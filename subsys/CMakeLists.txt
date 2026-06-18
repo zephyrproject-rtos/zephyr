@@ -12,6 +12,7 @@ add_subdirectory_ifdef(CONFIG_LORAWAN lorawan)
 add_compile_options($<TARGET_PROPERTY:compiler,warning_shadow_variables>)
 
 # zephyr-keep-sorted-start
+add_subdirectory(authentication)
 add_subdirectory(canbus)
 add_subdirectory(debug)
 add_subdirectory(fs)

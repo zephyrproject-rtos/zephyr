@@ -36,7 +36,7 @@ int dns_cache_add(struct dns_cache *cache, char const *query, struct dns_addrinf
 	}
 
 	if (strlen(query) >= CONFIG_DNS_RESOLVER_MAX_QUERY_LEN) {
-		NET_WARN("Query string to big to be processed %u >= "
+		NET_WARN("Query string too big to be processed %zu >= "
 			 "CONFIG_DNS_RESOLVER_MAX_QUERY_LEN",
 			 strlen(query));
 		return -EINVAL;
@@ -82,7 +82,7 @@ int dns_cache_remove(struct dns_cache *cache, char const *query)
 
 	NET_DBG("Remove all entries with query \"%s\"", query);
 	if (strlen(query) >= CONFIG_DNS_RESOLVER_MAX_QUERY_LEN) {
-		NET_WARN("Query string to big to be processed %u >= "
+		NET_WARN("Query string too big to be processed %zu >= "
 			 "CONFIG_DNS_RESOLVER_MAX_QUERY_LEN",
 			 strlen(query));
 		return -EINVAL;
@@ -121,7 +121,7 @@ int dns_cache_find(struct dns_cache const *cache, const char *query, enum dns_qu
 		return -EINVAL;
 	}
 	if (strlen(query) >= CONFIG_DNS_RESOLVER_MAX_QUERY_LEN) {
-		NET_WARN("Query string to big to be processed %u >= "
+		NET_WARN("Query string too big to be processed %zu >= "
 			 "CONFIG_DNS_RESOLVER_MAX_QUERY_LEN",
 			 strlen(query));
 		return -EINVAL;

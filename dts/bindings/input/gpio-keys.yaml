@@ -26,11 +26,41 @@ properties:
       Do not use interrupts for the key GPIOs, poll the pin periodically at the
       specified debounce-interval-ms instead.
 
-  no-disconnect:
-    type: boolean
+  zephyr,suspend-action:
+    type: string
+    default: "disconnect-with-pupd"
     description: |
-      Do not try to disconnect the pin on suspend. Can be used if the GPIO
-      controller does not support the GPIO_DISCONNECTED flag.
+      Action taken by driver on key GPIOs when device is suspended.
+
+      none:
+        No action - GPIO pins are not reconfigured.
+        Useful when the GPIO controller does not support GPIO_DISCONNECTED.
+
+      disconnect-with-pupd:
+        This option is provided mainly for backwards compatibility.
+        You probably want to use `full-disconnect` instead.
+
+        GPIO pins are reconfigured in GPIO_DISCONNECTED state using a call
+        to gpio_pin_configure_dt() which is identical to `full-disconnect`
+        if Devicetree does not contain flag GPIO_PULL_DOWN or GPIO_PULL_UP.
+        Otherwise, the behavior is implementation-defined:
+        - the requested pull-down/pull-up resistor may or may not be enabled
+        - the GPIO controller driver may reject the request (-ENOTSUP)
+
+      full-disconnect:
+        Fully disconnect GPIO pins (reconfigure without PU/PD flags)
+
+        GPIO pins are reconfigured in GPIO_DISCONNECTED state using a call
+        to gpio_pin_configure() with all flags from Devicetree unchanged,
+        except GPIO_PULL_DOWN and GPIO_PULL_UP which are masked out.
+
+        This should place GPIO pins in an high-impedance/"floating" state.
+
+      The default value is `disconnect-with-pupd` for backwards compatibility.
+    enum:
+      - "none"
+      - "disconnect-with-pupd"
+      - "full-disconnect"
 
 child-binding:
   description: GPIO KEYS child node

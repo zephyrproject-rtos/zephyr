@@ -2218,11 +2218,24 @@ try_resolve:
 			continue;
 		}
 
+#if defined(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)
+		/* Send query to all available DNS servers.
+		 * The first valid response received will be used.
+		 *
+		 * However, mDNS and LLMNR use multicast addresses,
+		 * so there is no need to send the query to more than
+		 * one multicast server of the same type.
+		 */
+		if (ctx->servers[j].is_mdns || ctx->servers[j].is_llmnr) {
+			break;
+		}
+#else
 		/* Do one concurrent query only for each name resolve.
 		 * TODO: Change the i (query index) to do multiple concurrent
 		 *       to each server.
 		 */
 		break;
+#endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
 	}
 
 	if (nfail > 0) {
@@ -2465,6 +2478,10 @@ static int do_dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 unlock:
 	k_mutex_unlock(&ctx->lock);
 	k_mutex_unlock(&lock);
+
+	if (err == 0) {
+		net_mgmt_event_notify(NET_EVENT_DNS_SERVERS_RECONFIGURED, NULL);
+	}
 
 	return err;
 }

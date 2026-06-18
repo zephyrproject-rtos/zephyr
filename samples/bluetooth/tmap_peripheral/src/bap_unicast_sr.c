@@ -16,6 +16,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/bap.h>
@@ -58,8 +59,10 @@ static const struct bt_bap_qos_cfg_pref qos_pref =
 
 static void print_hex(const uint8_t *ptr, size_t len)
 {
-	while (len-- != 0) {
-		printk("%02x", *ptr++);
+	while (len != 0U) {
+		printk("%02x", *ptr);
+		ptr++;
+		len--;
 	}
 }
 
@@ -103,7 +106,7 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 			printk("  Channel allocation: 0x%x\n", chan_allocation);
 		}
 
-		printk("  Octets per frame: %d (negative means value not pressent)\n",
+		printk("  Octets per frame: %d (negative means value not present)\n",
 		       bt_audio_codec_cfg_get_octets_per_frame(codec_cfg));
 		printk("  Frames per SDU: %d\n",
 		       bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true));
@@ -155,7 +158,8 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 	printk("ASE Codec Config stream %p\n", *stream);
 
 	if (dir == BT_AUDIO_DIR_SOURCE) {
-		source_streams[configured_source_stream_count++].stream = *stream;
+		source_streams[configured_source_stream_count].stream = *stream;
+		configured_source_stream_count++;
 	}
 
 	*pref = qos_pref;
@@ -373,8 +377,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SRC)) {
 		/* reset data */

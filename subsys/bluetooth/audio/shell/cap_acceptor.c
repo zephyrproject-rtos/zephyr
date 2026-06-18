@@ -16,21 +16,22 @@
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <zephyr/shell/shell.h>
-#include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/audio/cap.h>
-#include "host/shell/bt.h"
 #include "common/bt_shell_private.h"
+#include "host/shell/bt.h"
 
 static size_t ad_cap_announcement_data_add(struct bt_data data[], size_t data_size)
 {
@@ -100,7 +101,7 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 	};
 	int err = 0;
 
-	for (size_t argn = 1; argn < argc; argn++) {
+	for (size_t argn = 1U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "size") == 0) {
@@ -165,7 +166,7 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 
 			len = hex2bin(argv[argn], strlen(argv[argn]), param.sirk,
 				      sizeof(param.sirk));
-			if (len == 0) {
+			if (len == 0U) {
 				shell_error(sh, "Could not parse SIRK");
 
 				return -ENOEXEC;
@@ -358,7 +359,7 @@ SHELL_CMD_ARG_REGISTER(cap_acceptor, &cap_acceptor_cmds, "Bluetooth CAP acceptor
 
 size_t cap_acceptor_ad_data_add(struct bt_data data[], size_t data_size, bool discoverable)
 {
-	size_t ad_len = 0;
+	size_t ad_len = 0U;
 
 	if (!discoverable) {
 		return ad_len;

@@ -3,16 +3,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup regulator_npm10xx
+ * @brief Header file for nPM10xx Devicetree helpers.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_NPM10XX_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_NPM10XX_H_
 
 #include <zephyr/sys/util_macro.h>
 
 /**
- * @file npm10xx.h
+ * @defgroup regulator_npm10xx nPM10xx Devicetree helpers
  * @brief Nordic's nPM10 Series PMIC regulator driver Devicetree helpers
- * @defgroup regulator_npm10xx nPM10xx Devicetree helpers.
- * @ingroup regulator_interface
+ * @ingroup devicetree-regulator
  * @{
  */
 

@@ -61,7 +61,7 @@ static void calculate_low(void)
 		for (int i = 0; i < 3; i++) {
 			acc = fx_v2a32_cmac_cq15(acc, cq15_a[i], cq15_b[i]);
 		}
-		/* cast reult from v2accum32_ to short type */
+		/* cast result from v2accum32_ to short type */
 		res[0] = fx_q15_cast_asl_rnd_a32(fx_get_v2a32(acc, 0), 15);
 		res[1] = fx_q15_cast_asl_rnd_a32(fx_get_v2a32(acc, 1), 15);
 

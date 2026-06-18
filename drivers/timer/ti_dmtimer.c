@@ -12,14 +12,22 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/drivers/syscon.h>
 
 #include "ti_dmtimer.h"
 
 #define DT_DRV_COMPAT ti_am654_timer
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(ti_am654_timer, CONFIG_KERNEL_LOG_LEVEL);
+
 #define TIMER_IRQ_NUM   DT_INST_IRQN(0)
 #define TIMER_IRQ_PRIO  DT_INST_IRQ(0, priority)
 #define TIMER_IRQ_FLAGS DT_INST_IRQ(0, flags)
+
+#define CLKSEL_SYSCON DT_INST_PHANDLE(0, clksel)
+#define CLKSEL_OFFSET DT_INST_PHA(0, clksel, offset)
+#define CLKSEL_VALUE  DT_INST_PHA(0, clksel, value)
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = TIMER_IRQ_NUM;
@@ -158,6 +166,15 @@ static int sys_clock_driver_init(void)
 	struct ti_dm_timer_data *data;
 
 	systick_timer_dev = DEVICE_DT_GET(DT_DRV_INST(0));
+
+#if DT_NODE_HAS_STATUS_OKAY(CLKSEL_SYSCON)
+	int rv;
+
+	rv = syscon_write_reg(DEVICE_DT_GET(CLKSEL_SYSCON), CLKSEL_OFFSET, CLKSEL_VALUE);
+	if (rv != 0) {
+		LOG_WRN("failed to set timer's source via clksel");
+	}
+#endif
 
 	data = systick_timer_dev->data;
 

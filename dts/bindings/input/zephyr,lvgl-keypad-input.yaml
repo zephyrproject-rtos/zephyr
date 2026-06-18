@@ -9,7 +9,7 @@ description: |
 
   The property input-codes can be used to setup a mapping of input codes
   to the lvgl keys. There are lvgl keys that have a special function:
-  https://docs.lvgl.io/master/overview/indev.html#keys.
+  https://lvgl.io/docs/open/main-modules/indev/keypad#keys.
 
   The pseudo device can be associated to a specific device to listen only
   for events from that device.

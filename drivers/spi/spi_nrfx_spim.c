@@ -15,7 +15,11 @@ LOG_MODULE_DECLARE(spi_nrfx_spim);
 struct driver_data {
 	struct spi_nrfx_common_data common;
 	struct spi_context ctx;
+#if CONFIG_MULTITHREADING
 	struct k_sem wake_sem;
+#else
+	volatile bool wake_flag;
+#endif
 };
 
 struct driver_config {
@@ -44,7 +48,6 @@ static void transfer_start(const struct device *dev)
 	size_t tx_buf_len;
 	uint8_t *rx_buf;
 	size_t rx_buf_len;
-	int ret;
 
 	chunk_len = spi_context_max_continuous_chunk(&dev_data->ctx);
 	if (chunk_len == 0) {
@@ -68,32 +71,35 @@ static void transfer_start(const struct device *dev)
 		rx_buf_len = 0;
 	}
 
-	ret = spi_nrfx_spim_common_transfer_start(dev,
-						  tx_buf,
-						  tx_buf_len,
-						  rx_buf,
-						  rx_buf_len);
-	if (ret) {
-		transfer_end(dev, ret);
-		return;
-	}
+	spi_nrfx_spim_common_transfer_start(dev,
+					    tx_buf,
+					    tx_buf_len,
+					    rx_buf,
+					    rx_buf_len);
 }
 
 static void spim_wake_handler(const struct device *dev)
 {
 	struct driver_data *dev_data = dev->data;
 
+#if CONFIG_MULTITHREADING
 	k_sem_give(&dev_data->wake_sem);
+#else
+	dev_data->wake_flag = true;
+#endif
 }
 
-static void spim_evt_handler(const struct device *dev, nrfx_spim_event_t *evt)
+static void spim_evt_handler(const struct device *dev, int ret)
 {
 	struct driver_data *dev_data = dev->data;
-	uint32_t len = MAX(evt->xfer_desc.tx_length, evt->xfer_desc.rx_length);
 
-	spi_nrfx_spim_common_transfer_end(dev, &evt->xfer_desc);
-	spi_context_update_tx(&dev_data->ctx, 1, len);
-	spi_context_update_rx(&dev_data->ctx, 1, len);
+	if (ret < 0) {
+		transfer_end(dev, ret);
+		return;
+	}
+
+	spi_context_update_tx(&dev_data->ctx, 1, (size_t)ret);
+	spi_context_update_rx(&dev_data->ctx, 1, (size_t)ret);
 	transfer_start(dev);
 }
 
@@ -129,8 +135,20 @@ static int transceive(const struct device *dev,
 
 	dev_data->ctx.config = spi_cfg;
 
+#if CONFIG_MULTITHREADING
+	k_sem_reset(&dev_data->wake_sem);
+#else
+	dev_data->wake_flag = false;
+#endif
+
 	spi_nrfx_spim_common_wake_start(dev, spim_wake_handler);
+
+#if CONFIG_MULTITHREADING
 	k_sem_take(&dev_data->wake_sem, K_FOREVER);
+#else
+	while (dev_data->wake_flag == false) {
+	}
+#endif
 
 	spi_nrfx_spim_common_cs_set(dev, spi_cfg);
 	transfer_start(dev);
@@ -213,7 +231,9 @@ static int driver_init(const struct device *dev)
 		return ret;
 	}
 
+#if CONFIG_MULTITHREADING
 	k_sem_init(&dev_data->wake_sem, 0, 1);
+#endif
 
 	spi_context_unlock_unconditionally(&dev_data->ctx);
 

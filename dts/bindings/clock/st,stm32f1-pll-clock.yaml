@@ -30,7 +30,8 @@ properties:
     required: true
     description: |
         Main PLL multiplication factor for VCO
-        Valid range: 2 - 16
+    min: 2
+    max: 16
 
   xtpre:
     type: boolean

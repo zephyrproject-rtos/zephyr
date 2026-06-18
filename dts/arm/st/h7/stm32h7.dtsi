@@ -617,7 +617,7 @@
 			clocks = <&rcc STM32_CLOCK(APB1_2, 8)>;
 			interrupts = <19 0>, <21 0>, <63 0>;
 			interrupt-names = "int0", "int1", "calib";
-			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
+			bosch,mram-cfg = <0x0 28 8 6 0 0 3 3>;
 			status = "disabled";
 		};
 
@@ -628,7 +628,7 @@
 			clocks = <&rcc STM32_CLOCK(APB1_2, 8)>;
 			interrupts = <20 0>, <22 0>, <63 0>;
 			interrupt-names = "int0", "int1", "calib";
-			bosch,mram-cfg = <0x350 28 8 3 3 0 3 3>;
+			bosch,mram-cfg = <0x350 28 8 6 0 0 3 3>;
 			status = "disabled";
 		};
 
@@ -990,6 +990,58 @@
 			status = "disabled";
 		};
 
+		dfsdm: dfsdm@40017000 {
+			compatible = "st,stm32-dfsdm";
+			reg = <0x40017000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB2, 28)>,
+				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(1)>;
+			clock-names = "pclk", "aclk";
+			resets = <&rctl STM32_RESET(APB2, 28)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			pdm0: filter@0 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <0>;
+				interrupts = <110 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			pdm1: filter@1 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <1>;
+				interrupts = <111 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			pdm2: filter@2 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <2>;
+				interrupts = <112 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			pdm3: filter@3 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <3>;
+				interrupts = <113 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
 		adc1: adc@40022000 {
 			compatible = "st,stm32-adc";
 			reg = <0x40022000 0x400>;
@@ -1238,28 +1290,31 @@
 			status = "disabled";
 		};
 
-		sai1_a: sai1@40015804 {
+		sai1: sai1@40015800 {
 			compatible = "st,stm32-sai";
 			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40015804 0x20>;
+			#size-cells = <1>;
+			reg = <0x40015800 0x400>;
+			ranges = <0x0 0x40015800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
-				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(1)>;
-			dmas = <&dma1 2 87 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-					    STM32_DMA_16BITS) 0>;
+				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
 			status = "disabled";
-		};
 
-		sai1_b: sai1@40015824 {
-			compatible = "st,stm32-sai";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40015824 0x20>;
-			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
-				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(1)>;
-			dmas = <&dma1 3 88 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-					    STM32_DMA_16BITS) 0>;
-			status = "disabled";
+			sai1_a: sai1a@4 {
+				reg = <0x4 0x20>;
+				dmas = <&dma1 2 87 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH) 0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			sai1_b: sai1b@24 {
+				reg = <0x24 0x20>;
+				dmas = <&dma1 3 88 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH) 0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 
 		comp1_ch1: comparator@5800380c {

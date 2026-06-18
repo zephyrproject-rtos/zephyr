@@ -1,0 +1,52 @@
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+title: SiFli SF32LB52x Peripheral LDO Regulators
+
+description: |
+  This node is a child of the PMUC (Power Management Unit Controller) and
+  provides access to the internal peripheral LDOs controlled by the PERI_LDO
+  register (offset 0x5c in PMUC).
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/regulator/sf32lb52x-ldo.h>
+
+    pmuc: syscon@500ca000 {
+      compatible = "sifli,sf32lb52x-pmuc", "syscon";
+      reg = <0x500ca000 0x1000>;
+
+      regulators {
+        compatible = "sifli,sf32lb52x-ldo";
+
+        ldo1_1v8: LDO1_1V8 {
+          regulator-min-microvolt = <1800000>;
+          regulator-max-microvolt = <1800000>;
+          regulator-boot-on;
+        };
+
+        ldo2_3v3: LDO2_3V3 {
+          regulator-min-microvolt = <3300000>;
+          regulator-max-microvolt = <3300000>;
+        };
+
+        ldo3_3v3: LDO3_3V3 {
+          regulator-min-microvolt = <3300000>;
+          regulator-max-microvolt = <3300000>;
+        };
+      };
+    };
+
+compatible: "sifli,sf32lb52x-ldo"
+
+include: base.yaml
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-name
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-min-microvolt
+        - regulator-max-microvolt

@@ -6,6 +6,13 @@
 
 @}
 
+@defgroup toolchain Toolchain abstraction
+@brief Macros allowing to abstract compiler capabilities that utilize toolchain specific attributes
+       and/or pragmas.
+@{
+
+@}
+
 @defgroup os_services Operating System Services
 @brief Operating System Services
 @{
@@ -50,6 +57,13 @@
 @brief Device Management
 @defgroup device_mgmt Device Management
 @ingroup os_services
+@{
+@}
+
+@brief Xen hypervisor support
+@defgroup xen_support Xen support
+@ingroup os_services
+@details Interfaces for running Zephyr as a Xen guest or as Xen Dom0.
 @{
 @}
 
@@ -102,6 +116,12 @@
 
 @brief Memory Management APIs
 @defgroup mem_mgmt Memory Management APIs
+@{
+@}
+
+@brief Authentication
+@defgroup authentication Authentication
+@ingroup os_services
 @{
 @}
 

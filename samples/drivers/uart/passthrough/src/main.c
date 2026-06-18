@@ -59,7 +59,9 @@ static void uart_cb(const struct device *dev, void *ctx)
 	uint8_t *buf;
 	uint32_t len;
 
-	while (uart_irq_update(patch->rx_dev) > 0) {
+	while (true) {
+		uart_irq_update(patch->rx_dev);
+
 		ret = uart_irq_rx_ready(patch->rx_dev);
 		if (ret < 0) {
 			patch->rx_error = true;

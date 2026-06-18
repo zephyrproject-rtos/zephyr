@@ -255,7 +255,7 @@ struct net_config_ssh_key {
  * @param priv_key_config Private key configuration for the SSH server.
  * @param pub_key_config Public key configuration for the SSH server.
  * @param password_auth_config Password authentication configuration for the SSH server.
- *        If using public key authetication, then this can be left as NULL or
+ *        If using public key authentication, then this can be left as NULL or
  *        with NULL username and password. The public key authentication will have higher
  *        priority than password authentication, so if both are configured, then password
  *        authentication will only be used if public key authentication fails.

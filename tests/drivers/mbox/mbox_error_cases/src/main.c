@@ -430,7 +430,7 @@ ZTEST(mbox_error_cases, test_05c_mbox_set_enabled_on_already_enabled_rx_channel)
 }
 
 /**
- * @brief mbox_set_enabled_dt() - Dsiable already disabled channel shall fail
+ * @brief mbox_set_enabled_dt() - Disable already disabled channel shall fail
  *
  * Confirm that mbox_set_enabled_dt() returns
  * -EALREADY when user tries to disable already disabled RX mbox channel.

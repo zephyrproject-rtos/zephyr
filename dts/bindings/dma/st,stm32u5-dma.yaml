@@ -52,7 +52,11 @@ description: |
 
 compatible: "st,stm32u5-dma"
 
-include: st,stm32-dma.yaml
+include:
+  - name: st,stm32-dma.yaml
+    property-blocklist:
+      - st,mem2mem
+      - dma-offset
 
 properties:
   "#dma-cells":

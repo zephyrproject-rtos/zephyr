@@ -21,12 +21,18 @@ Requirements
 Building and Running
 ********************
 
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/iso_receive
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+After flashing, the sample starts scanning for an Isochronous Broadcaster automatically.
+
 Use ``-DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf`` to enable
 required ISO feature support in Zephyr Bluetooth Controller on supported boards.
 
-Use the sample found under :zephyr_file:`samples/bluetooth/iso_broadcast` on
-another board that will start periodic advertising, create BIG to which this
-sample will establish periodic advertising synchronization and synchronize to
-the Broadcast Isochronous Stream.
-
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+Use the :zephyr:code-sample:`bluetooth_isochronous_broadcaster` sample on
+another board, which will start periodic advertising and create a BIG to which
+this sample will establish periodic advertising synchronization and synchronize
+to the Broadcast Isochronous Stream.

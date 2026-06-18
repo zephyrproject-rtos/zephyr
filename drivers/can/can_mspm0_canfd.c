@@ -8,7 +8,7 @@
 #include <zephyr/irq.h>
 
 #include <zephyr/drivers/can.h>
-#include <zephyr/drivers/can/can_mcan.h>
+#include "can_mcan.h"
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/mspm0_clock_control.h>
@@ -289,8 +289,7 @@ static const struct can_mcan_ops can_mspm0_canfd_ops = {
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
 	};											\
 												\
-	static struct can_mcan_data can_mcan_data_##inst =					\
-		CAN_MCAN_DATA_INITIALIZER(NULL);						\
+	CAN_MCAN_DATA_DEFINE(can_mcan_data_##inst, NULL);                                       \
 												\
 	static const struct can_mcan_config can_mcan_cfg_##inst =				\
 		CAN_MCAN_DT_CONFIG_INST_GET(inst,						\

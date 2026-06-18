@@ -247,5 +247,8 @@ static inline uint32_t adin2111_oa_to_tc6_reg(uint16_t reg)
 {
     return (reg >= 0x30U) ? MMS_REG(1U, reg) : MMS_REG(0U, reg);
 }
+int eth_adin2111_reg_write(const struct device *dev, const uint16_t reg, uint32_t val);
+
+int eth_adin2111_reg_read(const struct device *dev, const uint16_t reg, uint32_t *val);
 
 #endif /* ETH_ADIN2111_PRIV_H__ */

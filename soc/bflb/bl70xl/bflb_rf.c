@@ -17,7 +17,7 @@ int bflb_rf_init(void)
 	uint8_t mac[8] = {};
 
 	hwinfo_get_device_id(mac, 6);
-	sys_mem_swap(mac, 6);
+	sys_mem_swap(mac, 8);
 
 	bl_wireless_mac_addr_set(mac);
 	rf_set_init_tsen_value(0);

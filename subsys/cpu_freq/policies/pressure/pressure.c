@@ -6,7 +6,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/cpu_freq/policy.h>
@@ -117,8 +116,8 @@ int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 {
 	int sys_pressure;
 
-	if (NULL == pstate_out) {
-		LOG_ERR("On-Demand Policy: pstate_out is NULL");
+	if (pstate_out == NULL) {
+		LOG_ERR("Pressure Policy: pstate_out is NULL");
 		return -EINVAL;
 	}
 

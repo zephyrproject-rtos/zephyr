@@ -16,4 +16,5 @@ supported:
   - input
   - video
   - rtc
+  - lora
 vendor: lilygo

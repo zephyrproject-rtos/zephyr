@@ -130,9 +130,9 @@ ZTEST(k_pipe_basic, test_reset)
 	/* reset an empty pipe, & no waiting should not produce any side-effects*/
 	k_pipe_reset(&pipe);
 	zassert_true(k_pipe_write(&pipe, &data, 1, K_NO_WAIT) == 1,
-		"Failed to write to resetted pipe");
+		"Failed to write to reset pipe");
 	zassert_true(k_pipe_read(&pipe, &read_data, 1, K_NO_WAIT) == 1,
-		"Failed to read from resetted pipe");
+		"Failed to read from reset pipe");
 	zassert_true(read_data == data, "Unexpected data received from pipe");
 }
 

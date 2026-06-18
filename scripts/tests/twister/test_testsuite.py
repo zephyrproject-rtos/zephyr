@@ -26,7 +26,6 @@ from twisterlib.testsuite import (
 )
 from twisterlib.testsuitedata import HarnessConfig, RequiredDevice, ShellCommand
 
-# pylint: disable=no-name-in-module
 from . import ZEPHYR_BASE
 
 TESTDATA_1 = [

@@ -69,23 +69,43 @@ out:
 	return err;
 }
 
+static void dsa_port_phylink_change(const struct device *phydev, struct phy_link_state *state,
+				    void *user_data)
+{
+	struct net_if *iface = (struct net_if *)user_data;
+	const struct device *dev = net_if_get_device(iface);
+	struct dsa_switch_context *dsa_switch_ctx = dev->data;
+
+	if (dsa_switch_ctx->dapi->port_phylink_change != NULL) {
+		dsa_switch_ctx->dapi->port_phylink_change(phydev, state, dev);
+	}
+
+	if (state->is_up) {
+		net_eth_carrier_on(iface);
+	} else {
+		net_eth_carrier_off(iface);
+	}
+}
+
 static void dsa_port_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	struct dsa_port_config *cfg = (struct dsa_port_config *)dev->config;
-	struct dsa_switch_context *dsa_switch_ctx = dev->data;
+	const struct dsa_port_config *cfg = dev->config;
 	char name[INTERFACE_NAME_LEN];
+	uint8_t mac_addr[6] = {0};
+	int ret;
 
 	/* Set interface name */
 	snprintk(name, sizeof(name), "swp%d", cfg->port_idx);
 	net_if_set_name(iface, name);
 
-	/* Use random mac address if could */
-	if (cfg->use_random_mac_addr && dsa_switch_ctx->dapi->port_generate_random_mac != NULL) {
-		dsa_switch_ctx->dapi->port_generate_random_mac(cfg->mac_addr);
+	ret = net_eth_mac_load(&cfg->mcfg, mac_addr);
+	if (ret >= 0) {
+		/* only set MAC address if successfully loaded, this way we won't overwrite a valid
+		 * MAC address, that might be already set by the dsa switch.
+		 */
+		net_if_set_link_addr(iface, mac_addr, sizeof(mac_addr), NET_LINK_ETHERNET);
 	}
-
-	net_if_set_link_addr(iface, cfg->mac_addr, sizeof(cfg->mac_addr), NET_LINK_ETHERNET);
 
 	if (cfg->ethernet_connection != NULL) {
 		/* DSA CPU port used only for DSA management */
@@ -110,12 +130,7 @@ static void dsa_port_iface_init(struct net_if *iface)
 		return;
 	}
 
-	if (dsa_switch_ctx->dapi->port_phylink_change == NULL) {
-		LOG_ERR("require port_phylink_change callback");
-		return;
-	}
-
-	phy_link_callback_set(cfg->phy_dev, dsa_switch_ctx->dapi->port_phylink_change, (void *)dev);
+	phy_link_callback_set(cfg->phy_dev, dsa_port_phylink_change, (void *)iface);
 }
 
 static const struct device *dsa_port_get_phy(const struct device *dev,

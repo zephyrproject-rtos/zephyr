@@ -117,7 +117,8 @@ properties:
     description: |
       Specify the FIFO watermark level in frame count.
       Default is power-up configuration (disabled).
-      Valid range: 0 - 104
+    min: 0
+    max: 104
 
   fifo-watermark-equals:
     type: boolean

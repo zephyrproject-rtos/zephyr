@@ -16,7 +16,7 @@
 #define _priq_run_add		z_priq_simple_add
 #define _priq_run_remove	z_priq_simple_remove
 #define _priq_run_yield         z_priq_simple_yield
-# if defined(CONFIG_SCHED_CPU_MASK)
+# if defined(CONFIG_SCHED_CPU_MASK) && !defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
 #  define _priq_run_best	z_priq_simple_mask_best
 # else
 #  define _priq_run_best	z_priq_simple_best
@@ -27,14 +27,22 @@
 #define _priq_run_add		z_priq_rb_add
 #define _priq_run_remove	z_priq_rb_remove
 #define _priq_run_yield         z_priq_rb_yield
-#define _priq_run_best		z_priq_rb_best
+# if defined(CONFIG_SCHED_CPU_MASK) && !defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
+#  define _priq_run_best	z_priq_rb_mask_best
+# else
+#  define _priq_run_best	z_priq_rb_best
+# endif /* CONFIG_SCHED_CPU_MASK */
  /* Multi Queue Scheduling */
 #elif defined(CONFIG_SCHED_MULTIQ)
 #define _priq_run_init		z_priq_mq_init
 #define _priq_run_add		z_priq_mq_add
 #define _priq_run_remove	z_priq_mq_remove
 #define _priq_run_yield         z_priq_mq_yield
-#define _priq_run_best		z_priq_mq_best
+# if defined(CONFIG_SCHED_CPU_MASK) && !defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
+#  define _priq_run_best	z_priq_mq_mask_best
+# else
+#  define _priq_run_best	z_priq_mq_best
+# endif /* CONFIG_SCHED_CPU_MASK */
 #endif
 
 /* Scalable Wait Queue */
@@ -172,10 +180,11 @@ static ALWAYS_INLINE struct k_thread *z_priq_simple_mask_best(sys_dlist_t *pq)
 	/* With masks enabled we need to be prepared to walk the list
 	 * looking for one we can run
 	 */
+	unsigned long current_cpu_bit = BIT(_current_cpu->id);
 	struct k_thread *thread;
 
 	SYS_DLIST_FOR_EACH_CONTAINER(pq, thread, base.qnode_dlist) {
-		if ((thread->base.cpu_mask & BIT(_current_cpu->id)) != 0) {
+		if ((thread->base.cpu_mask & current_cpu_bit) != 0) {
 			return thread;
 		}
 	}
@@ -245,7 +254,22 @@ static ALWAYS_INLINE struct k_thread *z_priq_rb_best(struct _priq_rb *pq)
 	}
 	return thread;
 }
-#endif
+
+#ifdef CONFIG_SCHED_CPU_MASK
+static ALWAYS_INLINE struct k_thread *z_priq_rb_mask_best(struct _priq_rb *pq)
+{
+	unsigned long current_cpu_bit = BIT(_current_cpu->id);
+	struct k_thread *thread;
+
+	RB_FOR_EACH_CONTAINER(&pq->tree, thread, base.qnode_rb) {
+		if ((thread->base.cpu_mask & current_cpu_bit) != 0) {
+			return thread;
+		}
+	}
+	return NULL;
+}
+#endif /* CONFIG_SCHED_CPU_MASK */
+#endif /* CONFIG_SCHED_SCALABLE || CONFIG_WAITQ_SCALABLE */
 
 struct prio_info {
 	uint8_t offset_prio;
@@ -345,5 +369,36 @@ static ALWAYS_INLINE struct k_thread *z_priq_mq_best(struct _priq_mq *pq)
 
 	return NULL;
 }
+
+#ifdef CONFIG_SCHED_CPU_MASK
+static ALWAYS_INLINE struct k_thread *z_priq_mq_mask_best(struct _priq_mq *pq)
+{
+	unsigned long current_cpu_bit = BIT(_current_cpu->id);
+
+	/* Walk priority levels from highest to lowest, and within each
+	 * level walk the thread list to find the first thread runnable
+	 * on the current CPU.
+	 */
+	for (unsigned int i = 0U; i < PRIQ_BITMAP_SIZE; i++) {
+		unsigned long bitmask = pq->bitmask[i];
+
+		while (bitmask != 0UL) {
+			unsigned int bit = TRAILING_ZEROS(bitmask);
+			unsigned int index = i * NBITS + bit;
+			struct k_thread *thread;
+
+			SYS_DLIST_FOR_EACH_CONTAINER(&pq->queues[index],
+						     thread, base.qnode_dlist) {
+				if ((thread->base.cpu_mask &
+				     current_cpu_bit) != 0) {
+					return thread;
+				}
+			}
+			bitmask &= (bitmask - 1UL);
+		}
+	}
+	return NULL;
+}
+#endif /* CONFIG_SCHED_CPU_MASK */
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_PRIORITY_Q_H_ */

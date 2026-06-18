@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Microchip Technology Inc.
+# Copyright (c) 2025-2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config DMA_MCHP_DMAC_G1
@@ -14,3 +14,20 @@ config DMA_MCHP_DMAC_G2
 	depends on DT_HAS_MICROCHIP_DMAC_G2_DMA_ENABLED && !DMA_64BIT
 	help
 	  Enables the G2 DMA driver support for Microchip MCUs.
+
+config DMA_MCHP_DMAC_G3
+	bool "Microchip G3 DMA driver"
+	default y
+	depends on DT_HAS_MICROCHIP_DMAC_G3_DMA_ENABLED && !DMA_64BIT
+	help
+	  Enables the G3 DMA driver support for Microchip MCUs.
+
+if DMA_MCHP_DMAC_G3
+
+config	DMAC_DESC_COUNT
+	int "DMAC descriptor count"
+	default 10
+	help
+	  Number of descriptors to preallocate.
+
+endif # DMA_MCHP_DMAC_G3

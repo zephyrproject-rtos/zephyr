@@ -95,7 +95,7 @@ and exit functions:
     static int some_function(void)
     {
         // Declare 'fa' with automatic cleanup
-        scope_var(flash_area, fa)(FIXED_PARTITION_ID(storage_partition));
+        scope_var(flash_area, fa)(PARTITION_ID(storage_partition));
         if (fa == NULL) {
             return -EINVAL;  // Exit function is still called
         }

@@ -261,11 +261,9 @@ enum net_if_flag {
 	/** Interface is in promiscuous mode */
 	NET_IF_PROMISC,
 
-	/** Do not start the interface immediately after initialization.
+	/** Do not bring the interface immediately up after initialization.
 	 * This requires that either the device driver or some other entity
 	 * will need to manually take the interface up when needed.
-	 * For example for Ethernet this will happen when the driver calls
-	 * the net_eth_carrier_on() function.
 	 */
 	NET_IF_NO_AUTO_START,
 
@@ -1504,22 +1502,6 @@ struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr);
 struct net_if *net_if_lookup_by_dev(const struct device *dev);
 
 /**
- * @brief Get network interface IP config
- *
- * @param iface Interface to use.
- *
- * @return NULL if not found or pointer to correct config settings.
- */
-static inline struct net_if_config *net_if_config_get(struct net_if *iface)
-{
-	if (iface == NULL) {
-		return NULL;
-	}
-
-	return &iface->config;
-}
-
-/**
  * @brief Remove a router from the system
  *
  * @param router Pointer to existing router
@@ -2456,6 +2438,18 @@ uint8_t net_if_ipv4_get_mcast_ttl(struct net_if *iface);
  * @param ttl Time-to-live value
  */
 void net_if_ipv4_set_mcast_ttl(struct net_if *iface, uint8_t ttl);
+
+/**
+ * @brief Check if this IPv4 address is part of the subnet of our
+ * network interface.
+ *
+ * @param iface Network interface. This is returned to the caller.
+ * The iface can be NULL in which case we check all the interfaces.
+ * @param addr IPv4 address
+ *
+ * @return True if address is part of our subnet, false otherwise
+ */
+bool net_if_ipv4_addr_onlink(struct net_if **iface, const struct net_in_addr *addr);
 
 /**
  * @brief Check if this IPv4 address belongs to one of the interfaces.

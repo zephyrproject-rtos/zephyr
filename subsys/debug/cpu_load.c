@@ -45,6 +45,7 @@ void cpu_load_log_control(bool enable)
 		return;
 	}
 	if (enable) {
+		(void)cpu_load_get(true);
 		k_timer_start(&cpu_load_timer, K_MSEC(CONFIG_CPU_LOAD_LOG_PERIODICALLY),
 			      K_MSEC(CONFIG_CPU_LOAD_LOG_PERIODICALLY));
 	} else {
@@ -75,6 +76,7 @@ static int cpu_load_init(void)
 	}
 
 	if (CONFIG_CPU_LOAD_LOG_PERIODICALLY > 0) {
+		(void)cpu_load_get(true);
 		k_timer_start(&cpu_load_timer, K_MSEC(CONFIG_CPU_LOAD_LOG_PERIODICALLY),
 			      K_MSEC(CONFIG_CPU_LOAD_LOG_PERIODICALLY));
 	}

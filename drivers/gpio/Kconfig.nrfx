@@ -17,7 +17,3 @@ config GPIO_NRFX_INTERRUPT
 	  The option can be used to disable the GPIO interrupt support to
 	  significantly reduce memory footprint in case of application that does
 	  not need GPIO interrupts.
-
-config GPIO_NRFX_HAS_LATCH_DETECT
-	bool
-	default y if !(SOC_NRF54H20 || SOC_SERIES_NRF92 || TRUSTED_EXECUTION_NONSECURE)

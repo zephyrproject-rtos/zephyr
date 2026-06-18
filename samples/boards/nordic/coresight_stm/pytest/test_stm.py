@@ -110,7 +110,7 @@ def check_benchmark_results(output: str, core: str, constraints: STMLimits) -> N
     """
     Use regular expressions to parse 'output' string.
     Search for benchmark results related to 'core' coprocessor.
-    Check that benchamrk results are lower than limits provided in 'constraints'.
+    Check that benchmark results are lower than limits provided in 'constraints'.
     """
 
     cfg = {

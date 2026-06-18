@@ -5,7 +5,7 @@
  */
 
 /*
- * Need to connect PC1 and PC2 of the Expension Pin header
+ * Need to connect PC1 and PC2 of the Expansion Pin header
  */
 
 dut: &eusart1 {

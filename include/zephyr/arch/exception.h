@@ -8,6 +8,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_EXCEPTION_H_
 #define ZEPHYR_INCLUDE_ARCH_EXCEPTION_H_
 
+#ifndef _ASMLANGUAGE
+
 #if defined(CONFIG_EXCEPTION_DUMP_HOOK)
 
 #include <stdbool.h>
@@ -105,6 +107,8 @@ static inline void arch_exception_call_dump_hook(const char *format, ...)
 #define EXCEPTION_DUMP(format, ...) printk(format "\n", ##__VA_ARGS__)
 #endif
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 #if defined(CONFIG_X86_64)
 #include <zephyr/arch/x86/intel64/exception.h>

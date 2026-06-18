@@ -13,11 +13,11 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 
-#define BT_CSIP_SIRK_TYPE_ENCRYPTED             0x00
-#define BT_CSIP_SIRK_TYPE_PLAIN                 0x01
+#define BT_CSIP_SIRK_TYPE_ENCRYPTED             0x00U
+#define BT_CSIP_SIRK_TYPE_PLAIN                 0x01U
 
-#define BT_CSIP_RELEASE_VALUE                   0x01
-#define BT_CSIP_LOCK_VALUE                      0x02
+#define BT_CSIP_RELEASE_VALUE                   0x01U
+#define BT_CSIP_LOCK_VALUE                      0x02U
 
 struct bt_csip_sirk {
 	uint8_t type;

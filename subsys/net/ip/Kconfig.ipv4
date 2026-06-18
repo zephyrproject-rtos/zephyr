@@ -29,6 +29,7 @@ config NET_IF_UNICAST_IPV4_ADDR_COUNT
 
 config NET_IF_MCAST_IPV4_ADDR_COUNT
 	int "Max number of multicast IPv4 addresses per network interface"
+	default 3 if PTP_DELAY_MECHANISM_P2P && PTP_UDP_IPV4_PROTOCOL
 	default 2 if NET_IPV4_IGMP
 	default 1
 
@@ -188,10 +189,98 @@ config NET_IPV4_PMTU_DESTINATION_CACHE_ENTRIES
 	help
 	  How many PMTU entries we can track for each destination address.
 
+config NET_IPV4_NBR_CACHE
+	bool "Neighbor cache"
+	default y if NET_ARP
+	help
+	  The value depends on your network needs. You might need to enable
+	  neighbor cache and IPv4 route table support if you have multiple
+	  network interfaces and you want to control where IPv4 packets are
+	  sent.
+
+config NET_IPV4_MAX_NEIGHBORS
+	int "How many IPv4 neighbors are supported"
+	depends on NET_IPV4_NBR_CACHE
+	default 8
+	range 1 254
+	help
+	  The value depends on your network needs.
+
+config NET_IPV4_ROUTE
+	bool "IPv4 unicast route table support"
+	depends on NET_IPV4_NBR_CACHE
+	default y if NET_IPV4_NBR_CACHE
+	help
+	  Enable the IPv4 unicast route table and route-aware destination
+	  selection for locally originated traffic.
+
+	  This option is needed for static IPv4 routes, route lookups from
+	  networking shell commands, and host-side route selection such as
+	  VPN traffic steering. Enable NET_IPV4_FORWARDING as well if the
+	  device must forward packets between interfaces.
+
+config NET_IPV4_FORWARDING
+	bool "IPv4 forwarding between interfaces"
+	default y if NET_IPV4_ROUTING
+	depends on NET_IPV4_ROUTE
+	help
+	  Allow the device to forward IPv4 packets between different network
+	  interfaces and technologies.
+
+	  This is separate from NET_IPV4_ROUTE, which only enables the IPv4
+	  route table for host-side route selection and shell route commands.
+
+config NET_IPV4_ROUTING
+	bool "IPv4 routing between interfaces [DEPRECATED]"
+	depends on NET_IPV4_ROUTE
+	select DEPRECATED
+	help
+	  This symbol is deprecated, use NET_IPV4_FORWARDING instead.
+
+config NET_IPV4_MAX_ROUTES
+	int "Max number of routing entries stored."
+	default NET_IPV4_MAX_NEIGHBORS
+	depends on NET_IPV4_ROUTE
+	help
+	  This determines how many entries can be stored in routing table.
+
+config NET_IPV4_NAT
+	bool "IPv4 Network Address Translation (EXPERIMENTAL)"
+	depends on NET_IPV4_ROUTE
+	select NET_PKT_FILTER
+	select NET_PKT_FILTER_IPV4_HOOK
+	select EXPERIMENTAL
+	help
+	  Update address and ports of packets for other interfaces.
+	  And pass them to route process.
+	  Add iptable rule to allow specific packets to be forwarded.
+
+if NET_IPV4_NAT
+config NET_IPV4_CONN_TRACK_MAX_NUM
+	int "Maximum connection track maintained for IP forward"
+	default 10
+	help
+	  Maximum number of active connection tracks maintained
+	  in the same time.
+	  The connection track will age out after inactive timeout.
+
+config NET_IPV4_IPTABLE_RULE_MAX_NUM
+	int "Maximum IP table rule number for IP forward"
+	default 3
+	help
+	  Maximum number of active IP table rules.
+endif
+
 module = NET_IPV4
 module-dep = NET_LOG
 module-str = Log level for core IPv4
 module-help = Enables core IPv4 code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+module = NET_IPV4_ROUTE
+module-dep = NET_LOG
+module-str = Log level for IPv4 route management
+module-help = Enables IPv4 routing engine debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
 module = NET_ICMPV4

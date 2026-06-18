@@ -543,6 +543,33 @@ ZTEST(bitarray, test_bitarray_alloc_free)
 	alloc_and_free_interval();
 }
 
+/**
+ * @brief Parameterized alloc/free loop — one invocation per divisor.
+ *
+ * Identical to the loop inside test_bitarray_alloc_free but exercised as
+ * separate named test cases so that a failure reports exactly which divisor
+ * triggered it (e.g. "test_bitarray_alloc_divisor[divisors/2]" for divisor=4)
+ * rather than only "FAIL - test_bitarray_alloc_free".
+ *
+ * Divisors: 1, 2, 4, 8, 16, 32, 64 — the same doubling sequence as the
+ * original while-loop, now with per-case visibility in Twister output.
+ *
+ * @see sys_bitarray_alloc()
+ * @see sys_bitarray_free()
+ */
+ZTEST_P(bitarray, test_bitarray_alloc_divisor)
+{
+	/* Bitarrays have embedded spinlocks and can't live on the stack. */
+	if (IS_ENABLED(CONFIG_KERNEL_COHERENCE)) {
+		ztest_test_skip();
+	}
+
+	alloc_and_free_loop(ZTEST_GET_PARAM(int));
+}
+
+ZTEST_DEFINE_PARAM_VALUES(ba_divisors, int, 1, 2, 4, 8, 16, 32, 64);
+ZTEST_INSTANTIATE_TEST_SUITE_P(loop, bitarray, test_bitarray_alloc_divisor, ba_divisors);
+
 ZTEST(bitarray, test_bitarray_popcount_region)
 {
 	int ret;

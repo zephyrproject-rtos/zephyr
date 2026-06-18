@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <posix/posix.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
@@ -29,8 +30,11 @@
 	};
 
 	aliases {
+		codec0 = &audio_codec;
+		dmic-dev = &dmic0;
 		eeprom-0 = &eeprom0;
 		i2c-0 = &i2c0;
+		i2s-node0 = &i2s_rxtx;
 		spi-0 = &spi0;
 		led0 = &led0;
 		rtc = &rtc;
@@ -196,6 +200,7 @@
 
 	sdl_dc: sdl_dc {
 		compatible = "zephyr,sdl-dc";
+		pixel-format = <PANEL_PIXEL_FORMAT_ARGB_8888>;
 		height = <240>;
 		width = <320>;
 	};
@@ -232,6 +237,34 @@
 		status = "okay";
 	};
 
+	audio_codec: audio_codec {
+		compatible = "zephyr,dummy-codec";
+		status = "okay";
+	};
+
+	dmic0: dmic0 {
+		compatible = "zephyr,native-sim-dmic";
+		status = "okay";
+	};
+
+	i2s_rx0: i2s_rx {
+		compatible = "zephyr,native-sim-i2s";
+		status = "okay";
+		stream-direction = "rx";
+	};
+
+	i2s_rxtx: i2s_rxtx {
+		compatible = "zephyr,native-sim-i2s";
+		status = "okay";
+		stream-direction = "both";
+	};
+
+	i2s_tx0: i2s_tx {
+		compatible = "zephyr,native-sim-i2s";
+		status = "okay";
+		stream-direction = "tx";
+	};
+
 	dma: dma {
 		compatible = "zephyr,dma-emul";
 		#dma-cells = <1>;
@@ -261,5 +294,10 @@
 			load-threshold = <0>;
 			pstate-id = <2>;
 		};
+	};
+
+	ptp_clock: ptp_clock {
+		compatible = "zephyr,native-ptp-clock";
+		status = "okay";
 	};
 };

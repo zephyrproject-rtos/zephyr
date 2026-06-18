@@ -15,6 +15,7 @@ supported:
   - dma
   - gpio
   - i2c
+  - i3c
   - spi
   - uart
   - usart

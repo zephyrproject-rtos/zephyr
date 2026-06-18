@@ -200,6 +200,9 @@ static int rangematch(const char **pattern, char test, int flags)
 			return RANGE_NOMATCH;
 		} else if (*pat == '\\' && !(flags & FNM_NOESCAPE)) {
 			pat++;
+			if (*pat == EOS) {
+				return RANGE_ERROR;
+			}
 		} else {
 			switch (rangematch_cc(&pat, test)) {
 			case RANGE_ERROR:
@@ -355,6 +358,9 @@ static int fnmatchx(const char *pattern, const char *string, const char *strings
 			break;
 		case '\\':
 			if ((flags & FNM_NOESCAPE) == 0) {
+				if (*pattern == EOS) {
+					return FNM_NOMATCH;
+				}
 				pc = FOLDCASE(*pattern++, flags);
 			}
 			__fallthrough;

@@ -20,12 +20,8 @@
 	};
 
 	mram: flash@80000000 {
-		compatible = "zephyr,memory-region", "soc-nv-flash";
+		compatible = "zephyr,memory-region";
 		reg = <0x80000000 DT_SIZE_K(5632)>;
 		zephyr,memory-region = "MRAM";
-
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges = <0x0 0x80000000 DT_SIZE_K(5632)>;
 	};
 };

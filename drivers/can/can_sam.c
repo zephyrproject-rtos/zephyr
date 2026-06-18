@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/drivers/can.h>
-#include <zephyr/drivers/can/can_mcan.h>
+#include "can_mcan.h"
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <soc.h>
@@ -247,9 +247,7 @@ static void config_can_##inst##_irq(void)                                       
 					    &can_sam_ops,		\
 					    &can_sam_cbs_##inst);
 
-#define CAN_SAM_DATA_INST(inst)						\
-	static struct can_mcan_data can_mcan_data_##inst =		\
-		CAN_MCAN_DATA_INITIALIZER(NULL);
+#define CAN_SAM_DATA_INST(inst) CAN_MCAN_DATA_DEFINE(can_mcan_data_##inst, NULL);
 
 #define CAN_SAM_DEVICE_INST(inst)						\
 	CAN_DEVICE_DT_INST_DEFINE(inst, can_sam_init, NULL,			\

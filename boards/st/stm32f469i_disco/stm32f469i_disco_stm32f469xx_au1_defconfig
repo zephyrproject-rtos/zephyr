@@ -13,9 +13,6 @@ CONFIG_SERIAL=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
-# Enable GPIO
-CONFIG_GPIO=y
-
 # Enable external Memory
 CONFIG_MEMC=y
 

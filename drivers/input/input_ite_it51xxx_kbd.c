@@ -158,11 +158,15 @@ static int it51xxx_kbd_init(const struct device *dev)
 	if (common->col_size > 16) {
 		/*
 		 * For KSO[16] and KSO[17]:
-		 * Set pull up and open-drain by their GPIO ports corresponding
+		 * Set (output | dt_flag) by their GPIO ports corresponding
 		 * GPCRx and GPOTx registers.
 		 */
-		gpio_pin_configure_dt(&config->kso16_gpios, (GPIO_OPEN_DRAIN | GPIO_PULL_UP));
-		gpio_pin_configure_dt(&config->kso17_gpios, (GPIO_OPEN_DRAIN | GPIO_PULL_UP));
+		if (!(config->kso_ignore_mask & BIT(16))) {
+			gpio_pin_configure_dt(&config->kso16_gpios, GPIO_OUTPUT);
+		}
+		if (common->col_size > 17 && !(config->kso_ignore_mask & BIT(17))) {
+			gpio_pin_configure_dt(&config->kso17_gpios, GPIO_OUTPUT);
+		}
 	}
 	/* Enable keyboard scan alternate function */
 	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
@@ -223,8 +227,8 @@ static const struct it51xxx_kbd_config it51xxx_kbd_cfg_0 = {
 	.irq = DT_INST_IRQN(0),
 	.wuc_map_list = it51xxx_kbd_wuc,
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-	.kso16_gpios = GPIO_DT_SPEC_INST_GET(0, kso16_gpios),
-	.kso17_gpios = GPIO_DT_SPEC_INST_GET(0, kso17_gpios),
+	.kso16_gpios = GPIO_DT_SPEC_INST_GET_OR(0, kso16_gpios, {0}),
+	.kso17_gpios = GPIO_DT_SPEC_INST_GET_OR(0, kso17_gpios, {0}),
 	.kso_ignore_mask = DT_INST_PROP(0, kso_ignore_mask),
 };
 
@@ -240,5 +244,9 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED) || IS_ENABLED(CONFIG_P
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "only one ite,it51xxx-kbd compatible node can be supported");
-BUILD_ASSERT(IN_RANGE(DT_INST_PROP(0, row_size), 1, 8), "invalid row-size");
-BUILD_ASSERT(IN_RANGE(DT_INST_PROP(0, col_size), 1, 18), "invalid col-size");
+BUILD_ASSERT(DT_INST_PROP(0, col_size) < 17 ||
+	     DT_INST_NODE_HAS_PROP(0, kso16_gpios),
+	     "kso16-gpios must be defined in dts when col-size is 17 or 18");
+BUILD_ASSERT(DT_INST_PROP(0, col_size) < 18 ||
+	     DT_INST_NODE_HAS_PROP(0, kso17_gpios),
+	     "kso17-gpios must be defined in dts when col-size is 18");

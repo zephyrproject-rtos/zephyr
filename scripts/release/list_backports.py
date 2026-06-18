@@ -77,10 +77,17 @@ def parse_args():
                         metavar='PR', type=int, action='append', default=[])
     parser.add_argument("-r", "--repo", default="zephyr",
                         help="Github repository")
+    parser.add_argument('-c', '--check', dest='check', action='store_true',
+                        help='check mode: verify a single PR has an associated issue '
+                             'and post a comment on the PR if one is missing')
 
     args = parser.parse_args()
 
-    if args.includes:
+    if args.check:
+        if len(args.includes) != 1:
+            logging.error('--check requires exactly one -p/--include-pull PR number')
+            return None
+    elif args.includes:
         if getattr(args, 'start'):
             logging.error(
                 'the --start argument should not be used with --include-pull')
@@ -224,7 +231,7 @@ class Backport(object):
         for p in self._pulls:
             # check for issues in this pr
             issues_for_this_pr = {}
-            with io.StringIO(p.body) as buf:
+            with io.StringIO(p.body or '') as buf:
                 for line in buf.readlines():
                     line = line.strip()
                     match = re.search(r"^Fixes[:]?\s*#([1-9][0-9]*).*", line)
@@ -283,6 +290,22 @@ class Backport(object):
         return self._pulls_with_invalid_issues
 
 
+BACKPORT_CHECK_MARKER = '<!-- backport-issue-check -->'
+
+
+def clear_bot_comments(pr):
+    """Delete any previous bot comments on pr that contain the marker."""
+    try:
+        for c in pr.get_issue_comments():
+            if BACKPORT_CHECK_MARKER in c.body:
+                try:
+                    c.delete()
+                except Exception as e:
+                    logging.warning(f'failed to delete comment {c.id} on PR #{pr.number}: {e}')
+    except Exception as e:
+        logging.warning(f'failed to list comments on PR #{pr.number}: {e}')
+
+
 def main():
     args = parse_args()
 
@@ -321,6 +344,28 @@ def main():
 
     pulls_without_issues = bp.get_pulls_without_issues()
     if pulls_without_issues:
+        if args.check:
+            comment = (
+                BACKPORT_CHECK_MARKER + '\n'
+                'This pull request to a release branch does not have an '
+                'associated GitHub issue.\n\n'
+                'Please update the pull request description to include a reference to '
+                'the issue being fixed, for example:\n\n'
+                '```\nFixes #<issue_number>\n```\n\n'
+                'For stable releases, all changes MUST have a reference to an issue or '
+                'a published advisory documenting:\n'
+                '- the issue being fixed\n'
+                '- its severity/impact\n'
+                '\nSee https://docs.zephyrproject.org/latest/project/release_process.html#issue-tracking-during-feature-freeze '
+                'for more details.'
+
+            )
+            for p in pulls_without_issues:
+                clear_bot_comments(p)
+                try:
+                    p.create_issue_comment(comment)
+                except Exception as e:
+                    logging.error(f'failed to post comment on PR #{p.number}: {e}')
         logging.error(
             'Please ensure the body of each PR to a release branch contains "Fixes #1234"')
         logging.error('The following PRs are lacking associated issues:')
@@ -328,6 +373,12 @@ def main():
             logging.error(
                 f'https://github.com/{repo.organization.login}/{repo.name}/pull/{p.number}')
         return os.EX_DATAERR
+
+    if args.check:
+        # clean up any previous failure comments now that the PR is valid
+        for p in bp.get_pulls():
+            clear_bot_comments(p)
+        return os.EX_OK
 
     if args.json:
         bp.print_json()

@@ -20,7 +20,7 @@ extern "C" {
  * @defgroup mfd_interface_npm10xx MFD NPM10XX Interface
  * @ingroup mfd_interfaces
  * @since 4.4
- * @version 0.1.0
+ * @version 0.2.0
  * @{
  */
 
@@ -247,7 +247,7 @@ struct mfd_npm10xx_event_callback {
 	/** Intended for internal use by the driver. Do not use in application. */
 	sys_snode_t node;
 	/**
-	 * A set of events the callback is intrested in. May be constructed by a bitwise-OR of any
+	 * A set of events the callback is interested in. May be constructed by a bitwise-OR of any
 	 * number of the NPM10XX_EVENT_* macros.
 	 */
 	npm10xx_event_t event_mask;
@@ -282,7 +282,6 @@ int mfd_npm10xx_get_reset_reason(const struct device *dev, npm10xx_rstreas_t *re
  * This will turn off all supplies and any devices powered from them. The VBAT Hibernate mode is
  * exited automatically when VBUS becomes present. The VBUS Hibernate mode is exited when VBUS is
  * removed. The SHPHLD button can be configured to exit Hibernate modes as well.
- * NOTE: currently only K_FOREVER timeout is supported.
  *
  * @param dev nPM10xx MFD device
  * @param mode The Hibernate mode to trigger
@@ -320,6 +319,44 @@ int mfd_npm10xx_standby(const struct device *dev, enum mfd_npm10xx_standby_op op
  */
 int mfd_npm10xx_manage_callback(const struct device *dev,
 				struct mfd_npm10xx_event_callback *callback, bool add);
+
+/**
+ * @brief Set the timeout value for the timer on an nPM10xx device
+ *
+ * @param dev nPM10xx MFD device
+ * @param timeout Timer timeout value
+ *
+ * @return 0 on success, negative errno otherwise
+ */
+int mfd_npm10xx_timer_set(const struct device *dev, k_timeout_t timeout);
+
+/**
+ * @brief Start the timer on an nPM10xx device
+ *
+ * @param dev nPM10xx MFD device
+ *
+ * @return 0 on success, negative errno otherwise
+ */
+int mfd_npm10xx_timer_start(const struct device *dev);
+
+/**
+ * @brief Stop the timer on an nPM10xx device
+ *
+ * @param dev nPM10xx MFD device
+ *
+ * @return 0 on success, negative errno otherwise
+ */
+int mfd_npm10xx_timer_stop(const struct device *dev);
+
+/**
+ * @brief Get the timer status on an nPM10xx device
+ *
+ * @param dev nPM10xx MFD device
+ * @param busy Pointer to a bool variable where the busy status will be stored
+ *
+ * @return 0 on success, negative errno otherwise
+ */
+int mfd_npm10xx_timer_status_get(const struct device *dev, bool *busy);
 
 /** @} */
 

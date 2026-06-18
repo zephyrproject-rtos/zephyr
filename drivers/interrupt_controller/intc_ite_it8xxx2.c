@@ -115,6 +115,7 @@ void __soc_ram_code ite_intc_irq_enable(unsigned int irq)
 {
 	uint32_t g, i;
 	volatile uint8_t *en;
+	volatile uint8_t _ier __unused;
 
 	if (irq > CONFIG_NUM_IRQS) {
 		return;
@@ -126,6 +127,12 @@ void __soc_ram_code ite_intc_irq_enable(unsigned int irq)
 	/* critical section due to run a bit-wise OR operation */
 	unsigned int key = irq_lock();
 	SET_MASK(*en, BIT(i));
+	ier_setting[g] |= BIT(i);
+	/*
+	 * This load operation will guarantee the above modification of
+	 * SOC's register can be seen by any following instructions.
+	 */
+	_ier = *en;
 	irq_unlock(key);
 }
 
@@ -145,6 +152,7 @@ void __soc_ram_code ite_intc_irq_disable(unsigned int irq)
 	/* critical section due to run a bit-wise OR operation */
 	unsigned int key = irq_lock();
 	CLEAR_MASK(*en, BIT(i));
+	ier_setting[g] &= ~BIT(i);
 	/*
 	 * This load operation will guarantee the above modification of
 	 * SOC's register can be seen by any following instructions.

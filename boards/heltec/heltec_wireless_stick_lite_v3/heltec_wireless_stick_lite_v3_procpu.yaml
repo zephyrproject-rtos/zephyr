@@ -1,5 +1,5 @@
 identifier: heltec_wireless_stick_lite_v3/esp32s3/procpu
-name: Heltec Wireless Stick Lite (V3)
+name: Heltec Wireless Stick Lite (V3) PROCPU
 type: mcu
 arch: xtensa
 toolchain:
@@ -15,5 +15,7 @@ supported:
   - entropy
   - pwm
   - dma
+  - lora
+  - nvs
   - lora
 vendor: heltec

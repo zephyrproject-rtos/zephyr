@@ -16,9 +16,11 @@ configdefault SDHC_BUFFER_ALIGNMENT
 	default 4
 
 config SDHC_LITEX_LITESDCARD_NO_COHERENT_DMA
-	bool "No coherent DMA bus, need cache management"
+	bool
 	select CACHE_MANAGEMENT
 	depends on DCACHE
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_LITEX_MMC),dma-coherent,False)
+	default y
 	help
 	  This needs to be enabled if the LiteSDCard Module is not connected
 	  to a coherent DMA bus, meaning that the cache needs to be managed

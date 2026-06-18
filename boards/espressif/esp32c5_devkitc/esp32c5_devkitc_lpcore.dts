@@ -13,6 +13,7 @@
 	compatible = "espressif,esp32c5";
 
 	chosen {
+		zephyr,flash = &flash0;
 		zephyr,sram = &sramlp;
 		zephyr,code-partition = &slot0_lpcore_partition;
 		zephyr,console = &lp_uart;

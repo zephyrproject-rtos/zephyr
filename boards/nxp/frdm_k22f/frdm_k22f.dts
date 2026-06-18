@@ -40,6 +40,7 @@
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 		zephyr,uart-pipe = &uart1;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -241,4 +242,8 @@ zephyr_uhc0: &usbh {
 			reg = <0x0006b000 DT_SIZE_K(84)>;
 		};
 	};
+};
+
+&crc {
+	status = "okay";
 };

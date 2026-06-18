@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024,2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -14,13 +14,17 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
-  - uart
-  - i2c
-  - pwm
-  - spi
-  - netif:eth
+  - adc
+  - can
   - counter
   - dma
+  - gpio
+  - i2c
+  - netif:eth
+  - pwm
+  - spi
+  - uart
+  - watchdog
 testing:
   binaries:
     - flash.bin

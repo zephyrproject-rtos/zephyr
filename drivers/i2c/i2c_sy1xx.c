@@ -8,6 +8,7 @@
 
 #include "zephyr/sys/byteorder.h"
 
+#include <zephyr/sys/minmax.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sy1xx_i2c, CONFIG_I2C_LOG_LEVEL);
 
@@ -347,10 +348,6 @@ static int sy1xx_i2c_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 {
 	struct sy1xx_i2c_dev_data *const data = dev->data;
 	int ret;
-
-	if (num_msgs == 0) {
-		return 0;
-	}
 
 	k_sem_take(&data->lock, K_FOREVER);
 

@@ -415,7 +415,7 @@ static void test_ccid(void)
 		WAIT_FOR_FLAG(ccid_read_flag);
 	}
 
-	for (uint8_t i = 0; i < tbs_count; i++) {
+	for (uint8_t i = 0U; i < tbs_count; i++) {
 		int err;
 
 		UNSET_FLAG(ccid_read_flag);

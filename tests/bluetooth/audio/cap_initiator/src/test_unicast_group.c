@@ -34,6 +34,7 @@ struct cap_initiator_test_unicast_group_fixture {
 	struct bt_cap_unicast_group_param *group_param;
 	struct bt_cap_unicast_group *unicast_group;
 	struct bt_bap_qos_cfg *qos_cfg;
+	void *cap_streams;
 };
 
 static void *cap_initiator_test_unicast_group_setup(void)
@@ -88,6 +89,7 @@ static void cap_initiator_test_unicast_group_before(void *f)
 		pair_cnt = str_cnt / 2U;
 	}
 
+	fixture->cap_streams = cap_streams;
 	fixture->group_param->packing = BT_ISO_PACKING_SEQUENTIAL;
 	fixture->group_param->params_count = pair_cnt;
 	fixture->group_param->params = pair_params;
@@ -97,15 +99,19 @@ static void cap_initiator_test_unicast_group_after(void *f)
 {
 	struct cap_initiator_test_unicast_group_fixture *fixture = f;
 	struct bt_cap_unicast_group_param *group_param;
+	int err;
 
 	/* In the case of a test failing, we delete the group so that subsequent tests won't fail */
 	if (fixture->unicast_group != NULL) {
-		bt_cap_unicast_group_delete(fixture->unicast_group);
+		err = bt_cap_unicast_group_delete(fixture->unicast_group);
+		if (err != 0) {
+			printk("Failed to delete unicast group (err %d)\n", err);
+		}
 	}
 
 	group_param = fixture->group_param;
 
-	free(group_param->params[0].rx_param->stream);
+	free(fixture->cap_streams);
 	free(group_param->params[0].rx_param);
 	free(group_param->params);
 	free(group_param);
@@ -356,7 +362,7 @@ static ZTEST_F(cap_initiator_test_unicast_group, test_initiator_unicast_group_fo
 						  unicast_group_foreach_stream_cb, &cnt);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 
-	for (size_t i = 0; i < fixture->group_param->params_count; i++) {
+	for (size_t i = 0U; i < fixture->group_param->params_count; i++) {
 		if (fixture->group_param->params[i].rx_param != NULL) {
 			expect_cnt++;
 		}

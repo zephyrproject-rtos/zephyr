@@ -65,7 +65,7 @@ jobs:
 
       - name: Setup Zephyr project
         if: github.event_name == 'pull_request'
-        uses: zephyrproject-rtos/action-zephyr-setup@700109a78599c7bb26585f2fb3d2411d65381b9d # v1.0.13
+        uses: zephyrproject-rtos/action-zephyr-setup@5ec39f5cba83346d83a836dfed1524270c660e28 # v1.0.14
         with:
           app-path: zephyr
           enable-ccache: false
@@ -89,7 +89,9 @@ jobs:
         run: |
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-          python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request -t $TESTS_PER_BUILDER
+          python3 ./scripts/ci/test_plan_v2.py -c origin/${BASE_REF}.. \
+            --tests-per-builder $TESTS_PER_BUILDER \
+            --disable-strategy  BoilerplateFilter
           if [ -s .testplan ]; then
             cat .testplan >> $GITHUB_ENV
           else
@@ -133,7 +135,7 @@ jobs:
       fail-fast: false
       matrix:
         subset: ${{fromJSON(needs.twister-build-prep.outputs.subset)}}
-    timeout-minutes: 1440
+    timeout-minutes: ${{ github.event_name == 'schedule' && 1440 || 120 }}
     env:
       CCACHE_DIR: /node-cache/ccache-zephyr
       CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"
@@ -253,12 +255,16 @@ jobs:
           rm -f testplan.json
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-          python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request
-          ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} --load-tests testplan.json ${TWISTER_COMMON} ${PR_OPTIONS}
-          if [ "${{matrix.subset}}" = "1" -a ${{needs.twister-build-prep.outputs.fullrun}} = 'True' ]; then
-            ./scripts/zephyr_module.py --twister-out module_tests.args
-            if [ -s module_tests.args ]; then
-              ./scripts/twister +module_tests.args --outdir module_tests ${TWISTER_COMMON} ${PR_OPTIONS}
+          python3 ./scripts/ci/test_plan_v2.py -c origin/${BASE_REF}.. \
+            --disable-strategy  BoilerplateFilter
+
+          if [ -f testplan.json ]; then
+            ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} --load-tests testplan.json ${TWISTER_COMMON} ${PR_OPTIONS}
+            if [ "${{matrix.subset}}" = "1" -a ${{needs.twister-build-prep.outputs.fullrun}} = 'True' ]; then
+              ./scripts/zephyr_module.py --twister-out module_tests.args
+              if [ -s module_tests.args ]; then
+                ./scripts/twister +module_tests.args --outdir module_tests ${TWISTER_COMMON} ${PR_OPTIONS}
+              fi
             fi
           fi
 
@@ -292,24 +298,6 @@ jobs:
             twister-out/twister.json
             module_tests/twister.xml
             testplan.json
-
-      - if: matrix.subset == 1 && github.event_name == 'push'
-        name: Save the list of Python packages
-        shell: bash
-        run: |
-          FREEZE_FILE="frozen-requirements.txt"
-          timestamp="$(date)"
-          version="$(git describe --abbrev=12 --always)"
-          echo -e "# Generated at $timestamp ($version)\n" > $FREEZE_FILE
-          pip freeze | tee -a $FREEZE_FILE
-
-      - if: matrix.subset == 1 && github.event_name == 'push'
-        name: Upload the list of Python packages
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: Frozen PIP package set
-          path: |
-            frozen-requirements.txt
 
   twister-test-results:
     name: "Publish Unit Tests Results"

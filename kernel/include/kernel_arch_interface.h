@@ -503,6 +503,9 @@ enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location);
  *
  * This bit is undefined if ARCH_DATA_PAGE_LOADED is not set.
  */
+#ifdef __DOXYGEN__
+#define ARCH_DATA_PAGE_ACCESSED
+#endif
 
  /**
   * @def ARCH_DATA_PAGE_DIRTY
@@ -514,6 +517,9 @@ enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location);
   *
   * This bit is undefined if ARCH_DATA_PAGE_LOADED is not set.
   */
+#ifdef __DOXYGEN__
+#define ARCH_DATA_PAGE_DIRTY
+#endif
 
  /**
   * @def ARCH_DATA_PAGE_LOADED
@@ -522,6 +528,9 @@ enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location);
   *
   * If un-set, the data page is paged out or not mapped.
   */
+#ifdef __DOXYGEN__
+#define ARCH_DATA_PAGE_LOADED
+#endif
 
 /**
  * @def ARCH_DATA_PAGE_NOT_MAPPED
@@ -529,6 +538,9 @@ enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location);
  * If ARCH_DATA_PAGE_LOADED is un-set, this will indicate that the page
  * is not mapped at all. This bit is undefined if ARCH_DATA_PAGE_LOADED is set.
  */
+#ifdef __DOXYGEN__
+#define ARCH_DATA_PAGE_NOT_MAPPED
+#endif
 
 /**
  * Retrieve page characteristics from the page table(s)

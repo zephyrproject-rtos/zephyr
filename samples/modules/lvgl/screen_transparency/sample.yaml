@@ -15,4 +15,6 @@ tests:
     modules:
       - lvgl
     integration_platforms:
-      - native_sim/native/64
+      - native_sim
+    platform_allow:
+      - native_sim

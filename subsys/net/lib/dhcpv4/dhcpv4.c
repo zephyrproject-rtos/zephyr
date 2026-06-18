@@ -1797,7 +1797,7 @@ const char *net_dhcpv4_state_name(enum net_dhcpv4_state state)
 		"decline,"
 	};
 
-	__ASSERT_NO_MSG(state >= 0 && state < sizeof(name));
+	__ASSERT_NO_MSG(state >= 0 && state < ARRAY_SIZE(name));
 	return name[state];
 }
 
@@ -1814,7 +1814,7 @@ const char *net_dhcpv4_msg_type_name(enum net_dhcpv4_msg_type msg_type)
 		"inform"
 	};
 
-	if (msg_type >= 1 && msg_type <= sizeof(name)) {
+	if (msg_type >= 1 && msg_type <= ARRAY_SIZE(name)) {
 		return name[msg_type - 1];
 	}
 

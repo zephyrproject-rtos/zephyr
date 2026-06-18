@@ -15,10 +15,6 @@
 	};
 };
 
-&gpiote130 {
-	status = "okay";
-};
-
 &gpio9 {
 	status = "okay";
 };

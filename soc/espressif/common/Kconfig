@@ -1,12 +1,6 @@
 # Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-config FLASH_SIZE
-	int
-
-config FLASH_BASE_ADDRESS
-	hex
-
 config ESP32_USE_UNSUPPORTED_REVISION
 	bool "Use unsupported ESP32 revision (Rev 0/1)"
 	help
@@ -69,3 +63,7 @@ rsource "Kconfig.spiram"
 rsource "Kconfig.esptool"
 rsource "Kconfig.flash"
 rsource "Kconfig.lcd_cam"
+
+if PM && TICKLESS_KERNEL
+rsource "Kconfig.pm"
+endif

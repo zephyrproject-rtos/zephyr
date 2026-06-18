@@ -60,7 +60,7 @@ simplicity.
            buttons {
                    compatible = "gpio-keys";
                    button0: button_0 {
-                           gpios = < &gpio0 PIN FLAGS >;
+                           gpios = <&gpio0 PIN FLAGS>;
                            label = "User button";
                    };
                    /* ... other buttons ... */

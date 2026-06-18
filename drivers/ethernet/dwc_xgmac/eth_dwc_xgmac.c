@@ -1044,13 +1044,11 @@ static void phy_link_state_change_callback(const struct device *phy_dev,
 		eth_dwc_xgmac_update_link_speed(mac_dev, dev_data->link_speed);
 		/* Set up link */
 		net_eth_carrier_on(dev_data->iface);
-		LOG_DBG("%s: Link up", mac_dev->name);
 
 	} else {
 		dev_data->link_speed = LINK_DOWN;
 		/* Announce link down status */
 		net_eth_carrier_off(dev_data->iface);
-		LOG_DBG("%s: Link down", mac_dev->name);
 	}
 }
 

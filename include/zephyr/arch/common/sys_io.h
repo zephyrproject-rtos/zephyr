@@ -20,6 +20,11 @@
 extern "C" {
 #endif
 
+/**
+ * @cond INTERNAL_HIDDEN
+ * Memory mapped registers I/O functions in non-arch-specific C code.
+ */
+
 static ALWAYS_INLINE uint8_t sys_read8(mem_addr_t addr)
 {
 	return *(volatile uint8_t *)addr;
@@ -59,6 +64,10 @@ static ALWAYS_INLINE void sys_write64(uint64_t data, mem_addr_t addr)
 {
 	*(volatile uint64_t *)addr = data;
 }
+
+/**
+ * @endcond
+ */
 
 #ifdef __cplusplus
 }

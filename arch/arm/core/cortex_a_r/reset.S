@@ -66,6 +66,35 @@ __start:
 SECTION_SUBSEC_FUNC(TEXT, _reset_section, z_arm_reset)
 SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
 #endif
+#if defined(CONFIG_AARCH32_ARMV8_A_MONITOR_INIT)
+    /*
+     * ARMv8-A AArch32 Monitor mode (EL3 AArch32) initialization.
+     * Analogous to z_arm64_el3_init() in the arm64 port.
+     *
+     * On bare-metal ARMv8-A AArch32 platforms the core resets into
+     * Secure SVC mode. Registers accessible only from Monitor mode
+     * must be configured before Zephyr starts. Switch to Monitor mode
+     * briefly, configure the required registers, then return to
+     * Secure SVC mode.
+     */
+
+    /* Switch to Monitor mode */
+    cps #MODE_MON
+    isb
+
+#if defined(CONFIG_GIC_V3)
+    /* Configure ICC_MSRE: enable GICv3 system register interface at lower levels */
+    mrc p15, 6, r0, c12, c12, 5    /* Read ICC_MSRE */
+    orr r0, r0, #ICC_MSRE_INIT
+    mcr p15, 6, r0, c12, c12, 5    /* Write ICC_MSRE */
+    isb
+#endif /* CONFIG_GIC_V3 */
+
+    /* Return to Secure SVC mode */
+    cps #MODE_SVC
+    isb
+#endif /* CONFIG_AARCH32_ARMV8_A_MONITOR_INIT */
+
 #if defined(CONFIG_AARCH32_ARMV8_R)
     /* Check if we are starting in HYP mode */
     mrs r0, cpsr

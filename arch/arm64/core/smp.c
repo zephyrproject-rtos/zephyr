@@ -14,7 +14,6 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <kernel_arch_interface.h>
 #include <ipi.h>
 #include <zephyr/init.h>
@@ -58,7 +57,7 @@ const uint64_t cpu_node_list[] = {
 
 BUILD_ASSERT(ARRAY_SIZE(cpu_node_list) == DT_CHILD_NUM_STATUS_OKAY(DT_PATH(cpus)));
 
-/* cpu_map saves the maping of core id and mpid */
+/* cpu_map saves the mapping of core id and mpid */
 static uint64_t cpu_map[CONFIG_MP_MAX_NUM_CPUS] = {
 	[0 ... (CONFIG_MP_MAX_NUM_CPUS - 1)] = INV_MPID
 };

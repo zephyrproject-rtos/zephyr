@@ -151,9 +151,17 @@ x86_ap_start:
 	 * so we can locate our x86_cpuboot[] bundle. Put it in EBP.
 	 */
 
+#ifdef CONFIG_X2APIC
+	/* In x2APIC mode the MMIO registers are inaccessible; read the
+	 * 32-bit x2APIC ID from MSR 0x802 instead.
+	 */
+	movl $(X86_X2APIC_BASE_MSR + (LOAPIC_ID >> 4)), %ecx
+	rdmsr
+#else
 	movl LOAPIC_BASE_ADDRESS+LOAPIC_ID, %eax
 	shrl $24, %eax
 	andl $0xFF, %eax		/* local APIC ID -> EAX */
+#endif
 
 	movl $x86_cpuboot, %ebp
 	xorl %ebx, %ebx
@@ -228,7 +236,7 @@ enter_code64:
 
 	/* On Intel processors, if GS is not zero and is being set to
 	 * zero, GS_BASE is also being set to zero. This would interfere
-	 * with the actual use of GS_BASE for usespace. To avoid accidentally
+	 * with the actual use of GS_BASE for userspace. To avoid accidentally
 	 * clearing GS_BASE, simply set GS to 0 at boot, so any subsequent
 	 * clearing of GS will not clear GS_BASE.
 	 */

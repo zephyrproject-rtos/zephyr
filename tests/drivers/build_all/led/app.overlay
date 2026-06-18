@@ -15,6 +15,14 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		test_fake_leds: fake-leds {
+			compatible = "zephyr,fake-leds";
+
+			fake_led: fake-led {
+				label = "Fake LED";
+			};
+		};
+
 		test_dac: dac@dac0dac0 {
 			compatible = "vnd,dac";
 			reg = <0xdac0dac0 0x1000>;
@@ -200,6 +208,29 @@
 				compatible = "nxp,pca9533";
 				reg = <0x15>;
 			};
+
+			lp5860@16 {
+				compatible = "ti,lp5860";
+				reg = <0x16>;
+			};
+
+			pmic@17 {
+				compatible = "nordic,npm10xx";
+				reg = <0x17>;
+
+				leds {
+					compatible = "nordic,npm10xx-led";
+
+					led0 {
+						index = <2>;
+					};
+
+					led1 {
+						index = <0>;
+						led-mode = "charge";
+					};
+				};
+			};
 		};
 
 		test_pwm: pwm@12341234 {
@@ -225,6 +256,18 @@
 		multi-led {
 			compatible = "leds-group-multicolor";
 			leds = <&test_pwm_led0>, <&test_pwm_led1>;
+		};
+
+		native_linux_leds {
+			compatible = "zephyr,native-linux-leds";
+
+			led_0 {
+				path = "dev::a";
+			};
+
+			led_1 {
+				path = "dev::b";
+			};
 		};
 	};
 };

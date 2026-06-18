@@ -99,6 +99,7 @@ static void interrupt_driven_uart_callback_main_uart(const struct device *dev, v
 		if (uart_irq_tx_ready(dev)) {
 			uart_tx_interrupt_service(dev, &tx_byte_offset);
 		}
+		uart_irq_update(dev);
 	}
 }
 
@@ -124,6 +125,7 @@ static void interrupt_driven_uart_callback_aux_uart(const struct device *dev, vo
 		if (uart_irq_tx_ready(dev)) {
 			uart_tx_interrupt_service(dev, &tx_byte_offset_aux);
 		}
+		uart_irq_update(dev);
 	}
 }
 #endif /* CONFIG_DUAL_UART_TEST */
@@ -187,7 +189,7 @@ ZTEST(uart_elementary, test_uart_improper_configuration)
 	err = uart_configure(uart_dev, &test_uart_config);
 	zassert_not_equal(
 		err, 0,
-		"'uart_configure' with incorrect configuration havent't raised an error, err=%d",
+		"'uart_configure' with incorrect configuration has not raised an error, err=%d",
 		err);
 }
 

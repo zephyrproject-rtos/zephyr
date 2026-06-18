@@ -1,0 +1,35 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Nuvoton Technology Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	i2c1_default: i2c1_default {
+		group0 {
+			pinmux = <PB2MFP_I2C1_SDA>,  /* UNO D0 */
+				 <PB3MFP_I2C1_SCL>;  /* UNO D1 */
+		};
+	};
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		address-width = <16>;
+		size = <1024>;
+	};
+};
+
+&arduino_i2c {
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		address-width = <16>;
+		size = <1024>;
+	};
+};

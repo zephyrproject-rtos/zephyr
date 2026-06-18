@@ -33,8 +33,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	__ASSERT_NO_MSG(default_conn == conn);
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 
 	UNSET_FLAG(flag_is_connected);
 	gatt_clear_flags();
@@ -130,7 +129,7 @@ void disconnect(struct bt_conn *conn)
 	int err;
 
 	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	__ASSERT(!err, "Failed to initate disconnection (err %d)", err);
+	__ASSERT(!err, "Failed to initiate disconnection (err %d)", err);
 
 	printk("Waiting for disconnection...\n");
 	WAIT_FOR_FLAG_UNSET(flag_is_connected);

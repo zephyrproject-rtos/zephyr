@@ -243,6 +243,10 @@ Property entries in ``properties:`` are written in this syntax:
        ...
        - <itemN>
      const: <string | int | array | uint8-array | string-array>
+     min: <int>
+     max: <int>
+     min-len: <int>
+     max-len: <int>
      specifier-space: <space-name>
 
 .. _dt-bindings-example-properties:
@@ -436,6 +440,69 @@ enum
 The ``enum:`` line is followed by a list of values the property may contain. If
 a property value in DTS is not in the ``enum:`` list in the binding, an error
 is raised. See :ref:`dt-bindings-example-properties` for examples.
+
+.. _dt-bindings-min-max:
+
+min and max
+===========
+
+The ``min:`` and ``max:`` keys constrain the range of valid values for
+properties with ``type: int`` or ``type: array``. If a property value in DTS
+is outside the ``[min, max]`` range, an error is raised.
+
+Both keys are optional and independent; you may specify just ``min:``, just
+``max:``, or both. They cannot be combined with ``enum:`` on the same property.
+
+For ``type: array``, each element of the array is checked against the range.
+
+Example:
+
+.. code-block:: YAML
+
+   properties:
+     # A brightness percentage between 0 and 100
+     brightness:
+       type: int
+       min: 0
+       max: 100
+       description: LED brightness as a percentage
+
+     # A timeout in milliseconds, with a minimum of 1 ms (no upper bound)
+     timeout-ms:
+       type: int
+       min: 1
+       description: Timeout in milliseconds
+
+.. _dt-bindings-min-len-max-len:
+
+min-len and max-len
+===================
+
+The ``min-len:`` and ``max-len:`` keys constrain the number of elements (length)
+for array-type properties (``array``, ``uint8-array``, ``string-array``,
+``phandles``, and ``phandle-array``). If the length of a property value in DTS
+is outside the ``[min-len, max-len]`` range, an error is raised.
+
+Both keys are optional and independent; you may specify just ``min-len:``, just
+``max-len:``, or both.
+
+Example:
+
+.. code-block:: YAML
+
+   properties:
+     # An array of exactly 3 integers
+     coordinates:
+       type: array
+       min-len: 3
+       max-len: 3
+       description: 3D coordinates
+
+     # A list of up to 4 GPIO phandles
+     gpios:
+       type: phandle-array
+       max-len: 4
+       description: Up to 4 GPIOs
 
 const
 =====

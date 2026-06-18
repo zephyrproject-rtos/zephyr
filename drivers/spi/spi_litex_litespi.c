@@ -11,6 +11,7 @@
 LOG_MODULE_REGISTER(spi_litex_litespi);
 
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/minmax.h>
 #include "spi_litex_common.h"
 
 #define SPI_LITEX_ANY_HAS_IRQ DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
@@ -79,7 +80,7 @@ static void spi_litex_set_frequency(const struct device *dev, const struct spi_c
 		divisor = DIV_ROUND_UP(sys_clock_hw_cycles_per_sec(), config->frequency);
 	} else {
 		if (dev_config->clk_divisor_addr == 0U) {
-			/* In the LiteX Simulator the phy_clk_divisor doesn't exists, thats why we
+			/* In the LiteX Simulator the phy_clk_divisor doesn't exists, that's why we
 			 * check.
 			 */
 			LOG_WRN_ONCE("No clk_divisor register, can't change frequency");

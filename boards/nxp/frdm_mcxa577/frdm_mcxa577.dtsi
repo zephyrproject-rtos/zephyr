@@ -93,6 +93,10 @@
 	status = "okay";
 };
 
+&waketimer0 {
+	status = "okay";
+};
+
 &gpio1 {
 	status = "okay";
 };
@@ -221,4 +225,26 @@
 		reg = <0>;
 		status = "okay";
 	};
+};
+
+&eim0 {
+	status = "okay";
+};
+
+&eim0_channel0 {
+	status = "okay";
+};
+
+&erm0 {
+	status = "okay";
+};
+
+&crc {
+	status = "okay";
+};
+
+&flexcan0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcan0>;
+	pinctrl-names = "default";
 };

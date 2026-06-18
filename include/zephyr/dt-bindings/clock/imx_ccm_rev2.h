@@ -104,6 +104,9 @@
 #define IMX_CCM_SAI3_CLK               0x1102UL
 #define IMX_CCM_SAI4_CLK               0x1103UL
 
+/* PDM */
+#define IMX_CCM_PDM_CLK                0x1110UL /*!< PDM/MICFIL clock identifier */
+
 /* ENET */
 #define IMX_CCM_ENET_CLK               0x1200UL
 #define IMX_CCM_ENET_PLL               0x1201UL
@@ -162,6 +165,11 @@
 /* USB */
 #define IMX_CCM_USB_CLK                0x2500UL
 #define IMX_CCM_USB_PHY_CLK            0x2600UL
+
+/** SYS_CTR 24 MHz XTAL base clock */
+#define IMX_CCM_SYSCTR_BASE_CLK        0x2700UL
+/** SYS_CTR 32 kHz LPO slow clock */
+#define IMX_CCM_SYSCTR_SLOW_CLK        0x2701UL
 
 /* QTMR */
 #define IMX_CCM_QTMR_CLK               0x6000UL

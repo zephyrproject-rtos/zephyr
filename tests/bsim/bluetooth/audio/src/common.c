@@ -127,8 +127,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 
 	if (err != 0) {
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
+		bt_conn_drop(&default_conn);
 
 		FAIL("Failed to connect to %s (0x%02x)\n", bt_conn_dst_str(conn), err);
 		return;
@@ -146,8 +145,7 @@ void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	printk("Disconnected: %s (reason 0x%02x)\n", bt_conn_dst_str(conn), reason);
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 	UNSET_FLAG(flag_connected);
 	UNSET_FLAG(flag_conn_updated);
 	SET_FLAG(flag_disconnected);
@@ -307,7 +305,7 @@ void test_tick(bs_time_t HW_device_time)
 	ARG_UNUSED(HW_device_time);
 
 	if (bst_result != Passed) {
-		FAIL("test failed (not passed after %i seconds)\n", WAIT_SECONDS);
+		FAIL("test failed (not passed after %u seconds)\n", WAIT_SECONDS);
 	}
 }
 
@@ -317,7 +315,7 @@ void test_init(void)
 	bst_result = In_progress;
 }
 
-#define SYNC_MSG_SIZE 1
+#define SYNC_MSG_SIZE 1U
 static int32_t dev_cnt;
 static uint backchannel_nums[255];
 static uint chan_cnt;
@@ -415,7 +413,8 @@ static void setup_backchannels(void)
 
 	for (int32_t i = 0; i < dev_cnt; i++) {
 		backchannel_nums[chan_cnt] = get_chan_num((uint16_t)i);
-		device_numbers[chan_cnt++] = i;
+		device_numbers[chan_cnt] = i;
+		chan_cnt++;
 	}
 
 	channels = bs_open_back_channel(self, device_numbers, backchannel_nums, chan_cnt);
@@ -469,7 +468,7 @@ void backchannel_sync_wait(uint dev)
 			break;
 		}
 
-		k_sleep(K_MSEC(1));
+		k_sleep(K_MSEC(1U));
 	}
 }
 
@@ -505,7 +504,7 @@ void backchannel_sync_wait_any(void)
 			}
 		}
 
-		k_sleep(K_MSEC(100));
+		k_sleep(K_MSEC(100U));
 	}
 }
 

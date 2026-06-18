@@ -6,7 +6,6 @@ menu "SMP Options"
 config SMP
 	bool "Symmetric multiprocessing support"
 	depends on USE_SWITCH
-	depends on !ATOMIC_OPERATIONS_C
 	help
 	  When true, kernel will be built with SMP support, allowing
 	  more than one CPU to schedule Zephyr tasks at a time.
@@ -73,21 +72,49 @@ config SCHED_IPI_CASCADE
 
 config SCHED_CPU_MASK
 	bool "CPU mask affinity/pinning API"
-	depends on SCHED_SIMPLE
 	help
 	  When true, the application will have access to the
 	  k_thread_cpu_mask_*() APIs which control per-CPU affinity masks in
 	  SMP mode, allowing applications to pin threads to specific CPUs or
-	  disallow threads from running on given CPUs.  Note that as currently
-	  implemented, this involves an inherent O(N) scaling in the number of
-	  idle-but-runnable threads, and thus works only with the simple
-	  scheduler (as SCALABLE and MULTIQ would see no benefit).
+	  disallow threads from running on given CPUs.
 
-	  Note that this setting does not technically depend on SMP and is
-	  implemented without it for testing purposes, but for obvious reasons
-	  makes sense as an application API only where there is more than one
-	  CPU.  With one CPU, it's just a higher overhead version of
-	  k_thread_start/stop().
+	  The API is supported with all three scheduler backends.  The
+	  performance characteristics of the mask-aware "best thread" search
+	  differ per backend:
+
+	  SCHED_SIMPLE (default): The run queue is a sorted linked list.
+	  Finding the best runnable thread for the current CPU requires a
+	  linear scan of the list until a thread whose cpu_mask includes the
+	  current CPU is found.  This is O(N) in the number of runnable
+	  threads.  Because the list is priority-ordered the scan terminates
+	  as soon as the first eligible thread is found, so in practice the
+	  cost is proportional to the number of higher-priority threads that
+	  are pinned away from the current CPU.
+
+	  SCHED_SCALABLE: The run queue is a red/black tree ordered by
+	  priority.  The mask-aware search performs an in-order tree walk
+	  and returns the first thread whose cpu_mask matches.  The walk is
+	  O(N) in the worst case but terminates early once a matching thread
+	  is found.  Because the tree is already sorted by priority the walk
+	  typically visits only a small number of nodes.  The additional
+	  ~2 kB of code required by the rbtree is shared with WAITQ_SCALABLE
+	  when both are enabled.
+
+	  SCHED_MULTIQ: The run queue is an array of per-priority doubly
+	  linked lists together with a bitmap of non-empty levels.  The
+	  mask-aware search iterates over non-empty priority levels from
+	  highest to lowest using the bitmap (O(P) where P is the number of
+	  distinct priorities in use) and within each level scans the thread
+	  list for the first thread whose cpu_mask includes the current CPU.
+	  In the common case where affinity-constrained threads are sparse,
+	  the search is fast; in the pathological case where many threads at
+	  the same high priority are all pinned away from the current CPU
+	  the inner list scan becomes O(N).  Note that SCHED_MULTIQ is
+	  incompatible with SCHED_DEADLINE.
+
+	  In all three cases the cpu_mask check adds overhead that is absent
+	  without this option, so it should only be enabled when CPU affinity
+	  is actually needed.
 
 config SCHED_CPU_MASK_PIN_ONLY
 	bool "CPU mask variant with single-CPU pinning only"

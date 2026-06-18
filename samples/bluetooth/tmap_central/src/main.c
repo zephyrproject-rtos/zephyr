@@ -95,8 +95,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		printk("Failed to connect to %s %u %s\n", bt_conn_dst_str(conn),
 		       err, bt_hci_err_to_str(err));
 
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
+		bt_conn_drop(&default_conn);
 
 		start_scan();
 		return;
@@ -119,8 +118,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	printk("Disconnected: %s, reason 0x%02x %s\n", bt_conn_dst_str(conn),
 	       reason, bt_hci_err_to_str(reason));
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 
 	k_sem_give(&sem_disconnected);
 }

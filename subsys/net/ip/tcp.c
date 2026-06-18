@@ -891,8 +891,7 @@ static void tcp_conn_release(struct k_work *work)
 
 	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
 		if (conn->queue_recv_data != NULL) {
-			net_buf_unref(conn->queue_recv_data);
-			conn->queue_recv_data = NULL;
+			net_buf_drop(&conn->queue_recv_data);
 		}
 	}
 
@@ -1280,8 +1279,7 @@ static size_t tcp_check_pending_data(struct tcp *conn, struct net_pkt *pkt,
 		} else {
 			/* Check if the queued data is just a section of the incoming data */
 			if (gap_size <= 0) {
-				net_buf_unref(conn->queue_recv_data);
-				conn->queue_recv_data = NULL;
+				net_buf_drop(&conn->queue_recv_data);
 
 				k_work_cancel_delayable(&conn->recv_queue_timer);
 			}
@@ -1937,8 +1935,7 @@ static void tcp_cleanup_recv_queue(struct k_work *work)
 		net_buf_frags_len(conn->queue_recv_data),
 		tcp_get_seq(conn->queue_recv_data));
 
-	net_buf_unref(conn->queue_recv_data);
-	conn->queue_recv_data = NULL;
+	net_buf_drop(&conn->queue_recv_data);
 
 	k_mutex_unlock(&conn->lock);
 }
@@ -2796,8 +2793,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 				NET_ERR("Incorrect order in out of order sequence for conn %p",
 					conn);
 				/* error in sequence list, drop it */
-				net_buf_unref(conn->queue_recv_data);
-				conn->queue_recv_data = NULL;
+				net_buf_drop(&conn->queue_recv_data);
 			}
 		} else {
 			NET_DBG("[%p] Cannot add new data to queue", conn);
@@ -3043,7 +3039,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 			return NET_DROP;
 		}
 
-		/* Accroding to RFC 793, the ACKnum is acceptable if in scope
+		/* According to RFC 793, the ACKnum is acceptable if in scope
 		 * SND.UNA =< SEG.ACK =< SND.NXT
 		 * Otherwise, drop the packet and send an ACK back.
 		 */
@@ -4639,7 +4635,7 @@ uint16_t net_tcp_get_supported_mss(const struct tcp *conn)
 
 #if defined(CONFIG_NET_TEST)
 struct testing_user_data {
-	struct net_sockaddr remote;
+	struct net_sockaddr_storage remote;
 	uint16_t mtu;
 };
 
@@ -4647,9 +4643,9 @@ static void testing_find_conn(struct tcp *conn, void *user_data)
 {
 	struct testing_user_data *data = user_data;
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && data->remote.sa_family == NET_AF_INET6 &&
+	if (IS_ENABLED(CONFIG_NET_IPV6) && data->remote.ss_family == NET_AF_INET6 &&
 	    net_ipv6_addr_cmp(&conn->dst.sin6.sin6_addr,
-			      &net_sin6(&data->remote)->sin6_addr)) {
+			      &net_sin6(net_sad(&data->remote))->sin6_addr)) {
 		if (data->mtu > 0) {
 			/* Set it only once */
 			return;
@@ -4661,9 +4657,9 @@ static void testing_find_conn(struct tcp *conn, void *user_data)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && data->remote.sa_family == NET_AF_INET &&
+	if (IS_ENABLED(CONFIG_NET_IPV4) && data->remote.ss_family == NET_AF_INET &&
 	    net_ipv4_addr_cmp(&conn->dst.sin.sin_addr,
-			      &net_sin(&data->remote)->sin_addr)) {
+			      &net_sin(net_sad(&data->remote))->sin_addr)) {
 		if (data->mtu > 0) {
 			/* Set it only once */
 			return;
@@ -4679,9 +4675,21 @@ static void testing_find_conn(struct tcp *conn, void *user_data)
 uint16_t net_tcp_get_mtu(struct net_sockaddr *dst)
 {
 	struct testing_user_data data = {
-		.remote = *dst,
 		.mtu = 0,
 	};
+	size_t addrlen;
+
+	/* Copy only the family-specific portion of the address. The caller
+	 * may pass a pointer to a net_sockaddr_in / net_sockaddr_in6, which is
+	 * smaller than the generic struct net_sockaddr, so copying the whole
+	 * struct would read past the end of the caller's object.
+	 */
+	addrlen = net_family2size(dst->sa_family);
+	if (addrlen == 0) {
+		return 0;
+	}
+
+	memcpy(&data.remote, dst, addrlen);
 
 	net_tcp_foreach(testing_find_conn, &data);
 

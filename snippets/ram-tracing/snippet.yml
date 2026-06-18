@@ -2,5 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 name: ram-tracing
+description: Enables CTF tracing using the RAM backend.
 append:
   EXTRA_CONF_FILE: ram-tracing.conf

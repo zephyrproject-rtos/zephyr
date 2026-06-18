@@ -259,9 +259,16 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 	uint8_t *text = ext->mem[LLEXT_MEM_TEXT];
 	int link_err = 0;
 
-	LOG_DBG("Found %p in PLT %u size %zu cnt %u text %p",
-		(void *)llext_section_name(ldr, ext, shdr),
-		shdr->sh_type, (size_t)shdr->sh_entsize, sh_cnt, (void *)text);
+	const char *sect_name = llext_section_name(ldr, ext, shdr);
+
+	if (sect_name == NULL) {
+		LOG_WRN("PLT: out of bounds string table index %u for section name, "
+			"trying to continue",
+			shdr->sh_name);
+	}
+
+	LOG_DBG("Found %p in PLT %u size %zu cnt %u text %p", (void *)sect_name, shdr->sh_type,
+		(size_t)shdr->sh_entsize, sh_cnt, (void *)text);
 
 	const elf_shdr_t *sym_shdr = ldr->sects + LLEXT_MEM_SYMTAB;
 	unsigned int sym_cnt = sym_shdr->sh_size / sym_shdr->sh_entsize;
@@ -276,7 +283,7 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 		}
 
 		if (ret != 0) {
-			LOG_ERR("PLT: failed to read RELA #%u, trying to continue", i);
+			LOG_WRN("PLT: failed to read RELA #%u, trying to continue", i);
 			continue;
 		}
 
@@ -296,7 +303,7 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 		}
 
 		if (ret != 0) {
-			LOG_ERR("PLT: failed to read symbol table #%u RELA #%u, trying to continue",
+			LOG_WRN("PLT: failed to read symbol table #%u RELA #%u, trying to continue",
 				j, i);
 			continue;
 		}
@@ -312,6 +319,13 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 
 		const char *name = llext_symbol_name(ldr, ext, &sym);
 
+		if (name == NULL) {
+			LOG_ERR("PLT: out of bounds string table index %u for symbol name",
+				sym.st_name);
+			link_err = -ENOEXEC;
+			continue;
+		}
+
 		/*
 		 * Both r_offset and sh_addr are addresses for which the extension
 		 * has been built.
@@ -324,7 +338,7 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 		 * since the buffer will be directly modified.
 		 */
 		if (ldr->storage != LLEXT_STORAGE_WRITABLE) {
-			LOG_ERR("PLT: cannot link read-only ELF file");
+			LOG_WRN("PLT: cannot link read-only ELF file");
 			continue;
 		}
 
@@ -333,13 +347,19 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 
 		if (tgt) {
 			/* Relocatable / partially linked ELF. */
+			if (rela.r_offset >= tgt->sh_size) {
+				LOG_WRN("PLT: r_offset %#zx out of target section "
+					"(size %#zx), skipping",
+					(size_t)rela.r_offset, (size_t)tgt->sh_size);
+				continue;
+			}
 			rel_addr += rela.r_offset + tgt->sh_offset;
 		} else {
 			/* Shared / dynamically linked ELF */
 			ssize_t offset = llext_file_offset(ldr, rela.r_offset);
 
 			if (offset < 0) {
-				LOG_ERR("Offset %#zx not found in ELF, trying to continue",
+				LOG_WRN("Offset %#zx not found in ELF, trying to continue",
 					(size_t)rela.r_offset);
 				continue;
 			}
@@ -454,6 +474,13 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 
 		name = llext_section_name(ldr, ext, shdr);
 
+		if (name == NULL) {
+			LOG_ERR("Section %d has out of bounds string table index %d "
+				"for section name",
+				shdr->sh_name, i);
+			return -ENOEXEC;
+		}
+
 		/*
 		 * FIXME: The Xtensa port is currently using a different way of
 		 * handling relocations that ultimately results in separate
@@ -522,8 +549,16 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 			ret = llext_read_symbol(ldr, ext, &rel, &sym);
 			if (ret == 0) {
 				name = llext_symbol_name(ldr, ext, &sym);
-				ret = llext_lookup_symbol(ldr, ext, &link_addr, &rel, &sym,
-							  name, shdr);
+				if (name == NULL) {
+					LOG_ERR("out of bounds string table index %u "
+						"for symbol name",
+						sym.st_name);
+					name = "<out of bounds>";
+					ret = -ENOEXEC;
+				} else {
+					ret = llext_lookup_symbol(ldr, ext, &link_addr, &rel, &sym,
+								  name, shdr);
+				}
 			} else {
 				name = "<unknown>";
 			}
@@ -562,7 +597,11 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 	for (i = 0; i < LLEXT_MEM_COUNT; ++i) {
 		if (ext->mem[i]) {
 			sys_cache_data_flush_range(ext->mem[i], ext->mem_size[i]);
-			if (i == LLEXT_MEM_TEXT && !ldr_parm->pre_located) {
+			if ((i == LLEXT_MEM_TEXT && !ldr_parm->pre_located)
+#ifdef CONFIG_LLEXT_VENEERS
+			    || i == LLEXT_MEM_VENEER
+#endif
+			    ) {
 				sys_cache_instr_invd_range(ext->mem[i], ext->mem_size[i]);
 			}
 		}
@@ -575,6 +614,10 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 
 			if (ldr_parm->section_detached(shdr)) {
 				void *base = llext_peek(ldr, shdr->sh_offset);
+
+				if (base == NULL) {
+					return -ENOEXEC;
+				}
 
 				sys_cache_data_flush_range(base, shdr->sh_size);
 				if (shdr->sh_flags & SHF_EXECINSTR && !ldr_parm->pre_located) {

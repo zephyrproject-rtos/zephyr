@@ -71,8 +71,14 @@ struct eth_fake_context {
 	bool promisc_mode;
 };
 
-static struct eth_fake_context eth_fake_data1;
-static struct eth_fake_context eth_fake_data2;
+static struct eth_fake_context eth_fake_data1 = {
+	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+	.mac_address = { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x00 },
+};
+static struct eth_fake_context eth_fake_data2 = {
+	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+	.mac_address = { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x01 },
+};
 
 static void eth_fake_iface_init(struct net_if *iface)
 {

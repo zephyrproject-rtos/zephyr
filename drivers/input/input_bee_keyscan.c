@@ -35,11 +35,7 @@ LOG_MODULE_REGISTER(bee_keyscan, CONFIG_INPUT_LOG_LEVEL);
 #error "Unsupported Realtek Bee SoC series"
 #endif
 
-#define BEE_KEYSCAN_MAX_ROWS      12
-#define BEE_KEYSCAN_MAX_COLS      20
 #define BEE_KEYSCAN_SRC_CLK       5000000
-#define BEE_KEYSCAN_MAX_SCAN_DIV  65535
-#define BEE_KEYSCAN_MAX_DELAY_DIV 255
 #define BEE_KEYSCAN_MAX_TICKS     511
 
 #define BEE_KEYSCAN_DEFAULT_PRE_GUARD_CNT 6
@@ -156,19 +152,6 @@ static void manual_keyscan_timer_cb(struct k_timer *timer)
 
 	bee_keyscan_init_driver(dev, KeyScan_Manual_Scan_Mode, KeyScan_Manual_Sel_Bit);
 }
-
-static bool
-bee_keyscan_all_released_and_debounced(const struct input_kbd_matrix_common_config *config)
-{
-	for (int c = 0; c < config->col_size; c++) {
-		if (config->matrix_unstable_state[c] != 0 || config->matrix_stable_state[c] != 0) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
 #endif
 
 static void bee_keyscan_process_matrix(const struct device *dev, uint8_t new_press_num,
@@ -206,7 +189,7 @@ static void bee_keyscan_process_matrix(const struct device *dev, uint8_t new_pre
 	input_kbd_matrix_update_state(dev);
 
 #ifndef CONFIG_BEE_INPUT_KEYSCAN_AUTOSCAN_MODE
-	if (new_press_num == 0 && bee_keyscan_all_released_and_debounced(cfg_common)) {
+	if (new_press_num == 0 && !input_kbd_matrix_active(dev)) {
 		k_timer_stop(&manual_keyscan_timer);
 		(void)clock_control_off(BEE_CLOCK_CONTROLLER,
 					(clock_control_subsys_t)&config->clkid);
@@ -350,14 +333,6 @@ static int bee_keyscan_init(const struct device *dev)
 #endif
 
 #define BEE_KEYSCAN_INIT(index)                                                                    \
-	BUILD_ASSERT(DT_INST_PROP(index, row_size) <= BEE_KEYSCAN_MAX_ROWS,                        \
-		     "DT error: 'row-size' exceeds hardware limit (12)");                          \
-	BUILD_ASSERT(DT_INST_PROP(index, col_size) <= BEE_KEYSCAN_MAX_COLS,                        \
-		     "DT error: 'col-size' exceeds hardware limit (20)");                          \
-	BUILD_ASSERT(DT_INST_PROP(index, scan_div) <= BEE_KEYSCAN_MAX_SCAN_DIV,                    \
-		     "DT error: 'scan-div' exceeds limit (65535)");                                \
-	BUILD_ASSERT(DT_INST_PROP(index, delay_div) <= BEE_KEYSCAN_MAX_DELAY_DIV,                  \
-		     "DT error: 'delay-div' exceeds limit (255)");                                 \
 	BEE_INPUT_KEYSCAN_ASSERT_SCAN_INTERVAL(index);                                             \
 	BUILD_ASSERT(BEE_KEYSCAN_CALC_US_TO_TICKS(index, release_time_us, 0) <=                    \
 			     BEE_KEYSCAN_MAX_TICKS,                                                \

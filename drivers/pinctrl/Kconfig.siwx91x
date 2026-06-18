@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config PINCTRL_SILABS_SIWX91X
-	bool "Silabs SiWx91x SoC series pinctrl driver"
+	bool "Silabs SiWx91x pinctrl driver"
 	default y
 	depends on DT_HAS_SILABS_SIWX91X_PINCTRL_ENABLED
 	help

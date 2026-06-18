@@ -440,8 +440,6 @@ extern const struct bt_conn_auth_cb *bt_auth;
 extern sys_slist_t bt_auth_info_cbs;
 enum bt_security_err bt_security_err_get(uint8_t hci_err);
 
-int bt_hci_recv(const struct device *dev, struct net_buf *buf);
-
 /* Data type to store state related with command to be updated
  * when command completes successfully.
  */
@@ -557,6 +555,7 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf);
 void bt_hci_read_remote_features_complete(struct net_buf *buf);
 void bt_hci_read_remote_ext_features_complete(struct net_buf *buf);
 void bt_hci_role_change(struct net_buf *buf);
+void bt_hci_conn_pkt_type_changed(struct net_buf *buf);
 #if defined(CONFIG_BT_POWER_MODE_CONTROL)
 void bt_hci_link_mode_change(struct net_buf *buf);
 #endif /* CONFIG_BT_POWER_MODE_CONTROL */

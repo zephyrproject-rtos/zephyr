@@ -165,10 +165,6 @@ static int ifx_xmc4_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 	const struct ifx_xmc4_i2c_config *config = dev->config;
 	XMC_I2C_CH_CMD_t cmd_type;
 
-	if (!num_msgs) {
-		return 0;
-	}
-
 	if (!data->is_configured) {
 		int ret;
 		uint32_t bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);

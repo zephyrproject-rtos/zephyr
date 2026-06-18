@@ -366,7 +366,7 @@ int mqtt_sn_client_init(struct mqtt_sn_client *client, const struct mqtt_sn_data
 void mqtt_sn_client_deinit(struct mqtt_sn_client *client);
 
 /**
- * @brief Manually add a Gateway, bypasing the normal search process.
+ * @brief Manually add a Gateway, bypassing the normal search process.
  *
  * This function manually creates a gateway that is stored internal to the library.
  *

@@ -121,5 +121,5 @@ ARM's TrustZone is not modelled in these boards. This means that:
   can be labelled as restricted for secure or non secure access.
 * TF-M cannot be used.
 
-Note that the ARM cryptocell-312 peripheral is not modelled. The mbedTLS library can still be used
+Note that the ARM cryptocell-312 peripheral is not modelled. The Mbed TLS library can still be used
 but with a SW crypto backend instead of the cryptocell HW acceleration.

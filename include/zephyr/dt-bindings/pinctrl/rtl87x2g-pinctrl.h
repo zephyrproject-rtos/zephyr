@@ -235,7 +235,7 @@
 #define P0_5    5 /**< GPIOA_5 */
 #define P0_6    6 /**< GPIOA_6 */
 #define P0_7    7 /**< GPIOA_7 */
-/* Note: P0_0/P0_1 default to SWD function for rtl87x2g. */
+/* Note: P1_0/P1_1 default to SWD function for rtl87x2g. */
 #define P1_0    8    /**< GPIOA_8 */
 #define P1_1    9    /**< GPIOA_9 */
 #define P1_2    10   /**< GPIOA_10 */
@@ -331,7 +331,7 @@
 #define BEE_PSEL_GPIOA_7_P0_7 BEE_PSEL(DWGPIO, P0_7) /**< GPIOA_7 for P0_7 */
 
 /* Port 1 */
-/* Note: P0_0/P0_1 default to SWD function for rtl87x2g. */
+/* Note: P1_0/P1_1 default to SWD function for rtl87x2g. */
 #define BEE_PSEL_GPIOA_8_P1_0  BEE_PSEL(DWGPIO, P1_0) /**< GPIOA_8 for P1_0 */
 #define BEE_PSEL_GPIOA_9_P1_1  BEE_PSEL(DWGPIO, P1_1) /**< GPIOA_9 for P1_1 */
 #define BEE_PSEL_GPIOA_10_P1_2 BEE_PSEL(DWGPIO, P1_2) /**< GPIOA_10 for P1_2 */

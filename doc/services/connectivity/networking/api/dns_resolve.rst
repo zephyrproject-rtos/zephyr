@@ -135,6 +135,33 @@ be large, you might need to adjust following Kconfig options:
 - :kconfig:option:`CONFIG_DNS_RESOLVER_MAX_NAME_LEN`. This tells the maximum length of the
   returned name. The value depends on your expected data size, typical value might be 128 bytes.
 
+Network management events
+*************************
+
+The DNS resolver raises the following :c:macro:`NET_MGMT_EVENT` events:
+
+- :c:macro:`NET_EVENT_DNS_SERVER_ADD` — a single DNS server slot was
+  added to the resolver. Raised once per slot, with the originating
+  interface as the event payload.
+- :c:macro:`NET_EVENT_DNS_SERVER_DEL` — a single DNS server slot was
+  removed, with the originating interface as the event payload.
+- :c:macro:`NET_EVENT_DNS_SERVERS_RECONFIGURED` — the DNS server
+  configuration was refreshed via :c:func:`dns_resolve_reconfigure`
+  or :c:func:`dns_resolve_reconfigure_with_interfaces`. Raised on
+  every successful call regardless of whether individual server
+  slots actually changed, with ``NULL`` iface (system-level event).
+
+``ADD`` and ``DEL`` are *delta* events: when
+:c:func:`dns_resolve_reconfigure` is called with a server set
+identical to the existing one, neither ``ADD`` nor ``DEL`` fires —
+the resolver intentionally suppresses them to avoid cancelling
+in-flight queries on DHCP-offer retransmit and IPv6 RA. Consumers
+that need a "DNS configuration is ready again" gate after a network
+event (for example, after a PPP iface re-establishes and pushes the
+same DNS servers via IPCP on every PM resume cycle) should listen
+for ``NET_EVENT_DNS_SERVERS_RECONFIGURED`` rather than
+``NET_EVENT_DNS_SERVER_ADD``.
+
 Sample usage
 ************
 

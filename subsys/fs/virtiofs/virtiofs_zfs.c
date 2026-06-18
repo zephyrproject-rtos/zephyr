@@ -288,7 +288,7 @@ static ssize_t virtio_zfs_write(struct fs_file_t *filp, const void *src, size_t 
 	while (nbytes > 0) {
 		/*
 		 * max write size is limited to max_write from fuse_init_out received during fs
-		 * initalization, so we have to split bigger writes into multiple smaller ones.
+		 * initialization, so we have to split bigger writes into multiple smaller ones.
 		 * If we try to write more the recent virtiofsd it will return 12 (Not enough
 		 * space), but the older one will assert, rendering fs unusable until restart.
 		 */

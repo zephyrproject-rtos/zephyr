@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 
 DEFINE_FAKE_VOID_FUNC(bt_conn_unref, struct bt_conn *);
+DEFINE_FAKE_VOID_FUNC(bt_conn_drop, struct bt_conn **);
 DEFINE_FAKE_VALUE_FUNC(struct bt_conn *, bt_conn_lookup_handle, uint16_t, enum bt_conn_type);
 DEFINE_FAKE_VOID_FUNC(bt_conn_notify_remote_cs_capabilities, struct bt_conn *,
 		      uint8_t, struct bt_conn_le_cs_capabilities *);

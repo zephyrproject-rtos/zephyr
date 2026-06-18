@@ -5,7 +5,7 @@
 
 config ARM_ARCH_TIMER
 	bool "ARM architected timer"
-	depends on GIC
+	depends on GIC || ARM_CUSTOM_INTERRUPT_CONTROLLER
 	select ARCH_HAS_CUSTOM_BUSY_WAIT
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER

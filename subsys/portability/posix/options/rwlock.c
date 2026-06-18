@@ -14,10 +14,8 @@
 #include <zephyr/sys/bitarray.h>
 #include <zephyr/sys/sem.h>
 
-#define CONCURRENT_READER_LIMIT  (CONFIG_POSIX_THREAD_THREADS_MAX + 1)
-
 struct posix_rwlock {
-	struct sys_sem rd_sem;
+	atomic_t rd_count;
 	struct sys_sem wr_sem;
 	struct sys_sem reader_active; /* blocks WR till reader has acquired lock */
 	k_tid_t wr_owner;
@@ -124,7 +122,7 @@ int pthread_rwlock_init(pthread_rwlock_t *rwlock,
 		return ENOMEM;
 	}
 
-	sys_sem_init(&rwl->rd_sem, CONCURRENT_READER_LIMIT, CONCURRENT_READER_LIMIT);
+	atomic_set(&rwl->rd_count, 0);
 	sys_sem_init(&rwl->wr_sem, 1, 1);
 	sys_sem_init(&rwl->reader_active, 1, 1);
 	rwl->wr_owner = NULL;
@@ -169,9 +167,6 @@ int pthread_rwlock_destroy(pthread_rwlock_t *rwlock)
 
 /**
  * @brief Lock a read-write lock object for reading.
- *
- * API behaviour is unpredictable if number of concurrent reader
- * lock held is greater than CONCURRENT_READER_LIMIT.
  *
  * See IEEE 1003.1
  */
@@ -220,9 +215,6 @@ int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
 
 /**
  * @brief Lock a read-write lock object for reading immediately.
- *
- * API behaviour is unpredictable if number of concurrent reader
- * lock held is greater than CONCURRENT_READER_LIMIT.
  *
  * See IEEE 1003.1
  */
@@ -331,10 +323,8 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock)
 		(void)sys_sem_give(&rwl->wr_sem);
 	} else {
 		/* Read unlock */
-		(void)sys_sem_give(&rwl->rd_sem);
-
-		if (sys_sem_count_get(&rwl->rd_sem) == CONCURRENT_READER_LIMIT) {
-			/* Last read lock, unlock writer */
+		if (atomic_dec(&rwl->rd_count) == 1) {
+			/* Last reader, unlock writer */
 			(void)sys_sem_give(&rwl->reader_active);
 		}
 	}
@@ -346,8 +336,10 @@ static uint32_t read_lock_acquire(struct posix_rwlock *rwl, uint32_t timeout)
 	uint32_t ret = 0U;
 
 	if (sys_sem_take(&rwl->wr_sem, SYS_TIMEOUT_MS(timeout)) == 0) {
-		(void)sys_sem_take(&rwl->reader_active, K_NO_WAIT);
-		(void)sys_sem_take(&rwl->rd_sem, K_NO_WAIT);
+		if (atomic_inc(&rwl->rd_count) == 0) {
+			/* First reader, lock writer */
+			(void)sys_sem_take(&rwl->reader_active, K_NO_WAIT);
+		}
 		(void)sys_sem_give(&rwl->wr_sem);
 	} else {
 		ret = EBUSY;

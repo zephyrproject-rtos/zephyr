@@ -64,4 +64,17 @@ static inline void espi_send_callbacks(sys_slist_t *list,
 	}
 }
 
+/**
+ * @brief Propagate eSPI driver interrupt control changes to eSPI host-specific implementations
+ *
+ * @param espi_flags the bitmap to select generic eSPI interrupt events.
+ * @param espi_vendor_flags the bitmap to select any vendor-specific eSPI interrupt events.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error, failed to configure device.
+ * @retval -EINVAL invalid capabilities, failed to configure device.
+ * @retval -ENOTSUP capability not supported by eSPI target.
+ */
+int espi_host_interrupt_config(uint32_t espi_flags, uint32_t espi_vendor_flags);
+
 #endif /* ZEPHYR_DRIVERS_ESPI_UTILS_H_ */

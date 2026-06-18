@@ -7,6 +7,11 @@
  */
 
 /**
+ * @file
+ * @brief Internal lookup table backing UTIL_DEC().
+ */
+
+/**
  * @cond INTERNAL_HIDDEN
  */
 

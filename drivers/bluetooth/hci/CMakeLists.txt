@@ -37,6 +37,7 @@ endif() # CONFIG_BUILD_ONLY_NO_BLOBS
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_BT_AMBIQ_HCI hci_ambiq.c apollox_blue.c)
+zephyr_library_sources_ifdef(CONFIG_BT_AMEBA hci_rtk_ameba.c)
 zephyr_library_sources_ifdef(CONFIG_BT_BEE hci_bee.c)
 zephyr_library_sources_ifdef(CONFIG_BT_BFLB hci_bflb.c)
 zephyr_library_sources_ifdef(CONFIG_BT_CYW208XX hci_infineon_cyw208xx.c)

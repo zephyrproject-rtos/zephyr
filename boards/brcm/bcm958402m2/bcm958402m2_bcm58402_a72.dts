@@ -11,8 +11,6 @@
 / {
 	model = "Broadcom BCM958402M2_A72";
 	compatible = "brcm,viper";
-	#address-cells = <1>;
-	#size-cells = <1>;
 
 	chosen {
 		zephyr,console = &uart1;

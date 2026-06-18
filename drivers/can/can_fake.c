@@ -57,6 +57,32 @@ DEFINE_FAKE_VALUE_FUNC(int, fake_can_get_max_filters, const struct device *, boo
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_can_get_core_clock, const struct device *, uint32_t *);
 
+static int fake_can_get_capabilities_delegate(const struct device *dev, can_mode_t *cap)
+{
+	ARG_UNUSED(dev);
+
+	*cap = CAN_MODE_NORMAL;
+
+	return 0;
+};
+
+static int fake_can_get_state_delegate(const struct device *dev, enum can_state *state,
+				       struct can_bus_err_cnt *err_cnt)
+{
+	ARG_UNUSED(dev);
+
+	if (state != NULL) {
+		*state = CAN_STATE_STOPPED;
+	}
+
+	if (err_cnt != NULL) {
+		err_cnt->tx_err_cnt = 0U;
+		err_cnt->rx_err_cnt = 0U;
+	}
+
+	return 0;
+}
+
 static int fake_can_get_core_clock_delegate(const struct device *dev, uint32_t *rate)
 {
 	ARG_UNUSED(dev);
@@ -88,7 +114,9 @@ static void fake_can_reset_rule_before(const struct ztest_unit_test *test, void 
 	RESET_FAKE(fake_can_get_max_filters);
 	RESET_FAKE(fake_can_get_core_clock);
 
-	/* Re-install default delegate for reporting the core clock */
+	/* Re-install default delegates */
+	fake_can_get_capabilities_fake.custom_fake = fake_can_get_capabilities_delegate;
+	fake_can_get_state_fake.custom_fake = fake_can_get_state_delegate;
 	fake_can_get_core_clock_fake.custom_fake = fake_can_get_core_clock_delegate;
 }
 
@@ -97,7 +125,9 @@ ZTEST_RULE(fake_can_reset_rule, fake_can_reset_rule_before, NULL);
 
 static int fake_can_init(const struct device *dev)
 {
-	/* Install default delegate for reporting the core clock */
+	/* Install default delegates */
+	fake_can_get_capabilities_fake.custom_fake = fake_can_get_capabilities_delegate;
+	fake_can_get_state_fake.custom_fake = fake_can_get_state_delegate;
 	fake_can_get_core_clock_fake.custom_fake = fake_can_get_core_clock_delegate;
 
 	return 0;

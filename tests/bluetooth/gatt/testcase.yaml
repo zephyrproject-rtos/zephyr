@@ -13,7 +13,7 @@ tests:
       - bluetooth
       - gatt
   bluetooth.gatt.psa:
-    filter: CONFIG_PSA_CRYPTO_CLIENT
+    filter: CONFIG_PSA_CRYPTO
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="test.overlay"
     platform_allow:
@@ -52,7 +52,6 @@ tests:
       - native_sim/native/64
       - qemu_x86
       - qemu_cortex_m3
-      - nrf5340dk/nrf5340/cpuapp/ns
       - nrf52840dk/nrf52840
     integration_platforms:
       - native_sim

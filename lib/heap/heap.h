@@ -6,6 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_LIB_OS_HEAP_H_
 #define ZEPHYR_INCLUDE_LIB_OS_HEAP_H_
 
+#include <zephyr/sys/minmax.h>
+
 /*
  * Internal heap APIs
  */

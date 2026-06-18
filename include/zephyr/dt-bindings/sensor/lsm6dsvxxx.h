@@ -6,7 +6,16 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_ST_LSM6DSVXXX_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_ST_LSM6DSVXXX_H_
 
-/* Accel and Gyro Data rates */
+/**
+ * @name STMicroelectronics LSM6DSVXXX sensor DT Options
+ * @ingroup sensor_interface
+ * @{
+ */
+
+/**
+ * @name Accel and Gyro Data rates
+ * @{
+ */
 #define LSM6DSVXXX_DT_ODR_OFF			0x0
 #define LSM6DSVXXX_DT_ODR_AT_1Hz875		0x1
 #define LSM6DSVXXX_DT_ODR_AT_7Hz5		0x2
@@ -40,8 +49,12 @@
 #define LSM6DSVXXX_DT_ODR_HA02_AT_1600Hz	0x2A
 #define LSM6DSVXXX_DT_ODR_HA02_AT_3200Hz	0x2B
 #define LSM6DSVXXX_DT_ODR_HA02_AT_6400Hz	0x2C
+/** @} */
 
-/* Accelerometer batching rates */
+/**
+ * @name Accelerometer batching rates
+ * @{
+ */
 #define LSM6DSVXXX_DT_XL_NOT_BATCHED		0x0
 #define LSM6DSVXXX_DT_XL_BATCHED_AT_1Hz875	0x1
 #define LSM6DSVXXX_DT_XL_BATCHED_AT_7Hz5	0x2
@@ -55,8 +68,12 @@
 #define LSM6DSVXXX_DT_XL_BATCHED_AT_1920Hz	0xa
 #define LSM6DSVXXX_DT_XL_BATCHED_AT_3840Hz	0xb
 #define LSM6DSVXXX_DT_XL_BATCHED_AT_7680Hz	0xc
+/** @} */
 
-/* Gyroscope batching rates */
+/**
+ * @name Gyroscope batching rates
+ * @{
+ */
 #define LSM6DSVXXX_DT_GY_NOT_BATCHED		0x0
 #define LSM6DSVXXX_DT_GY_BATCHED_AT_1Hz875	0x1
 #define LSM6DSVXXX_DT_GY_BATCHED_AT_7Hz5	0x2
@@ -70,22 +87,34 @@
 #define LSM6DSVXXX_DT_GY_BATCHED_AT_1920Hz	0xa
 #define LSM6DSVXXX_DT_GY_BATCHED_AT_3840Hz	0xb
 #define LSM6DSVXXX_DT_GY_BATCHED_AT_7680Hz	0xc
+/** @} */
 
-/* Temperature sensor batching rates */
+/**
+ * @name Temperature sensor batching rates
+ * @{
+ */
 #define LSM6DSVXXX_DT_TEMP_NOT_BATCHED		0x0
 #define LSM6DSVXXX_DT_TEMP_BATCHED_AT_1Hz875	0x1
 #define LSM6DSVXXX_DT_TEMP_BATCHED_AT_15Hz	0x2
 #define LSM6DSVXXX_DT_TEMP_BATCHED_AT_60Hz	0x3
+/** @} */
 
-/* Sensor Fusion Low Power Data rates */
+/**
+ * @name Sensor Fusion Low Power Data rates
+ * @{
+ */
 #define LSM6DSVXXX_DT_SFLP_ODR_AT_15Hz		0x0
 #define LSM6DSVXXX_DT_SFLP_ODR_AT_30Hz		0x1
 #define LSM6DSVXXX_DT_SFLP_ODR_AT_60Hz		0x2
 #define LSM6DSVXXX_DT_SFLP_ODR_AT_120Hz		0x3
 #define LSM6DSVXXX_DT_SFLP_ODR_AT_240Hz		0x4
 #define LSM6DSVXXX_DT_SFLP_ODR_AT_480Hz		0x5
+/** @} */
 
-/* Sensor Fusion Low Power FIFO enable defs */
+/**
+ * @name Sensor Fusion Low Power FIFO enable defs
+ * @{
+ */
 #define LSM6DSVXXX_DT_SFLP_FIFO_OFF				0x0
 #define LSM6DSVXXX_DT_SFLP_FIFO_GAME_ROTATION			0x1
 #define LSM6DSVXXX_DT_SFLP_FIFO_GRAVITY				0x2
@@ -94,8 +123,12 @@
 #define LSM6DSVXXX_DT_SFLP_FIFO_GAME_ROTATION_GBIAS		0x5
 #define LSM6DSVXXX_DT_SFLP_FIFO_GRAVITY_GBIAS			0x6
 #define LSM6DSVXXX_DT_SFLP_FIFO_GAME_ROTATION_GRAVITY_GBIAS	0x7
+/** @} */
 
-/* FIFO tags */
+/**
+ * @name FIFO tags
+ * @{
+ */
 #define LSM6DSVXXX_FIFO_EMPTY                    0x0
 #define LSM6DSVXXX_GY_NC_TAG                     0x1
 #define LSM6DSVXXX_XL_NC_TAG                     0x2
@@ -125,15 +158,34 @@
 #define LSM6DSVXXX_MLC_FEATURE                   0x1C
 #define LSM6DSVXXX_XL_HG_TAG                     0x1D
 #define LSM6DSVXXX_GY_ENHANCED_EIS               0x1E
+/** @} */
 
-/* status registers */
+/**
+ * @name status registers
+ * @{
+ */
 #define LSM6DSVXXX_STATUS_REG			0x1EU
 #define LSM6DSVXXX_OUTX_L_A			0x28U
 #define LSM6DSVXXX_FIFO_STATUS1			0x1BU
 #define LSM6DSVXXX_FIFO_DATA_OUT_TAG		0x78U
+/** @} */
 
-/* FIFO settings */
+/**
+ * @name FIFO settings
+ * @{
+ */
 #define LSM6DSVXXX_BYPASS_MODE			0x00U
 #define LSM6DSVXXX_FIFO_CTRL4			0x0AU
+/** @} */
+
+/**
+ * @name GPIO interrupt configuration
+ * @{
+ */
+#define LSM6DSVXXX_DT_GPIO_INT_EDGE_TO_ACTIVE	0 /*!< Edge-triggered interrupt */
+#define LSM6DSVXXX_DT_GPIO_INT_LEVEL_ACTIVE	1 /*!< Level-triggered interrupt */
+/** @} */
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ST_LSM6DSVXXX_H_ */

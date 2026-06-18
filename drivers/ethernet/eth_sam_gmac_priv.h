@@ -11,6 +11,7 @@
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_SAM_GMAC_PRIV_H_
 
 #include <zephyr/types.h>
+#include <zephyr/sys/ringq.h>
 
 #define ATMEL_OUI_B0 0x00
 #define ATMEL_OUI_B1 0x04
@@ -202,14 +203,6 @@ enum queue_idx {
 	GMAC_QUE_5,  /** Priority queue 5 */
 };
 
-/** Minimal ring buffer implementation */
-struct ring_buffer {
-	uint32_t *buf;
-	uint16_t len;
-	uint16_t head;
-	uint16_t tail;
-};
-
 /** Receive/transmit buffer descriptor */
 struct gmac_desc {
 	uint32_t w0;
@@ -237,9 +230,9 @@ struct gmac_queue {
 	struct net_buf **rx_frag_list;
 
 #if GMAC_MULTIPLE_TX_PACKETS == 1
-	struct ring_buffer tx_frag_list;
+	struct sys_ringq tx_frag_list;
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-	struct ring_buffer tx_frames;
+	struct sys_ringq tx_frames;
 #endif
 #endif
 
@@ -255,7 +248,7 @@ struct gmac_queue {
 
 /* Device constant configuration parameters */
 struct eth_sam_dev_cfg {
-	Gmac *regs;
+	DEVICE_MMIO_ROM;
 #ifdef CONFIG_SOC_FAMILY_ATMEL_SAM
 	const struct atmel_sam_pmc_config clock_cfg;
 #endif
@@ -273,6 +266,7 @@ struct eth_sam_dev_cfg {
 
 /* Device run time data */
 struct eth_sam_dev_data {
+	DEVICE_MMIO_RAM;
 	struct net_if *iface;
 	uint8_t mac_addr[6];
 	bool link_up;

@@ -24,6 +24,7 @@ jobs:
       fail-fast: false
       matrix:
         subset: [1, 2]
+    timeout-minutes: 120
     env:
       CCACHE_DIR: /node-cache/ccache-zephyr
       CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"

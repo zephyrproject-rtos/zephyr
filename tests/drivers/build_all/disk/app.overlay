@@ -31,7 +31,7 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
-			#include "spi.dtsi"
+#include "spi.dtsi"
 		};
 	};
 };

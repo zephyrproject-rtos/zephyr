@@ -4,17 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup regulator_max20335
+ * @brief Header file for MAX20335 Devicetree helpers.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_MAX20335_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_MAX20335_H_
 
 /**
- * @defgroup regulator_max20335 MAX20335 Devicetree helpers.
- * @ingroup regulator_interface
+ * @defgroup regulator_max20335 MAX20335 Devicetree helpers
+ * @brief Maxim MAX20335 PMIC regulator driver Devicetree helpers
+ * @ingroup devicetree-regulator
  * @{
  */
 
 /**
- * @name MAX20335 Regulator modes
+ * @name MAX20335 regulator modes
  * @{
  */
 /** LDO mode */

@@ -202,7 +202,7 @@ config ESP32_BT_CTLR_CHAN_ASS_EN
 
 config ESP32_BT_CTLR_LE_PING_EN
 	bool "LE authenticated payload timeout"
-	default y
+	default y if BT_CTLR_LE_PING
 	help
 	  Enable LE authenticated payload timeout (ping timer) for link security.
 
@@ -235,7 +235,7 @@ config ESP32_BT_CTLR_LE_SCAN
 
 config ESP32_BT_CTLR_LE_SECURITY_ENABLE
 	bool "BLE security support"
-	default y
+	default y if BT_CTLR_LE_ENC
 
 config ESP32_BT_CTLR_LE_ADV
 	bool "BLE advertising support"
@@ -288,7 +288,8 @@ endmenu
 
 menuconfig ESP32_BT_LE_50_FEATURE_SUPPORT
 	bool "BLE 5 feature support"
-	default y
+	default y if BT_CTLR_ADV_EXT || BT_CTLR_ADV_PERIODIC || BT_CTLR_PHY_2M \
+		     || BT_CTLR_PHY_CODED
 	help
 	  Support features introduced in Bluetooth 5.0, including extended advertising,
 	  2M PHY, and coded PHY.
@@ -296,21 +297,21 @@ menuconfig ESP32_BT_LE_50_FEATURE_SUPPORT
 config ESP32_BT_LE_LL_CFG_FEAT_LE_2M_PHY
 	bool "2M PHY support"
 	depends on ESP32_BT_LE_50_FEATURE_SUPPORT
-	default y
+	default y if BT_CTLR_PHY_2M
 	help
 	  Allow use of 2M PHY for higher data rates in BLE connections.
 
 config ESP32_BT_LE_LL_CFG_FEAT_LE_CODED_PHY
 	bool "Coded PHY support"
 	depends on ESP32_BT_LE_50_FEATURE_SUPPORT
-	default y
+	default y if BT_CTLR_PHY_CODED
 	help
 	  Enable coded PHY (LE Coded) for extended-range BLE connections.
 
 config ESP32_BT_LE_EXT_ADV
 	bool "Extended advertising support"
 	depends on ESP32_BT_LE_50_FEATURE_SUPPORT
-	default y
+	default y if BT_CTLR_ADV_EXT
 	help
 	  Support extended advertising features from Bluetooth 5.0.
 
@@ -319,6 +320,8 @@ if ESP32_BT_LE_EXT_ADV
 config ESP32_BT_LE_MAX_EXT_ADV_INSTANCES
 	int "Maximum extended advertising instances"
 	range 0 4
+	default BT_EXT_ADV_MAX_ADV_SET if BT_EXT_ADV
+	default 4 if BT_HCI_RAW
 	default 1
 	help
 	  Number of extended advertising instances (min 1). Each uses ~0.5 KB of DRAM.
@@ -332,14 +335,14 @@ config ESP32_BT_LE_EXT_ADV_MAX_SIZE
 
 config ESP32_BT_LE_ENABLE_PERIODIC_ADV
 	bool "Periodic advertising support"
-	default y
+	default y if BT_CTLR_ADV_PERIODIC
 	help
 	  Enable periodic advertising to synchronize broadcast events.
 
 config ESP32_BT_LE_PERIODIC_ADV_SYNC_TRANSFER
 	bool "Periodic sync event transfer"
 	depends on ESP32_BT_LE_ENABLE_PERIODIC_ADV
-	default y
+	default y if BT_CTLR_SYNC_TRANSFER_SENDER || BT_CTLR_SYNC_TRANSFER_RECEIVER
 	help
 	  Allow controller to transfer periodic sync events to the host.
 
@@ -350,6 +353,9 @@ config ESP32_BT_LE_MAX_PERIODIC_SYNCS
 	depends on ESP32_BT_LE_50_FEATURE_SUPPORT
 	range 0 3 if SOC_SERIES_ESP32C2
 	range 0 8 if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
+	default BT_PER_ADV_SYNC_MAX if BT_PER_ADV_SYNC
+	default 3 if BT_HCI_RAW && SOC_SERIES_ESP32C2
+	default 8 if BT_HCI_RAW
 	default 1 if ESP32_BT_LE_ENABLE_PERIODIC_ADV
 	default 0
 	help
@@ -367,8 +373,36 @@ config ESP32_BT_LE_POWER_CONTROL_ENABLED
 	bool "Controller BLE power control"
 	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
 	depends on ESP32_BT_LE_50_FEATURE_SUPPORT
+	default y if BT_CTLR_LE_POWER_CONTROL
 	help
 	  Allow controller to adjust transmit power based on link quality.
+
+config ESP32_BT_LE_SUBRATE_ENABLED
+	bool "Connection subrating (BLE 5.2)"
+	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
+	depends on ESP32_BT_LE_50_FEATURE_SUPPORT
+	default y if BT_CTLR_SUBRATING
+	help
+	  Enable Bluetooth 5.2 connection subrating to lower power consumption on
+	  established links by skipping connection events according to a subrate
+	  factor negotiated with the peer.
+
+config ESP32_BT_BLE_FEAT_CONN_SUBRATING
+	bool "Connection subrating feature support"
+	depends on ESP32_BT_LE_SUBRATE_ENABLED
+	default y
+	help
+	  Advertise BLE 5.2 connection subrating support in the controller feature
+	  set so the host stack can negotiate subrating with peers.
+
+config ESP32_BT_LE_PERIODIC_ADV_WITH_RESPONSE_ENABLED
+	bool "Periodic advertising with responses (PAwR, BLE 5.4)"
+	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
+	depends on ESP32_BT_LE_ENABLE_PERIODIC_ADV
+	default y if BT_CTLR_ADV_PERIODIC_RSP
+	help
+	  Enable Bluetooth 5.4 Periodic Advertising with Responses, allowing
+	  bidirectional communication on periodic advertising trains.
 
 menu "Memory Settings"
 
@@ -453,21 +487,21 @@ config ESP32_BT_LE_LL_RESOLV_LIST_SIZE
 menuconfig ESP32_BT_LE_SECURITY_ENABLE
 	bool "BLE security manager"
 	depends on BT_CRYPTO
-	default y
+	default y if BT_CTLR_LE_ENC
 	help
 	  Enable Security Manager features for BLE pairing and encryption.
 
 config ESP32_BT_LE_SM_LEGACY
 	bool "Legacy pairing"
 	depends on ESP32_BT_LE_SECURITY_ENABLE
-	default y
+	default y if BT_SMP && !BT_SMP_SC_PAIR_ONLY
 	help
 	  Use legacy pairing procedure (pre-Bluetooth 4.2).
 
 config ESP32_BT_LE_SM_SC
 	bool "Secure connections (LE SC)"
 	depends on ESP32_BT_LE_SECURITY_ENABLE
-	default y
+	default y if BT_SMP
 	help
 	  Use Secure Connections pairing (Bluetooth 4.2+).
 
@@ -480,14 +514,14 @@ config ESP32_BT_LE_SM_SC_DEBUG_KEYS
 config ESP32_BT_LE_LL_CFG_FEAT_LE_ENCRYPTION
 	bool "LE encryption"
 	depends on ESP32_BT_LE_SECURITY_ENABLE
-	default y
+	default y if BT_CTLR_LE_ENC
 	help
 	  Support link-layer encryption for BLE connections.
 
 config ESP32_BT_LE_CRYPTO_STACK_MBEDTLS
-	bool "mbedTLS crypto stack"
+	bool "Mbed TLS crypto stack"
 	depends on ESP32_BT_LE_SECURITY_ENABLE
-	default y
+	default y if BT_CTLR_LE_ENC
 	select PSA_CRYPTO
 	select MBEDTLS_CTR_DRBG_C
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
@@ -499,7 +533,7 @@ config ESP32_BT_LE_CRYPTO_STACK_MBEDTLS
 	# Keep access to legacy crypto headers
 	select MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 	help
-	  Use mbedTLS library for BLE cryptographic operations.
+	  Use Mbed TLS library for BLE cryptographic operations.
 
 config ESP32_BT_LE_WHITELIST_SIZE
 	int "BLE whitelist size"
@@ -723,6 +757,58 @@ config ESP32_BT_LE_CTLR_FAST_CONN_DATA_TX_EN
 	default y
 	help
 	  Continue sending empty PDUs immediately after data to maintain timing.
+
+config ESP32_BT_CTRL_MAIN_XTAL_PU_DURING_LIGHT_SLEEP
+	bool "Keep main XTAL powered up during light sleep"
+	depends on PM
+	help
+	  Keep the main crystal oscillator powered during light sleep so BLE wakes
+	  with a stable clock. Costs sleep current; only enable when BLE activity
+	  spans light-sleep transitions.
+
+config ESP32_BT_LE_CTLR_ADV_CH38_39_TX_AVOID_CONFLICT_EN
+	bool "Avoid TX conflicts on adv channels 38/39"
+	help
+	  Skip advertising on channels 38 and 39 when they overlap a connection
+	  event, reducing on-air collisions at the cost of slightly lower adv
+	  throughput.
+
+config ESP32_BT_LE_CTLR_ADV_EVENT_INC_ON_FULL_TX_EN
+	bool "Increment adv event counter on full TX"
+	help
+	  Increment the advertising event counter only after a full PDU is
+	  transmitted instead of after each PDU attempt.
+
+config ESP32_BT_LE_CTLR_ADV_FAST_TX_EN
+	bool "Fast advertising TX"
+	help
+	  Reduce inter-PDU spacing on advertising channels to increase
+	  advertisement rate. Higher power; may increase coex pressure.
+
+config ESP32_BT_LE_CTLR_ADV_RAND_CH_IDX_EN
+	bool "Randomize advertising channel index"
+	help
+	  Randomize the order in which adv channels 37/38/39 are used to spread
+	  airtime across the band.
+
+config ESP32_BT_LE_CTLR_ADV_TX_CONTINUE_WHEN_EXCEED_ITVL_EN
+	bool "Continue advertising TX past interval"
+	help
+	  Continue an in-flight advertising event when the configured interval
+	  expires, rather than aborting. Improves reliability under high load.
+
+config ESP32_BT_LE_CTLR_DL_ITVL_PHY_SYNC_EN
+	bool "Downlink interval PHY sync"
+	help
+	  Synchronize the downlink interval to the connection PHY for tighter
+	  timing on links that frequently switch PHY.
+
+config ESP32_BT_LE_CTLR_SLV_FAST_RX_CONN_DATA_EN
+	bool "Fast peripheral PDU reception during latency"
+	help
+	  Allow the peripheral role to receive connection data PDUs faster
+	  while peripheral latency is active, at the cost of slightly higher
+	  current draw.
 
 endif # SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
 

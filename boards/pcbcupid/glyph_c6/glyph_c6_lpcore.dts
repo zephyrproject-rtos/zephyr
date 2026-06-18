@@ -14,6 +14,7 @@
 	compatible = "pcbcupid,glyph-c6";
 
 	chosen {
+		zephyr,flash = &flash0;
 		zephyr,sram = &ulp_ram;
 		zephyr,code-partition = &slot0_lpcore_partition;
 	};

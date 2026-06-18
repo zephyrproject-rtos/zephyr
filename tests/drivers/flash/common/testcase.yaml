@@ -282,3 +282,16 @@ tests:
     build_only: true
     platform_allow:
       - versalnet_rpu/amd_versalnet_rpu
+  drivers.flash.common.andestech_qspi_nor:
+    platform_allow:
+      - adp_xc7k/ae350
+      - adp_xc7k/ae350/clic
+    extra_args:
+      - CONF_FILE="./prj.conf ./boards/${BOARD}_andestech_qspi_nor.conf"
+  drivers.flash.common.andestech_qspi_nor_xip:
+    platform_allow:
+      - adp_xc7k/ae350
+      - adp_xc7k/ae350/clic
+    extra_args:
+      - DTC_OVERLAY_FILE="./boards/${BOARD}_andestech_qspi_nor_xip.overlay"
+      - CONF_FILE="./prj.conf ./boards/${BOARD}_andestech_qspi_nor_xip.conf"

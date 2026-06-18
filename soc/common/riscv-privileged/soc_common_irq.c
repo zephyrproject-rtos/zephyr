@@ -162,7 +162,9 @@ void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flag
 		riscv_aia_config_source(irq, flags);
 	}
 
-	/* AIA priority is handled via IMSIC EITHRESHOLD or EIID ordering */
+	/* Set priority if direct delivery mode is enabled.
+	 * AIA-IMSIC priority is handled via IMSIC EITHRESHOLD or EIID ordering.
+	 */
 	riscv_aia_set_priority(irq, prio);
 }
 #endif /* CONFIG_RISCV_HAS_PLIC */

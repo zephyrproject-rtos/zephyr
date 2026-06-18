@@ -13,7 +13,7 @@
 
 void test_conn_init(struct bt_conn *conn)
 {
-	conn->index = 0;
+	conn->index = 0U;
 	conn->info.type = BT_CONN_TYPE_LE;
 	conn->info.role = BT_CONN_ROLE_CENTRAL;
 	conn->info.state = BT_CONN_STATE_CONNECTED;

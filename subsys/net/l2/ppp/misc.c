@@ -50,13 +50,20 @@ static void validate_phase_transition(enum ppp_phase current,
 		[PPP_ESTABLISH] = 1 << PPP_DEAD |
 				1 << PPP_AUTH |
 				1 << PPP_TERMINATE,
-		[PPP_AUTH] = 1 << PPP_TERMINATE |
+		[PPP_AUTH] = 1 << PPP_DEAD |
+				1 << PPP_ESTABLISH |
+				1 << PPP_TERMINATE |
 				1 << PPP_NETWORK,
-		[PPP_NETWORK] = 1 << PPP_TERMINATE |
+		[PPP_NETWORK] = 1 << PPP_DEAD |
+				1 << PPP_ESTABLISH |
+				1 << PPP_TERMINATE |
 				1 << PPP_RUNNING,
-		[PPP_RUNNING] = 1 << PPP_TERMINATE |
+		[PPP_RUNNING] = 1 << PPP_DEAD |
+				1 << PPP_ESTABLISH |
+				1 << PPP_TERMINATE |
 				1 << PPP_NETWORK,
-		[PPP_TERMINATE] = 1 << PPP_DEAD,
+		[PPP_TERMINATE] = 1 << PPP_DEAD |
+				1 << PPP_ESTABLISH,
 	};
 
 	if (!(valid_transitions[current] & 1 << new)) {

@@ -301,5 +301,3 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED) || IS_ENABLED(CONFIG_P
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "only one realtek,rts5912-kbd compatible node can be supported");
-BUILD_ASSERT(IN_RANGE(DT_INST_PROP(0, row_size), 1, 9), "invalid row-size");
-BUILD_ASSERT(IN_RANGE(DT_INST_PROP(0, col_size), 1, 19), "invalid col-size");

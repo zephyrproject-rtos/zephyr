@@ -7,7 +7,9 @@
 #
 
 config BT_BAP_UNICAST
-	def_bool BT_BAP_UNICAST_SERVER || BT_BAP_UNICAST_CLIENT
+	# FIXME: BT_ASCS should not enable this, but it is added as a temporary solution while ASCS
+	# and BAP are being decoupled
+	def_bool BT_BAP_UNICAST_SERVER || BT_BAP_UNICAST_CLIENT || BT_ASCS
 
 config BT_BAP_UNICAST_SERVER
 	bool "Bluetooth Unicast Audio Server Support"

@@ -2387,6 +2387,8 @@ static uint8_t get_attr_val(const void *cmd, uint16_t cmd_len,
 
 	bt_gatt_foreach_attr(handle, handle, get_attr_val_rp, &cb_data);
 
+	bt_conn_drop(&cb_data.conn);
+
 	if (buf->len) {
 		(void)memcpy(rsp, buf->data,  buf->len);
 		*rsp_len = buf->len;

@@ -443,9 +443,6 @@ static int paw32xx_pm_action(const struct device *dev,
 			  SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_TRANSFER_MSB)
 
 #define PAW32XX_INIT(n)								\
-	BUILD_ASSERT(IN_RANGE(DT_INST_PROP_OR(n, res_cpi, RES_MIN),		\
-			      RES_MIN, RES_MAX), "invalid res-cpi");		\
-										\
 	static const struct paw32xx_config paw32xx_cfg_##n = {			\
 		.spi = SPI_DT_SPEC_INST_GET(n, PAW32XX_SPI_MODE),		\
 		.motion_gpio = GPIO_DT_SPEC_INST_GET(n, motion_gpios),		\

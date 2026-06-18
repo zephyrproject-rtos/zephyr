@@ -11,8 +11,6 @@
 / {
 	model = "Xunlong Orange Pi Zero";
 	compatible = "xunlong,orangepi-zero", "allwinner,sun8i-h2-plus";
-	#address-cells = <1>;
-	#size-cells = <1>;
 
 	chosen {
 		zephyr,console = &uart0;

@@ -132,6 +132,13 @@ if(CONFIG_BOARD_FVP_BASE_REVC_2XAEM_A320)
   set(ARMFVP_MIN_VERSION 11.29.27)
 endif()
 
+if(CONFIG_BOARD_FVP_BASE_REVC_2XAEM_V8A_AARCH32)
+  set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
+    # Force AArch32 execution state for all exception levels in cluster0.
+    -C cluster0.has_aarch64=0
+    )
+endif()
+
 if(CONFIG_BUILD_WITH_TFA)
   set(TFA_PLAT "fvp")
 
@@ -142,6 +149,28 @@ if(CONFIG_BUILD_WITH_TFA)
     set(FVP_SECURE_FLASH_FILE ${TFA_BINARY_DIR}/fvp/release/bl1.bin)
     set(FVP_FLASH_FILE ${TFA_BINARY_DIR}/fvp/release/fip.bin)
   endif()
+
+  set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
+    -C bp.secureflashloader.fname=${APPLICATION_BINARY_DIR}/tfa${FVP_SECURE_FLASH_FILE}
+    -C bp.flashloader0.fname=${APPLICATION_BINARY_DIR}/tfa${FVP_FLASH_FILE}
+    )
+
+elseif(CONFIG_ARMV8_A_NS)
+  foreach(filetype BL1 FIP)
+    zephyr_get(ARMFVP_${filetype}_FILE)
+
+    if(NOT EXISTS "${ARMFVP_${filetype}_FILE}")
+      string(TOLOWER ${filetype} filename)
+      message(FATAL_ERROR "Please specify ARMFVP_${filetype}_FILE in environment "
+        "or with -DARMFVP_${filetype}_FILE=</path/to/${filename}.bin>")
+    endif()
+  endforeach()
+
+  set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
+    -C bp.secureflashloader.fname=${ARMFVP_BL1_FILE}
+    -C bp.flashloader0.fname=${ARMFVP_FIP_FILE}
+    --data cluster0.cpu0="${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}"@0x88000000
+    )
 
 elseif(CONFIG_PM_CPU_OPS_FVP)
   # Configure RVBAR_EL3 for bare metal SMP when using FVP PM CPU ops driver

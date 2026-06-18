@@ -3,7 +3,9 @@
   SPDX-License-Identifier: Apache-2.0
 #}
 
-<form class="filter-form" aria-label="Filter boards & shields by name, architecture, and vendor">
+<form
+  class="filter-form"
+  aria-label="Filter boards & shields by name, architecture, vendor, SoC, RAM, and flash">
 
   <div class="form-group" style="flex-basis: 60%">
     <label for="name">Name</label>
@@ -57,6 +59,26 @@
         <option value="{{ vendor }}">{{ vendors[vendor] }}</option>
         {% endfor %}
       </select>
+    </div>
+  </div>
+
+  <div class="form-group memory-slider-form-group">
+    <label>On-target RAM</label>
+    <div class="memory-slider-wrapper">
+      <div class="memory-slider-value-label" id="ram-range-label">Any</div>
+      <div class="memory-nouislider">
+        <div id="ram-slider-root"{% if not hw_features_present %} disabled{% endif %}></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-group memory-slider-form-group">
+    <label>On-target Flash</label>
+    <div class="memory-slider-wrapper">
+      <div class="memory-slider-value-label" id="flash-range-label">Any</div>
+      <div class="memory-nouislider">
+        <div id="flash-slider-root"{% if not hw_features_present %} disabled{% endif %}></div>
+      </div>
     </div>
   </div>
 

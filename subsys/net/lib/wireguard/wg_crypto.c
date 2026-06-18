@@ -1339,6 +1339,16 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 		return 0;
 	}
 
+	/* Limit the data_len to the max packet size that can be handled by the
+	 * crypto layer.
+	 */
+	if (data_len > (size_t)CONFIG_WIREGUARD_BUF_LEN) {
+		NET_DBG("Data length %zu exceeds max supported %d", data_len,
+			CONFIG_WIREGUARD_BUF_LEN);
+		vpn_stats_update_invalid_packet_len(ctx);
+		return -EMSGSIZE;
+	}
+
 	/* We don't know the unpadded size until we have decrypted the packet
 	 * and validated/inspected the IP header
 	 */
@@ -1349,7 +1359,7 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 		return -ENOMEM;
 	}
 
-	copied = net_buf_linearize(buf->data, data_len, pkt->buffer,
+	copied = net_buf_linearize(buf->data, net_buf_max_len(buf), pkt->buffer,
 				   ip_udp_hdr_len + sizeof(struct msg_transport_data),
 				   data_len);
 	if (copied != data_len) {
@@ -1432,20 +1442,8 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 		pkt_len = net_ntohs(NET_IPV6_HDR(pkt_decrypted)->len) +
 			sizeof(struct net_ipv6_hdr);
 
-		ARRAY_FOR_EACH(peer->allowed_ip, i) {
-			if (!(peer->allowed_ip[i].is_valid &&
-			      peer->allowed_ip[i].addr.family == NET_AF_INET6)) {
-				continue;
-			}
-
-			if (net_ipv6_is_prefix(
-				    (const uint8_t *)&NET_IPV6_HDR(pkt_decrypted)->src,
-				    (const uint8_t *)&peer->allowed_ip[i].addr.in6_addr,
-				    peer->allowed_ip[i].mask_len)) {
-				addr_found = true;
-				break;
-			}
-		}
+		addr_found = wg_peer_is_allowed_ip(peer, NET_AF_INET6,
+						   NET_IPV6_HDR(pkt_decrypted)->src);
 
 		if (!addr_found) {
 			NET_DBG("Address %s not found in allowed list",
@@ -1454,29 +1452,12 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 		}
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && vtc_vhl == 0x40) {
-		struct net_in_addr src;
-		uint32_t subnet;
-
 		net_pkt_set_ip_hdr_len(pkt_decrypted, sizeof(struct net_ipv4_hdr));
 		net_pkt_set_ipv4_opts_len(pkt_decrypted, 0);
 		pkt_len = net_ntohs(NET_IPV4_HDR(pkt_decrypted)->len);
 
-		ARRAY_FOR_EACH(peer->allowed_ip, i) {
-			if (!(peer->allowed_ip[i].is_valid &&
-			      peer->allowed_ip[i].addr.family == NET_AF_INET)) {
-				continue;
-			}
-
-			src.s_addr = sys_get_be32(
-				(const uint8_t *)&NET_IPV4_HDR(pkt_decrypted)->src);
-			subnet = UINT32_MAX << (32 - peer->allowed_ip[i].mask_len);
-
-			if ((src.s_addr & subnet) ==
-			    (net_ntohl(peer->allowed_ip[i].addr.in_addr.s_addr) & subnet)) {
-				addr_found = true;
-				break;
-			}
-		}
+		addr_found = wg_peer_is_allowed_ip(peer, NET_AF_INET,
+						   NET_IPV4_HDR(pkt_decrypted)->src);
 
 		if (!addr_found) {
 			NET_DBG("Address %s not found in allowed list",

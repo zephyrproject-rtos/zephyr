@@ -112,6 +112,9 @@ enum rtc_bank_sel {
 #define RTC_VCC_ON        1
 #define RTC_RSTS_HGRST    BIT(3)
 
+#define SLOTOCC_STATUS                   0x83
+#define RTC_INTERNAL_CLOCK_SOURCE_ENABLE BIT(3)
+
 /* Host view register map via index-data I/O pair, RTC bank 0 */
 /* 0x00: Seconds register */
 #define RTC_SECREG   0x00
@@ -199,6 +202,22 @@ enum rtc_bank_sel {
 /* RTC support 2000 ~ 2099 */
 #define RTC_ITE_MIN_YEAR 2000U
 #define RTC_ITE_MAX_YEAR 2099U
+
+#if defined(CONFIG_SOC_SERIES_IT8XXX2)
+#define ITE_RTC_EXTERNAL_CLOCK_SOURCE IS_ENABLED(CONFIG_SOC_IT8XXX2_EXT_32K)
+#elif defined(CONFIG_SOC_SERIES_IT51XXX)
+#define ITE_RTC_EXTERNAL_CLOCK_SOURCE ((CONFIG_SOC_IT51XXX_SIGNATURE_FLAG & BIT(4)) == 0)
+#else
+BUILD_ASSERT(false, "unknown rtc clock source setting");
+#endif /* defined(CONFIG_SOC_SERIES_IT8XXX2) */
+
+#if ITE_RTC_EXTERNAL_CLOCK_SOURCE
+#define RTC_IT8XXX2_CLKSRC_MASK ~(RTC_CLKSRC_OSCILLATOR | RTC_CLKSRC_SEL)
+#define RTC_SLOTOCC_UPDATE(val) (val) & ~RTC_INTERNAL_CLOCK_SOURCE_ENABLE
+#else
+#define RTC_IT8XXX2_CLKSRC_MASK ~RTC_CLKSRC_CRYSTAL
+#define RTC_SLOTOCC_UPDATE(val) (val) | RTC_INTERNAL_CLOCK_SOURCE_ENABLE
+#endif /* ITE_RTC_EXTERNAL_CLOCK_SOURCE */
 
 static void rtc_it8xxx2_update_gctrl(mm_reg_t addr, uint8_t mask, uint8_t val)
 {
@@ -676,11 +695,28 @@ static DEVICE_API(rtc, rtc_it8xxx2_driver_api) = {
 #endif /* CONFIG_RTC_ALARM */
 };
 
+static void rtc_it8xxx2_clock_source_selection(const struct device *dev)
+{
+	const struct rtc_ite_config *config = dev->config;
+
+	if (IS_ENABLED(CONFIG_SOC_SERIES_IT8XXX2) || IS_ENABLED(CONFIG_SOC_IT51526AW) ||
+	    IS_ENABLED(CONFIG_SOC_IT51526BW)) {
+		uint8_t gpiogcr_clksrc = sys_read8(config->reg_gpiogcr + RTC_GPIOGCR_CLKSRC);
+
+		sys_write8(gpiogcr_clksrc & RTC_IT8XXX2_CLKSRC_MASK,
+			   config->reg_gpiogcr + RTC_GPIOGCR_CLKSRC);
+	} else {
+		uint8_t slotocc = sys_read8(config->reg_gctrl + SLOTOCC_STATUS);
+
+		sys_write8(RTC_SLOTOCC_UPDATE(slotocc), config->reg_gctrl + SLOTOCC_STATUS);
+	}
+}
+
 static int rtc_it8xxx2_init(const struct device *dev)
 {
 	const struct rtc_ite_config *config = dev->config;
 	struct rtc_ite_data *data = dev->data;
-	uint8_t gpiogcr_clksrc, ctlregb;
+	uint8_t ctlregb;
 
 	/*
 	 * The VCC power status is treated as power-on.
@@ -689,16 +725,7 @@ static int rtc_it8xxx2_init(const struct device *dev)
 	rtc_it8xxx2_update_gctrl(config->reg_gctrl + RTC_GCTRL_RSTS, GENMASK(7, 6) | RTC_RSTS_HGRST,
 				 RTC_RSTS_VCCDO(RTC_VCC_ON));
 
-	/* Select RTC clock source */
-	gpiogcr_clksrc = sys_read8(config->reg_gpiogcr + RTC_GPIOGCR_CLKSRC);
-#ifdef CONFIG_SOC_IT8XXX2_EXT_32K
-	/* Enable external crystal oscillator for RTC */
-	gpiogcr_clksrc &= ~(RTC_CLKSRC_OSCILLATOR | RTC_CLKSRC_SEL);
-#else
-	/* Enable the ring oscillator for RTC */
-	gpiogcr_clksrc &= ~RTC_CLKSRC_CRYSTAL;
-#endif
-	sys_write8(gpiogcr_clksrc, config->reg_gpiogcr + RTC_GPIOGCR_CLKSRC);
+	rtc_it8xxx2_clock_source_selection(dev);
 
 	/* Divider chain control: [6:4]=010b: normal operation */
 	rtc_ec2i_ite_write(dev, RTC_CTLREGA, RTC_CTLREGA_DICCTL(RTC_NORMAL_OP), B0);

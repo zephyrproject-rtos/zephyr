@@ -520,7 +520,7 @@ ZTEST(cte_req_after_fex, test_cte_req_rejected_inv_ll_param_peripheral_local)
  * +-----+                     +-------+                         +-----+
  *    |                            |                                |
  *    | Start initiation           |                                |
- *    | CTE Reqest Proc.           |                                |
+ *    | CTE Request Proc.          |                                |
  *    |--------------------------->|                                |
  *    |                            |                                |
  *    |                            | LL_LE_CTE_REQ                  |
@@ -592,7 +592,7 @@ ZTEST(cte_req_after_fex, test_cte_req_reject_inv_ll_param_central_remote)
  * +-----+                     +-------+                         +-----+
  *    |                            |                                |
  *    | Start initiation           |                                |
- *    | CTE Reqest Proc.           |                                |
+ *    | CTE Request Proc.          |                                |
  *    |--------------------------->|                                |
  *    |                            |                                |
  *    |                            | LL_LE_CTE_REQ                  |
@@ -821,7 +821,7 @@ static void phy_update_setup(void)
 	ull_conn_default_tx_octets_set(PDU_DC_PAYLOAD_SIZE_MAX);
 	/* PHY Coded support is enabled hence it limits the max TX time */
 	ull_conn_default_tx_time_set(PDU_DC_PAYLOAD_TIME_MAX_CODED);
-	/* Initialize with defauly PHY1M */
+	/* Initialize with default PHY1M */
 	ull_dle_init(&conn, PHY_1M);
 	/* Emulate different remote numbers to trigger update of effective max TX octets and time.
 	 * Numbers are taken arbitrary.

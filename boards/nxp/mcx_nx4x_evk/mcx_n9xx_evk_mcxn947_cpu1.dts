@@ -24,6 +24,7 @@
 		zephyr,code-partition = &slot1_partition;
 		zephyr,console = &flexcomm2_lpuart2;
 		zephyr,shell-uart = &flexcomm2_lpuart2;
+		zephyr,crc = &crc;
 	};
 };
 

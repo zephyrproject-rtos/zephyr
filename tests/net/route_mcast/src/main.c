@@ -7,7 +7,7 @@
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(net_test, CONFIG_NET_ROUTE_LOG_LEVEL);
+LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_ROUTE_LOG_LEVEL);
 
 #include <zephyr/types.h>
 #include <zephyr/ztest.h>
@@ -35,9 +35,9 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ROUTE_LOG_LEVEL);
 #include <zephyr/net/udp.h>
 #include "udp_internal.h"
 #include "nbr.h"
-#include "route.h"
+#include "route_ipv6.h"
 
-#if defined(CONFIG_NET_ROUTE_LOG_LEVEL_DBG)
+#if defined(CONFIG_NET_IPV6_ROUTE_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #else
 #define DBG(fmt, ...)
@@ -79,9 +79,9 @@ struct net_route_mcast_iface_cfg {
 	struct net_linkaddr ll_addr;
 };
 
-#define MAX_MCAST_ROUTES CONFIG_NET_MAX_MCAST_ROUTES
+#define MAX_MCAST_ROUTES CONFIG_NET_IPV6_MAX_MCAST_ROUTES
 
-static struct net_route_entry_mcast *test_mcast_routes[MAX_MCAST_ROUTES];
+static struct net_route_ipv6_entry_mcast *test_mcast_routes[MAX_MCAST_ROUTES];
 
 static struct net_in6_addr mcast_prefix_iflocal = { { {
 					0xFF, 0x01, 0, 0,
@@ -334,39 +334,39 @@ static void test_route_mcast_init(void)
 static void test_route_mcast_route_add(void)
 {
 	struct net_in6_addr nw_prefix_based_all_nodes;
-	struct net_route_entry_mcast *entry;
+	struct net_route_ipv6_entry_mcast *entry;
 
-	entry = net_route_mcast_add(iface_1, &mcast_prefix_iflocal, 16);
+	entry = net_route_ipv6_mcast_add(iface_1, &mcast_prefix_iflocal, 16);
 	zassert_is_null(entry, "add iface local should fail");
 
-	entry = net_route_mcast_add(iface_1, &mcast_prefix_llocal, 16);
+	entry = net_route_ipv6_mcast_add(iface_1, &mcast_prefix_llocal, 16);
 	zassert_is_null(entry, "add link local should fail");
 
-	test_mcast_routes[0] = net_route_mcast_add(iface_1,
-				    &mcast_prefix_admin, 16);
+	test_mcast_routes[0] = net_route_ipv6_mcast_add(iface_1,
+							&mcast_prefix_admin, 16);
 	zassert_not_null(test_mcast_routes[0], "mcast route add failed");
 
-	test_mcast_routes[1] = net_route_mcast_add(iface_2,
-					      &mcast_prefix_site_local, 16);
+	test_mcast_routes[1] = net_route_ipv6_mcast_add(iface_2,
+							&mcast_prefix_site_local, 16);
 	zassert_not_null(test_mcast_routes[1], "mcast route add failed");
 
-	test_mcast_routes[2] = net_route_mcast_add(iface_1,
-						      &mcast_prefix_orga, 16);
+	test_mcast_routes[2] = net_route_ipv6_mcast_add(iface_1,
+							&mcast_prefix_orga, 16);
 	zassert_not_null(test_mcast_routes[2], "mcast route add failed");
 
-	test_mcast_routes[3] = net_route_mcast_add(iface_2,
-						      &mcast_prefix_global, 16);
+	test_mcast_routes[3] = net_route_ipv6_mcast_add(iface_2,
+							&mcast_prefix_global, 16);
 	zassert_not_null(test_mcast_routes[3], "mcast route add failed");
 
 	/* check if route can be added
 	 * if forwarding flag not set on iface
 	 */
-	test_mcast_routes[4] = net_route_mcast_add(iface_3,
-			&mcast_prefix_global, 16);
+	test_mcast_routes[4] = net_route_ipv6_mcast_add(iface_3,
+							&mcast_prefix_global, 16);
 	zassert_is_null(test_mcast_routes[4], "mcast route add should fail");
 
-	test_mcast_routes[4] = net_route_mcast_add(iface_1,
-				&mcast_prefix_nw_based, 96);
+	test_mcast_routes[4] = net_route_ipv6_mcast_add(iface_1,
+							&mcast_prefix_nw_based, 96);
 	zassert_not_null(test_mcast_routes[4],
 			"add for nw prefix based failed");
 
@@ -374,26 +374,27 @@ static void test_route_mcast_route_add(void)
 			sizeof(struct net_in6_addr));
 	nw_prefix_based_all_nodes.s6_addr[15] = 0x01;
 
-	test_mcast_routes[5] = net_route_mcast_add(iface_2,
-				&nw_prefix_based_all_nodes, 128);
+	test_mcast_routes[5] = net_route_ipv6_mcast_add(iface_2,
+							&nw_prefix_based_all_nodes, 128);
 	zassert_not_null(test_mcast_routes[5],
 			"add for nw prefix based failed");
 }
 
-static void mcast_foreach_cb(struct net_route_entry_mcast *entry,
+static void mcast_foreach_cb(struct net_route_ipv6_entry_mcast *entry,
 	     void *user_data)
 {
 	zassert_equal_ptr(user_data, &mcast_prefix_global,
-						  "foreach failed, wrong user_data");
+			  "foreach failed, wrong user_data");
 }
 
 static void test_route_mcast_foreach(void)
 {
-	int executed_first = net_route_mcast_foreach(mcast_foreach_cb,
-		NULL, &mcast_prefix_global);
+	int executed_first = net_route_ipv6_mcast_foreach(mcast_foreach_cb,
+							  NULL, &mcast_prefix_global);
 
-	int executed_skip =  net_route_mcast_foreach(mcast_foreach_cb,
-			&mcast_prefix_admin, &mcast_prefix_global);
+	int executed_skip =  net_route_ipv6_mcast_foreach(mcast_foreach_cb,
+							  &mcast_prefix_admin,
+							  &mcast_prefix_global);
 
 	zassert_true(executed_skip == (executed_first - 1),
 			"mcast foreach skip did not skip");
@@ -401,65 +402,65 @@ static void test_route_mcast_foreach(void)
 
 static void test_route_mcast_lookup(void)
 {
-	struct net_route_entry_mcast *route =
-			net_route_mcast_lookup(&mcast_prefix_admin);
+	struct net_route_ipv6_entry_mcast *route =
+			net_route_ipv6_mcast_lookup(&mcast_prefix_admin);
 
 	zassert_equal_ptr(test_mcast_routes[0], route,
-				  "mcast lookup failed");
+			  "mcast lookup failed");
 
-	route = net_route_mcast_lookup(&mcast_prefix_site_local);
+	route = net_route_ipv6_mcast_lookup(&mcast_prefix_site_local);
 
 	zassert_equal_ptr(test_mcast_routes[1], route,
-					  "mcast lookup failed");
+			  "mcast lookup failed");
 
-	route = net_route_mcast_lookup(&mcast_prefix_global);
+	route = net_route_ipv6_mcast_lookup(&mcast_prefix_global);
 
 	zassert_equal_ptr(test_mcast_routes[3], route,
-						  "mcast lookup failed");
+			  "mcast lookup failed");
 }
 
 static void test_route_mcast_lookup_by_iface(void)
 {
-	struct net_route_entry_mcast *route =
-			net_route_mcast_lookup_by_iface(&mcast_prefix_admin, iface_1);
+	struct net_route_ipv6_entry_mcast *route =
+			net_route_ipv6_mcast_lookup_by_iface(&mcast_prefix_admin, iface_1);
 
 	zassert_not_null(route, "mcast lookup by iface failed");
 
-	route = net_route_mcast_lookup_by_iface(&mcast_prefix_site_local, iface_2);
+	route = net_route_ipv6_mcast_lookup_by_iface(&mcast_prefix_site_local, iface_2);
 
 	zassert_not_null(route, "mcast lookup by iface failed");
 
-	route = net_route_mcast_lookup_by_iface(&mcast_prefix_site_local, iface_1);
+	route = net_route_ipv6_mcast_lookup_by_iface(&mcast_prefix_site_local, iface_1);
 
 	zassert_is_null(route, "mcast lookup by iface should not find a route on this interface");
 }
 
 static void test_route_mcast_route_del(void)
 {
-	struct net_route_entry_mcast *route;
-	bool success = net_route_mcast_del(test_mcast_routes[0]);
+	struct net_route_ipv6_entry_mcast *route;
+	bool success = net_route_ipv6_mcast_del(test_mcast_routes[0]);
 
 	zassert_true(success, "failed to delete mcast route");
 
-	route = net_route_mcast_lookup(&mcast_prefix_admin);
+	route = net_route_ipv6_mcast_lookup(&mcast_prefix_admin);
 	zassert_is_null(route, "lookup found deleted route");
 
-	success = net_route_mcast_del(test_mcast_routes[1]);
+	success = net_route_ipv6_mcast_del(test_mcast_routes[1]);
 	zassert_true(success, "failed to delete mcast route");
 
-	route = net_route_mcast_lookup(&mcast_prefix_site_local);
+	route = net_route_ipv6_mcast_lookup(&mcast_prefix_site_local);
 	zassert_is_null(route, "lookup found deleted route");
 
-	success = net_route_mcast_del(test_mcast_routes[2]);
+	success = net_route_ipv6_mcast_del(test_mcast_routes[2]);
 	zassert_true(success, "failed to delete mcast route");
 
-	success = net_route_mcast_del(test_mcast_routes[3]);
+	success = net_route_ipv6_mcast_del(test_mcast_routes[3]);
 	zassert_true(success, "failed to delete mcast route");
 
-	success = net_route_mcast_del(test_mcast_routes[4]);
+	success = net_route_ipv6_mcast_del(test_mcast_routes[4]);
 	zassert_true(success, "failed to delete mcast route");
 
-	success = net_route_mcast_del(test_mcast_routes[5]);
+	success = net_route_ipv6_mcast_del(test_mcast_routes[5]);
 	zassert_true(success, "failed to delete mcast route");
 }
 
@@ -681,7 +682,7 @@ void test_route_mcast_multiple_route_ifaces(void)
 	 *    6. Verify that packet sent to the same scope is before is now
 	 *       NOT forwarded to iface_1 as it was removed from the list.
 	 */
-	struct net_route_entry_mcast *route;
+	struct net_route_ipv6_entry_mcast *route;
 	bool res;
 
 	reset_counters();
@@ -710,11 +711,11 @@ void test_route_mcast_multiple_route_ifaces(void)
 
 	reset_counters();
 
-	route = net_route_mcast_lookup(&mcast_prefix_site_local);
+	route = net_route_ipv6_mcast_lookup(&mcast_prefix_site_local);
 	zassert_not_null(route, "failed to find the route entry");
 
 	/* Add iface_1 to the entry */
-	res = net_route_mcast_iface_add(route, iface_1);
+	res = net_route_ipv6_mcast_iface_add(route, iface_1);
 	zassert_true(res, "failed to add iface_1 to the entry");
 
 	struct net_pkt *pkt2 = setup_ipv6_udp(iface_3, &active_scenario.src,
@@ -737,7 +738,7 @@ void test_route_mcast_multiple_route_ifaces(void)
 	reset_counters();
 
 	/* Remove iface_1 from the entry */
-	res = net_route_mcast_iface_del(route, iface_1);
+	res = net_route_ipv6_mcast_iface_del(route, iface_1);
 	zassert_true(res, "failed to remove iface_1 from the entry");
 
 	struct net_pkt *pkt3 = setup_ipv6_udp(iface_3, &active_scenario.src,

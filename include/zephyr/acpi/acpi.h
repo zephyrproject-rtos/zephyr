@@ -290,6 +290,14 @@ int acpi_dmar_ioapic_get(uint16_t *ioapic_id);
 ACPI_MADT_LOCAL_APIC *acpi_local_apic_get(int cpu_num);
 
 /**
+ * @brief Retrieve the 'n'th enabled local x2apic info (MADT Type 9).
+ *
+ * @param cpu_num the cpu number
+ * @return local x2apic info on success or NULL otherwise
+ */
+ACPI_MADT_LOCAL_X2APIC *acpi_local_x2apic_get(int cpu_num);
+
+/**
  * @brief invoke an ACPI method and return the result.
  *
  * @param path the path name of the ACPI object

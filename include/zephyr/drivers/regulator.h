@@ -23,6 +23,12 @@
  * @version 0.1.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup devicetree-regulator Devicetree Regulator API
+ * @ingroup devicetree
+ * @ingroup regulator_interface
+ * @{
+ * @}
  */
 
 #include <errno.h>
@@ -307,8 +313,7 @@ void regulator_common_data_init(const struct device *dev);
  * @param is_enabled Indicate if the regulator is enabled by default in
  * hardware.
  *
- * @retval 0 If enabled successfully.
- * @retval -errno Negative errno in case of failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int regulator_common_init(const struct device *dev, bool is_enabled);
 
@@ -316,8 +321,8 @@ int regulator_common_init(const struct device *dev, bool is_enabled);
  * @brief Check if regulator is expected to be enabled at init time.
  *
  * @param dev Regulator device instance
- * @return true If regulator needs to be enabled at init time.
- * @return false If regulator does not need to be enabled at init time.
+ * @retval true Regulator needs to be enabled at init time.
+ * @retval false Regulator does not need to be enabled at init time.
  */
 static inline bool regulator_common_is_init_enabled(const struct device *dev)
 {
@@ -333,8 +338,8 @@ static inline bool regulator_common_is_init_enabled(const struct device *dev)
  * @param dev Regulator device instance.
  * @param min_uv Where minimum voltage will be stored, in microvolts.
  *
- * @retval 0 If successful
- * @retval -ENOENT If minimum voltage is not specified.
+ * @retval 0 on success.
+ * @retval -ENOENT Minimum voltage is not specified.
  */
 static inline int regulator_common_get_min_voltage(const struct device *dev, int32_t *min_uv)
 {
@@ -355,8 +360,8 @@ static inline int regulator_common_get_min_voltage(const struct device *dev, int
  * @param dev Regulator device instance.
  * @param max_uv Where maximum voltage will be stored, in microvolts.
  *
- * @retval 0 If successful
- * @retval -ENOENT If maximum voltage is not specified.
+ * @retval 0 on success.
+ * @retval -ENOENT Maximum voltage is not specified.
  */
 static inline int regulator_common_get_max_voltage(const struct device *dev, int32_t *max_uv)
 {
@@ -392,11 +397,10 @@ static inline int regulator_common_get_max_voltage(const struct device *dev, int
  * @param dev Parent regulator device instance.
  * @param state DVS state (vendor specific identifier).
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP If given state is not supported.
- * @retval -EPERM If state can't be changed by software.
- * @retval -ENOSYS If function is not implemented.
- * @retval -errno In case of any other error.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP Given state is not supported.
+ * @retval -EPERM State can't be changed by software.
+ * @retval -ENOSYS Function is not implemented.
  */
 static inline int regulator_parent_dvs_state_set(const struct device *dev,
 						 regulator_dvs_state_t state)
@@ -420,9 +424,8 @@ static inline int regulator_parent_dvs_state_set(const struct device *dev,
  *
  * @param dev Parent regulator device instance.
  *
- * @retval 0 If successful.
- * @retval -ENOSYS If function is not implemented.
- * @retval -errno In case of any other error.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Function is not implemented.
  */
 static inline int regulator_parent_ship_mode(const struct device *dev)
 {
@@ -447,9 +450,8 @@ static inline int regulator_parent_ship_mode(const struct device *dev)
  *
  * @param dev Regulator device instance
  *
- * @retval 0 If regulator has been successfully enabled.
- * @retval -errno Negative errno in case of failure.
- * @retval -ENOTSUP If regulator enablement can not be controlled.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP Regulator enablement can not be controlled.
  */
 int regulator_enable(const struct device *dev);
 
@@ -458,8 +460,8 @@ int regulator_enable(const struct device *dev);
  *
  * @param dev Regulator device instance.
  *
- * @retval true If regulator is enabled.
- * @retval false If regulator is disabled.
+ * @retval true Regulator is enabled.
+ * @retval false Regulator is disabled.
  */
 bool regulator_is_enabled(const struct device *dev);
 
@@ -475,9 +477,8 @@ bool regulator_is_enabled(const struct device *dev);
  *
  * @param dev Regulator device instance.
  *
- * @retval 0 If regulator has been successfully disabled.
- * @retval -errno Negative errno in case of failure.
- * @retval -ENOTSUP If regulator disablement can not be controlled.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP Regulator disablement can not be controlled.
  */
 int regulator_disable(const struct device *dev);
 
@@ -515,8 +516,8 @@ static inline unsigned int regulator_count_voltages(const struct device *dev)
  * @param[out] volt_uv Where voltage for the given @p index will be stored, in
  * microvolts.
  *
- * @retval 0 If @p index corresponds to a supported voltage.
- * @retval -EINVAL If @p index does not correspond to a supported voltage.
+ * @retval 0 @p index corresponds to a supported voltage.
+ * @retval -EINVAL @p index does not correspond to a supported voltage.
  */
 static inline int regulator_list_voltage(const struct device *dev,
 					 unsigned int idx, int32_t *volt_uv)
@@ -537,8 +538,8 @@ static inline int regulator_list_voltage(const struct device *dev,
  * @param min_uv Minimum voltage in microvolts.
  * @param max_uv maximum voltage in microvolts.
  *
- * @retval true If voltage is supported.
- * @retval false If voltage is not supported.
+ * @retval true Voltage is supported.
+ * @retval false Voltage is not supported.
  */
 bool regulator_is_supported_voltage(const struct device *dev, int32_t min_uv,
 				    int32_t max_uv);
@@ -556,10 +557,9 @@ bool regulator_is_supported_voltage(const struct device *dev, int32_t min_uv,
  * @param min_uv Minimum acceptable voltage in microvolts.
  * @param max_uv Maximum acceptable voltage in microvolts.
  *
- * @retval 0 If successful.
- * @retval -EINVAL If the given voltage window is not valid.
- * @retval -ENOSYS If function is not implemented.
- * @retval -errno In case of any other error.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EINVAL Given voltage window is not valid.
+ * @retval -ENOSYS Function is not implemented.
  */
 int regulator_set_voltage(const struct device *dev, int32_t min_uv,
 			  int32_t max_uv);
@@ -570,9 +570,8 @@ int regulator_set_voltage(const struct device *dev, int32_t min_uv,
  * @param dev Regulator device instance.
  * @param[out] volt_uv Where configured output voltage will be stored.
  *
- * @retval 0 If successful
- * @retval -ENOSYS If function is not implemented.
- * @retval -errno In case of any other error.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Function is not implemented.
  */
 static inline int regulator_get_voltage(const struct device *dev,
 					int32_t *volt_uv)
@@ -620,8 +619,8 @@ static inline unsigned int regulator_count_current_limits(const struct device *d
  * @param[out] current_ua Where current for the given @p index will be stored, in
  * microamps.
  *
- * @retval 0 If @p index corresponds to a supported current limit.
- * @retval -EINVAL If @p index does not correspond to a supported current limit.
+ * @retval 0 @p index corresponds to a supported current limit.
+ * @retval -EINVAL @p index does not correspond to a supported current limit.
  */
 static inline int regulator_list_current_limit(const struct device *dev,
 					       unsigned int idx, int32_t *current_ua)
@@ -647,10 +646,9 @@ static inline int regulator_list_current_limit(const struct device *dev,
  * @param min_ua Minimum acceptable current limit in microamps.
  * @param max_ua Maximum acceptable current limit in microamps.
  *
- * @retval 0 If successful.
- * @retval -EINVAL If the given current limit window is not valid.
- * @retval -ENOSYS If function is not implemented.
- * @retval -errno In case of any other error.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EINVAL Given current limit window is not valid.
+ * @retval -ENOSYS Function is not implemented.
  */
 int regulator_set_current_limit(const struct device *dev, int32_t min_ua,
 				int32_t max_ua);
@@ -661,9 +659,8 @@ int regulator_set_current_limit(const struct device *dev, int32_t min_ua,
  * @param dev Regulator device instance.
  * @param[out] curr_ua Where output current limit will be stored.
  *
- * @retval 0 If successful.
- * @retval -ENOSYS If function is not implemented.
- * @retval -errno In case of any other error.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Function is not implemented.
  */
 static inline int regulator_get_current_limit(const struct device *dev,
 					      int32_t *curr_ua)
@@ -688,10 +685,9 @@ static inline int regulator_get_current_limit(const struct device *dev,
  * @param dev Regulator device instance.
  * @param mode Mode to select for this regulator.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP If mode is not supported.
- * @retval -ENOSYS If function is not implemented.
- * @retval -errno In case of any other error.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP Mode is not supported.
+ * @retval -ENOSYS Function is not implemented.
  */
 int regulator_set_mode(const struct device *dev, regulator_mode_t mode);
 
@@ -701,9 +697,8 @@ int regulator_set_mode(const struct device *dev, regulator_mode_t mode);
  * @param dev Regulator device instance.
  * @param[out] mode Where mode will be stored.
  *
- * @retval 0 If successful.
- * @retval -ENOSYS If function is not implemented.
- * @retval -errno In case of any other error.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Function is not implemented.
  */
 static inline int regulator_get_mode(const struct device *dev,
 				     regulator_mode_t *mode)
@@ -723,9 +718,8 @@ static inline int regulator_get_mode(const struct device *dev,
  * @param dev Regulator device instance.
  * @param active_discharge Active discharge enable or disable.
  *
- * @retval 0 If successful.
- * @retval -ENOSYS If function is not implemented.
- * @retval -errno In case of any other error.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Function is not implemented.
  */
 static inline int regulator_set_active_discharge(const struct device *dev,
 				     bool active_discharge)
@@ -745,9 +739,8 @@ static inline int regulator_set_active_discharge(const struct device *dev,
  * @param dev Regulator device instance.
  * @param[out] active_discharge Where active discharge will be stored.
  *
- * @retval 0 If successful.
- * @retval -ENOSYS If function is not implemented.
- * @retval -errno In case of any other error.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Function is not implemented.
  */
 static inline int regulator_get_active_discharge(const struct device *dev,
 				     bool *active_discharge)
@@ -767,9 +760,8 @@ static inline int regulator_get_active_discharge(const struct device *dev,
  * @param dev Regulator device instance.
  * @param[out] flags Where error flags will be stored.
  *
- * @retval 0 If successful.
- * @retval -ENOSYS If function is not implemented.
- * @retval -errno In case of any other error.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Function is not implemented.
  */
 static inline int regulator_get_error_flags(const struct device *dev,
 					    regulator_error_flags_t *flags)
@@ -794,8 +786,8 @@ static inline int regulator_get_error_flags(const struct device *dev,
  * @param cb Event handler
  * @param user_data User data
  *
- * @retval 0 If successful.
- * @retval -ENOSYS If not supported by the device.
+ * @retval 0 on success.
+ * @retval -ENOSYS Function is not implemented.
  */
 static inline int regulator_set_callback(const struct device *dev,
 					 regulator_callback_t cb,

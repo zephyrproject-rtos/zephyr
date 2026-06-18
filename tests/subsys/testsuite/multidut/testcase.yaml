@@ -41,3 +41,14 @@ tests:
         - application: multidut.basic
     extra_args:
       - CONFIG_BOOT_BANNER_STRING="Banner changed Zephyr OS"
+
+  multidut.no_self_build:
+    harness_config:
+      pytest_root:
+        - "pytest/test_multiple_duts.py"
+      required_devices:
+        - application: multidut.other_application
+    build: false
+    required_applications:
+      # first required_application is taken as the current application, as `build` is false
+      - application: multidut.basic

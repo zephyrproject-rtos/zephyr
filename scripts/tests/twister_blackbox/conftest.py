@@ -23,9 +23,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts"))
 
 
-sample_filename_mock = mock.PropertyMock(return_value='test_sample.yaml')
-suite_filename_mock = mock.PropertyMock(return_value='test_data.yaml')
-sample_filename_mock = mock.PropertyMock(return_value='test_sample.yaml')
+test_filename_mock = mock.PropertyMock(return_value=['test_data.yaml'])
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "noclearlog: disable the clear_log autouse fixture")

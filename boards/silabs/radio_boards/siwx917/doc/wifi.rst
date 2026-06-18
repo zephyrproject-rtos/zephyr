@@ -242,6 +242,9 @@ Bugs and Limitations
    - The device supports bandwidth of 20 MHz only and 1 spatial stream.
    - 802.11r is not supported.
    - WMM power save mode is not supported.
+   - For Wi-Fi status (``wifi_iface_status``), the ``twt_capable`` field may be
+     set to ``true`` even if the AP does not support TWT. This will happen when
+     the connection is in 802.11ax mode, but the AP has disabled TWT.
 
 
 Soft-AP Mode Features

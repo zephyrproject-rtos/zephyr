@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2026 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nuvoton/m031kia.dtsi>
+#include "numaker_m031ki-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Nuvoton NuMaker M031KI board";
+	compatible = "nuvoton,numaker-m031ki";
+
+	aliases {
+		led0 = &red_led;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_led: led_0 {
+			gpios = <&gpiob 14 GPIO_ACTIVE_LOW>;
+			label = "User LD0";
+		};
+	};
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x0 0xfe00>;
+		};
+
+		slot0_partition: partition@fe00 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0xfe00 0x34100>;
+		};
+
+		slot1_partition: partition@43f00 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x43f00 0x34100>;
+		};
+
+		storage_partition: partition@78000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x78000 0x8000>;
+		};
+	};
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(96)>;
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

@@ -42,7 +42,8 @@ static int sendall(int sock, const void *buf, size_t len,
 			int pollres;
 			k_ticks_t req_timeout_ticks =
 				sys_timepoint_timeout(req_end_timepoint).ticks;
-			int req_timeout_ms = k_ticks_to_ms_ceil32(req_timeout_ticks);
+			int req_timeout_ms = (req_timeout_ticks == K_TICKS_FOREVER) ?
+					     -1 : k_ticks_to_ms_ceil32(req_timeout_ticks);
 
 			pfd.fd = sock;
 			pfd.events = ZSOCK_POLLOUT;
@@ -490,7 +491,8 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 	do {
 		k_ticks_t req_timeout_ticks =
 			sys_timepoint_timeout(req_end_timepoint).ticks;
-		int req_timeout_ms = k_ticks_to_ms_ceil32(req_timeout_ticks);
+		int req_timeout_ms = (req_timeout_ticks == K_TICKS_FOREVER) ?
+				     -1 : k_ticks_to_ms_ceil32(req_timeout_ticks);
 
 		ret = zsock_poll(fds, nfds, req_timeout_ms);
 		if (ret == 0) {

@@ -12,8 +12,6 @@
 / {
 	model = "DA1469x series Development Kit Pro";
 	compatible = "renesas,da1469x_dk_pro";
-	#address-cells = <1>;
-	#size-cells = <1>;
 
 	chosen {
 		zephyr,sram = &sram0;

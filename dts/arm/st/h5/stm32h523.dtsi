@@ -1,12 +1,21 @@
 /*
  * Copyright (c) 2024 STMicroelectronics
  * Copyright (c) 2025 Filip Stojanovic
+ * Copyright (c) 2026 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <st/h5/stm32h5.dtsi>
 
 / {
+	clocks {
+		pll3: pll3 {
+			#clock-cells = <0>;
+			compatible = "st,stm32h5-pll-clock";
+			status = "disabled";
+		};
+	};
+
 	soc {
 		compatible = "st,stm32h523", "st,stm32h5", "simple-bus";
 

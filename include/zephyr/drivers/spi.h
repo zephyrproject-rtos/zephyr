@@ -122,11 +122,10 @@ extern "C" {
 
 /** @} */
 
-
 /**
  * @name SPI Data Word Configurations
  *
- * A SPI Data word is a value that is shifted in/out of the controller's hardware FIFO
+ * An SPI Data word is a value that is shifted in/out of the controller's hardware FIFO
  * and is the atomic unit of communication on the spi bus.
  * A word is also called a "data frame" in this API.
  * A transfer is made up of an arbitrary number of words.
@@ -149,7 +148,7 @@ extern "C" {
  * @brief Get SPI word size in bits from a @ref spi_operation_t
  *
  * @param operation A @ref spi_operation_t from which to get the configured word size.
- * @return The size (in bits) of a spi word for the operation.
+ * @return The size (in bits) of an SPI word for the operation.
  */
 #define SPI_WORD_SIZE_GET(operation)					\
 	(((operation) & SPI_WORD_SIZE_MASK) >> SPI_WORD_SIZE_SHIFT)
@@ -157,7 +156,7 @@ extern "C" {
 /**
  * @brief Get a bitmask to set the word size in a @ref spi_operation_t
  *
- * @param word_size The size of a SPI data frame in bits.
+ * @param word_size The size of an SPI data frame in bits.
  * @return A bitmask to apply to a @ref spi_operation_t
  */
 #define SPI_WORD_SET(word_size)			\
@@ -277,7 +276,7 @@ struct spi_cs_control {
 };
 
 /**
- * @brief Get a <tt>struct gpio_dt_spec</tt> for a SPI device's chip select pin
+ * @brief Get a <tt>struct gpio_dt_spec</tt> for an SPI device's chip select pin
  *
  * Example devicetree fragment:
  *
@@ -310,7 +309,7 @@ struct spi_cs_control {
  *           // { DEVICE_DT_GET(DT_NODELABEL(gpio2)), 20, GPIO_ACTIVE_LOW }
  * @endcode
  *
- * @param spi_dev a SPI device node identifier
+ * @param spi_dev an SPI device node identifier
  * @return #gpio_dt_spec struct corresponding with spi_dev's chip select
  */
 #define SPI_CS_GPIOS_DT_SPEC_GET(spi_dev)			\
@@ -318,7 +317,7 @@ struct spi_cs_control {
 				   DT_REG_ADDR_RAW(spi_dev), {})
 
 /**
- * @brief Get a <tt>struct gpio_dt_spec</tt> for a SPI device's chip select pin
+ * @brief Get a <tt>struct gpio_dt_spec</tt> for an SPI device's chip select pin
  *
  * This is equivalent to
  * <tt>SPI_CS_GPIOS_DT_SPEC_GET(DT_DRV_INST(inst))</tt>.
@@ -353,9 +352,9 @@ struct spi_cs_control {
  * @brief Initialize and get a pointer to a @p spi_cs_control from a
  *        devicetree node identifier
  *
- * This helper is useful for initializing a device on a SPI bus. It
+ * This helper is useful for initializing a device on an SPI bus. It
  * initializes a struct spi_cs_control and returns a pointer to it.
- * Here, @p node_id is a node identifier for a SPI device, not a SPI
+ * Here, @p node_id is a node identifier for an SPI device, not an SPI
  * controller.
  *
  * Example devicetree fragment:
@@ -387,7 +386,7 @@ struct spi_cs_control {
  * For non-gpio CS, the idea is similar but the lead and lag fields of the cs struct
  * will be populated instead.
  *
- * @param node_id Devicetree node identifier for a device on a SPI bus
+ * @param node_id Devicetree node identifier for a device on an SPI bus
  *
  * @return a pointer to the @p spi_cs_control structure
  */
@@ -551,7 +550,7 @@ struct spi_dt_spec {
  * spi_dt_spec</tt> by reading the relevant bus, frequency, slave, and cs
  * data from the devicetree.
  *
- * Important: multiple fields are automatically constructed by this macro
+ * @important Multiple fields are automatically constructed by this macro
  * which must be checked before use. @ref spi_is_ready_dt performs the required
  * @ref device_is_ready checks.
  *
@@ -614,10 +613,11 @@ struct spi_dt_spec {
 /**
  * @brief SPI buffer structure
  *
- * A SPI buffer describes either a real data buffer or an indication of NOP
+ * An SPI buffer describes either a real data buffer or an indication of NOP.
+ *
  * For a NOP indicator:
- *   If buffer is used for TX, only 0's will be sent for the length on the bus
- *   If buffer is used for RX, that length of data received by bus will be ignored/skipped
+ * - If buffer is used for TX, only 0's will be sent for the length on the bus
+ * - If buffer is used for RX, that length of data received by bus will be ignored/skipped
  */
 struct spi_buf {
 	/** Valid pointer to a data buffer, or NULL for NOP indication */
@@ -629,9 +629,9 @@ struct spi_buf {
 /**
  * @brief SPI scatter-gather buffer array structure
  *
- * A spi_buf_set is a flexible description of a whole single SPI bus transfer.
+ * An spi_buf_set is a flexible description of a whole single SPI bus transfer.
  *
- * Since the set is an array of pointers to buffers, it means that pieces of a spi transfer
+ * Since the set is an array of pointers to buffers, it means that pieces of an SPI transfer
  * definition can be re-used across different transfers, without having to redefine or allocate
  * new memory for them each time.
  * This accomplishes what is called "scatter-gather" buffer management at the driver level with
@@ -676,7 +676,7 @@ struct spi_device_state {
 	CONTAINER_OF(dev_->state, struct spi_device_state, devstate)->stats
 
 /**
- * @brief Increment the rx bytes for a SPI device
+ * @brief Increment the rx bytes for an SPI device
  *
  * @param dev_ Pointer to the device structure for the driver instance.
  */
@@ -684,7 +684,7 @@ struct spi_device_state {
 	STATS_INCN(Z_SPI_GET_STATS(dev_), rx_bytes, n)
 
 /**
- * @brief Increment the tx bytes for a SPI device
+ * @brief Increment the tx bytes for an SPI device
  *
  * @param dev_ Pointer to the device structure for the driver instance.
  */
@@ -692,7 +692,7 @@ struct spi_device_state {
 	STATS_INCN(Z_SPI_GET_STATS(dev_), tx_bytes, n)
 
 /**
- * @brief Increment the transfer error counter for a SPI device
+ * @brief Increment the transfer error counter for an SPI device
  *
  * The transfer error count is incremented when there occurred a transfer error
  *
@@ -896,7 +896,7 @@ typedef int (*spi_api_io_async)(const struct device *dev,
 #if defined(CONFIG_SPI_RTIO) || defined(__DOXYGEN__)
 
 /**
- * @brief Callback API for submitting work to a SPI device with RTIO
+ * @brief Callback API for submitting work to an SPI device with RTIO
  */
 typedef void (*spi_api_iodev_submit)(const struct device *dev,
 				     struct rtio_iodev_sqe *iodev_sqe);
@@ -1092,7 +1092,7 @@ static inline int spi_read(const struct device *dev,
 }
 
 /**
- * @brief Read data from a SPI bus specified in @p spi_dt_spec.
+ * @brief Read data from an SPI bus specified in @p spi_dt_spec.
  *
  * This is equivalent to:
  *
@@ -1136,7 +1136,7 @@ static inline int spi_write(const struct device *dev,
 }
 
 /**
- * @brief Write data to a SPI bus specified in @p spi_dt_spec.
+ * @brief Write data to an SPI bus specified in @p spi_dt_spec.
  *
  * This is equivalent to:
  *
@@ -1170,8 +1170,7 @@ static inline int spi_write_dt(const struct spi_dt_spec *spec,
 /**
  * @brief Read/write the specified amount of data from the SPI driver asynchronously.
  *
- * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
- * is selected.
+ * @kconfig_dep{CONFIG_SPI_ASYNC}
  *
  * @note The chip select behavior as described by @ref spi_transceive and
  *       the function of controller/peripheral modes is the same.
@@ -1222,8 +1221,7 @@ void z_spi_transfer_signal_cb(const struct device *dev, int result, void *userda
  * @note The chip select behavior as described by @ref spi_transceive and
  *       the function of controller/peripheral modes is the same.
  *
- * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
- * and @kconfig{CONFIG_POLL} are selected.
+ * @kconfig_dep{CONFIG_SPI_ASYNC, CONFIG_POLL}
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
@@ -1263,8 +1261,7 @@ static inline int spi_transceive_signal(const struct device *dev,
  *
  * @note This function is a helper function calling spi_transceive_signal.
  *
- * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
- * and @kconfig{CONFIG_POLL} are selected.
+ * @kconfig_dep{CONFIG_SPI_ASYNC, CONFIG_POLL}
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
@@ -1298,8 +1295,7 @@ static inline int spi_read_signal(const struct device *dev,
  *
  * @note This function is a helper function calling spi_transceive_signal.
  *
- * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
- * and @kconfig{CONFIG_POLL} are selected.
+ * @kconfig_dep{CONFIG_SPI_ASYNC, CONFIG_POLL}
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
@@ -1336,12 +1332,12 @@ static inline int spi_write_signal(const struct device *dev,
 /**
  * @name SPI RTIO API
  *
- * Theses functions are for using the SPI driver class through an RTIO-based API
+ * These functions are for using the SPI driver class through an RTIO-based API
  *
  * @{
  */
 /**
- * @brief Submit a SPI device with a request
+ * @brief Submit an SPI device with a request
  *
  * @param iodev_sqe Prepared submissions queue entry connected to an iodev
  *                  defined by SPI_IODEV_DEFINE.

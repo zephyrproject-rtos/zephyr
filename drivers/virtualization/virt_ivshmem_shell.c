@@ -199,21 +199,20 @@ static int cmd_ivshmem_get_notified(const struct shell *sh,
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_ivshmem_cmds,
-			       SHELL_CMD(shmem, NULL,
-					 "Show shared memory info",
-					 cmd_ivshmem_shmem),
-			       SHELL_CMD_ARG(dump, NULL,
-					     "Dump shared memory content",
-					     cmd_ivshmem_dump, 3, 0),
-			       SHELL_CMD_ARG(int_peer, NULL,
-					     "Notify a vector on a peer",
-					     cmd_ivshmem_int, 3, 0),
-			       SHELL_CMD_ARG(get_notified, NULL,
-					     "Get notification on vector",
-					     cmd_ivshmem_get_notified, 2, 0),
-			       SHELL_SUBCMD_SET_END
-		);
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_ivshmem_cmds,
+	SHELL_CMD(shmem, NULL,
+		  SHELL_HELP("Show shared memory info", NULL), cmd_ivshmem_shmem),
+	SHELL_CMD_ARG(dump, NULL,
+		      SHELL_HELP("Dump shared memory content", "<offset> <length>"),
+		      cmd_ivshmem_dump, 3, 0),
+	SHELL_CMD_ARG(int_peer, NULL,
+		      SHELL_HELP("Notify a vector on a peer", "<peer_id> <vector>"),
+		      cmd_ivshmem_int, 3, 0),
+	SHELL_CMD_ARG(get_notified, NULL,
+		      SHELL_HELP("Get notification on vector", "<vector>"),
+		      cmd_ivshmem_get_notified, 2, 0),
+	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(ivshmem, &sub_ivshmem_cmds,
 		   "IVshmem information", cmd_ivshmem_shmem);

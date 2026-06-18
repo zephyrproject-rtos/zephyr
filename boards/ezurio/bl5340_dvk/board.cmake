@@ -2,10 +2,6 @@
 # Copyright (c) 2021 Laird Connectivity
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_BOARD_BL5340_DVK_NRF5340_CPUAPP_NS)
-  set(TFM_PUBLIC_KEY_FORMAT "full")
-endif()
-
 if(CONFIG_BOARD_BL5340_DVK_NRF5340_CPUAPP OR CONFIG_BOARD_BL5340_DVK_NRF5340_CPUAPP_NS)
   board_runner_args(jlink "--device=nrf5340_xxaa_app" "--speed=4000")
 elseif(BOARD_BL5340_DVK_NRF5340_CPUNET)

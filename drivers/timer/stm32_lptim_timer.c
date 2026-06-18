@@ -504,10 +504,10 @@ uint32_t sys_clock_cycle_get_32(void)
 	return (uint32_t)(ret);
 }
 
-/* Wait for the IER register of the stm32U5 ready, after any bit write operation */
+/* Wait for the IER register to be ready, after any bit write operation */
 void stm32_lptim_wait_ready(void)
 {
-#ifdef CONFIG_SOC_SERIES_STM32U5X
+#if defined(LL_LPTIM_ISR_DIEROK)
 	while (LL_LPTIM_IsActiveFlag_DIEROK(LPTIM) == 0) {
 	}
 	LL_LPTIM_ClearFlag_DIEROK(LPTIM);
@@ -561,7 +561,7 @@ static int sys_clock_driver_init(void)
 	}
 #endif
 
-#if DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout)
 	uint32_t timeout = DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout);
 
 	if (timeout > (lptim_clock_presc * 0xFFFF) / lptim_clock_freq) {

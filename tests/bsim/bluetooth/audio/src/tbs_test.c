@@ -91,7 +91,7 @@ static void tbs_join_calls_cb(struct bt_conn *conn,
 {
 	ARG_UNUSED(conn);
 
-	for (size_t i = 0; i < call_index_count; i++) {
+	for (size_t i = 0U; i < call_index_count; i++) {
 		printk("Call index: %u joined\n", call_indexes[i]);
 	}
 	SET_FLAG(call_joined);
@@ -347,7 +347,7 @@ static void init(void)
 		.gtbs = true,
 		.authorization_required = false,
 		.technology = BT_BEARER_TECH_3G,
-		.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
+		.optional_opcodes = BT_TBS_OPTIONAL_OPCODE_HOLD | BT_TBS_OPTIONAL_OPCODE_JOIN,
 	};
 	int err;
 
@@ -395,7 +395,8 @@ static void init(void)
 			.authorization_required = false,
 			/* Set different technologies per bearer */
 			.technology = (i % BT_BEARER_TECH_WCDMA) + 1,
-			.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
+			.optional_opcodes =
+				BT_TBS_OPTIONAL_OPCODE_HOLD | BT_TBS_OPTIONAL_OPCODE_JOIN,
 		};
 
 		snprintf(prov_name, sizeof(prov_name), "Telephone Bearer #%d", i);

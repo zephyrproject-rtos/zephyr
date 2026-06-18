@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RETERMINAL_E1003_ESP32S3_PROCPU
+
+if FUEL_GAUGE
+
+# Composite fuel gauge gets battery voltage from ADC-based voltage-divider sensor
+
+config ADC
+	default y
+
+config SENSOR
+	default y
+
+endif # FUEL_GAUGE
+
+endif # BOARD_RETERMINAL_E1003_ESP32S3_PROCPU

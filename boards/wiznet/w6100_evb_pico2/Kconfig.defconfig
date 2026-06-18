@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_W6100_EVB_PICO2
+
+configdefault NET_L2_ETHERNET
+	default y
+
+config USB_SELF_POWERED
+	default n
+
+endif # BOARD_W6100_EVB_PICO2

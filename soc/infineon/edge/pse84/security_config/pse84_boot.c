@@ -34,13 +34,7 @@ void ifx_pse84_cm55_startup(void)
 	Cy_SysClk_PeriGroupSlaveInit(CY_MMIO_SMIF0_PERI_NR, CY_MMIO_SMIF0_GROUP_NR,
 				     CY_MMIO_SMIF0_SLAVE_NR, CY_MMIO_SMIF0_CLK_HF_NR);
 
-	Cy_SysClk_PeriGroupSlaveInit(CY_MMIO_SMIF01_PERI_NR, CY_MMIO_SMIF01_GROUP_NR,
-				     CY_MMIO_SMIF01_SLAVE_NR, CY_MMIO_SMIF01_CLK_HF_NR);
-
-	/* Enable SOCMEM */
-	Cy_SysEnableSOCMEM(true);
-
-	/* Configure MPC for NS */
+	/* Configure Memory Protection Controller for Non-Secure */
 	cy_mpc_init();
 
 	/* Reduce deepsleep wakeup time in hardware */
@@ -60,7 +54,7 @@ void ifx_pse84_cm55_startup(void)
 	/* SoCMEM Idle Power Mode Configuration */
 	Cy_SysPm_SetSOCMEMDeepSleepMode(CY_SYSPM_MODE_DEEPSLEEP);
 
-	/* Configure PPC for NS*/
+	/* Configure Peripheral Protection Controller for Non-Secure */
 	cy_ppc0_init();
 	cy_ppc1_init();
 

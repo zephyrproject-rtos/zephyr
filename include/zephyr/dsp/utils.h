@@ -7,13 +7,14 @@
 /**
  * @file zephyr/dsp/utils.h
  *
- * @brief Extra functions and macros for DSP
+ * @brief Extra utility functions for DSP
  */
 
 #ifndef INCLUDE_ZEPHYR_DSP_UTILS_H_
 #define INCLUDE_ZEPHYR_DSP_UTILS_H_
 
 #include <stdint.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/kernel.h>
 #include <zephyr/dsp/types.h>
 
@@ -47,7 +48,10 @@ extern "C" {
  * @param m   The number of bits to left shift the input value (0 to 7).
  * @return The converted floating-point (float32_t) value.
  */
-#define Z_SHIFT_Q7_TO_F32(src, m) ((float32_t)(((src << m)) / (float32_t)(1U << 7)))
+static inline float32_t zdsp_q7_to_f32_shift(q7_t src, uint32_t m)
+{
+	return (float32_t)((src << m) / (float32_t)(1U << 7));
+}
 
 /**
  * @brief Convert a Q15 fixed-point value to a floating-point (float32_t) value with a left shift.
@@ -56,7 +60,10 @@ extern "C" {
  * @param m   The number of bits to left shift the input value (0 to 15).
  * @return The converted floating-point (float32_t) value.
  */
-#define Z_SHIFT_Q15_TO_F32(src, m) ((float32_t)((src << m) / (float32_t)(1U << 15)))
+static inline float32_t zdsp_q15_to_f32_shift(q15_t src, uint32_t m)
+{
+	return (float32_t)((src << m) / (float32_t)(1U << 15));
+}
 
 /**
  * @brief Convert a Q31 fixed-point value to a floating-point (float32_t) value with a left shift.
@@ -65,7 +72,10 @@ extern "C" {
  * @param m   The number of bits to left shift the input value (0 to 31).
  * @return The converted floating-point (float32_t) value.
  */
-#define Z_SHIFT_Q31_TO_F32(src, m) ((float32_t)(((int64_t)src) << m) / (float32_t)(1U << 31))
+static inline float32_t zdsp_q31_to_f32_shift(q31_t src, uint32_t m)
+{
+	return (float32_t)(((int64_t)src) << m) / (float32_t)(1U << 31);
+}
 
 /**
  * @brief Convert a Q7 fixed-point value to a floating-point (float64_t) value with a left shift.
@@ -74,7 +84,10 @@ extern "C" {
  * @param m   The number of bits to left shift the input value (0 to 7).
  * @return The converted floating-point (float64_t) value.
  */
-#define Z_SHIFT_Q7_TO_F64(src, m) (((float64_t)(src << m)) / (1U << 7))
+static inline float64_t zdsp_q7_to_f64_shift(q7_t src, uint32_t m)
+{
+	return ((float64_t)(src << m)) / (1U << 7);
+}
 
 /**
  * @brief Convert a Q15 fixed-point value to a floating-point (float64_t) value with a left shift.
@@ -83,7 +96,10 @@ extern "C" {
  * @param m   The number of bits to left shift the input value (0 to 15).
  * @return The converted floating-point (float64_t) value.
  */
-#define Z_SHIFT_Q15_TO_F64(src, m) (((float64_t)(src << m)) / (1UL << 15))
+static inline float64_t zdsp_q15_to_f64_shift(q15_t src, uint32_t m)
+{
+	return ((float64_t)(src << m)) / (1UL << 15);
+}
 
 /**
  * @brief Convert a Q31 fixed-point value to a floating-point (float64_t) value with a left shift.
@@ -92,7 +108,10 @@ extern "C" {
  * @param m   The number of bits to left shift the input value (0 to 31).
  * @return The converted floating-point (float64_t) value.
  */
-#define Z_SHIFT_Q31_TO_F64(src, m) ((float64_t)(((int64_t)src) << m) / (1ULL << 31))
+static inline float64_t zdsp_q31_to_f64_shift(q31_t src, uint32_t m)
+{
+	return (float64_t)(((int64_t)src) << m) / (1ULL << 31);
+}
 
 /**
  * @}
@@ -115,8 +134,10 @@ extern "C" {
  * @param m   The number of bits to right shift the input value (0 to 7).
  * @return The converted Q7 fixed-point value.
  */
-#define Z_SHIFT_F32_TO_Q7(src, m)                                                                  \
-	((q7_t)clamp((int32_t)(src * (1U << 7)) >> m, INT8_MIN, INT8_MAX))
+static inline q7_t zdsp_f32_to_q7_shift(float32_t src, uint32_t m)
+{
+	return (q7_t)clamp((int32_t)(src * (1U << 7)) >> m, INT8_MIN, INT8_MAX);
+}
 
 /**
  * @brief Convert a floating-point (float32_t) value to a Q15 fixed-point value with a right shift.
@@ -125,8 +146,10 @@ extern "C" {
  * @param m   The number of bits to right shift the input value (0 to 15).
  * @return The converted Q15 fixed-point value.
  */
-#define Z_SHIFT_F32_TO_Q15(src, m)                                                                 \
-	((q15_t)clamp((int32_t)(src * (1U << 15)) >> m, INT16_MIN, INT16_MAX))
+static inline q15_t zdsp_f32_to_q15_shift(float32_t src, uint32_t m)
+{
+	return (q15_t)clamp((int32_t)(src * (1U << 15)) >> m, INT16_MIN, INT16_MAX);
+}
 
 /**
  * @brief Convert a floating-point (float32_t) value to a Q31 fixed-point value with a right shift.
@@ -135,8 +158,10 @@ extern "C" {
  * @param m   The number of bits to right shift the input value (0 to 31).
  * @return The converted Q31 fixed-point value.
  */
-#define Z_SHIFT_F32_TO_Q31(src, m)                                                                 \
-	((q31_t)clamp((int64_t)(src * (1U << 31)) >> m, INT32_MIN, INT32_MAX))
+static inline q31_t zdsp_f32_to_q31_shift(float32_t src, uint32_t m)
+{
+	return (q31_t)clamp((int64_t)(src * (1U << 31)) >> m, INT32_MIN, INT32_MAX);
+}
 
 /**
  * @brief Convert a floating-point (float64_t) value to a Q7 fixed-point value with a right shift.
@@ -145,8 +170,10 @@ extern "C" {
  * @param m   The number of bits to right shift the input value (0 to 7).
  * @return The converted Q7 fixed-point value.
  */
-#define Z_SHIFT_F64_TO_Q7(src, m)                                                                  \
-	((q7_t)clamp((int32_t)(src * (1U << 7)) >> m, INT8_MIN, INT8_MAX))
+static inline q7_t zdsp_f64_to_q7_shift(float64_t src, uint32_t m)
+{
+	return (q7_t)clamp((int32_t)(src * (1U << 7)) >> m, INT8_MIN, INT8_MAX);
+}
 
 /**
  * @brief Convert a floating-point (float64_t) value to a Q15 fixed-point value with a right shift.
@@ -155,8 +182,10 @@ extern "C" {
  * @param m   The number of bits to right shift the input value (0 to 15).
  * @return The converted Q15 fixed-point value.
  */
-#define Z_SHIFT_F64_TO_Q15(src, m)                                                                 \
-	((q15_t)clamp((int32_t)(src * (1U << 15)) >> m, INT16_MIN, INT16_MAX))
+static inline q15_t zdsp_f64_to_q15_shift(float64_t src, uint32_t m)
+{
+	return (q15_t)clamp((int32_t)(src * (1U << 15)) >> m, INT16_MIN, INT16_MAX);
+}
 
 /**
  * @brief Convert a floating-point (float64_t) value to a Q31 fixed-point value with a right shift.
@@ -165,8 +194,10 @@ extern "C" {
  * @param m   The number of bits to right shift the input value (0 to 31).
  * @return The converted Q31 fixed-point value.
  */
-#define Z_SHIFT_F64_TO_Q31(src, m)                                                                 \
-	((q31_t)clamp((int64_t)(src * (1U << 31)) >> m, INT32_MIN, INT32_MAX))
+static inline q31_t zdsp_f64_to_q31_shift(float64_t src, uint32_t m)
+{
+	return (q31_t)clamp((int64_t)(src * (1U << 31)) >> m, INT32_MIN, INT32_MAX);
+}
 
 /**
  * @}

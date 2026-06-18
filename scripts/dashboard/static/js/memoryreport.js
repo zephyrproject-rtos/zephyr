@@ -65,11 +65,29 @@
         }
       }
     });
+    return tt;
+  }
+
+  function makeSearchHandler(tree) {
+    return function (event) {
+      let value = event.target.value;
+      if (value.length === 1) {
+        return;
+      }
+      tree.filter(value);
+    };
   }
 
   document.addEventListener("DOMContentLoaded", function(event) {
-    initTree("ramTree", ramReport);
-    initTree("romTree", romReport);
-    initTree("allTree", allReport);
+    let ramTree = initTree("ramTree", ramReport);
+    let romTree = initTree("romTree", romReport);
+    let allTree = initTree("allTree", allReport);
+    document.getElementById('searchAll').addEventListener('input', makeSearchHandler(allTree));
+    document.getElementById('searchRam').addEventListener('input', makeSearchHandler(ramTree));
+    document.getElementById('searchRom').addEventListener('input', makeSearchHandler(romTree));
+    for (const [tabId, report] of Object.entries(regionReports || {})) {
+      let tree = initTree(`${tabId}Tree`, report);
+      document.getElementById(`search_${tabId}`).addEventListener('input', makeSearchHandler(tree));
+    }
   });
 })();

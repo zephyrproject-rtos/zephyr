@@ -225,7 +225,7 @@ void load_call_unload(const struct llext_test *test_case)
 	/* The ELF specification forbids shared libraries from defining init
 	 * entries, so calling llext_bootstrap here would be redundant. Use
 	 * this opportunity to test llext_call_fn, even though llext_bootstrap
-	 * would have behaved simlarly.
+	 * would have behaved similarly.
 	 */
 	zassert_ok(llext_call_fn(ext, "test_entry"),
 		   "test_entry call should succeed");
@@ -244,7 +244,7 @@ void load_call_unload(const struct llext_test *test_case)
 /*
  * Attempt to load, list, list symbols, call a fn, and unload each
  * extension in the test table. This exercises loading, calling into, and
- * unloading each extension which may itself excercise various APIs provided by
+ * unloading each extension which may itself exercise various APIs provided by
  * Zephyr.
  */
 #define LLEXT_LOAD_UNLOAD(_name, extra_args...)			\
@@ -443,6 +443,13 @@ LLEXT_LOAD_UNLOAD(riscv_edge_case_non_paired_hi20_lo12)
 #endif /* CONFIG_RISCV */
 
 #endif /* !CONFIG_LLEXT_TYPE_ELF_OBJECT */
+
+#ifdef CONFIG_LLEXT_VENEERS
+static LLEXT_CONST uint8_t veneer_ext[] ELF_ALIGN = {
+	#include "veneer.inc"
+};
+LLEXT_LOAD_UNLOAD(veneer)
+#endif /* CONFIG_LLEXT_VENEERS */
 
 #ifndef CONFIG_USERSPACE
 static LLEXT_CONST uint8_t export_dependent_ext[] LLEXT_SECT ELF_ALIGN = {

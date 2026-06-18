@@ -954,6 +954,18 @@ def write_kobj_types_output(fp):
         subsystem = subsystem.replace("_driver_api", "").upper()
         fp.write(f"K_OBJ_DRIVER_{subsystem},\n")
 
+    if subsystems:
+        first = subsystems[0].replace("_driver_api", "").upper()
+        last = subsystems[-1].replace("_driver_api", "").upper()
+        fp.write(f"K_OBJ_DRIVER_FIRST = K_OBJ_DRIVER_{first},\n")
+        fp.write(f"K_OBJ_DRIVER_LAST = K_OBJ_DRIVER_{last},\n")
+    else:
+        # There will always be core kernel objects. In the unlikely event
+        # there are no driver subsystems, order the first and last driver
+        # entries to values that will indicate an empty set (first > last).
+        fp.write("K_OBJ_DRIVER_LAST,\n")
+        fp.write("K_OBJ_DRIVER_FIRST,\n")
+
 
 def write_kobj_otype_output(fp):
     fp.write("/* Core kernel objects */\n")

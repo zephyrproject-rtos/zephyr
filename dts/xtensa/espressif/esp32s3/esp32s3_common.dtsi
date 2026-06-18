@@ -37,6 +37,7 @@
 			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
 			clock-frequency = <DT_FREQ_M(240)>;
 			xtal-freq = <DT_FREQ_M(40)>;
+			d-cache-line-size = <16>;
 		};
 
 		cpu1: cpu@1 {
@@ -46,6 +47,7 @@
 			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
 			clock-frequency = <DT_FREQ_M(240)>;
 			xtal-freq = <DT_FREQ_M(40)>;
+			d-cache-line-size = <16>;
 		};
 
 		power-states {

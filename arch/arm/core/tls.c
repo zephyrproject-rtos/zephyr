@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <kernel_tls.h>
 #include <zephyr/app_memory/app_memdomain.h>

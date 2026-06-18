@@ -20,16 +20,18 @@ properties:
     type: int
     required: true
     description: |
-        PLL clock source
-    enum:
-      - 1
-      - 2
-      - 3
-      - 4
+      PLL clock used as source:
+        1: PLL1
+        2: PLL2
+        3: PLL3
+        4: PLL4
+    min: 1
+    max: 4
 
   ic-div:
     type: int
     description: |
         ICx integer division factor
         The input ICx frequency is divided by the specified value
-        Valid range: 1 - 256
+    min: 1
+    max: 256

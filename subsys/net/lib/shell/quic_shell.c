@@ -12,6 +12,8 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include "net_shell_private.h"
 
+#include <inttypes.h>
+
 #if defined(CONFIG_QUIC_SHELL)
 
 #include <zephyr/net/quic.h>
@@ -84,7 +86,7 @@ static void quic_stream_cb(struct quic_stream *stream, void *user_data)
 	if (stream->id == QUIC_STREAM_ID_UNASSIGNED) {
 		snprintk(id_str, sizeof(id_str), "<waiting connection>");
 	} else {
-		snprintk(id_str, sizeof(id_str), "%llu", stream->id);
+		snprintk(id_str, sizeof(id_str), "%" PRIu64, stream->id);
 	}
 
 	PR("[%2d]     %d    %-2d   %-2d   %-4d  %-4s  %s\t %s\n",
@@ -166,7 +168,7 @@ static void quic_context_stream_cb(struct quic_stream *stream, void *user_data)
 	if (stream->id == QUIC_STREAM_ID_UNASSIGNED) {
 		snprintk(id_str, sizeof(id_str), "<waiting connection>");
 	} else {
-		snprintk(id_str, sizeof(id_str), "%llu", stream->id);
+		snprintk(id_str, sizeof(id_str), "%" PRIu64, stream->id);
 	}
 
 	PR("          [%2d]  %d    %-4d  %-4s  %s\t %s\n",

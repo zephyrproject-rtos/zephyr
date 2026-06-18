@@ -179,6 +179,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pg14 &i2c1_sda_pg13>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiog 14 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiog 13 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 };
@@ -186,6 +188,8 @@
 &i2c2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
+	scl-gpios = <&gpiof 1 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiof 0 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 

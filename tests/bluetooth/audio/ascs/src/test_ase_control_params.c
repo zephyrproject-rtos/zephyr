@@ -3,6 +3,7 @@
 /*
  * Copyright (c) 2023 Codecoup
  * Copyright (c) 2024 Demant A/S
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -26,7 +28,7 @@
 #include <zephyr/ztest_test.h>
 #include <sys/types.h>
 
-#include "bap_unicast_server.h"
+#include "ascs.h"
 #include "bap_stream.h"
 #include "conn.h"
 #include "gatt_expects.h"
@@ -54,18 +56,16 @@ static void *test_ase_control_params_setup(void)
 static void test_ase_control_params_before(void *f)
 {
 	struct test_ase_control_params_fixture *fixture = f;
-	struct bt_bap_unicast_server_register_param param = {
-		CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
-		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+	struct bt_ascs_register_param param = {
+		.snk_cnt = CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
+		.src_cnt = CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
+		.cb = &mock_ascs_cb,
 	};
 	int err;
 
 	ARG_UNUSED(fixture);
 
-	err = bt_bap_unicast_server_register(&param);
-	zassert_equal(err, 0, "unexpected err response %d", err);
-
-	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	err = bt_ascs_register(&param);
 	zassert_equal(err, 0, "unexpected err response %d", err);
 
 	test_conn_init(&fixture->conn);
@@ -85,13 +85,7 @@ static void test_ase_control_params_after(void *f)
 
 	ARG_UNUSED(f);
 
-	err = bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
-	zassert_equal(err, 0, "unexpected err response %d", err);
-
-	/* Sleep to trigger any pending state changes from unregister_cb */
-	k_sleep(K_SECONDS(1));
-
-	err = bt_bap_unicast_server_unregister();
+	err = bt_ascs_unregister();
 	zassert_equal(err, 0, "Unexpected err response %d", err);
 }
 
@@ -121,15 +115,15 @@ static void test_expect_unsupported_opcode(struct test_ase_control_params_fixtur
 {
 	const uint8_t buf[] = {
 		opcode, /* Opcode */
-		0x01,   /* Number_of_ASEs */
-		0x01,   /* ASE_ID[0] */
+		0x01U,  /* Number_of_ASEs */
+		0x01U,  /* ASE_ID[0] */
 	};
 	const uint8_t data_expected[] = {
 		opcode, /* Opcode */
-		0xFF,   /* Number_of_ASEs */
-		0x00,   /* ASE_ID[0] */
-		0x01,   /* Response_Code[0] = Unsupported Opcode */
-		0x00,   /* Reason[0] */
+		0xFFU,  /* Number_of_ASEs */
+		0x00U,  /* ASE_ID[0] */
+		0x01U,  /* Response_Code[0] = Unsupported Opcode */
+		0x00U,  /* Reason[0] */
 	};
 
 	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, (void *)buf, sizeof(buf), 0, 0);
@@ -152,11 +146,11 @@ static void test_codec_configure_expect_invalid_length(
 	struct test_ase_control_params_fixture *fixture, const uint8_t *buf, size_t len)
 {
 	const uint8_t data_expected[] = {
-		0x01,           /* Opcode = Config Codec */
-		0xFF,           /* Number_of_ASEs */
-		0x00,           /* ASE_ID[0] */
-		0x02,           /* Response_Code[0] = Invalid Length */
-		0x00,           /* Reason[0] */
+		0x01U,          /* Opcode = Config Codec */
+		0xFFU,          /* Number_of_ASEs */
+		0x00U,          /* ASE_ID[0] */
+		0x02U,          /* Response_Code[0] = Invalid Length */
+		0x00U,          /* Reason[0] */
 	};
 
 	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, len, 0, 0);
@@ -183,15 +177,15 @@ static void test_codec_configure_expect_invalid_length(
 ZTEST_F(test_ase_control_params, test_codec_configure_number_of_ases_0x00)
 {
 	const uint8_t buf[] = {
-		0x01,           /* Opcode = Config Codec */
-		0x00,           /* Number_of_ASEs */
-		0x01,           /* ASE_ID[0] */
-		0x01,           /* Target_Latency[0] = Target low latency */
-		0x02,           /* Target_PHY[0] = LE 2M PHY */
-		0x06,           /* Codec_ID[0].Coding_Format = LC3 */
-		0x00, 0x00,     /* Codec_ID[0].Company_ID */
-		0x00, 0x00,     /* Codec_ID[0].Vendor_Specific_Codec_ID */
-		0x00,           /* Codec_Specific_Configuration_Length[0] */
+		0x01U,          /* Opcode = Config Codec */
+		0x00U,          /* Number_of_ASEs */
+		0x01U,          /* ASE_ID[0] */
+		0x01U,          /* Target_Latency[0] = Target low latency */
+		0x02U,          /* Target_PHY[0] = LE 2M PHY */
+		0x06U,          /* Codec_ID[0].Coding_Format = LC3 */
+		0x00U, 0x00U,   /* Codec_ID[0].Company_ID */
+		0x00U, 0x00U,   /* Codec_ID[0].Vendor_Specific_Codec_ID */
+		0x00U,          /* Codec_Specific_Configuration_Length[0] */
 	};
 
 	test_codec_configure_expect_invalid_length(fixture, buf, sizeof(buf));
@@ -208,15 +202,15 @@ ZTEST_F(test_ase_control_params, test_codec_configure_number_of_ases_above_max)
 	}
 
 	const uint8_t buf[] = {
-		0x01,             /* Opcode = Config Codec */
+		0x01U,            /* Opcode = Config Codec */
 		(uint8_t)ase_cnt, /* Number_of_ASEs */
-		0x01,             /* ASE_ID[0] */
-		0x01,             /* Target_Latency[0] = Target low latency */
-		0x02,             /* Target_PHY[0] = LE 2M PHY */
-		0x06,             /* Codec_ID[0].Coding_Format = LC3 */
-		0x00, 0x00,       /* Codec_ID[0].Company_ID */
-		0x00, 0x00,       /* Codec_ID[0].Vendor_Specific_Codec_ID */
-		0x00,             /* Codec_Specific_Configuration_Length[0] */
+		0x01U,            /* ASE_ID[0] */
+		0x01U,            /* Target_Latency[0] = Target low latency */
+		0x02U,            /* Target_PHY[0] = LE 2M PHY */
+		0x06U,            /* Codec_ID[0].Coding_Format = LC3 */
+		0x00U, 0x00U,     /* Codec_ID[0].Company_ID */
+		0x00U, 0x00U,     /* Codec_ID[0].Vendor_Specific_Codec_ID */
+		0x00U,            /* Codec_Specific_Configuration_Length[0] */
 	};
 
 	test_codec_configure_expect_invalid_length(fixture, buf, sizeof(buf));
@@ -241,22 +235,22 @@ ZTEST_F(test_ase_control_params, test_codec_configure_number_of_ases_above_max)
 ZTEST_F(test_ase_control_params, test_codec_configure_too_many_parameter_arrays)
 {
 	const uint8_t buf[] = {
-		0x01,           /* Opcode = Config Codec */
-		0x01,           /* Number_of_ASEs */
-		0x01,           /* ASE_ID[0] */
-		0x01,           /* Target_Latency[0] = Target low latency */
-		0x02,           /* Target_PHY[0] = LE 2M PHY */
-		0x06,           /* Codec_ID[0].Coding_Format = LC3 */
-		0x00, 0x00,     /* Codec_ID[0].Company_ID */
-		0x00, 0x00,     /* Codec_ID[0].Vendor_Specific_Codec_ID */
-		0x00,           /* Codec_Specific_Configuration_Length[0] */
-		0x02,           /* ASE_ID[1] */
-		0x01,           /* Target_Latency[1] = Target low latency */
-		0x02,           /* Target_PHY[1] = LE 2M PHY */
-		0x06,           /* Codec_ID[1].Coding_Format = LC3 */
-		0x00, 0x00,     /* Codec_ID[1].Company_ID */
-		0x00, 0x00,     /* Codec_ID[1].Vendor_Specific_Codec_ID */
-		0x00,           /* Codec_Specific_Configuration_Length[1] */
+		0x01U,          /* Opcode = Config Codec */
+		0x01U,          /* Number_of_ASEs */
+		0x01U,          /* ASE_ID[0] */
+		0x01U,          /* Target_Latency[0] = Target low latency */
+		0x02U,          /* Target_PHY[0] = LE 2M PHY */
+		0x06U,          /* Codec_ID[0].Coding_Format = LC3 */
+		0x00U, 0x00U,   /* Codec_ID[0].Company_ID */
+		0x00U, 0x00U,   /* Codec_ID[0].Vendor_Specific_Codec_ID */
+		0x00U,          /* Codec_Specific_Configuration_Length[0] */
+		0x02U,          /* ASE_ID[1] */
+		0x01U,          /* Target_Latency[1] = Target low latency */
+		0x02U,          /* Target_PHY[1] = LE 2M PHY */
+		0x06U,          /* Codec_ID[1].Coding_Format = LC3 */
+		0x00U, 0x00U,   /* Codec_ID[1].Company_ID */
+		0x00U, 0x00U,   /* Codec_ID[1].Vendor_Specific_Codec_ID */
+		0x00U,          /* Codec_Specific_Configuration_Length[1] */
 	};
 
 	test_codec_configure_expect_invalid_length(fixture, buf, sizeof(buf));
@@ -282,17 +276,17 @@ ZTEST_F(test_ase_control_params, test_codec_configure_too_many_parameter_arrays)
 ZTEST_F(test_ase_control_params, test_codec_specific_configuration_too_short)
 {
 	const uint8_t buf[] = {
-		0x01,           /* Opcode = Config Codec */
-		0x01,           /* Number_of_ASEs */
-		0x01,           /* ASE_ID[0] */
-		0x01,           /* Target_Latency[0] = Target low latency */
-		0x02,           /* Target_PHY[0] = LE 2M PHY */
-		0x06,           /* Codec_ID[0].Coding_Format = LC3 */
-		0x00, 0x00,     /* Codec_ID[0].Company_ID */
-		0x00, 0x00,     /* Codec_ID[0].Vendor_Specific_Codec_ID */
-		0x05,           /* Codec_Specific_Configuration_Length[0] */
-		0x00, 0x00,     /* Codec_Specific_Configuration[0] */
-		0x00, 0x00,
+		0x01U,          /* Opcode = Config Codec */
+		0x01U,          /* Number_of_ASEs */
+		0x01U,          /* ASE_ID[0] */
+		0x01U,          /* Target_Latency[0] = Target low latency */
+		0x02U,          /* Target_PHY[0] = LE 2M PHY */
+		0x06U,          /* Codec_ID[0].Coding_Format = LC3 */
+		0x00U, 0x00U,   /* Codec_ID[0].Company_ID */
+		0x00U, 0x00U,   /* Codec_ID[0].Vendor_Specific_Codec_ID */
+		0x05U,          /* Codec_Specific_Configuration_Length[0] */
+		0x00U, 0x00U,   /* Codec_Specific_Configuration[0] */
+		0x00U, 0x00U,
 	};
 
 	test_codec_configure_expect_invalid_length(fixture, buf, sizeof(buf));
@@ -318,18 +312,18 @@ ZTEST_F(test_ase_control_params, test_codec_specific_configuration_too_short)
 ZTEST_F(test_ase_control_params, test_codec_specific_configuration_too_long)
 {
 	const uint8_t buf[] = {
-		0x01,           /* Opcode = Config Codec */
-		0x01,           /* Number_of_ASEs */
-		0x01,           /* ASE_ID[0] */
-		0x01,           /* Target_Latency[0] = Target low latency */
-		0x02,           /* Target_PHY[0] = LE 2M PHY */
-		0x06,           /* Codec_ID[0].Coding_Format = LC3 */
-		0x00, 0x00,     /* Codec_ID[0].Company_ID */
-		0x00, 0x00,     /* Codec_ID[0].Vendor_Specific_Codec_ID */
-		0x05,           /* Codec_Specific_Configuration_Length[0] */
-		0x00, 0x00,     /* Codec_Specific_Configuration[0] */
-		0x00, 0x00,
-		0x00, 0x00,
+		0x01U,          /* Opcode = Config Codec */
+		0x01U,          /* Number_of_ASEs */
+		0x01U,          /* ASE_ID[0] */
+		0x01U,          /* Target_Latency[0] = Target low latency */
+		0x02U,          /* Target_PHY[0] = LE 2M PHY */
+		0x06U,          /* Codec_ID[0].Coding_Format = LC3 */
+		0x00U, 0x00U,   /* Codec_ID[0].Company_ID */
+		0x00U, 0x00U,   /* Codec_ID[0].Vendor_Specific_Codec_ID */
+		0x05U,          /* Codec_Specific_Configuration_Length[0] */
+		0x00U, 0x00U,   /* Codec_Specific_Configuration[0] */
+		0x00U, 0x00U,
+		0x00U, 0x00U,
 	};
 
 	test_codec_configure_expect_invalid_length(fixture, buf, sizeof(buf));
@@ -347,24 +341,24 @@ ZTEST_F(test_ase_control_params, test_codec_specific_configuration_too_long)
  */
 ZTEST_F(test_ase_control_params, test_codec_configure_invalid_ase_id_0x00)
 {
-	const uint8_t ase_id_invalid = 0x00;
+	const uint8_t ase_id_invalid = 0x00U;
 	const uint8_t buf[] = {
-		0x01,           /* Opcode = Config Codec */
-		0x01,           /* Number_of_ASEs */
+		0x01U,          /* Opcode = Config Codec */
+		0x01U,          /* Number_of_ASEs */
 		ase_id_invalid, /* ASE_ID[0] */
-		0x01,           /* Target_Latency[0] = Target low latency */
-		0x02,           /* Target_PHY[0] = LE 2M PHY */
-		0x06,           /* Codec_ID[0].Coding_Format = LC3 */
-		0x00, 0x00,     /* Codec_ID[0].Company_ID */
-		0x00, 0x00,     /* Codec_ID[0].Vendor_Specific_Codec_ID */
-		0x00,           /* Codec_Specific_Configuration_Length[0] */
+		0x01U,          /* Target_Latency[0] = Target low latency */
+		0x02U,          /* Target_PHY[0] = LE 2M PHY */
+		0x06U,          /* Codec_ID[0].Coding_Format = LC3 */
+		0x00U, 0x00U,   /* Codec_ID[0].Company_ID */
+		0x00U, 0x00U,   /* Codec_ID[0].Vendor_Specific_Codec_ID */
+		0x00U,          /* Codec_Specific_Configuration_Length[0] */
 	};
 	const uint8_t data_expected[] = {
-		0x01,           /* Opcode = Config Codec */
-		0x01,           /* Number_of_ASEs */
+		0x01U,          /* Opcode = Config Codec */
+		0x01U,          /* Number_of_ASEs */
 		ase_id_invalid, /* ASE_ID[0] */
-		0x03,           /* Response_Code[0] = Invalid ASE_ID */
-		0x00,           /* Reason[0] */
+		0x03U,          /* Response_Code[0] = Invalid ASE_ID */
+		0x00U,          /* Reason[0] */
 	};
 
 	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, sizeof(buf), 0, 0);
@@ -375,14 +369,14 @@ ZTEST_F(test_ase_control_params, test_codec_configure_invalid_ase_id_0x00)
 
 static struct bt_bap_stream test_stream;
 static const struct bt_bap_qos_cfg_pref qos_pref =
-	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02U, 10U, 40000U, 40000U, 40000U, 40000U);
 
-static int unicast_server_cb_config_custom_fake(struct bt_conn *conn, const struct bt_bap_ep *ep,
-						enum bt_audio_dir dir,
-						const struct bt_audio_codec_cfg *codec_cfg,
-						struct bt_bap_stream **stream,
-						struct bt_bap_qos_cfg_pref *const pref,
-						struct bt_bap_ascs_rsp *rsp)
+static int ascs_cb_config_custom_fake(struct bt_conn *conn, const struct bt_bap_ep *ep,
+				      enum bt_audio_dir dir,
+				      const struct bt_audio_codec_cfg *codec_cfg,
+				      struct bt_bap_stream **stream,
+				      struct bt_bap_qos_cfg_pref *const pref,
+				      struct bt_bap_ascs_rsp *rsp)
 {
 	ARG_UNUSED(conn);
 	ARG_UNUSED(ep);
@@ -405,41 +399,41 @@ ZTEST_F(test_ase_control_params, test_codec_configure_invalid_ase_id_unavailable
 		ztest_test_skip();
 	}
 
-	const uint8_t ase_id_valid = 0x01;
+	const uint8_t ase_id_valid = 0x01U;
 	const uint8_t ase_id_invalid = CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT +
 				       CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT + 1;
 	const uint8_t buf[] = {
-		0x01,           /* Opcode = Config Codec */
-		0x02,           /* Number_of_ASEs */
+		0x01U,          /* Opcode = Config Codec */
+		0x02U,          /* Number_of_ASEs */
 		ase_id_invalid, /* ASE_ID[0] */
-		0x01,           /* Target_Latency[0] = Target low latency */
-		0x02,           /* Target_PHY[0] = LE 2M PHY */
-		0x06,           /* Codec_ID[0].Coding_Format = LC3 */
-		0x00, 0x00,     /* Codec_ID[0].Company_ID */
-		0x00, 0x00,     /* Codec_ID[0].Vendor_Specific_Codec_ID */
-		0x04,           /* Codec_Specific_Configuration_Length[0] */
-		0x00, 0x00,     /* Codec_Specific_Configuration[0] */
-		0x00, 0x00,
+		0x01U,          /* Target_Latency[0] = Target low latency */
+		0x02U,          /* Target_PHY[0] = LE 2M PHY */
+		0x06U,          /* Codec_ID[0].Coding_Format = LC3 */
+		0x00U, 0x00U,   /* Codec_ID[0].Company_ID */
+		0x00U, 0x00U,   /* Codec_ID[0].Vendor_Specific_Codec_ID */
+		0x04U,          /* Codec_Specific_Configuration_Length[0] */
+		0x00U, 0x00U,   /* Codec_Specific_Configuration[0] */
+		0x00U, 0x00U,
 		ase_id_valid,   /* ASE_ID[1] */
-		0x01,           /* Target_Latency[1] = Target low latency */
-		0x02,           /* Target_PHY[1] = LE 2M PHY */
-		0x06,           /* Codec_ID[1].Coding_Format = LC3 */
-		0x00, 0x00,     /* Codec_ID[1].Company_ID */
-		0x00, 0x00,     /* Codec_ID[1].Vendor_Specific_Codec_ID */
-		0x00,           /* Codec_Specific_Configuration_Length[1] */
+		0x01U,          /* Target_Latency[1] = Target low latency */
+		0x02U,          /* Target_PHY[1] = LE 2M PHY */
+		0x06U,          /* Codec_ID[1].Coding_Format = LC3 */
+		0x00U, 0x00U,   /* Codec_ID[1].Company_ID */
+		0x00U, 0x00U,   /* Codec_ID[1].Vendor_Specific_Codec_ID */
+		0x00U,          /* Codec_Specific_Configuration_Length[1] */
 	};
 	const uint8_t data_expected[] = {
-		0x01,           /* Opcode = Config Codec */
-		0x02,           /* Number_of_ASEs */
+		0x01U,          /* Opcode = Config Codec */
+		0x02U,          /* Number_of_ASEs */
 		ase_id_invalid, /* ASE_ID[0] */
-		0x03,           /* Response_Code[0] = Invalid ASE_ID */
-		0x00,           /* Reason[0] */
+		0x03U,          /* Response_Code[0] = Invalid ASE_ID */
+		0x00U,          /* Reason[0] */
 		ase_id_valid,   /* ASE_ID[1] */
-		0x00,           /* Response_Code[1] = Success */
-		0x00,           /* Reason[1] */
+		0x00U,          /* Response_Code[1] = Success */
+		0x00U,          /* Reason[1] */
 	};
 
-	mock_bap_unicast_server_cb_config_fake.custom_fake = unicast_server_cb_config_custom_fake;
+	mock_ascs_cb_config_fake.custom_fake = ascs_cb_config_custom_fake;
 
 	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, sizeof(buf), 0, 0);
 
@@ -451,22 +445,22 @@ static void test_target_latency_out_of_range(struct test_ase_control_params_fixt
 					     uint8_t target_latency)
 {
 	const uint8_t buf[] = {
-		0x01,           /* Opcode = Config Codec */
-		0x01,           /* Number_of_ASEs */
-		0x01,           /* ASE_ID[0] */
+		0x01U,          /* Opcode = Config Codec */
+		0x01U,          /* Number_of_ASEs */
+		0x01U,          /* ASE_ID[0] */
 		target_latency, /* Target_Latency[0] */
-		0x02,           /* Target_PHY[0] = LE 2M PHY */
-		0x06,           /* Codec_ID[0].Coding_Format = LC3 */
-		0x00, 0x00,     /* Codec_ID[0].Company_ID */
-		0x00, 0x00,     /* Codec_ID[0].Vendor_Specific_Codec_ID */
-		0x00,           /* Codec_Specific_Configuration_Length[0] */
+		0x02U,          /* Target_PHY[0] = LE 2M PHY */
+		0x06U,          /* Codec_ID[0].Coding_Format = LC3 */
+		0x00U, 0x00U,   /* Codec_ID[0].Company_ID */
+		0x00U, 0x00U,   /* Codec_ID[0].Vendor_Specific_Codec_ID */
+		0x00U,          /* Codec_Specific_Configuration_Length[0] */
 	};
 	const uint8_t data_expected[] = {
-		0x01,           /* Opcode = Config Codec */
-		0x01,           /* Number_of_ASEs */
-		0x01,           /* ASE_ID[0] */
-		0x00,           /* Response_Code[0] = Success */
-		0x00,           /* Reason[0] */
+		0x01U,          /* Opcode = Config Codec */
+		0x01U,          /* Number_of_ASEs */
+		0x01U,          /* ASE_ID[0] */
+		0x00U,          /* Response_Code[0] = Success */
+		0x00U,          /* Reason[0] */
 	};
 
 	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, sizeof(buf), 0, 0);
@@ -495,22 +489,22 @@ static void test_target_phy_out_of_range(struct test_ase_control_params_fixture 
 					 uint8_t target_phy)
 {
 	const uint8_t buf[] = {
-		0x01,           /* Opcode = Config Codec */
-		0x01,           /* Number_of_ASEs */
-		0x01,           /* ASE_ID[0] */
-		0x01,           /* Target_Latency[0] */
+		0x01U,          /* Opcode = Config Codec */
+		0x01U,          /* Number_of_ASEs */
+		0x01U,          /* ASE_ID[0] */
+		0x01U,          /* Target_Latency[0] */
 		target_phy,     /* Target_PHY[0] */
-		0x06,           /* Codec_ID[0].Coding_Format = LC3 */
-		0x00, 0x00,     /* Codec_ID[0].Company_ID */
-		0x00, 0x00,     /* Codec_ID[0].Vendor_Specific_Codec_ID */
-		0x00,           /* Codec_Specific_Configuration_Length[0] */
+		0x06U,          /* Codec_ID[0].Coding_Format = LC3 */
+		0x00U, 0x00U,   /* Codec_ID[0].Company_ID */
+		0x00U, 0x00U,   /* Codec_ID[0].Vendor_Specific_Codec_ID */
+		0x00U,          /* Codec_Specific_Configuration_Length[0] */
 	};
 	const uint8_t data_expected[] = {
-		0x01,           /* Opcode = Config Codec */
-		0x01,           /* Number_of_ASEs */
-		0x01,           /* ASE_ID[0] */
-		0x00,           /* Response_Code[0] = Success */
-		0x00,           /* Reason[0] */
+		0x01U,          /* Opcode = Config Codec */
+		0x01U,          /* Number_of_ASEs */
+		0x01U,          /* ASE_ID[0] */
+		0x00U,          /* Response_Code[0] = Success */
+		0x00U,          /* Reason[0] */
 	};
 
 	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, sizeof(buf), 0, 0);
@@ -541,11 +535,11 @@ static void test_config_qos_expect_invalid_length(struct bt_conn *conn, uint8_t 
 						  const uint8_t *buf, size_t len)
 {
 	const uint8_t data_expected[] = {
-		0x02,           /* Opcode = Config QoS */
-		0xFF,           /* Number_of_ASEs */
-		0x00,           /* ASE_ID[0] */
-		0x02,           /* Response_Code[0] = Invalid Length */
-		0x00,           /* Reason[0] */
+		0x02U,          /* Opcode = Config QoS */
+		0xFFU,          /* Number_of_ASEs */
+		0x00U,          /* ASE_ID[0] */
+		0x02U,          /* Response_Code[0] = Invalid Length */
+		0x00U,          /* Reason[0] */
 	};
 
 	test_preamble_state_codec_configured(conn, ase_id, stream);
@@ -560,18 +554,18 @@ ZTEST_F(test_ase_control_params, test_config_qos_number_of_ases_0x00)
 {
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x02,                   /* Opcode = Config QoS */
-		0x00,                   /* Number_of_ASEs */
+		0x02U,                  /* Opcode = Config QoS */
+		0x00U,                  /* Number_of_ASEs */
 		ase_id,                 /* ASE_ID[0] */
-		0x01,                   /* CIG_ID[0] */
-		0x01,                   /* CIS_ID[0] */
-		0xFF, 0x00, 0x00,       /* SDU_Interval[0] */
-		0x00,                   /* Framing[0] */
-		0x02,                   /* PHY[0] */
-		0x64, 0x00,             /* Max_SDU[0] */
-		0x02,                   /* Retransmission_Number[0] */
-		0x0A, 0x00,             /* Max_Transport_Latency[0] */
-		0x40, 0x9C, 0x00,       /* Presentation_Delay[0] */
+		0x01U,                  /* CIG_ID[0] */
+		0x01U,                  /* CIS_ID[0] */
+		0xFFU, 0x00U, 0x00U,    /* SDU_Interval[0] */
+		0x00U,                  /* Framing[0] */
+		0x02U,                  /* PHY[0] */
+		0x64U, 0x00U,           /* Max_SDU[0] */
+		0x02U,                  /* Retransmission_Number[0] */
+		0x0AU, 0x00U,           /* Max_Transport_Latency[0] */
+		0x40U, 0x9CU, 0x00U,    /* Presentation_Delay[0] */
 	};
 
 	test_config_qos_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp,
@@ -590,18 +584,18 @@ ZTEST_F(test_ase_control_params, test_config_qos_number_of_ases_above_max)
 
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x02,             /* Opcode = Config QoS */
+		0x02U,            /* Opcode = Config QoS */
 		(uint8_t)ase_cnt, /* Number_of_ASEs */
 		ase_id,           /* ASE_ID[0] */
-		0x01,             /* CIG_ID[0] */
-		0x01,             /* CIS_ID[0] */
-		0xFF, 0x00, 0x00, /* SDU_Interval[0] */
-		0x00,             /* Framing[0] */
-		0x02,             /* PHY[0] */
-		0x64, 0x00,       /* Max_SDU[0] */
-		0x02,             /* Retransmission_Number[0] */
-		0x0A, 0x00,       /* Max_Transport_Latency[0] */
-		0x40, 0x9C, 0x00, /* Presentation_Delay[0] */
+		0x01U,            /* CIG_ID[0] */
+		0x01U,            /* CIS_ID[0] */
+		0xFFU, 0x00U, 0x00U, /* SDU_Interval[0] */
+		0x00U,            /* Framing[0] */
+		0x02U,            /* PHY[0] */
+		0x64U, 0x00U,     /* Max_SDU[0] */
+		0x02U,            /* Retransmission_Number[0] */
+		0x0AU, 0x00U,     /* Max_Transport_Latency[0] */
+		0x40U, 0x9CU, 0x00U, /* Presentation_Delay[0] */
 	};
 
 	test_config_qos_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp,
@@ -612,19 +606,19 @@ ZTEST_F(test_ase_control_params, test_config_qos_too_short)
 {
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x02,                   /* Opcode = Config QoS */
-		0x01,                   /* Number_of_ASEs */
+		0x02U,                  /* Opcode = Config QoS */
+		0x01U,                  /* Number_of_ASEs */
 		ase_id,                 /* ASE_ID[0] */
-		0x01,                   /* CIG_ID[0] */
-		0x01,                   /* CIS_ID[0] */
-		0xFF, 0x00, 0x00,       /* SDU_Interval[0] */
-		0x00,                   /* Framing[0] */
-		0x02,                   /* PHY[0] */
-		0x64, 0x00,             /* Max_SDU[0] */
-		0x02,                   /* Retransmission_Number[0] */
-		0x0A, 0x00,             /* Max_Transport_Latency[0] */
-		0x40, 0x9C, 0x00,       /* Presentation_Delay[0] */
-		0x00,
+		0x01U,                  /* CIG_ID[0] */
+		0x01U,                  /* CIS_ID[0] */
+		0xFFU, 0x00U, 0x00U,    /* SDU_Interval[0] */
+		0x00U,                  /* Framing[0] */
+		0x02U,                  /* PHY[0] */
+		0x64U, 0x00U,           /* Max_SDU[0] */
+		0x02U,                  /* Retransmission_Number[0] */
+		0x0AU, 0x00U,           /* Max_Transport_Latency[0] */
+		0x40U, 0x9CU, 0x00U,    /* Presentation_Delay[0] */
+		0x00U,
 	};
 
 	test_config_qos_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp,
@@ -635,18 +629,18 @@ ZTEST_F(test_ase_control_params, test_config_qos_too_long)
 {
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x02,                   /* Opcode = Config QoS */
-		0x01,                   /* Number_of_ASEs */
+		0x02U,                  /* Opcode = Config QoS */
+		0x01U,                  /* Number_of_ASEs */
 		ase_id,                 /* ASE_ID[0] */
-		0x01,                   /* CIG_ID[0] */
-		0x01,                   /* CIS_ID[0] */
-		0xFF, 0x00, 0x00,       /* SDU_Interval[0] */
-		0x00,                   /* Framing[0] */
-		0x02,                   /* PHY[0] */
-		0x64, 0x00,             /* Max_SDU[0] */
-		0x02,                   /* Retransmission_Number[0] */
-		0x0A, 0x00,             /* Max_Transport_Latency[0] */
-		0x40, 0x9C,             /* Presentation_Delay[0] */
+		0x01U,                  /* CIG_ID[0] */
+		0x01U,                  /* CIS_ID[0] */
+		0xFFU, 0x00U, 0x00U,    /* SDU_Interval[0] */
+		0x00U,                  /* Framing[0] */
+		0x02U,                  /* PHY[0] */
+		0x64U, 0x00U,           /* Max_SDU[0] */
+		0x02U,                  /* Retransmission_Number[0] */
+		0x0AU, 0x00U,           /* Max_Transport_Latency[0] */
+		0x40U, 0x9CU,           /* Presentation_Delay[0] */
 	};
 
 	test_config_qos_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp,
@@ -659,11 +653,11 @@ static void test_enable_expect_invalid_length(struct bt_conn *conn, uint8_t ase_
 					      const uint8_t *buf, size_t len)
 {
 	const uint8_t data_expected[] = {
-		0x03,           /* Opcode = Enable */
-		0xFF,           /* Number_of_ASEs */
-		0x00,           /* ASE_ID[0] */
-		0x02,           /* Response_Code[0] = Invalid Length */
-		0x00,           /* Reason[0] */
+		0x03U,          /* Opcode = Enable */
+		0xFFU,          /* Number_of_ASEs */
+		0x00U,          /* ASE_ID[0] */
+		0x02U,          /* Response_Code[0] = Invalid Length */
+		0x00U,          /* Reason[0] */
 	};
 
 	test_preamble_state_qos_configured(conn, ase_id, stream);
@@ -678,10 +672,10 @@ ZTEST_F(test_ase_control_params, test_enable_number_of_ases_0x00)
 {
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x03,           /* Opcode = Enable */
-		0x00,           /* Number_of_ASEs */
+		0x03U,          /* Opcode = Enable */
+		0x00U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x00,           /* Metadata_Length[0] */
+		0x00U,          /* Metadata_Length[0] */
 	};
 
 	test_enable_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp, &fixture->stream,
@@ -700,10 +694,10 @@ ZTEST_F(test_ase_control_params, test_enable_number_of_ases_above_max)
 
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x03,             /* Opcode = Enable */
+		0x03U,            /* Opcode = Enable */
 		(uint8_t)ase_cnt, /* Number_of_ASEs */
 		ase_id,           /* ASE_ID[0] */
-		0x00,             /* Metadata_Length[0] */
+		0x00U,            /* Metadata_Length[0] */
 	};
 
 	test_enable_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp, &fixture->stream,
@@ -714,11 +708,11 @@ ZTEST_F(test_ase_control_params, test_enable_too_long)
 {
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x03,           /* Opcode = Enable */
-		0x01,           /* Number_of_ASEs */
+		0x03U,          /* Opcode = Enable */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x00,           /* Metadata_Length[0] */
-		0x00,
+		0x00U,          /* Metadata_Length[0] */
+		0x00U,
 	};
 
 	test_enable_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp, &fixture->stream,
@@ -729,8 +723,8 @@ ZTEST_F(test_ase_control_params, test_enable_too_short)
 {
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x03,           /* Opcode = Enable */
-		0x01,           /* Number_of_ASEs */
+		0x03U,          /* Opcode = Enable */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
 	};
 
@@ -742,11 +736,11 @@ ZTEST_F(test_ase_control_params, test_enable_metadata_too_short)
 {
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x03,           /* Opcode = Enable */
-		0x01,           /* Number_of_ASEs */
+		0x03U,          /* Opcode = Enable */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x03,           /* Metadata_Length[0] */
-		0x02, 0x02,     /* Metadata[0] */
+		0x03U,          /* Metadata_Length[0] */
+		0x02U, 0x02U,   /* Metadata[0] */
 	};
 
 	test_enable_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp, &fixture->stream,
@@ -760,28 +754,28 @@ ZTEST_F(test_ase_control_params, test_enable_invalid_ase_id)
 		ztest_test_skip();
 	}
 
-	const uint8_t ase_id_valid = 0x01;
+	const uint8_t ase_id_valid = 0x01U;
 	const uint8_t ase_id_invalid = CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT +
 				       CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT + 1;
 	const uint8_t buf[] = {
-		0x03,                   /* Opcode = Enable */
-		0x02,                   /* Number_of_ASEs */
-		ase_id_invalid,         /* ASE_ID[0] */
-		0x04,                   /* Metadata_Length[0] */
-		0x03, 0x02, 0x04, 0x00, /* Metadata[0] = Streaming Context (Media) */
-		ase_id_valid,           /* ASE_ID[1] */
-		0x04,                   /* Metadata_Length[0] */
-		0x03, 0x02, 0x04, 0x00, /* Metadata[0] = Streaming Context (Media) */
+		0x03U,                      /* Opcode = Enable */
+		0x02U,                      /* Number_of_ASEs */
+		ase_id_invalid,             /* ASE_ID[0] */
+		0x04U,                      /* Metadata_Length[0] */
+		0x03U, 0x02U, 0x04U, 0x00U, /* Metadata[0] = Streaming Context (Media) */
+		ase_id_valid,               /* ASE_ID[1] */
+		0x04U,                      /* Metadata_Length[0] */
+		0x03U, 0x02U, 0x04U, 0x00U, /* Metadata[0] = Streaming Context (Media) */
 	};
 	const uint8_t data_expected[] = {
-		0x03,                   /* Opcode = Enable */
-		0x02,                   /* Number_of_ASEs */
+		0x03U,                  /* Opcode = Enable */
+		0x02U,                  /* Number_of_ASEs */
 		ase_id_invalid,         /* ASE_ID[0] */
-		0x03,                   /* Response_Code[0] = Invalid ASE_ID */
-		0x00,                   /* Reason[0] */
+		0x03U,                  /* Response_Code[0] = Invalid ASE_ID */
+		0x00U,                  /* Reason[0] */
 		ase_id_valid,           /* ASE_ID[1] */
-		0x00,                   /* Response_Code[1] = Success */
-		0x00,                   /* Reason[1] */
+		0x00U,                  /* Response_Code[1] = Success */
+		0x00U,                  /* Reason[1] */
 	};
 
 	test_preamble_state_qos_configured(&fixture->conn, ase_id_valid, &fixture->stream);
@@ -794,20 +788,20 @@ ZTEST_F(test_ase_control_params, test_enable_invalid_ase_id)
 
 ZTEST_F(test_ase_control_params, test_enable_metadata_prohibited_context)
 {
-	const uint8_t ase_id_valid = 0x01;
+	const uint8_t ase_id_valid = 0x01U;
 	const uint8_t buf[] = {
-		0x03,                   /* Opcode = Enable */
-		0x01,                   /* Number_of_ASEs */
-		ase_id_valid,           /* ASE_ID[0] */
-		0x04,                   /* Metadata_Length[0] */
-		0x03, 0x02, 0x00, 0x00, /* Metadata[0] = Streaming Context (Prohibited) */
+		0x03U,                      /* Opcode = Enable */
+		0x01U,                      /* Number_of_ASEs */
+		ase_id_valid,               /* ASE_ID[0] */
+		0x04U,                      /* Metadata_Length[0] */
+		0x03U, 0x02U, 0x00U, 0x00U, /* Metadata[0] = Streaming Context (Prohibited) */
 	};
 	const uint8_t data_expected[] = {
-		0x03,                   /* Opcode = Enable */
-		0x01,                   /* Number_of_ASEs */
+		0x03U,                  /* Opcode = Enable */
+		0x01U,                  /* Number_of_ASEs */
 		ase_id_valid,           /* ASE_ID[0] */
-		0x0C,                   /* Response_Code[0] = Invalid Metadata */
-		0x02,                   /* Reason[0] = Streaming Context */
+		0x0CU,                  /* Response_Code[0] = Invalid Metadata */
+		0x02U,                  /* Reason[0] = Streaming Context */
 	};
 
 	test_preamble_state_qos_configured(&fixture->conn, ase_id_valid, &fixture->stream);
@@ -824,11 +818,11 @@ static void test_receiver_start_ready_expect_invalid_length(struct bt_conn *conn
 							    const uint8_t *buf, size_t len)
 {
 	const uint8_t data_expected[] = {
-		0x04,           /* Opcode = Receiver Start Ready */
-		0xFF,           /* Number_of_ASEs */
-		0x00,           /* ASE_ID[0] */
-		0x02,           /* Response_Code[0] = Invalid Length */
-		0x00,           /* Reason[0] */
+		0x04U,          /* Opcode = Receiver Start Ready */
+		0xFFU,          /* Number_of_ASEs */
+		0x00U,          /* ASE_ID[0] */
+		0x02U,          /* Response_Code[0] = Invalid Length */
+		0x00U,          /* Reason[0] */
 	};
 	struct bt_iso_chan *chan;
 	int err;
@@ -856,8 +850,8 @@ ZTEST_F(test_ase_control_params, test_receiver_start_ready_number_of_ases_0x00)
 	ase_id = test_ase_id_get(ase);
 
 	const uint8_t buf[] = {
-		0x04,           /* Opcode = Receiver Start Ready */
-		0x00,           /* Number_of_ASEs */
+		0x04U,          /* Opcode = Receiver Start Ready */
+		0x00U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
 	};
 
@@ -882,7 +876,7 @@ ZTEST_F(test_ase_control_params, test_receiver_start_ready_number_of_ases_above_
 	const uint8_t ase_id = test_ase_id_get(ase);
 
 	const uint8_t buf[] = {
-		0x04,             /* Opcode = Receiver Start Ready */
+		0x04U,            /* Opcode = Receiver Start Ready */
 		(uint8_t)ase_cnt, /* Number_of_ASEs */
 		ase_id,           /* ASE_ID[0] */
 	};
@@ -903,10 +897,10 @@ ZTEST_F(test_ase_control_params, test_receiver_start_ready_too_long)
 	ase_id = test_ase_id_get(fixture->ase);
 
 	const uint8_t buf[] = {
-		0x04,           /* Opcode = Receiver Start Ready */
-		0x01,           /* Number_of_ASEs */
+		0x04U,          /* Opcode = Receiver Start Ready */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x00,
+		0x00U,
 	};
 
 	test_receiver_start_ready_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp,
@@ -916,8 +910,8 @@ ZTEST_F(test_ase_control_params, test_receiver_start_ready_too_long)
 ZTEST_F(test_ase_control_params, test_receiver_start_ready_too_short)
 {
 	const uint8_t buf[] = {
-		0x04,           /* Opcode = Receiver Start Ready */
-		0x01,           /* Number_of_ASEs */
+		0x04U,          /* Opcode = Receiver Start Ready */
+		0x01U,          /* Number_of_ASEs */
 	};
 	const struct bt_gatt_attr *ase;
 	uint8_t ase_id;
@@ -938,11 +932,11 @@ static void test_disable_expect_invalid_length(struct bt_conn *conn, uint8_t ase
 					       const uint8_t *buf, size_t len)
 {
 	const uint8_t data_expected[] = {
-		0x05,           /* Opcode = Disable */
-		0xFF,           /* Number_of_ASEs */
-		0x00,           /* ASE_ID[0] */
-		0x02,           /* Response_Code[0] = Invalid Length */
-		0x00,           /* Reason[0] */
+		0x05U,          /* Opcode = Disable */
+		0xFFU,          /* Number_of_ASEs */
+		0x00U,          /* ASE_ID[0] */
+		0x02U,          /* Response_Code[0] = Invalid Length */
+		0x00U,          /* Reason[0] */
 	};
 
 	test_preamble_state_enabling(conn, ase_id, stream);
@@ -957,8 +951,8 @@ ZTEST_F(test_ase_control_params, test_disable_number_of_ases_0x00)
 {
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x05,           /* Opcode = Disable */
-		0x00,           /* Number_of_ASEs */
+		0x05U,          /* Opcode = Disable */
+		0x00U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
 	};
 
@@ -978,7 +972,7 @@ ZTEST_F(test_ase_control_params, test_disable_number_of_ases_above_max)
 
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x05,             /* Opcode = Disable */
+		0x05U,            /* Opcode = Disable */
 		(uint8_t)ase_cnt, /* Number_of_ASEs */
 		ase_id,           /* ASE_ID[0] */
 	};
@@ -991,10 +985,10 @@ ZTEST_F(test_ase_control_params, test_disable_too_long)
 {
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x05,           /* Opcode = Disable */
-		0x01,           /* Number_of_ASEs */
+		0x05U,          /* Opcode = Disable */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x00,
+		0x00U,
 	};
 
 	test_disable_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp,
@@ -1005,8 +999,8 @@ ZTEST_F(test_ase_control_params, test_disable_too_short)
 {
 	uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x05,           /* Opcode = Disable */
-		0x01,           /* Number_of_ASEs */
+		0x05U,          /* Opcode = Disable */
+		0x01U,          /* Number_of_ASEs */
 	};
 
 	test_disable_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp,
@@ -1019,11 +1013,11 @@ static void test_receiver_stop_ready_expect_invalid_length(struct bt_conn *conn,
 							   const uint8_t *buf, size_t len)
 {
 	const uint8_t data_expected[] = {
-		0x06,           /* Opcode = Receiver Stop Ready */
-		0xFF,           /* Number_of_ASEs */
-		0x00,           /* ASE_ID[0] */
-		0x02,           /* Response_Code[0] = Invalid Length */
-		0x00,           /* Reason[0] */
+		0x06U,          /* Opcode = Receiver Stop Ready */
+		0xFFU,          /* Number_of_ASEs */
+		0x00U,          /* ASE_ID[0] */
+		0x02U,          /* Response_Code[0] = Invalid Length */
+		0x00U,          /* Reason[0] */
 	};
 	struct bt_iso_chan *chan;
 
@@ -1047,8 +1041,8 @@ ZTEST_F(test_ase_control_params, test_receiver_stop_ready_number_of_ases_0x00)
 	ase_id = test_ase_id_get(ase);
 
 	const uint8_t buf[] = {
-		0x06,           /* Opcode = Receiver Stop Ready */
-		0x00,           /* Number_of_ASEs */
+		0x06U,          /* Opcode = Receiver Stop Ready */
+		0x00U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
 	};
 
@@ -1073,7 +1067,7 @@ ZTEST_F(test_ase_control_params, test_receiver_stop_ready_number_of_ases_above_m
 	const uint8_t ase_id = test_ase_id_get(ase);
 
 	const uint8_t buf[] = {
-		0x06,             /* Opcode = Receiver Stop Ready */
+		0x06U,            /* Opcode = Receiver Stop Ready */
 		(uint8_t)ase_cnt, /* Number_of_ASEs */
 		ase_id,           /* ASE_ID[0] */
 	};
@@ -1094,10 +1088,10 @@ ZTEST_F(test_ase_control_params, test_receiver_stop_ready_too_long)
 	ase_id = test_ase_id_get(fixture->ase);
 
 	const uint8_t buf[] = {
-		0x06,           /* Opcode = Receiver Stop Ready */
-		0x01,           /* Number_of_ASEs */
+		0x06U,          /* Opcode = Receiver Stop Ready */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x00,
+		0x00U,
 	};
 
 	test_receiver_stop_ready_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp,
@@ -1107,8 +1101,8 @@ ZTEST_F(test_ase_control_params, test_receiver_stop_ready_too_long)
 ZTEST_F(test_ase_control_params, test_receiver_stop_ready_too_short)
 {
 	const uint8_t buf[] = {
-		0x06,           /* Opcode = Receiver Stop Ready */
-		0x01,           /* Number_of_ASEs */
+		0x06U,          /* Opcode = Receiver Stop Ready */
+		0x01U,          /* Number_of_ASEs */
 	};
 	const struct bt_gatt_attr *ase;
 	uint8_t ase_id;
@@ -1129,11 +1123,11 @@ static void test_update_metadata_expect_invalid_length(struct bt_conn *conn, uin
 						       const uint8_t *buf, size_t len)
 {
 	const uint8_t data_expected[] = {
-		0x07,           /* Opcode = Update Metadata */
-		0xFF,           /* Number_of_ASEs */
-		0x00,           /* ASE_ID[0] */
-		0x02,           /* Response_Code[0] = Invalid Length */
-		0x00,           /* Reason[0] */
+		0x07U,          /* Opcode = Update Metadata */
+		0xFFU,          /* Number_of_ASEs */
+		0x00U,          /* ASE_ID[0] */
+		0x02U,          /* Response_Code[0] = Invalid Length */
+		0x00U,          /* Reason[0] */
 	};
 
 	test_preamble_state_enabling(conn, ase_id, stream);
@@ -1148,10 +1142,10 @@ ZTEST_F(test_ase_control_params, test_update_metadata_number_of_ases_0x00)
 {
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x07,           /* Opcode = Update Metadata */
-		0x00,           /* Number_of_ASEs */
+		0x07U,          /* Opcode = Update Metadata */
+		0x00U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x00,           /* Metadata_Length[0] */
+		0x00U,          /* Metadata_Length[0] */
 	};
 
 	test_update_metadata_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp,
@@ -1170,10 +1164,10 @@ ZTEST_F(test_ase_control_params, test_update_metadata_number_of_ases_above_max)
 
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x07,             /* Opcode = Update Metadata */
+		0x07U,            /* Opcode = Update Metadata */
 		(uint8_t)ase_cnt, /* Number_of_ASEs */
 		ase_id,           /* ASE_ID[0] */
-		0x00,             /* Metadata_Length[0] */
+		0x00U,            /* Metadata_Length[0] */
 	};
 
 	test_update_metadata_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp,
@@ -1184,11 +1178,11 @@ ZTEST_F(test_ase_control_params, test_update_metadata_too_long)
 {
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x07,           /* Opcode = Update Metadata */
-		0x01,           /* Number_of_ASEs */
+		0x07U,          /* Opcode = Update Metadata */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x00,           /* Metadata_Length[0] */
-		0x00,
+		0x00U,          /* Metadata_Length[0] */
+		0x00U,
 	};
 
 	test_update_metadata_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp,
@@ -1199,8 +1193,8 @@ ZTEST_F(test_ase_control_params, test_update_metadata_too_short)
 {
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x07,           /* Opcode = Update Metadata */
-		0x01,           /* Number_of_ASEs */
+		0x07U,          /* Opcode = Update Metadata */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
 	};
 
@@ -1212,11 +1206,11 @@ ZTEST_F(test_ase_control_params, test_update_metadata_metadata_too_short)
 {
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x07,           /* Opcode = Update Metadata */
-		0x01,           /* Number_of_ASEs */
+		0x07U,          /* Opcode = Update Metadata */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x03,           /* Metadata_Length[0] */
-		0x02, 0x02,     /* Metadata[0] */
+		0x03U,          /* Metadata_Length[0] */
+		0x02U, 0x02U,   /* Metadata[0] */
 	};
 
 	test_update_metadata_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp,
@@ -1230,28 +1224,28 @@ ZTEST_F(test_ase_control_params, test_update_metadata_invalid_ase_id)
 		ztest_test_skip();
 	}
 
-	const uint8_t ase_id_valid = 0x01;
+	const uint8_t ase_id_valid = 0x01U;
 	const uint8_t ase_id_invalid = CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT +
 				       CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT + 1;
 	const uint8_t buf[] = {
-		0x07,                   /* Opcode = Update Metadata */
-		0x02,                   /* Number_of_ASEs */
-		ase_id_invalid,         /* ASE_ID[0] */
-		0x04,                   /* Metadata_Length[0] */
-		0x03, 0x02, 0x04, 0x00, /* Metadata[0] = Streaming Context (Media) */
-		ase_id_valid,           /* ASE_ID[1] */
-		0x04,                   /* Metadata_Length[0] */
-		0x03, 0x02, 0x04, 0x00, /* Metadata[0] = Streaming Context (Media) */
+		0x07U,                      /* Opcode = Update Metadata */
+		0x02U,                      /* Number_of_ASEs */
+		ase_id_invalid,             /* ASE_ID[0] */
+		0x04U,                      /* Metadata_Length[0] */
+		0x03U, 0x02U, 0x04U, 0x00U, /* Metadata[0] = Streaming Context (Media) */
+		ase_id_valid,               /* ASE_ID[1] */
+		0x04U,                      /* Metadata_Length[0] */
+		0x03U, 0x02U, 0x04U, 0x00U, /* Metadata[0] = Streaming Context (Media) */
 	};
 	const uint8_t data_expected[] = {
-		0x07,                   /* Opcode = Update Metadata */
-		0x02,                   /* Number_of_ASEs */
+		0x07U,                  /* Opcode = Update Metadata */
+		0x02U,                  /* Number_of_ASEs */
 		ase_id_invalid,         /* ASE_ID[0] */
-		0x03,                   /* Response_Code[0] = Invalid ASE_ID */
-		0x00,                   /* Reason[0] */
+		0x03U,                  /* Response_Code[0] = Invalid ASE_ID */
+		0x00U,                  /* Reason[0] */
 		ase_id_valid,           /* ASE_ID[1] */
-		0x00,                   /* Response_Code[1] = Success */
-		0x00,                   /* Reason[1] */
+		0x00U,                  /* Response_Code[1] = Success */
+		0x00U,                  /* Reason[1] */
 	};
 
 	test_preamble_state_enabling(&fixture->conn, ase_id_valid, &fixture->stream);
@@ -1268,11 +1262,11 @@ static void test_release_expect_invalid_length(struct bt_conn *conn, uint8_t ase
 					       const uint8_t *buf, size_t len)
 {
 	const uint8_t data_expected[] = {
-		0x08,           /* Opcode = Release */
-		0xFF,           /* Number_of_ASEs */
-		0x00,           /* ASE_ID[0] */
-		0x02,           /* Response_Code[0] = Invalid Length */
-		0x00,           /* Reason[0] */
+		0x08U,          /* Opcode = Release */
+		0xFFU,          /* Number_of_ASEs */
+		0x00U,          /* ASE_ID[0] */
+		0x02U,          /* Response_Code[0] = Invalid Length */
+		0x00U,          /* Reason[0] */
 	};
 
 	test_preamble_state_enabling(conn, ase_id, stream);
@@ -1287,8 +1281,8 @@ ZTEST_F(test_ase_control_params, test_release_number_of_ases_0x00)
 {
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x08,           /* Opcode = Release */
-		0x00,           /* Number_of_ASEs */
+		0x08U,          /* Opcode = Release */
+		0x00U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
 	};
 
@@ -1308,7 +1302,7 @@ ZTEST_F(test_ase_control_params, test_release_number_of_ases_above_max)
 
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x08,             /* Opcode = Release */
+		0x08U,            /* Opcode = Release */
 		(uint8_t)ase_cnt, /* Number_of_ASEs */
 		ase_id,           /* ASE_ID[0] */
 	};
@@ -1321,10 +1315,10 @@ ZTEST_F(test_ase_control_params, test_release_too_long)
 {
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x08,           /* Opcode = Release */
-		0x01,           /* Number_of_ASEs */
+		0x08U,          /* Opcode = Release */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x00,
+		0x00U,
 	};
 
 	test_release_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp,
@@ -1335,8 +1329,8 @@ ZTEST_F(test_ase_control_params, test_release_too_short)
 {
 	const uint8_t ase_id = test_ase_id_get(fixture->ase);
 	const uint8_t buf[] = {
-		0x08,           /* Opcode = Release */
-		0x01,           /* Number_of_ASEs */
+		0x08U,          /* Opcode = Release */
+		0x01U,          /* Number_of_ASEs */
 	};
 
 	test_release_expect_invalid_length(&fixture->conn, ase_id, fixture->ase_cp,

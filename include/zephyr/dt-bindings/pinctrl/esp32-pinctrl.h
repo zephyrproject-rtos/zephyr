@@ -15,6 +15,9 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESPRESSIF_ESP32_PINCTRL_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESPRESSIF_ESP32_PINCTRL_H_
 
+#include "esp-pinctrl-common.h"
+#include "esp32-gpio-sigmap.h"
+
 /**
  * @addtogroup espressif_pinctrl Espressif pin control helpers
  * @ingroup devicetree-pinctrl
@@ -30,9 +33,7 @@
  * mapped to `GPIO1`.
  *
  * @code{.dts}
- * #include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
  * #include <zephyr/dt-bindings/pinctrl/esp32-pinctrl.h>
- * #include <zephyr/dt-bindings/pinctrl/esp32-gpio-sigmap.h>
  *
  * &pinctrl {
  *     uart0_default: uart0_default {
@@ -3714,6 +3715,55 @@
 #define PCNT7_CH1SIG_GPIO37 ESP32_PINMUX(37, ESP_PCNT_SIG_CH1_IN7, ESP_NOSIG)
 #define PCNT7_CH1SIG_GPIO38 ESP32_PINMUX(38, ESP_PCNT_SIG_CH1_IN7, ESP_NOSIG)
 #define PCNT7_CH1SIG_GPIO39 ESP32_PINMUX(39, ESP_PCNT_SIG_CH1_IN7, ESP_NOSIG)
+/** @} */
+
+/**
+ * @name RMII_CLK
+ * @{
+ */
+#define RMII_CLK_GPIO0 ESP32_RMII_PINMUX(0, ESP_RMII_CLK)
+/** @} */
+
+/**
+ * @name RMII_CRS_DV
+ * @{
+ */
+#define RMII_CRS_DV_GPIO27 ESP32_RMII_PINMUX(27, ESP_RMII_CRS_DV)
+/** @} */
+
+/**
+ * @name RMII_RXD0
+ * @{
+ */
+#define RMII_RXD0_GPIO25 ESP32_RMII_PINMUX(25, ESP_RMII_RXD0)
+/** @} */
+
+/**
+ * @name RMII_RXD1
+ * @{
+ */
+#define RMII_RXD1_GPIO26 ESP32_RMII_PINMUX(26, ESP_RMII_RXD1)
+/** @} */
+
+/**
+ * @name RMII_TX_EN
+ * @{
+ */
+#define RMII_TX_EN_GPIO21 ESP32_RMII_PINMUX(21, ESP_RMII_TX_EN)
+/** @} */
+
+/**
+ * @name RMII_TXD0
+ * @{
+ */
+#define RMII_TXD0_GPIO19 ESP32_RMII_PINMUX(19, ESP_RMII_TXD0)
+/** @} */
+
+/**
+ * @name RMII_TXD1
+ * @{
+ */
+#define RMII_TXD1_GPIO22 ESP32_RMII_PINMUX(22, ESP_RMII_TXD1)
 /** @} */
 
 /**

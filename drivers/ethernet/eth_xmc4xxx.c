@@ -844,12 +844,10 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 	bool is_up = state->is_up;
 
 	if (is_up && !dev_data->link_up) {
-		LOG_INF("Link up");
 		dev_data->link_up = true;
 		net_eth_carrier_on(dev_data->iface);
 		eth_xmc4xxx_set_link(dev_cfg->regs, state);
 	} else if (!is_up && dev_data->link_up) {
-		LOG_INF("Link down");
 		dev_data->link_up = false;
 		net_eth_carrier_off(dev_data->iface);
 	}
@@ -905,8 +903,7 @@ static inline void eth_xmc4xxx_free_rx_bufs(const struct device *dev)
 
 	for (int i = 0; i < NUM_RX_DMA_DESCRIPTORS; i++) {
 		if (dev_data->rx_frag_list[i]) {
-			net_buf_unref(dev_data->rx_frag_list[i]);
-			dev_data->rx_frag_list[i] = NULL;
+			net_buf_drop(&dev_data->rx_frag_list[i]);
 		}
 	}
 }

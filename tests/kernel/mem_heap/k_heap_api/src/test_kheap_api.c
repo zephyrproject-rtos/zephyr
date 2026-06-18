@@ -18,7 +18,6 @@ K_HEAP_DEFINE(k_heap_test, HEAP_SIZE);
 
 #define ALLOC_SIZE_1 1024
 #define ALLOC_SIZE_2 1536
-#define ALLOC_SIZE_3 2049
 #define CALLOC_NUM   256
 #define CALLOC_SIZE  sizeof(uint32_t)
 
@@ -102,51 +101,6 @@ ZTEST(k_heap_api, test_k_heap_min_size)
 
 	zassert_equal(heap_guard0, guard_bits, "heap overran buffer");
 	zassert_equal(heap_guard1, guard_bits, "heap overran buffer");
-}
-
-/**
- * @brief Test k_heap_alloc() and k_heap_free() API usage
- *
- * @ingroup k_heap_api_tests
- *
- * @details The test allocates 1024 bytes from 2048 byte heap,
- * and checks if allocation is successful or not
- *
- * @see k_heap_malloc(), k_heap_Free()
- */
-ZTEST(k_heap_api, test_k_heap_alloc)
-{
-	k_timeout_t timeout = Z_TIMEOUT_US(TIMEOUT);
-	char *p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, timeout);
-
-	zassert_not_null(p, "k_heap_alloc operation failed");
-
-	for (int i = 0; i < ALLOC_SIZE_1; i++) {
-		p[i] = '0';
-	}
-	k_heap_free(&k_heap_test, p);
-}
-
-
-/**
- * @brief Test k_heap_alloc() and k_heap_free() API usage
- *
- * @ingroup k_heap_api_tests
- *
- * @details The test allocates 2049 bytes, which is greater than the heap
- * size(2048 bytes), and checks for NULL return from k_heap_alloc
- *
- * @see k_heap_malloc(), k_heap_Free()
- */
-ZTEST(k_heap_api, test_k_heap_alloc_fail)
-{
-
-	k_timeout_t timeout = Z_TIMEOUT_US(TIMEOUT);
-	char *p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_3, timeout);
-
-	zassert_is_null(p, NULL);
-
-	k_heap_free(&k_heap_test, p);
 }
 
 /**
@@ -511,3 +465,66 @@ ZTEST(k_heap_api, test_z_k_heap_double_free)
 	 */
 	ztest_test_fail();
 }
+
+/**
+ * @brief Parameterized k_heap_alloc() test over a range of block sizes.
+ *
+ * Covers sizes from 1 byte up to HEAP_SIZE bytes (success cases) and one
+ * size beyond the heap capacity (failure case) in a single test body.
+ * Each parameter pair is reported as a separate named Twister test case, so
+ * a failure pinpoints the exact size rather than just "FAIL -
+ * test_k_heap_alloc_size".
+ *
+ * When expect_success is true the test allocates, writes a fill pattern, and
+ * frees the block.  When false it verifies k_heap_alloc() returns NULL.
+ *
+ * @ingroup k_heap_api_tests
+ * @see k_heap_alloc(), k_heap_free()
+ */
+
+struct heap_alloc_case {
+	size_t alloc_size;
+	bool   expect_success;
+};
+
+ZTEST_P(k_heap_api, test_k_heap_alloc_size)
+{
+	const struct heap_alloc_case *tc =
+		ZTEST_GET_PARAM_PTR(struct heap_alloc_case);
+	k_timeout_t timeout = Z_TIMEOUT_US(TIMEOUT);
+	char *p = (char *)k_heap_alloc(&k_heap_test, tc->alloc_size, timeout);
+
+	if (tc->expect_success) {
+		zassert_not_null(p, "k_heap_alloc(%zu) failed unexpectedly",
+				 tc->alloc_size);
+		for (size_t i = 0; i < tc->alloc_size; i++) {
+			p[i] = (char)(i & 0xFFU);
+		}
+		for (size_t i = 0; i < tc->alloc_size; i++) {
+			zassert_equal((uint8_t)p[i], (uint8_t)(i & 0xFFU),
+				      "data corruption at offset %zu", i);
+		}
+		k_heap_free(&k_heap_test, p);
+	} else {
+		zassert_is_null(p, "k_heap_alloc(%zu) succeeded unexpectedly",
+				tc->alloc_size);
+	}
+}
+
+static const struct heap_alloc_case heap_size_cases[] = {
+	/* --- sizes that must succeed (well within HEAP_SIZE=2048) --- */
+	{1U,    true},
+	{16U,   true},
+	{64U,   true},
+	{256U,  true},
+	{512U,  true},
+	{1024U, true},
+	{1536U, true},
+	/* --- sizes that must fail (exceed heap capacity) --- */
+	{2049U, false},
+	{4096U, false},
+};
+
+ZTEST_DEFINE_PARAM_VALUES_ARRAY(heap_alloc_sizes, heap_size_cases);
+ZTEST_INSTANTIATE_TEST_SUITE_P(sizes, k_heap_api,
+			       test_k_heap_alloc_size, heap_alloc_sizes);

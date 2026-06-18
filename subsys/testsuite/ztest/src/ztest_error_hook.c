@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/ztest.h>
+#include <zephyr/spinlock.h>
 
 
 #if defined(CONFIG_ZTEST_FATAL_HOOK)
@@ -63,6 +63,10 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 		/* reset back to normal */
 		reset_stored_fault_status();
 
+#ifdef CONFIG_SPIN_VALIDATE
+		/* Mark thread so z_assert_can_swap() exempts the forced abort swap. */
+		_current->base.swap_data = (void *)&z_spinlock_abort_sentinel;
+#endif
 		/* do some action after expected fatal error happened */
 		ztest_post_fatal_error_hook(reason, pEsf);
 	} else {
@@ -138,6 +142,12 @@ void assert_post_action(const char *file, unsigned int line)
 		/* reset back to normal */
 		reset_stored_assert_status();
 
+#ifdef CONFIG_SPIN_VALIDATE
+		/* User-mode threads cannot hold spinlocks; skip the sentinel. */
+		if (!k_is_user_context()) {
+			_current->base.swap_data = (void *)&z_spinlock_abort_sentinel;
+		}
+#endif
 		/* It won't go back to caller when assert failed, and it
 		 * will terminate the thread.
 		 */

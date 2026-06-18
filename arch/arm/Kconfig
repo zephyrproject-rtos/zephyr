@@ -234,4 +234,7 @@ config ARM_VECTOR_TABLE_ITCM
 
 endchoice
 
+config ARCH_HAS_LLEXT_VENEERS
+	bool
+
 endmenu

@@ -3,7 +3,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/kernel/smp.h>
 #include <zephyr/spinlock.h>
 #include <kswap.h>

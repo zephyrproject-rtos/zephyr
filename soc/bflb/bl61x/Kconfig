@@ -8,11 +8,11 @@ config SOC_SERIES_BL61X
 	select DCACHE
 	select FPU
 	select ICACHE
+	select OTP
 	select REGULATOR
 	select RISCV
 	select SOC_EARLY_INIT_HOOK
 	select SOC_PREP_HOOK
-	select SYSCON
 	select XIP
 	select CPU_XUANTIE_E907
 	select CACHE_MANAGEMENT

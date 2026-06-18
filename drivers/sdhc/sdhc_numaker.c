@@ -17,6 +17,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
 #include <soc.h>
+#include "sdhc_helpers.h"
 
 #if defined(CONFIG_SOC_SERIES_M55M1X)
 #include <zephyr/dt-bindings/clock/numaker_m55m1x_clock.h>
@@ -280,9 +281,9 @@ static int numaker_sdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 	SDH_T *base = config->base;
 	int rc;
 
-	LOG_DBG("SDHC I/O: bus width %d, clock %dHz, card power %s, voltage %s", ios->bus_width,
-		ios->clock, ios->power_mode == SDHC_POWER_ON ? "ON" : "OFF",
-		ios->signal_voltage == SD_VOL_1_8_V ? "1.8V" : "3.3V");
+	LOG_DBG("SDHC I/O: bus width %d, clock %dHz, card power %s, timing %s, voltage %s",
+		ios->bus_width, ios->clock, ios->power_mode == SDHC_POWER_ON ? "ON" : "OFF",
+		sdhc_timing_mode_str(ios->timing), sd_voltage_str(ios->signal_voltage));
 
 	/* Note on power cycle
 	 *

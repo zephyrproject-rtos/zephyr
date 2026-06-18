@@ -178,14 +178,14 @@ ZTEST(w1_api, test_w1_search_empty)
 
 	ret = w1_search_rom(master_dev, w1_test_search_callback, 0);
 	zassert_equal(ret, 0, "In case no slaves are connected should return 0");
-	zassert_equal(found_w1_devices, 0, "No callback exptected");
+	zassert_equal(found_w1_devices, 0, "No callback expected");
 
 	ret = w1_search_rom(master_dev, 0, 0);
 	zassert_equal(ret, 0, "In case no slaves are connected should return 0");
 
 	ret = w1_search_alarm(master_dev, 0, 0);
 	zassert_equal(ret, 0, "In case no devices are connected should return 0");
-	zassert_equal(found_w1_devices, 0, "No callback exptected");
+	zassert_equal(found_w1_devices, 0, "No callback expected");
 }
 
 ZTEST_USER(w1_api, test_w1_fire_and_forget)

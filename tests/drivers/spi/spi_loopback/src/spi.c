@@ -737,7 +737,7 @@ ZTEST(spi_loopback, test_spi_word_size_7)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
 
-	spi_loopback_test_word_size(spec, tx_data, buffer_rx, tx_data,
+	spi_loopback_test_word_size(spec, buffer_tx, buffer_rx, buffer_tx,
 				    sizeof(tx_data), &spec_copies[0], 7);
 }
 

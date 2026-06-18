@@ -614,13 +614,13 @@ static int can_max32_init(const struct device *dev)
 
 	if (dev_cfg->common.phy != NULL) {
 		if (!device_is_ready(dev_cfg->common.phy)) {
-			LOG_ERR("CAN transceiver not ready");
+			LOG_ERR_DEVICE_NOT_READY(dev_cfg->common.phy);
 			return -ENODEV;
 		}
 	}
 
 	if (!device_is_ready(dev_cfg->clock)) {
-		LOG_ERR("CAN clock is not ready");
+		LOG_ERR_DEVICE_NOT_READY(dev_cfg->clock);
 		return -ENODEV;
 	}
 

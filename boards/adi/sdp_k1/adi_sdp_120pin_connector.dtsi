@@ -8,7 +8,7 @@
 #include <zephyr/dt-bindings/gpio/adi-sdp-120.h>
 
 / {
-	sdp_k1_120_hdr: connector {
+	sdp_k1_120_hdr: sdp_120_connector {
 		compatible = "adi,sdp-120";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;

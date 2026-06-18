@@ -51,9 +51,9 @@
 	/delete-node/ partitions;
 
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * All partition sizes must be aligned to the flash memory sector size (8 KB).
@@ -65,48 +65,56 @@
 		 * BL2 / MCUBoot
 		 */
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;  /* 64 KB */
 		};
 
 		/* Secure image - primary */
 		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(288)>;  /* 288 KB */
 		};
 
 		/* Non-secure image - primary */
 		slot0_ns_partition: partition@58000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0-nonsecure";
 			reg = <0x00058000 DT_SIZE_K(256)>;  /* 256 KB */
 		};
 
 		/* Secure image - secondary */
 		slot1_partition: partition@98000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1-secondary";
 			reg = <0x00098000 DT_SIZE_K(288)>;  /* 288 KB */
 		};
 
 		/* Non-secure image - secondary */
 		slot1_ns_partition: partition@e0000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1-non-secure";
 			reg = <0x000e0000 DT_SIZE_K(256)>;  /* 256 KB */
 		};
 
 		/* Protected Storage (PS) */
 		tfm_ps_partition: partition@120000 {
+			compatible = "zephyr,mapped-partition";
 			label = "tfm-ps";
 			reg = <0x00120000 DT_SIZE_K(16)>;   /* 16 KB */
 		};
 
 		/* Internal Trusted Storage (ITS) */
 		tfm_its_partition: partition@124000 {
+			compatible = "zephyr,mapped-partition";
 			label = "tfm-its";
 			reg = <0x00124000 DT_SIZE_K(16)>;   /* 16 KB */
 		};
 
 		/* OTP / NV counters */
 		tfm_otp_partition: partition@128000 {
+			compatible = "zephyr,mapped-partition";
 			label = "tfm-otp";
 			reg = <0x00128000 DT_SIZE_K(8)>;    /* 8 KB */
 		};
@@ -211,11 +219,12 @@
 	status = "okay";
 
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		storage_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x0 DT_SIZE_M(8)>;
 		};

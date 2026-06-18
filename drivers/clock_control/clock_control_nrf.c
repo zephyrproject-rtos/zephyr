@@ -599,6 +599,7 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 		? NRF_CLOCK_LFCLK_XTAL
 		: CLOCK_CONTROL_NRF_K32SRC;
 	nrf_clock_lfclk_t type;
+	bool can_sleep;
 
 	if ((mode == CLOCK_CONTROL_NRF_LF_START_AVAILABLE) &&
 	    (target_type == NRF_CLOCK_LFCLK_XTAL) &&
@@ -612,51 +613,38 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 		return;
 	}
 
-	bool isr_mode = k_is_in_isr() || k_is_pre_kernel();
-	int key = isr_mode ? irq_lock() : 0;
+	can_sleep = !k_is_in_isr() && !k_is_pre_kernel();
 
-	if (!isr_mode) {
-		nrf_clock_int_disable(NRF_CLOCK, NRF_CLOCK_INT_LF_STARTED_MASK);
-	}
+	nrf_clock_int_disable(NRF_CLOCK, NRF_CLOCK_INT_LF_STARTED_MASK);
 
-	while (!(nrfx_clock_is_running(d, (void *)&type)
-		 && ((type == target_type)
-		     || (mode == CLOCK_CONTROL_NRF_LF_START_AVAILABLE)))) {
-		/* Synth source start is almost instant and LFCLKSTARTED may
-		 * happen before calling idle. That would lead to deadlock.
-		 */
-		if (!IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_SYNTH)) {
-			if (isr_mode || !IS_ENABLED(CONFIG_MULTITHREADING)) {
-				k_cpu_atomic_idle(key);
-			} else {
-				k_msleep(1);
+	while (true) {
+		if (nrfx_clock_is_running(d, (void *)&type)) {
+			if (type == target_type) {
+				/* LFCLK is running stable with target source */
+				break;
+			}
+
+			if (target_type == NRF_CLOCK_LFCLK_XTAL &&
+			    nrf_clock_lf_src_get(NRF_CLOCK) == NRF_CLOCK_LFCLK_RC &&
+			    nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_LFCLKSTARTED)) {
+				/* Switch LFCLK source to target */
+				nrf_clock_event_clear(NRF_CLOCK, NRF_CLOCK_EVENT_LFCLKSTARTED);
+				nrf_clock_lf_src_set(NRF_CLOCK, CLOCK_CONTROL_NRF_K32SRC);
+				nrf_clock_task_trigger(NRF_CLOCK, NRF_CLOCK_TASK_LFCLKSTART);
+			}
+
+			if (mode == CLOCK_CONTROL_NRF_LF_START_AVAILABLE) {
+				/* LFCLK is running and will switch to target source */
+				break;
 			}
 		}
 
-		/* Clock interrupt is locked, LFCLKSTARTED is handled here. */
-		if ((target_type ==  NRF_CLOCK_LFCLK_XTAL)
-		    && (nrf_clock_lf_src_get(NRF_CLOCK) == NRF_CLOCK_LFCLK_RC)
-		    && nrf_clock_event_check(NRF_CLOCK,
-					     NRF_CLOCK_EVENT_LFCLKSTARTED)) {
-			nrf_clock_event_clear(NRF_CLOCK,
-					      NRF_CLOCK_EVENT_LFCLKSTARTED);
-			nrf_clock_lf_src_set(NRF_CLOCK,
-					     CLOCK_CONTROL_NRF_K32SRC);
-
-			/* Clear pending interrupt, otherwise new clock event
-			 * would not wake up from idle.
-			 */
-			NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
-			nrf_clock_task_trigger(NRF_CLOCK,
-					       NRF_CLOCK_TASK_LFCLKSTART);
+		if (can_sleep) {
+			k_msleep(1);
 		}
 	}
 
-	if (isr_mode) {
-		irq_unlock(key);
-	} else {
-		nrf_clock_int_enable(NRF_CLOCK, NRF_CLOCK_INT_LF_STARTED_MASK);
-	}
+	nrf_clock_int_enable(NRF_CLOCK, NRF_CLOCK_INT_LF_STARTED_MASK);
 }
 
 void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode)

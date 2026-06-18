@@ -1751,6 +1751,71 @@ void br_role_changed(struct bt_conn *conn, uint8_t status)
 	bt_shell_print("Current role is: %s", get_conn_role_str(info.role));
 }
 
+void br_packet_type_changed(struct bt_conn *conn, uint8_t status,
+			    uint16_t packet_type)
+{
+	bt_shell_print("Packet type changed (HCI status 0x%02x) packet_type 0x%04x",
+		       status, packet_type);
+}
+
+static int cmd_change_packet_type(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint16_t packet_type;
+	int err;
+
+	if (default_conn == NULL) {
+		shell_print(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	/* Start with all EDR types disabled (all NO_* bits set) */
+	packet_type = BT_HCI_ACL_PKT_TYPE_NO_2DH1 | BT_HCI_ACL_PKT_TYPE_NO_3DH1 |
+		      BT_HCI_ACL_PKT_TYPE_NO_2DH3 | BT_HCI_ACL_PKT_TYPE_NO_3DH3 |
+		      BT_HCI_ACL_PKT_TYPE_NO_2DH5 | BT_HCI_ACL_PKT_TYPE_NO_3DH5;
+
+	for (size_t i = 1; i < argc; i++) {
+		if (!strcmp(argv[i], "DM1")) {
+			packet_type |= BT_HCI_ACL_PKT_TYPE_DM1;
+		} else if (!strcmp(argv[i], "DH1")) {
+			packet_type |= BT_HCI_ACL_PKT_TYPE_DH1;
+		} else if (!strcmp(argv[i], "DM3")) {
+			packet_type |= BT_HCI_ACL_PKT_TYPE_DM3;
+		} else if (!strcmp(argv[i], "DH3")) {
+			packet_type |= BT_HCI_ACL_PKT_TYPE_DH3;
+		} else if (!strcmp(argv[i], "DM5")) {
+			packet_type |= BT_HCI_ACL_PKT_TYPE_DM5;
+		} else if (!strcmp(argv[i], "DH5")) {
+			packet_type |= BT_HCI_ACL_PKT_TYPE_DH5;
+		} else if (!strcmp(argv[i], "2-DH1")) {
+			packet_type &= ~BT_HCI_ACL_PKT_TYPE_NO_2DH1;
+		} else if (!strcmp(argv[i], "3-DH1")) {
+			packet_type &= ~BT_HCI_ACL_PKT_TYPE_NO_3DH1;
+		} else if (!strcmp(argv[i], "2-DH3")) {
+			packet_type &= ~BT_HCI_ACL_PKT_TYPE_NO_2DH3;
+		} else if (!strcmp(argv[i], "3-DH3")) {
+			packet_type &= ~BT_HCI_ACL_PKT_TYPE_NO_3DH3;
+		} else if (!strcmp(argv[i], "2-DH5")) {
+			packet_type &= ~BT_HCI_ACL_PKT_TYPE_NO_2DH5;
+		} else if (!strcmp(argv[i], "3-DH5")) {
+			packet_type &= ~BT_HCI_ACL_PKT_TYPE_NO_3DH5;
+		} else {
+			shell_error(sh, "Unknown packet type: %s", argv[i]);
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	shell_print(sh, "Changing packet type to 0x%04x", packet_type);
+
+	err = bt_conn_br_change_packet_type(default_conn, packet_type);
+	if (err != 0) {
+		shell_error(sh, "Failed to change packet type (err %d)", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 static int cmd_switch_role(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
@@ -2073,6 +2138,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD_ARG(auth-pincode, NULL, "<pincode>", cmd_auth_pincode, 2, 0),
 	SHELL_CMD_ARG(connect, NULL, "<address>", cmd_connect, 2, 0),
 	SHELL_CMD_ARG(bonds, NULL, HELP_NONE, cmd_bonds, 1, 0),
+	SHELL_CMD_ARG(change-packet-type, NULL,
+		      "<[DM1] [DH1] [DM3] [DH3] [DM5] [DH5] "
+		      "[2-DH1] [3-DH1] [2-DH3] [3-DH3] [2-DH5] [3-DH5]>",
+		      cmd_change_packet_type, 2, 11),
 	SHELL_CMD_ARG(clear, NULL, "[all] ["HELP_ADDR"]", cmd_clear, 2, 0),
 	SHELL_CMD_ARG(select, NULL, HELP_ADDR, cmd_select, 2, 0),
 	SHELL_CMD_ARG(info, NULL, HELP_ADDR, cmd_info, 1, 1),

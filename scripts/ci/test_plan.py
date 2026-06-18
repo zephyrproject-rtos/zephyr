@@ -315,19 +315,24 @@ class Filters:
             scope_found = False
             while not scope_found and d:
                 head, tail = os.path.split(d)
-                if os.path.exists(os.path.join(d, "testcase.yaml")) or os.path.exists(
-                    os.path.join(d, "sample.yaml")
-                ):
+                test_defs = [
+                    "sample.yaml",
+                    "testcase.yaml",
+                    "tests.yaml",
+                ]
+                if any(os.path.exists(os.path.join(d, td)) for td in test_defs):
                     tests.add(d)
                     # Modified file is treated as resolved, since a matching scope was found
                     self.resolved_files.append(f)
                     scope_found = True
                 elif tail == "common":
                     # Look for yamls in directories collocated with common
-                    testcase_yamls = glob.iglob(head + '/**/testcase.yaml', recursive=True)
-                    sample_yamls = glob.iglob(head + '/**/sample.yaml', recursive=True)
 
-                    yamls_found = [*testcase_yamls, *sample_yamls]
+                    yamls_found = [
+                        y
+                        for pattern in test_defs
+                        for y in glob.iglob(f"{head}/**/{pattern}", recursive=True)
+                    ]
                     if yamls_found:
                         for yaml in yamls_found:
                             tests.add(os.path.dirname(yaml))

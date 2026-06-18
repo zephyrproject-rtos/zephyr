@@ -177,6 +177,9 @@ static int mcux_qtmr_set_alarm(const struct device *dev, uint8_t chan_id,
 	/* this timer always counts up. */
 	config->base->CHANNEL[config->channel].COMP1 = ticks;
 
+	/* Clear any stale compare flag to prevent alarm firing immediately */
+	QTMR_ClearStatusFlags(config->base, config->channel, kQTMR_Compare1Flag);
+
 	data->interrupt_mask |= kQTMR_Compare1InterruptEnable;
 	QTMR_EnableInterrupts(config->base, config->channel, data->interrupt_mask);
 

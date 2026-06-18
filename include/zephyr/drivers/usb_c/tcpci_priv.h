@@ -41,9 +41,10 @@ struct tcpci_reg_dump_map {
  */
 extern const struct tcpci_reg_dump_map tcpci_std_regs[TCPCI_STD_REGS_SIZE];
 
-/** Type-C Port Controller Interface Specification Revision */
-#define PD_INT_REV10 0x10 /* Revision 1.0 */
-#define PD_INT_REV20 0x20 /* Revision 2.0 */
+/** Type-C Port Controller Interface Specification Revision 1.0 */
+#define PD_INT_REV10 0x10
+/** Type-C Port Controller Interface Specification Revision 2.0 */
+#define PD_INT_REV20 0x20
 
 /**
  * @brief Function to read the 8-bit register of TCPCI device

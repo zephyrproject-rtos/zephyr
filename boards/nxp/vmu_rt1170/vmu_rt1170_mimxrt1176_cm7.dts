@@ -21,7 +21,7 @@
 		watchdog0 = &wdog1;
 		sdhc0 = &usdhc1;
 		sw0 = &arming_button;
-		pwm-led0 = &buzzer0;
+		buzzer0 = &buzzer0;
 		mcuboot-button0 = &arming_button;
 	};
 
@@ -126,12 +126,9 @@
 		status = "okay";
 	};
 
-	pwm_shell: pwm_shell {
-		compatible = "pwm-leds";
-
-		buzzer0: buzzer0 {
-			pwms = <&qtmr1 0 PWM_HZ(50) PWM_POLARITY_NORMAL>;
-		};
+	buzzer0: buzzer0 {
+		compatible = "pwm-buzzer";
+		pwms = <&qtmr1 0 PWM_HZ(50) PWM_POLARITY_NORMAL>;
 	};
 };
 

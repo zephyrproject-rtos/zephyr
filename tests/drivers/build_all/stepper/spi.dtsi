@@ -49,9 +49,6 @@ adi_tmc50xx: adi-tmc50xx@0 {
 		ihold = <1>;
 		irun = <10>;
 		iholddelay = <1>;
-		activate-stallguard2;
-		stallguard-velocity-check-interval-ms = <1000>;
-		stallguard-threshold-velocity = <200000>;
 	};
 
 	tmc50xx_1_stepper_driver: tmc50xx-1-stepper-driver {
@@ -66,9 +63,6 @@ adi_tmc50xx: adi-tmc50xx@0 {
 		idx = <1>;
 		/* ADI TMC stallguard settings specific to TMC50XX */
 		compatible = "adi,tmc50xx-stepper-ctrl";
-		activate-stallguard2;
-		stallguard-velocity-check-interval-ms = <100>;
-		stallguard-threshold-velocity = <500000>;
 
 		/* ADI TMC ramp generator as well as current settings */
 		vstart = <10>;
@@ -109,11 +103,6 @@ adi_tmc51xx_1: adi-tmc51xx@1 {
 	/* common stepper controller settings */
 	tmc51xx_1_motion_controller: tmc51xx_1_motion_controller {
 		compatible = "adi,tmc51xx-stepper-ctrl";
-
-		/* ADI TMC stallguard settings specific to TMC5160 */
-		activate-stallguard2;
-		stallguard-velocity-check-interval-ms = <100>;
-		stallguard-threshold-velocity = <50000>;
 
 		/* ADI TMC ramp generator as well as current settings */
 		vstart = <10>;
@@ -158,11 +147,6 @@ adi_tmc51xx_2: adi-tmc51xx@2 {
 	/* common stepper controller settings */
 	tmc51xx_2_motion_controller: tmc51xx-2-motion-controller {
 		compatible = "adi,tmc51xx-stepper-ctrl";
-
-		/* ADI TMC stallguard settings specific to TMC5160 */
-		activate-stallguard2;
-		stallguard-velocity-check-interval-ms = <100>;
-		stallguard-threshold-velocity = <50000>;
 
 		/* ADI TMC ramp generator as well as current settings */
 		vstart = <10>;

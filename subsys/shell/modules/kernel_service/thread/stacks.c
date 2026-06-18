@@ -30,9 +30,7 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 
 	ret = k_thread_stack_space_get(thread, &unused);
 	if (ret) {
-		shell_print(sh,
-			    "Unable to determine unused stack size (%d)\n",
-			    ret);
+		shell_print(sh, "Unable to determine unused stack size (%d)\n", ret);
 		return;
 	}
 
@@ -41,20 +39,29 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 	/* Calculate the real size reserved for the stack */
 	pcnt = ((size - unused) * 100U) / size;
 
+#ifdef CONFIG_SMP
 	shell_print(sh,
 		    "%p %-" STRINGIFY(THREAD_MAX_NAM_LEN) "s "
-		    "(real size %4zu):\tunused %4zu\tusage %4zu / %4zu (%2u %%)",
-		    thread, tname ? tname : "NA", size, unused, size - unused, size, pcnt);
+							  "(real size %4zu):\tunused %4zu\tusage "
+							  "%4zu / %4zu (%2u %%) CPU %d",
+				      thread, tname ? tname : "NA", size, unused, size - unused,
+				      size, pcnt, thread->base.cpu);
+#else
+	shell_print(sh, "%p %-" STRINGIFY(THREAD_MAX_NAM_LEN) "s "
+							      "(real size %4zu):\tunused "
+							      "%4zu\tusage %4zu / %4zu (%2u %%)",
+					  thread, tname ? tname : "NA", size, unused, size - unused,
+					  size, pcnt);
+#endif
 }
 
-K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
-			     CONFIG_ISR_STACK_SIZE);
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS, CONFIG_ISR_STACK_SIZE);
 
 static int cmd_kernel_thread_stacks(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
-	char pad[THREAD_MAX_NAM_LEN] = { 0 };
+	char pad[THREAD_MAX_NAM_LEN] = {0};
 
 	memset(pad, ' ', MAX((THREAD_MAX_NAM_LEN - strlen("IRQ 00")), 1));
 
@@ -79,10 +86,19 @@ static int cmd_kernel_thread_stacks(const struct shell *sh, size_t argc, char **
 		(void)err;
 		__ASSERT_NO_MSG(err == 0);
 
+#ifdef CONFIG_SMP
 		shell_print(sh,
-			    "%p IRQ %02d %s(real size %4zu):\tunused %4zu\tusage %4zu / %4zu (%2zu %%)",
+			    "%p IRQ %02d %s(real size %4zu):\tunused %4zu\tusage "
+			    "%4zu / %4zu (%2zu %%) CPU %d",
+			    &z_interrupt_stacks[i], i, pad, size, unused, size - unused, size,
+			    ((size - unused) * 100U) / size, i);
+#else
+		shell_print(sh,
+			    "%p IRQ %02d %s(real size %4zu):\tunused %4zu\tusage "
+			    "%4zu / %4zu (%2zu %%)",
 			    &z_interrupt_stacks[i], i, pad, size, unused, size - unused, size,
 			    ((size - unused) * 100U) / size);
+#endif
 	}
 
 	return 0;

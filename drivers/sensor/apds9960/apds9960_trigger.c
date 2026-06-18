@@ -10,7 +10,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/drivers/sensor/apds9960.h>
+
+#include "apds9960.h"
 
 extern struct apds9960_data apds9960_driver;
 

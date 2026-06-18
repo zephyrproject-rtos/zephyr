@@ -24,10 +24,10 @@
  * @brief Performs a magnetic reset.
  *
  * The BMM350 has measures to recover from excessively strong
- * magnetic fields. A magnetic reset is trigged after reset by
+ * magnetic fields. A magnetic reset is triggered after reset by
  * the device itself, but if excessive field exposure has occurred
  * in suspend mode, the sensor can not detect that event. If a
- * large offset or sensitvity drift indicates that such an event
+ * large offset or sensitivity drift indicates that such an event
  * has occurred, then this function can be called by the
  * application.
  *

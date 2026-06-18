@@ -385,11 +385,6 @@ static int uart_bee_irq_is_pending(const struct device *dev)
 		(UART_GetFlagStatus(uart, UART_INT_RD_AVA) && data->rx_int_en));
 }
 
-static int uart_bee_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 static void uart_bee_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 				      void *cb_data)
 {
@@ -494,7 +489,6 @@ static DEVICE_API(uart, uart_bee_driver_api) = {
 	.irq_err_enable = uart_bee_irq_err_enable,
 	.irq_err_disable = uart_bee_irq_err_disable,
 	.irq_is_pending = uart_bee_irq_is_pending,
-	.irq_update = uart_bee_irq_update,
 	.irq_callback_set = uart_bee_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 

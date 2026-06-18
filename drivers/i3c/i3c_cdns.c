@@ -1500,6 +1500,88 @@ static void cdns_i3c_start_transfer(const struct device *dev)
 	sys_write32(CTRL_MCS | sys_read32(config->base + CTRL), config->base + CTRL);
 }
 
+static k_timeout_t cdns_i3c_calc_timeout_i3c(const struct i3c_msg *msgs, uint8_t num_msgs,
+					      uint32_t scl_hz)
+{
+	uint64_t us = 0;
+	bool send_broadcast = true;
+
+	for (uint8_t i = 0; i < num_msgs; i++) {
+		uint32_t bits;
+
+		if ((msgs[i].flags & I3C_MSG_HDR) && (msgs[i].hdr_mode & I3C_MSG_HDR_DDR)) {
+			/*
+			 * HDR-DDR preamble: ENTHDR0 broadcast CCC (0x7E addr + cmd code) = 18
+			 * SDR bits. DDR payload: (len/2) 16-bit data words + 1 DDR command header
+			 * word + 1 DDR CRC word = (len/2 + 2) words total, each taking 8 SCL
+			 * cycles (DDR encodes 2 bits per SCL edge, so 16 bits = 8 cycles).
+			 */
+			bits = 18 + ((msgs[i].len / 2) + 2) * 8;
+		} else {
+			/* SDR: address frame (9 bits) + data bytes (9 bits each) */
+			bits = 9 + (msgs[i].len * 9);
+			if (!(msgs[i].flags & I3C_MSG_NBCH) && send_broadcast) {
+				bits += 9; /* broadcast header 0x7E */
+				send_broadcast = false;
+			}
+			if (((i + 1) == num_msgs) || (msgs[i].flags & I3C_MSG_STOP)) {
+				send_broadcast = true;
+			}
+		}
+
+		us += DIV_ROUND_UP((uint64_t)bits * USEC_PER_SEC, scl_hz);
+	}
+
+	us += CONFIG_I3C_CADENCE_TRANSFER_TIMEOUT_MARGIN_US;
+
+	return K_TICKS(k_us_to_ticks_ceil64(us));
+}
+
+static k_timeout_t cdns_i3c_calc_timeout_i2c(const struct i2c_msg *msgs, uint8_t num_msgs,
+					      uint32_t scl_hz)
+{
+	uint64_t us = 0;
+
+	for (uint8_t i = 0; i < num_msgs; i++) {
+		uint32_t bits = (msgs[i].flags & I2C_MSG_ADDR_10_BITS) ? 18 : 9;
+
+		bits += msgs[i].len * 9;
+		us += DIV_ROUND_UP((uint64_t)bits * USEC_PER_SEC, scl_hz);
+	}
+
+	us += CONFIG_I3C_CADENCE_TRANSFER_TIMEOUT_MARGIN_US;
+
+	return K_TICKS(k_us_to_ticks_ceil64(us));
+}
+
+static k_timeout_t cdns_i3c_calc_timeout_ccc(const struct i3c_ccc_payload *payload,
+					      uint32_t scl_hz)
+{
+	/*
+	 * CCC frame on the wire: broadcast addr (9) + CCC command byte (9) + optional
+	 * defining/broadcast data byte(s) (9 each). Per the I3C spec these are
+	 * transmitted once per CCC frame regardless of the number of addressed targets.
+	 *
+	 * For a direct CCC the controller then issues, per target, a repeated start +
+	 * target address (9) + per-target data bytes (9 each). The Cadence IP requires
+	 * one queued command per target so it knows the direction and length, but it
+	 * still emits a single CCC byte / defining byte at the head of the wire frame.
+	 */
+	uint64_t us;
+	uint32_t bits = 18 + (payload->ccc.data_len * 9);
+
+	if (!i3c_ccc_is_payload_broadcast(payload)) {
+		for (size_t i = 0; i < payload->targets.num_targets; i++) {
+			bits += 9 + (payload->targets.payloads[i].data_len * 9);
+		}
+	}
+
+	us = DIV_ROUND_UP((uint64_t)bits * USEC_PER_SEC, scl_hz);
+	us += CONFIG_I3C_CADENCE_TRANSFER_TIMEOUT_MARGIN_US;
+
+	return K_TICKS(k_us_to_ticks_ceil64(us));
+}
+
 static int cdns_i3c_do_ccc_do(const struct device *dev, struct i3c_ccc_payload *payload, bool async,
 			      i3c_callback_t cb, void *userdata)
 {
@@ -1649,16 +1731,19 @@ static int cdns_i3c_do_ccc_do(const struct device *dev, struct i3c_ccc_payload *
 	data->xfer.ret = -ETIMEDOUT;
 	data->xfer.num_cmds = num_cmds;
 
+	k_timeout_t xfer_timeout = cdns_i3c_calc_timeout_ccc(payload,
+							      data->common.ctrl_config.scl.i3c);
+
 	cdns_i3c_start_transfer(dev);
 	if (!async) {
-		if (k_sem_take(&data->xfer.complete, K_MSEC(1000)) != 0) {
+		if (k_sem_take(&data->xfer.complete, xfer_timeout) != 0) {
 			LOG_ERR("%s: transfer timed out", dev->name);
 			cdns_i3c_cancel_transfer(dev);
 		}
 	}
 #ifdef CONFIG_I3C_CALLBACK
 	else {
-		k_timer_start(&data->timeout, K_MSEC(1000), K_NO_WAIT);
+		k_timer_start(&data->timeout, xfer_timeout, K_NO_WAIT);
 	}
 #endif
 
@@ -2175,6 +2260,7 @@ static int cdns_i3c_i2c_transfer_do(const struct device *dev, struct i3c_i2c_dev
 	uint32_t txsize = 0;
 	uint32_t rxsize = 0;
 	int ret;
+	k_timeout_t xfer_timeout;
 
 	__ASSERT_NO_MSG(num_msgs > 0);
 
@@ -2256,16 +2342,19 @@ static int cdns_i3c_i2c_transfer_do(const struct device *dev, struct i3c_i2c_dev
 	data->xfer.ret = -ETIMEDOUT;
 	data->xfer.num_cmds = num_msgs;
 
+	xfer_timeout = cdns_i3c_calc_timeout_i2c(msgs, num_msgs,
+						  data->common.ctrl_config.scl.i2c);
+
 	cdns_i3c_start_transfer(dev);
 	if (!async) {
-		if (k_sem_take(&data->xfer.complete, K_MSEC(1000)) != 0) {
+		if (k_sem_take(&data->xfer.complete, xfer_timeout) != 0) {
 			cdns_i3c_cancel_transfer(dev);
 		}
 		ret = data->xfer.ret;
 	}
 #ifdef CONFIG_I2C_CALLBACK
 	else {
-		k_timer_start(&data->timeout, K_MSEC(1000), K_NO_WAIT);
+		k_timer_start(&data->timeout, xfer_timeout, K_NO_WAIT);
 		ret = 0;
 	}
 #endif
@@ -2538,6 +2627,7 @@ static int cdns_i3c_transfer_do(const struct device *dev, struct i3c_device_desc
 	int txsize = 0;
 	int rxsize = 0;
 	int ret;
+	k_timeout_t xfer_timeout;
 
 	__ASSERT_NO_MSG(num_msgs > 0);
 
@@ -2707,16 +2797,19 @@ static int cdns_i3c_transfer_do(const struct device *dev, struct i3c_device_desc
 	data->xfer.ret = -ETIMEDOUT;
 	data->xfer.num_cmds = num_msgs;
 
+	xfer_timeout = cdns_i3c_calc_timeout_i3c(msgs, num_msgs,
+						  data->common.ctrl_config.scl.i3c);
+
 	cdns_i3c_start_transfer(dev);
 	if (!async) {
-		if (k_sem_take(&data->xfer.complete, K_MSEC(1000)) != 0) {
+		if (k_sem_take(&data->xfer.complete, xfer_timeout) != 0) {
 			LOG_ERR("%s: transfer timed out", dev->name);
 			cdns_i3c_cancel_transfer(dev);
 		}
 	}
 #ifdef CONFIG_I3C_CALLBACK
 	else {
-		k_timer_start(&data->timeout, K_MSEC(1000), K_NO_WAIT);
+		k_timer_start(&data->timeout, xfer_timeout, K_NO_WAIT);
 	}
 #endif
 	if (!async) {

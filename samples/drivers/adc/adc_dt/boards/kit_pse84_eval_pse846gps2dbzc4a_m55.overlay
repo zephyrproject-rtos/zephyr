@@ -6,10 +6,11 @@
  */
 
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/infineon-autanalog-sar.h>
 
 / {
 	zephyr,user {
-		io-channels = <&adc0 0>, <&adc0 1>, <&adc0 2>, <&adc0 3>;
+		io-channels = <&adc0 0>, <&adc0 1>, <&adc0 2>, <&adc0 3>, <&adc0 8>;
 	};
 };
 
@@ -24,7 +25,7 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <12>;
-		zephyr,input-positive = <0>;   /* P10.0 */
+		zephyr,input-positive = <0>;   /* P15.0 */
 	};
 
 	channel@1 {
@@ -33,7 +34,7 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <12>;
-		zephyr,input-positive = <1>;   /* P10.1 */
+		zephyr,input-positive = <1>;   /* P15.1 */
 	};
 
 	channel@2 {
@@ -42,7 +43,7 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <12>;
-		zephyr,input-positive = <2>;   /* P10.2 */
+		zephyr,input-positive = <2>;   /* P15.2 */
 	};
 
 	channel@3 {
@@ -51,6 +52,19 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <12>;
-		zephyr,input-positive = <3>;   /* P10.3 */
+		zephyr,input-positive = <3>;   /* P15.3 */
+	};
+
+	/* MUX channel: P15.0 via internal MUX routing.
+	 * Channel ID 8 = MUX channel index 0.
+	 */
+	channel@8 {
+		reg = <8>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <IFX_AUTANALOG_SAR_PIN_MUX_GPIO0>;
+		mux-buf-bypass;
 	};
 };

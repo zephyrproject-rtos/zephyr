@@ -13,6 +13,3 @@ CONFIG_SERIAL=y
 # Console ( disable to assign to M4 core)
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
-
-# Enable GPIO
-CONFIG_GPIO=y

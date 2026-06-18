@@ -100,8 +100,33 @@ tests:
       - esp32s3_devkitc/esp32s3/procpu
       - esp8684_devkitm
       - esp32c6_devkitc/esp32c6/hpcore
+  sample.net.wifi.esp32.enterprise:
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+      - EXTRA_CONF_FILE=esp32/overlay_enterprise.conf
+    platform_allow:
+      - esp32c6_devkitc/esp32c6/hpcore
+    integration_platforms:
+      - esp32c6_devkitc/esp32c6/hpcore
   sample.net.wifi.siwx91x_offloaded:
     extra_args:
       - CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD=y
     platform_allow:
       - siwx917_rb4338a
+  sample.net.wifi.sta_owe.esp32:
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+      - CONFIG_WIFI_CREDENTIALS_STATIC=y
+      - CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OWE=y
+      - CONFIG_ESP32_WIFI_ENABLE_WPA3_OWE_STA=y
+      - CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE=y
+    platform_allow:
+      - esp32c6_devkitc/esp32c6/hpcore
+  sample.net.wifi.sta_owe.nxp:
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+      - CONFIG_WIFI_CREDENTIALS_STATIC=y
+      - CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OWE=y
+      - CONFIG_NXP_WIFI_OWE=y
+    platform_allow:
+      - frdm_rw612

@@ -18,9 +18,10 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/audio/gmap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/gmap.h>
+#include <zephyr/bluetooth/audio/gmap_lc3_preset.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
@@ -31,9 +32,9 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
+#include "audio.h"
 #include "common/bt_shell_private.h"
 #include "host/shell/bt.h"
-#include "audio.h"
 
 #define UNICAST_SINK_SUPPORTED (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0)
 #define UNICAST_SRC_SUPPORTED  (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0)
@@ -216,28 +217,28 @@ static int cmd_gmap_discover(const struct shell *sh, size_t argc, char **argv)
 }
 
 static struct named_lc3_preset gmap_unicast_snk_presets[] = {
-	{"32_1_gr", BT_GMAP_LC3_PRESET_32_1_GR(LOCATION, CONTEXT)},
-	{"32_2_gr", BT_GMAP_LC3_PRESET_32_2_GR(LOCATION, CONTEXT)},
-	{"48_1_gr", BT_GMAP_LC3_PRESET_48_1_GR(LOCATION, CONTEXT)},
-	{"48_2_gr", BT_GMAP_LC3_PRESET_48_2_GR(LOCATION, CONTEXT)},
-	{"48_3_gr", BT_GMAP_LC3_PRESET_48_3_GR(LOCATION, CONTEXT)},
-	{"48_4_gr", BT_GMAP_LC3_PRESET_48_4_GR(LOCATION, CONTEXT)},
+	{"32_1_gr", BT_GMAP_LC3_PRESET_32_1_GR(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
+	{"32_2_gr", BT_GMAP_LC3_PRESET_32_2_GR(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
+	{"48_1_gr", BT_GMAP_LC3_PRESET_48_1_GR(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
+	{"48_2_gr", BT_GMAP_LC3_PRESET_48_2_GR(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
+	{"48_3_gr", BT_GMAP_LC3_PRESET_48_3_GR(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
+	{"48_4_gr", BT_GMAP_LC3_PRESET_48_4_GR(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
 };
 
 static struct named_lc3_preset gmap_unicast_src_presets[] = {
-	{"16_1_gs", BT_GMAP_LC3_PRESET_16_1_GS(LOCATION, CONTEXT)},
-	{"16_2_gs", BT_GMAP_LC3_PRESET_16_2_GS(LOCATION, CONTEXT)},
-	{"32_1_gs", BT_GMAP_LC3_PRESET_32_1_GS(LOCATION, CONTEXT)},
-	{"32_2_gs", BT_GMAP_LC3_PRESET_32_2_GS(LOCATION, CONTEXT)},
-	{"48_1_gs", BT_GMAP_LC3_PRESET_48_1_GS(LOCATION, CONTEXT)},
-	{"48_2_gs", BT_GMAP_LC3_PRESET_48_2_GS(LOCATION, CONTEXT)},
+	{"16_1_gs", BT_GMAP_LC3_PRESET_16_1_GS(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
+	{"16_2_gs", BT_GMAP_LC3_PRESET_16_2_GS(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
+	{"32_1_gs", BT_GMAP_LC3_PRESET_32_1_GS(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
+	{"32_2_gs", BT_GMAP_LC3_PRESET_32_2_GS(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
+	{"48_1_gs", BT_GMAP_LC3_PRESET_48_1_GS(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
+	{"48_2_gs", BT_GMAP_LC3_PRESET_48_2_GS(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
 };
 
 static struct named_lc3_preset gmap_broadcast_presets[] = {
-	{"48_1_g", BT_GMAP_LC3_PRESET_48_1_G(LOCATION, CONTEXT)},
-	{"48_2_g", BT_GMAP_LC3_PRESET_48_2_G(LOCATION, CONTEXT)},
-	{"48_3_g", BT_GMAP_LC3_PRESET_48_3_G(LOCATION, CONTEXT)},
-	{"48_4_g", BT_GMAP_LC3_PRESET_48_4_G(LOCATION, CONTEXT)},
+	{"48_1_g", BT_GMAP_LC3_PRESET_48_1_G(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
+	{"48_2_g", BT_GMAP_LC3_PRESET_48_2_G(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
+	{"48_3_g", BT_GMAP_LC3_PRESET_48_3_G(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
+	{"48_4_g", BT_GMAP_LC3_PRESET_48_4_G(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
 };
 
 const struct named_lc3_preset *gmap_get_named_preset(bool is_unicast, enum bt_audio_dir dir,

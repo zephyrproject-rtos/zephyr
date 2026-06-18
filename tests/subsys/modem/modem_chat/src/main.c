@@ -276,7 +276,7 @@ static void *test_modem_chat_setup(void)
 		.rx_buf_size = ARRAY_SIZE(mock_rx_buf),
 		.tx_buf = mock_tx_buf,
 		.tx_buf_size = ARRAY_SIZE(mock_tx_buf),
-		.limit = 8,
+		.limit = CONFIG_MODEM_MOCK_BACKEND_LIMIT,
 	};
 
 	mock_pipe = modem_backend_mock_init(&mock, &mock_config);

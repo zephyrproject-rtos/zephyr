@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "bmp581.h"
 #include "bmp581_bus.h"
 
 int bmp581_prep_reg_read_rtio_async(const struct bmp581_bus *bus,
@@ -15,18 +16,27 @@ int bmp581_prep_reg_read_rtio_async(const struct bmp581_bus *bus,
 	struct rtio_iodev *iodev = bus->rtio.iodev;
 	struct rtio_sqe *write_reg_sqe = rtio_sqe_acquire(ctx);
 	struct rtio_sqe *read_buf_sqe = rtio_sqe_acquire(ctx);
+	uint8_t reg_addr = reg;
 
 	if (!write_reg_sqe || !read_buf_sqe) {
 		rtio_sqe_drop_all(ctx);
 		return -ENOMEM;
 	}
 
-	rtio_sqe_prep_tiny_write(write_reg_sqe, iodev, RTIO_PRIO_NORM, &reg, 1, NULL);
+	/* SPI reads require bit 7 of the register address to be set */
+	if (bus->rtio.type == BMP581_BUS_TYPE_SPI) {
+		reg_addr |= BMP5_SPI_RD_MASK;
+	}
+
+	rtio_sqe_prep_tiny_write(write_reg_sqe, iodev, RTIO_PRIO_NORM, &reg_addr, 1, NULL);
 	write_reg_sqe->flags |= RTIO_SQE_TRANSACTION;
 	rtio_sqe_prep_read(read_buf_sqe, iodev, RTIO_PRIO_NORM, buf, size, NULL);
 	if (bus->rtio.type == BMP581_BUS_TYPE_I2C) {
 		read_buf_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	} else if (bus->rtio.type == BMP581_BUS_TYPE_I3C) {
+		read_buf_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
 	}
+	/* SPI does not require setting additional flags to the read-buf SQE */
 
 	/** Send back last SQE so it can be concatenated later. */
 	if (out) {
@@ -55,12 +65,16 @@ int bmp581_prep_reg_write_rtio_async(const struct bmp581_bus *bus,
 		return -EINVAL;
 	}
 
+	/* SPI writes use the register address with bit 7 cleared (default) */
 	rtio_sqe_prep_tiny_write(write_reg_sqe, iodev, RTIO_PRIO_NORM, &reg, 1, NULL);
 	write_reg_sqe->flags |= RTIO_SQE_TRANSACTION;
 	rtio_sqe_prep_tiny_write(write_buf_sqe, iodev, RTIO_PRIO_NORM, buf, size, NULL);
 	if (bus->rtio.type == BMP581_BUS_TYPE_I2C) {
 		write_buf_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
+	} else if (bus->rtio.type == BMP581_BUS_TYPE_I3C) {
+		write_buf_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP;
 	}
+	/* SPI does not require setting additional flags to the write-buf SQE */
 
 	/** Send back last SQE so it can be concatenated later. */
 	if (out) {

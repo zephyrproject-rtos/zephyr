@@ -289,14 +289,14 @@ static inline __printf_like(6, 7) bool z_zexpect(bool cond, const char *default_
  * @param cond Condition to check
  * @param ... Optional message and variables to print if the assertion fails
  */
-#define zassert_ok(cond, ...) zassert(!(cond), #cond " is non-zero", ##__VA_ARGS__)
+#define zassert_ok(cond, ...) zassert((cond) == 0, #cond " is non-zero", ##__VA_ARGS__)
 
 /**
  * @brief Assert that @a cond is not 0 (failure)
  * @param cond Condition to check
  * @param ... Optional message and variables to print if the assertion fails
  */
-#define zassert_not_ok(cond, ...) zassert(!!(cond), #cond " is zero", ##__VA_ARGS__)
+#define zassert_not_ok(cond, ...) zassert((cond) != 0, #cond " is zero", ##__VA_ARGS__)
 
 /**
  * @brief Assert that @a ptr is NULL
@@ -449,7 +449,7 @@ static inline __printf_like(6, 7) bool z_zexpect(bool cond, const char *default_
  * @param cond Condition to check
  * @param ... Optional message and variables to print if the assumption fails
  */
-#define zassume_ok(cond, ...) zassume(!(cond), #cond " is non-zero", ##__VA_ARGS__)
+#define zassume_ok(cond, ...) zassume((cond) == 0, #cond " is non-zero", ##__VA_ARGS__)
 
 /**
  * @brief Assume that @a cond is not 0 (failure)
@@ -459,7 +459,7 @@ static inline __printf_like(6, 7) bool z_zexpect(bool cond, const char *default_
  * @param cond Condition to check
  * @param ... Optional message and variables to print if the assumption fails
  */
-#define zassume_not_ok(cond, ...) zassume(!!(cond), #cond " is zero", ##__VA_ARGS__)
+#define zassume_not_ok(cond, ...) zassume((cond) != 0, #cond " is zero", ##__VA_ARGS__)
 
 /**
  * @brief Assume that @a ptr is NULL
@@ -622,7 +622,7 @@ static inline __printf_like(6, 7) bool z_zexpect(bool cond, const char *default_
  * @param cond Condition to check
  * @param ... Optional message and variables to print if the expectation fails
  */
-#define zexpect_ok(cond, ...) zexpect(!(cond), #cond " is non-zero", ##__VA_ARGS__)
+#define zexpect_ok(cond, ...) zexpect((cond) == 0, #cond " is non-zero", ##__VA_ARGS__)
 
 /**
  * @brief Expect that @a cond is not 0 (failure), otherwise mark test as failed but continue its
@@ -631,7 +631,7 @@ static inline __printf_like(6, 7) bool z_zexpect(bool cond, const char *default_
  * @param cond Condition to check
  * @param ... Optional message and variables to print if the expectation fails
  */
-#define zexpect_not_ok(cond, ...) zexpect(!!(cond), #cond " is zero", ##__VA_ARGS__)
+#define zexpect_not_ok(cond, ...) zexpect((cond) != 0, #cond " is zero", ##__VA_ARGS__)
 
 /**
  * @brief Expect that @a ptr is NULL, otherwise mark test as failed but continue its execution.

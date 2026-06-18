@@ -11,8 +11,8 @@
 #include <hal/ledc_ll.h>
 #include <hal/ledc_types.h>
 #include <esp_clk_tree.h>
+#include <esp_private/esp_clk_tree_common.h>
 #include <soc/rtc.h>
-#include <clk_ctrl_os.h>
 
 #include <soc.h>
 #include <errno.h>
@@ -22,6 +22,17 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+
+#if CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_LEDC_SUPPORT_SLEEP_RETENTION
+#define LEDC_SLEEP_RETENTION_ENABLED 1
+#else
+#define LEDC_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if LEDC_SLEEP_RETENTION_ENABLED
+#include <hal/ledc_periph.h>
+#include <esp_private/sleep_retention.h>
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_ledc_esp32, CONFIG_PWM_LOG_LEVEL);
@@ -159,16 +170,16 @@ static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *chan
 	 */
 	for (int i = 0; i < clock_src_num; i++) {
 		if (clock_src[i] == LEDC_SLOW_CLK_RC_FAST) {
-			uint32_t rc_fast_freq = periph_rtc_dig_clk8m_get_freq();
+			uint32_t rc_fast_freq = 0;
 
-			if (!rtc_dig_8m_enabled() || rc_fast_freq == 0) {
-				/* RC_FAST requires enabling and calibrating */
-				if (!periph_rtc_dig_clk8m_enable()) {
-					/* skip RC_FAST as clock source */
-					continue;
-				}
-				rc_fast_freq = periph_rtc_dig_clk8m_get_freq();
+			/* RC_FAST requires enabling and calibrating */
+			if (esp_clk_tree_enable_src(SOC_MOD_CLK_RC_FAST, true) != ESP_OK) {
+				/* skip RC_FAST as clock source */
+				continue;
 			}
+			esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RC_FAST,
+						     ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX,
+						     &rc_fast_freq);
 
 			channel->clock_src = clock_src[i];
 			channel->clock_src_hz = rc_fast_freq;
@@ -370,6 +381,62 @@ sem_give:
 	return ret;
 }
 
+#if LEDC_SLEEP_RETENTION_ENABLED
+static esp_err_t pwm_led_esp32_create_sleep_retention_cb(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	sleep_retention_module_t module = ledc_reg_retention_info[0].module_id;
+
+	esp_err_t err = sleep_retention_entries_create(
+		ledc_reg_retention_info[0].common.regdma_entry_array,
+		ledc_reg_retention_info[0].common.array_size, REGDMA_LINK_PRI_LEDC, module);
+
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	for (int i = 0; i < SOC_LEDC_TIMER_NUM; i++) {
+		err = sleep_retention_entries_create(
+			ledc_reg_retention_info[0].timer[i].regdma_entry_array,
+			ledc_reg_retention_info[0].timer[i].array_size, REGDMA_LINK_PRI_LEDC,
+			module);
+		if (err != ESP_OK) {
+			return err;
+		}
+	}
+
+	for (int j = 0; j < SOC_LEDC_CHANNEL_NUM; j++) {
+		err = sleep_retention_entries_create(
+			ledc_reg_retention_info[0].channel[j].regdma_entry_array,
+			ledc_reg_retention_info[0].channel[j].array_size, REGDMA_LINK_PRI_LEDC,
+			module);
+		if (err != ESP_OK) {
+			return err;
+		}
+	}
+
+	return ESP_OK;
+}
+
+static void pwm_led_esp32_sleep_retention_init(void)
+{
+	sleep_retention_module_t module = ledc_reg_retention_info[0].module_id;
+	sleep_retention_module_init_param_t init_param = {
+		.cbs = {.create = {.handle = pwm_led_esp32_create_sleep_retention_cb, .arg = NULL}},
+		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)};
+
+	esp_err_t err = sleep_retention_module_init(module, &init_param);
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_allocate(module);
+	}
+	if (err != ESP_OK) {
+		LOG_WRN("LEDC sleep retention init failed (%d)", err);
+	}
+}
+#endif /* LEDC_SLEEP_RETENTION_ENABLED */
+
 static int pwm_led_esp32_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct pwm_ledc_esp32_config *config = dev->config;
@@ -400,6 +467,11 @@ static int pwm_led_esp32_pm_action(const struct device *dev, enum pm_device_acti
 		break;
 
 	case PM_DEVICE_ACTION_TURN_ON:
+#if LEDC_SLEEP_RETENTION_ENABLED
+		pwm_led_esp32_sleep_retention_init();
+#endif
+		break;
+
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
 

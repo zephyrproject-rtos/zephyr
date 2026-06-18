@@ -715,10 +715,8 @@ static void eth_enc28j60_rx_thread(void *p1, void *p2, void *p3)
 			eth_enc28j60_read_phy(dev, ENC28J60_PHY_PHIR, &phir);
 			eth_enc28j60_read_phy(dev, ENC28J60_PHY_PHSTAT2, &phstat2);
 			if (phstat2 & ENC28J60_BIT_PHSTAT2_LSTAT) {
-				LOG_INF("%s: Link up", dev->name);
 				net_eth_carrier_on(context->iface);
 			} else {
-				LOG_INF("%s: Link down", dev->name);
 				net_eth_carrier_off(context->iface);
 			}
 		}

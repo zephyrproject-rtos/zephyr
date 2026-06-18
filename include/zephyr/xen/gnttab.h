@@ -3,95 +3,149 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Xen grant table helpers.
+ * @ingroup xen_grant_tables
+ */
+
 #ifndef __XEN_GNTTAB_H__
 #define __XEN_GNTTAB_H__
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include <zephyr/xen/public/grant_table.h>
 
-/*
- * Assigns gref and permits access to 4K page for specific domain.
+/**
+ * @defgroup xen_grant_tables Xen grant tables
+ * @ingroup xen_support
+ * @brief Share memory with foreign domains and map foreign grants.
+ * @{
+ */
+
+/**
+ * @brief Grant another domain access to a guest frame.
  *
- * @param domid - id of the domain you sharing gref with
- * @param gfn - guest frame number of page, where grant will be located
- * @param readonly - permit readonly access to shared grant
- * @return - gref assigned to shared grant
+ * @kconfig_dep{CONFIG_XEN_GRANT_TABLE}
+ *
+ * @param domid Foreign domain that receives access to the frame.
+ * @param gfn Guest frame number to expose.
+ * @param readonly Set to ``true`` to grant read-only access.
+ *
+ * @return Grant reference that identifies the new entry.
  */
 grant_ref_t gnttab_grant_access(domid_t domid, unsigned long gfn,
-		bool readonly);
+				bool readonly);
 
-/*
- * Finished access for previously shared grant. Does NOT
- * free memory, if it was previously allocated by
+/**
+ * @brief Release a grant reference created by gnttab_grant_access().
+ *
+ * This does NOT free memory that was previously allocated by
  * gnttab_alloc_and_grant().
  *
- * @param gref - grant reference that need to be closed
- * @return - zero on success, non-zero on failure
+ * @kconfig_dep{CONFIG_XEN_GRANT_TABLE}
+ *
+ * @param gref Grant reference to release.
+ *
+ * @retval 0 on success.
  */
 int gnttab_end_access(grant_ref_t gref);
 
-/*
- * Allocates 4K page for grant and share it via returned
- * gref. Need to k_free memory, which was allocated in
- * @map parameter after grant releasing.
+/**
+ * @brief Allocate a page and immediately grant access to it.
  *
- * @param map - double pointer to memory, where grant will be allocated
- * @param readonly - permit readonly access to allocated grant
- * @return -  grant ref on success or negative errno on failure
+ * The caller must release the grant and then ``k_free()`` the buffer returned
+ * in @p map once it is no longer needed.
+ *
+ * @kconfig_dep{CONFIG_XEN_GRANT_TABLE}
+ *
+ * @param[out] map Buffer that receives the page base address.
+ * @param readonly Set to ``true`` to grant read-only access.
+ *
+ * @return Grant reference on success, negative errno value on failure.
+ * @retval -ENOMEM Page allocation fails.
  */
 int32_t gnttab_alloc_and_grant(void **map, bool readonly);
 
-/*
- * Provides interface to acquire one or more pages that can be used for
- * mapping of foreign frames. Should be freed by gnttab_put_pages()
- * after use.
+/**
+ * @brief Allocate pages that can host grant mappings.
  *
- * @param npages - number of pages to allocate.
- * @return - pointer to page start address, that can be used as host_addr
- *           in struct gnttab_map_grant_ref, NULL on error.
+ * The returned range is suitable for use as ``host_addr`` in ``struct
+ * gnttab_map_grant_ref`` entries. Release it with gnttab_put_pages() after use.
+ *
+ * @kconfig_dep{CONFIG_XEN_GRANT_TABLE}
+ *
+ * @param npages Number of pages to allocate.
+ *
+ * @return Base address of the allocated range, or ``NULL`` on failure.
  */
 void *gnttab_get_pages(unsigned int npages);
 
-/*
- * Releases pages that were used for mapping foreign grant frames,
- * should be called after unmapping.
+/**
+ * @brief Release pages allocated by gnttab_get_pages().
  *
- * @param start_addr - pointer to start address of allocated buffer.
- * @param npages - number of pages allocated for the buffer.
- * @return - zero on success, non-zero on failure
+ * @kconfig_dep{CONFIG_XEN_GRANT_TABLE}
+ *
+ * @param start_addr Base address returned by gnttab_get_pages().
+ * @param npages Number of pages to release.
+ *
+ * @return 0 on success, negative errno value on failure.
  */
 int gnttab_put_pages(void *start_addr, unsigned int npages);
 
-/*
- * Maps foreign grant ref to Zephyr address space.
+/**
+ * @brief Map one or more foreign grant references.
  *
- * @param map_ops - array of prepared gnttab_map_grant_ref's for mapping
- * @param count - number of grefs in map_ops array
- * @return - zero on success or negative errno on failure
- *           also per-page status will be set in map_ops[i].status (GNTST_*)
+ * The ``host_addr`` pages referenced by @p map_ops must be 4K-aligned and
+ * should be obtained from gnttab_get_pages().
  *
- * To map foreign frames you need 4K-aligned memory pages, which will be
- * used as host_addr for grant mapping - it should be acquired by gnttab_get_pages()
- * function.
+ * @kconfig_dep{CONFIG_XEN_GRANT_TABLE}
+ *
+ * @param[in,out] map_ops Array of prepared map operations.
+ * @param count Number of entries in @p map_ops.
+ *
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EFAULT Xen extended regions are enabled and a host address is
+ *         outside them.
+ *
+ * Xen also stores a per-entry status code in each ``map_ops[i].status`` field.
  */
 int gnttab_map_refs(struct gnttab_map_grant_ref *map_ops, unsigned int count);
 
-/*
- * Unmap foreign grant refs. The gnttab_put_pages() should be used after this for
- * pages that were successfully unmapped.
+/**
+ * @brief Unmap one or more foreign grant references.
  *
- * @param unmap_ops - array of prepared gnttab_unmap_grant_ref's for unmapping
- * @param count - number of grefs in unmap_ops array
- * @return - @count on success or negative errno on failure
- *           also per-page status will be set in unmap_ops[i].status (GNTST_*)
+ * Use gnttab_put_pages() afterwards for the pages that were successfully
+ * unmapped.
+ *
+ * @kconfig_dep{CONFIG_XEN_GRANT_TABLE}
+ *
+ * @param[in,out] unmap_ops Array of prepared unmap operations.
+ * @param count Number of entries in @p unmap_ops.
+ *
+ * @return Value returned by the ``GNTTABOP_unmap_grant_ref`` hypercall (0 on
+ *         success), negative errno value on failure.
+ * @retval -EFAULT Xen extended regions are enabled and a host address is
+ *         outside them.
+ *
+ * Xen also stores a per-entry status code in each ``unmap_ops[i].status``
+ * field.
  */
 int gnttab_unmap_refs(struct gnttab_unmap_grant_ref *unmap_ops, unsigned int count);
 
-/*
- * Convert grant ref status codes (GNTST_*) to text messages.
+/**
+ * @brief Convert a Xen grant-table status into readable text.
  *
- * @param status - negative GNTST_* code, that needs to be converted
- * @return - constant pointer to text message, associated with @status
+ * @kconfig_dep{CONFIG_XEN_GRANT_TABLE}
+ *
+ * @param status Negative ``GNTST_*`` status code.
+ *
+ * @return Pointer to a constant error string.
  */
 const char *gnttabop_error(int16_t status);
+
+/** @} */
 
 #endif /* __XEN_GNTTAB_H__ */

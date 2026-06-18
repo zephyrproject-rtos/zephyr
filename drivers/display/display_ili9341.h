@@ -82,45 +82,6 @@ struct ili9341_regs {
 
 /* Initializer macro for ILI9341 registers. */
 #define ILI9341_REGS_INIT(n)                                                                       \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), gamset) == ILI9341_GAMSET_LEN,        \
-		     "ili9341: Error length gamma set (GAMSET) register");                         \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), ifmode) == ILI9341_IFMODE_LEN,        \
-		     "ili9341: Error length frame rate control (IFMODE) register");                \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), frmctr1) == ILI9341_FRMCTR1_LEN,      \
-		     "ili9341: Error length frame rate control (FRMCTR1) register");               \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), disctrl) == ILI9341_DISCTRL_LEN,      \
-		     "ili9341: Error length display function control (DISCTRL) register");         \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), pwctrl1) == ILI9341_PWCTRL1_LEN,      \
-		     "ili9341: Error length power control 1 (PWCTRL1) register");                  \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), pwctrl2) == ILI9341_PWCTRL2_LEN,      \
-		     "ili9341: Error length power control 2 (PWCTRL2) register");                  \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), vmctrl1) == ILI9341_VMCTRL1_LEN,      \
-		     "ili9341: Error length VCOM control 1 (VMCTRL1) register");                   \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), vmctrl2) == ILI9341_VMCTRL2_LEN,      \
-		     "ili9341: Error length VCOM control 2 (VMCTRL2) register");                   \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), pgamctrl) == ILI9341_PGAMCTRL_LEN,    \
-		     "ili9341: Error length positive gamma correction (PGAMCTRL) register");       \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), ngamctrl) == ILI9341_NGAMCTRL_LEN,    \
-		     "ili9341: Error length negative gamma correction (NGAMCTRL) register");       \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), pwctrla) == ILI9341_PWCTRLA_LEN,      \
-		     "ili9341: Error length power control A (PWCTRLA) register");                  \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), pwctrlb) == ILI9341_PWCTRLB_LEN,      \
-		     "ili9341: Error length power control B (PWCTRLB) register");                  \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), pwseqctrl) == ILI9341_PWSEQCTRL_LEN,  \
-		     "ili9341: Error length power on sequence control (PWSEQCTRL) register");      \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), timctrla) == ILI9341_TIMCTRLA_LEN,    \
-		     "ili9341: Error length driver timing control A (TIMCTRLA) register");         \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), timctrlb) == ILI9341_TIMCTRLB_LEN,    \
-		     "ili9341: Error length driver timing control B (TIMCTRLB) register");         \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), pumpratioctrl) ==                     \
-			     ILI9341_PUMPRATIOCTRL_LEN,                                            \
-		     "ili9341: Error length Pump ratio control (PUMPRATIOCTRL) register");         \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), enable3g) == ILI9341_ENABLE3G_LEN,    \
-		     "ili9341: Error length enable 3G (ENABLE3G) register");                       \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), ifctl) == ILI9341_IFCTL_LEN,          \
-		     "ili9341: Error length frame rate control (IFCTL) register");                 \
-	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), etmod) == ILI9341_ETMOD_LEN,          \
-		     "ili9341: Error length entry Mode Set (ETMOD) register");                     \
 	static const struct ili9341_regs ili9341_regs_##n = {                                      \
 		.gamset = DT_PROP(DT_INST(n, ilitek_ili9341), gamset),                             \
 		.ifmode = DT_PROP(DT_INST(n, ilitek_ili9341), ifmode),                             \

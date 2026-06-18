@@ -1,3 +1,5 @@
+common:
+  arch_exclude: posix # In this architecture we do not use the Zephyr managed stack
 tests:
   kernel.threads.thread_stack:
     tags:

@@ -7,7 +7,6 @@ menuconfig WIFI_AIROC
 	depends on DT_HAS_INFINEON_AIROC_WIFI_ENABLED
 	default y
 	select THREAD_CUSTOM_DATA
-	select WIFI_OFFLOAD
 	select NET_L2_ETHERNET
 	select NET_L2_WIFI_MGMT
 	select GPIO
@@ -52,7 +51,7 @@ config AIROC_WLAN_MFG_FIRMWARE
 	  Enable WLAN Manufacturing Firmware.
 
 config WHD_WIFI_COUNTRY
-	string "Wifi couuntry option"
+	string "Wifi country option"
 	default "WHD_COUNTRY_UNITED_STATES" if CYW55572 || CYW55500
 	default "WHD_COUNTRY_AUSTRALIA"
 	help
@@ -249,6 +248,12 @@ config CYW55513IUBG_SM
 	bool "CYW55513IUBG_SM"
 	help
 	  Infineon CYW55513IUBG (SM) module
+
+config CYW55513_MURATA_2FY_SM
+	bool "CYW55513 MURATA-2FY (SM)"
+	help
+	  Infineon CYW55513 in Murata LBEE5HY2FY (Type 2FY) module (SM)
+
 endchoice
 
 choice CYW55572_MODULE

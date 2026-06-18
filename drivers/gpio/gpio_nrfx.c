@@ -38,10 +38,6 @@
 #define GPIOTE_FLAG_FIXED_CHAN  BIT(1)
 #endif
 
-#if NRF_GPIO_HAS_DETECT_MODE && defined(CONFIG_GPIO_NRFX_HAS_LATCH_DETECT)
-#define GPIO_LATCH_DETECT_SUPPORT 1
-#endif
-
 struct gpio_nrfx_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
@@ -55,7 +51,7 @@ struct gpio_nrfx_cfg {
 	nrfx_gpiote_t *gpiote;
 	uint32_t edge_sense;
 	uint8_t port_num;
-#if defined(GPIO_LATCH_DETECT_SUPPORT)
+#if NRF_GPIO_HAS_DETECT_MODE
 	bool latch_detect;
 #endif
 #if defined(GPIOTE_FEATURE_FLAG)
@@ -456,7 +452,7 @@ static int gpio_nrfx_pin_interrupt_configure(const struct device *port,
 		return 0;
 	}
 
-#if defined(GPIO_LATCH_DETECT_SUPPORT)
+#if NRF_GPIO_HAS_DETECT_MODE
 	nrf_gpio_port_detect_latch_set(cfg->port, cfg->latch_detect);
 #endif
 
@@ -707,7 +703,7 @@ static DEVICE_API(gpio, gpio_nrfx_drv_api_funcs) = {
 		.gpiote = GPIOTE_REF(id),						\
 		.edge_sense = DT_INST_PROP_OR(id, sense_edge_mask, 0),			\
 		.port_num = DT_INST_PROP(id, port),					\
-		IF_ENABLED(GPIO_LATCH_DETECT_SUPPORT,					\
+		IF_ENABLED(NRF_GPIO_HAS_DETECT_MODE,					\
 			(.latch_detect = DT_INST_PROP(id, latch_detect),))		\
 		IF_ENABLED(GPIOTE_FEATURE_FLAG,						\
 			(.flags =							\

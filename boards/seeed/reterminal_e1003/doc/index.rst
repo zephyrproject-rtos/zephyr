@@ -27,8 +27,6 @@ The board includes the following features:
 - Green status LED
 - Buzzer
 
-The ePaper display is not currently enabled in Zephyr because it requires display driver support.
-
 For more details about the board, see the `reTerminal E1003 board schematics`_.
 
 .. include:: ../../../espressif/common/soc-esp32s3-features.rst

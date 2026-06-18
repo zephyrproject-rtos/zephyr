@@ -544,6 +544,7 @@ static void max20335_int_routine_work_handler(struct k_work *work)
 		if (ret < 0) {
 			LOG_WRN("Failed to read charger status: %d", ret);
 		} else {
+			LOG_INF("Charging status: %d", data->charger_status);
 			if (data->charger_status_notifier != NULL) {
 				data->charger_status_notifier(data->charger_status);
 			}
@@ -555,6 +556,7 @@ static void max20335_int_routine_work_handler(struct k_work *work)
 		if (ret < 0) {
 			LOG_WRN("Failed to read charger online %d", ret);
 		} else {
+			LOG_INF("Online status: %d", data->charger_online);
 			if (data->charger_online_notifier != NULL) {
 				data->charger_online_notifier(data->charger_online);
 			}

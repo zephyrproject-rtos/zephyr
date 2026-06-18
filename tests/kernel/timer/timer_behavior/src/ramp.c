@@ -12,15 +12,29 @@
 #include <zephyr/ztest.h>
 
 
+#ifdef CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
+typedef uint64_t cycle_t;
+#define ramp_cycle_get()         k_cycle_get_64()
+#define ramp_cyc_to_ticks(c)     k_cyc_to_ticks_floor64(c)
+#define CYCLE_FMT                "%llu"
+#else
+typedef uint32_t cycle_t;
+#define ramp_cycle_get()         k_cycle_get_32()
+#define ramp_cyc_to_ticks(c)     k_cyc_to_ticks_floor32(c)
+#define CYCLE_FMT                "%u"
+#endif
+
 K_SEM_DEFINE(ramp_sem, 0, 1);
-static uint32_t start_cycle;
-static uint32_t end_cycle;
+static cycle_t start_cycle;
+static cycle_t end_cycle;
 
 static void tm_fn(struct k_timer *tm)
 {
-	end_cycle = k_cycle_get_32();
+	end_cycle = ramp_cycle_get();
 	k_sem_give(&ramp_sem);
 }
+
+static struct k_timer tm;
 
 /**
  * @brief Test timers can be scheduled in a ramp
@@ -36,26 +50,25 @@ static void tm_fn(struct k_timer *tm)
 ZTEST(timer_ramp, test_timer_ramp)
 {
 	bool failed = false;
-	struct k_timer tm;
 	uint32_t delay = 1;
 
 	k_timer_init(&tm, tm_fn, NULL);
 
 	while ((delay/CONFIG_SYS_CLOCK_TICKS_PER_SEC) < 10) {
-		start_cycle = k_cycle_get_32();
+		start_cycle = ramp_cycle_get();
 		k_timer_start(&tm, K_TICKS(delay), K_NO_WAIT);
 		k_sem_take(&ramp_sem, K_FOREVER);
 
-		uint32_t delta_cycles = end_cycle - start_cycle;
-		uint32_t delta_ticks = k_cyc_to_ticks_floor32(delta_cycles);
+		cycle_t delta_cycles = end_cycle - start_cycle;
+		uint32_t delta_ticks = ramp_cyc_to_ticks(delta_cycles);
 
 		if (delta_ticks > (delay + 1) || delta_ticks < delay) {
-			TC_PRINT("failed: delay of %d ticks , actual %d (%d cycles)\n", delay,
-				 delta_ticks, delta_cycles);
+			TC_PRINT("failed: delay of %d ticks , actual %d (" CYCLE_FMT " cycles)\n",
+				 delay, delta_ticks, delta_cycles);
 			failed = true;
 		} else {
-			TC_PRINT("passed: delay of %d ticks, actual %d (%d cycles)\n", delay,
-				 delta_ticks, delta_cycles);
+			TC_PRINT("passed: delay of %d ticks, actual %d (" CYCLE_FMT " cycles)\n",
+				 delay, delta_ticks, delta_cycles);
 		}
 		delay = delay*2;
 	}

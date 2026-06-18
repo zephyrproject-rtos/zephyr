@@ -1,0 +1,6 @@
+board:
+  name: usbcan_iso
+  full_name: USBCAN ISO
+  vendor: canmodule
+  socs:
+    - name: stm32f072xb

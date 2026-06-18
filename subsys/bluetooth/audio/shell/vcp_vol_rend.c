@@ -199,7 +199,7 @@ static int cmd_vcp_vol_rend_init(const struct shell *sh, size_t argc,
 	/* Default values */
 	vcp_register_param.step = 1;
 	vcp_register_param.mute = BT_VCP_STATE_UNMUTED;
-	vcp_register_param.volume = 100;
+	vcp_register_param.volume = 100U;
 
 	for (int i = 1; i < argc; i++) {
 		const char *operator = strstr(argv[i], assignment_operator);

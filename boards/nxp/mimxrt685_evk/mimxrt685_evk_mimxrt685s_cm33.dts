@@ -47,6 +47,7 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
+		zephyr,crc = &crc;
 	};
 
 	gpio_keys {
@@ -150,6 +151,10 @@
 	status = "okay";
 };
 
+&crc {
+	status = "okay";
+};
+
 &flexcomm0 {
 	compatible = "nxp,lpc-usart";
 	status = "okay";
@@ -165,6 +170,9 @@ arduino_i2c: &flexcomm2 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+	recover-bus-on-init;
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -279,31 +287,40 @@ i2s1: &flexcomm3 {
 			erase-block-size = <DT_SIZE_K(4)>;
 			write-block-size = <1>; /* FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_STR set */
 
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
 			partitions {
-				compatible = "fixed-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
+
+				ranges;
 
 				/*
 				 * Partition sizes must be aligned
 				 * to the flash memory sector size of 4KB.
 				 */
 				boot_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
 					label = "mcuboot";
 					reg = <0x00000000 DT_SIZE_K(128)>;
 				};
 
 				slot0_partition: partition@20000 {
+					compatible = "zephyr,mapped-partition";
 					label = "image-0";
 					reg = <0x00020000 DT_SIZE_M(3)>;
 				};
 
 				slot1_partition: partition@320000 {
+					compatible = "zephyr,mapped-partition";
 					label = "image-1";
 					reg = <0x00320000 DT_SIZE_M(3)>;
 				};
 
 				storage_partition: partition@620000 {
+					compatible = "zephyr,mapped-partition";
 					label = "storage";
 					reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
 				};

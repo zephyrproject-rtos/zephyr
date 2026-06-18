@@ -18,28 +18,28 @@
 #include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/crypto.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <zephyr/shell/shell.h>
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/audio/cap.h>
 
+#include "audio.h"
 #include "common/bt_shell_private.h"
 #include "host/shell/bt.h"
-#include "audio.h"
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 #define UNICAST_SINK_SUPPORTED (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0)
@@ -135,7 +135,12 @@ static int cmd_cap_initiator_discover(const struct shell *sh, size_t argc, char 
 	}
 
 	if (!cbs_registered) {
-		bt_cap_initiator_register_cb(&cbs);
+		err = bt_cap_initiator_register_cb(&cbs);
+		if (err != 0) {
+			shell_error(sh, "Failed to register CAP initiator callbacks: %d", err);
+			return -ENOEXEC;
+		}
+
 		cbs_registered = true;
 	}
 
@@ -195,7 +200,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc, 
 
 	cap_initiator_unicast_audio_start_param.type = BT_CAP_SET_TYPE_AD_HOC;
 
-	for (size_t argn = 1; argn < argc; argn++) {
+	for (size_t argn = 1U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "csip") == 0) {
@@ -262,7 +267,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc, 
 
 	cap_initiator_unicast_audio_start_param.stream_params =
 		cap_initiator_audio_start_stream_params;
-	for (size_t i = 0; i < conn_cnt; i++) {
+	for (size_t i = 0U; i < conn_cnt; i++) {
 		struct bt_conn *conn = connected_conns[i];
 		size_t conn_src_cnt = 0U;
 		size_t conn_snk_cnt = 0U;
@@ -830,20 +835,22 @@ static int cap_ac_create_unicast_group(const struct cap_unicast_ac_param *param,
 	}
 
 	for (size_t i = 0U; i < param->conn_cnt; i++) {
-		for (size_t j = 0; j < MAX(param->snk_cnt[i], param->src_cnt[i]); j++) {
+		for (size_t j = 0U; j < MAX(param->snk_cnt[i], param->src_cnt[i]); j++) {
 			struct bt_cap_unicast_group_stream_pair_param *stream_pair_param =
 				&cap_initiator_unicast_group_pair_params[pair_cnt];
 
 			if (param->snk_cnt[i] > j) {
 				stream_pair_param->tx_param =
-					&snk_group_stream_params[snk_stream_cnt++];
+					&snk_group_stream_params[snk_stream_cnt];
+				snk_stream_cnt++;
 			} else {
 				stream_pair_param->tx_param = NULL;
 			}
 
 			if (param->src_cnt[i] > j) {
 				stream_pair_param->rx_param =
-					&src_group_stream_params[src_stream_cnt++];
+					&src_group_stream_params[src_stream_cnt];
+				src_stream_cnt++;
 			} else {
 				stream_pair_param->rx_param = NULL;
 			}
@@ -872,8 +879,8 @@ int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *pa
 	struct shell_stream *snk_uni_streams[BAP_UNICAST_AC_MAX_SNK];
 	struct shell_stream *src_uni_streams[BAP_UNICAST_AC_MAX_SRC];
 	size_t conn_avail_cnt;
-	size_t snk_cnt = 0;
-	size_t src_cnt = 0;
+	size_t snk_cnt = 0U;
+	size_t src_cnt = 0U;
 	size_t total_cnt;
 	int err;
 
@@ -896,7 +903,7 @@ int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *pa
 	}
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
-	for (size_t i = 0; i < param->conn_cnt; i++) {
+	for (size_t i = 0U; i < param->conn_cnt; i++) {
 		/* Verify conn values */
 		if (param->snk_cnt[i] > BAP_UNICAST_AC_MAX_SNK) {
 			shell_error(sh, "Invalid conn_snk_cnt[%zu]: %zu", i, param->snk_cnt[i]);
@@ -918,7 +925,7 @@ int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *pa
 
 	/* Populate the array of connected connections */
 	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns, (void *)connected_conns);
-	for (conn_avail_cnt = 0; conn_avail_cnt < ARRAY_SIZE(connected_conns); conn_avail_cnt++) {
+	for (conn_avail_cnt = 0U; conn_avail_cnt < ARRAY_SIZE(connected_conns); conn_avail_cnt++) {
 		if (connected_conns[conn_avail_cnt] == NULL) {
 			break;
 		}
@@ -1362,7 +1369,7 @@ static int cmd_broadcast_update(const struct shell *sh, size_t argc, char *argv[
 	}
 
 	len = hex2bin(argv[1], strlen(argv[1]), meta, sizeof(meta));
-	if (len == 0) {
+	if (len == 0U) {
 		shell_print(sh, "Unable to parse metadata (len was %zu, max len is %d)",
 			    strlen(argv[1]) / 2U + strlen(argv[1]) % 2U,
 			    CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE);
@@ -1479,13 +1486,13 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 
 	err = bt_le_ext_adv_get_info(adv, &adv_info);
 	if (err != 0) {
-		shell_error(sh, "Failed to get adv info: %d\n", err);
+		shell_error(sh, "Failed to get adv info: %d", err);
 		return -ENOEXEC;
 	}
 
 	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
 	if (err != 0) {
-		bt_shell_error("Unable to generate broadcast ID: %d\n", err);
+		bt_shell_error("Unable to generate broadcast ID: %d", err);
 
 		return -ENOEXEC;
 	}
@@ -1707,7 +1714,7 @@ size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_a
 
 		err = bt_cap_initiator_broadcast_get_base(default_source.cap_source, &base_buf);
 		if (err != 0) {
-			bt_shell_error("Unable to get BASE: %d\n", err);
+			bt_shell_error("Unable to get BASE: %d", err);
 
 			return 0U;
 		}

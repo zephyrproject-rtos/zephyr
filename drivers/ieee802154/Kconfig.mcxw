@@ -8,6 +8,7 @@ menuconfig IEEE802154_MCXW
 	default y
 	depends on DT_HAS_NXP_MCXW_IEEE802154_ENABLED
 	select COUNTER
+	select NVMEM
 	select NET_PKT_TXTIME
 	select NET_PKT_TIMESTAMP
 

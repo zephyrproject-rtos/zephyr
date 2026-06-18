@@ -9,8 +9,12 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
   - usbd
   - ble
+  - i2c
   - pwm
   - spi
   - watchdog

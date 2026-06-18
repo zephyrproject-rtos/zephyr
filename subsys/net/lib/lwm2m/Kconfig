@@ -173,6 +173,14 @@ config LWM2M_INTERVAL
 
 endchoice
 
+config ZVFS_EVENTFD_ADD_SIZE_LWM2M
+	int "Number of eventfds needed by the LwM2M engine"
+	default 1
+	depends on LWM2M_TICKLESS
+	help
+	  In tickless operation mode the LwM2M engine allocates one zvfs eventfd
+	  to wake up its poll loop.
+
 config LWM2M_SERVER_DEFAULT_SSID
 	int "Default server ssid when using the lwm2m-client. (used for access control)"
 	default 101
@@ -415,7 +423,7 @@ config LWM2M_NUM_BLOCK1_CONTEXT
 	  CoAP block-wise transfer we can handle at the same time.
 
 config LWM2M_SWMGMT_PACKAGE_URI_LEN
-	int "Maximum size of the software management object's download URI string"
+	int "Maximum size of the firmware and software management objects URI string"
 	default 128
 
 config LWM2M_COMPOSITE_PATH_LIST_SIZE

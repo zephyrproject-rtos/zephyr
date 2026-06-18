@@ -10,4 +10,24 @@ config I2C_ESP32
 	depends on DT_HAS_ESPRESSIF_ESP32_I2C_ENABLED
 	select GPIO_ESP32
 	help
-	  Enables the ESP32 I2C driver
+	  Enables the ESP32 I2C driver.
+
+	  When CONFIG_I2C_TARGET is also enabled, the driver exposes I2C
+	  target callbacks. Target mode relies on the SCL stretch-cause
+	  hardware feature and is supported on ESP32-S2, ESP32-S3,
+	  ESP32-C3, ESP32-C5, ESP32-C6 and ESP32-H2. ESP32 and ESP32-C2
+	  are excluded.
+
+config I2C_ESP32_TARGET_BUF
+	int "ESP32 I2C target buffered RX size"
+	depends on I2C_ESP32 && I2C_TARGET && I2C_TARGET_BUFFER_MODE
+	range 32 1024
+	default 256
+	help
+	  Size in bytes of the per-instance RX buffer used by the ESP32
+	  I2C target driver when CONFIG_I2C_TARGET_BUFFER_MODE is
+	  enabled. Bytes received during a write transaction are cached
+	  until the master issues STOP, at which point buf_write_received
+	  is invoked once with the accumulated data. Reads stream out of
+	  the pointer supplied by buf_read_requested and are not bounded
+	  by this size.

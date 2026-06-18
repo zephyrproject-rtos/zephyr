@@ -324,23 +324,47 @@ struct i2s_config {
 };
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * For internal use only, skip these in public documentation.
+ * @def_driverbackendgroup{I2S,i2s_interface}
+ * @ingroup i2s_interface
+ * @{
+ */
+
+/**
+ * @driver_ops{I2S}
  */
 __subsystem struct i2s_driver_api {
+	/**
+	 * @driver_ops_mandatory @copybrief i2s_configure
+	 * See i2s_configure() for arguments description.
+	 */
 	int (*configure)(const struct device *dev, enum i2s_dir dir,
 			 const struct i2s_config *cfg);
+	/**
+	 * @driver_ops_mandatory @copybrief i2s_config_get
+	 * See i2s_config_get() for arguments description.
+	 */
 	const struct i2s_config *(*config_get)(const struct device *dev,
 				  enum i2s_dir dir);
+	/**
+	 * @driver_ops_mandatory @copybrief i2s_read
+	 * See i2s_read() for arguments description.
+	 */
 	int (*read)(const struct device *dev, void **mem_block, size_t *size);
+	/**
+	 * @driver_ops_mandatory @copybrief i2s_write
+	 * See i2s_write() for arguments description.
+	 */
 	int (*write)(const struct device *dev, void *mem_block, size_t size);
+	/**
+	 * @driver_ops_mandatory @copybrief i2s_trigger
+	 * See i2s_trigger() for arguments description.
+	 */
 	int (*trigger)(const struct device *dev, enum i2s_dir dir,
 		       enum i2s_trigger_cmd cmd);
 };
-/**
- * @endcond
- */
+
+/** @} */
+
 
 /**
  * @brief Configure operation of a host I2S controller.
@@ -360,7 +384,7 @@ __subsystem struct i2s_driver_api {
  *            For those, the RX and TX streams need to be configured separately.
  * @param cfg Pointer to the structure containing configuration parameters.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EINVAL Invalid argument.
  * @retval -ENOSYS I2S_DIR_BOTH value is not supported.
  */
@@ -413,7 +437,7 @@ static inline const struct i2s_config *i2s_config_get(const struct device *dev,
  * @param mem_block Pointer to the RX memory block containing received data.
  * @param size Pointer to the variable storing the number of bytes read.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO The interface is in NOT_READY or ERROR state and there are no
  *         more data blocks in the RX queue.
  * @retval -EBUSY Returned without waiting.
@@ -443,7 +467,7 @@ static inline int i2s_read(const struct device *dev, void **mem_block,
  *            as large as the configured memory block size for the RX channel.
  * @param size Pointer to the variable storing the number of bytes read.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO The interface is in NOT_READY or ERROR state and there are no
  *         more data blocks in the RX queue.
  * @retval -EBUSY Returned without waiting.
@@ -472,7 +496,7 @@ __syscall int i2s_buf_read(const struct device *dev, void *buf, size_t *size);
  * @param size Number of bytes to write. This value has to be equal or smaller
  *        than the size of the memory block.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO The interface is not in READY or RUNNING state.
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
@@ -495,7 +519,7 @@ static inline int i2s_write(const struct device *dev, void *mem_block,
  * @param size Number of bytes to write. This value has to be equal or smaller
  *        than the size of the channel's TX memory block configuration.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO The interface is not in READY or RUNNING state.
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
@@ -514,7 +538,7 @@ __syscall int i2s_buf_write(const struct device *dev, void *buf, size_t size);
  *            and TX streams.
  * @param cmd Trigger command.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EINVAL Invalid argument.
  * @retval -EIO The trigger cannot be executed in the current state or a DMA
  *         channel cannot be allocated.

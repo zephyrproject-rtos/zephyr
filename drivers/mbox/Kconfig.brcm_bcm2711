@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_BCM2711
+	bool "Broadcom BCM2711 mailbox driver"
+	default y
+	depends on DT_HAS_BRCM_BCM2711_MBOX_ENABLED
+	help
+	  Driver for Broadcom BCM2711 mailbox used to communicate with the VideoCore.

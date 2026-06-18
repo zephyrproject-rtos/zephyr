@@ -3,7 +3,7 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(bap_unicast_client_self_tets)
+project(bap_unicast_client_self_tests)
 
 set(unicast_client_path ${ZEPHYR_BASE}/samples/bluetooth/bap_unicast_client)
 

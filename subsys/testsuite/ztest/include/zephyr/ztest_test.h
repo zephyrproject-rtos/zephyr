@@ -16,6 +16,7 @@
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/util.h>
 #include <stdbool.h>
 
 
@@ -116,10 +117,65 @@ struct ztest_unit_test {
 	struct ztest_unit_test_stats *const stats;
 };
 
+/**
+ * @brief Parameter value set for value-parameterized tests.
+ */
+struct ztest_param_values {
+	/** Pointer to the array of parameter values (NULL when @p value_at_cb is set). */
+	const void *values;
+	/** Number of parameter values (or invocations when @p value_at_cb is set). */
+	size_t count;
+	/** Size in bytes of each individual parameter value. */
+	size_t elem_size;
+	/** Optional callback returning a human-readable name for the value at @p index. */
+	const char *(*name_cb)(size_t index, const void *value);
+	/**
+	 * @brief Optional value generator for range-based or runtime parameters.
+	 *
+	 * When non-NULL, called once per invocation with the 0-based index
+	 * and a pointer to an aligned scratch buffer of at least @p elem_size
+	 * bytes.  The callback must write exactly @p elem_size bytes into
+	 * @p out.  @p values must be NULL when this callback is provided.
+	 *
+	 * Use ZTEST_DEFINE_PARAM_RANGE() or ZTEST_DEFINE_PARAM_GENERATOR()
+	 * instead of setting this directly.
+	 */
+	void (*value_at_cb)(size_t index, void *out);
+	/**
+	 * @brief Optional one-time setup called before the dispatch loop.
+	 *
+	 * When non-NULL, invoked exactly once per parameterized test dispatch
+	 * before the first value is produced.  Useful for seeding a PRNG,
+	 * resetting stateful generators, or any other per-test-run
+	 * initialisation.  May be NULL.
+	 *
+	 * Use ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP() to set this field.
+	 */
+	void (*setup_cb)(void);
+};
+
+/**
+ * @brief Registration entry mapping a test to a parameter value set.
+ */
+struct ztest_param_inst {
+	/** Name of the test suite this instantiation belongs to. */
+	const char *test_suite_name;
+	/** Name of the parameterized test function. */
+	const char *test_name;
+	/** Human-readable label for this particular instantiation. */
+	const char *instance_name;
+	/** Parameter value set to iterate over for this instantiation. */
+	const struct ztest_param_values *values;
+};
+
 extern struct ztest_unit_test _ztest_unit_test_list_start[];
 extern struct ztest_unit_test _ztest_unit_test_list_end[];
+extern struct ztest_param_inst _ztest_param_inst_list_start[];
+extern struct ztest_param_inst _ztest_param_inst_list_end[];
 /** Number of registered unit tests */
 #define ZTEST_TEST_COUNT (_ztest_unit_test_list_end - _ztest_unit_test_list_start)
+/** Number of registered value-parameterized test instantiations */
+#define ZTEST_PARAM_INST_COUNT (_ztest_param_inst_list_end - _ztest_param_inst_list_start)
 
 /**
  * Stats about a ztest suite
@@ -406,9 +462,235 @@ void ztest_test_skip(void);
 
 void ztest_skip_failed_assumption(void);
 
+/**
+ * @brief Returns currently active value-parameterized test argument.
+ *
+ * For non-parameterized tests this returns NULL.
+ */
+const void *ztest_get_current_param(void);
+
+/**
+ * @brief Returns index of currently active value-parameterized test argument.
+ *
+ * For non-parameterized tests this returns 0.
+ */
+size_t ztest_get_current_param_index(void);
+
+/**
+ * @brief Returns size of current parameter element in bytes.
+ *
+ * For non-parameterized tests this returns 0.
+ */
+size_t ztest_get_current_param_size(void);
+
+/**
+ * @brief Returns true when currently running a value-parameterized test instance.
+ */
+bool ztest_has_current_param(void);
+
+/**
+ * @brief Get current parameter as a typed pointer.
+ */
+#define ZTEST_GET_PARAM_PTR(type) ((const type *)ztest_get_current_param())
+
+/**
+ * @brief Get current parameter as a typed value.
+ */
+#define ZTEST_GET_PARAM(type) (*ZTEST_GET_PARAM_PTR(type))
+
+/**
+ * @brief Declare a static value set for use with ZTEST_INSTANTIATE_TEST_SUITE_P().
+ *
+ * Creates a named ``static const struct ztest_param_values`` backed by the
+ * supplied literal values.  The resulting name is passed directly to
+ * ZTEST_INSTANTIATE_TEST_SUITE_P().
+ *
+ * @param name_   Identifier for the resulting variable.
+ * @param type_   C type of each individual parameter value.
+ * @param ...     Comma-separated list of parameter values.
+ */
+#define ZTEST_DEFINE_PARAM_VALUES(name_, type_, ...)                                         \
+	static const type_ z_ztest_param_arr_##name_[] = {__VA_ARGS__};                     \
+	static const struct ztest_param_values name_ = {                                     \
+		.values       = z_ztest_param_arr_##name_,                                   \
+		.count        = ARRAY_SIZE(z_ztest_param_arr_##name_),                       \
+		.elem_size    = sizeof(type_),                                                \
+		.name_cb      = NULL,                                                        \
+		.value_at_cb  = NULL,                                                        \
+		.setup_cb     = NULL,                                                        \
+	}
+
+/**
+ * @brief Declare a static value set from an existing array.
+ *
+ * @param name_    Identifier for the resulting variable.
+ * @param array_   Array of parameter values (must be in scope at call site).
+ */
+#define ZTEST_DEFINE_PARAM_VALUES_ARRAY(name_, array_)                                       \
+	static const struct ztest_param_values name_ = {                                     \
+		.values      = (array_),                                                     \
+		.count       = ARRAY_SIZE(array_),                                           \
+		.elem_size   = sizeof((array_)[0]),                                          \
+		.name_cb     = NULL,                                                         \
+		.value_at_cb = NULL,                                                         \
+		.setup_cb    = NULL,                                                         \
+	}
+
+/**
+ * @brief Declare a numeric range for use with ZTEST_INSTANTIATE_TEST_SUITE_P().
+ *
+ * Modelled on GoogleTest's ``testing::Range(begin, end [, step])``.  The range
+ * is half-open: values are ``{begin, begin+step, begin+2*step, ...}`` up to
+ * (but not including) @p end_.  @p step_ defaults to 1 when omitted.
+ *
+ * Values are computed on demand via a generated callback — no array is
+ * allocated, so arbitrarily large ranges have zero RAM cost.
+ *
+ * Constraints (checked at compile time):
+ * - @p end_ > @p begin_
+ * - @p step_ > 0
+ * - ``sizeof(type_)`` must not exceed 16 bytes
+ *
+ * @param name_   Identifier for the resulting variable.
+ * @param type_   Scalar C type (e.g. ``int``, ``uint32_t``).
+ * @param begin_  First value in the range (inclusive).
+ * @param end_    Upper bound of the range (exclusive).
+ * @param step_   Increment between successive values (default 1).
+ */
+#define ZTEST_DEFINE_PARAM_RANGE(name_, type_, begin_, end_, step_)                          \
+	BUILD_ASSERT((end_) > (begin_), "ZTEST_DEFINE_PARAM_RANGE: end must be > begin"); \
+	BUILD_ASSERT((step_) > 0, "ZTEST_DEFINE_PARAM_RANGE: step must be > 0");          \
+	BUILD_ASSERT(sizeof(type_) <= 16U,                                                   \
+		     "ZTEST_DEFINE_PARAM_RANGE: type too large for scratch buffer");        \
+	static void z_ztest_range_value_at_##name_(size_t z_idx_, void *z_out_)             \
+	{                                                                                    \
+		type_ z_val_ = (type_)(begin_) + (type_)(step_) * (type_)(z_idx_);         \
+		*(type_ *)z_out_ = z_val_;                                                   \
+	}                                                                                    \
+	static const struct ztest_param_values name_ = {                                     \
+		.values      = NULL,                                                         \
+		.count       = (size_t)(((end_) - (begin_) - 1) / (step_) + 1),             \
+		.elem_size   = sizeof(type_),                                                \
+		.name_cb     = NULL,                                                         \
+		.value_at_cb = z_ztest_range_value_at_##name_,                              \
+		.setup_cb    = NULL,                                                         \
+	}
+
+/**
+ * @brief Declare a runtime-generated parameter set.
+ *
+ * @p gen_cb_ is called once per invocation with the 0-based iteration index
+ * and a pointer to an aligned scratch buffer; it must write exactly
+ * ``sizeof(type_)`` bytes into that buffer.  The callback may read any
+ * runtime state — random numbers, hardware registers, computed values, etc.
+ *
+ * Values are never stored in an array; @p count_ iterations cost no extra RAM
+ * regardless of type size.
+ *
+ * For generators that require one-time initialisation (e.g. seeding a PRNG)
+ * use ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP() instead.
+ *
+ * Constraint (checked at compile time): ``sizeof(type_)`` must not exceed
+ * 16 bytes.
+ *
+ * @param name_    Identifier for the resulting variable.
+ * @param type_    C type of each generated value.
+ * @param count_   Number of invocations (constant expression).
+ * @param gen_cb_  Generator: ``void (*)(size_t index, void *out)``.
+ */
+#define ZTEST_DEFINE_PARAM_GENERATOR(name_, type_, count_, gen_cb_)                          \
+	BUILD_ASSERT(sizeof(type_) <= 16U,                                                   \
+		     "ZTEST_DEFINE_PARAM_GENERATOR: type too large for scratch buffer");     \
+	static const struct ztest_param_values name_ = {                                     \
+		.values      = NULL,                                                         \
+		.count       = (count_),                                                     \
+		.elem_size   = sizeof(type_),                                                \
+		.name_cb     = NULL,                                                         \
+		.value_at_cb = (gen_cb_),                                                    \
+		.setup_cb    = NULL,                                                         \
+	}
+
+/**
+ * @brief Declare a runtime-generated parameter set with one-time setup.
+ *
+ * Identical to ZTEST_DEFINE_PARAM_GENERATOR() but also registers
+ * @p setup_cb_, which is called **once** before the first iteration of the
+ * dispatch loop.  Use this to seed a PRNG, reset a stateful counter, or
+ * perform any other per-test-run initialisation that must happen before
+ * values are generated.
+ *
+ * Example — reproducible fuzz testing:
+ *
+ * @code{.c}
+ * static void seed_rng(void) { sys_rand_seed(MY_FUZZ_SEED); }
+ * static void rand_u32(size_t idx, void *out)
+ * {
+ *     ARG_UNUSED(idx);
+ *     *(uint32_t *)out = sys_rand32_get();
+ * }
+ * ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP(fuzz_vals, uint32_t,
+ *                                         MY_FUZZ_ITERATIONS,
+ *                                         seed_rng, rand_u32);
+ * @endcode
+ *
+ * @param name_      Identifier for the resulting variable.
+ * @param type_      C type of each generated value.
+ * @param count_     Number of invocations (constant expression).
+ * @param setup_cb_  Setup: ``void (*)(void)`` — called once before iteration 0.
+ * @param gen_cb_    Generator: ``void (*)(size_t index, void *out)``.
+ */
+#define ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP(name_, type_, count_, setup_cb_, gen_cb_)    \
+	BUILD_ASSERT(sizeof(type_) <= 16U,                                                   \
+		     "ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP: type too large");             \
+	static const struct ztest_param_values name_ = {                                     \
+		.values      = NULL,                                                         \
+		.count       = (count_),                                                     \
+		.elem_size   = sizeof(type_),                                                \
+		.name_cb     = NULL,                                                         \
+		.value_at_cb = (gen_cb_),                                                    \
+		.setup_cb    = (setup_cb_),                                                  \
+	}
+
+/**
+ * @brief Instantiate a ZTEST_P test with a set of parameter values.
+ *
+ * Registers a ``struct ztest_param_inst`` entry in the ``ztest_param_inst``
+ * linker section.  During suite execution the framework calls @p fn once per
+ * value in @p param_values_name, setting the per-invocation parameter context
+ * before each call.  Inside the test body use ztest_get_current_param() or the
+ * typed helper ZTEST_GET_PARAM() to retrieve the current value.
+ *
+ * The suite fixture returned by ``setup()`` is passed as the ``data`` argument
+ * of the ZTEST_P function and is **never** overwritten by the parameter.
+ *
+ * @param inst_             Unique identifier for this instantiation.
+ * @param suite_            Suite name (must match the ZTEST_SUITE declaration).
+ * @param fn_               Test name (must be declared with ZTEST_P).
+ * @param param_values_name_ Name of a variable declared with
+ *                           ZTEST_DEFINE_PARAM_VALUES() or
+ *                           ZTEST_DEFINE_PARAM_VALUES_ARRAY().
+ */
+/* Note: all parameters carry a trailing underscore to avoid name collisions
+ * with the struct fields of ztest_param_inst (e.g. a parameter named
+ * 'instance_name' would cause the preprocessor to replace the token inside
+ * the '.instance_name' designator, producing the invalid '.ints').
+ */
+#define ZTEST_INSTANTIATE_TEST_SUITE_P(inst_, suite_, fn_, param_values_name_)               \
+	static const STRUCT_SECTION_ITERABLE(                                                \
+		ztest_param_inst,                                                            \
+		UTIL_CAT(UTIL_CAT(z_ztest_param_inst_, suite_),                              \
+			 UTIL_CAT(_, UTIL_CAT(fn_, UTIL_CAT(_, inst_))))) = {               \
+		.test_suite_name = STRINGIFY(suite_),                                        \
+		.test_name       = STRINGIFY(fn_),                                           \
+		.instance_name   = STRINGIFY(inst_),                                         \
+		.values          = &(param_values_name_),                                    \
+	}
+
 #define Z_TEST_P(suite, fn, t_options) \
 	struct ztest_unit_test_stats z_ztest_unit_test_stats_##suite##_##fn; \
 	static void _##suite##_##fn##_wrapper(void *data); \
+	/* data carries the suite fixture from setup(); use             */ \
+	/* ztest_get_current_param() / ZTEST_GET_PARAM() for the value. */ \
 	static void suite##_##fn(void *data); \
 	static STRUCT_SECTION_ITERABLE(ztest_unit_test, z_ztest_unit_test__##suite##__##fn) = { \
 		.test_suite_name = STRINGIFY(suite), \
@@ -425,6 +707,20 @@ void ztest_skip_failed_assumption(void);
 
 
 #define ZTEST_P(suite, fn) Z_TEST_P(suite, fn, 0)
+
+/**
+ * @brief Define a value-parameterized test function that runs as a user thread.
+ *
+ * Behaves exactly like ZTEST_P() but spawns the test thread with the @c K_USER
+ * flag so the test body executes in user space when @c CONFIG_USERSPACE is
+ * enabled.  Use this instead of ZTEST_P() when the code under test is a
+ * syscall or must otherwise be exercised from an unprivileged context.
+ *
+ * @param suite The name of the test suite to attach this test.
+ * @param fn    The test function to call (must be paired with
+ *              ZTEST_INSTANTIATE_TEST_SUITE_P()).
+ */
+#define ZTEST_USER_P(suite, fn) Z_TEST_P(suite, fn, K_USER)
 
 #define Z_TEST(suite, fn, t_options, use_fixture)                                                  \
 	struct ztest_unit_test_stats z_ztest_unit_test_stats_##suite##_##fn;                       \
@@ -464,7 +760,7 @@ void ztest_skip_failed_assumption(void);
  *
  * Use this macro at the start of your test case, to skip it when
  * config is not enabled.  Useful when your need to skip test if some
- * conifiguration option is not enabled.
+ * configuration option is not enabled.
  *
  * @param config The Kconfig option used to skip the test (if not enabled).
  */

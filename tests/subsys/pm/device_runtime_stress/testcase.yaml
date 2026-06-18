@@ -1,0 +1,7 @@
+common:
+  tags: pm
+
+tests:
+  pm.device_runtime.stress:
+    platform_allow:
+      - qemu_x86

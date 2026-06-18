@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config NRF_USBHS_WRAPPER
+	bool "Nordic USBHS wrapper"
+	default y
+	depends on DT_HAS_NORDIC_NRF_USBHS_WRAPPER_ENABLED
+	depends on REGULATOR
+	help
+	  Driver for Nordic USBHS wrapper.

@@ -37,7 +37,7 @@
 /** @} */
 
 /**
- * @defgroup mcp9600_cold_junction_temp_resolution Cold junction temperature resultion
+ * @defgroup mcp9600_cold_junction_temp_resolution Cold junction temperature resolution
  * @{
  */
 #define MCP9600_DT_COLD_JUNC_TMP_RES_0_0625C 0x0

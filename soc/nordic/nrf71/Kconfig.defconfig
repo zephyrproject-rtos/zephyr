@@ -42,4 +42,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config MSPI_DW_DDR
 	default n
 
+config MSPI_DMA
+	default y
+
 endif # SOC_SERIES_NRF71

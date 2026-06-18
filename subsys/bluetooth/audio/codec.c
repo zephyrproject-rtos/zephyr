@@ -134,9 +134,11 @@ static int ltv_set_val(struct net_buf_simple *buf, uint8_t type, const uint8_t *
 	size_t new_buf_len;
 
 	for (uint16_t i = 0U; i < buf->len;) {
-		uint8_t *len = &buf->data[i++];
-		const uint8_t data_type = buf->data[i++];
+		uint8_t *len = &buf->data[i];
+		const uint8_t data_type = buf->data[i + 1U];
 		const uint8_t value_len = *len - sizeof(data_type);
+
+		i += 2U;
 
 		if (data_type == type) {
 			uint8_t *value = &buf->data[i];
@@ -180,7 +182,7 @@ static int ltv_set_val(struct net_buf_simple *buf, uint8_t type, const uint8_t *
 						return -ENOMEM;
 					}
 
-					if (data_len_to_move > 0) {
+					if (data_len_to_move > 0U) {
 						memmove(new_next_data_start, old_next_data_start,
 							data_len_to_move);
 					}
@@ -202,7 +204,7 @@ static int ltv_set_val(struct net_buf_simple *buf, uint8_t type, const uint8_t *
 	if (new_buf_len <= buf->size) {
 		net_buf_simple_add_u8(buf, data_len + sizeof(type)); /* len */
 		net_buf_simple_add_u8(buf, type); /* type */
-		if (data_len > 0) {
+		if (data_len > 0U) {
 			net_buf_simple_add_mem(buf, data, data_len); /* value */
 		}
 	} else {
@@ -218,9 +220,11 @@ static int ltv_unset_val(struct net_buf_simple *buf, uint8_t type)
 {
 	for (uint16_t i = 0U; i < buf->len;) {
 		uint8_t *ltv_start = &buf->data[i];
-		const uint8_t len = buf->data[i++];
-		const uint8_t data_type = buf->data[i++];
+		const uint8_t len = buf->data[i];
+		const uint8_t data_type = buf->data[i + 1U];
 		const uint8_t value_len = len - sizeof(data_type);
+
+		i += 2U;
 
 		if (data_type == type) {
 			const uint8_t ltv_size = value_len + sizeof(data_type) + sizeof(len);
@@ -593,7 +597,7 @@ static int codec_meta_set_val(uint8_t meta[], size_t meta_len, size_t meta_size,
 		return -EINVAL;
 	}
 
-	if (data == NULL && data_len != 0) {
+	if (data == NULL && data_len != 0U) {
 		LOG_DBG("data is NULL");
 		return -EINVAL;
 	}

@@ -74,10 +74,15 @@ set_property(TARGET zephyr_property_target
              -DTFM_ISOLATION_LEVEL=2
 )
 
-# Let TF-M install Mbed TLS (3.6.5) include files in the binary directory.
+# Let TF-M install TF-PSA-Crypto include files in the binary directory.
+#
+# In a normal TF-M build in Zephyr this is not required because those headers
+# are provided by TF-PSA-Crypto already. This sample follows a different
+# build procedure though (which is the officially suggested one from TF-M),
+# so we need those headers to be installed in the binary directory.
 set_property(TARGET zephyr_property_target
              APPEND PROPERTY TFM_CMAKE_OPTIONS
-             -DTFM_INSTALL_MBEDTLS_HEADERS=ON
+             -DTFM_INSTALL_TF_PSA_CRYPTO_HEADERS=ON
 )
 
 include(ExternalProject)

@@ -26,4 +26,6 @@ supported:
   - opamp
   - can
   - arduino_gpio
+  - edac
+  - pwm
 vendor: nxp

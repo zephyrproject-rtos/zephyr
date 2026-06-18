@@ -34,7 +34,7 @@ class DeviceConnection(abc.ABC):
         """Initialize the device connection"""
         self.log_path = log_path
         self.timeout = timeout
-        self._device_read_queue: queue.Queue = queue.Queue()
+        self._device_read_queue: queue.Queue[str] = queue.Queue()
         self._reader_thread: threading.Thread | None = None
         # Prefix for log messages to differentiate between multiple connections
         self.log_prefix: str = ''
@@ -83,7 +83,7 @@ class DeviceConnection(abc.ABC):
     def _read_from_queue(self, timeout: float) -> str:
         """Read data from internal queue"""
         try:
-            data: str | object = self._device_read_queue.get(timeout=timeout)
+            data: str = self._device_read_queue.get(timeout=timeout)
         except queue.Empty as exc:
             raise TwisterHarnessTimeoutException(
                 f'Read from device timeout occurred ({timeout}s)'
@@ -121,7 +121,6 @@ class DeviceConnection(abc.ABC):
         - Collect a fixed number of lines
         - Get all currently available lines immediately
         """
-        __tracebackhide__ = True  # pylint: disable=unused-variable
         timeout = timeout or self.timeout
         if regex:
             regex_compiled = re.compile(regex)

@@ -1577,10 +1577,7 @@ static int cmd_bip_client_get_caps(const struct shell *sh, size_t argc, char *ar
 		return -ENOEXEC;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -1648,10 +1645,7 @@ static int cmd_bip_client_get_image_list(const struct shell *sh, size_t argc, ch
 		return -ENOEXEC;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -1718,10 +1712,7 @@ static int cmd_bip_client_get_image_properties(const struct shell *sh, size_t ar
 		return -ENOEXEC;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -1785,10 +1776,7 @@ static int cmd_bip_client_get_image(const struct shell *sh, size_t argc, char *a
 		return -ENOEXEC;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -1853,10 +1841,7 @@ static int cmd_bip_client_get_linked_thumbnail(const struct shell *sh, size_t ar
 		return -ENOEXEC;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -1917,10 +1902,7 @@ static int cmd_bip_client_get_linked_attachment(const struct shell *sh, size_t a
 		return -ENOEXEC;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -1996,10 +1978,7 @@ static int cmd_bip_client_get_partial_image(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -2069,10 +2048,7 @@ static int cmd_bip_client_get_monitoring_image(const struct shell *sh, size_t ar
 		return -ENOEXEC;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -2130,10 +2106,7 @@ static int cmd_bip_client_get_status(const struct shell *sh, size_t argc, char *
 		return -ENOEXEC;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -2272,10 +2245,7 @@ static int cmd_bip_client_put_image(const struct shell *sh, size_t argc, char *a
 		return -ENOEXEC;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -2366,10 +2336,7 @@ static int cmd_bip_client_put_linked_thumbnail(const struct shell *sh, size_t ar
 		return -ENOEXEC;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -2456,10 +2423,7 @@ static int cmd_bip_client_put_linked_attachment(const struct shell *sh, size_t a
 		return -ENOEXEC;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -2555,10 +2519,7 @@ static int cmd_bip_client_remote_display(const struct shell *sh, size_t argc, ch
 		return -ENOEXEC;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -2623,10 +2584,7 @@ static int cmd_bip_client_delete_image(const struct shell *sh, size_t argc, char
 		return -ENOEXEC;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -2739,10 +2697,7 @@ static int cmd_bip_client_start_print(const struct shell *sh, size_t argc, char 
 		return -ENOEXEC;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -2829,10 +2784,7 @@ static int cmd_bip_client_start_archive(const struct shell *sh, size_t argc, cha
 		return -ENOEXEC;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -3096,10 +3048,7 @@ static int cmd_bip_server_get_caps(const struct shell *sh, size_t argc, char *ar
 		goto error_rsp;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -3178,10 +3127,7 @@ static int cmd_bip_server_get_image_list(const struct shell *sh, size_t argc, ch
 		goto error_rsp;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -3285,10 +3231,7 @@ static int cmd_bip_server_get_image_properties(const struct shell *sh, size_t ar
 		goto error_rsp;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -3359,10 +3302,7 @@ static int cmd_bip_server_get_image(const struct shell *sh, size_t argc, char *a
 		goto error_rsp;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -3441,10 +3381,7 @@ static int cmd_bip_server_get_linked_thumbnail(const struct shell *sh, size_t ar
 		goto error_rsp;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -3515,10 +3452,7 @@ static int cmd_bip_server_get_linked_attachment(const struct shell *sh, size_t a
 		goto error_rsp;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -3589,10 +3523,7 @@ static int cmd_bip_server_get_partial_image(const struct shell *sh, size_t argc,
 		goto error_rsp;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -3687,10 +3618,7 @@ static int cmd_bip_server_get_monitoring_image(const struct shell *sh, size_t ar
 		goto error_rsp;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -3772,10 +3700,7 @@ static int cmd_bip_server_get_status(const struct shell *sh, size_t argc, char *
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -3823,10 +3748,7 @@ static int cmd_bip_server_put_image(const struct shell *sh, size_t argc, char *a
 		goto error_rsp;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -3888,10 +3810,7 @@ static int cmd_bip_server_put_linked_thumbnail(const struct shell *sh, size_t ar
 		goto error_rsp;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -3947,10 +3866,7 @@ static int cmd_bip_server_put_linked_attachment(const struct shell *sh, size_t a
 		goto error_rsp;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -4006,10 +3922,7 @@ static int cmd_bip_server_remote_display(const struct shell *sh, size_t argc, ch
 		goto error_rsp;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -4067,10 +3980,7 @@ static int cmd_bip_server_delete_image(const struct shell *sh, size_t argc, char
 		goto error_rsp;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -4121,10 +4031,7 @@ static int cmd_bip_server_start_print(const struct shell *sh, size_t argc, char 
 		goto error_rsp;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -4179,10 +4086,7 @@ static int cmd_bip_server_start_archive(const struct shell *sh, size_t argc, cha
 		goto error_rsp;
 	}
 
-	if (bip_app.tx_buf != NULL) {
-		net_buf_unref(bip_app.tx_buf);
-		bip_app.tx_buf = NULL;
-	}
+	net_buf_drop(&bip_app.tx_buf);
 
 	if (bip_app.tx_buf == NULL) {
 		bip_app.tx_buf = bt_goep_create_pdu(&bip_app.bip.goep, &tx_pool);
@@ -4557,8 +4461,7 @@ static int cmd_release_buf(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	net_buf_unref(bip_app.tx_buf);
-	bip_app.tx_buf = NULL;
+	net_buf_drop(&bip_app.tx_buf);
 
 	return 0;
 }

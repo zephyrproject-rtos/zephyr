@@ -82,6 +82,7 @@ static void *gpio_basic_setup(void)
 #ifdef CONFIG_UART_CONSOLE
 	(void)pm_device_runtime_get(DEVICE_DT_GET(DT_CHOSEN(zephyr_console)));
 #endif
+	k_object_access_grant(DEVICE_DT_GET(DEV), k_current_get());
 	return NULL;
 }
 

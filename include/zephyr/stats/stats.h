@@ -362,7 +362,7 @@ struct stats_hdr *stats_group_find(const char *name);
 #define STATS_SIZE_INIT_PARMS(group__, size__)
 #define STATS_INCN(group__, var__, n__)
 #define STATS_INC(group__, var__)
-#define STATS_SET(group__, var__)
+#define STATS_SET(group__, var__, n__)
 #define STATS_CLEAR(group__, var__)
 #define STATS_INIT_AND_REG(group__, size__, name__) (0)
 

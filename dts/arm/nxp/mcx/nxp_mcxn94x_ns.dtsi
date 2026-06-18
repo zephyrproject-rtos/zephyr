@@ -15,6 +15,10 @@
 
 		peripheral: peripheral@40000000 {
 			ranges = <0x0 0x40000000 0x10000000>;
+
+			ftfe: flash-controller@43000 {
+				ranges = <0x0 0x10000000 0x4000000>;
+			};
 		};
 
 		flexspi: spi@400c8000 {

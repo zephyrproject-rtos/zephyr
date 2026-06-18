@@ -9,7 +9,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <zephyr/kernel_structs.h>
 #include <string.h>
 #include <stdlib.h>
 #include <zephyr/app_memory/app_memdomain.h>
@@ -278,7 +277,7 @@ ZTEST_USER(userspace, test_disable_mmu_mpu)
 
 #if defined(CONFIG_XTENSA_MMU)
 	/* Reset way 6 to do identity mapping.
-	 * Complier would complain addr going out of range if we
+	 * Compiler would complain addr going out of range if we
 	 * simply do addr = i * 0x20000000 inside the loop. So
 	 * we do increment instead.
 	 */
@@ -615,7 +614,7 @@ ZTEST_USER(userspace, test_write_other_stack)
  * @brief Test to revoke access to kobject without permission
  *
  * @details User thread can only revoke their own access to an object.
- * In that test user thread to revokes access to unathorized object, as a result
+ * In that test user thread to revokes access to unauthorized object, as a result
  * the system will assert.
  *
  * @ingroup kernel_memprotect_tests

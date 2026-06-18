@@ -119,11 +119,6 @@ static int dsa_netc_port_init(const struct device *dev)
 	return 0;
 }
 
-static void dsa_netc_port_generate_random_mac(uint8_t *mac_addr)
-{
-	gen_random_mac(mac_addr, FREESCALE_OUI_B0, FREESCALE_OUI_B1, FREESCALE_OUI_B2);
-}
-
 static int dsa_netc_switch_setup(const struct dsa_switch_context *dsa_switch_ctx)
 {
 	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
@@ -193,28 +188,21 @@ static int dsa_netc_switch_setup(const struct dsa_switch_context *dsa_switch_ctx
 	return 0;
 }
 
-static void dsa_netc_port_phylink_change(const struct device *phydev, struct phy_link_state *state,
-					 void *user_data)
+static void dsa_netc_port_phylink_change(const struct device *phy_dev __unused,
+					 struct phy_link_state *state, const struct device *dev)
 {
-	const struct device *dev = (struct device *)user_data;
-	struct net_if *iface = net_if_lookup_by_dev(dev);
 	const struct dsa_port_config *cfg = dev->config;
 	struct dsa_switch_context *dsa_switch_ctx = dev->data;
 	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
 	status_t result;
 
 	if (state->is_up) {
-		LOG_INF("DSA user port %d Link up", cfg->port_idx);
 		result = SWT_SetEthPortMII(&prv->swt_handle, cfg->port_idx,
 					   PHY_TO_NETC_SPEED(state->speed),
 					   PHY_TO_NETC_DUPLEX_MODE(state->speed));
 		if (result != kStatus_Success) {
 			LOG_ERR("DSA user port %d failed to set MAC up", cfg->port_idx);
 		}
-		net_eth_carrier_on(iface);
-	} else {
-		LOG_INF("DSA user port %d Link down", cfg->port_idx);
-		net_eth_carrier_off(iface);
 	}
 }
 
@@ -555,7 +543,6 @@ static enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev)
 
 static struct dsa_api dsa_netc_api = {
 	.port_init = dsa_netc_port_init,
-	.port_generate_random_mac = dsa_netc_port_generate_random_mac,
 	.switch_setup = dsa_netc_switch_setup,
 	.port_phylink_change = dsa_netc_port_phylink_change,
 #ifdef NETC_PTP_TIMESTAMPING_SUPPORT
@@ -578,8 +565,7 @@ static struct dsa_api dsa_netc_api = {
 		.phy_mode = NETC_PHY_MODE(port),                                            \
 	};                                                                                  \
 	struct dsa_port_config dsa_##n##_##port##_config = {                                \
-		.use_random_mac_addr = DT_PROP(port, zephyr_random_mac_address),            \
-		.mac_addr = DT_PROP_OR(port, local_mac_address, {0}),                       \
+		.mcfg = NET_ETH_MAC_DT_CONFIG_INIT(port),                                   \
 		.port_idx = DT_REG_ADDR(port),                                              \
 		.phy_dev = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(port, phy_handle)),             \
 		.phy_mode = DT_PROP_OR(port, phy_connection_type, ""),                      \

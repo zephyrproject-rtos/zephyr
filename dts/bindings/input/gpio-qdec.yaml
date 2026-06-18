@@ -20,6 +20,8 @@ properties:
     required: true
     description: |
       GPIO for the A and B encoder signals.
+    min-len: 2
+    max-len: 2
 
   led-gpios:
     type: phandle-array

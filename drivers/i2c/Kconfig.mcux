@@ -15,6 +15,7 @@ menuconfig I2C_MCUX_FLEXCOMM
 config I2C_MCUX_FLEXCOMM_BUS_RECOVERY
 	bool "Bus recovery support"
 	default y if I2C_BUS_RECOVERY
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPC_I2C),recover-bus-on-init)
 	depends on I2C_MCUX_FLEXCOMM && PINCTRL
 	select I2C_BITBANG
 	help

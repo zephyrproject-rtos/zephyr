@@ -40,3 +40,40 @@
 	drive-open-drain;
 	input-enable;
 };
+
+/* Configure pin control bias mode for WiFi SDIO (SDHC0) pins */
+&p21_0_sdhc0_card_cmd {
+	drive-push-pull;
+	input-enable;
+	drive-strength = "half";
+};
+
+&p12_0_sdhc0_clk_card {
+	drive-push-pull;
+	input-enable;
+	drive-strength = "half";
+};
+
+&p12_1_sdhc0_card_dat_3to0 {
+	drive-push-pull;
+	input-enable;
+	drive-strength = "half";
+};
+
+&p12_2_sdhc0_card_dat_3to0 {
+	drive-push-pull;
+	input-enable;
+	drive-strength = "half";
+};
+
+&p12_4_sdhc0_card_dat_3to0 {
+	drive-push-pull;
+	input-enable;
+	drive-strength = "half";
+};
+
+&p12_5_sdhc0_card_dat_3to0 {
+	drive-push-pull;
+	input-enable;
+	drive-strength = "half";
+};

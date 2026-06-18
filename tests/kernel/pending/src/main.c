@@ -7,7 +7,6 @@
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <stdbool.h>
 
 #define  NUM_SECONDS(x)      ((x) * 1000)

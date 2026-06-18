@@ -30,7 +30,7 @@ config VIRTIOFS_NO_NOTIFICATION_QUEUE_SLOT
 	default y
 	help
 	  According to virtio specification v1.3 section 5.11.2 queue at idx 1 is notification queue and
-	  request queues start at idx 2, however on qemu+virtiofsd thats not true and idx 1 is
+	  request queues start at idx 2, however on qemu+virtiofsd that's not true and idx 1 is
 	  the first request queue
 
 config VIRTIOFS_VIRTIOFSD_UNLINK_QUIRK

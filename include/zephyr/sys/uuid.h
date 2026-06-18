@@ -98,6 +98,19 @@ int uuid_generate_v5(const struct uuid *ns, const void *data, size_t data_size,
 int uuid_cmp(const struct uuid *a, const struct uuid *b);
 
 /**
+ * @brief Check whether a UUID is the Nil UUID.
+ *
+ * @details The Nil UUID is the special form defined in RFC9562 section 5.9 in
+ * which all 128 bits are set to zero.
+ *
+ * @param data UUID to test.
+ *
+ * @retval true @p data is the Nil UUID.
+ * @retval false @p data is any other value.
+ */
+bool uuid_is_nil(const struct uuid *data);
+
+/**
  * @brief Copy an UUID into another UUID.
  *
  * @param data Input data to copy.

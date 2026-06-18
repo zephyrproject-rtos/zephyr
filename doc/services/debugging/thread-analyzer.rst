@@ -92,6 +92,8 @@ Configure this module using the following options.
   frame thread statistics, reset the Longest Frame value to zero after each time
   printing the thread statistics.  This enables observation of the longest frame
   during the most recent interval rather than longest frame since startup.
+:kconfig:option:`CONFIG_THREAD_ANALYZER_PRINT_THREAD_PRIORITY`
+  Print each thread's priority.
 
 API documentation
 *****************

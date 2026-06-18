@@ -284,15 +284,21 @@ void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item)
 	 * error: we are breaking our promise about run order.
 	 * Complain.
 	 */
-	struct k_thread *th = z_unpend_first_thread(&queue->waitq);
+	struct k_thread *th = NULL;
+
+	LOCK_SCHED_SPINLOCK {
+		th = z_unpend_first_thread_locked(&queue->waitq);
+		if (th != NULL) {
+			set_prio(th, item);
+			z_sched_ready_locked(th);
+		}
+	}
 
 	if (th == NULL) {
 		LOG_WRN("Out of worker threads, priority guarantee violated");
 		goto out;
 	}
 
-	set_prio(th, item);
-	z_ready_thread(th);
 	z_reschedule(&queue->lock, k);
 
 	return;

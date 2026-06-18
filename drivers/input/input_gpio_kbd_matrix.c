@@ -277,8 +277,6 @@ static const struct input_kbd_matrix_api gpio_kbd_matrix_api = {
 };
 
 #define INPUT_GPIO_KBD_MATRIX_INIT(n)								\
-	BUILD_ASSERT(DT_INST_PROP_LEN(n, col_gpios) <= 32, "invalid col-size");			\
-												\
 	INPUT_KBD_MATRIX_DT_INST_DEFINE_ROW_COL(						\
 		n, DT_INST_PROP_LEN(n, row_gpios), DT_INST_PROP_LEN(n, col_gpios));		\
 												\

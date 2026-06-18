@@ -108,7 +108,7 @@ int eeprom_fm25xxx_read(const struct device *dev, off_t offset, void *data, size
 		return -EINVAL;
 	}
 
-	LOG_HEXDUMP_DBG(read_op, 4, "Read op");
+	LOG_HEXDUMP_DBG(read_op, op_len, "Read op");
 
 	const struct spi_buf tx_bufs[] = {{
 		.buf = &read_op,
@@ -186,7 +186,7 @@ int eeprom_fm25xxx_write(const struct device *dev, off_t offset, const void *dat
 		return -EINVAL;
 	}
 
-	LOG_HEXDUMP_DBG(write_op, 4, "Write op");
+	LOG_HEXDUMP_DBG(write_op, op_len, "Write op");
 
 	const struct spi_buf tx_bufs[] = {
 		{

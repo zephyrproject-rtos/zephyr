@@ -79,6 +79,8 @@ struct udc_dwc2_data {
 	DEVICE_MMIO_NAMED_RAM(core);
 	struct k_spinlock lock;
 	struct k_thread thread_data;
+	/* Condition variable used to synchronously disable in driver thread */
+	struct k_condvar core_disabled;
 	/* Main events the driver thread waits for */
 	struct k_event drv_evt;
 	/* Endpoint is considered disabled when there is no active transfer */
@@ -95,6 +97,8 @@ struct udc_dwc2_data {
 	uint32_t rx_siz[16];
 	/* Isochronous endpoint enabled (IN on bits 0-15, OUT on bits 16-31) */
 	uint32_t iso_enabled;
+	/* Return code from disable executed synchronously in driver thread */
+	int disable_status;
 	uint16_t iso_in_rearm;
 	uint16_t iso_out_rearm;
 	uint16_t ep_out_disable;

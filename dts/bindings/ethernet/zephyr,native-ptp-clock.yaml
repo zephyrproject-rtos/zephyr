@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright 2026 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Native Sim PTP (Precision Time Protocol) Clock
+description: |
+  This binding describes a simulated PTP clock for use with native_sim. It provides
+  an interface to simulate a PTP clock, which can be used for testing and development
+  purposes without requiring actual hardware.
+
+compatible: "zephyr,native-ptp-clock"
+
+include: ["base.yaml"]

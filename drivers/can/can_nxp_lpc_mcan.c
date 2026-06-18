@@ -6,7 +6,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/can.h>
-#include <zephyr/drivers/can/can_mcan.h>
+#include "can_mcan.h"
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
@@ -98,12 +98,12 @@ static int nxp_lpc_mcan_init(const struct device *dev)
 	int err;
 
 	if (!device_is_ready(nxp_lpc_config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERR_DEVICE_NOT_READY(nxp_lpc_config->clock_dev);
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(nxp_lpc_config->reset.dev)) {
-		LOG_ERR("Reset device not ready");
+		LOG_ERR_DEVICE_NOT_READY(nxp_lpc_config->reset.dev);
 		return -ENODEV;
 	}
 
@@ -246,7 +246,7 @@ static const struct can_mcan_ops nxp_lpc_mcan_ops = {
 	static const struct can_mcan_config can_mcan_config_##n = CAN_MCAN_DT_CONFIG_INST_GET(     \
 		n, &nxp_lpc_mcan_config_##n, &nxp_lpc_mcan_ops, &nxp_lpc_mcan_cbs_##n);            \
                                                                                                    \
-	static struct can_mcan_data can_mcan_data_##n = CAN_MCAN_DATA_INITIALIZER(NULL);           \
+	CAN_MCAN_DATA_DEFINE(can_mcan_data_##n, NULL);                                             \
                                                                                                    \
 	CAN_DEVICE_DT_INST_DEFINE(n, nxp_lpc_mcan_init, NULL, &can_mcan_data_##n,                  \
 				  &can_mcan_config_##n, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,     \

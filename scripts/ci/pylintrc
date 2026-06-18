@@ -116,7 +116,6 @@ enable=
     undefined-variable,
     undefined-all-variable,
     invalid-all-object,
-    no-name-in-module,
     unpacking-non-sequence,
     bad-except-order,
     raising-bad-type,

@@ -93,9 +93,7 @@ static void modem_backend_uart_isr_irq_handler(const struct device *uart, void *
 {
 	struct modem_backend_uart *backend = (struct modem_backend_uart *)user_data;
 
-	if (uart_irq_update(uart) < 1) {
-		return;
-	}
+	uart_irq_update(uart);
 
 	if (uart_irq_rx_ready(uart)) {
 		modem_backend_uart_isr_irq_handler_receive_ready(backend);

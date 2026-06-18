@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/storage/flash_map.h>
 
 #include "bootloader_flash_priv.h"
@@ -13,6 +14,8 @@
 #include <esp_sleep.h>
 #include <hal/lp_core_ll.h>
 #include <esp_private/esp_pmu.h>
+
+LOG_MODULE_REGISTER(lp_core_loader, CONFIG_KERNEL_LOG_LEVEL);
 
 void IRAM_ATTR lp_core_image_init(void)
 {
@@ -30,6 +33,12 @@ void IRAM_ATTR lp_core_image_init(void)
 	const uint32_t lpcore_img_size = CONFIG_ESP32_ULP_COPROC_RESERVE_MEM;
 
 	const uint8_t *data = (const uint8_t *)bootloader_mmap(lpcore_img_off, lpcore_img_size);
+
+	if (*(const uint32_t *)data == 0xffffffff) {
+		LOG_ERR("LP core partition at 0x%x is erased; LP image not flashed",
+			lpcore_img_off);
+		return;
+	}
 
 	if (ulp_lp_core_load_binary(data, lpcore_img_size) != 0) {
 		return;

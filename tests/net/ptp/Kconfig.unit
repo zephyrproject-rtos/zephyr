@@ -10,3 +10,6 @@
 
 config PTP_LOG_LEVEL
 	default 3
+
+config PTP_DELAY_MECHANISM
+	default 1

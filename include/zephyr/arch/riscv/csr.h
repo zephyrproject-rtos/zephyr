@@ -209,7 +209,7 @@
 
 #define csr_read(csr)						\
 ({								\
-	register unsigned long __rv;				\
+	unsigned long __rv;					\
 	__asm__ volatile ("csrr %0, " STRINGIFY(csr)		\
 				: "=r" (__rv));			\
 	__rv;							\

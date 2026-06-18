@@ -49,7 +49,7 @@ static struct bt_pacs_cap                    caps_2 = {
 static bool is_peer_subscribed(struct bt_conn *conn)
 {
 	struct bt_gatt_attr *attr;
-	uint8_t nbr_subscribed = 0;
+	uint8_t nbr_subscribed = 0U;
 
 	attr = bt_gatt_find_by_uuid(NULL, 0, BT_UUID_PACS_SNK);
 	if (!attr) {
@@ -99,7 +99,7 @@ static bool is_peer_subscribed(struct bt_conn *conn)
 		nbr_subscribed++;
 	}
 
-	if (nbr_subscribed != 6) {
+	if (nbr_subscribed != 6U) {
 		return false;
 	}
 
@@ -210,7 +210,7 @@ static void test_main(void)
 	LOG_DBG("Waiting to be subscribed");
 
 	while (!is_peer_subscribed(default_conn)) {
-		(void)k_sleep(K_MSEC(10));
+		(void)k_sleep(K_MSEC(10U));
 	}
 	LOG_DBG("Subscribed");
 

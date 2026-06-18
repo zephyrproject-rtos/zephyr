@@ -8,7 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/syscon.h>
+#include <zephyr/drivers/otp.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_bl70x_l, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
@@ -387,7 +387,7 @@ static int clock_control_bl70x_l_clock_trim_32M(void)
 	uint32_t trim, trim_parity;
 	const struct device *efuse = DEVICE_DT_GET_ONE(bflb_efuse);
 
-	err = syscon_read_reg(efuse, EFUSE_RC32M_TRIM_OFFSET, &trim);
+	err = otp_read(efuse, EFUSE_RC32M_TRIM_OFFSET, &trim, sizeof(uint32_t));
 	if (err < 0) {
 		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", err);
 		return err;
@@ -648,7 +648,7 @@ static int clock_control_bl70x_l_clock_trim_32K(void)
 	uint32_t trim, trim_parity;
 	const struct device *efuse = DEVICE_DT_GET_ONE(bflb_efuse);
 
-	err = syscon_read_reg(efuse, EFUSE_RC32K_TRIM_OFFSET, &trim);
+	err = otp_read(efuse, EFUSE_RC32K_TRIM_OFFSET, &trim, sizeof(uint32_t));
 	if (err < 0) {
 		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", err);
 		return err;

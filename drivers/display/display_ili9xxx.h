@@ -57,25 +57,19 @@
 /** Reset wait time (ms), ref 15.4 of ILI9XXX manual. */
 #define ILI9XXX_RESET_WAIT_TIME 5
 
-enum madctl_cmd_set {
-	CMD_SET_1,	/* Default for most of ILI9xxx display controllers */
-	CMD_SET_2,	/* Used by ILI9342c & ILI9341 */
-};
-
-struct ili9xxx_quirks {
-	enum madctl_cmd_set cmd_set;
-};
-
 struct ili9xxx_config {
-	const struct ili9xxx_quirks *quirks;
 	const struct device *mipi_dev;
 	struct mipi_dbi_config dbi_config;
 	uint8_t pixel_format;
 	uint16_t rotation;
 	uint16_t x_resolution;
 	uint16_t y_resolution;
-	bool inversion;
+	bool bit_inversion;
 	bool disable_bgr_mode;
+	bool horizontal_mirror;
+	bool vertical_mirror;
+	bool bottom_top_refresh;
+	bool right_left_refresh;
 	uint8_t te_mode;
 	const void *regs;
 	int (*regs_init_fn)(const struct device *dev);

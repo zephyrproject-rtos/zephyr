@@ -122,7 +122,6 @@ static void phy_link_cb(const struct device *phy_dev, struct phy_link_state *sta
 
 			data->fsp_ctrl.link_establish_status = ETHER_LINK_ESTABLISH_STATUS_DOWN;
 
-			LOG_DBG("Link down");
 			net_eth_carrier_off(data->iface);
 		}
 		return;
@@ -168,8 +167,6 @@ static void phy_link_cb(const struct device *phy_dev, struct phy_link_state *sta
 		LOG_ERR("Link MAC failed, err=%d", fsp_err);
 		return;
 	}
-
-	LOG_DBG("Link up");
 
 	net_eth_carrier_on(data->iface);
 	data->phy_link_up = true;

@@ -222,6 +222,18 @@ static size_t get_package_len(void *packaged)
 
 static int append_string(cbprintf_convert_cb cb, void *ctx, const char *str, uint16_t strl)
 {
+	/* Guard against NULL string pointers. Passing NULL to %s is a
+	 * caller bug, but deferred log packages (see cbvprintf_package())
+	 * can capture a NULL argument now and dereference it much later,
+	 * disconnecting the fault from the offending call site and making
+	 * triage difficult. Substitute "(null)", matching glibc's printf
+	 * family, so the bad caller shows up in the log instead of the
+	 * log infrastructure crashing.
+	 */
+	if (str == NULL) {
+		str = "(null)";
+	}
+
 	if (cb == NULL) {
 		return 1 + strlen(str);
 	}
@@ -1054,10 +1066,24 @@ calculate_string_length:
 	 * shall remain in the output package.
 	 */
 	if (ro_cpy) {
+		__ASSERT_NO_MSG(ros_nbr <= sizeof(cpy_str_pos));
+		if (ros_nbr > sizeof(cpy_str_pos)) {
+			/* If assertions are not enabled, silently truncate
+			 * number of strings to avoid buffer overflow.
+			 */
+			ros_nbr = sizeof(cpy_str_pos);
+		}
 		scpy_cnt = ros_nbr;
 		keep_cnt = 0;
 		dst = cpy_str_pos;
 	} else if (ros_nbr && flags & CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR) {
+		__ASSERT_NO_MSG(ros_nbr <= sizeof(keep_str_pos));
+		if (ros_nbr > sizeof(keep_str_pos)) {
+			/* If assertions are not enabled, silently truncate
+			 * number of strings to avoid buffer overflow.
+			 */
+			ros_nbr = sizeof(keep_str_pos);
+		}
 		scpy_cnt = 0;
 		keep_cnt = ros_nbr;
 		dst = keep_str_pos;
@@ -1069,7 +1095,11 @@ calculate_string_length:
 	if (dst) {
 		memcpy(dst, str_pos, ros_nbr);
 	}
-	str_pos += ros_nbr;
+
+	/* As 'ros_nbr' may have been capped to prevent overflowing on local
+	 * arrays, adjust 'str_pos' by the actual number of strings.
+	 */
+	str_pos += in_desc->ro_str_cnt;
 
 	/* Go through read-write strings and identify which shall be appended.
 	 * Note that there may be read-only strings there. Use address evaluation
@@ -1089,21 +1119,29 @@ calculate_string_length:
 		if (is_ro) {
 			if (flags & CBPRINTF_PACKAGE_CONVERT_RO_STR) {
 				__ASSERT_NO_MSG(scpy_cnt < sizeof(cpy_str_pos));
-				cpy_str_pos[scpy_cnt++] = arg_pos;
+				if (scpy_cnt < sizeof(cpy_str_pos)) {
+					cpy_str_pos[scpy_cnt++] = arg_pos;
+				}
 			} else if (flags & CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR) {
 				__ASSERT_NO_MSG(keep_cnt < sizeof(keep_str_pos));
-				keep_str_pos[keep_cnt++] = arg_pos;
+				if (keep_cnt < sizeof(keep_str_pos)) {
+					keep_str_pos[keep_cnt++] = arg_pos;
+				}
 			} else {
 				/* Drop information about ro_str location. */
 			}
 		} else {
 			if (flags & CBPRINTF_PACKAGE_CONVERT_RW_STR) {
 				__ASSERT_NO_MSG(scpy_cnt < sizeof(cpy_str_pos));
-				cpy_str_pos[scpy_cnt++] = arg_pos;
+				if (scpy_cnt < sizeof(cpy_str_pos)) {
+					cpy_str_pos[scpy_cnt++] = arg_pos;
+				}
 			} else {
 				__ASSERT_NO_MSG(keep_cnt < sizeof(keep_str_pos));
-				keep_str_pos[keep_cnt++] = arg_idx;
-				keep_str_pos[keep_cnt++] = arg_pos;
+				if (keep_cnt < sizeof(keep_str_pos)) {
+					keep_str_pos[keep_cnt++] = arg_idx;
+					keep_str_pos[keep_cnt++] = arg_pos;
+				}
 			}
 		}
 	}

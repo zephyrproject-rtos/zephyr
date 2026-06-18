@@ -79,8 +79,20 @@ FUNC_NORETURN void z_prep_c(void)
 	 */
 	if (((uintptr_t)sp < (uintptr_t)stack_start) ||
 	    ((uintptr_t)sp >= (uintptr_t)stack_end)) {
-		memset(stack_start, 0xAA, stack_sz);
+		arch_early_memset(stack_start, 0xAA, stack_sz);
 	}
+
+#ifdef CONFIG_SMP
+	/* Initialize secondary CPU interrupt stacks. Unlike CPU0, secondary CPUs
+	 * are not yet running, so their stacks can be safely cleared without
+	 * checking the current SP.
+	 */
+	for (int i = 1; i < arch_num_cpus(); i++) {
+		stack_start = K_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]);
+		stack_sz = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]);
+		arch_early_memset(stack_start, 0xAA, stack_sz);
+	}
+#endif
 #endif
 #if CONFIG_ARCH_CACHE
 	arch_cache_init();

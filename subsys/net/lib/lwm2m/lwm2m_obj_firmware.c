@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
+#include "lwm2m_pull_context.h"
 
 #define FIRMWARE_VERSION_MAJOR 1
 #define FIRMWARE_VERSION_MINOR 0
@@ -44,8 +45,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define DELIVERY_METHOD_PUSH_ONLY		1
 #define DELIVERY_METHOD_BOTH			2
 
-#define PACKAGE_URI_LEN				255
-
 /*
  * Calculate resource instances as follows:
  * start with FIRMWARE_MAX_ID
@@ -57,7 +56,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 static uint8_t update_state[MAX_INSTANCE_COUNT];
 static uint8_t update_result[MAX_INSTANCE_COUNT];
 static uint8_t delivery_method[MAX_INSTANCE_COUNT];
-static char package_uri[MAX_INSTANCE_COUNT][PACKAGE_URI_LEN];
+static char package_uri[MAX_INSTANCE_COUNT][LWM2M_PACKAGE_URI_LEN];
 
 /* A varying number of firmware object exists */
 static struct lwm2m_engine_obj firmware;
@@ -446,7 +445,7 @@ static struct lwm2m_engine_obj_inst *firmware_create(uint16_t obj_inst_id)
 	INIT_OBJ_RES_OPT(FIRMWARE_PACKAGE_ID, res[index], i, res_inst[index], j, 1,
 			 false, true, NULL, NULL, NULL, package_write_cb, NULL);
 	INIT_OBJ_RES_LEN(FIRMWARE_PACKAGE_URI_ID, res[index], i, res_inst[index], j, 1,
-		     false, true, package_uri[index], PACKAGE_URI_LEN, 0, NULL, NULL, NULL,
+		     false, true, package_uri[index], LWM2M_PACKAGE_URI_LEN, 0, NULL, NULL, NULL,
 		     package_uri_write_cb, NULL);
 	INIT_OBJ_RES_EXECUTE(FIRMWARE_UPDATE_ID, res[index], i, firmware_update_cb);
 	INIT_OBJ_RES_DATA(FIRMWARE_STATE_ID, res[index], i, res_inst[index], j,

@@ -98,7 +98,7 @@ ZTEST(k_pipe_concurrency, test_reset_on_read)
 	zassert_true((pipe.flags & PIPE_FLAG_RESET) == 0,
 		"pipe should not have reset flag after all waiters are done");
 	zassert_true((pipe.flags & PIPE_FLAG_OPEN) != 0,
-		"pipe should continue to be open after pipe is reseted");
+		"pipe should continue to be open after pipe is reset");
 }
 
 ZTEST(k_pipe_concurrency, test_reset_on_write)
@@ -120,7 +120,7 @@ ZTEST(k_pipe_concurrency, test_reset_on_write)
 	zassert_true((pipe.flags & PIPE_FLAG_RESET) == 0,
 		"pipe should not have reset flag after all waiters are done");
 	zassert_true((pipe.flags & PIPE_FLAG_OPEN) != 0,
-		"pipe should continue to be open after pipe is reseted");
+		"pipe should continue to be open after pipe is reset");
 }
 
 ZTEST(k_pipe_concurrency, test_partial_read)

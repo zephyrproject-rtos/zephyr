@@ -83,3 +83,7 @@
 &i2c1 {
 	status = "okay";
 };
+
+&rtc {
+	status = "okay";
+};

@@ -14,3 +14,4 @@ Testing
    pytest
    coverage
    BabbleSim<bsim>
+   ci_test_plan

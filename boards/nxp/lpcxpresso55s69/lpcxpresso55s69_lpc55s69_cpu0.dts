@@ -44,6 +44,7 @@
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,entropy = &rng;
+		zephyr,crc = &crc;
 	};
 
 	gpio_keys {
@@ -237,6 +238,10 @@ i2s1: &flexcomm7 {
 };
 
 &counter_rtc {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };
 

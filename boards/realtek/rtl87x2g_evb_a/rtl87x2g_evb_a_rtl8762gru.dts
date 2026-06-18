@@ -17,11 +17,13 @@
 	partitions {
 		/* 0x402d000-0x4080000: Free space for Zephyr */
 		app_partition: partition@2d000 {
+			compatible = "zephyr,mapped-partition";
 			label = "app-image";
 			reg = <0x2d000 DT_SIZE_K(316)>;
 		};
 
 		storage_partition: partition@7c000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x7c000 DT_SIZE_K(16)>;
 		};

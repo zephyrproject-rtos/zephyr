@@ -66,6 +66,7 @@ static void i2c_ambiq_ios_reset_read_state(struct ambiq_i2c_ios_data *data)
 	data->read_active = false;
 }
 
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 static void i2c_ambiq_ios_feed_fifo(const struct device *dev)
 {
 	struct ambiq_i2c_ios_data *data = dev->data;
@@ -83,6 +84,7 @@ static void i2c_ambiq_ios_feed_fifo(const struct device *dev)
 	data->rd_pos += wrote;
 	am_hal_ios_control(data->i2c_ios_handle, AM_HAL_IOS_REQ_FIFO_UPDATE_CTR, NULL);
 }
+#endif /* CONFIG_I2C_TARGET_BUFFER_MODE */
 
 static void i2c_ambiq_ios_handle_genad(struct ambiq_i2c_ios_data *data)
 {
@@ -113,8 +115,6 @@ static void i2c_ambiq_ios_isr(const struct device *dev)
 	if (status & AM_HAL_IOS_INT_FSIZE) {
 		const struct i2c_target_callbacks *cb = data->tgt ? data->tgt->callbacks : NULL;
 		bool byte_mode = cb && (cb->read_requested || cb->read_processed);
-		bool buf_mode =
-			cb && IS_ENABLED(CONFIG_I2C_TARGET_BUFFER_MODE) && cb->buf_read_requested;
 
 		if (byte_mode) {
 			/* first byte read_requested */
@@ -146,7 +146,9 @@ static void i2c_ambiq_ios_isr(const struct device *dev)
 					}
 				}
 			}
-		} else if (buf_mode) {
+		}
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+		if (!byte_mode && cb && cb->buf_read_requested) {
 			if (data->rd_pos == data->rd_len) {
 				uint8_t *ptr = NULL;
 				uint32_t len = 0;
@@ -160,6 +162,7 @@ static void i2c_ambiq_ios_isr(const struct device *dev)
 			}
 			i2c_ambiq_ios_feed_fifo(dev);
 		}
+#endif
 		am_hal_ios_interrupt_clear(data->i2c_ios_handle, AM_HAL_IOS_INT_FSIZE);
 	}
 	am_hal_ios_interrupt_clear(data->i2c_ios_handle,
@@ -220,9 +223,12 @@ static void i2c_ambiq_ios_acc_isr(const struct device *dev)
 			if (cb->stop) {
 				(void)cb->stop(data->tgt);
 			}
-		} else if (IS_ENABLED(CONFIG_I2C_TARGET_BUFFER_MODE) && cb->buf_write_received) {
+		}
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+		if (!has_byte_cbs && cb->buf_write_received) {
 			cb->buf_write_received(data->tgt, (uint8_t *)&data->lram_ptr[1], len);
 		}
+#endif
 		data->lram_ptr[0] = 0;
 	}
 
@@ -343,8 +349,8 @@ static int i2c_ambiq_ios_target_register(const struct device *dev, struct i2c_ta
 	data->pm_active = pm_got;
 #endif
 
-	if (IS_ENABLED(CONFIG_I2C_TARGET_BUFFER_MODE) && data->tgt->callbacks &&
-	    data->tgt->callbacks->buf_read_requested) {
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+	if (data->tgt->callbacks && data->tgt->callbacks->buf_read_requested) {
 		uint8_t *ptr = NULL;
 		uint32_t len = 0;
 
@@ -356,6 +362,7 @@ static int i2c_ambiq_ios_target_register(const struct device *dev, struct i2c_ta
 			i2c_ambiq_ios_feed_fifo(dev);
 		}
 	}
+#endif
 
 	return 0;
 

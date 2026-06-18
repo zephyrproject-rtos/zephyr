@@ -178,10 +178,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Disconnected, reason 0x%02x %s\n", reason, bt_hci_err_to_str(reason));
 
-	if (default_conn) {
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
-	}
+	bt_conn_drop(&default_conn);
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {

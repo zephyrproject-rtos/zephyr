@@ -1,4 +1,5 @@
 name: rp2-boot-mode-retention
+description: Sets up RP2040/RP2350 boot mode retention via retained mem in SRAM.
 append:
   EXTRA_CONF_FILE: rp2-boot-mode-retention.conf
 

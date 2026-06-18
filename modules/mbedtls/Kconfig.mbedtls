@@ -12,7 +12,7 @@ config MBEDTLS_CONFIG_FILE
 	default MBEDTLS_CFG_FILE if MBEDTLS_CFG_FILE != "" # deprecated
 	default "config-mbedtls.h"
 	help
-	  Use a specific mbedTLS configuration file. The default config file
+	  Use a specific Mbed TLS configuration file. The default config file
 	  file can be tweaked with Kconfig. The default configuration is
 	  suitable to communicate with majority of HTTPS servers on the Internet,
 	  but has relatively many features enabled. To optimize resources for
@@ -141,8 +141,6 @@ config MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
 	select MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
 	select MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 	select MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
-	select MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
-	select MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
 	select MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
@@ -168,16 +166,6 @@ config MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
 	bool "ECDHE-ECDSA based ciphersuite modes"
 	depends on PSA_WANT_ALG_ECDH && PSA_WANT_ALG_ECDSA
-	depends on MBEDTLS_X509_CRT_PARSE_C
-
-config MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
-	bool "ECDH-ECDSA based ciphersuite modes"
-	depends on PSA_WANT_ALG_ECDH && PSA_WANT_ALG_ECDSA
-	depends on MBEDTLS_X509_CRT_PARSE_C
-
-config MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
-	bool "ECDH-RSA based ciphersuite modes"
-	depends on PSA_WANT_ALG_ECDH
 	depends on MBEDTLS_X509_CRT_PARSE_C
 
 config MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
@@ -222,7 +210,7 @@ config MBEDTLS_HAVE_TIME_DATE
 	bool "Date/time validation in mbed TLS"
 	help
 	  System has time.h, time(), and an implementation for gmtime_r().
-	  There also need to be a valid time source in the system, as mbedTLS
+	  There also need to be a valid time source in the system, as Mbed TLS
 	  expects a valid date/time for certificate validation.
 
 config MBEDTLS_SSL_CACHE_C

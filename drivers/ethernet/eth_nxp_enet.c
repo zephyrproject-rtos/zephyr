@@ -482,8 +482,6 @@ static void nxp_enet_phy_cb(const struct device *phy,
 	} else {
 		net_eth_carrier_off(data->iface);
 	}
-
-	LOG_INF("Link is %s", state->is_up ? "up" : "down");
 }
 
 static void eth_nxp_enet_iface_init(struct net_if *iface)

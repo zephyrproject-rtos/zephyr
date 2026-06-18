@@ -339,8 +339,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	LOG_INF("Disconnected, reason 0x%02x %s", reason, bt_hci_err_to_str(reason));
 
 	if (ot_plat_ble_connection) {
-		bt_conn_unref(ot_plat_ble_connection);
-		ot_plat_ble_connection = NULL;
+		bt_conn_drop(&ot_plat_ble_connection);
 
 		error = ot_plat_ble_queue_msg(NULL, PLAT_BLE_MSG_DISCONNECT, 0);
 		if (error != OT_ERROR_NONE) {

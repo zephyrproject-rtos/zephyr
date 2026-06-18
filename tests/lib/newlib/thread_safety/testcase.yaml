@@ -1,5 +1,8 @@
 common:
   filter: TOOLCHAIN_HAS_NEWLIB == 1
+  toolchain_exclude:
+    - zephyr/gnu
+    - zephyr/llvm
   arch_exclude: posix
   tags:
     - clib

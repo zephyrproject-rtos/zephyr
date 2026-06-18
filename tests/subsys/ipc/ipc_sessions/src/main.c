@@ -112,7 +112,7 @@ static struct ipc_ept ep;
 
 
 /**
- * @brief Estabilish connection before any test run
+ * @brief Establish connection before any test run
  */
 void *test_suite_setup(void)
 {

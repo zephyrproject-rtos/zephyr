@@ -42,7 +42,7 @@ int handle_http1_to_websocket_upgrade(struct http_client_ctx *client)
 	char key_accept[HTTP_SERVER_WS_MAX_SEC_KEY_LEN + sizeof(WS_MAGIC)];
 	char accept[20];
 	size_t accept_len;
-	char tmp[64];
+	char tmp[128];
 	size_t key_len;
 	size_t olen;
 	int ret;
@@ -87,8 +87,20 @@ int handle_http1_to_websocket_upgrade(struct http_client_ctx *client)
 		goto error;
 	}
 
-	ret = snprintk(tmp, sizeof(tmp), "\r\nUser-Agent: %s\r\n\r\n",
-		       ZEPHYR_USER_AGENT);
+	/* RFC 6455 sec. 4.2.2: if the client offered subprotocols via
+	 * Sec-WebSocket-Protocol, echo the one we selected. The HTTP/1
+	 * parser stores the first token from the client's list in
+	 * ws_sec_protocol; an empty value means the client did not
+	 * negotiate a subprotocol, in which case we omit the header.
+	 */
+	if (client->ws_sec_protocol[0] != '\0') {
+		ret = snprintk(tmp, sizeof(tmp),
+			       "\r\nSec-WebSocket-Protocol: %s\r\nUser-Agent: %s\r\n\r\n",
+			       client->ws_sec_protocol, ZEPHYR_USER_AGENT);
+	} else {
+		ret = snprintk(tmp, sizeof(tmp), "\r\nUser-Agent: %s\r\n\r\n",
+			       ZEPHYR_USER_AGENT);
+	}
 	if (ret < 0 || ret >= sizeof(tmp)) {
 		goto error;
 	}

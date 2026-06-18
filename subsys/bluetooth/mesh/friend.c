@@ -177,10 +177,7 @@ static void friend_clear(struct bt_mesh_friend *frnd)
 	}
 	memset(frnd->cred, 0, sizeof(frnd->cred));
 
-	if (frnd->last) {
-		net_buf_unref(frnd->last);
-		frnd->last = NULL;
-	}
+	net_buf_drop(&frnd->last);
 
 	purge_buffers(&frnd->queue);
 
@@ -251,13 +248,8 @@ int bt_mesh_friend_clear(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	struct bt_mesh_ctl_friend_clear *msg = (void *)buf->data;
 	struct bt_mesh_friend *frnd;
 	uint16_t lpn_addr, lpn_counter;
-	struct bt_mesh_net_tx tx = {
-		.sub  = rx->sub,
-		.ctx  = &rx->ctx,
-		.src  = bt_mesh_primary_addr(),
-		.xmit = bt_mesh_net_transmit_get(),
-	};
-	struct bt_mesh_ctl_friend_clear_confirm cfm;
+	uint8_t xmit = bt_mesh_net_transmit_get();
+	int32_t delay;
 
 	if (buf->len < sizeof(*msg)) {
 		LOG_WRN("Too short Friend Clear");
@@ -286,15 +278,42 @@ int bt_mesh_friend_clear(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 		return 0;
 	}
 
-	tx.ctx->send_ttl = BT_MESH_TTL_MAX;
-
-	cfm.lpn_addr    = msg->lpn_addr;
-	cfm.lpn_counter = msg->lpn_counter;
-
-	bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_CLEAR_CFM, &cfm,
-			 sizeof(cfm), NULL, NULL);
+	/* Store context for the delayed Confirm before clearing the slot. */
+	frnd->clear.cfm.net_idx = rx->sub->net_idx;
+	frnd->clear.cfm.dst = rx->ctx.addr;
+	frnd->clear.cfm.lpn_addr = msg->lpn_addr;
+	frnd->clear.cfm.lpn_counter = msg->lpn_counter;
+	frnd->clear.cfm.ttl = rx->ctx.recv_ttl == 0 ? 0 : BT_MESH_TTL_MAX;
 
 	friend_clear(frnd);
+
+	/* Estimate how long the LPN advertises before it starts scanning.
+	 * The Friend does not know the LPN's actual Network Transmit state,
+	 * so we use our own as a best-effort approximation (nodes in the
+	 * same network typically share the same transmit configuration).
+	 *
+	 * The LPN retransmits its Friend Clear as (COUNT + 1) advertising
+	 * events. Between each pair of events the Mesh spec allows a random
+	 * delay of 0-10 ms on top of the configured interval, so the
+	 * worst-case gap is (interval + 10) ms.  The total advertising
+	 * duration is therefore at most (COUNT + 1) * (interval + 10) ms.
+	 *
+	 * Example with COUNT=2, interval=20 ms (3 events total):
+	 *
+	 *   t=0 ms    event 1
+	 *   t<=30 ms  event 2
+	 *   t<=60 ms  event 3 (last)
+	 *   t~=70 ms  LPN finishes, starts scanning
+	 *   t=delay   Timer fires, Friend sends Confirm
+	 *
+	 * The formula intentionally overestimates to provide margin for
+	 * scheduling jitter and scanner startup time.
+	 */
+	delay = (BT_MESH_TRANSMIT_COUNT(xmit) + 1) *
+		(BT_MESH_TRANSMIT_INT(xmit) + 10);
+
+	frnd->pending_cfm = 1U;
+	k_work_reschedule(&frnd->clear.timer, K_MSEC(delay));
 
 	return 0;
 }
@@ -744,10 +763,7 @@ int bt_mesh_friend_poll(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 		LOG_DBG("Re-sending last PDU");
 		frnd->send_last = 1U;
 	} else {
-		if (frnd->last) {
-			net_buf_unref(frnd->last);
-			frnd->last = NULL;
-		}
+		net_buf_drop(&frnd->last);
 
 		frnd->fsn = msg->fsn;
 
@@ -837,6 +853,38 @@ static void clear_timeout(struct k_work *work)
 	struct bt_mesh_friend *frnd = CONTAINER_OF(dwork, struct bt_mesh_friend,
 						   clear.timer);
 	uint32_t duration;
+
+	if (frnd->pending_cfm) {
+		struct bt_mesh_subnet *sub;
+		struct bt_mesh_msg_ctx ctx = {
+			.net_idx = frnd->clear.cfm.net_idx,
+			.app_idx = BT_MESH_KEY_UNUSED,
+			.addr = frnd->clear.cfm.dst,
+			.send_ttl = frnd->clear.cfm.ttl,
+		};
+		struct bt_mesh_net_tx tx = {
+			.ctx = &ctx,
+			.src = bt_mesh_primary_addr(),
+			.xmit = bt_mesh_net_transmit_get(),
+		};
+		struct bt_mesh_ctl_friend_clear_confirm cfm = {
+			.lpn_addr = frnd->clear.cfm.lpn_addr,
+			.lpn_counter = frnd->clear.cfm.lpn_counter,
+		};
+
+		frnd->pending_cfm = 0U;
+
+		sub = bt_mesh_subnet_get(frnd->clear.cfm.net_idx);
+		if (!sub) {
+			LOG_DBG("No subnet for Friend Clear Confirm");
+			return;
+		}
+
+		tx.sub = sub;
+		bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_CLEAR_CFM,
+				 &cfm, sizeof(cfm), NULL, NULL);
+		return;
+	}
 
 	if (frnd->clear.frnd == BT_MESH_ADDR_UNASSIGNED) {
 		/* Failed cancelling timer, return early. */
@@ -1030,7 +1078,7 @@ int bt_mesh_friend_req(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	}
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
-		if (!bt_mesh.frnd[i].subnet) {
+		if (!bt_mesh.frnd[i].subnet && !bt_mesh.frnd[i].pending_cfm) {
 			frnd = &bt_mesh.frnd[i];
 			break;
 		}
@@ -1169,9 +1217,8 @@ static void buf_send_start(uint16_t duration, int err, void *user_data)
 	frnd->pending_buf = 0U;
 
 	/* Friend Offer doesn't follow the re-sending semantics */
-	if (!frnd->established && frnd->last) {
-		net_buf_unref(frnd->last);
-		frnd->last = NULL;
+	if (!frnd->established) {
+		net_buf_drop(&frnd->last);
 	}
 }
 

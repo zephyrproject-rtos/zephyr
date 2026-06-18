@@ -1,0 +1,11 @@
+# Copyright 2026 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config PTP_CLOCK_NATIVE
+	bool "PTP Clock driver for native_sim"
+	default y
+	depends on DT_HAS_ZEPHYR_NATIVE_PTP_CLOCK_ENABLED
+	depends on ARCH_POSIX
+	select NATIVE_USE_NSI_ERRNO
+	help
+	  Enable PTP clock driver for native_sim.

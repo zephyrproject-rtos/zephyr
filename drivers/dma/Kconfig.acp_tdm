@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 AMD
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DMA_AMD_ACP_TDM
+	bool "AMD ACP TDM DMA driver"
+	default y
+	depends on DT_HAS_AMD_ACP_TDM_DMA_ENABLED
+	help
+	  Enable the AMD ACP unified TDM DMA driver.
+	  Covers TDM0 (Headset), TDM1 (SP speaker), and TDM2 (Bluetooth)
+	  P1 DMA instances using per-instance register tables.
+
+if DMA_AMD_ACP_TDM
+
+config DMA_AMD_ACP_TDM_CHANNEL_COUNT
+	int "Channel count"
+	default 8
+	help
+	  Number of DMA channels (2 per instance x 3 instances).
+
+config DMA_AMD_ACP_TDM_BUFFER_ALIGN
+	int "Buffer alignment"
+	default 64
+	help
+	  Required alignment for ACP TDM audio buffers.
+
+config DMA_AMD_ACP_TDM_BUFFER_ADDRESS_ALIGN
+	int "Buffer address alignment"
+	default 128
+	help
+	  Required address alignment for ACP TDM audio buffers.
+
+endif # DMA_AMD_ACP_TDM

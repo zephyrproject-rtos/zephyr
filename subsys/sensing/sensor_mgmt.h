@@ -21,15 +21,8 @@ extern "C" {
 #define for_each_sensor(sensor)							\
 	STRUCT_SECTION_FOREACH(sensing_sensor, sensor)
 
-#define for_each_sensor_reverse(sensor)					\
-	STRUCT_SECTION_START_EXTERN(sensing_sensor);				\
-	STRUCT_SECTION_END_EXTERN(sensing_sensor);				\
-	for (struct sensing_sensor *sensor = STRUCT_SECTION_END(sensing_sensor)	\
-		- 1;								\
-	     ({ __ASSERT(sensor >= STRUCT_SECTION_START(sensing_sensor),	\
-		"unexpected list start location");				\
-		sensor >= STRUCT_SECTION_START(sensing_sensor); });		\
-	     sensor--)
+#define for_each_sensor_reverse(sensor)						\
+	STRUCT_SECTION_FOREACH_REVERSE(sensing_sensor, sensor)
 
 
 #define for_each_client_conn(sensor, client)				\

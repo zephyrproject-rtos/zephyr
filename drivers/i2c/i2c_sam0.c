@@ -414,10 +414,6 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 	uint32_t addr_reg;
 	int ret;
 
-	if (!num_msgs) {
-		return 0;
-	}
-
 	k_sem_take(&data->lock, K_FOREVER);
 
 	data->num_msgs = num_msgs;

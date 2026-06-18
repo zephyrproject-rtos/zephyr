@@ -62,7 +62,7 @@ examples:
         device-wake-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
         reset-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
         int-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
-        bosch,mram-cfg = <0x0 15 15 5 5 0 10 10>;
+        bosch,mram-cfg = <0x0 15 15 10 0 0 10 10>;
         ti,nwkrq-voltage-vio;
         status = "okay";
 

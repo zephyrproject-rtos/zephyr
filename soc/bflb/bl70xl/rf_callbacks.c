@@ -50,14 +50,4 @@ void rf_full_cal_start_callback(uint32_t addr, uint32_t size)
 	/* No DMA conflict checking needed during early init */
 	ARG_UNUSED(addr);
 	ARG_UNUSED(size);
-
-	/*
-	 * RF calibration uses double-precision float (__muldf3) which accesses
-	 * FP CSRs (frrm). With FPU_SHARING the FPU starts disabled per-thread
-	 * and relies on an illegal-instruction trap to lazy-enable it. The
-	 * BL70XL doesn't populate mtval with the faulting instruction encoding,
-	 * breaking the trap handler's FP instruction decoder. Pre-enable the
-	 * FPU here to avoid the trap entirely.
-	 */
-	__asm__ volatile("csrs mstatus, %0" ::"r"(MSTATUS_FS_INIT));
 }

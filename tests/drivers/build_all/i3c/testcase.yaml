@@ -37,3 +37,4 @@ tests:
   drivers.i3c.build.stm32:
     platform_allow:
       - nucleo_c5a3zg
+      - nucleo_u385rg_q

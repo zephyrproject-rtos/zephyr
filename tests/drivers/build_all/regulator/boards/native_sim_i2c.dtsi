@@ -136,6 +136,30 @@ axp2101@7 {
 	};
 };
 
+m5pm1@6e {
+	compatible = "m5stack,m5pm1";
+	reg = <0x6e>;
+
+	regulators {
+		compatible = "m5stack,m5pm1-regulator";
+
+		dcdc_3v3 {
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+		};
+
+		ldo_3v3 {
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+		};
+
+		boost_5v {
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+		};
+	};
+};
+
 max20335@5 {
 	compatible = "maxim,max20335";
 	reg = <0x5>;

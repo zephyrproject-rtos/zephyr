@@ -26,3 +26,10 @@ properties:
     description: |
       GPIO to which the I2C SDA signal is routed. This is only needed for I2C bus recovery
       support.
+
+  recover-bus-on-init:
+    type: boolean
+    description: |
+      Recover the I2C bus during driver initialization, in case
+      the I2C bus is held.  Requires scl-gpios and sda-gpios to be
+      defined on the same node.

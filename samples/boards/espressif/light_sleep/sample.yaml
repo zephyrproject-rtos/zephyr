@@ -2,9 +2,25 @@ sample:
   description: Sample application to test ESP32 light-sleep mode
   name: ESP32 Light-sleep
 tests:
-  sample.board.esp32.light_sleep:
+  sample.boards.esp32.light_sleep:
     platform_allow:
     - esp32_devkitc/esp32/procpu
     - esp32c3_devkitc
+    - esp32s2_devkitc
+    - esp32s3_devkitc/esp32s3/procpu
+    - esp8684_devkitm
     tags: esp32
     build_only: true
+    extra_configs:
+    - CONFIG_ESP32_SLEEP_POWER_DOWN_FLASH=y
+  sample.board.esp32.light_sleep.periph_pd:
+    platform_allow:
+    - esp32c5_devkitc/esp32c5/hpcore
+    - esp32c6_devkitc/esp32c6/hpcore
+    - esp32h2_devkitm
+    tags: esp32
+    build_only: true
+    extra_configs:
+    - CONFIG_ESP32_SLEEP_POWER_DOWN_FLASH=y
+    - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+    - CONFIG_HEAP_MEM_POOL_SIZE=8192

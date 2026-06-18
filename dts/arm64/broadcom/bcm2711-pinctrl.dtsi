@@ -70,4 +70,60 @@
 				 <UART5_RTS_GPIO15>;
 		};
 	};
+
+	i2c3_gpio2: i2c3-gpio2 {
+		group1 {
+			pinmux = <I2C3_SDA_GPIO2>,
+				 <I2C3_SCL_GPIO3>;
+		};
+	};
+
+	i2c3_gpio4: i2c3-gpio4 {
+		group1 {
+			pinmux = <I2C3_SDA_GPIO4>,
+				 <I2C3_SCL_GPIO5>;
+		};
+	};
+
+	i2c4_gpio6: i2c4-gpio6 {
+		group1 {
+			pinmux = <I2C4_SDA_GPIO6>,
+				 <I2C4_SCL_GPIO7>;
+		};
+	};
+
+	i2c4_gpio8: i2c4-gpio8 {
+		group1 {
+			pinmux = <I2C4_SDA_GPIO8>,
+				 <I2C4_SCL_GPIO9>;
+		};
+	};
+
+	i2c5_gpio10: i2c5-gpio10 {
+		group1 {
+			pinmux = <I2C5_SDA_GPIO10>,
+				 <I2C5_SCL_GPIO11>;
+		};
+	};
+
+	i2c5_gpio12: i2c5-gpio12 {
+		group1 {
+			pinmux = <I2C5_SDA_GPIO12>,
+				 <I2C5_SCL_GPIO13>;
+		};
+	};
+
+	i2c6_gpio0: i2c6-gpio0 {
+		group1 {
+			pinmux = <I2C6_SDA_GPIO0>,
+				 <I2C6_SCL_GPIO1>;
+		};
+	};
+
+	i2c6_gpio22: i2c6-gpio22 {
+		group1 {
+			pinmux = <I2C6_SDA_GPIO22>,
+				 <I2C6_SCL_GPIO23>;
+		};
+	};
 };

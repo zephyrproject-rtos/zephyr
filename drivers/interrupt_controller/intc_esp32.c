@@ -37,10 +37,17 @@ LOG_MODULE_REGISTER(intc_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 #define ETS_INTERNAL_SW1_INTR_NO 29
 #define ETS_INTERNAL_PROFILING_INTR_NO 11
 
-#define VECDESC_FL_RESERVED     (1 << 0)
-#define VECDESC_FL_INIRAM       (1 << 1)
-#define VECDESC_FL_SHARED       (1 << 2)
-#define VECDESC_FL_NONSHARED    (1 << 3)
+#define VECDESC_FL_RESERVED  (1 << 0)
+#define VECDESC_FL_INIRAM    (1 << 1)
+#define VECDESC_FL_SHARED    (1 << 2)
+#define VECDESC_FL_NONSHARED (1 << 3)
+#define VECDESC_FL_TYPE_MASK (0xf)
+
+#if SOC_CPU_HAS_FLEXIBLE_INTC
+#define VECDESC_FL_LEVEL_SHIFT  (8)
+#define VECDESC_FL_LEVEL_MASK   (0xf)
+#define VECDESC_FL_LEVEL(flags) (((flags) >> VECDESC_FL_LEVEL_SHIFT) & VECDESC_FL_LEVEL_MASK)
+#endif
 
 /*
  * Define this to debug the choices made when allocating the interrupt. This leads to much debugging
@@ -184,7 +191,7 @@ int esp_intr_mark_shared(int intno, int cpu, bool is_int_ram)
 		irq_unlock(key);
 		return -ENOMEM;
 	}
-	vd->flags = VECDESC_FL_SHARED;
+	vd->flags = (vd->flags & ~VECDESC_FL_TYPE_MASK) | VECDESC_FL_SHARED;
 	if (is_int_ram) {
 		vd->flags |= VECDESC_FL_INIRAM;
 	}
@@ -241,7 +248,14 @@ static bool is_vect_desc_usable(struct vector_desc_t *vd, int flags, int cpu, in
 		return false;
 	}
 
-#ifndef SOC_CPU_HAS_FLEXIBLE_INTC
+#if SOC_CPU_HAS_FLEXIBLE_INTC
+	const int vector_lvl = VECDESC_FL_LEVEL(vd->flags);
+
+	if (vector_lvl != 0 && (flags & (1 << vector_lvl)) == 0) {
+		INTC_LOG("....Unusable: incompatible priority");
+		return false;
+	}
+#else
 	/* Check if the interrupt level is acceptable */
 	if (!(flags & (1 << intr_desc.priority))) {
 		INTC_LOG("....Unusable: incompatible level");
@@ -497,8 +511,8 @@ int esp_intr_alloc_intrstatus(int source,
 	 * we need to make sure the interrupt is connected to the CPU0.
 	 * CPU1 does not have access to the RTC fast memory through this region.
 	 */
-	if ((flags & ESP_INTR_FLAG_IRAM) && handler &&
-	    !esp_ptr_in_iram(handler) && !esp_ptr_in_rtc_iram_fast(handler)) {
+	if ((flags & ESP_INTR_FLAG_IRAM) && handler && !esp_ptr_in_iram(handler) &&
+	    !esp_ptr_in_rtc_iram_fast(handler) && !esp_ptr_in_rom(handler)) {
 		return -EINVAL;
 	}
 
@@ -629,6 +643,8 @@ int esp_intr_alloc_intrstatus(int source,
 	 * would cause the interrupt to be masked if the threshold is >= 1.
 	 */
 	int level = esp_intr_flags_to_level(flags);
+
+	vd->flags |= level << VECDESC_FL_LEVEL_SHIFT;
 	esp_cpu_intr_set_priority(intr, level);
 
 	if (flags & ESP_INTR_FLAG_EDGE) {
@@ -766,6 +782,9 @@ int esp_intr_free(intr_handle_t handle)
 		 */
 		handle->vector_desc->flags &=
 			~(VECDESC_FL_NONSHARED | VECDESC_FL_RESERVED | VECDESC_FL_SHARED);
+#if SOC_CPU_HAS_FLEXIBLE_INTC
+		handle->vector_desc->flags &= ~(VECDESC_FL_LEVEL_MASK << VECDESC_FL_LEVEL_SHIFT);
+#endif
 		handle->vector_desc->source = ETS_INTERNAL_UNUSED_INTR_SOURCE;
 		/* Also kill non_iram mask bit. */
 		non_iram_int_mask[handle->vector_desc->cpu] &= ~(1 << (handle->vector_desc->intno));
@@ -777,11 +796,17 @@ int esp_intr_free(intr_handle_t handle)
 
 int esp_intr_get_intno(intr_handle_t handle)
 {
+	if (handle == NULL || handle->vector_desc == NULL) {
+		return -1;
+	}
 	return handle->vector_desc->intno;
 }
 
 int esp_intr_get_cpu(intr_handle_t handle)
 {
+	if (handle == NULL || handle->vector_desc == NULL) {
+		return -1;
+	}
 	return handle->vector_desc->cpu;
 }
 

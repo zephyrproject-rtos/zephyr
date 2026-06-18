@@ -51,6 +51,9 @@ struct thread_analyzer_info {
 	/** Privileged stack size in used */
 	size_t priv_stack_used;
 #endif
+#ifdef CONFIG_THREAD_ANALYZER_PRINT_THREAD_PRIORITY
+	int8_t prio;
+#endif
 };
 
 /** Stack safety issue codes */

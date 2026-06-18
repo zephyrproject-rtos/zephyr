@@ -129,6 +129,7 @@ class DeviceAdapter(abc.ABC):
         :returns: List of output lines without trailing newlines
         :raises AssertionError: If timeout expires before condition is met
         """
+        __tracebackhide__ = True  # pylint: disable=unused-variable
         self.check_connection(connection_index)
         return self.connections[connection_index].readlines_until(**kwargs)
 

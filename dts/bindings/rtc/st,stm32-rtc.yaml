@@ -58,4 +58,5 @@ properties:
       Not required, since RTC Alarm interrupt could be routed directly to Nested
       Vectored Interrupt Controller (NVIC) and to Power Control (PWR) wake-up
       pins on some series.
-      Valid range: 0 - 31
+    min: 0
+    max: 31

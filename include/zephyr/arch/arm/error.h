@@ -44,7 +44,7 @@ do {\
 		: "r0", "memory"); \
 } while (false)
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
-	|| defined(CONFIG_ARMV7_A)
+	|| defined(CONFIG_ARMV7_A) || defined(CONFIG_AARCH32_ARMV8_A)
 /*
  * In order to support using svc for an exception while running in an
  * isr, stack $lr_svc before calling svc.  While exiting the isr,

@@ -11,6 +11,15 @@
 DT_SCMI_PROTOCOL_DEFINE_NODEV(DT_INST(0, arm_scmi_power), NULL,
 		SCMI_POWER_DOMAIN_PROTOCOL_SUPPORTED_VERSION);
 
+enum scmi_power_domain_message {
+	POWER_DOMAIN_ATTRIBUTES = 0x3,
+	POWER_STATE_SET = 0x4,
+	POWER_STATE_GET = 0x5,
+	POWER_STATE_NOTIFY = 0x6,
+	POWER_STATE_CHANGE_REQEUSTED_NOTIFY = 0x7,
+	POWER_DOMAIN_GET = 0x8,
+};
+
 struct scmi_power_state_get_reply {
 	int32_t status;
 	uint32_t power_state;
@@ -32,7 +41,7 @@ int scmi_power_state_get(uint32_t domain_id, uint32_t *power_state)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_POWER_DOMAIN_MSG_POWER_STATE_GET, SCMI_COMMAND,
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(POWER_STATE_GET, SCMI_COMMAND,
 					proto->id, 0x0);
 	msg.len = sizeof(domain_id);
 	msg.content = &domain_id;
@@ -75,7 +84,7 @@ int scmi_power_state_set(struct scmi_power_state_config *cfg)
 		return -ENOTSUP;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_POWER_DOMAIN_MSG_POWER_STATE_SET, SCMI_COMMAND,
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(POWER_STATE_SET, SCMI_COMMAND,
 					proto->id, 0x0);
 	msg.len = sizeof(*cfg);
 	msg.content = cfg;

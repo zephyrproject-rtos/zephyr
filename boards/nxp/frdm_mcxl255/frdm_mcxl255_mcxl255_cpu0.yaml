@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 identifier: frdm_mcxl255/mcxl255/cpu0
-name: NXP FRDM MCXL255 (CPU0)
+name: NXP FRDM-MCXL255 (CPU0)
 type: mcu
 arch: arm
 ram: 128

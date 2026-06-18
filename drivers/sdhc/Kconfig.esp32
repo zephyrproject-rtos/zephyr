@@ -12,8 +12,9 @@ config SDHC_ESP32
 
 if SDHC_ESP32
 
-# ESP32 DMA needs 32 bit aligned buffers
+# DMA buffers must be cache-line aligned on SoCs with L1 data cache
 config SDHC_BUFFER_ALIGNMENT
+	default DCACHE_LINE_SIZE if DCACHE
 	default 4
 
 endif

@@ -31,6 +31,11 @@ currently supported by Zephyr is summarized below:
      - QEMU Firmware Configuration
      - `Link <https://www.qemu.org/docs/master/specs/fw_cfg.html>`__
 
+   * - RPI FIRMWARE
+     - Raspberry Pi
+     - Raspberry Pi VideoCore Firmware Interface
+     - `Link <https://github.com/raspberrypi/firmware/wiki>`__
+
 API Reference
 *************
 

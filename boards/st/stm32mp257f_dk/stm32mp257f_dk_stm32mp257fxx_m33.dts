@@ -80,6 +80,8 @@
 	/* Pin conflict with i3c4. Enable only with i3c4 disabled */
 	pinctrl-0 = <&i2c8_scl_pz4 &i2c8_sda_pz3>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioz 4 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioz 3 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
 

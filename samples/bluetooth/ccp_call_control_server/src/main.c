@@ -64,8 +64,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	LOG_INF("Disconnected: %s (reason 0x%02x)", bt_conn_dst_str(conn),
 		reason);
 
-	bt_conn_unref(peer_conn);
-	peer_conn = NULL;
+	bt_conn_drop(&peer_conn);
 	k_sem_give(&sem_state_change);
 }
 
@@ -161,7 +160,7 @@ static int init_ccp_call_control_server(void)
 		.gtbs = true,
 		.authorization_required = false,
 		.technology = BT_BEARER_TECH_3G,
-		.supported_features = BT_TBS_FEATURE_HOLD,
+		.optional_opcodes = BT_TBS_OPTIONAL_OPCODE_HOLD,
 	};
 	int err;
 
@@ -193,7 +192,7 @@ static int init_ccp_call_control_server(void)
 			.authorization_required = false,
 			/* Set different technologies per bearer */
 			.technology = (i % BT_BEARER_TECH_WCDMA) + 1,
-			.supported_features = BT_TBS_FEATURE_HOLD,
+			.optional_opcodes = BT_TBS_OPTIONAL_OPCODE_HOLD,
 		};
 
 		snprintf(prov_name, sizeof(prov_name), "Telephone Bearer #%d", i);

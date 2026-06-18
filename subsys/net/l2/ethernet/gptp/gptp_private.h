@@ -54,16 +54,7 @@ extern struct gptp_clock_data gptp_clock;
 bool gptp_is_slave_port(int port);
 
 /**
- * @brief Convert the network interface to the correct port number.
- *
- * @param iface Network Interface acting as a ptp port.
- *
- * @return Number of the port if found, ENODEV otherwise.
- */
-int gptp_get_port_number(struct net_if *iface);
-
-/**
- * @brief Calculate a logInterval and store in Uscaled ns structure.
+ * @brief Calculate a logInterval and store in UScaled ns structure.
  *
  * @param interval Result of calculation.
  *
@@ -76,9 +67,9 @@ void gptp_set_time_itv(struct gptp_uscaled_ns *interval,
 		       int8_t log_msg_interval);
 
 /**
- * @brief Convert uscaled ns to ms for timer use.
+ * @brief Convert UScaled ns to ms for timer use.
  *
- * @param usns Pointer to uscaled nanoseconds to convert.
+ * @param usns Pointer to UScaled nanoseconds to convert.
  *
  * @return INT32_MAX if value exceed timer max value, 0 if the result of the
  *	    conversion is less 1ms, the converted value otherwise.

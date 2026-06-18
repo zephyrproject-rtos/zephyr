@@ -667,7 +667,14 @@ ZTEST_USER(uart_async_read_abort, test_read_abort)
 	 * which might be low.
 	 */
 	baudrate = cfg.baudrate;
-	cfg.baudrate = 9600;
+
+
+	/* Skip baudrate capping for WIDE_DATA, as lower speeds can increase
+	 * RX interrupt load and delay TX completion handling on some platforms.
+	 */
+	if (!IS_ENABLED(CONFIG_UART_WIDE_DATA)) {
+		cfg.baudrate = MIN(cfg.baudrate, 9600);
+	}
 	zassert_ok(uart_configure(uart_dev, &cfg));
 
 	/* Lets aim to abort after transmitting ~20 bytes (200 bauds) */

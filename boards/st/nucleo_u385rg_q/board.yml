@@ -2,5 +2,11 @@ board:
   name: nucleo_u385rg_q
   full_name: Nucleo U385RG Q
   vendor: st
+  revision:
+    format: letter
+    default: "D"
+    revisions:
+      - name: "D"
+      - name: "E"
   socs:
     - name: stm32u385xx

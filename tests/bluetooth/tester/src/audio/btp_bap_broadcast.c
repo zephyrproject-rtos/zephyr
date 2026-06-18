@@ -898,7 +898,9 @@ static bool base_subgroup_bis_cb(const struct bt_bap_base_subgroup_bis *bis, voi
 
 	if (parse_data->stream_cnt < ARRAY_SIZE(broadcaster->streams)) {
 		struct btp_bap_broadcast_stream *stream =
-			&broadcaster->streams[parse_data->stream_cnt++];
+			&broadcaster->streams[parse_data->stream_cnt];
+
+		parse_data->stream_cnt++;
 
 		stream->bis_id = bis->index;
 		memcpy(&stream->codec_cfg, codec_cfg, sizeof(*codec_cfg));

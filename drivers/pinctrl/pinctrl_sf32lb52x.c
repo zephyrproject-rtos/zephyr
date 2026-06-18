@@ -20,6 +20,19 @@ struct sf32lb52x_pinctrl_config {
 	struct sf32lb_clock_dt_spec clock;
 };
 
+static bool pinctrl_sf32lb52x_is_pa39_42(uint8_t port, uint8_t pad_num)
+{
+	return (port == SF32LB_PORT_PA) && (pad_num >= 39U) && (pad_num <= 42U);
+}
+
+static bool pinctrl_sf32lb52x_uses_i2c_mode(pinctrl_soc_pin_t pin)
+{
+	uint8_t pinr_offset = FIELD_GET(SF32LB_PINR_OFFSET_MSK, pin);
+
+	return (FIELD_GET(SF32LB_FSEL_MSK, pin) == 4U) && (pinr_offset >= 0x48U) &&
+	       (pinr_offset <= 0x54U);
+}
+
 static int pinctrl_configure_pin(pinctrl_soc_pin_t pin)
 {
 	const struct device *dev = DEVICE_DT_INST_GET(0);
@@ -30,6 +43,8 @@ static int pinctrl_configure_pin(pinctrl_soc_pin_t pin)
 	uint8_t port = FIELD_GET(SF32LB_PORT_MSK, pin);
 	uint8_t pad_num = FIELD_GET(SF32LB_PAD_MSK, pin);
 	uint8_t ds_idx = FIELD_GET(SF32LB_DS_IDX_MSK, pin);
+	uint32_t cfg_msk = SF32LB_PINMUX_CFG_MSK;
+	bool pa39_42 = pinctrl_sf32lb52x_is_pa39_42(port, pad_num);
 	uint8_t ds_reg;
 
 	/*
@@ -39,7 +54,7 @@ static int pinctrl_configure_pin(pinctrl_soc_pin_t pin)
 	 * - For 20mA (idx 4): use 20mA (DS1=1, reg=1)
 	 * Other pins: 20mA (idx 4) is invalid, ds_idx maps directly to register value.
 	 */
-	if ((port == SF32LB_PORT_PA) && (pad_num >= 39U) && (pad_num <= 42U)) {
+	if (pa39_42) {
 		if (ds_idx == 4U) {
 			/* 20mA is valid for PA39-42 */
 			ds_reg = 1U;
@@ -85,9 +100,18 @@ static int pinctrl_configure_pin(pinctrl_soc_pin_t pin)
 	pad += FIELD_GET(SF32LB_PAD_MSK, pin) * 4U;
 
 	val = sys_read32(pad);
-	val &= ~SF32LB_PINMUX_CFG_MSK;
-	val |= (pin & (SF32LB_PINMUX_CFG_MSK & ~SF32LB_DS_MSK));
+	if (pa39_42) {
+		cfg_msk &= ~SF32LB_SR_MSK;
+	}
+	val &= ~cfg_msk;
+	val |= (pin & (cfg_msk & ~SF32LB_DS_MSK));
 	val |= FIELD_PREP(SF32LB_DS_MSK, ds_reg);
+	if (pa39_42) {
+		val &= ~SF32LB_SR_MSK;
+		if (pinctrl_sf32lb52x_uses_i2c_mode(pin)) {
+			val |= SF32LB_SR_MSK;
+		}
+	}
 
 	sys_write32(val, pad);
 

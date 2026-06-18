@@ -1294,6 +1294,10 @@ textarea.form-control {
   padding-left: 1.5rem !important;
 }
 
+.font-monospace {
+  font-family: var(--bs-font-monospace) !important;
+}
+
 .text-end {
   text-align: right !important;
 }

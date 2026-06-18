@@ -108,7 +108,7 @@ static int max14906_reg_trans_spi_diag(const struct device *dev, uint8_t addr, u
  * @brief Register update function for MAX14906
  *
  * @param dev - MAX149x6 device.
- * @param addr - Register valueto wich data is updated.
+ * @param addr - Register value to which data is updated.
  * @param mask - Corresponding mask to the data that will be updated.
  * @param val - Updated value to be written in the register at update.
  * @return 0 in case of success, negative error code otherwise.
@@ -575,6 +575,7 @@ static DEVICE_API(gpio, gpio_max14906_api) = {
 
 #define GPIO_MAX14906_DEVICE(id)                                                                   \
 	static const struct max14906_config max14906_##id##_cfg = {                                \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(id),                                     \
 		.spi = SPI_DT_SPEC_INST_GET(id, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U)),            \
 		.ready_gpio = GPIO_DT_SPEC_INST_GET_OR(id, drdy_gpios, {0}),                       \
 		.fault_gpio = GPIO_DT_SPEC_INST_GET_OR(id, fault_gpios, {0}),                      \

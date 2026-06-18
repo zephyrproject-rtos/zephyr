@@ -37,8 +37,8 @@
 /** 160MHz Clock */
 #define BL808_CLKID_CLK_160M    (BFLB_CLKID_CLK_PRIVATE + 3)
 
-/** CPU PLL output select: top frequency (400 MHz) */
-#define BL808_CPUPLL_ID_400M    0
+/** CPU PLL output select: divide by 1 */
+#define BL808_CPUPLL_ID_DIV1    0
 /** AUPLL output select: divide by 1 */
 #define BL808_AUPLL_ID_DIV1     1
 /** WiFi PLL output select: 3/4 of top frequency */
@@ -48,15 +48,17 @@
 
 /** WiFi PLL top frequency (960MHz VCO / 3 = 320MHz) */
 #define BL808_WIFIPLL_TOP_FREQ DT_FREQ_M(320)
-/** Audio PLL top frequency */
-#define BL808_AUPLL_TOP_FREQ   DT_FREQ_M(1)
+/** Audio PLL top frequency for 48 kHz family (442.368 MHz, postdiv /18 = 24.576 MHz) */
+#define BL808_AUPLL_TOP_FREQ       442368000
+/** Audio PLL top frequency for 44.1 kHz family (451.584 MHz, postdiv /20 = 22.5792 MHz) */
+#define BL808_AUPLL_TOP_FREQ_44K1  451584000
 
 /** Overclocked WiFi PLL top frequency (960MHz VCO / 2 = 480MHz) */
 #define BL808_WIFIPLL_TOP_FREQ_OC1 DT_FREQ_M(480)
 /** Overclocked WiFi PLL top frequency (no divider = 640MHz) */
 #define BL808_WIFIPLL_TOP_FREQ_OC2 DT_FREQ_M(640)
 
-/** CPU PLL top frequency (800 MHz VCO / 2 = 400 MHz) */
-#define BL808_CPUPLL_TOP_FREQ DT_FREQ_M(400)
+/** CPU PLL top frequency (480 MHz) */
+#define BL808_CPUPLL_TOP_FREQ DT_FREQ_M(480)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_BFLB_BL808_CLOCK_H_ */

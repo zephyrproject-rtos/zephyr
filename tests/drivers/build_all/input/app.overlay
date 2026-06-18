@@ -336,6 +336,16 @@
 				compatible = "adafruit,seesaw-gamepad";
 				reg = <0xe>;
 			};
+
+			modulino-buttons@f {
+				compatible = "i2c-device";
+				reg = <0xf>;
+
+				modulino_buttons {
+					compatible = "arduino,modulino-buttons";
+					zephyr,codes = <0>, <1>, <2>;
+				};
+			};
 		};
 
 		spi@2 {

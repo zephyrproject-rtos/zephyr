@@ -9,6 +9,7 @@
 #include "blueclover_plt_demo_v2_nrf52832-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	model = "Blue Clover PLT Demo Board V2";
@@ -41,11 +42,16 @@
 		};
 	};
 
+	buzzer: buzzer {
+		compatible = "pwm-buzzer";
+		pwms = <&pwm0 0 PWM_HZ(2700) PWM_POLARITY_NORMAL>;
+	};
+
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		sw0 = &button0;
 		sw1 = &button1;
-		pwm-buzzer = &pwm0;
+		buzzer0 = &buzzer;
 		watchdog0 = &wdt0;
 		accel0 = &bmi270;
 		led-strip = &apa102;
@@ -125,31 +131,36 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
 		};
 
 		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x0000c000 0x32000>;
 		};
 
 		slot1_partition: partition@3e000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x0003e000 0x32000>;
 		};
 
 		scratch_partition: partition@70000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-scratch";
 			reg = <0x00070000 0xa000>;
 		};
 
 		storage_partition: partition@7a000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x0007a000 0x00006000>;
 		};

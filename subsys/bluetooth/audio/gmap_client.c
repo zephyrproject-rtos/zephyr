@@ -88,8 +88,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	ARG_UNUSED(reason);
 
 	if (gmap_cli != NULL) {
-		bt_conn_unref(gmap_cli->conn);
-		gmap_cli->conn = NULL;
+		bt_conn_drop(&gmap_cli->conn);
 	}
 }
 

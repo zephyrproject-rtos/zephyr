@@ -9,6 +9,7 @@
 
 #include <zephyr/init.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/drivers/bluetooth.h>
 #include <zephyr/bluetooth/addr.h>
@@ -32,10 +33,6 @@
 LOG_MODULE_REGISTER(hci_wba);
 
 #define DT_DRV_COMPAT st_hci_stm32wba
-
-struct hci_data {
-	bt_hci_recv_t recv;
-};
 
 static K_SEM_DEFINE(hci_sem, 1, 1);
 
@@ -232,7 +229,6 @@ static struct net_buf *treat_iso(const uint8_t *data, size_t len,
 static int receive_data(const struct device *dev, const uint8_t *data, size_t len,
 			const uint8_t *ext_data, size_t ext_len)
 {
-	struct hci_data *hci = dev->data;
 	uint8_t pkt_indicator;
 	struct net_buf *buf;
 	int err = 0;
@@ -260,7 +256,7 @@ static int receive_data(const struct device *dev, const uint8_t *data, size_t le
 	}
 
 	if (buf) {
-		hci->recv(dev, buf);
+		bt_hci_recv(dev, buf);
 	} else {
 		err = -ENOMEM;
 		ll_state_busy = 1;
@@ -299,16 +295,13 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 
 static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 {
-	uint16_t event_length;
-	struct hci_data *hci = dev->data;
+	uint8_t hci_cmd_buf[MAX(BT_BUF_CMD_TX_SIZE, BT_BUF_EVT_SIZE(255U))];
 	struct net_buf *evt_buf = NULL;
+	uint16_t event_length;
 	uint8_t *data;
-
-	ARG_UNUSED(dev);
+	int err = 0;
 
 	k_sem_take(&hci_sem, K_FOREVER);
-
-	LOG_DBG("buf %p type %u len %u", buf, buf->data[0], buf->len);
 
 	if (buf->data[0] == BT_HCI_H4_CMD) {
 		/*
@@ -320,16 +313,18 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 		if (!evt_buf) {
 			LOG_ERR("No available event buffers!");
 			__ASSERT_NO_MSG(evt_buf);
-			k_sem_give(&hci_sem);
-			return -ENOMEM;
+			err = -ENOMEM;
+			goto done;
 		}
-		/*
-		 * Reset the event buffer length and copy the data packet to transmit
-		 * in the event buffer resource.
-		 */
-		evt_buf->len = 0;
-		net_buf_add_mem(evt_buf, buf->data, buf->len);
-		data = evt_buf->data;
+		if (buf->len > sizeof(hci_cmd_buf)) {
+			LOG_ERR("HCI command length %zu exceeds buffer size %zu",
+				buf->len, sizeof(hci_cmd_buf));
+			net_buf_unref(evt_buf);
+			err = -EMSGSIZE;
+			goto done;
+		}
+		memcpy(hci_cmd_buf, buf->data, buf->len);
+		data = hci_cmd_buf;
 	} else {
 		data = buf->data;
 	}
@@ -339,22 +334,27 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 
 	if (evt_buf) {
 		if (event_length) {
-			/*
-			 * Update the length of the event packet returned by
-			 * the BleStack_Request() function.
-			 */
-			evt_buf->len = event_length;
-			hci->recv(dev, evt_buf);
+			if (event_length > net_buf_tailroom(evt_buf)) {
+				LOG_ERR("HCI event too large for sync event buffer (%u > %zu)",
+					event_length, net_buf_tailroom(evt_buf));
+				net_buf_unref(evt_buf);
+				err = -EMSGSIZE;
+			} else {
+				net_buf_reset(evt_buf);
+				net_buf_add_mem(evt_buf, hci_cmd_buf, event_length);
+				bt_hci_recv(dev, evt_buf);
+			}
 		} else {
 			net_buf_unref(evt_buf);
 		}
 	}
 
+done:
 	k_sem_give(&hci_sem);
 
 	net_buf_unref(buf);
 
-	return 0;
+	return err;
 }
 
 static void stm32wba_set_stack_options(BleStack_init_t *init_params_p)
@@ -408,9 +408,8 @@ static int bt_ble_ctlr_init(void)
 	return 0;
 }
 
-static int bt_hci_stm32wba_open(const struct device *dev, bt_hci_recv_t recv)
+static int bt_hci_stm32wba_open(const struct device *dev)
 {
-	struct hci_data *data = dev->data;
 	int ret = 0;
 	/* Initialization of the thread dedicated to BLE Host Controller IP */
 	stm32wba_ble_ctlr_thread_init();
@@ -427,9 +426,6 @@ static int bt_hci_stm32wba_open(const struct device *dev, bt_hci_recv_t recv)
 	link_layer_register_isr(false);
 
 	ret = bt_ble_ctlr_init();
-	if (ret == 0) {
-		data->recv = recv;
-	}
 
 	/* TODO. Enable Flash manager once available */
 	if (IS_ENABLED(CONFIG_FLASH)) {
@@ -624,10 +620,13 @@ static DEVICE_API(bt_hci, drv) = {
 };
 
 #define HCI_DEVICE_INIT(inst) \
-	static struct hci_data hci_data_##inst = {}; \
+	static struct bt_hci_driver_data hci_data_##inst = {}; \
+	static const struct bt_hci_driver_config hci_config_##inst = \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \
 	PM_DEVICE_DT_INST_DEFINE(inst, radio_pm_action); \
-	DEVICE_DT_INST_DEFINE(inst, NULL, PM_DEVICE_DT_INST_GET(inst), &hci_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv);
+	DEVICE_DT_INST_DEFINE(inst, NULL, PM_DEVICE_DT_INST_GET(inst), &hci_data_##inst, \
+			      &hci_config_##inst, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			      &drv);
 
 /* Only one instance supported */
 HCI_DEVICE_INIT(0)

@@ -11,6 +11,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/posix/sys/stat.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/errno_private.h>
 #include <zephyr/sys/heap_listener.h>

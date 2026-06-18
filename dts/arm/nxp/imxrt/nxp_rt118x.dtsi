@@ -851,6 +851,19 @@
 		status = "disabled";
 	};
 
+	sys_ctr: counter@44290000 {
+		compatible = "nxp,sysctr";
+		reg = <0x44290000 0x1000>,
+		      <0x442b0000 0x1000>,
+		      <0x442a0000 0x1000>;
+		reg-names = "control", "read", "compare";
+		interrupts = <74 0>;
+		clocks = <&ccm IMX_CCM_SYSCTR_BASE_CLK 0x0 0>,
+			 <&ccm IMX_CCM_SYSCTR_SLOW_CLK 0x0 0>;
+		clock-names = "base", "slow";
+		status = "disabled";
+	};
+
 	lpit1: lpit@442f0000 {
 		compatible = "nxp,lpit";
 		reg = <0x442f0000 0x1000>;

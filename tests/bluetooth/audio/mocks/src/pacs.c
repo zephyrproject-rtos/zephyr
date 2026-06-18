@@ -45,7 +45,7 @@ static void pacs_cap_foreach_custom_fake(enum bt_audio_dir dir, bt_pacs_cap_fore
 
 	ARG_UNUSED(dir);
 
-	for (size_t i = 0; i < ARRAY_SIZE(cap); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(cap); i++) {
 		if (func(&cap[i], user_data) == false) {
 			break;
 		}

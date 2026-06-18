@@ -13,13 +13,9 @@ if(SB_CONFIG_NET_CORE_IMAGE_HCI_IPC)
     BOARD       ${SB_CONFIG_NET_CORE_BOARD}
   )
 
-  set(${NET_APP}_CONF_FILE
-    ${NET_APP_SRC_DIR}/nrf5340_cpunet_iso-bt_ll_sw_split.conf
-    CACHE INTERNAL ""
-  )
-
   set(${NET_APP}_EXTRA_CONF_FILE
-    ${APP_DIR}/overlay-nrf5340_cpunet_iso-bt_ll_sw_split.conf
+    ${NET_APP_SRC_DIR}/extra-iso-bt_ll_sw_split.conf;
+    ${APP_DIR}/extra-iso-nrf5340_cpunet-bt_ll_sw_split.conf
     CACHE INTERNAL ""
   )
 

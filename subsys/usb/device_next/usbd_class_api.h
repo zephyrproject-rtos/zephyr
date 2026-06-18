@@ -84,6 +84,14 @@ static inline int usbd_class_control_to_host(struct usbd_class_data *const c_dat
  * to identify the class, if more than one class instance is
  * present, only the first one will be called.
  *
+ * For requests with Data OUT stage (wLength != 0), the callback will
+ * be called first with NULL buf before Data OUT stage is received to
+ * check if data should be received. The callback will be called second
+ * time, with non-NULL buf, after data is received.
+ *
+ * For requests without Data Stage (wLength == 0), the callback is
+ * called just once with NULL buf.
+ *
  * The execution of the handler must not block.
  *
  * @param[in] c_data Pointer to USB device class data

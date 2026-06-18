@@ -637,6 +637,10 @@ int hapd_config_network(struct hostapd_iface *iface,
 		goto out;
 	}
 
+	if (!hostapd_cli_cmd_v("set ssid_protection %d", params->ssid_protection)) {
+		goto out;
+	}
+
 	return ret;
 out:
 	return -1;

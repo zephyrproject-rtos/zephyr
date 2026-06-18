@@ -407,89 +407,138 @@ static int fetch_pin_current_value(const struct device *dev,
 	return 0;
 }
 
-static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel chan)
+static int adltc2990_sample_fetch_die_temp(const struct device *dev)
 {
 	struct adltc2990_data *data = dev->data;
+	int32_t value;
+	int ret;
+
+	ret = adltc2990_fetch_property_value(dev, TEMPERATURE, INTERNAL_TEMPERATURE,
+					     &value);
+	if (!ret) {
+		data->internal_temperature = value;
+	}
+
+	return ret;
+}
+
+static int adltc2990_sample_fetch_current(const struct device *dev,
+		enum adltc2990_monitoring_type mode_v1_v2,
+		enum adltc2990_monitoring_type mode_v3_v4)
+{
+	int ret;
+
+	if (!(mode_v1_v2 == VOLTAGE_DIFFERENTIAL || mode_v3_v4 == VOLTAGE_DIFFERENTIAL)) {
+		LOG_ERR("Sensor is not configured to measure Current");
+		return -EINVAL;
+	}
+
+	ret = fetch_pin_current_value(dev, mode_v1_v2, V1);
+	if (ret) {
+		return ret;
+	}
+
+	ret = fetch_pin_current_value(dev, mode_v3_v4, V3);
+
+	return ret;
+}
+
+static int adltc2990_sample_fetch_voltage(const struct device *dev,
+		enum adltc2990_monitoring_type mode_v1_v2,
+		enum adltc2990_monitoring_type mode_v3_v4)
+{
+	struct adltc2990_data *data = dev->data;
+	int32_t value;
+	int ret;
+
+	ret = adltc2990_fetch_property_value(dev, VOLTAGE_SINGLEENDED, SUPPLY_VOLTAGE,
+					     &value);
+	if (ret) {
+		return ret;
+	}
+
+	data->supply_voltage = value + 2500000;
+
+	ret = fetch_pin_differential_voltage_value(dev, mode_v1_v2, V1);
+	if (ret) {
+		return ret;
+	}
+
+	ret = fetch_pin_differential_voltage_value(dev, mode_v3_v4, V3);
+	if (ret) {
+		return ret;
+	}
+
+	ret = fetch_pin_single_ended_voltage_value(dev, mode_v1_v2, V1, V2);
+	if (ret) {
+		return ret;
+	}
+
+	ret = fetch_pin_single_ended_voltage_value(dev, mode_v3_v4, V3, V4);
+
+	return ret;
+}
+
+static int adltc2990_sample_fetch_ambient_temp(const struct device *dev,
+		enum adltc2990_monitoring_type mode_v1_v2,
+		enum adltc2990_monitoring_type mode_v3_v4)
+{
+	int ret;
+
+	if (!(mode_v1_v2 == TEMPERATURE || mode_v3_v4 == TEMPERATURE)) {
+		LOG_ERR("Sensor is not configured to measure Ambient Temperature");
+		return -EINVAL;
+	}
+
+	ret = fetch_pin_temperature_value(dev, mode_v1_v2, V1);
+	if (ret) {
+		return ret;
+	}
+
+	ret = fetch_pin_temperature_value(dev, mode_v3_v4, V3);
+
+	return ret;
+}
+
+static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel chan)
+{
 	const struct adltc2990_config *cfg = dev->config;
 	enum adltc2990_monitoring_type mode_v1_v2 = adltc2990_get_v1_v2_measurement_modes(
 		cfg->measurement_mode[1], cfg->measurement_mode[0]);
 	enum adltc2990_monitoring_type mode_v3_v4 = adltc2990_get_v3_v4_measurement_modes(
 		cfg->measurement_mode[1], cfg->measurement_mode[0]);
 	int ret;
-	int32_t value;
 
 	switch (chan) {
 	case SENSOR_CHAN_DIE_TEMP:
-		ret = adltc2990_fetch_property_value(dev, TEMPERATURE, INTERNAL_TEMPERATURE,
-						     &value);
-		if (ret) {
-			return ret;
-		}
-		data->internal_temperature = value;
+		ret = adltc2990_sample_fetch_die_temp(dev);
 		break;
 
 	case SENSOR_CHAN_CURRENT:
-		if (!(mode_v1_v2 == VOLTAGE_DIFFERENTIAL || mode_v3_v4 == VOLTAGE_DIFFERENTIAL)) {
-			LOG_ERR("Sensor is not configured to measure Current");
-			return -EINVAL;
-		}
-
-		ret = fetch_pin_current_value(dev, mode_v1_v2, V1);
-		if (ret) {
-			return ret;
-		}
-
-		ret = fetch_pin_current_value(dev, mode_v3_v4, V3);
-		if (ret) {
-			return ret;
-		}
-
+		ret = adltc2990_sample_fetch_current(dev, mode_v1_v2, mode_v3_v4);
 		break;
 
 	case SENSOR_CHAN_VOLTAGE:
-		ret = adltc2990_fetch_property_value(dev, VOLTAGE_SINGLEENDED, SUPPLY_VOLTAGE,
-						     &value);
-		if (ret) {
-			return ret;
-		}
-		data->supply_voltage = value + 2500000;
-
-		ret = fetch_pin_differential_voltage_value(dev, mode_v1_v2, V1);
-		if (ret) {
-			return ret;
-		}
-
-		ret = fetch_pin_differential_voltage_value(dev, mode_v3_v4, V3);
-		if (ret) {
-			return ret;
-		}
-
-		ret = fetch_pin_single_ended_voltage_value(dev, mode_v1_v2, V1, V2);
-		if (ret) {
-			return ret;
-		}
-
-		ret = fetch_pin_single_ended_voltage_value(dev, mode_v3_v4, V3, V4);
-		if (ret) {
-			return ret;
-		}
-
+		ret = adltc2990_sample_fetch_voltage(dev, mode_v1_v2, mode_v3_v4);
 		break;
 
 	case SENSOR_CHAN_AMBIENT_TEMP:
-		if (!(mode_v1_v2 == TEMPERATURE || mode_v3_v4 == TEMPERATURE)) {
-			LOG_ERR("Sensor is not configured to measure Ambient Temperature");
-			return -EINVAL;
+		ret = adltc2990_sample_fetch_ambient_temp(dev, mode_v1_v2, mode_v3_v4);
+		break;
+
+	case SENSOR_CHAN_ALL:
+		ret = adltc2990_sample_fetch_die_temp(dev);
+
+		if (!ret) {
+			ret = adltc2990_sample_fetch_current(dev, mode_v1_v2, mode_v3_v4);
 		}
 
-		ret = fetch_pin_temperature_value(dev, mode_v1_v2, V1);
-		if (ret) {
-			return ret;
+		if (!ret) {
+			ret = adltc2990_sample_fetch_voltage(dev, mode_v1_v2, mode_v3_v4);
 		}
 
-		ret = fetch_pin_temperature_value(dev, mode_v3_v4, V3);
-		if (ret) {
-			return ret;
+		if (!ret) {
+			ret = adltc2990_sample_fetch_ambient_temp(dev, mode_v1_v2, mode_v3_v4);
 		}
 		break;
 
@@ -498,7 +547,7 @@ static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel 
 		return -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int adltc2990_channel_get(const struct device *dev, enum sensor_channel chan,

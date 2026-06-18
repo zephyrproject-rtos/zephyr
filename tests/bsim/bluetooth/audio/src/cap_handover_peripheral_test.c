@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/aics.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
@@ -364,7 +365,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 
 static struct bt_bap_stream *stream_alloc(void)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 		struct bt_bap_stream *stream = bap_stream_from_audio_test_stream(&streams[i]);
 
 		if (!stream->conn) {

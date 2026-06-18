@@ -26,7 +26,6 @@
  * @{
  */
 
-
 /**
  * @brief Wrap custom fake body to extract defined context struct
  *
@@ -76,19 +75,17 @@
  * @param HANDLERBODY in-line custom fake handling logic
  */
 
-#define RETURN_HANDLED_CONTEXT(FUNCNAME,                                      \
-		CONTEXTTYPE, RESULTFIELD, CONTEXTPTRNAME, HANDLERBODY)        \
-	if (FUNCNAME##_fake.return_val_seq_len) {                             \
-		CONTEXTTYPE * const contexts =                                \
-		CONTAINER_OF(FUNCNAME##_fake.return_val_seq,                  \
-				CONTEXTTYPE, RESULTFIELD);                    \
-		size_t const seq_idx = (FUNCNAME##_fake.return_val_seq_idx <  \
-					FUNCNAME##_fake.return_val_seq_len) ? \
-					FUNCNAME##_fake.return_val_seq_idx++ :\
-					FUNCNAME##_fake.return_val_seq_idx - 1;\
-		CONTEXTTYPE * const CONTEXTPTRNAME = &contexts[seq_idx];      \
-		HANDLERBODY;                                                  \
-	}                                                                     \
+#define RETURN_HANDLED_CONTEXT(FUNCNAME, CONTEXTTYPE, RESULTFIELD, CONTEXTPTRNAME, HANDLERBODY)    \
+	if (FUNCNAME##_fake.return_val_seq_len) {                                                  \
+		CONTEXTTYPE * const contexts =                                                     \
+			CONTAINER_OF(FUNCNAME##_fake.return_val_seq, CONTEXTTYPE, RESULTFIELD);    \
+		size_t const seq_idx =                                                             \
+			(FUNCNAME##_fake.return_val_seq_idx < FUNCNAME##_fake.return_val_seq_len)  \
+				? FUNCNAME##_fake.return_val_seq_idx++                             \
+				: FUNCNAME##_fake.return_val_seq_idx - 1;                          \
+		CONTEXTTYPE * const CONTEXTPTRNAME = &contexts[seq_idx];                           \
+		HANDLERBODY;                                                                       \
+	}                                                                                          \
 	return FUNCNAME##_fake.return_val
 
 /**

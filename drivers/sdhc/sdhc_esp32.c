@@ -9,18 +9,26 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sdhc.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/cache.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include "sdhc_helpers.h"
 
 #include <esp_clk_tree.h>
 #include <hal/sdmmc_ll.h>
 #include <esp_intr_alloc.h>
 #include <esp_timer.h>
 #include <hal/gpio_hal.h>
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+#include <hal/gpio_ll.h>
+#include <soc/io_mux_struct.h>
+#include <soc/gpio_struct.h>
+#else
 #include <hal/rtc_io_hal.h>
+#endif
 #include <soc/io_mux_reg.h>
 #include <soc/sdmmc_reg.h>
 #include <esp_memory_utils.h>
@@ -28,6 +36,8 @@
 #include "sdhc_esp32.h"
 
 LOG_MODULE_REGISTER(sdhc, CONFIG_SDHC_LOG_LEVEL);
+
+#define SDMMC_HLE_BIT BIT(12)
 
 #define SDMMC_SLOT_WIDTH_DEFAULT 1
 
@@ -39,6 +49,12 @@ LOG_MODULE_REGISTER(sdhc, CONFIG_SDHC_LOG_LEVEL);
 #define SDMMC_EVENT_QUEUE_LENGTH 32
 
 #define SDMMC_TIMEOUT_MAX 0xFFFFFFFF
+
+#if !defined(CONFIG_DCACHE_LINE_SIZE) || (CONFIG_DCACHE_LINE_SIZE == 0)
+#define SDMMC_DESC_ALIGN 4
+#else
+#define SDMMC_DESC_ALIGN CONFIG_DCACHE_LINE_SIZE
+#endif
 
 /* Number of DMA descriptors used for transfer.
  * Increasing this value above 4 doesn't improve performance for the usual case
@@ -87,7 +103,7 @@ struct sdhc_esp32_data {
 	struct host_ctx s_host_ctx;
 	struct k_mutex s_request_mutex;
 	bool s_is_app_cmd;
-	sdmmc_desc_t s_dma_desc[SDMMC_DMA_DESC_CNT];
+	sdmmc_desc_t s_dma_desc[SDMMC_DMA_DESC_CNT] __aligned(SDMMC_DESC_ALIGN);
 	struct sdmmc_transfer_state s_cur_transfer;
 };
 
@@ -243,6 +259,8 @@ static void fill_dma_descriptors(struct sdhc_esp32_data *data, size_t num_desc)
 		LOG_DBG("fill %d desc=%d rem=%d next=%d last=%d sz=%d", num_desc, next,
 			data->s_cur_transfer.size_remaining, data->s_cur_transfer.next_desc,
 			desc->last_descriptor, desc->buffer1_size);
+
+		sys_cache_data_flush_range(desc, sizeof(sdmmc_desc_t));
 	}
 }
 
@@ -386,6 +404,8 @@ static size_t get_free_descriptors_count(struct sdhc_esp32_data *data)
 	for (size_t i = 0; i < SDMMC_DMA_DESC_CNT; ++i) {
 		sdmmc_desc_t *desc = &data->s_dma_desc[(next + i) % SDMMC_DMA_DESC_CNT];
 
+		sys_cache_data_invd_range(desc, sizeof(sdmmc_desc_t));
+
 		if (desc->owned_by_idmac) {
 			break;
 		}
@@ -415,7 +435,8 @@ static int process_events(const struct device *dev, struct sdmmc_event evt,
 		evt.sdmmc_status, evt.dma_status);
 
 	enum sdmmc_req_state next_state = *pstate;
-	enum sdmmc_req_state state = (enum sdmmc_req_state) -1;
+	int state_init = -1;
+	enum sdmmc_req_state state = (enum sdmmc_req_state)state_init;
 
 	while (next_state != state) {
 
@@ -650,6 +671,8 @@ static int sdmmc_host_do_transaction(const struct device *dev, int slot,
 		/* prepare descriptors */
 		fill_dma_descriptors(data, SDMMC_DMA_DESC_CNT);
 
+		sys_cache_data_flush_range(cmdinfo->data, cmdinfo->datalen);
+
 		/* write transfer info into hardware */
 		sdmmc_host_dma_prepare(sdio_hw, &data->s_dma_desc[0], cmdinfo->blklen,
 				       cmdinfo->datalen);
@@ -679,6 +702,10 @@ static int sdmmc_host_do_transaction(const struct device *dev, int slot,
 		if (!wait_for_busy_cleared(sdio_hw, cmdinfo->timeout_ms)) {
 			ret = ESP_ERR_TIMEOUT;
 		}
+	}
+
+	if (ret == ESP_OK && cmdinfo->data && !hw_cmd.rw) {
+		sys_cache_data_flush_and_invd_range(cmdinfo->data, cmdinfo->datalen);
 	}
 
 	data->s_is_app_cmd = (ret == ESP_OK && cmdinfo->opcode == SD_APP_CMD);
@@ -718,8 +745,8 @@ static int sdmmc_host_clock_update_command(sdmmc_dev_t *sdio_hw, int slot)
 			}
 			/* Sending clock update command to the CIU can generate HLE error */
 			/* According to the manual, this is okay and we must retry the command */
-			if (sdio_hw->rintsts.hle) {
-				sdio_hw->rintsts.hle = 1;
+			if (sdio_hw->rintsts.val & SDMMC_HLE_BIT) {
+				sdio_hw->rintsts.val = SDMMC_HLE_BIT;
 				repeat = true;
 				break;
 			}
@@ -794,6 +821,13 @@ int sdmmc_host_set_card_clk(sdmmc_dev_t *sdio_hw, int slot, uint32_t freq_khz)
 		return ESP_ERR_INVALID_ARG;
 	}
 
+	/* Mask interrupts during clock configuration to prevent CMD_DONE
+	 * events from clock update commands filling the event queue.
+	 */
+	uint32_t saved_intmask = sdio_hw->intmask.val;
+
+	sdio_hw->intmask.val = 0;
+
 	/* Disable clock first */
 	sdmmc_ll_enable_card_clock(sdio_hw, slot, false);
 	int err = sdmmc_host_clock_update_command(sdio_hw, slot);
@@ -850,6 +884,9 @@ int sdmmc_host_set_card_clk(sdmmc_dev_t *sdio_hw, int slot, uint32_t freq_khz)
 	/* always set response timeout to highest value, it's small enough anyway */
 	sdmmc_ll_set_response_timeout(sdio_hw, 255);
 
+	sdio_hw->rintsts.val = 0xFFFFFFFFU;
+	sdio_hw->intmask.val = saved_intmask;
+
 	return 0;
 }
 
@@ -878,12 +915,19 @@ int sdmmc_host_set_bus_width(sdmmc_dev_t *sdio_hw, int slot, size_t width)
 static void configure_pin_iomux(int gpio_num)
 {
 	const int sdmmc_func = SDMMC_LL_IOMUX_FUNC;
-	const int drive_strength = 3;
 
 	if (gpio_num == GPIO_NUM_NC) {
-		return; /* parameter check*/
+		return;
 	}
 
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+	gpio_ll_pulldown_dis(GPIO_LL_GET_HW(0), gpio_num);
+	gpio_ll_pullup_en(GPIO_LL_GET_HW(0), gpio_num);
+	gpio_ll_input_enable(GPIO_LL_GET_HW(0), gpio_num);
+	gpio_ll_func_sel(GPIO_LL_GET_HW(0), gpio_num, sdmmc_func);
+	gpio_ll_set_drive_capability(GPIO_LL_GET_HW(0), gpio_num, GPIO_DRIVE_CAP_3);
+#else
+	const int drive_strength = 3;
 	int rtc_num = rtc_io_num_map[gpio_num];
 
 	rtcio_hal_pulldown_disable(rtc_num);
@@ -894,6 +938,7 @@ static void configure_pin_iomux(int gpio_num)
 	PIN_INPUT_ENABLE(reg);
 	PIN_FUNC_SELECT(reg, sdmmc_func);
 	PIN_SET_DRV(reg, drive_strength);
+#endif
 }
 
 /**********************************************************************
@@ -947,10 +992,12 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 	uint8_t bus_width;
 	int ret = 0;
 
-	LOG_INF("SDHC I/O: slot: %d, bus width %d, clock %dHz, card power %s, voltage %s",
+	LOG_INF("SDHC I/O: slot: %d, bus width %d, clock %dHz, card power %s, "
+		"timing %s, voltage %s",
 		cfg->slot, ios->bus_width, ios->clock,
 		ios->power_mode == SDHC_POWER_ON ? "ON" : "OFF",
-		ios->signal_voltage == SD_VOL_1_8_V ? "1.8V" : "3.3V");
+		sdhc_timing_mode_str(ios->timing),
+		sd_voltage_str(ios->signal_voltage));
 
 	if (ios->clock) {
 		/* Check for frequency boundaries supported by host */
@@ -964,6 +1011,8 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 			ret = sdmmc_host_set_card_clk(sdio_hw, cfg->slot, (ios->clock / 1000));
 
 			if (ret == 0) {
+				/* Purge stale CMD_DONE events from clock update commands */
+				k_msgq_purge(data->s_host_ctx.event_queue);
 				LOG_INF("Bus clock successfully set to %d kHz", ios->clock / 1000);
 			} else {
 				LOG_ERR("Error configuring card clock");
@@ -1002,11 +1051,43 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 	}
 
 	/* Toggle card power supply */
-	if ((data->power_mode != ios->power_mode) && (cfg->pwr_gpio.port)) {
+	if (data->power_mode != ios->power_mode) {
 		if (ios->power_mode == SDHC_POWER_OFF) {
-			gpio_pin_set_dt(&cfg->pwr_gpio, 0);
+			if (cfg->pwr_gpio.port) {
+				gpio_pin_set_dt(&cfg->pwr_gpio, 0);
+			}
+			sdmmc_ll_enable_card_clock(sdio_hw, cfg->slot, false);
+			sdmmc_host_clock_update_command(sdio_hw, cfg->slot);
 		} else if (ios->power_mode == SDHC_POWER_ON) {
-			gpio_pin_set_dt(&cfg->pwr_gpio, 1);
+			if (cfg->pwr_gpio.port) {
+				gpio_pin_set_dt(&cfg->pwr_gpio, 1);
+			}
+			sdhc_esp32_reset(dev);
+			sdio_hw->tmout.val = 0xFFFFFFFFU;
+			sdio_hw->rintsts.val = 0xFFFFFFFFU;
+			sdio_hw->intmask.val = SDMMC_INTMASK_CD | SDMMC_INTMASK_CMD_DONE |
+					       SDMMC_INTMASK_DATA_OVER | SDMMC_INTMASK_RCRC |
+					       SDMMC_INTMASK_DCRC | SDMMC_INTMASK_RTO |
+					       SDMMC_INTMASK_DTO | SDMMC_INTMASK_HTO |
+					       SDMMC_INTMASK_SBE | SDMMC_INTMASK_EBE |
+					       SDMMC_INTMASK_RESP_ERR | SDMMC_INTMASK_HLE;
+			sdio_hw->ctrl.int_enable = 1;
+			sdio_hw->cardthrctl.busy_clr_int_en = 0;
+			sdmmc_host_dma_init(sdio_hw);
+			k_msgq_purge(data->s_host_ctx.event_queue);
+			/* Reset wiped the clock dividers. Re-apply the previously
+			 * configured bus clock so commands issued before the next
+			 * set_io() call still see a running card clock.
+			 */
+			if (data->bus_clock != 0) {
+				ret = sdmmc_host_set_card_clk(sdio_hw, cfg->slot,
+							      data->bus_clock / 1000);
+				if (ret != 0) {
+					LOG_ERR("Failed to re-apply card clock after power-on");
+					return err_esp2zep(ret);
+				}
+				k_msgq_purge(data->s_host_ctx.event_queue);
+			}
 		}
 		data->power_mode = ios->power_mode;
 	}
@@ -1065,6 +1146,7 @@ static int sdhc_esp32_request(const struct device *dev, struct sdhc_command *cmd
 			      struct sdhc_data *data)
 {
 	const struct sdhc_esp32_config *cfg = dev->config;
+	struct sdhc_esp32_data *drv_data = dev->data;
 	int retries = (int)(cmd->retries + 1); /* first try plus retries */
 	uint32_t timeout_cfg = 0;
 	int ret_esp = 0;
@@ -1108,7 +1190,20 @@ static int sdhc_esp32_request(const struct device *dev, struct sdhc_command *cmd
 		break;
 
 	case SD_SEND_IF_COND:
-		esp_cmd.flags = SCF_CMD_BCR | SCF_RSP_R7;
+		/*
+		 * SD_SEND_IF_COND (CMD8) and MMC_SEND_EXT_CSD (CMD8) share opcode 8.
+		 * CMD8 for SD is a no-data command with R7 response.
+		 * CMD8 for MMC (EXT_CSD) is a data read with R1 response.
+		 */
+		if (data) {
+			esp_cmd.flags = SCF_CMD_ADTC | SCF_CMD_READ | SCF_RSP_R1;
+		} else {
+			esp_cmd.flags = SCF_CMD_BCR | SCF_RSP_R7;
+		}
+		break;
+
+	case MMC_SEND_OP_COND:
+		esp_cmd.flags = SCF_CMD_BCR | SCF_RSP_R3;
 		break;
 
 	case SD_APP_SEND_OP_COND:
@@ -1142,8 +1237,19 @@ static int sdhc_esp32_request(const struct device *dev, struct sdhc_command *cmd
 		esp_cmd.flags = SCF_CMD_AC | (cmd->arg > 0 ? SCF_RSP_R1 : 0);
 		break;
 
-	case SD_APP_SEND_SCR:
 	case SD_SWITCH:
+		/*
+		 * SD_SWITCH (CMD6) and SD_APP_SET_BUS_WIDTH (ACMD6) share opcode 6.
+		 * CMD6 is a data transfer read, ACMD6 is a simple AC command.
+		 */
+		if (drv_data->s_is_app_cmd) {
+			esp_cmd.flags = SCF_CMD_AC | SCF_RSP_R1;
+		} else {
+			esp_cmd.flags = SCF_CMD_ADTC | SCF_CMD_READ | SCF_RSP_R1;
+		}
+		break;
+
+	case SD_APP_SEND_SCR:
 	case SD_READ_SINGLE_BLOCK:
 	case SD_READ_MULTIPLE_BLOCK:
 	case SD_APP_SEND_NUM_WRITTEN_BLK:
@@ -1320,6 +1426,8 @@ static int sdhc_esp32_init(const struct device *dev)
 
 	/* Reset controller */
 	sdhc_esp32_reset(dev);
+
+	sdio_hw->tmout.val = 0xFFFFFFFFU;
 
 	/* Clear interrupt status and set interrupt mask to known state */
 	sdio_hw->rintsts.val = 0xffffffff;

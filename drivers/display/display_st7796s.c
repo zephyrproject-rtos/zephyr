@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/display.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/mipi_dbi.h>
 
@@ -340,58 +341,101 @@ static int st7796s_set_pixel_format(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int st7796s_init(const struct device *dev)
+static int st7796s_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct st7796s_config *config = dev->config;
 	int ret;
 	uint8_t param;
 
-	/* Since VDDI comes up before reset pin is low, we must reset display
-	 * state. Pulse for 100 MS, per datasheet
-	 */
-	ret = mipi_dbi_reset(config->mipi_dbi, 100);
-	if (ret < 0) {
-		return ret;
-	}
-	/* Delay an additional 100ms after reset */
-	k_msleep(100);
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		/* Since VDDI comes up before reset pin is low, we must reset display
+		 * state. Pulse for 100 MS, per datasheet
+		 */
+		ret = mipi_dbi_reset(config->mipi_dbi, 100);
+		if (ret < 0) {
+			return ret;
+		}
+		/* Delay an additional 100ms after reset */
+		if (k_can_yield()) {
+			k_msleep(100);
+		} else {
+			k_busy_wait(100 * USEC_PER_MSEC);
+		}
 
-	/* Configure controller parameters */
-	ret = st7796s_lcd_config(dev);
-	if (ret < 0) {
-		LOG_ERR("Could not set LCD configuration (%d)", ret);
-		return ret;
-	}
+		/* Configure controller parameters */
+		ret = st7796s_lcd_config(dev);
+		if (ret < 0) {
+			LOG_ERR("Could not set LCD configuration (%d)", ret);
+			return ret;
+		}
 
-	if (config->inverted) {
-		ret = st7796s_send_cmd(dev, ST7796S_CMD_INVON, NULL, 0);
-	} else {
-		ret = st7796s_send_cmd(dev, ST7796S_CMD_INVOFF, NULL, 0);
-	}
-	if (ret < 0) {
-		return ret;
-	}
+		if (config->inverted) {
+			ret = st7796s_send_cmd(dev, ST7796S_CMD_INVON, NULL, 0);
+		} else {
+			ret = st7796s_send_cmd(dev, ST7796S_CMD_INVOFF, NULL, 0);
+		}
+		if (ret < 0) {
+			return ret;
+		}
 
-	param = ST7796S_CONTROL_16BIT;
-	ret = st7796s_send_cmd(dev, ST7796S_CMD_COLMOD, &param, sizeof(param));
-	if (ret < 0) {
-		return ret;
-	}
+		param = ST7796S_CONTROL_16BIT;
+		ret = st7796s_send_cmd(dev, ST7796S_CMD_COLMOD, &param, sizeof(param));
+		if (ret < 0) {
+			return ret;
+		}
 
-	param = config->madctl;
-	ret = st7796s_send_cmd(dev, ST7796S_CMD_MADCTL, &param, sizeof(param));
-	if (ret < 0) {
-		return ret;
+		param = config->madctl;
+		ret = st7796s_send_cmd(dev, ST7796S_CMD_MADCTL, &param, sizeof(param));
+		if (ret < 0) {
+			return ret;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = st7796s_send_cmd(dev, ST7796S_CMD_DISPOFF, NULL, 0);
+		if (ret < 0) {
+			return ret;
+		}
+		if (k_can_yield()) {
+			k_msleep(10);
+		} else {
+			k_busy_wait(10 * USEC_PER_MSEC);
+		}
+		ret = st7796s_send_cmd(dev, ST7796S_CMD_SLPIN, NULL, 0);
+		if (ret < 0) {
+			return ret;
+		}
+		if (k_can_yield()) {
+			k_msleep(120);
+		} else {
+			k_busy_wait(120 * USEC_PER_MSEC);
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		ret = st7796s_send_cmd(dev, ST7796S_CMD_SLPOUT, NULL, 0);
+		if (ret < 0) {
+			return ret;
+		}
+		if (k_can_yield()) {
+			k_msleep(120);
+		} else {
+			k_busy_wait(120 * USEC_PER_MSEC);
+		}
+		ret = st7796s_send_cmd(dev, ST7796S_CMD_DISPON, NULL, 0);
+		if (ret < 0) {
+			return ret;
+		}
+		break;
+	default:
+		return -ENOTSUP;
 	}
-
-	/* Exit sleep */
-	st7796s_send_cmd(dev, ST7796S_CMD_SLPOUT, NULL, 0);
-	/* Delay 5ms after sleep out command, per datasheet */
-	k_msleep(5);
-	/* Turn on display */
-	st7796s_send_cmd(dev, ST7796S_CMD_DISPON, NULL, 0);
 
 	return 0;
+}
+
+static int st7796s_init(const struct device *dev)
+{
+	return pm_device_driver_init(dev, st7796s_pm_action);
 }
 
 static DEVICE_API(display, st7796s_api) = {
@@ -441,8 +485,9 @@ static DEVICE_API(display, st7796s_api) = {
 		.te_scanline = DT_INST_PROP(n, tear_scanline),                  \
 	};									\
 										\
+	PM_DEVICE_DT_INST_DEFINE(n, st7796s_pm_action);				\
 	DEVICE_DT_INST_DEFINE(n, st7796s_init,					\
-			NULL,							\
+			PM_DEVICE_DT_INST_GET(n),				\
 			NULL,							\
 			&st7796s_config_##n,					\
 			POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,		\

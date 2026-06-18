@@ -231,6 +231,9 @@
 &lpi2c0 {
 	pinctrl-0 = <&pinmux_lpi2c0>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
+	recover-bus-on-init;
 	status = "okay";
 
 	fxls8974: fxls8974@18 {

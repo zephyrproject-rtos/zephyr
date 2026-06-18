@@ -688,4 +688,44 @@ static void *condvar_tests_setup(void)
  * @}
  */
 
+
+/**
+ * @brief Verify k_condvar_wait relocks the mutex on timeout.
+ *
+ * Per the contract documented in kernel/condvar.c, k_condvar_wait()
+ * must always return with the mutex held by the calling thread, even
+ * when the wait times out (matching POSIX semantics for
+ * pthread_cond_timedwait). This test confirms the mutex is held
+ * after a timeout — if the fix in kernel/condvar.c regresses,
+ * k_mutex_unlock() below would fail with -EPERM (mutex not locked
+ * by the calling thread).
+ *
+ * Inspired by the pthread test added in zephyrproject-rtos/zephyr#105986.
+ */
+ZTEST(condvar_tests, test_condvar_wait_timeout_relocks_mutex)
+{
+	struct k_condvar local_cv;
+	struct k_mutex local_mtx;
+	int ret;
+
+	zassert_ok(k_condvar_init(&local_cv));
+	zassert_ok(k_mutex_init(&local_mtx));
+
+	/* Acquire the mutex before waiting. */
+	zassert_ok(k_mutex_lock(&local_mtx, K_FOREVER));
+
+	/* No waker, so this must time out. */
+	ret = k_condvar_wait(&local_cv, &local_mtx, K_MSEC(10));
+	zassert_equal(ret, -EAGAIN,
+		      "expected -EAGAIN on timeout, got %d", ret);
+
+	/*
+	 * The kernel contract requires the mutex to be locked on return.
+	 * k_mutex_unlock() returns -EPERM if the mutex is not locked
+	 * by the calling thread — that would mean the fix regressed.
+	 */
+	zassert_ok(k_mutex_unlock(&local_mtx),
+		   "mutex not held after k_condvar_wait timeout");
+}
+
 ZTEST_SUITE(condvar_tests, NULL, condvar_tests_setup, NULL, NULL, NULL);

@@ -31,12 +31,16 @@ properties:
     description: |
       CPI resolution for the X axis, range 0 to 1275, rounded down to the
       closest supported value in increments of 5.
+    min: 0
+    max: 1275
 
   res-y-cpi:
     type: int
     description: |
       CPI resolution for the Y axis, range 0 to 1275, rounded down to the
       closest supported value in increments of 5.
+    min: 0
+    max: 1275
 
   invert-x:
     type: boolean

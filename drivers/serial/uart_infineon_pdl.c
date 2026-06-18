@@ -311,9 +311,8 @@ static int ifx_cat1_uart_poll_in(const struct device *dev, unsigned char *c)
 
 	uint32_t read_value = Cy_SCB_UART_Get(config->reg_addr);
 
-	while (read_value == CY_SCB_UART_RX_NO_DATA) {
-		k_sleep(K_MSEC(1));
-		read_value = Cy_SCB_UART_Get(config->reg_addr);
+	if (read_value == CY_SCB_UART_RX_NO_DATA) {
+		return -1;
 	}
 	*c = (uint8_t)read_value;
 
@@ -567,17 +566,18 @@ static int ifx_cat1_uart_irq_is_pending(const struct device *dev)
  * uart_irq_rx_ready(), uart_irq_tx_ready(), uart_irq_tx_complete()
  * allowed only after this.
  */
-static int ifx_cat1_uart_irq_update(const struct device *dev)
+static void ifx_cat1_uart_irq_update(const struct device *dev)
 {
 	const struct ifx_cat1_uart_config *const config = dev->config;
-	uint32_t rx_intr_pending = ((ifx_cat1_uart_irq_is_pending(dev) & CY_SCB_RX_INTR));
-	uint32_t num_in_rx_fifo = Cy_SCB_UART_GetNumInRxFifo(config->reg_addr);
 
-	if (rx_intr_pending != 0u && num_in_rx_fifo == 0u) {
-		return 0;
-	}
-
-	return 1;
+	/*
+	 * Read interrupt cause and RX FIFO count have a side effect
+	 * to clear stale interrupt flags, so that FIFO is flushed
+	 * properly and the current hardware state is reflected.
+	 * This is required for proper UART operation.
+	 */
+	(void) (ifx_cat1_uart_irq_is_pending(dev));
+	(void) (Cy_SCB_UART_GetNumInRxFifo(config->reg_addr));
 }
 
 static void ifx_cat1_uart_irq_callback_set(const struct device *dev,

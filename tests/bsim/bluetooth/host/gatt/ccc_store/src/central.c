@@ -155,8 +155,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 }
 
 static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
@@ -218,7 +217,7 @@ static void connect_pair_subscribe(void)
 
 	/* confirm to server that we subscribed */
 	bk_sync_send();
-	/* wait for server to check that the subscribtion is well registered */
+	/* wait for server to check that the subscription is well registered */
 	bk_sync_wait();
 
 	WAIT_FOR_FLAG(notification_received_flag);
@@ -249,7 +248,7 @@ static void connect_restore_sec(void)
 
 	/* notify the end of security update to server */
 	bk_sync_send();
-	/* wait for server to check that the subscribtion has been restored */
+	/* wait for server to check that the subscription has been restored */
 	bk_sync_wait();
 
 	WAIT_FOR_FLAG(notification_received_flag);

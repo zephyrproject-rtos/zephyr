@@ -229,6 +229,38 @@ should see the following message in the terminal:
    *** Booting Zephyr OS v3.7.0 ***
    Hello World! mimxrt700_evk/mimxrt798s/cm33_cpu0
 
+SEGGER RTT Logging
+==================
+
+The CM33 CPU0 core has D-cache enabled on SRAM by default, which means a
+naive RTT buffer placed in regular ``.bss`` would be invisible to the
+debugger (CPU writes stay in D-cache and never reach physical SRAM that
+J-Link reads). The SoC layer automatically routes the SEGGER RTT control
+block and buffers into the Zephyr ``nocache`` region whenever
+:kconfig:option:`CONFIG_USE_SEGGER_RTT` is enabled, so no buffer-placement
+Kconfig or DTS overlay is needed.
+
+Enabling log output over RTT requires only the log backend:
+
+.. code-block:: cfg
+
+   CONFIG_USE_SEGGER_RTT=y
+   CONFIG_LOG_BACKEND_RTT=y
+
+When connecting with ``JLinkRTTViewer`` or ``JLinkRTTLogger``, set the
+**RTT Control Block** option to ``Address`` (not ``Auto Detection``) and
+enter the address of ``_SEGGER_RTT`` from the built linker map file:
+
+.. code-block:: console
+
+   $ grep " _SEGGER_RTT$" build/zephyr/zephyr.map
+                   0x30180260                _SEGGER_RTT
+
+The address sits in the Secure SRAM alias range (``0x30xxxxxx``) because
+:kconfig:option:`CONFIG_TRUSTED_EXECUTION_SECURE` is enabled in the board
+defconfig. J-Link's default RTT auto-search range only covers the Non-secure
+alias (``0x20xxxxxx``) and will fail to locate the control block otherwise.
+
 SD Card Support
 ***************
 

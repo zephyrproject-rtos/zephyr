@@ -23,6 +23,7 @@
 		zephyr,uart-mcumgr = &lpuart2;
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
+		zephyr,crc = &crc;
 	};
 
 	aliases {
@@ -236,5 +237,9 @@
 };
 
 &wdog {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

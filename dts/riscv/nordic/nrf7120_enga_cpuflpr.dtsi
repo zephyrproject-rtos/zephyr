@@ -32,6 +32,23 @@ clic: &cpuflpr_clic {};
 		compatible = "simple-bus";
 		interrupt-parent = <&cpuflpr_clic>;
 		ranges;
+
+		/* RAM02/03 is single cycle access for FLPR core while RAM00/01 is 2 cycle access */
+		cpuflpr_sram: memory@200e0000 {
+			compatible = "mmio-sram";
+			reg = <0x200e0000 DT_SIZE_K(120)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x200e0000 DT_SIZE_K(120)>;
+
+			ram03_sram: memory@0 {
+				compatible = "mmio-sram";
+				reg = <0x0 DT_SIZE_K(120)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x0 DT_SIZE_K(120)>;
+			};
+		};
 	};
 };
 

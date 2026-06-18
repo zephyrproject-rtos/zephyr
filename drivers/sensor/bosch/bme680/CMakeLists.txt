@@ -7,3 +7,4 @@
 zephyr_library()
 
 zephyr_library_sources(bme680.c bme680_i2c.c bme680_spi.c)
+zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API bme680_decoder.c bme680_async.c)

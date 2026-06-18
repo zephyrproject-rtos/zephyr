@@ -1,7 +1,6 @@
 common:
   arch_allow: arm64
-  platform_exclude:
-    - rza3ul_smarc
+  platform_allow: qemu_cortex_a53
   tags:
     - arm
     - userspace

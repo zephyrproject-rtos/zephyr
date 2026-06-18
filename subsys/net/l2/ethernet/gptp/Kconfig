@@ -131,6 +131,7 @@ config NET_GPTP_STACK_SIZE
 
 config NET_GPTP_NUM_PORTS
 	int "Number of gPTP ports"
+	range 1 $(UINT16_MAX)
 	default 1
 	help
 	  Configures the gPTP stack to work with the given number of ports.

@@ -73,9 +73,9 @@ __subsystem struct comparator_driver_api {
  *
  * @param dev Comparator device
  *
- * @retval 1 Output state is high
- * @retval 0 Output state is low
- * @retval -errno code Failure
+ * @retval 1 Output state is high.
+ * @retval 0 Output state is low.
+ * @return Negative errno value on failure.
  */
 __syscall int comparator_get_output(const struct device *dev);
 
@@ -90,8 +90,7 @@ static inline int z_impl_comparator_get_output(const struct device *dev)
  * @param dev Comparator device
  * @param trigger Trigger for signal and callback
  *
- * @retval 0 Successful
- * @retval -errno code Failure
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int comparator_set_trigger(const struct device *dev,
 				     enum comparator_trigger trigger);
@@ -109,8 +108,7 @@ static inline int z_impl_comparator_set_trigger(const struct device *dev,
  * @param callback Trigger callback
  * @param user_data User data passed to callback
  *
- * @retval 0 Successful
- * @retval -errno code Failure
+ * @return 0 on success, negative errno value on failure.
  *
  * @note Set callback to NULL to disable callback
  * @note Callback is called immediately if trigger is pending
@@ -129,7 +127,7 @@ static inline int comparator_set_trigger_callback(const struct device *dev,
  *
  * @retval 1 Trigger was pending
  * @retval 0 Trigger was cleared
- * @retval -errno code Failure
+ * @return Negative errno value on failure.
  */
 __syscall int comparator_trigger_is_pending(const struct device *dev);
 

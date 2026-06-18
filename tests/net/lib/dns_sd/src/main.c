@@ -123,7 +123,7 @@ static uint8_t *create_query(const struct dns_sd_rec *inst,
 	offs += sizeof(struct dns_query);
 
 	zassert_equal(expected_req_buf_size, offs,
-		      "sz: %zu offs: %u", expected_req_buf_size, offs);
+		      "sz: %u offs: %u", expected_req_buf_size, offs);
 
 	*size = offs;
 

@@ -32,6 +32,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/llext/symbol.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/minmax.h>
 
 #include <usage.h>
 
@@ -294,7 +295,7 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 	/* Special case: we allow reading the names of initialized threads
 	 * even if we don't have permission on them
 	 */
-	if ((thread == NULL) || (ko->type != K_OBJ_THREAD) ||
+	if ((ko == NULL) || (ko->type != K_OBJ_THREAD) ||
 		((ko->flags & K_OBJ_FLAG_INITIALIZED) == 0)) {
 		return -EINVAL;
 	}
@@ -1481,7 +1482,7 @@ void z_impl_k_wakeup(k_tid_t thread)
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 
 	if (z_is_thread_sleeping(thread)) {
-		z_abort_thread_timeout(thread);
+		(void)z_try_abort_thread_timeout(thread);
 		z_mark_thread_as_not_sleeping(thread);
 		z_sched_ready_locked(thread);
 		z_reschedule(&_sched_spinlock, key);
@@ -1586,7 +1587,13 @@ static bool thread_obj_validate(struct k_thread *thread)
 #ifdef CONFIG_LOG
 		k_object_dump_error(ret, thread, ko, K_OBJ_THREAD);
 #endif /* CONFIG_LOG */
-		K_OOPS(K_SYSCALL_VERIFY_MSG(ret, "access denied"));
+		/* ret is a non-zero error code here (the 0 and -EINVAL cases
+		 * are handled above), so this branch must always oops. Passing
+		 * ret as the "verify" expression would treat the failure code as
+		 * success and fall through to CODE_UNREACHABLE; verify ret == 0
+		 * so the oops is actually raised.
+		 */
+		K_OOPS(K_SYSCALL_VERIFY_MSG(ret == 0, "access denied"));
 	}
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }

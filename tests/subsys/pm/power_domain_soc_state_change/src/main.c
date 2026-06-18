@@ -36,8 +36,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
-
-	irq_unlock(0);
 }
 
 static int dev_pm_action(const struct device *dev, enum pm_device_action pm_action)

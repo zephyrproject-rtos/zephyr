@@ -98,6 +98,23 @@
 		};
 	};
 
+	pinmux_i3c2: pinmux_i3c2 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_18_i3c2_scl>,
+				 <&iomuxc_gpio_ad_19_i3c2_sda>;
+			drive-strength = "normal";
+			drive-open-drain;
+			slew-rate = "fast";
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_ad_17_i3c2_pur>;
+			slew-rate = "fast";
+			drive-strength = "high";
+		};
+	};
+
 	/* QSPI Flash on FlexSPI2 - GPIO_AON_22/23/24/25/26/27 */
 	pinmux_flexspi2: pinmux_flexspi2 {
 		group0 {

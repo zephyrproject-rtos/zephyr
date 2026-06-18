@@ -930,12 +930,12 @@ static int mcp2515_init(const struct device *dev)
 	k_sem_init(&dev_data->tx_sem, MCP2515_TX_CNT, MCP2515_TX_CNT);
 
 	if (dev_cfg->common.phy != NULL && !device_is_ready(dev_cfg->common.phy)) {
-		LOG_ERR("CAN transceiver not ready");
+		LOG_ERR_DEVICE_NOT_READY(dev_cfg->common.phy);
 		return -ENODEV;
 	}
 
 	if (!spi_is_ready_dt(&dev_cfg->bus)) {
-		LOG_ERR("SPI bus %s not ready", dev_cfg->bus.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(dev_cfg->bus.bus);
 		return -ENODEV;
 	}
 
@@ -947,7 +947,7 @@ static int mcp2515_init(const struct device *dev)
 
 	/* Initialize interrupt handling  */
 	if (!gpio_is_ready_dt(&dev_cfg->int_gpio)) {
-		LOG_ERR("Interrupt GPIO port not ready");
+		LOG_ERR_DEVICE_NOT_READY(dev_cfg->int_gpio.port);
 		return -ENODEV;
 	}
 

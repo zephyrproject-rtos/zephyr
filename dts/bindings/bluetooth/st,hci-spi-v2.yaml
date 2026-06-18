@@ -5,8 +5,17 @@ description: STMicroelectronics SPI protocol V2 compatible with BlueNRG-1 and su
 
 compatible: "st,hci-spi-v2"
 
-include: zephyr,bt-hci-spi.yaml
+include: st,hci-spi-v1.yaml
 
 properties:
-  bt-hci-quirks:
-    default: ["no-reset"]
+  reset-delay-ms:
+    type: int
+    description:
+      Duration to wait after reset, in ms. This allows the system to be up and running after reset
+      if the controller does not generate a proprietary event.
+
+  wait-irq-low:
+    type: boolean
+    description:
+      It indicates whether the host needs to wait for the IRQ pin to go low
+      after sending the header.

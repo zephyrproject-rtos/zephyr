@@ -6,6 +6,7 @@ OS Services
 .. toctree::
    :maxdepth: 1
 
+   authentication/index.rst
    binary_descriptors/index.rst
    connectivity/index.rst
    console.rst

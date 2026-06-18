@@ -25,4 +25,6 @@ supported:
   - watchdog
   - flash
   - netif:eth
+  - edac
+  - can
 vendor: nxp

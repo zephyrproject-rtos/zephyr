@@ -11,6 +11,19 @@
 DT_SCMI_PROTOCOL_DEFINE_NODEV(DT_INST(0, nxp_scmi_cpu), NULL,
 		SCMI_NXP_CPU_PROTOCOL_SUPPORTED_VERSION);
 
+enum scmi_nxp_cpu_domain_message {
+	CPU_ATTRIBUTES = 0x3,
+	CPU_START = 0x4,
+	CPU_STOP = 0x5,
+	CPU_RESET_VECTOR_SET = 0x6,
+	CPU_SLEEP_MODE_SET = 0x7,
+	CPU_IRQ_WAKE_SET = 0x8,
+	CPU_NON_IRQ_WAKE_SET = 0x9,
+	CPU_PD_LPM_CONFIG_SET = 0xA,
+	CPU_PER_LPM_CONFIG_SET = 0xB,
+	CPU_INFO_GET = 0xC,
+};
+
 struct scmi_nxp_cpu_info_get_reply {
 	int32_t status;
 	struct scmi_nxp_cpu_info data;
@@ -32,7 +45,7 @@ int scmi_nxp_cpu_sleep_mode_set(struct scmi_nxp_cpu_sleep_mode_config *cfg)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_NXP_CPU_DOMAIN_MSG_CPU_SLEEP_MODE_SET, SCMI_COMMAND,
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CPU_SLEEP_MODE_SET, SCMI_COMMAND,
 					proto->id, 0x0);
 	msg.len = sizeof(*cfg);
 	msg.content = cfg;
@@ -70,7 +83,7 @@ int scmi_nxp_cpu_pd_lpm_set(struct scmi_nxp_cpu_pd_lpm_config *cfg)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_NXP_CPU_DOMAIN_MSG_CPU_PD_LPM_CONFIG_SET, SCMI_COMMAND,
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CPU_PD_LPM_CONFIG_SET, SCMI_COMMAND,
 					proto->id, 0x0);
 	msg.len = sizeof(*cfg);
 	msg.content = cfg;
@@ -104,7 +117,7 @@ int scmi_nxp_cpu_set_irq_mask(struct scmi_nxp_cpu_irq_mask_config *cfg)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_NXP_CPU_DOMAIN_MSG_CPU_IRQ_WAKE_SET, SCMI_COMMAND,
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CPU_IRQ_WAKE_SET, SCMI_COMMAND,
 					proto->id, 0x0);
 	msg.len = sizeof(*cfg);
 	msg.content = cfg;
@@ -136,7 +149,7 @@ int scmi_nxp_cpu_reset_vector(struct scmi_nxp_cpu_vector_config *cfg)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_NXP_CPU_DOMAIN_MSG_CPU_RESET_VECTOR_SET, SCMI_COMMAND,
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CPU_RESET_VECTOR_SET, SCMI_COMMAND,
 					proto->id, 0x0);
 	msg.len = sizeof(*cfg);
 	msg.content = cfg;
@@ -169,7 +182,7 @@ int scmi_nxp_cpu_info_get(uint32_t cpu_id, struct scmi_nxp_cpu_info *cfg)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_NXP_CPU_DOMAIN_MSG_CPU_INFO_GET, SCMI_COMMAND,
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CPU_INFO_GET, SCMI_COMMAND,
 					proto->id, 0x0);
 	msg.len = sizeof(uint32_t);
 	msg.content = &cpu_id;

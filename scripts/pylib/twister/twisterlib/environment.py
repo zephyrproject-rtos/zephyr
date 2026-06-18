@@ -447,8 +447,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
 
     parser.add_argument(
         "--shuffle-tests", action="store_true", default=None,
-        help="""Shuffle test execution order to get randomly distributed tests across subsets.
-                Used only when --subset is provided.""")
+        help="Shuffle test execution order to get randomly distributed tests.")
 
     parser.add_argument(
         "--shuffle-tests-seed", action="store", default=None,
@@ -973,10 +972,6 @@ def parse_arguments(
 
     if options.flash_before and options.device_flash_with_test:
         logger.error("--device-flash-with-test does not apply when --flash-before is used")
-        sys.exit(1)
-
-    if options.shuffle_tests and options.subset is None:
-        logger.error("--shuffle-tests requires --subset")
         sys.exit(1)
 
     if options.shuffle_tests_seed and options.shuffle_tests is None:

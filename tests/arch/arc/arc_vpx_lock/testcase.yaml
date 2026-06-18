@@ -8,4 +8,5 @@ tests:
     toolchain_allow: arcmwdt
     platform_allow: nsim/nsim_vpx5
     extra_configs:
+      - CONFIG_SCHED_SIMPLE=y
       - CONFIG_SCHED_CPU_MASK=y

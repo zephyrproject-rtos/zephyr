@@ -1488,7 +1488,11 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 	SW_SWITCH_TIMER->PRESCALER = HAL_EVENT_TIMER_PRESCALER_VALUE;
 	SW_SWITCH_TIMER->BITMODE = 0; /* 16 bit */
 
+#if defined(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN)
 	hal_sw_switch_timer_start_ppi_config();
+#else /* !CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN */
+	nrf_timer_task_trigger(SW_SWITCH_TIMER, NRF_TIMER_TASK_START);
+#endif /* !CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN */
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	hal_sw_switch_timer_clear_ppi_config();

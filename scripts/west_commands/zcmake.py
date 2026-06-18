@@ -11,6 +11,7 @@ See build.py for the build command itself.
 
 from collections import OrderedDict
 import argparse
+import logging
 import os.path
 import re
 import subprocess
@@ -18,8 +19,9 @@ import shutil
 import sys
 
 import packaging.version
-from west import log
 from west.util import quote_sh_list
+
+_logger = logging.getLogger(__name__)
 
 DEFAULT_CACHE = 'CMakeCache.txt'
 
@@ -43,7 +45,7 @@ def run_cmake(args, cwd=None, capture_output=False, dry_run=False, env=None):
     of displaying it on stdout/stderr..'''
     cmake = shutil.which('cmake')
     if cmake is None and not dry_run:
-        log.die('CMake is not installed or cannot be found; cannot build.')
+        sys.exit('CMake is not installed or cannot be found; cannot build.')
     _ensure_min_version(cmake, dry_run)
 
     cmd = [cmake] + args
@@ -58,10 +60,10 @@ def run_cmake(args, cwd=None, capture_output=False, dry_run=False, env=None):
 
     if dry_run:
         in_cwd = ' (in {})'.format(cwd) if cwd else ''
-        log.inf('Dry run{}:'.format(in_cwd), quote_sh_list(cmd))
+        _logger.info(f'Dry run{in_cwd}: {quote_sh_list(cmd)}')
         return None
 
-    log.dbg('Running CMake:', quote_sh_list(cmd), level=log.VERBOSE_NORMAL)
+    _logger.debug('Running CMake: %s', quote_sh_list(cmd))
     p = subprocess.Popen(cmd, env=env, **kwargs)
     out, _ = p.communicate()
     out = out.decode(sys.getdefaultencoding()) if out else None
@@ -73,7 +75,7 @@ def run_cmake(args, cwd=None, capture_output=False, dry_run=False, env=None):
     else:
         # A real error occurred, raise an exception
         if out:
-            log.err(out)
+            _logger.error(out)
         raise subprocess.CalledProcessError(p.returncode, p.args)
 
 
@@ -296,34 +298,33 @@ class CMakeCache:
 def _ensure_min_version(cmake, dry_run):
     cmd = [cmake, '--version']
     if dry_run:
-        log.inf('Dry run:', quote_sh_list(cmd))
+        _logger.info(f'Dry run: {quote_sh_list(cmd)}')
         return
 
     try:
         version_out = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
     except subprocess.CalledProcessError as cpe:
-        log.die('cannot get cmake version:', str(cpe))
+        sys.exit('cannot get cmake version: {}'.format(cpe))
     decoded = version_out.decode('utf-8')
     lines = decoded.splitlines()
     if not lines:
-        log.die('can\'t get cmake version: ' +
-                'unexpected "cmake --version" output:\n{}\n'.
-                format(decoded) +
-                'Please install CMake ' + _MIN_CMAKE_VERSION_STR +
-                ' or higher (https://cmake.org/download/).')
+        sys.exit('can\'t get cmake version: ' +
+                 'unexpected "cmake --version" output:\n{}\n'.
+                 format(decoded) +
+                 'Please install CMake ' + _MIN_CMAKE_VERSION_STR +
+                 ' or higher (https://cmake.org/download/).')
     version = lines[0].split()[2]
     if '-' in version:
         # Handle semver cases like "3.19.20210206-g1e50ab6"
         # which Kitware uses for prerelease versions.
         version = version.split('-', 1)[0]
     if packaging.version.parse(version) < _MIN_CMAKE_VERSION:
-        log.die('cmake version', version,
-                'is less than minimum version {};'.
-                format(_MIN_CMAKE_VERSION_STR),
-                'please update your CMake (https://cmake.org/download/).')
+        sys.exit(f'cmake version {version} is less than minimum version '
+                 f'{_MIN_CMAKE_VERSION_STR}; please update your CMake '
+                 '(https://cmake.org/download/).')
     else:
-        log.dbg('cmake version', version, 'is OK; minimum version is',
-                _MIN_CMAKE_VERSION_STR)
+        _logger.debug('cmake version %s is OK; minimum version is %s',
+                      version, _MIN_CMAKE_VERSION_STR)
 
 _MIN_CMAKE_VERSION_STR = '3.13.1'
 _MIN_CMAKE_VERSION = packaging.version.parse(_MIN_CMAKE_VERSION_STR)

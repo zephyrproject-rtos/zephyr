@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for hooks allowing to redirect printk() character output.
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_PRINTK_HOOKS_H_
 #define ZEPHYR_INCLUDE_SYS_PRINTK_HOOKS_H_
 

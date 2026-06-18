@@ -199,8 +199,11 @@ bool z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
  * This function assumes that a wake up event has already been set up by the
  * application.
  *
- * This function is entered with interrupts disabled. It should re-enable
- * interrupts if it had entered a power state.
+ * This function is entered with the idle thread's interrupt lock held. If it
+ * enters a power state, it returns before the idle thread restores the saved
+ * interrupt key. SoC PM code may use architecture helpers around the
+ * low-power instruction, but normal IRQ dispatch must remain blocked until
+ * that final idle-thread restore.
  *
  * @return True if the system suspended, otherwise return false
  */

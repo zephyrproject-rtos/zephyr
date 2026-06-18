@@ -1238,7 +1238,7 @@ static void test_scp(void)
 
 	WAIT_FOR_FLAG(search_results_object_id_read);
 
-	if (g_search_results_object_id != 0) {
+	if (g_search_results_object_id != 0U) {
 		FAIL("Search results object ID not zero before search\n");
 		return;
 	}
@@ -1285,7 +1285,7 @@ static void test_scp(void)
 	 * results object ID will have been notified if the search gave results
 	 */
 	WAIT_FOR_FLAG(search_results_object_id_read);
-	if (g_search_results_object_id == 0) {
+	if (g_search_results_object_id == 0U) {
 		FAIL("No search results\n");
 		return;
 	}
@@ -1296,7 +1296,7 @@ static void test_scp(void)
 /* This function tests all commands in the API in sequence for the provided player.
  * (Works by setting the provided player as the "current player".)
  *
- * The order of the sequence follows the order of the characterstics in the
+ * The order of the sequence follows the order of the characteristics in the
  * Media Control Service specification
  */
 void test_media_controller_player(struct media_player *player)

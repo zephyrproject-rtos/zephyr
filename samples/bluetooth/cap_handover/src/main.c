@@ -584,8 +584,7 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 	if (err != 0) {
 		LOG_ERR("Failed to connect to %s: %u", addr, err);
 
-		bt_conn_unref(peer.conn);
-		peer.conn = NULL;
+		bt_conn_drop(&peer.conn);
 		(void)memset(peer.unicast_eps, 0, sizeof(peer.unicast_eps));
 
 		start_scan();
@@ -612,8 +611,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 
 	LOG_INF("Disconnected: %s, reason 0x%02x %s", addr, reason, bt_hci_err_to_str(reason));
 
-	bt_conn_unref(peer.conn);
-	peer.conn = NULL;
+	bt_conn_drop(&peer.conn);
 	(void)memset(peer.unicast_eps, 0, sizeof(peer.unicast_eps));
 
 	k_sem_give(&sem_state_change);

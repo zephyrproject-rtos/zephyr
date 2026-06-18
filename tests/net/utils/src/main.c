@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_UTILS_LOG_LEVEL);
 struct net_addr_test_data {
 	net_sa_family_t family;
 	bool pton;
+	bool valid;
 
 	struct {
 		char c_addr[16];
@@ -52,6 +53,7 @@ struct net_addr_test_data {
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_1 = {
 	.family = NET_AF_INET,
 	.pton = true,
+	.valid = true,
 	.ipv4.c_addr = "192.0.0.1",
 	.ipv4.verify.s4_addr = { 192, 0, 0, 1 },
 };
@@ -59,6 +61,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_pton_1 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_2 = {
 	.family = NET_AF_INET,
 	.pton = true,
+	.valid = true,
 	.ipv4.c_addr = "192.1.0.0",
 	.ipv4.verify.s4_addr = { 192, 1, 0, 0 },
 };
@@ -66,6 +69,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_pton_2 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_3 = {
 	.family = NET_AF_INET,
 	.pton = true,
+	.valid = true,
 	.ipv4.c_addr = "192.0.0.0",
 	.ipv4.verify.s4_addr = { 192, 0, 0, 0 },
 };
@@ -73,6 +77,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_pton_3 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_4 = {
 	.family = NET_AF_INET,
 	.pton = true,
+	.valid = true,
 	.ipv4.c_addr = "255.255.255.255",
 	.ipv4.verify.s4_addr = { 255, 255, 255, 255 },
 };
@@ -80,6 +85,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_pton_4 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_5 = {
 	.family = NET_AF_INET,
 	.pton = true,
+	.valid = true,
 	.ipv4.c_addr = "0.0.0.0",
 	.ipv4.verify.s4_addr = { 0, 0, 0, 0 },
 };
@@ -87,6 +93,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_pton_5 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_6 = {
 	.family = NET_AF_INET,
 	.pton = true,
+	.valid = true,
 	.ipv4.c_addr = "0.0.0.1",
 	.ipv4.verify.s4_addr = { 0, 0, 0, 1 },
 };
@@ -94,6 +101,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_pton_6 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_7 = {
 	.family = NET_AF_INET,
 	.pton = true,
+	.valid = true,
 	.ipv4.c_addr = "0.0.1.0",
 	.ipv4.verify.s4_addr = { 0, 0, 1, 0 },
 };
@@ -101,6 +109,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_pton_7 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_8 = {
 	.family = NET_AF_INET,
 	.pton = true,
+	.valid = true,
 	.ipv4.c_addr = "0.1.0.0",
 	.ipv4.verify.s4_addr = { 0, 1, 0, 0 },
 };
@@ -108,6 +117,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_pton_8 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_1 = {
 	.family = NET_AF_INET6,
 	.pton = true,
+	.valid = true,
 	.ipv6.c_addr = "ff08::",
 	.ipv6.verify.s6_addr16 = { net_htons(0xff08), 0, 0, 0, 0, 0, 0, 0 },
 };
@@ -115,6 +125,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_pton_1 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_2 = {
 	.family = NET_AF_INET6,
 	.pton = true,
+	.valid = true,
 	.ipv6.c_addr = "::",
 	.ipv6.verify.s6_addr16 = { 0 },
 };
@@ -122,6 +133,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_pton_2 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_3 = {
 	.family = NET_AF_INET6,
 	.pton = true,
+	.valid = true,
 	.ipv6.c_addr = "ff08::1",
 	.ipv6.verify.s6_addr16 = { net_htons(0xff08), 0, 0, 0, 0, 0, 0, net_htons(1) },
 };
@@ -129,6 +141,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_pton_3 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_4 = {
 	.family = NET_AF_INET6,
 	.pton = true,
+	.valid = true,
 	.ipv6.c_addr = "2001:db8::1",
 	.ipv6.verify.s6_addr16 = { net_htons(0x2001), net_htons(0xdb8),
 				   0, 0, 0, 0, 0, net_htons(1) },
@@ -137,6 +150,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_pton_4 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_5 = {
 	.family = NET_AF_INET6,
 	.pton = true,
+	.valid = true,
 	.ipv6.c_addr = "2001:db8::2:1",
 	.ipv6.verify.s6_addr16 = { net_htons(0x2001), net_htons(0xdb8),
 				   0, 0, 0, 0, net_htons(2), net_htons(1) },
@@ -145,6 +159,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_pton_5 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_6 = {
 	.family = NET_AF_INET6,
 	.pton = true,
+	.valid = true,
 	.ipv6.c_addr = "ff08:1122:3344:5566:7788:9900:aabb:ccdd",
 	.ipv6.verify.s6_addr16 = { net_htons(0xff08), net_htons(0x1122),
 				   net_htons(0x3344), net_htons(0x5566),
@@ -155,14 +170,37 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_pton_6 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_7 = {
 	.family = NET_AF_INET6,
 	.pton = true,
+	.valid = true,
 	.ipv6.c_addr = "0:ff08::",
 	.ipv6.verify.s6_addr16 = { 0, net_htons(0xff08), 0, 0, 0, 0, 0, 0 },
+};
+
+static ZTEST_DMEM struct net_addr_test_data ipv6_pton_8 = {
+	.family = NET_AF_INET6,
+	.pton = true,
+	.valid = false,
+	.ipv6.c_addr = "2001::db8::2:1",
+};
+
+static ZTEST_DMEM struct net_addr_test_data ipv6_pton_9 = {
+	.family = NET_AF_INET6,
+	.pton = true,
+	.valid = false,
+	.ipv6.c_addr = "2001:::db8:2:1",
+};
+
+static ZTEST_DMEM struct net_addr_test_data ipv6_pton_10 = {
+	.family = NET_AF_INET6,
+	.pton = true,
+	.valid = false,
+	.ipv6.c_addr = "::0::ffff:c0a8:5e4",
 };
 
 /* net_addr_ntop test cases */
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_1 = {
 	.family = NET_AF_INET,
 	.pton = false,
+	.valid = true,
 	.ipv4.c_verify = "192.0.0.1",
 	.ipv4.addr.s4_addr = { 192, 0, 0, 1 },
 };
@@ -170,6 +208,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_1 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_2 = {
 	.family = NET_AF_INET,
 	.pton = false,
+	.valid = true,
 	.ipv4.c_verify = "192.1.0.0",
 	.ipv4.addr.s4_addr = { 192, 1, 0, 0 },
 };
@@ -177,6 +216,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_2 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_3 = {
 	.family = NET_AF_INET,
 	.pton = false,
+	.valid = true,
 	.ipv4.c_verify = "192.0.0.0",
 	.ipv4.addr.s4_addr = { 192, 0, 0, 0 },
 };
@@ -184,6 +224,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_3 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_4 = {
 	.family = NET_AF_INET,
 	.pton = false,
+	.valid = true,
 	.ipv4.c_verify = "255.255.255.255",
 	.ipv4.addr.s4_addr = { 255, 255, 255, 255 },
 };
@@ -191,6 +232,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_4 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_5 = {
 	.family = NET_AF_INET,
 	.pton = false,
+	.valid = true,
 	.ipv4.c_verify = "0.0.0.0",
 	.ipv4.addr.s4_addr = { 0, 0, 0, 0 },
 };
@@ -198,6 +240,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_5 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_6 = {
 	.family = NET_AF_INET,
 	.pton = false,
+	.valid = true,
 	.ipv4.c_verify = "0.0.0.1",
 	.ipv4.addr.s4_addr = { 0, 0, 0, 1 },
 };
@@ -205,6 +248,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_6 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_7 = {
 	.family = NET_AF_INET,
 	.pton = false,
+	.valid = true,
 	.ipv4.c_verify = "0.0.1.0",
 	.ipv4.addr.s4_addr = { 0, 0, 1, 0 },
 };
@@ -212,6 +256,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_7 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_8 = {
 	.family = NET_AF_INET,
 	.pton = false,
+	.valid = true,
 	.ipv4.c_verify = "0.1.0.0",
 	.ipv4.addr.s4_addr = { 0, 1, 0, 0 },
 };
@@ -219,6 +264,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_8 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_1 = {
 	.family = NET_AF_INET6,
 	.pton = false,
+	.valid = true,
 	.ipv6.c_verify = "ff08::",
 	.ipv6.addr.s6_addr16 = { net_htons(0xff08), 0, 0, 0, 0, 0, 0, 0 },
 };
@@ -226,6 +272,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_1 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_2 = {
 	.family = NET_AF_INET6,
 	.pton = false,
+	.valid = true,
 	.ipv6.c_verify = "::",
 	.ipv6.addr.s6_addr16 = { 0 },
 };
@@ -233,6 +280,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_2 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_3 = {
 	.family = NET_AF_INET6,
 	.pton = false,
+	.valid = true,
 	.ipv6.c_verify = "ff08::1",
 	.ipv6.addr.s6_addr16 = { net_htons(0xff08), 0, 0, 0, 0, 0, 0, net_htons(1) },
 };
@@ -240,6 +288,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_3 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_4 = {
 	.family = NET_AF_INET6,
 	.pton = false,
+	.valid = true,
 	.ipv6.c_verify = "2001:db8::1",
 	.ipv6.addr.s6_addr16 = { net_htons(0x2001), net_htons(0xdb8),
 				 0, 0, 0, 0, 0, net_htons(1) },
@@ -248,6 +297,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_4 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_5 = {
 	.family = NET_AF_INET6,
 	.pton = false,
+	.valid = true,
 	.ipv6.c_verify = "2001:db8::2:1",
 	.ipv6.addr.s6_addr16 = { net_htons(0x2001), net_htons(0xdb8),
 				 0, 0, 0, 0, net_htons(2), net_htons(1) },
@@ -256,6 +306,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_5 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_6 = {
 	.family = NET_AF_INET6,
 	.pton = false,
+	.valid = true,
 	.ipv6.c_verify = "ff08:1122:3344:5566:7788:9900:aabb:ccdd",
 	.ipv6.addr.s6_addr16 = { net_htons(0xff08), net_htons(0x1122),
 				 net_htons(0x3344), net_htons(0x5566),
@@ -266,14 +317,17 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_6 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_7 = {
 	.family = NET_AF_INET6,
 	.pton = false,
+	.valid = true,
 	.ipv6.c_verify = "0:ff08::",
 	.ipv6.addr.s6_addr16 = { 0, net_htons(0xff08), 0, 0, 0, 0, 0, 0 },
 };
 
-static const struct {
+struct net_addr_test_case {
 	const char *name;
 	struct net_addr_test_data *data;
-} tests[] = {
+};
+
+static const struct net_addr_test_case net_addr_test_cases[] = {
 	/* IPv4 net_addr_pton */
 	{ "test_ipv4_pton_1", &ipv4_pton_1},
 	{ "test_ipv4_pton_2", &ipv4_pton_2},
@@ -292,6 +346,9 @@ static const struct {
 	{ "test_ipv6_pton_5", &ipv6_pton_5},
 	{ "test_ipv6_pton_6", &ipv6_pton_6},
 	{ "test_ipv6_pton_7", &ipv6_pton_7},
+	{ "test_ipv6_pton_8", &ipv6_pton_8},
+	{ "test_ipv6_pton_9", &ipv6_pton_9},
+	{ "test_ipv6_pton_10", &ipv6_pton_10},
 
 	/* IPv4 net_addr_ntop */
 	{ "test_ipv4_ntop_1", &ipv4_ntop_1},
@@ -313,41 +370,77 @@ static const struct {
 	{ "test_ipv6_ntop_7", &ipv6_ntop_7},
 };
 
+static const char *net_addr_test_name(size_t index, const void *value)
+{
+	const struct net_addr_test_case *tc = value;
+
+	ARG_UNUSED(index);
+	return tc->name;
+}
+
+static const struct ztest_param_values net_addr_cases = {
+	.values    = net_addr_test_cases,
+	.count     = ARRAY_SIZE(net_addr_test_cases),
+	.elem_size = sizeof(net_addr_test_cases[0]),
+	.name_cb   = net_addr_test_name,
+};
+
 static bool check_net_addr(struct net_addr_test_data *data)
 {
+	char *ptr;
+	int ret;
+
 	switch (data->family) {
 	case NET_AF_INET:
 		if (data->pton) {
-			if (net_addr_pton(NET_AF_INET, (char *)data->ipv4.c_addr,
-					  &data->ipv4.addr) < 0) {
-				printk("Failed to convert %s\n",
-				       data->ipv4.c_addr);
+			ret = net_addr_pton(NET_AF_INET, (char *)data->ipv4.c_addr,
+					    &data->ipv4.addr);
+
+			if (data->valid && ret < 0) {
+				printk("Failed to convert %s\n", data->ipv4.c_addr);
 
 				return false;
 			}
 
-			if (!net_ipv4_addr_cmp(&data->ipv4.addr,
-					       &data->ipv4.verify)) {
-				printk("Failed to verify %s\n",
-				       data->ipv4.c_addr);
+			if (!data->valid && ret == 0) {
+				printk("Convert did not fail for %s\n", data->ipv4.c_addr);
+
+				return false;
+			}
+
+			if (!data->valid) {
+				break;
+			}
+
+			if (!net_ipv4_addr_cmp(&data->ipv4.addr, &data->ipv4.verify)) {
+				printk("Failed to verify %s\n", data->ipv4.c_addr);
 
 				return false;
 			}
 		} else {
-			if (!net_addr_ntop(NET_AF_INET, &data->ipv4.addr,
-					   data->ipv4.c_addr,
-					   sizeof(data->ipv4.c_addr))) {
+			ptr = net_addr_ntop(NET_AF_INET, &data->ipv4.addr, data->ipv4.c_addr,
+					    sizeof(data->ipv4.c_addr));
+			if (data->valid && !ptr) {
 				printk("Failed to convert %s\n",
 				       net_sprint_ipv4_addr(&data->ipv4.addr));
 
 				return false;
 			}
 
+			if (!data->valid && ptr) {
+				printk("Convert did not fail for %s\n",
+				       net_sprint_ipv4_addr(&data->ipv4.addr));
+
+				return false;
+			}
+
+			if (!data->valid) {
+				break;
+			}
+
 			if (strcmp(data->ipv4.c_addr, data->ipv4.c_verify)) {
-				printk("Failed to verify %s\n",
-				       data->ipv4.c_addr);
-				printk("against %s\n",
-				       data->ipv4.c_verify);
+				printk("Failed to verify %s\n", data->ipv4.c_addr);
+				printk("against %s\n", data->ipv4.c_verify);
 
 				return false;
 			}
@@ -357,43 +450,60 @@ static bool check_net_addr(struct net_addr_test_data *data)
 
 	case NET_AF_INET6:
 		if (data->pton) {
-			if (net_addr_pton(NET_AF_INET6, (char *)data->ipv6.c_addr,
-					  &data->ipv6.addr) < 0) {
-				printk("Failed to convert %s\n",
-				       data->ipv6.c_addr);
+			ret = net_addr_pton(NET_AF_INET6, (char *)data->ipv6.c_addr,
+					    &data->ipv6.addr);
+
+			if (data->valid && ret < 0) {
+				printk("Failed to convert %s\n", data->ipv6.c_addr);
 
 				return false;
 			}
 
-			if (!net_ipv6_addr_cmp(&data->ipv6.addr,
-					       &data->ipv6.verify)) {
+			if (!data->valid && ret == 0) {
+				printk("Convert did not fail for %s\n", data->ipv6.c_addr);
+
+				return false;
+			}
+
+			if (!data->valid) {
+				break;
+			}
+
+			if (!net_ipv6_addr_cmp(&data->ipv6.addr, &data->ipv6.verify)) {
 				printk("Failed to verify %s\n",
 				       net_sprint_ipv6_addr(&data->ipv6.addr));
-				printk("against %s\n",
-				       net_sprint_ipv6_addr(
-							&data->ipv6.verify));
+				printk("against %s\n", net_sprint_ipv6_addr(&data->ipv6.verify));
 
 				return false;
 			}
 		} else {
-			if (!net_addr_ntop(NET_AF_INET6, &data->ipv6.addr,
-					   data->ipv6.c_addr,
-					   sizeof(data->ipv6.c_addr))) {
+			ptr = net_addr_ntop(NET_AF_INET6, &data->ipv6.addr, data->ipv6.c_addr,
+					    sizeof(data->ipv6.c_addr));
+
+			if (data->valid && !ptr) {
 				printk("Failed to convert %s\n",
 				       net_sprint_ipv6_addr(&data->ipv6.addr));
 
 				return false;
 			}
 
-			if (strcmp(data->ipv6.c_addr, data->ipv6.c_verify)) {
-				printk("Failed to verify %s\n",
-				       data->ipv6.c_addr);
-				printk("against %s\n",
-				       data->ipv6.c_verify);
+			if (!data->valid && ptr) {
+				printk("Convert did not fail for %s\n",
+				       net_sprint_ipv6_addr(&data->ipv6.addr));
 
 				return false;
 			}
 
+			if (!data->valid) {
+				break;
+			}
+
+			if (strcmp(data->ipv6.c_addr, data->ipv6.c_verify)) {
+				printk("Failed to verify %s\n", data->ipv6.c_addr);
+				printk("against %s\n", data->ipv6.c_verify);
+
+				return false;
+			}
 		}
 
 		break;
@@ -402,22 +512,12 @@ static bool check_net_addr(struct net_addr_test_data *data)
 	return true;
 }
 
-ZTEST(test_utils_fn, test_net_addr)
+ZTEST_P(test_utils_fn, test_net_addr)
 {
-	int count, pass;
+	const struct net_addr_test_case *tc =
+		ZTEST_GET_PARAM_PTR(struct net_addr_test_case);
 
-	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
-		TC_PRINT("Running test: %s: ", tests[count].name);
-
-		if (check_net_addr(tests[count].data)) {
-			TC_PRINT("passed\n");
-			pass++;
-		} else {
-			TC_PRINT("failed\n");
-		}
-	}
-
-	zassert_equal(pass, ARRAY_SIZE(tests), "check_net_addr error");
+	zassert_true(check_net_addr(tc->data), "check_net_addr failed: %s", tc->name);
 }
 
 ZTEST(test_utils_fn, test_addr_parse)
@@ -914,7 +1014,7 @@ static const char *check_ipaddr(const char *addresses)
 
 		zassert_mem_equal(addr_str, expecting,
 				  *addresses == '\0' ? strlen(orig) : addresses - orig - 1,
-				  "Address mismatch, expecing %s, got %s (len %d)\n",
+				  "Address mismatch, expecting %s, got %s (len %td)\n",
 				  expecting, addr_str, addresses - orig - 1);
 	} while (addresses != NULL && *addresses != '\0');
 
@@ -1152,7 +1252,7 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 		},
 		{
 			.address = "[2001:db8::200]:080",
-			.len = sizeof("[2001:db8:433:2]:80000") - 1,
+			.len = sizeof("[2001:db8::200]:080") - 1,
 			.verdict = NULL,
 		},
 		{
@@ -1219,13 +1319,16 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			parse_ipv4_entries[i].address,
 			parse_ipv4_entries[i].len,
 			&addr, &mask_len);
-		if (next != parse_ipv4_entries[i].verdict) {
+		if (next == NULL && parse_ipv4_entries[i].verdict == NULL) {
+			continue;
+		}
+
+		if (next != NULL && memcmp(next, parse_ipv4_entries[i].verdict,
+					   strlen(next)) != 0) {
 			printk("IPv4 entry [%d] \"%s\" failed\n", i,
 				parse_ipv4_entries[i].address);
 			printk("Points to \"%s\" but should point to \"%s\"\n",
-			       next == NULL ? "NULL" : next,
-			       parse_ipv4_entries[i].verdict == NULL ?
-			       "NULL" : parse_ipv4_entries[i].verdict);
+			       next, parse_ipv4_entries[i].verdict);
 			zassert_true(false, "failure");
 		}
 
@@ -1251,7 +1354,12 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			parse_ipv6_entries[i].address,
 			parse_ipv6_entries[i].len,
 			&addr, &mask_len);
-		if (next != parse_ipv6_entries[i].verdict) {
+		if (next == NULL && parse_ipv6_entries[i].verdict == NULL) {
+			continue;
+		}
+
+		if (next != NULL && memcmp(next, parse_ipv6_entries[i].verdict,
+					   strlen(next)) != 0) {
 			printk("IPv6 entry [%d] \"%s\" failed\n", i,
 			       parse_ipv6_entries[i].address);
 			zassert_true(false, "failure");
@@ -1468,4 +1576,320 @@ ZTEST(test_utils_fn, test_linkaddr_handling)
 	net_pkt_unref(pkt2);
 }
 
+ZTEST(test_utils_fn, test_parse_ipv4_overflow)
+{
+	struct net_sockaddr_storage saddr;
+	struct net_sockaddr *addr = net_sad(&saddr);
+	bool ret;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4)) {
+		ztest_test_skip();
+	}
+
+	/* Case 1: Invalid IPv4 address.
+	 *
+	 * A lone ':' at position 0 followed by 199 bytes of 'A'.
+	 * This will be rejected before the port is checked.
+	 */
+	{
+		/* Build the payload at runtime so the compiler cannot fold it */
+		char payload[201];
+
+		payload[0] = ':';
+		memset(payload + 1, 'A', 199);
+		payload[200] = '\0';
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in));
+		ret = net_ipaddr_parse(payload, sizeof(payload) - 1, addr);
+		zassert_false(ret, "Case 1: Invalid IPv4 address must be rejected");
+	}
+
+	/* Case 2: Valid IP, oversized port string (str_len >> buffer size).
+	 *
+	 * "192.0.2.1:" + 190 digits.
+	 * end≈9, port portion ≈190 bytes => unfixed overflow.
+	 * Fixed code scans the bounded port field and rejects it once it sees
+	 * that the port text is overlong.
+	 */
+	{
+		char payload[201];
+		int prefix_len;
+
+		prefix_len = snprintf(payload, sizeof(payload), "192.0.2.1:");
+		memset(payload + prefix_len, '9', 190);
+		payload[prefix_len + 190] = '\0';
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in));
+		ret = net_ipaddr_parse(payload, (size_t)(prefix_len + 190), addr);
+		zassert_false(ret, "Case 2: IP with oversized port digits must be rejected");
+	}
+
+	/* Case 3: str_len larger than the actual string (simulates a caller
+	 * passing a generous upper-bound length as allowed by the API).
+	 *
+	 * The buffer is genuinely 200 bytes so net_ipaddr_parse can legally read
+	 * up to str_len bytes from it.  The content ends at "1.2.3.4:80\0" and
+	 * the remainder is zero-padded, matching what a caller would have if it
+	 * allocated a fixed-size receive buffer and filled it partially.
+	 *
+	 * buf[200] = "1.2.3.4:80"  (10 chars)
+	 * buf_len  = 200
+	 *
+	 * Before fix: str_len - end - 1 = 200 - 7 - 1 = 192 bytes copied into
+	 * the 16-byte ipaddr[] buffer => overflow.
+	 * After fix: the parser stops at the first NUL within the bounded input,
+	 * so "80\0..." is handled as port 80.
+	 */
+	{
+		char buf[200];
+
+		memset(buf, 0, sizeof(buf));
+		memcpy(buf, "1.2.3.4:80", sizeof("1.2.3.4:80"));
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in));
+		ret = net_ipaddr_parse(buf, sizeof(buf), addr);
+		zassert_true(ret, "Case 3: valid ip:port with oversized buf_len must succeed");
+		zassert_equal(net_sin(addr)->sin_family, NET_AF_INET,
+			      "Case 3: family must be AF_INET");
+		zassert_equal(net_sin(addr)->sin_port, net_htons(80),
+			      "Case 3: port must be 80");
+		zassert_equal(net_sin(addr)->sin_addr.s4_addr[0], 1,  "Case 3: octet 0");
+		zassert_equal(net_sin(addr)->sin_addr.s4_addr[1], 2,  "Case 3: octet 1");
+		zassert_equal(net_sin(addr)->sin_addr.s4_addr[2], 3,  "Case 3: octet 2");
+		zassert_equal(net_sin(addr)->sin_addr.s4_addr[3], 4,  "Case 3: octet 3");
+	}
+
+	/* Case 4: Boundary, a 5-character port with leading zeros is valid.
+	 *
+	 * This exercises the longest accepted decimal port string without
+	 * exceeding the numeric range.
+	 */
+	{
+		const char *str = "192.168.1.1:00080";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_true(ret, "Case 4: 5-digit port must be accepted");
+		zassert_equal(net_sin(addr)->sin_port, net_htons(80),
+			      "Case 4: port must be 80");
+	}
+
+	/* Case 5: Overlong numeric ports with leading zeros must be rejected.
+	 */
+	{
+		const char *str = "192.168.1.1:000080";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_false(ret, "Case 5: 6-digit port must be rejected");
+	}
+
+	/* Case 6: Regression, shortest valid port (port 0).
+	 * Ensures the fix did not break the lower boundary of port handling.
+	 */
+	{
+		const char *str = "10.0.0.1:0";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_true(ret, "Case 6: port 0 must be accepted");
+		zassert_equal(net_sin(addr)->sin_port, net_htons(0),
+			      "Case 6: port must be 0");
+	}
+
+	/* Case 7: Regression, maximum valid port (65535).
+	 */
+	{
+		const char *str = "255.255.255.255:65535";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_true(ret, "Case 7: port 65535 must be accepted");
+		zassert_equal(net_sin(addr)->sin_port, net_htons(65535),
+			      "Case 7: port must be 65535");
+	}
+
+	/* Case 8: Port one above the maximum (65536) must be rejected.
+	 */
+	{
+		const char *str = "192.0.2.1:65536";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_false(ret, "Case 8: port 65536 must be rejected");
+	}
+
+	/* Case 9: Too long port value must be rejected.
+	 */
+	{
+		const char *str = "192.0.2.1:123456";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_false(ret, "Case 9: port 123456 must be rejected");
+	}
+}
+
+ZTEST(test_utils_fn, test_parse_ipv6_overflow)
+{
+	struct net_sockaddr_storage saddr;
+	struct net_sockaddr *addr = net_sad(&saddr);
+	bool ret;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV6)) {
+		ztest_test_skip();
+	}
+
+	/* Case 1: Exact proof-of-concept from the vulnerability analysis.
+	 *
+	 * str     = "[::1]:" + 50 * 'A'   (56 bytes total, no embedded NUL)
+	 * str_len = 56
+	 *
+	 * Variable trace (unfixed):
+	 *   end  = 3  (ptr points at ']' at str[4], end = ptr-(str+1) = 3)
+	 *   len  = str_len - end - 1 - 2 = 56 - 3 - 1 - 2 = 50
+	 *   NUL-scan: no NUL in first 50 'A' bytes => len stays 50
+	 *   memcpy(ipaddr, ptr, 50) into 47-byte buffer => overflows by 3 bytes
+	 *   ipaddr[50] = '\0' => overflows by 4 bytes
+	 *
+	 * Fixed code scans the bounded port field and rejects it once it sees
+	 * that the port text is overlong.
+	 */
+	{
+		char payload[57];
+
+		memcpy(payload, "[::1]:", 6);
+		memset(payload + 6, 'A', 50);
+		payload[56] = '\0';
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in6));
+		ret = net_ipaddr_parse(payload, 56, addr);
+		zassert_false(ret, "Case 1: [::1]: + 50-byte port must be rejected");
+	}
+
+	/* Case 2: Minimum-length valid IPv6 address with oversized port.
+	 *
+	 * Uses "::" (the all-zeros address, 2 chars) to keep 'end' as small
+	 * as possible, maximising the port overflow size.
+	 *
+	 * str     = "[::]:" + 50 * '9'
+	 * str_len = 55
+	 * end     = 2  (ptr at str[3], ptr-(str+1) = 2)
+	 * unfixed len = 55 - 2 - 1 - 2 = 50  => overflow by 3 bytes
+	 */
+	{
+		char payload[56];
+
+		memcpy(payload, "[::]:", 5);
+		memset(payload + 5, '9', 50);
+		payload[55] = '\0';
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in6));
+		ret = net_ipaddr_parse(payload, 55, addr);
+		zassert_false(ret, "Case 2: [::] + 50-digit port must be rejected");
+	}
+
+	/* Case 3: Valid address, str_len larger than the actual string.
+	 *
+	 * Mirrors the IPv4 Case 3: a caller passing a generous upper-bound
+	 * str_len (common in the Zephyr network stack) with a valid [addr]:port.
+	 *
+	 * str     = "[::1]:80"  (8 chars, NUL-terminated)
+	 * str_len = 200
+	 *
+	 * Unfixed: len = 200 - 3 - 1 - 2 = 194; NUL-scan caps at 2 ("80")
+	 *          => actually safe here because NUL-scan fires.
+	 *
+	 * This case verifies the NUL-scan path and that the fix does not
+	 * break it.  The result must be true with port 80.
+	 */
+	{
+		const char *str = "[::1]:80";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in6));
+		ret = net_ipaddr_parse(str, 200, addr);
+		zassert_true(ret,
+			"Case 3: [::1]:80 with oversized str_len must succeed");
+		zassert_equal(net_sin6(addr)->sin6_family, NET_AF_INET6,
+			      "Case 3: family must be AF_INET6");
+		zassert_equal(net_sin6(addr)->sin6_port, net_htons(80),
+			      "Case 3: port must be 80");
+	}
+
+	/* Case 4: Boundary, a 5-character port with leading zeros is valid.
+	 *
+	 * This exercises the longest accepted decimal port string without
+	 * exceeding the numeric range.
+	 */
+	{
+		const char *str = "[::1]:00080";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in6));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_true(ret, "Case 4: 5-digit port must be accepted");
+		zassert_equal(net_sin6(addr)->sin6_port, net_htons(80),
+			      "Case 4: port must be 80");
+	}
+
+	/* Case 5: Overlong numeric ports with leading zeros must be rejected.
+	 *
+	 * This catches the regression where truncating the port text could
+	 * incorrectly accept "000080" as port 80.
+	 */
+	{
+		const char *str = "[::1]:000080";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in6));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_false(ret, "Case 5: 6-digit port must be rejected");
+	}
+
+	/* Case 6: Regression, port 0 (lower boundary).                      */
+	{
+		const char *str = "[2001:db8::1]:0";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in6));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_true(ret, "Case 6: port 0 must be accepted");
+		zassert_equal(net_sin6(addr)->sin6_port, net_htons(0),
+			      "Case 6: port must be 0");
+	}
+
+	/* Case 7: Regression, port 65535 (upper boundary).                  */
+	{
+		const char *str = "[2001:db8::1]:65535";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in6));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_true(ret, "Case 7: port 65535 must be accepted");
+		zassert_equal(net_sin6(addr)->sin6_port, net_htons(65535),
+			      "Case 7: port must be 65535");
+	}
+
+	/* Case 8: Regression, port 65536 (one above maximum).               */
+	{
+		const char *str = "[2001:db8::1]:65536";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in6));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_false(ret, "Case 8: port 65536 must be rejected");
+	}
+
+	/* Case 9: Regression, full 128-bit address with port.
+	 *
+	 * Uses the longest standard-notation IPv6 address to ensure the
+	 * address-copy path (end up to NET_INET6_ADDRSTRLEN-1) is also safe.
+	 */
+	{
+		const char *str = "[ff08:1122:3344:5566:7788:9900:aabb:ccdd]:8080";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in6));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_true(ret, "Case 9: full IPv6 address with port must be accepted");
+		zassert_equal(net_sin6(addr)->sin6_port, net_htons(8080),
+			      "Case 9: port must be 8080");
+	}
+}
+
 ZTEST_SUITE(test_utils_fn, NULL, NULL, NULL, NULL, NULL);
+ZTEST_INSTANTIATE_TEST_SUITE_P(all, test_utils_fn, test_net_addr, net_addr_cases);

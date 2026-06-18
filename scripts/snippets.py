@@ -45,12 +45,17 @@ def _new_append():
 def _new_board2appends():
     return defaultdict(lambda: defaultdict(_new_append))
 
+def _new_dirs():
+    return []
+
 @dataclass
 class Snippet:
     '''Class for keeping track of all the settings discovered for an
     individual snippet.'''
 
     name: str
+    dirs: list[Path] = field(default_factory=_new_dirs)
+    description: str | None = None
     appends: Appends = field(default_factory=_new_append)
     board2appends: dict[str, BoardRevisionAppends] = field(default_factory=_new_board2appends)
 
@@ -91,6 +96,8 @@ class Snippet:
                 (sysbuild is False and variable[0:3] != 'SB_'):
                     self.board2appends[board][""][variable] += \
                         append_value(variable, value)
+        self.description = snippet_data.get('description')
+        self.dirs.append(pathobj.parent)
 
 class Snippets(UserDict):
     '''Type for all the information we have discovered about all snippets.

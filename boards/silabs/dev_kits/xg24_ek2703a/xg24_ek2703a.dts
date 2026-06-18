@@ -22,6 +22,8 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &usart0;
 		zephyr,flash = &flash0;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,openthread-counter = &protimer;
 		zephyr,shell-uart = &usart0;
 		zephyr,sram = &sram0;
 		zephyr,uart-pipe = &usart0;
@@ -271,5 +273,15 @@
 };
 
 &bt_hci_silabs {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+	hfxo = <&hfxo>;
+	sleep-clock = <&lfxo>;
+};
+
+&protimer {
 	status = "okay";
 };

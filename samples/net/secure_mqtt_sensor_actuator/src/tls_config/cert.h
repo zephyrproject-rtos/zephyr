@@ -7,11 +7,11 @@
 #ifndef __CERT_H__
 #define __CERT_H__
 
-/* The CA certficate of the MQTT broker should be included here
+/* The CA certificate of the MQTT broker should be included here
  *  The certificate can either be in DER or PEM format.
  *  A DER certificate can be converted to a byte array using
  *  "cat ca.crt | sed -e '1d;$d' | base64 -d |xxd -i"
- *  If using a PEM certifificate, each line should be wrapped in "\r\n"
+ *  If using a PEM certificate, each line should be wrapped in "\r\n"
  */
 
 /* CA certificate for Mosquitto public broker

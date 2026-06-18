@@ -6,7 +6,7 @@
 
 / {
 	chosen {
-		zephyr,display = &sh1106_sh1106_128x64;
+		zephyr,display = &sh1107_sh1107_128x64;
 	};
 
 	aliases {
@@ -40,8 +40,8 @@
 &feather_i2c {
 	status = "okay";
 
-	sh1106_sh1106_128x64: sh1106@3c {
-		compatible = "sinowealth,sh1106";
+	sh1107_sh1107_128x64: sh1107@3c {
+		compatible = "sinowealth,sh1107";
 		reg = <0x3c>;
 		width = <64>;
 		height = <128>;

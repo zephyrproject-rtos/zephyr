@@ -32,16 +32,30 @@ Requirements
 Building and Running
 ********************
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+This sample uses two applications, so two devices need to be set up.
+Build and flash the peripheral application on the first board, replacing ``<board>``
+with your target board:
 
-This sample uses two applications, so two devices need to be setup.
-Flash one device with the central application, and another device with the
-peripheral application.
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/encrypted_advertising/peripheral
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+Build and flash the central application on a second board:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/encrypted_advertising/central
+   :board: <board>
+   :goals: build flash
+   :compact:
 
 The two devices should automatically connect if they are close enough.
 
 After the boards are connected, you will be asked to press the configured push
-button on both boards to confirm the pairing request.
+button on both boards to confirm the pairing request. Both boards require a
+button mapped to the ``sw0`` devicetree alias. If your board does not define
+``sw0`` by default, provide a devicetree overlay before building.
 
 Here are the outputs you should get by default:
 

@@ -1,0 +1,23 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "mr_navq95b_mimx9596_m7.dts"
+
+/ {
+	model = "NXP MR-NavQ95B DDR variant";
+
+	chosen {
+		zephyr,sram = &ddr;
+		/delete-property/ zephyr,flash;
+	};
+
+	ddr: memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_M(4)>;
+	};
+};

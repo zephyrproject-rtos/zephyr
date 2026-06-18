@@ -16,7 +16,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/irq.h>
 #include <zephyr/tracing/tracing.h>

@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <string.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/math_extras.h>
 #include <zephyr/posix/mqueue.h>
 #include <zephyr/posix/pthread.h>
 
@@ -117,9 +118,10 @@ mqd_t mq_open(const char *name, int oflags, ...)
 
 	/* Allocate mqueue object for new message queue */
 	if (msg_queue == NULL) {
+		size_t buf_size;
 
 		/* Check for message quantity and size in message queue */
-		if (attrs->mq_msgsize > CONFIG_MSG_SIZE_MAX &&
+		if (attrs->mq_msgsize > CONFIG_MSG_SIZE_MAX ||
 		    attrs->mq_maxmsg > CONFIG_POSIX_MQ_OPEN_MAX) {
 			goto free_mq_desc;
 		}
@@ -145,10 +147,13 @@ mqd_t mq_open(const char *name, int oflags, ...)
 
 		strcpy(msg_queue->name, name);
 
-		mq_buf_ptr = k_malloc(msg_size * max_msgs * sizeof(uint8_t));
+		if (size_mul_overflow((size_t)msg_size, (size_t)max_msgs, &buf_size)) {
+			goto free_mq_buffer;
+		}
+
+		mq_buf_ptr = k_malloc(buf_size);
 		if (mq_buf_ptr != NULL) {
-			(void)memset(mq_buf_ptr, 0,
-				     msg_size * max_msgs * sizeof(uint8_t));
+			(void)memset(mq_buf_ptr, 0, buf_size);
 			msg_queue->mem_buffer = mq_buf_ptr;
 		} else {
 			goto free_mq_buffer;

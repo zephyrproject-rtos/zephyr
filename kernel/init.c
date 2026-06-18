@@ -16,12 +16,12 @@
 #include <string.h>
 #include <offsets_short.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/random/random.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/toolchain.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/linker/linker-defs.h>
@@ -487,6 +487,7 @@ static FUNC_NORETURN void switch_to_main_thread(char *stack_ptr)
 #endif /* CONFIG_MULTITHREADING */
 
 __boot_func
+FUNC_NO_STACK_PROTECTOR
 void __weak z_early_rand_get(uint8_t *buf, size_t length)
 {
 	static uint64_t state = (uint64_t)CONFIG_TIMER_RANDOM_INITIAL_STATE;

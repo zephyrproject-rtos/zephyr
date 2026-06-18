@@ -10,6 +10,8 @@ menuconfig IIS3DWB
 	depends on ZEPHYR_HAL_ST_MODULE
 	select SPI
 	select SPI_RTIO if SENSOR_ASYNC_API
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_IIS3DWB),int1-gpios) || \
+		       $(dt_compat_any_has_prop,$(DT_COMPAT_ST_IIS3DWB),int2-gpios)
 	select HAS_STMEMSC
 	select USE_STDC_IIS3DWB
 	help

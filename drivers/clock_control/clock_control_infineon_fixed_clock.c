@@ -210,8 +210,8 @@ static int fixed_rate_clk_init(const struct device *dev)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp0))
 	case IFX_DPLL250_0:
-#ifdef WA__DRIVERS_21925
-		/* Workaround: update DPLL_LP trim values */
+#ifdef UPDATE_DPLL_LP_TRIM_VALUES
+		/* Update DPLL_LP trim values */
 		CY_SET_REG32(0x52403218, 0x921F190A); /* DPLL_LP0_TEST3 */
 		CY_SET_REG32(0x5240321C, 0x08100000); /* DPLL_LP0_TEST4 */
 #endif
@@ -222,8 +222,8 @@ static int fixed_rate_clk_init(const struct device *dev)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp1))
 	case IFX_DPLL250_1:
-#ifdef WA__DRIVERS_21925
-		/* Workaround: update DPLL_LP trim values */
+#ifdef UPDATE_DPLL_LP_TRIM_VALUES
+		/* Update DPLL_LP trim values */
 		CY_SET_REG32(0x52403238, 0x921F190A); /* DPLL_LP1_TEST3 */
 		CY_SET_REG32(0x5240323C, 0x08100000); /* DPLL_LP1_TEST4 */
 #endif

@@ -129,3 +129,26 @@ child-binding:
         - "one-eighth"
       description: |
         Pin output drive strength.
+    infineon,cfgout3-mode:
+      type: boolean
+      description: |
+        Apply CY_GPIO_DM_CFGOUT3_STRONG_PULLUP_HIGHZ drive mode (CFG_OUT3),
+        required for I3C pins on some silicon.  When set, other drive-mode and
+        bias properties are ignored and input-enable is implied.
+    infineon,cfgout3-pullup-ohms:
+      type: int
+      enum:
+        - 0
+        - 2800
+        - 1800
+        - 1100
+        - 1200
+        - 840
+        - 720
+        - 570
+      description: |
+        Internal pull-up resistance for CFGOUT3 pads, in ohms.  Only
+        meaningful when infineon,cfgout3-mode is set.  Maps directly to
+        the Cy_GPIO_SetPullupResistance() PDL values (0 = disabled,
+        2800 = 2.8 kohm, ... 570 = 570 ohm).  If omitted, no pull-up
+        is configured (CY_GPIO_PULLUP_RES_DISABLE).

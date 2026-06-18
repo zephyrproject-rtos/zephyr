@@ -7,7 +7,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/tc_util.h>
-#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <assert.h>
 

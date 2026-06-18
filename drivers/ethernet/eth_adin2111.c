@@ -87,8 +87,8 @@ int eth_adin2111_mac_reset(const struct device *dev)
 	return 0;
 }
 
-int eth_adin2111_reg_update(const struct device *dev, const uint16_t reg,
-			    uint32_t mask,  uint32_t data)
+__maybe_unused static int eth_adin2111_reg_update(const struct device *dev, const uint16_t reg,
+						  uint32_t mask, uint32_t data)
 {
 	uint32_t val;
 	int ret;

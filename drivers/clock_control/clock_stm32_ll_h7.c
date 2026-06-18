@@ -190,6 +190,11 @@
 #define STM32H7_BUS_CLK_REG	DT_REG_ADDR(DT_NODELABEL(rcc)) + 0x60
 #endif
 
+#if IS_ENABLED(STM32_PLL_P_ENABLED)
+BUILD_ASSERT(((STM32_PLL_P_DIVISOR == 1) || (STM32_PLL_P_DIVISOR % 2) == 0),
+	     "STM32H7/H7RS PLL1 DIVP divisor factor must be 1 or even");
+#endif /* STM32_PLL_P_ENABLED */
+
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 {
 	return clock / prescaler;
@@ -874,7 +879,8 @@ static void stm32_clock_switch_to_hsi(void)
 __unused
 static int set_up_plls(void)
 {
-#if defined(STM32_PLL_ENABLED) || defined(STM32_PLL2_ENABLED) || defined(STM32_PLL3_ENABLED)
+#if !defined(CONFIG_CPU_CORTEX_M4) &&                                                              \
+	(defined(STM32_PLL_ENABLED) || defined(STM32_PLL2_ENABLED) || defined(STM32_PLL3_ENABLED))
 	int r;
 	uint32_t vco_input_range;
 	uint32_t vco_output_range;
@@ -1099,7 +1105,8 @@ static int set_up_plls(void)
 	/* Init PLL source to None */
 	LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_NONE);
 
-#endif /* STM32_PLL_ENABLED || STM32_PLL2_ENABLED || STM32_PLL3_ENABLED */
+#endif /* !CONFIG_CPU_CORTEX_M4 && (STM32_PLL_ENABLED || STM32_PLL2_ENABLED || STM32_PLL3_ENABLED)
+	*/
 
 	return 0;
 }

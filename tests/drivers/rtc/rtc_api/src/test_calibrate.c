@@ -70,7 +70,7 @@ ZTEST(rtc_api, test_set_get_calibration)
 		ret = test_set_get_calibration(-set);
 
 		if (ret < 0) {
-			/* Limit of hardware capabilties reached */
+			/* Limit of hardware capabilities reached */
 			break;
 		}
 	}
@@ -80,7 +80,7 @@ ZTEST(rtc_api, test_set_get_calibration)
 		ret = test_set_get_calibration(set);
 
 		if (ret < 0) {
-			/* Limit of hardware capabilties reached */
+			/* Limit of hardware capabilities reached */
 			break;
 		}
 	}

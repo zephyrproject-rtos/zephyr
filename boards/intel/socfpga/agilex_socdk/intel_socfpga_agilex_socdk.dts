@@ -12,8 +12,6 @@
 / {
 	model = "Intel SoC FPGA Agilex";
 	compatible = "intel,socfpga-agilex";
-	#address-cells = <1>;
-	#size-cells = <1>;
 
 	chosen {
 		zephyr,console = &uart0;

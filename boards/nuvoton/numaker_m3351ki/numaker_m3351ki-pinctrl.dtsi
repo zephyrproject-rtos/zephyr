@@ -24,4 +24,11 @@
 				 <PC4MFP_GPIO>;
 		};
 	};
+
+	i2c0_default: i2c0_default {
+		group0 {
+			pinmux = <PC0MFP_I2C0_SDA>,  /* UNO D14 */
+				 <PC1MFP_I2C0_SCL>;  /* UNO D15 */
+		};
+	};
 };

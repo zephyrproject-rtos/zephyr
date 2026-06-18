@@ -346,8 +346,7 @@ static void receive_state_machine(struct isotp_recv_ctx *rctx)
 		}
 
 		k_fifo_cancel_wait(&rctx->fifo);
-		net_buf_unref(rctx->buf);
-		rctx->buf = NULL;
+		net_buf_drop(&rctx->buf);
 		rctx->state = ISOTP_RX_STATE_RECYCLE;
 		__fallthrough;
 	case ISOTP_RX_STATE_RECYCLE:
@@ -658,8 +657,7 @@ int isotp_bind(struct isotp_recv_ctx *rctx, const struct device *can_dev,
 	ret = add_ff_sf_filter(rctx);
 	if (ret) {
 		LOG_ERR("Can't add filter for binding");
-		net_buf_unref(rctx->buf);
-		rctx->buf = NULL;
+		net_buf_drop(&rctx->buf);
 		return ret;
 	}
 
@@ -1040,8 +1038,7 @@ static inline int send_cf(struct isotp_send_ctx *sctx)
 static inline void free_send_ctx(struct isotp_send_ctx **sctx)
 {
 	if ((*sctx)->is_net_buf) {
-		net_buf_unref((*sctx)->buf);
-		(*sctx)->buf = NULL;
+		net_buf_drop(&(*sctx)->buf);
 	}
 
 	if ((*sctx)->is_ctx_slab) {

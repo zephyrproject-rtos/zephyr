@@ -48,7 +48,7 @@ config HCI_NXP_CONFIG_IR
 	  during HCI init.
 
 config HCI_NXP_TRIGGER_IR_ON_BT_INIT
-	bool "IR triggerred on BT Init"
+	bool "IR triggered on BT Init"
 	depends on BT_H4_NXP_CTLR
 	depends on BT_HCI_HOST
 	depends on HCI_NXP_CONFIG_IR

@@ -15,6 +15,7 @@ The Wi-Fi management API is used to manage Wi-Fi networks. It supports below mod
 Only personal mode security is supported with below types:
 
 * Open
+* OWE
 * WEP
 * WPA2-PSK
 * WPA2-PSK-256
@@ -84,11 +85,11 @@ If you want to use your own certificates, you can replace the existing certifica
     $ cp ca2.pem $WIFI_TEST_CERTS_DIR
     $ west build -p -b <board> samples/net/wifi -S wifi-enterprise
 
-or alternatively copy ``rsa2k`` certificates by changing the ``WIFI_TEST_CERTS_DIR`` environment variable.
+For RSA 2048-bit certificates, use ``rsa2k_no_des``.
 
 .. code-block:: bash
 
-    $ export WIFI_TEST_CERTS_DIR=samples/net/wifi/test_certs/rsa2k
+    $ export WIFI_TEST_CERTS_DIR=samples/net/wifi/test_certs/rsa2k_no_des
 
 or you can set the :envvar:`WIFI_TEST_CERTS_DIR` environment variable to point to the directory containing your certificates.
 
@@ -106,9 +107,9 @@ To facilitate installation of the certificates, a helper script is provided, see
 
 .. code-block:: bash
 
-    $ ./scripts/utils/wifi_ent_cert_installer.py -p samples/net/wifi/test_certs/rsa2k
+    $ ./scripts/utils/wifi_ent_cert_installer.py -p samples/net/wifi/test_certs/rsa2k_no_des
 
-The script will install the certificates in the ``rsa2k`` directory to the TLS credentials store in the device over UART and using TLS credentials shell commands.
+The script will install the certificates to the TLS credentials store in the device over UART and using TLS credentials shell commands.
 
 
 To initiate a Wi-Fi connection using enterprise security, use one of the following commands depending on the EAP method:
@@ -184,7 +185,7 @@ Different EAP methods have varying client-side certificate requirements, as outl
 How to Generate Test Certificates Using FreeRADIUS
 --------------------------------------------------
 
-The test certificates in ``samples/net/wifi/test_certs/rsa2k`` are generated using the `FreeRADIUS raddb/certs scripts <https://github.com/FreeRADIUS/freeradius-server/tree/master/raddb/certs>`_. You can generate your own certificates for testing as follows:
+The test certificates in ``samples/net/wifi/test_certs/rsa2k_no_des`` are generated using the `FreeRADIUS raddb/certs scripts <https://github.com/FreeRADIUS/freeradius-server/tree/master/raddb/certs>`_. You can generate your own certificates for testing as follows:
 
 1. **Prerequisites**
    - Install OpenSSL and GNU Make.
@@ -224,7 +225,8 @@ The test certificates in ``samples/net/wifi/test_certs/rsa2k`` are generated usi
    +-------------------+---------------------+
 
 6. **Copy the files**
-   Place the renamed files in your Zephyr project's certificate directory (e.g., ``samples/net/wifi/test_certs/rsa2k``).
+   Place the renamed files in your Zephyr project's certificate directory (e.g., ``samples/net/wifi/test_certs/rsa2k_no_des``).
+   Encrypt private keys with AES (PBES2), not DES; see the existing ``rsa2k_no_des`` keys for reference.
 
 .. note::
    These certificates are for testing only and should not be used in production.
@@ -243,6 +245,20 @@ To enable and build with Wi-Fi P2P support:
 .. code-block:: bash
 
     $ west build -p -b <board> samples/net/wifi/shell -- -DCONFIG_WIFI_NM_WPA_SUPPLICANT_P2P=y
+
+Wi-Fi NAN (Neighbor Awareness Networking)
+*****************************************
+
+Wi-Fi NAN (Neighbor Awareness Networking), also known as Wi-Fi Aware, enables devices to discover
+services and communicate with nearby devices without requiring a traditional access point or Internet
+connection. This feature uses a publish-subscribe model where devices can publish services or
+subscribe to discover services from nearby peers.
+
+To enable and build with Wi-Fi NAN support:
+
+.. code-block:: bash
+
+    $ west build -p -b <board> samples/net/wifi/shell -- -DCONFIG_WIFI_NM_WPA_SUPPLICANT_NAN=y
 
 API Reference
 *************

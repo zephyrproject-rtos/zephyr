@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief Renesas RA Clock Generator Circuit (CGC) header file
+ * @ingroup clock_control_renesas_ra
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_RENESAS_RA_CGC_H_
@@ -16,8 +17,8 @@
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 
 /**
- * @name Clock source and divider helpers for Renesas RA devices.
- *
+ * @defgroup clock_control_renesas_ra Renesas RA CGC
+ * @ingroup clock_control_interface_ext
  * @{
  */
 
@@ -52,8 +53,9 @@
 	(RA_CGC_PROP_HAS_STATUS_OKAY_OR(clk, prop, default_value))
 
 /**
- * @defgroup ra_cgc_div Renesas RA Clock Divider Generators
+ * @defgroup clock_control_renesas_ra_div Renesas RA Clock Divider Generators
  * @brief Divider generator macros for multiple clock domains.
+ * @ingroup clock_control_renesas_ra
  * @{
  */
 
@@ -164,11 +166,12 @@
 #define RA_CGC_DIV_TAU_CK03(n)    UTIL_CAT(TIMER_SOURCE_DIV_, n)
 /** TAU_CK04 divider. */
 #define RA_CGC_DIV_TAU_CK04(n)    UTIL_CAT(TIMER_SOURCE_DIV_, n)
-/** @} end of ra_cgc_div group */
+/** @} end of clock_control_renesas_ra_div group */
 
 /**
- *  @defgroup bsp_clock_source Renesas RA BSP Clock Source Constants
+ *  @defgroup clock_control_renesas_ra_source Renesas RA BSP Clock Source Constants
  *  @brief Renesas RA BSP clock source constants.
+ *  @ingroup clock_control_renesas_ra
  *  @{
  */
 
@@ -229,11 +232,12 @@
 #error "Invalid fsxp source clock"
 #endif /* DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(fsxp)), DT_NODELABEL(loco)) */
 #endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(fsxp)) */
-/** @} end of bsp_clock_source group */
+/** @} end of clock_control_renesas_ra_source group */
 
 /**
- *  @defgroup bsp_clock_clkout Renesas RA BSP Clock Clkout Divider Constants
+ *  @defgroup clock_control_renesas_ra_clkout Renesas RA BSP Clock Clkout Divider Constants
  *  @brief Renesas RA BSP clock clkout divider constants.
+ *  @ingroup clock_control_renesas_ra
  *  @{
  */
 
@@ -245,7 +249,7 @@
 #define BSP_CLOCKS_CLKOUT_DIV_32  (5) /**< Clkout div 32. */
 #define BSP_CLOCKS_CLKOUT_DIV_64  (6) /**< Clkout div 64. */
 #define BSP_CLOCKS_CLKOUT_DIV_128 (7) /**< Clkout div 128. */
-/** @} end of bsp_clock_clkout group */
+/** @} end of clock_control_renesas_ra_clkout group */
 
 /**
  * @brief Peripheral clock configuration.

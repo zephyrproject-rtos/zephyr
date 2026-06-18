@@ -309,9 +309,9 @@
 #define DWT_SYS_MASK_MGPIOIRQ       0x00400000UL
 /* Mask SLEEP to INIT event */
 #define DWT_SYS_MASK_MSLP2INIT      0x00800000UL
-/* Mask RF PLL Loosing Lock warning event */
+/* Mask RF PLL Losing Lock warning event */
 #define DWT_SYS_MASK_MRFPLLLL       0x01000000UL
-/* Mask Clock PLL Loosing Lock warning event */
+/* Mask Clock PLL Losing Lock warning event */
 #define DWT_SYS_MASK_MCPLLLL        0x02000000UL
 /* Mask Receive SFD timeout event */
 #define DWT_SYS_MASK_MRXSFDTO       0x04000000UL

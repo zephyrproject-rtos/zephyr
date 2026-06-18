@@ -143,8 +143,7 @@ static void connected(struct bt_conn *conn, uint8_t reason)
 	if (reason) {
 		printk("Failed to connect to %s (%u)\n", bt_conn_dst_str(conn), reason);
 
-		bt_conn_unref(conn_connecting);
-		conn_connecting = NULL;
+		bt_conn_drop(&conn_connecting);
 
 		start_scan();
 		return;

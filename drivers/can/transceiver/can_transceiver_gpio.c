@@ -78,7 +78,7 @@ static int can_transceiver_gpio_init(const struct device *dev)
 #if ANY_INST_HAS_ENABLE_GPIOS
 	if (config->enable_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->enable_gpio)) {
-			LOG_ERR("enable pin GPIO device not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->enable_gpio.port);
 			return -EINVAL;
 		}
 
@@ -94,7 +94,7 @@ static int can_transceiver_gpio_init(const struct device *dev)
 #if ANY_INST_HAS_STANDBY_GPIOS
 	if (config->standby_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->standby_gpio)) {
-			LOG_ERR("standby pin GPIO device not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->standby_gpio.port);
 			return -EINVAL;
 		}
 

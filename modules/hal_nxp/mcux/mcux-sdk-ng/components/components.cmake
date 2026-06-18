@@ -23,6 +23,11 @@ if(${MCUX_DEVICE} MATCHES "RW61")
     set(CONFIG_MCUX_COMPONENT_driver.cache_cache64 ON)
     set(CONFIG_MCUX_COMPONENT_driver.flexspi ON)
   endif()
+  if(CONFIG_NXP_IEEE802154_MAC)
+    set(CONFIG_MCUX_COMPONENT_driver.conn_fwloader ON)
+    set(CONFIG_MCUX_COMPONENT_component.mflash_offchip ON)
+  endif()
+
 endif()
 
 if(CONFIG_USB_DEVICE_DRIVER OR CONFIG_UDC_DRIVER OR CONFIG_UHC_DRIVER OR CONFIG_BT)

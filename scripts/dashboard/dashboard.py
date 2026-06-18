@@ -6,11 +6,58 @@ Process a build folder and generate a comprehensive HTML dashboard
 including memory use, Kconfig values, devicetree browser, sys-init
 ordering, and other general details.
 
-This incorporates results from various other scripts:
-- traceconfig
-- footprint
-- ram_plot/rom_plot
-- initlevels
+Data sources
+============
+
+The following build artifacts (read from <build_dir>/zephyr/ unless noted)
+are used by this script:
+
+  <build_dir>/build_info.yml
+      Build metadata produced by CMake: application source path, board
+      name, west build command, and workspace top directory.
+
+  <zephyr_base>/VERSION
+      Zephyr source version (major, minor, patchlevel, extraversion).
+
+  <build_dir>/CMakeFiles/*/CMakeCCompiler.cmake
+      CMake compiler description file, parsed to extract the toolchain
+      name and version string.
+
+  zephyr/<kernel>.elf
+      ELF image of the built kernel. Used by pyelftools to compute the
+      memory summary (text/rodata/rwdata/bss section sizes), to check
+      sys-init ordering via check_init_priorities, and by the
+      scripts/footprint/size_report script to generate memory reports.
+
+  zephyr/<kernel>.bin
+      Binary image.  Only its file size is read, reported as "Bin Size"
+      on the build summary page.
+
+  zephyr/.config-trace.pickle
+      Pickled output of the traceconfig script.  Contains the list of
+      Kconfig symbols that were evaluated during the build, together
+      with their values and source locations, used to populate the
+      Kconfig browser tab.
+
+  zephyr/edt.pickle
+      Pickled edtlib.EDT object representing the fully resolved
+      devicetree for the build.  Used in two ways:
+
+      1. General devicetree browser — the full DT node tree is rendered
+         as a searchable, expandable view in the Devicetree tab.
+
+      2. Per-region memory reports — all nodes whose "compatible"
+         includes "zephyr,memory-region" and whose status is "okay" are
+         enumerated.  For each such node the "zephyr,memory-region"
+         property provides the region name and the first "reg" entry
+         provides its base address and size.  If the ELF contains at
+         least one allocated section that overlaps the region's address
+         range, a report is created and shown as an additional tab in the
+         Memory Report view.
+
+  zephyr/zephyr.dts
+      Raw DTS source file, syntax-highlighted with Pygments and
+      displayed verbatim in the Devicetree tab.
 '''
 
 import argparse
@@ -63,6 +110,9 @@ KCONFIG_BROWSER = 'https://docs.zephyrproject.org/latest/kconfig.html'
 # that we cannot access from Python script.
 CSS_BS_TABLE_BG = '#f8f9fa'
 
+# Height of the memory report plot.
+MEMORY_PLOT_HEIGHT = 600
+
 # Constants for converting from bytes to human-friendly sizes.
 MEMORY_UNIT_SIZES = {
     1073741824: 'GB',
@@ -104,9 +154,7 @@ def elf_memory_summary(elf_file):
 
     report = {'bss': 0, 'rodata': 0, 'rwdata': 0, 'text': 0, 'other': 0}
 
-    with open(elf_file, "rb") as fd:
-        elf = ELFFile(fd)
-
+    with ELFFile.load_from_path(elf_file) as elf:
         for section in elf.iter_sections():
             flags = section.header['sh_flags']
             size = section.header['sh_size']
@@ -265,6 +313,54 @@ class KconfigSymbol:
         return self.src
 
 
+def _build_memory_report_tree(report):
+    '''
+    Convert a size_report JSON dict into the tree structure expected by the
+    JS tree widget.
+
+    Returns a dict with keys "size" (total bytes) and "tree" (list of nodes).
+    Each node has "expanded", "data" (name/size/displaySize/memoryType), and
+    optionally "children".
+    '''
+
+    def create_node(symbol, expanded=False):
+        size = symbol['size']
+        return (
+            {
+                "expanded": expanded,
+                "data": {
+                    "name": symbol['name'],
+                    "size": size,
+                    "displaySize": display_size(size),
+                    "memoryType": [loc.upper() for loc in symbol.get('loc', [])],
+                },
+            }
+            if size
+            else None
+        )
+
+    def add_children(node, children):
+        if not children:
+            return
+        node['children'] = []
+        for symbol in sorted(children, key=lambda c: c['name']):
+            child_node = create_node(symbol)
+            if not child_node:
+                continue
+            node['children'].append(child_node)
+            add_children(child_node, symbol.get('children'))
+
+    tree = {}
+    symbol = report.get('symbols')
+    if symbol:
+        tree['size'] = symbol['size']
+        tree['tree'] = []
+        node = create_node(symbol, expanded=True)
+        tree['tree'].append(node)
+        add_children(node, symbol.get('children'))
+    return tree
+
+
 class ZephyrDashboard:
     '''
     Class for collecting and processing Zephyr build artifacts to create the
@@ -335,6 +431,7 @@ class ZephyrDashboard:
 
         # Create the memory reports if they are stale.
         self.skip_memory_report = skip_memory_report
+        self.memory_regions = []
         if not self.skip_memory_report:
             memory_report = self.output_path / "all_report.json"
             if not os.path.isfile(memory_report) or os.path.getmtime(
@@ -373,6 +470,53 @@ class ZephyrDashboard:
         self.kconfigs = [KconfigSymbol(*sym, build=self) for sym in trace_data]
         self.kconfigs.sort(key=lambda kc: kc.name)
 
+    def _get_dt_memory_regions(self):
+        '''
+        Return a list of DT memory regions from edt.pickle.
+
+        Each entry is a dict with "name" (str), "addr" (int), "size" (int).
+        Only nodes with compatible "zephyr,memory-region", status "okay", a
+        valid "zephyr,memory-region" name property, and at least one reg are
+        included.
+        '''
+        edt_pickle_path = self.build_path / "zephyr" / "edt.pickle"
+        with open(edt_pickle_path, "rb") as f:
+            edt = pickle.load(f)
+
+        regions = []
+        for node in edt.compat2nodes.get("zephyr,memory-region", []):
+            if node.status != "okay":
+                continue
+            name_prop = node.props.get("zephyr,memory-region")
+            if not name_prop:
+                continue
+            name = name_prop.val
+            if not node.regs:
+                continue
+            reg = node.regs[0]
+            if reg.addr is None or reg.size is None:
+                continue
+            regions.append({"name": name, "addr": reg.addr, "size": reg.size, "path": node.path})
+        return regions
+
+    def _has_sections_in_range(self, addr, size):
+        '''
+        Return True if the ELF contains any allocated, non-empty section
+        whose address range overlaps [addr, addr+size).
+        '''
+        end = addr + size
+        with ELFFile.load_from_path(self.elf_file) as elf:
+            for section in elf.iter_sections():
+                if section["sh_size"] == 0:
+                    continue
+                if section["sh_flags"] & SH_FLAGS.SHF_ALLOC == 0:
+                    continue
+                sec_start = section["sh_addr"]
+                sec_end = sec_start + section["sh_size"]
+                if sec_start < end and sec_end > addr:
+                    return True
+        return False
+
     def _create_memory_reports(self):
         '''
         Use the footprint size_report tool to create the ram/rom/all JSON data.
@@ -408,6 +552,45 @@ class ZephyrDashboard:
                 f"Failed generating memory size report (exit code {e.returncode}). "
                 + f"Command:\n{' '.join(e.cmd)}"
             )
+
+        # Generate per-region reports for non-empty DT memory regions.
+        try:
+            regions = self._get_dt_memory_regions()
+        except Exception as e:
+            logger.warning(f"Could not load DT memory regions: {e}")
+            regions = []
+
+        for region in regions:
+            if not self._has_sections_in_range(region["addr"], region["size"]):
+                continue
+
+            region_cmd = [
+                sys.executable,
+                str(self.zephyr_base / "scripts" / "footprint" / "size_report"),
+                '-k',
+                str(self.elf_file),
+                '-z',
+                str(self.zephyr_base.absolute()),
+                f'--workspace={self.topdir}',
+                '--json',
+                str(self.output_path / f"{region['name']}_report.json"),
+                '--filter-address-range',
+                str(region["addr"]),
+                str(region["size"]),
+                '--quiet',
+                '--output',
+                '.',
+                'all',
+            ]
+            logger.debug(' '.join(region_cmd))
+            try:
+                subprocess.check_call(region_cmd)
+                self.memory_regions.append(region)
+            except subprocess.CalledProcessError as e:
+                logger.error(
+                    f"Failed generating memory region report for {region['name']} "
+                    f"(exit code {e.returncode}). Command:\n{' '.join(e.cmd)}"
+                )
 
     def _load_memory_report(self, mem_type):
         '''
@@ -463,52 +646,14 @@ class ZephyrDashboard:
 
         report = self._load_memory_report(mem_type)
 
-        def create_node(symbol, expanded=False):
-            size = symbol['size']
-            return (
-                {
-                    "expanded": expanded,
-                    "data": {
-                        "name": symbol['name'],
-                        "size": size,
-                        "displaySize": display_size(size),
-                        "memoryType": [loc.upper() for loc in symbol.get('loc', [])],
-                    },
-                }
-                if size
-                else None
-            )
-
-        def add_children(node, children):
-            if not children:
-                return
-            node['children'] = []
-            for symbol in sorted(children, key=lambda c: c['name']):
-                child_node = create_node(symbol)
-                if not child_node:
-                    continue
-                node['children'].append(child_node)
-                add_children(child_node, symbol.get('children'))
-
-        def create_tree(report):
-            tree = {}
-            symbol = report.get('symbols')
-            if symbol:
-                tree['size'] = symbol['size']
-                tree['tree'] = []
-                node = create_node(symbol, expanded=True)
-                tree['tree'].append(node)
-                add_children(node, symbol.get('children'))
-            return tree
-
         if report:
-            tree = create_tree(report)
+            tree = _build_memory_report_tree(report)
             ctxt[f'{mem_type}_report'] = json.dumps(tree)
             ctxt[f'{mem_type}_report_size'] = tree['size']
 
             if generate_figure:
                 figure = generate_figure(report)
-                figure.update_layout(paper_bgcolor=CSS_BS_TABLE_BG, height=600)
+                figure.update_layout(paper_bgcolor=CSS_BS_TABLE_BG, height=MEMORY_PLOT_HEIGHT)
                 ctxt[f'{mem_type}_plot'] = figure.to_html(full_html=False, include_plotlyjs=False)
             else:
                 ctxt[f'{mem_type}_plot'] = None
@@ -518,6 +663,60 @@ class ZephyrDashboard:
 
         if mem_type == 'all':
             ctxt['top_ten'] = self._symbols_by_size(report, 10)
+
+    def _region_reports_template_context(self, ctxt):
+        '''
+        Add the HTML template context for per-region memory reports.
+
+        Populates ctxt["memory_regions"] with a list of dicts, one per
+        non-empty DT memory region, each containing:
+          name       - region name (e.g. "ITCM")
+          tab_id     - sanitized lowercase id safe for use in HTML attributes
+          report     - JSON-encoded tree data for the JS tree widget
+          report_size - total size in bytes (for percentage display)
+        '''
+
+        region_ctxt_list = []
+        for region in self.memory_regions:
+            name = region['name']
+            tab_id = re.sub(r'[^a-zA-Z0-9]', '_', name).lower()
+            fname = self.output_path / f"{name}_report.json"
+            if not os.path.isfile(fname):
+                logger.warning(f'Region report file "{fname}" not found.')
+                continue
+            with open(fname, encoding="utf-8") as fd:
+                report = json.load(fd)
+            if not report:
+                continue
+            tree = _build_memory_report_tree(report)
+            if generate_figure:
+                # When doing a memory-region report, the total size of the children
+                # may exceed the region size by a few bytes due to how the linker
+                # deals with alignment padding at a section boundary. plotly
+                # barfs if they do not match, so force them to be the same.
+                saved_size = report['symbols']['size']
+                report['symbols']['size'] = sum(
+                    node['size'] for node in report['symbols']['children']
+                )
+                figure = generate_figure(report)
+                figure.update_layout(paper_bgcolor=CSS_BS_TABLE_BG, height=MEMORY_PLOT_HEIGHT)
+                plot = figure.to_html(full_html=False, include_plotlyjs=False)
+                report['symbols']['size'] = saved_size
+            else:
+                plot = None
+            region_ctxt_list.append(
+                {
+                    'name': name,
+                    'tab_id': tab_id,
+                    'path': region['path'],
+                    'region_size': region['size'],
+                    'report': json.dumps(tree),
+                    'report_size': tree.get('size', 0),
+                    'plot': plot,
+                }
+            )
+
+        ctxt['memory_regions'] = region_ctxt_list
 
     def _safe_relpath(self, filename):
         '''
@@ -736,6 +935,7 @@ class ZephyrDashboard:
             self._memory_report_template_context('all', context)
             self._memory_report_template_context('ram', context)
             self._memory_report_template_context('rom', context)
+            self._region_reports_template_context(context)
             fname = self.output_path / 'memoryreport.html'
             logger.debug(f"Creating {fname}")
             with open(fname, 'w', encoding="utf-8") as fd:
@@ -772,6 +972,9 @@ class ZephyrDashboard:
         '''
         for mem_type in ['ram', 'rom', 'all']:
             fname = self.output_path / f"{mem_type}_report.json"
+            fname.unlink(missing_ok=True)
+        for region in self.memory_regions:
+            fname = self.output_path / f"{region['name']}_report.json"
             fname.unlink(missing_ok=True)
 
     def open_browser(self):

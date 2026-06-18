@@ -37,6 +37,7 @@ message("  dashboard    - Generate an HTML dashboard with footprint, traceconfig
 message("  initlevels   - Display the initialization sequence")
 message("  boards       - Display supported boards")
 message("  shields      - Display supported shields")
+message("  snippets     - Display supported snippets")
 message("  usage        - Display this text")
 message("  llext-edk    - Build the Linkable Loadable Extension (LLEXT) Extension Development Kit (EDK)")
 message("  help         - Display all build system targets")

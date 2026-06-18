@@ -8,3 +8,12 @@ tests:
     tags:
       - timing
       - arch
+  arch.common.timing.smp:
+    filter: CONFIG_SMP and CONFIG_MP_MAX_NUM_CPUS > 1
+    tags:
+      - timing
+      - arch
+      - smp
+    extra_configs:
+      - CONFIG_SCHED_SIMPLE=y
+      - CONFIG_SCHED_CPU_MASK=y

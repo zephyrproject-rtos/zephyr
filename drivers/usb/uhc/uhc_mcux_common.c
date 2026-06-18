@@ -242,10 +242,17 @@ static usb_host_pipe_handle uhc_mcux_check_hal_ep(const struct device *dev,
 		}
 	}
 
-	if (mcux_ep != NULL && mcux_ep->pipeType == xfer->type &&
-	    (mcux_ep->maxPacketSize != xfer->mps ||
-	    priv->mcux_eps_interval[i] != xfer->interval)) {
-		/* re-initialize the ep */
+	if (mcux_ep == NULL) {
+		return NULL;
+	}
+
+	/* If the ep's attributes have changed, close the ep and return NULL.
+	 * The ep will be re-initialized with new attributes.
+	 */
+	if (mcux_ep->pipeType != xfer->type ||
+	    mcux_ep->maxPacketSize != USB_MPS_EP_SIZE(xfer->mps) ||
+	    mcux_ep->numberPerUframe != USB_MPS_ADDITIONAL_TRANSACTIONS(xfer->mps) + 1 ||
+	    priv->mcux_eps_interval[i] != xfer->interval) {
 		status = priv->mcux_if->controllerClosePipe(priv->mcux_host.controllerHandle,
 							    mcux_ep);
 		if (status != kStatus_USB_Success) {

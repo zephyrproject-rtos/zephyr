@@ -221,7 +221,7 @@ tr.text-secondary > td {
  * ==========================================================================
  */
 
-.tt-cell-content > span.memory-type {
+td span.memory-type {
     float: right;
     font-size: smaller;
 }
@@ -242,6 +242,10 @@ tr.mem-rpt-file span.tt-cell-content {
 
 tr.mem-rpt-symbol span.tt-cell-content {
     color: rgba(var(--bs-success-rgb));
+}
+
+.table-search-input {
+    width: 300px;
 }
 
 /* ==========================================================================

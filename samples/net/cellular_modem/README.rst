@@ -56,6 +56,25 @@ Next, the UART API must be specified using ``CONFIG_UART_INTERRUPT_DRIVEN=y`` or
 
 Lastly, the APN must be configured using ``CONFIG_MODEM_CELLULAR_APN=""``.
 
+Shell commands
+**************
+
+The sample enables :kconfig:option:`CONFIG_MODEM_CELLULAR_SHELL`, which
+adds a ``modem_cellular`` shell command for runtime control of the
+cellular_modem driver's periodic chat script:
+
+.. code-block:: shell
+
+   modem_cellular pause <device>
+   modem_cellular resume <device>
+
+Use ``modem_cellular pause`` to suppress the periodic CSQ/CREG poll while
+running a long AT operation on the command channel (firmware update,
+eSIM provisioning, factory test). ``modem_cellular resume`` re-enables it;
+the next periodic invocation fires immediately if a scheduled run was
+skipped while paused. Pausing while already paused, or resuming while
+not paused, returns ``-EINVAL``.
+
 Server setup
 ************
 

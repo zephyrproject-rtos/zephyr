@@ -70,7 +70,8 @@ Default Zephyr Peripheral Mapping:
 - USART_3 TX/RX : PB10/PB11 (ST-Link Virtual Port Com)
 - USART_1 TX/RX : PB6/PB7 (Arduino Serial)
 - SPI_2 NSS/SCK/MISO/MOSI : PB4/PD3/PI2/PB15 (Arduino SPI)
-- I2C_4 SCL/SDA: PD12, PD13 (Arduino I2C)
+- I2C_4 SCL/SDA: PD12, PD13 (Arduino I2C, on-board FT5336 touch)
+- LTDC : 4.3" 480x272 RGB888 panel (DISP_ON = PD7)
 - USER_PB : PC13
 - LD1 : PI13
 - LD2 : PJ2

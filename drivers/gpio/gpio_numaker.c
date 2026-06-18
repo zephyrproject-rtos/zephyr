@@ -8,14 +8,13 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_numaker.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/logging/log.h>
 #include <NuMicro.h>
-
-#define NU_MFP_POS(pinindex) ((pinindex % 4) * 8)
 
 LOG_MODULE_REGISTER(gpio_numaker, LOG_LEVEL_ERR);
 
@@ -38,7 +37,7 @@ static int gpio_numaker_configure(const struct device *dev, gpio_pin_t pin, gpio
 	const struct gpio_numaker_config *config = dev->config;
 	struct gpio_numaker_data *data = dev->data;
 	GPIO_T *gpio_base = (GPIO_T *)config->reg;
-	uint32_t pinMfpMask = (0x1f << NU_MFP_POS(pin));
+	uint32_t pinMfpMask = NU_MFP_MASK(pin);
 	uint32_t pinMask = BIT(pin); /* mask for pin index --> (0x01 << pin) */
 	uint32_t port_index;
 	uint32_t *GPx_MFPx;
@@ -74,7 +73,11 @@ static int gpio_numaker_configure(const struct device *dev, gpio_pin_t pin, gpio
 
 	/* Set Multi-function, default is GPIO */
 	port_index = (config->reg - config->gpa_base) / config->size;
+#if defined(CONFIG_SOC_SERIES_M031X)
+	GPx_MFPx = ((uint32_t *)&SYS->GPA_MFPL) + port_index * 2 + (pin / 8);
+#else
 	GPx_MFPx = ((uint32_t *)&SYS->GPA_MFP0) + port_index * 4 + (pin / 4);
+#endif
 	pinMfpGpio = 0x00UL;
 	/*
 	 * E.g.: SYS->GPA_MFP0  = (SYS->GPA_MFP0 & (~SYS_GPA_MFP0_PA0MFP_Msk) ) |

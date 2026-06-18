@@ -456,17 +456,18 @@ static int ifx_cat1_uart_irq_is_pending(const struct device *dev)
  * uart_irq_rx_ready(), uart_irq_tx_ready(), uart_irq_tx_complete()
  * allowed only after this.
  */
-static int ifx_cat1_uart_irq_update(const struct device *dev)
+static void ifx_cat1_uart_irq_update(const struct device *dev)
 {
 	struct ifx_cat1_uart_data *const data = dev->data;
-	int status = 1;
 
-	if (((ifx_cat1_uart_irq_is_pending(dev) & CY_SCB_RX_INTR) != 0u) &&
-	    (Cy_SCB_UART_GetNumInRxFifo(data->obj.base) == 0u)) {
-		status = 0;
-	}
-
-	return status;
+	/*
+	 * Read interrupt cause and RX FIFO count have a side effect
+	 * to clear stale interrupt flags, so that FIFO is flushed
+	 * properly and the current hardware state is reflected.
+	 * This is required for proper UART operation.
+	 */
+	(void) (ifx_cat1_uart_irq_is_pending(dev));
+	(void) (Cy_SCB_UART_GetNumInRxFifo(data->obj.base));
 }
 
 static void ifx_cat1_uart_irq_callback_set(const struct device *dev,

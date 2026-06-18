@@ -90,6 +90,18 @@ static void setup_priv_stack(struct k_thread *thread)
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *stack_ptr,
 		     k_thread_entry_t entry, void *p1, void *p2, void *p3)
 {
+
+#if defined(CONFIG_FP_HARDABI) || defined(CONFIG_FP_SOFTABI)
+	/*
+	 * Both CONFIG_FP_HARDABI and CONFIG_FP_SOFTABI allow the compiler
+	 * to generate FP instructions--even without explicit use of FP types.
+	 * All threads must thus be considered as using FP registers and
+	 * tagged with K_FP_REGS.
+	 */
+	thread->base.user_options |= K_FP_REGS;
+#endif
+
+
 #ifdef CONFIG_MPU_STACK_GUARD
 #if defined(CONFIG_USERSPACE)
 	if (z_stack_is_user_capable(stack)) {
@@ -474,9 +486,11 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 {
 	uint32_t sp = min_stack(fault_addr, psp);
 
-	if (sp != 0 && IS_ENABLED(CONFIG_USE_SWITCH)) {
+#if defined(CONFIG_USE_SWITCH)
+	if (sp != 0) {
 		sp += arm_m_switch_stack_buffer;
 	}
+#endif
 	return sp;
 }
 

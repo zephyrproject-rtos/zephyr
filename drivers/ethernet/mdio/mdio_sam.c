@@ -28,11 +28,12 @@ LOG_MODULE_REGISTER(mdio_sam, CONFIG_MDIO_LOG_LEVEL);
 #endif
 
 struct mdio_sam_dev_data {
+	DEVICE_MMIO_RAM;
 	struct k_sem sem;
 };
 
 struct mdio_sam_dev_config {
-	Gmac * const regs;
+	DEVICE_MMIO_ROM;
 	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_SOC_FAMILY_ATMEL_SAM
 	const struct atmel_sam_pmc_config clock_cfg;
@@ -43,14 +44,14 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
 			 enum mdio_opcode op, bool c45, uint16_t data_in,
 			 uint16_t *data_out)
 {
-	const struct mdio_sam_dev_config *const cfg = dev->config;
+	Gmac *gmac = (Gmac *)DEVICE_MMIO_GET(dev);
 	struct mdio_sam_dev_data *const data = dev->data;
 	int timeout = 50;
 
 	k_sem_take(&data->sem, K_FOREVER);
 
 	/* Write mdio transaction */
-	cfg->regs->GMAC_MAN = (c45 ? 0U : GMAC_MAN_CLTTO)
+	gmac->GMAC_MAN = (c45 ? 0U : GMAC_MAN_CLTTO)
 			    |  GMAC_MAN_OP(op)
 			    |  GMAC_MAN_WTN(0x02)
 			    |  GMAC_MAN_PHYA(prtad)
@@ -58,7 +59,7 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
 			    |  GMAC_MAN_DATA(data_in);
 
 	/* Wait until done */
-	while (!(cfg->regs->GMAC_NSR & GMAC_NSR_IDLE)) {
+	while (!(gmac->GMAC_NSR & GMAC_NSR_IDLE)) {
 		if (timeout-- == 0U) {
 			LOG_ERR("transfer timedout %s", dev->name);
 			k_sem_give(&data->sem);
@@ -70,7 +71,7 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
 	}
 
 	if (data_out) {
-		*data_out = cfg->regs->GMAC_MAN & GMAC_MAN_DATA_Msk;
+		*data_out = gmac->GMAC_MAN & GMAC_MAN_DATA_Msk;
 	}
 
 	k_sem_give(&data->sem);
@@ -141,10 +142,12 @@ static int mdio_sam_initialize(const struct device *dev)
 	*MCLK_GMAC |= MCLK_GMAC_MASK;
 #endif
 
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
 	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (retval >= 0) {
 		/* Enable MDIO */
-		cfg->regs->GMAC_NCR |= GMAC_NCR_MPE;
+		((Gmac *)DEVICE_MMIO_GET(dev))->GMAC_NCR |= GMAC_NCR_MPE;
 	}
 
 	return retval;
@@ -166,7 +169,7 @@ static DEVICE_API(mdio, mdio_sam_driver_api) = {
 
 #define MDIO_SAM_CONFIG(n)						\
 static const struct mdio_sam_dev_config mdio_sam_dev_config_##n = {	\
-	.regs = (Gmac *)DT_REG_ADDR(DT_INST_PARENT(n)),			\
+	DEVICE_MMIO_ROM_INIT(DT_INST_PARENT(n)),			\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	MDIO_SAM_CLOCK(n)						\
 };

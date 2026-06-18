@@ -60,8 +60,8 @@ properties:
       to your product's Reference Manual for more information about this
       feature's availability. (In particular, certain series such as
       STM32L0/STM32L1 have no instance supporting this feature).
-
-      Valid range [0 ... 255].
+    min: 0
+    max: 255
 
   st,mastermode:
     type: string

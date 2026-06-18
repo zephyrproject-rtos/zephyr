@@ -3,22 +3,21 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SSD135X
-	bool "SSD135x display controllers driver"
+	bool
 	select MIPI_DBI
 	help
-	  Enable driver for SSD135x display controllers.
+	  Hidden configuration entry for all SSD135x drivers.
 
 config SSD1351
-	bool "SSD1351 display controllers driver"
+	bool "SSD1351 display controller driver"
 	default y
 	depends on DT_HAS_SOLOMON_SSD1351_ENABLED
 	select SSD135X
 	help
 	  Enable driver for SSD1351 display controller.
 
-
 config SSD1357
-	bool "SSD1357 display controllers driver"
+	bool "SSD1357 display controller driver"
 	default y
 	depends on DT_HAS_SOLOMON_SSD1357_ENABLED
 	select SSD135X

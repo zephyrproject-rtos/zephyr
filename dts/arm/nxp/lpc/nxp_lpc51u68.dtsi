@@ -194,6 +194,12 @@
 			prescaler = <1>;
 			#pwm-cells = <3>;
 		};
+
+		crc: crc@40095000 {
+			compatible = "nxp,lpc-crc";
+			reg = <0x40095000 0x1000>;
+			status = "disabled";
+		};
 	};
 };
 

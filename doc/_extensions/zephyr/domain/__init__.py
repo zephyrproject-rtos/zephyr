@@ -95,6 +95,34 @@ BINDING_TYPE_TO_DOCUTILS_NODE = {
 logger = logging.getLogger(__name__)
 
 
+def _format_board_memory_bytes(size):
+    """Human-readable binary size for Devicetree memory (bytes from reg), or a placeholder."""
+    if size is None:
+        return "N/A"
+    for unit_bytes, suffix in (
+        (1024**3, "GiB"),
+        (1024**2, "MiB"),
+        (1024, "KiB"),
+    ):
+        if size >= unit_bytes and size % unit_bytes == 0:
+            return f"{size // unit_bytes} {suffix}"
+    return f"{size} B"
+
+
+def _board_target_memory_block(
+    board_id: str, target: str, ram_sz: int | None, flash_sz: int | None
+) -> nodes.container:
+    """One-sentence summary of on-device RAM and flash for one board build target."""
+
+    ram = _format_board_memory_bytes(ram_sz)
+    flash = _format_board_memory_bytes(flash_sz)
+    para = nodes.paragraph()
+    para += nodes.Text(f"On-target memory for this board target: {ram} of RAM, {flash} of Flash.")
+    block = nodes.container(ids=[f"{board_id}-{target}-hw-features-memory"])
+    block += para
+    return block
+
+
 def _board_catalog_xref(params: dict[str, str], *children: nodes.Node) -> addnodes.pending_xref:
     """Cross-reference to the board catalog with URL hash filters (see board-catalog.js)."""
     xref = addnodes.pending_xref(
@@ -904,8 +932,12 @@ class BoardSupportedHardwareDirective(SphinxDirective):
             )
         )
 
-        for target, features in sorted(supported_features.items()):
-            if not features:
+        for target, target_payload in sorted(supported_features.items()):
+            features = target_payload["features"]
+            ram_sz = target_payload.get("ram_size")
+            flash_sz = target_payload.get("flash_size")
+            has_memory = ram_sz is not None or flash_sz is not None
+            if not features and not has_memory:
                 continue
 
             target_heading = nodes.section(ids=[f"{board_node['id']}-{target}-hw-features-section"])
@@ -914,6 +946,18 @@ class BoardSupportedHardwareDirective(SphinxDirective):
             heading += nodes.Text(" target")
             target_heading += heading
             tables_container += target_heading
+
+            # Per-target panel: memory block sits directly above the hardware-features table so
+            # board.js can toggle one container in updateDisplayedTarget().
+            target_panel = nodes.container(
+                ids=[f"{board_node['id']}-{target}-hw-features-panel"],
+                classes=["board-hw-features-target-panel"],
+            )
+            target_panel += _board_target_memory_block(board_node["id"], target, ram_sz, flash_sz)
+
+            if not features:
+                tables_container += target_panel
+                continue
 
             table = nodes.table(
                 classes=["colwidths-given", "hardware-features"],
@@ -1060,7 +1104,8 @@ class BoardSupportedHardwareDirective(SphinxDirective):
 
             tgroup += tbody
             table += tgroup
-            tables_container += table
+            target_panel += table
+            tables_container += target_panel
 
         return result_nodes
 
@@ -1451,8 +1496,11 @@ def install_static_assets_as_needed(
         app.add_js_file("js/codesample-livesearch.js")
 
     if app.env.domaindata["zephyr"]["board_catalog_docname"] == pagename:
+        # Board catalog memory sliders use vendored noUiSlider (MIT); load before board-catalog.js.
+        app.add_css_file("css/nouislider.min.css")
         app.add_css_file("css/board-catalog.css")
-        app.add_js_file("js/board-catalog.js")
+        app.add_js_file("js/nouislider.min.js", priority=400)
+        app.add_js_file("js/board-catalog.js", priority=450)
 
     if app.env.domaindata["zephyr"]["has_board"].get(pagename, False):
         app.add_css_file("css/board.css")

@@ -24,4 +24,6 @@ supported:
   - spi
   - uart
   - watchdog
+  - edac
+  - pwm
 vendor: nxp

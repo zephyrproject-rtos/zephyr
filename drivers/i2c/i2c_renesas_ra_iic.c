@@ -174,10 +174,6 @@ static int i2c_ra_iic_transfer(const struct device *dev, struct i2c_msg *msgs, u
 	fsp_err_t fsp_err = FSP_SUCCESS;
 	int ret = 0;
 
-	if (!num_msgs) {
-		return 0;
-	}
-
 	/* Check for validity of all messages before transfer */
 	current = msgs;
 

@@ -2,3 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 rsource "*/Kconfig.defconfig"
+
+if SOC_FAMILY_SILABS_S1
+
+configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+
+endif # SOC_FAMILY_SILABS_S1

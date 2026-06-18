@@ -210,6 +210,8 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 		goto out;
 	}
 
+	(void)k_mutex_init(&ctx->lock);
+
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sockets, entry, next, node) {
 		/* Refuse to register context if we have identical context
 		 * already registered.

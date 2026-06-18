@@ -28,6 +28,7 @@ DEFINE_FFF_GLOBALS;
 
 #define DEFAULT_BEARER_NAME "test"
 #define DEFAULT_BEARER_UCI  "un999"
+#define DEFAULT_BEARER_TECH BT_BEARER_TECH_3G
 
 struct ccp_call_control_server_test_suite_fixture {
 	/** Need 1 additional bearer than the max to trigger some corner cases */
@@ -89,8 +90,8 @@ static void register_default_bearer(struct ccp_call_control_server_test_suite_fi
 		.uri_schemes_supported = "tel",
 		.gtbs = true,
 		.authorization_required = false,
-		.technology = BT_BEARER_TECH_3G,
-		.supported_features = 0,
+		.technology = DEFAULT_BEARER_TECH,
+		.optional_opcodes = 0,
 	};
 	int err;
 
@@ -120,7 +121,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 			.gtbs = false,
 			.authorization_required = false,
 			.technology = BT_BEARER_TECH_3G,
-			.supported_features = 0,
+			.optional_opcodes = 0,
 		};
 		int err;
 
@@ -149,7 +150,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 		.gtbs = true,
 		.authorization_required = false,
 		.technology = BT_BEARER_TECH_3G,
-		.supported_features = 0,
+		.optional_opcodes = 0,
 	};
 	int err;
 
@@ -167,7 +168,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 		.gtbs = false,
 		.authorization_required = false,
 		.technology = BT_BEARER_TECH_3G,
-		.supported_features = 0,
+		.optional_opcodes = 0,
 	};
 	int err;
 
@@ -185,7 +186,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 		.gtbs = true,
 		.authorization_required = false,
 		.technology = BT_BEARER_TECH_3G,
-		.supported_features = 0,
+		.optional_opcodes = 0,
 	};
 	int err;
 
@@ -209,7 +210,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 		.gtbs = false,
 		.authorization_required = false,
 		.technology = BT_BEARER_TECH_3G,
-		.supported_features = 0,
+		.optional_opcodes = 0,
 	};
 	int err;
 
@@ -345,7 +346,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 	char inval_bearer_name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 2];
 	int err;
 
-	for (size_t i = 0; i < ARRAY_SIZE(inval_bearer_name); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(inval_bearer_name); i++) {
 		inval_bearer_name[i] = 'a';
 	}
 	inval_bearer_name[sizeof(inval_bearer_name) - 1U] = '\0';
@@ -488,5 +489,113 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 	register_default_bearer(fixture);
 
 	err = bt_ccp_call_control_server_get_bearer_uci(fixture->bearers[0], NULL);
+	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(ccp_call_control_server_test_suite, test_bt_ccp_call_control_server_set_bearer_tech)
+{
+	const enum bt_bearer_tech new_bearer_tech = BT_BEARER_TECH_3G;
+	enum bt_bearer_tech res_bearer_tech;
+	int err;
+
+	register_default_bearer(fixture);
+
+	err = bt_ccp_call_control_server_set_bearer_tech(fixture->bearers[0], new_bearer_tech);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	err = bt_ccp_call_control_server_get_bearer_tech(fixture->bearers[0], &res_bearer_tech);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	zassert_equal(new_bearer_tech, res_bearer_tech, "%d != %d", new_bearer_tech,
+		      res_bearer_tech);
+}
+
+static ZTEST_F(ccp_call_control_server_test_suite,
+	       test_bt_ccp_call_control_server_set_bearer_tech_inval_not_registered)
+{
+	const enum bt_bearer_tech new_bearer_tech = BT_BEARER_TECH_3G;
+	int err;
+
+	/* Register and unregister bearer to get a valid pointer but where it is unregistered*/
+	register_default_bearer(fixture);
+	err = bt_ccp_call_control_server_unregister_bearer(fixture->bearers[0]);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	err = bt_ccp_call_control_server_set_bearer_tech(fixture->bearers[0], new_bearer_tech);
+	zassert_equal(err, -EFAULT, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(ccp_call_control_server_test_suite,
+	       test_bt_ccp_call_control_server_set_bearer_tech_inval_null_bearer)
+{
+	const enum bt_bearer_tech new_bearer_tech = BT_BEARER_TECH_3G;
+	int err;
+
+	register_default_bearer(fixture);
+
+	err = bt_ccp_call_control_server_set_bearer_tech(NULL, new_bearer_tech);
+	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(ccp_call_control_server_test_suite,
+	       test_bt_ccp_call_control_server_set_bearer_tech_inval_tech)
+{
+	int err;
+
+	register_default_bearer(fixture);
+
+	err = bt_ccp_call_control_server_set_bearer_tech(fixture->bearers[0], 0x10);
+	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(ccp_call_control_server_test_suite, test_bt_ccp_call_control_server_get_bearer_tech)
+{
+	enum bt_bearer_tech res_bearer_tech;
+	int err;
+
+	register_default_bearer(fixture);
+
+	err = bt_ccp_call_control_server_get_bearer_tech(fixture->bearers[0], &res_bearer_tech);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	zassert_equal(DEFAULT_BEARER_TECH, res_bearer_tech, "%d != %d", DEFAULT_BEARER_TECH,
+		      res_bearer_tech);
+}
+
+static ZTEST_F(ccp_call_control_server_test_suite,
+	       test_bt_ccp_call_control_server_get_bearer_tech_inval_not_registered)
+{
+	enum bt_bearer_tech res_bearer_tech;
+	int err;
+
+	/* Register and unregister bearer to get a valid pointer but where it is unregistered*/
+	register_default_bearer(fixture);
+	err = bt_ccp_call_control_server_unregister_bearer(fixture->bearers[0]);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	err = bt_ccp_call_control_server_get_bearer_tech(fixture->bearers[0], &res_bearer_tech);
+	zassert_equal(err, -EFAULT, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(ccp_call_control_server_test_suite,
+	       test_bt_ccp_call_control_server_get_bearer_tech_inval_null_bearer)
+{
+	enum bt_bearer_tech res_bearer_tech;
+	int err;
+
+	register_default_bearer(fixture);
+
+	err = bt_ccp_call_control_server_get_bearer_tech(NULL, &res_bearer_tech);
+	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(ccp_call_control_server_test_suite,
+	       test_bt_ccp_call_control_server_get_bearer_tech_inval_null_tech)
+{
+	int err;
+
+	register_default_bearer(fixture);
+
+	err = bt_ccp_call_control_server_get_bearer_tech(fixture->bearers[0], NULL);
 	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
 }

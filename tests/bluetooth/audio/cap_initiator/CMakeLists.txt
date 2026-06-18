@@ -22,7 +22,6 @@ target_sources(app PRIVATE
   src/test_unicast_stop.c
 
   # UUT files
-  uut/bap_unicast_client.c
   uut/cap_initiator.c
   uut/csip.c
 
@@ -39,6 +38,7 @@ target_sources(app PRIVATE
   ${ZEPHYR_BASE}/lib/uuid/uuid.c
 
   # Mock files
+  ${ZEPHYR_BASE}/tests/bluetooth/audio/mocks/src/bap_unicast_client.c
   ${ZEPHYR_BASE}/tests/bluetooth/audio/mocks/src/conn.c
   ${ZEPHYR_BASE}/tests/bluetooth/audio/mocks/src/gatt.c
   ${ZEPHYR_BASE}/tests/bluetooth/audio/mocks/src/iso.c

@@ -86,7 +86,7 @@ uint8_t T2__ID_CONTEXT_LEN;
 
 /* The OSCORE message created in C4 (35 Byte). Constructed from a CoAP request
  * of length 22. This request contains no payload. The request contains only
- * Uri-host (locahost) and Uri-path option (tv1). In the OSCORE packet Uri-host
+ * Uri-host (localhost) and Uri-path option (tv1). In the OSCORE packet Uri-host
  * option is transferred as plain normal option, The Uri-path is contained in
  * the ciphertext.
  */

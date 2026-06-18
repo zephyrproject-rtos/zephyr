@@ -60,7 +60,7 @@ static void rtk_uart_isr_callback(const struct device *dev, void *user_data)
 {
 	ARG_UNUSED(user_data);
 
-	(void)uart_irq_update(dev);
+	uart_irq_update(dev);
 
 	if (uart_irq_rx_ready(dev)) {
 		int ret;

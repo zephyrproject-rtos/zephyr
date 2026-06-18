@@ -396,9 +396,6 @@ static int gpio_qdec_pm_action(const struct device *dev,
 #endif
 
 #define QDEC_GPIO_INIT(n)							\
-	BUILD_ASSERT(DT_INST_PROP_LEN(n, gpios) == GPIO_QDEC_GPIO_NUM,		\
-		     "input_gpio_qdec: gpios must have exactly two entries");	\
-										\
 	BUILD_ASSERT(!(DT_INST_NODE_HAS_PROP(n, led_gpios) &&			\
 		       DT_INST_NODE_HAS_PROP(n, idle_poll_time_us)) ||		\
 		     DT_INST_NODE_HAS_PROP(n, led_pre_us),			\

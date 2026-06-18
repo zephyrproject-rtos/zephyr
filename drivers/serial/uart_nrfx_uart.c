@@ -915,12 +915,6 @@ static int uart_nrfx_irq_is_pending(const struct device *dev)
 		 uart_nrfx_irq_rx_ready(dev)));
 }
 
-/** Interrupt driven interrupt update function */
-static int uart_nrfx_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 /** Set the callback function */
 static void uart_nrfx_irq_callback_set(const struct device *dev,
 				       uart_irq_callback_user_data_t cb,
@@ -1073,7 +1067,6 @@ static DEVICE_API(uart, uart_nrfx_uart_driver_api) = {
 	.irq_err_enable   = uart_nrfx_irq_err_enable,
 	.irq_err_disable  = uart_nrfx_irq_err_disable,
 	.irq_is_pending   = uart_nrfx_irq_is_pending,
-	.irq_update       = uart_nrfx_irq_update,
 	.irq_callback_set = uart_nrfx_irq_callback_set,
 #endif /* CONFIG_UART_0_INTERRUPT_DRIVEN */
 };

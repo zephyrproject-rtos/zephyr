@@ -87,6 +87,10 @@ applications.
 
 :c:macro:`DEVICE_API()`
    Wrap a driver API declaration to assign it to its respective linker section.
+   Use of this macro is mandatory for any driver implementing an upstream driver
+   class, as :c:macro:`DEVICE_API_GET` and :c:macro:`DEVICE_API_IS` rely on API
+   instances being placed in their class linker section to validate the device's
+   API class at runtime.
 
 .. _device_struct:
 
@@ -127,8 +131,10 @@ Most drivers will be implementing a device-independent subsystem API.
 Applications can simply program to that generic API, and application
 code is not specific to any particular driver implementation.
 
-If all driver API instances are assigned to their respective API linker section
-use :c:macro:`DEVICE_API_IS()` to verify the API's type.
+Driver API instances must be declared with :c:macro:`DEVICE_API()` so that they
+are assigned to their respective API linker section. This is required for
+:c:macro:`DEVICE_API_GET` and :c:macro:`DEVICE_API_IS` to validate at runtime
+that a device's API belongs to the expected class.
 
 A subsystem API definition typically looks like this:
 

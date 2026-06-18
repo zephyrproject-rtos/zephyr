@@ -269,12 +269,13 @@ controllers, and properties related to them.
 
 .. _devicetree-flash-api:
 
-Fixed flash partitions
-======================
+Fixed and mapped flash partitions
+=================================
 
 These conveniences may be used for the special-purpose ``fixed-partitions``
-compatible used to encode information about flash memory partitions in the
-device tree. See See :dtcompatible:`fixed-partition` for more details.
+and ``zephyr,mapped-partition`` compatibles used to encode information about
+flash memory partitions in the device tree. See :dtcompatible:`fixed-partitions`
+and :dtcompatible:`zephyr,mapped-partition` for more details.
 
 .. doxygengroup:: devicetree-fixed-partition
 
@@ -401,6 +402,8 @@ identifier for a chosen node.
 
 .. doxygengroup:: devicetree-generic-chosen
 
+.. _devicetree-zephyr-chosen-nodes:
+
 Zephyr-specific chosen nodes
 ****************************
 
@@ -495,12 +498,13 @@ device.
      - A node whose ``reg`` sets the base address and size of SRAM memory
        available to the Zephyr image, used during linking
    * - zephyr,system-timer
-     - Selects the hardware timer instance used as the Zephyr system timer.
-       Used when devicetree selects which timer instance provides that
-       singleton system function.
+     - Selects the hardware timer instance used as the Zephyr system timer,
+       which is a singleton system-wide function. Use this when devicetree
+       selects which timer instance provides the system timer, even if other
+       identical timer instances are used by other APIs.
    * - zephyr,system-timer-companion
      - Selects the device used to keep time while the primary system timer is
-       inactive in low-power states
+       inactive in low-power states. It must implement the :ref:`counter_api` API.
    * - zephyr,tracing-uart
      - Sets UART device used by tracing subsystem
    * - zephyr,uart-mcumgr

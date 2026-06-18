@@ -84,7 +84,7 @@
 				       00 00 00 00 00 /* TP3A TP3B TP3C TP3D RP3 */
 				       00 00 00 00 00 /* TP4A TP4B TP4C TP4D RP4 */
 				       00 00 00 00 00 /* TP5A TP5B TP5C TP5D RP5 */
-				       00 00 00 00 00 /* TP6A TP6B TP6C TP6D RP6 */ ];
+				       00 00 00 00 00 /* TP6A TP6B TP6C TP6D RP6 */];
 			};
 
 			partial {
@@ -105,7 +105,7 @@
 				       00 00 00 00 00 /* TP3A TP3B TP3C TP3D RP3 */
 				       00 00 00 00 00 /* TP4A TP4B TP4C TP4D RP4 */
 				       00 00 00 00 00 /* TP5A TP5B TP5C TP5D RP5 */
-				       00 00 00 00 00 /* TP6A TP6B TP6C TP6D RP6 */ ];
+				       00 00 00 00 00 /* TP6A TP6B TP6C TP6D RP6 */];
 			};
 		};
 	};

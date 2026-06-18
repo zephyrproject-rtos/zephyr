@@ -871,7 +871,7 @@ static ssize_t read_search_results_id(struct bt_conn *conn,
 	/* *Spec requirement - IDs may not be valid, in which case the */
 	/* characteristic shall be zero length. */
 
-	if (search_id == 0) {
+	if (search_id == 0U) {
 		return bt_gatt_attr_read(conn, attr, buf, len, offset,
 					 NULL, 0);
 	} else {

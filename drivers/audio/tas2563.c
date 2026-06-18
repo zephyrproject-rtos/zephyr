@@ -292,7 +292,7 @@ unlock:
 	return ret;
 }
 
-static const struct audio_codec_api tas2563_driver_api = {
+static DEVICE_API(audio_codec, tas2563_driver_api) = {
 	.configure = tas2563_configure,
 	.start_output = tas2563_start_output,
 	.stop_output = tas2563_stop_output,

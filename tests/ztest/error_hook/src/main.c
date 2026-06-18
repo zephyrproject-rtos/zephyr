@@ -130,11 +130,12 @@ __no_optimization static void trigger_fault_divide_zero(void)
 #if (defined(CONFIG_SOC_SERIES_MPS2) && defined(CONFIG_QEMU_TARGET)) || \
 	(defined(CONFIG_SOC_SERIES_MPS3) && defined(CONFIG_QEMU_TARGET)) || \
 	defined(CONFIG_BOARD_QEMU_CORTEX_A53) || defined(CONFIG_SOC_QEMU_ARC) || \
-	defined(CONFIG_SOC_CORTEX_R8_VIRTUAL) || \
+	defined(CONFIG_BOARD_QEMU_CORTEX_A72) || defined(CONFIG_SOC_CORTEX_R8_VIRTUAL) || \
 	defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || \
 	defined(CONFIG_BOARD_QEMU_CORTEX_R5) || \
 	defined(CONFIG_ARMV8_R) || defined(CONFIG_AARCH32_ARMV8_R) || \
 	defined(CONFIG_BOARD_FVP_BASE_REVC_2XAEM) || \
+	defined(CONFIG_BOARD_FVP_CORSTONE1000) || \
 	defined(CONFIG_SOC_NSIM_EM11D)
 	ztest_test_skip();
 #endif
@@ -353,7 +354,7 @@ static void trigger_z_oops(void)
 }
 
 /**
- * @brief Test if a z_oops can be catched
+ * @brief Test if a z_oops can be caught
  *
  * @details Valid a z_oops we triggered in thread context works.
  * If the z_oops happened and the program enter our handler,

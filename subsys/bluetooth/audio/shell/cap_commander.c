@@ -202,7 +202,12 @@ static int cmd_cap_commander_discover(const struct shell *sh, size_t argc, char 
 	}
 
 	if (!cbs_registered) {
-		bt_cap_commander_register_cb(&cbs);
+		err = bt_cap_commander_register_cb(&cbs);
+		if (err != 0) {
+			shell_error(sh, "Failed to register CAP commander callbacks: %d", err);
+			return -ENOEXEC;
+		}
+
 		cbs_registered = true;
 	}
 
@@ -268,7 +273,7 @@ static int cmd_cap_commander_change_volume(const struct shell *sh, size_t argc, 
 
 	param.count = 0U;
 	param.members = members;
-	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(connected_conns); i++) {
 		struct bt_conn *conn = connected_conns[i];
 
 		if (conn == NULL) {
@@ -320,7 +325,7 @@ static int cmd_cap_commander_change_volume_mute(const struct shell *sh, size_t a
 
 	param.count = 0U;
 	param.members = members;
-	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(connected_conns); i++) {
 		struct bt_conn *conn = connected_conns[i];
 
 		if (conn == NULL) {
@@ -363,7 +368,7 @@ static int cmd_cap_commander_change_volume_offset(const struct shell *sh, size_t
 
 	/* Populate the array of connected connections */
 	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns, (void *)connected_conns);
-	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(connected_conns); i++) {
 		struct bt_conn *conn = connected_conns[i];
 
 		if (conn == NULL) {
@@ -448,7 +453,7 @@ static int cmd_cap_commander_change_microphone_mute(const struct shell *sh, size
 
 	param.count = 0U;
 	param.members = members;
-	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(connected_conns); i++) {
 		struct bt_conn *conn = connected_conns[i];
 
 		if (conn == NULL) {
@@ -494,7 +499,7 @@ static int cmd_cap_commander_change_microphone_gain(const struct shell *sh, size
 
 	/* Populate the array of connected connections */
 	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns, (void *)connected_conns);
-	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(connected_conns); i++) {
 		struct bt_conn *conn = connected_conns[i];
 
 		if (conn == NULL) {
@@ -584,7 +589,7 @@ static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, s
 
 	/* Populate the array of connected connections */
 	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns, (void *)connected_conns);
-	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(connected_conns); i++) {
 		struct bt_conn *conn = connected_conns[i];
 
 		if (conn == NULL) {
@@ -692,7 +697,7 @@ static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, s
 		subgroup.metadata_len = metadata_len;
 	}
 
-	member_param->num_subgroups = 1;
+	member_param->num_subgroups = 1U;
 	memcpy(member_param->subgroups, &subgroup, sizeof(struct bt_bap_bass_subgroup));
 
 	member_param->member.member = connected_conns[0];
@@ -752,7 +757,7 @@ static int cmd_cap_commander_broadcast_reception_stop(const struct shell *sh, si
 
 	/* Populate the array of connected connections */
 	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns, (void *)connected_conns);
-	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(connected_conns); i++) {
 		struct bt_conn *conn = connected_conns[i];
 
 		if (conn == NULL) {
@@ -786,7 +791,7 @@ static int cmd_cap_commander_broadcast_reception_stop(const struct shell *sh, si
 		}
 
 		/* TODO: Allow for multiple subgroups */
-		cap_commander_reception_stop_member_params[i].num_subgroups = 1;
+		cap_commander_reception_stop_member_params[i].num_subgroups = 1U;
 		cap_commander_reception_stop_member_params[i].src_id = src_id;
 		cap_commander_reception_stop_member_params[i].member.member = connected_conns[i];
 		cap_commander_reception_stop_param.count++;
@@ -832,7 +837,7 @@ static int cmd_cap_commander_distribute_broadcast_code(const struct shell *sh, s
 
 	/* Populate the array of connected connections */
 	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns, (void *)connected_conns);
-	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(connected_conns); i++) {
 		struct bt_conn *conn = connected_conns[i];
 
 		if (conn == NULL) {
@@ -856,7 +861,7 @@ static int cmd_cap_commander_distribute_broadcast_code(const struct shell *sh, s
 		return -ENOEXEC;
 	}
 
-	for (size_t i = 0; i < conn_cnt; i++) {
+	for (size_t i = 0U; i < conn_cnt; i++) {
 		const char *arg = argv[i + 1];
 		unsigned long src_id;
 

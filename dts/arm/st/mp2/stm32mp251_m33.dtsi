@@ -38,7 +38,7 @@
 			clocks = <&rcc STM32_CLOCK(FDCAN, STM32_CLK)>;
 			interrupts = <93 0>, <96 0>;
 			interrupt-names = "int0", "int1";
-			bosch,mram-cfg = <0x1aa0 28 8 3 3 0 3 3>;
+			bosch,mram-cfg = <0x1aa0 28 8 6 0 0 3 3>;
 			status = "disabled";
 		};
 

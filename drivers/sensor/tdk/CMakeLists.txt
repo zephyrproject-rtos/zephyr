@@ -11,4 +11,5 @@ add_subdirectory_ifdef(CONFIG_ICP101XX icp101xx)
 add_subdirectory_ifdef(CONFIG_ICP201XX icp201xx)
 add_subdirectory_ifdef(CONFIG_MPU6050 mpu6050)
 add_subdirectory_ifdef(CONFIG_MPU9250 mpu9250)
+add_subdirectory_ifdef(CONFIG_TAD2144 tad2144)
 # zephyr-keep-sorted-stop

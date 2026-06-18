@@ -202,10 +202,6 @@ static int i2c_bee_transfer(const struct device *dev, struct i2c_msg *msgs, uint
 	I2C_TypeDef *i2c = (I2C_TypeDef *)cfg->reg;
 	int ret = 0;
 
-	if (num_msgs == 0U) {
-		return 0;
-	}
-
 	k_mutex_lock(&data->bus_mutex, K_FOREVER);
 
 	data->ctx.msgs = msgs;

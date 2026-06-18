@@ -33,6 +33,7 @@
 	nxp_wifi {
 		compatible = "nxp,wifi";
 		wakeup-gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
+		oob-gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
 };

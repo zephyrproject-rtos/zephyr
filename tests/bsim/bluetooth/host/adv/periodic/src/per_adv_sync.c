@@ -48,8 +48,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Disconnected: %s (reason %u)\n", bt_conn_dst_str(conn), reason);
 
-	bt_conn_unref(g_conn);
-	g_conn = NULL;
+	bt_conn_drop(&g_conn);
 }
 
 static struct bt_conn_cb conn_cbs = {
@@ -424,7 +423,7 @@ static const struct bst_test_instance per_adv_sync[] = {
 		.test_id = "per_adv_long_data_sync",
 		.test_descr = "Periodic advertising sync test with larger "
 			      "data length. Test is used to verify that "
-			      "reassembly of long data is handeled correctly.",
+			      "reassembly of long data is handled correctly.",
 		.test_main_f = main_per_adv_long_data_sync
 	},
 	{

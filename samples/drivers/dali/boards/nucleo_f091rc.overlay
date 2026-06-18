@@ -1,0 +1,59 @@
+/*
+ * Copyright 2026 by Sven Hädrich <sven.haedrich@sevenlab.de>
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * add DALI 2 Click (MIKROE-2672)
+ * via Arduino UNO click shield (MIKROE-1581)
+ * to STM32 NUCLEO F091RC
+ * DALI 2 Click
+ *   DALI TX 2
+ *   DALI RX 15
+ * Arduino UNO click shield (slot 2)
+ *   DALI TX 2 > A3
+ *   DALI RX 15 > D2
+ * STM32F091
+ *   DALI TX A3 > PB_0
+ *   DALI RX D2 > PA_10
+ */
+
+/ {
+	dali0: dali {
+		compatible = "zephyr,dali-pwm";
+		status = "okay";
+		counter = <&counter2>;
+		chan-id-rx = <0>;
+		chan-id-tx = <1>;
+		pwms = <&pwm3 3 PWM_USEC(41) PWM_POLARITY_NORMAL>;
+		rx-gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+		tx-flank-shift-us = <(-46)>;
+		rx-flank-shift-us = <(-68)>;
+		tx-rx-propagation-max-us = <2400>;
+		tx-prog-delay-us = <(-200)>;
+		rx-max-latency-us = <80>;
+		rx-grey-area-us = <800>;
+	};
+};
+
+&timers2 {
+	// set timebase to 1us/1MHz
+	st,prescaler = <47>;
+	status = "okay";
+	interrupts = <15 1>;
+
+	counter2: counter {
+		compatible = "st,stm32-counter";
+		status = "okay";
+	};
+};
+
+&timers3 {
+	// set timebase to 1us/1MHz
+	st,prescaler = <47>;
+	status = "okay";
+
+	pwm3: pwm {
+		pinctrl-0 = <&tim3_ch3_pb0>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};

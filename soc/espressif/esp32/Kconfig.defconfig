@@ -3,12 +3,6 @@
 
 if SOC_SERIES_ESP32
 
-config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/flash-controller@3ff42000/flash@0,0)
-
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/flash-controller@3ff42000/flash@0)
-
 config BOOTLOADER_MCUBOOT
 	default y if SOC_ESP32_APPCPU
 

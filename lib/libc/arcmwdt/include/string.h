@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 extern size_t strnlen(const char *s, size_t maxlen);
+extern char *strsignal(int signum);
 
 #ifdef __cplusplus
 }

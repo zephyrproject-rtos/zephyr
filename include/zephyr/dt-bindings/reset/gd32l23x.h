@@ -4,10 +4,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Peripheral reset identifiers for GigaDevice GD32L23x
+ * @ingroup reset_controller_gd32l23x
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RESET_GD32L23X_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_RESET_GD32L23X_H_
 
 #include "gd32-common.h"
+
+/**
+ * @defgroup reset_controller_gd32l23x GigaDevice GD32L23x reset controller helpers
+ * @brief GigaDevice GD32L23x reset controller helpers
+ * @ingroup reset_controller_gigadevice
+ *
+ * Reset identifiers follow the pattern @c GD32_RESET_\<PERIPHERAL\>, where
+ * @c \<PERIPHERAL\> is the GD32L23x peripheral name from the reference manual (for example, @c
+ * GD32_RESET_USART0 resets USART0 and @c GD32_RESET_GPIOA resets GPIO port A). Pass these
+ * identifiers directly to a @c resets property.
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
 
 /**
  * @name Register offsets
@@ -21,7 +41,7 @@
 /** @} */
 
 /**
- * @name Clock enable/disable definitions for peripherals
+ * @name Peripheral reset identifiers
  * @{
  */
 
@@ -66,6 +86,10 @@
 #define GD32_RESET_TIMER8     GD32_RESET_CONFIG(APB2RST, 11U)
 #define GD32_RESET_SPI0       GD32_RESET_CONFIG(APB2RST, 12U)
 #define GD32_RESET_USART0     GD32_RESET_CONFIG(APB2RST, 14U)
+
+/** @} */
+
+/** @endcond */
 
 /** @} */
 

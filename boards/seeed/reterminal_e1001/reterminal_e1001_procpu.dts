@@ -7,6 +7,7 @@
 
 #include <espressif/esp32s3/esp32s3_r8.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/battery/battery.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <espressif/partitions_0x0_amp_32M.dtsi>
@@ -28,10 +29,11 @@
 	};
 
 	aliases {
+		fuel-gauge0 = &fuel_gauge;
 		i2c-0 = &i2c0;
 		i2c-1 = &i2c1;
 		led0 = &green_led0;
-		pwm-led0 = &buzzer0;
+		buzzer0 = &buzzer0;
 		rtc = &pcf8563_rtc;
 		sw0 = &refresh_key0;
 		sw1 = &left_key1;
@@ -50,6 +52,14 @@
 		power-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
 		power-on-sample-delay-us = <10000>;
 		skip-calibration;
+	};
+
+	fuel_gauge: fuel_gauge {
+		compatible = "zephyr,fuel-gauge-composite";
+		source-primary = <&vbatt>;
+		device-chemistry = "lithium-ion-polymer";
+		ocv-capacity-table-0 = <BATTERY_OCV_CURVE_LITHIUM_ION_POLYMER_DEFAULT>;
+		charge-full-design-microamp-hours = <2000000>;
 	};
 
 	buttons {
@@ -83,13 +93,9 @@
 		};
 	};
 
-	pwmleds {
-		compatible = "pwm-leds";
-
-		buzzer0: pwmled_0 {
-			pwms = <&ledc0 0 PWM_HZ(50) PWM_POLARITY_NORMAL>;
-			label = "Buzzer";
-		};
+	buzzer0: buzzer0 {
+		compatible = "pwm-buzzer";
+		pwms = <&ledc0 0 PWM_HZ(50) PWM_POLARITY_NORMAL>;
 	};
 
 	mipi_dbi_epd {

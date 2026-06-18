@@ -15,12 +15,44 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
+def append_serial_options(command, args):
+    if args.xonxoff:
+        command.append("--xonxoff")
+    if args.rtscts_off:
+        command.append("--rtscts-off")
+    if args.dsrdtr:
+        command.append("--dsrdtr")
+    if args.verbose:
+        command.append("-v")
+
+
 def main():
     signal.signal(signal.SIGINT, signal_handler)
     parser = argparse.ArgumentParser(description='Install Wi-Fi certificates', allow_abbrev=False)
     parser.add_argument('--path', required=True, help='Path to certificate files')
     parser.add_argument(
         '--serial-device', default='/dev/ttyACM1', help='Serial port device (default: /dev/ttyACM1)'
+    )
+    parser.add_argument(
+        "-x",
+        "--xonxoff",
+        help="Enable software flow control for serial connection",
+        action='store_true',
+        default=False,
+    )
+    parser.add_argument(
+        "-r",
+        "--rtscts-off",
+        help="Disable hardware (RTS/CTS) flow control for serial connection",
+        action='store_true',
+        default=False,
+    )
+    parser.add_argument(
+        "-f",
+        "--dsrdtr",
+        help="Enable hardware (DSR/DTR) flow control for serial connection",
+        action='store_true',
+        default=False,
     )
     parser.add_argument(
         '--operation-mode',
@@ -95,8 +127,7 @@ def main():
                 "-S",
                 str(sec_tag),
             ]
-            if args.verbose:
-                command.append("-v")
+            append_serial_options(command, args)
 
             subprocess.run(command, check=True)
             logger.info(f"Successfully installed {cert}.")

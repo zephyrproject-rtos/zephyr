@@ -230,6 +230,14 @@ void handle_radio_event(const struct device *dev, enum ieee802154_event evt,
 				rx_result = OT_ERROR_DESTINATION_ADDRESS_FILTERED;
 				break;
 
+			case IEEE802154_RX_FAIL_NO_BUFS:
+				rx_result = OT_ERROR_NO_BUFS;
+				break;
+
+			case IEEE802154_RX_FAIL_ABORT:
+				rx_result = OT_ERROR_ABORT;
+				break;
+
 			case IEEE802154_RX_FAIL_OTHER:
 			default:
 				rx_result = OT_ERROR_FAILED;

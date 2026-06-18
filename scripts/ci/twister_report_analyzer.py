@@ -8,6 +8,7 @@ import csv
 import json
 import logging
 import os
+import re
 import textwrap
 from dataclasses import asdict, dataclass, field, is_dataclass
 
@@ -185,8 +186,7 @@ class TwisterReports:
             reason = 'Build failure'
             self.errors.add_counter(reason)
             error_key = ts_reason.split(reason, 1)[-1].lstrip(' -')
-            if not error_key:
-                error_key = self._parse_build_failure(ts_log)
+            error_key += self._get_info_from_build_failure(ts_log)
             self.errors.counters[reason].subcounters.add_counter(error_key, test_identifier)
             ts_reason = reason
         else:
@@ -223,25 +223,38 @@ class TwisterReports:
                 return line
         return "No matching CMake error pattern found"
 
-    def _parse_build_failure(self, log: str) -> str | None:
-        last_warning = ''
+    def _get_info_from_build_failure(self, log: str) -> str | None:
+        build_step_stack = []
+        last_overflow = ''
         lines = log.splitlines()
         for i, line in enumerate(lines):
-            if "undefined reference" in line:
-                return line[line.index('undefined reference') :].strip()
-            elif "error: ld returned" in line:
-                if last_warning:
-                    return last_warning
-                elif "overflowed by" in lines[i - 1]:
-                    return "ld.bfd: region overflowed"
-                elif "ld.bfd: warning: " in lines[i - 1]:
-                    return "ld.bfd:" + lines[i - 1].split("ld.bfd:", 1)[-1]
-                return line
-            elif "error: " in line:
-                return line[line.index('error: ') :].strip()
-            elif ": in function " in line:
-                last_warning = line[line.index('in function') :].strip()
-        return "No matching build error pattern found"
+            if "error: ld returned" in line and "overflowed by" in lines[i - 1]:
+                # get build step where overflow occurs
+                build_step = ""
+                if len(build_step_stack) > 0:
+                    build_step = f" at build step for {build_step_stack[-1]}"
+
+                # show last region which overflows
+                region = ""
+                match = re.search(
+                    r"region `(\w+)' overflowed by", last_overflow, flags=re.IGNORECASE
+                )
+                if match:
+                    region = f" at region {match.group(1)}"
+                return f"{region}{build_step}"
+            if "Performing build step for" in line:
+                match = re.search(r"Performing build step for '([^']+)'", line)
+                if match:
+                    build_step_stack.append(match.group(1))
+            if "Completed" in line:
+                match = re.search(r"Completed '([^']+)'", line)
+                if match:
+                    completed_build_step = match.group(1)
+                    if completed_build_step in build_step_stack:
+                        build_step_stack.remove(completed_build_step)
+            if "overflowed by" in line:
+                last_overflow = line
+        return ""
 
     def sort_counters(self):
         self.status.sort_by_quantity()

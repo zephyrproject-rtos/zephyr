@@ -385,7 +385,7 @@ static int dma_sedi_init(const struct device *dev)
 		IRQ_CONNECT(DT_INST_IRQN(inst),				\
 			    DT_INST_IRQ(inst, priority), dma_isr,	\
 			    (void *)DT_INST_PROP(inst, peripheral_id),			\
-			    DT_INST_IRQ(inst, sense));			\
+			    DT_INST_IRQ(inst, flags));			\
 		irq_enable(DT_INST_IRQN(inst));				\
 	}
 

@@ -12,6 +12,7 @@ menuconfig STM32_LPTIM_TIMER
 	depends on $(dt_nodelabel_exists,stm32_lp_tick_source)
 	depends on DT_HAS_ST_STM32_LPTIM_ENABLED
 	depends on CLOCK_CONTROL && PM
+	select RESET
 	select TICKLESS_CAPABLE
 	select EXPERIMENTAL
 	help
