@@ -15,3 +15,4 @@ ram: 128
 flash: 64
 vendor: arm
 sysbuild: true
+twister: false
