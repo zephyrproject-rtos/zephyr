@@ -26,6 +26,12 @@ LOG_MODULE_REGISTER(uhc_vrt, CONFIG_UHC_DRIVER_LOG_LEVEL);
 
 #define FRAME_MAX_TRANSFERS 16
 
+/*
+ * UVB has no propagation delay, and this timeout is much higher than specified
+ * in USB 2.0 (7.1.19.2) So, it should be good enough even under high CPU load.
+ */
+#define UHC_VRT_XFER_TIMEOUT K_MSEC(1)
+
 struct uhc_vrt_config {
 };
 
@@ -48,6 +54,7 @@ struct uhc_vrt_data {
 	struct k_fifo fifo;
 	struct uhc_transfer *last_xfer;
 	struct uvb_packet *last_pkt;
+	k_timepoint_t xfer_timeout;
 	struct uhc_vrt_frame frame;
 	struct k_timer sof_timer;
 	k_timeout_t sof_period;
@@ -97,6 +104,11 @@ static int vrt_advert_pkt(struct uhc_vrt_data *const priv,
 	 * vrt_xfer_drop_active() to prevent a packet leak on device disconnect.
 	 */
 	priv->last_pkt = pkt;
+	/*
+	 * If the device does not respond for different reasons, check timeout
+	 * on SOF and cleanup.
+	 */
+	priv->xfer_timeout = sys_timepoint_calc(UHC_VRT_XFER_TIMEOUT);
 
 	return uvb_advert_pkt(priv->host_node, pkt);
 }
@@ -377,6 +389,19 @@ static void vrt_xfer_drop_active(const struct device *dev, int err)
 	}
 }
 
+static void vrt_xfer_check_timeout(const struct device *dev)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+
+	if (priv->last_pkt == NULL || !sys_timepoint_expired(priv->xfer_timeout)) {
+		return;
+	}
+
+	LOG_WRN("Transaction on ep 0x%02x timed out",
+		priv->last_xfer != NULL ? priv->last_xfer->ep : 0);
+	vrt_xfer_drop_active(dev, -ETIMEDOUT);
+}
+
 static int vrt_handle_reply(const struct device *dev,
 			    struct uvb_packet *const pkt)
 {
@@ -454,6 +479,7 @@ static void xfer_work_handler(struct k_work *work)
 		case UHC_VRT_EVT_SOF:
 			priv->frame_number++;
 			vrt_xfer_cleanup_cancelled(dev);
+			vrt_xfer_check_timeout(dev);
 			vrt_assemble_frame(dev);
 			schedule = true;
 			break;
