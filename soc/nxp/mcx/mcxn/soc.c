@@ -16,11 +16,23 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <soc.h>
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+#include <fsl_spc.h>
+#include <fsl_cmc.h>
+#endif
 
 #ifdef CONFIG_SOC_RESET_HOOK
 
 void soc_reset_hook(void)
 {
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+	if ((CMC_GetSystemResetStatus(CMC0) & kCMC_WakeUpReset) != 0UL) {
+		SPC_ClearPeriphIOIsolationFlag(SPC0);
+		SPC_ClearPowerDomainLowPowerRequestFlag(SPC0, kSPC_PowerDomain0);
+		SPC_ClearPowerDomainLowPowerRequestFlag(SPC0, kSPC_PowerDomain1);
+		SPC_ClearLowPowerRequest(SPC0);
+	}
+#endif
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	SystemInit();
 #endif /* ! CONFIG_TRUSTED_EXECUTION_NONSECURE */
