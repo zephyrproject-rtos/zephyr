@@ -59,6 +59,8 @@ static int runtime_suspend(const struct device *dev, bool async,
 	int ret = 0;
 	struct pm_device *pm = dev->pm;
 	bool early_exit = false;
+	const char *log_event = NULL;
+	unsigned int log_usage = 0;
 
 	/*
 	 * Early return if device runtime is not enabled.
@@ -71,11 +73,13 @@ static int runtime_suspend(const struct device *dev, bool async,
 		/* If we are not the last user, return. */
 		if (pm->base.usage > 1U) {
 			pm->base.usage--;
+			log_usage = pm->base.usage;
 			early_exit = true;
 		}
 	}
 
 	if (early_exit == true) {
+		LOG_DBG("%s: put, usage %u", dev->name, log_usage);
 		return 0;
 	}
 
@@ -96,6 +100,8 @@ static int runtime_suspend(const struct device *dev, bool async,
 
 	pm->base.usage--;
 	if (pm->base.usage > 0U) {
+		log_event = "put";
+		log_usage = pm->base.usage;
 		goto unlock;
 	}
 
@@ -108,6 +114,8 @@ static int runtime_suspend(const struct device *dev, bool async,
 #else
 		(void)k_work_schedule_for_queue(&pm_device_runtime_wq, &pm->work, delay);
 #endif /* CONFIG_PM_DEVICE_RUNTIME_USE_SYSTEM_WQ */
+		log_event = "async suspend scheduled";
+		log_usage = pm->base.usage;
 #endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 	} else {
 		/* suspend now */
@@ -118,6 +126,8 @@ static int runtime_suspend(const struct device *dev, bool async,
 		}
 
 		pm->base.state = PM_DEVICE_STATE_SUSPENDED;
+		log_event = "suspended";
+		log_usage = pm->base.usage;
 
 		/* Now put the domain */
 		if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
@@ -129,6 +139,10 @@ static int runtime_suspend(const struct device *dev, bool async,
 unlock:
 	if (!k_is_pre_kernel()) {
 		k_sem_give(&pm->lock);
+	}
+
+	if (log_event != NULL) {
+		LOG_DBG("%s: %s, usage %u", dev->name, log_event, log_usage);
 	}
 
 	return ret;
@@ -152,6 +166,10 @@ static void runtime_suspend_work(struct k_work *work)
 	}
 	k_event_set(&pm->event, BIT(pm->base.state));
 	k_sem_give(&pm->lock);
+
+	if (ret == 0) {
+		LOG_DBG("%s: async suspend completed", pm->dev->name);
+	}
 
 	/*
 	 * On async put, we have to suspend the domain when the device
@@ -209,6 +227,8 @@ int pm_device_runtime_get(const struct device *dev)
 {
 	int ret = 0;
 	struct pm_device *pm = dev->pm;
+	const char *log_event = NULL;
+	unsigned int log_usage = 0;
 
 	if (pm == NULL) {
 		return 0;
@@ -239,11 +259,13 @@ int pm_device_runtime_get(const struct device *dev)
 			/* If we are not the first user and device is active, return. */
 			if ((pm->base.usage > 0U) && (pm->base.state == PM_DEVICE_STATE_ACTIVE)) {
 				pm->base.usage++;
+				log_usage = pm->base.usage;
 				early_exit = true;
 			}
 		}
 
 		if (early_exit == true) {
+			LOG_DBG("%s: get, usage %u", dev->name, log_usage);
 			ret = 0;
 			goto end;
 		}
@@ -291,6 +313,8 @@ int pm_device_runtime_get(const struct device *dev)
 	if ((pm->base.state == PM_DEVICE_STATE_SUSPENDING) &&
 		((k_work_cancel_delayable(&pm->work) & K_WORK_RUNNING) == 0)) {
 		pm->base.state = PM_DEVICE_STATE_ACTIVE;
+		log_event = "get cancelled pending suspend";
+		log_usage = pm->base.usage;
 		goto unlock;
 	}
 
@@ -311,6 +335,8 @@ int pm_device_runtime_get(const struct device *dev)
 #endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 
 	if (pm->base.usage > 1U) {
+		log_event = "get";
+		log_usage = pm->base.usage;
 		goto unlock;
 	}
 
@@ -325,10 +351,16 @@ int pm_device_runtime_get(const struct device *dev)
 	}
 
 	pm->base.state = PM_DEVICE_STATE_ACTIVE;
+	log_event = "resumed";
+	log_usage = pm->base.usage;
 
 unlock:
 	if (!k_is_pre_kernel()) {
 		k_sem_give(&pm->lock);
+	}
+
+	if (log_event != NULL) {
+		LOG_DBG("%s: %s, usage %u", dev->name, log_event, log_usage);
 	}
 
 end:
