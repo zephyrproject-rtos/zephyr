@@ -811,7 +811,7 @@ config FIPS
 
 choice WIFI_NM_WPA_SUPPLICANT_NW_SEL
 	prompt "WPA supplicant Network selection criterion"
-	default WIFI_NM_WPA_SUPPLICANT_NW_SEL_THROUGHPUT
+	default WIFI_NM_WPA_SUPPLICANT_NW_SEL_RELIABILITY
 	help
 	  Select the network selection method for the supplicant.
 
