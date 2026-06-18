@@ -693,6 +693,21 @@ FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(k_thread_entry_t main_
 	/* Set PSP to the highest address of the main stack. */
 	char *psp = K_THREAD_STACK_BUFFER(z_main_stack) + K_THREAD_STACK_SIZEOF(z_main_stack);
 
+#if defined(CONFIG_THREAD_LOCAL_STORAGE)
+	/* On Cortex-M, TLS uses a global variable as pointer to
+	 * the thread local storage area. With multithreading disabled
+	 * there is no context switch to set it, so it must be
+	 * initialized here, carving the TLS area out of the top of
+	 * the main stack.
+	 */
+	extern uintptr_t z_arm_tls_ptr;
+	size_t tls_size;
+
+	tls_size = arch_tls_stack_setup(&z_main_thread, psp);
+	z_arm_tls_ptr = z_main_thread.tls;
+	psp -= tls_size;
+#endif
+
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
 	char *psplim = (K_THREAD_STACK_BUFFER(z_main_stack));
 	/* Clear PSPLIM before setting it to guard the main stack area. */
