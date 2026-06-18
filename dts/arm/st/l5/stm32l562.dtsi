@@ -10,7 +10,7 @@
 	soc {
 		compatible = "st,stm32l562", "st,stm32l5", "simple-bus";
 
-		aes: aes@420c0000 {
+		aes: crypto@420c0000 {
 			compatible = "st,stm32-aes";
 			reg = <0x420c0000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 16)>;
