@@ -22,6 +22,7 @@
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
 		reg = <0>;
+		spi-max-frequency = <1000>;
 	};
 };
 
