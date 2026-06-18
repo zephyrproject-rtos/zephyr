@@ -29,6 +29,33 @@
 			clock-frequency = <DT_FREQ_M(240)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&standby &suspend &sleep>;
+		};
+
+		power-states {
+			standby: standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <1000>;
+				exit-latency-us = <10>;
+				zephyr,pm-device-disabled;
+			};
+
+			suspend: suspend {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				substate-id = <RTS5817_S2RAM_SUB_ID_SUSPEND>;
+				min-residency-us = <20000>;
+				exit-latency-us = <200>;
+			};
+
+			sleep: sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				substate-id = <RTS5817_S2RAM_SUB_ID_SLEEP>;
+				min-residency-us = <30000>;
+				exit-latency-us = <300>;
+			};
 		};
 	};
 
@@ -52,6 +79,13 @@
 		dlink_sys: dlink_sys@401e2000 {
 			compatible = "syscon";
 			reg = <0x401e2000 0x200>;
+			reg-io-width = <4>;
+			status = "okay";
+		};
+
+		dlink_ups: dlink_ups@401e1400 {
+			compatible = "syscon";
+			reg = <0x401e1400 0x30>;
 			reg-io-width = <4>;
 			status = "okay";
 		};
