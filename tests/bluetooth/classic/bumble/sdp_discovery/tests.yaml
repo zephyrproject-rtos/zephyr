@@ -1,0 +1,58 @@
+common:
+  tags:
+    - bluetooth
+  platform_allow:
+    - native_sim
+  harness: ztest
+  sidecar: bumble
+tests:
+  bluetooth.classic.sim.sdp.discover.no_records:
+    timeout: 30
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address=00:00:01:00:00:02 -test=sdp_client::test_01_no_sdp_records
+          - --peer_bd_address=00:00:01:00:00:01 -test=sdp_server::test_01_no_sdp_records
+  bluetooth.classic.sim.sdp.discover.one_record:
+    timeout: 60
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address=00:00:01:00:00:02 -test=sdp_client::test_02_one_sdp_record
+          - --peer_bd_address=00:00:01:00:00:01 -test=sdp_server::test_02_one_sdp_record
+  bluetooth.classic.sim.sdp.discover.one_record_with_range:
+    timeout: 90
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address=00:00:01:00:00:02 -test=sdp_client::test_03_one_sdp_record_with_range
+          - --peer_bd_address=00:00:01:00:00:01 -test=sdp_server::test_03_one_sdp_record_with_range
+  bluetooth.classic.sim.sdp.discover.multiple_records:
+    timeout: 60
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address=00:00:01:00:00:02 -test=sdp_client::test_04_multiple_sdp_records
+          - --peer_bd_address=00:00:01:00:00:01 -test=sdp_server::test_04_multiple_sdp_records
+  bluetooth.classic.sim.sdp.discover.multiple_records_with_range:
+    timeout: 120
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address=00:00:01:00:00:02 -test=sdp_client::test_05_multiple_sdp_records_with_range
+          - --peer_bd_address=00:00:01:00:00:01 -test=sdp_server::test_05_multiple_sdp_records_with_range
