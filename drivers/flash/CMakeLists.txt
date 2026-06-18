@@ -95,10 +95,10 @@ zephyr_library_sources_ifdef(CONFIG_SPI_NOR spi_nor.c)
 # zephyr-keep-sorted-stop
 
 if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-  zephyr_library_sources_ifdef(CONFIG_INFINEON_CAT1_QSPI_FLASH flash_infineon_serial_memory_qspi.c)
   zephyr_library_sources_ifdef(CONFIG_FLASH_INFINEON_RRAM flash_infineon_rram.c)
+  zephyr_library_sources_ifdef(CONFIG_INFINEON_SMIF_MEMSLOT_FLASH flash_infineon_smif_memslot.c)
 else()
-  zephyr_library_sources_ifdef(CONFIG_INFINEON_CAT1_QSPI_FLASH flash_infineon_qspi.c)
+  zephyr_library_sources_ifdef(CONFIG_INFINEON_QSPI_FLASH flash_infineon_qspi.c)
 endif()
 
 if(CONFIG_FLASH_SIMULATOR)

@@ -1,0 +1,38 @@
+description: |
+  Infineon SMIF memory-slot (memslot) binding.
+
+  One node per external memory device attached to a SMIF (Serial Memory
+  InterFace) controller. The QSPI Configurator (cycfg_qspi_memslot.c)
+  generates one cy_stc_smif_block_config_t per SMIF instance
+  (smif0BlockConfig, smif1BlockConfig). The driver selects the matching
+  block config from the node's "reg" base address; both the non-secure and
+  secure CBUS aliases for a given SMIF resolve to the same block-config:
+    0x44460000 / 0x54460000 -> SMIF0
+    0x444A0000 / 0x544A0000 -> SMIF1
+  "infineon,chip-select" selects which slot within that block config holds
+  the memory device described by this node.
+
+compatible: "infineon,smif-memslot"
+
+include: [flash-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  infineon,chip-select:
+    type: int
+    default: 1
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      Chip-select slot index (memNum) within the selected SMIF block
+      configuration that addresses this memory device. Matches the slot
+      used in the QSPI Configurator.
+
+  infineon,hw-init:
+    type: boolean
+    description: |
+      When set, the driver fully initialises the SMIF peripheral (pinctrl,
+      Cy_SMIF_Init) at start-up. Required when the boot ROM has not configured
+      this SMIF core (e.g. when the first stage boots from internal RRAM).
