@@ -895,6 +895,12 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 	const uint32_t size = buf_len / dfs;
 	bool use_dma = false;
 
+	if (buf_len % dfs != 0) {
+		LOG_ERR("Buffer length is not a multiple of data frame size");
+		spi_stm32_iodev_complete(dev, -EINVAL);
+		return;
+	}
+
 #if defined(CONFIG_SPI_STM32_DMA)
 	use_dma = (data->dma_tx.dma_dev != NULL) && (data->dma_rx.dma_dev != NULL);
 #endif /* CONFIG_SPI_STM32_DMA */
