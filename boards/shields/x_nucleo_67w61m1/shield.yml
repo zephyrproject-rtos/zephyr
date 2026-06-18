@@ -1,0 +1,6 @@
+shield:
+  name: x_nucleo_67w61m1
+  full_name: X-NUCLEO-67W61M1
+  vendor: st
+  supported_features:
+    - wifi
