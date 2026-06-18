@@ -566,6 +566,9 @@ SECTIONS
   .iram0.data :
   {
     . = ALIGN(16);
+#if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
+    *(.llext_instr_heap)
+#endif
     *(.iram.data)
     *(.iram.data*)
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
@@ -873,9 +876,8 @@ SECTIONS
     *(.noinit)
     *(.noinit.*)
 #if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
-    *(.llext_heap)
-    *(.llext_ext_heap)
     *(.llext_metadata_heap)
+    *(.llext_data_heap)
 #endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
     . = ALIGN(16);
   } GROUP_LINK_IN(RAMABLE_REGION)
