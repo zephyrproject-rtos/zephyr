@@ -213,7 +213,9 @@ config MBEDTLS_PEM_WRITE_C
 
 config MBEDTLS_HAVE_ASM
 	bool "Use of assembly code"
-	default y if !ARM
+	# Enabled by default on ARMv7-M and ARMv8-M mainline cores because it brings performance improvement and footprint reduction.
+	# Disabled on other ARM architectures (e.g., ARMv6-M) because the footprint increases.
+	default y if !ARM || ARMV7_M_ARMV8_M_MAINLINE
 	help
 	  Enable use of assembly code in Mbed TLS. This improves the performance
 	  of asymmetric cryptography, however this might have an impact on the
