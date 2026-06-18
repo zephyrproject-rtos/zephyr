@@ -3116,6 +3116,15 @@ class ManifestStrategy(SelectionStrategy):
        integration-kernel suite is built on every board of that vendor to
        confirm it still builds and boots.
 
+    8. Cross-reference the ``labels:`` of the project's
+       ``"West project: <name>"`` area against every *other* area in
+       ``MAINTAINERS.yml``.  For each area that shares one of those labels and
+       carries a ``tests:`` list, emit a :class:`TwisterCall` with
+       ``--test-pattern`` arguments built from those tests.  This links a
+       module to the topic areas it belongs to (e.g. ``hal_adi`` labelled
+       ``"platform: ADI"`` also runs the tests catalogued by the ``Drivers``
+       areas carrying that same label).
+
     This strategy **consumes** all matched manifest files so they do not
     reach :class:`MaintainerAreaStrategy`.
 
@@ -3248,7 +3257,9 @@ class ManifestStrategy(SelectionStrategy):
             ", ".join(sorted(changed_projects)),
         )
 
-        west_project_tests = self._load_west_project_tests()
+        areas = self._load_areas()
+        west_project_tests = self._west_project_tests(areas)
+        project_labels, label_to_tests = self._build_label_index(areas)
 
         calls = []
         for proj_name in sorted(changed_projects):
@@ -3305,19 +3316,45 @@ class ManifestStrategy(SelectionStrategy):
                     )
                 )
 
+            # Label cross-reference: pull in tests from any *other* MAINTAINERS
+            # area that shares a label with this project's "West project: <name>"
+            # area.  A HAL labelled "platform: X" thus also runs the tests
+            # catalogued by the "Drivers: X" area, etc.
+            own_area = f"West project: {proj_name}"
+            label_test_names: list = []
+            shared = []  # (label, area_name) for logging
+            for label in sorted(project_labels.get(proj_name, set())):
+                for area_name, tests in sorted(label_to_tests.get(label, {}).items()):
+                    if area_name == own_area:
+                        continue
+                    shared.append((label, area_name))
+                    label_test_names.extend(tests)
+
+            if label_test_names:
+                patterns = list(dict.fromkeys(_test_pattern(t) for t in label_test_names))
+                log.info(
+                    "[%s] '%s' shares labels with %s → %d test pattern(s)",
+                    self.name,
+                    proj_name,
+                    ", ".join(f"{a!r} (via {lbl!r})" for lbl, a in shared),
+                    len(patterns),
+                )
+                calls.append(
+                    TwisterCall(
+                        description=f"ManifestStrategy: '{proj_name}' (shared-label tests)",
+                        test_patterns=patterns,
+                        platforms=list(self._platform_filter),
+                    )
+                )
+
         return calls, set(manifest_files)
 
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
 
-    def _load_west_project_tests(self):
-        """Return a dict mapping west project name → ``tests:`` list.
-
-        Reads all ``"West project: <name>"`` areas from ``MAINTAINERS.yml``
-        and returns only those that carry a non-empty ``tests:`` list.  When
-        no maintainers file is configured, an empty dict is returned.
-        """
+    def _load_areas(self):
+        """Return the raw ``MAINTAINERS.yml`` mapping (``{}`` when unavailable)."""
         if not self._maintainers_file:
             return {}
         try:
@@ -3326,17 +3363,52 @@ class ManifestStrategy(SelectionStrategy):
         except OSError as exc:
             log.warning("[%s] Cannot read maintainers file: %s", self.name, exc)
             return {}
-        if not isinstance(data, dict):
-            return {}
+        return data if isinstance(data, dict) else {}
+
+    @staticmethod
+    def _west_project_tests(areas):
+        """Return ``{west_project_name: tests}`` for areas with a ``tests:`` list.
+
+        Only ``"West project: <name>"`` areas that carry a non-empty ``tests:``
+        list are included.
+        """
         prefix = "West project: "
         result = {}
-        for key, area in data.items():
-            if not key.startswith(prefix):
+        for key, area in areas.items():
+            if not key.startswith(prefix) or not isinstance(area, dict):
                 continue
-            tests = area.get("tests", []) if isinstance(area, dict) else []
+            tests = area.get("tests", [])
             if tests:
                 result[key[len(prefix) :]] = tests
         return result
+
+    @staticmethod
+    def _build_label_index(areas):
+        """Return ``(project_labels, label_to_tests)`` derived from *areas*.
+
+        ``project_labels`` maps a west project name to the set of ``labels:``
+        declared on its ``"West project: <name>"`` area.
+
+        ``label_to_tests`` maps each label to ``{area_name: tests}`` for every
+        area (of any kind) that carries both that label and a non-empty
+        ``tests:`` list.  This lets a changed manifest project pull in the
+        tests of sibling areas that share one of its labels (e.g. a HAL whose
+        ``"platform: X"`` label is also used by the ``Drivers: X`` area).
+        """
+        prefix = "West project: "
+        project_labels: dict = {}
+        label_to_tests: dict = {}
+        for key, area in areas.items():
+            if not isinstance(area, dict):
+                continue
+            labels = area.get("labels") or []
+            if key.startswith(prefix):
+                project_labels[key[len(prefix) :]] = set(labels)
+            tests = area.get("tests") or []
+            if tests:
+                for label in labels:
+                    label_to_tests.setdefault(label, {})[key] = tests
+        return project_labels, label_to_tests
 
     def _diff_manifests(self, base_commit, head_commit="HEAD"):
         """Return the set of project names whose revision changed between

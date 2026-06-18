@@ -1110,3 +1110,103 @@ class TestManifestStrategyHalVendors:
         assert all("--vendor" not in c.extra_args for c in calls)
         # The tag-based module call is still produced.
         assert any(c.extra_args[:2] == ["-t", "mbedtls"] for c in calls)
+
+
+# ---------------------------------------------------------------------------
+# ManifestStrategy - shared-label cross reference
+# ---------------------------------------------------------------------------
+
+
+class TestManifestStrategySharedLabels:
+    """A changed project pulls in tests from areas sharing one of its labels."""
+
+    MAINTAINERS = textwrap.dedent(
+        """
+        "West project: hal_adi":
+          files: []
+          labels:
+            - "platform: ADI"
+        "Drivers: ADI things":
+          files:
+            - drivers/foo/
+          labels:
+            - "platform: ADI"
+          tests:
+            - drivers.adi
+            - sensor.adi
+        "Unrelated area":
+          files:
+            - misc/
+          labels:
+            - "area: Other"
+          tests:
+            - misc.other
+        """
+    )
+
+    def _strategy(self, tmp_path, changed_projects):
+        mf = tmp_path / "MAINTAINERS.yml"
+        mf.write_text(self.MAINTAINERS)
+        strategy = tp.ManifestStrategy(
+            zephyr_base="/fake/zephyr",
+            repo=mock.Mock(),
+            commits="base..HEAD",
+            maintainers_file=str(mf),
+        )
+        strategy._diff_manifests = mock.Mock(return_value=set(changed_projects))
+        return strategy
+
+    def test_shared_label_pulls_in_area_tests(self, tmp_path):
+        strategy = self._strategy(tmp_path, {"hal_adi"})
+        calls, _ = strategy.analyze(["west.yml"])
+
+        label_calls = [c for c in calls if "shared-label" in c.description]
+        assert len(label_calls) == 1
+        patterns = label_calls[0].test_patterns
+        assert patterns == [tp._test_pattern("drivers.adi"), tp._test_pattern("sensor.adi")]
+
+    def test_unshared_label_area_excluded(self, tmp_path):
+        strategy = self._strategy(tmp_path, {"hal_adi"})
+        calls, _ = strategy.analyze(["west.yml"])
+
+        all_patterns = [p for c in calls for p in c.test_patterns]
+        assert tp._test_pattern("misc.other") not in all_patterns
+
+    def test_own_area_tests_not_double_counted(self, tmp_path):
+        # The changed project's *own* West-project area must not feed the
+        # shared-label call (that is handled by the step-6 tests path).
+        maintainers = textwrap.dedent(
+            """
+            "West project: hal_adi":
+              files: []
+              labels:
+                - "platform: ADI"
+              tests:
+                - own.adi
+            """
+        )
+        mf = tmp_path / "MAINTAINERS.yml"
+        mf.write_text(maintainers)
+        strategy = tp.ManifestStrategy(
+            zephyr_base="/fake/zephyr",
+            repo=mock.Mock(),
+            commits="base..HEAD",
+            maintainers_file=str(mf),
+        )
+        strategy._diff_manifests = mock.Mock(return_value={"hal_adi"})
+        calls, _ = strategy.analyze(["west.yml"])
+
+        assert not any("shared-label" in c.description for c in calls)
+        # but the own-area tests path still fires
+        assert any("MAINTAINERS tests" in c.description for c in calls)
+
+    def test_no_maintainers_file_no_label_calls(self, tmp_path):
+        strategy = tp.ManifestStrategy(
+            zephyr_base="/fake/zephyr",
+            repo=mock.Mock(),
+            commits="base..HEAD",
+        )
+        strategy._diff_manifests = mock.Mock(return_value={"hal_adi"})
+        calls, _ = strategy.analyze(["west.yml"])
+
+        assert not any("shared-label" in c.description for c in calls)
