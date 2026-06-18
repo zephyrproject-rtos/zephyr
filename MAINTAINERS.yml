@@ -3513,9 +3513,20 @@ Kernel:
     - include/zephyr/sys_clock.h
     - samples/kernel/
     - include/zephyr/kernel/
+    - include/zephyr/cleanup.h
+    - include/zephyr/cleanup/
     - tests/lib/p4workq/
   files-exclude:
     - tests/kernel/mem_protect/
+  file-groups:
+    - name: Cleanup helpers
+      collaborators:
+        - pdgendt
+      files:
+        - include/zephyr/cleanup.h
+        - include/zephyr/cleanup/
+        - doc/kernel/cleanup.rst
+        - tests/kernel/cleanup/
   labels:
     - "area: Kernel"
   tests:
