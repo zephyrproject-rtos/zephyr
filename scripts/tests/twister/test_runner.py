@@ -1074,7 +1074,7 @@ TESTDATA_6 = [
         mock.ANY,
         ['build test: dummy instance name',
          'Determine test cases for test instance: dummy instance name'],
-        {'op': 'gather_metrics', 'test': mock.ANY},
+        {'op': 'post_build', 'test': mock.ANY},
         mock.ANY,
         mock.ANY,
         0,
@@ -1119,7 +1119,7 @@ TESTDATA_6 = [
         mock.ANY,
         ['build test: dummy instance name',
          'Determine test cases for test instance: dummy instance name'],
-        {'op': 'gather_metrics', 'test': mock.ANY},
+        {'op': 'post_build', 'test': mock.ANY},
         mock.ANY,
         mock.ANY,
         0,
@@ -1518,6 +1518,7 @@ def test_projectbuilder_process(
     pb.options.prep_artifacts_for_testing = options_prep_artifacts
     pb.options.runtime_artifact_cleanup = options_runtime_artifacts
     pb.options.cmake_only = options_cmake_only
+    pb.options.post_build_checks = True
     pb.options.outdir = tmp_path
     pb.options.log_file = None
     pb.options.log_level = "DEBUG"
@@ -1554,6 +1555,45 @@ def test_projectbuilder_process(
 
     if expected_missing:
         pb.instance.add_missing_case_status.assert_called_with(*expected_missing)
+
+
+@pytest.mark.parametrize(
+    'post_build_checks, expected_next_op',
+    [(True, 'post_build'), (False, 'gather_metrics')],
+    ids=['enabled', 'disabled']
+)
+def test_projectbuilder_process_post_build_checks_gating(
+    mocked_jobserver, tmp_path, post_build_checks, expected_next_op
+):
+    """A successful build transitions to 'post_build' only when post-build
+    checks are enabled; otherwise it goes straight to 'gather_metrics'.
+    """
+    instance_mock = mock.Mock()
+    instance_mock.name = 'dummy instance name'
+    instance_mock.status = 'success'
+    instance_mock.testsuite.harness = 'test'
+    env_mock = mock.Mock()
+
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb.options = mock.Mock()
+    pb.options.post_build_checks = post_build_checks
+    pb.options.outdir = tmp_path
+    pb.options.log_file = None
+    pb.options.log_level = "DEBUG"
+
+    pb.build = mock.Mock(return_value={'returncode': 0})
+    pb.determine_testcases = mock.Mock()
+
+    processing_queue_mock = mock.Mock()
+    lock_mock = mock.Mock(
+        __enter__=mock.Mock(return_value=(mock.Mock(), mock.Mock())),
+        __exit__=mock.Mock(return_value=None)
+    )
+    results_mock = mock.Mock()
+
+    pb.process(processing_queue_mock, mock.Mock(), {'op': 'build'}, lock_mock, results_mock)
+
+    processing_queue_mock.append.assert_called_with({'op': expected_next_op, 'test': mock.ANY})
 
 
 TESTDATA_7 = [
@@ -2358,6 +2398,63 @@ def test_projectbuilder_build(mocked_jobserver):
 
     pb.run_build.assert_called_once_with(['--build', 'build_dir'])
     assert res == {'dummy': 'dummy'}
+
+
+def test_projectbuilder_check_no_nested_git_repos(mocked_jobserver, tmp_path):
+    instance_mock = mock.Mock()
+    instance_mock.build_dir = str(tmp_path)
+    env_mock = mock.Mock()
+
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+
+    # Clean build directory: no nested git repository.
+    assert pb.check_no_nested_git_repos() is None
+
+    # A '.git' directory cloned somewhere under the build directory must fail.
+    nested = tmp_path / 'subproject'
+    (nested / '.git').mkdir(parents=True)
+    reason = pb.check_no_nested_git_repos()
+    assert reason is not None
+    assert os.path.join('subproject', '.git') in reason
+
+
+def test_projectbuilder_check_no_nested_git_repos_gitfile(mocked_jobserver, tmp_path):
+    instance_mock = mock.Mock()
+    instance_mock.build_dir = str(tmp_path)
+    env_mock = mock.Mock()
+
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+
+    # A '.git' file (e.g. a git submodule/worktree pointer) must also fail.
+    (tmp_path / '.git').write_text('gitdir: /elsewhere')
+    reason = pb.check_no_nested_git_repos()
+    assert reason is not None
+    assert '.git' in reason
+
+
+def test_projectbuilder_post_build_pass(mocked_jobserver):
+    instance_mock = mock.Mock()
+    env_mock = mock.Mock()
+
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb.check_no_nested_git_repos = mock.Mock(return_value=None)
+
+    assert pb.post_build() == {'returncode': 0}
+
+
+def test_projectbuilder_post_build_fail(mocked_jobserver):
+    instance_mock = mock.Mock()
+    instance_mock.name = 'dummy instance name'
+    env_mock = mock.Mock()
+
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb.check_no_nested_git_repos = mock.Mock(
+        return_value='cloned repo found', __name__='check_no_nested_git_repos'
+    )
+
+    res = pb.post_build()
+    assert res['returncode'] == 1
+    assert res['reason'] == 'cloned repo found'
 
 
 TESTDATA_14 = [

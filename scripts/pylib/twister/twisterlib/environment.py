@@ -384,6 +384,13 @@ Artificially long but functional example:
         help="""Only run device tests with current artifacts, do not build
              the code""")
 
+    parser.add_argument(
+        "--post-build-checks", action="store_true",
+        help="""Run post-build checks on each build directory once a build
+             completes, for example detecting git repositories accidentally
+             cloned into a build directory. Disabled by default; intended to
+             be enabled in CI.""")
+
     parser.add_argument("--timeout-multiplier", type=float, default=1,
         help="""Globally adjust tests timeouts by specified multiplier. The resulting test
         timeout would be multiplication of test timeout value, board-level timeout multiplier
