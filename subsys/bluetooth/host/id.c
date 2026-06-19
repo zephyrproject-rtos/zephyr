@@ -247,11 +247,7 @@ static void adv_rpa_expired(struct bt_le_ext_adv *adv, void *data)
 
 static void adv_rpa_invalidate(struct bt_le_ext_adv *adv, void *data)
 {
-	/* RPA of Advertisers limited by timeout or number of packets only expire
-	 * when they are stopped.
-	 */
-	if (!atomic_test_bit(adv->flags, BT_ADV_LIMITED) &&
-	    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
+	if (atomic_test_bit(adv->flags, BT_ADV_RPA_UPDATE)) {
 		adv_rpa_expired(adv, data);
 	}
 }
@@ -703,15 +699,12 @@ static void rpa_timeout(struct k_work *work)
 	adv_enabled = le_adv_rpa_timeout();
 	le_rpa_invalidate();
 
-	/* IF no roles using the RPA is running we can stop the RPA timer */
-	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
-		if (!(adv_enabled || atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING) ||
-		      bt_le_scan_active_scanner_running())) {
-			return;
-		}
+	/* Update the RPA if we have any active procedures that use it */
+	if ((IS_ENABLED(CONFIG_BT_BROADCASTER) && adv_enabled) ||
+	    (IS_ENABLED(CONFIG_BT_CENTRAL) && atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING)) ||
+	    (IS_ENABLED(CONFIG_BT_OBSERVER) && bt_le_scan_active_scanner_running())) {
+		le_update_private_addr();
 	}
-
-	le_update_private_addr();
 }
 #endif /* CONFIG_BT_PRIVACY */
 
