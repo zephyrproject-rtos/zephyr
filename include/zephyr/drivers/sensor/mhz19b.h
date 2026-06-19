@@ -15,7 +15,7 @@
 
 /**
  * @defgroup mhz19b_interface MH-Z19B
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_winsen
  * @brief Winsen MH-Z19B CO<sub>2</sub> sensor
  * @{
  */
