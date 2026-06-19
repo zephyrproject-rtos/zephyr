@@ -11,6 +11,10 @@ if(CONFIG_CPU_CORTEX_M55)
   board_runner_args(openocd "--gdb-init=disconnect")
   board_runner_args(openocd "--gdb-init=target extended-remote :3334")
   board_runner_args(openocd "--target-handle=CHIPNAME.cm55")
+  # GDB `run` cannot restart the CM55 (it is released by the CM33 enable_cm55
+  # application, not by a chip reset). Provide a `restart` command that replays
+  # the gdb-attach sequence instead.
+  board_runner_args(openocd "--gdb-init=source ${BOARD_DIR}/support/pse84_cm55_restart.gdb")
 else()
   board_runner_args(openocd "--target-handle=CHIPNAME.cm33")
 endif()
