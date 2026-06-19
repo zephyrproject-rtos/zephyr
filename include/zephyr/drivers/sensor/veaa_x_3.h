@@ -16,7 +16,7 @@
 /**
  * @brief Festo VEAA X-3 pressure regulator
  * @defgroup veaa_x_3_interface VEAA X-3
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_festo
  * @{
  */
 
