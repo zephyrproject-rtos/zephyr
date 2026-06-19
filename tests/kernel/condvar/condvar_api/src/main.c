@@ -133,16 +133,33 @@ void condvar_wait_wake_task(void *p1, void *p2, void *p3)
 	k_mutex_unlock(&test_mutex);
 }
 /**
+ * @brief Condition variable API tests
  * @defgroup kernel_condvar_tests Condition Variables
  * @ingroup all_tests
  * @{
- * @}
- *
- * @addtogroup kernel_condvar_tests
- * @{
  */
+
 /**
- * @brief Test k_condvar_wait() and k_condvar_wake()
+ * @brief Verify a thread blocked forever is released by k_condvar_signal().
+ *
+ * @details
+ * A helper thread locks a mutex and calls k_condvar_wait() with a K_FOREVER
+ * timeout, so it blocks indefinitely. A second thread then calls
+ * k_condvar_signal() on the same condition variable. The test verifies that the
+ * signal wakes the blocked waiter, which returns 0 (woken, not timed out).
+ *
+ * Test steps:
+ * - Initialize the condition variable.
+ * - Start a waiter thread that calls k_condvar_wait(..., K_FOREVER).
+ * - Start a waker thread that calls k_condvar_signal().
+ *
+ * Expected result:
+ * - k_condvar_wait() in the waiter returns 0 (verified in
+ *   condvar_wait_wake_task()).
+ * - k_condvar_signal() returns 0.
+ *
+ * @see k_condvar_wait()
+ * @see k_condvar_signal()
  */
 ZTEST_USER(condvar_tests, test_condvar_wait_forever_wake)
 {
@@ -171,9 +188,21 @@ ZTEST_USER(condvar_tests, test_condvar_wait_forever_wake)
 }
 
 /**
- * @brief Test k_condvar_wait() and k_condvar_wake() with timeout
+ * @brief Verify a finite-timeout waiter is woken by a signal before it times out.
+ *
+ * @details
+ * A helper thread calls k_condvar_wait() with a 100 ms timeout and a second
+ * thread signals the condition variable immediately. The signal arrives before
+ * the timeout expires, so the waiter must return 0 (woken), not -EAGAIN.
+ *
+ * Expected result:
+ * - k_condvar_wait() returns 0 (verified in condvar_wait_wake_task()).
+ * - k_condvar_signal() returns 0.
+ *
+ * @see k_condvar_wait()
+ * @see k_condvar_signal()
  */
-ZTEST_USER(condvar_tests, test_condvar_wait_timeout_wake)
+ZTEST_USER(condvar_tests, test_condvar_wake_before_timeout)
 {
 	woken = 1;
 	timeout = k_ms_to_ticks_ceil32(100);
@@ -201,7 +230,17 @@ ZTEST_USER(condvar_tests, test_condvar_wait_timeout_wake)
 }
 
 /**
- * @brief Test k_condvar_wait() and k_condvar_wake() with timeout
+ * @brief Verify k_condvar_wait() returns -EAGAIN when its timeout expires.
+ *
+ * @details
+ * A helper thread calls k_condvar_wait() with a 50 ms timeout and no thread ever
+ * signals the condition variable. The test verifies the wait fails with -EAGAIN
+ * once the timeout elapses.
+ *
+ * Expected result:
+ * - k_condvar_wait() returns -EAGAIN (verified in condvar_wait_task()).
+ *
+ * @see k_condvar_wait()
  */
 ZTEST_USER(condvar_tests, test_condvar_wait_timeout)
 {
@@ -219,7 +258,25 @@ ZTEST_USER(condvar_tests, test_condvar_wait_timeout)
 
 
 /**
- * @brief Test k_condvar_wait() forever
+ * @brief Verify a K_FOREVER waiter stays blocked when no signal is sent.
+ *
+ * @details
+ * A helper thread calls k_condvar_wait() with K_FOREVER and no thread signals
+ * the condition variable. The waiter must remain blocked; the test then aborts
+ * it. The intent is to confirm the absence of a spurious wakeup.
+ *
+ * Expected result:
+ * - The waiter never returns from k_condvar_wait() and is aborted while blocked.
+ *
+ * @note Weak verification: the success criterion is implicit (the waiter is
+ *       aborted, never running its post-wait assertions). The K_TICKS_FOREVER
+ *       branch in condvar_wait_task() contains contradictory assertions
+ *       (ret_value == 0 and ret_value != 0) that are dead code here because the
+ *       thread is aborted before returning. As written, this test would not
+ *       detect a spurious wakeup. Consider verifying blocked state explicitly,
+ *       e.g. with k_thread_join() and a deadline.
+ *
+ * @see k_condvar_wait()
  */
 ZTEST_USER(condvar_tests, test_condvar_wait_forever)
 {
@@ -237,7 +294,16 @@ ZTEST_USER(condvar_tests, test_condvar_wait_forever)
 }
 
 /**
- * @brief Test k_condvar_wait() with no wait
+ * @brief Verify k_condvar_wait() with a zero timeout returns -EAGAIN immediately.
+ *
+ * @details
+ * A helper thread calls k_condvar_wait() with a timeout of 0 ticks. With no
+ * signal pending, the call must not block and must return -EAGAIN immediately.
+ *
+ * Expected result:
+ * - k_condvar_wait() returns -EAGAIN (verified in condvar_wait_task()).
+ *
+ * @see k_condvar_wait()
  */
 ZTEST_USER(condvar_tests, test_condvar_wait_nowait)
 {
@@ -255,12 +321,22 @@ ZTEST_USER(condvar_tests, test_condvar_wait_nowait)
 
 
 /**
- * @brief Test case for conditional variable wait and wake functionality.
+ * @brief Verify a zero-timeout wait returns -EAGAIN even when a signal follows.
  *
- * This test validates the behavior of conditional variables when a thread
- * waits on a condition and another thread wakes it up.
+ * @details
+ * A helper thread calls k_condvar_wait() with a 0 tick timeout and returns
+ * -EAGAIN without blocking. Only afterwards does a second thread signal the
+ * condition variable. The test confirms the non-blocking wait result is
+ * unaffected by the later signal.
+ *
+ * Expected result:
+ * - k_condvar_wait() returns -EAGAIN (verified in condvar_wait_wake_task()).
+ * - k_condvar_signal() returns 0 with no waiter present.
+ *
+ * @see k_condvar_wait()
+ * @see k_condvar_signal()
  */
-ZTEST_USER(condvar_tests, test_condvar_wait_nowait_wake)
+ZTEST_USER(condvar_tests, test_condvar_nowait_returns_eagain)
 {
 	woken = 0;
 	timeout = 0;
@@ -287,11 +363,21 @@ ZTEST_USER(condvar_tests, test_condvar_wait_nowait_wake)
 
 
 /**
- * @brief Test case for condition variable wait and wake functionality.
+ * @brief Verify a thread blocked forever is woken by a signal from ISR context.
  *
- * This test verifies the behavior of a thread waiting on a condition variable
- * with an infinite timeout and being woken up from an interrupt service routine (ISR).
+ * @details
+ * A helper thread blocks in k_condvar_wait() with K_FOREVER. The test then
+ * issues k_condvar_signal() from an ISR via irq_offload(). The test verifies the
+ * signal raised in interrupt context releases the waiter, which returns 0.
  *
+ * Expected result:
+ * - k_condvar_wait() returns 0 (verified in condvar_wait_wake_task()).
+ *
+ * @note This is a kernel-mode test (ZTEST, not ZTEST_USER) because signalling is
+ *       performed from an ISR.
+ *
+ * @see k_condvar_wait()
+ * @see k_condvar_signal()
  */
 ZTEST(condvar_tests, test_condvar_wait_forever_wake_from_isr)
 {
@@ -313,13 +399,20 @@ ZTEST(condvar_tests, test_condvar_wait_forever_wake_from_isr)
 }
 
 /**
- * @brief Test case for multiple threads waiting and waking on a condition variable.
+ * @brief Verify k_condvar_broadcast() wakes every thread on one condition variable.
  *
- * This test initializes a condition variable and creates multiple threads that
- * wait on the condition variable. Another thread is created to wake up the
- * waiting threads. The test ensures proper synchronization and behavior of
- * threads waiting and waking on the condition variable.
-
+ * @details
+ * TOTAL_THREADS_WAITING (3) helper threads all block in k_condvar_wait() with
+ * K_FOREVER on the same condition variable. A waker thread then calls
+ * k_condvar_broadcast(). The test verifies broadcast reports exactly the number
+ * of threads it released and that all waiters return 0.
+ *
+ * Expected result:
+ * - k_condvar_broadcast() returns TOTAL_THREADS_WAITING.
+ * - Each k_condvar_wait() returns 0 (verified in condvar_wait_wake_task()).
+ *
+ * @see k_condvar_broadcast()
+ * @see k_condvar_wait()
  */
 ZTEST_USER(condvar_tests, test_condvar_multiple_threads_wait_wake)
 {
@@ -391,12 +484,28 @@ void condvar_multiple_wake_task(void *p1, void *p2, void *p3)
 
 
 /**
- * @brief Test multiple threads waiting and waking on a condition variable.
+ * @brief Verify independent condition variables each wake their own single waiter.
  *
- * This test creates multiple threads that wait on a condition variable and
- * another set of threads that wake them up. It ensures that the condition
- * variable mechanism works correctly when multiple threads are involved.
-
+ * @details
+ * TOTAL_THREADS_WAITING (3) helper threads each block on a distinct condition
+ * variable (multiple_condvar[i]). A matching set of waker threads each wakes its
+ * own condition variable. With one waiter per condition variable, each wake must
+ * release exactly one thread, demonstrating that condition variables are
+ * independent and do not cross-signal.
+ *
+ * Expected result:
+ * - Each wake call releases exactly one waiter (returns 1).
+ * - Each k_condvar_wait() returns 0 (verified in
+ *   condvar_multiple_wait_wake_task()).
+ *
+ * @note Easily confused with test_condvar_multiple_threads_wait_wake, which has
+ *       many waiters on a SINGLE condition variable. This one is the "one
+ *       condition variable per waiter" case. Because woken is 1,
+ *       condvar_multiple_wake_task() always takes its k_condvar_broadcast()
+ *       branch, so its k_condvar_signal() path is not exercised here.
+ *
+ * @see k_condvar_signal()
+ * @see k_condvar_broadcast()
  */
 ZTEST_USER(condvar_tests, test_multiple_condvar_wait_wake)
 {
@@ -447,11 +556,18 @@ static void cond_init_null(void *p1, void *p2, void *p3)
 
 
 /**
- * @brief Test case for conditional variable initialization with a null parameter.
+ * @brief Verify k_condvar_init(NULL) faults when called from user mode.
  *
- * This test verifies the behavior of the conditional variable initialization
- * when a null parameter is passed. It creates a thread to execute the
- * `cond_init_null` function and ensures the thread completes execution.
+ * @details
+ * A user-mode thread arms the ztest fault hook and calls k_condvar_init() with a
+ * NULL pointer. The call must trigger a kernel fault; execution must not fall
+ * through to the ztest_test_fail() guard placed after it.
+ *
+ * Expected result:
+ * - A valid fault is taken at k_condvar_init(NULL); the guard ztest_test_fail()
+ *   in cond_init_null() is never reached.
+ *
+ * @see k_condvar_init()
  */
 ZTEST_USER(condvar_tests, test_condvar_init_null)
 {
@@ -510,11 +626,18 @@ static void cond_wait_null(void *p1, void *p2, void *p3)
 	ztest_test_fail();
 }
 /**
- * @brief Test case for signaling a condition variable with a NULL parameter.
+ * @brief Verify k_condvar_signal(NULL) faults when called from user mode.
  *
- * This test creates a thread that attempts to signal a condition variable
- * with a NULL parameter. It ensures that the system handles this scenario
- * gracefully without causing unexpected behavior or crashes.
+ * @details
+ * A user-mode thread arms the ztest fault hook and calls k_condvar_signal() with
+ * a NULL pointer. The call must trigger a kernel fault; execution must not fall
+ * through to the ztest_test_fail() guard placed after it.
+ *
+ * Expected result:
+ * - A valid fault is taken at k_condvar_signal(NULL); the guard ztest_test_fail()
+ *   in cond_signal_null() is never reached.
+ *
+ * @see k_condvar_signal()
  */
 ZTEST_USER(condvar_tests, test_condvar_signal_null)
 {
@@ -527,11 +650,18 @@ ZTEST_USER(condvar_tests, test_condvar_signal_null)
 }
 
 /**
- * @brief Test case for broadcasting a condition variable with a NULL parameter.
+ * @brief Verify k_condvar_broadcast(NULL) faults when called from user mode.
  *
- * This test creates a thread that attempts to broadcast a condition variable
- * with a NULL parameter. It verifies that the system can handle this edge case
- * correctly and does not result in undefined behavior.
+ * @details
+ * A user-mode thread arms the ztest fault hook and calls k_condvar_broadcast()
+ * with a NULL pointer. The call must trigger a kernel fault; execution must not
+ * fall through to the ztest_test_fail() guard placed after it.
+ *
+ * Expected result:
+ * - A valid fault is taken at k_condvar_broadcast(NULL); the guard
+ *   ztest_test_fail() in cond_broadcast_null() is never reached.
+ *
+ * @see k_condvar_broadcast()
  */
 ZTEST_USER(condvar_tests, test_condvar_broadcast_null)
 {
@@ -545,11 +675,19 @@ ZTEST_USER(condvar_tests, test_condvar_broadcast_null)
 }
 
 /**
- * @brief Test case for waiting on a condition variable with a NULL parameter.
+ * @brief Verify k_condvar_wait(NULL, NULL, ...) faults when called from user mode.
  *
- * This test creates a thread that attempts to wait on a condition variable
- * with a NULL parameter. It ensures that the system properly handles this
- * invalid operation and maintains stability.
+ * @details
+ * A user-mode thread arms the ztest fault hook and calls k_condvar_wait() with
+ * NULL condition variable and mutex pointers. The call must trigger a kernel
+ * fault; execution must not fall through to the ztest_test_fail() guard placed
+ * after it.
+ *
+ * Expected result:
+ * - A valid fault is taken at k_condvar_wait(NULL, NULL, ...); the guard
+ *   ztest_test_fail() in cond_wait_null() is never reached.
+ *
+ * @see k_condvar_wait()
  */
 ZTEST_USER(condvar_tests, test_condvar_wait_null)
 {
@@ -648,11 +786,22 @@ void _condvar_usecase(long multi)
 
 
 /**
- * @brief Test case for conditional variable use case with signal
+ * @brief Verify a producer/consumer hand-off driven by k_condvar_signal().
  *
- * This test verifies the behavior of a conditional variable in a specific
- * use case where a signal is used. It ensures that the conditional variable
- * operates correctly when signaled, validating synchronization mechanisms.
+ * @details
+ * One watcher thread holds the mutex and waits on the condition variable until a
+ * shared counter reaches COUNT_LIMIT; two incrementer threads raise the counter
+ * under the same mutex and call k_condvar_signal() when the limit is hit. The
+ * deterministic final counter value proves the single-waiter wakeup fired and
+ * the mutex-protected shared state stayed consistent.
+ *
+ * Expected result:
+ * - Final count equals 145: 20 increments from the two incrementer threads
+ *   (2 x TCOUNT) plus 125 added by the watcher after it is released
+ *   (verified by zassert_equal() in _condvar_usecase()).
+ *
+ * @see k_condvar_signal()
+ * @see k_condvar_wait()
  */
 ZTEST_USER(condvar_tests, test_condvar_usecase_signal)
 {
@@ -660,6 +809,21 @@ ZTEST_USER(condvar_tests, test_condvar_usecase_signal)
 }
 
 
+/**
+ * @brief Verify a producer/consumer hand-off driven by k_condvar_broadcast().
+ *
+ * @details
+ * Same producer/consumer scenario as test_condvar_usecase_signal, but the
+ * incrementer threads release the watcher with k_condvar_broadcast() instead of
+ * k_condvar_signal(). With a single watcher the observable outcome is identical;
+ * this exercises the broadcast wakeup path in the same use case.
+ *
+ * Expected result:
+ * - Final count equals 145 (verified by zassert_equal() in _condvar_usecase()).
+ *
+ * @see k_condvar_broadcast()
+ * @see k_condvar_wait()
+ */
 ZTEST_USER(condvar_tests, test_condvar_usecase_broadcast)
 {
 	_condvar_usecase(1);
@@ -685,22 +849,22 @@ static void *condvar_tests_setup(void)
 }
 
 /**
- * @}
- */
-
-
-/**
- * @brief Verify k_condvar_wait relocks the mutex on timeout.
+ * @brief Verify k_condvar_wait() re-locks the mutex when the wait times out.
  *
- * Per the contract documented in kernel/condvar.c, k_condvar_wait()
- * must always return with the mutex held by the calling thread, even
- * when the wait times out (matching POSIX semantics for
- * pthread_cond_timedwait). This test confirms the mutex is held
- * after a timeout — if the fix in kernel/condvar.c regresses,
- * k_mutex_unlock() below would fail with -EPERM (mutex not locked
- * by the calling thread).
+ * @details
+ * Per the contract documented in kernel/condvar.c, k_condvar_wait() must always
+ * return with the mutex held by the calling thread, even when the wait times out
+ * (matching POSIX semantics for pthread_cond_timedwait). The test locks a mutex,
+ * waits with a short timeout and no waker so the wait expires, then unlocks the
+ * mutex to prove ownership was restored.
  *
- * Inspired by the pthread test added in zephyrproject-rtos/zephyr#105986.
+ * Expected result:
+ * - k_condvar_wait() returns -EAGAIN on timeout.
+ * - k_mutex_unlock() succeeds; a regression that failed to re-lock the mutex
+ *   would make it return -EPERM (mutex not locked by the calling thread).
+ *
+ * @see k_condvar_wait()
+ * @see k_mutex_unlock()
  */
 ZTEST(condvar_tests, test_condvar_wait_timeout_relocks_mutex)
 {
@@ -727,5 +891,9 @@ ZTEST(condvar_tests, test_condvar_wait_timeout_relocks_mutex)
 	zassert_ok(k_mutex_unlock(&local_mtx),
 		   "mutex not held after k_condvar_wait timeout");
 }
+
+/**
+ * @}
+ */
 
 ZTEST_SUITE(condvar_tests, NULL, condvar_tests_setup, NULL, NULL, NULL);
