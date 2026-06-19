@@ -757,6 +757,35 @@ struct adc_sequence_options {
 };
 
 /**
+ * @brief Options for when to trigger an interrupt
+ */
+enum adc_threshold_mode {
+	/** Disable threshold monitoring */
+	ADC_THRESHOLD_MODE_DISEABLE,
+	/** Trigger when value falls below lower_limit */
+	ADC_THRESHOLD_MODE_LOWER,
+	/** Trigger when value exceeds upper_limit */
+	ADC_THRESHOLD_MODE_UPPER,
+	/** Trigger when value is below lower_limit or above upper_limit */
+	ADC_THRESHOLD_MODE_OUTSIDE,
+	/** Trigger when value is strictly between limits */
+	ADC_THRESHOLD_MODE_INSIDE,
+};
+
+/**
+ * @brief Type definition of the optional callback function to be called when a threshold event
+ * trigger.
+ *
+ * @param dev Pointer to the device structure for the driver
+ *	      instance.
+ * @param channel_id Identifier of the channel that triggered the callback
+ * @param value	     Conversion result
+ * @param user_data  Pointer for additionnal context
+ */
+typedef void (*adc_threshold_callback)(const struct device *dev, uint8_t channel_id, uint32_t value,
+	      void *user_data);
+
+/**
  * @brief Structure defining an ADC sampling sequence.
  */
 struct adc_sequence {
@@ -836,6 +865,23 @@ struct adc_sequence {
 	 * ignore this flag.
 	 */
 	bool calibrate;
+
+#ifdef CONFIG_ADC_THRESHOLD
+	/**
+	 * Lower threshold value.
+	 * Raw ADC value for lower threshold to compare with conversion result.
+	 */
+	int32_t lower_threshold;
+
+	/**
+	 * Upper threshold value.
+	 * Raw ADC value for upper threshold to compare with conversion result.
+	 */
+	int32_t upper_threshold;
+
+	/** Threshold mode. */
+	enum adc_threshold_mode threshold_mode;
+#endif /* CONFIG_ADC_THRESHOLD */
 };
 
 struct adc_data_header {
@@ -1047,6 +1093,14 @@ typedef int (*adc_api_read_async)(const struct device *dev,
 				  struct k_poll_signal *async);
 
 /**
+ * @brief Type definition of ADC API function for setting a threshold callback
+ * See adc_set_threshold_callback() for argument descriptions.
+ */
+typedef int (*adc_api_set_threshold_callback)(const struct device *dev,
+					      adc_threshold_callback callback,
+					      void *user_data);
+
+/**
  * @driver_ops{ADC}
  */
 __subsystem struct adc_driver_api {
@@ -1072,6 +1126,13 @@ __subsystem struct adc_driver_api {
 	 * @kconfig_dep{CONFIG_ADC_STREAM}
 	 */
 	adc_api_get_decoder get_decoder;
+#endif
+#if defined(CONFIG_ADC_THRESHOLD) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_optional Set ADC threshold callback.
+	 * @kconfig_dep{CONFIG_ADC_THRESHOLD}
+	 */
+	adc_api_set_threshold_callback set_threshold_callback;
 #endif
 	/**
 	 * @driver_ops_mandatory Internal reference voltage, in millivolts.
@@ -1327,6 +1388,35 @@ static inline int z_impl_adc_get_decoder(const struct device *dev,
 	return api->get_decoder(dev, decoder);
 }
 #endif /* CONFIG_ADC_STREAM */
+
+/**
+ * @brief Set ADC threshold callback.
+ *
+ * @param dev	    Pointer to the device structure for the driver instance.
+ * @param callback  Callback function.
+ * @param user_data User data passed to callback.
+ *
+ * @retval 0	    On success.
+ * @retval -ENOTSUP If the driver or hardware does not support threshold monitoring.
+ */
+__syscall int adc_set_threshold_callback(const struct device *dev,
+					 adc_threshold_callback callback,
+					 void *user_data);
+
+#ifdef CONFIG_ADC_THRESHOLD
+static inline int z_impl_adc_set_threshold_callback(const struct device *dev,
+						    adc_threshold_callback callback,
+						    void *user_data)
+{
+	const struct adc_driver_api *api = DEVICE_API_GET(adc, dev);
+
+	if (api->set_threshold_callback == NULL) {
+		return -ENOTSUP;
+	}
+	return api->set_threshold_callback(dev, callback, user_data);
+}
+
+#endif /* CONFIG_ADC_THRESHOLD */
 
 /**
  * @brief Get the internal reference voltage.
