@@ -8,9 +8,11 @@
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/dt-bindings/clock/esp32c6_clock.h>
+#include <esp_rom_sys.h>
 
 #include <hal/uart_hal.h>
-#if defined(CONFIG_SOC_ESP32C6_HPCORE) || defined(CONFIG_SOC_ESP32P4_HPCORE)
+#if defined(CONFIG_SOC_ESP32C6_HPCORE) || defined(CONFIG_SOC_ESP32C5_HPCORE) || \
+	defined(CONFIG_SOC_ESP32P4_HPCORE)
 #include <hal/uart_ll.h>
 #include <hal/clk_tree_ll.h>
 #include <hal/clk_tree_hal.h>
@@ -19,7 +21,11 @@
 #include <hal/rtc_io_periph.h>
 #include <soc/uart_pins.h>
 #include <esp_private/esp_clk_tree_common.h>
+#include <esp_clk_tree.h>
 #include <ulp_lp_core_uart.h>
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+#include <soc/lp_gpio_sig_map.h>
+#endif
 #endif
 
 #define ESP_LP_UART_TX_IDLE_NUM_DEFAULT (0U)
@@ -69,7 +75,8 @@ static void lp_uart_esp32_poll_out(const struct device *dev, unsigned char c)
 	uart_hal_write_txfifo(&data->hal, (const void *)&c, 1, &tx_len);
 }
 
-#if defined(CONFIG_SOC_ESP32C6_HPCORE) || defined(CONFIG_SOC_ESP32P4_HPCORE)
+#if defined(CONFIG_SOC_ESP32C6_HPCORE) || defined(CONFIG_SOC_ESP32C5_HPCORE) || \
+	defined(CONFIG_SOC_ESP32P4_HPCORE)
 
 static int lp_uart_esp32_param_config(const struct device *dev)
 {
@@ -83,14 +90,26 @@ static int lp_uart_esp32_param_config(const struct device *dev)
 		return -EINVAL;
 	}
 
+#if CONFIG_SOC_SERIES_ESP32P4
+	/*
+	 * Drive the LP UART from the precise XTAL_D2 clock rather than the
+	 * uncalibrated RC_FAST default, so the baud rate is accurate enough for
+	 * reliable framing.
+	 */
+	esp_clk_tree_enable_src((soc_module_clk_t)SOC_MOD_CLK_XTAL_D2, true);
+	sclk_freq = clk_hal_xtal_get_freq_mhz() * MHZ(1) >> 1;
+
+	lp_uart_ll_enable_bus_clock(0, true);
+	lp_uart_ll_set_source_clk(data->hal.dev, LP_UART_SCLK_XTAL_D2);
+	lp_uart_ll_sclk_enable(0);
+
+	/* Initialize the controller to normal UART mode with default parameters */
+	uart_hal_init(&data->hal, 0);
+#else
 	/* Get LP UART source clock frequency */
 	switch (clk_ll_rtc_fast_get_src()) {
 	case SOC_RTC_FAST_CLK_SRC_XTAL_D2:
-#if CONFIG_SOC_SERIES_ESP32 || CONFIG_SOC_SERIES_ESP32S2 /* SOC_RTC_FAST_CLK_SRC_XTAL_D4 */
-		sclk_freq = clk_hal_xtal_get_freq_mhz() * MHZ(1) >> 2;
-#else /* SOC_RTC_FAST_CLK_SRC_XTAL_D2 */
 		sclk_freq = clk_hal_xtal_get_freq_mhz() * MHZ(1) >> 1;
-#endif
 		break;
 	case SOC_RTC_FAST_CLK_SRC_RC_FAST:
 		sclk_freq =
@@ -110,6 +129,7 @@ static int lp_uart_esp32_param_config(const struct device *dev)
 	lp_uart_ll_reset_register(0);
 	lp_uart_ll_set_source_clk(data->hal.dev, cfg->lp_uart_source_clk);
 	lp_uart_ll_sclk_enable(0);
+#endif
 
 	/* Set protocol parameters from the configuration */
 	lp_uart_ll_set_baudrate(data->hal.dev, cfg->baud_rate, sclk_freq);
@@ -148,6 +168,14 @@ static void lp_uart_esp32_set_pin(const struct device *dev)
 	/* Configure Rx Pin */
 	lp_uart_esp32_config_io(cfg->rx_io_num, RTC_GPIO_MODE_INPUT_ONLY, LP_U0RXD_MUX_FUNC);
 
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+	/* Route the LP UART signals through the LP GPIO matrix to the pads */
+	rtcio_ll_set_output_signal_matrix_source(rtc_io_num_map[cfg->tx_io_num],
+						 LP_UART_TXD_PAD_OUT_IDX, false);
+	rtcio_ll_set_input_signal_matrix_source(rtc_io_num_map[cfg->rx_io_num],
+						LP_UART_RXD_PAD_IN_IDX, false);
+#endif
+
 	/* Configure RTS Pin */
 	lp_uart_esp32_config_io(cfg->rts_io_num, RTC_GPIO_MODE_OUTPUT_ONLY, LP_U0RTS_MUX_FUNC);
 
@@ -166,10 +194,20 @@ static int lp_uart_esp32_init(const struct device *dev)
 
 	/* Configure LP UART IO pins */
 	lp_uart_esp32_set_pin(dev);
+
+	/*
+	 * Routing the pads can latch a spurious byte into the RX FIFO; let the
+	 * line settle, then discard it so the first received byte is real data.
+	 */
+	struct lp_uart_esp32_data *data = dev->data;
+
+	esp_rom_delay_us(1000);
+	uart_hal_rxfifo_rst(&data->hal);
+
 	return 0;
 }
 
-#endif /* CONFIG_SOC_ESP32C6_HPCORE || CONFIG_SOC_ESP32P4_HPCORE */
+#endif /* CONFIG_SOC_ESP32C6_HPCORE || CONFIG_SOC_ESP32C5_HPCORE || CONFIG_SOC_ESP32P4_HPCORE */
 
 static DEVICE_API(uart, lp_uart_esp32_api) = {
 	.poll_in = lp_uart_esp32_poll_in,
@@ -177,9 +215,9 @@ static DEVICE_API(uart, lp_uart_esp32_api) = {
 };
 
 static struct lp_uart_esp32_data lp_uart_esp32_data = {
-	.hal =	{
-			.dev = (uart_dev_t *)DT_REG_ADDR(DT_NODELABEL(lp_uart)),
-		},
+	.hal = {
+		.dev = (uart_dev_t *)DT_REG_ADDR(DT_NODELABEL(lp_uart)),
+	},
 };
 
 static const struct lp_uart_esp32_config lp_uart_esp32_cfg = {
@@ -196,7 +234,8 @@ static const struct lp_uart_esp32_config lp_uart_esp32_cfg = {
 	.lp_uart_source_clk = LP_UART_SCLK_DEFAULT,
 };
 
-#if defined(CONFIG_SOC_ESP32C6_HPCORE) || defined(CONFIG_SOC_ESP32P4_HPCORE)
+#if defined(CONFIG_SOC_ESP32C6_HPCORE) || defined(CONFIG_SOC_ESP32C5_HPCORE) || \
+	defined(CONFIG_SOC_ESP32P4_HPCORE)
 #define LP_UART_ESP32_INIT_FUNC lp_uart_esp32_init
 #else
 #define LP_UART_ESP32_INIT_FUNC NULL

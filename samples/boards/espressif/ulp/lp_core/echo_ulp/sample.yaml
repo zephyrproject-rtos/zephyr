@@ -1,9 +1,11 @@
 sample:
-  name: ESP32-C6 LP_CORE Echo Sample
+  name: LP_CORE Echo Sample
 tests:
   sample.boards.esp32.ulp.lp_core.echo_ulp:
     platform_allow:
       - esp32c6_devkitc/esp32c6/hpcore
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32p4_function_ev_board/esp32p4/hpcore
     tags:
       - samples
     sysbuild: true
