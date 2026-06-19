@@ -14,7 +14,7 @@
 
 /**
  * @defgroup ens160_interface ENS160
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_sciosense
  * @brief ScioSense ENS160 digital metal-oxide multi-gas sensor
  * @{
  */
