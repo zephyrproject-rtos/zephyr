@@ -52,3 +52,29 @@
 		};
 	};
 };
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+		};
+
+		slot1_partition: partition@8000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x00008000 DT_SIZE_K(8)>;
+		};
+
+		storage_partition: partition@f000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x0000f000 DT_SIZE_K(8)>;
+		};
+	};
+};
