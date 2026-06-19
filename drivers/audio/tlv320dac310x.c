@@ -291,7 +291,7 @@ static int codec_configure_clocks(const struct device *dev,
 		i2s->frame_clk_freq;
 	osr_max = DAC_MOD_CLK_FREQ_MAX / i2s->frame_clk_freq;
 
-	/* round mix and max values to the required multiple */
+	/* round min and max values to the required multiple */
 	osr_max = (osr_max / osr_multiple) * osr_multiple;
 	osr_min = DIV_ROUND_UP(osr_min, osr_multiple);
 
