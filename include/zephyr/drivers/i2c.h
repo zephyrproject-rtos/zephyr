@@ -79,6 +79,35 @@ extern "C" {
 #define I2C_TRANSFER_TIMEOUT K_FOREVER
 #endif
 
+/**
+ * @brief Resolve per-instance transfer timeout in milliseconds.
+ *
+ * Returns the raw millisecond value for the given DT instance @p inst:
+ *   1. DT property ``zephyr,transfer-timeout-ms`` on the controller node (per-bus)
+ *   2. ``CONFIG_I2C_TRANSFER_TIMEOUT_MS`` (application-wide Kconfig default)
+ *
+ * A value of 0 means no timeout (infinite wait).
+ */
+#define I2C_DT_INST_TRANSFER_TIMEOUT_MS(inst)                                                      \
+	DT_INST_PROP_OR(inst, zephyr_transfer_timeout_ms, CONFIG_I2C_TRANSFER_TIMEOUT_MS)
+
+/**
+ * @brief Per-instance transfer timeout as a k_timeout_t struct initializer.
+ *
+ * Produces a k_timeout_t brace-initializer for the given DT instance @p inst
+ * using a two-level priority (via @ref I2C_DT_INST_TRANSFER_TIMEOUT_MS):
+ *   1. DT property ``zephyr,transfer-timeout-ms`` on the controller node (per-bus)
+ *   2. ``CONFIG_I2C_TRANSFER_TIMEOUT_MS`` (application-wide Kconfig default)
+ *   3. @ref SYS_FOREVER_MS when the resolved value is 0 (infinite wait)
+ *
+ * Drivers that store the per-bus timeout in a static config struct can use
+ * this macro to initialize the target k_timeout_t value at build time.
+ */
+#define I2C_DT_INST_TRANSFER_TIMEOUT(inst)                                                         \
+	SYS_TIMEOUT_MS_INIT(((I2C_DT_INST_TRANSFER_TIMEOUT_MS(inst) != 0)                          \
+				     ? I2C_DT_INST_TRANSFER_TIMEOUT_MS(inst)                       \
+				     : SYS_FOREVER_MS))
+
 /** Helper macro drivers that do not support infinite timeout */
 #define BUILD_ASSERT_INVALID_I2C_TRANSFER_TIMEOUT() \
 	BUILD_ASSERT(CONFIG_I2C_TRANSFER_TIMEOUT_MS != 0, \

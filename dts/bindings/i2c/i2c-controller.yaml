@@ -25,3 +25,9 @@ properties:
     type: int
     default: 4
     description: Size of the completion queue for blocking requests
+
+  zephyr,transfer-timeout-ms:
+    type: int
+    description: |
+      Maximum time to wait for an I2C transfer to complete, in milliseconds.
+      When absent, the default value is CONFIG_I2C_TRANSFER_TIMEOUT_MS.

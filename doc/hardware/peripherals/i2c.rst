@@ -55,6 +55,52 @@ Configuration Options
 Related configuration options:
 
 * :kconfig:option:`CONFIG_I2C`
+* :kconfig:option:`CONFIG_I2C_TRANSFER_TIMEOUT_MS`
+
+Transfer Timeout
+================
+
+The I2C subsystem provides two complementary mechanisms to control how long a
+driver waits for a transfer to complete before returning ``-ETIMEDOUT``.
+
+Application-wide default (Kconfig)
+-----------------------------------
+
+:kconfig:option:`CONFIG_I2C_TRANSFER_TIMEOUT_MS` sets the default timeout in
+milliseconds for all I2C controllers whose drivers opt in by selecting
+``I2C_TRANSFER_TIMEOUT_SUPPORTED``.  A value of ``0`` means wait forever
+(``K_FOREVER``).  Drivers that do not permit an infinite timeout (e.g. those
+that program the value directly into a hardware register) use
+:c:macro:`BUILD_ASSERT_INVALID_I2C_TRANSFER_TIMEOUT` to enforce a non-zero
+value at build time.
+
+Per-controller DT override
+---------------------------
+
+Individual controllers can override the application-wide default through the
+``zephyr,transfer-timeout-ms`` devicetree property defined in
+``dts/bindings/i2c/i2c-controller.yaml``.  When the property is absent the
+driver falls back to :kconfig:option:`CONFIG_I2C_TRANSFER_TIMEOUT_MS`.
+
+Example board overlay::
+
+    &i2c1 {
+        /* Fast sensor bus - fail quickly on a hung device */
+        zephyr,transfer-timeout-ms = <50>;
+    };
+
+    &i2c2 {
+        /* EEPROM bus - allow for long internal write cycles */
+        zephyr,transfer-timeout-ms = <2000>;
+    };
+
+Drivers that support per-instance timeouts use
+:c:macro:`I2C_DT_INST_TRANSFER_TIMEOUT` (or :c:macro:`I2C_DT_INST_TRANSFER_TIMEOUT_MS`
+for raw integer use) which resolve the timeout with the following priority:
+
+1. ``zephyr,transfer-timeout-ms`` DT property on the controller node
+2. :kconfig:option:`CONFIG_I2C_TRANSFER_TIMEOUT_MS`
+3. ``K_FOREVER`` when the resolved value is ``0``
 
 API Reference
 *************
