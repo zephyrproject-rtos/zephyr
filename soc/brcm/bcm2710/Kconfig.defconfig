@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_BCM2710
+
+config NUM_IRQS
+	# Flat IRQ space for the BCM283x interrupt-controller pair: 0..9
+	# ARM-local intc, 32..127 ARMC peripheral banks. See
+	# <zephyr/dt-bindings/interrupt-controller/bcm2835-armctrl.h>.
+	default 128
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	# BCM2710 ARM generic timer runs at 19.2 MHz, set by the VPU
+	# firmware before kernel handoff.
+	default 19200000
+
+config DCACHE_LINE_SIZE
+	# Cortex-A53 L1 D-cache line size, 64 bytes (ARMv8-A standard).
+	default 64
+
+endif
