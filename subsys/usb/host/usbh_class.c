@@ -23,6 +23,7 @@ void usbh_class_init_all(void)
 
 		sys_dlist_init(&c_data->xfer_anchor_list);
 		k_mutex_init(&c_data->mutex);
+		k_condvar_init(&c_data->drained);
 
 		if (c_node->state != USBH_CLASS_STATE_IDLE) {
 			LOG_DBG("Skipping '%s' in state %u",
@@ -217,12 +218,29 @@ void usbh_class_xfer_anchor(struct usbh_class_data *const c_data,
 	k_mutex_unlock(&c_data->mutex);
 }
 
-void usbh_class_xfer_unanchor(struct uhc_transfer *const xfer)
+int usbh_class_xfer_acquire(struct usbh_class_data *const c_data)
+{
+	int ret = 0;
+
+	k_mutex_lock(&c_data->mutex, K_FOREVER);
+
+	if (!c_data->bound) {
+		ret = -ESHUTDOWN;
+	} else {
+		c_data->xfer_count++;
+	}
+
+	k_mutex_unlock(&c_data->mutex);
+
+	return ret;
+}
+
+struct usbh_class_data *usbh_class_xfer_unanchor(struct uhc_transfer *const xfer)
 {
 	struct usbh_class_data *const c_data = xfer->anchor;
 
 	if (c_data == NULL) {
-		return;
+		return NULL;
 	}
 
 	k_mutex_lock(&c_data->mutex, K_FOREVER);
@@ -233,6 +251,41 @@ void usbh_class_xfer_unanchor(struct uhc_transfer *const xfer)
 
 	xfer->anchor = NULL;
 	k_mutex_unlock(&c_data->mutex);
+
+	return c_data;
+}
+
+void usbh_class_xfer_release(struct usbh_class_data *const c_data)
+{
+	k_mutex_lock(&c_data->mutex, K_FOREVER);
+
+	if (c_data->xfer_count > 0) {
+		c_data->xfer_count--;
+	}
+
+	if (c_data->xfer_count == 0) {
+		k_condvar_broadcast(&c_data->drained);
+	}
+
+	k_mutex_unlock(&c_data->mutex);
+}
+
+int usbh_class_xfer_drain(struct usbh_class_data *const c_data, k_timeout_t timeout)
+{
+	int ret = 0;
+
+	k_mutex_lock(&c_data->mutex, K_FOREVER);
+
+	while (c_data->xfer_count != 0) {
+		if (k_condvar_wait(&c_data->drained, &c_data->mutex, timeout) != 0) {
+			ret = -ETIMEDOUT;
+			break;
+		}
+	}
+
+	k_mutex_unlock(&c_data->mutex);
+
+	return ret;
 }
 
 void usbh_class_xfer_dequeue_anchored(struct usbh_class_data *const c_data,

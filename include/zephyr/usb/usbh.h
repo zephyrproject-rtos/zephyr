@@ -124,6 +124,10 @@ struct usbh_class_data {
 	struct k_mutex mutex;
 	/** Set while bound to a device. New transfers are rejected when clear */
 	bool bound;
+	/** Signalled when all submitted transfers have completed */
+	struct k_condvar drained;
+	/** Number of submitted transfers not yet completed */
+	uint32_t xfer_count;
 	/** Name of the USB host class instance */
 	const char *name;
 	/** Pointer to USB device this class is used for */
