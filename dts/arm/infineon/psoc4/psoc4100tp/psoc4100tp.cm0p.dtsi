@@ -17,6 +17,19 @@
 			compatible = "arm,cortex-m0+";
 			reg = <0>;
 			clock-frequency = <48000000>;
+			cpu-power-states = <&sleep>;
+		};
+
+		power-states {
+			sleep: sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				/* min-residency-us is set to 100 us safe margin
+				 * to ensure sleep is only entered when the idle period is
+				 * long enough to provide the power saving benefit.
+				 */
+				min-residency-us = <100>;
+			};
 		};
 	};
 
