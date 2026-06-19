@@ -12,7 +12,7 @@
 };
 
 &pll {
-	mul = <15>;
+	mul = <18>;
 };
 
 &sram0 {
@@ -25,5 +25,5 @@
 };
 
 &cpu0 {
-	clock-frequency = <DT_FREQ_M(120)>;
+	clock-frequency = <DT_FREQ_M(144)>;
 };
