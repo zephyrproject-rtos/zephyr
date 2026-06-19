@@ -333,6 +333,7 @@ void i2c_stm32_dma_rx_cb(const struct device *dma_dev __unused, void *user_data 
 		.pclk_len = DT_INST_NUM_CLOCKS(index),						\
 		I2C_STM32_IRQ_HANDLER_FUNCTION(index)						\
 		.bitrate = DT_INST_PROP(index, clock_frequency),				\
+		.transfer_timeout = I2C_DT_INST_TRANSFER_TIMEOUT(index),			\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),					\
 		IF_ENABLED(CONFIG_I2C_STM32_BUS_RECOVERY, (					\
 		.scl = GPIO_DT_SPEC_INST_GET_OR(index, scl_gpios, {0}),				\
