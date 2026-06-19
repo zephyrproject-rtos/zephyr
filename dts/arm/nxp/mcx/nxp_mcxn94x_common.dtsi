@@ -7,10 +7,6 @@
 #include "nxp_mcxnx4x_common.dtsi"
 
 / {
-	chosen {
-		zephyr,entropy = &trng;
-	};
-
 	soc {
 		compatible = "nxp,mcxn94x", "nxp,mcx", "simple-bus";
 	};
@@ -128,15 +124,5 @@
 		clocks = <&syscon MCUX_FLEXCAN1_CLK>;
 		number-of-mb = <32>;
 		status = "disabled";
-	};
-
-	crypto@54000 {
-		compatible = "nxp,els";
-		reg = <0x54000 0x200>;
-		clocks = <&syscon MCUX_ELS_CLK>;
-
-		trng: rng {
-			compatible = "nxp,els-trng";
-		};
 	};
 };
