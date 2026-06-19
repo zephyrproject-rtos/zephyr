@@ -4,36 +4,55 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Devicetree binding constants for the Microchip PAC194x power monitor.
+ * @ingroup pac194x_interface
+ */
+
 #ifndef PAC194X_H_DTS_BINDINGS
 #define PAC194X_H_DTS_BINDINGS
 
 /**
- * @file pac194x.h
- * @brief Driver definitions for the PAC194X power monitor.
+ * @defgroup pac194x_interface PAC194X
+ * @ingroup sensor_interface_ext_microchip
+ * @brief Microchip PAC194x power monitor
+ * @{
  */
 
-/** Unipolar FSR range */
-#define PAC_UNIPOLAR_FSR	0
-/** Bipolar FSR range */
-#define PAC_BIPOLAR_FSR		1
-/** Bipolar FSR/2 range */
-#define PAC_BIPOLAR_HALF_FSR	2
+/**
+ * @name Full-scale range mode
+ *
+ * Values for the `microchip,vbus-mode` and `microchip,vsense-mode` devicetree properties.
+ * @{
+ */
+#define PAC_UNIPOLAR_FSR	0 /**< Unipolar full-scale range */
+#define PAC_BIPOLAR_FSR		1 /**< Bipolar full-scale range */
+#define PAC_BIPOLAR_HALF_FSR	2 /**< Bipolar half (FSR / 2) range */
+/** @} */
 
-/** Accumulate Power data */
-#define PAC_ACCUM_VPOWER	0
-/** Accumulate Current data */
-#define PAC_ACCUM_VSENSE	1
-/** Accumulate Voltage data */
-#define PAC_ACCUM_VBUS		2
+/**
+ * @name Accumulation source
+ *
+ * Values for the `microchip,accumulation-mode` devicetree property.
+ * @{
+ */
+#define PAC_ACCUM_VPOWER	0 /**< Accumulate power data */
+#define PAC_ACCUM_VSENSE	1 /**< Accumulate current (sense voltage) data */
+#define PAC_ACCUM_VBUS		2 /**< Accumulate bus voltage data */
+/** @} */
 
+/**
+ * @name Refresh mode
+ *
+ * Values for the `microchip,refresh-mode` devicetree property.
+ * @{
+ */
+#define PAC_REFRESH_MANUAL	0 /**< Manual refresh */
+#define PAC_REFRESH_AUTO_WAIT	1 /**< Automatic refresh, wait for valid data */
+#define PAC_REFRESH_AUTO_NOWAIT	2 /**< Automatic refresh, do not wait */
+/** @} */
 
-/** Refresh mode manual */
-#define PAC_REFRESH_MANUAL	0
-
-/** Refresh mode */
-#define PAC_REFRESH_AUTO_WAIT	1
-
-/** Refresh mode */
-#define PAC_REFRESH_AUTO_NOWAIT	2
+/** @} */
 
 #endif /* PAC194X_H_DTS_BINDINGS */
