@@ -16,7 +16,7 @@
 /**
  * @brief TMP11X temperature sensors
  * @defgroup tmp11x_interface TMP11X
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_ti
  * @{
  */
 
