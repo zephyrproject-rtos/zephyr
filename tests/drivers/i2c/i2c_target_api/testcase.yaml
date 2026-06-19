@@ -190,3 +190,73 @@ tests:
       - CONFIG_APP_DUAL_ROLE_I2C=y
       - CONFIG_DCACHE=y
     extra_args: EXTRA_DTC_OVERLAY_FILE="stm32_no_dma.overlay"
+  drivers.i2c.target_api.stm32.rtio.one_dir_dma:
+    filter: CONFIG_DT_HAS_ST_STM32_I2C_V2_ENABLED
+    integration_platforms:
+      - nucleo_h753zi
+    platform_allow:
+      - b_u585i_iot02a
+      - disco_l475_iot1
+      - nucleo_c071rb
+      - nucleo_c5a3zg
+      - nucleo_f091rc
+      - nucleo_f746zg
+      - nucleo_g071rb
+      - nucleo_g474re
+      - nucleo_h503rb
+      - nucleo_h563zi
+      - nucleo_h753zi
+      - nucleo_l073rz
+      - nucleo_l476rg
+      - nucleo_n657x0_q/stm32n657xx/sb
+      - nucleo_u083rc
+      - nucleo_u385rg_q
+      - nucleo_wb55rg
+      - nucleo_wba55cg
+      - nucleo_wl55jc
+      - stm32f072b_disco
+      - stm32f3_disco
+      - stm32h573i_dk
+      - stm32l562e_dk
+      - stm32n6570_dk/stm32n657xx/sb
+      - stm32u083c_dk
+    extra_configs:
+      - CONFIG_APP_DUAL_ROLE_I2C=y
+      - CONFIG_DCACHE=y
+      - CONFIG_I2C_RTIO=y
+    extra_args: EXTRA_DTC_OVERLAY_FILE="stm32_one_dir_dma.overlay"
+  drivers.i2c.target_api.stm32.rtio.no_dma:
+    filter: CONFIG_DT_HAS_ST_STM32_I2C_V2_ENABLED
+    integration_platforms:
+      - nucleo_f091rc
+    platform_allow:
+      - b_u585i_iot02a
+      - disco_l475_iot1
+      - nucleo_c071rb
+      - nucleo_c5a3zg
+      - nucleo_f091rc
+      - nucleo_f746zg
+      - nucleo_g071rb
+      - nucleo_g474re
+      - nucleo_h503rb
+      - nucleo_h563zi
+      - nucleo_h753zi
+      - nucleo_l073rz
+      - nucleo_l476rg
+      - nucleo_n657x0_q/stm32n657xx/sb
+      - nucleo_u083rc
+      - nucleo_u385rg_q
+      - nucleo_wb55rg
+      - nucleo_wba55cg
+      - nucleo_wl55jc
+      - stm32f072b_disco
+      - stm32f3_disco
+      - stm32h573i_dk
+      - stm32l562e_dk
+      - stm32n6570_dk/stm32n657xx/sb
+      - stm32u083c_dk
+    extra_configs:
+      - CONFIG_APP_DUAL_ROLE_I2C=y
+      - CONFIG_DCACHE=y
+      - CONFIG_I2C_RTIO=y
+    extra_args: EXTRA_DTC_OVERLAY_FILE="stm32_no_dma.overlay"
