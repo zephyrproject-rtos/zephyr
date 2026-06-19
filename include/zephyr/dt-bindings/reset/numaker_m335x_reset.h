@@ -4,21 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Peripheral reset identifiers for Nuvoton NuMaker M335X
+ * @ingroup reset_controller_nuvoton_m335x
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RESET_NUMAKER_M335X_RESET_H
 #define ZEPHYR_INCLUDE_DT_BINDINGS_RESET_NUMAKER_M335X_RESET_H
 
 /**
- * @file
- * @brief Reset module IDs for Nuvoton M335X
- * @ingroup reset_controller_nuvoton_m335x
+ * @addtogroup reset_controller_numaker Nuvoton NuMaker reset controller helpers
+ * @{
  */
-
 /**
- * @defgroup reset_controller_nuvoton_m335x Nuvoton NuMaker controller Devicetree helpers
- * @ingroup reset_controller_interface
+ * @defgroup reset_controller_nuvoton_m335x Nuvoton NuMaker M335X reset controller helpers
+ * @ingroup reset_controller_numaker
  *
- * @details Devicetree macos/defines for Nuvoton NuMaker devices,
- * for use with the <tt>nuvoton,numaker-rst</tt> binding.
+ * @brief Peripheral reset-cell identifiers for M335X devices.
+ *
+ * Reset identifiers follow the pattern @c NUMAKER_\<PERIPHERAL\>_RST, where @c \<PERIPHERAL\>
+ * is an M335X peripheral name (for example, @c NUMAKER_UART0_RST resets UART0). Pass these
+ * identifiers directly to a @c resets property.
  * @{
  */
 
@@ -165,7 +172,9 @@
 
 /** @} */
 
-/** @endcond INTERNAL_HIDDEN */
+/** @endcond */
+
+/** @} */
 
 /** @} */
 
