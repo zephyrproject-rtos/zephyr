@@ -16,7 +16,7 @@
 /**
  * @brief Pixart PAJ7620 gesture sensor
  * @defgroup paj7620_interface PAJ7620
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_pixart
  * @{
  */
 
