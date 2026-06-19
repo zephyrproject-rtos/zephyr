@@ -20,7 +20,9 @@
  */
 
 /**
- * @defgroup bmp581_power_modes Sensor power modes
+ * @name Sensor power modes
+ *
+ * Values for the `power-mode` devicetree property.
  * @{
  */
 #define BMP581_DT_MODE_NORMAL		1 /**< NORMAL mode */
@@ -29,7 +31,9 @@
 /** @} */
 
 /**
- * @defgroup bmp581_output_data_rate Output data rate options
+ * @name Output data rate options
+ *
+ * Values for the `odr` devicetree property.
  * @{
  */
 #define BMP581_DT_ODR_240_HZ		0x00 /**< 240 Hz */
@@ -67,7 +71,9 @@
 /** @} */
 
 /**
- * @defgroup bmp581_oversampling Oversampling options.
+ * @name Oversampling options
+ *
+ * Values for the `press-osr` and `temp-osr` devicetree properties.
  *
  * Valid values for temperature and pressure sensor oversampling ratio.
  * @{
@@ -83,7 +89,10 @@
 /** @} */
 
 /**
- * @defgroup bmp581_iir_filter IIR Filter options.
+ * @name IIR Filter options
+ * @anchor bmp581_iir_filter
+ *
+ * Values for the `press-iir` and `temp-iir` devicetree properties.
  *
  * Valid values for temperature and pressure IIR filter coefficient.
  *
@@ -98,7 +107,6 @@
  * - @f$ filtercoefficient @f$ is one of the coefficient values below
  *
  * Higher coefficient values provide more filtering (smoother output) but increase response time.
- *
  * @{
  */
 #define BMP581_DT_IIR_FILTER_BYPASS	0x00 /**< Bypass */
