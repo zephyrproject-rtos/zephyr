@@ -131,6 +131,11 @@
 		uart1: uart@3f215040 {
 			compatible = "brcm,bcm2711-aux-uart";
 			reg = <0x3f215040 0x40>;
+			/* Mini-UART input is the VPU core clock. The aux-uart
+			 * binding requires the rate via the clocks phandle;
+			 * clock-frequency is kept for the older in-tree driver.
+			 */
+			clocks = <&clk_core>;
 			clock-frequency = <DT_FREQ_M(250)>;
 			interrupts = <BCM2835_IRQ_AUX IRQ_TYPE_LEVEL 0>;
 			status = "disabled";
