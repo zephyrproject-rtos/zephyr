@@ -16,7 +16,7 @@
 /**
  * @brief NXP MCUX QDEC sensor
  * @defgroup sensor_qdec_mcux QDEC MCUX
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_nxp
  * @{
  */
 
