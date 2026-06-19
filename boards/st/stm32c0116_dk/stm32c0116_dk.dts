@@ -149,11 +149,15 @@
 	};
 };
 
+&adc1_common {
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <2>;
+	status = "okay";
+};
+
 &adc1 {
 	pinctrl-0 = <&adc1_in8_pa8>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <2>;
 	status = "okay";
 
 	#address-cells = <1>;

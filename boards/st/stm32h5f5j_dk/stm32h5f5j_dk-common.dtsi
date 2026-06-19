@@ -252,19 +252,27 @@
 	status = "okay";
 };
 
+&adc12_common {
+	st,adc-prescaler = <6>;
+	st,adc-clock-source = "ASYNC";
+	status = "okay";
+};
+
 &adc1 {
 	pinctrl-0 = <&adc1_inp6_pf12>; /* Arduino A5 */
 	pinctrl-names = "default";
-	st,adc-clock-source = "ASYNC";
+	status = "okay";
+};
+
+&adc3_common {
 	st,adc-prescaler = <6>;
+	st,adc-clock-source = "ASYNC";
 	status = "okay";
 };
 
 &adc3 {
 	pinctrl-0 = <&adc3_inp6_pe12>; /* Arduino A1 */
 	pinctrl-names = "default";
-	st,adc-clock-source = "ASYNC";
-	st,adc-prescaler = <6>;
 	status = "okay";
 };
 
