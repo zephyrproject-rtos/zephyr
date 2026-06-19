@@ -14,6 +14,12 @@
 
 LOG_MODULE_REGISTER(usbh_class, CONFIG_USBH_LOG_LEVEL);
 
+/* Time to wait for transfers to drain during removal */
+#define USBH_CLASS_DRAIN_TIMEOUT	K_MSEC(1000)
+
+/* Time to wait for transfers to drain before cancelling them again */
+#define USBH_CLASS_DRAIN_RETRY		K_MSEC(10)
+
 bool usbh_class_is_any_iface_bound(struct usb_device *const udev)
 {
 	STRUCT_SECTION_FOREACH(usbh_class_node, c_node) {
@@ -52,6 +58,25 @@ void usbh_class_init_all(void)
 	}
 }
 
+/*
+ * A transfer that was anchored before the instance stopped accepting transfers
+ * may be enqueued after the first cancellation and would not be cancelled.
+ * Cancel the anchored transfers again until all of them have completed or the
+ * time is up.
+ */
+static int usbh_class_cancel_xfers(struct usbh_class_data *const c_data)
+{
+	k_timepoint_t end = sys_timepoint_calc(USBH_CLASS_DRAIN_TIMEOUT);
+	int ret;
+
+	do {
+		usbh_xfer_anchor_dequeue_all(&c_data->anchor);
+		ret = usbh_xfer_anchor_drain(&c_data->anchor, USBH_CLASS_DRAIN_RETRY);
+	} while (ret != 0 && !sys_timepoint_expired(end));
+
+	return ret;
+}
+
 void usbh_class_remove_all(struct usb_device *const udev)
 {
 	int ret;
@@ -67,6 +92,14 @@ void usbh_class_remove_all(struct usb_device *const udev)
 
 		/* Stop the instance from accepting new transfers */
 		usbh_xfer_anchor_set_accept(&c_data->anchor, false);
+
+		/*
+		 * Cancel queued transfers and wait for their completion before
+		 * calling usbh_class_removed().
+		 */
+		if (usbh_class_cancel_xfers(c_data) != 0) {
+			LOG_ERR("%s transfers did not drain on removal", c_data->name);
+		}
 
 		ret = usbh_class_removed(c_data);
 		if (ret != 0) {
