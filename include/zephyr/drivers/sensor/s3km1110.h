@@ -15,7 +15,7 @@
 /**
  * @brief Iclegend S3KM1110 24 GHz mmWave radar
  * @defgroup s3km1110_interface Iclegend S3KM1110
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_iclegend
  * @{
  */
 
