@@ -20,12 +20,20 @@
 #ifdef CONFIG_I2C_RENESAS_RA_SCI_B_DTC
 #include "r_dtc.h"
 #endif
+#ifdef CONFIG_I2C_RENESAS_RA_SCI_B_DMAC
+#include "r_dmac.h"
+#endif
 
 #include <soc.h>
 
 LOG_MODULE_REGISTER(renesas_ra_i2c_sci_b, CONFIG_I2C_LOG_LEVEL);
 
 #define I2C_MAX_MSG_LEN (1 << (sizeof(uint8_t) * 8))
+#ifdef CONFIG_I2C_RENESAS_RA_SCI_B_DTC
+#define TRANSFER_INFO_ALIGNMENT DTC_TRANSFER_INFO_ALIGNMENT
+#else
+#define TRANSFER_INFO_ALIGNMENT
+#endif
 
 typedef void (*init_func_t)(const struct device *dev);
 struct sci_b_i2c_config {
@@ -53,21 +61,37 @@ struct sci_b_i2c_data {
 	void *p_context;
 #endif /* CONFIG_I2C_CALLBACK */
 
-#ifdef CONFIG_I2C_RENESAS_RA_SCI_B_DTC
+#if defined(CONFIG_I2C_RENESAS_RA_SCI_B_DTC) || defined(CONFIG_I2C_RENESAS_RA_SCI_B_DMAC)
 	/* RX */
+	transfer_info_t rx_transfer_info TRANSFER_INFO_ALIGNMENT;
 	transfer_instance_t rx_transfer;
-	transfer_info_t rx_transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
 	transfer_cfg_t rx_transfer_cfg;
-	dtc_instance_ctrl_t rx_transfer_ctrl;
-	dtc_extended_cfg_t rx_transfer_cfg_extend;
 
 	/* TX */
+	transfer_info_t tx_transfer_info TRANSFER_INFO_ALIGNMENT;
 	transfer_instance_t tx_transfer;
-	transfer_info_t tx_transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
 	transfer_cfg_t tx_transfer_cfg;
-	dtc_instance_ctrl_t tx_transfer_ctrl;
-	dtc_extended_cfg_t tx_transfer_cfg_extend;
+#endif
+
+#ifdef CONFIG_I2C_RENESAS_RA_SCI_B_DTC
+	/* DTC RX */
+	dtc_instance_ctrl_t rx_dtc_ctrl;
+	dtc_extended_cfg_t rx_dtc_cfg_extend;
+
+	/* DTC TX */
+	dtc_instance_ctrl_t tx_dtc_ctrl;
+	dtc_extended_cfg_t tx_dtc_cfg_extend;
 #endif /* CONFIG_I2C_RENESAS_RA_SCI_B_DTC */
+
+#ifdef CONFIG_I2C_RENESAS_RA_SCI_B_DMAC
+	/* DMAC RX */
+	dmac_instance_ctrl_t rx_dmac_ctrl;
+	dmac_extended_cfg_t rx_dmac_cfg_extend;
+
+	/* DMAC TX */
+	dmac_instance_ctrl_t tx_dmac_ctrl;
+	dmac_extended_cfg_t tx_dmac_cfg_extend;
+#endif /* CONFIG_I2C_RENESAS_RA_SCI_B_DMAC */
 };
 
 static void calc_sci_b_iic_clock_setting(const struct device *dev, const uint32_t fsp_i2c_rate,
@@ -77,6 +101,12 @@ static void calc_sci_b_iic_clock_setting(const struct device *dev, const uint32_
 void sci_b_i2c_txi_isr(void);
 void sci_b_i2c_tei_isr(void);
 void sci_b_i2c_rxi_isr(void);
+
+#ifdef CONFIG_I2C_RENESAS_RA_SCI_B_DMAC
+void dmac_int_isr(void);
+void sci_b_i2c_rx_dmac_callback(sci_b_i2c_instance_ctrl_t *const p_ctrl);
+void sci_b_i2c_tx_dmac_callback(sci_b_i2c_instance_ctrl_t *const p_ctrl);
+#endif
 
 static int renesas_ra_sci_b_i2c_configure(const struct device *dev, uint32_t dev_config)
 {
@@ -457,11 +487,6 @@ static int renesas_ra_sci_b_i2c_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-#ifdef CONFIG_I2C_RENESAS_RA_SCI_B_DTC
-	data->i2c_config.p_transfer_rx = &data->rx_transfer;
-	data->i2c_config.p_transfer_tx = &data->tx_transfer;
-#endif
-
 	fsp_err = R_SCI_B_I2C_Open(&data->ctrl, &data->i2c_config);
 
 	if (fsp_err != FSP_SUCCESS) {
@@ -593,12 +618,113 @@ static DEVICE_API(i2c, renesas_ra_sci_b_i2c_driver_api) = {
 #define EVENT_SCI_RXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _RXI))
 #define EVENT_SCI_TXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _TXI))
 #define EVENT_SCI_TEI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _TEI))
+#define EVENT_DMAC_INT(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_DMAC, channel, _INT))
+
+#define SCI_B_I2C_DMAC_IRQ(index, dir)                                                             \
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),                                             \
+		   (DT_IRQ_BY_IDX(DT_INST_DMAS_CTLR_BY_NAME(index, dir),                           \
+				   DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                 \
+				   irq)),                                                          \
+		   (FSP_INVALID_VECTOR))
+
+#define SCI_B_I2C_DMAC_IPL(index, dir)                                                             \
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),                                             \
+		   (DT_IRQ_BY_IDX(DT_INST_DMAS_CTLR_BY_NAME(index, dir),                           \
+				   DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                 \
+				   priority)),                                                     \
+		   (BSP_IRQ_DISABLED))
+
+#define SCI_B_I2C_ASSERT_NO_CONFLICT(index)                                                        \
+	BUILD_ASSERT(!(IS_ENABLED(CONFIG_I2C_RENESAS_RA_SCI_B_DMAC) &&                             \
+		       IS_ENABLED(CONFIG_I2C_RENESAS_RA_SCI_B_DTC)),                               \
+		     "SCI-B I2C driver cannot support both DMAC and DTC simultaneously.")
+
+#ifndef CONFIG_I2C_RENESAS_RA_SCI_B_DMAC
+#define SCI_B_I2C_DMAC_CFG_EXTEND(index)
+#define SCI_B_I2C_DMAC_CALLBACKS(index)
+#else
+#define SCI_B_I2C_DMAC_CFG_EXTEND(index)                                                           \
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, tx),                                               \
+		(.tx_dmac_cfg_extend = {                                                           \
+			.activation_source = EVENT_SCI_TXI(DT_INST_PROP(index, channel)),          \
+			.channel = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, tx),                   \
+					       (DT_INST_DMAS_CELL_BY_NAME(index, tx, channel)),    \
+					       (0)),                                               \
+			.irq = SCI_B_I2C_DMAC_IRQ(index, tx),                                      \
+			.ipl = SCI_B_I2C_DMAC_IPL(index, tx),                                      \
+			.offset = 0, .src_buffer_size = 0, .p_callback = NULL},                    \
+	))                                                                                         \
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, rx),                                               \
+		(.rx_dmac_cfg_extend = {                                                           \
+			.activation_source = EVENT_SCI_RXI(DT_INST_PROP(index, channel)),          \
+			.channel = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, rx),                   \
+					       (DT_INST_DMAS_CELL_BY_NAME(index, rx, channel)),    \
+					       (0)),                                               \
+			.irq = SCI_B_I2C_DMAC_IRQ(index, rx),                                      \
+			.ipl = SCI_B_I2C_DMAC_IPL(index, rx),                                      \
+			.offset = 0, .src_buffer_size = 0, .p_callback = NULL},                    \
+	))
+
+#define SCI_B_I2C_DMAC_CALLBACKS(index)                                                            \
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, tx),                                               \
+		(static void sci_b_i2c_dmac_tx_cb_##index(dmac_callback_args_t *p_args)            \
+		{                                                                                  \
+			FSP_PARAMETER_NOT_USED(p_args);                                            \
+			sci_b_i2c_tx_dmac_callback(&sci_b_i2c_data_##index.ctrl);                  \
+		}))                                                                                \
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, rx),                                               \
+		(static void sci_b_i2c_dmac_rx_cb_##index(dmac_callback_args_t *p_args)            \
+		{                                                                                  \
+			FSP_PARAMETER_NOT_USED(p_args);                                            \
+			sci_b_i2c_rx_dmac_callback(&sci_b_i2c_data_##index.ctrl);                  \
+		}))
+#endif
 
 #ifndef CONFIG_I2C_RENESAS_RA_SCI_B_DTC
-#define SCI_B_I2C_DTC_INIT(index)
-#define RXI_TRANSFER(index)
+#define SCI_B_I2C_DTC_CFG_EXTEND(index)
 #else
-#define SCI_B_I2C_DTC_INIT(index)                                                                  \
+#define SCI_B_I2C_DTC_CFG_EXTEND(index)                                                            \
+	IF_ENABLED(DT_INST_PROP_OR(index, rx_dtc, false),                                          \
+		(.rx_dtc_cfg_extend = {.activation_source =                                        \
+			   DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq)},))                     \
+	IF_ENABLED(DT_INST_PROP_OR(index, tx_dtc, false),                                          \
+		(.tx_dtc_cfg_extend = {.activation_source =                                        \
+			   DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq)},))
+#endif
+
+#if defined(CONFIG_I2C_RENESAS_RA_SCI_B_DTC) || defined(CONFIG_I2C_RENESAS_RA_SCI_B_DMAC)
+/*
+ * Select a transfer value for a given direction (@p dir: rx or tx).
+ * - If instance has DMAS for @p dir: use @p dmac_val
+ * - Else if instance has DTC property for @p dir: use @p dtc_val
+ * - Else: NULL
+ */
+#define SCI_B_I2C_TRANSFER_DMAC_OR_DTC(index, dir, dmac_val, dtc_val)                              \
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),                                             \
+		    (dmac_val),                                                                    \
+		    (COND_CODE_1(DT_INST_PROP_OR(index, dir##_dtc, false),                         \
+				 (dtc_val),                                                        \
+				 (NULL))))
+
+#define SCI_B_I2C_TRANSFER_INIT(index)                                                             \
+	do {                                                                                       \
+		if (DT_INST_PROP_OR(index, rx_dtc, false) || DT_INST_DMAS_HAS_NAME(index, rx)) {   \
+			sci_b_i2c_data_##index.i2c_config.p_transfer_rx =                          \
+				&sci_b_i2c_data_##index.rx_transfer;                               \
+		}                                                                                  \
+		if (DT_INST_PROP_OR(index, tx_dtc, false) || DT_INST_DMAS_HAS_NAME(index, tx)) {   \
+			sci_b_i2c_data_##index.i2c_config.p_transfer_tx =                          \
+				&sci_b_i2c_data_##index.tx_transfer;                               \
+		}                                                                                  \
+		IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, rx),                                       \
+			(sci_b_i2c_data_##index.rx_dmac_cfg_extend.p_callback =                    \
+				 sci_b_i2c_dmac_rx_cb_##index;))                                   \
+		IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, tx),                                       \
+			(sci_b_i2c_data_##index.tx_dmac_cfg_extend.p_callback =                    \
+				 sci_b_i2c_dmac_tx_cb_##index;))                                   \
+	} while (0)
+
+#define SCI_B_I2C_TRANSFER_CONFIGURE(index)                                                        \
 	.rx_transfer_info =                                                                        \
 		{                                                                                  \
 			.transfer_settings_word_b.dest_addr_mode = TRANSFER_ADDR_MODE_INCREMENTED, \
@@ -613,18 +739,21 @@ static DEVICE_API(i2c, renesas_ra_sci_b_i2c_driver_api) = {
 			.num_blocks = 0,                                                           \
 			.length = 0,                                                               \
 	},                                                                                         \
-	.rx_transfer_cfg_extend = {.activation_source =                                            \
-					   DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq)},       \
 	.rx_transfer_cfg =                                                                         \
 		{                                                                                  \
 			.p_info = &sci_b_i2c_data_##index.rx_transfer_info,                        \
-			.p_extend = &sci_b_i2c_data_##index.rx_transfer_cfg_extend,                \
+			.p_extend = SCI_B_I2C_TRANSFER_DMAC_OR_DTC(index, rx,                      \
+						(&sci_b_i2c_data_##index.rx_dmac_cfg_extend),      \
+						(&sci_b_i2c_data_##index.rx_dtc_cfg_extend)),      \
 	},                                                                                         \
 	.rx_transfer =                                                                             \
 		{                                                                                  \
-			.p_ctrl = &sci_b_i2c_data_##index.rx_transfer_ctrl,                        \
+			.p_ctrl = SCI_B_I2C_TRANSFER_DMAC_OR_DTC(index, rx,                        \
+					       (&sci_b_i2c_data_##index.rx_dmac_ctrl),             \
+					       (&sci_b_i2c_data_##index.rx_dtc_ctrl)),             \
 			.p_cfg = &sci_b_i2c_data_##index.rx_transfer_cfg,                          \
-			.p_api = &g_transfer_on_dtc,                                               \
+			.p_api = SCI_B_I2C_TRANSFER_DMAC_OR_DTC(index, rx,                         \
+					      (&g_transfer_on_dmac), (&g_transfer_on_dtc)),        \
 	},                                                                                         \
 	.tx_transfer_info =                                                                        \
 		{                                                                                  \
@@ -640,47 +769,74 @@ static DEVICE_API(i2c, renesas_ra_sci_b_i2c_driver_api) = {
 			.num_blocks = 0,                                                           \
 			.length = 0,                                                               \
 	},                                                                                         \
-	.tx_transfer_cfg_extend = {.activation_source =                                            \
-					   DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq)},       \
 	.tx_transfer_cfg =                                                                         \
 		{                                                                                  \
 			.p_info = &sci_b_i2c_data_##index.tx_transfer_info,                        \
-			.p_extend = &sci_b_i2c_data_##index.tx_transfer_cfg_extend,                \
+			.p_extend = SCI_B_I2C_TRANSFER_DMAC_OR_DTC(index, tx,                      \
+						(&sci_b_i2c_data_##index.tx_dmac_cfg_extend),      \
+						(&sci_b_i2c_data_##index.tx_dtc_cfg_extend)),      \
 	},                                                                                         \
 	.tx_transfer = {                                                                           \
-		.p_ctrl = &sci_b_i2c_data_##index.tx_transfer_ctrl,                                \
+		.p_ctrl = SCI_B_I2C_TRANSFER_DMAC_OR_DTC(index, tx,                                \
+				       (&sci_b_i2c_data_##index.tx_dmac_ctrl),                     \
+				       (&sci_b_i2c_data_##index.tx_dtc_ctrl)),                     \
 		.p_cfg = &sci_b_i2c_data_##index.tx_transfer_cfg,                                  \
-		.p_api = &g_transfer_on_dtc,                                                       \
-	},
-
-#define RXI_TRANSFER(index)                                                                        \
-	/* rxi */                                                                                  \
-	R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq)] =                            \
-		EVENT_SCI_RXI(DT_INST_PROP(index, channel));                                       \
-	BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SCI_RXI(DT_INST_PROP(index, channel)));             \
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq),                               \
-		    DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, priority), sci_b_i2c_rxi_isr,       \
-		    DEVICE_DT_INST_GET(index), 0);                                                 \
-	irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq));
+		.p_api = SCI_B_I2C_TRANSFER_DMAC_OR_DTC(index, tx,                                 \
+				      (&g_transfer_on_dmac), (&g_transfer_on_dtc)),                \
+	},                                                                                         \
+	SCI_B_I2C_DTC_CFG_EXTEND(index)                                                            \
+	SCI_B_I2C_DMAC_CFG_EXTEND(index)
+#else
+#define SCI_B_I2C_TRANSFER_INIT(index)
+#define SCI_B_I2C_TRANSFER_CONFIGURE(index)
 #endif
 
 #define SCI_B_I2C_RA_INIT(index)                                                                   \
 	static void renesas_ra_sci_b_i2c_irq_config_func##index(const struct device *dev)          \
 	{                                                                                          \
-		RXI_TRANSFER(index)                                                                \
-                                                                                                   \
+		/* DMA RX Interrupt */                                                             \
+		IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, rx),                                       \
+		(                                                                                  \
+			R_ICU->IELSR[SCI_B_I2C_DMAC_IRQ(index, rx)] = EVENT_DMAC_INT(              \
+				     DT_INST_DMAS_CELL_BY_NAME(index, rx, channel));               \
+			IRQ_CONNECT(SCI_B_I2C_DMAC_IRQ(index, rx),                                 \
+				    SCI_B_I2C_DMAC_IPL(index, rx),                                 \
+				    dmac_int_isr, NULL, 0);                                        \
+			irq_enable(SCI_B_I2C_DMAC_IRQ(index, rx));                                 \
+		))                                                                                 \
+		/* DMA TX Interrupt */                                                             \
+		IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, tx),                                       \
+		(                                                                                  \
+			R_ICU->IELSR[SCI_B_I2C_DMAC_IRQ(index, tx)] = EVENT_DMAC_INT(              \
+				     DT_INST_DMAS_CELL_BY_NAME(index, tx, channel));               \
+			IRQ_CONNECT(SCI_B_I2C_DMAC_IRQ(index, tx),                                 \
+				    SCI_B_I2C_DMAC_IPL(index, tx),                                 \
+				    dmac_int_isr, NULL, 0);                                        \
+			irq_enable(SCI_B_I2C_DMAC_IRQ(index, tx));                                 \
+		))                                                                                 \
+		/* rxi */                                                                          \
+		IF_ENABLED(CONFIG_I2C_RENESAS_RA_SCI_B_DTC,                                        \
+		(                                                                                  \
+			R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq)] =            \
+				     EVENT_SCI_RXI(DT_INST_PROP(index, channel));                  \
+			BSP_ASSIGN_EVENT_TO_CURRENT_CORE(                                          \
+					EVENT_SCI_RXI(DT_INST_PROP(index, channel)));              \
+			IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq),               \
+				    DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, priority),          \
+				    sci_b_i2c_rxi_isr, DEVICE_DT_INST_GET(index), 0);              \
+			irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq));               \
+		))                                                                                 \
 		/* txi */                                                                          \
 		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq)] =                    \
-			EVENT_SCI_TXI(DT_INST_PROP(index, channel));                               \
+			     EVENT_SCI_TXI(DT_INST_PROP(index, channel));                          \
 		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SCI_TXI(DT_INST_PROP(index, channel)));     \
 		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq),                       \
 			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, priority),                  \
 			    sci_b_i2c_txi_isr, DEVICE_DT_INST_GET(index), 0);                      \
 		irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq));                       \
-                                                                                                   \
 		/* tei */                                                                          \
 		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq)] =                    \
-			EVENT_SCI_TEI(DT_INST_PROP(index, channel));                               \
+			     EVENT_SCI_TEI(DT_INST_PROP(index, channel));                          \
 		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SCI_TEI(DT_INST_PROP(index, channel)));     \
 		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq),                       \
 			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, priority),                  \
@@ -702,7 +858,9 @@ static DEVICE_API(i2c, renesas_ra_sci_b_i2c_driver_api) = {
 				.rate = I2C_MASTER_RATE_STANDARD,                                  \
 				.addr_mode = I2C_MASTER_ADDR_MODE_7BIT,                            \
 				.ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, priority),       \
-				.rxi_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq),        \
+				.rxi_irq = COND_CODE_1(CONFIG_I2C_RENESAS_RA_SCI_B_DTC,            \
+					  (DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq)),       \
+					  (FSP_INVALID_VECTOR)),                                   \
 				.txi_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq),        \
 				.tei_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq),        \
 				.p_callback = renesas_ra_sci_b_i2c_callback,                       \
@@ -716,8 +874,17 @@ static DEVICE_API(i2c, renesas_ra_sci_b_i2c_driver_api) = {
 					DT_DRV_INST(index), bit_rate_modulation),                  \
 				.clock_settings.clock_source = SCI_B_I2C_CLOCK_SOURCE_SCISPICLK,   \
 			},                                                                         \
-		SCI_B_I2C_DTC_INIT(index)};                                                        \
-	I2C_DEVICE_DT_INST_DEFINE(index, renesas_ra_sci_b_i2c_init, NULL, &sci_b_i2c_data_##index, \
+		SCI_B_I2C_TRANSFER_CONFIGURE(index)};                                              \
+	                                                                                           \
+	SCI_B_I2C_DMAC_CALLBACKS(index)                                                            \
+	static int sci_b_i2c_init_##index(const struct device *dev)                                \
+	{                                                                                          \
+		SCI_B_I2C_ASSERT_NO_CONFLICT(index);                                               \
+		SCI_B_I2C_TRANSFER_INIT(index);                                                    \
+		return renesas_ra_sci_b_i2c_init(dev);                                             \
+	}                                                                                          \
+	                                                                                           \
+	I2C_DEVICE_DT_INST_DEFINE(index, sci_b_i2c_init_##index, NULL, &sci_b_i2c_data_##index,    \
 				  &sci_b_i2c_config_##index, POST_KERNEL,                          \
 				  CONFIG_I2C_INIT_PRIORITY, &renesas_ra_sci_b_i2c_driver_api);
 
