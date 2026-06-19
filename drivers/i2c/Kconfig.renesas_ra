@@ -63,9 +63,18 @@ config I2C_RENESAS_RA_SCI_B
 
 if I2C_RENESAS_RA_SCI_B
 
+config I2C_RENESAS_RA_SCI_B_DMAC
+	bool "RA MCU SCI-B I2C DMAC Support"
+	default $(dt_compat_any_has_prop,$(DT_COMPAT_RENESAS_RA_I2C_SCI_B),dmas)
+	select USE_RA_FSP_DMA
+	help
+	  Enable DMAC (Direct Memory Access Controller) support for the
+	  SCI-B I2C Driver of RA family.
+
 config I2C_RENESAS_RA_SCI_B_DTC
 	bool "DTC on Transmission and Reception"
-	default y
+	default ($(dt_compat_any_has_prop,$(DT_COMPAT_RENESAS_RA_I2C_SCI_B),rx-dtc,True) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_RENESAS_RA_I2C_SCI_B),tx-dtc,True))
 	select USE_RA_FSP_DTC
 	help
 	   Enable DTC on transmission and reception

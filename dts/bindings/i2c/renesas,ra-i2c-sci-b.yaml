@@ -32,3 +32,9 @@ properties:
     description: |
       Enabling bitrate modulation reduces the percent error
       of the actual bitrate with respect to the requested baud rate.
+
+  rx-dtc:
+    type: boolean
+
+  tx-dtc:
+    type: boolean
