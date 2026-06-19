@@ -18,7 +18,7 @@
 
 /**
  * @defgroup sgp40_interface SGP40
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_sensirion
  * @brief Sensirion SGP40 gas sensor
  * @{
  */
