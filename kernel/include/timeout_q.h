@@ -22,10 +22,27 @@ extern "C" {
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
+/*
+ * Per-node timeout helpers.
+ *
+ * z_init_timeout() and z_is_inactive_timeout() operate on a single
+ * struct _timeout and are needed tree-wide (timer.c, work.c, poll.c, ...),
+ * so they live here and depend only on struct _timeout's fields (see
+ * kernel_structs.h). The queue itself (the z_timeout_q_*() operations and the
+ * backend instance) is private to kernel/timeout.c, which includes the
+ * matching backend implementation header directly. The sorted delta list is
+ * the only backend today; when alternatives land this becomes a
+ * Kconfig-driven choice.
+ */
 static inline void z_init_timeout(struct _timeout *to)
 {
 	sys_dnode_init(&to->node);
 	to->dticks = 0;
+}
+
+static inline bool z_is_inactive_timeout(const struct _timeout *to)
+{
+	return !sys_dnode_is_linked(&to->node);
 }
 
 /* Adds the timeout to the queue.
@@ -61,11 +78,6 @@ int z_try_abort_timeout(struct _timeout *to);
  * taking their own lock, and bail if it returns true.
  */
 bool z_timeout_inflight_superseded(const struct _timeout *to);
-
-static inline bool z_is_inactive_timeout(const struct _timeout *to)
-{
-	return !sys_dnode_is_linked(&to->node);
-}
 
 static inline void z_init_thread_timeout(struct _thread_base *thread_base)
 {
