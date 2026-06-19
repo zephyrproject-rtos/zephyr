@@ -75,46 +75,6 @@ static struct fd_entry fdtable[ZVFS_OPEN_SIZE] = {
 #endif
 };
 
-int zvfs_open(const char *name, int flags, struct fd_op_vtable *vtable)
-{
-	int rc, fd;
-	struct fs_file_t *ptr = NULL;
-
-	fd = zvfs_reserve_fd();
-	if (fd < 0) {
-		return -1;
-	}
-
-	rc = k_mem_slab_alloc(&file_desc_slab, (void **)&ptr, K_NO_WAIT);
-	if (rc < 0) {
-		rc = -EMFILE;
-		goto out_err;
-	}
-
-	fs_file_t_init(ptr);
-
-	rc = fs_open(ptr, name, flags);
-	if (rc < 0) {
-		goto out_err;
-	}
-
-	zvfs_finalize_fd(fd, ptr, vtable);
-
-	goto out;
-
-out_err:
-	if (ptr != NULL) {
-		k_mem_slab_free(&file_desc_slab, ptr);
-	}
-
-	zvfs_free_fd(fd);
-	errno = -rc;
-	return -1;
-
-out:
-	return fd;
-}
-
 static K_MUTEX_DEFINE(fdtable_lock);
 
 static int z_fd_ref(int fd)

@@ -130,6 +130,28 @@ config COMMON_LIBC_REMOVE
 	help
 	  Common implementation of remove().
 
+config COMMON_LIBC_FCLOSE
+	bool "Common C library fclose"
+	depends on !SEMIHOST
+	depends on ZVFS && FILE_SYSTEM
+	default y
+	help
+	  Common implementation of fclose() for ZVFS-backed C libraries. It flushes the stream and
+	  closes the underlying file descriptor (via zvfs_close()), which returns the FILE object to
+	  the statically-allocated ZVFS FILE store.
+
+config COMMON_LIBC_FOPEN
+	bool "Common C library fopen"
+	depends on !SEMIHOST
+	depends on ZVFS && FILE_SYSTEM
+	select ZVFS_RESERVE_STDIO_FDS
+	default y
+	help
+	  Common implementation of fopen()/freopen() for ZVFS-backed C libraries. It opens the named
+	  file via zvfs_open() (ZVFS path open, not the POSIX_FILE_SYSTEM option group) and binds a
+	  C library FILE to the descriptor with zvfs_libc_fdopen(), whose storage comes from the
+	  statically-allocated ZVFS FILE store (no dynamic allocation).
+
 config LIBC_ERRNO
 	bool
 	help

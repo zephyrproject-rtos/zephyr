@@ -22,6 +22,9 @@ zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_THRD
     source/thrd/tss.c
     )
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_REMOVE source/stdio/remove.c)
+zephyr_library_sources_ifdef(CONFIG_ZVFS_LIBC_FILE source/stdio/zvfs_libc_file.c)
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FCLOSE source/stdio/fclose.c)
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FOPEN source/stdio/fopen.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_SIGNAL
     source/signal/raise.c
     source/signal/signal.c

@@ -9,6 +9,7 @@ tests:
     filter: CONFIG_MINIMAL_LIBC_SUPPORTED
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
+      - "# CONFIG_ZVFS is not set"
   libraries.libc.common.stdio.picolibc:
     tags: picolibc
     filter: CONFIG_PICOLIBC_SUPPORTED

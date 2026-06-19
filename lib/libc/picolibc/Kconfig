@@ -164,4 +164,13 @@ config PICOLIBC_GLOBAL_ERRNO
 
 endif # PICOLIBC_USE_MODULE
 
+if ZVFS
+
+config ZVFS_LIBC_FILE_SIZE
+	# sizeof(struct __file_bufio) plus a BUFSIZ (512) stdio buffer, rounded to ZVFS_LIBC_FILE_ALIGN
+	default 656 if 64BIT
+	default 592
+
+endif # ZVFS
+
 endif # PICOLIBC

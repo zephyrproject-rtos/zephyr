@@ -36,6 +36,8 @@ zephyr_library_sources(
   ${STRERROR_TABLE_H}
 )
 
+zephyr_library_sources_ifdef(CONFIG_ZVFS source/stdout/zvfs_libc.c)
+
 if(CONFIG_MINIMAL_LIBC_TIME)
   zephyr_library_sources(source/time/gmtime.c)
 endif()

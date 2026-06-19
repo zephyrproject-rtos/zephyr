@@ -31,6 +31,81 @@ config ZVFS_DEFAULT_FILE_VMETHODS
 
 endif
 
+config ZVFS_LIBC_FILE_SIZE
+	int
+	default -1
+	help
+	  Override for the size, in bytes, of a C library FILE object as stored in the ZVFS FILE
+	  store. When positive, zvfs_libc.h exposes this value as ZVFS_LIBC_FILE_SIZE; otherwise
+	  ZVFS_LIBC_FILE_SIZE defaults to sizeof(FILE). Picolibc and newlib override this when the
+	  active FILE representation (including any embedded stdio buffer and lock) is larger than
+	  sizeof(FILE).
+
+config ZVFS_LIBC_FILE_ALIGN
+	int
+	default -1
+	help
+	  Override for the alignment, in bytes, of C library FILE objects in the ZVFS FILE store.
+	  When positive, zvfs_libc.h exposes this value as ZVFS_LIBC_FILE_ALIGN; otherwise
+	  ZVFS_LIBC_FILE_ALIGN defaults to _Alignof(FILE).
+
+config ZVFS_FS
+	bool "ZVFS path open via Zephyr file system"
+	depends on FILE_SYSTEM
+	default y
+	help
+	  Build the ZVFS path opener (zvfs_open) that wraps Zephyr fs_open() and
+	  registers a file in the fd table. Required for ISO C fopen() and for POSIX
+	  open() when a mounted file system is present.
+
+config ZVFS_LIBC_FILE
+	bool
+	default y if ZVFS_FS && !MINIMAL_LIBC
+	help
+	  Build the C library's statically-allocated FILE-object store
+	  (lib/libc/common/source/stdio/zvfs_libc_file.c), in the C library's memory partition.
+	  It provides the allocation-free backing storage that each C library's zvfs_libc_fdopen()
+	  hook draws from to bind a FILE to a ZVFS file descriptor, usable from user mode.
+
+	  Minimal libc encodes a FILE directly as an fd and does not use this store, so it is not
+	  selected there.
+
+	  Every C library that uses the store must provide the two non-POSIX hooks:
+
+	  - FILE *zvfs_libc_fdopen(int fd, const char *mode);
+	  - int zvfs_libc_fileno(FILE *fp);
+
+config ZVFS_FS_DESC_MAX
+	int
+	depends on ZVFS_FS
+	default ZVFS_OPEN_MAX if ZVFS_OPEN_MAX > 0
+	default 16
+	help
+	  Maximum concurrent Zephyr FS objects tracked by the ZVFS FS descriptor
+	  pool (open files and directory streams).
+
+config ZVFS_OPEN_ADD_SIZE_FS
+	int
+	depends on ZVFS_FS
+	default 4
+	help
+	  Number of file descriptors reserved for ZVFS path opens via zvfs_open()
+	  (ISO C fopen()/freopen() and POSIX open() on a mounted file system).
+
+config ZVFS_RESERVE_STDIO_FDS
+	bool
+	help
+	  Pre-reserve fd slots 0, 1, and 2 for stdin, stdout, and stderr in the ZVFS fd
+	  table so dynamically allocated descriptors start at fd 3.
+
+config ZVFS_OPEN_ADD_SIZE_STDIO
+	int
+	default 3 if ZVFS_RESERVE_STDIO_FDS
+	default 0
+	help
+	  Number of file descriptors reserved for stdin, stdout, and stderr in the ZVFS
+	  fd table size calculation.
+
 config ZVFS_EVENTFD
 	bool "ZVFS event file descriptor support"
 	imply ZVFS_POLL

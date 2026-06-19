@@ -11,6 +11,12 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <string.h>
 
+#if defined(CONFIG_ZVFS)
+#include <zephyr/sys/zvfs_libc.h>
+
+long zvfs_write(int fd, const void *buf, size_t sz, const size_t *from_offset);
+#endif
+
 static int _stdout_hook_default(int c)
 {
 	(void)(c);  /* Prevent warning about unused argument */
@@ -25,9 +31,71 @@ void __stdout_hook_install(int (*hook)(int c))
 	_stdout_hook = hook;
 }
 
+static size_t minimal_console_write(const unsigned char *buf, size_t nbyte)
+{
+	size_t i;
+
+	for (i = 0; i < nbyte; i++) {
+		if (_stdout_hook((int)buf[i]) == EOF) {
+			break;
+		}
+	}
+
+	return i;
+}
+
+#if defined(CONFIG_ZVFS)
+static size_t minimal_zvfs_stream_write(int fd, const void *ptr, size_t nbyte)
+{
+	const char *p = ptr;
+	size_t written = 0;
+
+	while (written < nbyte) {
+		long ret = zvfs_write(fd, p + written, nbyte - written, NULL);
+
+		if (ret <= 0) {
+			break;
+		}
+
+		written += ret;
+	}
+
+	return written;
+}
+#endif
+
+static size_t minimal_stream_write(const void *ptr, size_t nbyte, FILE *stream)
+{
+#if defined(CONFIG_ZVFS)
+	int fd = zvfs_libc_fileno(stream);
+
+	if (fd == 1 || fd == 2) {
+		return minimal_console_write((const unsigned char *)ptr, nbyte);
+	}
+
+	if (fd >= 3) {
+		return minimal_zvfs_stream_write(fd, ptr, nbyte);
+	}
+#else
+	if ((stream == stdout) || (stream == stderr)) {
+		return minimal_console_write((const unsigned char *)ptr, nbyte);
+	}
+
+	ARG_UNUSED(stream);
+#endif
+
+	return 0;
+}
+
 int z_impl_zephyr_fputc(int c, FILE *stream)
 {
-	return ((stream == stdout) || (stream == stderr)) ? _stdout_hook(c) : EOF;
+	unsigned char ch = (unsigned char)c;
+
+	if (minimal_stream_write(&ch, 1, stream) == 1) {
+		return c;
+	}
+
+	return EOF;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -45,12 +113,21 @@ int fputc(int c, FILE *stream)
 
 int fputs(const char *ZRESTRICT s, FILE *ZRESTRICT stream)
 {
-	int len = strlen(s);
-	int ret;
+	size_t len;
+	size_t n;
 
-	ret = fwrite(s, 1, len, stream);
+	if (s == NULL) {
+		return EOF;
+	}
 
-	return (len == ret) ? 0 : EOF;
+	len = strlen(s);
+	if (len == 0) {
+		return 0;
+	}
+
+	n = minimal_stream_write(s, len, stream);
+
+	return (n == len) ? 0 : EOF;
 }
 
 #undef putc
@@ -68,31 +145,17 @@ int putchar(int c)
 size_t z_impl_zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
 			    size_t nitems, FILE *ZRESTRICT stream)
 {
-	size_t i;
-	size_t j;
-	const unsigned char *p;
+	size_t nbyte;
+	size_t written;
 
-	if (((stream != stdout) && (stream != stderr)) ||
-	    (nitems == 0) || (size == 0)) {
+	if ((nitems == 0) || (size == 0)) {
 		return 0;
 	}
 
-	p = ptr;
-	i = nitems;
-	do {
-		j = size;
-		do {
-			if (_stdout_hook((int) *p++) == EOF) {
-				goto done;
-			}
-			j--;
-		} while (j > 0);
+	nbyte = size * nitems;
+	written = minimal_stream_write(ptr, nbyte, stream);
 
-		i--;
-	} while (i > 0);
-
-done:
-	return (nitems - i);
+	return written / size;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -113,6 +176,12 @@ size_t fwrite(const void *ZRESTRICT ptr, size_t size, size_t nitems,
 	return zephyr_fwrite(ptr, size, nitems, stream);
 }
 
+int fflush(FILE *stream)
+{
+	(void)stream;
+
+	return 0;
+}
 
 int puts(const char *s)
 {

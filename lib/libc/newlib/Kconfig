@@ -80,4 +80,13 @@ config NEWLIB_LIBC_USE_POSIX_LIMITS_H
 	  Disable this option if your toolchain's newlib already includes all mandatory POSIX
 	  limits.
 
+if ZVFS
+
+config ZVFS_LIBC_FILE_SIZE
+	# sizeof(struct __sFILE) plus an embedded recursive lock, rounded to ZVFS_LIBC_FILE_ALIGN
+	default 256 if 64BIT
+	default 160
+
+endif # ZVFS
+
 endif # NEWLIB_LIBC

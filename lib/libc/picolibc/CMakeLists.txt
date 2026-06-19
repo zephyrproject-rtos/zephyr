@@ -10,6 +10,8 @@ zephyr_library_sources(
   locks.c
   stdio.c
   )
+
+zephyr_library_sources_ifdef(CONFIG_ZVFS_LIBC_FILE zvfs_libc.c)
 zephyr_include_directories(include)
 
 zephyr_library_compile_options($<TARGET_PROPERTY:compiler,prohibit_lto>)

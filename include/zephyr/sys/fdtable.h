@@ -337,17 +337,6 @@ enum {
 };
 
 /**
- * @brief Open a file with a given name.
- *
- * @param name Name of the file
- * @param flags Access modes for @ref fs_open
- * @param vtable Pointer to structure with appropriate i/o functions
- *
- * @return Index of newly created file descriptor on success, -1 on error with errno set.
- */
-int zvfs_open(const char *name, int flags, struct fd_op_vtable *vtable);
-
-/**
  * @brief Get information about file.
  *
  * @param fd File descriptor index
