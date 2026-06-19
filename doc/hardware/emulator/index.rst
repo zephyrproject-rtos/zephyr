@@ -73,6 +73,7 @@ Available Emulators
   * Emulated GPIO controllers which can be driven from SW
   * Main Kconfig option: :kconfig:option:`CONFIG_GPIO_EMUL`
   * DT binding: :dtcompatible:`zephyr,gpio-emul`
+  * See :ref:`gpio_emul` for detailed documentation, configuration, and usage examples.
 
 **I2C emulator**
   * Emulated I2C bus. See :ref:`bus emulators <bus_emul>`.
