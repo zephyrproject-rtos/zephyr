@@ -45,10 +45,16 @@ LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 #define CDC_ACM_CLASS_SUSPENDED		1
 #define CDC_ACM_IRQ_RX_ENABLED		2
 #define CDC_ACM_IRQ_TX_ENABLED		3
-#define CDC_ACM_RX_FIFO_BUSY		4
-#define CDC_ACM_TX_FIFO_BUSY		5
+#define CDC_ACM_TX_FIFO_BUSY		4
 
-struct cdc_acm_uart_fifo {
+struct cdc_acm_rx_uart_fifo {
+	struct k_fifo *bufs;
+	struct net_buf_pool *pool;
+	bool irq;
+	bool altered;
+};
+
+struct cdc_acm_tx_uart_fifo {
 	struct ring_buf *rb;
 	bool irq;
 	bool altered;
@@ -117,8 +123,8 @@ struct cdc_acm_uart_data {
 	void *cb_data;
 	/* UART API IRQ callback work */
 	struct k_work irq_cb_work;
-	struct cdc_acm_uart_fifo rx_fifo;
-	struct cdc_acm_uart_fifo tx_fifo;
+	struct cdc_acm_rx_uart_fifo rx_fifo;
+	struct cdc_acm_tx_uart_fifo tx_fifo;
 	/* USBD CDC ACM TX fifo work */
 	struct k_work_delayable tx_fifo_work;
 	/* USBD CDC ACM RX fifo work */
@@ -283,6 +289,7 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 	struct udc_buf_info *bi;
+	int ret = 0;
 
 	bi = udc_get_buf_info(buf);
 	if (err) {
@@ -292,10 +299,6 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 		} else {
 			LOG_ERR("request ep 0x%02x, len %u failed",
 				bi->ep, buf->len);
-		}
-
-		if (bi->ep == cdc_acm_get_bulk_out(c_data)) {
-			atomic_clear_bit(&data->state, CDC_ACM_RX_FIFO_BUSY);
 		}
 
 		if (bi->ep == cdc_acm_get_bulk_in(c_data)) {
@@ -311,16 +314,21 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 
 	if (bi->ep == cdc_acm_get_bulk_out(c_data)) {
 		/* RX transfer completion */
-		size_t done;
 
 		LOG_HEXDUMP_INF(buf->data, buf->len, "");
-		done = ring_buf_put(data->rx_fifo.rb, buf->data, buf->len);
-		if (done && data->cb) {
+		if (buf->len == 0) {
+			/* Drop transfer with zero length */
+			net_buf_unref(buf);
+			cdc_acm_work_submit(&data->rx_fifo_work);
+			goto ep_buf_already_handled;
+		}
+
+		k_fifo_put(data->rx_fifo.bufs, buf);
+		if (data->cb) {
 			cdc_acm_work_submit(&data->irq_cb_work);
 		}
 
-		atomic_clear_bit(&data->state, CDC_ACM_RX_FIFO_BUSY);
-		cdc_acm_work_submit(&data->rx_fifo_work);
+		goto ep_buf_already_handled;
 	}
 
 	if (bi->ep == cdc_acm_get_bulk_in(c_data)) {
@@ -354,7 +362,9 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 	}
 
 ep_request_error:
-	return usbd_ep_buf_free(uds_ctx, buf);
+	ret = usbd_ep_buf_free(uds_ctx, buf);
+ep_buf_already_handled:
+	return ret;
 }
 
 static void usbd_cdc_acm_update(struct usbd_class_data *const c_data,
@@ -713,8 +723,6 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 	struct cdc_acm_uart_data *data;
 	const struct cdc_acm_uart_config *cfg;
 	struct usbd_class_data *c_data;
-	struct net_buf *buf;
-	int ret;
 
 	data = CONTAINER_OF(work, struct cdc_acm_uart_data, rx_fifo_work);
 	cfg = data->dev->config;
@@ -726,29 +734,25 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	if (ring_buf_space_get(data->rx_fifo.rb) < cdc_acm_get_bulk_mps(c_data)) {
-		LOG_INF("RX buffer too small, throttle");
-		return;
-	}
+	while (true) {
+		struct udc_buf_info *bi;
+		struct net_buf *buf;
 
-	if (atomic_test_and_set_bit(&data->state, CDC_ACM_RX_FIFO_BUSY)) {
-		LOG_WRN("RX transfer already in progress");
-		return;
-	}
+		buf = net_buf_alloc(data->rx_fifo.pool, K_NO_WAIT);
+		if (buf == NULL) {
+			break;
+		}
 
-	buf = cdc_acm_buf_alloc(c_data, cdc_acm_get_bulk_out(c_data));
-	if (buf == NULL) {
-		return;
-	}
+		/* Shrink the buffer size if operating on a full speed bus */
+		buf->size = MIN(cdc_acm_get_bulk_mps(c_data), buf->size);
 
-	/* Shrink the buffer size if operating on a full speed bus */
-	buf->size = MIN(cdc_acm_get_bulk_mps(c_data), buf->size);
-
-	ret = usbd_ep_enqueue(c_data, buf);
-	if (ret) {
-		LOG_ERR("Failed to enqueue net_buf for 0x%02x",
-			cdc_acm_get_bulk_out(c_data));
-		net_buf_unref(buf);
+		bi = udc_get_buf_info(buf);
+		bi->ep = cdc_acm_get_bulk_out(c_data);
+		if (usbd_ep_enqueue(c_data, buf) != 0) {
+			LOG_ERR("Failed to enqueue net_buf for 0x%02x", bi->ep);
+			net_buf_unref(buf);
+			break;
+		}
 	}
 }
 
@@ -778,15 +782,12 @@ static void cdc_acm_irq_rx_enable(const struct device *dev)
 	atomic_set_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED);
 
 	/* Permit buffer to be drained regardless of USB state */
-	if (!ring_buf_is_empty(data->rx_fifo.rb)) {
+	if (!k_fifo_is_empty(data->rx_fifo.bufs)) {
 		LOG_INF("rx_en: trigger irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
 
-	if (!atomic_test_bit(&data->state, CDC_ACM_RX_FIFO_BUSY)) {
-		LOG_INF("rx_en: trigger rx_fifo_work");
-		cdc_acm_work_submit(&data->rx_fifo_work);
-	}
+	cdc_acm_work_submit(&data->rx_fifo_work);
 }
 
 static void cdc_acm_irq_rx_disable(const struct device *dev)
@@ -828,10 +829,11 @@ static int cdc_acm_fifo_read(const struct device *dev,
 			     const int size)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
-	uint32_t len;
+	struct net_buf *head;
+	int offset = 0;
+	int len;
 
-	LOG_INF("UART dev %p size %d length %u",
-		dev, size, ring_buf_size_get(data->rx_fifo.rb));
+	LOG_INF("UART dev %p size %d", dev, size);
 
 	if (!check_wq_ctx(dev)) {
 		LOG_WRN("Invoked by inappropriate context");
@@ -839,12 +841,24 @@ static int cdc_acm_fifo_read(const struct device *dev,
 		return 0;
 	}
 
-	len = ring_buf_get(data->rx_fifo.rb, rx_data, size);
-	if (len) {
-		data->rx_fifo.altered = true;
+	while (true) {
+		head = k_fifo_peek_head(data->rx_fifo.bufs);
+		if (head == NULL || offset == size) {
+			break;
+		}
+
+		len = MIN(size - offset, head->len);
+		memcpy(&rx_data[offset], net_buf_pull_mem(head, len), len);
+		offset += len;
+
+		if (head->len == 0) {
+			head = k_fifo_get(data->rx_fifo.bufs, K_NO_WAIT);
+			net_buf_unref(head);
+			data->rx_fifo.altered = true;
+		}
 	}
 
-	return len;
+	return offset;
 }
 
 static int cdc_acm_irq_tx_ready(const struct device *dev)
@@ -907,7 +921,7 @@ static void cdc_acm_irq_update(const struct device *dev)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) &&
-	    !ring_buf_is_empty(data->rx_fifo.rb)) {
+	    !k_fifo_is_empty(data->rx_fifo.bufs)) {
 		data->rx_fifo.irq = true;
 	} else {
 		data->rx_fifo.irq = false;
@@ -974,7 +988,7 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) &&
-	    !ring_buf_is_empty(data->rx_fifo.rb)) {
+	    !k_fifo_is_empty(data->rx_fifo.bufs)) {
 		LOG_DBG("rx irq pending, submit irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
@@ -999,20 +1013,22 @@ static void cdc_acm_irq_callback_set(const struct device *dev,
 static int cdc_acm_poll_in(const struct device *dev, unsigned char *const c)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
-	uint32_t len;
-	int ret = -1;
+	struct net_buf *head;
 
-	if (ring_buf_is_empty(data->rx_fifo.rb)) {
-		return ret;
+	head = k_fifo_peek_head(data->rx_fifo.bufs);
+	if (head == NULL) {
+		return -1;
 	}
 
-	len = ring_buf_get(data->rx_fifo.rb, c, 1);
-	if (len) {
+	*c = net_buf_pull_u8(head);
+
+	if (head->len == 0) {
+		head = k_fifo_get(data->rx_fifo.bufs, K_NO_WAIT);
+		net_buf_unref(head);
 		cdc_acm_work_submit(&data->rx_fifo_work);
-		ret = 0;
 	}
 
-	return ret;
+	return 0;
 }
 
 static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
@@ -1149,7 +1165,6 @@ static int usbd_cdc_acm_preinit(const struct device *dev)
 	struct cdc_acm_uart_data *const data = dev->data;
 
 	ring_buf_reset(data->tx_fifo.rb);
-	ring_buf_reset(data->rx_fifo.rb);
 
 	k_work_init_delayable(&data->tx_fifo_work, cdc_acm_tx_fifo_handler);
 	k_work_init(&data->rx_fifo_work, cdc_acm_rx_fifo_handler);
@@ -1359,6 +1374,9 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 	(struct usb_desc_header *) &cdc_acm_desc_##n.nil_desc,			\
 };
 
+#define CDC_ACM_RX_BUF_COUNT(n)							\
+	DIV_ROUND_UP(DT_INST_PROP(n, rx_fifo_size), USBD_MAX_BULK_MPS)
+
 #define USBD_CDC_ACM_DT_DEVICE_DEFINE(n)					\
 	BUILD_ASSERT(DT_INST_ON_BUS(n, usb),					\
 		     "node " DT_NODE_PATH(DT_DRV_INST(n))			\
@@ -1379,8 +1397,10 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 				USBD_DUT_STRING_INTERFACE);			\
 	))									\
 										\
-	RING_BUF_DECLARE(cdc_acm_rb_rx_##n, DT_INST_PROP(n, rx_fifo_size));	\
 	RING_BUF_DECLARE(cdc_acm_rb_tx_##n, DT_INST_PROP(n, tx_fifo_size));	\
+	UDC_BUF_POOL_DEFINE(cdc_acm_rx_pool_##n,				\
+			    CDC_ACM_RX_BUF_COUNT(n), USBD_MAX_BULK_MPS,		\
+			    sizeof(struct udc_buf_info), NULL);			\
 										\
 	static const struct cdc_acm_uart_config uart_config_##n = {		\
 		.c_data = &cdc_acm_##n,						\
@@ -1393,10 +1413,13 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 				       (cdc_acm_hs_desc_##n,), (NULL,))		\
 	};									\
 										\
+	static struct k_fifo cdc_acm_uart_rx_fifo##n =				\
+		Z_FIFO_INITIALIZER(cdc_acm_uart_rx_fifo##n);			\
 	static struct cdc_acm_uart_data uart_data_##n = {			\
 		.dev = DEVICE_DT_GET(DT_DRV_INST(n)),				\
 		.line_coding = CDC_ACM_DEFAULT_LINECODING,			\
-		.rx_fifo.rb = &cdc_acm_rb_rx_##n,				\
+		.rx_fifo.bufs = &cdc_acm_uart_rx_fifo##n,			\
+		.rx_fifo.pool = &cdc_acm_rx_pool_##n,				\
 		.tx_fifo.rb = &cdc_acm_rb_tx_##n,				\
 		.flow_ctrl = DT_INST_PROP(n, hw_flow_control),			\
 		.notif_sem = Z_SEM_INITIALIZER(uart_data_##n.notif_sem, 0, 1),	\
