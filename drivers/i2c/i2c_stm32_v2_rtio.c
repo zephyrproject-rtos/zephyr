@@ -38,11 +38,9 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v2_rtio);
 #endif /* CONFIG_STM32_HAL2 */
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
-static bool using_dma(const struct device *dev)
+static bool using_dma(struct i2c_stm32_data *dev_data)
 {
-	const struct i2c_stm32_config *cfg = dev->config;
-
-	return (cfg->rx_dma.dev_dma != NULL) && (cfg->tx_dma.dev_dma != NULL);
+	return dev_data->using_dma;
 }
 
 static int configure_start_dma(struct stream const *dma, struct dma_config *dma_cfg,
@@ -98,10 +96,6 @@ static int dma_xfer_start(const struct device *dev)
 
 		LL_I2C_EnableDMAReq_RX(i2c);
 	} else {
-		if (!stm32_buf_in_nocache((uintptr_t)data->xfer_buf, data->xfer_len)) {
-			sys_cache_data_flush_range(data->xfer_buf, data->xfer_len);
-		}
-
 		data->dma_blk_cfg.source_address = (uint32_t)data->xfer_buf;
 		data->dma_blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 		data->dma_blk_cfg.dest_address = LL_I2C_DMA_GetRegAddr(
@@ -139,7 +133,7 @@ static void dma_finish(const struct device *dev)
 	}
 }
 #else /* CONFIG_I2C_STM32_V2_DMA */
-static bool using_dma(const struct device *dev __unused)
+static bool using_dma(struct i2c_stm32_data *data __unused)
 {
 	return false;
 }
@@ -179,9 +173,10 @@ static void i2c_stm32_enable_transfer_interrupts(const struct device *dev)
 static void i2c_stm32_controller_mode_end(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
-	if (using_dma(dev)) {
+	if (using_dma(data)) {
 		dma_finish(dev);
 	}
 
@@ -192,8 +187,6 @@ static void i2c_stm32_controller_mode_end(const struct device *dev)
 	}
 
 #if defined(CONFIG_I2C_TARGET)
-	struct i2c_stm32_data *data = dev->data;
-
 	data->controller_active = false;
 	if (!data->target_attached) {
 		LL_I2C_Disable(i2c);
@@ -501,7 +494,7 @@ void i2c_stm32_event(const struct device *dev)
 	bool use_dma;
 	int ret = 0;
 
-	use_dma = using_dma(dev);
+	use_dma = using_dma(data);
 
 #if defined(CONFIG_I2C_TARGET)
 	if (data->target_attached && !data->controller_active) {
@@ -630,7 +623,13 @@ int i2c_stm32_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf, s
 	uint32_t transfer;
 	bool use_dma;
 
-	use_dma = using_dma(dev);
+#if defined(CONFIG_I2C_STM32_V2_DMA)
+	/* i2c_stm32_xfer_will_use_dma() flushes cache on write message if needed */
+	data->using_dma = i2c_stm32_xfer_will_use_dma(cfg, buf, buf_len,
+						      (flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE);
+#endif /* CONFIG_I2C_STM32_V2_DMA */
+
+	use_dma = using_dma(data);
 
 	data->xfer_buf = buf;
 	data->xfer_len = buf_len;
