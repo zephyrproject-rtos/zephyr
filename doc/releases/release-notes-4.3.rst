@@ -179,6 +179,26 @@ These GitHub issues were addressed since the previous 4.3.0 tagged release:
   connections
 * :github:`111016` - kernel: userspace: dynamic kernel-object list freed under a different lock than
   it is traversed
+* :github:`111031` - :file:`tests/drivers/can/api/drivers.can.api` fails on mutex
+* :github:`111087` - kernel: userspace: :c:func:`k_thread_name_copy` syscall dereferences NULL for an
+  unregistered thread pointer
+* :github:`111100` - kernel: pipe: a user thread can re-initialize a pipe that is already in use
+* :github:`111110` - kernel: poll: :c:func:`z_vrfy_k_poll` leaks ``events_copy`` when a
+  ``k_poll_event`` carries an invalid object handle
+* :github:`111116` - pmci: mctp: I2C+GPIO target writes received bytes through an unchecked/unallocated
+  packet buffer
+* :github:`111119` - drivers: spi: dw: :c:func:`spi_dw_configure` uses ``config->frequency`` as a
+  divisor without validating it
+* :github:`111345` - net: http_server: static filesystem handler serves files outside the web root
+  for paths containing ``".."``
+* :github:`111416` - logging: :c:func:`z_vrfy_log_filter_set` accepts a negative ``src_id`` and
+  indexes outside ``log_dynamic``
+* :github:`111431` - net: ip: forwarded packets keep their original TTL / hop-limit (no decrement
+  on the routing path)
+* :github:`111534` - Bluetooth: GATT: notify/indicate checks the declaration permissions, not the value
+  permissions, when passed a characteristic declaration
+* :github:`111564` - bluetooth: host: classic: l2cap_br: fix conf req/rsp length validation
+* :github:`111420` - debug: coredump/shell: check tgt code before using string array
 
 Security Vulnerability Related
 ******************************
