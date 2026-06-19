@@ -9,6 +9,34 @@ config SOC_ESP32P4
 	bool
 	select SOC_SERIES_ESP32P4
 
+#
+# ESP32-P4 silicon revision selection.
+#
+# These are hidden symbols selected by a board's Kconfig.defconfig to
+# declare the minimum supported chip revision. The numeric revision value
+# (major * 100 + minor) is derived from these in the hal_espressif Kconfig,
+# which owns the revision-to-build plumbing.
+#
+# v1.3 is the only pre-v3 revision: the mintthresh CSR, the SRAM layout and
+# the default L2 cache size differ on it from the v3.x parts, so the code
+# paths for those gate on SOC_ESP32P4_REV_1_3 directly.
+#
+# REV_3_1 is the floor for the whole v3.x family (v3.1 and above): v3.1+
+# silicon is code-identical and excludes the v3.0-only hardware workarounds.
+# There is intentionally no separate v3.2 symbol.
+#
+config SOC_ESP32P4_REV_1_3
+	bool
+	depends on SOC_ESP32P4
+
+config SOC_ESP32P4_REV_3_0
+	bool
+	depends on SOC_ESP32P4
+
+config SOC_ESP32P4_REV_3_1
+	bool
+	depends on SOC_ESP32P4
+
 config SOC_ESP32P4_HPCORE
 	bool
 	select SOC_ESP32P4
