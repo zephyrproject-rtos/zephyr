@@ -13,5 +13,13 @@
 		sram0: memory@20000000 {
 			reg = <0x20000000 DT_SIZE_K(16)>;
 		};
+
+		trng: trng@40444000 {
+			compatible = "ti,mspm0-trng";
+			reg = <0x40444000 0x2000>;
+			interrupts = <1 0>;
+			ti,clk-div = <2>;
+			status = "disabled";
+		};
 	};
 };
