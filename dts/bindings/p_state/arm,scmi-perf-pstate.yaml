@@ -1,0 +1,54 @@
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Generic CPU performance state backed by the SCMI Performance Domain
+  Protocol.
+
+  Example (NXP i.MX95 M7, SCMI domain 3):
+
+    performance-states {
+            pstate_odv: pstate-odv {
+                    compatible = "arm,scmi-perf-pstate";
+                    load-threshold = <70>;
+                    scmi-perf-domain = <3>;
+                    scmi-perf-level-khz = <800000>;
+            };
+            pstate_nom: pstate-nom {
+                    compatible = "arm,scmi-perf-pstate";
+                    load-threshold = <40>;
+                    scmi-perf-domain = <3>;
+                    scmi-perf-level-khz = <666667>;
+            };
+            pstate_low: pstate-low {
+                    compatible = "arm,scmi-perf-pstate";
+                    load-threshold = <10>;
+                    scmi-perf-domain = <3>;
+                    scmi-perf-level-khz = <400000>;
+            };
+            pstate_prk: pstate-prk {
+                    compatible = "arm,scmi-perf-pstate";
+                    load-threshold = <0>;
+                    scmi-perf-domain = <3>;
+                    scmi-perf-level-khz = <24000>;
+            };
+    };
+
+compatible: "arm,scmi-perf-pstate"
+
+include:
+  - "zephyr,pstate.yaml"
+
+properties:
+  scmi-perf-domain:
+    type: int
+    required: true
+    description: |
+      SCMI performance domain index for this CPU.
+
+  scmi-perf-level-khz:
+    type: int
+    required: true
+    description: |
+      Target CPU frequency in kHz for this P-state.

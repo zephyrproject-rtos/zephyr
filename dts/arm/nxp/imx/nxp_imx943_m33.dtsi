@@ -54,6 +54,36 @@
 		};
 	};
 
+	performance-states {
+		m33_pstate_odv: pstate-odv {
+			compatible = "arm,scmi-perf-pstate";
+			load-threshold = <70>;
+			scmi-perf-domain = <1>;
+			scmi-perf-level-khz = <266667>;
+		};
+
+		m33_pstate_nom: pstate-nom {
+			compatible = "arm,scmi-perf-pstate";
+			load-threshold = <40>;
+			scmi-perf-domain = <1>;
+			scmi-perf-level-khz = <250000>;
+		};
+
+		m33_pstate_low: pstate-low {
+			compatible = "arm,scmi-perf-pstate";
+			load-threshold = <10>;
+			scmi-perf-domain = <1>;
+			scmi-perf-level-khz = <142857>;
+		};
+
+		m33_pstate_prk: pstate-prk {
+			compatible = "arm,scmi-perf-pstate";
+			load-threshold = <0>;
+			scmi-perf-domain = <1>;
+			scmi-perf-level-khz = <24000>;
+		};
+	};
+
 	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;

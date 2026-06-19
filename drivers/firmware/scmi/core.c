@@ -123,9 +123,10 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 	 */
 	use_polling = (IS_ENABLED(CONFIG_ARM_SCMI_POLLING_ONLY) ||
 		       proto->tx->polling_only ||
+		       k_is_in_isr() ||
 		       k_is_pre_kernel()) ? true : use_polling;
 
-	if (!k_is_pre_kernel()) {
+	if (!k_is_pre_kernel() && !k_is_in_isr()) {
 		ret = k_mutex_lock(&proto->tx->lock, K_USEC(SCMI_CHAN_LOCK_TIMEOUT_USEC));
 		if (ret < 0) {
 			LOG_ERR("failed to acquire TX channel lock: %d", ret);
@@ -152,7 +153,7 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 	}
 
 out_release_mutex:
-	if (!k_is_pre_kernel()) {
+	if (!k_is_pre_kernel() && !k_is_in_isr()) {
 		k_mutex_unlock(&proto->tx->lock);
 	}
 
