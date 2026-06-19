@@ -16,7 +16,7 @@
 /**
  * @brief Würth Elektronik WSEN-TIDS-2521020222501 temperature sensor
  * @defgroup wsen_tids_2521020222501_interface WSEN-TIDS-2521020222501
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_we
  * @{
  */
 
