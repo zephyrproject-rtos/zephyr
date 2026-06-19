@@ -143,4 +143,108 @@ config KCONFIG_VND_PWM_ENABLED_NUM_0
 	int
 	default $(dt_compat_enabled_num,$(DT_COMPAT_VND_PWM))
 
+menu "dt_partition_mtd(..) test symbols"
+
+config KCONFIG_DT_MTD_INVALID_NODE
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,test_gpio_0))"
+
+config KCONFIG_DT_DUMMY_FLASH_PATH
+	string
+	default "$(dt_nodelabel_path,dummy_flash)"
+
+config KCONFIG_DT_MTD_DUMMY_0
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x0))"
+
+config KCONFIG_DT_MTD_DUMMY_1000
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x1000))"
+
+config KCONFIG_DT_MTD_DUMMY_1000_0
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x1000_0x0))"
+
+config KCONFIG_DT_MTD_DUMMY_1000_800
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x1000_0x800))"
+
+config KCONFIG_DT_MTD_DUMMY_1000_800_0
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x1000_0x800_0x0))"
+
+config KCONFIG_DT_MTD_DUMMY_1000_800_400
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x1000_0x800_0x400))"
+
+config KCONFIG_DT_MTD_DUMMY_1000_1000
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x1000_0x1000))"
+
+config KCONFIG_DT_MTD_DUMMY_3000
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x3000))"
+
+config KCONFIG_DT_MTD_DUMMY_3000_0
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x3000_0x0))"
+
+config KCONFIG_DT_MTD_DUMMY_3000_800
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x3000_0x800))"
+
+config KCONFIG_DT_MTD_DUMMY_3000_800_0
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x3000_0x800_0x0))"
+
+config KCONFIG_DT_MTD_DUMMY_3000_800_400
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x3000_0x800_0x400))"
+
+config KCONFIG_DT_MTD_DUMMY_3000_1000
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x3000_0x1000))"
+
+config KCONFIG_DT_MTD_DUMMY_4000
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x4000))"
+
+config KCONFIG_DT_MTD_RANGE_FLASH_PATH
+	string
+	default "$(dt_nodelabel_path,dummy_range_flash)"
+
+config KCONFIG_DT_MTD_RANGE_0
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_range_0x0))"
+
+config KCONFIG_DT_MTD_RANGE_1000
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_range_0x1000))"
+
+config KCONFIG_DT_MTD_RANGE_1000_0
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_range_0x1000_0x0))"
+
+config KCONFIG_DT_MTD_RANGE_1000_800
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_range_0x1000_0x800))"
+
+config KCONFIG_DT_MTD_RANGE_1000_800_0
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_range_0x1000_0x800_0x0))"
+
+config KCONFIG_DT_MTD_RANGE_1000_800_400
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_range_0x1000_0x800_0x400))"
+
+config KCONFIG_DT_MTD_RANGE_1000_1000
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_range_0x1000_0x1000))"
+
+config KCONFIG_DT_MTD_RANGE_4000
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_range_0x4000))"
+
+endmenu
+
 source "Kconfig.zephyr"
