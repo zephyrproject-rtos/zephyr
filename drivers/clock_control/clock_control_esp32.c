@@ -545,7 +545,24 @@ static int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cf
 #if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C5) ||                    \
 	defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32H2) ||                \
 	defined(CONFIG_SOC_SERIES_ESP32P4)
-#if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32P4)
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+	if (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_PLL) {
+		/*
+		 * The ROM selects XTAL as the console UART source, and XTAL
+		 * is independent of the CPU/PLL frequency. Keep the console
+		 * on XTAL across the CPU clock change instead of re-sourcing
+		 * it to PLL_F80M: that reference clock is later gated by
+		 * esp_perip_clk_init(), which would leave the console
+		 * without a clock and stall the first transmit.
+		 */
+		uint32_t uart_sclk_freq = (uint32_t)rtc_clk_xtal_freq_get() * MHZ(1);
+
+		uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), UART_SCLK_XTAL);
+		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM),
+				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, uart_sclk_freq);
+	}
+#else
+#if defined(CONFIG_SOC_SERIES_ESP32C5)
 	if (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_PLL) {
 #else
 	if (cpu_cfg->clk_src == SOC_CPU_CLK_SRC_PLL) {
@@ -561,6 +578,7 @@ static int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cf
 		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM),
 				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, uart_sclk_freq);
 	}
+#endif
 #else
 #if defined(CONFIG_MCUBOOT) && defined(ESP_ROM_UART_CLK_IS_XTAL)
 	uint32_t uart_clock_src_hz = (uint32_t)rtc_clk_xtal_freq_get() * MHZ(1);
