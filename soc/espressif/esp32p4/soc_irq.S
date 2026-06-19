@@ -6,6 +6,16 @@
 #include <zephyr/offsets.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/arch/riscv/irq.h>
+#include <zephyr/autoconf.h>
+
+/*
+ * The per-context interrupt threshold CSR mintthresh (0x347) only exists on
+ * ESP32-P4 rev >= v3.0. On pre-v3 silicon accessing it is an illegal
+ * instruction, so skip the save/restore there.
+ */
+#if !defined(CONFIG_SOC_ESP32P4_REV_1_3)
+#define SOC_HAS_MINTTHRESH 1
+#endif
 
 /* Exports */
 GTEXT(__soc_handle_irq)
@@ -43,16 +53,20 @@ SECTION_FUNC(exception.other, __soc_save_context)
 	and t0, t0, t1
 1:
 	sw t0, __soc_esf_t_mcause_OFFSET(a0)
+#ifdef SOC_HAS_MINTTHRESH
 	/* Save mintthresh (CSR 0x347): per-context interrupt threshold. */
 	csrr t0, 0x347
 	sw t0, __soc_esf_t_mintthresh_OFFSET(a0)
+#endif
 	ret
 
 SECTION_FUNC(exception.other, __soc_restore_context)
 
+#ifdef SOC_HAS_MINTTHRESH
 	/* Restore mintthresh (CSR 0x347) for the resumed context. */
 	lw t0, __soc_esf_t_mintthresh_OFFSET(a0)
 	csrw 0x347, t0
+#endif
 	lw t0, __soc_esf_t_mcause_OFFSET(a0)
 	/* Force mcause.interrupt (bit 31) so mret reloads mintstatus.mil
 	 * from mcause.mpil regardless of the saved trap type.
