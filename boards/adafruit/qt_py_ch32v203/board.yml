@@ -1,0 +1,6 @@
+board:
+  name: adafruit_qt_py_ch32v203
+  full_name: QT Py CH32V203
+  vendor: adafruit
+  socs:
+    - name: ch32v203

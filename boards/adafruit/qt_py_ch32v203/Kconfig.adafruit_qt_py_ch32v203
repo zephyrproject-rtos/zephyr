@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ADAFRUIT_QT_PY_CH32V203
+	select SOC_CH32V203
