@@ -18,7 +18,7 @@
 
 /**
  * @defgroup mmc56x3_interface MMC56X3
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_memsic
  * @brief Memsic MMC56X3 3-axis magnetic and temperature sensor
  * @{
  */
