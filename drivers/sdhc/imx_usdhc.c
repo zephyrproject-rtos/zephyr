@@ -7,7 +7,6 @@
 #define DT_DRV_COMPAT nxp_imx_usdhc
 
 #include <zephyr/kernel.h>
-#include <zephyr/cache.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sdhc.h>
 #include <zephyr/sd/sd_spec.h>
@@ -478,72 +477,6 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 	return 0;
 }
 
-#ifdef CONFIG_IMX_USDHC_DMA_SUPPORT
-/*
- * Cache maintenance for the data buffer on the ADMA2 DMA path. The buffer
- * (rxData/txData) is supplied by upper layers (FAT FS, SD subsys) and lives
- * in regular cacheable RAM. Without these calls, on a write the controller
- * may DMA-read stale RAM (CPU's writes still in D-cache), and on a read the
- * CPU may consume stale cache lines after the controller has DMA-written
- * fresh data to RAM.
- *
- * Pattern: flush before transfer (covers TX correctness and prevents dirty
- * cache eviction over DMA-written data on RX), invalidate after transfer
- * on RX (so the CPU sees the freshly DMA-written data).
- */
-#ifdef CONFIG_SDHC_SCATTER_GATHER_TRANSFER
-static void imx_usdhc_dcache_pre_xfer(usdhc_scatter_gather_data_t *data)
-{
-	usdhc_scatter_gather_data_list_t *sg;
-
-	if (data == NULL) {
-		return;
-	}
-	for (sg = &data->sgData; sg != NULL && sg->dataAddr != NULL; sg = sg->dataList) {
-		sys_cache_data_flush_range(sg->dataAddr, sg->dataSize);
-	}
-}
-
-static void imx_usdhc_dcache_post_xfer(usdhc_scatter_gather_data_t *data)
-{
-	usdhc_scatter_gather_data_list_t *sg;
-
-	if (data == NULL || data->dataDirection != kUSDHC_TransferDirectionReceive) {
-		return;
-	}
-	for (sg = &data->sgData; sg != NULL && sg->dataAddr != NULL; sg = sg->dataList) {
-		sys_cache_data_invd_range(sg->dataAddr, sg->dataSize);
-	}
-}
-#else
-static void imx_usdhc_dcache_pre_xfer(usdhc_data_t *data)
-{
-	void *buf;
-	size_t len;
-
-	if (data == NULL) {
-		return;
-	}
-	buf = data->rxData ? (void *)data->rxData : (void *)data->txData;
-	if (buf != NULL) {
-		len = (size_t)data->blockSize * data->blockCount;
-		sys_cache_data_flush_range(buf, len);
-	}
-}
-
-static void imx_usdhc_dcache_post_xfer(usdhc_data_t *data)
-{
-	size_t len;
-
-	if (data == NULL || data->rxData == NULL) {
-		return;
-	}
-	len = (size_t)data->blockSize * data->blockCount;
-	sys_cache_data_invd_range((void *)data->rxData, len);
-}
-#endif /* CONFIG_SDHC_SCATTER_GATHER_TRANSFER */
-#endif /* CONFIG_IMX_USDHC_DMA_SUPPORT */
-
 /*
  * Internal transfer function, used by tuning and request apis
  */
@@ -562,8 +495,6 @@ static int imx_usdhc_transfer(const struct device *dev, struct usdhc_host_transf
 	dma_config.burstLen = kUSDHC_EnBurstLenForINCR;
 #endif
 	dma_config.dmaMode = kUSDHC_DmaModeAdma2;
-
-	imx_usdhc_dcache_pre_xfer(request->transfer->data);
 #endif /* CONFIG_IMX_USDHC_DMA_SUPPORT */
 
 	/* Reset transfer status */
@@ -606,9 +537,6 @@ static int imx_usdhc_transfer(const struct device *dev, struct usdhc_host_transf
 		if (dev_data->transfer_status & TRANSFER_DATA_FAILED) {
 			return -EIO;
 		}
-#ifdef CONFIG_IMX_USDHC_DMA_SUPPORT
-		imx_usdhc_dcache_post_xfer(request->transfer->data);
-#endif
 	}
 	return 0;
 }
