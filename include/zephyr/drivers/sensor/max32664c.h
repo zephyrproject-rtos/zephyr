@@ -15,7 +15,7 @@
 
 /**
  * @defgroup max32664c_interface MAX32664C
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_adi
  * @brief Maxim Integrated MAX32664C biometric sensor hub
  * @{
  */
