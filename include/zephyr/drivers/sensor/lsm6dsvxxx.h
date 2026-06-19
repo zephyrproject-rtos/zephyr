@@ -15,7 +15,7 @@
 
 /**
  * @defgroup lsm6dsvxxx_interface LSM6DSVXXX
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_st
  * @brief ST Microelectronics LSM6DSVXXX 3-axis IMU family
  * @{
  */
