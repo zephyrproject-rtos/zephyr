@@ -1854,9 +1854,7 @@ struct k_timer_observer {
 #define Z_TIMER_INITIALIZER(obj, expiry, stop) \
 	{ \
 	.timeout = { \
-		.node = {},\
 		.fn = z_timer_expiration_handler, \
-		.dticks = 0, \
 	}, \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.expiry_fn = expiry, \

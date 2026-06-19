@@ -76,14 +76,14 @@ void z_timer_expiration_handler(struct _timeout *t)
 	k_spinlock_key_t key = k_spin_lock(&timer_lock);
 
 	/* A same-CPU IRQ may have raced with our dispatch between
-	 * sys_clock_announce() popping us off the list and us taking
+	 * sys_clock_announce() popping us off the queue and us taking
 	 * timer.c::lock. Two cases:
-	 *  - The timer was restarted (z_add_timeout re-linked the node):
-	 *    sys_dnode_is_linked() is true, the new schedule fires later.
+	 *  - The timer was restarted (z_add_timeout re-queued the timeout):
+	 *    it is active again, and the new schedule fires later.
 	 *  - The timer was stopped (z_try_abort_timeout marked the
 	 *    in-flight slot superseded): bail without firing expiry_fn.
 	 */
-	if (sys_dnode_is_linked(&t->node) ||
+	if (!z_is_inactive_timeout(t) ||
 	    z_timeout_inflight_superseded(t)) {
 		k_spin_unlock(&timer_lock, key);
 		return;
