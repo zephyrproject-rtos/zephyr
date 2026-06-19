@@ -28,15 +28,17 @@ zephyr_library_sources(
   source/string/strstr.c
   source/string/string.c
   source/string/strspn.c
-  source/stdout/stdout_console.c
-  source/stdout/sprintf.c
-  source/stdout/fprintf.c
+  source/stdio/stdout_console.c
+  source/stdio/fgetc.c
+  source/stdio/fgets.c
+  source/stdio/sprintf.c
+  source/stdio/fprintf.c
   source/math/sqrtf.c
   source/math/sqrt.c
   ${STRERROR_TABLE_H}
 )
 
-zephyr_library_sources_ifdef(CONFIG_ZVFS source/stdout/zvfs_libc.c)
+zephyr_library_sources_ifdef(CONFIG_ZVFS source/stdio/zvfs_libc.c)
 
 if(CONFIG_MINIMAL_LIBC_TIME)
   zephyr_library_sources(source/time/gmtime.c)
