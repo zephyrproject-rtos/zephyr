@@ -43,10 +43,26 @@
 
 struct event_walk_data {
 #ifdef CONFIG_WAITQ_SCALABLE
-	struct k_thread  *head;
+	struct z_event_wait_block *head;
 #endif /* CONFIG_WAITQ_SCALABLE */
 	uint32_t events;
 	uint32_t clear_events;
+};
+
+/*
+ * Ephemeral structure created by k_event_wait_internal() on the stack of threads
+ * pending on a k_event. This stores the information k_event_post_internal() needs
+ * to determine if a thread's wait conditions have been satisfied and, if they have,
+ * also receives the `events` that satisfied the wait conditions.
+ */
+struct z_event_wait_block {
+#ifdef CONFIG_WAITQ_SCALABLE
+	/* see k_event_post_internal() for rationale */
+	struct z_event_wait_block *next;
+	struct k_thread *thread;
+#endif /* CONFIG_WAITQ_SCALABLE */
+	uint32_t event_options;
+	uint32_t events; /* dual purpose - wait on and then received */
 };
 
 #ifdef CONFIG_OBJ_CORE_EVENT
@@ -116,17 +132,28 @@ static void event_post_walk_op(int status, void *data)
 	 */
 	ARG_UNUSED(status);
 	struct event_walk_data *walk_data = data;
-	struct k_thread *thread, *next;
+	struct z_event_wait_block *wait_block, *next_wb;
+	struct k_thread *thread;
 
-	thread = walk_data->head;
+	wait_block = walk_data->head;
 
-	while (thread != NULL) {
-		next = thread->next_event_link;
+	while (wait_block != NULL) {
+		/*
+		 * Read `next` from the thread's wait block before waking it.
+		 * This protects from an hypothetical race condition where the
+		 * thread is awoken, executes and invalidates its wait block
+		 * before we have the time to read it. (It shouldn't be possible
+		 * for this situation to occur because we hold the scheduler lock,
+		 * but we'll have to read `next` in any case; doing it now ensures
+		 * this hypothetical race condition can never occur.)
+		 */
+		next_wb = wait_block->next;
+		thread = wait_block->thread;
 
 		arch_thread_return_value_set(thread, 0);
 		z_sched_wake_thread_locked(thread);
 
-		thread = next;
+		wait_block = next_wb;
 	}
 }
 #define EVENT_POST_WALK_OP_FN event_post_walk_op
@@ -139,21 +166,25 @@ static int event_walk_op(struct k_thread *thread, void *data)
 	uint32_t match;
 	unsigned int wait_condition;
 	struct event_walk_data *event_data = data;
+	struct z_event_wait_block *wait_block = thread->event_wait_block;
 
-	wait_condition = thread->event_options & K_EVENT_WAIT_MASK;
+	__ASSERT_NO_MSG(wait_block != NULL);
 
-	match = are_wait_conditions_met(thread->events, event_data->events,
+	wait_condition = wait_block->event_options & K_EVENT_WAIT_MASK;
+
+	match = are_wait_conditions_met(wait_block->events, event_data->events,
 					wait_condition);
 	if (match != 0) {
 		/*
 		 * The wait conditions have been satisfied. Set the
 		 * received events then wake thread now if allowed,
-		 * else add it to the list of threads to unpend.
+		 * else add the wait block to the list of wait blocks
+		 * belonging to threads we need to unpend.
 		 *
 		 * NOTE: thread event options can consume an event
 		 */
-		thread->events = match;
-		if (thread->event_options & K_EVENT_OPTION_CLEAR) {
+		wait_block->events = match;
+		if (wait_block->event_options & K_EVENT_OPTION_CLEAR) {
 			event_data->clear_events |= match;
 		}
 		(void)z_try_abort_thread_timeout(thread);
@@ -167,8 +198,8 @@ static int event_walk_op(struct k_thread *thread, void *data)
 		arch_thread_return_value_set(thread, 0);
 		z_sched_wake_thread_locked(thread);
 #else /* !CONFIG_WAITQ_SCALABLE */
-		thread->next_event_link = event_data->head;
-		event_data->head = thread;
+		wait_block->next = event_data->head;
+		event_data->head = wait_block;
 #endif /* !CONFIG_WAITQ_SCALABLE */
 	}
 
@@ -196,11 +227,15 @@ static uint32_t k_event_post_internal(struct k_event *event, uint32_t events,
 	 * It is desirable to unpend all affected threads simultaneously. When
 	 * z_sched_waitq_walk() allows removal of nodes from the wait queue,
 	 * we unpend and ready each thread as part of the callback. Otherwise,
-	 * proceed in three steps:
+	 * proceed in two steps:
 	 *
-	 * 1. Walk the waitq and create a linked list of threads to unpend.
-	 * 2. Unpend each of the threads in the linked list
-	 * 3. Ready each of the threads in the linked list
+	 * 1. Walk the waitq and create a linked list of wait blocks belonging
+	 *    to threads we need to wake.
+	 * 2. Walk the created list and wake the thread to which each wait block belongs.
+	 *
+	 * In this situation, note that each wait block needs to contain a pointer
+	 * to the thread that created it because we make a list of wait blocks
+	 * rather than threads.
 	 */
 
 #ifdef CONFIG_WAITQ_SCALABLE
@@ -285,6 +320,7 @@ static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 	uint32_t  rv = 0;
 	unsigned int  wait_condition;
 	struct k_thread  *thread;
+	struct z_event_wait_block wait_block;
 
 	__ASSERT(((arch_is_in_isr() == false) ||
 		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
@@ -325,19 +361,27 @@ static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 
 	/*
 	 * The caller must pend to wait for the match. Save the desired
-	 * set of events in the k_thread structure.
+	 * set of events in a wait block on the stack whose address is
+	 * saved in the k_thread structure.
 	 */
 
-	thread->events = events;
-	thread->event_options = options;
+	wait_block.events = events;
+	wait_block.event_options = options;
+#ifdef CONFIG_WAITQ_SCALABLE
+	wait_block.thread = thread;
+	wait_block.next = NULL;
+#endif /* CONFIG_WAITQ_SCALABLE */
+	thread->event_wait_block = &wait_block;
 
 	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_event, wait, event, events,
 					   options, timeout);
 
 	if (z_pend_curr(&event->lock, key, &event->wait_q, timeout) == 0) {
 		/* Retrieve the set of events that woke the thread */
-		rv = thread->events;
+		rv = wait_block.events;
 	}
+
+	thread->event_wait_block = NULL;
 
 out:
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_event, wait, event, events, rv);

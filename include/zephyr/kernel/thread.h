@@ -252,6 +252,10 @@ struct z_poller {
 	uint8_t mode;
 };
 
+#if defined(CONFIG_EVENTS)
+struct z_event_wait_block;
+#endif /* CONFIG_EVENTS */
+
 /**
  * @ingroup thread_apis
  * Thread Structure
@@ -274,21 +278,15 @@ struct k_thread {
 #endif /* CONFIG_POLL */
 
 #if defined(CONFIG_EVENTS)
-#if defined(CONFIG_WAITQ_SCALABLE)
 	/*
-	 * Used to build a list of threads that are
-	 * pending on a k_event and should be woken
-	 * up due to a k_event_post/set() call.
-	 *
-	 * Needed only when red-black tree is used for
-	 * wait queues because it is forbidden to mutate
-	 * an rbtree waitq while walking it.
+	 * Pointer to a private structure used when a thread is sleeping
+	 * on a k_event logic. This points to an object on the thread's stack
+	 * created by k_event_wait_internal() and must not be accessed without
+	 * holding the corresponding k_event's lock. Note that the pointer may
+	 * become stale if a thread is aborted while pending on a k_event so
+	 * it should really never be used outside the k_event logic.
 	 */
-	struct k_thread *next_event_link;
-#endif /* CONFIG_WAITQ_SCALABLE */
-
-	uint32_t   events; /* dual purpose - wait on and then received */
-	uint32_t   event_options;
+	struct z_event_wait_block *event_wait_block;
 #endif /* CONFIG_EVENTS */
 
 #if defined(CONFIG_THREAD_MONITOR)
