@@ -14,6 +14,9 @@
 
 LOG_MODULE_REGISTER(usbh_class, CONFIG_USBH_LOG_LEVEL);
 
+/* Time to wait for transfers to drain during removal */
+#define USBH_CLASS_DRAIN_TIMEOUT	K_MSEC(1000)
+
 void usbh_class_init_all(void)
 {
 	int ret;
@@ -57,6 +60,15 @@ void usbh_class_remove_all(struct usb_device *const udev)
 		k_mutex_lock(&c_data->mutex, K_FOREVER);
 		c_data->bound = false;
 		k_mutex_unlock(&c_data->mutex);
+
+		/*
+		 * Cancel queued transfers and wait for their completion before
+		 * calling usbh_class_removed().
+		 */
+		usbh_class_xfer_dequeue_all_anchored(c_data);
+		if (usbh_class_xfer_drain(c_data, USBH_CLASS_DRAIN_TIMEOUT) != 0) {
+			LOG_ERR("%s transfers did not drain on removal", c_data->name);
+		}
 
 		ret = usbh_class_removed(c_data);
 		if (ret != 0) {
