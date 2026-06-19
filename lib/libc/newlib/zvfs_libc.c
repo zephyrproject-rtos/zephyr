@@ -22,14 +22,9 @@
 #include <reent.h>
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/zvfs.h>
 #include <zephyr/sys/zvfs_libc.h>
 #include <zephyr/toolchain.h>
-
-/* FIXME: do not use ssize_t or off_t (POSIX -> Zephyr -> POSIX dependency cycle) */
-ssize_t zvfs_read(int fd, void *buf, size_t sz, const size_t *from_offset);
-ssize_t zvfs_write(int fd, const void *buf, size_t sz, const size_t *from_offset);
-off_t zvfs_lseek(int fd, off_t offset, int whence);
-int zvfs_close(int fd);
 
 #ifndef __SINGLE_THREAD__
 struct zvfs_newlib_file {
@@ -54,7 +49,7 @@ static _READ_WRITE_RETURN_TYPE zvfs_read_cb(struct _reent *r, void *cookie, char
 {
 	ARG_UNUSED(r);
 
-	return zvfs_read((int)(intptr_t)cookie, buf, n, NULL);
+	return zvfs_read((int)(intptr_t)cookie, buf, n);
 }
 
 static _READ_WRITE_RETURN_TYPE zvfs_write_cb(struct _reent *r, void *cookie, const char *buf,
@@ -62,7 +57,7 @@ static _READ_WRITE_RETURN_TYPE zvfs_write_cb(struct _reent *r, void *cookie, con
 {
 	ARG_UNUSED(r);
 
-	return zvfs_write((int)(intptr_t)cookie, buf, n, NULL);
+	return zvfs_write((int)(intptr_t)cookie, buf, n);
 }
 
 static _fpos_t zvfs_seek_cb(struct _reent *r, void *cookie, _fpos_t offset, int whence)

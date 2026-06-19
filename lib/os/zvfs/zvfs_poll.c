@@ -200,6 +200,16 @@ static inline int z_vrfy_zvfs_poll(struct zvfs_pollfd *fds, int nfds, int timeou
 		return -1;
 	}
 
+	/*
+	 * An in-use fd the caller has no K_OBJ_FILE grant for faults here; an
+	 * fd that names no open file passes through and reports ZVFS_POLLNVAL.
+	 */
+	for (int i = 0; i < nfds; i++) {
+		if (fds_copy[i].fd >= 0) {
+			(void)zvfs_fd_syscall_verify(fds_copy[i].fd);
+		}
+	}
+
 	ret = z_impl_zvfs_poll(fds_copy, nfds, timeout);
 
 	if (ret >= 0) {

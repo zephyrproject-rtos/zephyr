@@ -9,6 +9,7 @@
 /* Zephyr headers */
 #include <fcntl.h>
 #include <zephyr/sys/fdtable.h>
+#include <zephyr/sys/zvfs.h>
 
 #ifndef F_GETFL
 #define F_GETFL ZVFS_F_GETFL
@@ -169,8 +170,6 @@ static inline int z_vrfy_zsock_socket(int family, int type, int proto)
 }
 #include <zephyr/syscalls/zsock_socket_mrsh.c>
 #endif /* CONFIG_USERSPACE */
-
-extern int zvfs_close(int fd);
 
 int z_impl_zsock_close(int sock)
 {

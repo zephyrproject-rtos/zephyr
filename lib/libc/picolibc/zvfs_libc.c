@@ -20,6 +20,7 @@
 #include <stdio.h>
 
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/zvfs.h>
 #include <zephyr/sys/zvfs_libc.h>
 #include <zephyr/toolchain.h>
 
@@ -29,20 +30,14 @@ BUILD_ASSERT(ZVFS_LIBC_FILE_SIZE > sizeof(struct __file_bufio),
 BUILD_ASSERT(ZVFS_LIBC_FILE_ALIGN >= __alignof(struct __file_bufio),
 	     "ZVFS_LIBC_FILE_ALIGN must be at least the alignment of struct __file_bufio");
 
-/* FIXME: do not use ssize_t or off_t (POSIX -> Zephyr -> POSIX dependency cycle) */
-ssize_t zvfs_read(int fd, void *buf, size_t sz, const size_t *from_offset);
-ssize_t zvfs_write(int fd, const void *buf, size_t sz, const size_t *from_offset);
-off_t zvfs_lseek(int fd, off_t offset, int whence);
-int zvfs_close(int fd);
-
 static ssize_t zvfs_read_wrap(int fd, void *buf, size_t sz)
 {
-	return zvfs_read(fd, buf, sz, NULL);
+	return zvfs_read(fd, buf, sz);
 }
 
 static ssize_t zvfs_write_wrap(int fd, const void *buf, size_t sz)
 {
-	return zvfs_write(fd, buf, sz, NULL);
+	return zvfs_write(fd, buf, sz);
 }
 
 static __off_t zvfs_lseek_wrap(int fd, __off_t offset, int whence)

@@ -5,10 +5,8 @@
 
 #include <stdio.h>
 
+#include <zephyr/sys/zvfs.h>
 #include <zephyr/sys/zvfs_libc.h>
-
-/* prototype for the not-yet-public function in fdtable.c */
-int zvfs_close(int fd);
 
 int fclose(FILE *stream)
 {

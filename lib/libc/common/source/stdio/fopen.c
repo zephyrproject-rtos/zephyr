@@ -7,11 +7,9 @@
 #include <stdio.h>
 
 #include <zephyr/sys/fdtable.h>
+#include <zephyr/sys/zvfs.h>
 #include <zephyr/sys/zvfs_libc.h>
 #include <zephyr/sys/zvfs_fs.h>
-
-/* prototype for the not-yet-public function in fdtable.c */
-int zvfs_close(int fd);
 
 #define FOPEN_CREATE_MODE 0644
 

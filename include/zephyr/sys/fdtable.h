@@ -272,11 +272,9 @@ static inline int zvfs_fdtable_call_ioctl(const struct fd_op_vtable *vtable, voi
 /**
  * Structure for result of the ZFD_IOCTL_STAT ioctl call.
  * Contains fields for all currently supported details. Defined to avoid POSIX dependency.
+ *
+ * Declared in @ref zvfs.h (see struct zvfs_stat).
  */
-struct zvfs_stat {
-	off_t size;
-	uint32_t mode;
-};
 
 struct zvfs_pollfd {
 	int fd;
@@ -336,51 +334,6 @@ enum {
 	ZFD_IOCTL_FIONWRITE = 0x5411,
 };
 
-/**
- * @brief Get information about file.
- *
- * @param fd File descriptor index
- * @param buf Pointer to result structure
- *
- * @return 0 on success, -1 with errno set on error.
- */
-int zvfs_fstat(int fd, struct zvfs_stat *buf);
-
-/**
- * @brief Close file.
- *
- * @param fd File descriptor index
- *
- * @return 0 on success, -1 with errno set on error.
- */
-int zvfs_close(int fd);
-
-/**
- * @brief Read bytes from file.
- *
- * @param fd File descriptor index
- * @param buf Destination buffer
- * @param sz Number of bytes to read
- * @param from_offset Pointer to variable specifying starting position;
- * current offset will be used if NULL
- *
- * @return Number of bytes read successfully, or -1 with errno set on failure
- */
-ssize_t zvfs_read(int fd, void *buf, size_t sz, const size_t *from_offset);
-
-/**
- * @brief Write bytes to file.
- *
- * @param fd File descriptor index
- * @param buf Source buffer
- * @param sz Number of bytes to write
- * @param from_offset Pointer to variable specifying starting position;
- * current offset will be used if NULL
- *
- * @return Number of bytes written successfully, or -1 with errno set on failure
- */
-ssize_t zvfs_write(int fd, const void *buf, size_t sz, const size_t *from_offset);
-
 #ifdef CONFIG_ZVFS_DEFAULT_FILE_VMETHODS
 int zvfs_ioctl_vmeth(void *obj, unsigned int request, va_list args);
 int zvfs_close_vmeth(void *obj);
@@ -424,6 +377,9 @@ void *zvfs_test_fd_entry_kobj(int fd);
 #ifdef __cplusplus
 }
 #endif
+
+#include <zephyr/sys/zvfs.h>
+#include <zephyr/sys/internal/fdtable_priv.h>
 
 #include <zephyr/syscalls/fdtable.h>
 

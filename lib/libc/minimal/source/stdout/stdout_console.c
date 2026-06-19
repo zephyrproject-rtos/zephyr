@@ -12,9 +12,8 @@
 #include <string.h>
 
 #if defined(CONFIG_ZVFS)
+#include <zephyr/sys/zvfs.h>
 #include <zephyr/sys/zvfs_libc.h>
-
-long zvfs_write(int fd, const void *buf, size_t sz, const size_t *from_offset);
 #endif
 
 static int _stdout_hook_default(int c)
@@ -51,7 +50,7 @@ static size_t minimal_zvfs_stream_write(int fd, const void *ptr, size_t nbyte)
 	size_t written = 0;
 
 	while (written < nbyte) {
-		long ret = zvfs_write(fd, p + written, nbyte - written, NULL);
+		long ret = zvfs_write(fd, p + written, nbyte - written);
 
 		if (ret <= 0) {
 			break;

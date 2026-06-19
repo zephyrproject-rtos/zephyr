@@ -261,6 +261,19 @@ static int z_vrfy_zvfs_select(int nfds, struct zvfs_fd_set *ZRESTRICT readfds,
 		}
 	}
 
+	/*
+	 * Walk every bit the implementation would poll (it scans the whole
+	 * bitset, not just nfds): an in-use fd without a K_OBJ_FILE grant
+	 * faults; an fd naming no open file proceeds and yields EBADF.
+	 */
+	for (int fd = 0; fd < (int)ZVFS_FD_SETSIZE; fd++) {
+		if ((readfds_copy != NULL && ZVFS_FD_ISSET(fd, readfds_copy)) ||
+		    (writefds_copy != NULL && ZVFS_FD_ISSET(fd, writefds_copy)) ||
+		    (exceptfds_copy != NULL && ZVFS_FD_ISSET(fd, exceptfds_copy))) {
+			(void)zvfs_fd_syscall_verify(fd);
+		}
+	}
+
 	ret = z_impl_zvfs_select(nfds, readfds_copy, writefds_copy, exceptfds_copy, to, sigmask);
 
 	if (ret >= 0) {

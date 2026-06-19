@@ -108,6 +108,7 @@ zephyr_library_include_directories(
 add_subdirectory_ifdef(CONFIG_ZVFS zvfs)
 
 zephyr_syscall_header_ifdef(CONFIG_ZVFS_FDTABLE
+  ${ZEPHYR_BASE}/include/zephyr/sys/zvfs.h
   ${ZEPHYR_BASE}/include/zephyr/sys/fdtable.h
 )
 
