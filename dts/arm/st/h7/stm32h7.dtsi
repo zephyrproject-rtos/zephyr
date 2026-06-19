@@ -1043,13 +1043,14 @@
 			};
 		};
 
-		adc1: adc@40022000 {
+		adc12_common: adc@40022000 {
 			compatible = "st,stm32-adc";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			reg = <0x40022000 0x400>;
+			ranges;
 			clocks = <&rcc STM32_CLOCK(AHB1, 5)>;
 			clock-names = "adcx";
-			interrupts = <18 0>;
-			#io-channel-cells = <1>;
 			st,adc-resolutions = <16 14 12 10 8>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
 			st,adc-sequencer = "programmable";
@@ -1060,54 +1061,30 @@
 			st,adc-has-differential-support;
 			st,adc-has-injected-support;
 			status = "disabled";
+
+			adc1: adc@40022000 {
+				reg = <0x40022000 0x100>;
+				interrupts = <18 0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
+
+			adc2: adc@40022100 {
+				reg = <0x40022100 0x100>;
+				interrupts = <18 0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
 		};
 
-		adc2: adc@40022100 {
+		adc3_common: adc@58026000 {
 			compatible = "st,stm32-adc";
-			reg = <0x40022100 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB1, 5)>;
-			clock-names = "adcx";
-			interrupts = <18 0>;
-			#io-channel-cells = <1>;
-			st,adc-resolutions = <16 14 12 10 8>;
-			sampling-times = <2 3 9 17 33 65 388 811>;
-			st,adc-sequencer = "programmable";
-			st,adc-oversampler = "extended";
-			st,adc-internal-regulator = "startup-hw-status";
-			st,adc-has-deep-powerdown;
-			st,adc-has-channel-preselection;
-			st,adc-has-differential-support;
-			st,adc-has-injected-support;
-			status = "disabled";
-		};
-
-		/* dual mode: adc1 and adc2 coupled */
-		adc1_2: adc@40022300 {
-			compatible = "st,stm32-adc";
-			reg = <0x40022300 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB1, 5)>;
-			clock-names = "adcx";
-			interrupts = <18 0>;
-			#io-channel-cells = <1>;
-			st,adc-resolutions = <16 14 12 10 8>;
-			sampling-times = <2 3 9 17 33 65 388 811>;
-			st,adc-sequencer = "programmable";
-			st,adc-oversampler = "extended";
-			st,adc-internal-regulator = "startup-hw-status";
-			st,adc-has-deep-powerdown;
-			st,adc-has-channel-preselection;
-			st,adc-has-differential-support;
-			st,adc-has-injected-support;
-			status = "disabled";
-		};
-
-		adc3: adc@58026000 {
-			compatible = "st,stm32-adc";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			reg = <0x58026000 0x400>;
+			ranges;
 			clocks = <&rcc STM32_CLOCK(AHB4, 24)>;
 			clock-names = "adcx";
-			interrupts = <127 0>;
-			#io-channel-cells = <1>;
 			st,adc-resolutions = <16 14 12 10 8>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
 			st,adc-sequencer = "programmable";
@@ -1118,6 +1095,13 @@
 			st,adc-has-differential-support;
 			st,adc-has-injected-support;
 			status = "disabled";
+
+			adc3: adc@58026000 {
+				reg = <0x58026000 0x100>;
+				interrupts = <127 0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		dac1: dac@40007400 {

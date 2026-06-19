@@ -86,13 +86,14 @@
 			};
 		};
 
-		adc1: adc@50000000 {
+		adc1_common: adc@50000000 {
 			compatible = "st,stm32-adc";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			reg = <0x50000000 0x400>;
+			ranges;
 			clocks = <&rcc STM32_CLOCK(AHB1, 28)>;
 			clock-names = "adcx";
-			interrupts = <18 0>;
-			#io-channel-cells = <1>;
 			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <2 3 5 8 20 62 182 602>;
 			st,adc-sequencer = "programmable";
@@ -101,6 +102,13 @@
 			st,adc-has-differential-support;
 			st,adc-has-injected-support;
 			status = "disabled";
+
+			adc1: adc@50000000 {
+				reg = <0x50000000 0x100>;
+				interrupts = <18 0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		rtc@40002800 {

@@ -379,13 +379,14 @@
 			};
 		};
 
-		adc1: adc@40012400 {
+		adc1_common: adc@40012400 {
 			compatible = "st,stm32-adc";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			reg = <0x40012400 0x400>;
+			ranges;
 			clocks = <&rcc STM32_CLOCK(APB2, 9)>;
 			clock-names = "adcx";
-			interrupts = <12 0>;
-			#io-channel-cells = <1>;
 			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <2 8 14 29 42 56 72 240>;
 			num-sampling-time-common-channels = <1>;
@@ -393,6 +394,13 @@
 			st,adc-oversampler = "none";
 			st,adc-internal-regulator = "none";
 			status = "disabled";
+
+			adc1: adc@40012400 {
+				reg = <0x40012400 0x100>;
+				interrupts = <12 0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		dma1: dma@40020000 {

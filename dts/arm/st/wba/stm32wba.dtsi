@@ -504,22 +504,30 @@
 			};
 		};
 
-		adc4: adc@46021000 {
+		adc4_common: adc@46021000 {
 			compatible = "st,stm32-adc";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			reg = <0x46021000 0x400>;
+			ranges;
 			clocks = <&rcc STM32_CLOCK(AHB4, 5)>,
 				 <&rcc STM32_SRC_HCLK1 ADC_SEL(0)>;
 			clock-names = "adcx", "adc_ker";
-			interrupts = <65 0>;
-			#io-channel-cells = <1>;
+			st,adc-clock-source = "ASYNC";
 			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <2 4 8 13 20 40 80 815>;
 			num-sampling-time-common-channels = <2>;
-			st,adc-clock-source = "ASYNC";
 			st,adc-sequencer = "fixed";
 			st,adc-oversampler = "minimal";
 			st,adc-internal-regulator = "startup-hw-status";
 			status = "disabled";
+
+			adc4: adc@46021000 {
+				reg = <0x46021000 0x100>;
+				interrupts = <65 0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		lptim1: timers@46004400 {

@@ -144,30 +144,24 @@
 			};
 		};
 
-		adc2: adc@40012800 {
-			compatible = "st,stm32f1-adc", "st,stm32-adc";
-			reg = <0x40012800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB2, 10)>;
-			clock-names = "adcx";
-			/* Shares vector with ADC1 */
-			interrupts = <18 0>;
-			#io-channel-cells = <1>;
-			st,adc-resolutions = <12>;
-			sampling-times = <2 8 14 29 42 56 72 240>;
-			st,adc-sequencer = "programmable";
-			st,adc-oversampler = "none";
-			st,adc-internal-regulator = "none";
-			st,adc-has-injected-support;
-			status = "disabled";
+		adc12_common: adc@40012400 {
+			adc2: adc@40012800 {
+				reg = <0x40012800 0x400>;
+				clocks = <&rcc STM32_CLOCK(APB2, 10)>;
+				clock-names = "adcx";
+				/* Shares vector with ADC1 */
+				interrupts = <18 0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
 		};
 
-		adc3: adc@40013c00 {
+		adc3_common: adc@40013c00 {
 			compatible = "st,stm32f1-adc", "st,stm32-adc";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			reg = <0x40013c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB2, 15)>;
-			clock-names = "adcx";
-			interrupts = <47 0>;
-			#io-channel-cells = <1>;
+			ranges;
 			st,adc-resolutions = <12>;
 			sampling-times = <2 8 14 29 42 56 72 240>;
 			st,adc-sequencer = "programmable";
@@ -175,6 +169,15 @@
 			st,adc-internal-regulator = "none";
 			st,adc-has-injected-support;
 			status = "disabled";
+
+			adc3: adc@40013c00 {
+				reg = <0x40013c00 0x400>;
+				clocks = <&rcc STM32_CLOCK(APB2, 15)>;
+				clock-names = "adcx";
+				interrupts = <47 0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		timers8: timers@40013400 {

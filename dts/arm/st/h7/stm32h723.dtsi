@@ -48,7 +48,7 @@
 		 * ADC3 on STM32H723, 725, 730, 733 & 735 is a 12-bit resolution
 		 * ADC, so we redefine the resolution for these devices.
 		 */
-		adc3: adc@58026000 {
+		adc3_common: adc@58026000 {
 			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
 			st,adc-oversampler = "minimal";
