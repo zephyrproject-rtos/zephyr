@@ -68,10 +68,16 @@ void condvar_wait_task(void *p1, void *p2, void *p3)
 
 	switch (time_val) {
 	case K_TICKS_FOREVER:
-		zassert_true(ret_value == 0,
-		     "k_condvar_wait failed.");
-		zassert_false(ret_value == 0,
-		     "condvar wait task wakeup.");
+		/*
+		 * With K_FOREVER and no waker, k_condvar_wait() must block
+		 * indefinitely. Reaching here means it returned at all, which
+		 * can only be a spurious wakeup -- fail unconditionally. In the
+		 * expected case the test aborts this thread while it is still
+		 * blocked, so this code is never reached.
+		 */
+		zassert_unreachable(
+			"k_condvar_wait(K_FOREVER) returned without a signal (ret %d)",
+			ret_value);
 		break;
 	case 0:
 		zassert_true(ret_value == -EAGAIN,
@@ -261,34 +267,43 @@ ZTEST_USER(condvar_tests, test_condvar_wait_timeout)
  * @brief Verify a K_FOREVER waiter stays blocked when no signal is sent.
  *
  * @details
- * A helper thread calls k_condvar_wait() with K_FOREVER and no thread signals
- * the condition variable. The waiter must remain blocked; the test then aborts
- * it. The intent is to confirm the absence of a spurious wakeup.
+ * A helper thread calls k_condvar_wait() with K_FOREVER and no thread ever
+ * signals the condition variable. The waiter must remain blocked. The test
+ * confirms this explicitly by joining the helper with a finite deadline: the
+ * join must time out, proving the thread is still alive and blocked. The waiter
+ * is then aborted.
+ *
+ * Test steps:
+ * - Start a helper thread that calls k_condvar_wait(..., K_FOREVER).
+ * - k_thread_join() the helper with a finite deadline.
  *
  * Expected result:
- * - The waiter never returns from k_condvar_wait() and is aborted while blocked.
- *
- * @note Weak verification: the success criterion is implicit (the waiter is
- *       aborted, never running its post-wait assertions). The K_TICKS_FOREVER
- *       branch in condvar_wait_task() contains contradictory assertions
- *       (ret_value == 0 and ret_value != 0) that are dead code here because the
- *       thread is aborted before returning. As written, this test would not
- *       detect a spurious wakeup. Consider verifying blocked state explicitly,
- *       e.g. with k_thread_join() and a deadline.
+ * - k_thread_join() returns -EAGAIN (the deadline expires while the helper is
+ *   still blocked). A return of 0 would mean a spurious wakeup let the helper
+ *   terminate, which condvar_wait_task() also catches with zassert_unreachable().
  *
  * @see k_condvar_wait()
+ * @see k_thread_join()
  */
 ZTEST_USER(condvar_tests, test_condvar_wait_forever)
 {
-	timeout = K_TICKS_FOREVER;
+	int ret;
 
+	timeout = K_TICKS_FOREVER;
 
 	k_thread_create(&condvar_tid, stack_1, STACK_SIZE,
 			condvar_wait_task, &timeout, NULL, NULL,
 			PRIO_WAIT, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
-	/* giving time for the condvar_wait_task to execute */
-	k_yield();
+	/*
+	 * No thread ever signals the condition variable, so the waiter must
+	 * stay blocked. Joining with a deadline must time out (-EAGAIN); a
+	 * return of 0 would mean k_condvar_wait() returned spuriously and the
+	 * helper terminated.
+	 */
+	ret = k_thread_join(&condvar_tid, K_MSEC(100));
+	zassert_equal(ret, -EAGAIN,
+		      "k_condvar_wait(K_FOREVER) did not stay blocked (ret %d)", ret);
 
 	k_thread_abort(&condvar_tid);
 }
