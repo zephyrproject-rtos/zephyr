@@ -32,3 +32,10 @@ properties:
 
   current-speed:
     type: int
+
+  loopback:
+    type: boolean
+    description: |
+      Enable the LP UART hardware internal loopback, tying TX to RX inside
+      the peripheral. Intended for self-test on hardware without external
+      wiring.
