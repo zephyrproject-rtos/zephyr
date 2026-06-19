@@ -128,6 +128,10 @@ struct usbh_xfer_anchor {
 	struct k_mutex mutex;
 	/** New transfers are accepted while set */
 	bool accept;
+	/** Signalled when all anchored transfers have completed */
+	struct k_condvar drained;
+	/** Number of anchored transfers not yet completed */
+	uint32_t count;
 };
 
 /**
@@ -268,7 +272,8 @@ void usbh_xfer_anchor_set_accept(struct usbh_xfer_anchor *const anchor,
  *
  * The anchor holds a reference to the transfer while it is anchored.
  *
- * @note On enqueue error the caller must unanchor the transfer before freeing it.
+ * @note On enqueue error the caller must call usbh_xfer_anchor_abort() before
+ * freeing the transfer.
  *
  * @param[in] anchor Anchor
  * @param[in] xfer UHC transfer
@@ -278,6 +283,13 @@ void usbh_xfer_anchor_set_accept(struct usbh_xfer_anchor *const anchor,
  */
 int usbh_xfer_anchor(struct usbh_xfer_anchor *const anchor,
 		     struct uhc_transfer *const xfer);
+
+/**
+ * @brief Undo usbh_xfer_anchor() after a failed enqueue.
+ *
+ * @param[in] xfer UHC transfer
+ */
+void usbh_xfer_anchor_abort(struct uhc_transfer *const xfer);
 
 /**
  * @brief Remove transfer from the anchor list.
@@ -290,6 +302,28 @@ int usbh_xfer_anchor(struct usbh_xfer_anchor *const anchor,
  * @retval NULL if the transfer was not anchored
  */
 struct usbh_xfer_anchor *usbh_xfer_unanchor(struct uhc_transfer *const xfer);
+
+/**
+ * @brief Decrease the number of anchored transfers not yet completed.
+ *
+ * Called by the stack after the completion callback of an unanchored transfer.
+ * Signals usbh_xfer_anchor_drain() waiters once the number reaches zero.
+ *
+ * @param[in] anchor Anchor returned by usbh_xfer_unanchor()
+ */
+void usbh_xfer_anchor_release(struct usbh_xfer_anchor *const anchor);
+
+/**
+ * @brief Wait until all anchored transfers have completed.
+ *
+ * @param[in] anchor Anchor
+ * @param[in] timeout Time to wait
+ *
+ * @return 0 on success, other values on error
+ * @retval -ETIMEDOUT if the transfers did not drain in time
+ */
+int usbh_xfer_anchor_drain(struct usbh_xfer_anchor *const anchor,
+			   k_timeout_t timeout);
 
 /**
  * @brief Remove all transfers from the anchor list.
