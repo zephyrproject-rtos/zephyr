@@ -3,35 +3,47 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Devicetree binding constants for the Analog Devices ADXL345 accelerometer.
+ * @ingroup adxl345_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_ADI_ADX345_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_ADI_ADX345_H_
 
 /**
- * @defgroup adxl345 ADXL345 DT Options
- * @ingroup sensor_interface
+ * @defgroup adxl345_interface ADXL345
+ * @ingroup sensor_interface_ext_adi
+ * @brief Analog Devices ADXL345 3-axis accelerometer
  * @{
  */
 
 /**
- * @defgroup adxl345_odr Output Rate options
+ * @name Output data rate options
+ *
+ * Values for the `odr` devicetree property.
  * @{
  */
-#define ADXL345_DT_ODR_12_5		7
-#define ADXL345_DT_ODR_25		8
-#define ADXL345_DT_ODR_50		9
-#define ADXL345_DT_ODR_100		10
-#define ADXL345_DT_ODR_200		11
-#define ADXL345_DT_ODR_400		12
+#define ADXL345_DT_ODR_12_5 7  /**< 12.5 Hz */
+#define ADXL345_DT_ODR_25   8  /**< 25 Hz */
+#define ADXL345_DT_ODR_50   9  /**< 50 Hz */
+#define ADXL345_DT_ODR_100  10 /**< 100 Hz */
+#define ADXL345_DT_ODR_200  11 /**< 200 Hz */
+#define ADXL345_DT_ODR_400  12 /**< 400 Hz */
 /** @} */
 
 /**
- * @defgroup adxl345_range Select range options
+ * @name Measurement range options
+ *
+ * Values for the `range` devicetree property.
  * @{
  */
-#define ADXL345_DT_RANGE_2G	    0
-#define ADXL345_DT_RANGE_4G	    1
-#define ADXL345_DT_RANGE_8G	    2
-#define ADXL345_DT_RANGE_16G    3
+#define ADXL345_DT_RANGE_2G  0 /**< ±2 g */
+#define ADXL345_DT_RANGE_4G  1 /**< ±4 g */
+#define ADXL345_DT_RANGE_8G  2 /**< ±8 g */
+#define ADXL345_DT_RANGE_16G 3 /**< ±16 g */
 /** @} */
 
 /** @} */
