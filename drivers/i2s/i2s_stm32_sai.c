@@ -866,7 +866,7 @@ static int stm32_sai_sub_trigger(const struct device *dev, enum i2s_dir dir,
 
 	if (dir == I2S_DIR_BOTH) {
 		LOG_ERR("Unsupported direction: %d", (int)dir);
-		return -ENOSYS;
+		return -ENOTSUP;
 	}
 
 	switch (cmd) {
