@@ -122,6 +122,8 @@ struct usbh_class_data {
 	sys_dlist_t xfer_anchor_list;
 	/** Anchor list mutex */
 	struct k_mutex mutex;
+	/** Set while bound to a device. New transfers are rejected when clear */
+	bool bound;
 	/** Name of the USB host class instance */
 	const char *name;
 	/** Pointer to USB device this class is used for */
