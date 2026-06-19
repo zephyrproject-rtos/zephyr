@@ -18,4 +18,14 @@ config RASPBERRYPI_FIRMWARE_INIT_PRIORITY
 	  Must be higher (later) than CONFIG_MBOX_INIT_PRIORITY so the
 	  mailbox device is ready before this drivers initialization runs.
 
+config RASPBERRYPI_FIRMWARE_TRANSFER_TIMEOUT_MS
+	int "VideoCore firmware transfer timeout (ms)"
+	default 100
+	help
+	  Maximum time to wait for a VideoCore mailbox property response.
+	  The default suits the fast query tags. Some SET_POWER_STATE
+	  requests are much slower -- powering the USB HCD island on
+	  BCM2710 takes ~530 ms -- so a consumer that issues those should
+	  raise this accordingly.
+
 endif
