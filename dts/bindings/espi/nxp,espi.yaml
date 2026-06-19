@@ -1,0 +1,108 @@
+# Copyright 2025-2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP MCX A series eSPI target controller.
+
+  The peripheral has up to 5 configurable I/O ports.
+  Each port is described by a child node whose reg property gives
+  the hardware port index (0-4).
+
+compatible: "nxp,espi"
+
+include: [espi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  ram-base-addr:
+    type: int
+    required: true
+    description: |
+      SRAM base address used by the eSPI hardware for mailbox and
+      OOB DMA buffers. Must be naturally aligned and accessible
+      by the eSPI bus-master engine.
+
+  map-base0-addr:
+    type: int
+    default: 0
+    description: |
+      Upper 16-bit base address for ports that select BASE0
+      addressing via the PnADDR register. Combined with the
+      port's io-addr to form the full host-side address.
+
+  map-base1-addr:
+    type: int
+    default: 0
+    description: |
+      Upper 16-bit base address for ports that select BASE1
+      addressing via the PnADDR register. Combined with the
+      port's io-addr to form the full host-side address.
+
+  flash-dev:
+    type: phandle
+    description: |
+      Reference to the local SPI NOR flash device used for
+      Target Attached Flash (TAF) passthrough when the eSPI
+      flash channel is enabled.
+
+child-binding:
+  description: eSPI port configuration (one child per hardware port).
+
+  properties:
+    reg:
+      type: int
+      required: true
+      description: Hardware port index (0-4).
+
+    port-type:
+      type: int
+      required: true
+      enum: [0x0, 0x1, 0x2, 0x4, 0x5, 0x8, 0x9, 0xA, 0xB, 0xC]
+      description: |
+        Port function type:
+          0x0 = Unconfigured
+          0x1 = ACPI Endpoint
+          0x2 = ACPI Index-Data
+          0x4 = Bus Master Memory
+          0x5 = Bus Master Flash
+          0x8 = Mailbox Shared
+          0x9 = Mailbox Single
+          0xA = Mailbox Split
+          0xB = Mailbox OOB Split
+          0xC = Mailbox OEM
+
+    io-addr:
+      type: int
+      default: 0
+      description: Host-side I/O address offset for this port.
+
+    ram-offset:
+      type: int
+      default: 0
+      description: Byte offset from ram-base-addr for this port's DMA buffer.
+
+    ram-size:
+      type: int
+      default: 0
+      description: |
+        RAM buffer size encoding:
+          0=4B, 1=8B, 2=16B, 3=32B, 4=64B, 5=128B, 6=256B, 7=512B.
+
+    idx-offset:
+      type: int
+      default: 0
+      description: Index register offset for ACPI Index-Data ports.

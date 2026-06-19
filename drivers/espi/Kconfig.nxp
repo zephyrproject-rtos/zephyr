@@ -1,0 +1,18 @@
+# Copyright 2025-2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config ESPI_NXP
+	bool "NXP eSPI target driver"
+	default y
+	depends on DT_HAS_NXP_ESPI_ENABLED
+	select ESPI_TARGET
+	select PINCTRL
+	help
+	  Enable the eSPI target driver for NXP SoCs.
+
+config ESPI_NXP_TIMEOUT_MS
+	int "eSPI operation timeout in milliseconds"
+	default 200
+	depends on ESPI_NXP
+	help
+	  Timeout for synchronous eSPI operations such as OOB receive.

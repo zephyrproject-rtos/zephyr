@@ -280,6 +280,11 @@ void board_early_init_hook(void)
 
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(espi0))
+	CLOCK_SetClockDiv(kCLOCK_DivESPI0, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_ESPI);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(edma0))
 	RESET_ReleasePeripheralReset(kDMA0_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_GateDMA0);

@@ -123,4 +123,33 @@
 			input-enable;
 		};
 	};
+
+	pinmux_espi0: pinmux_espi0 {
+		group0 {
+			pinmux = <ESPI0_DATA0_P4_9>,
+				 <ESPI0_DATA1_P4_8>,
+				 <ESPI0_DATA2_P4_13>,
+				 <ESPI0_DATA3_P4_12>,
+				 <ESPI0_CLK_P4_10>,
+				 <ESPI0_CSN_P4_11>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <ESPI0_RST_P4_6>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <ESPI0_NOTIFY_P4_7>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+			drive-open-drain;
+		};
+	};
 };

@@ -331,6 +331,12 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 		CLOCK_EnableClock(kCLOCK_GateTRNG0);
 	}
 #endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(espi0))
+	if ((uint32_t)sub_system == MCUX_ESPI0_CLK) {
+		CLOCK_EnableClock(kCLOCK_GateESPI0);
+	}
+#endif
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpcmp0))
