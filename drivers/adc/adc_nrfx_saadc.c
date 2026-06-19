@@ -503,6 +503,70 @@ static inline uint16_t interval_to_cc(uint16_t interval_us)
 	return (interval_us * 16) - 1;
 }
 
+#ifdef CONFIG_ADC_THRESHOLD
+static int threshold_set(const struct device *dev,
+		    const struct adc_sequence *sequence)
+{
+	uint32_t selected_channels = sequence->channels;
+	int16_t lower_threshold;
+	int16_t upper_threshold;
+	uint8_t channel_id = 0U;
+	int err;
+
+	if (sequence->lower_threshold > INT16_MAX || sequence->lower_threshold < INT16_MIN) {
+		LOG_ERR("Lower threshold (%d) out of bounds : [%d, %d]", sequence->lower_threshold,
+			INT16_MAX, INT16_MIN);
+		return -EINVAL;
+	}
+
+	if (sequence->upper_threshold > INT16_MAX || sequence->upper_threshold < INT16_MIN) {
+		LOG_ERR("Upper threshold (%d) out of bounds : [%d, %d]", sequence->upper_threshold,
+			INT16_MAX, INT16_MIN);
+		return -EINVAL;
+	}
+
+	switch (sequence->threshold_mode) {
+	case ADC_THRESHOLD_MODE_LOWER:
+		/* Nrfx HAL disable LIMITH interrupt when upper_threshold is set to INT16_MAX */
+		upper_threshold = INT16_MAX;
+		lower_threshold = (int16_t) sequence->lower_threshold;
+		break;
+	case ADC_THRESHOLD_MODE_UPPER:
+		/* Nrfx HAL disable LIMITL interrupt when lower_threshold is set to INT16_MIN */
+		upper_threshold = (int16_t) sequence->upper_threshold;
+		lower_threshold = INT16_MIN;
+		break;
+	case ADC_THRESHOLD_MODE_OUTSIDE:
+		upper_threshold = (int16_t) sequence->upper_threshold;
+		lower_threshold = (int16_t) sequence->lower_threshold;
+		if (lower_threshold > upper_threshold) {
+			LOG_ERR("Upper threshold should be higher than lower threshold");
+			return -EINVAL;
+		}
+		break;
+	case ADC_THRESHOLD_MODE_DISEABLE:
+		upper_threshold = INT16_MAX;
+		lower_threshold = INT16_MIN;
+		break;
+	default:
+		LOG_ERR("Threshold mode not supported");
+		return -EINVAL;
+	}
+
+	do {
+		if (selected_channels & BIT(channel_id)) {
+			err = nrfx_saadc_limits_set(channel_id, lower_threshold, upper_threshold);
+			if (err != 0) {
+				LOG_ERR("Failed to set thresholds on channel %d", channel_id);
+				return err;
+			}
+		}
+	} while (++channel_id < SAADC_CH_NUM);
+
+	return 0;
+}
+#endif /* CONFIG_ADC_THRESHOLD */
+
 static int start_read(const struct device *dev,
 		      const struct adc_sequence *sequence)
 {
@@ -607,6 +671,14 @@ static int start_read(const struct device *dev,
 		return error;
 	}
 
+#ifdef CONFIG_ADC_THRESHOLD
+	error = threshold_set(dev, sequence);
+	if (error != 0) {
+		LOG_ERR("Failed to configure limits monitoring: %d", error);
+		return error;
+	}
+#endif /* CONFIG_ADC_THRESHOLD */
+
 	adc_context_start_read(&m_data.ctx, sequence);
 
 	return adc_context_wait_for_completion(&m_data.ctx);
@@ -676,6 +748,24 @@ static void event_handler(const nrfx_saadc_evt_t *event)
 		}
 	} else if (event->type == NRFX_SAADC_EVT_FINISHED) {
 		adc_context_complete(&m_data.ctx, 0);
+#ifdef CONFIG_ADC_THRESHOLD
+	} else if (event->type == NRFX_SAADC_EVT_LIMIT) {
+
+		uint32_t channel_mask = m_data.ctx.sequence.channels &
+					(BIT(event->data.limit.channel) - 1);
+		uint8_t channel_offset = POPCOUNT(channel_mask);
+		uint32_t value = (uint32_t) *((nrf_saadc_value_t *)m_data.user_buffer +
+								   m_data.ctx.sampling_index *
+								   m_data.active_channel_cnt +
+								   channel_offset);
+
+		adc_context_on_threshold_event(&m_data.ctx,
+					       DEVICE_DT_INST_GET(0),
+					       event->data.limit.channel,
+					       value);
+#endif /* CONFIG_ADC_THRESHOLD */
+	} else {
+
 	}
 }
 
@@ -706,13 +796,27 @@ static int init_saadc(const struct device *dev)
 	return pm_device_driver_init(dev, saadc_pm_handler);
 }
 
+#ifdef CONFIG_ADC_THRESHOLD
+/* Implementation of the ADC driver API function: adc_set_threshold_callback. */
+static int adc_nrfx_set_threshold_callback(const struct device *dev,
+					   adc_threshold_callback callback,
+					   void *user_data)
+{
+	adc_context_set_threshold_callback(&m_data.ctx, callback, user_data);
+	return 0;
+}
+#endif /* CONFIG_ADC_THRESHOLD */
+
 static DEVICE_API(adc, adc_nrfx_driver_api) = {
-	.channel_setup = adc_nrfx_channel_setup,
-	.read          = adc_nrfx_read,
+	.channel_setup		= adc_nrfx_channel_setup,
+	.read			= adc_nrfx_read,
 #ifdef CONFIG_ADC_ASYNC
-	.read_async    = adc_nrfx_read_async,
+	.read_async		= adc_nrfx_read_async,
 #endif
-	.ref_internal  = NRFX_SAADC_REF_INTERNAL_VALUE,
+#ifdef CONFIG_ADC_THRESHOLD
+	.set_threshold_callback = adc_nrfx_set_threshold_callback,
+#endif /* CONFIG_ADC_THRESHOLD */
+	.ref_internal		= NRFX_SAADC_REF_INTERNAL_VALUE,
 };
 
 NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(DT_DRV_INST(0));
