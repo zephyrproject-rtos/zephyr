@@ -126,6 +126,8 @@ struct usbh_xfer_anchor {
 	sys_dlist_t list;
 	/** Anchor list mutex */
 	struct k_mutex mutex;
+	/** New transfers are accepted while set */
+	bool accept;
 };
 
 /**
@@ -246,9 +248,20 @@ int usbh_shutdown(struct usbh_context *const uhs_ctx);
 /**
  * @brief Initialize an anchor.
  *
+ * New transfers are rejected until usbh_xfer_anchor_set_accept() sets the flag.
+ *
  * @param[in] anchor Anchor
  */
 void usbh_xfer_anchor_init(struct usbh_xfer_anchor *const anchor);
+
+/**
+ * @brief Set or clear the flag that makes the anchor accept new transfers.
+ *
+ * @param[in] anchor Anchor
+ * @param[in] accept True to accept new transfers
+ */
+void usbh_xfer_anchor_set_accept(struct usbh_xfer_anchor *const anchor,
+				 const bool accept);
 
 /**
  * @brief Anchor a transfer before it is submitted to the controller.
@@ -261,6 +274,7 @@ void usbh_xfer_anchor_init(struct usbh_xfer_anchor *const anchor);
  * @param[in] xfer UHC transfer
  *
  * @return 0 on success, other values on error
+ * @retval -ESHUTDOWN if the anchor does not accept new transfers
  */
 int usbh_xfer_anchor(struct usbh_xfer_anchor *const anchor,
 		     struct uhc_transfer *const xfer);

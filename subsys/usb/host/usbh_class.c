@@ -65,6 +65,9 @@ void usbh_class_remove_all(struct usb_device *const udev)
 			continue;
 		}
 
+		/* Stop the instance from accepting new transfers */
+		usbh_xfer_anchor_set_accept(&c_data->anchor, false);
+
 		ret = usbh_class_removed(c_data);
 		if (ret != 0) {
 			LOG_ERR("Failed to handle device removal for each class (%d)", ret);
@@ -140,6 +143,8 @@ static void usbh_class_probe_function(struct usb_device *const udev,
 		c_node->state = USBH_CLASS_STATE_BOUND;
 		c_data->udev = udev;
 		c_data->iface = iface;
+
+		usbh_xfer_anchor_set_accept(&c_data->anchor, true);
 		break;
 	}
 }

@@ -11,19 +11,36 @@ void usbh_xfer_anchor_init(struct usbh_xfer_anchor *const anchor)
 {
 	sys_dlist_init(&anchor->list);
 	k_mutex_init(&anchor->mutex);
+	anchor->accept = false;
+}
+
+void usbh_xfer_anchor_set_accept(struct usbh_xfer_anchor *const anchor,
+				 const bool accept)
+{
+	k_mutex_lock(&anchor->mutex, K_FOREVER);
+	anchor->accept = accept;
+	k_mutex_unlock(&anchor->mutex);
 }
 
 int usbh_xfer_anchor(struct usbh_xfer_anchor *const anchor,
 		     struct uhc_transfer *const xfer)
 {
-	sys_dnode_init(&xfer->anchor_node);
+	int ret = 0;
+
 	k_mutex_lock(&anchor->mutex, K_FOREVER);
-	xfer->anchor = anchor;
-	sys_dlist_append(&anchor->list, &xfer->anchor_node);
-	uhc_xfer_ref(xfer);
+
+	if (!anchor->accept) {
+		ret = -ESHUTDOWN;
+	} else {
+		sys_dnode_init(&xfer->anchor_node);
+		xfer->anchor = anchor;
+		sys_dlist_append(&anchor->list, &xfer->anchor_node);
+		uhc_xfer_ref(xfer);
+	}
+
 	k_mutex_unlock(&anchor->mutex);
 
-	return 0;
+	return ret;
 }
 
 struct usbh_xfer_anchor *usbh_xfer_unanchor(struct uhc_transfer *const xfer)
