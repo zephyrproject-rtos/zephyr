@@ -84,6 +84,35 @@ struct arm_mpu_config {
  */
 extern const struct arm_mpu_config mpu_config;
 
+/**
+ * @brief Enable the ARM Memory Protection Unit (MPU).
+ *
+ * Turns the MPU on so that the currently programmed memory regions become
+ * active and start enforcing their access permissions and memory attributes.
+ *
+ * It is typically called during MPU initialization, but it may also be used to
+ * re-enable protection after a transient region that temporarily called
+ * arm_core_mpu_disable(). The set of active regions is whatever was programmed
+ * prior to the call; this function does not modify any region.
+ */
+void arm_core_mpu_enable(void);
+
+/**
+ * @brief Disable the ARM Memory Protection Unit (MPU).
+ *
+ * Turns the MPU off so that no memory access permissions or attributes are
+ * enforced. After this call every access is permitted until
+ * the MPU is re-enabled with arm_core_mpu_enable().
+ *
+ * The programmed region descriptors are left untouched, so a subsequent
+ * arm_core_mpu_enable() restores the previous protection without
+ * reprogramming.
+ *
+ * @warning While the MPU is disabled, stack overflow guards, null-pointer
+ *          detection and userspace isolation are not enforced.
+ */
+void arm_core_mpu_disable(void);
+
 #if defined(CONFIG_CPU_CORTEX_M)
 /**
  * @brief MPU context structure to retain MPU register state across deep sleep.

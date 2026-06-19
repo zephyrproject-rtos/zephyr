@@ -10,14 +10,12 @@
 #include <zephyr/kernel.h>
 
 #include "arm_core_mpu_dev.h"
+#include <zephyr/arch/arm/mpu/arm_mpu.h>
 #include <zephyr/linker/linker-defs.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mpu);
-
-extern void arm_core_mpu_enable(void);
-extern void arm_core_mpu_disable(void);
 
 /*
  * Maximum number of dynamic memory partitions that may be supplied to the MPU
