@@ -403,13 +403,6 @@ static void handle_cont_packet(uint8_t *raw_pkt)
 		return;
 	}
 
-	if (sys_timepoint_expired(ctx.msg_timeout)) {
-		LOG_WRN("CTAPHID reassembly timeout");
-		send_ctaphid_error(cid, CTAPHID_ERR_MSG_TIMEOUT);
-		abort_assembly();
-		return;
-	}
-
 	if (seq != ctx.msg_seq) {
 		LOG_WRN("Unexpected sequence: got %u, expected %u", seq, ctx.msg_seq);
 		send_ctaphid_error(cid, CTAPHID_ERR_INVALID_SEQ);
@@ -442,6 +435,13 @@ static void hid_rx_worker(struct k_work *work)
 	uint8_t pkt[CTAPHID_PACKET_SIZE];
 
 	while (k_msgq_get(&hid_rx_msgq, pkt, K_NO_WAIT) == 0) {
+		/* Check timeout before any packet handling */
+		if (ctx.msg_in_progress && sys_timepoint_expired(ctx.msg_timeout)) {
+			LOG_WRN("CTAPHID reassembly timeout on CID 0x%08x", ctx.msg_cid);
+			send_ctaphid_error(ctx.msg_cid, CTAPHID_ERR_MSG_TIMEOUT);
+			abort_assembly();
+		}
+
 		if (pkt[4] & BIT(7)) {
 			handle_init_packet(pkt);
 		} else {
