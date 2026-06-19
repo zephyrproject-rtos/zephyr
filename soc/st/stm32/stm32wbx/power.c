@@ -102,8 +102,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 		LL_LPM_EnableDeepSleep();
 
-		/* enter SLEEP mode : WFE or WFI */
-		k_cpu_idle();
+		__WFI();
 	} else {
 		LOG_DBG("Unsupported power state %u", state);
 		return;
@@ -141,13 +140,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 
 	/* Release RCC semaphore */
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
-
-	/*
-	 * System is now in active mode.
-	 * Reenable interrupts which were disabled
-	 * when OS started idling code.
-	 */
-	irq_unlock(0);
 }
 
 /* Initialize STM32 Power */

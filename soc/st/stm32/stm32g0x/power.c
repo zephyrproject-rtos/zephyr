@@ -32,15 +32,13 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		/* enter STOP0 mode */
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP0);
 		LL_LPM_EnableDeepSleep();
-		/* enter SLEEP mode : WFE or WFI */
-		k_cpu_idle();
+		__WFI();
 		break;
 	case 2: /* this corresponds to the STOP1 mode: */
 		/* enter STOP1 mode */
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP1);
 		LL_LPM_EnableDeepSleep();
-		/* enter SLEEP mode : WFE or WFI */
-		k_cpu_idle();
+		__WFI();
 		break;
 	default:
 		LOG_DBG("Unsupported power state substate-id %u",
@@ -71,13 +69,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		/* need to restore the clock */
 		stm32_clock_control_init(NULL);
 	}
-
-	/*
-	 * System is now in active mode.
-	 * Reenable interrupts which were disabled
-	 * when OS started idling code.
-	 */
-	irq_unlock(0);
 }
 
 /* Initialize STM32 Power */

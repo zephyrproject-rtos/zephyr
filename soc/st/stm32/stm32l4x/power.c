@@ -62,14 +62,13 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		set_mode_stop(substate_id);
 		/* Set SLEEPDEEP bit of Cortex System Control Register */
 		LL_LPM_EnableDeepSleep();
-		/* Select mode entry : WFE or WFI and enter the CPU selected mode */
-		k_cpu_idle();
+		__WFI();
 		break;
 	case PM_STATE_STANDBY:
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
 		LL_LPM_EnableDeepSleep();
 		LL_DBGMCU_DisableDBGStandbyMode();
-		k_cpu_idle();
+		__WFI();
 		break;
 	default:
 		LOG_DBG("Unsupported power state %u", state);
@@ -103,13 +102,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		LOG_DBG("Unsupported power state %u", state);
 		break;
 	}
-
-	/*
-	 * System is now in active mode.
-	 * Reenable interrupts which were disabled
-	 * when OS started idling code.
-	 */
-	irq_unlock(0);
 }
 
 /* Initialize STM32 Power */

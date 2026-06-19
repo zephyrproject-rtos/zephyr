@@ -40,7 +40,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP0);
 		LL_LPM_EnableDeepSleep();
 
-		k_cpu_idle();
+		__WFI();
 
 		break;
 	default:
@@ -65,10 +65,4 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		LOG_WRN("Unsupported power substate-id %u", state);
 		break;
 	}
-
-	/*
-	 * System is now in active mode. Reenable interrupts which were
-	 * disabled when OS started idling code.
-	 */
-	irq_unlock(0);
 }
