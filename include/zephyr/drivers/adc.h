@@ -64,6 +64,42 @@ enum adc_gain {
 };
 
 /**
+ * @brief Apply the application of gain to a raw value.
+ *
+ * For example, if the gain passed in is ADC_GAIN_1_6 and the
+ * referenced value is 60, the value after the function returns is 10.
+ *
+ * @param gain the gain used to amplify the input signal.
+ *
+ * @param value a pointer to a value that initially does not have
+ * the effect of the applied gain but has that effect applied when
+ * this function successfully returns. If the gain cannot be
+ * applied the value remains unchanged.
+ *
+ * @retval 0 if the gain was successfully applied
+ * @retval -EINVAL if the gain could not be interpreted
+ */
+int adc_gain_apply(enum adc_gain gain, int32_t *value);
+
+/**
+ * @brief Apply the application of gain to a raw value.
+ *
+ * For example, if the gain passed in is ADC_GAIN_1_6 and the
+ * referenced value is 60, the value after the function returns is 10.
+ *
+ * @param gain the gain used to amplify the input signal.
+ *
+ * @param value a pointer to a value that initially does not have
+ * the effect of the applied gain but has that effect applied when
+ * this function successfully returns. If the gain cannot be
+ * applied the value remains unchanged.
+ *
+ * @retval 0 if the gain was successfully applied
+ * @retval -EINVAL if the gain could not be interpreted
+ */
+int adc_gain_apply_64(enum adc_gain gain, int64_t *value);
+
+/**
  * @brief Invert the application of gain to a measurement value.
  *
  * For example, if the gain passed in is ADC_GAIN_1_6 and the
