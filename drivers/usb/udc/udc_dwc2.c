@@ -453,7 +453,13 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 			return -ENOTSUP;
 		}
 
-		sys_write32((uint32_t)(uintptr_t)(buf->data),
+		/* Program the controller's DMA master with the bus address for
+		 * this buffer. On SoCs where the DMA sits behind a bus whose
+		 * address space differs from the CPU's (e.g. BCM283x VideoCore,
+		 * bus = phys | 0xC0000000), the vendor quirk translates it;
+		 * otherwise this is the identity (CPU physical) address.
+		 */
+		sys_write32(dwc2_quirk_dma_addr(dev, buf->data),
 			    (mem_addr_t)&base->in_ep[ep_idx].diepdma);
 	}
 
