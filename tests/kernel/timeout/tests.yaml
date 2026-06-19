@@ -3,3 +3,9 @@ tests:
     tags:
       - kernel
       - timer
+  kernel.timer.timeout.min_heap:
+    extra_configs:
+      - CONFIG_TIMEOUT_BACKEND_MINHEAP=y
+    tags:
+      - kernel
+      - timer

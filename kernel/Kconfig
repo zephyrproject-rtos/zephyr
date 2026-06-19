@@ -752,6 +752,54 @@ config TIMEOUT_64BIT
 	  availability of absolute timeout values (which require the
 	  extra precision).
 
+choice TIMEOUT_BACKEND
+	prompt "Timeout queue backend"
+	default TIMEOUT_BACKEND_DLIST
+	depends on SYS_CLOCK_EXISTS
+	help
+	  Selects the data structure used by the kernel timeout subsystem
+	  to track pending timeouts. All backends share the same front-end
+	  (kernel/timeout.c); they differ only in the queue representation
+	  and its performance trade-offs.
+
+config TIMEOUT_BACKEND_DLIST
+	bool "Sorted delta list"
+	help
+	  The original Zephyr backend: a doubly linked list sorted by
+	  expiry, each node storing a delta to its predecessor. Insertion
+	  is O(n), head removal O(1). No capacity limit and no extra static
+	  RAM. The right default for most systems.
+
+config TIMEOUT_BACKEND_MINHEAP
+	bool "Binary min-heap [EXPERIMENTAL]"
+	depends on TIMEOUT_64BIT
+	select EXPERIMENTAL
+	help
+	  A binary min-heap keyed on absolute expiry tick. Insertion and
+	  arbitrary removal are O(log n). Requires 64-bit timeouts and a
+	  fixed-capacity heap (CONFIG_TIMEOUT_HEAP_MAX_ENTRIES); overflow is
+	  a fatal error. Consider this when many timeouts are pending and
+	  insertion cost on the delta list dominates.
+
+endchoice # TIMEOUT_BACKEND
+
+config TIMEOUT_HEAP_MAX_ENTRIES
+	int "Maximum simultaneous pending timeouts in the heap"
+	depends on TIMEOUT_BACKEND_MINHEAP
+	default 128
+	help
+	  Static capacity of the timeout min-heap array.
+
+	  Set this to the peak number of simultaneously pending timeouts your
+	  application requires. As a starting point, count:
+	    - Active threads (each may have one pending timeout)
+	    - Active k_timer instances
+	    - Delayable work items
+	    - Network / socket timeouts
+
+	  Overflow causes k_panic() at runtime. If you see unexpected panics,
+	  increase this value and rebuild.
+
 config SYS_CLOCK_MAX_TIMEOUT_DAYS
 	int "Max timeout (in days) used in conversions"
 	default 365

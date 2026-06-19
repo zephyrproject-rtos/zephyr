@@ -23,17 +23,30 @@ extern "C" {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
 /*
- * Per-node timeout helpers.
+ * Per-node timeout helpers (Kconfig choice TIMEOUT_BACKEND).
  *
  * z_init_timeout() and z_is_inactive_timeout() operate on a single
  * struct _timeout and are needed tree-wide (timer.c, work.c, poll.c, ...),
- * so they live here and depend only on struct _timeout's fields (see
- * kernel_structs.h). The queue itself (the z_timeout_q_*() operations and the
- * backend instance) is private to kernel/timeout.c, which includes the
- * matching backend implementation header directly. The sorted delta list is
- * the only backend today; when alternatives land this becomes a
- * Kconfig-driven choice.
+ * so they live here and depend only on the chosen backend's struct _timeout
+ * fields (see kernel_structs.h). The queue itself (the z_timeout_q_*()
+ * operations and the backend instance) is private to kernel/timeout.c, which
+ * includes the matching backend implementation header directly.
  */
+#if defined(CONFIG_TIMEOUT_BACKEND_MINHEAP)
+
+static inline void z_init_timeout(struct _timeout *to)
+{
+	to->heap_handle.idx = 0U;
+	to->abs_ticks = 0;
+}
+
+static inline bool z_is_inactive_timeout(const struct _timeout *to)
+{
+	return to->heap_handle.idx == 0U;
+}
+
+#else /* CONFIG_TIMEOUT_BACKEND_DLIST */
+
 static inline void z_init_timeout(struct _timeout *to)
 {
 	sys_dnode_init(&to->node);
@@ -44,6 +57,8 @@ static inline bool z_is_inactive_timeout(const struct _timeout *to)
 {
 	return !sys_dnode_is_linked(&to->node);
 }
+
+#endif
 
 /* Adds the timeout to the queue.
  *

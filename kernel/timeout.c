@@ -104,7 +104,11 @@ static uint32_t elapsed(void)
  * directly. The per-node helpers (z_init_timeout / z_is_inactive_timeout) are
  * tree-wide and live in timeout_q.h.
  */
+#if defined(CONFIG_TIMEOUT_BACKEND_MINHEAP)
+#include "timeout_minheap.h"
+#else /* CONFIG_TIMEOUT_BACKEND_DLIST */
 #include "timeout_list.h"
+#endif
 
 /*
  * Ticks the driver may wait before the next sys_clock_announce(). The
