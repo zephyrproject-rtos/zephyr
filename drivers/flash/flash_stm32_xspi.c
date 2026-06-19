@@ -911,13 +911,19 @@ static int stm32_xspi_set_memorymap(const struct device *dev)
 						: SPI_NOR_CMD_READ_FAST_4B)
 					: dev_data->read_opcode)
 				: SPI_NOR_OCMD_DTR_RD;
+
+	uint32_t address_mode_xspi_str = HAL_XSPI_ADDRESS_1_LINE;
+	if (dev_cfg->data_mode == XSPI_OCTO_MODE) {
+		address_mode_xspi_str = HAL_XSPI_ADDRESS_8_LINES;
+	} else if (dev_cfg->data_mode == XSPI_QUAD_MODE &&
+		   dev_data->read_mode == JESD216_MODE_144) {
+		address_mode_xspi_str = HAL_XSPI_ADDRESS_4_LINES;  /* 1-4-4 */
+	} else {
+		address_mode_xspi_str = HAL_XSPI_ADDRESS_1_LINE;   /* SPI, DUAL, 1-1-4 */
+	}
+
 	s_command.AddressMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
-				? ((dev_cfg->data_mode == XSPI_OCTO_MODE)
-					? HAL_XSPI_ADDRESS_8_LINES
-					: ((dev_cfg->data_mode == XSPI_QUAD_MODE &&
-					    dev_data->read_mode == JESD216_MODE_144)
-						? HAL_XSPI_ADDRESS_4_LINES  /* 1-4-4 */
-						: HAL_XSPI_ADDRESS_1_LINE)) /* SPI, DUAL, 1-1-4 */
+				? address_mode_xspi_str
 				: HAL_XSPI_ADDRESS_8_LINES;
 	s_command.AddressDTRMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
 				? HAL_XSPI_ADDRESS_DTR_DISABLE
@@ -935,13 +941,20 @@ static int stm32_xspi_set_memorymap(const struct device *dev)
 	s_command.DataDTRMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
 				? HAL_XSPI_DATA_DTR_DISABLE
 				: HAL_XSPI_DATA_DTR_ENABLE;
+
+	uint32_t dummy_cycles_str;
+	if (dev_cfg->data_mode == XSPI_OCTO_MODE) {
+		dummy_cycles_str = SPI_NOR_DUMMY_RD_OCTAL;
+	} else if (dev_cfg->data_mode == XSPI_QUAD_MODE) {
+		dummy_cycles_str = dev_data->read_dummy; /* from SFDP */
+	} else {
+		dummy_cycles_str = SPI_NOR_DUMMY_RD;     /* SPI */
+	}
+
 	s_command.DummyCycles = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
-				? ((dev_cfg->data_mode == XSPI_OCTO_MODE)
-					? SPI_NOR_DUMMY_RD_OCTAL
-					: (dev_cfg->data_mode == XSPI_QUAD_MODE)
-						? dev_data->read_dummy /* from SFDP */
-						: SPI_NOR_DUMMY_RD)    /* SPI */
+				? dummy_cycles_str
 				: SPI_NOR_DUMMY_RD_OCTAL_DTR;
+
 	s_command.DQSMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
 				? HAL_XSPI_DQS_DISABLE
 				: HAL_XSPI_DQS_ENABLE;
@@ -2112,13 +2125,6 @@ static int flash_stm32_xspi_init(const struct device *dev)
 				     == CLOCK_CONTROL_STATUS_ON) {
 		if (stm32_xspi_is_memorymap(dev)) {
 			LOG_DBG("NOR init'd in MemMapped mode");
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
-			ret = setup_pages_layout(dev);
-			if (ret != 0) {
-				LOG_ERR("layout setup failed: %d", ret);
-				return -ENODEV;
-			}
-#endif
 			/* Force HAL instance in correct state */
 			dev_data->hxspi.State = HAL_XSPI_STATE_BUSY_MEM_MAPPED;
 			return 0;
