@@ -107,6 +107,7 @@ kobjects = OrderedDict(
         ("net_if", (None, False, False)),
         ("k_futex", (None, True, False)),
         ("k_condvar", (None, False, True)),
+        ("fd_entry", ("CONFIG_ZVFS_FDTABLE", False, False)),
         ("k_event", ("CONFIG_EVENTS", False, True)),
         ("ztest_suite_node", ("CONFIG_ZTEST", True, False)),
         ("ztest_suite_stats", ("CONFIG_ZTEST", True, False)),
@@ -122,6 +123,9 @@ kobjects = OrderedDict(
 
 
 def kobject_to_enum(kobj):
+    if kobj == "fd_entry":
+        return "K_OBJ_FILE"
+
     if kobj.startswith("k_") or kobj.startswith("z_"):
         name = kobj[2:]
     else:

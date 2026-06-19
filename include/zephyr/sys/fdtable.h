@@ -407,6 +407,20 @@ int zvfs_unlink(const char *path);
  */
 int zvfs_rename(const char *old, const char *newp);
 
+#if defined(CONFIG_ZTEST) && defined(CONFIG_USERSPACE)
+/**
+ * @brief Return the kernel object backing a file descriptor slot (tests only).
+ *
+ * Each static @c fd_entry in the fd table is registered as @c K_OBJ_FILE for
+ * userspace permission checks. Tests use this to validate object metadata
+ * without reaching into @c fdtable.c.
+ *
+ * @param fd File descriptor index.
+ * @return Pointer to the slot's @c fd_entry, or NULL if @p fd is out of range.
+ */
+void *zvfs_test_fd_entry_kobj(int fd);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

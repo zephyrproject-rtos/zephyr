@@ -512,7 +512,10 @@ static void *z_object_alloc(enum k_objects otype, size_t size)
 		break;
 	/* The following are currently not allowed at all */
 	case K_OBJ_FUTEX:			/* Lives in user memory */
-	case K_OBJ_NET_SOCKET: /* Indeterminate size */
+	case K_OBJ_NET_SOCKET:			/* Indeterminate size */
+#if defined(CONFIG_ZVFS_FDTABLE)
+	case K_OBJ_FILE:			/* Static fdtable slots only */
+#endif
 		LOG_ERR("forbidden object type '%s' requested",
 			otype_to_str(otype));
 		return NULL;

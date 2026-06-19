@@ -9,6 +9,11 @@
 #include <zephyr/ztest.h>
 #include <kernel_internal.h>
 
+#if defined(CONFIG_ZVFS_FDTABLE)
+#include <errno.h>
+#include <zephyr/sys/fdtable.h>
+#endif
+
 #define SEM_ARRAY_SIZE	16
 
 /* Show that extern declarations don't interfere with detecting kernel
@@ -226,6 +231,65 @@ ZTEST(object_validation, test_kobj_freed_when_unreferenced)
 	ret = k_object_validate(k_object_find(test_dyn_mutex), K_OBJ_MUTEX, 0);
 	zassert_true(ret == -EBADF, "Dynamic kernel object not released");
 }
+
+#if defined(CONFIG_ZVFS_FDTABLE)
+static int validate_file_kobj(void *obj)
+{
+	struct k_object *ko = k_object_find(obj);
+
+	zassert_not_null(ko, "fd_entry not in kernel object table");
+	zassert_equal(ko->type, K_OBJ_FILE, "wrong kernel object type");
+
+	return k_object_validation_check(ko, obj, K_OBJ_FILE, 0);
+}
+
+ZTEST(object_validation, test_k_obj_file_fdtable_slot)
+{
+	int fd;
+	void *kobj;
+
+	fd = zvfs_reserve_fd();
+	zassert_true(fd >= 0, "fd reserve failed");
+
+	kobj = zvfs_test_fd_entry_kobj(fd);
+	zassert_not_null(kobj, "reserved fd_entry missing");
+	zassert_equal(validate_file_kobj(kobj), 0,
+		      "reserved slot should validate as K_OBJ_FILE");
+
+	zvfs_free_fd(fd);
+	zassert_equal(validate_file_kobj(kobj), -EPERM,
+		      "freed slot should retain no grants");
+}
+
+ZTEST(object_validation, test_k_obj_file_grant_revoke)
+{
+	int fd;
+	void *kobj;
+	struct k_thread *self = k_current_get();
+
+	fd = zvfs_reserve_fd();
+	zassert_true(fd >= 0, "fd reserve failed");
+
+	kobj = zvfs_test_fd_entry_kobj(fd);
+	zassert_not_null(kobj, "fd_entry missing");
+
+	k_object_access_revoke(kobj, self);
+	zassert_equal(validate_file_kobj(kobj), -EPERM,
+		      "revoked slot should deny access");
+
+	k_object_access_grant(kobj, self);
+	zassert_equal(validate_file_kobj(kobj), 0,
+		      "granted slot should allow access");
+
+	zvfs_free_fd(fd);
+}
+
+ZTEST(object_validation, test_k_obj_file_not_dynamically_allocatable)
+{
+	zassert_is_null(k_object_alloc(K_OBJ_FILE),
+			"K_OBJ_FILE must not be dynamically allocated");
+}
+#endif /* CONFIG_ZVFS_FDTABLE */
 
 void *object_validation_setup(void)
 {

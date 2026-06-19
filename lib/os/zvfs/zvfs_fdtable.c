@@ -21,6 +21,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/fdtable.h>
+#include <zephyr/sys/internal/kobject_internal.h>
 #include <zephyr/sys/speculation.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/atomic.h>
@@ -105,6 +106,18 @@ static int z_fd_unref(int fd)
 	fdtable[fd].obj = NULL;
 	fdtable[fd].vtable = NULL;
 
+#ifdef CONFIG_USERSPACE
+	{
+		struct k_object *ko = k_object_find(&fdtable[fd]);
+
+		/* closed => no thread may retain a grant on this slot */
+		if (ko != NULL) {
+			(void)memset(ko->perms, 0, sizeof(ko->perms));
+			ko->flags &= ~(K_OBJ_FLAG_INITIALIZED | K_OBJ_FLAG_PUBLIC);
+		}
+	}
+#endif
+
 	return 0;
 }
 
@@ -138,6 +151,17 @@ static int _check_fd(int fd)
 
 	return 0;
 }
+
+#if defined(CONFIG_ZTEST) && defined(CONFIG_USERSPACE)
+void *zvfs_test_fd_entry_kobj(int fd)
+{
+	if ((fd < 0) || (fd >= ARRAY_SIZE(fdtable))) {
+		return NULL;
+	}
+
+	return &fdtable[k_array_index_sanitize(fd, ARRAY_SIZE(fdtable))];
+}
+#endif
 
 void *zvfs_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err)
 {
@@ -221,6 +245,9 @@ int zvfs_reserve_fd(void)
 
 	fd = _find_fd_entry();
 	if (fd >= 0) {
+#if defined(CONFIG_USERSPACE)
+		k_object_recycle(&fdtable[fd]);
+#endif
 		/* Mark entry as used, zvfs_finalize_fd() will fill it in. */
 		(void)z_fd_ref(fd);
 		fdtable[fd].obj = NULL;
