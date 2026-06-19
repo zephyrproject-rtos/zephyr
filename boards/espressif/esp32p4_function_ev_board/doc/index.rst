@@ -4,18 +4,22 @@ Overview
 ********
 
 ESP32-P4-Function-EV-Board is an evaluation board from Espressif built around the
-ESP32-P4 SoC, a high-performance dual-core RISC-V MCU running up to 400 MHz. The
-board pairs the bare SoC with 16 MB of on-board flash and 8 MB of external PSRAM,
-and exposes USB Serial/JTAG, MIPI CSI/DSI, SD card and expansion headers
-for application development. For more information, check
-`ESP32-P4-Function-EV-Board`_.
+ESP32-P4 SoC, a high-performance dual-core RISC-V MCU. The board pairs the bare
+SoC with 16 MB of on-board flash and 8 MB of external PSRAM, and exposes USB
+Serial/JTAG, MIPI CSI/DSI, SD card and expansion headers for application
+development. For more information, check `ESP32-P4-Function-EV-Board`_.
+
+This board ships with ESP32-P4 silicon revision v1.3 (a pre-v3 part), and the
+Zephyr board configuration targets that revision with the HP cores clocked at
+360 MHz. Pre-v3 silicon tops out at 360 MHz; v3.x parts run at up to 400 MHz.
 
 Hardware
 ********
 
 ESP32-P4-Function-EV-Board ships with:
 
-- ESP32-P4 SoC paired with 16 MB on-board flash and 8 MB external PSRAM
+- ESP32-P4 SoC (silicon revision v1.3) paired with 16 MB on-board flash and
+  8 MB external PSRAM
 - USB-C connector wired to the on-chip USB Serial/JTAG controller
 - MIPI CSI camera connector
 - MIPI DSI display connector

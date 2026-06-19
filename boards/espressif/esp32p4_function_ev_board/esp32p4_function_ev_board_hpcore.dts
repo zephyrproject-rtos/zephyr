@@ -40,6 +40,19 @@
 	};
 };
 
+/*
+ * This board carries pre-v3 (v1.3) ESP32-P4 silicon, whose valid CPU
+ * frequencies are 90/180/360 MHz. Using a frequency outside that set
+ * builds but fails at boot with "invalid CPU frequency".
+ */
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(360)>;
+};
+
+&cpu1 {
+	clock-frequency = <DT_FREQ_M(360)>;
+};
+
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
