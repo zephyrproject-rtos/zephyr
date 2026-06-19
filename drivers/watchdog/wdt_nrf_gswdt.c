@@ -147,13 +147,11 @@ static int wdt_nrf_gswdt_init(const struct device *dev)
 
 	err = nrfs_backend_wait_for_connection(K_FOREVER);
 	if (err != NRFS_SUCCESS) {
-		printk("%s %s", "nrfs backend connection", "failed\n");
 		return -EIO;
 	}
 
 	err = nrfs_gswdt_init(wdt_nrf_nrfs_gswdt_handler);
 	if (err != NRFS_SUCCESS) {
-		printk("%s %s", "nrfs gswdt init", "failed\n");
 		return -EIO;
 	}
 #endif
