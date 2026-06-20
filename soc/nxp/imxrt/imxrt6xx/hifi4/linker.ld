@@ -429,14 +429,17 @@ SECTIONS
   } >adsp_data_nocache
   _nocache_noload_ram_size = _nocache_noload_ram_end - _nocache_noload_ram_start;
 
-  _nocache_window_end (DSECT) :
-  {
-    /* Align to cache line */
-    . = ALIGN (64);
-
-    /* End of the nocache window (absolute from the nocache memory region) */
-    _nocache_window_end_noncached = ABSOLUTE(.);
-  } >adsp_data_nocache
+  /*
+   * End of the nocache window (absolute from the nocache memory region),
+   * aligned to a cache line.
+   *
+   * This is derived directly from the end of the nocache content instead of
+   * from a trailing (DSECT) marker section. When the nocache sections are
+   * empty (no symbols land in .nocache*) such a marker's location counter
+   * collapses back to the region origin, which would place .bss on top of
+   * .rodata and break section placement for the whole image.
+   */
+  _nocache_window_end_noncached = ALIGN(_nocache_ram_end, 64);
 
   .bss
     (ORIGIN(adsp_data) + (_nocache_window_end_noncached - ORIGIN(adsp_data_nocache)))
