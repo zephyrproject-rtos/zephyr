@@ -13,3 +13,7 @@
 	pinctrl-0 = <&pinmux_micfil>;
 	pinctrl-names = "default";
 };
+
+&otpc {
+	status = "okay";
+};
