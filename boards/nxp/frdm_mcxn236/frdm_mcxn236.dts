@@ -475,3 +475,7 @@ dvp_20pin_interface: &video_sdma {};
 &trng {
 	status = "okay";
 };
+
+&otpc {
+	status = "okay";
+};
