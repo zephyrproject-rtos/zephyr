@@ -21,7 +21,8 @@ static uint64_t curr_tick;
 
 /*
  * The timeout code shall take no locks other than its own (timeout_lock), nor
- * shall it call any other subsystem while holding this lock.
+ * shall it call any other subsystem while holding this lock. Code outside this
+ * file takes it through sys_clock_lock()/sys_clock_unlock().
  */
 static struct k_spinlock timeout_lock;
 
@@ -106,6 +107,8 @@ static uint32_t elapsed(void)
  */
 #if defined(CONFIG_TIMEOUT_BACKEND_MINHEAP)
 #include "timeout_minheap.h"
+#elif defined(CONFIG_TIMEOUT_BACKEND_WHEEL)
+#include "timeout_wheel.h"
 #else /* CONFIG_TIMEOUT_BACKEND_DLIST */
 #include "timeout_list.h"
 #endif
@@ -341,6 +344,15 @@ void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key)
 	announce_remaining = ticks;
 	announcing_cpu = CPU_ID;
 
+#ifdef _TIMEOUT_BACKEND_OWNS_ANNOUNCE
+	/* The backend (timer wheel) runs the firing loop itself: its per-tick
+	 * advance is a bitmap jump over empty ticks and its sift is a
+	 * time-driven event with no single timeout to drive a generic loop.
+	 * It advances curr_tick / announce_remaining and fires handlers via
+	 * the same inflight_timeout dance as below.
+	 */
+	key = z_timeout_q_announce(key);
+#else
 	while (announce_remaining > 0) {
 		struct _timeout *t;
 		int32_t dt = z_timeout_q_next_gap();
@@ -378,6 +390,7 @@ void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key)
 			inflight_timeout = NULL;
 		}
 	}
+#endif /* _TIMEOUT_BACKEND_OWNS_ANNOUNCE */
 
 	announcing_cpu = -1;
 

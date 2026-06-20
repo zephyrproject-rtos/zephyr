@@ -781,6 +781,17 @@ config TIMEOUT_BACKEND_MINHEAP
 	  a fatal error. Consider this when many timeouts are pending and
 	  insertion cost on the delta list dominates.
 
+config TIMEOUT_BACKEND_WHEEL
+	bool "Hierarchical timer wheel [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  A hierarchical timer wheel: O(1) insertion and removal for timeouts
+	  expiring within the next ~1024 ticks, with a sorted overflow list
+	  for anything beyond. Sift work is amortised at 32-tick boundaries.
+	  Best when many short-lived timeouts are pending. Costs ~1 KB of
+	  static state, so it is a poor fit for very small-RAM targets, and
+	  it does not guarantee same-tick firing order.
+
 endchoice # TIMEOUT_BACKEND
 
 config TIMEOUT_HEAP_MAX_ENTRIES

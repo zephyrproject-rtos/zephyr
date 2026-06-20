@@ -315,8 +315,16 @@ struct _timeout {
 	int64_t abs_ticks;
 	struct min_heap_handle heap_handle;
 #else
-	/* Sorted delta-list backend: delta-ticks to the predecessor node. */
+	/*
+	 * Delta-list and timer-wheel backends: a list node plus dticks (a
+	 * delta to the predecessor for the delta list; an encoded slot
+	 * position for the wheel). The wheel adds a flags field recording
+	 * which wheel tier the timeout currently occupies.
+	 */
 	sys_dnode_t node;
+#if defined(CONFIG_TIMEOUT_BACKEND_WHEEL)
+	uint32_t flags;
+#endif
 #ifdef CONFIG_TIMEOUT_64BIT
 	/* Can't use k_ticks_t for header dependency reasons */
 	int64_t dticks;
