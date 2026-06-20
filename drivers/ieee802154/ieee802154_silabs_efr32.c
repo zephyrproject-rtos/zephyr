@@ -1210,8 +1210,8 @@ static void sl_802154_handle_ack_timeout(struct sl_802154_data *data)
 	__ASSERT_NO_MSG(sl_802154_state_is_waiting_for_ack(&data->radio_data.state));
 	sl_802154_state_set_tx_data_ongoing(&data->radio_data.state, false);
 	sl_802154_state_set_waiting_for_ack(&data->radio_data.state, false);
+	data->ack_errno = -ENOMSG;
 	k_sem_give(&data->ack_wait);
-	data->tx_errno = -ENOMSG;
 	sl_802154_yield_radio(data->radio_data.rail_handle);
 	data->mac_data.em_pending_data = false;
 }
@@ -1347,8 +1347,8 @@ static void sl_802154_handle_rx_ack(const struct device *dev, uint16_t length,
 ack_write_fail:
 	net_pkt_unref(ack_pkt);
 ack_alloc_fail:
+	data->ack_errno = 0;
 	k_sem_give(&data->ack_wait);
-	data->tx_errno = 0;
 	sl_802154_state_clear_tx_data_and_wait_for_ack(&data->radio_data.state);
 	if (tx_is_data_request && data->rx_mhr.fs->fc.frame_pending) {
 		data->mac_data.em_pending_data = true;
@@ -1515,8 +1515,8 @@ static void sl_802154_handle_tx_completion(struct sl_802154_data *data, sl_rail_
 			} else {
 				sl_802154_state_set_tx_data_ongoing(&data->radio_data.state, false);
 				(void)sl_802154_yield_radio(data->radio_data.rail_handle);
-				data->tx_errno = 0;
 			}
+			data->tx_errno = 0;
 		}
 	}
 	if (events & SL_RAIL_EVENT_TX_CHANNEL_BUSY) {
@@ -2118,7 +2118,8 @@ static int silabs_efr32_tx(const struct device *dev, enum ieee802154_tx_mode mod
 				    false);
 	k_sem_reset(&data->tx_wait);
 	k_sem_reset(&data->ack_wait);
-	data->tx_errno = -EIO; /* default if no event fires */
+	data->tx_errno = -EIO;  /* default if no event fires */
+	data->ack_errno = -EIO; /* default if no event fires */
 
 	if (data->tx_mhr.fs->fc.ar) {
 		tx_options |= SL_RAIL_TX_OPTION_WAIT_FOR_ACK;
@@ -2186,11 +2187,18 @@ static int silabs_efr32_tx(const struct device *dev, enum ieee802154_tx_mode mod
 
 	/* Block until RAIL events callback sets tx_errno and gives tx_wait. */
 	k_sem_take(&data->tx_wait, K_FOREVER);
+	if (data->tx_errno) {
+		return data->tx_errno;
+	}
 
 	if (data->tx_mhr.fs->fc.ar) {
 		k_sem_take(&data->ack_wait, K_FOREVER);
+		if (data->ack_errno) {
+			return data->ack_errno;
+		}
 	}
-	return data->tx_errno;
+
+	return 0;
 }
 
 static int silabs_efr32_energy_scan_start(const struct device *dev, uint16_t duration,
