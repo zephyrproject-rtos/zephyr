@@ -206,6 +206,12 @@ static size_t sl_802154_get_mhr_length(struct ieee802154_mhr *mhr)
 		length += sl_802154_get_aux_sec_hdr_bytes(mhr->aux_sec);
 	}
 
+	/* Derived from FindPayloadIndex in the openthread code base. */
+	if (mhr->fs->fc.frame_type == IEEE802154_FRAME_TYPE_MAC_COMMAND &&
+	    mhr->fs->fc.frame_version != IEEE802154_VERSION_802154) {
+		length += 1;
+	}
+
 	return length;
 }
 
