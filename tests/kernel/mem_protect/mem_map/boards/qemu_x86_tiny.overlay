@@ -1,3 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Grow DRAM beyond the qemu_x86_tiny default so the reserved page-frame
+ * pool used by k_mem_map() still has headroom after the kernel image
+ * consumes its share. The tight default leaves no margin for kernel
+ * growth (e.g. unity builds retain additional symbols) and causes
+ * test_k_mem_map_unmap to fail at k_mem_free_get() == 0.
+ */
 &dram0 {
-	reg = <0x100000 0x50000>;
+	reg = <0x100000 0x60000>;
 };
