@@ -634,8 +634,10 @@ int video_init_context_dev(const struct device *dev, enum video_buf_type buf_typ
 
 	if (buf_type == VIDEO_BUF_TYPE_INPUT) {
 		vctx->is_streaming_in = &dctx->is_streaming;
+		vctx->fmt_in = &dctx->fmt;
 	} else {
 		vctx->is_streaming_out = &dctx->is_streaming;
+		vctx->fmt_out = &dctx->fmt;
 	}
 
 	return 0;

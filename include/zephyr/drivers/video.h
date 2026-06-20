@@ -302,6 +302,9 @@ struct video_context {
 	/** pointers to the streaming status */
 	bool *is_streaming_in;
 	bool *is_streaming_out;
+	/** pointers to the video_formats */
+	struct video_format *fmt_in;
+	struct video_format *fmt_out;
 };
 
 /**
@@ -315,6 +318,8 @@ struct video_device_context {
 	struct video_context vctx;
 	/** streaming boolean */
 	bool is_streaming;
+	/** video_format */
+	struct video_format fmt;
 };
 
 /**
@@ -509,11 +514,6 @@ static inline int video_set_format(const struct device *dev, struct video_format
 		return -EINVAL;
 	}
 
-	api = DEVICE_API_GET(video, dev);
-	if (api->set_format == NULL) {
-		return -ENOSYS;
-	}
-
 	ctx = dev->data;
 
 	if (!is_video_type_valid(ctx, fmt->type)) {
@@ -526,6 +526,14 @@ static inline int video_set_format(const struct device *dev, struct video_format
 	if ((fmt->type == VIDEO_BUF_TYPE_INPUT && *ctx->is_streaming_in) ||
 	    (fmt->type == VIDEO_BUF_TYPE_OUTPUT && *ctx->is_streaming_out)) {
 		ret = -EBUSY;
+		goto out;
+	}
+
+	/* Check if the new format is different from the currently set format */
+	ret = memcmp(fmt->type == VIDEO_BUF_TYPE_INPUT ? ctx->fmt_in : ctx->fmt_out,
+		     fmt, sizeof(struct video_format));
+	if (ret	== 0) {
+		/* Nothing to do */
 		goto out;
 	}
 
@@ -556,15 +564,10 @@ static inline int video_get_format(const struct device *dev, struct video_format
 {
 	const struct video_driver_api *api;
 	struct video_context *ctx;
-	int ret;
+	int ret = 0;
 
 	if (dev == NULL || dev->data == NULL || fmt == NULL) {
 		return -EINVAL;
-	}
-
-	api = DEVICE_API_GET(video, dev);
-	if (api->get_format == NULL) {
-		return -ENOSYS;
 	}
 
 	ctx = dev->data;
@@ -573,8 +576,19 @@ static inline int video_get_format(const struct device *dev, struct video_format
 		return -EINVAL;
 	}
 
+	api = DEVICE_API_GET(video, dev);
+	if (api->get_format == NULL) {
+		return -ENOSYS;
+	}
+
 	k_mutex_lock(&ctx->lock, K_FOREVER);
-	ret = api->get_format(dev, fmt);
+
+	if (api->get_format != NULL) {
+		ret = api->get_format(dev, fmt);
+	} else {
+		*fmt = (fmt->type == VIDEO_BUF_TYPE_INPUT ? *ctx->fmt_in : *ctx->fmt_out);
+	}
+
 	k_mutex_unlock(&ctx->lock);
 
 	return ret;
