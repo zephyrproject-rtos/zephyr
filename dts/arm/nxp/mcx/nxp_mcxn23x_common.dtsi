@@ -669,6 +669,12 @@
 		status = "disabled";
 	};
 
+	otpc: otpc@c9000 {
+		compatible = "nxp,otpc";
+		reg = <0xc9000 0x1000>;
+		status = "disabled";
+	};
+
 	wwdt0: watchdog@16000 {
 		compatible = "nxp,lpc-wwdt";
 		reg = <0x16000 0x1000>;
