@@ -26,3 +26,7 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
+zephyr_udc0: &usb {
+	status = "okay";
+};

@@ -1954,6 +1954,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 			 */
 			spram_size = priv->dfifodepth;
 		}
+
 		max_rxfifo = ((spram_size * MAX_RXFIFO_GDFIFO_PERCENTAGE) / 100);
 
 		/* TODO: For proper runtime FIFO sizing UDC driver would have to
@@ -2649,12 +2650,27 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 
 		LOG_DBG("ep 0x%02x interrupt status: 0x%x", n, status);
 
-		/* StupPktRcvd is not enabled for interrupt, but must be checked
-		 * when XferComp hits to determine if SETUP token was received.
+		/* Buffer-DMA SETUP capture.
+		 *
+		 * Earlier in-tree code gated this on (XFERCOMPL && StupPktRcvd)
+		 * because StupPktRcvd (DOEPINTn bit 15) is the canonical
+		 * post-receipt indicator in newer Synopsys dwc2 revisions and
+		 * is sampled out-of-mask. Empirically (Pi Zero 2 W, dwc2 OT
+		 * 2.80a) StupPktRcvd is reserved-zero on this silicon, so
+		 * that guard never fires and priv->setup stays uninitialised
+		 * (USBD then sees an all-zero SETUP and STALLs everything).
+		 *
+		 * Mirror Linux dwc2/gadget.c which keys SETUP retrieval on
+		 * DXEPINT_SETUP (bit 3) only -- this is canonical across all
+		 * 13 dwc2 revisions Linux tracks. StupPktRcvd is still W1C'd
+		 * for any silicon where it does happen to set; XFERCOMPL is
+		 * still suppressed so the OUT-done handler doesn't process
+		 * the SETUP buffer as a data-stage completion. DOEPDMA
+		 * post-increment is verified on BCM283x, so the (addr - 8)
+		 * math reaches the SETUP location for the latest packet.
 		 */
-		if (dwc2_in_buffer_dma_mode(dev) &&
-		    (status & USB_DWC2_DOEPINT_XFERCOMPL) &&
-		    (doepint & USB_DWC2_DOEPINT_STUPPKTRCVD)) {
+		if (dwc2_in_buffer_dma_mode(dev) && n == 0 &&
+		    (status & USB_DWC2_DOEPINT_SETUP)) {
 			uint32_t addr;
 
 			sys_write32(USB_DWC2_DOEPINT_STUPPKTRCVD, doepint_reg);

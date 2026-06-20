@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026 Jonathan E. Peace <jep@alphabetiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Phase 2.1 bring-up: enable the DWC2 USB controller as a device-mode
+ * peripheral and declare a single CDC ACM UART child instance on it.
+ *
+ * The DWC2 node lives in bcm2710.dtsi (status="disabled" there); this
+ * overlay flips it on for this sample only -- the board defconfig is
+ * untouched, so the parallel wifi/SDIO work on the rpi-zero-2w-port
+ * branch is not affected.
+ *
+ * The DWC2 vendor pre_enable hook issues SET_POWER_STATE (USB_HCD, on)
+ * over the VideoCore firmware property interface during USB init to
+ * turn on the analog PHY power island that start.elf leaves off
+ * (without it the controller is digitally accessible but D+/D- aren't
+ * driven). The firmware + mbox0 nodes are enabled in bcm2710.dtsi.
+ */
+
+&usb {
+	status = "okay";
+
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "Zephyr USB CDC-ACM";
+	};
+};
