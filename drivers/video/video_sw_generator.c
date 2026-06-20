@@ -517,6 +517,7 @@ static int video_sw_generator_flush(const struct device *dev, bool cancel)
 
 static int video_sw_generator_get_caps(const struct device *dev, struct video_caps *caps)
 {
+	caps->type = VIDEO_BUF_TYPE_OUTPUT;
 	caps->format_caps = fmts;
 	caps->min_vbuf_count = 1;
 
@@ -636,6 +637,7 @@ static int video_sw_generator_init(const struct device *dev)
 
 #define VIDEO_SW_GENERATOR_DEFINE(n)                                                               \
 	static struct video_sw_generator_data video_sw_generator_data_##n = {                      \
+		.dctx.fmt.type = VIDEO_BUF_TYPE_OUTPUT,                                            \
 		.dctx.fmt.width = DEFAULT_FRAME_WIDTH,                                             \
 		.dctx.fmt.height = DEFAULT_FRAME_HEIGHT,                                           \
 		.dctx.fmt.pitch = DEFAULT_FRAME_WIDTH * 2,                                         \
