@@ -620,5 +620,23 @@ static int video_init_context(const struct device *dev, uint8_t buf_type)
 
 int video_init_context_dev(const struct device *dev, enum video_buf_type buf_type)
 {
-	return video_init_context(dev, buf_type);
+	struct video_context *vctx;
+	struct video_device_context *dctx;
+	int ret;
+
+	ret = video_init_context(dev, buf_type);
+	if (ret < 0) {
+		return ret;
+	}
+
+	vctx = (struct video_context *)dev->data;
+	dctx = (struct video_device_context *)dev->data;
+
+	if (buf_type == VIDEO_BUF_TYPE_INPUT) {
+		vctx->is_streaming_in = &dctx->is_streaming;
+	} else {
+		vctx->is_streaming_out = &dctx->is_streaming;
+	}
+
+	return 0;
 }

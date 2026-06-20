@@ -299,6 +299,9 @@ struct video_context {
 	struct k_mutex lock;
 	/** supported type bitfield - considering enum video_buf_type as bit */
 	uint8_t supported_buf_type;
+	/** pointers to the streaming status */
+	bool *is_streaming_in;
+	bool *is_streaming_out;
 };
 
 /**
@@ -310,6 +313,8 @@ struct video_context {
 struct video_device_context {
 	/** struct video_context */
 	struct video_context vctx;
+	/** streaming boolean */
+	bool is_streaming;
 };
 
 /**
@@ -516,7 +521,22 @@ static inline int video_set_format(const struct device *dev, struct video_format
 	}
 
 	k_mutex_lock(&ctx->lock, K_FOREVER);
+
+	/* Format cannot be set if the device is already streaming */
+	if ((fmt->type == VIDEO_BUF_TYPE_INPUT && *ctx->is_streaming_in) ||
+	    (fmt->type == VIDEO_BUF_TYPE_OUTPUT && *ctx->is_streaming_out)) {
+		ret = -EBUSY;
+		goto out;
+	}
+
+	api = DEVICE_API_GET(video, dev);
+	if (api->set_format == NULL) {
+		ret = -ENOSYS;
+		goto out;
+	}
+
 	ret = api->set_format(dev, fmt);
+out:
 	k_mutex_unlock(&ctx->lock);
 
 	return ret;
@@ -801,6 +821,7 @@ static inline int video_stream_start(const struct device *dev, enum video_buf_ty
 {
 	const struct video_driver_api *api;
 	struct video_context *ctx;
+	bool *is_streaming;
 	int ret;
 
 	if (dev == NULL || dev->data == NULL) {
@@ -818,8 +839,18 @@ static inline int video_stream_start(const struct device *dev, enum video_buf_ty
 		return -EINVAL;
 	}
 
+	is_streaming = (type == VIDEO_BUF_TYPE_INPUT ? ctx->is_streaming_in :
+			ctx->is_streaming_out);
+
 	k_mutex_lock(&ctx->lock, K_FOREVER);
+	if (*is_streaming) {
+		k_mutex_unlock(&ctx->lock);
+		return -EALREADY;
+	}
 	ret = api->set_stream(dev, true, type);
+	if (ret == 0) {
+		*is_streaming = true;
+	}
 	k_mutex_unlock(&ctx->lock);
 
 	return ret;
@@ -842,6 +873,7 @@ static inline int video_stream_stop(const struct device *dev, enum video_buf_typ
 {
 	const struct video_driver_api *api;
 	struct video_context *ctx;
+	bool *is_streaming;
 	int ret;
 
 	if (dev == NULL || dev->data == NULL) {
@@ -859,11 +891,20 @@ static inline int video_stream_stop(const struct device *dev, enum video_buf_typ
 		return -EINVAL;
 	}
 
+	is_streaming = (type == VIDEO_BUF_TYPE_INPUT ? ctx->is_streaming_in :
+			ctx->is_streaming_out);
+
 	k_mutex_lock(&ctx->lock, K_FOREVER);
+	if (!*is_streaming) {
+		k_mutex_unlock(&ctx->lock);
+		return -EALREADY;
+	}
 	ret = api->set_stream(dev, false, type);
 	if (ret < 0) {
 		k_mutex_unlock(&ctx->lock);
 		return ret;
+	} else if (ret == 0) {
+		*is_streaming = false;
 	}
 	ret = api->flush(dev, true);
 	k_mutex_unlock(&ctx->lock);
