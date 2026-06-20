@@ -79,7 +79,7 @@ static inline void z_vrfy_k_queue_init(struct k_queue *queue)
 #include <zephyr/syscalls/k_queue_init_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-static inline bool handle_poll_events(struct k_queue *queue, uint32_t state)
+static inline bool queue_handle_poll_events(struct k_queue *queue, uint32_t state)
 {
 #ifdef CONFIG_POLL
 	return z_handle_obj_poll_events(&queue->poll_events, state);
@@ -102,7 +102,7 @@ void z_impl_k_queue_cancel_wait(struct k_queue *queue)
 		resched = true;
 	}
 
-	resched = handle_poll_events(queue, K_POLL_STATE_CANCELLED) || resched;
+	resched = queue_handle_poll_events(queue, K_POLL_STATE_CANCELLED) || resched;
 
 	if (resched) {
 		z_reschedule(&queue->lock, key);
@@ -160,7 +160,7 @@ static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 	}
 
 	sys_sflist_insert(&queue->data_q, prev, data);
-	resched = handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
+	resched = queue_handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
 
 out:
 	if (resched) {
@@ -273,7 +273,7 @@ int k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, append_list, queue, 0);
 
-	resched = handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE) || resched;
+	resched = queue_handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE) || resched;
 
 	if (resched) {
 		z_reschedule(&queue->lock, key);

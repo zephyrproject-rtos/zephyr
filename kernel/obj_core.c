@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/obj_core.h>
 
-static struct k_spinlock  lock;
+static struct k_spinlock  obj_core_lock;
 
 sys_slist_t z_obj_type_list = SYS_SLIST_STATIC_INIT(&z_obj_type_list);
 
@@ -33,11 +33,11 @@ void k_obj_core_init(struct k_obj_core *obj_core, struct k_obj_type *type)
 
 void k_obj_core_link(struct k_obj_core *obj_core)
 {
-	k_spinlock_key_t  key = k_spin_lock(&lock);
+	k_spinlock_key_t  key = k_spin_lock(&obj_core_lock);
 
 	sys_slist_append(&obj_core->type->list, &obj_core->node);
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&obj_core_lock, key);
 }
 
 void k_obj_core_init_and_link(struct k_obj_core *obj_core,
@@ -49,11 +49,11 @@ void k_obj_core_init_and_link(struct k_obj_core *obj_core,
 
 void k_obj_core_unlink(struct k_obj_core *obj_core)
 {
-	k_spinlock_key_t  key = k_spin_lock(&lock);
+	k_spinlock_key_t  key = k_spin_lock(&obj_core_lock);
 
 	sys_slist_find_and_remove(&obj_core->type->list, &obj_core->node);
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&obj_core_lock, key);
 }
 
 struct k_obj_type *k_obj_type_find(uint32_t type_id)
@@ -62,7 +62,7 @@ struct k_obj_type *k_obj_type_find(uint32_t type_id)
 	struct k_obj_type *rv = NULL;
 	sys_snode_t *node;
 
-	k_spinlock_key_t  key = k_spin_lock(&lock);
+	k_spinlock_key_t  key = k_spin_lock(&obj_core_lock);
 
 	SYS_SLIST_FOR_EACH_NODE(&z_obj_type_list, node) {
 		type = CONTAINER_OF(node, struct k_obj_type, node);
@@ -72,7 +72,7 @@ struct k_obj_type *k_obj_type_find(uint32_t type_id)
 		}
 	}
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&obj_core_lock, key);
 
 	return rv;
 }
@@ -86,7 +86,7 @@ int k_obj_type_walk_locked(struct k_obj_type *type,
 	sys_snode_t *node;
 	int  status = 0;
 
-	key = k_spin_lock(&lock);
+	key = k_spin_lock(&obj_core_lock);
 
 	SYS_SLIST_FOR_EACH_NODE(&type->list, node) {
 		obj_core = CONTAINER_OF(node, struct k_obj_core, node);
@@ -96,7 +96,7 @@ int k_obj_type_walk_locked(struct k_obj_type *type,
 		}
 	}
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&obj_core_lock, key);
 
 	return status;
 }
@@ -126,7 +126,7 @@ int k_obj_core_stats_register(struct k_obj_core *obj_core, void *stats,
 			      size_t stats_len)
 {
 	int rv;
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&obj_core_lock);
 
 	if (obj_core->type->stats_desc == NULL) {
 		/* Object type not configured for statistics. */
@@ -139,7 +139,7 @@ int k_obj_core_stats_register(struct k_obj_core *obj_core, void *stats,
 		rv = 0;
 	}
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&obj_core_lock, key);
 
 	return rv;
 }
@@ -147,7 +147,7 @@ int k_obj_core_stats_register(struct k_obj_core *obj_core, void *stats,
 int k_obj_core_stats_deregister(struct k_obj_core *obj_core)
 {
 	int rv;
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&obj_core_lock);
 
 	if (obj_core->type->stats_desc == NULL) {
 		/* Object type not configured  for statistics. */
@@ -157,7 +157,7 @@ int k_obj_core_stats_deregister(struct k_obj_core *obj_core)
 		rv = 0;
 	}
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&obj_core_lock, key);
 
 	return rv;
 }
@@ -168,7 +168,7 @@ int k_obj_core_stats_raw(struct k_obj_core *obj_core, void *stats,
 	int rv;
 	struct k_obj_core_stats_desc *desc;
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&obj_core_lock);
 
 	desc = obj_core->type->stats_desc;
 	if ((desc == NULL) || (desc->raw == NULL)) {
@@ -184,7 +184,7 @@ int k_obj_core_stats_raw(struct k_obj_core *obj_core, void *stats,
 		rv = desc->raw(obj_core, stats);
 	}
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&obj_core_lock, key);
 
 	return rv;
 }
@@ -195,7 +195,7 @@ int k_obj_core_stats_query(struct k_obj_core *obj_core, void *stats,
 	int rv;
 	struct k_obj_core_stats_desc *desc;
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&obj_core_lock);
 
 	desc = obj_core->type->stats_desc;
 	if ((desc == NULL) || (desc->query == NULL)) {
@@ -211,7 +211,7 @@ int k_obj_core_stats_query(struct k_obj_core *obj_core, void *stats,
 		rv = desc->query(obj_core, stats);
 	}
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&obj_core_lock, key);
 
 	return rv;
 }
@@ -221,7 +221,7 @@ int k_obj_core_stats_reset(struct k_obj_core *obj_core)
 	int rv;
 	struct k_obj_core_stats_desc *desc;
 
-	k_spinlock_key_t  key = k_spin_lock(&lock);
+	k_spinlock_key_t  key = k_spin_lock(&obj_core_lock);
 
 	desc = obj_core->type->stats_desc;
 	if ((desc == NULL) || (desc->reset == NULL)) {
@@ -234,7 +234,7 @@ int k_obj_core_stats_reset(struct k_obj_core *obj_core)
 		rv = desc->reset(obj_core);
 	}
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&obj_core_lock, key);
 
 	return rv;
 }
@@ -244,7 +244,7 @@ int k_obj_core_stats_disable(struct k_obj_core *obj_core)
 	int rv;
 	struct k_obj_core_stats_desc *desc;
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&obj_core_lock);
 
 	desc = obj_core->type->stats_desc;
 	if ((desc == NULL) || (desc->disable == NULL)) {
@@ -257,7 +257,7 @@ int k_obj_core_stats_disable(struct k_obj_core *obj_core)
 		rv = desc->disable(obj_core);
 	}
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&obj_core_lock, key);
 
 	return rv;
 }
@@ -267,7 +267,7 @@ int k_obj_core_stats_enable(struct k_obj_core *obj_core)
 	int rv;
 	struct k_obj_core_stats_desc *desc;
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&obj_core_lock);
 
 	desc = obj_core->type->stats_desc;
 	if ((desc == NULL) || (desc->enable == NULL)) {
@@ -280,7 +280,7 @@ int k_obj_core_stats_enable(struct k_obj_core *obj_core)
 		rv = desc->enable(obj_core);
 	}
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&obj_core_lock, key);
 
 	return rv;
 }
