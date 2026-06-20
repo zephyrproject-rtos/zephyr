@@ -35,6 +35,7 @@ add_subdirectory(nxp_imx_netc)
 add_subdirectory(dwc_mac)
 add_subdirectory(dwc_xgmac)
 add_subdirectory(intel)
+add_subdirectory(offload)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_ETH_ADIN2111 eth_adin2111.c)
