@@ -1558,15 +1558,16 @@ def test_projectbuilder_process(
 
 
 @pytest.mark.parametrize(
-    'post_build_checks, expected_next_op',
-    [(True, 'post_build'), (False, 'gather_metrics')],
+    'post_build_checks',
+    [True, False],
     ids=['enabled', 'disabled']
 )
-def test_projectbuilder_process_post_build_checks_gating(
-    mocked_jobserver, tmp_path, post_build_checks, expected_next_op
+def test_projectbuilder_process_post_build_transition(
+    mocked_jobserver, tmp_path, post_build_checks
 ):
-    """A successful build transitions to 'post_build' only when post-build
-    checks are enabled; otherwise it goes straight to 'gather_metrics'.
+    """A successful build always transitions to 'post_build', regardless of
+    whether the optional post-build checks are enabled. The post_build stage
+    itself decides whether to run those checks.
     """
     instance_mock = mock.Mock()
     instance_mock.name = 'dummy instance name'
@@ -1593,7 +1594,7 @@ def test_projectbuilder_process_post_build_checks_gating(
 
     pb.process(processing_queue_mock, mock.Mock(), {'op': 'build'}, lock_mock, results_mock)
 
-    processing_queue_mock.append.assert_called_with({'op': expected_next_op, 'test': mock.ANY})
+    processing_queue_mock.append.assert_called_with({'op': 'post_build', 'test': mock.ANY})
 
 
 TESTDATA_7 = [
@@ -2437,6 +2438,8 @@ def test_projectbuilder_post_build_pass(mocked_jobserver):
     env_mock = mock.Mock()
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb.options.post_build_checks = True
+    pb._simulator_unavailable_reason = mock.Mock(return_value=None)
     pb.check_no_nested_git_repos = mock.Mock(return_value=None)
 
     assert pb.post_build() == {'returncode': 0}
@@ -2448,6 +2451,8 @@ def test_projectbuilder_post_build_fail(mocked_jobserver):
     env_mock = mock.Mock()
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb.options.post_build_checks = True
+    pb._simulator_unavailable_reason = mock.Mock(return_value=None)
     pb.check_no_nested_git_repos = mock.Mock(
         return_value='cloned repo found', __name__='check_no_nested_git_repos'
     )
@@ -2455,6 +2460,48 @@ def test_projectbuilder_post_build_fail(mocked_jobserver):
     res = pb.post_build()
     assert res['returncode'] == 1
     assert res['reason'] == 'cloned repo found'
+
+
+def test_projectbuilder_post_build_checks_skipped(mocked_jobserver):
+    """When --post-build-checks is not set, the optional checks are skipped
+    but post_build still succeeds (and other processing still runs).
+    """
+    instance_mock = mock.Mock()
+    env_mock = mock.Mock()
+
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb.options.post_build_checks = False
+    pb._simulator_unavailable_reason = mock.Mock(return_value=None)
+    pb.check_no_nested_git_repos = mock.Mock(
+        return_value='cloned repo found', __name__='check_no_nested_git_repos'
+    )
+
+    assert pb.post_build() == {'returncode': 0}
+    pb.check_no_nested_git_repos.assert_not_called()
+
+
+def test_projectbuilder_post_build_simulator_unavailable(mocked_jobserver):
+    """A runnable instance whose configure-time simulator binary is missing is
+    marked as not run during post_build, without failing the build.
+    """
+    instance_mock = mock.Mock()
+    instance_mock.name = 'dummy instance name'
+    instance_mock.run = True
+    env_mock = mock.Mock()
+
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb.options.post_build_checks = False
+    pb._simulator_unavailable_reason = mock.Mock(
+        return_value='armfvp simulator binary not found'
+    )
+
+    assert pb.post_build() == {'returncode': 0}
+    assert instance_mock.run is False
+    assert instance_mock.status == TwisterStatus.NOTRUN
+    assert instance_mock.reason == 'armfvp simulator binary not found'
+    instance_mock.add_missing_case_status.assert_called_once_with(
+        TwisterStatus.NOTRUN, 'armfvp simulator binary not found'
+    )
 
 
 TESTDATA_14 = [
@@ -2569,6 +2616,57 @@ def test_projectbuilder_run(
 
     if expect_handle:
         pb.instance.handler.handle.assert_called_once_with(harness_mock)
+
+
+TESTDATA_SIM_UNAVAILABLE = [
+    # No simulator selected for the platform.
+    (None, None, None),
+    # Simulator that does not resolve its binary at configure time.
+    ('qemu', None, None),
+    # Arm FVP binary found at configure time.
+    ('armfvp', '/opt/fvp/FVP_Base', None),
+    # Arm FVP binary not found at configure time.
+    ('armfvp', 'ARMFVP-NOTFOUND', 'armfvp simulator binary not found'),
+    # Arm FVP cache variable missing entirely.
+    ('armfvp', 'missing', 'armfvp simulator binary not found'),
+]
+
+
+@pytest.mark.parametrize(
+    'sim_name, armfvp_value, expected_reason',
+    TESTDATA_SIM_UNAVAILABLE,
+    ids=['no sim', 'non-configure sim', 'fvp found', 'fvp not found', 'fvp missing']
+)
+def test_projectbuilder_simulator_unavailable_reason(
+    mocked_jobserver,
+    tmp_path,
+    sim_name,
+    armfvp_value,
+    expected_reason
+):
+    instance_mock = mock.Mock()
+    instance_mock.build_dir = str(tmp_path)
+    if sim_name is None:
+        instance_mock.platform.simulator_by_name = mock.Mock(return_value=None)
+    else:
+        simulator_mock = mock.Mock()
+        simulator_mock.name = sim_name
+        instance_mock.platform.simulator_by_name = mock.Mock(return_value=simulator_mock)
+
+    if armfvp_value == 'missing':
+        # CMakeCache exists but has no ARMFVP entry.
+        with open(os.path.join(str(tmp_path), 'CMakeCache.txt'), 'w') as f:
+            f.write('SOME_OTHER_VAR:STRING=value\n')
+    elif armfvp_value is not None:
+        with open(os.path.join(str(tmp_path), 'CMakeCache.txt'), 'w') as f:
+            f.write(f'ARMFVP:FILEPATH={armfvp_value}\n')
+
+    env_mock = mock.Mock()
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb.options = mock.Mock()
+    pb.options.sim_name = sim_name
+
+    assert pb._simulator_unavailable_reason() == expected_reason
 
 
 TESTDATA_15 = [
