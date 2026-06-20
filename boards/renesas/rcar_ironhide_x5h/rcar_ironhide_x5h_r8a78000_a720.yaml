@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: rcar_ironhide_x5h/r8a78000/a720
+name: R-Car X5H (Cortex A720) Ironhide
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+supported:
+  - clock-control
+vendor: renesas
