@@ -20,6 +20,20 @@
 #include <stdarg.h>
 #include <zephyr/sys/util.h>
 
+/* Unity build support: give each kernel source file a unique suffix for
+ * file-scope statics defined by LOG_MODULE_DECLARE / LOG_LEVEL_SET so
+ * that combining multiple files in one translation unit does not produce
+ * duplicate-symbol errors.  ZEPHYR_KERNEL_UNITY_ID is defined (per source
+ * file) by CMake when building the kernel target with UNITY_BUILD enabled.
+ */
+#ifdef ZEPHYR_KERNEL_UNITY_ID
+#define Z_LOG_UNITY_SYM_PASTE(sym, id) sym##_##id
+#define Z_LOG_UNITY_SYM_EXPAND(sym, id) Z_LOG_UNITY_SYM_PASTE(sym, id)
+#define Z_LOG_UNITY_SYM(sym) Z_LOG_UNITY_SYM_EXPAND(sym, ZEPHYR_KERNEL_UNITY_ID)
+#else
+#define Z_LOG_UNITY_SYM(sym) sym
+#endif
+
 /* This header file keeps all macros and functions needed for creating logging
  * messages (macros like @ref LOG_ERR).
  */
@@ -117,8 +131,8 @@ extern "C" {
  *
  * @brief Macro for getting ID of current module.
  */
-#define LOG_CURRENT_MODULE_ID() (__log_level != 0 ? \
-	log_const_source_id(__log_current_const_data) : 0U)
+#define LOG_CURRENT_MODULE_ID() (Z_LOG_UNITY_SYM(__log_level) != 0 ? \
+	log_const_source_id(Z_LOG_UNITY_SYM(__log_current_const_data)) : 0U)
 
 /* Set of defines that are set to 1 if function name prefix is enabled for given level. */
 #define Z_LOG_FUNC_PREFIX_0 0
@@ -177,7 +191,7 @@ extern "C" {
 	(Z_LOG_LEVEL_CHECK(_level, CONFIG_LOG_OVERRIDE_LEVEL, LOG_LEVEL_NONE) \
 	||								    \
 	((IS_ENABLED(CONFIG_LOG_OVERRIDE_LEVEL) == false) &&		    \
-	((_level) <= __log_level) &&					    \
+	((_level) <= Z_LOG_UNITY_SYM(__log_level)) &&					    \
 	((_level) <= CONFIG_LOG_MAX_LEVEL)				    \
 	)								    \
 	))
@@ -260,7 +274,8 @@ extern "C" {
  */
 #define Z_LOG_CURRENT_DATA()                                                                       \
 	COND_CODE_1(CONFIG_LOG_RUNTIME_FILTERING, \
-			(__log_current_dynamic_data), (__log_current_const_data))
+			(Z_LOG_UNITY_SYM(__log_current_dynamic_data)), \
+			(Z_LOG_UNITY_SYM(__log_current_const_data)))
 
 /*****************************************************************************/
 /****************** Definitions used by minimal logging *********************/
