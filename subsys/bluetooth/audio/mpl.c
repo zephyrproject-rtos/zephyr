@@ -2383,14 +2383,12 @@ int media_proxy_pl_init(void)
 	media_player.content_ctrl_id = (uint8_t)ret;
 
 	/* Set up the media control service */
-	/* TODO: Fix initialization - who initializes what
-	 * https://github.com/zephyrproject-rtos/zephyr/issues/42965
-	 * Temporarily only initializing if service is present
-	 */
 #ifdef CONFIG_BT_MCS
 #ifdef CONFIG_BT_MPL_OBJECTS
 	/* The test here is arguably needed as the objects cannot be accessed before bt_mcs_init is
 	 * called, but the set is to avoid the objects being accessed before properly initialized
+	 * MCS has to be registered before we add the objects, as we need the OTS that is registered
+	 * and included by MCS.
 	 */
 	if (atomic_test_and_set_bit(obj.flags, MPL_OBJ_FLAG_BUSY)) {
 		LOG_ERR("Object busy");
@@ -2410,8 +2408,7 @@ int media_proxy_pl_init(void)
 		LOG_ERR("Could not init MCS: %d", ret);
 		return ret;
 	}
-#endif  /* CONFIG_BT_MPL_OBJECTS */
-	/* TODO: If anything below fails we should unregister MCS */
+#endif /* CONFIG_BT_MPL_OBJECTS */
 #else
 	LOG_WRN("MCS not configured");
 #endif /* CONFIG_BT_MCS */
@@ -2424,29 +2421,17 @@ int media_proxy_pl_init(void)
 
 	/* Icon Object */
 	ret = add_icon_object();
-	if (ret < 0) {
-		LOG_ERR("Unable to add icon object, error %d", ret);
-		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
-		return ret;
-	}
+	__ASSERT(ret == 0, "Unable to add icon object, error %d", ret);
 
 	/* Add all tracks and groups to OTS */
 	ret = add_group_and_track_objects(&media_player);
-	if (ret < 0) {
-		LOG_ERR("Error adding tracks and groups to OTS, error %d", ret);
-		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
-		return ret;
-	}
+	__ASSERT(ret == 0, "Error adding tracks and groups to OTS, error %d", ret);
 
 	/* Initial setup of Track Segments Object */
 	/* TODO: Later, this should be done when the tracks are added */
 	/* but for no only one of the tracks has segments .*/
 	ret = add_current_track_segments_object(&media_player);
-	if (ret < 0) {
-		LOG_ERR("Error adding Track Segments Object to OTS, error %d", ret);
-		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
-		return ret;
-	}
+	__ASSERT(ret == 0, "Error adding Track Segments Object to OTS, error %d", ret);
 
 	atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
 #endif /* CONFIG_BT_MPL_OBJECTS */
@@ -2487,10 +2472,7 @@ int media_proxy_pl_init(void)
 	media_player.calls.get_content_ctrl_id          = get_content_ctrl_id;
 
 	ret = media_proxy_pl_register(&media_player.calls);
-	if (ret < 0) {
-		LOG_ERR("Unable to register player");
-		return ret;
-	}
+	__ASSERT(ret == 0, "Unable to register player");
 
 	k_work_init_delayable(&media_player.pos_work, pos_work_cb);
 
