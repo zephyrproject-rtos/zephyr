@@ -620,6 +620,7 @@ else()
 endif()
 
 zephyr_cc_option_ifdef(CONFIG_STACK_USAGE            -fstack-usage)
+zephyr_cc_option_ifdef(CONFIG_CALLGRAPH_INFO         -fcallgraph-info)
 
 # If the compiler supports it, strip the ${ZEPHYR_BASE} prefix from the
 # __FILE__ macro used in __ASSERT*, in the

@@ -115,6 +115,13 @@ config STACK_USAGE
 	  Generate an extra file that specifies the maximum amount of stack used,
 	  on a per-function basis.
 
+config CALLGRAPH_INFO
+	bool "Generate call graph information"
+	help
+	  Generate an extra .ci file for each compilation unit, that specifies all
+	  calls known to GCC at complile time on a per-function basis. Calls are
+	  specified in the VCG format.
+
 config STACK_SENTINEL
 	bool "Stack sentinel"
 	select THREAD_STACK_INFO
