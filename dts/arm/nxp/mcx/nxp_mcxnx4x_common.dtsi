@@ -761,6 +761,12 @@
 		status = "disabled";
 	};
 
+	otpc: otpc@c9000 {
+		compatible = "nxp,otpc";
+		reg = <0xc9000 0x1000>;
+		status = "disabled";
+	};
+
 	dac0: dac@10f000 {
 		compatible = "nxp,lpdac";
 		reg = <0x10f000 0x1000>;
