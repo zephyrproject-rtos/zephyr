@@ -2090,6 +2090,7 @@ static int silabs_efr32_tx(const struct device *dev, enum ieee802154_tx_mode mod
 	int sec_ret;
 	uint32_t sym_rate;
 	uint32_t bit_rate;
+	uint16_t num_written;
 
 	if (!data->radio_data.rail_initialized) {
 		return -ENOTSUP;
@@ -2119,9 +2120,21 @@ static int silabs_efr32_tx(const struct device *dev, enum ieee802154_tx_mode mod
 	/* PHR (first byte) = PSDU length (MPDU + CRC); then write MPDU
 	 * RAIL appends the CRC in hardware.
 	 */
-	(void)sl_rail_write_tx_fifo(data->radio_data.rail_handle, &len, sizeof(len), true);
-	(void)sl_rail_write_tx_fifo(data->radio_data.rail_handle, data->tx_buffer, frag->len,
-				    false);
+	num_written = sl_rail_write_tx_fifo(data->radio_data.rail_handle, &len, sizeof(len), true);
+	if (num_written != sizeof(len)) {
+		LOG_WRN("Failed to write length to tx fifo");
+		sl_802154_handle_tx_failed(data);
+		return -ENOMEM;
+	}
+
+	num_written = sl_rail_write_tx_fifo(data->radio_data.rail_handle, data->tx_buffer,
+					    frag->len, false);
+	if (num_written != frag->len) {
+		LOG_WRN("Failed to write fragment data to tx fifo");
+		sl_802154_handle_tx_failed(data);
+		return -ENOMEM;
+	}
+
 	k_sem_reset(&data->tx_wait);
 	k_sem_reset(&data->ack_wait);
 	data->tx_errno = -EIO;  /* default if no event fires */
