@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+title: NXP OTPC eFuse controller
+
+description: |
+  NXP OTPC On-Chip OTP (One-Time Programmable) eFuse controller.
+
+  Fuse values can be exposed through nvmem-layout child nodes. The OTP API is
+  byte addressed while the controller reads 32-bit words; the driver handles
+  unaligned nvmem-layout child 'reg' offsets and read offsets/lengths
+  internally, so 4-byte alignment is not required.
+
+compatible: "nxp,otpc"
+
+include: base.yaml
+
+examples:
+  - |
+    otpc: otpc@c9000 {
+            compatible = "nxp,otpc";
+            reg = <0xc9000 0x1000>;
+            status = "okay";
+
+            nvmem-layout {
+                    compatible = "fixed-layout";
+                    #address-cells = <1>;
+                    #size-cells = <1>;
+
+                    uuid: uuid@40 {
+                            reg = <0x40 0x10>;
+                            #nvmem-cell-cells = <0>;
+                    };
+            };
+    };
