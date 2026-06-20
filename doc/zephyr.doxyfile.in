@@ -286,9 +286,6 @@ TAB_SIZE               = 8
 # @} or use a double escape (\\{ and \\})
 
 ALIASES                = "kconfig{1}=\c \1" \
-                         "req{1}=\ref ZEPH_\1 \"ZEPH-\1\"" \
-                         "satisfy{1}=\xrefitem satisfy \"Satisfies requirement\" \"Requirement Implementation\" \1" \
-                         "verify{1}=\xrefitem verify \"Verifies requirement\" \"Requirement Verification\" \1" \
                          "kconfig_dep{1}=\attention Available only when the following Kconfig option is enabled: \kconfig{\1}." \
                          "kconfig_dep{2}=\attention Available only when the following Kconfig options are enabled: \kconfig{\1}, \kconfig{\2}." \
                          "kconfig_dep{3}=\attention Available only when the following Kconfig options are enabled: \kconfig{\1}, \kconfig{\2}, \kconfig{\3}." \
