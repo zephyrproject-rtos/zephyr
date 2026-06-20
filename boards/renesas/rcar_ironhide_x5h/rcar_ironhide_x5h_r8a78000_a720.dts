@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm64/renesas/r8a78000.dtsi>
+#include "rcar_ironhide_x5h_r8a78000_a720-pinctrl.dtsi"
+
+/ {
+	model = "Renesas R-Car X5H Ironhide board";
+
+	chosen {
+		zephyr,sram = &ram;
+	};
+
+	ram: memory@9e600000 {
+		device_type = "mmio-sram";
+		reg = <0x9e600000 0x20000000>;
+	};
+};
