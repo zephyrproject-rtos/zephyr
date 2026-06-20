@@ -71,8 +71,11 @@ ZTEST(common_1cpu, test_timeout_order)
 {
 	int ii, prio = k_thread_priority_get(k_current_get()) + 1;
 
-	if (IS_ENABLED(CONFIG_TIMEOUT_BACKEND_MINHEAP)) {
-		/* The min-heap backend makes no same-tick ordering guarantee. */
+	if (IS_ENABLED(CONFIG_TIMEOUT_BACKEND_MINHEAP) ||
+	    IS_ENABLED(CONFIG_TIMEOUT_BACKEND_WHEEL)) {
+		/* The min-heap and timer-wheel backends make no same-tick
+		 * ordering guarantee.
+		 */
 		ztest_test_skip();
 	}
 

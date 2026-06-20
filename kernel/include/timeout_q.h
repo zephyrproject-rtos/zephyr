@@ -45,6 +45,20 @@ static inline bool z_is_inactive_timeout(const struct _timeout *to)
 	return to->heap_handle.idx == 0U;
 }
 
+#elif defined(CONFIG_TIMEOUT_BACKEND_WHEEL)
+
+static inline void z_init_timeout(struct _timeout *to)
+{
+	sys_dnode_init(&to->node);
+	to->flags = 0U;
+	to->dticks = 0;
+}
+
+static inline bool z_is_inactive_timeout(const struct _timeout *to)
+{
+	return !sys_dnode_is_linked(&to->node);
+}
+
 #else /* CONFIG_TIMEOUT_BACKEND_DLIST */
 
 static inline void z_init_timeout(struct _timeout *to)

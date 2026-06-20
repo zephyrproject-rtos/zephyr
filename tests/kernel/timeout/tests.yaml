@@ -9,3 +9,9 @@ tests:
     tags:
       - kernel
       - timer
+  kernel.timer.timeout.wheel:
+    extra_configs:
+      - CONFIG_TIMEOUT_BACKEND_WHEEL=y
+    tags:
+      - kernel
+      - timer
