@@ -36,6 +36,11 @@ static int pfic_init(void)
 {
 	/* `wfi` is called with interrupts disabled. Configure the PFIC to wake up on any event,
 	 * including any interrupt.
+	 *
+	 * On the dual-core CH32H41x (AMP) each core boots its own Zephyr image, so this runs once
+	 * per core. The assignment deliberately writes SCTLR to a fixed, known configuration
+	 * (rather than OR-ing into it); every core writes the same value, so the result is
+	 * well-defined regardless of which core runs first or how many times it runs.
 	 */
 	PFIC->SCTLR = SEVONPEND | WFITOWFE;
 	return 0;
