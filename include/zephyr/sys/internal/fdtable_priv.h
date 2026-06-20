@@ -8,6 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,6 +28,14 @@ struct fd_entry {
 
 struct fd_entry *zvfs_fd_entry_get(int fd);
 struct fd_entry *zvfs_fd_syscall_verify(int fd);
+
+bool supports_pread_pwrite(uint32_t mode);
+int zvfs_rw_unlocked(int fd, void *buf, size_t sz, bool is_write, const size_t *from_offset);
+
+int zvfs_lock_file(FILE *file, k_timeout_t timeout);
+int zvfs_unlock_file(FILE *file);
+int zvfs_getc_unlocked(FILE *stream);
+int zvfs_putc_unlocked(int c, FILE *stream);
 
 #ifdef __cplusplus
 }

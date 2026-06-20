@@ -4,6 +4,7 @@ zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_ZVFS_FDTABLE
   zvfs_fdtable.c
   zvfs_rw.c
+  zvfs_file_locking.c
   zvfs_close.c
   zvfs_lseek.c
   zvfs_fstat.c

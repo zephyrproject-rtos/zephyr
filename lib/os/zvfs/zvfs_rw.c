@@ -9,7 +9,7 @@
 #include <zephyr/sys/internal/fdtable_priv.h>
 #include <zephyr/internal/syscall_handler.h>
 
-static bool supports_pread_pwrite(uint32_t mode)
+bool supports_pread_pwrite(uint32_t mode)
 {
 	switch (mode & ZVFS_MODE_IFMT) {
 	case ZVFS_MODE_IFSHM:
@@ -19,11 +19,58 @@ static bool supports_pread_pwrite(uint32_t mode)
 	}
 }
 
-static ssize_t zvfs_rw(int fd, void *buf, size_t sz, bool is_write, const size_t *from_offset)
+static int zvfs_rw_entry(struct fd_entry *entry, void *buf, size_t sz, bool is_write,
+			 const size_t *from_offset)
 {
 	bool prw;
-	ssize_t res;
+	int res;
 	const size_t *off;
+
+	prw = supports_pread_pwrite(entry->mode);
+	if (from_offset != NULL && !prw) {
+		errno = ENOTSUP;
+		return -1;
+	}
+
+	off = (from_offset == NULL) ? &entry->offset : from_offset;
+
+	if (is_write) {
+		if (entry->vtable->write_offs == NULL) {
+			errno = EIO;
+			return -1;
+		}
+
+		res = entry->vtable->write_offs(entry->obj, buf, sz, *off);
+	} else {
+		if (entry->vtable->read_offs == NULL) {
+			errno = EIO;
+			return -1;
+		}
+
+		res = entry->vtable->read_offs(entry->obj, buf, sz, *off);
+	}
+
+	if (res > 0 && from_offset == NULL) {
+		entry->offset += res;
+	}
+
+	return res;
+}
+
+int zvfs_rw_unlocked(int fd, void *buf, size_t sz, bool is_write, const size_t *from_offset)
+{
+	struct fd_entry *entry = zvfs_fd_entry_get(fd);
+
+	if (entry == NULL) {
+		return -1;
+	}
+
+	return zvfs_rw_entry(entry, buf, sz, is_write, from_offset);
+}
+
+static ssize_t zvfs_rw(int fd, void *buf, size_t sz, bool is_write, const size_t *from_offset)
+{
+	ssize_t res;
 	struct fd_entry *entry = zvfs_fd_entry_get(fd);
 
 	if (entry == NULL) {
@@ -32,35 +79,8 @@ static ssize_t zvfs_rw(int fd, void *buf, size_t sz, bool is_write, const size_t
 
 	(void)k_mutex_lock(&entry->lock, K_FOREVER);
 
-	prw = supports_pread_pwrite(entry->mode);
-	if (from_offset != NULL && !prw) {
-		errno = ENOTSUP;
-		res = -1;
-		goto unlock;
-	}
+	res = zvfs_rw_entry(entry, buf, sz, is_write, from_offset);
 
-	off = (from_offset == NULL) ? &entry->offset : from_offset;
-
-	if (is_write) {
-		if (entry->vtable->write_offs == NULL) {
-			res = -1;
-			errno = EIO;
-		} else {
-			res = entry->vtable->write_offs(entry->obj, buf, sz, *off);
-		}
-	} else {
-		if (entry->vtable->read_offs == NULL) {
-			res = -1;
-			errno = EIO;
-		} else {
-			res = entry->vtable->read_offs(entry->obj, buf, sz, *off);
-		}
-	}
-	if (res > 0 && from_offset == NULL) {
-		entry->offset += res;
-	}
-
-unlock:
 	k_mutex_unlock(&entry->lock);
 
 	return res;

@@ -15,7 +15,6 @@ int z_impl_zephyr_fputc(int a, FILE *out)
 	return 0;
 }
 
-#ifdef CONFIG_POSIX_DEVICE_IO
 int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
 {
 	const char *buf = buffer;
@@ -28,7 +27,6 @@ int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
 	}
 	return nbytes;
 }
-#endif
 
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_zephyr_fputc(int c, FILE *stream)

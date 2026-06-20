@@ -258,3 +258,16 @@ int puts(const char *s)
 
 	return (fputc('\n', stdout) == EOF) ? EOF : 0;
 }
+
+int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
+{
+	size_t n;
+
+	if (buffer == NULL || nbytes < 0) {
+		return 0;
+	}
+
+	n = minimal_console_write((const unsigned char *)buffer, (size_t)nbytes);
+
+	return (int)n;
+}

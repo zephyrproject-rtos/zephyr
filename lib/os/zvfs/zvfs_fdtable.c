@@ -365,7 +365,7 @@ int zvfs_rename(const char *old, const char *newp)
 	return 0;
 }
 
-#if defined(CONFIG_POSIX_DEVICE_IO)
+#if defined(CONFIG_POSIX_DEVICE_IO) || defined(CONFIG_ZVFS_RESERVE_STDIO_FDS)
 /*
  * fd operations for stdio/stdout/stderr
  */
@@ -379,7 +379,7 @@ static ssize_t stdinout_read_vmeth(void *obj, void *buffer, size_t count)
 
 static ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
 {
-#if defined(CONFIG_PICOLIBC) || defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC)
+#if defined(CONFIG_PICOLIBC) || defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC) || defined(CONFIG_MINIMAL_LIBC)
 	return z_impl_zephyr_write_stdout(buffer, count);
 #else
 	return 0;
@@ -398,7 +398,7 @@ static const struct fd_op_vtable stdinout_fd_op_vtable = {
 	.ioctl = stdinout_ioctl_vmeth,
 };
 
-#endif /* defined(CONFIG_POSIX_DEVICE_IO) */
+#endif /* defined(CONFIG_POSIX_DEVICE_IO) || defined(CONFIG_ZVFS_RESERVE_STDIO_FDS) */
 
 #if defined(CONFIG_USERSPACE) && defined(CONFIG_ZVFS_RESERVE_STDIO_FDS)
 static int stdinout_access_init(void)
