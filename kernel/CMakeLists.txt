@@ -192,6 +192,42 @@ target_include_directories(kernel PRIVATE
 
 target_link_libraries(kernel zephyr_interface)
 
+if(CONFIG_KERNEL_UNITY_BUILD)
+  set_target_properties(kernel PROPERTIES
+    UNITY_BUILD ON
+    UNITY_BUILD_UNIQUE_ID "ZEPHYR_KERNEL_UNITY_ID"
+    UNITY_BUILD_BATCH_SIZE 0
+  )
+endif()
+
+# userspace.c includes the bulk-generated syscall_dispatch.c which defines
+# every z_mrsh_* function; batching it with any other file that includes an
+# individual *_mrsh.c produces duplicate-definition errors in a unity build.
+set_source_files_properties(
+  ${ZEPHYR_BASE}/kernel/userspace/userspace.c
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON
+)
+
+# main_weak.c must remain its own translation unit so linkers correctly resolve
+# the weak main() symbol. When batched with init.c under CONFIG_BOOTARGS the
+# two conflicting signatures for main() (void vs int/char**) also cause a
+# compile error.
+set_source_files_properties(
+  ${ZEPHYR_BASE}/kernel/main_weak.c
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON
+)
+
+# mailbox.c must remain its own translation unit. The kernel library is not
+# --whole-archive'd, so in a normal build the linker only pulls in mailbox.c
+# if something references k_mbox_* symbols. Merging it into the unity TU
+# forces it into every link, adding ~1 KB of noinit RAM (async_msg_free stack
+# buffer + async_msg array) even when no mailbox API is used, overflowing
+# RAM-constrained targets.
+set_source_files_properties(
+  ${ZEPHYR_BASE}/kernel/mailbox.c
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON
+)
+
 endif()
 
 # Optionally build kernel sources without LTO
