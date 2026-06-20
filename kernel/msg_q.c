@@ -29,7 +29,7 @@
 static struct k_obj_type obj_type_msgq;
 #endif /* CONFIG_OBJ_CORE_MSGQ */
 
-static inline bool handle_poll_events(struct k_msgq *msgq)
+static inline bool msgq_handle_poll_events(struct k_msgq *msgq)
 {
 #ifdef CONFIG_POLL
 	return z_handle_obj_poll_events(&msgq->poll_events,
@@ -192,7 +192,7 @@ static inline int put_msg_in_queue(struct k_msgq *msgq, const void *data,
 				(void)memcpy(msgq->read_ptr, (char *)data, msgq->msg_size);
 			}
 			msgq->used_msgs++;
-			resched = handle_poll_events(msgq);
+			resched = msgq_handle_poll_events(msgq);
 		}
 		result = 0;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
