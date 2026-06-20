@@ -154,6 +154,9 @@ static inline struct usb_dwc2_reg *dwc2_get_base(const struct device *dev)
 	return (struct usb_dwc2_reg *)DEVICE_MMIO_NAMED_GET(dev, core);
 }
 
+#if DT_HAS_COMPAT_STATUS_OKAY(brcm_bcm2835_usb)
+#include "udc_dwc2_brcm_bcm2835_usb.h"
+#endif
 #if DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_usb_otg)
 #include "udc_dwc2_esp32_usb_otg.h"
 #endif
