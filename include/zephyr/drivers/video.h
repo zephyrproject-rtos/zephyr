@@ -297,6 +297,8 @@ struct video_context {
 	const struct device *dev;
 	/** device lock, used to serialize all video calls */
 	struct k_mutex lock;
+	/** supported type bitfield - considering enum video_buf_type as bit */
+	uint8_t supported_buf_type;
 };
 
 /**
@@ -474,6 +476,11 @@ __subsystem struct video_driver_api {
  * @}
  */
 
+static inline bool is_video_type_valid(struct video_context *ctx, enum video_buf_type type)
+{
+	return !!(ctx->supported_buf_type & type);
+}
+
 /**
  * @brief Set video format.
  *
@@ -503,6 +510,10 @@ static inline int video_set_format(const struct device *dev, struct video_format
 	}
 
 	ctx = dev->data;
+
+	if (!is_video_type_valid(ctx, fmt->type)) {
+		return -EINVAL;
+	}
 
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 	ret = api->set_format(dev, fmt);
@@ -537,6 +548,10 @@ static inline int video_get_format(const struct device *dev, struct video_format
 	}
 
 	ctx = dev->data;
+
+	if (!is_video_type_valid(ctx, fmt->type)) {
+		return -EINVAL;
+	}
 
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 	ret = api->get_format(dev, fmt);
@@ -660,6 +675,10 @@ static inline int video_enum_frmival(const struct device *dev, struct video_frmi
 
 	ctx = dev->data;
 
+	if (!is_video_type_valid(ctx, fie->format->type)) {
+		return -EINVAL;
+	}
+
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 	ret = api->enum_frmival(dev, fie);
 	k_mutex_unlock(&ctx->lock);
@@ -713,6 +732,10 @@ static inline int video_dequeue(const struct device *dev, struct video_buffer **
 	}
 
 	ctx = dev->data;
+
+	if (!is_video_type_valid(ctx, (*buf)->type)) {
+		return -EINVAL;
+	}
 
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 	ret = api->dequeue(dev, buf, timeout);
@@ -791,6 +814,10 @@ static inline int video_stream_start(const struct device *dev, enum video_buf_ty
 
 	ctx = dev->data;
 
+	if (!is_video_type_valid(ctx, type)) {
+		return -EINVAL;
+	}
+
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 	ret = api->set_stream(dev, true, type);
 	k_mutex_unlock(&ctx->lock);
@@ -828,6 +855,10 @@ static inline int video_stream_stop(const struct device *dev, enum video_buf_typ
 
 	ctx = dev->data;
 
+	if (!is_video_type_valid(ctx, type)) {
+		return -EINVAL;
+	}
+
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 	ret = api->set_stream(dev, false, type);
 	if (ret < 0) {
@@ -854,8 +885,7 @@ static inline int video_get_caps(const struct device *dev, struct video_caps *ca
 	struct video_context *ctx;
 	int ret;
 
-	if (dev == NULL || dev->data == NULL || caps == NULL ||
-	    (caps->type != VIDEO_BUF_TYPE_INPUT && caps->type != VIDEO_BUF_TYPE_OUTPUT)) {
+	if (dev == NULL || dev->data == NULL || caps == NULL) {
 		return -EINVAL;
 	}
 
@@ -865,6 +895,10 @@ static inline int video_get_caps(const struct device *dev, struct video_caps *ca
 	}
 
 	ctx = dev->data;
+
+	if (!is_video_type_valid(ctx, caps->type)) {
+		return -EINVAL;
+	}
 
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 	ret = api->get_caps(dev, caps);
@@ -916,8 +950,7 @@ static inline int video_transform_cap(const struct device *const dev,
 	struct video_context *ctx;
 	int ret;
 
-	if (dev == NULL || dev->data == NULL || cap == NULL || res_cap == NULL ||
-	    (type != VIDEO_BUF_TYPE_INPUT && type != VIDEO_BUF_TYPE_OUTPUT)) {
+	if (dev == NULL || dev->data == NULL || cap == NULL || res_cap == NULL) {
 		return -EINVAL;
 	}
 
@@ -927,6 +960,10 @@ static inline int video_transform_cap(const struct device *const dev,
 	}
 
 	ctx = dev->data;
+
+	if (!is_video_type_valid(ctx, type)) {
+		return -EINVAL;
+	}
 
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 	ret = api->transform_cap(dev, cap, res_cap, type, ind);
@@ -1072,6 +1109,10 @@ static inline int video_set_selection(const struct device *dev, struct video_sel
 
 	ctx = dev->data;
 
+	if (!is_video_type_valid(ctx, sel->type)) {
+		return -EINVAL;
+	}
+
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 	ret = api->set_selection(dev, sel);
 	k_mutex_unlock(&ctx->lock);
@@ -1112,6 +1153,10 @@ static inline int video_get_selection(const struct device *dev, struct video_sel
 	}
 
 	ctx = dev->data;
+
+	if (!is_video_type_valid(ctx, sel->type)) {
+		return -EINVAL;
+	}
 
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 	ret = api->get_selection(dev, sel);
@@ -1281,7 +1326,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 			  enum video_buf_type src_type, enum video_buf_type sink_type,
 			  k_timeout_t timeout);
 
-int video_init_context_dev(const struct device *dev);
+int video_init_context_dev(const struct device *dev, enum video_buf_type buf_type);
 
 /**
  * @defgroup video_pixel_formats Video pixel formats
