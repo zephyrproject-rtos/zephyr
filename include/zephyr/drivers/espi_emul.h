@@ -63,7 +63,7 @@ typedef int (*emul_espi_api_set_vw)(const struct emul *target, enum espi_vwire_s
 typedef int (*emul_espi_api_get_vw)(const struct emul *target, enum espi_vwire_signal vw,
 				    uint8_t *level);
 
-#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+#if defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION) || defined(__DOXYGEN__)
 /**
  * Get the ACPI shared memory address owned by the emulator.
  *
@@ -168,7 +168,7 @@ int emul_espi_host_send_vw(const struct device *espi_dev, enum espi_vwire_signal
  */
 int emul_espi_host_port80_write(const struct device *espi_dev, uint32_t data);
 
-#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+#if defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION) || defined(__DOXYGEN__)
 /**
  * Get the host device's ACPI shared memory start address. The size of the region is
  * CONFIG_EMUL_ESPI_HOST_ACPI_SHM_REGION_SIZE.

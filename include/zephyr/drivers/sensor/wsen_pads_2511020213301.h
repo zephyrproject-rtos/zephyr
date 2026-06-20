@@ -32,7 +32,7 @@ enum sensor_attribute_wsen_pads_2511020213301 {
 	SENSOR_ATTR_WSEN_PADS_2511020213301_REFERENCE_POINT = SENSOR_ATTR_PRIV_START,
 };
 
-#ifdef CONFIG_WSEN_PADS_2511020213301_PRESSURE_THRESHOLD
+#if defined(CONFIG_WSEN_PADS_2511020213301_PRESSURE_THRESHOLD) || defined(__DOXYGEN__)
 /** @brief Pressure-threshold triggers for the WSEN-PADS-2511020213301. */
 enum sensor_trigger_wsen_pads_2511020213301 {
 	/** Pressure rose above the upper threshold. */

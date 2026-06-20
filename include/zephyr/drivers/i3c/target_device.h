@@ -190,7 +190,7 @@ struct i3c_target_callbacks {
 	int (*read_processed_cb)(struct i3c_target_config *config,
 				 uint8_t *val);
 
-#ifdef CONFIG_I3C_TARGET_BUFFER_MODE
+#if defined(CONFIG_I3C_TARGET_BUFFER_MODE) || defined(__DOXYGEN__)
 	/** @brief Function called when a write to the device is completed.
 	 *
 	 * This function is invoked by the controller when it completes
@@ -232,7 +232,8 @@ struct i3c_target_callbacks {
 	 */
 	int (*buf_read_requested_cb)(struct i3c_target_config *config, uint8_t **ptr, uint32_t *len,
 				     uint8_t *hdr_mode);
-#endif
+#endif /* CONFIG_I3C_TARGET_BUFFER_MODE */
+
 	/**
 	 * @brief Function called when a stop condition is observed after a
 	 * start condition addressed to a particular device.

@@ -350,10 +350,10 @@ struct can_driver_config {
 	uint32_t bitrate;
 	/** Initial CAN classic/CAN FD arbitration phase sample point in permille. */
 	uint16_t sample_point;
-#ifdef CONFIG_CAN_FD_MODE
-	/** Initial CAN FD data phase sample point in permille. */
+#if defined(CONFIG_CAN_FD_MODE) || defined(__DOXYGEN__)
+	/** Initial CAN FD data phase sample point in permille (@kconfig{CONFIG_CAN_FD_MODE}). */
 	uint16_t sample_point_data;
-	/** Initial CAN FD data phase bitrate. */
+	/** Initial CAN FD data phase bitrates (@kconfig{CONFIG_CAN_FD_MODE}). */
 	uint32_t bitrate_data;
 #endif /* CONFIG_CAN_FD_MODE */
 };

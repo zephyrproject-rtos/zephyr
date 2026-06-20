@@ -65,7 +65,7 @@ static inline void flexram_dt_partition(void)
 }
 #endif /* FLEXRAM_RUNTIME_BANKS_USED */
 
-#ifdef CONFIG_NXP_FLEXRAM_MAGIC_ADDR_API
+#if defined(CONFIG_NXP_FLEXRAM_MAGIC_ADDR_API) || defined(__DOXYGEN__)
 /** @brief Sets magic address for OCRAM
  *
  * Magic address allows core interrupt from FlexRAM when address

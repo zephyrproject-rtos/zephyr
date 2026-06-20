@@ -262,7 +262,7 @@ int cache_instr_invd_range(void *addr, size_t size);
  */
 int cache_instr_flush_and_invd_range(void *addr, size_t size);
 
-#ifdef CONFIG_ICACHE_LINE_SIZE_DETECT
+#if defined(CONFIG_ICACHE_LINE_SIZE_DETECT) || defined(__DOXYGEN__)
 /**
  *
  * @brief Get the i-cache line size.
@@ -270,7 +270,7 @@ int cache_instr_flush_and_invd_range(void *addr, size_t size);
  * The API is provided to dynamically detect the instruction cache line size at
  * run time.
  *
- * The function must be implemented only when CONFIG_ICACHE_LINE_SIZE_DETECT is
+ * The function must be implemented only when @kconfig{CONFIG_ICACHE_LINE_SIZE_DETECT} is
  * defined.
  *
  * @retval size Size of the d-cache line.
