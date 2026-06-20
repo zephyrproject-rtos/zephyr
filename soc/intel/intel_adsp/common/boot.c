@@ -68,7 +68,7 @@ __asm__(".pushsection .boot_entry.text, \"ax\" \n\t"
  */
 #define STRINGIFY_MACRO(x) Z_STRINGIFY(x)
 #define IMRSTACK STRINGIFY_MACRO(IMR_BOOT_LDR_MANIFEST_BASE)
-__asm__(".section .imr.z_boot_asm_entry, \"x\" \n\t"
+__asm__(".section .imr.z_boot_asm_entry, \"ax\" \n\t"
 	".align 4                   \n\t"
 	"z_boot_asm_entry:          \n\t"
 	"  movi  a0, 0x4002f        \n\t"

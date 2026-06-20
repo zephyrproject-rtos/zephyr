@@ -20,7 +20,7 @@
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
 #define STRINGIFY_MACRO(x) Z_STRINGIFY(x)
 #define IMRSTACK STRINGIFY_MACRO(IMR_BOOT_LDR_MANIFEST_BASE)
-__asm__(".section .imr.boot_entry_d3_restore, \"x\"\n\t"
+__asm__(".section .imr.boot_entry_d3_restore, \"ax\"\n\t"
 	".align 4\n\t"
 	".global boot_entry_d3_restore\n\t"
 	"boot_entry_d3_restore:\n\t"
