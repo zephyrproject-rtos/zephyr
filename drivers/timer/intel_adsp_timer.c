@@ -124,10 +124,10 @@ static void compare_isr(const void *arg)
 	set_compare(next);
 #endif
 
-	sys_clock_announce_locked((int32_t)dticks, key);
+	sys_clock_announce_locked((k_ticks_delta_t)dticks, key);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -135,7 +135,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 #ifdef CONFIG_TICKLESS_KERNEL
 	ticks = ticks == K_TICKS_FOREVER ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks, 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks, 0, (k_ticks_delta_t)MAX_TICKS);
 
 	uint64_t curr = count();
 	uint64_t next;
@@ -151,16 +151,16 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 #endif
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
 	}
-	uint64_t ret = (count() - last_count) / CYC_PER_TICK;
+	k_ticks_delta_t ret = (count() - last_count) / CYC_PER_TICK;
 
-	return (uint32_t)ret;
+	return ret;
 }
 
 uint32_t sys_clock_cycle_get_32(void)

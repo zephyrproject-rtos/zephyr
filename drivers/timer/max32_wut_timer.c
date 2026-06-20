@@ -53,7 +53,7 @@ static void max32_wut_timer_isr(const void *arg)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	uint32_t curr = MXC_WUT_GetCount(WUT_REGS);
-	uint32_t delta_ticks = (curr - last_count) / CYC_PER_TICK;
+	k_ticks_delta_t delta_ticks = (curr - last_count) / CYC_PER_TICK;
 
 	last_count += delta_ticks * CYC_PER_TICK;
 
@@ -72,7 +72,7 @@ static void max32_wut_timer_isr(const void *arg)
 	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? delta_ticks : 1);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -84,7 +84,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		ticks = MAX_TICKS;
 	}
 
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks - 1, 0, (k_ticks_delta_t)MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
@@ -110,7 +110,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	k_spin_unlock(&lock, key);
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
@@ -119,7 +119,7 @@ uint32_t sys_clock_elapsed(void)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	uint32_t curr = MXC_WUT_GetCount(WUT_REGS);
-	uint32_t delta_ticks = (curr - last_count) / CYC_PER_TICK;
+	k_ticks_delta_t delta_ticks = (curr - last_count) / CYC_PER_TICK;
 
 	k_spin_unlock(&lock, key);
 

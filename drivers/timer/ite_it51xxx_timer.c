@@ -114,8 +114,8 @@ static struct k_spinlock lock;
 /* Last HW count that we called sys_clock_announce() */
 static volatile uint32_t last_announced_hw_cnt;
 /* Last system (kernel) elapse and ticks */
-static volatile uint32_t last_elapsed;
-static volatile uint32_t last_ticks;
+static volatile k_ticks_delta_t last_elapsed;
+static volatile k_ticks_t last_ticks;
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = DT_IRQ_BY_IDX(DT_NODELABEL(timer), 3, irq);
@@ -170,8 +170,9 @@ static void evt_timer_isr(const void *unused)
 		 * Get free run observer count from last time announced and transform unit to
 		 * system tick
 		 */
-		uint32_t dticks = (~(read_timer_obser(FREE_RUN_TIMER))-last_announced_hw_cnt) /
-				  HW_CNT_PER_SYS_TICK;
+		k_ticks_delta_t dticks =
+			(~(read_timer_obser(FREE_RUN_TIMER)) - last_announced_hw_cnt) /
+			HW_CNT_PER_SYS_TICK;
 		last_announced_hw_cnt += (dticks * HW_CNT_PER_SYS_TICK);
 		last_ticks += dticks;
 		last_elapsed = 0;
@@ -193,7 +194,7 @@ static void free_run_timer_overflow_isr(const void *unused)
 	/* TODO: to increment 32-bit "top half" here for software 64-bit timer emulation. */
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -227,7 +228,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * ideally no more than one system tick in the future. So set event timer count
 	 * to 1 HW tick.
 	 */
-	ticks = CLAMP(ticks, 1, (int32_t)EVEN_TIMER_MAX_CNT_SYS_TICK);
+	ticks = CLAMP(ticks, 1, (k_ticks_delta_t)EVEN_TIMER_MAX_CNT_SYS_TICK);
 	next_cycs = (last_ticks + last_elapsed + ticks) * HW_CNT_PER_SYS_TICK;
 	now = ~read_timer_obser(FREE_RUN_TIMER);
 	if (unlikely(next_cycs <= now)) {
@@ -249,7 +250,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	k_spin_unlock(&lock, key);
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Always return 0 for non-tickless kernel system */
@@ -260,8 +261,8 @@ uint32_t sys_clock_elapsed(void)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	/* Get free run observer count from last time announced and transform unit to system tick */
-	uint32_t dticks =
-		(~(read_timer_obser(FREE_RUN_TIMER))-last_announced_hw_cnt) / HW_CNT_PER_SYS_TICK;
+	k_ticks_delta_t dticks =
+		(~(read_timer_obser(FREE_RUN_TIMER)) - last_announced_hw_cnt) / HW_CNT_PER_SYS_TICK;
 
 	last_elapsed = dticks;
 

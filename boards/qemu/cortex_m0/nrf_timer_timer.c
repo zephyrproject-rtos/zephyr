@@ -148,7 +148,7 @@ void timer0_nrf_isr(void *arg)
 
 
 	uint32_t t = get_comparator();
-	uint32_t dticks = counter_sub(t, last_count) / CYC_PER_TICK;
+	k_ticks_delta_t dticks = counter_sub(t, last_count) / CYC_PER_TICK;
 
 	last_count += dticks * CYC_PER_TICK;
 
@@ -162,7 +162,7 @@ void timer0_nrf_isr(void *arg)
 	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : (dticks > 0));
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 	uint32_t cyc;
@@ -172,7 +172,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	}
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks - 1, 0, (k_ticks_delta_t)MAX_TICKS);
 
 	uint32_t unannounced = counter_sub(counter(), last_count);
 
@@ -211,14 +211,14 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	NVIC_ClearPendingIRQ(TIMER0_IRQn);
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t ret = counter_sub(counter(), last_count) / CYC_PER_TICK;
+	k_ticks_delta_t ret = counter_sub(counter(), last_count) / CYC_PER_TICK;
 
 	k_spin_unlock(&lock, key);
 	return ret;

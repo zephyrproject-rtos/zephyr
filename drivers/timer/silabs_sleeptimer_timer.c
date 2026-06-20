@@ -35,7 +35,7 @@ extern unsigned int z_clock_hw_cycles_per_sec;
 /* Global timer state */
 struct sleeptimer_timer_data {
 	uint32_t cyc_per_tick;      /* Number of hw_cycles per 1 kernel tick */
-	uint32_t max_timeout_ticks; /* MAX_TIMEOUT_CYC expressed as ticks */
+	k_ticks_delta_t max_timeout_ticks; /* MAX_TIMEOUT_CYC expressed as ticks */
 	atomic_t last_count;        /* Value of counter when the previous tick was announced */
 	struct k_spinlock lock;     /* Spinlock to sync between ISR and updating the timeout */
 	bool initialized;           /* Set to true when timer is initialized */
@@ -60,7 +60,7 @@ static void sleeptimer_cb(sl_sleeptimer_timer_handle_t *handle, void *data)
 	sys_clock_announce(unannounced);
 }
 
-static void sleeptimer_clock_set_timeout(int32_t ticks, struct sleeptimer_timer_data *timer)
+static void sleeptimer_clock_set_timeout(k_ticks_delta_t ticks, struct sleeptimer_timer_data *timer)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
@@ -88,7 +88,7 @@ static void sleeptimer_clock_set_timeout(int32_t ticks, struct sleeptimer_timer_
 	k_spin_unlock(&timer->lock, key);
 }
 
-static uint32_t sleeptimer_clock_elapsed(struct sleeptimer_timer_data *timer)
+static k_ticks_delta_t sleeptimer_clock_elapsed(struct sleeptimer_timer_data *timer)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) || !timer->initialized) {
 		/* No unannounced ticks can have elapsed if not in tickless mode */
@@ -99,14 +99,14 @@ static uint32_t sleeptimer_clock_elapsed(struct sleeptimer_timer_data *timer)
 	}
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
 	sleeptimer_clock_set_timeout(ticks, &g_sleeptimer_timer_data);
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	return sleeptimer_clock_elapsed(&g_sleeptimer_timer_data);
 }

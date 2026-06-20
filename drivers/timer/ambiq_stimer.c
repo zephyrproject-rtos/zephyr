@@ -137,7 +137,7 @@ void stimer_isr(const void *arg)
 	}
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -147,7 +147,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	/* Adjust the ticks to the range of [1, MAX_TICKS]. */
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks, 1, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks, 1, (k_ticks_delta_t)MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&g_lock);
 
@@ -183,7 +183,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	k_spin_unlock(&g_lock, key);
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;

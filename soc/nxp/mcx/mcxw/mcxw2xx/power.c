@@ -142,7 +142,7 @@ uint64_t z_sys_clock_lpm_exit(void)
 #endif /* CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS */
 
 #if CONFIG_PM_POLICY_CUSTOM
-__weak const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
+__weak const struct pm_state_info *pm_policy_next_state(uint8_t cpu, k_ticks_delta_t ticks)
 {
 	uint8_t num_cpu_states;
 	const struct pm_state_info *cpu_states;

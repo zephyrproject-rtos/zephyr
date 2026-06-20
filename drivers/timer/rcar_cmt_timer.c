@@ -72,7 +72,7 @@ static void cmt_isr(void *arg)
 	sys_clock_announce(1);
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	/* Always return 0 for tickful operation */
 	return 0;

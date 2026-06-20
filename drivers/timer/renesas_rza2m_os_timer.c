@@ -62,7 +62,7 @@ const int32_t z_sys_timer_irq_for_test = OSTM_IRQ_NUM;
 /*
  * We have two constraints on the maximum number of cycles we can wait for.
  *
- * 1) sys_clock_announce() accepts at most INT32_MAX ticks.
+ * 1) sys_clock_announce() may only accept at most INT32_MAX ticks.
  *
  * 2) The number of cycles between two reports must fit in a cycle_diff_t
  *    variable before converting it to ticks.
@@ -78,7 +78,9 @@ const int32_t z_sys_timer_irq_for_test = OSTM_IRQ_NUM;
  * consecutive set bits coming from the original max values to produce a
  * nicer literal for assembly generation.
  */
-#define CYCLES_MAX_1 ((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK)
+#define CYCLES_MAX_1                                                                               \
+	(IS_ENABLED(CONFIG_TIMEOUT_64BIT) ? INT64_MAX                                              \
+					  : ((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK))
 #define CYCLES_MAX_2 ((uint64_t)CYCLE_DIFF_MAX)
 #define CYCLES_MAX_3 MIN(CYCLES_MAX_1, CYCLES_MAX_2)
 #define CYCLES_MAX_4 (CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
@@ -92,8 +94,8 @@ static uint32_t cyc_per_tick;
 
 static struct k_spinlock lock;
 static uint32_t last_cycle;
-static uint32_t last_tick;
-static uint32_t last_elapsed;
+static k_ticks_t last_tick;
+static k_ticks_delta_t last_elapsed;
 extern unsigned int z_clock_hw_cycles_per_sec;
 
 static void ostm_irq_handler(const struct device *dev)
@@ -101,7 +103,7 @@ static void ostm_irq_handler(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	uint32_t delta_cycles = sys_clock_cycle_get_32() - last_cycle;
-	uint32_t delta_ticks = delta_cycles / CYC_PER_TICK;
+	k_ticks_delta_t delta_ticks = delta_cycles / CYC_PER_TICK;
 
 	last_cycle += (cycle_diff_t)delta_ticks * CYC_PER_TICK;
 	last_tick += delta_ticks;
@@ -119,7 +121,7 @@ static void ostm_irq_handler(const struct device *dev)
 	sys_clock_announce(delta_ticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
@@ -136,6 +138,11 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	if (ticks == K_TICKS_FOREVER) {
 		next_cycle = last_cycle + CYCLES_MAX;
 	} else {
+		/* Clamp ticks so the multiplication by CYC_PER_TICK below cannot
+		 * overflow when the kernel passes a large value such as
+		 * SYS_CLOCK_MAX_WAIT.
+		 */
+		ticks = CLAMP(ticks, 0, (k_ticks_delta_t)(CYCLES_MAX / CYC_PER_TICK));
 		next_cycle = (last_tick + last_elapsed + ticks) * CYC_PER_TICK;
 		if ((next_cycle - last_cycle) > CYCLES_MAX) {
 			next_cycle = last_cycle + CYCLES_MAX;
@@ -148,14 +155,14 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	k_spin_unlock(&lock, key);
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
 	}
 
 	uint32_t delta_cycles = sys_clock_cycle_get_32() - last_cycle;
-	uint32_t delta_ticks = delta_cycles / CYC_PER_TICK;
+	k_ticks_delta_t delta_ticks = delta_cycles / CYC_PER_TICK;
 
 	last_elapsed = delta_ticks;
 

@@ -17,7 +17,7 @@
 LOG_MODULE_REGISTER(soc_power, CONFIG_SOC_LOG_LEVEL);
 
 /*
- * Called from pm_system_suspend(int32_t ticks) in subsys/power.c
+ * Called from pm_system_suspend(k_ticks_delta_t ticks) in subsys/pm/pm.c
  * For deep sleep pm_system_suspend has executed all the driver
  * power management call backs.
  */

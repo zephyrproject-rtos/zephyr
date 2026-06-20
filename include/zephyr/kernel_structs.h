@@ -206,7 +206,12 @@ struct z_kernel {
 	struct _cpu cpus[CONFIG_MP_MAX_NUM_CPUS];
 
 #ifdef CONFIG_PM
+	/* Can't use k_ticks_delta_t for header dependency reasons */
+#ifdef CONFIG_TIMEOUT_64BIT
+	int64_t idle; /* Number of ticks for kernel idling */
+#else
 	int32_t idle; /* Number of ticks for kernel idling */
+#endif
 #endif
 
 	/*

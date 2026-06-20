@@ -84,7 +84,7 @@ static void ti_dmtimer_isr(void *param)
 
 	uint32_t curr_cycle = TI_DM_TIMER_READ(systick_timer_dev, TCRR);
 	uint32_t delta_cycles = curr_cycle - data->last_cycle;
-	uint32_t delta_ticks = delta_cycles / CYC_PER_TICK;
+	k_ticks_delta_t delta_ticks = delta_cycles / CYC_PER_TICK;
 
 	data->last_cycle = curr_cycle;
 
@@ -103,7 +103,7 @@ static void ti_dmtimer_isr(void *param)
 	sys_clock_announce(delta_ticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -115,7 +115,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	}
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks, 1, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks, 1, (k_ticks_delta_t)MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
@@ -141,7 +141,7 @@ uint32_t sys_clock_cycle_get_32(void)
 	return curr_cycle;
 }
 
-unsigned int sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	struct ti_dm_timer_data *data = systick_timer_dev->data;
 
@@ -154,7 +154,7 @@ unsigned int sys_clock_elapsed(void)
 
 	uint32_t curr_cycle = TI_DM_TIMER_READ(systick_timer_dev, TCRR);
 	uint32_t delta_cycles = curr_cycle - data->last_cycle;
-	uint32_t delta_ticks = delta_cycles / CYC_PER_TICK;
+	k_ticks_delta_t delta_ticks = delta_cycles / CYC_PER_TICK;
 
 	k_spin_unlock(&data->lock, key);
 

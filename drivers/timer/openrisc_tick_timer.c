@@ -16,8 +16,8 @@
 
 static struct k_spinlock lock;
 static uint32_t last_count;
-static uint64_t last_ticks;
-static uint32_t last_elapsed;
+static k_ticks_t last_ticks;
+static k_ticks_delta_t last_elapsed;
 static uint32_t cyc_per_tick;
 
 static ALWAYS_INLINE void set_compare(uint32_t time)
@@ -45,7 +45,7 @@ void z_openrisc_timer_isr(void)
 
 	const uint32_t current_count = get_count();
 	const uint32_t delta_count = current_count - last_count;
-	const uint32_t delta_ticks = delta_count / cyc_per_tick;
+	const k_ticks_delta_t delta_ticks = delta_count / cyc_per_tick;
 
 	last_count += delta_ticks * cyc_per_tick;
 	last_ticks += delta_ticks;
@@ -65,7 +65,7 @@ void z_openrisc_timer_isr(void)
 	}
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 #if defined(CONFIG_TICKLESS_KERNEL)
 	if (ticks == K_TICKS_FOREVER) {
@@ -73,7 +73,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 			return;
 		}
 
-		ticks = INT32_MAX;
+		/* Program the hardware for its maximum timeout. */
+		ticks = MAX_CYC / 2 / cyc_per_tick;
 	}
 
 	/*
@@ -97,7 +98,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 #endif
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
@@ -107,7 +108,7 @@ uint32_t sys_clock_elapsed(void)
 
 	const uint32_t current_count = get_count();
 	const uint32_t delta_count = current_count - last_count;
-	const uint32_t delta_ticks = delta_count / cyc_per_tick;
+	const k_ticks_delta_t delta_ticks = delta_count / cyc_per_tick;
 
 	last_elapsed = delta_ticks;
 	k_spin_unlock(&lock, key);

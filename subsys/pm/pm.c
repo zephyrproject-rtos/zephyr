@@ -73,7 +73,7 @@ static inline void pm_state_notify(bool entering_state)
 	k_spin_unlock(&pm_notifier_lock, pm_notifier_key);
 }
 
-static inline int32_t ticks_expiring_sooner(int32_t ticks1, int32_t ticks2)
+static inline k_ticks_delta_t ticks_expiring_sooner(k_ticks_delta_t ticks1, k_ticks_delta_t ticks2)
 {
 	/*
 	 * Ticks are relative numbers that defines the number of ticks
@@ -145,12 +145,12 @@ bool pm_state_force(uint8_t cpu, const struct pm_state_info *info)
 	return true;
 }
 
-bool pm_system_suspend(int32_t kernel_ticks)
+bool pm_system_suspend(k_ticks_delta_t kernel_ticks)
 {
 	uint8_t id = CPU_ID;
 	k_spinlock_key_t key;
-	int32_t ticks, events_ticks;
-	uint32_t exit_latency_ticks;
+	k_ticks_delta_t ticks, events_ticks;
+	k_ticks_delta_t exit_latency_ticks;
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, kernel_ticks);
 
@@ -167,7 +167,7 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	ticks = ticks_expiring_sooner(kernel_ticks, events_ticks);
 
 #ifdef CONFIG_PM_CUSTOM_TICKS_HOOK
-	int32_t custom_ticks = pm_policy_next_custom_ticks();
+	k_ticks_delta_t custom_ticks = pm_policy_next_custom_ticks();
 
 	ticks = ticks_expiring_sooner(custom_ticks, ticks);
 #endif /* CONFIG_PM_CUSTOM_TICKS_HOOK */
@@ -215,7 +215,7 @@ bool pm_system_suspend(int32_t kernel_ticks)
 		 */
 		k_spinlock_key_t key = sys_clock_lock();
 
-		sys_clock_set_timeout(MAX(0, (int64_t)ticks - (int64_t)exit_latency_ticks), true);
+		sys_clock_set_timeout(MAX(0, ticks - exit_latency_ticks), true);
 		sys_clock_unlock(key);
 	}
 

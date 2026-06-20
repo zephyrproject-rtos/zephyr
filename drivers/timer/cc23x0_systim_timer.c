@@ -52,25 +52,30 @@ static int sys_clock_driver_init(void);
 /*
  * Set system clock timeout.
  */
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
-	/* If timeout is necessary */
-	if (ticks != K_TICKS_FOREVER) {
-		/* Get current value as early as possible */
-		uint32_t now_tick = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);
-		uint32_t timeout = ticks * TICK_PERIOD_MICRO_SEC;
-
-		if (timeout > SYSTIM_TIMEOUT_MAX) {
-			timeout = SYSTIM_TIMEOUT_MAX;
-		}
-		/* This should wrap around */
-		HWREG(SYSTIM_BASE + SYSTIM_O_CH0CC) = now_tick + timeout;
+	if (ticks == K_TICKS_FOREVER) {
+		return;
 	}
+
+	/* Clamp ticks so the multiplication by TICK_PERIOD_MICRO_SEC cannot
+	 * overflow uint32_t (or int64_t) when the kernel passes a large value
+	 * such as SYS_CLOCK_MAX_WAIT. SYSTIM_TIMEOUT_MAX cycles is the maximum
+	 * interval the 32-bit hardware compare register can schedule.
+	 */
+	ticks = CLAMP(ticks, 0, (k_ticks_delta_t)(SYSTIM_TIMEOUT_MAX / TICK_PERIOD_MICRO_SEC));
+
+	/* Get current value as early as possible */
+	uint32_t now_tick = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);
+	uint32_t timeout = (uint32_t)ticks * TICK_PERIOD_MICRO_SEC;
+
+	/* This should wrap around */
+	HWREG(SYSTIM_BASE + SYSTIM_O_CH0CC) = now_tick + timeout;
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	/* Get current value as early as possible */
 	uint32_t current_systim_count = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);

@@ -9,7 +9,7 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/pm/device.h>
 
-const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
+const struct pm_state_info *pm_policy_next_state(uint8_t cpu, k_ticks_delta_t ticks)
 {
 	uint8_t num_cpu_states;
 	const struct pm_state_info *cpu_states;
@@ -33,7 +33,7 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 			min_residency_ticks = k_us_to_ticks_ceil32(min_residency_us);
 		}
 
-		if (ticks < min_residency_ticks) {
+		if ((ticks != K_TICKS_FOREVER) && (ticks < min_residency_ticks)) {
 			/* If current state has higher residency then use the previous state; */
 			break;
 		}

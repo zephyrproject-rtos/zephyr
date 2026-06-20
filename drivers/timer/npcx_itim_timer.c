@@ -71,8 +71,8 @@ static const struct npcx_clk_cfg itim_clk_cfg[] = NPCX_DT_CLK_CFG_ITEMS_LIST(0);
 static struct k_spinlock lock;
 /* Announced cycles in system timer before executing sys_clock_announce() */
 static uint64_t cyc_sys_announced;
-static uint64_t last_ticks;
-static uint32_t last_elapsed;
+static k_ticks_t last_ticks;
+static k_ticks_delta_t last_elapsed;
 
 /* Current target cycles of time-out signal in event timer */
 static uint32_t cyc_evt_timeout;
@@ -138,7 +138,7 @@ static inline void npcx_itim_evt_disable(void)
 }
 
 /* ITIM local functions */
-static int npcx_itim_start_evt_tmr_by_tick(int32_t ticks)
+static int npcx_itim_start_evt_tmr_by_tick(k_ticks_delta_t ticks)
 {
 	/*
 	 * Get desired cycles of event timer from the requested ticks which
@@ -168,7 +168,7 @@ static int npcx_itim_start_evt_tmr_by_tick(int32_t ticks)
 			cyc_evt_timeout = CLAMP(dticks, 1, NPCX_ITIM32_MAX_CNT);
 		}
 	}
-	LOG_DBG("ticks %x, cyc_evt_timeout %x", ticks, cyc_evt_timeout);
+	LOG_DBG("ticks %llx, cyc_evt_timeout %x", (long long)ticks, cyc_evt_timeout);
 
 	/* Disable event timer if needed before configuring counter */
 	if (IS_BIT_SET(evt_tmr->ITCTS32, NPCX_ITCTSXX_ITEN)) {
@@ -194,7 +194,7 @@ static void npcx_itim_evt_isr(const struct device *dev)
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		k_spinlock_key_t key = k_spin_lock(&lock);
 		uint64_t curr = npcx_itim_get_sys_cyc64();
-		uint32_t delta_ticks = (uint32_t)((curr - cyc_sys_announced) / SYS_CYCLES_PER_TICK);
+		k_ticks_delta_t delta_ticks = (curr - cyc_sys_announced) / SYS_CYCLES_PER_TICK;
 
 		cyc_sys_announced += delta_ticks * SYS_CYCLES_PER_TICK;
 		last_ticks += delta_ticks;
@@ -252,7 +252,7 @@ static uint32_t npcx_itim_evt_elapsed_cyc32(void)
 #endif /* CONFIG_PM */
 
 /* System timer api functions */
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -261,7 +261,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	LOG_DBG("timeout is %d", ticks);
+	LOG_DBG("timeout is %lld", (long long)ticks);
 	/* Start a event timer in ticks */
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
@@ -269,7 +269,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	k_spin_unlock(&lock, key);
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Always return 0 for tickful kernel system */
@@ -278,7 +278,7 @@ uint32_t sys_clock_elapsed(void)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t delta_cycle = npcx_itim_get_sys_cyc64() - cyc_sys_announced;
-	uint32_t delta_ticks = (uint32_t)(delta_cycle / SYS_CYCLES_PER_TICK);
+	k_ticks_delta_t delta_ticks = (k_ticks_delta_t)(delta_cycle / SYS_CYCLES_PER_TICK);
 
 	last_elapsed = delta_ticks;
 	k_spin_unlock(&lock, key);

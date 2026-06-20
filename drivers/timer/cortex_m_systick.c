@@ -90,7 +90,7 @@ static cycle_t announced_cycles;
  * announce. Used by sys_clock_set_timeout() to compute a tick-aligned
  * absolute deadline relative to announced_cycles.
  */
-static uint32_t last_elapsed;
+static k_ticks_delta_t last_elapsed;
 
 /*
  * This local variable holds the amount of elapsed HW cycles due to
@@ -255,7 +255,7 @@ __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 #endif /* CONFIG_TRACING_ISR */
 
 	uint32_t dcycles;
-	uint32_t dticks;
+	k_ticks_delta_t dticks;
 
 	k_spinlock_key_t key = sys_clock_lock();
 
@@ -315,7 +315,7 @@ __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 }
 ARCH_ISR_DIAG_ON
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
@@ -479,7 +479,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 #endif
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
@@ -489,7 +489,7 @@ uint32_t sys_clock_elapsed(void)
 
 	uint32_t unannounced = cycle_count - announced_cycles;
 	uint32_t cyc = elapsed() + unannounced;
-	uint32_t dticks = cyc / CYC_PER_TICK;
+	k_ticks_delta_t dticks = cyc / CYC_PER_TICK;
 
 	last_elapsed = dticks;
 	return dticks;
@@ -522,7 +522,8 @@ void sys_clock_idle_exit(void)
 	if (timeout_idle) {
 		k_spinlock_key_t key = sys_clock_lock();
 		cycle_t systick_diff, missed_cycles;
-		uint32_t dcycles, dticks;
+		uint32_t dcycles;
+		k_ticks_delta_t dticks;
 		uint64_t systick_us, idle_timer_us;
 
 #if !defined(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)

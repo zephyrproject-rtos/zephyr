@@ -73,7 +73,7 @@ static void update_match(uint32_t cycles, uint32_t match)
 static void ttc_isr(const void *arg)
 {
 	uint32_t cycles;
-	uint32_t ticks;
+	k_ticks_delta_t ticks;
 
 	ARG_UNUSED(arg);
 
@@ -101,7 +101,7 @@ static void ttc_isr(const void *arg)
 	sys_clock_announce(ticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	uint32_t cycles;
@@ -114,6 +114,11 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	if (ticks == K_TICKS_FOREVER) {
 		next_cycles = cycles + CYCLES_NEXT_MAX;
 	} else {
+		/* Hardware counter is 32-bit. Clamp ticks so the multiplication
+		 * by CYCLES_PER_TICK does not overflow uint32_t when the kernel
+		 * passes a large value such as SYS_CLOCK_MAX_WAIT.
+		 */
+		ticks = CLAMP(ticks, 0, (k_ticks_delta_t)(CYCLES_NEXT_MAX / CYCLES_PER_TICK));
 		next_cycles = cycles + ((uint32_t)ticks * CYCLES_PER_TICK);
 	}
 
@@ -122,7 +127,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 #endif
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	uint32_t cycles;

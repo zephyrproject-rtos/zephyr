@@ -29,7 +29,7 @@ static uint32_t timer_val_31_24;
 
 static uint32_t last_isr_val;
 static uint32_t last_isr_val_rounded;
-static uint32_t announced_ticks;
+static k_ticks_t announced_ticks;
 
 static uint32_t get_rc32k_max_frequency(void)
 {
@@ -107,7 +107,7 @@ static void schedule_next_interrupt(uint32_t ticks)
 	}
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
@@ -151,12 +151,12 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		}
 	}
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks - 1, 0, (k_ticks_delta_t)MAX_TICKS);
 
 	schedule_next_interrupt(ticks);
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
@@ -184,7 +184,7 @@ void timer2_isr(const void *arg)
 {
 	uint32_t val;
 	int32_t delta;
-	int32_t dticks;
+	k_ticks_delta_t dticks;
 
 	ARG_UNUSED(arg);
 

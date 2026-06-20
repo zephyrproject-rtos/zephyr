@@ -39,12 +39,14 @@ static const struct max32_perclk perclk = {
 
 static struct k_spinlock lock;
 static uint32_t last_cycle;
-static uint32_t last_tick;
-static uint32_t last_elapsed;
+static k_ticks_t last_tick;
+static k_ticks_delta_t last_elapsed;
 
 #define CYCLE_DIFF_MAX (~(uint32_t)0)
 
-#define CYCLES_MAX_1 ((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK)
+#define CYCLES_MAX_1                                                                               \
+	(IS_ENABLED(CONFIG_TIMEOUT_64BIT) ? INT64_MAX                                              \
+					  : ((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK))
 #define CYCLES_MAX_2 ((uint64_t)CYCLE_DIFF_MAX)
 #define CYCLES_MAX_3 MIN(CYCLES_MAX_1, CYCLES_MAX_2)
 #define CYCLES_MAX_4 (CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
@@ -67,7 +69,7 @@ static void rv32_sys_timer_irq_handler(const struct device *unused)
 
 	uint32_t curr_cycle = MXC_TMR_GetCount(regs);
 	uint32_t delta_cycles = curr_cycle - last_cycle;
-	uint32_t delta_ticks = (uint32_t)delta_cycles / CYC_PER_TICK;
+	k_ticks_delta_t delta_ticks = delta_cycles / CYC_PER_TICK;
 
 	last_cycle += (uint32_t)delta_ticks * CYC_PER_TICK;
 	last_tick += delta_ticks;
@@ -91,7 +93,7 @@ uint32_t sys_clock_cycle_get_32(void)
 	return MXC_TMR_GetCount(regs) * DT_INST_PROP(0, prescaler);
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
@@ -100,8 +102,8 @@ uint32_t sys_clock_elapsed(void)
 	uint32_t curr_cycle = MXC_TMR_GetCount(regs);
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	int32_t delta_cycles = curr_cycle - last_cycle;
-	int32_t delta_ticks = (uint32_t)delta_cycles / CYC_PER_TICK;
+	uint32_t delta_cycles = curr_cycle - last_cycle;
+	k_ticks_delta_t delta_ticks = delta_cycles / CYC_PER_TICK;
 
 	last_elapsed = delta_ticks;
 	k_spin_unlock(&lock, key);
@@ -109,7 +111,7 @@ uint32_t sys_clock_elapsed(void)
 	return delta_ticks;
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
@@ -123,12 +125,16 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	uint32_t next_cycle;
 	uint32_t count;
 
-	if (ticks == INT32_MAX) {
+	if (ticks == SYS_CLOCK_MAX_WAIT) {
 		next_cycle = (last_tick * CYC_PER_TICK) + CYCLES_MAX;
 	} else if (ticks == 0) {
 		next_cycle = MXC_TMR_GetCount(regs) + (CYC_PER_TICK * 3 / 2);
 		next_cycle -= (next_cycle % CYC_PER_TICK);
 	} else {
+		/* Clamp ticks so the multiplication by CYC_PER_TICK below cannot
+		 * overflow when the kernel passes a large value.
+		 */
+		ticks = CLAMP(ticks, 0, (k_ticks_delta_t)(CYCLES_MAX / CYC_PER_TICK));
 		next_cycle = (last_tick + last_elapsed + ticks) * CYC_PER_TICK;
 		if ((next_cycle - last_cycle) > CYCLES_MAX) {
 			next_cycle = (last_tick * CYC_PER_TICK) + CYCLES_MAX;

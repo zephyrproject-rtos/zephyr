@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
+#include <zephyr/drivers/timer/system_timer.h>
 
 #ifdef CONFIG_TIMEOUT_64BIT
 /**
@@ -112,6 +113,32 @@ ZTEST(timeout, test_timeout_sum_absolute)
 	result = K_TIMEOUT_SUM(K_TICKS(6), K_TIMEOUT_ABS_TICKS(INT64_MAX - 8));
 	zassert_true(K_TIMEOUT_EQ(result, K_TICKS(INT64_MIN + 1)),
 		     "Expected INT64_MIN + 1 ticks");
+}
+
+/*
+ * Verify that sys_clock_announce() correctly advances the kernel tick counter
+ * when called with a delta larger than INT32_MAX.
+ */
+ZTEST(timeout, test_large_tick_announce)
+{
+	const k_ticks_delta_t large = (k_ticks_delta_t)INT32_MAX + 1000;
+	struct k_timer tmr;
+	int64_t t0, t1;
+
+	/* A timer set for INT32_MAX + 500 ticks must fire when large ticks elapse. */
+	k_timer_init(&tmr, NULL, NULL);
+	k_timer_start(&tmr, K_TICKS((k_ticks_t)INT32_MAX + 500), K_NO_WAIT);
+
+	t0 = sys_clock_tick_get();
+	sys_clock_announce(large);
+	t1 = sys_clock_tick_get();
+
+	zassert_equal(t1 - t0, (int64_t)large, "Tick counter advanced by %lld, expected %lld",
+		      (long long)(t1 - t0), (long long)large);
+
+	zassert_equal(k_timer_status_get(&tmr), 1, "Timer set for >INT32_MAX ticks did not fire");
+
+	k_timer_stop(&tmr);
 }
 #endif
 

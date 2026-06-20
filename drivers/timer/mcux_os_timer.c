@@ -27,7 +27,11 @@
 	((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() /                                      \
 		    (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 #define CYC_PER_US ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() / (uint64_t)USEC_PER_SEC))
+#ifdef CONFIG_TIMEOUT_64BIT
+#define MAX_CYC INT64_MAX
+#else
 #define MAX_CYC    INT_MAX
+#endif
 #define MAX_TICKS  ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY  CONFIG_MCUX_OS_TIMER_MIN_DELAY
 
@@ -65,10 +69,10 @@ void mcux_os_timer_set_next_tick_match(void)
 	OSTIMER_SetMatchValue(base, next_tick_cycles_match, NULL);
 }
 
-static uint32_t mcux_os_timer_calc_elapsed_ticks(uint64_t current_cycles)
+static k_ticks_delta_t mcux_os_timer_calc_elapsed_ticks(uint64_t current_cycles)
 {
 	uint64_t elapsed_cycles = current_cycles - last_count;
-	uint32_t elapsed_ticks = (uint32_t)elapsed_cycles / CYC_PER_TICK;
+	k_ticks_delta_t elapsed_ticks = (k_ticks_delta_t)(elapsed_cycles / CYC_PER_TICK);
 	return elapsed_ticks;
 }
 
@@ -82,7 +86,7 @@ void mcux_lpc_ostick_isr(const void *arg)
 	base->OSEVENT_CTRL &= ~OSTIMER_OSEVENT_CTRL_OSTIMER_INTENA_MASK;
 
 	uint64_t now = mcux_lpc_ostick_get_compensated_timer_value();
-	uint32_t elapsed_ticks = mcux_os_timer_calc_elapsed_ticks(now);
+	k_ticks_delta_t elapsed_ticks = mcux_os_timer_calc_elapsed_ticks(now);
 
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/*
@@ -244,7 +248,7 @@ bool z_nxp_os_timer_ignore_timer_wakeup(void)
 	return (wait_forever || counter_remaining_ticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Only for tickless kernel system */
@@ -268,14 +272,14 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	ARG_UNUSED(idle);
 #endif
 	ticks = ticks == K_TICKS_FOREVER ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks - 1, 0, (k_ticks_delta_t)MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t now = mcux_lpc_ostick_get_compensated_timer_value();
-	uint32_t adj, cyc = ticks * CYC_PER_TICK;
+	uint64_t adj, cyc = (uint64_t)ticks * CYC_PER_TICK;
 
 	/* Round up to next tick boundary. */
-	adj = (uint32_t)(now - last_count) + (CYC_PER_TICK - 1);
+	adj = (uint64_t)(now - last_count) + (CYC_PER_TICK - 1);
 	if (cyc <= MAX_CYC - adj) {
 		cyc += adj;
 	} else {
@@ -283,7 +287,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	}
 	cyc = (cyc / CYC_PER_TICK) * CYC_PER_TICK;
 
-	if ((int32_t)(cyc + last_count - now) < MIN_DELAY) {
+	if ((int64_t)(cyc + last_count - now) < MIN_DELAY) {
 		cyc += CYC_PER_TICK;
 	}
 
@@ -294,7 +298,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	k_spin_unlock(&lock, key);
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Always return 0 for tickful kernel system */
@@ -304,7 +308,7 @@ uint32_t sys_clock_elapsed(void)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	uint64_t now = mcux_lpc_ostick_get_compensated_timer_value();
-	uint32_t elapsed_ticks = mcux_os_timer_calc_elapsed_ticks(now);
+	k_ticks_delta_t elapsed_ticks = mcux_os_timer_calc_elapsed_ticks(now);
 
 	k_spin_unlock(&lock, key);
 

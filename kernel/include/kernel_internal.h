@@ -207,7 +207,7 @@ bool z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
  *
  * @return True if the system suspended, otherwise return false
  */
-bool pm_system_suspend(int32_t ticks);
+bool pm_system_suspend(k_ticks_delta_t ticks);
 
 #endif /* CONFIG_PM */
 

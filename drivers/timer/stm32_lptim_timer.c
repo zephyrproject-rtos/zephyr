@@ -258,9 +258,8 @@ static void lptim_irq_handler(const struct device *unused)
 		k_spin_unlock(&lock, key);
 
 		/* announce the elapsed time in ms (count register is 16bit) */
-		uint32_t dticks = (autoreload
-				* CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-				/ lptim_clock_freq;
+		k_ticks_delta_t dticks =
+			(autoreload * CONFIG_SYS_CLOCK_TICKS_PER_SEC) / lptim_clock_freq;
 
 		sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL)
 				? dticks : (dticks > 0));
@@ -302,7 +301,7 @@ static inline uint32_t z_clock_lptim_getcounter(void)
 	return lp_time;
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	/* new LPTIM AutoReload value to set (aligned on Kernel ticks) */
 	uint32_t next_arr = 0;
@@ -464,8 +463,7 @@ static uint32_t sys_clock_lp_time_get(void)
 	return lp_time;
 }
 
-
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
@@ -480,9 +478,10 @@ uint32_t sys_clock_elapsed(void)
 	/* gives the value of LPTIM counter (ms)
 	 * since the previous 'announce'
 	 */
-	uint64_t ret = ((uint64_t)lp_time * CONFIG_SYS_CLOCK_TICKS_PER_SEC) / lptim_clock_freq;
+	k_ticks_delta_t ret =
+		((uint64_t)lp_time * CONFIG_SYS_CLOCK_TICKS_PER_SEC) / lptim_clock_freq;
 
-	return (uint32_t)(ret);
+	return ret;
 }
 
 uint32_t sys_clock_cycle_get_32(void)
@@ -704,7 +703,8 @@ void sys_clock_idle_exit(void)
 #ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
 	if (timeout_stdby) {
 		cycle_t missed_lptim_cnt;
-		uint32_t stdby_timer_diff, stdby_timer_post, dticks;
+		uint32_t stdby_timer_diff, stdby_timer_post;
+		k_ticks_delta_t dticks;
 		uint64_t stdby_timer_us;
 
 		/* Get current value for standby timer and reset LPTIM counter value

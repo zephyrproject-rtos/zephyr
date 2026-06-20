@@ -51,6 +51,20 @@ typedef uint32_t k_ticks_t;
 #define K_TICKS_FOREVER ((k_ticks_t)(-1))
 
 /**
+ * @brief Signed tick delta type
+ *
+ * Used for tracking elapsed-tick deltas (k_ticks_t uses negative values to
+ * indicate an absolute tick count rather than a negative delta).
+ * Sized to match CONFIG_TIMEOUT_64BIT so that the sys_clock_announce path
+ * carries the same range as the timeouts.
+ */
+#ifdef CONFIG_TIMEOUT_64BIT
+typedef int64_t k_ticks_delta_t;
+#else
+typedef int32_t k_ticks_delta_t;
+#endif
+
+/**
  * @brief Kernel timeout type
  *
  * Timeout arguments presented to kernel APIs are stored in this

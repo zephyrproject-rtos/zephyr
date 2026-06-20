@@ -44,7 +44,7 @@ static void np_timer_isr(const void *arg)
 	ARG_UNUSED(arg);
 
 	uint64_t now = nsi_hws_get_time();
-	int32_t elapsed_ticks = (now - last_tick_time)/tick_period;
+	k_ticks_delta_t elapsed_ticks = (now - last_tick_time) / tick_period;
 
 	last_tick_time += elapsed_ticks*tick_period;
 	sys_clock_announce(elapsed_ticks);
@@ -71,16 +71,14 @@ void np_timer_isr_test_hook(const void *arg)
  * @param idle Hint to the driver that the system is about to enter
  *        the idle state immediately after setting the timeout
  */
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
 #if defined(CONFIG_TICKLESS_KERNEL)
 	uint64_t silent_ticks;
 
-	/* Note that we treat INT_MAX literally as anyhow the maximum amount of
-	 * ticks we can report with sys_clock_announce() is INT_MAX
-	 */
+	/* K_TICKS_FOREVER means park the simulated timer indefinitely. */
 	if (ticks == K_TICKS_FOREVER) {
 		silent_ticks = INT64_MAX;
 	} else if (ticks > 0) {
@@ -100,7 +98,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
  * this with appropriate locking, the driver needs only provide an
  * instantaneous answer.
  */
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	return (nsi_hws_get_time() - last_tick_time)/tick_period;
 }

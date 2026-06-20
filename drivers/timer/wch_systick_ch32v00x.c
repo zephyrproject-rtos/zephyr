@@ -43,7 +43,7 @@ uint32_t sys_clock_cycle_get_32(void)
 	return ch32v00x_systick_count + SYSTICK->CNT;
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	return 0;
 }

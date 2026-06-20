@@ -70,7 +70,7 @@ static void rtmr_isr(const void *arg)
 	ARG_UNUSED(arg);
 
 	uint32_t cycles;
-	int32_t ticks;
+	k_ticks_delta_t ticks;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
@@ -98,12 +98,12 @@ static void rtmr_isr(const void *arg)
 	sys_clock_announce(ticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
 	uint32_t cur_cnt, temp;
-	int full_ticks;
+	k_ticks_delta_t full_ticks;
 	uint32_t full_cycles;
 	uint32_t partial_cycles;
 
@@ -146,10 +146,10 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	k_spin_unlock(&lock, key);
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	uint32_t cur_cnt;
-	uint32_t ticks;
+	k_ticks_delta_t ticks;
 	int32_t elapsed;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
@@ -160,7 +160,7 @@ uint32_t sys_clock_elapsed(void)
 	if (elapsed < 0) {
 		elapsed = -1 * elapsed;
 	}
-	ticks = (uint32_t)elapsed;
+	ticks = (k_ticks_delta_t)elapsed;
 	ticks += previous_cnt - cur_cnt;
 	ticks /= CYCLES_PER_TICK;
 	ticks &= RTMR_COUNTER_MSK;

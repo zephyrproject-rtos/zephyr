@@ -187,14 +187,14 @@ static void startDevice(void)
 	irq_unlock(key);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
 #ifdef CONFIG_TICKLESS_KERNEL
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks - 1, 0, (int32_t) MAX_TICKS);
+	ticks = CLAMP(ticks - 1, 0, (k_ticks_delta_t)MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
@@ -216,10 +216,9 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 #endif /* CONFIG_TICKLESS_KERNEL */
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
-	uint32_t ret = (AONRTCCurrent64BitValueGet() - rtc_last) /
-		RTC_COUNTS_PER_TICK;
+	k_ticks_delta_t ret = (AONRTCCurrent64BitValueGet() - rtc_last) / RTC_COUNTS_PER_TICK;
 
 	return ret;
 }

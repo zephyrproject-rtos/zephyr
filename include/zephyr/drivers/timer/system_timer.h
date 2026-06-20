@@ -16,6 +16,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_
 
 #include <stdbool.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/types.h>
 #include <zephyr/spinlock.h>
 
@@ -23,8 +24,11 @@
 extern "C" {
 #endif
 
-#define SYS_CLOCK_MAX_WAIT (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) \
-			    ? K_TICKS_FOREVER : INT_MAX)
+#define SYS_CLOCK_MAX_WAIT                                                                         \
+	(IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE)                                               \
+		 ? K_TICKS_FOREVER                                                                 \
+		 : (IS_ENABLED(CONFIG_TIMEOUT_64BIT) ? (k_ticks_delta_t)INT64_MAX                  \
+						     : (k_ticks_delta_t)INT32_MAX))
 
 /**
  * @brief System Clock APIs
@@ -144,14 +148,17 @@ bool sys_clock_is_locked(void);
  * if this could cause rollover of the internal counter (i.e. the
  * system uptime counter is allowed to be wrong
  *
- * Note also that it is conventional for the kernel to pass INT_MAX
- * for ticks if it wants to preserve the uptime tick count but doesn't
- * have a specific event to await.  The intent here is that the driver
- * will schedule any needed timeout as far into the future as
- * possible.  For the specific case of INT_MAX, the next call to
- * sys_clock_announce() may occur at any point in the future, not just
- * at INT_MAX ticks.  But the correspondence between the announced
- * ticks and real-world time must be correct.
+ * Note also that it is conventional for the kernel to pass
+ * SYS_CLOCK_MAX_WAIT for ticks if it wants to preserve the uptime tick
+ * count but doesn't have a specific event to await.  The value of
+ * SYS_CLOCK_MAX_WAIT depends on CONFIG_TIMEOUT_64BIT: it is INT64_MAX
+ * when 64-bit timeouts are enabled (the default) and INT32_MAX otherwise.
+ * The intent here is that the driver will schedule any needed timeout as
+ * far into the future as possible.  For the specific case of
+ * SYS_CLOCK_MAX_WAIT, the next call to sys_clock_announce() may occur at
+ * any point in the future, not just at SYS_CLOCK_MAX_WAIT ticks.  But the
+ * correspondence between the announced ticks and real-world time must be
+ * correct.
  *
  * A final note about SMP: note that the call to sys_clock_set_timeout()
  * is made on any CPU, and reflects the next timeout desired globally.
@@ -168,7 +175,7 @@ bool sys_clock_is_locked(void);
  * @param idle Hint to the driver that the system is about to enter
  *        the idle state immediately after setting the timeout
  */
-void sys_clock_set_timeout(int32_t ticks, bool idle);
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle);
 
 /**
  * @brief Timer idle exit notification
@@ -204,7 +211,7 @@ void sys_clock_idle_exit(void);
  * @param ticks Elapsed time, in ticks
  * @param key Lock key obtained from sys_clock_lock().
  */
-void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key);
+void sys_clock_announce_locked(k_ticks_delta_t ticks, k_spinlock_key_t key);
 
 /**
  * @brief Announce time progress to the kernel (legacy wrapper)
@@ -216,7 +223,7 @@ void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key);
  *
  * @param ticks Elapsed time, in ticks
  */
-static inline void sys_clock_announce(int32_t ticks)
+static inline void sys_clock_announce(k_ticks_delta_t ticks)
 {
 	sys_clock_announce_locked(ticks, sys_clock_lock());
 }
@@ -232,7 +239,7 @@ static inline void sys_clock_announce(int32_t ticks)
  * @note This function is called by the kernel with the system clock
  * lock held.
  */
-uint32_t sys_clock_elapsed(void);
+k_ticks_delta_t sys_clock_elapsed(void);
 
 /**
  * @brief Disable system timer.

@@ -199,7 +199,7 @@ static void lptimer_set_delay(uint32_t delay)
 	Cy_MCWDT_SetInterruptMask(reg_addr, CY_MCWDT_CTR1);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	uint64_t current_cycles;
 	uint32_t cycles_per_tick;
@@ -275,12 +275,12 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	k_spin_unlock(&lock, key);
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	uint32_t current_cycles;
 	uint32_t cycles_per_tick;
 	uint32_t delta_cycles;
-	uint32_t delta_ticks;
+	k_ticks_delta_t delta_ticks;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;

@@ -12,6 +12,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/pm/state.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/toolchain.h>
 
@@ -86,7 +87,7 @@ struct pm_policy_event {
  * @return The power state the system should use for the given cpu. The function
  * will return NULL if system should remain into PM_STATE_ACTIVE.
  */
-const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks);
+const struct pm_state_info *pm_policy_next_state(uint8_t cpu, k_ticks_delta_t ticks);
 
 /** @endcond */
 

@@ -31,7 +31,7 @@ static uint32_t cyc_per_tick;
 /*
  * We have two constraints on the maximum number of cycles we can wait for.
  *
- * 1) sys_clock_announce() accepts at most INT32_MAX ticks.
+ * 1) sys_clock_announce() may only accept at most INT32_MAX ticks.
  *
  * 2) The number of cycles between two reports must fit in a cycle_diff_t
  *    variable before converting it to ticks.
@@ -47,7 +47,9 @@ static uint32_t cyc_per_tick;
  * consecutive set bits coming from the original max values to produce a
  * nicer literal for assembly generation.
  */
-#define CYCLES_MAX_1	((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK)
+#define CYCLES_MAX_1                                                                               \
+	(IS_ENABLED(CONFIG_TIMEOUT_64BIT) ? INT64_MAX                                              \
+					  : ((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK))
 #define CYCLES_MAX_2	((uint64_t)CYCLE_DIFF_MAX)
 #define CYCLES_MAX_3	MIN(CYCLES_MAX_1, CYCLES_MAX_2)
 #define CYCLES_MAX_4	(CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
@@ -62,8 +64,8 @@ static uint64_t cycles_max;
 #endif
 
 static uint64_t last_cycle;
-static uint64_t last_tick;
-static uint32_t last_elapsed;
+static k_ticks_t last_tick;
+static k_ticks_delta_t last_elapsed;
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = ARM_ARCH_TIMER_IRQ;
@@ -95,7 +97,7 @@ static void arm_arch_timer_compare_isr(const void *arg)
 
 	uint64_t curr_cycle = arm_arch_timer_count();
 	uint64_t delta_cycles = curr_cycle - last_cycle;
-	uint32_t delta_ticks = (cycle_diff_t)delta_cycles / CYC_PER_TICK;
+	k_ticks_delta_t delta_ticks = (cycle_diff_t)delta_cycles / CYC_PER_TICK;
 
 	last_cycle += (cycle_diff_t)delta_ticks * CYC_PER_TICK;
 	last_tick += delta_ticks;
@@ -134,7 +136,7 @@ static void arm_arch_timer_compare_isr(const void *arg)
 	sys_clock_announce_locked(delta_ticks, key);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
@@ -161,7 +163,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	arm_arch_timer_set_irq_mask(false);
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
@@ -171,7 +173,7 @@ uint32_t sys_clock_elapsed(void)
 
 	uint64_t curr_cycle = arm_arch_timer_count();
 	uint64_t delta_cycles = curr_cycle - last_cycle;
-	uint32_t delta_ticks = (cycle_diff_t)delta_cycles / CYC_PER_TICK;
+	k_ticks_delta_t delta_ticks = (cycle_diff_t)delta_cycles / CYC_PER_TICK;
 
 	last_elapsed = delta_ticks;
 	return delta_ticks;

@@ -182,14 +182,14 @@ static uint32_t last_announcement; /* last time we called sys_clock_announce() *
  * Writing a new value to preload only takes effect once the count
  * register reaches 0.
  */
-void sys_clock_set_timeout(int32_t n, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t n, bool idle)
 {
 	ARG_UNUSED(idle);
 
 	uint32_t ccr, temp;
-	int full_ticks;          /* number of complete ticks we'll wait */
-	uint32_t full_cycles;    /* full_ticks represented as cycles */
-	uint32_t partial_cycles; /* number of cycles to first tick boundary */
+	k_ticks_delta_t full_ticks; /* number of complete ticks we'll wait */
+	uint32_t full_cycles;       /* full_ticks represented as cycles */
+	uint32_t partial_cycles;    /* number of cycles to first tick boundary */
 
 	if (idle && (n == K_TICKS_FOREVER)) {
 		/*
@@ -243,10 +243,10 @@ void sys_clock_set_timeout(int32_t n, bool idle)
  * sys_clock_announce in the ISR. The caller casts uint32_t to int32_t.
  * We must make sure bit[31] is 0 in the return value.
  */
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	uint32_t ccr;
-	uint32_t ticks;
+	k_ticks_delta_t ticks;
 	int32_t elapsed;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
@@ -258,7 +258,7 @@ uint32_t sys_clock_elapsed(void)
 	if (elapsed < 0) {
 		elapsed = -1 * elapsed;
 	}
-	ticks = (uint32_t)elapsed;
+	ticks = (k_ticks_delta_t)elapsed;
 	ticks += cached_icr - ccr;
 	ticks /= CYCLES_PER_TICK;
 	ticks &= TIMER_COUNT_MASK;
@@ -273,7 +273,7 @@ static void xec_rtos_timer_isr(const void *arg)
 	ARG_UNUSED(arg);
 
 	uint32_t cycles;
-	int32_t ticks;
+	k_ticks_delta_t ticks;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
@@ -322,7 +322,7 @@ static void xec_rtos_timer_isr(const void *arg)
 	sys_clock_announce(1);
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	return 0U;
 }

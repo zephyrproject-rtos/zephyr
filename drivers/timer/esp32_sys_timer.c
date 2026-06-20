@@ -97,7 +97,7 @@ static void IRAM_ATTR sys_timer_isr(void *arg)
 	sys_clock_announce(dticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 #if defined(CONFIG_TICKLESS_KERNEL)
 	if (systimer_hal.dev == NULL) {
@@ -105,7 +105,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	}
 
 	ticks = ticks == K_TICKS_FOREVER ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks - 1, 0, (k_ticks_delta_t)MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t now = get_systimer_alarm();
@@ -143,7 +143,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 #endif
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
@@ -154,7 +154,8 @@ uint32_t sys_clock_elapsed(void)
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t ret = ((uint32_t)get_systimer_alarm() - (uint32_t)last_count) / CYC_PER_TICK;
+	k_ticks_delta_t ret =
+		((uint32_t)get_systimer_alarm() - (uint32_t)last_count) / CYC_PER_TICK;
 
 	k_spin_unlock(&lock, key);
 	return ret;

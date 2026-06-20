@@ -54,7 +54,7 @@ static void ra_ulpt_timer_isr(void)
 {
 	uint32_t cycles;
 	uint32_t dcycles;
-	uint32_t dticks;
+	k_ticks_delta_t dticks;
 	IRQn_Type irq = R_FSP_CurrentIrqGet();
 
 	/* Clear pending IRQ to prevent re-triggering. */
@@ -82,7 +82,7 @@ static void ra_ulpt_timer_isr(void)
 	}
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -91,18 +91,18 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	/* No timeout change for K_TICKS_FOREVER or INT32_MAX. */
-	if (ticks == K_TICKS_FOREVER || ticks == INT32_MAX) {
+	/* No timeout change for K_TICKS_FOREVER or SYS_CLOCK_MAX_WAIT. */
+	if (ticks == K_TICKS_FOREVER || ticks == SYS_CLOCK_MAX_WAIT) {
 		return;
 	}
 
 	/* Clamp the ticks value to a valid range. */
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks - 1, 0, (k_ticks_delta_t)MAX_TICKS);
 
 	/* Calculate the timer delay in cycles. */
 	uint32_t cycles = ~RA_ULPT_INST1_REG->ULPTCNT;
 	uint32_t unannounced = cycles - cycle_announced;
-	uint32_t delay = ticks * CYCLE_PER_TICK;
+	uint32_t delay = (uint32_t)ticks * CYCLE_PER_TICK;
 
 	/* Adjust delay to align with tick boundaries. */
 	delay += unannounced;
@@ -115,7 +115,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	RA_ULPT_INST0_REG->ULPTCNT = delay - 1U;
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	/* Elapsed time calculation is unsupported in tickful mode. */
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {

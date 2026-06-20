@@ -159,7 +159,7 @@ static void sys_clock_timeout_handler(int32_t id, uint64_t cc_val, void *p_conte
 {
 	ARG_UNUSED(id);
 	ARG_UNUSED(p_context);
-	uint32_t dticks;
+	k_ticks_delta_t dticks;
 
 	sys_event_unregister(false);
 	dticks = counter_sub(cc_val, last_count) / CYC_PER_TICK;
@@ -174,7 +174,7 @@ static void sys_clock_timeout_handler(int32_t id, uint64_t cc_val, void *p_conte
 	}
 
 	last_elapsed = 0;
-	sys_clock_announce((int32_t)dticks);
+	sys_clock_announce(dticks);
 }
 
 int32_t z_nrf_grtc_timer_chan_alloc(void)
@@ -487,7 +487,7 @@ uint64_t sys_clock_cycle_get_64(void)
 	return counter();
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
@@ -495,7 +495,7 @@ uint32_t sys_clock_elapsed(void)
 
 	last_elapsed = counter_sub(counter(), last_count);
 
-	return (uint32_t)(last_elapsed / CYC_PER_TICK);
+	return last_elapsed / CYC_PER_TICK;
 }
 
 #if !defined(CONFIG_GEN_SW_ISR_TABLE)
@@ -626,7 +626,7 @@ static int grtc_post_init(void)
 #endif
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 

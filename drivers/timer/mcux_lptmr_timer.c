@@ -66,7 +66,7 @@ static inline uint32_t counter_delta(uint32_t now, uint32_t then)
 	return (now - then) & COUNTER_MAX;
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -83,7 +83,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
 	/* Clamp ticks. We subtract one since we round up to next tick */
-	ticks = CLAMP((ticks - 1), 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP((ticks - 1), 0, (k_ticks_delta_t)MAX_TICKS);
 
 	key = k_spin_lock(&lock);
 
@@ -150,7 +150,7 @@ void sys_clock_disable(void)
 	LPTMR_StopTimer(LPTMR_BASE);
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;

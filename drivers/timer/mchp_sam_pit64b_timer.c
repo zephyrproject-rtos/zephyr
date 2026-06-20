@@ -61,7 +61,7 @@ static void pit64b_isr(const void *arg)
 	ARG_UNUSED(arg);
 
 	uint32_t dcycles;
-	uint32_t delta_ticks;
+	k_ticks_delta_t delta_ticks;
 
 	(void)cycles_elapsed();
 
@@ -71,7 +71,7 @@ static void pit64b_isr(const void *arg)
 
 		dcycles = cycle_count - announced_cycles;
 		delta_ticks = dcycles / CYCLES_PER_TICK;
-		announced_cycles += delta_ticks * CYCLES_PER_TICK;
+		announced_cycles += (cycle_t)delta_ticks * CYCLES_PER_TICK;
 
 		sys_clock_announce(delta_ticks);
 	} else {
@@ -79,7 +79,7 @@ static void pit64b_isr(const void *arg)
 	}
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -94,6 +94,11 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	uint32_t delay;
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
+	/* Hardware compare value is 21-bit (MAX_CYCLES); clamp ticks so the
+	 * multiplication by CYCLES_PER_TICK below cannot overflow uint32_t when
+	 * the kernel passes a large value such as SYS_CLOCK_MAX_WAIT.
+	 */
+	ticks = CLAMP(ticks, 0, (k_ticks_delta_t)MAX_TICKS);
 
 	key = k_spin_lock(&lock);
 	cycle_count += cycles_elapsed();
@@ -130,7 +135,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	k_spin_unlock(&lock, key);
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	uint32_t cycles;
 

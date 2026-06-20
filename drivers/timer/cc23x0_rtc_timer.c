@@ -31,22 +31,28 @@ static uint32_t last_rtc_count;
 
 #define TICK_PERIOD_MICRO_SEC (1000000 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
-	/* If timeout is necessary */
-	if (ticks != K_TICKS_FOREVER) {
-		/* Get current value as early as possible */
-		uint32_t ticks_now = HWREG(RTC_BASE + RTC_O_TIME8U);
+	if (ticks == K_TICKS_FOREVER) {
+		return;
+	}
 
-		if ((ticks_now + ticks) >= RTC_TIMEOUT_MAX) {
-			/* Reset timer and start from 0 */
-			HWREG(RTC_BASE + RTC_O_CTL) = RTC_CTL_RST_CLR;
-			HWREG(RTC_BASE + RTC_O_CH0CC8U) = ticks;
-		}
+	/* Hardware compare register is 32-bit; clamp to RTC_TIMEOUT_MAX so the
+	 * arithmetic below cannot overflow uint32_t or int64_t when the kernel
+	 * passes a large value such as SYS_CLOCK_MAX_WAIT.
+	 */
+	ticks = CLAMP(ticks, 0, (k_ticks_delta_t)RTC_TIMEOUT_MAX);
 
-		HWREG(RTC_BASE + RTC_O_CH0CC8U) = ticks_now + ticks;
+	uint32_t ticks_now = HWREG(RTC_BASE + RTC_O_TIME8U);
+
+	if (((uint64_t)ticks_now + (uint64_t)ticks) >= RTC_TIMEOUT_MAX) {
+		/* Reset timer and start from 0 */
+		HWREG(RTC_BASE + RTC_O_CTL) = RTC_CTL_RST_CLR;
+		HWREG(RTC_BASE + RTC_O_CH0CC8U) = (uint32_t)ticks;
+	} else {
+		HWREG(RTC_BASE + RTC_O_CH0CC8U) = ticks_now + (uint32_t)ticks;
 	}
 }
 
@@ -59,10 +65,10 @@ uint32_t get_elapsed_ticks_rtc(uint32_t current_rtc_count)
 	}
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
-	int32_t elapsed_ticks = get_elapsed_ticks_rtc(HWREG(RTC_BASE + RTC_O_TIME8U)) /
-						      TICK_PERIOD_MICRO_SEC;
+	k_ticks_delta_t elapsed_ticks =
+		get_elapsed_ticks_rtc(HWREG(RTC_BASE + RTC_O_TIME8U)) / TICK_PERIOD_MICRO_SEC;
 
 	return elapsed_ticks;
 }

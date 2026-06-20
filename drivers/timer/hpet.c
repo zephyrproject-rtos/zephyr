@@ -232,8 +232,8 @@ __WARN("HPET_INT_LEVEL_TRIGGER has no effect, DTS setting is used instead")
 #endif /* (DT_INST_IRQ_HAS_CELL(0, flags)) */
 
 static __pinned_bss uint64_t last_count;
-static __pinned_bss uint64_t last_tick;
-static __pinned_bss uint32_t last_elapsed;
+static __pinned_bss k_ticks_t last_tick;
+static __pinned_bss k_ticks_delta_t last_elapsed;
 
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 static __pinned_bss unsigned int cyc_per_tick;
@@ -308,7 +308,7 @@ static void hpet_isr(const void *arg)
 			now = last_count;
 		}
 	}
-	uint32_t dticks = (uint32_t)((now - last_count) / cyc_per_tick);
+	k_ticks_delta_t dticks = (now - last_count) / cyc_per_tick;
 
 	last_count += (uint64_t)dticks * cyc_per_tick;
 	last_tick += dticks;
@@ -352,8 +352,7 @@ void smp_timer_init(void)
 	 */
 }
 
-__pinned_func
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+__pinned_func void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -378,8 +377,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 #endif
 }
 
-__pinned_func
-uint32_t sys_clock_elapsed(void)
+__pinned_func k_ticks_delta_t sys_clock_elapsed(void)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
@@ -388,7 +386,7 @@ uint32_t sys_clock_elapsed(void)
 	}
 
 	uint64_t now = hpet_counter_get();
-	uint32_t ret = (uint32_t)((now - last_count) / cyc_per_tick);
+	k_ticks_delta_t ret = (now - last_count) / cyc_per_tick;
 
 	last_elapsed = ret;
 	return ret;

@@ -120,7 +120,7 @@ uint64_t sys_clock_cycle_get_64(void)
 }
 #endif /* CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER */
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Always return 0 for tickful operation */
@@ -129,18 +129,19 @@ uint32_t sys_clock_elapsed(void)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	uint32_t ret;
+	k_ticks_delta_t ret;
 	cycle_t current_cycle_count;
 
 	current_cycle_count = cmt1_elapsed();
 
 	if (current_cycle_count < announced_cycle_count) {
 		/* cycle_count overflowed */
-		ret = (uint32_t)((current_cycle_count +
-				  (CYCLE_COUNT_MAX - announced_cycle_count + 1)) /
-				 CYCLES_PER_TICK);
+		ret = (k_ticks_delta_t)((current_cycle_count +
+					 (CYCLE_COUNT_MAX - announced_cycle_count + 1)) /
+					CYCLES_PER_TICK);
 	} else {
-		ret = (uint32_t)((current_cycle_count - announced_cycle_count) / CYCLES_PER_TICK);
+		ret = (k_ticks_delta_t)((current_cycle_count - announced_cycle_count) /
+					CYCLES_PER_TICK);
 	}
 
 	k_spin_unlock(&lock, key);
@@ -150,7 +151,7 @@ uint32_t sys_clock_elapsed(void)
 
 static void cmt0_isr(void)
 {
-	k_ticks_t dticks;
+	k_ticks_delta_t dticks;
 	cycle_t current_cycle_count;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
@@ -159,12 +160,12 @@ static void cmt0_isr(void)
 
 	if (current_cycle_count < announced_cycle_count) {
 		/* cycle_count overflowed */
-		dticks = (k_ticks_t)((current_cycle_count +
-				      (CYCLE_COUNT_MAX - announced_cycle_count + 1)) /
-				     CYCLES_PER_TICK);
+		dticks = (k_ticks_delta_t)((current_cycle_count +
+					    (CYCLE_COUNT_MAX - announced_cycle_count + 1)) /
+					   CYCLES_PER_TICK);
 	} else {
-		dticks = (k_ticks_t)((current_cycle_count - announced_cycle_count) /
-				     CYCLES_PER_TICK);
+		dticks = (k_ticks_delta_t)((current_cycle_count - announced_cycle_count) /
+					   CYCLES_PER_TICK);
 	}
 
 	announced_cycle_count = (current_cycle_count / CYCLES_PER_TICK) * CYCLES_PER_TICK;
@@ -207,17 +208,17 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
 
-	if (ticks == K_TICKS_FOREVER || ticks == INT32_MAX) {
+	if (ticks == K_TICKS_FOREVER || ticks == SYS_CLOCK_MAX_WAIT) {
 		return;
 	}
 
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks - 1, 0, (k_ticks_delta_t)MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 

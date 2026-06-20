@@ -8,7 +8,7 @@
 #include <zephyr/pm/policy.h>
 #include <soc.h>
 
-__weak const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
+__weak const struct pm_state_info *pm_policy_next_state(uint8_t cpu, k_ticks_delta_t ticks)
 {
 	const struct pm_state_info *cpu_states;
 	uint8_t num_cpu_states;
@@ -30,7 +30,7 @@ __weak const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t tic
 		 * The tick interval for the system to enter sleep mode needs
 		 * to be longer than or equal to the minimum residency.
 		 */
-		if (ticks >= min_residency) {
+		if ((ticks == K_TICKS_FOREVER) || (ticks >= min_residency)) {
 			return state;
 		}
 	}

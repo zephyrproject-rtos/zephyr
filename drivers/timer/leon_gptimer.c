@@ -104,7 +104,7 @@ static uint32_t gptimer_ctrl_clear_ip;
  * single wrap.
  */
 static uint32_t announced_cyc; /* counter value at the last announce (tick-aligned) */
-static uint32_t last_elapsed;  /* ticks reported by the last sys_clock_elapsed() */
+static k_ticks_delta_t last_elapsed; /* ticks reported by the last sys_clock_elapsed() */
 
 static inline uint32_t up_counter(volatile struct gptimer_regs *regs)
 {
@@ -132,7 +132,7 @@ static void timer_isr(const void *unused)
 	ARG_UNUSED(unused);
 	volatile struct gptimer_regs *regs = get_regs();
 	volatile struct gptimer_timer_regs *tmr = &regs->timer[0];
-	uint32_t dticks;
+	k_ticks_delta_t dticks;
 
 	if ((tmr->ctrl & GPTIMER_CTRL_IP) == 0) {
 		return; /* interrupt not for us */
@@ -159,7 +159,7 @@ static void timer_isr(const void *unused)
 	sys_clock_announce(dticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(k_ticks_delta_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 	volatile struct gptimer_regs *regs = get_regs();
@@ -174,13 +174,14 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		ticks = MAX_TICKS;
 	}
 
-	/* The ISR eventually announces last_elapsed + ticks (plus IRQ-servicing
-	 * latency) and sys_clock_announce() takes an int32_t. Keep the sum
-	 * within INT32_MAX, reserving half the range for the latency.
+	/* The deadline is programmed as a 32-bit cycle reload, then read back
+	 * as a signed int32_t delay against the free-running counter. Keep
+	 * (last_elapsed + ticks) * CYC_PER_TICK below INT32_MAX / 2 - i.e.
+	 * last_elapsed + ticks <= MAX_TICKS / 2 in ticks - so the delay stays
+	 * positive when interpreted as int32_t, with half the range reserved
+	 * for IRQ-servicing latency.
 	 */
-	if (ticks > (INT32_MAX / 2 - last_elapsed)) {
-		ticks = INT32_MAX / 2 - last_elapsed;
-	}
+	ticks = CLAMP(ticks, 0, MAX(0, (k_ticks_delta_t)(MAX_TICKS / 2) - last_elapsed));
 
 	/* Absolute, tick-aligned deadline from the last announce, programmed as
 	 * a relative delay. last_elapsed is the tick count already reported via
@@ -196,7 +197,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	program_subtimer0(regs, delay);
 }
 
-uint32_t sys_clock_elapsed(void)
+k_ticks_delta_t sys_clock_elapsed(void)
 {
 	volatile struct gptimer_regs *regs = get_regs();
 

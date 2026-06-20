@@ -179,7 +179,7 @@ static void z_power_soc_sleep(void)
  *   tick = get next timeout expiration
  *   pm_system_suspend(ticks) in pm subsystem
  *
- * pm_system_suspend(int32_t ticks) in subsys/power.c
+ * pm_system_suspend(k_ticks_delta_t ticks) in subsys/pm/pm.c
  * if exit latency is acceptible.
  *   lock scheduler
  *   set pm post ops flag
