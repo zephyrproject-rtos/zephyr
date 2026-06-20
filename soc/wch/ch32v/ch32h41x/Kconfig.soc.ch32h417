@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Liu Changjie
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_CH32H417
+	bool
+	select SOC_SERIES_CH32H41X
+
+config SOC_CH32H417_V3F
+	bool
+	select SOC_CH32H417
+	help
+	  This hidden configuration targets the QingKe V3F boot core in the
+	  CH32H417 AMP SoC. When SOC_CH32H417_BOOT_V5F is enabled, the boot core
+	  wakes the V5F application core from soc_early_init_hook() (see
+	  soc_v3f.c).
+
+config SOC_CH32H417_V5F
+	bool
+	select SOC_CH32H417
+	help
+	  This hidden configuration targets the QingKe V5F application core in the
+	  CH32H417 AMP SoC.
+
+config SOC
+	default "ch32h417" if SOC_CH32H417

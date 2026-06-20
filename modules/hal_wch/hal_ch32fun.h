@@ -11,6 +11,10 @@
 #ifndef _CH32FUN_H
 #define _CH32FUN_H
 
+#ifndef asm
+#define asm __asm /* -std-c17 compatibility */
+#endif
+
 #if defined(CONFIG_SOC_SERIES_QINGKE_V2A)
 #define CH32V003 1
 #include <ch32fun.h>
@@ -49,5 +53,10 @@
 #endif
 #include <ch32fun.h>
 #endif /* defined(CONFIG_SOC_SERIES_QINGKE_V4F) */
+
+#if defined(CONFIG_SOC_SERIES_CH32H41X)
+#define CH32H41x 1
+#include <ch32fun.h>
+#endif /* defined(CONFIG_SOC_SERIES_CH32H41X) */
 
 #endif

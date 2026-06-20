@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Liu Changjie
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_CH32H417_BOOT_V5F
+	bool "Wake the V5F application core during early boot"
+	depends on SOC_CH32H417_V3F
+	default y
+	# SOC_EARLY_INIT_HOOK is defined in kernel/Kconfig.init, which is not
+	# loaded by the SoC-only Kconfig.soc.* compliance environment, so the
+	# select must live in this (full-tree) Kconfig rather than Kconfig.soc.*.
+	select SOC_EARLY_INIT_HOOK
+	help
+	  When enabled, the V3F boot core wakes the V5F application core (image
+	  linked at 0x08010000, programmed at flash offset 0x10000) from
+	  soc_early_init_hook(). Disable this when running the V3F core standalone,
+	  with no V5F application image programmed, so the boot core does not jump
+	  to a non-existent or invalid program.

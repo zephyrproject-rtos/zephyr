@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Liu Changjie
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_CH32H417
+
+config VECTOR_TABLE_SIZE
+	default 256
+
+config NUM_IRQS
+	default 256
+
+endif # SOC_CH32H417
+
+if SOC_CH32H417_V3F
+
+config RV_BOOT_HART
+	default 0
+
+endif # SOC_CH32H417_V3F
+
+if SOC_CH32H417_V5F
+
+# On the CH32H417 the QingKe V5F core is hart 1 (the V3F boot core is hart 0).
+config RV_BOOT_HART
+	default 1
+
+endif # SOC_CH32H417_V5F
