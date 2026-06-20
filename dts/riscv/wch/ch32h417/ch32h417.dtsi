@@ -28,6 +28,12 @@
 			clock-frequency = <DT_FREQ_M(25)>;
 			status = "disabled";
 		};
+
+		pll: pll {
+			#clock-cells = <0>;
+			compatible = "wch,ch32h41x-pll-clock";
+			status = "disabled";
+		};
 	};
 
 	soc {
