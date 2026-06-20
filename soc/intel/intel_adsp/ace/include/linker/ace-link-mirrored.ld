@@ -38,21 +38,39 @@ ENTRY(rom_entry);
 
 #ifdef CONFIG_KERNEL_COHERENCE
 #ifdef CONFIG_MMU
-#define SEGSTART_CACHED   RPO_SET(ALIGN(CONFIG_MMU_PAGE_SIZE), CONFIG_INTEL_ADSP_CACHED_REGION)
-#define SEGSTART_UNCACHED RPO_SET(ALIGN(CONFIG_MMU_PAGE_SIZE), CONFIG_INTEL_ADSP_UNCACHED_REGION)
+#define SEGSTART_CACHED   RPO_SET(ALIGN(phys_dot, CONFIG_MMU_PAGE_SIZE), CONFIG_INTEL_ADSP_CACHED_REGION)
+#define SEGSTART_UNCACHED RPO_SET(ALIGN(phys_dot, CONFIG_MMU_PAGE_SIZE), CONFIG_INTEL_ADSP_UNCACHED_REGION)
 #else
-#define SEGSTART_CACHED   RPO_SET(ALIGN(64), CONFIG_INTEL_ADSP_CACHED_REGION)
-#define SEGSTART_UNCACHED RPO_SET(ALIGN(64), CONFIG_INTEL_ADSP_UNCACHED_REGION)
+#define SEGSTART_CACHED   RPO_SET(ALIGN(phys_dot, 64), CONFIG_INTEL_ADSP_CACHED_REGION)
+#define SEGSTART_UNCACHED RPO_SET(ALIGN(phys_dot, 64), CONFIG_INTEL_ADSP_UNCACHED_REGION)
 #endif
 #else
 #ifdef CONFIG_MMU
-#define SEGSTART_CACHED   ALIGN(CONFIG_MMU_PAGE_SIZE)
-#define SEGSTART_UNCACHED ALIGN(CONFIG_MMU_PAGE_SIZE)
+#define SEGSTART_CACHED   ALIGN(phys_dot, CONFIG_MMU_PAGE_SIZE)
+#define SEGSTART_UNCACHED ALIGN(phys_dot, CONFIG_MMU_PAGE_SIZE)
 #else
-#define SEGSTART_CACHED   .
-#define SEGSTART_UNCACHED .
+#define SEGSTART_CACHED   phys_dot
+#define SEGSTART_UNCACHED phys_dot
 #endif
 #define ucram ram
+#endif
+
+#ifdef CONFIG_KERNEL_COHERENCE
+#ifdef CONFIG_MMU
+#define ADDR_CACHED(sym)   RPO_SET(ALIGN(sym, CONFIG_MMU_PAGE_SIZE), CONFIG_INTEL_ADSP_CACHED_REGION)
+#define ADDR_UNCACHED(sym) RPO_SET(ALIGN(sym, CONFIG_MMU_PAGE_SIZE), CONFIG_INTEL_ADSP_UNCACHED_REGION)
+#else
+#define ADDR_CACHED(sym)   RPO_SET(ALIGN(sym, 64), CONFIG_INTEL_ADSP_CACHED_REGION)
+#define ADDR_UNCACHED(sym) RPO_SET(ALIGN(sym, 64), CONFIG_INTEL_ADSP_UNCACHED_REGION)
+#endif
+#else
+#ifdef CONFIG_MMU
+#define ADDR_CACHED(sym)   ALIGN(sym, CONFIG_MMU_PAGE_SIZE)
+#define ADDR_UNCACHED(sym) ALIGN(sym, CONFIG_MMU_PAGE_SIZE)
+#else
+#define ADDR_CACHED(sym)   sym
+#define ADDR_UNCACHED(sym) sym
+#endif
 #endif
 
 /* intlist.ld needs an IDT_LIST memory region */
@@ -107,6 +125,7 @@ MEMORY {
 }
 
 SECTIONS {
+  phys_dot = 0;
 
   /* Boot loader code in IMR memory */
   .imr : {
@@ -210,10 +229,12 @@ SECTIONS {
 
     KEEP(*(.init))
     KEEP(*(.lps_vector))
-    *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
+    *(.gnu.linkonce.literal.* .gnu.linkonce.t.*.literal)
     MMU_PAGE_ALIGN
-    *(.literal .text)
-    *(.literal.* .text.*)
+    *(.literal)
+    *(.literal.*)
+    *(.text)
+    *(.text.* .stub .gnu.warning .gnu.linkonce.t.*)
     *(.fini.literal)
     KEEP(*(.fini))
     *(.gnu.version)
@@ -263,11 +284,13 @@ SECTIONS {
     *(*.initcall)
     _module_init_end = .;
   } >ram
+  . = _module_init_end;
+  phys_dot = . & 0x1fffffff;
 
 #define RAMABLE_REGION ram
 #define ROMABLE_REGION ram
 
-  __common_rom_region_start = SEGSTART_CACHED;
+  __common_rom_region_start = ADDR_CACHED(_module_init_end);
 #include <zephyr/linker/common-rom.ld>
 /* Located in generated directory. This file is populated by calling
  * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
@@ -276,8 +299,10 @@ SECTIONS {
    __rodata_region_end = .;
   __common_rom_region_end = .;
     __rodata_region_end = .;
+  . = __common_rom_region_end;
+  phys_dot = . & 0x1fffffff;
 
-  .noinit SEGSTART_UNCACHED (NOLOAD) : HDR_MMU_PAGE_ALIGN {
+  .noinit ADDR_UNCACHED(__common_rom_region_end) (NOLOAD) : HDR_MMU_PAGE_ALIGN {
     __data_start = .;
     *(.noinit)
     *(.noinit.*)
@@ -287,12 +312,15 @@ SECTIONS {
  */
 #include <snippets-noinit.ld>
 
+    __noinit_end = .;
   } >ucram
+  . = __noinit_end;
+  phys_dot = . & 0x1fffffff;
 
 #include <zephyr/linker/kobject-priv-stacks.ld>
-    . = SEGSTART_UNCACHED;
+    . = ADDR_UNCACHED(__noinit_end);
 
-  .data SEGSTART_UNCACHED : HDR_MMU_PAGE_ALIGN {
+  .data ADDR_UNCACHED(__noinit_end) : HDR_MMU_PAGE_ALIGN {
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)
@@ -312,29 +340,36 @@ SECTIONS {
     __data_end = .;
     MMU_PAGE_ALIGN
   } >ucram
+  . = __data_end;
+  phys_dot = . & 0x1fffffff;
 
-  .lit4 SEGSTART_CACHED : {
+  .lit4 ADDR_CACHED(__data_end) : {
     _lit4_start = .;
     *(*.lit4)
     *(.lit4.*)
     *(.gnu.linkonce.lit4.*)
     _lit4_end = .;
   } >ram
+  . = _lit4_end;
+  phys_dot = . & 0x1fffffff;
 
 /* These values need to change in our scheme, where the common-ram
  * sections need to be linked in safe/uncached memory but common-rom
  * wants to use the cache
  */
-. = SEGSTART_UNCACHED;
+. = ADDR_UNCACHED(_lit4_end);
 #undef RAMABLE_REGION
 #undef ROMABLE_REGION
 #define RAMABLE_REGION ucram
 #define ROMABLE_REGION ucram
 
-  .fw_ready SEGSTART_UNCACHED : {
+  .fw_ready ADDR_UNCACHED(_lit4_end) : {
     KEEP(*(".fw_ready"));
     KEEP (*(.fw_ready_metadata))
+    __fw_ready_end = .;
   } > ucram
+  . = __fw_ready_end;
+  phys_dot = . & 0x1fffffff;
 
   __common_ram_region_start = .;
 
@@ -353,15 +388,20 @@ SECTIONS {
 #include <zephyr/linker/common-ram.ld>
 #include <zephyr/linker/kobject-data.ld>
   __common_ram_region_end = .;
+  . = __common_ram_region_end;
+  phys_dot = . & 0x1fffffff;
 
-  .tm_clone_table : {
+  .tm_clone_table ADDR_CACHED(__common_ram_region_end) : {
     *(.tm_clone_table)
+    __tm_clone_table_end = .;
   } >ram
+  . = __tm_clone_table_end;
+  phys_dot = . & 0x1fffffff;
 
   /* This section is cached.  By default it contains only declared
   * thread stacks, but applications can put symbols here too.
   */
-  .cached SEGSTART_CACHED : {
+  .cached ADDR_CACHED(__tm_clone_table_end) : {
      _cached_start = .;
     *(.cached .cached.*)
 #ifdef CONFIG_USERSPACE
@@ -371,6 +411,8 @@ SECTIONS {
 #endif
     _cached_end = .;
   } >ram
+  . = _cached_end;
+  phys_dot = . & 0x1fffffff;
 
   /* Rimage requires 4k alignment between "DATA" and "BSS", can't do
    * this in the section declaration below because we're also changing
@@ -379,8 +421,9 @@ SECTIONS {
    * seems, --warn-section-align is on by default)
    */
   . = ALIGN(4096);
+  _bss_start_phys = .;
 
-  .bss SEGSTART_UNCACHED (NOLOAD) :
+  .bss ADDR_UNCACHED(_bss_start_phys) (NOLOAD) :
   {
     __bss_start = .;
 
@@ -429,21 +472,26 @@ SECTIONS {
     MMU_PAGE_ALIGN
     __bss_end = .;
   } >ucram
+  . = __bss_end;
+  phys_dot = . & 0x1fffffff;
 
-  . = SEGSTART_UNCACHED;
+  . = ADDR_UNCACHED(__bss_end);
   _end = ALIGN(8);
 
   /* Heap start and end markers. Used to reserve system heap memory. */
-  .heap_mem SEGSTART_UNCACHED (NOLOAD) :
+  .heap_mem ADDR_UNCACHED(__bss_end) (NOLOAD) :
   {
     _shared_heap_start = .;
     *(.shared_heap_mem)
     _shared_heap_end = .;
     _heap_start = .;
     *(.heap_mem)
+    _heap_end = .;
   } >ucram
+  . = _heap_end;
+  phys_dot = . & 0x1fffffff;
 
-  .unused_ram_start_marker SEGSTART_CACHED (NOLOAD) :
+  .unused_ram_start_marker ADDR_CACHED(_heap_end) (NOLOAD) :
   {
     . = ALIGN(4096);
     _unused_ram_start_marker = .;
@@ -451,17 +499,19 @@ SECTIONS {
     *(.unused_ram_start_marker.*)
     z_mapped_end = .;
   } >ram
+  . = z_mapped_end;
+  phys_dot = . & 0x1fffffff;
 
   /* Heap start and end markers. Used with libc malloc code. */
-  . = SEGSTART_UNCACHED;
+  . = ADDR_UNCACHED(z_mapped_end);
   _end = ALIGN(8);
-  . = SEGSTART_CACHED;
+  . = ADDR_CACHED(z_mapped_end);
   z_mapped_end = .;
   . = L2_SRAM_BASE + L2_SRAM_SIZE;
-  . = SEGSTART_UNCACHED;
+  . = ADDR_UNCACHED(z_mapped_end);
   _heap_end = .;
   _heap_sentry = .;
-  . = SEGSTART_CACHED;
+  . = ADDR_CACHED(z_mapped_end);
   _image_ram_end = .;
 
   /* dma buffers */
@@ -474,7 +524,7 @@ SECTIONS {
   /* Non-loadable sections below.  Back to cached memory so
    * the cache remap script doesn't try to move them around needlessly.
    */
-  . = SEGSTART_CACHED;
+  . = ADDR_CACHED(z_mapped_end);
 
   /* rimage module manifest headers */
   .module.boot : { KEEP(*(.module.boot)) } >noload

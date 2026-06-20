@@ -36,13 +36,16 @@ ENTRY(rom_entry);
  */
 #ifdef CONFIG_KERNEL_COHERENCE
 #define RPO_SET(addr, reg) ((addr & 0x1fffffff) | (reg << 29))
-#define SEGSTART_CACHED   RPO_SET(ALIGN(64), CONFIG_INTEL_ADSP_CACHED_REGION)
-#define SEGSTART_UNCACHED RPO_SET(ALIGN(64), CONFIG_INTEL_ADSP_UNCACHED_REGION)
+#define ADDR_CACHED_ALIGN(sym, align)   RPO_SET(ALIGN(sym, align), CONFIG_INTEL_ADSP_CACHED_REGION)
+#define ADDR_UNCACHED_ALIGN(sym, align) RPO_SET(ALIGN(sym, align), CONFIG_INTEL_ADSP_UNCACHED_REGION)
 #else
-#define SEGSTART_CACHED   .
-#define SEGSTART_UNCACHED .
+#define ADDR_CACHED_ALIGN(sym, align)   ALIGN(sym, align)
+#define ADDR_UNCACHED_ALIGN(sym, align) ALIGN(sym, align)
 #define ucram RAM
 #endif
+
+#define ADDR_CACHED(sym) ADDR_CACHED_ALIGN(sym, 64)
+#define ADDR_UNCACHED(sym) ADDR_UNCACHED_ALIGN(sym, 64)
 
 /* intlist.ld needs an IDT_LIST memory region */
 #define IDT_BASE 0xe0000000
@@ -120,7 +123,8 @@ SECTIONS {
     *(.iram0.text)
     KEEP(*(.init))
     KEEP(*(.lps_vector))
-    *(.literal .text .literal.* .text.* .stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
+    *(.literal .literal.* .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal)
+    *(.text .text.* .stub .gnu.warning .gnu.linkonce.t.*)
     *(.fini.literal)
     KEEP(*(.fini))
     *(.gnu.version)
@@ -180,14 +184,16 @@ SECTIONS {
   .fw_ready : {
     KEEP(*(".fw_ready"));
     KEEP (*(.fw_ready_metadata))
+    __fw_ready_end = .;
   } >RAM
 
-  .noinit SEGSTART_UNCACHED : {
+  .noinit ADDR_UNCACHED(__fw_ready_end) : {
     *(.noinit)
     *(.noinit.*)
+    __noinit_end = .;
   } >ucram
 
-  .data SEGSTART_UNCACHED : {
+  .data ADDR_UNCACHED(__noinit_end) : {
     __data_start = .;
     *(.data)
     *(.data.*)
@@ -211,7 +217,7 @@ SECTIONS {
     __data_end = .;
   } >ucram
 
-  .lit4 SEGSTART_CACHED : {
+  .lit4 ADDR_CACHED(__data_end) : {
     _lit4_start = .;
     *(*.lit4)
     *(.lit4.*)
@@ -223,22 +229,25 @@ SECTIONS {
  * sections need to be linked in safe/uncached memory but common-rom
  * wants to use the cache
  */
-. = SEGSTART_UNCACHED;
+. = ADDR_UNCACHED(_lit4_end);
 #undef RAMABLE_REGION
 #undef ROMABLE_REGION
 #define RAMABLE_REGION ucram
 #define ROMABLE_REGION ucram
 
 #include <zephyr/linker/common-ram.ld>
+  __common_ram_region_end = .;
+  . = ADDR_CACHED(__common_ram_region_end);
 
-  .tm_clone_table : {
+  .tm_clone_table ADDR_CACHED(__common_ram_region_end) : {
     *(.tm_clone_table)
+    __tm_clone_table_end = .;
   } >RAM
 
   /* This section is cached.  By default it contains only declared
   * thread stacks, but applications can put symbols here too.
   */
-  .cached SEGSTART_CACHED : {
+  .cached ADDR_CACHED(__tm_clone_table_end) : {
     _cached_start = .;
     *(.cached .cached.*)
     _cached_end = .;
@@ -252,7 +261,7 @@ SECTIONS {
    */
   . = ALIGN(4096);
 
-  .bss SEGSTART_UNCACHED (NOLOAD) :
+  .bss ADDR_UNCACHED_ALIGN(_cached_end, 4096) (NOLOAD) :
   {
     __bss_start = .;
     *(.dynsbss)
@@ -276,10 +285,10 @@ SECTIONS {
   } >ucram
 
   /* Heap start and end markers.  Mostly unused, though newlib likes them */
-  . = SEGSTART_UNCACHED;
+  . = ADDR_UNCACHED(__bss_end);
   _end = ALIGN(8);
   . = L2_SRAM_BASE + L2_SRAM_SIZE;
-  . = SEGSTART_UNCACHED;
+  . = ADDR_UNCACHED(__bss_end);
   _heap_sentry = .;
 
   /* dma buffers */
@@ -293,7 +302,7 @@ SECTIONS {
   /* Non-loadable sections below.  Back to cached memory so
    * the cache remap script doesn't try to move them around needlessly.
    */
-  . = SEGSTART_CACHED;
+  . = ADDR_CACHED(_cached_end);
 
   /* rimage module manifest headers */
   .module.boot : { KEEP(*(.module.boot)) } >noload
@@ -357,4 +366,9 @@ SECTIONS {
 #include <zephyr/linker/intlist.ld>
 #endif
 #include <zephyr/linker/llext-sections.ld>
+
+  /* Discard stack-executability notes emitted by Clang/GCC; Xtensa
+   * bare-metal targets have no use for them and the older CAVS ld.bfd
+   * emits a noisy "orphan section" warning otherwise. */
+  /DISCARD/ : { *(.note.GNU-stack) }
 }
