@@ -59,7 +59,7 @@ static inline bool z_is_inactive_timeout(const struct _timeout *to)
 	return !sys_dnode_is_linked(&to->node);
 }
 
-#else /* CONFIG_TIMEOUT_BACKEND_DLIST */
+#else /* CONFIG_TIMEOUT_BACKEND_DLIST or _BUCKET */
 
 static inline void z_init_timeout(struct _timeout *to)
 {
