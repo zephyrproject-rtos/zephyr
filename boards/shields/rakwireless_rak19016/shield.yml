@@ -1,0 +1,10 @@
+shield:
+  name: rakwireless_rak19016
+  full_name: RAK19016 WisBlock 5-24 V Power Slot Module
+  vendor: rakwireless
+  supported_features:
+    - gpio
+    - led
+    - adc
+    - sensor
+    - fuel_gauge

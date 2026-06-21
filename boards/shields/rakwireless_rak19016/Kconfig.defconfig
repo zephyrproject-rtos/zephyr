@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+if SHIELD_RAKWIRELESS_RAK19016
+
+if !MCUBOOT
+
+config GPIO
+	default y
+
+config LED
+	default y
+
+config ADC
+	default y
+
+config SENSOR
+	default y
+
+config FUEL_GAUGE
+	default y
+
+endif # !MCUBOOT
+
+endif # SHIELD_RAKWIRELESS_RAK19016
