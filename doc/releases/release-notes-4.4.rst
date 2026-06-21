@@ -1000,7 +1000,7 @@ New Boards
 
 * RAKwireless Technology Limited
 
-   * :zephyr:board:`rak11160` (``rak11160``)
+   * ``rak11160``
 
 * Realtek Semiconductor Corp.
 
