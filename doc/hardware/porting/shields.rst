@@ -255,6 +255,24 @@ Relevant devicetree node labels:
 - ``st_morpho_flash_spi``
 
 
+STMod+
+------
+
+This is a 20-pin expansion connector found on some STMicroelectronics Discovery
+and Evaluation boards.
+
+Relevant devicetree node labels:
+
+- ``stmod_plus_connector`` See :dtcompatible:`st,stmod-plus-connector` for
+  details on GPIO pin definitions and includes for use in devicetree files.
+- ``stmod_adc``
+- ``stmod_i2c``
+- ``stmod_serial``
+
+Boards may expose additional interface labels when a peripheral is wired to the
+STMod+ connector and enabled in the board devicetree.
+
+
 Xiao
 ----
 
