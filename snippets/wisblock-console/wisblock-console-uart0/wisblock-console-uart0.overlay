@@ -1,0 +1,18 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+/ {
+	chosen {
+		zephyr,console = &wisblock_uart0;
+		zephyr,shell-uart = &wisblock_uart0;
+		zephyr,uart-mcumgr = &wisblock_uart0;
+		zephyr,bt-mon-uart = &wisblock_uart0;
+		zephyr,bt-c2h-uart = &wisblock_uart0;
+	};
+};
+
+&wisblock_uart0 {
+	status = "okay";
+};

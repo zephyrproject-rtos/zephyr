@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+name: wisblock-console-uart0
+append:
+  EXTRA_CONF_FILE: wisblock-console-uart0.conf
+  EXTRA_DTC_OVERLAY_FILE: wisblock-console-uart0.overlay
