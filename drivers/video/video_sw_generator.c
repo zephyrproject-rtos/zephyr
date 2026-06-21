@@ -633,7 +633,7 @@ static int video_sw_generator_init(const struct device *dev)
 	struct video_sw_generator_data *data = dev->data;
 	int ret;
 
-	ret = video_init_context_dev(dev);
+	ret = video_init_context_dev(dev, VIDEO_BUF_TYPE_OUTPUT);
 	if (ret < 0) {
 		return ret;
 	}

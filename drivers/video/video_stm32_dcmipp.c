@@ -1476,10 +1476,6 @@ static int stm32_dcmipp_set_selection(const struct device *dev, struct video_sel
 	uint32_t frame_width = dcmipp->source_fmt.width;
 	uint32_t frame_height = dcmipp->source_fmt.height;
 
-	if (sel->type != VIDEO_BUF_TYPE_OUTPUT) {
-		return -EINVAL;
-	}
-
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	if (pipe->id == DCMIPP_PIPE1 || pipe->id == DCMIPP_PIPE2) {
 		frame_width /= dcmipp->isp_dec_hratio;
@@ -1567,10 +1563,6 @@ static int stm32_dcmipp_get_selection(const struct device *dev, struct video_sel
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
-
-	if (sel->type != VIDEO_BUF_TYPE_OUTPUT) {
-		return -EINVAL;
-	}
 
 	switch (sel->target) {
 	case VIDEO_SEL_TGT_CROP:
@@ -1743,7 +1735,7 @@ static int stm32_dcmipp_pipe_init(const struct device *dev)
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
 	int ret;
 
-	ret = video_init_context_dev(dev);
+	ret = video_init_context_dev(dev, VIDEO_BUF_TYPE_OUTPUT);
 	if (ret < 0) {
 		return ret;
 	}

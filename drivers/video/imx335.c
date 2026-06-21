@@ -755,7 +755,7 @@ static int imx335_init(const struct device *dev)
 	struct imx335_data *drv_data = dev->data;
 	int ret;
 
-	ret = video_init_context_dev(dev);
+	ret = video_init_context_dev(dev, VIDEO_BUF_TYPE_OUTPUT);
 	if (ret < 0) {
 		return ret;
 	}

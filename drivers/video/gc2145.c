@@ -1262,10 +1262,6 @@ static int gc2145_set_ctrl(const struct device *dev, uint32_t id)
 
 static int gc2145_set_selection(const struct device *dev, struct video_selection *sel)
 {
-	if (sel->type != VIDEO_BUF_TYPE_OUTPUT) {
-		return -EINVAL;
-	}
-
 	if (sel->target != VIDEO_SEL_TGT_CROP) {
 		return -EINVAL;
 	}
@@ -1276,10 +1272,6 @@ static int gc2145_set_selection(const struct device *dev, struct video_selection
 static int gc2145_get_selection(const struct device *dev, struct video_selection *sel)
 {
 	struct gc2145_data *drv_data = dev->data;
-
-	if (sel->type != VIDEO_BUF_TYPE_OUTPUT) {
-		return -EINVAL;
-	}
 
 	switch (sel->target) {
 	case VIDEO_SEL_TGT_CROP:
@@ -1351,7 +1343,7 @@ static int gc2145_init(const struct device *dev)
 	const struct gc2145_config *cfg = dev->config;
 	(void) cfg;
 
-	ret = video_init_context_dev(dev);
+	ret = video_init_context_dev(dev, VIDEO_BUF_TYPE_OUTPUT);
 	if (ret < 0) {
 		return ret;
 	}

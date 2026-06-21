@@ -368,7 +368,7 @@ static int mipid02_init(const struct device *dev)
 	const struct mipid02_config *cfg = dev->config;
 	int ret;
 
-	ret = video_init_context_dev(dev);
+	ret = video_init_context_dev(dev, VIDEO_BUF_TYPE_OUTPUT);
 	if (ret < 0) {
 		return ret;
 	}
