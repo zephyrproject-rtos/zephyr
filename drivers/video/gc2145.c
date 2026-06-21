@@ -768,6 +768,7 @@ struct gc2145_ctrls {
 };
 
 struct gc2145_data {
+	struct video_device_context dctx;
 	struct gc2145_ctrls ctrls;
 	struct video_format fmt;
 	struct video_rect crop;
@@ -1349,6 +1350,11 @@ static int gc2145_init(const struct device *dev)
 	int ret;
 	const struct gc2145_config *cfg = dev->config;
 	(void) cfg;
+
+	ret = video_init_context_dev(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
 		LOG_ERR("Bus device is not ready");
