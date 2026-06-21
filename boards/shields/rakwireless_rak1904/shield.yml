@@ -1,0 +1,36 @@
+shields:
+  - name: rakwireless_rak1904_sensor_a
+    full_name: RAK1904 WisBlock 3-Axis Acceleration Sensor Module (Sensor Slot A)
+    vendor: rakwireless
+    supported_features:
+      - sensor
+
+  - name: rakwireless_rak1904_sensor_b
+    full_name: RAK1904 WisBlock 3-Axis Acceleration Sensor Module (Sensor Slot B)
+    vendor: rakwireless
+    supported_features:
+      - sensor
+
+  - name: rakwireless_rak1904_sensor_c
+    full_name: RAK1904 WisBlock 3-Axis Acceleration Sensor Module (Sensor Slot C)
+    vendor: rakwireless
+    supported_features:
+      - sensor
+
+  - name: rakwireless_rak1904_sensor_d
+    full_name: RAK1904 WisBlock 3-Axis Acceleration Sensor Module (Sensor Slot D)
+    vendor: rakwireless
+    supported_features:
+      - sensor
+
+  - name: rakwireless_rak1904_sensor_e
+    full_name: RAK1904 WisBlock 3-Axis Acceleration Sensor Module (Sensor Slot E)
+    vendor: rakwireless
+    supported_features:
+      - sensor
+
+  - name: rakwireless_rak1904_sensor_f
+    full_name: RAK1904 WisBlock 3-Axis Acceleration Sensor Module (Sensor Slot F)
+    vendor: rakwireless
+    supported_features:
+      - sensor

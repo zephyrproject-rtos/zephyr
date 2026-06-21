@@ -1,0 +1,20 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+/ {
+	aliases {
+		accel0 = &rak1904_sensor;
+	};
+};
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	rak1904_sensor: lis3dh@18 {
+		status = "okay";
+		compatible = "st,lis3dh";
+		reg = <0x18>;
+	};
+};
