@@ -10,6 +10,37 @@
 
 static int nested_interrupts[CONFIG_MP_MAX_NUM_CPUS];
 
+/*
+ * Thread lifecycle hooks. These weak functions are called by the kernel when a
+ * thread is created, named, suspended, resumed or aborted. An application using
+ * the "user" tracing format implements them to record or forward the events
+ * however it wants; here we simply print them.
+ */
+void sys_trace_thread_create_user(struct k_thread *thread)
+{
+	printk("%s: %p\n", __func__, thread);
+}
+
+void sys_trace_thread_name_set_user(struct k_thread *thread)
+{
+	printk("%s: %p (%s)\n", __func__, thread, k_thread_name_get(thread));
+}
+
+void sys_trace_thread_suspend_user(struct k_thread *thread)
+{
+	printk("%s: %p\n", __func__, thread);
+}
+
+void sys_trace_thread_resume_user(struct k_thread *thread)
+{
+	printk("%s: %p\n", __func__, thread);
+}
+
+void sys_trace_thread_abort_user(struct k_thread *thread)
+{
+	printk("%s: %p\n", __func__, thread);
+}
+
 void sys_trace_thread_switched_in_user(void)
 {
 	unsigned int key = irq_lock();
