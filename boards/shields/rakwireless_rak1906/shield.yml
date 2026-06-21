@@ -1,0 +1,6 @@
+shield:
+  name: rakwireless_rak1906
+  full_name: RAK1906 WisBlock Environmental Sensor Module
+  vendor: rakwireless
+  supported_features:
+    - sensor

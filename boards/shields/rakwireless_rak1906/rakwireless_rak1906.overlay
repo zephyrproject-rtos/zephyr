@@ -1,0 +1,14 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	rak1906_sensor: bme680@76 {
+		status = "okay";
+		compatible = "bosch,bme680";
+		reg = <0x76>;
+	};
+};
