@@ -15,3 +15,9 @@ tests:
     tags:
       - kernel
       - timer
+  kernel.timer.timeout.bucket:
+    extra_configs:
+      - CONFIG_TIMEOUT_BACKEND_BUCKET=y
+    tags:
+      - kernel
+      - timer

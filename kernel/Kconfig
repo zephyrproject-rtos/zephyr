@@ -792,7 +792,31 @@ config TIMEOUT_BACKEND_WHEEL
 	  static state, so it is a poor fit for very small-RAM targets, and
 	  it does not guarantee same-tick firing order.
 
+config TIMEOUT_BACKEND_BUCKET
+	bool "Single-level bucketed delta list [EXPERIMENTAL]"
+	depends on TIMEOUT_64BIT
+	select EXPERIMENTAL
+	help
+	  A simpler relative of the timer wheel: one per-tick bucket list for
+	  the next CONFIG_TIMEOUT_BUCKET_LISTS ticks (O(1) insert/remove) plus
+	  a sorted overflow list for anything beyond (O(n) insert). Migration
+	  is on demand against the actual next event, so it imposes no
+	  tickless-idle floor. Requires 64-bit timeouts.
+
 endchoice # TIMEOUT_BACKEND
+
+config TIMEOUT_BUCKET_LISTS
+	int "Number of per-tick buckets for the bucketed backend"
+	depends on TIMEOUT_BACKEND_BUCKET
+	default 32
+	range 8 64
+	help
+	  Number of single-tick bucket lists (must be a power of two between 8
+	  and 64). Timeouts expiring within this many ticks get O(1) insertion;
+	  longer ones land in the sorted overflow list. Larger values widen
+	  the O(1) window at the cost of more static RAM (one list head each).
+	  Below 8 the plain delta-list backend is likely the better choice. The
+	  occupancy bitmap is a uint32_t for up to 32 buckets, a uint64_t beyond.
 
 config TIMEOUT_HEAP_MAX_ENTRIES
 	int "Maximum simultaneous pending timeouts in the heap"
