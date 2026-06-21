@@ -72,9 +72,14 @@ struct uhc_transfer *uhc_xfer_get_next(const struct device *dev)
 int uhc_xfer_append(const struct device *dev,
 		    struct uhc_transfer *const xfer)
 {
+	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
 	struct uhc_data *data = dev->data;
 
+	api->lock(dev);
+
 	sys_dlist_append(&data->ctrl_xfers, &xfer->node);
+
+	api->unlock(dev);
 
 	return 0;
 }
