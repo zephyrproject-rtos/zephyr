@@ -59,7 +59,6 @@ struct imx335_ctrls {
 struct imx335_data {
 	struct video_device_context dctx;
 	struct imx335_ctrls ctrls;
-	struct video_format fmt;
 	uint32_t frame_rate;
 };
 
@@ -370,15 +369,6 @@ static const uint32_t imx335_framerates[] = {
 	[IMX335_60_FPS] = 60,
 };
 
-static int imx335_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct imx335_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
-
-	return 0;
-}
-
 static int imx335_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	caps->format_caps = imx335_fmts;
@@ -491,7 +481,7 @@ static int imx335_set_frmival(const struct device *dev, struct video_frmival *fr
 	int ret;
 
 	struct video_frmival_enum match = {
-		.format = &drv_data->fmt,
+		.format = &drv_data->dctx.fmt,
 		.type = VIDEO_FRMIVAL_TYPE_DISCRETE,
 		.discrete = *frmival,
 	};
@@ -504,8 +494,8 @@ static int imx335_set_frmival(const struct device *dev, struct video_frmival *fr
 
 	switch (match.index) {
 	case IMX335_25_FPS:
-		hmax = (drv_data->fmt.width == IMX335_BIN_2X2_WIDTH
-				&& drv_data->fmt.height == IMX335_BIN_2X2_HEIGHT) ? 0x0280 : 0x0294;
+		hmax = (drv_data->dctx.fmt.width == IMX335_BIN_2X2_WIDTH &&
+			drv_data->dctx.fmt.height == IMX335_BIN_2X2_HEIGHT) ? 0x0280 : 0x0294;
 		break;
 	case IMX335_30_FPS:
 		hmax = 0x0226;
@@ -592,8 +582,8 @@ static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
 		}
 	}
 
-	drv_data->fmt.width = fmt->width;
-	drv_data->fmt.height = fmt->height;
+	drv_data->dctx.fmt.width = fmt->width;
+	drv_data->dctx.fmt.height = fmt->height;
 	/* update framerate, since the timing and allowed framerates may have changed */
 	struct video_frmival frmival = {
 		.numerator = 1,
@@ -637,7 +627,6 @@ static int imx335_enum_frmival(const struct device *dev, struct video_frmival_en
 
 static DEVICE_API(video, imx335_driver_api) = {
 	.set_format = imx335_set_fmt,
-	.get_format = imx335_get_fmt,
 	.get_caps = imx335_get_caps,
 	.set_stream = imx335_set_stream,
 	.set_ctrl = imx335_set_ctrl,
@@ -794,7 +783,7 @@ static int imx335_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = imx335_set_fmt(dev, &drv_data->fmt);
+	ret = imx335_set_fmt(dev, &drv_data->dctx.fmt);
 	if (ret < 0) {
 		LOG_ERR("Unable to apply format");
 		return ret;
@@ -825,7 +814,7 @@ static int imx335_init(const struct device *dev)
 
 #define IMX335_INIT(n)										\
 	static struct imx335_data imx335_data_##n = {						\
-		.fmt = {									\
+		.dctx.fmt = {									\
 			.pixelformat = VIDEO_PIX_FMT_SRGGB10P,					\
 			.width = IMX335_NATIVE_WIDTH,						\
 			.height = IMX335_NATIVE_HEIGHT,						\
