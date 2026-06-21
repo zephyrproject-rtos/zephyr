@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Kenneth Lu
+# Copyright (c) 2026 JaeHwan Jin <jaehwan.jin@rakwireless.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BOARD_RAK3212_ESP32S3_PROCPU
+	default 256 if BOARD_RAK3212_ESP32S3_APPCPU

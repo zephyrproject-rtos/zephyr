@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Kenneth Lu <kenneth.lu@rakwireless.com>
+# Copyright (c) 2026 JaeHwan Jin <jaehwan.jin@rakwireless.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RAK3212
+	select SOC_ESP32S3_R8
+	select SOC_ESP32S3_PROCPU if BOARD_RAK3212_ESP32S3_PROCPU
+	select SOC_ESP32S3_APPCPU if BOARD_RAK3212_ESP32S3_APPCPU

@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2025 Kenneth Lu <kenneth.lu@rakwireless.com>
+ * Copyright (c) 2026 JaeHwan Jin <jaehwan.jin@rakwireless.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <rakwireless/rak3112_appcpu.dtsi>
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+
+/ {
+	model = "RAK3212 Breakout Board APPCPU";
+	compatible = "rakwireless,rak3212";
+
+	chosen {
+		zephyr,code-partition = &slot0_appcpu_partition;
+	};
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&ipm0 {
+	status = "okay";
+};

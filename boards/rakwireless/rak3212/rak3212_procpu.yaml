@@ -1,5 +1,5 @@
-identifier: rak3112/esp32s3/procpu
-name: RAK3112 PROCPU
+identifier: rak3212/esp32s3/procpu
+name: RAK3212 Breakout Board PROCPU
 type: mcu
 arch: xtensa
 toolchain:
@@ -14,5 +14,5 @@ supported:
   - pwm
   - pinmux
   - nvs
-  - display
+  - lora
 vendor: rakwireless
