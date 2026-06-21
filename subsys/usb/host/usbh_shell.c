@@ -253,13 +253,13 @@ static int cmd_bulk(const struct shell *sh, size_t argc, char **argv)
 	ep = strtol(argv[2], NULL, 16);
 	len = MIN(sizeof(vreq_test_buf), strtol(argv[3], NULL, 10));
 
-	xfer = usbh_xfer_alloc(udev, ep, bulk_req_cb, NULL);
+	xfer = usbh_xfer_alloc(udev, ep, bulk_req_cb, NULL, K_NO_WAIT);
 	if (!xfer) {
 		shell_error(sh, "host: Failed to allocate transfer");
 		return -ENOMEM;
 	}
 
-	buf = usbh_xfer_buf_alloc(udev, len);
+	buf = usbh_xfer_buf_alloc(udev, len, K_NO_WAIT);
 	if (!buf) {
 		shell_error(sh, "host: Failed to allocate buffer");
 		(void)uhc_xfer_unref(xfer);
@@ -322,7 +322,7 @@ static int cmd_vendor_in(const struct shell *sh,
 	}
 
 	wLength = MIN(sizeof(vreq_test_buf), strtol(argv[2], NULL, 10));
-	buf = usbh_xfer_buf_alloc(udev, wLength);
+	buf = usbh_xfer_buf_alloc(udev, wLength, K_NO_WAIT);
 	if (!buf) {
 		shell_error(sh, "host: Failed to allocate buffer");
 		return -ENOMEM;
@@ -365,7 +365,7 @@ static int cmd_vendor_out(const struct shell *sh,
 	}
 
 	wLength = MIN(sizeof(vreq_test_buf), strtol(argv[2], NULL, 10));
-	buf = usbh_xfer_buf_alloc(udev, wLength);
+	buf = usbh_xfer_buf_alloc(udev, wLength, K_NO_WAIT);
 	if (!buf) {
 		shell_error(sh, "host: Failed to allocate buffer");
 		return -ENOMEM;
@@ -470,7 +470,7 @@ static int cmd_desc_string(const struct shell *sh,
 	id = strtol(argv[2], NULL, 10);
 	idx = strtol(argv[3], NULL, 10);
 
-	buf = usbh_xfer_buf_alloc(udev, 128);
+	buf = usbh_xfer_buf_alloc(udev, 128, K_NO_WAIT);
 	if (!buf) {
 		return -ENOMEM;
 	}
