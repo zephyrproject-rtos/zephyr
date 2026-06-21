@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RAK19026
+
+if !MCUBOOT
+
+config LED
+	default y
+
+config ADC
+	default y
+
+config I2C
+	default y
+
+config SENSOR
+	default y
+
+config LIS2DH
+	default y
+
+config FUEL_GAUGE
+	default y
+	depends on !MINIMAL_LIBC
+
+config UDC_NRF_THREAD_STACK_SIZE
+	default 2048
+
+config USBD_THREAD_STACK_SIZE
+	default 2048
+
+source "$(ZEPHYR_BASE)/boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+config CDC_ACM_SERIAL_PID
+	default 0x0004
+
+config CDC_ACM_SERIAL_MANUFACTURER_STRING
+	default "RAKwireless"
+
+config CDC_ACM_SERIAL_PRODUCT_STRING
+	default "RAK19026 WisMesh Base Board"
+
+endif # !MCUBOOT
+
+endif # BOARD_RAK19026
