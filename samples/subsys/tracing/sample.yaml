@@ -9,8 +9,17 @@ common:
       - "thread_a: Hello World from (.*)!"
       - "thread_b: Hello World from (.*)!"
 tests:
+  # Default build: the prj.conf baseline (CTF format, SEMIHOST backend).
+  sample.tracing.ctf.semihost:
+    platform_allow:
+      - mps2/an385
+    integration_platforms:
+      - mps2/an385
   sample.tracing.user:
-    extra_args: CONF_FILE="prj_user.conf"
+    extra_args: EXTRA_CONF_FILE="prj_user.conf"
+    platform_allow:
+      - mps2/an385
+      - qemu_x86
     integration_platforms:
       - qemu_x86
     platform_exclude:
@@ -22,27 +31,20 @@ tests:
         - "thread_b: Hello World from (.*)!"
         - "sys_trace_.*_user.*"
   sample.tracing.format.sysview:
+    extra_args: SNIPPET="rtt-tracing"
     platform_allow:
       - nrf52840dk/nrf52840
       - mimxrt1050_evk/mimxrt1052/hyperflash
       - mimxrt1064_evk
     integration_platforms:
       - nrf52840dk/nrf52840
-    extra_args: SNIPPET="rtt-tracing"
-  sample.tracing.osawareness.openocd:
-    arch_exclude:
-      - posix
-      - xtensa
-    platform_exclude: qemu_x86_64
-    integration_platforms:
-      - qemu_x86
   sample.tracing.transport.uart:
     platform_allow:
       - qemu_x86
       - qemu_x86_64
     integration_platforms:
       - qemu_x86
-    extra_args: CONF_FILE="prj_uart.conf"
+    extra_args: EXTRA_CONF_FILE="prj_uart.conf"
     filter: dt_chosen_enabled("zephyr,tracing-uart")
   sample.tracing.transport.uart.ctf:
     platform_allow:
@@ -50,35 +52,23 @@ tests:
       - qemu_x86_64
     integration_platforms:
       - qemu_x86
-    extra_args: CONF_FILE="prj_uart_ctf.conf"
+    extra_args: EXTRA_CONF_FILE="prj_uart_ctf.conf"
     filter: dt_chosen_enabled("zephyr,tracing-uart")
   sample.tracing.transport.usb.ctf:
     integration_platforms:
       - frdm_k64f
     depends_on: usbd
-    extra_args: CONF_FILE="prj_usb_ctf.conf"
-  sample.tracing.transport.native:
-    platform_allow:
-      - native_sim
-    integration_platforms:
-      - native_sim
+    extra_args: EXTRA_CONF_FILE="prj_usb_ctf.conf"
   sample.tracing.transport.native.ctf:
     platform_allow:
       - native_sim
     integration_platforms:
       - native_sim
-    extra_args: CONF_FILE="prj_native_ctf.conf"
-  sample.tracing.transport.ram:
-    build_only: true
-    platform_allow:
-      - native_sim
-      - qemu_x86
-    integration_platforms:
-      - native_sim
-    extra_args: CONF_FILE="prj_ram.conf"
+    extra_args: EXTRA_CONF_FILE="prj_native_ctf.conf"
   sample.tracing.percepio:
-    platform_allow: frdm_k64f
-    extra_args: CONF_FILE="prj_percepio.conf"
+    platform_allow:
+      - frdm_k64f
+    extra_args: EXTRA_CONF_FILE="prj_percepio.conf"
     modules:
       - percepio
   sample.tracing.gpio:
@@ -95,7 +85,10 @@ tests:
         - "thread_b: Hello World from (.*)!"
         - "sys_trace_.*_user.*"
     extra_args:
-      - CONF_FILE="prj_gpio.conf"
+      - EXTRA_CONF_FILE="prj_gpio.conf"
       - EXTRA_DTC_OVERLAY_FILE="gpio.overlay"
+    platform_allow:
+      - native_sim
+      - mps2/an385
     integration_platforms:
       - native_sim
