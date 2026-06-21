@@ -1,0 +1,21 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+/ {
+	aliases {
+		dht0 = &rak1901_sensor;
+	};
+};
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	rak1901_sensor: shtc3@70 {
+		status = "okay";
+		compatible = "sensirion,shtcx";
+		measure-mode = "normal";
+		reg = <0x70>;
+	};
+};
