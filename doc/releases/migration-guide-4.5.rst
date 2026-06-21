@@ -108,6 +108,42 @@ Boards
   Boards using the bl54l15u_dvk should migrate to bl54l15_dvk/nrf54l15/cpuapp or
   bl54l15_dvk/nrf54l15/cpuflpr as appropriate.
 
+* Several RAKwireless board names have changed. Each former WisDuo stamp module
+  board is now split into a standalone Breakout Board and a WisBlock Core Module
+  target:
+
+  * ``rak3112`` → :zephyr:board:`rak3212` (Breakout Board),
+    :zephyr:board:`rak3312` (WisBlock Core Module).
+    Replace ``-b rak3112/esp32s3`` with:
+
+    .. code-block:: console
+
+       west build -b rak3312/esp32s3 -DSHIELD=rakwireless_rak19010,rakwireless_rak19012 ...
+
+  * ``rak3172`` → :zephyr:board:`rak3272s` (Breakout Board),
+    :zephyr:board:`rak3372` (WisBlock Core Module).
+
+  * ``rak11160`` → :zephyr:board:`rak11161` (Breakout Board),
+    :zephyr:board:`rak11162` (WisBlock Core Module).
+    Both boards provide STM32WLE5xx and ESP32-C2 build targets.
+
+  * ``rak11720`` → :zephyr:board:`rak11721` (Breakout Board),
+    :zephyr:board:`rak11722` (WisBlock Core Module).
+
+* :zephyr:board:`rak4631` now supports the WisBlock ecosystem. A WisBlock Base Board
+  shield (e.g. :ref:`rakwireless_rak19007`) is required to expose the sensor and IO
+  slots. Attach additional WisBlock sensor shields as needed:
+
+  .. code-block:: console
+
+     west build -b rak4631/nrf52840 \
+       --shield rakwireless_rak19007 --shield rakwireless_rak1901 ...
+
+* :zephyr:board:`rak5010` has switched its default console from UART1 to
+  USB CDC ACM. Remove any explicit ``CONFIG_UART_CONSOLE=y`` and
+  ``CONFIG_CONSOLE=y`` from application configuration and connect via
+  the board's USB port instead.
+
 * The default MCUboot signature type for the boards stm32h573i_dk and b_u585i_iot02a has
   been changed from RSA-3072 to EC-P256. This affects builds that have MCUboot enabled in
   TF-M (:kconfig:option:`CONFIG_TFM_BL2`). If you wish to keep using RSA-3072, you need
