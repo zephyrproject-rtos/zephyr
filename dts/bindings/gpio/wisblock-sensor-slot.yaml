@@ -1,0 +1,34 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO pins exposed on a WisBlock Sensor Slot interface.
+
+  A Sensor Slot uses a WC24 24-pin connector (WC24F on the Base Board side).
+  Base boards provide between two and six Sensor Slots labeled A through F,
+  each implementing one of the six electrical interface variants (SSA–SSF).
+  All variants expose the same 10 signal-carrying pin names; GPIO1 and GPIO2
+  route to different platform IO signals depending on the variant.
+
+  This binding provides a gpio-nexus mapping for those 10 logical pins, where
+  parent pin indices correspond to the WISBLOCK_SENSOR_* constants defined in
+  <zephyr/dt-bindings/gpio/wisblock-sensor-slot.h>:
+
+    0   TXD       UART TX
+    1   SPI_CS    SPI chip select
+    2   SPI_CLK   SPI clock
+    3   SPI_MISO  SPI MISO
+    4   SPI_MOSI  SPI MOSI
+    5   I2C_SCL   I2C SCL
+    6   I2C_SDA   I2C SDA
+    7   GPIO1     General-purpose GPIO1
+    8   GPIO2     General-purpose GPIO2
+    9   RXD       UART RX
+
+  Each Base Board instantiates one node per slot using this binding
+  (e.g. wisblock_sensor_a, wisblock_sensor_b, ...) and maps the logical
+  slot pins to the underlying SoC GPIO lines via wisblock_io.
+
+compatible: "wisblock-sensor-slot"
+
+include: [gpio-nexus.yaml, base.yaml]
