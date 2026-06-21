@@ -41,6 +41,7 @@ void uhc_xfer_return(const struct device *dev,
 		     struct uhc_transfer *const xfer,
 		     const int err)
 {
+	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
 	struct uhc_data *data = dev->data;
 	struct uhc_event drv_evt = {
 		.type = UHC_EVT_EP_REQUEST,
@@ -48,14 +49,19 @@ void uhc_xfer_return(const struct device *dev,
 		.dev = dev,
 	};
 
+	api->lock(dev);
+
 	sys_dlist_remove(&xfer->node);
 	xfer->queued = 0;
 	xfer->err = err;
+
+	api->unlock(dev);
 
 	data->event_cb(dev, &drv_evt);
 	(void)uhc_xfer_unref(xfer);
 }
 
+/* Already locked by caller */
 static void xfer_schedule_periodic(const struct device *dev,
 				  struct uhc_transfer *const xfer,
 				  const uint32_t current_microframe)
@@ -96,6 +102,7 @@ static void xfer_schedule_periodic(const struct device *dev,
 	sys_dlist_append(&data->periodic_xfers, &xfer->node);
 }
 
+/* Already locked by caller */
 /* Get first matching microframe from older to most recent up to current microframe (included) */
 static struct uhc_transfer *uhc_xfer_get_next_periodic(const struct device *dev,
 						       uint32_t microframe_number,
@@ -122,6 +129,7 @@ static struct uhc_transfer *uhc_xfer_get_next_periodic(const struct device *dev,
 	return NULL;
 }
 
+/* Already locked by caller */
 static struct uhc_transfer *uhc_xfer_get_next_non_periodic(const struct device *dev,
 							   sys_dlist_t *dlist,
 							   uhc_xfer_filter_func_t filter,
@@ -142,8 +150,11 @@ struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t microf
 				       enum uhc_xfer_mask mask, uhc_xfer_filter_func_t filter,
 				       void *priv)
 {
+	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
 	struct uhc_data *data = dev->data;
 	struct uhc_transfer *xfer = NULL;
+
+	api->lock(dev);
 
 	if (mask & UHC_XFER_MASK_PERIODIC) {
 		xfer = uhc_xfer_get_next_periodic(dev, microframe_number, mask, filter, priv);
@@ -162,6 +173,8 @@ struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t microf
 		sys_dlist_append(&data->active_xfers, &xfer->node);
 	}
 
+	api->unlock(dev);
+
 	return xfer;
 }
 
@@ -169,7 +182,11 @@ int uhc_xfer_append(const struct device *dev,
 		    struct uhc_transfer *const xfer,
 		    uint32_t current_microframe_number)
 {
+	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
 	struct uhc_data *data = dev->data;
+	int ret = 0;
+
+	api->lock(dev);
 
 	switch (xfer->type) {
 	case USB_EP_TYPE_CONTROL:
@@ -184,9 +201,14 @@ int uhc_xfer_append(const struct device *dev,
 		break;
 	default:
 		LOG_ERR("Invalid xfer type: %d", xfer->type);
+		ret = -EINVAL;
+		goto end;
 	}
 
-	return 0;
+end:
+	api->unlock(dev);
+
+	return ret;
 }
 
 void uhc_xfer_reschedule(const struct device *dev,
@@ -201,12 +223,15 @@ void uhc_xfer_reschedule(const struct device *dev,
 		return;
 	}
 
+	api->lock(dev);
+
 	/* Remove from, supposedly, data->active_xfers */
 	sys_dlist_remove(&xfer->node);
 
 	/* Schedule for next interval */
 	xfer_schedule_periodic(dev, xfer, current_microframe);
 
+	api->unlock(dev);
 }
 
 struct net_buf *uhc_xfer_buf_alloc(const struct device *dev,
@@ -326,6 +351,7 @@ int uhc_get_ep_properties(const struct device *dev,
 	if (ep_idx == 0) {
 		type = USB_EP_TYPE_CONTROL;
 		mps = udev->dev_desc.bMaxPacketSize0;
+		bInterval = 0;
 	} else {
 		struct usb_ep_descriptor *ep_desc;
 
@@ -466,7 +492,7 @@ int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
 	xfer->queued = 1;
 	uhc_xfer_ref(xfer);
 	ret = api->ep_enqueue(dev, xfer);
-	if (ret) {
+	if (ret != 0) {
 		xfer->queued = 0;
 		uhc_xfer_unref(xfer);
 	}
