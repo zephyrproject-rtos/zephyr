@@ -11,6 +11,8 @@
 #include <zephyr/dt-bindings/reset/rts5817_reset.h>
 #include <zephyr/dt-bindings/clock/rts5817_clock.h>
 
+#include <zephyr/dt-bindings/wuc/wuc_rts5817.h>
+
 / {
 	chosen {
 		zephyr,sram = &sram0;
@@ -245,6 +247,62 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+		};
+
+		wuc: wakeup-controller {
+			compatible = "realtek,rts5817-wuc";
+			syscon-sys = <&dlink_sys>;
+			syscon-ldo = <&dlink_ldo>;
+			#wakeup-ctrl-cells = <1>;
+			status = "disabled";
+
+			wkup-src0 {
+				id = <RTS5817_WKUP_SRC_GPIO_AL2>;
+				mode = <RTS5817_WAKEUP_MODE_RISING_EDGE>;
+				substate-id = <RTS5817_S2RAM_SUB_ID_SUSPEND>;
+			};
+
+			wkup-src1 {
+				id = <RTS5817_WKUP_SRC_GPIO_AL1>;
+				mode = <RTS5817_WAKEUP_MODE_RISING_EDGE>;
+				substate-id = <RTS5817_S2RAM_SUB_ID_SUSPEND>;
+			};
+
+			wkup-src2 {
+				id = <RTS5817_WKUP_SRC_GPIO_AL0>;
+				mode = <RTS5817_WAKEUP_MODE_RISING_EDGE>;
+				substate-id = <RTS5817_S2RAM_SUB_ID_SUSPEND>;
+			};
+
+			wkup-src3 {
+				id = <RTS5817_WKUP_SRC_SENSOR_GPIO>;
+				mode = <RTS5817_WAKEUP_MODE_RISING_EDGE>;
+				substate-id = <RTS5817_S2RAM_SUB_ID_SUSPEND>;
+			};
+
+			wkup-src4 {
+				id = <RTS5817_WKUP_SRC_SENSOR_CS>;
+				mode = <RTS5817_WAKEUP_MODE_RISING_EDGE>;
+				substate-id = <RTS5817_S2RAM_SUB_ID_SUSPEND>;
+			};
+
+			wkup-src5 {
+				id = <RTS5817_WKUP_SRC_GPI_WAKE2>;
+				mode = <RTS5817_WAKEUP_MODE_RISING_EDGE>;
+				substate-id = <RTS5817_S2RAM_SUB_ID_SUSPEND>;
+			};
+
+			wkup-src6 {
+				id = <RTS5817_WKUP_SRC_GPI_WAKE1>;
+				mode = <RTS5817_WAKEUP_MODE_RISING_EDGE>;
+				substate-id = <RTS5817_S2RAM_SUB_ID_SUSPEND>;
+			};
+
+			wkup-src7 {
+				id = <RTS5817_WKUP_SRC_RC_TIMER>;
+				time = <1000>;
+				substate-id = <RTS5817_S2RAM_SUB_ID_SUSPEND>;
+			};
 		};
 	};
 };
