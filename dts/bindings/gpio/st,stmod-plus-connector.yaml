@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposed on STMod+ connectors.
+
+    STMod+ is a 20-pin expansion connector used on STMicroelectronics
+    Discovery and Evaluation boards. This binding provides a nexus mapping
+    for the GPIO-capable STMod+ pins. Power and ground pins are not mapped.
+
+    Use STMOD_PLUS_* constants in
+    <zephyr/dt-bindings/gpio/stmod-plus-connector.h> to refer to specific
+    pins using convenient constant names.
+
+compatible: "st,stmod-plus-connector"
+
+include: [gpio-nexus.yaml, base.yaml]
