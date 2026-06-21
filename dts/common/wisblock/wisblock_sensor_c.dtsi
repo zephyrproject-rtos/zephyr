@@ -1,0 +1,24 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+#include <zephyr/dt-bindings/gpio/wisblock-sensor-slot.h>
+
+/ {
+	wisblock_sensor_c: wisblock-sensor-c {
+		compatible = "wisblock-sensor-slot";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =
+			<WISBLOCK_SENSOR_SPI_CS		0	&wisblock_io	WISBLOCK_IO_SPI_CS	0>,
+			<WISBLOCK_SENSOR_SPI_CLK	0	&wisblock_io	WISBLOCK_IO_SPI_CLK	0>,
+			<WISBLOCK_SENSOR_SPI_MISO	0	&wisblock_io	WISBLOCK_IO_SPI_MISO	0>,
+			<WISBLOCK_SENSOR_SPI_MOSI	0	&wisblock_io	WISBLOCK_IO_SPI_MOSI	0>,
+			<WISBLOCK_SENSOR_I2C_SCL	0	&wisblock_io	WISBLOCK_IO_I2C1_SCL	0>,
+			<WISBLOCK_SENSOR_I2C_SDA	0	&wisblock_io	WISBLOCK_IO_I2C1_SDA	0>,
+			<WISBLOCK_SENSOR_GPIO1		0	&wisblock_io	WISBLOCK_IO_IO4		0>,
+			<WISBLOCK_SENSOR_GPIO2		0	&wisblock_io	WISBLOCK_IO_IO3		0>;
+	};
+};
