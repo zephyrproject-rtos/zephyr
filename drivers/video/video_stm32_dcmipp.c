@@ -88,7 +88,6 @@ struct stm32_dcmipp_pipe_data {
 	struct video_buffer *next;
 	struct video_buffer *active;
 	enum stm32_dcmipp_state state;
-	bool is_streaming;
 };
 
 struct stm32_dcmipp_data {
@@ -551,7 +550,6 @@ static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *f
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
 	const struct stm32_dcmipp_mapping *mapping;
-	int ret = 0;
 
 	/* Sanitize format given */
 	mapping = stm32_dcmipp_get_mapping(fmt->pixelformat, pipe->id);
@@ -585,11 +583,6 @@ static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *f
 
 	stm32_dcmipp_compute_fmt_pitch(pipe->id, fmt);
 
-	if (pipe->is_streaming) {
-		ret = -EBUSY;
-		goto out;
-	}
-
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	if (pipe->id == DCMIPP_PIPE1 || pipe->id == DCMIPP_PIPE2) {
 		uint32_t post_isp_decimate_width = dcmipp->source_fmt.width /
@@ -604,16 +597,14 @@ static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *f
 			      post_isp_decimate_height / STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR,
 			      post_isp_decimate_height)) {
 			LOG_ERR("Requested resolution cannot be achieved");
-			ret = -EINVAL;
-			goto out;
+			return -EINVAL;
 		}
 	}
 #endif
 
 	pipe->fmt = *fmt;
 
-out:
-	return ret;
+	return 0;
 }
 
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
@@ -975,11 +966,6 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	HAL_StatusTypeDef hal_ret;
 	int ret;
 
-	if (pipe->is_streaming) {
-		ret = -EALREADY;
-		goto out;
-	}
-
 	input_fmt = stm32_dcmipp_get_input_info(dcmipp->source_fmt.pixelformat);
 	if (input_fmt == NULL) {
 		LOG_ERR("Unsupported input format");
@@ -1190,7 +1176,6 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 #endif
 
 	pipe->state = STM32_DCMIPP_RUNNING;
-	pipe->is_streaming = true;
 	dcmipp->enabled_pipe++;
 
 out:
@@ -1204,11 +1189,6 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	const struct stm32_dcmipp_config *config = dev->config;
 	struct video_buffer *vbuf;
 	int ret;
-
-	if (!pipe->is_streaming) {
-		ret = -EINVAL;
-		goto out;
-	}
 
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	/* Stop the external ISP handling */
@@ -1268,7 +1248,6 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	}
 
 	pipe->state = STM32_DCMIPP_STOPPED;
-	pipe->is_streaming = false;
 	dcmipp->enabled_pipe--;
 
 out:
