@@ -673,6 +673,8 @@ struct mmc_ext_csd {
 	uint32_t sec_count;
 	/** Bus Width Mode [183] */
 	uint8_t bus_width;
+	/** Enhanced strobe support [184] */
+	bool enhanced_strobe_support;
 	/** High Speed Timing Mode [185] */
 	enum mmc_timing_mode hs_timing;
 	/** Device Type [196] */

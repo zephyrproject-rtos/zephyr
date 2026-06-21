@@ -217,6 +217,7 @@ struct sdhc_io {
 	enum sdhc_power power_mode; /*!< SD power supply mode */
 	enum sdhc_bus_width bus_width; /*!< SD bus width */
 	enum sdhc_timing_mode timing; /*!< SD bus timing */
+	bool enhanced_strobe;         /*!< eMMC HS400 enhanced strobe state */
 	enum sd_driver_type driver_type; /*!< SD driver type */
 	enum sd_voltage signal_voltage; /*!< IO signalling voltage (usually 1.8 or 3.3V) */
 };
@@ -237,6 +238,7 @@ struct sdhc_host_props {
 	bool bus_4_bit_support; /**< 4 bit bus support */
 	bool hs200_support; /**< HS200 support */
 	bool hs400_support; /**< HS400 support */
+	bool hs400_enhanced_strobe_support; /**< HS400 enhanced strobe support */
 	bool is_spi; /*!< Is the host using SPI mode */
 };
 
@@ -355,7 +357,8 @@ static inline int z_impl_sdhc_request(const struct device *dev,
  *
  * I/O properties should be reconfigured when the card has been sent a command
  * to change its own SD settings. This function can also be used to toggle
- * power to the SD card.
+ * power to the SD card. Hosts that support eMMC HS400 enhanced strobe should
+ * also apply the enhanced_strobe state from @p io.
  * @param dev: SDHC device
  * @param io: I/O properties
  * @return 0 I/O was configured correctly
