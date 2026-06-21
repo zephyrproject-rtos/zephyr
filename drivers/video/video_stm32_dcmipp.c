@@ -1386,6 +1386,7 @@ static int stm32_dcmipp_get_caps(const struct device *dev, struct video_caps *ca
 		CODE_UNREACHABLE;
 	}
 
+	caps->type = VIDEO_BUF_TYPE_OUTPUT;
 	caps->min_vbuf_count = 1;
 	caps->buf_align = 16;
 
@@ -1812,6 +1813,7 @@ static void stm32_dcmipp_csi_isr(const struct device *dev)
 			.Instance = (DCMIPP_TypeDef *)DT_INST_REG_ADDR(inst),			\
 		},										\
 		.source_fmt = {									\
+			.type = VIDEO_BUF_TYPE_OUTPUT,						\
 			.pixelformat =								\
 				VIDEO_FOURCC_FROM_STR(						\
 						CONFIG_VIDEO_STM32_DCMIPP_SENSOR_PIXEL_FORMAT),	\
