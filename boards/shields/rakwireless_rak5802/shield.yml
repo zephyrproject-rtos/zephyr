@@ -1,0 +1,6 @@
+shield:
+  name: rakwireless_rak5802
+  full_name: RAK5802 WisBlock RS485 Interface Module
+  vendor: rakwireless
+  supported_features:
+    - serial

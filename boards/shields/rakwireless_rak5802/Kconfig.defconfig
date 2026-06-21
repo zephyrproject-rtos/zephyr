@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+if SHIELD_RAKWIRELESS_RAK5802
+
+if !MCUBOOT
+
+config GPIO
+	default y
+
+config SERIAL
+	default y
+
+config MODBUS_SERIAL
+	default y
+
+endif # !MCUBOOT
+
+endif # SHIELD_RAKWIRELESS_RAK5802

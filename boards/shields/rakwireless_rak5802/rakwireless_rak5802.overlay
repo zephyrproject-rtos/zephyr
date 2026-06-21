@@ -1,0 +1,17 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/wisblock-io-slot.h>
+
+&wisblock_uart1 {
+	status = "okay";
+
+	rak5802_modbus: modbus0 {
+		status = "okay";
+		compatible = "zephyr,modbus-serial";
+		de-gpios = <&wisblock_io WISBLOCK_IO_IO1 GPIO_ACTIVE_LOW>;
+	};
+};
