@@ -382,15 +382,16 @@ class Console(Harness):
         elif self.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
             tc.status = self.status
             tc.reason = self.reason or "Unknown Console harness failure"
-        else:  # handle status None
-            # most likely not all the patterns were matched
+        else:
+            # status is still NONE: not all patterns have matched *yet*.
+            # handle() runs once per console line, so while the test is still
+            # producing output this branch is hit on every line that does not
+            # complete the match - it is not a failure on its own. The final
+            # verdict for an incomplete match (test ended/timed out before all
+            # patterns were seen) is decided by the handler in
+            # _update_instance_info(), so do not log or set a reason here to
+            # avoid spurious errors and bogus reasons on tests that pass later.
             tc.status = TwisterStatus.FAIL
-            unmatched_patterns = set(self.regex) - set(self.matches.keys())
-            if unmatched_patterns:
-                logger.error("Patterns left unmatched: %s", unmatched_patterns)
-                tc.reason = "Patterns left unmatched"
-            else:
-                tc.reason = "Unknown Console harness failure"
 
 
 class Script(Harness):
