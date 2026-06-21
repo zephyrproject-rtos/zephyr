@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+identifier: rak11310/rp2040
+name: RAK11310 WisBlock Core Module
+type: mcu
+arch: arm
+flash: 2048
+ram: 264
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - pico_gpio
+  - pico_i2c
+  - pico_spi
+  - pico_serial
+  - uart
+  - gpio
+  - adc
+  - i2c
+  - spi
+  - hwinfo
+  - watchdog
+  - pwm
+  - flash
+  - dma
+  - counter
+  - clock
+  - usbd
+  - lora
+  - wisblock_io
+vendor: rakwireless

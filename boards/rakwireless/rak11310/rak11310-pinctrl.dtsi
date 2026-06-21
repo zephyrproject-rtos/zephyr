@@ -1,0 +1,83 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_P0>;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_P1>;
+			input-enable;
+		};
+	};
+
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1_TX_P4>;
+		};
+
+		group2 {
+			pinmux = <UART1_RX_P5>;
+			input-enable;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux =
+				<I2C0_SDA_P20>,
+				<I2C0_SCL_P21>;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux =
+				<I2C1_SDA_P2>,
+				<I2C1_SCL_P3>;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux =
+				<SPI0_CSN_P17>,
+				<SPI0_SCK_P18>,
+				<SPI0_TX_P19>;
+		};
+
+		group2 {
+			pinmux = <SPI0_RX_P16>;
+			input-enable;
+		};
+	};
+
+	/*
+	 * PWM and ADC pinctrl states are intentionally empty. board.c computes
+	 * assignments at boot and installs them with pinctrl_update_states()
+	 * before the peripheral drivers apply their default state.
+	 */
+	pwm_default: pwm_default {
+
+	};
+
+	pwm_sleep: pwm_sleep {
+
+	};
+
+	adc_default: adc_default {
+
+	};
+
+	adc_sleep: adc_sleep {
+
+	};
+};

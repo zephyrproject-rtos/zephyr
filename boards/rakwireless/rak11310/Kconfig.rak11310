@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+config BOARD_RAK11310
+	select SOC_RP2040
+
+if BOARD_RAK11310
+
+config WISBLOCK_CORE_BOARD_VENDOR
+	string
+	default "RAKwireless"
+
+config WISBLOCK_CORE_BOARD_NAME
+	string
+	default "RAK11310 WisBlock LoRaWAN Module"
+
+endif # BOARD_RAK11310
