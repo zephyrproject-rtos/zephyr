@@ -724,8 +724,8 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 }
 
 #ifdef CONFIG_THREAD_RUNTIME_STACK_SAFETY
-int z_impl_k_thread_runtime_stack_safety_unused_threshold_pct_set(struct k_thread *thread,
-								  uint32_t pct)
+int z_impl_k_thread_runtime_stack_unused_threshold_pct_set(struct k_thread *thread,
+							   uint32_t pct)
 {
 	size_t unused_threshold;
 
@@ -740,8 +740,8 @@ int z_impl_k_thread_runtime_stack_safety_unused_threshold_pct_set(struct k_threa
 	return 0;
 }
 
-int z_impl_k_thread_runtime_stack_safety_unused_threshold_set(struct k_thread *thread,
-							      size_t threshold)
+int z_impl_k_thread_runtime_stack_unused_threshold_set(struct k_thread *thread,
+						       size_t threshold)
 {
 	if (threshold > thread->stack_info.size) {
 		return -EINVAL;
@@ -752,37 +752,37 @@ int z_impl_k_thread_runtime_stack_safety_unused_threshold_set(struct k_thread *t
 	return 0;
 }
 
-size_t z_impl_k_thread_runtime_stack_safety_unused_threshold_get(struct k_thread *thread)
+size_t z_impl_k_thread_runtime_stack_unused_threshold_get(struct k_thread *thread)
 {
 	return thread->stack_info.usage.unused_threshold;
 }
 
 #ifdef CONFIG_USERSPACE
-int z_vrfy_k_thread_runtime_stack_safety_unused_threshold_pct_set(struct k_thread *thread,
-								  uint32_t pct)
+int z_vrfy_k_thread_runtime_stack_unused_threshold_pct_set(struct k_thread *thread,
+							   uint32_t pct)
 {
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 
-	return z_impl_k_thread_runtime_stack_safety_unused_threshold_pct_set(thread, pct);
+	return z_impl_k_thread_runtime_stack_unused_threshold_pct_set(thread, pct);
 }
-#include <zephyr/syscalls/k_thread_runtime_stack_safety_unused_threshold_pct_set_mrsh.c>
+#include <zephyr/syscalls/k_thread_runtime_stack_unused_threshold_pct_set_mrsh.c>
 
-int z_vrfy_k_thread_runtime_stack_safety_unused_threshold_set(struct k_thread *thread,
-							      size_t threshold)
+int z_vrfy_k_thread_runtime_stack_unused_threshold_set(struct k_thread *thread,
+						       size_t threshold)
 {
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 
-	return z_impl_k_thread_runtime_stack_safety_unused_threshold_set(thread, threshold);
+	return z_impl_k_thread_runtime_stack_unused_threshold_set(thread, threshold);
 }
-#include <zephyr/syscalls/k_thread_runtime_stack_safety_unused_threshold_set_mrsh.c>
+#include <zephyr/syscalls/k_thread_runtime_stack_unused_threshold_set_mrsh.c>
 
-size_t z_vrfy_k_thread_runtime_stack_safety_unused_threshold_get(struct k_thread *thread)
+size_t z_vrfy_k_thread_runtime_stack_unused_threshold_get(struct k_thread *thread)
 {
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 
-	return z_impl_k_thread_runtime_stack_safety_unused_threshold_get(thread);
+	return z_impl_k_thread_runtime_stack_unused_threshold_get(thread);
 }
-#include <zephyr/syscalls/k_thread_runtime_stack_safety_unused_threshold_get_mrsh.c>
+#include <zephyr/syscalls/k_thread_runtime_stack_unused_threshold_get_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_THREAD_RUNTIME_STACK_SAFETY */
 
@@ -1056,16 +1056,6 @@ int k_thread_runtime_stack_safety_threshold_check(const struct k_thread *thread,
 
 	return 0;
 }
-
-#ifdef CONFIG_USERSPACE
-int z_vrfy_k_thread_runtime_stack_safety_unused_threshold_get(struct k_thread *thread)
-{
-	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-
-	return z_impl_k_thread_runtime_stack_safety_unused_threshold_set(thread);
-}
-#include <zephyr/syscalls/k_thread_runtime_stack_safety_unused_threshold_get_mrsh.c>
-#endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_THREAD_RUNTIME_STACK_SAFETY */
 
 int z_impl_k_thread_stack_space_get(const struct k_thread *thread,
