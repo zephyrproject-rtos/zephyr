@@ -1,0 +1,6 @@
+shield:
+  name: rakwireless_rak19010
+  full_name: RAK19010 WisBlock Base Board with Power Slot
+  vendor: rakwireless
+  supported_features:
+    - gpio
