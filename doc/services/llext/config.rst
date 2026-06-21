@@ -1,9 +1,21 @@
 Configuration
 #############
 
-The following Kconfig options are available for the LLEXT subsystem:
+The following Kconfig options are available for the LLEXT subsystem.
 
 .. _llext_kconfig_heap:
+
+Harvard architecture
+--------------------
+
+:kconfig:option:`CONFIG_HARVARD`
+
+        Architecture uses separate instruction and data memory.
+
+:kconfig:option:`CONFIG_HARVARD` is not a Kconfig defined by the LLEXT
+subsystem. Instead, it must be defined and selected by the board or SoC
+to signal that LLEXT should be built with Harvard architecture support.
+The board or SoC must also implement :c:func:`arch_is_instr_mem`.
 
 Heap size
 ----------

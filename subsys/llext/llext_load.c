@@ -11,6 +11,7 @@
 #include <zephyr/llext/llext.h>
 #include <zephyr/llext/llext_internal.h>
 #include <zephyr/kernel.h>
+#include <zephyr/arch/common/instr_mem.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
@@ -373,18 +374,12 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			}
 
 			if (mem_idx == LLEXT_MEM_TEXT &&
-			    !INSTR_FETCHABLE(detached_sect_ptr, shdr->sh_size)) {
-#ifdef CONFIG_ARC
+			    !arch_is_instr_mem(detached_sect_ptr, shdr->sh_size)) {
 				LOG_ERR("ELF buffer's detached text section %s not in instruction "
 					"memory: %p-%p",
 					name, detached_sect_ptr,
 					(void *)((char *)detached_sect_ptr + shdr->sh_size));
 				return -ENOEXEC;
-#else
-				LOG_WRN("Unknown if ELF buffer's detached text section %s is in "
-					"instruction memory; proceeding...",
-					name);
-#endif
 			}
 			continue;
 		}
