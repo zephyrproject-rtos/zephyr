@@ -1,0 +1,7 @@
+shield:
+  name: rakwireless_rak19017
+  full_name: RAK19017 WisBlock POE Slot Module
+  vendor: rakwireless
+  supported_features:
+    - gpio
+    - led
