@@ -1002,7 +1002,7 @@ static int vs_get(struct uvc_host_data *const host_data, const uint8_t request,
 		return -EINVAL;
 	}
 
-	buf = usbh_xfer_buf_alloc(host_data->udev, data_len);
+	buf = usbh_xfer_buf_alloc(host_data->udev, data_len, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate transfer buffer of size %u", data_len);
 		return -ENOMEM;
@@ -1071,7 +1071,7 @@ static int vs_set(struct uvc_host_data *const host_data, const uint8_t request,
 		return -EINVAL;
 	}
 
-	buf = usbh_xfer_buf_alloc(host_data->udev, data_len);
+	buf = usbh_xfer_buf_alloc(host_data->udev, data_len, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate transfer buffer of size %u", data_len);
 		return -ENOMEM;
@@ -1520,13 +1520,13 @@ static int initiate_transfer(struct uvc_host_data *const host_data,
 	LOG_DBG("Initiating transfer: ep=0x%02x, vbuf=%p", stream_ep->bEndpointAddress, vbuf);
 
 	xfer = usbh_xfer_alloc(host_data->udev, stream_ep->bEndpointAddress,
-			       stream_iso_req_cb, host_data);
+			       stream_iso_req_cb, host_data, K_NO_WAIT);
 	if (xfer == NULL) {
 		LOG_ERR("Failed to allocate transfer");
 		return -ENOMEM;
 	}
 
-	buf = usbh_xfer_buf_alloc(host_data->udev, stream_info->ep_mps_mult);
+	buf = usbh_xfer_buf_alloc(host_data->udev, stream_info->ep_mps_mult, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate buffer");
 		usbh_xfer_free(host_data->udev, xfer);
@@ -1558,7 +1558,7 @@ static int continue_transfer(struct uvc_host_data *const host_data,
 	struct net_buf *buf;
 	int ret;
 
-	buf = usbh_xfer_buf_alloc(host_data->udev, stream_info->ep_mps_mult);
+	buf = usbh_xfer_buf_alloc(host_data->udev, stream_info->ep_mps_mult, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate buffer");
 		return -ENOMEM;
@@ -1848,7 +1848,7 @@ static int vc_get(struct uvc_host_data *const host_data, const uint8_t request,
 		return -EINVAL;
 	}
 
-	buf = usbh_xfer_buf_alloc(host_data->udev, data_len);
+	buf = usbh_xfer_buf_alloc(host_data->udev, data_len, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate transfer buffer of size %u", data_len);
 		return -ENOMEM;
@@ -1917,7 +1917,7 @@ static int vc_set(struct uvc_host_data *const host_data, const uint8_t request,
 		return -EINVAL;
 	}
 
-	buf = usbh_xfer_buf_alloc(host_data->udev, data_len);
+	buf = usbh_xfer_buf_alloc(host_data->udev, data_len, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate transfer buffer of size %u", data_len);
 		return -ENOMEM;

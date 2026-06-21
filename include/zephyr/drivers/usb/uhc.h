@@ -419,6 +419,9 @@ static inline int uhc_bus_resume(const struct device *dev)
  * @param[in] udev    Pointer to USB device
  * @param[in] cb      Transfer completion callback
  * @param[in] cb_priv Completion callback callback private data
+ * @param[in] timeout Waiting period to wait for allocation to complete.
+ *                    Use K_NO_WAIT to return without waiting,
+ *                    or K_FOREVER to wait as long as necessary.
  *
  * @return pointer to allocated transfer or NULL on error.
  */
@@ -426,7 +429,8 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const uint8_t ep,
 				    struct usb_device *const udev,
 				    void *const cb,
-				    void *const cb_priv);
+				    void *const cb_priv,
+				    const k_timeout_t timeout);
 
 /**
  * @brief Allocate UHC transfer with buffer
@@ -439,6 +443,9 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
  * @param[in] cb      Transfer completion callback
  * @param[in] cb_priv Completion callback callback private data
  * @param[in] size    Size of the buffer
+ * @param[in] timeout Waiting period to wait for allocation to complete.
+ *                    Use K_NO_WAIT to return without waiting,
+ *                    or K_FOREVER to wait as long as necessary.
  *
  * @return pointer to allocated transfer or NULL on error.
  */
@@ -447,7 +454,8 @@ struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
 					     struct usb_device *const udev,
 					     void *const cb,
 					     void *const cb_priv,
-					     size_t size);
+					     size_t size,
+					     const k_timeout_t timeout);
 
 /**
  * @brief Free UHC transfer and any buffers
@@ -482,13 +490,17 @@ int uhc_xfer_buf_add(const struct device *dev,
  * Allocate a new buffer from common request buffer pool and
  * assign it to the transfer if the xfer parameter is not NULL.
  *
- * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] size   Size of the request buffer
+ * @param[in] dev     Pointer to device struct of the driver instance
+ * @param[in] size    Size of the request buffer
+ * @param[in] timeout Waiting period to wait for allocation to complete.
+ *                    Use K_NO_WAIT to return without waiting,
+ *                    or K_FOREVER to wait as long as necessary.
  *
  * @return pointer to allocated request or NULL on error.
  */
 struct net_buf *uhc_xfer_buf_alloc(const struct device *dev,
-				   const size_t size);
+				   const size_t size,
+				   const k_timeout_t timeout);
 
 /**
  * @brief Free UHC request buffer

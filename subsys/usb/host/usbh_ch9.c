@@ -66,7 +66,7 @@ int usbh_req_setup(struct usb_device *const udev,
 	uint8_t ep = usb_reqtype_is_to_device(&req) ? 0x00 : 0x80;
 	int ret;
 
-	xfer = usbh_xfer_alloc(udev, ep, ch9_req_cb, NULL);
+	xfer = usbh_xfer_alloc(udev, ep, ch9_req_cb, NULL, K_NO_WAIT);
 	if (!xfer) {
 		return -ENOMEM;
 	}
@@ -135,7 +135,7 @@ int usbh_req_desc_dev(struct usb_device *const udev,
 	struct net_buf *buf;
 	int ret;
 
-	buf = usbh_xfer_buf_alloc(udev, wLength);
+	buf = usbh_xfer_buf_alloc(udev, wLength, K_NO_WAIT);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -164,7 +164,7 @@ int usbh_req_desc_cfg(struct usb_device *const udev,
 	struct net_buf *buf;
 	int ret;
 
-	buf = usbh_xfer_buf_alloc(udev, len);
+	buf = usbh_xfer_buf_alloc(udev, len, K_NO_WAIT);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -207,7 +207,7 @@ int usbh_req_get_cfg(struct usb_device *const udev,
 	struct net_buf *buf;
 	int ret;
 
-	buf = usbh_xfer_buf_alloc(udev, wLength);
+	buf = usbh_xfer_buf_alloc(udev, wLength, K_NO_WAIT);
 	if (!buf) {
 		return -ENOMEM;
 	}
