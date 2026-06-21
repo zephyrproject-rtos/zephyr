@@ -74,14 +74,6 @@ enum i2c_status_t {
 	I2C_STATUS_TIMEOUT,	/* I2C bus status error, and operation timeout */
 };
 
-#ifndef I2C_LL_SUPPORT_HW_CLR_BUS
-struct i2c_esp32_pin {
-	struct gpio_dt_spec gpio;
-	int sig_out;
-	int sig_in;
-};
-#endif
-
 struct i2c_esp32_data {
 	i2c_hal_context_t hal;
 	struct k_sem cmd_sem;
@@ -143,8 +135,8 @@ struct i2c_esp32_config {
 
 	const struct device *clock_dev;
 #ifndef I2C_LL_SUPPORT_HW_CLR_BUS
-	const struct i2c_esp32_pin scl;
-	const struct i2c_esp32_pin sda;
+	const struct gpio_dt_spec scl;
+	const struct gpio_dt_spec sda;
 #endif
 	const struct pinctrl_dev_config *pcfg;
 
@@ -217,24 +209,27 @@ static i2c_clock_source_t i2c_get_clk_src(uint32_t clk_freq)
 static int i2c_esp32_config_pin(const struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config;
-	int ret = 0;
 
 	if (config->index >= SOC_I2C_NUM) {
 		LOG_ERR("Invalid I2C peripheral number");
 		return -EINVAL;
 	}
 
-	gpio_pin_set_dt(&config->sda.gpio, 1);
-	ret = gpio_pin_configure_dt(&config->sda.gpio, GPIO_PULL_UP | GPIO_OUTPUT | GPIO_INPUT);
-	esp_rom_gpio_matrix_out(config->sda.gpio.pin, config->sda.sig_out, 0, 0);
-	esp_rom_gpio_matrix_in(config->sda.gpio.pin, config->sda.sig_in, 0);
-
-	gpio_pin_set_dt(&config->scl.gpio, 1);
-	ret |= gpio_pin_configure_dt(&config->scl.gpio, GPIO_PULL_UP | GPIO_OUTPUT | GPIO_INPUT);
-	esp_rom_gpio_matrix_out(config->scl.gpio.pin, config->scl.sig_out, 0, 0);
-	esp_rom_gpio_matrix_in(config->scl.gpio.pin, config->scl.sig_in, 0);
-
-	return ret;
+	/* Reattach the I2C peripheral signals to SDA/SCL after the bit-bang bus
+	 * recovery in i2c_master_clear_bus() temporarily drove them as GPIOs.
+	 *
+	 * The previous esp_rom_gpio_matrix_*() reattach passed gpio.pin -- the
+	 * per-controller pin index -- as the absolute GPIO number. That only
+	 * holds for the gpio0 bank (GPIO0..31). For SDA/SCL on gpio1
+	 * (GPIO32..39, pin index 0..7) it rerouted the I2C signals onto
+	 * GPIO0/1 instead; GPIO1 is the default UART0 TX, so recovery hijacked
+	 * the console and the bus was never actually restored.
+	 *
+	 * Reapplying the pinctrl default state restores exactly the mux the
+	 * driver installed at init, regardless of which GPIO bank the pins are
+	 * on.
+	 */
+	return pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 }
 #endif
 
@@ -252,25 +247,25 @@ static void IRAM_ATTR i2c_master_clear_bus(const struct device *dev)
 	const int scl_half_period = I2C_CLR_BUS_HALF_PERIOD_US; /* use standard 100kHz data rate */
 	int i = 0;
 
-	gpio_pin_configure_dt(&config->scl.gpio, GPIO_OUTPUT);
-	gpio_pin_configure_dt(&config->sda.gpio, GPIO_OUTPUT | GPIO_INPUT);
+	gpio_pin_configure_dt(&config->scl, GPIO_OUTPUT);
+	gpio_pin_configure_dt(&config->sda, GPIO_OUTPUT | GPIO_INPUT);
 	/* If a SLAVE device was in a read operation when the bus was interrupted, */
 	/* the SLAVE device is controlling SDA. If the slave is sending a stream of ZERO bytes, */
 	/* it will only release SDA during the  ACK bit period. So, this reset code needs */
 	/* to synchronize the bit stream with either the ACK bit, or a 1 bit to correctly */
 	/* generate a STOP condition. */
-	gpio_pin_set_dt(&config->sda.gpio, 1);
+	gpio_pin_set_dt(&config->sda, 1);
 	esp_rom_delay_us(scl_half_period);
-	while (!gpio_pin_get_dt(&config->sda.gpio) && (i++ < I2C_CLR_BUS_SCL_NUM)) {
-		gpio_pin_set_dt(&config->scl.gpio, 1);
+	while (!gpio_pin_get_dt(&config->sda) && (i++ < I2C_CLR_BUS_SCL_NUM)) {
+		gpio_pin_set_dt(&config->scl, 1);
 		esp_rom_delay_us(scl_half_period);
-		gpio_pin_set_dt(&config->scl.gpio, 0);
+		gpio_pin_set_dt(&config->scl, 0);
 		esp_rom_delay_us(scl_half_period);
 	}
-	gpio_pin_set_dt(&config->sda.gpio, 0); /* setup for STOP */
-	gpio_pin_set_dt(&config->scl.gpio, 1);
+	gpio_pin_set_dt(&config->sda, 0); /* setup for STOP */
+	gpio_pin_set_dt(&config->scl, 1);
 	esp_rom_delay_us(scl_half_period);
-	gpio_pin_set_dt(&config->sda.gpio, 1); /* STOP, SDA low -> high while SCL is HIGH */
+	gpio_pin_set_dt(&config->sda, 1); /* STOP, SDA low -> high while SCL is HIGH */
 	i2c_esp32_config_pin(dev);
 #else
 	i2c_ll_master_clr_bus(data->hal.dev, I2C_LL_RESET_SLV_SCL_PULSE_NUM_DEFAULT, true);
@@ -1215,12 +1210,12 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
 #ifndef I2C_LL_SUPPORT_HW_CLR_BUS
-	if (!gpio_is_ready_dt(&config->scl.gpio)) {
+	if (!gpio_is_ready_dt(&config->scl)) {
 		LOG_ERR("SCL GPIO device is not ready");
 		return -EINVAL;
 	}
 
-	if (!gpio_is_ready_dt(&config->sda.gpio)) {
+	if (!gpio_is_ready_dt(&config->sda)) {
 		LOG_ERR("SDA GPIO device is not ready");
 		return -EINVAL;
 	}
@@ -1276,16 +1271,8 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 
 #ifndef I2C_LL_SUPPORT_HW_CLR_BUS
 #define I2C_ESP32_GET_PIN_INFO(idx)					\
-	.scl = {							\
-		.gpio = GPIO_DT_SPEC_GET(I2C(idx), scl_gpios),		\
-		.sig_out = I2CEXT##idx##_SCL_OUT_IDX,			\
-		.sig_in = I2CEXT##idx##_SCL_IN_IDX,			\
-	},								\
-	.sda = {							\
-		.gpio = GPIO_DT_SPEC_GET(I2C(idx), sda_gpios),		\
-		.sig_out = I2CEXT##idx##_SDA_OUT_IDX,			\
-		.sig_in = I2CEXT##idx##_SDA_IN_IDX,			\
-	},
+	.scl = GPIO_DT_SPEC_GET(I2C(idx), scl_gpios),			\
+	.sda = GPIO_DT_SPEC_GET(I2C(idx), sda_gpios),
 #else
 #define I2C_ESP32_GET_PIN_INFO(idx)
 #endif /* I2C_LL_SUPPORT_HW_CLR_BUS */
