@@ -60,7 +60,7 @@ static uint8_t png_frame_buffer_hflip[] = {
 };
 
 struct video_sw_generator_data {
-	const struct device *dev;
+	struct video_device_context dctx;
 	struct sw_ctrls ctrls;
 	struct video_format fmt;
 	struct k_fifo fifo_in;
@@ -468,7 +468,7 @@ static void video_sw_generator_worker(struct k_work *work)
 
 	switch (data->pattern) {
 	case VIDEO_PATTERN_COLOR_BAR:
-		video_sw_generator_fill(data->dev, vbuf);
+		video_sw_generator_fill(data->dctx.vctx.dev, vbuf);
 		break;
 	}
 
@@ -631,8 +631,13 @@ static int video_sw_generator_init_controls(const struct device *dev)
 static int video_sw_generator_init(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->data;
+	int ret;
 
-	data->dev = dev;
+	ret = video_init_context_dev(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
 	k_fifo_init(&data->fifo_in);
 	k_fifo_init(&data->fifo_out);
 	k_work_init_delayable(&data->work, video_sw_generator_worker);
