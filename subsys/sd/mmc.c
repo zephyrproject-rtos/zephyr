@@ -27,6 +27,9 @@
 #define MMC_SWITCH_8_BIT_DDR_BUS_ARG                                                               \
 	(0xFC000000 & (0U << 26)) + (0x03000000 & (0b11 << 24)) + (0x00FF0000 & (183U << 16)) +    \
 		(0x0000FF00 & (6U << 8)) + (0x000000F7 & (0U << 3)) + (0x00000000 & (3U << 0))
+#define MMC_EXT_CSD_BUS_WIDTH_STROBE BIT(7)
+#define MMC_SWITCH_8_BIT_DDR_ES_BUS_ARG                                                            \
+	((MMC_SWITCH_8_BIT_DDR_BUS_ARG) | (MMC_EXT_CSD_BUS_WIDTH_STROBE << 8))
 #define MMC_SWITCH_8_BIT_BUS_ARG                                                                   \
 	(0xFC000000 & (0U << 26)) + (0x03000000 & (0b11 << 24)) + (0x00FF0000 & (183U << 16)) +    \
 		(0x0000FF00 & (2U << 8)) + (0x000000F7 & (0U << 3)) + (0x00000000 & (3U << 0))
@@ -92,6 +95,9 @@ static int mmc_set_bus_width(struct sd_card *card);
 
 /* Sets card to the fastest timing mode (using CMD6) and SDHC to max frequency */
 static int mmc_set_timing(struct sd_card *card, struct mmc_ext_csd *card_ext_csd);
+
+/* Switches an 8-bit card and host directly to HS400 enhanced strobe mode */
+static int mmc_select_hs400es(struct sd_card *card);
 
 /* Enable cache for emmc if applicable */
 static int mmc_set_cache(struct sd_card *card, struct mmc_ext_csd *card_ext_csd);
@@ -454,10 +460,80 @@ static int mmc_set_power_class_HS200(struct sd_card *card, struct mmc_ext_csd *e
 	return ret;
 }
 
+static int mmc_select_hs400es(struct sd_card *card)
+{
+	int ret;
+	struct sdhc_command cmd = {0};
+
+	cmd.opcode = SD_SWITCH;
+	cmd.response_type = SD_RSP_TYPE_R1b;
+	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+
+	/* HS400ES is entered directly from HS timing and does not use HS200 tuning. */
+	ret = mmc_set_hs_timing(card);
+	if (ret) {
+		LOG_ERR("Switching MMC to HS before HS400ES failed: %d", ret);
+		return ret;
+	}
+
+	/* Tell the card to use the 8-bit DDR bus and drive the data strobe. */
+	cmd.arg = MMC_SWITCH_8_BIT_DDR_ES_BUS_ARG;
+	ret = sdhc_request(card->sdhc, &cmd, NULL);
+	if (ret) {
+		LOG_ERR("Setting MMC HS400ES bus width failed: %d", ret);
+		return ret;
+	}
+	ret = sdmmc_wait_ready(card);
+	if (ret) {
+		return ret;
+	}
+
+	/* Switch the card before configuring the host for HS400 signaling. */
+	cmd.arg = MMC_SWITCH_HS400_TIMING_ARG;
+	ret = sdhc_request(card->sdhc, &cmd, NULL);
+	if (ret) {
+		LOG_ERR("Switching MMC to HS400ES timing failed: %d", ret);
+		return ret;
+	}
+	ret = sdmmc_wait_ready(card);
+	if (ret) {
+		return ret;
+	}
+
+	mmc_set_clock(card, MMC_CLOCK_HS400, SDHC_TIMING_HS400);
+	card->bus_io.enhanced_strobe = true;
+	ret = sdhc_set_io(card->sdhc, &card->bus_io);
+	if (ret) {
+		card->bus_io.enhanced_strobe = false;
+		LOG_ERR("Enabling MMC HS400 enhanced strobe failed: %d", ret);
+		return ret;
+	}
+
+	/* Verify that command traffic still works with the data strobe enabled. */
+	ret = sdmmc_wait_ready(card);
+	if (ret) {
+		LOG_ERR("MMC status check after enabling enhanced strobe failed: %d", ret);
+		return ret;
+	}
+
+	card->card_speed = MMC_HS400_TIMING;
+	LOG_INF("MMC switched to HS400 enhanced strobe timing");
+
+	return 0;
+}
+
 static int mmc_set_timing(struct sd_card *card, struct mmc_ext_csd *ext)
 {
 	int ret = 0;
 	struct sdhc_command cmd = {0};
+
+	/* HS400ES uses the card-generated data strobe and does not require HS200 tuning. */
+	if (ext->device_type.MMC_HS400_DDR_1800MV && ext->enhanced_strobe_support &&
+	    card->host_props.hs400_support && card->host_props.hs400_enhanced_strobe_support &&
+	    card->bus_io.signal_voltage == SD_VOL_1_8_V &&
+	    card->bus_io.bus_width == SDHC_BUS_WIDTH8BIT) {
+		return mmc_select_hs400es(card);
+	}
 
 	/* Timing depends on EXT_CSD register information */
 	if ((ext->device_type.MMC_HS200_SDR_1200MV || ext->device_type.MMC_HS200_SDR_1800MV) &&
@@ -598,6 +674,7 @@ static inline void mmc_decode_ext_csd(struct mmc_ext_csd *ext, uint8_t *raw)
 {
 	ext->sec_count = sys_get_le32(&raw[212U]);
 	ext->bus_width = raw[183U];
+	ext->enhanced_strobe_support = (raw[184U] & BIT(0)) != 0U;
 	ext->hs_timing = raw[185U];
 	ext->device_type.MMC_HS400_DDR_1200MV = ((1 << 7U) & raw[196U]);
 	ext->device_type.MMC_HS400_DDR_1800MV = ((1 << 6U) & raw[196U]);
