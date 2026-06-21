@@ -1,8 +1,11 @@
 # RAKWIRELESS RAK5010 Board configuration
 
 # Copyright (c) 2020 Guillaume Paquet <guillaume.paquet@smile.fr>
+# Copyright (c) 2026 JaeHwan Jin <jaehwan.jin@rakwireless.com>
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_RAK5010
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
 
 endif # BOARD_RAK5010

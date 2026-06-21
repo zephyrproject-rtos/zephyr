@@ -1,5 +1,5 @@
 identifier: rak5010/nrf52840
-name: RAK5010-NRF52840
+name: RAK5010 WisTrio NB-IoT Tracker Pro
 type: mcu
 arch: arm
 flash: 1024
@@ -14,6 +14,9 @@ supported:
   - gpio
   - i2c
   - pwm
-  - usb_device
+  - usbd
   - watchdog
-vendor: rak
+  - fuel_gauge
+  - sensor
+  - netif:openthread
+vendor: rakwireless

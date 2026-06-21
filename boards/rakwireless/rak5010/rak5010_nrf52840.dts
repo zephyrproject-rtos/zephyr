@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Guillaume Paquet <guillaume.paquet@smile.fr>
+ * Copyright (c) 2026 JaeHwan Jin <jaehwan.jin@rakwireless.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,19 +8,12 @@
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
 #include <nordic/nrf52840_partition.dtsi>
+#include <zephyr/dt-bindings/battery/battery.h>
 #include "rak5010_nrf52840-pinctrl.dtsi"
 
 / {
-	model = "RAKWireless RAK5010 Wistrio Board with a Nordic NRF52840 SoC";
-	compatible = "nordic,rak5010_nrf52840";
-
-	chosen {
-		zephyr,console = &uart1;
-		zephyr,shell-uart = &uart1;
-		zephyr,uart-mcumgr = &uart1;
-		zephyr,bt-mon-uart = &uart1;
-		zephyr,bt-c2h-uart = &uart1;
-	};
+	model = "RAK5010 WisTrio NB-IoT Tracker Pro";
+	compatible = "rakwireless,rak5010";
 
 	leds {
 		compatible = "gpio-leds";
@@ -38,6 +32,22 @@
 		modem-uart = &uart0;
 		modem = &modem;
 		dht0 = &shtc3;
+		fuel-gauge0 = &fuel_gauge;
+	};
+
+	voltage_divider: voltage-divider {
+		compatible = "voltage-divider";
+		io-channels = <&adc 3>;
+		output-ohms = <1500000>;
+		full-ohms = <2500000>;
+	};
+
+	fuel_gauge: fuel-gauge {
+		compatible = "zephyr,fuel-gauge-composite";
+		source-primary = <&voltage_divider>;
+		device-chemistry = "lithium-ion-polymer";
+		ocv-capacity-table-0 =
+			<BATTERY_OCV_CURVE_LITHIUM_ION_POLYMER_DEFAULT>;
 	};
 };
 
@@ -72,14 +82,6 @@
 	};
 };
 
-&uart1 {
-	current-speed = <115200>;
-	status = "okay";
-	pinctrl-0 = <&uart1_default>;
-	pinctrl-1 = <&uart1_sleep>;
-	pinctrl-names = "default", "sleep";
-};
-
 &i2c1 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
@@ -102,7 +104,7 @@
 	};
 
 	/* ST Microelectronics LPS22HB pressure sensor */
-	lps22hb-press@5c {
+	lps22hb: lps22hb-press@5c {
 		compatible = "st,lps22hb-press";
 		reg = <0x5c>;
 	};
@@ -136,7 +138,29 @@
 	};
 };
 
+&adc {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* Li-Ion battery ADC positive */
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,resolution = <12>;
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,input-positive = <NRF_SAADC_AIN3>;
+	};
+};
+
 zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
+
+&board_cdc_acm_uart {
 	status = "okay";
 };
