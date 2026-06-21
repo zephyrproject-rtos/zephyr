@@ -147,6 +147,10 @@ tests:
   drivers.display.read_write.renesas_ra_glcdc:
     tags:
       - shield
+    vendor_allow:
+      - renesas
+    platform_type:
+      - mcu
     filter: dt_compat_enabled("renesas,ra-glcdc")
     extra_args:
       - platform:ek_ra8d1/r7fa8d1bhecbd:SHIELD=rtkmipilcdb00000be
