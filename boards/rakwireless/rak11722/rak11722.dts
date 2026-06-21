@@ -1,0 +1,187 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+/dts-v1/;
+#include <rakwireless/rak11720.dtsi>
+#include "rak11722-pinctrl.dtsi"
+
+/ {
+	model = "RAK11722 WisBlock Core Module";
+	compatible = "rakwireless,rak11722";
+
+	chosen {
+		zephyr,itcm = &tcm;
+		zephyr,sram = &sram0;
+		zephyr,flash-controller = &flash;
+		zephyr,flash = &flash0;
+		zephyr,bt_hci = &bt_hci_apollo;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+		lora0 = &lora;
+	};
+};
+
+&flash0 {
+	erase-block-size = <8192>;
+	write-block-size = <4>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		internal_boot_partition: partition@0 {
+			label = "internal_bootloader";
+			reg = <0x00000000 0xc000>;
+		};
+
+		boot_partition: partition@c000 {
+			label = "mcuboot";
+			reg = <0x0000c000 0xc000>;
+		};
+
+		slot0_partition: partition@18000 {
+			label = "image-0";
+			reg = <0x00018000 0x72000>;
+		};
+
+		slot1_partition: partition@8a000 {
+			label = "image-1";
+			reg = <0x0008a000 0x72000>;
+		};
+
+		storage_partition: partition@fc000 {
+			label = "storage";
+			reg = <0x000fc000 0x4000>;
+		};
+	};
+};
+
+&gpio0_31 {
+	status = "okay";
+};
+
+&gpio32_63 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&timer1 {
+	counter1: counter {
+		status = "okay";
+	};
+};
+
+&timer2 {
+	counter2: counter {
+		status = "okay";
+	};
+};
+
+&timer4 {
+	counter4: counter {
+		status = "okay";
+	};
+};
+
+&timer6 {
+	counter6: counter {
+		status = "okay";
+	};
+};
+
+&timer7 {
+	counter7: counter {
+		status = "okay";
+	};
+};
+
+&iom0 {
+	spi0: spi {
+		compatible = "ambiq,spi";
+		clock-frequency = <DT_FREQ_M(1)>;
+		pinctrl-0 = <&spi0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&iom2 {
+	i2c2: i2c {
+		compatible = "ambiq,i2c";
+		pinctrl-0 = <&i2c2_default>;
+		pinctrl-names = "default";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		status = "okay";
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <14>;
+	};
+
+	channel@5 {
+		reg = <5>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <14>;
+	};
+
+	channel@8 {
+		reg = <8>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <14>;
+	};
+
+	channel@9 {
+		reg = <9>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <14>;
+	};
+};
+
+&bt_hci_apollo {
+	status = "okay";
+};
+
+&lora {
+	status = "okay";
+};
+
+#include "wisblock.dtsi"

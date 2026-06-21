@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+identifier: rak11722/apollo3_blue
+name: RAK11722 WisBlock Core Module
+type: mcu
+arch: arm
+ram: 384
+flash: 976
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - counter
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - uart
+  - watchdog
+  - lora
+  - wisblock_io
+testing:
+  ignore_tags:
+    - net
+vendor: rakwireless

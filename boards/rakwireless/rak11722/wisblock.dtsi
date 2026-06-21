@@ -1,0 +1,71 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+#include <zephyr/dt-bindings/gpio/wisblock-io-slot.h>
+#include <zephyr/dt-bindings/adc/wisblock-adc.h>
+
+/ {
+	null-gpios {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		null_gpio: gpio@0 {
+			compatible = "vnd,gpio";
+			status = "okay";
+			gpio-controller;
+			reg = <0>;
+			#gpio-cells = <2>;
+			ngpios = <2>;
+		};
+	};
+
+	wisblock_io: wisblock-io {
+		compatible = "wisblock-io-slot";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map =
+			<WISBLOCK_IO_SW1	0	&null_gpio	0	0>, /* Not connected */
+			<WISBLOCK_IO_TXD0	0	&gpio32_63	7	0>,
+			<WISBLOCK_IO_RXD0	0	&gpio32_63	8	0>,
+			<WISBLOCK_IO_LED1	0	&gpio32_63	12	0>,
+			<WISBLOCK_IO_LED2	0	&gpio32_63	13	0>,
+			<WISBLOCK_IO_LED3	0	&null_gpio	0	0>, /* Not connected */
+			<WISBLOCK_IO_I2C1_SDA	0	&gpio0_31	25	0>,
+			<WISBLOCK_IO_I2C1_SCL	0	&gpio0_31	27	0>,
+			<WISBLOCK_IO_AIN0	0	&gpio0_31	13	0>,
+			<WISBLOCK_IO_AIN1	0	&gpio32_63	1	0>,
+			<WISBLOCK_IO_IO7	0	&gpio32_63	0	0>,
+			<WISBLOCK_IO_SPI_CS	0	&gpio0_31	1	0>,
+			<WISBLOCK_IO_SPI_CLK	0	&gpio0_31	5	0>,
+			<WISBLOCK_IO_SPI_MISO	0	&gpio0_31	6	0>,
+			<WISBLOCK_IO_SPI_MOSI	0	&gpio0_31	7	0>,
+			<WISBLOCK_IO_IO1	0	&gpio32_63	6	0>,
+			<WISBLOCK_IO_IO2	0	&gpio0_31	4	0>,
+			<WISBLOCK_IO_IO3	0	&gpio32_63	5	0>,
+			<WISBLOCK_IO_IO4	0	&gpio0_31	31	0>,
+			<WISBLOCK_IO_TXD1	0	&gpio32_63	10	0>,
+			<WISBLOCK_IO_RXD1	0	&gpio32_63	11	0>,
+			<WISBLOCK_IO_IO5	0	&gpio0_31	12	0>,
+			<WISBLOCK_IO_IO6	0	&gpio32_63	4	0>;
+	};
+
+	wisblock_adc: wisblock-adc {
+		compatible = "wisblock-adc";
+		#io-channel-cells = <1>;
+		io-channel-map =
+			<WISBLOCK_ADC_AIN0	&adc0	8>,
+			<WISBLOCK_ADC_AIN1	&adc0	5>,
+			<WISBLOCK_ADC_IO4	&adc0	3>,
+			<WISBLOCK_ADC_IO5	&adc0	9>;
+	};
+};
+
+wisblock_console: &uart0 {};
+
+wisblock_uart0: &uart0 {};
+wisblock_uart1: &uart1 {};
+wisblock_i2c1: &i2c2 {};
+wisblock_spi: &spi0 {};

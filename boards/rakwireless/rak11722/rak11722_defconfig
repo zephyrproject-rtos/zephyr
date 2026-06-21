@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+CONFIG_PINCTRL_DYNAMIC=y
+CONFIG_PINCTRL_KEEP_SLEEP_STATE=y

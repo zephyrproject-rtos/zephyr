@@ -1,0 +1,60 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0TX_P39>;
+		};
+
+		group2 {
+			pinmux = <UART0RX_P40>;
+			input-enable;
+		};
+	};
+
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1TX_P42>;
+		};
+
+		group2 {
+			pinmux = <UART1RX_P43>;
+			input-enable;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <M0SCK_P5>, <M0MISO_P6>, <M0MOSI_P7>;
+		};
+	};
+
+	i2c2_default: i2c2_default {
+		group1 {
+			pinmux = <M2SCL_P27>, <M2SDAWIR3_P25>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+
+	adc0_default: adc0_default {
+		group1 {
+			pinmux =
+				<ADCD0PSE8_P13>,
+				<ADCSE5_P33>,
+				<ADCSE3_P31>,
+				<ADCD0NSE9_P12>;
+			drive-strength = "0.1";
+		};
+	};
+
+	pwm5_default: pwm5_default {
+		group1 {
+			pinmux = <CTIM20_P44>;
+		};
+	};
+};
