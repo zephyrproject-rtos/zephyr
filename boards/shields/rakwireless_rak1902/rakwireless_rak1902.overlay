@@ -1,0 +1,14 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	rak1902_sensor: lps22hb@5c {
+		status = "okay";
+		compatible = "st,lps22hb-press";
+		reg = <0x5c>;
+	};
+};

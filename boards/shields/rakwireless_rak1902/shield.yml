@@ -1,0 +1,6 @@
+shield:
+  name: rakwireless_rak1902
+  full_name: RAK1902 WisBlock Barometer Pressure Sensor Module
+  vendor: rakwireless
+  supported_features:
+    - sensor
