@@ -1,0 +1,10 @@
+shield:
+  name: rakwireless_rak19013
+  full_name: RAK19013 WisBlock LiPo Solar Power Slot Module
+  vendor: rakwireless
+  supported_features:
+    - gpio
+    - led
+    - adc
+    - sensor
+    - fuel_gauge
