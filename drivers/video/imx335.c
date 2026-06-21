@@ -57,6 +57,7 @@ struct imx335_ctrls {
 };
 
 struct imx335_data {
+	struct video_device_context dctx;
 	struct imx335_ctrls ctrls;
 	struct video_format fmt;
 	uint32_t frame_rate;
@@ -753,6 +754,11 @@ static int imx335_init(const struct device *dev)
 	const struct imx335_config *cfg = dev->config;
 	struct imx335_data *drv_data = dev->data;
 	int ret;
+
+	ret = video_init_context_dev(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (!device_is_ready(cfg->i2c.bus)) {
 		LOG_ERR("Bus device is not ready");
