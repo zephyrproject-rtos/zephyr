@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+if BOARD_RAK3312_ESP32S3_PROCPU
+
+endif # BOARD_RAK3312_ESP32S3_PROCPU
+
+if BOARD_RAK3312_ESP32S3_APPCPU
+
+endif # BOARD_RAK3312_ESP32S3_APPCPU

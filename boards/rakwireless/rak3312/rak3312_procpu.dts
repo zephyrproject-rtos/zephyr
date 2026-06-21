@@ -1,0 +1,185 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+/dts-v1/;
+#include <rakwireless/rak3112_procpu.dtsi>
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+#include "rak3312-pinctrl.dtsi"
+
+/ {
+	model = "RAK3312 WisBlock Core Module PROCPU";
+	compatible = "rakwireless,rak3312";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+	};
+
+	aliases {
+		uart-0 = &usb_serial;
+		watchdog0 = &wdt0;
+		lora0 = &lora;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+	wakeup-source;
+};
+
+&gpio1 {
+	status = "okay";
+	wakeup-source;
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&timer3 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spim3_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&adc1 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&ledc0 {
+	status = "okay";
+	pinctrl-0 = <&ledc0_default>;
+	pinctrl-1 = <&ledc0_sleep>;
+	pinctrl-names = "default", "sleep";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		timer = <0>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		timer = <0>;
+	};
+
+	channel@2 {
+		reg = <2>;
+		timer = <0>;
+	};
+
+	channel@3 {
+		reg = <3>;
+		timer = <0>;
+	};
+
+	channel@4 {
+		reg = <4>;
+		timer = <0>;
+	};
+
+	channel@5 {
+		reg = <5>;
+		timer = <0>;
+	};
+};
+
+zephyr_udc0: &usb_otg {};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&lora {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
+
+#include "wisblock.dtsi"

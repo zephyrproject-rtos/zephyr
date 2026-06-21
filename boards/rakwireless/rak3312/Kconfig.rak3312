@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+config BOARD_RAK3312
+	select SOC_ESP32S3_R8
+	select SOC_ESP32S3_PROCPU if BOARD_RAK3312_ESP32S3_PROCPU
+	select SOC_ESP32S3_APPCPU if BOARD_RAK3312_ESP32S3_APPCPU
+
+if BOARD_RAK3312
+
+config WISBLOCK_CORE_BOARD_VENDOR
+	string
+	default "RAKwireless"
+
+config WISBLOCK_CORE_BOARD_NAME
+	string
+	default "RAK3312 WisBlock Core Module"
+
+endif # BOARD_RAK3312
