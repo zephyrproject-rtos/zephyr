@@ -1,0 +1,13 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+#include <zephyr/dt-bindings/gpio/wisblock-sensor-slot.h>
+
+/ {
+	rak19002_regulator: tps61046 {
+		status = "okay";
+		compatible = "regulator-fixed";
+	};
+};

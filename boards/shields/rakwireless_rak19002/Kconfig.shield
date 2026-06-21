@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+config SHIELD_RAKWIRELESS_RAK19002
+	bool
+
+config SHIELD_RAKWIRELESS_RAK19002_SENSOR_A
+	def_bool $(shields_list_contains,rakwireless_rak19002_sensor_a)
+	select SHIELD_RAKWIRELESS_RAK19002
+
+config SHIELD_RAKWIRELESS_RAK19002_SENSOR_B
+	def_bool $(shields_list_contains,rakwireless_rak19002_sensor_b)
+	select SHIELD_RAKWIRELESS_RAK19002
+
+config SHIELD_RAKWIRELESS_RAK19002_SENSOR_C
+	def_bool $(shields_list_contains,rakwireless_rak19002_sensor_c)
+	select SHIELD_RAKWIRELESS_RAK19002
+
+config SHIELD_RAKWIRELESS_RAK19002_SENSOR_D
+	def_bool $(shields_list_contains,rakwireless_rak19002_sensor_d)
+	select SHIELD_RAKWIRELESS_RAK19002
+
+config SHIELD_RAKWIRELESS_RAK19002_SENSOR_E
+	def_bool $(shields_list_contains,rakwireless_rak19002_sensor_e)
+	select SHIELD_RAKWIRELESS_RAK19002
+
+config SHIELD_RAKWIRELESS_RAK19002_SENSOR_F
+	def_bool $(shields_list_contains,rakwireless_rak19002_sensor_f)
+	select SHIELD_RAKWIRELESS_RAK19002

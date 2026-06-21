@@ -1,0 +1,12 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+#include "rakwireless_rak19002.dtsi"
+
+&rak19002 {
+	enable-gpios = <&wisblock_sensor_a WISBLOCK_SENSOR_GPIO1 GPIO_ACTIVE_HIGH>;
+};

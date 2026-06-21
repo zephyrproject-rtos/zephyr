@@ -1,0 +1,36 @@
+shields:
+  - name: rakwireless_rak19002_sensor_a
+    full_name: RAK19002 WisBlock Boost Module (Sensor Slot A)
+    vendor: rakwireless
+    supported_features:
+      - regulator
+
+  - name: rakwireless_rak19002_sensor_b
+    full_name: RAK19002 WisBlock Boost Module (Sensor Slot B)
+    vendor: rakwireless
+    supported_features:
+      - regulator
+
+  - name: rakwireless_rak19002_sensor_c
+    full_name: RAK19002 WisBlock Boost Module (Sensor Slot C)
+    vendor: rakwireless
+    supported_features:
+      - regulator
+
+  - name: rakwireless_rak19002_sensor_d
+    full_name: RAK19002 WisBlock Boost Module (Sensor Slot D)
+    vendor: rakwireless
+    supported_features:
+      - regulator
+
+  - name: rakwireless_rak19002_sensor_e
+    full_name: RAK19002 WisBlock Boost Module (Sensor Slot E)
+    vendor: rakwireless
+    supported_features:
+      - regulator
+
+  - name: rakwireless_rak19002_sensor_f
+    full_name: RAK19002 WisBlock Boost Module (Sensor Slot F)
+    vendor: rakwireless
+    supported_features:
+      - regulator
