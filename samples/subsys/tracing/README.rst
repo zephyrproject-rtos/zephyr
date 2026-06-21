@@ -30,8 +30,18 @@ Formats and backends
 
 Tracing is configured along two independent axes: the *format* describes how
 events are encoded, and the *backend* describes how the encoded bytes leave the
-device. This sample ships a ``prj_*.conf`` fragment for each commonly used
-combination:
+device.
+
+The default :zephyr_file:`samples/subsys/tracing/prj.conf` is a complete,
+working baseline: it enables tracing with the :ref:`CTF <ctf>` format and the
+RAM backend, which needs no transport or devicetree setup and therefore builds
+and runs on any board. Building the sample with no extra options already
+produces a trace.
+
+To stream the trace over a transport, or to use a different format, layer one of
+the ``prj_*.conf`` overlays on top of the baseline with ``EXTRA_CONF_FILE``.
+Each overlay contains only the options that differ from the baseline, so they
+can be combined with it (and with board configuration) without repetition:
 
 .. list-table::
    :header-rows: 1
@@ -40,6 +50,10 @@ combination:
      - Format
      - Backend
      - Notes
+   * - ``prj.conf`` (default)
+     - CTF
+     - RAM
+     - Binary CTF buffered in RAM, dumped with a debugger. Works on any board.
    * - ``prj_uart.conf``
      - test
      - UART
@@ -47,7 +61,7 @@ combination:
    * - ``prj_uart_ctf.conf``
      - CTF
      - UART
-     - Binary :ref:`CTF <ctf>` stream over a dedicated UART.
+     - Binary CTF stream over a dedicated UART.
    * - ``prj_usb_ctf.conf``
      - CTF
      - USB
@@ -56,10 +70,6 @@ combination:
      - CTF
      - POSIX
      - Binary CTF written to a file by ``native_sim``.
-   * - ``prj_ram.conf``
-     - CTF
-     - RAM
-     - Binary CTF buffered in RAM, dumped with a debugger.
    * - ``prj_user.conf``
      - user
      - n/a
@@ -77,16 +87,31 @@ combination:
      - RTT
      - SEGGER SystemView over RTT.
 
-The default :zephyr_file:`samples/subsys/tracing/prj.conf` builds the workload
-*without* tracing enabled; pick one of the fragments above with ``-DCONF_FILE``
-(or the ``:conf:`` option shown below) to select a format and backend.
+Capturing and decoding the output may also require host-side tooling, noted in
+each section below.
 
-Requirements
-************
+Usage for the default (RAM) configuration
+*****************************************
 
-Depending on the board you are using, choose one of the ``prj_*.conf`` files to
-enable the tracing subsystem. Capturing and decoding the output may also require
-host-side tooling, noted in each section below.
+Build the baseline for any board, with no extra options:
+
+.. zephyr-app-commands::
+	:zephyr-app: samples/subsys/tracing
+	:board: qemu_x86
+	:goals: build
+	:compact:
+
+The CTF stream is buffered in the in-RAM ``ram_tracing`` array. Let the
+application run for a while, halt the target in your debugger, and dump the
+buffer to a file. For example, from GDB:
+
+.. code-block:: console
+
+	dump binary memory channel0_0 &ram_tracing &ram_tracing+sizeof(ram_tracing)
+
+The size of the buffer is controlled by :kconfig:option:`CONFIG_RAM_TRACING_BUFFER_SIZE`.
+The dumped file is a CTF stream; decode it as described in
+`Decoding a CTF trace`_.
 
 Usage for UART Tracing Backend
 *******************************
@@ -96,7 +121,7 @@ Build a UART-tracing image with:
 .. zephyr-app-commands::
 	:zephyr-app: samples/subsys/tracing
 	:board: mps2/an521
-	:conf: "prj_uart.conf"
+	:gen-args: -DEXTRA_CONF_FILE=prj_uart.conf
 	:goals: build
 	:compact:
 
@@ -105,7 +130,7 @@ or, for a binary CTF stream:
 .. zephyr-app-commands::
 	:zephyr-app: samples/subsys/tracing
 	:board: mps2/an521
-	:conf: "prj_uart_ctf.conf"
+	:gen-args: -DEXTRA_CONF_FILE=prj_uart_ctf.conf
 	:goals: build
 	:compact:
 
@@ -127,7 +152,7 @@ Build a USB-tracing image with:
 .. zephyr-app-commands::
 	:zephyr-app: samples/subsys/tracing
 	:board: reel_board
-	:conf: "prj_usb_ctf.conf"
+	:gen-args: -DEXTRA_CONF_FILE=prj_usb_ctf.conf
 	:goals: build
 	:compact:
 
@@ -159,7 +184,7 @@ Build a POSIX-tracing image with:
 .. zephyr-app-commands::
 	:zephyr-app: samples/subsys/tracing
 	:board: native_sim
-	:conf: "prj_native_ctf.conf"
+	:gen-args: -DEXTRA_CONF_FILE=prj_native_ctf.conf
 	:goals: build
 	:compact:
 
@@ -173,33 +198,6 @@ Run the resulting executable; it writes the CTF stream to a file named
 Stop it after a few seconds with :kbd:`Ctrl-C` and decode ``channel0_0`` as
 described in `Decoding a CTF trace`_.
 
-Usage for RAM Tracing Backend
-*****************************
-
-The RAM backend stores the CTF stream in an in-memory ring buffer instead of
-streaming it out a transport. This is useful on targets that lack a spare UART
-or USB channel: the buffer is dumped with a debugger after the fact.
-
-Build a RAM-tracing image with:
-
-.. zephyr-app-commands::
-	:zephyr-app: samples/subsys/tracing
-	:board: qemu_x86
-	:conf: "prj_ram.conf"
-	:goals: build
-	:compact:
-
-Let the application run for a while, halt the target in your debugger, and dump
-the ``ram_tracing`` buffer to a file. For example, from GDB:
-
-.. code-block:: console
-
-	dump binary memory channel0_0 &ram_tracing &ram_tracing+sizeof(ram_tracing)
-
-The size of the buffer is controlled by :kconfig:option:`CONFIG_RAM_TRACING_BUFFER_SIZE`.
-The dumped file is a CTF stream; decode it as described in
-`Decoding a CTF trace`_.
-
 Usage for USER Tracing Backend
 ******************************
 
@@ -212,7 +210,7 @@ with:
 .. zephyr-app-commands::
 	:zephyr-app: samples/subsys/tracing
 	:board: qemu_x86
-	:conf: "prj_user.conf"
+	:gen-args: -DEXTRA_CONF_FILE=prj_user.conf
 	:goals: build
 	:compact:
 
@@ -246,7 +244,7 @@ in your workspace):
 .. zephyr-app-commands::
 	:zephyr-app: samples/subsys/tracing
 	:board: frdm_k64f
-	:conf: "prj_percepio.conf"
+	:gen-args: -DEXTRA_CONF_FILE=prj_percepio.conf
 	:goals: build
 	:compact:
 
@@ -260,8 +258,7 @@ Build a GPIO-tracing image (the ``user`` format with the GPIO hooks) with:
 .. zephyr-app-commands::
 	:zephyr-app: samples/subsys/tracing
 	:board: native_sim
-	:conf: "prj_gpio.conf"
-	:gen-args: -DEXTRA_DTC_OVERLAY_FILE=gpio.overlay
+	:gen-args: -DEXTRA_CONF_FILE=prj_gpio.conf -DEXTRA_DTC_OVERLAY_FILE=gpio.overlay
 	:goals: build
 	:compact:
 
