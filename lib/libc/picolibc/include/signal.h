@@ -13,10 +13,17 @@
 
 #if defined(_POSIX_C_SOURCE) || defined(__DOXYGEN__)
 
-#define SIGRTMIN 32
+/*
+ * Picolibc's <signal.h> defines SIGRTMIN as 32. Match Linux/glibc NPTL layout:
+ * reserve 32 (cancel) and 33, with application RT signals from 34.
+ */
+#undef SIGRTMIN
+#define SIGRTMIN 34
 #if defined(_POSIX_REALTIME_SIGNALS) || defined(__DOXYGEN__)
+#undef SIGRTMAX
 #define SIGRTMAX (SIGRTMIN + CONFIG_POSIX_RTSIG_MAX)
 #else
+#undef SIGRTMAX
 #define SIGRTMAX SIGRTMIN
 #endif
 
