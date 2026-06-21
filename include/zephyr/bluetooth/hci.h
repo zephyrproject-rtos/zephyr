@@ -178,6 +178,40 @@ struct bt_le_per_adv_sync *bt_hci_per_adv_sync_lookup_handle(uint16_t handle);
  */
 const char *bt_hci_get_ver_str(uint8_t core_version);
 
+/** @brief Local Bluetooth controller version and manufacturer information.
+ *
+ * This information is read from the controller during Bluetooth initialization
+ * using the HCI Read Local Version Information command.
+ */
+struct bt_hci_local_info {
+	/** HCI version. See the BT_HCI_VERSION_* defines. */
+	uint8_t hci_version;
+
+	/** LMP or PAL version. See the BT_HCI_VERSION_* defines. */
+	uint8_t lmp_version;
+
+	/** HCI revision. */
+	uint16_t hci_revision;
+
+	/** LMP or PAL subversion. */
+	uint16_t lmp_subversion;
+
+	/** Manufacturer identifier. */
+	uint16_t manufacturer;
+};
+
+/** @brief Get local Bluetooth controller version and manufacturer information.
+ *
+ * This information is cached during Bluetooth initialization.
+ *
+ * @param info Local controller information to be populated.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p info is NULL.
+ * @retval -EAGAIN Bluetooth is not ready yet (e.g. bt_enable() has not completed).
+ */
+int bt_hci_get_local_info(struct bt_hci_local_info *info);
+
 /** @typedef bt_hci_vnd_evt_cb_t
   * @brief Callback type for vendor handling of HCI Vendor-Specific Events.
   *
