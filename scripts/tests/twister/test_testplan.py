@@ -1255,9 +1255,15 @@ def test_testplan_info(capfd):
     assert 'dummy text\n' in out
 
 
+# Platforms with twister=False (here 'p1e1') are still listed in platforms so
+# references to them resolve, but they are never added as default platforms.
 TESTDATA_8 = [
-    (False, ['p1e2/unit_testing', 'p2/unit_testing', 'p3/unit_testing'], ['p2/unit_testing', 'p3/unit_testing']),
-    (True, ['p1e2/unit_testing', 'p2/unit_testing', 'p3/unit_testing'], ['p3/unit_testing']),
+    (False,
+     ['p1e1/unit_testing', 'p1e2/unit_testing', 'p2/unit_testing', 'p3/unit_testing'],
+     ['p2/unit_testing', 'p3/unit_testing']),
+    (True,
+     ['p1e1/unit_testing', 'p1e2/unit_testing', 'p2/unit_testing', 'p3/unit_testing'],
+     ['p3/unit_testing']),
 ]
 
 @pytest.mark.parametrize(
