@@ -33,6 +33,7 @@ struct mipid02_config {
 };
 
 struct mipid02_data {
+	struct video_device_context dctx;
 	struct video_format fmt;
 	const struct mipid02_format_desc *desc;
 	struct video_format_cap *caps;
@@ -366,6 +367,11 @@ static int mipid02_init(const struct device *dev)
 {
 	const struct mipid02_config *cfg = dev->config;
 	int ret;
+
+	ret = video_init_context_dev(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (!device_is_ready(cfg->i2c.bus)) {
 		LOG_ERR("Bus device is not ready");
