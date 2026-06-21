@@ -1485,7 +1485,7 @@ static int uvc_add_vs_frame_desc(const struct device *dev,
 
 	/* UVC requires the frame intervals to be sorted, but not Zephyr */
 	qsort(dwFrameInterval, *bFrameIntervalType,
-	      sizeof(*dwFrameInterval), uvc_compare_frmival_desc);
+	      sizeof(uint32_t), uvc_compare_frmival_desc);
 
 	sys_put_le32(sys_get_le32(dwFrameInterval), dwDefaultFrameInterval);
 	format_desc->bNumFrameDescriptors += 1;
