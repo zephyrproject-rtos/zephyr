@@ -68,6 +68,14 @@ tests:
     integration_platforms:
       - native_sim
     extra_args: CONF_FILE="prj_native_ctf.conf"
+  sample.tracing.transport.ram:
+    build_only: true
+    platform_allow:
+      - native_sim
+      - qemu_x86
+    integration_platforms:
+      - native_sim
+    extra_args: CONF_FILE="prj_ram.conf"
   sample.tracing.percepio:
     platform_allow: frdm_k64f
     extra_args: CONF_FILE="prj_percepio.conf"
