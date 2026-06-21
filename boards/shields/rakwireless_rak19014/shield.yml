@@ -1,0 +1,11 @@
+shield:
+  name: rakwireless_rak19014
+  full_name: RAK19014 WisBlock Battery USB Power Slot Module
+  vendor: rakwireless
+  supported_features:
+    - gpio
+    - led
+    - serial
+    - adc
+    - sensor
+    - fuel_gauge
