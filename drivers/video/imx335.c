@@ -61,7 +61,6 @@ struct imx335_data {
 	struct imx335_ctrls ctrls;
 	struct video_format fmt;
 	uint32_t frame_rate;
-	bool enabled;
 };
 
 #define IMX335_REG8(addr)  ((addr) | VIDEO_REG_ADDR16_DATA8)
@@ -389,7 +388,6 @@ static int imx335_get_caps(const struct device *dev, struct video_caps *caps)
 static int imx335_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	const struct imx335_config *cfg = dev->config;
-	struct imx335_data *drv_data = dev->data;
 	int ret;
 
 	ret = video_write_cci_reg(&cfg->i2c, IMX335_STANDBY,
@@ -398,8 +396,6 @@ static int imx335_set_stream(const struct device *dev, bool enable, enum video_b
 		LOG_ERR("Failed to set standby register\n");
 		return ret;
 	}
-
-	drv_data->enabled = enable;
 
 	k_sleep(K_USEC(20));
 
@@ -554,11 +550,6 @@ static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
 	struct imx335_ctrls *ctrls = &drv_data->ctrls;
 	int ret;
 	size_t fmt_idx;
-
-	if (drv_data->enabled) {
-		LOG_ERR("Cannot set format while the stream is running");
-		return -EBUSY;
-	}
 
 	ret = video_format_caps_index(imx335_fmts, fmt, &fmt_idx);
 	if (ret < 0) {
@@ -840,7 +831,6 @@ static int imx335_init(const struct device *dev)
 			.height = IMX335_NATIVE_HEIGHT,						\
 		},										\
 		.frame_rate = 30,								\
-		.enabled = false,								\
 	};											\
 	static const struct imx335_config imx335_cfg_##n = {					\
 		.i2c = I2C_DT_SPEC_INST_GET(n),							\
