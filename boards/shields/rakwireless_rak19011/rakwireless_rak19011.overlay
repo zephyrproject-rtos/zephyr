@@ -1,0 +1,27 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+#include <wisblock/wisblock_sensor_a.dtsi>
+#include <wisblock/wisblock_sensor_b.dtsi>
+#include <wisblock/wisblock_sensor_c.dtsi>
+#include <wisblock/wisblock_sensor_d.dtsi>
+#include <wisblock/wisblock_sensor_e.dtsi>
+#include <wisblock/wisblock_sensor_f.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		sw0 = &wisblock_sw1;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		wisblock_sw1: button0 {
+			gpios = <&wisblock_io WISBLOCK_IO_SW1 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};

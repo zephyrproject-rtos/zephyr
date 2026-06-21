@@ -1,0 +1,7 @@
+shield:
+  name: rakwireless_rak19011
+  full_name: RAK19011 WisBlock Dual IO Base Board with Power Slot
+  vendor: rakwireless
+  supported_features:
+    - gpio
+    - input
