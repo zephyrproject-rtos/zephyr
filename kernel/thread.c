@@ -1034,12 +1034,27 @@ int k_thread_runtime_stack_safety_threshold_check(const struct k_thread *thread,
 {
 	int    rv;
 	size_t unused_space;
+	size_t threshold;
+	size_t scan_size;
 
 	__ASSERT_NO_MSG(thread != NULL);
 
+	threshold = thread->stack_info.usage.unused_threshold;
+	scan_size = threshold;
+
+	/* z_stack_space_get() reserves the first bytes of the stack buffer for
+	 * the stack sentinel and shrinks its scan window by that amount. Grow
+	 * the requested window by the same reservation so that up to
+	 * 'threshold' bytes of the usable stack are actually examined;
+	 * otherwise a fully unused window would report fewer than 'threshold'
+	 * unused bytes and spuriously trip the threshold.
+	 */
+	if (IS_ENABLED(CONFIG_STACK_SENTINEL) && (threshold != 0U)) {
+		scan_size += sizeof(uint32_t);
+	}
+
 	rv = z_stack_space_get((const uint8_t *)thread->stack_info.start,
-			       thread->stack_info.usage.unused_threshold,
-			       &unused_space);
+			       scan_size, &unused_space);
 
 	if (rv != 0) {
 		return rv;
@@ -1049,8 +1064,7 @@ int k_thread_runtime_stack_safety_threshold_check(const struct k_thread *thread,
 		*unused_ptr = unused_space;
 	}
 
-	if ((unused_space < thread->stack_info.usage.unused_threshold) &&
-	    (handler != NULL)) {
+	if ((unused_space < threshold) && (handler != NULL)) {
 		handler(thread, unused_space, arg);
 	}
 
