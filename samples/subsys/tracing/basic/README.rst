@@ -22,7 +22,7 @@ events is produced for capture and visualization on a host:
   application-defined events (a short name plus two 32-bit arguments). Named
   events are the primary way to annotate a trace from application code.
 
-The optional GPIO scenario (:zephyr_file:`samples/subsys/tracing/src/gpio_main.c`)
+The optional GPIO scenario (:zephyr_file:`samples/subsys/tracing/basic/src/gpio_main.c`)
 additionally exercises the GPIO API so that the GPIO tracing hooks fire.
 
 Formats and backends
@@ -32,7 +32,7 @@ Tracing is configured along two independent axes: the *format* describes how
 events are encoded, and the *backend* describes how the encoded bytes leave the
 device.
 
-The default :zephyr_file:`samples/subsys/tracing/prj.conf` is a complete,
+The default :zephyr_file:`samples/subsys/tracing/basic/prj.conf` is a complete,
 working baseline: it enables tracing with the :ref:`CTF <ctf>` format and the
 RAM backend, which needs no transport or devicetree setup and therefore builds
 and runs on any board. Building the sample with no extra options already
@@ -96,7 +96,7 @@ Usage for the default (RAM) configuration
 Build the baseline for any board, with no extra options:
 
 .. zephyr-app-commands::
-	:zephyr-app: samples/subsys/tracing
+	:zephyr-app: samples/subsys/tracing/basic
 	:board: qemu_x86
 	:goals: build
 	:compact:
@@ -119,7 +119,7 @@ Usage for UART Tracing Backend
 Build a UART-tracing image with:
 
 .. zephyr-app-commands::
-	:zephyr-app: samples/subsys/tracing
+	:zephyr-app: samples/subsys/tracing/basic
 	:board: mps2/an521
 	:gen-args: -DEXTRA_CONF_FILE=prj_uart.conf
 	:goals: build
@@ -128,7 +128,7 @@ Build a UART-tracing image with:
 or, for a binary CTF stream:
 
 .. zephyr-app-commands::
-	:zephyr-app: samples/subsys/tracing
+	:zephyr-app: samples/subsys/tracing/basic
 	:board: mps2/an521
 	:gen-args: -DEXTRA_CONF_FILE=prj_uart_ctf.conf
 	:goals: build
@@ -137,7 +137,7 @@ or, for a binary CTF stream:
 .. note::
    You may need to set the ``zephyr,tracing-uart`` property under the chosen
    node in your devicetree. See
-   :zephyr_file:`samples/subsys/tracing/boards/mps2_an521_cpu0.overlay` for an
+   :zephyr_file:`samples/subsys/tracing/basic/boards/mps2_an521_cpu0.overlay` for an
    example.
 
 After the application has run for a while, check the trace output file (the
@@ -150,7 +150,7 @@ Usage for USB Tracing Backend
 Build a USB-tracing image with:
 
 .. zephyr-app-commands::
-	:zephyr-app: samples/subsys/tracing
+	:zephyr-app: samples/subsys/tracing/basic
 	:board: reel_board
 	:gen-args: -DEXTRA_CONF_FILE=prj_usb_ctf.conf
 	:goals: build
@@ -182,7 +182,7 @@ Usage for POSIX Tracing Backend
 Build a POSIX-tracing image with:
 
 .. zephyr-app-commands::
-	:zephyr-app: samples/subsys/tracing
+	:zephyr-app: samples/subsys/tracing/basic
 	:board: native_sim
 	:gen-args: -DEXTRA_CONF_FILE=prj_native_ctf.conf
 	:goals: build
@@ -203,12 +203,12 @@ Usage for USER Tracing Backend
 
 The "user" format does not use a backend at all: instead the kernel calls weak
 ``sys_trace_*_user`` callbacks that the application implements directly. See
-:zephyr_file:`samples/subsys/tracing/src/tracing_user.c` for the thread, ISR,
+:zephyr_file:`samples/subsys/tracing/basic/src/tracing_user.c` for the thread, ISR,
 sleep and GPIO hooks implemented by this sample. Build a USER-tracing image
 with:
 
 .. zephyr-app-commands::
-	:zephyr-app: samples/subsys/tracing
+	:zephyr-app: samples/subsys/tracing/basic
 	:board: qemu_x86
 	:gen-args: -DEXTRA_CONF_FILE=prj_user.conf
 	:goals: build
@@ -227,7 +227,7 @@ Usage for SEGGER SystemView RTT
 Build a SystemView-tracing image with the :ref:`snippet-rtt-tracing`:
 
 .. zephyr-app-commands::
-	:zephyr-app: samples/subsys/tracing
+	:zephyr-app: samples/subsys/tracing/basic
 	:board: frdm_k64f
 	:snippets: rtt-tracing
 	:goals: build
@@ -242,7 +242,7 @@ Build a Percepio-tracing image (requires the ``percepio`` module to be present
 in your workspace):
 
 .. zephyr-app-commands::
-	:zephyr-app: samples/subsys/tracing
+	:zephyr-app: samples/subsys/tracing/basic
 	:board: frdm_k64f
 	:gen-args: -DEXTRA_CONF_FILE=prj_percepio.conf
 	:goals: build
@@ -256,7 +256,7 @@ Usage for GPIO Tracing
 Build a GPIO-tracing image (the ``user`` format with the GPIO hooks) with:
 
 .. zephyr-app-commands::
-	:zephyr-app: samples/subsys/tracing
+	:zephyr-app: samples/subsys/tracing/basic
 	:board: native_sim
 	:gen-args: -DEXTRA_CONF_FILE=prj_gpio.conf -DEXTRA_DTC_OVERLAY_FILE=gpio.overlay
 	:goals: build
@@ -297,7 +297,7 @@ build directory:
 
 .. code-block:: console
 
-	west build -p -b mps2/an385 samples/subsys/tracing -t run
+	west build -p -b mps2/an385 samples/subsys/tracing/basic -t run
 	$ZEPHYR_BASE/scripts/tracing/trace_viewer.py build/tracing.bin
 
 The interactive view devotes most of the screen to a Gantt-style timeline with
