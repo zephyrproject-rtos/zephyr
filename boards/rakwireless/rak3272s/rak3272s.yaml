@@ -1,5 +1,5 @@
-identifier: rak3172
-name: RAK3172 LoRa STM32WL
+identifier: rak3272s/stm32wle5xx
+name: RAK3272S Breakout Board
 type: mcu
 arch: arm
 toolchain:
@@ -16,4 +16,4 @@ supported:
   - uart
   - watchdog
   - lora
-vendor: rak
+vendor: rakwireless
