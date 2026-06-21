@@ -1,0 +1,19 @@
+identifier: rak11162/esp32c2
+name: RAK11162 WisBlock Core Module (ESP32-C2)
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - dma
+  - gpio
+  - i2c
+  - pwm
+  - watchdog
+  - uart
+  - counter
+  - entropy
+  - netif:wifi
+  - wisblock_io
+vendor: rakwireless

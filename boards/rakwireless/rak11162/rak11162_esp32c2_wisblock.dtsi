@@ -1,0 +1,92 @@
+/*
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/wisblock-io-slot.h>
+#include <zephyr/dt-bindings/adc/wisblock-adc.h>
+#include <zephyr/dt-bindings/pwm/wisblock-pwm.h>
+
+/ {
+	null-gpios {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		null_gpio: gpio@0 {
+			compatible = "vnd,gpio";
+			status = "okay";
+			gpio-controller;
+			reg = <0>;
+			#gpio-cells = <2>;
+			ngpios = <1>;
+		};
+	};
+
+	wisblock_io: wisblock-io {
+		compatible = "wisblock-io-slot";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map =
+			<WISBLOCK_IO_SW1	0	&gpio0	3	0>, /* ESP_GPIO3 */
+			<WISBLOCK_IO_TXD0	0	&gpio0	5	0>, /* ESP_GPIO5 */
+			<WISBLOCK_IO_RXD0	0	&gpio0	10	0>, /* ESP_GPIO10 */
+			<WISBLOCK_IO_LED1	0	&null_gpio	0	0>, /* ST_PA10 */
+			<WISBLOCK_IO_LED2	0	&null_gpio	0	0>, /* ST_PA1 */
+			<WISBLOCK_IO_LED3	0	&gpio0	4	0>, /* ESP_GPIO4 */
+			<WISBLOCK_IO_I2C1_SDA	0	&null_gpio	0	0>, /* I2C2_SDA */
+			<WISBLOCK_IO_I2C1_SCL	0	&null_gpio	0	0>, /* I2C2_SCL */
+			<WISBLOCK_IO_AIN0	0	&null_gpio	0	0>, /* ST_PB3 */
+			<WISBLOCK_IO_AIN1	0	&null_gpio	0	0>, /* ST_PB4 */
+			<WISBLOCK_IO_IO7	0	&gpio0	1	0>, /* ESP_GPIO1 */
+			<WISBLOCK_IO_SPI_CS	0	&null_gpio	0	0>, /* ST_NSS */
+			<WISBLOCK_IO_SPI_CLK	0	&null_gpio	0	0>, /* ST_SCK */
+			<WISBLOCK_IO_SPI_MISO	0	&null_gpio	0	0>, /* ST_MISO */
+			<WISBLOCK_IO_SPI_MOSI	0	&null_gpio	0	0>, /* ST_MOSI */
+			<WISBLOCK_IO_IO1	0	&null_gpio	0	0>, /* ST_PB5 */
+			<WISBLOCK_IO_IO2	0	&null_gpio	0	0>, /* ST_PA8 */
+			<WISBLOCK_IO_IO3	0	&null_gpio	0	0>, /* ST_PB12 */
+			<WISBLOCK_IO_IO4	0	&null_gpio	0	0>, /* ST_PB2 */
+			<WISBLOCK_IO_TXD1	0	&gpio0	20	0>, /* ESP_DEBUG_UART_TX */
+			<WISBLOCK_IO_RXD1	0	&gpio0	19	0>, /* ESP_DEBUG_UART_RX */
+			<WISBLOCK_IO_I2C2_SDA	0	&gpio0	0	0>, /* ESP_GPIO0 */
+			<WISBLOCK_IO_I2C2_SCL	0	&gpio0	18	0>, /* ESP_GPIO18 */
+			<WISBLOCK_IO_IO5	0	&null_gpio	0	0>, /* ST_PA15 */
+			<WISBLOCK_IO_IO6	0	&null_gpio	0	0>; /* ST_PA9 */
+	};
+
+	null-adcs {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		null_adc: adc@0 {
+			compatible = "vnd,adc";
+			status = "okay";
+			reg = <0>;
+			#io-channel-cells = <1>;
+		};
+	};
+
+	wisblock_adc: wisblock-adc {
+		compatible = "wisblock-adc";
+		#io-channel-cells = <1>;
+		io-channel-map =
+			<WISBLOCK_ADC_AIN0	&null_adc	0>, /* ST_PB3 */
+			<WISBLOCK_ADC_AIN1	&null_adc	0>, /* ST_PB4 */
+			<WISBLOCK_ADC_IO7	&adc0	1>; /* ESP_GPIO1 */
+	};
+
+	wisblock_pwm: wisblock-pwm {
+		compatible = "wisblock-pwm";
+		#pwm-cells = <3>;
+		pwm-map-mask = <0xffffffff 0x0 0x0>;
+		pwm-map-pass-thru = <0x0 0xffffffff 0xffffffff>;
+		pwm-map =
+			<WISBLOCK_PWM_IO7	0	0	&ledc0	0	0	0>; /* ESP_GPIO1 */
+	};
+};
+
+wisblock_console: &uart0 {};
+wisblock_uart0: &soft_uart0 {};
+wisblock_uart1: &uart0 {};
+wisblock_i2c2: &i2c0 {};

@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Enable Clocks
+CONFIG_CLOCK_CONTROL=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Regulator
+CONFIG_REGULATOR=y
+
+# Required for board.c dynamic pinctrl (wisblock_init)
+CONFIG_PINCTRL_DYNAMIC=y
+CONFIG_PINCTRL_KEEP_SLEEP_STATE=y

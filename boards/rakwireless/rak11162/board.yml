@@ -1,0 +1,7 @@
+board:
+  name: rak11162
+  full_name: RAK11162 WisBlock Core Module
+  vendor: rakwireless
+  socs:
+  - name: stm32wle5xx
+  - name: esp32c2
