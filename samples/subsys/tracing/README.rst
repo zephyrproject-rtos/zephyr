@@ -281,3 +281,65 @@ CTF-aware tool such as `babeltrace2 <https://babeltrace.org/>`_:
 
 The same ``ctf`` directory can also be opened in `Trace Compass
 <https://eclipse.dev/tracecompass/>`_ for a graphical timeline.
+
+Viewing a CTF trace in the terminal
+***********************************
+
+For a quick look without installing any external tooling,
+:zephyr_file:`scripts/tracing/trace_viewer.py` renders the trace graphically on
+the console, in the spirit of SEGGER SystemView or Trace Compass.
+It decodes the packed CTF records itself (reading the field layout from the same
+:zephyr_file:`subsys/tracing/ctf/tsdl/metadata`) so it has no dependencies
+beyond Python 3.
+
+With the default semihosting backend the run produces a ``tracing.bin`` in the
+build directory:
+
+.. code-block:: console
+
+	west build -p -b mps2/an385 samples/subsys/tracing -t run
+	$ZEPHYR_BASE/scripts/tracing/trace_viewer.py build/tracing.bin
+
+The interactive view devotes most of the screen to a Gantt-style timeline with
+one lane per thread (plus idle and ISR lanes). Each lane is coloured by the
+thread's *state* over time rather than by identity, so the schedule reads at a
+glance: running (``█``, green), ready/preempted and waiting for a CPU (``▓``,
+yellow), blocked on a kernel object (``▒``, red), sleeping on a timeout (``░``,
+cyan) and suspended (``—``). The ready-to-running transition is the context
+switch, and a thread sitting in the blocked state while a lower-priority thread
+runs is the classic shape of a priority inversion. When a lane is blocked, the
+info strip names *why* - for example ``blocked on sem 0x2000012c`` or
+``blocked on mutex 0x...`` - for whichever lane is selected at the playhead.
+
+Below the lanes a metrics panel summarises the visible window: a CPU-busy
+gauge, the context-switch and event rates, and a per-thread stacked utilization
+bar showing how each thread split its time between running, ready, blocked and
+sleeping. It updates as you pan and zoom (toggle it with ``m``).
+
+A movable playhead selects a point in the trace, with a compact info strip
+(legend, running thread, and the selected lane's state and reason) below the
+chart. Navigate with the arrow keys (move playhead / select lane), ``,``/``.``
+(pan), ``+``/``-`` (zoom), ``a`` (fit the whole trace), ``m`` (toggle the
+metrics panel) and ``i`` (toggle the info strip).
+
+Press ``space`` to replay the trace: the playhead advances in real time and the
+chart scrolls to follow it; ``[`` and ``]`` adjust the playback speed. Press
+``v`` to switch to a raw CTF log view, a scrollable table of every decoded
+event with the one nearest the playhead highlighted. ``q`` quits.
+
+To watch a trace build up while the application is still running, add ``-f`` /
+``--follow``. The viewer decodes the file incrementally as it grows and keeps
+the chart pinned to the newest events; any pan or zoom detaches that. Press
+``End`` (or ``f``) at any time to jump to the latest state and re-sync with the
+incoming events - in both the Gantt and log views. This pairs naturally with
+the semihosting backend, which writes ``tracing.bin`` as the application runs
+under QEMU::
+
+	west build -t run &
+	$ZEPHYR_BASE/scripts/tracing/trace_viewer.py -f build/tracing.bin
+
+(The viewer waits for the file and the first events to appear, so it can be
+started before or after the run.)
+
+Pass ``--text`` for a static, non-interactive ASCII timeline that can be piped
+or redirected, or ``--metadata <path>`` to point at a specific metadata file.
