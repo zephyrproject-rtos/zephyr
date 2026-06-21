@@ -467,9 +467,14 @@ class TestPlan:
         arch_roots = self.env.arch_roots
 
         for platform in generate_platforms(board_roots, soc_roots, arch_roots):
+            self.platforms.append(platform)
+
+            # Platforms with `twister: false` are kept in the platform list so
+            # that references to them in test definitions still resolve (and
+            # twister does not abort on unidentified platforms), but they are
+            # never assigned tests nor used as default platforms.
             if not platform.twister:
                 continue
-            self.platforms.append(platform)
 
             if not self.test_config.override_default_platforms:
                 if platform.default:
@@ -958,6 +963,10 @@ class TestPlan:
                     if this_snippet not in found_snippets:
                         missing_required_snippet = this_snippet
                         break
+
+            # Platforms with `twister: false` are listed only so test
+            # references to them resolve; they are never assigned tests.
+            platform_scope = [plat for plat in platform_scope if plat.twister]
 
             # list of instances per testsuite, aka configurations.
             instance_list = []
