@@ -1220,6 +1220,7 @@ static int gc2145_set_stream(const struct device *dev, bool enable, enum video_b
 
 static int gc2145_get_caps(const struct device *dev, struct video_caps *caps)
 {
+	caps->type = VIDEO_BUF_TYPE_OUTPUT;
 	caps->format_caps = fmts;
 	return 0;
 }
@@ -1319,6 +1320,7 @@ static int gc2145_init(const struct device *dev)
 {
 	/* set default/init format VGA RGB565 */
 	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
 		.pixelformat = VIDEO_PIX_FMT_RGB565,
 		.width = RESOLUTION_VGA_W,
 		.height = RESOLUTION_VGA_H,
