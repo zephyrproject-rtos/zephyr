@@ -1,0 +1,16 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+#include <zephyr/dt-bindings/gpio/wisblock-sensor-slot.h>
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	rak1905_sensor: mpu9250@68 {
+		status = "okay";
+		compatible = "invensense,mpu9250";
+		reg = <0x68>;
+	};
+};
