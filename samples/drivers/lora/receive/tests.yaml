@@ -20,7 +20,7 @@ tests:
       dt_compat_enabled("semtech,sx1276")
     integration_platforms:
       - b_l072z_lrwan1
-      - rak11720
+      - rak11721
     extra_configs:
       - CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM=y
   sample.drivers.lora.receive.native:

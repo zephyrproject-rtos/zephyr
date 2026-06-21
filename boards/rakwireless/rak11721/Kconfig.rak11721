@@ -1,0 +1,7 @@
+# Copyright (c) 2024 RAKwireless Technology Limited <www.rakwireless.com>
+# Sercan Erat <sercanerat@gmail.com>
+# JaeHwan Jin <jaehwan.jin@rakwireless.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RAK11721
+	select SOC_APOLLO3_BLUE

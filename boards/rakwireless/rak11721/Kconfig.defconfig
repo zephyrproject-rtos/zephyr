@@ -1,0 +1,12 @@
+# RAKWIRELESS RAK11721 Board configuration
+# Copyright (c) 2024 RAKwireless Technology Limited <www.rakwireless.com>
+# Sercan Erat <sercanerat@gmail.com>
+# JaeHwan Jin <jaehwan.jin@rakwireless.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RAK11721
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768 if AMBIQ_STIMER_TIMER
+
+endif # BOARD_RAK11721

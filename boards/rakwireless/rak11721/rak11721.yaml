@@ -1,5 +1,5 @@
-identifier: rak11720
-name: RAK11720
+identifier: rak11721/apollo3_blue
+name: RAK11721 Breakout Board
 type: mcu
 arch: arm
 ram: 384
@@ -18,4 +18,4 @@ supported:
 testing:
   ignore_tags:
     - net
-vendor: rak
+vendor: rakwireless

@@ -1,5 +1,6 @@
-# Copyright (c) 2024 RAKwireless Technology Co., Ltd. <www.rakwireless.com>
+# Copyright (c) 2024 RAKwireless Technology Limited <www.rakwireless.com>
 # Sercan Erat <sercanerat@gmail.com>
+# JaeHwan Jin <jaehwan.jin@rakwireless.com>
 # SPDX-License-Identifier: Apache-2.0
 
 CONFIG_CONSOLE=y

@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2024 RAKwireless Technology Limited <www.rakwireless.com>
+ * Sercan Erat <sercanerat@gmail.com>
+ * JaeHwan Jin <jaehwan.jin@rakwireless.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ambiq-apollo3-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0TX_P39>;
+		};
+
+		group2 {
+			pinmux = <UART0RX_P40>;
+			input-enable;
+		};
+	};
+
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1TX_P42>;
+		};
+
+		group2 {
+			pinmux = <UART1RX_P43>;
+			input-enable;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <M0SCK_P5>, <M0MISO_P6>, <M0MOSI_P7>;
+		};
+	};
+
+	i2c2_default: i2c2_default {
+		group1 {
+			pinmux = <M2SCL_P27>, <M2SDAWIR3_P25>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+};

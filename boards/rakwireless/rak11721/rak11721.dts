@@ -1,18 +1,17 @@
 /*
- * Copyright (c) 2024 RAKwireless Technology Co., Ltd. <www.rakwireless.com>
+ * Copyright (c) 2024 RAKwireless Technology Limited <www.rakwireless.com>
  * Sercan Erat <sercanerat@gmail.com>
+ * JaeHwan Jin <jaehwan.jin@rakwireless.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
-#include <ambiq/ambiq_apollo3_blue.dtsi>
-#include <zephyr/dt-bindings/lora/sx126x.h>
-#include "rak11720_apollo3-pinctrl.dtsi"
-#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <rakwireless/rak11720.dtsi>
+#include "rak11721-pinctrl.dtsi"
 
 / {
-	model = "RAKwireless RAK11720 WisBlock LPWAN Module";
-	compatible = "ambiq,rak11720";
+	model = "RAK11721 Breakout Board";
+	compatible = "rakwireless,rak11721";
 
 	chosen {
 		zephyr,itcm = &tcm;
@@ -29,24 +28,7 @@
 
 	aliases {
 		watchdog0 = &wdt0;
-		led0 = &blue_led;
-		led1 = &green_led;
 		lora0 = &lora;
-		mcuboot-led0 = &blue_led;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		blue_led: led_2 {
-			gpios = <&gpio32_63 13 GPIO_ACTIVE_HIGH>;
-			label = "Blue LED";
-		};
-
-		green_led: led_1 {
-			gpios = <&gpio32_63 12 GPIO_ACTIVE_HIGH>;
-			label = "Green LED";
-		};
 	};
 };
 
@@ -89,19 +71,16 @@
 	};
 };
 
-&stimer0 {
-	clk-source = <3>;
-};
-
-&bleif {
-	pinctrl-0 = <&bleif_default>;
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };
 
-&uart0 {
+&uart1 {
 	current-speed = <115200>;
-	pinctrl-0 = <&uart0_default>;
+	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };
@@ -128,30 +107,6 @@
 		cs-gpios = <&gpio0_31 1 GPIO_ACTIVE_LOW>;
 		clock-frequency = <DT_FREQ_M(1)>;
 		status = "okay";
-	};
-};
-
-&iom1 {
-	spi1: spi {
-		compatible = "ambiq,spi";
-		status = "okay";
-		pinctrl-0 = <&spi1_default>;
-		pinctrl-names = "default";
-		clock-frequency = <DT_FREQ_M(1)>;
-		cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
-
-		lora: lora@0 {
-			compatible = "semtech,sx1262";
-			reg = <0>;
-			reset-gpios = <&gpio0_31 17 GPIO_ACTIVE_LOW>;
-			busy-gpios = <&gpio0_31 16 GPIO_ACTIVE_HIGH>;
-			dio1-gpios = <&gpio0_31 15 GPIO_ACTIVE_HIGH>;
-			antenna-enable-gpios = <&gpio0_31 18 GPIO_ACTIVE_LOW>;
-			dio2-tx-enable;
-			dio3-tcxo-voltage = <SX126X_DIO3_TCXO_3V3>;
-			tcxo-power-startup-delay-ms = <5>;
-			spi-max-frequency = <DT_FREQ_M(1)>;
-		};
 	};
 };
 
@@ -202,5 +157,13 @@
 };
 
 &gpio32_63 {
+	status = "okay";
+};
+
+&bt_hci_apollo {
+	status = "okay";
+};
+
+&lora {
 	status = "okay";
 };
