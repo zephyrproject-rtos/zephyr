@@ -1,0 +1,103 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ *
+ * RAK11720 pinout description
+ * https://docs.rakwireless.com/product-categories/wisduo/rak11720-module/datasheet
+ *
+ * P1 	- GP43/UART1_RX
+ * P2 	- GP42/UART1_TX
+ * P3 	- GP12/ADC9
+ * P4 	- GP39/UART0_TX
+ * P5 	- GP40/UART0_RX
+ * P6 	- GP45
+ * P7 	- GP21/SWDIO
+ * P8 	- GP20/SWDCK
+ * P9 	- GP27/I2C2_SCL
+ * P10	- GP25/I2C2_SDA
+ * P11	- GND
+ * P12	- LORA_RF
+ *
+ * P13	- GP7/SPI0_MOSI
+ * P14	- GP6/SPI0_MISO
+ * P15	- GP5/SPI0_SCK
+ * P16	- GP1/SPI0_NSS
+ *
+ * P17	- GND
+ * P18	- GND
+ * P19	- GP4 - IO2
+ * P20	- GP36 - IO6
+ * P21	- SWO
+ * P22	- RST
+ * P23	- GND
+ * P24	- VDD
+ *
+ * P25	- GP32/ADC4 - IO7
+ * P26	- GP31/ADC3
+ * P27	- GP37
+ * P28	- GND
+ * P29	- GP44
+ * P30	- GP38
+ * P31	- GP33/ADC5
+ * P32	- GP13/ADC8
+ * P33	- BLE_RF
+ * P34	- GND
+ */
+
+#include <ambiq/ambiq_apollo3_blue.dtsi>
+#include <zephyr/dt-bindings/pinctrl/ambiq-apollo3-pinctrl.h>
+#include <zephyr/dt-bindings/lora/sx126x.h>
+
+&pinctrl {
+	spi1_default: spi1_default {
+		group1 {
+			pinmux = <M1SCK_P8>, <M1MISO_P9>, <M1MOSI_P10>;
+		};
+	};
+
+	bleif_default: bleif_default {
+		group1 {
+			pinmux = <BLEIF_SCK_P30>,
+				 <BLEIF_MISO_P31>,
+				 <BLEIF_MOSI_P32>,
+				 <BLEIF_CSN_P33>,
+				 <BLEIF_STATUS_P35>,
+				 <BLEIF_IRQ_P41>;
+		};
+	};
+};
+
+&stimer0 {
+	clk-source = <3>;
+};
+
+&bleif {
+	status = "okay";
+	pinctrl-0 = <&bleif_default>;
+	pinctrl-names = "default";
+};
+
+&iom1 {
+	spi1: spi {
+		compatible = "ambiq,spi";
+		status = "okay";
+		pinctrl-0 = <&spi1_default>;
+		pinctrl-names = "default";
+		clock-frequency = <DT_FREQ_M(1)>;
+		cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
+
+		lora: lora@0 {
+			status = "disabled";
+			compatible = "semtech,sx1262";
+			reg = <0>;
+			reset-gpios = <&gpio0_31 17 GPIO_ACTIVE_LOW>;
+			busy-gpios = <&gpio0_31 16 GPIO_ACTIVE_HIGH>;
+			dio1-gpios = <&gpio0_31 15 GPIO_ACTIVE_HIGH>;
+			antenna-enable-gpios = <&gpio0_31 18 GPIO_ACTIVE_LOW>;
+			dio2-tx-enable;
+			dio3-tcxo-voltage = <SX126X_DIO3_TCXO_3V3>;
+			tcxo-power-startup-delay-ms = <5>;
+			spi-max-frequency = <DT_FREQ_M(1)>;
+		};
+	};
+};

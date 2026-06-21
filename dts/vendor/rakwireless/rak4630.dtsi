@@ -1,0 +1,112 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ *
+ * RAK4630 pinout description
+ * https://docs.rakwireless.com/product-categories/wisduo/rak4630-module/datasheet
+ *
+ * P1	- VBUS
+ * P2	- USB-
+ * P3	- USB+
+ * P4	- P0.13/I2C_SDA
+ * P5	- P0.14/I2C_SCL
+ * P6	- P0.15/UART2_RX
+ * P7	- P0.16/UART2_TX
+ * P8	- P0.17/UART2_DE
+ * P9	- P0.19/UART1_RX
+ * P10	- P0.20/UART1_TX
+ * P11	- P0.21/UART1_DE
+ * P12	- P0.10/NFC2
+ * P13	- P0.09/NFC1
+ *
+ * P14	- GND
+ * P15	- RF_BT
+ *
+ * P16	- GND
+ * P17	- NRF_RESET
+ * P18	- SWDCLK
+ * P19	- SWDIO
+ * P20	- VBAT_SX
+ * P21	- VBAT_IO_SX
+ * P22	- GND
+ *
+ * P23	- P0.24/I2C_SDA_2
+ * P24	- P0.25/I2C_SCL_2
+ * P25	- P1.01/SW1
+ * P26	- P1.02/SW2
+ * P27	- P0.03/LED1
+ * P28	- P0.04/LED2
+ * P29	- P0.03/QSPI_CLK
+ * P30	- P0.02/QSPI_DIO3
+ * P31	- P0.28/QSPI_DIO2
+ * P32	- P0.29/QSPI_DIO1
+ * P33	- P0.30/QSPI_DIO0
+ * P34	- P0.26/QSPI_CS
+ * P35	- GND
+ *
+ * P36	- GND
+ * P37	- RF_LoRa
+ * P38	- GND
+ * P39	- P0.31/AIN7
+ * P40	- P0.05/AIN3
+ * P41	- P0.04/AIN2
+ * P42	- GND
+ * P43	- VDD_NRF
+ * P44	- VBAT_NRF
+ */
+
+#include <nordic/nrf52840_qiaa.dtsi>
+#include <zephyr/dt-bindings/lora/sx126x.h>
+#include <zephyr/dt-bindings/pinctrl/nrf-pinctrl.h>
+
+&pinctrl {
+	spi1_default: spi1_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 1, 11)>,
+				<NRF_PSEL(SPIM_MOSI, 1, 12)>,
+				<NRF_PSEL(SPIM_MISO, 1, 13)>;
+		};
+	};
+
+	spi1_sleep: spi1_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 1, 11)>,
+				<NRF_PSEL(SPIM_MOSI, 1, 12)>,
+				<NRF_PSEL(SPIM_MISO, 1, 13)>;
+			low-power-enable;
+		};
+	};
+
+};
+
+&reg0 {
+	status = "okay";
+};
+
+&reg1 {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&spi1 {
+	compatible = "nordic,nrf-spi";
+	status = "okay";
+	cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	lora: lora@0 {
+		compatible = "semtech,sx1262";
+		reg = <0>;
+		status = "disabled";
+		reset-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		rx-enable-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+		dio1-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
+		dio2-tx-enable;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_3V3>;
+		tcxo-power-startup-delay-ms = <5>;
+		spi-max-frequency = <1000000>;
+	};
+};

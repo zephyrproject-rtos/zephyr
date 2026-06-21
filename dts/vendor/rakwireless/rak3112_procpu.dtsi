@@ -1,0 +1,106 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ *
+ *
+ * RAK3112 pinout description
+ * https://docs.rakwireless.com/product-categories/wisduo/rak3112-module/datasheet
+ *
+ * P1    - NC
+ * P2    - USB_D-
+ * P3    - USB_D+
+ * P4    - GPIO33/NC (not available with 16MB Flash)
+ * P5    - GPIO34/NC (not available with 16MB Flash)
+ * P6    - GPIO44/UART0_RX
+ * P7    - GPIO43/UART0_TX
+ * P8    - GPIO35/NC (not available with 16MB Flash)
+ * P9    - GPIO36/NC (not available with 16MB Flash)
+ * P10   - GPIO37/NC (not available with 16MB Flash)
+ * P11   - GPIO38
+ * P12   - GPIO39
+ * P13   - GPIO40/I2C1_SCL
+ * P14   - GNC
+ * P15   - RF_WIFI
+ * P16   - GND
+ * P17   - RESET
+ * P18   - GPIO41
+ * P19   - GPIO42
+ * P20   - VDD
+ * P21   - VDD
+ * P22   - GND
+ * P23   - GPIO45
+ * P24   - GPIO0/BOOT
+ * P25   - GPIO46
+ * P26   - GPIO1
+ * P27   - GPIO2
+ * P28   - GPIO9/I2C1_SDA
+ * P29   - GPIO4/NC (not available)
+ * P30   - GPIO10/SPI_MISO
+ * P31   - GPIO11/SPI_MOSI
+ * P32   - GPIO12/SPI_CS
+ * P33   - GPIO13/SPI_CLK
+ * P34   - GPIO14/AIN1
+ * P35   - GND
+ * P36   - GND
+ * P37   - RF_LORA
+ * P38   - GND
+ * P39   - GPIO18/I2C2_SCL
+ * P40   - GPIO17/I2C2_SDA
+ * P41   - GPIO21/AIN0
+ * P42   - GND
+ * P43   - NC
+ * P44   - NC
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+#include <espressif/esp32s3/esp32s3_r2.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/lora/sx126x.h>
+
+&pinctrl {
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO3>,
+				 <SPIM2_SCLK_GPIO5>,
+				 <SPIM2_CSEL_GPIO7>;
+		};
+
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO6>;
+			output-low;
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(8)>;
+};
+
+&spi2 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+
+	lora: lora@0 {
+		compatible = "semtech,sx1262";
+		reg = <0>;
+		status = "disabled";
+		reset-gpios = <&gpio 8 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+		busy-gpios = <&gpio 48 GPIO_ACTIVE_HIGH>;
+		dio1-gpios = <&gpio 47 GPIO_ACTIVE_HIGH>;
+		antenna-enable-gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		dio2-tx-enable;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V8>;
+		tcxo-power-startup-delay-ms = <5>;
+		spi-max-frequency = <1000000>;
+	};
+};

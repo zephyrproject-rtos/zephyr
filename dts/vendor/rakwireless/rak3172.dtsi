@@ -1,0 +1,96 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ *
+ *
+ * RAK3172 pinout description
+ * https://docs.rakwireless.com/product-categories/wisduo/rak3172-module/datasheet
+ *
+ * P1    - PA3/USART2_RX/LPUART1_RX
+ * P2    - PA2/USART2_TX/LPUART1_TX
+ * P3    - PA15/ADC_IN11(ADC5)
+ * P4    - PB6/USART1_TX
+ * P5    - PB7/USART1_RX
+ * P6    - PA1
+ * P7    - PA13/SWDIO
+ * P8    - PA14/SWCLK
+ * P9    - PA12/I2C2_SCL
+ * P10   - PA11/I2C2_SDA
+ * P11   - GND
+ * P12   - LORA_RF
+ * P13   - PA7/SPI1_MOSI
+ * P14   - PA6/SPI1_MISO
+ * P15   - PA5/SPI1_SCK
+ * P16   - PA4/SPI1_NSS
+ * P17   - GND
+ * P18   - GND
+ * P19   - PA8/I2S2_CK - IO2
+ * P20   - PA9/I2S2_WS - IO6
+ * P21   - BOOT0
+ * P22   - RST
+ * P23   - GND
+ * P24   - VDD
+ * P25   - PA10/ADC_IN6(ADC4)/I2S2_SD - IO7
+ * P26   - PB2/ADC_IN4(ADC3)
+ * P27   - PB12
+ * P28   - GND
+ * P29   - PA0
+ * P30   - PB5
+ * P31   - PB4/ADC_IN3(ADC2)
+ * P32   - PB3/ADC_IN2(ADC1)
+ */
+
+#include <st/wl/stm32wle5Xc.dtsi>
+#include <st/wl/stm32wle5ccux-pinctrl.dtsi>
+
+&clk_hse {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(32)>;
+};
+
+&clk_lse {
+	status = "okay";
+	clock-frequency = <32768>;
+};
+
+&subghzspi {
+	status = "okay";
+
+	lora: radio@0 {
+		status = "disabled";
+		tx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>; /* FE_CTRL1 */
+		rx-enable-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;  /* FE_CTRL2 */
+		power-amplifier-output = "rfo-hp";
+		rfo-hp-max-power = <22>;
+	};
+};
+
+&lptim1 {
+	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <2>;
+	mul-n = <6>;
+	div-r = <2>;
+	div-q = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(48)>;
+	cpu1-prescaler = <1>;
+	ahb3-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};

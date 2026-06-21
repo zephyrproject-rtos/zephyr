@@ -1,0 +1,129 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ *
+ * RAK11160 pinout description
+ * https://docs.rakwireless.com/product-categories/wisduo/rak11160-module/datasheet
+ *
+ * P1    - VDD_ST
+ * P2    - GND
+ * P3    - ST_PA8
+ * P4    - ST_PA9
+ * P5    - ST_RST
+ * P6    - ST_BOOT0
+ * P7    - ST_PB12
+ * P8    - ST_PB2
+ * P9    - ST_PA10
+ * P10   - ST_I2C2_SDA
+ * P11   - ST_I2C2_SCL
+ * P12   - ST_SWDIO
+ * P13   - ST_SWCLK
+ * P14   - ST_PA15
+ * P15   - GND
+ * P16   - RF_WIFI
+ * P17   - GND
+ * P18   - VDD_ESP
+ * P19   - ESP_GPIO0
+ * P20   - ESP_GPIO1
+ * P21   - ESP_GPIO2
+ * P22   - ESP_GPIO3
+ * P23   - GND
+ * P24   - ESP_GPIO5
+ * P25   - ESP_GPIO4
+ * P26   - ESP_GPIO8
+ * P27   - ESP_GPIO9
+ * P28   - ESP_GPIO10
+ * P29   - ESP_GPIO18
+ * P30   - ESP_DEBUG_UART_RX
+ * P31   - ESP_DEBUG_UART_TX
+ * P32   - ST_PB3
+ * P33   - ST_PB4
+ * P34   - ST_PB5
+ * P35   - ST_PA1
+ * P36   - GND
+ * P37   - GND
+ * P38   - RF_LORA
+ * P39   - GND
+ * P40   - ST_UART2_TX
+ * P41   - ST_UART2_RX
+ * P42   - ST_NSS
+ * P43   - ST_SCK
+ * P44   - ST_MISO
+ * P45   - ST_MOSI
+ */
+
+#include <st/wl/stm32wle5Xc.dtsi>
+#include <st/wl/stm32wle5ccux-pinctrl.dtsi>
+#include <zephyr/dt-bindings/lora/sx126x.h>
+
+/ {
+	/* SoM-internal ESP8684 power gate driven by STM32 PA0. */
+	esp32c2_enable: esp32c2-enable {
+		compatible = "regulator-fixed";
+		regulator-name = "esp32c2_enable";
+		enable-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+		regulator-boot-off;
+	};
+};
+
+&clk_hse {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(32)>;
+	hse-tcxo;
+};
+
+&clk_lse {
+	status = "okay";
+	clock-frequency = <32768>;
+};
+
+&subghzspi {
+	status = "okay";
+
+	lora: radio@0 {
+		status = "disabled";
+		antenna-enable-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+		tx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+		rx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V8>;
+		tcxo-power-startup-delay-ms = <5>;
+		power-amplifier-output = "rfo-hp";
+		rfo-hp-max-power = <22>;
+	};
+};
+
+&lptim1 {
+	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <6>;
+	div-r = <4>;
+	div-q = <4>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(48)>;
+	cpu1-prescaler = <1>;
+	ahb3-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+/* STM32WLE5 UART1 is hard-wired to the on-module ESP8684 coprocessor. */
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+};

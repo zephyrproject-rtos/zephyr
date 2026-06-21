@@ -1,0 +1,63 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ *
+ * RAK3400 pinout description
+ * P1    - VBUS
+ * P2    - USB_D-
+ * P3    - USB_D+
+ * P4    - P0.13/I2C1_SDA
+ * P5    - P0.14/I2C1_SCL
+ * P6    - P0.15/UART2_RX
+ * P7    - P0.16/UART2_TX
+ * P8    - P0.17/UART2_DE
+ * P9    - P0.19/UART1_RX
+ * P10   - P0.20/UART1_TX
+ * P11   - P0.21/UART1_DE
+ * P12   - NFC2
+ * P13   - NFC1
+ *
+ * P14   - GND
+ * P15   - RF_BT
+ * P16   - GND
+ * P17   - RESET
+ * P18   - SWDCLK
+ * P19   - SWDIO
+ * P20   - VBAT_SX (not populated)
+ * P21   - VBAT_IO_SX (not populated)
+ * P22   - GND
+ *
+ * P23   - P0.24/I2C2_SDA
+ * P24   - P0.25/I2C2_SCL
+ * P25   - P1.01
+ * P26   - P1.02
+ * P27   - P0.03
+ * P28   - P0.04
+ * P29   - P0.03/SPI_CLK
+ * P30   - P0.02/SPI_DIO3
+ * P31   - P0.28/SPI_DIO2
+ * P32   - P0.29/SPI_DIO1
+ * P33   - P0.30/SPI_DIO0
+ * P34   - P0.26/SPI_CS
+ * P35   - GND
+ *
+ * P36   - GND
+ * P37   - RF_LoRa (not populated)
+ * P38   - GND
+ * P39   - P0.31/AIN7
+ * P40   - P0.05/AIN3
+ * P41   - P0.04/AIN2
+ * P42   - GND
+ * P43   - VDD_NRF
+ * P44   - VBAT_NRF
+ */
+
+#include <nordic/nrf52840_qiaa.dtsi>
+
+&reg0 {
+	status = "okay";
+};
+
+&reg1 {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};

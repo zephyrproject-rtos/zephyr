@@ -1,0 +1,119 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ *
+ * RAK11300 pinout description
+ * https://docs.rakwireless.com/product-categories/wisduo/rak11300-module/datasheet
+ *
+ * P1 	- RESERVED
+ * P2 	- USB_D-
+ * P3 	- USB_D+
+ * P4 	- I2C1_SDA
+ * P5 	- I2C1_SCL
+ * P6   - UART2_RX
+ * P7   - UART2_TX
+ * P8   - GPIO6
+ * P9   - UART1_RX
+ * P10  - UART1_TX
+ * P11  - GPIO7
+ * P12  - GPIO8
+ * P13  - GPIO9
+ * P14  - GND
+ * P15  - RESERVED
+ * P16  - BOOT
+ * P17  - GND
+ * P18  - RESET
+ * P19  - SWCLK
+ * P20  - SWDIO
+ * P21  - VBAT_SX
+ * P22  - VBAT_IO_SX
+ * P23  - GND
+ * P24  - I2C2_SDA
+ * P25  - I2C2_SCL
+ * P26  - RESERVED
+ * P27  - GPIO22
+ * P28  - GPIO23
+ * P29  - GPIO24
+ * P30  - SPI0_SCK
+ * P31  - RESERVED
+ * P32  - RESERVED
+ * P33  - SPI0_MISO
+ * P34  - SPI0_MOSI
+ * P35  - SPI0_SCN
+ * P36  - GND
+ * P37  - GND
+ * P38  - RF_LORA
+ * P39  - RESERVED
+ * P40  - GND
+ * P41  - GPIO27
+ * P42  - GPIO26
+ * P43  - GPIO28
+ * P44  - GND
+ * P45  - DVDD
+ * P46  - AVDD
+ */
+
+#include <raspberrypi/rpi_pico/rp2040.dtsi>
+#include <raspberrypi/partitions_2M_sysbuild.dtsi>
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-pinctrl-common.h>
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+#include <zephyr/dt-bindings/lora/sx126x.h>
+#include <common/freq.h>
+
+&pinctrl {
+	spi1_default: spi1_default {
+		group1 {
+			pinmux = <SPI1_CSN_P13>,
+				<SPI1_SCK_P10>,
+				<SPI1_TX_P11>;
+		};
+
+		group2 {
+			pinmux = <SPI1_RX_P12>;
+			input-enable;
+		};
+	};
+};
+
+&flash0 {
+	status = "okay";
+	reg = <0x10000000 DT_SIZE_M(2)>;
+	ranges = <0x0 0x10000000 DT_SIZE_M(2)>;
+};
+
+&rtc {
+	clocks = <&clocks RPI_PICO_CLKID_CLK_RTC>;
+	status = "okay";
+};
+
+&vreg {
+	regulator-always-on;
+	regulator-allowed-modes = <REGULATOR_RPI_PICO_MODE_NORMAL>;
+};
+
+&xosc {
+	startup-delay-multiplier = <64>;
+};
+
+&spi1 {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+
+	lora: lora@0 {
+		compatible = "semtech,sx1262";
+		reg = <0>;
+		status = "disabled";
+		reset-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+		dio1-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+		antenna-enable-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+		dio2-tx-enable;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_3V3>;
+		tcxo-power-startup-delay-ms = <5>;
+		spi-max-frequency = <1000000>;
+	};
+};
