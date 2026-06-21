@@ -49,7 +49,8 @@ static int hub_start_interrupt(struct usbh_hub_data *hub_data)
 	xfer = usbh_xfer_alloc(hub_data->udev,
 			       hub_data->int_ep->bEndpointAddress,
 			       hub_interrupt_in_cb,
-			       (void *)hub_data);
+			       (void *)hub_data,
+			       K_NO_WAIT);
 	if (xfer == NULL) {
 		LOG_ERR("Failed to allocate interrupt transfer");
 		return -ENOMEM;
@@ -58,7 +59,8 @@ static int hub_start_interrupt(struct usbh_hub_data *hub_data)
 	hub_data->interrupt_transfer = xfer;
 
 	buf = usbh_xfer_buf_alloc(hub_data->udev,
-				  sys_le16_to_cpu(hub_data->int_ep->wMaxPacketSize));
+				  sys_le16_to_cpu(hub_data->int_ep->wMaxPacketSize),
+				  K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate interrupt buffer");
 		ret = -ENOMEM;
