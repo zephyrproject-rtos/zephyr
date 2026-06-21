@@ -1,0 +1,9 @@
+shield:
+  name: rakwireless_rak19003
+  full_name: RAK19003 WisBlock Mini Base Board
+  vendor: rakwireless
+  supported_features:
+    - gpio
+    - led
+    - serial
+    - fuel_gauge
