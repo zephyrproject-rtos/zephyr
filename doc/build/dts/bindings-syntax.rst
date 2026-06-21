@@ -248,6 +248,11 @@ Property entries in ``properties:`` are written in this syntax:
      min-len: <int>
      max-len: <int>
      specifier-space: <space-name>
+     target-compatibles:
+       - <compatible1>
+       - <compatible2>
+       ...
+     target-on-bus: <bus-name>
      dependency-mode: <normal | reverse | ignore | child-ignore>
 
 .. _dt-bindings-example-properties:
@@ -586,6 +591,88 @@ can write this property as follows:
      mboxes:
        type: phandle-array
        specifier-space: mbox
+
+.. _dt-bindings-target-compatibles:
+
+target-compatibles
+==================
+
+The ``target-compatibles`` setting constrains the node(s) that a ``phandle`` or
+``phandles`` property is allowed to reference. It takes a non-empty list of
+compatible strings. The build system emits an error if a referenced node does
+not have at least one of the listed strings in its ``compatible`` property.
+
+This lets a binding document and enforce the kind of node a phandle is expected
+to point at, instead of relying on a runtime ``BUILD_ASSERT()`` in the driver.
+
+For example, a binding whose ``peer`` property must point to a companion node
+can be written as follows:
+
+.. code-block:: YAML
+
+   compatible: "vendor,controller"
+
+   properties:
+     peer:
+       type: phandle
+       target-compatibles:
+         - "vendor,companion-a"
+         - "vendor,companion-b"
+       description: |
+         Phandle linking the controller node to its companion node.
+
+Given the binding above, this devicetree is accepted because the referenced
+node is compatible with ``vendor,companion-b``:
+
+.. code-block:: DTS
+
+   &controller {
+           peer = <&companion>;
+   };
+
+   companion: companion {
+           compatible = "vendor,companion-b";
+           /* ... */
+   };
+
+Pointing ``peer`` at a node with an unrelated compatible triggers a build error.
+
+.. _dt-bindings-target-on-bus:
+
+target-on-bus
+=============
+
+The ``target-on-bus`` setting is used together with :ref:`target-compatibles
+<dt-bindings-target-compatibles>` to additionally require that the referenced
+node appears on a specific :ref:`bus <dt-bindings-bus>`. It takes a single bus
+name, matching the values used with :ref:`on-bus <dt-bindings-on-bus>`.
+
+This is useful because the same compatible string can be matched by different
+bindings depending on the bus the node is on (see :ref:`on-bus
+<dt-bindings-on-bus>`). ``target-on-bus`` lets a binding disambiguate which of
+those the phandle is expected to reference.
+
+``target-on-bus`` must be combined with ``target-compatibles``; using it on its
+own is an error. Like ``target-compatibles``, it is only valid for ``phandle``
+and ``phandles`` properties.
+
+For example:
+
+.. code-block:: YAML
+
+   compatible: "vendor,controller"
+
+   properties:
+     sensor:
+       type: phandle
+       target-compatibles:
+         - "vendor,sensor"
+       target-on-bus: i2c
+       description: |
+         Phandle to a vendor,sensor node that must be attached to an I2C bus.
+
+The build system emits an error if the referenced node is compatible with
+``vendor,sensor`` but does not appear on an ``i2c`` bus.
 
 .. _dt-bindings-dependency-mode:
 

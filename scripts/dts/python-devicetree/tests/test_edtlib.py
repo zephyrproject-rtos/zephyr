@@ -1083,6 +1083,298 @@ def test_prop_range_len_errs(tmp_path):
         f"{str(dts_file)} has length 1, which is less than the "
         f"'min-len' value in {binding_path} (2)")
 
+def test_target_compatibles(tmp_path):
+    '''Test target-compatibles validation for phandle and phandles.'''
+
+    binding_file = tmp_path / "target-compat.yaml"
+    with open(binding_file, "w", encoding="utf-8") as f:
+        f.write(
+            """\
+description: target compatible test
+compatible: "target-user"
+
+properties:
+  single:
+    type: phandle
+    target-compatibles:
+      - "target-ok"
+
+  multiple:
+    type: phandles
+    target-compatibles:
+      - "target-ok"
+""")
+
+    def edt_from_dts(dts_content, fname):
+        dts_file = tmp_path / fname
+        with open(dts_file, "w", encoding="utf-8") as f:
+            f.write(dts_content)
+        return edtlib.EDT(str(dts_file), [str(tmp_path)])
+
+    edt = edt_from_dts(
+        """\
+/dts-v1/;
+
+/ {
+    target_ok: target-ok {
+        compatible = "target-ok";
+    };
+
+    user {
+        compatible = "target-user";
+        single = <&target_ok>;
+        multiple = <&target_ok &target_ok>;
+    };
+};
+""",
+        "target-compat-ok.dts")
+
+    user = edt.get_node("/user")
+    assert user.props["single"].val.path == "/target-ok"
+    assert [node.path for node in user.props["multiple"].val] == ["/target-ok", "/target-ok"]
+
+    with pytest.raises(edtlib.EDTError) as e:
+        edt_from_dts(
+            """\
+/dts-v1/;
+
+/ {
+    target_bad: target-bad {
+        compatible = "target-bad";
+    };
+
+    user {
+        compatible = "target-user";
+        single = <&target_bad>;
+    };
+};
+""",
+            "target-compat-bad.dts")
+
+    dts_bad = tmp_path / "target-compat-bad.dts"
+    assert str(e.value) == (
+        f"property 'single' on /user in {str(dts_bad)} points to /target-bad, "
+        "but this node has compatibles ['target-bad']; expected one of ['target-ok'] "
+        f"from 'target-compatibles' in {str(binding_file)}")
+
+
+def test_target_on_bus(tmp_path):
+    '''Test target-on-bus validation, paired with target-compatibles.'''
+
+    bindings = {
+        "i2c.yaml": """\
+description: i2c bus
+compatible: "vnd,i2c"
+bus: i2c
+""",
+        "spi.yaml": """\
+description: spi bus
+compatible: "vnd,spi"
+bus: spi
+""",
+        "sensor.yaml": """\
+description: sensor
+compatible: "target-sensor"
+""",
+        "user.yaml": """\
+description: user
+compatible: "target-user"
+properties:
+  sensor:
+    type: phandle
+    target-compatibles:
+      - "target-sensor"
+    target-on-bus: i2c
+""",
+    }
+    for fname, contents in bindings.items():
+        with open(tmp_path / fname, "w", encoding="utf-8") as f:
+            f.write(contents)
+
+    def edt_from_dts(dts_content, fname):
+        dts_file = tmp_path / fname
+        with open(dts_file, "w", encoding="utf-8") as f:
+            f.write(dts_content)
+        return edtlib.EDT(str(dts_file), [str(tmp_path)])
+
+    edt = edt_from_dts(
+        """\
+/dts-v1/;
+
+/ {
+    i2c {
+        compatible = "vnd,i2c";
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        sensor: sensor@0 {
+            compatible = "target-sensor";
+            reg = <0>;
+        };
+    };
+
+    user {
+        compatible = "target-user";
+        sensor = <&sensor>;
+    };
+};
+""",
+        "target-on-bus-ok.dts")
+    assert edt.get_node("/user").props["sensor"].val.path == "/i2c/sensor@0"
+
+    with pytest.raises(edtlib.EDTError) as e:
+        edt_from_dts(
+            """\
+/dts-v1/;
+
+/ {
+    spi {
+        compatible = "vnd,spi";
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        sensor: sensor@0 {
+            compatible = "target-sensor";
+            reg = <0>;
+        };
+    };
+
+    user {
+        compatible = "target-user";
+        sensor = <&sensor>;
+    };
+};
+""",
+            "target-on-bus-bad.dts")
+
+    binding_file = tmp_path / "user.yaml"
+    dts_bad = tmp_path / "target-on-bus-bad.dts"
+    assert str(e.value) == (
+        f"property 'sensor' on /user in {str(dts_bad)} points to /spi/sensor@0, "
+        "which is on bus(es) ['spi']; expected bus 'i2c' "
+        f"from 'target-on-bus' in {str(binding_file)}")
+
+
+def test_target_compatibles_binding_errs(tmp_path):
+    '''Test target-compatibles binding schema errors.'''
+
+    def check_binding_err(yaml_content, expected_err):
+        binding_file = tmp_path / "target-compat.yaml"
+        with open(binding_file, "w", encoding="utf-8") as f:
+            f.write(yaml_content)
+        with pytest.raises(edtlib.EDTError) as e:
+            edtlib.Binding(str(binding_file), {})
+        assert str(e.value) == expected_err
+
+    path = str(tmp_path / "target-compat.yaml")
+
+    # target-compatibles on unsupported type
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: int
+    target-compatibles:
+      - "target-ok"
+""",
+        "'target-compatibles' in 'properties: foo' has type 'int', "
+        "expected 'phandle' or 'phandles'")
+
+    # target-compatibles not a list
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: phandle
+    target-compatibles: "target-ok"
+""",
+        f"'target-compatibles' for 'foo' in '{path}' is not a list")
+
+    # empty target-compatibles
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: phandle
+    target-compatibles: []
+""",
+        f"'target-compatibles' for 'foo' in '{path}' must not be empty")
+
+    # target-compatibles not a list of strings
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: phandle
+    target-compatibles:
+      - "target-ok"
+      - 123
+""",
+        f"'target-compatibles' for 'foo' in '{path}' must be a list of strings")
+
+
+def test_target_on_bus_binding_errs(tmp_path):
+    '''Test target-on-bus binding schema errors.'''
+
+    def check_binding_err(yaml_content, expected_err):
+        binding_file = tmp_path / "target-on-bus.yaml"
+        with open(binding_file, "w", encoding="utf-8") as f:
+            f.write(yaml_content)
+        with pytest.raises(edtlib.EDTError) as e:
+            edtlib.Binding(str(binding_file), {})
+        assert str(e.value) == expected_err
+
+    path = str(tmp_path / "target-on-bus.yaml")
+
+    # target-on-bus on unsupported type
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: int
+    target-on-bus: i2c
+""",
+        "'target-on-bus' in 'properties: foo' has type 'int', "
+        "expected 'phandle' or 'phandles'")
+
+    # target-on-bus not a string
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: phandle
+    target-compatibles:
+      - "target-ok"
+    target-on-bus:
+      - i2c
+""",
+        f"'target-on-bus' for 'foo' in '{path}' is not a string")
+
+    # target-on-bus without target-compatibles
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: phandle
+    target-on-bus: i2c
+""",
+        f"'target-on-bus' for 'foo' in '{path}' "
+        "requires 'target-compatibles' to also be specified")
+
 def test_prop_range_binding_errs(tmp_path):
     '''Test errors in binding definitions with invalid min:/max:'''
 
