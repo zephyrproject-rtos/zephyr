@@ -1,5 +1,5 @@
-identifier: rak11160
-name: RAK11160
+identifier: rak11161/stm32wle5xx
+name: RAK11161 Breakout Board (STM32WLE5xx)
 type: mcu
 arch: arm
 toolchain:
@@ -16,4 +16,4 @@ supported:
   - uart
   - watchdog
   - lora
-vendor: rak
+vendor: rakwireless

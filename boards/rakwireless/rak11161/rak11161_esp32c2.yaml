@@ -1,0 +1,15 @@
+identifier: rak11161/esp32c2
+name: RAK11161 Breakout Board (ESP32-C2)
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - dma
+  - gpio
+  - watchdog
+  - uart
+  - counter
+  - entropy
+  - netif:wifi
+vendor: rakwireless

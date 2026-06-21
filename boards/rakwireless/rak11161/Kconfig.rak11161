@@ -1,0 +1,6 @@
+# Copyright (c) 2026 RAKwireless Technology Limited <www.rakwireless.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RAK11161
+	select SOC_STM32WLE5XX if BOARD_RAK11161_STM32WLE5XX
+	select SOC_ESP32C2 if BOARD_RAK11161_ESP32C2

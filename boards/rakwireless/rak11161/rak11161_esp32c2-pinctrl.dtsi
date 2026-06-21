@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 RAKwireless Technology Limited <www.rakwireless.com>
+ * JaeHwan Jin <jaehwan.jin@rakwireless.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO20>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO19>;
+			bias-pull-up;
+		};
+	};
+};

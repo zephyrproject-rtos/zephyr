@@ -1,0 +1,17 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RAK11161
+
+endif # BOARD_RAK11161
+
+if BOARD_RAK11161_STM32WLE5XX
+
+endif # BOARD_RAK11161_STM32WLE5XX
+
+if BOARD_RAK11161_ESP32C2
+
+config HEAP_MEM_POOL_SIZE
+	default 4096
+
+endif # BOARD_RAK11161_ESP32C2
