@@ -770,7 +770,6 @@ struct gc2145_ctrls {
 struct gc2145_data {
 	struct video_device_context dctx;
 	struct gc2145_ctrls ctrls;
-	struct video_format fmt;
 	struct video_rect crop;
 	uint16_t format_width;
 	uint16_t format_height;
@@ -1043,8 +1042,8 @@ static int gc2145_set_crop(const struct device *dev, struct video_selection *sel
 	drv_data->crop = sel->rect;
 
 	/* enqueue/dequeue depend on this being set as well as the crop */
-	drv_data->fmt.width = drv_data->crop.width;
-	drv_data->fmt.height = drv_data->crop.height;
+	drv_data->dctx.fmt.width = drv_data->crop.width;
+	drv_data->dctx.fmt.height = drv_data->crop.height;
 
 	return 0;
 }
@@ -1145,11 +1144,6 @@ static int gc2145_set_fmt(const struct device *dev, struct video_format *fmt)
 	size_t idx;
 	int ret;
 
-	if (memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt)) == 0) {
-		/* nothing to do */
-		return 0;
-	}
-
 	/* Check if camera is capable of handling given format */
 	ret = video_format_caps_index(fmts, fmt, &idx);
 	if (ret < 0) {
@@ -1180,16 +1174,7 @@ static int gc2145_set_fmt(const struct device *dev, struct video_format *fmt)
 		}
 	}
 
-	drv_data->fmt = *fmt;
-
-	return 0;
-}
-
-static int gc2145_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct gc2145_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
+	drv_data->dctx.fmt = *fmt;
 
 	return 0;
 }
@@ -1293,7 +1278,6 @@ static int gc2145_get_selection(const struct device *dev, struct video_selection
 
 static DEVICE_API(video, gc2145_driver_api) = {
 	.set_format = gc2145_set_fmt,
-	.get_format = gc2145_get_fmt,
 	.get_caps = gc2145_get_caps,
 	.set_stream = gc2145_set_stream,
 	.set_ctrl = gc2145_set_ctrl,
