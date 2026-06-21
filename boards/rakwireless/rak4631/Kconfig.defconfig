@@ -5,4 +5,12 @@
 
 if BOARD_RAK4631
 
+config WISBLOCK_CORE_BOARD_VENDOR
+	string
+	default "RAKwireless"
+
+config WISBLOCK_CORE_BOARD_NAME
+	string
+	default "RAK4631 WisBlock LoRaWAN Module"
+
 endif # BOARD_RAK4631

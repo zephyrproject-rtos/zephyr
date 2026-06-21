@@ -3,99 +3,121 @@
 Overview
 ********
 
-RAK4631 is a WisBlock Core module for RAK WisBlock.
-It extends the WisBlock series with a powerful
-Nordic nRF52840 MCU that supports Bluetooth 5.0
-(Bluetooth Low Energy) and the newest LoRa transceiver
-from Semtech, the SX1262. The Semtech SX1262 has compared
-to the older SX127x series a lower power consumption at
-the same TX power. This makes the RAK4631 an ultra-low
-power communication solution. RAK4631 can be comfortably
-programmed with ZephyrRTOS.
+The RAK4631 WisBlock Core Module is a WisBlock Core module for RAK WisBlock. It
+is based on the Nordic Semiconductor nRF52840 MCU with an integrated Semtech SX1262
+LoRa transceiver, offering Bluetooth 5.0 (BLE) and LoRa radio connectivity in a
+module compatible with WisBlock Base boards.
+
+- `WisBlock overview`_
+- `RAK4631 datasheet`_
 
 Hardware
 ********
 
-To use a RAK4631, you need at least a WisBlock Base
-to plug the module in. WisBlock Base is the power
-supply for the RAK4631 module and has the
-programming/debug interface.
-
-- nRF52840 ARM Cortex-M4F Processor
-- 64 MHz CPU clock
-- 1 Micro-AB USB OTG host/device
-- Semtech SX1262 low power high range LoRa transceiver
-- iPEX connectors for the LORA antenna and BLE antenna.
-- Multiple interfaces, I2C, UART, GPIO, ADC
-- 2 user LEDs on RAK5005 mother Board
-- Powered by either Micro USB, 3.7V rechargeable battery or a 5V Solar Panel Port
-
 Supported Features
 ==================
+
+- nRF52840 ARM Cortex-M4F processor at 64 MHz
+- 1 MB Flash, 256 KB SRAM
+- Bluetooth 5.0 (BLE)
+- Semtech SX1262 low-power high-range LoRa transceiver
+- iPEX connectors for LoRa and BLE antennas
+- USB 2.0 Full-Speed (Micro-AB USB OTG)
+- I/O ports: UART/I2C/SPI/ADC/GPIO
+- Supply voltage: 3.0 V ~ 3.6 V
 
 .. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
 
-LED
----
+The RAK4631 features a 40-pin header with various I/O interfaces for the WisBlock
+ecosystem. The pinout is as follows:
 
-* LED1 (green) = P1.3
-* LED2 (blue) = P1.4
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| Used                        | Name     | Pin | Pin | Name     | Used                        |
++=============================+==========+=====+=====+==========+=============================+
+| NC                          | VBAT     | 1   | 2   | VBAT     | NC                          |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| GND                         | GND      | 3   | 4   | GND      | GND                         |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| 3V3                         | 3V3      | 5   | 6   | 3V3      | 3V3                         |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| USB_P                       | USB_P    | 7   | 8   | USB_N    | USB_N                       |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| NC                          | VBUS     | 9   | 10  | SW1      | P1.00                       |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| P0.20 / UART0_TX            | TXD0     | 11  | 12  | RXD0     | P0.19 / UART0_RX            |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| RESET                       | RESET    | 13  | 14  | LED1     | P1.03                       |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| P1.04                       | LED2     | 15  | 16  | LED3     | P0.02                       |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| 3V3                         | VDD      | 17  | 18  | VDD      | 3V3                         |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| P0.13 / I2C0_SDA            | I2C1_SDA | 19  | 20  | I2C1_SCL | P0.14 / I2C0_SCL            |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| P0.05 / ADC_VBAT            | AIN0     | 21  | 22  | AIN1     | P0.31 / ADC                 |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| BOOT                        | BOOT0    | 23  | 24  | IO7      | P0.28                       |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| P0.26 / SPI2_CS             | SPI_CS   | 25  | 26  | SPI_CLK  | P0.03 / SPI2_SCK            |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| P0.29 / SPI2_MISO           | SPI_MISO | 27  | 28  | SPI_MOSI | P0.30 / SPI2_MOSI           |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| P0.17                       | IO1      | 29  | 30  | IO2      | P1.02                       |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| P0.21                       | IO3      | 31  | 32  | IO4      | P0.04                       |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| P0.16 / UART1_TX            | TXD1     | 33  | 34  | RXD1     | P0.15 / UART1_RX            |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| P0.24 / I2C1_SDA            | I2C2_SDA | 35  | 36  | I2C2_SCL | P0.25 / I2C1_SCL            |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| P0.09                       | IO5      | 37  | 38  | IO6      | P0.10                       |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
+| GND                         | GND      | 39  | 40  | GND      | GND                         |
++-----------------------------+----------+-----+-----+----------+-----------------------------+
 
-Programming and Debugging
+Connecting to a Baseboard
+=========================
+
+The RAK4631 can be mounted on a baseboard using the 40-pin header, called WisBlock
+I/O connector. It is compatible with the WisBlock ecosystem, allowing for easy
+integration with various WisBlock modules and sensors.
+
+.. figure:: img/mounting.webp
+   :align: center
+   :alt: RAK4631 mounting
+
+Programming and debugging
 *************************
 
 .. zephyr:board-supported-runners::
 
-The RAK4631 board shall be connected to a Segger Embedded Debugger Unit
-`J-Link OB <https://www.segger.com/jlink-ob.html>`_.  This provides a debug
-interface to the NRF52840 chip. You can use JLink to communicate with
-the NRF52840.
+Building & Flashing
+===================
 
-Flashing
-========
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: rak4631/nrf52840
+   :shield: rakwireless_rak19010,rakwireless_rak19012
+   :goals: build flash
 
-#. Download JLink from the Segger `JLink Downloads Page`_.  Go to the section
-   "J-Link Software and Documentation Pack" and install the "J-Link Software
-   and Documentation pack for Linux".  The application JLinkExe needs to be
-   accessible from your path.
+.. note::
 
-#. Run your favorite terminal program to listen for output.  Under Linux the
-   terminal should be :code:`/dev/ttyACM0`. For example:
-
-   .. code-block:: console
-
-      $ minicom -D /dev/ttyACM0 -o
-
-   The -o option tells minicom not to send the modem initialization string.
-   Connection should be configured as follows:
-
-   - Speed: 115200
-   - Data: 8 bits
-   - Parity: None
-   - Stop bits: 1
-
-#. Connect the RAK4631 board to your host computer using the USB debug port.
-   Then build and flash the :zephyr:code-sample:`hello_world` application.
-
-   .. zephyr-app-commands::
-      :zephyr-app: samples/hello_world
-      :board: rak4631/nrf52840
-      :goals: build flash
-
-   You should see "Hello World! rak4631_nrf52840" in your terminal.
+   When using the RAKDAP1 (CMSIS-DAP) debug probe, pass
+   ``-DOPENOCD_NRF5_INTERFACE=cmsis-dap`` to the build command.
 
 Debugging
 =========
 
-You can debug an application in the usual way.  Here is an example for the
+You can debug an application in the usual way. Here is an example for the
 :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: rak4631/nrf52840
+   :shield: rakwireless_rak19007
    :maybe-skip-config:
    :goals: debug
 
@@ -104,8 +126,8 @@ References
 
 .. target-notes::
 
-.. _RAK4631 Product Description:
-    https://docs.rakwireless.com/Product-Categories/WisBlock/RAK4631/Datasheet/#overview
+.. _WisBlock overview:
+   https://www.rakwireless.com/en-us/products/wisblock
 
-.. _JLink Downloads Page:
-    https://www.segger.com/downloads/jlink
+.. _RAK4631 datasheet:
+   https://docs.rakwireless.com/product-categories/wisblock/rak4631/datasheet
