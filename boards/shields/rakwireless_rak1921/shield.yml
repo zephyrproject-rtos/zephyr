@@ -1,0 +1,6 @@
+shield:
+  name: rakwireless_rak1921
+  full_name: RAK1921 WisBlock OLED Display
+  vendor: rakwireless
+  supported_features:
+    - display
