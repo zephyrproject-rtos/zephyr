@@ -1,0 +1,173 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+/dts-v1/;
+#include <rakwireless/rak3172.dtsi>
+
+/ {
+	model = "RAK3372 WisBlock Core Module";
+	compatible = "rakwireless,rak3372";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		lora0 = &lora;
+		watchdog0 = &iwdg;
+	};
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&aes {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+			read-only;
+		};
+
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 DT_SIZE_K(100)>;
+		};
+
+		slot1_partition: partition@25000 {
+			label = "image-1";
+			reg = <0x00025000 DT_SIZE_K(100)>;
+		};
+
+		storage_partition: partition@3e000 {
+			label = "storage";
+			reg = <0x0003e000 DT_SIZE_K(8)>;
+		};
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_sda_pa10 &i2c1_scl_pa9>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pa12 &i2c2_sda_pa11>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+			 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+};
+
+&adc1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <>;
+	pinctrl-1 = <>;
+	pinctrl-names = "default", "sleep";
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@4 {
+		reg = <4>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@6 {
+		reg = <6>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@11 {
+		reg = <11>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&timers1 {
+	st,prescaler = <47>;
+	status = "okay";
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <>;
+		pinctrl-1 = <>;
+		pinctrl-names = "default", "sleep";
+	};
+};
+
+&timers2 {
+	st,prescaler = <47>;
+	status = "okay";
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <>;
+		pinctrl-1 = <>;
+		pinctrl-names = "default", "sleep";
+	};
+};
+
+&lora {
+	status = "okay";
+};
+
+#include "wisblock.dtsi"

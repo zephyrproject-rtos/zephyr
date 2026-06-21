@@ -1,0 +1,23 @@
+identifier: rak3372/stm32wle5xx
+name: RAK3372 WisBlock Core Module
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 64
+flash: 256
+supported:
+  - adc
+  - counter
+  - gpio
+  - i2c
+  - nvs
+  - pwm
+  - rtc
+  - spi
+  - uart
+  - watchdog
+  - lora
+  - wisblock_io
+vendor: rakwireless

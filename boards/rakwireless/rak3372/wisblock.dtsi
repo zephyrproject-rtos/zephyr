@@ -1,0 +1,100 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+#include <zephyr/dt-bindings/gpio/wisblock-io-slot.h>
+#include <zephyr/dt-bindings/adc/wisblock-adc.h>
+#include <zephyr/dt-bindings/pwm/wisblock-pwm.h>
+
+/ {
+	null-gpios {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		null_gpio: gpio@0 {
+			compatible = "vnd,gpio";
+			status = "okay";
+			reg = <0>;
+			#gpio-cells = <2>;
+			ngpios = <1>;
+			gpio-controller;
+		};
+	};
+
+	wisblock_io: wisblock-io {
+		compatible = "wisblock-io-slot";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map =
+			<WISBLOCK_IO_SW1	0	&null_gpio	0	0>, /* Not connected */
+			<WISBLOCK_IO_TXD0	0	&gpioa	2	0>, /* 11 TXD0 (UART2_TX, PA2) */
+			<WISBLOCK_IO_RXD0	0	&gpioa	3	0>, /* 12 RXD0 (UART2_RX, PA3) */
+			<WISBLOCK_IO_LED1	0	&gpioa	0	0>, /* 14 LED1 (PA0) */
+			<WISBLOCK_IO_LED2	0	&gpioa	1	0>, /* 15 LED2 (PA1) */
+			<WISBLOCK_IO_LED3	0	&null_gpio	0	0>, /* Not connected */
+			<WISBLOCK_IO_I2C1_SDA	0	&gpioa	11	0>, /* 19 I2C_SDA (PA11) */
+			<WISBLOCK_IO_I2C1_SCL	0	&gpioa	12	0>, /* 20 I2C_SCL (PA12) */
+			<WISBLOCK_IO_AIN0	0	&gpiob	3	0>, /* 21 AIN0 (A1, PB3) */
+			<WISBLOCK_IO_AIN1	0	&gpiob	4	0>, /* 22 AIN1 (A2, PB4) */
+
+			/*
+			 * Note: when I2C2_SDA (PA10) is used as I2C,
+			 *       it cannot be used as IO7, and vice versa.
+			 */
+			<WISBLOCK_IO_IO7	0	&gpioa	10	0>, /* 32 IO7 (PA10) */
+
+			<WISBLOCK_IO_SPI_CS	0	&gpioa	4	0>, /* 25 SPI_CS (SPI_CS, PA4) */
+			<WISBLOCK_IO_SPI_CLK	0	&gpioa	5	0>, /* 26 SPI_CLK (SPI_CLK, PA5) */
+			<WISBLOCK_IO_SPI_MISO	0	&gpioa	6	0>, /* 27 SPI_MISO (SPI_MISO, PA6) */
+			<WISBLOCK_IO_SPI_MOSI	0	&gpioa	7	0>, /* 28 SPI_MOSI (SPI_MOSI, PA7) */
+			<WISBLOCK_IO_IO1	0	&gpiob	5	0>, /* 29 IO1 (PB5) */
+			<WISBLOCK_IO_IO2	0	&gpioa	8	0>, /* 30 IO2 (PA8) */
+			<WISBLOCK_IO_IO3	0	&gpiob	12	0>, /* 31 IO3 (PB12) */
+			<WISBLOCK_IO_IO4	0	&gpiob	2	0>, /* 32 IO4 (PB2) */
+			<WISBLOCK_IO_TXD1	0	&gpiob	6	0>, /* 33 TXD1 (UART1_TX, PB6) */
+			<WISBLOCK_IO_RXD1	0	&gpiob	7	0>, /* 34 RXD1 (UART1_RX, PB7) */
+			<WISBLOCK_IO_I2C2_SDA	0	&gpioa	10	0>, /* 35 I2C2_SDA (PA10) */
+			<WISBLOCK_IO_I2C2_SCL	0	&gpioa	9	0>, /* 36 I2C2_SCL (PA9) */
+			<WISBLOCK_IO_IO5	0	&gpioa	15	0>, /* 37 IO5 (PA15) */
+
+			/*
+			 * Note: when I2C2_SCL (PA9) is used as I2C,
+			 *       it cannot be used as IO6, and vice versa.
+			 */
+			<WISBLOCK_IO_IO6	0	&gpioa	9	0>; /* 38 IO6 (PA9) */
+	};
+
+	wisblock_adc: wisblock-adc {
+		compatible = "wisblock-adc";
+		#io-channel-cells = <1>;
+
+			io-channel-map =
+				<WISBLOCK_ADC_AIN0	&adc1	2>,
+				<WISBLOCK_ADC_AIN1	&adc1	3>,
+				<WISBLOCK_ADC_IO4	&adc1	4>,
+				<WISBLOCK_ADC_IO5	&adc1	11>,
+				<WISBLOCK_ADC_IO7	&adc1	6>;
+	};
+
+	wisblock_pwm: wisblock-pwm {
+		compatible = "wisblock-pwm";
+		#pwm-cells = <3>;
+		pwm-map-mask = <0xffffffff 0x0 0x0>;
+		pwm-map-pass-thru = <0x0 0xffffffff 0xffffffff>;
+		pwm-map =
+			<WISBLOCK_PWM_IO2	0	0	&pwm1	1	0	0>, /* TIM1_CH1 */
+			<WISBLOCK_PWM_IO5	0	0	&pwm2	1	0	0>, /* TIM2_CH1 */
+			<WISBLOCK_PWM_IO6	0	0	&pwm1	2	0	0>, /* TIM1_CH2 */
+			<WISBLOCK_PWM_IO7	0	0	&pwm1	3	0	0>; /* TIM1_CH3 */
+	};
+};
+
+wisblock_console: &usart2 {};
+
+wisblock_uart0: &usart2 {};
+wisblock_uart1: &usart1 {};
+wisblock_spi: &spi1 {};
+wisblock_i2c1: &i2c2 {};
+wisblock_i2c2: &i2c1 {};
