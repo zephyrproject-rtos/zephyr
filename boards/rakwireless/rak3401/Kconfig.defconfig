@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+if BOARD_RAK3401
+
+config WISBLOCK_CORE_BOARD_VENDOR
+	string
+	default "RAKwireless"
+
+config WISBLOCK_CORE_BOARD_NAME
+	string
+	default "RAK3401 WisBlock BLE Module"
+
+endif # BOARD_RAK3401

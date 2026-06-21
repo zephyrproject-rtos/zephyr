@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Enable RTT
+CONFIG_USE_SEGGER_RTT=y
+
+# Reassign pinctrl for WisBlock modules
+CONFIG_PINCTRL_DYNAMIC=y
+
+# Disable runtime PM by default, as it may cause issues with some peripherals
+CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE=n
