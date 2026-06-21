@@ -1,0 +1,12 @@
+common:
+  tags:
+    - kernel
+    - threads
+tests:
+  kernel.threads.runtime_stack_safety: {}
+  kernel.threads.runtime_stack_safety.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags:
+      - userspace
+    extra_configs:
+      - CONFIG_USERSPACE=y
