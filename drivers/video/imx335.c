@@ -371,6 +371,7 @@ static const uint32_t imx335_framerates[] = {
 
 static int imx335_get_caps(const struct device *dev, struct video_caps *caps)
 {
+	caps->type = VIDEO_BUF_TYPE_OUTPUT;
 	caps->format_caps = imx335_fmts;
 	return 0;
 }
@@ -815,6 +816,7 @@ static int imx335_init(const struct device *dev)
 #define IMX335_INIT(n)										\
 	static struct imx335_data imx335_data_##n = {						\
 		.dctx.fmt = {									\
+			.type = VIDEO_BUF_TYPE_OUTPUT,						\
 			.pixelformat = VIDEO_PIX_FMT_SRGGB10P,					\
 			.width = IMX335_NATIVE_WIDTH,						\
 			.height = IMX335_NATIVE_HEIGHT,						\
