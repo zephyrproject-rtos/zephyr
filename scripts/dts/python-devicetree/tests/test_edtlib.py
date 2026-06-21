@@ -1070,6 +1070,164 @@ def test_prop_range_len_errs(tmp_path):
         f"{str(dts_file)} has length 1, which is less than the "
         f"'min-len' value in {binding_path} (2)")
 
+def test_target_compatibles(tmp_path):
+    '''Test target-compatibles validation for phandle and phandles.'''
+
+    binding_file = tmp_path / "target-compat.yaml"
+    with open(binding_file, "w", encoding="utf-8") as f:
+        f.write(
+            """\
+description: target compatible test
+compatible: "target-user"
+
+properties:
+  single:
+    type: phandle
+    target-compatibles:
+      - "target-ok"
+
+  multiple:
+    type: phandles
+    target-compatibles:
+      - "target-ok"
+"""
+        )
+
+    dts_ok = tmp_path / "target-compat-ok.dts"
+    with open(dts_ok, "w", encoding="utf-8") as f:
+        f.write(
+            """\
+/dts-v1/;
+
+/ {
+    target_ok: target-ok {
+        compatible = "target-ok";
+    };
+
+    user {
+        compatible = "target-user";
+        single = <&target_ok>;
+        multiple = <&target_ok &target_ok>;
+    };
+};
+"""
+        )
+
+    edt = edtlib.EDT(str(dts_ok), [str(tmp_path)])
+    user = edt.get_node("/user")
+    assert user.props["single"].val.path == "/target-ok"
+    assert [node.path for node in user.props["multiple"].val] == ["/target-ok", "/target-ok"]
+
+    dts_bad = tmp_path / "target-compat-bad.dts"
+    with open(dts_bad, "w", encoding="utf-8") as f:
+        f.write(
+            """\
+/dts-v1/;
+
+/ {
+    target_bad: target-bad {
+        compatible = "target-bad";
+    };
+
+    user {
+        compatible = "target-user";
+        single = <&target_bad>;
+    };
+};
+"""
+        )
+
+    with pytest.raises(edtlib.EDTError) as e:
+        edtlib.EDT(str(dts_bad), [str(tmp_path)])
+
+    assert str(e.value) == (
+        f"property 'single' on /user in {str(dts_bad)} points to /target-bad, "
+        "but this node has compatibles ['target-bad']; expected one of ['target-ok'] "
+        f"from 'target-compatibles' in {str(binding_file)}"
+    )
+
+
+def test_target_compatibles_binding_errs(tmp_path):
+    '''Test target-compatibles binding schema errors.'''
+
+    binding_file = tmp_path / "wrong-target-compat.yaml"
+
+    with open(binding_file, "w", encoding="utf-8") as f:
+        f.write(
+            """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: int
+    target-compatibles:
+      - "target-ok"
+"""
+        )
+
+    with pytest.raises(edtlib.EDTError) as e:
+        edtlib.Binding(str(binding_file), {})
+    assert str(e.value) == (
+        "'target-compatibles' in 'properties: foo' has type 'int', "
+        "expected 'phandle' or 'phandles'"
+    )
+
+    with open(binding_file, "w", encoding="utf-8") as f:
+        f.write(
+            """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: phandle
+    target-compatibles: "target-ok"
+"""
+        )
+
+    with pytest.raises(edtlib.EDTError) as e:
+        edtlib.Binding(str(binding_file), {})
+    assert str(e.value) == (
+        f"'target-compatibles' for 'foo' in '{str(binding_file)}' is not a list"
+    )
+
+    with open(binding_file, "w", encoding="utf-8") as f:
+        f.write(
+            """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: phandle
+    target-compatibles: []
+"""
+        )
+
+    with pytest.raises(edtlib.EDTError) as e:
+        edtlib.Binding(str(binding_file), {})
+    assert str(e.value) == (
+        f"'target-compatibles' for 'foo' in '{str(binding_file)}' must not be empty"
+    )
+
+    with open(binding_file, "w", encoding="utf-8") as f:
+        f.write(
+            """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: phandle
+    target-compatibles:
+      - "target-ok"
+      - 123
+"""
+        )
+
+    with pytest.raises(edtlib.EDTError) as e:
+        edtlib.Binding(str(binding_file), {})
+    assert str(e.value) == (
+        f"'target-compatibles' for 'foo' in '{str(binding_file)}' must be a list of strings"
+    )
+
 def test_prop_range_binding_errs(tmp_path):
     '''Test errors in binding definitions with invalid min:/max:'''
 
