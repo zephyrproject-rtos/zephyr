@@ -77,10 +77,9 @@ enum stm32_dcmipp_state {
 #define STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR (STM32_DCMIPP_MAX_PIPE_DEC_FACTOR * \
 					    STM32_DCMIPP_MAX_PIPE_DSIZE_FACTOR)
 struct stm32_dcmipp_pipe_data {
-	const struct device *dev;
+	struct video_device_context dctx;
 	uint32_t id;
 	struct stm32_dcmipp_data *dcmipp;
-	struct k_mutex lock;
 	struct video_format fmt;
 	struct video_rect crop;
 	struct video_rect compose;
@@ -586,8 +585,6 @@ static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *f
 
 	stm32_dcmipp_compute_fmt_pitch(pipe->id, fmt);
 
-	k_mutex_lock(&pipe->lock, K_FOREVER);
-
 	if (pipe->is_streaming) {
 		ret = -EBUSY;
 		goto out;
@@ -616,8 +613,6 @@ static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *f
 	pipe->fmt = *fmt;
 
 out:
-	k_mutex_unlock(&pipe->lock);
-
 	return ret;
 }
 
@@ -980,8 +975,6 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	HAL_StatusTypeDef hal_ret;
 	int ret;
 
-	k_mutex_lock(&pipe->lock, K_FOREVER);
-
 	if (pipe->is_streaming) {
 		ret = -EALREADY;
 		goto out;
@@ -1201,8 +1194,6 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	dcmipp->enabled_pipe++;
 
 out:
-	k_mutex_unlock(&pipe->lock);
-
 	return ret;
 }
 
@@ -1213,8 +1204,6 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	const struct stm32_dcmipp_config *config = dev->config;
 	struct video_buffer *vbuf;
 	int ret;
-
-	k_mutex_lock(&pipe->lock, K_FOREVER);
 
 	if (!pipe->is_streaming) {
 		ret = -EINVAL;
@@ -1283,8 +1272,6 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	dcmipp->enabled_pipe--;
 
 out:
-	k_mutex_unlock(&pipe->lock);
-
 	return ret;
 }
 
@@ -1297,8 +1284,6 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
-
-	k_mutex_lock(&pipe->lock, K_FOREVER);
 
 	if (pipe->fmt.pitch * pipe->fmt.height > vbuf->size) {
 		return -EINVAL;
@@ -1325,8 +1310,6 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 	} else {
 		k_fifo_put(&pipe->fifo_in, vbuf);
 	}
-
-	k_mutex_unlock(&pipe->lock);
 
 	return 0;
 }
@@ -1534,14 +1517,12 @@ static int stm32_dcmipp_set_selection(const struct device *dev, struct video_sel
 			sel->rect.width = ROUND_DOWN(sel->rect.width, h_pixel_align);
 		}
 
-		k_mutex_lock(&pipe->lock, K_FOREVER);
 		pipe->crop = sel->rect;
 		pipe->compose.width = sel->rect.width;
 		pipe->compose.height = sel->rect.height;
 		pipe->fmt.width = sel->rect.width;
 		pipe->fmt.height = sel->rect.height;
 		stm32_dcmipp_compute_fmt_pitch(pipe->id, &pipe->fmt);
-		k_mutex_unlock(&pipe->lock);
 		break;
 	case VIDEO_SEL_TGT_COMPOSE:
 		/* Compose not available on Pipe0 */
@@ -1569,12 +1550,10 @@ static int stm32_dcmipp_set_selection(const struct device *dev, struct video_sel
 			sel->rect.height = pipe->crop.height / STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR;
 		}
 
-		k_mutex_lock(&pipe->lock, K_FOREVER);
 		pipe->compose = sel->rect;
 		pipe->fmt.width = sel->rect.width;
 		pipe->fmt.height = sel->rect.height;
 		stm32_dcmipp_compute_fmt_pitch(pipe->id, &pipe->fmt);
-		k_mutex_unlock(&pipe->lock);
 		break;
 	default:
 		return -EINVAL;
@@ -1762,8 +1741,13 @@ static int stm32_dcmipp_pipe_init(const struct device *dev)
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
+	int ret;
 
-	k_mutex_init(&pipe->lock);
+	ret = video_init_context_dev(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
 	k_fifo_init(&pipe->fifo_in);
 	k_fifo_init(&pipe->fifo_out);
 
