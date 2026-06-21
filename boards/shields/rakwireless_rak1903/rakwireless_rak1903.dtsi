@@ -1,0 +1,16 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+#include <zephyr/dt-bindings/gpio/wisblock-sensor-slot.h>
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	rak1903_sensor: opt3001@44 {
+		status = "okay";
+		compatible = "ti,opt3001";
+		reg = <0x44>;
+	};
+};
