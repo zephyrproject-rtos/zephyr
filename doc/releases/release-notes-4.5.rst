@@ -250,6 +250,20 @@ New Boards
 
   * :zephyr:board:`Arduino Nesso N1 <arduino_nesso_n1>` (``arduino_nesso_n1``)
 
+* RAKwireless Technology Limited
+
+  * :zephyr:board:`RAK3212 Breakout Board <rak3212>` (``rak3212``)
+  * :zephyr:board:`RAK3272S Breakout Board <rak3272s>` (``rak3272s``)
+  * :zephyr:board:`RAK3312 WisBlock Core Module <rak3312>` (``rak3312``)
+  * :zephyr:board:`RAK3372 WisBlock Core Module <rak3372>` (``rak3372``)
+  * :zephyr:board:`RAK3401 WisBlock Core Module <rak3401>` (``rak3401``)
+  * :zephyr:board:`RAK11161 Breakout Board <rak11161>` (``rak11161``)
+  * :zephyr:board:`RAK11162 WisBlock Core Module <rak11162>` (``rak11162``)
+  * :zephyr:board:`RAK11310 WisBlock Core Module <rak11310>` (``rak11310``)
+  * :zephyr:board:`RAK11721 Breakout Board <rak11721>` (``rak11721``)
+  * :zephyr:board:`RAK11722 WisBlock Core Module <rak11722>` (``rak11722``)
+  * :zephyr:board:`RAK19026 WisMesh Base Board <rak19026>` (``rak19026``)
+
 * Seeed
 
   * :zephyr:board:`Seeed Wio Tracker L1 <wio_tracker_l1>` (``wio_tracker_l1``)
@@ -263,6 +277,29 @@ New Shields
 
 ..
   Same as above, this will also be recomputed at the time of the release.
+
+* :ref:`RAK1901 WisBlock Temperature and Humidity Sensor <rakwireless_rak1901>`
+* :ref:`RAK1902 WisBlock Barometer Pressure Sensor Module <rakwireless_rak1902>`
+* :ref:`RAK1903 WisBlock Ambient Light Sensor Module <rakwireless_rak1903>`
+* :ref:`RAK1904 WisBlock 3-Axis Acceleration Sensor Module <rakwireless_rak1904>`
+* :ref:`RAK1905 WisBlock 9-Axis Sensor Module <rakwireless_rak1905>`
+* :ref:`RAK1906 WisBlock Environmental Sensor Module <rakwireless_rak1906>`
+* :ref:`RAK1921 WisBlock OLED Display <rakwireless_rak1921>`
+* :ref:`RAK5802 WisBlock RS485 Interface Module <rakwireless_rak5802>`
+* :ref:`RAK13002 WisBlock IO Module <rakwireless_rak13002>`
+* :ref:`RAK19001 WisBlock Dual IO Base Board <rakwireless_rak19001>`
+* :ref:`RAK19002 WisBlock Boost Module <rakwireless_rak19002>`
+* :ref:`RAK19003 WisBlock Mini Base Board <rakwireless_rak19003>`
+* :ref:`RAK19007 WisBlock Base Board 2nd Gen <rakwireless_rak19007>`
+* :ref:`RAK19009 WisBlock Mini Base Board with Power Slot <rakwireless_rak19009>`
+* :ref:`RAK19010 WisBlock Base Board with Power Slot <rakwireless_rak19010>`
+* :ref:`RAK19011 WisBlock Dual IO Base Board with Power Slot <rakwireless_rak19011>`
+* :ref:`RAK19012 WisBlock USB LiPo Solar Power Slot Module <rakwireless_rak19012>`
+* :ref:`RAK19013 WisBlock LiPo Solar Power Slot Module <rakwireless_rak19013>`
+* :ref:`RAK19014 WisBlock Battery USB Power Slot Module <rakwireless_rak19014>`
+* :ref:`RAK19015 WisBlock Battery Power Slot Module <rakwireless_rak19015>`
+* :ref:`RAK19016 WisBlock 5-24 V Power Slot Module <rakwireless_rak19016>`
+* :ref:`RAK19017 WisBlock POE Slot Module <rakwireless_rak19017>`
 
 
 New Drivers
