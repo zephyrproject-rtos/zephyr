@@ -1,0 +1,73 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+#include <wisblock/wisblock_sensor_a.dtsi>
+#include <wisblock/wisblock_sensor_b.dtsi>
+#include <wisblock/wisblock_sensor_c.dtsi>
+#include <wisblock/wisblock_sensor_d.dtsi>
+#include <wisblock/wisblock_sensor_e.dtsi>
+#include <wisblock/wisblock_sensor_f.dtsi>
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/wisblock-io-slot.h>
+#include <zephyr/dt-bindings/battery/battery.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	chosen {
+		zephyr,console = &wisblock_console;
+		zephyr,shell-uart = &wisblock_console;
+		zephyr,uart-mcumgr = &wisblock_console;
+		zephyr,bt-mon-uart = &wisblock_console;
+		zephyr,bt-c2h-uart = &wisblock_console;
+	};
+
+	aliases {
+		led0 = &wisblock_led1;
+		led1 = &wisblock_led2;
+		fuel-gauge0 = &wisblock_vbat;
+		sw0 = &wisblock_sw1;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		wisblock_sw1: button0 {
+			gpios = <&wisblock_io WISBLOCK_IO_SW1 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wisblock_led1: led0 {
+			gpios = <&wisblock_io WISBLOCK_IO_LED1 GPIO_ACTIVE_HIGH>;
+		};
+
+		wisblock_led2: led1 {
+			gpios = <&wisblock_io WISBLOCK_IO_LED2 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	rak19001_vdiv: vdiv {
+		compatible = "voltage-divider";
+		io-channels = <&wisblock_adc WISBLOCK_ADC_AIN0>;
+		output-ohms = <1500000>;
+		full-ohms = <2500000>;
+	};
+
+	wisblock_vbat: vbatt {
+		compatible = "zephyr,fuel-gauge-composite";
+		source-primary = <&rak19001_vdiv>;
+		device-chemistry = "lithium-ion-polymer";
+		ocv-capacity-table-0 =
+			<BATTERY_OCV_CURVE_LITHIUM_ION_POLYMER_DEFAULT>;
+	};
+};
+
+&wisblock_console {
+	status = "okay";
+};

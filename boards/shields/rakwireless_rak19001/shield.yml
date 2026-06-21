@@ -1,0 +1,12 @@
+shield:
+  name: rakwireless_rak19001
+  full_name: RAK19001 WisBlock Dual IO Base Board
+  vendor: rakwireless
+  supported_features:
+    - gpio
+    - led
+    - serial
+    - adc
+    - sensor
+    - fuel_gauge
+    - input
