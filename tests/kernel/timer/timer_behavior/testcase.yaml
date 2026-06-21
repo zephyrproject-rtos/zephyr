@@ -1,11 +1,11 @@
+common:
+  platform_type:
+    - mcu
+  tags:
+    - timer
 tests:
   kernel.timer.timer:
-    tags:
-      - kernel
-      - timer
     min_ram: 16
-    platform_type:
-      - mcu
     simulation_exclude:
       - renode
     harness_config:
@@ -18,12 +18,7 @@ tests:
     arch_exclude:
       - arc
   kernel.timer.timer_arc:
-    tags:
-      - kernel
-      - timer
     min_ram: 16
-    platform_type:
-      - mcu
     harness_config:
       record:
         regex:
@@ -34,9 +29,6 @@ tests:
     extra_configs:
       - CONFIG_SYS_CLOCK_TICKS_PER_SEC=10000
   kernel.timer.timer_behavior_external:
-    tags:
-      - kernel
-      - timer
     filter: dt_compat_enabled("test-kernel-timer-behavior-external")
     harness: pytest
     harness_config:
