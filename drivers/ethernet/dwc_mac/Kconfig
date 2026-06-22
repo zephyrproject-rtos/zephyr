@@ -25,6 +25,16 @@ config ETH_DWC_ETHER_1000_CORE
 	  also referred to as "dwc_ether_mac10_100_1000_universal".
 	  IP version v3.x is supported.
 
+config ETH_ESP32_DWC_ETHER_1000
+	bool "Driver for DWC Ethernet MAC-based ESP32"
+	depends on !ETH_ESP32
+	depends on SOC_SERIES_ESP32
+	depends on DT_HAS_ESPRESSIF_ESP32_ETH_ENABLED
+	select ETH_DWC_ETHER_1000_CORE
+	default y
+	help
+	  This enables the Synopsys DesignWare MAC driver for ESP32 SoCs.
+
 config ETH_STM32_DWC_ETHER_QOS
 	bool "Driver for DWC Ethernet QoS-based STM32"
 	depends on !ETH_STM32_HAL
