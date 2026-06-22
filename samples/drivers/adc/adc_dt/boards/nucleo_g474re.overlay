@@ -63,8 +63,6 @@
 &adc2 {
 	pinctrl-0 = <&adc2_in17_pa4>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
