@@ -186,6 +186,8 @@
 			compatible = "silabs,siwx91x-rng";
 			reg = <0x45090000 0x8>;
 			clocks = <&clock0 SIWX91X_CLK_RNG>;
+			power-domains = <&siwx91x_soc_pd>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		egpio0: egpio@46130000 {
