@@ -206,7 +206,58 @@ Security Vulnerability Related
 The following security vulnerabilities (CVEs) were addressed in this
 release:
 
-.. comment  List CVEs here
+* :cve:`2026-7656`: Under embargo until 2026-06-25
+* :cve:`2026-8023`: Under embargo until 2026-06-23
+* :cve:`2026-9263`: Under embargo until 2026-06-28
+* :cve:`2026-10593`: Under embargo until 2026-08-26
+* :cve:`2026-10634` `Zephyr project bug tracker GHSA-6c57-xfhw-j26x
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-6c57-xfhw-j26x>`_
+* :cve:`2026-10636` `Zephyr project bug tracker GHSA-fj6q-975v-65c9
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-fj6q-975v-65c9>`_
+* :cve:`2026-10637` `Zephyr project bug tracker GHSA-m23w-34pp-4h92
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-m23w-34pp-4h92>`_
+* :cve:`2026-10638`: Under embargo until 2026-08-20
+* :cve:`2026-10639` `Zephyr project bug tracker GHSA-qhrf-w466-qmpw
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-qhrf-w466-qmpw>`_
+* :cve:`2026-10640` `Zephyr project bug tracker GHSA-r74c-mr4m-7g9g
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-r74c-mr4m-7g9g>`_
+* :cve:`2026-10641` `Zephyr project bug tracker GHSA-wx5j-q6f2-59p3
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-wx5j-q6f2-59p3>`_
+* :cve:`2026-10642`: Under embargo until 2026-08-26
+* :cve:`2026-10643`: Under embargo until 2026-08-26
+* :cve:`2026-10645` `Zephyr project bug tracker GHSA-hwrh-9h3x-vccm
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hwrh-9h3x-vccm>`_
+* :cve:`2026-10646`: Under embargo until 2026-08-26
+* :cve:`2026-10647`: Under embargo until 2026-08-26
+* :cve:`2026-10651` `Zephyr project bug tracker GHSA-p93g-3r68-cj53
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-p93g-3r68-cj53>`_
+* :cve:`2026-10652`: Under embargo until 2026-07-22
+* :cve:`2026-10653`: Under embargo until 2026-08-21
+* :cve:`2026-10654`: Under embargo until 2026-08-26
+* :cve:`2026-10655`: Under embargo until 2026-08-26
+* :cve:`2026-10657`: Under embargo until 2026-08-20
+* :cve:`2026-10658` `Zephyr project bug tracker GHSA-26g8-rmpf-j6cw
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-26g8-rmpf-j6cw>`_
+* :cve:`2026-10660`: Under embargo until 2026-08-26
+* :cve:`2026-10664`: Under embargo until 2026-06-28
+* :cve:`2026-10666`: Under embargo until 2026-07-09
+* :cve:`2026-10667`: Under embargo until 2026-07-11
+* :cve:`2026-10669`: Under embargo until 2026-08-20
+* :cve:`2026-10670`: Under embargo until 2026-08-20
+* :cve:`2026-10671`: Under embargo until 2026-08-20
+* :cve:`2026-10672`: Under embargo until 2026-06-25
+* :cve:`2026-10673`: Under embargo until 2026-07-15
+* :cve:`2026-10674`: Under embargo until 2026-08-28
+* :cve:`2026-10675`: Under embargo until 2026-08-26
+* :cve:`2026-10677`: Under embargo until 2026-08-26
+* :cve:`2026-10678`: Under embargo until 2026-08-21
+* :cve:`2026-10679`: Under embargo until 2026-08-26
+* :cve:`2026-10680`: Under embargo until 2026-08-09
+* :cve:`2026-10682`: Under embargo until 2026-08-25
+* :cve:`2026-10684`: Under embargo until 2026-08-28
+* :cve:`2026-10686`: Under embargo until 2026-08-30
+* :cve:`2026-10772`: Under embargo until 2026-09-01
+* :cve:`2026-10774`: Under embargo until 2026-09-01
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
