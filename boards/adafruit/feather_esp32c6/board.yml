@@ -1,0 +1,6 @@
+board:
+  name: adafruit_feather_esp32c6
+  full_name: Adafruit Feather ESP32C6
+  vendor: adafruit
+  socs:
+  - name: esp32c6

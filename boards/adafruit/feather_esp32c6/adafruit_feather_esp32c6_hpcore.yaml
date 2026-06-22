@@ -1,0 +1,18 @@
+identifier: adafruit_feather_esp32c6/esp32c6/hpcore
+name: Adafruit Feather ESP32C6 HPCore
+vendor: adafruit
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - watchdog
+  - uart
+  - dma
+  - spi
+  - entropy
+  - i2c
+  - i2s
+  - netif:openthread
+  - netif:wifi

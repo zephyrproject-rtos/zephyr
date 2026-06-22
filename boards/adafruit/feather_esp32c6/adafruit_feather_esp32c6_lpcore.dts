@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32c6/esp32c6_lpcore_mini_n4.dtsi>
+#include <espressif/partitions_0x0_default.dtsi>
+
+/ {
+	model = "Adafruit Feather ESP32C6 LPCORE";
+	compatible = "espressif,esp32c6";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &ulp_ram;
+		zephyr,code-partition = &slot0_lpcore_partition;
+		zephyr,console = &lp_uart;
+		zephyr,shell-uart = &lp_uart;
+	};
+};
+
+&lp_uart {
+	status = "okay";
+	current-speed = <115200>;
+};
