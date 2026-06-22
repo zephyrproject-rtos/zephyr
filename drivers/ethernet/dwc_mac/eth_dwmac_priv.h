@@ -142,8 +142,8 @@ struct dwmac_priv {
  * Handy register accessors
  */
 
-#define REG_READ(r) sys_read32(DEVICE_MMIO_GET(dev) + (r))
-#define REG_WRITE(r, v) sys_write32((v), DEVICE_MMIO_GET(dev) + (r))
+#define DWMAC_REG_READ(r) sys_read32(DEVICE_MMIO_GET(dev) + (r))
+#define DWMAC_REG_WRITE(r, v) sys_write32((v), DEVICE_MMIO_GET(dev) + (r))
 
 /*
  * Shared declarations between core and platform glue code
