@@ -39,6 +39,18 @@ struct k_spinlock _sched_spinlock;
  */
 __incoherent struct k_thread _thread_dummy;
 
+/* One-shot guard + counter for the "already pended" recovery in
+ * add_to_waitq_locked(). The recovery is a defense-in-depth against a reachable
+ * state (a blocking pend from ISR -- e.g. a driver async callback doing
+ * k_sem_take(K_FOREVER) -- which the kernel does not yet refuse in production).
+ * It must not silently mask the producer: warn once + count, so a developer
+ * hitting this class finds the source instead of chasing a downstream crash.
+ * Once the kernel enforces "no blocking pend from ISR" in every build, the
+ * warning graduates to an __ASSERT and this becomes a true invariant check.
+ */
+static atomic_t already_pended_warned;
+static atomic_t already_pended_count;
+
 static ALWAYS_INLINE void update_cache(int preempt_ok);
 static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state,
 				      k_spinlock_key_t *key);
@@ -429,6 +441,15 @@ static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 	 * so this is a no-op.
 	 */
 	if (thread->base.pended_on != NULL) {
+		(void)atomic_inc(&already_pended_count);
+		if (atomic_set(&already_pended_warned, 1) == 0) {
+			LOG_WRN("thread %p reached add_to_waitq_locked() still pended on "
+				"%p; recovered. Likely a blocking pend from ISR "
+				"(e.g. a driver async callback doing k_sem_take(K_FOREVER)) -- "
+				"fix the producer. (This recovery is a defense until the kernel "
+				"enforces no-blocking-pend-from-ISR in production; see PR #111518.)",
+				thread, thread->base.pended_on);
+		}
 		unpend_thread_no_timeout(thread);
 		(void)z_try_abort_thread_timeout(thread);
 	}
