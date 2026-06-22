@@ -37,6 +37,9 @@ tests:
     extra_args:
       - FILE_SUFFIX=icbmsg
       - remote_FILE_SUFFIX=icbmsg
+      - remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_DEINIT=y
+    extra_configs:
+      - CONFIG_IPC_SERVICE_BACKEND_ICBMSG_DEINIT=y
   tests.ipc.ipc_service_api.static_vrings:
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
@@ -73,6 +76,9 @@ tests:
       - remote_FILE_SUFFIX=icbmsg
       - SB_CONFIG_REMOTE_NRF54H20_CPUPPR_CORE=y
       - ipc_service_api_SNIPPET=nordic-ppr
+      - remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_DEINIT=y
+    extra_configs:
+      - CONFIG_IPC_SERVICE_BACKEND_ICBMSG_DEINIT=y
   tests.ipc.ipc_service_api.icmsg.cpuflpr:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
@@ -98,10 +104,13 @@ tests:
     extra_args:
       - FILE_SUFFIX=icbmsg_cpuflpr
       - remote_FILE_SUFFIX=icbmsg
+      - remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_DEINIT=y
       - SB_CONFIG_REMOTE_NRF54H20_CPUFLPR_CORE=y
     required_snippets:
       - nordic-log-stm
       - nordic-flpr
+    extra_configs:
+      - CONFIG_IPC_SERVICE_BACKEND_ICBMSG_DEINIT=y
   tests.ipc.ipc_service_api.icmsg.no_multithreading:
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
@@ -132,5 +141,7 @@ tests:
       - FILE_SUFFIX=icbmsg
       - remote_FILE_SUFFIX=icbmsg
       - remote_CONFIG_MULTITHREADING=n
+      - remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_DEINIT=y
     extra_configs:
       - CONFIG_MULTITHREADING=n
+      - CONFIG_IPC_SERVICE_BACKEND_ICBMSG_DEINIT=y
