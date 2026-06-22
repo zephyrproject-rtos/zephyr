@@ -211,7 +211,7 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 	MEM_MAP_CONST_REGION(
 		IMR_BOOT_LDR_STACK_BASE,
 		IMR_BOOT_LDR_STACK_BASE + IMR_BOOT_LDR_STACK_SIZE,
-		XTENSA_MMU_PERM_W,
+		XTENSA_MMU_PERM_W | XTENSA_MMU_MAP_SHARED,
 		"imr stack"
 	)
 
