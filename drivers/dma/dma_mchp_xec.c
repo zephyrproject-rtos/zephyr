@@ -96,9 +96,7 @@ LOG_MODULE_REGISTER(dma_mchp_xec, CONFIG_DMA_LOG_LEVEL);
 
 struct dma_xec_irq_info {
 	uint8_t gid;	/* GIRQ id [8, 26] */
-	uint8_t gpos;	/* bit position in GIRQ [0, 31] */
-	uint8_t anid;	/* aggregated external NVIC input */
-	uint8_t dnid;	/* direct NVIC input */
+	uint8_t gpos;   /* bit position in GIRQ [0, 31] */
 };
 
 struct dma_xec_config {
@@ -108,7 +106,7 @@ struct dma_xec_config {
 	uint16_t enc_pcr;
 	int irq_info_size;
 	const struct dma_xec_irq_info *irq_info_list;
-	void (*irq_connect)(void);
+	void (*irq_connect)(const struct device *dev);
 };
 
 struct dma_xec_channel {
@@ -723,7 +721,7 @@ static int dma_xec_init(const struct device *dev)
 	}
 	sys_write32(BIT(XEC_DMA_MAIN_CTRL_EN_POS), regs + XEC_DMA_MAIN_CTRL);
 
-	devcfg->irq_connect();
+	devcfg->irq_connect(dev);
 
 	return 0;
 }
@@ -736,31 +734,31 @@ static int dma_xec_init(const struct device *dev)
 	{									\
 		.gid = DMA_XEC_GID(n, p, i),					\
 		.gpos = DMA_XEC_GPOS(n, p, i),					\
-		.anid = MCHP_XEC_ECIA_NVIC_AGGR(DT_PROP_BY_IDX(n, p, i)),	\
-		.dnid = MCHP_XEC_ECIA_NVIC_DIRECT(DT_PROP_BY_IDX(n, p, i)),	\
 	},
 
-/* n = node-id, p = property, i = index(channel?) */
-#define DMA_XEC_IRQ_DECLARE(node_id, p, i)					\
-	static void dma_xec_chan_##i##_isr(const struct device *dev)		\
-	{									\
-		dma_xec_irq_handler(dev, i);					\
-	}									\
+/* node_id, p = property (interrupt-names), i = interrupt/channel index */
+#define DMA_XEC_IRQ_DECLARE(node_id, p, i)                                                         \
+	static void dma_xec_chan_##i##_isr(const struct device *dev)                               \
+	{                                                                                          \
+		dma_xec_irq_handler(dev, i);                                                       \
+	}
 
-#define DMA_XEC_IRQ_CONNECT_SUB(node_id, p, i)					\
-	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, i, irq),				\
-		    DT_IRQ_BY_IDX(node_id, i, priority),			\
-		    dma_xec_chan_##i##_isr,					\
-		    DEVICE_DT_GET(node_id), 0);					\
-	irq_enable(DT_IRQ_BY_IDX(node_id, i, irq));				\
-	soc_ecia_girq_ctrl(DMA_XEC_GID(node_id, p, i), DMA_XEC_GPOS(node_id, p, i), 1);
+#define DMA_XEC_IRQ_CONNECT_SUB(node_id, p, i)                                                     \
+	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, i, irq), DT_IRQ_BY_IDX(node_id, i, priority),           \
+		    dma_xec_chan_##i##_isr, DEVICE_DT_GET(node_id), 0);                            \
+	irq_enable(DT_IRQ_BY_IDX(node_id, i, irq));                                                \
+	soc_ecia_girq_ctrl(devcfg->irq_info_list[i].gid, devcfg->irq_info_list[i].gpos, 1);
 
-/* i = instance number of DMA controller */
-#define DMA_XEC_IRQ_CONNECT(inst)							\
-	DT_INST_FOREACH_PROP_ELEM(inst, girqs, DMA_XEC_IRQ_DECLARE)			\
-	void dma_xec_irq_connect##inst(void)						\
-	{										\
-		DT_INST_FOREACH_PROP_ELEM(inst, girqs, DMA_XEC_IRQ_CONNECT_SUB)		\
+/* i = instance number of DMA controller. The connect loop iterates the
+ * interrupt-names property so the index aligns 1:1 with the interrupts
+ * entries; the GIRQ enable is looked up from the config array by index.
+ */
+#define DMA_XEC_IRQ_CONNECT(inst)                                                                  \
+	DT_INST_FOREACH_PROP_ELEM(inst, interrupt_names, DMA_XEC_IRQ_DECLARE)                      \
+	void dma_xec_irq_connect##inst(const struct device *dev)                                   \
+	{                                                                                          \
+		const struct dma_xec_config *const devcfg = dev->config;                           \
+		DT_INST_FOREACH_PROP_ELEM(inst, interrupt_names, DMA_XEC_IRQ_CONNECT_SUB)          \
 	}
 
 #define DMA_XEC_DEVICE(i)								\
