@@ -25,7 +25,7 @@ The following commands build and flash DAP sample.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/dap
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: flash
    :compact:
 
