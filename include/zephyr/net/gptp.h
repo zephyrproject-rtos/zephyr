@@ -253,6 +253,18 @@ struct gptp_clk_src_time_invoke_params {
 	uint16_t time_base_indicator;
 };
 
+/** @cond INTERNAL_HIDDEN */
+
+#if defined(CONFIG_NET_GPTP)
+void net_gptp_init(void);
+#else
+static inline void net_gptp_init(void)
+{
+}
+#endif /* CONFIG_NET_GPTP */
+
+/** @endcond */
+
 /**
  * @brief Register a phase discontinuity callback.
  *
