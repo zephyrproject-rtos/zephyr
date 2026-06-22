@@ -6,6 +6,11 @@
 
 /**
  * @file
+ * @brief Header file for the Bluetooth Mesh Device Firmware Update (DFU) metadata API.
+ * @ingroup bt_mesh_dfu_metadata
+ */
+
+/**
  * @defgroup bt_mesh_dfu_metadata Bluetooth Mesh Device Firmware Update (DFU) metadata
  * @ingroup bt_mesh_dfu
  * @{

@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Bluetooth Mesh Bridge Configuration Client model API.
+ * @ingroup bt_mesh_brg_cfg_cli
+ */
+
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_BRG_CFG_CLI_H__
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_BRG_CFG_CLI_H__
 
