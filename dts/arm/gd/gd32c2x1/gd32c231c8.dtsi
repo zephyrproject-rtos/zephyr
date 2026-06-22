@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026 GigaDevice Semiconductor Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "gd32c2x1.dtsi"
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(48)>;
+};
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(64)>;
+	page-size = <DT_SIZE_K(1)>;
+};
