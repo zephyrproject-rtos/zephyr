@@ -1,0 +1,9 @@
+# Copyright (c) 2025 MA Junyi
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: tq_h503a
+  full_name: TQ H503A
+  vendor: embedsky
+  socs:
+    - name: stm32h503xx

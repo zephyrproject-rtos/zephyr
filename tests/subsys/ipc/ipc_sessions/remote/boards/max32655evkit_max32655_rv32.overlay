@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Switch to using just SRAM2 for the RV32 core. */
+&rv32_sram {
+	reg = <0x20010000 DT_SIZE_K(48)>;
+};
+
+&mbox {
+	status = "okay";
+};
+
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* Split SRAM3 into even 8K pieces */
+		sram_rx: memory@2001c000 {
+			reg = <0x2001c000 DT_SIZE_K(8)>;
+		};
+
+		sram_tx: memory@2001e000 {
+			reg = <0x2001e000 DT_SIZE_K(8)>;
+		};
+	};
+
+	ipc0: ipc0 {
+		compatible = "zephyr,ipc-icmsg";
+		tx-region = <&sram_tx>;
+		rx-region = <&sram_rx>;
+		mboxes = <&mbox 0>, <&mbox 0>;
+		mbox-names = "tx", "rx";
+		dcache-alignment = <8>;
+		unbound = "detect";
+		status = "okay";
+	};
+};

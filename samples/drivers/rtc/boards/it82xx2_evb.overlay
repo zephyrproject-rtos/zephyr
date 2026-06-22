@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 ITE Technology Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		rtc = &rtc0;
+	};
+};
+
+&rtc0 {
+	status = "okay";
+};

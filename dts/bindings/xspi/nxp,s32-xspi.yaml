@@ -1,0 +1,270 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP S32 eXpanded Serial Peripheral Interface (XSPI) Controller.
+
+  XSPI acts as an interface to up to two serial flash memory devices, each with
+  up to eight bidirectional bidirectional data lines, depending on the platform.
+
+compatible: "nxp,s32-xspi"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+bus: xspi
+
+properties:
+  reg:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+  data-rate:
+    type: string
+    enum:
+      - "SDR"
+      - "DDR"
+    description: |
+      Selects the read mode:
+      - Single Data Rate (SDR): sampling of incoming data occurs on single edges.
+      - Double Data Rate (DDR): sampling of incoming data occurs on both edges.
+
+  hold-time-2x:
+    type: boolean
+    description: |
+      Set to align incoming data with 2x serial flash half clock, when in DDR
+      mode. Otherwise, data will be aligned to the posedge of the controller's
+      internal reference clock.
+
+  sample-delay-half-cycle:
+    type: boolean
+    description: |
+      Set to use half-cycle early DQS delay when sampling received data.
+
+  sample-phase-inverted:
+    type: boolean
+    description: |
+      Set to sample received data at inverted clock.
+
+  cs-setup-time:
+    type: int
+    default: 2
+    description: |
+      Chip select setup time, in serial clock cycles. A bigger value will pull
+      the CS signal earlier before the transaction starts.
+      This value must be greater than or equal to two.
+
+  cs-hold-time:
+    type: int
+    default: 2
+    description: |
+      Chip select hold time, in serial clock cycles. A bigger value will release
+      the CS signal later after the transaction ends.
+      This value must be greater than or equal to two.
+
+  column-space:
+    type: int
+    default: 0
+    description: |
+      Column Address Space bit width. For example, if the column address is
+      [2:0] of XSPI_SFAR/AHB address, then the column address space bit width
+      must be 3. If there is no column address separation in any serial flash
+      device connected to this controller, this value must be programmed to 0.
+      The default corresponds to the reset value of the register field.
+
+  word-addressable:
+    type: boolean
+    description: |
+      True if serial flash is controller is word (2 bytes) addressable.
+
+  dword-addressable:
+    type: boolean
+    description: |
+      True if serial flash is controller is word (4 bytes) addressable.
+
+  byte-swapping:
+    type: boolean
+    description: |
+      In case of Octal DDR mode, specifies whether a word unit composed of two
+      bytes from posedge and negedge of a single DQS cycle needs to be swapped.
+
+  ahb-buffers-masters:
+    type: array
+    description: |
+      Masters ID's for the AHB receive buffers. The master ID of every incoming
+      request is checked and the data is returned or fetched into the
+      corresponding associated buffer. The maximum number of buffers is SoC
+      specific.
+
+  ahb-buffers-sizes:
+    type: array
+    description: |
+      Sizes (in bytes) of the AHB receive buffers. The maximum buffer size and
+      maximum number of buffers is SoC specific.
+
+  ahb-buffers-all-masters:
+    type: boolean
+    description: |
+      Any access from a master not associated with any other buffer is routed to
+      the last buffer.
+
+  a-rx-clock-source:
+    type: string
+    enum:
+      - "LOOPBACK"
+      - "LOOPBACK_DQS"
+      - "EXTERNAL_DQS"
+    description: |
+      Selects DQS clock source for sampling read data at side A:
+      - LOOPBACK: use loopback clock from PAD as strobe signal.
+      - LOOPBACK_DQS: use loopback clock from PAD as strobe signal.
+      - EXTERNAL_DQS: use external strobe signal.
+
+  a-io2-idle-high:
+    type: boolean
+    description: |
+      Set if the logic level of IO2 signal output of this controller must be
+      driven high in the inactive state.
+      This property applies to side A of the controller.
+
+  a-io3-idle-high:
+    type: boolean
+    description: |
+      Set if the logic level of IO3 signal output of this controller must be
+      driven high in the inactive state.
+      This property applies to side A of the controller.
+
+  a-dll-mode:
+    type: string
+    enum:
+      - "BYPASSED"
+      - "AUTO_UPDATE"
+    description: |
+      DLL mode. The supported modes depends on the SoC.
+      This property applies to side A of the controller.
+
+  a-dll-freq-enable:
+    type: boolean
+    description: |
+      Selects delay-chain for high frequency of operation.
+      This property applies to side A of the controller.
+
+  a-dll-ref-counter:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    default: 1
+    description: |
+      Select the "n+1" interval of DLL phase detection and reference delay
+      updating interval.
+      Minimum recommended value is 1 (reset value).
+      This property applies to side A of the controller.
+
+  a-dll-resolution:
+    type: int
+    enum: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    default: 2
+    description: |
+      Minimum resolution for DLL phase detector to remain locked/unlocked based
+      on flash memory clock jitter.
+      The minimum value is 2 (reset value).
+      This property applies to side A of the controller.
+
+  a-dll-coarse-delay:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    description: |
+      This field sets the number of delay elements in each delay tap. The field
+      is used to overwrite DLL-generated delay values.
+      This property applies to side A of the controller.
+
+  a-dll-fine-delay:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    default: 1
+    description: |
+      This field sets the number of fine offset delay elements up to 16 in
+      incoming DQS. Default should be 1 element.
+      This property applies to side A of the controller.
+
+  a-dll-tap-select:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Selects the Nth tap provided by the slave delay-chain.
+      This property applies to side A of the controller.
+
+  a-differential-clock:
+    type: boolean
+    description: |
+      Enable differential clock output on CKN pad for side A of the controller.
+
+  dqs-as-an-output:
+    type: boolean
+    description: |
+      Enables DQS for output operation. This field is valid when data strobe is
+      also used as an output from the controller during the write data phase.
+      This field is valid for HyperRAM where the data strobe acts as a Read
+      Write Data Strobe (RWDS)
+
+  enable-hresp-mask:
+    type: boolean
+    description: |
+      Set to mask AHB error responses. When enabled, access errors will not
+      generate AHB error responses, instead error payload is provided on the
+      AHB read data bus.
+
+  error-payload-high:
+    type: int
+    description: |
+      High 32-bit word of the error payload returned on AHB read data bus when
+      AHB HRESP error masking is enabled and an access error occurs.
+
+  error-payload-low:
+    type: int
+    description: |
+      Low 32-bit word of the error payload returned on AHB read data bus when
+      AHB HRESP error masking is enabled and an access error occurs.
+
+  ahb-timeout:
+    type: int
+    description: |
+      AHB timeout counter value, in multiples of 50000 AHB clock cycles. When
+      XSPI does not respond to an AHB transfer and keeps HREADY signal low,
+      this timeout counter starts counting.
+
+  transaction-timeout:
+    type: int
+    description: |
+      Transaction timeout counter value to abort ongoing write or read commands.
+      The timeout counter starts after a target queue access wins arbitration
+      and XSPI becomes IDLE (FSM_STAT state field is not 00).
+
+  arbitration-timeout:
+    type: int
+    description: |
+      Arbitration lock timeout counter value. When arbitration is locked by a
+      target group, this timer starts. If the master does not release the
+      arbitration lock before this counter expires, a timeout error is generated.
+
+  tg1-fixed-priority:
+    type: boolean
+    description: |
+      Set to enable fixed priority for target group 1 (TG1). When disabled,
+      TG1 transactions are scheduled on a first-come-first-served basis with
+      other target group queues (except TG0). When enabled, TG1 has higher
+      priority than all other queues except TG0.
+
+  lock-configuration:
+    type: boolean
+    description: |
+      Set to lock configuration registers after initialization until next reset.
+      When enabled, all configuration registers become read-only after the
+      initialization phase completes.
+
+child-binding:
+  description: NXP S32 XSPI flash device
+  include: nxp,s32-xspi-device.yaml

@@ -1,0 +1,29 @@
+common:
+  tags:
+    - bluetooth
+    - host
+tests:
+  bluetooth.host.bt_id_adv_random_addr_check.default:
+    type: unit
+  bluetooth.host.bt_id_adv_random_addr_check.observer_enabled:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_CENTRAL=y
+      - CONFIG_BT_OBSERVER=y
+  bluetooth.host.bt_id_adv_random_addr_check.observer_privacy_enabled:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_SMP=y
+      - CONFIG_BT_PRIVACY=y
+      - CONFIG_BT_CENTRAL=y
+      - CONFIG_BT_OBSERVER=y
+  bluetooth.host.bt_id_adv_random_addr_check.observer_scan_with_identity_enabled:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_SCAN_WITH_IDENTITY=y
+      - CONFIG_BT_CENTRAL=y
+      - CONFIG_BT_OBSERVER=y
+  bluetooth.host.bt_id_adv_random_addr_check.bt_ext_adv_enabled:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_EXT_ADV=y

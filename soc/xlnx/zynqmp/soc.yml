@@ -1,0 +1,4 @@
+family:
+- name: xilinx_zynqmp
+  socs:
+  - name: zynqmp_rpu

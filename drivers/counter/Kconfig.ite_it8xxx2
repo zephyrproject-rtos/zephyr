@@ -1,0 +1,9 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_ITE_IT8XXX2
+	bool "ITE IT8XXX2 Timer driver"
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_COUNTER_ENABLED
+	help
+	  Enable counter support for the ITE IT8XXX2.

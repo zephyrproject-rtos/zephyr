@@ -1,0 +1,7 @@
+tests:
+  kernel.memory_protection.protection:
+    filter: CONFIG_SRAM_REGION_PERMISSIONS
+    tags:
+      - kernel
+      - security
+    ignore_faults: true

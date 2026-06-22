@@ -1,0 +1,5 @@
+# Copyright 2025 aisuneko icecat <iceneko@protonmail.ch>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_TTGO_TOIPLUS
+	select SOC_ESP32C3_FN4

@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# Memory protection
+CONFIG_THREAD_STACK_INFO=n
+CONFIG_THREAD_CUSTOM_DATA=n
+
+# Boot
+CONFIG_BOOT_BANNER=n
+
+# Console
+CONFIG_PRINTK=n
+
+# Build
+CONFIG_SIZE_OPTIMIZATIONS=y

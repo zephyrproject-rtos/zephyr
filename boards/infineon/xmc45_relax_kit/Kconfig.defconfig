@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2020 Linumiz
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+
+if BOARD_XMC45_RELAX_KIT
+
+configdefault NET_L2_ETHERNET
+	default y
+
+configdefault TEST_RANDOM_GENERATOR
+	default y if NETWORKING
+
+endif # BOARD_XMC45_RELAX_KIT

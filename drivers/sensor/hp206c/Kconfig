@@ -1,0 +1,41 @@
+# HopeRF Electronic HP206C precision barometer and altimeter configuration
+# options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HP206C
+	bool "HopeRF HP206C precision barometer and altimeter sensor"
+	default y
+	depends on DT_HAS_HOPERF_HP206C_ENABLED
+	select I2C
+	help
+	  Enable HopeRF HP206C barometer and altimeter support.
+
+if HP206C
+
+config HP206C_OSR_RUNTIME
+	bool "Oversampling rate set at runtime"
+	default y
+
+config HP206C_OSR
+	int "Oversampling rate"
+	depends on !HP206C_OSR_RUNTIME
+	default 4096
+	help
+	  Allowed values: 4096, 2048, 1024, 512, 256, 128
+
+config HP206C_ALT_OFFSET_RUNTIME
+	bool "Altitude offset set at runtime"
+	default y
+
+config HP206C_ALT_OFFSET
+	int "Altitude offset (in cm)"
+	depends on !HP206C_ALT_OFFSET_RUNTIME
+	default 0
+	help
+	  Value, in cm, that will be used to compensate altitude calculation.
+	  For more info on how to choose this value, consult section 6.1.1 in
+	  the datasheet.
+
+endif # HP206C

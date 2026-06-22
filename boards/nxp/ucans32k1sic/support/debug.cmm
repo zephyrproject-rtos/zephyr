@@ -1,0 +1,13 @@
+;*******************************************************************************
+;   Copyright 2023 NXP                                                         *
+;   SPDX-License-Identifier: Apache-2.0                                        *
+;                                                                              *
+;   Lauterbach TRACE32 start-up script for debugging ucans32k1sic              *
+;                                                                              *
+;*******************************************************************************
+
+ENTRY %LINE &args
+
+DO ~~~~/startup.cmm command=debug &args
+
+ENDDO

@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: pic32cm_jh01_cpro
+  full_name: PIC32CM JH01 Curiosity Pro
+  vendor: microchip
+  socs:
+    - name: pic32cm5164jh01100

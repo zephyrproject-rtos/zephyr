@@ -1,0 +1,90 @@
+/*
+ * Copyright (c) 2026 Patryk Koscik <pkoscik@antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/efm32hg309f64.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pinctrl/gecko-pinctrl-s1.h>
+#include <freq.h>
+
+/ {
+	model = "Tomu";
+	compatible = "kosagi,tomu";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpiob 7 0>;
+			label = "Red LED";
+		};
+
+		led1: led_1 {
+			gpios = <&gpioa 0 0>;
+			label = "Green LED";
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(21)>;
+};
+
+&gpioa {
+	status = "okay";
+
+	board-controller-enable {
+		gpio-hog;
+		gpios = <9 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&wdog0 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Toboot occupies the first 16 KB; application starts at 0x4000 */
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00000000 DT_SIZE_K(16)>;
+			read-only;
+			label = "toboot";
+		};
+
+		slot0_partition: partition@4000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00004000 DT_SIZE_K(44)>;
+			label = "image-0";
+		};
+
+		storage_partition: partition@f000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0000f000 DT_SIZE_K(4)>;
+			label = "storage";
+		};
+	};
+};

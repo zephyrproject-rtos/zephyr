@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Martin Kiepfer <mrmarteng@teleschirm.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_AXP192
+	bool "AXP192 PMIC multi-function device driver"
+	default y
+	depends on DT_HAS_X_POWERS_AXP192_ENABLED
+	select I2C
+	help
+	  Enable the X-Powers AXP192 PMIC multi-function device driver

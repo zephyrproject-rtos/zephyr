@@ -1,0 +1,21 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - gint
+
+tests:
+  drivers.interrupt_controller.intc_nxp_gint:
+    extra_args:
+      - platform:mcxw23_evk:EXTRA_DTC_OVERLAY_FILE="boards/mcxw23_evk.overlay"
+    platform_allow:
+      - frdm_mcxw23
+      - mcxw23_evk
+      - lpcxpresso55s36
+      - lpcxpresso51u68
+      - lpcxpresso55s06
+      - lpcxpresso55s16
+      - lpcxpresso55s28
+      - lpcxpresso55s69/lpc55s69/cpu0

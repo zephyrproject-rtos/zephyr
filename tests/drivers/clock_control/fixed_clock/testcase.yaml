@@ -1,0 +1,7 @@
+tests:
+  drivers.clock.clock_control_fixed_clock:
+    tags:
+      - drivers
+      - clock
+    platform_allow:
+      - native_sim/native/64

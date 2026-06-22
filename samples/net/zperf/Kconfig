@@ -1,0 +1,33 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NET_SAMPLE_CODE_RELOCATE
+	bool "Relocate networking code into RAM"
+	select CODE_DATA_RELOCATION
+	help
+	  Relocate networking code into RAM when running the zperf
+	  sample. Can improve performance on platforms with fast code
+	  RAM.
+
+if NET_SAMPLE_CODE_RELOCATE
+
+config NET_SAMPLE_CODE_RAM_NAME
+	string "Networking code RAM location"
+	default "RAM"
+	help
+	  Region to relocate networking code to
+
+endif # NET_SAMPLE_CODE_RELOCATE
+
+if USB_DEVICE_STACK_NEXT
+# Source common USB sample options used to initialize new experimental USB
+# device stack. The scope of these options is limited to USB samples in project
+# tree, you cannot use them in your own application.
+	source "samples/subsys/usb/common/Kconfig.sample_usbd"
+endif
+
+configdefault NRF_WIFI_DATA_HEAP_SIZE
+	default 30000 if NRF_WIFI_ZERO_COPY_TX
+	default 50000
+
+source "Kconfig.zephyr"

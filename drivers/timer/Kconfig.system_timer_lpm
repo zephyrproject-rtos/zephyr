@@ -1,0 +1,91 @@
+# Copyright (c) 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_SYSTEM_TIMER_COMPANION := zephyr,system-timer-companion
+DT_CHOSEN_SYSTEM_TIMER_COMPANION_LEGACY := zephyr,cortex-m-idle-timer
+
+config SYSTEM_TIMER_HAS_LPM_COMPANION_SUPPORT
+	bool
+	help
+	  This option should be selected by system timer drivers that support
+	  delegating low-power timekeeping to a companion timer.
+
+# If all dependencies are enabled, and either the preferred
+# /chosen/zephyr,system-timer-companion property or the deprecated
+# /chosen/zephyr,cortex-m-idle-timer property is enabled, default
+# to using the Counter API-based LPM timer. Otherwise, the first
+# choice (SYSTEM_TIMER_LPM_COMPANION_NONE) will be selected automatically,
+# and no LPM companion timer will be enabled.
+choice SYSTEM_TIMER_LPM_COMPANION
+	prompt "System timer low-power companion"
+	depends on SYSTEM_TIMER_HAS_LPM_COMPANION_SUPPORT
+	# Preserve legacy SysTick Kconfig selections during the deprecation period.
+	# These defaults are scheduled to be removed in Zephyr 4.6.0.
+	default SYSTEM_TIMER_LPM_COMPANION_COUNTER if CORTEX_M_SYSTICK_LPM_TIMER_COUNTER
+	default SYSTEM_TIMER_LPM_COMPANION_HOOKS if CORTEX_M_SYSTICK_LPM_TIMER_HOOKS
+	default SYSTEM_TIMER_LPM_COMPANION_NONE if CORTEX_M_SYSTICK_LPM_TIMER_NONE
+	default SYSTEM_TIMER_LPM_COMPANION_COUNTER
+	help
+	  On some platforms, the timer that is best suited for use as the active
+	  system timer cannot keep time while the system is in a low-power state.
+	  A separate timer may remain active in those states but still be a poor
+	  fit as the primary system timer, for example due to lower resolution.
+
+	  With this option, the primary system timer can hand over timekeeping to
+	  a low-power companion across low-power transitions and recover the
+	  elapsed time on wakeup.
+
+	  NOTE: since Power Management has to be enabled if the SoC may enter in
+	  low-power mode, no LPM companion can be selected if PM is not enabled.
+	  Tickless kernel must also be enabled, since periodic interrupts would
+	  prevent the system from entering in low-power modes.
+
+config SYSTEM_TIMER_LPM_COMPANION_NONE
+	bool "None"
+	help
+	  Use no additional device as the system timer low-power companion.
+
+	  The platform must never enter a low-power mode where the active system
+	  timer cannot keep time when this option is selected; otherwise, system
+	  behavior becomes unpredictable.
+
+if TICKLESS_KERNEL && PM
+
+config SYSTEM_TIMER_LPM_COMPANION_COUNTER
+	bool "Counter API timer"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_SYSTEM_TIMER_COMPANION)) || \
+		   $(dt_chosen_enabled,$(DT_CHOSEN_SYSTEM_TIMER_COMPANION_LEGACY))
+	depends on COUNTER
+	help
+	  Use a device that implements the Counter API as the system timer
+	  low-power companion.
+
+	  The device is selected by the chosen property
+	  "/chosen/zephyr,system-timer-companion".
+
+	  The legacy compatibility property
+	  "/chosen/zephyr,cortex-m-idle-timer" is deprecated but still accepted.
+
+config SYSTEM_TIMER_LPM_COMPANION_HOOKS
+	bool "Hook-based timer"
+	help
+	  Use platform hooks to configure the system timer low-power companion.
+	  Refer to `include/zephyr/drivers/timer/system_timer_lpm.h` for more
+	  details.
+
+endif # TICKLESS_KERNEL && PM
+endchoice # SYSTEM_TIMER_LPM_COMPANION
+
+config SYSTEM_TIMER_RESET_BY_LPM
+	bool "System timer reset by low-power mode"
+	depends on !SYSTEM_TIMER_LPM_COMPANION_NONE
+	help
+	  Some platforms provide one or more low-power modes which, as part
+	  of their operation, place the active system timer under reset. This
+	  requires special care from the driver, notably restarting the timer
+	  and reconstructing elapsed time after wakeup.
+
+	  Select this option if your platform may enter such a low-power mode and
+	  a system timer low-power companion is required for reliable timekeeping.
+
+	  Refer to CONFIG_SYSTEM_TIMER_LPM_COMPANION for more details.

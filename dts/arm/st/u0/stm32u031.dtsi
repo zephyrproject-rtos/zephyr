@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u0/stm32u0.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32u031", "st,stm32u0", "simple-bus";
+	};
+};

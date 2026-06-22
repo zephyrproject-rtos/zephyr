@@ -1,0 +1,128 @@
+;*******************************************************************************
+;   Copyright 2023 NXP                                                         *
+;   SPDX-License-Identifier: Apache-2.0                                        *
+;                                                                              *
+;   Lauterbach Trace32 start-up script for S32K146 / Cortex-M4F                *
+;                                                                              *
+;   Parameters:                                                                *
+;   - command     operation to execute                                         *
+;                 valid values: flash, debug                                   *
+;   - elfFile     filepath of ELF to load                                      *
+;   - loadTo      if "flash", the application will be downloaded to SoC        *
+;                 program flash by a flash programming routine; if "sram" it   *
+;                 will be downloaded to SoC SRAM.                              *
+;                 valid values: flash, sram                                    *
+;                 default: flash                                               *
+;   - eraseFlash  if set to "yes", the whole content in Flash device will be   *
+;                 erased before the application is downloaded to either Flash  *
+;                 or SRAM. This routine takes time to execute                  *
+;                 default: "no"                                                *
+;   - verifyFlash if set to "yes", verify after program application to Flash   *
+;                 default: "no"                                                *
+;*******************************************************************************
+
+ENTRY %LINE &args
+
+&command=STRing.SCANAndExtract("&args","command=","")
+&elfFile=STRing.SCANAndExtract("&args","elfFile=","")
+&loadTo=STRing.SCANAndExtract("&args","loadTo=","flash")
+&eraseFlash=STRing.SCANAndExtract("&args","eraseFlash=","no")
+&verifyFlash=STRing.SCANAndExtract("&args","verifyFlash=","no")
+
+IF ("&elfFile"=="")
+(
+  AREA.view
+  PRINT %ERROR "Missing ELF file path"
+  PLIST
+  STOP
+  ENDDO
+)
+
+; Initialize debugger
+RESet
+SYStem.RESet
+SYStem.CPU S32K146
+SYStem.CONFIG.DEBUGPORTTYPE SWD
+SYStem.Option DUALPORT ON
+SYStem.MemAccess DAP
+SYStem.JtagClock CTCK 10MHz
+Trace.DISable
+SYStem.Up
+
+GOSUB DisableBootrom
+
+; Only declares flash, does not execute flash programming
+DO ~~/demo/arm/flash/s32k.cmm PREPAREONLY
+
+IF ("&eraseFlash"=="yes")
+(
+  FLASH.Erase ALL
+)
+
+IF ("&loadTo"=="flash")
+(
+  ; Switch target flash to reprogramming state, erase virtual flash programming memory,
+  ; all target non-empty flash sectors are marked as pending, to be reprogrammed.
+  FLASH.ReProgram ALL /Erase
+
+  ; Write contents of the file to virtual Flash programming memory
+  Data.LOAD.Elf &elfFile
+
+  ; Program only changed sectors to target flash and erase obsolete code
+  FLASH.ReProgram off
+
+  IF ("&verifyFlash"=="yes")
+  (
+    Data.LOAD.Elf &elfFile /DIFF
+
+    IF FOUND()
+    (
+      AREA.view
+      PRINT %ERROR "Failed to download the code to flash"
+      Data.LOAD.Elf &elfFile /ComPare
+      ENDDO
+    )
+  )
+
+  ; Reset the processor again
+  SYStem.Up
+  GOSUB DisableBootrom
+)
+ELSE
+(
+  ; Load program to SRAM
+  Data.LOAD.Elf &elfFile
+)
+
+IF ("&command"=="flash")
+(
+  ; Execute the application and quit
+  Go
+  QUIT
+)
+ELSE IF ("&command"=="debug")
+(
+  ; Setup minimal debug environment
+  WinCLEAR
+  SETUP.Var.%SpotLight
+  WinPOS 0. 0. 120. 30.
+  List.auto
+  WinPOS 125. 0. 80. 10.
+  Frame.view
+  WinPOS 125. 18.
+  Register.view /SpotLight
+)
+ELSE
+(
+  AREA.view
+  PRINT %ERROR "Invalid command: &command"
+)
+
+ENDDO
+
+DisableBootrom:
+(
+  Data.Set SD:0x4007F010 %LE %Long 0x6
+  Data.Set SD:0x4007F014 %LE %Long 0x0
+  RETURN
+)

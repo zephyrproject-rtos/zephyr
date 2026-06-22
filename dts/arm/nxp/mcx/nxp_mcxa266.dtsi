@@ -1,0 +1,14 @@
+/*
+ * Copyright 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/mcx/nxp_mcxaxx6_common.dtsi>
+
+/delete-node/ &opamp1;
+/delete-node/ &opamp2;
+/delete-node/ &opamp3;
+/delete-node/ &lpcmp2;
+/delete-node/ &lpadc2;
+/delete-node/ &lpadc3;

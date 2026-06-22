@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Andreas Klinger
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Vishay VEML6046 RGBIR color sensor with I2C interface.
+    See: https://www.vishay.com/docs/80173/veml6046x00.pdf
+
+compatible: "vishay,veml6046"
+
+include: [sensor-device.yaml, i2c-device.yaml]

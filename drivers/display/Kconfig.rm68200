@@ -1,0 +1,10 @@
+# Copyright 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config RM68200
+	bool "RM68200 display driver"
+	default y
+	depends on MIPI_DSI
+	depends on DT_HAS_RAYDIUM_RM68200_ENABLED
+	help
+	  Enable driver for RM68200 display driver.

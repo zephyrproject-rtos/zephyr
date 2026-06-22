@@ -1,0 +1,60 @@
+# Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Bouffalo Lab internal die temperature sensor (TSEN)
+
+description: |
+  TSEN is an internal input of the GPADC. It has no external pins: the
+  analog front-end is shared with the general-purpose ADC and is switched
+  into temperature-sense mode by the BFLB ADC driver when a channel is
+  configured with zephyr,input-positive = 14.
+
+  Integration requirements:
+
+    * The parent ADC controller node (e.g. &adc0) must be enabled.
+    * The referenced ADC channel must use:
+        - zephyr,input-positive = 14
+        - zephyr,resolution = 16
+        - zephyr,gain = "ADC_GAIN_1"
+        - zephyr,reference = "ADC_REF_INTERNAL"
+        - zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>
+    * No pinctrl pins are required; an empty pinctrl state on the ADC is
+      sufficient.
+    * The sensor driver reads a factory calibration offset from the SoC
+      efuse when available and falls back to a built-in default otherwise.
+
+compatible: "bflb,tsen"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    required: true
+    description: |
+      Reference to the ADC controller and the channel node configured for
+      the internal TSEN input. The channel must have
+      zephyr,input-positive = 14.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/adc/adc.h>
+
+    &adc0 {
+        status = "okay";
+        pinctrl-0 = <&adc0_default>;
+        pinctrl-names = "default";
+
+        channel@0 {
+            reg = <0>;
+            zephyr,gain = "ADC_GAIN_1";
+            zephyr,reference = "ADC_REF_INTERNAL";
+            zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+            zephyr,resolution = <16>;
+            zephyr,input-positive = <14>;
+        };
+    };
+
+    &tsen {
+        status = "okay";
+    };

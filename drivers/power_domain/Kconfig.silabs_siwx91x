@@ -1,0 +1,16 @@
+# Copyright 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config POWER_DOMAIN_SILABS_SIWX91X
+	bool "Silabs siwx91x power domain driver"
+	default y
+	select DEVICE_DEPS
+	depends on DT_HAS_SILABS_SIWX91X_POWER_DOMAIN_ENABLED
+	help
+	  Driver for Silabs siwx91x power domain.
+
+config SIWX91X_POWER_DOMAIN_INIT_PRIORITY
+	int "Silabs siwx91x power domain init priority"
+	default 10
+	help
+	  Silabs siwx91x power domain initialization priority.

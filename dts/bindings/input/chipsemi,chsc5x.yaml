@@ -1,0 +1,16 @@
+description: CHSC5X touchscreen sensor
+
+compatible: "chipsemi,chsc5x"
+
+include: [i2c-device.yaml, touchscreen-common.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Interrupt GPIO. Used by the controller to signal touch data is available. Active low.
+
+  reset-gpios:
+    type: phandle-array
+    description: Reset GPIO used to reset the touch controller.

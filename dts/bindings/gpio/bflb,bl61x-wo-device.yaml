@@ -1,0 +1,25 @@
+# Copyright (c) 2026, MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for Bouffalolab GPIO FIFO / WO
+
+properties:
+  time-t0h:
+    type: int
+    description: |
+      0 pulse duration in ns. Can be 0.
+
+  time-t1h:
+    type: int
+    description: |
+      1 pulse duration in ns. Can be 0.
+
+  time-total:
+    type: int
+    description: |
+      Specify the total length of a pulse representing a bit. This or time-total must be defined.
+
+  frequency:
+    type: int
+    description: |
+      Frequency at which the bits are sent. This or time-total must be defined.

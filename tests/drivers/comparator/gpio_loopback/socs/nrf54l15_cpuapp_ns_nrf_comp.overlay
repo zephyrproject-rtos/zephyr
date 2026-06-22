@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf54l15_cpuapp_nrf_comp.overlay"

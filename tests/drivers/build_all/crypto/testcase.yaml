@@ -1,0 +1,11 @@
+# Copyright (c) 2024 TOKITA hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.crypto.build:
+    tags:
+      - drivers
+      - crypto
+    build_only: true
+    platform_allow:
+      - native_sim

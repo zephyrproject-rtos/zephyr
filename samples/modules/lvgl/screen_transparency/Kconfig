@@ -1,0 +1,4 @@
+# Copyright (c) 2024 Martin Stumpf <finomnis@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"

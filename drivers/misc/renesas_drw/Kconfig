@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Renesas DRW (D/AVE 2D) config options
+
+menuconfig RENESAS_DRW
+	bool "Renesas DRW Driver"
+	depends on SOC_FAMILY_RENESAS_RA
+	help
+	  Enable config options for Renesas DRW driver
+
+if RENESAS_DRW
+
+config RENESAS_DRW_INIT_PRIORITY
+	int "Renesas DRW initialization priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  System initialization priority for Renesas DRW drivers.
+
+source "drivers/misc/renesas_drw/Kconfig.renesas_ra_drw"
+
+endif # RENESAS_DRW

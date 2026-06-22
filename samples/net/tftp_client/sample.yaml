@@ -1,0 +1,15 @@
+sample:
+  description: Test TFTP client get and put methods
+  name: TFTP client sample app
+tests:
+  sample.net.tftp_client:
+    harness: net
+    depends_on: netif
+    platform_allow:
+      - native_sim
+      - qemu_cortex_m3
+    integration_platforms:
+      - native_sim
+    tags:
+      - net
+      - tftp

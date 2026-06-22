@@ -1,0 +1,88 @@
+# ICM42670-P ICM42670-S Six-Axis Motion Tracking device configuration options
+#
+# Copyright (c) 2024 TDK Invensense
+# Copyright (c) 2022 Esco Medical ApS
+# Copyright (c) 2020 TDK Invensense
+#
+# SPDX-License-Identifier: Apache-2.0
+config TDK_APEX
+	bool
+
+menuconfig ICM42X70
+	bool "ICM42670-P/-S Six-Axis or ICM42370-P Three-Axis Motion Tracking Device"
+	default y
+	depends on DT_HAS_INVENSENSE_ICM42670P_ENABLED \
+		|| DT_HAS_INVENSENSE_ICM42670S_ENABLED \
+		|| DT_HAS_INVENSENSE_ICM42370P_ENABLED
+	depends on ZEPHYR_HAL_TDK_MODULE
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM42670P),spi) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM42670S),spi) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM42370P),spi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM42670P),i2c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM42670S),i2c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM42370P),i2c)
+	select TDK_APEX if $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670p),apex,pedometer) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670p),apex,tilt) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670p),apex,smd) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670p),apex,wom) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670s),apex,pedometer) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670s),apex,tilt) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670s),apex,smd) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670s),apex,wom) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42370p),apex,pedometer) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42370p),apex,tilt) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42370p),apex,smd) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42370p),apex,wom)
+	select USE_EMD_ICM42670 if DT_HAS_INVENSENSE_ICM42670P_ENABLED || DT_HAS_INVENSENSE_ICM42670S_ENABLED
+	select USE_EMD_ICM42370 if DT_HAS_INVENSENSE_ICM42370P_ENABLED
+	select SENSOR_ASYNC_API
+	help
+	  Enable driver for ICM42x70 SPI-based or I2C-based Six-Axis or Three-Axis Motion Tracking device.
+
+if ICM42X70
+
+choice ICM42X70_TRIGGER_MODE
+	prompt "Trigger mode"
+	default ICM42X70_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config ICM42X70_TRIGGER_NONE
+	bool "No trigger"
+
+config ICM42X70_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM42670P),int-gpios) \
+		|| $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM42670S),int-gpios) \
+		|| $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM42370P),int-gpios)
+	select ICM42X70_TRIGGER
+
+config ICM42X70_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM42670P),int-gpios) \
+		|| $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM42670S),int-gpios) \
+		|| $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM42370P),int-gpios)
+	select ICM42X70_TRIGGER
+
+endchoice
+
+config ICM42X70_TRIGGER
+	bool
+
+config ICM42X70_THREAD_PRIORITY
+	int "Thread priority"
+	depends on ICM42X70_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config ICM42X70_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on ICM42X70_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # ICM42X70

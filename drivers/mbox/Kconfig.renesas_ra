@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_RENESAS_RA_IPC
+	bool "Renesas RA IPC mailbox driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_IPC_MBOX_ENABLED
+	select USE_RA_FSP_IPC
+	help
+	  Enable the RA IPC driver.

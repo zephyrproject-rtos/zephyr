@@ -1,0 +1,21 @@
+common:
+  build_only: true
+  min_ram: 32
+  tags:
+    - drivers
+    - led_strip
+tests:
+  drivers.led_strip.build:
+    depends_on:
+      - gpio
+      - spi
+  drivers.led_strip.build.uart:
+    depends_on:
+      - gpio
+      - uart
+    filter: not CONFIG_SERIAL_SUPPORT_ASYNC
+    extra_args:
+      - DTC_OVERLAY_FILE="uart.overlay"
+  drivers.led_strip.build.rpi_pico_pio:
+    platform_allow:
+      - rpi_pico

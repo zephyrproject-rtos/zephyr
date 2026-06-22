@@ -1,0 +1,222 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nuvoton, NPCM PCC (Power and Clock Controller) node.
+  Besides power management, this node is also in charge of configuring the
+  Oscillator Frequency Multiplier Clock (OFMCLK), which is derived from
+  High-Frequency Clock Generator (HFCG), is the source clock of Cortex-M4 core
+  and most of NPCM hardware modules.
+
+  Here is an example of configuring OFMCLK and the other clock sources derived
+  from it in board dts file.
+  &pcc {
+      clock-frequency = <DT_FREQ_M(96)>; /* OFMCLK runs at 96MHz */
+      core-prescaler = <1>; /* CORE_CLK runs at 96MHz */
+      apb1-prescaler = <8>; /* APB1_CLK runs at 12MHz */
+      apb2-prescaler = <1>; /* APB2_CLK runs at 96MHz */
+      apb3-prescaler = <1>; /* APB3_CLK runs at 96MHz */
+      apb6-prescaler = <1>; /* APB6_CLK runs at 96MHz */
+      fiu-prescaler = <1>; /* FIU_CLK runs at 96MHz */
+      i3c-prescaler = <1>; /* I3C_CLK runs at 96MHz */
+  };
+
+compatible: "nuvoton,npcm-pcc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    required: true
+    type: int
+    description: |
+      Default frequency in Hz for HFCG output clock (OFMCLK). Currently,
+      only the following values are allowed:
+        100000000, 100 MHz
+        96000000, 96 MHz
+        80000000, 80 MHz
+        66000000, 66 MHz
+        50000000, 50 MHz
+        48000000, 48 MHz
+        40000000, 40 MHz
+        33000000, 33 MHz
+    enum:
+      - 100000000
+      - 96000000
+      - 80000000
+      - 66000000
+      - 50000000
+      - 48000000
+      - 40000000
+      - 33000000
+
+  core-prescaler:
+    type: int
+    required: true
+    description: |
+      Core clock prescaler (FPRED). It sets the Core frequency, CORE_CLK, by
+      dividing OFMCLK(MCLK) and needs to meet the following requirements.
+      - The maximum CLK frequency is either the MCLK frequency divided by 1 or 100 MHz.
+      - Only the following values are allowed:
+        1, CORE_CLK = OFMCLK
+        2, CORE_CLK = OFMCLK / 2
+        3, CORE_CLK = OFMCLK / 3
+        4, CORE_CLK = OFMCLK / 4
+        5, CORE_CLK = OFMCLK / 5
+        6, CORE_CLK = OFMCLK / 6
+        7, CORE_CLK = OFMCLK / 7
+        8, CORE_CLK = OFMCLK / 8
+        9, CORE_CLK = OFMCLK / 9
+        10, CORE_CLK = OFMCLK / 10
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+
+  apb1-prescaler:
+    type: int
+    required: true
+    description: |
+      APB1 prescaler. It sets the APB1 bus frequency, APB1_CLK, by dividing
+      OFMCLK(MCLK) and needs to meet the following requirements.
+      - The maximum APB1_CLK frequency is either the MCLK frequency divided by 1 or 100 MHz.
+      - Only the following values are allowed:
+        1, APB1_CLK = OFMCLK
+        2, APB1_CLK = OFMCLK / 2
+        3, APB1_CLK = OFMCLK / 3
+        4, APB1_CLK = OFMCLK / 4
+        5, APB1_CLK = OFMCLK / 5
+        6, APB1_CLK = OFMCLK / 6
+        7, APB1_CLK = OFMCLK / 7
+        8, APB1_CLK = OFMCLK / 8
+        9, APB1_CLK = OFMCLK / 9
+        10, APB1_CLK = OFMCLK / 10
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+
+  apb2-prescaler:
+    type: int
+    required: true
+    description: |
+      APB2 prescaler. It sets the APB2 bus frequency, APB2_CLK, by dividing
+      OFMCLK(MCLK) and needs to meet the following requirements.
+      - The maximum APB2_CLK frequency is either the MCLK frequency divided by 1 or 100 MHz.
+      - Only the following values are allowed:
+        1, APB2_CLK = OFMCLK
+        2, APB2_CLK = OFMCLK / 2
+        3, APB2_CLK = OFMCLK / 3
+        4, APB2_CLK = OFMCLK / 4
+        5, APB2_CLK = OFMCLK / 5
+        6, APB2_CLK = OFMCLK / 6
+        7, APB2_CLK = OFMCLK / 7
+        8, APB2_CLK = OFMCLK / 8
+        9, APB2_CLK = OFMCLK / 9
+        10, APB2_CLK = OFMCLK / 10
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+
+  apb3-prescaler:
+    type: int
+    required: true
+    description: |
+      APB3 prescaler. It sets the APB3 bus frequency, APB3_CLK, by dividing
+      OFMCLK(MCLK) and needs to meet the following requirements.
+      - The maximum APB3_CLK frequency is either the MCLK frequency divided by 1 or 100 MHz.
+      - Only the following values are allowed:
+        1, APB3_CLK = OFMCLK
+        2, APB3_CLK = OFMCLK / 2
+        3, APB3_CLK = OFMCLK / 3
+        4, APB3_CLK = OFMCLK / 4
+        5, APB3_CLK = OFMCLK / 5
+        6, APB3_CLK = OFMCLK / 6
+        7, APB3_CLK = OFMCLK / 7
+        8, APB3_CLK = OFMCLK / 8
+        9, APB3_CLK = OFMCLK / 9
+        10, APB3_CLK = OFMCLK / 10
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+
+  ahb6-prescaler:
+    type: int
+    required: true
+    description: |
+      AHB6 prescaler. The AHB6 bus clock (AHB6_CLK) is derived from the Core clock (CLK) via a
+      programmable divider controlled by the AHB6DIV field in HFCGP register.
+      Its frequency must be set according to the following rules:
+      - The maximum AHB6_CLK frequency is either the CLK frequency divided by 1 or 100 MHz.
+      - Only the following values are allowed:
+        1, AHB6_CLK = CORE_CLK
+        2, AHB6_CLK = CORE_CLK / 2
+        4, AHB6_CLK = CORE_CLK / 4
+    enum:
+      - 1
+      - 2
+      - 4
+
+  fiu-prescaler:
+    type: int
+    required: true
+    description: |
+      FIU prescaler. The FIU clock (FIUCLK) is derived from the Core clock (CLK) via a
+      programmable divider controlled by the FIUDIV field in HFCBCD1 register.
+      Its frequency must be set according to the following rules:
+      - The maximum FIUCLK frequency is either the CLK frequency divided by 1 or 100MHz.
+      - Only the following values are allowed:
+        1, FIU_CLK = CORE_CLK
+        2, FIU_CLK = CORE_CLK / 2
+        4, FIU_CLK = CORE_CLK / 4
+    enum:
+      - 1
+      - 2
+      - 4
+
+  i3c-prescaler:
+    type: int
+    required: true
+    description: |
+      I3C prescaler. It sets the I3C clk_slow_tc frequency, by dividing
+      APB3_CLK and it can be up to 100 MHz.
+    enum:
+      - 1
+      - 2
+      - 4
+
+clock-cells:
+  - clk_id

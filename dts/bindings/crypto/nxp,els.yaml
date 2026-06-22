@@ -1,0 +1,12 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP EdgeLock Secure Subsystem
+
+compatible: "nxp,els"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

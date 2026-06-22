@@ -1,0 +1,31 @@
+# NPCX LCT driver configuration options
+
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_NPCX_NPCXN_V1
+	bool
+	help
+	  This option enables LCT version 1 support for npcxn variant.
+
+config COUNTER_NPCX_NPCXN_V2
+	bool
+	help
+	  This option enables LCT version 2 support for npcxn variant.
+
+config COUNTER_NPCX_NPCKN
+	bool
+	help
+	  This option enables LCT version 1 support for npckn variant.
+
+config COUNTER_NPCX_LCT
+	bool "NPCX Long Countdown Timer Module driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_LCT_V1_ENABLED ||\
+		   DT_HAS_NUVOTON_NPCX_LCT_V2_ENABLED ||\
+		   DT_HAS_NUVOTON_NPCK_LCT_ENABLED
+	select COUNTER_NPCX_NPCXN_V1 if DT_HAS_NUVOTON_NPCX_LCT_V1_ENABLED
+	select COUNTER_NPCX_NPCXN_V2 if DT_HAS_NUVOTON_NPCX_LCT_V2_ENABLED
+	select COUNTER_NPCX_NPCKN if DT_HAS_NUVOTON_NPCK_LCT_ENABLED
+	help
+	  Enable support for NPCX Long Countdown Timer Module (LCT) driver.

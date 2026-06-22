@@ -1,0 +1,30 @@
+# LoRaWAN loramac-node backend configuration
+#
+# Copyright (c) 2020 Manivannan Sadhasivam <mani@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+if LORA_MODULE_BACKEND_LORAMAC_NODE
+
+config LORAWAN_LORAMAC_NODE
+	bool
+	default y
+	select HAS_SEMTECH_LORAMAC
+	imply HAS_SEMTECH_SOFT_SE
+	help
+	  Hidden config to enable loramac-node backend specific options.
+
+config LORAWAN_SYSTEM_MAX_RX_ERROR
+	int "LoRaWAN System Max Rx Error"
+	default 20
+	help
+	  System Max Rx timing error value in ms to be used by LoRaWAN stack
+	  for calculating the RX1/RX2 window timing.
+
+config LORAWAN_PUBLIC_NETWORK
+	bool "LoRaWAN Public Network"
+	default y
+	help
+	  Enable this option to use a public LoRaWAN network.
+	  Disable for private LoRaWAN networks.
+
+endif # LORA_MODULE_BACKEND_LORAMAC_NODE

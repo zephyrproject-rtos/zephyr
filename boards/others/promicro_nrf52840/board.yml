@@ -1,0 +1,8 @@
+board:
+  name: promicro_nrf52840
+  full_name: Pro Micro nRF52840
+  vendor: others
+  socs:
+  - name: nrf52840
+    variants:
+    - name: uf2

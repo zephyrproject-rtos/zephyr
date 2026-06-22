@@ -1,0 +1,23 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2022 STMicroelectronics
+ */
+
+/ {
+	leds {
+		status = "disabled";
+	};
+};
+
+&pwmleds {
+	status = "okay";
+};
+
+&timers1 {
+	st,prescaler = <10000>;
+};
+
+&pwm1 {
+	status = "okay";
+};

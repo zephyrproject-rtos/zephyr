@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2019 Brett Witherspoon
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/cc2652r.dtsi>
+#include "../common/launchxl.dtsi"
+#include "../common/launchxl-flash.dtsi"
+#include "cc26x2r1_launchxl-pinctrl.dtsi"
+
+/ {
+	model = "TI CC26x2R1 LaunchXL";
+	compatible = "ti,launchxl-cc26x2r1";
+
+	chosen {
+		/delete-property/ zephyr,ieee802154;
+	};
+};
+
+&radio {
+	status = "disabled";
+};
+
+&ieee802154 {
+	status = "disabled";
+};
+
+&ieee802154g {
+	status = "disabled";
+};
+
+&adc0 {
+	status = "okay";
+};

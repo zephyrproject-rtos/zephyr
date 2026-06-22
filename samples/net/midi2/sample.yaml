@@ -1,0 +1,20 @@
+common:
+  harness: net
+  depends_on: netif
+  tags:
+    - net
+    - midi2
+sample:
+  name: Network MIDI2.0 sample application
+  description: Demonstrates usage of the Network MIDI2.0 (udp) host endpoint
+tests:
+  sample.net.midi2.host: {}
+  sample.net.midi2.host_auth_shared:
+    extra_configs:
+      - CONFIG_NET_SAMPLE_MIDI2_AUTH_SHARED_SECRET=y
+      - CONFIG_NET_SAMPLE_MIDI2_SHARED_SECRET="some-secret"
+  sample.net.midi2.host_auth_user:
+    extra_configs:
+      - CONFIG_NET_SAMPLE_MIDI2_AUTH_USER_PASSWORD=y
+      - CONFIG_NET_SAMPLE_MIDI2_USERNAME="user"
+      - CONFIG_NET_SAMPLE_MIDI2_PASSWORD="passwd"

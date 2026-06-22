@@ -1,0 +1,36 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config VIRTIO
+	bool "support for VIRTIO"
+	help
+	  Enable options for VIRTIO
+
+if VIRTIO
+
+module = VIRTIO
+module-str = VIRTIO
+source "subsys/logging/Kconfig.template.log_config"
+
+config VIRTIO_PCI
+	bool "support for VIRTIO over PCI"
+	default y
+	depends on DT_HAS_VIRTIO_PCI_ENABLED
+	select PCIE
+	help
+	  Enable options for VIRTIO over PCI
+
+config VIRTIO_MMIO
+	bool "support for VIRTIO over MMIO"
+	default y
+	depends on DT_HAS_VIRTIO_MMIO_ENABLED
+	help
+	  Enable options for VIRTIO over MMIO
+
+config HEAP_MEM_POOL_ADD_SIZE_VIRTIO
+	int "Heap memory pool size for VIRTIO"
+	default 32768
+	help
+	  Set the size of the heap memory pool for VIRTIO.
+
+endif # VIRTIO

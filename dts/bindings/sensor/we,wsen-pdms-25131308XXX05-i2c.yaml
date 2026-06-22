@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Würth Elektronik WSEN-PDMS-25131308XXX05 differential pressure sensor (I2C bus)
+    Note: On some MCUs a speed of more than 100 kHz cannot be used.
+
+compatible: "we,wsen-pdms-25131308XXX05"
+
+include: ["i2c-device.yaml", "we,wsen-pdms-25131308XXX05-common.yaml"]

@@ -1,0 +1,44 @@
+# Packet filtering config
+# Copyright (c) 2021 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Network Packet Filtering"
+
+config NET_PKT_FILTER
+	bool "Network packet filtering"
+	help
+	  The Network Packet Filtering facility provides the infrastructure
+	  to construct custom rules for accepting and/or denying packet
+	  transmission and reception.
+
+if NET_PKT_FILTER
+
+config NET_PKT_FILTER_IPV4_HOOK
+	bool "Additional network packet filtering hook inside IPv4 stack"
+	depends on NET_IPV4
+	help
+	  This additional hook provides infrastructure to construct custom
+	  rules on the IP packet.
+
+config NET_PKT_FILTER_IPV6_HOOK
+	bool "Additional network packet filtering hook inside IPv6 stack"
+	depends on NET_IPV6
+	help
+	  This additional hook provides infrastructure to construct custom
+	  rules on the IP packet.
+
+config NET_PKT_FILTER_LOCAL_IN_HOOK
+	bool "Additional network packet filtering hook for connection input"
+	depends on NET_IP
+	help
+	  This additional hook provides infrastructure to construct custom
+	  rules for e.g. TCP/UDP packets.
+
+module = NET_PKT_FILTER
+module-dep = NET_LOG
+module-str = Log level for packet filtering
+module-help = Enables packet filter output debug messages
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_PKT_FILTER
+
+endmenu

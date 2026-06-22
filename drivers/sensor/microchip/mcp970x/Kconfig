@@ -1,0 +1,13 @@
+# Microchip MCP970X ADC driver
+#
+# Copyright (c) 2023 FTP Technologies
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config MCP970X
+	bool "MCP9700/9700A and MCP9701/9701A sensor"
+	default y
+	depends on DT_HAS_MICROCHIP_MCP970X_ENABLED
+	select ADC
+	help
+	  Enables Low-Power Linear Active Thermistor IC driver.

@@ -1,0 +1,9 @@
+sample:
+  name: CO2 sensor sample
+tests:
+  sample.sensor.co2:
+    harness: sensor
+    tags: sensors
+    filter: dt_alias_exists("co2")
+    integration_platforms:
+      - nucleo_h563zi

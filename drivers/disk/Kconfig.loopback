@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DISK_DRIVER_LOOPBACK
+	bool "Loopback Disk"
+	depends on FILE_SYSTEM
+	help
+	  Enables mounting the contents of a file as a separate disk.
+
+if DISK_DRIVER_LOOPBACK
+
+config LOOPBACK_DISK_SECTOR_SIZE
+	int "Loopback disk sector size"
+	default 512
+	help
+	  Sets the sector size used for loopback-mounted disks.
+
+module = LOOPBACK_DISK
+module-str = loopback_disk
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DISK_DRIVER_LOOPBACK

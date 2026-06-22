@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/rv32m1-pinctrl.h>
+
+&pinctrl {
+	lpuart0_default: lpuart0_default {
+		group0 {
+			pinmux = <RV32M1_MUX('C', 7, 3)>,
+				 <RV32M1_MUX('C', 8, 3)>;
+			slew-rate = "slow";
+		};
+	};
+
+	lpuart1_default: lpuart1_default {
+		group0 {
+			pinmux = <RV32M1_MUX('C', 29, 2)>,
+				 <RV32M1_MUX('C', 30, 2)>;
+			slew-rate = "slow";
+		};
+	};
+
+	lpi2c0_default: lpi2c0_default {
+		group0 {
+			pinmux = <RV32M1_MUX('C', 9, 4)>,
+				 <RV32M1_MUX('C', 10, 4)>;
+			slew-rate = "slow";
+		};
+	};
+
+	lpi2c3_default: lpi2c3_default {
+		group0 {
+			pinmux = <RV32M1_MUX('E', 29, 3)>,
+				 <RV32M1_MUX('E', 30, 3)>;
+			slew-rate = "slow";
+		};
+	};
+
+	lpspi0_default: lpspi0_default {
+		group0 {
+			pinmux = <RV32M1_MUX('B', 4, 2)>,
+				 <RV32M1_MUX('B', 5, 2)>,
+				 <RV32M1_MUX('B', 6, 2)>,
+				 <RV32M1_MUX('B', 7, 2)>;
+			slew-rate = "slow";
+		};
+	};
+
+	lpspi1_default: lpspi1_default {
+		group0 {
+			pinmux = <RV32M1_MUX('B', 20, 2)>,
+				 <RV32M1_MUX('B', 21, 2)>,
+				 <RV32M1_MUX('B', 22, 2)>,
+				 <RV32M1_MUX('B', 24, 2)>;
+			slew-rate = "slow";
+		};
+	};
+
+	tpm2_default: tpm2_default {
+		group0 {
+			pinmux = <RV32M1_MUX('A', 22, 6)>,
+				 <RV32M1_MUX('A', 23, 6)>,
+				 <RV32M1_MUX('A', 24, 6)>;
+			slew-rate = "slow";
+		};
+	};
+};

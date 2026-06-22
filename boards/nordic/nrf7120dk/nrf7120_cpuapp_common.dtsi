@@ -1,0 +1,198 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* This file is common to the secure and non-secure domain */
+
+#include <nordic/nrf7120_enga_cpuapp.dtsi>
+#include "nrf7120dk_nrf7120-common.dtsi"
+
+/ {
+	chosen {
+		zephyr,console = &uart20;
+		zephyr,shell-uart = &uart20;
+		zephyr,uart-mcumgr = &uart20;
+		zephyr,bt-mon-uart = &uart20;
+		zephyr,bt-c2h-uart = &uart20;
+		zephyr,flash = &cpuapp_mram;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,wifi = &wlan0;
+	};
+
+	/* Single IPC channel: 4KB + 16KB shared memory for TX+RX */
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		ipc_shm_area_cpuapp_cpuuma: memory@200c0000 {
+			compatible = "mmio-sram";
+			reg = <0x200c0000 0x5000>;
+			ranges = <0x0 0x200c0000 0x5000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			ipc_shm_cpuapp_cpuuma_0: memory@0 {
+				reg = <0x0 0x800>;
+			};
+
+			ipc_shm_cpuuma_cpuapp_0: memory@800 {
+				reg = <0x800 0x800>;
+			};
+
+			ipc_shm_sparembox: memory@1000 {
+				reg = <0x1000 0x4000>;
+			};
+		};
+	};
+
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-icmsg";
+			tx-region = <&ipc_shm_cpuapp_cpuuma_0>;
+			rx-region = <&ipc_shm_cpuuma_cpuapp_0>;
+			mboxes = <&wifi_bellboard 2>,
+				 <&cpuapp_bellboard 0>;
+			mbox-names = "tx", "rx";
+			status = "okay";
+		};
+	};
+};
+
+&wicr {
+	status = "okay";
+	firmware-lmacinitpc = <&wifi_lmac_rom>;
+	firmware-umacinitpc = <&wifi_umac_rom>;
+	firmware-lmacrompatchaddr = <&wifi_lmac_patch_partition>;
+	firmware-umacrompatchaddr = <&wifi_umac_patch_partition>;
+	ipcconfig-commandmbox = <&ipc_shm_cpuapp_cpuuma_0>;
+	ipcconfig-eventmbox = <&ipc_shm_cpuuma_cpuapp_0>;
+	ipcconfig-sparembox = <&ipc_shm_sparembox>;
+};
+
+&cpuapp_sram {
+	status = "okay";
+};
+
+&grtc {
+	/* Channels 14-15 are reserved for Wi-Fi domain */
+	owned-channels = <0 1 2 3 4 5 6 7 8 9 10 11 12 13>;
+	/* Channels 7-11 reserved for Zero Latency IRQs, 3-4 for FLPR */
+	child-owned-channels = <3 4 7 8 9 10 11>;
+	status = "okay";
+};
+
+&uart20 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&gpiote20 {
+	status = "okay";
+};
+
+&gpiote30 {
+	status = "okay";
+};
+
+&radio {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&temp {
+	status = "okay";
+};
+
+&clock {
+	status = "okay";
+};
+
+&spi00 {
+	status = "okay";
+	cs-gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi00_default>;
+	pinctrl-1 = <&spi00_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&adc {
+	status = "okay";
+};
+
+&pwr_antswc {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
+
+&audio_auxpll {
+	nordic,frequency = <NRF_AUXPLL_FREQ_DIV_AUDIO_48K>;
+	status = "okay";
+};
+
+&cpuapp_bellboard {
+	status = "okay";
+};
+
+&wifi_bellboard {
+	status = "okay";
+};
+
+&mspi00 {
+	status = "disabled";
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+
+	mx25u25645g: flash@0 {
+		compatible = "jedec,mspi-nor";
+		status = "disabled";
+		reg = <0>;
+		jedec-id = [c2 25 39];
+		sfdp-bfp = [e5 20 fb ff ff ff ff 0f 44 eb 08 6b 08 3b 04 bb
+			    fe ff ff ff ff ff 00 ff ff ff 44 eb 0c 20 0f 52
+			    10 d8 00 ff 87 49 b5 00 82 d2 04 d2 44 03 67 38
+			    30 b0 30 b0 f7 bd d5 5c 4a 9e 29 ff f0 50 f9 85];
+		sfdp-ff84 = [7f 8f ff ff 21 5c dc ff];
+		size = <268435456>;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <30000>;
+		reset-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+		t-reset-pulse = <10000>;
+		t-reset-recovery = <35000>;
+		mspi-max-frequency = <DT_FREQ_M(64)>;
+		mspi-io-mode = "MSPI_IO_MODE_QUAD_1_1_4";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <1>;
+		mspi-cpp-mode = "MSPI_CPP_MODE_0";
+		mspi-endian = "MSPI_BIG_ENDIAN";
+		mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
+	};
+};

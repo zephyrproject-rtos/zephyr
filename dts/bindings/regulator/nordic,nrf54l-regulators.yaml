@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic REGULATORS (voltage regulators control module) on nRF54L.
+
+compatible: "nordic,nrf54l-regulators"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

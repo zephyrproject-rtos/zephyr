@@ -1,0 +1,28 @@
+# SSD1363 display controller configuration options
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SSD1363
+	bool "SSD1363 display controller driver"
+	default y
+	depends on DT_HAS_SOLOMON_SSD1363_ENABLED
+	select MIPI_DBI if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1363),mipi-dbi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1363),i2c)
+	help
+	  Enable driver for SSD1363 display controller.
+
+if SSD1363
+
+config SSD1363_DEFAULT_CONTRAST
+	int "SSD1363 default contrast"
+	default 192
+	range 0 255
+	help
+	  SSD1363 default contrast.
+
+config SSD1363_CONV_BUFFER_LINES
+	int "How many lines can the conversion buffer hold"
+	default 16
+	range 1 160
+
+endif # SSD1363

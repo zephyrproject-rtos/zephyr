@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_ESP_THREADBR_ETHERNET
+
+configdefault NET_L2_ETHERNET
+	default y
+
+endif # SHIELD_ESP_THREADBR_ETHERNET

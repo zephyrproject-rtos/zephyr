@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Zephyr Project Developers
+# SPDX-License-Identifier: Apache-2.0
+
+config FDC1004
+	bool "Texas Instruments FDC1004 Capacitance-to-Digital Converter"
+	default y
+	depends on DT_HAS_TI_FDC1004_ENABLED
+	select I2C
+	help
+	  Enable driver for the TI FDC1004 4-channel, 16-bit capacitance-to-digital
+	  converter. Communicates over I2C. Exposes four single-ended measurement
+	  channels (CIN1..CIN4) via the Zephyr sensor API using private channel IDs
+	  defined in <fdc1004.h>.

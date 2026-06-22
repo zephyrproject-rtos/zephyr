@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RA6E2
+	bool
+	select SOC_FAMILY_RENESAS_RA
+	help
+	  Renesas RA6E2 series
+
+config SOC_R7FA6E2BB3CFM
+	bool
+	select SOC_SERIES_RA6E2
+	help
+	  R7FA6E2BB3CFM
+
+config SOC_SERIES
+	default "ra6e2" if SOC_SERIES_RA6E2
+
+config SOC
+	default "r7fa6e2bb3cfm" if SOC_R7FA6E2BB3CFM

@@ -1,0 +1,9 @@
+common:
+  tags:
+    - dns
+    - net
+  depends_on: netif
+tests:
+  net.mdns:
+    min_ram: 21
+    timeout: 600

@@ -1,0 +1,19 @@
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_M46X
+	bool
+	select SOC_FAMILY_NUMAKER
+	help
+	  Enable support for Nuvoton M46X MCU series
+
+config SOC_M467
+	bool
+	select SOC_SERIES_M46X
+
+config SOC_SERIES
+	default "m46x" if SOC_SERIES_M46X
+
+config SOC
+	default "m467" if SOC_M467

@@ -1,0 +1,15 @@
+# Kconfig Andes mbox configuration options
+#
+# Copyright (c) 2022 Andes Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config MBOX_ANDES_PLIC_SW
+	bool "MBOX Andes PLIC-SW driver"
+	default y
+	depends on DT_HAS_ANDESTECH_MBOX_PLIC_SW_ENABLED
+	depends on PLIC_SUPPORTS_SOFT_INTERRUPT
+	select DYNAMIC_INTERRUPTS
+	help
+	  Enable the driver for the Andes PLIC-SW based MBOX controller.

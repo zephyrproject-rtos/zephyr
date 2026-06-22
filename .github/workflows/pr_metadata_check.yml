@@ -1,0 +1,47 @@
+name: PR Metadata Check
+
+on:
+  pull_request:
+    types:
+      - synchronize
+      - opened
+      - reopened
+      - labeled
+      - unlabeled
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  do-not-merge:
+    name: Prevent Merging
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          sparse-checkout: scripts/ci/do_not_merge.py
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: 3.12
+
+      - name: Install Python dependencies
+        run: |
+          pip install -U PyGithub
+
+      - name: Run the check script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python -u scripts/ci/do_not_merge.py \
+          -p "${{ github.event.pull_request.number }}" \
+          -o "${{ github.event.repository.owner.login }}" \
+          -r "${{ github.event.repository.name }}"

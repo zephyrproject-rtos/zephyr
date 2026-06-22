@@ -1,0 +1,49 @@
+# Copyright (c) 2024 Arif Balik <arifbalik@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_MQTT
+	bool "MQTT backend"
+	depends on MQTT_LIB && !LOG_MODE_IMMEDIATE
+	help
+	  Send log messages to an MQTT broker using an external MQTT client.
+	  This backend publishes log messages to a configurable MQTT topic
+	  using an MQTT client provided by the application via the
+	  log_backend_mqtt_client_set() API. The application is responsible
+	  for initializing, connecting, and managing the MQTT client lifecycle.
+
+if LOG_BACKEND_MQTT
+
+config LOG_BACKEND_MQTT_TOPIC_DEFAULT
+	string "Default MQTT topic for log messages"
+	default "zephyr/logs"
+	help
+	  Default MQTT topic for log messages. Use log backend MQTT API to change it at runtime.
+
+config LOG_BACKEND_MQTT_QOS
+	int "MQTT Quality of Service level"
+	default 0
+	range 0 2
+	help
+	  QoS level for published log messages:
+	  0 - At most once delivery (fire and forget)
+	  1 - At least once delivery (acknowledged delivery)
+	  2 - Exactly once delivery (assured delivery)
+
+config LOG_BACKEND_MQTT_RETAIN
+	bool "Retain MQTT messages"
+	help
+	  When enabled, published log messages will be retained by the broker
+	  and delivered to new subscribers immediately upon subscription.
+
+config LOG_BACKEND_MQTT_MAX_MSG_SIZE
+	int "Maximum log message size"
+	default 256
+	range 64 1024
+	help
+	  Maximum size of a single log message in bytes.
+
+backend = MQTT
+backend-str = mqtt
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_MQTT

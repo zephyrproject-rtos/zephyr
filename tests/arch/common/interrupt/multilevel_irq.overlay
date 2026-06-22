@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2024 Meta Platforms
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+
+		test_cpu_intc: interrupt-controller {
+			compatible = "vnd,cpu-intc";
+			#address-cells = <0>;
+			#interrupt-cells = <0x01>;
+			interrupt-controller;
+		};
+
+		test_l1_irq: interrupt-controller@bbbbcccc {
+			compatible = "vnd,intc";
+			reg = <0xbbbbcccc 0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <11 0>;
+			interrupt-parent = <&test_cpu_intc>;
+		};
+
+		test_l2_irq: interrupt-controller@bbbccccc {
+			compatible = "vnd,intc";
+			reg = <0xbbbccccc 0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <12 0>;
+			interrupt-parent = <&test_l1_irq>;
+		};
+
+		test_l3_irq: interrupt-holder {
+			compatible = "vnd,interrupt-holder";
+			status = "okay";
+			interrupts = <13 3>;
+			interrupt-parent = <&test_l2_irq>;
+			interrupt-names = "test";
+		};
+
+		test_l1_irq_inc: interrupt-controller@bbbbdccc {
+			compatible = "vnd,intc";
+			reg = <0xbbbbdccc 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <12 0>; /* +1 */
+			interrupt-parent = <&test_cpu_intc>;
+		};
+
+		test_l2_irq_inc: interrupt-controller@bbbbdcdc {
+			compatible = "vnd,intc";
+			reg = <0xbbbbdcdc 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <14 0>; /* +2 */
+			interrupt-parent = <&test_l1_irq>;
+		};
+
+		test_l3_irq_inc: interrupt-holder-inc {
+			compatible = "vnd,interrupt-holder";
+			status = "okay";
+			interrupts = <16 3>; /* +3 */
+			interrupt-parent = <&test_l2_irq>;
+			interrupt-names = "test";
+		};
+	};
+};

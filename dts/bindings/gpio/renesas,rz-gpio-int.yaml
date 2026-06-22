@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ GPIO Interrupt
+
+compatible: "renesas,rz-gpio-int"
+
+include: base.yaml
+
+properties:
+  interrupts:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0

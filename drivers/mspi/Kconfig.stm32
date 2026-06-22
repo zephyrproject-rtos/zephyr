@@ -1,0 +1,62 @@
+# STM32 MSPI drivers configuration options
+
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config MSPI_STM32_CONTROLLER
+	bool "STM32 MSPI Controller drivers"
+	depends on DT_HAS_ST_STM32_OSPI_CONTROLLER_ENABLED || \
+	           DT_HAS_ST_STM32_QSPI_CONTROLLER_ENABLED || \
+	           DT_HAS_ST_STM32_XSPI_CONTROLLER_ENABLED
+	select EXPERIMENTAL
+	default y
+	help
+	  This top-level option enables all STM32 MSPI controllers
+	  if at least one of OSPI, QSPI or XSPI controllers is present
+	  in the device tree.
+
+if MSPI_STM32_CONTROLLER
+
+config MSPI_STM32_BUFFER_ALIGNMENT
+	int
+	default 32
+	help
+	  Some MSPI host controllers require alignment of their data buffers
+	  in order for DMA to work correctly. This represents the alignment
+	  of buffers required in bytes.
+
+config MSPI_STM32_OSPI
+	bool "STM32 OSPI Controller driver"
+	depends on DT_HAS_ST_STM32_OSPI_CONTROLLER_ENABLED
+	default y
+	select USE_STM32_HAL_OSPI if !SOC_SERIES_STM32H5X
+	select USE_STM32_LL_DLYB if (SOC_SERIES_STM32H5X || SOC_SERIES_STM32U5X)
+	select USE_STM32_HAL_MDMA if SOC_SERIES_STM32H7X
+	select USE_STM32_HAL_DMA
+	select USE_STM32_HAL_DMA_EX
+	help
+	  Enable OSPI driver for STM32 family of processors.
+
+config MSPI_STM32_QSPI
+	bool "STM32 QSPI Controller driver"
+	depends on DT_HAS_ST_STM32_QSPI_CONTROLLER_ENABLED
+	default y
+	select USE_STM32_HAL_QSPI
+	select USE_STM32_HAL_MDMA if SOC_SERIES_STM32H7X
+	select USE_STM32_HAL_DMA
+	select USE_STM32_HAL_DMA_EX
+	help
+	  Enable QSPI driver for STM32 family of processors.
+
+config MSPI_STM32_XSPI
+	bool "STM32 XSPI Controller driver"
+	depends on DT_HAS_ST_STM32_XSPI_CONTROLLER_ENABLED
+	default y
+	select USE_STM32_HAL_XSPI
+	select USE_STM32_LL_DLYB
+	select USE_STM32_HAL_DMA
+	select USE_STM32_HAL_DMA_EX
+	help
+	  Enable XSPI driver for STM32 family of processors.
+
+endif # MSPI_STM32_CONTROLLER

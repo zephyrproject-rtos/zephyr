@@ -1,0 +1,93 @@
+#
+# Copyright (c) 2024, Jamie McCrae
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# The Kconfig file is dedicated to the LoRaWAN transport of MCUmgr
+# subsystem and provides Kconfig options to control aspects of
+# the transport.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_TRANSPORT_LORAWAN_
+
+menuconfig MCUMGR_TRANSPORT_LORAWAN
+	bool "LoRaWAN MCUmgr SMP transport"
+	depends on LORAWAN
+	help
+	  Enables handling of SMP commands received over LoRaWAN.
+
+if MCUMGR_TRANSPORT_LORAWAN
+
+config MCUMGR_TRANSPORT_LORAWAN_FRAME_PORT
+	int "LoRaWAN SMP frame port"
+	range 1 223
+	default 2
+	help
+	  LoRaWAN download and uplink frame port used for communication. All messages received on
+	  this port will be treated as SMP packets.
+
+config MCUMGR_TRANSPORT_LORAWAN_CONFIRMED_UPLINKS
+	bool "Use confirmed packets for uplinks"
+	default y
+	help
+	  Will use confirmed uplink packets for responses if enabled, otherwise will use
+	  unconfirmed packets.
+
+config MCUMGR_TRANSPORT_LORAWAN_REASSEMBLY
+	bool "Reassemble LoRaWAN SMP messages"
+	select MCUMGR_TRANSPORT_REASSEMBLY
+	default y
+	help
+	  Will reassemble downlink LoRaWAN messages together to allow for messages larger than a
+	  single message to be received, otherwise will support messages up to a single packet in
+	  size.
+
+menuconfig MCUMGR_TRANSPORT_LORAWAN_POLL_FOR_DATA
+	bool "Send empty packet if partial packet received"
+	depends on MCUMGR_TRANSPORT_LORAWAN_REASSEMBLY
+	default y
+	help
+	  Will send an empty packet if a partial (fragmented) message has been received from the
+	  server, this will allow the next packet to be received without waiting for next
+	  transmission window.
+
+	  Note: this requires a dedicated thread in order to prevent blocking the system workqueue.
+
+if MCUMGR_TRANSPORT_LORAWAN_POLL_FOR_DATA
+
+config MCUMGR_TRANSPORT_LORAWAN_POLL_FOR_DATA_STACK_SIZE
+	int "Poll thread stack size"
+	default 1800
+	help
+	  Stack size of the thread that will poll for empty additional packets when a partial
+	  frame is received.
+
+config MCUMGR_TRANSPORT_LORAWAN_POLL_FOR_DATA_THREAD_PRIORITY
+	int "Poll thread priority"
+	default 3
+	help
+	  Priority of the thread for polling for empty additional packets when a partial frame
+	  is received.
+
+config MCUMGR_TRANSPORT_LORAWAN_POLL_FOR_DATA_RETRIES
+	int "Poll thread retries"
+	default 3
+	help
+	  Number of LoRaWAN message send retries if sending fails for the thread for polling for
+	  empty additional packets when a partial frame is received.
+
+endif # MCUMGR_TRANSPORT_LORAWAN_POLL_FOR_DATA
+
+config MCUMGR_TRANSPORT_LORAWAN_FRAGMENTED_UPLINKS
+	bool "Fragment uplink messages"
+	default y
+	help
+	  Will fragment messages into multiple uplink messages if they are too big to fit into a
+	  single uplink message. If disabled then uplinks that are too large will not be sent.
+
+module = MCUMGR_TRANSPORT_LORAWAN
+module-str = LoRaWAN MCUmgr SMP transport
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MCUMGR_TRANSPORT_LORAWAN

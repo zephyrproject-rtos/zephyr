@@ -1,0 +1,20 @@
+# Copyright 2020 Peter Bigot Consulting, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_FIXED
+	bool "GPIO-controlled regulators"
+	default y
+	depends on DT_HAS_REGULATOR_FIXED_ENABLED
+	depends on GPIO
+	help
+	  Enable the driver for GPIO-controlled regulators
+
+if REGULATOR_FIXED
+
+config REGULATOR_FIXED_INIT_PRIORITY
+	int "Init priority"
+	default 75
+	help
+	  Device driver initialization priority
+
+endif # REGULATOR_FIXED

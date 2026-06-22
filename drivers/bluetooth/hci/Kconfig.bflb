@@ -1,0 +1,356 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_BFLB
+	bool
+	select HWINFO
+	help
+	  Common symbol for all Bouffalo Lab on-chip BLE controllers.
+	  Selected automatically by the SoC-specific HCI driver configs.
+
+config BT_BFLB_BL60X
+	bool
+	default y
+	depends on DT_HAS_BFLB_BT_HCI_ENABLED && SOC_SERIES_BL60X
+	select BT_BFLB
+	select HAS_BT_CTLR
+	select DYNAMIC_INTERRUPTS
+	select FPU_SHARING
+	select BFLB_FREERTOS_SHIM
+	help
+	  Bouffalo Lab BL60X (BL602) on-chip BLE controller HCI driver.
+	  Uses precompiled binary blobs from the hal_bouffalolab module.
+
+config BT_BFLB_BL70X
+	bool
+	default y
+	depends on DT_HAS_BFLB_BT_HCI_ENABLED && SOC_SERIES_BL70X
+	select BT_BFLB
+	select HAS_BT_CTLR
+	select DYNAMIC_INTERRUPTS
+	select FPU_SHARING
+	select BFLB_FREERTOS_SHIM
+	help
+	  Bouffalo Lab BL70X (BL702) on-chip BLE controller HCI driver.
+	  Uses precompiled binary blobs from the hal_bouffalolab module.
+
+
+if BT_BFLB
+
+config HEAP_MEM_POOL_ADD_SIZE_BFLB_BT
+	int
+	default 8192
+	help
+	  Additional heap memory reserved for BLE controller usage
+	  (task stacks, message queues, etc.)
+
+config BT_BFLB_CTLR_TASK_PRIO
+	int "BLE controller task priority (FreeRTOS-style)"
+	default 5
+	help
+	  Priority passed to the BLE controller init function. The RTOS
+	  shim layer maps this to a Zephyr preemptive priority.
+
+config BT_BFLB_RX_THREAD_STACK_SIZE
+	int "BLE HCI RX thread stack size"
+	default 1024
+	help
+	  Stack size for the HCI RX processing thread. The recv()
+	  callback reaches into host code, so adjust if needed.
+
+endif # BT_BFLB
+
+if BT_BFLB_BL70X
+
+choice BFLB_BL70X_BLE_VARIANT
+	prompt "BLE controller variant"
+	default BFLB_BL70X_BLE_M16S1 if BT_HCI_RAW
+	default BFLB_BL70X_BLE_M16S1 if (BT_PERIPHERAL && BT_CENTRAL)
+	default BFLB_BL70X_BLE_M0S0SP if (!BT_CONN && BT_OBSERVER)
+	default BFLB_BL70X_BLE_M0S1S if (BT_PERIPHERAL && BT_OBSERVER)
+	default BFLB_BL70X_BLE_M0S1P if BT_PERIPHERAL
+	default BFLB_BL70X_BLE_M16S1
+	help
+	  Select the BLE controller binary variant. The default is
+	  automatically chosen based on the enabled Bluetooth roles.
+	  The naming convention is m<master>s<slave>[suffix]:
+	    m = max master connections, s = max slave connections
+	    p = PDS (power down sleep), s = scan/observer
+
+config BFLB_BL70X_BLE_M0S1P
+	bool "m0s1p: Peripheral only, 1 connection"
+	help
+	  1 BLE connection, slave/peripheral only. Supports PDS.
+
+config BFLB_BL70X_BLE_M0S1
+	bool "m0s1: Peripheral only, 1 connection (no PDS)"
+
+config BFLB_BL70X_BLE_M0S1S
+	bool "m0s1s: Peripheral + Observer, 1 connection"
+
+config BFLB_BL70X_BLE_M0S1T10
+	bool "m0s1t10: Peripheral, 1 connection (test mode)"
+	help
+	  1 BLE connection, slave/peripheral only. Test/manufacturing mode.
+
+config BFLB_BL70X_BLE_M0S0SP
+	bool "m0s0sp: Observer only, no connections"
+
+config BFLB_BL70X_BLE_M1S1
+	bool "m1s1: Central + Peripheral, 1 connection each"
+	help
+	  1 master + 1 slave BLE connection.
+
+config BFLB_BL70X_BLE_M16S1
+	bool "m16s1: All roles, 16 master + 1 slave"
+	help
+	  16 Central + 1 Peripheral connections.
+	  Uses 16KB exchange memory (vs 8KB for other variants).
+	  The memory size must be correctly configured in the DTS (sram0_bt_em16k).
+
+endchoice
+
+config BFLB_BL70X_BLE_EM_16K
+	bool
+	default y if BFLB_BL70X_BLE_M16S1
+	help
+	  Use 16KB exchange memory for BLE controller.
+	  Only needed for the m16s1 variant.
+
+# ACL packet count the selected variant reports in LE Read Buffer Size
+configdefault BT_BUF_ACL_TX_COUNT
+	default 16 if BFLB_BL70X_BLE_M16S1
+	default 10 if BFLB_BL70X_BLE_M0S1T10
+	default 2
+
+# Set to 1 more than BT_BUF_ACL_TX_COUNT
+configdefault BT_BUF_EVT_RX_COUNT
+	default 17 if BFLB_BL70X_BLE_M16S1
+	default 11 if BFLB_BL70X_BLE_M0S1T10
+	default 3
+
+endif # BT_BFLB_BL70X
+
+if BT_BFLB_BL60X
+
+choice BFLB_BL60X_BLE_VARIANT
+	prompt "BLE controller variant"
+	default BFLB_BL60X_BLE_M8S1 if BT_HCI_RAW
+	default BFLB_BL60X_BLE_M8S1 if (BT_PERIPHERAL && BT_CENTRAL)
+	default BFLB_BL60X_BLE_M1S1 if BT_PERIPHERAL
+	default BFLB_BL60X_BLE_M8S1
+	help
+	  Select the BLE controller binary variant.
+
+config BFLB_BL60X_BLE_M1S1
+	bool "m1s1: Central + Peripheral, 1 connection each"
+
+config BFLB_BL60X_BLE_M8S1
+	bool "m8s1: 8 central + 1 peripheral"
+
+endchoice
+
+# ACL packet count the selected variant reports in LE Read Buffer Size
+configdefault BT_BUF_ACL_TX_COUNT
+	default 8 if BFLB_BL60X_BLE_M8S1
+	default 2
+
+# Set to 1 more than BT_BUF_ACL_TX_COUNT
+configdefault BT_BUF_EVT_RX_COUNT
+	default 9 if BFLB_BL60X_BLE_M8S1
+	default 3
+
+endif # BT_BFLB_BL60X
+
+config BT_BFLB_BL70XL
+	bool
+	default y
+	depends on DT_HAS_BFLB_BT_HCI_ENABLED && SOC_SERIES_BL70XL
+	select BT_BFLB
+	select HAS_BT_CTLR
+	select DYNAMIC_INTERRUPTS
+	select FPU_SHARING
+	select BFLB_BTBLE_PORT_OS_SHIM
+	help
+	  Bouffalo Lab BL70XL on-chip BLE controller HCI driver.
+	  Uses precompiled binary blobs from the hal_bouffalolab module.
+
+if BT_BFLB_BL70XL
+
+choice BFLB_BL70XL_SILICON_REV
+	prompt "BL70XL silicon revision"
+	default BFLB_BL70XL_REV_A1
+	help
+	  Select the BL70XL silicon revision. This determines the ROM
+	  data addresses used by the BLE controller binary blob.
+
+config BFLB_BL70XL_REV_A0
+	bool "A0"
+
+config BFLB_BL70XL_REV_A1
+	bool "A1"
+
+endchoice
+
+choice BFLB_BL70XL_BLE_VARIANT
+	prompt "BLE controller variant"
+	default BFLB_BL70XL_BLE_M8S1P if BT_HCI_RAW
+	default BFLB_BL70XL_BLE_M8S1P if BT_CENTRAL && BT_PERIPHERAL
+	default BFLB_BL70XL_BLE_M0S1SP if !BT_CONN && BT_OBSERVER
+	default BFLB_BL70XL_BLE_M0S1SP if BT_PERIPHERAL && BT_OBSERVER && BT_MAX_CONN = 1
+	default BFLB_BL70XL_BLE_M0S1P if BT_PERIPHERAL && BT_MAX_CONN = 1
+	default BFLB_BL70XL_BLE_M1S1P
+	help
+	  Select the BLE controller binary variant. This determines the
+	  maximum number of connections, supported roles, and features.
+	  The naming convention is m<master>s<slave>[suffix]:
+	    m = max master connections, s = max slave connections
+	    p = PDS (power down sleep), r = ROM code, s = scan/observer
+
+config BFLB_BL70XL_BLE_M0S1P
+	bool "m0s1p: Peripheral only, 1 connection"
+	help
+	  1 BLE connection, slave/peripheral only. All controller code
+	  in flash. Supports PDS.
+
+config BFLB_BL70XL_BLE_M0S1RP
+	bool "m0s1rp: Peripheral only, 1 connection (ROM code)"
+	depends on BFLB_BL70XL_REV_A1
+	help
+	  1 BLE connection, slave/peripheral only. Some controller code
+	  in ROM for reduced flash usage. Requires A1 silicon. Supports PDS.
+
+config BFLB_BL70XL_BLE_M0S1SP
+	bool "m0s1sp: Peripheral + Observer, 1 connection"
+	help
+	  1 BLE connection, slave/peripheral + observer/scanner.
+	  All controller code in flash. Supports PDS.
+
+config BFLB_BL70XL_BLE_M0S2P
+	bool "m0s2p: Peripheral only, 2 connections"
+	help
+	  2 BLE connections, slave/peripheral only. All controller code
+	  in flash. Supports PDS.
+
+config BFLB_BL70XL_BLE_M0S4P
+	bool "m0s4p: Peripheral only, 4 connections"
+	help
+	  4 BLE connections, slave/peripheral only. All controller code
+	  in flash. Supports PDS.
+
+config BFLB_BL70XL_BLE_M1S1P
+	bool "m1s1p: All roles, 1 connection"
+	help
+	  1 BLE connection, master or slave. All controller code in flash.
+	  Supports PDS.
+
+config BFLB_BL70XL_BLE_M2S1P
+	bool "m2s1p: All roles, 2 connections"
+	help
+	  2 BLE connections, master or slave. All controller code in flash.
+	  Supports PDS.
+
+config BFLB_BL70XL_BLE_M4S1P
+	bool "m4s1p: All roles, 4 connections"
+	help
+	  4 BLE connections, master or slave. All controller code in flash.
+	  Supports PDS.
+
+config BFLB_BL70XL_BLE_M8S1P
+	bool "m8s1p: All roles, 8 connections"
+	help
+	  8 BLE connections, master or slave. All controller code in flash.
+	  Supports PDS. Uses 16KB exchange memory (vs 8KB for other variants).
+	  The memory size must be correctly configured in the DTS (sram0_bt_em16k).
+
+endchoice
+
+config BFLB_BL70XL_BLE_EM_16K
+	bool
+	default y if BFLB_BL70XL_BLE_M8S1P
+	help
+	  Use 16KB exchange memory for BLE controller.
+	  Only needed for the m8s1p variant (8 connections).
+
+# ACL packet count the selected variant reports in LE Read Buffer Size
+configdefault BT_BUF_ACL_TX_COUNT
+	default 8 if BFLB_BL70XL_BLE_M8S1P
+	default 6 if BFLB_BL70XL_BLE_M0S4P || BFLB_BL70XL_BLE_M4S1P
+	default 5 if BFLB_BL70XL_BLE_M0S1RP
+	default 4 if BFLB_BL70XL_BLE_M0S2P || BFLB_BL70XL_BLE_M2S1P
+	default 2
+
+# Set to 1 more than BT_BUF_ACL_TX_COUNT
+configdefault BT_BUF_EVT_RX_COUNT
+	default 9 if BFLB_BL70XL_BLE_M8S1P
+	default 7 if BFLB_BL70XL_BLE_M0S4P || BFLB_BL70XL_BLE_M4S1P
+	default 6 if BFLB_BL70XL_BLE_M0S1RP
+	default 5 if BFLB_BL70XL_BLE_M0S2P || BFLB_BL70XL_BLE_M2S1P
+	default 3
+
+endif # BT_BFLB_BL70XL
+
+config BT_BFLB_BL61X
+	bool
+	default y
+	depends on DT_HAS_BFLB_BT_HCI_ENABLED && SOC_SERIES_BL61X
+	select BT_BFLB
+	select HAS_BT_CTLR
+	select DYNAMIC_INTERRUPTS
+	select FPU_SHARING
+	select BFLB_BTBLE_PORT_OS_SHIM
+	help
+	  Bouffalo Lab BL61X (BL616/BL618) on-chip BLE controller HCI driver.
+	  Uses precompiled binary blobs from the hal_bouffalolab module.
+
+if BT_BFLB_BL61X
+
+choice BFLB_BL61X_BLE_VARIANT
+	prompt "BLE controller variant"
+	default BFLB_BL61X_BLE_1M10S1 if BT_HCI_RAW
+	default BFLB_BL61X_BLE_1M2S1BREDR1 if BT_CLASSIC
+	default BFLB_BL61X_BLE_1M10S1 if (BT_PERIPHERAL && BT_CENTRAL)
+	default BFLB_BL61X_BLE_1M0S1 if BT_PERIPHERAL
+	default BFLB_BL61X_BLE_1M10S1
+	help
+	  Select the BLE controller binary variant. The default is
+	  automatically chosen based on the enabled Bluetooth roles.
+
+config BFLB_BL61X_BLE_1M0S1
+	bool "ble1m0s1bredr0: peripheral only, 1 connection"
+
+config BFLB_BL61X_BLE_1M10S1
+	bool "ble1m10s1bredr0: peripheral + central, 10 connections"
+
+config BFLB_BL61X_BLE_1M2S1BREDR1
+	bool "ble1m2s1bredr1: peripheral + central + BR/EDR, 2 connections"
+
+endchoice
+
+# ACL packet count the selected variant reports in LE Read Buffer Size
+configdefault BT_BUF_ACL_TX_COUNT
+	default 10 if BFLB_BL61X_BLE_1M10S1
+	default 4
+
+# Set to 1 more than BT_BUF_ACL_TX_COUNT
+configdefault BT_BUF_EVT_RX_COUNT
+	default 11 if BFLB_BL61X_BLE_1M10S1
+	default 5
+
+config BFLB_BL61X_BLE_EM_64K
+	bool "Use 64 KB exchange memory (required for BR/EDR)"
+	default y if BFLB_BL61X_BLE_1M2S1BREDR1
+	help
+	  Reserve 64 KB of WRAM for BLE exchange memory instead of the
+	  default 32 KB. Required for the BR/EDR variant. The board DTS
+	  must include bl61x_em_64kb.dtsi instead of bl61x_em_32kb.dtsi.
+
+config BFLB_BL61X_WL_RMEM_SIZE
+	int "PHY/RF retention memory size (bytes)"
+	default 8192
+	help
+	  Size in bytes of the static buffer passed to wl_cfg_get() for
+	  PHY/RF calibration data. The buffer persists for the lifetime
+	  of the application. 8192 matches the Bouffalo SDK default.
+
+endif # BT_BFLB_BL61X

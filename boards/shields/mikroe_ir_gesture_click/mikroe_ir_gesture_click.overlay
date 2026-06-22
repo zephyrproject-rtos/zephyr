@@ -1,0 +1,14 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mikrobus_i2c {
+	status = "okay";
+
+	apds9960_mikroe_ir_gesture_click: apds9960@39 {
+		compatible = "avago,apds9960";
+		reg = <0x39>;
+		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+	};
+};

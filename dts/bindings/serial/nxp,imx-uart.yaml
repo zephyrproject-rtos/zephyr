@@ -1,0 +1,26 @@
+# Copyright 2017, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: iMX UART
+
+compatible: "nxp,imx-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml, "nxp,rdc-policy.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  modem-mode:
+    type: int
+    required: true
+    description: Set the UART Port to modem mode 0 (dce) 64 (dte)
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# This binding should not try to override the "type:"
+# of an inherited property.
+#
+# Bindings, child-bindings and grandchild-bindings have
+# to be tested separately, see also:
+# - invalid_child_protype.yaml
+# - invalid_grandchild_proptype.yaml
+
+include: base.yaml
+
+properties:
+  prop-1:
+    type: string

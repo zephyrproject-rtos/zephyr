@@ -1,0 +1,45 @@
+# Copyright (c) 2024 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_OPENHWGROUP_CVA6
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default $(dt_node_int_prop_int,/cpus/cpu@0,timebase-frequency)
+
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+# highest implemented first-level interrupt is machine external, 11
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 12
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 11
+
+# 12 first level, 30 second level
+config MAX_IRQ_PER_AGGREGATOR
+	default 30
+
+# one 2nd level aggregator (PLIC) with 30 interrupts
+# offset of 12
+config NUM_IRQS
+	default 42
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+# 1 PLIC
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+config PLIC
+	default y
+
+config 3RD_LEVEL_INTERRUPTS
+	default n
+
+endif # SOC_FAMILY_OPENHWGROUP_CVA6

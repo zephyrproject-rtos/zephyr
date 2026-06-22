@@ -1,0 +1,21 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+
+		test_led: test_led_0 {
+			/* GPIO2 IO00 - general purpose GPIO pin on iMX95 EVK */
+			gpios = <&gpio2 3 GPIO_ACTIVE_HIGH>;
+			label = "Test LED";
+		};
+	};
+
+	aliases {
+		led0 = &test_led;
+	};
+};

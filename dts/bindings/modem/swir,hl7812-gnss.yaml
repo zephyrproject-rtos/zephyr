@@ -1,0 +1,12 @@
+description: |
+  Binding for a modem offload child node that indicates the modem
+  supports socket offload functionality. This node is intended to be a
+  child of a modem device node (for example, `modem: hl_modem { ... };`).
+
+  The binding is intentionally small and extensible; it documents a
+  presence node (compatible = "swir,hl7812-offload") and may be extended
+  in future with additional properties that the driver may consume.
+
+compatible: "swir,hl7812-gnss"
+
+include: swir,hl78xx-gnss.yaml

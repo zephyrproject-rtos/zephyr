@@ -1,0 +1,8 @@
+# Copyright 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel IGC MDIO device.
+
+compatible: "intel,igc-mdio"
+
+include: [mdio-controller.yaml, base.yaml]

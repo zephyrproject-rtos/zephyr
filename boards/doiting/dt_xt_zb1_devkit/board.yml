@@ -1,0 +1,6 @@
+board:
+  name: dt_xt_zb1_devkit
+  full_name: XT-ZB1 Zigbee 3.0 and BLE 5.0 Coexistence Module Development Kit
+  vendor: doiting
+  socs:
+    - name: bl702c10q2h

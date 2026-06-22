@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2018, 2019, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "nsim_em.dtsi"
+
+/ {
+	model = "snps,nsim_em";
+	compatible = "snps,nsim_em";
+};
+
+&cpu0 {
+	clock-frequency = <5000000>;
+};

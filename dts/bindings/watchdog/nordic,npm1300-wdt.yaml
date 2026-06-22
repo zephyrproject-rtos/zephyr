@@ -1,0 +1,13 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: nPM1300 Watchdog
+
+compatible: "nordic,npm1300-wdt"
+
+include: base.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: nPM1300 pin used as NRESETOUT

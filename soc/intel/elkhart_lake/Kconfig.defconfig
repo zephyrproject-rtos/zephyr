@@ -1,0 +1,16 @@
+# Elkhart Lake SoC configuration options
+
+# Copyright (c) 2018-2020 Intel Corporation
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ELKHART_LAKE
+
+config PCIE_MMIO_CFG
+	default y
+
+config X86_DYNAMIC_IRQ_STUBS
+	default 16
+	depends on DYNAMIC_INTERRUPTS
+
+endif # SOC_ELKHART_LAKE

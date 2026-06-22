@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_RENESAS_RX_MTU
+	bool "Renesas RX MTU PWM driver"
+	default y
+	depends on DT_HAS_RENESAS_RX_MTU_PWM_ENABLED
+	help
+	  Enable the Renesas RX PWM driver.

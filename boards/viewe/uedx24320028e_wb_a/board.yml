@@ -1,0 +1,6 @@
+board:
+  name: uedx24320028e_wb_a
+  full_name: VIEWE UEDX24320028E-WB-A
+  vendor: viewe
+  socs:
+  - name: esp32s3

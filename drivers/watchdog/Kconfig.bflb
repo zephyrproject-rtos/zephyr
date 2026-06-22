@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_BFLB
+	bool "Bouffalo Lab watchdog driver"
+	default y
+	depends on DT_HAS_BFLB_WDT_ENABLED
+	help
+	  Enable watchdog driver for Bouffalo Lab SoCs.

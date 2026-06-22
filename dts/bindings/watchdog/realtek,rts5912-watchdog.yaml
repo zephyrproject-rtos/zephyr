@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Realtek, SIBG-SD7
+# SPDX-License-Identifier: Apache-2.0
+
+description: Realtek RTS5912 watchdog timer
+
+include: base.yaml
+
+compatible: "realtek,rts5912-watchdog"
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clk-divider:
+    type: int
+    description: Watchdog clock divider
+    required: true

@@ -1,0 +1,12 @@
+# Counter and timer configuration options
+
+# Copyright (c) 2016 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config TIMER_TMR_CMSDK_APB
+	bool "ARM CMSDK (Cortex-M System Design Kit) Timer driver"
+	default y
+	depends on DT_HAS_ARM_CMSDK_TIMER_ENABLED
+	help
+	  The timers (TMR) present in the platform are used as timers.
+	  This option enables the support for the timers.

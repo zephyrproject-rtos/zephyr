@@ -1,0 +1,28 @@
+sample:
+  description: A simple echo app using Android's Context Hub Runtime Environment (CHRE).
+  name: chre
+tests:
+  sample.modules.chre:
+    tags:
+      - introduction
+      - chre
+    platform_exclude: qemu_leon3
+    modules:
+      - chre
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Hello CHRE!"
+        - "I: EventLoop start.*"
+        - "D: Instance ID 1 assigned to app ID 0x0000000000000001.*"
+        - "EchoApp::nanoappStart\\(\\)"
+        - "EchoApp::nanoappHandleEvent\\(sender_instance_id=0, event_type=1, event_data@(\\\
+        (nil\\))|0\\)"
+        - "Event \\(1\\) complete!"
+        - "EchoApp::nanoappEnd\\(\\)"
+        - "I: Exiting EventLoop.*"
+    integration_platforms:
+      - native_sim
+    filter: CONFIG_FULL_LIBC_SUPPORTED

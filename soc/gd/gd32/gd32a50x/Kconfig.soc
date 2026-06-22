@@ -1,0 +1,18 @@
+# Copyright (c) 2022 YuLong Yao <feilongphone@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_GD32A50X
+	bool
+	select SOC_FAMILY_GD_GD32
+	help
+	  Enable support for GigaDevice GD32A50X MCU series
+
+config SOC_SERIES
+	default "gd32a50x" if SOC_SERIES_GD32A50X
+
+config SOC_GD32A503
+	bool
+	select SOC_SERIES_GD32A50X
+
+config SOC
+	default "gd32a503" if SOC_GD32A503

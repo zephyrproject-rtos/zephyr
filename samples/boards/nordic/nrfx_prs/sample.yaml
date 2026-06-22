@@ -1,0 +1,24 @@
+sample:
+  name: nrfx Peripheral Resource Sharing example
+tests:
+  sample.boards.nrf.nrfx_prs:
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf9160dk/nrf9160
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf9160dk/nrf9160
+    tags: nrfx
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "nrfx PRS example on .*"
+        - "-> press \".*\" to trigger a transfer"
+        - "-> press \".*\" to switch the type of peripheral"
+        - "Switched to SPIM"
+        - "-- Background transfer on \".*\" --"
+        - "Tx: 4E 6F 72 64 69 63 20 53 65 6D 69 63 6F 6E 64 75 63 74 6F 72 00"
+        - "Rx:"
+        - "-- Background transfer on \".*\" --"

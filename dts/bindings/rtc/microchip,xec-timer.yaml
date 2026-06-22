@@ -1,0 +1,42 @@
+# Copyright (c) 2019, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC basic timer
+
+compatible: "microchip,xec-timer"
+
+include:
+  - name: rtc.yaml
+  - name: base.yaml
+  - name: microchip,dmec-ecia-girq.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    required: true
+
+  prescaler:
+    type: int
+    required: true
+    description: Timer frequency equals clock-frequency divided by the prescaler value
+
+  max-value:
+    type: int
+    required: true
+    description: Maximum counter value the instance can handle
+
+  girqs:
+    type: array
+    required: true
+    description: Array of GIRQ numbers [8:26] and bit positions [0:31].
+
+  pcr-src:
+    type: int
+    required: true
+    description: |
+      Timer Power Clock Reset(PCR) peripheral index and bit position.

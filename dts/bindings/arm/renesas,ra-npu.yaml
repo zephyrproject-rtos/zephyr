@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA frontend of Arm Ethos-U NPU
+
+compatible: "renesas,ra-npu"
+
+include: "arm,ethos-u.yaml"
+
+properties:
+  clocks:
+    required: true
+
+  interrupt-names:
+    required: true
+    enum:
+      - "npu-irq"

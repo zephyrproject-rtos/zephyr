@@ -1,0 +1,18 @@
+# Copyright 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: nRF9160 DK optional routing provided by analog switch
+
+compatible: "nordic,nrf9160dk-optional-routing"
+
+include: base.yaml
+
+properties:
+  status:
+    required: true
+
+  control-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO to use to control the analog switch.

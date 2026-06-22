@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Maxin John
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32L152C_DISCO
+	select SOC_STM32L152XC

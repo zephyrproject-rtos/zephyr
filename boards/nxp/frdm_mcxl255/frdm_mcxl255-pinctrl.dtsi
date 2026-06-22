@@ -1,0 +1,28 @@
+/*
+ * Copyright 2025 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/mcx/MCXL255VDF-pinctrl.h>
+
+&pinctrl {
+	pinmux_lpuart0: pinmux_lpuart0 {
+		group0 {
+			pinmux = <LPUART0_RXD_P2_10>,
+				 <LPUART0_TXD_P2_11>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_aon_lpuart0: pinmux_aon_lpuart0 {
+		group0 {
+			pinmux = <AON_LPUART0_TX_P0_6>,
+				 <AON_LPUART0_RX_P0_7>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+};

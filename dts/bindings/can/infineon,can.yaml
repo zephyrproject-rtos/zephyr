@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon MCAN Driver
+
+compatible: "infineon,can"
+
+include: ["bosch,m_can-base.yaml", "pinctrl-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clk-dst:
+    type: int
+    required: true
+    description: |
+      Peripheral clock destination ID for this CAN instance.
+      Maps to an en_clk_dst_t value used by the Infineon PDL to
+      connect a peripheral clock divider to this CAN block.

@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	esp_threadbr_header: connector {
+		compatible = "espressif,esp-threadbr-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = /* GND        1                  2                         GND */
+			   /* 5V         3                  4                         3V3 */
+			   /* GPIO15 */ <5 0 &gpio0 15 0>, <6 0 &gpio0 16 0>,   /* GPIO16 */
+			   /* GPIO03 */ <7 0 &gpio0 3 0>, <8 0 &gpio1 14 0>,    /* GPIO46 */
+			   /* GPIO09 */ <9 0 &gpio0 9 0>, <10 0 &gpio0 14 0>,   /* GPIO14 */
+			   /* GPIO21 */ <11 0 &gpio0 21 0>, <12 0 &gpio1 15 0>, /* GPIO47 */
+			   /* GPIO48 */ <13 0 &gpio1 16 0>, <14 0 &gpio1 13 0>, /* GPIO45 */
+			   /* GPIO35 */ <15 0 &gpio1 3 0>, <16 0 &gpio1 4 0>,   /* GPIO36 */
+			   /* GPIO37 */ <17 0 &gpio1 5 0>, <18 0 &gpio1 6 0>,   /* GPIO38 */
+			   /* GPIO39 */ <19 0 &gpio1 7 0>, <20 0 &gpio1 8 0>,   /* GPIO40 */
+			   /* GPIO41 */ <21 0 &gpio1 9 0>, <22 0 &gpio1 10 0>,  /* GPIO42 */
+			   /* GPIO43 */ <23 0 &gpio1 11 0>, <24 0 &gpio1 12 0>, /* GPIO44 */
+			   /* GPIO02 */ <25 0 &gpio0 2 0>, <26 0 &gpio0 1 0>;   /* GPIO01 */
+	};
+};
+
+esp_threadbr_spi: &spi2 {};
+
+esp_threadbr_i2c: &i2c0 {};

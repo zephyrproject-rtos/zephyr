@@ -1,0 +1,75 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PCA9422 battery charger
+
+include: battery.yaml
+
+compatible: "nxp,pca9422-charger"
+
+properties:
+  constant-charge-current-max-microamp:
+    type: int
+    required: true
+    default: 100000
+    description: |
+      Fast Charge current set at init time in uA, available range is 2.5mA to 640mA.
+      The value specified will be rounded down to the closest implemented
+      value. If set to 0 (default) skip setting the charge current value at
+      driver initialization.
+
+  constant-charge-voltage-max-microvolt:
+    type: int
+    required: true
+    default: 4200000
+    description: |
+      The maximum voltage that the battery will be charged at, defaults to
+      4.2V, matching the device default reset configuration.
+
+  precharge-current-percent:
+    type: int
+    enum:
+      - 7
+      - 16
+    default: 16
+    description: |
+      Precharge current as x%(7% or 16%) of Fast charge current.
+      Refer to CHARGER_CNTL_1 register description for details.
+
+  charge-termination-current-percent:
+    type: int
+    enum:
+      - 25
+      - 50
+      - 75
+      - 100
+    default: 25
+    description: |
+      Topoff current as x%*10 (2.5%, 5.0%, 7.5%, or 10.0%)
+      of Fast charge current. Charge will finish when charging
+      current is less than topoff current.
+      Refer to CHARGER_CNTL_4 register description for details.
+
+  re-charge-threshold-microvolt:
+    type: int
+    enum:
+      - 100000
+      - 150000
+      - 200000
+    default: 100000
+    description: |
+      Recharge threshold in relation to Vbat_reg.
+      Refer to CHARGER_CNTL_4 register description for details.
+
+  input-current-limit-microamp:
+    type: int
+    default: 470000
+    description: |
+      Input current limit on VIN, available range is 45mA to 1195mA.
+
+  system-voltage-min-threshold-microvolt:
+    type: int
+    default: 4550000
+    description: |
+      System regulation voltage. It is higher 200mV than Vbat_reg.
+      Vbatreg will clamp by Vsys_reg - 200mV.

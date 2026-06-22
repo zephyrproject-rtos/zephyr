@@ -1,0 +1,14 @@
+identifier: max32655fthr/max32655/rv32
+name: max32655fthr rv32
+vendor: adi
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - serial
+  - flash
+  - spi
+ram: 64
+flash: 128

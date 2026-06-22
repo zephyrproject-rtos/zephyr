@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/amebad-pinctrl.h>
+
+&pinctrl {
+	compatible = "realtek,ameba-pinctrl";
+
+	/* PA30 is SWD_CLK, PA31 is SWD_DAT(both pull-up internally) */
+	loguart_default: loguart_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('A', 8, AMEBA_LOGUART)>,        /* RXD */
+				 <AMEBA_PINMUX('A', 7, AMEBA_LOGUART)>;        /* TXD */
+			bias-pull-up;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('A', 25, AMEBA_I2C)>,
+				 <AMEBA_PINMUX('A', 26, AMEBA_I2C)>;
+			bias-pull-up;
+		};
+	};
+
+	/* amebad spi1 only be master */
+	spi1_default: spi1_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('B', 6, AMEBA_SPIM)>,/* AMEBA_SPI1_CLK */
+				 <AMEBA_PINMUX('B', 4, AMEBA_SPIM)>,/* AMEBA_SPI1_MOSI */
+				 <AMEBA_PINMUX('B', 5, AMEBA_SPIM)>;/* AMEBA_SPI1_MISO */
+			bias-pull-up;
+		};
+
+		group2 {
+			pinmux = <AMEBA_PINMUX('B', 7, AMEBA_SPIM)>;/* AMEBA_SPI1_CS */
+			bias-pull-up;
+		};
+	};
+};

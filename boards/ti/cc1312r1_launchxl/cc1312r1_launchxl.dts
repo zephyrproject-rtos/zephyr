@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2026 Jean-Pierre De Jesus DIAZ
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/cc1312r.dtsi>
+#include "../common/launchxl.dtsi"
+#include "../common/launchxl-flash.dtsi"
+
+/ {
+	model = "TI CC1312R1 LaunchXL";
+	compatible = "ti,launchxl-cc1312r1";
+
+	chosen {
+		/delete-property/ zephyr,ieee802154;
+	};
+};
+
+&btn0 {
+	gpios = <&gpio0 13 BTN_GPIO_FLAGS>;
+};
+
+&btn1 {
+	gpios = <&gpio0 14 BTN_GPIO_FLAGS>;
+};
+
+&uart0_tx_default {
+	pinmux = <3 IOC_PORT_MCU_UART0_TX>;
+	bias-disable;
+};
+
+&uart0_rx_default {
+	pinmux = <2 IOC_PORT_MCU_UART0_RX>;
+	bias-disable;
+};

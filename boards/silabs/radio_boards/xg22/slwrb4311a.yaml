@@ -1,0 +1,26 @@
+identifier: slwrb4311a
+name: BGM220P Bluetooth Module 2.4 GHz +8 dBm Radio Board (SLWRB4311A)
+type: mcu
+arch: arm
+ram: 32
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - bluetooth
+  - clock_control
+  - comparator
+  - counter
+  - dma
+  - entropy
+  - gpio
+  - flash
+  - i2c
+  - led
+  - pinctrl
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: silabs

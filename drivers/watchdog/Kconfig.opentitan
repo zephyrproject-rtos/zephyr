@@ -1,0 +1,13 @@
+# OpenTitan Always-On Timer support
+
+# Copyright (c) 2023, Rivos Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_OPENTITAN
+	bool "OpenTitan Always-On (AON) Timer"
+	depends on DT_HAS_LOWRISC_OPENTITAN_AONTIMER_ENABLED
+	default y
+	select HAS_WDT_MULTISTAGE
+	help
+	  This option enables support for the watchdog portion of the OpenTitan AON
+	  timer.

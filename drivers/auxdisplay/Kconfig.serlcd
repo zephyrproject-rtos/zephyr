@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Jan Henke <Jan.Henke@taujhe.de>
+# SPDX-License-Identifier: Apache-2.0
+
+config AUXDISPLAY_SERLCD
+	bool "SparkFun SerLCD dot character LCD driver"
+	default y
+	select I2C
+	depends on DT_HAS_SPARKFUN_SERLCD_ENABLED
+	help
+	  Enable driver for SparkFun SerLCD.

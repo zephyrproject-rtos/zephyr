@@ -1,0 +1,8 @@
+# Copyright (c) 2022, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: NVME Bus controller node
+
+compatible: "nvme-controller"
+
+include: [base.yaml, pcie-device.yaml]

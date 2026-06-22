@@ -1,0 +1,7 @@
+# Copyright (c) 2019, Joris Offouga
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PICO_PI
+	select SOC_PART_NUMBER_MCIMX7D7DVM10SC
+	select SOC_MCIMX7D_M4 if BOARD_PICO_PI_MCIMX7D_M4

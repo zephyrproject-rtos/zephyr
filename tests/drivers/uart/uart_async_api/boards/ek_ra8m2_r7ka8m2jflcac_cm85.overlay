@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+dut: &uart7 {
+	current-speed = <115200>;
+	status = "okay";
+};

@@ -1,0 +1,6 @@
+board:
+  name: we_proteus2ev
+  full_name: Proteus-II-EV
+  vendor: we
+  socs:
+  - name: nrf52832

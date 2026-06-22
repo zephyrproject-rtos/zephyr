@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Jan Kubiznak <jan.kubiznak@deveritec.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_AD569X
+	bool "Analog Devices AD5691 / AD5692 / AD5693 DAC driver"
+	default y
+	select I2C
+	depends on DT_HAS_ADI_AD5691_ENABLED || DT_HAS_ADI_AD5692_ENABLED || DT_HAS_ADI_AD5693_ENABLED
+	help
+	  Enable the driver for the Analog Devices AD569X.

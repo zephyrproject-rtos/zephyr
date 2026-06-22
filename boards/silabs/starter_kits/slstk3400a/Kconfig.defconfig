@@ -1,0 +1,23 @@
+# Copyright (c) 2018, Marcio Montenegro
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SLSTK3400A
+
+config CMU_HFXO_FREQ
+	default 24000000
+
+config CMU_LFXO_FREQ
+	default 32768
+
+# Kernel Options due to Low Memory (8k)
+
+configdefault MAIN_STACK_SIZE
+	default 640
+
+configdefault IDLE_STACK_SIZE
+	default 200
+
+configdefault ISR_STACK_SIZE
+	default 512
+
+endif # BOARD_SLSTK3400A

@@ -1,0 +1,78 @@
+# Copyright (c) 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This compatible binding should be applied to the device's iomuxc DTS node.
+  the DTS node will be populated with all pinmux options for the specific SOC.
+  These options can then be used in a pinctrl node with the "nxp,mcux-rt-pinctrl"
+  compatible string to define pin groups.
+
+  The user should not edit the bindings defined within this node to make pinmux
+  selections, but should instead edit the pinctrl groups for their board.
+
+compatible: "nxp,imx-iomuxc"
+
+include:
+  - name: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: MCUX RT pin mux option
+  properties:
+    pinmux:
+      required: true
+      type: array
+      description: |
+        An array of values defining the pin mux selection, in the following format:
+        <mux_register, mux_val, input_reg, daisy_val, cfg_reg>
+        mux_register: register that will be written to make mux selection
+        mux_val: value to write to mux_register
+        input_reg: peripheral register that will direct peripheral signal to pin
+        daisy_val: value to write to input_reg
+        cfg_reg: register that will configure pin pull, drive strength, and open drain
+    gpr:
+      type: array
+      description: |
+        An array of values defining the GPR bit write required, if one exists.
+        Some IOMUXC options require writing to an IOMUXC_GPR register to select
+        them. This array has the following elements:
+        <gpr_reg, gpr_shift, gpr_val>
+        gpr_reg: GPR register address to write to
+        gpr_shift: shift to apply to value before writing
+        gpr_val: value to write
+    # Note: the below properties should ideally be an enum. However, the pinctrl driver
+    # will need to initialize the pin configuration register differently based on
+    # the type of register provided, and it does so using the IF_ENABLED macro. This
+    # macro cannot work using preprocessor equality statements (like DT_ENUM_IDX(prop) == val),
+    # so we cannot use an enum and instead must use individual properties.
+    pin-pue:
+      type: boolean
+      description: |
+          RT11xx parts have multiple types of IOMUXC registers defined, with
+          different register layouts. This property can be set to indicate
+          to the pinctrl driver the type of register this pinmux represents,
+          and should not be modified by the user.
+    pin-pdrv:
+      type: boolean
+      description: |
+          RT11xx parts have multiple types of IOMUXC registers defined, with
+          different register layouts. This property can be set to indicate
+          to the pinctrl driver the type of register this pinmux represents,
+          and should not be modified by the user.
+    pin-lpsr:
+      type: boolean
+      description: |
+          RT11xx parts have multiple types of IOMUXC registers defined, with
+          different register layouts. This property can be set to indicate
+          to the pinctrl driver the type of register this pinmux represents,
+          and should not be modified by the user.
+    pin-snvs:
+      type: boolean
+      description: |
+          RT11xx parts have multiple types of IOMUXC registers defined, with
+          different register layouts. This property can be set to indicate
+          to the pinctrl driver the type of register this pinmux represents,
+          and should not be modified by the user.

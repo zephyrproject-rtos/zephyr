@@ -1,0 +1,12 @@
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config BD8LB600FS_DIAGNOSTICS
+	bool "Sensors of BD8LB600FS"
+	default y
+	depends on DT_HAS_ROHM_BD8LB600FS_DIAGNOSTICS_ENABLED
+	select MFD
+	help
+	  Enable driver for the open load detection, over current
+	  protection and thermal shutdown sensors of the low side
+	  switch BD8LB600FS.

@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/amebag2-pinctrl.h>
+
+&pinctrl {
+	compatible = "realtek,ameba-pinctrl";
+
+	/* PA18 is SWD_CLK, PA19 is SWD_DAT(both pull-up internally) */
+	loguart_default: loguart_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('B', 4, AMEBA_LOG_UART)>,        /* RXD */
+				 <AMEBA_PINMUX('B', 5, AMEBA_LOG_UART)>;        /* TXD */
+			bias-pull-up;
+		};
+	};
+
+	sdhc0_default: sdhc0_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('A', 18, AMEBA_SDIO_MST)>, /* CLK */
+				 <AMEBA_PINMUX('A', 19, AMEBA_SDIO_MST)>, /* CMD */
+				 <AMEBA_PINMUX('A', 28, AMEBA_SDIO_MST)>, /* D0 */
+				 <AMEBA_PINMUX('A', 20, AMEBA_SDIO_MST)>, /* D1 */
+				 <AMEBA_PINMUX('A', 27, AMEBA_SDIO_MST)>, /* D2 */
+				 <AMEBA_PINMUX('A', 21, AMEBA_SDIO_MST)>; /* D3 */
+			bias-pull-up;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('A', 22, AMEBA_I2C0_SDA)>,
+				 <AMEBA_PINMUX('A', 23, AMEBA_I2C0_SCL)>;
+			bias-pull-up;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('A', 24, AMEBA_I2C1_SDA)>,
+				 <AMEBA_PINMUX('A', 14, AMEBA_I2C1_SCL)>;
+			bias-pull-up;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('A', 29, AMEBA_SPI0_CLK)>,
+				 <AMEBA_PINMUX('A', 30, AMEBA_SPI0_MOSI)>,
+				 <AMEBA_PINMUX('A', 31, AMEBA_SPI0_MISO)>;
+			bias-pull-up;
+		};
+
+		group2 {
+			pinmux = <AMEBA_PINMUX('B', 0, AMEBA_SPI0_CS)>;
+			bias-pull-up;
+		};
+	};
+
+	spi1_default: spi1_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('B', 29, AMEBA_SPI1_CLK)>,
+				 <AMEBA_PINMUX('B', 30, AMEBA_SPI1_MOSI)>,
+				 <AMEBA_PINMUX('B', 31, AMEBA_SPI1_MISO)>;
+			bias-pull-up;
+		};
+
+		group2 {
+			pinmux = <AMEBA_PINMUX('C', 0, AMEBA_SPI1_CS)>;
+			bias-pull-up;
+		};
+	};
+};

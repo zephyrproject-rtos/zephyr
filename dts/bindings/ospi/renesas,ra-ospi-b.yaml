@@ -1,0 +1,23 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA OSPI
+
+compatible: "renesas,ra-ospi-b"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+bus: ospi
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clocks:
+    required: true

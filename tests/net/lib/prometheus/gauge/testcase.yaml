@@ -1,0 +1,8 @@
+tests:
+  # section.subsection
+  net.prometheus.gauge:
+    depends_on: netif
+    integration_platforms:
+      - native_sim
+      - qemu_x86
+    tags: prometheus

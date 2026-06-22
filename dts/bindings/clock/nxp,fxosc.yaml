@@ -1,0 +1,33 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Fast external crystal oscillator
+
+compatible: "nxp,fxosc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  freq:
+    required: true
+    type: int
+    description: FXOSC output clock frequency in Hz
+
+  workmode:
+    required: true
+    type: string
+    description: FXOSC work mode setting
+    enum: ["crystal", "bypass"]
+
+  delay:
+    required: true
+    type: int
+    description: FXOSC startup delay in counts
+
+  overdrive:
+    required: true
+    type: int
+    description: FXOSC overdrive protection setting

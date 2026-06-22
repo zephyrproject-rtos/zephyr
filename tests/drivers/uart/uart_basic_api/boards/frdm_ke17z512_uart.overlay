@@ -1,0 +1,22 @@
+/*
+ * Copyright 2024 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,shell-uart = &uart1;
+	};
+};
+
+/* This configuration is to test "UART" driver
+ * UART1_RX_PTC16(J4->10)
+ * UART1_TX_PTC17(J4->12)
+ */
+
+&uart1 {
+	status = "okay";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};

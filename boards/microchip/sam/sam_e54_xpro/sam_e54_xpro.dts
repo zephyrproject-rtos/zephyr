@@ -1,0 +1,434 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <microchip/sam/sam_d5x_e5x/atsame54/atsame54p20a.dtsi>
+#include "sam_e54_xpro-pinctrl.dtsi"
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/mchp_sam_d5x_e5x_adc.h>
+
+/ {
+	model = "SAM E54 Xplained Pro";
+	compatible = "same54,xpro", "microchip,atsame54p20a", "microchip,same54";
+
+	chosen {
+		zephyr,console = &sercom2;
+		zephyr,shell-uart = &sercom2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,flash-controller = &nvmctrl;
+		zephyr,entropy = &trng;
+	};
+
+	aliases {
+		led0 = &led0;
+		pwm-led0 = &pwm_led0;
+		sw0 = &button0;
+		rtc = &rtc;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&portc 18 GPIO_ACTIVE_LOW>;
+			label = "Yellow LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			status = "okay";
+			pwms = <&tcc0 2 PWM_MSEC(20) 0>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&portb 31 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	ext1_header: xplained-pro-connector1 {
+		compatible = "microchip,xpro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+					       /*                      Shared */
+		gpio-map = <0  0 &portb  4 0>, /* ADC1/AIN[6]                 */
+			   <1  0 &portb  5 0>, /* ADC1/AIN[7]                 */
+			   <2  0 &porta  6 0>, /* GPIO (RTS)                  */
+			   <3  0 &porta  7 0>, /* GPIO (CTS)                  */
+			   <4  0 &portb  8 0>, /* TC4/WO[0]                   */
+			   <5  0 &portb  9 0>, /* TC4/WO[1]                   */
+			   <6  0 &portb  7 0>, /* IRQ7/GPIO                   */
+			   <7  0 &porta 27 0>, /* GPIO                        */
+			   <8  0 &porta 22 0>, /* SERCOM3 PAD[0] I2C SDA      */
+			   <9  0 &porta 23 0>, /* SERCOM3 PAD[1] I2C SCL      */
+			   <10 0 &porta  5 0>, /* SERCOM0 PAD[1] UART RX      */
+			   <11 0 &porta  4 0>, /* SERCOM0 PAD[0] UART TX      */
+			   <12 0 &portb 28 0>, /* SERCOM4 PAD[2] SPI SS       */
+			   <13 0 &portb 27 0>, /* SERCOM4 PAD[0] SPI MOSI     */
+			   <14 0 &portb 29 0>, /* SERCOM4 PAD[3] SPI MISO     */
+			   <15 0 &portb 26 0>; /* SERCOM4 PAD[1] SPI SCK      */
+					       /* GND                         */
+					       /* +3.3V                       */
+		/* dts-format on */
+	};
+
+	ext2_header: xplained-pro-connector2 {
+		compatible = "microchip,xpro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+					       /*                       Shared */
+		gpio-map = <0  0 &portb  0 0>, /* ADC0/AIN[12]                 */
+			   <1  0 &porta  3 0>, /* ADC0/AIN[1]                  */
+			   <2  0 &portb  1 0>, /* GPIO                         */
+			   <3  0 &portb  6 0>, /* GPIO                         */
+			   <4  0 &portb 14 0>, /* TCC4/WO[4]                   */
+			   <5  0 &portb 15 0>, /* TCC4/WO[5]                   */
+			   <6  0 &portd  0 0>, /* IRQ0/GPIO                    */
+			   <7  0 &portb  2 0>, /* GPIO                         */
+			   <8  0 &portd  8 0>, /* SERCOM7 PAD[0] I2C SDA       */
+			   <9  0 &portd  9 0>, /* SERCOM7 PAD[1] I2C SCL       */
+			   <10 0 &portb 17 0>, /* SERCOM5 PAD[1] UART RX       */
+			   <11 0 &portb 16 0>, /* SERCOM5 PAD[0] UART TX       */
+			   <12 0 &portc  6 0>, /* SERCOM6 PAD[2] SPI SS        */
+			   <13 0 &portc  4 0>, /* SERCOM6 PAD[0] SPI MOSI      */
+			   <14 0 &portc  7 0>, /* SERCOM6 PAD[3] SPI MISO      */
+			   <15 0 &portc  5 0>; /* SERCOM6 PAD[1] SPI SCK       */
+					       /* GND                          */
+					       /* +3.3V                        */
+		/* dts-format on */
+	};
+
+	ext3_header: xplained-pro-connector3 {
+		compatible = "microchip,xpro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+					       /*                      Shared */
+		gpio-map = <0  0 &portc  2 0>, /* ADC1/AIN[4]                 */
+			   <1  0 &portc  3 0>, /* ADC1/AIN[5]                 */
+			   <2  0 &portc  1 0>, /* GPIO                        */
+			   <3  0 &portc 10 0>, /* GPIO                        */
+			   <4  0 &portd 10 0>, /* TCC0/WO[3]                  */
+			   <5  0 &portd 11 0>, /* TCC0/WO[4]                  */
+			   <6  0 &portc 30 0>, /* IRQ14/GPIO                  */
+			   <7  0 &portc 31 0>, /* GPIO                        */
+			   <8  0 &portd  8 0>, /* SERCOM7 PAD[0] I2C SDA      */
+			   <9  0 &portd  9 0>, /* SERCOM7 PAD[1] I2C SCL      */
+			   <10 0 &portc 23 0>, /* SERCOM1 PAD[1] UART RX      */
+			   <11 0 &portc 22 0>, /* SERCOM1 PAD[0] UART TX      */
+			   <12 0 &portc 14 0>, /* GPIO                        */
+			   <13 0 &portc  4 0>, /* SERCOM6 PAD[0] SPI MOSI     */
+			   <14 0 &portc  7 0>, /* SERCOM6 PAD[3] SPI MISO     */
+			   <15 0 &portc  5 0>; /* SERCOM6 PAD[1] SPI SCK      */
+					       /* GND                         */
+					       /* +3.3V                       */
+		/* dts-format on */
+	};
+};
+
+&rtc {
+	prescaler = <1024>;
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			reg = <0x00000000 0x00010000>;  /* 64 KB bootloader */
+			read-only;
+		};
+
+		slot0_partition: partition@10000 {
+			reg = <0x00010000 0x00070000>;  /* 448 KB primary app slot */
+		};
+
+		slot1_partition: partition@80000 {
+			reg = <0x00080000 0x00070000>;  /* 448 KB secondary app slot */
+		};
+
+		storage_partition: partition@f0000 {
+			reg = <0x000f0000 0x00010000>;  /* 64 KB storage area */
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <120000000>;
+};
+
+&clock {
+	compatible = "microchip,sam-d5x-e5x-clock";
+
+	xosc: xosc {
+		compatible = "microchip,sam-d5x-e5x-xosc";
+
+		xosc1 {
+			subsystem = <CLOCK_MCHP_XOSC_ID_XOSC1>;
+			xosc-frequency = <12000000>;
+			xosc-en = <1>;
+			xosc-xtal-en = <1>;
+			xosc-run-in-standby-en = <1>;
+		};
+	};
+
+	dfll: dfll {
+		compatible = "microchip,sam-d5x-e5x-dfll";
+		dfll-en = <0>;
+	};
+
+	fdpll: fdpll {
+		compatible = "microchip,sam-d5x-e5x-fdpll";
+
+		fdpll0 {
+			subsystem = <CLOCK_MCHP_FDPLL_ID_FDPLL0>;
+			fdpll-divider-ratio-int = <19>;
+			fdpll-lock-bypass-en = <1>;
+			fdpll-wakeup-fast-en = <1>;
+			fdpll-src = "xosc1";
+			fdpll-en = <1>;
+		};
+	};
+
+	xosc32k: xosc32k {
+		compatible = "microchip,sam-d5x-e5x-xosc32k";
+		xosc32k-xtal-en = <1>;
+		xosc32k-startup-time = <62>;
+		xosc32k-gain-mode = "standard";
+		xosc32k-en = <1>;
+		xosc32k-32khz-en = <1>;
+		xosc32k-1khz-en = <1>;
+	};
+
+	gclkgen: gclkgen {
+		compatible = "microchip,sam-d5x-e5x-gclkgen";
+
+		gclkgen0 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN0>;
+			gclkgen-div-factor = <1>;
+			gclkgen-run-in-standby-en = <1>;
+			gclkgen-src = "fdpll0";
+			gclkgen-en = <1>;
+		};
+
+		gclkgen1 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN1>;
+			gclkgen-div-factor = <2>;
+			gclkgen-src = "fdpll0";
+			gclkgen-run-in-standby-en = <1>;
+			gclkgen-en = <1>;
+		};
+	};
+
+	gclkperiph: gclkperiph {
+		compatible = "microchip,sam-d5x-e5x-gclkperiph";
+		#clock-cells = <1>;
+
+		sercom2 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SERCOM2_CORE>;
+			gclkperiph-src = "gclk0";
+			gclkperiph-en = <1>;
+		};
+
+		adc0 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_ADC0>;
+			gclkperiph-src = "gclk1";
+			gclkperiph-en = <0>;
+		};
+
+		adc1 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_ADC1>;
+			gclkperiph-src = "gclk1";
+			gclkperiph-en = <0>;
+		};
+
+		dac {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_DAC>;
+			gclkperiph-src = "gclk1";
+			gclkperiph-en = <0>;
+		};
+	};
+
+	mclkperiph: mclkperiph {
+		compatible = "microchip,sam-d5x-e5x-mclkperiph";
+		#clock-cells = <1>;
+
+		sercom2 {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_APBB_SERCOM2>;
+			mclk-en = <1>;
+		};
+	};
+};
+
+&sercom0 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+	rxpo = <1>;
+	txpo = <0>;
+	pinctrl-0 = <&sercom0_uart_default>;
+	pinctrl-names = "default";
+	dmas = <&dmac 3 4>, <&dmac 4 5>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&sercom1 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+	rxpo = <1>;
+	txpo = <0>;
+	pinctrl-0 = <&sercom1_uart_default>;
+	pinctrl-names = "default";
+	dmas = <&dmac 5 6>, <&dmac 6 7>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&sercom2 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+	rxpo = <1>;
+	txpo = <0>;
+	pinctrl-0 = <&sercom2_uart_default>;
+	pinctrl-names = "default";
+	dmas = <&dmac 1 8>, <&dmac 2 9>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&sercom5 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+	rxpo = <1>;
+	txpo = <0>;
+	pinctrl-0 = <&sercom5_uart_default>;
+	pinctrl-names = "default";
+	dmas = <&dmac 7 0xe>, <&dmac 8 0xf>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&sercom6 {
+	compatible = "microchip,sercom-g1-spi";
+
+	dipo = <3>;
+	dopo = <0>;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom6_spi_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&sercom7 {
+	compatible = "microchip,sercom-g1-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&sercom7_i2c_default>;
+	pinctrl-names = "default";
+	dmas = <&dmac 10 0x12>, <&dmac 11 0x13>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&tcc0 {
+	compatible = "microchip,tcc-g1-pwm";
+	status = "okay";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&tcc0_pwm_default>;
+	pinctrl-names = "default";
+	max-bit-width = <24>;
+	prescaler = <8>;
+	channels = <6>;
+};
+
+&tc0 {
+	compatible = "microchip,tc-g1-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&tc0_pwm_default>;
+	pinctrl-names = "default";
+	max-bit-width = <32>;
+	prescaler = <1>;
+};
+
+&portb {
+	status = "okay";
+};
+
+&portc {
+	status = "okay";
+};
+
+&adc0 {
+	/* ADC clock = GCLK / prescaler (60 MHz / 4 = 15 MHz) */
+	prescaler = <4>;
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&adc1 {
+	/* ADC clock = GCLK / prescaler (60 MHz / 4 = 15 MHz) */
+	prescaler = <4>;
+	pinctrl-0 = <&adc1_default>;
+	pinctrl-names = "default";
+};
+
+&dac {
+	pinctrl-0 = <&dac_default>;
+	pinctrl-names = "default";
+};
+
+ext1_serial: &sercom0 {};
+
+ext2_serial: &sercom5 {};
+
+ext3_serial: &sercom1 {};

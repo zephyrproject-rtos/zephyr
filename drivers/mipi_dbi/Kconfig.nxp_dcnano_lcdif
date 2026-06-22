@@ -1,0 +1,10 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DBI_NXP_DCNANO_LCDIF
+	bool "MIPI DBI driver for NXP DCnano LCDIF"
+	default y
+	depends on DT_HAS_NXP_MIPI_DBI_DCNANO_LCDIF_ENABLED
+	select PINCTRL
+	help
+	  Enable support for MIPI DBI driver for NXP FlexIO based LCDIF controller.

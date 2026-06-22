@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+description: Emulated RTC device
+
+compatible: "zephyr,rtc-emul"
+
+include: rtc-device.yaml

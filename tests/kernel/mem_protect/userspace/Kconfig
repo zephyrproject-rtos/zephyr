@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Userspace test"
+
+source "Kconfig.zephyr"
+
+config USERSPACE_SWITCHING_TESTS
+	bool "Run thread switching tests"
+	select SCHED_CPU_MASK if MP_MAX_NUM_CPUS > 1
+	help
+	  Run userspace_domain_switching tests.
+
+	  Enable this via board overlay.

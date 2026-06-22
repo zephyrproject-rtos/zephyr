@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Philipp Steiner <philipp.steiner1987@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config LC709203F
+	bool "LC709203F Fuel Gauge"
+	default y
+	depends on DT_HAS_ONNN_LC709203F_ENABLED
+	select CRC
+	select I2C
+	help
+	  Enable I2C-based driver for LC709203F Fuel Gauge.
+
+config EMUL_LC709203F
+	bool "Emulate an LC709203F fuel gauge"
+	default y
+	depends on EMUL
+	depends on LC709203F
+	help
+	  It provides readings which follow a simple sequence, thus allowing
+	  test code to check that things are working as expected.

@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_library_sources(fido2_storage.c)
+zephyr_library_sources_ifdef(CONFIG_FIDO2_STORAGE_NONE fido2_storage_none.c)
+zephyr_library_sources_ifdef(CONFIG_FIDO2_STORAGE_SETTINGS fido2_storage_settings.c)

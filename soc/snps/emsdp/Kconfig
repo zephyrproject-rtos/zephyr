@@ -1,0 +1,32 @@
+# Copyright (c) 2019 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_ARC_EMSDP
+	select ARC
+
+config SOC_EMSDP_EM4
+	select CPU_HAS_MPU
+
+config SOC_EMSDP_EM5D
+	select CPU_HAS_MPU
+	select CPU_HAS_FPU
+
+config SOC_EMSDP_EM6
+	select CPU_HAS_MPU
+
+config SOC_EMSDP_EM7D
+	select CPU_HAS_MPU
+	select CPU_HAS_FPU
+
+config SOC_EMSDP_EM7D_ESP
+	select CPU_HAS_MPU
+	select CPU_HAS_FPU
+	select ARC_HAS_SECURE
+
+config SOC_EMSDP_EM9D
+	select CPU_HAS_MPU
+	select CPU_HAS_FPU
+
+config SOC_EMSDP_EM11D
+	select CPU_HAS_MPU
+	select CPU_HAS_FPU

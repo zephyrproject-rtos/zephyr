@@ -1,0 +1,6 @@
+board:
+  name: arduino_nesso_n1
+  full_name: Arduino Nesso N1
+  vendor: arduino
+  socs:
+  - name: esp32c6

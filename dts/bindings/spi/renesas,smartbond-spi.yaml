@@ -1,0 +1,20 @@
+# Copyright (c) 2022 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas SmartBond(tm) SPI
+
+compatible: "renesas,smartbond-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  periph-clock-config:
+    type: int
+    description: Peripheral clock register configuration (COM domain)
+    required: true

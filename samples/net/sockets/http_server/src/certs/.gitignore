@@ -1,0 +1,3 @@
+*.pem
+!ca_cert.pem
+*.ext

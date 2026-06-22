@@ -1,0 +1,23 @@
+# Infineon XMC4xxx WDT configuration
+
+# Copyright (C) 2023 SLB
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_XMC4XXX
+	bool "Infineon XMC4xxx MCU Family Watchdog (WDT) Driver"
+	default y
+	depends on DT_HAS_INFINEON_XMC4XXX_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	help
+	  Enable WDT driver for Infineon XMC4xxx MCUs.
+
+if WDT_XMC4XXX && !WDT_DISABLE_AT_BOOT
+
+config WDT_XMC4XXX_DEFAULT_TIMEOUT_MAX_MS
+	int "Default watchdog timeout to use at startup"
+	default 20000
+	help
+	  Default watchdog timeout to use if the watchdog is not disabled
+	  at startup.
+
+endif

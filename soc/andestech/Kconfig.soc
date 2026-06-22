@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_ANDES_V5
+	bool
+
+config SOC_FAMILY
+	default "andes_v5" if SOC_FAMILY_ANDES_V5
+
+rsource "*/Kconfig.soc"

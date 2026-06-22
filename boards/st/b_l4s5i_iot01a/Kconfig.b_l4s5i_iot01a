@@ -1,0 +1,5 @@
+# Copyright (c) 2020 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_B_L4S5I_IOT01A
+	select SOC_STM32L4S5XX

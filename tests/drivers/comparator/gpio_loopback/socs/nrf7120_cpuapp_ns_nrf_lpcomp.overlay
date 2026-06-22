@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf7120_cpuapp_nrf_lpcomp.overlay"

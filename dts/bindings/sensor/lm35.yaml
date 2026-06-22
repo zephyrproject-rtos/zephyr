@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: LM35 Digital Temperature Sensor
+
+compatible: "lm35"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    required: true
+    description: |
+      ADC channel that will perform measurement
+
+  resolution:
+    type: int
+    default: 12
+    description: |
+      ADC resolution to be used for the channel. Defaults to 12 bits
+      as it's the most common for adc based drivers.

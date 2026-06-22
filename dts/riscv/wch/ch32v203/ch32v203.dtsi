@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/qingke-v4b.dtsi>
+#include <wch/common/ch32v20x_30x_common.dtsi>
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+};
+
+&pll {
+	mul = <15>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(10)>;
+};
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(224)>;
+	ranges = <0x0 0x08000000 DT_SIZE_K(224)>;
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(120)>;
+};

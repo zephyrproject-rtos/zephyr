@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Embeint Pty Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config MODEM_MOCK_BACKEND_LIMIT
+	int "Mock backend TX limit for test"
+	default 8
+
+source "Kconfig.zephyr"

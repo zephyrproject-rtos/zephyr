@@ -1,0 +1,9 @@
+# Glyph-H2 board configuration
+
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+# Copyright (c) 2026 Muhammed Asif
+
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_GLYPH_H2
+	select SOC_ESP32_H2_MINI_H4

@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Google, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: Arduino Modulino Pixels
+
+compatible: "arduino,modulino-pixels"
+
+include: [led-strip.yaml, i2c-device.yaml]
+
+properties:
+  reg:
+    required: true

@@ -1,0 +1,11 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CHARGER_PCA9422
+	bool "PCA9422 battery charger driver"
+	default y
+	depends on DT_HAS_NXP_PCA9422_CHARGER_ENABLED
+	select I2C
+	select MFD
+	help
+	  Enable the PCA9422 battery charger driver.

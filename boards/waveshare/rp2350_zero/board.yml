@@ -1,0 +1,6 @@
+board:
+  name: rp2350_zero
+  full_name: RP2350-Zero
+  vendor: waveshare
+  socs:
+  - name: rp2350a

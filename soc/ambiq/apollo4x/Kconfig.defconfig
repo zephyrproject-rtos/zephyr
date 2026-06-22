@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+
+if SOC_SERIES_APOLLO4X
+
+rsource "Kconfig.defconfig.apollo4*"
+
+# Need to enlarge the IDLE stack size because the power
+# management operations are executed in the idle task
+config IDLE_STACK_SIZE
+	default 2048 if PM
+
+endif # SOC_SERIES_APOLLO4X

@@ -1,0 +1,9 @@
+description: Nuvoton NuMaker Flash Controller
+
+compatible: "nuvoton,numaker-fmc"
+
+include: flash-controller.yaml
+
+properties:
+  reg:
+    required: true

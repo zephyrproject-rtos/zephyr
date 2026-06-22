@@ -1,0 +1,10 @@
+common:
+  tags:
+    - test_framework
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+  harness: ctest
+tests:
+  testing.ctest.base: {}

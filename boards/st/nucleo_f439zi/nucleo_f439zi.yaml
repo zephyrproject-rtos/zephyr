@@ -1,0 +1,27 @@
+identifier: nucleo_f439zi
+name: ST Nucleo F439ZI
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 192
+flash: 2048
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - netif:eth
+  - i2c
+  - spi
+  - gpio
+  - pwm
+  - counter
+  - usb_device
+  - watchdog
+  - adc
+  - dac
+  - dma
+  - rtc
+  - usbd
+vendor: st

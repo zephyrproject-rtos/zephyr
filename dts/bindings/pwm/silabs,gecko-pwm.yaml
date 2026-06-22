@@ -1,0 +1,36 @@
+description: Silabs Gecko PWM port
+
+compatible: "silabs,gecko-pwm"
+
+include: [pwm-controller.yaml, base.yaml]
+
+properties:
+  pin-location:
+    type: array
+    required: true
+    description: pwm pin configuration defined as <location port pin>
+
+  prescaler:
+    type: int
+    default: 1
+    description: prescaling factor from the HFPERCLK clock
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+      - 1024
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

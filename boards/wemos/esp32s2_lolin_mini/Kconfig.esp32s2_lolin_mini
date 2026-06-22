@@ -1,0 +1,7 @@
+# ESP32S2 LOLIN S2 MINI board configuration
+
+# Copyright (c) 2023 Google, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ESP32S2_LOLIN_MINI
+	select SOC_ESP32S2_FN4R2

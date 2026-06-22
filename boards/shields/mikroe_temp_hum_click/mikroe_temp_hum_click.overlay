@@ -1,0 +1,12 @@
+/* SPDX-FileCopyrightText: Copyright (c) 2026 ID8 Engineering AB */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&mikrobus_1_i2c {
+	status = "okay";
+
+	hts221_mikroe_temp_hum_click: hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+		status = "okay";
+	};
+};

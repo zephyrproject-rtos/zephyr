@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_RENESAS_RZ_CGC
+	bool "Renesas RZ Clock Control Driver"
+	default y
+	depends on DT_HAS_RENESAS_RZ_CGC_ENABLED
+	select USE_RZ_FSP_CGC
+	help
+	  Enable support for Renesas RZ CGC Clock Generator Circuit (CGC) driver.
+	  The CGC driver supports only module's clocks.
+	  The PLLs and core clocks are not configured by the CGC driver.

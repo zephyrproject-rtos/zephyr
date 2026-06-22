@@ -1,0 +1,141 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: SAM_D5x_E5x Crystal Oscillator (XOSC)
+
+description: |
+  8-48 MHz Crystal Oscillators (XOSC).
+
+include: [base.yaml]
+
+compatible: "microchip,sam-d5x-e5x-xosc"
+
+child-binding:
+  properties:
+    subsystem:
+      type: int
+      required: true
+      description: |
+        Clock subsystem
+
+    xosc-frequency:
+      type: int
+      default: 0
+      description: |
+        Crystal/External clock frequency for XOSC Controller
+
+    xosc-startup-time:
+      type: int
+      enum:
+        - 1
+        - 2
+        - 4
+        - 8
+        - 16
+        - 32
+        - 64
+        - 128
+        - 256
+        - 512
+        - 1024
+        - 2048
+        - 4096
+        - 8192
+        - 16384
+        - 32768
+      default: 1
+      description: |
+        XOSC start-up time. Select number of OSCULP32K oscillator clock cycles.
+
+    xosc-clock-switch-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: |
+        Switch back to the external clock or crystal oscillator for clock recovery
+        0: The clock switch back is disabled.
+        1: The clock switch back is enabled.
+
+    xosc-clock-failure-detection-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: |
+        Clock Failure Detector Enable
+        0: to disable, 1: to enable
+
+    xosc-automatic-loop-control-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: |
+        Oscillator's amplitude automatically adjusted
+        0: to disable, 1: to enable
+
+    xosc-low-buffer-gain-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: |
+        Increase the oscillator's amplitude by a factor of approximately 2.
+        Use this setting to solve stability issues.
+        0: to disable, 1: to enable
+
+    xosc-on-demand-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: |
+        0: The oscillator is always ON normally.
+        In standby sleep mode, oscillator will be OFF if there is no peripheral request,
+        unless run-in-standby-en is 1.
+        1: In both normal and standby sleep mode, The oscillator is ON,
+        when a peripheral is requesting the oscillator to be used as a clock source.
+        The oscillator is OFF if no peripheral is requesting the clock source.
+        Important: Initializing it with 1, along with clock enabled, can lead to indefinite wait
+        for the clock to be on, if there is no peripheral request for the clock in the sequence of
+        clock Initialization. If required, better to turn on the clock using API, instead of
+        enabling both during startup.
+
+    xosc-run-in-standby-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: |
+        0: The XOSCn is OFF in standby sleep mode if no peripheral requests the clock.
+        1: The XOSCn is always ON in standby sleep mode, unless on-demand-en is 1.
+        If on-demand-en is 1, the XOSCn will be ON only when a peripheral is requesting
+        the clock, even if run-in-standby-en is 1.
+
+    xosc-xtal-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: |
+        Selects external clock or crystal oscillator
+        0 - External clock connected on XIN. XOUT can be used as general-purpose I/O.
+        1 - Crystal connected to XIN/XOUT.
+
+    xosc-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: |
+        Oscillator Enable
+        0: to disable, 1: to enable

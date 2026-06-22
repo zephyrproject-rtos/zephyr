@@ -1,0 +1,30 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF low-frequency crystal oscillator (nRF53 series)
+
+compatible: "nordic,nrf53-lfxo"
+
+include: fixed-clock.yaml
+
+properties:
+  clock-frequency:
+    const: 32768
+
+  load-capacitors:
+    type: string
+    enum:
+      - "internal"
+      - "external"
+    description: |
+      Type of load capacitors connected to the crystal.
+
+  load-capacitance-picofarad:
+    type: int
+    enum:
+      - 6
+      - 7
+      - 9
+    description: |
+      Load capacitance in picofarads. This property is only used when
+      load-capacitors is set to "internal".

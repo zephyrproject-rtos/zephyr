@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025 Linumiz GmbH
+# Author : Sri Surya  <srisurya@linumiz.com>
+
+config SOC_SERIES_APOLLO2X
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select HAS_SWO
+	select AMBIQ_HAL
+	select SOC_EARLY_INIT_HOOK

@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - sensor
+    - subsys
+  platform_allow:
+    - native_sim
+tests:
+  drivers.sensor.mtch9010_capacitive:
+    extra_args: EXTRA_DTC_OVERLAY_FILE=./test_configs/operating_mode/capacitive.overlay
+  drivers.sensor.mtch9010_conductive:
+    extra_args: EXTRA_DTC_OVERLAY_FILE=./test_configs/operating_mode/conductive.overlay
+  drivers.sensor.mtch9010_current_output:
+    extra_args: EXTRA_DTC_OVERLAY_FILE=./test_configs/data_format/current.overlay
+  drivers.sensor.mtch9010_delta_output:
+    extra_args: EXTRA_DTC_OVERLAY_FILE=./test_configs/data_format/delta.overlay
+  drivers.sensor.mtch9010_both_outputs:
+    extra_args: EXTRA_DTC_OVERLAY_FILE=./test_configs/data_format/both.overlay
+  drivers.sensor.mtch9010_data_visualizer_output:
+    extra_args: EXTRA_DTC_OVERLAY_FILE=./test_configs/data_format/data_visualizer.overlay
+  drivers.sensor.mtch9010_unspecified_output:
+    extra_args: EXTRA_DTC_OVERLAY_FILE=./test_configs/data_format/unspecified.overlay

@@ -1,0 +1,19 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sai1 {
+	mclk-output;
+};
+
+&lpi2c2 {
+	status = "okay";
+};
+
+/ {
+	chosen {
+		zephyr,sram = &ocram1;
+	};
+};

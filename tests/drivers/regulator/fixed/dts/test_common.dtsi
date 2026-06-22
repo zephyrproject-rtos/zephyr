@@ -1,0 +1,18 @@
+/*
+ * Copyright 2020 Peter Bigot Consulting, LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "test";
+		regulator-boot-on;
+		startup-delay-us = <1000000>;
+		off-on-delay-us = <20000>;
+	};
+
+	resources {
+		compatible = "test-regulator-fixed";
+	};
+};

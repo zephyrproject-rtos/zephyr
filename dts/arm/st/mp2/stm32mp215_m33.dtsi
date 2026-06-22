@@ -1,0 +1,13 @@
+/*
+ * Copyright (C) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/mp2/stm32mp213_m33.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32mp215", "st,stm32mp2", "simple-bus";
+	};
+};

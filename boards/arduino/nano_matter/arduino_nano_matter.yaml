@@ -1,0 +1,20 @@
+identifier: arduino_nano_matter
+name: Arduino Nano Matter
+type: mcu
+arch: arm
+ram: 256
+flash: 1536
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - bluetooth
+  - gpio
+  - uart
+  - dma
+  - watchdog
+  - comparator
+testing:
+  ignore_tags:
+    - pm
+vendor: arduino

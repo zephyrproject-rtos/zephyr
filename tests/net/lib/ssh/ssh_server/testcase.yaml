@@ -1,0 +1,8 @@
+common:
+  tags:
+    - ssh
+    - net
+  depends_on: netif
+  platform_allow: native_sim
+tests:
+  net.ssh.server: {}

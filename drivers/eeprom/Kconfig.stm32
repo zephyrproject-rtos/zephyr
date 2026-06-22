@@ -1,0 +1,11 @@
+# Copyright (c) 2019 Kwon Tae-young <tykwon@m2i.co.kr>
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_STM32
+	bool "STM32 EEPROM driver"
+	default y
+	depends on DT_HAS_ST_STM32_EEPROM_ENABLED
+	select USE_STM32_HAL_FLASH
+	select USE_STM32_HAL_FLASH_EX
+	help
+	  Enable EEPROM support on the STM32 L0, L1 family of processors.

@@ -1,0 +1,24 @@
+identifier: nrf5340dk/nrf5340/cpuapp/ns
+name: NRF5340-DK-NRF5340-application-MCU-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+ram: 192
+flash: 192
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
+  - i2c
+  - pwm
+  - watchdog
+  - usb_device
+  - usbd
+  - netif:openthread
+  - gpio
+  - spi
+vendor: nordic
+sysbuild: true

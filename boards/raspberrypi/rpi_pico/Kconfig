@@ -1,0 +1,5 @@
+# Copyright (c) 2021 Yonatan Schachter
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RPI_PICO
+	select RP2_FLASH_W25Q080

@@ -1,0 +1,26 @@
+common:
+  tags:
+    - cmake
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+    - native_sim/native/64
+tests:
+  buildsystem.cmake.overlays.soc_folder_kconfig.default:
+    extra_args:
+      - CONFIG_TEST_TYPE=0
+  buildsystem.cmake.overlays.soc_folder_kconfig.suffix:
+    extra_args:
+      - CONFIG_TEST_TYPE=1
+      - FILE_SUFFIX=somesuffix
+  buildsystem.cmake.overlays.soc_folder_kconfig.conf:
+    extra_args:
+      - CONFIG_TEST_TYPE=2
+      - EXTRA_CONF_FILE=boards/other.conf
+  buildsystem.cmake.overlays.soc_folder_kconfig.suffix.conf:
+    extra_args:
+      - CONFIG_TEST_TYPE=3
+      - FILE_SUFFIX=somesuffix
+      - EXTRA_CONF_FILE=boards/other.conf

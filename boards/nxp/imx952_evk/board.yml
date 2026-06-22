@@ -1,0 +1,11 @@
+board:
+  name: imx952_evk
+  full_name: i.MX952 EVK
+  vendor: nxp
+  socs:
+  - name: mimx9529
+    variants:
+    - name: ddr
+      cpucluster: m7
+    - name: flash
+      cpucluster: m7

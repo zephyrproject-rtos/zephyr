@@ -1,0 +1,22 @@
+# F75303 temperature sensor configuration options
+
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config F75303
+	bool "F75303 Temperature Sensor"
+	default y
+	depends on DT_HAS_FINTEK_F75303_ENABLED
+	select I2C
+	help
+	  Enable the driver for Fintek F75303 Temperature Sensor.
+	  This device has three temperature channels - one local (on-chip),
+	  and two remote.
+
+config EMUL_F75303
+	bool "Emulator for F75303"
+	default y
+	depends on F75303
+	depends on EMUL
+	help
+	  Enable the hardware emulator for F75303 Temperature Sensor.

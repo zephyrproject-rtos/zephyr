@@ -1,0 +1,6 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "frdm_imxrt1186_mimxrt1186_cm33.overlay"

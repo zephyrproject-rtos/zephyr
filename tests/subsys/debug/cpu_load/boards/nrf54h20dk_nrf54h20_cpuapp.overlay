@@ -1,0 +1,10 @@
+/ {
+	chosen {
+		zephyr,cpu-load-counter = &timer130;
+	};
+};
+
+&timer130 {
+	status = "okay";
+	prescaler = <0>;
+};

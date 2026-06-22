@@ -1,0 +1,20 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32 CRC calculation unit
+
+description: |
+  Cyclic Redundancy Check (CRC) calculation unit with
+  programmable initial value and programmable polynomials
+  of 7-, 8-, 16- and 32-bit size.
+
+compatible: "st,stm32-crc"
+
+include: [base.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true

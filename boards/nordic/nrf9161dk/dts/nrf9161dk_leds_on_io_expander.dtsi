@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pcal6408a {
+	status = "okay";
+};
+
+&led0 {
+	gpios = <&pcal6408a 4 GPIO_ACTIVE_HIGH>;
+};
+
+&led1 {
+	gpios = <&pcal6408a 5 GPIO_ACTIVE_HIGH>;
+};
+
+&led2 {
+	gpios = <&pcal6408a 6 GPIO_ACTIVE_HIGH>;
+};
+
+&led3 {
+	gpios = <&pcal6408a 7 GPIO_ACTIVE_HIGH>;
+};

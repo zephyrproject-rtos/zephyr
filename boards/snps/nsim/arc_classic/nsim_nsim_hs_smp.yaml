@@ -1,0 +1,20 @@
+identifier: nsim/nsim_hs/smp
+name: Multi-core HS nSIM simulator
+type: sim
+simulation:
+  - name: mdb-nsim
+    exec: mdb
+arch: arc
+toolchain:
+  - zephyr
+  - cross-compile
+  - arcmwdt
+supported:
+  - smp
+testing:
+  timeout_multiplier: 1.5
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: snps

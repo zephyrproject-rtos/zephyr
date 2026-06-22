@@ -1,0 +1,34 @@
+# TMP112 temperature sensor configuration options
+
+# Copyright (c) 2016 Firmwave
+# SPDX-License-Identifier: Apache-2.0
+
+config TMP112
+	bool "TMP112 Temperature Sensor"
+	default y
+	depends on DT_HAS_TI_TMP112_ENABLED
+	select I2C
+	help
+	  Enable the driver for Texas Instruments TMP112 High-Accuracy Digital
+	  Temperature Sensors.
+
+	  The TMP102 is compatible with the TMP112 but is less accurate and has
+	  been successfully tested with this driver.
+
+if TMP112
+
+config TMP112_FULL_SCALE_RUNTIME
+	bool "Allow to set extended mode at runtime"
+	default y
+	help
+	  When set extended mode can be selected using tmp112_attr_set
+	  with SENSOR_ATTR_FULL_SCALE and value to set either 128 or 150
+
+config TMP112_SAMPLING_FREQUENCY_RUNTIME
+	bool "Allow to set conversion rate at runtime"
+	default y
+	help
+	  When set conversion rate can be set at runtime using sensor_attr_set
+	  with SENSOR_ATTR_SAMPLING_FREQUENCY
+
+endif # TMP112

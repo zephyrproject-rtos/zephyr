@@ -1,0 +1,105 @@
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32G4 series Comparator
+
+include:
+  - name: st,stm32-comp.yaml
+    property-blocklist:
+      - hysteresis
+      - st,blank-sel
+      - positive-input
+      - negative-input
+
+compatible: "st,stm32g4-comp"
+
+properties:
+  negative-input:
+    required: true
+    type: string
+    enum:
+      - 1_4VREFINT
+      - 1_2VREFINT
+      - 3_4VREFINT
+      - VREFINT
+      - DAC1_CH1
+      - DAC1_CH2
+      - DAC2_CH1
+      - DAC3_CH1
+      - DAC3_CH2
+      - DAC4_CH1
+      - DAC4_CH2
+      - IN0
+      - IN1
+
+  positive-input:
+    required: true
+    type: string
+    enum:
+      - IN0
+      - IN1
+      - DAC2_CH1
+
+  hysteresis:
+    type: string
+    enum:
+      - NONE
+      - LOW
+      - MEDIUM
+      - HIGH
+      - 10MV
+      - 20MV
+      - 30MV
+      - 40MV
+      - 50MV
+      - 60MV
+      - 70MV
+    default: NONE
+
+  st,blank-sel:
+    type: string
+    enum:
+      - NONE
+      - TIM1_OC5_COMP1
+      - TIM1_OC5_COMP2
+      - TIM1_OC5_COMP3
+      - TIM1_OC5_COMP4
+      - TIM1_OC5_COMP5
+      - TIM1_OC5_COMP6
+      - TIM1_OC5_COMP7
+      - TIM2_OC3_COMP1
+      - TIM2_OC3_COMP2
+      - TIM2_OC3_COMP5
+      - TIM2_OC4_COMP3
+      - TIM2_OC4_COMP6
+      - TIM3_OC3_COMP1
+      - TIM3_OC3_COMP2
+      - TIM3_OC3_COMP3
+      - TIM3_OC3_COMP5
+      - TIM3_OC3_COMP7
+      - TIM3_OC4_COMP4
+      - TIM8_OC5_COMP1
+      - TIM8_OC5_COMP2
+      - TIM8_OC5_COMP3
+      - TIM8_OC5_COMP4
+      - TIM8_OC5_COMP5
+      - TIM8_OC5_COMP6
+      - TIM8_OC5_COMP7
+      - TIM15_OC1_COMP4
+      - TIM15_OC2_COMP6
+      - TIM15_OC2_COMP7
+      - TIM20_OC5
+      - TIM15_OC1
+      - TIM4_OC3
+    default: NONE
+
+  st,miller-effect-hold-disable:
+    type: boolean
+    description: |
+      Disables an undocumented compare feature (sets COMP_CxCSR bit #1 to 0) which
+      holds the comparator output during the duration of the Miller effect.
+      NOTE: This setting is supported only by stm32g4x series.
+      NOTE: It is recommended to enable the feature unless very fast events are tracked.
+      Please refer to following url for details:
+      https://community.st.com/t5/stm32-mcus-products/stm32g431-comparator-bug/m-p/679540#M250779

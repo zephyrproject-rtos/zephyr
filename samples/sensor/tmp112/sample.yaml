@@ -1,0 +1,13 @@
+sample:
+  name: TMP112 Sensor Sample
+tests:
+  sample.sensor.tmp112:
+    harness: console
+    tags: sensors
+    depends_on: i2c
+    filter: dt_compat_enabled("ti,tmp112")
+    harness_config:
+      type: one_line
+      regex:
+        - "temp is (.*)"
+      fixture: fixture_i2c_tmp112

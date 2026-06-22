@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_NPM10XX
+	bool "nPM10xx PMIC multi-function device driver"
+	default y
+	depends on DT_HAS_NORDIC_NPM10XX_ENABLED
+	select I2C
+	help
+	  Enable the Nordic nPM10xx PMIC multi-function device driver
+
+config MFD_NPM10XX_INIT_PRIORITY
+	int "nPM10xx MFD initialization priority"
+	default MFD_INIT_PRIORITY
+	depends on MFD_NPM10XX
+	help
+	  Multi-function device initialization priority for nPM10xx

@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nordic/nrf54lm20_a_b.dtsi>
+#include <riscv/nordic/nrf54lm20_a_b_cpuflpr.dtsi>
+
+/ {
+	soc {
+		cpuflpr_sram: memory@20067c00 {
+			compatible = "mmio-sram";
+			reg = <0x20067c00 DT_SIZE_K(96)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x20067c00 DT_SIZE_K(96)>;
+		};
+	};
+};
+
+&rram_controller {
+	cpuflpr_rram: rram@1e5000 {
+		compatible = "soc-nv-flash";
+		reg = <0x1e5000 DT_SIZE_K(96)>;
+		ranges = <0x0 0x1e5000 DT_SIZE_K(96)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		erase-block-size = <4096>;
+		write-block-size = <16>;
+	};
+};

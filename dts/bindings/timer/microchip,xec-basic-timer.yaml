@@ -1,0 +1,35 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC basic timer properties
+
+compatible: "microchip,xec-basic-timer"
+
+include: ["base.yaml", "microchip,dmec-ecia-girq.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    const: 48000000
+    description: Basic timer input clock is 48 MHz.
+
+  max-value:
+    type: int
+    required: true
+    description: |
+      Counter maximum value. The SoC contains multiple instances
+      of the basic timer. Some are 16-bit, others 32-bit.
+
+  prescaler:
+    type: int
+    required: true
+    description: |
+      Basic timer implements a 16-bit clock prescale value.
+      Count frequency is clock-frequency divided by (prescaler + 1).

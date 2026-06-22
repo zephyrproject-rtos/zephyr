@@ -1,0 +1,18 @@
+# Copyright (c) 2026, Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: versal_rpu
+name: AMD Versal Development board for Cortex-R5
+arch: arm
+toolchain:
+  - zephyr
+ram: 65536
+flash: 32768
+supported:
+  - gpio
+testing:
+  timeout_multiplier: 10
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: amd

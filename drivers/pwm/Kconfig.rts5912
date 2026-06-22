@@ -1,0 +1,9 @@
+# Copyright (c) 2025, Realtek, SIBG-SD7
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_REALTEK_RTS5912
+	bool "Realtek RTS5912 PWM Driver"
+	default y
+	depends on DT_HAS_REALTEK_RTS5912_PWM_ENABLED
+	help
+	  Enable PWM driver for Realtek RTS5912 EC.

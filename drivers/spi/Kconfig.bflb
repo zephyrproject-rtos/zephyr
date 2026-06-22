@@ -1,0 +1,9 @@
+# Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_BFLB
+	bool "Bouffalolab SPI driver"
+	default y
+	depends on DT_HAS_BFLB_SPI_ENABLED
+	help
+	  Enable support for Bouffalolab SPI driver.

@@ -1,0 +1,33 @@
+# Copyright (c) 2023, Fabian Blatz
+# SPDX-License-Identifier: Apache-2.0
+
+description: UART Emulator
+
+compatible: "zephyr,uart-emul"
+
+include: uart-controller.yaml
+
+properties:
+  tx-fifo-size:
+    type: int
+    default: 256
+    description: |
+      Size of the virtual UART TX FIFO
+
+  rx-fifo-size:
+    type: int
+    default: 256
+    description: |
+      Size of the virtual UART RX FIFO
+
+  loopback:
+    type: boolean
+    description: |
+      Connects TX to RX internally creating a loop back connection. Useful
+      for testing.
+
+  latch-buffer-size:
+    type: int
+    default: 1
+    description: |
+      Size of the virtual UART latch buffer.

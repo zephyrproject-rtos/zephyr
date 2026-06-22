@@ -1,0 +1,60 @@
+description: ST75256 Display Controller
+
+compatible: "sitronix,st75256"
+
+include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+
+properties:
+  booster-frequency:
+    type: int
+    required: true
+    description: Sets frequency of booster, 0 or 1 (6 Khz)
+
+  bias-ratio:
+    type: int
+    required: true
+    description: Sets bias (0:1/14, 1:1/13, 2:1/12, 3:1/11, 4:1/10, 5:1/9)
+
+  flip-configuration:
+    type: int
+    required: true
+    description: 3 bits, MV[2], MX[1], MY[0]
+
+  duty:
+    type: int
+    required: true
+    description: 31, 62, 79, 127, 159, 161. Typically height-1
+
+  light-grey:
+    type: int
+    required: true
+    description: 5-bit value describing light grey (0x01) pixel. Heavily affected by contrast.
+
+  dark-grey:
+    type: int
+    required: true
+    description: 5-bit value describing dark grey (0x10) pixel. Heavily affected by contrast.
+
+  power-control:
+    type: int
+    default: 0xb
+    description: Power control register (x[0] = VR, x[1] = VF, x[3] = VB).
+      Most displays have all turned on.
+
+  fi-settings:
+    type: int
+    default: 0
+    description: Frame inversion settings. LF4, FI, LF3, LF2, LF1, LF0 (5:0). Most displays use 0
+
+  lsb-invdir:
+    type: boolean
+    description: Inverse vertically tiled Byte scan direction.
+      Use when display has locally inverted Y patterns or when flipping display.
+
+  external-power:
+    type: boolean
+    description: Use external power instead of internal power
+
+  inversion-on:
+    type: boolean
+    description: Turn on display color inverting

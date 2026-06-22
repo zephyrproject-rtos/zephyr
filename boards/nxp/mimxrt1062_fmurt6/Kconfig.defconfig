@@ -1,0 +1,18 @@
+# MIMXRT1062-FMURT6 board
+
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2023 NXP
+
+if BOARD_MIMXRT1062_FMURT6
+
+config DEVICE_CONFIGURATION_DATA
+	default y
+
+config NXP_IMX_EXTERNAL_SDRAM
+	default y
+
+configdefault NET_L2_ETHERNET
+	default y
+
+
+endif # BOARD_MIMXRT1062_FMURT6

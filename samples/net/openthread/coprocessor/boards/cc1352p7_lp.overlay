@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2024 Alexandre Bailon
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/* Use XDS110 UART for the NCP */
+		zephyr,ot-uart = &uart0;
+		/* Use UART1 for debugging / zephyr console */
+		zephyr,shell-uart = &uart1;
+		zephyr,console = &uart1;
+	};
+};
+
+&uart1 {
+	status = "okay";
+};

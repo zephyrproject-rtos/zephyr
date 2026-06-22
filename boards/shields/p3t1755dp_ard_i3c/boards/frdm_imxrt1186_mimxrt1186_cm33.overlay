@@ -1,0 +1,37 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The p3t1755 shield board is plugged into the Arduino interface on the
+ * FRDM-iMXRT1186 board.
+ *
+ * Hardware rework required before using this shield (see board schematic):
+ *   - Solder R30/R31 to route Arduino D14/D15 to GPIO_AD_18/19
+ *     (LPI2C3/I3C2 signals).
+ *   - Move R297/R299 to position 1-3 to disconnect GPIO_EMC_B2_19/20
+ *     from the Arduino header, avoiding contention on D14/D15.
+ *
+ * LPI2C3 and the on-board EEPROM share GPIO_AD_18/19 with I3C2, so they
+ * are disabled here.
+ */
+
+#include <freq.h>
+
+&lpi2c3 {
+	status = "disabled";
+};
+
+&eeprom0 {
+	status = "disabled";
+};
+
+&i3c2 {
+	status = "okay";
+
+	i2c-scl-hz = <DT_FREQ_K(400)>;
+	i3c-scl-hz = <DT_FREQ_K(400)>;
+	i3c-od-scl-hz = <DT_FREQ_K(100)>;
+};

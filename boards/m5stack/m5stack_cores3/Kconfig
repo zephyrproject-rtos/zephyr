@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Zhang Xingtao <zhxt@live.cn>
+# SPDX-License-Identifier: Apache-2.0
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BOARD_M5STACK_CORES3_ESP32S3_PROCPU || \
+			BOARD_M5STACK_CORES3_ESP32S3_PROCPU_SE
+	default 256 if BOARD_M5STACK_CORES3_ESP32S3_APPCPU

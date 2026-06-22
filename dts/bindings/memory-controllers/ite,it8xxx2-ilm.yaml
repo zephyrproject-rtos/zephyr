@@ -1,0 +1,9 @@
+# Copyright (c) 2022 The ChromiumOS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE IT8XXX2 Instruction Local Memory
+compatible: "ite,it8xxx2-ilm"
+include: base.yaml
+properties:
+  reg:
+    required: true

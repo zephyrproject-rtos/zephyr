@@ -1,0 +1,13 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - i2c
+tests:
+  drivers.i2c.build:
+    # will cover drivers without in-tree boards
+    platform_allow: qemu_cortex_m3
+    extra_args: "CONFIG_I2C=y"
+  drivers.i2c.build.bus_recovery:
+    platform_allow: nucleo_f411re
+    extra_args: "CONFIG_I2C=y CONFIG_I2C_BUS_RECOVERY=y"

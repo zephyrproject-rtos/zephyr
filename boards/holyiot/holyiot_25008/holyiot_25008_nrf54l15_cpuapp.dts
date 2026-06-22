@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Clunky Machines
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf54l15_cpuapp.dtsi>
+#include "holyiot_25008_common.dtsi"
+
+/ {
+	model = "HOLYIOT 25008";
+	compatible = "holyiot,holyiot_25008-nrf54l15-cpuapp";
+
+	chosen {
+		zephyr,console = &uart20;
+		zephyr,shell-uart = &uart20;
+		zephyr,uart-mcumgr = &uart20;
+		zephyr,bt-mon-uart = &uart20;
+		zephyr,bt-c2h-uart = &uart20;
+		zephyr,flash-controller = &rram_controller;
+		zephyr,flash = &cpuapp_rram;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+		zephyr,ieee802154 = &ieee802154;
+	};
+};
+
+/* Include default memory partition configuration file */
+#include <nordic/nrf54l15_cpuapp_partition.dtsi>

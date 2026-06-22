@@ -1,0 +1,28 @@
+# USB-C PS8xxx TCPC configuration options
+
+# Copyright 2024 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config USBC_TCPC_PS8XXX
+	bool "USB-C TCPC device controller driver"
+	select USBC_TCPC_TCPCI
+	default y
+	depends on DT_HAS_PARADE_PS8XXX_ENABLED
+	help
+	  Enable USB-C TCPC support for the Parade PS8xxx chip family
+
+if USBC_TCPC_PS8XXX
+
+config USBC_TCPC_PS8XXX_INIT_DELAY
+	int "PS8xxx init delay"
+	default 25
+	help
+	  Delay between each try of the TCPC initialization
+
+config USBC_TCPC_PS8XXX_INIT_RETRIES
+	int "PS8xxx init retries"
+	default 10
+	help
+	  Number of initialization tries that will be performed
+
+endif

@@ -1,0 +1,19 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Analog ADP5585 GPIO/keypad/PWM chip
+
+compatible: "adi,adp5585"
+
+include: i2c-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: RESET pin
+
+  nint-gpios:
+    type: phandle-array
+    description: |
+      Connection for the NINT signal. This signal is active-low when
+      produced by adp5585 GPIO node.

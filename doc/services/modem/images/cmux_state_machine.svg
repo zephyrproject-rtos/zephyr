@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+SPDX-FileCopyrightText: 2025 Seppo Takalo <seppo.takalo@nordicsemi.no>
+
+SPDX-License-Identifier: Apache-2.0
+-->
+<svg
+   contentStyleType="text/css"
+   data-diagram-type="STATE"
+   height="524"
+   preserveAspectRatio="none"
+   version="1.1"
+   viewBox="0 0 745 524"
+   width="745"
+   zoomAndPan="magnify"
+   id="svg817"
+   sodipodi:docname="cmux_state_machine.svg"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview819"
+     pagecolor="#ffffff"
+     bordercolor="#999999"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="true"
+     inkscape:deskcolor="#dbdbdb"
+     showgrid="false"
+     showborder="false"
+     inkscape:zoom="1.9599237"
+     inkscape:cx="333.94158"
+     inkscape:cy="262.25511"
+     inkscape:window-width="3790"
+     inkscape:window-height="2082"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg817" />
+  <defs
+     id="defs716" />
+  <g
+     id="g815"
+     style="display:inline">
+    <g
+       id="CONNECTED">
+      <rect
+         fill="#00ee00"
+         height="50.265598"
+         rx="12.5"
+         ry="12.5"
+         style="stroke:#181818;stroke-width:0.5"
+         width="108.5391"
+         x="362.82999"
+         y="87"
+         id="rect718" />
+      <line
+         style="stroke:#181818;stroke-width:0.5"
+         x1="362.82999"
+         x2="471.36911"
+         y1="113.2969"
+         y2="113.2969"
+         id="line720" />
+      <text
+         fill="#000000"
+         font-family="sans-serif"
+         font-size="14px"
+         lengthAdjust="spacing"
+         textLength="88.539101"
+         x="372.82999"
+         y="104.9951"
+         id="text722">CONNECTED</text>
+      <text
+         fill="#000000"
+         font-family="sans-serif"
+         font-size="12px"
+         lengthAdjust="spacing"
+         textLength="3.8145001"
+         x="367.82999"
+         y="129.4355"
+         id="text724"> </text>
+    </g>
+    <g
+       id="CONFIRM_POWERSAVE">
+      <rect
+         fill="#f1f1f1"
+         height="50.265598"
+         rx="12.5"
+         ry="12.5"
+         style="stroke:#181818;stroke-width:0.5"
+         width="181.02049"
+         x="217.59"
+         y="214.27"
+         id="rect727" />
+      <line
+         style="stroke:#181818;stroke-width:0.5"
+         x1="217.59"
+         x2="398.6105"
+         y1="240.56689"
+         y2="240.56689"
+         id="line729" />
+      <text
+         fill="#000000"
+         font-family="sans-serif"
+         font-size="14px"
+         lengthAdjust="spacing"
+         textLength="161.02049"
+         x="227.59"
+         y="232.26511"
+         id="text731">CONFIRM_POWERSAVE</text>
+      <text
+         fill="#000000"
+         font-family="sans-serif"
+         font-size="12px"
+         lengthAdjust="spacing"
+         textLength="145.69341"
+         x="222.59"
+         y="256.70551"
+         id="text733">Send PSC command ack</text>
+    </g>
+    <g
+       id="WAKEUP">
+      <rect
+         fill="#f1f1f1"
+         height="50.265598"
+         rx="12.5"
+         ry="12.5"
+         style="stroke:#181818;stroke-width:0.5"
+         width="159.5645"
+         x="494.32001"
+         y="468.53"
+         id="rect736" />
+      <line
+         style="stroke:#181818;stroke-width:0.5"
+         x1="494.32001"
+         x2="653.88452"
+         y1="494.8269"
+         y2="494.8269"
+         id="line738" />
+      <text
+         fill="#000000"
+         font-family="sans-serif"
+         font-size="14px"
+         lengthAdjust="spacing"
+         textLength="60.1357"
+         x="544.03442"
+         y="486.52509"
+         id="text740">WAKEUP</text>
+      <text
+         fill="#000000"
+         font-family="sans-serif"
+         font-size="12px"
+         lengthAdjust="spacing"
+         textLength="139.5645"
+         x="499.32001"
+         y="510.96552"
+         id="text742">Start transmitting flags</text>
+    </g>
+    <circle
+       cx="417.10001"
+       cy="16"
+       fill="#222222"
+       style="stroke:#222222;stroke-width:1"
+       id="ellipse745"
+       r="10" />
+    <g
+       id="ENTER_POWERSAVE">
+      <rect
+         fill="#f1f1f1"
+         height="50"
+         rx="12.5"
+         ry="12.5"
+         style="stroke:#181818;stroke-width:0.5"
+         width="162.20799"
+         x="7"
+         y="214.39999"
+         id="rect747" />
+      <line
+         style="stroke:#181818;stroke-width:0.5"
+         x1="7"
+         x2="169.20799"
+         y1="240.6969"
+         y2="240.6969"
+         id="line749" />
+      <text
+         fill="#000000"
+         font-family="sans-serif"
+         font-size="14px"
+         lengthAdjust="spacing"
+         textLength="142.20799"
+         x="17"
+         y="232.3951"
+         id="text751">ENTER_POWERSAVE</text>
+    </g>
+    <g
+       id="POWERSAVE">
+      <rect
+         fill="#f1f1f1"
+         height="50"
+         rx="12.5"
+         ry="12.5"
+         style="stroke:#181818;stroke-width:0.5"
+         width="108.7646"
+         x="346.72"
+         y="341.53"
+         id="rect754" />
+      <line
+         style="stroke:#181818;stroke-width:0.5"
+         x1="346.72"
+         x2="455.48459"
+         y1="367.8269"
+         y2="367.8269"
+         id="line756" />
+      <text
+         fill="#000000"
+         font-family="sans-serif"
+         font-size="14px"
+         lengthAdjust="spacing"
+         textLength="88.764603"
+         x="356.72"
+         y="359.52509"
+         id="text758">POWERSAVE</text>
+    </g>
+    <!--link *start* to CONNECTED-->
+    <g
+       class="link"
+       data-entity-1=".start."
+       data-entity-2="CONNECTED"
+       data-source-line="2"
+       data-uid="lnk3"
+       id="link_.start._CONNECTED">
+      <path
+         d="m 417.1,26.37 c 0,13.95 0,34.66 0,54.38"
+         fill="none"
+         id="*start*-to-CONNECTED"
+         style="stroke:#181818;stroke-width:1" />
+      <polygon
+         fill="#181818"
+         points="413.1,77.75 417.1,86.75 421.1,77.75 417.1,81.75 "
+         style="stroke:#181818;stroke-width:1"
+         id="polygon762" />
+    </g>
+    <!--link CONNECTED to CONNECTED-->
+    <g
+       class="link"
+       data-entity-1="CONNECTED"
+       data-entity-2="CONNECTED"
+       data-source-line="4"
+       data-uid="lnk4"
+       id="link_CONNECTED_CONNECTED">
+      <path
+         d="m 471.58,101.71 c 19.21,-0.17 34.79,3.31 34.79,10.43 0,7.11 -9.5802,10.6431 -28.7902,10.4731"
+         fill="none"
+         id="CONNECTED-to-CONNECTED"
+         style="stroke:#181818;stroke-width:1" />
+      <polygon
+         fill="#181818"
+         points="480.615,118.6398 471.58,122.56 480.5443,126.6395 476.5798,122.6042 "
+         style="stroke:#181818;stroke-width:1"
+         id="polygon766" />
+      <text
+         fill="#000000"
+         font-family="sans-serif"
+         font-size="13px"
+         lengthAdjust="spacing"
+         textLength="87.039101"
+         x="518.68268"
+         y="109.2069"
+         id="text768">pipe transmit</text>
+      <text
+         fill="#000000"
+         font-family="sans-serif"
+         font-size="13px"
+         lengthAdjust="spacing"
+         textLength="99.664597"
+         x="512.37"
+         y="124.3397"
+         id="text770">reset idle timer</text>
+    </g>
+    <!--link CONNECTED to ENTER_POWERSAVE-->
+    <g
+       class="link"
+       data-entity-1="CONNECTED"
+       data-entity-2="ENTER_POWERSAVE"
+       data-source-line="6"
+       data-uid="lnk6"
+       id="link_CONNECTED_ENTER_POWERSAVE">
+      <path
+         d="m 362.56,117.9 c -50.91,6.11 -127.89,19.73 -188.46,49.37 -23.84,11.67 -42.476,27.0499 -58.666,42.6999"
+         fill="none"
+         id="CONNECTED-to-ENTER_POWERSAVE"
+         style="stroke:#181818;stroke-width:1" />
+      <polygon
+         fill="#181818"
+         points="114.8109,205.0089 111.12,214.14 120.371,210.7609 114.715,210.6649 "
+         style="stroke:#181818;stroke-width:1"
+         id="polygon774" />
+      <text
+         fill="#000000"
+         font-family="sans-serif"
+         font-size="13px"
+         lengthAdjust="spacing"
+         textLength="130.29201"
+         x="175.10001"
+         y="180.3369"
+         id="text776">Idle timeout expires</text>
+    </g>
+    <!--link ENTER_POWERSAVE to POWERSAVE-->
+    <g
+       class="link"
+       data-entity-1="ENTER_POWERSAVE"
+       data-entity-2="POWERSAVE"
+       data-source-line="7"
+       data-uid="lnk8"
+       id="link_ENTER_POWERSAVE_POWERSAVE">
+      <path
+         d="m 82.5,264.69 c -2,15.27 -1.49,34.37 9.6,46.84 32.9,36.98 168.8364,48.3936 248.4064,52.0636"
+         fill="none"
+         id="ENTER_POWERSAVE-to-POWERSAVE"
+         style="stroke:#181818;stroke-width:1" />
+      <polygon
+         fill="#181818"
+         points="337.3253,367.4511 346.5,363.87 337.6939,359.4596 341.5053,363.6396 "
+         style="stroke:#181818;stroke-width:1"
+         id="polygon780" />
+      <text
+         fill="#000000"
+         font-family="sans-serif"
+         font-size="13px"
+         lengthAdjust="spacing"
+         textLength="192.1499"
+         x="93.099998"
+         y="307.59689"
+         id="text782">PSC command acknowledged</text>
+    </g>
+    <!--link CONNECTED to CONFIRM_POWERSAVE-->
+    <g
+       class="link"
+       data-entity-1="CONNECTED"
+       data-entity-2="CONFIRM_POWERSAVE"
+       data-source-line="10"
+       data-uid="lnk9"
+       id="link_CONNECTED_CONFIRM_POWERSAVE">
+      <path
+         d="m 362.65,133.87 c -15.21,8.24 -30.35,19.22 -40.55,33.4 -9.7,13.49 -12.7018,25.9946 -13.7318,40.7346"
+         fill="none"
+         id="CONNECTED-to-CONFIRM_POWERSAVE"
+         style="stroke:#181818;stroke-width:1" />
+      <polygon
+         fill="#181818"
+         points="304.5871,204.7331 307.95,213.99 312.5676,205.2907 308.2985,209.0022 "
+         style="stroke:#181818;stroke-width:1"
+         id="polygon786" />
+      <text
+         fill="#000000"
+         font-family="sans-serif"
+         font-size="13px"
+         lengthAdjust="spacing"
+         textLength="149.79829"
+         x="323.10001"
+         y="180.3369"
+         id="text788">Receive PSC command</text>
+    </g>
+    <!--link CONFIRM_POWERSAVE to POWERSAVE-->
+    <g
+       class="link"
+       data-entity-1="CONFIRM_POWERSAVE"
+       data-entity-2="POWERSAVE"
+       data-source-line="11"
+       data-uid="lnk10"
+       id="link_CONFIRM_POWERSAVE_POWERSAVE">
+      <path
+         d="m 297.75,264.73 c -4.5,14.54 -7.06,32.83 1.35,46.8 10.55,17.51 23.4143,27.1649 41.6543,35.4249"
+         fill="none"
+         id="CONFIRM_POWERSAVE-to-POWERSAVE"
+         style="stroke:#181818;stroke-width:1" />
+      <polygon
+         fill="#181818"
+         points="336.3714,349.3611 346.22,349.43 339.6716,342.0735 341.6653,347.3674 "
+         style="stroke:#181818;stroke-width:1"
+         id="polygon792" />
+      <text
+         fill="#000000"
+         font-family="sans-serif"
+         font-size="13px"
+         lengthAdjust="spacing"
+         textLength="172.0405"
+         x="300.10001"
+         y="307.59689"
+         id="text794">Transmit ringbuffer empty</text>
+    </g>
+    <!--link POWERSAVE to WAKEUP-->
+    <g
+       class="link"
+       data-entity-1="POWERSAVE"
+       data-entity-2="WAKEUP"
+       data-source-line="14"
+       data-uid="lnk11"
+       id="link_POWERSAVE_WAKEUP">
+      <path
+         d="m 434.87,391.96 c 30.39,21.98 69.9481,50.5941 100.3981,72.6141"
+         fill="none"
+         id="POWERSAVE-to-WAKEUP"
+         style="stroke:#181818;stroke-width:1" />
+      <polygon
+         fill="#181818"
+         points="530.4932,466.0574 540.13,468.09 535.1811,459.5748 536.0784,465.1601 "
+         style="stroke:#181818;stroke-width:1"
+         id="polygon798" />
+      <text
+         fill="#000000"
+         font-family="sans-serif"
+         font-size="13px"
+         lengthAdjust="spacing"
+         textLength="117.5015"
+         x="498.95999"
+         y="434.59689"
+         id="text800">DLC pipe transmit</text>
+    </g>
+    <!--link WAKEUP to CONNECTED-->
+    <g
+       class="link"
+       data-entity-1="WAKEUP"
+       data-entity-2="CONNECTED"
+       data-source-line="15"
+       data-uid="lnk12"
+       id="link_WAKEUP_CONNECTED">
+      <path
+         d="m 604.68,468.08 c 8.22,-8.41 16.04,-18.5 20.42,-29.55 36.96,-93.13 32.79,-141.03 -23,-224.26 -30.26,-45.15 -81.9782,-70.0221 -124.8582,-84.5721"
+         fill="none"
+         id="WAKEUP-to-CONNECTED"
+         style="stroke:#181818;stroke-width:1" />
+      <polygon
+         fill="#181818"
+         points="481.368,126.874 471.56,127.77 478.7974,134.4498 476.2948,129.3766 "
+         style="stroke:#181818;stroke-width:1"
+         id="polygon804" />
+      <text
+         fill="#000000"
+         font-family="sans-serif"
+         font-size="13px"
+         lengthAdjust="spacing"
+         textLength="91.355499"
+         x="647.59998"
+         y="307.59689"
+         id="text806">flags received</text>
+    </g>
+    <!--link POWERSAVE to CONNECTED-->
+    <g
+       class="link"
+       data-entity-1="POWERSAVE"
+       data-entity-2="CONNECTED"
+       data-source-line="17"
+       data-uid="lnk13"
+       id="link_POWERSAVE_CONNECTED"
+       style="display:inline">
+      <path
+         d="m 449.88,341.24 c 10.91,-7.89 21.06,-17.77 27.22,-29.71 29.41,-56.97 26.05,-85.67 0,-144.26 -5.07,-11.41 -9.3701,-17.4612 -18.6901,-25.6812"
+         fill="none"
+         id="POWERSAVE-to-CONNECTED"
+         style="stroke:#181818;stroke-width:1" />
+      <polygon
+         fill="#181818"
+         points="458.014,146.5731 457.6599,140.9273 463.3057,140.5732 453.91,137.62 "
+         style="stroke:#181818;stroke-width:1"
+         id="polygon810" />
+      <text
+         fill="#000000"
+         font-family="sans-serif"
+         font-size="13px"
+         lengthAdjust="spacing"
+         textLength="94.161102"
+         x="498.92001"
+         y="243.9669"
+         id="text812">Receive frame</text>
+    </g>
+    <!--SRC=[RP7DQiCm48JlUeg5tWA1d7qe14U5qDOnjjiSqX1KUsr4BDd8c_wyVOHSDPQ9ZjhvHhEZWGGXnBiauN71D_2mmbN4m9x3uWZBvUDjnjXD5WmYw6MFG4ReGKdwq0O7991LQo-bGiESOKZpfE3PATtjUPQltta4Mo_lBWJuqqlhuhYPqj4JBirZA3kbXAv0b6VTVRTODLWnDlZTdhRPw_If7Arsnjs9U8VCi4JvXLFOWw5qdhBuAmUCrCtdfQxH0AgUVdtC_VgPlwKs6mb3_rsILKFTYcQi8hJtoEOb3d_0QSVf_AUS5vXn3TjHw3WH-arh8nHU0G00]-->
+  </g>
+</svg>

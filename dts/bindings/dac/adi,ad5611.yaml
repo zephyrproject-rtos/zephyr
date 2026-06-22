@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Analog Devices 10-Bit single-channel SPI DAC
+
+compatible: "adi,ad5611"
+
+include: adi,ad56x1-base.yaml

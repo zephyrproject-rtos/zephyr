@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip RSTC Reset driver
+
+description: |
+  Microchip RSTC Reset driver bindings.
+
+  Group g1 RSTC Reset driver supports following hardware peripherals:
+    - module name="RSTC" id="U2239" version="4.0.0"
+
+include: base.yaml
+
+compatible: "microchip,rstc-g1-reset"
+
+properties:
+  reg:
+    required: true
+    description: |
+      Base address and size of the RSTC register block.

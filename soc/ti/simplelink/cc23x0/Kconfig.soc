@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Texas Instruments Incorporated
+# Copyright (c) 2024 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CC23X0
+	bool
+	select SOC_FAMILY_TI_SIMPLELINK
+	help
+	  Enable support for TI SimpleLink CC23X0 series SOCs.
+
+config SOC_CC2340R5
+	bool
+	select SOC_SERIES_CC23X0
+	help
+	  CC2340R5
+
+config SOC_SERIES
+	default "cc23x0" if SOC_SERIES_CC23X0
+
+config SOC
+	default "cc2340r5" if SOC_CC2340R5

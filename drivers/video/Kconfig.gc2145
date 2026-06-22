@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Felipe Neves
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_GC2145
+	bool "GC2145 CMOS digital image sensor"
+	select I2C
+	depends on DT_HAS_GALAXYCORE_GC2145_ENABLED
+	default y
+	help
+	  Enable driver for GC2145 CMOS digital image sensor device.

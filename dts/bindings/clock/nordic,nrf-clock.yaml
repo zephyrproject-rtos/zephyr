@@ -1,0 +1,23 @@
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF clock control node
+
+compatible: "nordic,nrf-clock"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  hfclkaudio-frequency:
+    type: int
+    description: |
+      Frequency of the HFCLKAUDIO clock in Hz. Adjustable with 3.3 ppm
+      resolution in two frequency bands - 11.176 MHz to 11.402 MHz, and
+      12.165 MHz to 12.411 MHz (refer to the relevant Product Specification).
+      The HFCLKAUDIO clock is only available in the nRF53 Series SoCs.

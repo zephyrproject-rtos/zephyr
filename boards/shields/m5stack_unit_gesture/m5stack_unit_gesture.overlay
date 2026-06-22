@@ -1,0 +1,13 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ */
+
+&zephyr_i2c {
+	status = "okay";
+
+	paj7620_m5stack_unit_gesture: paj7620@73 {
+		compatible = "pixart,paj7620";
+		reg = <0x73>;
+	};
+};

@@ -1,0 +1,14 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier Apache-2.0
+
+description: |
+  Child node for the Low Power Periodic Interrupt Timer node, intended
+  for an individual timer channel
+
+compatible: "nxp,lpit-channel"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

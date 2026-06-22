@@ -1,0 +1,12 @@
+board:
+  name: stm32f3_disco
+  full_name: STM32F3 Discovery
+  vendor: st
+  revision:
+    format: letter
+    default: "B"
+    revisions:
+      - name: "B"
+      - name: "E"
+  socs:
+    - name: stm32f303xc

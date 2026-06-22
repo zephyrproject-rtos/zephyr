@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Synopsys
+# SPDX-License-Identifier: Apache-2.0
+
+config PICOLIBC_SUPPORTED
+	default n

@@ -1,0 +1,29 @@
+# Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_BL70XL
+	bool
+	select SOC_FAMILY_BFLB
+	help
+	  Enable support for BouffaloLab BL70XL MCU series
+
+config SOC_SERIES
+	default "bl70xl" if SOC_SERIES_BL70XL
+
+config SOC_BL702L10Q2I
+	bool
+	select SOC_SERIES_BL70XL
+
+config SOC_BL704L10Q2I
+	bool
+	select SOC_SERIES_BL70XL
+
+config SOC_BL704L22Q2H
+	bool
+	select SOC_SERIES_BL70XL
+
+config SOC
+	default "bl702l10q2i" if SOC_BL702L10Q2I
+	default "bl704l10q2i" if SOC_BL704L10Q2I
+	default "bl704l22q2h" if SOC_BL704L22Q2H

@@ -1,0 +1,18 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Semtech SX1268 LoRa Modem
+  A variant of sx1262 targeting Chinese regulations compliance.
+
+compatible: "semtech,sx1268"
+
+include: semtech,sx126x-base.yaml
+
+properties:
+  reset-gpios:
+    required: true
+  busy-gpios:
+    required: true
+  dio1-gpios:
+    required: true

@@ -1,0 +1,8 @@
+shield:
+  name: zhaw_lumamatrix
+  full_name: ZHAW Luma Matrix Shield
+  vendor: zhaw
+  supported_features:
+    - led_strip
+    - display
+    - input

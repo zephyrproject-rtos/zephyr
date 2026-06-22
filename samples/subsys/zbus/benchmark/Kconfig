@@ -1,0 +1,33 @@
+# Copyright (c) 2022 Rodrigo Peixoto <rodrigopex@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BM_MESSAGE_SIZE
+	int "Message size"
+	default 256
+
+config BM_ONE_TO
+	int "Number of consumers"
+	default 8
+
+choice BM_OBSERVER_TYPE
+	bool "Observer type to be used in the benchmark"
+
+config BM_LISTENERS
+	bool "Synchronous using listeners"
+
+config BM_SUBSCRIBERS
+	bool "Asynchronous using subscribers"
+
+config BM_MSG_SUBSCRIBERS
+	bool "Asynchronous using message subscribers"
+	select ZBUS_MSG_SUBSCRIBER
+
+endchoice
+
+config BM_FAIRPLAY
+	bool "Force a comparison with same actions"
+	help
+	  Forces a message copy on the listeners and subscribers to behave equivalent to
+	  message subscribers.
+
+source "Kconfig.zephyr"

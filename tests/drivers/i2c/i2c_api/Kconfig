@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "I2C API Test"
+
+source "Kconfig.zephyr"
+
+choice
+	prompt "Select GY271 Sensor Type"
+	default SENSOR_GY271_HMC
+
+	config SENSOR_GY271_HMC
+		bool "Use gy271 HMC type sensor"
+		help
+		  Use to enable the use of gy271 HMC sensor
+
+	config SENSOR_GY271_QMC
+		bool "Use gy271 QMC type sensor"
+		help
+		  Use to enable the use of gy271 QMC sensor
+
+endchoice

@@ -1,0 +1,13 @@
+description: Hazard3 interrupt controller
+
+compatible: "hazard3,hazard3-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irq
+  - priority

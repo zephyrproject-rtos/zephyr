@@ -1,0 +1,24 @@
+# Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# Copyright (c) 2022 Basalte bv
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_SDL
+	depends on ARCH_POSIX
+	bool
+	help
+	  This option specifies that the target board has SDL support
+
+config SDL_THREAD_INTERVAL
+	int "SDL thread sleep interval"
+	default 10
+	depends on HAS_SDL
+	help
+	  Sleep interval time of SDL thread to handle events in milliseconds.
+
+config SDL_THREAD_PRIORITY
+	int "SDL thread priority"
+	default 0
+	depends on HAS_SDL
+	help
+	  Priority of SDL thread to handle events.

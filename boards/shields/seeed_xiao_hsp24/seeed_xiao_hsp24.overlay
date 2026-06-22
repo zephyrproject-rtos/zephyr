@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		prox-sensor0 = &seeed_xiao_hsp24;
+		distance0 = &seeed_xiao_hsp24;
+		radar0 = &seeed_xiao_hsp24;
+	};
+};
+
+&xiao_serial {
+	status = "okay";
+	current-speed = <256000>;
+
+	seeed_xiao_hsp24: hsp24 {
+		compatible = "iclegend,s3km1110";
+		status = "okay";
+	};
+};

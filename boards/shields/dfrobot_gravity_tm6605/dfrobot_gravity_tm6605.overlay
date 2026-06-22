@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Anuj Deshpande
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_i2c {
+	status = "okay";
+
+	dfrobot_tm6605: tm6605@2d {
+		compatible = "titanmec,tm6605";
+		reg = <0x2d>;
+		status = "okay";
+	};
+};
+
+/* Alternate node label for samples/drivers/haptics/tm6605 */
+haptic: &dfrobot_tm6605 {};

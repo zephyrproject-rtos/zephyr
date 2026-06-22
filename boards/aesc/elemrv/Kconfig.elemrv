@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: 2025 Aesc Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ELEMRV
+	select SOC_ELEMRV_N

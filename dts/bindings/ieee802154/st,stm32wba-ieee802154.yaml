@@ -1,0 +1,8 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST STM32WBA IEEE 802.15.4
+
+compatible: "st,stm32wba-ieee802154"
+
+include: base.yaml

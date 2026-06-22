@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_GD32E103V_EVAL
+	select SOC_GD32E103

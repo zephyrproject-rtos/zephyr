@@ -1,0 +1,33 @@
+/*
+ * Copyright 2022 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ *
+ * @brief Stub header allowing compilation of `#include <new>`
+ */
+
+#ifndef ZEPHYR_SUBSYS_CPP_INCLUDE_NEW_
+#define ZEPHYR_SUBSYS_CPP_INCLUDE_NEW_
+
+#include <cstddef>
+
+namespace std {
+#if __cplusplus < 201103L
+	struct nothrow_t {};
+#else
+	struct nothrow_t {
+		explicit nothrow_t() = default;
+	};
+#endif /* __cplusplus */
+	extern const std::nothrow_t nothrow;
+
+#if __cplusplus >= 201703L
+	enum class align_val_t : std::size_t {};
+#endif /* CONFIG_STD_CPP17 */
+
+}
+#endif /* ZEPHYR_SUBSYS_CPP_INCLUDE_NEW_ */

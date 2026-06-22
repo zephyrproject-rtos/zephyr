@@ -1,0 +1,53 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <qemu/virt-riscv.dtsi>
+
+/ {
+	cpus {
+		cpu@0 {
+			riscv,isa-base = "rv32e";
+			riscv,isa-extensions = "e", "m", "a", "c", "zicsr", "zifencei";
+		};
+
+		cpu@1 {
+			riscv,isa-base = "rv32e";
+			riscv,isa-extensions = "e", "m", "a", "c", "zicsr", "zifencei";
+		};
+
+		cpu@2 {
+			riscv,isa-base = "rv32e";
+			riscv,isa-extensions = "e", "m", "a", "c", "zicsr", "zifencei";
+		};
+
+		cpu@3 {
+			riscv,isa-base = "rv32e";
+			riscv,isa-extensions = "e", "m", "a", "c", "zicsr", "zifencei";
+		};
+
+		cpu@4 {
+			riscv,isa-base = "rv32e";
+			riscv,isa-extensions = "e", "m", "a", "c", "zicsr", "zifencei";
+		};
+
+		cpu@5 {
+			riscv,isa-base = "rv32e";
+			riscv,isa-extensions = "e", "m", "a", "c", "zicsr", "zifencei";
+		};
+
+		cpu@6 {
+			riscv,isa-base = "rv32e";
+			riscv,isa-extensions = "e", "m", "a", "c", "zicsr", "zifencei";
+		};
+
+		cpu@7 {
+			riscv,isa-base = "rv32e";
+			riscv,isa-extensions = "e", "m", "a", "c", "zicsr", "zifencei";
+		};
+	};
+};

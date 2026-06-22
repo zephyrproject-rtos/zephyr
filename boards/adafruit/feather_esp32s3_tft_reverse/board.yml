@@ -1,0 +1,6 @@
+board:
+  name: adafruit_feather_esp32s3_tft_reverse
+  full_name: Adafruit ESP32-S3 Reverse TFT Feather
+  vendor: adafruit
+  socs:
+  - name: esp32s3

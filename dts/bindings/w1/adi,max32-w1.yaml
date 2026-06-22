@@ -1,0 +1,61 @@
+# Copyright (c) 2023-2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADI MAX32xxx MCUs 1-Wire Master
+
+include: [w1-master.yaml, pinctrl-device.yaml]
+
+compatible: "adi,max32-w1"
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  internal-pullup:
+    required: true
+    type: int
+    enum: [0, 1]
+    description: |
+      Set this field to enable the internal pullup resistor.
+      0 - Internal pullup disabled.
+      1 - Internal pullup enabled.
+
+  external-pullup:
+    type: int
+    enum: [0, 1, 2]
+    description: |
+      Set this field to enable the external pullup.
+      0 - Pullup pin is active high when enabled.
+      1 - Pullup pin is active low when enabled.
+      2 - Pullup pin is not used for an external pullup.
+
+  long-line-mode:
+    type: boolean
+    description: |
+      Long Line Mode Enable
+      Selects alternate timings for 1-Wire communication.
+      The recommended setting depends on the length of the wire.
+      For lines less than 40 meters, 0 should be used.
+
+      Setting this bit to 0 leaves the write one release,
+      the data sampling, and the time-slot recovery times at
+      approximately 5us (micro second), 15us, and 7us, respectively.
+
+      Setting this bit to 1 enables long line mode timings during standard mode communications.
+      This mode moves the write one release, the data sampling,
+      and the time-slot recovery times out to approximately 8us, 22us, and 14us, respectively.
+
+      0 - Standard operation for lines less than 40 meters.
+      1 - Long Line mode enabled.

@@ -1,0 +1,36 @@
+# Copyright (c) 2023, Emna Rekik
+# Copyright (c) 2025, Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+# Config options for CoAP server sample application
+
+mainmenu "CoAP server sample application"
+
+config NET_SAMPLE_COAPS_SERVICE
+	bool "Enable CoAP secure service"
+	depends on NET_SOCKETS_ENABLE_DTLS || TLS_CREDENTIALS
+
+config NET_SAMPLE_COAP_SERVER_SERVICE_PORT
+	int "Port number for CoAP service"
+	default 5684 if NET_SAMPLE_COAPS_SERVICE
+	default 5683
+
+if NET_SAMPLE_COAPS_SERVICE
+
+config NET_SAMPLE_PSK_HEADER_FILE
+	string "Header file containing PSK"
+	default "dummy_psk.h"
+	depends on MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
+	help
+	  Name of a header file containing a pre-shared key.
+
+config NET_SAMPLE_CERTS_WITH_SC
+	bool "Signed Certificates"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Enable this flag, if you are interested to run this
+	  application with certificates.
+
+endif
+
+source "Kconfig.zephyr"

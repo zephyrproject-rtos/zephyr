@@ -1,0 +1,23 @@
+# Copyright (c), 2023 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO controller part for the SC18IM704 bridge
+
+compatible: "nxp,sc18im704-gpio"
+
+include: gpio-controller.yaml
+
+properties:
+  "#gpio-cells":
+    required: true
+    const: 2
+
+  ngpios:
+    required: true
+    const: 8
+
+gpio-cells:
+  - pin
+  - flags
+
+on-bus: nxp,sc18im704

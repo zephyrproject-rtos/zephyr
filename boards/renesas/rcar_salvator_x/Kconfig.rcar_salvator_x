@@ -1,0 +1,5 @@
+# Copyright (c) 2022 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RCAR_SALVATOR_X
+	select SOC_R8A77951_R7

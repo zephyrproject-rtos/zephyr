@@ -1,0 +1,14 @@
+# NUCODE NU40 board configuration
+
+# Copyright (c) 2026 NUCODE Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCODE_NU40
+	select BOARD_EARLY_INIT_HOOK
+
+config BOARD_HAS_NRF5_BOOTLOADER
+	bool
+	default y if !BOARD_NUCODE_NU40_NRF52840_BARE
+	help
+	  If selected, applications are linked so that they can be loaded by the
+	  onboard UF2 bootloader (Adafruit nRF52 fork).

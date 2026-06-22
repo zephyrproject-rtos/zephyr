@@ -1,0 +1,23 @@
+# Copyright 2023 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config INCLUDE_REMOTE_DIR
+	bool "Include remote core header directory"
+	help
+	  Include remote build header files. Can be used if primary image
+	  needs to be aware of size or base address of secondary image
+
+config TX_ENABLED
+	bool "TX enabled"
+	default y
+	help
+	  Enable TX
+
+config RX_ENABLED
+	bool "RX enabled"
+	default y
+	help
+	  Enable RX

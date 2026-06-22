@@ -1,0 +1,24 @@
+identifier: xg24_rb4187c
+name: EFR32xG24 2.4 GHz 20 dBm Radio Board (xG24-RB4187C, BRD4187C)
+type: mcu
+arch: arm
+ram: 256
+flash: 1536
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - bluetooth
+  - comparator
+  - counter
+  - dac
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: silabs

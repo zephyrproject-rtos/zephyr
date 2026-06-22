@@ -1,0 +1,33 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/s32/S32K56X-437BGA-pinctrl.h>
+
+&pinctrl {
+	lpuart3_default: lpuart3_default {
+		group1 {
+			pinmux = <PI9_LPUART3_TX_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PI10_LPUART3_RX>;
+			input-enable;
+		};
+	};
+
+	canxl_default: canxl_default {
+		group1 {
+			pinmux = <PE13_CANXL0_RX>;
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <PE14_CANXL0_TX>;
+			output-enable;
+		};
+	};
+};

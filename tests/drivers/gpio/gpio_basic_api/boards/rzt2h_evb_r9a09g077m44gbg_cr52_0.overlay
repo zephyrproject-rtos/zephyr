@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio4 4 GPIO_ACTIVE_HIGH>;
+		in-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	input_test: input_test {
+		group1 {
+			pinmux = <RZT_PINMUX(PORT_00, 7, 0)>;
+			input-enable;
+		};
+	};
+};
+
+&irq5 {
+	trigger-type = "falling";
+	pinctrl-0 = <&input_test>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio0 {
+	irqs = <&irq5 7>;
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};

@@ -1,0 +1,9 @@
+boards:
+  - name: imx8mp_var_som
+    full_name: VAR-SOM-MX8M-PLUS
+    vendor: variscite
+    socs:
+      - name: mimx8ml8
+        variants:
+          - name: ddr
+            cpucluster: m7

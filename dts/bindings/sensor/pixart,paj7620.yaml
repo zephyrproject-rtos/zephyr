@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Paul Timke <ptimkec@live.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Pixart PAJ7620 gesture sensor
+
+compatible: "pixart,paj7620"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      INT pin
+      This pin defaults to active low when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.

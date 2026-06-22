@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2025 Thomas Boje
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ch32v20x_30x-pinctrl.h>
+
+&pinctrl {
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <USART1_TX_PA9_0>;
+			output-high;
+			drive-push-pull;
+			slew-rate = "max-speed-10mhz";
+		};
+
+		group2 {
+			pinmux = <USART1_RX_PA10_0>;
+			bias-pull-up;
+		};
+	};
+
+	mac_default: mac_default {
+		mac_internal_rxp {
+			pinmux = <CH32V20X_V30X_PINMUX_DEFINE(PC, 6, ETH, 0)>;
+			slew-rate = "max-speed-50mhz";
+		};
+
+		mac_internal_rxn {
+			pinmux = <CH32V20X_V30X_PINMUX_DEFINE(PC, 7, ETH, 0)>;
+			slew-rate = "max-speed-50mhz";
+		};
+
+		mac_internal_txp {
+			pinmux = <CH32V20X_V30X_PINMUX_DEFINE(PC, 8, ETH, 0)>;
+			slew-rate = "max-speed-50mhz";
+		};
+
+		mac_internal_txn {
+			pinmux = <CH32V20X_V30X_PINMUX_DEFINE(PC, 9, ETH, 0)>;
+			slew-rate = "max-speed-50mhz";
+		};
+	};
+
+	mdio_default: mdio_default {
+		/* No MDIO pinmux required for internal PHY */
+	};
+};

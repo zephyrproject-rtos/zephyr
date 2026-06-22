@@ -1,0 +1,61 @@
+# FXLS8974 3-axis accelerometer
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FXLS8974
+	bool "FXLS8974 accelerometer driver"
+	default y
+	depends on DT_HAS_NXP_FXLS8974_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_NXP_FXLS8974),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_NXP_FXLS8974),spi)
+	help
+	  Enable driver for the FXLS8974 accelerometer
+
+if FXLS8974
+
+choice
+	prompt "Trigger mode"
+	default FXLS8974_TRIGGER_NONE
+
+config FXLS8974_TRIGGER_NONE
+	bool "No trigger"
+
+config FXLS8974_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_FXLS8974),int1-gpios) || \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_FXLS8974),int2-gpios)
+	select FXLS8974_TRIGGER
+
+config FXLS8974_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	select FXLS8974_TRIGGER
+
+endchoice
+
+config FXLS8974_TRIGGER
+	bool
+
+config FXLS8974_DRDY_INT1
+	bool "Data ready interrupt to INT1 pin"
+	depends on FXLS8974_TRIGGER
+	help
+	  Say Y to route data ready interrupt to INT1 pin. Say N to route to
+	  INT2 pin.
+
+if FXLS8974_TRIGGER
+
+config FXLS8974_THREAD_PRIORITY
+	int "Own thread priority"
+	depends on FXLS8974_TRIGGER_OWN_THREAD
+	default 10
+
+config FXLS8974_THREAD_STACK_SIZE
+	int "Own thread stack size"
+	depends on FXLS8974_TRIGGER_OWN_THREAD
+	default 1024
+
+endif # FXLS8974_TRIGGER
+
+endif # FXLS8974

@@ -1,0 +1,13 @@
+sample:
+  name: CRC Subsystem
+tests:
+  samples.subsys.crc:
+    depends_on: crc
+    tags:
+      - subsys
+      - crc
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "CRC computation completed successfully"

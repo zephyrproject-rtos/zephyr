@@ -1,0 +1,12 @@
+description: Atmel SAM0 series External Interrupt Controller
+
+compatible: "atmel,sam0-eic"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

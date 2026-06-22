@@ -1,0 +1,10 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#if defined(CONFIG_SOC_SERIES_IMXRT118X) && CONFIG_NXP_IMXRT_BOOT_HEADER
+__CONTAINER_IMG_OFFSET = CONFIG_CONTAINER_USER_IMAGE_OFFSET;
+__CONTAINER_IMG_SIZE = _flash_used;
+#endif

@@ -1,0 +1,9 @@
+# Copyright (c) 2025, Realtek, SIBG-SD7
+# SPDX-License-Identifier: Apache-2.0
+
+config TACH_RTS5912
+	bool "RTS5912 Tachometer sensor"
+	default y
+	depends on DT_HAS_REALTEK_RTS5912_TACH_ENABLED
+	help
+	  Enable the Realtek RTS5912 tachometer sensor.

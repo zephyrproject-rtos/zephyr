@@ -1,0 +1,63 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Network Wi-Fi apsta_mode application"
+
+config WIFI_SAMPLE_AP_SSID
+	string "SSID of soft AP"
+	help
+	  SSID of the soft AP created by the sample.
+	  Fox example: "SOFT-AP"
+
+config WIFI_SAMPLE_AP_PSK
+	string "Pre-shared key for soft AP"
+	help
+	  WPA2 password used by the soft AP for client authentication.
+	  For example: "PSK"
+
+config WIFI_SAMPLE_SSID
+	string "SSID of the target AP"
+	help
+	  SSID of the access point to connect to in station mode.
+	  For example: "TARGET-AP"
+
+config WIFI_SAMPLE_PSK
+	string "Pre-shared key for target AP"
+	help
+	  WPA2 password used to connect to the target AP.
+	  For example: "PSK"
+
+config WIFI_SAMPLE_DHCPV4_START
+	bool "Start DHCPv4 server in application layer."
+	default y
+	help
+	  Enable this option to start the DHCPv4 server from the application layer,
+	  typically before the Soft AP is initialized.
+
+	  When disabled, the DHCPv4 server startup timing is determined by the vendor's
+	  implementation. In some cases, the server may be started after the AP is up,
+	  using the vendor's default IP address, gateway, subnet mask.
+
+
+if WIFI_SAMPLE_DHCPV4_START
+
+# Some vendors start the DHCPv4 server after Soft AP initialization,
+# using default IP address and subnet mask. In such cases, manual
+# configuration of gateway and netmask may not be necessary.
+# The following options are used only if the DHCPv4 server is started
+# by the application.
+
+config WIFI_SAMPLE_AP_IP_ADDRESS
+	string "IP address of soft AP"
+	help
+	  IP address assigned to the soft AP interface.
+	  For example: "192.168.4.1"
+
+config WIFI_SAMPLE_AP_NETMASK
+	string "Netmask of soft AP"
+	help
+	  Subnet mask for the soft AP interface.
+	  For example: "255.255.255.0"
+endif # WIFI_SAMPLE_DHCPV4_START
+
+source "Kconfig.zephyr"

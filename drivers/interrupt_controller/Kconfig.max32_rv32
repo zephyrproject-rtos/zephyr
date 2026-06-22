@@ -1,0 +1,11 @@
+# ADI MAX32 RV32 IC configuration
+
+# Copyright (c) 2026 Analog Devices, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config MAX32_RV32_INTC
+	bool "Interrupt Controller Driver for MAX32 RV32 cores"
+	default y
+	depends on DT_HAS_ADI_MAX32_RV32_INTC_ENABLED
+	help
+	  Enable interrupt controller driver for MAX32 RV32 cores.

@@ -1,0 +1,6 @@
+board:
+  name: mimxrt700_evk
+  full_name: MIMXRT700-EVK
+  vendor: nxp
+  socs:
+  - name: mimxrt798s

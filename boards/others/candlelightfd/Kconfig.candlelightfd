@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Sean Nyekjaer <sean@geanix.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CANDLELIGHTFD
+	select SOC_STM32G0B1XX

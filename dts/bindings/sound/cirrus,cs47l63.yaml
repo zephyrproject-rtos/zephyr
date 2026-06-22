@@ -1,0 +1,82 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cirrus Logic CS47L63 Low-Power Audio DSP
+
+compatible: "cirrus,cs47l63"
+
+include: spi-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  irq-gpios:
+    type: phandle-array
+    description:
+      Interrupt request (IRQ) output.
+
+  reset-gpios:
+    type: phandle-array
+    description:
+      Digital reset input.
+
+  gpio1-gpios:
+    type: phandle-array
+    description:
+      GPIO1 input with bus-keeper
+
+  gpio2-gpios:
+    type: phandle-array
+    description:
+      GPIO2 input with bus-keeper
+
+  gpio3-gpios:
+    type: phandle-array
+    description:
+      GPIO3 input with bus-keeper
+
+  gpio4-gpios:
+    type: phandle-array
+    description:
+      GPIO4 input with bus-keeper
+
+  gpio5-gpios:
+    type: phandle-array
+    description:
+      GPIO5 input with bus-keeper
+
+  gpio6-gpios:
+    type: phandle-array
+    description:
+      GPIO6 input with bus-keeper
+
+  gpio7-gpios:
+    type: phandle-array
+    description:
+      GPIO7 input with bus-keeper
+
+  gpio8-gpios:
+    type: phandle-array
+    description:
+      GPIO8 input with bus-keeper
+
+  gpio9-gpios:
+    type: phandle-array
+    description:
+      GPIO9 input with bus-keeper
+
+  gpio10-gpios:
+    type: phandle-array
+    description:
+      GPIO10 input with bus-keeper
+
+  gpio11-gpios:
+    type: phandle-array
+    description:
+      GPIO11 input with bus-keeper
+
+  gpio12-gpios:
+    type: phandle-array
+    description:
+      GPIO12 input with bus-keeper

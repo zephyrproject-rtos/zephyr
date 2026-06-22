@@ -1,0 +1,19 @@
+# Copyright (c) 2025 tinyvision.ai
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_SC18IS606
+	bool "NXP SC18IS606 GPIO Controller driver"
+	default y
+	select MFD
+	depends on DT_HAS_NXP_SC18IS606_GPIO_ENABLED
+	help
+	   Enables NXP SC18IS606 gpio controller driver
+
+config GPIO_SC18IS606_INIT_PRIORITY
+	int "SC18IS606 GPIO Init Priority"
+	default 80
+	depends on GPIO_SC18IS606
+	help
+	   SC18IS606 GPIO Controller Init priority
+
+	   Note: Has to be greater than the parent SC18IS606 bridge init priority

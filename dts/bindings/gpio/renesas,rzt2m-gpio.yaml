@@ -1,0 +1,22 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+description: Renesas RZT2M GPIO
+
+compatible: "renesas,rzt2m-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+  irqs:
+    type: array
+    description: pin-irq pairs
+
+gpio-cells:
+  - pin
+  - flags

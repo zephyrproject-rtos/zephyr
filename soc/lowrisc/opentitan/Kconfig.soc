@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Rivos Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_OPENTITAN
+	bool
+
+config SOC
+	default "opentitan" if SOC_OPENTITAN

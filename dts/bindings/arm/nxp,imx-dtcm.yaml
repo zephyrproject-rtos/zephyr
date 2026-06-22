@@ -1,0 +1,12 @@
+# Copyright (c) 2018, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: i.MX DTCM (Data Tightly Coupled Memory)
+
+compatible: "nxp,imx-dtcm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

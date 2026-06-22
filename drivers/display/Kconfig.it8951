@@ -1,0 +1,11 @@
+# Copyright 2026 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config IT8951
+	bool "ITE IT8951 e-paper display controller"
+	default y
+	depends on DT_HAS_ITE_IT8951_ENABLED
+	select SPI
+	help
+	  Enable driver for ITE IT8951 timing controllers used by SPI/I80
+	  e-paper display modules, including ED103TC2-based panels.

@@ -1,0 +1,15 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: INTEL ADSP MAILBOX
+
+compatible: "intel,adsp-mailbox"
+
+include: base.yaml
+
+properties:
+  interrupts:
+    required: true
+
+  interrupt-parent:
+    required: true

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xilinx Zynq OCM (On-Chip Memory)
+
+compatible: "xlnx,zynq-ocm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

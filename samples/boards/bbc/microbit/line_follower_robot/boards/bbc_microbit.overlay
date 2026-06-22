@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2022 Nordic Semicondiuctor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		left-gpios = <&edge_connector 13 GPIO_ACTIVE_HIGH>;
+		right-gpios = <&edge_connector 14 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&i2c0 {
+	motorctl: motor-controller@10 {
+		compatible = "motor-controller";
+		reg = <0x10>;
+	};
+};

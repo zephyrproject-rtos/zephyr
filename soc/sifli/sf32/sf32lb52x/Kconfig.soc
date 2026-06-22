@@ -1,0 +1,51 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SF32LB52X
+	bool
+	select SOC_FAMILY_SF32
+
+config SOC_SERIES
+	default "sf32lb52x" if SOC_SERIES_SF32LB52X
+
+config SOC_SF32LB520U36
+	bool
+	select SOC_SERIES_SF32LB52X
+
+config SOC_SF32LB523UB6
+	bool
+	select SOC_SERIES_SF32LB52X
+
+config SOC_SF32LB525UC6
+	bool
+	select SOC_SERIES_SF32LB52X
+
+config SOC_SF32LB527UD6
+	bool
+	select SOC_SERIES_SF32LB52X
+
+config SOC_SF32LB52BU36
+	bool
+	select SOC_SERIES_SF32LB52X
+
+config SOC_SF32LB52EUB6
+	bool
+	select SOC_SERIES_SF32LB52X
+
+config SOC_SF32LB52GUC6
+	bool
+	select SOC_SERIES_SF32LB52X
+
+config SOC_SF32LB52JUD6
+	bool
+	select SOC_SERIES_SF32LB52X
+
+config SOC
+	default "sf32lb520u36" if SOC_SF32LB520U36
+	default "sf32lb523ub6" if SOC_SF32LB523UB6
+	default "sf32lb525uc6" if SOC_SF32LB525UC6
+	default "sf32lb527ud6" if SOC_SF32LB527UD6
+	default "sf32lb52bu36" if SOC_SF32LB52BU36
+	default "sf32lb52eub6" if SOC_SF32LB52EUB6
+	default "sf32lb52guc6" if SOC_SF32LB52GUC6
+	default "sf32lb52jud6" if SOC_SF32LB52JUD6

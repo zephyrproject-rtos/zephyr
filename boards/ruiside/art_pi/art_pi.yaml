@@ -1,0 +1,18 @@
+identifier: art_pi
+name: art pi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 1024
+flash: 128
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - flash
+  - display
+  - sdmmc
+  - usbd
+vendor: ruiside

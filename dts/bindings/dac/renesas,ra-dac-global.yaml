@@ -1,0 +1,33 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA DAC Controller Global
+
+compatible: "renesas,ra-dac-global"
+
+include: [base.yaml]
+
+properties:
+  has-internal-output:
+    type: boolean
+    description: |
+      True if the SoC supports the "internal output" feature in the DAC HWIP.
+      Note: If the SoC doesn't support this "internal output" features,
+            it cannot support the "internal" feature.
+
+  has-output-amplifier:
+    type: boolean
+    description: |
+      True if the SoC supports the "output amplifier" feature in the DAC HWIP.
+
+  has-chargepump:
+    type: boolean
+    description: |
+      True if the SoC supports the "chargepump" feature in the DAC HWIP.
+      Note: If the SoC doesn't support the "output amplifier" and "charge pump" features,
+            it cannot support the "buffer" feature.
+
+  has-davrefcr:
+    type: boolean
+    description: |
+      True if the SoC supports the D/A VREF configuration in the DAC HWIP.

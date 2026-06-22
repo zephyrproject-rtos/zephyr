@@ -1,0 +1,11 @@
+# STM32C5 clock test configuration options
+
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CFG_USE_STM32_HAL_RCC
+	bool "Use HAL RCC"
+	default y
+	select USE_STM32_HAL_RCC
+
+source "Kconfig.zephyr"

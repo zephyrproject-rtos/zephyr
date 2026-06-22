@@ -1,0 +1,25 @@
+sample:
+  description: This app shows how RTCs are synchronized
+      on nrf53 cores.
+  name: nRF53 Synchronized RTC sample
+common:
+  sysbuild: true
+tests:
+  sample.boards.nrf.nrf53_sync_rtc.real_hw:
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+    harness: remote
+  sample.boards.nrf.nrf53_sync_rtc.simu:
+    platform_allow:
+      - nrf5340bsim/nrf5340/cpuapp
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "main: Synchronization using mbox driver"
+        - "sync_rtc: Updated timestamp to synchronized RTC by .* ticks"
+        - "main: IPC send at .* ticks"
+        - "main: Local timestamp: .*, application core timestamp:"

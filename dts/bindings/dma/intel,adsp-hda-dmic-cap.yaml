@@ -1,0 +1,13 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel HDA DMIC Capabilities controller
+
+compatible: "intel,adsp-hda-dmic-cap"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

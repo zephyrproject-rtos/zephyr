@@ -1,0 +1,10 @@
+# Renesas R-Car Gen4 SoC line
+
+# Copyright (c) 2023 IoT.bzh
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RCAR_GEN4
+
+rsource "Kconfig.defconfig.r8a779*"
+
+endif # SOC_SERIES_RCAR_GEN4

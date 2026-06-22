@@ -1,0 +1,12 @@
+# Copyright(c) 2026, Realtek Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Realtek Bee TRNG
+
+compatible: "realtek,bee-trng"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

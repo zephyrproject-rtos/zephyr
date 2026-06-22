@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright The Zephyr Project Contributors
+
+# A pykwalify schema for basic validation of the structure of a shield metadata YAML file.
+#
+# The shield.yml file can contain either a single shield definition or a list of shields.
+
+schema;shield-schema:
+  type: map
+  mapping:
+    name:
+      required: true
+      type: str
+      desc: Name of the shield (used in Kconfig and build system)
+    full_name:
+      required: true
+      type: str
+      desc: Full name of the shield (typically the commercial name)
+    vendor:
+      required: true
+      type: str
+      desc: Manufacturer/vendor of the shield
+    supported_features:
+      required: false
+      sequence:
+        - type: str
+          desc: A hardware feature the shield supports (see dts/bindings/binding-types.txt)
+
+type: map
+range:
+  min: 1
+  max: 1
+mapping:
+  shield:
+    include: shield-schema
+  shields:
+    type: seq
+    sequence:
+      - include: shield-schema

@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+/ {
+	model = "Sparkfun RP2040 mikroBUS Development Board";
+	compatible = "sparkfun,rp2040-mikrobus";
+};
+
+#include "sparkfun_rp2040_mikrobus-common.dtsi"
+#include "sparkfun_rp2040_mikrobus-flash.dtsi"
+#include "sparkfun_rp2040_mikrobus-led.dtsi"
+#include "sparkfun_rp2040_mikrobus-ws2812.dtsi"
+#include "sparkfun_rp2040_mikrobus-max17048.dtsi"
+#include "sparkfun_rp2040_mikrobus-sdcard.dtsi"
+#include "sparkfun_rp2040_mikrobus-stemma.dtsi"
+#include "sparkfun_rp2040_mikrobus-mikrobus.dtsi"
+#include "sparkfun_rp2040_mikrobus-feather.dtsi"

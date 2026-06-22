@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_DIRECT_IRQ_MAX
+	int "Max offset of direct IRQ used for the test"
+	default NUM_IRQS
+
+source "Kconfig.zephyr"

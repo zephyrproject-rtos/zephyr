@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+# SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: sparkfun_rp2040_mikrobus
+  full_name: Sparkfun RP2040 mikroBUS Development Board
+  vendor: sparkfun
+  socs:
+    - name: rp2040

@@ -1,0 +1,77 @@
+# Copyright (c) 2016 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "IEEE 802.15.4 Radio"
+
+config NET_L2_IEEE802154_RADIO_DFLT_TX_POWER
+	int "Default radio transmission power"
+	default 0
+	help
+	  TX power in dbm. Valid setting are: -18, -7, -4, -2, 0, 1, 2, 3, 5
+	  If wrongly set, it will silently fail.
+
+config NET_L2_IEEE802154_RADIO_TX_RETRIES
+	int "Radio Retransmission attempts"
+	default 3
+	range 0 7
+	help
+	  Number of re-transmission attempts radio driver should do, before
+	  replying it could not send the packet (MAC PIB attribute:
+	  macMaxFrameRetries).
+
+choice
+	prompt "Radio channel access protocol"
+	default NET_L2_IEEE802154_RADIO_CSMA_CA
+	help
+	  Select which medium access protocol to use.
+
+config NET_L2_IEEE802154_RADIO_CSMA_CA
+	bool "IEEE 802.15.4 unslotted CSMA-CA medium access protocol"
+	help
+	  Use CSMA-CA mechanism (listen-before-talk with exponential backoff)
+	  to transmit packets. This is the most common way of mediating radio
+	  channel access and fits most usage scenarios (see IEEE 802.15.4-2020,
+	  sections 6.2.5.1 and 10.2.8).
+
+config NET_L2_IEEE802154_RADIO_ALOHA
+	bool "IEEE 802.15.4 Aloha medium access protocol (CCA mode 4)"
+	help
+	  Use Aloha mechanism (send without any clear channel assessment) to
+	  transmit packets. This is a simplistic way of transmitting packets
+	  and fits low duty-cycle contexts where the radio spectrum is not
+	  too heavily loaded (see IEEE 802.15.4-2020, section 10.2.8). The
+	  current implementation does not randomize channel access.
+
+endchoice
+
+if NET_L2_IEEE802154_RADIO_CSMA_CA
+
+config NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BO
+	int "CSMA maximum backoffs"
+	default 4
+	range 0 5
+	help
+	  The maximum number of backoffs the CSMA-CA algorithm will attempt
+	  before declaring a channel access failure (MAC PIB attribute:
+	  macMaxCSMABackoffs).
+
+config NET_L2_IEEE802154_RADIO_CSMA_CA_MIN_BE
+	int "CSMA MAC minimum backoff exponent"
+	default 3
+	range 0 8
+	help
+	  The minimum value of the backoff exponent (BE) in the CSMA-CA
+	  algorithm (MAC PIB attribute: macMinBe). This setting must be less
+	  than or equal NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BE.
+
+config NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BE
+	int "CSMA MAC maximum backoff exponent"
+	default 5
+	range 3 8
+	help
+	  The maximum value of the backoff exponent (BE) in the CSMA-CA
+	  algorithm (MAC PIB attribute: macMaxBe).
+
+endif # NET_L2_IEEE802154_RADIO_CSMA_CA
+
+endmenu

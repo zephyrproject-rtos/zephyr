@@ -1,0 +1,5 @@
+/ {
+	chosen {
+		zephyr,bt-hci = &bt_hci_uart;
+	};
+};

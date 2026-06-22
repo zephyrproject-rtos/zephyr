@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Gergo Vari <work@gergovari.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Maxim DS3231 I2C temperature sensor
+
+compatible: "maxim,ds3231-sensor"
+
+include: [sensor-device.yaml]

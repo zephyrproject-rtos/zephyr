@@ -1,0 +1,9 @@
+# Copyright (c) 2021 IP-Logix Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_ATMEL_SAM
+	bool "Atmel SAM MDIO driver"
+	depends on ETH_SAM_GMAC
+	default y
+	help
+	  Enable Atmel SAM MCU Family MDIO driver.

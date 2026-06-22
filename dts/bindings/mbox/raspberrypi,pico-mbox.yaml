@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Igalia S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Raspberry Pi Pico interprocessor mailbox
+
+compatible: "raspberrypi,pico-mbox"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  fifo-depth:
+    type: int
+    description: number of entries that the mailbox FIFO can hold
+    required: true

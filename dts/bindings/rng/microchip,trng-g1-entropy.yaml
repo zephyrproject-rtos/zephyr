@@ -1,0 +1,30 @@
+# Copyright (c) 2025, Microchip Technologies Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip TRNG G1 entropy driver
+
+description: |
+  Microchip TRNG driver bindings.
+
+  Group g1 TRNG driver supports following hardware peripherals:
+    - module name="TRNG" id="U2242" version="1.1.0"
+
+compatible: "microchip,trng-g1-entropy"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  run-in-standby-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 1
+    description: |
+      Enable (1) or disable (0) run in standby mode for TRNG.

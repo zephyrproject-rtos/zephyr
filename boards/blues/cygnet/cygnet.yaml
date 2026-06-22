@@ -1,0 +1,22 @@
+identifier: cygnet
+name: Blues Cygnet
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 256
+supported:
+  - nvs
+  - can
+  - spi
+  - i2c
+  - pwm
+  - gpio
+  - counter
+  - feather_serial
+  - feather_i2c
+  - feather_spi
+vendor: blues

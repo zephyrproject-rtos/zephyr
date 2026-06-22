@@ -1,0 +1,6 @@
+board:
+  name: ek_ra8t2
+  full_name: RA8T2 Evaluation Kit
+  vendor: renesas
+  socs:
+  - name: r7ka8t2lflcac

@@ -1,0 +1,9 @@
+[tool.mypy]
+ignore_missing_imports = true
+mypy_path = "."
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[tool.ruff]
+extend = "../../.ruff.toml"

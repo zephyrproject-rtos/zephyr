@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+common:
+  platform_allow:
+    - qemu_riscv32
+    - qemu_riscv64
+    - qemu_cortex_a53
+    - qemu_cortex_m3
+    - qemu_xtensa/dc233c
+  tags:
+    - debug
+    - symtab
+
+tests:
+  debug.symtab: {}

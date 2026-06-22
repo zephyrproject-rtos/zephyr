@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config GEN_UICR_SNAPSHOT_REGION_$(index)
+	bool "UICR.SNAPSHOT region"
+	depends on GEN_UICR_SNAPSHOT_REGIONS
+	help
+	  When enabled, configures a UICR.SNAPSHOT region.
+
+config GEN_UICR_SNAPSHOT_REGION_$(index)_ADDRESS
+	hex "UICR.SNAPSHOT region start address"
+	range 0x0e030000 0x0e1ff000
+	depends on GEN_UICR_SNAPSHOT_REGION_$(index)
+	help
+	  UICR.SNAPSHOT region start address. Must be aligned to a 1 KB boundary.
+
+config GEN_UICR_SNAPSHOT_REGION_$(index)_SIZE_BYTES
+	int "UICR.SNAPSHOT region size in bytes"
+	range 1024 1048576
+	depends on GEN_UICR_SNAPSHOT_REGION_$(index)
+	help
+	  Size of the snapshot region in bytes. Must be a multiple of 1024.

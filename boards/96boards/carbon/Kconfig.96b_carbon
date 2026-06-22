@@ -1,0 +1,6 @@
+# Copyright (c) 2016 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_96B_CARBON
+	select SOC_STM32F401XE if BOARD_96B_CARBON_STM32F401XE
+	select SOC_NRF51822_QFAC if BOARD_96B_CARBON_NRF51822

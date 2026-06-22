@@ -1,0 +1,10 @@
+# Copyright (c) 2024, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_AMBIQ
+	bool "AMBIQ RTC driver"
+	default y
+	depends on DT_HAS_AMBIQ_RTC_ENABLED
+	select AMBIQ_HAL
+	help
+	  Enable the AMBIQ RTC driver.

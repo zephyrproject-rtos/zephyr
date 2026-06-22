@@ -1,0 +1,67 @@
+# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2018 Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig APDS9960
+	bool "APDS9960 Sensor"
+	default y
+	depends on DT_HAS_AVAGO_APDS9960_ENABLED
+	select I2C
+	help
+	  Enable driver for APDS9960 sensors.
+
+if APDS9960
+
+choice
+	prompt "Trigger mode"
+	default APDS9960_TRIGGER_NONE
+	help
+	  Specify the type of triggering used by the driver.
+
+config APDS9960_TRIGGER_NONE
+	bool "No trigger"
+
+config APDS9960_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_AVAGO_APDS9960),int-gpios)
+	select APDS9960_TRIGGER
+
+endchoice
+
+config APDS9960_TRIGGER
+	bool
+
+choice APDS9960_FETCH_MODE
+	prompt "Fetching Mode"
+	default APDS9960_FETCH_MODE_INTERRUPT
+	help
+	  Specify whether to wait for interrupt
+
+config APDS9960_FETCH_MODE_POLL
+	bool "Poll without interrupt pin"
+	help
+	  Uses I2C to check sample
+
+config APDS9960_FETCH_MODE_INTERRUPT
+	bool "Wait for interrupt"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_AVAGO_APDS9960),int-gpios)
+	help
+	  Wait for interrupt before reading
+
+endchoice
+
+config APDS9960_ENABLE_ALS
+	bool "Ambient Light Sense"
+	default y
+	help
+	  Enable Ambient Light Sense (ALS).
+
+config APDS9960_ENABLE_GESTURE
+	bool "Gesture Sense"
+	default n
+	help
+	  Enable Gesture Sense.
+
+endif # APDS9960

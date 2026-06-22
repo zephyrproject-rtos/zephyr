@@ -1,0 +1,25 @@
+# XMC 4xxx MCU line
+#
+# Copyright (c) 2020 Linumiz
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_XMC4XXX
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select HAS_XMCLIB
+	select HAS_XMCLIB_UART
+	select HAS_XMCLIB_FLASH
+	select HAS_XMCLIB_ERU
+	select HAS_XMCLIB_VADC
+	select HAS_XMCLIB_DMA
+	select HAS_XMCLIB_SPI
+	select HAS_XMCLIB_I2C
+	select HAS_XMCLIB_CCU
+	select HAS_XMCLIB_WDT
+	select HAS_XMCLIB_ETH
+	select HAS_XMCLIB_CAN
+	select HAS_XMCLIB_RTC

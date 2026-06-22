@@ -1,0 +1,310 @@
+/*
+ * Copyright (c) 2021 Linaro Limited
+ * Copyright (c) 2024 STMicroelectronics
+ * Copyright (c) 2025 Arduino SA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u5/stm32u585Xi.dtsi>
+#include <st/u5/stm32u585aiixq-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+
+		led3_red: led3_red {
+			gpios = <&gpioh 10 GPIO_ACTIVE_LOW>;
+			label = "RGB LED 3 Red";
+		};
+
+		led3_green: led3_green {
+			gpios = <&gpioh 11 GPIO_ACTIVE_LOW>;
+			label = "RGB LED 3 Green";
+		};
+
+		led3_blue: led3_blue {
+			gpios = <&gpioh 12 GPIO_ACTIVE_LOW>;
+			label = "RGB LED 3 Blue";
+		};
+
+		led4_red: led4_red {
+			gpios = <&gpioh 13 GPIO_ACTIVE_LOW>;
+			label = "RGB LED 4 Red";
+		};
+
+		led4_green: led4_green {
+			gpios = <&gpioh 14 GPIO_ACTIVE_LOW>;
+			label = "RGB LED 4 Green";
+		};
+
+		led4_blue: led4_blue {
+			gpios = <&gpioh 15 GPIO_ACTIVE_LOW>;
+			label = "RGB LED 4 Blue";
+		};
+	};
+
+	aliases {
+		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref1;
+		volt-sensor1 = &vbat4;
+	};
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(16)>;
+	status = "okay";
+};
+
+&clk_lse {
+	clock-frequency = <32768>;
+	status = "okay";
+};
+
+&clk_msis {
+	status = "okay";
+	msi-range = <4>;
+	msi-pll-mode;
+};
+
+&pll1 {
+	div-m = <1>;
+	mul-n = <80>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_msis>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll1>;
+	clock-frequency = <DT_FREQ_M(160)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb3-prescaler = <1>;
+};
+
+stm32_lp_tick_source: &lptim1 {
+	clocks = <&rcc STM32_CLOCK(APB3, 11)>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
+};
+
+&lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pg7 &lpuart1_rx_pg8 &lpuart1_rts_pg6 &lpuart1_cts_pg5>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart1 {
+	status = "okay";
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&i2c2 {
+	status = "okay";
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	pinctrl-names = "default";
+	scl-gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c4 {
+	status = "okay";
+	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pd13>;
+	/* use      <&i2c4_scl_pf14 &i2c4_sda_pf15> for the JMISC connector */
+	pinctrl-names = "default";
+	scl-gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi2 {
+	status = "okay";
+	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15 &spi2_nss_pb9>;
+	/* use      <&spi2_sck_pd1 &spi2_miso_pc2 &spi2_mosi_pc3> for the ICSP connector */
+	pinctrl-names = "default";
+};
+
+&spi3 {
+	status = "okay";
+	pinctrl-0 = <&spi3_sck_pg9 &spi3_miso_pg10 &spi3_mosi_pb5 &spi3_nss_pg12>;
+	pinctrl-names = "default";
+};
+
+&aes {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in9_pa4
+		     &adc1_in10_pa5
+		     &adc1_in11_pa6
+		     &adc1_in12_pa7
+		     &adc1_in2_pc1
+		     &adc1_in1_pc0>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <14>;
+	};
+
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <14>;
+	};
+
+	channel@9 {
+		reg = <9>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <14>;
+	};
+
+	channel@a {
+		reg = <10>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <14>;
+	};
+
+	channel@b {
+		reg = <11>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <14>;
+	};
+
+	channel@c {
+		reg = <12>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <14>;
+	};
+};
+
+&adc4 {
+	/* needed by vbat */
+	st,adc-clock-source = "ASYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&dac1 {
+	pinctrl-0 = <&dac1_out1_pa4 &dac1_out2_pa5>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB3, 21)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&vref1 {
+	status = "okay";
+};
+
+&vbat4 {
+	status = "okay";
+};
+
+&gpiog {
+	status = "okay";
+};
+
+/*
+ * On-board 13x8 charlieplexed LED matrix (104 LEDs) driven across STM32
+ * port F lines PF0..PF10 and scanned by TIM17. See the
+ * charlieplex-led-matrix binding; the pixel-pairs table maps each
+ * framebuffer pixel to its {high,low} GPIO pin-pair.
+ */
+
+/ {
+	chosen {
+		zephyr,display = &led_matrix;
+	};
+
+	led_matrix: charlieplex-led-matrix {
+		compatible = "charlieplex-led-matrix";
+		gpios = <&gpiof 0 0>, <&gpiof 1 0>, <&gpiof 2 0>,
+			<&gpiof 3 0>, <&gpiof 4 0>, <&gpiof 5 0>,
+			<&gpiof 6 0>, <&gpiof 7 0>, <&gpiof 8 0>,
+			<&gpiof 9 0>, <&gpiof 10 0>;
+		counter = <&counter_matrix>;
+		refresh-frequency = <100>;
+		width = <13>;
+		height = <8>;
+		grayscale-bits = <3>;
+		pixel-pairs = <0x0001 0x0100 0x0002 0x0200 0x0102 0x0201 0x0003 0x0300 0x0103 0x0301
+			       0x0203 0x0302 0x0004 0x0400 0x0104 0x0401 0x0204 0x0402 0x0304 0x0403
+			       0x0005 0x0500 0x0105 0x0501 0x0205 0x0502 0x0305 0x0503 0x0405 0x0504
+			       0x0006 0x0600 0x0106 0x0601 0x0206 0x0602 0x0306 0x0603 0x0406 0x0604
+			       0x0506 0x0605 0x0007 0x0700 0x0107 0x0701 0x0207 0x0702 0x0307 0x0703
+			       0x0407 0x0704 0x0507 0x0705 0x0607 0x0706 0x0008 0x0800 0x0108 0x0801
+			       0x0208 0x0802 0x0308 0x0803 0x0408 0x0804 0x0508 0x0805 0x0608 0x0806
+			       0x0708 0x0807 0x0009 0x0900 0x0109 0x0901 0x0209 0x0902 0x0309 0x0903
+			       0x0409 0x0904 0x0509 0x0905 0x0609 0x0906 0x0709 0x0907 0x0809 0x0908
+			       0x000a 0x0a00 0x010a 0x0a01 0x020a 0x0a02 0x030a 0x0a03 0x040a 0x0a04
+			       0x050a 0x0a05 0x060a 0x0a06>;
+	};
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&timers17 {
+	status = "okay";
+	st,prescaler = <4>;
+
+	counter_matrix: counter {
+		status = "okay";
+	};
+};

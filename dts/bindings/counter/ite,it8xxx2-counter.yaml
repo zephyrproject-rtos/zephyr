@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2025 ITE Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: ITE IT8XXX2 counter
+
+compatible: "ite,it8xxx2-counter"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

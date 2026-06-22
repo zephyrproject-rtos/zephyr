@@ -1,0 +1,58 @@
+# Copyright (c) 2024, Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cadence SPI controller
+
+compatible: "cdns,spi"
+
+include: [spi-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    required: true
+
+  clock-frequency-ext:
+    type: int
+
+  fifo-width:
+    type: int
+    required: true
+    enum:
+      - 8
+      - 16
+      - 24
+      - 32
+    description: |
+      The total fifo width in bits
+
+  rx-fifo-depth:
+    type: int
+    required: true
+    enum:
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+    description: |
+      The depth of the rx fifo
+
+  tx-fifo-depth:
+    type: int
+    required: true
+    enum:
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+    description: |
+      The depth of the tx fifo

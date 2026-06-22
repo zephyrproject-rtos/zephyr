@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: npcx4m8f_evb
+name: Nuvoton NPCX4M8F EVB
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 114
+flash: 384
+supported:
+  - adc
+  - clock
+  - gpio
+  - i2c
+  - pm
+  - pwm
+  - psl
+  - tach
+  - uart
+  - watchdog

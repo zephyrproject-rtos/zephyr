@@ -1,0 +1,12 @@
+board:
+  name: beetle_esp32c3
+  full_name: DFRobot Beetle ESP32-C3
+  vendor: dfrobot
+  revision:
+    format: major.minor.patch
+    default: "2.0.0"
+    revisions:
+      - name: "1.0.0"
+      - name: "2.0.0"
+  socs:
+    - name: esp32c3

@@ -1,0 +1,10 @@
+identifier: rzn2h_evb/r9a09g087m44gbg/cr52_0
+name: RZ/N2H Evaluation Board Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - uart
+  - gpio
+vendor: renesas

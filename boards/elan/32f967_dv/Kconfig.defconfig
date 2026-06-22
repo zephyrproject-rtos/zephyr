@@ -1,0 +1,12 @@
+# Copyright (c) 2025 ELAN Microelectronics Corp.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_USE_RUNTIME_CONFIGURE
+	default n
+
+config UART_INTERRUPT_DRIVEN
+	default n
+
+config UART_ASYNC_API
+	default n

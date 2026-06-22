@@ -1,0 +1,28 @@
+# Copyright (c) 2025, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32MP13 Ethernet
+
+  This binding file describes the device tree properties required to configure
+  and use the Ethernet controller on STM32MP13 series microprocessor.
+
+compatible: "st,stm32mp13-ethernet"
+
+include:
+  - "st,stm32-ethernet-common.yaml"
+  - "memory-region.yaml"
+
+properties:
+  memory-regions:
+    required: true
+    description: |
+      Memory region in which the Ethernet DMA lists and data buffers will be
+      placed. The memory region has to be non-cacheable and accessible by the
+      Ethernet peripheral.
+  st,ext-phyclk:
+    type: boolean
+    description:
+      Set this property in RMII mode when you have PHY without crystal 50MHz and want to
+      select RCC clock instead of ETH_REF_CLK, or in RGMII mode when you want to select
+      RCC clock instead of ETH_CLK125.

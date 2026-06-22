@@ -1,0 +1,14 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FVP_BASE_REVC_2XAEM
+
+config BUILD_OUTPUT_BIN
+	default y
+
+# Use arch-specific atomic operations workaround with DMB barriers for SMP
+config ATOMIC_OPERATIONS_ARCH
+	depends on SMP
+	default y
+
+endif # BOARD_FVP_BASE_REVC_2XAEM

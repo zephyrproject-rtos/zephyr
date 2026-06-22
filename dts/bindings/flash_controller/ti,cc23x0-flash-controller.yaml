@@ -1,0 +1,5 @@
+description: Texas Instruments CC23X0 flash controller
+
+compatible: "ti,cc23x0-flash-controller"
+
+include: flash-controller.yaml

@@ -1,0 +1,8 @@
+# nRF52840-MDK board configuration
+
+# Copyright (c) 2018 makerdiary.com
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52840_MDK
+
+endif # BOARD_NRF52840_MDK

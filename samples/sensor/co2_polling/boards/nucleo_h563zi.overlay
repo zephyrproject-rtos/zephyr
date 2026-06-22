@@ -1,0 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		co2 = &explorir_m;
+	};
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <9600>;
+
+	explorir_m: explorir_m {
+		compatible = "gss,explorir-m";
+		status = "okay";
+	};
+};

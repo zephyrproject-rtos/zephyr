@@ -1,0 +1,61 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  XSPI hyperram connected to the NXP S32 XSPI bus.
+
+compatible: "nxp,s32-xspi-hyperram"
+
+include: "nxp,s32-xspi-device.yaml"
+
+properties:
+  device-id-word-addr:
+    required: true
+    type: int
+    description: |
+      The word address of the device ID in ASO (Application-Specific Object).
+      This address specifies the exact location within the memory where the device ID is stored.
+
+  master-clock-type:
+    type: string
+    enum:
+      - "SINGLE_ENDED"
+      - "DIFFERENTIAL"
+    description: |
+      Selects the clock types:
+        - Differential Clock: Command, address, and data information is output with respect
+          to the crossing of the CK and CK# signals. Differential clock is used on 1.8V I/O devices.
+        - Single Ended Clock: CK# is not used on 3.0V devices, only a single ended CK is used.
+          The clock is not required to be free-running.
+
+  drive-strength-ohm:
+    type: int
+    required: true
+    enum: [19, 22, 27, 34, 46, 67, 115]
+    default: 34
+    description: |
+      Specifies the output drive strength in ohm, which based on the operating device VCC.
+      The supported typical impedance settings:
+        19 ohm, 22 ohm, 27 ohm, 34 ohm, 46 ohm, 67 ohm, 115 ohm
+      See the CR0[14:12] field in CR0 configuration register in the memory device datasheet.
+      Defaults to reset value.
+
+  refresh-interval-multiplier:
+    type: string
+    enum:
+      - "1"
+      - "1.5"
+      - "2"
+      - "4"
+    default: "1"
+    description: |
+      Automatic memory refresh interval multiplier. Controls how frequently memory is refreshed.
+      Defaults to reset value.
+
+  initial-latency-cycles:
+    type: int
+    required: true
+    enum: [3, 4, 5, 6, 7]
+    description: |
+      Specifies the read latency in cycles, which is determined based on the operating frequency
+      as specified in the memory device datasheet.

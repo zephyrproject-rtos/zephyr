@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Ayush Singh, BeagleBoard.org Foundation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: pocketbeagle_2/mspm0l1105
+name: BeagleBoard.org PocketBeagle 2
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 4
+flash: 32
+vendor: beagle
+supported:
+  - pinctrl

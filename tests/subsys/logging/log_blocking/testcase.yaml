@@ -1,0 +1,28 @@
+common:
+  filter: CONFIG_QEMU_TARGET and not CONFIG_SMP
+  tags:
+    - log_api
+    - logging
+  integration_platforms:
+    - qemu_x86
+tests:
+  logging.blocking.rate.input_limited:
+    extra_configs:
+      - CONFIG_TEST_INPUT_LOG_RATE=500
+      - CONFIG_TEST_OUTPUT_LOG_RATE=1000
+  logging.blocking.rate.matched:
+    extra_configs:
+      - CONFIG_TEST_INPUT_LOG_RATE=1000
+      - CONFIG_TEST_OUTPUT_LOG_RATE=1000
+  logging.blocking.rate.output_limited:
+    extra_configs:
+      - CONFIG_TEST_INPUT_LOG_RATE=1000
+      - CONFIG_TEST_OUTPUT_LOG_RATE=500
+  logging.blocking.rate.stalled:
+    platform_exclude:
+      # twister fails with "unexpected eof" even though the test passes
+      - qemu_cortex_r5
+    timeout: 5
+    extra_configs:
+      - CONFIG_TEST_INPUT_LOG_RATE=1000
+      - CONFIG_TEST_OUTPUT_LOG_RATE=0

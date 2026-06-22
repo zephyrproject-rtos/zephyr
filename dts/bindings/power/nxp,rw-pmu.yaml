@@ -1,0 +1,14 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP RW PMU
+
+compatible: "nxp,rw-pmu"
+
+include: base.yaml
+
+properties:
+  reset-causes-en:
+    type: array
+    description: |
+      List reset causes to enable, using bitmasks of SYS_RESET registers.

@@ -1,0 +1,13 @@
+/*
+ * Copyright 2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	wo-uart {
+		compatible = "vnd,phandle-holder";
+
+		gpios = <&gpio0 17 GPIO_PULL_UP>, <&gpio0 16 GPIO_PULL_UP>;
+	};
+};

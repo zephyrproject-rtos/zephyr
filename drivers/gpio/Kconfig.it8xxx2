@@ -1,0 +1,29 @@
+# Copyright (c) 2020 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_ITE_IT8XXX2
+	bool "ITE IT8XXX2 GPIO driver"
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_GPIO_ENABLED
+	help
+	  Enable driver for the ite GPIO controller.
+
+config GPIO_ITE_IT8XXX2_V2
+	bool "ITE IT8XXX2 GPIO driver V2"
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_GPIO_V2_ENABLED
+	help
+	  Enable driver for the ite GPIO V2 controller.
+
+config GPIO_KSCAN_ITE_IT8XXX2
+	bool "ITE IT8XXX2 GPIO KSCAN driver"
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_GPIOKSCAN_ENABLED
+	help
+	  Enable GPIO KSCAN driver for ITE chip it8xxx2.
+	  IT8XXX2 support 8 KSI pins and 18 KSO pins, all of them can be configured
+	  to GPIO mode.
+	  KSI[7:0] and KSO[15:0] pins are configured to GPIO mode by
+	  this GPIO_KSCAN_ITE_IT8XXX2 driver.
+	  KSO[17:16] corresponds to GPC5 and GPC3 pin, so they can be configured to
+	  gpio mode by original GPIO_ITE_IT8XXX2 driver.

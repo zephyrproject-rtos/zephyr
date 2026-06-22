@@ -1,0 +1,6 @@
+board:
+  name: ubx_evkninab5
+  full_name: EVK-NINA-B5-MCXW716C
+  vendor: u-blox
+  socs:
+    - name: mcxw716c

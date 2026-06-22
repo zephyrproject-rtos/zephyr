@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2022 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	regulator: regulator {
+		compatible = "zephyr,fake-regulator";
+
+		reg0: REG0 {};
+
+		reg1: REG1 {
+			regulator-always-on;
+		};
+
+		reg2: REG2 {
+			regulator-boot-on;
+		};
+
+		reg3: REG3 {
+			regulator-min-microvolt = <100>;
+			regulator-max-microvolt = <200>;
+			regulator-min-microamp = <100>;
+			regulator-max-microamp = <200>;
+			regulator-allowed-modes = <1 10>;
+			regulator-initial-mode = <1>;
+			regulator-active-discharge = <1>;
+		};
+
+		reg4: REG4 {
+			regulator-boot-off;
+		};
+
+		reg5: REG5 {
+			regulator-boot-off;
+			fake-is-enabled-in-hardware;
+		};
+	};
+};

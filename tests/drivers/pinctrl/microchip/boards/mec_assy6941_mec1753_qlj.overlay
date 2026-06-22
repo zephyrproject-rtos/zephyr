@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_device: test_device@0 {
+		compatible = "vnd,pinctrl-device";
+		reg = <0x0 0x1>;
+		pinctrl-0 = <&ksi0_gpio017 &ksi1_gpio020 &ksi2_gpio021
+			     &ksi3_gpio026 &ksi4_gpio027 &ksi5_gpio030>;
+		pinctrl-names = "default";
+	};
+};
+
+&ksi0_gpio017 {
+	output-enable;
+	output-high;
+};
+
+&ksi1_gpio020 {
+	drive-open-drain;
+	slew-rate = <MCHP_XEC_SLEW_RATE_SLOW>;
+};
+
+&ksi2_gpio021 {
+	drive-strength = <MCHP_XEC_DRV_STR_4X>;
+};
+
+&ksi3_gpio026 {
+	bias-pull-up;
+};
+
+&ksi4_gpio027 {
+	bias-pull-down;
+};
+
+&ksi5_gpio030 {
+	bias-pull-up;
+	drive-open-drain;
+};

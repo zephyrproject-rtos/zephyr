@@ -1,0 +1,111 @@
+/* Copyright 2025 Mediatek
+ * SPDX-License-Identifier: Apache-2.0
+ */
+afe_dl1: afe_dl1 {
+	compatible = "mediatek,afe";
+	afe-name = "DL1";
+	dai-id = <0>;
+	downlink;
+	base = <0x00000000 0x11220040>;
+	cur = <0x00000000 0x11220044>;
+	end = <0x00000000 0x11220048>;
+	fs = <0x11220014 0 4>;
+	mono = <0x11220014 21 1>;
+	enable = <0x11220010 1 1>;
+	hd = <0x112203d8 16 1>;
+};
+
+afe_dl2: afe_dl2 {
+	compatible = "mediatek,afe";
+	afe-name = "DL2";
+	dai-id = <1>;
+	downlink;
+	base = <0x00000000 0x11220050>;
+	cur = <0x00000000 0x11220054>;
+	end = <0x00000000 0x11220058>;
+	fs = <0x11220014 4 4>;
+	mono = <0x11220014 22 1>;
+	enable = <0x11220010 2 1>;
+	hd = <0x112203d8 18 1>;
+};
+
+afe_tdm_out: afe_tdm_out {
+	compatible = "mediatek,afe";
+	afe-name = "TDM_OUT";
+	dai-id = <4>;
+	downlink;
+	base = <0x00000000 0x11220374>;
+	cur = <0x00000000 0x11220378>;
+	end = <0x00000000 0x1122037c>;
+	enable = <0x11220370 0 1>;
+	hd = <0x112203d8 28 1>;
+};
+
+afe_awb: afe_awb {
+	compatible = "mediatek,afe";
+	afe-name = "AWB";
+	dai-id = <2>;
+	base = <0x00000000 0x11220070>;
+	cur = <0x00000000 0x1122007c>;
+	end = <0x00000000 0x11220078>;
+	fs = <0x11220014 12 4>;
+	mono = <0x11220014 24 1>;
+	enable = <0x11220010 6 1>;
+	hd = <0x112203d8 20 1>;
+	msb = <0x112200cc 17 1>;
+};
+
+afe_vul: afe_vul {
+	compatible = "mediatek,afe";
+	afe-name = "VUL";
+	dai-id = <3>;
+	base = <0x00000000 0x11220080>;
+	cur = <0x00000000 0x1122008c>;
+	end = <0x00000000 0x11220088>;
+	fs = <0x11220014 16 4>;
+	mono = <0x11220014 27 1>;
+	enable = <0x11220010 3 1>;
+	hd = <0x112203d8 22 1>;
+	msb = <0x112200cc 20 1>;
+};
+
+afe_vul2: afe_vul2 {
+	compatible = "mediatek,afe";
+	afe-name = "VUL2";
+	dai-id = <5>;
+	base = <0x00000000 0x11220350>;
+	cur = <0x00000000 0x1122035c>;
+	end = <0x00000000 0x11220358>;
+	fs = <0x11220010 20 4>;
+	mono = <0x11220010 10 1>;
+	enable = <0x11220010 9 1>;
+	hd = <0x112203d8 14 1>;
+	msb = <0x112200cc 21 1>;
+};
+
+afe_vul3: afe_vul3 {
+	compatible = "mediatek,afe";
+	afe-name = "VUL3";
+	dai-id = <6>;
+	base = <0x00000000 0x112208c0>;
+	cur = <0x00000000 0x112208c4>;
+	end = <0x00000000 0x112208c8>;
+	fs = <0x11220014 8 4>;
+	mono = <0x11220010 13 1>;
+	enable = <0x11220010 12 1>;
+	hd = <0x112203ec 10 1>;
+	msb = <0x112200cc 27 1>;
+};
+
+afe_tdm_in: afe_tdm_in {
+	compatible = "mediatek,afe";
+	afe-name = "TDM_IN";
+	dai-id = <7>;
+	base = <0x00000000 0x112209c4>;
+	cur = <0x00000000 0x112209cc>;
+	end = <0x00000000 0x112209c8>;
+	mono = <0x112209c0 1 1>;
+	enable = <0x112209c0 0 1>;
+	hd = <0x112203ec 8 1>;
+	msb = <0x112200cc 28 1>;
+};

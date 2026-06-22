@@ -1,0 +1,13 @@
+# TI MSPM0 DAC Driver Configuration
+
+# Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_MSPM0
+	bool "TI MSPM0 Digital To Analog Converter (DAC) Driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_DAC_ENABLED
+	select USE_MSPM0_DL_DAC12
+	help
+	  Enable support for the DAC (Digital-to-Analog Converter)
+	  peripheral driver for Texas Instruments MSPM0 G-Series MCUs.

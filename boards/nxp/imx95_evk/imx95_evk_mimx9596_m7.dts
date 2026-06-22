@@ -1,0 +1,293 @@
+/*
+ * Copyright 2024-2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/imx/nxp_imx95_m7.dtsi>
+#include "imx95_evk-pinctrl.dtsi"
+#include <dt-bindings/mipi_dsi/mipi_dsi.h>
+
+/ {
+	model = "NXP i.MX95 EVK board";
+	compatible = "nxp,imx95_evk";
+
+	aliases {
+		watchdog0 = &wdog5;
+		i2s-codec-tx = &sai3_2;
+		i2s-tx = &sai3_2;
+	};
+
+	chosen {
+		/* TCM */
+		zephyr,flash = &itcm;
+		zephyr,sram = &dtcm;
+
+		zephyr,flash-controller = &ext_flash_ctrl;
+		zephyr,console = &lpuart3;
+		zephyr,shell-uart = &lpuart3;
+		zephyr,canbus = &flexcan1;
+	};
+
+	can_phy1: can-phy1 {
+		compatible = "nxp,tja1463", "can-transceiver-gpio";
+		enable-gpios = <&gpio_can 6 GPIO_ACTIVE_HIGH>;
+		standby-gpios = <&gpio_can 5 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+		status = "okay";
+	};
+};
+
+&emdio {
+	pinctrl-0 = <&emdio_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy0: phy@1 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x1>;
+		status = "okay";
+	};
+};
+
+&enetc_psi0 {
+	local-mac-address = [00 00 00 01 02 00];
+	pinctrl-0 = <&eth0_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy0>;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+&enetc_ptp_clock {
+	status = "okay";
+};
+
+&flexcan1 {
+	pinctrl-0 = <&flexcan1_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy1>;
+	status = "okay";
+};
+
+&flexspi {
+	status = "okay";
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
+	pinctrl-0 = <&flexspi_default>;
+	pinctrl-names = "default";
+
+	ext_flash_ctrl: flash-controller@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		size = <DT_SIZE_M(1024)>;
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(200)>;
+		status = "okay";
+		jedec-id = [2c 5b 1b];
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x28000000 DT_SIZE_M(128)>;
+
+		mt35xu01gbba: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(128)>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			write-block-size = <2>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			partitions {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
+
+				/*
+				 * Partition sizes must be aligned
+				 * to the flash memory sector size of 4KB.
+				 */
+				boot_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
+					label = "mcuboot";
+					reg = <0x00000000 DT_SIZE_K(128)>;
+				};
+
+				slot0_partition: partition@20000 {
+					compatible = "zephyr,mapped-partition";
+					label = "image-0";
+					reg = <0x00020000 DT_SIZE_M(7)>;
+				};
+
+				slot1_partition: partition@720000 {
+					compatible = "zephyr,mapped-partition";
+					label = "image-1";
+					reg = <0x00720000 DT_SIZE_M(7)>;
+				};
+
+				storage_partition: partition@e20000 {
+					compatible = "zephyr,mapped-partition";
+					label = "storage";
+					reg = <0x00e20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+				};
+			};
+		};
+	};
+};
+
+&lpi2c2 {
+	pinctrl-0 = <&lpi2c2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpi2c4 {
+	pinctrl-0 = <&lpi2c4_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	gpio_exp1: gpio-exp@21 {
+		compatible = "nxp,pcal6408";
+		reg = <0x21>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		ngpios = <8>;
+
+		codec-sai3-sel-hog {
+			gpio-hog;
+			gpios = <7 GPIO_ACTIVE_LOW>;
+			output-low;
+			line-name = "CODEC_SLOT_SAI3_SEL";
+		};
+	};
+
+	audio_codec: wm8962@1a {
+		compatible = "wolfson,wm8962";
+		reg = <0x1a>;
+		clock-source = "MCLK";
+		clocks = <&scmi_clk IMX95_CLK_SAI3>;
+		clock-names = "mclk";
+	};
+};
+
+&lpi2c5 {
+	pinctrl-0 = <&lpi2c5_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpi2c6 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&lpi2c6_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	gpio_can: pcal6416@21 {
+		compatible = "nxp,pcal6416";
+		reg = <0x21>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		ngpios = <16>;
+		status = "okay";
+
+		/* Set PDM_CAN_SEL as active high to select CAN1 */
+		can_sel_hog {
+			gpio-hog;
+			gpios = <10 GPIO_ACTIVE_HIGH>;
+			output-high;
+		};
+	};
+};
+
+&lpi2c7 {
+	pinctrl-0 = <&lpi2c7_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpspi1 {
+	pinctrl-0 = <&lpspi1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpuart3 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart3_default>;
+	pinctrl-names = "default";
+};
+
+&lpuart5 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart5_default>;
+	pinctrl-names = "default";
+};
+
+&sai3 {
+	pinctrl-0 = <&sai3_default>;
+	pinctrl-names = "default";
+};
+
+&sai3_2 {
+	mclk-output;
+	pinctrl-0 = <&sai3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&tpm2 {
+	pinctrl-0 = <&tpm2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lptmr1 {
+	status = "okay";
+};
+
+&edma1 {
+	status = "okay";
+};
+
+&edma2 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&gpio5 {
+	status = "okay";
+};
+
+&sar_adc {
+	status = "okay";
+};
+
+zephyr_dpu: &dpu {};
+
+zephyr_mipi_dsi: &mipi_dsi {};
+
+display_i2c: &lpi2c2 {};
+
+&wdog5 {
+	status = "okay";
+};

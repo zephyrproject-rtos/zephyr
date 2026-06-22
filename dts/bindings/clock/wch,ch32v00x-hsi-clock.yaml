@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH32V00x HSI Clock
+
+compatible: "wch,ch32v00x-hsi-clock"
+
+include: [fixed-clock.yaml]

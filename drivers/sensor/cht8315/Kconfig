@@ -1,0 +1,19 @@
+# Copyright (c) 2026 MASSDRIVER EI
+# SPDX-License-Identifier: Apache-2.0
+
+config CHT8315
+	bool "Sensylink CHT8315 Temperature and Humidity Sensor"
+	default y
+	depends on DT_HAS_SENSYLINK_CHT8315_ENABLED
+	select I2C
+	help
+	  Enable driver for Sensylink CHT8315 Temperature and Humidity Sensor.
+
+config CHT8315_TRIGGER
+	bool "Sensylink CHT8315 Trigger"
+	default y
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_SENSYLINK_CHT8315),alert-gpios)
+	help
+	  Enable interrupt based trigger support for CHT8315.
+	  Requires that the sensor to not be set to one shot mode.

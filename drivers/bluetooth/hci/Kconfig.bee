@@ -1,0 +1,22 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_BEE
+	bool "Realtek Bee series BT HCI driver"
+	default y
+	depends on DT_HAS_REALTEK_BEE_BT_HCI_ENABLED
+	select HAL_REALTEK_BEE_BT
+	help
+	  This option enables the bt hci driver for Realtek Bee SoCs.
+
+if BT_BEE
+
+config BT_BEE_HCI_H2C_POOL_SIZE
+	int "HCI h2c pool size"
+	default 3072
+	help
+	  HCI H2C POOL is used by HCI command packets and
+	  HCI ACL data packets. Set this value according max
+	  LE ACL data packets num and max HCI command packets num.
+
+endif # BT_BEE

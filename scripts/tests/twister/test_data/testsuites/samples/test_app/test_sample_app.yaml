@@ -1,0 +1,11 @@
+sample:
+  name: Sample Library
+tests:
+  sample_test.app:
+    tags: sample_tag
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Hello World!"
+        - "Sample says: Hello World!"

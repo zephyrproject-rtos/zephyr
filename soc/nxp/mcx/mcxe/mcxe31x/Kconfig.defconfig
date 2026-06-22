@@ -1,0 +1,18 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_MCXE31X
+
+config NUM_IRQS
+	default 240
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+
+config CORTEX_M_SYSTICK
+	default n if (MCUX_LPTMR_TIMER || MCUX_OS_TIMER)
+
+config ROM_START_OFFSET
+	default 0x1000
+
+endif # SOC_SERIES_MCXE31X

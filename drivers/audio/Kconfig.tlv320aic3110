@@ -1,0 +1,10 @@
+# Copyright (c) 2025 PHYTEC America LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_TLV320AIC3110
+	bool "TLV320AIC3110 AIC support"
+	default y
+	depends on DT_HAS_TI_TLV320AIC3110_ENABLED
+	select I2C
+	help
+	  Enable TLV320AIC3110 support on the selected board

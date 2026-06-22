@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ambiq SPI
+
+compatible: "ambiq,spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]

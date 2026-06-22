@@ -1,0 +1,31 @@
+#
+# Copyright (c) 2022 Jamie McCrae
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Noritake Itron VFD module
+
+description: |
+    Noritake Itron VFD character display module
+    from series CU-TE, CU-Y, GU-3000, GU-7000
+    and GU-D.
+
+    Example references:
+    GU280X16G-7000
+    CU20029-TE200K
+    CU24043-Y100
+    GU128X32D-D903S
+
+compatible: "noritake,itron"
+
+include: [auxdisplay-device.yaml, uart-device.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: Optional GPIO used to reset the display
+
+  busy-gpios:
+    type: phandle-array
+    description: Optional GPIO used for busy detection

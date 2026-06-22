@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Dipak Shetty <shetty.dipak@gmx.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Everlight ALS-PT19 Ambient Light Sensor
+
+compatible: "everlight,als-pt19"
+
+include: sensor-device.yaml
+
+properties:
+  load-resistor:
+    type: int
+    required: true
+    description: |
+      Load resistor value in ohms
+
+  io-channels:
+    type: phandle-array
+    required: true
+    description: |
+      ADC IO channel to use.

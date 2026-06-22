@@ -1,0 +1,17 @@
+# Copyright (c) 2018, blik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for RTC devices
+
+include: base.yaml
+
+properties:
+  clock-frequency:
+    type: int
+    description: Clock frequency information for RTC operation
+  interrupts:
+    required: true
+
+  prescaler:
+    type: int
+    description: RTC frequency equals clock-frequency divided by the prescaler value

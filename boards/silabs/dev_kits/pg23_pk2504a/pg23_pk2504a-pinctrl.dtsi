@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2025 Christoph Jans
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/silabs/xg23-pinctrl.h>
+
+&pinctrl {
+	eusart0_default: eusart0_default {
+		group0 {
+			pins = <EUSART0_TX_PB5>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <EUSART0_RX_PB6>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group0 {
+			pins = <I2C0_SCL_PA8>, <I2C0_SDA_PA7>;
+			drive-open-drain;
+			bias-pull-up;
+		};
+	};
+
+	timer0_default: timer0_default {
+		group0 {
+			pins = <TIMER0_CC0_PC8>, <TIMER0_CC1_PC9>;
+			drive-push-pull;
+			output-high;
+		};
+	};
+};

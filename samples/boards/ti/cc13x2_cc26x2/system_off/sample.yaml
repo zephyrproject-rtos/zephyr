@@ -1,0 +1,7 @@
+sample:
+  name: Low Power State Sample for TI CC13x2/CC26x2
+tests:
+  sample.boards.ti.cc13x2_cc26x2.system_off:
+    build_only: true
+    platform_allow: cc1352r1_launchxl
+    tags: power

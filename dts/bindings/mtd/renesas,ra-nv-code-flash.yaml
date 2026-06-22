@@ -1,0 +1,61 @@
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Flash memory binding for Renesas RA Code flash region
+
+include: [base.yaml, soc-nv-flash.yaml]
+
+compatible: "renesas,ra-nv-code-flash"
+
+properties:
+  programming-enable:
+    type: boolean
+    description: Enable code flash programming configuration
+
+  erase-block-size:
+    type: int
+    description: |
+      The flash controller is limited by hardware to erase whole blocks of flash
+      at a time. This property describes the largest erase block size in erase-blocks.
+
+  erase-blocks:
+    type: phandle-array
+    description: |
+      The flash controller is limited by hardware to erase whole blocks of flash
+      at a time. This property describes the layout of the erase-blocks, which can
+      vary in size within the flash memory area.
+
+      Currently, Renesas SoCs use different versions of code-flash. While most code-flash
+      defines `erase-block-size` as one block, some versions have blocks with different sizes
+      and divided into regions. Therefore, this property reflects the actual `erase-block-size`
+      for each region of code-flash, depending on the flash version.
+
+      For example:
+        - The R7FA8M1AHECBD's code-flash has `flash-hardware-version = <40>` and uses
+        the following blocks layout:
+          |--------------------|
+          | 8 Kbytes           |
+          |--------------------|  number of 8kb blocks = 8
+          | 8 Kbytes           |
+          |--------------------|
+          | 32 Kbytes          |
+          |--------------------|
+          | 32 Kbytes          |  number of 32kb blocks = 61
+          |--------------------|
+          | 32 Kbytes          |
+          |--------------------|
+        The "erase-block" should has the value like this:
+          erase-blocks = <&flash 8 8192>, <&flash 61 32768>;
+
+        - The R7FA4L1BD4CFP's code-flash has `flash-hardware-version = <4>` and uses
+        the following blocks layout:
+          |--------------------|
+          | 2 Kbytes           |
+          |--------------------|
+          | 2 Kbytes           |  number of 2kb blocks = 256
+          |--------------------|
+          | 2 Kbytes           |
+          |--------------------|
+        The "erase-block" should has the value like this:
+          erase-blocks = <&flash 256 2048>;

@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_SAM_RSTC
+	bool "Atmel SAM reset cause"
+	default y
+	depends on SOC_FAMILY_ATMEL_SAM && !SOC_SERIES_SAM4L
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable Atmel SAM reset cause hwinfo driver.

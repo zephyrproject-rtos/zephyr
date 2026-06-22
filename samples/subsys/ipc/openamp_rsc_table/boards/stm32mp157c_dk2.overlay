@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2020, STMICROELECTRONICS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/*
+		 * shared memory reserved for the inter-processor communication
+		 */
+		zephyr,ipc_shm = &mcusram3;
+		zephyr,ipc = &mailbox;
+	};
+
+	mcusram3: memory1@10040000 {
+		compatible = "mmio-sram";
+		reg = <0x10040000 DT_SIZE_K(64)>;
+	};
+};
+
+&mcusram {
+	reg = <0x10000000 DT_SIZE_K(256)>;
+};

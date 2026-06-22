@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* NOTE: It is necessary to connect VREG_OUT to the ADC to perform the test.
+	 * But the rpi_pico board and most boards that use the rp2040, VREG_OUT and
+	 * DVDD are directly connected, and no available exposed trace on the board.
+	 *
+	 * In the rpi_pico board, a short, thick, diagonal wiring pattern near the 3x3
+	 * thermal via connect to VREG_OUT. (Around between C and E of CE mark of silk print.)
+	 * Scraping the resist on there and soldering wire to make it able to measure by ADC.
+	 */
+	resources: resources {
+		compatible = "test-regulator-voltage";
+		regulators = <&vreg>;
+		io-channels = <&adc 0>;
+		tolerance-microvolt = <50000>;
+		set-read-delay-ms = <10>;
+		adc-avg-count = <10>;
+		min-microvolt = <850000>;
+	};
+};
+
+&vreg {
+	raspberrypi,brown-out-threshold = <473000>;
+};
+
+&adc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};

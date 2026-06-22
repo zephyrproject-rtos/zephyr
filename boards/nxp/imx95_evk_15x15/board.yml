@@ -1,0 +1,6 @@
+board:
+  name: imx95_evk_15x15
+  full_name: i.MX95 15x15 EVK
+  vendor: nxp
+  socs:
+  - name: mimx9596

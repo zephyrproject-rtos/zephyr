@@ -1,0 +1,21 @@
+sample:
+  name: Bluetooth A2DP Sink
+tests:
+  sample.bluetooth.a2dp.sink:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+    tags: bluetooth
+    integration_platforms:
+      - qemu_cortex_m3
+  sample.bluetooth.a2dp.sink.no_blobs:
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    tags:
+      - bluetooth
+      - gap
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    timeout: 600
+    build_only: true

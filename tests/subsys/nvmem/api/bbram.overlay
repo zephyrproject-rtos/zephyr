@@ -1,0 +1,16 @@
+/**
+ * Copyright (c) 2026, Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	bbram0: bbram {
+		compatible = "zephyr,bbram-emul";
+		status = "okay";
+		size = <0xff>;
+	};
+};
+
+test_nvmem0: &bbram0 {};
+
+#include "common.dtsi"

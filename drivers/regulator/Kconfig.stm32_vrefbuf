@@ -1,0 +1,16 @@
+# Copyright 2025 CodeWrights GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_STM32_VREFBUF
+	bool "STM32 VREFBUF regulator driver"
+	default y
+	depends on DT_HAS_ST_STM32_VREFBUF_ENABLED
+	help
+	  Enable the STM32 VREFBUF regulator driver.
+
+config REGULATOR_STM32_VREFBUF_INIT_PRIORITY
+	int "STM32 VREFBUF regulator driver init priority"
+	default 45
+	depends on DT_HAS_ST_STM32_VREFBUF_ENABLED
+	help
+	  Init priority for the STM32 VREFBUF regulator driver.

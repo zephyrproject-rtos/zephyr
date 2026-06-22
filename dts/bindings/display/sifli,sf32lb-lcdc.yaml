@@ -1,0 +1,15 @@
+# Copyright (c) 2025, Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sifli SF32LB LCDC display controller
+
+compatible: "sifli,sf32lb-lcdc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true

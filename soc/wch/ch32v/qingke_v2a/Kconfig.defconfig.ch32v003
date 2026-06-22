@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Michael Hope
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_CH32V003
+
+config VECTOR_TABLE_SIZE
+	default 38
+
+config NUM_IRQS
+	default 48
+
+endif # SOC_CH32V003

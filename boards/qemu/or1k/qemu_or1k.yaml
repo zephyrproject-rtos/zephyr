@@ -1,0 +1,16 @@
+identifier: qemu_or1k
+name: QEMU emulation for OpenRISC 1000
+type: qemu
+simulation:
+  - name: qemu
+arch: openrisc
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 128
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: qemu

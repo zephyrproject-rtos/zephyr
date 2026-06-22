@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: p2d
+name: Pebble-2-Duo
+vendor: coredevices
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 256
+flash: 1024
+supported:
+  - ble
+  - counter
+  - gpio
+  - i2c
+  - i2s
+  - pwm
+  - uart
+  - watchdog

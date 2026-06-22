@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Seeed Technology Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+if BOARD_XIAO_NRF54L15_NRF54L15_CPUAPP
+
+config HAS_BT_CTLR
+	default BT
+
+endif # BOARD_XIAO_NRF54L15_NRF54L15_CPUAPP

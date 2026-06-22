@@ -1,0 +1,18 @@
+# Copyright (c) 2018 Christian Taedcke
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFR32FG1P
+	bool
+	select SOC_FAMILY_SILABS_S1
+	help
+	  Silicon Labs EFR32FG1P (Flex Gecko) Series MCU
+
+config SOC_EFR32FG1P133F256GM48
+	bool
+	select SOC_SERIES_EFR32FG1P
+
+config SOC_SERIES
+	default "efr32fg1p" if SOC_SERIES_EFR32FG1P
+
+config SOC
+	default "efr32fg1p133f256gm48" if SOC_EFR32FG1P133F256GM48

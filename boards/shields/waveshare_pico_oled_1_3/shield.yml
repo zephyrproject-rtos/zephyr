@@ -1,0 +1,7 @@
+shield:
+  name: waveshare_pico_oled_1_3
+  full_name: Waveshare Pico OLED 1.3"
+  vendor: waveshare
+  supported_features:
+    - display
+    - input

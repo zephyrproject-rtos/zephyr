@@ -1,0 +1,10 @@
+# Copyright (c) 2024 GARDENA GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_SI32
+	bool "GPIO driver for Si32 family of MCUs"
+	default y
+	depends on DT_HAS_SILABS_SI32_GPIO_ENABLED
+	help
+	  Enable GPIO driver for Si32 line of MCUs

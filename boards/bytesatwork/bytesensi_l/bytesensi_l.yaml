@@ -1,0 +1,18 @@
+# Copyright (c) 2024 bytesatwork AG
+# SPDX-License-Identifier: Apache-2.0
+identifier: bytesensi_l
+name: bytesatwork byteSENSI-L
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 64
+flash: 512
+supported:
+  - ble
+  - gpio
+  - i2c
+  - lora
+  - spi
+vendor: bytesatwork

@@ -1,0 +1,17 @@
+common:
+  build_only: true
+  arch_allow: riscv
+  tags:
+    - pm
+    - riscv
+tests:
+  arch.riscv.pm_s2ram.clint:
+    platform_allow:
+      - qemu_riscv32
+    integration_platforms:
+      - qemu_riscv32
+  arch.riscv.pm_s2ram.clic:
+    platform_allow:
+      - gd32vf103v_eval
+    integration_platforms:
+      - gd32vf103v_eval

@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	spi0_default_alt: spi0_default_alt {
+		group1 {
+			/* MISO MOSI RSPCK */
+			psels = <RA_PSEL(RA_PSEL_SPI, 1, 0)>,
+				<RA_PSEL(RA_PSEL_SPI, 1, 1)>,
+				<RA_PSEL(RA_PSEL_SPI, 1, 2)>;
+		};
+	};
+
+	spi1_default_alt: spi1_default_alt {
+		group1 {
+			/* MISO MOSI RSPCK SSL */
+			psels = <RA_PSEL(RA_PSEL_SPI, 2, 2)>,
+				<RA_PSEL(RA_PSEL_SPI, 2, 3)>,
+				<RA_PSEL(RA_PSEL_SPI, 2, 4)>,
+				<RA_PSEL(RA_PSEL_SPI, 2, 5)>;
+		};
+	};
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&spi0 {
+	rx-dtc;
+	tx-dtc;
+	status = "okay";
+	pinctrl-0 = <&spi0_default_alt>;
+	pinctrl-names = "default";
+	cs-gpios = <&ioport1 3 GPIO_ACTIVE_LOW>;
+
+	dut_spi_dt: test-spi-dev@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+	};
+};
+
+dut_spis: &spi1 {
+	rx-dtc;
+	tx-dtc;
+	status = "okay";
+	pinctrl-0 = <&spi1_default_alt>;
+	pinctrl-names = "default";
+	interrupts = <92 1>, <93 1>, <94 1>, <95 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+};

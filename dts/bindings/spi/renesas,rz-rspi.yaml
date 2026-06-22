@@ -1,0 +1,54 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  RENESAS RZ SPI
+
+  Example of devicetree configuration
+
+   &spi0 {
+          compatible = "renesas,rz-rspi";
+          reg = <0x400aa000 0x24>;
+          interrupts = <358 0>, <359 0>, <360 0>;
+          interrupt-names = "error", "rx", "tx";
+          channel = <0>;
+          #address-cells = <1>;
+          #size-cells = <0>;
+          status = "okay";
+    }
+
+  Example of devicetree configuration(use DMA)
+
+   &spi0 {
+          compatible = "renesas,rz-rspi";
+          reg = <0x400aa000 0x24>;
+          interrupts = <358 0>, <359 0>, <360 0>;
+          interrupt-names = "error", "rx", "tx";
+          channel = <0>;
+          #address-cells = <1>;
+          #size-cells = <0>;
+          status = "okay";
+          dmas = <&dma0 0 RZ_DMA_PERIPH_TO_MEM>, <&dma0 5 RZ_DMA_MEM_TO_PERIPH>;
+          dma-names = "rx", "tx";
+    }
+
+    RZ_DMA_PERIPH_TO_MEM, RZ_DMA_MEM_TO_PERIPH are DMA usual configuration, see renesas_rz_dma.h
+
+
+compatible: "renesas,rz-rspi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  channel:
+    type: int
+    required: true

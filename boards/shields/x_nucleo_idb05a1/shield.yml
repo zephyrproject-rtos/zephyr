@@ -1,0 +1,6 @@
+shield:
+  name: x_nucleo_idb05a1
+  full_name: X-NUCLEO-IDB05A1
+  vendor: st
+  supported_features:
+    - bluetooth
