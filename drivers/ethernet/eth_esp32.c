@@ -19,15 +19,11 @@
 #include <esp_mac.h>
 #include <hal/emac_hal.h>
 #include <hal/emac_ll.h>
-#include <hal/emac_periph.h>
 #include <soc/rtc.h>
 #include <soc/gpio_periph.h>
 #include <soc/gpio_sig_map.h>
-#include <soc/io_mux_reg.h>
 #include <soc/soc.h>
 #include <clk_ctrl_os.h>
-#include <esp_clk_tree.h>
-#include <esp_private/esp_clk_tree_common.h>
 
 LOG_MODULE_REGISTER(eth_esp32, CONFIG_ETHERNET_LOG_LEVEL);
 
@@ -387,102 +383,6 @@ static uint32_t eth_esp32_receive_frame(struct eth_esp32_dev_data *dev_data, uin
 	return copy_len;
 }
 
-#if !DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
-static void eth_esp32_iomux_rmii_clk_input(int gpio_num)
-{
-	const emac_iomux_info_t *pin;
-
-	pin = esp32_emac_iomux_find(emac_rmii_iomux_pins.clki, gpio_num);
-	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-}
-#endif
-
-static void eth_esp32_iomux_init_mii(void)
-{
-	const emac_iomux_info_t *pin;
-
-	/*
-	 * ESP32 EMAC uses dedicated IOMUX pins, not GPIO matrix.
-	 * Only PIN_FUNC_SELECT is needed to route signals.
-	 */
-
-	/* TX_CLK - input */
-	pin = emac_mii_iomux_pins.clk_tx;
-	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	/* TX_EN - output */
-	pin = emac_mii_iomux_pins.tx_en;
-	if (pin != NULL) {
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	/* TXD0-3 - outputs */
-	pin = emac_mii_iomux_pins.txd0;
-	if (pin != NULL) {
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	pin = emac_mii_iomux_pins.txd1;
-	if (pin != NULL) {
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	pin = emac_mii_iomux_pins.txd2;
-	if (pin != NULL) {
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	pin = emac_mii_iomux_pins.txd3;
-	if (pin != NULL) {
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	/* RX_CLK - input */
-	pin = emac_mii_iomux_pins.clk_rx;
-	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	/* RX_DV - input */
-	pin = emac_mii_iomux_pins.rx_dv;
-	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	/* RXD0-3 - inputs */
-	pin = emac_mii_iomux_pins.rxd0;
-	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	pin = emac_mii_iomux_pins.rxd1;
-	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	pin = emac_mii_iomux_pins.rxd2;
-	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	pin = emac_mii_iomux_pins.rxd3;
-	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-}
-
 static enum ethernet_hw_caps eth_esp32_caps(const struct device *dev __unused,
 					    struct net_if *iface __unused)
 {
@@ -729,11 +629,11 @@ int eth_esp32_initialize(const struct device *dev)
 			goto err;
 		}
 #else
-		eth_esp32_iomux_rmii_clk_input(rmii_clk_gpio);
+		esp32_emac_iomux_rmii_clk_input(rmii_clk_gpio);
 		emac_hal_clock_enable_rmii_input(&dev_data->hal);
 #endif
 	} else { /* phy_connection_type: mii */
-		eth_esp32_iomux_init_mii();
+		esp32_emac_iomux_init_mii();
 		emac_hal_clock_enable_mii(&dev_data->hal);
 	}
 
