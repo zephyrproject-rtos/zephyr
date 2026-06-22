@@ -34,10 +34,6 @@ choice CYW55500_MODULE
 	default CYW55513_MURATA_2FY_SM
 endchoice
 
-# Enable L2 Ethernet
-config NET_L2_ETHERNET
-	default y
-
 # Heap Pool Size
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
