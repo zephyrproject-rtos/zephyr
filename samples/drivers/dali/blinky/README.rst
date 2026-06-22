@@ -48,7 +48,7 @@ The sample can be build and executed for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dali/blinky
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build flash
    :shield: arduino_uno_click,mikroe_dali_2_click
    :compact:
