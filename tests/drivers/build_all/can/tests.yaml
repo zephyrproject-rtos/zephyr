@@ -76,6 +76,9 @@ tests:
   drivers.can.build_all.rcar:
     platform_allow:
       - rcar_h3ulcb/r8a77951/r7
+  drivers.can.build_all.rcar_rscanfsd:
+    platform_allow:
+      - rcar_ironhide_x5h/r8a78000/r52
   drivers.can.build_all.renesas_ra:
     platform_allow:
       - aik_ra8d1
