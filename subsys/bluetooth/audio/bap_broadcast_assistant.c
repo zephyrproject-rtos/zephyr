@@ -203,6 +203,39 @@ static void bap_broadcast_assistant_scan_results(const struct bt_le_scan_recv_in
 	}
 }
 
+struct per_adv_exist_lookup_data {
+	const bt_addr_le_t *adv_addr;
+	uint8_t sid;
+};
+
+static bool per_adv_exists_cb(const struct bt_le_ext_adv *adv, void *data)
+{
+	const struct per_adv_exist_lookup_data *lookup_data = data;
+	struct bt_le_ext_adv_info info;
+	__maybe_unused int err;
+
+	err = bt_le_ext_adv_get_info(adv, &info);
+	__ASSERT(err == 0, "Failed to get adv_info from %p: %d", adv, err);
+
+	const bool exists = info.per_adv_state != BT_LE_PER_ADV_STATE_NONE &&
+			    lookup_data->sid == info.sid &&
+			    bt_addr_le_eq(lookup_data->adv_addr, info.addr);
+
+	/* Return !exists to stop iterating when found, else continue iterating */
+	return !exists;
+}
+
+static bool per_adv_exists(const bt_addr_le_t *adv_addr, uint8_t sid)
+{
+	struct per_adv_exist_lookup_data lookup_data = {
+		.adv_addr = adv_addr,
+		.sid = sid,
+	};
+
+	/* bt_le_ext_adv_foreach will return -ECANCELED if a matching per_adv set was found */
+	return bt_le_ext_adv_foreach(per_adv_exists_cb, &lookup_data) == -ECANCELED;
+}
+
 static bool past_available(const struct bt_conn *conn,
 			   const bt_addr_le_t *adv_addr,
 			   uint8_t sid)
@@ -232,7 +265,9 @@ static bool past_available(const struct bt_conn *conn,
 
 		return BT_FEAT_LE_PAST_RECV(remote_info.le.features) &&
 		       BT_FEAT_LE_PAST_SEND(local_features.features) &&
-		       bt_le_per_adv_sync_lookup_addr(adv_addr, sid) != NULL;
+		       ((IS_ENABLED(CONFIG_BT_PER_ADV_SYNC) &&
+			 bt_le_per_adv_sync_lookup_addr(adv_addr, sid) != NULL) ||
+			(IS_ENABLED(CONFIG_BT_PER_ADV) && per_adv_exists(adv_addr, sid)));
 	} else {
 		return false;
 	}
