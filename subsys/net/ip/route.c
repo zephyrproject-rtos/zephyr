@@ -823,7 +823,9 @@ int net_route_mcast_forward_packet(struct net_pkt *pkt, struct net_ipv6_hdr *hdr
 	 * Change its value in a common buffer so the forwardee has a proper count. As we have
 	 * a direct access to the buffer there is no need to perform read/write operations.
 	 */
+	/* Decrement hop limit; required for forwarding. */
 	hdr->hop_limit--;
+	net_pkt_set_ipv6_hop_limit(pkt, hdr->hop_limit);
 
 	ARRAY_FOR_EACH_PTR(route_mcast_entries, route) {
 		struct net_pkt *pkt_cpy = NULL;
@@ -839,7 +841,7 @@ int net_route_mcast_forward_packet(struct net_pkt *pkt, struct net_ipv6_hdr *hdr
 				continue;
 			}
 
-			pkt_cpy = net_pkt_shallow_clone(pkt, K_NO_WAIT);
+			pkt_cpy = net_pkt_clone(pkt, K_NO_WAIT);
 
 			if (pkt_cpy == NULL) {
 				err--;
@@ -858,6 +860,10 @@ int net_route_mcast_forward_packet(struct net_pkt *pkt, struct net_ipv6_hdr *hdr
 			}
 		}
 	}
+
+	/* Restore initial hop limit for further processing. */
+	hdr->hop_limit++;
+	net_pkt_set_ipv6_hop_limit(pkt, hdr->hop_limit);
 
 	return (err == 0) ? ret : err;
 }
