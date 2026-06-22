@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Bluetooth Object Transfer Service (OTS) API.
+ * @ingroup bt_ots
+ */
+
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_OTS_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_OTS_H_
 

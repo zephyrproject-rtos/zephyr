@@ -2,6 +2,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Bluetooth Encrypted Advertising Data (EAD) API.
+ * @ingroup bt_ead
+ */
+
 #include <stddef.h>
 #include <stdint.h>
 

@@ -6,6 +6,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Bluetooth Battery Service (BAS) API.
+ * @ingroup bt_bas
+ */
+
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_BAS_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_BAS_H_
 

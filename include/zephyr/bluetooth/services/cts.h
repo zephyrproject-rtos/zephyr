@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Bluetooth Current Time Service (CTS) API.
+ * @ingroup bt_cts
+ */
+
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_CTS_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_CTS_H_
 

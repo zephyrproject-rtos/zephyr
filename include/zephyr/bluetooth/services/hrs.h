@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Bluetooth Heart Rate Service (HRS) API.
+ * @ingroup bt_hrs
+ */
+
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_HRS_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_HRS_H_
 
