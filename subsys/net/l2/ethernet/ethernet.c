@@ -19,7 +19,6 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #if defined(CONFIG_NET_DSA)
 #include <zephyr/net/dsa_core.h>
 #endif
-#include <zephyr/net/gptp.h>
 #include <zephyr/random/random.h>
 
 #if defined(CONFIG_NET_LLDP)
