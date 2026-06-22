@@ -26,8 +26,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(max3421e, CONFIG_UHC_DRIVER_LOG_LEVEL);
 
-static K_KERNEL_STACK_DEFINE(drv_stack, CONFIG_MAX3421E_THREAD_STACK_SIZE);
-static struct k_thread drv_stack_data;
 
 #define MAX3421E_STATE_BUS_RESET	0
 #define MAX3421E_STATE_BUS_RESUME	1
@@ -51,6 +49,7 @@ struct max3421e_config {
 	struct spi_dt_spec dt_spi;
 	struct gpio_dt_spec dt_int;
 	struct gpio_dt_spec dt_rst;
+	void (*make_thread)(const struct device *dev);
 };
 
 static int max3421e_read_hirq(const struct device *dev,
@@ -1094,12 +1093,7 @@ static int max3421e_driver_init(const struct device *dev)
 	}
 
 	k_mutex_init(&data->mutex);
-	k_thread_create(&drv_stack_data, drv_stack,
-			K_KERNEL_STACK_SIZEOF(drv_stack),
-			uhc_max3421e_thread,
-			(void *)dev, NULL, NULL,
-			K_PRIO_COOP(2), 0, K_NO_WAIT);
-	k_thread_name_set(&drv_stack_data, "uhc_max3421e");
+	config->make_thread(dev);
 
 	LOG_DBG("MAX3421E CPU interface initialized");
 
@@ -1123,21 +1117,38 @@ static const struct uhc_api max3421e_uhc_api = {
 	.ep_dequeue = max3421e_dequeue,
 };
 
-static struct max3421e_data max3421e_data = {
-	.irq_sem = Z_SEM_INITIALIZER(max3421e_data.irq_sem, 0, 1),
-};
-
-static struct uhc_data max3421e_uhc_data = {
-	.priv = &max3421e_data,
-};
-
-static const struct max3421e_config max3421e_cfg = {
-	.dt_spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB),
-	.dt_int = GPIO_DT_SPEC_INST_GET(0, int_gpios),
-	.dt_rst = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, {0}),
-};
-
-DEVICE_DT_INST_DEFINE(0, max3421e_driver_init, NULL,
-		      &max3421e_uhc_data, &max3421e_cfg,
-		      POST_KERNEL, 99,
+#define MAX3421E_DEFINE(id)                                                      \
+static K_KERNEL_STACK_DEFINE(drv_stack_##id, CONFIG_MAX3421E_THREAD_STACK_SIZE); \
+static struct k_thread drv_stack_data_##id;                                      \
+                                                                                 \
+static void max3421e_make_thread_##id(const struct device *dev)                  \
+{                                                                                \
+	k_thread_create(&drv_stack_data_##id, drv_stack_##id,                    \
+			K_KERNEL_STACK_SIZEOF(drv_stack_##id),                   \
+			uhc_max3421e_thread,                                     \
+			(void *)dev, NULL, NULL,                                 \
+			K_PRIO_COOP(2), 0, K_NO_WAIT);                           \
+	k_thread_name_set(&drv_stack_data_##id, "uhc_max3421e_" STRINGIFY(id));  \
+}                                                                                \
+                                                                                 \
+static struct max3421e_data max3421e_data_##id = {                               \
+	.irq_sem = Z_SEM_INITIALIZER(max3421e_data_##id.irq_sem, 0, 1),          \
+};                                                                               \
+                                                                                 \
+static struct uhc_data max3421e_uhc_data_##id = {                                \
+	.priv = &max3421e_data_##id,                                             \
+};                                                                               \
+                                                                                 \
+static const struct max3421e_config max3421e_cfg_##id = {                        \
+	.dt_spi = SPI_DT_SPEC_INST_GET(id, SPI_WORD_SET(8) | SPI_TRANSFER_MSB),  \
+	.dt_int = GPIO_DT_SPEC_INST_GET(id, int_gpios),                          \
+	.dt_rst = GPIO_DT_SPEC_INST_GET_OR(id, reset_gpios, {0}),                \
+	.make_thread = max3421e_make_thread_##id                                 \
+};                                                                               \
+                                                                                 \
+DEVICE_DT_INST_DEFINE(id, max3421e_driver_init, NULL,                            \
+		      &max3421e_uhc_data_##id, &max3421e_cfg_##id,               \
+		      POST_KERNEL, 99,                                           \
 		      &max3421e_uhc_api);
+
+DT_INST_FOREACH_STATUS_OKAY(MAX3421E_DEFINE)
