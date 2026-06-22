@@ -44,6 +44,7 @@
 #define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_AHB6
 
 /** @brief Device domain clocks selection helpers */
+#define BDCR_REG                0x400
 #define MCO1CFGR_REG		0x460
 #define MCO2CFGR_REG		0x464
 #define I2C12CKSELR_REG		0x600
@@ -151,5 +152,6 @@
 #define STGEN_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, STGENCKSELR_REG)
 #define DCMIPP_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, DCMIPPCKSELR_REG)
 #define SAES_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, SAESCKSELR_REG)
+#define RTC_SEL(val)            STM32_DT_CLOCK_SELECT((val), 17, 16, BDCR_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32MP13_CLOCK_H_ */
