@@ -9,3 +9,17 @@ config DMA_MCHP_XEC
 	depends on DT_HAS_MICROCHIP_XEC_DMAC_ENABLED
 	help
 	  DMA driver for Microchip XEC series MCUs.
+
+if DMA_MCHP_XEC
+
+XEC_DMA_NODE_PATH := $(dt_nodelabel_path,dmac)
+XEC_DMA_MAX_CHANS := $(dt_node_int_prop_int,$(XEC_DMA_NODE_PATH),dma-channels)
+
+config DMA_MCHP_XEC_DMAC_MAX_CHANNELS
+	int "Microchip XEC central DMA maximum channels"
+	default $(XEC_DMA_MAX_CHANS)
+	help
+	  The number of channels this instance of the DMAC
+	  controller supports.
+
+endif # DMA_MCHP_XEC
