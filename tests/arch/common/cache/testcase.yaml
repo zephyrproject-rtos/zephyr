@@ -1,5 +1,5 @@
 tests:
-  kernel.cache.api:
+  arch.cache.api:
     tags:
       - kernel
       - cache
@@ -13,7 +13,7 @@ tests:
       - nsim/nsim_em
       - qemu_x86
       - qemu_x86_64
-  kernel.cache.api.minimallibc:
+  arch.cache.api.minimallibc:
     tags:
       - kernel
       - cache

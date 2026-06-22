@@ -1080,13 +1080,13 @@ Cache:
     - include/zephyr/cache.h
     - doc/hardware/cache/index.rst
     - drivers/cache/
-    - tests/kernel/cache/
+    - tests/arch/common/cache/
     - doc/hardware/cache/
     - dts/bindings/cache/
   labels:
     - "area: Cache"
   tests:
-    - kernel.cache
+    - arch.cache
 
 Coding Guidelines:
   status: maintained
