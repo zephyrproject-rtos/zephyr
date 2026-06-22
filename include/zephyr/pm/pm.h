@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Power Management API.
+ * @ingroup subsys_pm
+ */
+
 #ifndef ZEPHYR_INCLUDE_PM_PM_H_
 #define ZEPHYR_INCLUDE_PM_PM_H_
 
@@ -213,7 +219,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id);
  * @}
  */
 
-#else  /* CONFIG_PM */
+#else /* CONFIG_PM */
 
 static inline void pm_notifier_register(struct pm_notifier *notifier)
 {
