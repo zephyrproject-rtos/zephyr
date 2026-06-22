@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for System Power Management state definitions.
+ * @ingroup subsys_pm_states
+ */
+
 #ifndef ZEPHYR_INCLUDE_PM_STATE_H_
 #define ZEPHYR_INCLUDE_PM_STATE_H_
 
