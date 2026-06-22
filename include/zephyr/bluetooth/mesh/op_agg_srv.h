@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Bluetooth Mesh Opcodes Aggregator Server model API.
+ * @ingroup bt_mesh_op_agg_srv
+ */
+
 #ifndef BT_MESH_OP_AGG_SRV_H__
 #define BT_MESH_OP_AGG_SRV_H__
 

@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for Bluetooth Mesh SAR Configuration common definitions.
+ * @ingroup bt_mesh_sar_cfg
+ */
+
 #ifndef BT_MESH_SAR_CFG_H__
 #define BT_MESH_SAR_CFG_H__
 
