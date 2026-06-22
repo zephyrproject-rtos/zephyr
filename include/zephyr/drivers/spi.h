@@ -190,6 +190,10 @@ extern "C" {
  * is the spi_config pointer given to the transaction API, so this same
  * config should be re-used to do another transaction or release the lock.
  *
+ * For chaining asynchronous transactions, use the RTIO submit path
+ * (@ref spi_iodev_submit) rather than re-entering
+ * transceive from the completion callback, which may run in ISR context.
+ *
  * See @ref spi_release for how to release the  lock.
  */
 #define SPI_LOCK_ON		BIT(13)
