@@ -481,6 +481,10 @@ STM32
   ``st,dsi-lcd-qsh-030`` is renamed into :dtcompatible:`st,dsi-lcd-qsh-030-connector`
   ``st,stm32-dcmi-camera-fpu-330zh`` is renamed into :dtcompatible:`st,dvp-cam-zif-30-connector`
 
+* :dtcompatible:`st,stm32-xspim` is now also used on STM32H5 and STM32H7RS series
+  to declare and configure XSPI Manager. Boards making use of XSPI must now enable
+  ``&xspim`` node in addition to the desired XSPI controller to use XSPI. (:github:`109903`)
+
 Syscon
 ======
 
