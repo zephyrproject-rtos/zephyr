@@ -173,8 +173,6 @@ static void dwmac_receive(const struct device *dev)
 	unsigned int d_idx;
 	uint32_t des0;
 	uint16_t bytes_so_far;
-	struct net_pkt *rx_pkt = NULL;
-	uint16_t rx_bytes = 0;
 
 	for (d_idx = p->rx_desc_tail; d_idx != p->rx_desc_head;
 	     INC_WRAP(d_idx, NB_RX_DESCS), k_sem_give(&p->free_rx_descs)) {
@@ -186,18 +184,18 @@ static void dwmac_receive(const struct device *dev)
 		}
 
 		if ((des0 & RDES0_FS) != 0U) {
-			rx_bytes = 0;
-			if (rx_pkt != NULL) {
+			p->rx_bytes = 0;
+			if (p->rx_pkt != NULL) {
 				eth_stats_update_errors_rx(p->iface);
-				net_pkt_unref(rx_pkt);
+				net_pkt_unref(p->rx_pkt);
 			}
-			rx_pkt = net_pkt_rx_alloc_on_iface(p->iface, K_NO_WAIT);
-			if (rx_pkt == NULL) {
+			p->rx_pkt = net_pkt_rx_alloc_on_iface(p->iface, K_NO_WAIT);
+			if (p->rx_pkt == NULL) {
 				eth_stats_update_errors_rx(p->iface);
 			}
 		}
 
-		if (rx_pkt == NULL) {
+		if (p->rx_pkt == NULL) {
 			continue;
 		}
 
@@ -207,27 +205,27 @@ static void dwmac_receive(const struct device *dev)
 
 		bytes_so_far = RX_LEN_FROM_RDES0(des0);
 
-		if (bytes_so_far < rx_bytes) {
+		if (bytes_so_far < p->rx_bytes) {
 			eth_stats_update_errors_rx(p->iface);
-			net_pkt_unref(rx_pkt);
-			rx_pkt = NULL;
+			net_pkt_unref(p->rx_pkt);
+			p->rx_pkt = NULL;
 			net_buf_unref(frag);
 			continue;
 		}
 
-		frag->len = bytes_so_far - rx_bytes;
-		rx_bytes = bytes_so_far;
-		net_pkt_frag_add(rx_pkt, frag);
+		frag->len = bytes_so_far - p->rx_bytes;
+		p->rx_bytes = bytes_so_far;
+		net_pkt_frag_add(p->rx_pkt, frag);
 
 		if ((des0 & RDES0_LS) != 0U) {
 			if ((des0 & RDES0_ES) == 0U) {
-				net_recv_data(p->iface, rx_pkt);
+				net_recv_data(p->iface, p->rx_pkt);
 			} else {
 				LOG_ERR("rx error (DES0 = 0x%08x)", des0);
 				eth_stats_update_errors_rx(p->iface);
-				net_pkt_unref(rx_pkt);
+				net_pkt_unref(p->rx_pkt);
 			}
-			rx_pkt = NULL;
+			p->rx_pkt = NULL;
 		}
 	}
 

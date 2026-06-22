@@ -124,10 +124,9 @@ struct dwmac_priv {
 #ifdef CONFIG_ETH_DWC_ETHER_QOS_CORE
 	struct net_buf *tx_frags[NB_TX_DESCS]; /* index shared with tx_descs */
 	struct net_buf *rx_frags[NB_RX_DESCS]; /* index shared with rx_descs */
-
-	struct net_pkt *rx_pkt;
-	unsigned int rx_bytes;
 #endif
+	struct net_pkt *rx_pkt;
+	uint16_t rx_bytes;
 
 	K_KERNEL_STACK_MEMBER(rx_refill_thread_stack, RX_REFILL_STACK_SIZE);
 	struct k_thread rx_refill_thread;

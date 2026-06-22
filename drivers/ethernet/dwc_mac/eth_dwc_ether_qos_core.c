@@ -247,8 +247,9 @@ static void dwmac_receive(struct dwmac_priv *p)
 {
 	struct dwmac_dma_desc *d;
 	struct net_buf *frag;
-	unsigned int d_idx, bytes_so_far;
+	unsigned int d_idx;
 	uint32_t des3_val;
+	uint16_t bytes_so_far;
 
 	for (d_idx = p->rx_desc_tail;
 	     d_idx != p->rx_desc_head;
