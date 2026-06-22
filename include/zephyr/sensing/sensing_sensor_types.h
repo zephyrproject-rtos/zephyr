@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for Sensing subsystem sensor type definitions.
+ * @ingroup sensing_sensor_types
+ */
+
 #ifndef ZEPHYR_INCLUDE_SENSING_SENSOR_TYPES_H_
 #define ZEPHYR_INCLUDE_SENSING_SENSOR_TYPES_H_
 
