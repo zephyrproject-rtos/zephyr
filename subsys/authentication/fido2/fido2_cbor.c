@@ -8,12 +8,12 @@
 #include <zephyr/authentication/fido2/fido2_types.h>
 #include <zcbor_encode.h>
 #include <zcbor_decode.h>
-
-#include "fido2_cbor.h"
-#include "fido2_crypto.h"
-#include "zcbor_common.h"
+#include <zcbor_common.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+
+#include "fido2_cbor.h"
 
 LOG_MODULE_DECLARE(fido2, CONFIG_FIDO2_LOG_LEVEL);
 
@@ -71,212 +71,21 @@ LOG_MODULE_DECLARE(fido2, CONFIG_FIDO2_LOG_LEVEL);
 #define GETINFO_KEY_TRANSPORTS                   0x09
 #define GETINFO_KEY_FIRMWARE_VERSION             0x0E
 
-int fido2_cbor_encode_get_info(const struct fido2_device_info *info, uint8_t *cbor_out,
-			       size_t cbor_out_cap, size_t *cbor_out_len)
-{
-	ZCBOR_STATE_E(zs, 5, cbor_out, cbor_out_cap, 1);
-
-	if (!zcbor_map_start_encode(zs, 10)) {
-		return -ENOMEM;
-	}
-
-	/* 0x01: versions */
-	if (!zcbor_uint32_put(zs, GETINFO_KEY_VERSIONS) ||
-	    !zcbor_list_start_encode(zs, info->num_versions)) {
-		return -ENOMEM;
-	}
-	for (int i = 0; i < info->num_versions; ++i) {
-		if (!zcbor_tstr_put_term(zs, info->versions[i], 32)) {
-			return -ENOMEM;
-		}
-	}
-	if (!zcbor_list_end_encode(zs, info->num_versions)) {
-		return -ENOMEM;
-	}
-
-	/* 0x02: extensions */
-	if (info->num_extensions > 0) {
-		if (!zcbor_uint32_put(zs, GETINFO_KEY_EXTENSIONS) ||
-		    !zcbor_list_start_encode(zs, info->num_extensions)) {
-			return -ENOMEM;
-		}
-		for (int i = 0; i < info->num_extensions; ++i) {
-			if (!zcbor_tstr_put_term(zs, info->extensions[i], 64)) {
-				return -ENOMEM;
-			}
-		}
-		if (!zcbor_list_end_encode(zs, info->num_extensions)) {
-			return -ENOMEM;
-		}
-	}
-
-	/* 0x03: aaguid */
-	if (!zcbor_uint32_put(zs, GETINFO_KEY_AAGUID) ||
-	    !zcbor_bstr_encode_ptr(zs, info->aaguid, FIDO2_AAGUID_SIZE)) {
-		return -ENOMEM;
-	}
-
-	/* 0x04: options */
-	uint8_t opt_count = 3; /* rk, up, plat always present */
-
-	if (info->options.uv) {
-		++opt_count;
-	}
-	if (info->options.always_uv) {
-		++opt_count;
-	}
-	if (info->options.cred_mgmt) {
-		++opt_count;
-	}
-	if (info->num_pin_uv_auth_protocols > 0) {
-		++opt_count;
-	}
-	if (info->options.pin_uv_auth_token) {
-		++opt_count;
-	}
-	if (info->options.make_cred_uv_not_rqd) {
-		++opt_count;
-	}
-	if (info->options.no_mc_ga_permissions_with_client_pin) {
-		++opt_count;
-	}
-
-	if (!zcbor_uint32_put(zs, GETINFO_KEY_OPTIONS) || !zcbor_map_start_encode(zs, opt_count)) {
-		return -ENOMEM;
-	}
-	if (!zcbor_tstr_put_lit(zs, "rk") || !zcbor_bool_put(zs, info->options.rk)) {
-		return -ENOMEM;
-	}
-	if (!zcbor_tstr_put_lit(zs, "up") || !zcbor_bool_put(zs, info->options.up)) {
-		return -ENOMEM;
-	}
-	if (info->options.uv) {
-		if (!zcbor_tstr_put_lit(zs, "uv") || !zcbor_bool_put(zs, info->options.uv)) {
-			return -ENOMEM;
-		}
-	}
-	if (!zcbor_tstr_put_lit(zs, "plat") || !zcbor_bool_put(zs, info->options.plat)) {
-		return -ENOMEM;
-	}
-	if (info->options.always_uv) {
-		if (!zcbor_tstr_put_lit(zs, "alwaysUv") || !zcbor_bool_put(zs, true)) {
-			return -ENOMEM;
-		}
-	}
-	if (info->options.cred_mgmt) {
-		if (!zcbor_tstr_put_lit(zs, "credMgmt") ||
-		    !zcbor_bool_put(zs, info->options.cred_mgmt)) {
-			return -ENOMEM;
-		}
-	}
-	/*
-	 * clientPin: false = supported but not set, true = supported and set,
-	 * absent = unsupported. So we check with num_pin_uv_auth_protocols
-	 */
-	if (info->num_pin_uv_auth_protocols > 0) {
-		if (!zcbor_tstr_put_lit(zs, "clientPin") ||
-		    !zcbor_bool_put(zs, info->options.client_pin)) {
-			return -ENOMEM;
-		}
-	}
-	if (info->options.pin_uv_auth_token) {
-		if (!zcbor_tstr_put_lit(zs, "pinUvAuthToken") || !zcbor_bool_put(zs, true)) {
-			return -ENOMEM;
-		}
-	}
-	if (info->options.make_cred_uv_not_rqd) {
-		if (!zcbor_tstr_put_lit(zs, "makeCredUvNotRqd") || !zcbor_bool_put(zs, true)) {
-			return -ENOMEM;
-		}
-	}
-	if (info->options.no_mc_ga_permissions_with_client_pin) {
-		if (!zcbor_tstr_put_lit(zs, "noMcGaPermissionsWithClientPin") ||
-		    !zcbor_bool_put(zs, true)) {
-			return -ENOMEM;
-		}
-	}
-	if (!zcbor_map_end_encode(zs, opt_count)) {
-		return -ENOMEM;
-	}
-
-	/* 0x05: maxMsgSize */
-	if (!zcbor_uint32_put(zs, GETINFO_KEY_MAX_MSG_SIZE) ||
-	    !zcbor_uint32_put(zs, info->max_msg_size)) {
-		return -ENOMEM;
-	}
-
-	/* 0x06: pinUvAuthProtocols */
-	if (info->num_pin_uv_auth_protocols > 0) {
-		if (!zcbor_uint32_put(zs, GETINFO_KEY_PIN_UV_AUTH_PROTOCOLS) ||
-		    !zcbor_list_start_encode(zs, info->num_pin_uv_auth_protocols)) {
-			return -ENOMEM;
-		}
-		for (int i = 0; i < info->num_pin_uv_auth_protocols; ++i) {
-			if (!zcbor_uint32_put(zs, info->pin_uv_auth_protocols[i])) {
-				return -ENOMEM;
-			}
-		}
-		if (!zcbor_list_end_encode(zs, info->num_pin_uv_auth_protocols)) {
-			return -ENOMEM;
-		}
-	}
-
-	/* 0x07: maxCredentialCountInList */
-	if (!zcbor_uint32_put(zs, GETINFO_KEY_MAX_CREDENTIAL_COUNT_IN_LIST) ||
-	    !zcbor_uint32_put(zs, info->max_credential_count)) {
-		return -ENOMEM;
-	}
-
-	/* 0x08: maxCredentialIdLength */
-	if (!zcbor_uint32_put(zs, GETINFO_KEY_MAX_CREDENTIAL_ID_LENGTH) ||
-	    !zcbor_uint32_put(zs, info->max_credential_id_length)) {
-		return -ENOMEM;
-	}
-
-	/* 0x09: transports */
-	if (info->transports != 0) {
-		uint8_t transport_count = 0;
-
-		if (info->transports & FIDO2_TRANSPORT_USB) {
-			++transport_count;
-		}
-		if (info->transports & FIDO2_TRANSPORT_BLE) {
-			++transport_count;
-		}
-		if (info->transports & FIDO2_TRANSPORT_NFC) {
-			++transport_count;
-		}
-		if (!zcbor_uint32_put(zs, GETINFO_KEY_TRANSPORTS) ||
-		    !zcbor_list_start_encode(zs, transport_count)) {
-			return -ENOMEM;
-		}
-		if ((info->transports & FIDO2_TRANSPORT_BLE) && !zcbor_tstr_put_lit(zs, "ble")) {
-			return -ENOMEM;
-		}
-		if ((info->transports & FIDO2_TRANSPORT_NFC) && !zcbor_tstr_put_lit(zs, "nfc")) {
-			return -ENOMEM;
-		}
-		if ((info->transports & FIDO2_TRANSPORT_USB) && !zcbor_tstr_put_lit(zs, "usb")) {
-			return -ENOMEM;
-		}
-		if (!zcbor_list_end_encode(zs, transport_count)) {
-			return -ENOMEM;
-		}
-	}
-
-	/* 0x0E: firmwareVersion */
-	if (!zcbor_uint32_put(zs, GETINFO_KEY_FIRMWARE_VERSION) ||
-	    !zcbor_uint32_put(zs, info->firmware_version)) {
-		return -ENOMEM;
-	}
-
-	if (!zcbor_map_end_encode(zs, 10)) {
-		return -ENOMEM;
-	}
-
-	*cbor_out_len = zs->payload - cbor_out;
-	return 0;
-}
+/* authenticatorClientPIN 0x06 */
+#define CLIENTPIN_KEY_PIN_UV_AUTH_PROTOCOL 0x01
+#define CLIENTPIN_KEY_SUB_COMMAND          0x02
+#define CLIENTPIN_KEY_KEY_AGREEMENT        0x03
+#define CLIENTPIN_KEY_PIN_UV_AUTH_PARAM    0x04
+#define CLIENTPIN_KEY_NEW_PIN_ENC          0x05
+#define CLIENTPIN_KEY_PIN_HASH_ENC         0x06
+#define CLIENTPIN_KEY_PERMISSIONS          0x09
+#define CLIENTPIN_KEY_RP_ID                0x0A
+/* authenticatorClientPIN response */
+#define CLIENTPIN_RESP_KEY_AGREEMENT       0x01
+#define CLIENTPIN_RESP_PIN_UV_AUTH_TOKEN   0x02
+#define CLIENTPIN_RESP_PIN_RETRIES         0x03
+#define CLIENTPIN_RESP_POWER_CYCLE_STATE   0x04
+#define CLIENTPIN_RESP_UV_RETRIES          0x05
 
 static int decode_tstr_field(zcbor_state_t *zs, char *out, size_t out_cap)
 {
@@ -295,6 +104,80 @@ static int decode_tstr_field(zcbor_state_t *zs, char *out, size_t out_cap)
 	return 0;
 }
 
+/* Unlike fido2_cbor_encode_cose_key, this one is internal */
+static int decode_cose_key(zcbor_state_t *zs, uint8_t *pub_key, size_t pub_key_size,
+			   size_t *pub_key_len)
+{
+	uint8_t x[FIDO2_P256_COORD_SIZE];
+	uint8_t y[FIDO2_P256_COORD_SIZE];
+	struct zcbor_string str;
+	int32_t key;
+
+	bool has_x = false;
+	bool has_y = false;
+	bool has_alg = false;
+
+	if (!zcbor_map_start_decode(zs)) {
+		return -EBADMSG;
+	}
+
+	while (!zcbor_array_at_end(zs)) {
+		if (!zcbor_int32_decode(zs, &key)) {
+			return -EBADMSG;
+		}
+
+		switch (key) {
+		case 3: {
+			int32_t alg;
+
+			/* We don't need the alg value, we just make sure it exists */
+			if (!zcbor_int32_decode(zs, &alg)) {
+				return -EBADMSG;
+			}
+			has_alg = true;
+			break;
+		}
+		/* -2 (x) = x coordinate */
+		case -2:
+			if (!zcbor_bstr_decode(zs, &str) || str.len != FIDO2_P256_COORD_SIZE) {
+				return -EBADMSG;
+			}
+			memcpy(x, str.value, str.len);
+			has_x = true;
+			break;
+		/* -3 (y) = y coordinate */
+		case -3:
+			if (!zcbor_bstr_decode(zs, &str) || str.len != FIDO2_P256_COORD_SIZE) {
+				return -EBADMSG;
+			}
+			memcpy(y, str.value, str.len);
+			has_y = true;
+			break;
+		default:
+			if (!zcbor_any_skip(zs, NULL)) {
+				return -EBADMSG;
+			}
+			break;
+		}
+	}
+
+	if (!zcbor_map_end_decode(zs)) {
+		return -EBADMSG;
+	}
+
+	if (!has_x || !has_y || !has_alg) {
+		return -EBADMSG;
+	}
+
+	pub_key[0] = FIDO2_EC_POINT_UNCOMPRESSED;
+	memcpy(pub_key + 1, x, FIDO2_P256_COORD_SIZE);
+	memcpy(pub_key + 1 + FIDO2_P256_COORD_SIZE, y, FIDO2_P256_COORD_SIZE);
+	*pub_key_len = FIDO2_P256_UNCOMPRESSED_KEY_SIZE;
+
+	return 0;
+}
+
+/* authenticatorMakeCredential 0x01 operations */
 static int mc_decode_rp(zcbor_state_t *zs, struct fido2_make_credential_params *params)
 {
 	struct zcbor_string str;
@@ -754,6 +637,124 @@ int fido2_cbor_decode_make_credential(const uint8_t *cbor_in, size_t cbor_in_len
 	return 0;
 }
 
+int fido2_cbor_encode_cose_key(const uint8_t *pub_key, size_t pub_key_len, uint8_t *cbor_out,
+			       size_t cbor_out_cap, size_t *cbor_out_len)
+{
+	ZCBOR_STATE_E(zs, 5, cbor_out, cbor_out_cap, 1);
+	const uint8_t *x;
+	const uint8_t *y;
+
+	if (pub_key_len < FIDO2_P256_UNCOMPRESSED_KEY_SIZE ||
+	    pub_key[0] != FIDO2_EC_POINT_UNCOMPRESSED) {
+		return -EINVAL;
+	}
+
+	x = pub_key + 1;
+	y = pub_key + 1 + FIDO2_P256_COORD_SIZE;
+
+	if (!zcbor_map_start_encode(zs, 5)) {
+		return -ENOMEM;
+	}
+
+	/* 1 (kty) = 2 (EC2) */
+	if (!zcbor_int32_put(zs, 1) || !zcbor_int32_put(zs, 2)) {
+		return -ENOMEM;
+	}
+	/* 3 (alg) = -7 (ES256) */
+	if (!zcbor_int32_put(zs, 3) || !zcbor_int32_put(zs, FIDO2_COSE_ES256)) {
+		return -ENOMEM;
+	}
+	/* -1 (crv) = 1 (P-256) */
+	if (!zcbor_int32_put(zs, -1) || !zcbor_int32_put(zs, 1)) {
+		return -ENOMEM;
+	}
+	/* -2 (x) = x coordinate */
+	if (!zcbor_int32_put(zs, -2) || !zcbor_bstr_encode_ptr(zs, x, FIDO2_P256_COORD_SIZE)) {
+		return -ENOMEM;
+	}
+	/* -3 (y) = y coordinate */
+	if (!zcbor_int32_put(zs, -3) || !zcbor_bstr_encode_ptr(zs, y, FIDO2_P256_COORD_SIZE)) {
+		return -ENOMEM;
+	}
+
+	if (!zcbor_map_end_encode(zs, 5)) {
+		return -ENOMEM;
+	}
+
+	*cbor_out_len = zs->payload - cbor_out;
+
+	return 0;
+}
+
+int fido2_cbor_encode_make_credential_resp(const uint8_t *auth_data, size_t auth_data_len,
+					   const struct fido2_attestation_result *att_result,
+					   uint8_t *cbor_out, size_t cbor_out_cap,
+					   size_t *cbor_out_len)
+{
+	ZCBOR_STATE_E(zs, 5, cbor_out, cbor_out_cap, 1);
+
+	uint8_t att_stmt_entries = 0;
+
+	if (att_result->sig != NULL && att_result->sig_len > 0) {
+		att_stmt_entries = 2; /* alg + sig */
+		if (att_result->x5c != NULL && att_result->x5c_len > 0) {
+			att_stmt_entries = 3; /* alg + sig + x5c */
+		}
+	}
+
+	if (!zcbor_map_start_encode(zs, 3)) {
+		return -ENOMEM;
+	}
+
+	/* 0x01: fmt */
+	if (!zcbor_uint32_put(zs, MAKE_CREDENTIAL_RESP_FMT) ||
+	    !zcbor_tstr_put_term(zs, att_result->fmt, FIDO2_ATTESTATION_FMT_MAX_LEN)) {
+		return -ENOMEM;
+	}
+	/* 0x02: authData */
+	if (!zcbor_uint32_put(zs, MAKE_CREDENTIAL_RESP_AUTH_DATA) ||
+	    !zcbor_bstr_encode_ptr(zs, auth_data, auth_data_len)) {
+		return -ENOMEM;
+	}
+	/* 0x03: attStmt */
+	if (!zcbor_uint32_put(zs, MAKE_CREDENTIAL_RESP_ATT_STMT) ||
+	    !zcbor_map_start_encode(zs, att_stmt_entries)) {
+		return -ENOMEM;
+	}
+	if (att_stmt_entries >= 2) {
+		if (!zcbor_tstr_put_lit(zs, "alg") || !zcbor_int32_put(zs, att_result->alg)) {
+			return -ENOMEM;
+		}
+		if (!zcbor_tstr_put_lit(zs, "sig") ||
+		    !zcbor_bstr_encode_ptr(zs, att_result->sig, att_result->sig_len)) {
+			return -ENOMEM;
+		}
+	}
+	if (att_stmt_entries >= 3) {
+		if (!zcbor_tstr_put_lit(zs, "x5c") || !zcbor_list_start_encode(zs, 1)) {
+			return -ENOMEM;
+		}
+		if (!zcbor_bstr_encode_ptr(zs, att_result->x5c, att_result->x5c_len)) {
+			return -ENOMEM;
+		}
+		if (!zcbor_list_end_encode(zs, 1)) {
+			return -ENOMEM;
+		}
+	}
+	if (!zcbor_map_end_encode(zs, att_stmt_entries)) {
+		return -ENOMEM;
+	}
+
+	if (!zcbor_map_end_encode(zs, 3)) {
+		return -ENOMEM;
+	}
+
+	*cbor_out_len = zs->payload - cbor_out;
+
+	return 0;
+}
+
+/* authenticatorGetAssertion 0x02 operations */
 static int ga_decode_allow_list(zcbor_state_t *zs, struct fido2_get_assertion_params *params)
 {
 	struct zcbor_string str;
@@ -1000,123 +1001,6 @@ int fido2_cbor_decode_get_assertion(const uint8_t *cbor_in, size_t cbor_in_len,
 	return 0;
 }
 
-int fido2_cbor_encode_cose_key(const uint8_t *pub_key, size_t pub_key_len, uint8_t *cbor_out,
-			       size_t cbor_out_cap, size_t *cbor_out_len)
-{
-	ZCBOR_STATE_E(zs, 5, cbor_out, cbor_out_cap, 1);
-	const uint8_t *x;
-	const uint8_t *y;
-
-	if (pub_key_len < FIDO2_P256_UNCOMPRESSED_KEY_SIZE ||
-	    pub_key[0] != FIDO2_EC_POINT_UNCOMPRESSED) {
-		return -EINVAL;
-	}
-
-	x = pub_key + 1;
-	y = pub_key + 1 + FIDO2_P256_COORD_SIZE;
-
-	if (!zcbor_map_start_encode(zs, 5)) {
-		return -ENOMEM;
-	}
-
-	/* 1 (kty) = 2 (EC2) */
-	if (!zcbor_int32_put(zs, 1) || !zcbor_int32_put(zs, 2)) {
-		return -ENOMEM;
-	}
-	/* 3 (alg) = -7 (ES256) */
-	if (!zcbor_int32_put(zs, 3) || !zcbor_int32_put(zs, FIDO2_COSE_ES256)) {
-		return -ENOMEM;
-	}
-	/* -1 (crv) = 1 (P-256) */
-	if (!zcbor_int32_put(zs, -1) || !zcbor_int32_put(zs, 1)) {
-		return -ENOMEM;
-	}
-	/* -2 (x) = x coordinate */
-	if (!zcbor_int32_put(zs, -2) || !zcbor_bstr_encode_ptr(zs, x, FIDO2_P256_COORD_SIZE)) {
-		return -ENOMEM;
-	}
-	/* -3 (x) = x coordinate */
-	if (!zcbor_int32_put(zs, -3) || !zcbor_bstr_encode_ptr(zs, y, FIDO2_P256_COORD_SIZE)) {
-		return -ENOMEM;
-	}
-
-	if (!zcbor_map_end_encode(zs, 5)) {
-		return -ENOMEM;
-	}
-
-	*cbor_out_len = zs->payload - cbor_out;
-
-	return 0;
-}
-
-int fido2_cbor_encode_make_credential_resp(const uint8_t *auth_data, size_t auth_data_len,
-					   const struct fido2_attestation_result *att_result,
-					   uint8_t *cbor_out, size_t cbor_out_cap,
-					   size_t *cbor_out_len)
-{
-	ZCBOR_STATE_E(zs, 5, cbor_out, cbor_out_cap, 1);
-
-	uint8_t att_stmt_entries = 0;
-
-	if (att_result->sig != NULL && att_result->sig_len > 0) {
-		att_stmt_entries = 2; /* alg + sig */
-		if (att_result->x5c != NULL && att_result->x5c_len > 0) {
-			att_stmt_entries = 3; /* alg + sig + x5c */
-		}
-	}
-
-	if (!zcbor_map_start_encode(zs, 3)) {
-		return -ENOMEM;
-	}
-
-	/* 0x01: fmt */
-	if (!zcbor_uint32_put(zs, MAKE_CREDENTIAL_RESP_FMT) ||
-	    !zcbor_tstr_put_term(zs, att_result->fmt, FIDO2_ATTESTATION_FMT_MAX_LEN)) {
-		return -ENOMEM;
-	}
-	/* 0x02: authData */
-	if (!zcbor_uint32_put(zs, MAKE_CREDENTIAL_RESP_AUTH_DATA) ||
-	    !zcbor_bstr_encode_ptr(zs, auth_data, auth_data_len)) {
-		return -ENOMEM;
-	}
-	/* 0x03: attStmt */
-	if (!zcbor_uint32_put(zs, MAKE_CREDENTIAL_RESP_ATT_STMT) ||
-	    !zcbor_map_start_encode(zs, att_stmt_entries)) {
-		return -ENOMEM;
-	}
-	if (att_stmt_entries >= 2) {
-		if (!zcbor_tstr_put_lit(zs, "alg") || !zcbor_int32_put(zs, att_result->alg)) {
-			return -ENOMEM;
-		}
-		if (!zcbor_tstr_put_lit(zs, "sig") ||
-		    !zcbor_bstr_encode_ptr(zs, att_result->sig, att_result->sig_len)) {
-			return -ENOMEM;
-		}
-	}
-	if (att_stmt_entries >= 3) {
-		if (!zcbor_tstr_put_lit(zs, "x5c") || !zcbor_list_start_encode(zs, 1)) {
-			return -ENOMEM;
-		}
-		if (!zcbor_bstr_encode_ptr(zs, att_result->x5c, att_result->x5c_len)) {
-			return -ENOMEM;
-		}
-		if (!zcbor_list_end_encode(zs, 1)) {
-			return -ENOMEM;
-		}
-	}
-	if (!zcbor_map_end_encode(zs, att_stmt_entries)) {
-		return -ENOMEM;
-	}
-
-	if (!zcbor_map_end_encode(zs, 3)) {
-		return -ENOMEM;
-	}
-
-	*cbor_out_len = zs->payload - cbor_out;
-
-	return 0;
-}
-
 int fido2_cbor_encode_get_assertion_resp(const uint8_t *cred_id, size_t cred_id_len,
 					 const uint8_t *auth_data, size_t auth_data_len,
 					 const uint8_t *sig, size_t sig_len, const uint8_t *user_id,
@@ -1189,6 +1073,422 @@ int fido2_cbor_encode_get_assertion_resp(const uint8_t *cred_id, size_t cred_id_
 	}
 
 	if (!zcbor_map_end_encode(zs, num_entries)) {
+		return -ENOMEM;
+	}
+
+	*cbor_out_len = zs->payload - cbor_out;
+
+	return 0;
+}
+
+/* authenticatorGetInfo 0x04 operations */
+int fido2_cbor_encode_get_info(const struct fido2_device_info *info, uint8_t *cbor_out,
+			       size_t cbor_out_cap, size_t *cbor_out_len)
+{
+	ZCBOR_STATE_E(zs, 5, cbor_out, cbor_out_cap, 1);
+
+	if (!zcbor_map_start_encode(zs, 10)) {
+		return -ENOMEM;
+	}
+
+	/* 0x01: versions */
+	if (!zcbor_uint32_put(zs, GETINFO_KEY_VERSIONS) ||
+	    !zcbor_list_start_encode(zs, info->num_versions)) {
+		return -ENOMEM;
+	}
+	for (int i = 0; i < info->num_versions; ++i) {
+		if (!zcbor_tstr_put_term(zs, info->versions[i], 32)) {
+			return -ENOMEM;
+		}
+	}
+	if (!zcbor_list_end_encode(zs, info->num_versions)) {
+		return -ENOMEM;
+	}
+
+	/* 0x02: extensions */
+	if (info->num_extensions > 0) {
+		if (!zcbor_uint32_put(zs, GETINFO_KEY_EXTENSIONS) ||
+		    !zcbor_list_start_encode(zs, info->num_extensions)) {
+			return -ENOMEM;
+		}
+		for (int i = 0; i < info->num_extensions; ++i) {
+			if (!zcbor_tstr_put_term(zs, info->extensions[i], 64)) {
+				return -ENOMEM;
+			}
+		}
+		if (!zcbor_list_end_encode(zs, info->num_extensions)) {
+			return -ENOMEM;
+		}
+	}
+
+	/* 0x03: aaguid */
+	if (!zcbor_uint32_put(zs, GETINFO_KEY_AAGUID) ||
+	    !zcbor_bstr_encode_ptr(zs, info->aaguid, FIDO2_AAGUID_SIZE)) {
+		return -ENOMEM;
+	}
+
+	/* 0x04: options */
+	uint8_t opt_count = 3; /* rk, up, plat always present */
+
+	if (info->options.uv) {
+		++opt_count;
+	}
+	if (info->options.always_uv) {
+		++opt_count;
+	}
+	if (info->options.cred_mgmt) {
+		++opt_count;
+	}
+	if (info->num_pin_uv_auth_protocols > 0) {
+		++opt_count;
+	}
+	if (info->options.pin_uv_auth_token) {
+		++opt_count;
+	}
+	if (info->options.make_cred_uv_not_rqd) {
+		++opt_count;
+	}
+	if (info->options.no_mc_ga_permissions_with_client_pin) {
+		++opt_count;
+	}
+
+	if (!zcbor_uint32_put(zs, GETINFO_KEY_OPTIONS) || !zcbor_map_start_encode(zs, opt_count)) {
+		return -ENOMEM;
+	}
+	if (!zcbor_tstr_put_lit(zs, "rk") || !zcbor_bool_put(zs, info->options.rk)) {
+		return -ENOMEM;
+	}
+	if (!zcbor_tstr_put_lit(zs, "up") || !zcbor_bool_put(zs, info->options.up)) {
+		return -ENOMEM;
+	}
+	if (info->options.uv) {
+		if (!zcbor_tstr_put_lit(zs, "uv") || !zcbor_bool_put(zs, info->options.uv)) {
+			return -ENOMEM;
+		}
+	}
+	if (!zcbor_tstr_put_lit(zs, "plat") || !zcbor_bool_put(zs, info->options.plat)) {
+		return -ENOMEM;
+	}
+	if (info->options.always_uv) {
+		if (!zcbor_tstr_put_lit(zs, "alwaysUv") || !zcbor_bool_put(zs, true)) {
+			return -ENOMEM;
+		}
+	}
+	if (info->options.cred_mgmt) {
+		if (!zcbor_tstr_put_lit(zs, "credMgmt") ||
+		    !zcbor_bool_put(zs, info->options.cred_mgmt)) {
+			return -ENOMEM;
+		}
+	}
+	/*
+	 * clientPin: false = supported but not set, true = supported and set,
+	 * absent = unsupported. So we check with num_pin_uv_auth_protocols
+	 */
+	if (info->num_pin_uv_auth_protocols > 0) {
+		if (!zcbor_tstr_put_lit(zs, "clientPin") ||
+		    !zcbor_bool_put(zs, info->options.client_pin)) {
+			return -ENOMEM;
+		}
+	}
+	if (info->options.pin_uv_auth_token) {
+		if (!zcbor_tstr_put_lit(zs, "pinUvAuthToken") || !zcbor_bool_put(zs, true)) {
+			return -ENOMEM;
+		}
+	}
+	if (info->options.make_cred_uv_not_rqd) {
+		if (!zcbor_tstr_put_lit(zs, "makeCredUvNotRqd") || !zcbor_bool_put(zs, true)) {
+			return -ENOMEM;
+		}
+	}
+	if (info->options.no_mc_ga_permissions_with_client_pin) {
+		if (!zcbor_tstr_put_lit(zs, "noMcGaPermissionsWithClientPin") ||
+		    !zcbor_bool_put(zs, true)) {
+			return -ENOMEM;
+		}
+	}
+	if (!zcbor_map_end_encode(zs, opt_count)) {
+		return -ENOMEM;
+	}
+
+	/* 0x05: maxMsgSize */
+	if (!zcbor_uint32_put(zs, GETINFO_KEY_MAX_MSG_SIZE) ||
+	    !zcbor_uint32_put(zs, info->max_msg_size)) {
+		return -ENOMEM;
+	}
+
+	/* 0x06: pinUvAuthProtocols */
+	if (info->num_pin_uv_auth_protocols > 0) {
+		if (!zcbor_uint32_put(zs, GETINFO_KEY_PIN_UV_AUTH_PROTOCOLS) ||
+		    !zcbor_list_start_encode(zs, info->num_pin_uv_auth_protocols)) {
+			return -ENOMEM;
+		}
+		for (int i = 0; i < info->num_pin_uv_auth_protocols; ++i) {
+			if (!zcbor_uint32_put(zs, info->pin_uv_auth_protocols[i])) {
+				return -ENOMEM;
+			}
+		}
+		if (!zcbor_list_end_encode(zs, info->num_pin_uv_auth_protocols)) {
+			return -ENOMEM;
+		}
+	}
+
+	/* 0x07: maxCredentialCountInList */
+	if (!zcbor_uint32_put(zs, GETINFO_KEY_MAX_CREDENTIAL_COUNT_IN_LIST) ||
+	    !zcbor_uint32_put(zs, info->max_credential_count)) {
+		return -ENOMEM;
+	}
+
+	/* 0x08: maxCredentialIdLength */
+	if (!zcbor_uint32_put(zs, GETINFO_KEY_MAX_CREDENTIAL_ID_LENGTH) ||
+	    !zcbor_uint32_put(zs, info->max_credential_id_length)) {
+		return -ENOMEM;
+	}
+
+	/* 0x09: transports */
+	if (info->transports != 0) {
+		uint8_t transport_count = 0;
+
+		if (info->transports & FIDO2_TRANSPORT_USB) {
+			++transport_count;
+		}
+		if (info->transports & FIDO2_TRANSPORT_BLE) {
+			++transport_count;
+		}
+		if (info->transports & FIDO2_TRANSPORT_NFC) {
+			++transport_count;
+		}
+		if (!zcbor_uint32_put(zs, GETINFO_KEY_TRANSPORTS) ||
+		    !zcbor_list_start_encode(zs, transport_count)) {
+			return -ENOMEM;
+		}
+		if ((info->transports & FIDO2_TRANSPORT_BLE) && !zcbor_tstr_put_lit(zs, "ble")) {
+			return -ENOMEM;
+		}
+		if ((info->transports & FIDO2_TRANSPORT_NFC) && !zcbor_tstr_put_lit(zs, "nfc")) {
+			return -ENOMEM;
+		}
+		if ((info->transports & FIDO2_TRANSPORT_USB) && !zcbor_tstr_put_lit(zs, "usb")) {
+			return -ENOMEM;
+		}
+		if (!zcbor_list_end_encode(zs, transport_count)) {
+			return -ENOMEM;
+		}
+	}
+
+	/* 0x0E: firmwareVersion */
+	if (!zcbor_uint32_put(zs, GETINFO_KEY_FIRMWARE_VERSION) ||
+	    !zcbor_uint32_put(zs, info->firmware_version)) {
+		return -ENOMEM;
+	}
+
+	if (!zcbor_map_end_encode(zs, 10)) {
+		return -ENOMEM;
+	}
+
+	*cbor_out_len = zs->payload - cbor_out;
+	return 0;
+}
+
+/* authenticatorClientPIN 0x06 operations */
+int fido2_cbor_decode_client_pin(const uint8_t *cbor_in, size_t cbor_in_len,
+				 struct fido2_client_pin_params *params)
+{
+	ZCBOR_STATE_D(zs, 5, cbor_in, cbor_in_len, 1, 0);
+	struct zcbor_string str;
+	uint32_t key;
+
+	bool has_cmd = false;
+
+	if (!zcbor_map_start_decode(zs)) {
+		return -EBADMSG;
+	}
+
+	while (!zcbor_array_at_end(zs)) {
+		if (!zcbor_uint32_decode(zs, &key)) {
+			return -EBADMSG;
+		}
+
+		switch (key) {
+		case CLIENTPIN_KEY_PIN_UV_AUTH_PROTOCOL: {
+			uint32_t proto;
+
+			if (!zcbor_uint32_decode(zs, &proto)) {
+				return -EBADMSG;
+			}
+			params->pin_uv_auth_protocol = (uint8_t)proto;
+			params->has_pin_uv_auth_protocol = true;
+			break;
+		}
+		case CLIENTPIN_KEY_SUB_COMMAND: {
+			uint32_t cmd;
+
+			if (!zcbor_uint32_decode(zs, &cmd)) {
+				return -EBADMSG;
+			}
+			params->sub_command = (uint8_t)cmd;
+			has_cmd = true;
+			break;
+		}
+		case CLIENTPIN_KEY_KEY_AGREEMENT: {
+			if (decode_cose_key(zs, params->key_agreement,
+					    sizeof(params->key_agreement),
+					    &params->key_agreement_len)) {
+				return -EBADMSG;
+			}
+			params->has_key_agreement = true;
+			break;
+		}
+		case CLIENTPIN_KEY_PIN_UV_AUTH_PARAM:
+			if (!zcbor_bstr_decode(zs, &str)) {
+				return -EBADMSG;
+			}
+			if (str.len > sizeof(params->pin_uv_auth_param)) {
+				return -EBADMSG;
+			}
+			memcpy(params->pin_uv_auth_param, str.value, str.len);
+			params->pin_uv_auth_param_len = str.len;
+			params->has_pin_uv_auth_param = true;
+			break;
+		case CLIENTPIN_KEY_NEW_PIN_ENC:
+			if (!zcbor_bstr_decode(zs, &str)) {
+				return -EBADMSG;
+			}
+			if (str.len > sizeof(params->new_pin_enc)) {
+				return -EBADMSG;
+			}
+			memcpy(params->new_pin_enc, str.value, str.len);
+			params->new_pin_enc_len = str.len;
+			params->has_new_pin_enc = true;
+			break;
+		case CLIENTPIN_KEY_PIN_HASH_ENC:
+			if (!zcbor_bstr_decode(zs, &str)) {
+				return -EBADMSG;
+			}
+			if (str.len > sizeof(params->pin_hash_enc)) {
+				return -EBADMSG;
+			}
+			memcpy(params->pin_hash_enc, str.value, str.len);
+			params->pin_hash_enc_len = str.len;
+			params->has_pin_hash_enc = true;
+			break;
+		case CLIENTPIN_KEY_PERMISSIONS: {
+			uint32_t val;
+
+			if (!zcbor_uint32_decode(zs, &val)) {
+				return -EBADMSG;
+			}
+			params->permissions = (uint8_t)val;
+			params->has_permissions = true;
+			break;
+		}
+		case CLIENTPIN_KEY_RP_ID:
+			if (decode_tstr_field(zs, params->rp_id, sizeof(params->rp_id))) {
+				return -EBADMSG;
+			}
+			params->has_rp_id = true;
+			break;
+		default:
+			if (!zcbor_any_skip(zs, NULL)) {
+				return -EBADMSG;
+			}
+			break;
+		}
+	}
+
+	if (!zcbor_map_end_decode(zs)) {
+		return -EBADMSG;
+	}
+
+	if (!has_cmd) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int fido2_cbor_encode_client_pin_retries(uint8_t retries, bool power_cycle_s, uint8_t *cbor_out,
+					 size_t cbor_out_cap, size_t *cbor_out_len)
+{
+	ZCBOR_STATE_E(zs, 5, cbor_out, cbor_out_cap, 1);
+	int num_entries = 1;
+
+	if (power_cycle_s) {
+		++num_entries;
+	}
+
+	if (!zcbor_map_start_encode(zs, num_entries)) {
+		return -ENOMEM;
+	}
+	if (!zcbor_uint32_put(zs, CLIENTPIN_RESP_PIN_RETRIES) || !zcbor_uint32_put(zs, retries)) {
+		return -ENOMEM;
+	}
+	if (power_cycle_s) {
+		if (!zcbor_uint32_put(zs, CLIENTPIN_RESP_POWER_CYCLE_STATE) ||
+		    !zcbor_uint32_put(zs, power_cycle_s)) {
+			return -ENOMEM;
+		}
+	}
+	if (!zcbor_map_end_encode(zs, num_entries)) {
+		return -ENOMEM;
+	}
+
+	*cbor_out_len = zs->payload - cbor_out;
+
+	return 0;
+}
+
+int fido2_cbor_encode_client_pin_key_agreement(const uint8_t *pub_key, size_t pub_key_len,
+					       uint8_t *cbor_out, size_t cbor_out_cap,
+					       size_t *cbor_out_len)
+{
+	ZCBOR_STATE_E(zs, 5, cbor_out, cbor_out_cap, 1);
+	const uint8_t *x;
+	const uint8_t *y;
+
+	if (pub_key_len < FIDO2_P256_UNCOMPRESSED_KEY_SIZE ||
+	    pub_key[0] != FIDO2_EC_POINT_UNCOMPRESSED) {
+		return -EINVAL;
+	}
+
+	x = pub_key + 1;
+	y = pub_key + 1 + FIDO2_P256_COORD_SIZE;
+
+	if (!zcbor_map_start_encode(zs, 1)) {
+		return -ENOMEM;
+	}
+	if (!zcbor_uint32_put(zs, CLIENTPIN_RESP_KEY_AGREEMENT)) {
+		return -ENOMEM;
+	}
+
+	if (!zcbor_map_start_encode(zs, 5)) {
+		return -ENOMEM;
+	}
+	/* 1 (kty) = 2 (EC2) */
+	if (!zcbor_int32_put(zs, 1) || !zcbor_int32_put(zs, 2)) {
+		return -ENOMEM;
+	}
+	/* 3 (alg) = -25 (although this is not the algorithm actually used) */
+	if (!zcbor_int32_put(zs, 3) || !zcbor_int32_put(zs, FIDO2_COSE_ECDHES_HKDF256)) {
+		return -ENOMEM;
+	}
+	/* -1 (crv) = 1 (P-256) */
+	if (!zcbor_int32_put(zs, -1) || !zcbor_int32_put(zs, 1)) {
+		return -ENOMEM;
+	}
+	/* -2 (x) = x coordinate */
+	if (!zcbor_int32_put(zs, -2) || !zcbor_bstr_encode_ptr(zs, x, FIDO2_P256_COORD_SIZE)) {
+		return -ENOMEM;
+	}
+	/* -3 (y) = y coordinate */
+	if (!zcbor_int32_put(zs, -3) || !zcbor_bstr_encode_ptr(zs, y, FIDO2_P256_COORD_SIZE)) {
+		return -ENOMEM;
+	}
+
+	if (!zcbor_map_end_encode(zs, 5)) {
+		return -ENOMEM;
+	}
+
+	if (!zcbor_map_end_encode(zs, 1)) {
 		return -ENOMEM;
 	}
 

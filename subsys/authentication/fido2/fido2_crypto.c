@@ -347,3 +347,24 @@ int fido2_crypto_unwrap_credential(const uint8_t *cred_id,
 
 	return status;
 }
+
+int fido2_crypto_ecdh_generate_keypair(uint32_t *key_id)
+{
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_status_t status;
+	psa_key_id_t id;
+
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_DERIVE);
+	psa_set_key_algorithm(&attr, PSA_ALG_ECDH);
+	psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+	psa_set_key_bits(&attr, FIDO2_ES256_KEY_BITS);
+
+	status = psa_generate_key(&attr, &id);
+	psa_reset_key_attributes(&attr);
+
+	if (status == PSA_SUCCESS) {
+		*key_id = id;
+	}
+
+	return status;
+}
