@@ -1,0 +1,21 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * GIC interrupt routing for peripherals shared by the E4, E6 and E8 Ensemble
+ * SoCs (see ensemble_e4_e6_e8.dtsi). Included by the per-SoC _gic_irq.dtsi.
+ */
+
+#include <alif/ensemble/common/ensemble_common_gic_irq.dtsi>
+
+&uart6 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 119 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&uart7 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 120 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};

@@ -9,4 +9,4 @@
  * A board that uses this SoC includes this for APSS (GIC) cores.
  */
 
-#include <alif/ensemble/common/ensemble_common_gic_irq.dtsi>
+#include <alif/ensemble/common/ensemble_e4_e6_e8_gic_irq.dtsi>
