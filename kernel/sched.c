@@ -442,7 +442,13 @@ static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 	 */
 	if (thread->base.pended_on != NULL) {
 		(void)atomic_inc(&already_pended_count);
-		if (atomic_set(&already_pended_warned, 1) == 0) {
+		/* Warn only for the ISR-context misuse (a real bug to alarm on);
+		 * the non-current-thread path (e.g. k_mbox_async_put's dummy carrier
+		 * via z_pend_thread, which legitimately reaches here already pended
+		 * without any swap race) is handled silently so it does not pollute
+		 * test console output. The counter still records both.
+		 */
+		if (k_is_in_isr() && atomic_set(&already_pended_warned, 1) == 0) {
 			LOG_WRN("thread %p reached add_to_waitq_locked() still pended on "
 				"%p; recovered. Likely a blocking pend from ISR "
 				"(e.g. a driver async callback doing k_sem_take(K_FOREVER)) -- "
