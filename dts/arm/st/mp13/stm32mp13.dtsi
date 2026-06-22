@@ -353,6 +353,16 @@
 			resets = <&rctl STM32_RESET(AHB6, 20)>;
 			status = "disabled";
 		};
+
+		rtc: rtc@5c004000 {
+			compatible = "st,stm32-rtc";
+			reg = <0x5c004000 0x400>;
+			interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&rcc STM32_CLOCK(APB5, 8)>;
+			alarms-count = <2>;
+			alrm-exti-line = <19>;
+			status = "disabled";
+		};
 	};
 
 	gic: gic@a0021000 {
