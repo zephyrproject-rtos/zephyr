@@ -51,7 +51,7 @@
 #include "gatt_internal.h"
 #include "hci_core.h"
 #include "keys.h"
-#include "long_wq.h"
+#include "common/long_wq.h"
 #include "l2cap_internal.h"
 #include "settings.h"
 #include "smp.h"
