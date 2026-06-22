@@ -148,6 +148,10 @@
 	};
 };
 
+&adc4_common {
+	status = "disabled";
+};
+
 &adc4 {
 	status = "disabled";
 };

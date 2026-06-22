@@ -33,6 +33,10 @@
 	};
 };
 
+&adc12_common {
+	status = "disabled";
+};
+
 &adc1 {
 	status = "disabled";
 };
