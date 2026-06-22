@@ -5945,6 +5945,7 @@ Testing:
     - hakehuang
   collaborators:
     - nashif
+    - nordic-piks
   files: []
   description: >-
     This area is for testing activities on hardware and in emulators. It is not
