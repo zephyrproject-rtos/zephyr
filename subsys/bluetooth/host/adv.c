@@ -231,6 +231,28 @@ struct bt_le_ext_adv *bt_hci_adv_lookup_handle(uint8_t handle)
 	return NULL;
 }
 #endif /* CONFIG_BT_BROADCASTER */
+
+struct bt_le_ext_adv *bt_le_ext_adv_lookup_addr(const bt_addr_le_t *addr, uint8_t sid)
+{
+	ARRAY_FOR_EACH_PTR(adv_pool, adv) {
+		if (atomic_test_bit(adv->flags, BT_ADV_CREATED) && adv->sid == sid) {
+			const bt_addr_le_t *adv_addr;
+
+			if (atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
+				adv_addr = &bt_dev.id_addr[adv->id];
+			} else {
+				adv_addr = &adv->random_addr;
+			}
+
+			if (bt_addr_le_eq(adv_addr, addr)) {
+				return adv;
+			}
+		}
+	}
+
+	return NULL;
+}
+
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
 void bt_le_ext_adv_foreach(void (*func)(struct bt_le_ext_adv *adv, void *data),
@@ -1461,7 +1483,8 @@ int bt_le_ext_adv_create(const struct bt_le_adv_param *param,
 	}
 
 	adv->id = param->id;
-	adv->sid = param->sid;
+	/* Only set SID for extended advertising sets, else set BT_GAP_SID_INVALID for legacy */
+	adv->sid = (param->options & BT_LE_ADV_OPT_EXT_ADV) == 0 ? BT_GAP_SID_INVALID : param->sid;
 	adv->cb = cb;
 
 	err = le_ext_adv_param_set(adv, param, false);
@@ -1507,6 +1530,9 @@ int bt_le_ext_adv_update_param(struct bt_le_ext_adv *adv,
 	if (param->id != adv->id) {
 		atomic_clear_bit(adv->flags, BT_ADV_RPA_VALID);
 	}
+
+	/* Only set SID for extended advertising sets, else set BT_GAP_SID_INVALID for legacy */
+	adv->sid = (param->options & BT_LE_ADV_OPT_EXT_ADV) == 0 ? BT_GAP_SID_INVALID : param->sid;
 
 	return le_ext_adv_param_set(adv, param, false);
 }
@@ -1988,6 +2014,17 @@ int bt_le_per_adv_start(struct bt_le_ext_adv *adv)
 int bt_le_per_adv_stop(struct bt_le_ext_adv *adv)
 {
 	return bt_le_per_adv_enable(adv, false);
+}
+
+struct bt_le_ext_adv *bt_le_per_adv_lookup_addr(const bt_addr_le_t *addr, uint8_t sid)
+{
+	struct bt_le_ext_adv *ext_adv = bt_le_ext_adv_lookup_addr(addr, sid);
+
+	if (ext_adv != NULL && atomic_test_bit(ext_adv->flags, BT_PER_ADV_PARAMS_SET)) {
+		return ext_adv;
+	}
+
+	return NULL;
 }
 
 #if defined(CONFIG_BT_PER_ADV_RSP)
