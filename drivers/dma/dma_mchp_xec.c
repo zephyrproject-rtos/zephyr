@@ -11,7 +11,6 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/drivers/dma.h>
-#include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/sys_io.h>
@@ -20,10 +19,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_mchp_xec, CONFIG_DMA_LOG_LEVEL);
 
-#define XEC_DMA_DEBUG				1
-#ifdef XEC_DMA_DEBUG
-#include <string.h>
-#endif
+#define XEC_DMA_MAX_CHANS			CONFIG_DMA_MCHP_XEC_DMAC_MAX_CHANNELS
 
 #define XEC_DMA_ABORT_WAIT_LOOPS		32
 
@@ -109,8 +105,7 @@ struct dma_xec_config {
 	mm_reg_t regs;
 	uint8_t dma_channels;
 	uint8_t dma_requests;
-	uint8_t pcr_idx;
-	uint8_t pcr_pos;
+	uint16_t enc_pcr;
 	int irq_info_size;
 	const struct dma_xec_irq_info *irq_info_list;
 	void (*irq_connect)(void);
@@ -142,10 +137,6 @@ struct dma_xec_data {
 	struct dma_context ctx;
 	struct dma_xec_channel *channels;
 };
-
-#ifdef XEC_DMA_DEBUG
-static void xec_dma_debug_clean(void);
-#endif
 
 static inline mm_reg_t xec_chan_regs(mm_reg_t regs, uint32_t chan)
 {
@@ -194,7 +185,7 @@ static void xec_dma_chan_clr(mm_reg_t chregs, const struct dma_xec_irq_info *inf
 	sys_write32(0, chregs + XEC_DMA_CHAN_CTRL);
 	sys_write32(0, chregs + XEC_DMA_CHAN_IENABLE);
 	sys_write32(0xffu, chregs + XEC_DMA_CHAN_ISTATUS);
-	mchp_xec_ecia_girq_src_clr(info->gid, info->gpos);
+	soc_ecia_girq_status_clear(info->gid, info->gpos);
 }
 
 static int is_dma_config_valid(const struct device *dev, struct dma_config *config)
@@ -336,10 +327,6 @@ static int dma_xec_configure(const struct device *dev, uint32_t channel,
 	if (!config || (channel >= (uint32_t)devcfg->dma_channels)) {
 		return -EINVAL;
 	}
-
-#ifdef XEC_DMA_DEBUG
-	xec_dma_debug_clean();
-#endif
 
 	const struct dma_xec_irq_info *info = xec_chan_irq_info(devcfg, channel);
 	mm_reg_t const chregs = xec_chan_regs(regs, channel);
@@ -683,29 +670,6 @@ static int dmac_xec_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-/* DMA channel interrupt handler called by ISR.
- * Callback flags in struct dma_config
- * completion_callback_en
- *	0 = invoke at completion of all blocks
- *	1 = invoke at completion of each block
- * error_callback_dis
- *	0 = invoke on all errors
- *	1 = disabled, do not invoke on errors
- */
-/* DEBUG */
-#ifdef XEC_DMA_DEBUG
-static volatile uint8_t channel_isr_idx[16];
-static volatile uint8_t channel_isr_sts[16][16];
-static volatile uint32_t channel_isr_ctrl[16][16];
-
-static void xec_dma_debug_clean(void)
-{
-	memset((void *)channel_isr_idx, 0, sizeof(channel_isr_idx));
-	memset((void *)channel_isr_sts, 0, sizeof(channel_isr_sts));
-	memset((void *)channel_isr_ctrl, 0, sizeof(channel_isr_ctrl));
-}
-#endif
-
 static void dma_xec_irq_handler(const struct device *dev, uint32_t channel)
 {
 	const struct dma_xec_config * const devcfg = dev->config;
@@ -716,15 +680,6 @@ static void dma_xec_irq_handler(const struct device *dev, uint32_t channel)
 	uint32_t sts = sys_read32(regs + XEC_DMA_CHAN_ISTATUS);
 	int cb_status = 0;
 
-#ifdef XEC_DMA_DEBUG
-	uint8_t idx = channel_isr_idx[channel];
-
-	if (idx < 16) {
-		channel_isr_sts[channel][idx] = sts;
-		channel_isr_ctrl[channel][idx] = sys_read32(regs + XEC_DMA_CHAN_CTRL);
-		channel_isr_idx[channel] = ++idx;
-	}
-#endif
 	LOG_DBG("maddr=0x%08x mend=0x%08x daddr=0x%08x ctrl=0x%08x sts=0x%02x",
 		sys_read32(regs + XEC_DMA_CHAN_MEM_ADDR),
 		sys_read32(regs + XEC_DMA_CHAN_MEM_ADDR_END),
@@ -733,7 +688,7 @@ static void dma_xec_irq_handler(const struct device *dev, uint32_t channel)
 
 	sys_write32(0u, regs + XEC_DMA_CHAN_IENABLE);
 	sys_write32(0xffu, regs + XEC_DMA_CHAN_ISTATUS);
-	mchp_xec_ecia_girq_src_clr(info[channel].gid, info[channel].gpos);
+	soc_ecia_girq_status_clear(info[channel].gid, info[channel].gpos);
 
 	chan_data->isr_hw_status = sts;
 	chan_data->total_curr_xfr_len +=
@@ -757,7 +712,7 @@ static int dma_xec_init(const struct device *dev)
 
 	LOG_DBG("driver init");
 
-	z_mchp_xec_pcr_periph_sleep(devcfg->pcr_idx, devcfg->pcr_pos, 0);
+	soc_xec_pcr_sleep_en_clear(devcfg->enc_pcr);
 
 	/* soft reset, self-clearing */
 	sys_write32(BIT(XEC_DMA_MAIN_CTRL_SRST_POS), regs + XEC_DMA_MAIN_CTRL);
@@ -794,7 +749,7 @@ static int dma_xec_init(const struct device *dev)
 		    dma_xec_chan_##i##_isr,					\
 		    DEVICE_DT_GET(node_id), 0);					\
 	irq_enable(DT_IRQ_BY_IDX(node_id, i, irq));				\
-	mchp_xec_ecia_enable(DMA_XEC_GID(node_id, p, i), DMA_XEC_GPOS(node_id, p, i));
+	soc_ecia_girq_ctrl(DMA_XEC_GID(node_id, p, i), DMA_XEC_GPOS(node_id, p, i), 1);
 
 /* i = instance number of DMA controller */
 #define DMA_XEC_IRQ_CONNECT(inst)							\
@@ -805,8 +760,10 @@ static int dma_xec_init(const struct device *dev)
 	}
 
 #define DMA_XEC_DEVICE(i)								\
-	BUILD_ASSERT(DT_INST_PROP(i, dma_channels) <= 16, "XEC DMA dma-channels > 16");	\
-	BUILD_ASSERT(DT_INST_PROP(i, dma_requests) <= 16, "XEC DMA dma-requests > 16");	\
+	BUILD_ASSERT(DT_INST_PROP(i, dma_channels) <= XEC_DMA_MAX_CHANS,		\
+		     "XEC DMA dma-channels exceeds max");				\
+	BUILD_ASSERT(DT_INST_PROP(i, dma_requests) <= XEC_DMA_MAX_CHANS,		\
+		     "XEC DMA dma-requests exceeds max");				\
 											\
 	static struct dma_xec_channel							\
 		dma_xec_ctrl##i##_chans[DT_INST_PROP(i, dma_channels)];			\
@@ -828,8 +785,7 @@ static int dma_xec_init(const struct device *dev)
 		.regs = DT_INST_REG_ADDR(i),						\
 		.dma_channels = DT_INST_PROP(i, dma_channels),				\
 		.dma_requests = DT_INST_PROP(i, dma_requests),				\
-		.pcr_idx = DT_INST_PROP_BY_IDX(i, pcrs, 0),				\
-		.pcr_pos = DT_INST_PROP_BY_IDX(i, pcrs, 1),				\
+		.enc_pcr = DT_INST_PROP(i, pcr_scr),					\
 		.irq_info_size = ARRAY_SIZE(dma_xec_irqi##i),				\
 		.irq_info_list = dma_xec_irqi##i,					\
 		.irq_connect = dma_xec_irq_connect##i,					\
