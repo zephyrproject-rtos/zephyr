@@ -812,6 +812,42 @@ static void sync_all_broadcasts(void)
 	}
 }
 
+static int sync_term_broadcast(struct sync_state *state)
+{
+	uint32_t sync_term[BT_BAP_BASS_MAX_SUBGROUPS] = {0};
+	int err;
+
+	UNSET_FLAG(flag_recv_state_updated);
+
+	/* We don't actually need to sync to the BIG/BISes */
+	err = bt_bap_scan_delegator_set_bis_sync_state(state->src_id, sync_term);
+	if (err != 0) {
+		return err;
+	}
+
+	WAIT_FOR_FLAG(flag_recv_state_updated);
+
+	return 0;
+}
+
+static void sync_term_all_broadcasts(void)
+{
+	ARRAY_FOR_EACH(sync_states, i) {
+		struct sync_state *state = &sync_states[i];
+		int err;
+
+		printk("[%zu]: Terminating broadcast sync\n", i);
+
+		err = sync_term_broadcast(state);
+		if (err != 0) {
+			FAIL("[%zu]: Broadcast sync state set failed (err %d)\n", i, err);
+			return;
+		}
+
+		printk("[%zu]: Broadcast sync terminated\n", i);
+	}
+}
+
 static int common_init(void)
 {
 	struct bt_le_ext_adv *ext_adv;
@@ -874,6 +910,14 @@ static void test_main_client_sync(void)
 	printk("Waiting for flag_pa_terminated\n");
 	WAIT_FOR_FLAG(flag_pa_terminated);
 
+	WAIT_FOR_FLAG(flag_bis_sync_term_requested);
+	/* TODO: The broadcast assistant does not currently support handling notifications while it
+	 * is doing a long read, so wait a bit until it is done before updating the state. See
+	 * https://github.com/zephyrproject-rtos/zephyr/issues/111871
+	 */
+	k_sleep(K_SECONDS(1));
+	sync_term_all_broadcasts();
+
 	WAIT_FOR_FLAG(flag_broadcast_source_removed);
 	PASS("BAP Scan Delegator Client Sync passed\n");
 }
@@ -913,6 +957,18 @@ static void test_main_server_sync_client_rem(void)
 	/* Set the BIS sync state */
 	sync_all_broadcasts();
 
+	/* Wait for client to remove source and thus terminate the PA */
+	printk("Waiting for flag_pa_terminated\n");
+	WAIT_FOR_FLAG(flag_pa_terminated);
+
+	WAIT_FOR_FLAG(flag_bis_sync_term_requested);
+	/* TODO: The broadcast assistant does not currently support handling notifications while it
+	 * is doing a long read, so wait a bit until it is done before updating the state. See
+	 * https://github.com/zephyrproject-rtos/zephyr/issues/111871
+	 */
+	k_sleep(K_SECONDS(1));
+	sync_term_all_broadcasts();
+
 	/* Enable rejection for the first remove source request */
 	reject_control_op = true;
 
@@ -920,9 +976,6 @@ static void test_main_server_sync_client_rem(void)
 
 	/* Disable rejection for subsequent remove source requests */
 	reject_control_op = false;
-	/* For for client to remove source and thus terminate the PA */
-	printk("Waiting for flag_pa_terminated\n");
-	WAIT_FOR_FLAG(flag_pa_terminated);
 
 	PASS("BAP Scan Delegator Server Sync Client Remove passed\n");
 }

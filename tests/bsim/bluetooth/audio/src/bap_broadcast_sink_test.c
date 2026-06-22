@@ -388,9 +388,11 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 			  const struct bt_bap_scan_delegator_recv_state *recv_state,
 			  bool past_avail, uint16_t pa_interval)
 {
-	ARG_UNUSED(conn);
-	ARG_UNUSED(past_avail);
-	ARG_UNUSED(pa_interval);
+	printk("Requested to sync to PA by %p with past_available %d and pa_interval 0x%04X for "
+	       "receive state %p\n",
+	       conn, past_avail, pa_interval, recv_state);
+
+	/* TODO: Check for past_avail and use PAST if possible */
 
 	if (recv_state->pa_sync_state == BT_BAP_PA_STATE_SYNCED ||
 	    recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
@@ -409,7 +411,7 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 static int pa_sync_term_req_cb(struct bt_conn *conn,
 			       const struct bt_bap_scan_delegator_recv_state *recv_state)
 {
-	ARG_UNUSED(conn);
+	printk("Requested to terminate sync to PA by %p for receive state %p\n", conn, recv_state);
 
 	if (pa_sync == NULL || recv_state->pa_sync_state == BT_BAP_PA_STATE_NOT_SYNCED) {
 		return -EALREADY;
@@ -735,6 +737,8 @@ static int pa_sync_create(void)
 static void test_pa_sync_delete(void)
 {
 	int err;
+
+	printk("Terminated PA sync %p\n", pa_sync);
 
 	err = bt_le_per_adv_sync_delete(pa_sync);
 	if (err != 0) {
