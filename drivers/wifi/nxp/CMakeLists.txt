@@ -195,6 +195,7 @@ zephyr_code_relocate(FILES ${ZEPHYR_BASE}/subsys/net/ip/net_context.c
                      LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
 
 string(JOIN "" NXP_UTILS_FILTER
+       ".*\\.calc_chksum|"
        ".*\\.net_calc_chksum|"
        ".*\\.net_calc_chksum_ipv4|"
        ".*\\.net_calc_chksum_udp|"
@@ -219,6 +220,19 @@ string(JOIN "" NXP_ETHERNET_FILTER
 )
 zephyr_code_relocate(FILES ${ZEPHYR_BASE}/subsys/net/l2/ethernet/ethernet.c
                      FILTER "${NXP_ETHERNET_FILTER}"
+                     LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
+
+string(JOIN "" NXP_ARP_FILTER
+       ".*\\.net_arp_prepare|"
+       ".*\\.arp_prepare|"
+       ".*\\.arp_entry_find_move_first|"
+       ".*\\.arp_entry_find_pending|"
+       ".*\\.arp_entry_get_free|"
+       ".*\\.arp_entry_get_last_from_table|"
+       ".*\\.arp_entry_find_pending"
+)
+zephyr_code_relocate(FILES ${ZEPHYR_BASE}/subsys/net/l2/ethernet/arp.c
+                     FILTER "${NXP_ARP_FILTER}"
                      LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
 
 zephyr_code_relocate(FILES
