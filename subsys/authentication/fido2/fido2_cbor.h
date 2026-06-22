@@ -13,20 +13,14 @@
 /** Maximum number of algorithms in pubKeyCredParams */
 #define FIDO2_MAX_ALGORITHMS 8
 
-/** PIN Protocol 1 auth param size (HMAC-SHA-256 truncated to 16 bytes) */
-#define FIDO2_CBOR_PIN_AUTH_SIZE_P1 16
-
-/** PIN Protocol 2 auth param size (full HMAC-SHA-256, 32 bytes) */
-#define FIDO2_CBOR_PIN_AUTH_SIZE_P2 32
-
 /** Maximum PIN auth param size across all supported protocols */
 #define FIDO2_CBOR_PIN_AUTH_MAX_SIZE 32
 
 /** Maximum encrypted PIN size */
-#define FIDO2_CBOR_PIN_ENC_MAX_SIZE 64
+#define FIDO2_CBOR_PIN_ENC_MAX_SIZE 80
 
 /** Encrypted PIN hash size */
-#define FIDO2_CBOR_PIN_HASH_ENC_SIZE 16
+#define FIDO2_CBOR_PIN_HASH_ENC_SIZE 32
 
 /** Number of attestation statement format identifiers */
 #define FIDO2_CBOR_MAX_ATTESTATION_FORMATS 4
@@ -147,15 +141,60 @@ struct fido2_get_assertion_params {
 };
 
 /**
- * Encode authenticatorGetInfo response.
+ * Decoded authenticatorClientPin request parameters.
+ */
+struct fido2_client_pin_params {
+	/** 0x01: pinUvAuthProtocol */
+	uint8_t pin_uv_auth_protocol;
+	/** Whether pinUvAuthProtocol was present */
+	bool has_pin_uv_auth_protocol;
+	/** 0x02: subCommand */
+	uint8_t sub_command;
+	/** 0x03: keyAgreement */
+	uint8_t key_agreement[FIDO2_P256_UNCOMPRESSED_KEY_SIZE];
+	/** Length of keyAgreement */
+	size_t key_agreement_len;
+	/** Whether keyAgreement was present */
+	bool has_key_agreement;
+	/** 0x04: pinUvAuthParam */
+	uint8_t pin_uv_auth_param[FIDO2_CBOR_PIN_AUTH_MAX_SIZE];
+	/** Length of pinUvAuthParam */
+	size_t pin_uv_auth_param_len;
+	/** Whether pinUvAuthParam was present */
+	bool has_pin_uv_auth_param;
+	/** 0x05: newPinEnc */
+	uint8_t new_pin_enc[FIDO2_CBOR_PIN_ENC_MAX_SIZE];
+	/** newPinEnc len */
+	size_t new_pin_enc_len;
+	/** Whether newPinEnc was present */
+	bool has_new_pin_enc;
+	/** 0x06: pinHashEnc */
+	uint8_t pin_hash_enc[FIDO2_CBOR_PIN_HASH_ENC_SIZE];
+	/** pinHashEnc len */
+	size_t pin_hash_enc_len;
+	/** Whether pinHashEnc was present */
+	bool has_pin_hash_enc;
+	/** 0x09: permissions */
+	uint32_t permissions;
+	/** Whether permissions was present */
+	bool has_permissions;
+	/** 0x0A: rpId */
+	char rp_id[FIDO2_RP_ID_MAX_LEN];
+	/** Whether rpId was present */
+	bool has_rp_id;
+};
+
+/**
+ * Encode a COSE_Key for ES256 (P-256) public key.
  *
- * @param info         Device info to encode
+ * @param pub_key Uncompressed public key
+ * @param pub_key_len Public key length
  * @param cbor_out     Output buffer
  * @param cbor_out_cap Capacity of @p cbor_out in bytes
  * @param cbor_out_len Number of bytes written to @p cbor_out
  * @return 0 on success, negative errno on failure
  */
-int fido2_cbor_encode_get_info(const struct fido2_device_info *info, uint8_t *cbor_out,
+int fido2_cbor_encode_cose_key(const uint8_t *pub_key, size_t pub_key_len, uint8_t *cbor_out,
 			       size_t cbor_out_cap, size_t *cbor_out_len);
 
 /**
@@ -168,17 +207,6 @@ int fido2_cbor_encode_get_info(const struct fido2_device_info *info, uint8_t *cb
  */
 int fido2_cbor_decode_make_credential(const uint8_t *cbor_in, size_t cbor_in_len,
 				      struct fido2_make_credential_params *params);
-
-/**
- * Decode authenticatorGetAssertion request.
- *
- * @param cbor_in CBOR-encoded request
- * @param cbor_in_len Length of request data
- * @param params Output: decoded parameters
- * @return 0 on success, negative errno on failure
- */
-int fido2_cbor_decode_get_assertion(const uint8_t *cbor_in, size_t cbor_in_len,
-				    struct fido2_get_assertion_params *params);
 
 /**
  * Encode authenticatorMakeCredential response.
@@ -195,6 +223,17 @@ int fido2_cbor_encode_make_credential_resp(const uint8_t *auth_data, size_t auth
 					   const struct fido2_attestation_result *att,
 					   uint8_t *cbor_out, size_t cbor_out_cap,
 					   size_t *cbor_out_len);
+
+/**
+ * Decode authenticatorGetAssertion request.
+ *
+ * @param cbor_in CBOR-encoded request
+ * @param cbor_in_len Length of request data
+ * @param params Output: decoded parameters
+ * @return 0 on success, negative errno on failure
+ */
+int fido2_cbor_decode_get_assertion(const uint8_t *cbor_in, size_t cbor_in_len,
+				    struct fido2_get_assertion_params *params);
 
 /**
  * Encode authenticatorGetAssertion response.
@@ -221,16 +260,53 @@ int fido2_cbor_encode_get_assertion_resp(const uint8_t *cred_id, size_t cred_id_
 					 size_t *cbor_out_len);
 
 /**
- * Encode a COSE_Key for ES256 (P-256) public key.
+ * Encode authenticatorGetInfo response.
  *
- * @param pub_key Uncompressed public key
- * @param pub_key_len Public key length
- * @param cbor_out     Output buffer
+ * @param info Device info to encode
+ * @param cbor_out Output buffer
  * @param cbor_out_cap Capacity of @p cbor_out in bytes
  * @param cbor_out_len Number of bytes written to @p cbor_out
  * @return 0 on success, negative errno on failure
  */
-int fido2_cbor_encode_cose_key(const uint8_t *pub_key, size_t pub_key_len, uint8_t *cbor_out,
+int fido2_cbor_encode_get_info(const struct fido2_device_info *info, uint8_t *cbor_out,
 			       size_t cbor_out_cap, size_t *cbor_out_len);
+
+/**
+ * Decode authenticatorClientPIN request.
+ *
+ * @param cbor_in CBOR-encoded request
+ * @param cbor_in_len Length of request data
+ * @param params Output: decoded parameters
+ * @return 0 on success, negative errno on failure
+ */
+int fido2_cbor_decode_client_pin(const uint8_t *cbor_in, size_t cbor_in_len,
+				 struct fido2_client_pin_params *params);
+
+/**
+ * Encode clientPIN getPINRetries response.
+ *
+ * @param retries Remaining PIN retry count
+ * @param power_cycle_s Requires a power cycle
+ * @param cbor_out Output buffer
+ * @param cbor_out_cap Buffer size
+ * @param cbor_out_len Encoded length written
+ * @return 0 on success, negative errno on failure
+ */
+int fido2_cbor_encode_client_pin_retries(uint8_t retries, bool power_cycle_s, uint8_t *cbor_out,
+					 size_t cbor_out_cap, size_t *cbor_out_len);
+
+/**
+ * Encode clientPIN getKeyAgreement response.
+ *
+ * @param pub_key Uncompressed P-256 public key (65 bytes)
+ * @param pub_key_len Public key length
+ * @param cbor_out Output buffer
+ * @param cbor_out_cap Buffer size
+ * @param cbor_out_len Encoded length written
+ * @return 0 on success, negative errno on failure
+ */
+int fido2_cbor_encode_client_pin_key_agreement(const uint8_t *pub_key, size_t pub_key_len,
+					       uint8_t *cbor_out, size_t cbor_out_cap,
+					       size_t *cbor_out_len);
 
 #endif /* FIDO2_CBOR_H_ */

@@ -76,6 +76,18 @@ extern "C" {
 /** @brief Maximum number of supported versions */
 #define FIDO2_MAX_VERSIONS 4
 
+/** @brief P-256 public key export size */
+#define FIDO2_P256_UNCOMPRESSED_KEY_SIZE 65
+
+/** @brief P-256 coordinate size */
+#define FIDO2_P256_COORD_SIZE 32
+
+/** @brief EC point prefix */
+#define FIDO2_EC_POINT_UNCOMPRESSED 0x04
+
+/** @brief ASN.1-encoded ECDSA signature length */
+#define FIDO2_ECDSA_SIG_MAX_SIZE 72
+
 /** @brief Credential extension HMAC secret */
 #define FIDO2_EXT_HMAC_SECRET     BIT(0)
 /** @brief Credential extension largeBlobKey */
@@ -177,9 +189,10 @@ enum fido2_cred_protect {
 
 /** @brief COSE algorithm identifiers */
 enum fido2_cose_alg {
-	FIDO2_COSE_ES256 = -7,   /**< ECDSA w/ SHA-256 */
-	FIDO2_COSE_EDDSA = -8,   /**< EdDSA */
-	FIDO2_COSE_RS256 = -257, /**< RSASSA-PKCS1-v1_5 w/ SHA-256 */
+	FIDO2_COSE_ES256 = -7,           /**< ECDSA w/ SHA-256 */
+	FIDO2_COSE_EDDSA = -8,           /**< EdDSA */
+	FIDO2_COSE_ECDHES_HKDF256 = -25, /**< ECDH ES w/ HKDF */
+	FIDO2_COSE_RS256 = -257,         /**< RSASSA-PKCS1-v1_5 w/ SHA-256 */
 };
 
 /** @brief A stored FIDO2 credential */

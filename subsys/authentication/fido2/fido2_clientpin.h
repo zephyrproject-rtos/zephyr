@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2026 Siratul Islam <siratul.islam@linux.dev>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef FIDO2_CLIENTPIN_H_
+#define FIDO2_CLIENTPIN_H_
+
+#include <zephyr/authentication/fido2/fido2_types.h>
+
+/** PIN Protocol 1 auth param size */
+#define FIDO2_PIN_AUTH_SIZE_P1  16
+/** PIN Protocol 2 auth param size */
+#define FIDO2_PIN_AUTH_SIZE_P2  32
+/** Maximum PIN auth param size */
+#define FIDO2_PIN_AUTH_MAX_SIZE 32
+
+#define FIDO2_CLIENTPIN_GET_PIN_RETRIES           0x01 /**< getPINRetries */
+#define FIDO2_CLIENTPIN_GET_KEY_AGREEMENT         0x02 /**< getKeyAgreement */
+#define FIDO2_CLIENTPIN_SET_PIN                   0x03 /**< setPIN */
+#define FIDO2_CLIENTPIN_CHANGE_PIN                0x04 /**< changePIN */
+#define FIDO2_CLIENTPIN_GET_PIN_TOKEN             0x05 /**< getPinToken */
+#define FIDO2_CLIENTPIN_GET_PIN_TOKEN_UV_W_PERMS  0x06 /**< UvWithPermissions */
+#define FIDO2_CLIENTPIN_GET_UV_RETRIES            0x07 /**< getUVRetries */
+#define FIDO2_CLIENTPIN_GET_PIN_TOKEN_PIN_W_PERMS 0x09 /**< PinWithPermissions */
+
+#define FIDO2_PIN_PERM_MC   BIT(0) /**< MakeCredential */
+#define FIDO2_PIN_PERM_GA   BIT(1) /**< GetAssertion */
+#define FIDO2_PIN_PERM_CM   BIT(2) /**< Credential Management */
+#define FIDO2_PIN_PERM_BE   BIT(3) /**< Bio Enrollment */
+#define FIDO2_PIN_PERM_LBW  BIT(4) /**< Large Blob Write */
+#define FIDO2_PIN_PERM_ACFG BIT(5) /**< Authenticator Configuration */
+
+/**
+ * Generates the initial ECDH key agreement key pair.
+ *
+ * @return 0 on success, negative errno on failure
+ */
+int fido2_clientpin_init(void);
+
+/**
+ * Handle getPINRetries.
+ *
+ * @param cbor_out Output buffer for the CBOR-encoded response.
+ * @param cbor_out_cap Size of @p cbor_out in bytes.
+ * @param cbor_out_len Set to the number of bytes written to @p cbor_out.
+ * @return FIDO2_OK on success, FIDO2_ERR_OTHER on failure.
+ */
+enum fido2_status fido2_clientpin_cmd_get_retries(uint8_t *cbor_out, size_t cbor_out_cap,
+						  size_t *cbor_out_len);
+
+/**
+ * Handle KeyAgreement.
+ *
+ * @param cbor_out Output buffer for the CBOR-encoded response.
+ * @param cbor_out_cap Size of @p cbor_out in bytes.
+ * @param cbor_out_len Set to the number of bytes written to @p cbor_out.
+ * @return FIDO2_OK on success, FIDO2_ERR_OTHER on failure.
+ */
+enum fido2_status fido2_clientpin_cmd_get_key_agreement(uint8_t *cbor_out, size_t cbor_out_cap,
+							size_t *cbor_out_len);
+
+#endif /* FIDO2_CLIENTPIN_H_ */

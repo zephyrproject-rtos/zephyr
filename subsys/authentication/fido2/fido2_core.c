@@ -19,6 +19,7 @@
 
 #include "fido2_cbor.h"
 #include "fido2_crypto.h"
+#include "fido2_clientpin.h"
 
 LOG_MODULE_REGISTER(fido2, CONFIG_FIDO2_LOG_LEVEL);
 
@@ -59,6 +60,8 @@ static uint8_t ga_next_rp_id_hash[FIDO2_SHA256_SIZE];
 static uint8_t ga_next_flags;
 static k_timepoint_t ga_next_deadline;
 static bool ga_next_pending;
+/* clientPIN */
+static struct fido2_client_pin_params cp_params;
 
 static uint8_t ctap_tx_frame[CONFIG_FIDO2_CBOR_MAX_SIZE];
 
@@ -687,6 +690,36 @@ static enum fido2_status handle_get_info(uint8_t *cbor_out, size_t cbor_out_cap,
 	return FIDO2_OK;
 }
 
+static enum fido2_status handle_client_pin(uint8_t *cbor_in, size_t cbor_in_len, uint8_t *cbor_out,
+					   size_t cbor_out_cap, size_t *cbor_out_len,
+					   const struct fido2_transport *transport, uint32_t cid)
+{
+	int ret;
+
+	ret = fido2_cbor_decode_client_pin(cbor_in, cbor_in_len, &cp_params);
+	if (ret) {
+		LOG_WRN("ClientPIN CBOR decode failed: %d", ret);
+		return FIDO2_ERR_INVALID_CBOR;
+	}
+
+	switch (cp_params.sub_command) {
+	case FIDO2_CLIENTPIN_GET_PIN_RETRIES:
+		return fido2_clientpin_cmd_get_retries(cbor_out, cbor_out_cap, cbor_out_len);
+	case FIDO2_CLIENTPIN_GET_KEY_AGREEMENT:
+		return fido2_clientpin_cmd_get_key_agreement(cbor_out, cbor_out_cap, cbor_out_len);
+	case FIDO2_CLIENTPIN_SET_PIN:
+	case FIDO2_CLIENTPIN_CHANGE_PIN:
+	case FIDO2_CLIENTPIN_GET_PIN_TOKEN:
+	case FIDO2_CLIENTPIN_GET_PIN_TOKEN_UV_W_PERMS:
+	case FIDO2_CLIENTPIN_GET_UV_RETRIES:
+	case FIDO2_CLIENTPIN_GET_PIN_TOKEN_PIN_W_PERMS:
+	default:
+		return FIDO2_ERR_INVALID_SUBCOMMAND;
+	}
+
+	return FIDO2_OK;
+}
+
 static enum fido2_status handle_get_next_assertion(uint8_t *cbor_out, size_t cbor_out_cap,
 						   size_t *cbor_out_len)
 {
@@ -750,9 +783,8 @@ static enum fido2_status process_command(uint8_t cmd, uint8_t *cbor_in, size_t c
 	case FIDO2_CMD_GET_INFO:
 		return handle_get_info(cbor_out, cbor_out_cap, cbor_out_len);
 	case FIDO2_CMD_CLIENT_PIN:
-		/* TODO: clientPin */
-		*cbor_out_len = 0;
-		return FIDO2_ERR_INVALID_COMMAND;
+		return handle_client_pin(cbor_in, cbor_in_len, cbor_out, cbor_out_cap, cbor_out_len,
+					 transport, cid);
 	case FIDO2_CMD_RESET:
 		/* TODO: Reset */
 		*cbor_out_len = 0;
@@ -864,6 +896,12 @@ int fido2_init(void)
 	ret = fido2_storage_init();
 	if (ret) {
 		LOG_ERR("Storage init failed: %d", ret);
+		return ret;
+	}
+
+	ret = fido2_clientpin_init();
+	if (ret) {
+		LOG_ERR("clientPIN init failed: %d", ret);
 		return ret;
 	}
 

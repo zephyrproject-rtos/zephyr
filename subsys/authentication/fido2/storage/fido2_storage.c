@@ -66,3 +66,8 @@ int fido2_storage_sign_count_increment(const uint8_t *cred_id, size_t cred_id_le
 {
 	return fido2_storage_backend.sign_count_increment(cred_id, cred_id_len, new_count);
 }
+
+int fido2_storage_pin_retries_get(uint8_t *retries)
+{
+	return fido2_storage_backend.pin_retries_get(retries);
+}

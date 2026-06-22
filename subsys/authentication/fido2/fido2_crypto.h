@@ -9,15 +9,6 @@
 
 #include <zephyr/authentication/fido2/fido2_types.h>
 
-/* P-256 public key export size */
-#define FIDO2_P256_UNCOMPRESSED_KEY_SIZE 65
-/* P-256 coordinate size */
-#define FIDO2_P256_COORD_SIZE            32
-/* EC point prefix */
-#define FIDO2_EC_POINT_UNCOMPRESSED      0x04
-/* ASN.1-encoded ECDSA signature length */
-#define FIDO2_ECDSA_SIG_MAX_SIZE         72
-
 /**
  * Initialize the crypto module.
  * @return 0 on success, non-zero on failure
@@ -110,5 +101,13 @@ int fido2_crypto_wrap_credential(uint32_t key_id, const uint8_t rp_id_hash[FIDO2
 int fido2_crypto_unwrap_credential(const uint8_t *cred_id,
 				   const uint8_t rp_id_hash[FIDO2_SHA256_SIZE],
 				   uint32_t *key_id_out);
+
+/**
+ * Generate a ECDH P-256 keypair and return the PSA key ID.
+ *
+ * @param key_id  PSA persistent key identifier
+ * @return 0 on success, non-zero on failure
+ */
+int fido2_crypto_ecdh_generate_keypair(uint32_t *key_id);
 
 #endif /* FIDO2_CRYPTO_H_ */
