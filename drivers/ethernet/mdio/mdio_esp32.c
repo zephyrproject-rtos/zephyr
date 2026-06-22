@@ -16,12 +16,8 @@
 #include <esp_mac.h>
 #include <hal/emac_hal.h>
 #include <hal/emac_ll.h>
-#include <hal/emac_periph.h>
 #include <soc/rtc.h>
 #include <soc/gpio_periph.h>
-#include <soc/io_mux_reg.h>
-#include <esp_clk_tree.h>
-#include <esp_private/esp_clk_tree_common.h>
 
 LOG_MODULE_REGISTER(mdio_esp32, CONFIG_MDIO_LOG_LEVEL);
 

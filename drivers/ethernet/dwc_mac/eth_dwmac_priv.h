@@ -1280,8 +1280,13 @@ extern const struct ethernet_api dwmac_api;
 
 #elif defined(CONFIG_ETH_DWC_ETHER_1000_CORE)
 
+#ifdef CONFIG_SOC_SERIES_ESP32
+#define DWMAC_MAC_OFFSET		0x1000
+#define DWMAC_DMA_OFFSET		0x0000
+#else
 #define DWMAC_MAC_OFFSET		0x0000
 #define DWMAC_DMA_OFFSET		0x1000
+#endif
 
 /* GMAC register map */
 #define DWMAC_MACCR      (DWMAC_MAC_OFFSET + 0x0000)
