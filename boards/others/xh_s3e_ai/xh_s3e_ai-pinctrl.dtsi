@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2026 Anuj Deshpande
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO43>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO44>;
+			bias-pull-up;
+		};
+	};
+
+	/* I2C broken out on the pin header (silkscreen IO41/SDA, IO42/SCL) */
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO41>,
+				 <I2C0_SCL_GPIO42>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	/* I2S0 -> NS4168 class-D speaker amplifier (output only) */
+	i2s0_default: i2s0_default {
+		group1 {
+			pinmux = <I2S0_O_WS_GPIO16>,
+				 <I2S0_O_BCK_GPIO15>,
+				 <I2S0_O_SD_GPIO7>;
+		};
+	};
+
+	/* I2S1 -> INMP441-style I2S MEMS microphone (RX, input only).
+	 * The mic is an RX master, so the bit/word clock must be driven via the
+	 * RX-unit clock signals (I_WS/I_BCK); the TX-unit (O_) signals are not
+	 * driven in RX-only mode and would leave the mic unclocked.
+	 */
+	i2s1_default: i2s1_default {
+		group1 {
+			pinmux = <I2S1_I_WS_GPIO4>,
+				 <I2S1_I_BCK_GPIO5>,
+				 <I2S1_I_SD_GPIO6>;
+		};
+	};
+
+	/* SPI2 MOSI drives the on-board WS2812 RGB LED */
+	spim2_ws2812_led: spim2_ws2812_led {
+		group1 {
+			pinmux = <SPIM2_MOSI_GPIO48>;
+			output-low;
+		};
+	};
+};
