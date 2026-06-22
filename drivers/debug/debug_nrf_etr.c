@@ -247,7 +247,12 @@ static int log_output_func(uint8_t *buf, size_t size, void *ctx)
 			err = k_sem_take(&uart_sem, K_FOREVER);
 			__ASSERT_NO_MSG(err >= 0);
 
-			if (size == sizeof(frame_buf0)) {
+			/* When shell is used then function might be called with shell buffer which
+			 * is not 32-bit aligned.
+			 */
+			if (size == sizeof(frame_buf0) &&
+			    (!IS_ENABLED(CONFIG_DEBUG_NRF_ETR_SHELL) ||
+			      IS_ALIGNED(buf, sizeof(uint32_t)))) {
 				/* If full 16 byte frame is used we can optimize copying. */
 				uint64_t *tx_buf64 = (uint64_t *)tx_buf;
 				uint64_t *buf64 = (uint64_t *)buf;
