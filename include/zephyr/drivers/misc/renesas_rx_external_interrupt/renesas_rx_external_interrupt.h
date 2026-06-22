@@ -49,4 +49,4 @@ void gpio_rx_interrupt_unset(const struct device *dev, uint8_t port_num, uint8_t
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_MISC_RENESAS_RX_EXTERNAL_INTERRUPT_RENESAS_RX_EXTERNAL_INTERRUPT_H_ */
+#endif

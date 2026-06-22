@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/device.h>
-#include <zephyr/dt-bindings/misc/nxp_rtxxx_dsp_ctrl.h>
-
 #ifndef ZEPHYR_INCLUDE_DRIVERS_MISC_NXP_RTXXX_DSP_CTRL_NXP_RTXXX_DSP_CTRL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_MISC_NXP_RTXXX_DSP_CTRL_NXP_RTXXX_DSP_CTRL_H_
+
+#include <zephyr/device.h>
+#include <zephyr/dt-bindings/misc/nxp_rtxxx_dsp_ctrl.h>
 
 /**
  * @brief Describes an image section type selection.
