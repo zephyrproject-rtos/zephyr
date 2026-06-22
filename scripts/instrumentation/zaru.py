@@ -459,6 +459,8 @@ def get_trace_event_generator(msg_it, symbols):
                 "Tracing will be aborted because it's unreliable when symbols can't be "
                 "properly resolved."
             )
+            thread_id = event.payload_field.get("thread_id")
+            thread_id = hex(thread_id)
 
             sys.exit(1)
 
@@ -512,6 +514,12 @@ def get_and_print_trace(args, tmpdir, elf, demangle, annotate_ret=False, verbose
         cur_type, cur_func, cur_thread_id, cur_cpu, cur_mode, cur_ts, cur_tn = (
             current_event.values()
         )
+
+        # When tracing non-application code usually there isn't
+        # a thread ID associated to the context, so in this case
+        # change thread ID to "none-thread".
+        if int(cur_thread_id, 16) == 0:
+            cur_thread_id = "none-thread"
 
         if demangle:
             cmd = CPPFILT_CMD + [cur_func]
