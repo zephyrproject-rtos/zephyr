@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 Teslabs Engineering S.L.
- *
+ * Copyright (c) 2026 GigaDevice Semiconductor Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -31,10 +31,13 @@ static const uint8_t ahb_exp[16] = {
 static const uint8_t apb1_exp[8] = {
 	0U, 0U, 0U, 0U, 1U, 2U, 3U, 4U,
 };
+
+#if !defined(CONFIG_SOC_SERIES_GD32C2X1)
 /** APB2 prescaler exponents */
 static const uint8_t apb2_exp[8] = {
 	0U, 0U, 0U, 0U, 1U, 2U, 3U, 4U,
 };
+#endif
 
 struct clock_control_gd32_config {
 	uint32_t base;
@@ -103,10 +106,12 @@ static int clock_control_gd32_get_rate(const struct device *dev,
 	cfg = sys_read32(config->base + RCU_CFG0_OFFSET);
 
 	switch (GD32_CLOCK_ID_OFFSET(id)) {
-#if defined(CONFIG_SOC_SERIES_GD32F4XX)
+#if defined(CONFIG_SOC_SERIES_GD32F4XX) || defined(CONFIG_SOC_SERIES_GD32C2X1)
 	case RCU_AHB1EN_OFFSET:
 	case RCU_AHB2EN_OFFSET:
+#if defined(CONFIG_SOC_SERIES_GD32F4XX)
 	case RCU_AHB3EN_OFFSET:
+#endif
 #else
 	case RCU_AHBEN_OFFSET:
 #endif
@@ -116,16 +121,19 @@ static int clock_control_gd32_get_rate(const struct device *dev,
 	case RCU_APB1EN_OFFSET:
 #if !defined(CONFIG_SOC_SERIES_GD32VF103) && \
 	!defined(CONFIG_SOC_SERIES_GD32A50X) && \
-	!defined(CONFIG_SOC_SERIES_GD32L23X)
+	!defined(CONFIG_SOC_SERIES_GD32L23X) && \
+	!defined(CONFIG_SOC_SERIES_GD32C2X1)
 	case RCU_ADDAPB1EN_OFFSET:
 #endif
 		psc = (cfg & RCU_CFG0_APB1PSC_MSK) >> RCU_CFG0_APB1PSC_POS;
 		*rate = CPU_FREQ >> apb1_exp[psc];
 		break;
+#if !defined(CONFIG_SOC_SERIES_GD32C2X1)
 	case RCU_APB2EN_OFFSET:
 		psc = (cfg & RCU_CFG0_APB2PSC_MSK) >> RCU_CFG0_APB2PSC_POS;
 		*rate = CPU_FREQ >> apb2_exp[psc];
 		break;
+#endif
 	default:
 		return -ENOTSUP;
 	}
