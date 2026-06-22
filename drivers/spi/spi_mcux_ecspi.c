@@ -67,7 +67,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 		return;
 	}
 
-	transfer.channel = ctx->config->slave;
+	transfer.channel = spi_cs_is_gpio(ctx->config) ? kECSPI_Channel0 : ctx->config->slave;
 
 	if (spi_context_rx_buf_on(ctx)) {
 		transfer.rxData = &data->rx_data;
