@@ -36,8 +36,6 @@ struct can_native_linux_data {
 	struct can_filter_context filters[CONFIG_CAN_MAX_FILTER];
 	struct k_mutex filter_mutex;
 	struct k_sem tx_idle;
-	can_tx_callback_t tx_callback;
-	void *tx_user_data;
 	int dev_fd; /* Linux socket file descriptor */
 	struct k_thread rx_thread;
 
@@ -97,9 +95,14 @@ static void rx_thread(void *arg1, void *arg2, void *arg3)
 			count = linux_socketcan_read_data(data->dev_fd, (void *)(&sframe),
 							   sizeof(sframe), &msg_confirm);
 			if (msg_confirm) {
-				data->tx_callback(dev, 0, data->tx_user_data);
-				k_sem_give(&data->tx_idle);
-
+				/*
+				 * Own-message echo. TX completion is reported
+				 * synchronously from can_native_linux_send() rather than
+				 * here: the echo only returns once a frame is acknowledged
+				 * on the bus, so a frame that is never acknowledged would
+				 * otherwise wedge the sender's TX path forever. Drop the
+				 * echo unless loopback mode wants it delivered.
+				 */
 				if ((data->common.mode & CAN_MODE_LOOPBACK) == 0U) {
 					continue;
 				}
@@ -185,12 +188,21 @@ static int can_native_linux_send(const struct device *dev, const struct can_fram
 		return -EAGAIN;
 	}
 
-	data->tx_callback = callback;
-	data->tx_user_data = user_data;
-
 	ret = nsi_host_write(data->dev_fd, &sframe, mtu);
 	if (ret < 0) {
 		LOG_ERR("Cannot send CAN data len %d (%d)", sframe.len, -errno);
+	}
+
+	/*
+	 * SocketCAN has taken the frame; report completion immediately instead of
+	 * waiting for the kernel's own-message echo (handled in rx_thread). The echo
+	 * only returns once the frame is acknowledged on the bus, so waiting for it
+	 * would wedge the caller's TX path forever on any unacknowledged frame.
+	 */
+	k_sem_give(&data->tx_idle);
+
+	if (callback != NULL) {
+		callback(dev, ret < 0 ? -EIO : 0, user_data);
 	}
 
 	return 0;
