@@ -5,10 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Select the IHO as the output of the path mux */
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IFX_CLOCK_SOURCE_PSE8XX_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IFX_CLOCK_SOURCE_PSE8XX_H_
 
+/* Select the IHO as the output of the path mux */
 #define IFX_CAT1_CLKPATH_IN_IHO 0
 
 /* Select the EXT as the output of the path mux */
