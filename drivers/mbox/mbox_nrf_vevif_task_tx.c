@@ -103,6 +103,11 @@ static DEVICE_API(mbox, vevif_task_tx_driver_api) = {
 	.max_channels_get = vevif_task_tx_max_channels_get,
 };
 
+#define VEVIF_TASK_TX_INIT_PRIORITY(inst)                                                          \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_INST_PARENT(inst), nordic_nrf_vpr_coprocessor),          \
+		    (UTIL_INC(CONFIG_NORDIC_VPR_LAUNCHER_INIT_PRIORITY)),                          \
+		    (CONFIG_MBOX_INIT_PRIORITY))
+
 #define VEVIF_TASK_TX_DEFINE(inst)                                                                 \
 	BUILD_ASSERT(DT_INST_PROP(inst, nordic_tasks) <= VPR_TASKS_TRIGGER_MaxCount,               \
 		     "Number of tasks exceeds maximum");                                           \
@@ -121,7 +126,7 @@ static DEVICE_API(mbox, vevif_task_tx_driver_api) = {
 	DEVICE_DT_INST_DEFINE(inst, NULL, NULL,                                                    \
 			      COND_CODE_0(VPR_READY_CHECK_NEEDED, (NULL), (&data##inst)),          \
 			      &conf##inst,                                                         \
-			      POST_KERNEL, CONFIG_MBOX_INIT_PRIORITY,                              \
+			      POST_KERNEL, VEVIF_TASK_TX_INIT_PRIORITY(inst),                      \
 			      &vevif_task_tx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VEVIF_TASK_TX_DEFINE)
