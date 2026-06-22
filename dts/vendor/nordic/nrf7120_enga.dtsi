@@ -100,15 +100,6 @@
 			compatible = "zephyr,memory-region", "mmio-sram";
 			zephyr,memory-region = "NRF_KMU_CRACEN_EXCHANGE";
 		};
-
-		nrf_mpc: memory@50041000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
-			compatible = "nordic,nrf-mpc";
-			reg = <0x50041000 0x1000>;
-			override-num = <14>;
-			override-granularity = <4096>;
-		};
 	};
 
 	pwr_antswc: pwr_antswc {
@@ -196,6 +187,10 @@
 
 		wifi_umac_rom: memory@28180000 {
 			reg = <0x28180000 DT_SIZE_K(512)>;
+		};
+
+		boot_rom_patch: memory@3fb000 {
+			reg = <0x3fb000 DT_SIZE_K(8)>;
 		};
 
 #ifdef USE_NON_SECURE_ADDRESS_MAP
@@ -1003,6 +998,15 @@
 			reg = <0x40078000 0x1000>;
 			status = "disabled";
 			#mbox-cells = <1>;
+		};
+
+		nrf_mpc: memory@50041000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "nordic,nrf-mpc";
+			reg = <0x50041000 0x1000>;
+			override-num = <14>;
+			override-granularity = <4096>;
 		};
 
 		mram_controller: mram-controller@5004e000 {
