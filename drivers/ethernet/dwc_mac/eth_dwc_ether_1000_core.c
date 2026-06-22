@@ -132,7 +132,7 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 
 	barrier_dmem_fence_full();
 	p->tx_desc_head = d_idx;
-	REG_WRITE(DWMAC_DMATPDR, 0);
+	DWMAC_REG_WRITE(DWMAC_DMATPDR, 0);
 
 	return 0;
 
@@ -272,7 +272,7 @@ static void dwmac_rx_refill(const struct device *dev, unsigned int d_idx)
 	d->des0 = RDES0_OWN;
 
 	p->rx_desc_head = INC_WRAP(d_idx, NB_RX_DESCS);
-	REG_WRITE(DWMAC_DMARPDR, 0);
+	DWMAC_REG_WRITE(DWMAC_DMARPDR, 0);
 
 	LOG_DBG("desc sem/head/tail=%d/%d/%d", k_sem_count_get(&p->free_rx_descs), p->rx_desc_head,
 		p->rx_desc_tail);
@@ -297,8 +297,8 @@ void dwmac_isr(const struct device *dev)
 {
 	uint32_t status;
 
-	status = REG_READ(DWMAC_DMASR);
-	REG_WRITE(DWMAC_DMASR, status);
+	status = DWMAC_REG_READ(DWMAC_DMASR);
+	DWMAC_REG_WRITE(DWMAC_DMASR, status);
 
 	LOG_DBG("DMA status 0x%08x", status);
 
@@ -317,8 +317,8 @@ void dwmac_isr(const struct device *dev)
 
 static void dwmac_set_mac_addr(const struct device *dev, const uint8_t *addr)
 {
-	REG_WRITE(DWMAC_MACA0HR, (uint32_t)sys_get_le16(&addr[4]));
-	REG_WRITE(DWMAC_MACA0LR, sys_get_le32(&addr[0]));
+	DWMAC_REG_WRITE(DWMAC_MACA0HR, (uint32_t)sys_get_le16(&addr[4]));
+	DWMAC_REG_WRITE(DWMAC_MACA0LR, sys_get_le32(&addr[0]));
 }
 
 static int dwmac_set_config(const struct device *dev, struct net_if *iface __unused,
@@ -332,13 +332,13 @@ static int dwmac_set_config(const struct device *dev, struct net_if *iface __unu
 		break;
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
-		reg = REG_READ(DWMAC_MACFFR);
+		reg = DWMAC_REG_READ(DWMAC_MACFFR);
 		if (config->promisc_mode) {
 			reg |= DWMAC_MACFFR_PM;
 		} else {
 			reg &= ~DWMAC_MACFFR_PM;
 		}
-		REG_WRITE(DWMAC_MACFFR, reg);
+		DWMAC_REG_WRITE(DWMAC_MACFFR, reg);
 		break;
 #endif
 	default:
@@ -356,7 +356,7 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 	uint32_t reg;
 
 	if (state->is_up) {
-		reg = REG_READ(DWMAC_MACCR);
+		reg = DWMAC_REG_READ(DWMAC_MACCR);
 
 		reg &= ~(DWMAC_MACCR_PS | DWMAC_MACCR_FES | DWMAC_MACCR_DM);
 
@@ -372,7 +372,7 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 			reg |= DWMAC_MACCR_DM;
 		}
 
-		REG_WRITE(DWMAC_MACCR, reg);
+		DWMAC_REG_WRITE(DWMAC_MACCR, reg);
 	}
 
 	net_eth_carrier_set(p->iface, state->is_up);
@@ -401,7 +401,7 @@ static void dwmac_iface_init(struct net_if *iface)
 	dwmac_set_mac_addr(dev, p->mac_addr);
 
 	/* Pass all multicast frames */
-	REG_WRITE(DWMAC_MACFFR, REG_READ(DWMAC_MACFFR) | DWMAC_MACFFR_PAM);
+	DWMAC_REG_WRITE(DWMAC_MACFFR, DWMAC_REG_READ(DWMAC_MACFFR) | DWMAC_MACFFR_PAM);
 
 	net_if_carrier_off(iface);
 	if (device_is_ready(cfg->phy_dev)) {
@@ -414,12 +414,22 @@ static void dwmac_iface_init(struct net_if *iface)
 			K_ESSENTIAL, K_NO_WAIT);
 	k_thread_name_set(&p->rx_refill_thread, "dwmac_rx_refill");
 
-	REG_WRITE(DWMAC_DMAIER,
-		  DWMAC_DMAIER_NISE | DWMAC_DMAIER_RIE | DWMAC_DMAIER_TIE | DWMAC_DMAIER_AISE);
+	DWMAC_REG_WRITE(DWMAC_DMAIER,
+			DWMAC_DMAIER_NISE |
+			DWMAC_DMAIER_RIE |
+			DWMAC_DMAIER_TIE |
+			DWMAC_DMAIER_AISE);
 
-	REG_WRITE(DWMAC_DMAOMR, REG_READ(DWMAC_DMAOMR) | DWMAC_DMAOMR_SR | DWMAC_DMAOMR_ST);
-	REG_WRITE(DWMAC_MACCR,
-		  REG_READ(DWMAC_MACCR) | DWMAC_MACCR_CSTF | DWMAC_MACCR_TE | DWMAC_MACCR_RE);
+	DWMAC_REG_WRITE(DWMAC_DMAOMR,
+			DWMAC_REG_READ(DWMAC_DMAOMR) |
+			DWMAC_DMAOMR_SR |
+			DWMAC_DMAOMR_ST);
+
+	DWMAC_REG_WRITE(DWMAC_MACCR,
+			DWMAC_REG_READ(DWMAC_MACCR) |
+			DWMAC_MACCR_CSTF |
+			DWMAC_MACCR_TE |
+			DWMAC_MACCR_RE);
 }
 
 int dwmac_probe(const struct device *dev)
@@ -437,21 +447,21 @@ int dwmac_probe(const struct device *dev)
 		return ret;
 	}
 
-	REG_WRITE(DWMAC_DMABMR, REG_READ(DWMAC_DMABMR) | DWMAC_DMABMR_SR);
+	DWMAC_REG_WRITE(DWMAC_DMABMR, DWMAC_REG_READ(DWMAC_DMABMR) | DWMAC_DMABMR_SR);
 
 	timeout = sys_timepoint_calc(K_MSEC(100));
-	while ((REG_READ(DWMAC_DMABMR) & DWMAC_DMABMR_SR) != 0U) {
+	while ((DWMAC_REG_READ(DWMAC_DMABMR) & DWMAC_DMABMR_SR) != 0U) {
 		if (sys_timepoint_expired(timeout)) {
 			LOG_ERR("unable to reset hardware");
 			return -EIO;
 		}
 	}
 
-	reg_val = REG_READ(DWMAC_MACVERR);
+	reg_val = DWMAC_REG_READ(DWMAC_MACVERR);
 	LOG_INF("HW version %u.%u0", (reg_val >> 4) & 0xf, reg_val & 0xf);
 
 	/* get configured hardware features */
-	p->feature0 = REG_READ(DWMAC_HWFR);
+	p->feature0 = DWMAC_REG_READ(DWMAC_HWFR);
 	LOG_DBG("hw_feature: 0x%08x", p->feature0);
 
 	ret = dwmac_platform_init(dev);
@@ -473,15 +483,15 @@ int dwmac_probe(const struct device *dev)
 	}
 
 	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE)) {
-		REG_WRITE(DWMAC_DMABMR, REG_READ(DWMAC_DMABMR) | DWMAC_DMABMR_EDFE);
+		DWMAC_REG_WRITE(DWMAC_DMABMR, DWMAC_REG_READ(DWMAC_DMABMR) | DWMAC_DMABMR_EDFE);
 	}
 
-	REG_WRITE(DWMAC_DMATDLAR, TXDESC_PHYS_L(0));
-	REG_WRITE(DWMAC_DMARDLAR, RXDESC_PHYS_L(0));
-	REG_WRITE(DWMAC_DMAOMR, DWMAC_DMAOMR_TSF | DWMAC_DMAOMR_RSF);
+	DWMAC_REG_WRITE(DWMAC_DMATDLAR, TXDESC_PHYS_L(0));
+	DWMAC_REG_WRITE(DWMAC_DMARDLAR, RXDESC_PHYS_L(0));
+	DWMAC_REG_WRITE(DWMAC_DMAOMR, DWMAC_DMAOMR_TSF | DWMAC_DMAOMR_RSF);
 
 	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM)) {
-		REG_WRITE(DWMAC_MACCR, REG_READ(DWMAC_MACCR) | DWMAC_MACCR_IPCO);
+		DWMAC_REG_WRITE(DWMAC_MACCR, DWMAC_REG_READ(DWMAC_MACCR) | DWMAC_MACCR_IPCO);
 	}
 
 	return 0;

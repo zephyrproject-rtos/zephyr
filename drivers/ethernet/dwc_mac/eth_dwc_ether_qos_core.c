@@ -200,7 +200,7 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 	p->tx_desc_head = d_idx;
 
 	/* lastly notify the hardware */
-	REG_WRITE(DMA_CHn_TXDESC_TAIL_PTR(0), TXDESC_PHYS_L(d_idx));
+	DWMAC_REG_WRITE(DMA_CHn_TXDESC_TAIL_PTR(0), TXDESC_PHYS_L(d_idx));
 
 	return 0;
 
@@ -393,7 +393,7 @@ static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
 		p->rx_desc_head = INC_WRAP(d_idx, NB_RX_DESCS);
 
 		/* lastly notify the hardware */
-		REG_WRITE(DMA_CHn_RXDESC_TAIL_PTR(0), RXDESC_PHYS_L(d_idx));
+		DWMAC_REG_WRITE(DMA_CHn_RXDESC_TAIL_PTR(0), RXDESC_PHYS_L(d_idx));
 	}
 }
 
@@ -402,9 +402,9 @@ static void dwmac_dma_irq(const struct device *dev, unsigned int ch)
 	struct dwmac_priv *p = dev->data;
 	uint32_t status;
 
-	status = REG_READ(DMA_CHn_STATUS(ch));
+	status = DWMAC_REG_READ(DMA_CHn_STATUS(ch));
 	LOG_DBG("DMA_CHn_STATUS(%d) = 0x%08x", ch, status);
-	REG_WRITE(DMA_CHn_STATUS(ch), status);
+	DWMAC_REG_WRITE(DMA_CHn_STATUS(ch), status);
 
 	__ASSERT(ch == 0, "only one DMA channel is currently supported");
 
@@ -425,7 +425,7 @@ static void dwmac_mac_irq(const struct device *dev)
 {
 	uint32_t status;
 
-	status = REG_READ(MAC_IRQ_STATUS);
+	status = DWMAC_REG_READ(MAC_IRQ_STATUS);
 	LOG_DBG("MAC_IRQ_STATUS = 0x%08x", status);
 	__ASSERT(false, "unimplemented");
 }
@@ -434,7 +434,7 @@ static void dwmac_mtl_irq(const struct device *dev)
 {
 	uint32_t status;
 
-	status = REG_READ(MTL_IRQ_STATUS);
+	status = DWMAC_REG_READ(MTL_IRQ_STATUS);
 	LOG_DBG("MTL_IRQ_STATUS = 0x%08x", status);
 	__ASSERT(false, "unimplemented");
 }
@@ -444,7 +444,7 @@ void dwmac_isr(const struct device *dev)
 	uint32_t irq_status;
 	unsigned int ch;
 
-	irq_status = REG_READ(DMA_IRQ_STATUS);
+	irq_status = DWMAC_REG_READ(DMA_IRQ_STATUS);
 	LOG_DBG("DMA_IRQ_STATUS = 0x%08x", irq_status);
 
 	while (irq_status & 0xff) {
@@ -467,9 +467,9 @@ static void dwmac_set_mac_addr(const struct device *dev, const uint8_t *addr, in
 	uint32_t reg_val;
 
 	reg_val = (addr[5] << 8) | addr[4];
-	REG_WRITE(MAC_ADDRESS_HIGH(n), reg_val | MAC_ADDRESS_HIGH_AE);
+	DWMAC_REG_WRITE(MAC_ADDRESS_HIGH(n), reg_val | MAC_ADDRESS_HIGH_AE);
 	reg_val = (addr[3] << 24) | (addr[2] << 16) | (addr[1] << 8) | addr[0];
-	REG_WRITE(MAC_ADDRESS_LOW(n), reg_val);
+	DWMAC_REG_WRITE(MAC_ADDRESS_LOW(n), reg_val);
 }
 
 static int dwmac_set_config(const struct device *dev,
@@ -489,15 +489,15 @@ static int dwmac_set_config(const struct device *dev,
 
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
-		reg_val = REG_READ(MAC_PKT_FILTER);
+		reg_val = DWMAC_REG_READ(MAC_PKT_FILTER);
 		if (config->promisc_mode &&
 		    !(reg_val & MAC_PKT_FILTER_PR)) {
-			REG_WRITE(MAC_PKT_FILTER,
-				  reg_val | MAC_PKT_FILTER_PR);
+			DWMAC_REG_WRITE(MAC_PKT_FILTER,
+					reg_val | MAC_PKT_FILTER_PR);
 		} else if (!config->promisc_mode &&
 			   (reg_val & MAC_PKT_FILTER_PR)) {
-			REG_WRITE(MAC_PKT_FILTER,
-				  reg_val & ~MAC_PKT_FILTER_PR);
+			DWMAC_REG_WRITE(MAC_PKT_FILTER,
+					reg_val & ~MAC_PKT_FILTER_PR);
 		} else {
 			ret = -EALREADY;
 		}
@@ -523,7 +523,7 @@ static void phy_link_state_changed(const struct device *phy_dev,
 	ARG_UNUSED(phy_dev);
 
 	if (state->is_up) {
-		reg_val = REG_READ(MAC_CONF);
+		reg_val = DWMAC_REG_READ(MAC_CONF);
 
 		switch (state->speed) {
 		case LINK_HALF_10BASE:
@@ -555,7 +555,7 @@ static void phy_link_state_changed(const struct device *phy_dev,
 			reg_val &= ~MAC_CONF_DM;
 		}
 
-		REG_WRITE(MAC_CONF, reg_val);
+		DWMAC_REG_WRITE(MAC_CONF, reg_val);
 	}
 
 	net_eth_carrier_set(p->iface, state->is_up);
@@ -590,7 +590,7 @@ static void dwmac_iface_init(struct net_if *iface)
 	 *   - pass multicast packets
 	 *   - pass broadcast packets
 	 */
-	REG_WRITE(MAC_PKT_FILTER, MAC_PKT_FILTER_PM);
+	DWMAC_REG_WRITE(MAC_PKT_FILTER, MAC_PKT_FILTER_PM);
 
 	if (cfg->phy_dev != NULL) {
 		/* Do not start the interface until PHY link is up */
@@ -622,16 +622,16 @@ static void dwmac_iface_init(struct net_if *iface)
 	k_thread_name_set(&p->rx_refill_thread, "dwmac_rx_refill");
 
 	/* start up TX/RX */
-	reg_val = REG_READ(DMA_CHn_TX_CTRL(0));
-	REG_WRITE(DMA_CHn_TX_CTRL(0), reg_val | DMA_CHn_TX_CTRL_St);
-	reg_val = REG_READ(DMA_CHn_RX_CTRL(0));
-	REG_WRITE(DMA_CHn_RX_CTRL(0), reg_val | DMA_CHn_RX_CTRL_SR);
-	reg_val = REG_READ(MAC_CONF);
+	reg_val = DWMAC_REG_READ(DMA_CHn_TX_CTRL(0));
+	DWMAC_REG_WRITE(DMA_CHn_TX_CTRL(0), reg_val | DMA_CHn_TX_CTRL_St);
+	reg_val = DWMAC_REG_READ(DMA_CHn_RX_CTRL(0));
+	DWMAC_REG_WRITE(DMA_CHn_RX_CTRL(0), reg_val | DMA_CHn_RX_CTRL_SR);
+	reg_val = DWMAC_REG_READ(MAC_CONF);
 	reg_val |= MAC_CONF_CST | MAC_CONF_TE | MAC_CONF_RE;
-	REG_WRITE(MAC_CONF, reg_val);
+	DWMAC_REG_WRITE(MAC_CONF, reg_val);
 
 	/* unmask IRQs */
-	REG_WRITE(DMA_CHn_IRQ_ENABLE(0),
+	DWMAC_REG_WRITE(DMA_CHn_IRQ_ENABLE(0),
 		  DMA_CHn_IRQ_ENABLE_TIE |
 		  DMA_CHn_IRQ_ENABLE_RIE |
 		  DMA_CHn_IRQ_ENABLE_NIE |
@@ -656,15 +656,15 @@ int dwmac_probe(const struct device *dev)
 		return ret;
 	}
 
-	reg_val = REG_READ(MAC_VERSION);
+	reg_val = DWMAC_REG_READ(MAC_VERSION);
 	LOG_INF("HW version %u.%u0", (reg_val >> 4) & 0xf, reg_val & 0xf);
 	__ASSERT(FIELD_GET(MAC_VERSION_SNPSVER, reg_val) >= 0x40,
 		 "This driver expects DWC-ETHERNET version >= 4.00");
 
 	/* resets all of the MAC internal registers and logic */
-	REG_WRITE(DMA_MODE, DMA_MODE_SWR);
+	DWMAC_REG_WRITE(DMA_MODE, DMA_MODE_SWR);
 	timeout = sys_timepoint_calc(K_MSEC(100));
-	while (REG_READ(DMA_MODE) & DMA_MODE_SWR) {
+	while (DWMAC_REG_READ(DMA_MODE) & DMA_MODE_SWR) {
 		if (sys_timepoint_expired(timeout)) {
 			LOG_ERR("unable to reset hardware");
 			return -EIO;
@@ -672,10 +672,10 @@ int dwmac_probe(const struct device *dev)
 	}
 
 	/* get configured hardware features */
-	p->feature0 = REG_READ(MAC_HW_FEATURE0);
-	p->feature1 = REG_READ(MAC_HW_FEATURE1);
-	p->feature2 = REG_READ(MAC_HW_FEATURE2);
-	p->feature3 = REG_READ(MAC_HW_FEATURE3);
+	p->feature0 = DWMAC_REG_READ(MAC_HW_FEATURE0);
+	p->feature1 = DWMAC_REG_READ(MAC_HW_FEATURE1);
+	p->feature2 = DWMAC_REG_READ(MAC_HW_FEATURE2);
+	p->feature3 = DWMAC_REG_READ(MAC_HW_FEATURE3);
 	LOG_DBG("hw_feature: 0x%08x 0x%08x 0x%08x 0x%08x",
 		p->feature0, p->feature1, p->feature2, p->feature3);
 
@@ -688,16 +688,16 @@ int dwmac_probe(const struct device *dev)
 	memset(p->rx_descs, 0, NB_RX_DESCS * sizeof(struct dwmac_dma_desc));
 
 	/* set up DMA */
-	REG_WRITE(DMA_CHn_TX_CTRL(0), 0);
-	REG_WRITE(DMA_CHn_RX_CTRL(0),
-		  FIELD_PREP(DMA_CHn_RX_CTRL_PBL, 32) |
-		  FIELD_PREP(DMA_CHn_RX_CTRL_RBSZ, RX_FRAG_SIZE));
-	REG_WRITE(DMA_CHn_TXDESC_LIST_HADDR(0), TXDESC_PHYS_H(0));
-	REG_WRITE(DMA_CHn_TXDESC_LIST_ADDR(0), TXDESC_PHYS_L(0));
-	REG_WRITE(DMA_CHn_RXDESC_LIST_HADDR(0), RXDESC_PHYS_H(0));
-	REG_WRITE(DMA_CHn_RXDESC_LIST_ADDR(0), RXDESC_PHYS_L(0));
-	REG_WRITE(DMA_CHn_TXDESC_RING_LENGTH(0), NB_TX_DESCS - 1);
-	REG_WRITE(DMA_CHn_RXDESC_RING_LENGTH(0), NB_RX_DESCS - 1);
+	DWMAC_REG_WRITE(DMA_CHn_TX_CTRL(0), 0);
+	DWMAC_REG_WRITE(DMA_CHn_RX_CTRL(0),
+			FIELD_PREP(DMA_CHn_RX_CTRL_PBL, 32) |
+			FIELD_PREP(DMA_CHn_RX_CTRL_RBSZ, RX_FRAG_SIZE));
+	DWMAC_REG_WRITE(DMA_CHn_TXDESC_LIST_HADDR(0), TXDESC_PHYS_H(0));
+	DWMAC_REG_WRITE(DMA_CHn_TXDESC_LIST_ADDR(0), TXDESC_PHYS_L(0));
+	DWMAC_REG_WRITE(DMA_CHn_RXDESC_LIST_HADDR(0), RXDESC_PHYS_H(0));
+	DWMAC_REG_WRITE(DMA_CHn_RXDESC_LIST_ADDR(0), RXDESC_PHYS_L(0));
+	DWMAC_REG_WRITE(DMA_CHn_TXDESC_RING_LENGTH(0), NB_TX_DESCS - 1);
+	DWMAC_REG_WRITE(DMA_CHn_RXDESC_RING_LENGTH(0), NB_RX_DESCS - 1);
 
 	return 0;
 }

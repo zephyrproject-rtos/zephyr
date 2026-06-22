@@ -136,13 +136,13 @@ int dwmac_platform_init(const struct device *dev)
 	p->rx_descs = dwmac_rx_descs;
 
 	/* basic configuration for this platform */
-	REG_WRITE(MAC_CONF,
-		  MAC_CONF_PS |
-		  MAC_CONF_FES |
-		  MAC_CONF_DM);
-	REG_WRITE(DMA_SYSBUS_MODE,
-		  DMA_SYSBUS_MODE_AAL |
-		  DMA_SYSBUS_MODE_FB);
+	DWMAC_REG_WRITE(MAC_CONF,
+			MAC_CONF_PS |
+			MAC_CONF_FES |
+			MAC_CONF_DM);
+	DWMAC_REG_WRITE(DMA_SYSBUS_MODE,
+			DMA_SYSBUS_MODE_AAL |
+			DMA_SYSBUS_MODE_FB);
 
 	/* set up IRQs (still masked for now) */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), dwmac_isr,
