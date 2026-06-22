@@ -156,6 +156,11 @@ struct k_work_q *get_workq(void)
 /* found in hostap/wpa_supplicant/ctrl_iface_zephyr.c */
 extern int send_data(struct k_fifo *fifo, int sock, const char *buf, size_t len, int flags);
 
+/* Serializes wpa_s->ctrl_conn lifecycle (open/close) against its users in
+ * supp_api.c, so that the NULL checks there cannot race with teardown.
+ */
+extern struct k_mutex wpa_supplicant_mutex;
+
 int zephyr_wifi_send_event(const struct wpa_supplicant_event_msg *msg)
 {
 	struct supplicant_context *ctx;
@@ -379,7 +384,9 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 		net_if_get_name(iface, ctx->if_name, CONFIG_NET_INTERFACE_NAME_LEN);
 	}
 
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
 	ret = zephyr_wpa_ctrl_init(wpa_s);
+	k_mutex_unlock(&wpa_supplicant_mutex);
 	if (ret) {
 		LOG_ERR("Failed to initialize supplicant control interface");
 		goto out;
@@ -473,7 +480,9 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 		goto out;
 	}
 
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
 	zephyr_wpa_ctrl_deinit(wpa_s);
+	k_mutex_unlock(&wpa_supplicant_mutex);
 
 	ret = zephyr_wpa_cli_global_cmd_v("interface_remove %s", ifname);
 	if (ret) {

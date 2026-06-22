@@ -93,7 +93,11 @@ static K_WORK_DELAYABLE_DEFINE(wpa_supp_status_work,
 	({                                                                                         \
 		bool status;                                                                       \
                                                                                                    \
-		if (zephyr_wpa_cli_cmd_v(wpa_s->ctrl_conn, cmd, ##__VA_ARGS__) < 0) {              \
+		if (wpa_s->ctrl_conn == NULL) {                                                    \
+			wpa_printf(MSG_ERROR,                                                      \
+				   "Control interface not ready, dropping command: %s", cmd);      \
+			status = false;                                                            \
+		} else if (zephyr_wpa_cli_cmd_v(wpa_s->ctrl_conn, cmd, ##__VA_ARGS__) < 0) {       \
 			wpa_printf(MSG_ERROR, "Failed to execute wpa_cli command: %s", cmd);       \
 			status = false;                                                            \
 		} else {                                                                           \
@@ -662,7 +666,14 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	wpas_remove_certs(wpa_s);
 #endif
 
+	if (wpa_s->ctrl_conn == NULL) {
+		wpa_printf(MSG_ERROR, "Control interface not ready");
+		ret = -EAGAIN;
+		goto out;
+	}
+
 	if (!wpa_cli_cmd_v("remove_network all")) {
+		ret = -EINVAL;
 		goto out;
 	}
 
@@ -1402,6 +1413,13 @@ int supplicant_connect(const struct device *dev __unused, struct net_if *iface,
 		goto out;
 	}
 
+	if (wpa_s->ctrl_conn == NULL) {
+		wpa_printf(MSG_ERROR,
+			   "Control interface not ready, supplicant still initializing");
+		ret = -EAGAIN;
+		goto out;
+	}
+
 	/* Allow connect in STA mode only even if we are connected already */
 	if  (wpa_s->current_ssid && wpa_s->current_ssid->mode != WPAS_MODE_INFRA) {
 		ret = -EBUSY;
@@ -1486,6 +1504,12 @@ int supplicant_status(const struct device *dev __unused, struct net_if *iface,
 
 	wpa_s = get_wpa_s_handle(iface);
 	if (!wpa_s) {
+		goto out;
+	}
+
+	if (wpa_s->ctrl_conn == NULL) {
+		wpa_printf(MSG_ERROR, "Control interface not ready");
+		ret = -EAGAIN;
 		goto out;
 	}
 
