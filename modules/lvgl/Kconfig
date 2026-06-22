@@ -12,6 +12,9 @@ config LVGL
 
 if LVGL
 
+config LV_DRAW_BUF_ALIGN
+	int
+
 config LV_USE_MONKEY
 	bool
 
