@@ -28,15 +28,6 @@ BUILD_HELPERS_LOGGER = 'zephyr_build_helpers'
 _logger = logging.getLogger(BUILD_HELPERS_LOGGER)
 
 
-class WestLogFormatter(logging.Formatter):
-
-    def __init__(self):
-        # Match the format used by west's own LogFormatter
-        # (west/app/main.py) so bridged records render identically to
-        # records emitted by west itself.
-        super().__init__(fmt='%(name)s: %(levelname)s: %(message)s')
-
-
 class WestLogHandler(logging.Handler):
     '''Forwards Python logging records to a WestCommand's logging methods.
 
@@ -52,7 +43,10 @@ class WestLogHandler(logging.Handler):
     def __init__(self, command, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._command = command
-        self.setFormatter(WestLogFormatter())
+        # No formatter is set: WestCommand.err/wrn/die already add
+        # "ERROR: " etc., and west itself doesn't carry a logger-name
+        # prefix on its output. The default formatter passes the raw
+        # message through unchanged ('%(message)s').
 
     def emit(self, record):
         fmt = self.format(record)
