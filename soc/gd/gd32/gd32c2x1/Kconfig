@@ -1,0 +1,12 @@
+# Copyright (c) 2026 GigaDevice Semiconductor Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_GD32C2X1
+	select ARM
+	select CPU_CORTEX_M23
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select GD32_HAS_AF_PINMUX
+	select GD32_HAS_IRC_32K
+	select SOC_RESET_HOOK
+	select SOC_EARLY_INIT_HOOK
