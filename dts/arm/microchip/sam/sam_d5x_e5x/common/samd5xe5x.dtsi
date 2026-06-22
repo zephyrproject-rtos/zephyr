@@ -453,7 +453,7 @@
 				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SDHC0_SLOW>;
 			clock-names = "mclk", "gclk", "gclk-slow";
 			min-bus-freq = <400000>;
-			max-bus-freq = <25000000>;
+			max-bus-freq = <50000000>;
 			status = "disabled";
 		};
 
@@ -466,7 +466,7 @@
 				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SDHC1_SLOW>;
 			clock-names = "mclk", "gclk", "gclk-slow";
 			min-bus-freq = <400000>;
-			max-bus-freq = <25000000>;
+			max-bus-freq = <50000000>;
 			status = "disabled";
 		};
 	};
