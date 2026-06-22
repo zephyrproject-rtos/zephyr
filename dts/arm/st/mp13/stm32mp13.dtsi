@@ -389,6 +389,20 @@
 			status = "disabled";
 		};
 
+		clk_lse: clk-lse {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		clk_lsi: clk-lsi {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_K(32)>;
+			status = "disabled";
+		};
+
 		cpusw: cpusw {
 			#clock-cells = <0>;
 			compatible = "st,stm32mp13-cpu-clock-mux";
