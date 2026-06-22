@@ -18,6 +18,7 @@
 #include <zephyr/bluetooth/uuid.h>
 
 #include "common/bt_str.h"
+#include "common/long_wq.h"
 
 #include "crypto.h"
 #include "mesh.h"
@@ -390,7 +391,7 @@ static void prov_pub_key(const uint8_t *data)
 		       PDU_LEN_PUB_KEY);
 	}
 
-	k_work_submit(&dh_gen_work);
+	bt_long_wq_submit(&dh_gen_work);
 }
 
 static void notify_input_complete(void)
