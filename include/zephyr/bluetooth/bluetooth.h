@@ -1450,6 +1450,18 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv);
  */
 uint8_t bt_le_ext_adv_get_index(struct bt_le_ext_adv *adv);
 
+/**
+ * @brief Look up an advertising set by advertiser address and SID.
+ *
+ * @kconfig_dep{CONFIG_BT_EXT_ADV}
+ *
+ * @param addr Advertiser address and type.
+ * @param sid  The advertising set ID.
+ *
+ * @return Pointer to the extended advertising set object or NULL if no matching set was found.
+ */
+struct bt_le_ext_adv *bt_le_ext_adv_lookup_addr(const bt_addr_le_t *addr, uint8_t sid);
+
 /** Advertising states. */
 enum bt_le_ext_adv_state {
 	/** The advertising set has been created but not enabled. */
@@ -1649,6 +1661,19 @@ int bt_le_per_adv_start(struct bt_le_ext_adv *adv);
  * @return         Zero on success or (negative) error code otherwise.
  */
 int bt_le_per_adv_stop(struct bt_le_ext_adv *adv);
+
+/**
+ * @brief Look up a periodic advertising set by advertiser address and SID.
+ *
+ * @kconfig_dep{CONFIG_BT_PER_ADV}
+ *
+ * @param addr Advertiser address.
+ * @param sid  The advertising set ID.
+ *
+ * @return Pointer to the extended advertising set object with periodic advertising configured,
+ *         or NULL if no matching set was found.
+ */
+struct bt_le_ext_adv *bt_le_per_adv_lookup_addr(const bt_addr_le_t *addr, uint8_t sid);
 
 /**
  * @brief Information about the successful synchronization with periodic advertising.
