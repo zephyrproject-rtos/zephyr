@@ -164,6 +164,16 @@ config SYS_HEAP_CANARIES_RANDOM
 	  Without this, canaries are still effective at detecting
 	  accidental corruption but are predictable.
 
+config SYS_HEAP_SANITIZER_HOOKS
+	bool
+	help
+	  Hidden symbol selected by any sys_heap sanitizer backend. When set,
+	  heap.c emits the generic poison/unpoison hook calls
+	  (heap_sanitizer_on_init / _alloc / _free) at the public-API boundary. The
+	  active backend implements those three entry points. Keeping the call
+	  sites gated on this single symbol means heap.c carries no
+	  backend-specific conditionals.
+
 module = SYS_HEAP
 module-str = sys_heap
 source "subsys/logging/Kconfig.template.log_config"
