@@ -6,15 +6,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_MODEM_UBX_H_
+#define ZEPHYR_INCLUDE_MODEM_UBX_H_
+
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/atomic.h>
 
 #include <zephyr/modem/pipe.h>
 #include <zephyr/modem/ubx/protocol.h>
-
-#ifndef ZEPHYR_INCLUDE_MODEM_UBX_H_
-#define ZEPHYR_INCLUDE_MODEM_UBX_H_
 
 #ifdef __cplusplus
 extern "C" {
