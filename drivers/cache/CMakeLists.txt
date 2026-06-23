@@ -9,6 +9,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE cache_handlers.c)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_CACHE_ANDES cache_andes.c)
+zephyr_library_sources_ifdef(CONFIG_CACHE_ARM_AHB cache_arm_ahb.c)
 zephyr_library_sources_ifdef(CONFIG_CACHE_ASPEED cache_aspeed.c)
 zephyr_library_sources_ifdef(CONFIG_CACHE_BFLB_L1C cache_bflb_l1c.c)
 zephyr_library_sources_ifdef(CONFIG_CACHE_ESP32 cache_esp32.c)
