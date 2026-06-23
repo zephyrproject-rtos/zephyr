@@ -286,9 +286,6 @@ TAB_SIZE               = 8
 # @} or use a double escape (\\{ and \\})
 
 ALIASES                = "kconfig{1}=\c \1" \
-                         "req{1}=\ref ZEPH_\1 \"ZEPH-\1\"" \
-                         "satisfy{1}=\xrefitem satisfy \"Satisfies requirement\" \"Requirement Implementation\" \1" \
-                         "verify{1}=\xrefitem verify \"Verifies requirement\" \"Requirement Verification\" \1" \
                          "kconfig_dep{1}=\attention Available only when the following Kconfig option is enabled: \kconfig{\1}." \
                          "kconfig_dep{2}=\attention Available only when the following Kconfig options are enabled: \kconfig{\1}, \kconfig{\2}." \
                          "kconfig_dep{3}=\attention Available only when the following Kconfig options are enabled: \kconfig{\1}, \kconfig{\2}, \kconfig{\3}." \
@@ -318,6 +315,14 @@ ALIASES               += "driver_ops{1}=\brief \htmlonly <span class=\"mlabel\">
                                         \see DEVICE_API()"
 ALIASES               += "driver_ops_mandatory=\htmlonly<span class=\"op-badge op-req\" title=\"This operation MUST be implemented by the driver.\">REQ</span>\endhtmlonly"
 ALIASES               += "driver_ops_optional=\htmlonly<span class=\"op-badge op-opt\" title=\"This operation MAY optionally be implemented by the driver.\">OPT</span>\endhtmlonly"
+
+# Requirements traceability (Doxygen 1.14+). The requirements themselves are
+# generated from the reqmgmt module into the directory appended to the INPUT tag
+# below, using the native \requirement command. Code and tests link to them with
+# \satisfies / \verifies.
+
+GENERATE_REQUIREMENTS  = YES
+REQ_TRACEABILITY_INFO  = YES
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources
 # only. Doxygen will then generate output that is more tailored for C. For
@@ -1048,6 +1053,7 @@ INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
                          @ZEPHYR_BASE@/subsys/secure_storage/include/ \
                          @ZEPHYR_BASE@/subsys/fs/zms/zms_priv.h \
                          @ZEPHYR_BASE@/modules/openthread/include/openthread.h \
+                         @DOXY_REQ_INPUT@ \
 
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1090,7 +1096,8 @@ INPUT_FILE_ENCODING    =
 FILE_PATTERNS          = *.c \
                          *.h \
                          *.S \
-                         *.md
+                         *.md \
+                         *.dox
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.

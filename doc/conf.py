@@ -283,6 +283,11 @@ doxyrunner_projects = {
         "fmt_vars": {
             "ZEPHYR_BASE": str(ZEPHYR_BASE),
             "ZEPHYR_VERSION": version,
+            # Directory with the generated requirement .dox files (populated by
+            # the CMake 'requirements' target before the Sphinx build runs).
+            "DOXY_REQ_INPUT": os.environ.get(
+                "DOXY_REQ_INPUT", str(ZEPHYR_BUILD / "requirements" / "dox")
+            ),
         },
         "outdir_var": "DOXY_OUT",
     },
@@ -358,6 +363,8 @@ external_content_keep = [
     "build/dts/api/bindings.rst",
     "build/dts/api/bindings/**/*",
     "build/dts/api/compatibles/**/*",
+    "build/requirements/*",
+    "build/requirements/**/*",
 ]
 
 # -- Options for zephyr.domain --------------------------------------------
