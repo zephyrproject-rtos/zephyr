@@ -108,8 +108,8 @@
 
 		uartlite0: uartlite@8f000000 {
 			compatible = "xlnx,xps-uartlite-1.00.a";
-			interrupt-parent = <&hlic>;
-			interrupts = <2>;
+			interrupt-parent = <&plic>;
+			interrupts = <17 1>;
 			reg = <0x8f000000 0x10000>;
 			status = "disabled";
 		};
