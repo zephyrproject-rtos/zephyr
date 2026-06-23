@@ -90,7 +90,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
 #if defined(CONFIG_TICKLESS_KERNEL)
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
 
 	uint32_t curr = ccount(), cyc, adj;
 

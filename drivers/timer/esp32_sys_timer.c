@@ -104,7 +104,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 		return;
 	}
 
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t now = get_systimer_alarm();

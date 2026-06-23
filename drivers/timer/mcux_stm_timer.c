@@ -81,7 +81,7 @@ static void mcux_stm_timer_isr(const void *arg)
 		stm_disable_compare();
 	}
 
-	sys_clock_announce_locked((int32_t)delta_ticks, key);
+	sys_clock_announce_locked(delta_ticks, key);
 }
 
 void sys_clock_set_timeout(uint32_t ticks, bool idle)

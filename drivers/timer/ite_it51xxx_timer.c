@@ -227,7 +227,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	 * ideally no more than one system tick in the future. So set event timer count
 	 * to 1 HW tick.
 	 */
-	ticks = CLAMP(ticks, 1, (int32_t)EVEN_TIMER_MAX_CNT_SYS_TICK);
+	ticks = CLAMP(ticks, 1, EVEN_TIMER_MAX_CNT_SYS_TICK);
 	next_cycs = (last_ticks + last_elapsed + ticks) * HW_CNT_PER_SYS_TICK;
 	now = ~read_timer_obser(FREE_RUN_TIMER);
 	if (unlikely(next_cycs <= now)) {

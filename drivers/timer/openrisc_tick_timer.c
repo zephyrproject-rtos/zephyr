@@ -74,7 +74,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	 * to be usable elsewhere. The half range gives us extra room to cope
 	 * with the unavoidable IRQ servicing latency.
 	 */
-	ticks = CLAMP(ticks, 0, MAX_CYC / 2 / cyc_per_tick);
+	ticks = MIN(ticks, MAX_CYC / 2 / cyc_per_tick);
 
 	const uint32_t compare =
 		((last_ticks + last_elapsed + (uint32_t)ticks) * cyc_per_tick) & MAX_CYC;

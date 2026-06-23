@@ -218,7 +218,15 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 		return;
 	}
 
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	/* Preserve the original behavior even though it looks wrong; to be
+	 * revisited.
+	 */
+	if (ticks >= 1) {
+		ticks -= 1;
+	}
+	if (ticks > MAX_TICKS) {
+		ticks = MAX_TICKS;
+	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
