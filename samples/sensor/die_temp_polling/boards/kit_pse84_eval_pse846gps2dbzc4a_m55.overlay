@@ -1,0 +1,82 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * AutAnalog die-temperature configuration for the die_temp_polling sample.
+ *
+ * The on-chip temperature sensor is sampled through the AutAnalog SAR ADC
+ * internal temperature-sensor MUX channel (LP mode, VBGR reference, 32-sample
+ * accumulation) and exposed as a standard Zephyr SENSOR_CHAN_DIE_TEMP channel
+ * via the infineon,autanalog-die-temp sensor driver.
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/infineon-autanalog-sar.h>
+#include <zephyr/dt-bindings/mfd/infineon-autanalog.h>
+
+/ {
+	aliases {
+		die-temp0 = &die_temp0;
+	};
+
+	die_temp0: die-temp0 {
+		compatible = "infineon,autanalog-die-temp";
+		io-channels = <&adc0 8>;
+		status = "okay";
+	};
+};
+
+/*
+ * SAR ADC: low-power die-temperature measurement.
+ *
+ *   - LP mode (LPOSC), VBGR reference (mandatory for temperature conversion)
+ *   - acc-mode ACCUNDUMP (accumulate-and-dump, 32 samples), sign-shifted result
+ *   - MUX channel 0 (Zephyr channel ID 8): positive = negative = TEMP_SENSOR
+ *     (differential die-temperature measurement), MUX buffer enabled
+ */
+&autanalog {
+	/* Defer the Autonomous Controller start to the die-temperature sensor */
+	ac-app-managed;
+};
+
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	lp-mode;
+	lp-diff-en;
+	vref-source = <IFX_AUTANALOG_SAR_VREF_VBGR>;
+	pos-buf-pwr = <IFX_AUTANALOG_SAR_BUF_PWR_ULTRA_LOW_RAIL>;
+	neg-buf-pwr = <IFX_AUTANALOG_SAR_BUF_PWR_ULTRA_LOW>;
+	acc-mode = <IFX_AUTANALOG_SAR_ACC_ACCUNDUMP>;
+	shift-mode;
+
+	seq-lp-0 {
+		compatible = "infineon,autanalog-sar-seq-lp";
+		mux0-sel = <0>;
+		sample-time-en;
+		sample-time = <IFX_AUTANALOG_SAR_SEQ_SAMPLE_TIME0>;
+		acc-en;
+		acc-count = <IFX_AUTANALOG_SAR_SEQ_ACC_CNT32>;
+		cal-req = <IFX_AUTANALOG_SAR_SEQ_CAL_DISABLED>;
+		next-action = <IFX_AUTANALOG_SAR_SEQ_NEXT_REPEAT>;
+	};
+
+	/* LP MUX channel 0 (channel ID 8): internal die temperature sensor */
+	channel@8 {
+		reg = <8>;
+		zephyr,input-positive = <IFX_AUTANALOG_SAR_PIN_MUX_TEMP_SENSOR>;
+		zephyr,input-negative = <IFX_AUTANALOG_SAR_PIN_MUX_TEMP_SENSOR>;
+		sign;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 6)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		acc-shift;
+	};
+};
