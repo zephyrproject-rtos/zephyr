@@ -194,6 +194,7 @@ endfunction()
 #                             SOURCE_DIR <dir>
 #                             [BOARD <board> [BOARD_REVISION <revision>]]
 #                             [APP_TYPE <MAIN|BOOTLOADER|FIRMWARE_LOADER>]
+#                             [SNIPPET <snippet>]
 #                             [BUILD_ONLY <bool>]
 #   )
 #
@@ -214,13 +215,14 @@ endfunction()
 #                             MAIN_APP unmodified.
 #                             BOOTLOADER indicates this app is a bootloader
 #                             FIRMWARE_LOADER indicates this app is a firmware loader image for MCUboot
+# SNIPPET <snippet>:          List of default snippets to append to the application.
 # BUILD_ONLY <bool>:          Mark the application as build-only. If <bool> evaluates to
 #                             true, then this application will be excluded from flashing
 #                             and debugging.
 #
 function(ExternalZephyrProject_Add)
   set(app_types MAIN BOOTLOADER FIRMWARE_LOADER)
-  cmake_parse_arguments(ZBUILD "" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR;APP_TYPE;BUILD_ONLY" "" ${ARGN})
+  cmake_parse_arguments(ZBUILD "" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR;APP_TYPE;SNIPPET;BUILD_ONLY" "" ${ARGN})
 
   if(ZBUILD_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
@@ -427,6 +429,21 @@ function(ExternalZephyrProject_Add)
       "ExternalZephyrProject_Add(... BOARD_REVISION ${ZBUILD_BOARD_REVISION})"
       " requires BOARD."
     )
+  endif()
+
+  if(DEFINED ZBUILD_SNIPPET)
+    if(NOT ${ZBUILD_APPLICATION}_SNIPPET)
+      set(${ZBUILD_APPLICATION}_SNIPPET ${SNIPPET} CACHE INTERNAL "" FORCE)
+    endif()
+    foreach(snippet ${ZBUILD_SNIPPET})
+      if(NOT ${snippet} IN_LIST ${ZBUILD_APPLICATION}_SNIPPET)
+        set(
+          ${ZBUILD_APPLICATION}_SNIPPET
+          ${${ZBUILD_APPLICATION}_SNIPPET} ${snippet}
+          CACHE INTERNAL "" FORCE
+        )
+      endif()
+    endforeach()
   endif()
 
   if(DEFINED ZBUILD_BUILD_ONLY)
