@@ -1,0 +1,12 @@
+#
+# SPDX-FileCopyrightText: Copyright (c) 2026 Synaptics Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  ARM CoreLink AHB Cache.
+
+compatible: "arm,ahb-cache"
+
+include: base.yaml
