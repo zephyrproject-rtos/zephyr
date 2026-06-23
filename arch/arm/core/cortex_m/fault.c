@@ -561,11 +561,20 @@ static uint32_t usage_fault(const struct arch_esf *esf)
  *
  * @return error code to identify the fatal error reason
  */
-static uint32_t secure_fault(const struct arch_esf *esf)
+static uint32_t secure_fault(const struct arch_esf *esf, bool non_secure_esf)
 {
 	uint32_t reason = K_ERR_ARM_SECURE_GENERIC;
 
+	ARG_UNUSED(esf);
+
 	PR_FAULT_INFO("***** SECURE FAULT *****");
+
+	if (non_secure_esf) {
+		PR_FAULT_INFO("  Non-Secure fault escalated to SecureFault");
+		PR_FAULT_INFO("  Reporting recovered Non-Secure exception frame");
+		PR_FAULT_INFO("  Check Non-Secure fault vector/handler setup");
+		PR_FAULT_INFO("  Missing or disabled handler can cause this escalation");
+	}
 
 	STORE_xFAR(sfar, SAU->SFAR);
 	if ((SAU->SFSR & SAU_SFSR_SFARVALID_Msk) != 0) {
@@ -710,9 +719,13 @@ static inline bool z_arm_is_pc_valid(uintptr_t pc)
  *
  * @return error code to identify the fatal error reason
  */
-static uint32_t hard_fault(struct arch_esf *esf, bool *recoverable)
+static uint32_t hard_fault(struct arch_esf *esf, bool *recoverable, bool non_secure_esf)
 {
 	uint32_t reason = K_ERR_CPU_EXCEPTION;
+
+#if !defined(CONFIG_ARM_SECURE_FIRMWARE) || defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	ARG_UNUSED(non_secure_esf);
+#endif
 
 	PR_FAULT_INFO("***** HARD FAULT *****");
 
@@ -752,7 +765,7 @@ static uint32_t hard_fault(struct arch_esf *esf, bool *recoverable)
 			reason = usage_fault(esf);
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 		} else if (SAU->SFSR != 0) {
-			reason = secure_fault(esf);
+			reason = secure_fault(esf, non_secure_esf);
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 		} else {
 			__ASSERT(0, "Fault escalation without FSR info");
@@ -784,7 +797,8 @@ static void reserved_exception(const struct arch_esf *esf, int fault)
 }
 
 /* Handler function for ARM fault conditions. */
-static uint32_t fault_handle(struct arch_esf *esf, int fault, bool *recoverable)
+static uint32_t fault_handle(struct arch_esf *esf, int fault, bool *recoverable,
+			     bool non_secure_esf)
 {
 	uint32_t reason = K_ERR_CPU_EXCEPTION;
 
@@ -792,7 +806,7 @@ static uint32_t fault_handle(struct arch_esf *esf, int fault, bool *recoverable)
 
 	switch (fault) {
 	case 3:
-		reason = hard_fault(esf, recoverable);
+		reason = hard_fault(esf, recoverable, non_secure_esf);
 		break;
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 		/* HardFault is raised for all fault conditions on ARMv6-M. */
@@ -808,7 +822,7 @@ static uint32_t fault_handle(struct arch_esf *esf, int fault, bool *recoverable)
 		break;
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 	case 7:
-		reason = secure_fault(esf);
+		reason = secure_fault(esf, non_secure_esf);
 		break;
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 	case 12:
@@ -889,6 +903,7 @@ static void secure_stack_dump(const struct arch_esf *secure_esf)
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
 struct fault_esf_context {
+	bool non_secure_esf;
 	const uint32_t *additional_context;
 };
 
@@ -938,6 +953,7 @@ static inline struct arch_esf *get_esf(uint32_t msp, uint32_t psp, uint32_t exc_
 	struct arch_esf *ptr_esf = NULL;
 
 	*nested_exc = false;
+	context->non_secure_esf = false;
 
 	if ((exc_return & EXC_RETURN_INDICATOR_PREFIX) != EXC_RETURN_INDICATOR_PREFIX) {
 		/* Invalid EXC_RETURN value. This is a fatal error. */
@@ -962,6 +978,7 @@ static inline struct arch_esf *get_esf(uint32_t msp, uint32_t psp, uint32_t exc_
 		 * exception stack frame is located in the Non-Secure stack.
 		 */
 		alternative_state_exc = true;
+		context->non_secure_esf = true;
 
 		/* Dump the Secure stack before handling the actual fault. */
 		struct arch_esf *secure_esf;
@@ -1113,11 +1130,15 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return, _callee_saved_
 	 * as argument to the remainder of the fault handling process.
 	 */
 	esf = get_esf(msp, psp, exc_return, &nested_exc, &context);
-	__ASSERT(esf != NULL, "ESF could not be retrieved successfully. Shall never occur.");
+	if (esf == NULL) {
+		PR_FAULT_INFO("ESF could not be retrieved successfully. Shall never occur.");
+		z_arm_fatal_error(K_ERR_CPU_EXCEPTION, NULL);
+		return;
+	}
 
 	z_arm_set_fault_sp(esf, exc_return);
 
-	reason = fault_handle(esf, fault, &recoverable);
+	reason = fault_handle(esf, fault, &recoverable, context.non_secure_esf);
 	if (recoverable) {
 		return;
 	}
