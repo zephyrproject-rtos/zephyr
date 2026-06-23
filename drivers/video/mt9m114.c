@@ -180,20 +180,15 @@ static const struct mt9m114_resolution_config resolution_configs[] = {
 	{.width = 1280, .height = 720, .params = mt9m114_1280_720},
 };
 
-#define MT9M114_VIDEO_FORMAT_CAP(width, height, format)                                            \
-	{                                                                                          \
-		.pixelformat = (format), .width_min = (width), .width_max = (width),               \
-		.height_min = (height), .height_max = (height), .width_step = 0, .height_step = 0  \
-	}
-
 static const struct video_format_cap fmts[] = {
-	MT9M114_VIDEO_FORMAT_CAP(480, 272, VIDEO_PIX_FMT_RGB565),
-	MT9M114_VIDEO_FORMAT_CAP(480, 272, VIDEO_PIX_FMT_YUYV),
-	MT9M114_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565),
-	MT9M114_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_YUYV),
-	MT9M114_VIDEO_FORMAT_CAP(1280, 720, VIDEO_PIX_FMT_RGB565),
-	MT9M114_VIDEO_FORMAT_CAP(1280, 720, VIDEO_PIX_FMT_YUYV),
-	{0}};
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_RGB565, 480, 272),
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_RGB565, 640, 480),
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_RGB565, 1280, 720),
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_YUYV,   480, 272),
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_YUYV,   640, 480),
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_YUYV,   1280, 720),
+	{0},
+};
 
 static inline int i2c_burst_read16_dt(const struct i2c_dt_spec *spec, uint16_t start_addr,
 				      uint8_t *buf, uint32_t num_bytes)

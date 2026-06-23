@@ -98,38 +98,23 @@ static const struct stm32_jpeg_fmt_conf stm32_jpeg_confs[] = {
 	/* TODO: YCrCb 4:4:4 to be added */
 };
 
+#define STM32_FMT_CAP(pixfmt)                                                                      \
+	{                                                                                          \
+		.pixelformat = (pixfmt),                                                           \
+		.width_min  = 16, .width_max  = 65520, .width_step  = 16,                          \
+		.height_min = 16, .height_max = 65520, .height_step = 16,                          \
+	}
+
 static const struct video_format_cap stm32_jpeg_in_fmts[] = {
-	{
-		.pixelformat = VIDEO_PIX_FMT_NV12,
-		.width_min = 16,
-		.width_max = 65520,
-		.height_min = 16,
-		.height_max = 65520,
-		.width_step = 16,
-		.height_step = 16,
-	},
-	{
-		.pixelformat = VIDEO_PIX_FMT_GREY,
-		.width_min = 16,
-		.width_max = 65520,
-		.height_min = 16,
-		.height_max = 65520,
-		.width_step = 16,
-		.height_step = 16,
-	},
-	{0}};
+	STM32_FMT_CAP(VIDEO_PIX_FMT_NV12),
+	STM32_FMT_CAP(VIDEO_PIX_FMT_GREY),
+	{0},
+};
 
 static const struct video_format_cap stm32_jpeg_out_fmts[] = {
-	{
-		.pixelformat = VIDEO_PIX_FMT_JPEG,
-		.width_min = 16,
-		.width_max = 65520,
-		.height_min = 16,
-		.height_max = 65520,
-		.width_step = 16,
-		.height_step = 16,
-	},
-	{0}};
+	STM32_FMT_CAP(VIDEO_PIX_FMT_JPEG),
+	{0},
+};
 
 #define MCU_BLOCK_SZ         8
 #define MCU_WIDTH            16

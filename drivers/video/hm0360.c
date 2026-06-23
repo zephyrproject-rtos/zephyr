@@ -544,17 +544,12 @@ static const struct video_reg hm0360_qqvga_regs[] = {
 	{HM0360_CCI_COMMAND_UPDATE, 0x01},
 };
 
-#define HM0360_VIDEO_FORMAT_CAP(width, height, format)                                             \
-	{                                                                                          \
-		.pixelformat = (format), .width_min = (width), .width_max = (width),               \
-		.height_min = (height), .height_max = (height), .width_step = 0, .height_step = 0  \
-	}
-
 static const struct video_format_cap fmts[] = {
-	HM0360_VIDEO_FORMAT_CAP(160, 120, VIDEO_PIX_FMT_GREY), /* QQVGA  */
-	HM0360_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_GREY), /* QVGA  */
-	HM0360_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_GREY), /* VGA   */
-	{0}};
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_GREY, 160, 120), /* QQVGA  */
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_GREY, 320, 240), /* QVGA  */
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_GREY, 640, 480), /* VGA   */
+	{0},
+};
 
 static int hm0360_get_caps(const struct device *dev, struct video_caps *caps)
 {

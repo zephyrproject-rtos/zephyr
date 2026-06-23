@@ -140,20 +140,9 @@ static const struct emul_imager_mode *emul_imager_modes[] = {
 /* Video device capabilities where the supported resolutions and pixel formats are listed.
  * The format ID is used as index to fetch the matching mode from the list above.
  */
-#define EMUL_IMAGER_VIDEO_FORMAT_CAP(format, width, height)                                        \
-	{                                                                                          \
-		/* For a real imager, the width and height would be macro parameters */            \
-		.pixelformat = (format),                                                           \
-		.width_min = (width),                                                              \
-		.width_max = (width),                                                              \
-		.width_step = 0,                                                                   \
-		.height_min = (height),                                                            \
-		.height_max = (height),                                                            \
-		.height_step = 0,                                                                  \
-	}
 static const struct video_format_cap fmts[] = {
-	[RGB565_320x240] = EMUL_IMAGER_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_RGB565, 320, 240),
-	[YUYV_320x240] = EMUL_IMAGER_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_YUYV, 320, 240),
+	[RGB565_320x240] = VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_RGB565, 320, 240),
+	[YUYV_320x240]   = VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_YUYV,   320, 240),
 	{0},
 };
 

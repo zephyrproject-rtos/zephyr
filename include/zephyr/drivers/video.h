@@ -121,6 +121,22 @@ struct video_format_cap {
 };
 
 /**
+ * @brief define an entry in a @ref video_format_cap with identical min/max
+ *
+ * The width and height step is set to 0 as this is not expected to be read.
+ *
+ * @param pixfmt FourCC of the pixel format to test
+ * @param width  The single width supported by this entry
+ * @param height The single height supported by this entry
+ */
+#define VIDEO_FORMAT_CAP_DISCRETE(pixfmt, width, height)                                           \
+	{                                                                                          \
+		.pixelformat = (pixfmt),                                                           \
+		.width_min  = (width),  .width_max  = (width),  .width_step  = (0),                \
+		.height_min = (height), .height_max = (height), .height_step = (0),                \
+	}
+
+/**
  * @brief Video format capabilities
  *
  * Used to describe video endpoint capabilities.

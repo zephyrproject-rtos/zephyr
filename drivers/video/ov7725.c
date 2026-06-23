@@ -521,16 +521,8 @@ static int ov7725_set_stream(const struct device *dev, bool enable, enum video_b
 }
 
 static const struct video_format_cap fmts[] = {
-	{
-		.pixelformat = VIDEO_PIX_FMT_RGB565,
-		.width_min = 640,
-		.width_max = 640,
-		.height_min = 480,
-		.height_max = 480,
-		.width_step = 0,
-		.height_step = 0,
-	},
-	{ 0 }
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_RGB565, 640, 480),
+	{0}
 };
 
 static int ov7725_get_caps(const struct device *dev, struct video_caps *caps)

@@ -169,23 +169,12 @@ static const struct video_reg8 ov9655_init_common[] = {
 	{0xcd, 0x93},
 };
 
-#define OV9655_VIDEO_FORMAT_CAP(width, height, format)	\
-	{						\
-		.pixelformat = (format),		\
-		.width_min = (width),			\
-		.width_max = (width),			\
-		.height_min = (height),			\
-		.height_max = (height),			\
-		.width_step = 0,			\
-		.height_step = 0  \
-	}
-
 static const struct video_format_cap fmts[] = {
-	OV9655_VIDEO_FORMAT_CAP(160, 120, VIDEO_PIX_FMT_RGB565),	/* QQVGA */
-	OV9655_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_RGB565),	/* QVGA */
-	OV9655_VIDEO_FORMAT_CAP(160, 120, VIDEO_PIX_FMT_YUYV),		/* QQVGA */
-	OV9655_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_YUYV),		/* QVGA */
-	{ 0 },
+	VIDEO_FORMAT_CAP_DISCRETE(160, 120, VIDEO_PIX_FMT_RGB565),	/* QQVGA */
+	VIDEO_FORMAT_CAP_DISCRETE(320, 240, VIDEO_PIX_FMT_RGB565),	/* QVGA */
+	VIDEO_FORMAT_CAP_DISCRETE(160, 120, VIDEO_PIX_FMT_YUYV),	/* QQVGA */
+	VIDEO_FORMAT_CAP_DISCRETE(320, 240, VIDEO_PIX_FMT_YUYV),	/* QVGA */
+	{0},
 };
 
 static int ov9655_get_caps(const struct device *dev, struct video_caps *caps)

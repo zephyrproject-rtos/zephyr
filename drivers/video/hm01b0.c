@@ -237,29 +237,18 @@ struct hm01b0_config {
 	const uint8_t ctrl_val;
 };
 
-#define HM01B0_VIDEO_FORMAT_CAP(width, height, format)                                             \
-	{                                                                                          \
-		.pixelformat = (format),                                                           \
-		.width_min = (width),                                                              \
-		.width_max = (width),                                                              \
-		.height_min = (height),                                                            \
-		.height_max = (height),                                                            \
-		.width_step = 0,                                                                   \
-		.height_step = 0,                                                                  \
-	}
-
 static const struct video_format_cap hm01b0_fmts[] = {
-	[RESOLUTION_160x120] = HM01B0_VIDEO_FORMAT_CAP(160, 120, VIDEO_PIX_FMT_GREY),
-	[RESOLUTION_320x240] = HM01B0_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_GREY),
-	[RESOLUTION_320x320] = HM01B0_VIDEO_FORMAT_CAP(320, 320, VIDEO_PIX_FMT_GREY),
-	[RESOLUTION_162x122] = HM01B0_VIDEO_FORMAT_CAP(162, 122, VIDEO_PIX_FMT_GREY),
-	[RESOLUTION_324x244] = HM01B0_VIDEO_FORMAT_CAP(324, 244, VIDEO_PIX_FMT_GREY),
-	[RESOLUTION_324x324] = HM01B0_VIDEO_FORMAT_CAP(324, 324, VIDEO_PIX_FMT_GREY),
-	[RESOLUTION_162x122_Y8P16] = HM01B0_VIDEO_FORMAT_CAP(162, 122, VIDEO_PIX_FMT_Y8P16),
-	[RESOLUTION_324x244_Y8P16] = HM01B0_VIDEO_FORMAT_CAP(324, 244, VIDEO_PIX_FMT_Y8P16),
-	[RESOLUTION_324x324_Y8P16] = HM01B0_VIDEO_FORMAT_CAP(324, 324, VIDEO_PIX_FMT_Y8P16),
-	[RESOLUTION_324x244_BAYER] = HM01B0_VIDEO_FORMAT_CAP(324, 244, VIDEO_PIX_FMT_SBGGR8),
-	[RESOLUTION_324x324_BAYER] = HM01B0_VIDEO_FORMAT_CAP(324, 324, VIDEO_PIX_FMT_SBGGR8),
+	[RESOLUTION_160x120] =       VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_GREY,   160, 120),
+	[RESOLUTION_320x240] =       VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_GREY,   320, 240),
+	[RESOLUTION_320x320] =       VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_GREY,   320, 320),
+	[RESOLUTION_162x122] =       VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_GREY,   162, 122),
+	[RESOLUTION_324x244] =       VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_GREY,   324, 244),
+	[RESOLUTION_324x324] =       VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_GREY,   324, 324),
+	[RESOLUTION_162x122_Y8P16] = VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_Y8P16,  162, 122),
+	[RESOLUTION_324x244_Y8P16] = VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_Y8P16,  324, 244),
+	[RESOLUTION_324x324_Y8P16] = VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_Y8P16,  324, 324),
+	[RESOLUTION_324x244_BAYER] = VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_SBGGR8, 324, 244),
+	[RESOLUTION_324x324_BAYER] = VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_SBGGR8, 324, 324),
 	{0},
 };
 

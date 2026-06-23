@@ -462,39 +462,22 @@ struct ov2640_data {
 	struct video_format fmt;
 };
 
-#define OV2640_VIDEO_FORMAT_CAP(width, height, format)                                             \
-	{                                                                                          \
-		.pixelformat = (format),                                                           \
-		.width_min = (width),                                                              \
-		.width_max = (width),                                                              \
-		.height_min = (height),                                                            \
-		.height_max = (height),                                                            \
-		.width_step = 0,                                                                   \
-		.height_step = 0,                                                                  \
-	}
+#define OV2640_VIDEO_FORMAT_CAP(pixfmt)                                                            \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 160, 120),   /* QQVGA */                                 \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 176, 144),   /* QCIF  */                                 \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 240, 160),   /* HQVGA */                                 \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 240, 240),   /* 240x240 */                               \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 320, 240),   /* QVGA  */                                 \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 352, 288),   /* CIF   */                                 \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 640, 480),   /* VGA   */                                 \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 800, 600),   /* SVGA  */                                 \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 1024, 768),  /* XVGA  */                                 \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 1280, 1024), /* SXGA  */                                 \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 1600, 1200), /* UXGA  */
 
 static const struct video_format_cap fmts[] = {
-	OV2640_VIDEO_FORMAT_CAP(160, 120, VIDEO_PIX_FMT_RGB565),   /* QQVGA */
-	OV2640_VIDEO_FORMAT_CAP(176, 144, VIDEO_PIX_FMT_RGB565),   /* QCIF  */
-	OV2640_VIDEO_FORMAT_CAP(240, 160, VIDEO_PIX_FMT_RGB565),   /* HQVGA */
-	OV2640_VIDEO_FORMAT_CAP(240, 240, VIDEO_PIX_FMT_RGB565),   /* 240x240 */
-	OV2640_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_RGB565),   /* QVGA  */
-	OV2640_VIDEO_FORMAT_CAP(352, 288, VIDEO_PIX_FMT_RGB565),   /* CIF   */
-	OV2640_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565),   /* VGA   */
-	OV2640_VIDEO_FORMAT_CAP(800, 600, VIDEO_PIX_FMT_RGB565),   /* SVGA  */
-	OV2640_VIDEO_FORMAT_CAP(1024, 768, VIDEO_PIX_FMT_RGB565),  /* XVGA  */
-	OV2640_VIDEO_FORMAT_CAP(1280, 1024, VIDEO_PIX_FMT_RGB565), /* SXGA  */
-	OV2640_VIDEO_FORMAT_CAP(1600, 1200, VIDEO_PIX_FMT_RGB565), /* UXGA  */
-	OV2640_VIDEO_FORMAT_CAP(160, 120, VIDEO_PIX_FMT_JPEG),     /* QQVGA */
-	OV2640_VIDEO_FORMAT_CAP(176, 144, VIDEO_PIX_FMT_JPEG),     /* QCIF  */
-	OV2640_VIDEO_FORMAT_CAP(240, 160, VIDEO_PIX_FMT_JPEG),     /* HQVGA */
-	OV2640_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_JPEG),     /* QVGA  */
-	OV2640_VIDEO_FORMAT_CAP(352, 288, VIDEO_PIX_FMT_JPEG),     /* CIF   */
-	OV2640_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_JPEG),     /* VGA   */
-	OV2640_VIDEO_FORMAT_CAP(800, 600, VIDEO_PIX_FMT_JPEG),     /* SVGA  */
-	OV2640_VIDEO_FORMAT_CAP(1024, 768, VIDEO_PIX_FMT_JPEG),    /* XVGA  */
-	OV2640_VIDEO_FORMAT_CAP(1280, 1024, VIDEO_PIX_FMT_JPEG),   /* SXGA  */
-	OV2640_VIDEO_FORMAT_CAP(1600, 1200, VIDEO_PIX_FMT_JPEG),   /* UXGA  */
+	OV2640_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_RGB565),
+	OV2640_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_JPEG),
 	{0},
 };
 

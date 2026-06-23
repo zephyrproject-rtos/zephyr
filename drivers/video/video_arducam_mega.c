@@ -252,43 +252,21 @@ struct arducam_mega_data {
 	uint32_t camera_id;
 };
 
-#define ARDUCAM_MEGA_VIDEO_FORMAT_CAP(width, height, format)                                       \
-	{.pixelformat = (format),                                                                  \
-	 .width_min = (width),                                                                     \
-	 .width_max = (width),                                                                     \
-	 .height_min = (height),                                                                   \
-	 .height_max = (height),                                                                   \
-	 .width_step = 0,                                                                          \
-	 .height_step = 0}
+#define ARDUCAM_MEGA_VIDEO_FORMAT_CAP(pixfmt)                                                      \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 96,   96),                                               \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 128,  128),                                              \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 320,  240),                                              \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 320,  320),                                              \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 640,  480),                                              \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 1280, 720),                                              \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 1600, 1200),                                             \
+	VIDEO_FORMAT_CAP_DISCRETE(pixfmt, 1920, 1080),                                             \
+	{0}
 
 static struct video_format_cap fmts[] = {
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(96, 96, VIDEO_PIX_FMT_RGB565),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(128, 128, VIDEO_PIX_FMT_RGB565),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_RGB565),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(320, 320, VIDEO_PIX_FMT_RGB565),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(1280, 720, VIDEO_PIX_FMT_RGB565),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(1600, 1200, VIDEO_PIX_FMT_RGB565),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(1920, 1080, VIDEO_PIX_FMT_RGB565),
-	{0},
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(96, 96, VIDEO_PIX_FMT_JPEG),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(128, 128, VIDEO_PIX_FMT_JPEG),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_JPEG),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(320, 320, VIDEO_PIX_FMT_JPEG),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_JPEG),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(1280, 720, VIDEO_PIX_FMT_JPEG),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(1600, 1200, VIDEO_PIX_FMT_JPEG),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(1920, 1080, VIDEO_PIX_FMT_JPEG),
-	{0},
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(96, 96, VIDEO_PIX_FMT_YUYV),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(128, 128, VIDEO_PIX_FMT_YUYV),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_YUYV),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(320, 320, VIDEO_PIX_FMT_YUYV),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_YUYV),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(1280, 720, VIDEO_PIX_FMT_YUYV),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(1600, 1200, VIDEO_PIX_FMT_YUYV),
-	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(1920, 1080, VIDEO_PIX_FMT_YUYV),
-	{0},
+	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_RGB565),
+	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_JPEG),
+	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_YUYV),
 	{0},
 };
 
@@ -781,31 +759,31 @@ static int arducam_mega_check_connection(const struct device *dev)
 
 	switch (cam_id) {
 	case ARDUCAM_SENSOR_5MP_1:
-		fmts[8] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-			2592, 1944, VIDEO_PIX_FMT_RGB565);
-		fmts[17] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-			2592, 1944, VIDEO_PIX_FMT_JPEG);
-		fmts[26] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-			2592, 1944, VIDEO_PIX_FMT_YUYV);
+		fmts[8] = (struct video_format_cap)
+			VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_RGB565, 2592, 1944);
+		fmts[17] = (struct video_format_cap)
+			VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_JPEG, 2592, 1944);
+		fmts[26] = (struct video_format_cap)
+			VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_YUYV, 2592, 1944);
 		drv_data->features |= MEGA_HAS_FOCUS | MEGA_HAS_COLORFX;
 		break;
 	case ARDUCAM_SENSOR_3MP_1:
 	case ARDUCAM_SENSOR_3MP_2:
-		fmts[8] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-			2048, 1536, VIDEO_PIX_FMT_RGB565);
-		fmts[17] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-			2048, 1536, VIDEO_PIX_FMT_JPEG);
-		fmts[26] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-			2048, 1536, VIDEO_PIX_FMT_YUYV);
+		fmts[8] = (struct video_format_cap)
+			VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_RGB565, 2048, 1536);
+		fmts[17] = (struct video_format_cap)
+			VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_JPEG, 2048, 1536);
+		fmts[26] = (struct video_format_cap)
+			VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_YUYV, 2048, 1536);
 		drv_data->features |= MEGA_HAS_SHARPNESS | MEGA_HAS_COLORFX;
 		break;
 	case ARDUCAM_SENSOR_5MP_2:
-		fmts[8] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-			2592, 1936, VIDEO_PIX_FMT_RGB565);
-		fmts[17] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-			2592, 1936, VIDEO_PIX_FMT_JPEG);
-		fmts[26] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-			2592, 1936, VIDEO_PIX_FMT_YUYV);
+		fmts[8] = (struct video_format_cap)
+			VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_RGB565, 2592, 1936);
+		fmts[17] = (struct video_format_cap)
+			VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_JPEG, 2592, 1936);
+		fmts[26] = (struct video_format_cap)
+			VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_YUYV, 2592, 1936);
 		drv_data->features |= MEGA_HAS_FOCUS | MEGA_HAS_COLORFX;
 		break;
 	default:
