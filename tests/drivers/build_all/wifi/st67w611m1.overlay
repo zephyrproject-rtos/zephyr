@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <2>;
+			status = "okay";
+		};
+
+		test_st67w611m1: spi@67676767 {
+			compatible = "vnd,spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x67676767 0x1000>;
+			status = "okay";
+
+			test_st67w611m1_spi: st67w611m1@0 {
+				status = "okay";
+				compatible = "st,st67w611m1";
+				reg = <0>;
+				spi-max-frequency = <40000000>;
+				chip-select-gpios = <&test_gpio 0 0>;
+				ready-gpios = <&test_gpio 0 0>;
+				chip-en-gpios = <&test_gpio 0 0>;
+			};
+		};
+	};
+};
