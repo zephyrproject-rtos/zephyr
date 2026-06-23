@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Synaptics Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+config CACHE_ARM_AHB
+	bool "ARM CoreLink AHB cache driver"
+	select CACHE_HAS_DRIVER
+	depends on CACHE_MANAGEMENT
+	depends on DT_HAS_ARM_AHB_CACHE_ENABLED
+	help
+	  Enable support for the ARM CoreLink AHB cache as instruction cache
+	  for Cortex-M0/0+/3/4/23/33 and similar CPUs.
