@@ -1072,6 +1072,13 @@ INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
                          @ZEPHYR_BASE@/subsys/testsuite/ztest/include/ \
                          @ZEPHYR_BASE@/subsys/secure_storage/include/ \
                          @ZEPHYR_BASE@/modules/openthread/include/openthread.h \
+			 @ZEPHYR_BASE@/tests/tests.dox \
+			 @ZEPHYR_BASE@/tests/kernel \
+			 @ZEPHYR_BASE@/tests/arch \
+			 @ZEPHYR_BASE@/tests/lib/multi_heap \
+			 @ZEPHYR_BASE@/tests/lib/devicetree/devices \
+			 @ZEPHYR_BASE@/tests/subsys/logging \
+			 @ZEPHYR_BASE@/kernel/ \
                          @DOXY_REQ_INPUT@ \
 
 # This tag can be used to specify the character encoding of the source files
@@ -2586,6 +2593,7 @@ PREDEFINED             = __DOXYGEN__ \
                          CONFIG_FPU_SHARING \
                          CONFIG_GDBSTUB \
                          CONFIG_HEAP_MEM_POOL_SIZE \
+                         CONFIG_INIT_STACKS \
                          CONFIG_MMU \
                          CONFIG_NET_L2_ETHERNET_MGMT \
                          CONFIG_NET_L2_IEEE802154_MGMT \
@@ -2598,11 +2606,15 @@ PREDEFINED             = __DOXYGEN__ \
                          CONFIG_SCHED_DEADLINE \
                          CONFIG_SETTINGS_RUNTIME \
                          CONFIG_SMP \
+                         CONFIG_STACK_POINTER_RANDOM \
                          CONFIG_SYS_CLOCK_EXISTS \
                          CONFIG_THREAD_CUSTOM_DATA \
                          CONFIG_THREAD_MONITOR \
                          CONFIG_THREAD_STACK_INFO \
+                         CONFIG_TIMEOUT_64BIT \
+                         CONFIG_TIMER_OBSERVER \
                          CONFIG_TIMING_FUNCTIONS \
+                         CONFIG_WORKQUEUE_WORK_TIMEOUT \
                          CONFIG_UART_DRV_CMD \
                          CONFIG_UART_INTERRUPT_DRIVEN \
                          CONFIG_UART_ASYNC_API \
@@ -2624,12 +2636,12 @@ PREDEFINED             = __DOXYGEN__ \
                          __syscall_always_inline= \
                          __must_check= \
                          "ATOMIC_DEFINE(x, y)=atomic_t x[ATOMIC_BITMAP_SIZE(y)]" \
-                         "ZTEST(suite, fn)=void fn(void)" \
-                         "ZTEST_USER(suite, fn)=void fn(void)" \
-                         "ZTEST_USER_F(suite, fn)=void fn(void)" \
-                         "ZTEST_F(suite, fn)=void fn(void)" \
-                         "ZTEST_P(suite, fn)=void fn(void)" \
-                         "ZTEST_USER_P(suite, fn)=void fn(void)"
+                         "ZTEST(suite, fn)=void suite##__##fn(void)" \
+                         "ZTEST_USER(suite, fn)=void suite##__##fn(void)" \
+                         "ZTEST_USER_F(suite, fn)=void suite##__##fn(void)" \
+                         "ZTEST_F(suite, fn)=void suite##__##fn(void)" \
+                         "ZTEST_P(suite, fn)=void suite##__##fn(void)" \
+                         "ZTEST_USER_P(suite, fn)=void suite##__##fn(void)"
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The
