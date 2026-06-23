@@ -146,7 +146,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 			ticks = watchdog_expire_ticks - 2;
 		}
 	}
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
 
 	schedule_next_interrupt(ticks);
 }

@@ -61,7 +61,7 @@ static void radio_timer_error_isr(void *args)
 
 static void radio_timer_cpu_wkup_isr(void *args)
 {
-	int32_t dticks;
+	uint32_t dticks;
 	uint64_t diff_cycles;
 
 	ARG_UNUSED(args);
@@ -78,7 +78,7 @@ static void radio_timer_cpu_wkup_isr(void *args)
 
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		diff_cycles = HAL_RADIO_TIMER_GetCurrentSysTime() - announced_cycles;
-		dticks = (int32_t)k_cyc_to_ticks_near64(diff_cycles);
+		dticks = k_cyc_to_ticks_near64(diff_cycles);
 		announced_cycles += k_ticks_to_cyc_near32(dticks);
 		sys_clock_announce(dticks);
 	} else {

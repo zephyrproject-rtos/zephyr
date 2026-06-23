@@ -395,7 +395,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	 * treated identically: it simply indicates the kernel would like the
 	 * next tick announcement as soon as possible.
 	 */
-	ticks = CLAMP(ticks - 1, 1, lptim_time_base);
+	ticks = CLAMP(ticks, 2, lptim_time_base) - 1;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 

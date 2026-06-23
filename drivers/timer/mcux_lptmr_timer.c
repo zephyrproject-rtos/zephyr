@@ -83,7 +83,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	uint32_t next, adj, now;
 
 	/* Clamp ticks. We subtract one since we round up to next tick */
-	ticks = CLAMP((ticks - 1), 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
 
 	key = k_spin_lock(&lock);
 

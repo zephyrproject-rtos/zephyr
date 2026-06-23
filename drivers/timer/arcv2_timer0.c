@@ -312,7 +312,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	uint32_t delay;
 	uint32_t unannounced;
 
-	ticks = MIN(MAX_TICKS, (uint32_t)(MAX((int32_t)(ticks - 1), 0)));
+	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 

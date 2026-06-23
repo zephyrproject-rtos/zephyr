@@ -139,7 +139,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	/* Compute desired expiration time */
 	uint64_t now = sys_clock_cycle_get_64();
-	uint64_t end = now + CLAMP(ticks - 1, 0, MAX_TICKS) * OST64_PER_TICK;
+	uint64_t end = now + (CLAMP(ticks, 1, MAX_TICKS) - 1) * OST64_PER_TICK;
 	uint32_t dt = (uint32_t)MIN(end - last_announce, CYC64_MAX);
 
 	/* Round up to tick boundary */
