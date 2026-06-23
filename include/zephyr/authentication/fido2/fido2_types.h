@@ -272,6 +272,8 @@ struct fido2_device_info {
 	uint8_t num_pin_uv_auth_protocols;
 	/** Remaining PIN retry attempts. */
 	uint8_t pin_retries;
+	/** Current minimum PIN length */
+	uint8_t min_pin_length;
 };
 
 #ifdef __cplusplus

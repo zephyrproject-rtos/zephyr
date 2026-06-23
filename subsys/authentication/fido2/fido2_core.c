@@ -543,10 +543,6 @@ static enum fido2_status handle_get_assertion(uint8_t *cbor_in, size_t cbor_in_l
 	if (ga_params.has_pin_uv_auth_param) {
 		ga_params.uv = false;
 	}
-	if (ga_params.uv) {
-		LOG_WRN("Rejected GetAssertion: UV not supported");
-		return FIDO2_ERR_OPERATION_DENIED;
-	}
 	if (ga_params.has_enterprise_attestation) {
 		LOG_WRN("Rejected GetAssertion: enterprise attestation not supported");
 		return FIDO2_ERR_INVALID_PARAMETER;
@@ -632,14 +628,15 @@ static enum fido2_status handle_get_info(uint8_t *cbor_out, size_t cbor_out_cap,
 	info.versions[0] = "FIDO_2_0";
 	info.versions[1] = "FIDO_2_1";
 	info.num_versions = 2;
-	info.num_pin_uv_auth_protocols = 0;
+	info.num_pin_uv_auth_protocols = 1;
+	info.pin_uv_auth_protocols[0] = FIDO2_PIN_PROTOCOL_V1;
 	info.max_credential_count = CONFIG_FIDO2_MAX_CREDENTIALS;
 	info.max_msg_size = CONFIG_FIDO2_CBOR_MAX_SIZE;
 	info.max_credential_id_length = FIDO2_CREDENTIAL_ID_MAX_SIZE;
-	info.transports = 0;
-
+	info.min_pin_length = CONFIG_FIDO2_MIN_PIN_LENGTH;
 	info.firmware_version = 0x00010000;
 
+	info.transports = 0;
 	if (IS_ENABLED(CONFIG_FIDO2_TRANSPORT_USB_HID)) {
 		info.transports |= FIDO2_TRANSPORT_USB;
 	}
@@ -647,8 +644,8 @@ static enum fido2_status handle_get_info(uint8_t *cbor_out, size_t cbor_out_cap,
 	info.options.rk = !IS_ENABLED(CONFIG_FIDO2_STORAGE_NONE);
 	info.options.up = true;
 	info.options.plat = false;
-	/* These will depend on config */
-	info.options.uv = false;
+	info.options.pin_uv_auth_token = true;
+	info.options.client_pin = fido2_clientpin_pin_is_set();
 	/* Allow non-UV non-discoverable credential creation */
 	info.options.make_cred_uv_not_rqd = !IS_ENABLED(CONFIG_FIDO2_ALWAYS_UV);
 	/* Force UV even when RP sets userVerification=discouraged */
@@ -708,6 +705,14 @@ static enum fido2_status handle_client_pin(uint8_t *cbor_in, size_t cbor_in_len,
 	case FIDO2_CLIENTPIN_GET_KEY_AGREEMENT:
 		return fido2_clientpin_cmd_get_key_agreement(cbor_out, cbor_out_cap, cbor_out_len);
 	case FIDO2_CLIENTPIN_SET_PIN:
+		if (!cp_params.has_pin_uv_auth_param || !cp_params.has_new_pin_enc ||
+		    !cp_params.has_key_agreement) {
+			return FIDO2_ERR_MISSING_PARAMETER;
+		}
+		return fido2_clientpin_cmd_set_pin(
+			cp_params.pin_uv_auth_protocol, cp_params.key_agreement,
+			cp_params.key_agreement_len, cp_params.new_pin_enc,
+			cp_params.new_pin_enc_len, cp_params.pin_uv_auth_param);
 	case FIDO2_CLIENTPIN_CHANGE_PIN:
 	case FIDO2_CLIENTPIN_GET_PIN_TOKEN:
 	case FIDO2_CLIENTPIN_GET_PIN_TOKEN_UV_W_PERMS:

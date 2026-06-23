@@ -16,6 +16,7 @@ LOG_MODULE_DECLARE(fido2, CONFIG_FIDO2_LOG_LEVEL);
 #define FIDO2_SETTINGS_BASE        "fido2"
 #define FIDO2_SETTINGS_CRED_PREFIX FIDO2_SETTINGS_BASE "/cred"
 #define FIDO2_SETTINGS_PIN_RETRIES FIDO2_SETTINGS_BASE "/pin_retries"
+#define FIDO2_SETTINGS_PIN_HASH    FIDO2_SETTINGS_BASE "/pin_hash"
 #define FIDO2_SETTINGS_KEY_MAX     20
 
 static void build_key(char *buf, size_t size, int idx)
@@ -161,6 +162,29 @@ static int settings_backend_pin_retries_get(uint8_t *retries)
 	return 0;
 }
 
+static int settings_backend_pin_retries_reset(void)
+{
+	uint8_t retries = CONFIG_FIDO2_PIN_MAX_RETRIES;
+
+	return settings_save_one(FIDO2_SETTINGS_PIN_RETRIES, &retries, sizeof(retries));
+}
+
+static int settings_backend_pin_set(const uint8_t *pin_hash)
+{
+	return settings_save_one(FIDO2_SETTINGS_PIN_HASH, pin_hash, FIDO2_PIN_HASH_SIZE);
+}
+
+static int settings_backend_pin_get(uint8_t *pin_hash)
+{
+	ssize_t len = settings_load_one(FIDO2_SETTINGS_PIN_HASH, pin_hash, FIDO2_PIN_HASH_SIZE);
+
+	if (len != FIDO2_PIN_HASH_SIZE) {
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
 const struct fido2_storage_api fido2_storage_backend = {
 	.init = settings_backend_init,
 	.store = settings_backend_store,
@@ -169,4 +193,7 @@ const struct fido2_storage_api fido2_storage_backend = {
 	.find_by_rp = settings_backend_find_by_rp,
 	.sign_count_increment = settings_backend_sign_count_increment,
 	.pin_retries_get = settings_backend_pin_retries_get,
+	.pin_retries_reset = settings_backend_pin_retries_reset,
+	.pin_set = settings_backend_pin_set,
+	.pin_get = settings_backend_pin_get,
 };

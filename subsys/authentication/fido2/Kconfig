@@ -13,6 +13,8 @@ menuconfig FIDO2
 	select PSA_WANT_ALG_ECDH
 	select PSA_WANT_ALG_SHA_256
 	select PSA_WANT_ALG_GCM
+	select PSA_WANT_ALG_HMAC
+	select PSA_WANT_ALG_CBC_NO_PADDING
 	select PSA_WANT_ECC_SECP_R1_256
 	help
 	  Enable the FIDO2/CTAP2 authenticator subsystem.
@@ -104,6 +106,13 @@ config FIDO2_PIN_MAX_RETRIES
 	help
 	  Maximum number of attempts left before PIN is disabled.
 	  Must not be more than 8 per the CTAP2 specification.
+
+config FIDO2_MIN_PIN_LENGTH
+	int "Minimum PIN length"
+	default 4
+	range 4 63
+	help
+	  Minimum PIN length enforced by the authenticator.
 
 rsource "attestation/Kconfig"
 rsource "transport/Kconfig"

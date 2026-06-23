@@ -69,6 +69,7 @@ LOG_MODULE_DECLARE(fido2, CONFIG_FIDO2_LOG_LEVEL);
 #define GETINFO_KEY_MAX_CREDENTIAL_COUNT_IN_LIST 0x07
 #define GETINFO_KEY_MAX_CREDENTIAL_ID_LENGTH     0x08
 #define GETINFO_KEY_TRANSPORTS                   0x09
+#define GETINFO_KEY_MIN_PIN_LENGTH               0x0D
 #define GETINFO_KEY_FIRMWARE_VERSION             0x0E
 
 /* authenticatorClientPIN 0x06 */
@@ -1087,7 +1088,7 @@ int fido2_cbor_encode_get_info(const struct fido2_device_info *info, uint8_t *cb
 {
 	ZCBOR_STATE_E(zs, 5, cbor_out, cbor_out_cap, 1);
 
-	if (!zcbor_map_start_encode(zs, 10)) {
+	if (!zcbor_map_start_encode(zs, 15)) {
 		return -ENOMEM;
 	}
 
@@ -1275,13 +1276,21 @@ int fido2_cbor_encode_get_info(const struct fido2_device_info *info, uint8_t *cb
 		}
 	}
 
+	/* 0x0D: minPINLength */
+	if (info->num_pin_uv_auth_protocols > 0) {
+		if (!zcbor_uint32_put(zs, GETINFO_KEY_MIN_PIN_LENGTH) ||
+		    !zcbor_uint32_put(zs, info->min_pin_length)) {
+			return -ENOMEM;
+		}
+	}
+
 	/* 0x0E: firmwareVersion */
 	if (!zcbor_uint32_put(zs, GETINFO_KEY_FIRMWARE_VERSION) ||
 	    !zcbor_uint32_put(zs, info->firmware_version)) {
 		return -ENOMEM;
 	}
 
-	if (!zcbor_map_end_encode(zs, 10)) {
+	if (!zcbor_map_end_encode(zs, 15)) {
 		return -ENOMEM;
 	}
 
