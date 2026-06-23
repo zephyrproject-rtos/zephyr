@@ -7,6 +7,10 @@
 
 if SOC_SERIES_STM32F4X
 
+# STM32F401xD must be exposed as STM32F401xE at HAL level.
+configdefault STM32CUBE_SOC_NAME_OVERRIDE
+	default "stm32f401xe" if SOC_STM32F401XD
+
 configdefault SHARED_INTERRUPTS
 	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers9)
 	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers10)
