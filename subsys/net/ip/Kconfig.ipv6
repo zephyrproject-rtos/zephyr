@@ -494,11 +494,13 @@ config NET_MAX_6LO_CONTEXTS
 	  network and memory consumption. More 6CO options uses more memory.
 
 if NET_6LO
+
 module = NET_6LO
 module-dep = NET_LOG
 module-str = Log level for 6LoWPAN library
 module-help = Enables 6LoWPAN code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_6LO
 
 module = NET_IPV6
@@ -538,4 +540,5 @@ module-help = Enables IPv6 routing engine debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
 endif # NET_NATIVE_IPV6
+
 endif # NET_IPV6
