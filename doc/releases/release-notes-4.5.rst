@@ -56,6 +56,10 @@ API Changes
 Removed APIs and options
 ========================
 
+* Counter
+
+    * ``CONFIG_COUNTER_MAXIM_DS3231``
+
 * Networking
 
     * ``CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO``

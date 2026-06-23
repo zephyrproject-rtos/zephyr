@@ -1,10 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_syscall_header_ifdef(
-  CONFIG_COUNTER_MAXIM_DS3231
-  ${ZEPHYR_BASE}/include/zephyr/drivers/rtc/maxim_ds3231.h
-)
-
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/counter.h)
 
 zephyr_library()
@@ -31,7 +26,6 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_INFINEON_CAT1 counter_infineon.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_INFINEON_TCPWM counter_infineon_tcpwm.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_ITE_IT51XXX counter_ite_it51xxx.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_ITE_IT8XXX2 counter_ite_it8xxx2.c)
-zephyr_library_sources_ifdef(CONFIG_COUNTER_MAXIM_DS3231 maxim_ds3231.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCHP_G1_TCC counter_mchp_tcc_g1.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCHP_RTC_G1 counter_mchp_rtc_g1.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCHP_SAM_PIT64B counter_mchp_sam_pit64b.c)
