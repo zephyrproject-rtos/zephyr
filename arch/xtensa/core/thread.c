@@ -215,12 +215,23 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 {
 	struct k_thread *current = _current;
 	size_t stack_end;
+	uint8_t *psp_stack_start;
+	size_t psp_stack_sz;
 
+#ifdef CONFIG_GEN_PRIV_STACKS
+	psp_stack_start = z_priv_stack_find(current->stack_obj);
+	psp_stack_sz = CONFIG_PRIVILEGED_STACK_SIZE;
+
+	current->arch.psp_stack_start = psp_stack_start;
+#else /* CONFIG_GEN_PRIV_STACKS */
 	struct xtensa_thread_stack_header *header =
 		(struct xtensa_thread_stack_header *)current->stack_obj;
 
-	current->arch.psp = header->privilege_stack +
-		sizeof(header->privilege_stack);
+	psp_stack_start = header->privilege_stack;
+	psp_stack_sz = sizeof(header->privilege_stack);
+#endif /* CONFIG_GEN_PRIV_STACKS */
+
+	current->arch.psp = psp_stack_start + psp_stack_sz;
 
 #ifdef CONFIG_INIT_STACKS
 	/* setup_thread_stack() does not initialize the architecture specific
@@ -231,13 +242,11 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	 * Note that only user threads have privileged stacks and kernel
 	 * only threads do not.
 	 */
-	(void)memset(&header->privilege_stack[0], 0xaa, sizeof(header->privilege_stack));
-
+	(void)memset(psp_stack_start, 0xaa, psp_stack_sz);
 #endif
 
 #ifdef CONFIG_KERNEL_COHERENCE
-	sys_cache_data_flush_and_invd_range(&header->privilege_stack[0],
-					    sizeof(header->privilege_stack));
+	sys_cache_data_flush_and_invd_range(psp_stack_start, psp_stack_sz);
 #endif
 
 	/* Transition will reset stack pointer to initial, discarding
@@ -248,7 +257,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 				      current->stack_info.delta);
 
 	xtensa_userspace_enter(user_entry, p1, p2, p3,
-			       stack_end, current->stack_info.start);
+			       stack_end, (uint32_t)current->arch.psp);
 
 	CODE_UNREACHABLE;
 }
@@ -265,16 +274,21 @@ int arch_thread_priv_stack_space_get(const struct k_thread *thread, size_t *stac
 		return -EINVAL;
 	}
 
-	struct xtensa_thread_stack_header *hdr_stack_obj;
-
 	if ((thread->base.user_options & K_USER) != K_USER) {
 		return -EINVAL;
 	}
 
-	hdr_stack_obj = (struct xtensa_thread_stack_header *)thread->stack_obj;
+#ifdef CONFIG_GEN_PRIV_STACKS
+	return z_stack_space_get(thread->arch.psp_stack_start,
+				 CONFIG_PRIVILEGED_STACK_SIZE,
+				 unused_ptr);
+#else /* CONFIG_GEN_PRIV_STACKS */
+	struct xtensa_thread_stack_header *hdr_stack_obj =
+		(struct xtensa_thread_stack_header *)thread->stack_obj;
 
 	return z_stack_space_get(&hdr_stack_obj->privilege_stack[0],
 				 sizeof(hdr_stack_obj->privilege_stack),
 				 unused_ptr);
+#endif /* CONFIG_GEN_PRIV_STACKS */
 }
 #endif /* CONFIG_USERSPACE */

@@ -52,16 +52,20 @@
 #ifndef _ASMLANGUAGE
 
 /* thread stack */
+
+#if defined(CONFIG_USERSPACE) && !defined(CONFIG_GEN_PRIV_STACKS)
+
+/** Struct describing the reserved thread stack space */
 struct xtensa_thread_stack_header {
-#if defined(CONFIG_XTENSA_MMU) || defined(CONFIG_XTENSA_MPU)
+	/** Privilege stack */
 	char privilege_stack[CONFIG_PRIVILEGED_STACK_SIZE];
-#endif /* CONFIG_XTENSA_MPU */
 } __packed __aligned(XTENSA_STACK_BASE_ALIGN);
 
-#if defined(CONFIG_XTENSA_MMU) || defined(CONFIG_XTENSA_MPU)
+/** Size of reserved thread stack space */
 #define ARCH_THREAD_STACK_RESERVED		\
 	sizeof(struct xtensa_thread_stack_header)
-#endif /* CONFIG_XTENSA_MMU || CONFIG_XTENSA_MPU */
+
+#endif /* CONFIG_USERSPACE && !CONFIG_GEN_PRIV_STACKS */
 
 #define ARCH_THREAD_STACK_OBJ_ALIGN(size)	XTENSA_STACK_BASE_ALIGN
 #define ARCH_THREAD_STACK_SIZE_ADJUST(size)	\
