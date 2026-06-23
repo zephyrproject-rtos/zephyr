@@ -47,7 +47,7 @@
 /**
  * @brief Extract major version from SCMI protocol version
  *
- * @param v Combined 32-bit protocol version (major << 16 | minor)
+ * @param v Combined 32-bit protocol version <tt>(major << 16 | minor)</tt>
  * @return Major version number
  */
 #define SCMI_PROTO_VER_MAJOR(v) ((v) >> 16)
@@ -55,7 +55,7 @@
 /**
  * @brief Extract minor version from SCMI protocol version
  *
- * @param v Combined 32-bit protocol version (major << 16 | minor)
+ * @param v Combined 32-bit protocol version <tt>(major << 16 | minor)</tt>
  * @return Minor version number
  */
 #define SCMI_PROTO_VER_MINOR(v) ((v) & 0xFFFF)

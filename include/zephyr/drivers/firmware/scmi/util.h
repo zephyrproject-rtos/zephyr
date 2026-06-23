@@ -53,7 +53,7 @@
 /**
  * @brief Check if a node is the base SCMI transport node.
  *
- * This macro determines if the given node_id corresponds to the primary
+ * This macro determines if the given @p node_id corresponds to the primary
  * SCMI transport layer (the base node), by verifying if the node has
  * a compatible string matching the current transport's definition
  * (DT_SCMI_TRANSPORT_COMPATIBLE).
@@ -126,12 +126,14 @@
 /*
  * Declare a TX SCMI channel.
  *
- * Given a node_id for a protocol, this macro declares the SCMI
+ * Given a @p node_id for a protocol, this macro declares the SCMI
  * TX channel statically bound to said protocol via the "extern"
  * qualifier. This is useful when the transport layer driver
  * supports static channels since all channel structures are
  * defined inside the transport layer driver. Internal helper used
  * by DT_SCMI_TRANSPORT_CHANNELS_DECLARE(); not meant to be used directly.
+ *
+ * @param node_id Protocol node identifier
  */
 #define DT_SCMI_TRANSPORT_TX_CHAN_DECLARE(node_id)				\
 	COND_CODE_1(DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, 0),		\
@@ -157,7 +159,7 @@
  *
  * Note:
  * Some transports do not provide an RX channel. Also, the base protocol is
- * represented by the SCMI node itself (compatible "arm,scmi" or others), so relying
+ * represented by the SCMI node itself (compatible <tt>"arm,scmi"</tt> or others), so relying
  * unconditionally on @c DT_PARENT(node_id) for transport properties can be incorrect.
  * The fallback therefore checks the SCMI node transport description using the
  * transport-provided DT_SCMI_TRANSPORT_PROTO_HAS_CHAN() macro.
@@ -184,7 +186,7 @@
 /**
  * @brief Declare SCMI TX/RX channels
  *
- * Given a node_id for a protocol, this macro declares the
+ * Given a @p node_id for a protocol, this macro declares the
  * SCMI TX and RX channels statically bound to said protocol via
  * the "extern" qualifier.
  *
@@ -208,7 +210,7 @@
 /**
  * @brief Get a reference to a protocol's SCMI TX channel
  *
- * Given a node_id for a protocol, this macro returns a
+ * Given a @p node_id for a protocol, this macro returns a
  * reference to an SCMI TX channel statically bound to said
  * protocol.
  *
@@ -226,14 +228,14 @@
 /**
  * @brief Get a reference to a protocol's SCMI RX channel
  *
- * Given a node_id for a protocol, this macro returns a
+ * Given a @p node_id for a protocol, this macro returns a
  * reference to an SCMI RX channel statically bound to said
  * protocol.
  *
  * @param node_id protocol node identifier
  *
  * @return reference to the struct scmi_channel of the RX channel
- * bound to the protocol identifier by node_id
+ * bound to the protocol identifier by @p node_id
  */
 #define DT_SCMI_TRANSPORT_RX_CHAN_BASE_RAW(node_id)				\
 	COND_CODE_1(DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, 1),		\
@@ -283,11 +285,11 @@
  * DT_SCMI_PROTOCOL_DEFINE(), which also takes care of the static
  * channel declaration (if applicable).
  *
- * node_id	- protocol node identifier
- * proto	- protocol ID in decimal format
- * pdata	- protocol private data
- * version_val	- protocol version supported by the driver
- * pevents	- protocol registered events
+ * @param node_id Protocol node identifier
+ * @param proto	Protocol ID in decimal format
+ * @param pdata	Protocol private data
+ * @param version_val Protocol version supported by the driver
+ * @param pevents Protocol registered events
  */
 #define DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, proto, pdata, version_val, pevents)	\
 	STRUCT_SECTION_ITERABLE(scmi_protocol, SCMI_PROTOCOL_NAME(proto)) =		\
@@ -323,10 +325,10 @@
  *
  * This is merely a wrapper over DEVICE_DT_INST_DEFINE(), but is
  * required since transport layer drivers are not allowed to place
- * their own init() function in the init section. Instead, transport
+ * their own @c init() function in the init section. Instead, transport
  * layer drivers place the scmi_core_transport_init() function in the
  * init section, which, in turn, will call the transport layer driver
- * init() function. This is required because the SCMI core needs to
+ * @c init() function. This is required because the SCMI core needs to
  * perform channel binding and setup during the transport layer driver's
  * initialization.
  */
