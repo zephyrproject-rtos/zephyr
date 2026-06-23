@@ -53,6 +53,9 @@ static void *init_stack(struct k_thread *thread, int *stack_top,
 	 */
 	thread->arch.last_cpu = -1;
 
+#if __XTENSA_CALL0_ABI__
+	const int bsasz = sizeof(*frame);
+#else
 	/* We cheat and shave 16 bytes off, the top four words are the
 	 * A0-A3 spill area for the caller of the entry function,
 	 * which doesn't exist.  It will never be touched, so we
@@ -61,6 +64,7 @@ static void *init_stack(struct k_thread *thread, int *stack_top,
 	 * start will decrement the stack pointer by 16.
 	 */
 	const int bsasz = sizeof(*frame) - 16;
+#endif
 
 	frame = (void *)(((char *) stack_top) - bsasz);
 
@@ -90,6 +94,14 @@ static void *init_stack(struct k_thread *thread, int *stack_top,
 #endif
 #endif
 
+#if __XTENSA_CALL0_ABI__
+	frame->bsa.a2 = (uintptr_t)entry;
+	frame->bsa.a3 = (uintptr_t)arg1;
+	frame->a4 = (uintptr_t)arg2;
+	frame->a5 = (uintptr_t)arg3;
+	frame->a6 = 0;
+	frame->a7 = 0;
+#else
 	/* Arguments to z_thread_entry().  Remember these start at A6,
 	 * which will be rotated into A2 by the ENTRY instruction that
 	 * begins the C function.  And A4-A7 and A8-A11 are optional
@@ -104,6 +116,7 @@ static void *init_stack(struct k_thread *thread, int *stack_top,
 	frame->a10 = 0;                /* a10 */
 	frame->a9  = (uintptr_t)arg3;  /* a9 */
 	frame->a8  = (uintptr_t)arg2;  /* a8 */
+#endif
 
 	/* Finally push the BSA pointer and return the stack pointer
 	 * as the handle

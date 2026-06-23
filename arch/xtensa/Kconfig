@@ -14,6 +14,11 @@ config SIMULATOR_XTENSA
 	help
 	  Enable if building to run on simulator.
 
+config XTENSA_CALL0_ABI
+	bool "Use non-windowed ABI"
+	help
+	  When selected, Call0 ABI is used instead of Windowed ABI.
+
 config XTENSA_RESET_VECTOR
 	bool "Build reset vector code"
 	default y
