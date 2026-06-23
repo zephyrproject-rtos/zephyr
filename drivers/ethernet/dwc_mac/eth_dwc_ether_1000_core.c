@@ -97,13 +97,12 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 
 		net_pkt_frag_ref(frag);
 		sys_cache_data_flush_range(frag->data, frag->len);
+		p->tx_frags[d_idx] = frag;
 
 		d = &p->tx_descs[d_idx];
 		d->des0 = des0_flags;
 		d->des1 = FIELD_PREP(TDES1_TBS1, frag->len);
 		d->des2 = phys_lo32(frag->data);
-		/* track the net_buf associated with this desc for later release */
-		d->frag = frag;
 
 		if (!frag->frags) {
 			d->des0 |= TDES0_LS;
@@ -127,8 +126,7 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 abort:
 	while (d_idx != p->tx_desc_head) {
 		DEC_WRAP(d_idx, NB_TX_DESCS);
-		d = &p->tx_descs[d_idx];
-		net_pkt_frag_unref(d->frag);
+		net_pkt_frag_unref(p->tx_frags[d_idx]);
 		k_sem_give(&p->free_tx_descs);
 	}
 
@@ -151,7 +149,7 @@ static void dwmac_tx_release(const struct device *dev)
 			break;
 		}
 
-		frag = d->frag;
+		frag = p->tx_frags[d_idx];
 		net_pkt_frag_unref(frag);
 
 		if ((des0 & TDES0_LS) != 0U && (des0 & TDES0_ES) != 0U) {
@@ -199,8 +197,9 @@ static void dwmac_receive(const struct device *dev)
 			continue;
 		}
 
-		frag = d->frag;
-		d->frag = NULL;
+		frag = p->rx_frags[d_idx];
+		p->rx_frags[d_idx] = NULL;
+
 		sys_cache_data_invd_range(frag->data, frag->size);
 
 		bytes_so_far = RX_LEN_FROM_RDES0(des0);
@@ -241,7 +240,7 @@ static void dwmac_rx_refill(const struct device *dev, unsigned int d_idx)
 	d = &p->rx_descs[d_idx];
 	__ASSERT(!(d->des0 & RDES0_OWN), "rx desc still owned");
 
-	frag = d->frag;
+	frag = p->rx_frags[d_idx];
 	if (frag == NULL) {
 		frag = net_pkt_get_reserve_rx_data(RX_FRAG_SIZE, K_FOREVER);
 		if (frag == NULL) {
@@ -249,7 +248,7 @@ static void dwmac_rx_refill(const struct device *dev, unsigned int d_idx)
 			return;
 		}
 		__ASSERT_NO_MSG(frag->size == RX_FRAG_SIZE);
-		d->frag = frag;
+		p->rx_frags[d_idx] = frag;
 	}
 
 	d->des1 = FIELD_PREP(RDES1_RBS1, frag->size) | RDES1_RCH;
