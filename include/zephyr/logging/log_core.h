@@ -29,6 +29,11 @@
  * @{
  */
 
+/**
+ * @name Severity levels
+ * @{
+ */
+
 /** @brief Severity level used to disable logging for a source. */
 #define LOG_LEVEL_NONE 0
 /** @brief Error severity level. */
@@ -39,6 +44,8 @@
 #define LOG_LEVEL_INF  3
 /** @brief Debug severity level. */
 #define LOG_LEVEL_DBG  4
+
+/** @} */
 
 /** @} */
 
