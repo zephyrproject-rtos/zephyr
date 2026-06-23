@@ -30,6 +30,9 @@ manifest:
   # Please add items below based on alphabetical order
   # zephyr-keep-sorted-start re(^\s+\- name:)
   projects:
+    - name: reqmgmt
+      path: doc/reqmgmt
+      revision: main
     - name: acpica
       revision: 8d24867bc9c9d81c81eeac59391cda59333affd4
       path: modules/lib/acpica
