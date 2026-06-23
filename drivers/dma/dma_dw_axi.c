@@ -414,9 +414,9 @@ static void dma_dw_axi_isr(const struct device *dev)
 				reg_base + DMA_DW_AXI_CH_INTCLEARREG(channel));
 
 		if (chan_data->dma_xfer_callback) {
+			atomic_set(&chan_data->ch_state, dma_dw_axi_get_ch_status(dev, channel));
 			chan_data->dma_xfer_callback(dev, chan_data->priv_data_xfer,
 						channel, ret_status);
-			atomic_set(&chan_data->ch_state, dma_dw_axi_get_ch_status(dev, channel));
 		}
 	}
 }
