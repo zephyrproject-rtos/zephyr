@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Synaptics Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_SYNA_AON
+	bool "Synaptics AON GPIO driver"
+	default y
+	depends on DT_HAS_SYNA_AON_GPIO_ENABLED
+	help
+	  Enable the Synaptics AON GPIO driver.
