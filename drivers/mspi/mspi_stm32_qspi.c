@@ -174,7 +174,6 @@ static int mspi_stm32_qspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream
 	hdma->Init.MemInc = DMA_MINC_ENABLE;
 	hdma->Init.Mode = DMA_NORMAL;
 	hdma->Init.Priority = mspi_stm32_table_priority[dma_stream->cfg.channel_priority];
-	hdma->Init.Direction = mspi_stm32_table_direction[dma_stream->cfg.channel_direction];
 #ifdef CONFIG_DMA_STM32_V1
 	/* TODO: Not tested in this configuration */
 	hdma->Init.Channel = dma_stream->cfg.dma_slot;
@@ -1072,54 +1071,6 @@ static int mspi_stm32_qspi_get_channel_status(const struct device *controller, u
 	return ret;
 }
 
-static int mspi_stm32_qspi_pio_transceive(const struct device *controller,
-					  const struct mspi_xfer *xfer)
-{
-	struct mspi_stm32_data *dev_data = controller->data;
-	struct mspi_stm32_context *ctx = &dev_data->ctx;
-	const struct mspi_xfer_packet *packet;
-	uint32_t packet_idx;
-	int ret = 0;
-
-	if (xfer->num_packet == 0 || xfer->packets == NULL ||
-	    xfer->timeout > CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE) {
-		LOG_ERR("Transfer: wrong parameters");
-		return -EFAULT;
-	}
-
-	/* Acquire the context lock (semaphore) */
-	if (k_sem_take(&ctx->lock, K_MSEC(xfer->timeout)) < 0) {
-		return -EBUSY;
-	}
-
-	ctx->xfer = *xfer;
-	ctx->packets_left = ctx->xfer.num_packet;
-
-	while (ctx->packets_left > 0) {
-		packet_idx = ctx->xfer.num_packet - ctx->packets_left;
-		packet = &ctx->xfer.packets[packet_idx];
-
-		/*
-		 * Always starts with a command,
-		 * then payload is given by the xfer->num_packet
-		 */
-		ret = mspi_stm32_qspi_access(controller, packet, ctx->xfer.async ?
-					     MSPI_ACCESS_ASYNC : MSPI_ACCESS_SYNC);
-
-		if (ret != 0) {
-			LOG_ERR("QSPI access failed for packet %d: %d", packet_idx, ret);
-			ret = -EIO;
-			goto out;
-		}
-
-		ctx->packets_left--;
-	}
-
-out:
-	k_sem_give(&ctx->lock);
-	return ret;
-}
-
 /**
  * API implementation of mspi_transceive.
  *
@@ -1136,6 +1087,10 @@ static int mspi_stm32_qspi_transceive(const struct device *controller,
 				      const struct mspi_xfer *xfer)
 {
 	struct mspi_stm32_data *data = controller->data;
+	struct mspi_stm32_context *ctx = &data->ctx;
+	const struct mspi_xfer_packet *packet;
+	uint32_t packet_idx;
+	uint8_t access_mode;
 	int ret = 0;
 
 	/* Verify device ID matches */
@@ -1144,15 +1099,67 @@ static int mspi_stm32_qspi_transceive(const struct device *controller,
 		return -ESTALE;
 	}
 
-	/* Need to map the xfer to the data context */
-	data->ctx.xfer = *xfer;
-
-	if (xfer->xfer_mode == MSPI_PIO) {
-		ret = mspi_stm32_qspi_pio_transceive(controller, xfer);
-	} else {
-		ret = -EIO;
+	if (xfer->num_packet == 0 || xfer->packets == NULL ||
+	    xfer->timeout > CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE) {
+		LOG_ERR("Transfer: wrong parameters");
+		return -EFAULT;
 	}
 
+	switch (xfer->xfer_mode) {
+	case MSPI_PIO:
+		access_mode = xfer->async ? MSPI_ACCESS_ASYNC : MSPI_ACCESS_SYNC;
+		break;
+	case MSPI_DMA:
+#if defined(CONFIG_MSPI_DMA)
+	{
+		const struct mspi_stm32_conf *cfg = controller->config;
+
+		if (!cfg->dma_specified) {
+			LOG_ERR("DMA configuration is missing from the device tree");
+			return -EIO;
+		}
+		access_mode = MSPI_ACCESS_DMA;
+		break;
+	}
+#else
+		LOG_ERR("DMA mode not enabled (CONFIG_MSPI_DMA not set)");
+		return -ENOTSUP;
+#endif
+	default:
+		LOG_ERR("Invalid transfer mode: %d", xfer->xfer_mode);
+		return -EINVAL;
+	}
+
+	/* Acquire the context lock (semaphore) */
+	if (k_sem_take(&ctx->lock, K_MSEC(xfer->timeout)) < 0) {
+		return -EBUSY;
+	}
+
+	/* Need to map the xfer to the data context */
+	ctx->xfer = *xfer;
+	ctx->packets_left = ctx->xfer.num_packet;
+
+	while (ctx->packets_left > 0) {
+		packet_idx = ctx->xfer.num_packet - ctx->packets_left;
+		packet = &ctx->xfer.packets[packet_idx];
+
+		/*
+		 * Always starts with a command,
+		 * then payload is given by the xfer->num_packet
+		 */
+		ret = mspi_stm32_qspi_access(controller, packet, access_mode);
+
+		if (ret != 0) {
+			LOG_ERR("QSPI access failed for packet %d: %d", packet_idx, ret);
+			ret = -EIO;
+			goto out;
+		}
+
+		ctx->packets_left--;
+	}
+
+out:
+	k_sem_give(&ctx->lock);
 	return ret;
 }
 
