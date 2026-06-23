@@ -39,6 +39,7 @@ struct mcux_wwdt_data {
 	wwdt_config_t wwdt_config;
 	bool timeout_valid;
 	bool active_before_sleep;
+	bool started;
 };
 
 static inline int mcux_wwdt_get_clock_frequency(const struct device *dev, uint32_t *freq)
@@ -99,8 +100,8 @@ static int mcux_wwdt_setup(const struct device *dev, uint8_t options)
 	}
 
 	WWDT_Init(base, &data->wwdt_config);
+	data->started = true;
 	LOG_DBG("Setup the watchdog");
-
 	return 0;
 }
 
@@ -113,6 +114,7 @@ static int mcux_wwdt_disable(const struct device *dev)
 	WWDT_Deinit(base);
 	data->timeout_valid = false;
 	data->active_before_sleep = false;
+	data->started = false;
 	LOG_DBG("Disabled the watchdog");
 
 	return 0;
@@ -223,6 +225,10 @@ static void mcux_wwdt_isr(const struct device *dev)
 	flags = WWDT_GetStatusFlags(base);
 	WWDT_ClearStatusFlags(base, flags);
 
+	if (!data->started) {
+		return;
+	}
+
 	if (data->callback) {
 		data->callback(dev, 0);
 	}
@@ -253,6 +259,7 @@ static int mcux_wwdt_driver_pm_action(const struct device *dev,
 	case PM_DEVICE_ACTION_SUSPEND:
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
+		data->started = false;
 		if (config->base->MOD & WWDT_MOD_WDEN_MASK) {
 			data->active_before_sleep = true;
 		}
@@ -322,6 +329,10 @@ static DEVICE_API(wdt, mcux_wwdt_api) = {
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), mcux_wwdt_isr,            \
 			    DEVICE_DT_INST_GET(id), 0);                                            \
+		/* Defensive: clear any peripheral status and NVIC pending */                      \
+		WWDT_ClearStatusFlags((WWDT_Type *)DT_INST_REG_ADDR(id),                           \
+			      WWDT_GetStatusFlags((WWDT_Type *)DT_INST_REG_ADDR(id)));             \
+		NVIC_ClearPendingIRQ(DT_INST_IRQN(id));                                            \
 		irq_enable(DT_INST_IRQN(id));                                                      \
 	}
 
