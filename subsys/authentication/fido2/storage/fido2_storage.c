@@ -71,3 +71,18 @@ int fido2_storage_pin_retries_get(uint8_t *retries)
 {
 	return fido2_storage_backend.pin_retries_get(retries);
 }
+
+int fido2_storage_pin_retries_reset(void)
+{
+	return fido2_storage_backend.pin_retries_reset();
+}
+
+int fido2_storage_pin_set(uint8_t pin_hash[FIDO2_PIN_HASH_SIZE])
+{
+	return fido2_storage_backend.pin_set(pin_hash);
+}
+
+int fido2_storage_pin_get(uint8_t pin_hash[FIDO2_PIN_HASH_SIZE])
+{
+	return fido2_storage_backend.pin_get(pin_hash);
+}

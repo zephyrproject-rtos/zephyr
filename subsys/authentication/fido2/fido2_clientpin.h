@@ -15,6 +15,8 @@
 #define FIDO2_PIN_AUTH_SIZE_P2  32
 /** Maximum PIN auth param size */
 #define FIDO2_PIN_AUTH_MAX_SIZE 32
+/** Padded PIN size */
+#define FIDO2_PIN_PADDED_SIZE   64
 
 #define FIDO2_CLIENTPIN_GET_PIN_RETRIES           0x01 /**< getPINRetries */
 #define FIDO2_CLIENTPIN_GET_KEY_AGREEMENT         0x02 /**< getKeyAgreement */
@@ -32,12 +34,25 @@
 #define FIDO2_PIN_PERM_LBW  BIT(4) /**< Large Blob Write */
 #define FIDO2_PIN_PERM_ACFG BIT(5) /**< Authenticator Configuration */
 
+/** ClientPIN protocols */
+enum fido2_clientpin_protocols {
+	FIDO2_PIN_PROTOCOL_V1 = 1,
+	FIDO2_PIN_PROTOCOL_V2,
+};
+
 /**
  * Generates the initial ECDH key agreement key pair.
  *
  * @return 0 on success, negative errno on failure
  */
 int fido2_clientpin_init(void);
+
+/**
+ * Check if PIN is set.
+ *
+ * @return 0 on success, negative errno on failure
+ */
+int fido2_clientpin_pin_is_set(void);
 
 /**
  * Handle getPINRetries.
@@ -60,5 +75,21 @@ enum fido2_status fido2_clientpin_cmd_get_retries(uint8_t *cbor_out, size_t cbor
  */
 enum fido2_status fido2_clientpin_cmd_get_key_agreement(uint8_t *cbor_out, size_t cbor_out_cap,
 							size_t *cbor_out_len);
+
+/**
+ * Handle setPIN.
+ *
+ * @param protocol PIN/UV auth protocol version.
+ * @param platform_key Platform's ECDH public key.
+ * @param platform_key_len Length of @p platform_key in bytes.
+ * @param new_pin_enc Encrypted new pin.
+ * @param new_pin_enc_len Length of @p new_pin_enc in bytes.
+ * @param pin_uv_auth_param Result of calling authenticate(shared secret, newPinEnc).
+ * @return FIDO2_OK on success, FIDO2_ERR_* on failure.
+ */
+enum fido2_status fido2_clientpin_cmd_set_pin(uint8_t protocol, const uint8_t *platform_key,
+					      size_t platform_key_len, const uint8_t *new_pin_enc,
+					      size_t new_pin_enc_len,
+					      const uint8_t *pin_uv_auth_param);
 
 #endif /* FIDO2_CLIENTPIN_H_ */

@@ -62,6 +62,7 @@ static psa_status_t ensure_wrap_key(void)
 
 	status = psa_generate_key(&attr, &key_id);
 	psa_reset_key_attributes(&attr);
+
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("Wrap key generation failed: %d", status);
 		return status;
@@ -357,7 +358,7 @@ int fido2_crypto_ecdh_generate_keypair(uint32_t *key_id)
 	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_DERIVE);
 	psa_set_key_algorithm(&attr, PSA_ALG_ECDH);
 	psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
-	psa_set_key_bits(&attr, FIDO2_ES256_KEY_BITS);
+	psa_set_key_bits(&attr, PSA_BYTES_TO_BITS(FIDO2_SHA256_SIZE));
 
 	status = psa_generate_key(&attr, &id);
 	psa_reset_key_attributes(&attr);
@@ -365,6 +366,98 @@ int fido2_crypto_ecdh_generate_keypair(uint32_t *key_id)
 	if (status == PSA_SUCCESS) {
 		*key_id = id;
 	}
+
+	return status;
+}
+
+int fido2_crypto_ecdh_agree(uint32_t key_id, const uint8_t *peer_key, size_t peer_key_len,
+			    uint8_t z[FIDO2_SHA256_SIZE], size_t *z_len)
+{
+	psa_status_t status;
+
+	status = psa_raw_key_agreement(PSA_ALG_ECDH, key_id, peer_key, peer_key_len, z,
+				       FIDO2_SHA256_SIZE, z_len);
+	return status;
+}
+
+int fido2_crypto_hmac_sha256(const uint8_t *key, size_t key_len, const uint8_t *msg, size_t msg_len,
+			     uint8_t mac[FIDO2_SHA256_SIZE])
+{
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_status_t status;
+	psa_key_id_t id;
+	size_t mac_len;
+
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_SIGN_MESSAGE);
+	psa_set_key_algorithm(&attr, PSA_ALG_HMAC(PSA_ALG_SHA_256));
+	psa_set_key_type(&attr, PSA_KEY_TYPE_HMAC);
+	psa_set_key_bits(&attr, key_len * 8);
+
+	status = psa_import_key(&attr, key, key_len, &id);
+	psa_reset_key_attributes(&attr);
+
+	if (status) {
+		return status;
+	}
+
+	status = psa_mac_compute(id, PSA_ALG_HMAC(PSA_ALG_SHA_256), msg, msg_len, mac,
+				 FIDO2_SHA256_SIZE, &mac_len);
+
+	psa_destroy_key(id);
+
+	return status;
+}
+
+int fido2_crypto_aes256_cbc_decrypt(const uint8_t key[FIDO2_SHA256_SIZE], const uint8_t *iv,
+				    const uint8_t *ciphertext, size_t ciphertext_len,
+				    uint8_t *plaintext, size_t plaintext_size,
+				    size_t *plaintext_len)
+{
+	psa_key_id_t aes_key;
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_cipher_operation_t op = PSA_CIPHER_OPERATION_INIT;
+	psa_status_t status;
+	size_t update_len, finish_len;
+
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_DECRYPT);
+	psa_set_key_algorithm(&attr, PSA_ALG_CBC_NO_PADDING);
+	psa_set_key_type(&attr, PSA_KEY_TYPE_AES);
+	psa_set_key_bits(&attr, PSA_BYTES_TO_BITS(FIDO2_SHA256_SIZE));
+
+	status = psa_import_key(&attr, key, FIDO2_SHA256_SIZE, &aes_key);
+	psa_reset_key_attributes(&attr);
+
+	if (status != PSA_SUCCESS) {
+		return status;
+	}
+
+	status = psa_cipher_decrypt_setup(&op, aes_key, PSA_ALG_CBC_NO_PADDING);
+	if (status != PSA_SUCCESS) {
+		goto cleanup;
+	}
+
+	status = psa_cipher_set_iv(&op, iv, PSA_BLOCK_CIPHER_BLOCK_LENGTH(PSA_KEY_TYPE_AES));
+	if (status != PSA_SUCCESS) {
+		goto cleanup;
+	}
+
+	status = psa_cipher_update(&op, ciphertext, ciphertext_len, plaintext, plaintext_size,
+				   &update_len);
+	if (status != PSA_SUCCESS) {
+		goto cleanup;
+	}
+
+	status = psa_cipher_finish(&op, plaintext + update_len, plaintext_size - update_len,
+				   &finish_len);
+	if (status != PSA_SUCCESS) {
+		goto cleanup;
+	}
+
+	*plaintext_len = update_len + finish_len;
+
+cleanup:
+	psa_cipher_abort(&op);
+	psa_destroy_key(aes_key);
 
 	return status;
 }
