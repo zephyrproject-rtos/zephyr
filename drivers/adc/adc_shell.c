@@ -35,8 +35,9 @@ LOG_MODULE_REGISTER(adc_shell);
 #define CMD_HELP_CH_POS \
 	SHELL_HELP("Configure channel positive input", "<positive_input_id>")
 
-#define CMD_HELP_READ \
-	SHELL_HELP("Read adc value", "<channel>")
+#define CMD_HELP_READ                                                                              \
+	SHELL_HELP("Read adc value. Prints periodically if period is provided",                    \
+		   "<channel> [period_ms]")
 
 #define CMD_HELP_RES \
 	SHELL_HELP("Configure resolution", "<resolution>")
@@ -386,6 +387,16 @@ static int cmd_adc_ref(const struct shell *sh, size_t argc, char **argv,
 	return retval;
 }
 
+static void adc_shell_read_bypass_cb(const struct shell *sh, uint8_t *data, size_t len,
+				     void *user_data)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+
+	*(bool *)user_data = true;
+}
+
 #define BUFFER_SIZE 1
 static int cmd_adc_read(const struct shell *sh, size_t argc, char **argv)
 {
@@ -413,7 +424,42 @@ static int cmd_adc_read(const struct shell *sh, size_t argc, char **argv)
 		shell_print(sh, "read: %i", m_sample_buffer[0]);
 	}
 
-	return retval;
+	if (argc == 2) { /* One-time print; Non-periodic */
+		return retval;
+	}
+
+	/* Periodic print; argc=3 */
+	int period_ms = strtol(argv[2], NULL, 10);
+
+	if (period_ms < 1) {
+		shell_error(sh, "<period_ms> must be at least 1");
+		return -EINVAL;
+	}
+
+	bool stop = false;
+	bool msg_one_shot = true;
+
+	shell_set_bypass(sh, adc_shell_read_bypass_cb, &stop);
+
+	while (!stop) {
+		retval = adc_read(adc->dev, &sequence);
+		if (retval >= 0) {
+			shell_print(sh, "read: %i", m_sample_buffer[0]);
+		} else {
+			break;
+		}
+
+		if (msg_one_shot) {
+			msg_one_shot = false;
+			shell_print(sh, "Hit any key to exit");
+		}
+
+		k_msleep(period_ms);
+	}
+
+	shell_set_bypass(sh, NULL, NULL);
+
+	return stop ? 0 : retval;
 }
 
 static int cmd_adc_print(const struct shell *sh, size_t argc, char **argv)
@@ -489,7 +535,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_adc_cmds,
 	SHELL_CMD_ARG(channel, &sub_channel_cmds, CMD_HELP_CHANNEL, NULL, 3, 0),
 	SHELL_CMD(gain, &sub_gain_cmds, CMD_HELP_GAIN, NULL),
 	SHELL_CMD_ARG(print, NULL, CMD_HELP_PRINT, cmd_adc_print, 1, 0),
-	SHELL_CMD_ARG(read, NULL, CMD_HELP_READ, cmd_adc_read, 2, 0),
+	SHELL_CMD_ARG(read, NULL, CMD_HELP_READ, cmd_adc_read, 2, 1),
 	SHELL_CMD(reference, &sub_ref_cmds, CMD_HELP_REF, NULL),
 	SHELL_CMD_ARG(resolution, NULL, CMD_HELP_RES, cmd_adc_reso, 2, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
