@@ -1,0 +1,55 @@
+# Copyright (c) 2026 Fiona Behrens
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH32F/V20x_V30x_V31x HB Clock
+
+compatible: "wch,ch32v20x_30x-hclk-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  clocks:
+    type: phandle-array
+    required: true
+
+  prescaler:
+    type: int
+    description: |
+      HCLK divider from HCLK clock source
+
+      Note: HCLK must be less then 144MHz
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 64
+      - 128
+      - 256
+      - 512
+
+  pclk1-div:
+    type: int
+    description: |
+      Divider for PCLK1 from the HCLK frequency
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+
+  pclk2-div:
+    type: int
+    description: |
+      Divider for PCLK2 from the HCLK frequency
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16

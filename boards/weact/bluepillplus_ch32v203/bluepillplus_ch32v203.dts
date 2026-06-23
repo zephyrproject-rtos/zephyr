@@ -50,6 +50,10 @@
 	status = "okay";
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
 &pll {
 	clocks = <&clk_hse>;
 	status = "okay";

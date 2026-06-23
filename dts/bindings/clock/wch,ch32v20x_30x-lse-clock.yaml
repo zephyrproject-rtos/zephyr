@@ -1,15 +1,15 @@
-# Copyright (c) 2024 Google LLC.
+# Copyright (c) 2026 Fiona Behrens
 # SPDX-License-Identifier: Apache-2.0
 
-description: WCH CH32V00x HSE Clock
+description: WCH CH32F/V20x_30x Low Speed External clock
 
-compatible: "wch,ch32v00x-hse-clock"
+compatible: "wch,ch32v20x_30x-lse-clock"
 
 include: [fixed-clock.yaml]
 
 properties:
-  hse-bypass:
+  lse-bypass:
     type: boolean
     description: |
-      HSE crystal oscillator bypass
+      LSE Crystal oscillator bypass
       Set to the property to by-pass the oscillator with an external clock.

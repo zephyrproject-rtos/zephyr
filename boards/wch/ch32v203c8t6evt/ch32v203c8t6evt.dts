@@ -26,12 +26,16 @@
 	status = "okay";
 };
 
+&clk_hse {
+	status = "okay";
+};
+
 &pll {
 	clocks = <&clk_hse>;
 	status = "okay";
 };
 
-&rcc {
+&hclk {
 	clocks = <&pll>;
 };
 
