@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Header file for the STMESP logging frontend.
+ * @ingroup log_frontend_stmesp
+ */
+
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_FRONTEND_STMESP_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_FRONTEND_STMESP_H_
 
@@ -15,6 +22,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @defgroup log_frontend_stmesp STMESP frontend
+ * @ingroup log_frontend
+ * @brief Logging frontend that emits messages and trace points over STM (STMESP).
+ * @{
+ */
 
 /** @brief Notify frontend that ETR/STM is ready.
  *
@@ -99,7 +113,9 @@ void log_frontend_stmesp_log0(const void *source, uint32_t x);
  */
 void log_frontend_stmesp_log1(const void *source, uint32_t x, uint32_t arg);
 
+/** @cond INTERNAL_HIDDEN */
 TYPE_SECTION_START_EXTERN(const char *, log_stmesp_ptr);
+/** @endcond */
 
 /** @brief Macro for handling a turbo log message with no arguments.
  *
@@ -135,6 +151,8 @@ TYPE_SECTION_START_EXTERN(const char *, log_stmesp_ptr);
 			sizeof(void *);                                                            \
 		log_frontend_stmesp_log1(_source, _idx, (uintptr_t)(GET_ARG_N(2, __VA_ARGS__)));   \
 	} while (0)
+
+/** @} */
 
 #ifdef __cplusplus
 }
