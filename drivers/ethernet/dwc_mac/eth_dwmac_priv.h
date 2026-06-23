@@ -86,10 +86,6 @@ struct dwmac_dma_desc {
 	uint32_t des1;
 	uint32_t des2;
 	uint32_t des3;
-#ifndef CONFIG_ETH_DWC_ETHER_QOS_CORE
-	/* software-only field for tracking the net_buf associated with this desc */
-	struct net_buf *frag;
-#endif
 };
 
 /* our private instance structure */
@@ -121,10 +117,10 @@ struct dwmac_priv {
 #ifdef CONFIG_MMU
 	uintptr_t tx_descs_phys, rx_descs_phys;
 #endif
-#ifdef CONFIG_ETH_DWC_ETHER_QOS_CORE
+
 	struct net_buf *tx_frags[NB_TX_DESCS]; /* index shared with tx_descs */
 	struct net_buf *rx_frags[NB_RX_DESCS]; /* index shared with rx_descs */
-#endif
+
 	struct net_pkt *rx_pkt;
 	uint16_t rx_bytes;
 
