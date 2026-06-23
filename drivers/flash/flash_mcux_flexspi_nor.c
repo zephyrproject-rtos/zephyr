@@ -1201,9 +1201,15 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 	/* Check to see if we can enable 4 byte addressing */
 	ret = jesd216_bfp_decode_dw16(&header->phdr[0], bfp, &dw16);
 	if (ret == 0) {
-		/* Attempt to enable 4 byte addressing */
-		ret = flash_flexspi_nor_4byte_enable(data, flexspi_lut,
-						     dw16.enter_4ba);
+		bool xip_cfg = memc_flexspi_is_running_xip(&data->controller);
+
+		if (!xip_cfg || data->size > MB(16)) {
+			ret = flash_flexspi_nor_4byte_enable(data, flexspi_lut,
+							     dw16.enter_4ba);
+		} else {
+			/* ≤16MB under XIP: 24-bit addressing covers full range, skip */
+			ret = 0;
+		}
 		if (ret == 0) {
 			/* Use 4 byte address width */
 			addr_width = 32;
