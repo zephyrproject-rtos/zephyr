@@ -3633,14 +3633,21 @@ static void iface_ipv6_start(struct net_if *iface)
 
 static void iface_ipv6_stop(struct net_if *iface)
 {
-	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
+	struct net_if_ipv6 *ipv6;
 
 	if (!net_if_flag_is_set(iface, NET_IF_IPV6) ||
 	    net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
 		return;
 	}
 
+	/* notify_iface_down() runs without net_if_lock() held, so take it here
+	 * to access the IPv6 address structures safely.
+	 */
+	net_if_lock(iface);
+
+	ipv6 = iface->config.ip.ipv6;
 	if (ipv6 == NULL) {
+		net_if_unlock(iface);
 		return;
 	}
 
@@ -3658,6 +3665,8 @@ static void iface_ipv6_stop(struct net_if *iface)
 						  &ipv6->unicast[i].address.in6_addr);
 		}
 	}
+
+	net_if_unlock(iface);
 }
 
 static void iface_ipv6_init(int if_count)
@@ -5963,6 +5972,14 @@ static void notify_iface_up(struct net_if *iface)
 
 	net_if_flag_set(iface, NET_IF_RUNNING);
 	net_mgmt_event_notify(NET_EVENT_IF_UP, iface);
+
+	/* net_virtual_enable() and the IPv6/IPv4 startup below transmit packets
+	 * (RS, MLD join) and lock other interfaces, so drop net_if_lock() around
+	 * them - otherwise two interfaces coming up concurrently could deadlock
+	 * (ABBA). The caller holds the lock exactly once.
+	 */
+	net_if_unlock(iface);
+
 	net_virtual_enable(iface);
 
 	/* If the interface is only having point-to-point traffic then we do
@@ -5978,12 +5995,20 @@ static void notify_iface_up(struct net_if *iface)
 		iface_ipv4_start(iface);
 		net_ipv4_autoconf_start(iface);
 	}
+
+	net_if_lock(iface);
 }
 
 static void notify_iface_down(struct net_if *iface)
 {
 	net_if_flag_clear(iface, NET_IF_RUNNING);
 	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
+
+	/* As in notify_iface_up(), drop net_if_lock() around the parts that
+	 * transmit packets and lock other interfaces.
+	 */
+	net_if_unlock(iface);
+
 	net_virtual_disable(iface);
 
 	if (!net_if_is_offloaded(iface) &&
@@ -5995,10 +6020,10 @@ static void notify_iface_down(struct net_if *iface)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_NATIVE_TCP)) {
-		net_if_unlock(iface);
 		net_tcp_close_all_for_iface(iface);
-		net_if_lock(iface);
 	}
+
+	net_if_lock(iface);
 }
 
 const char *net_if_oper_state2str(enum net_if_oper_state state)
