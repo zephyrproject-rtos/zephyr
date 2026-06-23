@@ -194,6 +194,19 @@
 			ghwcfg4 = <0xe2003e20>; // 9 in endpoints, desc-DMA
 			status = "disabled";
 		};
+
+		aon_gpio: aon-gpio@50350060 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "syna,aon-gpio";
+			reg = <0x50350060 0x4>;
+			reg-width = <9>;
+			polarity-shift = <8>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			ngpios = <3>;
+			status = "disabled";
+		};
 	};
 };
 
