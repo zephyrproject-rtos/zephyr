@@ -2144,21 +2144,21 @@ static uint8_t get_handle_from_uuid(const void *cmd, uint16_t cmd_len, void *rsp
 {
 	const struct btp_gatt_get_handle_from_uuid_cmd *cp = cmd;
 	struct btp_gatt_get_handle_from_uuid_rp *rp = rsp;
-	struct bt_uuid search_uuid;
+	struct bt_uuid_any search_uuid;
 
-	if (btp2bt_uuid(cp->uuid, cp->uuid_length, &search_uuid)) {
+	if (btp2bt_uuid(cp->uuid, cp->uuid_length, &search_uuid.uuid)) {
 		return BTP_STATUS_FAILED;
 	}
 
 	__maybe_unused char uuid_str[BT_UUID_STR_LEN];
 
-	bt_uuid_to_str(&search_uuid, uuid_str, sizeof(uuid_str));
+	bt_uuid_to_str(&search_uuid.uuid, uuid_str, sizeof(uuid_str));
 
 	LOG_DBG("Searching handle for UUID %s", uuid_str);
 
 	for (int i = 0; i < attr_count; i++) {
 		if (server_db[i].uuid != NULL &&
-		    bt_uuid_cmp(server_db[i].uuid, &search_uuid) == 0) {
+		    bt_uuid_cmp(server_db[i].uuid, &search_uuid.uuid) == 0) {
 			rp->handle = sys_cpu_to_le16(server_db[i].handle);
 			*rsp_len = sizeof(*rp);
 
