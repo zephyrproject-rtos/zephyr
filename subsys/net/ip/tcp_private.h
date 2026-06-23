@@ -329,6 +329,7 @@ struct tcp { /* TCP connection */
 	uint16_t recv_win_sent;
 	uint16_t recv_win_max;
 	uint16_t recv_win;
+	uint16_t recv_since_ack;
 	uint16_t send_win_max;
 	uint16_t send_win;
 #ifdef CONFIG_NET_TCP_RANDOMIZED_RTO
