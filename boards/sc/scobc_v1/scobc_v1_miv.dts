@@ -16,6 +16,8 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &tcm0;
+		zephyr,flash-controller = &envm;
+		zephyr,flash = &flash0;
 	};
 
 	cpus {
@@ -76,6 +78,32 @@
 			device_type = "memory";
 			compatible = "mmio-sram";
 			reg = <0x40000000 0x10000>;
+		};
+
+		envm: flash-controller@60080000 {
+			compatible = "microchip,igloo2-envm-controller";
+
+			/* Control registers for each physical eNVM bank. */
+			reg = <0x60080000 0x200>, <0x600c0000 0x200>;
+			reg-names = "envm0", "envm1";
+
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			flash0: flash@60000000 {
+				/*
+				 * Logical eNVM data window exposed to the CPU.
+				 * eNVM0 and eNVM1 are contiguous here.
+				 */
+				compatible = "soc-nv-flash";
+				reg = <0x60000000 0x80000>;
+				ranges = <0x0 0x60000000 0x80000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				status = "okay";
+			};
 		};
 
 		uartlite0: uartlite@8f000000 {
