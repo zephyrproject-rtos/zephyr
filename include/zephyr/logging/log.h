@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the logging subsystem.
+ * @ingroup log_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_H_
 
@@ -25,6 +31,16 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Default interval for rate-limited log messages, in milliseconds.
+ *
+ * Period used by the rate-limited logging macros that do not take an explicit
+ * rate (for example @ref LOG_ERR_RATELIMIT). It evaluates to
+ * @kconfig{CONFIG_LOG_RATELIMIT_INTERVAL_MS} when @kconfig{CONFIG_LOG_RATELIMIT}
+ * is enabled, and to 0 (no rate limiting) otherwise.
+ *
+ * @ingroup log_api
+ */
 #ifdef CONFIG_LOG_RATELIMIT
 #define LOG_RATELIMIT_INTERVAL_MS CONFIG_LOG_RATELIMIT_INTERVAL_MS
 

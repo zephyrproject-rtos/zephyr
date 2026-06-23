@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Header file for the logging core.
+ * @ingroup log_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_
 
@@ -16,15 +23,30 @@
 /* This header file keeps all macros and functions needed for creating logging
  * messages (macros like @ref LOG_ERR).
  */
+
+/**
+ * @addtogroup log_api
+ * @{
+ */
+
+/** @brief Severity level used to disable logging for a source. */
 #define LOG_LEVEL_NONE 0
+/** @brief Error severity level. */
 #define LOG_LEVEL_ERR  1
+/** @brief Warning severity level. */
 #define LOG_LEVEL_WRN  2
+/** @brief Informational severity level. */
 #define LOG_LEVEL_INF  3
+/** @brief Debug severity level. */
 #define LOG_LEVEL_DBG  4
+
+/** @} */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** @cond INTERNAL_HIDDEN */
 
 #ifndef CONFIG_LOG
 #define CONFIG_LOG_DEFAULT_LEVEL 0
@@ -480,8 +502,12 @@ TYPE_SECTION_END_EXTERN(struct log_source_const_data, log_const);
 			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, __VA_ARGS__);\
 } while (0)
 
+/** @endcond */
+
 /** @brief Get index of the log source based on the address of the constant data
  *         associated with the source.
+ *
+ * @ingroup log_api
  *
  * @param data Address of the constant data.
  *
@@ -493,6 +519,8 @@ static inline uint32_t log_const_source_id(
 	return ((const uint8_t *)data - (uint8_t *)TYPE_SECTION_START(log_const))/
 			sizeof(struct log_source_const_data);
 }
+
+/** @cond INTERNAL_HIDDEN */
 
 TYPE_SECTION_START_EXTERN(struct log_source_dynamic_data, log_dynamic);
 TYPE_SECTION_END_EXTERN(struct log_source_dynamic_data, log_dynamic);
@@ -506,8 +534,12 @@ TYPE_SECTION_END_EXTERN(struct log_source_dynamic_data, log_dynamic);
 #define LOG_INSTANCE_DYNAMIC_DATA(_module_name, _inst) \
 	LOG_ITEM_DYNAMIC_DATA(Z_LOG_INSTANCE_FULL_NAME(_module_name, _inst))
 
+/** @endcond */
+
 /** @brief Get index of the log source based on the address of the dynamic data
  *         associated with the source.
+ *
+ * @ingroup log_api
  *
  * @param data Address of the dynamic data.
  *
@@ -520,6 +552,8 @@ static inline uint32_t log_dynamic_source_id(struct log_source_dynamic_data *dat
 }
 
 /** @brief Get index of the log source based on the address of the associated data.
+ *
+ * @ingroup log_api
  *
  * @param source Address of the data structure (dynamic if runtime filtering is
  * enabled and static otherwise).
@@ -543,9 +577,11 @@ void z_log_printf_arg_checker(const char *fmt, ...)
 /**
  * @brief Write a generic log message.
  *
+ * @ingroup log_api
+ *
  * @note This function is intended to be used when porting other log systems.
  *
- * @param level          Log level..
+ * @param level          Log level.
  * @param fmt            String to format.
  * @param ap             Pointer to arguments list.
  */
