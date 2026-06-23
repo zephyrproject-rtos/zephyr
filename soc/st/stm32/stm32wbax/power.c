@@ -107,6 +107,8 @@ static uint32_t ram_waitstates_backup;
 static uint32_t flash_latency_backup;
 
 #if defined(CONFIG_PM_S2RAM)
+/* set to true if standby mode has been effectively entered */
+bool standby_entered;
 static struct fpu_ctx_full fpu_state;
 static struct scb_context scb_state;
 #if defined(CONFIG_ARM_MPU)
@@ -189,8 +191,16 @@ static void set_mode_suspend_to_ram_enter(void)
 #if defined(CONFIG_ARM_MPU)
 	z_arm_save_mpu_context(&mpu_state);
 #endif /* CONFIG_ARM_MPU */
+
+	standby_entered = true;
 	/* Save context and enter Standby mode */
-	arch_pm_s2ram_suspend(enter_low_power_mode);
+	if (arch_pm_s2ram_suspend(enter_low_power_mode) < 0) {
+		/* The SoC has not entered the Standby, we set the flag
+		 * accordingly so we can later skip re-initialization as no
+		 * configuration has been lost.
+		 */
+		standby_entered = false;
+	}
 }
 
 static void set_mode_suspend_to_ram_exit(void)
@@ -208,7 +218,7 @@ static void set_mode_suspend_to_ram_exit(void)
 	/* Restore system clock as soon as we exit standby mode */
 	stm32_clock_control_standby_exit();
 
-	if (LL_PWR_IsActiveFlag_SB() || !HSE_ON) {
+	if (standby_entered || !HSE_ON) {
 		stm32_clock_control_init(NULL);
 	}
 	/* Resume configuration */
@@ -251,7 +261,8 @@ static void set_mode_stop_enter(uint8_t substate_id)
 		return;
 	}
 
-	enter_low_power_mode();
+	/* Return value is irrelevant when entering STOP mode */
+	(void)enter_low_power_mode();
 }
 
 static void set_mode_stop_exit(uint8_t substate_id)
@@ -303,6 +314,16 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 /* Handle SOC specific activity after Low Power Mode Exit */
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
+#if defined(CONFIG_PM_S2RAM)
+	if (state == PM_STATE_SUSPEND_TO_RAM) {
+		/*
+		 * The full post-standby re-initialization sequence has been
+		 * done, this flag can be cleaned.
+		 */
+		standby_entered = false;
+	}
+#endif
+
 	/*
 	 * System is now in active mode.
 	 * Reenable interrupts which were disabled
