@@ -44,6 +44,11 @@ struct log_source_dynamic_data {
  * @{
  */
 
+/**
+ * @name Instance registration
+ * @{
+ */
+
 /** @internal
  *
  * Creates name of variable and section for constant log data.
@@ -175,6 +180,8 @@ struct log_source_dynamic_data {
  */
 #define LOG_INSTANCE_REGISTER(_module_name, _inst_name, _level) \
 	IF_ENABLED(CONFIG_LOG, (Z_LOG_INSTANCE_REGISTER(_module_name, _inst_name, _level)))
+
+/** @} */
 
 /** @} */
 
