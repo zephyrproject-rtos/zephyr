@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief Header file for the Bluetooth log backend API
+ * @brief Header file for the Bluetooth log backend.
  * @ingroup log_backend_ble
  */
 
@@ -14,9 +14,9 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_BLE_H_
 
 /**
- * @brief Bluetooth log backend API
- * @defgroup log_backend_ble Bluetooth log backend API
+ * @defgroup log_backend_ble Bluetooth log backend
  * @ingroup log_backend
+ * @brief Logging backend that transmits messages over a Bluetooth LE service.
  * @{
  */
 

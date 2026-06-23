@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief Header file for the Intel ADSP HDA log backend API
+ * @brief Header file for the Intel ADSP HDA log backend.
  * @ingroup log_backend_adsp_hda
  */
 
@@ -14,16 +14,16 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_ADSP_HDA_H_
 
 /**
- * @brief Intel ADSP HDA log backend API
- * @defgroup log_backend_adsp_hda Intel ADSP HDA log backend API
+ * @defgroup log_backend_adsp_hda Intel ADSP HDA log backend
  * @ingroup log_backend
+ * @brief Logging backend that streams over an Intel ADSP HDA DMA channel.
  * @{
  */
 
 #include <stdint.h>
 
 /**
- *@brief HDA logger requires a hook for IPC messages
+ * @brief HDA logger requires a hook for IPC messages
  *
  * When the log is flushed and written with DMA an IPC message should
  * be sent to inform the host. This hook function pointer allows for that
