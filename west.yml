@@ -299,7 +299,7 @@ manifest:
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
     - name: libmctp
-      revision: 782a9da666b6e7703b28dee65499a8f1f456f2b5
+      revision: b6be45dfc5c67c43c3a5e12589ae3845ea00ab5e
       path: modules/lib/libmctp
     - name: libmetal
       revision: c41f476ba425663cadf7e456b6432e4b21591278
