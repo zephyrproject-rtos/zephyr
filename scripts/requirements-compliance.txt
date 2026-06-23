@@ -16,6 +16,8 @@ reuse
 ruff==0.14.2
 sphinx-lint
 tabulate
+tree-sitter-cmake
+tree-sitter>=0.23
 unidiff
 vermin
 west>=0.14.0

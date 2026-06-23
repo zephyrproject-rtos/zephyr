@@ -36,6 +36,8 @@ sphinx-lint
 tabulate
 tox
 tqdm>=4.67.1
+tree-sitter-cmake
+tree-sitter>=0.23
 unidiff
 vermin
 west>=0.14.0
