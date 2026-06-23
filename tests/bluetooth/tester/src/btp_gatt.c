@@ -155,19 +155,23 @@ static void gatt_buf_clear(void)
 	(void)memset(&gatt_buf, 0, sizeof(gatt_buf));
 }
 
-union uuid {
-	struct bt_uuid uuid;
-	struct bt_uuid_16 u16;
-	struct bt_uuid_128 u128;
-};
-
 static struct bt_gatt_attr *gatt_db_add(const struct bt_gatt_attr *pattern,
 					size_t user_data_len)
 {
 	static struct bt_gatt_attr *attr = server_db;
-	const union uuid *u = CONTAINER_OF(pattern->uuid, union uuid, uuid);
-	size_t uuid_size = u->uuid.type == BT_UUID_TYPE_16 ? sizeof(u->u16) :
-							     sizeof(u->u128);
+	size_t uuid_size;
+
+	switch (pattern->uuid->type) {
+	case BT_UUID_TYPE_16:
+		uuid_size = sizeof(struct bt_uuid_16);
+		break;
+	case BT_UUID_TYPE_128:
+		uuid_size = sizeof(struct bt_uuid_128);
+		break;
+	default:
+		__ASSERT_NO_MSG(false);
+		return NULL;
+	}
 
 	/* Return NULL if database is full */
 	if (attr == &server_db[SERVER_MAX_ATTRIBUTES - 1]) {
@@ -182,8 +186,7 @@ static struct bt_gatt_attr *gatt_db_add(const struct bt_gatt_attr *pattern,
 	memcpy(attr, pattern, sizeof(*attr));
 
 	/* Store the UUID. */
-	attr->uuid = server_buf_push(uuid_size);
-	memcpy((void *) attr->uuid, &u->uuid, uuid_size);
+	attr->uuid = memcpy(server_buf_push(uuid_size), pattern->uuid, uuid_size);
 
 	/* Copy user_data to the buffer. */
 	if (user_data_len) {
@@ -203,23 +206,18 @@ static struct bt_gatt_attr *gatt_db_add(const struct bt_gatt_attr *pattern,
 static uint8_t btp2bt_uuid(const uint8_t *uuid, uint8_t len,
 			   struct bt_uuid *bt_uuid)
 {
-	uint16_t le16;
-
-	switch (len) {
-	case 0x02: /* UUID 16 */
-		bt_uuid->type = BT_UUID_TYPE_16;
-		memcpy(&le16, uuid, sizeof(le16));
-		BT_UUID_16(bt_uuid)->val = sys_le16_to_cpu(le16);
-		break;
-	case 0x10: /* UUID 128*/
-		bt_uuid->type = BT_UUID_TYPE_128;
-		memcpy(BT_UUID_128(bt_uuid)->val, uuid, 16);
-		break;
-	default:
+	/* allow only 16 and 128 bit UUIDs for now as other parts of the code
+	 * assume this
+	 */
+	if (len != BT_UUID_SIZE_16 && len != BT_UUID_SIZE_128) {
 		return BTP_STATUS_FAILED;
 	}
 
-	return BTP_STATUS_SUCCESS;
+	if (bt_uuid_create(bt_uuid, uuid, len)) {
+		return BTP_STATUS_SUCCESS;
+	}
+
+	return BTP_STATUS_FAILED;
 }
 
 static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
@@ -256,7 +254,7 @@ static uint8_t add_service(const void *cmd, uint16_t cmd_len,
 	const struct btp_gatt_add_service_cmd *cp = cmd;
 	struct btp_gatt_add_service_rp *rp = rsp;
 	struct bt_gatt_attr *attr_svc = NULL;
-	union uuid uuid;
+	struct bt_uuid_any uuid;
 	size_t uuid_size;
 
 	if ((cmd_len < sizeof(*cp)) ||
@@ -462,7 +460,7 @@ static uint8_t add_characteristic(const void *cmd, uint16_t cmd_len,
 	const struct btp_gatt_add_characteristic_cmd *cp = cmd;
 	struct btp_gatt_add_characteristic_rp *rp = rsp;
 	struct add_characteristic cmd_data;
-	union uuid uuid;
+	struct bt_uuid_any uuid;
 
 	if ((cmd_len < sizeof(*cp)) ||
 	    (cmd_len != sizeof(*cp) + cp->uuid_length)) {
@@ -652,7 +650,7 @@ static uint8_t add_descriptor(const void *cmd, uint16_t cmd_len,
 	struct btp_gatt_add_descriptor_rp *rp = rsp;
 	struct add_descriptor cmd_data;
 	struct bt_gatt_attr *chrc;
-	union uuid uuid;
+	struct bt_uuid_any uuid;
 
 	if ((cmd_len < sizeof(*cp)) ||
 	    (cmd_len != sizeof(*cp) + cp->uuid_length)) {
@@ -990,7 +988,7 @@ static uint8_t exchange_mtu(const void *cmd, uint16_t cmd_len,
 }
 
 static struct bt_gatt_discover_params discover_params;
-static union uuid uuid;
+static struct bt_uuid_any uuid;
 static uint8_t btp_opcode;
 
 static void discover_destroy(struct bt_gatt_discover_params *params)
@@ -2250,7 +2248,7 @@ static uint8_t get_attrs(const void *cmd, uint16_t cmd_len,
 	struct net_buf_simple *buf = NET_BUF_SIMPLE(BTP_DATA_MAX_SIZE - sizeof(*rp));
 	struct get_attrs_foreach_data foreach;
 	uint16_t start_handle, end_handle;
-	union uuid search_uuid;
+	struct bt_uuid_any search_uuid;
 
 	if ((cmd_len < sizeof(*cp)) ||
 	    (cmd_len != sizeof(*cp) + cp->type_length)) {
