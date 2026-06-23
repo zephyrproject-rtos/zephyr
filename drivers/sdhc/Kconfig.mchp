@@ -5,7 +5,49 @@ config SDHC_MCHP_G1
 	bool "Microchip SDHC G1 driver"
 	default y
 	depends on DT_HAS_MICROCHIP_SDHC_G1_ENABLED
+	depends on CLOCK_CONTROL
 	select PINCTRL
 	select SDHC_SUPPORTS_NATIVE_MODE
+	imply CACHE_MANAGEMENT if CPU_HAS_DCACHE
 	help
 	  Enable the Microchip SDHC MMC/SD card G1 driver.
+
+if SDHC_MCHP_G1
+
+# Heap memory required to handle unaligned buffers during DMA operations.
+# If the application prj.conf defines a global CONFIG_HEAP_MEM_POOL_SIZE larger
+# than 8KB, this adds 0 bytes.
+#
+# NOTE: This symbol is intentionally invisible (no text prompt) to prevent
+# manual menuconfig overrides. It should be configured globally via the
+# application prj.conf using CONFIG_HEAP_MEM_POOL_SIZE.
+config HEAP_MEM_POOL_ADD_SIZE_SDHC_MCHP_G1
+	int
+	default 8192
+
+# Local tuning optimization for your ADMA scatter-gather array sizing
+config SDHC_MCHP_G1_ADMA_DESC_COUNT
+	int "Number of SDHC ADMA descriptors"
+	default 16
+	range 2 64
+	help
+	  The maximum number of ADMA2 scatter-gather descriptor table elements
+	  allocated for SDHC instances. Each descriptor maps a burst chunk
+	  length up to 64 KB.
+
+	  For example, setting this to 32 allocates a 256-byte table in RAM,
+	  enabling continuous block transfers up to 2 MB (32 x 64 KB).
+
+# Overrriding the default SDHC DMA buffer alignment for Microchip SDHC G1 driver.
+config SDHC_BUFFER_ALIGNMENT
+	int
+	default DCACHE_LINE_SIZE if DCACHE_LINE_SIZE >= 4
+	default 4
+	help
+	  Alignment required for SDHC DMA buffers. Buffers with unsuitable
+	  addresses or lengths are transferred through an aligned bounce buffer,
+	  which requires sufficient kernel heap space. Requests return -ENOMEM if
+	  that allocation fails. The default is the data-cache line size when
+	  available, or the 4-byte minimum required by ADMA2.
+
+endif # SDHC_MCHP_G1
