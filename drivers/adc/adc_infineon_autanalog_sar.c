@@ -1315,11 +1315,6 @@ static int ifx_autanalog_sar_adc_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (channel_cfg->differential && is_mux_channel) {
-		LOG_ERR("Differential mode for MUX channels is configured via sequencer mux-mode");
-		return -EINVAL;
-	}
-
 	if (channel_cfg->gain != ADC_GAIN_1) {
 		LOG_ERR("AutAnalog SAR ADC Hardware only supports unity gain.");
 		return -EINVAL;
