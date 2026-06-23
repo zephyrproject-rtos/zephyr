@@ -289,13 +289,15 @@ module-str = Log level for ICMPv4
 module-help = Enables ICMPv4 code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
-#if NET_IPV4_ACD
+if NET_IPV4_ACD
+
 module = NET_IPV4_ACD
 module-dep = NET_LOG
 module-str = Log level for IPv4 address conflict detection
 module-help = Enables IPv4 address conflict detection debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
-#endif
+
+endif
 
 if NET_IPV4_AUTO
 module = NET_IPV4_AUTO
