@@ -173,16 +173,15 @@ choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_32 if STM32_LTDC_ARGB8888
 endchoice
 
-# In case of using DMA2D, buffer alignment must be ensured
-# for both cache handling as well as DMA2D address registers
-# constraints
-# Keep it simple and always align on cache lines
+# Use 32-byte alignment for all buffers as required by DMA2D.
+# This conveniently also matches the data cache line size,
+# ensuring safe D$ flush/invalidate operations.
 if DT_HAS_ST_STM32_DMA2D_ENABLED
-# Align buffer provided to DMA2D on 32 bytes boundaries
+
 config LV_ATTRIBUTE_MEM_ALIGN_SIZE
 	default 32
 
-# Align area width on cache line (32 bytes), depends on format
+# Value for 32-byte area width alignment depends on format
 config LV_Z_AREA_X_ALIGNMENT_WIDTH
 	default 16 if STM32_LTDC_RGB565
 	default 96 if STM32_LTDC_RGB888
