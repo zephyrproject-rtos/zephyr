@@ -5927,6 +5927,19 @@ TDK Sensors:
   tests:
     - drivers.sensor
 
+TI AM13 Platforms:
+  status: maintained
+  maintainers:
+    - glneo
+  collaborators:
+    - s-m33r
+  files:
+    - boards/ti/*am13*/
+    - dts/arm/ti/am13*/
+    - soc/ti/am13*/
+  labels:
+    - "platform: TI AM13"
+
 TI K3 Platforms:
   status: maintained
   maintainers:
