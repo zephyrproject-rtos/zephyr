@@ -1874,6 +1874,33 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
     assert all([log in caplog.text for log in expected_logs])
 
 
+def test_testplan_load_from_file_unknown_platform():
+    env = mock_twister_env()
+    env.outdir = os.path.join('out', 'dir')
+    testplan = TestPlan(env=env)
+    testplan.options = mock.Mock(device_testing=False, test_only=True, report_summary=None)
+    testplan.testsuites = {'TestSuite 1': mock.Mock(testcases=[])}
+    testplan.get_platform = mock.Mock(return_value=None)
+
+    testplan_data = """\
+{
+    "testsuites": [
+        {
+            "name": "TestSuite 1",
+            "platform": "Unknown Platform",
+            "toolchain": "zephyr"
+        }
+    ]
+}
+"""
+
+    with mock.patch('builtins.open', mock.mock_open(read_data=testplan_data)), \
+         pytest.raises(TwisterRuntimeError) as exc:
+        testplan.load_from_file('dummy.yaml')
+
+    assert 'unknown platform Unknown Platform' in str(exc.value)
+
+
 def test_testplan_add_instances():
     testplan = TestPlan(env=mock_twister_env())
     instance1 = mock.Mock()
