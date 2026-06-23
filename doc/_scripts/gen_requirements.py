@@ -101,54 +101,82 @@ def clean(text):
     return " ".join((text or "").split())
 
 
+# Number of requirements contained in a node subtree (used to skip empty
+# sections and requirement-less documents).
+def count_reqs(node):
+    return sum(1 for _ in iter_requirements([node]))
+
+
+def children(node):
+    kids = node.get("NODES")
+    return [c for c in kids if isinstance(c, dict)] if isinstance(kids, list) else []
+
+
 # -- reStructuredText generation ---------------------------------------------
 
 RST_ESCAPE = re.compile(r"([*`|\\])")
+
+# Heading underline characters by absolute level (0 = document title).
+RST_LEVELS = ["#", "*", "=", "-", "~", "^", '"', "+"]
 
 
 def rst_escape(text):
     return RST_ESCAPE.sub(r"\\\1", text)
 
 
-def render_rst_document(doc, reqs):
-    title = doc.get("TITLE", "Requirements")
-    out = []
-    out.append(title)
-    out.append("#" * len(title))
+def rst_heading(out, text, level):
+    char = RST_LEVELS[min(level, len(RST_LEVELS) - 1)]
+    out.append(text)
+    out.append(char * max(len(text), 3))
     out.append("")
 
-    for req in reqs:
-        uid = req.get("UID")
-        if not uid:
-            continue
-        heading = f"{uid}: {req.get('TITLE', '')}".rstrip(": ").strip()
-        # Cross-reference target so other docs can use :ref:`<UID>`.
-        out.append(f".. _{uid}:")
+
+def render_requirement_rst(out, req, level):
+    uid = req.get("UID")
+    if not uid:
+        return
+    heading = f"{uid}: {clean(req.get('TITLE', ''))}".rstrip(": ").strip()
+    # Cross-reference target so other docs can use :ref:`<UID>`.
+    out.append(f".. _{uid}:")
+    out.append("")
+    rst_heading(out, heading, level)
+
+    statement = clean(req.get("STATEMENT"))
+    if statement:
+        out.append(rst_escape(statement))
         out.append("")
-        out.append(heading)
-        out.append("=" * len(heading))
+
+    fields = []
+    for key in ORDERED_FIELDS:
+        value = clean(req.get(key))
+        if value:
+            fields.append((key.replace("_", " ").title(), rst_escape(value)))
+    rels = parents(req)
+    if rels:
+        fields.append(("Parents", ", ".join(f":ref:`{p} <{p}>`" for p in rels)))
+    for name, value in fields:
+        out.append(f":{name}: {value}")
+    if fields:
         out.append("")
 
-        statement = clean(req.get("STATEMENT"))
-        if statement:
-            out.append(rst_escape(statement))
-            out.append("")
 
-        # Field list with the remaining metadata.
-        fields = []
-        for key in ORDERED_FIELDS:
-            value = clean(req.get(key))
-            if value:
-                fields.append((key.replace("_", " ").title(), value))
-        rels = parents(req)
-        if rels:
-            links = ", ".join(f":ref:`{p} <{p}>`" for p in rels)
-            fields.append(("Parents", links))
-        for name, value in fields:
-            out.append(f":{name}: {value}")
-        if fields:
-            out.append("")
+def render_node_rst(out, node, level):
+    node_type = node.get("_NODE_TYPE")
+    if node_type == "REQUIREMENT":
+        render_requirement_rst(out, node, level)
+    elif node_type == "SECTION":
+        if count_reqs(node) == 0:
+            return
+        rst_heading(out, clean(node.get("TITLE")) or "Section", level)
+        for child in children(node):
+            render_node_rst(out, child, level + 1)
 
+
+def render_rst_document(doc):
+    out = []
+    rst_heading(out, doc.get("TITLE", "Requirements"), 0)
+    for node in children(doc):
+        render_node_rst(out, node, 1)
     return "\n".join(out).rstrip() + "\n"
 
 
@@ -157,11 +185,10 @@ def write_rst(rst_out, documents):
 
     pages = []
     for doc in documents:
-        reqs = list(iter_requirements(doc.get("NODES", [])))
-        if not reqs:
+        if count_reqs(doc) == 0:
             continue
         name = slugify(doc.get("TITLE", "requirements"))
-        (rst_out / f"{name}.rst").write_text(render_rst_document(doc, reqs))
+        (rst_out / f"{name}.rst").write_text(render_rst_document(doc))
         pages.append((doc.get("TITLE", name), name))
 
     write_rst_index(rst_out, pages)
@@ -208,43 +235,96 @@ def dox_escape(text):
     return DOX_ESCAPE.sub(r"\\\1", text)
 
 
+# Doxygen sectioning commands by depth (it supports four nested levels).
+DOX_SECTIONS = ["section", "subsection", "subsubsection", "paragraph"]
+
+
+def render_requirement_block_dox(out, req):
+    """Emit a flat \\requirement block. These are collected by Doxygen onto a
+    single requirements page and are the anchors for \\satisfies / \\verifies."""
+    uid = req.get("UID")
+    if not uid:
+        return
+    title = clean(req.get("TITLE"))
+    out.append("/**")
+    out.append(f" * \\requirement {uid} ({dox_escape(title)})" if title else f" * \\requirement {uid}")
+    out.append(" *")
+
+    statement = clean(req.get("STATEMENT"))
+    if statement:
+        out.append(f" * {dox_escape(statement)}")
+        out.append(" *")
+
+    # Metadata is rendered as a Markdown bullet list. Note: \par must not be used
+    # inside a \requirement block (Doxygen 1.17 emits mismatched </div> nesting
+    # warnings for it).
+    for key in ORDERED_FIELDS:
+        value = clean(req.get(key))
+        if value:
+            out.append(f" * - **{key.replace('_', ' ').title()}:** {dox_escape(value)}")
+    rels = parents(req)
+    if rels:
+        links = ", ".join("\\ref " + p for p in rels)
+        out.append(f" * - **Parents:** {links}")
+    out.append(" */")
+    out.append("")
+
+
+def render_node_dox_page(out, node, depth, counter):
+    """Render a section/requirement into a grouped index page. Sections become
+    Doxygen section headings; requirements become \\ref links into the
+    requirements page so the catalog is browsable by category."""
+    node_type = node.get("_NODE_TYPE")
+    if node_type == "REQUIREMENT":
+        uid = node.get("UID")
+        if uid:
+            title = clean(node.get("TITLE")).replace('"', "")
+            out.append(f' * - \\ref {uid} "{uid}: {title}"')
+    elif node_type == "SECTION":
+        if count_reqs(node) == 0:
+            return
+        cmd = DOX_SECTIONS[min(depth, len(DOX_SECTIONS) - 1)]
+        counter[0] += 1
+        out.append(" *")
+        out.append(f" * \\{cmd} reqsec_{counter[0]} {dox_escape(clean(node.get('TITLE')) or 'Section')}")
+        for child in children(node):
+            render_node_dox_page(out, child, depth + 1, counter)
+
+
 def render_dox(documents):
     out = ["/**", " * @file", " */", ""]
+
+    # Flat \requirement blocks (the requirements page + traceability anchors).
     for doc in documents:
-        reqs = list(iter_requirements(doc.get("NODES", [])))
-        if not reqs:
-            continue
-        for req in reqs:
-            uid = req.get("UID")
-            if not uid:
-                continue
-            title = clean(req.get("TITLE"))
-            out.append("/**")
-            if title:
-                out.append(f" * \\requirement {uid} ({dox_escape(title)})")
-            else:
-                out.append(f" * \\requirement {uid}")
-            out.append(" *")
+        for req in iter_requirements(doc.get("NODES", [])):
+            render_requirement_block_dox(out, req)
 
-            statement = clean(req.get("STATEMENT"))
-            if statement:
-                out.append(f" * {dox_escape(statement)}")
-                out.append(" *")
+    # Grouped, browsable index pages mirroring the StrictDoc section hierarchy.
+    docs_with_reqs = [d for d in documents if count_reqs(d) > 0]
+    page_ids = []
+    counter = [0]
+    for doc in docs_with_reqs:
+        page_id = "reqcat_" + slugify(doc.get("TITLE", "requirements"))
+        page_ids.append(page_id)
+        out.append("/**")
+        out.append(f" * \\page {page_id} {dox_escape(clean(doc.get('TITLE')) or 'Requirements')}")
+        for node in children(doc):
+            render_node_dox_page(out, node, 0, counter)
+        out.append(" */")
+        out.append("")
 
-            # Metadata is rendered as a Markdown bullet list. Note: \par must not
-            # be used inside a \requirement block (Doxygen 1.17 emits mismatched
-            # </div> nesting warnings for it).
-            for key in ORDERED_FIELDS:
-                value = clean(req.get(key))
-                if value:
-                    label = key.replace("_", " ").title()
-                    out.append(f" * - **{label}:** {dox_escape(value)}")
-            rels = parents(req)
-            if rels:
-                links = ", ".join(f"\\ref {p}" for p in rels)
-                out.append(f" * - **Parents:** {links}")
-            out.append(" */")
-            out.append("")
+    if page_ids:
+        out.append("/**")
+        out.append(" * \\page reqcat Requirements Catalog")
+        out.append(" *")
+        out.append(" * Requirements imported from the Zephyr requirements repository")
+        out.append(" * (reqmgmt), grouped by category.")
+        out.append(" *")
+        for page_id in page_ids:
+            out.append(f" * \\subpage {page_id}")
+        out.append(" */")
+        out.append("")
+
     return "\n".join(out) + "\n"
 
 
