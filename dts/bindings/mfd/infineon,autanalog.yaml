@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -65,6 +65,25 @@ properties:
       When omitted, the driver uses a built-in 3-state SAR single-shot
       sequence (basic mode) and automatically populates SAR fields based on
       the SAR ADC child node status.
+
+  ac-app-managed:
+    type: boolean
+    description: |
+      Defer the Autonomous Controller start to the application or a consumer
+      driver instead of starting it automatically from the MFD at boot.
+
+      By default the MFD starts the AC once all child drivers have initialized
+      and loaded their configurations.  When ac-app-managed is set, the MFD does
+      not start the AC; instead the application (for example after configuring an
+      ADC channel and arming a stream) or a consumer driver (for example the
+      die-temperature sensor in its channel setup) calls
+      ifx_autanalog_start_autonomous_control() once the SAR channels are in
+      place.
+
+      Use this for free-running advanced sequences whose channel configuration is
+      written after boot, and for application-managed state machines that park in
+      a wait state until the application issues a firmware trigger.  Child drivers
+      never pause or restart the shared AC during channel reconfiguration.
 
 examples:
   - |
