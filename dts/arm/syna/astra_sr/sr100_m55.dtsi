@@ -172,6 +172,19 @@
 			status = "okay";
 		};
 
+		aon_gpio: aon-gpio@50350060 {
+			compatible = "syna,aon-gpio";
+			reg = <0x50350060 0x4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg-width = <9>;
+			polarity-shift = <8>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			ngpios = <3>;
+			status = "disabled";
+		};
+
 		ns16550_lp_uart: uart@b5000000 {
 			compatible = "ns16550";
 			reg = <0xb5000000 0x1000>;
