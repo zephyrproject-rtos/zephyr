@@ -9,17 +9,17 @@ config SOC_FAMILY_MCXA
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_RESET_HOOK
+	select CPU_HAS_ICACHE
+	select HAS_MCUX_SYSCON_LPCAC
 
 config SOC_SERIES_MCXA1X3
 	select CPU_CORTEX_M33
-	select HAS_MCUX_CACHE
 	select HAS_PM
 
 config SOC_SERIES_MCXA1X6
 	select CPU_CORTEX_M33
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
-	select HAS_MCUX_CACHE
 	select HAS_PM
 
 config SOC_SERIES_MCXAXX6
@@ -27,7 +27,6 @@ config SOC_SERIES_MCXAXX6
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
-	select HAS_MCUX_CACHE
 	select HAS_PM
 
 config SOC_SERIES_MCXAXX4
@@ -35,7 +34,6 @@ config SOC_SERIES_MCXAXX4
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
-	select HAS_MCUX_CACHE
 
 config SOC_SERIES_MCXAXX7
 	select CPU_CORTEX_M33
@@ -44,4 +42,3 @@ config SOC_SERIES_MCXAXX7
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select ARM_TRUSTZONE_M
-	select HAS_MCUX_CACHE
