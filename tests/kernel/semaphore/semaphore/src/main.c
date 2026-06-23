@@ -60,9 +60,10 @@
 /* global variable for mutual exclusion test */
 uint32_t critical_var;
 
+/** Per-thread timeout descriptor used by the multi-timeout test helpers. */
 struct timeout_info {
-	uint32_t timeout;
-	struct k_sem *sema;
+	uint32_t timeout;    /**< Requested take timeout in milliseconds. */
+	struct k_sem *sema;  /**< Semaphore the thread waits on. */
 };
 
 /******************************************************************************/
@@ -249,8 +250,24 @@ ZTEST_USER(semaphore, test_k_sem_define)
 }
 
 /**
- * @brief Test synchronization of threads with semaphore
- * @see k_sem_init(), #K_SEM_DEFINE(x)
+ * @brief Verify a semaphore synchronizes two threads.
+ *
+ * @details
+ * A semaphore is used to hand off execution between two threads, exercising both
+ * a run-time initialized semaphore (k_sem_init()) and a compile-time defined one
+ * (K_SEM_DEFINE()). One thread gives the semaphore while the other takes it,
+ * confirming that a run-time defined semaphore is usable for synchronization.
+ *
+ * Test steps:
+ * - Initialize a semaphore at run time with k_sem_init().
+ * - Hand off between two threads via k_sem_give()/k_sem_take().
+ * - Repeat the hand off using a compile-time K_SEM_DEFINE() semaphore.
+ *
+ * Expected result:
+ * - Both threads synchronize correctly using either semaphore.
+ *
+ * @see k_sem_init()
+ * @see K_SEM_DEFINE
  */
 ZTEST_USER(semaphore, test_sem_thread2thread)
 {
@@ -264,8 +281,24 @@ ZTEST_USER(semaphore, test_sem_thread2thread)
 }
 
 /**
- * @brief Test synchronization between thread and irq
- * @see k_sem_init(), #K_SEM_DEFINE(x)
+ * @brief Verify a semaphore synchronizes a thread with an ISR.
+ *
+ * @details
+ * A semaphore is given from interrupt context and taken from thread context,
+ * exercising both a run-time initialized semaphore and a compile-time defined
+ * one, to confirm a semaphore can be used to synchronize across the thread/ISR
+ * boundary.
+ *
+ * Test steps:
+ * - Initialize a semaphore at run time and give it from an ISR.
+ * - Take it from the thread and verify synchronization.
+ * - Repeat with a compile-time K_SEM_DEFINE() semaphore.
+ *
+ * Expected result:
+ * - The thread and ISR synchronize correctly using either semaphore.
+ *
+ * @see k_sem_init()
+ * @see K_SEM_DEFINE
  */
 ZTEST(semaphore, test_sem_thread2isr)
 {
@@ -278,30 +311,32 @@ ZTEST(semaphore, test_sem_thread2isr)
 	tsema_thread_isr(&ksema);
 }
 
+/** Parameter set for the parameterized test_sem_init_validity test. */
+struct sem_init_case {
+	uint32_t init_val;     /**< Initial semaphore count passed to k_sem_init(). */
+	uint32_t max_val;      /**< Maximum semaphore count passed to k_sem_init(). */
+	int      expected_ret; /**< Expected k_sem_init() return value. */
+};
+
 /**
  * @brief Parameterized k_sem_init() validity test.
  *
+ * @details
  * The existing test_k_sem_init() checks 3 hardcoded (init, max) combinations
  * in a single test body.  Here each combination is a separate named invocation
  * so that Twister output immediately identifies which specific combination
  * caused a failure (e.g. "test_sem_init_validity[cases/3]").
  *
  * Valid combinations must return 0; invalid ones must return -EINVAL:
- *  - max == 0                          → -EINVAL
- *  - init > max                        → -EINVAL
- *  - init == max (boundary)            → 0
- *  - init < max                        → 0
- *  - large but valid max               → 0
+ *  - max == 0                          -> -EINVAL
+ *  - init > max                        -> -EINVAL
+ *  - init == max (boundary)            -> 0
+ *  - init < max                        -> 0
+ *  - large but valid max               -> 0
  *
  * @ingroup kernel_semaphore_tests
  * @see k_sem_init()
  */
-struct sem_init_case {
-	uint32_t init_val;
-	uint32_t max_val;
-	int      expected_ret;
-};
-
 ZTEST_USER_P(semaphore, test_sem_init_validity)
 {
 	const struct sem_init_case *tc =
@@ -339,7 +374,21 @@ ZTEST_INSTANTIATE_TEST_SUITE_P(cases, semaphore,
 			       test_sem_init_validity, sem_init_cases_vals);
 
 /**
- * @brief Test k_sem_reset() API
+ * @brief Verify k_sem_reset() sets the semaphore count back to zero.
+ *
+ * @details
+ * After giving a semaphore so its count is non-zero, k_sem_reset() must return
+ * the count to zero. A subsequent non-blocking take then fails with -EBUSY and a
+ * timed take fails with -EAGAIN, and the semaphore remains usable afterwards.
+ *
+ * Test steps:
+ * - Initialize a semaphore and give it once (count becomes 1).
+ * - Call k_sem_reset() and read the count.
+ * - Attempt k_sem_take() with K_NO_WAIT and with a finite timeout.
+ *
+ * Expected result:
+ * - Count is zero after reset; take returns -EBUSY (no wait) and -EAGAIN (timeout).
+ *
  * @see k_sem_reset()
  */
 ZTEST_USER(semaphore, test_sem_reset)
@@ -367,6 +416,18 @@ ZTEST_USER(semaphore, test_sem_reset)
 	expect_k_sem_count_get_nomsg(&msg_sema, 0);
 }
 
+/**
+ * @brief Verify that resetting a semaphore aborts pending acquisitions.
+ *
+ * @details
+ * A waiter blocks on k_sem_take() with K_FOREVER while another thread resets
+ * the semaphore. The pending acquisition must be aborted and return -EAGAIN,
+ * and the semaphore must remain functional afterwards.
+ *
+ * @ingroup kernel_semaphore_tests
+ * @see k_sem_reset()
+ * @see k_sem_take()
+ */
 ZTEST_USER(semaphore, test_sem_reset_waiting)
 {
 	int32_t ret_value;
@@ -393,7 +454,22 @@ ZTEST_USER(semaphore, test_sem_reset_waiting)
 }
 
 /**
- * @brief Test k_sem_count_get() API
+ * @brief Verify k_sem_count_get() reports the count without acquiring.
+ *
+ * @details
+ * k_sem_count_get() must return the current semaphore count without consuming
+ * it, and the reported count must track give/take operations: it increments on
+ * each give (saturating at the maximum) and decrements on each take.
+ *
+ * Test steps:
+ * - Read the count right after initialization.
+ * - Give the semaphore and read the count again.
+ * - Repeatedly give up to (and beyond) the maximum and read the count.
+ *
+ * Expected result:
+ * - The returned count matches the expected value at each step and never exceeds
+ *   the configured maximum.
+ *
  * @see k_sem_count_get()
  */
 ZTEST_USER(semaphore, test_sem_count_get)
@@ -475,7 +551,20 @@ ZTEST_USER(semaphore, test_sem_give_from_thread)
 }
 
 /**
- * @brief Test if k_sem_take() decreases semaphore count
+ * @brief Verify k_sem_take() succeeds and decrements when the count is positive.
+ *
+ * @details
+ * While the count is greater than zero, a non-blocking k_sem_take() must acquire
+ * the semaphore immediately and decrement the count by one on each call.
+ *
+ * Test steps:
+ * - Give the semaphore several times to raise its count.
+ * - Repeatedly call k_sem_take() with K_NO_WAIT.
+ * - Read the count after each take.
+ *
+ * Expected result:
+ * - Each take returns 0 and the count decreases by one each time.
+ *
  * @see k_sem_take()
  */
 ZTEST_USER(semaphore, test_sem_take_no_wait)
@@ -497,7 +586,20 @@ ZTEST_USER(semaphore, test_sem_take_no_wait)
 }
 
 /**
- * @brief Test k_sem_take() when there is no semaphore to take
+ * @brief Verify k_sem_take() with no wait fails when the count is zero.
+ *
+ * @details
+ * When the count is zero and no timeout is provided (K_NO_WAIT), k_sem_take()
+ * must not block and must return -EBUSY, leaving the count unchanged at zero.
+ *
+ * Test steps:
+ * - Reset the semaphore so its count is zero.
+ * - Call k_sem_take() with K_NO_WAIT repeatedly.
+ * - Read the count after each attempt.
+ *
+ * Expected result:
+ * - Each take returns -EBUSY and the count remains zero.
+ *
  * @see k_sem_take()
  */
 ZTEST_USER(semaphore, test_sem_take_no_wait_fails)
@@ -607,7 +709,21 @@ ZTEST_USER(semaphore, test_sem_take_timeout_forever)
 }
 
 /**
- * @brief Test k_sem_take() with timeout in ISR context
+ * @brief Verify k_sem_take() with a timeout is satisfied by an ISR give.
+ *
+ * @details
+ * A thread blocks on k_sem_take() with a finite timeout while a helper gives the
+ * semaphore from interrupt context before the timeout elapses, so the take must
+ * succeed.
+ *
+ * Test steps:
+ * - Reset the semaphore so its count is zero.
+ * - Start a helper that gives the semaphore from an ISR.
+ * - Call k_sem_take() with a finite timeout.
+ *
+ * Expected result:
+ * - k_sem_take() returns 0 (acquired before the timeout expires).
+ *
  * @see k_sem_take()
  */
 ZTEST(semaphore_1cpu, test_sem_take_timeout_isr)
@@ -631,6 +747,10 @@ ZTEST(semaphore_1cpu, test_sem_take_timeout_isr)
 
 /**
  * @brief Test semaphore take operation by multiple threads
+ * @details
+ * Several threads of differing priorities wait on the same semaphore. When the
+ * semaphore is given, the highest-priority (and, among equal priorities, the
+ * longest-waiting) thread must be the one that acquires it.
  * @ingroup kernel_semaphore_tests
  * @see k_sem_take()
  */
@@ -787,7 +907,8 @@ ZTEST_USER(semaphore, test_sem_take_multiple)
  *   as expected.
  * - Verify the max times a semaphore can be taken.
  * @ingroup kernel_semaphore_tests
- * @see k_sem_count_get(), k_sem_give()
+ * @see k_sem_count_get()
+ * @see k_sem_give()
  */
 ZTEST_USER(semaphore, test_k_sem_correct_count_limit)
 {
@@ -833,7 +954,21 @@ ZTEST_USER(semaphore, test_k_sem_correct_count_limit)
 }
 
 /**
- * @brief Test semaphore give and take and its count from ISR
+ * @brief Verify a semaphore can be given and taken from ISR context.
+ *
+ * @details
+ * Give the semaphore from an ISR up to its maximum, then take it from an ISR back
+ * down to zero, checking the count after every operation to confirm give/take
+ * work correctly from interrupt context.
+ *
+ * Test steps:
+ * - Reset the semaphore so its count is zero.
+ * - Give from an ISR until the maximum count, checking the count each time.
+ * - Take from an ISR until zero, checking the count each time.
+ *
+ * Expected result:
+ * - The count tracks every give/take and ends at zero.
+ *
  * @see k_sem_give()
  */
 ZTEST(semaphore, test_sem_give_take_from_isr)
@@ -870,9 +1005,25 @@ void sem_multiple_threads_wait_helper(void *p1, void *p2, void *p3)
 
 
 /**
- * @brief Test multiple semaphore take and give with wait
+ * @brief Verify all waiters are released as the semaphore is given repeatedly.
+ *
+ * @details
+ * Several threads block on the same semaphore. Giving the semaphore once per
+ * waiter must release each of them exactly once. The scenario is run twice to
+ * confirm the wait queue is left empty and reusable after the first round.
+ *
+ * Test steps:
+ * - Start TOTAL_THREADS_WAITING threads, each blocking on the semaphore.
+ * - Give the semaphore once per waiting thread.
+ * - Confirm every thread acquired it and the counts return to zero.
+ * - Repeat the whole sequence a second time.
+ *
+ * Expected result:
+ * - All waiters are released each round and the wait queue ends empty.
+ *
  * @ingroup kernel_semaphore_tests
- * @see k_sem_take(), k_sem_give()
+ * @see k_sem_take()
+ * @see k_sem_give()
  */
 ZTEST(semaphore, test_sem_multiple_threads_wait)
 {
@@ -919,9 +1070,25 @@ ZTEST(semaphore, test_sem_multiple_threads_wait)
 }
 
 /**
- * @brief Test semaphore timeout period
+ * @brief Verify k_sem_take() honors the requested timeout duration.
+ *
+ * @details
+ * On an unavailable semaphore, k_sem_take() with a one-second timeout must block
+ * for at least that long before returning -EAGAIN, confirming the timeout period
+ * is actually observed (and a K_NO_WAIT take returns promptly).
+ *
+ * Test steps:
+ * - Reset the semaphore so its count is zero.
+ * - Record uptime, call k_sem_take() with a 1-second timeout, record uptime.
+ * - Verify the elapsed time is at least one second and the return is -EAGAIN.
+ *
+ * Expected result:
+ * - The timed take blocks for >= 1 second and returns -EAGAIN.
+ *
  * @ingroup kernel_semaphore_tests
- * @see k_sem_take(), k_sem_give(), k_sem_reset()
+ * @see k_sem_take()
+ * @see k_sem_give()
+ * @see k_sem_reset()
  */
 ZTEST(semaphore, test_sem_measure_timeouts)
 {
@@ -977,9 +1144,25 @@ void sem_measure_timeout_from_thread_helper(void *p1, void *p2, void *p3)
 
 
 /**
- * @brief Test timeout of semaphore from thread
+ * @brief Verify a timed k_sem_take() returns early when given by a thread.
+ *
+ * @details
+ * A thread blocks on k_sem_take() with a one-second timeout while a lower
+ * priority thread gives the semaphore well before the timeout. The take must
+ * therefore return success in less than the full timeout period.
+ *
+ * Test steps:
+ * - Reset the semaphores and start a helper thread that gives the semaphore.
+ * - Synchronize, then call k_sem_take() with a 1-second timeout.
+ * - Measure the elapsed time.
+ *
+ * Expected result:
+ * - k_sem_take() returns 0 and the elapsed time is well under one second.
+ *
  * @ingroup kernel_semaphore_tests
- * @see k_sem_give(), k_sem_reset(), k_sem_take()
+ * @see k_sem_give()
+ * @see k_sem_reset()
+ * @see k_sem_take()
  */
 ZTEST(semaphore, test_sem_measure_timeout_from_thread)
 {
@@ -1035,9 +1218,25 @@ void sem_multiple_take_and_timeouts_helper(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test multiple semaphore take with timeouts
+ * @brief Verify threads waiting on one semaphore time out in timeout order.
+ *
+ * @details
+ * Several threads block on the same semaphore with different timeouts. With none
+ * of them ever given the semaphore, they must time out (-EAGAIN) in ascending
+ * order of their timeout values; the observed order is recorded via a pipe and
+ * checked.
+ *
+ * Test steps:
+ * - Start threads that each take the semaphore with a distinct timeout.
+ * - Record each thread's timeout value as it expires.
+ * - Compare the expiry order against the expected ascending order.
+ *
+ * Expected result:
+ * - Threads time out with -EAGAIN in increasing timeout order.
+ *
  * @ingroup kernel_semaphore_tests
- * @see k_sem_take(), k_sem_reset()
+ * @see k_sem_take()
+ * @see k_sem_reset()
  */
 ZTEST(semaphore_1cpu, test_sem_multiple_take_and_timeouts)
 {
@@ -1104,9 +1303,25 @@ void sem_multi_take_timeout_diff_sem_helper(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test sequence of multiple semaphore timeouts
+ * @brief Verify timeout ordering across waiters on different semaphores.
+ *
+ * @details
+ * Threads block with different timeouts on two different semaphores. None are
+ * given, so every thread must time out (-EAGAIN), and the global expiry order
+ * must follow the ascending timeout values regardless of which semaphore each
+ * thread waited on.
+ *
+ * Test steps:
+ * - Start threads waiting on two semaphores, each with a distinct timeout.
+ * - Record each expiry as it happens.
+ * - Verify the expiries occur in ascending timeout order.
+ *
+ * Expected result:
+ * - All takes return -EAGAIN and expire in ascending timeout order.
+ *
  * @ingroup kernel_semaphore_tests
- * @see k_sem_take(), k_sem_reset()
+ * @see k_sem_take()
+ * @see k_sem_reset()
  */
 ZTEST(semaphore, test_sem_multi_take_timeout_diff_sem)
 {
