@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config INFINEON_AUTANALOG_TEMP
+	bool "Infineon AutAnalog die temperature sensor"
+	default y
+	depends on DT_HAS_INFINEON_AUTANALOG_DIE_TEMP_ENABLED
+	select ADC
+	help
+	  Enable the Infineon PSOC Edge AutAnalog die temperature sensor driver.
+	  The driver wraps the AutAnalog SAR ADC internal temperature-sensor MUX
+	  channel and exposes it as a Zephyr SENSOR_CHAN_DIE_TEMP channel.
+
+config INFINEON_AUTANALOG_TEMP_VREF_TRIM_WORKAROUND
+	bool "Clear the AREF VREF bandgap trim after AutAnalog init"
+	default y
+	depends on INFINEON_AUTANALOG_TEMP
+	help
+	  Workaround for B0 silicon: Cy_AutAnalog_Init() loads the factory
+	  AREF VREF trim constants from RRAM into INFRA->AREF.VREF_TRIM1 and
+	  VREF_TRIM2.  On B0 silicon these constants are not valid and skew the
+	  bandgap reference, which makes the SAR die-temperature conversion read
+	  low.  When enabled, the MFD driver clears VREF_TRIM1 and VREF_TRIM2
+	  immediately after Cy_AutAnalog_Init(), so the correction applies to all
+	  AutAnalog consumers (SAR ADC samples and the die-temperature sensor
+	  driver) without per-application code.  Disable on silicon revisions
+	  that ship with valid AREF VREF trim values.
