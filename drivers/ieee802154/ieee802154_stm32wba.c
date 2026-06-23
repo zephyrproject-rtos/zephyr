@@ -56,6 +56,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #endif /* SUPPORT_RADIO_SECURITY_OT_1_2 */
 
 extern uint32_t llhwc_cmn_is_dp_slp_enabled(void);
+extern bool standby_entered;
 
 static struct stm32wba_802154_data_t stm32wba_802154_data;
 static volatile bool stm32wba_tx_wait_pending;
@@ -1146,7 +1147,7 @@ static int radio_pm_action(const struct device *dev, enum pm_device_action actio
 		LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_RADIO);
 #if defined(CONFIG_PM_S2RAM)
 		if (ll_sys_dp_slp_get_state() == LL_SYS_DP_SLP_ENABLED) {
-			if (LL_PWR_IsActiveFlag_SB() == 1U) {
+			if (standby_entered) {
 				/* Restore NVIC configuration for radio */
 				link_layer_register_isr(true);
 				ll_sys_dp_slp_exit();
