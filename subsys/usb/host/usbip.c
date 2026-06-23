@@ -342,7 +342,10 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 
 	if (k_mem_slab_alloc(&usbip_slab, (void **)&cmd_nd, K_MSEC(1000)) != 0) {
 		LOG_ERR("Failed to allocate slab");
-		net_buf_unref(buf);
+		if (buf != NULL) {
+			net_buf_unref(buf);
+		}
+
 		return -ENOMEM;
 	}
 
@@ -358,6 +361,14 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 	ret = usbip_submit_req(cmd_nd, ep, &setup, buf);
 	if (ret != 0) {
 		LOG_ERR("Failed to submit request %d", ret);
+		k_mutex_lock(&dev_ctx->list_mutex, K_FOREVER);
+		sys_dlist_remove(&cmd_nd->node);
+		k_mutex_unlock(&dev_ctx->list_mutex);
+		k_mem_slab_free(&usbip_slab, cmd_nd);
+		if (buf != NULL) {
+			net_buf_unref(buf);
+		}
+
 		return ret;
 	}
 
