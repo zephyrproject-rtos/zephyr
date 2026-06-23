@@ -307,7 +307,8 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 			      uint32_t access_rights, uint8_t *first_idx)
 {
 	int ret;
-	uint8_t idx_s, idx_e, first_enabled_idx;
+	uint8_t idx_s, first_enabled_idx;
+	uint8_t idx_e = 0;
 	uint32_t memory_type;
 	struct xtensa_mpu_entry *entry_slot_s, *entry_slot_e = NULL;
 
