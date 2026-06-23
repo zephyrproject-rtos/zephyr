@@ -2407,6 +2407,7 @@ int airoc_wifi_wpa_supp_reg_mgmt_frame(void *if_priv, u16 frame_type, size_t mat
 }
 #endif
 
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
 static inline unsigned short mhz_from_5g_channel(uint8_t ch)
 {
 	/* 5GHz channels: 36, 40, 44, 48, 149, 153, 157, 161, 165 */
@@ -2499,7 +2500,6 @@ out:
 	return status;
 }
 
-#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
 static const struct zep_wpa_supp_dev_ops airoc_wifi_wpa_drv_ops = {
 	.init = airoc_wifi_wpa_supp_dev_init,
 	.scan2 = airoc_wifi_wpa_supp_scan2,
