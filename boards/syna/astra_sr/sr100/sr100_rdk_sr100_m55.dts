@@ -20,6 +20,20 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &itcm0;
 	};
+
+	sys_1v8: regulator-sys-1v8 {
+		compatible = "regulator-fixed";
+
+		regulator-name = "SYS_1V8";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+
+		enable-gpios = <&aon_gpio 1 GPIO_ACTIVE_HIGH>;
+
+		startup-delay-us = <30000>;
+
+		regulator-boot-on;
+	};
 };
 
 &ns16550_uart1 {
@@ -35,5 +49,11 @@
 };
 
 &gpiob {
+	status = "okay";
+};
+
+&aon_gpio {
+	pinctrl-0 = <&aon_gpo1>;
+	pinctrl-names = "default";
 	status = "okay";
 };
