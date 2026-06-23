@@ -452,9 +452,9 @@ Authentication:
 Base OS:
   status: maintained
   maintainers:
-    - andyross
     - nashif
   collaborators:
+    - andyross
     - dcpleung
     - peter-mitsis
   files:
@@ -2783,10 +2783,10 @@ Documentation Infrastructure:
 "Drivers: System timer":
   status: maintained
   maintainers:
-    - andyross
+    - npitre
   collaborators:
     - teburd
-    - npitre
+    - andyross
   files:
     - drivers/timer/
     - include/zephyr/drivers/timer/
@@ -3222,6 +3222,7 @@ Heap Management:
   status: maintained
   maintainers:
     - npitre
+  collaborators:
     - andyross
   files:
     - tests/lib/shared_multi_heap/
@@ -3500,10 +3501,10 @@ Kconfig:
 Kernel:
   status: maintained
   maintainers:
-    - andyross
     - peter-mitsis
     - npitre
   collaborators:
+    - andyross
     - nashif
     - ceolin
     - dcpleung
@@ -6222,9 +6223,9 @@ Userspace:
 Utilities:
   status: maintained
   maintainers:
-    - andyross
     - nashif
   collaborators:
+    - andyross
     - dcpleung
     - peter-mitsis
   files:
