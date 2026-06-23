@@ -281,8 +281,10 @@ installation.
 
    .. note::
 
-      Remember to activate the virtual environment every time you
-      start working.
+      Remember to activate the virtual environment every time you start a new
+      terminal session before working with Zephyr. If you don't, commands such
+      as ``west`` will not be found, or may run against a different Python
+      environment, leading to confusing errors.
 
 #. Install west:
 
