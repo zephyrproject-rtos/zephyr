@@ -858,12 +858,12 @@ static int z_ztest_run_test_dispatch(struct ztest_suite_node *suite,
 				const char *param_name =
 					inst->values->name_cb(i, z_ztest_param_state.value);
 
-				snprintf(z_ztest_param_state.display_name,
+				snprintk(z_ztest_param_state.display_name,
 					 sizeof(z_ztest_param_state.display_name),
 					 "%s[%s/%s]", test->name, inst->instance_name,
 					 param_name);
 			} else {
-				snprintf(z_ztest_param_state.display_name,
+				snprintk(z_ztest_param_state.display_name,
 					 sizeof(z_ztest_param_state.display_name),
 					 "%s[%s/%zu]", test->name, inst->instance_name, i);
 			}
