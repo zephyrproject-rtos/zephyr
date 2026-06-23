@@ -23,6 +23,17 @@
 		zephyr,code-partition = &slot0_partition;
 	};
 
+	/*
+	 * Reserve a fixed retained RAM window for the S2RAM CPU context so both
+	 * the application and MCUboot place `_cpu_context` at the same physical
+	 * address.
+	 */
+	pm_s2ram: memory@2006ffe0 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2006ffe0 0x20>;
+		zephyr,memory-region = "PM_S2RAM";
+	};
+
 	leds: leds {
 		compatible = "gpio-leds";
 
@@ -79,6 +90,11 @@
 		led1 = &red_led_2;
 		die-temp0 = &die_temp;
 	};
+};
+
+&sram0 {
+	/* Exclude the final 0x20 bytes reserved for the PM_S2RAM marker. */
+	reg = <0x20000000 (DT_SIZE_K(448) - 0x20)>;
 };
 
 &clk_lse {
