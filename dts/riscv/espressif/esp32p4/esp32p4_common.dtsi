@@ -303,6 +303,14 @@
 			ngpios = <23>;
 		};
 
+		touch: touch@50113000 {
+			compatible = "espressif,esp32-touch";
+			reg = <0x50113000 0x1000 0x50128000 0x1000>;
+			interrupts = <LP_TOUCH_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
 		i2c0: i2c@500c4000 {
 			compatible = "espressif,esp32-i2c";
 			#address-cells = <1>;
