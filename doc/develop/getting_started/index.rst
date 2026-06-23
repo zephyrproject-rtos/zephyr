@@ -71,6 +71,11 @@ The current minimum required versions for the main dependencies are:
    * - `Devicetree compiler <https://www.devicetree.org/>`_
      - 1.4.6
 
+.. note::
+
+   Python 3.12 is strongly recommended. Using a newer Python release may fail on some systems, for
+   example when installing the required packages on Windows.
+
 .. tabs::
 
    .. group-tab:: Ubuntu
