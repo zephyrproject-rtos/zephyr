@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/flash.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/kernel.h>
 
 #if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 #include "tfm_ioctl_core_api.h"
