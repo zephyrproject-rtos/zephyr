@@ -66,6 +66,25 @@ properties:
       sequence (basic mode) and automatically populates SAR fields based on
       the SAR ADC child node status.
 
+  ac-app-managed:
+    type: boolean
+    description: |
+      Defer the Autonomous Controller start to the application or a consumer
+      driver instead of starting it automatically from the MFD at boot.
+
+      By default the MFD starts the AC once all child drivers have initialized
+      and loaded their configurations.  When ac-app-managed is set, the MFD does
+      not start the AC; instead the application (for example after configuring an
+      ADC channel and arming a stream) or a consumer driver (for example the
+      die-temperature sensor in its channel setup) calls
+      ifx_autanalog_start_autonomous_control() once the SAR channels are in
+      place.
+
+      Use this for free-running advanced sequences whose channel configuration is
+      written after boot, and for application-managed state machines that park in
+      a wait state until the application issues a firmware trigger.  Child drivers
+      never pause or restart the shared AC during channel reconfiguration.
+
   ac-timer-enable:
     type: boolean
     description: |
