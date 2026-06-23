@@ -254,12 +254,12 @@ struct dac_dt_spec {
 	COND_CODE_1(DT_PROP_HAS_NAME(node_id, io_channels, name), \
 		    (DAC_DT_SPEC_GET_BY_NAME(node_id, name)), (default_value))
 
-/** @brief Get DAC io-channel information from a DT_DRV_COMPAT devicetree
+/** @brief Get DAC io-channel information from a @c DT_DRV_COMPAT devicetree
  *         instance by name.
  *
  * @see DAC_DT_SPEC_GET_BY_NAME()
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name Channel name.
  *
  * @return Static initializer for an dac_dt_spec structure.
@@ -271,7 +271,7 @@ struct dac_dt_spec {
 /**
  * @brief Like DAC_DT_SPEC_INST_GET_BY_NAME(), with a fallback to a default value.
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name Channel name.
  * @param default_value Fallback value to expand to.
  *
@@ -365,12 +365,12 @@ struct dac_dt_spec {
 	COND_CODE_1(DT_PROP_HAS_IDX(node_id, io_channels, idx), \
 		    (DAC_DT_SPEC_GET_BY_IDX(node_id, idx)), (default_value))
 
-/** @brief Get DAC io-channel information from a DT_DRV_COMPAT devicetree
+/** @brief Get DAC io-channel information from a @c DT_DRV_COMPAT devicetree
  *         instance.
  *
  * @see DAC_DT_SPEC_GET_BY_IDX()
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx Channel index.
  *
  * @return Static initializer for an dac_dt_spec structure.
@@ -381,7 +381,7 @@ struct dac_dt_spec {
 /**
  * @brief Like DAC_DT_SPEC_INST_GET_BY_IDX(), with a fallback to a default value.
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx Channel index.
  * @param default_value Fallback value to expand to.
  *
@@ -422,7 +422,7 @@ struct dac_dt_spec {
  *
  * @see DAC_DT_SPEC_GET()
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  *
  * @return Static initializer for an dac_dt_spec structure.
  */
@@ -433,7 +433,7 @@ struct dac_dt_spec {
  *
  * @see DAC_DT_SPEC_GET_OR()
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param default_value Fallback value to expand to.
  *
  * @return Static initializer for a struct dac_dt_spec for the property,

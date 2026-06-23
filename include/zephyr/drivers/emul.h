@@ -160,7 +160,7 @@ struct emul {
 	};
 
 /**
- * @brief Like EMUL_DT_DEFINE(), but uses an instance of a DT_DRV_COMPAT compatible instead of a
+ * @brief Like EMUL_DT_DEFINE(), but uses an instance of a @c DT_DRV_COMPAT compatible instead of a
  *        node identifier.
  *
  * @param inst instance number. The @p node_id argument to EMUL_DT_DEFINE is set to
