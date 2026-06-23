@@ -33,3 +33,6 @@ coverxygen!=1.8.2 # See https://github.com/psycofdj/coverxygen/issues/37
 
 # Used by Kconfig extension
 python-dotenv
+
+# Used to export requirements from the reqmgmt module (StrictDoc)
+strictdoc
