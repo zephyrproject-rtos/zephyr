@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Header file for log instance registration.
+ * @ingroup log_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_INSTANCE_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_INSTANCE_H_
 
@@ -12,6 +19,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** @cond INTERNAL_HIDDEN */
 
 /** @brief Constant data associated with the source of log messages. */
 struct log_source_const_data {
@@ -27,6 +36,13 @@ struct log_source_dynamic_data {
 	uint32_t dummy_64;
 #endif
 };
+
+/** @endcond */
+
+/**
+ * @addtogroup log_api
+ * @{
+ */
 
 /** @internal
  *
@@ -159,6 +175,8 @@ struct log_source_dynamic_data {
  */
 #define LOG_INSTANCE_REGISTER(_module_name, _inst_name, _level) \
 	IF_ENABLED(CONFIG_LOG, (Z_LOG_INSTANCE_REGISTER(_module_name, _inst_name, _level)))
+
+/** @} */
 
 #ifdef __cplusplus
 }

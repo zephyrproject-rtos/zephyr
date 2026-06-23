@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Header file for log messages.
+ * @ingroup log_msg
+ */
+
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_MSG_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_MSG_H_
 
@@ -27,9 +34,20 @@
 extern "C" {
 #endif
 
+/** @cond INTERNAL_HIDDEN */
 #define LOG_MSG_DEBUG 0
 #define LOG_MSG_DBG(...) IF_ENABLED(LOG_MSG_DEBUG, (printk(__VA_ARGS__)))
+/** @endcond */
 
+/**
+ * @brief Timestamp value associated with a log message.
+ *
+ * 32-bit wide by default, or 64-bit when @kconfig{CONFIG_LOG_TIMESTAMP_64BIT}
+ * is enabled. The meaning of the value (ticks, cycles, microseconds, ...)
+ * depends on the registered timestamp source; see log_set_timestamp_func().
+ *
+ * @ingroup log_msg
+ */
 #ifdef CONFIG_LOG_TIMESTAMP_64BIT
 typedef uint64_t log_timestamp_t;
 #else
@@ -37,12 +55,13 @@ typedef uint32_t log_timestamp_t;
 #endif
 
 /**
- * @brief Log message API
- * @defgroup log_msg Log message API
+ * @brief Log message
+ * @defgroup log_msg Log messages
  * @ingroup logger
  * @{
  */
 
+/** @cond INTERNAL_HIDDEN */
 #define Z_LOG_MSG_LOG 0
 
 #define Z_LOG_MSG_PACKAGE_BITS 11
@@ -103,14 +122,8 @@ struct log_msg {
 	uint8_t data[];
 };
 
-/**
- * @cond INTERNAL_HIDDEN
- */
 BUILD_ASSERT(sizeof(struct log_msg) % Z_LOG_MSG_ALIGNMENT == 0,
 	     "Log msg size must aligned");
-/**
- * @endcond
- */
 
 
 struct log_msg_generic_hdr {
@@ -728,6 +741,8 @@ static inline bool z_log_item_is_msg(const union log_msg_generic *msg)
 {
 	return msg->generic.type == Z_LOG_MSG_LOG;
 }
+
+/** @endcond */
 
 /** @brief Get total length (in 32 bit words) of a log message.
  *
