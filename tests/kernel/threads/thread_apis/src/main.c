@@ -79,6 +79,7 @@ static void customdata_entry(void *p1, void *p2, void *p3)
  * @ingroup kernel_thread_tests
  * @brief Test thread custom data get/set from coop thread
  *
+ * @verifies ZEP-SRS-1-12
  * @see k_thread_custom_data_get(), k_thread_custom_data_set()
  */
 ZTEST(threads_lifecycle_1cpu, test_customdata_get_set_coop)
