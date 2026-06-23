@@ -27,4 +27,17 @@
 				 <PA25C_SERCOM5_PAD1>; /* RX */
 		};
 	};
+
+	sdhc0_default: sdmmc0_default {
+		group1 {
+			pinmux = <PD10I_SDMMC0_SDCK>,
+				 <PD6I_SDMMC0_SDCMD>,
+				 <PD7I_SDMMC0_SDDAT0>,
+				 <PD11I_SDMMC0_SDDAT1>,
+				 <PD8I_SDMMC0_SDDAT2>,
+				 <PD9I_SDMMC0_SDDAT3>,
+				 <PD12I_SDMMC0_SDCD>,
+				 <PD5I_SDMMC0_SDWP>;
+		};
+	};
 };
