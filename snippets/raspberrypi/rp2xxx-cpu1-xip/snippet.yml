@@ -1,0 +1,9 @@
+name: rp2xxx-cpu1-xip
+
+boards:
+  /.*/rp2350[ab]/m33(/w)?/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/rp2350_m33.overlay
+  /.*/rp2350a/m33/cpu1/:
+    append:
+      EXTRA_CONF_FILE: rp2350-cpu1-xip.conf
