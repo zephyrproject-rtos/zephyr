@@ -79,7 +79,24 @@ void validate_bitarray_define(sys_bitarray_t *ba, size_t num_bits)
 }
 
 /**
- * @brief Test defining of bitarrays
+ * @brief Verify SYS_BITARRAY_DEFINE allocates a correctly sized, fully-free bit array.
+ *
+ * @ingroup kernel_bitarray_tests
+ *
+ * @details
+ * Proves that the compile-time SYS_BITARRAY_DEFINE macro reserves enough
+ * bundles to hold the requested bit count for both aligned and non-aligned
+ * sizes, records the requested bit count, and initializes every bundle to the
+ * free state. This guarantees a freshly defined bit array is usable and starts
+ * with no bits set.
+ *
+ * Test steps:
+ * - Define bit arrays of 1, 32, 33, 64, 65, 128 and 129 bits.
+ * - For each, check num_bits, the derived num_bundles, and that all bundles are free.
+ *
+ * Expected result:
+ * - Each bit array reports the requested num_bits, the expected number of
+ *   bundles, and all bundles are zero/free.
  *
  * @see SYS_BITARRAY_DEFINE()
  */
@@ -122,7 +139,26 @@ bool bitarray_bundles_is_zero(sys_bitarray_t *ba)
 }
 
 /**
- * @brief Test bitarrays set and clear
+ * @brief Verify single-bit set/clear/test operations and out-of-range rejection.
+ *
+ * @ingroup kernel_bitarray_tests
+ *
+ * @details
+ * Proves the atomic single-bit primitives behave consistently: setting,
+ * clearing, testing and the test-and-modify variants each report the prior
+ * state correctly and leave only the targeted bit changed in the underlying
+ * bundle. Also proves that out-of-range indices (>= num_bits and negative) are
+ * rejected without corrupting any bit, which is the safety guarantee callers
+ * rely on.
+ *
+ * Test steps:
+ * - For every valid bit, exercise set/test/clear and both test-and-set and
+ *   test-and-clear variants, checking returned prior values and bundle state.
+ * - Invoke each primitive with index num_bits and with -1.
+ *
+ * Expected result:
+ * - In-range operations succeed and only the targeted bit changes.
+ * - Out-of-range operations return a non-zero error and leave the array unchanged.
  *
  * @see sys_bitarray_set_bit()
  * @see sys_bitarray_clear_bit()
@@ -516,7 +552,26 @@ void alloc_and_free_interval(void)
 }
 
 /**
- * @brief Test bitarrays allocation and free
+ * @brief Verify region allocation and free across patterns, sizes and bundle boundaries.
+ *
+ * @ingroup kernel_bitarray_tests
+ *
+ * @details
+ * Proves the allocator finds a contiguous free region of the requested size,
+ * returns its offset, marks exactly those bits used, and that free returns the
+ * same bits to the free state. Covers predefined fragmentation patterns,
+ * regions spanning multiple bundles, exhaustion (-ENOSPC), rejection of
+ * mismatched free requests, and repeated alloc/free cycles at several
+ * granularities so the bookkeeping stays consistent (verified via popcount).
+ *
+ * Test steps:
+ * - Run predefined alloc/free patterns on 32-bit and 128-bit arrays.
+ * - Loop alloc/free with divisors 1, 2, 4, 8, 16, 32, 64.
+ * - Run the interval alloc/free pattern.
+ *
+ * Expected result:
+ * - Allocations return expected offsets and bit patterns; frees restore the
+ *   prior state; invalid frees and exhausted allocations fail without corruption.
  *
  * @see sys_bitarray_alloc()
  * @see sys_bitarray_free()
@@ -544,15 +599,24 @@ ZTEST(bitarray, test_bitarray_alloc_free)
 }
 
 /**
- * @brief Parameterized alloc/free loop — one invocation per divisor.
+ * @brief Verify alloc/free bookkeeping stays consistent per allocation granularity.
  *
- * Identical to the loop inside test_bitarray_alloc_free but exercised as
- * separate named test cases so that a failure reports exactly which divisor
- * triggered it (e.g. "test_bitarray_alloc_divisor[divisors/2]" for divisor=4)
- * rather than only "FAIL - test_bitarray_alloc_free".
+ * @ingroup kernel_bitarray_tests
  *
- * Divisors: 1, 2, 4, 8, 16, 32, 64 — the same doubling sequence as the
- * original while-loop, now with per-case visibility in Twister output.
+ * @details
+ * Proves the same alloc/free loop as test_bitarray_alloc_free, but parameterized
+ * by divisor so each granularity is a separately named case. This gives
+ * per-divisor traceability: a failure pinpoints exactly which allocation size
+ * broke the invariant (allocated offset, returned bits, and running popcount)
+ * instead of collapsing all sizes into one result.
+ *
+ * Test steps:
+ * - For the supplied divisor, repeatedly allocate a fraction of remaining bits
+ *   and free all but the first bit, checking offsets and the running popcount.
+ *
+ * Expected result:
+ * - Allocations and frees succeed (or fail as expected for zero-size requests)
+ *   and the bit count tracks the expected value throughout.
  *
  * @see sys_bitarray_alloc()
  * @see sys_bitarray_free()
@@ -570,6 +634,28 @@ ZTEST_P(bitarray, test_bitarray_alloc_divisor)
 ZTEST_DEFINE_PARAM_VALUES(ba_divisors, int, 1, 2, 4, 8, 16, 32, 64);
 ZTEST_INSTANTIATE_TEST_SUITE_P(loop, bitarray, test_bitarray_alloc_divisor, ba_divisors);
 
+/**
+ * @brief Verify counting set bits within an arbitrary region.
+ *
+ * @ingroup kernel_bitarray_tests
+ *
+ * @details
+ * Proves sys_bitarray_popcount_region returns the exact number of set bits in a
+ * region defined by length and offset, both when the region lies inside one
+ * bundle and when it spans multiple bundles (including the first and last bit
+ * of the array). Also proves invalid regions (zero length, or length+offset
+ * exceeding num_bits) are rejected with -EINVAL.
+ *
+ * Test steps:
+ * - Count bits in single-bundle regions with known patterns.
+ * - Count bits in multi-bundle regions, including array endpoints.
+ * - Request zero-length and out-of-range regions.
+ *
+ * Expected result:
+ * - Counts match the known patterns; invalid regions return -EINVAL.
+ *
+ * @see sys_bitarray_popcount_region()
+ */
 ZTEST(bitarray, test_bitarray_popcount_region)
 {
 	int ret;
@@ -667,6 +753,29 @@ ZTEST(bitarray, test_bitarray_popcount_region)
 		      ret);
 }
 
+/**
+ * @brief Verify region-wise XOR of two bit arrays and its validation.
+ *
+ * @ingroup kernel_bitarray_tests
+ *
+ * @details
+ * Proves sys_bitarray_xor combines the bits of a region from a second array
+ * into the destination at a given length/offset, leaving the source unchanged
+ * and bits outside the region untouched, for both single-bundle and
+ * multi-bundle regions. Also proves mismatched array sizes and out-of-range
+ * or zero-length regions are rejected with -EINVAL.
+ *
+ * Test steps:
+ * - XOR equal-sized arrays over single-bundle regions at various offsets.
+ * - XOR over a region spanning multiple bundles.
+ * - Attempt XOR with a different-sized array and with invalid length/offset.
+ *
+ * Expected result:
+ * - Destination bits reflect the XOR, source is unchanged; invalid calls
+ *   return -EINVAL.
+ *
+ * @see sys_bitarray_xor()
+ */
 ZTEST(bitarray, test_bitarray_xor)
 {
 	int ret;
@@ -810,6 +919,30 @@ ZTEST(bitarray, test_bitarray_xor)
 	zassert_equal(ret, -EINVAL, "sys_bitarray_xor() returned unexpected value: %d", ret);
 }
 
+/**
+ * @brief Verify locating the nth set bit within a region.
+ *
+ * @ingroup kernel_bitarray_tests
+ *
+ * @details
+ * Proves sys_bitarray_find_nth_set reports the index of the nth set bit inside a
+ * region defined by length and offset, for searches contained in one bundle and
+ * for searches spanning multiple bundles. Also proves it returns a positive
+ * not-found indication when fewer than n bits are set in the region, and
+ * -EINVAL for invalid arguments (n == 0 or region exceeding the array).
+ *
+ * Test steps:
+ * - Find the nth set bit in single-bundle and multi-bundle regions with a known
+ *   pattern, varying n and the region offset.
+ * - Search regions containing too few set bits.
+ * - Pass invalid n and out-of-range regions.
+ *
+ * Expected result:
+ * - Found indices match the known pattern; insufficient matches return a
+ *   not-found result; invalid arguments return -EINVAL.
+ *
+ * @see sys_bitarray_find_nth_set()
+ */
 ZTEST(bitarray, test_bitarray_find_nth_set)
 {
 	int ret;
@@ -917,6 +1050,33 @@ ZTEST(bitarray, test_bitarray_find_nth_set)
 		      ret);
 }
 
+/**
+ * @brief Verify region set/clear manipulation and region-state queries.
+ *
+ * @ingroup kernel_bitarray_tests
+ *
+ * @details
+ * Proves the region predicates correctly report whether a region is entirely
+ * set or entirely cleared (and report neither when a region is mixed), and that
+ * sys_bitarray_set_region / sys_bitarray_clear_region flip exactly the targeted
+ * bits across single and multiple bundles. Also proves that operations on
+ * out-of-range regions are rejected with -EINVAL without altering the array.
+ *
+ * Test steps:
+ * - Query is_region_set / is_region_cleared on known patterns, then invert and
+ *   re-query, including mixed regions and regions spanning bundles.
+ * - Set and clear regions and compare against expected bundle values.
+ * - Attempt set/clear on out-of-range regions.
+ *
+ * Expected result:
+ * - Predicates match the patterns; set/clear modify only the targeted bits;
+ *   out-of-range operations return -EINVAL and leave the array unchanged.
+ *
+ * @see sys_bitarray_set_region()
+ * @see sys_bitarray_clear_region()
+ * @see sys_bitarray_is_region_set()
+ * @see sys_bitarray_is_region_cleared()
+ */
 ZTEST(bitarray, test_bitarray_region_set_clear)
 {
 	int ret;
@@ -1059,12 +1219,27 @@ ZTEST(bitarray, test_bitarray_region_set_clear)
 }
 
 /**
- * @brief Test find MSB and LSB operations
+ * @brief Verify finding the most- and least-significant set bit of a word.
  *
- * @details Verify the functions that find out the most significant
- * bit and least significant bit work as expected.
+ * @ingroup kernel_bitarray_tests
  *
- * @see find_msb_set(), find_lsb_set()
+ * @details
+ * Proves find_msb_set and find_lsb_set return the 1-based position of the
+ * highest and lowest set bit (and 0 when no bit is set), across boundary inputs
+ * and every single-bit value. This validates the primitives bit-array code and
+ * callers depend on for scanning words.
+ *
+ * Test steps:
+ * - Exercise boundary values 0, 1, 0x80000000, 0xffffffff and 0xfffffffe and a
+ *   mid-range value.
+ * - For each bit position 0..31, check both functions on a single-bit value.
+ *
+ * Expected result:
+ * - find_msb_set / find_lsb_set return the expected 1-based positions, and 0
+ *   for an all-zero input.
+ *
+ * @see find_msb_set()
+ * @see find_lsb_set()
  */
 ZTEST(bitarray, test_ffs)
 {
