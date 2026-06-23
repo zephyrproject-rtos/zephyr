@@ -9,6 +9,11 @@ ExternalZephyrProject_Add(
 # Ensure UICR is configured and built after the default image so EDT/ELFs exist.
 sysbuild_add_dependencies(CONFIGURE uicr ${DEFAULT_IMAGE})
 
+# Ensure UICR is flashed after the default image. If UICR were to be
+# flashed first, then IronSide SE may read UICR.PROTECTEDMEM before
+# the app is flashed and protect the old FW instead of the new FW
+sysbuild_add_dependencies(FLASH uicr ${DEFAULT_IMAGE})
+
 # Add build dependencies for all images whose ELF files may be used by gen_uicr.
 # The gen_uicr/CMakeLists.txt scans all sibling build directories and adds their
 # ELF files as file dependencies. However, we also need target dependencies to
