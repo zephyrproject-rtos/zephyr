@@ -319,12 +319,13 @@ static uint32_t dma_dw_axi_get_ch_status(const struct device *dev, uint32_t ch)
 
 	/* channel is active/busy in the dma transfer */
 	if ((ch_status & CH_EN_BIT(ch)) {
-		return DMA_DW_AXI_CH_ACTIVE;
-	}
 
-	/* channel is currently suspended */
-	if ((ch_status & CH_SUSP_BIT(ch)) {
-		return DMA_DW_AXI_CH_SUSPENDED;
+		/* channel is currently suspended */
+		if ((ch_status & CH_SUSP_BIT(ch)) {
+			return DMA_DW_AXI_CH_SUSPENDED;
+		}
+
+		return DMA_DW_AXI_CH_ACTIVE;
 	}
 
 	/* channel is idle */
