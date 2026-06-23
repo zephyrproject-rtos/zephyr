@@ -62,6 +62,13 @@
 			pclk1-div = <1>;
 			pclk2-div = <1>;
 		};
+
+
+		mco: mco {
+			compatible = "wch,ch32v20x_30x-clock-mco";
+			clocks = <&rcc CH32V20x_V30X_CLOCK_MCO>;
+			status = "disabled";
+		};
 	};
 
 	soc {

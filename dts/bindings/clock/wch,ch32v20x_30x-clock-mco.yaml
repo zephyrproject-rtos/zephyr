@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Fiona Behrens
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH32F/V20x_30x MCO clock Out
+
+compatible: "wch,ch32v20x_30x-clock-mco"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  source:
+    type: string
+    required: true
+    description: |
+      Clock Source to output onto the mco pin
+    enum:
+      - "sysclk"
+      - "hsi"
+      - "hse"
+      - "pll/2"
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

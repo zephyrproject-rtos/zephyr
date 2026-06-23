@@ -33,4 +33,13 @@
 			bias-pull-up;
 		};
 	};
+
+	 /omit-if-no-ref/ mco_default: mco_default {
+		group1 {
+			pinmux = <MCO_PA8_0>;
+			output-high;
+			drive-push-pull;
+			slew-rate = "max-speed-50mhz";
+		};
+	};
 };

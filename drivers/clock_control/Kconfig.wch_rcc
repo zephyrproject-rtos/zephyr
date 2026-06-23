@@ -12,3 +12,11 @@ config CLOCK_CONTROL_WCH_RCC_V2
 	depends on DT_HAS_WCH_CH32_203_RCC_ENABLED
 	help
 	  This is a rewrite of the old WCH_RCC clock driver adding more functionality.
+
+config CLOCK_CONTROL_WCH_MCO
+	bool "WCH CH32 MCO clock output driver"
+	depends on DT_HAS_WCH_CH32V20X_30X_CLOCK_MCO_ENABLED
+	depends on CLOCK_CONTROL_WCH_RCC_V2
+	default y
+	help
+	  Enabled the WCH CH32 MCO clock output.
