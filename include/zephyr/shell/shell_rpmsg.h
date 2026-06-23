@@ -6,8 +6,8 @@
 
 /**
  * @file
- * @brief RPMsg shell backend
- * @ingroup shell_api
+ * @brief Header file for the RPMsg shell backend.
+ * @ingroup shell_rpmsg
  */
 
 #ifndef ZEPHYR_INCLUDE_SHELL_RPMSG_H_
@@ -21,6 +21,7 @@
 extern "C" {
 #endif
 
+/** @cond INTERNAL_HIDDEN */
 extern const struct shell_transport_api shell_rpmsg_transport_api;
 
 /** RPMsg received message placeholder */
@@ -60,7 +61,20 @@ struct shell_rpmsg {
 	/** The number of bytes consumed from rx_cur */
 	size_t rx_consumed;
 };
+/** @endcond */
 
+/**
+ * @defgroup shell_rpmsg RPMsg shell backend
+ * @ingroup shell_backends
+ * @brief Shell access over an RPMsg endpoint.
+ * @{
+ */
+
+/**
+ * @brief Define an RPMsg shell transport instance.
+ *
+ * @param _name Name of the transport instance.
+ */
 #define SHELL_RPMSG_DEFINE(_name)					\
 	static struct shell_rpmsg _name##_shell_rpmsg;			\
 	struct shell_transport _name = {				\
@@ -85,6 +99,8 @@ int shell_backend_rpmsg_init_transport(struct rpmsg_device *rpmsg_dev);
  * @returns Pointer to the shell instance.
  */
 const struct shell *shell_backend_rpmsg_get_ptr(void);
+
+/** @} */
 
 #ifdef __cplusplus
 }
