@@ -744,6 +744,11 @@ class TestPlan:
                     toolchain = ts["toolchain"]
 
                     platform = self.get_platform(ts["platform"])
+                    if platform is None:
+                        raise TwisterRuntimeError(
+                            f"{file}: unknown platform {ts['platform']} "
+                            f"for test {ts['name']}"
+                        )
                     if filter_platform and platform.name not in filter_platform:
                         continue
                     instance = TestInstance(
