@@ -47,14 +47,6 @@
 		compatible = "microchip,miv-soc", "simple-bus";
 		ranges;
 
-		uart0: uart@11001000 {
-			compatible = "microchip,coreuart";
-			reg = <0x11001000 0x1000>;
-			status = "okay";
-			current-speed = <0>;
-			clock-frequency = <0>;
-		};
-
 		plic: interrupt-controller@10000000 {
 			compatible = "sifive,plic-1.0.0";
 			#address-cells = <0>;
@@ -64,6 +56,14 @@
 			reg = <0x10000000 0x04000000>;
 			riscv,max-priority = <1>;
 			riscv,ndev = <31>;
+		};
+
+		uart0: uart@11001000 {
+			compatible = "microchip,coreuart";
+			reg = <0x11001000 0x1000>;
+			status = "okay";
+			current-speed = <0>;
+			clock-frequency = <0>;
 		};
 
 		mtimer: timer@1200bff8 {
