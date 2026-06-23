@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Header file for the logging backend interface.
+ * @ingroup log_backend
+ */
+
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_H_
 
@@ -18,9 +25,9 @@ extern "C" {
 #endif
 
 /**
- * @brief Logger backend interface
- * @defgroup log_backend Logger backend interface
+ * @defgroup log_backend Logger backends
  * @ingroup logger
+ * @brief Interface implemented by logging backends and used by the log core.
  * @{
  */
 
@@ -59,18 +66,29 @@ union log_backend_evt_arg {
 
 /**
  * @brief Logger backend API.
+ *
+ * Set of operations a backend implements. Mandatory operations must always be
+ * provided; optional operations may be left @c NULL, in which case the log core
+ * skips them.
  */
 struct log_backend_api {
+	/** @brief Mandatory: process a single log message (see log_backend_msg_process()). */
 	void (*process)(const struct log_backend *const backend,
 			union log_msg_generic *msg);
 
+	/** @brief Optional: report number of dropped messages (see log_backend_dropped()). */
 	void (*dropped)(const struct log_backend *const backend, uint32_t cnt);
+	/** @brief Mandatory: switch the backend to panic (blocking) mode. */
 	void (*panic)(const struct log_backend *const backend);
+	/** @brief Optional: initialize the backend (see log_backend_init()). */
 	void (*init)(const struct log_backend *const backend);
+	/** @brief Optional: poll for backend readiness (see log_backend_is_ready()). */
 	int (*is_ready)(const struct log_backend *const backend);
+	/** @brief Optional: set the output format type (see log_backend_format_set()). */
 	int (*format_set)(const struct log_backend *const backend,
 				uint32_t log_type);
 
+	/** @brief Optional: handle a backend event (see log_backend_notify()). */
 	void (*notify)(const struct log_backend *const backend,
 		       enum log_backend_evt event,
 		       union log_backend_evt_arg *arg);
@@ -78,8 +96,12 @@ struct log_backend_api {
 
 /**
  * @brief Logger backend control block.
+ *
+ * Holds the run-time state of a backend instance. Managed by the log core;
+ * backends should not modify it directly.
  */
 struct log_backend_control_block {
+	/** @cond INTERNAL_HIDDEN */
 	void *ctx;
 	uint8_t id;
 	bool active;
@@ -87,16 +109,17 @@ struct log_backend_control_block {
 
 	/* Initialization level. */
 	uint8_t level;
+	/** @endcond */
 };
 
 /**
  * @brief Logger backend structure.
  */
 struct log_backend {
-	const struct log_backend_api *api;
-	struct log_backend_control_block *cb;
-	const char *name;
-	bool autostart;
+	const struct log_backend_api *api; /**< Backend operations. */
+	struct log_backend_control_block *cb; /**< Run-time control block. */
+	const char *name; /**< Unique backend name. */
+	bool autostart; /**< Enable the backend automatically at logger startup. */
 };
 
 /**
