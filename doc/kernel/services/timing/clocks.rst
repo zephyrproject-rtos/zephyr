@@ -177,25 +177,60 @@ Timeout Queue
 -------------
 
 All Zephyr :c:type:`k_timeout_t` events specified using the API above are
-managed in a single, global queue of events.  Each event is stored in
-a double-linked list, with an attendant delta count in ticks from the
-previous event.  The action to take on an event is specified as a
-callback function pointer provided by the subsystem requesting the
-event, along with a :c:struct:`_timeout` tracking struct that is
-expected to be embedded within subsystem-defined data structures (for
-example: a :c:struct:`wait_q` struct, or a :c:type:`k_tid_t` thread struct).
+managed in a single, global queue of events.  The action to take on an
+event is specified as a callback function pointer provided by the
+subsystem requesting the event, along with a :c:struct:`_timeout`
+tracking struct that is expected to be embedded within subsystem-defined
+data structures (for example: a :c:struct:`wait_q` struct, or a
+:c:type:`k_tid_t` thread struct).
 
-Note that all variant units passed via a :c:type:`k_timeout_t` are converted
-to ticks once on insertion into the list.  There no
+Note that all variant units passed via a :c:type:`k_timeout_t` are
+converted to ticks once on insertion into the queue.  There are no
 multiple-conversion steps internal to the kernel, so precision is
-guaranteed at the tick level no matter how many events exist or how
-long a timeout might be.
+guaranteed at the tick level no matter how many events exist or how long
+a timeout might be.
 
-Note that the list structure means that the CPU work involved in
-managing large numbers of timeouts is quadratic in the number of
-active timeouts.  The API design of the timeout queue was intended to
-permit a more scalable backend data structure, but no such
-implementation exists currently.
+The data structure that holds the queue is selected at build time
+through the :kconfig:option:`CONFIG_TIMEOUT_BACKEND` choice.  Only the
+front end is shared between backends (the announce path, the SMP
+re-entry handling, and the relative versus absolute timeout rules); each
+backend supplies the queue itself, so an integrator can match the data
+structure to the workload without touching the common code.
+
+The default, :kconfig:option:`CONFIG_TIMEOUT_BACKEND_DLIST`, stores
+events in a doubly linked list sorted by expiry, each holding a delta
+count in ticks from its predecessor.  Insertion is O(N) in the number of
+pending timeouts: inexpensive for the handful a typical system has
+pending, but it scales poorly when many are outstanding.  The three
+alternative backends, all currently experimental, trade extra memory or
+behaviour for faster insertion at scale:
+
+* :kconfig:option:`CONFIG_TIMEOUT_BACKEND_MINHEAP` keeps the events in a
+  binary min-heap keyed on absolute expiry, making insertion and removal
+  O(log N).  It requires 64-bit ticks
+  (:kconfig:option:`CONFIG_TIMEOUT_64BIT`) and a fixed-capacity heap
+  (:kconfig:option:`CONFIG_TIMEOUT_HEAP_MAX_ENTRIES`, whose overflow is
+  fatal), and it does not preserve the firing order of timeouts that
+  expire on the same tick.
+
+* :kconfig:option:`CONFIG_TIMEOUT_BACKEND_WHEEL` is a hierarchical timer
+  wheel with O(1) insertion and removal for the near future and a sorted
+  overflow list beyond.  It has the largest per-event and static
+  footprint, does not preserve same-tick firing order, and wakes a
+  tickless-idle CPU periodically because its next-timeout estimate is
+  bounded by the wheel period (a power cost the other backends avoid).
+
+* :kconfig:option:`CONFIG_TIMEOUT_BACKEND_BUCKET` is a single-level
+  bucketed delta list, a simpler relative of the wheel.  It gives O(1)
+  insertion within a tunable near-future window
+  (:kconfig:option:`CONFIG_TIMEOUT_BUCKET_LISTS`) and falls back to a
+  sorted overflow list beyond it.  It also requires 64-bit ticks, but
+  unlike the wheel it preserves same-tick firing order and adds no
+  idle-wakeup cost.
+
+The non-default backends target systems that hold many concurrent
+timeouts, especially ones clustered in the near future.  For most
+applications the delta list remains the appropriate default.
 
 Timer Drivers
 -------------
