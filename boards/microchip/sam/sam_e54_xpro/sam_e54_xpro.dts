@@ -24,6 +24,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,flash-controller = &nvmctrl;
 		zephyr,entropy = &trng;
+		zephyr,sdhc = &sdhc1;
 	};
 
 	aliases {
@@ -218,11 +219,21 @@
 
 		fdpll0 {
 			subsystem = <CLOCK_MCHP_FDPLL_ID_FDPLL0>;
-			fdpll-divider-ratio-int = <119>;
+			fdpll-divider-ratio-int = <19>;
 			fdpll-lock-bypass-en = <1>;
 			fdpll-wakeup-fast-en = <1>;
 			fdpll-src = "xosc1";
+			fdpll-en = <1>;
+		};
+
+		/* fdpll1: 100 MHz for SDHC (12 MHz / 12 * 100 = 100 MHz) */
+		fdpll1 {
+			subsystem = <CLOCK_MCHP_FDPLL_ID_FDPLL1>;
+			fdpll-divider-ratio-int = <99>;
 			fdpll-xosc-clock-divider = <5>;
+			fdpll-lock-bypass-en = <1>;
+			fdpll-wakeup-fast-en = <1>;
+			fdpll-src = "xosc1";
 			fdpll-en = <1>;
 		};
 	};
@@ -263,6 +274,24 @@
 			gclkgen-run-in-standby-en = <1>;
 			gclkgen-en = <1>;
 		};
+
+		/* GCLK4: 100 MHz for SDHC main clock */
+		gclkgen4 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN4>;
+			gclkgen-div-factor = <1>;
+			gclkgen-src = "fdpll1";
+			gclkgen-run-in-standby-en = <1>;
+			gclkgen-en = <1>;
+		};
+
+		/* GCLK5: 12 MHz for SDHC slow clock (120 MHz / 10) */
+		gclkgen5 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN5>;
+			gclkgen-div-factor = <10>;
+			gclkgen-src = "fdpll0";
+			gclkgen-run-in-standby-en = <1>;
+			gclkgen-en = <1>;
+		};
 	};
 
 	gclkperiph: gclkperiph {
@@ -298,6 +327,18 @@
 			gclkperiph-src = "gclk2";
 			gclkperiph-en = <0>;
 		};
+
+		sdhc1 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SDHC1>;
+			gclkperiph-src = "gclk4";
+			gclkperiph-en = <1>;
+		};
+
+		sdhc1_slow {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SDHC1_SLOW>;
+			gclkperiph-src = "gclk5";
+			gclkperiph-en = <1>;
+		};
 	};
 
 	mclkperiph: mclkperiph {
@@ -306,6 +347,11 @@
 
 		sercom2 {
 			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_APBB_SERCOM2>;
+			mclk-en = <1>;
+		};
+
+		sdhc1 {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_AHB_SDHC1>;
 			mclk-en = <1>;
 		};
 	};
@@ -484,6 +530,8 @@ i2c0: &sercom7 {
 	compatible = "microchip,sdhc-g1";
 	pinctrl-0 = <&sdhc1_default>;
 	pinctrl-names = "default";
+	auto-cmd23;
+	auto-cmd12;
 	status = "okay";
 
 	disk {
