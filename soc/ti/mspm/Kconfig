@@ -1,9 +1,9 @@
-# Texas Instruments MSPM0 Family
+# Texas Instruments MSPM SoC Family
 # Copyright (c) 2025 Texas Instruments
 # Copyright (c) 2025 Linumiz
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_TI_MSPM0
+if SOC_FAMILY_TI_MSPM
 
 rsource "*/Kconfig"
 
@@ -14,9 +14,10 @@ rsource "*/Kconfig"
 config MSPM0_PERIPH_STARTUP_DELAY
 	int
 	default 8
+	depends on SOC_SERIES_MSPM0G || SOC_SERIES_MSPM0L
 
 config HWINFO
 	bool
-	default y if POWEROFF
+	default y if POWEROFF && (SOC_SERIES_MSPM0G || SOC_SERIES_MSPM0L)
 
-endif # SOC_FAMILY_TI_MSPM0
+endif # SOC_FAMILY_TI_MSPM

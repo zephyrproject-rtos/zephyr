@@ -5955,7 +5955,7 @@ TI K3 Platforms:
   labels:
     - "platform: TI K3"
 
-TI MSPM0 Platforms:
+TI MSPM Platforms:
   status: maintained
   maintainers:
     - ssekar15
@@ -5963,14 +5963,14 @@ TI MSPM0 Platforms:
   collaborators:
     - d-philpot
   files:
-    - soc/ti/mspm0/
-    - boards/ti/*mspm0*/
-    - dts/arm/ti/mspm0/
+    - soc/ti/mspm/
+    - boards/ti/*mspm*/
+    - dts/arm/ti/mspm*/
     - dts/bindings/*/*mspm0*
     - drivers/*/*_mspm0*
     - modules/Kconfig.mspm0
   labels:
-    - "platform: Texas Instruments MSPM0"
+    - "platform: TI MSPM"
 
 TI SimpleLink Platforms:
   status: maintained
