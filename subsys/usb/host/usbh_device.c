@@ -77,19 +77,19 @@ static int validate_device_mps0(const struct usb_device *const udev)
 {
 	const uint8_t mps0 = udev->dev_desc.bMaxPacketSize0;
 
-	if (udev->speed == USB_SPEED_SPEED_SS) {
+	if (udev->speed == USB_PORT_SPEED_SS || udev->speed == USB_PORT_SPEED_LS) {
 		LOG_ERR("USB device speed not supported");
 		return -ENOTSUP;
 	}
 
-	if (udev->speed == USB_SPEED_SPEED_HS) {
+	if (udev->speed == USB_PORT_SPEED_HS) {
 		if (mps0 != 64) {
 			LOG_ERR("HS device has wrong bMaxPacketSize0 %u", mps0);
 			return -EINVAL;
 		}
 	}
 
-	if (udev->speed == USB_SPEED_SPEED_FS) {
+	if (udev->speed == USB_PORT_SPEED_FS) {
 		if (mps0 != 8 && mps0 != 16 && mps0 != 32 && mps0 != 64) {
 			LOG_ERR("FS device has wrong bMaxPacketSize0 %u", mps0);
 			return -EINVAL;
@@ -566,9 +566,9 @@ int usbh_device_init(struct usb_device *const udev)
 	}
 
 	LOG_INF("New %s-speed device with address %u state %u",
-		udev->speed == USB_SPEED_SPEED_LS ? "low" :
-		udev->speed == USB_SPEED_SPEED_FS ? "full" :
-		udev->speed == USB_SPEED_SPEED_HS ? "high" : "unknown",
+		udev->speed == USB_PORT_SPEED_LS ? "low" :
+		udev->speed == USB_PORT_SPEED_FS ? "full" :
+		udev->speed == USB_PORT_SPEED_HS ? "high" : "unknown",
 		udev->addr, udev->state);
 
 	err = usbh_req_desc_dev(udev, sizeof(udev->dev_desc), &udev->dev_desc);
