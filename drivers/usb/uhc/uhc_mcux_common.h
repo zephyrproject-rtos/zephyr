@@ -15,7 +15,7 @@ struct uhc_mcux_data {
 	uint16_t mcux_eps_interval[USB_HOST_CONFIG_MAX_PIPES];
 	usb_host_instance_t mcux_host;
 	struct k_thread drv_stack_data;
-	enum usb_device_speed speed;
+	enum usb_port_speed speed;
 	uint8_t controller_id; /* MCUX hal controller id, 0xFF is invalid value */
 };
 
