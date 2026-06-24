@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 EXALT Technologies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sram1 {
+	status = "disabled";
+};
+
+/ {
+	aliases {
+		psram0 = &aps6408l;
+	};
+};
