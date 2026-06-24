@@ -90,7 +90,7 @@ static uint32_t cpu_map[CONFIG_MP_MAX_NUM_CPUS] = {
 extern void z_arm_mpu_init(void);
 extern void z_arm_configure_static_mpu_regions(void);
 #elif defined(CONFIG_ARM_AARCH32_MMU)
-extern int z_arm_mmu_init(void);
+extern int z_arm_mmu_init(bool is_primary_core);
 #endif
 
 /* Called from Zephyr initialization */
@@ -186,7 +186,7 @@ void arch_secondary_cpu_init(void)
 	z_arm_mpu_init();
 	z_arm_configure_static_mpu_regions();
 #elif defined(CONFIG_ARM_AARCH32_MMU)
-	z_arm_mmu_init();
+	z_arm_mmu_init(false);
 #endif
 
 #ifdef CONFIG_SMP
