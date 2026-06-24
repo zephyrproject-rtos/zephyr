@@ -152,3 +152,15 @@ properties:
 
   clock-frequency:
     required: true
+
+  st,mem-type:
+    type: string
+    description: |
+      The type of memory to be supported by the controller.
+    enum:
+      - "micron"
+      - "macronix"
+      - "apmemory"
+      - "macronix-ram"
+      - "hyperbus"
+    default: "standard"
