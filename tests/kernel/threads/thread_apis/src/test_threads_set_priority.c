@@ -15,9 +15,10 @@ static int thread2_data;
 K_SEM_DEFINE(sem_thread2, 0, 1);
 K_SEM_DEFINE(sem_thread1, 0, 1);
 
+/** Arguments passed to the ISR that changes a thread's priority. */
 struct isr_arg {
-	k_tid_t thread;
-	int     prio;
+	k_tid_t thread;  /**< Thread whose priority is changed. */
+	int     prio;    /**< Priority to set from the ISR. */
 };
 
 static struct isr_arg prio_args;
@@ -66,6 +67,7 @@ void thread2_set_prio_test(void *p1, void *p2, void *p3)
  * higher value, and checks that the priority has been set correctly.
  *
  * @see k_thread_priority_set(), k_thread_priority_get()
+ * @verifies ZEP-SRS-1-2
  */
 ZTEST(threads_lifecycle, test_threads_priority_set)
 {
@@ -136,6 +138,7 @@ ZTEST(threads_lifecycle, test_threads_priority_set)
  * correctly when invoked from an interrupt service routine (ISR).
  *
  * @see k_thread_priority_set(), k_thread_priority_get()
+ * @verifies ZEP-SRS-1-2
  */
 ZTEST(threads_lifecycle, test_isr_threads_priority_set_)
 {

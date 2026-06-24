@@ -50,6 +50,8 @@ static void threads_suspend_resume(int prio)
  * gets scheduled, and resume and check if the entry function is executed.
  *
  * @see k_thread_suspend(), k_thread_resume()
+ * @verifies ZEP-SRS-1-3
+ * @verifies ZEP-SRS-1-4
  */
 ZTEST(threads_lifecycle_1cpu, test_threads_suspend_resume_cooperative)
 {
@@ -66,6 +68,8 @@ ZTEST(threads_lifecycle_1cpu, test_threads_suspend_resume_cooperative)
  * scheduled, and resume and check if the entry function is executed.
  *
  * @see k_thread_suspend(), k_thread_resume()
+ * @verifies ZEP-SRS-1-3
+ * @verifies ZEP-SRS-1-4
  */
 ZTEST_USER(threads_lifecycle, test_threads_suspend_resume_preemptible)
 {
@@ -88,6 +92,7 @@ void suspend_myself(void *arg0, void *arg1, void *arg2)
  *
  * @brief Check that suspending a thread is a schedule point when
  * called on the current thread.
+ * @verifies ZEP-SRS-1-3
  */
 ZTEST(threads_lifecycle, test_threads_suspend)
 {
@@ -125,6 +130,7 @@ void sleep_suspended(void *arg0, void *arg1, void *arg2)
  *
  * @details Suspended threads should not wake up unexpectedly if they
  * happened to have been sleeping when suspended.
+ * @verifies ZEP-SRS-1-3
  */
 ZTEST(threads_lifecycle, test_threads_suspend_timeout)
 {
@@ -153,6 +159,8 @@ ZTEST(threads_lifecycle, test_threads_suspend_timeout)
  *
  * @details Use k_thread_state_str() to get thread state.
  * Resume an unsuspend thread will not change the thread state.
+ * @verifies ZEP-SRS-1-4
+ * @verifies ZEP-SRS-1-7
  */
 ZTEST(threads_lifecycle, test_resume_unsuspend_thread)
 {

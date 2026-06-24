@@ -39,6 +39,7 @@ static void thread_entry_abort(void *p1, void *p2, void *p3)
  * Here the main thread is also a user thread.
  *
  * @see k_thread_abort()
+ * @verifies ZEP-SRS-1-6
  */
 ZTEST_USER(threads_lifecycle, test_threads_abort_self)
 {
@@ -59,6 +60,7 @@ ZTEST_USER(threads_lifecycle, test_threads_abort_self)
  * after it has started.
  *
  * @see k_thread_abort()
+ * @verifies ZEP-SRS-1-6
  */
 ZTEST_USER(threads_lifecycle, test_threads_abort_others)
 {
@@ -125,6 +127,7 @@ static void delayed_thread_entry(void *p1, void *p2, void *p3)
  * execution
  *
  * @see k_thread_abort()
+ * @verifies ZEP-SRS-1-6
  */
 ZTEST(threads_lifecycle_1cpu, test_delayed_thread_abort)
 {
@@ -195,6 +198,7 @@ extern struct k_sem offload_sem;
  * the child thread. Check if ISR completed and target thread was aborted.
  *
  * @see k_thread_abort()
+ * @verifies ZEP-SRS-1-6
  */
 ZTEST(threads_lifecycle, test_abort_from_isr)
 {
@@ -249,6 +253,7 @@ static void entry_aborted_thread(void *p1, void *p2, void *p3)
  * the child thread. Check if ISR completed and target thread was aborted.
  *
  * @see k_thread_abort()
+ * @verifies ZEP-SRS-1-6
  */
 ZTEST(threads_lifecycle, test_abort_from_isr_not_self)
 {
