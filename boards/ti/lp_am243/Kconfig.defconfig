@@ -1,0 +1,29 @@
+# Texas Instruments AM243x Launchpad
+#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright 2026 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_LP_AM243
+
+# The ELF needs to have the exception vector at 0x0 so the SBL can load it
+# correctly after it is converted by the TI MCU+ SDK tools
+if SOC_SERIES_AM64X_R5
+
+DT_ROMSTART := romstart
+
+config ROMSTART_RELOCATION_ROM
+	default y if $(dt_nodelabel_exists,$(DT_ROMSTART))
+
+config ROMSTART_REGION_SIZE_UNIT
+	default 1
+
+config ROMSTART_REGION_ADDRESS
+	default $(dt_nodelabel_reg_addr_hex,$(DT_ROMSTART))
+
+config ROMSTART_REGION_SIZE
+	default $(dt_nodelabel_reg_size_hex,$(DT_ROMSTART))
+
+endif # SOC_SERIES_AM64X_R5
+
+endif # BOARD_LP_AM243

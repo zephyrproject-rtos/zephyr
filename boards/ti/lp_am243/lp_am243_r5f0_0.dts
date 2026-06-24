@@ -10,6 +10,12 @@
 #include "lp_am243_r5f0_0-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
+/*
+ * The ATCM node needs to be recreated since the node-name (memory@0) will
+ * otherwise conflict with the romstart region
+ */
+/delete-node/ &atcm;
+
 / {
 	model = "AM243x LaunchPad R5F Cluster 0 Core 0";
 	compatible = "ti,lp_am243";
@@ -18,6 +24,25 @@
 		zephyr,console = &main_uart0;
 		zephyr,shell-uart = &main_uart0;
 		zephyr,sram = &sram;
+	};
+
+	/*
+	 * The ROMSTART region from the linker script will occupy the first 0x3C byte
+	 * with the exception vector. To avoid overlaps the ATCM needs to be shrunken
+	 * down appropiatly (by recreation as commented above)
+	 */
+	romstart: memory@0 {
+		reg = <0x0 0x3c>;
+		device_type = "memory";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "ROMSTART_DT";
+	};
+
+	atcm: memory@3c {
+		device_type = "memory";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x3c (DT_SIZE_K(32) - 0x3c)>;
+		zephyr,memory-region = "ATCM";
 	};
 
 	leds {
@@ -70,13 +95,4 @@
 
 &main_timer8 {
 	status = "okay";
-};
-
-/*
- * The ROMSTART region from the linker script will occupy the first 0x3C byte
- * with the exception vector. To avoid overlaps the ATCM needs to be shrunken
- * down appropiatly. See the _defconfig for more details.
- */
-&atcm {
-	reg = <0x3c (DT_SIZE_K(32) - 0x3c)>;
 };
