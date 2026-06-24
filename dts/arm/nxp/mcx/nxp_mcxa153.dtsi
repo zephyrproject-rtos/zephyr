@@ -137,6 +137,15 @@
 			channels = <0 1>;
 		};
 
+		eqdc0: eqdc@400a7000 {
+			compatible = "nxp,mcux-eqdc";
+			reg = <0x400a7000 0x1000>;
+			interrupts = <50 0>, <51 0>, <52 0>, <53 0>;
+			interrupt-names = "compare", "home", "watchdog", "index";
+			clocks = <&syscon MCUX_EQDC_CLK>;
+			status = "disabled";
+		};
+
 		flexpwm0: flexpwm@400a9000 {
 			compatible = "nxp,flexpwm";
 			reg = <0x400a9000 0x1000>;
