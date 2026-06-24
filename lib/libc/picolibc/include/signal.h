@@ -18,7 +18,7 @@
  * reserve 32 (cancel) and 33, with application RT signals from 34.
  */
 #undef SIGRTMIN
-#define SIGRTMIN 34
+#define SIGRTMIN (CONFIG_THREAD_CANCEL_SIGNAL_NUMBER + 2)
 #if defined(_POSIX_REALTIME_SIGNALS) || defined(__DOXYGEN__)
 #undef SIGRTMAX
 #define SIGRTMAX (SIGRTMIN + CONFIG_POSIX_RTSIG_MAX)
