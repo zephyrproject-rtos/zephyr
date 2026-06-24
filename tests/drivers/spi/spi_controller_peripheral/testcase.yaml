@@ -29,7 +29,7 @@ tests:
       - esp32_devkitc/esp32/procpu
       - esp32s2_saola
       - esp32s3_devkitc/esp32s3/procpu
-      - esp32p4_function_ev_board/esp32p4/hpcore
+      - esp32p4x_function_ev_board/esp32p4/hpcore
     integration_platforms:
       - esp32s3_devkitc/esp32s3/procpu
 
