@@ -29,3 +29,5 @@ supported:
   - comparator
   - dmic
   - i2c
+  - mpu
+  - userspace
