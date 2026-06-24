@@ -45,6 +45,6 @@ ipc1: &cpuapp_cpurad_ipc_b {
 	mbox-names = "tx", "rx";
 	tx-region = <&cpurad_cpuapp_ipc_shm_b>;
 	rx-region = <&cpuapp_cpurad_ipc_shm_b>;
-	tx-blocks = <32>;
-	rx-blocks = <32>;
+	tx-blocks = <15>;
+	rx-blocks = <15>;
 };
