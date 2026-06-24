@@ -304,14 +304,18 @@ static DEVICE_API(counter, mcux_qtmr_driver_api) = {
 	.get_freq = mcux_qtmr_get_freq,
 };
 
+#define MCUX_QTMR_CLK_SUBSYS(n)                            \
+	COND_CODE_1(DT_PHA_HAS_CELL_AT_IDX(DT_INST_PARENT(n), clocks, 0, name),    \
+		((clock_control_subsys_t)DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n), 0, name)), \
+		((clock_control_subsys_t)0))
+
 #define TMR_DEVICE_INIT_MCUX(n)									\
 	static struct mcux_qtmr_data mcux_qtmr_data_ ## n;					\
 												\
 	static const struct mcux_qtmr_config mcux_qtmr_config_ ## n = {				\
 		.base = (void *)DT_REG_ADDR(DT_INST_PARENT(n)),					\
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),			\
-		.clock_subsys =									\
-			(clock_control_subsys_t)DT_CLOCKS_CELL(DT_INST_PARENT(n), name),	\
+		.clock_subsys = MCUX_QTMR_CLK_SUBSYS(n),				\
 		.info = {									\
 			.max_top_value = UINT16_MAX,						\
 			.freq = DT_INST_PROP_OR(n, freq, 0),					\
@@ -324,7 +328,7 @@ static DEVICE_API(counter, mcux_qtmr_driver_api) = {
 			.enableExternalForce = false,						\
 			.enableMasterMode = false,						\
 			.faultFilterCount = DT_INST_PROP_OR(n, filter_count, 0),		\
-			.faultFilterPeriod = DT_INST_PROP_OR(n, filter_count, 0),		\
+			.faultFilterPeriod = DT_INST_PROP_OR(n, filter_period, 0),		\
 			.primarySource = DT_INST_ENUM_IDX(n, primary_source),			\
 			.secondarySource = DT_INST_ENUM_IDX_OR(n, secondary_source, 0),		\
 		},										\
