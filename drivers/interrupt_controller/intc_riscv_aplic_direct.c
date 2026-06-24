@@ -94,10 +94,7 @@ int riscv_aplic_set_priority(const struct device *dev, uint32_t local_irq, uint3
 	uint32_t target_offset = aplic_target_off(local_irq);
 
 	if (prio > cfg->max_prio) {
-		LOG_WRN("AIA-APLIC-Direct: Invalid priority specified (irq %u, prio %u, max_prio "
-			"%u)",
-			local_irq, prio, cfg->max_prio);
-		return -EINVAL;
+		prio = cfg->max_prio;
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
