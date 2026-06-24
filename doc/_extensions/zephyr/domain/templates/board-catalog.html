@@ -112,7 +112,17 @@
   </div>
 
   <div class="form-group" style="flex-basis: 100%">
-    <label for="compatibles-input">Supported devices (compatible strings, supports wildcards)</label>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <label for="compatibles-input">Supported devices (compatible strings, supports wildcards)</label>
+      <div class="toggle-group">
+        <input type="checkbox" id="compat-scope-enabled" checked
+          {% if not hw_features_present %}disabled{% endif %}>
+        <label for="compat-scope-enabled" class="toggle-label">
+          <span class="toggle-switch"></span>
+          <span class="toggle-text">Enabled</span>
+        </label>
+      </div>
+    </div>
     <div class="tag-container" id="compatibles-tags">
       <input list="compatibles-list" class="tag-input" id="compatibles-input"
         placeholder="{% if hw_features_present -%}
