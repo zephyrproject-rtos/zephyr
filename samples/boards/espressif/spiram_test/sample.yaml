@@ -15,7 +15,7 @@ tests:
       - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
       - esp32c5_devkitc/esp32c5/hpcore
-      - esp32p4_function_ev_board/esp32p4/hpcore
+      - esp32p4x_function_ev_board/esp32p4/hpcore
   sample.boards.espressif.spiram.octal_80m:
     platform_allow: esp32s3_devkitc/esp32s3/procpu
     extra_configs:

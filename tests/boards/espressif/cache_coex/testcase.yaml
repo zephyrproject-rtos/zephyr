@@ -11,7 +11,7 @@ tests:
       - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
       - esp32c5_devkitc/esp32c5/hpcore
-      - esp32p4_function_ev_board/esp32p4/hpcore
+      - esp32p4x_function_ev_board/esp32p4/hpcore
     integration_platforms:
       - esp32s3_devkitc/esp32s3/procpu
   boards.esp32.cache_coex.octal_80m:
