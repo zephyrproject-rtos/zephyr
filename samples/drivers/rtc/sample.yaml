@@ -17,6 +17,7 @@ tests:
       - frdm_mcxl255/mcxl255/cpu0
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
       - mimxrt700_evk/mimxrt798s/cm33_cpu1
+      - native_sim/native/64
       - sama7d65_curiosity
       - sama7g54_ek
     integration_platforms:
