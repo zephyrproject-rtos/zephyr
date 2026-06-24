@@ -154,6 +154,12 @@ static void tfifo_is_empty(void *p)
  * @see k_fifo_put_list()
  * @see k_fifo_put_slist()
  * @see k_fifo_get()
+ * @verifies ZEP-SRS-24-1
+ * @verifies ZEP-SRS-24-3
+ * @verifies ZEP-SRS-24-5
+ * @verifies ZEP-SRS-24-6
+ * @verifies ZEP-SRS-24-7
+ * @verifies ZEP-SRS-24-11
  */
 ZTEST(fifo_api_1cpu, test_fifo_thread2thread)
 {
@@ -183,6 +189,8 @@ ZTEST(fifo_api_1cpu, test_fifo_thread2thread)
  *
  * @see k_fifo_put()
  * @see k_fifo_get()
+ * @verifies ZEP-SRS-24-3
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_api, test_fifo_thread2isr)
 {
@@ -212,6 +220,8 @@ ZTEST(fifo_api, test_fifo_thread2isr)
  *
  * @see k_fifo_put()
  * @see k_fifo_get()
+ * @verifies ZEP-SRS-24-3
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_api, test_fifo_isr2thread)
 {
@@ -240,6 +250,7 @@ ZTEST(fifo_api, test_fifo_isr2thread)
  * - k_fifo_is_empty() reflects the presence or absence of queued data.
  *
  * @see k_fifo_is_empty()
+ * @verifies ZEP-SRS-24-8
  */
 ZTEST(fifo_api, test_fifo_is_empty_thread)
 {
@@ -267,6 +278,7 @@ ZTEST(fifo_api, test_fifo_is_empty_thread)
  * - k_fifo_is_empty() reports the correct state when called from an ISR.
  *
  * @see k_fifo_is_empty()
+ * @verifies ZEP-SRS-24-8
  */
 ZTEST(fifo_api, test_fifo_is_empty_isr)
 {
