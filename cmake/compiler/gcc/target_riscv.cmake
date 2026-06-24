@@ -67,6 +67,14 @@ if(CONFIG_RISCV_ISA_EXT_ZIFENCEI)
   string(APPEND riscv_march "_zifencei")
 endif()
 
+if(CONFIG_RISCV_ISA_EXT_ZK)
+    string(APPEND riscv_march  "_zk")
+endif()
+
+if(CONFIG_RISCV_ISA_EXT_ZKS)
+    string(APPEND riscv_march "_zks")
+endif()
+
 # Check whether we already imply Zaamo/Zalrsc by selecting the A extension; if not - check them
 # individually and enable them as needed
 if(NOT CONFIG_RISCV_ISA_EXT_A)
