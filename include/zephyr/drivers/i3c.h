@@ -777,7 +777,7 @@ __subsystem struct i3c_driver_api {
 	struct i3c_device_desc *(*i3c_device_find)(const struct device *dev,
 						   const struct i3c_device_id *id);
 #endif /* CONFIG_I3C_CONTROLLER */
-#ifdef CONFIG_I3C_USE_IBI
+#if defined(CONFIG_I3C_USE_IBI) || defined(__DOXYGEN__)
 #if defined(CONFIG_I3C_TARGET) || defined(__DOXYGEN__)
 	/**
 	 * Raise In-Band Interrupt (IBI).
@@ -1315,6 +1315,7 @@ struct i3c_driver_data {
 #endif /* CONFIG_I3C_TARGET */
 #endif /* CONFIG_I3C_CONTROLLER */
 };
+
 #if defined(CONFIG_I3C_CONTROLLER) || defined(__DOXYGEN__)
 /**
  * @brief iterate over all I3C devices present on the bus
@@ -1482,6 +1483,7 @@ int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
 				 struct i3c_device_desc **target,
 				 uint8_t *addr);
 #endif /* CONFIG_I3C_CONTROLLER */
+
 /**
  * @brief Configure the I3C hardware.
  *
@@ -1506,6 +1508,7 @@ static inline int i3c_configure(const struct device *dev,
 
 	return api->configure(dev, type, config);
 }
+
 #if defined(CONFIG_I3C_CONTROLLER) || defined(__DOXYGEN__)
 /**
  * @brief Get the controller device configuration for an I3C device.
@@ -1528,6 +1531,7 @@ static inline int i3c_configure_controller(const struct device *dev,
 	return i3c_configure(dev, I3C_CONFIG_CONTROLLER, config);
 }
 #endif /* CONFIG_I3C_CONTROLLER */
+
 #if defined(CONFIG_I3C_TARGET) || defined(__DOXYGEN__)
 /**
  * @brief Get the target device configuration for an I3C device.
@@ -1550,6 +1554,7 @@ static inline int i3c_configure_target(const struct device *dev,
 	return i3c_configure(dev, I3C_CONFIG_TARGET, config);
 }
 #endif /* CONFIG_I3C_TARGET */
+
 /**
  * @brief Get configuration of the I3C hardware.
  *
@@ -1581,6 +1586,7 @@ static inline int i3c_config_get(const struct device *dev,
 
 	return api->config_get(dev, type, config);
 }
+
 #if defined(CONFIG_I3C_CONTROLLER) || defined(__DOXYGEN__)
 /**
  * @brief Get the controller device configuration for an I3C device.
@@ -1603,6 +1609,7 @@ static inline int i3c_config_get_controller(const struct device *dev,
 	return i3c_config_get(dev, I3C_CONFIG_CONTROLLER, config);
 }
 #endif /* CONFIG_I3C_CONTROLLER */
+
 #if defined(CONFIG_I3C_TARGET) || defined(__DOXYGEN__)
 /**
  * @brief Get the target device configuration for an I3C device.
@@ -1625,6 +1632,7 @@ static inline int i3c_config_get_target(const struct device *dev,
 	return i3c_config_get(dev, I3C_CONFIG_TARGET, config);
 }
 #endif /* CONFIG_I3C_TARGET */
+
 #if defined(CONFIG_I3C_CONTROLLER) || defined(__DOXYGEN__)
 /**
  * @brief Attempt bus recovery on the I3C bus.
@@ -1902,7 +1910,7 @@ static inline int z_impl_i3c_do_ccc_cb(const struct device *dev,
 
 	return api->do_ccc_cb(dev, payload, cb, userdata);
 }
-#endif
+#endif /* CONFIG_I3C_CALLBACK */
 
 /**
  * @addtogroup i3c_transfer_api
@@ -1993,7 +2001,7 @@ static inline int z_impl_i3c_transfer_cb(struct i3c_device_desc *target,
 
 	return api->i3c_xfers_cb(target->bus, target, msgs, num_msgs, cb, userdata);
 }
-#endif
+#endif /* CONFIG_I3C_CALLBACK */
 
 /** @} */
 
@@ -2024,6 +2032,7 @@ struct i3c_device_desc *i3c_device_find(const struct device *dev,
 	return api->i3c_device_find(dev, id);
 }
 #endif /* CONFIG_I3C_CONTROLLER */
+
 #if defined(CONFIG_I3C_USE_IBI) || defined(__DOXYGEN__)
 /**
  * @addtogroup i3c_ibi
@@ -2080,6 +2089,7 @@ static inline int i3c_ibi_crr_response(struct i3c_device_desc *target,
 	return api->ibi_crr_response(target, ack);
 }
 #endif /* CONFIG_I3C_CONTROLLER */
+
 #if defined(CONFIG_I3C_TARGET) || defined(__DOXYGEN__)
 /**
  * @brief Raise an In-Band Interrupt (IBI).
@@ -2104,6 +2114,7 @@ static inline int i3c_ibi_raise(const struct device *dev,
 	return api->ibi_raise(dev, request);
 }
 #endif /* CONFIG_I3C_TARGET */
+
 #if defined(CONFIG_I3C_CONTROLLER) || defined(__DOXYGEN__)
 /**
  * @brief Enable IBI of a target device.
@@ -2154,6 +2165,7 @@ static inline int i3c_ibi_disable(struct i3c_device_desc *target)
 }
 #endif /* CONFIG_I3C_CONTROLLER */
 #endif /* CONFIG_I3C_USE_IBI */
+
 /**
  * @brief Check if target's IBI has payload.
  *
@@ -2206,6 +2218,7 @@ static inline int i3c_device_is_controller_capable(struct i3c_device_desc *targe
 }
 
 /** @} */
+
 #if defined(CONFIG_I3C_CONTROLLER) || defined(__DOXYGEN__)
 /**
  * @addtogroup i3c_transfer_api
