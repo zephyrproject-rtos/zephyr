@@ -104,7 +104,7 @@ int riscv_aplic_set_priority(const struct device *dev, uint32_t local_irq, uint3
 
 	uint32_t hart_id = rd32(cfg->base, target_offset) >> APLIC_TARGET_HART_SHIFT;
 
-	if (!IS_ENABLED(CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY) || (hart_id >= arch_num_cpus())) {
+	if ((hart_id >= arch_num_cpus()) || !IS_ENABLED(CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY)) {
 		/* Use Hart 0 if affinity configuration is not supported or improperly configured.
 		 * Otherwise, respect affinity currently configured in target register
 		 */

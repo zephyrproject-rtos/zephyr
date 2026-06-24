@@ -39,6 +39,8 @@ tests:
       - qemu_riscv32/qemu_virt_riscv32/smp
       - qemu_riscv32/qemu_virt_riscv32/aia-imsic
       - qemu_riscv32/qemu_virt_riscv32/aia-imsic/smp
+      - qemu_riscv32/qemu_virt_riscv32/aia-direct
+      - qemu_riscv32/qemu_virt_riscv32/aia-direct/smp
       - qemu_cortex_m3
       - mps2/an385
     extra_configs:
