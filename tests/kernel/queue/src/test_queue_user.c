@@ -150,6 +150,7 @@ ZTEST(queue_api_1cpu, test_queue_supv_to_user)
  *
  * @see k_queue_alloc_prepend()
  * @see k_queue_get()
+ * @verifies ZEP-SRS-20-14
  */
 ZTEST_USER(queue_api, test_queue_alloc_prepend_user)
 {
@@ -192,6 +193,7 @@ ZTEST_USER(queue_api, test_queue_alloc_prepend_user)
  *
  * @see k_queue_alloc_append()
  * @see k_queue_get()
+ * @verifies ZEP-SRS-20-14
  */
 ZTEST_USER(queue_api, test_queue_alloc_append_user)
 {
