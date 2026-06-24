@@ -425,6 +425,7 @@ static void tmbox(struct k_mbox *pmbox)
 
 /**
  * @brief Test mailbox initialization
+ * @verifies ZEP-SRS-25-1
  */
 ZTEST(mbox_api, test_mbox_kinit)
 {
@@ -442,6 +443,7 @@ ZTEST(mbox_api, test_mbox_kinit)
  * @ingroup kernel_mbox_api
  *
  * @see k_mbox_init() k_mbox_put() k_mbox_get()
+ * @verifies ZEP-SRS-25-2
  */
 ZTEST(mbox_api, test_mbox_kdefine)
 {
@@ -463,6 +465,8 @@ static ZTEST_BMEM char __aligned(4) buffer[8];
  * @ingroup kernel_mbox_api
  *
  * @see k_msgq_init() k_msgq_put() k_mbox_async_put() k_mbox_get()
+ * @verifies ZEP-SRS-25-14
+ * @verifies ZEP-SRS-25-15
  */
 ZTEST(mbox_api, test_mbox_enhanced_capabilities)
 {
@@ -486,6 +490,7 @@ ZTEST(mbox_api, test_mbox_enhanced_capabilities)
  * - Define multiple mailbox and verify the mailbox whether as
  *   expected
  * - Verify the mailbox can be used
+ * @verifies ZEP-SRS-25-16
  */
 ZTEST(mbox_api, test_define_multi_mbox)
 {
@@ -505,6 +510,7 @@ ZTEST(mbox_api, test_define_multi_mbox)
 
 /**
  * @brief Test case for mailbox put and get operations with null data.
+ * @verifies ZEP-SRS-25-5
  */
 ZTEST(mbox_api, test_mbox_put_get_null)
 {
@@ -515,6 +521,10 @@ ZTEST(mbox_api, test_mbox_put_get_null)
 /**
  * @brief Test case for mailbox put and get operations with buffer.
  *
+ * @verifies ZEP-SRS-25-3
+ * @verifies ZEP-SRS-25-4
+ * @verifies ZEP-SRS-25-5
+ * @verifies ZEP-SRS-25-9
  */
 ZTEST(mbox_api, test_mbox_put_get_buffer)
 {
@@ -525,6 +535,8 @@ ZTEST(mbox_api, test_mbox_put_get_buffer)
 /**
  * @brief Test case for mailbox asynchronous put and get operations with buffer.
  *
+ * @verifies ZEP-SRS-25-7
+ * @verifies ZEP-SRS-25-8
  */
 ZTEST(mbox_api, test_mbox_async_put_get_buffer)
 {
@@ -535,6 +547,8 @@ ZTEST(mbox_api, test_mbox_async_put_get_buffer)
 /**
  * @brief Test case for mailbox asynchronous put and get operations with block.
  *
+ * @verifies ZEP-SRS-25-7
+ * @verifies ZEP-SRS-25-10
  */
 ZTEST(mbox_api, test_mbox_async_put_get_block)
 {
@@ -544,6 +558,8 @@ ZTEST(mbox_api, test_mbox_async_put_get_block)
 
 /**
  * @brief Test case for mailbox target/source thread buffer operations.
+ * @verifies ZEP-SRS-25-4
+ * @verifies ZEP-SRS-25-13
  */
 ZTEST(mbox_api, test_mbox_target_source_thread_buffer)
 {
@@ -553,6 +569,8 @@ ZTEST(mbox_api, test_mbox_target_source_thread_buffer)
 
 /**
  * @brief Test case for mailbox incorrect receiver thread ID.
+ * @verifies ZEP-SRS-25-13
+ * @verifies ZEP-SRS-25-17
  */
 ZTEST(mbox_api, test_mbox_incorrect_receiver_tid)
 {
@@ -562,6 +580,8 @@ ZTEST(mbox_api, test_mbox_incorrect_receiver_tid)
 
 /**
  * @brief Test case for mailbox incorrect transmit thread ID.
+ * @verifies ZEP-SRS-25-13
+ * @verifies ZEP-SRS-25-17
  */
 ZTEST(mbox_api, test_mbox_incorrect_transmit_tid)
 {
@@ -571,6 +591,7 @@ ZTEST(mbox_api, test_mbox_incorrect_transmit_tid)
 
 /**
  * @brief Test case for mailbox timed out get operation.
+ * @verifies ZEP-SRS-25-12
  */
 ZTEST(mbox_api, test_mbox_timed_out_mbox_get)
 {
@@ -580,6 +601,8 @@ ZTEST(mbox_api, test_mbox_timed_out_mbox_get)
 
 /**
  * @brief Test case for mailbox message thread ID mismatch.
+ * @verifies ZEP-SRS-25-13
+ * @verifies ZEP-SRS-25-17
  */
 ZTEST(mbox_api, test_mbox_msg_tid_mismatch)
 {
@@ -589,6 +612,7 @@ ZTEST(mbox_api, test_mbox_msg_tid_mismatch)
 
 /**
  * @brief Test case for mailbox dispose size 0 message.
+ * @verifies ZEP-SRS-25-3
  */
 ZTEST(mbox_api, test_mbox_dispose_size_0_msg)
 {
@@ -598,6 +622,8 @@ ZTEST(mbox_api, test_mbox_dispose_size_0_msg)
 
 /**
  * @brief Test case for mailbox asynchronous put to waiting get operation.
+ * @verifies ZEP-SRS-25-7
+ * @verifies ZEP-SRS-25-11
  */
 ZTEST(mbox_api, test_mbox_async_put_to_waiting_get)
 {
@@ -607,6 +633,8 @@ ZTEST(mbox_api, test_mbox_async_put_to_waiting_get)
 
 /**
  * @brief Test case for mailbox get waiting put with incorrect thread ID.
+ * @verifies ZEP-SRS-25-13
+ * @verifies ZEP-SRS-25-17
  */
 ZTEST(mbox_api, test_mbox_get_waiting_put_incorrect_tid)
 {
@@ -616,6 +644,7 @@ ZTEST(mbox_api, test_mbox_get_waiting_put_incorrect_tid)
 
 /**
  * @brief Test case for mailbox asynchronous multiple put operation.
+ * @verifies ZEP-SRS-25-7
  */
 ZTEST(mbox_api, test_mbox_async_multiple_put)
 {
@@ -625,6 +654,10 @@ ZTEST(mbox_api, test_mbox_async_multiple_put)
 
 /**
  * @brief Test case for mailbox multiple waiting get operation.
+ * @verifies ZEP-SRS-25-9
+ * @verifies ZEP-SRS-25-11
+ * @verifies ZEP-SRS-25-14
+ * @verifies ZEP-SRS-25-15
  */
 ZTEST(mbox_api, test_mbox_multiple_waiting_get)
 {
