@@ -18,6 +18,29 @@ tests:
         - "Quadrature decoder sensor test"
         - "Position = (.*) degrees"
 
+  sample.sensor.eqdc_trigger:
+    platform_allow:
+      - frdm_mcxa153
+      - frdm_mcxa156
+      - frdm_mcxa266
+      - frdm_mcxa344
+      - frdm_mcxa346
+      - frdm_mcxa366
+    integration_platforms:
+      - frdm_mcxa153
+    depends_on: gpio
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Quadrature decoder sensor test"
+        - "Quadrature encoder emulator enabled with (.*) ms period"
+        - "Registered SENSOR_TRIG_OVERFLOW on SENSOR_CHAN_ENCODER_REVOLUTIONS"
+        - "Position = (.*) degrees"
+        - "Speed = (.*) RPM"
+        - "Revolutions = (.*)"
+        - "Triggers = (.*)"
+
   sample.sensor.sam_qdec_sensor:
     platform_allow:
       - sam_e70_xplained/same70q21
