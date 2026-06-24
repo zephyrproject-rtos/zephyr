@@ -496,6 +496,22 @@ ZTEST(ptp_clock_wakeup, test_synchronize_stops_when_phc_read_fails)
 		      "failed PHC read should not adjust the clock");
 }
 
+ZTEST(ptp_clock_wakeup, test_pi_servo_uses_configured_gains)
+{
+	const int64_t offset = 1000;
+	const double kp = (double)CONFIG_PTP_SERVO_KP / PTP_SERVO_GAIN_SCALE;
+	const double ki = (double)CONFIG_PTP_SERVO_KI / PTP_SERVO_GAIN_SCALE;
+	double correction;
+
+	correction = ptp_servo_pi(offset);
+	zassert_within(correction, (kp + ki) * offset, 0.000001,
+		       "first PI correction mismatch");
+
+	correction = ptp_servo_pi(offset);
+	zassert_within(correction, (kp + 2.0 * ki) * offset, 0.000001,
+		       "integral accumulation mismatch");
+}
+
 ZTEST(ptp_clock_wakeup, test_synchronize_applies_pi_rate_adjustment)
 {
 	ptp_clk.phc = &fake_phc;

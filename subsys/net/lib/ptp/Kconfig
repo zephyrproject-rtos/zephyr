@@ -281,6 +281,30 @@ config PTP_SYNC_LOG_INTERVAL
 	  when transmitted as multicast messages. The value is the converted
 	  to nanoseconds as follow: nanoseconds = (10^9) * 2^(value)
 
+config PTP_SERVO_KP
+	int "PI servo proportional gain in thousandths"
+	default 700
+	range 0 10000
+	help
+	  Proportional gain used by the PTP clock PI servo, expressed in
+	  thousandths. For example, 700 configures a gain of 0.7
+
+	  The default is suitable for a Sync interval around one second.
+	  Shorter Sync intervals may require a smaller gain to avoid
+	  oscillation.
+
+config PTP_SERVO_KI
+	int "PI servo integral gain in thousandths"
+	default 300
+	range 0 10000
+	help
+	  Integral gain used by the PTP clock PI servo, expressed in
+	  thousandths. For example, 300 configures a gain of 0.3
+
+	  The default is suitable for a Sync interval around one second.
+	  Shorter Sync intervals may require a smaller gain to avoid
+	  oscillation.
+
 config PTP_MIN_PDELAY_REQ_LOG_INTERVAL
 	int "PDelay Req interval in Log2 base"
 	default 0
