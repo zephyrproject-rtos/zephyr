@@ -1,0 +1,19 @@
+identifier: esp32p4x_function_ev_board/esp32p4/lpcore
+name: ESP32-P4X-Function-EV-Board LP Core
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - cpu
+  - uart
+  - serial
+testing:
+  only_tags:
+    - introduction
+  ignore_tags:
+    - kernel
+    - posix
+    - chre
+    - cpp
+vendor: espressif
