@@ -1,0 +1,23 @@
+{
+  "description": "TF-M secure partition manifests",
+  "type": "manifest_list",
+  "version_major": 0,
+  "version_minor": 1,
+  "pid": 1000,
+  "manifest_list": [
+    {
+      "description": "SE Partition",
+      "short_name": "TFM_SE",
+      "manifest": "${CMAKE_CURRENT_BINARY_DIR}/se_over_i2c/tfm_se_over_i2c.yaml",
+      "output_path": "${TFM_BINARY_DIR}/se_over_i2c",
+      "tfm_partition_ipc": true,
+      "version_major": 0,
+      "version_minor": 1,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_se.*"
+         ],
+      }
+    },
+  ]
+}

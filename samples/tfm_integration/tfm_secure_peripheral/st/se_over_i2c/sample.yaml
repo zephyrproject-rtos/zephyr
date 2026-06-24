@@ -1,0 +1,16 @@
+sample:
+  name: TF-M partition for probing an STSAFE device over I2C
+common:
+  tags:
+    - trusted-firmware-m
+  platform_allow:
+    - b_u585i_iot02a/stm32u585xx/ns
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "I2C echo success. RX: 00 00 06 61 62 63 64 90 C2"
+tests:
+  sample.tfm.st.se_over_i2c:
+    tags:
+      - se_over_i2c
