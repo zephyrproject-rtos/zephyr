@@ -91,6 +91,10 @@ static void tlifo_isr_thread(struct k_lifo *plifo)
 /**
  * @brief test thread to thread data passing via lifo
  * @see k_fifo_init(), k_lifo_put(), k_lifo_get()
+ * @verifies ZEP-SRS-23-1
+ * @verifies ZEP-SRS-23-2
+ * @verifies ZEP-SRS-23-4
+ * @verifies ZEP-SRS-23-5
  */
 ZTEST(lifo_contexts_1cpu, test_lifo_thread2thread)
 {
@@ -105,6 +109,8 @@ ZTEST(lifo_contexts_1cpu, test_lifo_thread2thread)
 /**
  * @brief test isr to thread data passing via lifo
  * @see k_fifo_init(), k_lifo_put(), k_lifo_get()
+ * @verifies ZEP-SRS-23-2
+ * @verifies ZEP-SRS-23-4
  */
 ZTEST(lifo_contexts, test_lifo_thread2isr)
 {
@@ -119,6 +125,8 @@ ZTEST(lifo_contexts, test_lifo_thread2isr)
 /**
  * @brief test thread to isr data passing via lifo
  * @see k_fifo_init(), k_lifo_put(), k_lifo_get()
+ * @verifies ZEP-SRS-23-2
+ * @verifies ZEP-SRS-23-4
  */
 ZTEST(lifo_contexts, test_lifo_isr2thread)
 {

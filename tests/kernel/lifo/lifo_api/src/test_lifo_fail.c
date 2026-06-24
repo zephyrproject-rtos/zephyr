@@ -19,6 +19,7 @@
  * @details verify zephyr k_lifo_get, it returns NULL
  * when there is no data to read
  * @see k_lifo_init(), k_lifo_get()
+ * @verifies ZEP-SRS-23-4
  */
 ZTEST(lifo_fail, test_lifo_get_fail)
 {
