@@ -388,7 +388,7 @@
 				compatible = "st,stm32n6-pinctrl", "st,stm32-pinctrl";
 				#address-cells = <1>;
 				#size-cells = <1>;
-				reg = <0x6020000 0x2000>;
+				reg = <0x6020000 0x4400>;
 				ranges;
 
 				gpioa: gpio@6020000 {
