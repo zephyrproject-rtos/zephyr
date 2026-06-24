@@ -249,6 +249,14 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 				board_early_init_hook();
 
 				if (!(POWER_EnterPowerMode(POWER_MODE3, &slp_cfg))) {
+					/* PM3 entry failed — GDET still disabled from
+					 * PrePowerMode, but PostPowerMode reset
+					 * disableCount=0. Re-disable to restore count
+					 * to match actual HW state.
+					 */
+					if (PMU->PWR_MODE_STATUS != (POWER_MODE3 - 1U)) {
+						POWER_DisableGDetVSensors();
+					}
 					break;
 				}
 			}
@@ -259,6 +267,15 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			clock_init();
 
 			sys_clock_idle_exit();
+		} else {
+			/* PM3 entry failed — GDET still disabled from
+			 * PrePowerMode, but PostPowerMode reset
+			 * disableCount=0. Re-disable to restore count
+			 * to match actual HW state.
+			 */
+			if (PMU->PWR_MODE_STATUS != (POWER_MODE3 - 1U)) {
+				POWER_DisableGDetVSensors();
+			}
 		}
 
 		POWER_DisableWakeup(DT_IRQN(DT_NODELABEL(rtc)));
