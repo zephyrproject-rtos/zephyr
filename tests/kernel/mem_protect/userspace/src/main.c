@@ -773,7 +773,6 @@ ZTEST(userspace_domain, test_1st_init_and_access_other_memdomain)
 #if (defined(CONFIG_ARM) || (defined(CONFIG_GEN_PRIV_STACKS) && defined(CONFIG_RISCV)))
 extern uint8_t *z_priv_stack_find(void *obj);
 #endif
-extern k_thread_stack_t ztest_thread_stack[];
 
 /**
  * Show that changing between memory domains and dropping to user mode works
