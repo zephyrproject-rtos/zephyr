@@ -942,6 +942,17 @@ bool z_ztest_should_suite_run(const void *state, struct ztest_suite_node *suite)
 bool z_ztest_should_test_run(const char *suite, const char *test);
 
 /**
+ * @brief Stack used by the ztest runner thread.
+ *
+ * Defined by the active ztest backend. Declared here so the definition has a
+ * visible prior declaration (MISRA C:2012 Rule 8.4) and so that tests which
+ * inspect the runner thread's stack (e.g. the userspace memory-protection
+ * tests) can reference it.
+ */
+K_THREAD_STACK_DECLARE(ztest_thread_stack,
+		       CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
+
+/**
  * @}
  */
 

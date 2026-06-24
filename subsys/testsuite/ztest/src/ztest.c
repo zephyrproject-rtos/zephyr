@@ -583,8 +583,12 @@ out:
 #define FAIL_FAST 0
 #endif
 
-static K_THREAD_STACK_DEFINE(ztest_thread_stack,
-			     CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
+/*
+ * Declared with external linkage (see ztest_test.h) so that tests inspecting
+ * the runner thread's stack (e.g. the userspace memory-protection tests) can
+ * reference it.
+ */
+K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
 
 static void test_finalize(void)
 {
