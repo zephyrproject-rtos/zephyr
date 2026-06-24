@@ -63,6 +63,7 @@ CREATE_FLAG(flag_remove_source_rejected);
 static bt_addr_le_t g_broadcaster_addr;
 static struct bt_le_scan_recv_info g_broadcaster_info;
 static struct bt_le_per_adv_sync *g_pa_sync;
+struct bt_le_ext_adv *g_ext_adv;
 
 static uint8_t metadata[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_VENDOR, LONG_META)};
 
@@ -184,12 +185,22 @@ static void bap_broadcast_assistant_recv_state_cb(
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
 	if (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
-		printk("Sending PAST %p to %p\n", g_pa_sync, conn);
-		err = bt_le_per_adv_sync_transfer(g_pa_sync, conn,
-						  BT_UUID_BASS_VAL);
-		if (err != 0) {
-			FAIL("Could not transfer periodic adv sync: %d\n", err);
-			return;
+		if (g_pa_sync != NULL) {
+			printk("Sending PAST %p to %p\n", g_pa_sync, conn);
+			err = bt_le_per_adv_sync_transfer(g_pa_sync, conn, BT_UUID_BASS_VAL);
+			if (err != 0) {
+				FAIL("Could not transfer periodic adv sync: %d\n", err);
+				return;
+			}
+		} else if (g_ext_adv != NULL) {
+			printk("Sending PAST (set info) %p to %p\n", g_ext_adv, conn);
+			err = bt_le_per_adv_set_info_transfer(g_ext_adv, conn, BT_UUID_BASS_VAL);
+			if (err != 0) {
+				FAIL("Could not transfer periodic adv sync: %d\n", err);
+				return;
+			}
+		} else {
+			FAIL("Not possible to do PAST without PA sync or PA set\n");
 		}
 	}
 #endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER */
@@ -536,7 +547,7 @@ static void test_bass_add_source(void)
 	printk("Source added\n");
 }
 
-static void test_bass_mod_source(bool pa_sync, uint32_t bis_sync)
+static void test_bass_mod_source(bool pa_sync, uint32_t bis_sync, bool clear_metadata)
 {
 	int err;
 	struct bt_bap_broadcast_assistant_mod_src_param mod_src_param = { 0 };
@@ -554,8 +565,12 @@ static void test_bass_mod_source(bool pa_sync, uint32_t bis_sync)
 	subgroup.bis_sync = bis_sync;
 
 	/* Leave metadata as is */
-	subgroup.metadata_len = recv_state.subgroups[0].metadata_len;
-	memcpy(subgroup.metadata, recv_state.subgroups[0].metadata, sizeof(metadata));
+	if (clear_metadata) {
+		subgroup.metadata_len = 0U;
+	} else {
+		subgroup.metadata_len = recv_state.subgroups[0].metadata_len;
+		(void)memcpy(subgroup.metadata, recv_state.subgroups[0].metadata, sizeof(metadata));
+	}
 
 	err = bt_bap_broadcast_assistant_mod_src(default_conn, &mod_src_param);
 	if (err != 0) {
@@ -774,15 +789,11 @@ static void test_main_client_sync(void)
 	test_bass_scan_stop();
 	test_bass_create_pa_sync();
 	test_bass_add_source();
-	test_bass_mod_source(true, 0);
+	test_bass_mod_source(true, 0, false);
 	test_bass_mod_source_long_meta();
-	test_bass_mod_source(true, BT_ISO_BIS_INDEX_BIT(1U) | BT_ISO_BIS_INDEX_BIT(2U));
+	test_bass_mod_source(true, BT_ISO_BIS_INDEX_BIT(1U) | BT_ISO_BIS_INDEX_BIT(2U), false);
 	test_bass_broadcast_code(BROADCAST_CODE);
-
-	printk("Waiting for receive state with BIS sync\n");
-	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
-
-	test_bass_mod_source(false, 0);
+	test_bass_mod_source(false, 0, true);
 	test_bass_remove_source();
 
 	err = common_deinit();
@@ -808,12 +819,12 @@ static void test_main_client_sync_incorrect_code(void)
 	test_bass_scan_stop();
 	test_bass_create_pa_sync();
 	test_bass_add_source();
-	test_bass_mod_source(true, BT_ISO_BIS_INDEX_BIT(1U));
+	test_bass_mod_source(true, BT_ISO_BIS_INDEX_BIT(1U), false);
 	WAIT_FOR_FLAG(flag_broadcast_code_requested);
 	test_bass_broadcast_code(INCORRECT_BROADCAST_CODE);
 	WAIT_FOR_FLAG(flag_incorrect_broadcast_code);
 
-	test_bass_mod_source(false, 0);
+	test_bass_mod_source(false, 0, true);
 	test_bass_remove_source();
 
 	err = common_deinit();
@@ -843,7 +854,7 @@ static void test_main_server_sync_client_rem(void)
 	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
 
 	printk("Attempting to remove source for the first time\n");
-	test_bass_mod_source(false, 0);
+	test_bass_mod_source(false, 0, true);
 	test_bass_remove_source();
 
 	WAIT_FOR_FLAG(flag_remove_source_rejected);
@@ -896,7 +907,6 @@ static void test_main_colocated(void)
 	};
 	struct bt_bap_broadcast_source *source;
 	struct bt_le_ext_adv_info adv_info;
-	struct bt_le_ext_adv *adv;
 	uint32_t broadcast_id;
 	int err;
 
@@ -920,15 +930,15 @@ static void test_main_colocated(void)
 		return;
 	}
 
-	err = bap_common_broadcast_source_setup_ext_adv(source, &adv, &broadcast_id);
+	err = bap_common_broadcast_source_setup_ext_adv(source, &g_ext_adv, &broadcast_id);
 	if (err != 0) {
 		FAIL("Failed to setup extended advertising: %d\n", err);
 		return;
 	}
 
-	bap_common_broadcast_source_start(source, adv);
+	bap_common_broadcast_source_start(source, g_ext_adv);
 
-	err = bt_le_ext_adv_get_info(adv, &adv_info);
+	err = bt_le_ext_adv_get_info(g_ext_adv, &adv_info);
 	if (err != 0) {
 		FAIL("Failed to get adv_info: %d\n", err);
 		return;
@@ -941,23 +951,24 @@ static void test_main_colocated(void)
 	g_broadcast_id = broadcast_id;
 
 	test_bass_add_source();
-	test_bass_mod_source(true, BT_ISO_BIS_INDEX_BIT(1U));
+	test_bass_mod_source(true, BT_ISO_BIS_INDEX_BIT(1U), false);
 
 	printk("Waiting for receive state with BIS sync\n");
 	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
 
-	test_bass_mod_source(false, 0);
+	test_bass_mod_source(false, 0, true);
 	test_bass_remove_source();
 
 	bap_common_broadcast_source_stop(source);
 	bap_common_broadcast_source_delete(source);
 	source = NULL;
 
-	err = bap_common_broadcast_source_stop_ext_adv(adv);
+	err = bap_common_broadcast_source_stop_ext_adv(g_ext_adv);
 	if (err != 0) {
 		FAIL("Failed to setup extended advertising: %d\n", err);
 		return;
 	}
+	g_ext_adv = NULL;
 
 	err = common_deinit();
 	if (err != 0) {

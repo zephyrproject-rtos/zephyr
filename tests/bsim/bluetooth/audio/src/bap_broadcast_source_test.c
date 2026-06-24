@@ -465,9 +465,7 @@ void bap_common_broadcast_source_start(struct bt_bap_broadcast_source *source,
 		__ASSERT_NO_MSG(err == 0);
 	}
 
-	printk("WAITING FLAG\n");
 	WAIT_FOR_FLAG(flag_source_started);
-	printk("FLAG GOT\n");
 }
 
 static void test_broadcast_source_update_metadata(struct bt_bap_broadcast_source *source,

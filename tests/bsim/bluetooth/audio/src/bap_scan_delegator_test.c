@@ -45,7 +45,7 @@ CREATE_FLAG(flag_broadcast_source_modified);
 CREATE_FLAG(flag_broadcast_source_removed);
 CREATE_FLAG(flag_remove_source_rejected);
 
-static volatile uint32_t g_broadcast_id;
+static volatile uint32_t g_broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 static bool reject_control_op;
 
 struct sync_state {
@@ -284,6 +284,8 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 		/* TODO: Terminate existing sync and then sync to new?*/
 		return -1;
 	}
+
+	g_broadcast_id = recv_state->broadcast_id;
 
 	if (past_avail) {
 		err = pa_sync_past(conn, state, pa_interval);

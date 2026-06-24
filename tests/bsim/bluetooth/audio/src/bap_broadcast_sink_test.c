@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <zephyr/autoconf.h>
@@ -46,17 +47,21 @@ CREATE_FLAG(flag_base_metadata_updated);
 CREATE_FLAG(flag_pa_synced);
 CREATE_FLAG(flag_syncable);
 CREATE_FLAG(flag_pa_sync_lost);
+CREATE_FLAG(flag_src_removed);
 CREATE_FLAG(flag_pa_request);
 CREATE_FLAG(flag_bis_sync_requested);
 CREATE_FLAG(flag_big_sync_mic_failure);
 CREATE_FLAG(flag_sink_started);
+CREATE_FLAG(flag_past_avail);
+
+static bool past_arg;
 
 static struct bt_bap_broadcast_sink *g_sink;
 static size_t stream_sync_cnt;
 static struct bt_le_scan_recv_info broadcaster_info;
 static bt_addr_le_t broadcaster_addr;
 static struct bt_le_per_adv_sync *pa_sync;
-static uint32_t broadcaster_broadcast_id;
+static uint32_t broadcaster_broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 static struct audio_test_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 static struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
 static uint32_t requested_bis_sync;
@@ -330,15 +335,23 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
 
-	printk("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X\n", broadcast_id,
-	       bt_addr_le_str(info->addr), info->sid);
+	/* Since the address may be a RPA, we cannot compare with the address and BASS suggests to
+	 * just use the SID and broadcast_id
+	 */
+	if (req_recv_state == NULL || (req_recv_state->broadcast_id == broadcast_id &&
+				       req_recv_state->adv_sid == info->sid)) {
+		printk("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X\n",
+		       broadcast_id, bt_addr_le_str(info->addr), info->sid);
 
-	SET_FLAG(flag_broadcaster_found);
+		(void)memcpy(&broadcaster_info, info, sizeof(broadcaster_info));
+		bt_addr_le_copy(&broadcaster_addr, info->addr);
 
-	/* Store info for PA sync parameters */
-	memcpy(&broadcaster_info, info, sizeof(broadcaster_info));
-	bt_addr_le_copy(&broadcaster_addr, info->addr);
-	broadcaster_broadcast_id = broadcast_id;
+		if (req_recv_state == NULL) {
+			broadcaster_broadcast_id = broadcast_id;
+		}
+
+		SET_FLAG(flag_broadcaster_found);
+	}
 
 	/* Stop parsing */
 	return false;
@@ -346,7 +359,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad)
 {
-	if (info->interval != 0U) {
+	if (!TEST_FLAG(flag_broadcaster_found) && info->interval != 0U) {
 		bt_data_parse(ad, scan_check_and_sync_broadcast, (void *)info);
 	}
 }
@@ -365,6 +378,14 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 		       broadcaster_broadcast_id);
 
 		SET_FLAG(flag_pa_synced);
+	} else if (pa_sync == NULL && info->conn == default_conn) {
+		printk("PA sync %p synced for broadcast sink with broadcast ID 0x%06X via PAST\n",
+		       sync, broadcaster_broadcast_id);
+
+		pa_sync = sync;
+		SET_FLAG(flag_pa_synced);
+	} else {
+		FAIL("Unexpected PA sync %p");
 	}
 }
 
@@ -384,6 +405,20 @@ static struct bt_le_per_adv_sync_cb bap_pa_sync_cb = {
 	.term = bap_pa_sync_terminated_cb,
 };
 
+static void recv_state_updated_cb(struct bt_conn *conn,
+				  const struct bt_bap_scan_delegator_recv_state *recv_state)
+{
+	/* TODO: Temporary workaround to check if a recv_state is all zeroes, which indicate that it
+	 * has been removed. See https://github.com/zephyrproject-rtos/zephyr/issues/95422
+	 */
+	if (util_memeq(recv_state, &(struct bt_bap_scan_delegator_recv_state){0},
+		       sizeof(*recv_state))) {
+		SET_FLAG(flag_src_removed);
+	} else {
+		UNSET_FLAG(flag_src_removed);
+	}
+}
+
 static int pa_sync_req_cb(struct bt_conn *conn,
 			  const struct bt_bap_scan_delegator_recv_state *recv_state,
 			  bool past_avail, uint16_t pa_interval)
@@ -391,8 +426,6 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 	printk("Requested to sync to PA by %p with past_available %d and pa_interval 0x%04X for "
 	       "receive state %p\n",
 	       conn, past_avail, pa_interval, recv_state);
-
-	/* TODO: Check for past_avail and use PAST if possible */
 
 	if (recv_state->pa_sync_state == BT_BAP_PA_STATE_SYNCED ||
 	    recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
@@ -402,6 +435,13 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 	}
 
 	req_recv_state = recv_state;
+
+	if (past_avail) {
+		SET_FLAG(flag_past_avail);
+		broadcaster_info.interval = pa_interval;
+	} else {
+		UNSET_FLAG(flag_past_avail);
+	}
 
 	SET_FLAG(flag_pa_request);
 
@@ -465,6 +505,7 @@ static void scanning_state_cb(struct bt_conn *conn, bool is_scanning)
 }
 
 static struct bt_bap_scan_delegator_cb scan_delegator_cbs = {
+	.recv_state_updated = recv_state_updated_cb,
 	.scanning_state = scanning_state_cb,
 	.pa_sync_req = pa_sync_req_cb,
 	.pa_sync_term_req = pa_sync_term_req_cb,
@@ -749,6 +790,32 @@ static void test_pa_sync_delete(void)
 	pa_sync = NULL;
 }
 
+static void pa_sync_past(void)
+{
+	struct bt_le_per_adv_sync_transfer_param param = {0};
+	int err;
+
+	param.options = BT_LE_PER_ADV_SYNC_TRANSFER_OPT_FILTER_DUPLICATES;
+	param.skip = PA_SYNC_SKIP;
+	param.timeout = interval_to_sync_timeout(broadcaster_info.interval);
+
+	printk("Subscribing to PAST from %p\n", default_conn);
+	err = bt_le_per_adv_sync_transfer_subscribe(default_conn, &param);
+	if (err != 0) {
+		FAIL("Could not do PAST subscribe: %d\n", err);
+		return;
+	}
+
+	err = bt_bap_scan_delegator_set_pa_state(req_recv_state->src_id, BT_BAP_PA_STATE_INFO_REQ);
+	if (err != 0) {
+		FAIL("Failed to set PA state to BT_BAP_PA_STATE_INFO_REQ: %d\n", err);
+		return;
+	}
+
+	printk("Waiting for PA sync\n");
+	WAIT_FOR_FLAG(flag_pa_synced);
+}
+
 static void test_scan_and_pa_sync(void)
 {
 	int err;
@@ -785,7 +852,7 @@ static void test_broadcast_sink_create(void)
 {
 	int err;
 
-	printk("Creating the broadcast sink\n");
+	printk("Creating the broadcast sink with broadcast_id 0x%06X\n", broadcaster_broadcast_id);
 	err = bt_bap_broadcast_sink_create(pa_sync, broadcaster_broadcast_id, &g_sink);
 	if (err != 0) {
 		FAIL("Unable to create the sink: %d\n", err);
@@ -1196,7 +1263,14 @@ static void broadcast_sink_with_assistant(void)
 	printk("Waiting for PA sync request\n");
 	WAIT_FOR_FLAG(flag_pa_request);
 
-	test_scan_and_pa_sync();
+	broadcaster_broadcast_id = req_recv_state->broadcast_id;
+
+	if (TEST_FLAG(flag_past_avail) && past_arg) {
+		pa_sync_past();
+	} else {
+		test_scan_and_pa_sync();
+	}
+
 	test_broadcast_sink_create();
 
 	printk("Broadcast source PA synced, waiting for BASE\n");
@@ -1230,6 +1304,8 @@ static void broadcast_sink_with_assistant(void)
 	WAIT_FOR_UNSET_FLAG(flag_pa_request);
 	test_pa_sync_delete();
 	test_broadcast_delete();
+
+	WAIT_FOR_FLAG(flag_src_removed);
 
 	backchannel_sync_send_all(); /* let the broadcast source know it can stop */
 
@@ -1276,9 +1352,36 @@ static void broadcast_sink_with_assistant_incorrect_code(void)
 	test_pa_sync_delete();
 	test_broadcast_delete();
 
+	WAIT_FOR_FLAG(flag_src_removed);
+
 	backchannel_sync_send_all(); /* let the broadcast source know it can stop */
 
 	PASS("Broadcast sink with assistant and incorrect code passed\n");
+}
+
+static void test_args(int argc, char *argv[])
+{
+	int argn = 0;
+
+	while (argn < argc) {
+		const char *arg = argv[argn];
+
+		if (strcmp(arg, "past") == 0) {
+			if (argn + 1 == argc) {
+				FAIL("MIssing argument for \"past\"");
+				return;
+			}
+
+			argn++;
+			arg = argv[argn];
+			past_arg = strtoul(arg, NULL, 10) != 0U;
+		} else {
+			FAIL("Invalid arg: %s\n", arg);
+			return;
+		}
+
+		argn++;
+	}
 }
 
 static const struct bst_test_instance test_broadcast_sink[] = {
@@ -1287,42 +1390,49 @@ static const struct bst_test_instance test_broadcast_sink[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
+		.test_args_f = test_args,
 	},
 	{
 		.test_id = "broadcast_sink_update",
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_update,
+		.test_args_f = test_args,
 	},
 	{
 		.test_id = "broadcast_sink_disconnect",
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_sink_disconnect,
+		.test_args_f = test_args,
 	},
 	{
 		.test_id = "broadcast_sink_encrypted",
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_sink_encrypted,
+		.test_args_f = test_args,
 	},
 	{
 		.test_id = "broadcast_sink_encrypted_incorrect_code",
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_sink_encrypted_incorrect_code,
+		.test_args_f = test_args,
 	},
 	{
 		.test_id = "broadcast_sink_with_assistant",
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = broadcast_sink_with_assistant,
+		.test_args_f = test_args,
 	},
 	{
 		.test_id = "broadcast_sink_with_assistant_incorrect_code",
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = broadcast_sink_with_assistant_incorrect_code,
+		.test_args_f = test_args,
 	},
 	BSTEST_END_MARKER,
 };

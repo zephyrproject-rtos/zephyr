@@ -51,7 +51,7 @@ static volatile size_t connected_conn_cnt;
 static struct bt_le_scan_recv_info broadcaster_info;
 static bt_addr_le_t broadcaster_addr;
 static struct bt_le_per_adv_sync *g_pa_sync;
-static uint32_t broadcaster_broadcast_id;
+static uint32_t broadcaster_broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 
 static uint8_t received_base[UINT8_MAX];
 static uint8_t received_base_size;
