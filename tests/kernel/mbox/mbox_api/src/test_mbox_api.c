@@ -463,6 +463,7 @@ static void tmbox(struct k_mbox *pmbox)
  * - The mailbox is initialized and ready for put/get operations.
  *
  * @see k_mbox_init()
+ * @verifies ZEP-SRS-25-1
  */
 ZTEST(mbox_api, test_mbox_kinit)
 {
@@ -487,6 +488,7 @@ ZTEST(mbox_api, test_mbox_kinit)
  * @see K_MBOX_DEFINE()
  * @see k_mbox_put()
  * @see k_mbox_get()
+ * @verifies ZEP-SRS-25-2
  */
 ZTEST(mbox_api, test_mbox_kdefine)
 {
@@ -514,6 +516,8 @@ static ZTEST_BMEM char __aligned(4) buffer[8];
  * @see k_msgq_put()
  * @see k_mbox_async_put()
  * @see k_mbox_get()
+ * @verifies ZEP-SRS-25-14
+ * @verifies ZEP-SRS-25-15
  */
 ZTEST(mbox_api, test_mbox_enhanced_capabilities)
 {
@@ -547,6 +551,7 @@ ZTEST(mbox_api, test_mbox_enhanced_capabilities)
  * @see k_mbox_init()
  * @see k_mbox_put()
  * @see k_mbox_get()
+ * @verifies ZEP-SRS-25-16
  */
 ZTEST(mbox_api, test_define_multi_mbox)
 {
@@ -581,6 +586,7 @@ ZTEST(mbox_api, test_define_multi_mbox)
  *
  * @see k_mbox_put()
  * @see k_mbox_get()
+ * @verifies ZEP-SRS-25-5
  */
 ZTEST(mbox_api, test_mbox_put_get_null)
 {
@@ -605,6 +611,10 @@ ZTEST(mbox_api, test_mbox_put_get_null)
  *
  * @see k_mbox_put()
  * @see k_mbox_get()
+ * @verifies ZEP-SRS-25-3
+ * @verifies ZEP-SRS-25-4
+ * @verifies ZEP-SRS-25-5
+ * @verifies ZEP-SRS-25-9
  */
 ZTEST(mbox_api, test_mbox_put_get_buffer)
 {
@@ -630,6 +640,8 @@ ZTEST(mbox_api, test_mbox_put_get_buffer)
  * @see k_mbox_async_put()
  * @see k_mbox_data_get()
  * @see k_mbox_get()
+ * @verifies ZEP-SRS-25-7
+ * @verifies ZEP-SRS-25-8
  */
 ZTEST(mbox_api, test_mbox_async_put_get_buffer)
 {
@@ -658,6 +670,8 @@ ZTEST(mbox_api, test_mbox_async_put_get_buffer)
  *
  * @see k_mbox_put()
  * @see k_mbox_get()
+ * @verifies ZEP-SRS-25-7
+ * @verifies ZEP-SRS-25-10
  */
 ZTEST(mbox_api, test_mbox_async_put_get_block)
 {
@@ -682,6 +696,8 @@ ZTEST(mbox_api, test_mbox_async_put_get_block)
  *
  * @see k_mbox_put()
  * @see k_mbox_get()
+ * @verifies ZEP-SRS-25-4
+ * @verifies ZEP-SRS-25-13
  */
 ZTEST(mbox_api, test_mbox_target_source_thread_buffer)
 {
@@ -704,6 +720,8 @@ ZTEST(mbox_api, test_mbox_target_source_thread_buffer)
  * - k_mbox_get() returns -ENOMSG.
  *
  * @see k_mbox_get()
+ * @verifies ZEP-SRS-25-13
+ * @verifies ZEP-SRS-25-17
  */
 ZTEST(mbox_api, test_mbox_incorrect_receiver_tid)
 {
@@ -725,6 +743,8 @@ ZTEST(mbox_api, test_mbox_incorrect_receiver_tid)
  * - k_mbox_put() returns -ENOMSG.
  *
  * @see k_mbox_put()
+ * @verifies ZEP-SRS-25-13
+ * @verifies ZEP-SRS-25-17
  */
 ZTEST(mbox_api, test_mbox_incorrect_transmit_tid)
 {
@@ -746,6 +766,7 @@ ZTEST(mbox_api, test_mbox_incorrect_transmit_tid)
  * - k_mbox_get() returns -EAGAIN after the timeout.
  *
  * @see k_mbox_get()
+ * @verifies ZEP-SRS-25-12
  */
 ZTEST(mbox_api, test_mbox_timed_out_mbox_get)
 {
@@ -824,6 +845,8 @@ ZTEST(mbox_api, test_mbox_put_timeout)
  *
  * @see k_mbox_put()
  * @see k_mbox_get()
+ * @verifies ZEP-SRS-25-13
+ * @verifies ZEP-SRS-25-17
  */
 ZTEST(mbox_api, test_mbox_msg_tid_mismatch)
 {
@@ -846,6 +869,7 @@ ZTEST(mbox_api, test_mbox_msg_tid_mismatch)
  * - The get succeeds (returns 0) and the message is consumed without copying.
  *
  * @see k_mbox_get()
+ * @verifies ZEP-SRS-25-3
  */
 ZTEST(mbox_api, test_mbox_dispose_size_0_msg)
 {
@@ -871,6 +895,8 @@ ZTEST(mbox_api, test_mbox_dispose_size_0_msg)
  *
  * @see k_mbox_async_put()
  * @see k_mbox_get()
+ * @verifies ZEP-SRS-25-7
+ * @verifies ZEP-SRS-25-11
  */
 ZTEST(mbox_api, test_mbox_async_put_to_waiting_get)
 {
@@ -896,6 +922,8 @@ ZTEST(mbox_api, test_mbox_async_put_to_waiting_get)
  *
  * @see k_mbox_async_put()
  * @see k_mbox_get()
+ * @verifies ZEP-SRS-25-13
+ * @verifies ZEP-SRS-25-17
  */
 ZTEST(mbox_api, test_mbox_get_waiting_put_incorrect_tid)
 {
@@ -920,6 +948,7 @@ ZTEST(mbox_api, test_mbox_get_waiting_put_incorrect_tid)
  *
  * @see k_mbox_async_put()
  * @see k_mbox_get()
+ * @verifies ZEP-SRS-25-7
  */
 ZTEST(mbox_api, test_mbox_async_multiple_put)
 {
@@ -945,6 +974,10 @@ ZTEST(mbox_api, test_mbox_async_multiple_put)
  *
  * @see k_mbox_put()
  * @see k_mbox_get()
+ * @verifies ZEP-SRS-25-9
+ * @verifies ZEP-SRS-25-11
+ * @verifies ZEP-SRS-25-14
+ * @verifies ZEP-SRS-25-15
  */
 ZTEST(mbox_api, test_mbox_multiple_waiting_get)
 {
