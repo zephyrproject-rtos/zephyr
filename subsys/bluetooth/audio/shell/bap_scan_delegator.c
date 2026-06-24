@@ -506,7 +506,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
-static struct bt_conn_cb conn_cb = {
+BT_CONN_CB_DEFINE(conn_cb) = {
 	.disconnected = disconnected_cb,
 };
 
@@ -530,12 +530,6 @@ static int cmd_bap_scan_delegator_init(const struct shell *sh, size_t argc,
 		err = bt_le_per_adv_sync_cb_register(&pa_sync_cb);
 		if (err != 0) {
 			shell_error(sh, "Failed to register PA sync callbacks (err: %d)", err);
-			return -ENOEXEC;
-		}
-
-		err = bt_conn_cb_register(&conn_cb);
-		if (err != 0) {
-			shell_error(sh, "Failed to register conn callbacks (err: %d)", err);
 			return -ENOEXEC;
 		}
 
