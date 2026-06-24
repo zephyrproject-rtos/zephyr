@@ -42,3 +42,11 @@
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
+
+&aon_qtmr0 {
+	interrupts = <151 0>;
+};
+
+&aon_qtmr1 {
+	interrupts = <152 0>;
+};
