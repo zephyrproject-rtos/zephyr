@@ -677,7 +677,7 @@
 				index = <0>;
 				interrupts = <46 0>;
 				#pwm-cells = <3>;
-				clocks = <&syscon MCUX_BUS_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
 				nxp,prescaler = <128>;
 				status = "disabled";
 				run-in-wait;
@@ -688,7 +688,7 @@
 				index = <1>;
 				interrupts = <47 0>;
 				#pwm-cells = <3>;
-				clocks = <&syscon MCUX_BUS_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
 				nxp,prescaler = <128>;
 				status = "disabled";
 				run-in-wait;
@@ -699,7 +699,7 @@
 				index = <2>;
 				interrupts = <48 0>;
 				#pwm-cells = <3>;
-				clocks = <&syscon MCUX_BUS_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
 				nxp,prescaler = <128>;
 				status = "disabled";
 				run-in-wait;
@@ -717,7 +717,7 @@
 				index = <0>;
 				interrupts = <81 0>;
 				#pwm-cells = <3>;
-				clocks = <&syscon MCUX_BUS_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
 				nxp,prescaler = <128>;
 				status = "disabled";
 				run-in-wait;
@@ -728,7 +728,7 @@
 				index = <1>;
 				interrupts = <82 0>;
 				#pwm-cells = <3>;
-				clocks = <&syscon MCUX_BUS_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
 				nxp,prescaler = <128>;
 				status = "disabled";
 				run-in-wait;
@@ -739,7 +739,7 @@
 				index = <2>;
 				interrupts = <83 0>;
 				#pwm-cells = <3>;
-				clocks = <&syscon MCUX_BUS_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
 				nxp,prescaler = <128>;
 				status = "disabled";
 				run-in-wait;

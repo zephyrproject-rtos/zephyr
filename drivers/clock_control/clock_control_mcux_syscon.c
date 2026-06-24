@@ -640,6 +640,10 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		break;
 #endif
 
+	case MCUX_SYSTEM_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_CoreSysClk);
+		break;
+
 #if defined(CONFIG_I3C_MCUX)
 	case MCUX_I3C_CLK:
 #if CONFIG_SOC_FAMILY_MCXN
