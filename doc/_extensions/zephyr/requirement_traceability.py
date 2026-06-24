@@ -52,10 +52,81 @@ def _xml_dir(app: Sphinx) -> Path | None:
     return xml_dir if xml_dir.is_dir() else None
 
 
-def _collect_links(xml_dir: Path) -> dict[str, dict[str, set[str]]]:
-    """Parse the Doxygen XML and collect, per relationship, the mapping
-    ``symbol name -> {requirement UID, ...}``."""
-    links: dict[str, dict[str, set[str]]] = {rel: {} for rel in LINK_RELATIONSHIPS.values()}
+# Doxygen simplesect kinds rendered as labelled paragraphs.
+SIMPLESECT_LABELS = {
+    "see": "See also",
+    "note": "Note",
+    "attention": "Attention",
+    "warning": "Warning",
+    "return": "Returns",
+}
+
+
+def _inline_text(el: ET.Element) -> str:
+    """Concatenate all text of an element and its descendants."""
+    text = el.text or ""
+    for child in el:
+        text += _inline_text(child)
+        text += child.tail or ""
+    return text
+
+
+def _description_to_rst(desc: ET.Element | None) -> list[str]:
+    """Convert a Doxygen ``<...description>`` element into RST body lines
+    (unindented). Handles paragraphs, bullet lists and ``\\see``-style sections."""
+    if desc is None:
+        return []
+    lines: list[str] = []
+    for para in desc.findall("para"):
+        buf = para.text or ""
+        for child in para:
+            if child.tag in ("itemizedlist", "orderedlist"):
+                flushed = " ".join(buf.split())
+                if flushed:
+                    lines += [flushed, ""]
+                buf = ""
+                for item in child.findall("listitem"):
+                    item_text = " ".join(_inline_text(item).split())
+                    if item_text:
+                        lines.append(f"- {item_text}")
+                lines.append("")
+                buf = child.tail or ""
+            elif child.tag == "simplesect":
+                flushed = " ".join(buf.split())
+                if flushed:
+                    lines += [flushed, ""]
+                buf = ""
+                kind = child.get("kind", "")
+                label = SIMPLESECT_LABELS.get(kind, kind.capitalize())
+                sect = " ".join(_inline_text(child).split())
+                if sect:
+                    lines += [f"*{label}:* {sect}", ""]
+                buf = child.tail or ""
+            else:
+                buf += _inline_text(child) + (child.tail or "")
+        flushed = " ".join(buf.split())
+        if flushed:
+            lines += [flushed, ""]
+    while lines and lines[-1] == "":
+        lines.pop()
+    return lines
+
+
+def _link_uids(member: ET.Element, tag: str) -> set[str]:
+    uids = {
+        req.get("refid", "")[len(REQ_REFID_PREFIX):]
+        for link in member.findall(tag)
+        for req in link.findall("requirement")
+        if req.get("refid", "").startswith(REQ_REFID_PREFIX)
+    }
+    uids.discard("")
+    return uids
+
+
+def _collect(xml_dir: Path) -> dict[str, dict]:
+    """Parse the Doxygen XML and collect, per documented symbol, its
+    relationships and its brief/detailed description (as RST lines)."""
+    symbols: dict[str, dict] = {}
     for xml_file in xml_dir.glob("*.xml"):
         # Cheap pre-filter: only parse files that actually contain a link.
         text = xml_file.read_text(encoding="utf-8", errors="ignore")
@@ -71,21 +142,26 @@ def _collect_links(xml_dir: Path) -> dict[str, dict[str, set[str]]]:
             name_el = member.find("name")
             if name_el is None or not name_el.text:
                 continue
-            name = name_el.text
-            for tag, rel in LINK_RELATIONSHIPS.items():
-                uids = {
-                    req.get("refid", "")[len(REQ_REFID_PREFIX):]
-                    for link in member.findall(tag)
-                    for req in link.findall("requirement")
-                    if req.get("refid", "").startswith(REQ_REFID_PREFIX)
-                }
-                uids.discard("")
-                if uids:
-                    links[rel].setdefault(name, set()).update(uids)
-    return links
+            rels = {
+                rel: _link_uids(member, tag)
+                for tag, rel in LINK_RELATIONSHIPS.items()
+                if _link_uids(member, tag)
+            }
+            if not rels:
+                continue  # only document symbols that trace to a requirement
+            entry = symbols.setdefault(
+                name_el.text, {"rels": {}, "brief": "", "body": []}
+            )
+            for rel, uids in rels.items():
+                entry["rels"].setdefault(rel, set()).update(uids)
+            if not entry["brief"]:
+                entry["brief"] = " ".join(_inline_text(member.find("briefdescription")).split())
+            if not entry["body"]:
+                entry["body"] = _description_to_rst(member.find("detaileddescription"))
+    return symbols
 
 
-def _render_page(links: dict[str, dict[str, set[str]]]) -> str:
+def _render_page(symbols: dict[str, dict]) -> str:
     title = "Requirements Traceability"
     out = [
         title,
@@ -125,20 +201,18 @@ def _render_page(links: dict[str, dict[str, set[str]]]) -> str:
         "",
     ]
 
-    # One item per symbol, carrying all of its relationships.
-    by_symbol: dict[str, dict[str, set[str]]] = {}
-    for rel, mapping in links.items():
-        for symbol, uids in mapping.items():
-            by_symbol.setdefault(symbol, {}).setdefault(rel, set()).update(uids)
-
-    for symbol in sorted(by_symbol):
-        out.append(f".. item:: {symbol}")
-        for rel in sorted(by_symbol[symbol]):
-            uids = " ".join(sorted(by_symbol[symbol][rel]))
-            out.append(f"   :{rel}: {uids}")
+    for name in sorted(symbols):
+        entry = symbols[name]
+        caption = f".. item:: {name} {entry['brief']}".rstrip()
+        out.append(caption)
+        for rel in sorted(entry["rels"]):
+            out.append(f"   :{rel}: {' '.join(sorted(entry['rels'][rel]))}")
+        out.append("")
+        for line in entry["body"]:
+            out.append(f"   {line}" if line else "")
         out.append("")
 
-    if not by_symbol:
+    if not symbols:
         out.append("No traceability links were found in this build.")
         out.append("")
 
@@ -154,15 +228,14 @@ def generate_traceability(app: Sphinx) -> None:
     xml_dir = _xml_dir(app)
     if xml_dir is None:
         logger.warning("requirement_traceability: Doxygen XML not found; writing empty page")
-        links: dict[str, dict[str, set[str]]] = {rel: {} for rel in LINK_RELATIONSHIPS.values()}
+        symbols: dict[str, dict] = {}
     else:
-        links = _collect_links(xml_dir)
+        symbols = _collect(xml_dir)
 
-    n_links = sum(len(m) for m in links.values())
-    logger.info("requirement_traceability: %d traceable symbols", n_links)
+    logger.info("requirement_traceability: %d traceable symbols", len(symbols))
 
     out_file.parent.mkdir(parents=True, exist_ok=True)
-    out_file.write_text(_render_page(links))
+    out_file.write_text(_render_page(symbols))
 
 
 def setup(app: Sphinx) -> dict:
