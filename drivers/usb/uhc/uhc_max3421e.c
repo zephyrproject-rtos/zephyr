@@ -37,7 +37,7 @@ struct max3421e_data {
 	struct uhc_transfer *last_xfer;
 	struct k_sem irq_sem;
 	atomic_t state;
-	enum usb_device_speed speed;
+	enum usb_port_speed speed;
 	uint16_t tog_in;
 	uint16_t tog_out;
 	uint8_t addr;
@@ -813,7 +813,7 @@ static int max3421e_dequeue(const struct device *dev,
 	return 0;
 }
 
-static enum usb_device_speed max3421e_get_speed(const struct device *dev)
+static enum usb_port_speed max3421e_get_speed(const struct device *dev)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
 	const uint8_t jk = priv->hrsl & MAX3421E_JKSTATUS_MASK;

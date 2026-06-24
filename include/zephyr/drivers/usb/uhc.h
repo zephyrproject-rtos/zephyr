@@ -37,19 +37,19 @@ enum usb_device_state {
 };
 
 /**
- * @brief USB device operating speed
+ * @brief USB port operating speed
  */
-enum usb_device_speed {
+enum usb_port_speed {
 	/** Device is probably not connected */
-	USB_SPEED_UNKNOWN,
-	/** Low speed */
-	USB_SPEED_SPEED_LS,
-	/** Full speed */
-	USB_SPEED_SPEED_FS,
-	/** High speed */
-	USB_SPEED_SPEED_HS,
-	/** Super speed */
-	USB_SPEED_SPEED_SS,
+	USB_PORT_SPEED_UNKNOWN,
+	/** Port at Low speed */
+	USB_PORT_SPEED_LS,
+	/** Port at Full speed */
+	USB_PORT_SPEED_FS,
+	/** Port at High speed */
+	USB_PORT_SPEED_HS,
+	/** Port at Super speed */
+	USB_PORT_SPEED_SS,
 };
 
 #define UHC_INTERFACES_MAX 32
@@ -83,7 +83,7 @@ struct usb_device {
 	/** Device state */
 	enum usb_device_state state;
 	/** Device speed */
-	enum usb_device_speed speed;
+	enum usb_port_speed speed;
 	/** Actual active device configuration */
 	uint8_t actual_cfg;
 	/** Device address */
@@ -303,7 +303,7 @@ struct uhc_api {
 	int (*bus_suspend)(const struct device *dev);
 	int (*bus_resume)(const struct device *dev);
 
-	enum usb_device_speed (*get_speed)(const struct device *dev);
+	enum usb_port_speed (*get_speed)(const struct device *dev);
 
 	int (*ep_enqueue)(const struct device *dev,
 			  struct uhc_transfer *const xfer);
@@ -414,14 +414,14 @@ static inline int uhc_bus_resume(const struct device *dev)
  *
  * @return The operating speed of the port.
  */
-static inline enum usb_device_speed uhc_get_speed(const struct device *dev)
+static inline enum usb_port_speed uhc_get_speed(const struct device *dev)
 {
 	const struct uhc_api *api = dev->api;
 	enum usb_port_speed speed;
 
 	if (api->get_speed == NULL) {
 		__ASSERT(false, "%s() is not implemented", __func__);
-		return USB_SPEED_UNKNOWN;
+		return USB_PORT_SPEED_UNKNOWN;
 	}
 
 	api->lock(dev);
