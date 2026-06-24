@@ -44,11 +44,25 @@ int riscv_aplic_is_enabled(uint32_t local_irq);
  * @brief Configure the priority for a specified interrupt source
  *        for a domain with direct delivery mode enabled.
  *
+ * @param dev APLIC device
  * @param local_irq Local IRQ whose target register will be configured
  * @param prio Priority value to set
  * @return 0 on success, negative error code on failure
  */
-int riscv_aplic_set_priority(uint32_t local_irq, uint32_t prio);
+int riscv_aplic_set_priority(const struct device *dev, uint32_t local_irq, uint32_t prio);
+
+#if defined(CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY)
+/**
+ * @brief Set affinity of a riscv APLIC-specific interrupt line if IRQ
+ *        affinity is configured
+ *
+ * @param dev APLIC device
+ * @param irq IRQ number for which to set priority
+ * @param hart_id Hart ID
+ * @return 0 if success, negative errno value otherwise
+ */
+int riscv_aplic_irq_set_affinity(const struct device *dev, uint32_t irq, uint32_t hart_id);
+#endif
 
 /**
  * @brief Get active interrupt ID
