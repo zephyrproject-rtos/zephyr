@@ -1682,6 +1682,41 @@ test can interact with all devices.
 An example multi-DUT test can be found at
 :zephyr_file:`tests/subsys/testsuite/multidut`.
 
+Scripts
+-------
+
+Twister allows to execute custom scripts before and after the execution of the tests.
+
+Four options of the hardware map file allow specifying the path to the scripts:
+- ``pre_script``: executed before flashing and connecting to serial.
+- ``pre_flash_script``: executed before flashing.
+- ``post_flash_script``: executed after flashing.
+- ``post_script``: executed after closing serial connection.
+
+The options support passing parameters (for example ``python3 pre_script.py foo bar``).
+
+.. code-block:: yaml
+
+    - connected: true
+      id: 01
+      platform: nrf52840dk/nrf52840
+      serial: /dev/ttyACM0
+      pre_script: pre_script.sh
+      pre_flash_script: pre_flash_script.sh
+      post_flash_script: post_flash_script.sh
+      post_script: post_script.sh
+
+.. code-block:: yaml
+
+    - connected: true
+      id: 01
+      platform: nrf52840dk/nrf52840
+      serial: /dev/ttyACM0
+      pre_script: python3 pre_script.py foo bar
+      pre_flash_script: python3 pre_flash_script.py foo bar
+      post_flash_script: python3 post_flash_script.py foo bar
+      post_script: python3 post_script.py foo bar
+
 Quarantine
 ----------
 
