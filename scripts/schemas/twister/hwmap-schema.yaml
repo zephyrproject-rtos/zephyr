@@ -30,11 +30,13 @@ items:
       type: integer
     serial_baud:
       type: integer
+    pre_script:
+      type: string
     post_script:
       type: string
-    post_flash_script:
+    pre_flash_script:
       type: string
-    pre_script:
+    post_flash_script:
       type: string
     fixtures:
       type: array
@@ -52,6 +54,8 @@ items:
         pre_script_timeout:
           type: integer
         post_script_timeout:
+          type: integer
+        pre_flash_timeout:
           type: integer
         post_flash_timeout:
           type: integer

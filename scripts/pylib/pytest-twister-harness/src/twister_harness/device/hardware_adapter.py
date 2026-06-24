@@ -148,6 +148,9 @@ class HardwareAdapter(DeviceAdapter):
             logger.error(msg)
             raise TwisterHarnessException(msg)
 
+        if self.device_config.pre_flash_script:
+            self._run_custom_script(self.device_config.pre_flash_script, self.base_timeout)
+
         if self.device_config.id:
             logger.debug('Flashing device %s', self.device_config.id)
         log_command(logger, 'Flashing command', self.command, level=logging.DEBUG)

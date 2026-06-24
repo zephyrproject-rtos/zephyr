@@ -682,7 +682,7 @@ class DeviceHandler(Handler):
 
         return ser_pty_process
 
-    def _handle_robot_test(self, harness, hardware, command, serial_device, serial_pty,
+    def _handle_robot_test(self, harness, hardware, command, serial_device, pre_flash_script,
                             post_flash_script, post_script, script_param, flash_timeout):
         """Flash device and run Robot Framework test directly without serial monitoring."""
         start_time = time.time()
@@ -690,6 +690,12 @@ class DeviceHandler(Handler):
         logger.debug(f'Flash command: {command}')
         failure_type = Handler.FailureType.NONE
         stderr = b""
+
+        if pre_flash_script:
+            timeout = 30
+            if script_param:
+                timeout = script_param.get("pre_flash_timeout", timeout)
+            self.run_custom_script(pre_flash_script, timeout)
 
         try:
             with subprocess.Popen(
@@ -744,11 +750,13 @@ class DeviceHandler(Handler):
     def handle(self, harness):
         robot_test = getattr(harness, "is_robot_test", False) is True
         hardware: CompoundHardwareData = self.instance.reserved_duts[0]
-
-        # Run pre-script BEFORE starting serial PTY to avoid conflicts
         pre_script = hardware.pre_script
+        pre_flash_script = hardware.pre_flash_script
+        post_flash_script = hardware.post_flash_script
+        post_script = hardware.post_script
         script_param = hardware.script_param
 
+        # Run pre-script BEFORE starting serial PTY to avoid conflicts
         if pre_script:
             timeout = 30
             if script_param:
@@ -768,9 +776,6 @@ class DeviceHandler(Handler):
 
         command = self._create_command(runner, hardware)
 
-        post_flash_script = hardware.post_flash_script
-        post_script = hardware.post_script
-
         flash_timeout = hardware.flash_timeout
         if hardware.flash_with_test:
             flash_timeout += self.get_test_timeout()
@@ -779,7 +784,7 @@ class DeviceHandler(Handler):
             # For robot tests: flash the device, then hand off to Robot Framework
             # directly. Robot Framework will open the serial port itself.
             self._handle_robot_test(
-                harness, hardware, command, serial_device, serial_pty,
+                harness, hardware, command, serial_device, pre_flash_script,
                 post_flash_script, post_script, script_param, flash_timeout
             )
             return
@@ -812,6 +817,13 @@ class DeviceHandler(Handler):
         d_log = f"{self.instance.build_dir}/device.log"
         logger.debug(f'Flash command: {command}', )
         failure_type = Handler.FailureType.NONE
+
+        if pre_flash_script:
+            timeout = 30
+            if script_param:
+                timeout = script_param.get("pre_flash_timeout", timeout)
+            self.run_custom_script(pre_flash_script, timeout)
+
         try:
             stdout = stderr = None
             with subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
