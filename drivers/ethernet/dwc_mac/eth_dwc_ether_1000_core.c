@@ -34,6 +34,7 @@ LOG_MODULE_REGISTER(dwmac_core, CONFIG_ETHERNET_LOG_LEVEL);
 #define TDES0_FS  BIT(28)
 #define TDES0_TCH BIT(20)
 #define TDES0_ES  BIT(15)
+#define TDES0_CIC GENMASK(23, 22)
 
 #define TDES1_TBS1 GENMASK(12, 0)
 
@@ -63,6 +64,12 @@ static enum ethernet_hw_caps dwmac_caps(const struct device *dev __unused,
 #ifdef CONFIG_NET_PROMISCUOUS_MODE
 	       | ETHERNET_PROMISC_MODE
 #endif
+#ifdef CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM
+	       | ETHERNET_HW_RX_CHKSUM_OFFLOAD
+#endif
+#ifdef CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM
+	       | ETHERNET_HW_TX_CHKSUM_OFFLOAD
+#endif
 		;
 }
 
@@ -77,6 +84,9 @@ static __maybe_unused unsigned int net_pkt_get_nbfrags(struct net_pkt *pkt)
 	return nbfrags;
 }
 
+#define TDES0_FLAGS_DEFAULT (TDES0_TCH | TDES0_IC | \
+	(IS_ENABLED(CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM) ? TDES0_CIC : 0U))
+
 static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct dwmac_priv *p = dev->data;
@@ -87,7 +97,7 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 	LOG_DBG("pkt len/frags=%zu/%u", net_pkt_get_len(pkt), net_pkt_get_nbfrags(pkt));
 
 	d_idx = p->tx_desc_head;
-	des0_flags = TDES0_TCH | TDES0_IC;
+	des0_flags = TDES0_FLAGS_DEFAULT;
 
 	NET_PKT_FRAG_FOR_EACH(pkt, frag) {
 		if (k_sem_take(&p->free_tx_descs, TX_AVAIL_WAIT) != 0) {
@@ -108,14 +118,14 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 			d->des0 |= TDES0_LS;
 		}
 
-		des0_flags = TDES0_OWN | TDES0_TCH | TDES0_IC;
+		des0_flags = TDES0_OWN | TDES0_FLAGS_DEFAULT;
 		INC_WRAP(d_idx, NB_TX_DESCS);
 	};
 
 	barrier_dmem_fence_full();
 
 	d = &p->tx_descs[p->tx_desc_head];
-	d->des0 = TDES0_OWN | TDES0_FS | TDES0_TCH | TDES0_IC;
+	d->des0 = TDES0_OWN | TDES0_FS | TDES0_FLAGS_DEFAULT;
 
 	barrier_dmem_fence_full();
 	p->tx_desc_head = d_idx;
@@ -459,9 +469,17 @@ int dwmac_probe(const struct device *dev)
 		p->rx_descs[i].des3 = RXDESC_PHYS_L((i + 1) % NB_RX_DESCS);
 	}
 
+	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE)) {
+		REG_WRITE(DWMAC_DMABMR, REG_READ(DWMAC_DMABMR) | DWMAC_DMABMR_EDFE);
+	}
+
 	REG_WRITE(DWMAC_DMATDLAR, TXDESC_PHYS_L(0));
 	REG_WRITE(DWMAC_DMARDLAR, RXDESC_PHYS_L(0));
 	REG_WRITE(DWMAC_DMAOMR, DWMAC_DMAOMR_TSF | DWMAC_DMAOMR_RSF);
+
+	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM)) {
+		REG_WRITE(DWMAC_MACCR, REG_READ(DWMAC_MACCR) | DWMAC_MACCR_IPCO);
+	}
 
 	return 0;
 }
