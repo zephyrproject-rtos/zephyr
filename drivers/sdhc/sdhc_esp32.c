@@ -18,6 +18,7 @@
 #include "sdhc_helpers.h"
 
 #include <esp_clk_tree.h>
+#include <esp_private/esp_clk_tree_common.h>
 #include <hal/sdmmc_ll.h>
 #include <esp_intr_alloc.h>
 #include <esp_timer.h>
@@ -143,6 +144,7 @@ static int sdmmc_host_set_clk_div(sdmmc_dev_t *sdio_hw, int div)
 	}
 
 	sdmmc_ll_set_clock_div(sdio_hw, div);
+	esp_clk_tree_enable_src(SDMMC_CLK_SRC_DEFAULT, true);
 	sdmmc_ll_select_clk_source(sdio_hw, SDMMC_CLK_SRC_DEFAULT);
 	sdmmc_ll_init_phase_delay(sdio_hw);
 #if SDMMC_LL_DELAY_PHASE_SUPPORTED
