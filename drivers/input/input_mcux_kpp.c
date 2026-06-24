@@ -20,7 +20,6 @@ LOG_MODULE_REGISTER(kpp, CONFIG_INPUT_LOG_LEVEL);
 
 #define INPUT_KPP_COLUMNNUM_MAX  KPP_KEYPAD_COLUMNNUM_MAX
 #define INPUT_KPP_ROWNUM_MAX     KPP_KEYPAD_ROWNUM_MAX
-#define INPUT_KPP_ROWNUM_MAX     KPP_KEYPAD_ROWNUM_MAX
 
 struct kpp_config {
 	KPP_Type *base;
@@ -176,26 +175,25 @@ static int input_kpp_init(const struct device *dev)
 	return 0;
 }
 
-#define INPUT_KPP_INIT(n)                                                               \
-	static struct kpp_data kpp_data_##n;                                            \
-                                                                                        \
-	PINCTRL_DT_INST_DEFINE(n);                                                      \
-                                                                                        \
-	static const struct kpp_config kpp_config_##n = {                               \
-		.base = (KPP_Type *)DT_INST_REG_ADDR(n),                                \
-		.clk_sub_sys =                                                          \
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name),	\
-		.ccm_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                       \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                              \
-	};                                                                              \
-                                                                                        \
-	DEVICE_DT_INST_DEFINE(n,                                                        \
-			      input_kpp_init,                                           \
-			      NULL,                                                     \
-			      &kpp_data_##n,                                            \
-			      &kpp_config_##n,                                          \
-			      POST_KERNEL,                                              \
-			      CONFIG_INPUT_INIT_PRIORITY,                               \
-			      NULL);
+#define INPUT_KPP_CLK_SUBSYS(n)                                                                    \
+	COND_CODE_1(                            \
+		DT_PHA_HAS_CELL_AT_IDX(DT_DRV_INST(n), clocks, 0, name),    \
+		((clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name)), \
+		((clock_control_subsys_t)0))
+
+#define INPUT_KPP_INIT(n)                                                                          \
+	static struct kpp_data kpp_data_##n;                                                       \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	static const struct kpp_config kpp_config_##n = {                                          \
+		.base = (KPP_Type *)DT_INST_REG_ADDR(n),                                           \
+		.clk_sub_sys = INPUT_KPP_CLK_SUBSYS(n),                                            \
+		.ccm_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                  \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, input_kpp_init, NULL, &kpp_data_##n, &kpp_config_##n,             \
+			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(INPUT_KPP_INIT)
