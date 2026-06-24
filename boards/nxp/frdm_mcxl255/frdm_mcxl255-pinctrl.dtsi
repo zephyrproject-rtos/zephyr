@@ -29,7 +29,7 @@
 	pinmux_aon_kpp0: pinmux_aon_kpp0 {
 		row {
 			pinmux = <KPP_ROW_0_P0_12>,
-					<KPP_ROW_1_P0_13>;
+				 <KPP_ROW_1_P0_13>;
 			drive-strength = "low";
 			slew-rate = "fast";
 			bias-pull-up;
@@ -38,7 +38,7 @@
 
 		col {
 			pinmux = <KPP_COL_0_P0_2>,
-					<KPP_COL_1_P0_3>;
+				 <KPP_COL_1_P0_3>;
 			drive-strength = "low";
 			slew-rate = "fast";
 			drive-open-drain;
