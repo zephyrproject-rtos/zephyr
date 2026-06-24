@@ -132,6 +132,7 @@ SECTIONS {
     _imr_start = .;
     /* Entry point MUST be here per external configuration */
     KEEP (*(.boot_entry.text))
+    *(.imr.literal .imr.*.literal)
     *(.imr .imr.*)
   } >imr
 
