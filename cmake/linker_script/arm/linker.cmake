@@ -57,7 +57,7 @@ else()
     )
   else()
     math(EXPR FLASH_SIZE
-      "(${CONFIG_FLASH_SIZE} + 0) * 1024 - (${CONFIG_FLASH_LOAD_OFFSET} + 0) - (${CONFIG_ROM_END_OFFSET} + 0)"
+      "(${CONFIG_FLASH_SIZE} + 0) * (${CONFIG_ROMSTART_REGION_SIZE_UNIT} + 0) - (${CONFIG_FLASH_LOAD_OFFSET} + 0) - (${CONFIG_ROM_END_OFFSET} + 0)"
       OUTPUT_FORMAT HEXADECIMAL
     )
   endif()
