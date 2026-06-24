@@ -51,7 +51,6 @@ struct rtc_sam_data {
 #endif /* CONFIG_RTC_UPDATE */
 	struct k_spinlock lock;
 	struct k_sem cr_sec_evt_sem;
-	struct k_sem cr_upd_ack_sem;
 };
 
 static void rtc_sam_disable_wp(void)
@@ -100,19 +99,17 @@ static int rtc_sam_set_time(const struct device *dev, const struct rtc_time *tim
 	struct rtc_sam_data *data = dev->data;
 	const struct rtc_sam_config *config = dev->config;
 	Rtc *regs = config->regs;
+	uint32_t timeout_ms = 1100;
+	k_spinlock_key_t key;
 
 	if (rtc_utils_validate_rtc_time(timeptr, RTC_SAM_TIME_MASK) == false) {
 		return -EINVAL;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&data->lock);
-
 	k_sem_reset(&data->cr_sec_evt_sem);
 	k_sem_take(&data->cr_sec_evt_sem, K_MSEC(1100));
-	k_sem_reset(&data->cr_upd_ack_sem);
 
-	/* Enable update acknowledge interrupt */
-	regs->RTC_IER = RTC_IER_ACKEN;
+	key = k_spin_lock(&data->lock);
 
 	rtc_sam_disable_wp();
 
@@ -120,23 +117,27 @@ static int rtc_sam_set_time(const struct device *dev, const struct rtc_time *tim
 	regs->RTC_CR = (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
 
 	/* Await update acknowledge */
-	if (k_sem_take(&data->cr_upd_ack_sem, K_MSEC(1100)) < 0) {
-		regs->RTC_CR = 0;
+	while (!(regs->RTC_SR & RTC_SR_ACKUPD)) {
+		if (timeout_ms == 0) {
+			regs->RTC_CR = 0;
 
-		rtc_sam_enable_wp();
+			rtc_sam_enable_wp();
 
-		/* Disable update acknowledge interrupt */
-		regs->RTC_IDR = RTC_IDR_ACKDIS;
-
+			k_spin_unlock(&data->lock, key);
+			return -EAGAIN;
+		}
 		k_spin_unlock(&data->lock, key);
-		return -EAGAIN;
+		k_msleep(1);
+		key = k_spin_lock(&data->lock);
+		timeout_ms--;
 	}
+
+	regs->RTC_SCCR = RTC_SCCR_ACKCLR;
 
 	regs->RTC_TIMR = rtc_sam_timr_from_tm(timeptr);
 	regs->RTC_CALR = rtc_sam_calr_from_tm(timeptr);
 	regs->RTC_CR = 0;
 	rtc_sam_enable_wp();
-	regs->RTC_IDR = RTC_IDR_ACKDIS;
 	k_spin_unlock(&data->lock, key);
 	return 0;
 }
@@ -192,11 +193,6 @@ static void rtc_sam_isr(const struct device *dev)
 	Rtc *regs = config->regs;
 
 	uint32_t sr = regs->RTC_SR;
-
-	if (sr & RTC_SR_ACKUPD) {
-		regs->RTC_SCCR = RTC_SCCR_ACKCLR;
-		k_sem_give(&data->cr_upd_ack_sem);
-	}
 
 #ifdef CONFIG_RTC_ALARM
 	if (sr & RTC_SR_ALARM) {
@@ -661,7 +657,6 @@ static int rtc_sam_init(const struct device *dev)
 			       | RTC_IDR_TDERRDIS);
 
 	k_sem_init(&data->cr_sec_evt_sem, 0, 1);
-	k_sem_init(&data->cr_upd_ack_sem, 0, 1);
 	config->irq_init_fn_ptr();
 	irq_enable(config->irq_num);
 	return 0;
