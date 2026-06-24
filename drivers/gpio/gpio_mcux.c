@@ -153,7 +153,15 @@ static int gpio_mcux_port_configure(const struct device *dev, gpio_pin_t pin, gp
 	}
 
 	if ((flags & GPIO_SINGLE_ENDED) != 0) {
+#if defined(FSL_FEATURE_PORT_HAS_OPEN_DRAIN) && FSL_FEATURE_PORT_HAS_OPEN_DRAIN
+		if (flags & GPIO_LINE_OPEN_DRAIN) {
+			pcr |= PORT_PCR_ODE_MASK;
+		} else  {
+			return -ENOTSUP;
+		}
+#else
 		return -ENOTSUP;
+#endif
 	}
 
 	/* The flags contain options that require touching registers in the
