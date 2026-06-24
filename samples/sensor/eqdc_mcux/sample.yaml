@@ -1,0 +1,9 @@
+sample:
+  name: Enhanced Quadrature Decoder MCUX Sensor Sample
+tests:
+  sample.sensor.eqdc_mcux:
+    harness: sensor
+    tags: sensors
+    platform_allow: frdm_mcxa156
+    integration_platforms:
+      - frdm_mcxa156

@@ -390,6 +390,20 @@
 			};
 		};
 
+		eqdc0: eqdc@400A7000 {
+			compatible = "nxp,mcux-eqdc";
+			reg = <0x400A7000 0x1000>;
+			interrupts = <50 0>;
+			status = "disabled";
+		};
+
+		eqdc1: eqdc@400A8000 {
+			compatible = "nxp,mcux-eqdc";
+			reg = <0x400A8000 0x1000>;
+			interrupts = <85 0>;
+			status = "disabled";
+		};
+
 		i3c0: i3c@40002000 {
 			compatible = "nxp,mcux-i3c";
 			reg = <0x40002000 0x1000>;

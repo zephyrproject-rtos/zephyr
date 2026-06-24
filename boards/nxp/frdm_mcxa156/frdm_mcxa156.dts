@@ -27,6 +27,7 @@
 		watchdog0 = &wwdt0;
 		ambient-temp0 = &p3t1755;
 		die-temp0 = &temp0;
+		eqdc0 = &eqdc0;
 	};
 
 	chosen {
@@ -206,6 +207,24 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm0_pwm0>;
 	pinctrl-names = "default";
+};
+
+&eqdc0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_qdc0>;
+	pinctrl-names = "default";
+	counts-per-revolution = <1000>; 
+	input-channels = <0 0>;
+	inputmux-connections = <0x37000020 0x36C0001D>;
+};
+
+&eqdc1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_qdc1>;
+	pinctrl-names = "default";
+	counts-per-revolution = <1000>; 
+	input-channels = <0 0>;
+	inputmux-connections = <0x3900001C 0x38C00021>;
 };
 
 &i3c0 {

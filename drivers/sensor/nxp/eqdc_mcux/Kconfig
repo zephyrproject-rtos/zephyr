@@ -1,0 +1,12 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config EQDC_MCUX
+	bool "NXP EQDC MCUX driver"
+	default y
+	depends on DT_HAS_NXP_MCUX_EQDC_ENABLED
+	select NXP_INPUTMUX
+	select PINCTRL
+	select NXP_MCUX_EQDC
+	help
+	 Enable driver for NXP MCUX EQDC. Currently verified on MCXA156.
