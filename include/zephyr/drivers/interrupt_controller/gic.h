@@ -126,7 +126,7 @@
  */
 #define GICD_ISACTIVERnE (GIC_DIST_BASE + 0x1A00)
 
-#if CONFIG_GIC_VER >= 2
+#if (CONFIG_GIC_VER >= 2) || defined(__DOXYGEN__)
 /*
  * 0x380  Interrupt Clear-Active Registers
  * v2/v3	GICD_ICACTIVERn
@@ -138,7 +138,7 @@
  * v3.1		GICD_ICACTIVERnE
  */
 #define GICD_ICACTIVERnE (GIC_DIST_BASE + 0x1C00)
-#endif
+#endif /* CONFIG_GIC_VER >= 2 */
 
 /*
  * 0x400  Interrupt Priority Registers
@@ -184,7 +184,7 @@
  * GIC CPU Interface
  */
 
-#if CONFIG_GIC_VER <= 2
+#if (CONFIG_GIC_VER <= 2) || defined(__DOXYGEN__)
 
 /*
  * 0x0000  CPU Interface Control Register
@@ -401,7 +401,7 @@ unsigned int arm_gic_get_active(void);
  */
 void arm_gic_eoi(unsigned int irq);
 
-#ifdef CONFIG_SMP
+#if defined(CONFIG_SMP) || defined(__DOXYGEN__)
 /**
  * @brief Initialize GIC of secondary cores
  */
