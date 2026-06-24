@@ -176,7 +176,7 @@ static int static_init(void)
 					  &pp->stacks[ssz * i],
 					  pp->stack_size);
 
-#ifdef CONFIG_SCHED_CPU_MASK
+#if defined(CONFIG_SCHED_CPU_MASK) && !defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
 			if (pp->flags & K_P4WQ_USER_CPU_MASK) {
 				int ret = k_thread_cpu_mask_clear(&pp->threads[i]);
 
@@ -196,6 +196,16 @@ void k_p4wq_enable_static_thread(struct k_p4wq *queue, struct k_thread *thread,
 {
 #ifdef CONFIG_SCHED_CPU_MASK
 	if (queue->flags & K_P4WQ_USER_CPU_MASK) {
+#ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
+		__ASSERT(cpu_mask != 0 && (cpu_mask & (cpu_mask - 1)) == 0,
+			 "PIN_ONLY requires exactly one CPU in mask");
+		int cpu = (int)u32_count_trailing_zeros(cpu_mask);
+		int ret = k_thread_cpu_pin(thread, cpu);
+
+		if (ret < 0) {
+			LOG_ERR("Couldn't pin thread to CPU%d: %d", cpu, ret);
+		}
+#else
 		unsigned int i;
 
 		while ((i = find_lsb_set(cpu_mask))) {
@@ -206,8 +216,9 @@ void k_p4wq_enable_static_thread(struct k_p4wq *queue, struct k_thread *thread,
 			}
 			cpu_mask &= ~BIT(i - 1);
 		}
+#endif /* CONFIG_SCHED_CPU_MASK_PIN_ONLY */
 	}
-#endif
+#endif /* CONFIG_SCHED_CPU_MASK */
 
 	if (queue->flags & K_P4WQ_DELAYED_START) {
 		k_thread_start(thread);
