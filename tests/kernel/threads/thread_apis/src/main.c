@@ -213,6 +213,7 @@ ZTEST_USER(threads_lifecycle, test_thread_name_user_get_set)
  * @ingroup kernel_thread_tests
  * @brief Test thread custom data get/set from preempt thread
  * @see k_thread_custom_data_get(), k_thread_custom_data_set()
+ * @verifies ZEP-SRS-1-12
  */
 ZTEST_USER(threads_lifecycle_1cpu, test_customdata_get_set_preempt)
 {
@@ -258,6 +259,18 @@ static void enter_user_mode_entry(void *p1, void *p2, void *p3)
 				 k_current_get(), NULL, NULL);
 }
 
+/**
+ * @brief Verify a thread can run with user-mode (unprivileged) privileges.
+ *
+ * @details
+ * Create a thread that calls k_thread_user_mode_enter() so it transitions to
+ * user mode, confirming the kernel can create threads with a defined privilege
+ * level.
+ *
+ * @ingroup kernel_thread_tests
+ * @see k_thread_user_mode_enter()
+ * @verifies ZEP-SRS-1-9
+ */
 ZTEST_USER(threads_lifecycle, test_user_mode)
 {
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
@@ -683,6 +696,7 @@ static int small_stack(size_t *space)
  * large local variable
  *
  * @ingroup kernel_thread_tests
+ * @verifies ZEP-SRS-1-8
  */
 ZTEST_USER(threads_lifecycle, test_k_thread_stack_space_get_user)
 {

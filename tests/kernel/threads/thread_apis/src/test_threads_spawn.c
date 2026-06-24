@@ -44,6 +44,7 @@ static void thread_entry_delay(void *p1, void *p2, void *p3)
  * of the parameters passed.
  *
  * @see k_thread_create()
+ * @verifies ZEP-SRS-1-1
  */
 ZTEST_USER(threads_lifecycle, test_threads_spawn_params)
 {
@@ -61,6 +62,8 @@ ZTEST_USER(threads_lifecycle, test_threads_spawn_params)
  * current thread and check its behavior.
  *
  * @see k_thread_create()
+ * @verifies ZEP-SRS-1-1
+ * @verifies ZEP-SRS-1-2
  */
 ZTEST(threads_lifecycle, test_threads_spawn_priority)
 {
@@ -79,6 +82,7 @@ ZTEST(threads_lifecycle, test_threads_spawn_priority)
  * thread entry function is executed only after the timeout occurs.
  *
  * @see k_thread_create()
+ * @verifies ZEP-SRS-1-1
  */
 ZTEST_USER(threads_lifecycle, test_threads_spawn_delay)
 {
@@ -106,6 +110,7 @@ ZTEST_USER(threads_lifecycle, test_threads_spawn_delay)
  * if thread has started executing.
  *
  * @see k_thread_create()
+ * @verifies ZEP-SRS-1-1
  */
 ZTEST(threads_lifecycle, test_threads_spawn_forever)
 {
@@ -134,6 +139,7 @@ ZTEST(threads_lifecycle, test_threads_spawn_forever)
  * @details Call k_thread_start() on an already terminated thread
  *
  * @see k_thread_start()
+ * @verifies ZEP-SRS-1-1
  */
 ZTEST(threads_lifecycle, test_thread_start)
 {

@@ -47,6 +47,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
  * @ingroup kernel_thread_tests
  *
  * @see #K_ESSENTIAL(x)
+ * @verifies ZEP-SRS-1-11
  */
 ZTEST(threads_lifecycle, test_essential_thread_operation)
 {
