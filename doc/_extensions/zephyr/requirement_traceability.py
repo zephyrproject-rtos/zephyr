@@ -208,6 +208,10 @@ def _render_page(symbols: dict[str, dict]) -> str:
         for rel in sorted(entry["rels"]):
             out.append(f"   :{rel}: {' '.join(sorted(entry['rels'][rel]))}")
         out.append("")
+        # Link to the full test/implementation documentation in the Doxygen
+        # output (resolved by the doxybridge extension).
+        out.append(f"   Documented at :c:func:`{name}`.")
+        out.append("")
         for line in entry["body"]:
             out.append(f"   {line}" if line else "")
         out.append("")
