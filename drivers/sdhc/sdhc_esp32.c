@@ -145,6 +145,9 @@ static int sdmmc_host_set_clk_div(sdmmc_dev_t *sdio_hw, int div)
 	sdmmc_ll_set_clock_div(sdio_hw, div);
 	sdmmc_ll_select_clk_source(sdio_hw, SDMMC_CLK_SRC_DEFAULT);
 	sdmmc_ll_init_phase_delay(sdio_hw);
+#if SDMMC_LL_DELAY_PHASE_SUPPORTED
+	sdmmc_ll_set_din_delay_phase(sdio_hw, SDMMC_LL_DELAY_PHASE_0, SDMMC_LL_SPEED_MODE_LS);
+#endif
 
 	/* Wait for the clock to propagate */
 	esp_rom_delay_us(10);
