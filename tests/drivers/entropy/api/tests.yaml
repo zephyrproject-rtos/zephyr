@@ -3,6 +3,7 @@ tests:
     filter: CONFIG_ENTROPY_HAS_DRIVER
     integration_platforms:
       - frdm_mcxn236
+      - kit_psc3m6_evk/psc3m6ges3ahq1
     tags:
       - drivers
       - entropy
