@@ -14,7 +14,7 @@
 			clocks = <&rcc CH32V10X_CLOCK_USART3>;
 			interrupt-parent = <&pfic>;
 			interrupts = <55>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		spi2: spi@40003800 {
@@ -23,7 +23,7 @@
 			clocks = <&rcc CH32V10X_CLOCK_SPI2>;
 			interrupt-parent = <&pfic>;
 			interrupts = <52>;
-			status = "okay";
+			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -34,7 +34,7 @@
 			clocks = <&rcc CH32V10X_CLOCK_I2C2>;
 			interrupt-parent = <&pfic>;
 			interrupts = <49>, <50>;
-			status = "okay";
+			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
