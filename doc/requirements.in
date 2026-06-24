@@ -36,3 +36,6 @@ python-dotenv
 
 # Used to export requirements from the reqmgmt module (StrictDoc)
 strictdoc
+
+# Requirements traceability (items, matrices, coverage) in the Sphinx docs
+mlx.traceability
