@@ -43,18 +43,6 @@
 	arm,num-irq-priority-bits = <3>;
 };
 
-&aon_peripheral {
-	aon_kpp_clock: aon-kpp-clock {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <16384>;
-	};
-
-	aon_kpp0: kpp@95000 {
-		compatible = "nxp,mcux-kpp";
-		reg = <0x95000 0x1000>;
-		interrupts = <148 0>;
-		clocks = <&aon_kpp_clock>;
-		status = "disabled";
-	};
+&aon_kpp0 {
+	interrupts = <148 0>;
 };
