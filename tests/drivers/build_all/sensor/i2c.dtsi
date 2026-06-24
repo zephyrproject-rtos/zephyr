@@ -1037,7 +1037,7 @@ test_i2c_am2301b: am2301b@89 {
 
 test_i2c_aht30: aht30@8b {
 	compatible = "aosong,aht30";
-	reg = <0x8b>;
+	reg = <0x9a>;
 	status = "okay";
 };
 
