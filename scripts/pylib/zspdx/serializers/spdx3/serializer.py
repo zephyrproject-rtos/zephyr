@@ -302,7 +302,20 @@ class SPDX3Serializer:
                 self.build.build_buildEndTime = sbom_build.finished_at
 
         self._add_build_parameters()
+        self._add_build_environment()
         self.elements.append(self.build)
+
+    def _add_build_environment(self):
+        """Populate ``build_environment`` from the collected environment variables."""
+        if not self.build:
+            return
+        for key, value in sorted(self.build_info.get("environment", {}).items()):
+            if not value:
+                continue
+            entry = spdx.DictionaryEntry()
+            entry.key = key
+            entry.value = str(value)
+            self.build.build_environment.append(entry)
 
     def _add_build_parameters(self):
         """Populate ``build_parameter`` with the global build configuration."""
@@ -430,6 +443,13 @@ class SPDX3Serializer:
         )
         target_build.creationInfo = self.creation_info._id
         target_build.build_buildType = self.build.build_buildType
+        # per-language compile flags and defines used to produce this artifact
+        for kind in ("flags", "defines"):
+            for lang, value in sorted(component.metadata.get(f"compile_{kind}", {}).items()):
+                entry = spdx.DictionaryEntry()
+                entry.key = f"compile:{kind}:{lang}"
+                entry.value = value
+                target_build.build_parameter.append(entry)
         self.elements.append(target_build)
         self.target_builds[component.name] = target_build
 
