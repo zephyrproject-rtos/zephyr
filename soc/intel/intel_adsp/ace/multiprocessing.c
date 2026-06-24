@@ -72,6 +72,10 @@ static void ipc_isr(void *arg)
 #define CAP_INST_SHIFT		24
 #define CAP_INST_MASK		BIT_MASK(4)
 
+#if CONFIG_MP_MAX_NUM_CPUS == 1
+bool soc_cpus_active[CONFIG_MP_MAX_NUM_CPUS];
+#endif
+
 unsigned int soc_num_cpus;
 
 __imr void soc_num_cpus_init(void)
