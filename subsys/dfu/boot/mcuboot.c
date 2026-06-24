@@ -77,7 +77,6 @@ enum IMAGE_INDEXES {
 	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
 /* For RAM LOAD mode, the active image must be fetched from the bootloader */
 #define ACTIVE_SLOT_FLASH_AREA_ID boot_fetch_active_slot()
-#define INVALID_SLOT_ID 255
 #else
 /* Get active partition. zephyr,code-partition chosen node must be defined */
 #define ACTIVE_SLOT_FLASH_AREA_ID DT_PARTITION_ID(DT_CHOSEN(zephyr_code_partition))
@@ -118,7 +117,7 @@ uint8_t boot_fetch_active_slot(void)
 	if (rc <= 0) {
 		LOG_ERR("Failed to fetch active slot: %d", rc);
 
-		return INVALID_SLOT_ID;
+		return BOOT_INVALID_SLOT_ID;
 	}
 
 	LOG_DBG("Active slot: %d", slot);
@@ -206,7 +205,7 @@ uint8_t boot_fetch_active_slot(void)
 		break;
 	}
 
-	return INVALID_SLOT_ID;
+	return BOOT_INVALID_SLOT_ID;
 }
 #else  /* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD ||
 	* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT
