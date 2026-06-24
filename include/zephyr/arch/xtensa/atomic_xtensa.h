@@ -71,7 +71,7 @@ atomic_val_t xtensa_cas(atomic_t *addr, atomic_val_t oldval,
 		 * Otherwise, we must return some other value to signal that
 		 * the store failed to function caller.
 		 */
-		return (result == 1U) ? oldval : newval;
+		return (result == 1U) ? oldval : ~oldval;
 	}
 
 	/* Since *addr != oldval, we skip writing to memory and
@@ -79,7 +79,7 @@ atomic_val_t xtensa_cas(atomic_t *addr, atomic_val_t oldval,
 	 */
 	__asm__("clrex");
 
-	return newval;
+	return mem_val;
 }
 
 #elif XCHAL_HAVE_S32C1I
