@@ -19,6 +19,7 @@ K_SEM_DEFINE(sem, 0, 1);
  * @brief Test k_queue_get() failure scenario
  * @ingroup kernel_queue_tests
  * @see k_queue_get()
+ * @verifies ZEP-SRS-20-6
  */
 ZTEST(queue_api_1cpu, test_queue_get_fail)
 {
@@ -55,6 +56,7 @@ static void tThread_entry(void *p1, void *p2, void *p3)
  * @ingroup kernel_queue_tests
  *
  * @see k_queue_append_list()
+ * @verifies ZEP-SRS-20-11
  */
 ZTEST(queue_api, test_queue_append_list_error)
 {
@@ -101,6 +103,7 @@ ZTEST(queue_api, test_queue_append_list_error)
  * @ingroup kernel_queue_tests
  *
  * @see k_queue_merge_slist()
+ * @verifies ZEP-SRS-20-12
  */
 ZTEST(queue_api, test_queue_merge_list_error)
 {
@@ -133,6 +136,7 @@ ZTEST(queue_api, test_queue_merge_list_error)
  * @ingroup kernel_queue_tests
  *
  * @see k_queue_init()
+ * @verifies ZEP-SRS-20-2
  */
 ZTEST_USER(queue_api, test_queue_init_null)
 {
@@ -149,6 +153,7 @@ ZTEST_USER(queue_api, test_queue_init_null)
  * @ingroup kernel_queue_tests
  *
  * @see k_queue_alloc_append()
+ * @verifies ZEP-SRS-20-14
  */
 ZTEST_USER(queue_api, test_queue_alloc_append_null)
 {
@@ -168,6 +173,7 @@ ZTEST_USER(queue_api, test_queue_alloc_append_null)
  * @ingroup kernel_queue_tests
  *
  * @see k_queue_alloc_prepend()
+ * @verifies ZEP-SRS-20-14
  */
 ZTEST_USER(queue_api, test_queue_alloc_prepend_null)
 {
@@ -187,6 +193,7 @@ ZTEST_USER(queue_api, test_queue_alloc_prepend_null)
  * @ingroup kernel_queue_tests
  *
  * @see k_queue_get()
+ * @verifies ZEP-SRS-20-6
  */
 ZTEST_USER(queue_api, test_queue_get_null)
 {
@@ -203,6 +210,7 @@ ZTEST_USER(queue_api, test_queue_get_null)
  * @ingroup kernel_queue_tests
  *
  * @see k_queue_is_empty()
+ * @verifies ZEP-SRS-20-7
  */
 ZTEST_USER(queue_api, test_queue_is_empty_null)
 {
@@ -219,6 +227,7 @@ ZTEST_USER(queue_api, test_queue_is_empty_null)
  * @ingroup kernel_queue_tests
  *
  * @see k_queue_peek_head()
+ * @verifies ZEP-SRS-20-9
  */
 ZTEST_USER(queue_api, test_queue_peek_head_null)
 {
@@ -235,6 +244,7 @@ ZTEST_USER(queue_api, test_queue_peek_head_null)
  * @ingroup kernel_queue_tests
  *
  * @see k_queue_peek_tail()
+ * @verifies ZEP-SRS-20-8
  */
 ZTEST_USER(queue_api, test_queue_peek_tail_null)
 {
