@@ -6,6 +6,7 @@
 #ifndef ZEPHYR_DRIVERS_HAPTICS_CS40L26_H_
 #define ZEPHYR_DRIVERS_HAPTICS_CS40L26_H_
 
+#include "cs40lxx.h"
 #include <sys/types.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/haptics.h>
@@ -17,9 +18,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-
-#define CS40L26_REG_WIDTH  4
-#define CS40L26_ADDR_WIDTH 4
 
 /* Supported devices */
 #define CS40L26_DEVID_A1  0x40A260U
@@ -52,12 +50,6 @@ extern "C" {
 #define CS40L26_REG_MAILBOX_STATUS              19
 #define CS40L26_REG_SOURCE_ATTENUATION          20
 
-struct cs40l26_multi_write {
-	uint32_t addr;
-	uint32_t *buf;
-	size_t len;
-};
-
 struct cs40l26_calibration {
 	/* Coil DC resistance in signed Q6.17 format (Ohms * (24 / 2.9)) */
 	uint32_t redc;
@@ -65,47 +57,12 @@ struct cs40l26_calibration {
 	uint32_t f0;
 };
 
-typedef bool (*cs40l26_io_bus_is_ready)(const struct device *const dev);
-typedef const struct device *const (*cs40l26_io_bus_get_device)(const struct device *const dev);
-typedef int (*cs40l26_io_bus_read)(const struct device *const dev, const uint32_t addr,
-				   uint32_t *const rx, const uint32_t len);
-typedef int (*cs40l26_io_bus_write)(const struct device *const dev, const uint32_t addr,
-				    uint32_t *const tx, const uint32_t len);
-typedef int (*cs40l26_io_bus_raw_write)(const struct device *const dev, const uint32_t addr,
-					uint32_t *const tx, const uint32_t len);
-
-struct cs40l26_bus_io {
-	cs40l26_io_bus_is_ready is_ready;
-	cs40l26_io_bus_get_device get_device;
-	cs40l26_io_bus_read read;
-	cs40l26_io_bus_write write;
-	cs40l26_io_bus_raw_write raw_write;
-};
-
-#if CONFIG_HAPTICS_CS40L26_I2C
-extern const struct cs40l26_bus_io cs40l26_bus_io_i2c;
-#endif /* CONFIG_HAPTICS_CS40L26_I2C */
-
-#if CONFIG_HAPTICS_CS40L26_SPI
-extern const struct cs40l26_bus_io cs40l26_bus_io_spi;
-#endif /* CONFIG_HAPTICS_CS40L26_SPI */
-
-struct cs40l26_bus {
-#if CONFIG_HAPTICS_CS40L26_I2C
-	struct i2c_dt_spec i2c;
-#endif /* CONFIG_HAPTICS_CS40L26_I2C */
-#if CONFIG_HAPTICS_CS40L26_SPI
-	struct spi_dt_spec spi;
-#endif /* CONFIG_HAPTICS_CS40L26_SPI */
-};
-
 struct cs40l26_config {
 	LOG_INSTANCE_PTR_DECLARE(log);
 	/* Log instance declaration requires blank line. */
 	const struct device *const dev;
 	const uint32_t dev_id;
-	const struct cs40l26_bus bus;
-	const struct cs40l26_bus_io *const bus_io;
+	const struct cs40lxx_io_bus io_bus;
 	const struct gpio_dt_spec reset_gpio;
 	const struct gpio_dt_spec interrupt_gpio;
 	const struct device *flash;
@@ -134,7 +91,7 @@ int cs40l26_firmware_burst_write(const struct device *const dev, const uint32_t 
 int cs40l26_firmware_raw_write(const struct device *const dev, const uint32_t firmware_control,
 			       uint32_t *const tx, const uint32_t len);
 int cs40l26_firmware_multi_write(const struct device *const dev,
-				 const struct cs40l26_multi_write *const multi_write,
+				 const struct cs40lxx_multi_write *const multi_write,
 				 const uint32_t len);
 
 #ifdef __cplusplus

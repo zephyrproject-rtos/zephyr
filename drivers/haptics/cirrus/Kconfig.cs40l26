@@ -11,16 +11,6 @@ menuconfig HAPTICS_CS40L26
 
 if HAPTICS_CS40L26
 
-config HAPTICS_CS40L26_I2C
-	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L26),i2c) || \
-		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L27),i2c)
-	select I2C
-
-config HAPTICS_CS40L26_SPI
-	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L26),spi) || \
-		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L27),spi)
-	select SPI
-
 config HAPTICS_CS40L26_A1
 	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L26),i2c) || \
 		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L26),spi)
