@@ -65,8 +65,15 @@ static int rtc_ti_mspm0_set_time(const struct device *dev,
 		DL_RTC_Common_setCalendarSecondsBinary(cfg->regs, timeptr->tm_sec);
 		DL_RTC_Common_setCalendarMinutesBinary(cfg->regs, timeptr->tm_min);
 		DL_RTC_Common_setCalendarHoursBinary(cfg->regs, timeptr->tm_hour);
-		DL_RTC_Common_setCalendarDayOfWeekBinary(cfg->regs, timeptr->tm_wday);
-		DL_RTC_Common_setCalendarDayOfMonthBinary(cfg->regs, timeptr->tm_mday);
+		/*
+		 * Back to back writes to counter/calendar registers such as
+		 * SEC, MIN, HOUR, DAY, MON, YEAR need to be avoided since writes
+		 * to calendar registers take 2 to 3 RTCCLK cycles to take effect.
+		 */
+		DL_Common_updateReg(&cfg->regs->DAY,
+				    (uint32_t)timeptr->tm_wday |
+					    ((uint32_t)timeptr->tm_mday << RTC_DAY_DOMBIN_OFS),
+				    RTC_DAY_DOW_MASK | RTC_DAY_DOMBIN_MASK);
 		DL_RTC_Common_setCalendarMonthBinary(cfg->regs, timeptr->tm_mon);
 		DL_RTC_Common_setCalendarYearBinary(cfg->regs, timeptr->tm_year);
 	}
