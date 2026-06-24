@@ -19,6 +19,20 @@
 #define AD4170_ADC_AIN6            6
 #define AD4170_ADC_AIN7            7
 #define AD4170_ADC_AIN8            8
+/** Analog input AIN9 (AD4195-8/AD4190-8 only) */
+#define AD4170_ADC_AIN9            9
+/** Analog input AIN10 (AD4195-8/AD4190-8 only) */
+#define AD4170_ADC_AIN10           10
+/** Analog input AIN11 (AD4195-8/AD4190-8 only) */
+#define AD4170_ADC_AIN11           11
+/** Analog input AIN12 (AD4195-8/AD4190-8 only) */
+#define AD4170_ADC_AIN12           12
+/** Analog input AIN13 (AD4195-8/AD4190-8 only) */
+#define AD4170_ADC_AIN13           13
+/** Analog input AIN14 (AD4195-8/AD4190-8 only) */
+#define AD4170_ADC_AIN14           14
+/** Analog input AIN15 (AD4195-8/AD4190-8 only) */
+#define AD4170_ADC_AIN15           15
 #define AD4170_ADC_TEMP_SENSOR     17
 #define AD4130_ADC_AVDD_AVSS_DIV5  18
 #define AD4130_ADC_IOVDD_DGND_DIV5 19
