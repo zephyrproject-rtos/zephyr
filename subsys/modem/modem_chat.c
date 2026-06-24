@@ -33,6 +33,48 @@ static char log_buffer[CONFIG_MODEM_CHAT_LOG_BUFFER_SIZE];
 
 static void modem_chat_log_received_command(struct modem_chat *chat)
 {
+#if defined(CONFIG_MODEM_CHAT_LOG_RAW_RX)
+	uint16_t log_buffer_pos = 0;
+	uint16_t separators_pos = 0;
+	uint16_t argv_len;
+
+	for (uint16_t i = 0; i < chat->argc; i++) {
+		if ((i > 1) && (chat->raw_log_separators_len > separators_pos)) {
+			if ((log_buffer_pos + 1) >= sizeof(log_buffer)) {
+				LOG_WRN("raw log buffer overrun");
+				break;
+			}
+
+			log_buffer[log_buffer_pos] = (char)chat->raw_log_separators[separators_pos];
+			log_buffer_pos++;
+			separators_pos++;
+		}
+
+		argv_len = (uint16_t)strlen(chat->argv[i]);
+
+		if (sizeof(log_buffer) < (log_buffer_pos + argv_len + 1)) {
+			LOG_WRN("raw log buffer overrun");
+			break;
+		}
+
+		memcpy(&log_buffer[log_buffer_pos], chat->argv[i], argv_len);
+		log_buffer_pos += argv_len;
+	}
+
+	while (chat->raw_log_separators_len > separators_pos) {
+		if ((log_buffer_pos + 1) >= sizeof(log_buffer)) {
+			LOG_WRN("raw log buffer overrun");
+			break;
+		}
+
+		log_buffer[log_buffer_pos] = (char)chat->raw_log_separators[separators_pos];
+		log_buffer_pos++;
+		separators_pos++;
+	}
+
+	log_buffer[log_buffer_pos] = '\0';
+	LOG_DBG("raw: %s", log_buffer);
+#else
 	uint16_t log_buffer_pos = 0;
 	uint16_t argv_len;
 
@@ -57,6 +99,7 @@ static void modem_chat_log_received_command(struct modem_chat *chat)
 	log_buffer[log_buffer_pos] = '\0';
 
 	LOG_DBG("%s", log_buffer);
+#endif
 }
 
 #else
@@ -387,6 +430,10 @@ static void modem_chat_parse_reset(struct modem_chat *chat)
 	chat->delimiter_match_len = 0;
 	chat->argc = 0;
 	chat->parse_match = NULL;
+
+#if defined(CONFIG_MODEM_CHAT_LOG_RAW_RX)
+	chat->raw_log_separators_len = 0;
+#endif
 }
 
 /* Exact match is stored at end of receive buffer */
@@ -661,6 +708,15 @@ static void modem_chat_process_byte(struct modem_chat *chat, uint8_t byte)
 
 	/* Check if separator reached */
 	if (modem_chat_parse_is_separator(chat) == true) {
+
+#if defined(CONFIG_MODEM_CHAT_LOG_RAW_RX)
+		if (chat->raw_log_separators_len < ARRAY_SIZE(chat->raw_log_separators)) {
+			chat->raw_log_separators[chat->raw_log_separators_len] =
+				chat->receive_buf[chat->receive_buf_len - 1];
+			chat->raw_log_separators_len++;
+		}
+#endif
+
 		/* Check if argument is empty */
 		if (chat->parse_arg_len == 0) {
 			/* Save empty argument */

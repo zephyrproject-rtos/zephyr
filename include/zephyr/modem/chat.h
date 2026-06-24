@@ -281,6 +281,10 @@ struct modem_chat {
 	uint16_t parse_match_len;
 	uint16_t parse_arg_len;
 	uint16_t parse_match_type;
+#if defined(CONFIG_MODEM_CHAT_LOG_RAW_RX)
+	uint8_t raw_log_separators[CONFIG_MODEM_CHAT_LOG_BUFFER_SIZE];
+	uint16_t raw_log_separators_len;
+#endif
 
 	/* Process received data */
 	struct k_work receive_work;
