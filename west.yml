@@ -37,7 +37,7 @@ manifest:
       remote: babblesim
       repo-path: base
       path: tools/bsim/components
-      revision: 1cce925c72805cfdbb6341ca8c0755c7d42699d3
+      revision: 122b0d6fc1b23b3d678bfbaedb68c53d64b3f3bd
       groups:
         - babblesim
     - name: babblesim_ext_2G4_channel_NtNcable
@@ -86,7 +86,7 @@ manifest:
       remote: babblesim
       repo-path: ext_2G4_modem_BLE_simple
       path: tools/bsim/components/ext_2G4_modem_BLE_simple
-      revision: 3712283f0bd3a982f620908579c99af35e969554
+      revision: 6fdae81d5b5e348bd130c038d049b233ce983a74
       groups:
         - babblesim
     - name: babblesim_ext_2G4_modem_magic
@@ -112,7 +112,7 @@ manifest:
         - babblesim
     - name: bsim
       repo-path: babblesim-manifest
-      revision: 7e10d556b5dd04360756cdf1f4b80d4f5bcac6cf
+      revision: 9fce3723520edcdfddcfa0f1162b45c80d3da527
       path: tools/bsim
       groups:
         - babblesim
