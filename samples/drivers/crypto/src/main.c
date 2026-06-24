@@ -47,6 +47,8 @@ LOG_MODULE_REGISTER(main);
 #define CRYPTO_DEV_COMPAT realtek_bee_aes
 #elif CONFIG_CRYPTO_MSPM0_AES
 #define CRYPTO_DEV_COMPAT ti_mspm0_aes
+#elif CONFIG_CRYPTO_INFINEON_MXCRYPTOLITE
+#define CRYPTO_DEV_COMPAT infineon_mxcryptolite_crypto
 #else
 #error "You need to enable one crypto device"
 #endif
