@@ -25,7 +25,7 @@ from zspdx.serializers.helpers import (
     get_standard_licenses,
     normalize_spdx_name,
 )
-from zspdx.spdxids import getUniqueFileID
+from zspdx.spdxids import get_unique_file_id
 
 _logger = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ class SPDX3Serializer:
     def _generate_file_id(self, file_path: str) -> str:
         """Generate URI-based ID for a file."""
         filename_only = os.path.basename(file_path)
-        unique_id = getUniqueFileID(filename_only, self.filename_counts)
+        unique_id = get_unique_file_id(filename_only, self.filename_counts)
         # Remove "SPDXRef-" prefix and normalize
         normalized_id = unique_id.replace("SPDXRef-", "").replace("_", "-")
         namespace = self.sbom_data.namespace_prefix.rstrip("/")

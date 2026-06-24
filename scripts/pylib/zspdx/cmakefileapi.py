@@ -25,7 +25,7 @@ class Config:
         self.name = ""
         self.directories = []
         self.projects = []
-        self.configTargets = []
+        self.config_targets = []
 
     def __repr__(self):
         if self.name == "":
@@ -41,12 +41,12 @@ class ConfigDir:
 
         self.source = ""
         self.build = ""
-        self.parentIndex = -1
-        self.childIndexes = []
-        self.projectIndex = -1
-        self.targetIndexes = []
-        self.minimumCMakeVersion = ""
-        self.hasInstallRule = False
+        self.parent_index = -1
+        self.child_indexes = []
+        self.project_index = -1
+        self.target_indexes = []
+        self.minimum_cmake_version = ""
+        self.has_install_rule = False
 
         # actual items, calculated from indices after loading
         self.parent = None
@@ -64,10 +64,10 @@ class ConfigProject:
         super().__init__()
 
         self.name = ""
-        self.parentIndex = -1
-        self.childIndexes = []
-        self.directoryIndexes = []
-        self.targetIndexes = []
+        self.parent_index = -1
+        self.child_indexes = []
+        self.directory_indexes = []
+        self.target_indexes = []
 
         # actual items, calculated from indices after loading
         self.parent = None
@@ -79,18 +79,18 @@ class ConfigProject:
         return f"ConfigProject: {self.name}"
 
 
-# A member of the configuration.configTargets array
+# A member of the configuration.config_targets array
 class ConfigTarget:
     def __init__(self):
         super().__init__()
 
         self.name = ""
         self.id = ""
-        self.directoryIndex = -1
-        self.projectIndex = -1
-        self.jsonFile = ""
+        self.directory_index = -1
+        self.project_index = -1
+        self.json_file = ""
 
-        # actual target data, loaded from self.jsonFile
+        # actual target data, loaded from self.json_file
         self.target = None
 
         # actual items, calculated from indices after loading
@@ -124,8 +124,8 @@ class TargetInstallDestination:
         return f"TargetInstallDestination: {self.path}"
 
 
-# A member of the target.link_commandFragments and
-# archive_commandFragments array
+# A member of the target.link_command_fragments and
+# archive_command_fragments array
 class TargetCommandFragment:
     def __init__(self):
         super().__init__()
@@ -155,26 +155,26 @@ class TargetSource:
         super().__init__()
 
         self.path = ""
-        self.compileGroupIndex = -1
-        self.sourceGroupIndex = -1
-        self.isGenerated = False
+        self.compile_group_index = -1
+        self.source_group_index = -1
+        self.is_generated = False
         self.backtrace = -1
 
         # actual items, calculated from indices after loading
-        self.compileGroup = None
-        self.sourceGroup = None
+        self.compile_group = None
+        self.source_group = None
 
     def __repr__(self):
         return f"TargetSource: {self.path}"
 
 
-# A member of the target.sourceGroups array
+# A member of the target.source_groups array
 class TargetSourceGroup:
     def __init__(self):
         super().__init__()
 
         self.name = ""
-        self.sourceIndexes = []
+        self.source_indexes = []
 
         # actual items, calculated from indices after loading
         self.sources = []
@@ -183,20 +183,20 @@ class TargetSourceGroup:
         return f"TargetSourceGroup: {self.name}"
 
 
-# A member of the target.compileGroups.includes array
+# A member of the target.compile_groups.includes array
 class TargetCompileGroupInclude:
     def __init__(self):
         super().__init__()
 
         self.path = ""
-        self.isSystem = False
+        self.is_system = False
         self.backtrace = -1
 
     def __repr__(self):
         return f"TargetCompileGroupInclude: {self.path}"
 
 
-# A member of the target.compileGroups.precompileHeaders array
+# A member of the target.compile_groups.precompile_headers array
 class TargetCompileGroupPrecompileHeader:
     def __init__(self):
         super().__init__()
@@ -208,7 +208,7 @@ class TargetCompileGroupPrecompileHeader:
         return f"TargetCompileGroupPrecompileHeader: {self.header}"
 
 
-# A member of the target.compileGroups.defines array
+# A member of the target.compile_groups.defines array
 class TargetCompileGroupDefine:
     def __init__(self):
         super().__init__()
@@ -220,16 +220,16 @@ class TargetCompileGroupDefine:
         return f"TargetCompileGroupDefine: {self.define}"
 
 
-# A member of the target.compileGroups array
+# A member of the target.compile_groups array
 class TargetCompileGroup:
     def __init__(self):
         super().__init__()
 
-        self.sourceIndexes = []
+        self.source_indexes = []
         self.language = ""
-        self.compileCommandFragments = []
+        self.compile_command_fragments = []
         self.includes = []
-        self.precompileHeaders = []
+        self.precompile_headers = []
         self.defines = []
         self.sysroot = ""
 
@@ -240,7 +240,7 @@ class TargetCompileGroup:
         return f"TargetCompileGroup: {self.sources}"
 
 
-# A member of the target.backtraceGraph_nodes array
+# A member of the target.backtrace_graph_nodes array
 class TargetBacktraceGraphNode:
     def __init__(self):
         super().__init__()
@@ -255,7 +255,7 @@ class TargetBacktraceGraphNode:
 
 
 # Actual data in config.target.target, loaded from
-# config.target.jsonFile
+# config.target.json_file
 class Target:
     def __init__(self):
         super().__init__()
@@ -267,9 +267,9 @@ class Target:
         self.folder = ""
         self.paths_source = ""
         self.paths_build = ""
-        self.nameOnDisk = ""
+        self.name_on_disk = ""
         self.artifacts = []
-        self.isGeneratorProvided = False
+        self.is_generator_provided = False
 
         # only if install rule is present
         self.install_prefix = ""
@@ -278,12 +278,12 @@ class Target:
         # only for executables and shared library targets that link into
         # a runtime binary
         self.link_language = ""
-        self.link_commandFragments = []
+        self.link_command_fragments = []
         self.link_lto = False
         self.link_sysroot = ""
 
         # only for static library targets
-        self.archive_commandFragments = []
+        self.archive_command_fragments = []
         self.archive_lto = False
 
         # only if the target depends on other targets
@@ -293,15 +293,15 @@ class Target:
         self.sources = []
 
         # only if sources are grouped together by source_group() or by default
-        self.sourceGroups = []
+        self.source_groups = []
 
         # only if target has sources that compile
-        self.compileGroups = []
+        self.compile_groups = []
 
         # graph of backtraces referenced from elsewhere
-        self.backtraceGraph_nodes = []
-        self.backtraceGraph_commands = []
-        self.backtraceGraph_files = []
+        self.backtrace_graph_nodes = []
+        self.backtrace_graph_commands = []
+        self.backtrace_graph_files = []
 
     def __repr__(self):
         return f"Target: {self.name}"

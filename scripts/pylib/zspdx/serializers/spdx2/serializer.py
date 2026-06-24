@@ -20,7 +20,7 @@ from zspdx.serializers.helpers import (
     get_standard_licenses,
     normalize_spdx_name,
 )
-from zspdx.util import getHashes
+from zspdx.util import get_hashes
 from zspdx.version import SPDX_VERSION_2_3
 
 _logger = logging.getLogger(__name__)
@@ -109,7 +109,7 @@ class SPDX2Serializer:
                 self._write_custom_licenses(f, doc)
 
             # Calculate document hash and store it locally for external document refs
-            hashes = getHashes(output_path)
+            hashes = get_hashes(output_path)
             if not hashes:
                 _logger.error(
                     f"Error: created document but unable to calculate hash values for {output_path}"
@@ -137,7 +137,7 @@ class SPDX2Serializer:
                 self._write_custom_licenses(f, doc)
 
             # Recalculate hash after adding external refs
-            hashes = getHashes(output_path)
+            hashes = get_hashes(output_path)
             if not hashes:
                 _logger.error(f"Error: unable to recalculate hash for {output_path}")
                 return False
