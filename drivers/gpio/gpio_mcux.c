@@ -90,8 +90,6 @@ static int gpio_mcux_iopctl_configure(const struct device *dev, gpio_pin_t pin, 
 	switch (flags & GPIO_DIR_MASK) {
 	case GPIO_INPUT:
 		gpio_base->PDDR &= ~BIT(pin);
-		/* Enable input buffer for input pins */
-		pinconfig |= IOPCTL_INBUF_EN;
 		break;
 	case GPIO_OUTPUT:
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
@@ -104,6 +102,9 @@ static int gpio_mcux_iopctl_configure(const struct device *dev, gpio_pin_t pin, 
 	default:
 		return -ENOTSUP;
 	}
+
+	/* Enable digital input buffer */
+	pinconfig |= IOPCTL_INBUF_EN;
 
 	/* Select GPIO mux for this pin (func 0 is always GPIO) */
 	pinconfig |= IOPCTL_FUNC0;
