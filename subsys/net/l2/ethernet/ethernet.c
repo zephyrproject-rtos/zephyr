@@ -287,14 +287,9 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 				  sizeof(struct net_eth_addr), NET_LINK_ETHERNET);
 
 	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE) && net_eth_iface_is_bridged(ctx)) {
-		verdict = eth_bridge_input_process(iface, pkt);
+		verdict = eth_bridge_input_process(iface, pkt, &iface);
 		if (verdict == NET_DROP) {
 			goto drop;
-		}
-
-		/* Handled by bridge locally */
-		if (verdict == NET_OK) {
-			iface = net_eth_get_bridge(ctx);
 		}
 	}
 
