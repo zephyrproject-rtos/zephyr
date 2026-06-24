@@ -195,10 +195,6 @@ LOG_MODULE_REGISTER(CS40L5X, CONFIG_HAPTICS_LOG_LEVEL);
 #define CS40L5X_FLASH_MEMORY_ERASED     0xFFFFFFFFU
 #define CS40L5X_NUM_IRQ1_INT            16
 
-#define CS40L5X_WRITE_BE32(...)                                                                    \
-	.buf = (uint32_t[]){FOR_EACH(sys_cpu_to_be32, (,), __VA_ARGS__)},                          \
-	.len = NUM_VA_ARGS(__VA_ARGS__)
-
 enum cs40l5x_irq {
 	CS40L5X_INT1,
 	CS40L5X_INT2,
@@ -218,69 +214,63 @@ enum cs40l5x_irq {
 	CS40L5X_INT22,
 };
 
-struct cs40l5x_multi_write {
-	uint32_t addr;
-	uint32_t *buf;
-	size_t len;
+static const struct cs40lxx_multi_write cs40l5x_b0_internal_boost[] = {
+	{.addr = 0x00002018U, CS40LXX_MULTI_WRITE_BE32(0x00003321U, 0x04000010U)},
 };
 
-static const struct cs40l5x_multi_write cs40l5x_b0_internal_boost[] = {
-	{.addr = 0x00002018U, CS40L5X_WRITE_BE32(0x00003321U, 0x04000010U)},
+static const struct cs40lxx_multi_write cs40l5x_b0_external_boost[] = {
+	{.addr = 0x00002018U, CS40LXX_MULTI_WRITE_BE32(0x00003201U)},
+	{.addr = 0x00004404U, CS40LXX_MULTI_WRITE_BE32(0x01000000U)},
 };
 
-static const struct cs40l5x_multi_write cs40l5x_b0_external_boost[] = {
-	{.addr = 0x00002018U, CS40L5X_WRITE_BE32(0x00003201U)},
-	{.addr = 0x00004404U, CS40L5X_WRITE_BE32(0x01000000U)},
-};
-
-static const struct cs40l5x_multi_write cs40l5x_b0_errata[] = {
-	{.addr = 0x00000040U, CS40L5X_WRITE_BE32(0x00000055U)},
-	{.addr = 0x00000040U, CS40L5X_WRITE_BE32(0x000000AAU)},
-	{.addr = 0x00003014U, CS40L5X_WRITE_BE32(0x08012E16U)},
-	{.addr = 0x00003808U, CS40L5X_WRITE_BE32(0xC0000004U)},
-	{.addr = 0x0000380CU, CS40L5X_WRITE_BE32(0xC8710230U)},
-	{.addr = 0x0000388CU, CS40L5X_WRITE_BE32(0x04E0FFFFU)},
-	{.addr = 0x0000649CU, CS40L5X_WRITE_BE32(0x01818461U)},
-	{.addr = 0x00000040U, CS40L5X_WRITE_BE32(0x00000000U)},
+static const struct cs40lxx_multi_write cs40l5x_b0_errata[] = {
+	{.addr = 0x00000040U, CS40LXX_MULTI_WRITE_BE32(0x00000055U)},
+	{.addr = 0x00000040U, CS40LXX_MULTI_WRITE_BE32(0x000000AAU)},
+	{.addr = 0x00003014U, CS40LXX_MULTI_WRITE_BE32(0x08012E16U)},
+	{.addr = 0x00003808U, CS40LXX_MULTI_WRITE_BE32(0xC0000004U)},
+	{.addr = 0x0000380CU, CS40LXX_MULTI_WRITE_BE32(0xC8710230U)},
+	{.addr = 0x0000388CU, CS40LXX_MULTI_WRITE_BE32(0x04E0FFFFU)},
+	{.addr = 0x0000649CU, CS40LXX_MULTI_WRITE_BE32(0x01818461U)},
+	{.addr = 0x00000040U, CS40LXX_MULTI_WRITE_BE32(0x00000000U)},
 	{.addr = 0x02BC21B8U,
-	 CS40L5X_WRITE_BE32(0x00000302U, 0x00000001U, 0x00018B41U, 0x00009920U)},
+	 CS40LXX_MULTI_WRITE_BE32(0x00000302U, 0x00000001U, 0x00018B41U, 0x00009920U)},
 };
 
-static const struct cs40l5x_multi_write cs40l5x_b0_errata_external_boost[] = {
-	{.addr = 0x00000040U, CS40L5X_WRITE_BE32(0x00000055U)},
-	{.addr = 0x00000040U, CS40L5X_WRITE_BE32(0x000000AAU)},
-	{.addr = 0x00005C00U, CS40L5X_WRITE_BE32(0x00000400U)},
-	{.addr = 0x00004220U, CS40L5X_WRITE_BE32(0x8000007DU)},
-	{.addr = 0x00004200U, CS40L5X_WRITE_BE32(0x00000008U)},
-	{.addr = 0x00004240U, CS40L5X_WRITE_BE32(0x510002B5U)},
-	{.addr = 0x00006024U, CS40L5X_WRITE_BE32(0x00522303U)},
-	{.addr = 0x00000040U, CS40L5X_WRITE_BE32(0x00000000U)},
+static const struct cs40lxx_multi_write cs40l5x_b0_errata_external_boost[] = {
+	{.addr = 0x00000040U, CS40LXX_MULTI_WRITE_BE32(0x00000055U)},
+	{.addr = 0x00000040U, CS40LXX_MULTI_WRITE_BE32(0x000000AAU)},
+	{.addr = 0x00005C00U, CS40LXX_MULTI_WRITE_BE32(0x00000400U)},
+	{.addr = 0x00004220U, CS40LXX_MULTI_WRITE_BE32(0x8000007DU)},
+	{.addr = 0x00004200U, CS40LXX_MULTI_WRITE_BE32(0x00000008U)},
+	{.addr = 0x00004240U, CS40LXX_MULTI_WRITE_BE32(0x510002B5U)},
+	{.addr = 0x00006024U, CS40LXX_MULTI_WRITE_BE32(0x00522303U)},
+	{.addr = 0x00000040U, CS40LXX_MULTI_WRITE_BE32(0x00000000U)},
 	{.addr = 0x02804348U,
-	 CS40L5X_WRITE_BE32(0x00040020U, 0x00183201U, 0x00050044U, 0x00040100U, 0x00FD0001U,
-			    0x0004005CU, 0x00000400U, 0x00000000U, 0x00422080U, 0x0000007DU,
-			    0x00040042U, 0x00000008U, 0x00050042U, 0x00405100U, 0x00040060U,
-			    0x00242303U, 0x00FFFFFFU)}};
+	 CS40LXX_MULTI_WRITE_BE32(0x00040020U, 0x00183201U, 0x00050044U, 0x00040100U, 0x00FD0001U,
+				  0x0004005CU, 0x00000400U, 0x00000000U, 0x00422080U, 0x0000007DU,
+				  0x00040042U, 0x00000008U, 0x00050042U, 0x00405100U, 0x00040060U,
+				  0x00242303U, 0x00FFFFFFU)}};
 
-static const struct cs40l5x_multi_write cs40l5x_irq_clear[] = {
+static const struct cs40lxx_multi_write cs40l5x_irq_clear[] = {
 	{.addr = CS40L5X_REG_IRQ1_INT_1,
-	 CS40L5X_WRITE_BE32(0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU,
-			    0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU)},
-	{.addr = CS40L5X_REG_IRQ1_INT_14, CS40L5X_WRITE_BE32(0xFFFFFFFFU)},
+	 CS40LXX_MULTI_WRITE_BE32(0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU,
+				  0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU)},
+	{.addr = CS40L5X_REG_IRQ1_INT_14, CS40LXX_MULTI_WRITE_BE32(0xFFFFFFFFU)},
 	{.addr = CS40L5X_REG_IRQ1_INT_18,
-	 CS40L5X_WRITE_BE32(0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU)},
+	 CS40LXX_MULTI_WRITE_BE32(0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU)},
 };
 
-static const struct cs40l5x_multi_write cs40l5x_irq_masks[] = {
-	{.addr = CS40L5X_REG_IRQ1_MASK_1, CS40L5X_WRITE_BE32(0x03FFFFFFU, 0xFFDF7FFFU)},
-	{.addr = CS40L5X_REG_IRQ1_MASK_4, CS40L5X_WRITE_BE32(0xE0FFFFFFU)},
+static const struct cs40lxx_multi_write cs40l5x_irq_masks[] = {
+	{.addr = CS40L5X_REG_IRQ1_MASK_1, CS40LXX_MULTI_WRITE_BE32(0x03FFFFFFU, 0xFFDF7FFFU)},
+	{.addr = CS40L5X_REG_IRQ1_MASK_4, CS40LXX_MULTI_WRITE_BE32(0xE0FFFFFFU)},
 	{.addr = CS40L5X_REG_IRQ1_MASK_8,
-	 CS40L5X_WRITE_BE32(0x7C000FFFU, 0x0101C033U, 0x0000F00CU)},
-	{.addr = CS40L5X_REG_IRQ1_MASK_20, CS40L5X_WRITE_BE32(0x15FFF000U)},
+	 CS40LXX_MULTI_WRITE_BE32(0x7C000FFFU, 0x0101C033U, 0x0000F00CU)},
+	{.addr = CS40L5X_REG_IRQ1_MASK_20, CS40LXX_MULTI_WRITE_BE32(0x15FFF000U)},
 };
 
-static const struct cs40l5x_multi_write cs40l5x_pseq[] = {
+static const struct cs40lxx_multi_write cs40l5x_pseq[] = {
 	{.addr = CS40L5X_REG_WSEQ_POWER,
-	 CS40L5X_WRITE_BE32(
+	 CS40LXX_MULTI_WRITE_BE32(
 		 0x00000000U, 0x00E09003U, 0x00FFFFFFU, 0x000304FFU, 0x00DF7FFFU, 0x00000000U,
 		 0x00E09CE0U, 0x00FFFFFFU, 0x00000000U, 0x00E0AC7CU, 0x00000FFFU, 0x00030401U,
 		 0x0001C033U, 0x00030400U, 0x0000F00CU, 0x00000000U, 0x00E0DC15U, 0x00FFF000U,
@@ -290,20 +280,20 @@ static const struct cs40l5x_multi_write cs40l5x_pseq[] = {
 		 0x00000000U, 0x00004000U, 0x00000000U, CS40L5X_WSEQ_TERMINATOR)},
 };
 
-static const struct cs40l5x_multi_write cs40l5x_pseq_internal[] = {
-	{.addr = CS40L5X_REG_WSEQ_POWER + (cs40l5x_pseq[0].len - 1) * CS40L5X_REG_WIDTH,
-	 CS40L5X_WRITE_BE32(0x00000000U, 0x00201800U, 0x00003321U, 0x00030404U, 0x00000010U,
-			    CS40L5X_WSEQ_TERMINATOR)},
+static const struct cs40lxx_multi_write cs40l5x_pseq_internal[] = {
+	{.addr = CS40L5X_REG_WSEQ_POWER + (cs40l5x_pseq[0].len - 1) * CS40LXX_REGISTER_WIDTH,
+	 CS40LXX_MULTI_WRITE_BE32(0x00000000U, 0x00201800U, 0x00003321U, 0x00030404U, 0x00000010U,
+				  CS40L5X_WSEQ_TERMINATOR)},
 };
 
-static const struct cs40l5x_multi_write cs40l5x_pseq_external[] = {
-	{.addr = CS40L5X_REG_WSEQ_POWER + (cs40l5x_pseq[0].len - 1) * CS40L5X_REG_WIDTH,
-	 CS40L5X_WRITE_BE32(0x00000000U, 0x00201800U, 0x00003201U, 0x00000000U, 0x00440401U,
-			    0x00000000U, 0x00000000U, 0x00004000U, 0x00000055U, 0x00030000U,
-			    0x000000AAU, 0x00000000U, 0x005C0000U, 0x00000400U, 0x00000000U,
-			    0x00420000U, 0x00000008U, 0x00032080U, 0x0000007DU, 0x00032051U,
-			    0x000002B5U, 0x00000000U, 0x00602400U, 0x00522303U, 0x00000000U,
-			    0x00004000U, 0x00000000U, CS40L5X_WSEQ_TERMINATOR)},
+static const struct cs40lxx_multi_write cs40l5x_pseq_external[] = {
+	{.addr = CS40L5X_REG_WSEQ_POWER + (cs40l5x_pseq[0].len - 1) * CS40LXX_REGISTER_WIDTH,
+	 CS40LXX_MULTI_WRITE_BE32(0x00000000U, 0x00201800U, 0x00003201U, 0x00000000U, 0x00440401U,
+				  0x00000000U, 0x00000000U, 0x00004000U, 0x00000055U, 0x00030000U,
+				  0x000000AAU, 0x00000000U, 0x005C0000U, 0x00000400U, 0x00000000U,
+				  0x00420000U, 0x00000008U, 0x00032080U, 0x0000007DU, 0x00032051U,
+				  0x000002B5U, 0x00000000U, 0x00602400U, 0x00522303U, 0x00000000U,
+				  0x00004000U, 0x00000000U, CS40L5X_WSEQ_TERMINATOR)},
 };
 
 /* Source attenuation in decibels (dB) stored in signed Q21.2 format */
@@ -319,78 +309,16 @@ static const uint8_t cs40l5x_src_atten[] = {
 	0x04, 0x04, 0x03, 0x03, 0x03, 0x02, 0x02, 0x01, 0x01, 0x01, 0x00, 0x00 /* 100% */
 };
 
-static bool cs40l5x_is_ready(const struct device *const dev)
-{
-	const struct cs40l5x_config *const config = dev->config;
-
-	return config->bus_io->is_ready(dev);
-}
-
-static const struct device *const cs40l5x_get_control_port(const struct device *const dev)
-{
-	const struct cs40l5x_config *const config = dev->config;
-
-	return config->bus_io->get_device(dev);
-}
-
-static int cs40l5x_read(const struct device *const dev, const uint32_t addr, uint32_t *const rx)
-{
-	const struct cs40l5x_config *const config = dev->config;
-
-	return config->bus_io->read(dev, addr, rx, 1);
-}
-
-static int cs40l5x_burst_read(const struct device *const dev, const uint32_t addr,
-			      uint32_t *const rx, const uint32_t len)
-{
-	const struct cs40l5x_config *const config = dev->config;
-
-	return config->bus_io->read(dev, addr, rx, len);
-}
-
-static int cs40l5x_write(const struct device *const dev, const uint32_t addr, uint32_t val)
-{
-	const struct cs40l5x_config *const config = dev->config;
-
-	return config->bus_io->write(dev, addr, &val, 1);
-}
-
-static int cs40l5x_burst_write(const struct device *const dev, const uint32_t addr,
-			       uint32_t *const tx, const uint32_t len)
-{
-	const struct cs40l5x_config *const config = dev->config;
-
-	return config->bus_io->write(dev, addr, tx, len);
-}
-
-static int cs40l5x_multi_write(const struct device *const dev,
-			       const struct cs40l5x_multi_write *const multi_write,
-			       const uint32_t len)
-{
-	const struct cs40l5x_config *const config = dev->config;
-	int ret;
-
-	for (int i = 0; i < len; i++) {
-		ret = config->bus_io->raw_write(dev, multi_write[i].addr, multi_write[i].buf,
-						multi_write[i].len);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	return 0;
-}
-
 static int cs40l5x_poll(const struct device *const dev, const uint32_t addr, const uint32_t val,
 			const k_timeout_t timeout)
 {
-	__maybe_unused const struct cs40l5x_config *const config = dev->config;
+	const struct cs40l5x_config *const config = dev->config;
 	const k_timepoint_t end = sys_timepoint_calc(timeout);
 	uint32_t reg_val;
 	int ret;
 
 	do {
-		ret = cs40l5x_read(dev, addr, &reg_val);
+		ret = cs40lxx_read(&config->io_bus, addr, &reg_val);
 		if (ret < 0) {
 			return ret;
 		}
@@ -431,11 +359,12 @@ static inline bool cs40l5x_valid_wavetable_source(const struct device *const dev
 static int cs40l5x_write_mailbox(const struct device *const dev, const uint32_t mailbox_command)
 {
 	const k_timepoint_t end = sys_timepoint_calc(CS40L5X_T_WAKESOURCE);
-	__maybe_unused const struct cs40l5x_config *const config = dev->config;
+	const struct cs40l5x_config *const config = dev->config;
 	int ret;
 
 	do {
-		ret = cs40l5x_write(dev, CS40L5X_REG_DSP_VIRTUAL1_MBOX_1, mailbox_command);
+		ret = cs40lxx_write(&config->io_bus, CS40L5X_REG_DSP_VIRTUAL1_MBOX_1,
+				    mailbox_command);
 		if (ret >= 0) {
 			return cs40l5x_poll(dev, CS40L5X_REG_DSP_VIRTUAL1_MBOX_1,
 					    CS40L5X_EXP_MBOX_CLEAR, CS40L5X_T_MBOX_CLEAR);
@@ -451,22 +380,25 @@ static int cs40l5x_write_mailbox(const struct device *const dev, const uint32_t 
 
 static int cs40l5x_increment_mailbox(const struct device *const dev, uint32_t *const mbox_ptr)
 {
+	const struct cs40l5x_config *const config = dev->config;
+
 	if (*mbox_ptr < CS40L5X_REG_DSP_MBOX_8) {
-		*mbox_ptr += CS40L5X_REG_WIDTH;
+		*mbox_ptr += CS40LXX_REGISTER_WIDTH;
 	} else {
 		*mbox_ptr = CS40L5X_REG_DSP_MBOX_2;
 	}
 
-	return cs40l5x_write(dev, CS40L5X_REG_MAILBOX_QUEUE_RD, *mbox_ptr);
+	return cs40lxx_write(&config->io_bus, CS40L5X_REG_MAILBOX_QUEUE_RD, *mbox_ptr);
 }
 
 static int cs40l5x_poll_mailbox(const struct device *const dev, const uint32_t mailbox_command,
 				const k_timeout_t timeout)
 {
+	const struct cs40l5x_config *const config = dev->config;
 	uint32_t mbox_rd_ptr;
 	int ret;
 
-	ret = cs40l5x_read(dev, CS40L5X_REG_MAILBOX_QUEUE_RD, &mbox_rd_ptr);
+	ret = cs40lxx_read(&config->io_bus, CS40L5X_REG_MAILBOX_QUEUE_RD, &mbox_rd_ptr);
 	if (ret < 0) {
 		return ret;
 	}
@@ -481,15 +413,16 @@ static int cs40l5x_poll_mailbox(const struct device *const dev, const uint32_t m
 
 static int cs40l5x_reset_mailbox(const struct device *const dev)
 {
+	const struct cs40l5x_config *const config = dev->config;
 	uint32_t mbox_ptr;
 	int ret;
 
-	ret = cs40l5x_read(dev, CS40L5X_REG_MAILBOX_QUEUE_WT, &mbox_ptr);
+	ret = cs40lxx_read(&config->io_bus, CS40L5X_REG_MAILBOX_QUEUE_WT, &mbox_ptr);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return cs40l5x_write(dev, CS40L5X_REG_MAILBOX_QUEUE_RD, mbox_ptr);
+	return cs40lxx_write(&config->io_bus, CS40L5X_REG_MAILBOX_QUEUE_RD, mbox_ptr);
 }
 
 static int cs40l5x_get_trigger_gpio(const struct device *const dev,
@@ -547,22 +480,22 @@ static void cs40l5x_error_callback(const struct device *const dev, const uint32_
 
 static int cs40l5x_process_mailbox(const struct device *const dev)
 {
-	__maybe_unused const struct cs40l5x_config *const config = dev->config;
 	uint32_t mbox_rd_ptr, mbox_status, mbox_val, mbox_wr_ptr;
+	const struct cs40l5x_config *const config = dev->config;
 	struct cs40l5x_data *const data = dev->data;
 	int ret;
 
-	ret = cs40l5x_read(dev, CS40L5X_REG_MAILBOX_STATUS, &mbox_status);
+	ret = cs40lxx_read(&config->io_bus, CS40L5X_REG_MAILBOX_STATUS, &mbox_status);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40l5x_read(dev, CS40L5X_REG_MAILBOX_QUEUE_RD, &mbox_rd_ptr);
+	ret = cs40lxx_read(&config->io_bus, CS40L5X_REG_MAILBOX_QUEUE_RD, &mbox_rd_ptr);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40l5x_read(dev, CS40L5X_REG_MAILBOX_QUEUE_WT, &mbox_wr_ptr);
+	ret = cs40lxx_read(&config->io_bus, CS40L5X_REG_MAILBOX_QUEUE_WT, &mbox_wr_ptr);
 	if (ret < 0) {
 		return ret;
 	}
@@ -572,7 +505,7 @@ static int cs40l5x_process_mailbox(const struct device *const dev)
 	}
 
 	do {
-		ret = cs40l5x_read(dev, mbox_rd_ptr, &mbox_val);
+		ret = cs40lxx_read(&config->io_bus, mbox_rd_ptr, &mbox_val);
 		if (ret < 0) {
 			return ret;
 		}
@@ -627,13 +560,14 @@ static int cs40l5x_process_mailbox(const struct device *const dev)
 		}
 	} while (mbox_rd_ptr != mbox_wr_ptr);
 
-	return cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT_2, CS40L5X_MASK_DSP_VIRTUAL2_MBOX_WR_INT1);
+	return cs40lxx_write(&config->io_bus, CS40L5X_REG_IRQ1_INT_2,
+			     CS40L5X_MASK_DSP_VIRTUAL2_MBOX_WR_INT1);
 }
 
 static int cs40l5x_process_interrupts(const struct device *const dev,
 				      const uint32_t *const irq_ints)
 {
-	__maybe_unused const struct cs40l5x_config *const config = dev->config;
+	const struct cs40l5x_config *const config = dev->config;
 	uint32_t error_bitmask = 0;
 	int ret;
 
@@ -642,7 +576,8 @@ static int cs40l5x_process_interrupts(const struct device *const dev,
 
 		error_bitmask |= HAPTICS_ERROR_OVERCURRENT;
 
-		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT_1, CS40L5X_MASK_AMP_SHORT_ERR_INT1);
+		ret = cs40lxx_write(&config->io_bus, CS40L5X_REG_IRQ1_INT_1,
+				    CS40L5X_MASK_AMP_SHORT_ERR_INT1);
 		if (ret < 0) {
 			return ret;
 		}
@@ -653,7 +588,8 @@ static int cs40l5x_process_interrupts(const struct device *const dev,
 
 		error_bitmask |= HAPTICS_ERROR_OVERTEMPERATURE;
 
-		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT_8, CS40L5X_MASK_TEMP_ERR_INT1);
+		ret = cs40lxx_write(&config->io_bus, CS40L5X_REG_IRQ1_INT_8,
+				    CS40L5X_MASK_TEMP_ERR_INT1);
 		if (ret < 0) {
 			return ret;
 		}
@@ -664,7 +600,8 @@ static int cs40l5x_process_interrupts(const struct device *const dev,
 
 		error_bitmask |= HAPTICS_ERROR_UNDERVOLTAGE;
 
-		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT_9, CS40L5X_MASK_BST_UVP_ERR_INT1);
+		ret = cs40lxx_write(&config->io_bus, CS40L5X_REG_IRQ1_INT_9,
+				    CS40L5X_MASK_BST_UVP_ERR_INT1);
 		if (ret < 0) {
 			return ret;
 		}
@@ -675,7 +612,8 @@ static int cs40l5x_process_interrupts(const struct device *const dev,
 
 		error_bitmask |= HAPTICS_ERROR_OVERCURRENT;
 
-		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT_9, CS40L5X_MASK_BST_SHORT_ERR_INT1);
+		ret = cs40lxx_write(&config->io_bus, CS40L5X_REG_IRQ1_INT_9,
+				    CS40L5X_MASK_BST_SHORT_ERR_INT1);
 		if (ret < 0) {
 			return ret;
 		}
@@ -684,7 +622,8 @@ static int cs40l5x_process_interrupts(const struct device *const dev,
 	if (FIELD_GET(CS40L5X_MASK_BST_ILIMIT_ERR_INT1, irq_ints[CS40L5X_INT9]) != 0) {
 		LOG_INST_WRN(config->log, "current limited");
 
-		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT_9, CS40L5X_MASK_BST_ILIMIT_ERR_INT1);
+		ret = cs40lxx_write(&config->io_bus, CS40L5X_REG_IRQ1_INT_9,
+				    CS40L5X_MASK_BST_ILIMIT_ERR_INT1);
 		if (ret < 0) {
 			return ret;
 		}
@@ -695,7 +634,7 @@ static int cs40l5x_process_interrupts(const struct device *const dev,
 
 		error_bitmask |= HAPTICS_ERROR_UNDERVOLTAGE;
 
-		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT_10,
+		ret = cs40lxx_write(&config->io_bus, CS40L5X_REG_IRQ1_INT_10,
 				    CS40L5X_MASK_UVLO_VDDBATT_ERR_INT1);
 		if (ret < 0) {
 			return ret;
@@ -712,35 +651,38 @@ static int cs40l5x_process_interrupts(const struct device *const dev,
 static int cs40l5x_retrieve_interrupt_statuses(const struct device *const dev,
 					       uint32_t *const irq_ints)
 {
+	const struct cs40l5x_config *const config = dev->config;
 	uint32_t irq_masks[CS40L5X_NUM_IRQ1_INT];
 	int ret;
 
-	ret = cs40l5x_burst_read(dev, CS40L5X_REG_IRQ1_INT_1, irq_ints, 10);
+	ret = cs40lxx_burst_read(&config->io_bus, CS40L5X_REG_IRQ1_INT_1, irq_ints, 10);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40l5x_read(dev, CS40L5X_REG_IRQ1_INT_14, &irq_ints[CS40L5X_INT14]);
+	ret = cs40lxx_read(&config->io_bus, CS40L5X_REG_IRQ1_INT_14, &irq_ints[CS40L5X_INT14]);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40l5x_burst_read(dev, CS40L5X_REG_IRQ1_INT_18, &irq_ints[CS40L5X_INT18], 5);
+	ret = cs40lxx_burst_read(&config->io_bus, CS40L5X_REG_IRQ1_INT_18, &irq_ints[CS40L5X_INT18],
+				 5);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40l5x_burst_read(dev, CS40L5X_REG_IRQ1_MASK_1, irq_masks, 10);
+	ret = cs40lxx_burst_read(&config->io_bus, CS40L5X_REG_IRQ1_MASK_1, irq_masks, 10);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40l5x_read(dev, CS40L5X_REG_IRQ1_MASK_14, &irq_masks[CS40L5X_INT14]);
+	ret = cs40lxx_read(&config->io_bus, CS40L5X_REG_IRQ1_MASK_14, &irq_masks[CS40L5X_INT14]);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40l5x_burst_read(dev, CS40L5X_REG_IRQ1_MASK_18, &irq_masks[CS40L5X_INT18], 5);
+	ret = cs40lxx_burst_read(&config->io_bus, CS40L5X_REG_IRQ1_MASK_18,
+				 &irq_masks[CS40L5X_INT18], 5);
 	if (ret < 0) {
 		return ret;
 	}
@@ -770,7 +712,7 @@ static void cs40l5x_interrupt_worker(struct k_work *work)
 		return;
 	}
 
-	ret = cs40l5x_read(data->dev, CS40L5X_REG_IRQ1_STATUS, &irq1_status);
+	ret = cs40lxx_read(&config->io_bus, CS40L5X_REG_IRQ1_STATUS, &irq1_status);
 	if (ret < 0) {
 		goto exit_pm;
 	}
@@ -799,7 +741,7 @@ static void cs40l5x_interrupt_worker(struct k_work *work)
 		}
 	}
 
-	ret = cs40l5x_read(data->dev, CS40L5X_REG_IRQ1_STATUS, &irq1_status);
+	ret = cs40lxx_read(&config->io_bus, CS40L5X_REG_IRQ1_STATUS, &irq1_status);
 	if (ret < 0) {
 		goto exit_pm;
 	}
@@ -847,12 +789,14 @@ static int cs40l5x_irq_config(const struct device *const dev)
 		return ret;
 	}
 
-	ret = cs40l5x_multi_write(dev, cs40l5x_irq_masks, ARRAY_SIZE(cs40l5x_irq_masks));
+	ret = cs40lxx_multi_write(&config->io_bus, cs40l5x_irq_masks,
+				  ARRAY_SIZE(cs40l5x_irq_masks));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40l5x_multi_write(dev, cs40l5x_irq_clear, ARRAY_SIZE(cs40l5x_irq_clear));
+	ret = cs40lxx_multi_write(&config->io_bus, cs40l5x_irq_clear,
+				  ARRAY_SIZE(cs40l5x_irq_clear));
 	if (ret < 0) {
 		return ret;
 	}
@@ -865,7 +809,7 @@ static int cs40l5x_irq_config(const struct device *const dev)
 
 static int cs40l5x_click_compensation(const struct device *const dev)
 {
-	__maybe_unused const struct cs40l5x_config *const config = dev->config;
+	const struct cs40l5x_config *const config = dev->config;
 	const struct cs40l5x_data *const data = dev->data;
 	int32_t enable = 0;
 
@@ -874,15 +818,17 @@ static int cs40l5x_click_compensation(const struct device *const dev)
 		return 0;
 	}
 
-	if (cs40l5x_write(dev, CS40L5X_REG_VIBEGEN_F0_OTP_STORED, data->calibration.f0) >= 0) {
+	if (cs40lxx_write(&config->io_bus, CS40L5X_REG_VIBEGEN_F0_OTP_STORED,
+			  data->calibration.f0) >= 0) {
 		enable |= CS40L5X_WRITE_F0_COMP_ENABLE;
 	}
 
-	if (cs40l5x_write(dev, CS40L5X_REG_VIBEGEN_REDC_OTP_STORED, data->calibration.redc) >= 0) {
+	if (cs40lxx_write(&config->io_bus, CS40L5X_REG_VIBEGEN_REDC_OTP_STORED,
+			  data->calibration.redc) >= 0) {
 		enable |= CS40L5X_WRITE_REDC_COMP_ENABLE;
 	}
 
-	return cs40l5x_write(dev, CS40L5X_REG_VIBEGEN_COMPENSATION_ENABLE, enable);
+	return cs40lxx_write(&config->io_bus, CS40L5X_REG_VIBEGEN_COMPENSATION_ENABLE, enable);
 }
 
 static inline bool cs40l5x_is_memory_erased(const struct cs40l5x_calibration *const calibration)
@@ -953,15 +899,15 @@ static int cs40l5x_pseq_config(const struct device *const dev)
 	const struct cs40l5x_config *const config = dev->config;
 	int ret;
 
-	ret = cs40l5x_multi_write(dev, cs40l5x_pseq, ARRAY_SIZE(cs40l5x_pseq));
+	ret = cs40lxx_multi_write(&config->io_bus, cs40l5x_pseq, ARRAY_SIZE(cs40l5x_pseq));
 	if (ret < 0) {
 		return ret;
 	}
 
 	return (config->external_boost != NULL)
-		       ? cs40l5x_multi_write(dev, cs40l5x_pseq_external,
+		       ? cs40lxx_multi_write(&config->io_bus, cs40l5x_pseq_external,
 					     ARRAY_SIZE(cs40l5x_pseq_external))
-		       : cs40l5x_multi_write(dev, cs40l5x_pseq_internal,
+		       : cs40lxx_multi_write(&config->io_bus, cs40l5x_pseq_internal,
 					     ARRAY_SIZE(cs40l5x_pseq_internal));
 }
 
@@ -985,7 +931,8 @@ static int cs40l5x_dsp_config(const struct device *const dev)
 	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_DYNAMIC_F0)) {
-		return cs40l5x_write(dev, CS40L5X_REG_DYNAMIC_F0, CS40L5X_WRITE_DYNAMIC_F0_ENABLE);
+		return cs40lxx_write(&config->io_bus, CS40L5X_REG_DYNAMIC_F0,
+				     CS40L5X_WRITE_DYNAMIC_F0_ENABLE);
 	}
 
 	return 0;
@@ -993,6 +940,7 @@ static int cs40l5x_dsp_config(const struct device *const dev)
 
 static int cs40l5x_timeout_config(const struct device *const dev)
 {
+	const struct cs40l5x_config *const config = dev->config;
 	uint32_t active_timeout[2], standby_timeout[2];
 	int ret;
 
@@ -1002,13 +950,13 @@ static int cs40l5x_timeout_config(const struct device *const dev)
 	standby_timeout[0] = FIELD_GET(GENMASK(23, 0), CONFIG_HAPTICS_CS40L5X_PM_STDBY_TIMEOUT_MS);
 	standby_timeout[1] = FIELD_GET(GENMASK(31, 24), CONFIG_HAPTICS_CS40L5X_PM_STDBY_TIMEOUT_MS);
 
-	ret = cs40l5x_burst_write(dev, CS40L5X_REG_ACTIVE_TIMEOUT, active_timeout,
+	ret = cs40lxx_burst_write(&config->io_bus, CS40L5X_REG_ACTIVE_TIMEOUT, active_timeout,
 				  ARRAY_SIZE(active_timeout));
 	if (ret < 0) {
 		return ret;
 	}
 
-	return cs40l5x_burst_write(dev, CS40L5X_REG_STDBY_TIMEOUT, standby_timeout,
+	return cs40lxx_burst_write(&config->io_bus, CS40L5X_REG_STDBY_TIMEOUT, standby_timeout,
 				   ARRAY_SIZE(standby_timeout));
 }
 
@@ -1017,13 +965,14 @@ static int cs40l5x_write_errata(const struct device *const dev)
 	const struct cs40l5x_config *const config = dev->config;
 	int ret;
 
-	ret = cs40l5x_multi_write(dev, cs40l5x_b0_errata, ARRAY_SIZE(cs40l5x_b0_errata));
+	ret = cs40lxx_multi_write(&config->io_bus, cs40l5x_b0_errata,
+				  ARRAY_SIZE(cs40l5x_b0_errata));
 	if (ret < 0) {
 		return ret;
 	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_EXTERNAL_BOOST) && config->external_boost != NULL) {
-		return cs40l5x_multi_write(dev, cs40l5x_b0_errata_external_boost,
+		return cs40lxx_multi_write(&config->io_bus, cs40l5x_b0_errata_external_boost,
 					   ARRAY_SIZE(cs40l5x_b0_errata_external_boost));
 	}
 
@@ -1041,25 +990,25 @@ static int cs40l5x_boost_configuration(const struct device *const dev)
 
 	return (!IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERNAL_BOOST) ||
 		config->external_boost != NULL)
-		       ? cs40l5x_multi_write(dev, cs40l5x_b0_external_boost,
+		       ? cs40lxx_multi_write(&config->io_bus, cs40l5x_b0_external_boost,
 					     ARRAY_SIZE(cs40l5x_b0_external_boost))
-		       : cs40l5x_multi_write(dev, cs40l5x_b0_internal_boost,
+		       : cs40lxx_multi_write(&config->io_bus, cs40l5x_b0_internal_boost,
 					     ARRAY_SIZE(cs40l5x_b0_internal_boost));
 }
 
 static int cs40l5x_fingerprint(const struct device *const dev)
 {
-	__maybe_unused const struct cs40l5x_config *const config = dev->config;
+	const struct cs40l5x_config *const config = dev->config;
 	struct cs40l5x_data *const data = dev->data;
 	uint32_t otpid, rx[2];
 	int ret;
 
-	ret = cs40l5x_burst_read(dev, CS40L5X_REG_DEVID, rx, ARRAY_SIZE(rx));
+	ret = cs40lxx_burst_read(&config->io_bus, CS40L5X_REG_DEVID, rx, ARRAY_SIZE(rx));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40l5x_read(dev, CS40L5X_REG_OTPID, &otpid);
+	ret = cs40lxx_read(&config->io_bus, CS40L5X_REG_OTPID, &otpid);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1111,7 +1060,8 @@ static int cs40l5x_reset(const struct device *const dev)
 
 		ret = gpio_pin_set_dt(&config->reset_gpio, CS40L5X_GPIO_INACTIVE);
 	} else {
-		ret = cs40l5x_write(dev, CS40L5X_REG_SFT_RESET, CS40L5X_WRITE_SFT_RESET);
+		ret = cs40lxx_write(&config->io_bus, CS40L5X_REG_SFT_RESET,
+				    CS40L5X_WRITE_SFT_RESET);
 	}
 	if (ret < 0) {
 		return ret;
@@ -1210,7 +1160,7 @@ static int cs40l5x_bringup(const struct device *const dev)
 		}
 	}
 
-	return cs40l5x_write(dev, CS40L5X_REG_BUZZ_RES, CS40L5X_BUZ_1MS_RES);
+	return cs40lxx_write(&config->io_bus, CS40L5X_REG_BUZZ_RES, CS40L5X_BUZ_1MS_RES);
 }
 
 #if CONFIG_PM_DEVICE
@@ -1288,7 +1238,7 @@ static int cs40l5x_calibrate_redc(const struct device *const dev, uint32_t *cons
 		return ret;
 	}
 
-	return cs40l5x_read(dev, CS40L5X_REG_CALIB_REDC_EST, redc);
+	return cs40lxx_read(&config->io_bus, CS40L5X_REG_CALIB_REDC_EST, redc);
 }
 
 static int cs40l5x_calibrate_f0(const struct device *const dev, uint32_t *const f0)
@@ -1319,12 +1269,13 @@ static int cs40l5x_calibrate_f0(const struct device *const dev, uint32_t *const 
 		return ret;
 	}
 
-	return cs40l5x_read(dev, CS40L5X_REG_F0_EST, f0);
+	return cs40lxx_read(&config->io_bus, CS40L5X_REG_F0_EST, f0);
 }
 
 static int cs40l5x_run_calibration(const struct device *const dev, uint32_t *const redc,
 				   uint32_t *const f0)
 {
+	const struct cs40l5x_config *const config = dev->config;
 	int ret;
 
 	ret = cs40l5x_calibrate_redc(dev, redc);
@@ -1332,7 +1283,7 @@ static int cs40l5x_run_calibration(const struct device *const dev, uint32_t *con
 		return ret;
 	}
 
-	ret = cs40l5x_write(dev, CS40L5X_REG_REDC, *redc);
+	ret = cs40lxx_write(&config->io_bus, CS40L5X_REG_REDC, *redc);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1407,7 +1358,7 @@ error_pm:
 int cs40l5x_configure_buzz(const struct device *const dev, const uint32_t frequency,
 			   const uint8_t level, const uint32_t duration)
 {
-	__maybe_unused const struct cs40l5x_config *const config = dev->config;
+	const struct cs40l5x_config *const config = dev->config;
 	struct cs40l5x_data *const data = dev->data;
 	int ret;
 
@@ -1422,17 +1373,17 @@ int cs40l5x_configure_buzz(const struct device *const dev, const uint32_t freque
 		goto error_pm;
 	}
 
-	ret = cs40l5x_write(dev, CS40L5X_REG_BUZZ_FREQ, frequency);
+	ret = cs40lxx_write(&config->io_bus, CS40L5X_REG_BUZZ_FREQ, frequency);
 	if (ret < 0) {
 		goto error_mutex;
 	}
 
-	ret = cs40l5x_write(dev, CS40L5X_REG_BUZZ_LEVEL, level);
+	ret = cs40lxx_write(&config->io_bus, CS40L5X_REG_BUZZ_LEVEL, level);
 	if (ret < 0) {
 		goto error_mutex;
 	}
 
-	ret = cs40l5x_write(dev, CS40L5X_REG_BUZZ_DURATION, duration);
+	ret = cs40lxx_write(&config->io_bus, CS40L5X_REG_BUZZ_DURATION, duration);
 
 error_mutex:
 	(void)k_mutex_unlock(&data->lock);
@@ -1497,7 +1448,8 @@ int cs40l5x_configure_trigger(const struct device *const dev, const struct gpio_
 
 	address = (edge == CS40L5X_RISING_EDGE) ? gpios->rising_edge : gpios->falling_edge;
 
-	ret = cs40l5x_write(dev, CS40L5X_REG_GPIO_EVENT_BASE | (uint32_t)address[i], playback);
+	ret = cs40lxx_write(&config->io_bus, CS40L5X_REG_GPIO_EVENT_BASE | (uint32_t)address[i],
+			    playback);
 
 	(void)k_mutex_unlock(&data->lock);
 
@@ -1509,7 +1461,7 @@ error_pm:
 
 int cs40l5x_logger(const struct device *const dev, enum cs40l5x_logger logger_state)
 {
-	__maybe_unused const struct cs40l5x_config *const config = dev->config;
+	const struct cs40l5x_config *const config = dev->config;
 	struct cs40l5x_data *const data = dev->data;
 	int ret;
 
@@ -1529,7 +1481,7 @@ int cs40l5x_logger(const struct device *const dev, enum cs40l5x_logger logger_st
 		goto error_pm;
 	}
 
-	ret = cs40l5x_write(dev, CS40L5X_REG_LOGGER_ENABLE, (uint32_t)logger_state);
+	ret = cs40lxx_write(&config->io_bus, CS40L5X_REG_LOGGER_ENABLE, (uint32_t)logger_state);
 
 	(void)k_mutex_unlock(&data->lock);
 
@@ -1542,7 +1494,7 @@ error_pm:
 int cs40l5x_logger_get(const struct device *const dev, enum cs40l5x_logger_source source,
 		       enum cs40l5x_logger_source_type type, uint32_t *const value)
 {
-	__maybe_unused const struct cs40l5x_config *const config = dev->config;
+	const struct cs40l5x_config *const config = dev->config;
 	struct cs40l5x_data *const data = dev->data;
 	int offset, ret;
 
@@ -1564,7 +1516,7 @@ int cs40l5x_logger_get(const struct device *const dev, enum cs40l5x_logger_sourc
 		goto error_pm;
 	}
 
-	ret = cs40l5x_read(dev, CS40L5X_REG_LOGGER_DATA + offset, value);
+	ret = cs40lxx_read(&config->io_bus, CS40L5X_REG_LOGGER_DATA + offset, value);
 
 	(void)k_mutex_unlock(&data->lock);
 
@@ -1629,7 +1581,7 @@ int cs40l5x_select_output(const struct device *const dev, const enum cs40l5x_ban
 
 int cs40l5x_set_gain(const struct device *const dev, const uint8_t gain)
 {
-	__maybe_unused const struct cs40l5x_config *const config = dev->config;
+	const struct cs40l5x_config *const config = dev->config;
 	struct cs40l5x_data *const data = dev->data;
 	uint32_t attenuation;
 	int ret;
@@ -1652,7 +1604,7 @@ int cs40l5x_set_gain(const struct device *const dev, const uint8_t gain)
 
 	attenuation = (gain == 0) ? CS40L5X_MAX_ATTENUATION : (uint32_t)cs40l5x_src_atten[gain];
 
-	ret = cs40l5x_write(data->dev, CS40L5X_REG_SOURCE_ATTENUATION, attenuation);
+	ret = cs40lxx_write(&config->io_bus, CS40L5X_REG_SOURCE_ATTENUATION, attenuation);
 
 	(void)k_mutex_unlock(&data->lock);
 
@@ -1724,25 +1676,28 @@ static int cs40l5x_upload_pcm_header(const struct device *const dev,
 				     const enum cs40l5x_custom_index index, const uint16_t redc,
 				     const uint16_t f0, const uint16_t num_samples)
 {
+	const struct cs40l5x_config *const config = dev->config;
 	uint32_t header[2];
 	int ret;
 
 	header[0] = FIELD_PREP(GENMASK(21, 0), num_samples);
 	header[1] = FIELD_PREP(GENMASK(23, 12), f0) | FIELD_PREP(GENMASK(11, 0), redc);
 
-	ret = cs40l5x_write(dev, cs40l5x_custom_header(index, CS40L5X_HEADER_1), CS40L5X_WRITE_PCM);
+	ret = cs40lxx_write(&config->io_bus, cs40l5x_custom_header(index, CS40L5X_HEADER_1),
+			    CS40L5X_WRITE_PCM);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return cs40l5x_burst_write(dev, cs40l5x_custom_header(index, CS40L5X_HEADER_2), header,
-				   ARRAY_SIZE(header));
+	return cs40lxx_burst_write(&config->io_bus, cs40l5x_custom_header(index, CS40L5X_HEADER_2),
+				   header, ARRAY_SIZE(header));
 }
 
 static int cs40l5x_upload_pcm_data(const struct device *const dev,
 				   const enum cs40l5x_custom_index index,
 				   const int8_t *const samples, const uint16_t num_samples)
 {
+	const struct cs40l5x_config *const config = dev->config;
 	uint32_t addr, offset, sample;
 	uint8_t current_word = 0;
 	uint16_t i = 0;
@@ -1764,10 +1719,10 @@ static int cs40l5x_upload_pcm_data(const struct device *const dev,
 			i += 1;
 		}
 
-		offset = current_word * CS40L5X_REG_WIDTH;
+		offset = current_word * CS40LXX_REGISTER_WIDTH;
 		current_word += 1;
 
-		ret = cs40l5x_write(dev, addr + offset, sample);
+		ret = cs40lxx_write(&config->io_bus, addr + offset, sample);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1831,6 +1786,7 @@ static int cs40l5x_upload_pwle_header(const struct device *const dev,
 				      const struct cs40l5x_pwle_section *const sections,
 				      const uint8_t num_sections)
 {
+	const struct cs40l5x_config *const config = dev->config;
 	uint32_t header[4];
 	int ret;
 
@@ -1842,14 +1798,14 @@ static int cs40l5x_upload_pwle_header(const struct device *const dev,
 		    FIELD_PREP(GENMASK(15, 4), CS40L5X_PWLE_DEFAULT_FREQ) |
 		    FIELD_PREP(GENMASK(3, 0), CS40L5X_PWLE_DEFAULT_FLAGS);
 
-	ret = cs40l5x_write(dev, cs40l5x_custom_header(index, CS40L5X_HEADER_1),
+	ret = cs40lxx_write(&config->io_bus, cs40l5x_custom_header(index, CS40L5X_HEADER_1),
 			    CS40L5X_WRITE_PWLE);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return cs40l5x_burst_write(dev, cs40l5x_custom_header(index, CS40L5X_HEADER_2), header,
-				   ARRAY_SIZE(header));
+	return cs40lxx_burst_write(&config->io_bus, cs40l5x_custom_header(index, CS40L5X_HEADER_2),
+				   header, ARRAY_SIZE(header));
 }
 
 static int cs40l5x_upload_pwle_data(const struct device *const dev,
@@ -1857,19 +1813,20 @@ static int cs40l5x_upload_pwle_data(const struct device *const dev,
 				    const struct cs40l5x_pwle_section *const sections,
 				    const uint8_t num_sections)
 {
+	const struct cs40l5x_config *const config = dev->config;
 	uint32_t addr, offset, word;
 	uint8_t current_word = 0;
 	int ret;
 
-	addr = cs40l5x_custom_header(index, CS40L5X_HEADER_2) + 4 * CS40L5X_REG_WIDTH;
+	addr = cs40l5x_custom_header(index, CS40L5X_HEADER_2) + 4 * CS40LXX_REGISTER_WIDTH;
 
 	for (int i = 1; i < num_sections; i++) {
 		word = FIELD_PREP(GENMASK(19, 4), sections[i].duration) |
 		       FIELD_PREP(GENMASK(3, 0), FIELD_GET(GENMASK(11, 8), sections[i].level));
 
-		offset = (current_word++ * CS40L5X_REG_WIDTH);
+		offset = (current_word++ * CS40LXX_REGISTER_WIDTH);
 
-		ret = cs40l5x_write(dev, addr + offset, word);
+		ret = cs40lxx_write(&config->io_bus, addr + offset, word);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1878,9 +1835,9 @@ static int cs40l5x_upload_pwle_data(const struct device *const dev,
 		       FIELD_PREP(GENMASK(15, 4), sections[i].frequency) |
 		       FIELD_PREP(GENMASK(3, 0), sections[i].flags);
 
-		offset = (current_word++ * CS40L5X_REG_WIDTH);
+		offset = (current_word++ * CS40LXX_REGISTER_WIDTH);
 
-		ret = cs40l5x_write(dev, addr + offset, word);
+		ret = cs40lxx_write(&config->io_bus, addr + offset, word);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1965,7 +1922,7 @@ static int cs40l5x_pm_resume(const struct device *const dev)
 		}
 	}
 
-	ret = pm_device_runtime_get(cs40l5x_get_control_port(dev));
+	ret = pm_device_runtime_get(cs40lxx_get_control_port(&config->io_bus));
 	if (ret < 0) {
 		return ret;
 	}
@@ -1994,7 +1951,7 @@ static int cs40l5x_pm_suspend(const struct device *const dev)
 
 	LOG_INST_DBG(config->log, "allowing hibernation");
 
-	(void)pm_device_runtime_put(cs40l5x_get_control_port(dev));
+	(void)pm_device_runtime_put(cs40lxx_get_control_port(&config->io_bus));
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_EXTERNAL_BOOST) && config->external_boost != NULL) {
 		ret = regulator_disable(config->external_boost);
@@ -2049,7 +2006,7 @@ static int cs40l5x_pm_turn_on(const struct device *const dev)
 		}
 	}
 
-	ret = pm_device_runtime_get(cs40l5x_get_control_port(dev));
+	ret = pm_device_runtime_get(cs40lxx_get_control_port(&config->io_bus));
 	if (ret < 0) {
 		goto error_pm_reset;
 	}
@@ -2067,7 +2024,7 @@ static int cs40l5x_pm_turn_on(const struct device *const dev)
 	}
 
 error_pm_io:
-	(void)pm_device_runtime_put(cs40l5x_get_control_port(dev));
+	(void)pm_device_runtime_put(cs40lxx_get_control_port(&config->io_bus));
 
 error_pm_reset:
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_RESET) && config->reset_gpio.port != NULL) {
@@ -2113,7 +2070,7 @@ static int cs40l5x_init(const struct device *dev)
 		k_work_init_delayable(&data->interrupt_worker, cs40l5x_interrupt_worker);
 	}
 
-	if (!cs40l5x_is_ready(dev)) {
+	if (!cs40lxx_is_bus_ready(&config->io_bus)) {
 		LOG_INST_DBG(config->log, "control port is not ready");
 		return -ENODEV;
 	}
@@ -2248,9 +2205,9 @@ __maybe_unused static int cs40l5x_deinit(const struct device *dev)
 
 #define HAPTICS_CS40L5X_BUS(inst)                                                                  \
 	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),	\
-		(.bus.i2c = I2C_DT_SPEC_INST_GET(inst), .bus_io = &cs40l5x_bus_io_i2c,),	   \
-		(.bus.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER),		   \
-			.bus_io = &cs40l5x_bus_io_spi,))
+		(.io_bus.bus.i2c = I2C_DT_SPEC_INST_GET(inst), .io_bus.io = &cs40lxx_io_i2c,),	   \
+		(.io_bus.bus.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER),		   \
+			.io_bus.io = &cs40lxx_io_spi,))
 
 #define HAPTICS_CS40L5X_CONFIG(inst, name, id)                                                     \
 	.dev = DEVICE_DT_INST_GET(inst), .dev_id = id,                                             \

@@ -120,7 +120,7 @@ int cs40l26_firmware_read(const struct device *const dev, const uint32_t firmwar
 		return ret;
 	}
 
-	return config->bus_io->read(dev, firmware_address, rx, 1);
+	return cs40lxx_read(&config->io_bus, firmware_address, rx);
 }
 
 int cs40l26_firmware_burst_write(const struct device *const dev, const uint32_t firmware_control,
@@ -135,7 +135,7 @@ int cs40l26_firmware_burst_write(const struct device *const dev, const uint32_t 
 		return ret;
 	}
 
-	return config->bus_io->write(dev, firmware_address, tx, len);
+	return cs40lxx_burst_write(&config->io_bus, firmware_address, tx, len);
 }
 
 int cs40l26_firmware_write(const struct device *const dev, const uint32_t firmware_control,
@@ -156,11 +156,11 @@ int cs40l26_firmware_raw_write(const struct device *const dev, const uint32_t fi
 		return ret;
 	}
 
-	return config->bus_io->raw_write(dev, firmware_address, tx, len);
+	return cs40lxx_raw_burst_write(&config->io_bus, firmware_address, tx, len);
 }
 
 int cs40l26_firmware_multi_write(const struct device *const dev,
-				 const struct cs40l26_multi_write *const multi_write,
+				 const struct cs40lxx_multi_write *const multi_write,
 				 const uint32_t len)
 {
 	const struct cs40l26_config *const config = dev->config;
@@ -173,8 +173,8 @@ int cs40l26_firmware_multi_write(const struct device *const dev,
 			return ret;
 		}
 
-		ret = config->bus_io->raw_write(dev, firmware_address, multi_write[i].buf,
-						multi_write[i].len);
+		ret = cs40lxx_raw_burst_write(&config->io_bus, firmware_address, multi_write[i].buf,
+					      multi_write[i].len);
 		if (ret < 0) {
 			return ret;
 		}
