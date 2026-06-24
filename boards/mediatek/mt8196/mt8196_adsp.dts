@@ -9,6 +9,12 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	host_dma: dma {
+		compatible = "mediatek,sof-host-dma";
+		dma-channels = <32>;
+		#dma-cells = <0>;
+	};
+
 	sram0: memory@4e100000 {
 		device_type = "memory";
 		compatible = "mmio-sram";

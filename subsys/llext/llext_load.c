@@ -51,18 +51,29 @@ const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct llext *ext, u
 	}
 
 	elf_shdr_t *shdr = ext->sect_hdrs + sh_ndx;
+	enum llext_mem mem_idx = ldr->sect_map[sh_ndx].mem_idx;
 
-	if (shdr->sh_addr < 0x08000000) {
+	/* For relocatable ELFs (ET_REL), all sections have sh_addr=0.
+	 * Always prefer the sect_map runtime DRAM address when the section
+	 * has been loaded (mem_idx != LLEXT_MEM_COUNT), so that relocation
+	 * uses the runtime address rather than the file-image (IMR/ROM)
+	 * pointer that llext_peek() would return.
+	 *
+	 * Only fall back to llext_peek() for sections with a valid linked
+	 * address (sh_addr >= 0x08000000) that are NOT in the sect_map
+	 * (e.g. pre-located read-only sections in ROM/IMR).
+	 * For ET_REL sections (sh_addr=0), return NULL so callers fall back
+	 * to llext_peek() themselves with appropriate error handling.
+	 */
+	if (mem_idx != LLEXT_MEM_COUNT) {
+		return (const uint8_t *)ext->mem[mem_idx] + ldr->sect_map[sh_ndx].offset;
+	}
+
+	if (shdr->sh_addr >= 0x08000000) {
 		return llext_peek(ldr, shdr->sh_offset);
 	}
 
-	enum llext_mem mem_idx = ldr->sect_map[sh_ndx].mem_idx;
-
-	if (mem_idx == LLEXT_MEM_COUNT) {
-		return NULL;
-	}
-
-	return (const uint8_t *)ext->mem[mem_idx] + ldr->sect_map[sh_ndx].offset;
+	return NULL;
 }
 
 /*
