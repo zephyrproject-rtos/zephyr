@@ -339,6 +339,8 @@ class BuildInfo(TypedDict, total=False):
     # CMake generator and version
     cmake_generator: str
     cmake_version: str
+    # build environment variables, keyed by name (e.g. BOARD, ARCH)
+    environment: dict[str, str]
 
 
 @dataclass

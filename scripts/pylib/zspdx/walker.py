@@ -300,6 +300,20 @@ class Walker:
             build_info["cmake_generator"] = self.cmake_info.generator_name
             build_info["cmake_version"] = self.cmake_info.version_string
 
+        # build environment: Zephyr config inputs surfaced as build_environment
+        environment = {}
+        for var in (
+            "BOARD",
+            "ARCH",
+            "ZEPHYR_TOOLCHAIN_VARIANT",
+            "ZEPHYR_SDK_INSTALL_DIR",
+            "CMAKE_BUILD_TYPE",
+        ):
+            value = self.cmake_cache.get(var, "")
+            if value:
+                environment[var] = value
+        build_info["environment"] = environment
+
         # linker and archiver versions are not in toolchains-v1; query the tools
         for version_key, path in (
             ("linker_version", build_info["cmake_linker"]),
@@ -586,15 +600,36 @@ class Walker:
             # get its target dependencies
             self.collect_target_dependencies(cfg_targets, cfg_target, component)
 
-    # capture the per-target metadata the SPDX 3.0 Build profile needs to
-    # attribute a compiler/archiver to each artifact: the CMake target type and
-    # the languages compiled into it
+    # capture the per-target metadata the SPDX 3.0 Build profile needs to attribute a compiler/
+    # archiver to each artifact: target type, compiled languages and per-language compile flags
     def capture_build_metadata(self, cfg_target, component):
         target = cfg_target.target
         component.metadata["target_type"] = target.type.name
-        languages = sorted({cg.language for cg in target.compile_groups if cg.language})
+
+        languages = set()
+        compile_flags = {}
+        compile_defines = {}
+        for cg in target.compile_groups:
+            if not cg.language:
+                continue
+            languages.add(cg.language)
+            flags = [frag for frag in (cg.compile_command_fragments or []) if frag]
+            if flags:
+                compile_flags.setdefault(cg.language, []).extend(flags)
+            defines = [f"-D{d.define}" for d in (cg.defines or []) if d.define]
+            if defines:
+                compile_defines.setdefault(cg.language, []).extend(defines)
+
         if languages:
-            component.metadata["compile_languages"] = languages
+            component.metadata["compile_languages"] = sorted(languages)
+        if compile_flags:
+            component.metadata["compile_flags"] = {
+                lang: " ".join(flags) for lang, flags in compile_flags.items()
+            }
+        if compile_defines:
+            component.metadata["compile_defines"] = {
+                lang: " ".join(defs) for lang, defs in compile_defines.items()
+            }
 
     # build a Component for the given ConfigTarget
     def init_config_target_component(self, cfg_target):
