@@ -178,6 +178,9 @@ void condvar_wait_wake_task(void *p1, void *p2, void *p3)
  *
  * @see k_condvar_wait()
  * @see k_condvar_signal()
+ * @verifies ZEP-SRS-21-1
+ * @verifies ZEP-SRS-21-5
+ * @verifies ZEP-SRS-21-9
  */
 ZTEST_USER(condvar_tests, test_condvar_wait_forever_wake)
 {
@@ -219,6 +222,8 @@ ZTEST_USER(condvar_tests, test_condvar_wait_forever_wake)
  *
  * @see k_condvar_wait()
  * @see k_condvar_signal()
+ * @verifies ZEP-SRS-21-6
+ * @verifies ZEP-SRS-21-9
  */
 ZTEST_USER(condvar_tests, test_condvar_wake_before_timeout)
 {
@@ -259,6 +264,8 @@ ZTEST_USER(condvar_tests, test_condvar_wake_before_timeout)
  * - k_condvar_wait() returns -EAGAIN (verified in condvar_wait_task()).
  *
  * @see k_condvar_wait()
+ * @verifies ZEP-SRS-21-6
+ * @verifies ZEP-SRS-21-7
  */
 ZTEST_USER(condvar_tests, test_condvar_wait_timeout)
 {
@@ -296,6 +303,8 @@ ZTEST_USER(condvar_tests, test_condvar_wait_timeout)
  *
  * @see k_condvar_wait()
  * @see k_thread_join()
+ * @brief Test k_condvar_wait() forever
+ * @verifies ZEP-SRS-21-5
  */
 ZTEST_USER(condvar_tests, test_condvar_wait_forever)
 {
@@ -331,6 +340,7 @@ ZTEST_USER(condvar_tests, test_condvar_wait_forever)
  * - k_condvar_wait() returns -EAGAIN (verified in condvar_wait_task()).
  *
  * @see k_condvar_wait()
+ * @verifies ZEP-SRS-21-5
  */
 ZTEST_USER(condvar_tests, test_condvar_wait_nowait)
 {
@@ -362,6 +372,8 @@ ZTEST_USER(condvar_tests, test_condvar_wait_nowait)
  *
  * @see k_condvar_wait()
  * @see k_condvar_signal()
+ * @verifies ZEP-SRS-21-5
+ * @verifies ZEP-SRS-21-9
  */
 ZTEST_USER(condvar_tests, test_condvar_nowait_returns_eagain)
 {
@@ -405,6 +417,7 @@ ZTEST_USER(condvar_tests, test_condvar_nowait_returns_eagain)
  *
  * @see k_condvar_wait()
  * @see k_condvar_signal()
+ * @verifies ZEP-SRS-21-9
  */
 ZTEST(condvar_tests, test_condvar_wait_forever_wake_from_isr)
 {
@@ -440,6 +453,9 @@ ZTEST(condvar_tests, test_condvar_wait_forever_wake_from_isr)
  *
  * @see k_condvar_broadcast()
  * @see k_condvar_wait()
+
+ * @verifies ZEP-SRS-21-4
+ * @verifies ZEP-SRS-21-9
  */
 ZTEST_USER(condvar_tests, test_condvar_multiple_threads_wait_wake)
 {
@@ -543,6 +559,8 @@ void condvar_multiple_wake_task(void *p1, void *p2, void *p3)
  *
  * @see k_condvar_signal()
  * @see k_condvar_broadcast()
+ * @verifies ZEP-SRS-21-4
+ * @verifies ZEP-SRS-21-9
  */
 ZTEST_USER(condvar_tests, test_multiple_condvar_wait_wake)
 {
@@ -615,6 +633,7 @@ static void cond_init_null(void *p1, void *p2, void *p3)
  *   in cond_init_null() is never reached.
  *
  * @see k_condvar_init()
+ * @verifies ZEP-SRS-21-1
  */
 ZTEST_USER(condvar_tests, test_condvar_init_null)
 {
@@ -685,6 +704,7 @@ static void cond_wait_null(void *p1, void *p2, void *p3)
  *   in cond_signal_null() is never reached.
  *
  * @see k_condvar_signal()
+ * @verifies ZEP-SRS-21-3
  */
 ZTEST_USER(condvar_tests, test_condvar_signal_null)
 {
@@ -709,6 +729,7 @@ ZTEST_USER(condvar_tests, test_condvar_signal_null)
  *   ztest_test_fail() in cond_broadcast_null() is never reached.
  *
  * @see k_condvar_broadcast()
+ * @verifies ZEP-SRS-21-4
  */
 ZTEST_USER(condvar_tests, test_condvar_broadcast_null)
 {
@@ -735,6 +756,7 @@ ZTEST_USER(condvar_tests, test_condvar_broadcast_null)
  *   ztest_test_fail() in cond_wait_null() is never reached.
  *
  * @see k_condvar_wait()
+ * @verifies ZEP-SRS-21-5
  */
 ZTEST_USER(condvar_tests, test_condvar_wait_null)
 {
@@ -849,6 +871,8 @@ void _condvar_usecase(long multi)
  *
  * @see k_condvar_signal()
  * @see k_condvar_wait()
+ * @verifies ZEP-SRS-21-3
+ * @verifies ZEP-SRS-21-8
  */
 ZTEST_USER(condvar_tests, test_condvar_usecase_signal)
 {
@@ -920,6 +944,8 @@ static void *condvar_tests_setup(void)
  *
  * @see k_condvar_wait()
  * @see k_mutex_unlock()
+ * @verifies ZEP-SRS-21-7
+ * @verifies ZEP-SRS-21-8
  */
 ZTEST(condvar_tests, test_condvar_wait_timeout_relocks_mutex)
 {
