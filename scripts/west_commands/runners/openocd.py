@@ -142,16 +142,21 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt'},
-                          rtt=True, erase=True, skip_load=True, file=True)
+                          dev_id=True, rtt=True, erase=True, skip_load=True, file=True)
+
+    @classmethod
+    def dev_id_help(cls) -> str:
+        return '''Selects the debug adapter by its serial number. The value is
+                  passed to the OpenOCD config as _ZEPHYR_BOARD_SERIAL.'''
 
     @classmethod
     def do_add_parser(cls, parser):
         parser.add_argument('--config', action='append',
                             help='''if given, override default config file;
                             may be given multiple times''')
-        parser.add_argument('--serial', default="",
-                            help='''if given, selects FTDI instance by its serial number,
-                            defaults to empty''')
+        parser.add_argument('--serial', dest='dev_id', default="",
+                            help='''Deprecated: use -i/--dev-id instead. Selects the
+                            debug adapter by its serial number.''')
         # Deprecated --use-* flags for backward compatibility
         parser.add_argument('--use-hex', action='store_const',
                             dest='use_image_type', const='hex',
@@ -252,7 +257,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             pre_load=args.cmd_pre_load, erase_cmd=args.cmd_erase, load_cmd=args.cmd_load,
             verify_cmd=args.cmd_verify, post_verify=args.cmd_post_verify,
             do_verify=args.verify, do_verify_only=args.verify_only, do_erase=args.erase,
-            tui=args.tui, config=args.config, serial=args.serial,
+            tui=args.tui, config=args.config, serial=args.dev_id,
             image_type=image_type,
             flash_address=args.flash_address, no_halt=args.no_halt, no_init=args.no_init,
             no_targets=args.no_targets, tcl_port=args.tcl_port,
