@@ -6046,6 +6046,7 @@
 /* have these last so they have access to all previously defined macros */
 #include <zephyr/devicetree/io-channels.h>
 #include <zephyr/devicetree/clocks.h>
+#include <zephyr/devicetree/clock_management.h>
 #include <zephyr/devicetree/gpio.h>
 #include <zephyr/devicetree/spi.h>
 #include <zephyr/devicetree/dma.h>
