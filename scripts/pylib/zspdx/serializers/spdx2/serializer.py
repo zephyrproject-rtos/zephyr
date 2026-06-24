@@ -101,7 +101,7 @@ class SPDX2Serializer:
         """Write a single SPDX 2.x document (first pass, without external refs)."""
         try:
             _logger.info(f"Writing SPDX {self.spdx_version} document {doc.name} to {output_path}")
-            with open(output_path, "w") as f:
+            with open(output_path, "w", encoding="utf-8") as f:
                 self._write_document_header(f, doc)
                 # Skip external document refs in first pass
                 self._write_document_relationships(f, doc)
@@ -126,7 +126,7 @@ class SPDX2Serializer:
         """Rewrite document with external document references (second pass)."""
         try:
             # Write the updated document
-            with open(output_path, "w") as f:
+            with open(output_path, "w", encoding="utf-8") as f:
                 # Write header
                 self._write_document_header(f, doc)
                 # Write external document refs (now we have all hashes)
