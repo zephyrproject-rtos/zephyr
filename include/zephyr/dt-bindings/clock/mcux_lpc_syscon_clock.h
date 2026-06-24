@@ -231,4 +231,11 @@
 /** SYSTEM clock identifier. */
 #define MCUX_SYSTEM_CLK MCUX_LPC_CLK_ID(0x36, 0x00)
 
+/** EQDC peripheral clock identifier. */
+#define MCUX_EQDC_CLK MCUX_LPC_CLK_ID(0x37, 0x00)
+/** EQDC0 peripheral clock identifier. */
+#define MCUX_EQDC0_CLK MCUX_LPC_CLK_ID(0x38, 0x00)
+/** EQDC1 peripheral clock identifier. */
+#define MCUX_EQDC1_CLK MCUX_LPC_CLK_ID(0x38, 0x01)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */
