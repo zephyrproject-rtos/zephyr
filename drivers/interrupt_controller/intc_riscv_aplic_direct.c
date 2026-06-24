@@ -10,15 +10,12 @@
 #include <zephyr/drivers/interrupt_controller/riscv_aplic_direct.h>
 #include <zephyr/arch/riscv/icsr.h>
 #include <zephyr/arch/riscv/irq.h>
-#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/irq.h>
 
 #include "sw_isr_common.h"
 #include "intc_riscv_aplic_priv.h"
-
-LOG_MODULE_REGISTER(intc_riscv_aplic_direct, CONFIG_LOG_DEFAULT_LEVEL);
 
 /* APLIC registers are 32-bit memory-mapped */
 #define APLIC_REG_SIZE 32
@@ -94,10 +91,7 @@ int riscv_aplic_set_priority(const struct device *dev, uint32_t local_irq, uint3
 	uint32_t target_offset = aplic_target_off(local_irq);
 
 	if (prio > cfg->max_prio) {
-		LOG_WRN("AIA-APLIC-Direct: Invalid priority specified (irq %u, prio %u, max_prio "
-			"%u)",
-			local_irq, prio, cfg->max_prio);
-		return -EINVAL;
+		prio = cfg->max_prio;
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
