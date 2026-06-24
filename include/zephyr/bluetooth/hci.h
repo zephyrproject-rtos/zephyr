@@ -82,6 +82,44 @@ struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout);
   */
 int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);
 
+/** @typedef bt_hci_cmd_cb_t
+ * @brief Callback for asynchronous HCI command completion.
+ *
+ * Invoked when the Command Complete or Command Status for a command sent via
+ * bt_hci_cmd_send_cb() is received. It runs in the HCI RX/system workqueue
+ * context, so it must not block.
+ *
+ * @param status    The HCI status of the command completion.
+ * @param rsp       Buffer holding the command return parameters
+ *                  (rsp->data[0] is the HCI status). It is valid ONLY for the
+ *                  duration of this callback; call net_buf_ref() on it if it
+ *                  needs to outlive the callback. May carry no parameters
+ *                  (e.g. on a Command Status or a send failure), in which case
+ *                  only @p status is meaningful.
+ * @param user_data The opaque value passed to bt_hci_cmd_send_cb().
+ */
+typedef void (*bt_hci_cmd_cb_t)(uint8_t status, struct net_buf *rsp, void *user_data);
+
+/** Send a HCI command asynchronously with a completion callback.
+ *
+ * Like bt_hci_cmd_send(), the command is queued and this function returns as
+ * soon as it has been queued successfully. In addition, once the controller
+ * returns a Command Complete or Command Status for the command, @p cb is
+ * invoked with the resulting status and return parameters. This provides
+ * one-shot, fire-and-forget sending with asynchronous result notification,
+ * without blocking the caller as bt_hci_cmd_send_sync() would.
+ *
+ * @param opcode    Command OpCode.
+ * @param buf       Command buffer or NULL (if no parameters).
+ * @param cb        Callback to invoke on command completion. May be NULL, in
+ *                  which case the behavior is identical to bt_hci_cmd_send().
+ * @param user_data Opaque value passed back to @p cb.
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_hci_cmd_send_cb(uint16_t opcode, struct net_buf *buf,
+		       bt_hci_cmd_cb_t cb, void *user_data);
+
 /** Send a HCI command synchronously.
   *
   * This function is used for sending a HCI command synchronously. It can
