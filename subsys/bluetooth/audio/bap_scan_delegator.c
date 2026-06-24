@@ -1499,6 +1499,7 @@ int bt_bap_scan_delegator_set_bis_sync_state(
 	uint32_t bis_synced[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
 {
 	struct bass_recv_state_internal *internal_state = bass_lookup_src_id(src_id);
+	uint32_t big_sync_bitfield;
 	__maybe_unused int err;
 	bool notify = false;
 
@@ -1510,20 +1511,14 @@ int bt_bap_scan_delegator_set_bis_sync_state(
 	err = k_mutex_lock(&internal_state->mutex, SCAN_DELEGATOR_BUF_SEM_TIMEOUT);
 	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
 
-	if (internal_state->state.pa_sync_state != BT_BAP_PA_STATE_SYNCED) {
-		err = k_mutex_unlock(&internal_state->mutex);
-		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
-
-		LOG_DBG("PA for src_id %u isn't synced, cannot be BIG synced",
-			src_id);
-		return -EINVAL;
-	}
-
 	/* Verify state for all subgroups before assigning any data */
+	big_sync_bitfield = 0U;
 	for (uint8_t i = 0U; i < internal_state->state.num_subgroups; i++) {
 		if (i >= CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
 			break;
 		}
+
+		big_sync_bitfield |= bis_synced[i];
 
 		if (bis_synced[i] == BT_BAP_BIS_SYNC_NO_PREF ||
 		    !bits_subset_of(bis_synced[i],
@@ -1535,6 +1530,15 @@ int bt_bap_scan_delegator_set_bis_sync_state(
 				i, bis_synced[i], internal_state->requested_bis_sync[i]);
 			return -EINVAL;
 		}
+	}
+
+	if (internal_state->state.pa_sync_state != BT_BAP_PA_STATE_SYNCED &&
+	    big_sync_bitfield != 0U) {
+		err = k_mutex_unlock(&internal_state->mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+		LOG_DBG("PA for src_id %u isn't synced, cannot be BIG synced", src_id);
+		return -EINVAL;
 	}
 
 	for (uint8_t i = 0U; i < internal_state->state.num_subgroups; i++) {
