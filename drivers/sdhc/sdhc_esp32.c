@@ -1261,6 +1261,20 @@ static int sdhc_esp32_request(const struct device *dev, struct sdhc_command *cmd
 		esp_cmd.flags = SCF_CMD_ADTC | SCF_RSP_R1;
 		break;
 
+	case SD_ERASE_BLOCK_START:
+	case SD_ERASE_BLOCK_END:
+		esp_cmd.flags = SCF_CMD_AC | SCF_RSP_R1;
+		break;
+
+	case SD_ERASE_BLOCK_OPERATION:
+		/*
+		 * The erase drives the card busy on DAT0 (R1b). Wait for the
+		 * busy signal to clear before returning so the caller does not
+		 * issue the next command while the erase is still in progress.
+		 */
+		esp_cmd.flags = SCF_CMD_AC | SCF_RSP_R1B | SCF_WAIT_BUSY;
+		break;
+
 	default:
 		LOG_INF("SDHC driver: command %u not supported", cmd->opcode);
 		return -ENOTSUP;
