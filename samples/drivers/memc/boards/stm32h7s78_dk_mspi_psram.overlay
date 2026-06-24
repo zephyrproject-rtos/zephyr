@@ -50,7 +50,7 @@
 				address-length = "ADDR_4_BYTE";
 				rx-dummy = <5>;
 				tx-dummy = <5>;
-				xip-config = <1 0 0 0>;
+				xip-config = <1 0 DT_SIZE_M(32) 0>;
 				ce-break-config = <1024 3>;
 				aps-version = "APS256";
 			};
