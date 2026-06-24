@@ -6,8 +6,7 @@
 
 / {
 	aliases {
-		/* The sample gets the DT_ALIAS(flash0) as the mspi device */
-		flash0 = &mx25lm51245;
+		mspi0 = &xspi1;
 	};
 };
 

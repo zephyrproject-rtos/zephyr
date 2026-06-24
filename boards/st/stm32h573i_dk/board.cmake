@@ -14,7 +14,7 @@ endif()
 
 # keep first
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
-if(CONFIG_STM32_MEMMAP OR (CONFIG_XIP AND CONFIG_BOOTLOADER_MCUBOOT))
+if(CONFIG_STM32_MEMMAP OR CONFIG_MSPI_XIP OR (CONFIG_XIP AND CONFIG_BOOTLOADER_MCUBOOT))
   board_runner_args(stm32cubeprogrammer "--extload=MX25LM51245G_STM32H573I-DK-RevB-SFIx.stldr")
 endif()
 
