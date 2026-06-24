@@ -423,3 +423,96 @@ class Target:
 
     def __repr__(self):
         return f"Target: {self.name}"
+
+
+@dataclass
+class CMakeInfo:
+    """Generator and version from the "cmake" object of the file-based API index reply.
+
+    Attributes:
+        generator_name: CMake generator name (e.g. ``"Ninja"``).
+        generator_multi_config: Whether the generator supports multiple configurations.
+        cmake_path: Absolute path to the cmake executable.
+        version_major: CMake major version.
+        version_minor: CMake minor version.
+        version_patch: CMake patch version.
+        version_string: Full CMake version string.
+    """
+
+    generator_name: str = ""
+    generator_multi_config: bool = False
+    cmake_path: str = ""
+    version_major: int = 0
+    version_minor: int = 0
+    version_patch: int = 0
+    version_string: str = ""
+
+    def __repr__(self):
+        return f"CMakeInfo: version {self.version_string}, generator {self.generator_name}"
+
+
+@dataclass
+class ToolchainCompiler:
+    """Compiler information for a single language from the toolchains-v1 reply.
+
+    Attributes:
+        path: Absolute path to the compiler executable.
+        id: Compiler identifier (e.g. ``"GNU"``, ``"Clang"``).
+        version: Compiler version string.
+        target: Compiler target triple, if known.
+    """
+
+    path: str = ""
+    id: str = ""
+    version: str = ""
+    target: str = ""
+
+    def __repr__(self):
+        return f"ToolchainCompiler: {self.id} {self.version} at {self.path}"
+
+
+@dataclass
+class Toolchain:
+    """A member of the toolchains-v1 reply toolchains array.
+
+    Attributes:
+        language: Source language this toolchain compiles (e.g. ``"C"``, ``"CXX"``).
+        compiler: Compiler used for this language, if known.
+        source_file_extensions: File extensions associated with this language.
+    """
+
+    language: str = ""
+    compiler: ToolchainCompiler | None = None
+    source_file_extensions: list[str] = field(default_factory=list)
+
+    def __repr__(self):
+        return f"Toolchain: {self.language}"
+
+
+@dataclass
+class Toolchains:
+    """Collection of toolchains keyed by language, from the toolchains-v1 reply.
+
+    Attributes:
+        by_language: Toolchains keyed by source language.
+    """
+
+    by_language: dict[str, Toolchain] = field(default_factory=dict)
+
+    def get_compiler_path(self, language):
+        """Get the compiler path for a given language, or "" if unknown."""
+        tc = self.by_language.get(language)
+        return tc.compiler.path if tc and tc.compiler else ""
+
+    def get_compiler_version(self, language):
+        """Get the compiler version for a given language, or "" if unknown."""
+        tc = self.by_language.get(language)
+        return tc.compiler.version if tc and tc.compiler else ""
+
+    def get_compiler_id(self, language):
+        """Get the compiler ID for a given language, or "" if unknown."""
+        tc = self.by_language.get(language)
+        return tc.compiler.id if tc and tc.compiler else ""
+
+    def __repr__(self):
+        return f"Toolchains: {list(self.by_language.keys())}"

@@ -55,19 +55,21 @@ def setup_cmake_query(build_dir):
         # create the directory
         os.makedirs(cmake_api_dir_path, exist_ok=False)
 
-    # check that codemodel-v2 exists as a file, or else create it
-    query_file_path = os.path.join(cmake_api_dir_path, "codemodel-v2")
-    if os.path.exists(query_file_path):
-        if not os.path.isfile(query_file_path):
-            _logger.error("cmake api query file %s exists and is not a directory", query_file_path)
-            return False
-        # file exists, we're good
-        return True
-    else:
+    # request the codemodel (targets/sources) and toolchains-v1 (compiler ids and versions, used by
+    # the SPDX 3.0 Build profile) file-based API objects by creating an empty query file for each
+    for query_object in ("codemodel-v2", "toolchains-v1"):
+        query_file_path = os.path.join(cmake_api_dir_path, query_object)
+        if os.path.exists(query_file_path):
+            if not os.path.isfile(query_file_path):
+                _logger.error("cmake api query file %s exists and is not a file", query_file_path)
+                return False
+            # file exists, we're good
+            continue
         # file doesn't exist, let's create an empty file
         with open(query_file_path, "w"):
             pass
-        return True
+
+    return True
 
 
 # main entry point for SBOM maker
