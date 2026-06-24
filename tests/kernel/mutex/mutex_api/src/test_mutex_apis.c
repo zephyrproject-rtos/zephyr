@@ -210,6 +210,18 @@ static void tThread_waiter(void *p1, void *p2, void *p3)
 }
 
 /*test cases*/
+/**
+ * @brief Verify reentrant locking with a waiter blocking forever.
+ *
+ * @details
+ * A thread holds the mutex while a second thread blocks on it with K_FOREVER;
+ * the waiter acquires the mutex once it is released. Exercised on both a
+ * run-time initialized mutex and a compile-time K_MUTEX_DEFINE() mutex.
+ *
+ * @ingroup kernel_mutex_tests
+ * @see k_mutex_init(), k_mutex_lock(), k_mutex_unlock()
+ * @verifies ZEP-SRS-6-1
+ */
 ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_forever)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
@@ -222,6 +234,17 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_forever)
 	k_thread_abort(&tdata);
 }
 
+/**
+ * @brief Verify locking a held mutex with K_NO_WAIT fails immediately.
+ *
+ * @details
+ * While the mutex is held by another thread, a K_NO_WAIT lock attempt must
+ * return without blocking. Exercised on a run-time and a K_MUTEX_DEFINE() mutex.
+ *
+ * @ingroup kernel_mutex_tests
+ * @see k_mutex_lock(), k_mutex_unlock()
+ * @verifies ZEP-SRS-6-1
+ */
 ZTEST_USER(mutex_api, test_mutex_reent_lock_no_wait)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
@@ -231,6 +254,17 @@ ZTEST_USER(mutex_api, test_mutex_reent_lock_no_wait)
 	tmutex_test_lock(&kmutex, tThread_entry_lock_no_wait);
 }
 
+/**
+ * @brief Verify locking a held mutex with a finite timeout times out.
+ *
+ * @details
+ * While the mutex is held, a lock attempt with a finite timeout must fail once
+ * the timeout elapses without the mutex being released.
+ *
+ * @ingroup kernel_mutex_tests
+ * @see k_mutex_lock(), k_mutex_unlock()
+ * @verifies ZEP-SRS-6-1
+ */
 ZTEST_USER(mutex_api, test_mutex_reent_lock_timeout_fail)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
@@ -240,6 +274,17 @@ ZTEST_USER(mutex_api, test_mutex_reent_lock_timeout_fail)
 	tmutex_test_lock_timeout(&kmutex, tThread_entry_lock_no_wait);
 }
 
+/**
+ * @brief Verify a timed lock succeeds once the mutex is released in time.
+ *
+ * @details
+ * A lock attempt with a finite timeout must succeed when the holding thread
+ * releases the mutex before the timeout elapses.
+ *
+ * @ingroup kernel_mutex_tests
+ * @see k_mutex_lock(), k_mutex_unlock()
+ * @verifies ZEP-SRS-6-1
+ */
 ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_timeout_pass)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
@@ -249,6 +294,18 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_timeout_pass)
 	tmutex_test_lock_timeout(&kmutex, tThread_entry_lock_no_wait);
 }
 
+/**
+ * @brief Verify basic mutex lock and unlock.
+ *
+ * @details
+ * Lock and then unlock the mutex from a single thread and confirm the
+ * operations succeed, on both a run-time initialized mutex and a compile-time
+ * K_MUTEX_DEFINE() mutex.
+ *
+ * @ingroup kernel_mutex_tests
+ * @see k_mutex_init(), k_mutex_lock(), k_mutex_unlock()
+ * @verifies ZEP-SRS-6-1
+ */
 ZTEST_USER(mutex_api_1cpu, test_mutex_lock_unlock)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
@@ -264,6 +321,7 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_lock_unlock)
  * succeed and waiters will be unblocked only when the number of locks
  * reaches zero.
  * @ingroup kernel_mutex_tests
+ * @verifies ZEP-SRS-6-1
  */
 ZTEST_USER(mutex_api, test_mutex_recursive)
 {
@@ -316,6 +374,7 @@ ZTEST_USER(mutex_api, test_mutex_recursive)
  * - case 3. When priority T2 > T3 > T1, priority inheritance happened but T2
  *   wait for timeout and T3 got the mutex.
  * @ingroup kernel_mutex_tests
+ * @verifies ZEP-SRS-6-1
  */
 ZTEST_USER(mutex_api_1cpu, test_mutex_priority_inheritance)
 {
