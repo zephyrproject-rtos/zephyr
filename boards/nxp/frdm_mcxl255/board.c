@@ -127,6 +127,25 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_GateAonUART);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_qtmr0)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_qtmr1))
+	CLOCK_AttachClk(kFROdiv4_to_AON_TMR);
+
+	/*
+	 * AON QTMR0 and AON QTMR1 are controlled by a shared
+	 * AON QTMR reset line.
+	 */
+	RESET_ReleasePeripheralReset(kAonQTMR0_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_qtmr0))
+	CLOCK_EnableClock(kCLOCK_GateAonQTMR0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_qtmr1))
+	CLOCK_EnableClock(kCLOCK_GateAonQTMR1);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rtc))
 	if (!CLOCK_IsRoscInitialized()) {
 		rosc_init_config_t rosc_init_config;
