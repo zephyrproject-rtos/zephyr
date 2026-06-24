@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2026 NotioNext Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Aosong AHT30 (Digital-output Humidity and Temperature Sensor)
+
+    The Aosong AHT30 sensor provides temperature and humidity
+    measurements through an I2C bus.
+
+compatible: "aosong,aht30"
+
+include: [sensor-device.yaml, i2c-device.yaml]
