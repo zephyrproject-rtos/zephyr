@@ -46,7 +46,7 @@ tests:
     harness_config:
       bsim_exe_name: tests_bluetooth_tester_prj_conf
     sysbuild: true
-  bluetooth.general.tester_le_audio:
+  bluetooth.audio.tester:
     build_only: true
     platform_allow:
       - qemu_x86
@@ -61,7 +61,7 @@ tests:
     tags: bluetooth
     harness: bluetooth
     sysbuild: true
-  bluetooth.general.tester_le_audio_bsim:
+  bluetooth.audio.tester_bsim:
     build_only: true
     platform_allow:
       - nrf52_bsim/native
@@ -70,7 +70,7 @@ tests:
     harness: bsim
     harness_config:
       bsim_exe_name: tests_bluetooth_tester_le_audio_prj_conf
-  bluetooth.general.tester_hci_ipc_le_audio_bsim:
+  bluetooth.audio.tester_hci_ipc_bsim:
     build_only: true
     platform_allow:
       - nrf5340bsim/nrf5340/cpuapp
