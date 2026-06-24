@@ -584,6 +584,7 @@ Bluetooth Audio:
     - "area: Bluetooth"
   tests:
     - bluetooth.audio
+    - sample.bluetooth.audio
 
 Bluetooth Classic:
   status: maintained
