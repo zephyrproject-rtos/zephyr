@@ -219,6 +219,11 @@ New Drivers
   Same as above, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
 
+* ADC
+
+  * Analog Devices AD4190-8 and AD4195-8 Sigma-Delta ADCs
+    (:dtcompatible:`adi,ad4190-8-adc`, :dtcompatible:`adi,ad4195-8-adc`).
+
 * GPIO
 
   * Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander

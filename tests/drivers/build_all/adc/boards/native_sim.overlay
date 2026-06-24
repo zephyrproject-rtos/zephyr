@@ -527,6 +527,20 @@
 				#io-channel-cells = <1>;
 				int-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
 			};
+
+			test_spi_ad4190_8: ad4190-8@31 {
+				compatible = "adi,ad4190-8-adc";
+				reg = <0x31>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_ad4195_8: ad4195-8@32 {
+				compatible = "adi,ad4195-8-adc";
+				reg = <0x32>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
 		};
 	};
 };
