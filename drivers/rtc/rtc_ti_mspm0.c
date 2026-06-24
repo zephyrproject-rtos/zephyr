@@ -167,10 +167,14 @@ static int rtc_ti_mspm0_set_time(const struct device *dev,
 {
 	const struct rtc_ti_mspm0_config *cfg = dev->config;
 	struct rtc_ti_mspm0_data *data = dev->data;
+	int mon, year;
 
 	if ((timeptr == NULL) || !rtc_utils_validate_rtc_time(timeptr, 0)) {
 		return -EINVAL;
 	}
+
+	mon = timeptr->tm_mon + 1;
+	year = timeptr->tm_year + 1900;
 
 	K_SPINLOCK(&data->lock) {
 		/*
@@ -221,6 +225,10 @@ static int rtc_ti_mspm0_get_time(const struct device *dev,
 				   1900;
 		timeptr->tm_wday = FIELD_GET(RTC_MSPM0_WDAY_BIN_MASK, cfg->regs->day);
 	}
+
+	timeptr->tm_yday = -1;
+	timeptr->tm_nsec = 0;
+	timeptr->tm_isdst = -1;
 
 	return 0;
 }
