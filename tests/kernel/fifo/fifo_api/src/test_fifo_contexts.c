@@ -133,6 +133,12 @@ static void tfifo_is_empty(void *p)
 /**
  * @brief Test thread to thread data passing via fifo
  * @see k_fifo_init(), k_fifo_put(), k_fifo_get(), k_fifo_put_list()
+ * @verifies ZEP-SRS-24-1
+ * @verifies ZEP-SRS-24-3
+ * @verifies ZEP-SRS-24-5
+ * @verifies ZEP-SRS-24-6
+ * @verifies ZEP-SRS-24-7
+ * @verifies ZEP-SRS-24-11
  */
 ZTEST(fifo_api_1cpu, test_fifo_thread2thread)
 {
@@ -147,6 +153,8 @@ ZTEST(fifo_api_1cpu, test_fifo_thread2thread)
 /**
  * @brief Test isr to thread data passing via fifo
  * @see k_fifo_init(), k_fifo_put(), k_fifo_get()
+ * @verifies ZEP-SRS-24-3
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_api, test_fifo_thread2isr)
 {
@@ -161,6 +169,8 @@ ZTEST(fifo_api, test_fifo_thread2isr)
 /**
  * @brief Test thread to isr data passing via fifo
  * @see k_fifo_init(), k_fifo_put(), k_fifo_get()
+ * @verifies ZEP-SRS-24-3
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_api, test_fifo_isr2thread)
 {
@@ -175,6 +185,7 @@ ZTEST(fifo_api, test_fifo_isr2thread)
 /**
  * @brief Test empty fifo
  * @see k_fifo_init(), k_fifo_is_empty(), k_fifo_put(), k_fifo_get()
+ * @verifies ZEP-SRS-24-8
  */
 ZTEST(fifo_api, test_fifo_is_empty_thread)
 {
@@ -189,6 +200,7 @@ ZTEST(fifo_api, test_fifo_is_empty_thread)
 /**
  * @brief Test empty fifo in interrupt context
  * @see k_fifo_init(), fifo_is_empty(), k_fifo_put(), k_fifo_get()
+ * @verifies ZEP-SRS-24-8
  */
 ZTEST(fifo_api, test_fifo_is_empty_isr)
 {

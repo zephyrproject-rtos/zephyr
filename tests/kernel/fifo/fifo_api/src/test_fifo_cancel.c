@@ -60,6 +60,7 @@ static void tfifo_thread_thread(struct k_fifo *pfifo)
  * @details This routine causes first thread pending on fifo (if any),
  * to return from k_fifo_get() with NULL value (as if timeout expired).
  * @see k_fifo_init(),k_fifo_get(), k_fifo_cancel_wait()
+ * @verifies ZEP-SRS-24-2
  */
 ZTEST(fifo_api_1cpu, test_fifo_cancel_wait)
 {

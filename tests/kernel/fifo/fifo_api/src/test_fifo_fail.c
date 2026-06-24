@@ -18,6 +18,7 @@
  * @details test zephyr fifo_get when no data to read,
  * it should returns NULL.
  * @see k_fifo_init(), k_fifo_get()
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_api, test_fifo_get_fail)
 {
