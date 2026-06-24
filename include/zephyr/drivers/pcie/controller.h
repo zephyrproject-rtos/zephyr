@@ -128,7 +128,13 @@ typedef bool (*pcie_ctrl_region_translate_t)(const struct device *dev, pcie_bdf_
 					     bool mem, bool mem64, uintptr_t bar_bus_addr,
 					     uintptr_t *bar_addr);
 
-#ifdef CONFIG_PCIE_MSI
+#if defined(CONFIG_PCIE_MSI) || defined(__DOXYGEN__)
+/**
+ * @brief Function called to configure the given PCI endpoint to generate MSIs.
+ * See pcie_ctrl_msi_device_setup() for description.
+ *
+ * @kconfig_dep{CONFIG_PCIE_MSI}
+ */
 typedef uint8_t (*pcie_ctrl_msi_device_setup_t)(const struct device *dev, unsigned int priority,
 						msi_vector_t *vectors, uint8_t n_vector);
 #endif
