@@ -321,6 +321,16 @@ traceability_attribute_to_string = {
 # implements/implemented_by and trace/backtrace) and only add display strings we
 # rely on. The defaults for traceability_relationships are used as-is.
 
+# Render each item's relationships inline, so a requirement shows the tests that
+# verify it ("Validated by") and its parents ("Traces"), and a test shows the
+# requirement it verifies ("Validates"). The reverse links are created
+# automatically by mlx from the forward links emitted on the test items.
+traceability_render_relationship_per_item = True
+
+# Collapse the per-item attribute/relationship lists behind a toggle to keep
+# requirements with many verifying tests readable.
+traceability_collapse_links = True
+
 # Machine-readable export of all traceable items and their relationships.
 traceability_json_export_path = str(ZEPHYR_BUILD / "traceability.json")
 
