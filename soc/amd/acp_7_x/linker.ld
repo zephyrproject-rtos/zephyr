@@ -160,13 +160,13 @@ sram1 :
         len = IDT_SIZE
 #endif
 
-  static_uuid_entries_seg (!ari) :
+  static_uuid_entries_seg :
 	org = UUID_ENTRY_ELF_BASE,
 	len = UUID_ENTRY_ELF_SIZE
-  static_log_entries_seg (!ari) :
+  static_log_entries_seg :
         org = LOG_ENTRY_ELF_BASE,
         len = LOG_ENTRY_ELF_SIZE
- fw_metadata_seg (!ari) :
+ fw_metadata_seg :
         org = EXT_MANIFEST_ELF_BASE,
         len = EXT_MANIFEST_ELF_SIZE
 }

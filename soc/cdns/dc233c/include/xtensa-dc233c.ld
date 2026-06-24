@@ -123,7 +123,8 @@ SECTIONS
  >vectors :vectors_phdr
 
 #define LIB_OBJ_FUNC_IN_SECT(library, obj_file, func)		\
-	*##library##:##obj_file##(.literal.##func .text.##func)	\
+	*##library##:##obj_file##(.literal.##func)		\
+	*##library##:##obj_file##(.text.##func)
 
 #ifdef CONFIG_XTENSA_MMU
   .vec_helpers :
@@ -139,12 +140,14 @@ SECTIONS
      *       TLB multi-hit exception.
      */
 
-    *libarch__xtensa__core.a:xtensa_asm2_util.S.obj(.literal .text)
+    *libarch__xtensa__core.a:xtensa_asm2_util.S.obj(.literal)
+    *libarch__xtensa__core.a:xtensa_asm2_util.S.obj(.text)
     *libarch__xtensa__core.a:xtensa_asm2_util.S.obj(.iram.text .iram0.text)
 
     *libarch__xtensa__core.a:window_vectors.S.obj(.iram.text)
 
-    *libarch__xtensa__core.a:crt1.S.obj(.literal .text)
+    *libarch__xtensa__core.a:crt1.S.obj(.literal)
+    *libarch__xtensa__core.a:crt1.S.obj(.text)
 
     LIB_OBJ_FUNC_IN_SECT(libarch__xtensa__core.a,xtensa_asm2.c.obj,*)
     LIB_OBJ_FUNC_IN_SECT(libarch__xtensa__core.a,fatal.c.obj,*)
@@ -155,7 +158,8 @@ SECTIONS
     /* To support backtracing */
     LIB_OBJ_FUNC_IN_SECT(libarch__xtensa__core.a,xtensa_backtrace.c.obj,*)
 
-    *libarch__xtensa__core.a:debug_helpers_asm.S.obj(.iram1.literal .iram1)
+    *libarch__xtensa__core.a:debug_helpers_asm.S.obj(.iram1.literal)
+    *libarch__xtensa__core.a:debug_helpers_asm.S.obj(.iram1)
 
     /* Userspace related stuff */
     LIB_OBJ_FUNC_IN_SECT(libarch__xtensa__core.a,userspace.S.obj,xtensa_do_syscall)
@@ -171,12 +175,17 @@ SECTIONS
     LIB_OBJ_FUNC_IN_SECT(libdrivers__console.a,,*)
     LIB_OBJ_FUNC_IN_SECT(libdrivers__timer.a,,*)
 
-    *(.literal.z_vrfy_* .text.z_vrfy_*)
-    *(.literal.z_mrsh_* .text.z_mrsh_*)
-    *(.literal.z_impl_* .text.z_impl_*)
-    *(.literal.z_obj_*  .text.z_obj_*)
+    *(.literal.z_vrfy_*)
+    *(.text.z_vrfy_*)
+    *(.literal.z_mrsh_*)
+    *(.text.z_mrsh_*)
+    *(.literal.z_impl_*)
+    *(.text.z_impl_*)
+    *(.literal.z_obj_*)
+    *(.text.z_obj_*)
 
-    *(.literal.k_sys_fatal_error_handler .text.k_sys_fatal_error_handler)
+    *(.literal.k_sys_fatal_error_handler)
+    *(.text.k_sys_fatal_error_handler)
   } >vec_helpers :vec_helpers_phdr
 #endif /* CONFIG_XTENSA_MMU */
 
@@ -203,6 +212,18 @@ SECTIONS
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
     *(.iram1.literal .iram1)
     KEEP(*(.init))
+    *libarch__xtensa__core.a:(.literal .literal.*)
+    *libarch__xtensa__core.a:(.text .text.*)
+
+    *libkernel.a:(.literal .literal.*)
+    *libkernel.a:(.text .text.*)
+
+    *libzephyr.a:(.literal .literal.*)
+    *libzephyr.a:(.text .text.*)
+
+    *libmodules_sof.a:(.literal .literal.*)
+    *libmodules_sof.a:(.text .text.*)
+
     *(.literal .literal.* .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal)
     *(.text .text.* .stub .gnu.warning .gnu.linkonce.t.*)
     *(.fini.literal)
