@@ -1204,7 +1204,7 @@ static void copy_path_trace(struct gptp_announce *announce)
 	int len = net_ntohs(announce->tlv.len);
 	struct gptp_path_trace *sys_path_trace;
 
-	if (len > GPTP_MAX_PATHTRACE_SIZE * GPTP_CLOCK_ID_LEN) {
+	if (len > (GPTP_MAX_PATHTRACE_SIZE - 1) * GPTP_CLOCK_ID_LEN) {
 		NET_ERR("Too long path trace (%d vs %d)",
 			GPTP_MAX_PATHTRACE_SIZE * GPTP_CLOCK_ID_LEN, len);
 		return;
