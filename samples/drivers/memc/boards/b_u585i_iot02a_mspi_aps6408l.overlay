@@ -35,6 +35,7 @@
 				     &octospim_p1_dqs_pe3>;
 			pinctrl-names = "default";
 			st,csbound = <3>;
+			st,dqs-port = <1>;
 			status = "okay";
 
 			memc: aps6408l: memory@0 {
