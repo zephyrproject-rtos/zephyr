@@ -37,17 +37,21 @@ static void ch32v00x_systick_irq(const void *unused)
 	SYSTICK->CTLR = 0; /* Stop timer. */
 
 	/* Clear CNT */
-	SYSTICK->CNT0 = 0;	SYSTICK->CNT1 = 0;
-	SYSTICK->CNT2 = 0;	SYSTICK->CNT3 = 0;
-	SYSTICK->CNT4 = 0;	SYSTICK->CNT5 = 0;
-	SYSTICK->CNT6 = 0;	SYSTICK->CNT7 = 0;
+	SYSTICK->CNT0 = 0;
+	SYSTICK->CNT1 = 0;
+	SYSTICK->CNT2 = 0;
+	SYSTICK->CNT3 = 0;
+	SYSTICK->CNT4 = 0;
+	SYSTICK->CNT5 = 0;
+	SYSTICK->CNT6 = 0;
+	SYSTICK->CNT7 = 0;
 
 	SYSTICK->CTLR = STK_STE; /* Restart timer. */
 #else
 	SYSTICK->SR = 0;
 #endif
 	ch32v00x_systick_count += CYCLES_PER_TICK; /* Track cycles. */
-	sys_clock_announce(1);  /* Poke the scheduler. */
+	sys_clock_announce(1);                     /* Poke the scheduler. */
 }
 
 uint32_t sys_clock_cycle_get_32(void)
@@ -71,10 +75,14 @@ static int ch32v00x_systick_init(void)
 	SYSTICK->CTLR = 0;
 
 	/* Clear all 8 CNTs */
-	SYSTICK->CNT0 = 0;	SYSTICK->CNT1 = 0;
-	SYSTICK->CNT2 = 0;	SYSTICK->CNT3 = 0;
-	SYSTICK->CNT4 = 0;	SYSTICK->CNT5 = 0;
-	SYSTICK->CNT6 = 0;	SYSTICK->CNT7 = 0;
+	SYSTICK->CNT0 = 0;
+	SYSTICK->CNT1 = 0;
+	SYSTICK->CNT2 = 0;
+	SYSTICK->CNT3 = 0;
+	SYSTICK->CNT4 = 0;
+	SYSTICK->CNT5 = 0;
+	SYSTICK->CNT6 = 0;
+	SYSTICK->CNT7 = 0;
 
 	SYSTICK->CMP0 = (uint8_t)ticks;
 	SYSTICK->CMP1 = (uint8_t)(ticks >> 8);
