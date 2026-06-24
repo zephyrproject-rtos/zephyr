@@ -74,8 +74,6 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #if defined(CONFIG_NET_NATIVE)
 static inline enum net_verdict process_data(struct net_pkt *pkt)
 {
-	int ret;
-
 	net_packet_socket_input(pkt, ETH_P_ALL, NET_SOCK_RAW);
 
 	/* If there is no data, then drop the packet. */
@@ -87,15 +85,17 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 	}
 
 	if (!net_pkt_is_l2_processed(pkt)) {
-		ret = net_if_recv_data(net_pkt_iface(pkt), pkt);
-		if (ret != NET_CONTINUE) {
-			if (ret == NET_DROP) {
+		enum net_verdict verdict;
+
+		verdict = net_if_recv_data(net_pkt_iface(pkt), pkt);
+		if (verdict != NET_CONTINUE) {
+			if (verdict == NET_DROP) {
 				NET_DBG("Packet %p discarded by L2", pkt);
 				net_stats_update_processing_error(
 							net_pkt_iface(pkt));
 			}
 
-			return ret;
+			return verdict;
 		}
 	}
 
