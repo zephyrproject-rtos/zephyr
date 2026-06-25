@@ -339,3 +339,37 @@ Under embargo until 2026-08-08
 ----------------
 
 Under embargo until 2026-06-28
+
+:cve:`2026-10645`
+-----------------
+
+fs: ext2: Missing structural validation of directory entries can cause
+out-of-bounds read and zero-progress directory traversal
+
+Zephyr's ext2 directory-entry parser in ``ext2_fetch_direntry()`` does not fully
+validate the on-disk directory entry structure before copying the entry name and
+advancing traversal state. It only checks ``de_name_len <= EXT2_MAX_FILE_NAME``,
+without validating the structural relationship between ``de_rec_len``,
+``de_name_len`` and the directory block boundary. A crafted ext2 image can
+therefore trigger out-of-bounds reads from the directory block buffer and/or a
+zero-progress infinite loop when ``de_rec_len == 0``. The issue is not reached
+during mount, but later through directory traversal paths such as pathname
+lookup, ``stat``/``open``/``unlink``/``rename`` and ``readdir``, leading to denial
+of service or out-of-bounds reads when mounting untrusted ext2 images.
+
+- `Zephyr project bug tracker GHSA-hwrh-9h3x-vccm
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hwrh-9h3x-vccm>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 108226 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108226>`_
+
+- `PR 110031 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110031>`_
+
+- `PR 110033 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110033>`_
+
+- `PR 110030 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110030>`_
