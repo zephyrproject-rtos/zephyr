@@ -41,20 +41,8 @@ const struct gpio_dt_spec demo_gpio = GPIO_DT_SPEC_GET_BY_IDX(DT_ALIAS(haptic0),
 
 #if CONFIG_SHELL
 #define CS40L5X_HELP                SHELL_HELP("CS40L5x haptics commands", NULL)
-#define CS40L5X_CALIBRATE_HELP      SHELL_HELP("Run calibration routine", NULL)
 #define CS40L5X_CONFIGURE_BUZZ_HELP SHELL_HELP("Configure buzz output", "<freq> <level> <dur>")
-#define CS40L5X_GAIN_HELP           SHELL_HELP("Update gain", "<gain %%>")
-#define CS40L5X_LOGGER_HELP         SHELL_HELP("Enable or disable runtime logging", "<state>")
-#define CS40L5X_LOGGER_GET_HELP     SHELL_HELP("Get runtime logging data", "<source>")
-#define CS40L5X_SELECT_HELP         SHELL_HELP("Select haptic effect", "<source>")
-#define CS40L5X_START_HELP          SHELL_HELP("Start haptic playback", NULL)
-#define CS40L5X_STOP_HELP           SHELL_HELP("Stop haptic playback", NULL)
 #define CS40L5X_TRIGGER_HELP        SHELL_HELP("Induce trigger playback via GPIO", "<gpio> <pin>")
-
-static int cmd_calibrate(const struct shell *sh, size_t argc, char **argv)
-{
-	return cs40l5x_calibrate(cs40l5x);
-}
 
 static int cmd_configure_buzz(const struct shell *sh, size_t argc, char **argv)
 {
@@ -70,104 +58,6 @@ static int cmd_configure_buzz(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	return cs40l5x_configure_buzz(cs40l5x, frequency, (uint8_t)level, duration);
-}
-
-static int cmd_gain(const struct shell *sh, size_t argc, char **argv)
-{
-	uint32_t gain;
-
-	gain = strtoul(argv[1], NULL, 10);
-
-	if (gain > 100) {
-		shell_error(sh, "Gain must be between 0 and 100%%");
-		return -EINVAL;
-	}
-
-	return cs40l5x_set_gain(cs40l5x, (uint8_t)gain);
-}
-
-static int cmd_logger(const struct shell *sh, size_t argc, char **argv, void *data)
-{
-	return cs40l5x_logger(cs40l5x, (int)data);
-}
-
-SHELL_SUBCMD_DICT_SET_CREATE(sub_logger, cmd_logger, (disable, 0, "disable"),
-			     (enable, 1, "enable"));
-
-static int cmd_logger_get(const struct shell *sh, size_t argc, char **argv, void *data)
-{
-	enum cs40l5x_logger_source_type type;
-	enum cs40l5x_logger_source source;
-	int error, input;
-	uint32_t value;
-
-	input = (int)data;
-
-	if (input < 3) {
-		source = CS40L5X_LOGGER_BEMF;
-	} else if (input < 6) {
-		source = CS40L5X_LOGGER_VBST;
-	} else {
-		source = CS40L5X_LOGGER_VMON;
-	}
-
-	type = (enum cs40l5x_logger_source_type)(input % 3);
-
-	error = cs40l5x_logger_get(cs40l5x, source, type, &value);
-	if (error >= 0) {
-		shell_print(sh, "%s: 0x%08X", argv[0], value);
-	}
-
-	return error;
-}
-
-SHELL_SUBCMD_DICT_SET_CREATE(sub_logger_get, cmd_logger_get, (min_bemf, 0, "Minimum BEMF"),
-			     (max_bemf, 1, "Maximum BEMF"), (mean_bemf, 2, "Mean BEMF"),
-			     (min_vbst, 3, "Minimum VBST"), (max_vbst, 4, "Maximum VBST"),
-			     (mean_vbst, 5, "Mean VBST"), (min_vmon, 6, "Minimum VMON"),
-			     (max_vmon, 7, "Maximum VMON"), (mean_vmon, 8, "Mean VMON"));
-
-static int cmd_select(const struct shell *sh, size_t argc, char **argv, void *data)
-{
-	enum cs40l5x_bank bank;
-	uint8_t index;
-	int source;
-
-	source = (int)data;
-	if (source < 27) {
-		bank = CS40L5X_ROM_BANK;
-		index = source;
-	} else if (source == 27) {
-		bank = CS40L5X_BUZ_BANK;
-		index = 0;
-	} else {
-		bank = CS40L5X_CUSTOM_BANK;
-		index = source % 28;
-	}
-
-	return cs40l5x_select_output(cs40l5x, bank, index);
-}
-
-SHELL_SUBCMD_DICT_SET_CREATE(sub_select, cmd_select, (ROM0, 0, "ROM 0"), (ROM1, 1, "ROM 1"),
-			     (ROM2, 2, "ROM 2"), (ROM3, 3, "ROM 3"), (ROM4, 4, "ROM 4"),
-			     (ROM5, 5, "ROM 5"), (ROM6, 6, "ROM 6"), (ROM7, 7, "ROM 7"),
-			     (ROM8, 8, "ROM 8"), (ROM9, 9, "ROM 9"), (ROM10, 10, "ROM 10"),
-			     (ROM11, 11, "ROM 11"), (ROM12, 12, "ROM 12"), (ROM13, 13, "ROM 13"),
-			     (ROM14, 14, "ROM 14"), (ROM15, 15, "ROM 15"), (ROM16, 16, "ROM 16"),
-			     (ROM17, 17, "ROM 17"), (ROM18, 18, "ROM 18"), (ROM19, 19, "ROM 19"),
-			     (ROM20, 20, "ROM 20"), (ROM21, 21, "ROM 21"), (ROM22, 22, "ROM 22"),
-			     (ROM23, 23, "ROM 23"), (ROM24, 24, "ROM 24"), (ROM25, 25, "ROM 25"),
-			     (ROM26, 26, "ROM 26"), (BUZ0, 27, "BUZ 0"), (CUSTOM0, 28, "CUSTOM 0"),
-			     (CUSTOM1, 29, "CUSTOM 1"));
-
-static int cmd_start(const struct shell *sh, size_t argc, char **argv)
-{
-	return haptics_start_output(cs40l5x);
-}
-
-static int cmd_stop(const struct shell *sh, size_t argc, char **argv)
-{
-	return haptics_stop_output(cs40l5x);
 }
 
 #if CS40L5X_DEMO_TRIGGER
@@ -210,19 +100,14 @@ static void gpio_name_get(size_t idx, struct shell_static_entry *entry)
 SHELL_DYNAMIC_CMD_CREATE(dsub_gpio_name, gpio_name_get);
 #endif /* CS40L5X_DEMO_TRIGGER */
 
-SHELL_STATIC_SUBCMD_SET_CREATE(
-	cs40l5x_cmds, SHELL_CMD_ARG(calibrate, NULL, CS40L5X_CALIBRATE_HELP, cmd_calibrate, 1, 0),
+/* clang-format off */
+SHELL_STATIC_SUBCMD_SET_CREATE(cs40l5x_cmds,
 	SHELL_CMD_ARG(configure_buzz, NULL, CS40L5X_CONFIGURE_BUZZ_HELP, cmd_configure_buzz, 4, 0),
-	SHELL_CMD_ARG(gain, NULL, CS40L5X_GAIN_HELP, cmd_gain, 2, 0),
-	SHELL_CMD_ARG(logger, &sub_logger, CS40L5X_LOGGER_HELP, cmd_logger, 2, 0),
-	SHELL_CMD_ARG(logger_get, &sub_logger_get, CS40L5X_LOGGER_GET_HELP, cmd_logger_get, 2, 0),
-	SHELL_CMD_ARG(select, &sub_select, CS40L5X_SELECT_HELP, NULL, 2, 0),
-	SHELL_CMD_ARG(start, NULL, CS40L5X_START_HELP, cmd_start, 1, 0),
-	SHELL_CMD_ARG(stop, NULL, CS40L5X_STOP_HELP, cmd_stop, 1, 0),
 #if CS40L5X_DEMO_TRIGGER
 	SHELL_CMD_ARG(trigger, &dsub_gpio_name, CS40L5X_TRIGGER_HELP, cmd_trigger, 3, 0),
 #endif /* CS40L5X_DEMO_TRIGGER */
 	SHELL_SUBCMD_SET_END);
+/* clang-format off */
 
 SHELL_CMD_REGISTER(cs40l5x, &cs40l5x_cmds, "CS40L5x shell commands", NULL);
 #endif /* CONFIG_SHELL */
@@ -292,6 +177,7 @@ static void cs40l5x_dummy_callback(const struct device *const dev, const uint32_
 
 int main(void)
 {
+	const union haptics_config cfg = {.idx = CS40L5X_DEMO_INDEX};
 	int ret;
 
 	if (!cs40l5x || !device_is_ready(cs40l5x)) {
@@ -310,15 +196,14 @@ int main(void)
 	(void)haptics_register_error_callback(cs40l5x, cs40l5x_dummy_callback, NULL);
 
 	/* Demonstration of PCM upload (CUSTOM0) */
-	ret = cs40l5x_upload_pcm(cs40l5x, CS40L5X_CUSTOM_0, CS40L5X_DEMO_REDC, CS40L5X_DEMO_F0,
-				   pcm_samples, ARRAY_SIZE(pcm_samples));
+	ret = cs40l5x_upload_pcm(cs40l5x, 0, CS40L5X_DEMO_REDC, CS40L5X_DEMO_F0, pcm_samples,
+				 ARRAY_SIZE(pcm_samples));
 	if (ret < 0) {
 		LOG_WRN("upload PCM failure (%d)", ret);
 	}
 
 	/* Demonstration of PWLE upload (CUSTOM1) */
-	ret = cs40l5x_upload_pwle(cs40l5x, CS40L5X_CUSTOM_1, pwle_sections,
-				    ARRAY_SIZE(pwle_sections));
+	ret = cs40l5x_upload_pwle(cs40l5x, 1, pwle_sections, ARRAY_SIZE(pwle_sections));
 	if (ret < 0) {
 		LOG_WRN("upload PWLE failure (%d)", ret);
 	}
@@ -332,8 +217,8 @@ int main(void)
 
 #if CS40L5X_DEMO_TRIGGER
 	/* Demonstration of GPIO configuration for edge-triggered haptic effects */
-	ret = cs40l5x_configure_trigger(cs40l5x, &demo_gpio, CS40L5X_ROM_BANK, CS40L5X_DEMO_INDEX,
-					  CS40L5X_ATTENUATION_3DB, CS40L5X_RISING_EDGE);
+	ret = cs40l5x_configure_trigger(cs40l5x, &demo_gpio, HAPTICS_SOURCE_ROM, &cfg, 3,
+					CS40L5X_RISING_EDGE);
 	if (ret < 0) {
 		LOG_WRN("configure GPIO trigger failure (%d)", ret);
 	}
@@ -341,7 +226,7 @@ int main(void)
 
 	/* Basic demonstration if not using the custom shell interface. */
 	if (!IS_ENABLED(CONFIG_SHELL)) {
-		ret = cs40l5x_select_output(cs40l5x, CS40L5X_BUZ_BANK, 0);
+		ret = haptics_select_source(cs40l5x, (int)CS40L5X_SOURCE_BUZ, 0);
 		if (ret < 0) {
 			LOG_WRN("failed to select output (%d)", ret);
 		}
@@ -353,7 +238,7 @@ int main(void)
 
 		(void)k_msleep(2000);
 
-		ret = cs40l5x_select_output(cs40l5x, CS40L5X_ROM_BANK, 17);
+		ret = haptics_select_source(cs40l5x, HAPTICS_SOURCE_ROM, &cfg);
 		if (ret < 0) {
 			LOG_WRN("failed to select output during playback (%d)", ret);
 		}
