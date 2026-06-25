@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* _POSIX_C_SOURCE is required to expose gmtime_r declaration in glibc headers */
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tls_credentials_shell, CONFIG_TLS_CREDENTIALS_LOG_LEVEL);
 
@@ -769,6 +773,45 @@ cleanup:
 	return err;
 }
 
+static int tls_cred_cmd_expiry(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+	char buf[32];
+	struct tm tm_expiry;
+	sec_tag_t sectag;
+	enum tls_credential_type type;
+
+	err = shell_parse_cred_sectag(sh, argv[1], &sectag, false);
+	if (err) {
+		goto cleanup;
+	}
+
+	err = shell_parse_cred_type(sh, argv[2], &type, false);
+	if (err) {
+		goto cleanup;
+	}
+
+	time_t expiry;
+
+	err = tls_credential_expiry(sectag, type, &expiry);
+	if (err) {
+		shell_fprintf(sh, SHELL_ERROR, "Could not retrieve expiry for TLS credential with "
+					       "sectag %d and type %s due to error: %d.\n",
+					       sectag, cred_type_name(type), err);
+		goto cleanup;
+	}
+
+	gmtime_r(&expiry, &tm_expiry);
+	strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm_expiry);
+
+	shell_fprintf(sh, SHELL_NORMAL, "Expiry for TLS credential with sectag %d and type %s "
+					"is %s (%lld).\n",
+					sectag, cred_type_name(type), buf, (long long)expiry);
+
+cleanup:
+	return err;
+}
+
 /* Lists credentials in credential store. */
 static int tls_cred_cmd_list(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -859,6 +902,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(tls_cred_cmds,
 		      tls_cred_cmd_del, 3, 0),
 	SHELL_CMD_ARG(get, NULL, "Retrieve the contents of a TLS credential",
 		      tls_cred_cmd_get, 4, 0),
+	SHELL_CMD_ARG(expiry, NULL, "Retrieve the expiry of a TLS credential",
+		      tls_cred_cmd_expiry, 3, 0),
 	SHELL_CMD_ARG(list, NULL, "List stored TLS credentials, optionally filtering by type "
 				  "or sectag.",
 		      tls_cred_cmd_list, 1, 2),
