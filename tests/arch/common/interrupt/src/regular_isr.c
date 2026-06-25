@@ -50,6 +50,10 @@ void isr_comm(const void *param)
  *
  * @see IRQ_CONNECT(), irq_enable(), irq_disable(),
  * irq_unlock(),
+ * @verifies ZEP-SRS-7-1
+ * @verifies ZEP-SRS-7-8
+ * @verifies ZEP-SRS-7-9
+ * @verifies ZEP-SRS-7-11
  */
 ZTEST(interrupt_feature, test_isr_regular)
 {

@@ -188,6 +188,8 @@ ZTEST(shared_irq_feature, test_dynamic_shared_irq_write)
  * @details This tests if ISR/arg pairs are disconnected successfully
  * and the interrupts are "unshared" whenever a single ISR/arg pair is
  * left.
+ * @verifies ZEP-SRS-7-7
+ * @verifies ZEP-SRS-7-10
  */
 ZTEST(shared_irq_feature, test_dynamic_shared_irq_disconnect_write)
 {

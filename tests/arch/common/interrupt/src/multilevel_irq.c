@@ -9,6 +9,18 @@
 #include <zephyr/irq_multilevel.h>
 #include <zephyr/ztest.h>
 
+/**
+ * @brief Test the multi-level interrupt encoding API
+ *
+ * @ingroup kernel_interrupt_tests
+ *
+ * @details Exercise the multi-level IRQ encoding helpers against second-level
+ * interrupt numbers obtained from the devicetree, verifying conversion between
+ * raw and Zephyr-encoded IRQ numbers, parent (aggregator) resolution and IRQ
+ * level queries. This exercises the kernel support for multi-level interrupts.
+ *
+ * @verifies ZEP-SRS-7-14
+ */
 ZTEST(interrupt_feature, test_multi_level_api)
 {
 	/* Zephyr multilevel-encoded IRQ */
@@ -63,6 +75,18 @@ ZTEST(interrupt_feature, test_multi_level_api)
 }
 
 #ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+/**
+ * @brief Test the multi-level interrupt encoding API for third-level interrupts
+ *
+ * @ingroup kernel_interrupt_tests
+ *
+ * @details Exercise the multi-level IRQ encoding helpers against third-level
+ * interrupt numbers obtained from the devicetree, verifying conversion and
+ * parent resolution across three interrupt levels. This exercises the kernel
+ * support for multi-level interrupts.
+ *
+ * @verifies ZEP-SRS-7-14
+ */
 ZTEST(interrupt_feature, test_multi_level_api_l3)
 {
 	/* Zephyr multilevel-encoded IRQ */
