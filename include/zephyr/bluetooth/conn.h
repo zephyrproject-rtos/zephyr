@@ -2195,6 +2195,16 @@ struct bt_conn_br_cb {
 	void (*packet_type_changed)(struct bt_conn *conn, uint8_t status, uint16_t packet_type);
 };
 
+/** @brief Synthetic error value for an L2CAP Connection Parameter Update
+ *         Procedure (CPUP) rejection.
+ *
+ *  Passed as the hci_err argument to @ref bt_conn_cb.le_param_update_rejected
+ *  when the remote peer does not support the HCI Connection Parameter Request
+ *  (CPR) procedure and the L2CAP CPUP fallback is rejected instead. This is a
+ *  host-internal sentinel; it is not a real HCI error code.
+ */
+#define BT_CONN_PARAM_REJECT_ERR_L2CAP_CPUP 0xFF
+
 /** @brief Connection callback structure.
  *
  *  This structure is used for tracking the state of a connection.
@@ -2306,6 +2316,29 @@ struct bt_conn_cb {
 	 */
 	void (*le_param_updated)(struct bt_conn *conn, uint16_t interval,
 				 uint16_t latency, uint16_t timeout);
+
+#if defined(CONFIG_BT_USER_CONN_PARAM_REJECTED) || defined(__DOXYGEN__)
+	/** @brief LE connection parameter update was rejected by the peer.
+	 *
+	 *  This callback notifies the application that a connection parameter
+	 *  update request initiated by @ref bt_conn_le_param_update was rejected
+	 *  by the peer.
+	 *
+	 *  @note Only called for explicit HCI rejections and L2CAP Connection
+	 *        Parameter Update Procedure (CPUP) rejections.
+	 *        Mutually exclusive with le_param_updated for the same event.
+	 *        If the remote does not support the Connection Parameter Request
+	 *        (CPR) procedure and the L2CAP fallback is
+	 *        rejected, @p hci_err will be BT_CONN_PARAM_REJECT_ERR_L2CAP_CPUP.
+	 *
+	 *  @param conn    Connection object.
+	 *  @param hci_err HCI error code (BT_HCI_ERR_*) for CPR rejection, or
+	 *                 BT_CONN_PARAM_REJECT_ERR_L2CAP_CPUP for L2CAP fallback
+	 *                 rejection.
+	 */
+	void (*le_param_update_rejected)(struct bt_conn *conn, uint8_t hci_err);
+#endif /* defined(CONFIG_BT_USER_CONN_PARAM_REJECTED) || defined(__DOXYGEN__) */
+
 #if defined(CONFIG_BT_SMP)
 	/** @brief Remote Identity Address has been resolved.
 	 *

@@ -1103,7 +1103,21 @@ static void le_conn_param_rsp(struct bt_l2cap *l2cap, struct net_buf *buf)
 		return;
 	}
 
-	LOG_DBG("LE conn param rsp result %u", sys_le16_to_cpu(rsp->result));
+	__maybe_unused uint16_t result = sys_le16_to_cpu(rsp->result);
+
+	LOG_DBG("L2CAP conn param rsp result %u", result);
+
+	if (IS_ENABLED(CONFIG_BT_USER_CONN_PARAM_REJECTED) &&
+	    result == BT_L2CAP_CONN_PARAM_REJECTED) {
+		struct bt_conn *conn = l2cap->chan.chan.conn;
+
+		/* Mirror le_conn_update_complete(): only notify for
+		 * application-initiated updates, not host-initiated (auto) ones.
+		 */
+		if (!atomic_test_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE)) {
+			bt_conn_notify_le_param_rejected(conn, BT_CONN_PARAM_REJECT_ERR_L2CAP_CPUP);
+		}
+	}
 }
 
 static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
