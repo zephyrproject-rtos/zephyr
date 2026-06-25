@@ -37,6 +37,7 @@ The following board targets are available:
 * ``fvp_base_revc_2xaem/v9a/smp/ns`` - ARMv9-A SMP Non-Secure
 * ``fvp_base_revc_2xaem/a320`` - ARMv9.2-A with Cortex-A320 configuration
 * ``fvp_base_revc_2xaem/v8a_aarch32`` - ARMv8-A AArch32 with Cortex-A32 cores
+* ``fvp_base_revc_2xaem/v8a_aarch32/smp`` - ARMv8-A AArch32 SMP (4 cores)
 
 **Cortex-A320 Variant:**
 
