@@ -168,6 +168,7 @@ endif()
 
 if(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
   zephyr_code_relocate(FILES flash_stm32_xspi.c LOCATION RAM_TEXT_RODATA NOKEEP)
+  zephyr_code_relocate(FILES ${ZEPHYR_BASE}/soc/st/stm32/common/stm32_xspi_hal_timer.c LOCATION RAM_TEXT_RODATA NOKEEP)
 
   # Relocate HAL XSPI and HAL timebase code to RAM for STM32N6 and STM32H7S series.
   if(CONFIG_SOC_SERIES_STM32N6X)

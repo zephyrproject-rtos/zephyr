@@ -39,8 +39,10 @@ config FLASH_STM32_XSPI_RAM_RELOCATION
 	select EXPERIMENTAL
 	select CODE_DATA_RELOCATION
 	select CODE_DATA_RELOCATION_SRAM
+	select CORTEX_M_DWT
 	depends on XIP && STM32_APP_IN_EXT_FLASH
 	depends on SOC_SERIES_STM32N6X || SOC_SERIES_STM32H7RSX
+	depends on CPU_CORTEX_M_HAS_DWT
 	help
 	  Relocate STM32 XSPI driver code out of external flash so erase/write
 	  operations remain possible while executing from external Flash.
