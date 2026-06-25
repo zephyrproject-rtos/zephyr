@@ -2027,6 +2027,25 @@ void bt_conn_notify_remote_info(struct bt_conn *conn)
 }
 #endif /* defined(CONFIG_BT_REMOTE_INFO) */
 
+#if defined(CONFIG_BT_USER_CONN_PARAM_REJECTED)
+void bt_conn_notify_le_param_rejected(struct bt_conn *conn, uint8_t hci_err)
+{
+	if (IS_ENABLED(CONFIG_BT_CONN_DYNAMIC_CALLBACKS)) {
+		BT_CONN_CB_DYNAMIC_FOREACH(callback) {
+			if (callback->le_param_update_rejected != NULL) {
+				callback->le_param_update_rejected(conn, hci_err);
+			}
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->le_param_update_rejected != NULL) {
+			cb->le_param_update_rejected(conn, hci_err);
+		}
+	}
+}
+#endif /* defined(CONFIG_BT_USER_CONN_PARAM_REJECTED) */
+
 void bt_conn_notify_le_param_updated(struct bt_conn *conn)
 {
 	uint16_t interval_1250us = conn->le.interval_us / BT_HCI_LE_INTERVAL_UNIT_US;

@@ -450,6 +450,12 @@ config BT_USER_DATA_LEN_UPDATE
 	  about Data Length changes on the connection. The current Data Length
 	  info is available in the connection info.
 
+config BT_USER_CONN_PARAM_REJECTED
+	bool "User notification of connection parameter update rejection"
+	help
+	  Enable application callback when an application-initiated connection
+	  parameter update request is rejected by the peer.
+
 config BT_AUTO_DATA_LEN_UPDATE
 	bool "Auto-initiate Data Length Update procedure"
 	depends on BT_DATA_LEN_UPDATE
