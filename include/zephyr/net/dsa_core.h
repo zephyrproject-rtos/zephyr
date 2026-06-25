@@ -50,6 +50,23 @@ extern "C" {
 #define DSA_PORT_INST_INIT(port, n, cfg)                                                           \
 	ETH_NET_DEVICE_DT_DEFINE(port, dsa_port_initialize, NULL, &dsa_switch_context_##n, cfg,    \
 				 CONFIG_ETH_INIT_PRIORITY, &dsa_eth_api, NET_ETH_MTU)
+
+/** @cond INTERNAL_HIDDEN */
+
+#define DSA_PORT_IFACE_CONDUIT_DECLARE(port)                                                       \
+	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_PHANDLE(port, ethernet)),                            \
+		    (extern NET_IF_DT_DECLARE(DT_PHANDLE(port, ethernet), 0);))
+
+#define DSA_PORT_IFACE_CONDUIT_INIT(port)                                                          \
+	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_PHANDLE(port, ethernet)),                            \
+		    (NET_IF_DT_GET(DT_PHANDLE(port, ethernet), 0)))
+
+#define DSA_PORT_IFACE_USER_INIT(port)                                                             \
+	IF_DISABLED(DT_NODE_HAS_STATUS_OKAY(DT_PHANDLE(port, ethernet)),                           \
+		    (NET_IF_DT_GET(port, 0),))
+
+/** @endcond */
+
 /**
  * @brief Macro for DSA switch instance initialization.
  *
@@ -59,13 +76,20 @@ extern "C" {
  * @param fn	DSA port instance init function.
  */
 #define DSA_SWITCH_INST_INIT(n, _dapi, data, fn)                                                   \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY(n, DSA_PORT_IFACE_CONDUIT_DECLARE)                       \
+	struct dsa_switch_context dsa_switch_context_##n;                                          \
+                                                                                                   \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(n, fn, n);                                         \
+                                                                                                   \
 	struct dsa_switch_context dsa_switch_context_##n = {                                       \
+		.iface_conduit =                                                                   \
+			DT_INST_FOREACH_CHILD_STATUS_OKAY(n, DSA_PORT_IFACE_CONDUIT_INIT),         \
+		.iface_user = {DT_INST_FOREACH_CHILD_STATUS_OKAY(n, DSA_PORT_IFACE_USER_INIT)},    \
 		.dapi = _dapi,                                                                     \
 		.prv_data = data,                                                                  \
 		.init_ports = 0,                                                                   \
 		.num_ports = DT_INST_CHILD_NUM_STATUS_OKAY(n),                                     \
-	};                                                                                         \
-	DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(n, fn, n);
+	};
 
 /** DSA switch context data */
 struct dsa_switch_context {
@@ -152,8 +176,6 @@ struct dsa_port_config {
 	const char *phy_mode;
 	/** Tag protocol */
 	const int tag_proto;
-	/** Ethernet device connected to the port */
-	const struct device *ethernet_connection;
 #if defined(CONFIG_NET_L2_PTP) || defined(__DOXYGEN__)
 	/**
 	 * PTP clock used on the port
