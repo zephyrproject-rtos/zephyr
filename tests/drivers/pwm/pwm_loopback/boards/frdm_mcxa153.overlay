@@ -52,11 +52,11 @@
 	#pwm-cells = <3>;
 	/*
 	 * Route CT_INP15 (P2_5) to CTIMER2 CAPTSEL[0] via INPUTMUX0.
-	 * Cells: <&inputmux0 channel connection> where connection is
+	 * Cells: <&inputmux0 index connection> where connection is
 	 * kINPUTMUX_CtimerInp15ToTimer2Captsel = 16U | (TIMER2CAPTSEL0 << 20)
 	 * = 0x06000010.
 	 */
-	inputmux-connections = <&inputmux0 0 0x06000010>;
+	mux-states = <&inputmux0 0 0x06000010>;
 	pinctrl-0 = <&pinmux_ctimer2_pwm_cap>;
 	pinctrl-names = "default";
 };
