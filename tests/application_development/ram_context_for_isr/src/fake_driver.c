@@ -78,24 +78,9 @@ static unsigned int get_test_irq(void)
 	return (unsigned int)i;
 }
 #else /* CONFIG_TEST_FIND_FREE_IRQ */
-
-#if CONFIG_TEST_IRQ_NUM == 0
-/* For all the other platforms, use the last available IRQ line for testing. */
-#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
-#define TEST_IRQ_NUM (CONFIG_2ND_LVL_ISR_TBL_OFFSET - 1)
-#else
-#define TEST_IRQ_NUM  (CONFIG_NUM_IRQS - 1)
-#endif
-#else
-#define TEST_IRQ_NUM CONFIG_TEST_IRQ_NUM
-#endif
-
-BUILD_ASSERT(TEST_IRQ_NUM >= 0,
-	     "CONFIG_TEST_IRQ_NUM defines the test IRQ when CONFIG_TEST_FIND_FREE_IRQ is disabled");
-
 static unsigned int get_test_irq(void)
 {
-	return TEST_IRQ_NUM;
+	return CONFIG_TEST_IRQ_NUM;
 }
 #endif /* CONFIG_TEST_FIND_FREE_IRQ */
 
