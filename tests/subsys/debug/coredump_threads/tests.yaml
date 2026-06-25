@@ -11,6 +11,7 @@ common:
     - qemu_riscv32
     - qemu_riscv64
     - qemu_riscv32e
+    - versalnet_apu/amd_versalnet_apu/smp
 tests:
   debug.coredump.threads:
     platform_exclude:
@@ -18,12 +19,14 @@ tests:
       # arch_coredump_info_dump() returns immediately when esf is NULL so
       # the coredump output is never produced.
       - qemu_riscv64/qemu_virt_riscv64/smode
-    filter: CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS and CONFIG_MP_MAX_NUM_CPUS == 1
+    filter: CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS
     harness: console
     harness_config:
       type: multi_line
       # Verify core dump contains threads metadata section and several
-      # memory sections, two for each thread
+      # memory sections, two per thread, plus per-CPU ISR stacks.
+      # uniprocessor: 7 threads x 2 + 1 ISR stack  = 15 memory sections
+      # SMP 4-CPU:    7 threads x 2 + 4 ISR stacks  = 18 memory sections
       regex:
         - "E: #CD:BEGIN#"
         - "E: #CD:5([aA])45([0-9a-fA-F]+)"
