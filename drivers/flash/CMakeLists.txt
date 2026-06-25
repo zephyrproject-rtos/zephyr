@@ -166,6 +166,19 @@ if(CONFIG_SOC_FLASH_STM32)
   endif()
 endif()
 
+if(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
+  zephyr_code_relocate(FILES flash_stm32_xspi.c LOCATION RAM_TEXT_RODATA NOKEEP)
+
+  # Relocate HAL XSPI and HAL timebase code to RAM for STM32N6 and STM32H7S series.
+  if(CONFIG_SOC_SERIES_STM32N6X)
+    zephyr_code_relocate(FILES ${ZEPHYR_HAL_STM32_MODULE_DIR}/stm32cube/stm32n6xx/drivers/src/stm32n6xx_hal_xspi.c LOCATION RAM_TEXT_RODATA NOKEEP)
+    zephyr_code_relocate(FILES ${ZEPHYR_HAL_STM32_MODULE_DIR}/stm32cube/stm32n6xx/drivers/src/stm32n6xx_hal.c LOCATION RAM_TEXT_RODATA NOKEEP)
+  elseif(CONFIG_SOC_SERIES_STM32H7RSX)
+    zephyr_code_relocate(FILES ${ZEPHYR_HAL_STM32_MODULE_DIR}/stm32cube/stm32h7rsxx/drivers/src/stm32h7rsxx_hal_xspi.c LOCATION RAM_TEXT_RODATA NOKEEP)
+    zephyr_code_relocate(FILES ${ZEPHYR_HAL_STM32_MODULE_DIR}/stm32cube/stm32h7rsxx/drivers/src/stm32h7rsxx_hal.c LOCATION RAM_TEXT_RODATA NOKEEP)
+  endif()
+endif()
+
 if(CONFIG_SOC_FLASH_GD32)
   zephyr_library_sources(flash_gd32.c)
 
