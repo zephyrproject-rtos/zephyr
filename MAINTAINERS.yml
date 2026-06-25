@@ -3298,6 +3298,7 @@ Infineon Platforms:
     - lauracarlesso
     - merin-infineon
     - ifx-rmcs
+    - parthitce
   files:
     - boards/cypress/
     - boards/infineon/
