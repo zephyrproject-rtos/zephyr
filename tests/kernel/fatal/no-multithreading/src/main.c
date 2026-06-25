@@ -120,6 +120,8 @@ static const exc_trigger_func_t exc_trigger_func[] = {
  * should match.
  *
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-16-2
+ * @verifies ZEP-SRS-16-4
  */
 ZTEST(fatal_no_mt, test_fatal_no_mt)
 {
