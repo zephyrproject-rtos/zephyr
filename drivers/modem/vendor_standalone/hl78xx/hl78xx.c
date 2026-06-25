@@ -905,16 +905,16 @@ void hl78xx_on_cpsms(struct modem_chat *chat, char **argv, uint16_t argc, void *
 	if (argc > 3) {
 		HL78XX_LOG_DBG("%d %d [%s] [%s] [%s] [%s]", __LINE__, argc, argv[0], argv[1],
 			       argv[4], argv[5]);
-		data->status.pmc_cpsms.mode = ATOI(argv[1], 0, "mode");
+		data->status.lpm.cpsms.mode = ATOI(argv[1], 0, "mode");
 		int8_t active_time = binary_str_to_byte(argv[5]);
 		int8_t periodic_tau = binary_str_to_byte(argv[4]);
 
-		data->status.pmc_cpsms.active_time = (active_time == -EINVAL) ? 0 : active_time;
-		data->status.pmc_cpsms.periodic_tau = (periodic_tau == -EINVAL) ? 0 : periodic_tau;
+		data->status.lpm.cpsms.active_time = (active_time == -EINVAL) ? 0 : active_time;
+		data->status.lpm.cpsms.periodic_tau = (periodic_tau == -EINVAL) ? 0 : periodic_tau;
 	} else {
-		data->status.pmc_cpsms.mode = ATOI(argv[1], 0, "mode");
-		data->status.pmc_cpsms.active_time = 0;
-		data->status.pmc_cpsms.periodic_tau = 0;
+		data->status.lpm.cpsms.mode = ATOI(argv[1], 0, "mode");
+		data->status.lpm.cpsms.active_time = 0;
+		data->status.lpm.cpsms.periodic_tau = 0;
 	}
 }
 
@@ -1308,21 +1308,6 @@ static int modem_init_chat(const struct device *dev)
 	return modem_chat_init(&data->chat, &chat_config);
 }
 
-static void hl78xx_dynamic_cmd_feed_lpm_timers(struct hl78xx_data *data, uint16_t response_timeout)
-{
-#if defined(CONFIG_MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN)
-	hl78xx_power_down_feed_timer(data, response_timeout);
-#endif /* CONFIG_MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN */
-
-#if defined(CONFIG_MODEM_HL78XX_EDRX)
-	if (hl78xx_edrx_idle_is_ignoring_feeding(data) == false) {
-		hl78xx_edrx_idle_feed_timer(data, response_timeout);
-	} else {
-		hl78xx_edrx_idle_allow_feeding(data);
-	}
-#endif /* CONFIG_MODEM_HL78XX_EDRX */
-}
-
 static void hl78xx_dynamic_cmd_reset_terminal_result(struct hl78xx_data *data)
 {
 	if (data == NULL) {
@@ -1550,11 +1535,11 @@ static int hl78xx_dynamic_cmd_send_impl(struct hl78xx_data *data,
 		errno = EINVAL;
 		return -EINVAL;
 	}
-
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 	if (!run_async) {
 		hl78xx_dynamic_cmd_feed_lpm_timers(data, req->response_timeout);
 	}
-
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 	hl78xx_dynamic_cmd_reset_terminal_result(data);
 
 	ret = k_mutex_lock(&data->tx_lock, tx_lock_timeout);
@@ -1712,9 +1697,20 @@ void mdm_gpio6_callback_isr(const struct device *port, struct gpio_callback *cb,
 	LOG_DBG("GPIO6 ISR callback %s %d %d", spec->port->name, spec->pin, pin_state);
 
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+	if (hl78xx_is_power_down_scheduled(data)) {
+		LOG_DBG("Power down is scheduled, ignoring GPIO6 interrupt");
+		return;
+	}
+#elif CONFIG_MODEM_HL78XX_EDRX
+	if (hl78xx_is_edrx_idle_scheduled(data)) {
+		LOG_DBG("eDRX is scheduled, ignoring GPIO6 interrupt");
+		return;
+	}
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 	if (config->variant->gpio6_debounce_ms > 0) {
-		data->hl78xx_gpio6_pending_state = pin_state;
-		k_work_reschedule(&data->hl78xx_gpio6_debounce_work,
+		data->low_power.hl78xx_gpio6_pending_state = pin_state;
+		k_work_reschedule(&data->work.hl78xx_gpio6_debounce_work,
 				  K_MSEC(config->variant->gpio6_debounce_ms));
 		return;
 	}
@@ -2541,7 +2537,7 @@ static int hl78xx_on_await_registered_state_enter(struct hl78xx_data *data)
 	}
 
 #if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	if (config->variant->await_registered_enter_lpm) {
 		int ret = config->variant->await_registered_enter_lpm(data);
@@ -2570,7 +2566,7 @@ static void hl78xx_handle_await_registered_timeout(struct hl78xx_data *data)
 	}
 
 #if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	if (config->variant->await_registered_timeout_lpm &&
 	    config->variant->await_registered_timeout_lpm(data)) {
@@ -2614,13 +2610,13 @@ static bool hl78xx_await_registered_resume_should_sleep(struct hl78xx_data *data
 	bool match = false;
 
 #ifdef CONFIG_MODEM_HL78XX_PSM
-	match = match || (data->status.psmev.current == HL78XX_PSM_EVENT_ENTER);
+	match = match || (data->status.lpm.psmev.current == HL78XX_PSM_EVENT_ENTER);
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
-	match = match || (data->status.power_down.current == POWER_DOWN_EVENT_ENTER);
+	match = match || (data->status.lpm.power_down.current == POWER_DOWN_EVENT_ENTER);
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 #ifdef CONFIG_MODEM_HL78XX_EDRX
-	match = match || (data->status.edrxev.current == HL78XX_EDRX_EVENT_IDLE_ENTER);
+	match = match || (data->status.lpm.edrxev.current == HL78XX_EDRX_EVENT_IDLE_ENTER);
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
 
 	return match;
@@ -2738,10 +2734,10 @@ static int hl78xx_on_carrier_on_state_enter(struct hl78xx_data *data)
 		return ret;
 	}
 
-	notif_carrier_on(data->dev);
+	notif_carrier_on(data->devices.hl78xx);
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 	bool is_lpm = false;
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	if (config->variant->carrier_on_enter_lpm) {
 		ret = config->variant->carrier_on_enter_lpm(data, &is_lpm);
@@ -2752,14 +2748,14 @@ static int hl78xx_on_carrier_on_state_enter(struct hl78xx_data *data)
 	}
 
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
-	LOG_DBG("POWER_DOWN: current=%d previous=%d", data->status.power_down.current,
-		data->status.power_down.previous);
+	LOG_DBG("POWER_DOWN: current=%d previous=%d", data->status.lpm.power_down.current,
+		data->status.lpm.power_down.previous);
 	is_lpm = true;
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
 	if (is_lpm) {
 		LOG_DBG("LPM wake: deferring APN/CGCONTRDP to settling timer");
-		data->status.lpm_restore_pending = true;
+		data->status.lpm.restore_pending = true;
 		hl78xx_start_timer(data, K_SECONDS(2));
 	}
 #else
@@ -2784,16 +2780,16 @@ static void hl78xx_carrier_on_timeout_handler(struct hl78xx_data *data
 
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 #ifdef CONFIG_MODEM_HL78XX_PSM
-	if (data->status.awaiting_psm_confirmation) {
+	if (data->status.lpm.awaiting_psm_confirmation) {
 		LOG_WRN("PSM confirmation timeout - deregistration likely due to "
 			"coverage loss, not low power transition");
-		data->status.awaiting_psm_confirmation = false;
+		data->status.lpm.awaiting_psm_confirmation = false;
 		return;
 	}
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 
-	if (data->status.lpm_restore_pending) {
-		data->status.lpm_restore_pending = false;
+	if (data->status.lpm.restore_pending) {
+		data->status.lpm.restore_pending = false;
 		if (config->variant->carrier_on_dns_complete) {
 			/* Variant needs APN/KCNXCFG restore (e.g. HL7800 PSM/eDRX) */
 			LOG_DBG("LPM restore: re-applying APN/KCNXCFG");
@@ -2801,7 +2797,7 @@ static void hl78xx_carrier_on_timeout_handler(struct hl78xx_data *data
 						      strlen(data->identity.apn));
 			if (ret) {
 				LOG_ERR("LPM APN restore failed: %d, retrying", ret);
-				data->status.lpm_restore_pending = true;
+				data->status.lpm.restore_pending = true;
 				hl78xx_start_timer(data, K_SECONDS(2));
 				return;
 			}
@@ -2812,14 +2808,14 @@ static void hl78xx_carrier_on_timeout_handler(struct hl78xx_data *data
 		ret = iface_status_work_cb(data, hl78xx_chat_callback_handler);
 		if (ret < 0) {
 			LOG_WRN("LPM restore: CGCONTRDP deferred (ret=%d), retrying", ret);
-			data->status.lpm_restore_pending = true;
+			data->status.lpm.restore_pending = true;
 			hl78xx_start_timer(data, K_SECONDS(2));
 		}
 		return;
 	}
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
-	ret = dns_work_cb(data->dev, true);
+	ret = dns_work_cb(data->devices.hl78xx, true);
 	if (ret == -EAGAIN) {
 		LOG_ERR("DNS work callback failed: rescheduling... %d", ret);
 		hl78xx_start_timer(data, K_SECONDS(2));
@@ -2838,13 +2834,13 @@ static void hl78xx_carrier_on_timeout_handler(struct hl78xx_data *data
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 	event_dispatcher_dispatch(&ready_event);
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
-	LOG_DBG("%d %d %d", __LINE__, data->status.power_down.previous,
-		data->status.power_down.current);
-	if (data->status.power_down.current != POWER_DOWN_EVENT_NONE) {
+	LOG_DBG("%d %d %d", __LINE__, data->status.lpm.power_down.previous,
+		data->status.lpm.power_down.current);
+	if (data->status.lpm.power_down.current != POWER_DOWN_EVENT_NONE) {
 		if (!hl78xx_request_signal_quality_check(data)) {
 			LOG_WRN("Failed to trigger post-power-down signal quality check");
 		}
-		data->status.power_down.current = POWER_DOWN_EVENT_NONE;
+		data->status.lpm.power_down.current = POWER_DOWN_EVENT_NONE;
 		hl78xx_release_socket_comms(data);
 	}
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
@@ -2892,7 +2888,7 @@ static void hl78xx_carrier_on_event_handler(struct hl78xx_data *data, enum hl78x
 		 */
 		hl78xx_start_timer(data, K_SECONDS(MDM_REGISTRATION_TIMEOUT));
 #ifdef CONFIG_MODEM_HL78XX_PSM
-		data->status.awaiting_psm_confirmation = true;
+		data->status.lpm.awaiting_psm_confirmation = true;
 		if (config->variant->carrier_on_deregistered_psm) {
 			config->variant->carrier_on_deregistered_psm(data);
 		}
@@ -2906,7 +2902,7 @@ static void hl78xx_carrier_on_event_handler(struct hl78xx_data *data, enum hl78x
 	case MODEM_HL78XX_EVENT_DEVICE_ASLEEP:
 		hl78xx_stop_timer(data);
 #ifdef CONFIG_MODEM_HL78XX_PSM
-		data->status.awaiting_psm_confirmation = false;
+		data->status.lpm.awaiting_psm_confirmation = false;
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 		if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
 			gpio_pin_set_dt(&config->mdm_gpio_wake, 0);
@@ -2999,7 +2995,7 @@ static int hl78xx_on_carrier_on_state_leave(struct hl78xx_data *data)
 {
 	hl78xx_stop_timer(data);
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
-	data->status.lpm_restore_pending = false;
+	data->status.lpm.restore_pending = false;
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 	return 0;
 }
@@ -3238,7 +3234,7 @@ static void hl78xx_sleep_event_handler(struct hl78xx_data *data, enum hl78xx_eve
 		/* Modem is waking up from sleep */
 
 #ifdef CONFIG_MODEM_HL78XX_EDRX
-		data->status.edrxev.is_edrx_idle_requested = false;
+		data->status.lpm.edrxev.is_requested = false;
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
 
 		if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
@@ -3434,14 +3430,14 @@ static int hl78xx_on_power_off_pulse_state_leave(struct hl78xx_data *data)
 
 static int hl78xx_on_idle_state_enter(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
 		gpio_pin_set_dt(&config->mdm_gpio_wake, 0);
 	}
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
-	if (data->status.power_down.current == POWER_DOWN_EVENT_NONE &&
-	    !data->status.power_down.is_power_down_requested) {
+	if (data->status.lpm.power_down.current == POWER_DOWN_EVENT_NONE &&
+	    !data->status.lpm.power_down.is_power_down_requested) {
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 		if (hl78xx_gpio_is_enabled(&config->mdm_gpio_reset)) {
 			gpio_pin_set_dt(&config->mdm_gpio_reset, 1);
@@ -3506,7 +3502,10 @@ static int hl78xx_on_idle_state_leave(struct hl78xx_data *data)
 		gpio_pin_set_dt(&config->mdm_gpio_wake, 1);
 	}
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
-	data->status.power_down.is_power_down_requested = false;
+	data->status.lpm.power_down.is_power_down_requested = false;
+	data->status.lpm.power_down.previous = data->status.lpm.power_down.current;
+	data->status.lpm.power_down.current = POWER_DOWN_EVENT_EXIT;
+
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 	return 0;
 }

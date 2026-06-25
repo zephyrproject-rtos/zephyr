@@ -63,16 +63,16 @@ static void hl78xx_hl7812_on_rrc_status_urc(struct hl78xx_data *data, bool is_id
 static void hl78xx_hl7812_on_psmev_urc(struct hl78xx_data *data, int psmev_value)
 {
 #if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE) && defined(CONFIG_MODEM_HL78XX_PSM)
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 	struct hl78xx_evt event = {.type = HL78XX_LTE_PSMEV_UPDATE};
 
-	data->status.psmev.previous = data->status.psmev.current;
-	data->status.psmev.current = psmev_value;
-	event.content.psm_event = data->status.psmev.current;
+	data->status.lpm.psmev.previous = data->status.lpm.psmev.current;
+	data->status.lpm.psmev.current = psmev_value;
+	event.content.psm_event = data->status.lpm.psmev.current;
 
 	event_dispatcher_dispatch(&event);
 
-	if (data->status.psmev.current == HL78XX_PSM_EVENT_ENTER) {
+	if (data->status.lpm.psmev.current == HL78XX_PSM_EVENT_ENTER) {
 		if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
 			gpio_pin_set_dt(&config->mdm_gpio_wake, 0);
 			LOG_DBG("Set WAKE pin to 0");
@@ -81,13 +81,13 @@ static void hl78xx_hl7812_on_psmev_urc(struct hl78xx_data *data, int psmev_value
 		    data->status.state != MODEM_HL78XX_STATE_IDLE) {
 			hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_DEVICE_ASLEEP);
 		}
-	} else if (data->status.psmev.current == HL78XX_PSM_EVENT_EXIT) {
+	} else if (data->status.lpm.psmev.current == HL78XX_PSM_EVENT_EXIT) {
 		if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
 			gpio_pin_set_dt(&config->mdm_gpio_wake, 1);
 			LOG_DBG("Set WAKE pin to 1");
 		}
 	} else {
-		LOG_DBG("Unknown PSM event value: %d", data->status.psmev.current);
+		LOG_DBG("Unknown PSM event value: %d", data->status.lpm.psmev.current);
 	}
 #else
 	ARG_UNUSED(data);
@@ -269,9 +269,9 @@ static void hl78xx_hl7812_gpio6_handle_low(struct hl78xx_data *data,
 	}
 
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
-	data->status.power_down.previous = data->status.power_down.current;
-	if (data->status.power_down.is_power_down_requested) {
-		data->status.power_down.current = POWER_DOWN_EVENT_ENTER;
+	data->status.lpm.power_down.previous = data->status.lpm.power_down.current;
+	if (data->status.lpm.power_down.is_power_down_requested) {
+		data->status.lpm.power_down.current = POWER_DOWN_EVENT_ENTER;
 		LOG_DBG("GPIO6 LOW: power-down confirmed (internal state updated)");
 	}
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
@@ -280,13 +280,13 @@ static void hl78xx_hl7812_gpio6_handle_low(struct hl78xx_data *data,
 	/* HL7812: accept GPIO6 LOW as eDRX ENTER only when idle-sleep was
 	 * explicitly requested by the eDRX idle timer.
 	 */
-	if (data->status.edrxev.is_edrx_idle_requested) {
-		if (data->status.edrxev.current != HL78XX_EDRX_EVENT_IDLE_ENTER) {
-			data->status.edrxev.previous = data->status.edrxev.current;
-			data->status.edrxev.current = HL78XX_EDRX_EVENT_IDLE_ENTER;
+	if (data->status.lpm.edrxev.is_requested) {
+		if (data->status.lpm.edrxev.current != HL78XX_EDRX_EVENT_IDLE_ENTER) {
+			data->status.lpm.edrxev.previous = data->status.lpm.edrxev.current;
+			data->status.lpm.edrxev.current = HL78XX_EDRX_EVENT_IDLE_ENTER;
 			hl78xx_hl7812_append_pending_event(pending_evts, pending_evt_count,
 							   HL78XX_EDRX_IDLE_UPDATE,
-							   data->status.edrxev.current);
+							   data->status.lpm.edrxev.current);
 		}
 	}
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
@@ -313,9 +313,9 @@ static void hl78xx_hl7812_gpio6_handle_high(struct hl78xx_data *data,
 					    uint8_t *pending_evt_count)
 {
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
-	data->status.power_down.previous = data->status.power_down.current;
-	if (data->status.power_down.is_power_down_requested) {
-		data->status.power_down.current = POWER_DOWN_EVENT_EXIT;
+	data->status.lpm.power_down.previous = data->status.lpm.power_down.current;
+	if (data->status.lpm.power_down.is_power_down_requested) {
+		data->status.lpm.power_down.current = POWER_DOWN_EVENT_EXIT;
 		LOG_DBG("GPIO6 HIGH: modem waking from power-down (state updated)");
 	}
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
@@ -324,13 +324,13 @@ static void hl78xx_hl7812_gpio6_handle_high(struct hl78xx_data *data,
 	/* HL7812: accept GPIO6 HIGH as eDRX EXIT only after explicit wake
 	 * intent cleared the idle-request marker in RESUME flow.
 	 */
-	if (!data->status.edrxev.is_edrx_idle_requested) {
-		if (data->status.edrxev.current != HL78XX_EDRX_EVENT_IDLE_EXIT) {
-			data->status.edrxev.previous = data->status.edrxev.current;
-			data->status.edrxev.current = HL78XX_EDRX_EVENT_IDLE_EXIT;
+	if (!data->status.lpm.edrxev.is_requested) {
+		if (data->status.lpm.edrxev.current != HL78XX_EDRX_EVENT_IDLE_EXIT) {
+			data->status.lpm.edrxev.previous = data->status.lpm.edrxev.current;
+			data->status.lpm.edrxev.current = HL78XX_EDRX_EVENT_IDLE_EXIT;
 			hl78xx_hl7812_append_pending_event(pending_evts, pending_evt_count,
 							   HL78XX_EDRX_IDLE_UPDATE,
-							   data->status.edrxev.current);
+							   data->status.lpm.edrxev.current);
 		}
 	}
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
@@ -392,8 +392,8 @@ static void hl78xx_hl7812_on_ksup_lpm(struct hl78xx_data *data)
 static int hl78xx_hl7812_await_registered_enter_lpm(struct hl78xx_data *data)
 {
 #ifdef CONFIG_MODEM_HL78XX_PSM
-	LOG_DBG("PSM event: previous=%d current=%d", data->status.psmev.previous,
-		data->status.psmev.current);
+	LOG_DBG("PSM event: previous=%d current=%d", data->status.lpm.psmev.previous,
+		data->status.lpm.psmev.current);
 
 	if (hl78xx_psm_is_active(data) && IS_ENABLED(CONFIG_HL78XX_GNSS)) {
 		return modem_dynamic_cmd_send_req(
@@ -417,7 +417,7 @@ static int hl78xx_hl7812_await_registered_enter_lpm(struct hl78xx_data *data)
 	 * the socket semaphore.
 	 */
 	if (hl78xx_is_registered(data) && !IS_ENABLED(CONFIG_MODEM_HL78XX_PSM)) {
-		data->status.edrxev.is_edrx_idle_requested = false;
+		data->status.lpm.edrxev.is_requested = false;
 		return modem_dynamic_cmd_send_req(
 			data, &(const struct hl78xx_dynamic_cmd_request){
 				      .script_user_callback = NULL,
@@ -456,11 +456,11 @@ static bool hl78xx_hl7812_await_registered_timeout_lpm(struct hl78xx_data *data)
 static int hl78xx_hl7812_carrier_on_enter_lpm(struct hl78xx_data *data, bool *is_lpm)
 {
 #ifdef CONFIG_MODEM_HL78XX_PSM
-	LOG_DBG("PSMEV previous: %d, current: %d", data->status.psmev.previous,
-		data->status.psmev.current);
+	LOG_DBG("PSMEV previous: %d, current: %d", data->status.lpm.psmev.previous,
+		data->status.lpm.psmev.current);
 
-	*is_lpm = *is_lpm || ((data->status.psmev.previous == HL78XX_PSM_EVENT_NONE &&
-			       data->status.psmev.current == HL78XX_PSM_EVENT_NONE) &&
+	*is_lpm = *is_lpm || ((data->status.lpm.psmev.previous == HL78XX_PSM_EVENT_NONE &&
+			       data->status.lpm.psmev.current == HL78XX_PSM_EVENT_NONE) &&
 			      data->status.registration.network_state_previous !=
 				      CELLULAR_REGISTRATION_UNKNOWN);
 
@@ -474,10 +474,10 @@ static int hl78xx_hl7812_carrier_on_enter_lpm(struct hl78xx_data *data, bool *is
 	 * we're already in CARRIER_ON, the modem woke from PSM.  Clear the
 	 * state and return — data can flow as soon as +KCELLMEAS fires.
 	 */
-	if (data->status.psmev.current == HL78XX_PSM_EVENT_ENTER) {
+	if (data->status.lpm.psmev.current == HL78XX_PSM_EVENT_ENTER) {
 		LOG_DBG("HL7812 PSM wake: sockets retained, skipping CGCONTRDP/DNS");
-		data->status.psmev.previous = HL78XX_PSM_EVENT_ENTER;
-		data->status.psmev.current = HL78XX_PSM_EVENT_EXIT;
+		data->status.lpm.psmev.previous = HL78XX_PSM_EVENT_ENTER;
+		data->status.lpm.psmev.current = HL78XX_PSM_EVENT_EXIT;
 		return 1; /* early return from carrier_on_enter */
 	}
 #endif /* CONFIG_MODEM_HL78XX_PSM */
@@ -490,6 +490,7 @@ static int hl78xx_hl7812_carrier_on_enter_lpm(struct hl78xx_data *data, bool *is
 	 */
 	LOG_DBG("eDRX event previous: %d, current: %d, is_lpm: %d",
 		data->status.lpm.edrxev.previous, data->status.lpm.edrxev.current, *is_lpm);
+
 	*is_lpm = *is_lpm || ((data->status.lpm.edrxev.previous == HL78XX_EDRX_EVENT_IDLE_NONE &&
 			       data->status.lpm.edrxev.current == HL78XX_EDRX_EVENT_IDLE_EXIT));
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
@@ -545,11 +546,11 @@ static void hl78xx_hl7812_check_lpm_state(struct hl78xx_data *data, bool *in_lpm
 	/* HL7812: use explicit eDRX idle request as the LPM indicator,
 	 * not GPIO6-derived previous/current transitions.
 	 */
-	*in_lpm = *in_lpm || data->status.edrxev.is_edrx_idle_requested;
+	*in_lpm = *in_lpm || data->status.lpm.edrxev.is_requested;
 
-	LOG_DBG("EDRX status: is_edrx_idle_requested=%d current=%d previous=%d",
-		data->status.edrxev.is_edrx_idle_requested, data->status.edrxev.current,
-		data->status.edrxev.previous);
+	LOG_DBG("EDRX status: is_requested=%d current=%d previous=%d",
+		data->status.lpm.edrxev.is_requested, data->status.lpm.edrxev.current,
+		data->status.lpm.edrxev.previous);
 
 	if (!*in_lpm) {
 		*early_return = true;
