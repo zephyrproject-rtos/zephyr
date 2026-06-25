@@ -636,6 +636,10 @@ int net_context_get(net_sa_family_t family, enum net_sock_type type, uint16_t pr
 			k_sem_init(&contexts[i].recv_data_wait, 1, K_SEM_MAX_LIMIT);
 		}
 
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+		k_sem_init(&contexts[i].linger_sem, 0, 1);
+#endif
+
 		k_mutex_init(&contexts[i].lock);
 
 		contexts[i].flags |= NET_CONTEXT_IN_USE;
@@ -716,6 +720,9 @@ int net_context_unref(struct net_context *context)
 int net_context_put(struct net_context *context)
 {
 	int ret = 0;
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+	bool linger = false;
+#endif
 
 	NET_ASSERT(context);
 
@@ -733,6 +740,17 @@ int net_context_put(struct net_context *context)
 		return ret;
 	}
 
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+	/* SO_LINGER with a non-zero timeout: block until the connection has
+	 * been closed by the stack or the timeout expires. The linger_sem is
+	 * signalled from tcp_conn_close() via net_context_signal_linger().
+	 */
+	linger = context->options.linger.l_onoff != 0 &&
+		 context->options.linger.l_linger > 0 &&
+		 net_context_get_type(context) == NET_SOCK_STREAM &&
+		 net_context_get_state(context) == NET_CONTEXT_CONNECTED;
+#endif /* CONFIG_NET_CONTEXT_LINGER */
+
 	context->connect_cb = NULL;
 	context->recv_cb = NULL;
 	context->send_cb = NULL;
@@ -741,6 +759,13 @@ int net_context_put(struct net_context *context)
 	net_tcp_put(context, false);
 
 	k_mutex_unlock(&context->lock);
+
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+	if (linger) {
+		(void)k_sem_take(&context->linger_sem,
+				 K_SECONDS(context->options.linger.l_linger));
+	}
+#endif /* CONFIG_NET_CONTEXT_LINGER */
 
 	/* Decrement refcount on user app's behalf */
 	net_context_unref(context);
@@ -1778,6 +1803,37 @@ static int get_context_sndbuf(struct net_context *context,
 
 	return -ENOTSUP;
 #endif
+}
+
+static int get_context_linger(struct net_context *context,
+			      void *value, uint32_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+	struct net_linger *linger = value;
+
+	/* SO_LINGER is only meaningful for connection-oriented (stream)
+	 * sockets.
+	 */
+	if (net_context_get_type(context) != NET_SOCK_STREAM) {
+		return -ENOTSUP;
+	}
+
+	if (value == NULL || len == NULL || *len != sizeof(struct net_linger)) {
+		return -EINVAL;
+	}
+
+	*linger = context->options.linger;
+
+	*len = sizeof(struct net_linger);
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif /* CONFIG_NET_CONTEXT_LINGER */
 }
 
 static int get_context_dscp_ecn(struct net_context *context,
@@ -3606,6 +3662,39 @@ static int set_context_sndbuf(struct net_context *context,
 #endif
 }
 
+static int set_context_linger(struct net_context *context,
+			      const void *value, uint32_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+	const struct net_linger *linger = value;
+
+	/* SO_LINGER is only meaningful for connection-oriented (stream)
+	 * sockets.
+	 */
+	if (net_context_get_type(context) != NET_SOCK_STREAM) {
+		return -ENOTSUP;
+	}
+
+	if (value == NULL || len != sizeof(struct net_linger)) {
+		return -EINVAL;
+	}
+
+	if (linger->l_linger < 0) {
+		return -EINVAL;
+	}
+
+	context->options.linger = *linger;
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif /* CONFIG_NET_CONTEXT_LINGER */
+}
+
 static int set_context_dscp_ecn(struct net_context *context,
 				const void *value, uint32_t len)
 {
@@ -4106,6 +4195,9 @@ int net_context_set_option(struct net_context *context,
 	case NET_OPT_DONT_FRAGMENT:
 		ret = set_context_dont_fragment(context, value, len);
 		break;
+	case NET_OPT_LINGER:
+		ret = set_context_linger(context, value, len);
+		break;
 	}
 
 	k_mutex_unlock(&context->lock);
@@ -4202,6 +4294,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_DONT_FRAGMENT:
 		ret = get_context_dont_fragment(context, value, len);
+		break;
+	case NET_OPT_LINGER:
+		ret = get_context_linger(context, value, len);
 		break;
 	}
 

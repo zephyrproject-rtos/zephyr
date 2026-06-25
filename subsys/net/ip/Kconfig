@@ -578,6 +578,17 @@ config NET_CONTEXT_SNDBUF
 	  For TCP sockets, the sndbuf will determine the total size of queued
 	  data in the TCP layer.
 
+config NET_CONTEXT_LINGER
+	bool "Add SO_LINGER support to net_context"
+	depends on NET_TCP
+	help
+	  Allow setting the SO_LINGER option on a TCP socket. When linger is
+	  enabled with a zero timeout, closing the socket aborts the connection
+	  by sending a RST segment instead of performing a graceful FIN close.
+	  When linger is enabled with a non-zero timeout, close() blocks until
+	  the connection has been closed by the stack or the timeout (in
+	  seconds) expires, in which case the connection is aborted with a RST.
+
 config NET_CONTEXT_DSCP_ECN
 	bool "Add support for setting DSCP/ECN IP properties on net_context"
 	depends on NET_IP_DSCP_ECN

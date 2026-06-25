@@ -1989,6 +1989,20 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 			break;
 
+		case ZSOCK_SO_LINGER:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_LINGER)) {
+				ret = net_context_get_option(ctx,
+							     NET_OPT_LINGER,
+							     optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+			break;
+
 		case ZSOCK_SO_KEEPALIVE:
 			if (IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE) &&
 			    net_context_get_proto(ctx) == NET_IPPROTO_TCP) {
@@ -2651,7 +2665,21 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 		}
 
 		case ZSOCK_SO_LINGER:
-			/* ignored. for compatibility purposes only */
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_LINGER)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_LINGER,
+							     optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			/* Without linger support, accept the option for
+			 * compatibility purposes only.
+			 */
 			return 0;
 
 		case ZSOCK_SO_KEEPALIVE:
