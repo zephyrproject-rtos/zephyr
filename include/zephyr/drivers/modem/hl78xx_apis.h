@@ -13,7 +13,6 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_HL78XX_APIS_H_
 #define ZEPHYR_INCLUDE_DRIVERS_HL78XX_APIS_H_
 
-#include <stdarg.h>
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
@@ -36,17 +35,17 @@ extern "C" {
  */
 /* clang-format off */
 /** Unknown RSSI value returned by AT+CSQ command */
-#define CSQ_RSSI_UNKNOWN         (99)
+#define CSQ_RSSI_UNKNOWN  (99)
 /** Maximum valid RSSI code returned by AT+CSQ command */
-#define CSQ_RSSI_MAX             (31)
+#define CSQ_RSSI_MAX      (31)
 /** Unknown RSRP value returned by AT+CESQ command */
-#define CESQ_RSRP_UNKNOWN        (255)
+#define CESQ_RSRP_UNKNOWN (255)
 /** Maximum valid RSRP code returned by AT+CESQ command */
-#define CESQ_RSRP_MAX            (97)
+#define CESQ_RSRP_MAX     (97)
 /** Unknown RSRQ value returned by AT+CESQ command */
-#define CESQ_RSRQ_UNKNOWN        (255)
+#define CESQ_RSRQ_UNKNOWN (255)
 /** Maximum valid RSRQ code returned by AT+CESQ command */
-#define CESQ_RSRQ_MAX            (34)
+#define CESQ_RSRQ_MAX     (34)
 
 /** Modem response type for generic ERROR responses returned by public AT helpers. */
 #define HL78XX_MODEM_AT_ERROR     1
@@ -60,50 +59,66 @@ extern "C" {
  * @param v RSSI value (0-31)
  * @return Signal strength in dBm (-113 to -51)
  */
-#define CSQ_RSSI_TO_DB(v)        (-113 + (2 * (v)))
+#define CSQ_RSSI_TO_DB(v)  (-113 + (2 * (v)))
 /**
  * Convert CESQ RSRP value to dBm
  * @param v RSRP value (0-97)
  * @return Conservative lower-bound representative in dBm (-141 to -44)
  */
-#define CESQ_RSRP_TO_DB(v)       (-141 + (v))
+#define CESQ_RSRP_TO_DB(v) (-141 + (v))
 /**
  * Convert CESQ RSRQ value to dB
  * @param v RSRQ value (0-34)
  * @return Conservative integer representative in dB (-21 to -3)
  */
-#define CESQ_RSRQ_TO_DB(v)       (((v) == 0U) ? -21 : (-20 + ((v) / 2)))
+#define CESQ_RSRQ_TO_DB(v) (((v) == 0U) ? -21 : (-20 + ((v) / 2)))
 
 /** Monitor is paused */
-#define PAUSED                   1
+#define PAUSED 1
 /** Monitor is active, default */
-#define ACTIVE                   0
+#define ACTIVE 0
 /** Maximum length of modem manufacturer string */
-#define MDM_MANUFACTURER_LENGTH  20
+#define MDM_MANUFACTURER_LENGTH        20
 /** Maximum length of modem model string */
-#define MDM_MODEL_LENGTH         32
+#define MDM_MODEL_LENGTH               32
 /** Maximum length of modem revision string */
-#define MDM_REVISION_LENGTH      64
+#define MDM_REVISION_LENGTH            64
 /** Maximum length of modem IMEI string */
-#define MDM_IMEI_LENGTH          16
+#define MDM_IMEI_LENGTH                16
 /** Maximum length of modem IMSI string */
-#define MDM_IMSI_LENGTH          23
+#define MDM_IMSI_LENGTH                23
 /** Maximum length of modem ICCID string */
-#define MDM_ICCID_LENGTH         22
+#define MDM_ICCID_LENGTH               22
 /** Maximum length of APN string */
-#define MDM_APN_MAX_LENGTH       64
+#define MDM_APN_MAX_LENGTH             64
 /** Maximum length of certificate */
-#define MDM_MAX_CERT_LENGTH      4096
+#define MDM_MAX_CERT_LENGTH            4096
 /** Maximum length of hostname */
-#define MDM_MAX_HOSTNAME_LEN     128
+#define MDM_MAX_HOSTNAME_LEN           128
 /** Maximum length of serial number string */
-#define MDM_SERIAL_NUMBER_LENGTH 32
+#define MDM_SERIAL_NUMBER_LENGTH       32
 /** Recommended buffer size for extracted +CTZEU universal time strings */
 #define HL78XX_CTZEU_UTIME_MAX_LEN     32
 /** Maximum length of CEREG timer string */
 #define HL78XX_CEREG_TIMER_STR_LEN     9
 /** Maximum length of network address string */
 #define HL78XX_NETWORK_ADDRESS_MAX_LEN 46
+/** Pattern used to indicate end-of-file or completion of data transmission */
+#define MDM_HL78XX_EOF_PATTERN         "--EOF--Pattern--"
+/** Escape/termination sequence used to exit data mode and return to command mode */
+#define MDM_HL78XX_TERMINATION_PATTERN "+++"
+/** Response string indicating a successful data connection has been established */
+#define MDM_HL78XX_CONNECT_STRING      "CONNECT"
+/** Response string indicating the connection has been lost or terminated */
+#define MDM_HL78XX_NO_CARRIER_STRING   "NO CARRIER"
+/** Prefix for CME (Mobile Equipment) error responses, typically followed by an error code */
+#define MDM_HL78XX_CME_ERROR_STRING    "+CME ERROR: "
+/** Prefix for CMS (Message Service) error responses, typically related to SMS operations */
+#define MDM_HL78XX_CMS_ERROR_STRING    "+CMS ERROR: "
+/** Generic error response string indicating command failure */
+#define MDM_HL78XX_ERROR_STRING        "ERROR"
+/** Standard response string indicating successful execution of an AT command */
+#define MDM_HL78XX_OK_STRING           "OK"
 
 /**
  * @brief Initial active state for HL78xx monitors.
@@ -274,8 +289,7 @@ struct kselacq_syntax {
  * @return true when a valid runtime band override exists for @p rat.
  */
 typedef bool (*hl78xx_runtime_band_provider_t)(const struct device *dev,
-					       enum hl78xx_cell_rat_mode rat,
-					       uint16_t *band,
+					       enum hl78xx_cell_rat_mode rat, uint16_t *band,
 					       void *user_data);
 
 /**
@@ -1413,8 +1427,7 @@ int hl78xx_api_func_get_prl(const struct device *dev, struct kselacq_syntax *kse
  * @return 0 on success, negative errno on failure.
  */
 int hl78xx_set_runtime_band_provider(const struct device *dev,
-				     hl78xx_runtime_band_provider_t provider,
-				     void *user_data);
+				     hl78xx_runtime_band_provider_t provider, void *user_data);
 
 /**
  * @brief Send dynamic AT command (internal implementation)
@@ -1435,129 +1448,35 @@ int hl78xx_api_func_modem_dynamic_cmd_send(const struct device *dev, const char 
 					   uint16_t matches_size);
 
 /**
- * @brief Send a formatted AT command to the modem (va_list variant).
+ * @brief Send a pre-formatted AT command to the modem.
  *
- * This is the va_list form of hl78xx_modem_at_printf(). Use this when
- * implementing your own variadic wrapper.
+ * Returns 0 on OK responses, a positive encoded modem error on
+ * ERROR/+CME ERROR/+CMS ERROR responses, and a negative errno on
+ * transport failure. Callers must format the command string first
+ * with snprintf() when variable arguments are needed.
  *
  * @param dev Cellular network device instance
- * @param fmt Command format string
- * @param args Format arguments
+ * @param cmd AT command string to send
  * @return 0 on success, positive encoded modem error, or negative errno on failure
  */
-__printf_like(2, 0)
-int hl78xx_modem_at_printf_va(const struct device *dev, const char *fmt, va_list args);
+int hl78xx_modem_at_send(const struct device *dev, const char *cmd);
 
 /**
- * @brief Send a formatted AT command to the modem.
+ * @brief Send a pre-formatted AT command and copy the whole modem response
+ * into a caller-supplied buffer.
  *
- * This helper is analogous to nrf_modem_at_printf(). It returns 0 on OK responses,
- * a positive encoded modem error on ERROR/+CME ERROR/+CMS ERROR responses, and a
- * negative errno on local formatting or transport failure.
- *
- * @param dev Cellular network device instance
- * @param fmt Command format string
- * @param ... Format arguments
- * @return 0 on success, positive encoded modem error, or negative errno on failure
- */
-__printf_like(2, 3)
-static inline int hl78xx_modem_at_printf(const struct device *dev, const char *fmt, ...)
-{
-	va_list args;
-	int ret;
-
-	va_start(args, fmt);
-	ret = hl78xx_modem_at_printf_va(dev, fmt, args);
-	va_end(args);
-
-	return ret;
-}
-
-/**
- * @brief Send an AT command and parse the modem response with scanf()-style formatting
- * (va_list variant).
- *
- * This is the va_list form of hl78xx_modem_at_scanf(). Use this when
- * implementing your own variadic wrapper.
- *
- * @param dev Cellular network device instance
- * @param cmd AT command string sent as-is
- * @param fmt scanf()-style response format string
- * @param args Output arguments as va_list
- * @return number of matched arguments on success, or negative errno on failure
- */
-int hl78xx_modem_at_scanf_va(const struct device *dev, const char *cmd, const char *fmt,
-			     va_list args);
-
-/**
- * @brief Send an AT command and parse the modem response with scanf()-style formatting.
- *
- * This helper is analogous to nrf_modem_at_scanf(). The command string is sent as-is,
- * and the received response is parsed with vsscanf().
- *
- * @param dev Cellular network device instance
- * @param cmd AT command string sent as-is
- * @param fmt scanf()-style response format string
- * @param ... Output arguments for parsed values
- * @return number of matched arguments on success, or negative errno on failure
- */
-static inline int hl78xx_modem_at_scanf(const struct device *dev, const char *cmd,
-					const char *fmt, ...)
-{
-	va_list args;
-	int ret;
-
-	va_start(args, fmt);
-	ret = hl78xx_modem_at_scanf_va(dev, cmd, fmt, args);
-	va_end(args);
-
-	return ret;
-}
-
-/**
- * @brief Send a formatted AT command and copy the modem response into a buffer
- * (va_list variant).
- *
- * This is the va_list form of hl78xx_modem_at_cmd(). Use this when
- * implementing your own variadic wrapper.
+ * Callers must format the command string first with snprintf() when
+ * variable arguments are needed. The response buffer receives the full
+ * modem response collected by the driver.
  *
  * @param dev Cellular network device instance
  * @param response Output buffer for the whole modem response
  * @param response_size Output buffer size
- * @param fmt Command format string
- * @param args Format arguments
+ * @param cmd AT command string to send
  * @return 0 on success, positive encoded modem error, or negative errno on failure
  */
-__printf_like(4, 0)
-int hl78xx_modem_at_cmd_va(const struct device *dev, char *response, size_t response_size,
-			   const char *fmt, va_list args);
-
-/**
- * @brief Send a formatted AT command and copy the whole modem response into a buffer.
- *
- * This helper is analogous to nrf_modem_at_cmd(). The response buffer receives the whole
- * modem response collected by the driver, including terminal lines.
- *
- * @param dev Cellular network device instance
- * @param response Output buffer for the whole modem response
- * @param response_size Output buffer size
- * @param fmt Command format string
- * @param ... Format arguments
- * @return 0 on success, positive encoded modem error, or negative errno on failure
- */
-__printf_like(4, 5)
-static inline int hl78xx_modem_at_cmd(const struct device *dev, char *response,
-				      size_t response_size, const char *fmt, ...)
-{
-	va_list args;
-	int ret;
-
-	va_start(args, fmt);
-	ret = hl78xx_modem_at_cmd_va(dev, response, response_size, fmt, args);
-	va_end(args);
-
-	return ret;
-}
+int hl78xx_modem_at_cmd(const struct device *dev, char *response, size_t response_size,
+			const char *cmd);
 
 /**
  * @brief Get modem info for the device
@@ -1687,7 +1606,7 @@ static inline int hl78xx_set_phone_functionality(const struct device *dev,
  * @retval Negative errno-code on failure.
  */
 static inline int hl78xx_restart_modem(const struct device *dev,
-					 enum hl78xx_modem_restart_mode mode)
+				       enum hl78xx_modem_restart_mode mode)
 {
 	return hl78xx_api_func_restart(dev, mode);
 }
@@ -1740,9 +1659,9 @@ static inline int hl78xx_modem_cmd_send(const struct device *dev, const char *cm
 }
 
 /**
- * @brief Return the modem error type encoded in hl78xx_modem_at_printf/cmd return values.
+ * @brief Return the modem error type encoded in hl78xx_modem_at_send/cmd return values.
  *
- * @param error Return value from hl78xx_modem_at_printf() or hl78xx_modem_at_cmd().
+ * @param error Return value from hl78xx_modem_at_send() or hl78xx_modem_at_cmd().
  *
  * @retval HL78XX_MODEM_AT_ERROR for ERROR responses.
  * @retval HL78XX_MODEM_AT_CME_ERROR for +CME ERROR responses.
@@ -1750,19 +1669,19 @@ static inline int hl78xx_modem_cmd_send(const struct device *dev, const char *cm
  */
 static inline int hl78xx_modem_at_err_type(int error)
 {
-	return (error & 0x00ff0000) >> 16;
+	return (error & 0x00ff0000U) >> 16;
 }
 
 /**
- * @brief Return the modem CME/CMS error code encoded in hl78xx_modem_at_printf/cmd.
+ * @brief Return the modem CME/CMS error code encoded in hl78xx_modem_at_send/cmd.
  *
- * @param error Return value from hl78xx_modem_at_printf() or hl78xx_modem_at_cmd().
+ * @param error Return value from hl78xx_modem_at_send() or hl78xx_modem_at_cmd().
  *
  * @return Encoded modem error value, or 0 for generic ERROR responses.
  */
 static inline int hl78xx_modem_at_err(int error)
 {
-	return (error & 0xff00ffff);
+	return (error & 0xff00ffffU);
 }
 /**
  * @brief Convert raw RSSI value from the modem to dBm.
@@ -2010,8 +1929,7 @@ enum cellular_access_technology hl78xx_rat_to_access_tech(enum hl78xx_cell_rat_m
  * @param access_tech Standard cellular access technology.
  * @return Corresponding HL78xx RAT mode.
  */
-enum hl78xx_cell_rat_mode hl78xx_access_tech_to_rat(
-	enum cellular_access_technology access_tech);
+enum hl78xx_cell_rat_mode hl78xx_access_tech_to_rat(enum cellular_access_technology access_tech);
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 /**
  * @brief Start an AirVantage Device Management (DM) session
@@ -2292,8 +2210,7 @@ int hl78xx_power_down_cancel(const struct device *dev);
  * @return 0 on success, -EINVAL for invalid arguments, or -ENOENT if no
  *         application-controlled shutdown is pending.
  */
-int hl78xx_power_down_respond(const struct device *dev,
-			      enum hl78xx_power_down_response response,
+int hl78xx_power_down_respond(const struct device *dev, enum hl78xx_power_down_response response,
 			      uint32_t timeout_s);
 
 /**
