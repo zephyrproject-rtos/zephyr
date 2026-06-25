@@ -72,9 +72,7 @@ int riscv_aplic_is_enabled(uint32_t local_irq)
 	const struct device *dev = riscv_aplic_get_dev();
 	const struct aplic_cfg *cfg = dev->config;
 
-	if (local_irq == 0 || local_irq > cfg->num_sources) {
-		return 0;
-	}
+	__ASSERT_NO_MSG(IN_RANGE(local_irq, 1, cfg->num_sources));
 
 	const uint32_t setie_offset = APLIC_SETIE_BASE + local_irq_to_reg_offset(local_irq);
 	const uint32_t setie_value = rd32(cfg->base, setie_offset);
@@ -87,9 +85,7 @@ int riscv_aplic_set_priority(const struct device *dev, uint32_t local_irq, uint3
 	const struct aplic_cfg *cfg = dev->config;
 	struct aplic_data *data = dev->data;
 
-	if (local_irq == 0U || local_irq > cfg->num_sources) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(IN_RANGE(local_irq, 1, cfg->num_sources));
 
 	uint32_t target_offset = aplic_target_off(local_irq);
 
