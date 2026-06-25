@@ -186,7 +186,11 @@ static void child_fn(void *p1, void *p2, void *p3)
  * @ingroup kernel_smp_tests
  *
  * @details Verify whether thread running on other core is
- * parent thread from child thread
+ * parent thread from child thread. Relies on the SMP initialization having
+ * brought up the secondary CPUs so that a child thread can run on a different
+ * core than its parent.
+ *
+ * @verifies ZEP-SRS-12-9
  */
 ZTEST(smp, test_cpu_id_threads)
 {
