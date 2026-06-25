@@ -3,10 +3,55 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Devicetree pin control helpers for Renesas RZ/A2M
+ * @ingroup pinctrl_rza2m
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZA2M_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZA2M_H_
 
+/**
+ * @addtogroup renesas_pinctrl Renesas pin control helpers
+ * @ingroup devicetree-pinctrl
+ */
+
+/**
+ * @defgroup pinctrl_rza2m Renesas RZ/A2M pin control helpers
+ * @brief Macros for pin control configuration of the Renesas RZ/A2M SoC
+ * @ingroup renesas_pinctrl
+ *
+ * Each pin configuration is built with the RZA2M_PINMUX() macro, which takes a
+ * port, the pin number within that port, and the alternate-function number.
+ * Ports are named as in the hardware manual: @c PORT_00 ... @c PORT_09,
+ * @c PORT_A ... @c PORT_M, plus @c PORT_CKIO and @c PORT_PPOC.
+ *
+ * RZ/A2M uses an older pinmux scheme than the other RZ/A SoCs: the
+ * alternate-function index is encoded in the upper bits and taken from the SoC's
+ * pin-function table (there is no symbolic macro for it).
+ *
+ * @code{.dts}
+ * #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rza2m.h>
+ *
+ * &pinctrl {
+ *         scifa4_default: scifa4_default {
+ *                 device-pinmux {
+ *                         pinmux = <RZA2M_PINMUX(PORT_09, 0, 4)>,
+ *                                  <RZA2M_PINMUX(PORT_09, 1, 4)>;
+ *                 };
+ *         };
+ * };
+ * @endcode
+ *
+ * @{
+ */
+
+/** Number of pins per port. */
 #define RZA2M_PIN_NUM_IN_PORT 8
+
+/** @cond INTERNAL_HIDDEN */
 
 /* Port names as labeled in the Hardware Manual */
 #define PORT_00 0
@@ -40,12 +85,26 @@
 #define PIN_POC2  1 /* Sets function for SSD host 0, 0 - 1.8v 1 - 3.3v */
 #define PIN_POC3  2 /* Sets function for SSD host 1, 0 - 1.8v 1 - 3.3v */
 
-/*
- * Create the pin index from its bank and position numbers and store in
- * the upper 16 bits the alternate function identifier
+/** @endcond */
+
+/**
+ * @brief Create an encoded pinmux value from a port, pin and function.
+ *
+ * The pin index is built from the port and pin position numbers; the alternate
+ * function identifier is stored in the upper 16 bits.
+ *
+ * @param b Port identifier (PORT_00..PORT_M, plus PORT_CKIO / PORT_PPOC).
+ * @param p Pin number within the port.
+ * @param f Alternate function identifier.
+ *
+ * @return Encoded pinmux value.
  */
 #define RZA2M_PINMUX(b, p, f) ((b) * RZA2M_PIN_NUM_IN_PORT + (p) | (f << 16))
 
+/** @cond INTERNAL_HIDDEN */
 #define CKIO_DRV RZA2M_PINMUX(PORT_CKIO, 0, 0)
+/** @endcond */
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZA2M_H_ */
