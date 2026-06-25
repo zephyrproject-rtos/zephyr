@@ -28,6 +28,8 @@
 extern "C" {
 #endif
 
+#include <time.h>
+
 /** TLS credential types */
 enum tls_credential_type {
 	/** Unspecified credential. */
@@ -142,6 +144,20 @@ int tls_credential_get(sec_tag_t tag, enum tls_credential_type type,
  * @retval -ENOENT Requested TLS credential was not found.
  */
 int tls_credential_delete(sec_tag_t tag, enum tls_credential_type type);
+
+/**
+ * @brief Get the expiry time of a TLS credential.
+ *
+ * @param tag The security tag of the TLS credential.
+ * @param type The type of the TLS credential.
+ * @param expiry Pointer to store the expiry time.
+ *
+ * @retval 0 TLS credential expiry time successfully obtained.
+ * @retval -EACCES Access to the TLS credential subsystem was denied.
+ * @retval -ENOENT Requested TLS credential was not found.
+ * @retval -ENOTSUP TLS credential storage does not support expiry time retrieval.
+ */
+int tls_credential_expiry(sec_tag_t tag, enum tls_credential_type type, time_t *expiry);
 
 #ifdef __cplusplus
 }
