@@ -21,6 +21,36 @@
 		zephyr,flash = &itcm0;
 	};
 
+	aliases {
+		led0 = &led0;
+		led-controller-0 = &led_controller_0;
+		sw0 = &user_button;
+	};
+
+	led_controller_0: gpio-leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio_exp0 0 GPIO_ACTIVE_HIGH>;
+			label = "LED0";
+		};
+
+		led1: led_1 {
+			gpios = <&gpio_exp0 1 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+	};
+
+	buttons: keys {
+		compatible = "gpio-keys";
+
+		user_button: user_button {
+			label = "SW8";
+			gpios = <&gpio_exp0 11 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
 	sys_1v8: regulator-sys-1v8 {
 		compatible = "regulator-fixed";
 
@@ -44,11 +74,39 @@
 	status = "okay";
 };
 
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_ms_scl_b &i2c1_ms_sda_b>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	gpio_exp0: pca6416@20 {
+		compatible = "nxp,pcal6416a";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+		int-gpios = <&gpioa 3 GPIO_ACTIVE_LOW>;
+	};
+
+	mc3479: mc3419@4c {
+		compatible = "memsic,mc3419";
+		status = "disabled";
+		reg = <0x4c>;
+		int-gpios = <&gpio_exp0 4 0>;
+		lpf-fc-sel = <0>;
+	};
+};
+
 &gpioa {
 	status = "okay";
 };
 
 &gpiob {
+	status = "okay";
+};
+
+zephyr_udc0: &usb0 {
 	status = "okay";
 };
 
