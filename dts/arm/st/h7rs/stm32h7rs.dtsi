@@ -1066,6 +1066,7 @@
 			ranges = <0x0 0x42005800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 				 <&rcc STM32_SRC_PLL3_P SAI1_SEL(0)>;
+			clock-names = "sai_ck", "sai_ker_ck";
 			status = "disabled";
 
 			sai1_a: sai1a@4 {

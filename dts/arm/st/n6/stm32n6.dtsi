@@ -1480,6 +1480,7 @@
 				reg = <0x52005800 0x400>;
 				ranges = <0x0 0x52005800 0x400>;
 				clocks = <&rcc STM32_CLOCK(APB2, 21)>;
+				clock-names = "sai_ck";
 				status = "disabled";
 
 				sai1_a: sai1a@4 {
@@ -1508,6 +1509,7 @@
 				reg = <0x52005c00 0x400>;
 				ranges = <0x0 0x52005c00 0x400>;
 				clocks = <&rcc STM32_CLOCK(APB2, 22)>;
+				clock-names = "sai_ck";
 				status = "disabled";
 
 				sai2_a: sai2a@4 {

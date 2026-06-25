@@ -34,6 +34,7 @@
 	status = "okay";
 	clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 		 <&rcc STM32_SRC_IC7 SAI2_SEL(2)>;
+	clock-names = "sai_ck", "sai_ker_ck";
 };
 
 &sai2_b {

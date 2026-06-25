@@ -123,6 +123,7 @@
 			reg = <0x40015800 0x400>;
 			ranges = <0x0 0x40015800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>;
+			clock-names = "sai_ck";
 			status = "disabled";
 
 			sai1_a: sai1a@4 {

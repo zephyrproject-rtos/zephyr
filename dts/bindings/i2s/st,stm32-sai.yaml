@@ -15,6 +15,28 @@ properties:
     type: array
     required: true
 
+  clock-names:
+    required: true
+    enum:
+      - "sai_ck"
+      - "sai_ker_ck"
+      - "sai_b_ker_ck"
+    description: |
+      Expected names are the following:
+      - "sai_ck" for configuring the peripheral bus clock
+      - "sai_ker_ck" for configuring a shared SAI or dedicated SAI A kernel clock
+      - "sai_b_ker_ck" for configuring a dedicated SAI B kernel clock
+
+      Depending on the platform, SAI A and SAI B may either share a single
+      kernel clock selector or have independent selectors.
+
+      - Platforms with independent kernel clock selectors must provide the kernel clock
+      corresponding to each enabled SAI node.
+      For example, "sai_ker_ck" is required for SAI A and "sai_b_ker_ck" for SAI B.
+
+      - Platforms with a shared kernel clock selector only need to provide "sai_ker_ck",
+      which applies to both SAI A and SAI B.
+
   "#address-cells":
     const: 1
 
