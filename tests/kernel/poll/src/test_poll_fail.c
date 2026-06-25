@@ -144,6 +144,7 @@ ZTEST_USER(poll_api, test_k_poll_user_type_msgq_err)
  * @see k_poll_signal_init()
  *
  * @ingroup kernel_poll_tests
+ * @verifies ZEP-SRS-33-6
  */
 ZTEST_USER(poll_api, test_poll_signal_init_null)
 {
@@ -181,6 +182,7 @@ ZTEST_USER(poll_api, test_poll_signal_check_obj)
  * @see k_poll_signal_check()
  *
  * @ingroup kernel_poll_tests
+ * @verifies ZEP-SRS-33-10
  */
 ZTEST_USER(poll_api, test_poll_signal_check_signal)
 {
@@ -205,6 +207,7 @@ ZTEST_USER(poll_api, test_poll_signal_check_signal)
  * @see k_poll_signal_check()
  *
  * @ingroup kernel_poll_tests
+ * @verifies ZEP-SRS-33-10
  */
 ZTEST_USER(poll_api, test_poll_signal_check_result)
 {
@@ -227,6 +230,7 @@ ZTEST_USER(poll_api, test_poll_signal_check_result)
  * @see k_poll_signal_raise()
  *
  * @ingroup kernel_poll_tests
+ * @verifies ZEP-SRS-33-7
  */
 ZTEST_USER(poll_api, test_poll_signal_raise_null)
 {
@@ -247,6 +251,7 @@ ZTEST_USER(poll_api, test_poll_signal_raise_null)
  * @see k_poll_signal_reset()
  *
  * @ingroup kernel_poll_tests
+ * @verifies ZEP-SRS-33-9
  */
 ZTEST_USER(poll_api, test_poll_signal_reset_null)
 {
