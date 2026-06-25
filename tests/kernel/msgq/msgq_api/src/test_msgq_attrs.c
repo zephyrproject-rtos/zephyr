@@ -45,6 +45,8 @@ static void attrs_get(struct k_msgq *q)
  * @brief Test basic attributes of a message queue
  *
  * @see  k_msgq_get_attrs()
+ * @verifies ZEP-SRS-31-15
+ * @verifies ZEP-SRS-31-16
  */
 ZTEST(msgq_api, test_msgq_attrs_get)
 {

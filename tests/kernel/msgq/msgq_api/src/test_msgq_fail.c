@@ -47,6 +47,7 @@ static void get_fail(struct k_msgq *q)
 /**
  * @brief Test returned error code during writing in msgq
  * @see k_msgq_init()
+ * @verifies ZEP-SRS-31-7
  */
 ZTEST(msgq_api_1cpu, test_msgq_put_fail)
 {
@@ -73,6 +74,7 @@ ZTEST_USER(msgq_api, test_msgq_user_put_fail)
 /**
  * @brief Test returned error code during reading from msgq
  * @see k_msgq_init(), k_msgq_put()
+ * @verifies ZEP-SRS-31-11
  */
 ZTEST(msgq_api_1cpu, test_msgq_get_fail)
 {

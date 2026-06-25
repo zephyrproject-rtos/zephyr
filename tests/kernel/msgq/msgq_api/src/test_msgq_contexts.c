@@ -272,6 +272,15 @@ static void prepend_full_entry(void *p1, void *p2, void *p3)
 /**
  * @brief Test thread to thread data passing via message queue
  * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
+ * @verifies ZEP-SRS-31-1
+ * @verifies ZEP-SRS-31-2
+ * @verifies ZEP-SRS-31-4
+ * @verifies ZEP-SRS-31-5
+ * @verifies ZEP-SRS-31-8
+ * @verifies ZEP-SRS-31-9
+ * @verifies ZEP-SRS-31-12
+ * @verifies ZEP-SRS-31-15
+ * @verifies ZEP-SRS-31-16
  */
 ZTEST(msgq_api_1cpu, test_msgq_thread)
 {
@@ -314,6 +323,8 @@ ZTEST(msgq_api, test_msgq_thread_overflow)
 /**
  * @brief Test user thread to kernel thread data passing via message queue
  * @see k_msgq_alloc_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
+ * @verifies ZEP-SRS-31-4
+ * @verifies ZEP-SRS-31-8
  */
 ZTEST_USER(msgq_api, test_msgq_user_thread)
 {
@@ -351,6 +362,8 @@ ZTEST_USER(msgq_api, test_msgq_user_thread_overflow)
 /**
  * @brief Test thread to isr data passing via message queue
  * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
+ * @verifies ZEP-SRS-31-4
+ * @verifies ZEP-SRS-31-8
  */
 ZTEST(msgq_api, test_msgq_isr)
 {
@@ -366,6 +379,7 @@ ZTEST(msgq_api, test_msgq_isr)
 /**
  * @brief Test pending writer in msgq
  * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
+ * @verifies ZEP-SRS-31-6
  */
 ZTEST(msgq_api_1cpu, test_msgq_pend_thread)
 {
@@ -383,6 +397,8 @@ ZTEST(msgq_api_1cpu, test_msgq_pend_thread)
  * @details Initialization and buffer allocation for msgq from resource
  * pool with various parameters
  * @see k_msgq_alloc_init(), k_msgq_cleanup()
+ * @verifies ZEP-SRS-31-3
+ * @verifies ZEP-SRS-31-17
  */
 ZTEST(msgq_api, test_msgq_alloc)
 {
@@ -412,6 +428,7 @@ ZTEST(msgq_api, test_msgq_alloc)
  *   is set to a positive value or K_FOREVER
  *
  * @see k_msgq_get()
+ * @verifies ZEP-SRS-31-10
  */
 ZTEST(msgq_api_1cpu, test_msgq_empty)
 {
@@ -452,6 +469,7 @@ ZTEST(msgq_api_1cpu, test_msgq_empty)
  *   is set to a positive value or K_FOREVER
  *
  * @see k_msgq_put()
+ * @verifies ZEP-SRS-31-6
  */
 ZTEST(msgq_api_1cpu, test_msgq_full)
 {
