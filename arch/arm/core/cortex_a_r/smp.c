@@ -148,9 +148,12 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 	/* store mpid last as this is our synchronization point */
 	arm_cpu_boot_params.mpid = cpu_mpid;
 
-	sys_cache_data_invd_range(
+	sys_cache_data_flush_range(
 			(void *)&arm_cpu_boot_params,
 			sizeof(arm_cpu_boot_params));
+
+	/* barrier to guarantee completion of the cache flush above. */
+	barrier_dsync_fence_full();
 
 	/*! TODO: Support PSCI
 	 *  \todo Support PSCI
