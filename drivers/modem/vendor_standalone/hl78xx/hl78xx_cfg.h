@@ -155,11 +155,13 @@ const char *hl78xx_trim_leading_zeros(const char *hex_str);
  * @param max_len Maximum length of the essential APN buffer.
  */
 void hl78xx_extract_essential_part_apn(const char *full_apn, char *essential_apn, size_t max_len);
+
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 int hl78xx_enable_pmc(struct hl78xx_data *data);
 int hl78xx_psm_settings(struct hl78xx_data *data);
 int hl78xx_edrx_settings(struct hl78xx_data *data);
 int hl78xx_power_down_settings(struct hl78xx_data *data);
+void hl78xx_dynamic_cmd_feed_lpm_timers(struct hl78xx_data *data, uint16_t response_timeout);
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
 
 int hl78xx_init_power_down(struct hl78xx_data *data);
