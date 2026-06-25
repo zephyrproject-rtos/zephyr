@@ -57,6 +57,13 @@ struct cs40l26_calibration {
 	uint32_t f0;
 };
 
+struct cs40l26_sensor {
+	bool is_signed;
+	uint8_t n;
+	uint8_t m;
+	int32_t full_scale: 8;
+};
+
 struct cs40l26_config {
 	LOG_INSTANCE_PTR_DECLARE(log);
 	/* Log instance declaration requires blank line. */
@@ -84,6 +91,8 @@ struct cs40l26_data {
 
 int cs40l26_firmware_read(const struct device *const dev, const uint32_t firmware_control,
 			  uint32_t *const rx);
+int cs40l26_firmware_read_offset(const struct device *const dev, const uint32_t firmware_control,
+				 uint32_t *const rx, const off_t offset);
 int cs40l26_firmware_write(const struct device *const dev, const uint32_t firmware_control,
 			   uint32_t val);
 int cs40l26_firmware_burst_write(const struct device *const dev, const uint32_t firmware_control,

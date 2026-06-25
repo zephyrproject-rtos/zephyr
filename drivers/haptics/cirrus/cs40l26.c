@@ -112,6 +112,20 @@ LOG_MODULE_REGISTER(CS40L26, CONFIG_HAPTICS_LOG_LEVEL);
 #define CS40L26_NUM_ROM_EFFECTS     39
 #define CS40L26_NUM_BUZ_EFFECTS     1
 #define CS40L26_FLASH_MEMORY_ERASED 0xFFFFFFFF
+#define CS40L26_LOGGER_SOURCE_STEP  12
+#define CS40L26_LOGGER_TYPE_STEP    4
+
+enum cs40l26_monitor {
+	CS40L26_MONITOR_BEMF,
+	CS40L26_MONITOR_VBST,
+	CS40L26_MONITOR_VOUT,
+};
+
+static const struct cs40l26_sensor cs40l26_sensors[] = {
+	[HAPTICS_MONITOR_BEMF] = {.is_signed = true, .n = 23, .m = 0, .full_scale = 24},
+	[HAPTICS_MONITOR_VBST] = {.is_signed = false, .n = 24, .m = 0, .full_scale = 14},
+	[HAPTICS_MONITOR_VOUT] = {.is_signed = true, .n = 23, .m = 0, .full_scale = 24},
+};
 
 static const struct cs40lxx_multi_write cs40l26_irq_clear[] = {
 	{.addr = CS40L26_REG_IRQ1_EINT_1,
@@ -1033,6 +1047,100 @@ error_pm:
 	return ret;
 }
 
+static int cs40l26_monitor_get(const struct device *dev, const enum haptics_monitor monitor,
+			       const enum haptics_monitor_type type, struct sensor_value *const val)
+{
+	__maybe_unused const struct cs40l26_config *const config = dev->config;
+	int offset = type * CS40L26_LOGGER_TYPE_STEP, ret;
+	struct cs40l26_data *const data = dev->data;
+	uint32_t reading;
+
+	if (type >= HAPTICS_MONITOR_TYPE_SINGLE) {
+		LOG_INST_DBG(config->log, "invalid haptics monitor type %d", type);
+		return -EINVAL;
+	}
+
+	switch (monitor) {
+	case HAPTICS_MONITOR_BEMF:
+		offset += (CS40L26_MONITOR_BEMF * CS40L26_LOGGER_SOURCE_STEP);
+		break;
+	case HAPTICS_MONITOR_VBST:
+		offset += (CS40L26_MONITOR_VBST * CS40L26_LOGGER_SOURCE_STEP);
+		break;
+	case HAPTICS_MONITOR_VOUT:
+		offset += (CS40L26_MONITOR_VOUT * CS40L26_LOGGER_SOURCE_STEP);
+		break;
+	default:
+		LOG_INST_DBG(config->log, "invalid haptics monitor %d", monitor);
+		return -EINVAL;
+	}
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = k_mutex_lock(&data->lock, CS40L26_T_WAIT);
+	if (ret < 0) {
+		LOG_INST_DBG(config->log, "timed out waiting for lock (%d)", ret);
+		goto error_pm;
+	}
+
+	ret = cs40l26_firmware_read_offset(dev, CS40L26_REG_LOGGER_DATA, &reading, offset);
+
+	(void)k_mutex_unlock(&data->lock);
+
+error_pm:
+	(void)pm_device_runtime_put(dev);
+
+	if (ret >= 0) {
+		ret = sensor_value_from_fixed_point(val, reading, cs40l26_sensors[monitor].m,
+						    cs40l26_sensors[monitor].n,
+						    cs40l26_sensors[monitor].is_signed);
+		if (ret < 0) {
+			LOG_INST_DBG(config->log, "failed fixed-point conversion (%d)", ret);
+			return ret;
+		}
+
+		ret = sensor_value_scale(val, cs40l26_sensors[monitor].full_scale, val);
+	}
+
+	return ret;
+}
+
+static int cs40l26_monitor_set(const struct device *dev, const enum haptics_monitor monitor,
+			       const bool enable)
+{
+	__maybe_unused const struct cs40l26_config *const config = dev->config;
+	struct cs40l26_data *const data = dev->data;
+	int ret;
+
+	if (monitor != HAPTICS_MONITOR_ALL) {
+		LOG_INST_DBG(config->log, "invalid haptics monitor %d", monitor);
+		return -EINVAL;
+	}
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = k_mutex_lock(&data->lock, CS40L26_T_WAIT);
+	if (ret < 0) {
+		LOG_INST_DBG(config->log, "timed out waiting for lock (%d)", ret);
+		goto error_pm;
+	}
+
+	ret = cs40l26_firmware_write(dev, CS40L26_REG_LOGGER_ENABLE, (uint32_t)enable);
+
+	(void)k_mutex_unlock(&data->lock);
+
+error_pm:
+	(void)pm_device_runtime_put(dev);
+
+	return ret;
+}
+
 static int cs40l26_register_error_callback(const struct device *dev, haptics_error_callback_t cb,
 					   void *const user_data)
 {
@@ -1160,6 +1268,8 @@ static int cs40l26_stop_output(const struct device *const dev)
 
 static DEVICE_API(haptics, cs40l26_driver_api) = {
 	.calibrate = &cs40l26_calibrate,
+	.monitor_get = &cs40l26_monitor_get,
+	.monitor_set = &cs40l26_monitor_set,
 	.register_error_callback = &cs40l26_register_error_callback,
 	.select_source = &cs40l26_select_source,
 	.set_level = &cs40l26_set_level,
