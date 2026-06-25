@@ -33,6 +33,7 @@
 #include <zephyr/dsp/types.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
@@ -1401,6 +1402,44 @@ static inline float sensor_value_to_float(const struct sensor_value *val)
 }
 
 /**
+ * @brief Helper function for converting struct sensor_value to fixed-point.
+ *
+ * @param val A pointer to a fixed-point value in Qm.n format.
+ * @param inp A pointer to a sensor_value struct.
+ * @param m Number of integer bits.
+ * @param n Number of fractional bits.
+ * @param is_signed Indicates whether the fixed-point value is signed or unsigned.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_to_fixed_point(uint32_t *val, struct sensor_value *inp, uint8_t m,
+					      uint8_t n, bool is_signed)
+{
+	uint8_t num_bits = m + n + (is_signed ? 1U : 0U);
+
+	if (m > 31 || !IN_RANGE(n, 1, 32) || !IN_RANGE(num_bits, 1, 32)) {
+		return -EINVAL;
+	}
+
+	int64_t raw = ((int64_t)inp->val1 << n) + ((int64_t)inp->val2 << n) / 1000000LL;
+
+	if (is_signed) {
+		if (!IN_RANGE(raw, -(int64_t)BIT(num_bits - 1), (int64_t)BIT_MASK(num_bits - 1))) {
+			return -ERANGE;
+		}
+
+		*val = (uint32_t)(raw & BIT64_MASK(num_bits));
+	} else {
+		if (!IN_RANGE(raw, 0, BIT64_MASK(num_bits))) {
+			return -ERANGE;
+		}
+
+		*val = (uint32_t)raw;
+	}
+
+	return 0;
+}
+
+/**
  * @brief Helper function for converting double to struct sensor_value.
  *
  * @param val A pointer to a sensor_value struct.
@@ -1440,6 +1479,39 @@ static inline int sensor_value_from_float(struct sensor_value *val, float inp)
 
 	val->val1 = val1;
 	val->val2 = val2;
+
+	return 0;
+}
+
+/**
+ * @brief Helper function for converting fixed-point to struct sensor_value.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @param inp Fixed-point value in Qm.n format.
+ * @param m Number of integer bits.
+ * @param n Number of fractional bits.
+ * @param is_signed Indicates whether the fixed-point value is signed or unsigned.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_from_fixed_point(struct sensor_value *val, uint32_t inp, uint8_t m,
+						uint8_t n, bool is_signed)
+{
+	uint8_t num_bits = m + n + (is_signed ? 1U : 0U);
+
+	if (m > 31 || !IN_RANGE(n, 1, 32) || !IN_RANGE(num_bits, 1, 32)) {
+		return -EINVAL;
+	}
+
+	inp &= BIT64_MASK(num_bits);
+
+	int64_t inp_int64 = is_signed ? sign_extend_64((uint64_t)inp, m + n) : (int64_t)inp;
+
+	val->val1 = arithmetic_shift_right(inp_int64 + (inp_int64 < 0 ? BIT64_MASK(n) : 0), n);
+
+	inp_int64 -= ((int64_t)val->val1 << n);
+	inp_int64 *= 1000000LL;
+
+	val->val2 = arithmetic_shift_right(inp_int64 + (inp_int64 < 0 ? BIT64_MASK(n) : 0), n);
 
 	return 0;
 }
