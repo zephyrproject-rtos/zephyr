@@ -13,6 +13,7 @@
 
 #include "tls_internal.h"
 #include "tls_credentials_digest_raw.h"
+#include "tls_credentials_info_raw.h"
 
 LOG_MODULE_REGISTER(tls_credentials_trusted,
 		    CONFIG_TLS_CREDENTIALS_LOG_LEVEL);
@@ -473,6 +474,82 @@ int tls_credential_get(sec_tag_t tag, enum tls_credential_type type,
 	}
 
 cleanup:
+	k_mutex_unlock(&credential_lock);
+
+	return ret;
+}
+
+int tls_credential_expiry(sec_tag_t tag, enum tls_credential_type type, time_t *expiry)
+{
+	struct tls_credential credential;
+	struct psa_storage_info_t info;
+	psa_storage_uid_t uid = tls_credential_get_uid(tag, type);
+	psa_status_t status;
+	unsigned int slot;
+	size_t credlen;
+	void *cred;
+	int ret = 0;
+
+	if (type != TLS_CREDENTIAL_CA_CERTIFICATE &&
+	    type != TLS_CREDENTIAL_PUBLIC_CERTIFICATE) {
+		/* Only CA and server certificates have expiry information. */
+		return -EINVAL;
+	}
+
+	/* tag 0xffffffff type 0xffff are reserved */
+	if (tag == 0xffffffffU && type == 0xffffU) {
+		ret = -EINVAL;
+		goto unlock;
+	}
+
+	k_mutex_lock(&credential_lock, K_FOREVER);
+
+	ret = credentials_ensure_loaded();
+	if (ret != 0) {
+		goto unlock;
+	}
+
+	slot = tls_credential_toc_find_slot(uid);
+	if (slot == CRED_MAX_SLOTS) {
+		ret = -ENOENT;
+		goto unlock;
+	}
+
+	status = psa_ps_get_info(uid, &info);
+	if (status == PSA_ERROR_DOES_NOT_EXIST) {
+		ret = -ENOENT;
+		goto unlock;
+	} else if (status != PSA_SUCCESS) {
+		ret = -EIO;
+		goto unlock;
+	} else {
+		/* Success - continue. */
+	}
+
+	credlen = info.size;
+	cred = k_malloc(credlen);
+	if (cred == NULL) {
+		ret = -ENOMEM;
+		goto unlock;
+	}
+
+	status = psa_ps_get(uid, 0, info.size, cred, &credlen);
+	if (status != PSA_SUCCESS) {
+		ret = -EIO;
+		goto free_cred;
+	}
+
+	credential.buf = cred;
+	credential.len = credlen;
+	credential.tag = tag;
+	credential.type = type;
+
+	ret = credential_info_expiry_get(&credential, expiry);
+
+free_cred:
+	k_free(cred);
+
+unlock:
 	k_mutex_unlock(&credential_lock);
 
 	return ret;
