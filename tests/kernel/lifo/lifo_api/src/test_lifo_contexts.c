@@ -111,7 +111,6 @@ static void tlifo_isr_thread(struct k_lifo *plifo)
  * @verifies ZEP-SRS-23-1
  * @verifies ZEP-SRS-23-2
  * @verifies ZEP-SRS-23-4
- * @verifies ZEP-SRS-23-5
  */
 ZTEST(lifo_contexts_1cpu, test_lifo_thread2thread)
 {

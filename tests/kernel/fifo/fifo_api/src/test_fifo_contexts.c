@@ -159,7 +159,6 @@ static void tfifo_is_empty(void *p)
  * @verifies ZEP-SRS-24-5
  * @verifies ZEP-SRS-24-6
  * @verifies ZEP-SRS-24-7
- * @verifies ZEP-SRS-24-11
  */
 ZTEST(fifo_api_1cpu, test_fifo_thread2thread)
 {
