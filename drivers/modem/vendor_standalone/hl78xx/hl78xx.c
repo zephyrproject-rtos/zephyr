@@ -401,9 +401,9 @@ static bool hl78xx_parse_gsm_kcell_serving_cell(struct hl78xx_data *data, char *
 
 static void hl78xx_signal_quality_ready(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
-	data->status.kcellmeas_bootstrap_done = true;
+	data->status.kcellmeas.bootstrap_done = true;
 	data->status.registration.is_registered_currently = true;
 	hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SOCKET_READY);
 
@@ -415,13 +415,11 @@ static void hl78xx_signal_quality_ready(struct hl78xx_data *data)
 static bool hl78xx_request_signal_quality_check(struct hl78xx_data *data)
 {
 	const char *cmd;
-	const char *cmd_name;
 	bool use_kcell;
 	int ret;
 
 	use_kcell = hl78xx_signal_quality_check_uses_kcell(data);
 	cmd = use_kcell ? CHECK_GSM_CELL_INFO_CMD : CHECK_LTE_COVERAGE_CMD;
-	cmd_name = use_kcell ? "KCELL" : "KCELLMEAS";
 
 #ifdef CONFIG_MODEM_HL78XX_12
 	if (use_kcell) {
@@ -439,7 +437,7 @@ static bool hl78xx_request_signal_quality_check(struct hl78xx_data *data)
 						       .user_cmd = false,
 					       });
 	if (ret < 0) {
-		LOG_WRN("Failed to trigger %s after registration: %d", cmd_name, ret);
+		LOG_WRN("Failed to trigger %s after registration: %d", cmd, ret);
 		return false;
 	}
 
@@ -799,7 +797,7 @@ void hl78xx_on_iccid(struct modem_chat *chat, char **argv, uint16_t argc, void *
 void hl78xx_on_kstatev(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 	int state_value;
 	int rat_mode;
 
@@ -883,7 +881,7 @@ void hl78xx_on_kselacq(struct modem_chat *chat, char **argv, uint16_t argc, void
 void hl78xx_on_psmev(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 	int psmev_value;
 
 	if (argc < 2) {
@@ -924,7 +922,7 @@ void hl78xx_on_cpsms(struct modem_chat *chat, char **argv, uint16_t argc, void *
 void hl78xx_on_rrc_status(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 	bool is_idle;
 
 	if (argc < 2 || !argv[1]) {
@@ -1651,7 +1649,7 @@ static void hl78xx_dispatch_vgpio_state(struct hl78xx_data *data, bool pin_state
 void mdm_vgpio_callback_isr(const struct device *port, struct gpio_callback *cb, uint32_t pins)
 {
 	struct hl78xx_data *data = CONTAINER_OF(cb, struct hl78xx_data, gpio_cbs.vgpio_cb);
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 	const struct gpio_dt_spec *spec = &config->mdm_gpio_vgpio;
 	bool pin_state;
 
@@ -1681,7 +1679,7 @@ void mdm_vgpio_callback_isr(const struct device *port, struct gpio_callback *cb,
 void mdm_uart_dsr_callback_isr(const struct device *port, struct gpio_callback *cb, uint32_t pins)
 {
 	struct hl78xx_data *data = CONTAINER_OF(cb, struct hl78xx_data, gpio_cbs.vgpio_cb);
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 	const struct gpio_dt_spec *spec = &config->mdm_gpio_uart_dsr;
 
 	if (spec == NULL || spec->port == NULL) {
@@ -1698,7 +1696,7 @@ void mdm_uart_dsr_callback_isr(const struct device *port, struct gpio_callback *
 void mdm_gpio6_callback_isr(const struct device *port, struct gpio_callback *cb, uint32_t pins)
 {
 	struct hl78xx_data *data = CONTAINER_OF(cb, struct hl78xx_data, gpio_cbs.gpio6_cb);
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 	const struct gpio_dt_spec *spec = &config->mdm_gpio_gpio6;
 	bool pin_state;
 
@@ -1730,8 +1728,8 @@ static void hl78xx_vgpio_debounce_work_handler(struct k_work *work_item)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work_item);
 	struct hl78xx_data *data =
-		CONTAINER_OF(dwork, struct hl78xx_data, hl78xx_vgpio_debounce_work);
-	const struct hl78xx_config *config = data->dev->config;
+		CONTAINER_OF(dwork, struct hl78xx_data, work.hl78xx_vgpio_debounce_work);
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 	const struct gpio_dt_spec *spec = &config->mdm_gpio_vgpio;
 	bool pin_state;
 
@@ -1758,8 +1756,8 @@ static void hl78xx_gpio6_debounce_work_handler(struct k_work *work_item)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work_item);
 	struct hl78xx_data *data =
-		CONTAINER_OF(dwork, struct hl78xx_data, hl78xx_gpio6_debounce_work);
-	const struct hl78xx_config *config = data->dev->config;
+		CONTAINER_OF(dwork, struct hl78xx_data, work.hl78xx_gpio6_debounce_work);
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 	const struct gpio_dt_spec *spec = &config->mdm_gpio_gpio6;
 	bool pin_state;
 
@@ -1786,7 +1784,7 @@ static void hl78xx_gpio6_debounce_work_handler(struct k_work *work_item)
 void mdm_uart_cts_callback_isr(const struct device *port, struct gpio_callback *cb, uint32_t pins)
 {
 	struct hl78xx_data *data = CONTAINER_OF(cb, struct hl78xx_data, gpio_cbs.gpio6_cb);
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 	const struct gpio_dt_spec *spec = &config->mdm_gpio_uart_cts;
 
 	if (spec == NULL || spec->port == NULL) {
@@ -1874,7 +1872,7 @@ static void hl78xx_reset_pulse_event_handler(struct hl78xx_data *data, enum hl78
 
 static int hl78xx_on_reset_pulse_state_leave(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_reset)) {
 		gpio_pin_set_dt(&config->mdm_gpio_reset, 0);
@@ -1888,7 +1886,7 @@ static int hl78xx_on_reset_pulse_state_leave(struct hl78xx_data *data)
 
 static int hl78xx_on_soft_reset_state_enter(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 	const char *cmd_restart = (const char *)SET_AIRPLANE_MODE_CMD;
 	int ret;
 
@@ -1907,9 +1905,9 @@ static int hl78xx_on_soft_reset_state_enter(struct hl78xx_data *data)
 						       .user_cmd = false,
 					       });
 	if (ret < 0) {
-			LOG_WRN("Failed to request soft reset: %d", ret);
-			hl78xx_start_timer(data, K_NO_WAIT);
-			return 0;
+		LOG_WRN("Failed to request soft reset: %d", ret);
+		hl78xx_start_timer(data, K_NO_WAIT);
+		return 0;
 	}
 
 	hl78xx_start_timer(data, K_SECONDS(MDM_CMD_TIMEOUT));
@@ -1946,7 +1944,7 @@ static int hl78xx_on_soft_reset_state_leave(struct hl78xx_data *data)
 
 static int hl78xx_on_power_on_pulse_state_enter(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_pwr_on)) {
 		gpio_pin_set_dt(&config->mdm_gpio_pwr_on, 1);
@@ -1973,7 +1971,7 @@ static void hl78xx_power_on_pulse_event_handler(struct hl78xx_data *data, enum h
 
 static int hl78xx_on_power_on_pulse_state_leave(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_pwr_on)) {
 		gpio_pin_set_dt(&config->mdm_gpio_pwr_on, 0);
@@ -1984,7 +1982,7 @@ static int hl78xx_on_power_on_pulse_state_leave(struct hl78xx_data *data)
 
 static int hl78xx_on_await_power_on_state_enter(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	hl78xx_start_timer(data, K_MSEC(config->startup_time_ms));
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
@@ -1995,7 +1993,7 @@ static int hl78xx_on_await_power_on_state_enter(struct hl78xx_data *data)
 
 static void hl78xx_await_power_on_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_TIMEOUT:
@@ -2119,7 +2117,7 @@ static void hl78xx_set_baudrate_event_handler(struct hl78xx_data *data, enum hl7
 
 static int hl78xx_on_run_init_script_state_enter(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
 		gpio_pin_set_dt(&config->mdm_gpio_wake, 1);
@@ -2161,7 +2159,7 @@ static int hl78xx_on_run_init_diagnose_script_state_enter(struct hl78xx_data *da
 static void hl78xx_run_init_fail_script_event_handler(struct hl78xx_data *data,
 						      enum hl78xx_event evt)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
@@ -2330,7 +2328,7 @@ static void hl78xx_run_rat_cfg_script_event_handler(struct hl78xx_data *data, en
 
 static int hl78xx_on_await_power_off_state_enter(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	hl78xx_start_timer(data, K_MSEC(config->shutdown_time_ms));
 	return 0;
@@ -2437,7 +2435,7 @@ static void hl78xx_run_pmc_cfg_script_event_handler(struct hl78xx_data *data, en
 
 static int hl78xx_on_run_pmc_cfg_script_state_leave(struct hl78xx_data *data)
 {
-	data->status.config_restart_pending = false;
+	data->status.restart.config_pending = false;
 	return 0;
 }
 
@@ -2854,7 +2852,7 @@ static void hl78xx_carrier_on_timeout_handler(struct hl78xx_data *data
 static void hl78xx_carrier_on_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 #endif
 
 	switch (evt) {
@@ -3186,7 +3184,7 @@ static int hl78xx_on_carrier_off_state_leave(struct hl78xx_data *data)
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 static int hl78xx_on_sleep_state_enter(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
 		gpio_pin_set_dt(&config->mdm_gpio_wake, 0);
@@ -3406,7 +3404,7 @@ static int hl78xx_on_init_power_off_state_leave(struct hl78xx_data *data)
 
 static int hl78xx_on_power_off_pulse_state_enter(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_pwr_on)) {
 		gpio_pin_set_dt(&config->mdm_gpio_pwr_on, 1);
@@ -3424,7 +3422,7 @@ static void hl78xx_power_off_pulse_event_handler(struct hl78xx_data *data, enum 
 
 static int hl78xx_on_power_off_pulse_state_leave(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_pwr_on)) {
 		gpio_pin_set_dt(&config->mdm_gpio_pwr_on, 0);
@@ -4012,8 +4010,8 @@ static DEVICE_API(cellular, hl78xx_api) = {
 	};                                                                                         \
 	static struct hl78xx_data hl78xx_data_##inst = {                                           \
 		.buffers.delimiter = "\r\n",                                                       \
-		.buffers.eof_pattern = EOF_PATTERN,                                                \
-		.buffers.termination_pattern = TERMINATION_PATTERN,                                \
+		.buffers.eof_pattern = MDM_HL78XX_EOF_PATTERN,                                     \
+		.buffers.termination_pattern = MDM_HL78XX_TERMINATION_PATTERN,                     \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, hl78xx_driver_pm_action);                                   \

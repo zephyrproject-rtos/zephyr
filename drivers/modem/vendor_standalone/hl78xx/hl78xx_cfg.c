@@ -171,7 +171,8 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 	*rat_request = HL78XX_RAT_MODE_AUTO;
 
 	if (config->variant->cfg_apply_rat_post_select) {
-		ret = config->variant->cfg_apply_rat_post_select(data, data->status.registration.rat_mode);
+		ret = config->variant->cfg_apply_rat_post_select(
+			data, data->status.registration.rat_mode);
 		if (ret < 0) {
 			goto error;
 		}
@@ -238,8 +239,7 @@ error:
 }
 
 static bool hl78xx_get_runtime_band_override(struct hl78xx_data *data,
-					    enum hl78xx_cell_rat_mode rat,
-					    uint16_t *band)
+					     enum hl78xx_cell_rat_mode rat, uint16_t *band)
 {
 	hl78xx_runtime_band_provider_t provider;
 	void *user_data;
@@ -293,9 +293,8 @@ static int hl78xx_band_bitmap_from_single_band(uint16_t band_number, char *hex_b
 }
 
 static int hl78xx_get_expected_band_config_for_rat(struct hl78xx_data *data,
-					   enum hl78xx_cell_rat_mode rat,
-					   char *hex_bndcfg,
-					   size_t size_in_bytes)
+						   enum hl78xx_cell_rat_mode rat, char *hex_bndcfg,
+						   size_t size_in_bytes)
 {
 	uint16_t runtime_band = 0U;
 	int ret;
@@ -1749,7 +1748,7 @@ int hl78xx_set_network_operator_format(struct hl78xx_data *data, enum hl78xx_ope
 
 int configure_uart_for_auto_baudrate(struct hl78xx_data *data, uint32_t baudrate)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 	struct uart_config uart_cfg;
 	int ret;
 
@@ -1844,7 +1843,7 @@ int hl78xx_detect_current_baudrate(struct hl78xx_data *data)
 int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate)
 {
 	char cmd_buf[32] = {0};
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 	struct uart_config uart_cfg;
 	int ret;
 
