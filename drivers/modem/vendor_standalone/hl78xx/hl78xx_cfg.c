@@ -148,7 +148,7 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 		   enum hl78xx_cell_rat_mode *rat_request)
 {
 	int ret = 0;
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 #if defined(CONFIG_MODEM_HL78XX_AUTORAT)
 	/* Check autorat status/configs */
@@ -251,15 +251,15 @@ static bool hl78xx_get_runtime_band_override(struct hl78xx_data *data,
 	}
 
 	k_mutex_lock(&data->api_lock, K_FOREVER);
-	provider = data->runtime_band_provider;
-	user_data = data->runtime_band_provider_user_data;
+	provider = data->runtime_band.provider;
+	user_data = data->runtime_band.provider_user_data;
 	k_mutex_unlock(&data->api_lock);
 
 	if (provider == NULL) {
 		return false;
 	}
 
-	has_override = provider(data->dev, rat, &override_band, user_data);
+	has_override = provider(data->devices.hl78xx, rat, &override_band, user_data);
 	if (!has_override) {
 		return false;
 	}
@@ -321,7 +321,7 @@ int hl78xx_band_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 	char bnd_bitmap[MDM_BAND_HEX_STR_LEN] = {0};
 	const char *modem_trimmed;
 	const char *expected_trimmed;
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	if (rat_config_request == HL78XX_RAT_MODE_NONE) {
 		return -EINVAL;
@@ -1370,7 +1370,7 @@ void hl78xx_extract_essential_part_apn(const char *full_apn, char *essential_apn
 
 int hl78xx_get_uart_config(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 	struct uart_config uart_cfg;
 	int ret;
 	/* Get current UART configuration */
