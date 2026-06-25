@@ -568,6 +568,11 @@ PWM
 * STM32 PWM DT bindings macro ``PWM_STM32_COMPLEMENTARY`` that is deprecated since
   Zephyr v3.3.0 is no more defined. One shall use ``STM32_PWM_COMPLEMENTARY`` instead.
 
+* :dtcompatible:`nxp,ctimer-pwm` now routes its input capture signal through the generic
+  :ref:`mux <mux_api>` subsystem. The ``inputmux-connections`` property has been removed; describe
+  the routing with an INPUTMUX controller node (:dtcompatible:`nxp,inputmux`) and reference it from
+  the timer node's ``mux-states`` property instead. (:github:`112088`)
+
 RTC
 ===
 

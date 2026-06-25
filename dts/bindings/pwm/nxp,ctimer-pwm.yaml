@@ -6,7 +6,12 @@ description: NXP CTimer PWM
 
 compatible: "nxp,ctimer-pwm"
 
-include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml, "nxp,lpc-ctimer.yaml"]
+include:
+  - pwm-controller.yaml
+  - pinctrl-device.yaml
+  - base.yaml
+  - "nxp,lpc-ctimer.yaml"
+  - mux-consumer.yaml
 
 properties:
   reg:
@@ -24,19 +29,17 @@ properties:
     required: true
     description: clock to use
 
-  inputmux-connections:
+  mux-states:
     type: phandle-array
-    specifier-space: inputmux
     description: |
-      INPUTMUX routing for PWM capture inputs. Each phandle-array entry
-      is <&inputmuxN channel connection> where:
-        - &inputmuxN is the INPUTMUX node providing the route
-        - channel is the CAPTSEL destination index (0..3)
+      PWM capture input routing. Optional; only needed when PWM capture is
+      used. Each entry is <&inputmuxN index connection>:
+        - &inputmuxN is the INPUTMUX mux controller providing the route
+        - index is the CAPTSEL destination index (0..3)
         - connection is an inputmux_connection_t value from
           fsl_inputmux_connections.h
-
       Example (route CT_INP15 to CTIMER2 CAPTSEL[0] via INPUTMUX0):
-        inputmux-connections = <&inputmux0 0 0x06000010>;
+        mux-states = <&inputmux0 0 0x06000010>;
 
   "#pwm-cells":
     const: 3
