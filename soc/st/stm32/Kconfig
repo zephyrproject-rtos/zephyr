@@ -69,6 +69,8 @@ config HAS_STM32_INT_FLASH
 
 config STM32_INT_FLASH_SECURE_BASE_ADDRESS
 	hex
+	default 0x0c000000
+	depends on HAS_STM32_INT_FLASH && TRUSTED_EXECUTION_NONSECURE
 	help
 	  Secure internal flash based address when TZEN is enabled on
 	  applicable STM32 SoCs.

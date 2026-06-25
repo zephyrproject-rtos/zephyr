@@ -12,7 +12,4 @@ choice CACHE_TYPE
 	default EXTERNAL_CACHE
 endchoice
 
-config STM32_INT_FLASH_SECURE_BASE_ADDRESS
-	default 0x0c000000
-
 endif # SOC_SERIES_STM32H5X
