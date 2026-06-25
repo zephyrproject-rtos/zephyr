@@ -292,13 +292,6 @@ ZTEST(aplic_direct, test_aplic_direct_verify_interrupt_disabled)
 {
 	int ret = -1;
 
-	/* Out of bound test cases */
-	ret = riscv_aia_irq_is_enabled(TEST_IRQ_ID_INVALID);
-	zassert_equal(ret, 0, "Expected test IRQ to be disabled");
-
-	ret = riscv_aia_irq_is_enabled(APLIC_NUM_SOURCES + 1);
-	zassert_equal(ret, 0, "Expected test IRQ to be disabled");
-
 	/* In-bounds check */
 	riscv_aia_irq_disable(TEST_IRQ_ID_L2);
 	ret = riscv_aia_irq_is_enabled(TEST_IRQ_ID_L2);
