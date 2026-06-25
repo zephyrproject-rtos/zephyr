@@ -109,17 +109,19 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "uf2";
 			reg = <0x00000000 0x2000>;
 			read-only;
 		};
 
 		code_partition: partition@2000 {
+			compatible = "zephyr,mapped-partition";
 			label = "code";
 			reg = <0x2000 0x3a000>;
 			read-only;
@@ -131,6 +133,7 @@
 		 * if enabled.
 		 */
 		storage_partition: partition@3c000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x0003c000 0x00004000>;
 		};
