@@ -34,7 +34,7 @@
 #endif
 
 #if defined(CONFIG_ARM)
-#include <zephyr/arch/arm/mpu/arm_mpu.h>
+extern void arm_core_mpu_disable(void);
 #endif
 
 #define INFO(fmt, ...) printk(fmt, ##__VA_ARGS__)
