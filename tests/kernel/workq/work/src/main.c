@@ -303,6 +303,13 @@ ZTEST(work, test_null_queue)
 }
 
 /* Basic single-CPU check submitting with a non-blocking handler. */
+/**
+ * @brief Verify submitting a work item to a started queue runs its handler.
+ * @ingroup kernel_workqueue_tests
+ * @verifies ZEP-SRS-26-1
+ * @verifies ZEP-SRS-26-11
+ * @verifies ZEP-SRS-26-13
+ */
 ZTEST(work_1cpu, test_1cpu_simple_queue)
 {
 	int rc;
@@ -411,6 +418,11 @@ ZTEST(work, test_smp_simple_queue)
 }
 
 /* Basic single-CPU check submitting with a blocking handler */
+/**
+ * @brief Verify flushing a work item blocks until its handler completes.
+ * @ingroup kernel_workqueue_tests
+ * @verifies ZEP-SRS-26-15
+ */
 ZTEST(work_1cpu, test_1cpu_sync_queue)
 {
 	int rc;
@@ -448,6 +460,11 @@ ZTEST(work_1cpu, test_1cpu_sync_queue)
 /* Verify that if a work item is submitted while it is being run by a
  * queue thread it gets submitted to the queue it's running on, to
  * prevent reentrant invocation, at least on a single CPU.
+ */
+/**
+ * @brief Verify a work item handler can resubmit the work item.
+ * @ingroup kernel_workqueue_tests
+ * @verifies ZEP-SRS-26-14
  */
 ZTEST(work_1cpu, test_1cpu_reentrant_queue)
 {
@@ -526,6 +543,11 @@ ZTEST(work_1cpu, test_1cpu_queued_flush)
 
 /* Single CPU submit a work item and wait for flush after it's started.
  */
+/**
+ * @brief Verify flushing a running work item waits for it to finish.
+ * @ingroup kernel_workqueue_tests
+ * @verifies ZEP-SRS-26-15
+ */
 ZTEST(work_1cpu, test_1cpu_running_flush)
 {
 	int rc;
@@ -591,6 +613,11 @@ ZTEST(work_1cpu, test_1cpu_delayed_flush)
 /* Single CPU cancel before work item is unqueued should complete
  * immediately.
  */
+/**
+ * @brief Verify cancelling a work item that is still queued.
+ * @ingroup kernel_workqueue_tests
+ * @verifies ZEP-SRS-26-17
+ */
 ZTEST(work_1cpu, test_1cpu_queued_cancel)
 {
 	int rc;
@@ -612,6 +639,11 @@ ZTEST(work_1cpu, test_1cpu_queued_cancel)
 }
 
 /* Single CPU cancel before work item is unqueued should not wait. */
+/**
+ * @brief Verify cancelling a queued work item and waiting for completion.
+ * @ingroup kernel_workqueue_tests
+ * @verifies ZEP-SRS-26-19
+ */
 ZTEST(work_1cpu, test_1cpu_queued_cancel_sync)
 {
 	int rc;
@@ -641,6 +673,11 @@ ZTEST(work_1cpu, test_1cpu_queued_cancel_sync)
 
 /* Single CPU cancel before scheduled work item is queued should
  * complete immediately.
+ */
+/**
+ * @brief Verify cancelling a delayable work item before it expires.
+ * @ingroup kernel_workqueue_tests
+ * @verifies ZEP-SRS-26-24
  */
 ZTEST(work_1cpu, test_1cpu_delayed_cancel)
 {
@@ -743,6 +780,11 @@ static void test_running_cancel_cb(struct k_timer *timer)
 }
 
 /* Single CPU test cancellation after work starts. */
+/**
+ * @brief Verify cancelling a work item whose handler is running.
+ * @ingroup kernel_workqueue_tests
+ * @verifies ZEP-SRS-26-18
+ */
 ZTEST(work_1cpu, test_1cpu_running_cancel)
 {
 	struct test_running_cancel_timer *ctx = &test_running_cancel_ctx;
@@ -937,6 +979,11 @@ static void test_drain_wait_cb(struct k_timer *timer)
 }
 
 /* Single CPU submit an item and wait for it to drain. */
+/**
+ * @brief Verify draining a work queue waits for queued items to finish.
+ * @ingroup kernel_workqueue_tests
+ * @verifies ZEP-SRS-26-5
+ */
 ZTEST(work_1cpu, test_1cpu_drain_wait)
 {
 	struct test_drain_wait_timer *ctx = &test_drain_wait_ctx;
@@ -981,6 +1028,11 @@ ZTEST(work_1cpu, test_1cpu_drain_wait)
 }
 
 /* Single CPU submit item, drain with plug, test, then unplug. */
+/**
+ * @brief Verify submission is blocked while a queue is plugged for drain.
+ * @ingroup kernel_workqueue_tests
+ * @verifies ZEP-SRS-26-6
+ */
 ZTEST(work_1cpu, test_1cpu_plugged_drain)
 {
 	int rc;
@@ -1038,6 +1090,13 @@ ZTEST(work_1cpu, test_1cpu_plugged_drain)
 }
 
 /* Single CPU test delayed submission */
+/**
+ * @brief Verify scheduling a delayable work item runs it after the delay.
+ * @ingroup kernel_workqueue_tests
+ * @verifies ZEP-SRS-26-20
+ * @verifies ZEP-SRS-26-21
+ * @verifies ZEP-SRS-26-22
+ */
 ZTEST(work_1cpu, test_1cpu_basic_schedule)
 {
 	int rc;
@@ -1187,6 +1246,11 @@ ZTEST(work_1cpu, test_1cpu_immed_schedule)
 }
 
 /* Single CPU test that delayed work can be rescheduled. */
+/**
+ * @brief Verify rescheduling a delayable work item updates its delay.
+ * @ingroup kernel_workqueue_tests
+ * @verifies ZEP-SRS-26-23
+ */
 ZTEST(work_1cpu, test_1cpu_basic_reschedule)
 {
 	int rc;
@@ -1383,6 +1447,11 @@ ZTEST(work_1cpu, test_1cpu_queue_no_yield)
 }
 
 /* Basic functionality with the system work queue. */
+/**
+ * @brief Verify submitting a work item to the system work queue.
+ * @ingroup kernel_workqueue_tests
+ * @verifies ZEP-SRS-26-10
+ */
 ZTEST(work_1cpu, test_1cpu_system_queue)
 {
 	int rc;
