@@ -1,0 +1,175 @@
+/*
+ * Copyright (c) 2017 Piotr Mienkowski
+ * Copyright (c) 2017 Justin Watson
+ * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2026 sensry.io
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "htpa_eval-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/clock/atmel_sam_pmc.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	aliases {
+		led-r = &led_r;
+		led-g = &led_g;
+		led-b = &led_b;
+		cam-led-r = &cam_led_r;
+		cam-led-g = &cam_led_g;
+		cam-led-b = &cam_led_b;
+		cam-on = &cam_on;
+		sw0 = &sw0_user_button;
+		watchdog0 = &wdt;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	extsram0: memory@60000000 {
+		compatible = "zephyr,memory-region";
+		device_type = "memory";
+		status = "okay";
+		reg = <0x60000000 0x00100000>;
+		zephyr,memory-region = "EXTSRAM";
+		zephyr,memory-region-flags = "rw";
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM_NOCACHE>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_r: led_r {
+			gpios = <&pioa 29 GPIO_ACTIVE_LOW>;
+			label = "LED R";
+		};
+
+		led_g: led_g {
+			gpios = <&pioa 30 GPIO_ACTIVE_LOW>;
+			label = "LED G";
+		};
+
+		led_b: led_b {
+			gpios = <&pioa 31 GPIO_ACTIVE_LOW>;
+			label = "LED B";
+		};
+
+		cam_led_r: cam_led_r {
+			gpios = <&pioa 26 GPIO_ACTIVE_LOW>;
+			label = "CAM LED R";
+		};
+
+		cam_led_g: cam_led_g {
+			gpios = <&pioa 27 GPIO_ACTIVE_LOW>;
+			label = "CAM LED G";
+		};
+
+		cam_led_b: cam_led_b {
+			gpios = <&pioa 28 GPIO_ACTIVE_LOW>;
+			label = "CAM LED B";
+		};
+
+		cam_on: cam_on {
+			gpios = <&pioa 25 GPIO_ACTIVE_HIGH>;
+			label = "CAM ON";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		sw0_user_button: button_1 {
+			label = "User Button";
+			gpios = <&pioa 21 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	soc {
+		smc: smc@40080000 {
+			compatible = "atmel,sam-smc";
+			reg = <0x40080000 0x200>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 9>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-0 = <&smc_default>;
+			pinctrl-names = "default";
+			status = "okay";
+
+			ext_sram_bus: ext-sram@0 {
+				reg = <0>;
+				/* this needs: PR #112329 */
+				/* atmel,smc-data-bus-width = <16>; */
+				atmel,smc-write-mode = "nwe";
+				atmel,smc-read-mode = "nrd";
+				atmel,smc-setup-timing = <1 1 1 1>;
+				/*
+				 * MCK is 300 MHz on SAME70, so one cycle is 3.33 ns.
+				 * 14 cycles is the minimum value that meets the 45 ns access time.
+				 */
+				atmel,smc-pulse-timing = <14 14 14 14>;
+				atmel,smc-cycle-timing = <15 15>;
+				status = "okay";
+			};
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <300000000>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <1000000>;
+
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&wdt {
+	status = "okay";
+};
+
+&usbhs {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+
+	pinctrl-0 = <&gmac_rmii>;
+	pinctrl-names = "default";
+
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		status = "okay";
+		reg = <0>;
+	};
+};
+
+&xdmac {
+	status = "okay";
+};
+
+&pioc {
+	status = "okay";
+};
