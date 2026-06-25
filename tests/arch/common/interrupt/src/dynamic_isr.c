@@ -43,6 +43,7 @@ struct _isr_table_entry _sw_isr_table[];
  * by checking the software ISR table entry.
  *
  * @see arch_irq_connect_dynamic()
+ * @verifies ZEP-SRS-7-5
  */
 ZTEST(interrupt_feature, test_isr_dynamic)
 {
@@ -83,6 +84,22 @@ ZTEST(interrupt_feature, test_isr_dynamic)
 #define TEST_IRQ_DYN_LINE 5
 #endif
 
+/**
+ * @brief Test dynamic ISR installation, enable and disable
+ *
+ * @ingroup kernel_interrupt_tests
+ *
+ * @details Install a dynamic ISR at run time with arch_irq_connect_dynamic(),
+ * confirm the interrupt is initially disabled (its handler has not run), enable
+ * the line, trigger it and confirm the handler runs with the configured
+ * parameter, then disable the line again.
+ *
+ * @see arch_irq_connect_dynamic(), irq_enable(), irq_disable()
+ * @verifies ZEP-SRS-7-5
+ * @verifies ZEP-SRS-7-6
+ * @verifies ZEP-SRS-7-10
+ * @verifies ZEP-SRS-7-11
+ */
 ZTEST(interrupt_feature, test_isr_dynamic)
 {
 	int vector_num;
