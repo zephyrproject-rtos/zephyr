@@ -1490,12 +1490,30 @@ static ssize_t zsock_recv_stream_timed(struct net_context *ctx, struct net_msghd
 
 	for (end = sys_timepoint_calc(timeout); max_len > 0; timeout = sys_timepoint_timeout(end)) {
 
-		if (sock_is_error(ctx)) {
-			return -POINTER_TO_INT(ctx->user_data);
-		}
+		/* Drain any buffered data before reporting a pending error or
+		 * EOF. This ensures data received before the connection was
+		 * closed (for example just before a peer RST) is delivered to
+		 * the application prior to returning the error. If some data
+		 * was already received in this call (for example with
+		 * MSG_WAITALL), return it now and let the next recv() report
+		 * the pending error or EOF.
+		 */
+		if (k_fifo_is_empty(&ctx->recv_q)) {
+			if (sock_is_error(ctx)) {
+				if (recv_len > 0) {
+					break;
+				}
 
-		if (sock_is_eof(ctx)) {
-			return 0;
+				return -POINTER_TO_INT(ctx->user_data);
+			}
+
+			if (sock_is_eof(ctx)) {
+				if (recv_len > 0) {
+					break;
+				}
+
+				return 0;
+			}
 		}
 
 		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
