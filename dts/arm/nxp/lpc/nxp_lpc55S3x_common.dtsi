@@ -575,6 +575,7 @@
 	crc: crc@95000 {
 		compatible = "nxp,crc";
 		reg = <0x95000 0x1000>;
+		clocks = <&syscon MCUX_CRC_CLK>;
 		status = "disabled";
 	};
 
