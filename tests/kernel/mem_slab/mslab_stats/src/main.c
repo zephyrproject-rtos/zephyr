@@ -12,6 +12,14 @@
 
 K_MEM_SLAB_DEFINE(kmslab, BLK_SZ, NUM_BLOCKS, 4);
 
+/**
+ * @brief Verify memory slab statistics routines reject invalid parameters
+ *
+ * @details Call the memory slab runtime statistics query and reset routines
+ * with invalid parameters and verify they return -EINVAL.
+ *
+ * @verifies ZEP-SRS-9-17
+ */
 ZTEST(lib_mem_slab_stats_test, test_mem_slab_stats_invalid_params)
 {
 	struct sys_memory_stats  stats;
@@ -40,6 +48,15 @@ ZTEST(lib_mem_slab_stats_test, test_mem_slab_stats_invalid_params)
 		      status, -EINVAL);
 }
 
+/**
+ * @brief Verify memory slab runtime usage statistics
+ *
+ * @details Query the runtime statistics of a memory slab and verify that the
+ * reported free, allocated and maximum-allocated byte counts track block
+ * allocations and frees, and that resetting the maximum works.
+ *
+ * @verifies ZEP-SRS-9-17
+ */
 ZTEST(lib_mem_slab_stats_test, test_mem_slab_runtime_stats)
 {
 	struct sys_memory_stats  stats;
