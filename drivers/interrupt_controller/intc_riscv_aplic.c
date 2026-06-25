@@ -70,14 +70,11 @@ void riscv_aplic_enable_src(const struct device *dev, unsigned int src, bool ena
 	wr32(cfg->base, enable ? APLIC_SETIENUM : APLIC_CLRIENUM, src);
 }
 
-static int aplic_init(const struct device *dev)
-{
 #ifdef CONFIG_RISCV_APLIC_MSI
-	return aplic_msi_init(dev);
+#define aplic_init aplic_msi_init
 #else
-	return aplic_direct_init(dev);
+#define aplic_init aplic_direct_init
 #endif
-}
 
 uint32_t riscv_aplic_get_num_sources(const struct device *dev)
 {
