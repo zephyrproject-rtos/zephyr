@@ -122,6 +122,8 @@ static struct k_thread alt_thread_data;
  * a few messages before terminating.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-11
+ * @verifies ZEP-SRS-8-12
  */
 ZTEST_USER(stackprot, test_stackprot)
 {
@@ -136,6 +138,7 @@ ZTEST_USER(stackprot, test_stackprot)
  * when supervisor threads overflow stack memory buffer.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-12
  */
 ZTEST(stackprot, test_create_alt_thread)
 {
@@ -183,6 +186,7 @@ void alternate_thread_canary(void *arg1, void *arg2, void *arg3)
  * CONFIG_STACK_CANARIES_TLS is enabled.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-12
  */
 ZTEST(stackprot, test_canary_value)
 {

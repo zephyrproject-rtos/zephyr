@@ -100,6 +100,8 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
  * @brief Test to check if the thread is in user mode
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-3
+ * @verifies ZEP-SRS-8-9
  */
 ZTEST_USER(userspace, test_is_usermode)
 {
@@ -113,6 +115,7 @@ ZTEST_USER(userspace, test_is_usermode)
  * @brief Test to check if k_is_pre_kernel works from user mode
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-9
  */
 ZTEST_USER(userspace, test_is_post_kernel)
 {
@@ -125,6 +128,7 @@ ZTEST_USER(userspace, test_is_post_kernel)
  * @brief Test to write to a control register
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-3
  */
 ZTEST_USER(userspace, test_write_control)
 {
@@ -215,6 +219,8 @@ ZTEST_USER(userspace, test_write_control)
  * @brief Test to disable memory protection
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
+ * @verifies ZEP-SRS-8-3
  */
 ZTEST_USER(userspace, test_disable_mmu_mpu)
 {
@@ -315,6 +321,8 @@ ZTEST_USER(userspace, test_disable_mmu_mpu)
  * @brief Test to read from kernel RAM
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
+ * @verifies ZEP-SRS-8-3
  */
 ZTEST_USER(userspace, test_read_kernram)
 {
@@ -332,6 +340,8 @@ ZTEST_USER(userspace, test_read_kernram)
  * @brief Test to write to kernel RAM
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
+ * @verifies ZEP-SRS-8-3
  */
 ZTEST_USER(userspace, test_write_kernram)
 {
@@ -350,6 +360,8 @@ extern int _errno_neg_eagain;
  * @brief Test to write kernel RO
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
+ * @verifies ZEP-SRS-8-3
  */
 ZTEST_USER(userspace, test_write_kernro)
 {
@@ -374,6 +386,8 @@ ZTEST_USER(userspace, test_write_kernro)
  * @brief Test to write to kernel text section
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
+ * @verifies ZEP-SRS-8-3
  */
 ZTEST_USER(userspace, test_write_kerntext)
 {
@@ -390,6 +404,8 @@ static int kernel_data;
  * @brief Test to read from kernel data section
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
+ * @verifies ZEP-SRS-8-3
  */
 ZTEST_USER(userspace, test_read_kernel_data)
 {
@@ -403,6 +419,8 @@ ZTEST_USER(userspace, test_read_kernel_data)
  * @brief Test to write to kernel data section
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
+ * @verifies ZEP-SRS-8-3
  */
 ZTEST_USER(userspace, test_write_kernel_data)
 {
@@ -425,6 +443,8 @@ K_APP_DMEM(default_part) int32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE -
  * @brief Test to read privileged stack
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
+ * @verifies ZEP-SRS-8-3
  */
 ZTEST_USER(userspace, test_read_priv_stack)
 {
@@ -450,6 +470,8 @@ ZTEST_USER(userspace, test_read_priv_stack)
  * @brief Test to write to privilege stack
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
+ * @verifies ZEP-SRS-8-3
  */
 ZTEST_USER(userspace, test_write_priv_stack)
 {
@@ -478,6 +500,8 @@ K_APP_BMEM(default_part) static struct k_sem sem;
  * @brief Test to pass a user object to system call
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-2
+ * @verifies ZEP-SRS-8-14
  */
 ZTEST_USER(userspace, test_pass_user_object)
 {
@@ -494,6 +518,8 @@ static struct k_sem ksem;
  * @brief Test to pass object to a system call without permissions
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-2
+ * @verifies ZEP-SRS-8-14
  */
 ZTEST_USER(userspace, test_pass_noperms_object)
 {
@@ -517,6 +543,7 @@ void thread_body(void *p1, void *p2, void *p3)
  * @brief Test to start kernel thread from usermode
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-8
  */
 ZTEST_USER(userspace, test_start_kernel_thread)
 {
@@ -551,6 +578,8 @@ static void uthread_write_body(void *p1, void *p2, void *p3)
  * @brief Test to read from another thread's stack
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
+ * @verifies ZEP-SRS-8-3
  */
 ZTEST_USER(userspace, test_read_other_stack)
 {
@@ -580,6 +609,8 @@ ZTEST_USER(userspace, test_read_other_stack)
  * @brief Test to write to other thread's stack
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
+ * @verifies ZEP-SRS-8-3
  */
 ZTEST_USER(userspace, test_write_other_stack)
 {
@@ -611,6 +642,7 @@ ZTEST_USER(userspace, test_write_other_stack)
  * the system will assert.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-7
  */
 ZTEST_USER(userspace, test_revoke_noperms_object)
 {
@@ -627,6 +659,7 @@ ZTEST_USER(userspace, test_revoke_noperms_object)
  * @brief Test to access object after revoking access
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-7
  */
 ZTEST_USER(userspace, test_access_after_revoke)
 {
@@ -657,6 +690,7 @@ static void umode_enter_func(void *p1, void *p2, void *p3)
 * ability to drop privileges to user mode.
 *
 * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-9
 */
 ZTEST(userspace, test_user_mode_enter)
 {
@@ -672,6 +706,7 @@ K_PIPE_DEFINE(kpipe, PIPE_LEN, BYTES_TO_READ_WRITE);
  * @brief Test to write to kobject using pipe
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-14
  */
 ZTEST_USER(userspace, test_write_kobject_user_pipe)
 {
@@ -691,6 +726,7 @@ ZTEST_USER(userspace, test_write_kobject_user_pipe)
  * @brief Test to read from kobject using pipe
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-14
  */
 ZTEST_USER(userspace, test_read_kobject_user_pipe)
 {
@@ -748,6 +784,8 @@ static void drop_user(volatile bool *to_modify)
  * page tables, allowing the write to "default_part" to work.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
+ * @verifies ZEP-SRS-8-17
  */
 ZTEST(userspace_domain, test_1st_init_and_access_other_memdomain)
 {
@@ -779,6 +817,8 @@ extern uint8_t *z_priv_stack_find(void *obj);
  * as expected.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
+ * @verifies ZEP-SRS-8-17
  */
 ZTEST(userspace_domain, test_domain_add_thread_drop_to_user)
 {
@@ -787,12 +827,14 @@ ZTEST(userspace_domain, test_domain_add_thread_drop_to_user)
 	drop_user(&alt_bool);
 }
 
-/* @brief Test adding application memory partition to memory domain
+/**
+ * @brief Test adding application memory partition to memory domain
  *
  * @details Show that adding a partition to a domain and then dropping to user
  * mode works as expected.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-17
  */
 ZTEST(userspace_domain, test_domain_add_part_drop_to_user)
 {
@@ -810,6 +852,7 @@ ZTEST(userspace_domain, test_domain_add_part_drop_to_user)
  * and then dropping to user mode faults as expected.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-17
  */
 ZTEST(userspace_domain, test_domain_remove_part_drop_to_user)
 {
@@ -830,6 +873,8 @@ ZTEST(userspace_domain, test_domain_remove_part_drop_to_user)
  * thread in the same domain works as expected.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
+ * @verifies ZEP-SRS-8-17
  */
 ZTEST(userspace_domain_ctx, test_domain_add_thread_context_switch)
 {
@@ -838,10 +883,12 @@ ZTEST(userspace_domain_ctx, test_domain_add_thread_context_switch)
 	spawn_user(&alt_bool);
 }
 
-/* Show that adding a partition to a domain and then switching to another
+/**
+ * Show that adding a partition to a domain and then switching to another
  * user thread in the same domain works as expected.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-17
  */
 ZTEST(userspace_domain_ctx, test_domain_add_part_context_switch)
 {
@@ -860,6 +907,7 @@ ZTEST(userspace_domain_ctx, test_domain_add_part_context_switch)
  * expected.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-17
  */
 ZTEST(userspace_domain_ctx, test_domain_remove_part_context_switch)
 {
@@ -889,6 +937,7 @@ void z_impl_missing_syscall(void)
  * calls.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-4
  */
 ZTEST_USER(userspace, test_unimplemented_syscall)
 {
@@ -905,6 +954,7 @@ ZTEST_USER(userspace, test_unimplemented_syscall)
  * system call was made from user code.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-5
  */
 ZTEST_USER(userspace, test_bad_syscall)
 {
@@ -928,6 +978,7 @@ static struct k_sem recycle_sem;
  * @see k_object_recycle(), k_object_find()
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-16
  */
 ZTEST(userspace, test_object_recycle)
 {

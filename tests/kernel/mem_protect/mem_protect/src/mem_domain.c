@@ -166,6 +166,8 @@ static void ro_write_entry(void *p1, void *p2, void *p3)
  * as expected by the permissions provided.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
+ * @verifies ZEP-SRS-8-17
  */
 ZTEST(mem_protect_domain, test_mem_domain_valid_access)
 {
@@ -177,6 +179,8 @@ ZTEST(mem_protect_domain, test_mem_domain_valid_access)
  * @brief Show that a user thread can't touch partitions not in its domain
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
+ * @verifies ZEP-SRS-8-17
  */
 ZTEST(mem_protect_domain, test_mem_domain_invalid_access)
 {
@@ -189,6 +193,7 @@ ZTEST(mem_protect_domain, test_mem_domain_invalid_access)
  * @brief Show that a read-only partition can't be written to
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-17
  */
 ZTEST(mem_protect_domain, test_mem_domain_no_writes_to_ro)
 {
@@ -204,6 +209,7 @@ ZTEST(mem_protect_domain, test_mem_domain_no_writes_to_ro)
  * Show that adding a partition back restores access from a user thread.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-17
  */
 ZTEST(mem_protect_domain, test_mem_domain_remove_add_partition)
 {
@@ -276,6 +282,7 @@ static void mem_domain_add_thread_entry(void *p1, void *p2, void *p3)
  *
  * @see k_mem_domain_init(), k_mem_domain_add_partition(),
  *	k_mem_domain_remove_partition(), k_mem_domain_add_thread()
+ * @verifies ZEP-SRS-8-3
  */
 ZTEST(mem_protect_domain, test_mem_domain_api_supervisor_only)
 {
@@ -337,6 +344,7 @@ static void spin_entry(void *p1, void *p2, void *p3)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_mem_domain_add_thread()
+ * @verifies ZEP-SRS-8-17
  */
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
