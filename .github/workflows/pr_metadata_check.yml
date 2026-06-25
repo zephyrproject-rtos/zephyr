@@ -25,17 +25,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          sparse-checkout: scripts/ci/do_not_merge.py
+          sparse-checkout: |
+            scripts/ci/do_not_merge.py
+            scripts/requirements-actions-basic.txt
           sparse-checkout-cone-mode: false
 
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: 3.12
+          cache: pip
+          cache-dependency-path: scripts/requirements-actions-basic.txt
+
 
       - name: Install Python dependencies
         run: |
-          pip install -U PyGithub
+          pip install -r scripts/requirements-actions-basic.txt --require-hashes
 
       - name: Run the check script
         env:
