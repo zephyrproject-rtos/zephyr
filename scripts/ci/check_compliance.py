@@ -9,7 +9,6 @@ import collections
 import json
 import logging
 import os
-import platform
 import re
 import shlex
 import shutil
@@ -18,7 +17,6 @@ import sys
 import tempfile
 import textwrap
 import traceback
-from collections.abc import Iterable
 from itertools import takewhile
 from pathlib import Path, PurePath
 
@@ -41,14 +39,10 @@ except ImportError:
         if dll_dir.is_dir():
             os.environ['PATH'] = str(dll_dir) + os.pathsep + os.environ.get('PATH', '')
     import magic
-import unidiff
 import yaml
 from dotenv import load_dotenv
 from junitparser import Error, Failure, JUnitXml, Skipped, TestCase, TestSuite
-from reuse.project import Project
-from reuse.report import ProjectSubsetReport
 from west.manifest import Manifest, ManifestProject
-from yamllint import config, linter
 
 try:
     from yaml import CSafeLoader as SafeLoader
@@ -420,58 +414,6 @@ class BoardYmlCheck(ComplianceTest):
 
         for file in path.glob("**/board.yml"):
             self.check_board_file(file, vendor_prefixes)
-
-
-class ClangFormatCheck(ComplianceTest):
-    """
-    Check if clang-format reports any issues
-    """
-
-    name = "ClangFormat"
-    doc = zephyr_doc_detail_builder("/contribute/guidelines.html#clang-format")
-
-    def _process_patch_error(self, file: str, patch: unidiff.PatchedFile):
-        for hunk in patch:
-            # Strip the before and after context
-            before = next(i for i, v in enumerate(hunk) if str(v).startswith(('-', '+')))
-            after = next(i for i, v in enumerate(reversed(hunk)) if str(v).startswith(('-', '+')))
-            msg = "".join([str(line) for line in hunk[before : -after or None]])
-
-            # show the hunk at the last line
-            self.fmtd_failure(
-                "notice",
-                "You may want to run clang-format on this change",
-                file,
-                line=hunk.source_start + hunk.source_length - after,
-                desc=f'\r\n{msg}',
-            )
-
-    def run(self):
-        exe = f"clang-format-diff.{'exe' if platform.system() == 'Windows' else 'py'}"
-
-        for file in get_files():
-            if Path(file).suffix not in ['.c', '.h']:
-                continue
-
-            diff = subprocess.Popen(
-                ('git', 'diff', '-U0', '--no-color', COMMIT_RANGE, '--', file),
-                stdout=subprocess.PIPE,
-                cwd=GIT_TOP,
-            )
-            try:
-                subprocess.run(
-                    (exe, '-p1'),
-                    check=True,
-                    stdin=diff.stdout,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    cwd=GIT_TOP,
-                )
-
-            except subprocess.CalledProcessError as ex:
-                patchset = unidiff.PatchSet.from_string(ex.output, encoding="utf-8")
-                for patch in patchset:
-                    self._process_patch_error(file, patch)
 
 
 class DevicetreeBindingsCheck(ComplianceTest):
@@ -1806,70 +1748,6 @@ class GitDiffCheck(ComplianceTest):
             self.failure("\n".join(offending_lines))
 
 
-class LicenseAndCopyrightCheck(ComplianceTest):
-    """
-    Verify that every file touched by the patch set has correct SPDX headers and uses allowed
-    license.
-    """
-
-    name = "LicenseAndCopyrightCheck"
-    doc = "Check SPDX headers and copyright lines with the reuse Python API."
-
-    def _report_violations(
-        self,
-        paths: Iterable[Path],
-        title: str,
-        severity: str,
-        desc: str | None = None,
-    ) -> None:
-        for p in paths:
-            rel_path = os.path.relpath(str(p), GIT_TOP)
-            self.fmtd_failure(severity, title, rel_path, desc=desc or "", line=1)
-
-    def run(self) -> None:
-        changed_files = get_files(filter="d")
-        if not changed_files:
-            return
-
-        # Only scan text files for now, in the future we may want to leverage REUSE standard's
-        # ability to also associate license/copyright info with binary files.
-        filtered_files = []
-        for file in changed_files:
-            full_path = GIT_TOP / file
-            mime_type = magic.from_file(os.fspath(full_path), mime=True)
-            if mime_type.startswith("text/"):
-                filtered_files.append(file)
-        changed_files = filtered_files
-
-        project = Project.from_directory(GIT_TOP)
-        report = ProjectSubsetReport.generate(project, changed_files, multiprocessing=False)
-
-        self._report_violations(
-            report.files_without_licenses,
-            "License missing",
-            "warning",
-            "File has no SPDX-License-Identifier header, consider adding one.",
-        )
-
-        self._report_violations(
-            report.files_without_copyright,
-            "Copyright missing",
-            "warning",
-            "File has no SPDX-FileCopyrightText header, consider adding one.",
-        )
-
-        for lic_id, paths in getattr(report, "missing_licenses", {}).items():
-            self._report_violations(
-                paths,
-                "License may not be allowed",
-                "warning",
-                (
-                    f"License file for '{lic_id}' not found in /LICENSES. Please check "
-                    "https://docs.zephyrproject.org/latest/contribute/guidelines.html#components-using-other-licenses."
-                ),
-            )
-
-
 class GitLint(ComplianceTest):
     """
     Runs gitlint on the commits and finds issues with style and syntax
@@ -1986,45 +1864,6 @@ def filter_py(root, fnames):
             or magic.from_file(os.path.join(root, fname), mime=True) == "text/x-python"
         )
     ]
-
-
-class CMakeStyle(ComplianceTest):
-    """
-    Checks cmake style added/modified files
-    """
-
-    name = "CMakeStyle"
-    doc = zephyr_doc_detail_builder("/contribute/style/cmake.html")
-
-    def run(self):
-        # Loop through added/modified files
-        for fname in get_files(filter="d"):
-            if fname.endswith(".cmake") or fname.endswith("CMakeLists.txt"):
-                self.check_style(fname)
-
-    def check_style(self, fname):
-        SPACE_BEFORE_OPEN_BRACKETS_CHECK = re.compile(r"^\s*if\s+\(")
-        TAB_INDENTATION_CHECK = re.compile(r"^\t+")
-
-        with open(fname, encoding="utf-8") as f:
-            for line_num, line in enumerate(f.readlines(), start=1):
-                if TAB_INDENTATION_CHECK.match(line):
-                    self.fmtd_failure(
-                        "error",
-                        "CMakeStyle",
-                        fname,
-                        line_num,
-                        "Use spaces instead of tabs for indentation",
-                    )
-
-                if SPACE_BEFORE_OPEN_BRACKETS_CHECK.match(line):
-                    self.fmtd_failure(
-                        "error",
-                        "CMakeStyle",
-                        fname,
-                        line_num,
-                        "Remove space before '(' in if() statements",
-                    )
 
 
 class Identity(ComplianceTest):
@@ -2214,37 +2053,6 @@ class ZephyrModuleFile(ComplianceTest):
             if os.path.exists(file):
                 self.failure("A zephyr module file has been added to the Zephyr repository")
                 break
-
-
-class YAMLLint(ComplianceTest):
-    """
-    YAMLLint
-    """
-
-    name = "YAMLLint"
-    doc = "Check YAML files with YAMLLint."
-
-    def run(self):
-        config_file = ZEPHYR_BASE / ".yamllint"
-
-        for file in get_files(filter="d"):
-            if Path(file).suffix not in ['.yaml', '.yml']:
-                continue
-
-            yaml_config = config.YamlLintConfig(file=config_file)
-
-            if file.startswith(".github/"):
-                # Tweak few rules for workflow files.
-                yaml_config.rules["line-length"] = False
-                yaml_config.rules["truthy"]["allowed-values"].extend(['on', 'off'])
-            elif file == ".codecov.yml":
-                yaml_config.rules["truthy"]["allowed-values"].extend(['yes', 'no'])
-
-            with open(file) as fp:
-                for p in linter.run(fp, yaml_config):
-                    self.fmtd_failure(
-                        'warning', f'YAMLLint ({p.rule})', file, p.line, col=p.column, desc=p.desc
-                    )
 
 
 class SphinxLint(ComplianceTest):
@@ -2977,6 +2785,13 @@ def _main(args):
     global COMMIT_RANGE
     COMMIT_RANGE = args.commits
 
+    # Populate the shared context so linter modules in compliance/ can access
+    # these values without reaching into sys.modules['__main__'] directly.
+    _ctx = sys.modules.get('_compliance_context')
+    if _ctx is not None:
+        _ctx.GIT_TOP = GIT_TOP
+        _ctx.COMMIT_RANGE = COMMIT_RANGE
+
     init_logs(args.loglevel)
 
     logger.info(f'Running tests on commit range {COMMIT_RANGE}')
@@ -3025,6 +2840,8 @@ def _main(args):
             test.run()
         except EndTest:
             pass
+        except KeyboardInterrupt:
+            raise
         except BaseException:
             test.failure(f"An exception occurred in {test.name}:\n{traceback.format_exc()}")
 
@@ -3117,6 +2934,56 @@ def err(msg):
         cmd += ": "
     sys.exit(f"{cmd} error: {msg}")
 
+
+# Auto-load all compliance linter modules from the compliance/ sub-directory.
+# Each module is expected to define one or more ComplianceTest subclasses,
+# which are auto-discovered by the inheritors() walk used by the runner.
+#
+# This block must come after all built-in ComplianceTest subclasses are
+# defined so the linter modules can access ComplianceTest via
+# sys.modules['check_compliance'] / sys.modules['__main__'].
+def _load_compliance_linters():
+    import importlib.util
+
+    compliance_dir = Path(__file__).resolve().parent / 'compliance'
+
+    # Load the shared context module first so linter modules can import it.
+    context_path = compliance_dir / '_context.py'
+    if context_path.exists():
+        spec = importlib.util.spec_from_file_location('_compliance_context', context_path)
+        ctx_mod = importlib.util.module_from_spec(spec)
+        sys.modules['_compliance_context'] = ctx_mod
+        spec.loader.exec_module(ctx_mod)
+
+        # Populate static symbols — these are all defined at module level in
+        # check_compliance.py by the time this function runs, so they are safe
+        # to use at linter class-definition time (e.g. as class attributes).
+        _main_mod = sys.modules['__main__']
+        for _attr in (
+            'ComplianceTest',
+            'EndTest',
+            'get_files',
+            'get_shas',
+            'git',
+            'get_set_from_file',
+            'zephyr_doc_detail_builder',
+            'ZEPHYR_BASE',
+            'magic',
+        ):
+            setattr(ctx_mod, _attr, getattr(_main_mod, _attr))
+
+    for linter_path in sorted(compliance_dir.glob('*.py')):
+        if linter_path.name.startswith('_'):
+            continue
+        mod_name = f'_compliance_{linter_path.stem}'
+        spec = importlib.util.spec_from_file_location(mod_name, linter_path)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[mod_name] = mod
+        spec.loader.exec_module(mod)
+
+
+_load_compliance_linters()
+del _load_compliance_linters
 
 if __name__ == "__main__":
     main(sys.argv[1:])
