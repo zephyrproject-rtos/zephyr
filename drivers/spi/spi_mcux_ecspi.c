@@ -184,6 +184,10 @@ static int spi_mcux_configure(const struct device *dev,
 
 	master_config.channel =
 		spi_cs_is_gpio(spi_cfg) ? kECSPI_Channel0 : (ecspi_channel_source_t)spi_cfg->slave;
+	master_config.channelConfig.clockInactiveState =
+		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
+		? kECSPI_ClockInactiveStateHigh
+		: kECSPI_ClockInactiveStateLow;
 	master_config.channelConfig.polarity =
 		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
 		? kECSPI_PolarityActiveLow
