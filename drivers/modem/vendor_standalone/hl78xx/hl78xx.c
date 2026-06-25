@@ -3122,11 +3122,11 @@ static int hl78xx_on_fota_state_leave(struct hl78xx_data *data)
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 static int hl78xx_on_carrier_off_state_enter(struct hl78xx_data *data)
 {
-	notif_carrier_off(data->dev);
+	notif_carrier_off(data->devices.hl78xx);
 	/* Check whether or not there is any sockets are connected,
 	 * if true, wait until sockets are closed properly
 	 */
-	if (check_if_any_socket_connected(data->dev) == false) {
+	if (check_if_any_socket_connected(data->devices.hl78xx) == false) {
 		hl78xx_start_timer(data, K_MSEC(100));
 	} else {
 		/* There are still active sockets, wait until they are closed */
