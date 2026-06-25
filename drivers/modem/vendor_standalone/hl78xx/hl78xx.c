@@ -481,23 +481,23 @@ static void hl78xx_schedule_signal_quality_retry(struct hl78xx_data *data)
 	}
 
 	LOG_DBG("Signal quality not ready; retrying in 2 seconds");
-	(void)k_work_reschedule(&data->timeout_work, K_SECONDS(2));
+	(void)k_work_reschedule(&data->work.timeout_work, K_SECONDS(2));
 }
 
 void hl78xx_start_timer(struct hl78xx_data *data, k_timeout_t timeout)
 {
-	k_work_schedule(&data->timeout_work, timeout);
+	k_work_schedule(&data->work.timeout_work, timeout);
 }
 
 void hl78xx_stop_timer(struct hl78xx_data *data)
 {
-	k_work_cancel_delayable(&data->timeout_work);
+	k_work_cancel_delayable(&data->work.timeout_work);
 }
 
 static void hl78xx_timeout_handler(struct k_work *item)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
-	struct hl78xx_data *data = CONTAINER_OF(dwork, struct hl78xx_data, timeout_work);
+	struct hl78xx_data *data = CONTAINER_OF(dwork, struct hl78xx_data, work.timeout_work);
 
 	hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_TIMEOUT);
 }
@@ -1665,8 +1665,8 @@ void mdm_vgpio_callback_isr(const struct device *port, struct gpio_callback *cb,
 
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 	if (config->variant->vgpio_debounce_ms > 0) {
-		data->hl78xx_vgpio_pending_state = pin_state;
-		k_work_reschedule(&data->hl78xx_vgpio_debounce_work,
+		data->low_power.hl78xx_vgpio_pending_state = pin_state;
+		k_work_reschedule(&data->work.hl78xx_vgpio_debounce_work,
 				  K_MSEC(config->variant->vgpio_debounce_ms));
 		return;
 	}
@@ -3204,13 +3204,13 @@ static int hl78xx_on_sleep_state_enter(struct hl78xx_data *data)
 		config->variant->on_sleep_enter(data);
 	}
 
-	k_sem_give(&data->suspended_sem);
+	k_sem_give(&data->sems.suspended_sem);
 	return 0;
 }
 
 static void hl78xx_sleep_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_BUS_CLOSED:
@@ -3457,13 +3457,13 @@ static int hl78xx_on_idle_state_enter(struct hl78xx_data *data)
 
 static void hl78xx_idle_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_BUS_CLOSED:
 		LOG_DBG("Modem bus closed in idle state, suspending UART");
 		hl78xx_suspend_uart(config);
-		k_sem_give(&data->suspended_sem);
+		k_sem_give(&data->sems.suspended_sem);
 		break;
 	case MODEM_HL78XX_EVENT_RESUME:
 		if (config->autostarts) {
@@ -3485,7 +3485,7 @@ static void hl78xx_idle_event_handler(struct hl78xx_data *data, enum hl78xx_even
 
 	case MODEM_HL78XX_EVENT_SUSPEND:
 		hl78xx_suspend_uart(config);
-		k_sem_give(&data->suspended_sem);
+		k_sem_give(&data->sems.suspended_sem);
 		break;
 
 	default:
@@ -3495,9 +3495,9 @@ static void hl78xx_idle_event_handler(struct hl78xx_data *data, enum hl78xx_even
 
 static int hl78xx_on_idle_state_leave(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
-	k_sem_take(&data->suspended_sem, K_NO_WAIT);
+	k_sem_take(&data->sems.suspended_sem, K_NO_WAIT);
 
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_reset)) {
 		gpio_pin_set_dt(&config->mdm_gpio_reset, 0);
@@ -3602,9 +3602,9 @@ static int hl78xx_driver_pm_action(const struct device *dev, enum pm_device_acti
 	case PM_DEVICE_ACTION_SUSPEND:
 		/* suspend the device */
 		LOG_DBG("%d PM_DEVICE_ACTION_SUSPEND", __LINE__);
-		k_sem_take(&data->suspended_sem, K_NO_WAIT);
+		k_sem_take(&data->sems.suspended_sem, K_NO_WAIT);
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SUSPEND);
-		ret = k_sem_take(&data->suspended_sem, K_SECONDS(30));
+		ret = k_sem_take(&data->sems.suspended_sem, K_SECONDS(30));
 		break;
 	case PM_DEVICE_ACTION_RESUME:
 		LOG_DBG("%d PM_DEVICE_ACTION_RESUME", __LINE__);
@@ -3646,16 +3646,16 @@ static int hl78xx_init(const struct device *dev)
 	/* Initialize work queue and event handling */
 	k_work_queue_start(&modem_workq, modem_workq_stack,
 			   K_KERNEL_STACK_SIZEOF(modem_workq_stack), K_PRIO_COOP(7), NULL);
-	k_work_init_delayable(&data->timeout_work, hl78xx_timeout_handler);
+	k_work_init_delayable(&data->work.timeout_work, hl78xx_timeout_handler);
 	k_work_init(&data->events.event_dispatch_work, hl78xx_event_dispatch_handler);
 	ring_buf_init(&data->events.event_rb, sizeof(data->events.event_buf),
 		      data->events.event_buf);
-	k_sem_init(&data->suspended_sem, 0, 1);
+	k_sem_init(&data->sems.suspended_sem, 0, 1);
 #ifdef CONFIG_MODEM_HL78XX_STAY_IN_BOOT_MODE_FOR_ROAMING
-	k_sem_init(&data->stay_in_boot_mode_sem, 0, 1);
+	k_sem_init(&data->sems.stay_in_boot_mode_sem, 0, 1);
 #endif /* CONFIG_MODEM_HL78XX_STAY_IN_BOOT_MODE_FOR_ROAMING */
-	k_sem_init(&data->script_stopped_sem_tx_int, 0, 1);
-	k_sem_init(&data->script_stopped_sem_rx_int, 0, 1);
+	k_sem_init(&data->sems.script_stopped_sem_tx_int, 0, 1);
+	k_sem_init(&data->sems.script_stopped_sem_rx_int, 0, 1);
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 #ifdef CONFIG_MODEM_HL78XX_PSM
 	hl78xx_psmev_init(data);
@@ -3666,18 +3666,18 @@ static int hl78xx_init(const struct device *dev)
 #ifdef CONFIG_MODEM_HL78XX_EDRX
 	hl78xx_edrx_idle_init(data);
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
-	k_work_init_delayable(&data->hl78xx_vgpio_debounce_work,
+	k_work_init_delayable(&data->work.hl78xx_vgpio_debounce_work,
 			      hl78xx_vgpio_debounce_work_handler);
-	data->hl78xx_vgpio_pending_state = false;
-	k_work_init_delayable(&data->hl78xx_gpio6_debounce_work,
+	data->low_power.hl78xx_vgpio_pending_state = false;
+	k_work_init_delayable(&data->work.hl78xx_gpio6_debounce_work,
 			      hl78xx_gpio6_debounce_work_handler);
-	data->hl78xx_gpio6_pending_state = false;
+	data->low_power.hl78xx_gpio6_pending_state = false;
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
-	data->dev = dev;
+	data->devices.hl78xx = dev;
 	/* reset to default  */
 	data->buffers.eof_pattern_size = strlen(data->buffers.eof_pattern);
 	data->buffers.termination_pattern_size = strlen(data->buffers.termination_pattern);
-	data->status.kcellmeas_bootstrap_done = false;
+	data->status.kcellmeas.bootstrap_done = false;
 	memset(data->identity.apn, 0, MDM_APN_MAX_LENGTH);
 #ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
 	data->status.uart.current_baudrate = 0;
