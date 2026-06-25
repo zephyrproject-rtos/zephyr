@@ -80,6 +80,8 @@ void object_permission_checks(struct k_sem *sem, bool skip_init)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_object_alloc(), k_object_access_grant()
+ * @verifies ZEP-SRS-8-2
+ * @verifies ZEP-SRS-8-16
  */
 ZTEST(object_validation, test_generic_object)
 {
@@ -128,6 +130,8 @@ ZTEST(object_validation, test_generic_object)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_object_alloc()
+ * @verifies ZEP-SRS-8-2
+ * @verifies ZEP-SRS-8-16
  */
 ZTEST(object_validation, test_kobj_assign_perms_on_alloc_obj)
 {
@@ -163,6 +167,7 @@ ZTEST(object_validation, test_kobj_assign_perms_on_alloc_obj)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_object_alloc()
+ * @verifies ZEP-SRS-8-16
  */
 ZTEST(object_validation, test_no_ref_dyn_kobj_release_mem)
 {

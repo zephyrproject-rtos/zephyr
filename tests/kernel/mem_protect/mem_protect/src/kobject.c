@@ -38,6 +38,7 @@ static void kobject_access_grant_user_part(void *p1, void *p2, void *p3)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_thread_access_grant(), k_thread_user_mode_enter()
+ * @verifies ZEP-SRS-8-2
  */
 ZTEST(mem_protect_kobj, test_kobject_access_grant)
 {
@@ -217,6 +218,7 @@ static void kobject_revoke_access_user_part(void *p1, void *p2, void *p3)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_thread_access_grant(), k_object_access_revoke()
+ * @verifies ZEP-SRS-8-7
  */
 ZTEST(mem_protect_kobj, test_kobject_revoke_access)
 {
@@ -264,6 +266,7 @@ static void kobject_grant_access_extra_entry(void *p1, void *p2, void *p3)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_thread_access_grant(), k_object_access_revoke()
+ * @verifies ZEP-SRS-8-2
  */
 ZTEST(mem_protect_kobj, test_kobject_grant_access_kobj)
 {
@@ -344,6 +347,7 @@ static void release_from_user_child(void *p1, void *p2, void *p3)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_thread_access_grant(), k_object_release()
+ * @verifies ZEP-SRS-8-7
  */
 ZTEST(mem_protect_kobj, test_kobject_release_from_user)
 {
@@ -443,6 +447,7 @@ ZTEST(mem_protect_kobj, test_kobject_access_all_grant)
  * @see k_object_access_revoke_others()
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-7
  */
 ZTEST(mem_protect_kobj, test_kobject_revoke_others)
 {
@@ -926,6 +931,7 @@ static void supervisor_from_user_child(void *p1, void *p2, void *p3)
  * threads.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-8
  */
 ZTEST(mem_protect_kobj, test_create_new_supervisor_thread_from_user)
 {
@@ -1015,6 +1021,7 @@ static void higher_prio_from_user_child(void *p1, void *p2, void *p3)
  * @details  _handler_k_thread_create validation.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-6
  */
 
 ZTEST(mem_protect_kobj, test_create_new_higher_prio_thread_from_user)
@@ -1063,6 +1070,7 @@ static void invalid_prio_from_user_child(void *p1, void *p2, void *p3)
  * @details _handler_k_thread_create validation.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-6
  */
 ZTEST(mem_protect_kobj, test_create_new_invalid_prio_thread_from_user)
 {
