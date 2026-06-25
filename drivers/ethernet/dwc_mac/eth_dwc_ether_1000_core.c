@@ -435,7 +435,7 @@ int dwmac_probe(const struct device *dev)
 		}
 	}
 
-	reg_val = REG_READ(MAC_VERSION);
+	reg_val = REG_READ(DWMAC_MACVERR);
 	LOG_INF("HW version %u.%u0", (reg_val >> 4) & 0xf, reg_val & 0xf);
 
 	ret = dwmac_platform_init(dev);
