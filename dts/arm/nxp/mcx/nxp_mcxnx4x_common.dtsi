@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
@@ -1165,6 +1166,7 @@
 		prescale-glitch-filter-bypass;
 		clk-source = <1>;
 		resolution = <32>;
+		wakeup-ctrls = <&wuu NXP_WUU_MODULE_6_INT>;
 	};
 
 	lptmr1: lptmr@4b000 {
@@ -1305,9 +1307,10 @@
 	};
 
 	wuu: system-modules@46000 {
-		compatible = "nxp,wuu";
+		compatible = "nxp,wuc-wuu", "nxp,wuu";
 		reg = <0x46000 0x1000>;
 		interrupts = <147 0>;
+		#wakeup-ctrl-cells = <1>;
 	};
 
 	cmc: system-modules@48000 {
