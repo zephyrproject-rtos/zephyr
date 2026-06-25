@@ -69,7 +69,7 @@
 &ns16550_uart1 {
 	pinctrl-0 = <&uart1_tx_a &uart1_rx_a>;
 	pinctrl-names = "default";
-	current-speed = <115200>;
+	current-speed = <230400>;
 	dlf = <2>;
 	status = "okay";
 };
