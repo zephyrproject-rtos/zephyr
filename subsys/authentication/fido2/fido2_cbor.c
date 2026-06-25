@@ -1505,3 +1505,26 @@ int fido2_cbor_encode_client_pin_key_agreement(const uint8_t *pub_key, size_t pu
 
 	return 0;
 }
+
+int fido2_cbor_encode_client_pin_token(const uint8_t *token_enc, size_t token_enc_len,
+				       uint8_t *cbor_out, size_t cbor_out_cap, size_t *cbor_out_len)
+{
+	ZCBOR_STATE_E(zs, 5, cbor_out, cbor_out_cap, 1);
+
+	if (!zcbor_map_start_encode(zs, 1)) {
+		return -ENOMEM;
+	}
+
+	if (!zcbor_uint32_put(zs, CLIENTPIN_RESP_PIN_UV_AUTH_TOKEN) ||
+	    !zcbor_bstr_encode_ptr(zs, token_enc, token_enc_len)) {
+		return -ENOMEM;
+	}
+
+	if (!zcbor_map_end_encode(zs, 1)) {
+		return -ENOMEM;
+	}
+
+	*cbor_out_len = zs->payload - cbor_out;
+
+	return 0;
+}

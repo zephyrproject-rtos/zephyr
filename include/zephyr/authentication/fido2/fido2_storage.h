@@ -162,6 +162,12 @@ int fido2_storage_sign_count_increment(const uint8_t *cred_id, size_t cred_id_le
 int fido2_storage_pin_retries_get(uint8_t *retries);
 
 /**
+ * @brief Decrement remaining PIN retries
+ * @return 0 on success, negative errno on failure
+ */
+int fido2_storage_pin_retries_decrement(void);
+
+/**
  * @brief Reset remaining PIN retries
  * @return 0 on success, negative errno on failure
  */

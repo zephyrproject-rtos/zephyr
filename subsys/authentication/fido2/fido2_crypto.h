@@ -145,12 +145,29 @@ int fido2_crypto_hmac_sha256(const uint8_t *key, size_t key_len, const uint8_t *
  * @param ciphertext_len Length of @p ciphertext in bytes
  * @param plaintext Output buffer for plaintext
  * @param plaintext_size Size of @p plaintext in bytes
- * @param plaintext_len Set to the number of bytes written to @p out
+ * @param plaintext_len Set to the number of bytes written to @p plaintext
  * @return 0 on success, non-zero on failure
  */
 int fido2_crypto_aes256_cbc_decrypt(const uint8_t key[FIDO2_SHA256_SIZE], const uint8_t *iv,
 				    const uint8_t *ciphertext, size_t ciphertext_len,
 				    uint8_t *plaintext, size_t plaintext_size,
 				    size_t *plaintext_len);
+
+/**
+ * Encrypt data using AES-256-CBC without padding
+ *
+ * @param key 256-bit AES key
+ * @param iv Initialization vector
+ * @param plaintext Plaintext to encrypt
+ * @param plaintext_len Length of @p plaintext in bytes
+ * @param ciphertext Output buffer for ciphertext
+ * @param ciphertext_size Size of @p ciphertext in bytes
+ * @param ciphertext_len Set to the number of bytes written to @p ciphertext
+ * @return 0 on success, non-zero on failure
+ */
+int fido2_crypto_aes256_cbc_encrypt(const uint8_t key[FIDO2_SHA256_SIZE], const uint8_t *iv,
+				    const uint8_t *plaintext, size_t plaintext_len,
+				    uint8_t *ciphertext, size_t ciphertext_size,
+				    size_t *ciphertext_len);
 
 #endif /* FIDO2_CRYPTO_H_ */

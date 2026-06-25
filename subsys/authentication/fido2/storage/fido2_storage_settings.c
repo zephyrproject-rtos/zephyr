@@ -162,6 +162,19 @@ static int settings_backend_pin_retries_get(uint8_t *retries)
 	return 0;
 }
 
+static int settings_backend_pin_retries_decrement(void)
+{
+	uint8_t retries;
+
+	settings_backend_pin_retries_get(&retries);
+
+	if (retries > 0) {
+		--retries;
+	}
+
+	return settings_save_one(FIDO2_SETTINGS_PIN_RETRIES, &retries, sizeof(retries));
+}
+
 static int settings_backend_pin_retries_reset(void)
 {
 	uint8_t retries = CONFIG_FIDO2_PIN_MAX_RETRIES;
@@ -193,6 +206,7 @@ const struct fido2_storage_api fido2_storage_backend = {
 	.find_by_rp = settings_backend_find_by_rp,
 	.sign_count_increment = settings_backend_sign_count_increment,
 	.pin_retries_get = settings_backend_pin_retries_get,
+	.pin_retries_decrement = settings_backend_pin_retries_decrement,
 	.pin_retries_reset = settings_backend_pin_retries_reset,
 	.pin_set = settings_backend_pin_set,
 	.pin_get = settings_backend_pin_get,
