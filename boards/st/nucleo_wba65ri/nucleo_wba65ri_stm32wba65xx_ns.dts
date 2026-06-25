@@ -5,7 +5,8 @@
  */
 
 /dts-v1/;
-#include "nucleo_wba65ri.dts"
+#include "nucleo_wba65ri-common.dtsi"
+#include <mem.h>
 
 / {
 	chosen {
@@ -28,12 +29,14 @@
 };
 
 &flash0 {
-	/delete-node/ partitions;
-
 	partitions {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges;
+
+		/* The flash layout defined in the partition nodes below must be synced
+		 * with TF-M flash layout implementation.
+		 */
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
@@ -59,9 +62,4 @@
 			reg = <0xcc000 (DT_SIZE_M(2) - DT_SIZE_K(48 + 256 + 512))>;
 		};
 	};
-};
-
-/* RNG is owned by TF-M */
-&rng {
-	status = "disabled";
 };
