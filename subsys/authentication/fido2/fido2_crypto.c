@@ -413,25 +413,25 @@ int fido2_crypto_aes256_cbc_decrypt(const uint8_t key[FIDO2_SHA256_SIZE], const 
 				    uint8_t *plaintext, size_t plaintext_size,
 				    size_t *plaintext_len)
 {
-	psa_key_id_t aes_key;
 	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
 	psa_cipher_operation_t op = PSA_CIPHER_OPERATION_INIT;
-	psa_status_t status;
 	size_t update_len, finish_len;
+	psa_status_t status;
+	psa_key_id_t id;
 
 	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_DECRYPT);
 	psa_set_key_algorithm(&attr, PSA_ALG_CBC_NO_PADDING);
 	psa_set_key_type(&attr, PSA_KEY_TYPE_AES);
 	psa_set_key_bits(&attr, PSA_BYTES_TO_BITS(FIDO2_SHA256_SIZE));
 
-	status = psa_import_key(&attr, key, FIDO2_SHA256_SIZE, &aes_key);
+	status = psa_import_key(&attr, key, FIDO2_SHA256_SIZE, &id);
 	psa_reset_key_attributes(&attr);
 
 	if (status != PSA_SUCCESS) {
 		return status;
 	}
 
-	status = psa_cipher_decrypt_setup(&op, aes_key, PSA_ALG_CBC_NO_PADDING);
+	status = psa_cipher_decrypt_setup(&op, id, PSA_ALG_CBC_NO_PADDING);
 	if (status != PSA_SUCCESS) {
 		goto cleanup;
 	}
@@ -457,7 +457,61 @@ int fido2_crypto_aes256_cbc_decrypt(const uint8_t key[FIDO2_SHA256_SIZE], const 
 
 cleanup:
 	psa_cipher_abort(&op);
-	psa_destroy_key(aes_key);
+	psa_destroy_key(id);
+
+	return status;
+}
+
+int fido2_crypto_aes256_cbc_encrypt(const uint8_t key[FIDO2_SHA256_SIZE], const uint8_t *iv,
+				    const uint8_t *plaintext, size_t plaintext_len,
+				    uint8_t *ciphertext, size_t ciphertext_size,
+				    size_t *ciphertext_len)
+{
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_cipher_operation_t op = PSA_CIPHER_OPERATION_INIT;
+	size_t update_len, finish_len;
+	psa_status_t status;
+	psa_key_id_t id;
+
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_ENCRYPT);
+	psa_set_key_algorithm(&attr, PSA_ALG_CBC_NO_PADDING);
+	psa_set_key_type(&attr, PSA_KEY_TYPE_AES);
+	psa_set_key_bits(&attr, PSA_BYTES_TO_BITS(FIDO2_SHA256_SIZE));
+
+	status = psa_import_key(&attr, key, FIDO2_SHA256_SIZE, &id);
+	psa_reset_key_attributes(&attr);
+
+	if (status != PSA_SUCCESS) {
+		return status;
+	}
+
+	status = psa_cipher_encrypt_setup(&op, id, PSA_ALG_CBC_NO_PADDING);
+	if (status != PSA_SUCCESS) {
+		goto cleanup;
+	}
+
+	status = psa_cipher_set_iv(&op, iv, PSA_BLOCK_CIPHER_BLOCK_LENGTH(PSA_KEY_TYPE_AES));
+	if (status != PSA_SUCCESS) {
+		goto cleanup;
+	}
+
+	status = psa_cipher_update(&op, plaintext, plaintext_len, ciphertext, ciphertext_size,
+				   &update_len);
+	if (status != PSA_SUCCESS) {
+		goto cleanup;
+	}
+
+	status = psa_cipher_finish(&op, ciphertext + update_len, ciphertext_size - update_len,
+				   &finish_len);
+	if (status != PSA_SUCCESS) {
+		goto cleanup;
+	}
+
+	*ciphertext_len = update_len + finish_len;
+
+cleanup:
+	psa_cipher_abort(&op);
+	psa_destroy_key(id);
 
 	return status;
 }

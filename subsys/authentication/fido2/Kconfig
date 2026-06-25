@@ -114,6 +114,12 @@ config FIDO2_MIN_PIN_LENGTH
 	help
 	  Minimum PIN length enforced by the authenticator.
 
+config FIDO2_PIN_TOKEN_TIMEOUT_MS
+	int "pinUvAuthToken usage timeout (ms)"
+	default 30000
+	help
+	  Maximum time in milliseconds a pinUvAuthToken remains valid.
+
 rsource "attestation/Kconfig"
 rsource "transport/Kconfig"
 rsource "up/Kconfig"

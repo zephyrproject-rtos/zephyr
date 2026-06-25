@@ -309,4 +309,18 @@ int fido2_cbor_encode_client_pin_key_agreement(const uint8_t *pub_key, size_t pu
 					       uint8_t *cbor_out, size_t cbor_out_cap,
 					       size_t *cbor_out_len);
 
+/**
+ * Encode clientPIN getPINToken response.
+ *
+ * @param token_enc Encrypted pinUvAuthToken
+ * @param token_enc_len Length of encrypted token
+ * @param cbor_out Output buffer
+ * @param cbor_out_cap Buffer size
+ * @param cbor_out_len Encoded length written
+ * @return 0 on success, negative errno on failure
+ */
+int fido2_cbor_encode_client_pin_token(const uint8_t *token_enc, size_t token_enc_len,
+				       uint8_t *cbor_out, size_t cbor_out_cap,
+				       size_t *cbor_out_len);
+
 #endif /* FIDO2_CBOR_H_ */
