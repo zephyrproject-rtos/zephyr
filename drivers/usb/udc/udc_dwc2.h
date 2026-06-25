@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/usb/udc.h>
-#include <usb_dwc2_hw.h>
+#include <synopsys/usb_dwc2_hw.h>
 
 /* Required by DEVICE_MMIO_NAMED_* macros */
 #define DEV_CFG(_dev) ((const struct udc_dwc2_config *)(_dev)->config)

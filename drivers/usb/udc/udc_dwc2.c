@@ -21,7 +21,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/usb/usb_ch9.h>
-#include <usb_dwc2_hw.h>
+#include <synopsys/usb_dwc2_hw.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(udc_dwc2, CONFIG_UDC_DRIVER_LOG_LEVEL);

@@ -25,7 +25,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/usb/usb_device.h>
 
-#include <usb_dwc2_hw.h>
+#include <synopsys/usb_dwc2_hw.h>
 #include "usb_dc_dw_stm32.h"
 
 #include <zephyr/logging/log.h>
