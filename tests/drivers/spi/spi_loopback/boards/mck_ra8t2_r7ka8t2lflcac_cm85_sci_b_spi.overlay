@@ -22,7 +22,7 @@
 	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
 
-	spi {
+	spi: spi {
 		status = "okay";
 
 		slow@0 {
