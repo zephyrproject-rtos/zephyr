@@ -9,8 +9,12 @@
 #include <espressif/esp32s3/esp32s3_wroom_n16r16.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <espressif/partitions_0x0_amp_16M.dtsi>
+<<<<<<< HEAD
 #include <zephyr/dt-bindings/display/panel.h>
 #include "esp32s3_box3-pinctrl.dtsi"
+=======
+#include "esp32s3-box-3-header.dtsi"
+>>>>>>> 50f911d2100 (boards: esp32s3_box3: add sensor connector header)
 
 / {
 	model = "Espressif ESP32S3-BOX-3 PROCPU";
