@@ -321,6 +321,78 @@ ZTEST_USER(net_socket_tcp, test_v6_send_recv)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
+static void test_recv_before_eof_common(int family)
+{
+	/* Data received before the peer gracefully closes the connection should
+	 * still be readable with recv() before EOF (0) is returned.
+	 */
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct net_sockaddr_in c_saddr4;
+	struct net_sockaddr_in s_saddr4;
+	struct net_sockaddr_in6 c_saddr6;
+	struct net_sockaddr_in6 s_saddr6;
+	struct net_sockaddr *s_saddr;
+	net_socklen_t saddrlen;
+	struct net_sockaddr addr;
+	net_socklen_t addrlen = sizeof(addr);
+	char rx_buf[30] = {0};
+	ssize_t recved;
+
+	if (family == NET_AF_INET) {
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr4);
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr4);
+		s_saddr = (struct net_sockaddr *)&s_saddr4;
+		saddrlen = sizeof(s_saddr4);
+	} else {
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr6);
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_saddr6);
+		s_saddr = (struct net_sockaddr *)&s_saddr6;
+		saddrlen = sizeof(s_saddr6);
+	}
+
+	test_bind(s_sock, s_saddr, saddrlen);
+	test_listen(s_sock);
+
+	test_connect(c_sock, s_saddr, saddrlen);
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+
+	/* Server sends some data and immediately closes the connection. */
+	test_send(new_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
+	test_close(new_sock);
+
+	/* Let the data and FIN packets pass through. */
+	k_msleep(THREAD_SLEEP);
+
+	/* Client should be able to read the data first... */
+	recved = zsock_recv(c_sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(recved, strlen(TEST_STR_SMALL),
+		      "unexpected received bytes (%zd)", recved);
+	zassert_equal(strncmp(rx_buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL)),
+		      0, "unexpected data");
+
+	/* ...and only then get EOF (0). */
+	recved = zsock_recv(c_sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(recved, 0, "expected EOF, got %zd", recved);
+
+	test_close(c_sock);
+	test_close(s_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST_USER(net_socket_tcp, test_v4_recv_before_eof)
+{
+	test_recv_before_eof_common(NET_AF_INET);
+}
+
+ZTEST_USER(net_socket_tcp, test_v6_recv_before_eof)
+{
+	test_recv_before_eof_common(NET_AF_INET6);
+}
+
 /* Test the stack behavior with a reasonable sized block data, be sure to have multiple packets */
 #define TEST_LARGE_TRANSFER_SIZE 60000
 #define TEST_PRIME 811
