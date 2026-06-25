@@ -72,6 +72,7 @@
 		flash_ctrl: flash-controller@40003000 {
 			compatible = "focaltech,ft9001-flash-controller";
 			reg = <0x40003000 0x1000>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";
@@ -79,6 +80,9 @@
 			flash0: flash@10000000 {
 				compatible = "focaltech,ft9001-nv-flash", "soc-nv-flash";
 				reg = <0x10000000 0x200000>;
+				ranges = <0x0 0x10000000 0x200000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <1>;
 			};
 		};
