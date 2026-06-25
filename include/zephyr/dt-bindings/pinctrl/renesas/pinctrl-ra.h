@@ -6,20 +6,56 @@
 
 /**
  * @file
- * @brief Renesas RA pin control (pinctrl) definitions for Zephyr.
- *
- * This header provides macro constants for encoding pin function selections
- * and pin indices for Renesas RA SoCs. These values are used by the DeviceTree
- * pinctrl subsystem to describe peripheral pin mappings.
+ * @brief Devicetree pin control helpers for Renesas RA
+ * @ingroup pinctrl_ra
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RA_H__
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RA_H__
 
 /**
- * @name Renesas RA Pinctrl Definitions.
+ * @addtogroup renesas_pinctrl Renesas pin control helpers
+ * @ingroup devicetree-pinctrl
+ */
+
+/**
+ * @defgroup pinctrl_ra Renesas RA pin control helpers
+ * @brief Macros for pin control configuration of Renesas RA SoCs
+ * @ingroup renesas_pinctrl
+ *
+ * Each pin configuration is built with the RA_PSEL() macro, which combines a
+ * peripheral-function selector, the port number, and the pin number within that
+ * port.
+ *
+ * The selector follows the naming convention @c RA_PSEL_\<FUNCTION\>, where
+ * @c \<FUNCTION\> is one of:
+ *
+ * - Analog: @c ADC, @c DAC, @c ACMPHS, @c ACMPHS_VCOUT, @c CAC_ADC, @c CAC_DAC,
+ *   @c CTSU
+ * - Timers: @c AGT, @c GPT0, @c GPT1
+ * - Serial: @c SCI_0 ... @c SCI_9, @c SPI, @c I2C, @c I3C
+ * - Connectivity: @c CANFD, @c QSPI, @c OSPI, @c SSIE, @c USBFS, @c USBHS,
+ *   @c SDHI, @c ETH_MII, @c ETH_RMII, @c ETH_RGMII
+ * - Graphics / capture: @c GLCDC, @c CEU
+ * - System: @c HIZ_JTAG_SWD, @c CLKOUT_RTC, @c ETHPHYCLK, @c BUS
+ *
+ * @code{.dts}
+ * #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
+ *
+ * &pinctrl {
+ *         sci0_default: sci0_default {
+ *                 group1 {
+ *                         psels = <RA_PSEL(RA_PSEL_SCI_0, 4, 11)>,
+ *                                 <RA_PSEL(RA_PSEL_SCI_0, 4, 10)>;
+ *                 };
+ *         };
+ * };
+ * @endcode
+ *
  * @{
  */
+
+/** @cond INTERNAL_HIDDEN */
 
 /** @brief Bit position of the port number field. */
 #define RA_PORT_NUM_POS  0 /**< Port number position. */
@@ -89,6 +125,8 @@
 
 /** @brief Bit mask for the RA mode field (1-bit width). */
 #define RA_MODE_MASK 0x1 /** Mode field mask. */
+
+/** @endcond */
 
 /**
  * @brief Macro to encode a pin configuration for Renesas RA SoCs.
