@@ -144,6 +144,10 @@ int z_impl_k_stack_pop(struct k_stack *stack, stack_data_t *data,
 	k_spinlock_key_t key;
 	int result;
 
+	CHECKIF(k_is_in_isr() && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		k_panic();
+	}
+
 	key = k_spin_lock(&stack->lock);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_stack, pop, stack, timeout);

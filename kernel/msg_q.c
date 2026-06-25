@@ -130,7 +130,9 @@ exit:
 static inline int put_msg_in_queue(struct k_msgq *msgq, const void *data,
 			k_timeout_t timeout, bool put_at_back)
 {
-	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
+	CHECKIF(k_is_in_isr() && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		k_panic();
+	}
 
 	struct k_thread *pending_thread = NULL;
 	k_spinlock_key_t key;
@@ -286,7 +288,9 @@ static inline void z_vrfy_k_msgq_get_attrs(struct k_msgq *msgq,
 
 int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 {
-	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
+	CHECKIF(k_is_in_isr() && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		k_panic();
+	}
 
 	k_spinlock_key_t key;
 	struct k_thread *pending_thread;

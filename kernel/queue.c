@@ -321,6 +321,10 @@ int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
 
 void *z_impl_k_queue_get(struct k_queue *queue, k_timeout_t timeout)
 {
+	CHECKIF(k_is_in_isr() && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		k_panic();
+	}
+
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 	void *data;
 
