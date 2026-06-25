@@ -14,10 +14,10 @@ menu "Debugging Options"
 
 config DEBUG
 	bool "Build kernel with debugging enabled"
+	default y
 	help
-	  Build a kernel suitable for debugging.  Right now, this option
-	  only disables optimization, more debugging variants can be selected
-	  from here to allow more debugging.
+	  Build a kernel suitable for debugging. This option acts as the
+	  master switch for debugging features
 
 config GPROF
 	bool "Generate profiling information"
