@@ -286,8 +286,12 @@ def _blank_requirements(
     for i, line in enumerate(lines):
         kw = _if_endif_kw(line)
         if kw:
-            if i > 0:
-                before[i] = ("if-blank", f"add a blank line before '{kw}'")
+            # A comment block directly above an 'if' documents the conditional
+            # block and belongs with it, so the required blank line goes before
+            # the comment rather than between the comment and the 'if'.
+            start = _decl_unit_start(lines, i) if kw == "if" else i
+            if start > 0:
+                before[start] = ("if-blank", f"add a blank line before '{kw}'")
             if i < n - 1:
                 after[i] = ("if-blank", f"add a blank line after '{kw}'")
         elif i not in help_body and _is_entry(line):
