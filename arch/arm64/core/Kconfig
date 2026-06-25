@@ -14,6 +14,11 @@ config CPU_CORTEX_A
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
 	select ARCH_HAS_PMU
+	select ARCH_SUPPORTS_COREDUMP_THREADS
+	# On SMP, threads on other CPUs may be actively running with a stale
+	# callee_saved.sp_elx, so THREAD_STACK_TOP cannot rely on the saved SP.
+	# Dump the full stack allocation instead (matches RISC-V and Xtensa).
+	select ARCH_SUPPORTS_COREDUMP_STACK_PTR if !SMP
 	imply FPU
 	imply FPU_SHARING
 	help
