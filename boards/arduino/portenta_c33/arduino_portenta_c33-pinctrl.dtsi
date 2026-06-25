@@ -105,6 +105,26 @@
 		};
 	};
 
+	sdhc0_default: sdhc0_default {
+		group1 {
+			/* SDCMD SDDAT0 SDDAT1 SDDAT2 SDDAT3 SDCD */
+			psels = <RA_PSEL(RA_PSEL_SDHI, 4, 12)>,
+				<RA_PSEL(RA_PSEL_SDHI, 4, 11)>,
+				<RA_PSEL(RA_PSEL_SDHI, 4, 10)>,
+				<RA_PSEL(RA_PSEL_SDHI, 2, 6)>,
+				<RA_PSEL(RA_PSEL_SDHI, 2, 5)>,
+				<RA_PSEL(RA_PSEL_SDHI, 4, 15)>;
+			drive-strength = "high";
+			bias-pull-up;
+		};
+
+		group2 {
+			/* SDCLK */
+			psels = <RA_PSEL(RA_PSEL_SDHI, 4, 13)>;
+			drive-strength = "highspeed-high";
+		};
+	};
+
 	ether_default: ether_default {
 		group1 {
 			psels = <RA_PSEL(RA_PSEL_ETH_RMII, 2, 14)>, /* ET0_MDC */
