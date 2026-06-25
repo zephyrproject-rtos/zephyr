@@ -41,6 +41,7 @@ void tStack_pop_entry(void *p1, void *p2, void *p3)
 /**
  * @brief Verifies stack pop functionality
  * @see k_stack_init(), k_stack_pop()
+ * @verifies ZEP-SRS-30-9
  */
 ZTEST(stack_fail, test_stack_pop_fail)
 {
@@ -53,6 +54,7 @@ ZTEST(stack_fail, test_stack_pop_fail)
  * @brief Verifies cleanup a stack that still be needed by another
  * thread.
  * @see k_stack_cleanup()
+ * @verifies ZEP-SRS-30-10
  */
 ZTEST(stack_fail, test_stack_cleanup_error)
 {
@@ -75,6 +77,7 @@ ZTEST(stack_fail, test_stack_cleanup_error)
 /**
  * @brief Verifies push a data in the full stack.
  * @see k_stack_push()
+ * @verifies ZEP-SRS-30-5
  */
 ZTEST(stack_fail, test_stack_push_full)
 {
@@ -93,6 +96,7 @@ ZTEST(stack_fail, test_stack_push_full)
 /**
  * @brief Verifies stack pop from a user thread
  * @see k_stack_init(), k_stack_pop()
+ * @verifies ZEP-SRS-30-9
  */
 ZTEST_USER(stack_fail, test_stack_user_pop_fail)
 {
@@ -108,6 +112,7 @@ ZTEST_USER(stack_fail, test_stack_user_pop_fail)
 /**
  * @brief Verifies stack alloc and initialize a null pointer.
  * @see k_stack_alloc_init()
+ * @verifies ZEP-SRS-30-3
  */
 ZTEST_USER(stack_fail, test_stack_user_init_null)
 {

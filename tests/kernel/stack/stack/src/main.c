@@ -271,6 +271,7 @@ void thread_entry_wait(void *p1, void *p2, void *p3)
  * @ingroup kernel_stack_tests
  *
  * @see k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
+ * @verifies ZEP-SRS-30-8
  */
 ZTEST(stack_usage, test_stack_pop_can_wait)
 {
