@@ -62,6 +62,8 @@ static ZTEST_BMEM struct timer_data tdata;
  * - Uptime readings increase over time and k_uptime_delta() reports elapsed time.
  *
  * @see k_uptime_get(), k_uptime_get_32(), k_uptime_delta()
+ * @verifies ZEP-SRS-28-1
+ * @verifies ZEP-SRS-28-4
  */
 ZTEST_USER(clock, test_clock_uptime)
 {
@@ -117,6 +119,8 @@ ZTEST_USER(clock, test_clock_uptime)
  *   k_cyc_to_ns_floor64(), exceeds one millisecond in nanoseconds.
  *
  * @see k_cycle_get_32(), k_uptime_get_32()
+ * @verifies ZEP-SRS-28-5
+ * @verifies ZEP-SRS-28-7
  */
 
 ZTEST(clock, test_clock_cycle_32)
@@ -172,6 +176,7 @@ ZTEST(clock, test_clock_cycle_32)
  * - The 64-bit delta is >= the 32-bit delta and < twice the 32-bit delta.
  *
  * @see k_cycle_get_64()
+ * @verifies ZEP-SRS-28-6
  */
 ZTEST(clock, test_clock_cycle_64)
 {
@@ -246,6 +251,7 @@ static void init_data_count(void)
  *
  * @see k_timer_start(), k_timer_stop(), k_busy_wait()
  *
+ * @verifies ZEP-SRS-28-13
  */
 
 ZTEST(clock, test_ms_time_duration)

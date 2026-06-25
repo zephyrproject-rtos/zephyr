@@ -291,6 +291,16 @@ static void test_conversion(struct test_rec *t, uint64_t val)
 		     result, result, diff, diff, mindiff, maxdiff);
 }
 
+/**
+ * @brief Test conversion between time units
+ *
+ * @details Exercise the kernel time-unit conversion routines over a large set
+ * of source/target frequencies, bit widths and rounding modes, converting
+ * values between milliseconds, microseconds, nanoseconds, system ticks and
+ * hardware cycles and verifying each result is within the rounding-mode bound.
+ *
+ * @verifies ZEP-SRS-28-7
+ */
 ZTEST(timer_api, test_time_conversions)
 {
 	for (int i = 0; i < ARRAY_SIZE(tests); i++) {

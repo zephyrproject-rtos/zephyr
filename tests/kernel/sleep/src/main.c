@@ -204,6 +204,9 @@ static void helper_thread(void *p1, void *p2, void *p3)
  * @see k_sleep()
  * @see k_wakeup()
  * @see k_uptime_get_32()
+ * @verifies ZEP-SRS-28-8
+ * @verifies ZEP-SRS-28-10
+ * @verifies ZEP-SRS-28-11
  */
 ZTEST(sleep, test_sleep)
 {
@@ -283,6 +286,9 @@ static void forever_thread_entry(void *p1, void *p2, void *p3)
  *
  * @see k_sleep()
  * @see k_wakeup()
+ * @verifies ZEP-SRS-28-8
+ * @verifies ZEP-SRS-28-10
+ * @verifies ZEP-SRS-28-11
  */
 ZTEST(sleep, test_sleep_forever)
 {
