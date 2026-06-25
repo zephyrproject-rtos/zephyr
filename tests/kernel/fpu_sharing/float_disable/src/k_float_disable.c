@@ -62,6 +62,21 @@ static void usr_fp_thread_entry_2(void *p1, void *p2, void *p3)
 	}
 }
 
+/**
+ * @brief Test enabling and disabling floating point context preservation
+ *
+ * @details Create an FP-capable thread with the K_FP_OPTS thread options and
+ * verify the options are set, then exercise k_float_disable() on it. On
+ * architectures that support disabling another thread's FP context the options
+ * are cleared; on ARM (Cortex-M/R) disabling a thread other than the current
+ * one is rejected with -EINVAL; on architectures without support the call
+ * returns -ENOTSUP.
+ *
+ * @verifies ZEP-SRS-29-1
+ * @verifies ZEP-SRS-29-3
+ * @verifies ZEP-SRS-29-5
+ * @verifies ZEP-SRS-29-6
+ */
 ZTEST(k_float_disable, test_k_float_disable_common)
 {
 	test_ret = TC_PASS;
@@ -118,6 +133,17 @@ ZTEST(k_float_disable, test_k_float_disable_common)
 #endif
 }
 
+/**
+ * @brief Test disabling floating point context preservation from user mode
+ *
+ * @details Create an FP-capable user thread that disables its own floating
+ * point context preservation through the k_float_disable() system call, and
+ * verify the call reports the architecture-defined result (success where
+ * supported, -ENOTSUP otherwise).
+ *
+ * @verifies ZEP-SRS-29-3
+ * @verifies ZEP-SRS-29-5
+ */
 ZTEST(k_float_disable, test_k_float_disable_syscall)
 {
 	test_ret = TC_PASS;
@@ -268,6 +294,16 @@ static void sup_fp_thread_entry(void *p1, void *p2, void *p3)
 	}
 }
 
+/**
+ * @brief Test floating point context preservation across interrupts
+ *
+ * @details Create an FP-capable supervisor thread with the K_FP_REGS thread
+ * option and verify that its floating point context is preserved across an
+ * interrupt that also uses the floating point unit.
+ *
+ * @verifies ZEP-SRS-29-1
+ * @verifies ZEP-SRS-29-4
+ */
 ZTEST(k_float_disable, test_k_float_disable_irq)
 {
 	test_ret = TC_PASS;
@@ -292,6 +328,16 @@ ZTEST(k_float_disable, test_k_float_disable_irq)
 	zassert_true(ok, "");
 }
 #else
+/**
+ * @brief Test floating point context preservation across interrupts
+ *
+ * @details Create an FP-capable supervisor thread with the K_FP_REGS thread
+ * option and verify that its floating point context is preserved across an
+ * interrupt that also uses the floating point unit.
+ *
+ * @verifies ZEP-SRS-29-1
+ * @verifies ZEP-SRS-29-4
+ */
 ZTEST(k_float_disable, test_k_float_disable_irq)
 {
 	TC_PRINT("This is not an ARM system with DYNAMIC_INTERRUPTS.\n");

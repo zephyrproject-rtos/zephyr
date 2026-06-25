@@ -174,6 +174,18 @@ K_THREAD_DEFINE(pi_low, THREAD_STACK_SIZE, calculate_pi_low, NULL, NULL, NULL,
 K_THREAD_DEFINE(pi_high, THREAD_STACK_SIZE, calculate_pi_high, NULL, NULL, NULL,
 		THREAD_HIGH_PRIORITY, THREAD_FP_FLAGS, K_TICKS_FOREVER);
 
+/**
+ * @brief Test preservation of the floating point context under concurrent use
+ *
+ * @details Run two FP-capable threads that repeatedly compute pi using the
+ * floating point unit and verify each computation matches the reference value.
+ * Because both threads share the floating point unit, a correct result depends
+ * on the kernel preserving each thread's floating point context across context
+ * switches.
+ *
+ * @verifies ZEP-SRS-29-1
+ * @verifies ZEP-SRS-29-4
+ */
 ZTEST(fpu_sharing_generic, test_pi)
 {
 	/* Initialise test states */
