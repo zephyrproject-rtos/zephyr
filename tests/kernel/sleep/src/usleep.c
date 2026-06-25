@@ -74,6 +74,20 @@
 #define UPPER_BOUND_MS	(((3 + MAXIMUM_SHORTEST_TICKS) * 1000 * LOOPS)	\
 			 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
+/**
+ * @brief Test suspending a thread with microsecond resolution
+ *
+ * @ingroup kernel_sleep_tests
+ *
+ * @details Repeatedly suspend the calling thread for a short microsecond
+ * duration with k_usleep() and verify that the accumulated elapsed time over
+ * many iterations falls within the expected bounds, confirming the thread
+ * sleeps for at least the requested duration and becomes ready again afterward.
+ *
+ * @see k_usleep()
+ * @verifies ZEP-SRS-28-9
+ * @verifies ZEP-SRS-28-10
+ */
 ZTEST_USER(sleep, test_usleep)
 {
 	int retries = 0;

@@ -42,6 +42,17 @@ uint32_t timeout(uint64_t prev, uint64_t now)
 	return (uint32_t)next;
 }
 
+/**
+ * @brief Test the 64-bit hardware cycle counter across a 32-bit wrap
+ *
+ * @details Read the 64-bit hardware cycle counter repeatedly across the point
+ * where its lower 32 bits wrap around and verify that the full 64-bit value
+ * continues to increase monotonically, confirming the counter provides a
+ * 64-bit cycle count.
+ *
+ * @see k_cycle_get_64()
+ * @verifies ZEP-SRS-28-6
+ */
 ZTEST(cycle64_tests, test_32bit_wrap_around)
 {
 	enum {

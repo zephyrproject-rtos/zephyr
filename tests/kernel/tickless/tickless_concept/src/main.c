@@ -75,6 +75,10 @@ static void thread_tslice(void *p1, void *p2, void *p3)
  *
  * @details Check if system clock recovers and works as expected
  * when tickless idle is enabled and disabled.
+ *
+ * @verifies ZEP-SRS-28-1
+ * @verifies ZEP-SRS-28-8
+ * @verifies ZEP-SRS-28-10
  */
 ZTEST(tickless_concept, test_tickless_sysclock)
 {

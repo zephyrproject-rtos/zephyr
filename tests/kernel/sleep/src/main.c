@@ -189,6 +189,9 @@ static void helper_thread(void *p1, void *p2, void *p3)
  * @ingroup kernel_sleep_tests
  *
  * @see k_sleep(), k_wakeup(), k_uptime_get_32()
+ * @verifies ZEP-SRS-28-8
+ * @verifies ZEP-SRS-28-10
+ * @verifies ZEP-SRS-28-11
  */
 ZTEST(sleep, test_sleep)
 {
@@ -247,6 +250,19 @@ static void forever_thread_entry(void *p1, void *p2, void *p3)
 	k_sem_give(&test_thread_sem);
 }
 
+/**
+ * @brief Test waking a thread sleeping forever
+ *
+ * @ingroup kernel_sleep_tests
+ *
+ * @details Put a thread to sleep with K_FOREVER and verify that k_wakeup()
+ * makes it eligible to run again and that k_sleep() reports K_TICKS_FOREVER.
+ *
+ * @see k_sleep(), k_wakeup()
+ * @verifies ZEP-SRS-28-8
+ * @verifies ZEP-SRS-28-10
+ * @verifies ZEP-SRS-28-11
+ */
 ZTEST(sleep, test_sleep_forever)
 {
 	test_objects_init();
