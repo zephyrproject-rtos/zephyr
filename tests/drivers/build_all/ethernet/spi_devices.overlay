@@ -171,5 +171,27 @@
 				local-mac-address = [00 00 00 00 00 00];
 			};
 		};
+
+		test_lan78xx: lan78xx {
+			compatible = "microchip,lan78xx";
+			local-mac-address = [00 00 00 01 02 03];
+			phy-handle = <&lan78xx_phy>;
+			status = "okay";
+
+			lan78xx_mdio: lan78xx_mdio {
+				compatible = "microchip,lan78xx-mdio";
+				status = "okay";
+				zephyr,deferred-init;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				lan78xx_phy: ethernet-phy@1 {
+					compatible = "ethernet-phy";
+					reg = <0x1>;
+					status = "okay";
+					zephyr,deferred-init;
+				};
+			};
+		};
 	};
 };
