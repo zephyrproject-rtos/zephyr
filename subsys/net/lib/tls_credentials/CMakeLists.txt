@@ -10,6 +10,7 @@ zephyr_library_sources_ifdef(CONFIG_TLS_CREDENTIALS_BACKEND_VOLATILE
 zephyr_library_sources_ifdef(CONFIG_TLS_CREDENTIALS_BACKEND_PROTECTED_STORAGE
   tls_credentials_trusted.c
   tls_credentials_digest_raw.c
+  tls_credentials_info_raw.c
 )
 zephyr_library_sources_ifdef(CONFIG_TLS_CREDENTIALS_SHELL
   tls_credentials_shell.c
