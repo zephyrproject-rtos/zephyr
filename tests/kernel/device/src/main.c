@@ -222,6 +222,8 @@ SYS_INIT(null_driver_init, POST_KERNEL, 0);
  * Confirms check is correct.
  *
  * @see k_is_pre_kernel()
+ * @verifies ZEP-SRS-12-5
+ * @verifies ZEP-SRS-12-6
  */
 ZTEST(device, test_pre_kernel_detection)
 {
@@ -295,6 +297,20 @@ SYS_INIT_NAMED(init3, init_fn, APPLICATION, 2);
 SYS_INIT_NAMED(init4, init_fn, APPLICATION, 99);
 SYS_INIT_NAMED(init5, init_fn, APPLICATION, 999);
 
+/**
+ * @brief Test registering multiple initialization functions
+ *
+ * @ingroup kernel_device_tests
+ *
+ * @details Register the same initialization function multiple times with
+ * SYS_INIT() and SYS_INIT_NAMED() at the same initialization level but
+ * different priorities, and verify that every registered entry is invoked
+ * during system initialization.
+ *
+ * @see SYS_INIT(), SYS_INIT_NAMED()
+ * @verifies ZEP-SRS-12-1
+ * @verifies ZEP-SRS-12-4
+ */
 ZTEST(device, test_sys_init_multiple)
 {
 	zassert_equal(sys_init_counter, 6, "");
@@ -316,6 +332,9 @@ extern unsigned int seq_priority_cnt;
  * means assigning the level for driver instance works.
  *
  * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-12-2
+ * @verifies ZEP-SRS-12-3
+ * @verifies ZEP-SRS-12-7
  */
 ZTEST(device, test_device_init_level)
 {
@@ -343,6 +362,8 @@ ZTEST(device, test_device_init_level)
  * means assigning the priority for driver instance works.
  *
  * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-12-4
+ * @verifies ZEP-SRS-12-7
  */
 ZTEST(device, test_device_init_priority)
 {
@@ -370,6 +391,8 @@ ZTEST(device, test_device_init_priority)
  * means using the devicetree for sub-priority sorting works.
  *
  * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-12-4
+ * @verifies ZEP-SRS-12-7
  */
 ZTEST(device, test_device_init_sub_priority)
 {
