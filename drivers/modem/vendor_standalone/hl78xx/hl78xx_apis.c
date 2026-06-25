@@ -1042,7 +1042,6 @@ int hl78xx_api_func_set_network_operator_format(const struct device *dev,
 int hl78xx_api_func_set_prl(const struct device *dev, const struct kselacq_syntax kselacq_rats)
 {
 	struct hl78xx_data *data;
-	int ret;
 
 	if (dev == NULL || dev->data == NULL) {
 		return -EINVAL;
@@ -1050,12 +1049,7 @@ int hl78xx_api_func_set_prl(const struct device *dev, const struct kselacq_synta
 
 	data = (struct hl78xx_data *)dev->data;
 
-	ret = hl78xx_set_prl_internal(data, kselacq_rats);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return ret;
+	return hl78xx_set_prl_internal(data, kselacq_rats);
 }
 
 int hl78xx_api_func_get_prl(const struct device *dev, struct kselacq_syntax *kselacq_rats)
@@ -1077,8 +1071,7 @@ int hl78xx_api_func_get_prl(const struct device *dev, struct kselacq_syntax *kse
 #endif /* CONFIG_MODEM_HL78XX_AUTORAT */
 
 int hl78xx_set_runtime_band_provider(const struct device *dev,
-				     hl78xx_runtime_band_provider_t provider,
-				     void *user_data)
+				     hl78xx_runtime_band_provider_t provider, void *user_data)
 {
 	struct hl78xx_data *data;
 
@@ -1089,8 +1082,8 @@ int hl78xx_set_runtime_band_provider(const struct device *dev,
 	data = (struct hl78xx_data *)dev->data;
 
 	k_mutex_lock(&data->api_lock, K_FOREVER);
-	data->runtime_band_provider = provider;
-	data->runtime_band_provider_user_data = user_data;
+	data->runtime_band.provider = provider;
+	data->runtime_band.provider_user_data = user_data;
 	k_mutex_unlock(&data->api_lock);
 
 	LOG_DBG("Runtime band provider %s", (provider != NULL) ? "registered" : "cleared");
