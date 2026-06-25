@@ -113,7 +113,9 @@ static void work_handler(struct k_work *work)
 #endif
 
 	if (spim.config.operation & SPI_HALF_DUPLEX) {
-		spim.config.operation |= SPI_HOLD_ON_CS;
+		if (!IS_ENABLED(CONFIG_TEST_SPI_NO_HOLD_ON_CS)) {
+			spim.config.operation |= SPI_HOLD_ON_CS;
+		}
 
 		rv = spi_write_dt(&spim, td->mtx_set);
 		spim.config.operation &= ~SPI_HOLD_ON_CS;
@@ -588,7 +590,11 @@ static void run_half_duplex_test(int len)
 		return;
 	}
 
-	spis_half_duplex_config.operation |= (SPI_HOLD_ON_CS | SPI_HALF_DUPLEX);
+	spis_half_duplex_config.operation |= SPI_HALF_DUPLEX;
+
+	if (!IS_ENABLED(CONFIG_TEST_SPI_NO_HOLD_ON_CS)) {
+		spim.config.operation |= SPI_HOLD_ON_CS;
+	}
 
 	tdata.async = false;
 	rv = k_work_schedule_for_queue(&spim_spis_work_q, &tdata.test_work, K_MSEC(10));

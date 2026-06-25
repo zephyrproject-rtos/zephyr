@@ -35,4 +35,11 @@ config SPI_CONTROLLER_PERIPHERAL_WORKQUEUE_PRIORITY
 	help
 	  Priority for the work queue used for async testing
 
+config TEST_SPI_NO_HOLD_ON_CS
+	bool "No hold on CS"
+	help
+	  Setting this option will disable holding the CS line active between transactions.
+	  This can be useful when the SPI instances is expecting a CS transition to start
+	  a transaction.
+
 source "Kconfig.zephyr"
