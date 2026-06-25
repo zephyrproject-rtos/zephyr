@@ -2718,7 +2718,7 @@ static int hl78xx_on_carrier_on_state_enter(struct hl78xx_data *data)
 #ifdef CONFIG_HL78XX_GNSS
 	/* Check and process any pending GNSS mode entry request */
 	if (hl78xx_gnss_is_pending(data)) {
-		const struct hl78xx_config *config = data->dev->config;
+		const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 		if (config->variant->carrier_on_gnss_pending &&
 		    config->variant->carrier_on_gnss_pending(data)) {

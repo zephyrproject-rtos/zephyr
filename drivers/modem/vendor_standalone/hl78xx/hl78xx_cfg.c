@@ -48,13 +48,13 @@ int hl78xx_enable_lte_coverage_urc(struct hl78xx_data *data, bool *modem_require
 		return -EINVAL;
 	}
 
-	if (data->status.kcellmeas_timeout == timeout_s) {
+	if (data->status.kcellmeas.timeout == timeout_s) {
 		/* No update needed */
 		*modem_require_restart |= false;
 		return 0;
 	}
 	if (!IS_ENABLED(CONFIG_HL78XX_GNSS)) {
-		/* Additional configuration for low power mode with GNSS enabled */
+		/* GNSS disabled: configure +KCELLMEAS with the requested timeout. */
 		snprintk(cmd, sizeof(cmd), "AT+KCELLMEAS=1,%d", timeout_s);
 	} else {
 		snprintk(cmd, sizeof(cmd), "AT+KCELLMEAS=1,0");

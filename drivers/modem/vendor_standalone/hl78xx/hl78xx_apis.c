@@ -1472,12 +1472,12 @@ static int hl78xx_get_gnss_context(const struct device *dev,
 		/* Modem device path: dev->data is hl78xx_data */
 		struct hl78xx_data *modem_data = (struct hl78xx_data *)dev->data;
 
-		if (modem_data->gnss_dev == NULL || modem_data->gnss_dev->data == NULL) {
+		if (modem_data->devices.gnss == NULL || modem_data->devices.gnss->data == NULL) {
 			return -EINVAL;
 		}
 
 		/* gnss_dev->data is hl78xx_gnss_data */
-		*gnss_data_out = (struct hl78xx_gnss_data *)modem_data->gnss_dev->data;
+		*gnss_data_out = (struct hl78xx_gnss_data *)modem_data->devices.gnss->data;
 
 		if (modem_data_out != NULL) {
 			*modem_data_out = modem_data;
