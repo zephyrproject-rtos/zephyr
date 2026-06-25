@@ -373,3 +373,33 @@ This has been fixed in main for v4.5.0
 
 - `PR 110030 fix for v3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/110030>`_
+
+:cve:`2026-10651`
+-----------------
+
+Bluetooth: Classic SDP parser truncation bug leads to reachable
+assertion and possible out-of-bounds read
+
+The Bluetooth Classic SDP parser in ``bt_sdp_parse_attribute()``
+(``subsys/bluetooth/host/classic/sdp.c``) accepts an attribute buffer once it
+contains the 1-byte attribute type and 2-byte attribute id, but then
+unconditionally pulls an additional value-type byte without verifying that the
+buffer still holds it. A malformed 3-byte attribute such as ``09 00 09``
+therefore triggers a reachable assertion (``buf->len >= len``) in
+``net_buf_simple_pull()``, causing a kernel panic in assert-enabled builds. In
+builds where assertions are disabled, parsing may continue with an invalid
+buffer state, leading to an out-of-bounds read.
+
+- `Zephyr project bug tracker GHSA-p93g-3r68-cj53
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-p93g-3r68-cj53>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 107325 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107325>`_
+
+- `PR 110850 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110850>`_
+
+- `PR 110851 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110851>`_
