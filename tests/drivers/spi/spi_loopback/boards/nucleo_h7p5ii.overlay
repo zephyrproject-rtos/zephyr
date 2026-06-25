@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * SPI1 is left unconfigured, so it uses its bus clock as kernel clock.
+ * Slow down the APB2 bus on which SPI1 resides to ensure that the internal
+ * prescaler values necessary to operate at the SPI bus frequencies this test
+ * exercises are not larger than the maximum allowed.
+ */
+&rcc {
+	ppre2 = <4>;
+};
+
+&spi1 {
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_K(500)>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(16)>;
+	};
+};
