@@ -1,0 +1,24 @@
+# Copyright (c) 2026, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip XEC I2Cv3 byte mode virtual I2C Port routing mapping
+  onto a physical multi-port hardware controller.
+
+compatible: "microchip,xec-i2c-v3-bm-port"
+
+# i2c-controller.yaml lets the port node be treated as an I2C master bus.
+# pinctrl-device.yaml exposes the pinctrl-0/pinctrl-names properties used to
+# pick the SCL/SDA pads for this physical port.
+include: ["i2c-controller.yaml", "pinctrl-device.yaml"]
+
+properties:
+  controller:
+    type: phandle
+    required: true
+    description: Phandle pointing to the underlying hardware I2C controller block.
+
+  port:
+    type: int
+    required: true
+    description: The physical channel/port index (e.g., 0 through 15) on the controller.
