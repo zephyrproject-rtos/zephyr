@@ -999,7 +999,10 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 			      void *p1, void *p2, void *p3,
 			      int prio, uint32_t options, k_timeout_t delay)
 {
-	__ASSERT(!arch_is_in_isr(), "Threads may not be created in ISRs");
+	CHECKIF(k_is_in_isr()) {
+		/* threads cannot be created from ISRs */
+		k_panic();
+	}
 
 	z_setup_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 			  prio, options, NULL);
@@ -1747,6 +1750,11 @@ void z_impl_k_thread_abort(k_tid_t thread)
 
 int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 {
+	CHECKIF(k_is_in_isr() && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
+
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 	int ret;
 
@@ -1761,7 +1769,6 @@ int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 		   (thread->base.pended_on == &_current->join_queue)) {
 		ret = -EDEADLK;
 	} else {
-		__ASSERT(!arch_is_in_isr(), "cannot join in ISR");
 		z_sched_add_to_waitq_locked(_current, &thread->join_queue);
 		z_add_thread_timeout(_current, timeout);
 
@@ -1845,7 +1852,10 @@ bool k_can_yield(void)
 
 void z_impl_k_yield(void)
 {
-	__ASSERT(!arch_is_in_isr(), "");
+	CHECKIF(k_is_in_isr()) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
 
 	SYS_PORT_TRACING_FUNC(k_thread, yield);
 

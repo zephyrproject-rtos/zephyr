@@ -4,6 +4,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/check.h>
 #include <kernel_internal.h>
 
 /* We are not building thread.c when MULTITHREADING=n, so we
@@ -23,7 +24,10 @@ static K_TIMER_DEFINE(sleep_timer, NULL, NULL);
  */
 int32_t z_impl_k_sleep(k_timeout_t timeout)
 {
-	__ASSERT(!arch_is_in_isr(), "");
+	CHECKIF(k_is_in_isr()) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
 
 	SYS_PORT_TRACING_FUNC_ENTER(k_thread, sleep, timeout);
 

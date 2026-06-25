@@ -56,8 +56,6 @@ static struct k_obj_type obj_type_event;
 
 void z_impl_k_event_init(struct k_event *event)
 {
-	__ASSERT_NO_MSG(!arch_is_in_isr());
-
 	event->events = 0;
 	event->lock = (struct k_spinlock) {};
 
@@ -286,8 +284,10 @@ static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 	unsigned int  wait_condition;
 	struct k_thread  *thread;
 
-	__ASSERT(((arch_is_in_isr() == false) ||
-		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
+	CHECKIF(k_is_in_isr() && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_event, wait, event, events,
 					options, timeout);

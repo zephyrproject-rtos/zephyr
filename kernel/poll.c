@@ -23,6 +23,7 @@
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/check.h>
 #include <stdbool.h>
 
 /* Single subsystem lock.  Locking per-event would be better on highly
@@ -286,15 +287,19 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events,
 	k_spinlock_key_t key;
 	struct z_poller *poller = &_current->poller;
 
+	SYS_PORT_TRACING_FUNC_ENTER(k_poll_api, poll, events);
+	CHECKIF(k_is_in_isr() && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
+
+	CHECKIF((events == NULL) || (num_events < 0)) {
+		SYS_PORT_TRACING_FUNC_EXIT(k_poll_api, poll, events, -EINVAL);
+		return -EINVAL;
+	}
+
 	poller->is_polling = true;
 	poller->mode = MODE_POLL;
-
-	__ASSERT(!arch_is_in_isr(), "");
-	__ASSERT(events != NULL, "NULL events\n");
-	__ASSERT(num_events >= 0, "<0 events\n");
-
-	SYS_PORT_TRACING_FUNC_ENTER(k_poll_api, poll, events);
-
 	events_registered = register_events(events, num_events, poller,
 					    K_TIMEOUT_EQ(timeout, K_NO_WAIT));
 
@@ -706,12 +711,12 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 	int events_registered;
 	k_spinlock_key_t key;
 
-	__ASSERT(work_q != NULL, "NULL work_q\n");
-	__ASSERT(work != NULL, "NULL work\n");
-	__ASSERT(events != NULL, "NULL events\n");
-	__ASSERT(num_events >= 0, "<0 events\n");
-
 	SYS_PORT_TRACING_FUNC_ENTER(k_work_poll, submit_to_queue, work_q, work, timeout);
+	CHECKIF((work_q == NULL) || (work == NULL) || (events == NULL) || (num_events < 0)) {
+		SYS_PORT_TRACING_FUNC_EXIT(k_work_poll, submit_to_queue, work_q,
+			work, timeout, -EINVAL);
+		return -EINVAL;
+	}
 
 	/* Take ownership of the work if it is possible. */
 	key = k_spin_lock(&poll_lock);
@@ -829,9 +834,8 @@ int k_work_poll_cancel(struct k_work_poll *work)
 	SYS_PORT_TRACING_FUNC_ENTER(k_work_poll, cancel, work);
 
 	/* Check if the work was submitted. */
-	if (work == NULL || work->workq == NULL) {
+	CHECKIF(work == NULL || work->workq == NULL) {
 		SYS_PORT_TRACING_FUNC_EXIT(k_work_poll, cancel, work, -EINVAL);
-
 		return -EINVAL;
 	}
 
