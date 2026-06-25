@@ -39,6 +39,7 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/spinlock.h>
 #include <soc.h>
 
@@ -80,6 +81,11 @@ static uint32_t cyc_evt_timeout;
 __unused static uint64_t cyc_sys_compensated;
 /* Current cycles in event timer when ec entered "sleep/deep sleep" mode */
 __unused static uint32_t cyc_evt_enter_deep_idle;
+
+static inline uint32_t npcx_itim_evt_counter_val(void)
+{
+	return max(cyc_evt_timeout - 1, 1);
+}
 
 /* ITIM local inline functions */
 static inline uint64_t npcx_itim_get_sys_cyc64(void)
@@ -176,7 +182,7 @@ static int npcx_itim_start_evt_tmr_by_tick(int32_t ticks)
 	}
 
 	/* Upload counter of event timer */
-	evt_tmr->ITCNT32 = MAX(cyc_evt_timeout - 1, 1);
+	evt_tmr->ITCNT32 = npcx_itim_evt_counter_val();
 
 	/* Enable event timer and start ticking */
 	return npcx_itim_evt_enable();
@@ -243,7 +249,7 @@ static uint32_t npcx_itim_evt_elapsed_cyc32(void)
 	if (IS_BIT_SET(sys_cts, NPCX_ITCTSXX_TO_STS) || (cnt2 > cnt1)) {
 		cnt2 = cyc_evt_timeout;
 	} else {
-		cnt2 = cyc_evt_timeout - cnt2 - 1;
+		cnt2 = npcx_itim_evt_counter_val() - cnt2;
 	}
 
 	/* Return elapsed cycles of 32-bit counter of event timer  */
