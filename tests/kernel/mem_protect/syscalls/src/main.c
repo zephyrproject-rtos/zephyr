@@ -334,7 +334,8 @@ ZTEST(syscalls, test_string_nlen_maxsize_zero)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see k_usermode_string_alloc_copy(), strcmp()
+ * @see k_usermode_string_alloc_copy()
+ * @see strcmp()
  */
 ZTEST_USER(syscalls, test_user_string_alloc_copy)
 {
@@ -359,7 +360,8 @@ ZTEST_USER(syscalls, test_user_string_alloc_copy)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see k_usermode_string_copy(), strcmp()
+ * @see k_usermode_string_copy()
+ * @see strcmp()
  */
 ZTEST_USER(syscalls, test_user_string_copy)
 {
@@ -383,7 +385,8 @@ ZTEST_USER(syscalls, test_user_string_copy)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see memcpy(), k_usermode_to_copy()
+ * @see memcpy()
+ * @see k_usermode_to_copy()
  */
 ZTEST_USER(syscalls, test_to_copy)
 {
@@ -410,11 +413,32 @@ void run_test_arg64(void)
 		      "syscall (arg64_big) didn't match impl");
 }
 
+/**
+ * @brief Test passing 64-bit arguments through a system call
+ *
+ * @details Invoke system calls that take 64-bit arguments from user mode and
+ * verify the values received by the implementation match those passed in,
+ * confirming user threads can perform privileged operations through system
+ * calls with wide arguments.
+ *
+ * @ingroup kernel_memprotect_tests
+ * @see syscall_arg64()
+ */
 ZTEST_USER(syscalls, test_arg64)
 {
 	run_test_arg64();
 }
 
+/**
+ * @brief Test passing the maximum number of system call arguments
+ *
+ * @details Invoke a system call from user mode that takes more arguments than
+ * fit in registers and verify the implementation receives all of them intact,
+ * confirming user threads can perform privileged operations through system
+ * calls with many arguments.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 ZTEST_USER(syscalls, test_more_args)
 {
 	zassert_equal(more_args(1, 2, 3, 4, 5, 6, 7),
@@ -474,6 +498,15 @@ void syscall_switch_stress(void *arg1, void *arg2, void *arg3)
 	}
 }
 
+/**
+ * @brief Stress test system calls under concurrency
+ *
+ * @details Spawn many user threads that hammer the test system calls in a tight
+ * loop across all CPUs, smoking out concurrency problems in the system call
+ * path used by user threads to perform privileged operations.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 ZTEST(syscalls_extended, test_syscall_switch_stress)
 {
 	uintptr_t i;
@@ -527,7 +560,15 @@ void test_syscall_context_user(void *p1, void *p2, void *p3)
 		     "not reported in user syscall");
 }
 
-/* Show that z_is_in_syscall() works properly */
+/**
+ * @brief Test detection of user system call context
+ *
+ * @details Show that k_is_in_user_syscall() correctly reports whether execution
+ * is inside a system call invoked from user mode: false in a supervisor thread
+ * and in a supervisor-mode call, true when invoked from a user thread. This
+ * exercises the system call mechanism that lets user threads perform privileged
+ * operations.
+ */
 ZTEST(syscalls, test_syscall_context)
 {
 	/* We're a regular supervisor thread. */
