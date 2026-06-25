@@ -1236,6 +1236,8 @@
 	crc: crc@151000 {
 		compatible = "nxp,crc";
 		reg = <0x151000 0x1000>;
+		clocks = <&clkctl0 MCUX_CRC_CLK>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 18)>;
 		status = "disabled";
 	};
 };
