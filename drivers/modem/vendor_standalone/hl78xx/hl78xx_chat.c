@@ -154,9 +154,9 @@ static void hl78xx_on_unsol_monitored(struct modem_chat *chat, char **argv, uint
 				      void *user_data);
 
 MODEM_CHAT_MATCH_DEFINE(hl78xx_ok_match, "OK", "", NULL);
-MODEM_CHAT_MATCHES_DEFINE(hl78xx_allow_match, MODEM_CHAT_MATCH("OK", "", NULL),
-			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL),
-			  MODEM_CHAT_MATCH(ERROR_STRING, "", NULL));
+MODEM_CHAT_MATCHES_DEFINE(hl78xx_allow_match, MODEM_CHAT_MATCH(MDM_HL78XX_OK_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(MDM_HL78XX_CME_ERROR_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(MDM_HL78XX_ERROR_STRING, "", NULL));
 
 static const modem_chat_match_callback hl78xx_unsol_handlers[] = {
 	hl78xx_on_ksup,
@@ -327,7 +327,8 @@ static void hl78xx_on_unsol_monitored(struct modem_chat *chat, char **argv, uint
 	}
 }
 
-MODEM_CHAT_MATCHES_DEFINE(hl78xx_abort_matches, MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL));
+MODEM_CHAT_MATCHES_DEFINE(hl78xx_abort_matches,
+			  MODEM_CHAT_MATCH(MDM_HL78XX_CME_ERROR_STRING, "", NULL));
 MODEM_CHAT_MATCH_DEFINE(hl78xx_at_ready_match, "+KSUP: ", "", hl78xx_on_ksup);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_imei_match, "", "", hl78xx_on_imei);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_cgmm_match, "", "", hl78xx_on_cgmm);
@@ -591,26 +592,27 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_fota_install_accept_script, hl78xx_fota_install_
  * unit. These were extracted from hl78xx_sockets.c to centralize chat
  * definitions.
  */
-MODEM_CHAT_MATCHES_DEFINE(connect_matches, MODEM_CHAT_MATCH(CONNECT_STRING, "", NULL),
-			  MODEM_CHAT_MATCH(NO_CARRIER_STRING, "", NULL),
-			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL),
-			  MODEM_CHAT_MATCH(ERROR_STRING, "", NULL));
+MODEM_CHAT_MATCHES_DEFINE(connect_matches, MODEM_CHAT_MATCH(MDM_HL78XX_CONNECT_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(MDM_HL78XX_NO_CARRIER_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(MDM_HL78XX_CME_ERROR_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(MDM_HL78XX_ERROR_STRING, "", NULL));
 MODEM_CHAT_MATCHES_DEFINE(kudpind_allow_match,
 			  MODEM_CHAT_MATCH("+KUDP_IND: ", ",", hl78xx_on_kudpsocket_create),
-			  MODEM_CHAT_MATCH(NO_CARRIER_STRING, "", NULL),
-			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL),
-			  MODEM_CHAT_MATCH(ERROR_STRING, "", NULL));
-MODEM_CHAT_MATCHES_DEFINE(hl78xx_sockets_allow_matches, MODEM_CHAT_MATCH(OK_STRING, "", NULL),
-			  MODEM_CHAT_MATCH(NO_CARRIER_STRING, "", NULL),
-			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL),
-			  MODEM_CHAT_MATCH(ERROR_STRING, "", NULL));
+			  MODEM_CHAT_MATCH(MDM_HL78XX_NO_CARRIER_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(MDM_HL78XX_CME_ERROR_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(MDM_HL78XX_ERROR_STRING, "", NULL));
+MODEM_CHAT_MATCHES_DEFINE(hl78xx_sockets_allow_matches,
+			  MODEM_CHAT_MATCH(MDM_HL78XX_OK_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(MDM_HL78XX_NO_CARRIER_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(MDM_HL78XX_CME_ERROR_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(MDM_HL78XX_ERROR_STRING, "", NULL));
 MODEM_CHAT_MATCH_DEFINE(ktcpind_match, "+KTCP_IND: ", ",", hl78xx_on_ktcpind);
 MODEM_CHAT_MATCH_DEFINE(ktcpcfg_match, "+KTCPCFG: ", "", hl78xx_on_ktcpsocket_create);
 MODEM_CHAT_MATCH_DEFINE(cgdcontrdp_match, "+CGCONTRDP: ", ",", hl78xx_on_cgdcontrdp);
 MODEM_CHAT_MATCHES_DEFINE(ktcp_state_matches,
 			  MODEM_CHAT_MATCH_INITIALIZER("+KTCPSTAT: ", ",", hl78xx_on_ktcpstat,
 						       false, true),
-			  MODEM_CHAT_MATCH("OK", "", NULL));
+			  MODEM_CHAT_MATCH(MDM_HL78XX_OK_STRING, "", NULL));
 
 const struct modem_chat_match *hl78xx_get_connect_matches(void)
 {

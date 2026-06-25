@@ -1406,6 +1406,33 @@ static void hl78xx_dynamic_cmd_on_cms_error(struct modem_chat *chat, char **argv
 		hl78xx_dynamic_cmd_parse_error_code(argv, argc, "cms_error"));
 }
 
+static void hl78xx_dynamic_cmd_set_default_callback(struct modem_chat_match *match)
+{
+	if (match->callback != NULL) {
+		return;
+	}
+
+	if (hl78xx_dynamic_cmd_match_equals(match, MDM_HL78XX_OK_STRING)) {
+		match->callback = hl78xx_dynamic_cmd_on_ok;
+		return;
+	}
+
+	if (hl78xx_dynamic_cmd_match_equals(match, MDM_HL78XX_ERROR_STRING) ||
+	    hl78xx_dynamic_cmd_match_equals(match, MDM_HL78XX_NO_CARRIER_STRING)) {
+		match->callback = hl78xx_dynamic_cmd_on_error;
+		return;
+	}
+
+	if (hl78xx_dynamic_cmd_match_equals(match, MDM_HL78XX_CME_ERROR_STRING)) {
+		match->callback = hl78xx_dynamic_cmd_on_cme_error;
+		return;
+	}
+
+	if (hl78xx_dynamic_cmd_match_equals(match, MDM_HL78XX_CMS_ERROR_STRING)) {
+		match->callback = hl78xx_dynamic_cmd_on_cms_error;
+	}
+}
+
 static int hl78xx_dynamic_cmd_prepare_matches(struct hl78xx_data *data,
 					      const struct hl78xx_dynamic_cmd_request *req,
 					      const struct modem_chat_match **response_matches,
@@ -1432,28 +1459,7 @@ static int hl78xx_dynamic_cmd_prepare_matches(struct hl78xx_data *data,
 			return -E2BIG;
 		}
 
-		if (hl78xx_dynamic_cmd_match_equals(&match, OK_STRING)) {
-			if (match.callback == NULL) {
-				match.callback = hl78xx_dynamic_cmd_on_ok;
-			}
-		} else if (hl78xx_dynamic_cmd_match_equals(&match, ERROR_STRING)) {
-			if (match.callback == NULL) {
-				match.callback = hl78xx_dynamic_cmd_on_error;
-			}
-		} else if (hl78xx_dynamic_cmd_match_equals(&match, NO_CARRIER_STRING)) {
-			if (match.callback == NULL) {
-				match.callback = hl78xx_dynamic_cmd_on_error;
-			}
-		} else if (hl78xx_dynamic_cmd_match_equals(&match, CME_ERROR_STRING)) {
-			if (match.callback == NULL) {
-				match.callback = hl78xx_dynamic_cmd_on_cme_error;
-			}
-		} else if (hl78xx_dynamic_cmd_match_equals(&match, CMS_ERROR_STRING)) {
-			if (match.callback == NULL) {
-				match.callback = hl78xx_dynamic_cmd_on_cms_error;
-			}
-		}
-
+		hl78xx_dynamic_cmd_set_default_callback(&match);
 		data->buffers.dynamic_matches[normalized_count++] = match;
 	}
 
