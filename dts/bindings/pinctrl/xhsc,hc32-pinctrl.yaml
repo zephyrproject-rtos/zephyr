@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Liu Changjie <liucj1228@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: XHSC HC32 pin controller
+
+compatible: "xhsc,hc32-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: |
+    Each child node defines the configuration for a particular state.
+  child-binding:
+    description: |
+      The grandchild nodes group pins that share the same pin configuration.
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. The pins should
+          be defined using HC32_PINMUX() or pre-defined HC32 pinmux macros.
