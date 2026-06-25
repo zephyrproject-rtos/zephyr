@@ -403,3 +403,36 @@ This has been fixed in main for v4.5.0
 
 - `PR 110851 fix for v4.3
   <https://github.com/zephyrproject-rtos/zephyr/pull/110851>`_
+
+:cve:`2026-10658`
+-----------------
+
+Bluetooth Host ISO RX Missing SDU Header Length Validation in bt_iso_recv() Leads to DoS
+
+The Bluetooth Host ISO receive path in ``bt_iso_recv()``
+(``subsys/bluetooth/host/iso.c``) does not validate that an incoming
+PB=START/SINGLE fragment contains a full inner SDU header before pulling it.
+While ``hci_iso()`` checks outer HCI ISO payload length consistency, it does not
+enforce the minimum inner SDU header size, so a packet with ``len=1`` can reach
+``bt_iso_recv()`` and trigger ``net_buf_pull_mem()`` of 8 bytes (TS header) or
+4 bytes (SDU header) without verifying ``buf->len``. This causes a reachable
+assertion (``buf->len >= len``) and a kernel panic in assert-enabled builds, and
+an out-of-bounds read in builds where assertions are disabled. Only systems
+built with ``CONFIG_BT_ISO_RX=y`` are affected.
+
+- `Zephyr project bug tracker GHSA-26g8-rmpf-j6cw
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-26g8-rmpf-j6cw>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 108603 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108603>`_
+
+- `PR 111024 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111024>`_
+
+- `PR 110959 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110959>`_
+
+- `PR 110958 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110958>`_
