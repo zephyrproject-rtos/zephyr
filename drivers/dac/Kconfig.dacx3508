@@ -1,0 +1,25 @@
+# DAC configuration options
+
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_DACX3508
+	bool "TI DACx3508 DAC driver"
+	default y
+	select SPI
+	depends on DT_HAS_TI_DAC43508_ENABLED \
+		|| DT_HAS_TI_DAC53508_ENABLED \
+		|| DT_HAS_TI_DAC63508_ENABLED
+	help
+	  Enable the driver for the TI DACx3508.
+
+if DAC_DACX3508
+
+config DAC_DACX3508_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  TI DACx3508 DAC device driver initialization priority.
+
+endif # DAC_DACX3508
