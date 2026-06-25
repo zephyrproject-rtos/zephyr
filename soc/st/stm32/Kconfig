@@ -62,6 +62,11 @@ config STM32_APP_IN_EXT_FLASH
 	  in external Flash and is chainloaded with MCUboot.
 	  Whether the app is eXecuted in Place (XiP) depends on the MCUboot mode used.
 
+config HAS_STM32_INT_FLASH
+	bool
+	help
+	  Hidden symbol set by STM32 SoCs that embed an internal flash.
+
 config STM32_INT_FLASH_SECURE_BASE_ADDRESS
 	hex
 	help
