@@ -901,6 +901,9 @@ static void tcp_conn_release(struct k_work *work)
 	(void)k_work_cancel_delayable(&conn->ack_timer);
 	(void)k_work_cancel_delayable(&conn->send_timer);
 	(void)k_work_cancel_delayable(&conn->recv_queue_timer);
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+	(void)k_work_cancel_delayable(&conn->linger_timer);
+#endif /* CONFIG_NET_CONTEXT_LINGER */
 	keep_alive_timer_stop(conn);
 
 	k_mutex_unlock(&conn->lock);
@@ -982,6 +985,11 @@ static int tcp_conn_close(struct tcp *conn, int status)
 	}
 
 	k_sem_give(&conn->tx_sem);
+
+	/* Wake up any close() blocked on SO_LINGER for this connection. */
+	if (conn->context != NULL) {
+		net_context_signal_linger(conn->context);
+	}
 
 	return tcp_conn_unref(conn);
 }
@@ -2055,6 +2063,28 @@ static void tcp_fin_timeout(struct k_work *work)
 	(void)tcp_conn_close(conn, -ETIMEDOUT);
 }
 
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+static void tcp_linger_timeout(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, linger_timer);
+
+	k_mutex_lock(&conn->lock, K_FOREVER);
+
+	/* The graceful close (SO_LINGER) may have completed already; only
+	 * abort with a RST if the connection is still open.
+	 */
+	if (conn->state != TCP_CLOSED && conn->state != TCP_UNUSED) {
+		NET_DBG("[%p] Linger timeout, aborting connection", conn);
+
+		tcp_out(conn, RST);
+		(void)tcp_conn_close(conn, -ECONNRESET);
+	}
+
+	k_mutex_unlock(&conn->lock);
+}
+#endif /* CONFIG_NET_CONTEXT_LINGER */
+
 static void tcp_last_ack_timeout(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
@@ -2227,6 +2257,9 @@ static struct tcp *tcp_conn_alloc(void)
 	k_work_init_delayable(&conn->recv_queue_timer, tcp_cleanup_recv_queue);
 	k_work_init_delayable(&conn->persist_timer, tcp_send_zwp);
 	k_work_init_delayable(&conn->ack_timer, tcp_send_ack);
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+	k_work_init_delayable(&conn->linger_timer, tcp_linger_timeout);
+#endif /* CONFIG_NET_CONTEXT_LINGER */
 	k_work_init(&conn->conn_release, tcp_conn_release);
 	keep_alive_timer_init(conn);
 
@@ -3697,6 +3730,7 @@ out:
 int net_tcp_put(struct net_context *context, bool force_close)
 {
 	struct tcp *conn = context->tcp;
+	bool linger_abort = false;
 
 	if (!conn) {
 		return -ENOENT;
@@ -3720,8 +3754,49 @@ int net_tcp_put(struct net_context *context, bool force_close)
 		return 0;
 	}
 
-	if (conn->state == TCP_ESTABLISHED ||
-	    conn->state == TCP_SYN_RECEIVED) {
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+	/* SO_LINGER with a zero timeout requests an abortive close: send a RST
+	 * to the peer and tear down the connection immediately, instead of
+	 * performing a graceful FIN handshake.
+	 */
+	linger_abort = context->options.linger.l_onoff != 0 &&
+		       context->options.linger.l_linger == 0 &&
+		       (conn->state == TCP_ESTABLISHED ||
+			conn->state == TCP_SYN_RECEIVED ||
+			conn->state == TCP_CLOSE_WAIT);
+#endif /* CONFIG_NET_CONTEXT_LINGER */
+
+	if (linger_abort) {
+		NET_DBG("[%p] Aborting connection (SO_LINGER)", conn);
+
+		k_work_cancel_delayable(&conn->send_data_timer);
+		keep_alive_timer_stop(conn);
+
+		tcp_out(conn, RST);
+
+		/* An established connection holds two references. Like the
+		 * graceful close path below, this falls through to the common
+		 * tcp_conn_unref() at the end: tcp_conn_close() drops one
+		 * reference and the common epilogue drops the other, fully
+		 * releasing the (immediately closed) connection.
+		 */
+		tcp_conn_close(conn, -ECONNRESET);
+	} else if (conn->state == TCP_ESTABLISHED ||
+		   conn->state == TCP_SYN_RECEIVED) {
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+		/* SO_LINGER with a non-zero timeout: arm a timer that aborts
+		 * the connection with a RST if the graceful close does not
+		 * complete within the linger period. The timer is cancelled
+		 * once the connection is released (tcp_conn_release()).
+		 */
+		if (context->options.linger.l_onoff != 0 &&
+		    context->options.linger.l_linger > 0) {
+			k_work_reschedule_for_queue(
+				&tcp_work_q, &conn->linger_timer,
+				K_SECONDS(context->options.linger.l_linger));
+		}
+#endif /* CONFIG_NET_CONTEXT_LINGER */
+
 		/* Send all remaining data if possible. */
 		if (conn->send_data_total > 0) {
 			NET_DBG("[%p] pending %zu bytes", conn,

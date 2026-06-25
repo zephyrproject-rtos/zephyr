@@ -292,6 +292,9 @@ struct tcp { /* TCP connection */
 	struct k_work_delayable timewait_timer;
 	struct k_work_delayable persist_timer;
 	struct k_work_delayable ack_timer;
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+	struct k_work_delayable linger_timer;
+#endif /* CONFIG_NET_CONTEXT_LINGER */
 #if defined(CONFIG_NET_TCP_KEEPALIVE)
 	struct k_work_delayable keepalive_timer;
 #endif /* CONFIG_NET_TCP_KEEPALIVE */
