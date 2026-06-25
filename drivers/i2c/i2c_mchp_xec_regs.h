@@ -20,8 +20,10 @@ extern "C" {
 #define XEC_I2C_SMB4_ID    4
 #define XEC_I2C_SMB_MAX_ID 5
 
-#define XEC_I2C_SMB_GIRQ    13U
-#define XEC_I2C_SMB_WK_GIRQ 22U
+#define XEC_I2C_SMB_GIRQ 13U
+
+#define XEC_I2C_SMB_WK_GIRQ               22U
+#define XEC_I2C_SMB_WK_GIRQ_POS(instance) ((instance) + 1U)
 
 #define XEC_I2C_SMB_INST_SIZE 0x400U
 
@@ -247,7 +249,14 @@ extern "C" {
 #define XEC_I2C_BBCR_SDA_IN_POS 6
 #define XEC_I2C_BBCR_CM_POS     7 /* ver3.8 only */
 
-#define XEC_I2C_MR0_OFS 0x3cU /* MCHP reserved 0 */
+/* I2C controller specification details the reserved register at offset 0x3c should be programmed
+ * when selecting the bus frequency. Added a register mask and default value to only
+ * update the known bits.
+ */
+#define XEC_I2C_MR0_OFS        0x3cU /* MCHP reserved 0 */
+#define XEC_I2C_MR0_TM_POS     0
+#define XEC_I2C_MR0_TM_MSK     GENMASK(7, 0)
+#define XEC_I2C_MR0_TM_BAUD16M 0x05
 
 #define XEC_I2C_DT_OFS         0x40U /* data timing */
 #define XEC_I2C_DT_DH_POS      0
