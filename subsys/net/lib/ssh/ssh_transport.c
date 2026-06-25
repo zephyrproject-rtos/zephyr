@@ -646,12 +646,12 @@ int update_channels(struct ssh_transport *transport)
 			BUILD_ASSERT(sizeof(transport->tx_buf) > 256);
 
 			len = MIN(len, sizeof(transport->tx_buf) - 256);
-			len = ring_buf_get_claim(&channel->tx_ring_buf, &data, len);
+			len = MIN(ring_buf_get_ptr(&channel->tx_ring_buf, &data), len);
 			channel->tx_window_rem -= len;
 
 			ret = ssh_connection_send_channel_data(
 				transport, channel->remote_channel, data, len);
-			ring_buf_get_finish(&channel->tx_ring_buf, len);
+			ring_buf_consume(&channel->tx_ring_buf, len);
 			if (ret != 0) {
 				/* Close channel? */
 				break;
@@ -673,13 +673,13 @@ int update_channels(struct ssh_transport *transport)
 			BUILD_ASSERT(sizeof(transport->tx_buf) > 256);
 
 			len = MIN(len, sizeof(transport->tx_buf) - 256);
-			len = ring_buf_get_claim(&channel->tx_stderr_ring_buf, &data, len);
+			len = MIN(ring_buf_get_ptr(&channel->tx_stderr_ring_buf, &data), len);
 			channel->tx_window_rem -= len;
 
 			ret = ssh_connection_send_channel_extended_data(
 				transport, channel->remote_channel,
 				SSH_EXTENDED_DATA_STDERR, data, len);
-			ring_buf_get_finish(&channel->tx_stderr_ring_buf, len);
+			ring_buf_consume(&channel->tx_stderr_ring_buf, len);
 			if (ret != 0) {
 				/* Close channel? */
 				break;

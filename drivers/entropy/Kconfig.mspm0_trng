@@ -7,7 +7,6 @@ config ENTROPY_MSPM0_TRNG
 	depends on DT_HAS_TI_MSPM0_TRNG_ENABLED
 	depends on SOC_FAMILY_TI_MSPM0
 	select ENTROPY_HAS_DRIVER
-	select RING_BUFFER
 	help
 	  This option enables the driver for the True Random Number Generator (TRNG)
 	  for TI MSPM0 SoCs.

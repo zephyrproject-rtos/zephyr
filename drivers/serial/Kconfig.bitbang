@@ -8,7 +8,6 @@ config UART_BITBANG
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select COUNTER
-	select RING_BUFFER
 	help
 	  Enable the Bitbang UART controller.
 	  The driver relies on counter interrupts to generate/sample UART

@@ -17,7 +17,6 @@ menuconfig NET_PPP
 	depends on NET_L2_PPP
 	depends on NET_NATIVE
 	depends on NET_TEST || $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_PPP_UART))
-	select RING_BUFFER
 	select CRC
 
 if NET_PPP

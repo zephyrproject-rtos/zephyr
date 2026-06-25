@@ -563,7 +563,6 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340_audio_dk/nrf5340/cpuapp
     extra_configs:
-      - CONFIG_RING_BUFFER=n
       - CONFIG_USB_DEVICE_STACK=n
       - CONFIG_USBD_AUDIO2_CLASS=n
   bluetooth.native_shell:

@@ -1397,9 +1397,9 @@ static int lwm2m_read_cached_data(struct lwm2m_message *msg,
 
 	if (msg->cache_info) {
 		read_info = &msg->cache_info->read_info[msg->cache_info->entry_size];
-		/* Store original timeseries ring buffer get states for failure handling */
+		/* cache ringq for failure handling */
 		read_info->cache_data = cached_data;
-		read_info->original_rb_get = cached_data->fifo.rb.get;
+		read_info->original_fifo = cached_data->fifo;
 		msg->cache_info->entry_size++;
 		if (msg->cache_info->entry_limit) {
 			length = MIN(length, msg->cache_info->entry_limit);
@@ -3082,10 +3082,10 @@ static bool lwm2m_timeseries_data_rebuild(struct lwm2m_message *msg, int error_c
 		return false;
 	}
 
-	/* Put Ring buffer back to original */
+	/* Restore ringq from cache */
 	for (int i = 0; i < cache_temp->entry_size; i++) {
-		cache_temp->read_info[i].cache_data->fifo.rb.get =
-			cache_temp->read_info[i].original_rb_get;
+		cache_temp->read_info[i].cache_data->fifo =
+			cache_temp->read_info[i].original_fifo;
 	}
 
 	if (cache_temp->entry_limit) {

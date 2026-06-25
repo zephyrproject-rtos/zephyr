@@ -6,6 +6,7 @@
 
 #define DISABLE_SYSCALL_TRACING
 
+#include <zephyr/sys/ring_buffer.h>
 #include <tracing_core.h>
 #include <tracing_buffer.h>
 #include <tracing_format_common.h>
@@ -22,7 +23,7 @@ void tracing_format_string(const char *str, ...)
 	va_start(args, str);
 
 	TRACING_LOCK();
-	before_put_is_empty = tracing_buffer_is_empty();
+	before_put_is_empty = ring_buf_is_empty(tracing_buffer_get_ring_buf());
 	put_success = tracing_format_string_put(str, args);
 	TRACING_UNLOCK();
 
@@ -44,7 +45,7 @@ void tracing_format_raw_data(uint8_t *data, uint32_t length)
 	}
 
 	TRACING_LOCK();
-	before_put_is_empty = tracing_buffer_is_empty();
+	before_put_is_empty = ring_buf_is_empty(tracing_buffer_get_ring_buf());
 	put_success = tracing_format_raw_data_put(data, length);
 	TRACING_UNLOCK();
 
@@ -64,7 +65,7 @@ void tracing_format_data(tracing_data_t *tracing_data_array, uint32_t count)
 	}
 
 	TRACING_LOCK();
-	before_put_is_empty = tracing_buffer_is_empty();
+	before_put_is_empty = ring_buf_is_empty(tracing_buffer_get_ring_buf());
 	put_success = tracing_format_data_put(tracing_data_array, count);
 	TRACING_UNLOCK();
 

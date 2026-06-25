@@ -195,7 +195,7 @@ static void fill_tx(struct test_tx_data *data)
 		return;
 	}
 
-	while ((len = ring_buf_put_claim(&data->rbuf, &buf, 255)) > 0) {
+	while ((len = ring_buf_put_ptr(&data->rbuf, &buf)) > 0) {
 		uint8_t r = (sys_rand8_get() % MAX_PACKET_LEN) % len;
 		uint8_t packet_len = MAX(r, MIN_PACKET_LEN);
 
@@ -205,7 +205,7 @@ static void fill_tx(struct test_tx_data *data)
 			buf[i] = packet_len - i;
 		}
 
-		ring_buf_put_finish(&data->rbuf, packet_len);
+		ring_buf_commit(&data->rbuf, packet_len);
 	}
 }
 
@@ -236,7 +236,7 @@ static void try_tx(const struct device *dev, bool irq)
 			return;
 		}
 
-		len = ring_buf_get_claim(&tx_data.rbuf, &buf, 255);
+		len = ring_buf_get_ptr(&tx_data.rbuf, &buf);
 		if (len > 0) {
 			err = uart_tx(dev, buf, len, TX_TIMEOUT);
 			zassert_equal(err, 0,
@@ -295,7 +295,7 @@ static void on_tx_done(const struct device *dev, struct uart_event *evt)
 	}
 
 	/* Finish previous data chunk and start new if any pending. */
-	ring_buf_get_finish(&tx_data.rbuf, evt->data.tx.len);
+	ring_buf_consume(&tx_data.rbuf, evt->data.tx.len);
 	atomic_set(&tx_data.busy, 0);
 	try_tx(dev, true);
 }
