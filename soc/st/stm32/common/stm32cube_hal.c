@@ -14,6 +14,8 @@
 
 #include <zephyr/kernel.h>
 #include <soc.h>
+
+#if !defined(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
 /**
  * @brief This function configures the source of stm32cube time base.
  *        Cube HAL expects a 1ms tick which matches with k_uptime_get_32.
@@ -35,6 +37,7 @@ void HAL_Delay(__IO uint32_t Delay)
 {
 	k_msleep(Delay);
 }
+#endif /* !CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION */
 
 #ifdef CONFIG_USE_STM32_ASSERT
 #ifdef CONFIG_STM32_HAL2
