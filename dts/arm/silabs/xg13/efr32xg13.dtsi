@@ -12,6 +12,7 @@
 / {
 	chosen {
 		zephyr,flash-controller = &msc;
+		silabs,sleeptimer = &rtcc0;
 	};
 
 	cpus {
@@ -167,10 +168,11 @@
 		};
 
 		rtcc0: rtcc@40042000 {
-			compatible = "silabs,gecko-rtcc";
+			compatible = "silabs,rtcc";
 			reg = <0x40042000 0x184>;
-			interrupts = <31 0>;
 			clock-frequency = <32768>;
+			interrupt-names = "rtcc";
+			interrupts = <31 0>;
 			prescaler = <1>;
 			status = "disabled";
 		};
