@@ -364,6 +364,9 @@ Interrupt Controllers
   ``DT_INST_IRQ(n, sense)`` or ``DT_IRQ(node, sense)`` should be updated to use ``flags`` instead
   of ``sense``.
 
+* Deprecate ``GIC_NUM_CPU_IF`` from GIC header file :file:`gic.h`. One shall use
+  instead.:kconfig:option:`CONFIG_MP_MAX_NUM_CPUS` instead.
+
 NXP
 ===
 

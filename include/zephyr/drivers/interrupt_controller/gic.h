@@ -317,7 +317,12 @@
 /* GIC special interrupt id */
 #define GIC_INTID_SPURIOUS 1023
 
-/* Fixme: update from platform specific define or dt */
+/**
+ * @brief Max number of supported CPUs in a SMP environment
+ *
+ * Fixme: update from platform specific define or dt
+ * DEPRECATED - Use CONFIG_MP_MAX_NUM_CPUS instead.
+ */
 #define GIC_NUM_CPU_IF CONFIG_MP_MAX_NUM_CPUS
 
 #ifndef _ASMLANGUAGE
