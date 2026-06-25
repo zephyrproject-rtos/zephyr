@@ -44,6 +44,8 @@ static struct k_pipe pipe;
  * @see k_pipe_init()
  */
 ZTEST(k_pipe_basic, test_pipe_init)
+ * @verifies ZEP-SRS-32-1
+ * @verifies ZEP-SRS-32-2
 {
 	uint8_t buffer[10];
 
@@ -69,6 +71,8 @@ ZTEST(k_pipe_basic, test_pipe_init)
  * @see k_pipe_read()
  */
 ZTEST(k_pipe_basic, test_pipe_write_read_one)
+ * @verifies ZEP-SRS-32-3
+ * @verifies ZEP-SRS-32-4
 {
 	uint8_t buffer[10];
 	uint8_t data = 0x55;
@@ -131,6 +135,7 @@ ZTEST(k_pipe_basic, test_pipe_write_read_multiple)
  * @see k_pipe_write()
  */
 ZTEST(k_pipe_basic, test_pipe_write_full)
+ * @verifies ZEP-SRS-32-3
 {
 	uint8_t buffer[10];
 	uint8_t data[10];
@@ -158,6 +163,7 @@ ZTEST(k_pipe_basic, test_pipe_write_full)
  * @see k_pipe_read()
  */
 ZTEST(k_pipe_basic, test_pipe_read_empty)
+ * @verifies ZEP-SRS-32-4
 {
 	uint8_t buffer[10];
 	uint8_t read_data;
@@ -261,6 +267,7 @@ ZTEST(k_pipe_basic, test_pipe_read_write_wrap_around)
  * @see k_pipe_reset()
  */
 ZTEST(k_pipe_basic, test_pipe_reset)
+ * @verifies ZEP-SRS-32-7
 {
 	uint8_t buffer[10];
 	uint8_t data = 0x55;
@@ -300,6 +307,7 @@ ZTEST(k_pipe_basic, test_pipe_reset)
  * @see k_pipe_write()
  */
 ZTEST(k_pipe_basic, test_pipe_close)
+ * @verifies ZEP-SRS-32-8
 {
 	uint8_t buffer[12];
 	uint8_t input[8];
