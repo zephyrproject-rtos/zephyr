@@ -5,7 +5,8 @@
 
 /**
  * @file
- * @brief Renesas RZ/G3E pin control (pinctrl) definitions for Zephyr.
+ * @brief Renesas RZ/G3E pin and function definitions
+ * @ingroup pinctrl_rzg
  *
  * This header provides macro constants for encoding pin function selections
  * and pin indices for Renesas RZ/G3E SoCs. These values are used by the DeviceTree
@@ -14,6 +15,8 @@
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZG3E_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZG3E_H_
+
+/** @cond INTERNAL_HIDDEN */
 
 /**
  * @name Renesas RZ/G3E I/O Ports.
@@ -116,5 +119,7 @@
  * @return Encoded filter configuration value.
  */
 #define RZG_FILTER_SET(filnum, filclksel) (((filnum) & 0x3) << 0x2) | (filclksel & 0x3)
+
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZG3E_H_ */
