@@ -48,13 +48,11 @@ int riscv_aplic_config_src(const struct device *dev, unsigned int src, unsigned 
 	const struct aplic_cfg *cfg = dev->config;
 	struct aplic_data *data = dev->data;
 
-	if (src == 0 || src > cfg->num_sources) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(IN_RANGE(src, 1, cfg->num_sources));
+
 	/* Validate sm parameter - 0x2 and 0x3 are reserved (RISC-V AIA spec, section 4.5.2) */
-	if (sm == 0x2 || sm == 0x3 || (sm > APLIC_SM_LEVEL_LOW)) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG((sm != 0x2 && sm != 0x3 && sm <= APLIC_SM_LEVEL_LOW));
+
 	uintptr_t off = aplic_sourcecfg_off(src);
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 	uint32_t v = rd32(cfg->base, off);
@@ -70,9 +68,7 @@ int riscv_aplic_enable_src(const struct device *dev, unsigned int src, bool enab
 {
 	const struct aplic_cfg *cfg = dev->config;
 
-	if (src == 0 || src > cfg->num_sources) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(IN_RANGE(src, 1, cfg->num_sources));
 
 	wr32(cfg->base, enable ? APLIC_SETIENUM : APLIC_CLRIENUM, src);
 	return 0;

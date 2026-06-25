@@ -17,19 +17,13 @@ int riscv_aplic_msi_route(const struct device *dev, unsigned int src, uint32_t h
 {
 	const struct aplic_cfg *cfg = dev->config;
 
-	if (src == 0 || src > cfg->num_sources) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(IN_RANGE(src, 1, cfg->num_sources));
 
 	/* Validate hart parameter - must be valid CPU index */
-	if (hart >= CONFIG_MP_MAX_NUM_CPUS) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(hart < CONFIG_MP_MAX_NUM_CPUS);
 
 	/* Validate EIID parameter - consistent with IMSIC driver bounds */
-	if (eiid == 0 || eiid >= CONFIG_NUM_IRQS) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(IN_RANGE(eiid, 1, CONFIG_NUM_IRQS - 1));
 
 	/* Route for MMSI delivery (memory-mapped MSI write to IMSIC).
 	 * TARGET register format (RISC-V AIA spec, section 4.5.4):
@@ -49,14 +43,10 @@ int riscv_aplic_msi_inject_software_interrupt(const struct device *dev, uint32_t
 	const struct aplic_cfg *cfg = dev->config;
 
 	/* Validate EIID parameter - consistent with IMSIC driver bounds */
-	if (eiid == 0 || eiid >= CONFIG_NUM_IRQS) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(IN_RANGE(eiid, 1, CONFIG_NUM_IRQS - 1));
 
 	/* Validate hart_id parameter - must be valid CPU index */
-	if (hart_id >= CONFIG_MP_MAX_NUM_CPUS) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(hart_id < CONFIG_MP_MAX_NUM_CPUS);
 
 	/* GENMSI register format (RISC-V AIA spec, section 4.5.5):
 	 * - Hart_Index (bits 31:18)
