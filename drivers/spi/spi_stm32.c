@@ -749,6 +749,38 @@ static int spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 #else /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 	uint32_t dir = ll_get_transfer_direction(spi);
 
+#ifdef CONFIG_SPI_STM32_INTERRUPT
+	if (dir == STM32_SPI_FULL_DUPLEX) {
+		/* RXNE-driven: TXE interrupt is not enabled for this path.
+		 * Read the received frame, then queue the next TX frame to keep
+		 * the one-frame pipeline full.
+		 * After the last TX frame, re-enable TXE so the trailing TXE ISR
+		 * provides a guaranteed exit point once BSY has cleared.
+		 */
+		if (ll_rx_is_not_empty(spi) && data->rx_len != 0U) {
+			data->rx_len -= spi_stm32_read_next_frame(spi, data, 0U);
+			if (data->tx_len != 0U) {
+				data->tx_len -= spi_stm32_send_next_frame(spi, data, 0U);
+			} else {
+				/* All TX done; request one trailing TXE interrupt
+				 * to exit cleanly once BSY is cleared.
+				 */
+				ll_enable_int_tx_empty(spi);
+			}
+		}
+	} else {
+		/* Half-duplex: independent TXE/RXNE flag-based handling. */
+		if (dir != STM32_SPI_HALF_DUPLEX_RX && ll_tx_is_not_full(spi) &&
+		    data->tx_len != 0U) {
+			data->tx_len -= spi_stm32_send_next_frame(spi, data, 0U);
+		}
+
+		if (dir != STM32_SPI_HALF_DUPLEX_TX && ll_rx_is_not_empty(spi) &&
+		    data->rx_len != 0U) {
+			data->rx_len -= spi_stm32_read_next_frame(spi, data, 0U);
+		}
+	}
+#else /* CONFIG_SPI_STM32_INTERRUPT */
 	if (dir != STM32_SPI_HALF_DUPLEX_RX && data->tx_len != 0U) {
 		while (!ll_tx_is_not_full(spi)) {
 			/* NOP */
@@ -762,6 +794,7 @@ static int spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 		}
 		data->rx_len -= spi_stm32_read_next_frame(spi, data, 0U);
 	}
+#endif /* CONFIG_SPI_STM32_INTERRUPT */
 
 	return 0;
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
@@ -878,13 +911,30 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 	ll_enable_int_errors(spi);
 
-	if (transfer_dir != STM32_SPI_HALF_DUPLEX_TX) {
-		ll_enable_int_rx_not_empty(spi);
-	}
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	if (transfer_dir == STM32_SPI_FULL_DUPLEX &&
+	    LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+		struct spi_stm32_data *data = dev->data;
 
-	if (transfer_dir != STM32_SPI_HALF_DUPLEX_RX) {
-		ll_enable_int_tx_empty(spi);
+		/* Non-H7 full-duplex master: seed the TX pipeline with the first
+		 * frame and enable RXNE only. Each RXNE ISR reads one received
+		 * frame then sends the next, keeping exactly one frame in flight.
+		 * This eliminates RX overrun without busy-waiting in ISR context.
+		 */
+		data->tx_len -= spi_stm32_send_next_frame(spi, data, 0U);
+		ll_enable_int_rx_not_empty(spi);
+	} else {
+#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+		if (transfer_dir != STM32_SPI_HALF_DUPLEX_TX) {
+			ll_enable_int_rx_not_empty(spi);
+		}
+
+		if (transfer_dir != STM32_SPI_HALF_DUPLEX_RX) {
+			ll_enable_int_tx_empty(spi);
+		}
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	}
+#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	irq_enable(cfg->irq_line);
