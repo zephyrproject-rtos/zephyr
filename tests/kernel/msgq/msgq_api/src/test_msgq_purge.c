@@ -71,6 +71,7 @@ static void purge_when_put(struct k_msgq *q)
  *
  * @see k_msgq_purge()
  * @see k_msgq_put()
+ * @verifies ZEP-SRS-31-14
  */
 ZTEST(msgq_api_1cpu, test_msgq_purge_when_put)
 {

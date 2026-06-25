@@ -293,6 +293,15 @@ static void prepend_full_entry(void *p1, void *p2, void *p3)
  * @see k_msgq_put()
  * @see k_msgq_put_front()
  * @see k_msgq_get()
+ * @verifies ZEP-SRS-31-1
+ * @verifies ZEP-SRS-31-2
+ * @verifies ZEP-SRS-31-4
+ * @verifies ZEP-SRS-31-5
+ * @verifies ZEP-SRS-31-8
+ * @verifies ZEP-SRS-31-9
+ * @verifies ZEP-SRS-31-12
+ * @verifies ZEP-SRS-31-15
+ * @verifies ZEP-SRS-31-16
  */
 ZTEST(msgq_api_1cpu, test_msgq_thread)
 {
@@ -366,6 +375,8 @@ ZTEST(msgq_api, test_msgq_thread_overflow)
  * @see k_msgq_alloc_init()
  * @see k_msgq_put()
  * @see k_msgq_get()
+ * @verifies ZEP-SRS-31-4
+ * @verifies ZEP-SRS-31-8
  */
 ZTEST_USER(msgq_api, test_msgq_user_thread)
 {
@@ -437,6 +448,8 @@ ZTEST_USER(msgq_api, test_msgq_user_thread_overflow)
  * @see k_msgq_put()
  * @see k_msgq_put_front()
  * @see k_msgq_get()
+ * @verifies ZEP-SRS-31-4
+ * @verifies ZEP-SRS-31-8
  */
 ZTEST(msgq_api, test_msgq_isr)
 {
@@ -472,6 +485,7 @@ ZTEST(msgq_api, test_msgq_isr)
  * @see k_msgq_put()
  * @see k_msgq_put_front()
  * @see k_msgq_get()
+ * @verifies ZEP-SRS-31-6
  */
 ZTEST(msgq_api_1cpu, test_msgq_pend_thread)
 {
@@ -502,6 +516,8 @@ ZTEST(msgq_api_1cpu, test_msgq_pend_thread)
  *
  * @see k_msgq_alloc_init()
  * @see k_msgq_cleanup()
+ * @verifies ZEP-SRS-31-3
+ * @verifies ZEP-SRS-31-17
  */
 ZTEST(msgq_api, test_msgq_alloc)
 {
@@ -541,6 +557,7 @@ ZTEST(msgq_api, test_msgq_alloc)
  *
  * @see k_msgq_get()
  * @see k_msgq_cleanup()
+ * @verifies ZEP-SRS-31-10
  */
 ZTEST(msgq_api_1cpu, test_msgq_empty)
 {
@@ -587,6 +604,7 @@ ZTEST(msgq_api_1cpu, test_msgq_empty)
  * - The put returns -ENOMSG/-EAGAIN as appropriate and blocks under K_FOREVER.
  *
  * @see k_msgq_put()
+ * @verifies ZEP-SRS-31-6
  */
 ZTEST(msgq_api_1cpu, test_msgq_full)
 {
