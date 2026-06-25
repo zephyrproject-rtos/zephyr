@@ -240,7 +240,7 @@ static void hl78xx_log_event(enum hl78xx_event evt)
 
 static void hl78xx_enter_restart_fallback_state(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_pwr_on)) {
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_POWER_ON_PULSE);
@@ -454,12 +454,12 @@ static bool hl78xx_should_request_kcellmeas_manual(struct hl78xx_data *data)
 	ARG_UNUSED(data);
 	return true;
 #endif
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
-	if (data->status.kcellmeas_bootstrap_done) {
+	if (data->status.lpm.kcellmeas_bootstrap_done) {
 		return false;
 	}
-	bool first_attach = !data->status.registration.is_registered_previously;
+	bool first_attach = !data->status.lpm.registration.is_registered_previously;
 
 	if (!first_attach) {
 		return false;
@@ -671,7 +671,7 @@ void hl78xx_on_ksup(struct modem_chat *chat, char **argv, uint16_t argc, void *u
 	if (data->status.boot.is_booted_previously == true &&
 	    module_status == (int)HL78XX_MODULE_READY) {
 #if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)
-		const struct hl78xx_config *config = data->dev->config;
+		const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 		config->variant->on_ksup_lpm(data);
 #else
@@ -1844,7 +1844,7 @@ static void hl78xx_resume_uart(const struct hl78xx_config *config)
  */
 static int hl78xx_on_reset_pulse_state_enter(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
 		gpio_pin_set_dt(&config->mdm_gpio_wake, 0);
@@ -2229,7 +2229,7 @@ static int hl78xx_on_rat_cfg_script_state_enter(struct hl78xx_data *data)
 {
 	int ret = 0;
 	bool modem_require_restart = false;
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 	enum hl78xx_cell_rat_mode rat_config_request = HL78XX_RAT_MODE_NONE;
 	const char *cmd_restart = (const char *)SET_AIRPLANE_MODE_CMD;
 #ifdef CONFIG_HL78XX_GNSS
@@ -2392,7 +2392,7 @@ error:
 
 static void hl78xx_run_pmc_cfg_script_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_TIMEOUT:
@@ -2465,7 +2465,7 @@ static int hl78xx_on_enable_gprs_state_enter(struct hl78xx_data *data)
 /* set blank string to get apn from network */
 #endif
 	}
-	ret = hl78xx_api_func_set_phone_functionality(data->dev, HL78XX_AIRPLANE, false);
+	ret = hl78xx_api_func_set_phone_functionality(data->devices.hl78xx, HL78XX_AIRPLANE, false);
 	if (ret) {
 		goto error;
 	}
@@ -2473,7 +2473,8 @@ static int hl78xx_on_enable_gprs_state_enter(struct hl78xx_data *data)
 	if (ret) {
 		goto error;
 	}
-	ret = hl78xx_api_func_set_phone_functionality(data->dev, HL78XX_FULLY_FUNCTIONAL, false);
+	ret = hl78xx_api_func_set_phone_functionality(data->devices.hl78xx, HL78XX_FULLY_FUNCTIONAL,
+						      false);
 	if (ret) {
 		goto error;
 	}
@@ -2663,7 +2664,7 @@ static void hl78xx_await_registered_event_handler(struct hl78xx_data *data, enum
 #endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 #if defined(CONFIG_MODEM_HL78XX_AUTORAT) && defined(CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC)
 	case MODEM_HL78XX_EVENT_AUTORAT_RAT_CHANGED: {
-		const struct hl78xx_config *rat_cfg = data->dev->config;
+		const struct hl78xx_config *rat_cfg = data->devices.hl78xx->config;
 
 		if (rat_cfg->variant->cfg_apply_rat_post_select) {
 			(void)rat_cfg->variant->cfg_apply_rat_post_select(
@@ -2726,7 +2727,7 @@ static int hl78xx_on_carrier_on_state_enter(struct hl78xx_data *data)
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_GNSS_INIT_SCRIPT);
 		return 0;
 	}
-	notif_carrier_on(data->dev);
+	notif_carrier_on(data->devices.hl78xx);
 #endif /* CONFIG_HL78XX_GNSS */
 
 	/* Activate the PDP context */
@@ -2979,7 +2980,7 @@ static void hl78xx_carrier_on_event_handler(struct hl78xx_data *data, enum hl78x
 
 #if defined(CONFIG_MODEM_HL78XX_AUTORAT) && defined(CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC)
 	case MODEM_HL78XX_EVENT_AUTORAT_RAT_CHANGED: {
-		const struct hl78xx_config *rat_cfg = data->dev->config;
+		const struct hl78xx_config *rat_cfg = data->devices.hl78xx->config;
 
 		if (rat_cfg->variant->cfg_apply_rat_post_select) {
 			(void)rat_cfg->variant->cfg_apply_rat_post_select(
@@ -3305,7 +3306,7 @@ static int hl78xx_on_airplane_mode_state_enter(struct hl78xx_data *data)
 		return 0;
 	}
 	HL78XX_LOG_DBG("Setting airplane mode (CFUN=4)...");
-	hl78xx_api_func_set_phone_functionality(data->dev, HL78XX_AIRPLANE, false);
+	hl78xx_api_func_set_phone_functionality(data->devices.hl78xx, HL78XX_AIRPLANE, false);
 
 	return hl78xx_run_cfun_query_script_async(data);
 }
