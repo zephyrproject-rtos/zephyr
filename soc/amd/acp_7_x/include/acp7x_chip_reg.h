@@ -354,29 +354,19 @@ typedef union acp_tdm_iter {
 	} bits;
 	unsigned int u32all;
 } acp_tdm_iter_t;
-typedef union acp_tdm_rxfrmt {
+union acp_tdm_frmt {
 	struct {
-		unsigned int tdm_frame_len: 9;
-		unsigned int: 6;
-		unsigned int tdm_num_slots: 3;
-		unsigned int tdm_slot_len: 5;
-		unsigned int: 9;
+		uint32_t tdm_frame_len: 9;
+		uint32_t: 6;
+		uint32_t num_slots: 3;
+		uint32_t slot_len: 5;
+		uint32_t reserved: 9;
 	} bits;
-	unsigned int u32all;
-} acp_tdm_rxfrmt_t;
-typedef union acp_tdm_txfrmt {
-	struct {
-		unsigned int tdm_frame_len: 9;
-		unsigned int: 6;
-		unsigned int tdm_num_slots: 3;
-		unsigned int tdm_slot_len: 5;
-		unsigned int: 9;
-	} bits;
-	unsigned int u32all;
-} acp_tdm_txfrmt_t;
+	uint32_t u32all;
+};
 typedef union acp_tdm_mstrclkgen {
 	struct {
-		unsigned int tdm_controller_mode: 1;
+		unsigned int tdm_master_mode: 1;
 		unsigned int tdm_format_mode: 1;
 		unsigned int tdm_lrclk_div_val: 11;
 		unsigned int tdm_bclk_div_val: 11;
@@ -772,7 +762,7 @@ struct sdw_pin_data {
 	uint32_t instance;
 	uint32_t instance1;
 };
-struct tdm_context {
+struct acp_tdm_context {
 	uint64_t prev_pos;
 	uint32_t buff_size;
 	uint32_t tdm_instance;
