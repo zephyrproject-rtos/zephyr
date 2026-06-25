@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2026 Narek Aydinyan
+ * Copyright (c) 2026 Arayik Gharibyan
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_ETHERNET_USB_ETH_LAN78XX_PRIV_H_
+#define ZEPHYR_DRIVERS_ETHERNET_USB_ETH_LAN78XX_PRIV_H_
+
+#include <stdint.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/usb/usb_ch9.h>
+
+/* USB vendor requests */
+#define LAN78XX_USB_REQ_WRITE_REG 0xA0u
+#define LAN78XX_USB_REQ_READ_REG  0xA1u
+
+/* bmRequestType for vendor/device */
+#define LAN78XX_REQTYPE_VENDOR_DEV(dir)                                                            \
+	(((dir) << 7) | (USB_REQTYPE_TYPE_VENDOR << 5) | USB_REQTYPE_RECIPIENT_DEVICE)
+#define LAN78XX_REQTYPE_VENDOR_IN_DEV  LAN78XX_REQTYPE_VENDOR_DEV(USB_REQTYPE_DIR_TO_HOST)
+#define LAN78XX_REQTYPE_VENDOR_OUT_DEV LAN78XX_REQTYPE_VENDOR_DEV(USB_REQTYPE_DIR_TO_DEVICE)
+
+/* TX/RX framing */
+#define LAN78XX_TX_CMD_A_FCS      BIT(22)
+#define LAN78XX_TX_CMD_A_LEN_MASK 0x000FFFFFu
+
+#define LAN78XX_RX_CMD_A_RED      BIT(22)
+#define LAN78XX_RX_CMD_A_LEN_MASK 0x00003FFFu
+
+#define LAN78XX_CMD_HDR_LEN 8u
+#define LAN78XX_RX_PADDING  2u
+
+/* Device registers used by the driver */
+#define LAN78XX_ID_REV 0x0000u
+
+#define LAN78XX_HW_CFG      0x0010u
+#define LAN78XX_HW_CFG_LRST BIT(1)
+#define LAN78XX_HW_CFG_MEF  BIT(4)
+
+#define LAN78XX_HW_CFG_LED0_EN 0x00100000u
+#define LAN78XX_HW_CFG_LED1_EN 0x00200000u
+#define LAN78XX_HW_CFG_LED2_EN 0x00400000u
+#define LAN78XX_HW_CFG_LED3_EN 0x00800000u
+
+#define LAN78XX_USB_CFG0     0x0080u
+#define LAN78XX_USB_CFG0_BCE BIT(5)
+#define LAN78XX_USB_CFG0_BIR BIT(6)
+
+#define LAN78XX_BURST_CAP   0x0090u
+#define LAN78XX_BULK_IN_DLY 0x0094u
+
+#define LAN78XX_RFE_CTL            0x00B0u
+#define LAN78XX_RFE_CTL_BCAST_EN   BIT(10)
+#define LAN78XX_RFE_CTL_UCAST_EN   BIT(8)
+#define LAN78XX_RFE_CTL_DA_PERFECT BIT(1)
+
+#define LAN78XX_FCT_RX_CTL     0x00C0u
+#define LAN78XX_FCT_RX_CTL_EN  BIT(31)
+#define LAN78XX_FCT_RX_CTL_RST BIT(30)
+
+#define LAN78XX_FCT_TX_CTL     0x00C4u
+#define LAN78XX_FCT_TX_CTL_EN  BIT(31)
+#define LAN78XX_FCT_TX_CTL_RST BIT(30)
+
+#define LAN78XX_MAC_CR        0x0100u
+#define LAN78XX_MAC_CR_EEE_EN BIT(17)
+#define LAN78XX_MAC_CR_ADD    BIT(12)
+#define LAN78XX_MAC_CR_ASD    BIT(11)
+
+#define LAN78XX_MAC_RX      0x0104u
+#define LAN78XX_MAC_RX_RXEN BIT(0)
+
+#define LAN78XX_MAC_TX      0x0108u
+#define LAN78XX_MAC_TX_TXEN BIT(0)
+
+#define LAN78XX_RX_ADDRH 0x0118u
+#define LAN78XX_RX_ADDRL 0x011Cu
+
+/* MDIO via MII_ACC/MII_DATA */
+#define LAN78XX_MII_ACC  0x0120u
+#define LAN78XX_MII_DATA 0x0124u
+
+#define LAN78XX_MII_ACC_PHY_ADDR_SHIFT 11
+#define LAN78XX_MII_ACC_PHY_ADDR_MASK  0x0000F800u
+#define LAN78XX_MII_ACC_REG_SHIFT      6
+#define LAN78XX_MII_ACC_REG_MASK       0x000007C0u
+#define LAN78XX_MII_ACC_MII_WRITE      BIT(1)
+#define LAN78XX_MII_ACC_MII_BUSY       BIT(0)
+
+#define LAN78XX_PMT_CTL         0x0014u
+#define LAN78XX_PMT_CTL_PHY_RST BIT(4)
+#define LAN78XX_PMT_CTL_READY   BIT(7)
+
+#endif /* ZEPHYR_DRIVERS_ETHERNET_USB_ETH_LAN78XX_PRIV_H_ */
