@@ -12,6 +12,7 @@ config SOC_SERIES_STM32WB0X
 	select HAS_PM
 	select PM_STATE_SET_IRQ_UNLOCKED
 	select HAS_STM32CUBE
+	select HAS_STM32_INT_FLASH
 	select SOC_EARLY_INIT_HOOK
 	# WB0x has a ROM bootloader executed at reset,
 	# which makes the following option required
