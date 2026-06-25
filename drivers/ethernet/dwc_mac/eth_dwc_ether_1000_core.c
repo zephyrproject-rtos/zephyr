@@ -56,14 +56,24 @@ static uint32_t phys_lo32(void *addr)
 	return (uint32_t)(uintptr_t)addr;
 }
 
-static enum ethernet_hw_caps dwmac_caps(const struct device *dev __unused,
-					struct net_if *iface __unused)
+static enum ethernet_hw_caps dwmac_caps(const struct device *dev, struct net_if *iface __unused)
 {
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
+	struct dwmac_priv *p = dev->data;
+	enum ethernet_hw_caps caps = 0;
+
+	if (p->feature0 & DWMAC_HWFR_1000) {
+		caps |= ETHERNET_LINK_1000BASE;
+	}
+
+	if (p->feature0 & DWMAC_HWFR_10_100) {
+		caps |= ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
+	}
+
 #ifdef CONFIG_NET_PROMISCUOUS_MODE
-	       | ETHERNET_PROMISC_MODE
+	caps |= ETHERNET_PROMISC_MODE;
 #endif
-		;
+
+	return caps;
 }
 
 static __maybe_unused unsigned int net_pkt_get_nbfrags(struct net_pkt *pkt)
@@ -437,6 +447,10 @@ int dwmac_probe(const struct device *dev)
 
 	reg_val = REG_READ(DWMAC_MACVERR);
 	LOG_INF("HW version %u.%u0", (reg_val >> 4) & 0xf, reg_val & 0xf);
+
+	/* get configured hardware features */
+	p->feature0 = REG_READ(DWMAC_HWFR);
+	LOG_DBG("hw_feature: 0x%08x", p->feature0);
 
 	ret = dwmac_platform_init(dev);
 	if (ret < 0) {
