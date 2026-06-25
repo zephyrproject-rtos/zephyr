@@ -7,17 +7,12 @@ source "Kconfig.zephyr"
 config TEST_IRQ_NUM
 	int "Test IRQ number"
 	depends on !TEST_FIND_FREE_IRQ
-	default 14 if GIC
 	help
 	  IRQ number to use for testing purposes. This should be an
 	  available/unused IRQ on the target platform.
 
-	  Platform-specific defaults:
-	  - GIC platforms: 14 (available test SGI - Software Generated Interrupt)
-
 config TEST_IRQ_PRIO
 	int "Test IRQ priority"
-	default 160 if GIC
 	default 1
 	help
 	  Platform-specific defaults:
