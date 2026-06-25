@@ -187,6 +187,7 @@ def _render_page(symbols: dict[str, dict]) -> str:
         "   :sourcetitle: Requirement",
         "   :targettitle: Verifying test / implementation",
         "   :type: validated_by implemented_by",
+        "   :nocaptions:",
         "   :stats:",
         "",
         "Requirement hierarchy",
