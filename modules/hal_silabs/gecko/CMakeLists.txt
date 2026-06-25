@@ -29,11 +29,13 @@ string(REGEX REPLACE "[^0-9]" "" GECKO_SERIES_NUMBER "${GECKO_SERIES_NUMBER}")
 string(REGEX MATCH "^[0-9]" GECKO_MAJOR_SERIES_NUMBER "${GECKO_SERIES_NUMBER}")
 
 function(add_prebuilt_library lib_name prebuilt_path)
-  add_library(${lib_name} STATIC IMPORTED GLOBAL)
-  set_target_properties(${lib_name} PROPERTIES
-    IMPORTED_LOCATION ${BLOBS_DIR}/${prebuilt_path}
-  )
-  zephyr_link_libraries(${lib_name})
+  if(NOT CONFIG_BUILD_ONLY_NO_BLOBS)
+    add_library(${lib_name} STATIC IMPORTED GLOBAL)
+    set_target_properties(${lib_name} PROPERTIES
+      IMPORTED_LOCATION ${BLOBS_DIR}/${prebuilt_path}
+    )
+    zephyr_link_libraries(${lib_name})
+  endif()
 endfunction()
 
 if(${CONFIG_SOC_GECKO_HAS_RADIO})
@@ -137,6 +139,11 @@ zephyr_include_directories(
 
 zephyr_library_sources(
   sl_memory_manager_shim.c
+)
+
+zephyr_library_sources_ifdef(
+  CONFIG_BUILD_ONLY_NO_BLOBS
+  blob_stubs.c
 )
 
 # The gecko SDK uses the cpu name to include the matching device header.
