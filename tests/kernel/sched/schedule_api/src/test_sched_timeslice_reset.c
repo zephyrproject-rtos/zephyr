@@ -84,6 +84,7 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
  *      k_uptime_get_32()
  *
  * @ingroup kernel_sched_tests
+ * @verifies ZEP-SRS-2-11
  */
 ZTEST(threads_scheduling, test_slice_reset)
 {

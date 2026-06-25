@@ -53,6 +53,19 @@ void worker(void *p1, void *p2, void *p3)
 	}
 }
 
+/**
+ * @brief Verify earliest-deadline-first scheduling order.
+ *
+ * @details
+ * Several equal-priority worker threads are each given a deadline with
+ * k_thread_deadline_set(). When earliest-deadline-first scheduling is enabled,
+ * the threads must run in ascending deadline order rather than creation order.
+ *
+ * @ingroup kernel_sched_tests
+ * @see k_thread_deadline_set()
+ * @verifies ZEP-SRS-2-5
+ * @verifies ZEP-SRS-2-17
+ */
 ZTEST(suite_deadline, test_deadline)
 {
 	int i;
@@ -185,6 +198,7 @@ void unqueue_worker(void *p1, void *p2, void *p3)
  * these threads run before there delay time pass.
  *
  * @ingroup kernel_sched_tests
+ * @verifies ZEP-SRS-2-17
  */
 ZTEST(suite_deadline, test_unqueued)
 {

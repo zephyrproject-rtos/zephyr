@@ -89,6 +89,8 @@ static void thread_tslice(void *p1, void *p2, void *p3)
  * Ensure that each thread is given the time slice period to execute.
  *
  * @ingroup kernel_sched_tests
+ * @verifies ZEP-SRS-2-11
+ * @verifies ZEP-SRS-2-13
  */
 ZTEST(threads_scheduling, test_slice_scheduling)
 {
