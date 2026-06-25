@@ -95,6 +95,10 @@ static void entry_extra2(void *p1, void *p2, void *p3)
  * - The set of posted events is 0.
  *
  * @see k_event_init()
+ *
+ * @verifies ZEP-SRS-27-1
+ * @verifies ZEP-SRS-27-2
+ * @verifies ZEP-SRS-27-3
  */
 ZTEST(events_api, test_k_event_init)
 {
@@ -397,6 +401,12 @@ void test_wake_multiple_threads(void)
  * @see k_event_set()
  * @see k_event_set_masked()
  * @see k_event_test()
+ *
+ * @verifies ZEP-SRS-27-4
+ * @verifies ZEP-SRS-27-5
+ * @verifies ZEP-SRS-27-6
+ * @verifies ZEP-SRS-27-7
+ * @verifies ZEP-SRS-27-8
  */
 
 ZTEST_USER(events_api, test_event_deliver)
@@ -490,6 +500,14 @@ ZTEST_USER(events_api, test_event_deliver)
  * @see k_event_set()
  * @see k_event_wait()
  * @see k_event_wait_all()
+ *
+ * @verifies ZEP-SRS-27-9
+ * @verifies ZEP-SRS-27-10
+ * @verifies ZEP-SRS-27-11
+ * @verifies ZEP-SRS-27-12
+ * @verifies ZEP-SRS-27-13
+ * @verifies ZEP-SRS-27-14
+ * @verifies ZEP-SRS-27-15
  */
 
 ZTEST(events_api, test_event_receive)
@@ -539,6 +557,8 @@ ZTEST(events_api, test_event_receive)
  *   them, so re-waiting for already-consumed bits yields 0.
  *
  * @see k_event_wait_safe()
+ *
+ * @verifies ZEP-SRS-27-10
  */
 ZTEST_USER(events_api, test_k_event_wait_safe)
 {
@@ -580,6 +600,8 @@ ZTEST_USER(events_api, test_k_event_wait_safe)
  *   the requested bits and removes them from the object.
  *
  * @see k_event_wait_all_safe()
+ *
+ * @verifies ZEP-SRS-27-11
  */
 ZTEST_USER(events_api, test_k_event_wait_all_safe)
 {
