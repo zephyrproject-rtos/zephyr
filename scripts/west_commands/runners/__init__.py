@@ -71,6 +71,7 @@ _names = [
     'stm32flash',
     'sy1xx',
     'teensy',
+    'touch1200reset',
     'trace32',
     'uf2',
     'wchisp',
