@@ -21,6 +21,10 @@
 #include <sl_sleeptimer.h>
 #include <sl_power_manager.h>
 
+#ifdef CONFIG_SOC_GECKO_USE_RAIL
+#include <soc_radio.h>
+#endif
+
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #ifdef CONFIG_SILABS_GECKO_EMU_DCDC
@@ -95,4 +99,8 @@ void soc_early_init_hook(void)
 	if (IS_ENABLED(CONFIG_PM) && IS_ENABLED(CONFIG_SILABS_GECKO_POWER_MANAGER)) {
 		sl_power_manager_init();
 	}
+
+#ifdef CONFIG_SOC_GECKO_USE_RAIL
+	soc_radio_init();
+#endif
 }
