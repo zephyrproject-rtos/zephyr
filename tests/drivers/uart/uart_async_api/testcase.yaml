@@ -166,3 +166,27 @@ tests:
       - sam_e54_xpro
       - pic32cm_jh01_cpro
       - pic32cx_sg41_cult
+
+  drivers.uart.async_api.renesas_ra8_sci_b.dmac:
+    filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_UART_RA8_SCI_B_UART_DMAC
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+      - mck_ra8t1
+      - fpb_ra8e1
+      - ek_ra8p1/r7ka8p1kflcac/cm85
+      - ek_ra8p1/r7ka8p1kflcac/cm33
+      - mck_ra8t2/r7ka8t2lflcac/cm85
+      - mck_ra8t2/r7ka8t2lflcac/cm33
+      - ek_ra8d2/r7ka8d2kflcac/cm85
+      - ek_ra8d2/r7ka8d2kflcac/cm33
+      - ek_ra8m2/r7ka8m2jflcac/cm85
+      - ek_ra8m2/r7ka8m2jflcac/cm33
+      - ek_ra8t2/r7ka8t2lflcac/cm85
+      - ek_ra8t2/r7ka8t2lflcac/cm33
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    depends_on: gpio
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="./socs/ra8_sci_b_dmac_common.overlay"
