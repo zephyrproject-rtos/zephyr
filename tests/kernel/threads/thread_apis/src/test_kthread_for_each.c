@@ -220,6 +220,7 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_unlocked_null_cb)
  * @see k_thread_state_str()
  * @ingroup kernel_thread_tests
  * @verifies ZEP-SRS-1-7
+ * @verifies ZEP-SRS-1-21
  */
 ZTEST(threads_lifecycle_1cpu, test_k_thread_state_str)
 {

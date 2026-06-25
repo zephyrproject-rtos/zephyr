@@ -93,6 +93,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
  * @see #K_THREAD_DEFINE(x)
  *
  * @ingroup kernel_thread_tests
+ * @verifies ZEP-SRS-1-13
  */
 ZTEST_USER(thread_init, test_kdefine_preempt_thread)
 {
@@ -117,6 +118,7 @@ ZTEST_USER(thread_init, test_kdefine_preempt_thread)
  * @ingroup kernel_thread_tests
  *
  * @see #K_THREAD_DEFINE(x)
+ * @verifies ZEP-SRS-1-13
  */
 ZTEST_USER(thread_init, test_kdefine_coop_thread)
 {
@@ -141,6 +143,7 @@ ZTEST_USER(thread_init, test_kdefine_coop_thread)
  * @ingroup kernel_thread_tests
  *
  * @see k_thread_create()
+ * @verifies ZEP-SRS-1-1
  */
 ZTEST_USER(thread_init, test_kinit_preempt_thread)
 {
@@ -174,6 +177,7 @@ ZTEST_USER(thread_init, test_kinit_preempt_thread)
  * @ingroup kernel_thread_tests
  *
  * @see k_thread_create()
+ * @verifies ZEP-SRS-1-1
  */
 ZTEST(thread_init, test_kinit_coop_thread)
 {

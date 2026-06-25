@@ -45,6 +45,7 @@ static void thread_entry_delay(void *p1, void *p2, void *p3)
  *
  * @see k_thread_create()
  * @verifies ZEP-SRS-1-1
+ * @verifies ZEP-SRS-1-15
  */
 ZTEST_USER(threads_lifecycle, test_threads_spawn_params)
 {
@@ -83,6 +84,7 @@ ZTEST(threads_lifecycle, test_threads_spawn_priority)
  *
  * @see k_thread_create()
  * @verifies ZEP-SRS-1-1
+ * @verifies ZEP-SRS-1-5
  */
 ZTEST_USER(threads_lifecycle, test_threads_spawn_delay)
 {
@@ -140,6 +142,7 @@ ZTEST(threads_lifecycle, test_threads_spawn_forever)
  *
  * @see k_thread_start()
  * @verifies ZEP-SRS-1-1
+ * @verifies ZEP-SRS-1-14
  */
 ZTEST(threads_lifecycle, test_thread_start)
 {
