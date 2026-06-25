@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Liu Changjie <liucj1228@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_HC32_DDL
+	bool
+	select HAS_CMSIS_CORE
+	depends on SOC_FAMILY_XHSC_HC32
+
+if HAS_HC32_DDL
+
+config HC32_DDL_DEBUG
+	bool "HC32 DDL assertions"
+
+config HC32_LL_ICG
+	bool
+	default y
+
+config HC32_LL_FCG
+	bool
+
+config HC32_LL_GPIO
+	bool
+
+config HC32_LL_USART
+	bool
+
+config HC32_LL_UTILITY
+	bool
+	default y
+
+endif # HAS_HC32_DDL

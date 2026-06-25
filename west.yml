@@ -287,6 +287,11 @@ manifest:
       path: modules/hal/wurthelektronik
       groups:
         - hal
+    - name: hal_xhsc
+      revision: a84e04900616f68097d80cda2e89eaa8af3afadd
+      path: modules/hal/xhsc
+      groups:
+        - hal
     - name: hal_xtensa
       revision: 614d7dd1cdb4dd61b8fda5a504d63297497b05ac
       path: modules/hal/xtensa
