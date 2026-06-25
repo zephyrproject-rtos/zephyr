@@ -68,6 +68,7 @@ void thread2_set_prio_test(void *p1, void *p2, void *p3)
  *
  * @see k_thread_priority_set(), k_thread_priority_get()
  * @verifies ZEP-SRS-1-2
+ * @verifies ZEP-SRS-1-16
  */
 ZTEST(threads_lifecycle, test_threads_priority_set)
 {
