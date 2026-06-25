@@ -47,7 +47,7 @@ static inline uint32_t hart_and_prio_to_target(uint32_t hart_id, uint32_t prio)
 	return (hart_id << APLIC_TARGET_HART_SHIFT) | (prio & APLIC_IPRIO_MASK);
 }
 
-int riscv_aplic_direct_mode_enable(const struct device *dev, bool enable)
+void riscv_aplic_direct_mode_enable(const struct device *dev, bool enable)
 {
 	const struct aplic_cfg *cfg = dev->config;
 	struct aplic_data *data = dev->data;
@@ -63,8 +63,6 @@ int riscv_aplic_direct_mode_enable(const struct device *dev, bool enable)
 	wr32(cfg->base, APLIC_DOMAINCFG, v);
 
 	k_spin_unlock(&data->lock, key);
-
-	return 0;
 }
 
 int riscv_aplic_is_enabled(uint32_t local_irq)
@@ -80,7 +78,7 @@ int riscv_aplic_is_enabled(uint32_t local_irq)
 	return !!(setie_value & local_irq_to_reg_bitpos(local_irq));
 }
 
-int riscv_aplic_set_priority(const struct device *dev, uint32_t local_irq, uint32_t prio)
+void riscv_aplic_set_priority(const struct device *dev, uint32_t local_irq, uint32_t prio)
 {
 	const struct aplic_cfg *cfg = dev->config;
 	struct aplic_data *data = dev->data;
@@ -107,23 +105,17 @@ int riscv_aplic_set_priority(const struct device *dev, uint32_t local_irq, uint3
 	wr32(cfg->base, target_offset, hart_and_prio_to_target(hart_id, prio));
 
 	k_spin_unlock(&data->lock, key);
-
-	return 0;
 }
 
 #if defined(CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY)
-int riscv_aplic_irq_set_affinity(const struct device *dev, uint32_t local_irq, uint32_t hart_id)
+void riscv_aplic_irq_set_affinity(const struct device *dev, uint32_t local_irq, uint32_t hart_id)
 {
 	const struct aplic_cfg *cfg = dev->config;
 	struct aplic_data *data = dev->data;
 
-	if ((local_irq == 0) || (local_irq > cfg->num_sources)) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(IN_RANGE(local_irq, 1, cfg->num_sources));
 
-	if (hart_id >= arch_num_cpus()) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(hart_id < arch_num_cpus());
 
 	uint32_t target_offset = aplic_target_off(local_irq);
 
@@ -134,8 +126,6 @@ int riscv_aplic_irq_set_affinity(const struct device *dev, uint32_t local_irq, u
 	wr32(cfg->base, target_offset, hart_and_prio_to_target(hart_id, prio));
 
 	k_spin_unlock(&data->lock, key);
-
-	return 0;
 }
 #endif
 

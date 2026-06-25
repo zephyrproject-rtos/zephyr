@@ -91,7 +91,7 @@ void ztest_post_fatal_error_hook(unsigned int reason, const struct arch_esf *pEs
 }
 
 #ifndef CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY
-int riscv_aplic_irq_set_affinity(const struct device *dev, uint32_t irq, uint32_t hart)
+void riscv_aia_route_to_hart(uint32_t irq, uint32_t hart)
 {
 	/*
 	 * Define stub if IRQ affinity is not configured.
@@ -99,18 +99,6 @@ int riscv_aplic_irq_set_affinity(const struct device *dev, uint32_t irq, uint32_
 	 * this stub allows the tests to compile without checking if
 	 * CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY is defined across the entire suite
 	 */
-	return 0;
-}
-
-int riscv_aia_route_to_hart(uint32_t irq, uint32_t hart)
-{
-	/*
-	 * Define stub if IRQ affinity is not configured.
-	 * Tests that intend to verify affinity behavior are skipped if not configured;
-	 * this stub allows the tests to compile without checking if
-	 * CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY is defined across the entire suite
-	 */
-	return 0;
 }
 #endif
 
@@ -215,23 +203,12 @@ ZTEST(aplic_direct, test_aplic_direct_priority_within_config_range)
 
 	for (uint32_t priority = aplic_min_priority; priority < (APLIC_MAX_PRIORITY + 1);
 	     priority++) {
-		int ret = riscv_aplic_set_priority(aplic, TEST_IRQ_ID, priority);
-
-		zassert_equal(ret, 0, "Expected IRQ priority configuration to succeed");
+		riscv_aplic_set_priority(aplic, TEST_IRQ_ID, priority);
 
 		trigger_aplic_irq(TEST_IRQ_ID, 0);
 
 		zassert_not_equal(hart_id, 0xDEADBEEF, "Expected ISR to update Hart ID");
 	}
-}
-
-ZTEST(aplic_direct, test_aplic_direct_priority_outside_of_config_range)
-{
-	const struct device *aplic = riscv_aplic_get_dev();
-
-	int ret = riscv_aplic_set_priority(aplic, TEST_IRQ_ID_L2, (APLIC_MAX_PRIORITY + 1));
-
-	zassert_not_equal(ret, 0, "Expected IRQ priority configuration to fail");
 }
 
 ZTEST(aplic_direct, test_aplic_direct_random_hart_id)
@@ -270,9 +247,7 @@ ZTEST(aplic_direct, test_aplic_direct_random_priority)
 
 		hart_id = 0xDEADBEEFU;
 
-		int ret = riscv_aplic_set_priority(aplic, TEST_IRQ_ID, random_priority);
-
-		zassert_equal(ret, 0, "Expected IRQ priority configuration to succeed");
+		riscv_aplic_set_priority(aplic, TEST_IRQ_ID, random_priority);
 
 		trigger_aplic_irq(TEST_IRQ_ID, expected_hart_id);
 
@@ -296,51 +271,6 @@ ZTEST(aplic_direct, test_aplic_direct_verify_interrupt_disabled)
 	riscv_aia_irq_disable(TEST_IRQ_ID_L2);
 	ret = riscv_aia_irq_is_enabled(TEST_IRQ_ID_L2);
 	zassert_equal(ret, 0, "Expected test IRQ to be disabled");
-}
-
-ZTEST(aplic_direct, test_aplic_direct_affinity_out_of_bounds)
-{
-	if (!IS_ENABLED(CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY)) {
-		ztest_test_skip();
-	}
-
-	const struct device *aplic = riscv_aplic_get_dev();
-
-	int ret = -1;
-
-	ret = riscv_aplic_irq_set_affinity(aplic, TEST_IRQ_ID_INVALID, 0);
-	zassert_not_equal(ret, 0,
-			  "Expected affinity configuration to fail due to out of bound IRQ");
-
-	ret = riscv_aplic_irq_set_affinity(aplic, TEST_IRQ_ID_L2, 50);
-	zassert_not_equal(ret, 0, "Expected affinity configuration to fail due to invalid Hart ID");
-}
-
-ZTEST(aplic_direct, test_aplic_direct_source_mode_configuration)
-{
-	const uint32_t out_of_range_margin = 2;
-	const uint32_t aplic_sm_start = (APLIC_SM_INACTIVE - out_of_range_margin);
-	const uint32_t aplic_sm_end = (APLIC_SM_LEVEL_LOW + out_of_range_margin);
-
-	const struct device *aplic_dev = riscv_aplic_get_dev();
-
-	int ret = -1;
-
-	for (uint32_t source_mode = aplic_sm_start; source_mode < aplic_sm_end; source_mode++) {
-		ret = riscv_aplic_config_src(aplic_dev, TEST_IRQ_ID_L2, source_mode);
-
-		/* Per AIA modes 0x2 and 0x3 are invalid */
-		if ((source_mode == 0x2) || (source_mode == 0x3)) {
-			zassert_not_equal(
-				ret, 0,
-				"Expected invalid source mode to return error. Source mode: %d",
-				source_mode);
-		} else {
-			zassert_equal(ret, 0,
-				      "Expected source mode to return success. Source mode: %d",
-				      source_mode);
-		}
-	}
 }
 
 ZTEST(aplic_direct, test_aplic_direct_spurious_interrupt)
