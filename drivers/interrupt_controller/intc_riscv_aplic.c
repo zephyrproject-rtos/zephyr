@@ -21,7 +21,7 @@
 
 LOG_MODULE_REGISTER(intc_riscv_aplic, CONFIG_LOG_DEFAULT_LEVEL);
 
-int riscv_aplic_domain_enable(const struct device *dev, bool enable)
+void riscv_aplic_domain_enable(const struct device *dev, bool enable)
 {
 	const struct aplic_cfg *cfg = dev->config;
 	struct aplic_data *data = dev->data;
@@ -39,11 +39,9 @@ int riscv_aplic_domain_enable(const struct device *dev, bool enable)
 	wr32(cfg->base, APLIC_DOMAINCFG, v);
 
 	k_spin_unlock(&data->lock, key);
-
-	return 0;
 }
 
-int riscv_aplic_config_src(const struct device *dev, unsigned int src, unsigned int sm)
+void riscv_aplic_config_src(const struct device *dev, unsigned int src, unsigned int sm)
 {
 	const struct aplic_cfg *cfg = dev->config;
 	struct aplic_data *data = dev->data;
@@ -61,17 +59,15 @@ int riscv_aplic_config_src(const struct device *dev, unsigned int src, unsigned 
 	v |= (sm & APLIC_SOURCECFG_SM_MASK);
 	wr32(cfg->base, off, v);
 	k_spin_unlock(&data->lock, key);
-	return 0;
 }
 
-int riscv_aplic_enable_src(const struct device *dev, unsigned int src, bool enable)
+void riscv_aplic_enable_src(const struct device *dev, unsigned int src, bool enable)
 {
 	const struct aplic_cfg *cfg = dev->config;
 
 	__ASSERT_NO_MSG(IN_RANGE(src, 1, cfg->num_sources));
 
 	wr32(cfg->base, enable ? APLIC_SETIENUM : APLIC_CLRIENUM, src);
-	return 0;
 }
 
 static int aplic_init(const struct device *dev)
