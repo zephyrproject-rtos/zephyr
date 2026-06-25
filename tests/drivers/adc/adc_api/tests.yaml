@@ -112,6 +112,7 @@ tests:
       - xg27_dk2602a
       - bg29_rb4420a
       - xg29_rb4412a
+      - kg100s_rb4332a
   drivers.adc.dma_silabs_async:
     extra_args:
       - EXTRA_CONF_FILE="overlay-dma-silabs.conf"
@@ -126,3 +127,4 @@ tests:
       - xg27_dk2602a
       - bg29_rb4420a
       - xg29_rb4412a
+      - kg100s_rb4332a
