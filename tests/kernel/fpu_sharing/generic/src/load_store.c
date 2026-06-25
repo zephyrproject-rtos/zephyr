@@ -315,6 +315,18 @@ K_THREAD_DEFINE(load_low, THREAD_STACK_SIZE, load_store_low, NULL, NULL, NULL,
 K_THREAD_DEFINE(load_high, THREAD_STACK_SIZE, load_store_high, NULL, NULL, NULL,
 		THREAD_HIGH_PRIORITY, THREAD_FP_FLAGS, K_TICKS_FOREVER);
 
+/**
+ * @brief Test preservation of the floating point context across context switches
+ *
+ * @details Run two FP-capable threads that continuously load a unique set of
+ * values into all floating point registers and, after being switched out and
+ * back in, verify the register contents are unchanged. This exercises the
+ * kernel saving and restoring each thread's floating point context across
+ * context switches.
+ *
+ * @verifies ZEP-SRS-29-1
+ * @verifies ZEP-SRS-29-4
+ */
 ZTEST(fpu_sharing_generic, test_load_store)
 {
 	/* Initialise test states */
