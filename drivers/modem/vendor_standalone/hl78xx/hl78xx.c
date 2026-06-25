@@ -1744,9 +1744,9 @@ static void hl78xx_vgpio_debounce_work_handler(struct k_work *work_item)
 	}
 
 	pin_state = gpio_pin_get_dt(spec);
-	if (pin_state != data->hl78xx_vgpio_pending_state) {
+	if (pin_state != data->low_power.hl78xx_vgpio_pending_state) {
 		LOG_DBG("VGPIO debounce ignored unstable edge (sample=%d pending=%d)", pin_state,
-			data->hl78xx_vgpio_pending_state);
+			data->low_power.hl78xx_vgpio_pending_state);
 		return;
 	}
 
@@ -1772,9 +1772,9 @@ static void hl78xx_gpio6_debounce_work_handler(struct k_work *work_item)
 	}
 
 	pin_state = gpio_pin_get_dt(spec);
-	if (pin_state != data->hl78xx_gpio6_pending_state) {
+	if (pin_state != data->low_power.hl78xx_gpio6_pending_state) {
 		LOG_DBG("GPIO6 debounce ignored unstable edge (sample=%d pending=%d)", pin_state,
-			data->hl78xx_gpio6_pending_state);
+			data->low_power.hl78xx_gpio6_pending_state);
 		return;
 	}
 
