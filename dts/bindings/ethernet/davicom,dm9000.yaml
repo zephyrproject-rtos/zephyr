@@ -1,0 +1,71 @@
+# Copyright (c) 2026 Fuyu Fei
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Davicom DM9000 10/100BASE-T Ethernet controller with parallel host
+  interface.
+
+  The controller exposes an index (address) port and a data port, both
+  mapped through a parallel/external memory bus and described with two reg
+  regions named "addr" and "data".
+
+  The host interface width (8-, 16- or 32-bit) is selected by the DM9000's
+  pin strapping at reset. This driver supports the 16-bit interface only.
+
+  The integrated MII PHY is reached through the controller's EPCR/EPAR/EPDR
+  registers. Describe it as an "ethernet-phy" node (reg = <1>) on a
+  "davicom,dm9000-mdio" child bus and point phy-handle at it; the generic
+  phy_mii driver then manages link state over that bus. For example:
+
+    eth0: ethernet@... {
+            compatible = "davicom,dm9000";
+            phy-handle = <&dm9000_phy>;
+            ...
+            mdio {
+                    compatible = "davicom,dm9000-mdio";
+                    #address-cells = <1>;
+                    #size-cells = <0>;
+                    dm9000_phy: ethernet-phy@1 {
+                            compatible = "ethernet-phy";
+                            reg = <1>;
+                    };
+            };
+    };
+
+compatible: "davicom,dm9000"
+
+include: [ethernet-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  phy-handle:
+    required: true
+
+  reg-names:
+    required: true
+    description: |
+      Names of the two register regions: "addr" for the index port and
+      "data" for the data port.
+
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Interrupt pin of the DM9000.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      RESET pin of the DM9000 (optional). When present, the driver pulses it
+      during initialization to hardware-reset the controller. Omit it on
+      boards that tie the DM9000 reset to the SoC reset line.
+
+  host-clock-frequency:
+    type: int
+    default: 100000000
+    description: |
+      Frequency in Hz of the host bus clock driving the DM9000's parallel
+      interface. The driver uses it to select the controller's bus timing.
+      Defaults to 100 MHz.
