@@ -306,6 +306,9 @@ void check_stack_overflow(k_thread_entry_t handler, uint32_t flags)
  * thread's stack and check for the exception.
  *
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-16-1
+ * @verifies ZEP-SRS-16-2
+ * @verifies ZEP-SRS-16-4
  */
 ZTEST(fatal_exception, test_fatal)
 {

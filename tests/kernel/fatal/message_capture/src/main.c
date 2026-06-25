@@ -65,6 +65,8 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
  * Assumptions and Constraints:
  * - N/A
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-16-2
+ * @verifies ZEP-SRS-16-4
  */
 void test_message_capture(void)
 {
