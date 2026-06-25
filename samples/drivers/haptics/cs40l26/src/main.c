@@ -25,17 +25,7 @@ const struct device *cs40l26 = DEVICE_DT_GET(DT_ALIAS(haptic0));
 
 #if CONFIG_SHELL
 #define CS40L26_HELP                SHELL_HELP("CS40L26 haptics commands", NULL)
-#define CS40L26_CALIBRATE_HELP      SHELL_HELP("Run calibration routine", NULL)
 #define CS40L26_CONFIGURE_BUZZ_HELP SHELL_HELP("Configure buzz output", "<freq> <level> <dur>")
-#define CS40L26_GAIN_HELP           SHELL_HELP("Update gain", "<gain %%>")
-#define CS40L26_SELECT_HELP         SHELL_HELP("Select haptic effect", "<bank> <index>")
-#define CS40L26_START_HELP          SHELL_HELP("Start haptic playback", NULL)
-#define CS40L26_STOP_HELP           SHELL_HELP("Stop haptic playback", NULL)
-
-static int cmd_calibrate(const struct shell *sh, size_t argc, char **argv)
-{
-	return cs40l26_calibrate(cs40l26);
-}
 
 static int cmd_configure_buzz(const struct shell *sh, size_t argc, char **argv)
 {
@@ -53,56 +43,11 @@ static int cmd_configure_buzz(const struct shell *sh, size_t argc, char **argv)
 	return cs40l26_configure_buzz(cs40l26, frequency, (uint8_t)level, duration);
 }
 
-static int cmd_gain(const struct shell *sh, size_t argc, char **argv)
-{
-	uint32_t gain;
-
-	gain = strtoul(argv[1], NULL, 10);
-
-	if (gain > 100) {
-		shell_error(sh, "Gain must be between 0 and 100%%");
-		return -EINVAL;
-	}
-
-	return cs40l26_set_gain(cs40l26, (uint8_t)gain);
-}
-
-static int cmd_select(const struct shell *sh, size_t argc, char **argv)
-{
-	enum cs40l26_bank bank;
-	uint8_t index;
-
-	if (strcmp(argv[1], "ROM") == 0) {
-		bank = CS40L26_ROM_BANK;
-	} else if (strcmp(argv[1], "BUZ") == 0) {
-		bank = CS40L26_BUZ_BANK;
-	} else {
-		shell_error(sh, "Bank must be 'ROM' or 'BUZ'");
-		return -EINVAL;
-	}
-
-	index = strtoul(argv[2], NULL, 10);
-
-	return cs40l26_select_output(cs40l26, bank, index);
-}
-
-static int cmd_start(const struct shell *sh, size_t argc, char **argv)
-{
-	return haptics_start_output(cs40l26);
-}
-
-static int cmd_stop(const struct shell *sh, size_t argc, char **argv)
-{
-	return haptics_stop_output(cs40l26);
-}
-
-SHELL_STATIC_SUBCMD_SET_CREATE(
-	cs40l26_cmds, SHELL_CMD_ARG(calibrate, NULL, CS40L26_CALIBRATE_HELP, cmd_calibrate, 1, 0),
+/* clang-format off */
+SHELL_STATIC_SUBCMD_SET_CREATE(cs40l26_cmds,
 	SHELL_CMD_ARG(configure_buzz, NULL, CS40L26_CONFIGURE_BUZZ_HELP, cmd_configure_buzz, 4, 0),
-	SHELL_CMD_ARG(gain, NULL, CS40L26_GAIN_HELP, cmd_gain, 2, 0),
-	SHELL_CMD_ARG(select, NULL, CS40L26_SELECT_HELP, cmd_select, 3, 0),
-	SHELL_CMD_ARG(start, NULL, CS40L26_START_HELP, cmd_start, 1, 0),
-	SHELL_CMD_ARG(stop, NULL, CS40L26_STOP_HELP, cmd_stop, 1, 0), SHELL_SUBCMD_SET_END);
+	SHELL_SUBCMD_SET_END);
+/* clang-format on */
 
 SHELL_CMD_REGISTER(cs40l26, &cs40l26_cmds, "CS40L26 shell commands", NULL);
 #endif /* CONFIG_SHELL */
@@ -132,7 +77,7 @@ int main(void)
 
 	/* Basic demonstration if not using the custom shell interface. */
 	if (!IS_ENABLED(CONFIG_SHELL)) {
-		ret = cs40l26_calibrate(cs40l26);
+		ret = haptics_calibrate(cs40l26, 0);
 		if (ret < 0) {
 			return ret;
 		}
@@ -145,7 +90,7 @@ int main(void)
 			return ret;
 		}
 
-		ret = cs40l26_select_output(cs40l26, CS40L26_BUZ_BANK, 0);
+		ret = haptics_select_source(cs40l26, (int)CS40L26_SOURCE_BUZ, 0);
 		if (ret < 0) {
 			return ret;
 		}
