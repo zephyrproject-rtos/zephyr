@@ -70,6 +70,9 @@ static void tmslab_api(void *p1, void *p2, void *p3)
  * freeing up the memory blocks in memory slab.
  *
  * @ingroup kernel_memory_slab_tests
+ *
+ * @verifies ZEP-SRS-9-14
+ * @verifies ZEP-SRS-9-16
  */
 ZTEST(mslab_threadsafe, test_mslab_threadsafe)
 {

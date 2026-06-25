@@ -214,6 +214,8 @@ static void helper_thread(void *p0, void *p1, void *p2)
  * is 0 and free blocks is equal to number of blocks initialized.
  *
  * @ingroup kernel_memory_slab_tests
+ * @verifies ZEP-SRS-9-13
+ * @verifies ZEP-SRS-9-17
  */
 ZTEST(mslab_api, test_mslab_kinit)
 {
@@ -233,6 +235,8 @@ ZTEST(mslab_api, test_mslab_kinit)
  * is 0 and free blocks is equal to number of blocks initialized.
  *
  * @ingroup kernel_memory_slab_tests
+ * @verifies ZEP-SRS-9-12
+ * @verifies ZEP-SRS-9-17
  */
 ZTEST(mslab_api, test_mslab_kdefine)
 {
@@ -247,6 +251,7 @@ ZTEST(mslab_api, test_mslab_kdefine)
  * with the expected block size, block count, and type alignment.
  *
  * @ingroup kernel_memory_slab_tests
+ * @verifies ZEP-SRS-9-12
  */
 ZTEST(mslab_api, test_mslab_kdefine_type)
 {
@@ -258,6 +263,8 @@ ZTEST(mslab_api, test_mslab_kdefine_type)
  * @brief Verify alloc and free of blocks from mem_slab
  *
  * @ingroup kernel_memory_slab_tests
+ * @verifies ZEP-SRS-9-14
+ * @verifies ZEP-SRS-9-16
  */
 ZTEST(mslab_api, test_mslab_alloc_free_thread)
 {
@@ -273,6 +280,7 @@ ZTEST(mslab_api, test_mslab_alloc_free_thread)
  * and free them.
  *
  * @ingroup kernel_memory_slab_tests
+ * @verifies ZEP-SRS-9-14
  */
 ZTEST(mslab_api, test_mslab_alloc_align)
 {
@@ -295,6 +303,8 @@ ZTEST(mslab_api, test_mslab_alloc_align)
  * was made and return of -EAGAIN.
  *
  * @ingroup kernel_memory_slab_tests
+ * @verifies ZEP-SRS-9-14
+ * @verifies ZEP-SRS-9-15
  */
 ZTEST(mslab_api, test_mslab_alloc_timeout)
 {
@@ -318,6 +328,7 @@ ZTEST(mslab_api, test_mslab_alloc_timeout)
  * @see k_mem_slab_num_free_get().
  *
  * @ingroup kernel_memory_slab_tests
+ * @verifies ZEP-SRS-9-17
  */
 ZTEST(mslab_api, test_mslab_used_get)
 {
@@ -335,6 +346,8 @@ ZTEST(mslab_api, test_mslab_used_get)
  * a memory block until helper thread free one.
  *
  * @ingroup kernel_memory_slab_tests
+ * @verifies ZEP-SRS-9-14
+ * @verifies ZEP-SRS-9-15
  */
 ZTEST(mslab_api, test_mslab_pending)
 {
