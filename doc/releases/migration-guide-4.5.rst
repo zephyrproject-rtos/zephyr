@@ -117,6 +117,10 @@ Boards
 * All Kconfigs under modules/hal_silabs/gecko were renamed from ``SOC_GECKO_*``
   to ``SILABS_GECKO_*``. Adapt your board accordingly.
 
+* The clock configuration for all Silabs Series 0 and Series 1 boards needs to be specified in the
+  device tree now. The Kconfigs ``CONFIG_SOC_GECKO_HAS_HFRCO_FREQRANGE`` and ``CONFIG_CMU_*`` have
+  been removed. See :github:`111754` for examples of how to adapt your board.
+
 Device Drivers and Devicetree
 *****************************
 
