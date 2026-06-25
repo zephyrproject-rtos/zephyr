@@ -436,3 +436,34 @@ This has been fixed in main for v4.5.0
 
 - `PR 110958 fix for v3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/110958>`_
+
+:cve:`2026-13351`
+-----------------
+
+net: Maliciously fragmented IPv6 packets can prevent receiving/processing future incoming packets
+
+The Zephyr network stack can be prevented from receiving or processing future
+incoming packets by sending a few maliciously fragmented IPv6 packets. When
+``net_ipv6_handle_fragment_hdr()`` triggers an ICMPv6 error response for a
+malformed fragment, it returns ``NET_OK`` without unreferencing the packet,
+leaking the RX network packet buffer. Each call to ``k_mem_slab_alloc()`` lacks a
+counterpart ``k_mem_slab_free()``, so replaying such a packet a few times
+exhausts the RX buffer slab, after which the driver repeatedly fails to obtain RX
+buffers, resulting in a denial of service.
+
+- `Zephyr project bug tracker GHSA-cv4q-2j56-4wqf
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-cv4q-2j56-4wqf>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 104044 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/104044>`_
+
+- `PR 104205 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/104205>`_
+
+- `PR 104206 fix for v4.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/104206>`_
+
+- `PR 104209 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/104209>`_
