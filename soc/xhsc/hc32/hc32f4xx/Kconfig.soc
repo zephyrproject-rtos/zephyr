@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Liu Changjie <liucj1228@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_HC32F4XX
+	bool
+	select SOC_FAMILY_XHSC_HC32
+
+config SOC_SERIES
+	default "hc32f4xx" if SOC_SERIES_HC32F4XX
+
+config SOC_HC32F4A0
+	bool
+	select SOC_SERIES_HC32F4XX
+
+config SOC
+	default "hc32f4a0" if SOC_HC32F4A0
