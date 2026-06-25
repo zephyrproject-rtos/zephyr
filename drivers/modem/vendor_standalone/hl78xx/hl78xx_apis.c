@@ -63,31 +63,36 @@ static void hl78xx_at_cmd_capture_release(struct hl78xx_at_cmd_capture_ctx *capt
 	capture->len = 0U;
 	capture->used = 0U;
 }
-
+struct at_cmd_ctx {
+	const char *cmd;
+	uint16_t cmd_len;
+	const struct modem_chat_match *matches;
+	uint16_t match_count;
+	char *response;
+	size_t response_size;
+};
 /* Shared executor for internal helpers and public AT helpers.
  * Terminal handling semantics depend on the response matches supplied by the caller.
  */
 static int hl78xx_at_cmd_execute(struct hl78xx_data *data, modem_chat_script_callback chat_cb,
-				 const char *cmd, uint16_t cmd_len,
-				 const struct modem_chat_match *matches, uint16_t match_count,
-				 char *response, size_t response_size)
+				 struct at_cmd_ctx *ctx)
 {
-	if ((data == NULL) || (cmd == NULL)) {
+	if ((data == NULL) || (ctx == NULL) || (ctx->cmd == NULL)) {
 		return -EINVAL;
 	}
 
-	if ((response == NULL) != (response_size == 0U)) {
+	if ((ctx->response == NULL) != (ctx->response_size == 0U)) {
 		return -EINVAL;
 	}
 
-	hl78xx_at_cmd_capture_prepare(&data->at_cmd_capture, response, response_size);
+	hl78xx_at_cmd_capture_prepare(&data->at_cmd_capture, ctx->response, ctx->response_size);
 
 	int ret = modem_dynamic_cmd_send_req(data, &(const struct hl78xx_dynamic_cmd_request){
 							   .script_user_callback = chat_cb,
-							   .cmd = (const uint8_t *)cmd,
-							   .cmd_len = cmd_len,
-							   .response_matches = matches,
-							   .matches_size = match_count,
+							   .cmd = (const uint8_t *)ctx->cmd,
+							   .cmd_len = ctx->cmd_len,
+							   .response_matches = ctx->matches,
+							   .matches_size = ctx->match_count,
 							   .response_timeout = MDM_CMD_TIMEOUT,
 							   .user_cmd = true,
 						   });
@@ -108,8 +113,16 @@ static int hl78xx_send_cmd(struct hl78xx_data *data, const char *cmd,
 		return -EINVAL;
 	}
 
-	return hl78xx_at_cmd_execute(data, chat_cb, cmd, (uint16_t)strlen(cmd), matches,
-				     match_count, NULL, 0U);
+	struct at_cmd_ctx ctx = {
+		.cmd = cmd,
+		.cmd_len = (uint16_t)strlen(cmd),
+		.matches = matches,
+		.match_count = match_count,
+		.response = NULL,
+		.response_size = 0U,
+	};
+
+	return hl78xx_at_cmd_execute(data, chat_cb, &ctx);
 }
 
 static bool hl78xx_soft_restart_state_is_ready(enum hl78xx_state state)
@@ -299,28 +312,6 @@ static int hl78xx_modem_at_encode_error(const struct hl78xx_at_cmd_capture_ctx *
 	return (error_type << 16) | (capture->error_code & 0x0000ffff);
 }
 
-__printf_like(3, 0)
-static int hl78xx_at_cmd_format_command(char *cmd_buf, size_t cmd_buf_size, const char *fmt,
-					va_list args)
-{
-	int ret;
-
-	if ((cmd_buf == NULL) || (cmd_buf_size == 0U) || (fmt == NULL)) {
-		return -EINVAL;
-	}
-
-	ret = vsnprintf(cmd_buf, cmd_buf_size, fmt, args);
-	if (ret < 0) {
-		return -EINVAL;
-	}
-
-	if ((size_t)ret >= cmd_buf_size) {
-		return -EMSGSIZE;
-	}
-
-	return ret;
-}
-
 static int hl78xx_modem_at_exec(struct hl78xx_data *data, char *response, size_t response_size,
 				const char *cmd)
 {
@@ -342,8 +333,8 @@ static int hl78xx_modem_at_exec(struct hl78xx_data *data, char *response, size_t
 		.callback = hl78xx_at_cmd_capture_cb,
 	};
 	matches[match_count++] = (struct modem_chat_match){
-		.match = (const uint8_t *)OK_STRING,
-		.match_size = (uint8_t)(sizeof(OK_STRING) - 1U),
+		.match = (const uint8_t *)MDM_HL78XX_OK_STRING,
+		.match_size = (uint8_t)(sizeof(MDM_HL78XX_OK_STRING) - 1U),
 		.separators = (const uint8_t *)"",
 		.separators_size = 0,
 		.wildcards = false,
@@ -351,8 +342,8 @@ static int hl78xx_modem_at_exec(struct hl78xx_data *data, char *response, size_t
 		.callback = hl78xx_at_cmd_on_ok,
 	};
 	matches[match_count++] = (struct modem_chat_match){
-		.match = (const uint8_t *)CME_ERROR_STRING,
-		.match_size = (uint8_t)(sizeof(CME_ERROR_STRING) - 1U),
+		.match = (const uint8_t *)MDM_HL78XX_CME_ERROR_STRING,
+		.match_size = (uint8_t)(sizeof(MDM_HL78XX_CME_ERROR_STRING) - 1U),
 		.separators = (const uint8_t *)"",
 		.separators_size = 0,
 		.wildcards = false,
@@ -360,8 +351,8 @@ static int hl78xx_modem_at_exec(struct hl78xx_data *data, char *response, size_t
 		.callback = hl78xx_at_cmd_on_cme_error,
 	};
 	matches[match_count++] = (struct modem_chat_match){
-		.match = (const uint8_t *)ERROR_STRING,
-		.match_size = (uint8_t)(sizeof(ERROR_STRING) - 1U),
+		.match = (const uint8_t *)MDM_HL78XX_ERROR_STRING,
+		.match_size = (uint8_t)(sizeof(MDM_HL78XX_ERROR_STRING) - 1U),
 		.separators = (const uint8_t *)"",
 		.separators_size = 0,
 		.wildcards = false,
@@ -369,8 +360,8 @@ static int hl78xx_modem_at_exec(struct hl78xx_data *data, char *response, size_t
 		.callback = hl78xx_at_cmd_on_error,
 	};
 	matches[match_count++] = (struct modem_chat_match){
-		.match = (const uint8_t *)CMS_ERROR_STRING,
-		.match_size = (uint8_t)(sizeof(CMS_ERROR_STRING) - 1U),
+		.match = (const uint8_t *)MDM_HL78XX_CMS_ERROR_STRING,
+		.match_size = (uint8_t)(sizeof(MDM_HL78XX_CMS_ERROR_STRING) - 1U),
 		.separators = (const uint8_t *)"",
 		.separators_size = 0,
 		.wildcards = false,
@@ -378,8 +369,16 @@ static int hl78xx_modem_at_exec(struct hl78xx_data *data, char *response, size_t
 		.callback = hl78xx_at_cmd_on_cms_error,
 	};
 
-	ret = hl78xx_at_cmd_execute(data, NULL, cmd, (uint16_t)strlen(cmd), matches, match_count,
-				    response, response_size);
+	struct at_cmd_ctx ctx = {
+		.cmd = cmd,
+		.cmd_len = (uint16_t)strlen(cmd),
+		.matches = matches,
+		.match_count = match_count,
+		.response = response,
+		.response_size = response_size,
+	};
+
+	ret = hl78xx_at_cmd_execute(data, NULL, &ctx);
 
 	if (data->at_cmd_capture.truncated) {
 		return -E2BIG;
@@ -393,72 +392,32 @@ static int hl78xx_modem_at_exec(struct hl78xx_data *data, char *response, size_t
 	return ret;
 }
 
-int hl78xx_modem_at_printf_va(const struct device *dev, const char *fmt, va_list args)
+int hl78xx_modem_at_send(const struct device *dev, const char *cmd)
 {
 	struct hl78xx_data *data;
-	char cmd_buf[CONFIG_MODEM_HL78XX_COMMAND_BUFFER_SIZE];
-	int ret;
 
-	if ((dev == NULL) || (dev->data == NULL) || (fmt == NULL)) {
+	if ((dev == NULL) || (dev->data == NULL) || (cmd == NULL)) {
 		return -EINVAL;
-	}
-
-	ret = hl78xx_at_cmd_format_command(cmd_buf, sizeof(cmd_buf), fmt, args);
-	if (ret < 0) {
-		return ret;
 	}
 
 	data = (struct hl78xx_data *)dev->data;
 
-	return hl78xx_modem_at_exec(data, NULL, 0U, cmd_buf);
+	return hl78xx_modem_at_exec(data, NULL, 0U, cmd);
 }
 
-int hl78xx_modem_at_cmd_va(const struct device *dev, char *response, size_t response_size,
-			   const char *fmt, va_list args)
+int hl78xx_modem_at_cmd(const struct device *dev, char *response, size_t response_size,
+			const char *cmd)
 {
 	struct hl78xx_data *data;
-	char cmd_buf[CONFIG_MODEM_HL78XX_COMMAND_BUFFER_SIZE];
-	int ret;
 
 	if ((dev == NULL) || (dev->data == NULL) || (response == NULL) || (response_size == 0U) ||
-	    (fmt == NULL)) {
-		return -EINVAL;
-	}
-
-	ret = hl78xx_at_cmd_format_command(cmd_buf, sizeof(cmd_buf), fmt, args);
-	if (ret < 0) {
-		return ret;
-	}
-
-	data = (struct hl78xx_data *)dev->data;
-
-	return hl78xx_modem_at_exec(data, response, response_size, cmd_buf);
-}
-
-int hl78xx_modem_at_scanf_va(const struct device *dev, const char *cmd, const char *fmt,
-			     va_list args)
-{
-	char response[CONFIG_MODEM_HL78XX_CHAT_BUFFER_SIZES];
-	struct hl78xx_data *data;
-	int ret;
-	int matched;
-
-	if ((dev == NULL) || (dev->data == NULL) || (cmd == NULL) || (fmt == NULL)) {
+	    (cmd == NULL)) {
 		return -EINVAL;
 	}
 
 	data = (struct hl78xx_data *)dev->data;
-	ret = hl78xx_modem_at_exec(data, response, sizeof(response), cmd);
-	if (ret < 0) {
-		return ret;
-	}
 
-	matched = vsscanf(response, fmt, args);
-	if (matched <= 0) {
-		return -EBADMSG;
-	}
-
-	return matched;
+	return hl78xx_modem_at_exec(data, response, response_size, cmd);
 }
 
 int hl78xx_api_func_get_signal(const struct device *dev, const enum cellular_signal_type type,
@@ -1204,9 +1163,17 @@ int hl78xx_api_func_modem_dynamic_cmd_send(const struct device *dev, const char 
 	}
 
 	data = (struct hl78xx_data *)dev->data;
+
 	/* respect provided matches_size and serialize modem access */
-	return hl78xx_at_cmd_execute(data, NULL, cmd, cmd_size, response_matches, matches_size,
-				     NULL, 0U);
+	struct at_cmd_ctx ctx = {
+		.cmd = cmd,
+		.cmd_len = cmd_size,
+		.matches = response_matches,
+		.match_count = matches_size,
+		.response = NULL,
+		.response_size = 0U,
+	};
+	return hl78xx_at_cmd_execute(data, NULL, &ctx);
 }
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 int hl78xx_start_airvantage_dm_session(const struct device *dev)
