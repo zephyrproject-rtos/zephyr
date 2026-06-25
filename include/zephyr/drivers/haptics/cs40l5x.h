@@ -48,53 +48,10 @@ enum cs40l5x_attenuation {
 
 /**
  * @brief Wavetable sources for haptic effects
- * @details Provide to @ref cs40l5x_configure_trigger() or @ref cs40l5x_select_output().
  */
-enum cs40l5x_bank {
-	CS40L5X_ROM_BANK,    /**< Playback from the pre-programmed ROM library */
-	CS40L5X_CUSTOM_BANK, /**< Playback from custom haptics source programmed at runtime */
-	CS40L5X_BUZ_BANK,    /**< Playback from buzz source programmed at runtime */
-	CS40L5X_NO_BANK,     /**< Reserved for driver error handling */
-};
-
-/**
- * @brief Custom haptics source indices (0 or 1)
- * @details Provide to @ref cs40l5x_upload_pcm() or @ref cs40l5x_upload_pwle() to specify
- * index to upload custom haptics source.
- */
-enum cs40l5x_custom_index {
-	CS40L5X_CUSTOM_0,           /**< Custom haptics source at index 0 */
-	CS40L5X_CUSTOM_1,           /**< Custom haptics source at index 1 */
-	CS40L5X_NUM_CUSTOM_EFFECTS, /**< Maximum number of custom haptics effects */
-};
-
-/**
- * @brief Options for runtime haptics logging
- * @details Provide to @ref cs40l5x_logger() to update runtime haptics logging.
- */
-enum cs40l5x_logger {
-	CS40L5X_LOGGER_DISABLE,   /**< Disable runtime logging for the device */
-	CS40L5X_LOGGER_ENABLE,    /**< Enable runtime logging for the device */
-};
-
-/**
- * @brief Options for runtime haptics logging sources
- * @details Provide to @ref cs40l5x_logger_get() to get runtime device characteristics.
- */
-enum cs40l5x_logger_source {
-	CS40L5X_LOGGER_BEMF, /**< Back EMF (SVC) in signed Q0.23 format (full scale is 24 V) */
-	CS40L5X_LOGGER_VBST, /**< Boost voltage in unsigned Q0.24 format (full scale is 14 V) */
-	CS40L5X_LOGGER_VMON, /**< Output voltage in signed Q0.23 format (full scale is 24 V) */
-};
-
-/**
- * @brief Type specification for runtime haptics logging sources
- * @details Provide to @ref cs40l5x_logger_get() to get minimum, mean, or maximum logged values.
- */
-enum cs40l5x_logger_source_type {
-	CS40L5X_LOGGER_MIN,  /**< Minimum value sampled for a logger source */
-	CS40L5X_LOGGER_MAX,  /**< Maximum value sampled for a logger source */
-	CS40L5X_LOGGER_MEAN, /**< Mean value sampled for a logger source */
+enum cs40l5x_source {
+	CS40L5X_SOURCE_BUZ = HAPTICS_SOURCE_PRIV_START, /**< Playback from the buzz library */
+	CS40L5X_SOURCE_RTH,                             /**< Playback from the runtime library */
 };
 
 /**
@@ -122,17 +79,6 @@ enum cs40l5x_trigger_edge {
 };
 
 /**
- * @brief Run calibration to derive ReDC and F0 values and apply results for click compensation
- *
- * @param[in] dev Pointer to the device structure for haptic device instance
- *
- * @return 0 on success, negative errno value on failure.
- * @retval -EAGAIN ReDC or F0 estimation timed out.
- * @retval -EIO A control port transaction failed.
- */
-int cs40l5x_calibrate(const struct device *const dev);
-
-/**
  * @brief Configure ROM buzz for haptic playback
  *
  * @details With large amplitudes and insufficient power (e.g., in the case of internal boost
@@ -154,9 +100,9 @@ int cs40l5x_configure_buzz(const struct device *const dev, const uint32_t freque
  *
  * @param[in] dev Pointer to the device structure for haptic device instance
  * @param[in] gpio Pointer to the device structure for the GPIO used as the trigger source
- * @param[in] bank Wavetable source for desired haptic effect, see @ref cs40l5x_bank
- * @param[in] index Wavetable index for desired haptic effect
- * @param[in] attenuation Attenuation in dB for desired haptic effect, see @ref cs40l5x_attenuation
+ * @param[in] src Playback source (of type @ref haptics_source)
+ * @param[in] cfg Source configuration (of type @ref haptics_config) or NULL
+ * @param[in] attenuation Attenuation in dB for desired haptic effect (range 0 to 7)
  * @param[in] edge Specify edge (rising or falling) to trigger haptic effects
  *
  * @return 0 on success, negative errno value on failure.
@@ -164,67 +110,15 @@ int cs40l5x_configure_buzz(const struct device *const dev, const uint32_t freque
  * @retval -EIO A control port transaction failed.
  */
 int cs40l5x_configure_trigger(const struct device *const dev, const struct gpio_dt_spec *const gpio,
-			      const enum cs40l5x_bank bank, const uint8_t index,
+			      const enum haptics_source src, const union haptics_config *const cfg,
 			      const enum cs40l5x_attenuation attenuation,
 			      const enum cs40l5x_trigger_edge edge);
-
-/**
- * @brief Enable or disable runtime haptics logging
- *
- * @param[in] dev Pointer to the device structure for haptic device instance
- * @param[in] logger_state See @ref cs40l5x_logger
- *
- * @retval 1 Logging is enabled.
- * @retval 0 Logging is disabled.
- * @retval -EINVAL Invalid wavetable source or trigger GPIO provided.
- * @retval -EIO A control port transaction failed.
- */
-int cs40l5x_logger(const struct device *const dev, enum cs40l5x_logger logger_state);
-
-/**
- * @brief Get runtime haptics logging data for the specified logger source
- *
- * @param[in] dev Pointer to the device structure for haptic device instance
- * @param[in] source See @ref cs40l5x_logger_source
- * @param[in] type See @ref cs40l5x_logger_source_type
- * @param[out] value Unsigned 32-bit integer to store the retrieved data
- *
- * @return 0 on success, negative errno value on failure.
- * @retval -EIO A control port transaction failed.
- */
-int cs40l5x_logger_get(const struct device *const dev, enum cs40l5x_logger_source source,
-		       enum cs40l5x_logger_source_type type, uint32_t *const value);
-
-/**
- * @brief Select haptic effect triggered via @ref haptics_start_output()
- *
- * @param[in] dev Pointer to the device structure for haptic device instance
- * @param[in] bank Wavetable source for desired haptic effect, see @ref cs40l5x_bank
- * @param[in] index Wavetable index for desired haptic effect
- *
- * @return 0 on success, negative errno value on failure.
- * @retval -EINVAL Invalid wavetable source and index provided (e.g., index out of bounds).
- */
-int cs40l5x_select_output(const struct device *const dev, const enum cs40l5x_bank bank,
-			  const uint8_t index);
-
-/**
- * @brief Configure gain for haptic effects triggered via @ref haptics_start_output()
- *
- * @param[in] dev Pointer to the device structure for haptic device instance
- * @param[in] gain Gain setting (valid values between 0 and 100)
- *
- * @return 0 on success, negative errno value on failure.
- * @retval -EINVAL Provided gain is greater than 100%.
- * @retval -EIO A control port transaction failed.
- */
-int cs40l5x_set_gain(const struct device *const dev, const uint8_t gain);
 
 /**
  * @brief Upload PCM effect to the specified index
  *
  * @param[in] dev Pointer to the device structure for haptic device instance
- * @param[in] index See @ref cs40l5x_custom_index
+ * @param[in] index Wavetable index
  * @param[in] redc ReDC compensation in unsigned Q5.7 format | redc * (24 / 2.9)
  * @param[in] f0 F0 compensation in unsigned Q9.3 format | (f0 - 50) * 8
  * @param[in] samples Array of signed 8-bit PCM samples
@@ -234,15 +128,14 @@ int cs40l5x_set_gain(const struct device *const dev, const uint8_t gain);
  * @retval -EINVAL Invalid index provided (e.g., index out of bounds).
  * @retval -EIO A control port transaction failed.
  */
-int cs40l5x_upload_pcm(const struct device *const dev, const enum cs40l5x_custom_index index,
-		       const uint16_t redc, const uint16_t f0, const int8_t *const samples,
-		       const uint16_t num_samples);
+int cs40l5x_upload_pcm(const struct device *const dev, const int index, const uint16_t redc,
+		       const uint16_t f0, const int8_t *const samples, const uint16_t num_samples);
 
 /**
  * @brief Upload PWLE effect to the specified index
  *
  * @param[in] dev Pointer to the device structure for haptic device instance
- * @param[in] index See @ref cs40l5x_custom_index
+ * @param[in] index Wavetable index
  * @param[in] sections Array of @ref cs40l5x_pwle_section
  * @param[in] num_sections Number of PWLE sections
  *
@@ -250,7 +143,7 @@ int cs40l5x_upload_pcm(const struct device *const dev, const enum cs40l5x_custom
  * @retval -EINVAL Invalid index provided (e.g., index out of bounds).
  * @retval -EIO A control port transaction failed.
  */
-int cs40l5x_upload_pwle(const struct device *const dev, const enum cs40l5x_custom_index index,
+int cs40l5x_upload_pwle(const struct device *const dev, const int index,
 			const struct cs40l5x_pwle_section *const sections,
 			const uint8_t num_sections);
 
