@@ -118,7 +118,7 @@
 			reg-names = "channel", "common";
 			clocks = <&iclk MSTPA 22>;
 			dma-channels = <8>;
-			#dma-cells = <2>;
+			#dma-cells = <1>;
 			status = "disabled";
 		};
 
