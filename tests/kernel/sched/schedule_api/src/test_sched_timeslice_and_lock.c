@@ -95,6 +95,8 @@ static void thread_handler(void *p1, void *p2, void *p3)
  * @details Create 3 threads of priority -2, -1 and 0.
  * Yield the main thread which is cooperative. Check
  * if all the threads gets executed.
+ * @verifies ZEP-SRS-2-14
+ * @verifies ZEP-SRS-2-15
  */
 ZTEST(threads_scheduling, test_yield_cooperative)
 {
@@ -122,6 +124,7 @@ ZTEST(threads_scheduling, test_yield_cooperative)
  * Check if all the threads gets executed.
  *
  * @ingroup tests_kernel_sched
+ * @verifies ZEP-SRS-2-14
  */
 ZTEST(threads_scheduling, test_sleep_cooperative)
 {
@@ -262,6 +265,7 @@ ZTEST(threads_scheduling, test_pending_thread_wakeup)
  * with equal priorities are executed in time slice.
  *
  * @ingroup tests_kernel_sched
+ * @verifies ZEP-SRS-2-11
  */
 ZTEST(threads_scheduling, test_time_slicing_preemptible)
 {
@@ -333,6 +337,7 @@ ZTEST(threads_scheduling, test_time_slicing_disable_preemptible)
  * have executed.
  *
  * @ingroup tests_kernel_sched
+ * @verifies ZEP-SRS-2-16
  */
 ZTEST(threads_scheduling, test_lock_preemptible)
 {
@@ -368,6 +373,7 @@ ZTEST(threads_scheduling, test_lock_preemptible)
  * @see k_sched_lock(), k_sched_unlock()
  *
  * @ingroup tests_kernel_sched
+ * @verifies ZEP-SRS-2-16
  */
 ZTEST(threads_scheduling, test_unlock_preemptible)
 {

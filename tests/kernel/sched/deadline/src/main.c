@@ -73,6 +73,8 @@ void worker(void *p1, void *p2, void *p3)
  * @ingroup tests_kernel_sched
  *
  * @see k_thread_deadline_set()
+ * @verifies ZEP-SRS-2-5
+ * @verifies ZEP-SRS-2-17
  */
 ZTEST(suite_deadline, test_deadline)
 {
@@ -239,6 +241,7 @@ void unqueue_worker(void *p1, void *p2, void *p3)
  * @ingroup tests_kernel_sched
  *
  * @see k_thread_deadline_set()
+ * @verifies ZEP-SRS-2-17
  */
 ZTEST(suite_deadline, test_unqueued)
 {
