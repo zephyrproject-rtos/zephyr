@@ -1,0 +1,6 @@
+board:
+  name: skystar_hc32f4a0pitb
+  full_name: SkyStar HC32F4A0PITB
+  vendor: jlc
+  socs:
+    - name: hc32f4a0

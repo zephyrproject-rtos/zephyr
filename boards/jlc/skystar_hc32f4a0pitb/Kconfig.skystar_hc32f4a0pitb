@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Liu Changjie <liucj1228@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SKYSTAR_HC32F4A0PITB
+	select SOC_HC32F4A0

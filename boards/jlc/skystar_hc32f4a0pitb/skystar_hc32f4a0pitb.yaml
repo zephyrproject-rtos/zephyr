@@ -1,0 +1,12 @@
+identifier: skystar_hc32f4a0pitb
+name: JLC SkyStar-HC32F4A0PITB
+type: mcu
+arch: arm
+ram: 512
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+vendor: jlc
