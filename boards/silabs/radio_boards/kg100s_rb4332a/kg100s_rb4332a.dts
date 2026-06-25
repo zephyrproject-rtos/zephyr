@@ -1,0 +1,137 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2026 Martin Moya <martin.moya@focus.uy>
+ *
+ */
+
+/dts-v1/;
+#include <quectel/kg100s.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "kg100s_rb4332a-pinctrl.dtsi"
+
+/ {
+	model = "Silicon Labs BRD4332A (KG100S Radio Board)";
+	compatible = "silabs,kg100s", "silabs,efr32mg21";
+
+	chosen {
+		zephyr,bt-hci = &bt_hci_silabs;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &usart0;
+		zephyr,flash = &flash0;
+		zephyr,shell-uart = &usart0;
+		zephyr,sram = &sram0;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		sw0 = &button0;
+		sw1 = &button1;
+		lora0 = &lora0;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+			label = "BTN0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpiod 4 GPIO_ACTIVE_LOW>;
+			label = "BTN1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&usart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio {
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&se {
+	status = "okay";
+};
+
+&bt_hci_silabs {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
+		};
+
+		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0000c000 DT_SIZE_K(472)>;
+			label = "image-0";
+		};
+
+		slot1_partition: partition@82000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00082000 DT_SIZE_K(472)>;
+			label = "image-1";
+		};
+
+		storage_partition: partition@f8000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x000f8000 DT_SIZE_K(32)>;
+			label = "storage";
+		};
+	};
+};
+
+&rtcc0 {
+	status = "okay";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
