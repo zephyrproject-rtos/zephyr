@@ -259,12 +259,12 @@ static void hl78xx_handle_restart_requested_event(struct hl78xx_data *data)
 {
 	enum hl78xx_modem_restart_mode mode;
 	bool requested;
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	k_mutex_lock(&data->api_lock, K_FOREVER);
-	requested = data->status.restart_requested;
-	mode = data->status.restart_mode;
-	data->status.restart_requested = false;
+	requested = data->status.restart.requested;
+	mode = data->status.restart.mode;
+	data->status.restart.requested = false;
 	k_mutex_unlock(&data->api_lock);
 
 	if (!requested) {
@@ -383,7 +383,7 @@ static bool hl78xx_parse_gsm_kcell_serving_cell(struct hl78xx_data *data, char *
 
 	gsm->rssi_raw = (uint8_t)rssi_raw;
 	gsm->rssi_dbm = hl78xx_gsm_kcell_rssi_to_dbm(gsm->rssi_raw);
-	data->status.rssi = gsm->rssi_dbm;
+	data->status.signal.rssi = gsm->rssi_dbm;
 
 	if ((argc > 9U) && (argv[9] != NULL) && (argv[9][0] != '\0')) {
 		int timing_advance = ATOI(argv[9], -1, "gsm_timing_advance");
@@ -950,7 +950,7 @@ void hl78xx_on_kcellmeas(struct modem_chat *chat, char **argv, uint16_t argc, vo
 	}
 	LOG_DBG("%d argc: %d", __LINE__, argc);
 	if (argc == 2) {
-		data->status.kcellmeas_timeout = ATOI(argv[1], 0, "kcellmeas");
+		data->status.kcellmeas.timeout = ATOI(argv[1], 0, "kcellmeas");
 		hl78xx_schedule_signal_quality_retry(data);
 		return;
 	}
@@ -963,17 +963,17 @@ void hl78xx_on_kcellmeas(struct modem_chat *chat, char **argv, uint16_t argc, vo
 		return;
 	}
 	HL78XX_LOG_DBG("%d %d [%s] [%s] [%s]", __LINE__, argc, argv[0], argv[1], argv[2]);
-	data->status.rsrp = (int)ATOD(argv[1], 0, "rsrp");
+	data->status.signal.rsrp = (int)ATOD(argv[1], 0, "rsrp");
 	if (argc >= 6) {
-		data->status.sinr = (int16_t)ATOD(argv[5], 0, "sinr");
+		data->status.signal.sinr = (int16_t)ATOD(argv[5], 0, "sinr");
 	}
 	if (hl78xx_is_rsrp_valid(data)) {
 		hl78xx_signal_quality_ready(data);
 	} else {
-		LOG_DBG("Invalid RSRP value: %d", data->status.rsrp);
+		LOG_DBG("Invalid RSRP value: %d", data->status.signal.rsrp);
 		hl78xx_schedule_signal_quality_retry(data);
 	}
-	event.content.cellmeas.rsrp = data->status.rsrp;
+	event.content.cellmeas.rsrp = data->status.signal.rsrp;
 	event_dispatcher_dispatch(&event);
 }
 
@@ -1051,9 +1051,9 @@ void hl78xx_on_kbndcfg(struct modem_chat *chat, char **argv, uint16_t argc, void
 	if (rat_id >= HL78XX_RAT_COUNT) {
 		return;
 	}
-	data->status.kbndcfg[rat_id].rat = rat_id;
-	strncpy(data->status.kbndcfg[rat_id].bnd_bitmap, argv[2], kbnd_bitmap_size);
-	data->status.kbndcfg[rat_id].bnd_bitmap[kbnd_bitmap_size] = '\0';
+	data->status.band.kbndcfg[rat_id].rat = rat_id;
+	strncpy(data->status.band.kbndcfg[rat_id].bnd_bitmap, argv[2], kbnd_bitmap_size);
+	data->status.band.kbndcfg[rat_id].bnd_bitmap[kbnd_bitmap_size] = '\0';
 }
 
 void hl78xx_on_kbnd(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
@@ -1078,9 +1078,9 @@ void hl78xx_on_kbnd(struct modem_chat *chat, char **argv, uint16_t argc, void *u
 		return;
 	}
 
-	data->status.active_band.rat = rat_id;
-	strncpy(data->status.active_band.bnd_bitmap, argv[2], bitmap_size);
-	data->status.active_band.bnd_bitmap[bitmap_size] = '\0';
+	data->status.band.active_band.rat = rat_id;
+	strncpy(data->status.band.active_band.bnd_bitmap, argv[2], bitmap_size);
+	data->status.band.active_band.bnd_bitmap[bitmap_size] = '\0';
 }
 #ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
 
@@ -1115,7 +1115,7 @@ void hl78xx_on_csq(struct modem_chat *chat, char **argv, uint16_t argc, void *us
 	if (argc < 3) {
 		return;
 	}
-	data->status.rssi = ATOI(argv[1], 0, "rssi");
+	data->status.signal.rssi = ATOI(argv[1], 0, "rssi");
 }
 
 void hl78xx_on_cesq(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
@@ -1125,8 +1125,8 @@ void hl78xx_on_cesq(struct modem_chat *chat, char **argv, uint16_t argc, void *u
 	if (argc < 7) {
 		return;
 	}
-	data->status.rsrq = ATOI(argv[5], 0, "rsrq");
-	data->status.rsrp = ATOI(argv[6], 0, "rsrp");
+	data->status.signal.rsrq = ATOI(argv[5], 0, "rsrq");
+	data->status.signal.rsrp = ATOI(argv[6], 0, "rsrp");
 }
 
 void hl78xx_on_cfun(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
@@ -2262,7 +2262,7 @@ static int hl78xx_on_rat_cfg_script_state_enter(struct hl78xx_data *data)
 #endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 	if (modem_require_restart) {
 		HL78XX_LOG_DBG("Modem restart required to apply new RAT/Band settings");
-		data->status.config_restart_pending = true;
+		data->status.restart.config_pending = true;
 		ret = modem_dynamic_cmd_send_req(data,
 						 &(const struct hl78xx_dynamic_cmd_request){
 							 .script_user_callback = NULL,
@@ -2274,7 +2274,7 @@ static int hl78xx_on_rat_cfg_script_state_enter(struct hl78xx_data *data)
 							 .user_cmd = false,
 						 });
 		if (ret < 0) {
-			data->status.config_restart_pending = false;
+			data->status.restart.config_pending = false;
 			goto error;
 		}
 		hl78xx_start_timer(data,
@@ -2291,7 +2291,7 @@ error:
 
 static int hl78xx_on_rat_cfg_script_state_leave(struct hl78xx_data *data)
 {
-	data->status.config_restart_pending = false;
+	data->status.restart.config_pending = false;
 	hl78xx_stop_timer(data);
 	return 0;
 }
@@ -2361,7 +2361,7 @@ static int hl78xx_on_pmc_cfg_script_state_enter(struct hl78xx_data *data)
 		const char *cmd_restart = (const char *)SET_AIRPLANE_MODE_CMD;
 
 		LOG_DBG("%d Reset required", __LINE__);
-		data->status.config_restart_pending = true;
+		data->status.restart.config_pending = true;
 
 		ret = modem_dynamic_cmd_send_req(data,
 						 &(const struct hl78xx_dynamic_cmd_request){
@@ -2374,7 +2374,7 @@ static int hl78xx_on_pmc_cfg_script_state_enter(struct hl78xx_data *data)
 							 .user_cmd = false,
 						 });
 		if (ret < 0) {
-			data->status.config_restart_pending = false;
+			data->status.restart.config_pending = false;
 			goto error;
 		}
 		hl78xx_start_timer(data, K_MSEC(100));

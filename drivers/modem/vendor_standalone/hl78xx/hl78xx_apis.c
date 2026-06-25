@@ -501,15 +501,15 @@ int hl78xx_api_func_get_signal(const struct device *dev, const enum cellular_sig
 	/* Parse received value */
 	switch (type) {
 	case CELLULAR_SIGNAL_RSSI:
-		ret = hl78xx_parse_rssi(data->status.rssi, value);
+		ret = hl78xx_parse_rssi(data->status.signal.rssi, value);
 		break;
 
 	case CELLULAR_SIGNAL_RSRP:
-		ret = hl78xx_parse_rsrp(data->status.rsrp, value);
+		ret = hl78xx_parse_rsrp(data->status.signal.rsrp, value);
 		break;
 
 	case CELLULAR_SIGNAL_RSRQ:
-		ret = hl78xx_parse_rsrq(data->status.rsrq, value);
+		ret = hl78xx_parse_rsrq(data->status.signal.rsrq, value);
 		break;
 
 	default:
@@ -1145,7 +1145,7 @@ int hl78xx_api_func_restart(const struct device *dev, enum hl78xx_modem_restart_
 	config = dev->config;
 
 	k_mutex_lock(&data->api_lock, K_FOREVER);
-	if (data->status.restart_requested) {
+	if (data->status.restart.requested) {
 		k_mutex_unlock(&data->api_lock);
 		return -EBUSY;
 	}
@@ -1162,8 +1162,8 @@ int hl78xx_api_func_restart(const struct device *dev, enum hl78xx_modem_restart_
 		return -EAGAIN;
 	}
 
-	data->status.restart_requested = true;
-	data->status.restart_mode = mode;
+	data->status.restart.requested = true;
+	data->status.restart.mode = mode;
 	k_mutex_unlock(&data->api_lock);
 
 	LOG_INF("Restart requested via %s path",

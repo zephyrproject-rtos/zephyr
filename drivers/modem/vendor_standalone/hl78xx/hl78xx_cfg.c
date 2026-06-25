@@ -65,7 +65,7 @@ int hl78xx_enable_lte_coverage_urc(struct hl78xx_data *data, bool *modem_require
 	if (ret < 0) {
 		LOG_ERR("Failed to enable LTE coverage URC: %d", ret);
 	} else {
-		data->status.kcellmeas_timeout = timeout_s;
+		data->status.kcellmeas.timeout = timeout_s;
 	}
 	*modem_require_restart = true;
 
@@ -336,12 +336,13 @@ int hl78xx_band_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 	int rat = rat_config_request;
 #endif /* CONFIG_MODEM_HL78XX_AUTORAT */
 		ret = hl78xx_get_expected_band_config_for_rat(data, rat, bnd_bitmap,
-						      ARRAY_SIZE(bnd_bitmap));
+							      ARRAY_SIZE(bnd_bitmap));
 		if (ret) {
 			LOG_ERR("%d %s error get expected band config %d", __LINE__, __func__, ret);
 			goto error;
 		}
-		modem_trimmed = hl78xx_trim_leading_zeros(data->status.kbndcfg[rat].bnd_bitmap);
+		modem_trimmed =
+			hl78xx_trim_leading_zeros(data->status.band.kbndcfg[rat].bnd_bitmap);
 		expected_trimmed = hl78xx_trim_leading_zeros(bnd_bitmap);
 
 		if (strcmp(modem_trimmed, expected_trimmed) != 0) {
@@ -1019,7 +1020,7 @@ bool hl78xx_is_sinr_value_valid(int16_t sinr)
 
 bool hl78xx_is_rsrp_valid(struct hl78xx_data *data)
 {
-	return hl78xx_is_rsrp_value_valid(data->status.rsrp);
+	return hl78xx_is_rsrp_value_valid(data->status.signal.rsrp);
 }
 
 static void set_band_bit(uint8_t *bitmap, uint16_t band_num)
