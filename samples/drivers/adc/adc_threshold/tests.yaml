@@ -15,5 +15,6 @@ tests:
   sample.drivers.adc.adc_threshold:
     platform_allow:
       - nrf52dk/nrf52832
+      - xg24_ek2703a
     integration_platforms:
       - nrf52dk/nrf52832
