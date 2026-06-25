@@ -393,6 +393,105 @@ ZTEST_USER(net_socket_tcp, test_v6_recv_before_eof)
 	test_recv_before_eof_common(NET_AF_INET6);
 }
 
+static void test_recv_before_rst_common(int family)
+{
+	/* Data received before the peer abruptly closes the connection (RST)
+	 * should still be readable with recv() before an error is returned.
+	 *
+	 * The peer is forced to send a RST instead of a graceful FIN by enabling
+	 * the SO_LINGER socket option with a zero linger timeout before close().
+	 */
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct net_sockaddr_in c_saddr4;
+	struct net_sockaddr_in s_saddr4;
+	struct net_sockaddr_in6 c_saddr6;
+	struct net_sockaddr_in6 s_saddr6;
+	struct net_sockaddr *s_saddr;
+	net_socklen_t saddrlen;
+	struct net_sockaddr addr;
+	net_socklen_t addrlen = sizeof(addr);
+	struct net_linger linger_opt = {
+		.l_onoff = 1,
+		.l_linger = 0,
+	};
+	char rx_buf[30] = {0};
+	char rx_buf2[30] = {0};
+	ssize_t recved_data;
+	ssize_t recved_eof;
+	int recv_errno;
+	int ret;
+
+	if (family == NET_AF_INET) {
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr4);
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr4);
+		s_saddr = (struct net_sockaddr *)&s_saddr4;
+		saddrlen = sizeof(s_saddr4);
+	} else {
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr6);
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_saddr6);
+		s_saddr = (struct net_sockaddr *)&s_saddr6;
+		saddrlen = sizeof(s_saddr6);
+	}
+
+	test_bind(s_sock, s_saddr, saddrlen);
+	test_listen(s_sock);
+
+	test_connect(c_sock, s_saddr, saddrlen);
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+
+	/* Server sends some data... */
+	test_send(new_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
+
+	/* ...and forces an abrupt close (RST) by setting SO_LINGER with a zero
+	 * timeout before closing the socket.
+	 */
+	ret = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_LINGER,
+			       &linger_opt, sizeof(linger_opt));
+	zassert_equal(ret, 0, "setsockopt SO_LINGER failed (%d)", errno);
+
+	test_close(new_sock);
+
+	/* Let the data and RST packets pass through. */
+	k_msleep(THREAD_SLEEP);
+
+	/* Client should still be able to read the data first... */
+	recved_data = zsock_recv(c_sock, rx_buf, sizeof(rx_buf), 0);
+
+	/* ...and only then get an error indicating the connection was reset. */
+	recved_eof = zsock_recv(c_sock, rx_buf2, sizeof(rx_buf2), 0);
+	recv_errno = errno;
+
+	/* Clean up before evaluating the result, so that a failed assertion
+	 * does not leak the bound port and poison subsequent test cases.
+	 */
+	test_close(c_sock);
+	test_close(s_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+
+	zassert_equal(recved_data, strlen(TEST_STR_SMALL),
+		      "unexpected received bytes (%zd)", recved_data);
+	zassert_equal(strncmp(rx_buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL)),
+		      0, "unexpected data");
+
+	zassert_equal(recved_eof, -1, "expected error, got %zd", recved_eof);
+	zassert_equal(recv_errno, ECONNRESET, "unexpected errno value: %d",
+		      recv_errno);
+}
+
+ZTEST_USER(net_socket_tcp, test_v4_recv_before_rst)
+{
+	test_recv_before_rst_common(NET_AF_INET);
+}
+
+ZTEST_USER(net_socket_tcp, test_v6_recv_before_rst)
+{
+	test_recv_before_rst_common(NET_AF_INET6);
+}
+
 /* Test the stack behavior with a reasonable sized block data, be sure to have multiple packets */
 #define TEST_LARGE_TRANSFER_SIZE 60000
 #define TEST_PRIME 811
