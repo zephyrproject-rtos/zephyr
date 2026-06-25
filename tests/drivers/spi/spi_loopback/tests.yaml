@@ -439,6 +439,19 @@ tests:
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
       - mimxrt1050_evk/mimxrt1052/hyperflash
+  drivers.spi.loopback.renesas_spi_b.dmac:
+    filter: dt_compat_enabled("renesas,ra8-spi-b")
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/ra8_spi_b_dmac_common.overlay"
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+      - mck_ra8t1
+      - fpb_ra8e1
+      - ek_ra8p1/r7ka8p1kflcac/cm85
+      - ek_ra8p1/r7ka8p1kflcac/cm85
+      - mck_ra8t2/r7ka8t2lflcac/cm85
+      - ek_ra8t2/r7ka8t2lflcac/cm85
   drivers.spi.loopback.renesas_sci_b_spi:
     filter: dt_compat_enabled("renesas,ra-spi-sci-b")
     extra_args:
