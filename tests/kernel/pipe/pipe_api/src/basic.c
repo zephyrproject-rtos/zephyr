@@ -19,6 +19,11 @@ K_PIPE_DEFINE(test_define, 256, 4);
 
 static struct k_pipe pipe;
 
+/**
+ * @brief Verify pipe initialization.
+ * @verifies ZEP-SRS-32-1
+ * @verifies ZEP-SRS-32-2
+ */
 ZTEST(k_pipe_basic, test_init)
 {
 	uint8_t buffer[10];
@@ -27,6 +32,11 @@ ZTEST(k_pipe_basic, test_init)
 	zassert_true(pipe.flags == PIPE_FLAG_OPEN, "Unexpected pipe flags");
 }
 
+/**
+ * @brief Verify writing then reading a single item through a pipe.
+ * @verifies ZEP-SRS-32-3
+ * @verifies ZEP-SRS-32-4
+ */
 ZTEST(k_pipe_basic, test_write_read_one)
 {
 	uint8_t buffer[10];
@@ -56,6 +66,10 @@ ZTEST(k_pipe_basic, test_write_read_multiple)
 	zassert_true(read_data == data, "Unexpected data received from pipe");
 }
 
+/**
+ * @brief Verify a write to a full pipe transfers no extra data.
+ * @verifies ZEP-SRS-32-3
+ */
 ZTEST(k_pipe_basic, test_write_full)
 {
 	uint8_t buffer[10];
@@ -68,6 +82,10 @@ ZTEST(k_pipe_basic, test_write_full)
 		"Should not be able to write to full pipe");
 }
 
+/**
+ * @brief Verify a read from an empty pipe returns no data.
+ * @verifies ZEP-SRS-32-4
+ */
 ZTEST(k_pipe_basic, test_read_empty)
 {
 	uint8_t buffer[10];
@@ -119,6 +137,10 @@ ZTEST(k_pipe_basic, test_read_write_wrapp_around)
 		"Unexpected data received from pipe");
 }
 
+/**
+ * @brief Verify resetting a pipe discards its buffered data.
+ * @verifies ZEP-SRS-32-7
+ */
 ZTEST(k_pipe_basic, test_reset)
 {
 	uint8_t buffer[10];
@@ -136,6 +158,10 @@ ZTEST(k_pipe_basic, test_reset)
 	zassert_true(read_data == data, "Unexpected data received from pipe");
 }
 
+/**
+ * @brief Verify closing a pipe.
+ * @verifies ZEP-SRS-32-8
+ */
 ZTEST(k_pipe_basic, test_close)
 {
 	uint8_t buffer[12];

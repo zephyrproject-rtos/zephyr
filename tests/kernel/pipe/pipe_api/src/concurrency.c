@@ -44,6 +44,12 @@ static void thread_read(void *arg1, void *arg2, void *arg3)
 		K_MSEC(partial_wait_time)) == sizeof(garbage), "Failed to read from pipe");
 }
 
+/**
+ * @brief Verify a blocked reader is released with -EPIPE when the pipe is closed.
+ * @verifies ZEP-SRS-32-6
+ * @verifies ZEP-SRS-32-8
+ * @verifies ZEP-SRS-32-9
+ */
 ZTEST(k_pipe_concurrency, test_close_on_read)
 {
 	k_tid_t tid;
@@ -61,6 +67,12 @@ ZTEST(k_pipe_concurrency, test_close_on_read)
 		"Pipe should continue to be closed after all waiters have been released");
 }
 
+/**
+ * @brief Verify a blocked writer is released with -EPIPE when the pipe is closed.
+ * @verifies ZEP-SRS-32-5
+ * @verifies ZEP-SRS-32-8
+ * @verifies ZEP-SRS-32-9
+ */
 ZTEST(k_pipe_concurrency, test_close_on_write)
 {
 	k_tid_t tid;
@@ -81,6 +93,11 @@ ZTEST(k_pipe_concurrency, test_close_on_write)
 		"pipe should continue to be closed after all waiters have been released");
 }
 
+/**
+ * @brief Verify a blocked reader is released with -ECANCELED when the pipe is reset.
+ * @verifies ZEP-SRS-32-7
+ * @verifies ZEP-SRS-32-10
+ */
 ZTEST(k_pipe_concurrency, test_reset_on_read)
 {
 	k_tid_t tid;
@@ -101,6 +118,12 @@ ZTEST(k_pipe_concurrency, test_reset_on_read)
 		"pipe should continue to be open after pipe is reset");
 }
 
+/**
+ * @brief Verify a blocked writer is released with -ECANCELED when the pipe is reset.
+ * @verifies ZEP-SRS-32-5
+ * @verifies ZEP-SRS-32-7
+ * @verifies ZEP-SRS-32-10
+ */
 ZTEST(k_pipe_concurrency, test_reset_on_write)
 {
 	k_tid_t tid;
