@@ -1274,6 +1274,7 @@ extern const struct ethernet_api dwmac_api;
 /* GMAC register map */
 #define DWMAC_MACCR      0x0000
 #define DWMAC_MACFFR     0x0004
+#define DWMAC_MACVERR    0x0020
 #define DWMAC_MACA0HR    0x0040
 #define DWMAC_MACA0LR    0x0044
 
@@ -1334,8 +1335,6 @@ extern const struct ethernet_api dwmac_api;
 
 #define MAC_MDIO_DATA_RA GENMASK(31, 16)
 #define MAC_MDIO_DATA_GD GENMASK(15, 0)
-
-#define MAC_VERSION 0x0020
 
 #endif /* CONFIG_ETH_DWC_ETHER_1000_CORE */
 
