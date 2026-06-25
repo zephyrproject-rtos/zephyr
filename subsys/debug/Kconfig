@@ -343,6 +343,9 @@ config DEBUG_THREAD_INFO
 	help
 	  This option exports an array of offsets to kernel structs to allow
 	  for debugger RTOS plugins to determine the state of running threads.
+	  Not supported on SMP: thread_info.c exports K_CURR_THREAD which
+	  only reflects cpus[0].current, confusing live RTOS debugger plugins
+	  on multi-core systems.
 
 rsource "coredump/Kconfig"
 rsource "symtab/Kconfig"
