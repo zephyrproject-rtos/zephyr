@@ -14,7 +14,7 @@ if STREAM_FLASH
 config STREAM_FLASH_INSPECT
 	bool "Check whether device layout is OK with Stream Flash definition"
 	default y
-	select FLASH_PAGE_LAYOUT
+	depends on FLASH_PAGE_LAYOUT
 	help
 	  Runs simple check to find whether provided device can be used for
 	  stream flash by verifying that buffer size will fit into page.
