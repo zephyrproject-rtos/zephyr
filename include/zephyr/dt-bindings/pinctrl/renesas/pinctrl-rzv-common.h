@@ -3,8 +3,71 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Devicetree pin control helpers for Renesas RZ/V
+ * @ingroup pinctrl_rzv
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZV_COMMON_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZV_COMMON_H_
+
+/**
+ * @addtogroup renesas_pinctrl Renesas pin control helpers
+ * @ingroup devicetree-pinctrl
+ */
+
+/**
+ * @defgroup pinctrl_rzv Renesas RZ/V pin control helpers
+ * @brief Macros for pin control configuration of Renesas RZ/V SoCs
+ * @ingroup renesas_pinctrl
+ *
+ * General-purpose pins are configured with the RZV_PINMUX() macro, which takes
+ * three fields:
+ *
+ * - @c port — the port identifier, one of the @c PORT_* values.
+ * - @c pin — the pin number within that port.
+ * - @c func — the alternate-function number selecting the peripheral signal
+ *   routed to the pin, taken from the SoC's Pin Function Controller table; it
+ *   has no symbolic macro and is passed as a plain integer.
+ *
+ * Dedicated-function pins that sit outside the general-purpose port matrix are
+ * referenced directly through their @c BSP_IO_* identifiers, covering debug
+ * (@c BSP_IO_NMI, @c BSP_IO_TMS_SWDIO, @c BSP_IO_TDO), audio clocks, SD/MMC,
+ * QSPI flash, RIIC (I2C), watchdog overflow and, on some variants, Ethernet and
+ * PCIe reset.
+ *
+ * An optional digital noise filter can be applied to a pin group with
+ * RZV_FILTER_SET(), built from a stage count (@c RZV_FILNUM_*) and a sampling
+ * clock divider (@c RZV_FILCLKSEL_*).
+ *
+ * The pre-defined port/pin combinations differ between RZ/V variants and are
+ * provided by a dedicated header per variant:
+ *
+ * - @c pinctrl-rzv-common.h — RZ/V general-purpose port superset
+ * - @c pinctrl-rzv2h.h — RZ/V2H
+ * - @c pinctrl-rzv2n.h — RZ/V2N
+ *
+ * @code{.dts}
+ * #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzv-common.h>
+ *
+ * &pinctrl {
+ *         scif0_default: scif0_default {
+ *                 device-pinmux {
+ *                         pinmux = <RZV_PINMUX(PORT_04, 0, 2)>,
+ *                                  <RZV_PINMUX(PORT_04, 1, 2)>;
+ *                         bias-pull-up;
+ *                         renesas,filter =
+ *                                 RZV_FILTER_SET(RZV_FILNUM_8_STAGE, RZV_FILCLKSEL_DIV_18000);
+ *                 };
+ *         };
+ * };
+ * @endcode
+ *
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
 
 /* Superset list of all possible IO ports. */
 #define PORT_00 0x0000 /* IO port 0 */
@@ -57,14 +120,20 @@
 #define PORT_47 0x2F00 /* IO port 47 */
 #define PORT_48 0x3000 /* IO port 48 */
 
-/*
- * Create the value contain port/pin/function information
+/** @endcond */
+
+/**
+ * @brief Create an encoded value containing port/pin/function information.
  *
- * port: port number BSP_IO_PORT_00..BSP_IO_PORT_48
- * pin: pin number
- * func: pin function
+ * @param port Port identifier (PORT_00..PORT_48).
+ * @param pin Pin number within the port.
+ * @param func Pin function selector.
+ *
+ * @return Encoded pinmux value.
  */
 #define RZV_PINMUX(port, pin, func) (port | pin | (func << 4))
+
+/** @cond INTERNAL_HIDDEN */
 
 /* Special purpose port */
 #define BSP_IO_NMI 0xFFFF0100 /* NMI */
@@ -122,18 +191,42 @@
 #define BSP_IO_RIIC1_SDA 0xFFFF0E02 /* RIIC1_SDA */
 #define BSP_IO_RIIC1_SCL 0xFFFF0E03 /* RIIC1_SCL */
 
-/* FILNUM */
-#define RZV_FILNUM_4_STAGE  0
-#define RZV_FILNUM_8_STAGE  1
-#define RZV_FILNUM_12_STAGE 2
-#define RZV_FILNUM_16_STAGE 3
+/** @endcond */
 
-/* FILCLKSEL */
-#define RZV_FILCLKSEL_NOT_DIV   0
-#define RZV_FILCLKSEL_DIV_9000  1
-#define RZV_FILCLKSEL_DIV_18000 2
-#define RZV_FILCLKSEL_DIV_36000 3
+/**
+ * @name Renesas RZ/V digital noise filter options
+ *
+ * Set the number of filter stages (FILNUM) and the sampling clock divider
+ * (FILCLKSEL).
+ * @{
+ */
 
+#define RZV_FILNUM_4_STAGE  0 /**< FILNUM: 4-stage filter */
+#define RZV_FILNUM_8_STAGE  1 /**< FILNUM: 8-stage filter */
+#define RZV_FILNUM_12_STAGE 2 /**< FILNUM: 12-stage filter */
+#define RZV_FILNUM_16_STAGE 3 /**< FILNUM: 16-stage filter */
+
+#define RZV_FILCLKSEL_NOT_DIV   0 /**< FILCLKSEL: no division */
+#define RZV_FILCLKSEL_DIV_9000  1 /**< FILCLKSEL: divided by 9000 */
+#define RZV_FILCLKSEL_DIV_18000 2 /**< FILCLKSEL: divided by 18000 */
+#define RZV_FILCLKSEL_DIV_36000 3 /**< FILCLKSEL: divided by 36000 */
+
+/** @} */
+
+/**
+ * @brief Encode filter stage count and clock selection into one configuration value.
+ *
+ * Encoding:
+ * - bits [3:2] = FILNUM (masked to 2 bits)
+ * - bits [1:0] = FILCLKSEL (masked to 2 bits)
+ *
+ * @param filnum Filter stage selection (RZV_FILNUM_*).
+ * @param filclksel Filter clock selection (RZV_FILCLKSEL_*).
+ *
+ * @return Encoded filter configuration value.
+ */
 #define RZV_FILTER_SET(filnum, filclksel) (((filnum) & 0x3) << 0x2) | (filclksel & 0x3)
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZV_COMMON_H_ */
