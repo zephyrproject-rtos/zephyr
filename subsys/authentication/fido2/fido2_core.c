@@ -324,6 +324,49 @@ handle_make_credential(uint8_t *cbor_in, size_t cbor_in_len, uint8_t *cbor_out, 
 		return FIDO2_ERR_OTHER;
 	}
 
+	if (mc_params.has_pin_uv_auth_param) {
+		if (mc_params.pin_uv_auth_param_len == 0) {
+			set_runtime_state(FIDO2_RUNTIME_STATE_WAITING_USER_PRESENCE);
+			notify_wire(transport, cid, FIDO2_WIRE_STATUS_UP_NEEDED);
+
+			ret = fido2_up_wait();
+			if (ret) {
+				return FIDO2_ERR_OPERATION_DENIED;
+			}
+
+			set_runtime_state(FIDO2_RUNTIME_STATE_PROCESSING);
+			notify_wire(transport, cid, FIDO2_WIRE_STATUS_PROCESSING);
+
+			return fido2_clientpin_pin_is_set() ? FIDO2_ERR_PIN_INVALID
+							    : FIDO2_ERR_PIN_NOT_SET;
+		}
+		if (!mc_params.has_pin_uv_auth_protocol) {
+			return FIDO2_ERR_MISSING_PARAMETER;
+		}
+
+		ret = fido2_clientpin_pin_verify_pin_uv_auth_token(
+			mc_params.client_data_hash, FIDO2_SHA256_SIZE, mc_params.pin_uv_auth_param,
+			mc_params.pin_uv_auth_param_len, FIDO2_PIN_PERM_MC, mc_params.rp_id);
+		if (ret == -EPERM) {
+			return FIDO2_ERR_UNAUTHORIZED_PERMISSION;
+		}
+		if (ret) {
+			return FIDO2_ERR_PIN_AUTH_INVALID;
+		}
+
+		user_verified = true;
+	} else if (fido2_clientpin_pin_is_set()) { /* PIN set but no pinuvauthparam */
+		if (IS_ENABLED(CONFIG_FIDO2_ALWAYS_UV)) {
+			return FIDO2_ERR_PUAT_REQUIRED; /* override makeCredUvNotRqd */
+		}
+
+		if (mc_params.resident_key) { /* makeCredUvNotRqd only applies to non-disco */
+			return FIDO2_ERR_PUAT_REQUIRED;
+		}
+	} else if (IS_ENABLED(CONFIG_FIDO2_ALWAYS_UV)) { /* alwaysUV true, no PIN set */
+		return FIDO2_ERR_OPERATION_DENIED;
+	}
+
 	if (mc_check_exclude_list()) {
 		set_runtime_state(FIDO2_RUNTIME_STATE_WAITING_USER_PRESENCE);
 		notify_wire(transport, cid, FIDO2_WIRE_STATUS_UP_NEEDED);

@@ -187,6 +187,9 @@ int fido2_clientpin_pin_verify_pin_uv_auth_token(const uint8_t *msg, size_t msg_
 						 uint32_t permissions, const char *rp_id)
 {
 
+	if (!pin_uv_auth_token_in_use) {
+		return -EACCES;
+	}
 	if (sys_timepoint_expired(pin_uv_auth_token_timeout)) {
 		stop_using_pin_uv_auth_token();
 		return -EACCES;
