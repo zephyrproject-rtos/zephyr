@@ -7,6 +7,7 @@ zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/usb/common/)
 
 zephyr_library_sources(uhc_common.c)
 zephyr_library_sources_ifdef(CONFIG_UHC_DWC2 uhc_dwc2.c)
+zephyr_library_sources_ifdef(CONFIG_UHC_DWC2 ${ZEPHYR_BASE}/drivers/usb/common/synopsys/dwc2_core.c)
 zephyr_library_sources_ifdef(CONFIG_UHC_MAX3421E uhc_max3421e.c)
 zephyr_library_sources_ifdef(CONFIG_UHC_VIRTUAL uhc_virtual.c)
 zephyr_library_sources_ifdef(CONFIG_UHC_NXP_EHCI uhc_mcux_common.c uhc_mcux_ehci.c)

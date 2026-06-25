@@ -22,6 +22,7 @@
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <synopsys/usb_dwc2_hw.h>
+#include <synopsys/dwc2_core.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(udc_dwc2, CONFIG_UDC_DRIVER_LOG_LEVEL);
@@ -1679,50 +1680,6 @@ static enum udc_bus_speed udc_dwc2_device_speed(const struct device *dev)
 	}
 }
 
-static int dwc2_core_soft_reset(const struct device *dev)
-{
-	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
-	mem_addr_t grstctl_reg = (mem_addr_t)&base->grstctl;
-	const unsigned int csr_timeout_us = 10000UL;
-	uint32_t cnt = 0UL;
-
-	/* Check AHB master idle state */
-	while (!(sys_read32(grstctl_reg) & USB_DWC2_GRSTCTL_AHBIDLE)) {
-		k_busy_wait(1);
-
-		if (++cnt > csr_timeout_us) {
-			LOG_ERR("Wait for AHB idle timeout, GRSTCTL 0x%08x",
-				sys_read32(grstctl_reg));
-			return -EIO;
-		}
-	}
-
-	/* Apply Core Soft Reset */
-	sys_write32(USB_DWC2_GRSTCTL_CSFTRST, grstctl_reg);
-
-	cnt = 0UL;
-	do {
-		if (++cnt > csr_timeout_us) {
-			LOG_ERR("Wait for CSR done timeout, GRSTCTL 0x%08x",
-				sys_read32(grstctl_reg));
-			return -EIO;
-		}
-
-		k_busy_wait(1);
-
-		if (dwc2_quirk_is_phy_clk_off(dev)) {
-			/* Software reset won't finish without PHY clock */
-			return -EIO;
-		}
-	} while (sys_read32(grstctl_reg) & USB_DWC2_GRSTCTL_CSFTRST &&
-		 !(sys_read32(grstctl_reg) & USB_DWC2_GRSTCTL_CSFTRSTDONE));
-
-	/* CSFTRSTDONE is W1C so the write must have the bit set to clear it */
-	sys_clear_bits(grstctl_reg, USB_DWC2_GRSTCTL_CSFTRST);
-
-	return 0;
-}
-
 static int udc_dwc2_init_controller(const struct device *dev)
 {
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
@@ -1745,7 +1702,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	int ret;
 	bool hs_phy;
 
-	ret = dwc2_core_soft_reset(dev);
+	ret = dwc2_core_soft_reset(dev, base, &dwc2_quirk_is_phy_clk_off);
 	if (ret) {
 		return ret;
 	}
@@ -2088,7 +2045,7 @@ static int dwc2_handle_disable(const struct device *dev)
 	 * Soft Reset does timeout if PHY clock is not running. However, just
 	 * triggering Soft Reset seems to be enough on shutdown clean up.
 	 */
-	dwc2_core_soft_reset(dev);
+	dwc2_core_soft_reset(dev, base, &dwc2_quirk_is_phy_clk_off);
 	for (buf = udc_buf_get(cfg_out); buf; buf = udc_buf_get(cfg_out)) {
 		net_buf_unref(buf);
 	}
