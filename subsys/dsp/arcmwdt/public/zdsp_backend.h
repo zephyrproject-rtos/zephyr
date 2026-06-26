@@ -17,7 +17,7 @@ extern "C" {
 #include <zephyr/kernel.h>
 
 #include <arm_math.h>
-#include "dsplib.h"
+#include <dsplib.h>
 
 static inline void zdsp_mult_q7(const DSP_DATA q7_t *src_a, const DSP_DATA q7_t *src_b,
 				DSP_DATA q7_t *dst, uint32_t block_size)
