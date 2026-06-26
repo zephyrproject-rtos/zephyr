@@ -549,6 +549,7 @@ ZTEST(msgq_api_1cpu, test_msgq_thread_pending)
  *
  * @ingroup kernel_message_queue_tests
  * @see k_msgq_peek_at()
+ * @verifies ZEP-SRS-31-13
  */
 ZTEST_USER(msgq_api, test_msgq_peek_at)
 {
