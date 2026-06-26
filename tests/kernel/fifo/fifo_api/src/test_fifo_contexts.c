@@ -330,6 +330,7 @@ K_HEAP_DEFINE(fifo_alloc_pool, 256);
  * data pointer is returned by a subsequent get.
  *
  * @see k_fifo_alloc_put()
+ * @verifies ZEP-SRS-24-4
  */
 ZTEST(fifo_api, test_fifo_alloc_put)
 {
