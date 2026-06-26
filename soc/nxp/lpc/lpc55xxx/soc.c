@@ -27,8 +27,8 @@
 #include <fsl_pint.h>
 #endif
 #if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511 || CONFIG_UHC_NXP_IP3516HS
-#include "usb_phy.h"
-#include "usb.h"
+#include <usb_phy.h>
+#include <usb.h>
 #endif
 #if defined(CONFIG_SOC_LPC55S36) && (defined(CONFIG_ADC_MCUX_LPADC) \
 	|| defined(CONFIG_DAC_MCUX_LPDAC))
