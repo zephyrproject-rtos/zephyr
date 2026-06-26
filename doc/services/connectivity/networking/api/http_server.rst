@@ -255,7 +255,7 @@ in the application:
 .. code-block:: c
 
     static const uint8_t index_html_gz[] = {
-        #include "index.html.gz.inc"
+        #include <index.html.gz.inc>
     };
 
     struct http_resource_detail_static index_html_gz_resource_detail = {
