@@ -69,9 +69,11 @@ ZTEST_USER(i2s_loopback, test_i2s_transfer_short)
 	zassert_equal(ret, TC_PASS);
 	TC_PRINT("%d<-OK\n", 3);
 
-	/* TODO: Verify the interface is in READY state when i2s_state_get
-	 * function is available.
-	 */
+	ret = i2s_check_state(dev_i2s_tx, I2S_DIR_TX, I2S_STATE_READY, I2S_STATE_TIMEOUT);
+	zassert_equal(ret, TC_PASS);
+
+	ret = i2s_check_state(dev_i2s_rx, I2S_DIR_RX, I2S_STATE_READY, I2S_STATE_TIMEOUT);
+	zassert_equal(ret, TC_PASS);
 }
 
 #define TEST_I2S_TRANSFER_LONG_REPEAT_COUNT  100
@@ -125,9 +127,11 @@ ZTEST_USER(i2s_loopback, test_i2s_transfer_long)
 	ret = rx_block_read(dev_i2s_rx, 0);
 	zassert_equal(ret, TC_PASS);
 
-	/* TODO: Verify the interface is in READY state when i2s_state_get
-	 * function is available.
-	 */
+	ret = i2s_check_state(dev_i2s_tx, I2S_DIR_TX, I2S_STATE_READY, I2S_STATE_TIMEOUT);
+	zassert_equal(ret, TC_PASS);
+
+	ret = i2s_check_state(dev_i2s_rx, I2S_DIR_RX, I2S_STATE_READY, I2S_STATE_TIMEOUT);
+	zassert_equal(ret, TC_PASS);
 }
 
 /** @brief RX sync start.
@@ -181,9 +185,11 @@ ZTEST_USER(i2s_loopback, test_i2s_rx_sync_start)
 	ret = i2s_trigger(dev_i2s_rx, I2S_DIR_RX, I2S_TRIGGER_DROP);
 	zassert_equal(ret, 0, "RX DROP trigger failed");
 
-	/* TODO: Verify the interface is in READY state when i2s_state_get
-	 * function is available.
-	 */
+	ret = i2s_check_state(dev_i2s_tx, I2S_DIR_TX, I2S_STATE_READY, I2S_STATE_TIMEOUT);
+	zassert_equal(ret, TC_PASS);
+
+	ret = i2s_check_state(dev_i2s_rx, I2S_DIR_RX, I2S_STATE_READY, I2S_STATE_TIMEOUT);
+	zassert_equal(ret, TC_PASS);
 }
 
 /** @brief Timeout on RX queue empty.

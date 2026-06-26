@@ -72,6 +72,45 @@ ZTEST_USER(i2s_states, test_i2s_state_not_ready_neg)
 	zassert_equal(ret, TC_PASS);
 }
 
+/** @brief Verify the reported state follows configuration.
+ *
+ * - Configuring a stream with frame_clk_freq = 0 reports NOT_READY.
+ * - Configuring the stream again reports READY.
+ */
+ZTEST_USER(i2s_states, test_i2s_state_get_not_ready_ready)
+{
+	struct i2s_config i2s_cfg = {0};
+	int ret;
+
+	i2s_cfg.frame_clk_freq = 0U;
+
+	i2s_cfg.mem_slab = &rx_mem_slab;
+	ret = i2s_configure(dev_i2s_rx, I2S_DIR_RX, &i2s_cfg);
+	zassert_equal(ret, 0, "Failed to configure I2S RX stream");
+
+	ret = i2s_check_state(dev_i2s_rx, I2S_DIR_RX, I2S_STATE_NOT_READY, I2S_STATE_TIMEOUT);
+	zassert_equal(ret, TC_PASS);
+
+	i2s_cfg.mem_slab = &tx_mem_slab;
+	ret = i2s_configure(dev_i2s_tx, I2S_DIR_TX, &i2s_cfg);
+	zassert_equal(ret, 0, "Failed to configure I2S TX stream");
+
+	ret = i2s_check_state(dev_i2s_tx, I2S_DIR_TX, I2S_STATE_NOT_READY, I2S_STATE_TIMEOUT);
+	zassert_equal(ret, TC_PASS);
+
+	ret = configure_stream(dev_i2s_rx, I2S_DIR_RX);
+	zassert_equal(ret, TC_PASS);
+
+	ret = i2s_check_state(dev_i2s_rx, I2S_DIR_RX, I2S_STATE_READY, I2S_STATE_TIMEOUT);
+	zassert_equal(ret, TC_PASS);
+
+	ret = configure_stream(dev_i2s_tx, I2S_DIR_TX);
+	zassert_equal(ret, TC_PASS);
+
+	ret = i2s_check_state(dev_i2s_tx, I2S_DIR_TX, I2S_STATE_READY, I2S_STATE_TIMEOUT);
+	zassert_equal(ret, TC_PASS);
+}
+
 /** @brief Verify all failure cases in READY state.
  *
  * - Sending DRAIN, STOP, PREPARE trigger in READY state returns failure.

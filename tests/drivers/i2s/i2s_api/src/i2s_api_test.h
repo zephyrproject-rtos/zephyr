@@ -37,6 +37,13 @@ extern bool dir_both_supported;
 #define NUM_RX_BLOCKS	4
 #define NUM_TX_BLOCKS	4
 
+#define I2S_STATE_TIMEOUT K_MSEC(50)
+
+/* Drivers known to implement i2s_get_state(). For these, I2S_STATE_UNKNOWN is
+ * a test failure instead of a skipped check.
+ */
+#define I2S_TEST_STATE_REQUIRED DT_HAS_COMPAT_STATUS_OKAY(zephyr_native_sim_i2s)
+
 int tx_block_write(const struct device *dev_i2s, int att, int err);
 int rx_block_read(const struct device *dev_i2s, int att);
 
@@ -44,5 +51,8 @@ void fill_buf_const(int16_t *tx_block, int16_t val_l, int16_t val_r);
 int verify_buf_const(int16_t *rx_block, int16_t val_l, int16_t val_r);
 
 int configure_stream(const struct device *dev_i2s, enum i2s_dir dir);
+
+int i2s_check_state(const struct device *dev_i2s, enum i2s_dir dir, enum i2s_state expected_state,
+		    k_timeout_t timeout);
 
 #endif
