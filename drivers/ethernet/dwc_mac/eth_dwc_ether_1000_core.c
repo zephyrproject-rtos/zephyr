@@ -438,6 +438,10 @@ int dwmac_probe(const struct device *dev)
 	reg_val = REG_READ(DWMAC_MACVERR);
 	LOG_INF("HW version %u.%u0", (reg_val >> 4) & 0xf, reg_val & 0xf);
 
+	/* get configured hardware features */
+	p->feature0 = REG_READ(DWMAC_HWFR);
+	LOG_DBG("hw_feature: 0x%08x", p->feature0);
+
 	ret = dwmac_platform_init(dev);
 	if (ret < 0) {
 		return ret;
