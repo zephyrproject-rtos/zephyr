@@ -6,15 +6,15 @@
 
 #include "supp_events.h"
 
-#include "includes.h"
-#include "common.h"
-#include "common/ieee802_11_defs.h"
-#include "wpa_supplicant_i.h"
+#include <includes.h>
+#include <common.h>
+#include <common/ieee802_11_defs.h>
+#include <wpa_supplicant_i.h>
 
 #ifdef CONFIG_AP
-#include "ap/sta_info.h"
-#include "ap/ieee802_11.h"
-#include "ap/hostapd.h"
+#include <ap/sta_info.h>
+#include <ap/ieee802_11.h>
+#include <ap/hostapd.h>
 #endif /* CONFIG_AP */
 
 #include <zephyr/net/wifi_mgmt.h>

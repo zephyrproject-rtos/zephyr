@@ -7,7 +7,7 @@
 #ifndef __HAPD_MAIN_H_
 #define __HAPD_MAIN_H_
 
-#include "common.h"
+#include <common.h>
 
 struct hostapd_iface *zephyr_get_hapd_handle_by_ifname(const char *ifname);
 void zephyr_hostapd_init(struct hapd_interfaces *interfaces);

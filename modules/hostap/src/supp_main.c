@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(wifi_supplicant, CONFIG_WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL);
 #include <mbedtls/platform.h>
 #endif /* !CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE && !CONFIG_MBEDTLS_ENABLE_HEAP */
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
-#include "supp_psa_api.h"
+#include <supp_psa_api.h>
 #endif
 
 #include <zephyr/net/wifi_mgmt.h>
@@ -37,16 +37,16 @@ static K_THREAD_STACK_DEFINE(iface_wq_stack, CONFIG_WIFI_NM_WPA_SUPPLICANT_WQ_ST
 #include "supp_api.h"
 #include "supp_events.h"
 
-#include "includes.h"
-#include "common.h"
-#include "eloop.h"
-#include "wpa_supplicant/config.h"
-#include "wpa_supplicant_i.h"
-#include "fst/fst.h"
-#include "wpa_cli_zephyr.h"
-#include "ctrl_iface_zephyr.h"
+#include <includes.h>
+#include <common.h>
+#include <eloop.h>
+#include <wpa_supplicant/config.h>
+#include <wpa_supplicant_i.h>
+#include <fst/fst.h>
+#include <wpa_cli_zephyr.h>
+#include <ctrl_iface_zephyr.h>
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-#include "hostapd.h"
+#include <hostapd.h>
 #include "hapd_main.h"
 #endif
 
