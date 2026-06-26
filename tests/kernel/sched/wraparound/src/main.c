@@ -16,7 +16,27 @@ static void alarm_callback(struct k_timer *timer)
 K_TIMER_DEFINE(alarm, alarm_callback, NULL);
 
 /**
- * @brief Test 32-bit tick wraparound during k_sleep() execution
+ * @brief Verify k_sleep() handles a 32-bit tick counter wraparound correctly.
+ *
+ * @details
+ * When the system tick counter wraps around 2^32 while a thread is sleeping, the
+ * timeout math must remain correct so an early k_wakeup() is honored and the
+ * reported remaining time is sane. The tick counter is preset close to the wrap
+ * point, a timer wakes the sleeper before its long timeout, and the test checks
+ * the sleep returned early with a plausible remaining duration.
+ *
+ * Test steps:
+ * - Set the tick counter just below the 32-bit wrap point.
+ * - Sleep for a long timeout while a timer fires an early k_wakeup().
+ * - Verify k_sleep() returned with the expected non-zero remaining time.
+ *
+ * Expected result:
+ * - The sleep is woken early across the tick wraparound with correct accounting.
+ *
+ * @ingroup tests_kernel_sched
+ *
+ * @see k_sleep()
+ * @see k_wakeup()
  */
 ZTEST(wraparound, test_tick_wraparound_in_sleep)
 {

@@ -63,7 +63,7 @@ static void tcoop_ctx(void *p1, void *p2, void *p3)
  *
  * @see k_is_preempt_thread()
  *
- * @ingroup kernel_sched_tests
+ * @ingroup tests_kernel_sched
  */
 ZTEST(threads_scheduling, test_sched_is_preempt_thread)
 {
