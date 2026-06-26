@@ -130,6 +130,32 @@ ZTEST(lifo_contexts, test_lifo_isr2thread)
 	tlifo_isr_thread(&klifo);
 }
 
+K_HEAP_DEFINE(lifo_alloc_pool, 256);
+
+/**
+ * @brief Test enqueuing a data item to a LIFO with implicit memory allocation
+ *
+ * @details Use k_lifo_alloc_put() to enqueue a data item that does not reserve
+ * space for the bookkeeping word, so the kernel allocates the container from the
+ * calling thread's resource pool. Verify the call succeeds and that the same
+ * data pointer is returned by a subsequent get.
+ *
+ * @ingroup kernel_lifo_tests
+ * @see k_lifo_alloc_put()
+ */
+ZTEST(lifo_contexts, test_lifo_alloc_put)
+{
+	static uint32_t payload = 0xDEADBEEF;
+
+	k_lifo_init(&lifo);
+	k_thread_heap_assign(k_current_get(), &lifo_alloc_pool);
+
+	/**TESTPOINT: allocate the queue container from the thread resource pool*/
+	zassert_equal(k_lifo_alloc_put(&lifo, &payload), 0);
+
+	zassert_equal(k_lifo_get(&lifo, K_NO_WAIT), (void *)&payload);
+}
+
 /**
  * @}
  */
