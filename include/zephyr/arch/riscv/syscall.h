@@ -27,6 +27,7 @@
 
 #include <zephyr/types.h>
 #include <stdbool.h>
+#include <zephyr/arch/riscv/thread.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -164,10 +165,12 @@ static inline bool arch_is_user_context(void)
 		return false;
 	}
 
-	/* Defined in arch/riscv/core/thread.c */
-	extern Z_THREAD_LOCAL uint8_t is_user_mode;
-
-	return is_user_mode != 0;
+	/*
+	 * Use an exported accessor (declared in arch/riscv/thread.h) rather
+	 * than the thread-local directly, so loadable extensions, which cannot
+	 * relocate a thread-local symbol, can call syscalls.
+	 */
+	return z_riscv_thread_is_user_mode();
 }
 #endif
 
