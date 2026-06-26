@@ -6,6 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32MP13_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32MP13_CLOCK_H_
 
+/** @cond INTERNAL_HIDDEN */
+
 #include "stm32_common_clocks.h"
 
 /** System clock */
@@ -153,5 +155,7 @@
 #define DCMIPP_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, DCMIPPCKSELR_REG)
 #define SAES_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, SAESCKSELR_REG)
 #define RTC_SEL(val)            STM32_DT_CLOCK_SELECT((val), 17, 16, BDCR_REG)
+
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32MP13_CLOCK_H_ */
