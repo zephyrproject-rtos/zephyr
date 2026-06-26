@@ -6,11 +6,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "cmdline.h" /* native_sim command line options header */
-#include "soc.h"
+#include <cmdline.h> /* native_sim command line options header */
+#include <soc.h>
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest_test.h>
-#include "nsi_host_trampolines.h"
+#include <nsi_host_trampolines.h>
 #include <nsi_tracing.h>
 
 static const char *test_args;
