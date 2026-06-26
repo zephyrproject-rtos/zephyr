@@ -3,6 +3,10 @@
 Polling API
 ###########
 
+.. design:: DESIGN-POLLING Polling API
+   :fulfills: ZEP-SRS-33-1 ZEP-SRS-33-2 ZEP-SRS-33-3 ZEP-SRS-33-4 ZEP-SRS-33-5 ZEP-SRS-33-6 ZEP-SRS-33-7 ZEP-SRS-33-8 ZEP-SRS-33-9 ZEP-SRS-33-10
+
+
 The polling API is used to wait concurrently for any one of multiple conditions
 to be fulfilled.
 

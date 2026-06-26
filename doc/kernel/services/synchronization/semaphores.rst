@@ -3,6 +3,10 @@
 Semaphores
 ##########
 
+.. design:: DESIGN-SEMAPHORES Semaphores
+   :fulfills: ZEP-SRS-5-1 ZEP-SRS-5-2 ZEP-SRS-5-3 ZEP-SRS-5-4 ZEP-SRS-5-5 ZEP-SRS-5-6 ZEP-SRS-5-7 ZEP-SRS-5-8 ZEP-SRS-5-9 ZEP-SRS-5-10 ZEP-SRS-5-11 ZEP-SRS-5-12 ZEP-SRS-5-13 ZEP-SRS-5-14 ZEP-SRS-5-15 ZEP-SRS-5-16 ZEP-SRS-5-17 ZEP-SRS-5-18 ZEP-SRS-5-19 ZEP-SRS-5-20
+
+
 A :dfn:`semaphore` is a kernel object that implements a traditional
 counting semaphore.
 
