@@ -11,7 +11,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/rtio/rtio.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sensing/sensing.h>
 #include <zephyr/sensing/sensing_sensor.h>
 #include <zephyr/sys/util.h>
