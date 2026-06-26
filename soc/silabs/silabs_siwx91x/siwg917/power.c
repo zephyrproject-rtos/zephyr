@@ -34,7 +34,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 
 	if (state == PM_STATE_RUNTIME_IDLE) {
-		sl_si91x_power_manager_standby();
+		sli_si91x_power_manager_standby();
 	} else {
 		if (!sl_si91x_power_manager_is_ok_to_sleep()) {
 			/* Deep-sleep path is not ready yet; skip this suspend attempt. */
@@ -54,7 +54,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			sli_si91x_xtal_turn_off_request_from_m4_to_TA();
 		}
 
-		sl_si91x_power_manager_sleep();
+		sli_si91x_power_manager_sleep();
 
 		if (!(M4_ULP_SLP_STATUS_REG & ULP_MODE_SWITCHED_NPSS)) {
 			if (frontend_switch_control != 0) {
