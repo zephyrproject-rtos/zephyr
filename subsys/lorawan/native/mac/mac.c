@@ -32,7 +32,7 @@
 #include <zephyr/kernel.h>
 
 #include "mac_internal.h"
-#include "radio.h"
+#include <radio.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lorawan_native_mac, CONFIG_LORAWAN_LOG_LEVEL);
