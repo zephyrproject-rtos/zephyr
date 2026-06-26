@@ -3248,10 +3248,19 @@ int supplicant_p2p_oper(const struct device *dev __unused, struct net_if *iface,
 		const char *method_str = "";
 		char freq_str[32] = "";
 		const char *join_str = "";
+		char persistent_str[32] = "";
 
 		if (params == NULL) {
 			wpa_printf(MSG_ERROR, "P2P connect params are NULL");
 			return -EINVAL;
+		}
+
+		if ((params->connect.persistent_set)) {
+			ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn,
+					"SET persistent_reconnect 1", resp_buf);
+			if (ret < 0) {
+				wpa_printf(MSG_WARNING, "Failed to set persistent_reconnect");
+			}
 		}
 
 		snprintk(addr_str, sizeof(addr_str), "%02x:%02x:%02x:%02x:%02x:%02x",
@@ -3268,27 +3277,33 @@ int supplicant_p2p_oper(const struct device *dev __unused, struct net_if *iface,
 			join_str = " join";
 		}
 
+		/* Add persistent parameter if specified */
+		if (params->connect.persistent_set == true) {
+			/* persistent without specific ID — wpa_supplicant picks the group */
+			snprintk(persistent_str, sizeof(persistent_str), " persistent");
+		}
+
 		switch (params->connect.method) {
 		case WIFI_P2P_METHOD_PBC:
 			method_str = "pbc";
-			snprintk(cmd_buf, sizeof(cmd_buf), "P2P_CONNECT %s %s go_intent=%d%s%s",
+			snprintk(cmd_buf, sizeof(cmd_buf), "P2P_CONNECT %s %s go_intent=%d%s%s%s",
 				 addr_str, method_str, params->connect.go_intent, freq_str,
-				 join_str);
+				 join_str, persistent_str);
 			break;
 		case WIFI_P2P_METHOD_DISPLAY:
 			method_str = "pin";
-			snprintk(cmd_buf, sizeof(cmd_buf), "P2P_CONNECT %s %s go_intent=%d%s%s",
+			snprintk(cmd_buf, sizeof(cmd_buf), "P2P_CONNECT %s %s go_intent=%d%s%s%s",
 				 addr_str, method_str, params->connect.go_intent, freq_str,
-				 join_str);
+				 join_str, persistent_str);
 			break;
 		case WIFI_P2P_METHOD_KEYPAD:
 			if (params->connect.pin[0] == '\0') {
 				wpa_printf(MSG_ERROR, "PIN required for keypad method");
 				return -EINVAL;
 			}
-			snprintk(cmd_buf, sizeof(cmd_buf), "P2P_CONNECT %s %s go_intent=%d%s%s",
+			snprintk(cmd_buf, sizeof(cmd_buf), "P2P_CONNECT %s %s go_intent=%d%s%s%s",
 				 addr_str, params->connect.pin,
-				 params->connect.go_intent, freq_str, join_str);
+				 params->connect.go_intent, freq_str, join_str, persistent_str);
 			break;
 		default:
 			wpa_printf(MSG_ERROR, "Unknown P2P connection method: %d",

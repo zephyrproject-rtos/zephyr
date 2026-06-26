@@ -1789,6 +1789,8 @@ struct wifi_p2p_params {
 		unsigned int freq;
 		/** Join an existing group (as a client) instead of starting GO negotiation */
 		bool join;
+		/** Add persistent group */
+		bool persistent_set;
 	} connect;
 	/** Group add specific parameters */
 	struct {
