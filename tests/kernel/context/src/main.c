@@ -163,6 +163,16 @@ static void isr_handler_trigger(void)
 	irq_offload(isr_handler, NULL);
 }
 
+/* Records k_can_yield() as observed from within an irq_offload() handler. */
+static volatile bool offload_can_yield;
+
+static void can_yield_probe(const void *arg)
+{
+	ARG_UNUSED(arg);
+
+	offload_can_yield = k_can_yield();
+}
+
 /**
  *
  * @brief Initialize kernel objects
@@ -323,6 +333,10 @@ static void _test_kernel_cpu_idle(int atomic)
 ZTEST(context_cpu_idle, test_cpu_idle_atomic)
 {
 #if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+	/* On ARM k_cpu_atomic_idle() returns immediately, so the idle-duration
+	 * check below does not apply.
+	 */
+	TC_PRINT("Skipped: k_cpu_atomic_idle() is a no-op on ARM/ARM64\n");
 	ztest_test_skip();
 #else
 	_test_kernel_cpu_idle(1);
@@ -358,10 +372,12 @@ ZTEST(context_cpu_idle, test_cpu_idle)
 #else /* HAS_POWERSAVE_INSTRUCTION */
 ZTEST(context_cpu_idle, test_cpu_idle)
 {
+	TC_PRINT("Skipped: target has no power-save (idle) instruction\n");
 	ztest_test_skip();
 }
 ZTEST(context_cpu_idle, test_cpu_idle_atomic)
 {
+	TC_PRINT("Skipped: target has no power-save (idle) instruction\n");
 	ztest_test_skip();
 }
 #endif
@@ -456,6 +472,7 @@ ZTEST(context, test_interrupts)
 {
 	/* IRQ locks don't prevent ticks from advancing in tickless mode */
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		TC_PRINT("Skipped: tick advances under irq_lock() in tickless mode\n");
 		ztest_test_skip();
 	}
 
@@ -564,6 +581,41 @@ ZTEST(context, test_irq_lock_nested)
 }
 
 /**
+ * @brief Verify k_can_yield() is true in a thread and false in an ISR.
+ *
+ * @ingroup tests_kernel_context
+ *
+ * @details
+ * k_can_yield() reports whether the current context is allowed to yield the CPU.
+ * A normal thread may yield, but an ISR must not. The ISR case is observed via
+ * an irq_offload() handler that records k_can_yield().
+ *
+ * Test steps:
+ * - In thread context, confirm k_can_yield() returns true.
+ * - Trigger an irq_offload() handler that records k_can_yield() and confirm it
+ *   observed false in ISR context.
+ *
+ * Expected result:
+ * - k_can_yield() is true in thread context and false in ISR context.
+ *
+ * @see k_can_yield()
+ */
+ZTEST(context, test_k_can_yield)
+{
+	zassert_true(k_can_yield(),
+		     "k_can_yield() reported false in thread context");
+
+	/* Seed with the opposite value so the assertion below proves the
+	 * handler actually ran and wrote the ISR-context result.
+	 */
+	offload_can_yield = true;
+	irq_offload(can_yield_probe, NULL);
+
+	zassert_false(offload_can_yield,
+		      "k_can_yield() reported true in ISR context");
+}
+
+/**
  * @brief Verify irq_disable()/irq_enable() mask a specific numeric IRQ.
  *
  * @ingroup tests_kernel_context
@@ -598,6 +650,8 @@ ZTEST(context_one_cpu, test_timer_interrupts)
 	/* Disable interrupts coming from the timer. */
 	_test_kernel_interrupts(irq_disable_wrapper, irq_enable_wrapper, TICK_IRQ);
 #else
+	TC_PRINT("Skipped: requires a known timer IRQ (TICK_IRQ) and "
+		 "CONFIG_TICKLESS_KERNEL\n");
 	ztest_test_skip();
 #endif
 }
