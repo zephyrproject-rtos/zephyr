@@ -4,7 +4,7 @@
 #ifndef ZEPHYR_TESTS_INTEL_ADSP_TESTS_H
 #define ZEPHYR_TESTS_INTEL_ADSP_TESTS_H
 
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <intel_adsp_ipc.h>
 #include <cavstool.h>
 #include <stdint.h>
