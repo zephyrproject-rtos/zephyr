@@ -149,6 +149,7 @@ K_HEAP_DEFINE(lifo_alloc_pool, 256);
  *
  * @ingroup kernel_lifo_tests
  * @see k_lifo_alloc_put()
+ * @verifies ZEP-SRS-23-3
  */
 ZTEST(lifo_contexts, test_lifo_alloc_put)
 {
