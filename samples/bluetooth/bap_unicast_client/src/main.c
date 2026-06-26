@@ -734,7 +734,9 @@ static int create_group(void)
 
 	param.params = pair_params;
 	param.params_count = params_count;
-	param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	param.packing = (IS_ENABLED(CONFIG_ISO_PACKING_INTERLEAVED) ?
+			 BT_ISO_PACKING_INTERLEAVED :
+			 BT_ISO_PACKING_SEQUENTIAL);
 
 	err = bt_bap_unicast_group_create(&param, &unicast_group);
 	if (err != 0) {
