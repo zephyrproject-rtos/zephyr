@@ -221,6 +221,9 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 	cig->lll.role = BT_HCI_ROLE_CENTRAL;
 	cig->lll.resume_cis = LLL_HANDLE_INVALID;
 	cig->lll.num_cis = num_cis;
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+	cig->lll.packing = (cig->central.packing == BT_ISO_PACKING_INTERLEAVED);
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
 	force_framed = false;
 
 	if (!cig->central.test) {
