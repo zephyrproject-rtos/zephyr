@@ -25,8 +25,8 @@
 #include "shim.h"
 #include "work.h"
 #include "timer.h"
-#include "osal_ops.h"
-#include "common/hal_structs_common.h"
+#include <osal_ops.h>
+#include <common/hal_structs_common.h>
 
 LOG_MODULE_REGISTER(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
