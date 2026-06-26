@@ -257,21 +257,20 @@ int fcb_get_len(const struct fcb *fcbp, uint8_t *buf, uint16_t *len)
  */
 int fcb_sector_hdr_init(struct fcb *fcbp, struct flash_sector *sector, uint16_t id)
 {
-	/* Need to align fda size to write block size */
-	union {
-		struct fcb_disk_area fda;
-		uint8_t raw[MAX(sizeof(struct fcb_disk_area), fcbp->f_align)];
-	} buf;
+
+	uint8_t buf[MAX(sizeof(struct fcb_disk_area), fcbp->f_align)];
+	struct fcb_disk_area *fda = (struct fcb_disk_area *)buf;
+
 	int rc;
 
-	memset(&buf, fcbp->f_erase_value, sizeof(buf));
+	memset(buf, fcbp->f_erase_value, sizeof(buf));
 
-	buf.fda.fd_magic = fcb_flash_magic(fcbp);
-	buf.fda.fd_ver = fcbp->f_version;
-	buf.fda._pad = fcbp->f_erase_value;
-	buf.fda.fd_id = id;
+	fda->fd_magic = fcb_flash_magic(fcbp);
+	fda->fd_ver = fcbp->f_version;
+	fda->_pad = fcbp->f_erase_value;
+	fda->fd_id = id;
 
-	rc = fcb_flash_write(fcbp, sector, 0, &buf, sizeof(buf));
+	rc = fcb_flash_write(fcbp, sector, 0, buf, sizeof(buf));
 	if (rc != 0) {
 		return -EIO;
 	}
