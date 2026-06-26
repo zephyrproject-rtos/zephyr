@@ -12,20 +12,20 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
-#include "usb.h"
-#include "usb_device.h"
-#include "usb_device_config.h"
-#include "usb_device_dci.h"
+#include <usb.h>
+#include <usb_device.h>
+#include <usb_device_config.h>
+#include <usb_device_dci.h>
 
 #ifdef CONFIG_USB_DC_NXP_EHCI
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_ehci
-#include "usb_device_ehci.h"
+#include <usb_device_ehci.h>
 #endif
 #ifdef CONFIG_USB_DC_NXP_LPCIP3511
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_lpcip3511
-#include "usb_device_lpcip3511.h"
+#include <usb_device_lpcip3511.h>
 #endif
 #ifdef CONFIG_HAS_MCUX_CACHE
 #include <fsl_cache.h>
