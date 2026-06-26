@@ -7,6 +7,6 @@
 #ifndef __RX62N_SOC_H__
 #define __RX62N_SOC_H__
 
-#include "reg_protection.h"
+#include <reg_protection.h>
 
 #endif /* __RX62N_SOC_H__ */

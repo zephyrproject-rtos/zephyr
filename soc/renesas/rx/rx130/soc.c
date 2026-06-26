@@ -14,8 +14,8 @@
 #include <zephyr/arch/cpu.h>
 #include <soc.h>
 
-#include "platform.h"
-#include "r_bsp_cpu.h"
+#include <platform.h>
+#include <r_bsp_cpu.h>
 
 /**
  * @brief Perform basic hardware initialization at boot.
