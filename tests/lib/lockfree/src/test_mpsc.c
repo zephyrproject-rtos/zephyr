@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "zephyr/irq.h"
+#include <zephyr/irq.h>
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util_loops.h>
