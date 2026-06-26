@@ -27,7 +27,7 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
 /* To support multicast */
 #include "ipv6.h"
-#include "zephyr/net/igmp.h"
+#include <zephyr/net/igmp.h>
 
 static struct net_sockaddr_in6 *in6_addr_my;
 static struct net_sockaddr_in *in4_addr_my;
