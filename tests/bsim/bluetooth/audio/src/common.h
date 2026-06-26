@@ -29,7 +29,7 @@
 #include <zephyr/sys/clock.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/types.h>
 
 #include "bstests.h"

@@ -25,7 +25,7 @@
 #include <zephyr/kernel_structs.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/irq_offload.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #if defined(CONFIG_SOC_POSIX)
 /* TIMER_TICK_IRQ <soc.h> header for certain platforms */
