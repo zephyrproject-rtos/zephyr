@@ -187,7 +187,7 @@ static void create_negative_test_thread(int choice)
  *
  * @see k_thread_start()
  */
-ZTEST_USER(thread_error_case, test_thread_start)
+ZTEST_USER(thread_error_case, test_thread_start_error)
 {
 	create_negative_test_thread(THREAD_START);
 }
