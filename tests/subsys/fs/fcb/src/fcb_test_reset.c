@@ -15,8 +15,11 @@ ZTEST(fcb_test_with_2sectors_set, test_fcb_reset)
 	struct fcb_entry loc;
 	uint8_t test_data[128];
 	int var_cnt;
+	uint8_t align;
+	size_t write_len;
 
 	fcb = &test_fcb;
+	align = fcb_get_align(fcb);
 
 	var_cnt = 0;
 	rc = fcb_walk(fcb, 0, fcb_test_data_walk_cb, &var_cnt);
@@ -39,8 +42,10 @@ ZTEST(fcb_test_with_2sectors_set, test_fcb_reset)
 	for (i = 0; i < sizeof(test_data); i++) {
 		test_data[i] = fcb_test_append_data(32, i);
 	}
+	write_len = ROUND_UP(32, align);
+	memset(test_data + 32, 0, write_len - 32);
 	rc = flash_area_write(fcb->fap, FCB_ENTRY_FA_DATA_OFF(loc), test_data,
-			      32);
+			      write_len);
 	zassert_true(rc == 0, "flash_area_write call failure");
 
 	rc = fcb_append_finish(fcb, &loc);
@@ -77,8 +82,10 @@ ZTEST(fcb_test_with_2sectors_set, test_fcb_reset)
 	for (i = 0; i < sizeof(test_data); i++) {
 		test_data[i] = fcb_test_append_data(33, i);
 	}
+	write_len = ROUND_UP(33, align);
+	memset(test_data + 33, 0, write_len - 33);
 	rc = flash_area_write(fcb->fap, FCB_ENTRY_FA_DATA_OFF(loc), test_data,
-			      33);
+			      write_len);
 	zassert_true(rc == 0, "flash_area_write call failure");
 
 	rc = fcb_append_finish(fcb, &loc);
@@ -119,8 +126,10 @@ ZTEST(fcb_test_with_2sectors_set, test_fcb_reset)
 	for (i = 0; i < sizeof(test_data); i++) {
 		test_data[i] = fcb_test_append_data(34, i);
 	}
+	write_len = ROUND_UP(34, align);
+	memset(test_data + 34, 0, write_len - 34);
 	rc = flash_area_write(fcb->fap, FCB_ENTRY_FA_DATA_OFF(loc), test_data,
-			      34);
+			      write_len);
 	zassert_true(rc == 0, "flash_area_write call failure");
 
 	rc = fcb_append_finish(fcb, &loc);
