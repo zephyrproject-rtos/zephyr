@@ -6,8 +6,8 @@
 #ifndef _BOARD_POSIX_NRF52_BSIM_TIME_MACHINE_H
 #define _BOARD_POSIX_NRF52_BSIM_TIME_MACHINE_H
 
-#include "bs_types.h"
-#include "time_machine_if.h"
+#include <bs_types.h>
+#include <time_machine_if.h>
 #include <zephyr/toolchain.h>
 
 #ifdef __cplusplus

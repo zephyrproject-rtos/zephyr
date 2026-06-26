@@ -6,11 +6,11 @@
  */
 
 #include <stdint.h>
-#include "irq_ctrl.h"
-#include "posix_core.h"
-#include "posix_board_if.h"
-#include "board_soc.h"
-#include "bs_tracing.h"
+#include <irq_ctrl.h>
+#include <posix_core.h>
+#include <posix_board_if.h>
+#include <board_soc.h>
+#include <bs_tracing.h>
 
 /*
  *  Replacement for ARMs NVIC functions()

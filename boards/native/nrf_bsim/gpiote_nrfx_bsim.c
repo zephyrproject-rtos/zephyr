@@ -5,7 +5,7 @@
 
 #include <zephyr/kernel.h>
 #include <nrfx_gpiote.h>
-#include "gpiote_nrfx.h"
+#include <gpiote_nrfx.h>
 
 #define GPIOTE_NRFX_INST_IDX(idx) DT_CAT3(NRFX_GPIOTE, idx, _INST_IDX)
 #define GPIOTE_INST_IDX(node_id) GPIOTE_NRFX_INST_IDX(DT_PROP(node_id, instance))

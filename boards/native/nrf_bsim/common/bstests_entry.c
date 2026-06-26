@@ -6,11 +6,11 @@
 #include <zephyr/init.h>
 #include <stdint.h>
 #include <string.h>
-#include "bs_types.h"
-#include "bs_tracing.h"
+#include <bs_types.h>
+#include <bs_tracing.h>
 #include "bstests.h"
-#include "bs_oswrap.h"
-#include "nsi_host_trampolines.h"
+#include <bs_oswrap.h>
+#include <nsi_host_trampolines.h>
 
 /*
  * Result of the testcase execution.
@@ -251,7 +251,7 @@ uint8_t bst_delete(void)
 }
 
 #if defined(CONFIG_NATIVE_SIMULATOR_MCU_N)
-#include "bstest_ticker.h"
+#include <bstest_ticker.h>
 
 void bst_ticker_set_period(bs_time_t tick_period)
 {

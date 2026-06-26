@@ -7,11 +7,11 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "fake_timer.h"
+#include <fake_timer.h>
 #include <zephyr/arch/posix/posix_soc_if.h>
 #include <posix_board_if.h>
 #include <posix_soc.h>
-#include "nsi_hw_scheduler.h"
+#include <nsi_hw_scheduler.h>
 
 /**
  * Replacement to the kernel k_busy_wait()

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bs_tracing.h"
-#include "nsi_cpu_if.h"
+#include <bs_tracing.h>
+#include <nsi_cpu_if.h>
 
 /*
  * Default (weak) implementation for nsif_cpu<n>_save_test_arg() expected by the argument

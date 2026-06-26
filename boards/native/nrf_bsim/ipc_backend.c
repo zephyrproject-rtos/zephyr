@@ -15,7 +15,7 @@
  * with the network core image alone, as we would lack this buffer during linking.
  */
 
-#include "nsi_cpu_if.h"
+#include <nsi_cpu_if.h>
 #include <zephyr/device.h>
 
 #define DT_DRV_COMPAT zephyr_ipc_openamp_static_vrings

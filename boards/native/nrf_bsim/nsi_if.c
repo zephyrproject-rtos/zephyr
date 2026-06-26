@@ -9,12 +9,12 @@
 #include <soc.h>
 #include <posix_native_task.h>
 #include <nsi_cpu_if.h>
-#include "bstests.h"
-#include "bs_tracing.h"
-#include "phy_sync_ctrl.h"
-#include "nsi_hw_scheduler.h"
-#include "nsi_cpu_ctrl.h"
-#include "nsi_host_trampolines.h"
+#include <bstests.h>
+#include <bs_tracing.h>
+#include <phy_sync_ctrl.h>
+#include <nsi_hw_scheduler.h>
+#include <nsi_cpu_ctrl.h>
+#include <nsi_host_trampolines.h>
 
 /*
  * These hooks are to be named nsif_cpu<cpu_number>_<hook_name>, for example nsif_cpu0_boot
