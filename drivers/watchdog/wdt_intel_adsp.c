@@ -32,7 +32,7 @@
 
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/math/ilog2.h>
 
 #include "wdt_dw.h"
