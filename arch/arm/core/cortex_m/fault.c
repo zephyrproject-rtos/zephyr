@@ -1136,6 +1136,30 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return, _callee_saved_
 		return;
 	}
 
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	SCB_Type *scb_ptr;
+
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+	scb_ptr = context.non_secure_esf ? SCB_NS : SCB;
+#else /* !CONFIG_ARM_SECURE_FIRMWARE */
+	scb_ptr = SCB;
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
+
+	/* Snapshot system control registers inspected and/or modified
+	 * during fault handling before fault handling is performed.
+	 */
+	esf_copy.extra_info.cfsr = scb_ptr->CFSR;
+	esf_copy.extra_info.hfsr = scb_ptr->HFSR;
+	esf_copy.extra_info.dfsr = scb_ptr->DFSR;
+	esf_copy.extra_info.mmfar = scb_ptr->MMFAR;
+	esf_copy.extra_info.bfar = scb_ptr->BFAR;
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+	esf_copy.extra_info.sfsr = SAU->SFSR;
+	esf_copy.extra_info.sfar = SAU->SFAR;
+	esf_copy.extra_info.non_secure = context.non_secure_esf;
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO && CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
 	z_arm_set_fault_sp(esf, exc_return);
 
 	reason = fault_handle(esf, fault, &recoverable, context.non_secure_esf);
@@ -1178,8 +1202,9 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return, _callee_saved_
 	 * so we only copy the fields before those.
 	 */
 	memcpy(&esf_copy, esf, offsetof(struct arch_esf, extra_info));
-	esf_copy.extra_info = (struct __extra_esf_info){
-		.callee = fault_callee_regs, .exc_return = exc_return, .msp = msp};
+	esf_copy.extra_info.callee = fault_callee_regs;
+	esf_copy.extra_info.exc_return = exc_return;
+	esf_copy.extra_info.msp = msp;
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 
 	/* Overwrite stacked IPSR to mark a nested exception,
