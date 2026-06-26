@@ -347,6 +347,10 @@ def doxygen_build(app: Sphinx) -> None:
         app: Sphinx application instance.
     """
 
+    if app.config.doxyrunner_skip:
+        logger.info("Doxygen build skipped (doxyrunner_skip is set).")
+        return
+
     for name, config in app.config.doxyrunner_projects.items():
         if config.get("outdir"):
             outdir = Path(config["outdir"])
@@ -393,6 +397,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_config_value("doxyrunner_doxygen", "doxygen", "env")
     app.add_config_value("doxyrunner_silent", True, "")
     app.add_config_value("doxyrunner_projects", {}, "")
+    app.add_config_value("doxyrunner_skip", False, "env")
 
     app.connect("builder-inited", doxygen_build)
 

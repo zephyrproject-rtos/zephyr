@@ -224,7 +224,17 @@ class KconfigSearch(SphinxDirective):
 
     def run(self):
         if not self.config.kconfig_generate_db:
-            raise ExtensionError("Kconfig search directive can not be used without database")
+            # Partial build: the Kconfig database was not generated, so render a
+            # placeholder instead of failing the build.
+            return [
+                nodes.note(
+                    "",
+                    nodes.paragraph(
+                        text="Kconfig option search is not available in this "
+                        "build because the Kconfig layer was skipped."
+                    ),
+                )
+            ]
 
         if "kconfig_search_inserted" in self.env.temp_data:
             raise ExtensionError("Kconfig search directive can only be used once")
