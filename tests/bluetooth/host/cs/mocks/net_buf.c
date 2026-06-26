@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 
-#include "mocks/net_buf.h"
+#include <mocks/net_buf.h>
 
 const struct net_buf_data_cb net_buf_fixed_cb;
 

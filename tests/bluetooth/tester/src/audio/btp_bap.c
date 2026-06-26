@@ -24,7 +24,7 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "btp/btp.h"
+#include <btp/btp.h>
 #include "btp_bap_audio_stream.h"
 #include "btp_bap_unicast.h"
 #include "btp_bap_broadcast.h"

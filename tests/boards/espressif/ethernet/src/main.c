@@ -17,7 +17,7 @@
 
 LOG_MODULE_REGISTER(ethernet_test, LOG_LEVEL_INF);
 
-#include "net_private.h"
+#include <net_private.h>
 
 #define DHCP_OPTION_NTP (42)
 #define TEST_DATA       "ICMP dummy data"

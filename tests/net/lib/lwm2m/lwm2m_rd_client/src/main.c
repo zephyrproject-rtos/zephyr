@@ -10,7 +10,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/ztest.h>
 #if defined(CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
-#include "nsi_timer_model.h"
+#include <nsi_timer_model.h>
 #endif
 #include <lwm2m_rd_client.h>
 

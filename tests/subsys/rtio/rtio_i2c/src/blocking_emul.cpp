@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "blocking_emul.hpp"
+#include <blocking_emul.hpp>
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/emul.h>

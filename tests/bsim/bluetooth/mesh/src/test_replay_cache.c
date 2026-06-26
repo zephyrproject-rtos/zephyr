@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "mesh_test.h"
-#include "mesh/mesh.h"
-#include "mesh/net.h"
-#include "mesh/rpl.h"
-#include "mesh/transport.h"
+#include <mesh/mesh.h>
+#include <mesh/net.h>
+#include <mesh/rpl.h>
+#include <mesh/transport.h>
 
 #define LOG_MODULE_NAME test_rpc
 

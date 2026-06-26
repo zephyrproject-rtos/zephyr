@@ -18,7 +18,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
-#include "bstests.h"
+#include <bstests.h>
 #include "common.h"
 
 #ifdef CONFIG_BT_TMAP

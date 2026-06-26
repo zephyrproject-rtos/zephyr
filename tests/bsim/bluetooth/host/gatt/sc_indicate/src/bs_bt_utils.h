@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bstests.h"
-#include "bs_tracing.h"
+#include <bstests.h>
+#include <bs_tracing.h>
 
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
 
 DECLARE_FLAG(flag_pairing_complete);
 DECLARE_FLAG(flag_bonded);

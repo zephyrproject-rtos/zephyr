@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
 
-#include "net_private.h"
+#include <net_private.h>
 
 #define COAP_BUF_SIZE 128
 

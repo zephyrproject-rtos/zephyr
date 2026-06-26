@@ -28,10 +28,10 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/net_pkt.h>
 
-#include "ipv4.h"
-#include "ipv6.h"
-#include "tcp_internal.h"
-#include "net_stats.h"
+#include <ipv4.h>
+#include <ipv6.h>
+#include <tcp_internal.h>
+#include <net_stats.h>
 
 #include <zephyr/ztest.h>
 

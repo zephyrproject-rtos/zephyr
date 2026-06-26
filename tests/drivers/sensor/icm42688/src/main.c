@@ -12,8 +12,8 @@
 #include <zephyr/fff.h>
 #include <zephyr/ztest.h>
 
-#include "icm4268x_emul.h"
-#include "icm4268x_reg.h"
+#include <icm4268x_emul.h>
+#include <icm4268x_reg.h>
 
 #define NODE DT_NODELABEL(icm42688)
 

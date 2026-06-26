@@ -15,9 +15,9 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
-#include "babblekit/sync.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
+#include <babblekit/sync.h>
 #include "common.h"
 
 DEFINE_FLAG_STATIC(flag_is_connected);

@@ -10,17 +10,17 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/logging/log.h>
 
-#include "testlib/att_read.h"
-#include "testlib/att_write.h"
-#include "testlib/conn.h"
-#include "testlib/scan.h"
-#include "testlib/log_utils.h"
+#include <testlib/att_read.h>
+#include <testlib/att_write.h>
+#include <testlib/conn.h>
+#include <testlib/scan.h>
+#include <testlib/log_utils.h>
 
-#include "babblekit/flags.h"
-#include "babblekit/testcase.h"
+#include <babblekit/flags.h>
+#include <babblekit/testcase.h>
 
 /* local includes */
-#include "data.h"
+#include <data.h>
 
 LOG_MODULE_REGISTER(dut, LOG_LEVEL_DBG);
 

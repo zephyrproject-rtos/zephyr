@@ -12,7 +12,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
-#include "ina237.h"
+#include <ina237.h>
 #include "emul_ina228.h"
 
 #define DT_DRV_COMPAT ti_ina228

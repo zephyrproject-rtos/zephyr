@@ -42,11 +42,11 @@ LOG_MODULE_REGISTER(net_test, ICMP_LOG_LEVEL);
 #include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/wifi_mgmt.h>
 
-#include "net_private.h"
-#include "icmpv4.h"
-#include "icmpv6.h"
-#include "ipv4.h"
-#include "ipv6.h"
+#include <net_private.h>
+#include <icmpv4.h>
+#include <icmpv6.h>
+#include <ipv4.h>
+#include <ipv6.h>
 
 #define PKT_WAIT_TIME K_SECONDS(1)
 #define SEM_WAIT_TIME K_SECONDS(1)

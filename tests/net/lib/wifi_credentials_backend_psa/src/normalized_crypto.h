@@ -7,9 +7,9 @@
 #ifndef PSA_CRYPTO_H
 #define PSA_CRYPTO_H
 
-#include "zephyr/types.h"
-#include "psa/crypto_types.h"
-#include "psa/crypto_values.h"
+#include <zephyr/types.h>
+#include <psa/crypto_types.h>
+#include <psa/crypto_values.h>
 
 struct psa_client_key_attributes_s {
 	uint16_t type;

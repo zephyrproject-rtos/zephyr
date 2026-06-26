@@ -28,13 +28,13 @@
 #include <zephyr/ztest_test.h>
 #include <sys/types.h>
 
-#include "ascs.h"
-#include "bap_stream.h"
-#include "conn.h"
-#include "gatt_expects.h"
-#include "iso.h"
+#include <ascs.h>
+#include <bap_stream.h>
+#include <conn.h>
+#include <gatt_expects.h>
+#include <iso.h>
 
-#include "test_common.h"
+#include <test_common.h>
 
 struct test_ase_control_params_fixture {
 	struct bt_conn conn;

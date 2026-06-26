@@ -9,7 +9,7 @@
 
 #include <zephyr/logging/log.h>
 
-#include "bs_tracing.h"
+#include <bs_tracing.h>
 
 LOG_MODULE_DECLARE(bt_bsim_ccc_update, LOG_LEVEL_DBG);
 

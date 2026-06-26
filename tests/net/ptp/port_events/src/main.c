@@ -14,10 +14,10 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/ztest.h>
 
-#include "clock.h"
-#include "msg.h"
-#include "port.h"
-#include "transport.h"
+#include <clock.h>
+#include <msg.h>
+#include <port.h>
+#include <transport.h>
 
 static struct ptp_default_ds fake_default_ds;
 static struct ptp_parent_ds fake_parent_ds;

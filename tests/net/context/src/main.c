@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/udp.h>
 
-#include "net_private.h"
+#include <net_private.h>
 
 #if defined(CONFIG_NET_CONTEXT_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)

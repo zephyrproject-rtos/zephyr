@@ -32,7 +32,7 @@
 
 #include "bap_stream_rx.h"
 #include "bap_stream_tx.h"
-#include "bstests.h"
+#include <bstests.h>
 #include "common.h"
 #include "bap_common.h"
 

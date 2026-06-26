@@ -14,7 +14,7 @@
 
 #include <zephyr/net/wifi_credentials.h>
 
-#include "wifi_credentials_internal.h"
+#include <wifi_credentials_internal.h>
 
 DEFINE_FFF_GLOBALS;
 

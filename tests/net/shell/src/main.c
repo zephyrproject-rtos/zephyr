@@ -31,8 +31,8 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/net/udp.h>
 #include <zephyr/random/random.h>
 
-#include "ipv4.h"
-#include "ipv6.h"
+#include <ipv4.h>
+#include <ipv6.h>
 
 #include <zephyr/ztest.h>
 
@@ -42,12 +42,12 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #define DBG(fmt, ...)
 #endif
 
-#include "udp_internal.h"
+#include <udp_internal.h>
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 #define NET_LOG_ENABLED 1
 #endif
-#include "net_private.h"
+#include <net_private.h>
 
 static bool test_failed;
 static struct k_sem recv_lock;

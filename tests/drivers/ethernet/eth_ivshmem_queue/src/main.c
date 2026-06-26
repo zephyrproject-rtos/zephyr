@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-#include "eth_ivshmem_priv.h"
+#include <eth_ivshmem_priv.h>
 
 #define SHMEM_SECTION_SIZE KB(4)
 

@@ -89,7 +89,7 @@ static struct k_thread server_thread;
  * type of configuration is often referred to as *mutual authentication*.
  */
 static const unsigned char ca[] = {
-#include "ca.inc"
+#include <ca.inc>
 };
 
 /**
@@ -98,7 +98,7 @@ static const unsigned char ca[] = {
  * This is the public key of the server.
  */
 static const unsigned char server[] = {
-#include "server.inc"
+#include <server.inc>
 };
 
 /**
@@ -107,7 +107,7 @@ static const unsigned char server[] = {
  * This is the private key of the server.
  */
 static const unsigned char server_privkey[] = {
-#include "server_privkey.inc"
+#include <server_privkey.inc>
 };
 
 /**
@@ -116,7 +116,7 @@ static const unsigned char server_privkey[] = {
  * This is the public key of the client.
  */
 static const unsigned char client[] = {
-#include "client.inc"
+#include <client.inc>
 };
 
 /**
@@ -125,7 +125,7 @@ static const unsigned char client[] = {
  * This is the private key of the client.
  */
 static const unsigned char client_privkey[] = {
-#include "client_privkey.inc"
+#include <client_privkey.inc>
 };
 #else /* CONFIG_TLS_CREDENTIALS */
 #define ca NULL

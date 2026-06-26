@@ -16,8 +16,8 @@ LOG_MODULE_REGISTER(npf_test, NET_LOG_LEVEL);
 #include <errno.h>
 #include <zephyr/sys/printk.h>
 
-#include "ipv4.h"
-#include "ipv6.h"
+#include <ipv4.h>
+#include <ipv6.h>
 
 #include <zephyr/ztest.h>
 

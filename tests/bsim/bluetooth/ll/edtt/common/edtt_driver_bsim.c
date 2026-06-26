@@ -14,13 +14,13 @@
 
 #include "edtt_driver.h"
 #include <zephyr/kernel.h>
-#include "posix_native_task.h"
+#include <posix_native_task.h>
 
-#include "bs_tracing.h"
-#include "bs_utils.h"
-#include "bs_oswrap.h"
-#include "bs_pc_base_fifo_user.h"
-#include "bsim_args_runner.h"
+#include <bs_tracing.h>
+#include <bs_utils.h>
+#include <bs_oswrap.h>
+#include <bs_pc_base_fifo_user.h>
+#include <bsim_args_runner.h>
 
 /* Recheck if something arrived from the EDTT every 5ms */
 #define EDTT_IF_RECHECK_DELTA 5 /* ms */

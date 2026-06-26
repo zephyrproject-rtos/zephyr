@@ -8,10 +8,10 @@
 
 #include <zephyr/ztest.h>
 
-#include "btca.h"
-#include "clock.h"
-#include "port.h"
-#include "state_machine.h"
+#include <btca.h>
+#include <clock.h>
+#include <port.h>
+#include <state_machine.h>
 
 static const struct ptp_dataset *stub_clock_default_ds;
 static const struct ptp_dataset *stub_clock_best_ds;

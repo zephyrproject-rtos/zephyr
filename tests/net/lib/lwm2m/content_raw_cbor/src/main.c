@@ -7,8 +7,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-#include "lwm2m_util.h"
-#include "lwm2m_rw_cbor.h"
+#include <lwm2m_util.h>
+#include <lwm2m_rw_cbor.h>
 
 #define TEST_MAX_PAYLOAD_BUFFER_LENGTH 40
 

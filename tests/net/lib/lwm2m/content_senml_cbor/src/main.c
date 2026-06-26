@@ -7,9 +7,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-#include "lwm2m_util.h"
-#include "lwm2m_rw_senml_cbor.h"
-#include "lwm2m_engine.h"
+#include <lwm2m_util.h>
+#include <lwm2m_rw_senml_cbor.h>
+#include <lwm2m_engine.h>
 
 #define TEST_OBJ_ID 0xFFFF
 #define TEST_OBJ_INST_ID 0

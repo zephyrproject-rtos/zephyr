@@ -20,9 +20,9 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/settings/settings.h>
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 #define ID_1 1
 #define ID_2 2

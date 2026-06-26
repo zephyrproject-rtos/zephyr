@@ -19,8 +19,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/ptp_time.h>
 
-#include "ipv6.h"
-#include "net_private.h"
+#include <ipv6.h>
+#include <net_private.h>
 #include "../../socket_helpers.h"
 
 #if defined(CONFIG_NET_SOCKETS_LOG_LEVEL_DBG)

@@ -32,13 +32,13 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV4_LOG_LEVEL);
 
 #include <zephyr/random/random.h>
 
-#include "ipv4.h"
-#include "igmp.h"
+#include <ipv4.h>
+#include <igmp.h>
 
 #define THREAD_SLEEP 50 /* ms */
 
 #define NET_LOG_ENABLED 1
-#include "net_private.h"
+#include <net_private.h>
 
 #if defined(CONFIG_NET_IPV4_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)

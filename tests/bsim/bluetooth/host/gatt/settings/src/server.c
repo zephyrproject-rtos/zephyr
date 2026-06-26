@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 
 void set_public_addr(void)
 {

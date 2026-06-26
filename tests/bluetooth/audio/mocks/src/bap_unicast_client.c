@@ -26,9 +26,9 @@
 #include <zephyr/ztest_assert.h>
 #include <sys/errno.h>
 
-#include "audio/bap_endpoint.h"
-#include "audio/bap_iso.h"
-#include "conn.h"
+#include <audio/bap_endpoint.h>
+#include <audio/bap_iso.h>
+#include <conn.h>
 
 LOG_MODULE_REGISTER(bt_bap_unicast_client, CONFIG_BT_BAP_UNICAST_CLIENT_LOG_LEVEL);
 

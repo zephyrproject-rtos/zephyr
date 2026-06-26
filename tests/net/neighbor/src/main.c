@@ -23,10 +23,10 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_NBR_CACHE_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/linker/sections.h>
 
-#include "nbr.h"
+#include <nbr.h>
 
 #define NET_LOG_ENABLED 1
-#include "net_private.h"
+#include <net_private.h>
 
 static int remove_count, add_count, clear_called;
 

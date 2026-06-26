@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(mdns_resp_test);
 #include <zephyr/net/socket.h>
 #include <zephyr/ztest.h>
 
-#include "dns_pack.h"
+#include <dns_pack.h>
 
 #define NULL_CHAR_SIZE 1
 #define EXT_RECORDS_NUM 3

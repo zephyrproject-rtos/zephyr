@@ -28,10 +28,10 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/net/net_log.h>
 
 #define NET_LOG_ENABLED 1
-#include "net_private.h"
+#include <net_private.h>
 
-#include "ipv6.h"
-#include "udp_internal.h"
+#include <ipv6.h>
+#include <udp_internal.h>
 
 /* Interface 1 addresses */
 static struct net_in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,

@@ -14,8 +14,8 @@
 
 #include <zephyr/bluetooth/gatt.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_bsim_mtu_update, LOG_LEVEL_DBG);

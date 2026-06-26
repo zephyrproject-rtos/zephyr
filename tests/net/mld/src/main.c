@@ -32,15 +32,15 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #include <zephyr/random/random.h>
 
-#include "icmpv6.h"
-#include "ipv6.h"
-#include "route_ipv6.h"
+#include <icmpv6.h>
+#include <ipv6.h>
+#include <route_ipv6.h>
 
 #define THREAD_SLEEP 50 /* ms */
 #define MLD_REPORT_ADDR_COUNT 8
 
 #define NET_LOG_ENABLED 1
-#include "net_private.h"
+#include <net_private.h>
 
 #if defined(CONFIG_NET_IPV6_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)

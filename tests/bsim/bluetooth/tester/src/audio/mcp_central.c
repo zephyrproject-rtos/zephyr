@@ -15,11 +15,11 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/util_macro.h>
 
-#include "babblekit/testcase.h"
-#include "bstests.h"
+#include <babblekit/testcase.h>
+#include <bstests.h>
 
-#include "btp/btp.h"
-#include "bsim_btp.h"
+#include <btp/btp.h>
+#include <bsim_btp.h>
 
 LOG_MODULE_REGISTER(bsim_mcp_central, CONFIG_BSIM_BTTESTER_LOG_LEVEL);
 

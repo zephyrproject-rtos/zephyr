@@ -9,8 +9,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/settings/settings.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
 
 LOG_MODULE_REGISTER(bs_bt_utils, LOG_LEVEL_DBG);
 

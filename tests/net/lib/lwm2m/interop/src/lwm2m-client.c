@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/net/lwm2m.h>
 #include <zephyr/net/socket.h>
-#include "lwm2m_rd_client.h"
+#include <lwm2m_rd_client.h>
 
 #define APP_BANNER "Run LWM2M client"
 

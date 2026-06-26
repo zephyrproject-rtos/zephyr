@@ -4,7 +4,7 @@
 
 #include <zephyr/ztest.h>
 
-#include "fail_test.hpp"
+#include <fail_test.hpp>
 
 static void fail_after(void *) {
 	fail_test_after_impl();

@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_UTILS_LOG_LEVEL);
 #include <zephyr/ztest.h>
 
 #define NET_LOG_ENABLED 1
-#include "net_private.h"
+#include <net_private.h>
 
 struct net_addr_test_data {
 	net_sa_family_t family;

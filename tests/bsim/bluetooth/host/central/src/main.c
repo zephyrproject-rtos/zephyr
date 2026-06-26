@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bstests.h"
-#include "babblekit/testcase.h"
+#include <bstests.h>
+#include <babblekit/testcase.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
 
 /* Include hci_common_internal for the purpose of checking HCI Command counts. */
-#include "common/hci_common_internal.h"
+#include <common/hci_common_internal.h>
 
 /* Include conn_internal for the purpose of checking reference counts. */
-#include "host/conn_internal.h"
+#include <host/conn_internal.h>
 
 struct bst_test_list *test_peripheral_install(struct bst_test_list *tests);
 

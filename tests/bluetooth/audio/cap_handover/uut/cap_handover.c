@@ -9,7 +9,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/fff.h>
 
-#include "cap_handover.h"
+#include <cap_handover.h>
 
 /* List of fakes used by this unit tester */
 #define FFF_FAKES_LIST(FAKE) FAKE(mock_unicast_to_broadcast_complete_cb)

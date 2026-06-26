@@ -6,9 +6,9 @@
 
 #if defined(CONFIG_BT_PRIVACY)
 
-#include "mocks/crypto.h"
-#include "mocks/crypto_expects.h"
-#include "testing_common_defs.h"
+#include <mocks/crypto.h>
+#include <mocks/crypto_expects.h>
+#include <testing_common_defs.h>
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/kernel.h>

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "server_internal.h"
+#include <server_internal.h>
 
 #include <string.h>
 
@@ -18,7 +18,7 @@
 #define TIMEOUT      1000
 
 static const unsigned char index_html_gz[] = {
-#include "index.html.gz.inc"
+#include <index.html.gz.inc>
 };
 
 static const unsigned char compressed_inc_file[] = {

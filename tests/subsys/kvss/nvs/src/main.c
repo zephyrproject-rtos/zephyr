@@ -13,7 +13,7 @@
 #include <zephyr/stats/stats.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/sys/crc.h>
-#include "nvs_priv.h"
+#include <nvs_priv.h>
 
 #define TEST_NVS_FLASH_AREA		storage_partition
 #define TEST_NVS_FLASH_AREA_OFFSET	PARTITION_OFFSET(TEST_NVS_FLASH_AREA)

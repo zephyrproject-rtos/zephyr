@@ -13,11 +13,11 @@
 #include "../common_defs.h"
 
 #include <testlib/conn.h>
-#include "testlib/scan.h"
-#include "testlib/security.h"
+#include <testlib/scan.h>
+#include <testlib/security.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
 
 LOG_MODULE_REGISTER(client, LOG_LEVEL_DBG);
 

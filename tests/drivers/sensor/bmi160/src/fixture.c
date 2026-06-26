@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "fixture.h"
+#include <fixture.h>
 
 #include <zephyr/drivers/emul_sensor.h>
 #include <zephyr/drivers/sensor.h>

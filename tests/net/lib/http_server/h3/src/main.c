@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "server_internal.h"
+#include <server_internal.h>
 
 #include <errno.h>
 #include <string.h>
@@ -16,7 +16,7 @@
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/ztest.h>
 
-#include "certificate.h"
+#include <certificate.h>
 
 #define SERVER_IPV4_ADDR "127.0.0.1"
 #define SERVER_PORT 18443

@@ -8,10 +8,10 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/l2cap.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
-#include "bsim_args_runner.h"
-#include "argparse.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
+#include <bsim_args_runner.h>
+#include <argparse.h>
 
 extern enum bst_result_t bst_result;
 

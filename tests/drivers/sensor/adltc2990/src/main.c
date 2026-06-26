@@ -13,9 +13,9 @@
 #include <zephyr/fff.h>
 #include <zephyr/ztest.h>
 
-#include "adltc2990_emul.h"
-#include "adltc2990_reg.h"
-#include "adltc2990_internal.h"
+#include <adltc2990_emul.h>
+#include <adltc2990_reg.h>
+#include <adltc2990_internal.h>
 
 #include <zephyr/logging/log.h>
 

@@ -6,7 +6,7 @@
 
 #include <zephyr/ztest.h>
 
-#include "state_machine.h"
+#include <state_machine.h>
 
 static const enum ptp_port_state all_states[] = {
 	PTP_PS_INITIALIZING,         PTP_PS_FAULTY,           PTP_PS_DISABLED,     PTP_PS_LISTENING,

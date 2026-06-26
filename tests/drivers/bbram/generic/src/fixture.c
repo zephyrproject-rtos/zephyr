@@ -7,7 +7,7 @@
 #include <zephyr/drivers/emul.h>
 #include <zephyr/ztest.h>
 
-#include "fixture.h"
+#include <fixture.h>
 
 ZTEST_SUITE(generic, NULL, NULL, NULL, NULL, NULL);
 

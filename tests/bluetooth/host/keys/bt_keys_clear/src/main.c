@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "mocks/id.h"
-#include "mocks/id_expects.h"
-#include "mocks/keys_help_utils.h"
-#include "testing_common_defs.h"
+#include <mocks/id.h>
+#include <mocks/id_expects.h>
+#include <mocks/keys_help_utils.h>
+#include <testing_common_defs.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/fff.h>

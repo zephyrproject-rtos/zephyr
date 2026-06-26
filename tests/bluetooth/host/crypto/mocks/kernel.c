@@ -5,6 +5,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include "mocks/kernel.h"
+#include <mocks/kernel.h>
 
 DEFINE_FAKE_VALUE_FUNC(int64_t, k_uptime_ticks);

@@ -30,9 +30,9 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
-#include "btp/btp.h"
+#include <btp/btp.h>
 #include "btp_bap_audio_stream.h"
-#include "bap_endpoint.h"
+#include <bap_endpoint.h>
 
 #include "btp_bap_unicast.h"
 #include "btp_bap_broadcast.h"

@@ -16,7 +16,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-#include "cpu_freq_thermal_cap.h"
+#include <cpu_freq_thermal_cap.h>
 
 #define TEST_SENSOR_NODE DT_NODELABEL(thermal_cap_sensor)
 

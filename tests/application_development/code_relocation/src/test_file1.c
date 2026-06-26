@@ -8,7 +8,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/ztest.h>
 
-#include "test_lib.h"
+#include <test_lib.h>
 
 /*
  * These values will typically be placed in the appropriate sections, but may be moved around

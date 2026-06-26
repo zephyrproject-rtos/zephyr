@@ -18,7 +18,7 @@
 #include <errno.h>
 #include <zephyr/sys/printk.h>
 
-#include "ipv4.h"
+#include <ipv4.h>
 
 #include <zephyr/ztest.h>
 

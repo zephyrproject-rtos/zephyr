@@ -11,7 +11,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/ztest_assert.h>
 
-#include "test_sbs_gauge.h"
+#include <test_sbs_gauge.h>
 
 ZTEST_F(sbs_gauge_new_api, test_cutoff)
 {

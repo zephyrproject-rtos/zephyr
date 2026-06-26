@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TRICKLE_LOG_LEVEL);
 
 #include <zephyr/net/trickle.h>
 
-#include "net_private.h"
+#include <net_private.h>
 
 #if defined(CONFIG_NET_TRICKLE_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)

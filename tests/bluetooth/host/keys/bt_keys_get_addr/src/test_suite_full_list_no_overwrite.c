@@ -7,9 +7,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/addr.h>
 #include <host/keys.h>
-#include "mocks/keys_help_utils.h"
-#include "mocks/hci_core_expects.h"
-#include "testing_common_defs.h"
+#include <mocks/keys_help_utils.h>
+#include <mocks/hci_core_expects.h>
+#include <testing_common_defs.h>
 
 /* This LUT contains different combinations of ID and Address pairs */
 extern const struct id_addr_pair testing_id_addr_pair_lut[CONFIG_BT_MAX_PAIRED];

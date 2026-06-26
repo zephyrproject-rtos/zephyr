@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "lwm2m_engine.h"
-#include "lwm2m_object.h"
+#include <lwm2m_engine.h>
+#include <lwm2m_object.h>
 
 #include <zephyr/ztest.h>
 

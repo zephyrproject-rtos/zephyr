@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bs_tracing.h"
-#include "bs_types.h"
-#include "bstests.h"
+#include <bs_tracing.h>
+#include <bs_types.h>
+#include <bstests.h>
 
 extern enum bst_result_t bst_result;
 

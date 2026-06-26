@@ -27,10 +27,10 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ARP_LOG_LEVEL);
 #include <zephyr/ztest.h>
 #include <zephyr/random/random.h>
 
-#include "arp.h"
+#include <arp.h>
 
 #define NET_LOG_ENABLED 1
-#include "net_private.h"
+#include <net_private.h>
 
 static bool req_test;
 

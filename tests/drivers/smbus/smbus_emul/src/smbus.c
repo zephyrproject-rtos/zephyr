@@ -58,7 +58,7 @@ static void mock_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data)
 #define CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY	1
 #endif
 
-#include "intel_pch_smbus.c"
+#include <intel_pch_smbus.c>
 
 void run_isr(enum emul_isr_type type)
 {

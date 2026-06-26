@@ -13,8 +13,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
 
 void peripheral(void)
 {

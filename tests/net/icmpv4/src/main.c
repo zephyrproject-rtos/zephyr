@@ -24,9 +24,9 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ICMPV4_LOG_LEVEL);
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/icmp.h>
 
-#include "net_private.h"
-#include "icmpv4.h"
-#include "ipv4.h"
+#include <net_private.h>
+#include <icmpv4.h>
+#include <ipv4.h>
 
 #include <zephyr/ztest.h>
 

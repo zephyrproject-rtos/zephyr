@@ -6,7 +6,7 @@
 
 #include <zephyr/ztest.h>
 
-#include "mqtt_internal.h"
+#include <mqtt_internal.h>
 
 static uint8_t auth_data[] = { 0x01, 0x02, 0x03, 0x04 };
 static uint8_t correlation_data[] = { 0x11, 0x12, 0x13, 0x14, 0x15, 0x16 };

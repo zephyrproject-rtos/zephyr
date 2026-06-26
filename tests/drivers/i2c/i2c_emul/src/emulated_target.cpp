@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "emulated_target.hpp"
+#include <emulated_target.hpp>
 
 DEFINE_FFF_GLOBALS;
 

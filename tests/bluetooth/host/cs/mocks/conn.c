@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "mocks/conn.h"
+#include <mocks/conn.h>
 
 #include <zephyr/kernel.h>
 

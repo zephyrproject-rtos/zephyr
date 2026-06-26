@@ -6,8 +6,8 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/sys/util.h>
-#include "lwm2m_engine.h"
-#include "lwm2m_util.h"
+#include <lwm2m_engine.h>
+#include <lwm2m_util.h>
 
 #define TEST_OBJ_ID 32768
 

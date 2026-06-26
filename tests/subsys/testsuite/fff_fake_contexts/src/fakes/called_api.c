@@ -6,7 +6,7 @@
 
 #include <zephyr/fff.h>
 
-#include "fakes/called_api.h"
+#include <fakes/called_api.h>
 
 DEFINE_FAKE_VALUE_FUNC(int, called_api_open, const struct called_api_info **);
 DEFINE_FAKE_VALUE_FUNC(int, called_api_close, const struct called_api_info *);

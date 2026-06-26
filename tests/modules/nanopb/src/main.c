@@ -14,7 +14,7 @@
 #include <proto/simple.pb.h>
 #include <proto/complex.pb.h>
 
-#include "lib.h"
+#include <lib.h>
 
 ZTEST(nanopb_tests, test_nanopb_simple)
 {

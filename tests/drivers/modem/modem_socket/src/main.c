@@ -12,7 +12,7 @@
  */
 
 #include <zephyr/ztest.h>
-#include "modem_socket.h"
+#include <modem_socket.h>
 
 #define MODEM_SOCKETS_MAX 3
 #define MODEM_SOCKETS_BASE_NUM 0

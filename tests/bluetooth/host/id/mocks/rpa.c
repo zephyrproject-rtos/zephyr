@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "mocks/rpa.h"
+#include <mocks/rpa.h>
 
 #include <zephyr/kernel.h>
 

@@ -11,7 +11,7 @@
 #include <tracing_core.h>
 #include <zephyr/tracing/tracing_format.h>
 #if defined(CONFIG_TRACING_BACKEND_UART)
-#include "../../../../subsys/tracing/include/tracing_backend.h"
+#include <../../../../subsys/tracing/include/tracing_backend.h>
 #endif
 
 /**

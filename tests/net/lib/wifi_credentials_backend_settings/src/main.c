@@ -15,7 +15,7 @@
 
 #include <zephyr/net/wifi_credentials.h>
 
-#include "wifi_credentials_internal.h"
+#include <wifi_credentials_internal.h>
 
 #define MAX_KEY_LEN 16
 

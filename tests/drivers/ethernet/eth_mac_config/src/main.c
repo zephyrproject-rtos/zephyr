@@ -10,7 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
 
-#include "eth_test_priv.h"
+#include <eth_test_priv.h>
 
 ZTEST(ethernet_mac_config, test_eth_mac_local)
 {

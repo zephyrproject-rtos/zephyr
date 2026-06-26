@@ -17,7 +17,7 @@
 #endif
 
 #include <zephyr/ztest.h>
-#include "fake_driver.h"
+#include <fake_driver.h>
 
 static volatile bool test_flag;
 

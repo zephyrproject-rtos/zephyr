@@ -11,7 +11,7 @@
 #include <zephyr/fff.h>
 #include <zephyr/net_buf.h>
 
-#include "bap_stream.h"
+#include <bap_stream.h>
 
 /* List of fakes used by this unit tester */
 #define FFF_FAKES_LIST(FAKE)                                                                       \

@@ -24,9 +24,9 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ICMPV6_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/icmp.h>
 
-#include "ipv6.h"
-#include "net_private.h"
-#include "icmpv6.h"
+#include <ipv6.h>
+#include <net_private.h>
+#include <icmpv6.h>
 #include <zephyr/ztest.h>
 
 static struct net_if *test_iface;

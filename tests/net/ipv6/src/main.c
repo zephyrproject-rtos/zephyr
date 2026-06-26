@@ -29,15 +29,15 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/net/udp.h>
 #include <zephyr/net/dns_resolve.h>
 
-#include "icmpv6.h"
-#include "ipv6.h"
-#include "route.h"
-#include "route_ipv6.h"
+#include <icmpv6.h>
+#include <ipv6.h>
+#include <route.h>
+#include <route_ipv6.h>
 
-#include "udp_internal.h"
+#include <udp_internal.h>
 
 #define NET_LOG_ENABLED 1
-#include "net_private.h"
+#include <net_private.h>
 
 #if defined(CONFIG_NET_IPV6_PE)
 #define NET_IPV6_PE_FILTER_PREFIX_COUNT CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT

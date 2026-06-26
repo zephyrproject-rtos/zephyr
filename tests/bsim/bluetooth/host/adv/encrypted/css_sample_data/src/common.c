@@ -4,7 +4,7 @@
 
 #include "common.h"
 
-#include "bs_cmd_line.h"
+#include <bs_cmd_line.h>
 
 #define SAMPLE_DATA_SET_SIZE 2
 static const struct test_sample_data *sample_data_set[] = {

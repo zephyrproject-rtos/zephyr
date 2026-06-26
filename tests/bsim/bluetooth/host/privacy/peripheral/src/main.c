@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bstests.h"
+#include <bstests.h>
 
 extern struct bst_test_list *test_main_rpa_rotation_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_main_rpa_expired_install(struct bst_test_list *tests);

@@ -14,7 +14,7 @@
 #include <zephyr/kernel.h>
 #include <stdlib.h>
 
-#include "arm_nnfunctions.h"
+#include <arm_nnfunctions.h>
 
 #define REPEAT_NUM 3
 

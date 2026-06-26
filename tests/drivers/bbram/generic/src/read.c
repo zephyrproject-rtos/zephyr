@@ -9,7 +9,7 @@
 #include <zephyr/drivers/emul_bbram.h>
 #include <zephyr/ztest.h>
 
-#include "fixture.h"
+#include <fixture.h>
 
 static void run_test_read_invalid_size(const struct device *dev, const struct emul *emulator)
 {

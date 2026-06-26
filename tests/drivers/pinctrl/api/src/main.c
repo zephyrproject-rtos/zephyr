@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "test_device.h"
+#include <test_device.h>
 
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/fff.h>

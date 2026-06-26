@@ -17,7 +17,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/logging/log.h>
 
-#include "bstests.h"
+#include <bstests.h>
 #include "common.h"
 
 #ifdef CONFIG_BT_CCP_CALL_CONTROL_SERVER

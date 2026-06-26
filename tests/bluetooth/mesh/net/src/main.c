@@ -11,8 +11,8 @@
 #include <zephyr/sys/byteorder.h>
 #include <errno.h>
 #include <string.h>
-#include "crypto.h"
-#include "net.h"
+#include <crypto.h>
+#include <net.h>
 
 /**** Mocked functions ****/
 

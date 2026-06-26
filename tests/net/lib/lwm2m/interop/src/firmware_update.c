@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/net/lwm2m.h>
 #include <zephyr/sys/crc.h>
-#include "lwm2m_engine.h"
+#include <lwm2m_engine.h>
 
 static uint8_t firmware_buf[64];
 static uint32_t crc;

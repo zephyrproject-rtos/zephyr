@@ -11,7 +11,7 @@
 #include <zephyr/net/mqtt.h>
 #include <zephyr/random/random.h>
 
-#include "mqtt_internal.h"
+#include <mqtt_internal.h>
 
 #define SERVER_ADDR        "::1"
 #define SERVER_PORT        1883

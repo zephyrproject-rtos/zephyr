@@ -37,12 +37,12 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <hci_core.h>
 
-#include "ascs_internal.h"
+#include <ascs_internal.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #define LOG_MODULE_NAME bttester_bap_unicast
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
-#include "btp/btp.h"
+#include <btp/btp.h>
 #include "btp_bap_audio_stream.h"
 #include "btp_bap_unicast.h"
 

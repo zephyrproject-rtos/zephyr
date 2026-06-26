@@ -4,7 +4,7 @@
  * Copyright (c) 2023 Antmicro <www.antmicro.com>
  */
 
-#include "dt-bindings/adc/silabs-adc.h"
+#include <dt-bindings/adc/silabs-adc.h>
 
 / {
 	zephyr,user {

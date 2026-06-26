@@ -28,11 +28,11 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/net/net_l2.h>
 #include <zephyr/net/udp.h>
 
-#include "ipv6.h"
-#include "udp_internal.h"
+#include <ipv6.h>
+#include <udp_internal.h>
 
 #define NET_LOG_ENABLED 1
-#include "net_private.h"
+#include <net_private.h>
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)

@@ -8,11 +8,11 @@
 
 #include "mesh_test.h"
 #include <zephyr/bluetooth/mesh.h>
-#include "mesh/net.h"
-#include "mesh/keys.h"
-#include "mesh/va.h"
-#include "bsim_args_runner.h"
-#include "common/bt_str.h"
+#include <mesh/net.h>
+#include <mesh/keys.h>
+#include <mesh/va.h>
+#include <bsim_args_runner.h>
+#include <common/bt_str.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test_brg, LOG_LEVEL_INF);

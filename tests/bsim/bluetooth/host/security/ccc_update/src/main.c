@@ -3,7 +3,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include "bstests.h"
+#include <bstests.h>
 
 #include <zephyr/logging/log.h>
 
