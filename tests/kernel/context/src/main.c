@@ -7,7 +7,7 @@
 /**
  * @brief Context and thread API tests
  *
- * @defgroup kernel_context_tests Context Tests
+ * @defgroup tests_kernel_context Kernel context and thread tests
  *
  * @ingroup all_tests
  *
@@ -298,41 +298,27 @@ static void _test_kernel_cpu_idle(int atomic)
 #endif /* CONFIG_TICKLESS_KERNEL */
 
 /**
- * @brief Test cpu idle function
+ * @brief Verify k_cpu_atomic_idle() idles the CPU until an interrupt wakes it.
+ *
+ * @ingroup tests_kernel_context
  *
  * @details
- * Test Objective:
- * - The kernel architecture provide an idle function to be run when the system
- *   has no work for the current CPU
- * - This routine tests the k_cpu_atomic_idle() routine
+ * The architecture provides an atomic idle primitive that suspends the CPU
+ * with interrupts locked and resumes when an interrupt arrives, without losing
+ * a wake-up that races the idle. The test arms a timer, enters
+ * k_cpu_atomic_idle(), and confirms the CPU stayed idle for the expected
+ * duration and was woken by the timer.
  *
- * Testing techniques
- * - Functional and black box testing
- * - Interface testing
+ * Test steps:
+ * - Record the system time before idling.
+ * - Lock interrupts, arm a timer, and enter k_cpu_atomic_idle().
+ * - On wake-up, record the system time again and compare against the timer.
  *
- * Prerequisite Condition:
- * - HAS_POWERSAVE_INSTRUCTION is set
- *
- * Input Specifications:
- * - N/A
- *
- * Test Procedure:
- * -# Record system time before cpu enters idle state
- * -# Enter cpu idle state by k_cpu_atomic_idle()
- * -# Record system time after cpu idle state is interrupted
- * -# Compare the two system time values.
- *
- * Expected Test Result:
- * - cpu enters idle state for a given time
- *
- * Pass/Fail criteria:
- * - Success if the cpu enters idle state, failure otherwise.
- *
- * Assumptions and Constraints
- * - N/A
+ * Expected result:
+ * - The CPU idles until the timer fires and the elapsed time matches the timer
+ *   duration within tolerance.
  *
  * @see k_cpu_atomic_idle()
- * @ingroup kernel_context_tests
  */
 ZTEST(context_cpu_idle, test_cpu_idle_atomic)
 {
@@ -344,41 +330,25 @@ ZTEST(context_cpu_idle, test_cpu_idle_atomic)
 }
 
 /**
- * @brief Test cpu idle function
+ * @brief Verify k_cpu_idle() idles the CPU until an interrupt wakes it.
+ *
+ * @ingroup tests_kernel_context
  *
  * @details
- * Test Objective:
- * - The kernel architecture provide an idle function to be run when the system
- *   has no work for the current CPU
- * - This routine tests the k_cpu_idle() routine
+ * The architecture provides an idle primitive that suspends the CPU when there
+ * is no work to do and resumes on the next interrupt. The test enters
+ * k_cpu_idle() and confirms the CPU stayed idle for the expected duration
+ * before an interrupt woke it.
  *
- * Testing techniques
- * - Functional and black box testing
- * - Interface testing
+ * Test steps:
+ * - Record the system time before idling.
+ * - Enter k_cpu_idle() and wait for an interrupt to resume execution.
+ * - On wake-up, record the system time again and compare the elapsed time.
  *
- * Prerequisite Condition:
- * - HAS_POWERSAVE_INSTRUCTION is set
- *
- * Input Specifications:
- * - N/A
- *
- * Test Procedure:
- * -# Record system time before cpu enters idle state
- * -# Enter cpu idle state by k_cpu_idle()
- * -# Record system time after cpu idle state is interrupted
- * -# Compare the two system time values.
- *
- * Expected Test Result:
- * - cpu enters idle state for a given time
- *
- * Pass/Fail criteria:
- * - Success if the cpu enters idle state, failure otherwise.
- *
- * Assumptions and Constraints
- * - N/A
+ * Expected result:
+ * - The CPU idles and resumes after the expected time has elapsed.
  *
  * @see k_cpu_idle()
- * @ingroup kernel_context_tests
  */
 ZTEST(context_cpu_idle, test_cpu_idle)
 {
@@ -461,51 +431,26 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
 }
 
 /**
- * @brief Test routines for disabling and enabling interrupts
+ * @brief Verify irq_lock()/irq_unlock() mask interrupts and stop the tick.
  *
- * @ingroup kernel_context_tests
+ * @ingroup tests_kernel_context
  *
  * @details
- * Test Objective:
- * - To verify kernel architecture layer shall provide a mechanism to
- *   selectively disable and enable specific numeric interrupts.
- * - This routine tests the routines for disabling and enabling interrupts.
- *   These include irq_lock() and irq_unlock().
+ * irq_lock() must mask maskable interrupts so the system tick cannot advance,
+ * and irq_unlock() must restore delivery so ticks resume. With a non-tickless
+ * timer the tick count is the observable proxy for interrupt delivery.
  *
- * Testing techniques:
- * - Interface testing, function and black box testing,
- *   dynamic analysis and testing
+ * Test steps:
+ * - Align to a tick boundary and read the tick count.
+ * - Call irq_lock(), busy-loop across what would be several ticks, and confirm
+ *   the tick count did not advance.
+ * - Call irq_unlock(), busy-loop again, and confirm the tick count advanced.
  *
- * Prerequisite Conditions:
- * - CONFIG_TICKLESS_KERNEL is not set.
+ * Expected result:
+ * - Ticks do not advance while interrupts are locked and resume after unlock.
  *
- * Input Specifications:
- * - N/A
- *
- * Test Procedure:
- * -# Do action to align to a tick boundary.
- * -# Left shift 4 bits for the value of counts.
- * -# Call irq_lock() and restore its return value to imask.
- * -# Call sys_clock_tick_get_32() and store its return value to tick.
- * -# Repeat counts of calling sys_clock_tick_get_32().
- * -# Call sys_clock_tick_get_32() and store its return value to tick2.
- * -# Call irq_unlock() with parameter imask.
- * -# Check if tick is equal to tick2.
- * -# Repeat counts of calling sys_clock_tick_get_32().
- * -# Call sys_clock_tick_get_32() and store its return value to tick2.
- * -# Check if tick is NOT equal to tick2.
- *
- * Expected Test Result:
- * - The ticks shall not increase while interrupt locked.
- *
- * Pass/Fail Criteria:
- * - Successful if check points in test procedure are all passed, otherwise
- *   failure.
- *
- * Assumptions and Constraints:
- * - N/A
- *
- * @see irq_lock(), irq_unlock()
+ * @see irq_lock()
+ * @see irq_unlock()
  */
 ZTEST(context, test_interrupts)
 {
@@ -520,7 +465,7 @@ ZTEST(context, test_interrupts)
 /**
  * @brief Verify arch_cpu_irqs_are_enabled() reports IRQ state without altering it.
  *
- * @ingroup kernel_context_tests
+ * @ingroup tests_kernel_context
  *
  * @details
  * The probe must report the current CPU's interrupt-enable state and must be
@@ -561,59 +506,33 @@ ZTEST(context, test_arch_cpu_irqs_are_enabled)
 }
 
 /**
- * @brief Test routines for disabling and enabling interrupts (disable timer)
+ * @brief Verify irq_disable()/irq_enable() mask a specific numeric IRQ.
  *
- * @ingroup kernel_context_tests
+ * @ingroup tests_kernel_context
  *
  * @details
- * Test Objective:
- * - To verify the kernel architecture layer shall provide a mechanism to
- *   simultaneously mask all local CPU interrupts and return the previous mask
- *   state for restoration.
- * - This routine tests the routines for disabling and enabling interrupts.
- *   These include irq_disable() and irq_enable().
+ * irq_disable() must mask a single numeric interrupt line so its handler cannot
+ * run, and irq_enable() must re-enable delivery. The test disables the timer
+ * IRQ directly and uses the tick count as the observable proxy: ticks must
+ * stall while the timer IRQ is disabled and resume once it is re-enabled.
  *
- * Testing techniques:
- * - Interface testing, function and black box testing,
- *   dynamic analysis and testing
+ * Test steps:
+ * - Align to a tick boundary and read the tick count.
+ * - Call irq_disable(TICK_IRQ), busy-loop across several ticks, and confirm the
+ *   tick count did not advance.
+ * - Call irq_enable(TICK_IRQ), busy-loop again, and confirm ticks advanced.
  *
- * Prerequisite Conditions:
- * - TICK_IRQ is defined.
+ * Expected result:
+ * - Ticks stall while the timer IRQ is disabled and resume after enable.
  *
- * Input Specifications:
- * - N/A
- *
- * Test Procedure:
- * -# Do action to align to a tick boundary.
- * -# Left shift 4 bit for the value of counts.
- * -# Call irq_disable() and restore its return value to imask.
- * -# Call sys_clock_tick_get_32() and store its return value to tick.
- * -# Repeat counts of calling sys_clock_tick_get_32().
- * -# Call sys_clock_tick_get_32() and store its return value to tick2.
- * -# Call irq_enable() with parameter imask.
- * -# Check if tick is equal to tick2.
- * -# Repeat counts of calling sys_clock_tick_get_32().
- * -# Call sys_clock_tick_get_32() and store its return value to tick2.
- * -# Check if tick is NOT equal to tick2.
- *
- * Expected Test Result:
- * - The ticks shall not increase while interrupt locked.
- *
- * Pass/Fail Criteria:
- * - Successful if check points in test procedure are all passed, otherwise
- *   failure.
- *
- * Assumptions and Constraints:
- * - Note that this test works by disabling the timer interrupt
- *   directly, without any interaction with the timer driver or
- *   timeout subsystem.  NOT ALL ARCHITECTURES will latch and deliver
- *   a timer interrupt that arrives while the interrupt is disabled,
- *   which means that the timeout list will become corrupted (because
- *   it contains items that should have expired in the past).  Any use
- *   of kernel timeouts after completion of this test is disallowed.
+ * @note This test disables the timer interrupt directly, bypassing the timer
+ *   driver and timeout subsystem. Not all architectures latch a timer interrupt
+ *   that arrives while disabled, so the timeout list may be left corrupted with
+ *   already-expired entries. Kernel timeouts must not be used after this test —
  *   RUN THIS TEST LAST IN THE SUITE.
  *
- * @see irq_disable(), irq_enable()
+ * @see irq_disable()
+ * @see irq_enable()
  */
 ZTEST(context_one_cpu, test_timer_interrupts)
 {
@@ -626,44 +545,31 @@ ZTEST(context_one_cpu, test_timer_interrupts)
 }
 
 /**
- * @brief Test some context routines
+ * @brief Verify context identity is reported correctly across an ISR from a
+ *        preemptible thread.
+ *
+ * @ingroup tests_kernel_context
  *
  * @details
- * Test Objective:
- * - Thread context handles derived from context switches must be able to be
- *   restored upon interrupt exit
+ * From a preemptible thread the kernel must report the running thread's identity
+ * and execution context consistently, and the thread context must be restored on
+ * interrupt exit. An ISR triggered from the thread reports back the interrupted
+ * thread's id and that it is executing in ISR context.
  *
- * Testing techniques
- * - Functional and black box testing
- * - Interface testing
+ * Test steps:
+ * - Set the current thread to preemptible priority and read its id.
+ * - Trigger an ISR that returns the interrupted thread's id; compare with the
+ *   caller's id.
+ * - Trigger an ISR that reports its execution context; confirm it is K_ISR.
+ * - Back in the thread, confirm k_is_in_isr() is false and the priority is
+ *   preemptible.
  *
- * Prerequisite Condition:
- * - N/A
+ * Expected result:
+ * - The ISR observes the calling thread's id and K_ISR context, and the thread
+ *   context is intact after interrupt exit.
  *
- * Input Specifications:
- * - N/A
- *
- * Test Procedure:
- * -# Set priority of current thread to 0 as a preemptible thread
- * -# Trap to interrupt context, get thread id of the interrupted thread and
- *  pass back to that thread.
- * -# Return to thread context and make sure this context is interrupted by
- *  comparing its thread ID and the thread ID passed by isr.
- * -# Pass command to isr to check whether the isr is executed in interrupt
- *  context
- * -# When return to thread context, check the return value of command.
- *
- * Expected Test Result:
- * - Thread context restored upon interrupt exit
- *
- * Pass/Fail criteria:
- * - Success if context of thread restored correctly, failure otherwise.
- *
- * Assumptions and Constraints
- * - N/A
- *
- * @ingroup kernel_context_tests
- * @see k_current_get(), k_is_in_isr()
+ * @see k_current_get()
+ * @see k_is_in_isr()
  */
 ZTEST(context, test_ctx_thread)
 {
@@ -960,7 +866,7 @@ static void delayed_thread(void *num, void *arg2, void *arg3)
 /**
  * @brief Verify that k_busy_wait() blocks and returns.
  *
- * @ingroup kernel_context_tests
+ * @ingroup tests_kernel_context
  *
  * @details
  * k_busy_wait() must spin for the requested duration and return, both with
@@ -998,7 +904,7 @@ ZTEST(context_one_cpu, test_busy_wait)
 /**
  * @brief Verify k_sleep() duration and delayed-start thread ordering.
  *
- * @ingroup kernel_context_tests
+ * @ingroup tests_kernel_context
  *
  * @details
  * k_sleep() must block the caller for at least the requested time, and threads
@@ -1134,17 +1040,29 @@ ZTEST(context_one_cpu, test_k_sleep)
 }
 
 /**
+ * @brief Verify k_yield() only switches to threads of equal or higher priority.
  *
- * @brief Test the k_yield() routine
+ * @ingroup tests_kernel_context
  *
- * @ingroup kernel_context_tests
+ * @details
+ * k_yield() relinquishes the CPU to any ready thread of equal or higher
+ * priority but must not switch to a lower-priority thread. A cooperative helper
+ * thread is used to exercise k_yield() against higher-, equal-, and
+ * lower-priority peers, with a shared counter recording when each thread runs.
  *
- * Tests the k_yield() routine. It starts another thread
- * (thus also testing k_thread_create()) and checks that behavior of
- * k_yield() against the a higher priority thread,
- * a lower priority thread, and another thread of equal priority.
+ * Test steps:
+ * - Create a cooperative worker thread (also exercising k_thread_create()).
+ * - From the worker, yield to a higher-priority and an equal-priority helper
+ *   and confirm each runs.
+ * - Raise the worker's priority and yield again; confirm the lower-priority
+ *   helper does not run.
+ *
+ * Expected result:
+ * - k_yield() switches to equal/higher-priority threads and never to a
+ *   lower-priority thread.
  *
  * @see k_yield()
+ * @see k_thread_create()
  */
 ZTEST(context_one_cpu, test_k_yield)
 {
@@ -1168,7 +1086,7 @@ ZTEST(context_one_cpu, test_k_yield)
 /**
  * @brief Verify a created thread runs and observes correct context state.
  *
- * @ingroup kernel_context_tests
+ * @ingroup tests_kernel_context
  *
  * @details
  * A thread started with k_thread_create() must actually run, and from both
