@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 #include "reg/reg_system.h"
-#include "zephyr/drivers/gpio/gpio_rts5912.h"
+#include <zephyr/drivers/gpio/gpio_rts5912.h>
 #endif
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1, "support only one espi compatible node");
