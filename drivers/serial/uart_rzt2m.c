@@ -5,8 +5,8 @@
  */
 
 #include "uart_rzt2m.h"
-#include "zephyr/spinlock.h"
-#include "zephyr/sys/printk.h"
+#include <zephyr/spinlock.h>
+#include <zephyr/sys/printk.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys/util.h>
