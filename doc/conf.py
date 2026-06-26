@@ -89,6 +89,7 @@ if SKIP_EXTERNAL_CONTENT:
 # -- General configuration ------------------------------------------------
 
 extensions = [
+    "zephyr.build_timer",
     "sphinx_rtd_theme",
     "sphinx.ext.todo",
     "sphinx.ext.extlinks",
