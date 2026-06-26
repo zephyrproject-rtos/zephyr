@@ -8,7 +8,7 @@
 #define __USB_DEVICE_CONFIG_H__
 
 #include <zephyr/devicetree.h>
-#include "usb.h"
+#include <usb.h>
 
 /******************************************************************************
  * Definitions
