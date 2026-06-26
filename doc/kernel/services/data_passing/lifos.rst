@@ -3,6 +3,10 @@
 LIFOs
 #####
 
+.. design:: DESIGN-LIFOS LIFOs
+   :fulfills: ZEP-SRS-23-1 ZEP-SRS-23-2 ZEP-SRS-23-3 ZEP-SRS-23-4
+
+
 A :dfn:`LIFO` is a kernel object that implements a traditional
 last in, first out (LIFO) queue, allowing threads and ISRs
 to add and remove data items of any size.

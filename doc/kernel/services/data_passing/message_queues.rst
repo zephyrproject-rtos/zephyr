@@ -3,6 +3,10 @@
 Message Queues
 ##############
 
+.. design:: DESIGN-MESSAGE-QUEUES Message Queues
+   :fulfills: ZEP-SRS-31-1 ZEP-SRS-31-2 ZEP-SRS-31-3 ZEP-SRS-31-4 ZEP-SRS-31-5 ZEP-SRS-31-6 ZEP-SRS-31-7 ZEP-SRS-31-8 ZEP-SRS-31-9 ZEP-SRS-31-10 ZEP-SRS-31-11 ZEP-SRS-31-12 ZEP-SRS-31-13 ZEP-SRS-31-14 ZEP-SRS-31-15 ZEP-SRS-31-16 ZEP-SRS-31-17
+
+
 A :dfn:`message queue` is a kernel object that implements a simple
 message queue, allowing threads and ISRs to asynchronously send and receive
 fixed-size data items.

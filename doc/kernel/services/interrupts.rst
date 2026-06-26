@@ -3,6 +3,10 @@
 Interrupts
 ##########
 
+.. design:: DESIGN-INTERRUPTS Interrupts
+   :fulfills: ZEP-SRS-7-1 ZEP-SRS-7-2 ZEP-SRS-7-3 ZEP-SRS-7-4 ZEP-SRS-7-5 ZEP-SRS-7-6 ZEP-SRS-7-7 ZEP-SRS-7-8 ZEP-SRS-7-9 ZEP-SRS-7-10 ZEP-SRS-7-11 ZEP-SRS-7-12 ZEP-SRS-7-13 ZEP-SRS-7-14 ZEP-SRS-7-15 ZEP-SRS-7-16
+
+
 An :dfn:`interrupt service routine` (ISR) is a function that executes
 asynchronously in response to a hardware or software interrupt.
 An ISR normally preempts the execution of the current thread,

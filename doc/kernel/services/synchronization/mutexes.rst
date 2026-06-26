@@ -3,6 +3,10 @@
 Mutexes
 #######
 
+.. design:: DESIGN-MUTEXES Mutexes
+   :fulfills: ZEP-SRS-6-1 ZEP-SRS-6-2 ZEP-SRS-6-3 ZEP-SRS-6-4 ZEP-SRS-6-5 ZEP-SRS-6-6 ZEP-SRS-6-7 ZEP-SRS-6-8 ZEP-SRS-6-9 ZEP-SRS-6-10 ZEP-SRS-6-11 ZEP-SRS-6-12
+
+
 A :dfn:`mutex` is a kernel object that implements a traditional
 reentrant mutex. A mutex allows multiple threads to safely share
 an associated hardware or software resource by ensuring mutually exclusive

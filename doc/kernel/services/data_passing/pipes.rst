@@ -3,6 +3,10 @@
 Pipes
 #####
 
+.. design:: DESIGN-PIPES Pipes
+   :fulfills: ZEP-SRS-32-1 ZEP-SRS-32-2 ZEP-SRS-32-3 ZEP-SRS-32-4 ZEP-SRS-32-5 ZEP-SRS-32-6 ZEP-SRS-32-7 ZEP-SRS-32-8 ZEP-SRS-32-9 ZEP-SRS-32-10
+
+
 A :dfn:`pipe` is a kernel object that allows a thread to send a byte stream
 to another thread. Pipes enable efficient inter-thread communication and can
 be used to synchronously transfer chunks of data in whole or in part.
