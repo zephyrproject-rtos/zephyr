@@ -939,6 +939,47 @@ ZTEST_USER(timer_api, test_sleep_abs)
 
 }
 
+static struct k_timer isr_ctx_timer;
+static volatile bool isr_ctx_expiry_ran;
+static volatile bool isr_ctx_expiry_in_isr;
+
+static void isr_ctx_expire(struct k_timer *timer)
+{
+	isr_ctx_expiry_in_isr = k_is_in_isr();
+	isr_ctx_expiry_ran = true;
+}
+
+/**
+ * @brief Test that a timer expiry function runs in interrupt context
+ *
+ * @ingroup kernel_timer_tests
+ *
+ * @details Start a one-shot timer whose expiry callback records, via
+ * k_is_in_isr(), whether it executes in interrupt context. After the timer has
+ * expired, verify the callback ran and that it observed itself running in
+ * interrupt context.
+ *
+ * @see k_timer_start(), k_is_in_isr()
+ */
+ZTEST(timer_api, test_timer_expiry_in_isr)
+{
+	isr_ctx_expiry_ran = false;
+	isr_ctx_expiry_in_isr = false;
+
+	k_timer_init(&isr_ctx_timer, isr_ctx_expire, NULL);
+	k_timer_start(&isr_ctx_timer, K_MSEC(DURATION), K_NO_WAIT);
+
+	/* Wait long enough for the one-shot timer to expire. */
+	k_msleep(DURATION * 2);
+
+	zassert_true(isr_ctx_expiry_ran,
+		     "timer expiry function did not run");
+	zassert_true(isr_ctx_expiry_in_isr,
+		     "timer expiry function did not run in interrupt context");
+
+	k_timer_stop(&isr_ctx_timer);
+}
+
 static void timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
 		       k_timer_stop_t stop_fn)
 {
