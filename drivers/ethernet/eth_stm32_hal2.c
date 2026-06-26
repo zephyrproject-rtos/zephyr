@@ -49,6 +49,9 @@ LOG_MODULE_REGISTER(eth_stm32_hal, CONFIG_ETHERNET_LOG_LEVEL);
 NET_BUF_POOL_DEFINE(rx_net_buf_pool, CONFIG_ETH_STM32_HAL_RX_BUF_POOL_COUNT, ETH_STM32_RX_BUF_SIZE,
 		    0, NULL);
 
+/* Make memcpy() for MAC address array safe between the HAL structure and the Zephyr one */
+BUILD_ASSERT(sizeof(((hal_eth_config_t *)NULL)->mac_addr) == NET_ETH_ADDR_LEN);
+
 static struct net_buf *rx_net_buf[CONFIG_ETH_STM32_HAL_RX_DMA_BUF_COUNT];
 
 static hal_eth_tx_channel_config_t tx_ch_cfg;
@@ -562,7 +565,6 @@ static int eth_initialize(const struct device *dev)
 		return ret;
 	}
 
-	BUILD_ASSERT(sizeof(config_eth.mac_addr) == sizeof(dev_data->mac_addr));
 	memcpy(config_eth.mac_addr, dev_data->mac_addr, sizeof(dev_data->mac_addr));
 
 	config_eth.media_interface = HAL_ETH_MEDIA_IF_RMII;
@@ -607,7 +609,6 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		HAL_ETH_GetConfig(heth, &eth_cfg);
-		BUILD_ASSERT(sizeof(eth_cfg.mac_addr) == sizeof(dev_data->mac_addr));
 		memcpy(eth_cfg.mac_addr, dev_data->mac_addr, sizeof(dev_data->mac_addr));
 
 		if (HAL_ETH_SetConfig(heth, &eth_cfg) != HAL_OK) {
