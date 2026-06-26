@@ -25,12 +25,21 @@ no-op.
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from docutils import nodes
+from docutils.parsers.rst import Directive, directives
+from docutils.statemachine import StringList
 from sphinx.application import Sphinx
 from sphinx.util import logging
 
 __version__ = "0.1.0"
 
 logger = logging.getLogger(__name__)
+
+# Relationships/attributes a ``design`` item may declare. ``fulfills`` (to a
+# requirement) is the primary one; the others are accepted so design and
+# architecture documents can express richer links when needed. All of these are
+# mlx.traceability defaults, so no extra configuration is required.
+DESIGN_OPTIONS = ("fulfills", "implements", "satisfies", "realizes", "trace", "status")
 
 # Doxygen XML <name> prefix for requirement compounds.
 REQ_REFID_PREFIX = "requirement_"
@@ -190,6 +199,22 @@ def _render_page(symbols: dict[str, dict]) -> str:
         "   :nocaptions:",
         "   :stats:",
         "",
+        "Requirement / design matrix",
+        "===========================",
+        "",
+        "Design and architecture elements (``DESIGN-*`` items declared with the",
+        "``design`` directive in the design documents) and the requirements they",
+        "fulfill.",
+        "",
+        ".. item-matrix:: Requirements and the design elements that fulfill them",
+        "   :source: ZEP-S",
+        "   :target: DESIGN-",
+        "   :sourcetitle: Requirement",
+        "   :targettitle: Design / architecture element",
+        "   :type: fulfilled_by",
+        "   :nocaptions:",
+        "   :stats:",
+        "",
         "Requirement hierarchy",
         "=====================",
         "",
@@ -243,10 +268,66 @@ def generate_traceability(app: Sphinx) -> None:
     out_file.write_text(_render_page(symbols))
 
 
+class DesignDirective(Directive):
+    """A ``design`` item linking a design/architecture element to requirements.
+
+    Usage in a design document (e.g. under ``doc/kernel/``)::
+
+        .. design:: DESIGN-THREAD-SUSPENSION Thread Suspension
+           :fulfills: ZEP-SRS-1-3 ZEP-SRS-1-4
+
+           Optional prose describing the design element.
+
+    When the ``reqmgmt`` tag is active the directive renders an
+    ``mlx.traceability`` ``item`` (so the design element participates in the
+    requirement/design matrices and JSON export). When the tag is absent it is a
+    no-op: any body content is rendered as ordinary prose and no traceability
+    item is created, so the directive never interferes with the documentation
+    flow and never errors when the requirements tooling is disabled.
+    """
+
+    required_arguments = 1
+    optional_arguments = 0
+    # Allow "ID Caption with spaces" as a single argument (mlx splits the id off).
+    final_argument_whitespace = True
+    has_content = True
+    option_spec = {opt: directives.unchanged for opt in DESIGN_OPTIONS}
+
+    def run(self):
+        env = self.state.document.settings.env
+
+        if not env.app.tags.has("reqmgmt"):
+            # No-op: keep any prose, drop the traceability marker entirely.
+            if self.content:
+                container = nodes.container()
+                self.state.nested_parse(self.content, self.content_offset, container)
+                return container.children
+            return []
+
+        # Emit an mlx ``item`` and let mlx parse and register it.
+        lines = [f".. item:: {self.arguments[0].strip()}"]
+        for opt in DESIGN_OPTIONS:
+            if opt in self.options:
+                lines.append(f"   :{opt}: {self.options[opt]}")
+        lines.append("")
+        for line in self.content:
+            lines.append(f"   {line}" if line else "")
+
+        container = nodes.container()
+        self.state.nested_parse(
+            StringList(lines, source="design"), self.content_offset, container
+        )
+        return container.children
+
+
 def setup(app: Sphinx) -> dict:
     # Run after doxyrunner (which produces the XML) and external_content (which
     # syncs the source tree), both connected at the default priority of 500.
     app.connect("builder-inited", generate_traceability, priority=600)
+
+    # Always register the directive so design documents that use it parse
+    # cleanly whether or not the requirements tooling is enabled.
+    app.add_directive("design", DesignDirective)
 
     return {
         "version": __version__,
