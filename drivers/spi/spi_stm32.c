@@ -1324,7 +1324,7 @@ static int spi_stm32_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	LL_SPI_Disable(spi);
+	ll_disable_spi(spi);
 	LL_SPI_SetBaudRatePrescaler(spi, scaler[br]);
 
 #if defined(SPI_CFG2_IOSWP)
@@ -1508,6 +1508,12 @@ static int32_t spi_stm32_set_transfer_size(const struct device *dev,
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	if (frames <= cfg->fifo_max_transfer_size) {
+		if (LL_SPI_IsEnabled(spi)) {
+			/* CFG1 (TSIZE) is write-protected while SPE=1 on H7; disable
+			 * first to ensure the new transfer size takes effect.
+			 */
+			ll_disable_spi(spi);
+		}
 		LL_SPI_SetTransferSize(spi, (uint32_t)frames);
 	} else {
 		LOG_ERR("Buffer size exceeds maximal supported value");
@@ -1531,7 +1537,7 @@ static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config
 		while (ll_spi_is_busy(spi)) {
 			/* NOP */
 		}
-		LL_SPI_Disable(spi);
+		ll_disable_spi(spi);
 #endif /* CONFIG_SPI_STM32_INTERRUPT*/
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
@@ -1870,7 +1876,7 @@ static int transceive_dma(const struct device *dev,
 		if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX &&
 		    !spi_context_tx_on(&data->ctx) &&
 		    spi_context_rx_on(&data->ctx)) {
-			LL_SPI_Disable(spi);
+			ll_disable_spi(spi);
 			ll_set_transfer_direction(spi, STM32_SPI_HALF_DUPLEX_RX);
 			transfer_dir = STM32_SPI_HALF_DUPLEX_RX;
 			LL_SPI_Enable(spi);
@@ -1895,7 +1901,7 @@ static int transceive_dma(const struct device *dev,
 
 	/* Keep SPE enabled for SPI_HOLD_ON_CS or Slave Half-Duplex TX */
 	if (!slave_hd_tx && !(config->operation & SPI_HOLD_ON_CS)) {
-		LL_SPI_Disable(spi);
+		ll_disable_spi(spi);
 	}
 	/* The Config. Reg. on some mcus is write un-protected when SPI is disabled */
 	LL_SPI_DisableDMAReq_TX(spi);
