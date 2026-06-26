@@ -36,6 +36,7 @@ config SILABS_SISDK_IADC
 
 config SILABS_SISDK_LDMA
 	bool "Peripheral HAL for LDMA"
+	select SILABS_SISDK_SLIST
 
 config SILABS_SISDK_LETIMER
 	bool "Peripheral HAL for LETIMER"
