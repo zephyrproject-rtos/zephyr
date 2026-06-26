@@ -59,6 +59,7 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
     ${RADIO_DIR}/rail_lib/common
     ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_compatible_pa
     ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_rf_path_switch
+    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_built_in_phys/efr32xg${SILABS_DEVICE_FAMILY_NUMBER}
     ${BLUETOOTH_DIR}/bgstack/ll/inc
   )
 
@@ -107,6 +108,29 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
       ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_rf_path_switch/sl_rail_util_rf_path_switch.c
       ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_sequencer/sl_rail_util_sequencer.c
     )
+
+    if(NOT CONFIG_SILABS_DEVICE_IS_MODULE)
+      zephyr_library_sources(
+        ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_built_in_phys/sl_rail_util_built_in_phys.c
+      )
+
+      if(CONFIG_SOC_SILABS_XG24 OR CONFIG_SOC_SILABS_XG26)
+        dt_nodelabel(hfxo_node NODELABEL "hfxo" REQUIRED)
+        dt_prop(hfxo_freq PATH "${hfxo_node}" PROPERTY "clock-frequency")
+        if(hfxo_freq EQUAL "38400000")
+          set(phy_suffix "_38M4Hz")
+        elseif(hfxo_freq EQUAL "39000000")
+          set(phy_suffix "_39MHz")
+        elseif(hfxo_freq EQUAL "40000000")
+          set(phy_suffix "_40MHz")
+        else()
+          message(FATAL_ERROR "Unknown HFXO frequency, not compatible with radio PHYs")
+        endif()
+      endif()
+      set(PHY_DIR ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_built_in_phys/efr32xg${SILABS_DEVICE_FAMILY_NUMBER})
+      zephyr_library_sources_ifdef(CONFIG_BT_SILABS_EFR32 ${PHY_DIR}/sl_rail_ble_config${phy_suffix}.c)
+      zephyr_library_sources_ifdef(CONFIG_IEEE802154_SILABS_EFR32 ${PHY_DIR}/sl_rail_ieee802154_config${phy_suffix}.c)
+    endif()
 
     # PA curve for the modules comes from their config archive - omit the compilation of the SoC curves on modules
     zephyr_library_sources_ifdef(CONFIG_SILABS_DEVICE_IS_MODULE
@@ -202,6 +226,7 @@ zephyr_include_directories(
   ${SERVICE_DIR}/udelay/inc
   ${SECURITY_DIR}/sl_component/sl_protocol_crypto/src
   ${SECURITY_DIR}/sl_component/sli_crypto/inc
+  ${SECURITY_DIR}/sl_component/sli_psec_common/inc
   ${SECURITY_DIR}/sl_component/sli_psec_osal/inc
   ${BOARD_DIR}
 )
