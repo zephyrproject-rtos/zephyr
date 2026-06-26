@@ -3,6 +3,10 @@
 Events
 ######
 
+.. design:: DESIGN-EVENTS Events
+   :fulfills: ZEP-SRS-27-1 ZEP-SRS-27-2 ZEP-SRS-27-3 ZEP-SRS-27-4 ZEP-SRS-27-5 ZEP-SRS-27-6 ZEP-SRS-27-7 ZEP-SRS-27-8 ZEP-SRS-27-9 ZEP-SRS-27-10 ZEP-SRS-27-11 ZEP-SRS-27-12 ZEP-SRS-27-13 ZEP-SRS-27-14 ZEP-SRS-27-15
+
+
 An :dfn:`event object` is a kernel object that implements traditional events.
 
 .. contents::

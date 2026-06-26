@@ -3,6 +3,10 @@
 Mailboxes
 #########
 
+.. design:: DESIGN-MAILBOXES Mailboxes
+   :fulfills: ZEP-SRS-25-1 ZEP-SRS-25-2 ZEP-SRS-25-3 ZEP-SRS-25-4 ZEP-SRS-25-5 ZEP-SRS-25-6 ZEP-SRS-25-7 ZEP-SRS-25-8 ZEP-SRS-25-9 ZEP-SRS-25-10 ZEP-SRS-25-11 ZEP-SRS-25-12 ZEP-SRS-25-13 ZEP-SRS-25-14 ZEP-SRS-25-15 ZEP-SRS-25-16 ZEP-SRS-25-17
+
+
 A :dfn:`mailbox` is a kernel object that provides enhanced message queue
 capabilities that go beyond the capabilities of a message queue object.
 A mailbox allows threads to send and receive messages of any size

@@ -3,6 +3,10 @@
 FIFOs
 #####
 
+.. design:: DESIGN-FIFOS FIFOs
+   :fulfills: ZEP-SRS-24-1 ZEP-SRS-24-2 ZEP-SRS-24-3 ZEP-SRS-24-4 ZEP-SRS-24-5 ZEP-SRS-24-6 ZEP-SRS-24-7 ZEP-SRS-24-8 ZEP-SRS-24-9 ZEP-SRS-24-10
+
+
 A :dfn:`FIFO` is a kernel object that implements a traditional
 first in, first out (FIFO) queue, allowing threads and ISRs
 to add and remove data items of any size.

@@ -3,6 +3,10 @@
 Timers
 ######
 
+.. design:: DESIGN-TIMERS Timers
+   :fulfills: ZEP-SRS-4-1 ZEP-SRS-4-2 ZEP-SRS-4-3 ZEP-SRS-4-4 ZEP-SRS-4-5 ZEP-SRS-4-6 ZEP-SRS-4-7 ZEP-SRS-4-8 ZEP-SRS-4-9 ZEP-SRS-4-10 ZEP-SRS-4-11 ZEP-SRS-4-12 ZEP-SRS-4-13 ZEP-SRS-4-14 ZEP-SRS-4-15 ZEP-SRS-4-16 ZEP-SRS-4-17
+
+
 A :dfn:`timer` is a kernel object that measures the passage of time
 using the kernel's system clock. When a timer's specified time limit
 is reached it can perform an application-defined action,
