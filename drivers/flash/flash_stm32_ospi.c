@@ -1359,9 +1359,16 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 	}
 
 #ifdef CONFIG_STM32_MEMMAP
+	/* Acquire lock before memcpy: another higher priority thread
+	 * may call stm32_ospi_set_memorymap() concurrently, toggling
+	 * the peripheral out of memory-mapped mode mid-read and
+	 * corrupting the transfer
+	 */
+	ospi_lock_thread(dev);
 	/* If not MemMapped then configure it */
 	if (!stm32_ospi_is_memorymap(dev)) {
 		if (stm32_ospi_set_memorymap(dev) != 0) {
+			ospi_unlock_thread(dev);
 			LOG_ERR("READ failed: cannot enable MemoryMap");
 			return -EIO;
 		}
@@ -1371,6 +1378,7 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 		(long)(STM32_OSPI_BASE_ADDRESS + addr),
 		size);
 	memcpy(data, (uint8_t *)STM32_OSPI_BASE_ADDRESS + addr, size);
+	ospi_unlock_thread(dev);
 
 #else /* CONFIG_STM32_MEMMAP */
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
