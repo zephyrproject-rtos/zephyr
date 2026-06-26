@@ -54,11 +54,12 @@ struct dac_stm32_cfg {
 	struct stm32_pclken pclken;
 	/* pinctrl configurations. */
 	const struct pinctrl_dev_config *pcfg;
+	/* number of channels supported */
+	uint8_t channel_count;
 };
 
 /* Runtime driver data */
 struct dac_stm32_data {
-	uint8_t channel_count;
 	uint8_t resolution;
 };
 
@@ -68,7 +69,7 @@ static int dac_stm32_write_value(const struct device *dev,
 	struct dac_stm32_data *data = dev->data;
 	const struct dac_stm32_cfg *cfg = dev->config;
 
-	if (channel - STM32_FIRST_CHANNEL >= data->channel_count ||
+	if (channel - STM32_FIRST_CHANNEL >= cfg->channel_count ||
 					channel < STM32_FIRST_CHANNEL) {
 		LOG_ERR("Channel %d is not valid", channel);
 		return -EINVAL;
@@ -98,7 +99,7 @@ static int dac_stm32_channel_setup(const struct device *dev,
 	uint32_t cfg_setting, channel;
 
 	if ((channel_cfg->channel_id - STM32_FIRST_CHANNEL >=
-			data->channel_count) ||
+			cfg->channel_count) ||
 			(channel_cfg->channel_id < STM32_FIRST_CHANNEL)) {
 		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
 		return -EINVAL;
@@ -182,11 +183,10 @@ static DEVICE_API(dac, api_stm32_driver_api) = {
 		.base = (DAC_TypeDef *)DT_INST_REG_ADDR(index),		\
 		.pclken = STM32_DT_INST_CLOCK_INFO(index),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		\
+		.channel_count = STM32_CHANNEL_COUNT,			\
 	};								\
 									\
-	static struct dac_stm32_data dac_stm32_data_##index = {		\
-		.channel_count = STM32_CHANNEL_COUNT			\
-	};								\
+	static struct dac_stm32_data dac_stm32_data_##index;		\
 									\
 	DEVICE_DT_INST_DEFINE(index, &dac_stm32_init, NULL,		\
 			      &dac_stm32_data_##index,			\
