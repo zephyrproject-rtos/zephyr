@@ -40,9 +40,11 @@ zephyr_compile_definitions(
   SLI_SI91X_ENABLE_OS
   SLI_SI917
   SLI_SI917B0
+  SLI_POWER_MANAGER_USE_CRITICAL_IRQ_FOR_PS_API=1
 )
 
 zephyr_include_directories(
+  inc
   ${SISDK}/platform/common/config
   ${SISDK}/platform/common/inc
   ${SISDK}/platform/emlib/inc
@@ -82,10 +84,16 @@ zephyr_include_directories(
   ${WISECONNECT}/components/device/silabs/si91x/wireless/inc
   ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/inc
   ${WISECONNECT}/components/device/silabs/si91x/wireless/socket/inc
+  ${WISECONNECT}/components/device/silabs/si91x/wireless/sli_hal_si91x/inc
+  ${WISECONNECT}/components/device/silabs/si91x/wireless/sli_si91x_wifi_command_engine/inc
+  ${WISECONNECT}/components/device/silabs/si91x/wireless/sli_si91x_wifi_event_handler/inc
   ${WISECONNECT}/components/protocol/wifi/inc
   ${WISECONNECT}/components/service/network_manager/inc
   ${WISECONNECT}/components/sli_buffer_manager/inc
-  ${WISECONNECT}/components/sli_wifi_command_engine/inc
+  ${WISECONNECT}/components/sli_command_engine/inc
+  ${WISECONNECT}/components/sli_event_engine/inc
+  ${WISECONNECT}/components/sli_queue_manager/inc
+  ${WISECONNECT}/components/sli_routing_utility/inc
   ${WISECONNECT}/components/sli_wifi/inc
   ${WISECONNECT}/resources/defaults
 )
@@ -207,7 +215,8 @@ if(CONFIG_WIFI_SILABS_SIWX91X)
     ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/src/sli_net_si91x_utility.c
     ${WISECONNECT}/components/protocol/wifi/src/sl_wifi_basic_credentials.c
     ${WISECONNECT}/components/service/network_manager/src/sl_net_basic_profiles.c
-    ${WISECONNECT}/components/service/network_manager/src/sl_net_credentials.c
+    ${WISECONNECT}/components/service/network_manager/src/sli_net_credentials.c
+    ${WISECONNECT}/components/service/network_manager/src/si91x/sl_net_credentials.c
   )
   zephyr_compile_definitions(
     SLI_SI91X_CONFIG_WIFI6_PARAMS
@@ -254,18 +263,25 @@ if(CONFIG_SILABS_SIWX91X_NWP)
     ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/src/sl_si91x_bus.c
     ${WISECONNECT}/components/device/silabs/si91x/wireless/host_mcu/si91x/siwx917_soc_ncp_host.c
     ${WISECONNECT}/components/device/silabs/si91x/wireless/memory/mem_pool_buffer_quota.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/src/sli_wifi_memory_manager.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/src/sli_wifi_power_profile.c
+    ${WISECONNECT}/components/device/silabs/si91x/wireless/sli_hal_si91x/src/sli_hal_si91x.c
+    ${WISECONNECT}/components/device/silabs/si91x/wireless/sli_si91x_wifi_event_handler/src/sli_si91x_wifi_event_handler.c
+    ${WISECONNECT}/components/device/silabs/si91x/wireless/sli_si91x_wifi_command_engine/src/sli_si91x_wifi_command_engine.c
+    ${WISECONNECT}/components/device/silabs/si91x/wireless/sli_si91x_wifi_command_engine/src/sli_si91x_wifi_command_engine_config.c
     ${WISECONNECT}/components/device/silabs/si91x/wireless/src/sl_rsi_utility.c
     ${WISECONNECT}/components/device/silabs/si91x/wireless/src/sl_si91x_driver.c
-    ${WISECONNECT}/components/protocol/wifi/si91x/sl_wifi.c
+    ${WISECONNECT}/components/device/silabs/si91x/wireless/src/sli_si91x_driver.c
+    ${WISECONNECT}/components/protocol/wifi/src/si91x/sl_wifi.c
     ${WISECONNECT}/components/protocol/wifi/src/sli_wifi_callback_framework.c
     ${WISECONNECT}/components/protocol/wifi/src/sl_wifi_callback_framework.c
     ${WISECONNECT}/components/service/network_manager/src/sli_net_common_utility.c
-    ${WISECONNECT}/components/sli_si91x_wifi_event_handler/src/sli_si91x_wifi_event_handler.c
+    ${WISECONNECT}/components/sli_buffer_manager/src/sli_buffer_manager.c
+    ${WISECONNECT}/components/sli_command_engine/src/sli_command_engine.c
+    ${WISECONNECT}/components/sli_event_engine/src/sli_event_engine.c
+    ${WISECONNECT}/components/sli_queue_manager/src/sli_queue_manager.c
+    ${WISECONNECT}/components/sli_routing_utility/src/sli_routing_utility.c
     ${WISECONNECT}/components/sli_wifi/src/sli_wifi.c
+    ${WISECONNECT}/components/sli_wifi/src/sli_wifi_power_profile.c
     ${WISECONNECT}/components/sli_wifi/src/sli_wifi_utility.c
-    ${WISECONNECT}/components/sli_wifi_command_engine/src/sli_wifi_command_engine.c
   )
   zephyr_library_sources_ifdef(CONFIG_SIWX91X_FIRMWARE_UPGRADE
     ${WISECONNECT}/components/device/silabs/si91x/wireless/firmware_upgrade/firmware_upgradation.c
