@@ -10,7 +10,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 /*
  * Copyright (c) 2015-2016 Intel Corporation
