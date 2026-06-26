@@ -32,7 +32,7 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/kernel.h>
 
-#include "net_sample_common.h"
+#include <net_sample_common.h>
 
 #ifdef CONFIG_NET_IPV6
 #define USE_IPV6

@@ -11,5 +11,5 @@
 /* This is the same cert as what is found in net-tools/https-cert.pem file
  */
 static const unsigned char ca_certificate[] = {
-#include "https-cert.der.inc"
+#include <https-cert.der.inc>
 };

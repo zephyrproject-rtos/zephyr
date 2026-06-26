@@ -9,13 +9,13 @@ LOG_MODULE_REGISTER(net_coap_service_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/net/coap_service.h>
 
-#include "net_sample_common.h"
+#include <net_sample_common.h>
 
 #ifdef CONFIG_NET_IPV6
 #include <zephyr/net/mld.h>
 
-#include "net_private.h"
-#include "ipv6.h"
+#include <net_private.h>
+#include <ipv6.h>
 #endif
 
 static uint16_t coap_port = CONFIG_NET_SAMPLE_COAP_SERVER_SERVICE_PORT;

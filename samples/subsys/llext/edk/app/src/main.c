@@ -28,17 +28,17 @@
 #endif
 
 #ifndef EDK_BUILD
-#include "../../ext1/build/ext1.inc"
+#include <../../ext1/build/ext1.inc>
 #define ext1_inc ext1_llext
 #define ext1_len ext1_llext_len
-#include "../../ext2/build/ext2.inc"
+#include <../../ext2/build/ext2.inc>
 #define ext2_inc ext2_llext
 #define ext2_len ext2_llext_len
-#include "../../ext3/build/ext3.inc"
+#include <../../ext3/build/ext3.inc>
 #define ext3_inc ext3_llext
 #define ext3_len ext3_llext_len
 #ifndef CONFIG_LLEXT_EDK_USERSPACE_ONLY
-#include "../../k-ext1/build/kext1.inc"
+#include <../../k-ext1/build/kext1.inc>
 #define kext1_inc kext1_llext
 #define kext1_len kext1_llext_len
 #endif

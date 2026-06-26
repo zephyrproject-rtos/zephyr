@@ -22,7 +22,7 @@
 
 #include <zephyr/logging/log.h>
 
-#include "common.h"
+#include <common.h>
 
 LOG_MODULE_DECLARE(ead_central_sample, CONFIG_BT_EAD_LOG_LEVEL);
 

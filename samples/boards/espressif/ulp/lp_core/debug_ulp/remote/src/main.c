@@ -5,9 +5,9 @@
  */
 
 #include <stdio.h>
-#include "ulp_lp_core_utils.h"
+#include <ulp_lp_core_utils.h>
 #include <esp_cpu.h>
-#include "riscv/rvruntime-frames.h"
+#include <riscv/rvruntime-frames.h>
 
 /* Override for the ulp_lp_core_panic_handler() so it stops the debugger when abort() is called */
 void ulp_lp_core_panic_handler(RvExcFrame *frame, int exccause)

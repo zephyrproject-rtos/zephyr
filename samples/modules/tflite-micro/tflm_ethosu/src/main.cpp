@@ -17,9 +17,9 @@
 #include <zephyr/kernel.h>
 
 /* Model data */
-#include "input.h"
-#include "model.h"
-#include "output.h"
+#include <input.h>
+#include <model.h>
+#include <output.h>
 
 using namespace std;
 using namespace InferenceProcess;

@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(net_syslog, LOG_LEVEL_DBG);
 
 #include <stdlib.h>
 
-#include "net_sample_common.h"
+#include <net_sample_common.h>
 
 BUILD_ASSERT(IS_ENABLED(CONFIG_LOG_BACKEND_NET), "syslog backend not enabled");
 

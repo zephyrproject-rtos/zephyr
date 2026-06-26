@@ -11,7 +11,7 @@ LOG_MODULE_DECLARE(net_coap_service_sample);
 #include <zephyr/sys/printk.h>
 #include <zephyr/net/coap_service.h>
 
-#include "net_private.h"
+#include <net_private.h>
 
 static int piggyback_get(struct coap_resource *resource,
 			 struct coap_packet *request,

@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "mspi_ambiq.h"
+#include <mspi_ambiq.h>
 
 #if CONFIG_FLASH_MSPI
 #define TARGET_DEVICE DT_ALIAS(flash0)

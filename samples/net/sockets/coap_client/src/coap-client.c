@@ -24,11 +24,11 @@
 #include <zephyr/net/udp.h>
 #include <zephyr/net/coap.h>
 
-#include "net_sample_common.h"
+#include <net_sample_common.h>
 
 LOG_MODULE_REGISTER(net_coap_client_sample, LOG_LEVEL_DBG);
 
-#include "net_private.h"
+#include <net_private.h>
 
 #define MAX_COAP_MSG_LEN 256
 #define COAP_DEFAULT_PORT 5683

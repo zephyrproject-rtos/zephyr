@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 
-#include "arm_math.h"
+#include <arm_math.h>
 
 #define NUM_TAPS   10 /* Number of taps in the FIR filter (length of the moving average window) */
 #define BLOCK_SIZE 32 /* Number of samples processed per block */

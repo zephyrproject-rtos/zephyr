@@ -6,9 +6,9 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log_ctrl.h>
 
-#include "apps.hpp"
-#include "chre/core/event_loop_manager.h"
-#include "chre/target_platform/init.h"
+#include <apps.hpp>
+#include <chre/core/event_loop_manager.h>
+#include <chre/target_platform/init.h>
 
 inline const char *boolToString(bool cond)
 {

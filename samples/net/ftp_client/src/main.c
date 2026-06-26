@@ -9,7 +9,7 @@ LOG_MODULE_REGISTER(ftp_client_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/kernel.h>
 
-#include "net_sample_common.h"
+#include <net_sample_common.h>
 
 int main(void)
 {

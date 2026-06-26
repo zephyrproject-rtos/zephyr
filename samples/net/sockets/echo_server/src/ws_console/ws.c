@@ -12,7 +12,7 @@ LOG_MODULE_DECLARE(net_echo_server_sample, LOG_LEVEL_DBG);
 #include <zephyr/shell/shell_websocket.h>
 
 static const char index_html_gz[] = {
-#include "index.html.gz.inc"
+#include <index.html.gz.inc>
 };
 
 struct http_resource_detail_static index_html_gz_resource_detail = {
@@ -26,7 +26,7 @@ struct http_resource_detail_static index_html_gz_resource_detail = {
 };
 
 static const char style_css_gz[] = {
-#include "style.css.gz.inc"
+#include <style.css.gz.inc>
 };
 
 struct http_resource_detail_static style_css_gz_resource_detail = {
@@ -40,7 +40,7 @@ struct http_resource_detail_static style_css_gz_resource_detail = {
 };
 
 static const char favicon_16x16_png_gz[] = {
-#include "favicon-16x16.png.gz.inc"
+#include <favicon-16x16.png.gz.inc>
 };
 
 struct http_resource_detail_static favicon_16x16_png_gz_resource_detail = {

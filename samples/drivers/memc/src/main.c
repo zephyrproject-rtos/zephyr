@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(main);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_flexspi)
 /* Use memc API to get AHB base address for the device */
-#include "memc_mcux_flexspi.h"
+#include <memc_mcux_flexspi.h>
 #define FLEXSPI_DEV DEVICE_DT_GET(DT_PARENT(DT_ALIAS(sram_ext)))
 #define MEMC_DEV DT_ALIAS(sram_ext)
 #define MEMC_PORT DT_REG_ADDR(DT_ALIAS(sram_ext))

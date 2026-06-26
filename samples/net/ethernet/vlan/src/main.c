@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(net_vlan_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
 
-#include "net_sample_common.h"
+#include <net_sample_common.h>
 
 int main(void)
 {

@@ -5,8 +5,8 @@
 #ifndef SAMPLES_APPLICATION_DEVELOPMENT_CHRE_INCLUDE_APPS_H_
 #define SAMPLES_APPLICATION_DEVELOPMENT_CHRE_INCLUDE_APPS_H_
 
-#include "chre/core/nanoapp.h"
-#include "chre/util/unique_ptr.h"
+#include <chre/core/nanoapp.h>
+#include <chre/util/unique_ptr.h>
 
 namespace chre {
 

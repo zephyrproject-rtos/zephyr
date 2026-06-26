@@ -8,7 +8,7 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>
 
-#include "tfm_ns_interface.h"
+#include <tfm_ns_interface.h>
 #include "psa_attestation.h"
 #include "psa_crypto.h"
 #include "util_app_cfg.h"

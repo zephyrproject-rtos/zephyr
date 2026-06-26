@@ -5,10 +5,10 @@
 #include <cinttypes>
 #include <zephyr/sys/printk.h>
 
-#include "chre_api/chre/event.h"
-#include "chre/core/event_loop_manager.h"
-#include "chre/platform/static_nanoapp_init.h"
-#include "chre/util/system/napp_permissions.h"
+#include <chre_api/chre/event.h>
+#include <chre/core/event_loop_manager.h>
+#include <chre/platform/static_nanoapp_init.h>
+#include <chre/util/system/napp_permissions.h>
 
 namespace
 {

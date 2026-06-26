@@ -31,7 +31,7 @@
 #include "ca_certificate.h"
 #endif
 
-#include "net_sample_common.h"
+#include <net_sample_common.h>
 
 #endif
 

@@ -16,7 +16,7 @@
 static const unsigned char ca_certificate[] = "ca_cert.der";
 #else
 static const unsigned char ca_certificate[] = {
-#include "ca_cert.der.inc"
+#include <ca_cert.der.inc>
 };
 #endif
 

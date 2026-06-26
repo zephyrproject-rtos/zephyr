@@ -7,8 +7,8 @@
 #include <string.h>
 #include <zephyr/logging/log.h>
 
-#include "psa/error.h"
-#include "psa/protected_storage.h"
+#include <psa/error.h>
+#include <psa/protected_storage.h>
 #include "util_app_cfg.h"
 #include "util_app_log.h"
 

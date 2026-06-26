@@ -9,7 +9,7 @@
 #include <zephyr/kernel.h>
 
 #include "app_gpio.h"
-#include "publisher.h"
+#include <publisher.h>
 
 K_WORK_DEFINE(button_work, publish);
 

@@ -43,26 +43,26 @@ static void l4_event_handler(struct net_mgmt_event_callback *cb,
 
 /* HTML */
 static uint8_t index_html_gz[] = {
-#include "index.html.gz.inc"
+#include <index.html.gz.inc>
 };
 
 /* CSS */
 static uint8_t style_css_gz[] = {
-#include "style.css.gz.inc"
+#include <style.css.gz.inc>
 };
 
 /* JavaScript */
 static uint8_t app_js_gz[] = {
-#include "app.js.gz.inc"
+#include <app.js.gz.inc>
 };
 
 /* Logo Left */
 static uint8_t vendor_logo_png[] = {
-#include "images/vendor_logo.png.gz.inc"
+#include <images/vendor_logo.png.gz.inc>
 };
 /* Logo Right */
 static uint8_t zephyr_logo_png[] = {
-#include "images/zephyr_logo.png.gz.inc"
+#include <images/zephyr_logo.png.gz.inc>
 };
 
 /* Static resource detail for index page */

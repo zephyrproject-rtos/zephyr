@@ -7,8 +7,8 @@
 #ifndef QE_TOUCH_CONFIG_H
 #define QE_TOUCH_CONFIG_H
 
-#include "r_ctsu_qe.h"
-#include "rm_touch_qe.h"
+#include <r_ctsu_qe.h>
+#include <rm_touch_qe.h>
 #include "qe_touch_define.h"
 
 /* Exported global variables */

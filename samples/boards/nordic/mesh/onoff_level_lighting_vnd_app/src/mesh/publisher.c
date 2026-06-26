@@ -7,7 +7,7 @@
 
 #include <zephyr/drivers/gpio.h>
 
-#include "app_gpio.h"
+#include <app_gpio.h>
 #include "ble_mesh.h"
 #include "device_composition.h"
 #include "publisher.h"

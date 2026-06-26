@@ -35,12 +35,12 @@ LOG_MODULE_REGISTER(net_dumb_http_srv_mt_sample);
 #define SERVER_CERTIFICATE_TAG 1
 
 static const unsigned char server_certificate[] = {
-#include "mt-http-server-cert.der.inc"
+#include <mt-http-server-cert.der.inc>
 };
 
 /* This is the private key in pkcs#8 format. */
 static const unsigned char private_key[] = {
-#include "mt-http-server-key.der.inc"
+#include <mt-http-server-key.der.inc>
 };
 #else
 #define STACK_SIZE 1024
@@ -53,9 +53,9 @@ static const unsigned char private_key[] = {
 
 static const char content[] = {
 #if defined(CONFIG_NET_SAMPLE_SERVE_LARGE_FILE)
-    #include "response_100k.html.bin.inc"
+    #include <response_100k.html.bin.inc>
 #else
-    #include "response_big.html.bin.inc"
+    #include <response_big.html.bin.inc>
 #endif
 };
 
