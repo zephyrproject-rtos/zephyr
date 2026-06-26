@@ -351,7 +351,7 @@
 		};
 
 		usb_otg: usb_otg@50000000 {
-			compatible = "espressif,esp32p4-usb-otg-hs", "snps,dwc2";
+			compatible = "espressif,esp32-usb-otg-hs", "snps,dwc2";
 			reg = <0x50000000 DT_SIZE_K(256)>;
 			status = "disabled";
 			interrupts = <USB_OTG_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
