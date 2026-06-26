@@ -12,7 +12,7 @@
 #include <zephyr/sys/mpsc_pbuf.h>
 #include <zephyr/logging/log_link.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/__assert.h>
