@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "mocks/adv.h"
-#include "mocks/adv_expects.h"
-#include "mocks/conn.h"
-#include "mocks/conn_expects.h"
-#include "mocks/hci_core.h"
-#include "mocks/hci_core_expects.h"
-#include "mocks/keys.h"
-#include "mocks/keys_expects.h"
-#include "mocks/net_buf.h"
-#include "mocks/net_buf_expects.h"
-#include "mocks/scan.h"
-#include "mocks/scan_expects.h"
-#include "testing_common_defs.h"
+#include <mocks/adv.h>
+#include <mocks/adv_expects.h>
+#include <mocks/conn.h>
+#include <mocks/conn_expects.h>
+#include <mocks/hci_core.h>
+#include <mocks/hci_core_expects.h>
+#include <mocks/keys.h>
+#include <mocks/keys_expects.h>
+#include <mocks/net_buf.h>
+#include <mocks/net_buf_expects.h>
+#include <mocks/scan.h>
+#include <mocks/scan_expects.h>
+#include <testing_common_defs.h>
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/fff.h>

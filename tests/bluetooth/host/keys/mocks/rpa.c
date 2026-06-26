@@ -5,6 +5,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include "mocks/rpa.h"
+#include <mocks/rpa.h>
 
 DEFINE_FAKE_VALUE_FUNC(bool, bt_rpa_irk_matches, const uint8_t *, const bt_addr_t *);

@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/hci.h>
 #include <host/hci_core.h>
-#include "mocks/hci_core.h"
+#include <mocks/hci_core.h>
 
 struct bt_dev bt_dev = {
 	.manufacturer = 0x1234,

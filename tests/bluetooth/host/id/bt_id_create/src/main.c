@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "testing_common_defs.h"
+#include <testing_common_defs.h>
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/hci.h>

@@ -7,8 +7,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/buf.h>
 #include <host/keys.h>
-#include "mocks/settings_store.h"
-#include "mocks/settings_store_expects.h"
+#include <mocks/settings_store.h>
+#include <mocks/settings_store_expects.h>
 
 void expect_single_call_bt_settings_delete_keys(void)
 {

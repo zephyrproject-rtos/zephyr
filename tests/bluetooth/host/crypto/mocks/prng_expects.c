@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/kernel.h>
-#include "mocks/prng.h"
-#include "mocks/prng_expects.h"
+#include <mocks/prng.h>
+#include <mocks/prng_expects.h>
 
 void expect_single_call_tc_psa_crypto_init(void)
 {
