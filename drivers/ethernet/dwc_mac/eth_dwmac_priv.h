@@ -106,8 +106,8 @@ struct dwmac_priv {
 
 	uint8_t mac_addr[6];
 
-#ifdef CONFIG_ETH_DWC_ETHER_QOS_CORE
 	uint32_t feature0;
+#ifdef CONFIG_ETH_DWC_ETHER_QOS_CORE
 	uint32_t feature1;
 	uint32_t feature2;
 	uint32_t feature3;
@@ -1286,6 +1286,7 @@ extern const struct ethernet_api dwmac_api;
 #define DWMAC_DMASR        0x1014
 #define DWMAC_DMAOMR       0x1018
 #define DWMAC_DMAIER       0x101C
+#define DWMAC_HWFR         0x1058
 
 /* MAC control bits */
 #define DWMAC_MACCR_RE     BIT(2)
@@ -1322,6 +1323,25 @@ extern const struct ethernet_api dwmac_api;
 #define DWMAC_DMAIER_RBUIE BIT(7)
 #define DWMAC_DMAIER_AISE  BIT(15)
 #define DWMAC_DMAIER_NISE  BIT(16)
+
+/* Hardware Feature Register */
+#define DWMAC_HWFR_10_100  BIT(0)
+#define DWMAC_HWFR_1000    BIT(1)
+#define DWMAC_HWFR_HD      BIT(2)
+#define DWMAC_HWFR_HASHF   BIT(4)
+#define DWMAC_HWFR_ADDMAC  BIT(5)
+#define DWMAC_HWFR_PCS     BIT(6)
+#define DWMAC_HWFR_SMA     BIT(8)
+#define DWMAC_HWFR_PMTW    BIT(9)
+#define DWMAC_HWFR_PMTM    BIT(10)
+#define DWMAC_HWFR_RMON    BIT(11)
+#define DWMAC_HWFR_TS2002  BIT(12)
+#define DWMAC_HWFR_TS2008  BIT(13)
+#define DWMAC_HWFR_TX_CHK  BIT(16)
+#define DWMAC_HWFR_RXCHKV1 BIT(17)
+#define DWMAC_HWFR_RXCHKV2 BIT(18)
+#define DWMAC_HWFR_FIFO2K  BIT(19)
+#define DWMAC_HWFR_ALTDESC BIT(24)
 
 /* DWMAC v3.x MDIO registers (GMAC core) */
 #define MAC_MDIO_ADDRESS 0x0010
