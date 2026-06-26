@@ -78,10 +78,23 @@ static void entry_extra2(void *p1, void *p2, void *p3)
 }
 
 /**
- * Test the k_event_init() API.
+ * @brief Verify that k_event_init() produces an empty, unowned event object.
  *
- * This is a white-box test to verify that the k_event_init() API initializes
- * the fields of a k_event structure as expected.
+ * @details
+ * White-box test confirming that a freshly initialized event starts with no
+ * pending events and no threads parked on its wait queue, which is the
+ * precondition every other event operation relies on.
+ *
+ * Test steps:
+ * - Initialize a k_event object with k_event_init().
+ * - Read the head of the event wait queue.
+ * - Read the event's set of posted events.
+ *
+ * Expected result:
+ * - The wait queue head is NULL (no waiters).
+ * - The set of posted events is 0.
+ *
+ * @see k_event_init()
  */
 ZTEST(events_api, test_k_event_init)
 {
@@ -359,11 +372,31 @@ void test_wake_multiple_threads(void)
 }
 
 /**
- * Test basic k_event_post() and k_event_set() APIs.
+ * @brief Verify event posting and clearing primitives update stored events.
  *
- * Tests the basic k_event_post() and k_event_set() APIs. This does not
- * involve waking or receiving events. It runs as a user-mode test so that
- * the event system calls are also exercised from an unprivileged thread.
+ * @details
+ * Exercises the value-manipulation event system calls without any waking or
+ * blocking, validating both the resulting set of posted events and the
+ * previous value each call returns. Runs as a user-mode test so the event
+ * system calls are also exercised from an unprivileged thread.
+ *
+ * Test steps:
+ * - Initialize an event object and confirm it holds no events.
+ * - Post events and verify k_event_post() returns the prior set and ORs in
+ *   the new bits.
+ * - Overwrite events with k_event_set() and verify it returns the prior set.
+ * - Use k_event_set_masked() to selectively set/clear bits and verify only
+ *   the masked bits change while the returned value reports their prior state.
+ *
+ * Expected result:
+ * - After each call the stored events (read via k_event_test()) match the
+ *   expected value, and each call returns the previous state of the affected
+ *   bits.
+ *
+ * @see k_event_post()
+ * @see k_event_set()
+ * @see k_event_set_masked()
+ * @see k_event_test()
  */
 
 ZTEST_USER(events_api, test_event_deliver)
@@ -429,11 +462,34 @@ ZTEST_USER(events_api, test_event_deliver)
 }
 
 /**
- * Test delivery and reception of events.
+ * @brief Verify multi-threaded waiting, reset-on-wait and waking of waiters.
  *
- * Testing both the delivery and reception of events involves the use of
- * multiple threads and uses the following event related APIs:
- *   k_event_post(), k_event_set(), k_event_wait() and k_event_wait_all().
+ * @details
+ * Drives a receiver thread and two extra waiter threads through a scripted
+ * sequence of synchronization points to validate the blocking event APIs end
+ * to end: matching all-vs-any conditions, returning only the matching bits,
+ * optionally resetting the event before waiting, and waking multiple threads
+ * blocked on a single event object at once.
+ *
+ * Test steps:
+ * - Pre-load the event object and start a receiver thread plus two extra
+ *   threads waiting with k_event_wait()/k_event_wait_all().
+ * - Walk the receiver through waits that should miss, partially match and
+ *   fully match the posted events, checking the returned bits each time.
+ * - Repeat with the reset flag set and confirm the event is cleared before
+ *   the new bits are posted.
+ * - Wake both extra threads via k_event_set() and collect the events they
+ *   report back.
+ *
+ * Expected result:
+ * - Each wait returns exactly the matching bits (0 when the condition is not
+ *   satisfied), reset-on-wait clears prior events, and all woken threads
+ *   report the expected events.
+ *
+ * @see k_event_post()
+ * @see k_event_set()
+ * @see k_event_wait()
+ * @see k_event_wait_all()
  */
 
 ZTEST(events_api, test_event_receive)
@@ -462,6 +518,28 @@ ZTEST(events_api, test_event_receive)
 	test_wake_multiple_threads();
 }
 
+/**
+ * @brief Verify k_event_wait_safe() consumes only the bits it returns.
+ *
+ * @details
+ * The "safe" wait variant atomically clears the events it reports so a caller
+ * never observes the same event twice. This test confirms that requested bits
+ * present in the object are returned and removed, and that a subsequent wait
+ * for the same bits returns nothing. Runs as a user-mode test.
+ *
+ * Test steps:
+ * - Set a known set of events on the object.
+ * - Wait (any-match) for a subset and verify exactly that subset is returned.
+ * - Wait again for the same subset and verify no events are returned (the bits
+ *   were consumed).
+ * - Repeat for the remaining bits, including an all-ones request.
+ *
+ * Expected result:
+ * - Each call returns only the matching bits that were present and removes
+ *   them, so re-waiting for already-consumed bits yields 0.
+ *
+ * @see k_event_wait_safe()
+ */
 ZTEST_USER(events_api, test_k_event_wait_safe)
 {
 	uint32_t events;
@@ -481,6 +559,28 @@ ZTEST_USER(events_api, test_k_event_wait_safe)
 	zexpect_equal(events, 0x0, "phantom events %x not removed from event object", events);
 }
 
+/**
+ * @brief Verify k_event_wait_all_safe() consumes bits only on a full match.
+ *
+ * @details
+ * The all-match "safe" wait variant returns and clears the requested bits only
+ * when every requested bit is present; a partial match returns nothing and
+ * leaves the object untouched. This test exercises both the no-match and the
+ * complete-match cases. Runs as a user-mode test.
+ *
+ * Test steps:
+ * - Set a known set of events on the object.
+ * - Wait-all for a set that is not fully present and verify 0 is returned.
+ * - Wait-all for a fully-present subset and verify exactly that subset is
+ *   returned and consumed.
+ * - Repeat for the remaining bits.
+ *
+ * Expected result:
+ * - A partial match returns 0 and consumes nothing; a complete match returns
+ *   the requested bits and removes them from the object.
+ *
+ * @see k_event_wait_all_safe()
+ */
 ZTEST_USER(events_api, test_k_event_wait_all_safe)
 {
 	uint32_t events;
