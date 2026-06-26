@@ -23,4 +23,7 @@ tests:
       - nucleo_h753zi
       - sf32lb52_devkit_lcd
       - kit_psc3m5_evk
+      - cyw920829m2evk_02/cyw20829b1340
+      - cyw920829m2evk_02/cyw20829b1010
+      - cyw920829m2evk_02/cyw20829b0lkml
     tags: crypto
