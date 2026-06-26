@@ -2190,10 +2190,11 @@ try_resolve:
 		}
 
 		/* If mDNS is enabled, then send .local queries only to
-		 * a well known multicast mDNS server address.
+		 * a well known multicast mDNS server and non .local only
+		 * to unicast servers.
 		 */
-		if (IS_ENABLED(CONFIG_MDNS_RESOLVER) && mdns_query &&
-		    !ctx->servers[j].is_mdns) {
+		if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
+		    (mdns_query != !!ctx->servers[j].is_mdns)) {
 			continue;
 		}
 
