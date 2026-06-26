@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Rithic Chellaram Hariharan
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu
+
+config TEST_PROVIDE_PM_HOOKS
+	bool "Provide PM hooks for test purposes"
+	default y
+	select HAS_PM
+
+config APP_HAVE_RETAINING_STATE
+	bool "Devicetree declares a context-retaining power state"
+	default y
+	help
+	  Set to n for the scenario whose devicetree declares only a soft-off
+	  state, so that both helpers are expected to fail with -ENOTSUP.

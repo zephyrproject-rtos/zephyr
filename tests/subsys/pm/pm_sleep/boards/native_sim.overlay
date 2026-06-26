@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2026 Rithic Chellaram Hariharan
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	cpus {
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <100>;
+				exit-latency-us = <10>;
+			};
+
+			standby: standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <1000>;
+				exit-latency-us = <100>;
+			};
+
+			s2ram: s2ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				min-residency-us = <5000>;
+				exit-latency-us = <500>;
+			};
+
+			off: off {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				status = "disabled";
+			};
+		};
+	};
+};
+
+&cpu0 {
+	cpu-power-states = <&idle &standby &s2ram &off>;
+};

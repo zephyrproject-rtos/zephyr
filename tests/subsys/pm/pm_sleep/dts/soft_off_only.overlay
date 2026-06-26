@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 Rithic Chellaram Hariharan
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Only a soft-off state, so both helpers report -ENOTSUP.
+ */
+
+/ {
+	cpus {
+		power-states {
+			off: off {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+			};
+		};
+	};
+};
+
+&cpu0 {
+	cpu-power-states = <&off>;
+};

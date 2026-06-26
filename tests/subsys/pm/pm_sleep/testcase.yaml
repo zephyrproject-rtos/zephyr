@@ -1,0 +1,10 @@
+common:
+  platform_allow: native_sim
+  tags: pm
+tests:
+  pm.sleep: {}
+  pm.sleep.no_retaining:
+    extra_args:
+      - DTC_OVERLAY_FILE="dts/soft_off_only.overlay"
+    extra_configs:
+      - CONFIG_APP_HAVE_RETAINING_STATE=n
