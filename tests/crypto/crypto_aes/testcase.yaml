@@ -19,4 +19,5 @@ tests:
       - sama7d65_curiosity
       - sama7g54_ek
       - sf32lb52_devkit_lcd
+      - kit_psc3m5_evk
     tags: crypto
