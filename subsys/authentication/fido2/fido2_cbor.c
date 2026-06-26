@@ -11,7 +11,7 @@
 
 #include "fido2_cbor.h"
 #include "fido2_crypto.h"
-#include "zcbor_common.h"
+#include <zcbor_common.h>
 #include <stdint.h>
 #include <string.h>
 
