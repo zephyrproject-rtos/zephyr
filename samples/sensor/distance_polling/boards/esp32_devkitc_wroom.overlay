@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2026 Malluri Sai Raghu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		distance0 = &hc_sr04;
+	};
+
+	hc_sr04: hc-sr04 {
+		compatible = "hc-sr04";
+		trigger-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+		echo-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+	};
+};
