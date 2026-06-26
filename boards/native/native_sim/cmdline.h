@@ -8,7 +8,7 @@
 #ifndef BOARDS_POSIX_NATIVE_SIM_CMDLINE_H
 #define BOARDS_POSIX_NATIVE_SIM_CMDLINE_H
 
-#include "nsi_cmdline.h"
+#include <nsi_cmdline.h>
 
 #ifdef __cplusplus
 extern "C" {
