@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/arch/arch_interface.h>
 #include <zephyr/drivers/counter.h>
 #include <soc.h>
 #include <r_lpm.h>
@@ -112,10 +113,17 @@ static struct st_lpm_cfg renesas_ra_lpm_fsp_cfg = {
 
 static struct st_lpm_instance_ctrl renesas_ra_lpm_fsp_ctrl;
 
+void enter_low_power_mode(void)
+{
+	unsigned int key;
+
+	key = arch_pm_state_set_prepare();
+	R_LPM_LowPowerModeEnter(&renesas_ra_lpm_fsp_ctrl);
+	arch_pm_state_set_finish(key);
+}
+
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
-	irq_unlock(0);
-
 	switch (state) {
 	case PM_STATE_RUNTIME_IDLE:
 		ARG_UNUSED(substate_id);
@@ -180,7 +188,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	}
 
 	R_LPM_Open(&renesas_ra_lpm_fsp_ctrl, &renesas_ra_lpm_fsp_cfg);
-	R_LPM_LowPowerModeEnter(&renesas_ra_lpm_fsp_ctrl);
+	enter_low_power_mode();
 }
 
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
@@ -209,8 +217,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	default:
 		break;
 	}
-
-	irq_unlock(0);
 }
 
 static int renesas_ra_idle_counter_start(void)
