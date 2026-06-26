@@ -506,6 +506,64 @@ ZTEST(context, test_arch_cpu_irqs_are_enabled)
 }
 
 /**
+ * @brief Verify irq_lock()/irq_unlock() nest and only the outer unlock restores
+ *        interrupts.
+ *
+ * @ingroup tests_kernel_context
+ *
+ * @details
+ * irq_lock() is reentrant: it returns a key encoding the interrupt state at the
+ * time of the call, and irq_unlock() restores exactly that state. Nesting two
+ * locks must therefore keep interrupts masked until the call balancing the
+ * outermost lock runs - unlocking the inner key must NOT prematurely re-enable
+ * interrupts. arch_cpu_irqs_are_enabled() is used to observe the state at each
+ * step.
+ *
+ * Test steps:
+ * - In thread context (IRQs enabled), take an outer irq_lock(); confirm masked.
+ * - Take a nested inner irq_lock(); confirm still masked.
+ * - irq_unlock() the inner key; confirm interrupts remain masked.
+ * - irq_unlock() the outer key; confirm interrupts are enabled again.
+ *
+ * Expected result:
+ * - Interrupts stay masked across the inner unlock and are only restored by the
+ *   unlock balancing the outermost lock.
+ *
+ * @see irq_lock()
+ * @see irq_unlock()
+ * @see arch_cpu_irqs_are_enabled()
+ */
+ZTEST(context, test_irq_lock_nested)
+{
+	unsigned int key_outer;
+	unsigned int key_inner;
+
+	/* Sanity: start from thread context with interrupts enabled. */
+	zassert_true(arch_cpu_irqs_are_enabled(),
+		     "IRQs not enabled at test entry");
+
+	key_outer = irq_lock();
+	zassert_false(arch_cpu_irqs_are_enabled(),
+		      "IRQs not masked after outer irq_lock()");
+
+	key_inner = irq_lock();
+	zassert_false(arch_cpu_irqs_are_enabled(),
+		      "IRQs not masked after nested irq_lock()");
+
+	/* Balancing the inner lock must leave interrupts masked, because the
+	 * outer lock is still held.
+	 */
+	irq_unlock(key_inner);
+	zassert_false(arch_cpu_irqs_are_enabled(),
+		      "inner irq_unlock() re-enabled IRQs while outer lock held");
+
+	/* Balancing the outermost lock restores the original (enabled) state. */
+	irq_unlock(key_outer);
+	zassert_true(arch_cpu_irqs_are_enabled(),
+		     "outer irq_unlock() did not restore IRQs");
+}
+
+/**
  * @brief Verify irq_disable()/irq_enable() mask a specific numeric IRQ.
  *
  * @ingroup tests_kernel_context
