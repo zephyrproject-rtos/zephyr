@@ -99,6 +99,12 @@
 		compatible = "simple-bus";
 		ranges;
 
+		instr_mem: memory@40378000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x40378000 DT_SIZE_K(416)>;
+			zephyr,memory-region = "IRAM";
+		};
+
 		icache0: memory@42000000 {
 			compatible = "zephyr,memory-region";
 			reg = <0x42000000 DT_SIZE_M(32)>;

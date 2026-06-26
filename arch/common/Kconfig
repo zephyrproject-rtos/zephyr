@@ -24,6 +24,13 @@ config ISR_TABLE_SHELL
 	help
 	  This option enables a shell command to dump the ISR tables.
 
+config ARCH_HAS_WORD_GRANULAR_ACCESS_INSTR_MEM
+	bool "Word granular access instruction memory support"
+	select WORD_GRANULAR_ACCESS
+	help
+	  This option enables support for access to byte addressable and word granular
+	  access instruction memory.
+
 config ARCH_SUPPORTS_ROM_OFFSET
 	bool
 	default y
