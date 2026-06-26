@@ -4,4 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "hal/swi_vendor_hal.h"
+#include <hal/swi_vendor_hal.h>

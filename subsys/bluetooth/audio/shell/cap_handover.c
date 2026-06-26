@@ -35,8 +35,8 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/cap.h>
 
-#include "common/bt_shell_private.h"
-#include "host/shell/bt.h"
+#include <common/bt_shell_private.h>
+#include <host/shell/bt.h>
 #include "audio.h"
 
 static void unicast_to_broadcast_created_cb(struct bt_cap_broadcast_source *broadcast_source)

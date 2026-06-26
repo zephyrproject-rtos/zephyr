@@ -12,13 +12,13 @@
 #include <zephyr/drivers/entropy.h>
 
 #include "util.h"
-#include "util/memq.h"
+#include <util/memq.h>
 
-#include "ll_sw/lll.h"
+#include <ll_sw/lll.h>
 
-#include "ll_sw/pdu_df.h"
-#include "lll/pdu_vendor.h"
-#include "ll_sw/pdu.h"
+#include <ll_sw/pdu_df.h>
+#include <lll/pdu_vendor.h>
+#include <ll_sw/pdu.h>
 
 /**
  * @brief Population count: Count the number of bits set to 1

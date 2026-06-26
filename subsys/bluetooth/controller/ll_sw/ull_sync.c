@@ -10,32 +10,32 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/mayfly.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/mayfly.h>
+#include <util/dbuf.h>
 
-#include "hal/cpu.h"
-#include "hal/ccm.h"
-#include "hal/radio.h"
-#include "hal/ticker.h"
+#include <hal/cpu.h>
+#include <hal/ccm.h>
+#include <hal/radio.h>
+#include <hal/ticker.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll/lll_adv_types.h"
+#include <lll/lll_adv_types.h>
 #include "lll_adv.h"
-#include "lll/lll_adv_pdu.h"
+#include <lll/lll_adv_pdu.h>
 #include "lll_clock.h"
-#include "lll/lll_vendor.h"
+#include <lll/lll_vendor.h>
 #include "lll_chan.h"
 #include "lll_scan.h"
-#include "lll/lll_df_types.h"
+#include <lll/lll_df_types.h>
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 #include "lll_sync.h"
@@ -63,9 +63,9 @@
 #include "ull_df_internal.h"
 
 #include "ull_llcp.h"
-#include "ll.h"
+#include <ll.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 /* Check that timeout_reload member is at safe offset when ll_sync_set is
  * allocated using mem interface. timeout_reload being non-zero is used to

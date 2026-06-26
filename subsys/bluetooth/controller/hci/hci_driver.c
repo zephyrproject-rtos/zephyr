@@ -27,38 +27,38 @@
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #endif /* CONFIG_CLOCK_CONTROL_NRF */
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
-#include "util/util.h"
-#include "util/memq.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/memq.h>
+#include <util/dbuf.h>
 
-#include "hal/ccm.h"
+#include <hal/ccm.h>
 
 #if defined(CONFIG_SOC_FAMILY_NORDIC_NRF)
-#include "hal/radio.h"
+#include <hal/radio.h>
 #endif /* CONFIG_SOC_FAMILY_NORDIC_NRF */
 
-#include "ll_sw/pdu_df.h"
-#include "lll/pdu_vendor.h"
-#include "ll_sw/pdu.h"
+#include <ll_sw/pdu_df.h>
+#include <lll/pdu_vendor.h>
+#include <ll_sw/pdu.h>
 
-#include "ll_sw/lll.h"
-#include "lll/lll_df_types.h"
-#include "ll_sw/lll_sync_iso.h"
-#include "ll_sw/lll_conn.h"
-#include "ll_sw/lll_conn_iso.h"
-#include "ll_sw/isoal.h"
+#include <ll_sw/lll.h>
+#include <lll/lll_df_types.h>
+#include <ll_sw/lll_sync_iso.h>
+#include <ll_sw/lll_conn.h>
+#include <ll_sw/lll_conn_iso.h>
+#include <ll_sw/isoal.h>
 
-#include "ll_sw/ull_iso_types.h"
-#include "ll_sw/ull_conn_iso_types.h"
+#include <ll_sw/ull_iso_types.h>
+#include <ll_sw/ull_conn_iso_types.h>
 
-#include "ll_sw/ull_iso_internal.h"
-#include "ll_sw/ull_sync_iso_internal.h"
-#include "ll_sw/ull_conn_internal.h"
-#include "ll_sw/ull_conn_iso_internal.h"
+#include <ll_sw/ull_iso_internal.h>
+#include <ll_sw/ull_sync_iso_internal.h>
+#include <ll_sw/ull_conn_internal.h>
+#include <ll_sw/ull_conn_iso_internal.h>
 
-#include "ll.h"
+#include <ll.h>
 
 #include "hci_internal.h"
 

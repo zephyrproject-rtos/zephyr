@@ -13,11 +13,11 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "hal/ticker.h"
-#include "ticker/ticker.h"
-#include "ll.h"
+#include <hal/ticker.h>
+#include <ticker/ticker.h>
+#include <ll.h>
 
-#include "soc_flash_nrf.h"
+#include <soc_flash_nrf.h>
 
 #define FLASH_RADIO_ABORT_DELAY_US 1500
 #define FLASH_RADIO_WORK_DELAY_US  200

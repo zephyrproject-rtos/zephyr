@@ -37,7 +37,7 @@
 #include <zephyr/types.h>
 
 #include "audio_internal.h"
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 #include "media_proxy_internal.h"
 #include "mcs_internal.h"
 

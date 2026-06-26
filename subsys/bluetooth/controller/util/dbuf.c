@@ -9,9 +9,9 @@
 
 #include <soc.h>
 
-#include "hal/cpu.h"
+#include <hal/cpu.h>
 
-#include "util/util.h"
+#include <util/util.h>
 #include "dbuf.h"
 
 void *dbuf_alloc(struct dbuf_hdr *hdr, uint8_t *idx)

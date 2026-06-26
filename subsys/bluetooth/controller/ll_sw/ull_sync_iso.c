@@ -8,27 +8,27 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/mayfly.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/mayfly.h>
+#include <util/dbuf.h>
 
-#include "hal/ccm.h"
-#include "hal/radio.h"
-#include "hal/ticker.h"
+#include <hal/ccm.h>
+#include <hal/radio.h>
+#include <hal/ticker.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll/lll_vendor.h"
+#include <lll/lll_vendor.h>
 #include "lll_clock.h"
 #include "lll_scan.h"
-#include "lll/lll_df_types.h"
+#include <lll/lll_df_types.h>
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
 #include "lll_conn.h"
@@ -52,11 +52,11 @@
 #include "ull_conn_internal.h"
 #include "ull_conn_iso_internal.h"
 
-#include "ll.h"
+#include <ll.h>
 
-#include "bt_crypto.h"
+#include <bt_crypto.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 static int init_reset(void);
 static struct ll_sync_iso_set *sync_iso_get(uint8_t handle);

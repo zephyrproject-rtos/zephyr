@@ -43,8 +43,8 @@
 #include "../host/keys.h"
 #include "../host/settings.h"
 
-#include "common/bt_settings_commit.h"
-#include "common/bt_str.h"
+#include <common/bt_settings_commit.h>
+#include <common/bt_str.h>
 #include "audio_internal.h"
 #include "csip_internal.h"
 #include "csip_crypto.h"

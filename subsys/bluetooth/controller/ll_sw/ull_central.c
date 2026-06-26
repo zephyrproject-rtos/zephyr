@@ -9,38 +9,38 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "util/util.h"
-#include "util/memq.h"
-#include "util/mem.h"
-#include "util/mayfly.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/memq.h>
+#include <util/mem.h>
+#include <util/mayfly.h>
+#include <util/dbuf.h>
 
-#include "hal/cpu.h"
-#include "hal/ccm.h"
-#include "hal/radio.h"
-#include "hal/ticker.h"
+#include <hal/cpu.h>
+#include <hal/ccm.h>
+#include <hal/radio.h>
+#include <hal/ticker.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
 #include "lll.h"
 #include "lll_clock.h"
-#include "lll/lll_vendor.h"
-#include "lll/lll_adv_types.h"
+#include <lll/lll_vendor.h>
+#include <lll/lll_adv_types.h>
 #include "lll_adv.h"
-#include "lll/lll_adv_pdu.h"
+#include <lll/lll_adv_pdu.h>
 #include "lll_chan.h"
 #include "lll_scan.h"
-#include "lll/lll_df_types.h"
+#include <lll/lll_df_types.h>
 #include "lll_conn.h"
 #include "lll_central.h"
 #include "lll_filter.h"
 #include "lll_conn_iso.h"
 
-#include "ll_sw/ull_tx_queue.h"
+#include <ll_sw/ull_tx_queue.h>
 
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
@@ -53,18 +53,18 @@
 #include "ull_conn_internal.h"
 #include "ull_central_internal.h"
 
-#include "ll.h"
-#include "ll_feat.h"
-#include "ll_settings.h"
+#include <ll.h>
+#include <ll_feat.h>
+#include <ll_settings.h>
 
-#include "ll_sw/isoal.h"
-#include "ll_sw/ull_iso_types.h"
-#include "ll_sw/ull_conn_iso_types.h"
-#include "ll_sw/ull_conn_iso_internal.h"
+#include <ll_sw/isoal.h>
+#include <ll_sw/ull_iso_types.h>
+#include <ll_sw/ull_conn_iso_types.h>
+#include <ll_sw/ull_conn_iso_internal.h>
 
-#include "ll_sw/ull_llcp.h"
+#include <ll_sw/ull_llcp.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 static void ticker_op_stop_scan_cb(uint32_t status, void *param);
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CTLR_PHY_CODED)

@@ -35,7 +35,7 @@
 #include <sys/types.h>
 
 #include "addr_internal.h"
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 #include "conn_internal.h"
 #include "direction_internal.h"
 #include "hci_core.h"

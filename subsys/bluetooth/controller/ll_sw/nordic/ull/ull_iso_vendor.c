@@ -11,23 +11,23 @@
 
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "util/util.h"
-#include "util/memq.h"
+#include <util/util.h>
+#include <util/memq.h>
 
-#include "hal/ccm.h"
+#include <hal/ccm.h>
 
-#include "pdu_df.h"
-#include "lll/pdu_vendor.h"
-#include "pdu.h"
+#include <pdu_df.h>
+#include <lll/pdu_vendor.h>
+#include <pdu.h>
 
-#include "lll.h"
-#include "lll_conn.h"
+#include <lll.h>
+#include <lll_conn.h>
 
-#include "isoal.h"
+#include <isoal.h>
 
-#include "ull_iso_types.h"
-#include "ull_conn_internal.h"
-#include "ull_internal.h"
+#include <ull_iso_types.h>
+#include <ull_conn_internal.h>
+#include <ull_internal.h>
 
 /* FIXME: Implement vendor specific data path configuration */
 static bool dummy;

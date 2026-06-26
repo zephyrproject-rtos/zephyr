@@ -12,12 +12,12 @@
 
 #include <hal/nrf_ecb.h>
 
-#include "util/mem.h"
+#include <util/mem.h>
 
-#include "hal/cpu.h"
-#include "hal/ecb.h"
+#include <hal/cpu.h>
+#include <hal/ecb.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #if defined(NRF_ECB00) /* In some devices NRF_ECB was renamed NRF_ECB00 */
 #define NRF_ECB                   NRF_ECB00

@@ -25,9 +25,9 @@
 
 #include <zephyr/shell/shell.h>
 
-#include "host/shell/bt.h"
-#include "common/bt_shell_private.h"
-#include "common/bt_str.h"
+#include <host/shell/bt.h>
+#include <common/bt_shell_private.h>
+#include <common/bt_str.h>
 
 #define HELP_NONE "[none]"
 #define SPP_RFCOMM_MTU     CONFIG_BT_RFCOMM_L2CAP_MTU

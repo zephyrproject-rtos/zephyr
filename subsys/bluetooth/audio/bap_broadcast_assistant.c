@@ -46,7 +46,7 @@
 
 LOG_MODULE_REGISTER(bt_bap_broadcast_assistant, CONFIG_BT_BAP_BROADCAST_ASSISTANT_LOG_LEVEL);
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 #include "audio_internal.h"
 #include "bap_internal.h"

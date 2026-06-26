@@ -37,7 +37,7 @@
 
 LOG_MODULE_REGISTER(bt_cap_commander, CONFIG_BT_CAP_COMMANDER_LOG_LEVEL);
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 static void cap_commander_proc_complete(struct bt_cap_common_proc *active_proc);
 

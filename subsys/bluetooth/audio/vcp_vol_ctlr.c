@@ -33,7 +33,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 #include "vcp_internal.h"
 
 LOG_MODULE_REGISTER(bt_vcp_vol_ctlr, CONFIG_BT_VCP_VOL_CTLR_LOG_LEVEL);
