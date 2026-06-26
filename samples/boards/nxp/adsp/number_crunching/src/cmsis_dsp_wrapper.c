@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <stdio.h>
 
-#include "arm_math.h"
+#include <arm_math.h>
 
 void vec_sum_int16(const int16_t *in_a, const int16_t *in_b, int16_t *out, uint32_t length)
 {
