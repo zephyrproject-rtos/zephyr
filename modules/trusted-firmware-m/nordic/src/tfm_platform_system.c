@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "platform/include/tfm_platform_system.h"
-#include "cmsis.h"
-#include "tfm_platform_hal_ioctl.h"
-#include "tfm_ioctl_core_api.h"
+#include <platform/include/tfm_platform_system.h>
+#include <cmsis.h>
+#include <tfm_platform_hal_ioctl.h>
+#include <tfm_ioctl_core_api.h>
 
 void tfm_platform_hal_system_reset(void)
 {
