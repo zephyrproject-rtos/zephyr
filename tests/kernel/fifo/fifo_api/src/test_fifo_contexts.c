@@ -228,6 +228,32 @@ ZTEST(fifo_api, test_fifo_peek)
 	zassert_is_null(k_fifo_peek_head(&fifo));
 	zassert_is_null(k_fifo_peek_tail(&fifo));
 }
+
+K_HEAP_DEFINE(fifo_alloc_pool, 256);
+
+/**
+ * @brief Test enqueuing a data item to a FIFO with implicit memory allocation
+ *
+ * @details Use k_fifo_alloc_put() to enqueue a data item that does not reserve
+ * space for the bookkeeping word, so the kernel allocates the container from the
+ * calling thread's resource pool. Verify the call succeeds and that the same
+ * data pointer is returned by a subsequent get.
+ *
+ * @ingroup kernel_fifo_tests
+ * @see k_fifo_alloc_put()
+ */
+ZTEST(fifo_api, test_fifo_alloc_put)
+{
+	static uint32_t payload = 0xDEADBEEF;
+
+	k_fifo_init(&fifo);
+	k_thread_heap_assign(k_current_get(), &fifo_alloc_pool);
+
+	/**TESTPOINT: allocate the queue container from the thread resource pool*/
+	zassert_equal(k_fifo_alloc_put(&fifo, &payload), 0);
+
+	zassert_equal(k_fifo_get(&fifo, K_NO_WAIT), (void *)&payload);
+}
 /**
  * @}
  */
