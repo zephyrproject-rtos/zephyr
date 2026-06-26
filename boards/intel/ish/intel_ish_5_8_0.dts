@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include "intel/intel_ish5_8.dtsi"
+#include <intel/intel_ish5_8.dtsi>
 
 / {
 	model = "intel_ish_5_8_0";
