@@ -5,8 +5,8 @@
  */
 
 #include <stdio.h>
-#include "ulp_lp_core_utils.h"
-#include "ulp_lp_core_interrupts.h"
+#include <ulp_lp_core_utils.h>
+#include <ulp_lp_core_interrupts.h>
 
 volatile uint32_t lp_core_pmu_intr_count;
 
