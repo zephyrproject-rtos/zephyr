@@ -493,7 +493,7 @@ CBOR data of successful response:
         (str)"type"     : (str)
         (str,opt)"off"  : (uint)
         (str)"len"      : (uint)
-        (str)"output"   : (uint or bstr)
+        (str)"output"   : (uint or byte str)
     }
 
 In case of error the CBOR data takes the form:
