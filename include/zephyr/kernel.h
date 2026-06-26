@@ -5293,6 +5293,10 @@ struct k_msgq_attrs {
  *
  * @code extern struct k_msgq <name>; @endcode
  *
+ * @note This macro cannot be used together with a static keyword.
+ *       If such a use-case is desired, use @ref K_MSGQ_DEFINE_STATIC
+ *       instead.
+ *
  * @param q_name Name of the message queue.
  * @param q_msg_size Message size (in bytes).
  * @param q_max_msgs Maximum number of messages that can be queued.
@@ -5304,6 +5308,26 @@ struct k_msgq_attrs {
 		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];	\
 	STRUCT_SECTION_ITERABLE(k_msgq, q_name) =			\
 	       Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,	\
+				  (q_msg_size), (q_max_msgs))
+
+/**
+ * @brief Statically define and initialize a message queue in a private (static) scope.
+ *
+ * The message queue's ring buffer contains space for @a q_max_msgs messages,
+ * each of which is @a q_msg_size bytes long. Alignment of the message queue's
+ * ring buffer is not necessary, setting @a q_align to 1 is sufficient.
+ *
+ * @param q_name Name of the message queue.
+ * @param q_msg_size Message size (in bytes).
+ * @param q_max_msgs Maximum number of messages that can be queued.
+ * @param q_align Alignment of the message queue's ring buffer (power of 2).
+ *
+ */
+#define K_MSGQ_DEFINE_STATIC(q_name, q_msg_size, q_max_msgs, q_align)	\
+	static char __noinit __aligned(q_align)				\
+		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];	\
+	static STRUCT_SECTION_ITERABLE(k_msgq, q_name) =		\
+		Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,	\
 				  (q_msg_size), (q_max_msgs))
 
 /**
