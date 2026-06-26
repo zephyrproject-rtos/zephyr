@@ -411,6 +411,9 @@ void z_sched_yield(void)
 /* _sched_spinlock must be held */
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 {
+	/* A thread must not already be on a wait queue when added to a new one. */
+	__ASSERT_NO_MSG(thread->base.pended_on == NULL);
+
 	unready_thread(thread);
 	z_mark_thread_as_pending(thread);
 
@@ -503,6 +506,17 @@ void z_thread_timeout(struct _timeout *timeout)
 int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	       _wait_q_t *wait_q, k_timeout_t timeout)
 {
+	/* A blocking pend from ISR context is a programming error with no
+	 * safe recovery: it would sleep whatever thread was interrupted and,
+	 * on CONFIG_SWAP_NONATOMIC, corrupt the scheduler. Refuse it fatally
+	 * in every build rather than degrading into the corruption traced in
+	 * #111518. Placed first so the refusal performs no side effect.
+	 */
+	if (arch_is_in_isr()) {
+		__ASSERT(false, "blocking pend from ISR context");
+		k_panic();
+	}
+
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
 	pending_current = _current;
 #endif /* CONFIG_TIMESLICING && CONFIG_SWAP_NONATOMIC */
