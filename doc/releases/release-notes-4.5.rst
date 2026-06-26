@@ -286,6 +286,13 @@ New Drivers
   * :dtcompatible:`nxp,cmu-fm` — NXP Clock Monitoring Unit (Frequency Meter)
     back-end for the new :ref:`clock_monitor_api` subsystem.
 
+* USB
+
+  * :dtcompatible:`espressif,esp32-usb-otg-fs` - Espressif USB-OTG full-speed
+    controller with internal FS/LS PHY.
+  * :dtcompatible:`espressif,esp32-usb-otg-hs` - Espressif USB-OTG high-speed
+    controller with internal UTMI PHY.
+
 New Samples
 ***********
 
