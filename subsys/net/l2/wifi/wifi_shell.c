@@ -4107,6 +4107,7 @@ static int cmd_wifi_p2p_connect(const struct shell *sh, size_t argc, char *argv[
 		{"go-intent", sys_getopt_required_argument, 0, 'g'},
 		{"freq", sys_getopt_required_argument, 0, 'f'},
 		{"join", sys_getopt_no_argument, 0, 'j'},
+		{"persistent_set", sys_getopt_no_argument, 0, 'a'},
 		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}
@@ -4117,7 +4118,8 @@ static int cmd_wifi_p2p_connect(const struct shell *sh, size_t argc, char *argv[
 
 	if (argc < 3) {
 		PR_ERROR("Usage: wifi p2p connect <MAC address> <pbc|pin> [PIN] "
-			 "[--go-intent=<0-15>] [--freq=<frequency>] [--join]\n");
+			 "[--go-intent=<0-15>] [--freq=<frequency>] [--join] "
+			 "[--persistent_set]\n");
 		return -EINVAL;
 	}
 
@@ -4153,8 +4155,10 @@ static int cmd_wifi_p2p_connect(const struct shell *sh, size_t argc, char *argv[
 	params.connect.freq = 0;
 	/* Set default join to false */
 	params.connect.join = false;
+	/* Set default persistent_set to false */
+	params.connect.persistent_set = false;
 
-	while ((opt = sys_getopt_long(argc, argv, "g:f:ji:h", long_options, &opt_index)) != -1) {
+	while ((opt = sys_getopt_long(argc, argv, "g:f:jai:h", long_options, &opt_index)) != -1) {
 		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'g':
@@ -4171,6 +4175,9 @@ static int cmd_wifi_p2p_connect(const struct shell *sh, size_t argc, char *argv[
 			break;
 		case 'j':
 			params.connect.join = true;
+			break;
+		case 'a':
+			params.connect.persistent_set = true;
 			break;
 		case 'i':
 			/* Unused, but parsing to avoid unknown option error */
@@ -5601,6 +5608,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "[PIN]: 8-digit PIN (optional, generates if omitted)\n"
 				 "[-g, --go-intent=<0-15>]: GO intent "
 				 "(0=client, 15=GO, default: 0)\n"
+				 "[-a, --persistent_set]: Add persistent group\n"
 				 "[-f, --freq=<frequency>]: Frequency in MHz (default: 2462)\n"
 				 "[-j, --join]: Join an existing group (as a client) "
 				 "instead of starting GO negotiation\n"
@@ -5610,7 +5618,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "(uses PIN)\n"
 				 "wifi p2p connect f4:ce:36:01:00:38 pbc --join  "
 				 "(join existing group)"),
-		      cmd_wifi_p2p_connect, 3, 6),
+		      cmd_wifi_p2p_connect, 3, 7),
 	SHELL_CMD_ARG(group_add, NULL,
 		      SHELL_HELP("Add a P2P group (start as GO)",
 				 "[-i, --iface=<interface index>]\n"
