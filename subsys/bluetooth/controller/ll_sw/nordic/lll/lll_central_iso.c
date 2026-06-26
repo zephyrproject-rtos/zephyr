@@ -63,6 +63,24 @@ static uint16_t cis_offset_first;
 static uint16_t cis_handle_curr;
 static uint8_t se_curr;
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+/* Per-CIS channel PRN state, saved/restored when switching between CISes
+ * during interleaved subevent traversal.
+ */
+static struct lll_conn_iso_data_chan_interleaved
+	cis_interleaved[CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP];
+/* Per-CIS subevent counter for interleaved traversal */
+static uint8_t cis_se[CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP];
+/* Current CIS index within the round (0-based) */
+static uint8_t cis_idx_in_round;
+/* Handle of the first active CIS, for restarting rounds */
+static uint16_t cis_handle_first;
+/* Bitmask of CISes closed via CIE (skip in subsequent rounds) */
+static uint32_t cis_closed_bitmask;
+/* Next CIS LLL context selected by isr_tx for isr_rx to use */
+static struct lll_conn_iso_stream *cis_lll_next;
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 static uint8_t mic_state;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
@@ -184,6 +202,24 @@ static int prepare_cb(struct lll_prepare_param *p)
 	cig_lll->latency_prepare = 0U;
 
 	se_curr = 1U;
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+	if (cig_lll->packing) {
+		/* Initialize interleaved packing state */
+		cis_idx_in_round = 0U;
+		cis_handle_first = cis_handle_curr;
+		cis_closed_bitmask = 0U;
+
+		/* Initialize per-CIS channel PRN state for the first CIS */
+		cis_interleaved[0].prn_s = data_chan_prn_s;
+		cis_interleaved[0].remap_idx = data_chan_remap_idx;
+		cis_interleaved[0].id = lll_chan_id(cis_lll->access_addr);
+		cis_interleaved[0].chan_use = data_chan_use;
+		cis_se[0] = 1U;
+	}
+
+	uint8_t cis_idx = 1U; /* First CIS (idx 0) already initialized */
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
 
 	/* Adjust the SN and NESN for skipped CIG events */
 	payload_count_lazy_update(cis_lll, cig_lll->latency_event);
@@ -389,6 +425,32 @@ static int prepare_cb(struct lll_prepare_param *p)
 			if (err) {
 				payload_count_flush_or_inc_on_close(cis_lll);
 			}
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+			if (cig_lll->packing) {
+				const struct lll_conn *iter_conn_lll;
+				uint16_t iter_event_counter;
+				uint16_t iter_data_chan_id;
+
+				LL_ASSERT_DBG(cis_idx <
+					      CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP);
+
+				iter_conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+				iter_event_counter = cis_lll->event_count;
+				iter_data_chan_id = lll_chan_id(cis_lll->access_addr);
+
+				/* Calculate initial channel for this CIS's first subevent */
+				cis_interleaved[cis_idx].id = iter_data_chan_id;
+				cis_interleaved[cis_idx].chan_use =
+					lll_chan_iso_event(iter_event_counter, iter_data_chan_id,
+							   iter_conn_lll->data_chan_map,
+							   iter_conn_lll->data_chan_count,
+							   &cis_interleaved[cis_idx].prn_s,
+							   &cis_interleaved[cis_idx].remap_idx);
+				cis_se[cis_idx] = 0U;
+				cis_idx++;
+			}
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
 		}
 	} while (cis_lll);
 
@@ -419,14 +481,21 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		cis_lll = ull_conn_iso_lll_stream_get(cis_handle_curr);
 		cig_lll = param;
 
-		/* Adjust the SN, NESN and payload_count on abort for CISes  */
-		do {
-			next_cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll,
-									    &cis_handle_curr);
-			if (next_cis_lll && next_cis_lll->prepared) {
-				payload_count_flush_or_inc_on_close(next_cis_lll);
-			}
-		} while (next_cis_lll);
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+		if (!cig_lll->packing) {
+#else /* !CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+		{
+#endif /* !CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+			/* Adjust the SN, NESN and payload_count on abort for CISes  */
+			do {
+				next_cis_lll =
+					ull_conn_iso_lll_stream_get_by_group(cig_lll,
+									     &cis_handle_curr);
+				if (next_cis_lll && next_cis_lll->prepared) {
+					payload_count_flush_or_inc_on_close(next_cis_lll);
+				}
+			} while (next_cis_lll);
+		}
 
 		/* Perform event abort here.
 		 * After event has been cleanly aborted, clean up resources
@@ -600,13 +669,185 @@ static void isr_tx(void *param)
 
 	/* Schedule next subevent.
 	 *
-	 * NOTE: The LLL currently traverses subevents using sequential packing,
-	 * i.e. all NSE subevents of the current CIS are scheduled (spaced by
-	 * sub_interval) before advancing to the next CIS in the CIG. Interleaved
-	 * packing, where the n-th subevents of all CISes are scheduled adjacent
-	 * to each other before the (n+1)-th subevents, requires a round-robin
-	 * traversal across CISes per subevent and is not yet implemented here.
+	 * Sequential packing: all NSE subevents of the current CIS are
+	 * scheduled (spaced by sub_interval) before advancing to the next
+	 * CIS in the CIG.
+	 *
+	 * Interleaved packing: the n-th subevents of all CISes are scheduled
+	 * adjacent to each other before the (n+1)-th subevents, using a
+	 * round-robin traversal across CISes per subevent round.
 	 */
+	struct lll_conn_iso_group *cig_lll;
+
+	cig_lll = ull_conn_iso_lll_group_get_by_stream(cis_lll);
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+	if (cig_lll->packing) {
+		struct lll_conn_iso_stream *next_cis_lll;
+		struct lll_conn *next_conn_lll;
+		uint16_t cis_handle;
+		uint8_t next_idx;
+
+		/* Save current CIS PRN state before switching */
+		cis_interleaved[cis_idx_in_round].prn_s = data_chan_prn_s;
+		cis_interleaved[cis_idx_in_round].remap_idx = data_chan_remap_idx;
+
+		/* Find the next CIS in this round */
+		cis_handle = cis_handle_curr;
+		next_idx = cis_idx_in_round;
+		next_cis_lll = NULL;
+		while (true) {
+			struct lll_conn_iso_stream *candidate;
+
+			candidate = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
+			if (!candidate) {
+				break;
+			}
+
+			next_idx++;
+
+			if (candidate->prepared &&
+			    !(cis_closed_bitmask &
+			      (1U << LL_CIS_IDX_FROM_HANDLE(candidate->handle)))) {
+				next_cis_lll = candidate;
+				cis_idx_in_round = next_idx;
+				break;
+			}
+		}
+
+		if (!next_cis_lll) {
+			/* End of round: advance subevent index and restart from first CIS */
+			se_curr++;
+			cis_idx_in_round = 0U;
+
+			/* Restart from first CIS */
+			cis_handle_curr = cis_handle_first;
+
+			/* Find first active CIS for new round */
+			cis_handle = UINT16_MAX;
+			next_cis_lll = NULL;
+			uint8_t find_idx = 0U;
+
+			while (true) {
+				struct lll_conn_iso_stream *candidate;
+
+				candidate = ull_conn_iso_lll_stream_get_by_group(cig_lll,
+										 &cis_handle);
+				if (!candidate) {
+					break;
+				}
+
+				if (candidate->prepared &&
+				    !(cis_closed_bitmask &
+				      (1U << LL_CIS_IDX_FROM_HANDLE(candidate->handle)))) {
+					if (cis_se[find_idx] < candidate->nse) {
+						next_cis_lll = candidate;
+						cis_idx_in_round = find_idx;
+						cis_handle_curr = cis_handle;
+						break;
+					}
+				}
+
+				find_idx++;
+			}
+
+			if (!next_cis_lll) {
+				return;
+			}
+		}
+
+		/* Restore next CIS's PRN state */
+		data_chan_prn_s = cis_interleaved[cis_idx_in_round].prn_s;
+		data_chan_remap_idx = cis_interleaved[cis_idx_in_round].remap_idx;
+
+		/* Calculate the subevent channel for the next CIS */
+		next_conn_lll = ull_conn_lll_get(next_cis_lll->acl_handle);
+		LL_ASSERT_DBG(next_conn_lll != NULL);
+
+		if (cis_se[cis_idx_in_round] == 0U) {
+			/* First subevent of this CIS: channel was calculated at prepare */
+			next_chan_use = cis_interleaved[cis_idx_in_round].chan_use;
+			next_cis_chan = next_chan_use;
+			next_cis_chan_prn_s = cis_interleaved[cis_idx_in_round].prn_s;
+			next_cis_chan_remap_idx = cis_interleaved[cis_idx_in_round].remap_idx;
+		} else {
+			/* Subsequent subevent: advance PRN for subevent channel */
+			uint16_t chan_id;
+
+			chan_id = cis_interleaved[cis_idx_in_round].id;
+			next_chan_use = lll_chan_iso_subevent(chan_id,
+							      next_conn_lll->data_chan_map,
+							      next_conn_lll->data_chan_count,
+							      &data_chan_prn_s,
+							      &data_chan_remap_idx);
+		}
+
+		cis_se[cis_idx_in_round]++;
+		cis_handle_curr = cis_handle;
+
+#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+		{
+			uint32_t subevent_us;
+			uint32_t start_us;
+
+			/* Interleaved timing: offset relative to anchor +
+			 * sub_interval * (subevent_round - 1)
+			 */
+			subevent_us = radio_tmr_ready_restore();
+			subevent_us += next_cis_lll->offset - cis_offset_first +
+				       (next_cis_lll->sub_interval *
+					(cis_se[cis_idx_in_round] - 1U));
+
+			start_us = radio_tmr_start_us(1U, subevent_us);
+			LL_ASSERT_ERR(start_us == (subevent_us + 1U));
+		}
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+		/* If switching to a different CIS, set up stale Tx ack */
+		if (next_cis_lll != cis_lll) {
+			struct node_tx_iso *node_tx;
+			uint64_t payload_count;
+			memq_link_t *link;
+
+			payload_count = next_cis_lll->tx.payload_count +
+					next_cis_lll->tx.bn_curr - 1U;
+
+			do {
+				link = memq_peek(next_cis_lll->memq_tx.head,
+						 next_cis_lll->memq_tx.tail,
+						 (void **)&node_tx);
+				if (!link) {
+					break;
+				}
+
+				if (node_tx->payload_count < payload_count) {
+					memq_dequeue(next_cis_lll->memq_tx.tail,
+						     &next_cis_lll->memq_tx.head,
+						     NULL);
+
+					node_tx->next = link;
+					ull_iso_lll_ack_enqueue(next_cis_lll->handle,
+								node_tx);
+				} else if (node_tx->payload_count >=
+					   (payload_count + next_cis_lll->tx.bn)) {
+					link = NULL;
+				} else {
+					if (node_tx->payload_count != payload_count) {
+						link = NULL;
+					}
+
+					break;
+				}
+			} while (link);
+		}
+
+		cis_lll_next = next_cis_lll;
+
+		return;
+	}
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+
+	/* Sequential packing: same CIS next subevent or next CIS */
 	if (se_curr < cis_lll->nse) {
 		const struct lll_conn *evt_conn_lll;
 		uint16_t data_chan_id;
@@ -636,7 +877,6 @@ static void isr_tx(void *param)
 						      &data_chan_remap_idx);
 	} else {
 		struct lll_conn_iso_stream *next_cis_lll;
-		struct lll_conn_iso_group *cig_lll;
 		struct lll_conn *next_conn_lll;
 		struct node_tx_iso *node_tx;
 		uint64_t payload_count;
@@ -646,7 +886,6 @@ static void isr_tx(void *param)
 		memq_link_t *link;
 
 		/* Calculate channel for next CIS */
-		cig_lll = ull_conn_iso_lll_group_get_by_stream(cis_lll);
 		cis_handle = cis_handle_curr;
 		do {
 			next_cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
@@ -883,10 +1122,44 @@ static void isr_rx(void *param)
 		      !ack_pending);
 
 isr_rx_next_subevent:
+	struct lll_conn_iso_group *cig_lll;
+
+	cig_lll = ull_conn_iso_lll_group_get_by_stream(cis_lll);
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+	if (cig_lll->packing) {
+		/* Interleaved packing: CIE handling for current CIS.
+		 * Mark CIS as closed if CIE received. Finalization
+		 * (payload_count_flush_or_inc_on_close) runs only when all
+		 * rounds for this CIS are complete, i.e. at isr_done time.
+		 */
+		if (cie) {
+			if (cis_lll_next == cis_lll) {
+				goto isr_rx_done;
+			}
+
+			cis_closed_bitmask |=
+				(1U << LL_CIS_IDX_FROM_HANDLE(cis_lll->handle));
+		}
+
+		/* The interleaved scheduling decision (next CIS in round or
+		 * new round) was already computed in isr_tx. Proceed to
+		 * isr_prepare_subevent which sets up the next Tx.
+		 */
+		isr_prepare_subevent(cis_lll_next);
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			lll_prof_send();
+		}
+
+		return;
+	}
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+
+	/* Sequential packing: switch CIS or done */
 	if (cie || (se_curr == cis_lll->nse)) {
 		struct lll_conn_iso_stream *next_cis_lll;
 		struct lll_conn_iso_stream *old_cis_lll;
-		struct lll_conn_iso_group *cig_lll;
 		struct lll_conn *next_conn_lll;
 		uint8_t phy;
 
@@ -894,7 +1167,6 @@ isr_rx_next_subevent:
 		/* TODO: Use a new ull_conn_iso_lll_stream_get_active_by_group()
 		 *       in the future.
 		 */
-		cig_lll = ull_conn_iso_lll_group_get_by_stream(cis_lll);
 		do {
 			next_cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll,
 									    &cis_handle_curr);
@@ -1092,6 +1364,8 @@ static void isr_prepare_subevent(void *param)
 
 	/* PHY */
 	radio_phy_set(cis_lll->tx.phy, cis_lll->tx.phy_flags);
+	radio_aa_set(cis_lll->access_addr);
+	radio_crc_configure(PDU_CRC_POLYNOMIAL, sys_get_le24(conn_lll->crc_init));
 
 	/* Encryption */
 	if (false) {
@@ -1141,8 +1415,21 @@ static void isr_prepare_subevent(void *param)
 	uint32_t subevent_us;
 
 	subevent_us = radio_tmr_ready_restore();
-	subevent_us += cis_lll->offset - cis_offset_first +
-		       (cis_lll->sub_interval * se_curr);
+
+	if (false) {
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+	} else if (ull_conn_iso_lll_group_get_by_stream(cis_lll)->packing) {
+		/* Interleaved: use per-CIS subevent index for timing */
+		subevent_us += cis_lll->offset - cis_offset_first +
+			       (cis_lll->sub_interval *
+				(cis_se[cis_idx_in_round] - 1U));
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+
+	} else {
+		subevent_us += cis_lll->offset - cis_offset_first +
+			       (cis_lll->sub_interval * se_curr);
+	}
 
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	start_us = radio_tmr_start_us(1U, subevent_us);
@@ -1199,7 +1486,16 @@ static void isr_prepare_subevent(void *param)
 	radio_isr_set(isr_tx, param);
 
 	/* Next subevent */
-	se_curr++;
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+	struct lll_conn_iso_group *cig_lll;
+
+	cig_lll = ull_conn_iso_lll_group_get_by_stream(cis_lll);
+	if (!cig_lll->packing) {
+#else /* !CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+	{
+#endif /* !CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+		se_curr++;
+	}
 }
 
 static void isr_done(void *param)
@@ -1212,8 +1508,36 @@ static void isr_done(void *param)
 	/* Get reference to CIS LLL context */
 	cis_lll = param;
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+	{
+		struct lll_conn_iso_group *cig_lll;
+
+		cig_lll = ull_conn_iso_lll_group_get_by_stream(cis_lll);
+		if (cig_lll->packing) {
+			/* Interleaved: finalize all prepared CISes.
+			 * Finalization was deferred during interleaved traversal.
+			 */
+			uint16_t handle_iter = UINT16_MAX;
+			struct lll_conn_iso_stream *iter_cis;
+
+			do {
+				iter_cis = ull_conn_iso_lll_stream_get_by_group(
+						cig_lll, &handle_iter);
+				if (iter_cis && iter_cis->prepared) {
+					payload_count_flush_or_inc_on_close(iter_cis);
+				}
+			} while (iter_cis);
+
+			goto isr_done_extra;
+		}
+	}
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+
 	payload_count_flush_or_inc_on_close(cis_lll);
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+isr_done_extra:
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
 	e = ull_event_done_extra_get();
 	LL_ASSERT_ERR(e);
 
