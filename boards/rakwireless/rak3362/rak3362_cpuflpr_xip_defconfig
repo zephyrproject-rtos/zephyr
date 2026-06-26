@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+# GPIO
+CONFIG_GPIO=y
+
+# Execute from RRAM
+CONFIG_XIP=y

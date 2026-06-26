@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+identifier: rak3362/nrf54l15/cpuflpr/xip
+name: RAK3362 WisBlock Core Module Fast Lightweight Peripheral Processor (RRAM XIP)
+type: mcu
+vendor: rakwireless
+arch: riscv
+toolchain:
+  - zephyr
+sysbuild: true
+ram: 68
+flash: 96
+supported:
+  - counter
+  - gpio

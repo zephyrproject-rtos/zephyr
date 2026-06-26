@@ -255,6 +255,7 @@ New Boards
   * :zephyr:board:`RAK3212 Breakout Board <rak3212>` (``rak3212``)
   * :zephyr:board:`RAK3272S Breakout Board <rak3272s>` (``rak3272s``)
   * :zephyr:board:`RAK3312 WisBlock Core Module <rak3312>` (``rak3312``)
+  * :zephyr:board:`RAK3362 WisBlock Core Module <rak3362>` (``rak3362``)
   * :zephyr:board:`RAK3372 WisBlock Core Module <rak3372>` (``rak3372``)
   * :zephyr:board:`RAK3401 WisBlock Core Module <rak3401>` (``rak3401``)
   * :zephyr:board:`RAK11161 Breakout Board <rak11161>` (``rak11161``)

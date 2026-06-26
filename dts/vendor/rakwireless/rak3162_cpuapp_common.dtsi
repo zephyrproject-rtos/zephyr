@@ -1,0 +1,81 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+#include <zephyr/dt-bindings/lora/sx126x.h>
+#include <zephyr/dt-bindings/pinctrl/nrf-pinctrl.h>
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
+
+&pinctrl {
+	/* SX1262 internal SPI */
+	spi22_default: spi22_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK,  1, 11)>,
+				<NRF_PSEL(SPIM_MOSI, 1, 10)>,
+				<NRF_PSEL(SPIM_MISO, 1,  9)>;
+		};
+	};
+
+	spi22_sleep: spi22_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK,  1, 11)>,
+				<NRF_PSEL(SPIM_MOSI, 1, 10)>,
+				<NRF_PSEL(SPIM_MISO, 1,  9)>;
+			low-power-enable;
+		};
+	};
+};
+
+/ {
+	lora_ant_sw: lora-ant-sw {
+		compatible = "regulator-fixed";
+		regulator-name = "lora-ant-sw";
+		enable-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+		startup-delay-us = <1000>;
+	};
+};
+
+&hfxo {
+	status = "okay";
+	load-capacitors = "internal";
+	load-capacitance-femtofarad = <15000>;
+};
+
+&lfxo {
+	status = "okay";
+	load-capacitors = "internal";
+	load-capacitance-femtofarad = <16000>;
+};
+
+&regulators {
+	status = "okay";
+};
+
+&vregmain {
+	status = "okay";
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&spi22 {
+	status = "okay";
+	pinctrl-0 = <&spi22_default>;
+	pinctrl-1 = <&spi22_sleep>;
+	pinctrl-names = "default", "sleep";
+	overrun-character = <0>;
+	cs-gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+
+	lora: lora@0 {
+		compatible = "semtech,sx1262";
+		reg = <0>;
+		status = "disabled";
+		spi-max-frequency = <DT_FREQ_M(4)>;
+		reset-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+		busy-gpios  = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+		dio1-gpios  = <&gpio0 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		dio2-tx-enable;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V8>;
+		tcxo-power-startup-delay-ms = <5>;
+	};
+};

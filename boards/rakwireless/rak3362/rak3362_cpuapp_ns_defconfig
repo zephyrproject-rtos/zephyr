@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+# Memory Protection
+CONFIG_ARM_MPU=y
+CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
+
+# TrustZone Non-Secure
+CONFIG_ARM_TRUSTZONE_M=y
+CONFIG_TRUSTED_EXECUTION_NONSECURE=y
+
+# Cache is a secure-only peripheral on nRF54L15
+CONFIG_CACHE_MANAGEMENT=n
+CONFIG_EXTERNAL_CACHE=n
+
+# GPIO
+CONFIG_GPIO=y
+
+# GRTC system timer
+CONFIG_NRF_GRTC_START_SYSCOUNTER=y
+
+# TF-M
+CONFIG_TFM_BL2=n
+CONFIG_TFM_LOG_LEVEL_SILENCE=y
+
+# CRACEN is a secure-only peripheral, NS image accesses entropy via PSA
+CONFIG_ENTROPY_GENERATOR=y
+
+# Oscillators are secure; skip nrfx clock config to avoid bus fault
+CONFIG_NRF_SKIP_CLOCK_CONFIG=y
+
+# Required for board.c dynamic pinctrl (wisblock_init)
+CONFIG_PINCTRL_DYNAMIC=y
+CONFIG_PINCTRL_KEEP_SLEEP_STATE=y

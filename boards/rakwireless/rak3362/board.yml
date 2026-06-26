@@ -1,0 +1,11 @@
+board:
+  name: rak3362
+  full_name: RAK3362 WisBlock Core Module
+  vendor: rakwireless
+  socs:
+  - name: nrf54l15
+    variants:
+    - name: ns
+      cpucluster: cpuapp
+    - name: xip
+      cpucluster: cpuflpr

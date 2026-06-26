@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <rakwireless/rak3162_cpuapp.dtsi>
+#include "rak3362_cpuapp_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+	};
+};
+
+#include <vendor/nordic/nrf54l15_cpuapp_partition.dtsi>

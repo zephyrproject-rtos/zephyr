@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+identifier: rak3362/nrf54l15/cpuapp/ns
+name: RAK3362 WisBlock Core Module Non-Secure
+type: mcu
+vendor: rakwireless
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+sysbuild: true
+ram: 188
+flash: 1428
+supported:
+  - adc
+  - counter
+  - gpio
+  - i2c
+  - lora
+  - pwm
+  - watchdog
+  - wisblock_io

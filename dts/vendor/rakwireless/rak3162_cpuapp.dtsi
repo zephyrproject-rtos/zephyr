@@ -1,0 +1,12 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ *
+ * RAK3162 WisDuo SoM — nRF54L15, SX1262
+ * https://docs.rakwireless.com/product-categories/wisduo/rak3162/overview/
+ *
+ *
+ */
+
+#include <nordic/nrf54l15_cpuapp.dtsi>
+#include "rak3162_cpuapp_common.dtsi"
