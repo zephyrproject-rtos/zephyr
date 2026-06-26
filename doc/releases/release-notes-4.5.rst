@@ -116,6 +116,12 @@ New APIs and options
   * :c:func:`lora_recv_duty_cycle`
   * :c:func:`lora_recv_duty_cycle_async`
 
+* Power management
+
+  * :c:func:`pm_light_sleep`
+  * :c:func:`pm_deep_sleep`
+  * :c:func:`pm_soft_off`
+
 * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
 
 .. zephyr-keep-sorted-stop
