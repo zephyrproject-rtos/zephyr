@@ -20,6 +20,8 @@
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/cache.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/pm.h>
 
 #include <cy_pdl.h>
 #include <soc.h>
@@ -490,6 +492,44 @@ static int ifx_cat1_dma_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int ifx_cat1_dma_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct ifx_cat1_dma_config *const cfg = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Refuse only while a transfer is in flight; gating aborts it. An
+		 * armed-but-idle channel (enabled, waiting for a trigger) is retained
+		 * across the gate, so it must not block low power.
+		 */
+		if (Cy_DMA_GetActiveChannel(cfg->regs) != 0U) {
+			return -EBUSY;
+		}
+		/* Clock gate the block; clock tree left untouched. */
+		Cy_DMA_Disable(cfg->regs);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/* Re-enable the block; per-channel descriptors are retained. */
+		Cy_DMA_Enable(cfg->regs);
+		break;
+#if defined(CONFIG_PM_S2RAM) || defined(CONFIG_PM_DEVICE_POWER_DOMAIN)
+	case PM_DEVICE_ACTION_TURN_ON:
+		/*
+		 * Power was lost: re-enable the DMA block and reconnect its IRQs.
+		 * Per-channel descriptors are reprogrammed by the consumer on its
+		 * next dma_config().
+		 */
+		return ifx_cat1_dma_init(dev);
+#endif /* CONFIG_PM_S2RAM || CONFIG_PM_DEVICE_POWER_DOMAIN */
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 /* Handles DMA interrupts and dispatches to the individual channel */
 struct ifx_cat1_dma_irq_context {
 	const struct device *dev;
@@ -606,8 +646,10 @@ static DEVICE_API(dma, ifx_cat1_dma_api) = {
 		CONFIGURE_ALL_IRQS(n, DT_NUM_IRQS(DT_DRV_INST(n)));                                \
 	}                                                                                          \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_dma_init, NULL, &ifx_cat1_dma_data##n,                  \
-			      &ifx_cat1_dma_config##n, PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,     \
-			      &ifx_cat1_dma_api);
+	PM_DEVICE_DT_INST_DEFINE(n, ifx_cat1_dma_pm_action);                                       \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_dma_init, PM_DEVICE_DT_INST_GET(n),                     \
+			      &ifx_cat1_dma_data##n, &ifx_cat1_dma_config##n, PRE_KERNEL_1,        \
+			      CONFIG_DMA_INIT_PRIORITY, &ifx_cat1_dma_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_DMA_INIT)
