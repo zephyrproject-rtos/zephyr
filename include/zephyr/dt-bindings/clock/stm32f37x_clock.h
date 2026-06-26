@@ -26,13 +26,18 @@
 #undef ADC_PRE_DIV_256
 
 /** @brief Device domain clocks selection helpers */
-/** CFGR devices */
+/* CFGR devices */
+/** @brief Clock prescaler selection for ADC */
 #define ADC_PRE(val)		STM32_DT_CLOCK_SELECT((val), 15, 14, CFGR_REG)
 
 /* ADC prescaler division factor for STM32F37x */
+/** @brief ADC prescaler division factor: 2 */
 #define ADC_PRE_DIV_2		0
+/** @brief ADC prescaler division factor: 4 */
 #define ADC_PRE_DIV_4		1
+/** @brief ADC prescaler division factor: 6 */
 #define ADC_PRE_DIV_6		2
+/** @brief ADC prescaler division factor: 8 */
 #define ADC_PRE_DIV_8		3
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F37X_CLOCK_H_ */

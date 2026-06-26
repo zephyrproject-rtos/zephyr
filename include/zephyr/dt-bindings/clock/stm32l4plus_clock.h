@@ -15,8 +15,10 @@
 #undef SAI1_SEL(val)
 #undef SAI2_SEL(val)
 
-/** CCIPR2 devices */
+/* CCIPR2 devices */
+/** @brief Kernel clock source selection for SAI1 */
 #define SAI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 5, CCIPR2_REG)
+/** @brief Kernel clock source selection for SAI2 */
 #define SAI2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 10, 8, CCIPR2_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32L4PLUS_CLOCK_H_ */

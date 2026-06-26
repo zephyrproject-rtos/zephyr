@@ -10,22 +10,34 @@
 
 /** @brief RCC_DCKCFGR register offset */
 #define DCKCFGR_REG		0x8C
+/** @brief RCC DCKCFGR2 register offset */
 #define DCKCFGR2_REG		0x94
 
 /** @brief Device domain clocks selection helpers */
-/** DCKCFGR devices */
+/* DCKCFGR devices */
+/** @brief Kernel clock source selection for CKDFSDM2A */
 #define CKDFSDM2A_SEL(val)	STM32_DT_CLOCK_SELECT((val), 14, 14, DCKCFGR_REG)
+/** @brief Kernel clock source selection for CKDFSDM1A */
 #define CKDFSDM1A_SEL(val)	STM32_DT_CLOCK_SELECT((val), 15, 15, DCKCFGR_REG)
+/** @brief Kernel clock source selection for SAI1A */
 #define SAI1A_SEL(val)		STM32_DT_CLOCK_SELECT((val), 21, 20, DCKCFGR_REG)
+/** @brief Kernel clock source selection for SAI1B */
 #define SAI1B_SEL(val)		STM32_DT_CLOCK_SELECT((val), 23, 22, DCKCFGR_REG)
+/** @brief Kernel clock source selection for I2S1 */
 #define I2S1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 26, 25, DCKCFGR_REG)
+/** @brief Kernel clock source selection for I2S2 */
 #define I2S2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 28, 27, DCKCFGR_REG)
+/** @brief Kernel clock source selection for CKDFSDM */
 #define CKDFSDM_SEL(val)	STM32_DT_CLOCK_SELECT((val), 31, 31, DCKCFGR_REG)
 
-/** DCKCFGR2 devices */
+/* DCKCFGR2 devices */
+/** @brief Kernel clock source selection for I2CFMP1 */
 #define I2CFMP1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 23, 22, DCKCFGR2_REG)
+/** @brief Kernel clock source selection for CK48M */
 #define CK48M_SEL(val)		STM32_DT_CLOCK_SELECT((val), 27, 27, DCKCFGR2_REG)
+/** @brief Kernel clock source selection for SDIO */
 #define SDIO_SEL(val)		STM32_DT_CLOCK_SELECT((val), 28, 28, DCKCFGR2_REG)
+/** @brief Kernel clock source selection for LPTIM1 */
 #define LPTIM1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 31, 30, DCKCFGR2_REG)
 
 /* F4 generic I2S_SEL is not compatible with F410 devices */

@@ -14,198 +14,357 @@
 
 /** System clock */
 /* defined in stm32_common_clocks.h */
-/** Fixed clocks  */
+/* Fixed clocks */
+/** @brief Clock source identifier for HSE */
 #define STM32_SRC_HSE		(STM32_SRC_LSI + 1)
+/** @brief Clock source identifier for HSI */
 #define STM32_SRC_HSI		(STM32_SRC_HSE + 1)
+/** @brief Clock source identifier for MSI */
 #define STM32_SRC_MSI		(STM32_SRC_HSI + 1)
-/** PLL outputs */
+/* PLL outputs */
+/** @brief Clock source identifier for PLL1 */
 #define STM32_SRC_PLL1		(STM32_SRC_MSI + 1)
+/** @brief Clock source identifier for PLL2 */
 #define STM32_SRC_PLL2		(STM32_SRC_PLL1 + 1)
+/** @brief Clock source identifier for PLL3 */
 #define STM32_SRC_PLL3		(STM32_SRC_PLL2 + 1)
+/** @brief Clock source identifier for PLL4 */
 #define STM32_SRC_PLL4		(STM32_SRC_PLL3 + 1)
-/** Clock muxes */
+/* Clock muxes */
+/** @brief Clock source identifier for CKPER */
 #define STM32_SRC_CKPER		(STM32_SRC_PLL4 + 1)
+/** @brief Clock source identifier for IC1 */
 #define STM32_SRC_IC1		(STM32_SRC_CKPER + 1)
+/** @brief Clock source identifier for IC2 */
 #define STM32_SRC_IC2		(STM32_SRC_IC1 + 1)
+/** @brief Clock source identifier for IC3 */
 #define STM32_SRC_IC3		(STM32_SRC_IC2 + 1)
+/** @brief Clock source identifier for IC4 */
 #define STM32_SRC_IC4		(STM32_SRC_IC3 + 1)
+/** @brief Clock source identifier for IC5 */
 #define STM32_SRC_IC5		(STM32_SRC_IC4 + 1)
+/** @brief Clock source identifier for IC6 */
 #define STM32_SRC_IC6		(STM32_SRC_IC5 + 1)
+/** @brief Clock source identifier for IC7 */
 #define STM32_SRC_IC7		(STM32_SRC_IC6 + 1)
+/** @brief Clock source identifier for IC8 */
 #define STM32_SRC_IC8		(STM32_SRC_IC7 + 1)
+/** @brief Clock source identifier for IC9 */
 #define STM32_SRC_IC9		(STM32_SRC_IC8 + 1)
+/** @brief Clock source identifier for IC10 */
 #define STM32_SRC_IC10		(STM32_SRC_IC9 + 1)
+/** @brief Clock source identifier for IC11 */
 #define STM32_SRC_IC11		(STM32_SRC_IC10 + 1)
+/** @brief Clock source identifier for IC12 */
 #define STM32_SRC_IC12		(STM32_SRC_IC11 + 1)
+/** @brief Clock source identifier for IC13 */
 #define STM32_SRC_IC13		(STM32_SRC_IC12 + 1)
+/** @brief Clock source identifier for IC14 */
 #define STM32_SRC_IC14		(STM32_SRC_IC13 + 1)
+/** @brief Clock source identifier for IC15 */
 #define STM32_SRC_IC15		(STM32_SRC_IC14 + 1)
+/** @brief Clock source identifier for IC16 */
 #define STM32_SRC_IC16		(STM32_SRC_IC15 + 1)
+/** @brief Clock source identifier for IC17 */
 #define STM32_SRC_IC17		(STM32_SRC_IC16 + 1)
+/** @brief Clock source identifier for IC18 */
 #define STM32_SRC_IC18		(STM32_SRC_IC17 + 1)
+/** @brief Clock source identifier for IC19 */
 #define STM32_SRC_IC19		(STM32_SRC_IC18 + 1)
+/** @brief Clock source identifier for IC20 */
 #define STM32_SRC_IC20		(STM32_SRC_IC19 + 1)
+/** @brief Clock source identifier for HSI_DIV */
 #define STM32_SRC_HSI_DIV	(STM32_SRC_IC20 + 1)
+/** @brief Clock source identifier for TIMG */
 #define STM32_SRC_TIMG		(STM32_SRC_HSI_DIV + 1)
+/** @brief Clock source identifier for HCLK1 */
 #define STM32_SRC_HCLK1		(STM32_SRC_TIMG + 1)
+/** @brief Clock source identifier for HCLK2 */
 #define STM32_SRC_HCLK2		(STM32_SRC_HCLK1 + 1)
+/** @brief Clock source identifier for HCLK3 */
 #define STM32_SRC_HCLK3		(STM32_SRC_HCLK2 + 1)
+/** @brief Clock source identifier for HCLK4 */
 #define STM32_SRC_HCLK4		(STM32_SRC_HCLK3 + 1)
+/** @brief Clock source identifier for HCLK5 */
 #define STM32_SRC_HCLK5		(STM32_SRC_HCLK4 + 1)
+/** @brief Clock source identifier for PCLK1 */
 #define STM32_SRC_PCLK1		(STM32_SRC_HCLK5 + 1)
+/** @brief Clock source identifier for PCLK2 */
 #define STM32_SRC_PCLK2		(STM32_SRC_PCLK1 + 1)
+/** @brief Clock source identifier for PCLK4 */
 #define STM32_SRC_PCLK4		(STM32_SRC_PCLK2 + 1)
+/** @brief Clock source identifier for PCLK5 */
 #define STM32_SRC_PCLK5		(STM32_SRC_PCLK4 + 1)
 
 /** Others: Not yet supported */
 /* #define STM32_SRC_I2SCKIN	TBD */
 
-/** Bus clocks */
+/* Bus clocks */
+/** @brief MISC bus clock enable register offset */
 #define STM32_CLOCK_BUS_MISC	0x248
+/** @brief MEM bus clock enable register offset */
 #define STM32_CLOCK_BUS_MEM	0x24C
+/** @brief AHB1 bus clock enable register offset */
 #define STM32_CLOCK_BUS_AHB1	0x250
+/** @brief AHB2 bus clock enable register offset */
 #define STM32_CLOCK_BUS_AHB2	0x254
+/** @brief AHB3 bus clock enable register offset */
 #define STM32_CLOCK_BUS_AHB3	0x258
+/** @brief AHB4 bus clock enable register offset */
 #define STM32_CLOCK_BUS_AHB4	0x25C
+/** @brief AHB5 bus clock enable register offset */
 #define STM32_CLOCK_BUS_AHB5	0x260
+/** @brief APB1 bus clock enable register offset */
 #define STM32_CLOCK_BUS_APB1	0x264
+/** @brief APB1_2 bus clock enable register offset */
 #define STM32_CLOCK_BUS_APB1_2	0x268
+/** @brief APB2 bus clock enable register offset */
 #define STM32_CLOCK_BUS_APB2	0x26C
+/** @brief APB3 bus clock enable register offset */
 #define STM32_CLOCK_BUS_APB3	0x270
+/** @brief APB4 bus clock enable register offset */
 #define STM32_CLOCK_BUS_APB4	0x274
+/** @brief APB4_2 bus clock enable register offset */
 #define STM32_CLOCK_BUS_APB4_2	0x278
+/** @brief APB5 bus clock enable register offset */
 #define STM32_CLOCK_BUS_APB5	0x27C
 
+/** @brief STM32 clock lp bus shift */
 #define STM32_CLOCK_LP_BUS_SHIFT	0x40
 
+/** @brief First peripheral bus clock enable register offset */
 #define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_MISC
+/** @brief Last peripheral bus clock enable register offset */
 #define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB5
 
 /** @brief RCC_CCIPRx register offset (RM0486.pdf) */
 #define CCIPR1_REG		0x144
+/** @brief RCC CCIPR2 register offset */
 #define CCIPR2_REG		0x148
+/** @brief RCC CCIPR3 register offset */
 #define CCIPR3_REG		0x14C
+/** @brief RCC CCIPR4 register offset */
 #define CCIPR4_REG		0x150
+/** @brief RCC CCIPR5 register offset */
 #define CCIPR5_REG		0x154
+/** @brief RCC CCIPR6 register offset */
 #define CCIPR6_REG		0x158
+/** @brief RCC CCIPR7 register offset */
 #define CCIPR7_REG		0x15C
+/** @brief RCC CCIPR8 register offset */
 #define CCIPR8_REG		0x160
+/** @brief RCC CCIPR9 register offset */
 #define CCIPR9_REG		0x164
+/** @brief RCC CCIPR12 register offset */
 #define CCIPR12_REG		0x170
+/** @brief RCC CCIPR13 register offset */
 #define CCIPR13_REG		0x174
+/** @brief RCC CCIPR14 register offset */
 #define CCIPR14_REG		0x178
 
 /** @brief Device domain clocks selection helpers */
-/** CCIPR1 devices */
+/* CCIPR1 devices */
+/** @brief Kernel clock source selection for ADF1 */
 #define ADF1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 0, CCIPR1_REG)
+/** @brief Kernel clock source selection for ADC12 */
 #define ADC12_SEL(val)		STM32_DT_CLOCK_SELECT((val), 6, 4, CCIPR1_REG)
+/** @brief Clock prescaler selection for ADC */
 #define ADC_PRE(val)		STM32_DT_CLOCK_SELECT((val), 15, 8, CCIPR1_REG)
+/** @brief Kernel clock source selection for DCMIPP */
 #define DCMIPP_SEL(val)		STM32_DT_CLOCK_SELECT((val), 21, 20, CCIPR1_REG)
-/** CCIPR2 devices */
+/* CCIPR2 devices */
+/** @brief Kernel clock source selection for ETH1PTP */
 #define ETH1PTP_SEL(val)	STM32_DT_CLOCK_SELECT((val), 1, 0, CCIPR2_REG)
+/** @brief Kernel clock source selection for ETH1CLK */
 #define ETH1CLK_SEL(val)	STM32_DT_CLOCK_SELECT((val), 13, 12, CCIPR2_REG)
+/** @brief Kernel clock source selection for ETH1 */
 #define ETH1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 18, 16, CCIPR2_REG)
+/** @brief Kernel clock source selection for ETH1REFCLK */
 #define ETH1REFCLK_SEL(val)	STM32_DT_CLOCK_SELECT((val), 20, 20, CCIPR2_REG)
+/** @brief Kernel clock source selection for ETH1GTXCLK */
 #define ETH1GTXCLK_SEL(val)	STM32_DT_CLOCK_SELECT((val), 24, 24, CCIPR2_REG)
-/** CCIPR3 devices */
+/* CCIPR3 devices */
+/** @brief Kernel clock source selection for FDCAN */
 #define FDCAN_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, CCIPR3_REG)
+/** @brief Kernel clock source selection for FMC */
 #define FMC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 5, 4, CCIPR3_REG)
-/** CCIPR4 devices */
+/* CCIPR4 devices */
+/** @brief Kernel clock source selection for I2C1 */
 #define I2C1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 0, CCIPR4_REG)
+/** @brief Kernel clock source selection for I2C2 */
 #define I2C2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 6, 4, CCIPR4_REG)
+/** @brief Kernel clock source selection for I2C3 */
 #define I2C3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 10, 8, CCIPR4_REG)
+/** @brief Kernel clock source selection for I2C4 */
 #define I2C4_SEL(val)		STM32_DT_CLOCK_SELECT((val), 14, 12, CCIPR4_REG)
+/** @brief Kernel clock source selection for I3C1 */
 #define I3C1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 18, 16, CCIPR4_REG)
+/** @brief Kernel clock source selection for I3C2 */
 #define I3C2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 22, 20, CCIPR4_REG)
+/** @brief Kernel clock source selection for LTDC */
 #define LTDC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 25, 24, CCIPR4_REG)
-/** CCIPR5 devices */
+/* CCIPR5 devices */
+/** @brief MCO1 clock source selection */
 #define MCO1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 0, CCIPR5_REG)
+/** @brief MCO1 prescaler selection */
 #define MCO1_PRE(val)		STM32_DT_CLOCK_SELECT((val), 7, 4, CCIPR5_REG)
+/** @brief MCO2 clock source selection */
 #define MCO2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 10, 8, CCIPR5_REG)
+/** @brief MCO2 prescaler selection */
 #define MCO2_PRE(val)		STM32_DT_CLOCK_SELECT((val), 15, 12, CCIPR5_REG)
 
 /* MCO1 source */
+/** @brief MCO1 clock source selection value: HSI */
 #define MCO1_SEL_HSI  0
+/** @brief MCO1 clock source selection value: LSE */
 #define MCO1_SEL_LSE  1
+/** @brief MCO1 clock source selection value: MSI */
 #define MCO1_SEL_MSI  2
+/** @brief MCO1 clock source selection value: LSI */
 #define MCO1_SEL_LSI  3
+/** @brief MCO1 clock source selection value: HSE */
 #define MCO1_SEL_HSE  4
+/** @brief MCO1 clock source selection value: IC5 */
 #define MCO1_SEL_IC5  5
+/** @brief MCO1 clock source selection value: IC10 */
 #define MCO1_SEL_IC10 6
+/** @brief MCO1 clock source selection value: SYSA */
 #define MCO1_SEL_SYSA 7
 
 /* MCO2 source */
+/** @brief MCO2 clock source selection value: HSI */
 #define MCO2_SEL_HSI  0
+/** @brief MCO2 clock source selection value: LSE */
 #define MCO2_SEL_LSE  1
+/** @brief MCO2 clock source selection value: MSI */
 #define MCO2_SEL_MSI  2
+/** @brief MCO2 clock source selection value: LSI */
 #define MCO2_SEL_LSI  3
+/** @brief MCO2 clock source selection value: HSE */
 #define MCO2_SEL_HSE  4
+/** @brief MCO2 clock source selection value: IC15 */
 #define MCO2_SEL_IC15 5
+/** @brief MCO2 clock source selection value: IC20 */
 #define MCO2_SEL_IC20 6
+/** @brief MCO2 clock source selection value: SYSB */
 #define MCO2_SEL_SYSB 7
 
 /* MCO prescaler : division factor */
+/** @brief MCO prescaler division factor: 1 */
 #define MCO_PRE_DIV_1  0
+/** @brief MCO prescaler division factor: 2 */
 #define MCO_PRE_DIV_2  1
+/** @brief MCO prescaler division factor: 3 */
 #define MCO_PRE_DIV_3  2
+/** @brief MCO prescaler division factor: 4 */
 #define MCO_PRE_DIV_4  3
+/** @brief MCO prescaler division factor: 5 */
 #define MCO_PRE_DIV_5  4
+/** @brief MCO prescaler division factor: 6 */
 #define MCO_PRE_DIV_6  5
+/** @brief MCO prescaler division factor: 7 */
 #define MCO_PRE_DIV_7  6
+/** @brief MCO prescaler division factor: 8 */
 #define MCO_PRE_DIV_8  7
+/** @brief MCO prescaler division factor: 9 */
 #define MCO_PRE_DIV_9  8
+/** @brief MCO prescaler division factor: 10 */
 #define MCO_PRE_DIV_10 9
+/** @brief MCO prescaler division factor: 11 */
 #define MCO_PRE_DIV_11 10
+/** @brief MCO prescaler division factor: 12 */
 #define MCO_PRE_DIV_12 11
+/** @brief MCO prescaler division factor: 13 */
 #define MCO_PRE_DIV_13 12
+/** @brief MCO prescaler division factor: 14 */
 #define MCO_PRE_DIV_14 13
+/** @brief MCO prescaler division factor: 15 */
 #define MCO_PRE_DIV_15 14
+/** @brief MCO prescaler division factor: 16 */
 #define MCO_PRE_DIV_16 15
 
+/** @brief MDF1SEL: mdf1sel */
 #define MDF1SEL(val)		STM32_DT_CLOCK_SELECT((val), 18, 16, CCIPR5_REG)
-/** CCIPR6 devices */
+/* CCIPR6 devices */
+/** @brief Kernel clock source selection for XSPI1 */
 #define XSPI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, CCIPR6_REG)
+/** @brief Kernel clock source selection for XSPI2 */
 #define XSPI2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 5, 4, CCIPR6_REG)
+/** @brief Kernel clock source selection for XSPI3 */
 #define XSPI3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 9, 8, CCIPR6_REG)
+/** @brief Kernel clock source selection for OTGPHY1 */
 #define OTGPHY1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 13, 12, CCIPR6_REG)
+/** @brief Kernel clock source selection for OTGPHY1CKREF */
 #define OTGPHY1CKREF_SEL(val)	STM32_DT_CLOCK_SELECT((val), 16, 16, CCIPR6_REG)
+/** @brief Kernel clock source selection for OTGPHY2 */
 #define OTGPHY2_SEL(val)	STM32_DT_CLOCK_SELECT((val), 21, 20, CCIPR6_REG)
+/** @brief Kernel clock source selection for OTGPHY2CKREF */
 #define OTGPHY2CKREF_SEL(val)	STM32_DT_CLOCK_SELECT((val), 24, 24, CCIPR6_REG)
-/** CCIPR7 devices */
+/* CCIPR7 devices */
+/** @brief Kernel clock source selection for PER */
 #define PER_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 0, CCIPR7_REG)
+/** @brief Kernel clock source selection for PSSI */
 #define PSSI_SEL(val)		STM32_DT_CLOCK_SELECT((val), 5, 4, CCIPR7_REG)
+/** @brief Kernel clock source selection for RTC */
 #define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 9, 8, CCIPR7_REG)
+/** @brief Kernel clock source selection for SAI1 */
 #define SAI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 22, 20, CCIPR7_REG)
+/** @brief Kernel clock source selection for SAI2 */
 #define SAI2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 26, 24, CCIPR7_REG)
-/** CCIPR8 devices */
+/* CCIPR8 devices */
+/** @brief Kernel clock source selection for SDMMC1 */
 #define SDMMC1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, CCIPR8_REG)
+/** @brief Kernel clock source selection for SDMMC2 */
 #define SDMMC2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 5, 4, CCIPR8_REG)
-/** CCIPR9 devices */
+/* CCIPR9 devices */
+/** @brief Kernel clock source selection for SPDIFRX1 */
 #define SPDIFRX1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 2, 0, CCIPR9_REG)
+/** @brief Kernel clock source selection for SPI1 */
 #define SPI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 6, 4, CCIPR9_REG)
+/** @brief Kernel clock source selection for SPI2 */
 #define SPI2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 10, 8, CCIPR9_REG)
+/** @brief Kernel clock source selection for SPI3 */
 #define SPI3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 14, 12, CCIPR9_REG)
+/** @brief Kernel clock source selection for SPI4 */
 #define SPI4_SEL(val)		STM32_DT_CLOCK_SELECT((val), 18, 16, CCIPR9_REG)
+/** @brief Kernel clock source selection for SPI5 */
 #define SPI5_SEL(val)		STM32_DT_CLOCK_SELECT((val), 22, 20, CCIPR9_REG)
+/** @brief Kernel clock source selection for SPI6 */
 #define SPI6_SEL(val)		STM32_DT_CLOCK_SELECT((val), 26, 24, CCIPR9_REG)
-/** CCIPR12 devices */
+/* CCIPR12 devices */
+/** @brief Kernel clock source selection for LPTIM1 */
 #define LPTIM1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 10, 8, CCIPR12_REG)
+/** @brief Kernel clock source selection for LPTIM2 */
 #define LPTIM2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 14, 12, CCIPR12_REG)
+/** @brief Kernel clock source selection for LPTIM3 */
 #define LPTIM3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 18, 16, CCIPR12_REG)
+/** @brief Kernel clock source selection for LPTIM4 */
 #define LPTIM4_SEL(val)		STM32_DT_CLOCK_SELECT((val), 22, 20, CCIPR12_REG)
+/** @brief Kernel clock source selection for LPTIM5 */
 #define LPTIM5_SEL(val)		STM32_DT_CLOCK_SELECT((val), 26, 24, CCIPR12_REG)
-/** CCIPR13 devices */
+/* CCIPR13 devices */
+/** @brief Kernel clock source selection for USART1 */
 #define USART1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 0, CCIPR13_REG)
+/** @brief Kernel clock source selection for USART2 */
 #define USART2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 6, 4, CCIPR13_REG)
+/** @brief Kernel clock source selection for USART3 */
 #define USART3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 10, 8, CCIPR13_REG)
+/** @brief Kernel clock source selection for UART4 */
 #define UART4_SEL(val)		STM32_DT_CLOCK_SELECT((val), 14, 12, CCIPR13_REG)
+/** @brief Kernel clock source selection for UART5 */
 #define UART5_SEL(val)		STM32_DT_CLOCK_SELECT((val), 18, 16, CCIPR13_REG)
+/** @brief Kernel clock source selection for USART6 */
 #define USART6_SEL(val)		STM32_DT_CLOCK_SELECT((val), 22, 20, CCIPR13_REG)
+/** @brief Kernel clock source selection for UART7 */
 #define UART7_SEL(val)		STM32_DT_CLOCK_SELECT((val), 26, 24, CCIPR13_REG)
+/** @brief Kernel clock source selection for UART8 */
 #define UART8_SEL(val)		STM32_DT_CLOCK_SELECT((val), 30, 28, CCIPR13_REG)
-/** CCIPR14 devices */
+/* CCIPR14 devices */
+/** @brief Kernel clock source selection for UART9 */
 #define UART9_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 0, CCIPR14_REG)
+/** @brief Kernel clock source selection for USART10 */
 #define USART10_SEL(val)	STM32_DT_CLOCK_SELECT((val), 6, 4, CCIPR14_REG)
+/** @brief Kernel clock source selection for LPUART1 */
 #define LPUART1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 10, 8, CCIPR14_REG)
 
 /** @brief RCC_ICxCFGR register offset (RM0486.pdf) */
@@ -221,6 +380,7 @@
 #define CPU_SEL(val)		STM32_DT_CLOCK_SELECT((val), 17, 16, CFGR1_REG)
 
 /* ADC prescaler division factor helper */
+/** @brief ADC_PRE_DIV: adc pre div */
 #define ADC_PRE_DIV(pres)	((pres - 1) & 0xFFU)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32N6_CLOCK_H_ */
