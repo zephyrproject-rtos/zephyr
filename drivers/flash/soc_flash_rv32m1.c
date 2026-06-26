@@ -16,8 +16,8 @@
 #include <soc.h>
 #include "flash_priv.h"
 
-#include "fsl_common.h"
-#include "fsl_flash.h"
+#include <fsl_common.h>
+#include <fsl_flash.h>
 
 struct flash_priv {
 	flash_config_t config;

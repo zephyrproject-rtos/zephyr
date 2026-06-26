@@ -11,7 +11,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
 #include "spi_nor.h"
-#include "memc_mcux_flexspi.h"
+#include <memc_mcux_flexspi.h>
 
 #ifdef CONFIG_HAS_MCUX_CACHE
 #include <fsl_cache.h>

@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT silabs_siwx91x_gpio
 
-#include "sl_si91x_driver_gpio.h"
-#include "sl_status.h"
+#include <sl_si91x_driver_gpio.h>
+#include <sl_status.h>
 
 #include <errno.h>
 #include <zephyr/sys/util.h>

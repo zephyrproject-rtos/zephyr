@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(nxp_s32_sent, CONFIG_SENT_LOG_LEVEL);
 
 #include <zephyr/drivers/sent/sent.h>
 
-#include "Srx_Ip.h"
+#include <Srx_Ip.h>
 
 #define CHANNEL_ID_INVAL 0xFF
 

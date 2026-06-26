@@ -9,13 +9,13 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/logging/log.h>
 
-#include "rsi_power_save.h"
-#include "rsi_rom_ulpss_clk.h"
-#include "rsi_rom_clks.h"
-#include "rsi_sysrtc.h"
-#include "rsi_pll.h"
-#include "clock_update.h"
-#include "sl_si91x_clock_manager.h"
+#include <rsi_power_save.h>
+#include <rsi_rom_ulpss_clk.h>
+#include <rsi_rom_clks.h>
+#include <rsi_sysrtc.h>
+#include <rsi_pll.h>
+#include <clock_update.h>
+#include <sl_si91x_clock_manager.h>
 
 #define DT_DRV_COMPAT          silabs_siwx91x_clock
 #define LF_FSM_CLOCK_FREQUENCY 32768

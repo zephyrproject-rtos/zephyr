@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT ambiq_puf_trng
 
 #include <string.h>
-#include "soc.h"
+#include <soc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/entropy.h>
 

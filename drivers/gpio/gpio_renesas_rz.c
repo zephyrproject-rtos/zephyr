@@ -10,7 +10,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/irq.h>
-#include "r_ioport.h"
+#include <r_ioport.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/logging/log.h>
@@ -18,10 +18,10 @@
 #include <zephyr/drivers/interrupt_controller/intc_rz_tint.h>
 #endif
 #if defined(CONFIG_RENESAS_RZ_EXT_IRQ)
-#include "r_icu.h"
+#include <r_icu.h>
 #include <zephyr/drivers/interrupt_controller/intc_rz_ext_irq.h>
 #endif
-#include "pinctrl_soc.h"
+#include <pinctrl_soc.h>
 LOG_MODULE_REGISTER(rz_gpio, CONFIG_GPIO_LOG_LEVEL);
 
 #define GPIO_RZ_MODE_HIZ    (0x0U)

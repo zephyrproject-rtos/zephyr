@@ -10,8 +10,8 @@
 #define DT_DRV_COMPAT infineon_watchdog
 
 #include <infineon_kconfig.h>
-#include "cy_wdt.h"
-#include "cy_sysclk.h"
+#include <cy_wdt.h>
+#include <cy_sysclk.h>
 
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/watchdog.h>

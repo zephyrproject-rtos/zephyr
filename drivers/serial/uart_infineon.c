@@ -18,7 +18,7 @@
 #include <cyhal_utils_impl.h>
 #include <cyhal_scb_common.h>
 
-#include "cy_scb_uart.h"
+#include <cy_scb_uart.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_ifx_cat1, CONFIG_UART_LOG_LEVEL);

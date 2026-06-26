@@ -11,7 +11,7 @@
 
 #include <zephyr/drivers/sensor.h>
 
-#include "lps28dfw_reg.h"
+#include <lps28dfw_reg.h>
 
 #ifndef ZEPHYR_DRIVERS_SENSOR_LPS28DFW_LPS28DFW_H_
 #define ZEPHYR_DRIVERS_SENSOR_LPS28DFW_LPS28DFW_H_

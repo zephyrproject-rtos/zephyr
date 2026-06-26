@@ -21,8 +21,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/irq.h>
 
-#include "ifx_hppass_analog.h"
-#include "cy_pdl.h"
+#include <ifx_hppass_analog.h>
+#include <cy_pdl.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"

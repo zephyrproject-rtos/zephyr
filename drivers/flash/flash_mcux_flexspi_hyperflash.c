@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(flexspi_hyperflash, CONFIG_FLASH_LOG_LEVEL);
 #endif
 
 #include <zephyr/sys/util.h>
-#include "memc_mcux_flexspi.h"
+#include <memc_mcux_flexspi.h>
 
 #define SPI_HYPERFLASH_SECTOR_SIZE              (0x40000U)
 #define SPI_HYPERFLASH_PAGE_SIZE                (512U)

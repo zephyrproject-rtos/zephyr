@@ -28,8 +28,8 @@
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/pm.h>
-#include "app_conf.h"
-#include "linklayer_plat.h"
+#include <app_conf.h>
+#include <linklayer_plat.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 #endif

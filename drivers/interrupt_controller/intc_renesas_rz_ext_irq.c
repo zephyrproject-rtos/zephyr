@@ -14,13 +14,13 @@
 #include <zephyr/logging/log.h>
 
 #if CONFIG_DT_HAS_RENESAS_RZ_INTC_ENABLED
-#include "r_intc_irq.h"
+#include <r_intc_irq.h>
 #elif CONFIG_DT_HAS_RENESAS_RZ_ICU_ENABLED || CONFIG_DT_HAS_RENESAS_RZ_ICU_V2_ENABLED
-#include "r_icu.h"
+#include <r_icu.h>
 #endif
 
 #if CONFIG_RENESAS_RZ_INTC_HAS_NMI
-#include "r_intc_nmi.h"
+#include <r_intc_nmi.h>
 #endif
 
 #include <zephyr/drivers/interrupt_controller/intc_rz_ext_irq.h>

@@ -50,11 +50,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/irq.h>
 
 #include "ieee802154_nrf5.h"
-#include "nrf_802154.h"
-#include "nrf_802154_const.h"
+#include <nrf_802154.h>
+#include <nrf_802154_const.h>
 
 #if defined(CONFIG_NRF_802154_SER_HOST)
-#include "nrf_802154_serialization_error.h"
+#include <nrf_802154_serialization_error.h>
 #endif
 
 struct nrf5_802154_config {

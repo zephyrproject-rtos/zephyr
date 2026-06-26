@@ -13,7 +13,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mspi.h>
 #if CONFIG_SOC_FAMILY_AMBIQ
-#include "mspi_ambiq.h"
+#include <mspi_ambiq.h>
 typedef struct mspi_ambiq_timing_cfg mspi_timing_cfg;
 typedef enum mspi_ambiq_timing_param mspi_timing_param;
 

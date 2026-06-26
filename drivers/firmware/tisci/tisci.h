@@ -13,7 +13,7 @@
 #ifndef INCLUDE_ZEPHYR_DRIVERS_TISCI_PROTOCOL_H_
 #define INCLUDE_ZEPHYR_DRIVERS_TISCI_PROTOCOL_H_
 
-#include "zephyr/kernel.h"
+#include <zephyr/kernel.h>
 #include <stddef.h>
 #include <stdint.h>
 

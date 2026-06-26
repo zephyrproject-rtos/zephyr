@@ -9,7 +9,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/atomic.h>
 
-#include "ralf.h"
+#include <ralf.h>
 
 #define STATE_FREE    0
 #define STATE_BUSY    1

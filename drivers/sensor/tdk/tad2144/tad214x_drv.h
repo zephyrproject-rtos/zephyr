@@ -16,8 +16,8 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/crc.h>
 
-#include "tad214x.h"
-#include "tad214xSerif.h"
+#include <tad214x.h>
+#include <tad214xSerif.h>
 
 #define TAD214X_BUFFER_LEN 6
 

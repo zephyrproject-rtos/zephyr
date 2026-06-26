@@ -15,8 +15,8 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/logging/log.h>
 
-#include "cy_serial_flash_qspi.h"
-#include "qspi_memslot.h"
+#include <cy_serial_flash_qspi.h>
+#include <qspi_memslot.h>
 
 LOG_MODULE_REGISTER(flash_infineon, CONFIG_FLASH_LOG_LEVEL);
 

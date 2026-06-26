@@ -12,7 +12,7 @@
 #include <soc.h>
 #include <zephyr/irq.h>
 
-#include "bee_qdec_common.h"
+#include <bee_qdec_common.h>
 
 #include <zephyr/logging/log.h>
 

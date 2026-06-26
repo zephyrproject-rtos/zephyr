@@ -14,9 +14,9 @@
 #include <nsi_host_trampolines.h>
 #include <nsi_hw_scheduler.h>
 
-#include "cmdline.h"
+#include <cmdline.h>
 #include "dmic_native_sim_bottom.h"
-#include "soc.h"
+#include <soc.h>
 
 #include <zephyr/audio/dmic.h>
 #include <zephyr/device.h>

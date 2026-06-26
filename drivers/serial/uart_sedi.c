@@ -9,7 +9,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
-#include "sedi_driver_uart.h"
+#include <sedi_driver_uart.h>
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_sedi_isr(void *arg);

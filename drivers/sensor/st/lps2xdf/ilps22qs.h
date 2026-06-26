@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stmemsc.h>
 
-#include "ilps22qs_reg.h"
+#include <ilps22qs_reg.h>
 
 #include <zephyr/drivers/sensor.h>
 

@@ -30,7 +30,7 @@
 
 LOG_MODULE_REGISTER(nxp_wifi, CONFIG_WIFI_LOG_LEVEL);
 
-#include "nxp_wifi_drv.h"
+#include <nxp_wifi_drv.h>
 
 /*******************************************************************************
  * Definitions

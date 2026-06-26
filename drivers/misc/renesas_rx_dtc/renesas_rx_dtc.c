@@ -13,7 +13,7 @@
 #include <zephyr/irq.h>
 #include <soc.h>
 #include <zephyr/drivers/misc/renesas_rx_dtc/renesas_rx_dtc.h>
-#include "platform.h"
+#include <platform.h>
 
 #define DT_DRV_COMPAT renesas_rx_dtc
 

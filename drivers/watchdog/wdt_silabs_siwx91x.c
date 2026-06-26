@@ -13,8 +13,8 @@
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/drivers/clock_control.h>
 #include <math.h>
-#include "rsi_wwdt.h"
-#include "rsi_sysrtc.h"
+#include <rsi_wwdt.h>
+#include <rsi_sysrtc.h>
 
 #define DT_DRV_COMPAT                       silabs_siwx91x_wdt
 #define SIWX91X_WDT_SYSTEM_RESET_TIMER_MASK 0x0000001F

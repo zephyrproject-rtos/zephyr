@@ -21,10 +21,10 @@
 #include <nsi_errno.h>
 #include <nsi_tracing.h>
 
-#include "cmdline.h"
-#include "posix_native_task.h"
+#include <cmdline.h>
+#include <posix_native_task.h>
 #include "uart_native_tty_bottom.h"
-#include "nsi_host_trampolines.h"
+#include <nsi_host_trampolines.h>
 
 #define WARN(...)  nsi_print_warning(__VA_ARGS__)
 #define ERROR(...) nsi_print_error_and_exit(__VA_ARGS__)

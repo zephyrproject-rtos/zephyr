@@ -10,7 +10,7 @@
 #include <zephyr/audio/dmic.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include "OpenPDMFilter.h"
+#include <OpenPDMFilter.h>
 
 #ifdef __cplusplus
 extern "C" {

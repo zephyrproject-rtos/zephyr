@@ -9,7 +9,7 @@
 #include <zephyr/drivers/otp.h>
 #include <zephyr/logging/log.h>
 
-#include "fsl_ocotp.h"
+#include <fsl_ocotp.h>
 
 #define DT_DRV_COMPAT nxp_ocotp
 

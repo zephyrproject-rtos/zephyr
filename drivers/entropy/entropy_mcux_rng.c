@@ -11,7 +11,7 @@
 #include <zephyr/random/random.h>
 #include <zephyr/init.h>
 
-#include "fsl_rng.h"
+#include <fsl_rng.h>
 
 struct mcux_entropy_config {
 	RNG_Type *base;

@@ -11,7 +11,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/util.h>
 #include "rtc_utils.h"
-#include "sl_si91x_calendar.h"
+#include <sl_si91x_calendar.h>
 
 #define DT_DRV_COMPAT silabs_siwx91x_rtc
 

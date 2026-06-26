@@ -8,14 +8,14 @@
  * @brief NRF Wi-Fi util shell module
  */
 #include <stdlib.h>
-#include "host_rpu_umac_if.h"
-#include "common/fmac_util.h"
-#include "system/fmac_api.h"
-#include "fmac_main.h"
+#include <host_rpu_umac_if.h>
+#include <common/fmac_util.h>
+#include <system/fmac_api.h>
+#include <fmac_main.h>
 #include "wifi_util.h"
 
-#include "rpu_lmac_phy_stats.h"
-#include "rpu_umac_stats.h"
+#include <rpu_lmac_phy_stats.h>
+#include <rpu_umac_stats.h>
 
 extern struct nrf_wifi_drv_priv_zep rpu_drv_priv_zep;
 struct nrf_wifi_ctx_zep *ctx = &rpu_drv_priv_zep.rpu_ctx_zep;

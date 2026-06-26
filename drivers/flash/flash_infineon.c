@@ -15,7 +15,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/logging/log.h>
 
-#include "cyhal_flash.h"
+#include <cyhal_flash.h>
 
 LOG_MODULE_REGISTER(flash_infineon, CONFIG_FLASH_LOG_LEVEL);
 

@@ -23,8 +23,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #include <ethernet/eth_stats.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/net/phy.h>
-#include "r_ether.h"
-#include "r_ether_phy.h"
+#include <r_ether.h>
+#include <r_ether_phy.h>
 
 /* Additional configurations to use with hal_renesas */
 #define ETHER_DEFAULT          NULL

@@ -10,12 +10,12 @@
 #include "siwx91x_wifi.h"
 #include "siwx91x_wifi_socket.h"
 
-#include "sl_status.h"
-#include "sl_net_ip_types.h"
-#include "sl_net_si91x.h"
-#include "sl_si91x_types.h"
-#include "sl_si91x_socket.h"
-#include "sl_si91x_socket_utility.h"
+#include <sl_status.h>
+#include <sl_net_ip_types.h>
+#include <sl_net_si91x.h>
+#include <sl_si91x_types.h>
+#include <sl_si91x_socket.h>
+#include <sl_si91x_socket_utility.h>
 
 LOG_MODULE_DECLARE(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
 

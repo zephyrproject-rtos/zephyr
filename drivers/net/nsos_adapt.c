@@ -29,16 +29,16 @@
 #include <unistd.h>
 
 #include "nsos.h"
-#include "nsi_errno.h"
-#include "nsi_fcntl.h"
+#include <nsi_errno.h>
+#include <nsi_fcntl.h>
 #include "nsos_netdb.h"
 #include "nsos_socket.h"
 
-#include "board_soc.h"
-#include "irq_ctrl.h"
-#include "nsi_hws_models_if.h"
-#include "nsi_tasks.h"
-#include "nsi_tracing.h"
+#include <board_soc.h>
+#include <irq_ctrl.h>
+#include <nsi_hws_models_if.h>
+#include <nsi_tasks.h>
+#include <nsi_tracing.h>
 
 #include <stdio.h>
 

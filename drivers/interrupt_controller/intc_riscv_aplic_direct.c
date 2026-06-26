@@ -15,7 +15,7 @@
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/irq.h>
 
-#include "sw_isr_common.h"
+#include <sw_isr_common.h>
 #include "intc_riscv_aplic_priv.h"
 
 LOG_MODULE_REGISTER(intc_riscv_aplic_direct, CONFIG_LOG_DEFAULT_LEVEL);

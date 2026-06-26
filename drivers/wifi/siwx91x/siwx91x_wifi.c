@@ -16,9 +16,9 @@
 #include "siwx91x_wifi_socket.h"
 #include "siwx91x_wifi_sta.h"
 
-#include "sli_wifi_utility.h"
-#include "sl_rsi_utility.h"
-#include "sl_wifi_callback_framework.h"
+#include <sli_wifi_utility.h>
+#include <sl_rsi_utility.h>
+#include <sl_wifi_callback_framework.h>
 
 #define SIWX91X_DRIVER_VERSION KERNEL_VERSION_STRING
 #define SIWX91X_MAX_RTS_THRESHOLD 2347

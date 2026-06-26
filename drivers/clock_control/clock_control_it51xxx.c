@@ -15,7 +15,7 @@
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(clock_control_it51xxx, LOG_LEVEL_ERR);
-#include "soc_espi.h"
+#include <soc_espi.h>
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "only one ite,it51xxx-ecpm compatible node can be supported");

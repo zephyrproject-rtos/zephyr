@@ -12,7 +12,7 @@
 #include <zephyr/drivers/mdio.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/mdio.h>
-#include "r_ether_phy.h"
+#include <r_ether_phy.h>
 
 #include <zephyr/logging/log.h>
 

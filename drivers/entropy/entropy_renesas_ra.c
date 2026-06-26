@@ -7,8 +7,8 @@
 #include <soc.h>
 #include <zephyr/drivers/entropy.h>
 
-#include "hw_sce_trng_private.h"
-#include "hw_sce_private.h"
+#include <hw_sce_trng_private.h>
+#include <hw_sce_private.h>
 
 static int entropy_renesas_ra_get_entropy(const struct device *dev, uint8_t *buf, uint16_t len)
 {

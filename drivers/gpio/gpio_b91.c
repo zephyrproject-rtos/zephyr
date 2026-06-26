@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "analog.h"
+#include <analog.h>
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>

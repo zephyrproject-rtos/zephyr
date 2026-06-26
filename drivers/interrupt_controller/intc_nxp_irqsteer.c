@@ -231,7 +231,7 @@
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/util.h>
-#include "sw_isr_common.h"
+#include <sw_isr_common.h>
 
 LOG_MODULE_REGISTER(nxp_irqstr);
 

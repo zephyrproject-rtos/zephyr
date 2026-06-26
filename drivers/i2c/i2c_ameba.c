@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(i2c_ameba, CONFIG_I2C_LOG_LEVEL);
 #include "i2c-priv.h"
 
 #if CONFIG_I2C_ASYNC_API
-#include "dma_ameba_gdma.h"
+#include <dma_ameba_gdma.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/cache.h>
 

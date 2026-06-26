@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "gpio_stepper_common.h"
+#include <gpio_stepper_common.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_stepper_common, CONFIG_STEPPER_LOG_LEVEL);

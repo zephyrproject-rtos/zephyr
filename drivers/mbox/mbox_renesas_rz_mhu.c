@@ -12,7 +12,7 @@
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/logging/log.h>
 
-#include "r_mhu_ns.h"
+#include <r_mhu_ns.h>
 
 LOG_MODULE_REGISTER(mbox_renesas_rz_mhu, CONFIG_MBOX_LOG_LEVEL);
 

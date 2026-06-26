@@ -23,14 +23,14 @@
 LOG_MODULE_REGISTER(bee_keyscan, CONFIG_INPUT_LOG_LEVEL);
 
 #if defined(CONFIG_SOC_SERIES_RTL87X2G)
-#include "rtl_keyscan.h"
-#include "rtl_pinmux.h"
+#include <rtl_keyscan.h>
+#include <rtl_pinmux.h>
 #elif defined(CONFIG_SOC_SERIES_RTL8752H)
-#include "rtl876x_keyscan.h"
-#include "rtl876x_nvic.h"
-#include "rtl876x_rcc.h"
-#include "rtl876x_pinmux.h"
-#include "vector_table.h"
+#include <rtl876x_keyscan.h>
+#include <rtl876x_nvic.h>
+#include <rtl876x_rcc.h>
+#include <rtl876x_pinmux.h>
+#include <vector_table.h>
 #else
 #error "Unsupported Realtek Bee SoC series"
 #endif

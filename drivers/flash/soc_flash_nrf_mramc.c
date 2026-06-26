@@ -11,7 +11,7 @@
 #include <zephyr/logging/log.h>
 
 #if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-#include "tfm_ioctl_core_api.h"
+#include <tfm_ioctl_core_api.h>
 #else
 #include <nrfx_mramc.h>
 #endif

@@ -13,7 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
 #include <soc.h>
-#include "r_lvd_rx_if.h"
+#include <r_lvd_rx_if.h>
 
 LOG_MODULE_REGISTER(renesas_rx_lvd, CONFIG_COMPARATOR_LOG_LEVEL);
 

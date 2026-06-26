@@ -14,7 +14,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys/util_macro.h>
 
-#include "bee_timer_common.h"
+#include <bee_timer_common.h>
 
 #include <zephyr/logging/log.h>
 

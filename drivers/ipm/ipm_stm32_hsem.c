@@ -11,7 +11,7 @@
 #include <zephyr/drivers/ipm.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
-#include "stm32_hsem.h"
+#include <stm32_hsem.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>

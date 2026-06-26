@@ -100,7 +100,7 @@
 #include <hal/clk_tree_hal.h>
 #include <esp_private/esp_clk_tree_common.h>
 #include <esp_private/rtc_clk.h>
-#include "esp_clk_internal.h"
+#include <esp_clk_internal.h>
 
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>

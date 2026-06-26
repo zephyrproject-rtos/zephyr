@@ -9,7 +9,7 @@
 #include "siwx91x_wifi.h"
 #include "siwx91x_wifi_scan.h"
 
-#include "sl_rsi_utility.h"
+#include <sl_rsi_utility.h>
 
 LOG_MODULE_DECLARE(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
 

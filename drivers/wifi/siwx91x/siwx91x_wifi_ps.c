@@ -10,7 +10,7 @@
 #include "siwx91x_wifi.h"
 #include "siwx91x_wifi_ps.h"
 
-#include "sl_wifi_constants.h"
+#include <sl_wifi_constants.h>
 
 LOG_MODULE_DECLARE(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
 

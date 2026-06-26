@@ -41,7 +41,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/lldp.h>
 
 #include "eth_native_tap_priv.h"
-#include "nsi_host_trampolines.h"
+#include <nsi_host_trampolines.h>
 #include "eth.h"
 
 #define NET_BUF_TIMEOUT K_MSEC(100)

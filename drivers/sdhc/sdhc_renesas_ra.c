@@ -17,9 +17,9 @@
 
 /* Renesas include */
 #include "sdhc_renesas_ra.h"
-#include "r_sdhi.h"
-#include "r_dtc.h"
-#include "r_sdhi_private.h"
+#include <r_sdhi.h>
+#include <r_dtc.h>
+#include <r_sdhi_private.h>
 
 LOG_MODULE_REGISTER(sdhc_renesas_ra, CONFIG_SDHC_LOG_LEVEL);
 

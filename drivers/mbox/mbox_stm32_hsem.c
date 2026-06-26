@@ -10,7 +10,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 
-#include "stm32_hsem.h"
+#include <stm32_hsem.h>
 
 LOG_MODULE_REGISTER(mbox_stm32_hsem_ipc, CONFIG_MBOX_LOG_LEVEL);
 

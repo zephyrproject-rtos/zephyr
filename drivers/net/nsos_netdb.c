@@ -13,7 +13,7 @@
  */
 
 #include "nsos_netdb.h"
-#include "nsi_errno.h"
+#include <nsi_errno.h>
 
 #ifdef __ZEPHYR__
 

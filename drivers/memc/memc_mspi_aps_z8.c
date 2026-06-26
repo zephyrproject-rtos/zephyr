@@ -15,11 +15,11 @@
 #include <zephyr/pm/device_runtime.h>
 #include "memc_mspi_aps_z8.h"
 #if CONFIG_SOC_FAMILY_AMBIQ
-#include "mspi_ambiq.h"
+#include <mspi_ambiq.h>
 typedef struct mspi_ambiq_timing_cfg mspi_timing_cfg;
 typedef enum mspi_ambiq_timing_param mspi_timing_param;
 #elif CONFIG_SOC_FAMILY_STM32
-#include "mspi_stm32.h"
+#include <mspi_stm32.h>
 typedef struct mspi_stm32_timing_cfg mspi_timing_cfg;
 typedef enum mspi_stm32_timing_param mspi_timing_param;
 #else

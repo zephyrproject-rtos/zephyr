@@ -11,7 +11,7 @@
 #include <zephyr/random/random.h>
 #include <zephyr/init.h>
 
-#include "fsl_rnga.h"
+#include <fsl_rnga.h>
 
 static uint8_t entropy_mcux_rnga_get_uint8(void)
 {

@@ -12,12 +12,12 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/cache.h>
 #include "spi_nor.h"
-#include "r_spi_flash_api.h"
+#include <r_spi_flash_api.h>
 
 #if defined(CONFIG_FLASH_RENESAS_RZ_QSPI_SPIBSC)
-#include "r_spibsc.h"
+#include <r_spibsc.h>
 #else
-#include "r_xspi_qspi.h"
+#include <r_xspi_qspi.h>
 #endif
 
 LOG_MODULE_REGISTER(renesas_rz_qspi, CONFIG_FLASH_LOG_LEVEL);

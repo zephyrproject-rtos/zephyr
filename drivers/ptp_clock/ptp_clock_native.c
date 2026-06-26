@@ -11,7 +11,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 
-#include "nsi_errno.h"
+#include <nsi_errno.h>
 #include "ptp_clock_native_bottom.h"
 
 static int ptp_clock_set_native(const struct device *clk, struct net_ptp_time *tm)

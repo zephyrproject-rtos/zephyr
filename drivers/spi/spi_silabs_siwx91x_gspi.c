@@ -18,7 +18,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include "spi_rtio.h"
-#include "clock_update.h"
+#include <clock_update.h>
 
 LOG_MODULE_REGISTER(siwx91x_gspi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"

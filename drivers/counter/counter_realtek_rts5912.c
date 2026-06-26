@@ -26,7 +26,7 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_rts5912.h>
-#include "reg/reg_timer.h"
+#include <reg/reg_timer.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(counter_realtek_rts5912, CONFIG_COUNTER_LOG_LEVEL);
 struct counter_rts5912_config {

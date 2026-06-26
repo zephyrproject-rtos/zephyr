@@ -17,7 +17,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_rts5912, CONFIG_WDT_LOG_LEVEL);
 
-#include "reg/reg_wdt.h"
+#include <reg/reg_wdt.h>
 
 #define WDT_MAX_CNT   256
 #define WDT_CLK_CYCLE 32768UL

@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(nxp_s32_qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 #include "spi_nor.h"
 #include "jesd216.h"
 
-#include "memc_nxp_s32_qspi.h"
+#include <memc_nxp_s32_qspi.h>
 #include "flash_nxp_s32_qspi.h"
 
 #define QSPI_INST_NODE_HAS_PROP_EQ_AND_OR(n, prop, val)				\

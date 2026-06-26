@@ -12,8 +12,8 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
-#include "Icp101xx.h"
-#include "Icp101xxSerif.h"
+#include <Icp101xx.h>
+#include <Icp101xxSerif.h>
 
 #define ICP101XX_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 

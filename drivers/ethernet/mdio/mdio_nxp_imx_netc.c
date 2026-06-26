@@ -12,7 +12,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/logging/log.h>
 
-#include "fsl_netc_mdio.h"
+#include <fsl_netc_mdio.h>
 LOG_MODULE_REGISTER(nxp_imx_netc_emdio, CONFIG_MDIO_LOG_LEVEL);
 
 #define DEV_CFG(_dev)  ((const struct nxp_imx_netc_mdio_config *)(_dev)->config)

@@ -14,10 +14,10 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/gpio.h>
 
-#include "coex.h"
-#include "coex_struct.h"
-#include "fmac_main.h"
-#include "common/fmac_api_common.h"
+#include <coex.h>
+#include <coex_struct.h>
+#include <fmac_main.h>
+#include <common/fmac_api_common.h>
 
 LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 

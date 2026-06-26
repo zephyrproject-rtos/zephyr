@@ -10,7 +10,7 @@
 #define ZEPHYR_DRIVERS_FLASH_FLASH_STM32_H_
 
 #include <zephyr/drivers/flash.h>
-#include "stm32_hsem.h"
+#include <stm32_hsem.h>
 
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_flash_controller), clocks) || \
 	DT_NODE_HAS_PROP(DT_INST(0, st_stm32h7_flash_controller), clocks)

@@ -23,7 +23,7 @@
 #include <zephyr/pm/device_runtime.h>
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && defined(CONFIG_MODEM_HL78XX_SOCKETS_SOCKOPT_TLS)
-#include "tls_internal.h"
+#include <tls_internal.h>
 #include <zephyr/net/tls_credentials.h>
 #endif
 

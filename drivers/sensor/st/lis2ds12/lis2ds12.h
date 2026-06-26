@@ -15,7 +15,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/gpio.h>
 #include <stmemsc.h>
-#include "lis2ds12_reg.h"
+#include <lis2ds12_reg.h>
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <zephyr/drivers/spi.h>

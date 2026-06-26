@@ -15,7 +15,7 @@
 
 #include <stdlib.h>
 
-#include "sw_isr_common.h"
+#include <sw_isr_common.h>
 
 #include <zephyr/debug/symtab.h>
 #include <zephyr/kernel.h>

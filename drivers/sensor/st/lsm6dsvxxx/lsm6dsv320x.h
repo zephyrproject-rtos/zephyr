@@ -14,7 +14,7 @@
 #include <stmemsc.h>
 
 #include "lsm6dsvxxx.h"
-#include "lsm6dsv320x_reg.h"
+#include <lsm6dsv320x_reg.h>
 
 #include <zephyr/drivers/sensor.h>
 

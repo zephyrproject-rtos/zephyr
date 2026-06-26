@@ -39,10 +39,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <errno.h>
 #include <string.h>
 
-#include "EmbeddedTypes.h"
-#include "Phy.h"
+#include <EmbeddedTypes.h>
+#include <Phy.h>
 
-#include "fwk_platform_ot.h"
+#include <fwk_platform_ot.h>
 
 #include "ieee802154_mcxw.h"
 #include "ieee802154_mcxw_utils.h"

@@ -14,7 +14,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 
-#include "hts221_reg.h"
+#include <hts221_reg.h>
 
 #define HTS221_AUTOINCREMENT_ADDR      BIT(7)
 

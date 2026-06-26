@@ -23,7 +23,7 @@
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
-#include "cy_pdl.h"
+#include <cy_pdl.h>
 
 LOG_MODULE_REGISTER(ifx_autanalog_sar_adc, CONFIG_ADC_LOG_LEVEL);
 

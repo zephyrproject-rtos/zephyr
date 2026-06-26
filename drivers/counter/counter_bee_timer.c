@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
 
-#include "bee_timer_common.h"
+#include <bee_timer_common.h>
 
 LOG_MODULE_REGISTER(counter_bee_timer, CONFIG_COUNTER_LOG_LEVEL);
 

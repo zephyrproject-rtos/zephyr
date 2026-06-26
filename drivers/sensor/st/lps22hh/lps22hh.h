@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 #include <stmemsc.h>
-#include "lps22hh_reg.h"
+#include <lps22hh_reg.h>
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <zephyr/drivers/spi.h>

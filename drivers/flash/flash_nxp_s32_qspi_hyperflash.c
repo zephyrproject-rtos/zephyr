@@ -12,7 +12,7 @@
 
 #include <Qspi_Ip.h>
 
-#include "memc_nxp_s32_qspi.h"
+#include <memc_nxp_s32_qspi.h>
 #include "flash_nxp_s32_qspi.h"
 
 LOG_MODULE_REGISTER(nxp_s32_qspi_hyperflash, CONFIG_FLASH_LOG_LEVEL);

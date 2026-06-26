@@ -16,7 +16,7 @@
 #include <zephyr/device.h>
 #include <zephyr/net/wifi_mgmt.h>
 
-#include "osal_api.h"
+#include <osal_api.h>
 
 /** Filter setting defines for sniffer mode. */
 #define WIFI_MGMT_DATA_CTRL_FILTER_SETTING 0xE

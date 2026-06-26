@@ -69,7 +69,7 @@
 #include <cyabs_rtos.h>
 #include <cybt_result.h>
 
-#include "cyhal_syspm.h"
+#include <cyhal_syspm.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 LOG_MODULE_REGISTER(cyw208xx);

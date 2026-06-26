@@ -12,7 +12,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/mfd/pca9422.h>
-#include "fsl_power.h"
+#include <fsl_power.h>
 #include <soc.h>
 
 #include <zephyr/logging/log.h>

@@ -11,7 +11,7 @@
 #include <zephyr/drivers/clock_control/clock_control_rts5912.h>
 #include <zephyr/drivers/pinctrl.h>
 
-#include "reg/reg_adc.h"
+#include <reg/reg_adc.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"

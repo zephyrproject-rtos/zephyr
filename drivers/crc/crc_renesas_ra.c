@@ -11,8 +11,8 @@ LOG_MODULE_REGISTER(renesas_ra_crc, CONFIG_CRC_LOG_LEVEL);
 #include <zephyr/drivers/crc.h>
 
 #include <soc.h>
-#include "r_crc.h"
-#include "rp_crc.h"
+#include <r_crc.h>
+#include <rp_crc.h>
 
 #define DT_DRV_COMPAT      renesas_ra_crc
 #define DEFAULT_NUM_BYTES  (4U)

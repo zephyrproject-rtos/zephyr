@@ -12,7 +12,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 
-#include "fsl_caam.h"
+#include <fsl_caam.h>
 
 struct mcux_entropy_config {
 	CAAM_Type *base;

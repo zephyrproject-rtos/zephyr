@@ -24,8 +24,8 @@
 #ifdef CONFIG_ARCH_POSIX
 
 #include "flash_simulator_native.h"
-#include "cmdline.h"
-#include "soc.h"
+#include <cmdline.h>
+#include <soc.h>
 
 /* For backward compatibility, default file name for instance 0 is "flash.bin" */
 #define DEFAULT_FLASH_FILE_PATH(n) COND_CODE_0(n, ("flash.bin"), ("flash" #n ".bin"))

@@ -20,9 +20,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr/arch/posix/posix_trace.h>
-#include "soc.h"
-#include "cmdline.h" /* native_sim command line options header */
-#include "nsi_host_trampolines.h"
+#include <soc.h>
+#include <cmdline.h> /* native_sim command line options header */
+#include <nsi_host_trampolines.h>
 #include "fake_entropy_native_bottom.h"
 
 static unsigned int seed = 0x5678;

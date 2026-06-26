@@ -6,7 +6,7 @@
 
 #include <zephyr/dt-bindings/pinctrl/pinctrl-zynqmp.h>
 #include <zephyr/logging/log.h>
-#include "pinctrl_soc.h"
+#include <pinctrl_soc.h>
 
 LOG_MODULE_REGISTER(pinctrl_xlnx_zynqmp, CONFIG_PINCTRL_LOG_LEVEL);
 

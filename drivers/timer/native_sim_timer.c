@@ -13,9 +13,9 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
-#include "nsi_hw_scheduler.h"
-#include "nsi_timer_model.h"
-#include "soc.h"
+#include <nsi_hw_scheduler.h>
+#include <nsi_timer_model.h>
+#include <soc.h>
 
 static uint64_t tick_period; /* System tick period in microseconds */
 /* Time (microseconds since boot) of the last timer tick interrupt */

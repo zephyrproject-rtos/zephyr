@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(ws2812_rpi_pico_pio, CONFIG_LED_STRIP_LOG_LEVEL);
 #include <zephyr/dt-bindings/dma/rpi-pico-dma-rp2350.h>
 #endif
 
-#include "hardware/dma.h"
+#include <hardware/dma.h>
 
 #endif
 

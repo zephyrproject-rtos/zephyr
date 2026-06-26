@@ -14,7 +14,7 @@
 #include <zephyr/devicetree.h>
 
 #include "auxdisplay_slcd_config.h"
-#include "fsl_slcd.h"
+#include <fsl_slcd.h>
 
 LOG_MODULE_REGISTER(auxdisplay_nxp_slcd, CONFIG_AUXDISPLAY_LOG_LEVEL);
 

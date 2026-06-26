@@ -17,18 +17,18 @@
 LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 
 #include "espi_utils.h"
-#include "reg/reg_acpi.h"
-#include "reg/reg_emi.h"
-#include "reg/reg_espi.h"
-#include "reg/reg_kbc.h"
-#include "reg/reg_port80.h"
+#include <reg/reg_acpi.h>
+#include <reg/reg_emi.h>
+#include <reg/reg_espi.h>
+#include <reg/reg_kbc.h>
+#include <reg/reg_port80.h>
 
 #ifdef CONFIG_PM
-#include "reg/reg_gpio.h"
+#include <reg/reg_gpio.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
-#include "reg/reg_system.h"
-#include "zephyr/drivers/gpio/gpio_rts5912.h"
+#include <reg/reg_system.h>
+#include <zephyr/drivers/gpio/gpio_rts5912.h>
 #endif
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1, "support only one espi compatible node");

@@ -22,16 +22,16 @@
 #include <zephyr/net/dhcpv4_server.h>
 #endif
 
-#include "wlan_bt_fw.h"
-#include "wlan.h"
+#include <wlan_bt_fw.h>
+#include <wlan.h>
 #include "nxp_wifi_net.h"
-#include "mlan_api.h"
+#include <mlan_api.h>
 #if defined(CONFIG_NXP_WIFI_SHELL)
-#include "wifi_shell.h"
+#include <wifi_shell.h>
 #endif
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
-#include "wifi_nxp.h"
-#include "rtos_wpa_supp_if.h"
+#include <wifi_nxp.h>
+#include <rtos_wpa_supp_if.h>
 #endif
 
 #define MAX_DATA_SIZE 1600

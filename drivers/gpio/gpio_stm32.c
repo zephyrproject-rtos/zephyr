@@ -26,7 +26,7 @@
 #include <zephyr/drivers/misc/stm32_wkup_pins/stm32_wkup_pins.h>
 #include <zephyr/dt-bindings/gpio/stm32-gpio.h>
 
-#include "stm32_hsem.h"
+#include <stm32_hsem.h>
 #include "gpio_stm32.h"
 #include <zephyr/drivers/gpio/gpio_utils.h>
 

@@ -13,7 +13,7 @@
 #include <zephyr/input/input.h>
 #include <zephyr/input/input_kbd_matrix.h>
 #include <zephyr/sys/util_macro.h>
-#include "reg/reg_kbm.h"
+#include <reg/reg_kbm.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(input_realtek_rts5912_kbd, CONFIG_INPUT_LOG_LEVEL);

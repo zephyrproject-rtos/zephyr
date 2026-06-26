@@ -11,7 +11,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_VL53L0X_VL53L0X_PLATFORM_H_
 #define ZEPHYR_DRIVERS_SENSOR_VL53L0X_VL53L0X_PLATFORM_H_
 
-#include "vl53l0x_def.h"
+#include <vl53l0x_def.h>
 #include "vl53l0x_platform_log.h"
 
 #ifdef __cplusplus

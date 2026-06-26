@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(spi_pico_pio);
 #include <zephyr/drivers/misc/pio_rpi_pico/pio_rpi_pico.h>
 
 #include <hardware/pio.h>
-#include "hardware/clocks.h"
+#include <hardware/clocks.h>
 
 #if defined(CONFIG_SPI_RPI_PICO_PIO_DMA)
 
@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(spi_pico_pio);
 #include <zephyr/dt-bindings/dma/rpi-pico-dma-rp2350.h>
 #endif
 
-#include "hardware/dma.h"
+#include <hardware/dma.h>
 
 #endif
 

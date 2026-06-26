@@ -21,7 +21,7 @@
 #include <zephyr/sys/util.h>
 
 #include "can_native_linux_adapt.h"
-#include "nsi_host_trampolines.h"
+#include <nsi_host_trampolines.h>
 
 LOG_MODULE_REGISTER(can_native_linux, CONFIG_CAN_LOG_LEVEL);
 

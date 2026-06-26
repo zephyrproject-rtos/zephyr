@@ -7,7 +7,7 @@
 
 #include <zephyr/net/wifi_mgmt.h>
 
-#include "sl_si91x_types.h"
+#include <sl_si91x_types.h>
 
 struct siwx91x_config {
 	const struct device *nwp_dev;

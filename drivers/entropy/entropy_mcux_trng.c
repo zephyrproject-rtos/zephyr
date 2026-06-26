@@ -13,7 +13,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/init.h>
 
-#include "fsl_trng.h"
+#include <fsl_trng.h>
 
 struct mcux_entropy_config {
 	TRNG_Type *base;

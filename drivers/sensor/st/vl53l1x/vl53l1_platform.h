@@ -10,7 +10,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_VL53L1X_VL53L1_PLATFORM_H_
 
 #include <string.h>
-#include "vl53l1_ll_def.h"
+#include <vl53l1_ll_def.h>
 #include "vl53l1_platform_log.h"
 #include "vl53l1_platform_user_data.h"
 

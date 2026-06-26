@@ -74,9 +74,9 @@
 #include <zephyr/sys/atomic.h>
 #include <soc.h>
 #include "i2c_npcx_controller.h"
-#include "soc_miwu.h"
-#include "soc_pins.h"
-#include "soc_power.h"
+#include <soc_miwu.h>
+#include <soc_pins.h>
+#include <soc_power.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>

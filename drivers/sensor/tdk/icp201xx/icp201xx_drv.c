@@ -15,7 +15,7 @@
 #include <zephyr/logging/log.h>
 
 #include "icp201xx_drv.h"
-#include "Icp201xxDriver.h"
+#include <Icp201xxDriver.h>
 
 LOG_MODULE_REGISTER(ICP201XX, CONFIG_SENSOR_LOG_LEVEL);
 

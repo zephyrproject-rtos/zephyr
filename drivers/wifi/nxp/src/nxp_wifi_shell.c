@@ -9,7 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 
-#include "nxp_wifi_drv.h"
+#include <nxp_wifi_drv.h>
 
 static struct nxp_wifi_dev *nxp_wifi;
 

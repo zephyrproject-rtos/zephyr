@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(dsa_netc, CONFIG_ETHERNET_LOG_LEVEL);
 
 #include "dsa_tag_netc.h"
 #include "../eth.h"
-#include "fsl_netc_switch.h"
+#include <fsl_netc_switch.h>
 
 #define DT_DRV_COMPAT nxp_netc_switch
 #define PRV_DATA(ctx) ((struct dsa_netc_data *const)(ctx)->prv_data)

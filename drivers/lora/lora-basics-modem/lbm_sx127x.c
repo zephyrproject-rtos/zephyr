@@ -14,12 +14,12 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/pm/device.h>
 
-#include "ral.h"
+#include <ral.h>
 
-#include "ralf_sx127x.h"
-#include "ral_sx127x_bsp.h"
-#include "sx127x_hal.h"
-#include "sx127x.h"
+#include <ralf_sx127x.h>
+#include <ral_sx127x_bsp.h>
+#include <sx127x_hal.h>
+#include <sx127x.h>
 
 #include "lbm_common.h"
 

@@ -18,8 +18,8 @@
 #include <zephyr/sys/util.h>
 #include <soc.h>
 #include "espi_utils.h"
-#include "soc_host.h"
-#include "soc_miwu.h"
+#include <soc_host.h>
+#include <soc_miwu.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>

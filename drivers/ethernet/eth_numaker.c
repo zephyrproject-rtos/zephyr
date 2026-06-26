@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/net/ethernet.h>
 #include "eth_numaker_priv.h"
-#include "ethernet/eth_stats.h"
+#include <ethernet/eth_stats.h>
 #include <soc.h>
 #include <NuMicro.h>
 #include <synopGMAC_network_interface.h>

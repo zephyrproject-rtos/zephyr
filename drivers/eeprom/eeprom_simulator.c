@@ -9,8 +9,8 @@
 
 #ifdef CONFIG_ARCH_POSIX
 #include "eeprom_simulator_native.h"
-#include "cmdline.h"
-#include "soc.h"
+#include <cmdline.h>
+#include <soc.h>
 #endif /* CONFIG_ARCH_POSIX */
 
 #include <zephyr/device.h>

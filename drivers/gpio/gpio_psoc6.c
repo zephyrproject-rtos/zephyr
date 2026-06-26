@@ -15,8 +15,8 @@
 #include <zephyr/drivers/gpio.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
-#include "cy_gpio.h"
-#include "cy_sysint.h"
+#include <cy_gpio.h>
+#include <cy_sysint.h>
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
 #include <zephyr/logging/log.h>

@@ -21,7 +21,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_infineon, CONFIG_I2C_LOG_LEVEL);
 
-#include "cy_scb_i2c.h"
+#include <cy_scb_i2c.h>
 
 #ifdef CONFIG_I2C_INFINEON_BUS_RECOVERY
 #include "i2c_bitbang.h"

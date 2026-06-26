@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "analog.h"
-#include "clock.h"
+#include <analog.h>
+#include <clock.h>
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>

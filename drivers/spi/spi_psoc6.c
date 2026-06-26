@@ -20,10 +20,10 @@ LOG_MODULE_REGISTER(spi_psoc6);
 
 #include "spi_context.h"
 
-#include "cy_syslib.h"
-#include "cy_sysclk.h"
-#include "cy_scb_spi.h"
-#include "cy_sysint.h"
+#include <cy_syslib.h>
+#include <cy_sysclk.h>
+#include <cy_scb_spi.h>
+#include <cy_sysint.h>
 
 #define SPI_CHIP_SELECT_COUNT		4
 #define SPI_MAX_DATA_WIDTH		16

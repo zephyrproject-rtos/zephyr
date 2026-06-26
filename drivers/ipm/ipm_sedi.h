@@ -9,8 +9,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "sedi_driver_common.h"
-#include "sedi_driver_ipc.h"
+#include <sedi_driver_common.h>
+#include <sedi_driver_ipc.h>
 #include <zephyr/sys/atomic.h>
 
 /*

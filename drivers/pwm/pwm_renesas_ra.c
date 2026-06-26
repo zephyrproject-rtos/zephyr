@@ -10,8 +10,8 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pwm/pwm_utils.h>
 #include <zephyr/drivers/pinctrl.h>
-#include "r_gpt.h"
-#include "r_gpt_cfg.h"
+#include <r_gpt.h>
+#include <r_gpt_cfg.h>
 #include <zephyr/logging/log.h>
 #include <stdio.h>
 

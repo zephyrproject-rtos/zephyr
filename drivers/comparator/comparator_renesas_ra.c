@@ -13,7 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
 #include <soc.h>
-#include "r_acmphs.h"
+#include <r_acmphs.h>
 
 LOG_MODULE_REGISTER(acmphs_renesas_ra, CONFIG_COMPARATOR_LOG_LEVEL);
 

@@ -12,7 +12,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_rts5912.h>
 
-#include "reg/reg_pwm.h"
+#include <reg/reg_pwm.h>
 
 LOG_MODULE_REGISTER(pwm, CONFIG_PWM_LOG_LEVEL);
 

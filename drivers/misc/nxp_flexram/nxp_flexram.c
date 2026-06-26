@@ -12,7 +12,7 @@
 #include <errno.h>
 #include <zephyr/irq.h>
 
-#include "fsl_device_registers.h"
+#include <fsl_device_registers.h>
 
 
 #if defined(CONFIG_NXP_FLEXRAM_MAGIC_ADDR_API)

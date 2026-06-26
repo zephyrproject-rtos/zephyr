@@ -15,7 +15,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_sedi);
 
-#include "sedi_driver_spi.h"
+#include <sedi_driver_spi.h>
 #include "spi_context.h"
 
 

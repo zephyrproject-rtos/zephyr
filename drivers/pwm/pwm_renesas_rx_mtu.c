@@ -11,7 +11,7 @@
 #include <zephyr/dt-bindings/pwm/rx_mtu_pwm.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
-#include "r_gpio_rx_if.h"
+#include <r_gpio_rx_if.h>
 
 #define DT_DRV_COMPAT renesas_rx_mtu_pwm
 

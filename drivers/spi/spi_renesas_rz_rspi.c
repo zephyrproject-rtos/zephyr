@@ -11,9 +11,9 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/pinctrl.h>
-#include "r_rspi.h"
+#include <r_rspi.h>
 #ifdef CONFIG_SPI_RENESAS_RZ_RSPI_DMAC
-#include "r_dmac_b.h"
+#include <r_dmac_b.h>
 #endif
 #ifdef CONFIG_SPI_RTIO
 #include "spi_rtio.h"

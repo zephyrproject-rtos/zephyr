@@ -18,11 +18,11 @@
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
-#include "cy_sar.h"
-#include "cy_pdl.h"
-#include "cy_gpio.h"
-#include "cy_device.h"
-#include "cyip_hsiom.h"
+#include <cy_sar.h>
+#include <cy_pdl.h>
+#include <cy_gpio.h>
+#include <cy_device.h>
+#include <cyip_hsiom.h>
 
 LOG_MODULE_REGISTER(ifx_sar_adc, CONFIG_ADC_LOG_LEVEL);
 

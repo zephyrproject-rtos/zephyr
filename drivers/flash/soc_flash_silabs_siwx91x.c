@@ -9,7 +9,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/logging/log.h>
 
-#include "sl_si91x_driver.h"
+#include <sl_si91x_driver.h>
 
 LOG_MODULE_REGISTER(siwx91x_soc_flash);
 

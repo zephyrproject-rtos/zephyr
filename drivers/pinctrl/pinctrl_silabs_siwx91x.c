@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT silabs_siwx91x_pinctrl
 
 #include <zephyr/drivers/pinctrl.h>
-#include "sl_si91x_peripheral_gpio.h"
+#include <sl_si91x_peripheral_gpio.h>
 
 #define MODE_COUNT               16
 #define HP_PERIPHERAL_ON_ULP_PIN 6

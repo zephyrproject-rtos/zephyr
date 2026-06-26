@@ -14,8 +14,8 @@
 #include <cyhal_utils.h>
 #include <cyhal_clock_impl.h>
 
-#include "cy_gpio.h"
-#include "cy_sysclk.h"
+#include <cy_gpio.h>
+#include <cy_sysclk.h>
 
 #define GET_CLK_SOURCE_ORD(N) DT_DEP_ORD(DT_CLOCKS_CTLR_BY_IDX(DT_NODELABEL(N), 0))
 

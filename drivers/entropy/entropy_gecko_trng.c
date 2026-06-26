@@ -8,8 +8,8 @@
 
  #include <zephyr/drivers/entropy.h>
  #include <string.h>
- #include "soc.h"
- #include "em_cmu.h"
+ #include <soc.h>
+ #include <em_cmu.h>
 
 #if defined(CONFIG_CRYPTO_ACC_GECKO_TRNG)
 

@@ -9,7 +9,7 @@
 #include <zephyr/drivers/clock_control/renesas_ra_cgc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/watchdog.h>
-#include "r_wdt.h"
+#include <r_wdt.h>
 
 LOG_MODULE_REGISTER(wdt_renesas_ra, CONFIG_WDT_LOG_LEVEL);
 

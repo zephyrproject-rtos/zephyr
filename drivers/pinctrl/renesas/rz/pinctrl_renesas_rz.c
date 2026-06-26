@@ -4,7 +4,7 @@
  */
 
 #include <zephyr/drivers/pinctrl.h>
-#include "r_ioport.h"
+#include <r_ioport.h>
 
 static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 {

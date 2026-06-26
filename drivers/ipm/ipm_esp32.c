@@ -5,8 +5,8 @@
  */
 
 #define DT_DRV_COMPAT espressif_esp32_ipm
-#include "soc/dport_reg.h"
-#include "soc/gpio_periph.h"
+#include <soc/dport_reg.h>
+#include <soc/gpio_periph.h>
 
 #include <stdint.h>
 #include <string.h>

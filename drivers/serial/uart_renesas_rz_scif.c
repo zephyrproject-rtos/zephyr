@@ -9,7 +9,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-#include "r_scif_uart.h"
+#include <r_scif_uart.h>
 
 LOG_MODULE_REGISTER(rz_scif_uart);
 

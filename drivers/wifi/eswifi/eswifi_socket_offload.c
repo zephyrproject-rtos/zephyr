@@ -17,9 +17,9 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 #include <zephyr/net/socket_offload.h>
 #include <zephyr/net/tls_credentials.h>
 
-#include "sockets_internal.h"
+#include <sockets_internal.h>
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-#include "tls_internal.h"
+#include <tls_internal.h>
 #endif
 #include "eswifi.h"
 #include <zephyr/net/net_pkt.h>

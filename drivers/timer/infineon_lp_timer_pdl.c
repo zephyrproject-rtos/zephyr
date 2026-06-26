@@ -44,7 +44,7 @@ static const uint32_t clock_frequency = DT_INST_PROP(0, clock_frequency);
 
 #define DEFAULT_TIMEOUT (0xFFFFUL)
 
-#include "cy_mcwdt.h"
+#include <cy_mcwdt.h>
 
 #if defined(CY_IP_MXS40SSRSS)
 static const uint16_t LPTIMER_RESET_TIME_US = 93;

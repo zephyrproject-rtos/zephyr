@@ -15,9 +15,9 @@
 #include <zephyr/drivers/pinctrl.h>
 
 #if defined(CONFIG_SPI_RENESAS_RZ)
-#include "r_spi.h"
+#include <r_spi.h>
 #else /* CONFIG_SPI_RENESAS_RZ_SPI_B */
-#include "r_spi_b.h"
+#include <r_spi_b.h>
 typedef spi_b_extended_cfg_t spi_extended_cfg_t;
 typedef spi_b_clock_source_t spi_clock_source_t;
 typedef spi_b_instance_ctrl_t spi_instance_ctrl_t;
@@ -25,9 +25,9 @@ typedef spi_b_instance_ctrl_t spi_instance_ctrl_t;
 
 #ifdef CONFIG_SPI_RENESAS_RZ_DMA
 #ifdef CONFIG_USE_RZ_FSP_DMAC
-#include "r_dmac.h"
+#include <r_dmac.h>
 #else /* USE_RZ_FSP_DMAC_B */
-#include "r_dmac_b.h"
+#include <r_dmac_b.h>
 typedef dmac_b_instance_ctrl_t dmac_instance_ctrl_t;
 #endif /* CONFIG_USE_RZ_FSP_DMAC */
 #endif /* CONFIG_SPI_RENESAS_RZ_DMA */

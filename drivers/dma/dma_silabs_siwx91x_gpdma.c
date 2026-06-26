@@ -14,8 +14,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
-#include "rsi_gpdma.h"
-#include "rsi_rom_gpdma.h"
+#include <rsi_gpdma.h>
+#include <rsi_rom_gpdma.h>
 
 #define SIWX91X_GPDMA_MAX_XFER_COUNT      4096
 #define SIWX91X_GPDMA_MAX_FIFO_SIZE         64

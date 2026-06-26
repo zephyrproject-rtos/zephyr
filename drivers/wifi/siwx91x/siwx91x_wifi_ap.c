@@ -7,8 +7,8 @@
 #include <siwx91x_nwp.h>
 #include "siwx91x_wifi.h"
 
-#include "sli_wifi_utility.h"
-#include "sl_net.h"
+#include <sli_wifi_utility.h>
+#include <sl_net.h>
 
 #define SIWX91X_AP_BEACON_INTERVAL_MS 100
 

@@ -10,8 +10,8 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/pwm/renesas_rz_pwm.h>
-#include "r_gpt.h"
-#include "r_gpt_cfg.h"
+#include <r_gpt.h>
+#include <r_gpt_cfg.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(pwm_renesas_rz_gpt, CONFIG_PWM_LOG_LEVEL);

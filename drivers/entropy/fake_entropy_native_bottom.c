@@ -14,7 +14,7 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/random.h>
-#include "nsi_tracing.h"
+#include <nsi_tracing.h>
 
 void entropy_native_seed(unsigned int seed, bool seed_random)
 {

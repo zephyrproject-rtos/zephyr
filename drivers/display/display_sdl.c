@@ -18,7 +18,7 @@
 #include <soc.h>
 #include <zephyr/sys/byteorder.h>
 #include "display_sdl_bottom.h"
-#include "cmdline.h"
+#include <cmdline.h>
 
 #define LOG_LEVEL CONFIG_DISPLAY_LOG_LEVEL
 #include <zephyr/logging/log.h>

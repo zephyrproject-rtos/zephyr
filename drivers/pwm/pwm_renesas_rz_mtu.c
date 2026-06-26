@@ -10,8 +10,8 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/pwm/renesas_rz_pwm.h>
-#include "r_mtu3.h"
-#include "r_mtu3_cfg.h"
+#include <r_mtu3.h>
+#include <r_mtu3_cfg.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(pwm_renesas_rz_mtu, CONFIG_PWM_LOG_LEVEL);

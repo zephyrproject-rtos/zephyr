@@ -11,9 +11,9 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #if defined(CONFIG_UART_RENESAS_RZ_SCI_B)
-#include "r_sci_b_uart.h"
+#include <r_sci_b_uart.h>
 #else
-#include "r_sci_uart.h"
+#include <r_sci_uart.h>
 #endif
 
 #if defined(CONFIG_UART_RENESAS_RZ_SCI_B)

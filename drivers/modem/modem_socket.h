@@ -17,7 +17,7 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 
-#include "sockets_internal.h"
+#include <sockets_internal.h>
 
 #ifdef __cplusplus
 extern "C" {

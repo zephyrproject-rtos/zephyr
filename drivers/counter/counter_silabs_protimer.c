@@ -14,7 +14,7 @@
 #include <zephyr/devicetree.h>
 #include <soc.h>
 #include <zephyr/drivers/counter.h>
-#include "sl_rail.h"
+#include <sl_rail.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(counter_silabs_protimer, CONFIG_COUNTER_LOG_LEVEL);

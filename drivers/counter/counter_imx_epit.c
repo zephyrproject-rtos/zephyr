@@ -8,8 +8,8 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/device.h>
 #include <zephyr/irq.h>
-#include "clock_freq.h"
-#include "epit.h"
+#include <clock_freq.h>
+#include <epit.h>
 
 #define COUNTER_MAX_RELOAD	0xFFFFFFFF
 

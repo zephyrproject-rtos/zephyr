@@ -10,9 +10,9 @@
 #include "siwx91x_wifi_socket.h"
 #include "siwx91x_wifi_ps.h"
 
-#include "sl_rsi_utility.h"
-#include "sl_net_default_values.h"
-#include "sl_net.h"
+#include <sl_rsi_utility.h>
+#include <sl_net_default_values.h>
+#include <sl_net.h>
 
 LOG_MODULE_DECLARE(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
 

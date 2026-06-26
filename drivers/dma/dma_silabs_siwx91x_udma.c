@@ -27,10 +27,10 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/types.h>
-#include "rsi_rom_udma.h"
-#include "rsi_rom_udma_wrapper.h"
-#include "rsi_udma.h"
-#include "sl_status.h"
+#include <rsi_rom_udma.h>
+#include <rsi_rom_udma_wrapper.h>
+#include <rsi_udma.h>
+#include <sl_status.h>
 
 #define SIWX91X_UDMA_MAX_XFER_COUNT      1024
 #define SIWX91X_UDMA_MAX_PRIORITY           1

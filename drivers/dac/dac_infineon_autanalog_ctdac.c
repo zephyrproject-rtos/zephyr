@@ -34,7 +34,7 @@
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
 #include <infineon_autanalog.h>
 
-#include "cy_pdl.h"
+#include <cy_pdl.h>
 
 LOG_MODULE_REGISTER(ifx_autanalog_ctdac, CONFIG_DAC_LOG_LEVEL);
 

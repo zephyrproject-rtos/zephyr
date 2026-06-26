@@ -23,7 +23,7 @@
 #define CUSTOM_COUNTER_BIT_WIDTH 1
 #define WRAP_CH 0
 #define SYS_CLOCK_CH 1
-#include "helpers/nrfx_gppi.h"
+#include <helpers/nrfx_gppi.h>
 #else
 #define CUSTOM_COUNTER_BIT_WIDTH 0
 #define SYS_CLOCK_CH 0

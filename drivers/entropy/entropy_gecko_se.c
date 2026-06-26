@@ -8,9 +8,9 @@
 
  #include <zephyr/drivers/entropy.h>
  #include <soc.h>
- #include "em_cmu.h"
- #include "sl_se_manager.h"
- #include "sl_se_manager_entropy.h"
+ #include <em_cmu.h>
+ #include <sl_se_manager.h>
+ #include <sl_se_manager_entropy.h>
 
 
 static int entropy_gecko_se_get_entropy(const struct device *dev,

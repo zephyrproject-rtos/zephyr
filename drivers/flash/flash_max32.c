@@ -11,7 +11,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
 
-#include "wrap_max32_flc.h"
+#include <wrap_max32_flc.h>
 
 struct max32_flash_dev_config {
 	uint32_t flash_base;

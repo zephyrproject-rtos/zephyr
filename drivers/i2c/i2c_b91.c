@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT telink_b91_i2c
 
-#include "i2c.h"
-#include "clock.h"
+#include <i2c.h>
+#include <clock.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_telink);
