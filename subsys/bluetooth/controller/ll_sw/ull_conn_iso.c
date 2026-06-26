@@ -856,6 +856,35 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 	cis->lll.offset = cig->sync_delay - cis->sync_delay;
 	cis->lll.handle = cis_handle;
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+	/* Detect interleaved packing for peripheral role:
+	 * Central role sets this explicitly via the packing parameter.
+	 * For peripheral, detect by checking if a second CIS's offset falls
+	 * within the first CIS's sub_interval, indicating interleaved layout.
+	 */
+	if (cig->lll.role == BT_HCI_ROLE_PERIPHERAL && cig->lll.num_cis > 1U) {
+		struct ll_conn_iso_stream *cis_other;
+		uint16_t handle_iter = UINT16_MAX;
+
+		cis_other = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
+		if (cis_other && cis_other != cis &&
+		    cis_other->lll.sub_interval > 0U) {
+			uint32_t offset_a = cis->lll.offset;
+			uint32_t offset_b = cis_other->lll.offset;
+			uint32_t sub_int = cis_other->lll.sub_interval;
+
+			/* If both CIS offsets are within one sub_interval,
+			 * packing is interleaved.
+			 */
+			if ((offset_a < offset_b + sub_int) &&
+			    (offset_b < offset_a + sub_int) &&
+			    (offset_a != offset_b)) {
+				cig->lll.packing = 1U;
+			}
+		}
+	}
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	if (conn->lll.enc_tx) {
 		/* copy the Session Key */
