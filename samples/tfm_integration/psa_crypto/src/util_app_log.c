@@ -7,7 +7,7 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>
 
-#include "psa/crypto.h"
+#include <psa/crypto.h>
 #include "util_app_log.h"
 
 LOG_MODULE_REGISTER(app, CONFIG_LOG_DEFAULT_LEVEL);
