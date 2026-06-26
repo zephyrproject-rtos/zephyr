@@ -19,13 +19,13 @@
 #include <time.h>
 #include <stdbool.h>
 #include <math.h>
-#include "nsi_utils.h"
-#include "nsi_cmdline.h"
-#include "nsi_tracing.h"
-#include "nsi_cpu0_interrupts.h"
-#include "irq_ctrl.h"
-#include "nsi_tasks.h"
-#include "nsi_hws_models_if.h"
+#include <nsi_utils.h>
+#include <nsi_cmdline.h>
+#include <nsi_tracing.h>
+#include <nsi_cpu0_interrupts.h>
+#include <irq_ctrl.h>
+#include <nsi_tasks.h>
+#include <nsi_hws_models_if.h>
 
 #define DEBUG_NP_TIMER 0
 
