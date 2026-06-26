@@ -1,0 +1,30 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "MediaPipe Network Streaming Sample"
+
+config SAMPLE_NET_STREAM_PORT
+	int "TCP port for the streaming server"
+	default 5000
+	range 1 65535
+	help
+	  TCP port the ztcpsink element will listen on.
+
+config SAMPLE_NET_STREAM_SELFTEST
+	bool "Enable built-in self-test client"
+	depends on NETWORKING && NET_TCP && NET_SOCKETS
+	help
+	  When enabled, a second thread connects to the streaming server,
+	  receives all JPEG frames, validates their SOI/EOI markers, and
+	  prints a PASS/FAIL result.  Useful for CI and loopback testing
+	  without an external player.
+
+config SAMPLE_NET_STREAM_SELFTEST_ADDR
+	string "Server IPv4 address for the self-test client"
+	default "127.0.0.1"
+	depends on SAMPLE_NET_STREAM_SELFTEST
+	help
+	  IPv4 address the self-test client connects to.  Use 127.0.0.1
+	  when testing over the loopback interface.
+
+source "Kconfig.zephyr"

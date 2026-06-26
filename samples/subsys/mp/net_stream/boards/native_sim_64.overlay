@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Emulates an SD card backed by the flash simulator's flash.bin file.
+ * The flash region starts at 0x0 with 8 MB total; the last 6 MB is used
+ * for FAT storage.
+ */
+
+/delete-node/ &storage_partition;
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(8)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@200000 {
+			label = "storage";
+			reg = <0x00200000 DT_SIZE_M(6)>;
+		};
+	};
+};
+
+/ {
+	msc_disk0 {
+		status = "okay";
+		compatible = "zephyr,flash-disk";
+		partition = <&storage_partition>;
+		disk-name = "SD";
+		cache-size = <4096>;
+	};
+};
