@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "kernel_internal.h"
+#include <kernel_internal.h>
 
 #include <zephyr/kernel.h>
 #include <ksched.h>
