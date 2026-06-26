@@ -15,8 +15,10 @@ websites that support WebAuthn, such as `webauthn.io <https://webauthn.io>`_.
 Supported operations:
 
 - ``authenticatorMakeCredential``
-- ``authenticatorGetAssertion`` and ``authenticatorGetNextAssertion``
+- ``authenticatorGetAssertion``
 - ``authenticatorGetInfo``
+- ``authenticatorClientPIN``
+- ``authenticatorGetNextAssertion``
 - ``authenticatorSelection``
 
 Requirements
@@ -48,17 +50,11 @@ For the Black Pill STM32H523 board:
    :goals: build flash
 
 After flashing, connect the board to your computer via its USB port.
-Open `webauthn.io <https://webauthn.io>`_ in Chrome or Firefox:
+Open `webauthn.io <https://webauthn.io>`_ in any WebAuthn-compatible
+browser (e.g., Chrome, Edge, Firefox, Safari) and follow these steps:
 
 1. Enter a username and click **Register**.
-2. The browser prompts for a security key. Press the user-presence button
-   on the board.
-3. Registration should succeed.
-4. Click **Authenticate** and press the button again to log in.
-
-.. note::
-
-   This sample does not implement clientPin. Chromium-based browsers may
-   require clientPin for discoverable credentials, even though it is not
-   enforced by the FIDO2 specification. Use non-discoverable credentials
-   on Chrome, or use Firefox or Safari.
+2. The browser prompts for a security key. Press the user-presence button on the board.
+3. Setup or enter a PIN if prompted.
+4. Registration should succeed.
+5. Click **Authenticate**, press the button again, and enter pin to log in.
