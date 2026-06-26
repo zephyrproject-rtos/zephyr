@@ -13,6 +13,8 @@
 #define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #endif
 #define MAIL_LEN 64
+/* Receiver buffer smaller than the sent message, to exercise size negotiation. */
+#define TRUNCATED_SIZE 16
 
 /**
  * @brief Tests for the mailbox kernel object
@@ -142,7 +144,19 @@ static void tmbox_put(struct k_mbox *pmbox)
 		k_sem_take(&sync_sema, K_FOREVER);
 		break;
 	case ASYNC_PUT_GET_BLOCK:
-		__fallthrough;
+		/* Offer a full buffer to a receiver that accepts fewer bytes.
+		 * The kernel must truncate the transfer and report the
+		 * negotiated (smaller) size back to the sender.
+		 */
+		mmsg.info = PUT_GET_BUFFER;
+		mmsg.size = sizeof(data[ASYNC_PUT_GET_BLOCK]);
+		mmsg.tx_data = data[ASYNC_PUT_GET_BLOCK];
+		mmsg.tx_target_thread = K_ANY;
+		k_mbox_put(pmbox, &mmsg, K_FOREVER);
+		/**TESTPOINT: sender learns the actually transferred size*/
+		zassert_equal(mmsg.size, TRUNCATED_SIZE,
+			      "sender size not negotiated down: %zu", mmsg.size);
+		break;
 	case INCORRECT_TRANSMIT_TID:
 		mmsg.tx_target_thread = random_tid;
 		zassert_true(k_mbox_put(pmbox,
@@ -285,7 +299,19 @@ static void tmbox_get(struct k_mbox *pmbox)
 			     NULL);
 		break;
 	case ASYNC_PUT_GET_BLOCK:
-		__fallthrough;
+		/* Accept fewer bytes than were sent: the message must be
+		 * truncated to the receiver's size and only that prefix copied.
+		 */
+		mmsg.size = TRUNCATED_SIZE;
+		mmsg.rx_source_thread = K_ANY;
+		zassert_equal(k_mbox_get(pmbox, &mmsg, rxdata, K_FOREVER), 0,
+			      NULL);
+		/**TESTPOINT: message truncated to the receiver's size*/
+		zassert_equal(mmsg.size, TRUNCATED_SIZE,
+			      "receiver size not truncated: %zu", mmsg.size);
+		zassert_true(memcmp(rxdata, data[ASYNC_PUT_GET_BLOCK],
+				    TRUNCATED_SIZE) == 0, NULL);
+		break;
 	case INCORRECT_RECEIVER_TID:
 		mmsg.rx_source_thread = random_tid;
 		zassert_true(k_mbox_get
@@ -612,19 +638,23 @@ ZTEST(mbox_api, test_mbox_async_put_get_buffer)
 }
 
 /**
- * @brief Verify non-matching put and get with K_NO_WAIT return -ENOMSG.
+ * @brief Verify message-size negotiation when the receiver accepts fewer bytes.
  *
  * @details
- * When there is no compatible peer, a non-blocking mailbox operation must fail
- * rather than wait: a put whose target thread is not waiting and a get whose
- * source thread does not match both return -ENOMSG under K_NO_WAIT.
+ * The receiver advertises in rx_msg->size the maximum it will accept. When that
+ * is smaller than the sent message, the kernel must truncate the transfer to the
+ * receiver's size, copy only that prefix, and report the negotiated size back to
+ * both the receiver (rx_msg->size) and the sender (tx_msg->size).
  *
  * Test steps:
- * - Sender puts to a non-waiting target thread with K_NO_WAIT.
- * - Receiver gets from a non-matching source thread with K_NO_WAIT.
+ * - Sender puts a full-length buffer message (MAIL_LEN bytes), K_FOREVER.
+ * - Receiver gets with rx size set to TRUNCATED_SIZE (< MAIL_LEN).
+ * - Check the receiver's size is TRUNCATED_SIZE and the copied prefix matches.
+ * - Check the sender's tx size was updated to TRUNCATED_SIZE after the put.
  *
  * Expected result:
- * - Both operations return -ENOMSG.
+ * - Both sizes are negotiated down to TRUNCATED_SIZE and only that many bytes
+ *   are transferred.
  *
  * @see k_mbox_put()
  * @see k_mbox_get()
@@ -721,6 +751,60 @@ ZTEST(mbox_api, test_mbox_timed_out_mbox_get)
 {
 	info_type = TIMED_OUT_MBOX_GET;
 	tmbox(&mbox);
+}
+
+/* Receiver that performs a single blocking empty get, used to satisfy a
+ * synchronous put within its timeout.
+ */
+static void put_timeout_receiver(void *p1, void *p2, void *p3)
+{
+	struct k_mbox_msg mmsg = {0};
+
+	mmsg.size = 0;
+	mmsg.rx_source_thread = K_ANY;
+	k_mbox_get((struct k_mbox *)p1, &mmsg, NULL, K_FOREVER);
+}
+
+/**
+ * @brief Verify synchronous k_mbox_put() honors its timeout.
+ *
+ * @details
+ * A synchronous put blocks until a receiver takes the message or the timeout
+ * elapses. With no receiver present a finite-timeout put must fail with -EAGAIN;
+ * once a receiver is waiting the same put must succeed.
+ *
+ * Test steps:
+ * - With no receiver, put a message with a finite timeout; expect -EAGAIN.
+ * - Start a receiver thread, then put with a finite timeout; expect success.
+ *
+ * Expected result:
+ * - The put without a receiver returns -EAGAIN; with a receiver it returns 0.
+ *
+ * @see k_mbox_put()
+ */
+ZTEST(mbox_api, test_mbox_put_timeout)
+{
+	struct k_mbox_msg mmsg = {0};
+	k_tid_t rtid;
+
+	/* No receiver waiting: a finite-timeout put must time out. */
+	mmsg.info = PUT_GET_NULL;
+	mmsg.size = 0;
+	mmsg.tx_data = NULL;
+	mmsg.tx_target_thread = K_ANY;
+	zassert_equal(k_mbox_put(&mbox, &mmsg, TIMEOUT), -EAGAIN,
+		      "put with no receiver did not time out");
+
+	/* Receiver waiting: the same finite-timeout put must succeed. */
+	rtid = k_thread_create(&tdata, tstack, STACK_SIZE,
+			       put_timeout_receiver, &mbox, NULL, NULL,
+			       K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+	mmsg.size = 0;
+	mmsg.tx_data = NULL;
+	mmsg.tx_target_thread = K_ANY;
+	zassert_equal(k_mbox_put(&mbox, &mmsg, TIMEOUT), 0,
+		      "put with a waiting receiver failed");
+	k_thread_abort(rtid);
 }
 
 /**
