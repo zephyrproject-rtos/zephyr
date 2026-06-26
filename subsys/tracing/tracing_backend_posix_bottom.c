@@ -6,7 +6,7 @@
  */
 
 #include <stdio.h>
-#include "nsi_tracing.h"
+#include <nsi_tracing.h>
 
 void *tracing_backend_posix_init_bottom(const char *file_name)
 {
