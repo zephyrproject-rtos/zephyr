@@ -15,6 +15,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/sys_clock.h>
 #include <zephyr/pm/state.h>
 #include <zephyr/toolchain.h>
 #include <errno.h>
@@ -104,6 +105,59 @@ struct pm_notifier {
  *	suspend operation.
  */
 bool pm_state_force(uint8_t cpu, const struct pm_state_info *info);
+
+/**
+ * @brief Enter a light (shallow, context-retaining) low-power sleep state.
+ *
+ * Enters the shallowest low-power state the board declares (fastest wake-up)
+ * for up to @p timeout, then returns. Context is always retained.
+ *
+ * @note Interrupts the chosen state keeps enabled still wake the CPU and run
+ *       their handlers, but the call returns when @p timeout elapses, not on an
+ *       interrupt. The state is forced for the upcoming idle period only. After
+ *       an early wake-up, later idle periods follow the active PM policy.
+ *
+ * @param timeout Maximum time to remain asleep (@ref K_FOREVER for no limit).
+ *
+ * @retval 0 Entered the state and resumed.
+ * @retval -ENOTSUP No suitable low-power state is declared.
+ */
+int pm_light_sleep(k_timeout_t timeout);
+
+/**
+ * @brief Enter a deep, context-retaining low-power sleep state.
+ *
+ * Enters the deepest @em context-retaining state the board declares (up to
+ * @ref PM_STATE_SUSPEND_TO_DISK) for up to @p timeout, then resumes in place.
+ * @ref PM_STATE_SOFT_OFF is never selected. For a full power-off that resets on
+ * wake-up use @c sys_poweroff() instead.
+ *
+ * @note Interrupts the chosen state keeps enabled still wake the CPU and run
+ *       their handlers, but the call returns when @p timeout elapses, not on an
+ *       interrupt. The state is forced for the upcoming idle period only. After
+ *       an early wake-up, later idle periods follow the active PM policy.
+ *
+ * @param timeout Maximum time to remain asleep (@ref K_FOREVER for no limit).
+ *
+ * @retval 0 Entered the state and resumed.
+ * @retval -ENOTSUP No context-retaining low-power state is declared.
+ */
+int pm_deep_sleep(k_timeout_t timeout);
+
+/**
+ * @brief Enter soft-off, the deepest state with no context retention.
+ *
+ * Enters @ref PM_STATE_SOFT_OFF for up to @p timeout. Context is not preserved:
+ * on platforms that power off, the system resets on wake-up and this does not
+ * return. A wake-up source must be configured. @p timeout is propagated to SoC
+ * backends that support a timed wake.
+ *
+ * @param timeout Maximum time to remain off (@ref K_FOREVER for no limit).
+ *
+ * @retval 0 The platform did not power off and resumed after @p timeout.
+ * @retval -ENOTSUP No soft-off state is declared.
+ */
+int pm_soft_off(k_timeout_t timeout);
 
 /**
  * @brief Register a power management notifier
@@ -242,6 +296,27 @@ static inline const struct pm_state_info *pm_state_next_get(uint8_t cpu)
 
 static inline void pm_system_resume(void)
 {
+}
+
+static inline int pm_light_sleep(k_timeout_t timeout)
+{
+	ARG_UNUSED(timeout);
+
+	return -ENOSYS;
+}
+
+static inline int pm_deep_sleep(k_timeout_t timeout)
+{
+	ARG_UNUSED(timeout);
+
+	return -ENOSYS;
+}
+
+static inline int pm_soft_off(k_timeout_t timeout)
+{
+	ARG_UNUSED(timeout);
+
+	return -ENOSYS;
 }
 
 #endif /* CONFIG_PM */

@@ -237,6 +237,47 @@ into certain power states. This can be used by devices when executing tasks in
 background to prevent the system from going to a specific state where it would
 lose context. See :c:func:`pm_policy_state_lock_get`.
 
+.. _pm-system-explicit-sleep:
+
+Entering sleep states explicitly
+================================
+
+In addition to the policy- and idle-driven flow described above, an application
+can request a low-power state directly and portably:
+
+* :c:func:`pm_light_sleep` enters the *shallowest* low-power state the board
+  declares (fastest wake-up) and returns once the system wakes up.
+* :c:func:`pm_deep_sleep` enters the *deepest context-retaining* state the board
+  declares (up to :c:enumerator:`PM_STATE_SUSPEND_TO_DISK`) and resumes in place.
+  :c:enumerator:`PM_STATE_SOFT_OFF` is never selected.
+* :c:func:`pm_soft_off` enters :c:enumerator:`PM_STATE_SOFT_OFF`, which does not
+  retain context: the system resets on wake-up and the call does not return.
+
+These helpers select the appropriate :c:struct:`pm_state_info` from the states
+declared for the CPU in devicetree and force it with :c:func:`pm_state_force`,
+so the same application code works across SoCs without any vendor-specific code.
+If the board declares no suitable low-power state, the helper returns
+``-ENOTSUP``.
+
+Interrupts that the chosen state keeps enabled still wake the CPU and run their
+handlers during the sleep, but the call returns when the timeout elapses, not on
+an interrupt. The state is forced for the *upcoming idle period*. After an early
+wake-up, subsequent idle periods follow the active PM policy rather than the
+forced state.
+
+.. code-block:: c
+
+   #include <zephyr/pm/pm.h>
+
+   /* Light sleep for up to 500 ms (shallowest state). */
+   pm_light_sleep(K_MSEC(500));
+
+   /* Deep sleep for up to 1 second (deepest context-retaining state). */
+   pm_deep_sleep(K_SECONDS(1));
+
+   /* Soft-off for up to 1 second (no context retention, resets on wake). */
+   pm_soft_off(K_SECONDS(1));
+
 Examples
 ========
 
@@ -245,6 +286,7 @@ Some helpful examples showing different power management features:
 * :zephyr_file:`samples/boards/st/power_mgmt/blinky/`
 * :zephyr_file:`samples/boards/espressif/deep_sleep/`
 * :zephyr_file:`samples/subsys/pm/device_pm/`
+* :zephyr_file:`samples/subsys/pm/pm_sleep/`
 * :zephyr_file:`tests/subsys/pm/power_mgmt/`
 * :zephyr_file:`tests/subsys/pm/power_mgmt_soc/`
 * :zephyr_file:`tests/subsys/pm/power_states_api/`
