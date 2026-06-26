@@ -41,7 +41,7 @@ struct xencons_interface {
 };
 
 #ifdef XEN_WANT_FLEX_CONSOLE_RING
-#include "ring.h"
+#include <ring.h>
 DEFINE_XEN_FLEX_RING(xencons);
 #endif
 

@@ -11,7 +11,7 @@
 #ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_RENESAS_RX_GRP_INT_H_
 #define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_RENESAS_RX_GRP_INT_H_
 
-#include "platform.h"
+#include <platform.h>
 
 /**
  * @brief Enables or disables a group interrupt for a given interrupt vector.
