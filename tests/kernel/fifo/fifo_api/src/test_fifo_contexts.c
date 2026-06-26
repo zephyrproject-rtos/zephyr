@@ -296,6 +296,8 @@ ZTEST(fifo_api, test_fifo_is_empty_isr)
  * empty FIFO returns NULL.
  *
  * @see k_fifo_peek_head(), k_fifo_peek_tail()
+ * @verifies ZEP-SRS-24-9
+ * @verifies ZEP-SRS-24-10
  */
 ZTEST(fifo_api, test_fifo_peek)
 {
