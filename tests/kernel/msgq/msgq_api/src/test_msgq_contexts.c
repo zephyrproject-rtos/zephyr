@@ -286,7 +286,12 @@ static void prepend_full_entry(void *p1, void *p2, void *p3)
  * Expected result:
  * - All messages are received in order and the counters stay consistent.
  *
+ * @note The kernel.message_queue.put_front scenario builds this with
+ *       CONFIG_TEST_MSGQ_PUT_FRONT=y, exercising k_msgq_put_front() in place of
+ *       k_msgq_put() and checking the resulting prepend (LIFO) ordering.
+ *
  * @see k_msgq_put()
+ * @see k_msgq_put_front()
  * @see k_msgq_get()
  */
 ZTEST(msgq_api_1cpu, test_msgq_thread)
@@ -425,7 +430,12 @@ ZTEST_USER(msgq_api, test_msgq_user_thread_overflow)
  * Expected result:
  * - The thread receives every ISR-enqueued message in order.
  *
+ * @note The kernel.message_queue.put_front scenario builds this with
+ *       CONFIG_TEST_MSGQ_PUT_FRONT=y, so the ISR enqueues via k_msgq_put_front()
+ *       and the thread checks the prepend (LIFO) ordering.
+ *
  * @see k_msgq_put()
+ * @see k_msgq_put_front()
  * @see k_msgq_get()
  */
 ZTEST(msgq_api, test_msgq_isr)
@@ -455,7 +465,12 @@ ZTEST(msgq_api, test_msgq_isr)
  * Expected result:
  * - The blocked writer is woken and its message reaches the reader.
  *
+ * @note Under the kernel.message_queue.put_front scenario
+ *       (CONFIG_TEST_MSGQ_PUT_FRONT=y) the writer uses k_msgq_put_front(), which
+ *       does not block: on a full queue it returns -ENOMSG instead of pending.
+ *
  * @see k_msgq_put()
+ * @see k_msgq_put_front()
  * @see k_msgq_get()
  */
 ZTEST(msgq_api_1cpu, test_msgq_pend_thread)
@@ -609,6 +624,11 @@ ZTEST(msgq_api_1cpu, test_msgq_full)
  *
  * Expected result:
  * - Messages are dequeued in the correct order despite the pending writer.
+ *
+ * @note The kernel.message_queue.put_front scenario
+ *       (CONFIG_TEST_MSGQ_PUT_FRONT=y) fills the queue and prepends via
+ *       k_msgq_put_front(), checking that a full-queue prepend returns -ENOMSG
+ *       and that the front-inserted message is dequeued first.
  *
  * @see k_msgq_put()
  * @see k_msgq_put_front()
