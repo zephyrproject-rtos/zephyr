@@ -99,6 +99,8 @@ ZTEST(interrupt_feature, test_isr_dynamic)
  * @verifies ZEP-SRS-7-6
  * @verifies ZEP-SRS-7-10
  * @verifies ZEP-SRS-7-11
+ * @verifies ZEP-SRS-7-15
+ * @verifies ZEP-SRS-7-16
  */
 ZTEST(interrupt_feature, test_isr_dynamic)
 {

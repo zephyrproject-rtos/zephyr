@@ -300,6 +300,7 @@ ZTEST_USER(semaphore, test_sem_thread2thread)
  * - The thread and ISR synchronize correctly using either semaphore.
  *
  * @see k_sem_init(), #K_SEM_DEFINE(x)
+ * @verifies ZEP-SRS-5-20
  */
 ZTEST(semaphore, test_sem_thread2isr)
 {
@@ -511,6 +512,7 @@ ZTEST_USER(semaphore, test_sem_count_get)
  * @ingroup kernel_semaphore_tests
  * @see k_sem_give()
  * @verifies ZEP-SRS-5-12
+ * @verifies ZEP-SRS-5-20
  */
 ZTEST(semaphore, test_sem_give_from_isr)
 {
@@ -928,6 +930,7 @@ ZTEST_USER(semaphore, test_sem_take_multiple)
  * @see k_sem_count_get(), k_sem_give()
  * @verifies ZEP-SRS-5-3
  * @verifies ZEP-SRS-5-4
+ * @verifies ZEP-SRS-5-19
  */
 ZTEST_USER(semaphore, test_k_sem_correct_count_limit)
 {
@@ -989,6 +992,7 @@ ZTEST_USER(semaphore, test_k_sem_correct_count_limit)
  * - The count tracks every give/take and ends at zero.
  *
  * @see k_sem_give()
+ * @verifies ZEP-SRS-5-20
  */
 ZTEST(semaphore, test_sem_give_take_from_isr)
 {

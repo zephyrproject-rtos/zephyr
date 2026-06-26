@@ -54,6 +54,8 @@ void isr_comm(const void *param)
  * @verifies ZEP-SRS-7-8
  * @verifies ZEP-SRS-7-9
  * @verifies ZEP-SRS-7-11
+ * @verifies ZEP-SRS-7-15
+ * @verifies ZEP-SRS-7-16
  */
 ZTEST(interrupt_feature, test_isr_regular)
 {
