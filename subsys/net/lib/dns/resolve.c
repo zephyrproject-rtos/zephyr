@@ -748,9 +748,9 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 			local_addr = (struct net_sockaddr *)&local_addr6;
 			addr_len = sizeof(struct net_sockaddr_in6);
 
-			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
-			    ctx->servers[i].is_mdns && port == 0) {
-				local_addr6.sin6_port = net_htons(5353);
+			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) && port == 0) {
+				local_addr6.sin6_port =
+					net_htons(ctx->servers[i].is_mdns ? 5353 : 0);
 			}
 #else
 			continue;
@@ -762,9 +762,9 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 			local_addr = (struct net_sockaddr *)&local_addr4;
 			addr_len = sizeof(struct net_sockaddr_in);
 
-			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
-			    ctx->servers[i].is_mdns && port == 0) {
-				local_addr4.sin_port = net_htons(5353);
+			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) && port == 0) {
+				local_addr4.sin_port =
+					net_htons(ctx->servers[i].is_mdns ? 5353 : 0);
 			}
 #else
 			continue;
