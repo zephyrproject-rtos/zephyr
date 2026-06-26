@@ -8,7 +8,7 @@
 #include "soc.h"
 
 #if defined(CONFIG_HPET_TIMER)
-#include "sedi_driver_hpet.h"
+#include <sedi_driver_hpet.h>
 #endif
 
 void soc_early_init_hook(void)

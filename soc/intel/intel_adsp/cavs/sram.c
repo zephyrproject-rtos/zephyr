@@ -11,7 +11,7 @@
 #include <adsp_shim.h>
 #include <adsp_memory.h>
 #include <cpu_init.h>
-#include "manifest.h"
+#include <manifest.h>
 
 #define DELAY_COUNT			256
 #define LPSRAM_MASK(x)		0x00000003
