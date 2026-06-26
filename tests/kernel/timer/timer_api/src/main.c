@@ -989,6 +989,7 @@ static void isr_ctx_expire(struct k_timer *timer)
  * interrupt context.
  *
  * @see k_timer_start(), k_is_in_isr()
+ * @verifies ZEP-SRS-4-15
  */
 ZTEST(timer_api, test_timer_expiry_in_isr)
 {
