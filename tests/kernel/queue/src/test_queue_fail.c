@@ -16,8 +16,23 @@ K_SEM_DEFINE(sem, 0, 1);
 
 /*test cases*/
 /**
- * @brief Test k_queue_get() failure scenario
- * @ingroup kernel_queue_tests
+ * @brief Verify k_queue_get() on an empty queue returns NULL.
+ *
+ * @details
+ * With no data queued, k_queue_get() must return NULL rather than block forever
+ * or return stale data. Checked both with K_NO_WAIT (immediate) and with a finite
+ * timeout that is allowed to expire.
+ *
+ * Test steps:
+ * - Initialize an empty queue.
+ * - Call k_queue_get() with K_NO_WAIT and verify it returns NULL.
+ * - Call k_queue_get() with a finite timeout and verify it returns NULL.
+ *
+ * Expected result:
+ * - Both k_queue_get() calls return NULL.
+ *
+ * @ingroup tests_kernel_queue
+ *
  * @see k_queue_get()
  */
 ZTEST(queue_api_1cpu, test_queue_get_fail)
@@ -52,7 +67,7 @@ static void tThread_entry(void *p1, void *p2, void *p3)
  *	3. Verify that append list to the queue when a
  * sub-thread is waiting for data.
  *
- * @ingroup kernel_queue_tests
+ * @ingroup tests_kernel_queue
  *
  * @see k_queue_append_list()
  */
@@ -98,7 +113,7 @@ ZTEST(queue_api, test_queue_append_list_error)
  * @details Verify the API k_queue_merge_slist when
  * a slist is empty or a slist's tail is null.
  *
- * @ingroup kernel_queue_tests
+ * @ingroup tests_kernel_queue
  *
  * @see k_queue_merge_slist()
  */
@@ -130,7 +145,7 @@ ZTEST(queue_api, test_queue_merge_list_error)
  * @details Verify that the parameter of API k_queue_init() is
  * NULL, what will happen.
  *
- * @ingroup kernel_queue_tests
+ * @ingroup tests_kernel_queue
  *
  * @see k_queue_init()
  */
@@ -146,7 +161,7 @@ ZTEST_USER(queue_api, test_queue_init_null)
  * @details Verify that the parameter of the API is
  * NULL, what will happen.
  *
- * @ingroup kernel_queue_tests
+ * @ingroup tests_kernel_queue
  *
  * @see k_queue_alloc_append()
  */
@@ -165,7 +180,7 @@ ZTEST_USER(queue_api, test_queue_alloc_append_null)
  * @details Verify that the parameter of the API is
  * NULL, what will happen.
  *
- * @ingroup kernel_queue_tests
+ * @ingroup tests_kernel_queue
  *
  * @see k_queue_alloc_prepend()
  */
@@ -184,7 +199,7 @@ ZTEST_USER(queue_api, test_queue_alloc_prepend_null)
  * @details Verify that the parameter of the API is
  * NULL, what will happen.
  *
- * @ingroup kernel_queue_tests
+ * @ingroup tests_kernel_queue
  *
  * @see k_queue_get()
  */
@@ -200,7 +215,7 @@ ZTEST_USER(queue_api, test_queue_get_null)
  * @details Verify that the parameter of the API is
  * NULL, what will happen.
  *
- * @ingroup kernel_queue_tests
+ * @ingroup tests_kernel_queue
  *
  * @see k_queue_is_empty()
  */
@@ -216,7 +231,7 @@ ZTEST_USER(queue_api, test_queue_is_empty_null)
  * @details Verify that the parameter of the API is
  * NULL, what will happen.
  *
- * @ingroup kernel_queue_tests
+ * @ingroup tests_kernel_queue
  *
  * @see k_queue_peek_head()
  */
@@ -232,7 +247,7 @@ ZTEST_USER(queue_api, test_queue_peek_head_null)
  * @details Verify that the parameter of the API is
  * NULL, what will happen.
  *
- * @ingroup kernel_queue_tests
+ * @ingroup tests_kernel_queue
  *
  * @see k_queue_peek_tail()
  */
@@ -248,7 +263,7 @@ ZTEST_USER(queue_api, test_queue_peek_tail_null)
  * @details Verify that the parameter of the API is
  * NULL, what will happen.
  *
- * @ingroup kernel_queue_tests
+ * @ingroup tests_kernel_queue
  *
  * @see k_queue_merge_slist()
  */

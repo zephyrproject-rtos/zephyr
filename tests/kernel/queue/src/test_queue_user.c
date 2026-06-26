@@ -17,7 +17,7 @@ static ZTEST_BMEM struct qdata qdata[LIST_LEN * 2];
 
 /**
  * @brief Tests for queue
- * @defgroup kernel_queue_tests Queues
+ * @defgroup tests_kernel_queue Queue tests
  * @ingroup all_tests
  * @{
  * @}
@@ -58,17 +58,28 @@ void child_thread_get(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Verify queue elements and cancel wait from a user thread
+ * @brief Verify supervisor-queued data reaches a user thread and cancel wait.
  *
- * @details The test adds elements to queue and then
- * verified by the child user thread.
- * Get data from a empty queue,and use K_FORVER to wait for available
- * And to cancel wait from current thread.
+ * @details
+ * A supervisor thread fills a queue with both plain and alloc-appended elements,
+ * which a user-mode child thread must read back in order (with correct head/tail
+ * peeks). The child then blocks on an empty queue and must be released by
+ * k_queue_cancel_wait() returning NULL.
  *
- * @ingroup kernel_queue_tests
+ * Test steps:
+ * - Supervisor appends interleaved plain and alloc-appended items.
+ * - Start a user child that peeks head/tail, gets all items in order, then
+ *   blocks on an empty get.
+ * - Call k_queue_cancel_wait() and verify the child's blocked get returns NULL.
  *
- * @see k_queue_append(), k_queue_alloc_append(),
- * k_queue_init(), k_queue_cancel_wait()
+ * Expected result:
+ * - The user thread reads every item in order and the cancel releases its wait.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_alloc_append()
+ * @see k_queue_get()
+ * @see k_queue_cancel_wait()
  */
 ZTEST(queue_api_1cpu, test_queue_supv_to_user)
 {
@@ -119,16 +130,24 @@ ZTEST(queue_api_1cpu, test_queue_supv_to_user)
 }
 
 /**
- * @brief verify allocate and feature "Last In, First Out"
+ * @brief Verify k_queue_alloc_prepend() yields LIFO order from user mode.
  *
- * @details Create a new queue
- * And allocated memory for the queue
- * Initialize and insert data item in sequence.
- * Verify the feather "Last in,First out"
+ * @details
+ * Prepending items pushes each to the front, so reading the queue back returns
+ * them in reverse insertion (LIFO) order. Exercised from a user-mode thread on an
+ * allocated queue object.
  *
- * @ingroup kernel_queue_tests
+ * Test steps:
+ * - Alloc-prepend a sequence of items 0..N-1 from a user thread.
+ * - Get all items and verify they come out in reverse order (N-1..0).
+ *
+ * Expected result:
+ * - Items are returned newest-first (LIFO).
+ *
+ * @ingroup tests_kernel_queue
  *
  * @see k_queue_alloc_prepend()
+ * @see k_queue_get()
  */
 ZTEST_USER(queue_api, test_queue_alloc_prepend_user)
 {
@@ -153,16 +172,24 @@ ZTEST_USER(queue_api, test_queue_alloc_prepend_user)
 }
 
 /**
- * @brief verify feature of queue "First In, First Out"
+ * @brief Verify k_queue_alloc_append() yields FIFO order from user mode.
  *
- * @details Create a new queue
- * And allocated memory for the queue
- * Initialize and insert data item in sequence.
- * Verify the feather "First in,First out"
+ * @details
+ * Appending items adds each to the tail, so reading the queue back returns them
+ * in insertion (FIFO) order. Exercised from a user-mode thread on an allocated
+ * queue object.
  *
- * @ingroup kernel_queue_tests
+ * Test steps:
+ * - Alloc-append a sequence of items 0..N-1 from a user thread.
+ * - Get all items and verify they come out in insertion order (0..N-1).
  *
- * @see k_queue_init(), k_queue_alloc_append()
+ * Expected result:
+ * - Items are returned oldest-first (FIFO).
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_alloc_append()
+ * @see k_queue_get()
  */
 ZTEST_USER(queue_api, test_queue_alloc_append_user)
 {
@@ -187,8 +214,24 @@ ZTEST_USER(queue_api, test_queue_alloc_append_user)
 }
 
 /**
- * @brief Test to verify free of allocated elements of queue
- * @ingroup kernel_queue_tests
+ * @brief Verify allocated queue resources are auto-freed back to the pool.
+ *
+ * @details
+ * Elements added with the alloc APIs and the kernel objects allocated by the
+ * previous user-mode test must be released automatically (queue elements when
+ * dequeued, objects when permitted threads exit). The test confirms the whole
+ * pool is available again by reallocating all of it.
+ *
+ * Test steps:
+ * - After the preceding alloc-heavy test, allocate the entire pool in chunks.
+ * - Verify every allocation succeeds, then free them.
+ *
+ * Expected result:
+ * - All pool memory is reclaimable, proving prior resources were auto-freed.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_alloc_append()
  */
 ZTEST(queue_api, test_auto_free)
 {
