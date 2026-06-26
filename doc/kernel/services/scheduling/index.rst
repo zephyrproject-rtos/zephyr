@@ -3,6 +3,10 @@
 Scheduling
 ##########
 
+.. design:: DESIGN-SCHEDULING Scheduling
+   :fulfills: ZEP-SRS-2-4 ZEP-SRS-2-5 ZEP-SRS-2-8 ZEP-SRS-2-9 ZEP-SRS-2-10 ZEP-SRS-2-11 ZEP-SRS-2-12 ZEP-SRS-2-13 ZEP-SRS-2-14 ZEP-SRS-2-15 ZEP-SRS-2-16 ZEP-SRS-2-17
+
+
 The kernel's priority-based scheduler allows an application's threads
 to share the CPU.
 
