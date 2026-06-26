@@ -191,12 +191,14 @@ static int can_esp32_twaifd_set_timing_data(const struct device *dev,
 		.tseg_1 = timing_data->phase_seg1,
 		.tseg_2 = timing_data->phase_seg2,
 		.sjw = timing_data->sjw,
-		/* Transmitter delay compensation: place the secondary sample
-		 * point at the data-phase sample point. CAN_CALC_TDCO() returns
-		 * the offset in minimum time quanta (clock cycles), so divide by
-		 * the prescaler to get the time quanta the ssp_offset field uses.
-		 * The TDCO max is scaled by the prescaler so the clamp lands on
-		 * CAN_ESP32_TWAIFD_SSP_MAX after the division.
+		/* Transmitter delay compensation: the secondary sample point is
+		 * the controller-measured transmitter delay (TDC) plus a fixed
+		 * offset (TDCO). Only the TDCO is configured here; ssp_offset
+		 * carries it in time quanta. CAN_CALC_TDCO() returns the offset
+		 * in minimum time quanta (clock cycles), so divide by the
+		 * prescaler to convert to time quanta. The TDCO max is scaled by
+		 * the prescaler so the clamp lands on CAN_ESP32_TWAIFD_SSP_MAX
+		 * after the division.
 		 */
 		.ssp_offset = CAN_CALC_TDCO(timing_data, 0U,
 					    CAN_ESP32_TWAIFD_SSP_MAX * timing_data->prescaler) /
