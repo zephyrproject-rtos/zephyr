@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(net_eth_bridge, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 #include <zephyr/sys/slist.h>
 #include <zephyr/random/random.h>
 
-#include "net_private.h"
+#include <net_private.h>
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_TXRX_DEBUG)
 #define DEBUG_TX 1

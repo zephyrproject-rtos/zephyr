@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(net_ethernet_vlan, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/virtual.h>
 #include <zephyr/random/random.h>
 
-#include "net_private.h"
+#include <net_private.h>
 
 #if defined(CONFIG_NET_VLAN_TXRX_DEBUG)
 #define DEBUG_TX 1

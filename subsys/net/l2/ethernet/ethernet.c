@@ -30,9 +30,9 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 
 #include "arp.h"
 #include "eth_stats.h"
-#include "net_private.h"
-#include "ipv6.h"
-#include "ipv4.h"
+#include <net_private.h>
+#include <ipv6.h>
+#include <ipv4.h>
 
 #define NET_BUF_TIMEOUT K_MSEC(100)
 

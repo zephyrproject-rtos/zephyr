@@ -25,7 +25,7 @@
 LOG_MODULE_REGISTER(net_dhcpv4_server, CONFIG_NET_DHCPV4_SERVER_LOG_LEVEL);
 
 #include "dhcpv4_internal.h"
-#include "net_private.h"
+#include <net_private.h>
 #include "../../l2/ethernet/arp.h"
 
 #define DHCPV4_OPTIONS_MSG_TYPE_SIZE 3

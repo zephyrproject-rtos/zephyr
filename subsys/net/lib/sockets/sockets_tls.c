@@ -53,7 +53,7 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #endif /* CONFIG_MBEDTLS */
 
 #include "sockets_internal.h"
-#include "tls_internal.h"
+#include <tls_internal.h>
 #include "../../ip/net_private.h"
 
 #if defined(CONFIG_NET_SOCKETS_TLS_SESSION_CACHE_PERSISTENT)

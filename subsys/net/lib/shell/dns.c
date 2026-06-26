@@ -14,7 +14,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/net/socket.h>
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/dns_sd.h>
-#include "dns/dns_sd.h"
+#include <dns/dns_sd.h>
 
 #include "net_shell_private.h"
 

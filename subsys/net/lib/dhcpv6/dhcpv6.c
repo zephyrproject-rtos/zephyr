@@ -19,9 +19,9 @@ LOG_MODULE_REGISTER(net_dhcpv6, CONFIG_NET_DHCPV6_LOG_LEVEL);
 #include <zephyr/sys/math_extras.h>
 
 #include "dhcpv6_internal.h"
-#include "ipv6.h"
-#include "net_private.h"
-#include "udp_internal.h"
+#include <ipv6.h>
+#include <net_private.h>
+#include <udp_internal.h>
 
 #define PKT_WAIT_TIME K_MSEC(100)
 
