@@ -9,9 +9,9 @@
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <ipi.h>
 #include "boot.h"
-#include "zephyr/cache.h"
-#include "zephyr/kernel/thread_stack.h"
-#include "zephyr/toolchain/gcc.h"
+#include <zephyr/cache.h>
+#include <zephyr/kernel/thread_stack.h>
+#include <zephyr/toolchain/gcc.h>
 #include <zephyr/platform/hooks.h>
 
 #define INV_MPID	UINT32_MAX
