@@ -437,15 +437,16 @@ ZTEST(k_heap_api, test_k_heap_aligned_alloc)
 	p = k_heap_aligned_alloc(&k_heap_test, 8, HEAP_SIZE * 2, K_NO_WAIT);
 	zassert_is_null(p, "k_heap_aligned_alloc with oversize should fail");
 
-	ztest_set_fault_valid(true);
-	/* invalid alignment, should assert */
-	p = k_heap_aligned_alloc(&k_heap_test, 3, 64, K_NO_WAIT);
-	(void)p;
-	/*
-	 * If calling k_heap_aligned_alloc with invalid alignment didn't result in an assert
-	 * then the API isn't working as expected, and the test shall fail.
-	 */
-	ztest_test_fail();
+	if (IS_ENABLED(CONFIG_ASSERT_ON_ERRORS)) {
+		ztest_set_fault_valid(true);
+		p = k_heap_aligned_alloc(&k_heap_test, 3, 64, K_NO_WAIT);
+		(void)p;
+		ztest_test_fail();
+	} else if (IS_ENABLED(CONFIG_RUNTIME_ERROR_CHECKS)) {
+		p = k_heap_aligned_alloc(&k_heap_test, 3, 64, K_NO_WAIT);
+		zassert_is_null(p,
+			"k_heap_aligned_alloc with invalid alignment should return NULL");
+	}
 }
 
 /*
