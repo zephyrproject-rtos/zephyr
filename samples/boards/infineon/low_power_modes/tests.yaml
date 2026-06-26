@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: Infineon Low-Power Modes
+tests:
+  # Single-core PSC3M5 DUT: exercises the SoC power states (runtime-idle,
+  # DeepSleep, DeepSleep-RAM and the DeepSleep-OFF / Hibernate terminal modes)
+  # on a plain single-core part.
+  infineon.low_power_modes.psc3m5:
+    build_only: true
+    platform_allow:
+      - kit_psc3m5_evk/psc3m5fds2afq1
+    integration_platforms:
+      - kit_psc3m5_evk/psc3m5fds2afq1
+    tags:
+      - pm
+      - counter
+      - gpio
+      - pwm
