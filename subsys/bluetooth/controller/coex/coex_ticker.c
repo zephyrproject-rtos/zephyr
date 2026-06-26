@@ -16,10 +16,10 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "controller/hal/ticker.h"
-#include "controller/ticker/ticker.h"
-#include "controller/include/ll.h"
-#include "controller/ll_sw/nordic/hal/nrf5/debug.h"
+#include <controller/hal/ticker.h>
+#include <controller/ticker/ticker.h>
+#include <controller/include/ll.h>
+#include <controller/ll_sw/nordic/hal/nrf5/debug.h>
 
 LOG_MODULE_REGISTER(coex_ticker);
 

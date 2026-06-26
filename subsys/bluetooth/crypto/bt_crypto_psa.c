@@ -7,9 +7,9 @@
 
 #include <zephyr/sys/byteorder.h>
 
-#include "psa/crypto.h"
+#include <psa/crypto.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 #include "bt_crypto.h"
 
 #define LOG_LEVEL CONFIG_BT_CRYPTO_LOG_LEVEL

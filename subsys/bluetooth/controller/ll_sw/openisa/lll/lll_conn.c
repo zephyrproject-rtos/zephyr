@@ -12,27 +12,27 @@
 #include <soc.h>
 #include <zephyr/sys/util.h>
 
-#include "hal/cpu.h"
-#include "hal/ccm.h"
-#include "hal/radio.h"
+#include <hal/cpu.h>
+#include <hal/ccm.h>
+#include <hal/radio.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/mfifo.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/mfifo.h>
 
 #include "pdu_vendor.h"
-#include "pdu.h"
+#include <pdu.h>
 
-#include "lll.h"
+#include <lll.h>
 #include "lll_df_types.h"
-#include "lll_conn.h"
+#include <lll_conn.h>
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
 #include "lll_prof_internal.h"
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 static int init_reset(void);
 static void isr_done(void *param);

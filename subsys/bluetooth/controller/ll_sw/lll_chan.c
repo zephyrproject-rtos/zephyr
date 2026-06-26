@@ -7,11 +7,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "hal/ccm.h"
-#include "hal/radio.h"
+#include <hal/ccm.h>
+#include <hal/radio.h>
 
 #include <soc.h>
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 static uint8_t chan_sel_remap(uint8_t *chan_map, uint8_t chan_index);
 #if defined(CONFIG_BT_CTLR_CHAN_SEL_2)

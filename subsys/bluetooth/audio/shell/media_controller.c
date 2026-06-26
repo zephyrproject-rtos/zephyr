@@ -29,8 +29,8 @@
 
 #include "../media_proxy_internal.h" /* For MPL_NO_TRACK_ID - TODO: Fix */
 
-#include "host/shell/bt.h"
-#include "common/bt_shell_private.h"
+#include <host/shell/bt.h>
+#include <common/bt_shell_private.h>
 
 LOG_MODULE_REGISTER(bt_media_controller_shell, CONFIG_BT_MCS_LOG_LEVEL);
 

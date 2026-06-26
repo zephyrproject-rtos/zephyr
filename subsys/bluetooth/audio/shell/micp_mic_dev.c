@@ -24,7 +24,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
-#include "common/bt_shell_private.h"
+#include <common/bt_shell_private.h>
 
 static void micp_mic_dev_mute_cb(uint8_t mute)
 {

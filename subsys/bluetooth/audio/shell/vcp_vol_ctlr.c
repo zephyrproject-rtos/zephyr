@@ -23,8 +23,8 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
-#include "host/shell/bt.h"
-#include "common/bt_shell_private.h"
+#include <host/shell/bt.h>
+#include <common/bt_shell_private.h>
 
 static struct bt_vcp_vol_ctlr *vcp_vol_ctlr;
 static struct bt_vcp_included vcp_included;

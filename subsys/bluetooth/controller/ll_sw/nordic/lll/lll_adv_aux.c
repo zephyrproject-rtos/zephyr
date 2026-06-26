@@ -11,41 +11,41 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <soc.h>
 
-#include "hal/cpu.h"
-#include "hal/ccm.h"
-#include "hal/radio.h"
-#include "hal/ticker.h"
+#include <hal/cpu.h>
+#include <hal/ccm.h>
+#include <hal/radio.h>
+#include <hal/ticker.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/dbuf.h>
 
-#include "pdu_df.h"
+#include <pdu_df.h>
 #include "pdu_vendor.h"
-#include "pdu.h"
+#include <pdu.h>
 
-#include "lll.h"
+#include <lll.h>
 #include "lll_vendor.h"
-#include "lll_clock.h"
-#include "lll_chan.h"
+#include <lll_clock.h>
+#include <lll_chan.h>
 #include "lll_df_types.h"
-#include "lll_conn.h"
+#include <lll_conn.h>
 #include "lll_adv_types.h"
-#include "lll_adv.h"
+#include <lll_adv.h>
 #include "lll_adv_pdu.h"
-#include "lll_adv_aux.h"
-#include "lll_adv_sync.h"
-#include "lll_filter.h"
+#include <lll_adv_aux.h>
+#include <lll_adv_sync.h>
+#include <lll_filter.h>
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
 #include "lll_adv_internal.h"
 #include "lll_prof_internal.h"
 
-#include "ull_adv_types.h"
+#include <ull_adv_types.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);

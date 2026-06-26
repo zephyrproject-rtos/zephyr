@@ -12,14 +12,14 @@
 
 #include <zephyr/bluetooth/conn.h>
 
-#include "common/assert.h"
+#include <common/assert.h>
 
 #include <zephyr/bluetooth/classic/sdp.h>
 #include <zephyr/bluetooth/classic/goep.h>
 #include <zephyr/bluetooth/classic/bip.h>
 
-#include "host/hci_core.h"
-#include "host/conn_internal.h"
+#include <host/hci_core.h>
+#include <host/conn_internal.h>
 #include "l2cap_br_internal.h"
 #include "obex_internal.h"
 

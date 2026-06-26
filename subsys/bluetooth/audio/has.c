@@ -35,10 +35,10 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/toolchain.h>
 
-#include "../bluetooth/host/settings.h"
+#include <../bluetooth/host/settings.h>
 
 #include "audio_internal.h"
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 #include "has_internal.h"
 
 LOG_MODULE_REGISTER(bt_has, CONFIG_BT_HAS_LOG_LEVEL);

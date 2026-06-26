@@ -21,8 +21,8 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/toolchain.h>
 
-#include "common/bt_shell_private.h"
-#include "host/shell/bt.h"
+#include <common/bt_shell_private.h>
+#include <host/shell/bt.h>
 
 static struct bt_ccp_call_control_client *clients[CONFIG_BT_MAX_CONN];
 

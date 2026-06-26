@@ -26,7 +26,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
-#include "common/bt_shell_private.h"
+#include <common/bt_shell_private.h>
 
 #define PBS_DEMO                'P', 'B', 'P'
 

@@ -49,11 +49,11 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 #include "csip_crypto.h"
 #include "csip_internal.h"
-#include "host/conn_internal.h"
-#include "host/keys.h"
+#include <host/conn_internal.h>
+#include <host/keys.h>
 
 LOG_MODULE_REGISTER(bt_csip_set_coordinator, CONFIG_BT_CSIP_SET_COORDINATOR_LOG_LEVEL);
 

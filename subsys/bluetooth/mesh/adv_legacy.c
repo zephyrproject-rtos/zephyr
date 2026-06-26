@@ -15,9 +15,9 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
-#include "host/hci_core.h"
+#include <host/hci_core.h>
 
 #include "net.h"
 #include "foundation.h"

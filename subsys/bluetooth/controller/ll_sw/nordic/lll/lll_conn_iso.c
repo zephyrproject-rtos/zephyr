@@ -10,20 +10,20 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
 
-#include "hal/ccm.h"
+#include <hal/ccm.h>
 
-#include "util/memq.h"
-#include "util/mem.h"
+#include <util/memq.h>
+#include <util/mem.h>
 
-#include "pdu_df.h"
+#include <pdu_df.h>
 #include "pdu_vendor.h"
-#include "pdu.h"
+#include <pdu.h>
 
-#include "lll.h"
-#include "lll_conn_iso.h"
+#include <lll.h>
+#include <lll_conn_iso.h>
 
 #include <soc.h>
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 
 int lll_conn_iso_init(void)

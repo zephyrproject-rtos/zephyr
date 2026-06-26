@@ -29,8 +29,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
-#include "host/shell/bt.h"
-#include "common/bt_shell_private.h"
+#include <host/shell/bt.h>
+#include <common/bt_shell_private.h>
 
 #include "../media_proxy_internal.h"
 
