@@ -165,7 +165,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 	 */
 	cis_lll->prepared = 1U;
 
-	/* Save first active CIS offset */
+	/* Save first active CIS offset, used as the baseline reference for
+	 * calculating each subevent's start time relative to the CIG event
+	 * anchor point (subevent_us = offset - cis_offset_first +
+	 * sub_interval * se_curr).
+	 */
 	cis_offset_first = cis_lll->offset;
 
 	/* Get reference to ACL context */
@@ -811,7 +815,15 @@ static void isr_rx(void *param)
 		lll_prof_cputime_capture();
 	}
 
-	/* Schedule next subevent */
+	/* Schedule next subevent.
+	 *
+	 * NOTE: The LLL currently traverses subevents using sequential packing,
+	 * i.e. all NSE subevents of the current CIS are scheduled (spaced by
+	 * sub_interval) before advancing to the next CIS in the CIG. Interleaved
+	 * packing, where the n-th subevents of all CISes are scheduled adjacent
+	 * to each other before the (n+1)-th subevents, requires a round-robin
+	 * traversal across CISes per subevent and is not yet implemented here.
+	 */
 	if (!cie && (se_curr < cis_lll->nse)) {
 		/* Calculate the radio channel to use for next subevent
 		 */
