@@ -4,12 +4,40 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* _POSIX_C_SOURCE is required to expose gmtime_r declaration in glibc headers */
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
 #include <zephyr/ztest.h>
 
 #include "tls_internal.h"
 
 static const char test_ca_cert[] = "Test CA certificate";
-static const char test_server_cert[] = "Test server certificate";
+/* DigiCert Global Root G2 (expires 2038-01-15 12:00:00) */
+static const char test_server_cert[] =
+"-----BEGIN CERTIFICATE-----\n"
+"MIIDjjCCAnagAwIBAgIQAzrx5qcRqaC7KGSxHQn65TANBgkqhkiG9w0BAQsFADBh\n"
+"MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3\n"
+"d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBH\n"
+"MjAeFw0xMzA4MDExMjAwMDBaFw0zODAxMTUxMjAwMDBaMGExCzAJBgNVBAYTAlVT\n"
+"MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j\n"
+"b20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290IEcyMIIBIjANBgkqhkiG\n"
+"9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuzfNNNx7a8myaJCtSnX/RrohCgiN9RlUyfuI\n"
+"2/Ou8jqJkTx65qsGGmvPrC3oXgkkRLpimn7Wo6h+4FR1IAWsULecYxpsMNzaHxmx\n"
+"1x7e/dfgy5SDN67sH0NO3Xss0r0upS/kqbitOtSZpLYl6ZtrAGCSYP9PIUkY92eQ\n"
+"q2EGnI/yuum06ZIya7XzV+hdG82MHauVBJVJ8zUtluNJbd134/tJS7SsVQepj5Wz\n"
+"tCO7TG1F8PapspUwtP1MVYwnSlcUfIKdzXOS0xZKBgyMUNGPHgm+F6HmIcr9g+UQ\n"
+"vIOlCsRnKPZzFBQ9RnbDhxSJITRNrw9FDKZJobq7nMWxM4MphQIDAQABo0IwQDAP\n"
+"BgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwIBhjAdBgNVHQ4EFgQUTiJUIBiV\n"
+"5uNu5g/6+rkS7QYXjzkwDQYJKoZIhvcNAQELBQADggEBAGBnKJRvDkhj6zHd6mcY\n"
+"1Yl9PMWLSn/pvtsrF9+wX3N3KjITOYFnQoQj8kVnNeyIv/iPsGEMNKSuIEyExtv4\n"
+"NeF22d+mQrvHRAiGfzZ0JFrabA0UWTW98kndth/Jsw1HKj2ZL7tcu7XUIOGZX1NG\n"
+"Fdtom/DzMNU+MeKNhJ7jitralj41E6Vf8PlwUHBHQRFXGU7Aj64GxJUTFy8bJZ91\n"
+"8rGOmaFvE7FBcf6IKshPECBV1/MUReXgRPTqh5Uykw7+U0b6LJ3/iyK5S9kJRaTe\n"
+"pLiaWN0bfVKfjllDiIGknibVb63dDcY3fe0Dkhvld1927jyNxF1WW6LZZm6zNTfl\n"
+"MrY=\n"
+"-----END CERTIFICATE-----\n";
+
 static const char test_server_key[] = "Test server key";
 
 static const int invalid_tag = CONFIG_TLS_MAX_CREDENTIALS_NUMBER + 1;
@@ -141,6 +169,42 @@ static void test_credential_internal_iterate(void)
 	zassert_is_null(key, "Should have return NULL after last credential");
 }
 
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
+static void test_credential_expiry(void)
+{
+	int ret;
+	struct tm tm_expiry;
+	time_t expiry;
+
+	/* Should fail on trying to get expiry of non-existing credential. */
+	ret = tls_credential_expiry(invalid_tag, TLS_CREDENTIAL_CA_CERTIFICATE, &expiry);
+	zassert_equal(ret, -ENOENT, "Should have failed with ENOENT");
+
+	/* Should fail on trying to get expiry of private key. */
+	ret = tls_credential_expiry(common_tag, TLS_CREDENTIAL_PRIVATE_KEY, &expiry);
+	zassert_equal(ret, -EINVAL, "Should have failed with EINVAL");
+
+	zassert_ok(tls_credential_expiry(common_tag, TLS_CREDENTIAL_PUBLIC_CERTIFICATE, &expiry));
+
+	gmtime_r(&expiry, &tm_expiry);
+
+	zassert_equal(tm_expiry.tm_year + 1900, 2038);
+	zassert_equal(tm_expiry.tm_mon + 1, 1);
+	zassert_equal(tm_expiry.tm_mday, 15);
+	zassert_equal(tm_expiry.tm_hour, 12);
+	zassert_equal(tm_expiry.tm_min, 0);
+	zassert_equal(tm_expiry.tm_sec, 0);
+
+	ret = tls_credential_expiry(common_tag, TLS_CREDENTIAL_PRIVATE_KEY, &expiry);
+	zassert_equal(ret, -EINVAL, "Should have failed with EINVAL");
+}
+#else
+static void test_credential_expiry(void)
+{
+	zassert_equal(tls_credential_expiry(0, TLS_CREDENTIAL_CA_CERTIFICATE, NULL),
+		      -ENOTSUP, "Should have failed with ENOTSUP");
+}
+#endif
 /**
  * @brief Test test_credential_delete function
  *
@@ -171,6 +235,7 @@ ZTEST(tls_crecentials, test_tls_crecentials)
 	test_credential_add();
 	test_credential_get();
 	test_credential_internal_iterate();
+	test_credential_expiry();
 	test_credential_delete();
 }
 
