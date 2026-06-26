@@ -471,14 +471,6 @@ static void eth_intel_igc_iface_init(struct net_if *iface)
 	eth_intel_igc_intr_enable(dev);
 }
 
-static enum ethernet_hw_caps eth_intel_igc_get_caps(const struct device *dev,
-						    struct net_if *iface __unused)
-{
-	ARG_UNUSED(dev);
-
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE;
-}
-
 static int eth_intel_igc_set_config(const struct device *dev,
 				    struct net_if *iface __unused,
 				    enum ethernet_config_type type,
@@ -1204,7 +1196,6 @@ static int eth_intel_igc_init(const struct device *dev)
 
 static const struct ethernet_api eth_api = {
 	.iface_api.init = eth_intel_igc_iface_init,
-	.get_capabilities = eth_intel_igc_get_caps,
 	.set_config = eth_intel_igc_set_config,
 	.send = eth_intel_igc_tx_data,
 	.get_phy = eth_intel_igc_get_phy,

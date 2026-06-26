@@ -551,7 +551,7 @@ static void eth_wch_iface_init(struct net_if *iface)
 static enum ethernet_hw_caps eth_wch_get_capabilities(const struct device *dev __unused,
 						      struct net_if *iface __unused)
 {
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
+	return 0
 #if defined(CONFIG_ETH_WCH_HW_CHECKSUM)
 	       | ETHERNET_HW_RX_CHKSUM_OFFLOAD
 #endif

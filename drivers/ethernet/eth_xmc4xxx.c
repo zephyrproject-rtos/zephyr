@@ -1110,8 +1110,7 @@ static enum ethernet_hw_caps eth_xmc4xxx_capabilities(const struct device *dev _
 						     struct net_if *iface __unused)
 {
 	ARG_UNUSED(dev);
-	enum ethernet_hw_caps caps = ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE |
-				     ETHERNET_HW_TX_CHKSUM_OFFLOAD | ETHERNET_HW_RX_CHKSUM_OFFLOAD;
+	enum ethernet_hw_caps caps = ETHERNET_HW_TX_CHKSUM_OFFLOAD | ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
 	caps |= ETHERNET_PTP;

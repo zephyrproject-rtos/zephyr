@@ -733,7 +733,7 @@ static enum ethernet_hw_caps eth_enc28j60_get_capabilities(const struct device *
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE
+	return 0
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
 #endif

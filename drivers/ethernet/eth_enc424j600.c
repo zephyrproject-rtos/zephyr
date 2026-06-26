@@ -495,12 +495,6 @@ static void enc424j600_rx_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static enum ethernet_hw_caps enc424j600_get_capabilities(const struct device *dev __unused,
-							 struct net_if *iface __unused)
-{
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
-}
-
 static int enc424j600_set_config(const struct device *dev,
 				 struct net_if *iface __unused,
 				 enum ethernet_config_type type,
@@ -631,7 +625,6 @@ static int enc424j600_stop_device(const struct device *dev, struct net_if *iface
 static const struct ethernet_api api_funcs = {
 	.iface_api.init		= enc424j600_iface_init,
 	.set_config		= enc424j600_set_config,
-	.get_capabilities	= enc424j600_get_capabilities,
 	.send			= enc424j600_tx,
 	.start			= enc424j600_start_device,
 	.stop			= enc424j600_stop_device,

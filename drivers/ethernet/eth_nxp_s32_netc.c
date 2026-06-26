@@ -254,10 +254,7 @@ static void nxp_s32_eth_rx_thread(void *arg1, void *unused1, void *unused2)
 enum ethernet_hw_caps nxp_s32_eth_get_capabilities(const struct device *dev __unused,
 						   struct net_if *iface __unused)
 {
-	return (ETHERNET_LINK_10BASE
-		| ETHERNET_LINK_100BASE
-		| ETHERNET_LINK_1000BASE
-		| ETHERNET_HW_RX_CHKSUM_OFFLOAD
+	return (ETHERNET_HW_RX_CHKSUM_OFFLOAD
 		| ETHERNET_HW_FILTERING
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN

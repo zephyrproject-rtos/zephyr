@@ -501,7 +501,7 @@ static enum ethernet_hw_caps w6300_get_capabilities(const struct device *dev,
 	ARG_UNUSED(dev);
 	ARG_UNUSED(iface);
 
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
+	return 0
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		| ETHERNET_PROMISC_MODE
 #endif

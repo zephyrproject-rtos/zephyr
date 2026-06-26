@@ -164,12 +164,6 @@ static const struct device *axi_eth_lite_get_phy(const struct device *dev,
 	return config->phy;
 }
 
-static enum ethernet_hw_caps axi_eth_lite_get_caps(const struct device *dev __unused,
-						    struct net_if *iface __unused)
-{
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
-}
-
 static void axi_eth_lite_phy_link_state_changed(const struct device *phydev __unused,
 						struct phy_link_state *state, void *user_data)
 {
@@ -320,7 +314,6 @@ static int axi_eth_lite_send(const struct device *dev, struct net_pkt *pkt)
 
 static const struct ethernet_api axi_eth_lite_api = {
 	.get_phy = axi_eth_lite_get_phy,
-	.get_capabilities = axi_eth_lite_get_caps,
 	.iface_api.init = axi_eth_lite_iface_init,
 	.set_config = axi_eth_lite_set_config,
 	.send = axi_eth_lite_send,

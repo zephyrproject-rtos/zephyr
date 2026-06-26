@@ -225,8 +225,7 @@ static int eth_fake_get_config(const struct device *dev,
 static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev __unused,
 						       struct net_if *iface __unused)
 {
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_QAV |
-	       ETHERNET_PROMISC_MODE | ETHERNET_PRIORITY_QUEUES;
+	return ETHERNET_QAV | ETHERNET_PROMISC_MODE | ETHERNET_PRIORITY_QUEUES;
 }
 
 static struct ethernet_api eth_fake_api_funcs = {

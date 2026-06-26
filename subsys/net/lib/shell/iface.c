@@ -48,11 +48,6 @@ static struct ethernet_capabilities eth_hw_caps[] = {
 	EC(ETHERNET_HW_VLAN,              "Virtual LAN"),
 	EC(ETHERNET_HW_VLAN_TAG_STRIP,    "VLAN Tag stripping"),
 #endif
-	EC(ETHERNET_LINK_10BASE,          "10 Mbits"),
-	EC(ETHERNET_LINK_100BASE,         "100 Mbits"),
-	EC(ETHERNET_LINK_1000BASE,        "1 Gbits"),
-	EC(ETHERNET_LINK_2500BASE,        "2.5 Gbits"),
-	EC(ETHERNET_LINK_5000BASE,        "5 Gbits"),
 #ifdef CONFIG_PTP_CLOCK
 	EC(ETHERNET_PTP,                  "IEEE 802.1AS gPTP clock"),
 #endif

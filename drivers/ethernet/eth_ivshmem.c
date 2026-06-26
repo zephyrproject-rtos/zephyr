@@ -86,12 +86,6 @@ static int eth_ivshmem_stop(const struct device *dev, struct net_if *iface __unu
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_ivshmem_caps(const struct device *dev __unused,
-					      struct net_if *iface __unused)
-{
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE;
-}
-
 static int eth_ivshmem_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_ivshmem_dev_data *dev_data = dev->data;
@@ -380,7 +374,6 @@ static const struct ethernet_api eth_ivshmem_api = {
 #endif
 	.start			= eth_ivshmem_start,
 	.stop			= eth_ivshmem_stop,
-	.get_capabilities	= eth_ivshmem_caps,
 	.send			= eth_ivshmem_send,
 };
 
