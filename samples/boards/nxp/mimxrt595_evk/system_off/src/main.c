@@ -8,7 +8,7 @@
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/sys/poweroff.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 int main(void)
 {
