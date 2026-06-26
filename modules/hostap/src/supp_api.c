@@ -3339,6 +3339,15 @@ int supplicant_p2p_oper(const struct device *dev __unused, struct net_if *iface,
 			return -EINVAL;
 		}
 
+		if ((params->group_add.persistent_set)) {
+			ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn,
+					"SET persistent_reconnect 1",
+					resp_buf);
+			if (ret < 0) {
+				wpa_printf(MSG_WARNING, "Failed to set persistent_reconnect");
+			}
+		}
+
 		len = snprintk(cmd_buf, sizeof(cmd_buf), "P2P_GROUP_ADD");
 
 		if (params->group_add.freq > 0) {
@@ -3346,9 +3355,25 @@ int supplicant_p2p_oper(const struct device *dev __unused, struct net_if *iface,
 					params->group_add.freq);
 		}
 
-		if (params->group_add.persistent >= 0) {
-			len += snprintk(cmd_buf + len, sizeof(cmd_buf) - len, " persistent=%d",
-					params->group_add.persistent);
+		if (params->group_add.persistent_set == true) {
+			len += snprintk(cmd_buf + len, sizeof(cmd_buf) - len, " persistent");
+		} else if (params->group_add.persistent >= 0) {
+			/* Sanity check: verify the network exists before proceeding. */
+			char check_cmd[64];
+
+			snprintk(check_cmd, sizeof(check_cmd), "GET_NETWORK %d ssid",
+				 params->group_add.persistent);
+			ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn,
+							      check_cmd, resp_buf);
+			if (ret < 0 || strncmp(resp_buf, "FAIL", 4) == 0) {
+				wpa_printf(MSG_ERROR,
+					   "P2P persistent group %d does not exist",
+					   params->group_add.persistent);
+				return -ENOENT;
+			}
+
+			len += snprintk(cmd_buf + len, sizeof(cmd_buf) - len,
+					" persistent=%d", params->group_add.persistent);
 		}
 
 		if (params->group_add.ht40 != 0) {

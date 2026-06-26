@@ -1796,6 +1796,8 @@ struct wifi_p2p_params {
 		int freq;
 		/** Persistent group ID (-1 = not persistent) */
 		int persistent;
+		/** Add persistent group */
+		bool persistent_set;
 		/** Enable HT40 */
 		bool ht40;
 		/** Enable VHT */

@@ -4196,6 +4196,7 @@ static int cmd_wifi_p2p_group_add(const struct shell *sh, size_t argc, char *arg
 	static const struct sys_getopt_option long_options[] = {
 		{"freq", sys_getopt_required_argument, 0, 'f'},
 		{"persistent", sys_getopt_required_argument, 0, 'p'},
+		{"persistent_set", sys_getopt_no_argument, 0, 'a'},
 		{"ht40", sys_getopt_no_argument, 0, 'h'},
 		{"vht", sys_getopt_no_argument, 0, 'v'},
 		{"he", sys_getopt_no_argument, 0, 'H'},
@@ -4212,6 +4213,7 @@ static int cmd_wifi_p2p_group_add(const struct shell *sh, size_t argc, char *arg
 
 	params.oper = WIFI_P2P_GROUP_ADD;
 	params.group_add.freq = 0;
+	params.group_add.persistent_set = false;
 	params.group_add.persistent = -1;
 	params.group_add.ht40 = false;
 	params.group_add.vht = false;
@@ -4219,7 +4221,7 @@ static int cmd_wifi_p2p_group_add(const struct shell *sh, size_t argc, char *arg
 	params.group_add.edmg = false;
 	params.group_add.go_bssid_length = 0;
 
-	while ((opt = sys_getopt_long(argc, argv, "f:p:hvHeb:i:?", long_options,
+	while ((opt = sys_getopt_long(argc, argv, "f:ap:hvHeb:i:?", long_options,
 				      &opt_index)) != -1) {
 		state = sys_getopt_state_get();
 		switch (opt) {
@@ -4228,6 +4230,9 @@ static int cmd_wifi_p2p_group_add(const struct shell *sh, size_t argc, char *arg
 				return -EINVAL;
 			}
 			params.group_add.freq = (int)val;
+			break;
+		case 'a':
+			params.group_add.persistent_set = true;
 			break;
 		case 'p':
 			if (!parse_number(sh, &val, state->optarg, "persistent", -1, 255)) {
@@ -4268,6 +4273,11 @@ static int cmd_wifi_p2p_group_add(const struct shell *sh, size_t argc, char *arg
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
 		}
+	}
+
+	if (params.group_add.persistent_set == true) {
+		PR_WARNING("The persistent_set is indicated and parameter -p will be ignored\n");
+		params.group_add.persistent = -1;
 	}
 
 	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params))) {
@@ -5590,6 +5600,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "[-f, --freq=<MHz>]: Frequency in MHz (0 = auto)\n"
 				 "[-p, --persistent=<id>]: Persistent group ID "
 				 "(-1 = not persistent)\n"
+				 "[-a, --persistent_set]: Add persistent group\n"
 				 "[-h, --ht40]: Enable HT40\n"
 				 "[-v, --vht]: Enable VHT (also enables HT40)\n"
 				 "[-H, --he]: Enable HE\n"
