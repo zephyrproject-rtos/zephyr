@@ -7,8 +7,8 @@
 #include <lvgl.h>
 #include <zephyr/kernel.h>
 #include <zephyr/fs/fs.h>
-#include "lvgl_fs.h"
-#include "lv_conf.h"
+#include <lvgl_fs.h>
+#include <lv_conf.h>
 #include LV_STDLIB_INCLUDE
 
 static bool lvgl_fs_ready(lv_fs_drv_t *drv)

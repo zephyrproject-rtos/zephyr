@@ -8,14 +8,14 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <lvgl.h>
-#include "lvgl_display.h"
-#include "lvgl_common_input.h"
-#include "lvgl_zephyr.h"
+#include <lvgl_display.h>
+#include <lvgl_common_input.h>
+#include <lvgl_zephyr.h>
 #ifdef CONFIG_LV_Z_USE_FILESYSTEM
-#include "lvgl_fs.h"
+#include <lvgl_fs.h>
 #endif
 #ifdef CONFIG_LV_Z_MEM_POOL_SYS_HEAP
-#include "lvgl_mem.h"
+#include <lvgl_mem.h>
 #endif
 #include LV_STDLIB_INCLUDE
 

@@ -4,17 +4,17 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "lvgl_common_input.h"
+#include <lvgl_common_input.h>
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <lvgl_input_device.h>
 #include <lvgl_display.h>
 #include <zephyr/logging/log.h>
-#include "lvgl_pointer_input.h"
-#include "lvgl_button_input.h"
-#include "lvgl_encoder_input.h"
-#include "lvgl_keypad_input.h"
+#include <lvgl_pointer_input.h>
+#include <lvgl_button_input.h>
+#include <lvgl_encoder_input.h>
+#include <lvgl_keypad_input.h>
 
 LOG_MODULE_DECLARE(lvgl, CONFIG_LV_Z_LOG_LEVEL);
 

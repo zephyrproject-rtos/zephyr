@@ -7,8 +7,8 @@
 
 #define DT_DRV_COMPAT zephyr_lvgl_pointer_input
 
-#include "lvgl_common_input.h"
-#include "lvgl_pointer_input.h"
+#include <lvgl_common_input.h>
+#include <lvgl_pointer_input.h>
 
 #include <lvgl_display.h>
 #include <zephyr/logging/log.h>
