@@ -200,6 +200,11 @@ int fido2_clientpin_pin_verify_pin_uv_auth_token(const uint8_t *msg, size_t msg_
 		return -EPERM;
 	}
 
+	if ((pin_uv_auth_token_rp_id[0] != '\0') && (rp_id != NULL) &&
+	    (strcmp(pin_uv_auth_token_rp_id, rp_id) != 0)) {
+		return -EACCES;
+	}
+
 	return verify(pin_uv_auth_token, msg, msg_len, auth_param, auth_param_len);
 }
 
@@ -307,11 +312,10 @@ enum fido2_status fido2_clientpin_cmd_set_pin(uint8_t protocol, const uint8_t *p
 	return FIDO2_OK;
 }
 
-enum fido2_status fido2_clientpin_cmd_get_pin_token(uint8_t protocol, const uint8_t *platform_key,
-						    size_t platform_key_len,
-						    const uint8_t *pin_hash_enc,
-						    size_t pin_hash_enc_len, uint8_t *cbor_out,
-						    size_t cbor_out_cap, size_t *cbor_out_len)
+enum fido2_status fido2_clientpin_cmd_get_pin_token_pin_w_perms(
+	uint8_t protocol, const uint8_t *platform_key, size_t platform_key_len,
+	const uint8_t *pin_hash_enc, size_t pin_hash_enc_len, uint8_t permissions,
+	const char *rp_id, uint8_t *cbor_out, size_t cbor_out_cap, size_t *cbor_out_len)
 {
 	uint8_t retries;
 	uint8_t pin_hash_dec[FIDO2_PIN_HASH_SIZE];
@@ -387,7 +391,13 @@ enum fido2_status fido2_clientpin_cmd_get_pin_token(uint8_t protocol, const uint
 
 	reset_pin_uv_auth_token();
 
-	begin_using_pin_uv_auth_token(false, FIDO2_PIN_PERM_MC | FIDO2_PIN_PERM_GA, protocol);
+	begin_using_pin_uv_auth_token(false, permissions, protocol);
+
+	/* Ignored for getPinToken */
+	if (rp_id != NULL) {
+		strncpy(pin_uv_auth_token_rp_id, rp_id, sizeof(pin_uv_auth_token_rp_id) - 1);
+		pin_uv_auth_token_rp_id[sizeof(pin_uv_auth_token_rp_id) - 1] = '\0';
+	}
 
 	ret = encrypt(protocol, pin_uv_auth_token, sizeof(pin_uv_auth_token), token_enc,
 		      sizeof(token_enc), &token_enc_len);
