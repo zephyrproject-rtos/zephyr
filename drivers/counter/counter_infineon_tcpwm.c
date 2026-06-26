@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,8 @@
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/pm.h>
 #include <infineon_kconfig.h>
 #include <zephyr/drivers/timer/ifx_tcpwm.h>
 #include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
@@ -50,6 +52,12 @@ struct ifx_tcpwm_counter_data {
 	struct ifx_cat1_clock clock;
 	/* Counter input frequency, cached at init (see ifx_tcpwm_counter_get_freq) */
 	uint32_t freq;
+#ifdef CONFIG_PM_DEVICE
+	/* Whether the counter was running when suspend was entered, so
+	 * resume only restarts a counter that was previously active.
+	 */
+	bool was_running;
+#endif /* CONFIG_PM_DEVICE */
 };
 
 static const cy_stc_tcpwm_counter_config_t counter_default_config = {
@@ -213,6 +221,14 @@ static int ifx_tcpwm_counter_start(const struct device *dev)
 	Cy_TCPWM_TriggerStart_Single(config->reg_base, config->index);
 #endif
 
+#ifdef CONFIG_PM_DEVICE
+	{
+		struct ifx_tcpwm_counter_data *const data = dev->data;
+
+		data->was_running = true;
+	}
+#endif /* CONFIG_PM_DEVICE */
+
 	return 0;
 }
 
@@ -223,6 +239,14 @@ static int ifx_tcpwm_counter_stop(const struct device *dev)
 	const struct ifx_tcpwm_counter_config *config = dev->config;
 
 	Cy_TCPWM_Counter_Disable(config->reg_base, config->index);
+
+#ifdef CONFIG_PM_DEVICE
+	{
+		struct ifx_tcpwm_counter_data *const data = dev->data;
+
+		data->was_running = false;
+	}
+#endif /* CONFIG_PM_DEVICE */
 
 	return 0;
 }
@@ -480,6 +504,54 @@ static int ifx_tcpwm_counter_set_guard_period(const struct device *dev, uint32_t
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int ifx_tcpwm_counter_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct ifx_tcpwm_counter_data *const data = dev->data;
+#if defined(CONFIG_PM_S2RAM)
+	int ret;
+#endif /* CONFIG_PM_S2RAM */
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Nothing to do; the block can be gated as-is. */
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+#if defined(CONFIG_PM_S2RAM)
+		/*
+		 * On a DS-RAM warm boot the block is power-cycled and rebuilt by
+		 * TURN_ON, so skip the light restart here.
+		 */
+		if (pm_state_next_get(_current_cpu->id)->state == PM_STATE_SUSPEND_TO_RAM) {
+			break;
+		}
+#endif /* CONFIG_PM_S2RAM */
+		/* Configuration is retained across the gate; restart if it was running. */
+		if (data->was_running) {
+			(void)ifx_tcpwm_counter_start(dev);
+		}
+		break;
+#if defined(CONFIG_PM_S2RAM)
+	case PM_DEVICE_ACTION_TURN_ON:
+		/* Power was lost: re-init the block and restart if it was running. */
+		ret = ifx_tcpwm_counter_init(dev);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (data->was_running) {
+			(void)ifx_tcpwm_counter_start(dev);
+		}
+		break;
+#endif /* CONFIG_PM_S2RAM */
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(counter, counter_api) = {
 	.start = ifx_tcpwm_counter_start,
 	.stop = ifx_tcpwm_counter_stop,
@@ -545,6 +617,8 @@ static DEVICE_API(counter, counter_api) = {
 	static struct ifx_tcpwm_counter_data ifx_tcpwm_counter##n##_data = {                       \
 		COUNTER_PERI_CLOCK_INIT(n)};                                                       \
                                                                                                    \
+	PM_DEVICE_DT_INST_DEFINE(n, ifx_tcpwm_counter_pm_action);                                  \
+                                                                                                   \
 	static const struct ifx_tcpwm_counter_config ifx_tcpwm_counter##n##_config = {             \
 		.counter_info = {.max_top_value = (DT_PROP(DT_INST_PARENT(n), resolution) == 32)   \
 							  ? UINT32_MAX                             \
@@ -560,8 +634,8 @@ static DEVICE_API(counter, counter_api) = {
 		.irq_enable_func = ifx_counter_irq_enable_func_##n,                                \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, ifx_tcpwm_counter_init, NULL, &ifx_tcpwm_counter##n##_data,       \
-			      &ifx_tcpwm_counter##n##_config, POST_KERNEL,                         \
-			      CONFIG_COUNTER_INIT_PRIORITY, &counter_api);
+	DEVICE_DT_INST_DEFINE(n, ifx_tcpwm_counter_init, PM_DEVICE_DT_INST_GET(n),                 \
+			      &ifx_tcpwm_counter##n##_data, &ifx_tcpwm_counter##n##_config,        \
+			      PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY, &counter_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_TCPWM_COUNTER_INIT);
