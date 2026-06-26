@@ -1,0 +1,22 @@
+tests:
+  debug.coredump.app_dump:
+    tags:
+      - coredump
+      - debug
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_64
+      - qemu_cortex_m3
+      - versalnet_apu
+      - versalnet_apu/amd_versalnet_apu/smp
+    ignore_faults: true
+    ignore_qemu_crash: true
+    timeout: 300
+    integration_platforms:
+      - qemu_x86
+      - qemu_cortex_m3
+    harness: ztest
+    harness_config:
+      type: one_line
+      regex:
+        - "SUITE PASS"
