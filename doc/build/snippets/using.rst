@@ -51,3 +51,16 @@ can be added to that application's ``CMakeLists.txt`` file. For example:
    endif()
 
    find_package(Zephyr ....)
+
+If :ref:`adding an extra zephyr application using sysbuild <sysbuild_zephyr_application>`, the
+required snippets can be provided to ``ExternalZephyrProject_Add()`` using the ``SNIPPET``
+argument. For example:
+
+.. code-block:: cmake
+
+   ExternalZephyrProject_Add(
+     APPLICATION sample
+     SOURCE_DIR <path-to>/sample
+     BOARD <board>
+     SNIPPET snippet1 snippet2 ...
+   )
