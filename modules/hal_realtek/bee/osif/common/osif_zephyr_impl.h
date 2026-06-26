@@ -13,7 +13,7 @@
 #define OSIF_ZEPHYR_IMPL_H
 
 #include <zephyr/kernel.h>
-#include "mem_types.h"
+#include <mem_types.h>
 
 #ifdef __cplusplus
 extern "C" {
