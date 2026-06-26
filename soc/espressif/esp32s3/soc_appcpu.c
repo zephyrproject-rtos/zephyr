@@ -29,7 +29,7 @@
 #include <hal/wdt_hal.h>
 #include <hal/cpu_hal.h>
 #include <soc/gpio_periph.h>
-#include "esp_cpu.h"
+#include <esp_cpu.h>
 #include <esp_err.h>
 #include <esp_timer.h>
 #include <esp_app_format.h>
