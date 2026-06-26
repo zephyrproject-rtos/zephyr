@@ -1,0 +1,145 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+description: >
+  Generic QPI PSRAM device on MSPI bus.
+
+  Two operating modes are supported:
+
+  1. Known chip variant (chip-variant is set):
+     The driver looks up all chip parameters — read/write commands, CE refresh
+     interval, maximum burst size — from its internal table.
+     read-command, write-command, command-length, address-length, and rx-dummy
+     are still required by the MSPI controller to program its hardware registers
+     (XIP/DMA mode), but CE timing (mem_boundary / time_to_break) is always
+     taken from the chip table and any ce-break-config in DT is ignored.
+     Supported chip variants: ESP-PSRAM64H, ISSI IS66WVS4M8BLL, IS66WVS8M8BLL.
+
+  2. Generic mode (chip-variant is omitted):
+     The driver uses the standard de-facto QPI PSRAM init sequence
+     (Enter QPI 0x35, Reset 0x66+0x99, Read ID 0x9F) but skips KGD
+     verification. All transfer parameters must be provided in DT:
+     read-command, write-command, command-length, address-length, rx-dummy,
+     and CE timing via ce-break-config or the mspi-device ce-* properties.
+
+  STM32 users: add compatible = "st,psram-device" to the device node
+  alongside this compatible to expose the st,timing-config property
+  needed for OCTOSPI turnaround-cycle tuning.
+
+compatible: "mspi-qspi-psram"
+
+include: [mspi-device.yaml]
+
+properties:
+  size:
+    type: int
+    required: true
+    description: Memory capacity in bits (e.g. 67108864 for 64 Mbit).
+
+  chip-variant:
+    type: string
+    enum:
+      - "ESP64H"          # Espressif ESP-PSRAM64H  64 Mbit (8 MB)
+      - "IS66WVS4M8BLL"   # ISSI IS66WVS4M8BLL      32 Mbit (4 MB)
+      - "IS66WVS8M8BLL"   # ISSI IS66WVS8M8BLL      64 Mbit (8 MB)
+    description: >
+      Selects the PSRAM chip variant. The driver uses this to look up
+      chip-specific read/write commands and CE refresh interval from its
+      internal parameter table, overriding the DT values for those fields.
+      Omit this property to use generic mode, in which read-command,
+      write-command, and CE timing must be specified explicitly in DT.
+
+  mspi-io-mode:
+    required: true
+    description: Must be MSPI_IO_MODE_QUAD.
+
+  mspi-max-frequency:
+    required: true
+
+  read-command:
+    description: >
+      QPI fast-read command byte sent by the MSPI controller in DMA/XIP mode.
+      Required in generic mode (no chip-variant). When chip-variant is set,
+      this value is overridden by the driver from its internal chip table.
+
+  write-command:
+    description: >
+      QPI write command byte sent by the MSPI controller in DMA/XIP mode.
+      Required in generic mode (no chip-variant). When chip-variant is set,
+      this value is overridden by the driver from its internal chip table.
+
+  command-length:
+    description: >
+      Length of the read/write command in bytes.
+      Required in generic mode (no chip-variant). When chip-variant is set,
+      the driver uses the value from its internal chip table (INSTR_1_BYTE
+      for all supported variants) and ignores this property.
+
+  address-length:
+    description: >
+      Length of the address phase in bytes.
+      Required in generic mode (no chip-variant). When chip-variant is set,
+      the driver uses the value from its internal chip table (ADDR_3_BYTE
+      for all supported variants) and ignores this property.
+
+  rx-dummy:
+    description: >
+      Read dummy cycles. Use the value from the chip datasheet for the
+      chosen operating frequency (typically 6 at or below 80 MHz).
+      Required in generic mode (no chip-variant). When chip-variant is set,
+      the driver uses the datasheet value from its internal chip table and
+      ignores this property.
+
+  enter-qpi-cmd:
+    type: int
+    default: 0x35
+    description: >
+      SPI command to switch the chip into QPI (quad) mode.
+      Default 0x35 is the de-facto standard for most QPI PSRAM vendors.
+      Only used in generic mode (chip-variant not set); for known variants
+      the driver takes this value from its internal chip table.
+
+  exit-qpi-cmd:
+    type: int
+    default: 0xF5
+    description: >
+      QPI command to return the chip to SPI mode.
+      Default 0xF5 is the de-facto standard.
+      Only used in generic mode (chip-variant not set).
+
+  reset-en-cmd:
+    type: int
+    default: 0x66
+    description: >
+      Reset Enable command (sent before reset-cmd).
+      Default 0x66 is the de-facto standard.
+      Only used in generic mode (chip-variant not set).
+
+  reset-cmd:
+    type: int
+    default: 0x99
+    description: >
+      Reset command.
+      Default 0x99 is the de-facto standard.
+      Only used in generic mode (chip-variant not set).
+
+  read-id-cmd:
+    type: int
+    default: 0x9F
+    description: >
+      Read ID command. The driver reads 3 bytes (MF / KGD / EID) at address 0.
+      Default 0x9F is the de-facto standard.
+      In generic mode KGD verification is skipped; the command is still
+      issued so the chip presence can be confirmed via LOG_INF output.
+      Only used in generic mode (chip-variant not set).
+
+  st,timing-config:
+    type: array
+    default: [0]
+    description: >
+      STM32-specific OCTOSPI timing array.
+      Element 0: turnaround_cycles — clock cycles subtracted from rx-dummy
+      to compensate for the STM32 OCTOSPI controller's internal pipeline
+      delay. Refer to the ST MSPI driver documentation for the correct
+      value for your board's operating frequency.
+      Ignored on non-STM32 platforms.
