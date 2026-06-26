@@ -1066,13 +1066,15 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 	uint32_t ticks_slot_offset;
 
 	/* Calculate time reservations for sequential and interleaved packing as
-	 * configured.
+	 * configured. The sub_interval and nse values are already calculated correctly
+	 * by ULL for both packing modes, so the same formula works for both.
 	 */
 	if (IS_PERIPHERAL(cig)) {
 		uint32_t slot_us;
 
-		/* FIXME: Time reservation for interleaved packing */
-		/* Below is time reservation for sequential packing */
+		/* Time reservation works for both sequential and interleaved packing because
+		 * sub_interval is calculated differently for each mode in ULL
+		 */
 		if (IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO_RESERVE_MAX)) {
 			slot_us = cis->lll.sub_interval * cis->lll.nse;
 		} else {
@@ -1232,8 +1234,14 @@ static void mfy_cis_lazy_fill(void *param)
 	 * is incremented in ull_conn_iso_ticker_cb().
 	 */
 	cis->lll.prepared = 0U;
-	cis->lll.active = 1U;
+
+	/* Set lazy_active before active to prevent race with
+	 * ull_conn_iso_ticker_cb which runs at higher priority
+	 * (ULL_HIGH) and checks active flag before using lazy_active
+	 * to adjust event_count_prepare.
+	 */
 	cis->lll.lazy_active = lazy;
+	cis->lll.active = 1U;
 }
 
 static void ticker_next_slot_get_op_cb(uint32_t status, void *param)
