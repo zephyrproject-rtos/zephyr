@@ -16,7 +16,7 @@
 #include <stdint.h>
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 struct dns_cache_entry {
 	char query[CONFIG_DNS_RESOLVER_MAX_QUERY_LEN];
