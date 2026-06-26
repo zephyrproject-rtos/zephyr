@@ -941,6 +941,9 @@ gPTP
   New :c:func:`gptp_get_port_number` and :c:func:`gptp_set_port_number`
   can be used instead.
 
+* Removed ``CONFIG_NET_GPTP_CLOCK_ACCURACY_*``, users need to make sure right gPTP clock
+  accuracy value configured in :kconfig:option:`CONFIG_NET_GPTP_CLOCK_ACCURACY`.
+
 Modem
 *****
 

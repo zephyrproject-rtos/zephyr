@@ -76,6 +76,7 @@ Removed APIs and options
 
     * ``CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO``
     * ``CONFIG_NET_SOCKETS_POLL_MAX``
+    * ``CONFIG_NET_GPTP_CLOCK_ACCURACY_*``
     * ``net_ipv6_set_hop_limit()``
     * ``net_if_ipv4_get_netmask()``
     * ``net_if_ipv4_set_netmask()``
