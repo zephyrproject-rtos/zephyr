@@ -59,6 +59,9 @@ Lifecycle
 Thread Creation
 ===============
 
+.. design:: DESIGN-THREAD-CREATION Thread Creation
+   :fulfills: ZEP-SRS-1-1 ZEP-SRS-1-5
+
 A thread must be created before it can be used. The kernel initializes
 the thread control block as well as one end of the stack portion. The remainder
 of the thread's stack is typically left uninitialized.
@@ -116,6 +119,9 @@ and not rely on signaling from within application logic.
 Thread Aborting
 ===============
 
+.. design:: DESIGN-THREAD-ABORTING Thread Aborting
+   :fulfills: ZEP-SRS-1-6
+
 A thread may asynchronously end its execution by **aborting**. The kernel
 automatically aborts a thread if the thread triggers a fatal error condition,
 such as dereferencing a null pointer.
@@ -133,6 +139,9 @@ owned by an aborted thread.
 
 Thread Suspension
 ==================
+
+.. design:: DESIGN-THREAD-SUSPENSION Thread Suspension
+   :fulfills: ZEP-SRS-1-3 ZEP-SRS-1-4
 
 A thread can be prevented from executing for an indefinite period of time
 if it becomes **suspended**. The function :c:func:`k_thread_suspend`
@@ -152,6 +161,9 @@ Once suspended, a thread cannot be scheduled until another thread calls
 
 Thread States
 *************
+
+.. design:: DESIGN-THREAD-STATES Thread States
+   :fulfills: ZEP-SRS-1-7
 
 A thread that has no factors that prevent its execution is deemed
 to be **ready**, and is eligible to be selected as the current thread.
@@ -180,6 +192,9 @@ The following factors make a thread unready:
 
 Thread Stack objects
 ********************
+
+.. design:: DESIGN-THREAD-STACK Thread Stack objects
+   :fulfills: ZEP-SRS-1-8
 
 Every thread requires its own stack buffer for the CPU to push context.
 Depending on configuration, there are several constraints that must be
@@ -241,6 +256,9 @@ have an identical effect to the ``K_KERNEL_STACK`` macros.
 
 Thread Priorities
 *****************
+
+.. design:: DESIGN-THREAD-PRIORITY Thread Priorities
+   :fulfills: ZEP-SRS-1-2
 
 A thread's priority is an integer value, and can be either negative or
 non-negative.
