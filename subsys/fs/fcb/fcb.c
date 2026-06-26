@@ -117,6 +117,11 @@ int fcb_init(int f_area_id, struct fcb *fcbp)
 		return -EINVAL;
 	}
 
+	/* Buffer needs adjusting */
+	if (align > WRITE_ALIGNMENT_BUFFER_SIZE) {
+		return -ENOMEM;
+	}
+
 	/* Fill last used, first used */
 	for (i = 0; i < fcbp->f_sector_cnt; i++) {
 		sector = &fcbp->f_sectors[i];
@@ -260,7 +265,7 @@ int fcb_sector_hdr_init(struct fcb *fcbp, struct flash_sector *sector, uint16_t 
 	/* Need to align fda size to write block size */
 	union {
 		struct fcb_disk_area fda;
-		uint8_t raw[MAX(sizeof(struct fcb_disk_area), fcbp->f_align)];
+		uint8_t raw[WRITE_ALIGNMENT_BUFFER_SIZE];
 	} buf;
 	int rc;
 
