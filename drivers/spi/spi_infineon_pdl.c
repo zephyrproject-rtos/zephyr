@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,9 @@ LOG_MODULE_REGISTER(cat1_spi, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/pm.h>
 
 #ifdef CONFIG_SPI_INFINEON_DMA
 #include <zephyr/drivers/dma.h>
@@ -100,7 +103,6 @@ struct ifx_cat1_spi_data {
 	uint8_t dfs_value;
 	size_t chunk_len;
 	bool dma_configured;
-
 #ifdef CONFIG_SPI_INFINEON_DMA
 	struct ifx_cat1_dma_stream dma_rx;
 	struct ifx_cat1_dma_stream dma_tx;
@@ -551,9 +553,18 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 
 	spi_context_lock(ctx, asynchronous, cb, userdata, spi_cfg);
 
+	/*
+	 * Reference the device for the duration of the transfer.  When device
+	 * runtime PM is enabled this resumes the SCB on the 0->1 reference and
+	 * suspends it again on the matching put; when runtime PM is not configured
+	 * these calls are inert and the device stays system managed.
+	 */
+	(void)pm_device_runtime_get(dev);
+
 	result = spi_config(dev, spi_cfg);
 	if (result) {
 		LOG_ERR("Error in SPI Configuration (result: 0x%x)", result);
+		(void)pm_device_runtime_put(dev);
 		spi_context_release(ctx, result);
 		return result;
 	}
@@ -564,6 +575,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	transfer_chunk(dev);
 	result = spi_context_wait_for_completion(&data->ctx);
 
+	(void)pm_device_runtime_put(dev);
 	spi_context_release(ctx, result);
 
 	return result;
@@ -679,8 +691,82 @@ static int ifx_cat1_spi_init(const struct device *dev)
 #ifdef CONFIG_PM
 	Cy_SysPm_RegisterCallback(&data->spi_deep_sleep);
 #endif
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	/*
+	 * Opt this instance into device runtime PM whenever it is configured.  The
+	 * SCB is then reference counted per transfer (see transceive()) instead of
+	 * being suspended/resumed by the system-managed policy around every
+	 * low-power transition.  With CONFIG_PM_DEVICE_RUNTIME disabled this is
+	 * compiled out and the device stays system managed.
+	 */
+	ret = pm_device_runtime_enable(dev);
+	if (ret < 0) {
+		return ret;
+	}
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
+
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int ifx_cat1_spi_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct ifx_cat1_spi_config *const config = dev->config;
+#if defined(CONFIG_PM_S2RAM)
+	struct ifx_cat1_spi_data *const data = dev->data;
+	cy_rslt_t result;
+	int ret;
+#endif /* CONFIG_PM_S2RAM */
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/*
+		 * Refuse to suspend mid-transfer: gating the SCB clock would
+		 * corrupt the in-flight frame. Retried once the bus is idle.
+		 */
+		if (Cy_SCB_SPI_IsBusBusy(config->reg_addr) ||
+		    !Cy_SCB_SPI_IsTxComplete(config->reg_addr)) {
+			return -EBUSY;
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/* Configuration is retained across the gate; nothing to restore. */
+		break;
+#if defined(CONFIG_PM_S2RAM)
+	case PM_DEVICE_ACTION_TURN_ON:
+		/*
+		 * Power was lost: rebuild the SCB - re-apply pinctrl, re-assign
+		 * the clock divider, re-configure the CS GPIOs, and re-connect
+		 * the IRQ.
+		 */
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
+		}
+
+		result = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
+		if (result != CY_RSLT_SUCCESS) {
+			return -EIO;
+		}
+
+		ret = spi_context_cs_configure_all(&data->ctx);
+		if (ret < 0) {
+			return ret;
+		}
+
+		config->irq_config_func(dev);
+
+		data->ctx.config = NULL;
+		break;
+#endif /* CONFIG_PM_S2RAM */
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 #if defined(CONFIG_SPI_INFINEON_DMA)
 #define SPI_DMA_CHANNEL_INIT(index, dir, ch_dir, src_data_size, dst_data_size)                     \
@@ -785,8 +871,8 @@ static int ifx_cat1_spi_init(const struct device *dev)
 				 DT_INST_PROP_OR(n, enable_miso_late_sample, true),                \
 			 .EN_XFER_SEPARATION =                                                     \
 				 DT_INST_PROP_OR(n, enable_transfer_separation, false),            \
-			 ADVANCED_SPI_FIELDS(n)                                                   \
-			 .enableWakeFromSleep = DT_INST_PROP_OR(n, enableWakeFromSleep, false),    \
+			 ADVANCED_SPI_FIELDS(n).enableWakeFromSleep =                              \
+				 DT_INST_PROP(n, wakeup_source),                                   \
 			 .ssPolarity = DT_INST_PROP_OR(n, ss_polarity, CY_SCB_SPI_ACTIVE_LOW),     \
 			 .rxFifoTriggerLevel = DT_INST_PROP_OR(n, rx_fifo_trigger_level, 0),       \
 			 .rxFifoIntEnableMask = DT_INST_PROP_OR(n, rx_fifo_int_enable_mask, 0),    \
@@ -815,7 +901,9 @@ static int ifx_cat1_spi_init(const struct device *dev)
 			CY_SYSPM_SKIP_BEFORE_TRANSITION,                                           \
 			&spi_cat1_config_##n.spi_deep_sleep_param, NULL, NULL, 1}};                \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_spi_init, NULL, &spi_cat1_data_##n,                     \
+	PM_DEVICE_DT_INST_DEFINE(n, ifx_cat1_spi_pm_action);                                       \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_spi_init, PM_DEVICE_DT_INST_GET(n), &spi_cat1_data_##n, \
 			      &spi_cat1_config_##n, POST_KERNEL,                                   \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ifx_cat1_spi_api);
 
@@ -1015,6 +1103,15 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 		CY_UNUSED_PARAMETER(last_ovrsmpl_val);
 	}
 
+	/*
+	 * A programmable divider must be disabled before its value is changed
+	 * (see Cy_SysClk_PeriPclkSetDivider): writing the divider while it is
+	 * still enabled does not latch the new value cleanly, so the first
+	 * transfer after boot can run without a usable SCB clock and time out.
+	 * Disable, set, then re-enable so the new rate takes effect immediately.
+	 */
+	(void)ifx_cat1_utils_peri_pclk_disable_divider(config->clk_dst, &(data->clock));
+
 	if ((data->clock.block & 0x02) == 0) {
 		result = ifx_cat1_utils_peri_pclk_set_divider(config->clk_dst, &(data->clock),
 							      last_dvdr_val - 1);
@@ -1022,6 +1119,8 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 		result = ifx_cat1_utils_peri_pclk_set_frac_divider(config->clk_dst, &(data->clock),
 								   last_dvdr_val - 1, 0);
 	}
+
+	(void)ifx_cat1_utils_peri_pclk_enable_divider(config->clk_dst, &(data->clock));
 
 	return result;
 }
