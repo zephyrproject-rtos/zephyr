@@ -90,7 +90,29 @@ static void test_send(void *p1, void *p2, void *p3)
 	msg_sender((struct k_mbox *)p1, K_NO_WAIT);
 }
 
-/* Receive message from any thread with no wait */
+/**
+ * @addtogroup tests_kernel_mbox
+ * @{
+ */
+
+/**
+ * @brief Verify non-blocking receive fails and a timed receive gets a message.
+ *
+ * @details
+ * A k_mbox_get() with K_NO_WAIT on an empty mailbox must not succeed, while a
+ * get with a finite timeout receives a message that a sender thread provides in
+ * time. Confirms the no-wait versus timed receive semantics in a usage scenario.
+ *
+ * Test steps:
+ * - Receive from K_ANY with K_NO_WAIT on an empty mailbox; expect failure.
+ * - Start a sender thread, then receive with a short timeout.
+ *
+ * Expected result:
+ * - The K_NO_WAIT get fails; the timed get receives the sender's message.
+ *
+ * @see k_mbox_get()
+ * @see k_mbox_put()
+ */
 ZTEST(mbox_usage, test_msg_receiver)
 {
 	static k_tid_t tid;
@@ -112,7 +134,24 @@ static void test_send_un(void *p1, void *p2, void *p3)
 	msg_sender((struct k_mbox *)p1, K_FOREVER);
 }
 
-/* Receive message from thread tid1 */
+/**
+ * @brief Verify a blocking receive from a specific source thread.
+ *
+ * @details
+ * A receiver blocking with K_FOREVER and filtering on a specific sender thread
+ * must receive that thread's message once it is sent, exercising directed,
+ * unbounded-wait delivery.
+ *
+ * Test steps:
+ * - Start a sender thread that puts a message with K_FOREVER.
+ * - Receive filtering on that sender's tid with K_FOREVER.
+ *
+ * Expected result:
+ * - The receiver obtains the message from the specified sender.
+ *
+ * @see k_mbox_get()
+ * @see k_mbox_put()
+ */
 ZTEST(mbox_usage, test_msg_receiver_unlimited)
 {
 	info_type = PUT_GET_NULL;
@@ -160,6 +199,26 @@ static void thread_high_prio(void *p1, void *p2, void *p3)
 	k_sem_give(&sync_sema);
 }
 
+/**
+ * @brief Verify messages are delivered to multiple waiting receiver threads.
+ *
+ * @details
+ * Two receiver threads of different priority block on the same mailbox, then two
+ * messages are put. Each message must be delivered to a waiting receiver, with
+ * the higher-priority thread served first, and the payloads must match.
+ *
+ * Test steps:
+ * - Start a low- and a high-priority receiver, each blocking on the mailbox.
+ * - Put two messages targeted at K_ANY.
+ * - Synchronize on a semaphore after both receivers complete.
+ *
+ * Expected result:
+ * - Both receivers obtain a message; the high-priority thread receives first and
+ *   each payload matches what was sent.
+ *
+ * @see k_mbox_put()
+ * @see k_mbox_get()
+ */
 ZTEST(mbox_usage_1cpu, test_multi_thread_send_get)
 {
 	static k_tid_t low_prio, high_prio;
@@ -192,6 +251,10 @@ ZTEST(mbox_usage_1cpu, test_multi_thread_send_get)
 	k_thread_abort(low_prio);
 	k_thread_abort(high_prio);
 }
+
+/**
+ * @}
+ */
 
 void *setup_mbox_usage(void)
 {
