@@ -50,8 +50,8 @@
 /* NPCX9 Clock configuration and limitation */
 #define MAX_OFMCLK 100000000
 
-#include "reg_def.h"
-#include "clock_def.h"
+#include <reg_def.h>
+#include <clock_def.h>
 #include <soc_dt.h>
 #include <soc_pins.h>
 #include <soc_power.h>
