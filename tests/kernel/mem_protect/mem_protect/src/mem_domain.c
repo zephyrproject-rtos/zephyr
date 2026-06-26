@@ -168,6 +168,7 @@ static void ro_write_entry(void *p1, void *p2, void *p3)
  * @ingroup kernel_memprotect_tests
  * @verifies ZEP-SRS-8-1
  * @verifies ZEP-SRS-8-17
+ * @verifies ZEP-SRS-8-24
  */
 ZTEST(mem_protect_domain, test_mem_domain_valid_access)
 {
@@ -181,6 +182,7 @@ ZTEST(mem_protect_domain, test_mem_domain_valid_access)
  * @ingroup kernel_memprotect_tests
  * @verifies ZEP-SRS-8-1
  * @verifies ZEP-SRS-8-17
+ * @verifies ZEP-SRS-8-24
  */
 ZTEST(mem_protect_domain, test_mem_domain_invalid_access)
 {
@@ -210,6 +212,8 @@ ZTEST(mem_protect_domain, test_mem_domain_no_writes_to_ro)
  *
  * @ingroup kernel_memprotect_tests
  * @verifies ZEP-SRS-8-17
+ * @verifies ZEP-SRS-8-21
+ * @verifies ZEP-SRS-8-22
  */
 ZTEST(mem_protect_domain, test_mem_domain_remove_add_partition)
 {

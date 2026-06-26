@@ -58,6 +58,7 @@ K_APP_BMEM(part_arch) uint8_t __aligned(MEM_REGION_ALLOC)
  *   match the base address of buf_arc.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-19
  */
 ZTEST(mem_protect_part, test_mem_part_auto_determ_size)
 {

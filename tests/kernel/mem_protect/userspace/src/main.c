@@ -786,6 +786,7 @@ static void drop_user(volatile bool *to_modify)
  * @ingroup kernel_memprotect_tests
  * @verifies ZEP-SRS-8-1
  * @verifies ZEP-SRS-8-17
+ * @verifies ZEP-SRS-8-20
  */
 ZTEST(userspace_domain, test_1st_init_and_access_other_memdomain)
 {
@@ -819,6 +820,7 @@ extern uint8_t *z_priv_stack_find(void *obj);
  * @ingroup kernel_memprotect_tests
  * @verifies ZEP-SRS-8-1
  * @verifies ZEP-SRS-8-17
+ * @verifies ZEP-SRS-8-23
  */
 ZTEST(userspace_domain, test_domain_add_thread_drop_to_user)
 {
@@ -835,6 +837,7 @@ ZTEST(userspace_domain, test_domain_add_thread_drop_to_user)
  *
  * @ingroup kernel_memprotect_tests
  * @verifies ZEP-SRS-8-17
+ * @verifies ZEP-SRS-8-21
  */
 ZTEST(userspace_domain, test_domain_add_part_drop_to_user)
 {
@@ -853,6 +856,7 @@ ZTEST(userspace_domain, test_domain_add_part_drop_to_user)
  *
  * @ingroup kernel_memprotect_tests
  * @verifies ZEP-SRS-8-17
+ * @verifies ZEP-SRS-8-22
  */
 ZTEST(userspace_domain, test_domain_remove_part_drop_to_user)
 {

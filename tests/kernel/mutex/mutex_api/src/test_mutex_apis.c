@@ -388,6 +388,7 @@ ZTEST_USER(mutex_api, test_mutex_recursive)
  *   wait for timeout and T3 got the mutex.
  * @ingroup kernel_mutex_tests
  * @verifies ZEP-SRS-6-1
+ * @verifies ZEP-SRS-6-11
  * @verifies ZEP-SRS-6-12
  */
 ZTEST_USER(mutex_api_1cpu, test_mutex_priority_inheritance)

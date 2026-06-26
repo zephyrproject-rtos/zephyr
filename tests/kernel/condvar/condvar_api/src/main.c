@@ -1224,6 +1224,7 @@ ZTEST(condvar_tests, test_condvar_wait_signaled_keeps_mutex)
  *
  * @see K_CONDVAR_DEFINE
  * @see k_condvar_wait()
+ * @verifies ZEP-SRS-21-2
  */
 ZTEST(condvar_tests, test_condvar_static_define)
 {
