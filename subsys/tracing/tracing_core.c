@@ -140,7 +140,27 @@ static int tracing_init(void)
 	return 0;
 }
 
-SYS_INIT(tracing_init, APPLICATION, 0);
+/* The init level is configurable (TRACING_INIT_LEVEL): a lower level captures
+ * more of the boot sequence. PRE_KERNEL_2 is the earliest supported (sync only,
+ * after the system timer so timestamps are valid); async tracing needs the
+ * kernel for its drainer thread, so it cannot go below POST_KERNEL.
+ */
+#define TRACING_INIT_LEVEL                                                                         \
+	COND_CASE_1(CONFIG_TRACING_INIT_LEVEL_PRE_KERNEL_2, (PRE_KERNEL_2),                        \
+		    CONFIG_TRACING_INIT_LEVEL_POST_KERNEL, (POST_KERNEL), (APPLICATION))
+
+SYS_INIT(tracing_init, TRACING_INIT_LEVEL, CONFIG_TRACING_INIT_PRIORITY);
+
+/* At PRE_KERNEL_2 the system timer initializes at the same level; tracing must
+ * run after it or k_cycle_get_32() is not yet ticking and event timestamps are
+ * invalid. Every in-tree timer registers sys_clock_driver_init() at PRE_KERNEL_2
+ * with SYSTEM_CLOCK_INIT_PRIORITY, so require a strictly higher tracing priority.
+ */
+#if defined(CONFIG_TRACING_INIT_LEVEL_PRE_KERNEL_2) && defined(CONFIG_SYS_CLOCK_EXISTS)
+BUILD_ASSERT(CONFIG_TRACING_INIT_PRIORITY > CONFIG_SYSTEM_CLOCK_INIT_PRIORITY,
+	     "Tracing at PRE_KERNEL_2 must init after the system timer: set "
+	     "TRACING_INIT_PRIORITY > SYSTEM_CLOCK_INIT_PRIORITY for valid timestamps");
+#endif
 
 #ifdef CONFIG_TRACING_ASYNC
 void tracing_trigger_output(bool before_put_is_empty)
