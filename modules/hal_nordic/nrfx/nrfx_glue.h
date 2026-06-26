@@ -314,7 +314,7 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 void nrfx_isr(const void *irq_handler);
 
 #if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
-#include "nrfx_glue_bsim.h"
+#include <nrfx_glue_bsim.h>
 #endif
 
 /** @} */

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nrf_802154_spinel_response_notifier.h"
+#include <nrf_802154_spinel_response_notifier.h>
 
 #include <assert.h>
 #include <string.h>
@@ -12,8 +12,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
 
-#include "../spinel_base/spinel.h"
-#include "nrf_802154_spinel_log.h"
+#include <../spinel_base/spinel.h>
+#include <nrf_802154_spinel_log.h>
 
 #define LOG_LEVEL LOG_LEVEL_INFO
 #define LOG_MODULE_NAME spinel_ipc_backend_rsp_ntf
