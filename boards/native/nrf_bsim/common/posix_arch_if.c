@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nsi_main.h"
+#include <nsi_main.h>
 
 void posix_exit(int exit_code)
 {

@@ -9,7 +9,7 @@
 #include "board.h"
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/printk.h>
-#include "em_cmu.h"
+#include <em_cmu.h>
 
 static int efm32gg_stk3701a_init(void)
 {

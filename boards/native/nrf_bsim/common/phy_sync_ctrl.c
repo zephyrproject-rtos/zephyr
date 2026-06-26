@@ -7,15 +7,15 @@
 
 #include <stddef.h>
 #include <stdbool.h>
-#include "bs_cmd_line.h"
-#include "bs_dynargs.h"
-#include "bs_utils.h"
-#include "bs_types.h"
-#include "bs_tracing.h"
-#include "nsi_tasks.h"
-#include "nsi_hws_models_if.h"
-#include "NRF_HWLowL.h"
-#include "xo_if.h"
+#include <bs_cmd_line.h>
+#include <bs_dynargs.h>
+#include <bs_utils.h>
+#include <bs_types.h>
+#include <bs_tracing.h>
+#include <nsi_tasks.h>
+#include <nsi_hws_models_if.h>
+#include <NRF_HWLowL.h>
+#include <xo_if.h>
 #include "bsim_args_runner.h"
 
 /* By default every second we will inform the Phy simulator about our timing */

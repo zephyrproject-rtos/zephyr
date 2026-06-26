@@ -7,13 +7,13 @@
  * this file should therefore only be built once for all CPUs.
  */
 
-#include "bs_tracing.h"
-#include "bs_dump_files.h"
-#include "bs_pc_backchannel.h"
-#include "nsi_tasks.h"
-#include "nsi_main.h"
-#include "nsi_hw_scheduler.h"
-#include "NRF_HWLowL.h"
+#include <bs_tracing.h>
+#include <bs_dump_files.h>
+#include <bs_pc_backchannel.h>
+#include <nsi_tasks.h>
+#include <nsi_main.h>
+#include <nsi_hw_scheduler.h>
+#include <NRF_HWLowL.h>
 #include "bsim_args_runner.h"
 
 static bool bsim_disconnect_on_exit;

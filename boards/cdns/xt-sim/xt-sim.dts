@@ -5,7 +5,7 @@
  */
 /dts-v1/;
 
-#include "sample_controller.dtsi"
+#include <sample_controller.dtsi>
 
 / {
 	model = "xt-sim";

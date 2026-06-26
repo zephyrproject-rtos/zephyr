@@ -6,14 +6,14 @@
  */
 #include <stdbool.h>
 #include <stdlib.h>
-#include "bs_tracing.h"
-#include "bstests.h"
-#include "bs_cmd_line.h"
-#include "bs_dynargs.h"
-#include "posix_native_task.h"
-#include "nsi_tracing.h"
-#include "nsi_main.h"
-#include "nsi_cpu_ctrl.h"
+#include <bs_tracing.h>
+#include <bstests.h>
+#include <bs_cmd_line.h>
+#include <bs_dynargs.h>
+#include <posix_native_task.h>
+#include <nsi_tracing.h>
+#include <nsi_main.h>
+#include <nsi_cpu_ctrl.h>
 
 static const char exe_name[] = "nrf_bsim options:";
 

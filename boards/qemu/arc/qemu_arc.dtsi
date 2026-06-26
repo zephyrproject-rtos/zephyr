@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <mem.h>
-#include "skeleton.dtsi"
+#include <skeleton.dtsi>
 
 #define DT_FLASH_SIZE		DT_SIZE_M(4)
 #define DT_SRAM_SIZE		DT_SIZE_M(4)

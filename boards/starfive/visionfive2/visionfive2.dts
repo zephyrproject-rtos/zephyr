@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include "starfive/jh7110-visionfive-v2.dtsi"
+#include <starfive/jh7110-visionfive-v2.dtsi>
 
 / {
 	model = "StarFive VisionFive V2";

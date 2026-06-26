@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "fsl_common.h"
+#include <fsl_common.h>
 
 /* FLEXSPI memory config block related definitions */
 #define FLASH_CONFIG_BLOCK_TAG     (0x42464346)
