@@ -6,6 +6,10 @@
 #include <zephyr/sys/poweroff.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/drivers/retained_mem/nrf_retained_mem.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
+
+LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 #if defined(CONFIG_SOC_SERIES_NRF51) || defined(CONFIG_SOC_SERIES_NRF52)
 #include <hal/nrf_power.h>
@@ -60,8 +64,16 @@ void z_sys_poweroff(void)
 #endif /* defined(CONFIG_HAS_NORDIC_RAM_CTRL) */
 
 #if defined(CONFIG_RETAINED_MEM_NRF_RAM_CTRL)
-	/* Restore retention for retained_mem driver regions defined in devicetree */
-	(void)z_nrf_retained_mem_retention_apply();
+	/* Restore retention for retained_mem driver regions defined in devicetree. */
+	int err = z_nrf_retained_mem_retention_apply();
+
+	if (err != 0) {
+		/* Retention is best-effort. Continue powering off even though
+		 * configured retained data may not survive.
+		 */
+		LOG_ERR("Failed to apply RAM retention configuration (%d)", err);
+		log_flush();
+	}
 #endif
 
 #if defined(CONFIG_SOC_SERIES_NRF54L)
