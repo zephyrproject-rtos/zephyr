@@ -154,24 +154,20 @@ static void thread_entry_wait(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief LIFOs
- * @defgroup kernel_lifo_tests LIFOs
+ * @brief LIFO kernel object tests
+ * @defgroup tests_kernel_lifo LIFO tests
  * @ingroup all_tests
  * @{
  * @}
  */
 
 /**
- * @addtogroup kernel_lifo_tests
+ * @addtogroup tests_kernel_lifo
  * @{
  */
 
-/**
- * @brief try getting data on lifo with special timeout value,
- * return result in lifo
- *
- *
- * @see k_lifo_put()
+/* Helper: get from lifo_timeout[0] with K_NO_WAIT and report whether data was
+ * present back via timeout_order_lifo.
  */
 static void test_thread_timeout_reply_values(void *p1, void *p2, void *p3)
 {
@@ -183,8 +179,8 @@ static void test_thread_timeout_reply_values(void *p1, void *p2, void *p3)
 	k_lifo_put(&timeout_order_lifo, reply_packet);
 }
 
-/**
- * @see k_lifo_put()
+/* Helper: get from lifo_timeout[0] with K_FOREVER and report the result back
+ * via timeout_order_lifo.
  */
 static void test_thread_timeout_reply_values_wfe(void *p1, void *p2, void *p3)
 {
@@ -196,11 +192,7 @@ static void test_thread_timeout_reply_values_wfe(void *p1, void *p2, void *p3)
 	k_lifo_put(&timeout_order_lifo, reply_packet);
 }
 
-/**
- * @brief A thread sleeps then puts data on the lifo
- *
- * @see k_lifo_put()
- */
+/* Helper: sleep for the given timeout then put a packet on the lifo. */
 static void test_thread_put_timeout(void *p1, void *p2, void *p3)
 {
 	uint32_t timeout = *((uint32_t *)p2);
@@ -210,8 +202,22 @@ static void test_thread_put_timeout(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test last in, first out queue using LIFO
- * @see k_sem_init(), k_lifo_put(), k_lifo_get()
+ * @brief Verify k_lifo_get() returns items in last-in first-out order.
+ *
+ * @details
+ * The defining property of a LIFO is that the most recently put item is
+ * retrieved first. Two items are placed on the LIFO around the creation of a
+ * reader thread, which must receive them in reverse insertion order.
+ *
+ * Test steps:
+ * - Put item 0, start a reader thread, then put item 1.
+ * - The reader gets two items and verifies item 1 is returned before item 0.
+ *
+ * Expected result:
+ * - Items are returned newest-first (item 1, then item 0).
+ *
+ * @see k_lifo_put()
+ * @see k_lifo_get()
  */
 ZTEST(lifo_usage, test_lifo_nowait)
 {
@@ -234,8 +240,24 @@ ZTEST(lifo_usage, test_lifo_nowait)
 }
 
 /**
- * @brief Test pending reader in LIFO
- * @see k_lifo_init(), k_lifo_get(), k_lifo_put()
+ * @brief Verify a thread blocked on an empty LIFO is woken by k_lifo_put().
+ *
+ * @details
+ * A reader blocks on an empty LIFO with K_FOREVER. A second thread then puts two
+ * items; the pending reader must be woken with the first item and retrieve the
+ * second on its next get, confirming put correctly hands data to a waiter.
+ *
+ * Test steps:
+ * - Start a thread that puts item 0 then item 1 on the LIFO.
+ * - In the main thread, block in k_lifo_get(K_FOREVER) and verify it returns
+ *   item 0.
+ * - Get again and verify it returns item 1.
+ *
+ * Expected result:
+ * - The pending reader wakes and receives both items in order.
+ *
+ * @see k_lifo_get()
+ * @see k_lifo_put()
  */
 ZTEST(lifo_usage_1cpu, test_lifo_wait)
 {
@@ -262,7 +284,21 @@ ZTEST(lifo_usage_1cpu, test_lifo_wait)
 }
 
 /**
- * @brief Test reading empty LIFO
+ * @brief Verify k_lifo_get() timeout behavior on an empty LIFO.
+ *
+ * @details
+ * On an empty LIFO, k_lifo_get() with a finite timeout must block for at least
+ * the requested duration and then return NULL, while K_NO_WAIT must return NULL
+ * immediately. The elapsed time is measured to confirm the full timeout elapsed.
+ *
+ * Test steps:
+ * - Call k_lifo_get() on an empty LIFO with a 100 ms timeout; measure the wait.
+ * - Verify it returned NULL and that at least the timeout elapsed.
+ * - Call k_lifo_get() with K_NO_WAIT and verify it returns NULL.
+ *
+ * Expected result:
+ * - The timed get returns NULL after the timeout; K_NO_WAIT returns NULL at once.
+ *
  * @see k_lifo_get()
  */
 ZTEST(lifo_usage_1cpu, test_timeout_empty_lifo)
@@ -287,8 +323,22 @@ ZTEST(lifo_usage_1cpu, test_timeout_empty_lifo)
 }
 
 /**
- * @brief Test read and write operation in LIFO with timeout
- * @see k_lifo_put(), k_lifo_get()
+ * @brief Verify k_lifo_get() returns queued data without waiting.
+ *
+ * @details
+ * When an item is already on the LIFO, k_lifo_get() must return it immediately
+ * regardless of the timeout argument. The contract is checked with both
+ * K_NO_WAIT and K_FOREVER, neither of which should block when data is present.
+ *
+ * Test steps:
+ * - Put an item, then k_lifo_get() with K_NO_WAIT and verify a non-NULL return.
+ * - Put an item, then k_lifo_get() with K_FOREVER and verify a non-NULL return.
+ *
+ * Expected result:
+ * - Both gets return the queued item without blocking.
+ *
+ * @see k_lifo_get()
+ * @see k_lifo_put()
  */
 ZTEST(lifo_usage, test_timeout_non_empty_lifo)
 {
@@ -309,8 +359,28 @@ ZTEST(lifo_usage, test_timeout_non_empty_lifo)
 }
 
 /**
- * @brief Test LIFO with timeout
- * @see k_lifo_put(), k_lifo_get()
+ * @brief Verify k_lifo_get() wakes when a thread supplies data within timeout.
+ *
+ * @details
+ * A getter pending with a timeout must be woken as soon as a producer thread
+ * puts data, returning that data rather than timing out. The test also covers
+ * the K_NO_WAIT and K_FOREVER variants where a child thread conditionally
+ * supplies data based on availability on a second LIFO, exercising the
+ * interaction between blocking gets and producer timing.
+ *
+ * Test steps:
+ * - Pend on k_lifo_get() with a timeout while a child puts data in time; verify
+ *   the data is returned within the timeout window.
+ * - With K_NO_WAIT, verify the child reports no data when the LIFO is empty and
+ *   reports data when it has been pre-filled.
+ * - With K_FOREVER, verify the child retrieves pre-filled data.
+ *
+ * Expected result:
+ * - The getter receives data supplied in time; the reply flags reflect LIFO
+ *   availability for each timeout variant.
+ *
+ * @see k_lifo_get()
+ * @see k_lifo_put()
  */
 ZTEST(lifo_usage_1cpu, test_timeout_lifo_thread)
 {
@@ -391,9 +461,8 @@ ZTEST(lifo_usage_1cpu, test_timeout_lifo_thread)
 	put_scratch_packet(scratch_packet);
 }
 
-/**
- * @brief a thread pends on a lifo then times out
- * @see k_lifo_put(), k_lifo_get()
+/* Helper: pend on the thread's lifo with its timeout, confirm it times out with
+ * NULL in range, then report back via timeout_order_lifo.
  */
 void test_thread_pend_and_timeout(void *p1, void *p2, void *p3)
 {
@@ -411,9 +480,21 @@ void test_thread_pend_and_timeout(void *p1, void *p2, void *p3)
 
 
 /**
- * @brief Test multiple pending readers in LIFO
- * @details test multiple threads pending on the same lifo
- * with different timeouts
+ * @brief Verify multiple threads pending on one LIFO time out in timeout order.
+ *
+ * @details
+ * When several threads block on the same LIFO with different timeouts and no
+ * data arrives, each must time out in ascending-timeout order regardless of the
+ * order in which the threads were queued, validating the timeout queue ordering.
+ *
+ * Test steps:
+ * - Spawn several threads that pend on the same LIFO with distinct timeouts.
+ * - Each reports back as it times out; verify the reported order matches the
+ *   ascending-timeout order.
+ *
+ * Expected result:
+ * - Threads time out strictly in increasing-timeout order.
+ *
  * @see k_lifo_get()
  */
 ZTEST(lifo_usage_1cpu, test_timeout_threads_pend_on_lifo)
@@ -430,8 +511,11 @@ ZTEST(lifo_usage_1cpu, test_timeout_threads_pend_on_lifo)
 }
 
 /**
- * @brief Test LIFO initialization with various parameters
- * @see k_lifo_init(), k_lifo_put()
+ * @}
+ */
+
+/* Suite setup helper: initialize the lifos used by the tests, pre-fill the
+ * scratch packet pool, and seed the lifo_data payloads.
  */
 static void test_para_init(void)
 {
@@ -459,11 +543,7 @@ static void test_para_init(void)
 	}
 }
 
-/**
- * @}
- */
-
-/** test case main entry */
+/* Suite setup entry point. */
 void *lifo_usage_setup(void)
 {
 	test_para_init();
