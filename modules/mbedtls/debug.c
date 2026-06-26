@@ -8,7 +8,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mbedtls, CONFIG_MBEDTLS_LOG_LEVEL);
 
-#include "zephyr_mbedtls_priv.h"
+#include <zephyr_mbedtls_priv.h>
 
 void zephyr_mbedtls_debug(void *ctx, int level, const char *file, int line, const char *str)
 {
