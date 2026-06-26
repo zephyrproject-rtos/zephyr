@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "kernel_shell.h"
+#include <kernel_shell.h>
 
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/kernel.h>
