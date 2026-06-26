@@ -14,7 +14,7 @@ tests:
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
     sysbuild: true
-  sample.bluetooth.audio.unicast_client.bt_ll_sw_split:
+  sample.bluetooth.audio.unicast_client.sequential.bt_ll_sw_split:
     harness: bluetooth
     platform_allow:
       - nrf52_bsim
@@ -22,5 +22,15 @@ tests:
       - nrf52840dk/nrf52840
     integration_platforms:
       - nrf52dk/nrf52832
-    extra_args: EXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf
+    extra_args: EXTRA_CONF_FILE="overlay-bt_ll_sw_split.conf;overlay-sequential.conf"
+    tags: bluetooth
+  sample.bluetooth.audio.unicast_client.interleaved.bt_ll_sw_split:
+    harness: bluetooth
+    platform_allow:
+      - nrf52_bsim
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52dk/nrf52832
+    extra_args: EXTRA_CONF_FILE="overlay-bt_ll_sw_split.conf;overlay-interleaved.conf"
     tags: bluetooth
