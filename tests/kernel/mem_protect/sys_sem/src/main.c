@@ -268,7 +268,7 @@ ZTEST_USER(sys_sem, test_simple_sem_from_task)
  * @see sys_sem_take()
  * @see sys_sem_count_get()
  */
-ZTEST_USER(sys_sem, test_sem_take_no_wait)
+ZTEST_USER(sys_sem, test_sem_take_no_wait_syssem)
 {
 	uint32_t signal_count;
 	int32_t ret_value;
@@ -307,7 +307,7 @@ ZTEST_USER(sys_sem, test_sem_take_no_wait)
  *
  * @see sys_sem_take()
  */
-ZTEST_USER(sys_sem, test_sem_take_no_wait_fails)
+ZTEST_USER(sys_sem, test_sem_take_no_wait_fails_syssem)
 {
 	uint32_t signal_count;
 	int32_t ret_value;
@@ -343,7 +343,7 @@ ZTEST_USER(sys_sem, test_sem_take_no_wait_fails)
  *
  * @see sys_sem_take()
  */
-ZTEST_USER(sys_sem_1cpu, test_sem_take_timeout_fails)
+ZTEST_USER(sys_sem_1cpu, test_sem_take_timeout_fails_syssem)
 {
 	int32_t ret_value;
 
@@ -375,7 +375,7 @@ ZTEST_USER(sys_sem_1cpu, test_sem_take_timeout_fails)
  * @see sys_sem_take()
  * @see sys_sem_give()
  */
-ZTEST_USER(sys_sem, test_sem_take_timeout)
+ZTEST_USER(sys_sem, test_sem_take_timeout_syssem)
 {
 	int32_t ret_value;
 #ifdef CONFIG_USERSPACE
@@ -416,7 +416,7 @@ ZTEST_USER(sys_sem, test_sem_take_timeout)
  * @see sys_sem_take()
  * @see sys_sem_give()
  */
-ZTEST_USER(sys_sem_1cpu, test_sem_take_timeout_forever)
+ZTEST_USER(sys_sem_1cpu, test_sem_take_timeout_forever_syssem)
 {
 	int32_t ret_value;
 #ifdef CONFIG_USERSPACE
@@ -550,7 +550,7 @@ ZTEST(sys_sem_1cpu, test_sem_take_kernel_user)
  * @see sys_sem_take()
  * @see sys_sem_give()
  */
-ZTEST_USER(sys_sem_1cpu, test_sem_take_multiple)
+ZTEST_USER(sys_sem_1cpu, test_sem_take_multiple_syssem)
 {
 	uint32_t signal_count;
 #ifdef CONFIG_USERSPACE
@@ -670,7 +670,7 @@ ZTEST_USER(sys_sem_1cpu, test_sem_take_multiple)
  * @see sys_sem_take()
  * @see sys_sem_count_get()
  */
-ZTEST(sys_sem, test_sem_give_take_from_isr)
+ZTEST(sys_sem, test_sem_give_take_from_isr_syssem)
 {
 	uint32_t signal_count;
 
