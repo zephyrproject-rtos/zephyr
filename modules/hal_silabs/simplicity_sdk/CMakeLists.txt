@@ -202,14 +202,13 @@ zephyr_include_directories(
   ${DRIVER_DIR}/i2c/inc
   ${DRIVER_DIR}/i2c/src
   ${EMDRV_DIR}/common/inc
-  ${EMDRV_DIR}/dmadrv/config/s2_8ch/
-  ${EMDRV_DIR}/dmadrv/inc
-  ${EMDRV_DIR}/dmadrv/inc/s2_signals/
   ${EMLIB_DIR}/inc
   ${PERIPHERAL_DIR}/inc
   ${SERVICE_DIR}/clock_manager/inc
   ${SERVICE_DIR}/device_init/inc
   ${SERVICE_DIR}/device_manager/inc
+  ${SERVICE_DIR}/dma_manager/config/8ch
+  ${SERVICE_DIR}/dma_manager/inc
   ${SERVICE_DIR}/hfxo_manager/config
   ${SERVICE_DIR}/hfxo_manager/inc
   ${SERVICE_DIR}/hfxo_manager/src
@@ -242,7 +241,9 @@ zephyr_library_sources(
   ${DEVICE_DIR}/SiliconLabs/${SILABS_DEVICE_FAMILY}/Source/system_${CONFIG_SOC_SERIES}.c
   ${EMLIB_DIR}/src/em_system.c
   ${SERVICE_DIR}/device_manager/devices/sl_device_peripheral_hal_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}.c
+  ${SERVICE_DIR}/device_manager/dma/sl_device_dma_s2.c
   ${SERVICE_DIR}/device_manager/src/sl_device_clock.c
+  ${SERVICE_DIR}/device_manager/src/sl_device_dma.c
   ${SERVICE_DIR}/device_manager/src/sl_device_gpio.c
   ${SERVICE_DIR}/device_manager/src/sl_device_peripheral.c
   ${SERVICE_DIR}/memory_manager/profiler/src/sli_memory_profiler_stubs.c
@@ -384,7 +385,9 @@ zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_TIMER
 )
 
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_LDMA
-  ${EMDRV_DIR}/dmadrv/src/dmadrv.c
+  ${SERVICE_DIR}/dma_manager/src/sl_dma_manager.c
+  ${SERVICE_DIR}/dma_manager/src/sl_dma_manager_hal_ldma.c
+  ${PERIPHERAL_DIR}/src/sl_hal_ldma.c
   ${EMLIB_DIR}/src/em_ldma.c
 )
 
