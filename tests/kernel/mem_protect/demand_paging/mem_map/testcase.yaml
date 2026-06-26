@@ -25,4 +25,4 @@ tests:
       - demand_paging
     platform_allow: qemu_x86_tiny
     extra_configs:
-      - CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT=y
+      - CONFIG_EVICTION_LRU=y

@@ -93,6 +93,10 @@
 	status = "okay";
 };
 
+&clk_lse {
+	status = "okay";
+};
+
 &cpusw {
 	clocks = <&clk_hsi>;
 	clock-frequency = <DT_FREQ_M(64)>;
@@ -321,4 +325,9 @@ csi_interface: &dcmipp {
 		reg = <0>;
 		reset-gpios = <&mcp23017 9 GPIO_ACTIVE_LOW>;
 	};
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB5, 8)>, <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
 };

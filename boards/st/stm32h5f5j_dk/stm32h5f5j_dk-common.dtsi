@@ -269,6 +269,10 @@
 	status = "okay";
 };
 
+&xspim {
+	status = "okay";
+};
+
 &xspi1 {
 	pinctrl-0 = <&octospim_p1_io0_pc9 &octospim_p1_io1_pf9
 		     &octospim_p1_io2_pe2 &octospim_p1_io3_pa6
@@ -324,4 +328,8 @@
 		st,csbound = <10>;
 		status = "okay";
 	};
+};
+
+zephyr_jpegenc: &jpeg {
+	status = "okay";
 };

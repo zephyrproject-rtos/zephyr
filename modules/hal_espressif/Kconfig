@@ -17,7 +17,7 @@ config ESP_HAL_EARLY_LOG_LEVEL
 	  These use esp_rom_printf and are independent of CONFIG_LOG.
 	  0 = Off, 1 = Error, 2 = Warning, 3 = Info, 4 = Debug
 
-endif # SOC_FAMILY_ESPRESSIF_ESP32
-
 # Include the HAL's own Kconfig
 osource "$(ZEPHYR_HAL_ESPRESSIF_MODULE_DIR)/zephyr/Kconfig"
+
+endif # SOC_FAMILY_ESPRESSIF_ESP32

@@ -25,4 +25,5 @@ supported:
   - usbd
   - comparator
   - gint
+  - watchdog
 vendor: nxp

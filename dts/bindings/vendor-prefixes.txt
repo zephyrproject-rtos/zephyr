@@ -106,6 +106,7 @@ azoteq	Azoteq (Pty) Ltd
 azw	Shenzhen AZW Technology Co., Ltd.
 baikal	BAIKAL ELECTRONICS, JSC
 bananapi	BIPAI KEJI LIMITED
+barth	Barth Elektronik GmbH
 bbc	BBC
 bcdevices	Blue Clover Devices
 beacon	Compass Electronics Group, LLC
@@ -130,6 +131,7 @@ calxeda	Calxeda
 canaan	Canaan, Inc.
 caninos	Caninos Loucos Program
 canis	Canis Automotive Labs
+canmodule	CAN-module, FOP
 capella	Capella Microsystems, Inc
 cascoda	Cascoda, Ltd.
 catalyst	Catalyst Semiconductor, Inc.
@@ -478,6 +480,7 @@ mti	Imagination Technologies Ltd. (formerly MIPS Technologies Inc.)
 multi-inno	Multi-Inno Technology Co.,Ltd
 mundoreader	Mundo Reader S.L.
 murata	Murata Manufacturing Co., Ltd.
+muselab	MuseLab Electronics
 mxchip	Shanghai MXCHIP Information Technology Co., Ltd.
 mxicy	Macronix International Co., Ltd.
 myir	MYIR Tech Limited

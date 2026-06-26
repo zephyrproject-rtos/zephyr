@@ -539,7 +539,8 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
  * @param dev Pointer to the device data
  * @retval    0 upon successful completion
  */
-static int eth_xlnx_gem_start_device(const struct device *dev)
+static int eth_xlnx_gem_start_device(const struct device *dev,
+				     struct net_if *iface __unused)
 {
 	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
 	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
@@ -588,7 +589,8 @@ static int eth_xlnx_gem_start_device(const struct device *dev)
  * @param dev Pointer to the device data
  * @retval    0 upon successful completion
  */
-static int eth_xlnx_gem_stop_device(const struct device *dev)
+static int eth_xlnx_gem_stop_device(const struct device *dev,
+				    struct net_if *iface __unused)
 {
 	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
 	struct eth_xlnx_gem_dev_data *dev_data = dev->data;

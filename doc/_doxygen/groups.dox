@@ -60,6 +60,13 @@
 @{
 @}
 
+@brief Xen hypervisor support
+@defgroup xen_support Xen support
+@ingroup os_services
+@details Interfaces for running Zephyr as a Xen guest or as Xen Dom0.
+@{
+@}
+
 @brief MCUmgr
 @defgroup mcumgr MCUmgr
 @ingroup device_mgmt
@@ -109,6 +116,12 @@
 
 @brief Memory Management APIs
 @defgroup mem_mgmt Memory Management APIs
+@{
+@}
+
+@brief Authentication
+@defgroup authentication Authentication
+@ingroup os_services
 @{
 @}
 

@@ -1,6 +1,8 @@
 common:
   tags:
     - arm
+  arch_allow:
+    - arm
   platform_allow:
     - mps3/corstone310/fvp
     - mps3/corstone310/fvp/ns

@@ -13,7 +13,7 @@ from twisterlib.twister_main import Twister, catch_system_exit_exception
 
 @pytest.fixture
 def outdir(tmp_path) -> Path:
-    """Return twister output temporay directory."""
+    """Return twister output temporary directory."""
     outdir_path = tmp_path / "twister-out"
     return outdir_path
 

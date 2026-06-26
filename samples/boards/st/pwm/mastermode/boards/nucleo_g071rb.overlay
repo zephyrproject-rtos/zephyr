@@ -6,15 +6,35 @@
 
 #include "dt-bindings/timer/stm32-timer.h"
 
-&timers3 {
+/ {
+	zephyr,user {
+		pwms = <&pwm3 1 PWM_USEC(400) PWM_POLARITY_NORMAL>;
+	};
+};
+
+&timers1 {
 	/**
 	 * Configure the TRGO output and counter mode of the timer instance.
-	 * TRGO event is generated at timer update event.
-	 * --> Will cause the TRGO event during mid of high AND low time
-	 *     of PWM period.
-	 * The TRGO can be used on other peripherals according to the
-	 * `Interconnect matrix` of the SoC.
+	 * A TRGO event is generated at each timer update event
+	 * (i.e., after each time the timer counter overflows)
 	 */
-	st,countermode = <STM32_TIM_COUNTERMODE_CENTER_UP>;
+	st,countermode = <STM32_TIM_COUNTERMODE_UP>;
 	st,mastermode = "UPDATE";
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers3 {
+	/**
+	 * Configure TIM3 to be reset every time TIM1 overflows.
+	 * Select TIM1 TRGO signal as input (= ITR0). Refer to RM0444 Rev.6
+	 * table 123 "TIMx internal trigger connection" for details.
+	 */
+	st,countermode = <STM32_TIM_COUNTERMODE_UP>;
+	st,slavemode = "reset";
+	st,trigger-selection = "ITR0";
 };

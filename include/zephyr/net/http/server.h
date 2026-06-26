@@ -195,7 +195,18 @@ struct http_header {
 	const char *value; /**< Pointer to header value NULL-terminated string. */
 };
 
-/** @brief HTTP request context */
+/**
+ * @brief HTTP request context
+ *
+ * @note The captured request headers (@ref headers, @ref header_count and
+ *       @ref headers_status) are only populated in the first dynamic resource
+ *       callback of a request. In any subsequent callback for the same request,
+ *       @ref headers is NULL, @ref header_count is 0 and @ref headers_status is
+ *       @ref HTTP_HEADER_STATUS_NONE. The first callback may or may not also
+ *       carry request body data, so do not condition header handling on the
+ *       presence of @ref data. Copy out any header values you need during that
+ *       first callback.
+ */
 struct http_request_ctx {
 	uint8_t *data;                          /**< HTTP request data */
 	size_t data_len;                        /**< Length of HTTP request data */
@@ -225,6 +236,9 @@ struct http_response_ctx {
  *               HTTP_SERVER_TRANSACTION_ABORTED and HTTP_SERVER_TRANSACTION_COMPLETE are
  *               terminal notifications.
  * @param request_ctx Request context structure containing HTTP request data that was received.
+ *                    Captured request headers (if
+ *                    @kconfig{CONFIG_HTTP_SERVER_CAPTURE_HEADERS} is enabled) are only available
+ *                    in the first callback of a request; see @ref http_request_ctx.
  * @param response_ctx Response context structure for application to populate with response data.
  * @param user_data User specified data.
  *

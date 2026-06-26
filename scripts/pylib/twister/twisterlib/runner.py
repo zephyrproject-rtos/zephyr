@@ -1071,14 +1071,40 @@ class ProjectBuilder(FilterBuilder):
                             )
                             try:
                                 self.determine_testcases(results)
-                                next_op = 'gather_metrics'
+                                next_op = 'post_build' if self.options.post_build_checks \
+                                    else 'gather_metrics'
                             except BuildError as e:
                                 logger.error(str(e))
                                 self.instance.status = TwisterStatus.ERROR
                                 self.instance.reason = str(e)
                                 next_op = 'report'
                         else:
-                            next_op = 'gather_metrics'
+                            next_op = 'post_build' if self.options.post_build_checks \
+                                else 'gather_metrics'
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
+                self.instance.status = TwisterStatus.ERROR
+                reason = 'Incorrect status assignment'
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                next_op = 'report'
+            finally:
+                self._add_to_processing_queue(processing_queue, next_op)
+
+        # Run post-build checks on the freshly built artifacts
+        elif op == "post_build":
+            try:
+                ret = self.post_build()
+                if ret.get('returncode', 1) > 0:
+                    self.instance.status = TwisterStatus.ERROR
+                    self.instance.reason = ret.get('reason', 'Post-build check failure')
+                    self.instance.add_missing_case_status(
+                        TwisterStatus.BLOCK,
+                        self.instance.reason
+                    )
+                    next_op = 'report'
+                else:
+                    next_op = 'gather_metrics'
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
@@ -1312,7 +1338,7 @@ class ProjectBuilder(FilterBuilder):
                 # Keep previous statuses and reasons
                 tc_info = tc_keeper.get(testcase_id, {})
                 if not tc_info and self.trace:
-                    # Also happens when Ztest uses macroses, eg. DEFINE_TEST_VARIANT
+                    # Also happens when Ztest uses macros, eg. DEFINE_TEST_VARIANT
                     logger.debug(f"Ztest case '{testcase_id}' discovered for "
                                  f"'{self.instance.testsuite.source_dir_rel}' "
                                  f"with {list(tc_keeper)}")
@@ -1784,6 +1810,47 @@ class ProjectBuilder(FilterBuilder):
             return
         return build_result
 
+    def post_build(self):
+        """Run post-build checks against the build directory.
+
+        Each check is a bound method returning ``None`` on success or a
+        human-readable reason string on failure. The first failing check
+        short-circuits and fails the build. New checks can be added to the
+        ``checks`` list below.
+        """
+        checks = [
+            self.check_no_nested_git_repos,
+        ]
+        for check in checks:
+            reason = check()
+            if reason:
+                logger.error(
+                    f"Post-build check '{check.__name__}' failed for "
+                    f"{self.instance.name}: {reason}"
+                )
+                return {"returncode": 1, "reason": reason}
+        return {"returncode": 0}
+
+    def check_no_nested_git_repos(self):
+        """Post-build check: a test or platform must never clone a git tree
+        into its build directory. Detect any nested git repository (a ``.git``
+        directory or file) under the build directory and fail if found.
+        """
+        found = []
+        for dirpath, dirnames, filenames in os.walk(self.instance.build_dir):
+            if '.git' in dirnames:
+                found.append(os.path.join(dirpath, '.git'))
+                # Do not descend into the discovered repository.
+                dirnames.remove('.git')
+            if '.git' in filenames:
+                found.append(os.path.join(dirpath, '.git'))
+        if found:
+            return (
+                "git repository cloned into build directory during build: "
+                + ", ".join(found)
+            )
+        return None
+
     def run(self):
 
         instance = self.instance
@@ -2014,9 +2081,9 @@ class TwisterRunner:
 
     def update_counting_before_pipeline(self):
         '''
-        Updating counting before pipeline is necessary because statically filterd
+        Updating counting before pipeline is necessary because statically filtered
         test instance never enter the pipeline. While some pipeline output needs
-        the static filter stats. So need to prepare them before pipline starts.
+        the static filter stats. So need to prepare them before pipeline starts.
         '''
         for instance in self.instances.values():
             if instance.status == TwisterStatus.FILTER and instance.reason != 'runtime filter':

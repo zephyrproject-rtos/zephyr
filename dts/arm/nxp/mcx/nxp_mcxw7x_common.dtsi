@@ -191,6 +191,7 @@
 		compatible = "nxp,spc";
 		reg = <0x16000 0x1000>;
 		interrupts = <21 0>;
+		active-dcdc-output-microvolt = <2500000>;
 	};
 
 	wuu: system-modules@19000 {
@@ -447,9 +448,9 @@
 		compatible = "nxp,nbu";
 		interrupts = <48 2>;
 		interrupt-names = "nbu_rx_int";
-		max-tx-power-support = <0 7>; /* TODO: Add 10dbm support */
+		max-tx-power-support = <0 7 10>;
 		/* Max TX power can be overridden by the board */
-		max-tx-power-dbm = <7>;
+		max-tx-power-dbm = <10>;
 		wakeup-source;
 		wakeup-ctrls = <&wuu NXP_WUU_MODULE_2_DMA>;
 	};

@@ -7,6 +7,9 @@ if SOC_FAMILY_NXP_IMXRT
 # can override the defaults given here
 rsource "*/Kconfig.defconfig"
 
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x4fb2d5bd" if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
+
 if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
 
 config ROM_START_OFFSET

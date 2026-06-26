@@ -4,15 +4,49 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_ITE_INTC_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_ITE_INTC_H_
+/**
+ * @file
+ * @brief ITE IT51XXX interrupt controller devicetree macros
+ * @ingroup dt_ite_it51xxx_intc
+ */
 
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_ITE_IT51XXX_INTC_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_ITE_IT51XXX_INTC_H_
+
+/**
+ * @defgroup dt_ite_it51xxx_intc ITE IT51XXX interrupt controller
+ * @brief Devicetree macros for the ITE IT51XXX interrupt controller (INTC).
+ * @ingroup devicetree-interrupt_controller
+ *
+ * Macros for encoding interrupt cells for the <tt>ite,it51xxx-intc</tt> compatible interrupt
+ * controller. An interrupt is described by two cells: the interrupt number and the trigger type
+ * (one of the @c IRQ_TYPE_* flags below).
+ *
+ * Interrupt numbers follow the pattern @c IT51XXX_IRQ_\<source\>, where @c \<source\> is the
+ * IT51XXX interrupt source name (for example @c IT51XXX_IRQ_TIMER1 or @c IT51XXX_IRQ_SMB_A).
+ *
+ * @code{.dts}
+ * &timer {
+ *         interrupts = <IT51XXX_IRQ_TIMER1 IRQ_TYPE_EDGE_RISING>;
+ * };
+ * @endcode
+ * @{
+ */
+
+/** No trigger */
 #define IRQ_TYPE_NONE         0
+/** Rising edge trigger */
 #define IRQ_TYPE_EDGE_RISING  1
+/** Falling edge trigger */
 #define IRQ_TYPE_EDGE_FALLING 2
+/** Both edges */
 #define IRQ_TYPE_EDGE_BOTH    (IRQ_TYPE_EDGE_FALLING | IRQ_TYPE_EDGE_RISING)
+/** Active-high level trigger */
 #define IRQ_TYPE_LEVEL_HIGH   4
+/** Active-low level trigger */
 #define IRQ_TYPE_LEVEL_LOW    8
+
+/** @cond INTERNAL_HIDDEN */
 
 /* IRQ numbers of WUC */
 /* Group 0 of INTC */
@@ -195,4 +229,8 @@
 /* Group 28 */
 #define IT51XXX_IRQ_SMB_I      224
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_ITE_INTC_H_ */
+/** @endcond */
+
+/** @} */
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_ITE_IT51XXX_INTC_H_ */

@@ -47,7 +47,12 @@ zephyr_library_compile_definitions(
   CONFIG_CTRL_IFACE_ZEPHYR
   CONFIG_SUITEB192
   CONFIG_SUITEB
-  # Though MbedTLS is not FIPS compliant, we don't want to use broken crypto algorithms
+)
+
+# Though MbedTLS is not FIPS compliant, CONFIG_FIPS is used here to strip the
+# broken/legacy crypto call sites (HMAC-MD5, RC4, ...) and keep the default
+# build robust. Legacy WPA/TKIP interop explicitly opts out of this.
+zephyr_library_compile_definitions_ifndef(CONFIG_WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO
   CONFIG_FIPS
 )
 
@@ -319,9 +324,9 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NO
   CONFIG_CRYPTO_INTERNAL
 )
 
-zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP
-  CONFIG_WEP
-)
+if(CONFIG_WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO AND CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP)
+  zephyr_library_compile_definitions(CONFIG_WEP)
+endif()
 
 zephyr_library_sources_ifndef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
   ${HOSTAP_SRC_BASE}/crypto/tls_none.c
@@ -701,7 +706,6 @@ zephyr_include_directories(
 
 zephyr_library_sources(
   ${HOSTAP_SRC_BASE}/crypto/crypto_mbedtls_alt.c
-  ${HOSTAP_SRC_BASE}/crypto/rc4.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
@@ -723,6 +727,25 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_TEST
   ${HOSTAP_SRC_BASE}/crypto/fips_prf_internal.c
   ${HOSTAP_SRC_BASE}/crypto/sha1-internal.c
 )
+endif()
+
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO
+  ${HOSTAP_SRC_BASE}/crypto/rc4.c
+)
+
+if(CONFIG_WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO AND NOT CONFIG_PSA_WANT_ALG_MD5)
+  zephyr_library_sources(
+    ${HOSTAP_SRC_BASE}/crypto/md5-internal.c
+    ${HOSTAP_SRC_BASE}/crypto/md5.c
+  )
+endif()
+
+# EAP-TTLS phase-2 CHAP (RFC 1994) is compiled only when CONFIG_FIPS is off,
+# i.e. when LEGACY_CRYPTO opts out of CONFIG_FIPS. Link chap.c for the symbol.
+if(CONFIG_WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO AND (CONFIG_EAP_TTLS OR CONFIG_EAP_SERVER_TTLS))
+  zephyr_library_sources(
+    ${HOSTAP_SRC_BASE}/eap_common/chap.c
+  )
 endif()
 
 zephyr_compile_definitions(WPA_SUPPLICANT_CLEANUP_INTERVAL=${CONFIG_WIFI_NM_WPA_SUPPLICANT_CLEANUP_INTERVAL})

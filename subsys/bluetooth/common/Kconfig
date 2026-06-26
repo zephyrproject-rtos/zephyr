@@ -358,3 +358,35 @@ config BT_DEBUG_MONITOR_RTT_BUFFER_SIZE
 endif # BT_DEBUG_MONITOR_RTT
 
 endchoice # Bluetooth debug type
+
+config BT_LONG_WQ
+	bool "Dedicated workqueue for long-running tasks."
+	default y if BT_GATT_CACHING
+	default y if BT_ECC
+	help
+	  Adds an API for a workqueue dedicated to long-running tasks.
+
+if BT_LONG_WQ
+config BT_LONG_WQ_STACK_SIZE
+	int "Long workqueue stack size."
+	default 4096 if NO_OPTIMIZATIONS
+	default 1400 if BT_ECC
+	default 1300 if BT_GATT_CACHING
+	default 1024
+	help
+	  The stack size used for the long workqueue. In most cases it's best to use the default
+	  values, however since the actual requirement depends on the underlying crypto backend
+	  this option can be used to finetune the stack size.
+
+config BT_LONG_WQ_PRIO
+	int "Long workqueue priority. Should be preemptible."
+	default 10
+	range 0 NUM_PREEMPT_PRIORITIES
+
+config BT_LONG_WQ_INIT_PRIO
+	int "Long workqueue init priority"
+	default 50
+	help
+	  Init priority level to setup the long workqueue.
+
+endif # BT_LONG_WQ

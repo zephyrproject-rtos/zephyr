@@ -31,6 +31,7 @@ reuse
 ruff==0.14.2
 setuptools>=70.2.0
 spdx-tools
+spdx3-validate
 sphinx-lint
 tabulate
 tox

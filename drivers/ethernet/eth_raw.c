@@ -19,14 +19,10 @@ __weak void ethernet_init(struct net_if *iface)
 	ARG_UNUSED(iface);
 }
 
-__weak void net_eth_carrier_on(struct net_if *iface)
+__weak void net_eth_carrier_set(struct net_if *iface, bool carrier_up)
 {
 	ARG_UNUSED(iface);
-}
-
-__weak void net_eth_carrier_off(struct net_if *iface)
-{
-	ARG_UNUSED(iface);
+	ARG_UNUSED(carrier_up);
 }
 
 __weak int net_recv_data(struct net_if *iface, struct net_pkt *pkt)

@@ -37,6 +37,7 @@ from typing import NamedTuple, NoReturn
 
 try:
     from elftools.elf.elffile import ELFFile
+    from elftools.elf.sections import SymbolTableSection
     ELFTOOLS_MISSING = False
 except ImportError:
     ELFTOOLS_MISSING = True
@@ -65,6 +66,8 @@ def find_rtt_block(elf_file: str) -> int | None:
     with open(elf_file, 'rb') as f:
         elffile = ELFFile(f)
         for sect in elffile.iter_sections('SHT_SYMTAB'):
+            if not isinstance(sect, SymbolTableSection):
+                continue
             symbols = sect.get_symbol_by_name('_SEGGER_RTT')
             if symbols is None:
                 continue

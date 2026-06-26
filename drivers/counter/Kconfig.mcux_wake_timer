@@ -1,0 +1,30 @@
+# MCUXpresso SDK Wake Timer
+
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_MCUX_WAKE_TIMER
+	bool "MCUX Wake Timer driver"
+	default y
+	depends on DT_HAS_NXP_WAKE_TIMER_ENABLED
+	help
+	  Enable support for the MCUX Wake Timer, a 32-bit down-counter
+	  clocked at 1 kHz that can wake the chip from low-power modes.
+
+config COUNTER_MCUX_WAKE_TIMER_ALARM
+	bool "Wake Timer alarm support"
+	depends on COUNTER_MCUX_WAKE_TIMER
+	help
+	  The Wake Timer has a single count/reload register, so the periodic
+	  TOP callback and the single-shot ALARM both need the same hardware
+	  resource. Because of this limitation, this Kconfig option selects
+	  which one is available at runtime. When alarm support is enabled the
+	  driver supports relative single-shot alarms only and will return
+	  -ENOTSUP for absolute alarms and set TOP operation; when alarm support
+	  is disabled the driver will not allow set and cancel ALARM operation at
+	  runtime (attempts to set and cancel ALARM will return -ENOTSUP). Choose
+	  the configuration that matches your application's requirements.
+
+if COUNTER_MCUX_WAKE_TIMER_ALARM
+comment "NOTE: Enabling Wake Timer ALARM disables set TOP operation and absolute alarms."
+endif

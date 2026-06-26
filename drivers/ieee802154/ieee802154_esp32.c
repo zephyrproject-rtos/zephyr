@@ -48,58 +48,111 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define IEEE802154_ESP32_TX_TIMEOUT_MS (100)
 
+struct ieee802154_esp32_rx_msg {
+	/* PHR at [0], PSDU bytes follow (length per PHR, max IEEE802154_MAX_PHY_PACKET_SIZE). */
+	uint8_t frame[IEEE802154_MAX_PHY_PACKET_SIZE + 1U];
+	esp_ieee802154_frame_info_t info;
+};
+
 static struct ieee802154_esp32_data esp32_data;
 
-/* override weak function in components/ieee802154/esp_ieee802154.c of ESP-IDF */
-void esp_ieee802154_receive_done(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info)
+K_MSGQ_DEFINE(ieee802154_esp32_rx_msgq, sizeof(struct ieee802154_esp32_rx_msg),
+	      CONFIG_IEEE802154_ESP32_RX_BUFFER_SIZE, 4);
+
+static void ieee802154_esp32_rx_deliver(const struct ieee802154_esp32_rx_msg *rx)
 {
+	struct ieee802154_esp32_data *data = &esp32_data;
 	struct net_pkt *pkt;
-	uint8_t *payload;
+	const uint8_t *raw = rx->frame;
+	const esp_ieee802154_frame_info_t *frame_info = &rx->info;
+	const uint8_t *payload;
 	uint8_t len;
 	int err;
+
+#ifndef CONFIG_IEEE802154_RAW_MODE
+	if (data->iface == NULL) {
+		return;
+	}
+#endif
 
 	/* The ESP-IDF HAL handles FCS already and drops frames with bad checksum. The checksum at
 	 * the end of a valid frame is replaced with RSSI and LQI values.
 	 * Zephyr L2 expects only valid frames, so checksum is not needed for a re-check.
 	 */
 	if (IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
-		len = frame[0];
+		len = raw[0];
 	} else {
-		len = frame[0] - IEEE802154_FCS_LENGTH;
+		len = raw[0] - IEEE802154_FCS_LENGTH;
 	}
 
-#if defined(CONFIG_NET_BUF_DATA_SIZE)
+#ifdef CONFIG_NET_BUF_DATA_SIZE
 	__ASSERT_NO_MSG(len <= CONFIG_NET_BUF_DATA_SIZE);
 #endif
 
-	payload = frame + 1;
+	payload = raw + 1;
 
 	LOG_HEXDUMP_DBG(payload, len, "RX buffer:");
 
-	pkt = net_pkt_rx_alloc_with_buffer(esp32_data.iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No pkt available");
-		goto exit;
+		return;
 	}
 
 	err = net_pkt_write(pkt, payload, len);
 	if (err != 0) {
 		LOG_ERR("Failed to write to a packet: %d", err);
 		net_pkt_unref(pkt);
-		goto exit;
+		return;
 	}
 
 	net_pkt_set_ieee802154_lqi(pkt, frame_info->lqi);
 	net_pkt_set_ieee802154_rssi_dbm(pkt, frame_info->rssi);
 	net_pkt_set_ieee802154_ack_fpb(pkt, frame_info->pending);
 
-	err = net_recv_data(esp32_data.iface, pkt);
+	err = net_recv_data(data->iface, pkt);
 	if (err != 0) {
 		LOG_ERR("RCV Packet dropped by NET stack: %d", err);
 		net_pkt_unref(pkt);
 	}
+}
 
-exit:
+static void ieee802154_esp32_rx_thread_fn(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct ieee802154_esp32_rx_msg rx;
+
+	for (;;) {
+		k_msgq_get(&ieee802154_esp32_rx_msgq, &rx, K_FOREVER);
+		ieee802154_esp32_rx_deliver(&rx);
+	}
+}
+
+K_THREAD_DEFINE(ieee802154_esp32_rx, CONFIG_IEEE802154_ESP32_RX_STACK_SIZE,
+		ieee802154_esp32_rx_thread_fn, NULL, NULL, NULL,
+		K_PRIO_PREEMPT(CONFIG_IEEE802154_ESP32_RX_THREAD_PRIORITY), 0, 0);
+
+/* Override weak function in components/ieee802154/esp_ieee802154.c */
+void IRAM_ATTR esp_ieee802154_receive_done(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info)
+{
+	struct ieee802154_esp32_rx_msg msg = {0};
+	uint8_t phr_len = frame[0];
+
+	if (phr_len > IEEE802154_MAX_PHY_PACKET_SIZE) {
+		goto done;
+	}
+
+	memcpy(msg.frame, frame, (size_t)phr_len + 1U);
+	msg.info = *frame_info;
+
+	if (k_msgq_put(&ieee802154_esp32_rx_msgq, &msg, K_NO_WAIT) != 0) {
+		LOG_ERR("RX queue full, frame dropped");
+	}
+
+done:
 	esp_ieee802154_receive_handle_done(frame);
 }
 
@@ -107,19 +160,16 @@ static enum ieee802154_hw_caps esp32_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	/*
-	 * ESP32-C6 Datasheet:
-	 * - CSMA/CA
-	 * - active scan and energy detect
-	 * - HW frame filter
-	 * - HW auto acknowledge
-	 * - HW auto frame pending
-	 * - coordinated sampled listening (CSL)
+	/* Espressif 802.15.4 MAC (ESP32-H2, ESP32-C6, ESP32-C5):
+	 * HW FCS, frame filter, promiscuous mode, CSMA/CA, HW TX/RX ACK,
+	 * energy detect, Rx-on-when-idle.
+	 *
+	 * Not advertised until driver support is complete:
+	 * TXTIME, RXTIME (CSL), TX_SEC, RETRANSMISSION, SELECTIVE_TXCHANNEL.
 	 */
-
-	/* ToDo: Double-check and extend */
-	return IEEE802154_HW_ENERGY_SCAN | IEEE802154_HW_FILTER | IEEE802154_HW_TX_RX_ACK |
-	       IEEE802154_HW_CSMA | IEEE802154_HW_PROMISC | IEEE802154_RX_ON_WHEN_IDLE;
+	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER | IEEE802154_HW_PROMISC |
+	       IEEE802154_HW_CSMA | IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_RX_TX_ACK |
+	       IEEE802154_HW_ENERGY_SCAN | IEEE802154_RX_ON_WHEN_IDLE;
 }
 
 /* override weak function in components/ieee802154/esp_ieee802154.c of ESP-IDF */
@@ -484,6 +534,8 @@ static void esp32_iface_init(struct net_if *iface)
 	data->iface = iface;
 
 	ieee802154_init(iface);
+
+	LOG_INF("Iface initialized");
 }
 
 static const struct ieee802154_radio_api esp32_radio_api = {
@@ -512,11 +564,18 @@ static const struct ieee802154_radio_api esp32_radio_api = {
 #define MTU 1280
 #endif
 
-#if defined(CONFIG_NET_L2_PHY_IEEE802154)
-NET_DEVICE_DT_INST_DEFINE(0, esp32_init, NULL, &esp32_data, NULL,
-			  CONFIG_IEEE802154_ESP32_INIT_PRIO, &esp32_radio_api, L2,
-			  L2_CTX_TYPE, MTU);
+/* clang-format off */
+#if defined(CONFIG_IEEE802154_RAW_MODE)
+DEVICE_DT_INST_DEFINE(0, esp32_init, NULL, &esp32_data, NULL,
+		      POST_KERNEL,
+		      CONFIG_IEEE802154_ESP32_INIT_PRIO,
+		      &esp32_radio_api);
 #else
-DEVICE_DT_INST_DEFINE(0, esp32_init, NULL, &esp32_data, NULL, POST_KERNEL,
-		      CONFIG_IEEE802154_ESP32_INIT_PRIO, &esp32_radio_api);
+NET_DEVICE_DT_INST_DEFINE(0, esp32_init, NULL, &esp32_data, NULL,
+			  CONFIG_IEEE802154_ESP32_INIT_PRIO,
+			  &esp32_radio_api,
+			  L2,
+			  L2_CTX_TYPE,
+			  MTU);
 #endif
+/* clang-format on */

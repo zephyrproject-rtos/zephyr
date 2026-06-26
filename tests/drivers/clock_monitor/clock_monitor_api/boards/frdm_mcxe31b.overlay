@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	clock-monitor-test {
+		compatible = "test-clock-monitor";
+
+		/* cmu_0: CMU_FC, WINDOW mode. */
+		fc {
+			monitor = <&cmu_0>;
+		};
+
+		/* cmu_1: CMU_FM, MEASURE mode; measures FIRC (48 MHz). */
+		fm {
+			monitor = <&cmu_1>;
+			measure-expected-hz = <48000000>;
+		};
+	};
+};
+
+&cmu_0 {
+	status = "okay";
+};
+
+&cmu_1 {
+	status = "okay";
+};

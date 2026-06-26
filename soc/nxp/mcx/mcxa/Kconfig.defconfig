@@ -9,8 +9,8 @@ config CORTEX_M_SYSTICK
 config NUM_IRQS
 	default 80 if SOC_SERIES_MCXA1X3
 	default 89 if SOC_SERIES_MCXA1X6
-	default 122 if SOC_SERIES_MCXAXX6
-	default 164 if SOC_SERIES_MCXAXX7
+	default 122 if SOC_SERIES_MCXAXX4 || SOC_SERIES_MCXAXX6
+	default 146 if SOC_SERIES_MCXAXX7
 	default 88
 
 # Default offset 0x200 is not enough with higher ISR count
@@ -26,11 +26,28 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config FLASH_FILL_BUFFER_SIZE
 	default 128
 
+config RESET
+	default y if DT_HAS_NXP_MRCC_RESET_ENABLED
+
 if PM
 
 configdefault SYSTEM_TIMER_RESET_BY_LPM
 	default y
 
 endif # PM
+
+if HAS_MCUX_SYSCON_LPCAC
+
+config CACHE_MANAGEMENT
+	default y
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
+config ICACHE_LINE_SIZE
+	default 256
+
+endif # HAS_MCUX_SYSCON_LPCAC
 
 endif # SOC_FAMILY_MCXA

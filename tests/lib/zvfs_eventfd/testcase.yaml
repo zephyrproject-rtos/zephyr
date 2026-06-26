@@ -1,0 +1,12 @@
+tests:
+  libraries.zvfs_eventfd.add_size:
+    tags: zvfs eventfd
+    integration_platforms:
+      - qemu_x86
+  libraries.zvfs_eventfd.ignore_min:
+    tags: zvfs eventfd
+    extra_configs:
+      - CONFIG_ZVFS_EVENTFD_IGNORE_MIN=y
+      - CONFIG_ZVFS_EVENTFD_MAX=2
+    integration_platforms:
+      - qemu_x86

@@ -19,3 +19,6 @@ tests:
   drivers.led_strip.build.rpi_pico_pio:
     platform_allow:
       - rpi_pico
+  drivers.led_strip.build.ai_m62_12f_kit:
+    platform_allow:
+      - ai_m62_12f_kit

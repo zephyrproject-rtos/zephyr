@@ -81,6 +81,26 @@
 			status = "disabled";
 		};
 
+		spi0: spi@40124000 {
+			compatible = "realtek,ameba-spi";
+			reg = <0x40124000 0x100>;
+			interrupts = <42 0>;
+			clocks = <&rcc AMEBA_SPI0_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@40125000 {
+			compatible = "realtek,ameba-spi";
+			reg = <0x40125000 0x100>;
+			interrupts = <43 0>;
+			clocks = <&rcc AMEBA_SPI1_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		spic: flash-controller@40128000 {
 			compatible = "realtek,ameba-flash-controller";
 			reg = <0x40128000 0x400>;
@@ -118,6 +138,14 @@
 			clocks = <&rcc AMEBA_RTC_CLK>;
 			interrupts = <46 0>;
 			alarms-count = <1>;
+			status = "disabled";
+		};
+
+		wdg: watchdog@41008d80 {
+			compatible = "realtek,ameba-watchdog";
+			reg = <0x41008d80 0x20>;
+			interrupts = <65 0>;
+			early-int-cnt-ms = <500>;
 			status = "disabled";
 		};
 

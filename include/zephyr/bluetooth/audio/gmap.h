@@ -201,6 +201,7 @@ int bt_gmap_cb_register(const struct bt_gmap_cb *cb);
  *
  * @retval -EINVAL if @p conn is NULL
  * @retval -EBUSY if discovery is already in progress for @p conn
+ * @retval -ENOTCONN if @p conn is not connected
  * @retval -ENOEXEC if discovery failed to initiate
  * @retval 0 on success
  */

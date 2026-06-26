@@ -19,11 +19,22 @@ config NUM_IRQS
 	default 61
 
 DT_SYSCLK_PATH := $(dt_nodelabel_path,sysclk)
+DT_OSTIMER_CLK_PATH := $(dt_nodelabel_path,clk_32k)
 
 configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
+	# MCXW23 clocks the OS event timer from the 32.768 kHz RTC oscillator (PMC
+	# OSTIMERCLKSEL resets to 32.768 kHz and the HAL never reselects it; MCXW23
+	# RM 45.4.11.2.24), unlike other NXP parts where OSTIMER is 1 MHz. The rate
+	# is taken from the clk_32k fixed-clock node rather than hardcoded. Note:
+	# selecting OSTIMER trades timing precision (~1 ms tick, ~30 us resolution)
+	# for low-power always-on operation, so SysTick stays the default where
+	# fine-grained timing is needed.
+	default $(dt_node_int_prop_int,$(DT_OSTIMER_CLK_PATH),clock-frequency) if MCUX_OS_TIMER
 	default $(dt_node_int_prop_int,$(DT_SYSCLK_PATH),clock-frequency) if CORTEX_M_SYSTICK
 
 configdefault SYS_CLOCK_TICKS_PER_SEC
+	# 32.768 kHz / 1024 = 32 cycles per tick exactly when OSTIMER is the timer.
+	default 1024 if MCUX_OS_TIMER
 	default 1000 if PM
 
 # Set to the minimal size of data which can be written.

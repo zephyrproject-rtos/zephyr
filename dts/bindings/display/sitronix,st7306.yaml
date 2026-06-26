@@ -8,3 +8,24 @@ description: Sitronix ST7306 multi-mode 720x480 display controller
 compatible: "sitronix,st7306"
 
 include: sitronix,st730x-common.yaml
+
+properties:
+  color-mode:
+    type: string
+    enum:
+      - "MONO"
+      - "RBW"
+    description: |
+      What type of display this is.
+      MONO: Monochrome display, 1 bit per pixel.
+      RBW: Red Black White (and Off) display, with 2 bits per pixel.
+      Other color modes are not supported at the moment.
+
+      If the display is not monochrome, provide a palette.
+
+  mono-color:
+    type: int
+    default: 3
+    description: |
+      The color to use for MONO mode on multicolor displays.
+      The default is black for Red Black White displays.

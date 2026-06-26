@@ -51,7 +51,7 @@ class Snippets(WestCommand):
                 west snippets --format="{name}: {dirs}"
 
             When no format string is given, snippets are listed with their
-            names and descriptions aligned in colums.
+            names and descriptions aligned in columns.
             '''),
         )
 

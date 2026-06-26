@@ -3047,6 +3047,22 @@ int nrf_wifi_wpa_supp_sta_set_flags(void *if_priv, const u8 *addr,
 
 	peer_id = nrf_wifi_fmac_peer_get_id(rpu_ctx_zep->rpu_ctx, chg_sta.mac_addr);
 	if (peer_id == -1) {
+		/*
+		 * hostapd clears flags (flags_or == 0) while a station is torn
+		 * down, e.g. the EAP-Failure that ends every WPS/WSC exchange.
+		 * The peer may already be gone from (or not yet added to) the
+		 * driver peer table by then. Clearing flags on an absent peer is
+		 * a harmless no-op, so don't treat it as an error. Only setting
+		 * flags on a missing peer is a genuine desync worth flagging.
+		 */
+		if (flags_or == 0) {
+			LOG_DBG("%s: Ignoring flag clear for absent PEER: %s",
+				__func__,
+				nrf_wifi_sprint_ll_addr_buf(chg_sta.mac_addr, 6,
+							    buf, sizeof(buf)));
+			ret = 0;
+			goto out;
+		}
 		LOG_ERR("%s: Unknown PEER: %s", __func__,
 			nrf_wifi_sprint_ll_addr_buf(chg_sta.mac_addr, 6, buf,
 						    sizeof(buf)));

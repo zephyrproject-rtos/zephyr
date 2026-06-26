@@ -274,43 +274,17 @@ config LINKER_USE_BOOT_SECTION
 	  Requires that boot sections exist in the architecture, SoC,
 	  board or custom linker script.
 
-config LINKER_USE_PINNED_SECTION
-	bool "Use Pinned Linker Section"
-	help
-	  If enabled, the symbols which need to be pinned in memory
-	  will be put into another linker section reserved for pinned
-	  symbols. During boot, the corresponding memory will be marked
-	  as pinned.
-
-	  Requires that pinned sections exist in the architecture, SoC,
-	  board or custom linker script.
-
 config LINKER_USE_ONDEMAND_SECTION
 	bool "Use Evictable Linker Section"
 	depends on DEMAND_MAPPING
-	depends on !LINKER_USE_PINNED_SECTION
 	depends on !ARCH_MAPS_ALL_RAM
 	help
 	  If enabled, the symbols which may be evicted from memory
 	  will be put into a linker section reserved for on-demand symbols.
 	  During boot, the corresponding memory will be mapped as paged out.
-	  This is conceptually the opposite of CONFIG_LINKER_USE_PINNED_SECTION.
 
 	  Requires that on-demand sections exist in the architecture, SoC,
 	  board or custom linker script.
-
-config LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
-	bool "Generic sections are present at boot" if DEMAND_PAGING && LINKER_USE_PINNED_SECTION
-	default y
-	help
-	  When disabled, the linker sections other than the boot and
-	  pinned sections will be marked as not present in the page
-	  tables. This allows kernel to pull in data pages on demand
-	  as required by current execution context when demand paging
-	  is enabled. There is no need to load all code and data into
-	  memory at once.
-
-	  If unsure, say Y.
 
 config LINKER_LAST_SECTION_ID
 	bool "Last section identifier"
@@ -884,7 +858,7 @@ config BUILD_OUTPUT_VERILOG_DATA_WIDTH
 
 config BUILD_OUTPUT_UF2
 	bool "Build a binary in UF2 format"
-	depends on BUILD_OUTPUT_BIN
+	depends on BUILD_OUTPUT_BIN || BUILD_OUTPUT_HEX
 	help
 	  Build a UF2 binary zephyr/zephyr.uf2 in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
@@ -899,37 +873,12 @@ if BUILD_OUTPUT_UF2
 
 config BUILD_OUTPUT_UF2_FAMILY_ID
 	string "UF2 device family ID"
-	default "0x1c5f21b0" if SOC_SERIES_ESP32
-	default "0x621e937a" if SOC_NRF52833_QIAA
-	default "0xada52840" if SOC_NRF52840_QIAA
-	default "0x11de784a" if SOC_SERIES_BL70X
-	default "0x4fb2d5bd" if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
-	default "0x2abc77ec" if SOC_SERIES_LPC55XXX
-	default "0xe48bff56" if SOC_SERIES_RP2040
-	default "0xe48bff57" if SOC_SERIES_RP2350
-	default "0x68ed2b88" if SOC_SERIES_SAMD21
-	default "0x55114460" if SOC_SERIES_SAMD51
-	default "0x647824b6" if SOC_SERIES_STM32F0X
-	default "0x5d1a0a2e" if SOC_SERIES_STM32F2X
-	default "0x6b846188" if SOC_SERIES_STM32F3X
-	default "0x53b80f00" if SOC_SERIES_STM32F7X
-	default "0x300f5633" if SOC_SERIES_STM32G0X
-	default "0x4c71240a" if SOC_SERIES_STM32G4X
-	default "0x6db66082" if SOC_SERIES_STM32H7X
-	default "0x202e3a91" if SOC_SERIES_STM32L0X
-	default "0x1e1f432d" if SOC_SERIES_STM32L1X
-	default "0x00ff6919" if SOC_SERIES_STM32L4X
-	default "0x04240bdf" if SOC_SERIES_STM32L5X
-	default "0x70d16653" if SOC_SERIES_STM32WBX
-	default "0x5ee21072" if SOC_STM32F103XE
-	default "0x57755a57" if SOC_SERIES_STM32F4X && (!SOC_STM32F407XE) && (!SOC_STM32F407XG)
-	default "0x6d0922fa" if SOC_STM32F407XE
-	default "0x8fb060fe" if SOC_STM32F407XG
 	help
 	  UF2 bootloaders only accept UF2 files with a matching family ID.
 	  This can be either a hex, e.g. 0x68ed2b88, or well-known family
 	  name string. If the SoC in use is known by UF2, the Family ID will
-	  be pre-filled with the known value.
+	  be pre-filled with the known value. SoC-specific defaults are set
+	  in the SoC layer Kconfig.defconfig files.
 
 config BUILD_OUTPUT_UF2_USE_FLASH_BASE
 	bool

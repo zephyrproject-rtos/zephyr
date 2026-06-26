@@ -354,10 +354,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_demo,
 		      cmd_demo_readline, 1, 1),
 #if defined CONFIG_SHELL_GETOPT
 	SHELL_CMD(getopt_thread_safe, NULL,
-		  "Cammand using getopt in thread safe way"
+		  "Command using getopt in thread safe way"
 		  " looking for: \"abhc:\".",
 		  cmd_demo_getopt_ts),
-	SHELL_CMD(getopt, NULL, "Cammand using getopt in non thread safe way"
+	SHELL_CMD(getopt, NULL, "Command using getopt in non thread safe way"
 		  " looking for: \"abhc:\".\n", cmd_demo_getopt),
 #endif
 	SHELL_SUBCMD_SET_END /* Array terminated. */

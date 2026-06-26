@@ -43,10 +43,26 @@ static void offload_function(const void *param)
 }
 
 /**
- * @brief Verify thread context
+ * @brief Verify irq_offload() runs a function in interrupt context and passes its argument.
  *
- * @details Check whether offloaded running function is in interrupt
- * context, on the IRQ stack or not.
+ * @ingroup kernel_irq_offload_tests
+ *
+ * @details
+ * Confirms that irq_offload() synchronously executes the supplied callback in ISR
+ * context on the IRQ stack and forwards the caller-provided parameter. Passing
+ * proves the offload mechanism transitions to interrupt context correctly and
+ * that nested irq lock/unlock key handling reports the right lock state.
+ *
+ * Test steps:
+ * - Nest arch_irq_lock() twice and assert the returned keys report unlocked then
+ *   locked state, then unlock in reverse order.
+ * - Call irq_offload() with a known sentinel value as the parameter.
+ * - The callback asserts it runs in ISR context and stores the parameter.
+ *
+ * Expected result:
+ * - The sentinel global equals the value passed to irq_offload().
+ *
+ * @see irq_offload()
  */
 ZTEST(irq_offload, test_irq_offload)
 {
@@ -105,8 +121,26 @@ static void offload_thread_fn(void *p0, void *p1, void *p2)
 }
 
 /**
- * @brief Invoke irq_offload from an interrupt and verify that the
- * resulting nested interrupt doesn't explode
+ * @brief Verify a nested irq_offload() invoked from within an interrupt is handled safely.
+ *
+ * @ingroup kernel_irq_offload_tests
+ *
+ * @details
+ * Exercises the regression where irq_offload() is called from an already-running
+ * interrupt (a timer ISR) and the nested handler suspends the interrupted thread,
+ * forcing a context switch out of the nested interrupt. Passing proves nested
+ * interrupt offload runs the inner handler exactly once and returns control to the
+ * correct context without corruption. Skipped on SMP or when nested offload is off.
+ *
+ * Test steps:
+ * - Raise the test thread priority and start a timer whose ISR calls irq_offload().
+ * - In a separate thread, spin asserting it is never resumed after the timer fires.
+ * - The timer ISR invokes the nested offload handler which suspends that thread.
+ *
+ * Expected result:
+ * - Both the timer handler and the nested offload handler report having executed.
+ *
+ * @see irq_offload()
  */
 ZTEST(common_1cpu, test_nested_irq_offload)
 {

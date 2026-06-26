@@ -317,3 +317,7 @@ zephyr_mipi_dsi: &mipi_dsi {};
 
 /* alias used by LCD display shields */
 zephyr_lcd_controller: &ltdc {};
+
+zephyr_jpegenc: &jpeg {
+	status = "okay";
+};

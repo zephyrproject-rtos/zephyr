@@ -22,4 +22,13 @@ config DMIC_STM32_DFSDM_QUEUE_SIZE
 	  Lower values mean less memory footprint and latency, but possibly
 	  more overruns.
 
+config DMIC_STM32_DFSDM_MAX_SAMPLES
+	int "Maximum number of samples per DMIC block"
+	default 1024
+	help
+	  This defines the size of the static internal DMA buffer used for continuous
+	  audio transfers. The driver allocates two of these blocks (Ping/Pong) per
+	  active filter. Larger values allow for larger k_mem_slab block sizes but
+	  consume more RAM.
+
 endif #AUDIO_DMIC_STM32_DFSDM

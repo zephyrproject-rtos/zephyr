@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2026 Filip Stojanovic <filipembedded@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+
+#include "b_m2mem_pack1_common.dtsi"
+
+&m2mem_xspi {
+	status = "okay";
+
+	m2mem_flash: mx25uw25645: mspi-nor-flash@0 {
+		compatible = "mxicy,mx25u", "jedec,mspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(256)>; /* 256 Mbits */
+		status = "okay";
+
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <0>;
+
+		read-command = <0xec13>;
+		write-command = <0x12ed>;
+		command-length = "INSTR_2_BYTE";
+
+		/* TODO:
+		 * mx25uw25645 datasheet: Confirm octal STR read dummy cycles.
+		 * placeholder value mirrors mx25lm51245 (33ba) - should be verified
+		 */
+		rx-dummy = <20>;
+
+		/* TODO: Add jedec-id */
+
+		reset-gpios = <&m2mem_ldo_en M2MEM_CONNECTOR_GPIO_LDO_EN GPIO_ACTIVE_LOW>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			m2mem_flash0: partition@0 {
+				label = "storage";
+				reg = <0x0 DT_SIZE_M(32)>;
+			};
+		};
+	};
+};

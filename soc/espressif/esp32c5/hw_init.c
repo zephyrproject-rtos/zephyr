@@ -14,10 +14,8 @@
 #include <hal/mmu_hal.h>
 #include <hal/mmu_ll.h>
 
-#include <soc/hp_apm_reg.h>
-#include <soc/lp_apm_reg.h>
-#include <soc/lp_apm0_reg.h>
 #include <soc/pcr_reg.h>
+#include <hal/apm_ll.h>
 
 #include <bootloader_clock.h>
 #include <bootloader_flash.h>
@@ -41,9 +39,24 @@ int hardware_init(void)
 	ana_reset_config();
 	super_wdt_auto_feed();
 
-	REG_WRITE(LP_APM_FUNC_CTRL_REG, 0);
-	REG_WRITE(LP_APM0_FUNC_CTRL_REG, 0);
-	REG_WRITE(HP_APM_FUNC_CTRL_REG, 0);
+	/*
+	 * The APM access-path filters default to enabled and only allow
+	 * masters in TEE mode. Disable them so the application (which runs in
+	 * REE mode) is not denied access to peripherals.
+	 */
+	apm_ll_hp_apm_enable_ctrl_filter_all(false);
+	apm_ll_lp_apm_enable_ctrl_filter_all(false);
+	apm_ll_lp_apm0_enable_ctrl_filter_all(false);
+
+	/*
+	 * On power-up only the HP CPU starts in TEE mode; the LP CPU defaults
+	 * to REE2. The TEE controller grants access to the PMU and LP_AON
+	 * peripherals to TEE mode only, so LP-core accesses to that window are
+	 * silently dropped, breaking the LP->HP wakeup path. Put both cores in
+	 * TEE mode to match the access-control configuration.
+	 */
+	apm_ll_hp_tee_set_master_sec_mode(APM_MASTER_HPCORE, APM_SEC_MODE_TEE);
+	apm_ll_lp_tee_set_master_sec_mode(APM_MASTER_LPCORE, APM_SEC_MODE_TEE);
 
 	/*
 	 * Configure PMA (Physical Memory Attributes) entries to replace

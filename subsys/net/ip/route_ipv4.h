@@ -138,6 +138,16 @@ bool net_route_ipv4_get_info(struct net_if *iface,
 			     struct net_in_addr **nexthop);
 
 /**
+ * @brief Decrement IPv4 TTL for a forwarded packet.
+ *
+ * @param pkt Network packet.
+ *
+ * @return 0 on success, -ETIMEDOUT if TTL has expired,
+ * or a negative errno value otherwise.
+ */
+int net_route_ipv4_decrement_ttl(struct net_pkt *pkt);
+
+/**
  * @brief Send the network packet to network via some intermediate host.
  *
  * @param pkt Network packet to send.

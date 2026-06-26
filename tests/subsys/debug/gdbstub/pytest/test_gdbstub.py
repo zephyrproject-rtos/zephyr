@@ -80,7 +80,7 @@ def test_gdbstub(dut: DeviceAdapter, gdb_process, expected_app, expected_gdb, ex
     """
     Test gdbstub feature using a GDB script. We connect to the DUT, run the
     GDB script then evaluate return code and expected patterns at the GDB
-    and Test Applicaiton outputs.
+    and Test Application outputs.
     """
     logger.debug(f"GDB output:\n{gdb_process.stdout}\n")
     assert gdb_process.returncode == 0

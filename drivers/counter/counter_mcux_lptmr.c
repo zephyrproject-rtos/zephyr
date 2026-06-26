@@ -408,10 +408,21 @@ static void mcux_lptmr_isr(const struct device *dev)
 		uint32_t current_count = sw_pending ? 0U :
 			LPTMR_GetCurrentTimerCount(config->base);
 
-		LPTMR_StopTimer(config->base);
-		LPTMR_SetTimerPeriod(config->base, config->info.max_top_value);
-
+		/* Defer stop/restore until after callback: stop would reset the
+		 * counter and break counter_get_value() consistency with the ticks
+		 * arg; also skip when callback re-armed (set_alarm reconfigured timer).
+		 */
 		callback(dev, 0, current_count, user_data);
+
+		key = k_spin_lock(&data->lock);
+		/* Check re-arm and stop/restore atomically under the lock so a
+		 * concurrent set_alarm() cannot have its config clobbered.
+		 */
+		if (!data->alarm_active) {
+			LPTMR_StopTimer(config->base);
+			LPTMR_SetTimerPeriod(config->base, config->info.max_top_value);
+		}
+		k_spin_unlock(&data->lock, key);
 
 		return;
 	}

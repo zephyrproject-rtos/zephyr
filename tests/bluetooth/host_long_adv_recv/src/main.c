@@ -326,7 +326,7 @@ static void *adv_report_evt(struct net_buf *buf, uint8_t data_len, uint16_t evt_
 	return net_buf_add(buf, data_len);
 }
 
-/* Send a prop event report wit the given data. */
+/* Send a prop event report with the given data. */
 static void send_adv_report(const struct test_adv_report *report)
 {
 	LOG_DBG("Sending adv report");

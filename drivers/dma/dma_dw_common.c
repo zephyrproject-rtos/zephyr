@@ -174,8 +174,11 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 		goto out;
 	}
 
-	/* burst_size = (2 ^ msize) */
-	msize = find_msb_set(cfg->source_burst_length) - 1;
+	/* burst_size = (2 ^ msize); burst length 0 keeps the default msize */
+	if (cfg->source_burst_length != 0) {
+		msize = find_msb_set(cfg->source_burst_length) - 1;
+	}
+
 	LOG_DBG("%s: channel %d m_size=%d", dev->name, channel, msize);
 	__ASSERT_NO_MSG(msize < 5);
 

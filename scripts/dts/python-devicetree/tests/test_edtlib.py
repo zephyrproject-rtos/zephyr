@@ -1447,7 +1447,7 @@ def test_dependencies():
     assert edt.get_node("/in-dir-1") in edt.get_node("/").required_by
 
 def test_child_dependencies():
-    '''Test dependencies relashionship with child nodes propagated to parent'''
+    '''Test dependencies relationship with child nodes propagated to parent'''
     with from_here():
         edt = edtlib.EDT("test.dts", ["test-bindings"])
 

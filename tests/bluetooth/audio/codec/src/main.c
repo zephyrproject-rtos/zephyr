@@ -130,9 +130,9 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_freq_to_freq_hz)
 		const struct freq_test_input *fti = &freq_test_inputs[i];
 
 		zassert_equal(bt_audio_codec_cfg_freq_to_freq_hz(fti->freq), fti->freq_hz,
-			      "freq %d was not coverted to %u", fti->freq, fti->freq_hz);
+			      "freq %d was not converted to %u", fti->freq, fti->freq_hz);
 		zassert_equal(bt_audio_codec_cfg_freq_hz_to_freq(fti->freq_hz), fti->freq,
-			      "freq_hz %u was not coverted to %d", fti->freq_hz, fti->freq);
+			      "freq_hz %u was not converted to %d", fti->freq_hz, fti->freq);
 	}
 }
 
@@ -197,10 +197,10 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_frame_dur_to_frame_dur_us)
 		const struct frame_dur_test_input *fdti = &frame_dur_test_inputs[i];
 
 		zassert_equal(bt_audio_codec_cfg_frame_dur_to_frame_dur_us(fdti->frame_dur),
-			      fdti->frame_dur_us, "frame_dur %d was not coverted to %u",
+			      fdti->frame_dur_us, "frame_dur %d was not converted to %u",
 			      fdti->frame_dur, fdti->frame_dur_us);
 		zassert_equal(bt_audio_codec_cfg_frame_dur_us_to_frame_dur(fdti->frame_dur_us),
-			      fdti->frame_dur, "frame_dur_us %u was not coverted to %d",
+			      fdti->frame_dur, "frame_dur_us %u was not converted to %d",
 			      fdti->frame_dur_us, fdti->frame_dur);
 	}
 }

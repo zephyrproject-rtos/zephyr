@@ -46,7 +46,7 @@ static int stm32_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool f
 	const struct device *dev = ctx->device;
 	struct crypto_stm32_hash_data *data = CRYPTO_STM32_HASH_DATA(dev);
 	struct crypto_stm32_hash_session *session = CRYPTO_STM32_HASH_SESSN(ctx);
-	HAL_StatusTypeDef status;
+	stm32_status_t status;
 
 	if (!pkt || !pkt->in_buf || !pkt->out_buf) {
 		LOG_ERR("Invalid packet buffers");
@@ -60,6 +60,42 @@ static int stm32_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool f
 
 	k_sem_take(&data->device_sem, K_FOREVER);
 
+#if defined(CONFIG_STM32_HAL2)
+	hal_hash_config_t hash_cfg = {
+		.data_swapping = HAL_HASH_DATA_SWAP_BYTE,
+	};
+	uint32_t digest_size;
+
+	switch (session->algo) {
+	case CRYPTO_HASH_ALGO_SHA224:
+		hash_cfg.algorithm = HAL_HASH_ALGO_SHA224;
+		break;
+	case CRYPTO_HASH_ALGO_SHA256:
+		hash_cfg.algorithm = HAL_HASH_ALGO_SHA256;
+		break;
+	default:
+		k_sem_give(&data->device_sem);
+		LOG_ERR("Unsupported algorithm in handler: %d", session->algo);
+		return -ENOTSUP;
+	}
+
+	status = HAL_HASH_SetConfig(&data->hhash, &hash_cfg);
+	if (status != HAL_OK) {
+		k_sem_give(&data->device_sem);
+		LOG_ERR("HAL_HASH_SetConfig failed: %d", status);
+		return -EIO;
+	}
+
+	/*
+	 * In Zephyr, the output buffer is assumed to be large enough to receive
+	 * the digest. The HAL parameter output_buffer_size_byte is used only for
+	 * parameter validation; specify UINT32_MAX instead of the "proper value"
+	 * (= per-algorithm digest size) as the end result should be the same.
+	 */
+	status = HAL_HASH_Compute(&data->hhash, pkt->in_buf, pkt->in_len, pkt->out_buf,
+				  UINT32_MAX, &digest_size, HAL_MAX_DELAY);
+	UNUSED(digest_size);
+#else /* CONFIG_STM32_HAL2 */
 	switch (session->algo) {
 	case CRYPTO_HASH_ALGO_SHA224:
 		status = HAL_HASHEx_SHA224_Start(&data->hhash, pkt->in_buf, pkt->in_len,
@@ -74,6 +110,7 @@ static int stm32_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool f
 		LOG_ERR("Unsupported algorithm in handler: %d", session->algo);
 		return -ENOTSUP;
 	}
+#endif /* CONFIG_STM32_HAL2 */
 
 	k_sem_give(&data->device_sem);
 
@@ -108,7 +145,6 @@ static int stm32_hash_begin_session(const struct device *dev, struct hash_ctx *c
 	}
 
 	session = &stm32_hash_sessions[ctx_idx];
-	memset(&session->config, 0, sizeof(session->config));
 	memset(session->digest, 0, sizeof(session->digest));
 	session->in_use = true;
 	session->algo = algo;
@@ -155,11 +191,23 @@ static int crypto_stm32_hash_init(const struct device *dev)
 	k_sem_init(&data->device_sem, 1, 1);
 	k_sem_init(&data->session_sem, 1, 1);
 
+#if defined(CONFIG_STM32_HAL2)
+	if (HAL_HASH_Init(&data->hhash, HAL_HASH) != HAL_OK) {
+		LOG_ERR("Peripheral init error");
+		return -EIO;
+	}
+	/*
+	 * NOTE: we need to SetConfig before each operation,
+	 * so don't bother configuring "DataType" here since
+	 * it will be overwritten later.
+	 */
+#else /* CONFIG_STM32_HAL2 */
 	data->hhash.Init.DataType = HASH_DATATYPE_8B;
 	if (HAL_HASH_Init(&data->hhash) != HAL_OK) {
 		LOG_ERR("Peripheral init error");
 		return -EIO;
 	}
+#endif /* CONFIG_STM32_HAL2 */
 
 	return 0;
 }

@@ -7,7 +7,13 @@
 #ifndef ZEPHYR_DRIVERS_CRYPTO_CRYPTO_STM32_HASH_PRIV_H_
 #define ZEPHYR_DRIVERS_CRYPTO_CRYPTO_STM32_HASH_PRIV_H_
 
-#define hash_config_t HASH_InitTypeDef
+#include <stm32cube_hal.h>
+
+#if defined(CONFIG_STM32_HAL2)
+typedef hal_hash_handle_t	stm32_hash_handle_t;
+#else /* CONFIG_STM32_HAL2 */
+typedef HASH_HandleTypeDef	stm32_hash_handle_t;
+#endif /* CONFIG_STM32_HAL2 */
 
 /* Max digest length: SHA256 = 32 bytes */
 #define STM32_HASH_MAX_DIGEST_SIZE (32)
@@ -18,13 +24,12 @@ struct crypto_stm32_hash_config {
 };
 
 struct crypto_stm32_hash_data {
-	HASH_HandleTypeDef hhash;
+	stm32_hash_handle_t hhash;
 	struct k_sem device_sem;
 	struct k_sem session_sem;
 };
 
 struct crypto_stm32_hash_session {
-	hash_config_t config;
 	uint8_t digest[STM32_HASH_MAX_DIGEST_SIZE];
 	bool in_use;
 	enum hash_algo algo;

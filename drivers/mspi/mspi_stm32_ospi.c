@@ -30,13 +30,52 @@
 #include <stm32_ll_dma.h>
 #include "mspi_stm32.h"
 
-#define DT_OSPI_IO_PORT_PROP_OR(prop, default_value, index)                             \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(index, prop),				\
-		    (_CONCAT(HAL_OSPIM_, DT_INST_STRING_TOKEN(index, prop))),	\
+/*
+ * Map a DT_INST ordinal to the hardware OCTOSPI instance number (1, 2, ...).
+ *
+ * COND_CODE_1(DT_NODE_EXISTS(...)) is evaluated entirely by the preprocessor
+ * and emits the ternary arm only when the node label exists in the current DTS.
+ * This avoids expanding DT_NODELABEL(octospiN) on chips that have fewer
+ * instances, making the macro portable across all STM32 OCTOSPI variants.
+ *
+ * The result is a stacked ternary whose trailing 0 (unknown node) is caught at
+ * compile time by BUILD_ASSERT in MSPI_STM32_INIT.
+ */
+#define OSPI_INST_NUM(index)                                                           \
+	(COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(octospi1)),                               \
+		(DT_SAME_NODE(DT_DRV_INST(index), DT_NODELABEL(octospi1)) ? 1 :),    \
+		())                                                                   \
+	COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(octospi2)),                               \
+		(DT_SAME_NODE(DT_DRV_INST(index), DT_NODELABEL(octospi2)) ? 2 :),    \
+		())                                                                   \
+	0)
+
+/*
+ * OSPIM-specific macros: HAL_OSPIM_IOPORT_* constants are only defined by the
+ * STM32 HAL when the OCTOSPI I/O Manager peripheral is present.  Guard them so
+ * the driver compiles cleanly on chips without OCTOSPIM (e.g. STM32L4/L5).
+ */
+#if defined(OCTOSPIM)
+#define DT_OSPI_IO_PORT_PROP_OR(prop, default_value, index)                          \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(index, prop),                              \
+		    (_CONCAT(HAL_OSPIM_, DT_INST_STRING_TOKEN(index, prop))),         \
 		    (default_value))
 
-#define DT_OSPI_PROP_OR(prop, default_value, index)                                     \
-	DT_INST_PROP_OR(index, prop, default_value)
+#define OSPI_INST_IO_LOW_PORT(index)                              \
+	((OSPI_INST_NUM(index) == 1) ? HAL_OSPIM_IOPORT_1_LOW :  \
+	 (OSPI_INST_NUM(index) == 2) ? HAL_OSPIM_IOPORT_2_LOW :  \
+	 HAL_OSPIM_IOPORT_1_LOW)
+
+#define OSPI_INST_IO_HIGH_PORT(index)                              \
+	((OSPI_INST_NUM(index) == 1) ? HAL_OSPIM_IOPORT_1_HIGH :  \
+	 (OSPI_INST_NUM(index) == 2) ? HAL_OSPIM_IOPORT_2_HIGH :  \
+	 HAL_OSPIM_IOPORT_1_HIGH)
+#else
+/* No OCTOSPIM: io port fields are unused; provide neutral zero values. */
+#define DT_OSPI_IO_PORT_PROP_OR(prop, default_value, index) 0
+#define OSPI_INST_IO_LOW_PORT(index)  0
+#define OSPI_INST_IO_HIGH_PORT(index) 0
+#endif /* OCTOSPIM */
 
 LOG_MODULE_REGISTER(ospi_stm32, CONFIG_MSPI_LOG_LEVEL);
 
@@ -107,8 +146,6 @@ static OSPI_RegularCmdTypeDef mspi_stm32_ospi_prepare_cmd(uint8_t cfg_mode, uint
 								  : HAL_OSPI_DATA_DTR_ENABLE;
 	/* AddressWidth must be set to 32bits for init and mem config phase */
 	cmd_tmp.AddressSize = HAL_OSPI_ADDRESS_32_BITS;
-	cmd_tmp.DataDtrMode = (cfg_rate == MSPI_DATA_RATE_SINGLE) ? HAL_OSPI_DATA_DTR_DISABLE
-								  : HAL_OSPI_DATA_DTR_ENABLE;
 	cmd_tmp.DQSMode =
 		(cfg_rate == MSPI_DATA_RATE_SINGLE) ? HAL_OSPI_DQS_DISABLE : HAL_OSPI_DQS_ENABLE;
 	cmd_tmp.SIOOMode = HAL_OSPI_SIOO_INST_EVERY_CMD;
@@ -163,7 +200,7 @@ static int mspi_stm32_ospi_memmap_on(const struct device *controller)
 	struct mspi_stm32_data *dev_data = controller->data;
 	OSPI_RegularCmdTypeDef s_command =
 		mspi_stm32_ospi_prepare_cmd(dev_data->dev_cfg.io_mode, dev_data->dev_cfg.data_rate);
-	OSPI_MemoryMappedTypeDef s_MemMappedCfg;
+	OSPI_MemoryMappedTypeDef s_MemMappedCfg = {0};
 	HAL_StatusTypeDef hal_ret;
 
 	if (mspi_stm32_ospi_is_memorymap(controller)) {
@@ -197,6 +234,13 @@ static int mspi_stm32_ospi_memmap_on(const struct device *controller)
 	s_command.OperationType = HAL_OSPI_OPTYPE_WRITE_CFG;
 	s_command.Instruction = dev_data->dev_cfg.write_cmd;
 	s_command.DummyCycles = dev_data->dev_cfg.tx_dummy;
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	/* STM32U5 errata 2.6.1: DQSE must be set in WCCR for memory-mapped writes
+	 * even when the memory has no physical DQS pin, otherwise every write
+	 * in memory-mapped mode returns an AHB error response (Bus Fault).
+	 */
+	s_command.DQSMode = HAL_OSPI_DQS_ENABLE;
+#endif
 
 	hal_ret =
 		HAL_OSPI_Command(&dev_data->hmspi.ospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
@@ -205,8 +249,26 @@ static int mspi_stm32_ospi_memmap_on(const struct device *controller)
 		return -EIO;
 	}
 
-	/* Enable the memory-mapping */
+	/* Enable the memory-mapping.
+	 * The inactivity timeout is only needed when the OCTOSPI I/O Manager
+	 * is in multiplexed mode (OCTOSPI1/OCTOSPI2 share pins) — only then a
+	 * peripheral must release nCS so the other one can drive the bus.
+	 * MUXEN is set by HAL_OSPIM_Config() based on the DTS port mapping, so
+	 * reading it here gives the actual hardware state and avoids a separate
+	 * DT property that could drift out of sync.
+	 */
+#if defined(OCTOSPIM) && defined(OCTOSPIM_CR_MUXEN_Msk)
+	if ((OCTOSPIM->CR & OCTOSPIM_CR_MUXEN_Msk) != 0U) {
+		LOG_DBG("Detected OSPI muxed mode, set timeout.");
+		s_MemMappedCfg.TimeOutActivation = HAL_OSPI_TIMEOUT_COUNTER_ENABLE;
+		s_MemMappedCfg.TimeOutPeriod = 0x34;
+	} else {
+		s_MemMappedCfg.TimeOutActivation = HAL_OSPI_TIMEOUT_COUNTER_DISABLE;
+	}
+#else
 	s_MemMappedCfg.TimeOutActivation = HAL_OSPI_TIMEOUT_COUNTER_DISABLE;
+#endif
+
 	hal_ret = HAL_OSPI_MemoryMapped(&dev_data->hmspi.ospi, &s_MemMappedCfg);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("Failed to enable memory mapped");
@@ -1176,23 +1238,14 @@ static int mspi_stm32_ospi_config(const struct mspi_dt_spec *spec)
 	/* OCTOSPI I/O manager init Function */
 	OSPIM_CfgTypeDef ospi_mgr_cfg = {0};
 
-	if (dev_data->hmspi.ospi.Instance == OCTOSPI1) {
-		ospi_mgr_cfg.ClkPort = DT_OSPI_PROP_OR(clk_port, 1, dev_data->dev_id);
-		ospi_mgr_cfg.DQSPort = DT_OSPI_PROP_OR(dqs_port, 1, dev_data->dev_id);
-		ospi_mgr_cfg.NCSPort = DT_OSPI_PROP_OR(ncs_port, 1, dev_data->dev_id);
-		ospi_mgr_cfg.IOLowPort = DT_OSPI_IO_PORT_PROP_OR(
-			io_low_port, HAL_OSPIM_IOPORT_1_LOW, dev_data->dev_id);
-		ospi_mgr_cfg.IOHighPort = DT_OSPI_IO_PORT_PROP_OR(
-			io_high_port, HAL_OSPIM_IOPORT_1_HIGH, dev_data->dev_id);
-	} else if (dev_data->hmspi.ospi.Instance == OCTOSPI2) {
-		ospi_mgr_cfg.ClkPort = DT_OSPI_PROP_OR(clk_port, 2, dev_data->dev_id);
-		ospi_mgr_cfg.DQSPort = DT_OSPI_PROP_OR(dqs_port, 2, dev_data->dev_id);
-		ospi_mgr_cfg.NCSPort = DT_OSPI_PROP_OR(ncs_port, 2, dev_data->dev_id);
-		ospi_mgr_cfg.IOLowPort = DT_OSPI_IO_PORT_PROP_OR(
-			io_low_port, HAL_OSPIM_IOPORT_2_LOW, dev_data->dev_id);
-		ospi_mgr_cfg.IOHighPort = DT_OSPI_IO_PORT_PROP_OR(
-			io_high_port, HAL_OSPIM_IOPORT_2_HIGH, dev_data->dev_id);
-	} else {
+	ospi_mgr_cfg.ClkPort    = dev_cfg->ospim_clk_port;
+	ospi_mgr_cfg.DQSPort    = dev_cfg->ospim_dqs_port;
+	ospi_mgr_cfg.NCSPort    = dev_cfg->ospim_ncs_port;
+	ospi_mgr_cfg.IOLowPort  = dev_cfg->ospim_io_low_port;
+	ospi_mgr_cfg.IOHighPort = dev_cfg->ospim_io_high_port;
+
+	if (dev_data->hmspi.ospi.Instance != OCTOSPI1 &&
+		dev_data->hmspi.ospi.Instance != OCTOSPI2) {
 		LOG_ERR("Unknown OSPI Instance");
 		ret = -EINVAL;
 		goto end;
@@ -1392,6 +1445,8 @@ static int mspi_stm32_ospi_pm_action(const struct device *dev, enum pm_device_ac
 	}
 
 #define MSPI_STM32_INIT(index)                                                                     \
+	BUILD_ASSERT(OSPI_INST_NUM(index) != 0,                                                    \
+		     "Unsupported OSPI instance: DTS node must be octospi1 or octospi2");          \
 	static const struct stm32_pclken pclken_##index[] = STM32_DT_INST_CLOCKS(index);           \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
@@ -1409,6 +1464,15 @@ static int mspi_stm32_ospi_pm_action(const struct device *dev, enum pm_device_ac
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
 		.mspicfg.num_ce_gpios = ARRAY_SIZE(ce_gpios##index),                               \
 		.dma_specified = DT_INST_NODE_HAS_PROP(index, dmas),                               \
+		.ospim_clk_port = DT_INST_PROP_OR(index, st_clk_port,                              \
+						   OSPI_INST_NUM(index)),                          \
+		.ospim_dqs_port = DT_INST_PROP_OR(index, st_dqs_port, 0),                         \
+		.ospim_ncs_port = DT_INST_PROP_OR(index, st_ncs_port,                              \
+						   OSPI_INST_NUM(index)),                          \
+		.ospim_io_low_port = DT_OSPI_IO_PORT_PROP_OR(st_io_low_port,                      \
+						      OSPI_INST_IO_LOW_PORT(index), index),        \
+		.ospim_io_high_port = DT_OSPI_IO_PORT_PROP_OR(st_io_high_port,                    \
+						       OSPI_INST_IO_HIGH_PORT(index), index),      \
 	};                                                                                         \
 	static struct mspi_stm32_data mspi_stm32_dev_data_##index = {                              \
 		.hmspi.ospi = {                                                                    \

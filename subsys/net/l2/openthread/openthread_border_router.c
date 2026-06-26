@@ -63,7 +63,9 @@ static K_FIFO_DEFINE(border_router_msg_rx_fifo);
 K_MEM_SLAB_DEFINE_STATIC_TYPE(border_router_messages_slab, struct otbr_msg_ctx,
 			      CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MSG_POOL_NUM);
 
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MDNS_AUTO_NAMING)
 static const char *create_base_name(otInstance *ot_instance, char *base_name);
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MDNS_AUTO_NAMING */
 static void openthread_border_router_add_or_rm_route_to_multicast_groups(bool add);
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR)
 static bool nat64_translator_enabled;
@@ -86,11 +88,13 @@ int openthread_start_border_router_services_ipv6(struct net_if *ot_iface, struct
 
 	openthread_mutex_lock();
 
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MDNS_AUTO_NAMING)
 	if (otMdnsSetLocalHostName(instance,
 				   create_base_name(instance, otbr_vendor_name)) != OT_ERROR_NONE) {
 		error = -EIO;
 		goto exit;
 	}
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MDNS_AUTO_NAMING */
 
 	/* Initialize platform modules first */
 	if (trel_plat_init(instance, ail_iface_ptr) != OT_ERROR_NONE) {
@@ -443,6 +447,7 @@ const otIp6Address *get_ot_slaac_address(otInstance *instance)
 	return NULL;
 }
 
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MDNS_AUTO_NAMING)
 static const char *create_base_name(otInstance *ot_instance, char *base_name)
 {
 	const otExtAddress *extAddress = otLinkGetExtendedAddress(ot_instance);
@@ -457,6 +462,7 @@ static const char *create_base_name(otInstance *ot_instance, char *base_name)
 
 	return (const char *)base_name;
 }
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MDNS_AUTO_NAMING */
 
 int openthread_border_router_allocate_message(void **msg)
 {

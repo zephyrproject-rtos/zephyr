@@ -15,3 +15,8 @@ endif()
 project(nrf_coresight_stm)
 
 target_sources(app PRIVATE src/main.c)
+
+if(CONFIG_CPP)
+  # When testing for C++ force test file C++ compilation
+  set_source_files_properties(src/main.c PROPERTIES LANGUAGE CXX)
+endif()

@@ -72,13 +72,13 @@ static int api_get_value(const struct device *dev, uint32_t *ticks)
 	mxc_rtc_regs_t *regs = cfg->regs;
 	uint32_t sec = 0, subsec = 0;
 
-	/* Read twice incase of glitch */
+	/* Read twice in case of glitch */
 	sec = regs->sec;
 	if (regs->sec != sec) {
 		sec = regs->sec;
 	}
 
-	/* Read twice incase of glitch */
+	/* Read twice in case of glitch */
 	subsec = regs->ssec;
 	if (regs->ssec != subsec) {
 		subsec = regs->ssec;

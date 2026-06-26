@@ -481,11 +481,6 @@ enum __packed bt_obex_state {
 	BT_OBEX_DISCONNECTING,
 };
 
-/* bt_obex flags */
-enum {
-	BT_OBEX_HAS_TARGET, /* Has target_header */
-};
-
 union bt_obex_uuid {
 	struct bt_uuid uuid;
 	struct bt_uuid_16 u16;
@@ -508,11 +503,13 @@ struct bt_obex_server {
 	 */
 	const struct bt_obex_server_ops *ops;
 
+	/** @brief Receiving configurations */
 	struct {
 		/** @brief The Maximum OBEX Packet Length (MOPL) */
 		uint16_t mopl;
 	} rx;
 
+	/** @brief Transmission configurations */
 	struct {
 		/** @brief The Maximum OBEX Packet Length (MOPL) */
 		uint16_t mopl;
@@ -549,11 +546,13 @@ struct bt_obex_client {
 	 */
 	const struct bt_obex_client_ops *ops;
 
+	/** @brief Receiving configurations */
 	struct {
 		/** @brief The Maximum OBEX Packet Length (MOPL) */
 		uint16_t mopl;
 	} rx;
 
+	/** @brief Transmission configurations */
 	struct {
 		/** @brief The Maximum OBEX Packet Length (MOPL) */
 		uint16_t mopl;
@@ -583,11 +582,13 @@ struct bt_obex_client {
 
 /** @brief OBEX structure. */
 struct bt_obex {
+	/** @brief Receiving configurations */
 	struct {
 		/** @brief MTU of OBEX transport */
 		uint16_t mtu;
 	} rx;
 
+	/** @brief Transmission configurations */
 	struct {
 		/** @brief MTU of OBEX transport */
 		uint16_t mtu;

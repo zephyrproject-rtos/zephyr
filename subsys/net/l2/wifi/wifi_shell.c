@@ -161,12 +161,14 @@ static struct net_if *get_iface(enum iface_type type, int argc, char *argv[])
 			return NULL;
 		}
 
-		/* If iface nm wifi type match input type */
-		if ((type == IFACE_TYPE_STA && !wifi_nm_iface_is_sta(iface)) ||
-			(type == IFACE_TYPE_SAP && !wifi_nm_iface_is_sap(iface))) {
-			LOG_ERR("Interface %d type does not match %d", resolved_iface_index, type);
-			return NULL;
-		}
+		/*
+		 * Don't reject the interface based on its current NM role. A
+		 * single VIF moves between STA and SoftAP at runtime, so the
+		 * stored role only reflects what the interface is doing now,
+		 * not what it is allowed to do. Matching against it here breaks
+		 * a STA->SoftAP switch on single-VIF parts. Whether the role
+		 * change is possible is decided by the driver/supplicant.
+		 */
 	}
 #endif
 

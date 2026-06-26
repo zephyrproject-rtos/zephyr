@@ -1460,8 +1460,9 @@ int bt_csip_set_coordinator_register_cb(struct bt_csip_set_coordinator_cb *cb)
 
 int bt_csip_set_coordinator_discover(struct bt_conn *conn)
 {
-	int err;
 	struct bt_csip_set_coordinator_inst *client;
+	struct bt_conn *ref;
+	int err;
 
 	if (conn == NULL) {
 		LOG_DBG("NULL conn");
@@ -1471,6 +1472,12 @@ int bt_csip_set_coordinator_discover(struct bt_conn *conn)
 	client = &client_insts[bt_conn_index(conn)];
 	if (atomic_test_and_set_bit(client->flags, SET_COORDINATOR_FLAG_BUSY)) {
 		return -EBUSY;
+	}
+
+	ref = bt_conn_ref(conn);
+	if (ref == NULL) {
+		err = -ENOTCONN;
+		goto cleanup;
 	}
 
 	csip_set_coordinator_reset(client);
@@ -1485,15 +1492,20 @@ int bt_csip_set_coordinator_discover(struct bt_conn *conn)
 	client->discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
 	err = bt_gatt_discover(conn, &client->discover_params);
-	if (err == 0) {
-		for (size_t i = 0U; i < ARRAY_SIZE(client->set_member.insts); i++) {
-			client->set_member.insts[i].svc_inst = (void *)&client->svc_insts[i];
-		}
-		client->conn = bt_conn_ref(conn);
-	} else {
-		atomic_clear_bit(client->flags, SET_COORDINATOR_FLAG_BUSY);
+	if (err != 0) {
+		bt_conn_unref(ref);
+		goto cleanup;
 	}
 
+	for (size_t i = 0U; i < ARRAY_SIZE(client->set_member.insts); i++) {
+		client->set_member.insts[i].svc_inst = (void *)&client->svc_insts[i];
+	}
+	client->conn = ref;
+
+	return 0;
+
+cleanup:
+	atomic_clear_bit(client->flags, SET_COORDINATOR_FLAG_BUSY);
 	return err;
 }
 

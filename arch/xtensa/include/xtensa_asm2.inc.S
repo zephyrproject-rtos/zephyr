@@ -403,7 +403,7 @@ _xstack_call0_\@:
 #endif
 #endif
 #ifdef CONFIG_XTENSA_MPU
-	call4 xtensa_mpu_map_write
+	call4 xtensa_mpu_thread_map_write
 #endif
 
 _xstack_skip_table_swap_\@:

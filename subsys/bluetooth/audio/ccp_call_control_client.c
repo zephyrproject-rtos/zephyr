@@ -202,6 +202,7 @@ int bt_ccp_call_control_client_discover(struct bt_conn *conn,
 					struct bt_ccp_call_control_client **out_client)
 {
 	struct bt_ccp_call_control_client *client;
+	struct bt_conn *ref;
 	int err;
 
 	if (conn == NULL) {
@@ -228,24 +229,35 @@ int bt_ccp_call_control_client_discover(struct bt_conn *conn,
 
 	tbs_client_cbs.discover = tbs_client_discover_cb;
 
+	ref = bt_conn_ref(conn);
+	if (ref == NULL) {
+		err = -ENOTCONN;
+		goto cleanup;
+	}
+
+	client->conn = ref;
+
 	err = bt_tbs_client_discover(conn);
 	if (err != 0) {
 		LOG_DBG("Failed to discover TBS for %p: %d", (void *)conn, err);
 
-		atomic_clear_bit(client->flags, CCP_CALL_CONTROL_CLIENT_FLAG_BUSY);
-
 		/* Return known errors */
-		if (err == -EBUSY || err == -ENOTCONN) {
-			return err;
+		if (err != -EBUSY && err != -ENOTCONN) {
+			err = -ENOEXEC;
 		}
 
-		return -ENOEXEC;
+		bt_conn_unref(ref);
+		client->conn = NULL;
+		goto cleanup;
 	}
 
-	client->conn = bt_conn_ref(conn);
 	*out_client = client;
 
 	return 0;
+
+cleanup:
+	atomic_clear_bit(client->flags, CCP_CALL_CONTROL_CLIENT_FLAG_BUSY);
+	return err;
 }
 
 int bt_ccp_call_control_client_register_cb(struct bt_ccp_call_control_client_cb *cb)

@@ -136,16 +136,6 @@
 "./scripts/coredump/coredump_serial_log_parser.py" = [
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
 ]
-"./scripts/dts/gen_defines.py" = [
-    "B007",     # https://docs.astral.sh/ruff/rules/unused-loop-control-variable
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "E741",     # https://docs.astral.sh/ruff/rules/ambiguous-variable-name
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
-    "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
-    "UP045",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-optional
-]
 "./scripts/dts/python-devicetree/src/devicetree/_private.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
@@ -838,7 +828,7 @@ exclude = [
     "./doc/_scripts/gen_devicetree_rest.py",
     "./doc/_scripts/redirects.py",
     "./doc/conf.py",
-    "./doc/develop/test/twister/sample_blackbox_test.py",
+    "./doc/develop/twister/sample_blackbox_test.py",
     "./modules/mbedtls/create_psa_files.py",
     "./samples/boards/nordic/coresight_stm/pytest/test_stm.py",
     "./samples/modules/tflite-micro/magic_wand/train/data_augmentation.py",
@@ -863,7 +853,6 @@ exclude = [
     "./samples/subsys/zbus/remote_mock/remote_mock.py",
     "./scripts/check_maintainers.py",
     "./scripts/ci/upload_test_results_es.py",
-    "./scripts/dts/gen_defines.py",
     "./scripts/dts/gen_edt.py",
     "./scripts/dts/python-devicetree/src/devicetree/_private.py",
     "./scripts/dts/python-devicetree/src/devicetree/dtlib.py",

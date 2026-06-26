@@ -7,6 +7,9 @@ menuconfig UART_NS16550
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT if $(dt_compat_any_has_prop,$(DT_COMPAT_NS16550),interrupts)
 	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_NS16550),pinctrl-0)
+	select PCIE if $(dt_compat_on_bus,$(DT_COMPAT_NS16550),pcie)
+	select DYNAMIC_INTERRUPTS if UART_INTERRUPT_DRIVEN && \
+				     $(dt_compat_on_bus,$(DT_COMPAT_NS16550),pcie)
 	help
 	  This option enables the NS16550 serial driver.
 	  This driver can be used for the serial hardware

@@ -187,10 +187,10 @@ class Twister:
         report = Reporting(tplan, env)
         plan_file = os.path.join(self.options.outdir, "testplan.json")
         if not os.path.exists(plan_file):
-            report.json_report(plan_file, env.version)
+            report.json_report.create(plan_file, env.version)
 
         if self.options.save_tests:
-            report.json_report(self.options.save_tests, env.version)
+            report.json_report.create(self.options.save_tests, env.version)
             raise SystemExit(0)
 
         if self.options.report_summary is not None:

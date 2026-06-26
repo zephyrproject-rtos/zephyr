@@ -277,7 +277,8 @@ config NET_CONFIG_SNTP_INIT_USE_CONNECTION_MANAGER
 	help
 	  If this option is set, then the connection manager is used to
 	  start and stop the SNTP client. This way an SNTP request is
-	  also sent everytime when the network connection is established.
+	  also sent every time when the network connection is established.
 
 endif # NET_CONFIG_SNTP_INIT_RESYNC
+
 endif # NET_CONFIG_CLOCK_SNTP_INIT

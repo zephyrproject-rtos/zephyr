@@ -13,6 +13,7 @@ supported:
   - dma
   - flash
   - gpio
+  - hwinfo
   - i2c
   - pwm
   - spi

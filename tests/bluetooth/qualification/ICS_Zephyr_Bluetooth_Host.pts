@@ -4394,7 +4394,7 @@
       </item>
       <item>
         <table>2</table>
-        <row>62</row>
+        <row>63</row>
       </item>
       <item>
         <table>2a</table>
@@ -4429,8 +4429,8 @@
         <row>62</row>
       </item>
       <item>
-        <table>2b</table>
-        <row>62</row>
+        <table>2a</table>
+        <row>63</row>
       </item>
       <item>
         <table>2b</table>
@@ -12518,7 +12518,7 @@
       <name>UHCI</name>
       <item>
         <table>0</table>
-        <row>62</row>
+        <row>63</row>
       </item>
     </profile>
     <profile>

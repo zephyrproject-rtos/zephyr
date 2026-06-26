@@ -19,7 +19,7 @@ menu "SPI RAM config"
 
 config ESP_SPIRAM_HEAP_SIZE
 	int "Size of SPIRAM heap"
-	default 262134 if SYS_HEAP_SMALL_ONLY
+	default 262128 if SYS_HEAP_SMALL_ONLY
 	default 1048576 if !SYS_HEAP_SMALL_ONLY
 	help
 	  Specify size of SPIRAM heap.
@@ -132,7 +132,7 @@ config SPIRAM_CS_IO
 
 config SPIRAM_FETCH_INSTRUCTIONS
 	bool "Move Instructions in Flash to PSRAM"
-	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32P4
+	depends on SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
 	help
 	  If enabled, instructions in flash will be moved into PSRAM on startup.
 	  If SPIRAM_RODATA is also enabled, code that requires execution during an SPI1 Flash operation
@@ -141,7 +141,7 @@ config SPIRAM_FETCH_INSTRUCTIONS
 
 config SPIRAM_RODATA
 	bool "Move Read-Only Data in Flash to PSRAM"
-	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32P4
+	depends on SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
 	help
 	  If enabled, rodata in flash will be moved into PSRAM on startup.
 	  If SPIRAM_FETCH_INSTRUCTIONS is also enabled, code that requires execution during an SPI1 Flash operation

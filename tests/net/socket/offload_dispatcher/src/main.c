@@ -424,7 +424,7 @@ static void test_socket_setup_udp(void *dummy)
 
 	zassert_true(test_sock >= 0, "Failed to create socket");
 	zassert_false(test_socket_ctx[OFFLOAD_1].socket_called,
-		      "Socket should'nt have been dispatched yet");
+		      "Socket shouldn't have been dispatched yet");
 }
 
 static void test_socket_setup_tls(void *dummy)
@@ -435,7 +435,7 @@ static void test_socket_setup_tls(void *dummy)
 	test_sock = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TLS_1_2);
 	zassert_true(test_sock >= 0, "Failed to create socket");
 	zassert_false(test_socket_ctx[OFFLOAD_1].socket_called,
-		      "Socket should'nt have been dispatched yet");
+		      "Socket shouldn't have been dispatched yet");
 }
 
 static void test_socket_teardown(void *dummy)
@@ -460,9 +460,9 @@ ZTEST(net_socket_offload_close, test_close_not_bound)
 
 	zassert_equal(0, ret, "close() failed");
 	zassert_false(test_socket_ctx[OFFLOAD_1].socket_called,
-		      "Socket should'nt have been dispatched");
+		      "Socket shouldn't have been dispatched");
 	zassert_false(test_socket_ctx[OFFLOAD_1].close_called,
-		      "close() should'nt have been dispatched");
+		      "close() shouldn't have been dispatched");
 }
 
 /* Verify that socket is automatically dispatched to a default socket

@@ -99,6 +99,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_LPC_RTC_1HZ
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc)
 #endif
+#ifdef CONFIG_COUNTER_NXP_IRTC
+	DEVS_FOR_DT_COMPAT(nxp_irtc_wake_timer)
+#endif
 #ifdef CONFIG_TEST_DRIVER_COUNTER_MCUX_LPC_RTC_HIGHRES
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc_highres)
 #endif
@@ -153,6 +156,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_LPTMR
 	DT_FOREACH_STATUS_OKAY(nxp_lptmr, DEVICE_DT_GET_AND_COMMA_IF_NOT_SYSTEM_TIMER)
 #endif
+#ifdef CONFIG_COUNTER_MCUX_WAKE_TIMER
+	DEVS_FOR_DT_COMPAT(nxp_wake_timer)
+#endif
 #ifdef CONFIG_COUNTER_MCUX_LPIT
 	DEVS_FOR_DT_COMPAT(nxp_lpit_channel)
 #endif
@@ -204,6 +210,9 @@ static const struct device *const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_BEE_RTC
 	DEVS_FOR_DT_COMPAT(realtek_bee_counter_rtc)
+#endif
+#ifdef CONFIG_COUNTER_WUT_MAX32
+	DEVS_FOR_DT_COMPAT(adi_max32_wut)
 #endif
 };
 
@@ -889,7 +898,7 @@ static void test_valid_function_without_alarm(const struct device *dev)
 		ticks, ticks_expected > ticks_tol ? ticks_expected - ticks_tol : 0,
 		ticks_expected + ticks_tol, "%s: counter ticks not in tolerance", dev->name);
 
-	/* ticks count is always within ticks_tol for RTC, therefor
+	/* ticks count is always within ticks_tol for RTC, therefore
 	 * check, if ticks are greater than 0.
 	 */
 	zassert_true((ticks > 0), "%s: counter did not count", dev->name);
@@ -904,7 +913,7 @@ static bool ms_period_capable(const struct device *dev)
 	uint32_t freq_khz;
 	uint32_t max_time_ms;
 
-	/* Assume 2 ms counter periode can be set for frequency below 1 kHz*/
+	/* Assume 2 ms counter period can be set for frequency below 1 kHz*/
 	if (counter_get_frequency(dev) < 1000) {
 		return true;
 	}

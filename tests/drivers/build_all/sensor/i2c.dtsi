@@ -1575,6 +1575,7 @@ test_i2c_pac194x: pac194x@d0 {
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	microchip,refresh-mode = <PAC_REFRESH_AUTO_NOWAIT>;
 
 	channel@1 {
 		reg = <0x1>;

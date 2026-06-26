@@ -271,3 +271,7 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
+zephyr_jpegenc: &jpeg {
+	status = "okay";
+};

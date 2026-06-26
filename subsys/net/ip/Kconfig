@@ -71,11 +71,13 @@ config NET_PMTU
 	depends on NET_IPV6_PMTU || NET_IPV4_PMTU
 
 if NET_PMTU
+
 module = NET_PMTU
 module-dep = NET_LOG
 module-str = Log level for PMTU
 module-help = Enables PMTU to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_PMTU
 
 config NET_NATIVE_TCP
@@ -102,11 +104,13 @@ config NET_OFFLOADING_SUPPORT
 	  only one option instead of two.
 
 if NET_OFFLOAD
+
 module = NET_OFFLOAD
 module-dep = NET_LOG
 module-str = Log level for offload layer
 module-help = Enables offload layer to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_OFFLOAD
 
 config NET_RAW_MODE
@@ -468,11 +472,13 @@ config NET_UDP_MISSING_CHECKSUM
 	  UDP checksum in transmission path.
 
 if NET_UDP
+
 module = NET_UDP
 module-dep = NET_LOG
 module-str = Log level for UDP
 module-help = Enables UDP handler output debug messages
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_UDP
 
 config NET_MAX_CONN
@@ -854,20 +860,15 @@ config NET_INTERFACE_NAME_LEN
 config NET_PKT_TIMESTAMP
 	bool "Network packet timestamp support"
 	help
-	  Enable network packet timestamp support. This is needed for
-	  example in gPTP which needs to know how long it takes to send
-	  a network packet or for timed radio protocols like IEEE 802.15.4
-	  CSL and TSCH.
+	  Enable network packet timestamp support. This enables the timestamp
+	  information storage in network packet.
 
 config NET_PKT_TIMESTAMP_THREAD
 	bool "Create TX timestamp thread"
 	depends on NET_PKT_TIMESTAMP
 	help
-	  Create a TX timestamp thread that will pass the timestamped network
-	  packets to some other module like gPTP for further processing.
-	  If you just want to timestamp network packets and get information
-	  how long the network packets flow in the system, you can disable
-	  the thread support.
+	  Create a TX timestamp thread that allows timestamped network packets
+	  enqueued and handled by registered callback.
 
 config NET_PKT_TIMESTAMP_STACK_SIZE
 	int "Timestamp thread stack size"
@@ -953,11 +954,13 @@ config NET_PROMISCUOUS_MODE
 	  also needs to read the promiscuous mode data.
 
 if NET_PROMISCUOUS_MODE
+
 module = NET_PROMISC
 module-dep = NET_LOG
 module-str = Log level for promiscuous mode
 module-help = Enables promiscuous mode to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_PROMISCUOUS_MODE
 
 config NET_DISABLE_ICMP_DESTINATION_UNREACHABLE

@@ -9,7 +9,8 @@ menuconfig PTP
 	select ZVFS_EVENTFD
 	select NET_SOCKETS
 	select NET_CONTEXT_PRIORITY
-	select NET_L2_PTP
+	select PTP_CLOCK
+	select NET_L2_PTP_TIMESTAMPING
 	depends on NET_L2_ETHERNET
 	depends on !NET_GPTP
 	help
@@ -18,6 +19,12 @@ menuconfig PTP
 	  supports only one PTP Instance in the PTP Node.
 
 if PTP
+
+config ZVFS_EVENTFD_ADD_SIZE_PTP
+	int "Number of eventfds needed by the PTP stack"
+	default 1
+	help
+	  The PTP stack allocates one zvfs eventfd to wake up its poll loop.
 
 module = PTP
 module-dep = NET_LOG

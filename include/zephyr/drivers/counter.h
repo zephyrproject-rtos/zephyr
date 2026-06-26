@@ -435,6 +435,11 @@ typedef int (*counter_api_enable_capture)(const struct device *dev, uint8_t chan
 /** @brief Callback API to disable counter capture on a channel. */
 typedef int (*counter_api_disable_capture)(const struct device *dev, uint8_t chan_id);
 
+/** @brief Callback API to set counter calibration in parts per billion. */
+typedef int (*counter_api_set_calibration)(const struct device *dev, int32_t calibration);
+/** @brief Callback API to get counter calibration in parts per billion. */
+typedef int (*counter_api_get_calibration)(const struct device *dev, int32_t *calibration);
+
 /**
  * @driver_ops{Counter}
  */
@@ -547,6 +552,16 @@ __subsystem struct counter_driver_api {
 	 */
 	counter_api_disable_capture disable_capture;
 #endif /* CONFIG_COUNTER_CAPTURE */
+#if defined(CONFIG_COUNTER_CALIBRATION) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_optional @copybrief counter_set_calibration
+	 */
+	counter_api_set_calibration set_calibration;
+	/**
+	 * @driver_ops_optional @copybrief counter_get_calibration
+	 */
+	counter_api_get_calibration get_calibration;
+#endif /* CONFIG_COUNTER_CALIBRATION */
 };
 /**
  * @}
@@ -693,7 +708,9 @@ __syscall uint64_t counter_us_to_ticks_64(const struct device *dev, uint64_t us)
 
 static inline uint64_t z_impl_counter_us_to_ticks_64(const struct device *dev, uint64_t us)
 {
-	return (us * z_counter_get_frequency(dev)) / USEC_PER_SEC;
+	uint64_t freq = z_counter_get_frequency(dev);
+
+	return (us / USEC_PER_SEC) * freq + ((us % USEC_PER_SEC) * freq) / USEC_PER_SEC;
 }
 
 /**
@@ -723,7 +740,9 @@ __syscall uint64_t counter_ticks_to_us_64(const struct device *dev, uint64_t tic
 
 static inline uint64_t z_impl_counter_ticks_to_us_64(const struct device *dev, uint64_t ticks)
 {
-	return (ticks * USEC_PER_SEC) / z_counter_get_frequency(dev);
+	uint64_t freq = z_counter_get_frequency(dev);
+
+	return (ticks / freq) * USEC_PER_SEC + ((ticks % freq) * USEC_PER_SEC) / freq;
 }
 
 /**
@@ -755,7 +774,9 @@ __syscall uint64_t counter_ns_to_ticks_64(const struct device *dev, uint64_t ns)
 
 static inline uint64_t z_impl_counter_ns_to_ticks_64(const struct device *dev, uint64_t ns)
 {
-	return (ns * z_counter_get_frequency(dev)) / NSEC_PER_SEC;
+	uint64_t freq = z_counter_get_frequency(dev);
+
+	return (ns / NSEC_PER_SEC) * freq + ((ns % NSEC_PER_SEC) * freq) / NSEC_PER_SEC;
 }
 
 /**
@@ -785,7 +806,9 @@ __syscall uint64_t counter_ticks_to_ns_64(const struct device *dev, uint64_t tic
 
 static inline uint64_t z_impl_counter_ticks_to_ns_64(const struct device *dev, uint64_t ticks)
 {
-	return (ticks * NSEC_PER_SEC) / z_counter_get_frequency(dev);
+	uint64_t freq = z_counter_get_frequency(dev);
+
+	return (ticks / freq) * NSEC_PER_SEC + ((ticks % freq) * NSEC_PER_SEC) / freq;
 }
 
 /**
@@ -813,8 +836,7 @@ static inline uint32_t z_impl_counter_get_max_top_value(const struct device *dev
  *
  * @param dev Pointer to the device structure for the driver instance.
  *
- * @retval 0 If successful.
- * @retval <0 Negative errno code if failure.
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int counter_start(const struct device *dev);
 
@@ -828,8 +850,8 @@ static inline int z_impl_counter_start(const struct device *dev)
  *
  * @param dev Pointer to the device structure for the driver instance.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if the device doesn't support stopping the
+ * @retval 0 on success.
+ * @retval -ENOTSUP Device doesn't support stopping the
  *                        counter.
  */
 __syscall int counter_stop(const struct device *dev);
@@ -844,8 +866,7 @@ static inline int z_impl_counter_stop(const struct device *dev)
  * @param dev Pointer to the device structure for the driver instance.
  * @param ticks Pointer to where to store the current counter value
  *
- * @retval 0 If successful.
- * @retval <0 Negative error code on failure getting the counter value
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int counter_get_value(const struct device *dev, uint32_t *ticks);
 
@@ -858,8 +879,7 @@ static inline int z_impl_counter_get_value(const struct device *dev, uint32_t *t
  * @brief Reset the counter to the initial value.
  * @param dev Pointer to the device structure for the driver instance.
  *
- * @retval 0 If successful.
- * @retval -errno Negative error code on failure resetting the counter value.
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int counter_reset(const struct device *dev);
 
@@ -879,8 +899,7 @@ static inline int z_impl_counter_reset(const struct device *dev)
  * @param dev Pointer to the device structure for the driver instance.
  * @param ticks Tick value to set
  *
- * @retval 0 If successful.
- * @retval Negative error code on failure setting the counter value
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int counter_set_value(const struct device *dev, uint32_t ticks);
 
@@ -908,12 +927,12 @@ static inline int z_impl_counter_set_value(const struct device *dev, uint32_t ti
  * @param chan_id	Channel ID.
  * @param alarm_cfg	Alarm configuration.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if request is not supported (device does not support
+ * @retval 0 on success.
+ * @retval -ENOTSUP Request is not supported (device does not support
  *		    interrupts or requested channel).
- * @retval -EINVAL if alarm settings are invalid.
- * @retval -ETIME  if absolute alarm was set too late.
- * @retval -EBUSY  if alarm is already active.
+ * @retval -EINVAL Alarm settings are invalid.
+ * @retval -ETIME  Absolute alarm was set too late.
+ * @retval -EBUSY  Alarm is already active.
  */
 __syscall int counter_set_channel_alarm(const struct device *dev, uint8_t chan_id,
 					const struct counter_alarm_cfg *alarm_cfg);
@@ -938,8 +957,8 @@ static inline int z_impl_counter_set_channel_alarm(const struct device *dev, uin
  * @param dev		Pointer to the device structure for the driver instance.
  * @param chan_id	Channel ID.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if request is not supported or the counter was not started
+ * @retval 0 on success.
+ * @retval -ENOTSUP Request is not supported or the counter was not started
  *		    yet.
  */
 __syscall int counter_cancel_channel_alarm(const struct device *dev, uint8_t chan_id);
@@ -975,12 +994,12 @@ static inline int z_impl_counter_cancel_channel_alarm(const struct device *dev, 
  * @param dev		Pointer to the device structure for the driver instance.
  * @param cfg		Configuration. Cannot be NULL.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if request is not supported (e.g. top value cannot be
+ * @retval 0 on success.
+ * @retval -ENOTSUP Request is not supported (e.g. top value cannot be
  *		    changed or counter cannot/must be reset during top value
 		    update).
- * @retval -EBUSY if any alarm is active.
- * @retval -ETIME if @ref COUNTER_TOP_CFG_DONT_RESET was set and new top value
+ * @retval -EBUSY Any alarm is active.
+ * @retval -ETIME @ref COUNTER_TOP_CFG_DONT_RESET was set and new top value
  *		  is smaller than current counter value (counter counting up).
  */
 __syscall int counter_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg);
@@ -1085,9 +1104,9 @@ static inline uint32_t z_impl_counter_get_top_value(const struct device *dev)
  * @param ticks		Guard period in counter ticks.
  * @param flags		See @ref COUNTER_GUARD_PERIOD_FLAGS.
  *
- * @retval 0 if successful.
- * @retval -ENOSYS if function or flags are not supported.
- * @retval -EINVAL if ticks value is invalid.
+ * @retval 0 on success.
+ * @retval -ENOSYS Function or flags are not supported.
+ * @retval -EINVAL Ticks value is invalid.
  */
 __syscall int counter_set_guard_period(const struct device *dev, uint32_t ticks, uint32_t flags);
 
@@ -1160,12 +1179,12 @@ static inline uint64_t z_impl_counter_get_max_top_value_64(const struct device *
  * @param dev		Pointer to the device structure for the driver instance.
  * @param cfg		Configuration. Cannot be NULL.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if request is not supported (e.g. top value cannot be
+ * @retval 0 on success.
+ * @retval -ENOTSUP Request is not supported (e.g. top value cannot be
  *		    changed or counter cannot/must be reset during top value
 		    update).
- * @retval -EBUSY if any alarm is active.
- * @retval -ETIME if @ref COUNTER_TOP_CFG_DONT_RESET was set and new top value
+ * @retval -EBUSY Any alarm is active.
+ * @retval -ETIME @ref COUNTER_TOP_CFG_DONT_RESET was set and new top value
  *		  is smaller than current counter value (counter counting up).
  */
 __syscall int counter_set_top_value_64(const struct device *dev,
@@ -1202,12 +1221,12 @@ static inline int z_impl_counter_set_top_value_64(const struct device *dev,
  * @param chan_id	Channel ID.
  * @param alarm_cfg	Alarm configuration.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if request is not supported (device does not support
+ * @retval 0 on success.
+ * @retval -ENOTSUP Request is not supported (device does not support
  *		    interrupts or requested channel).
- * @retval -EINVAL if alarm settings are invalid.
- * @retval -ETIME  if absolute alarm was set too late.
- * @retval -EBUSY  if alarm is already active.
+ * @retval -EINVAL Alarm settings are invalid.
+ * @retval -ETIME  Absolute alarm was set too late.
+ * @retval -EBUSY  Alarm is already active.
  */
 __syscall int counter_set_channel_alarm_64(const struct device *dev, uint8_t chan_id,
 					   const struct counter_alarm_cfg_64 *alarm_cfg);
@@ -1304,9 +1323,9 @@ static inline uint64_t z_impl_counter_get_top_value_64(const struct device *dev)
  * @param ticks		Guard period in counter ticks of 64 bits.
  * @param flags		See @ref COUNTER_GUARD_PERIOD_FLAGS.
  *
- * @retval 0 if successful.
- * @retval -ENOSYS if function or flags are not supported.
- * @retval -EINVAL if ticks value is invalid.
+ * @retval 0 on success.
+ * @retval -ENOSYS Function or flags are not supported.
+ * @retval -EINVAL Ticks value is invalid.
  */
 __syscall int counter_set_guard_period_64(const struct device *dev, uint64_t ticks, uint32_t flags);
 
@@ -1360,8 +1379,7 @@ static inline uint64_t z_impl_counter_get_guard_period_64(const struct device *d
  * @param dev Pointer to the device structure for the driver instance.
  * @param ticks Pointer to where to store the current counter value in 64 bits.
  *
- * @retval 0 If successful.
- * @retval <0 Negative error code on failure getting the counter value
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int counter_get_value_64(const struct device *dev, uint64_t *ticks);
 
@@ -1387,8 +1405,7 @@ static inline int z_impl_counter_get_value_64(const struct device *dev, uint64_t
  * @param dev Pointer to the device structure for the driver instance.
  * @param ticks Tick value to set in 64 bits
  *
- * @retval 0 If successful.
- * @retval <0 Negative error code on failure setting the counter value
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int counter_set_value_64(const struct device *dev, uint64_t ticks);
 
@@ -1564,6 +1581,56 @@ static inline int z_impl_counter_disable_capture(const struct device *dev, uint8
 
 /** @} */
 #endif /* CONFIG_COUNTER_CAPTURE */
+
+#if defined(CONFIG_COUNTER_CALIBRATION) || defined(__DOXYGEN__)
+/**
+ * @brief Set counter calibration value.
+ *
+ * Calibration is specified in parts per billion (ppb). A positive value
+ * speeds up the counter, a negative value slows it down.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param calibration Calibration value in ppb.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL if calibration value is out of range.
+ * @retval -ENOSYS if not supported by the driver.
+ */
+__syscall int counter_set_calibration(const struct device *dev, int32_t calibration);
+
+static inline int z_impl_counter_set_calibration(const struct device *dev, int32_t calibration)
+{
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
+
+	if (!api->set_calibration) {
+		return -ENOSYS;
+	}
+
+	return api->set_calibration(dev, calibration);
+}
+
+/**
+ * @brief Get counter calibration value.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param calibration Pointer to store the calibration value in ppb.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS if not supported by the driver.
+ */
+__syscall int counter_get_calibration(const struct device *dev, int32_t *calibration);
+
+static inline int z_impl_counter_get_calibration(const struct device *dev, int32_t *calibration)
+{
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
+
+	if (!api->get_calibration) {
+		return -ENOSYS;
+	}
+
+	return api->get_calibration(dev, calibration);
+}
+#endif /* CONFIG_COUNTER_CALIBRATION */
 
 #ifdef __cplusplus
 }

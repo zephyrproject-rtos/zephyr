@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Google, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Linux LED backed LED device
+
+compatible: "zephyr,native-linux-leds"
+
+child-binding:
+  description: Linux LED child node
+
+  include:
+    - name: led-node.yaml
+      property-allowlist:
+        - label
+
+  properties:
+    path:
+      type: string
+      required: true
+
+examples:
+  - |
+    / {
+      leds {
+        compatible = "zephyr,native-linux-leds";
+
+        led0: led_0 {
+          /* /sys/class/leds/tpacpi::lid_logo_dot/brightness */
+          path = "tpacpi::lid_logo_dot";
+        };
+        led1: led_1 {
+          /* /sys/class/leds/tpacpi::power/brightness */
+          path = "tpacpi::power";
+        };
+      };
+    };

@@ -141,6 +141,36 @@ ZTEST(crc, test_crc_16_ccitt)
 }
 
 /* Define result of CRC computation */
+#define RESULT_CRC_16_ITU_T 0x8866
+
+/**
+ * @brief Test that crc_16_itu_t works
+ */
+ZTEST(crc, test_crc_16_itu_t)
+{
+#ifndef CONFIG_CRC_DRIVER_HAS_CRC16_ITU_T
+	ztest_test_skip();
+#endif
+
+	static const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_crc));
+
+	uint8_t data[8] = {0x0A, 0x2B, 0x4C, 0x6D, 0x8E, 0x49, 0x00, 0xC4};
+
+	struct crc_ctx ctx = {
+		.type = CRC16_ITU_T,
+		.polynomial = CRC16_CCITT_POLY,
+		.seed = CRC16_ITU_T_INIT_VAL,
+		.reversed = 0,
+	};
+
+	zassert_equal(crc_begin(dev, &ctx), 0);
+	zassert_equal(crc_update(dev, &ctx, data, sizeof(data)), 0);
+	zassert_equal(crc_finish(dev, &ctx), 0);
+
+	zassert_equal(crc_verify(&ctx, RESULT_CRC_16_ITU_T), 0);
+}
+
+/* Define result of CRC computation */
 #define RESULT_CRC_32_C 0xBB19ECB2
 
 /**
@@ -196,6 +226,34 @@ ZTEST(crc, test_crc_32_ieee)
 	zassert_equal(crc_update(dev, &ctx, data, sizeof(data)), 0);
 	zassert_equal(crc_finish(dev, &ctx), 0);
 	zassert_equal(crc_verify(&ctx, RESULT_CRC_32_IEEE), 0);
+}
+
+/* Define result of CRC computation */
+#define RESULT_CRC_32_MPEG2 0x80AE8C93
+
+/**
+ * @brief Test that crc_32_mpeg2 works
+ */
+ZTEST(crc, test_crc_32_mpeg2)
+{
+#ifndef CONFIG_CRC_DRIVER_HAS_CRC32_MPEG2
+	ztest_test_skip();
+#endif
+
+	static const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_crc));
+
+	uint8_t data[8] = {0x0A, 0x2B, 0x4C, 0x6D, 0x8E, 0x49, 0x00, 0xC4};
+	struct crc_ctx ctx = {
+		.type = CRC32_MPEG2,
+		.polynomial = CRC32_IEEE_POLY,
+		.seed = CRC32_MPEG2_INIT_VAL,
+		.reversed = 0,
+	};
+
+	zassert_equal(crc_begin(dev, &ctx), 0);
+	zassert_equal(crc_update(dev, &ctx, data, sizeof(data)), 0);
+	zassert_equal(crc_finish(dev, &ctx), 0);
+	zassert_equal(crc_verify(&ctx, RESULT_CRC_32_MPEG2), 0);
 }
 
 /* Define result of CRC computation */

@@ -25,7 +25,7 @@
 #include <psa/crypto_types.h>
 #include <psa/crypto_values.h>
 
-#include "long_wq.h"
+#include "common/long_wq.h"
 #include "ecc.h"
 #include "hci_core.h"
 

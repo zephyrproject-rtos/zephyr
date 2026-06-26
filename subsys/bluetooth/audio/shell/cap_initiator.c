@@ -714,9 +714,9 @@ static int cap_ac_unicast_start(const struct cap_unicast_ac_param *param,
 	return bt_cap_initiator_unicast_audio_start(&cap_initiator_unicast_audio_start_param);
 }
 
-static int set_codec_config(const struct shell *sh, struct shell_stream *sh_stream,
-			    struct named_lc3_preset *preset, size_t conn_cnt, size_t ep_cnt,
-			    size_t chan_cnt, size_t conn_index, size_t ep_index)
+static int set_unicast_codec_config(const struct shell *sh, struct shell_stream *sh_stream,
+				    struct named_lc3_preset *preset, size_t conn_cnt, size_t ep_cnt,
+				    size_t chan_cnt, size_t conn_index, size_t ep_index)
 {
 	enum bt_audio_location new_chan_alloc;
 	enum bt_audio_location chan_alloc;
@@ -766,20 +766,28 @@ static int set_codec_config(const struct shell *sh, struct shell_stream *sh_stre
 		new_chan_alloc = BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT;
 
 	} else {
-		return 0;
+		shell_error(sh, "Could not set chan alloc for chan_cnt %zu", chan_cnt);
+
+		return -EINVAL;
 	}
 
 	err = bt_audio_codec_cfg_get_chan_allocation(&sh_stream->codec_cfg, &chan_alloc, false);
 	if (err != 0) {
 		if (err == -ENODATA) {
+			shell_info(sh, "Could not get channel allocation, defaulting to mono");
 			chan_alloc = BT_AUDIO_LOCATION_MONO_AUDIO;
+		} else {
+			shell_error(sh, "Could not get channel allocation: %d", err);
+
+			return err;
 		}
 	}
 
 	if (chan_alloc != new_chan_alloc) {
 		shell_info(sh,
-			   "[%zu][%zu]: Overwriting existing channel allocation 0x%08X with 0x%08X",
-			   conn_index, ep_index, chan_alloc, new_chan_alloc);
+			   "[%zu][%zu]: Overwriting existing channel allocation 0x%08X with 0x%08X "
+			   "for conn_cnt %zu and chan_cnt %zu",
+			   conn_index, ep_index, chan_alloc, new_chan_alloc, conn_cnt, chan_cnt);
 
 		err = bt_audio_codec_cfg_set_chan_allocation(&sh_stream->codec_cfg, new_chan_alloc);
 		if (err < 0) {
@@ -942,15 +950,16 @@ int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *pa
 	/* Set all endpoints from multiple connections in a single array, and verify that the known
 	 * endpoints matches the audio configuration
 	 */
+	total_cnt = 0U;
 	for (size_t i = 0U; i < param->conn_cnt; i++) {
 		for (size_t j = 0U; j < param->snk_cnt[i]; j++) {
 			struct shell_stream *snk_uni_stream;
 
-			snk_uni_stream = snk_uni_streams[snk_cnt] = &unicast_streams[snk_cnt];
+			snk_uni_stream = snk_uni_streams[snk_cnt] = &unicast_streams[total_cnt];
 
-			err = set_codec_config(sh, snk_uni_stream, &default_sink_preset,
-					       param->conn_cnt, param->snk_cnt[i],
-					       param->snk_chan_cnt, i, j);
+			err = set_unicast_codec_config(sh, snk_uni_stream, &default_sink_preset,
+						       param->conn_cnt, param->snk_cnt[i],
+						       param->snk_chan_cnt, i, j);
 			if (err != 0) {
 				shell_error(sh, "Failed to set codec configuration: %d", err);
 
@@ -958,17 +967,17 @@ int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *pa
 			}
 
 			snk_cnt++;
+			total_cnt++;
 		}
 
 		for (size_t j = 0U; j < param->src_cnt[i]; j++) {
 			struct shell_stream *src_uni_stream;
 
-			src_uni_stream = src_uni_streams[src_cnt] =
-				&unicast_streams[snk_cnt + src_cnt];
+			src_uni_stream = src_uni_streams[src_cnt] = &unicast_streams[total_cnt];
 
-			err = set_codec_config(sh, src_uni_stream, &default_source_preset,
-					       param->conn_cnt, param->src_cnt[i],
-					       param->src_chan_cnt, i, j);
+			err = set_unicast_codec_config(sh, src_uni_stream, &default_source_preset,
+						       param->conn_cnt, param->src_cnt[i],
+						       param->src_chan_cnt, i, j);
 			if (err != 0) {
 				shell_error(sh, "Failed to set codec configuration: %d", err);
 
@@ -976,6 +985,7 @@ int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *pa
 			}
 
 			src_cnt++;
+			total_cnt++;
 		}
 	}
 
@@ -1337,6 +1347,12 @@ static int cmd_broadcast_start(const struct shell *sh, size_t argc, char *argv[]
 		return -ENOEXEC;
 	}
 
+	if (default_source.handover_in_progress) {
+		shell_info(sh, "CAP Handover in progress");
+
+		return -ENOEXEC;
+	}
+
 	if (default_source.cap_source == NULL || !default_source.is_cap) {
 		shell_info(sh, "CAP Broadcast source not created");
 
@@ -1361,6 +1377,12 @@ static int cmd_broadcast_update(const struct shell *sh, size_t argc, char *argv[
 	int err;
 
 	ARG_UNUSED(argc);
+
+	if (default_source.handover_in_progress) {
+		shell_info(sh, "CAP Handover in progress");
+
+		return -ENOEXEC;
+	}
 
 	if (default_source.cap_source == NULL || !default_source.is_cap) {
 		shell_info(sh, "CAP Broadcast source not created");
@@ -1396,6 +1418,12 @@ static int cmd_broadcast_stop(const struct shell *sh, size_t argc, char *argv[])
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
+
+	if (default_source.handover_in_progress) {
+		shell_info(sh, "CAP Handover in progress");
+
+		return -ENOEXEC;
+	}
 
 	if (default_source.cap_source == NULL || !default_source.is_cap) {
 		shell_info(sh, "CAP Broadcast source not created");
@@ -1449,12 +1477,86 @@ static int cmd_broadcast_delete(const struct shell *sh, size_t argc, char *argv[
 	return 0;
 }
 
+static int set_broadcast_codec_config(const struct shell *sh, struct broadcast_source *source,
+				      struct named_lc3_preset *preset, size_t stream_cnt,
+				      size_t chan_cnt)
+{
+	const size_t total_chan_cnt = stream_cnt * chan_cnt;
+	enum bt_audio_location new_chan_alloc;
+	enum bt_audio_location chan_alloc;
+	int err;
+
+	copy_broadcast_source_preset(source, preset);
+
+	if (stream_cnt == 1U && chan_cnt > 1U) {
+		/* If there is more than a single channel in a single stream, we multiply the SDU by
+		 * the number of channels to be able to send multiple frames per SDU
+		 */
+		if (source->qos.sdu * chan_cnt > BT_ISO_MAX_SDU) {
+
+			shell_error(sh,
+				    "Could not set SDU size for chan_cnt %zu that would result in "
+				    "SDU of size %u",
+				    chan_cnt, source->qos.sdu * chan_cnt);
+			return -EINVAL;
+		}
+
+		source->qos.sdu *= chan_cnt;
+	} else {
+		if (stream_cnt > 1U && chan_cnt > 1U) {
+			shell_error(sh,
+				    "Could not set SDU size for stream_cnt %zu and chan_cnt %zu",
+				    stream_cnt, chan_cnt);
+
+			return -EINVAL;
+		}
+	}
+
+	if (total_chan_cnt == 1U) {
+		/* If a broadcast source has 1 channel, we make it mono */
+		new_chan_alloc = BT_AUDIO_LOCATION_MONO_AUDIO;
+	} else if (total_chan_cnt == 2U) {
+		/* If a broadcast source has 2 channels, we make it stereo */
+		new_chan_alloc = BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT;
+	} else {
+		shell_error(sh, "Could not set chan alloc for stream_cnt %zu and chan_cnt %zu",
+			    stream_cnt, chan_cnt);
+
+		return -EINVAL;
+	}
+
+	err = bt_audio_codec_cfg_get_chan_allocation(&source->codec_cfg, &chan_alloc, false);
+	if (err != 0) {
+		if (err == -ENODATA) {
+			shell_info(
+				sh,
+				"Could not get broadcast channel allocation, defaulting to mono");
+			chan_alloc = BT_AUDIO_LOCATION_MONO_AUDIO;
+		} else {
+			shell_error(sh, "Could not get channel allocation: %d", err);
+
+			return err;
+		}
+	}
+
+	if (chan_alloc != new_chan_alloc) {
+		shell_info(sh,
+			   "Overwriting existing broadcast channel allocation 0x%08X with 0x%08X "
+			   "for chan_cnt %zu",
+			   chan_alloc, new_chan_alloc, chan_cnt);
+
+		err = bt_audio_codec_cfg_set_chan_allocation(&source->codec_cfg, new_chan_alloc);
+		if (err < 0) {
+			return err;
+		}
+	}
+
+	return 0;
+}
+
 int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 		     const struct bap_broadcast_ac_param *param)
 {
-	uint8_t stereo_data[] = {
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
-				    BT_AUDIO_LOCATION_FRONT_RIGHT | BT_AUDIO_LOCATION_FRONT_LEFT)};
 	uint8_t right_data[] = {
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC, BT_AUDIO_LOCATION_FRONT_RIGHT)};
 	uint8_t left_data[] = {
@@ -1499,8 +1601,13 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 
 	shell_print(sh, "Generated broadcast_id 0x%06X", broadcast_id);
 
-	copy_broadcast_source_preset(&default_source, &default_broadcast_source_preset);
-	default_source.qos.sdu *= param->chan_cnt;
+	err = set_broadcast_codec_config(sh, &default_source, &default_broadcast_source_preset,
+					 param->stream_cnt, param->chan_cnt);
+	if (err != 0) {
+		shell_error(sh, "Failed to set codec configuration: %d", err);
+
+		return -ENOEXEC;
+	}
 
 	(void)memset(cap_initiator_broadcast_stream_params, 0,
 		     sizeof(cap_initiator_broadcast_stream_params));
@@ -1515,15 +1622,14 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 
 		stream_param->stream = &broadcast_source_streams[i].stream;
 
-		if (param->stream_cnt == 1U) {
-			stream_param->data_len = ARRAY_SIZE(stereo_data);
-			stream_param->data = stereo_data;
-		} else if (i == 0U) {
-			stream_param->data_len = ARRAY_SIZE(left_data);
-			stream_param->data = left_data;
-		} else if (i == 1U) {
-			stream_param->data_len = ARRAY_SIZE(right_data);
-			stream_param->data = right_data;
+		if (param->stream_cnt > 1U) {
+			if (i == 0U) {
+				stream_param->data_len = ARRAY_SIZE(left_data);
+				stream_param->data = left_data;
+			} else if (i == 1U) {
+				stream_param->data_len = ARRAY_SIZE(right_data);
+				stream_param->data = right_data;
+			}
 		}
 	}
 

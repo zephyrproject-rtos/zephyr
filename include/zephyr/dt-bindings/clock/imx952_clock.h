@@ -13,8 +13,9 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IMX952_CLOCK_H_
 
 /**
- * @defgroup imx952_clock_sources Clock Sources (0-40)
+ * @defgroup imx952_clock_sources NXP i.MX952 Clock Sources
  * @brief Root clock sources for i.MX952 SoC
+ * @ingroup devicetree-clocks
  * @{
  */
 

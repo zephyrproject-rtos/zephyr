@@ -1212,6 +1212,15 @@
 			reg = <0x40c20000 0x1000>;
 			interrupts = <202 0>;
 			clocks = <&ccm IMX_CCM_PDM_CLK 0x1f00 4>;
+			/* Source from audio PLL */
+			clock-mux = <6>;
+			podf = <192>;
+			pll-clocks = <&anatop 0 0 0>,
+				     <&anatop 0 0 32>,
+				     <&anatop 0 0 1>,
+				     <&anatop 0 0 768>,
+				     <&anatop 0 0 1000>;
+			pll-clock-names = "src", "lp", "pd", "num", "den";
 			quality-mode = <1>;
 			cic-decimation-rate = <0>;
 			fifo-watermark = <4>;

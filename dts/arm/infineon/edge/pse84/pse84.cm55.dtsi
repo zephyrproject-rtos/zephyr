@@ -152,7 +152,8 @@
 };
 
 &autanalog {
-	interrupts = <36 4>;
+	interrupts = <36 4>, <37 4>;
+	interrupt-names = "autanalog", "autanalog_fifo";
 };
 
 &scb0 {

@@ -6,5 +6,6 @@ common:
   platform_allow:
     - qemu_cortex_m3
   harness: ctest
+  timeout: 120
 tests:
   buildsystem.sbom.spdx: {}

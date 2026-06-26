@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the MCUmgr enumeration management group API.
+ * @ingroup mcumgr_enum_mgmt
+ */
+
 #ifndef H_ENUM_MGMT_
 #define H_ENUM_MGMT_
 

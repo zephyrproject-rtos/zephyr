@@ -46,6 +46,7 @@ config BT_MESH_PB_GATT_COMMON
 # Virtual option enabled whenever Generic Provisioning layer is needed
 config BT_MESH_PROV
 	bool
+	select BT_LONG_WQ
 
 ###################################################################################################
 # Visible options

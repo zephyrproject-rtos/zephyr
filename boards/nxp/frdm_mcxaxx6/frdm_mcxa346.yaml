@@ -27,4 +27,5 @@ supported:
   - can
   - arduino_gpio
   - edac
+  - pwm
 vendor: nxp

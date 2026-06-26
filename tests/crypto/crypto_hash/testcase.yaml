@@ -19,6 +19,7 @@ tests:
       - esp32h2_devkitm
       - sama7d65_curiosity
       - sama7g54_ek
+      - nucleo_c562re
       - nucleo_h753zi
       - sf32lb52_devkit_lcd
     tags: crypto

@@ -546,8 +546,10 @@ ZTEST_USER(arm_interrupt, test_arm_user_interrupt)
 }
 #endif /* CONFIG_USERSPACE */
 
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC push_options
 #pragma GCC optimize("O0")
+#endif
 /* Avoid compiler optimizing null pointer de-referencing. */
 
 /**
@@ -573,4 +575,6 @@ ZTEST(arm_interrupt, test_arm_null_pointer_exception)
 	reason = expected_reason;
 	zassert_equal(reason, -1, "expected_reason has not been reset (%d)\n", reason);
 }
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC pop_options
+#endif

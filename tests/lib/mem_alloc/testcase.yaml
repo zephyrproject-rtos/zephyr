@@ -15,12 +15,18 @@ tests:
     tags:
       - minimal_libc
   libraries.libc.newlib.mem_alloc:
+    toolchain_exclude:
+      - zephyr/gnu
+      - zephyr/llvm
     extra_args: CONF_FILE=prj_newlib.conf
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     min_ram: 16
     tags:
       - newlib
   libraries.libc.newlib_nano.mem_alloc:
+    toolchain_exclude:
+      - zephyr/gnu
+      - zephyr/llvm
     extra_args: CONF_FILE=prj_newlibnano.conf
     filter: CONFIG_HAS_NEWLIB_LIBC_NANO
     tags:

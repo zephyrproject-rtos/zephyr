@@ -23,13 +23,4 @@ static inline void arch_bss_zero_boot(void)
 }
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION */
 
-#ifdef CONFIG_LINKER_USE_PINNED_SECTION
-void arch_bss_zero_pinned(void);
-#else
-static inline void arch_bss_zero_pinned(void)
-{
-	/* Do nothing */
-}
-#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
-
 #endif /* ZEPHYR_ARCH_COMMON_INIT_H_ */

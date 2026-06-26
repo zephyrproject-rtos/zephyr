@@ -43,25 +43,17 @@ static void transfer_end(const struct device *dev, int ret)
 static void transfer_start(const struct device *dev)
 {
 	struct driver_data *dev_data = dev->data;
-	const struct driver_config *dev_config = dev->config;
 	size_t chunk_len;
 	const uint8_t *tx_buf;
 	size_t tx_buf_len;
 	uint8_t *rx_buf;
 	size_t rx_buf_len;
-	int ret;
 
 	chunk_len = spi_context_max_continuous_chunk(&dev_data->ctx);
 	if (chunk_len == 0) {
 		transfer_end(dev, 0);
 		return;
 	}
-
-	/* A single EasyDMA transfer cannot exceed MAXCNT, so cap the chunk to
-	 * the controller limit. The remainder is picked up by the next call to
-	 * this function from the event handler once the current chunk is done.
-	 */
-	chunk_len = MIN(chunk_len, dev_config->common.max_transfer_len);
 
 	if (spi_context_tx_buf_on(&dev_data->ctx)) {
 		tx_buf = dev_data->ctx.tx_buf;
@@ -79,15 +71,11 @@ static void transfer_start(const struct device *dev)
 		rx_buf_len = 0;
 	}
 
-	ret = spi_nrfx_spim_common_transfer_start(dev,
-						  tx_buf,
-						  tx_buf_len,
-						  rx_buf,
-						  rx_buf_len);
-	if (ret) {
-		transfer_end(dev, ret);
-		return;
-	}
+	spi_nrfx_spim_common_transfer_start(dev,
+					    tx_buf,
+					    tx_buf_len,
+					    rx_buf,
+					    rx_buf_len);
 }
 
 static void spim_wake_handler(const struct device *dev)
@@ -101,14 +89,17 @@ static void spim_wake_handler(const struct device *dev)
 #endif
 }
 
-static void spim_evt_handler(const struct device *dev, nrfx_spim_event_t *evt)
+static void spim_evt_handler(const struct device *dev, int ret)
 {
 	struct driver_data *dev_data = dev->data;
-	uint32_t len = MAX(evt->xfer_desc.tx_length, evt->xfer_desc.rx_length);
 
-	spi_nrfx_spim_common_transfer_end(dev, &evt->xfer_desc);
-	spi_context_update_tx(&dev_data->ctx, 1, len);
-	spi_context_update_rx(&dev_data->ctx, 1, len);
+	if (ret < 0) {
+		transfer_end(dev, ret);
+		return;
+	}
+
+	spi_context_update_tx(&dev_data->ctx, 1, (size_t)ret);
+	spi_context_update_rx(&dev_data->ctx, 1, (size_t)ret);
 	transfer_start(dev);
 }
 

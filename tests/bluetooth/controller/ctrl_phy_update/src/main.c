@@ -1160,7 +1160,7 @@ ZTEST(phy_central, test_phy_update_central_rem_collision)
 	event_done(&conn);
 
 	/* Start execution of a paused local PHY update procedure. It is delayed by one connection
-	 * event due to completion of remote PHY update at end of the "at instant" conneciton event.
+	 * event due to completion of remote PHY update at end of the "at instant" connection event.
 	 */
 
 	/* Check that data tx is no longer paused */

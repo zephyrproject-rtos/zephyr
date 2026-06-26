@@ -1,5 +1,5 @@
 common:
-  # For twister runs, only logging backends with in hexidecimal format
+  # For twister runs, only logging backends with in hexadecimal format
   # are supported. Currently, only UART logging backend does that.
   # So platform_allow list needs to limit to those platforms.
   platform_allow:

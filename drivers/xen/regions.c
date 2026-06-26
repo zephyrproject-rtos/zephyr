@@ -121,7 +121,7 @@ void *xen_region_get_pages(size_t nr_pages)
 
 	/*
 	 * Locking ranges iteration, although each call sys_mem_blocks_alloc_contiguous
-	 * has it's own syncronisation, to avoid the situation of 2 parralel calls of
+	 * has it's own synchronisation, to avoid the situation of 2 parallel calls of
 	 * get_page and put_page on full buffers when put_page clears space in block 1
 	 * when get_page has already checked block 1. This will lead us to -ENOMEM while
 	 * block 1 space was freed already

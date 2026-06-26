@@ -29,4 +29,5 @@ supported:
   - arduino_gpio
   - usbd
   - edac
+  - pwm
 vendor: nxp

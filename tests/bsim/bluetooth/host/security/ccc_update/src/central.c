@@ -70,7 +70,7 @@ static int gatt_write(struct bt_conn *conn, uint16_t handle, const uint8_t *writ
 	UNSET_FLAG(gatt_write_flag);
 
 	/* `bt_gatt_write` is used instead of `bt_gatt_subscribe` and
-	 * `bt_gatt_unsubscribe` to bypass subscribtion checks of GATT client
+	 * `bt_gatt_unsubscribe` to bypass subscription checks of GATT client
 	 */
 	err = bt_gatt_write(conn, &params);
 	if (err) {
@@ -212,7 +212,7 @@ static void connect_pair_subscribe(void)
 
 	/* confirm to server that we subscribed */
 	backchannel_sync_send(SERVER_CLIENT_CHAN, SERVER_ID);
-	/* wait for server to check that the subscribtion is well registered */
+	/* wait for server to check that the subscription is well registered */
 	backchannel_sync_wait(SERVER_CLIENT_CHAN, SERVER_ID);
 }
 
@@ -223,7 +223,7 @@ static void connect_unsubscribe(void)
 	WAIT_FOR_FLAG(connected_flag);
 	UNSET_FLAG(connected_flag);
 
-	/* wait for server to check that the subscribtion has not been restored */
+	/* wait for server to check that the subscription has not been restored */
 	backchannel_sync_wait(SERVER_CLIENT_CHAN, SERVER_ID);
 
 	LOG_DBG("Trying to unsubscribe without being paired...");
@@ -255,7 +255,7 @@ static void connect_restore_sec(void)
 
 	/* notify the end of security update to server */
 	backchannel_sync_send(SERVER_CLIENT_CHAN, SERVER_ID);
-	/* wait for server to check that the subscribtion has been restored */
+	/* wait for server to check that the subscription has been restored */
 	backchannel_sync_wait(SERVER_CLIENT_CHAN, SERVER_ID);
 
 	/* wait for server to check that the subscription no longer exist */

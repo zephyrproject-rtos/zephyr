@@ -156,7 +156,7 @@ static int event_walk_op(struct k_thread *thread, void *data)
 		if (thread->event_options & K_EVENT_OPTION_CLEAR) {
 			event_data->clear_events |= match;
 		}
-		z_abort_thread_timeout(thread);
+		(void)z_try_abort_thread_timeout(thread);
 
 #ifndef CONFIG_WAITQ_SCALABLE
 		/*
@@ -193,14 +193,13 @@ static uint32_t k_event_post_internal(struct k_event *event, uint32_t events,
 
 	/*
 	 * Posting an event has the potential to wake multiple pended threads.
-	 * It is desirable to unpend all affected threads simultaneously. When
+	 * It is desirable to wake all affected threads simultaneously. When
 	 * z_sched_waitq_walk() allows removal of nodes from the wait queue,
-	 * we unpend and ready each thread as part of the callback. Otherwise,
-	 * proceed in three steps:
+	 * we wake (unpend and ready) each thread as part of the callback.
+	 * Otherwise, proceed in two steps:
 	 *
-	 * 1. Walk the waitq and create a linked list of threads to unpend.
-	 * 2. Unpend each of the threads in the linked list
-	 * 3. Ready each of the threads in the linked list
+	 * 1. Walk the waitq and create a linked list of threads to wake.
+	 * 2. Walk the resulting linked list and wake each of the threads.
 	 */
 
 #ifdef CONFIG_WAITQ_SCALABLE

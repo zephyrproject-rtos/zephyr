@@ -43,7 +43,8 @@ struct gpio_qdec_data {
 	int32_t acc;
 	struct k_work event_work;
 	struct k_work_delayable idle_work;
-	struct gpio_callback gpio_cb;
+	struct gpio_callback gpio_cb_a;
+	struct gpio_callback gpio_cb_b;
 	atomic_t polling;
 #ifdef CONFIG_PM_DEVICE
 	atomic_t suspended;
@@ -242,11 +243,21 @@ static void gpio_qdec_idle_worker(struct k_work *work)
 	gpio_qdec_idle_mode(dev);
 }
 
-static void gpio_qdec_cb(const struct device *gpio_dev, struct gpio_callback *cb,
+static void gpio_qdec_cb_a(const struct device *gpio_dev, struct gpio_callback *cb,
 			 uint32_t pins)
 {
 	struct gpio_qdec_data *data = CONTAINER_OF(
-			cb, struct gpio_qdec_data, gpio_cb);
+			cb, struct gpio_qdec_data, gpio_cb_a);
+	const struct device *dev = data->dev;
+
+	gpio_qdec_poll_mode(dev);
+}
+
+static void gpio_qdec_cb_b(const struct device *gpio_dev, struct gpio_callback *cb,
+			 uint32_t pins)
+{
+	struct gpio_qdec_data *data = CONTAINER_OF(
+			cb, struct gpio_qdec_data, gpio_cb_b);
 	const struct device *dev = data->dev;
 
 	gpio_qdec_poll_mode(dev);
@@ -266,8 +277,11 @@ static int gpio_qdec_init(const struct device *dev)
 	k_timer_init(&data->sample_timer, gpio_qdec_sample_timer_timeout, NULL);
 	k_timer_user_data_set(&data->sample_timer, (void *)dev);
 
-	gpio_init_callback(&data->gpio_cb, gpio_qdec_cb,
-			   BIT(cfg->ab_gpio[0].pin) | BIT(cfg->ab_gpio[1].pin));
+	gpio_init_callback(&data->gpio_cb_a, gpio_qdec_cb_a,
+			   BIT(cfg->ab_gpio[0].pin));
+	gpio_init_callback(&data->gpio_cb_b, gpio_qdec_cb_b,
+			   BIT(cfg->ab_gpio[1].pin));
+
 	for (int i = 0; i < GPIO_QDEC_GPIO_NUM; i++) {
 		const struct gpio_dt_spec *gpio = &cfg->ab_gpio[i];
 
@@ -286,7 +300,12 @@ static int gpio_qdec_init(const struct device *dev)
 			continue;
 		}
 
-		ret = gpio_add_callback_dt(gpio, &data->gpio_cb);
+		if (i == 0) {
+			ret = gpio_add_callback_dt(gpio, &data->gpio_cb_a);
+		} else {
+			ret = gpio_add_callback_dt(gpio, &data->gpio_cb_b);
+		}
+
 		if (ret < 0) {
 			LOG_ERR("Could not set gpio callback");
 			return ret;

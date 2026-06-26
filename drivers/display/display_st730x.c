@@ -78,17 +78,35 @@ LOG_MODULE_REGISTER(st730x, CONFIG_DISPLAY_LOG_LEVEL);
 #define ST730X_RESET_DELAY 100
 #define ST730X_SLEEP_DELAY 100
 
-#ifdef CONFIG_ST730X_POWERMODE_LOW
-#define ST730X_POWER_MODE ST730X_LPM
-#else
-#define ST730X_POWER_MODE ST730X_HPM
-#endif
-
 /* ST730x controllers have an evil data format for b&w
  * where the pixels are ordered at each address as such:
  * p1  p3  p5  p7
  * p2  p4  p6  p8
+ *
+ * With data transfer order following the pixel numbering.
+ *
+ * Additionally, ST7306 supports multiple color modes:
+ *
+ * RBW format is as such in the configuration supported:
+ * p1 p1 p3 p3
+ * p2 p2 p4 p4
+ *
+ * 0: Off
+ * 1: Red
+ * 2: White
+ * 3: Black
+ *
+ * Other color modes are not supported.
+ *
  */
+
+#define RBW_PIX(_p, _color)						\
+	((((uint8_t)(_color) & 0x2) << (6U - ((_p) & 0xfe) - (_p)))	\
+	| (((uint8_t)(_color) & 0x1) << (5U - ((_p) & 0xfe) - (_p))))
+
+/* Flip bits, 0 is no flip, 1 is flip, avoids conditional */
+#define RBW_COLOR_FLIP(_color, _flipv) \
+	((((_color) & 0x2) >> (_flipv)) | (((_color) & 0x1) << (_flipv)))
 
 struct st730x_specific {
 	uint8_t column_offset;
@@ -117,8 +135,23 @@ struct st730x_config {
 	uint8_t hpm_gate_waveform[ST730X_HPM_GATE_WAVEFORM_LEN];
 	uint8_t lpm_gate_waveform[ST730X_LPM_GATE_WAVEFORM_LEN];
 	bool color_inversion;
+	bool low_power_mode;
+	uint8_t te_mode;
+	uint32_t te_delay;
+	uint32_t bppx;
+	uint32_t bppy;
+	bool is_rbw;
+	uint8_t mono_color;
+	bool flip_color_bits;
+#if defined(CONFIG_DISPLAY_COLOR_PALETTE)
+	uint32_t color_palette[CONFIG_DISPLAY_COLOR_PALETTE_MAX_SIZE];
+#endif
 	uint8_t *conversion_buf;
 	size_t conversion_buf_size;
+};
+
+struct st730x_data {
+	enum display_pixel_format current_pixel_format;
 };
 
 static int st730x_resume(const struct device *dev)
@@ -302,16 +335,21 @@ static inline int st730x_set_hardware_config(const struct device *dev)
 		return err;
 	}
 
+	if (config->low_power_mode) {
+		return mipi_dbi_command_write(config->mipi_dev, &config->dbi_config,
+					      ST730X_LPM, NULL, 0);
+	}
+
 	return mipi_dbi_command_write(config->mipi_dev, &config->dbi_config,
-				     ST730X_POWER_MODE, NULL, 0);
+				      ST730X_HPM, NULL, 0);
 }
 
 /* Convert what the conversion buffer can hold to the st730x format */
-static int st730x_convert(const struct device *dev, const uint8_t *buf, uint32_t offset,
-			       const struct display_buffer_descriptor *desc)
+static int st730x_convert_mono_mono(const struct device *dev, const uint8_t *buf, uint32_t offset,
+				    const struct display_buffer_descriptor *desc)
 {
 	const struct st730x_config *config = dev->config;
-	uint32_t vertical_offset = desc->width / ST730X_PPB;
+	const uint32_t vertical_offset = desc->width / ST730X_PPB;
 	uint32_t i = 0;
 	uint32_t ipos, ipos_zeroed;
 	uint32_t max_lines = (config->conversion_buf_size / (desc->width / ST730X_PPB)) & ~0x1;
@@ -323,8 +361,8 @@ static int st730x_convert(const struct device *dev, const uint8_t *buf, uint32_t
 
 	for (; (offset + i) < desc->height && i < max_lines; i += ST730X_PPYA) {
 		ipos = (offset + i) * vertical_offset;
-		ipos_zeroed = i * vertical_offset / ST730X_PPYA;
-		for (uint32_t j = 0; j < desc->width / ST730X_PPB ; j++) {
+		ipos_zeroed = (i * vertical_offset) / ST730X_PPYA;
+		for (uint32_t j = 0; j < desc->width / ST730X_PPB; j++) {
 			config->conversion_buf[(ipos_zeroed + j) * 2 + 1] =
 				(buf[ipos + j + vertical_offset] & 0x80) >> 7
 				| (buf[ipos + j] & 0x80) >> 6
@@ -349,40 +387,151 @@ static int st730x_convert(const struct device *dev, const uint8_t *buf, uint32_t
 	return i;
 }
 
+static int st730x_convert_rbw_mono(const struct device *dev, const uint8_t *buf, uint32_t offset,
+				   const struct display_buffer_descriptor *desc)
+{
+	const struct st730x_config *config = dev->config;
+	const uint8_t color = RBW_COLOR_FLIP(config->mono_color, config->flip_color_bits ? 1 : 0);
+	const uint32_t vertical_offset = desc->width / ST730X_PPB;
+	uint32_t i = 0;
+	uint32_t ipos, ipos_zeroed, jpos_zeroed;
+	uint32_t max_lines = config->conversion_buf_size
+		/ ((desc->width * config->bppx) / ST730X_PPB);
+
+	if (max_lines < ST730X_PPYA) {
+		LOG_ERR("Buffer too small, cannot convert");
+		return -EINVAL;
+	}
+
+	for (; (offset + i) < desc->height && i < max_lines; i += ST730X_PPYA) {
+		ipos = (offset + i) * vertical_offset;
+		ipos_zeroed = i * (vertical_offset * config->bppx);
+		for (uint32_t j = 0; j < desc->width / ST730X_PPB ; j++) {
+			jpos_zeroed = ipos_zeroed + j * config->bppx * 2;
+			config->conversion_buf[jpos_zeroed + 3] =
+				RBW_PIX(0, (buf[ipos + j] & 0x40) ? color : 0)
+				| RBW_PIX(1, (buf[ipos + j + vertical_offset] & 0x40) ? color : 0)
+				| RBW_PIX(2, (buf[ipos + j] & 0x80) ? color : 0)
+				| RBW_PIX(3, (buf[ipos + j + vertical_offset] & 0x80) ? color : 0);
+			config->conversion_buf[jpos_zeroed + 2] =
+				RBW_PIX(0, (buf[ipos + j] & 0x10) ? color : 0)
+				| RBW_PIX(1, (buf[ipos + j + vertical_offset] & 0x10) ? color : 0)
+				| RBW_PIX(2, (buf[ipos + j] & 0x20) ? color : 0)
+				| RBW_PIX(3, (buf[ipos + j + vertical_offset] & 0x20) ? color : 0);
+			config->conversion_buf[jpos_zeroed + 1] =
+				RBW_PIX(0, (buf[ipos + j] & 0x4) ? color : 0)
+				| RBW_PIX(1, (buf[ipos + j + vertical_offset] & 0x4) ? color : 0)
+				| RBW_PIX(2, (buf[ipos + j] & 0x8) ? color : 0)
+				| RBW_PIX(3, (buf[ipos + j + vertical_offset] & 0x8) ? color : 0);
+			config->conversion_buf[jpos_zeroed] =
+				RBW_PIX(0, (buf[ipos + j] & 0x1) ? color : 0)
+				| RBW_PIX(1, (buf[ipos + j + vertical_offset] & 0x1) ? color : 0)
+				| RBW_PIX(2, (buf[ipos + j] & 0x2) ? color : 0)
+				| RBW_PIX(3, (buf[ipos + j + vertical_offset] & 0x2) ? color : 0);
+		}
+	}
+
+	return i;
+}
+
+static int st730x_convert_rbw_i4(const struct device *dev, const uint8_t *buf, uint32_t offset,
+				 const struct display_buffer_descriptor *desc)
+{
+	const struct st730x_config *config = dev->config;
+	const uint32_t vertical_offset = desc->width / 2;
+	const uint32_t flip = config->flip_color_bits ? 1 : 0;
+	uint32_t i = 0;
+	uint32_t jpos, ipos, ipos_zeroed, jpos_zeroed;
+	uint32_t max_lines = config->conversion_buf_size
+		/ ((desc->width * config->bppx) / ST730X_PPB);
+
+	if (max_lines < ST730X_PPYA) {
+		LOG_ERR("Buffer too small, cannot convert");
+		return -EINVAL;
+	}
+
+	for (; (offset + i) < desc->height && i < max_lines; i += ST730X_PPYA) {
+		ipos = (offset + i) * vertical_offset;
+		ipos_zeroed = i * (desc->width / ST730X_PPB) * config->bppx;
+		for (uint32_t j = 0; j < desc->width; j += 2) {
+			jpos = ipos + j / 2;
+			jpos_zeroed = ipos_zeroed + (j * config->bppx * 2) / ST730X_PPB;
+			config->conversion_buf[jpos_zeroed] =
+				RBW_PIX(0, RBW_COLOR_FLIP((buf[jpos] & 0x30) >> 4, flip))
+				| RBW_PIX(1, RBW_COLOR_FLIP(
+					(buf[jpos + vertical_offset] & 0x30) >> 4, flip))
+				| RBW_PIX(2, RBW_COLOR_FLIP(buf[jpos] & 0x3, flip))
+				| RBW_PIX(3,
+					  RBW_COLOR_FLIP(buf[jpos + vertical_offset] & 0x3, flip));
+		}
+	}
+
+	return i;
+}
+
 static int st730x_write(const struct device *dev, const uint16_t x, const uint16_t y,
 			 const struct display_buffer_descriptor *desc, const void *buf)
 {
 	const struct st730x_config *config = dev->config;
+	struct st730x_data *data = dev->data;
+	int (*convert_function)(const struct device *dev, const uint8_t *buf, uint32_t offset,
+				const struct display_buffer_descriptor *desc);
 	int err;
 	size_t buf_len;
 	uint32_t processed = 0;
 	int i;
 	struct display_buffer_descriptor mipi_desc = *desc;
-	uint8_t x_start = config->specifics->column_offset + (config->start_column + x)
-			  / ST730X_PPXA;
+	uint8_t x_start = config->specifics->column_offset
+			  + ((config->start_column + x) * config->bppx) / ST730X_PPXA;
 	uint8_t x_end = config->specifics->column_offset
-			+ (config->start_column + x + desc->width) / ST730X_PPXA - 1;
+			+ ((config->start_column + x + desc->width) * config->bppx)
+			/ ST730X_PPXA - 1;
 	uint8_t x_position[] = {x_start, x_end};
-	uint8_t y_position[] = {y / ST730X_PPYA, (y + desc->height) / ST730X_PPYA - 1};
+	uint8_t y_position[] = {(y * config->bppy) / ST730X_PPYA,
+			((y + desc->height) * config->bppy) / ST730X_PPYA - 1};
+
+	if (desc->height * desc->width == 0) {
+		return 0;
+	}
 
 	if (desc->pitch != desc->width) {
 		LOG_ERR("Pitch is not width");
 		return -EINVAL;
 	}
 
-	buf_len = MIN(desc->buf_size, desc->height * desc->width / ST730X_PPB);
-	if (buf == NULL || buf_len == 0U) {
+	if (data->current_pixel_format == PIXEL_FORMAT_MONO01) {
+		buf_len = (desc->height * desc->width) / ST730X_PPB;
+		if (config->is_rbw) {
+			convert_function = st730x_convert_rbw_mono;
+		} else {
+			convert_function = st730x_convert_mono_mono;
+		}
+	} else if (config->is_rbw && data->current_pixel_format == PIXEL_FORMAT_I_4) {
+		buf_len = (desc->height * desc->width) / 2;
+		convert_function = st730x_convert_rbw_i4;
+	} else {
+		return -ENOTSUP;
+	}
+
+	if (desc->buf_size < buf_len) {
+		LOG_ERR("Display buffer is invalid");
+		return -EINVAL;
+	}
+
+	if (buf == NULL || desc->buf_size == 0U) {
 		LOG_ERR("Display buffer is not available");
 		return -EINVAL;
 	}
 
-	if (x % ST730X_PPXA || desc->width % ST730X_PPXA) {
-		LOG_ERR("X coordinate and size must be aligned by 12 pixels");
+	if (x % (ST730X_PPXA / config->bppx) || desc->width % (ST730X_PPXA / config->bppx)) {
+		LOG_ERR("X coordinate and size must be aligned by %d pixels (got %d and %d)",
+			ST730X_PPXA / config->bppx, x, desc->width);
 		return -EINVAL;
 	}
 
-	if (y % ST730X_PPYA || desc->height % ST730X_PPYA) {
-		LOG_ERR("Y coordinate and size must be aligned by 2 pixels");
+	if (y % (ST730X_PPYA / config->bppy) || desc->height % (ST730X_PPYA / config->bppy)) {
+		LOG_ERR("Y coordinate and size must be aligned by %d pixels (got %d and %d)",
+			ST730X_PPYA / config->bppy, y, desc->height);
 		return -EINVAL;
 	}
 
@@ -406,14 +555,19 @@ static int st730x_write(const struct device *dev, const uint16_t x, const uint16
 		return err;
 	}
 
-	while (desc->height > processed) {
-		i = st730x_convert(dev, buf, processed, desc);
+	mipi_desc.frame_incomplete = true;
 
+	while (desc->height > processed) {
+		i = convert_function(dev, buf, processed, desc);
 		if (i < 0) {
 			return i;
 		}
 
-		mipi_desc.buf_size = i * desc->width / ST730X_PPB;
+		if (desc->height <= processed + i) {
+			mipi_desc.frame_incomplete = false;
+		}
+
+		mipi_desc.buf_size = (i * desc->width * config->bppx * config->bppy) / ST730X_PPB;
 		mipi_desc.width = desc->width;
 		mipi_desc.height = i;
 
@@ -423,6 +577,7 @@ static int st730x_write(const struct device *dev, const uint16_t x, const uint16
 		if (err < 0) {
 			return err;
 		}
+
 		processed += i;
 	}
 
@@ -432,20 +587,36 @@ static int st730x_write(const struct device *dev, const uint16_t x, const uint16
 static void st730x_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct st730x_config *config = dev->config;
+	struct st730x_data *data = dev->data;
 
 	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;
-	caps->current_pixel_format = PIXEL_FORMAT_MONO01;
+	if (config->bppx > 1 || config->bppy > 1) {
+		caps->supported_pixel_formats = PIXEL_FORMAT_MONO01 | PIXEL_FORMAT_I_4;
+#if defined(CONFIG_DISPLAY_COLOR_PALETTE)
+		memcpy(caps->color_palette, config->color_palette, sizeof(config->color_palette));
+#endif
+	} else {
+		caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;
+	}
+	caps->current_pixel_format = data->current_pixel_format;
 	caps->screen_info = 0;
 }
 
 static int st730x_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
 {
+	const struct st730x_config *config = dev->config;
+	struct st730x_data *data = dev->data;
+
 	if (pf == PIXEL_FORMAT_MONO01) {
+		data->current_pixel_format = PIXEL_FORMAT_MONO01;
+		return 0;
+	} else if (pf == PIXEL_FORMAT_I_4 && config->is_rbw) {
+		data->current_pixel_format = PIXEL_FORMAT_I_4;
 		return 0;
 	}
+
 	LOG_ERR("Unsupported pixel format");
 
 	return -ENOTSUP;
@@ -506,6 +677,14 @@ static int st730x_init(const struct device *dev)
 		return err;
 	}
 
+	if (config->te_mode != MIPI_DBI_TE_NO_EDGE) {
+		err = mipi_dbi_configure_te(config->mipi_dev, config->te_mode, config->te_delay);
+		if (err < 0) {
+			LOG_ERR("Failed to configure tearing effect! %d", err);
+			return err;
+		}
+	}
+
 	return 0;
 }
 
@@ -533,12 +712,28 @@ static const struct st730x_specific st7306_specifics = {
 	((DT_STRING_UPPER_TOKEN(inst, mipi_mode) == MIPI_DBI_MODE_SPI_4WIRE) ? SPI_WORD_SET(8)     \
 									     : SPI_WORD_SET(9))
 
+#define ST730X_IS_RBW(node_id) IS_EQ(DT_ENUM_IDX_OR(node_id, color_mode, 0), 1)
+
+#define ST730X_BPPX(node_id) COND_CASE_1(ST730X_IS_RBW(node_id), (2), (1))
+#define ST730X_BPPY(node_id) (1)
+
 #define ST730X_CONV_BUFFER_SIZE(node_id)                                                           \
-	ROUND_UP(DT_PROP(node_id, width) * CONFIG_ST730X_CONV_BUFFER_LINE_CNT,                     \
-		     DT_PROP(node_id, width))
+	ROUND_UP((DT_PROP(node_id, width) * CONFIG_ST730X_CONV_BUFFER_LINE_CNT                     \
+	* ST730X_BPPX(node_id) * ST730X_BPPY(node_id)) / 8,                                        \
+	(DT_PROP(node_id, width) * ST730X_BPPX(node_id) * ST730X_BPPY(node_id)) / 4)
+
+#ifdef CONFIG_ST730X_DEFAULT_PALETTED
+#define ST730X_CURRENT_PIXEL_FORMAT(node_id) \
+	COND_CASE_1(ST730X_IS_RBW(node_id), (PIXEL_FORMAT_I_4), (PIXEL_FORMAT_MONO01))
+#else
+#define ST730X_CURRENT_PIXEL_FORMAT(node_id) PIXEL_FORMAT_MONO01
+#endif
 
 #define ST730X_DEFINE_MIPI(node_id, specifics_ptr)                                                 \
 	static uint8_t conversion_buf##node_id[ST730X_CONV_BUFFER_SIZE(node_id)];                  \
+	static struct st730x_data data##node_id = {                                                \
+		.current_pixel_format = ST730X_CURRENT_PIXEL_FORMAT(node_id),                      \
+	};                                                                                         \
 	static const struct st730x_config config##node_id = {                                      \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                     \
 		.dbi_config = MIPI_DBI_CONFIG_DT(                                                  \
@@ -558,16 +753,36 @@ static const struct st730x_specific st7306_specifics = {
 		.multiplex_ratio = DT_PROP(node_id, multiplex_ratio),                              \
 		.source_voltage = DT_PROP(node_id, source_voltage),                                \
 		.remap_value = DT_PROP(node_id, remap_value),                                      \
+		.flip_color_bits = DT_PROP(node_id, remap_value) & 0x8,                            \
 		.panel_settings = DT_PROP(node_id, panel_settings),                                \
 		.hpm_gate_waveform = DT_PROP(node_id, hpm_gate_waveform),                          \
 		.lpm_gate_waveform = DT_PROP(node_id, lpm_gate_waveform),                          \
 		.color_inversion = DT_PROP(node_id, inversion_on),                                 \
+		.low_power_mode = DT_PROP(node_id, low_power_mode),                                \
 		.specifics = specifics_ptr,                                                        \
+		.te_mode = MIPI_DBI_TE_MODE_DT(node_id, te_mode),                                  \
+		.te_delay = DT_PROP(node_id, te_delay),                                            \
+		.is_rbw = ST730X_IS_RBW(node_id),                                                  \
+		.bppx = ST730X_BPPX(node_id),                                                      \
+		.bppy = ST730X_BPPY(node_id),                                                      \
+		.mono_color = DT_PROP_OR(node_id, mono_color, 0),                                  \
+		IF_ENABLED(CONFIG_DISPLAY_COLOR_PALETTE,                                           \
+		(.color_palette = DT_PROP_OR(DT_CHILD(node_id, color_palette), colors, {}),))      \
 		.conversion_buf = conversion_buf##node_id,                                         \
 		.conversion_buf_size = sizeof(conversion_buf##node_id),                            \
 	};                                                                                         \
-	DEVICE_DT_DEFINE(node_id, st730x_init, NULL, NULL, &config##node_id,                       \
+	DEVICE_DT_DEFINE(node_id, st730x_init, NULL, &data##node_id, &config##node_id,             \
 			 POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &st730x_driver_api);
 
 DT_FOREACH_STATUS_OKAY_VARGS(sitronix_st7305, ST730X_DEFINE_MIPI, &st7305_specifics)
 DT_FOREACH_STATUS_OKAY_VARGS(sitronix_st7306, ST730X_DEFINE_MIPI, &st7306_specifics)
+
+#if defined(CONFIG_DISPLAY_COLOR_PALETTE)
+
+#define ST730X_ASSERT_PALETTE(node_id)                                                             \
+	BUILD_ASSERT(CONFIG_DISPLAY_COLOR_PALETTE_MAX_SIZE >=                                      \
+		     DT_PROP_LEN_OR(DT_CHILD(node_id, color_palette), colors, 1));
+
+DT_FOREACH_STATUS_OKAY(sitronix_st7306, ST730X_ASSERT_PALETTE)
+
+#endif

@@ -114,6 +114,14 @@
 		};
 	};
 
+	pinmux_lpcmp0: pinmux_lpcmp0 {
+		group0 {
+			pinmux = <CMP0_IN2_P1_4>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
 	pinmux_flexcan0: pinmux_flexcan0 {
 		group0 {
 			pinmux = <CAN0_TXD_P1_18>,
@@ -121,6 +129,14 @@
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;
+		};
+	};
+
+	pinmux_dac0: pinmux_dac0 {
+		group0 {
+			pinmux = <DAC0_OUT_P2_2>;
+			drive-strength = "low";
+			slew-rate = "fast";
 		};
 	};
 };

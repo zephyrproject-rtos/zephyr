@@ -67,11 +67,9 @@ static void phy_link_state_changed(const struct device *pdev,
 	ARG_UNUSED(pdev);
 
 	if (state->is_up) {
-		LOG_DBG("Link up");
 		nxp_s32_eth_configure_port(cfg->port_idx, state->speed);
 		net_eth_carrier_on(ctx->iface);
 	} else {
-		LOG_DBG("Link down");
 		net_eth_carrier_off(ctx->iface);
 	}
 }

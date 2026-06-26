@@ -11,6 +11,10 @@
 	interrupts = <24 0>;
 };
 
+&uart3 {
+	interrupts = <21 0>;
+};
+
 &gpio2 {
 	interrupts = <27 0>;
 };

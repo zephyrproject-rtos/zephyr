@@ -508,6 +508,10 @@ int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config
 		return -EBUSY;
 	}
 
+	if ((config->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) != 0) {
+		return -ENOTSUP;
+	}
+
 	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate);
 
 	ret = i2c_stm32_runtime_configure(dev, bitrate_cfg);
@@ -516,13 +520,16 @@ int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config
 		return ret;
 	}
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		LOG_ERR("i2c: PM runtime failure: %d", ret);
+		return ret;
+	}
+
 	data->target_cfg = config;
 
 	LL_I2C_Enable(i2c);
 
-	if (data->target_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
-		return -ENOTSUP;
-	}
 	LL_I2C_SetOwnAddress1(i2c, config->address << 1U, LL_I2C_OWNADDRESS1_7BIT);
 	data->target_attached = true;
 
@@ -557,6 +564,8 @@ int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_conf
 	if (!data->smbalert_active) {
 		LL_I2C_Disable(i2c);
 	}
+
+	(void)pm_device_runtime_put(dev);
 
 	data->target_attached = false;
 

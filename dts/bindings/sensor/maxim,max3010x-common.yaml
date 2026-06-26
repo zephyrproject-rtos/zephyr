@@ -140,3 +140,5 @@ properties:
       User needs to choose which LED is active for each slot.
       NOTE: If a LED is present on multiple slots, `sensor_channel_get`
       will result in the averaging of the values.
+    min-len: 4
+    max-len: 4

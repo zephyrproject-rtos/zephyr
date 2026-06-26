@@ -150,6 +150,14 @@ config MCUBOOT_MODE_SINGLE_APP_RAM_LOAD
 
 endchoice
 
+config MCUBOOT_RAMLOAD_ALLOW_XIP
+	bool "Allow XIP when using RAM load"
+	depends on MCUBOOT_MODE_RAM_LOAD || MCUBOOT_MODE_RAM_LOAD_WITH_REVERT
+	help
+	  Allow application XIP from its initial loading RAM when using MCUboot
+	  RAM Load mode. This is useful if the application is linked to be
+	  executed from an instruction RAM that's separate from data RAM.
+
 config MCUBOOT_DIRECT_XIP_GENERATE_VARIANT
 	bool "Generate slot 1 variant image [EXPERIMENTAL]"
 	depends on MCUBOOT_MODE_DIRECT_XIP || MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT

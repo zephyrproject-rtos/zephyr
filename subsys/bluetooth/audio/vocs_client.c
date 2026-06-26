@@ -717,6 +717,7 @@ int bt_vocs_discover(struct bt_conn *conn, struct bt_vocs *vocs,
 		     const struct bt_vocs_discover_param *param)
 {
 	struct bt_vocs_client *inst;
+	struct bt_conn *ref;
 	int err = 0;
 
 	if (!vocs || !conn || !param) {
@@ -747,20 +748,33 @@ int bt_vocs_discover(struct bt_conn *conn, struct bt_vocs *vocs,
 		return -EBUSY;
 	}
 
+	ref = bt_conn_ref(conn);
+	if (ref == NULL) {
+		err = -ENOTCONN;
+		goto cleanup;
+	}
+
 	vocs_client_reset(inst);
 
-	inst->conn = bt_conn_ref(conn);
 	inst->discover_params.start_handle = param->start_handle;
 	inst->discover_params.end_handle = param->end_handle;
 	inst->discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 	inst->discover_params.func = vocs_discover_func;
 
+	inst->conn = ref;
+
 	err = bt_gatt_discover(conn, &inst->discover_params);
 	if (err != 0) {
 		LOG_DBG("Discover failed (err %d)", err);
-		atomic_clear_bit(inst->flags, BT_VOCS_CLIENT_FLAG_BUSY);
+		bt_conn_unref(ref);
+		inst->conn = NULL;
+		goto cleanup;
 	}
 
+	return 0;
+
+cleanup:
+	atomic_clear_bit(inst->flags, BT_VOCS_CLIENT_FLAG_BUSY);
 	return err;
 }
 

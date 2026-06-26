@@ -64,6 +64,7 @@ extern void rtc_pretick_rtc1_isr_hook(void);
 static volatile uint32_t overflow_cnt;
 static volatile uint64_t anchor;
 static uint64_t last_count;
+static uint32_t last_elapsed;
 static bool sys_busy;
 
 struct z_nrf_rtc_timer_chan_data {
@@ -498,9 +499,11 @@ static void sys_clock_timeout_handler(int32_t chan,
 				      void *user_data)
 {
 	uint32_t cc_value = absolute_time_to_cc(expire_time);
-	uint32_t dticks = (uint32_t)(expire_time - last_count) / CYC_PER_TICK;
+	uint64_t now = z_nrf_rtc_timer_read();
+	uint32_t dticks = (uint32_t)(now - last_count) / CYC_PER_TICK;
 
 	last_count += dticks * CYC_PER_TICK;
+	last_elapsed = 0;
 
 	anchor_update(cc_value);
 
@@ -667,51 +670,28 @@ bail:
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
-	uint32_t cyc;
+	uint64_t target_time;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
 
 	if (ticks == K_TICKS_FOREVER) {
-		cyc = MAX_TICKS * CYC_PER_TICK;
+		target_time = last_count + MAX_CYCLES;
 		sys_busy = false;
 	} else {
-		/* Value of ticks can be zero or negative, what means "announce
-		 * the next tick" (the same as ticks equal to 1).
+		target_time = last_count +
+			      ((uint64_t)last_elapsed + (uint64_t)ticks) * CYC_PER_TICK;
+		/* Clamp to fit the 24-bit compare register and keep the
+		 * anchor in its valid range (see anchor_update). A resulting
+		 * target in the past is fine: compare_set forces an immediate
+		 * IRQ and the handler catches up in one shot.
 		 */
-		cyc = CLAMP(ticks, 1, (int32_t)MAX_TICKS);
-		cyc *= CYC_PER_TICK;
+		if ((target_time - last_count) > MAX_CYCLES) {
+			target_time = last_count + MAX_CYCLES;
+		}
 		sys_busy = true;
 	}
-
-	uint32_t unannounced = z_nrf_rtc_timer_read() - last_count;
-
-	/* If we haven't announced for more than half the 24-bit wrap
-	 * duration, then force an announce to avoid loss of a wrap
-	 * event.  This can happen if new timeouts keep being set
-	 * before the existing one triggers the interrupt.
-	 */
-	if (unannounced >= COUNTER_HALF_SPAN) {
-		cyc = 0;
-	}
-
-	/* Get the cycles from last_count to the tick boundary after
-	 * the requested ticks have passed starting now.
-	 */
-	cyc += unannounced;
-	cyc = DIV_ROUND_UP(cyc, CYC_PER_TICK) * CYC_PER_TICK;
-
-	/* Due to elapsed time the calculation above might produce a
-	 * duration that laps the counter.  Don't let it.
-	 * This limitation also guarantees that the anchor will be properly
-	 * updated before every overflow (see anchor_update()).
-	 */
-	if (cyc > MAX_CYCLES) {
-		cyc = MAX_CYCLES;
-	}
-
-	uint64_t target_time = cyc + last_count;
 
 	compare_set(SYS_CLOCK_CH, target_time, sys_clock_timeout_handler, NULL, false);
 }
@@ -722,7 +702,10 @@ uint32_t sys_clock_elapsed(void)
 		return 0;
 	}
 
-	return (z_nrf_rtc_timer_read() - last_count) / CYC_PER_TICK;
+	uint32_t dticks = (uint32_t)(z_nrf_rtc_timer_read() - last_count) / CYC_PER_TICK;
+
+	last_elapsed = dticks;
+	return dticks;
 }
 
 uint32_t sys_clock_cycle_get_32(void)

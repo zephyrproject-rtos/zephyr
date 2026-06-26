@@ -189,7 +189,7 @@ ZTEST(uart_elementary, test_uart_improper_configuration)
 	err = uart_configure(uart_dev, &test_uart_config);
 	zassert_not_equal(
 		err, 0,
-		"'uart_configure' with incorrect configuration havent't raised an error, err=%d",
+		"'uart_configure' with incorrect configuration has not raised an error, err=%d",
 		err);
 }
 

@@ -304,7 +304,7 @@ int main(void)
 	/* Check zephyr crypto drivers capabilities */
 	ret = validate_hw_compatibility(symcr_dev);
 	if (ret) {
-		printf("ERROR: symcr driver capabilties failure\n");
+		printf("ERROR: symcr driver capabilities failure\n");
 		return 0;
 	}
 
@@ -392,7 +392,7 @@ static int pr_hash_algo_name(enum hash_algo algo)
 		printf("SHA-512\n");
 		break;
 	default:
-		printf("Uknown Hash algorithm\n");
+		printf("Unknown Hash algorithm\n");
 		ret = -ENOTSUP;
 	}
 

@@ -1,0 +1,163 @@
+/*
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <adi/max32/max78000-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Analog Devices MAX78000FTHR";
+	compatible = "adi,max78000fthr";
+
+	soc {
+		/*
+		 * Concatenate SRAM0 and SRAM1 for the M4.
+		 */
+		m4_sram: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(32 + 32)>;
+		};
+
+		/*
+		 * Concatenate SRAM2 and SRAM3 for the RV32
+		 * Note: SRAM3 cannot be used once ICC1 is enabled
+		 */
+		rv32_sram: memory@20010000 {
+			compatible = "mmio-sram";
+			reg = <0x20010000 DT_SIZE_K(48 + 16)>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led_1 {
+			gpios = <&gpio2 0 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+
+		led2: led_2 {
+			gpios = <&gpio2 1 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+
+		led3: led_3 {
+			gpios = <&gpio2 2 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		pb1: pb1 {
+			gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		pb2: pb2 {
+			gpios = <&gpio1 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		sw0 = &pb1;
+		sw1 = &pb2;
+		watchdog0 = &wdt0;
+	};
+};
+
+cmsis_serial: &uart0 {
+	pinctrl-0 = <&uart0a_tx_p0_1 &uart0a_rx_p0_0>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+feather_serial: &uart3 {
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+	pinctrl-0 = <&lpuartb_tx_p2_7 &lpuartb_rx_p2_6>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_scl_p0_10 &i2c0_sda_p0_11>;
+	pinctrl-names = "default";
+};
+
+feather_i2c: &i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_scl_p0_16 &i2c1_sda_p0_17>;
+	pinctrl-names = "default";
+};
+
+&w1 {
+	pinctrl-0 = <&owm_io_p0_6 &owm_pe_p0_7>;
+	pinctrl-names = "default";
+};
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		m4_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-m4";
+			reg = <0x0 DT_SIZE_K(224)>;
+		};
+
+		m4_storage_partition: partition@38000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage-m4";
+			reg = <0x38000 DT_SIZE_K(32)>;
+		};
+
+		rv32_partition: partition@40000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-rv32";
+			reg = <0x40000 DT_SIZE_K(64)>;
+		};
+
+		rv32_storage_partition: partition@50000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage-rv32";
+			reg = <0x50000 DT_SIZE_K(32)>;
+		};
+	};
+};

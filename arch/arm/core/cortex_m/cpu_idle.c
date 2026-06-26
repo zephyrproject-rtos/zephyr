@@ -151,7 +151,7 @@ void arch_cpu_atomic_idle(unsigned int key)
 }
 #endif
 
-#if defined(CONFIG_PM) && defined(CONFIG_PM_STATE_SET_IRQ_LOCKED) && \
+#if defined(CONFIG_PM) && !defined(CONFIG_PM_STATE_SET_IRQ_UNLOCKED) && \
 	defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 unsigned int arch_pm_state_set_prepare(void)
 {

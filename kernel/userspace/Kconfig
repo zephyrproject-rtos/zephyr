@@ -19,8 +19,8 @@ config EXECUTE_XOR_WRITE
 	depends on ARCH_HAS_EXECUTABLE_PAGE_BIT
 	default y
 	help
-	  When enabled, will enforce that a writable page isn't executable
-	  and vice versa.  This might not be acceptable in all scenarios,
+	  When enabled, will enforce that a writable partition isn't executable
+	  and vice versa. This might not be acceptable in all scenarios,
 	  so this option is given for those unafraid of shooting themselves
 	  in the foot.
 

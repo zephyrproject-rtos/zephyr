@@ -17,6 +17,20 @@ config IEEE802154_ESP32_INIT_PRIO
 	  Set the initialization priority number. Do not mess with it unless
 	  you know what you are doing.
 
+config IEEE802154_ESP32_RX_STACK_SIZE
+	int "Stack size for the ESP32 802.15.4 RX worker thread"
+	default 1024
+	help
+	  Stack used by the dedicated thread that forwards received frames to the
+	  network stack (net_pkt allocation and net_recv_data).
+
+config IEEE802154_ESP32_RX_THREAD_PRIORITY
+	int "Preempt priority of the ESP32 802.15.4 RX worker thread (lower value = higher urgency)"
+	default 10
+	help
+	  Must be a valid preempt thread priority for this build
+	  (see CONFIG_NUM_PREEMPT_PRIORITIES).
+
 # Kconfigs copied from Espressif HAL module (ESP-IDF) below
 
 config IEEE802154_ESP32_RX_BUFFER_SIZE

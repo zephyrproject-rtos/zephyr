@@ -26,4 +26,14 @@
 /** Accumulate Voltage data */
 #define PAC_ACCUM_VBUS		2
 
+
+/** Refresh mode manual */
+#define PAC_REFRESH_MANUAL	0
+
+/** Refresh mode */
+#define PAC_REFRESH_AUTO_WAIT	1
+
+/** Refresh mode */
+#define PAC_REFRESH_AUTO_NOWAIT	2
+
 #endif /* PAC194X_H_DTS_BINDINGS */

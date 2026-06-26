@@ -111,10 +111,18 @@ config COAP_OVER_RELIABLE_TRANSPORT
 config COAP_CLIENT
 	bool "CoAP client support [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	select ZVFS
+	select ZVFS_EVENTFD
 	help
 	  This option enables the API for CoAP-client for sending CoAP requests
 
 if COAP_CLIENT
+
+config ZVFS_EVENTFD_ADD_SIZE_COAP_CLIENT
+	int "Number of eventfds needed by the CoAP client"
+	default 1
+	help
+	  The CoAP client allocates one zvfs eventfd to wake up its poll loop.
 
 config COAP_CLIENT_THREAD_PRIORITY
 	int "Coap client thread priority"
@@ -233,6 +241,12 @@ config COAP_SERVER
 	  This option enables the API for CoAP-services to register resources.
 
 if COAP_SERVER
+
+config ZVFS_EVENTFD_ADD_SIZE_COAP_SERVER
+	int "Number of eventfds needed by the CoAP server"
+	default 1
+	help
+	  The CoAP server allocates one zvfs eventfd to wake up its poll loop.
 
 config COAP_SERVER_STACK_SIZE
 	int "CoAP server thread stack size"

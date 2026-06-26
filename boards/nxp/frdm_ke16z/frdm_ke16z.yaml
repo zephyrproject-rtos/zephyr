@@ -10,4 +10,5 @@ ram: 8
 supported:
   - flash
   - gpio
+  - hwinfo
   - uart

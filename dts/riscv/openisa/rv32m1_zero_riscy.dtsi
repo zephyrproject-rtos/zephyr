@@ -18,7 +18,7 @@
 
 &m0_flash {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -28,10 +28,12 @@
 		 */
 
 		zero_riscy_code_partition: partition@1000000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x01000000 0x0003ff00>;
 		};
 
 		zero_riscy_vector_partition: partition@3ff00 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x0003ff00 0x100>;
 		};
 	};

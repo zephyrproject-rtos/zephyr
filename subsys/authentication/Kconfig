@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Siratul Islam <email@sirat.me>
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Authentication"
+
+source "subsys/authentication/fido2/Kconfig"
+
+endmenu

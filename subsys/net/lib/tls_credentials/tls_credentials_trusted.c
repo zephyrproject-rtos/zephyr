@@ -40,6 +40,11 @@ static psa_storage_uid_t credentials_toc[CRED_MAX_SLOTS];
 /* A mutex for protecting access to the credentials array. */
 static K_MUTEX_DEFINE(credential_lock);
 
+/* Whether the Table Of Content has been successfully loaded from storage.
+ * The backend is loaded lazily on first access (under credential_lock).
+ */
+static bool credentials_loaded;
+
 /* Construct PSA PS uid from tag & type */
 static inline psa_storage_uid_t tls_credential_get_uid(uint32_t tag,
 						       uint16_t type)
@@ -71,8 +76,10 @@ static int credentials_toc_get(void)
 	status = psa_ps_get(PSA_PS_CRED_TOC_ID, 0, sizeof(credentials_toc),
 			    credentials_toc, &len);
 	if (status == PSA_ERROR_DOES_NOT_EXIST) {
+		LOG_DBG("No credentials ToC found in storage, initializing to empty");
 		return -ENOENT;
 	} else if (status != PSA_SUCCESS) {
+		LOG_ERR("Failed to get credentials ToC from storage: %d", status);
 		return -EIO;
 	}
 
@@ -86,6 +93,7 @@ static int credentials_toc_write(void)
 	status = psa_ps_set(PSA_PS_CRED_TOC_ID, sizeof(credentials_toc),
 			    credentials_toc, 0);
 	if (status != PSA_SUCCESS) {
+		LOG_ERR("Failed to write credentials ToC to storage: %d", status);
 		return -EIO;
 	}
 
@@ -165,7 +173,30 @@ static int credentials_init(void)
 
 	return 0;
 }
-SYS_INIT(credentials_init, POST_KERNEL, 0);
+
+/* Lazily load the ToC on first access. Must be called with credential_lock held.
+ * Returns 0 once the ToC has been successfully loaded (including the "no ToC yet"
+ * case on a fresh device), or -EACCES if storage is not yet usable, in which case
+ * the caller must fail rather than operate on an unloaded ToC.
+ */
+static int credentials_ensure_loaded(void)
+{
+	int ret;
+
+	if (credentials_loaded) {
+		return 0;
+	}
+
+	ret = credentials_init();
+	if (ret != 0) {
+		LOG_ERR("Failed to load TLS credentials from storage (%d)", ret);
+		return -EACCES;
+	}
+
+	credentials_loaded = true;
+
+	return 0;
+}
 
 static struct tls_credential *unused_credential_get(void)
 {
@@ -224,6 +255,11 @@ static struct tls_credential *credential_get_from_uid(psa_storage_uid_t uid)
 struct tls_credential *credential_get(sec_tag_t tag,
 				      enum tls_credential_type type)
 {
+	if (!credentials_loaded) {
+		LOG_WRN("Credentials not loaded");
+		return NULL;
+	}
+
 	return credential_get_from_uid(tls_credential_get_uid(tag, type));
 }
 
@@ -234,6 +270,11 @@ struct tls_credential *credential_next_get(sec_tag_t tag,
 {
 	psa_storage_uid_t uid;
 	unsigned int slot;
+
+	if (!credentials_loaded) {
+		LOG_WRN("Credentials not loaded");
+		return NULL;
+	}
 
 	if (!iter) {
 		slot = 0;
@@ -269,6 +310,11 @@ sec_tag_t credential_next_tag_get(sec_tag_t iter)
 	psa_storage_uid_t uid;
 	sec_tag_t lowest_candidate = TLS_SEC_TAG_NONE;
 	sec_tag_t candidate;
+
+	if (!credentials_loaded) {
+		LOG_WRN("Credentials not loaded");
+		return TLS_SEC_TAG_NONE;
+	}
 
 	/* Scan all slots and find lowest sectag greater than iter */
 	for (slot = 0; slot < CRED_MAX_SLOTS; slot++) {
@@ -306,6 +352,8 @@ int credential_digest(struct tls_credential *credential, void *dest, size_t *len
 void credentials_lock(void)
 {
 	k_mutex_lock(&credential_lock, K_FOREVER);
+
+	(void)credentials_ensure_loaded();
 }
 
 void credentials_unlock(void)
@@ -339,6 +387,14 @@ int tls_credential_add(sec_tag_t tag, enum tls_credential_type type,
 	}
 
 	k_mutex_lock(&credential_lock, K_FOREVER);
+
+	/* Refuse to modify storage until the ToC is loaded, otherwise this write
+	 * would overwrite the stored ToC and orphan existing credentials.
+	 */
+	ret = credentials_ensure_loaded();
+	if (ret != 0) {
+		goto cleanup;
+	}
 
 	if (tls_credential_toc_find_slot(uid) != CRED_MAX_SLOTS) {
 		ret = -EEXIST;
@@ -383,6 +439,11 @@ int tls_credential_get(sec_tag_t tag, enum tls_credential_type type,
 	}
 
 	k_mutex_lock(&credential_lock, K_FOREVER);
+
+	ret = credentials_ensure_loaded();
+	if (ret != 0) {
+		goto cleanup;
+	}
 
 	slot = tls_credential_toc_find_slot(uid);
 	if (slot == CRED_MAX_SLOTS) {
@@ -431,6 +492,11 @@ int tls_credential_delete(sec_tag_t tag, enum tls_credential_type type)
 	}
 
 	k_mutex_lock(&credential_lock, K_FOREVER);
+
+	ret = credentials_ensure_loaded();
+	if (ret != 0) {
+		goto cleanup;
+	}
 
 	slot = tls_credential_toc_find_slot(uid);
 	if (slot == CRED_MAX_SLOTS) {

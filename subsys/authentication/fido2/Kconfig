@@ -1,0 +1,104 @@
+# Copyright (c) 2026 Siratul Islam <email@sirat.me>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FIDO2
+	bool "FIDO2 authenticator"
+	select ZCBOR
+	select ZCBOR_CANONICAL
+	select PSA_CRYPTO
+	select SECURE_STORAGE if !BUILD_WITH_TFM
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	select PSA_WANT_ALG_ECDSA
+	select PSA_WANT_ALG_SHA_256
+	select PSA_WANT_ALG_GCM
+	select PSA_WANT_ECC_SECP_R1_256
+	help
+	  Enable the FIDO2/CTAP2 authenticator subsystem.
+
+if FIDO2
+
+module = FIDO2
+module-str = fido2
+source "subsys/logging/Kconfig.template.log_config"
+
+config FIDO2_THREAD_STACK_SIZE
+	int "FIDO2 processing thread stack size"
+	default 4096
+
+config FIDO2_THREAD_PRIORITY
+	int "FIDO2 processing thread priority"
+	default 7
+
+config FIDO2_CBOR_MAX_SIZE
+	int "Maximum CBOR message buffer size"
+	default 1024
+	range 1024 4096
+	help
+	  Maximum size of CBOR encoded CTAP2 request and response messages.
+
+config FIDO2_MAX_CREDENTIALS
+	int "Maximum number of resident credentials"
+	default 16
+	range 1 256
+	help
+	  Maximum number of discoverable (resident) credentials that
+	  can be stored on the device.
+
+config FIDO2_EXT_CRED_PROTECT
+	bool "credProtect extension"
+	help
+	  Enable the CTAP2 credProtect extension.
+
+config FIDO2_EXT_HMAC_SECRET
+	bool "hmac-secret extension"
+	select PSA_WANT_ALG_HMAC
+	help
+	  Enable the CTAP2 hmac-secret extension.
+
+config FIDO2_EXT_LARGE_BLOB_KEY
+	bool "largeBlobKey extension"
+	help
+	  Enable the CTAP2 largeBlobKey extension for per-credential
+	  large blob storage. Not yet implemented.
+
+config FIDO2_EXT_CRED_BLOB
+	bool "credBlob extension"
+	depends on FIDO2_EXT_CRED_PROTECT
+	help
+	  Enable the CTAP2 credBlob extension. Requires credProtect support.
+	  Authenticators supporting credBlob MUST also support credProtect.
+
+config FIDO2_EXT_THIRD_PARTY_PAYMENT
+	bool "thirdPartyPayment extension"
+	help
+	  Enable the CTAP2 thirdPartyPayment extension.
+
+config FIDO2_CREDENTIAL_MANAGEMENT
+	bool "Credential management command"
+	help
+	  Enable the CTAP 2.1 authenticatorCredentialManagement (0x0A)
+	  command. Requires PIN protocol support since all credMgmt
+	  subcommands require a pinUvAuthToken with CM permission.
+
+config FIDO2_AAGUID
+	string "Authenticator AAGUID (32 hex chars)"
+	help
+	  Authenticator AAGUID encoded as 32 hexadecimal characters with no
+	  separators (16 bytes).
+
+config FIDO2_ALWAYS_UV
+	bool "Always require user verification"
+	help
+	  When enabled, this forces user verification for every MakeCredential
+	  and GetAssertion operation regardless of what the Relying Party requests,
+	  including when userVerification is set to "discouraged".
+
+	  This overrides makeCredUvNotRqd
+
+rsource "attestation/Kconfig"
+rsource "transport/Kconfig"
+rsource "up/Kconfig"
+rsource "storage/Kconfig"
+
+endif # FIDO2

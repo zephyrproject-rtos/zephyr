@@ -932,7 +932,7 @@ static bool valid_snk_state_transition(enum bt_bap_ep_state old_state,
 	case BT_BAP_EP_STATE_RELEASING:
 		switch (new_state) {
 		case BT_BAP_EP_STATE_IDLE:
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
 			valid_transition = true;
 			break;
 		default:
@@ -1030,7 +1030,7 @@ static bool valid_src_state_transition(enum bt_bap_ep_state old_state,
 	case BT_BAP_EP_STATE_RELEASING:
 		switch (new_state) {
 		case BT_BAP_EP_STATE_IDLE:
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
 			valid_transition = true;
 			break;
 		default:

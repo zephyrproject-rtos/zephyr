@@ -25,7 +25,7 @@ static bool initialized;
 #define BLOCK_MEMORY_BUFFER_SIZE (CONFIG_EXT2_MAX_BLOCK_COUNT * CONFIG_EXT2_MAX_BLOCK_SIZE)
 #define BLOCK_STRUCT_BUFFER_SIZE (CONFIG_EXT2_MAX_BLOCK_COUNT * sizeof(struct ext2_block))
 
-/* Structures for blocks slab alocator */
+/* Structures for blocks slab allocator */
 struct k_mem_slab ext2_block_memory_slab, ext2_block_struct_slab;
 char __aligned(sizeof(void *)) __ext2_block_memory_buffer[BLOCK_MEMORY_BUFFER_SIZE];
 char __aligned(sizeof(void *)) __ext2_block_struct_buffer[BLOCK_STRUCT_BUFFER_SIZE];
@@ -262,6 +262,17 @@ int ext2_verify_disk_superblock(struct ext2_disk_superblock *sb)
 		return -EINVAL;
 	}
 
+	/* Block size is computed as 1024 << s_log_block_size and is used to size
+	 * the static block slab. A crafted value would overflow the shift and/or
+	 * exceed the statically configured maximum block size, corrupting the
+	 * allocator. The first term guards the shift against undefined behaviour.
+	 */
+	if (sys_le32_to_cpu(sb->s_log_block_size) > 11U ||
+	    (1024U << sys_le32_to_cpu(sb->s_log_block_size)) > CONFIG_EXT2_MAX_BLOCK_SIZE) {
+		LOG_ERR("Filesystem block size is too large");
+		return -ENOTSUP;
+	}
+
 	/* Check if file system may contain errors. */
 	if (sys_le16_to_cpu(sb->s_state) == EXT2_ERROR_FS) {
 		LOG_WRN("File system may contain errors.");
@@ -349,6 +360,11 @@ int ext2_init_fs(struct ext2_data *fs)
 	uint32_t set;
 	struct ext2_superblock *sb = &fs->sblock;
 	uint32_t fs_blocks = sb->s_blocks_count - sb->s_first_data_block;
+
+	if (fs_blocks > (uint32_t)(fs->block_size * 8U)) {
+		error_behavior(fs, "s_blocks_count exceeds single-group bitmap capacity");
+		return -EINVAL;
+	}
 
 	set = ext2_bitmap_count_set(BGROUP_BLOCK_BITMAP(&fs->bgroup), fs_blocks);
 

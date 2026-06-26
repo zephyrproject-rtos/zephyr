@@ -312,3 +312,7 @@ st_cam_dvp: &dcmi {
 		     &dcmi_pixclk_pa6 &dcmi_hsync_pa4 &dcmi_vsync_pb7>;
 	pinctrl-names = "default";
 };
+
+zephyr_jpegenc: &jpeg {
+	status = "okay";
+};

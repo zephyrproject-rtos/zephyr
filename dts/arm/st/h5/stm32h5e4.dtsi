@@ -95,12 +95,20 @@
 			compatible = "st,stm32-xspi";
 			reg = <0x47002400 0x400>, <0x70000000 DT_SIZE_M(256)>;
 			interrupts = <150 0>;
-			clock-names = "xspix", "xspi-ker", "xspi-mgr";
+			clock-names = "xspix", "xspi-ker";
 			clocks = <&rcc STM32_CLOCK(AHB4, 21)>,
-				 <&rcc STM32_SRC_PLL1_Q OCTOSPI2_SEL(1)>,
-				 <&rcc STM32_CLOCK(AHB4, 22)>;
+				 <&rcc STM32_SRC_PLL1_Q OCTOSPI2_SEL(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		xspim: xspim@47003400 {
+			compatible = "st,stm32-xspim";
+			reg = <0x47003400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB4, 22)>;
+			io-port-1 = <&xspi1>;
+			io-port-2 = <&xspi2>;
 			status = "disabled";
 		};
 
@@ -114,6 +122,15 @@
 			clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
 				 <&rcc STM32_SRC_HSE FDCAN_SEL(0)>;
 			bosch,mram-cfg = <0x6a0 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
+
+		jpeg: codec@5002b000 {
+			compatible = "st,stm32-jpeg";
+			reg = <0x5002b000 0x1000>;
+			interrupts = <135 0>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 23)>;
+			resets = <&rctl STM32_RESET(AHB1, 23)>;
 			status = "disabled";
 		};
 	};
@@ -142,8 +159,7 @@
 
 &xspi1 {
 	/* OCTOSPI instance has a XSPI IO manager */
-	clock-names = "xspix", "xspi-ker", "xspi-mgr";
+	clock-names = "xspix", "xspi-ker";
 	clocks = <&rcc STM32_CLOCK(AHB4, 20)>,
-		 <&rcc STM32_SRC_PLL1_Q OCTOSPI1_SEL(1)>,
-		 <&rcc STM32_CLOCK(AHB4, 22)>;
+		 <&rcc STM32_SRC_PLL1_Q OCTOSPI1_SEL(1)>;
 };

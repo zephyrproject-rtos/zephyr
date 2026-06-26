@@ -12,6 +12,9 @@ config LVGL
 
 if LVGL
 
+config LV_DRAW_BUF_ALIGN
+	int
+
 config LV_USE_MONKEY
 	bool
 
@@ -188,6 +191,9 @@ config LV_Z_LVGL_WORKQUEUE_PRIORITY
 endif # LV_Z_RUN_LVGL_ON_WORKQUEUE
 
 config LV_USE_DRAW_DMA2D
+	bool
+
+config LV_USE_DRAW_DMA2D_INTERRUPT
 	bool
 
 config LV_DRAW_DMA2D_HAL_INCLUDE

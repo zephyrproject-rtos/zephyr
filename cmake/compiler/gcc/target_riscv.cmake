@@ -177,6 +177,13 @@ if(CONFIG_RISCV_ISA_EXT_XTHEAD_VECTOR)
   string(APPEND riscv_march "_xtheadvector")
 endif()
 
+if(CONFIG_RISCV_ISA_EXT_SMAIA)
+  string(APPEND riscv_march "_smaia")
+endif()
+if(CONFIG_RISCV_ISA_EXT_SSAIA)
+  string(APPEND riscv_march "_ssaia")
+endif()
+
 if(CONFIG_RISCV_USE_MSAVE_RESTORE)
   list(APPEND RISCV_C_FLAGS -msave-restore)
 endif()

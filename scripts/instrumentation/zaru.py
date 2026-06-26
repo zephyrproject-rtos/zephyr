@@ -91,7 +91,7 @@ def generate_reverse_symbol_lookup(addr_to_symbol):
     """Generate a reverse symbol lookup dict.
 
     Given a dict of ELF symbols indexed by the symbol address, return the same
-    dict but indexed by the symbols intead of by the symbol address, allowing
+    dict but indexed by the symbols instead of by the symbol address, allowing
     a reverse lookup, i.e. look up for a symbol address given a symbol.
     """
 
@@ -689,11 +689,7 @@ def get_traces_in_trace_event_format(tmpdir, elf, demangle, verbose=False):
     named_thread_list = []
     for trace in ge:
         event_type, func, tid, cpu, _, ts, tn = trace.values()
-
-        # Use 4 LSB in tid (address) as the final thread ID just to ease
-        # displaying it in Perfetto. Hardly there will be a collision.
         tid = int(tid, 0)
-        tid = tid & 0xFFFF
 
         # Set phase type according with the Event
         if event_type == "entry":
@@ -1051,7 +1047,7 @@ def trace(args):
     # 'data' (binary) file and 'metadata' file written in the TSDL, hence it's not possible to
     # specify an alternative path for 'data' or 'metadata' files. Thus here a temporary dir is
     # created and a copy of the 'metadata' is copied to it together with the binary stream extracted
-    # from the target, which is saved as 'data' file. The tempory dir is then passed to the
+    # from the target, which is saved as 'data' file. The temporary dir is then passed to the
     # babeltrace methods.
     with tempfile.TemporaryDirectory() as tmpdir:
         if args.verbose:

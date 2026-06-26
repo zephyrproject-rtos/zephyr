@@ -415,11 +415,7 @@ static void eth_intel_igc_phylink_cb(const struct device *phy __unused,
 {
 	struct net_if *iface = (struct net_if *)user_data;
 
-	if (state->is_up) {
-		net_eth_carrier_on(iface);
-	} else {
-		net_eth_carrier_off(iface);
-	}
+	net_eth_carrier_set(iface, state->is_up);
 }
 
 static void eth_intel_igc_intr_enable(const struct device *dev)

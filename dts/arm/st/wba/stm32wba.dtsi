@@ -77,6 +77,7 @@
 			reg = <0>;
 			/* Do not add &standby here since CONFIG_PM_S2RAM is disabled by default */
 			cpu-power-states = <&stop0 &stop1>;
+			i-cache-line-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -539,7 +540,7 @@
 			status = "disabled";
 		};
 
-		aes: aes@420c0000 {
+		aes: crypto@420c0000 {
 			compatible = "st,stm32-aes";
 			reg = <0x420c0000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 16)>;

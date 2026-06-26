@@ -18,4 +18,16 @@ config PREALLOC_BUFFERS
 		Preallocate buffers used for transaction
 		using `memory-region` property.
 
+config SPI_CONTROLLER_PERIPHERAL_WORKQUEUE_STACK_SIZE
+	int "Test workqueue stack size"
+	default 1024
+	help
+	    Stack size for thread used to perform async API checks
+
+config SPI_CONTROLLER_PERIPHERAL_WORKQUEUE_PRIORITY
+	int "Test workqueue priority"
+	default 10
+	help
+	    Priority for the work queue used for async testing
+
 source "Kconfig.zephyr"

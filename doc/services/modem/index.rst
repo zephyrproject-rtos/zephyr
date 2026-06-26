@@ -349,6 +349,29 @@ binding, then write a driver source file using the macros from
 The example above is minimal but enough to start a PPP connection on a generic cellular modem.
 Refer to :zephyr_file:`drivers/modem/modem_cellular.c` for more complete examples.
 
+Board-specific init script
+==========================
+
+The init, network and dial scripts are vendor-scoped (keyed to the devicetree
+compatible), so configuration that differs between boards using the same modem,
+for example RF tuner band routing, would otherwise require forking the vendor
+driver. A board may instead register its own chat script with
+:c:macro:`MODEM_CELLULAR_BOARD_INIT_DEFINE`. The script runs over the AT control
+channel after CMUX is established and before APN and network configuration.
+Boards that register no script add no ROM or RAM footprint.
+
+The driver overrides the script's completion callback with the one that
+advances the connect sequence, so any callback set on the script is ignored.
+
+.. code-block:: c
+
+   MODEM_CHAT_MATCH_DEFINE(board_init_ok_match, "OK", "", NULL);
+   MODEM_CHAT_SCRIPT_CMDS_DEFINE(board_init_cmds,
+       MODEM_CHAT_SCRIPT_CMD_RESP("AT+QCFG=\"rf/tuner_cfg\",0,\"12,28\"", board_init_ok_match));
+   MODEM_CHAT_SCRIPT_NO_ABORT_DEFINE(board_init, board_init_cmds, NULL, 10);
+
+   MODEM_CELLULAR_BOARD_INIT_DEFINE(DT_NODELABEL(modem), &board_init);
+
 .. _cmux-power-saving:
 
 CMUX Power Saving

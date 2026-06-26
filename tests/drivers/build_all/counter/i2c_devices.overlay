@@ -24,12 +24,6 @@
 			status = "okay";
 			clock-frequency = <100000>;
 
-			test_ds3231: ds3231@0 {
-				compatible = "maxim,ds3231";
-				status = "okay";
-				reg = <0x0>;
-			};
-
 			test_mcp7940n: mcp7940n@1 {
 				compatible = "microchip,mcp7940n";
 				status = "okay";

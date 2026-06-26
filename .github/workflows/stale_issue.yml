@@ -21,7 +21,8 @@ jobs:
         stale-pr-message: 'This pull request has been marked as stale because it has been open (more
           than) 30 days with no activity. Remove the stale label or add a comment saying that you
           would like to have the label removed otherwise this pull request will automatically be
-          closed in 7 days. Note, that you can always re-open a closed pull request at any time.'
+          closed in 7 days. Note that if it gets closed, you can ask someone to reopen it for you if
+          you do not have the permissions to do so.'
         stale-issue-message: 'This issue has been marked as stale because it has been open (more
           than) 30 days with no activity. Remove the stale label or add a comment saying that you
           would like to have the label removed otherwise this issue will automatically be closed in

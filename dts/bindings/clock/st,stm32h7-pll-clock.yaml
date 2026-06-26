@@ -54,6 +54,7 @@ properties:
     type: int
     description: |
         PLL division factor for pllx_p_ck
+        Note: For PLL1, P division factor must be 1 or even.
     min: 1
     max: 128
 

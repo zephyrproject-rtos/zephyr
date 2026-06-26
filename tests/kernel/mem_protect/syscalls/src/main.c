@@ -20,6 +20,11 @@
 #define SLEEP_MS_LONG	300
 #elif defined(CONFIG_WHISPER_TARGET)
 #define SLEEP_MS_LONG	300
+#elif defined(CONFIG_QEMU_TARGET)
+/* Emulators are much slower than real hardware, especially in the kyield
+ * scenario where every syscall forces a userspace context switch.
+ */
+#define SLEEP_MS_LONG	300
 #else
 #define SLEEP_MS_LONG	15000
 #endif

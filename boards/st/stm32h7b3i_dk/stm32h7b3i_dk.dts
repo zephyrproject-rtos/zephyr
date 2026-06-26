@@ -73,7 +73,7 @@
 	};
 
 	dcmi_camera_connector: connector_dcmi_camera {
-		compatible = "st,stm32-dcmi-camera-fpu-330zh";
+		compatible = "st,dvp-cam-zif-30-connector";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
@@ -314,4 +314,8 @@ st_cam_dvp: &dcmi {
 		     &dcmi_d0_pc6 &dcmi_d1_pc7 &dcmi_d2_pg10 &dcmi_d3_pc9
 		     &dcmi_d4_pc11 &dcmi_d5_pd3 &dcmi_d6_pb8 &dcmi_d7_pb9>;
 	pinctrl-names = "default";
+};
+
+zephyr_jpegenc: &jpeg {
+	status = "okay";
 };

@@ -96,6 +96,7 @@ config NET_MGMT_EVENT_INFO
 	  on the type of event.
 
 if NET_MGMT_EVENT_INFO
+
 config NET_MGMT_EVENT_INFO_DEFAULT_DATA_SIZE
 	int "Default size of event information data"
 	default 32
@@ -111,6 +112,7 @@ config NET_MGMT_EVENT_MONITOR
 	  default. Note that you should probably increase the value of
 	  NET_MGMT_EVENT_QUEUE_SIZE from the default in order not to miss
 	  any events.
+
 endif # NET_MGMT_EVENT_INFO
 
 config NET_MGMT_EVENT_MONITOR_STACK_SIZE
@@ -145,6 +147,7 @@ config NET_MGMT_THREAD_PRIO_CUSTOM
 	bool "Customize net mgmt thread priority"
 
 if NET_MGMT_THREAD_PRIO_CUSTOM
+
 config NET_MGMT_THREAD_PRIORITY
 	int "Priority of net_mgmt thread"
 	default NUM_PREEMPT_PRIORITIES

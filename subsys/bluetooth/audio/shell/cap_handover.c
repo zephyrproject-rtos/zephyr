@@ -39,18 +39,49 @@
 #include "host/shell/bt.h"
 #include "audio.h"
 
+static void unicast_to_broadcast_created_cb(struct bt_cap_broadcast_source *broadcast_source)
+{
+	bt_shell_info("Broadcast source %p created for broadcast id 0x%06X ."
+		      "Execute \"bt per-adv-data\" to set the BASE",
+		      broadcast_source, default_source.broadcast_id);
+
+	if (default_source.cap_source == NULL) {
+		default_source.cap_source = broadcast_source;
+		default_source.is_cap = true;
+	} else {
+		bt_shell_warn("Unexpected broadcast source %p already exists for CAP",
+			      default_source.cap_source);
+	}
+}
+
 static void unicast_to_broadcast_complete_cb(int err, struct bt_conn *conn,
 					     struct bt_cap_unicast_group *unicast_group,
 					     struct bt_cap_broadcast_source *broadcast_source)
 {
-	if (err == -ECANCELED) {
-		bt_shell_print("Unicast to broadcast handover was cancelled for conn %p", conn);
+	default_source.handover_in_progress = false;
 
-		default_source.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
-		default_source.adv_sid = BT_GAP_SID_INVALID;
-	} else if (err != 0) {
-		bt_shell_error("Unicast to broadcast handover failed for conn %p (%d)", conn, err);
+	if (err != 0) {
+		const char *unicast_group_del_str =
+			unicast_group != NULL ? " without deleting the unicast_group" : "";
 
+		if (err == -ECANCELED) {
+			bt_shell_print("Unicast to broadcast handover was cancelled for conn %p%s",
+				       conn, unicast_group_del_str);
+		} else {
+			bt_shell_error("Unicast to broadcast handover failed for conn %p (%d)%s",
+				       conn, err, unicast_group_del_str);
+		}
+
+		if (broadcast_source != NULL) {
+			err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
+
+			if (err != 0) {
+				bt_shell_error("Failed to delete broadcast source: %d", err);
+			}
+		}
+
+		default_source.cap_source = NULL;
+		default_source.is_cap = false;
 		default_source.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 		default_source.adv_sid = BT_GAP_SID_INVALID;
 	} else {
@@ -63,13 +94,6 @@ static void unicast_to_broadcast_complete_cb(int err, struct bt_conn *conn,
 		default_unicast_group.is_cap = false;
 		default_unicast_group.cap_group = NULL;
 	}
-
-	if (broadcast_source != NULL) {
-		default_source.cap_source = broadcast_source;
-		default_source.is_cap = true;
-	}
-
-	default_source.handover_in_progress = false;
 }
 
 static void broadcast_to_unicast_complete_cb(int err, struct bt_conn *conn,
@@ -143,6 +167,7 @@ static int register_callbacks(void)
 
 	if (!registered) {
 		static const struct bt_cap_handover_cb cbs = {
+			.unicast_to_broadcast_created = unicast_to_broadcast_created_cb,
 			.unicast_to_broadcast_complete = unicast_to_broadcast_complete_cb,
 			.broadcast_to_unicast_complete = broadcast_to_unicast_complete_cb,
 		};
@@ -165,57 +190,57 @@ static int validate_and_parse_cmd_cap_handover_unicast_to_broadcast_args(
 	const struct named_lc3_preset **named_preset,
 	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE], bool *encrypted)
 {
+	size_t i;
 
-	for (size_t i = 1U; i < argc; i++) {
+	i = 1U;
+	while (i < argc) {
 		char *arg = argv[i];
 
 		if (strcmp(arg, "enc") == 0) {
+			size_t bcode_len;
+
 			i++;
-
-			if (argc > i) {
-				size_t bcode_len;
-
-				arg = argv[i];
-
-				bcode_len = hex2bin(arg, strlen(arg), broadcast_code,
-						    BT_ISO_BROADCAST_CODE_SIZE);
-
-				if (bcode_len != BT_ISO_BROADCAST_CODE_SIZE) {
-					shell_error(sh, "Invalid Broadcast Code Length: %zu",
-						    bcode_len);
-
-					return -ENOEXEC;
-				}
-
-				*encrypted = true;
-			} else {
+			if (i == argc) {
 				shell_help(sh);
 
 				return SHELL_CMD_HELP_PRINTED;
 			}
+
+			arg = argv[i];
+
+			bcode_len = hex2bin(arg, strlen(arg), broadcast_code,
+					    BT_ISO_BROADCAST_CODE_SIZE);
+
+			if (bcode_len != BT_ISO_BROADCAST_CODE_SIZE) {
+				shell_error(sh, "Invalid Broadcast Code Length: %zu", bcode_len);
+
+				return -ENOEXEC;
+			}
+
+			*encrypted = true;
 		} else if (strcmp(arg, "preset") == 0) {
 			i++;
-
-			if (argc > i) {
-
-				arg = argv[i];
-
-				*named_preset = bap_get_named_preset(false, BT_AUDIO_DIR_SINK, arg);
-				if (*named_preset == NULL) {
-					shell_error(sh, "Unable to parse named_preset %s", arg);
-
-					return -ENOEXEC;
-				}
-			} else {
+			if (i == argc) {
 				shell_help(sh);
 
 				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			arg = argv[i];
+
+			*named_preset = bap_get_named_preset(false, BT_AUDIO_DIR_SINK, arg);
+			if (*named_preset == NULL) {
+				shell_error(sh, "Unable to parse named_preset %s", arg);
+
+				return -ENOEXEC;
 			}
 		} else {
 			shell_help(sh);
 
 			return SHELL_CMD_HELP_PRINTED;
 		}
+
+		i++;
 	}
 
 	return 0;
@@ -424,7 +449,10 @@ static int validate_and_parse_cmd_cap_handover_broadcast_to_unicast(
 	const struct shell *sh, size_t argc, char *argv[],
 	const struct named_lc3_preset **named_preset, bool *all_conn, size_t *conn_cnt)
 {
-	for (size_t i = 1U; i < argc; i++) {
+	size_t i;
+
+	i = 1U;
+	while (i < argc) {
 		const char *arg = argv[i];
 		int err;
 
@@ -481,6 +509,8 @@ static int validate_and_parse_cmd_cap_handover_broadcast_to_unicast(
 
 			return SHELL_CMD_HELP_PRINTED;
 		}
+
+		i++;
 	}
 
 	return 0;

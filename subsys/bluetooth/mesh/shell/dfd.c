@@ -158,7 +158,7 @@ static int cmd_dfd_receivers_get(const struct shell *sh, size_t argc, char *argv
 	}
 
 	cnt = MIN(cnt, dfd_srv->target_cnt - first);
-	uint8_t progress = bt_mesh_dfu_cli_progress(&dfd_srv->dfu) / 2;
+	uint8_t progress = bt_mesh_dfu_cli_progress(&dfd_srv->dfu);
 
 	shell_print(sh, "{\n\t\"target_cnt\": %d,\n\t\"targets\": {",
 		    dfd_srv->target_cnt);

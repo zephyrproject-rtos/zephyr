@@ -52,6 +52,12 @@ config MODEM_HL78XX_HAS_KPSMEV_URC
 	help
 	  Hidden capability symbol: selected variants support +KPSMEV URCs.
 
+config MODEM_HL78XX_HAS_CTZEU_URC
+	bool
+	default y if MODEM_HL78XX_12
+	help
+	  Hidden capability symbol: selected variants support +CTZEU URCs.
+
 config MODEM_HL78XX_WDSI_PROFILE_VALUE
 	int
 	default 8191 if MODEM_HL78XX_12
@@ -658,7 +664,7 @@ config MODEM_HL78XX_AUTORAT_OVER_WRITE_PRL
 	bool "Overwrite PRL profiles always at boot"
 	help
 	  If you enable this option, the PRL profiles on the modem will be overwritten by the app
-	  with the PRL profile values at boot everytime.
+	  with the PRL profile values at boot every time.
 
 config MODEM_HL78XX_AUTORAT_PRL_PROFILES
 	string "Configure Preferred Radio Access Technology List"
@@ -1476,5 +1482,6 @@ config MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
 	  This setting is depends on global log level debug.
 
 rsource "hl78xx_evt_monitor/Kconfig.hl78xx_evt_monitor"
+rsource "hl78xx_at_monitor/Kconfig.hl78xx_at_monitor"
 
 endif # MODEM_HL78XX

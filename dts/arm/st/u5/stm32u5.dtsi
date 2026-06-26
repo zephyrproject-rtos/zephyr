@@ -40,6 +40,8 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			cpu-power-states = <&stop0 &stop1 &stop2>;
+			i-cache-line-size = <16>;
+			d-cache-line-size = <16>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
@@ -957,7 +959,7 @@
 			status = "disabled";
 		};
 
-		hash: hash@420c0400 {
+		hash: crypto@420c0400 {
 			compatible = "st,stm32-hash";
 			reg = <0x420c0400 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 17)>;

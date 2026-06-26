@@ -1004,7 +1004,7 @@ ZTEST(net_pkt_test_suite, test_net_pkt_headroom_copy)
 	net_buf_reserve(frag2_dst, 1);
 	net_pkt_append_buffer(pkt_dst, frag2_dst);
 	zassert_equal(net_pkt_available_buffer(pkt_dst), 4, "Wrong space left");
-	zassert_equal(net_pkt_get_len(pkt_dst), 0, "Length missmatch");
+	zassert_equal(net_pkt_get_len(pkt_dst), 0, "Length mismatch");
 
 	/* Copy to net_pkt which contains fragments with reserved bytes */
 	net_pkt_cursor_init(pkt_src);
@@ -1012,7 +1012,7 @@ ZTEST(net_pkt_test_suite, test_net_pkt_headroom_copy)
 	res = net_pkt_copy(pkt_dst, pkt_src, 4);
 	zassert_equal(res, 0, "Pkt copy failed");
 	zassert_equal(net_pkt_available_buffer(pkt_dst), 0, "Wrong space left");
-	zassert_equal(net_pkt_get_len(pkt_dst), 4, "Length missmatch");
+	zassert_equal(net_pkt_get_len(pkt_dst), 4, "Length mismatch");
 
 	net_pkt_cursor_init(pkt_dst);
 	zassert_true(net_pkt_read(pkt_dst, small_buffer, 4) == 0,

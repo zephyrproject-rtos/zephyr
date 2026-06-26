@@ -79,8 +79,8 @@ config NET_INITIAL_IPV4_MCAST_LOOP
 	bool "Control whether the socket sees multicast packets sent by itself"
 	default y
 	help
-	Assign initial value to IPV4_MULTICAST_LOOP in socket options,
-	if not set by the user using setsockopt().
+	  Assign initial value to IPV4_MULTICAST_LOOP in socket options,
+	  if not set by the user using setsockopt().
 
 config NET_IF_MCAST_IPV4_SOURCE_COUNT
 	int "Max number of IPv4 sources per mcast address to be included or excluded"
@@ -256,6 +256,7 @@ config NET_IPV4_NAT
 	  Add iptable rule to allow specific packets to be forwarded.
 
 if NET_IPV4_NAT
+
 config NET_IPV4_CONN_TRACK_MAX_NUM
 	int "Maximum connection track maintained for IP forward"
 	default 10
@@ -269,6 +270,7 @@ config NET_IPV4_IPTABLE_RULE_MAX_NUM
 	default 3
 	help
 	  Maximum number of active IP table rules.
+
 endif
 
 module = NET_IPV4
@@ -289,21 +291,26 @@ module-str = Log level for ICMPv4
 module-help = Enables ICMPv4 code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
-#if NET_IPV4_ACD
+if NET_IPV4_ACD
+
 module = NET_IPV4_ACD
 module-dep = NET_LOG
 module-str = Log level for IPv4 address conflict detection
 module-help = Enables IPv4 address conflict detection debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
-#endif
+
+endif
 
 if NET_IPV4_AUTO
+
 module = NET_IPV4_AUTO
 module-dep = NET_LOG
 module-str = Log level for IPv4 autoconf client
 module-help = Enable debug diagnostic from IPv4 autoconf client.
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_IPV4_AUTO
 
 endif # NET_NATIVE_IPV4
+
 endif # NET_IPV4
