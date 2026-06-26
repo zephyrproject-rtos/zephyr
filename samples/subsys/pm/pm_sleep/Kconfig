@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Rithic Chellaram Hariharan
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu
+
+config APP_SIM_PM_BACKEND
+	bool "Provide a simulated power-management backend"
+	default y if BOARD_NATIVE_SIM
+	select HAS_PM
+	help
+	  Emulation targets such as native_sim do not implement the SoC
+	  pm_state_set() hook required by the power-management subsystem.
+	  Enable this option to provide a trivial simulated backend (and a
+	  custom policy that only enters explicitly requested states) so the
+	  sample can demonstrate pm_light_sleep() and pm_deep_sleep().
+
+	  On real hardware the SoC supplies the backend, so this option is
+	  disabled by default for any board other than native_sim.

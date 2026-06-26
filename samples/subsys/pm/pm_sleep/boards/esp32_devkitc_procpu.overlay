@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2026 Rithic Chellaram Hariharan
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Enable the RTC timer as a wake-up source for light sleep.
+ */
+
+&rtc_timer {
+	status = "okay";
+	wakeup-source;
+};

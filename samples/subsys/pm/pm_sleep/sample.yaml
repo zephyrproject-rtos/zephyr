@@ -1,0 +1,30 @@
+sample:
+  name: PM Unified Sleep
+  description: Portable light, deep and soft-off system sleep helpers
+tests:
+  sample.pm.unified_sleep:
+    platform_allow:
+      - native_sim
+      - esp32_devkitc/esp32/procpu
+      - esp32s3_devkitc/esp32s3/procpu
+      - frdm_mcxa153/mcxa153
+      - frdm_mcxn236/mcxn236
+    integration_platforms:
+      - native_sim
+    tags: pm
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "PM unified sleep sample"
+        - "Requesting light sleep"
+        - "SoC entering suspend-to-idle"
+        - "Resumed from light sleep"
+        - "Requesting deep sleep"
+        - "SoC entering suspend-to-ram"
+        - "Resumed from deep sleep"
+        - "Requesting soft-off"
+        - "SoC entering soft-off"
+        - "Resumed from soft-off"
+        - "PM unified sleep sample complete"
