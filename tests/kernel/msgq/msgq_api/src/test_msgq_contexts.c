@@ -521,5 +521,41 @@ ZTEST(msgq_api_1cpu, test_msgq_thread_pending)
 }
 
 /**
+ * @brief Test peeking at a message by index without removing it
+ *
+ * @details Put two distinct messages into a message queue, then use
+ * k_msgq_peek_at() to read the message at each valid index and verify the
+ * returned values match what was enqueued, without removing them (the used
+ * count stays unchanged). Also verify that peeking at an index beyond the
+ * number of queued messages returns -ENOMSG.
+ *
+ * @ingroup kernel_message_queue_tests
+ * @see k_msgq_peek_at()
+ */
+ZTEST_USER(msgq_api, test_msgq_peek_at)
+{
+	uint32_t read_data;
+
+	k_msgq_purge(&kmsgq);
+
+	zassert_equal(k_msgq_put(&kmsgq, &data[0], K_NO_WAIT), 0);
+	zassert_equal(k_msgq_put(&kmsgq, &data[1], K_NO_WAIT), 0);
+
+	/* Peek at each index; messages are queued FIFO so index 0 is oldest. */
+	zassert_equal(k_msgq_peek_at(&kmsgq, &read_data, 0), 0);
+	zassert_equal(read_data, data[0]);
+	zassert_equal(k_msgq_peek_at(&kmsgq, &read_data, 1), 0);
+	zassert_equal(read_data, data[1]);
+
+	/* Peeking must not remove any message. */
+	zassert_equal(k_msgq_num_used_get(&kmsgq), MSGQ_LEN);
+
+	/* An index at or beyond the number of queued messages returns -ENOMSG. */
+	zassert_equal(k_msgq_peek_at(&kmsgq, &read_data, MSGQ_LEN), -ENOMSG);
+
+	k_msgq_purge(&kmsgq);
+}
+
+/**
  * @}
  */
