@@ -47,6 +47,19 @@ class ApiOverview(SphinxDirective):
     """
 
     def run(self):
+        # Partial build: Doxygen XML may not have been generated (e.g. the API
+        # layer was skipped). Render a placeholder instead of failing.
+        index_xml = Path(self.config.api_overview_doxygen_out_dir) / "xml" / "index.xml"
+        if not index_xml.exists():
+            placeholder = nodes.note()
+            placeholder += nodes.paragraph(
+                text=(
+                    "The API overview table is not available in this build "
+                    "because the Doxygen (API) layer was skipped."
+                )
+            )
+            return [placeholder]
+
         groups = parse_xml_dir(self.config.api_overview_doxygen_out_dir + "/xml")
 
         inners = [group.get_compounddef()[0].get_innergroup() for group in groups]

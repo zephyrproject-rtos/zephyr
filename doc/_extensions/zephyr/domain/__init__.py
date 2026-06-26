@@ -317,6 +317,15 @@ class ConvertBoardNode(SphinxTransform):
             new_section = nodes.section(ids=[node["id"]])
             new_section += nodes.title(text=node["full_name"])
 
+            # Partial build: no catalog data available, render title + content
+            # only (no overview sidebar).
+            if node.get("catalog_skipped"):
+                new_section.extend(siblings_to_move)
+                node.replace_self(new_section)
+                for sibling in siblings_to_move:
+                    parent.remove(sibling)
+                return
+
             # create a sidebar with all the board details
             sidebar = nodes.sidebar(classes=["board-overview"])
             new_section += sidebar
@@ -544,6 +553,11 @@ class ProcessCodeSampleListingNode(SphinxPostTransform):
 
             for category in node["categories"]:
                 if category not in code_samples_categories:
+                    if not code_samples_categories:
+                        # No sample categories registered at all (e.g. external
+                        # content skipped in a partial build); render nothing
+                        # instead of erroring on every requested category.
+                        continue
                     logger.error(
                         f"Category {category} not found in code samples categories",
                         location=(self.env.docname, node.line),
@@ -768,6 +782,16 @@ class BoardDirective(SphinxDirective):
         # board_name is passed as the directive argument
         board_name = self.arguments[0]
 
+        # Partial build: the board catalog was not generated, so there is no
+        # board data to render. Emit a minimal node so the page keeps a title
+        # (avoiding fatal "no title" toctree warnings under -W); the overview
+        # sidebar is omitted by ConvertBoardNode.
+        if not self.env.app.config.zephyr_generate_board_catalog:
+            board_node = BoardNode(id=board_name)
+            board_node["full_name"] = board_name
+            board_node["catalog_skipped"] = True
+            return [board_node]
+
         boards = self.env.domaindata["zephyr"]["boards"]
         vendors = self.env.domaindata["zephyr"]["vendors"]
 
@@ -812,6 +836,15 @@ class BoardCatalogDirective(SphinxDirective):
     optional_arguments = 0
 
     def run(self):
+        # Partial build: catalog data was not generated, show a placeholder.
+        if not self.env.app.config.zephyr_generate_board_catalog:
+            return [
+                nodes.paragraph(
+                    text="The board catalog is not available in this build "
+                    "because the board catalog layer was skipped."
+                )
+            ]
+
         if self.env.app.builder.format == "html":
             domain_data = self.env.domaindata["zephyr"]
 
@@ -855,6 +888,11 @@ class BoardSupportedHardwareDirective(SphinxDirective):
     def run(self):
         env = self.env
         docname = env.docname
+
+        # Partial build: board data (and the BoardNode) is not generated when
+        # the catalog layer is skipped, so there is nothing to render.
+        if not env.app.config.zephyr_generate_board_catalog:
+            return []
 
         matcher = NodeMatcher(BoardNode)
         board_nodes = list(self.state.document.traverse(matcher))
@@ -1120,6 +1158,11 @@ class BoardSupportedRunnersDirective(SphinxDirective):
     def run(self):
         env = self.env
         docname = env.docname
+
+        # Partial build: board data (and the BoardNode) is not generated when
+        # the catalog layer is skipped, so there is nothing to render.
+        if not env.app.config.zephyr_generate_board_catalog:
+            return []
 
         matcher = NodeMatcher(BoardNode)
         board_nodes = list(self.state.document.traverse(matcher))
@@ -1508,6 +1551,10 @@ def install_static_assets_as_needed(
 
 
 def load_board_catalog_into_domain(app: Sphinx) -> None:
+    if not app.config.zephyr_generate_board_catalog:
+        logger.info("Board catalog generation skipped (zephyr_generate_board_catalog is False).")
+        return
+
     board_catalog = get_catalog(
         generate_hw_features=(
             app.builder.format == "html" and app.config.zephyr_generate_hw_features
@@ -1534,6 +1581,7 @@ def setup(app):
     app.add_config_value("zephyr_breathe_insert_related_samples", False, "env")
     app.add_config_value("zephyr_generate_hw_features", False, "env")
     app.add_config_value("zephyr_hw_features_vendor_filter", [], "env", types=[list[str]])
+    app.add_config_value("zephyr_generate_board_catalog", True, "env")
 
     app.add_domain(ZephyrDomain)
 
