@@ -8,7 +8,7 @@
 
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <errno.h>
 
 #include <hal_ch32fun.h>

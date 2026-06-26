@@ -11,7 +11,7 @@
 #include <hardware/structs/psm.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/watchdog.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_rpi_pico, CONFIG_WDT_LOG_LEVEL);

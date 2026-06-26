@@ -8,7 +8,7 @@
 
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #if defined(CONFIG_SOC_SERIES_RTL87X2G)
 #include <rtl_wdt.h>
