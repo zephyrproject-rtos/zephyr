@@ -38,7 +38,7 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 #include "audio_internal.h"
 #include "bap_unicast_server.h"

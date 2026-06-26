@@ -47,7 +47,7 @@ LOG_MODULE_REGISTER(bt_bap_scan_delegator, CONFIG_BT_BAP_SCAN_DELEGATOR_LOG_LEVE
 	 Use the CONFIG_LOG_MODE_DEFERRED Kconfig option when this feature is enabled.
 #endif
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 #include "audio_internal.h"
 #include "bap_internal.h"

@@ -32,7 +32,7 @@
 
 LOG_MODULE_REGISTER(bt_cap_common, CONFIG_BT_CAP_COMMON_LOG_LEVEL);
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 static struct bt_cap_common_client bt_cap_common_clients[CONFIG_BT_MAX_CONN];
 static const struct bt_uuid *cas_uuid = BT_UUID_CAS;

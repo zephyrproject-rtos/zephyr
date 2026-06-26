@@ -21,9 +21,9 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
-#include "crypto/bt_crypto.h"
+#include <crypto/bt_crypto.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 #include "csip_crypto.h"
 

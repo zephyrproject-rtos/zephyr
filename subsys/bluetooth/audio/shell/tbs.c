@@ -26,7 +26,7 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
-#include "host/shell/bt.h"
+#include <host/shell/bt.h>
 
 static struct bt_conn *tbs_authorized_conn;
 

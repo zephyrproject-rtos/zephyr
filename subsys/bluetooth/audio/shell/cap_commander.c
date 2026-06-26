@@ -28,8 +28,8 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
-#include "common/bt_shell_private.h"
-#include "host/shell/bt.h"
+#include <common/bt_shell_private.h>
+#include <host/shell/bt.h>
 #include "audio.h"
 
 static void cap_discover_cb(struct bt_conn *conn, int err,
