@@ -235,7 +235,13 @@ void coredump(unsigned int reason, const struct arch_esf *esf,
 
 	process_memory_region_list(thread);
 
+	coredump_app_dump();
+
 	z_coredump_end();
+}
+
+__weak void coredump_app_dump(void)
+{
 }
 
 void z_coredump_start(void)

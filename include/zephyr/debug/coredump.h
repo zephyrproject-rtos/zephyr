@@ -259,6 +259,34 @@ void coredump_buffer_output(uint8_t *buf, size_t buflen);
 int coredump_query(enum coredump_query_id query_id, void *arg);
 int coredump_cmd(enum coredump_cmd_id cmd_id, void *arg);
 
+/**
+ * @brief Application hook for adding extra memory regions to a coredump.
+ *
+ * This weak function is called during every coredump for ALL dump modes
+ * (MIN, THREADS, LINKER_RAM) after linker/thread/COREDUMP_DEVICE regions
+ * are emitted and just before the backend is finalized.  Override it in
+ * the application to call coredump_memory_dump() for any data structure
+ * the crashed function was operating on that is not already captured by
+ * the selected dump mode.
+ *
+ * @note Called from the fatal error handler with IRQs disabled.  Blocking
+ * calls (k_sleep, k_mutex_lock, etc.) must not be used.  On SMP, only
+ * copy data that is safe to read without locking other CPUs.  Backends
+ * with fixed buffers (for example IN_MEMORY) silently drop excess output.
+ *
+ * Example:
+ * @code
+ * void coredump_app_dump(void)
+ * {
+ *     coredump_memory_dump((uintptr_t)&pkt_ctx,
+ *                          (uintptr_t)&pkt_ctx + sizeof(pkt_ctx));
+ *     coredump_memory_dump((uintptr_t)rx_buf,
+ *                          (uintptr_t)rx_buf + sizeof(rx_buf));
+ * }
+ * @endcode
+ */
+void coredump_app_dump(void);
+
 #else
 
 static inline void coredump(unsigned int reason, const struct arch_esf *esf,
@@ -267,6 +295,10 @@ static inline void coredump(unsigned int reason, const struct arch_esf *esf,
 	ARG_UNUSED(reason);
 	ARG_UNUSED(esf);
 	ARG_UNUSED(thread);
+}
+
+static inline void coredump_app_dump(void)
+{
 }
 
 static inline void coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr)
@@ -352,6 +384,15 @@ static inline int coredump_cmd(enum coredump_cmd_id query_id, void *arg)
  * @param[in] cmd_id Command ID
  * @param[in,out] arg Pointer to argument for exchanging information
  * @return Depends on the command
+ */
+
+/**
+ * @fn void coredump_app_dump(void);
+ * @brief Application hook for adding extra memory regions to a coredump.
+ *
+ * Override this weak function to call coredump_memory_dump() for data not
+ * captured by the selected dump mode. Called from the fatal error handler
+ * with IRQs disabled for all dump modes after standard regions are emitted.
  */
 
 /**
