@@ -853,7 +853,6 @@ exclude = [
     "./samples/subsys/zbus/remote_mock/remote_mock.py",
     "./scripts/check_maintainers.py",
     "./scripts/ci/upload_test_results_es.py",
-    "./scripts/dts/gen_edt.py",
     "./scripts/dts/python-devicetree/src/devicetree/_private.py",
     "./scripts/dts/python-devicetree/src/devicetree/dtlib.py",
     "./scripts/dts/python-devicetree/src/devicetree/edtlib.py",
