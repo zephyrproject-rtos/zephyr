@@ -7,14 +7,15 @@
 /**
  * @brief Tests for the FIFO kernel object
  *
- * Verify zephyr fifo apis under different context
+ * Verify the Zephyr FIFO APIs across thread and ISR contexts, including data
+ * passing, emptiness queries, cancellation, timeouts and queueing order.
  *
  * - API coverage
- *   -# k_fifo_init K_FIFO_DEFINE
- *   -# k_fifo_put k_fifo_put_list k_fifo_put_slist
- *   -# k_fifo_get *
+ *   -# k_fifo_init() K_FIFO_DEFINE()
+ *   -# k_fifo_put() k_fifo_put_list() k_fifo_put_slist()
+ *   -# k_fifo_get() k_fifo_is_empty() k_fifo_cancel_wait()
  *
- * @defgroup kernel_fifo_tests FIFOs
+ * @defgroup tests_kernel_fifo FIFO tests
  * @ingroup all_tests
  * @{
  * @}
