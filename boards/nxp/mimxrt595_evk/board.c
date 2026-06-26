@@ -4,13 +4,13 @@
  */
 
 #include <zephyr/init.h>
-#include "fsl_power.h"
-#include "fsl_inputmux.h"
+#include <fsl_power.h>
+#include <fsl_inputmux.h>
 #include <zephyr/pm/policy.h>
 #include "board.h"
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
-#include "flash_clock_setup.h"
+#include <flash_clock_setup.h>
 #endif
 
 /* OTP fuse index. */
