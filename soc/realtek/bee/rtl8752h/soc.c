@@ -9,15 +9,15 @@
 #include <zephyr/logging/log.h>
 #include <soc.h>
 
-#include "clock_manager.h"
-#include "image_header.h"
-#include "osif_zephyr.h"
-#include "rom_uuid.h"
-#include "rtl_boot_record.h"
-#include "system_rtl876x.h"
-#include "utils.h"
-#include "vector_table.h"
-#include "rtl876x_aon_reg.h"
+#include <clock_manager.h>
+#include <image_header.h>
+#include <osif_zephyr.h>
+#include <rom_uuid.h>
+#include <rtl_boot_record.h>
+#include <system_rtl876x.h>
+#include <utils.h>
+#include <vector_table.h>
+#include <rtl876x_aon_reg.h>
 
 extern void _isr_wrapper(void);
 
