@@ -19,11 +19,11 @@
 #include <zephyr/drivers/clock_control.h>
 
 #include "udc_common.h"
-#include "usb.h"
-#include "usb_device_config.h"
-#include "usb_device_mcux_drv_port.h"
-#include "usb_device_ehci.h"
-#include "usb_phy.h"
+#include <usb.h>
+#include <usb_device_config.h>
+#include <usb_device_mcux_drv_port.h>
+#include <usb_device_ehci.h>
+#include <usb_phy.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(udc_mcux, CONFIG_UDC_DRIVER_LOG_LEVEL);
