@@ -12,7 +12,7 @@
 #include <zephyr/kernel.h>
 #include <stdio.h>
 
-#include "math_ops.h"
+#include <math_ops.h>
 
 int main(void)
 {

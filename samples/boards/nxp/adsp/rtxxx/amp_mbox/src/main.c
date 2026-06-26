@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/mbox.h>
 
-#include "dsp.h"
+#include <dsp.h>
 
 static const struct device *mbox = DEVICE_DT_GET(DT_ALIAS(mbox));
 static mbox_channel_id_t mbox_ch;
