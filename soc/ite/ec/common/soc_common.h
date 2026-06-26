@@ -12,7 +12,7 @@
 #ifndef __SOC_COMMON_H_
 #define __SOC_COMMON_H_
 
-#include "chip_chipregs.h"
+#include <chip_chipregs.h>
 
 #ifndef _ASMLANGUAGE
 

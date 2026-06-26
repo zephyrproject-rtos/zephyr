@@ -9,10 +9,10 @@
 #define pse84_s_protection_h
 
 #include <infineon_kconfig.h>
-#include "cy_mpc.h"
+#include <cy_mpc.h>
 #include "pse84_s_system.h"
 #include "pse84_s_mpc.h"
-#include "cy_ppc.h"
+#include <cy_ppc.h>
 
 #include "pse84_s_sau.h"
 

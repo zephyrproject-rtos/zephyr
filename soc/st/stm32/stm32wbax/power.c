@@ -29,8 +29,8 @@
 
 #if defined(CONFIG_PM) && (defined(CONFIG_BT) || defined(CONFIG_IEEE802154))
 #include <zephyr/pm/policy.h>
-#include "os_wrapper.h"
-#include "ll_sys.h"
+#include <os_wrapper.h>
+#include <ll_sys.h>
 #endif
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);

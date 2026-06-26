@@ -7,7 +7,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/devicetree.h>
-#include "r_ioport.h"
+#include <r_ioport.h>
 
 #ifdef __cplusplus
 extern "C" {

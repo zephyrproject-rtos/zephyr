@@ -23,7 +23,7 @@
 #error "Library does not support the specified device."
 #endif
 
-#include "pic32cm_pl.h"
+#include <pic32cm_pl.h>
 
 #endif /* _ASMLANGUAGE */
 

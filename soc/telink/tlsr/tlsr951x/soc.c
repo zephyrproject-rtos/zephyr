@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "sys.h"
-#include "clock.h"
+#include <sys.h>
+#include <clock.h>
 #include <zephyr/init.h>
 #include <zephyr/devicetree.h>
 

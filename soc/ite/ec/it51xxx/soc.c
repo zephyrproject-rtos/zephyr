@@ -7,7 +7,7 @@
 #include <soc_common.h>
 #include <zephyr/kernel.h>
 
-#include "soc_espi.h"
+#include <soc_espi.h>
 
 static mm_reg_t ecpm_base = DT_REG_ADDR(DT_NODELABEL(ecpm));
 /* it51xxx ECPM registers definition */

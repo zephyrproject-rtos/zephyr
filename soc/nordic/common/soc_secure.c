@@ -7,8 +7,8 @@
 #include <soc_secure.h>
 #include <errno.h>
 
-#include "tfm_platform_api.h"
-#include "tfm_ioctl_api.h"
+#include <tfm_platform_api.h>
+#include <tfm_ioctl_api.h>
 
 #if NRF_GPIO_HAS_SEL
 void soc_secure_gpio_pin_mcu_select(uint32_t pin_number, nrf_gpio_pin_sel_t mcu)

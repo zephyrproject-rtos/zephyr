@@ -5,7 +5,7 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
-#include "fsl_power.h"
+#include <fsl_power.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
