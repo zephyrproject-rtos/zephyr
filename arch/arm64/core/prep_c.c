@@ -20,7 +20,7 @@
 #include <zephyr/arch/common/init.h>
 
 #include "boot.h"
-#include "kernel_arch_func.h"
+#include <kernel_arch_func.h>
 
 __weak void z_arm64_mm_init(bool is_primary_core) { }
 

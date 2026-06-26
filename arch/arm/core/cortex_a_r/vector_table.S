@@ -13,7 +13,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include "vector_table.h"
-#include "offsets_short.h"
+#include <offsets_short.h>
 #include "macro_priv.inc"
 
 _ASM_FILE_PROLOGUE

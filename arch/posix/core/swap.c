@@ -14,9 +14,9 @@
  */
 
 #include <zephyr/kernel.h>
-#include "posix_core.h"
+#include <posix_core.h>
 #include <zephyr/irq.h>
-#include "kswap.h"
+#include <kswap.h>
 #include <zephyr/pm/pm.h>
 
 int arch_swap(unsigned int key)

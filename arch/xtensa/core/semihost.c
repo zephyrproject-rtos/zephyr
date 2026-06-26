@@ -7,7 +7,7 @@
 
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/arch/common/semihost.h>
-#include "semihost_types.h"
+#include <semihost_types.h>
 
 #ifdef CONFIG_SIMULATOR_XTENSA
 #include <xtensa/simcall.h>

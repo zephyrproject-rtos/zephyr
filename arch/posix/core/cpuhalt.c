@@ -20,8 +20,8 @@
  * A weak stub for sys_arch_reboot(), which does nothing
  */
 
-#include "posix_core.h"
-#include "posix_board_if.h"
+#include <posix_core.h>
+#include <posix_board_if.h>
 #include <zephyr/arch/posix/posix_soc_if.h>
 #include <zephyr/tracing/tracing.h>
 
