@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bootutil/bootutil_public.h"
+#include <bootutil/bootutil_public.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/init.h>
 #include <zephyr/shell/shell.h>

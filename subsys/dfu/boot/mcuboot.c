@@ -17,7 +17,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "bootutil/bootutil_public.h"
+#include <bootutil/bootutil_public.h>
 #include <zephyr/dfu/mcuboot.h>
 
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
