@@ -572,14 +572,14 @@
 			fifo-max-transfer-size = <65535>;
 		};
 
-		i2s1: i2s@40013000 {
+		i2s1: i2s@42003000 {
 			compatible = "st,stm32h7-i2s", "st,stm32-i2s";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40013000 0x400>;
+			reg = <0x42003000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI1_SEL(0)>;
-			interrupts = <35 0>;
+			interrupts = <58 0>;
 			status = "disabled";
 		};
 
