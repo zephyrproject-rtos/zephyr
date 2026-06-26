@@ -19,14 +19,15 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
-#include "usbh_ch9.h"
-#include "usbh_class.h"
-#include "usbh_desc.h"
-#include "usbh_device.h"
+#include <usbh_ch9.h>
+#include <usbh_class.h>
+#include <usbh_desc.h>
+#include <usbh_device.h>
 
-#include "uvc.h"
-#include "../../../drivers/video/video_ctrls.h"
-#include "../../../drivers/video/video_device.h"
+#include <uvc.h>
+
+#include "../../../../drivers/video/video_ctrls.h"
+#include "../../../../drivers/video/video_device.h"
 
 LOG_MODULE_REGISTER(usbh_uvc, CONFIG_USBH_UVC_LOG_LEVEL);
 
