@@ -229,3 +229,19 @@ int configure_stream(const struct device *dev_i2s, enum i2s_dir dir)
 
 	return TC_PASS;
 }
+
+int i2s_check_state(const struct device *dev_i2s, enum i2s_dir dir, enum i2s_state expected_state)
+{
+	enum i2s_state state = i2s_state_get(dev_i2s, dir);
+
+	if (state == expected_state) {
+		return TC_PASS;
+	}
+
+	if (state == I2S_STATE_UNKNOWN) {
+		TC_PRINT("Unknown stream state");
+		return TC_PASS;
+	}
+
+	return -TC_FAIL;
+}
