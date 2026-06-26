@@ -24,6 +24,13 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 bool llext_heap_inited;
 #endif
 
+/* PMP granularity is only defined when RISC-V PMP is built in. */
+#ifdef CONFIG_PMP_GRANULARITY
+#define LLEXT_PMP_GRANULARITY CONFIG_PMP_GRANULARITY
+#else
+#define LLEXT_PMP_GRANULARITY 1
+#endif
+
 /*
  * Initialize the memory partition associated with the specified memory region
  */
@@ -98,6 +105,18 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 				/* ARMv8-M and newer ARC MPUs use 32-byte alignment. */
 				region_alloc = ROUND_UP(region_alloc, LLEXT_PAGE_SIZE);
 				region_align = MAX(region_align, LLEXT_PAGE_SIZE);
+			} else if (IS_ENABLED(CONFIG_RISCV_PMP)) {
+				/*
+				 * RISC-V PMP regions only need to be sized and
+				 * aligned to the PMP granularity; TOR matching
+				 * removes any power-of-two requirement.
+				 */
+				region_alloc = ROUND_UP(region_alloc, LLEXT_PMP_GRANULARITY);
+				region_align = MAX(region_align, LLEXT_PMP_GRANULARITY);
+			} else {
+				LOG_ERR("region %d: no memory protection alignment "
+					"rule for this architecture", mem_idx);
+				return -ENOTSUP;
 			}
 		}
 	}
