@@ -1,0 +1,251 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/*
+ * Single-core (CM33) overlay for the low-power modes sample on the PSC3M5 EVK.
+ * Wires two observable probes:
+ *
+ *   - A free-running 32-bit counter on TCPWM (counter0_0) as the clock-gating
+ *     probe: it runs from CLK_HF2 (peri group 4), so it freezes during
+ *     DeepSleep and the counter pm_action restarts it on wake.
+ *   - A PWM LED on P4.0 (TCPWM1 line 4) blinking at 2 Hz. The on-chip LEDs have
+ *     no TCPWM route, so connect an LED or scope to P4.0.
+ *
+ * Three SCB blocks are self-tested across DeepSleep (SDHC, DMIC and I2S have no
+ * block on this SoC and are absent):
+ *
+ *   - SPI on SCB2: loopback, jumper P7.1 (MOSI) to P7.2 (MISO).
+ *   - I2C on SCB0: single-register probe on the kit's header P9.0 (SCL) /
+ *     P9.2 (SDA). With no target it reports no-response consistently.
+ *   - UART on SCB4: interrupt-driven loopback on P3.3 (TX) / P3.2 (RX),
+ *     separate from the console; jumper P3.3 to P3.2.
+ */
+
+/ {
+	aliases {
+		counter0 = &counter0_0;
+		pwm-led0 = &pwm_led0;
+		uart-test = &uart4;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		status = "okay";
+
+		pwm_led0: pwm_led0 {
+			pwms = <&pwm1_4 0 PWM_MSEC(500) PWM_POLARITY_NORMAL>;
+			label = "PWM LED (P4.0)";
+		};
+	};
+};
+
+/*
+ * Arm the Hibernate wake source declaratively: the SoC power management reads
+ * this node at init, enables the input buffer on the armed pad and programs the
+ * SRSS wake registers. PIN0 = P2.0 = SW2, pressed low. PIN1 = P9.0 is the I2C
+ * SCL header pin, so it is not armed (arming it would self-wake).
+ */
+&hibernate_wakeup {
+	status = "okay";
+	wakeup-pin0-trigger = "low";
+};
+
+/*
+ * DeepSleep-RAM is disabled by default in the SoC devicetree. Enabling it here
+ * selects it explicitly; its "suspend-to-ram" power-state-name auto-selects
+ * CONFIG_PM_S2RAM. The default min-residency (2 s) equals the sample's 2 s
+ * sleep window, so lower it here so the state reliably engages.
+ */
+&deepsleep_ram {
+	status = "okay";
+	min-residency-us = <500000>;
+};
+
+/* Free-running 32-bit counter used to observe clock gating across DeepSleep.
+ * peri group 4 is a CLK_HF2 divider (80 MHz); divide to a 1 MHz tick.
+ */
+&peri0_group4_16bit_0 {
+	status = "okay";
+	clock-div = <80>;
+};
+
+&tcpwm0_0 {
+	status = "okay";
+
+	counter0_0 {
+		status = "okay";
+		clocks = <&peri0_group4_16bit_0>;
+	};
+};
+
+/*
+ * PWM LED on P4.0 (TCPWM1 line 4). tcpwm1_4 is a 16-bit counter, so feed it a
+ * slow clock: divide peri group 5 by 2000 to keep the 500 ms (2 Hz) blink
+ * within range. The PWM is suspended across DeepSleep and re-armed on wake.
+ */
+&peri0_group5_16bit_0 {
+	status = "okay";
+	clock-div = <2000>;
+};
+
+&tcpwm1_4 {
+	status = "okay";
+
+	pwm1_4: pwm1_4 {
+		status = "okay";
+		clocks = <&peri0_group5_16bit_0>;
+		pinctrl-0 = <&p4_0_pwm1_4>;
+		pinctrl-names = "default";
+	};
+};
+
+&pinctrl {
+	p4_0_pwm1_4: p4_0_pwm1_4 {
+		drive-push-pull;
+	};
+};
+
+&gpio_prt4 {
+	status = "okay";
+};
+
+/*
+ * SPI loopback self-test on SCB2 (port 7). Jumper P7.1 (MOSI) to P7.2 (MISO);
+ * P7.0 is the clock and P7.3 the chip-select. SCB2 is on CLK_HF2 (peri group
+ * 4).
+ */
+spi2: &scb2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	compatible = "infineon,spi";
+	status = "okay";
+
+	/* Keep the SoC out of states that gate SCB2 while a transfer is active. */
+	zephyr,disabling-power-states = <&deepsleep &deepsleep_ram>;
+
+	clocks = <&peri0_group4_16_5bit_1>;
+	pinctrl-0 = <&p7_1_scb2_spi_m_mosi &p7_2_scb2_spi_m_miso &p7_0_scb2_spi_m_clk>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio_prt7 3 GPIO_ACTIVE_LOW>;
+
+	loopback_dev: loopback@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+	};
+};
+
+&peri0_group4_16_5bit_1 {
+	status = "okay";
+};
+
+&p7_1_scb2_spi_m_mosi {
+	drive-strength = "full";
+	drive-push-pull;
+};
+
+&p7_2_scb2_spi_m_miso {
+	drive-strength = "full";
+	input-enable;
+};
+
+&p7_0_scb2_spi_m_clk {
+	drive-strength = "full";
+	drive-push-pull;
+};
+
+&gpio_prt7 {
+	status = "okay";
+};
+
+/*
+ * I2C controller on SCB0, on the kit's header P9.0 (SCL) / P9.2 (SDA) with
+ * board pull-ups. The sample reads a single register at 0x68; with no device it
+ * reports no-response consistently. SCB0 is on CLK_HF2 (peri group 4).
+ */
+i2c0: &scb0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	compatible = "infineon,i2c";
+	status = "okay";
+
+	/* Keep the SoC out of states that gate SCB0 while a transfer is active. */
+	zephyr,disabling-power-states = <&deepsleep &deepsleep_ram>;
+
+	clocks = <&peri0_group4_16_5bit_2>;
+	pinctrl-0 = <&p9_0_scb0_i2c_scl &p9_2_scb0_i2c_sda>;
+	pinctrl-names = "default";
+};
+
+&peri0_group4_16_5bit_2 {
+	status = "okay";
+};
+
+&p9_0_scb0_i2c_scl {
+	drive-open-drain;
+	input-enable;
+};
+
+&p9_2_scb0_i2c_sda {
+	drive-open-drain;
+	input-enable;
+};
+
+/*
+ * Second UART on SCB4, on the kit's P3.3 (TX) / P3.2 (RX) header pins and
+ * separate from the console. The only peripheral wired for device runtime PM
+ * (zephyr,pm-device-runtime-auto). Loopback jumper: P3.3 (TX) to P3.2 (RX).
+ * SCB4 is on CLK_HF2 (peri group 4).
+ */
+uart4: &scb4 {
+	compatible = "infineon,uart";
+	status = "okay";
+	current-speed = <115200>;
+	zephyr,pm-device-runtime-auto;
+
+	/* Block SCB4-gating states during a TX drain; RX stays a wake candidate. */
+	zephyr,disabling-power-states = <&deepsleep &deepsleep_ram>;
+
+	clocks = <&peri0_group4_8bit_1>;
+	pinctrl-0 = <&p3_3_scb4_uart_tx &p3_2_scb4_uart_rx>;
+	pinctrl-names = "default";
+};
+
+&peri0_group4_8bit_1 {
+	status = "okay";
+};
+
+&p3_3_scb4_uart_tx {
+	drive-push-pull;
+};
+
+&p3_2_scb4_uart_rx {
+	input-enable;
+};
+
+/*
+ * DataWire DMA0, exercised by a software-triggered memory-to-memory copy (DMIC
+ * and I2S, the usual DMA consumers, have no block on this SoC). The channel is
+ * disabled again once the copy completes.
+ */
+&dma0 {
+	status = "okay";
+};
+
+/*
+ * CAN FD channel 1 (can1), already enabled, clocked and pinned by the board
+ * devicetree and selected as chosen zephyr,canbus. The sample picks it up via
+ * DT_CHOSEN(zephyr_canbus) and drives it in internal loopback (TX routed to RX
+ * on-chip, self-acknowledged), so no transceiver or bus is required. The
+ * reference is made explicit so the node is visibly part of this overlay.
+ */
+&can1 {
+	status = "okay";
+};
