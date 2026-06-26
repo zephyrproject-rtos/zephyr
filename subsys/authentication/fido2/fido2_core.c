@@ -565,8 +565,9 @@ static enum fido2_status handle_get_assertion(uint8_t *cbor_in, size_t cbor_in_l
 {
 	uint8_t rp_id_hash[FIDO2_SHA256_SIZE];
 	size_t found_creds_count = 0;
-	uint8_t flags = 0;
+	bool user_verified = false;
 	uint16_t num_credentials;
+	uint8_t flags = 0;
 	int ret;
 
 	ret = fido2_cbor_decode_get_assertion(cbor_in, cbor_in_len, &ga_params);
@@ -614,6 +615,44 @@ static enum fido2_status handle_get_assertion(uint8_t *cbor_in, size_t cbor_in_l
 		return FIDO2_ERR_NO_CREDENTIALS;
 	}
 
+	if (ga_params.has_pin_uv_auth_param) {
+		if (ga_params.pin_uv_auth_param_len == 0) {
+			set_runtime_state(FIDO2_RUNTIME_STATE_WAITING_USER_PRESENCE);
+			notify_wire(transport, cid, FIDO2_WIRE_STATUS_UP_NEEDED);
+
+			ret = fido2_up_wait();
+			if (ret) {
+				return FIDO2_ERR_OPERATION_DENIED;
+			}
+
+			set_runtime_state(FIDO2_RUNTIME_STATE_PROCESSING);
+			notify_wire(transport, cid, FIDO2_WIRE_STATUS_PROCESSING);
+
+			return fido2_clientpin_pin_is_set() ? FIDO2_ERR_PIN_INVALID
+							    : FIDO2_ERR_PIN_NOT_SET;
+		}
+		if (!ga_params.has_pin_uv_auth_protocol) {
+			return FIDO2_ERR_MISSING_PARAMETER;
+		}
+
+		ret = fido2_clientpin_pin_verify_pin_uv_auth_token(
+			ga_params.client_data_hash, FIDO2_SHA256_SIZE, ga_params.pin_uv_auth_param,
+			ga_params.pin_uv_auth_param_len, FIDO2_PIN_PERM_GA, ga_params.rp_id);
+		if (ret == -EPERM) {
+			return FIDO2_ERR_UNAUTHORIZED_PERMISSION;
+		}
+		if (ret) {
+			return FIDO2_ERR_PIN_AUTH_INVALID;
+		}
+
+		user_verified = true;
+	} else if (IS_ENABLED(CONFIG_FIDO2_ALWAYS_UV)) {
+		if (fido2_clientpin_pin_is_set()) { /* PIN set but no pinuvauthparam */
+			return FIDO2_ERR_PUAT_REQUIRED;
+		}
+		return FIDO2_ERR_OPERATION_DENIED; /* alwaysUV true, no PIN set */
+	}
+
 	if (ga_params.up) {
 		set_runtime_state(FIDO2_RUNTIME_STATE_WAITING_USER_PRESENCE);
 		notify_wire(transport, cid, FIDO2_WIRE_STATUS_UP_NEEDED);
@@ -630,6 +669,10 @@ static enum fido2_status handle_get_assertion(uint8_t *cbor_in, size_t cbor_in_l
 		notify_wire(transport, cid, FIDO2_WIRE_STATUS_PROCESSING);
 
 		flags = AUTH_DATA_FLAG_UP;
+	}
+
+	if (user_verified) {
+		flags |= AUTH_DATA_FLAG_UV;
 	}
 
 	/* Exclude numberOfCredentials when allowList is pesent or found_creds_count is exactly 1*/
@@ -746,10 +789,13 @@ static enum fido2_status handle_client_pin(uint8_t *cbor_in, size_t cbor_in_len,
 	case FIDO2_CLIENTPIN_GET_PIN_RETRIES:
 		return fido2_clientpin_cmd_get_retries(cbor_out, cbor_out_cap, cbor_out_len);
 	case FIDO2_CLIENTPIN_GET_KEY_AGREEMENT:
+		if (!cp_params.has_pin_uv_auth_protocol) {
+			return FIDO2_ERR_MISSING_PARAMETER;
+		}
 		return fido2_clientpin_cmd_get_key_agreement(cbor_out, cbor_out_cap, cbor_out_len);
 	case FIDO2_CLIENTPIN_SET_PIN:
-		if (!cp_params.has_pin_uv_auth_param || !cp_params.has_new_pin_enc ||
-		    !cp_params.has_key_agreement) {
+		if (!cp_params.has_pin_uv_auth_protocol || !cp_params.has_pin_uv_auth_param ||
+		    !cp_params.has_new_pin_enc || !cp_params.has_key_agreement) {
 			return FIDO2_ERR_MISSING_PARAMETER;
 		}
 		return fido2_clientpin_cmd_set_pin(
@@ -760,7 +806,8 @@ static enum fido2_status handle_client_pin(uint8_t *cbor_in, size_t cbor_in_len,
 		/* TODO */
 		return FIDO2_ERR_INVALID_SUBCOMMAND;
 	case FIDO2_CLIENTPIN_GET_PIN_TOKEN: /* Backwards compatibility */
-		if (!cp_params.has_key_agreement || !cp_params.has_pin_hash_enc) {
+		if (!cp_params.has_pin_uv_auth_protocol || !cp_params.has_key_agreement ||
+		    !cp_params.has_pin_hash_enc) {
 			return FIDO2_ERR_MISSING_PARAMETER;
 		}
 		if (cp_params.has_permissions || cp_params.has_rp_id) {
@@ -775,9 +822,12 @@ static enum fido2_status handle_client_pin(uint8_t *cbor_in, size_t cbor_in_len,
 	case FIDO2_CLIENTPIN_GET_UV_RETRIES:
 		return FIDO2_ERR_INVALID_SUBCOMMAND;
 	case FIDO2_CLIENTPIN_GET_PIN_TOKEN_PIN_W_PERMS:
-		if (!cp_params.has_key_agreement || !cp_params.has_pin_hash_enc ||
-		    !cp_params.has_permissions) {
+		if (!cp_params.has_pin_uv_auth_protocol || !cp_params.has_key_agreement ||
+		    !cp_params.has_pin_hash_enc || !cp_params.has_permissions) {
 			return FIDO2_ERR_MISSING_PARAMETER;
+		}
+		if (cp_params.permissions == 0) {
+			return FIDO2_ERR_INVALID_PARAMETER;
 		}
 		return fido2_clientpin_cmd_get_pin_token_pin_w_perms(
 			cp_params.pin_uv_auth_protocol, cp_params.key_agreement,
