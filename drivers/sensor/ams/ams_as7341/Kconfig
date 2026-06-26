@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Dotcom IoT LLP
+# SPDX-License-Identifier: Apache-2.0
+
+config AMS_AS7341
+	bool "AMS AS7341 spectral sensor driver"
+	default y
+	depends on DT_HAS_AMS_AS7341_ENABLED
+	select I2C
+	help
+	  Enable AMS AS7341 11-channel spectral sensor driver.
+
+config EMUL_AMS_AS7341
+	bool "Emulator for AMS AS7341"
+	default y
+	depends on EMUL
+	depends on AMS_AS7341

@@ -1642,3 +1642,8 @@ test_i2c_tmp451: tmp451@d5 {
 	reg = <0xd5>;
 	alert-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_as7341: as7341@d6 {
+	compatible = "ams,as7341";
+	reg = <0xd6>;
+};
