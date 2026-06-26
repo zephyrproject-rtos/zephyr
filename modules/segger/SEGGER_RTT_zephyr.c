@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
 #include <zephyr/init.h>
-#include "SEGGER_RTT.h"
+#include <SEGGER_RTT.h>
 
 static int rtt_init(void)
 {
