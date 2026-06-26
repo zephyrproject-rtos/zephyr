@@ -107,12 +107,13 @@ struct i2c_mchp_dev_data {
 	struct k_sem sync_sem;
 	int xfer_status;
 	uint32_t dev_config;
-	uint32_t byte_idx;
-	uint32_t seg_remaining;
+	uint32_t byte_idx; /* Current byte index within current message */
+	/* segment: consecutive messages with same direction (all reads or all writes) */
+	uint32_t seg_byte_cnt; /* Bytes pending in current segment */
 	uint16_t target_addr;
-	uint8_t msg_idx;
-	uint8_t num_msgs;
-	uint8_t next_seg_idx;
+	uint8_t msg_idx;      /* Current message index being processed */
+	uint8_t num_msgs;     /* Total number of messages */
+	uint8_t next_seg_idx; /* Index of first message in next segment */
 	bool target_mode;
 #if defined(CONFIG_I2C_MCHP_DMA_DRIVEN)
 	bool dma_active;
@@ -185,7 +186,7 @@ static void i2c_set_runstandby(const struct device *dev)
 static void i2c_set_bus_idle(const struct device *dev)
 {
 	I2CM(dev).SERCOM_STATUS = (I2CM(dev).SERCOM_STATUS & ~SERCOM_I2CM_STATUS_BUSSTATE_Msk) |
-				  SERCOM_I2CM_STATUS_BUSSTATE(SERCOM_I2CM_STATUS_BUSSTATE_IDLE_Val);
+				  SERCOM_I2CM_STATUS_BUSSTATE(0x1);
 
 	if (!I2C_WAIT_SYNC_M(dev, SERCOM_I2CM_SYNCBUSY_SYSOP_Msk)) {
 		LOG_ERR("Bus idle sync timeout");
@@ -206,10 +207,11 @@ static void i2c_send_stop(const struct device *dev)
 /* Sets ACK/NACK control for I2C target response */
 static inline void i2c_set_ack(const struct device *dev, bool ack)
 {
-	uint32_t ctrlb = I2CM(dev).SERCOM_CTRLB;
-
-	ctrlb = (ctrlb & ~SERCOM_I2CM_CTRLB_ACKACT_Msk) | SERCOM_I2CM_CTRLB_ACKACT(!ack);
-	I2CM(dev).SERCOM_CTRLB = ctrlb;
+	if (ack) {
+		I2CM(dev).SERCOM_CTRLB &= ~SERCOM_I2CM_CTRLB_ACKACT_Msk;
+	} else {
+		I2CM(dev).SERCOM_CTRLB |= SERCOM_I2CM_CTRLB_ACKACT_Msk;
+	}
 }
 
 /* Checks if NACK was received from I2C slave */
@@ -434,8 +436,8 @@ static void i2c_init_segment(struct i2c_mchp_dev_data *data)
 {
 	data->msg_idx = data->next_seg_idx;
 	data->byte_idx = 0;
-	data->seg_remaining = i2c_segment_len(data->msgs, data->num_msgs, data->next_seg_idx,
-					      &data->next_seg_idx);
+	data->seg_byte_cnt = i2c_segment_len(data->msgs, data->num_msgs, data->next_seg_idx,
+					     &data->next_seg_idx);
 }
 
 /* Completes I2C transfer: signals callback (async) or semaphore (sync) */
@@ -466,15 +468,18 @@ static void i2c_handle_error(const struct device *dev, int error_status)
 
 #if defined(CONFIG_I2C_MCHP_DMA_DRIVEN)
 	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
+	const struct i2c_mchp_dev_config *cfg = DEV_CFG(dev);
+	struct i2c_msg *msg = I2C_CURR_MSG(data);
+	uint32_t ch = i2c_is_read_op(msg) ? cfg->dma.rx_dma_channel : cfg->dma.tx_dma_channel;
+
+	unsigned int key = irq_lock();
 
 	if (data->dma_active) {
-		const struct i2c_mchp_dev_config *cfg = DEV_CFG(dev);
-		struct i2c_msg *msg = I2C_CURR_MSG(data);
-		uint32_t ch =
-			i2c_is_read_op(msg) ? cfg->dma.rx_dma_channel : cfg->dma.tx_dma_channel;
 		dma_stop(cfg->dma.dma_dev, ch);
 		data->dma_active = false;
 	}
+
+	irq_unlock(key);
 #endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
 
 	I2CM(dev).SERCOM_INTENCLR = SERCOM_I2CM_INTENCLR_Msk;
@@ -498,7 +503,12 @@ static int i2c_validate_msgs(struct i2c_msg *msgs, uint8_t num_msgs)
 
 	for (uint8_t i = 0; i < num_msgs; i++) {
 
-		if ((msgs[i].buf == NULL) || (msgs[i].len == 0)) {
+		if ((msgs[i].len == 0) && i2c_is_read_op(&msgs[i])) {
+			LOG_WRN("Zero-length read not supported");
+			return -EINVAL;
+		}
+
+		if ((msgs[i].len > 0) && (msgs[i].buf == NULL)) {
 			return -EINVAL;
 		}
 
@@ -527,17 +537,17 @@ static bool i2c_advance_byte(struct i2c_mchp_dev_data *data)
 	struct i2c_msg *msg = I2C_CURR_MSG(data);
 
 	data->byte_idx++;
-	data->seg_remaining--;
+	data->seg_byte_cnt--;
 
 	if (data->byte_idx >= msg->len) {
-		if (data->seg_remaining > 0) {
+		if (data->seg_byte_cnt > 0) {
 			data->msg_idx++;
 		}
 
 		data->byte_idx = 0;
 	}
 
-	return (data->seg_remaining == 0);
+	return (data->seg_byte_cnt == 0);
 }
 
 /* Writes a single byte to I2C data register */
@@ -554,14 +564,52 @@ static void i2c_int_start_xfer(const struct device *dev, uint16_t addr, bool is_
 {
 	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
 	struct i2c_msg *msg = I2C_CURR_MSG(data);
-	uint8_t flag = (is_read) ? SERCOM_I2CM_INTFLAG_SB_Msk : SERCOM_I2CM_INTFLAG_MB_Msk;
 
-	I2CM(dev).SERCOM_INTFLAG = flag;
-	I2CM(dev).SERCOM_INTENSET = flag;
+	/*
+	 * Always enable MB interrupt: for writes it signals byte completion,
+	 * for reads it signals address phase completion and error conditions.
+	 * Additionally enable SB for reads to handle received data bytes.
+	 */
+	I2CM(dev).SERCOM_INTENSET = SERCOM_I2CM_INTENSET_MB_Msk;
+	if (is_read) {
+		I2CM(dev).SERCOM_INTENSET = SERCOM_I2CM_INTENSET_SB_Msk;
+	}
 
 	if (MSG_HAS_RESTART(msg) != 0) {
 		i2c_write_addr(dev, addr, is_read);
 	}
+}
+
+/* Starts next I2C segment using DMA or interrupt mode as appropriate */
+static void i2c_start_next_segment(const struct device *dev)
+{
+	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
+
+	i2c_init_segment(data);
+
+	struct i2c_msg *msg = I2C_CURR_MSG(data);
+	bool is_read = i2c_is_read_op(msg);
+	uint16_t hw_addr = data->target_addr << 1;
+
+#if defined(CONFIG_I2C_MCHP_DMA_DRIVEN)
+	const struct i2c_mchp_dev_config *cfg = DEV_CFG(dev);
+
+	if (cfg->dma.dma_dev != NULL && msg->len > 1) {
+		if (i2c_dma_setup(dev, is_read) != 0) {
+			i2c_xfer_complete(dev, -EIO);
+			return;
+		}
+
+		uint32_t ch = is_read ? cfg->dma.rx_dma_channel : cfg->dma.tx_dma_channel;
+
+		dma_start(cfg->dma.dma_dev, ch);
+		data->dma_active = true;
+		i2c_write_addr(dev, hw_addr, is_read);
+		return;
+	}
+#endif /* CONFIG_I2C_MCHP_DMA_DRIVEN */
+
+	i2c_int_start_xfer(dev, hw_addr, is_read);
 }
 
 /* Handles interrupt-driven I2C byte read operation */
@@ -570,9 +618,26 @@ static void i2c_int_read_byte(const struct device *dev)
 	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
 	struct i2c_msg *msg = I2C_CURR_MSG(data);
 
-	if ((data->seg_remaining == 1) && (i2c_is_stop_op(msg))) {
+	/* Last byte of read segment */
+	if (data->seg_byte_cnt == 1) {
+
+		/* always NACK (for both STOP and RESTART) */
 		i2c_set_ack(dev, false);
-		i2c_send_stop(dev);
+
+		if (i2c_is_stop_op(msg)) {
+			i2c_send_stop(dev);
+		} else {
+			if (data->next_seg_idx < data->num_msgs) {
+				/*
+				 * RESTART: Reading DATA triggers NACK which releases bus to IDLE.
+				 * Write ADDR first so bus stays in OWNER state and then read DATA.
+				 */
+				I2CM(dev).SERCOM_INTENCLR = SERCOM_I2CM_INTENCLR_SB_Msk;
+				i2c_start_next_segment(dev);
+				msg->buf[msg->len - 1] = I2CM(dev).SERCOM_DATA;
+				return;
+			}
+		}
 	}
 
 	*I2C_CURR_BYTE_PTR(data) = I2CM(dev).SERCOM_DATA;
@@ -582,10 +647,7 @@ static void i2c_int_read_byte(const struct device *dev)
 		I2CM(dev).SERCOM_INTENCLR = SERCOM_I2CM_INTENCLR_SB_Msk;
 
 		if (data->next_seg_idx < data->num_msgs) {
-			i2c_init_segment(data);
-			bool is_read = i2c_is_read_op(I2C_CURR_MSG(data));
-
-			i2c_int_start_xfer(dev, data->target_addr << 1, is_read);
+			i2c_start_next_segment(dev);
 		} else {
 			i2c_xfer_complete(dev, 0);
 		}
@@ -596,6 +658,7 @@ static void i2c_int_read_byte(const struct device *dev)
 static void i2c_int_write_byte(const struct device *dev)
 {
 	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
+	struct i2c_msg *msg = I2C_CURR_MSG(data);
 
 	if (i2c_got_nack(dev)) {
 		I2CM(dev).SERCOM_INTENCLR = SERCOM_I2CM_INTENCLR_MB_Msk;
@@ -604,9 +667,7 @@ static void i2c_int_write_byte(const struct device *dev)
 		return;
 	}
 
-	if (data->seg_remaining == 0) {
-		struct i2c_msg *msg = I2C_CURR_MSG(data);
-
+	if (data->seg_byte_cnt == 0) {
 		I2CM(dev).SERCOM_INTENCLR = SERCOM_I2CM_INTENCLR_MB_Msk;
 
 		if (i2c_is_stop_op(msg)) {
@@ -614,10 +675,7 @@ static void i2c_int_write_byte(const struct device *dev)
 		}
 
 		if (data->next_seg_idx < data->num_msgs) {
-			i2c_init_segment(data);
-			bool is_read = i2c_is_read_op(I2C_CURR_MSG(data));
-
-			i2c_int_start_xfer(dev, data->target_addr << 1, is_read);
+			i2c_start_next_segment(dev);
 		} else {
 			i2c_xfer_complete(dev, 0);
 		}
@@ -662,7 +720,9 @@ static int i2c_transfer_internal(const struct device *dev, struct i2c_msg *msgs,
 	I2CM(dev).SERCOM_INTENSET = SERCOM_I2CM_INTENSET_ERROR_Msk;
 
 #if defined(CONFIG_I2C_MCHP_DMA_DRIVEN)
-	if (DEV_CFG(dev)->dma.dma_dev != NULL) {
+	struct i2c_msg *msg = I2C_CURR_MSG(data);
+
+	if (DEV_CFG(dev)->dma.dma_dev != NULL && msg->len > 1) {
 		if (i2c_dma_setup(dev, is_read) != 0) {
 			k_sem_give(&data->lock);
 			return -EIO;
@@ -695,62 +755,80 @@ static int i2c_transfer_internal(const struct device *dev, struct i2c_msg *msgs,
 }
 
 #if defined(CONFIG_I2C_MCHP_DMA_DRIVEN)
+/*
+ * Starts DMA or interrupt transfer for the current message.
+ * For multi-byte: sets up DMA and starts transfer.
+ * For single-byte: falls back to interrupt mode.
+ */
+static void i2c_dma_start_msg(const struct device *dev, bool is_read)
+{
+	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
+	const struct i2c_mchp_dev_config *cfg = DEV_CFG(dev);
+	struct i2c_msg *msg = I2C_CURR_MSG(data);
+
+	if (msg->len > 1) {
+		if (i2c_dma_setup(dev, is_read) != 0) {
+			data->dma_active = false;
+			i2c_xfer_complete(dev, -EIO);
+			return;
+		}
+		uint32_t ch = is_read ? cfg->dma.rx_dma_channel : cfg->dma.tx_dma_channel;
+
+		dma_start(cfg->dma.dma_dev, ch);
+		data->dma_active = true;
+		return;
+	}
+
+	data->dma_active = false;
+	i2c_int_start_xfer(dev, data->target_addr << 1, is_read);
+}
 
 /* DMA completion callback - advances to next segment or completes transfer */
 static void i2c_dma_callback(const struct device *dma_dev, void *arg, uint32_t channel, int status)
 {
 	struct i2c_mchp_dev_data *data = arg;
 	const struct device *dev = data->dev;
-	const struct i2c_mchp_dev_config *cfg = DEV_CFG(dev);
 	struct i2c_msg *msg = I2C_CURR_MSG(data);
 	bool is_read = i2c_is_read_op(msg);
 	uint32_t prev_msg_len = msg->len;
 	bool new_segment = (data->msg_idx + 1 >= data->next_seg_idx);
 
+	ARG_UNUSED(dma_dev);
 	ARG_UNUSED(channel);
 
-	data->dma_active = false;
-
 	if (status < 0) {
+		data->dma_active = false;
 		i2c_handle_error(dev, status);
 		return;
 	}
 
+	/*
+	 * For reads: DMA transfers len-1 bytes; the last byte must be read via SB
+	 * interrupt to allow issuing STOP or RESTART command before reading DATA.
+	 * For writes with STOP: enable MB to wait for final byte completion.
+	 */
+	if (is_read) {
+		I2CM(dev).SERCOM_INTENSET = SERCOM_I2CM_INTENSET_SB_Msk;
+		return;
+	}
+
 	if (i2c_is_stop_op(msg)) {
-
-		if (is_read) {
-			I2CM(dev).SERCOM_INTENSET = SERCOM_I2CM_INTENSET_SB_Msk;
-		} else {
-			I2CM(dev).SERCOM_INTENSET = SERCOM_I2CM_INTENSET_MB_Msk;
-		}
-
+		I2CM(dev).SERCOM_INTENSET = SERCOM_I2CM_INTENSET_MB_Msk;
 		return;
 	}
 
-	data->msg_idx++;
-	data->byte_idx = 0;
-
+	/* Start new segment, or same segment (write-write): continue to next message */
 	if (new_segment) {
-		i2c_init_segment(data);
+		data->dma_active = false;
+		i2c_start_next_segment(dev);
 	} else {
-		data->seg_remaining -= prev_msg_len;
-	}
+		data->msg_idx++;
+		data->byte_idx = 0;
+		data->seg_byte_cnt -= prev_msg_len;
 
-	msg = I2C_CURR_MSG(data);
-	is_read = i2c_is_read_op(msg);
-
-	if (i2c_dma_setup(dev, is_read) != 0) {
-		i2c_xfer_complete(dev, -EIO);
-		return;
-	}
-
-	uint32_t ch = (is_read) ? cfg->dma.rx_dma_channel : cfg->dma.tx_dma_channel;
-
-	dma_start(cfg->dma.dma_dev, ch);
-	data->dma_active = true;
-
-	if ((new_segment) || (MSG_HAS_RESTART(msg) != 0)) {
-		i2c_write_addr(dev, data->target_addr << 1, is_read);
+		msg = I2C_CURR_MSG(data);
+		is_read = i2c_is_read_op(msg);
+		i2c_dma_start_msg(dev, is_read);
 	}
 }
 
@@ -774,7 +852,19 @@ static int i2c_dma_setup(const struct device *dev, bool is_read)
 	dma_cfg.head_block = &blk;
 
 	if (is_read) {
-		blk.block_size = msg->len - 1; /* Last byte read manually */
+		/*
+		 * Hardware's Host DMA mode (ADDR.LENEN=1) is NOT used because it
+		 * auto-generates NACK and STOP after LEN bytes with no RESTART option,
+		 * breaking Zephyr's write-restart-read pattern (i2c_write_read).
+		 *
+		 * Instead, DMA transfers len-1 bytes; final byte handled via SB interrupt.
+		 * Commands (STOP/RESTART) require SB=1 or MB=1. Reading DATA clears SB.
+		 * - Read: SB clears when DATA read. If DMA reads last byte, cannot issue CMD.
+		 * - Write: MB stays set after TX. DMA can send all bytes, MB available for CMD.
+		 *
+		 * Single-byte reads fall back to interrupt mode.
+		 */
+		blk.block_size = msg->len - 1;
 		blk.source_address = (uint32_t)&cfg->regs->I2CM.SERCOM_DATA;
 		blk.dest_address = (uint32_t)msg->buf;
 		blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
@@ -802,6 +892,9 @@ static int i2c_dma_setup(const struct device *dev, bool is_read)
 /* Handles DMA transmission completion */
 static void i2c_dma_tx_complete(const struct device *dev)
 {
+	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
+
+	data->dma_active = false;
 	I2CM(dev).SERCOM_INTENCLR = SERCOM_I2CM_INTENCLR_MB_Msk;
 	i2c_send_stop(dev);
 	i2c_xfer_complete(dev, 0);
@@ -812,15 +905,44 @@ static void i2c_dma_rx_complete(const struct device *dev)
 {
 	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
 	struct i2c_msg *msg = I2C_CURR_MSG(data);
-
-	if (i2c_is_stop_op(msg)) {
-		i2c_set_ack(dev, false);
-		i2c_send_stop(dev);
-		msg->buf[msg->len - 1] = I2CM(dev).SERCOM_DATA;
-	}
+	uint32_t prev_msg_len = msg->len;
+	bool is_stop = i2c_is_stop_op(msg);
+	bool new_segment = (data->msg_idx + 1 >= data->next_seg_idx);
+	bool has_more_segments = new_segment && (data->next_seg_idx < data->num_msgs);
 
 	I2CM(dev).SERCOM_INTENCLR = SERCOM_I2CM_INTENCLR_SB_Msk;
-	i2c_xfer_complete(dev, 0);
+
+	if (is_stop || new_segment) {
+		data->dma_active = false;
+		i2c_set_ack(dev, false);
+
+		if (is_stop) {
+			i2c_send_stop(dev);
+		} else {
+			if (has_more_segments) {
+				/* Writing ADDR issues NACK and RESTART, keeps bus OWNER */
+				i2c_start_next_segment(dev);
+			}
+		}
+
+		msg->buf[msg->len - 1] = I2CM(dev).SERCOM_DATA;
+
+		if (is_stop) {
+			i2c_xfer_complete(dev, 0);
+		}
+
+		return;
+	}
+
+	/* Same segment (read-read): ACK and continue to next message */
+	i2c_set_ack(dev, true);
+	msg->buf[msg->len - 1] = I2CM(dev).SERCOM_DATA;
+
+	data->msg_idx++;
+	data->byte_idx = 0;
+	data->seg_byte_cnt -= prev_msg_len;
+
+	i2c_dma_start_msg(dev, true);
 }
 #endif /* CONFIG_I2C_MCHP_DMA_DRIVEN */
 
@@ -1001,16 +1123,16 @@ static void i2c_target_isr(const struct device *dev)
 /* I2C interrupt handler - routes to target ISR or handles controller mode interrupts */
 static void i2c_mchp_isr(const struct device *dev)
 {
-#if defined(CONFIG_I2C_TARGET)
 	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
 
+#if defined(CONFIG_I2C_TARGET)
 	if (data->target_mode) {
 		i2c_target_isr(dev);
 		return;
 	}
 #endif /*CONFIG_I2C_TARGET*/
 
-	uint8_t intflags = I2CM(dev).SERCOM_INTFLAG & SERCOM_I2CM_INTFLAG_Msk;
+	uint8_t intflags = I2CM(dev).SERCOM_INTFLAG;
 
 	if ((intflags & SERCOM_I2CM_INTFLAG_ERROR_Msk) != 0) {
 		i2c_handle_error(dev, -EIO);
@@ -1018,20 +1140,37 @@ static void i2c_mchp_isr(const struct device *dev)
 	}
 
 	if ((intflags & SERCOM_I2CM_INTFLAG_MB_Msk) != 0) {
-#if defined(CONFIG_I2C_MCHP_DMA_DRIVEN)
-		if (DEV_CFG(dev)->dma.dma_dev != NULL) {
-			i2c_dma_tx_complete(dev);
+		struct i2c_msg *msg = I2C_CURR_MSG(data);
+		bool is_read = i2c_is_read_op(msg);
+
+		if (is_read) {
+			/*
+			 * MB during read: address phase complete.
+			 * Disable MB - SB will handle data reception.
+			 * Check for NACK (device not responding) and handle error.
+			 */
+			I2CM(dev).SERCOM_INTENCLR = SERCOM_I2CM_INTENCLR_MB_Msk;
+			if (i2c_got_nack(dev)) {
+				i2c_send_stop(dev);
+				i2c_xfer_complete(dev, -EIO);
+			}
+			return;
 		} else {
-#endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
-			i2c_int_write_byte(dev);
 #if defined(CONFIG_I2C_MCHP_DMA_DRIVEN)
-		}
+			if (data->dma_active) {
+				i2c_dma_tx_complete(dev);
+			} else {
 #endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
+				i2c_int_write_byte(dev);
+#if defined(CONFIG_I2C_MCHP_DMA_DRIVEN)
+			}
+#endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
+		}
 	}
 
 	if ((intflags & SERCOM_I2CM_INTFLAG_SB_Msk) != 0) {
 #if defined(CONFIG_I2C_MCHP_DMA_DRIVEN)
-		if (DEV_CFG(dev)->dma.dma_dev != NULL) {
+		if (data->dma_active) {
 			i2c_dma_rx_complete(dev);
 		} else {
 #endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
@@ -1302,29 +1441,20 @@ static DEVICE_API(i2c, i2c_mchp_api) = {
 	.recover_bus = i2c_mchp_recover,
 };
 
-#define I2C_MCHP_IRQ_CONNECT(n, idx)                                                               \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, idx, irq), DT_INST_IRQ_BY_IDX(n, idx, priority), \
-			    i2c_mchp_isr, DEVICE_DT_INST_GET(n), 0);                               \
-		irq_enable(DT_INST_IRQ_BY_IDX(n, idx, irq));                                       \
-	} while (false)
+#define I2C_MCHP_IRQ_CONNECT(idx, inst)                                                            \
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, idx, irq), DT_INST_IRQ_BY_IDX(inst, idx, priority),   \
+		    i2c_mchp_isr, DEVICE_DT_INST_GET(inst), 0);                                    \
+	irq_enable(DT_INST_IRQ_BY_IDX(inst, idx, irq))
 
-#if DT_INST_IRQ_HAS_IDX(0, 3)
 #define I2C_MCHP_IRQ_HANDLER(n)                                                                    \
 	static void i2c_mchp_irq_config_##n(const struct device *dev)                              \
 	{                                                                                          \
-		I2C_MCHP_IRQ_CONNECT(n, 0);                                                        \
-		I2C_MCHP_IRQ_CONNECT(n, 1);                                                        \
-		I2C_MCHP_IRQ_CONNECT(n, 2);                                                        \
-		I2C_MCHP_IRQ_CONNECT(n, 3);                                                        \
+		ARG_UNUSED(dev);                                                                   \
+		LISTIFY(DT_INST_NUM_IRQS(n),                                                       \
+			I2C_MCHP_IRQ_CONNECT,                                                      \
+			(;),                                                                       \
+			n);                           \
 	}
-#else
-#define I2C_MCHP_IRQ_HANDLER(n)                                                                    \
-	static void i2c_mchp_irq_config_##n(const struct device *dev)                              \
-	{                                                                                          \
-		I2C_MCHP_IRQ_CONNECT(n, 0);                                                        \
-	}
-#endif
 
 #define I2C_MCHP_CLOCK_INIT(n)                                                                     \
 	.clk.mclk_sys = (void *)(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, subsystem)),                 \
