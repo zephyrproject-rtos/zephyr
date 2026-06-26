@@ -9,6 +9,13 @@
 #define consumer0 DT_NODELABEL(test_consumer0)
 #define nvmem0    DT_NODELABEL(test_nvmem0)
 
+/*
+ * MMIO is a property of the cell's parent (the fixed-layout), same as how
+ * NVMEM_CELL_INIT() selects the cell type. Detecting it from devicetree lets
+ * the MMIO overlay reuse this test without a separate source file.
+ */
+#define CELL_IS_MMIO DT_PROP(DT_PARENT(DT_NVMEM_CELL_BY_IDX(consumer0, 0)), mmio)
+
 static const struct nvmem_cell cell0 = NVMEM_CELL_GET_BY_IDX(consumer0, 0);
 static const struct nvmem_cell cell10 = NVMEM_CELL_GET_BY_NAME(consumer0, cell10);
 
@@ -17,12 +24,21 @@ ZTEST(nvmem_api, test_nvmem_api)
 	uint8_t buf[0x10];
 	int ret;
 
+#if CELL_IS_MMIO
+	/* MMIO cells reference the controller's physical base, not a device. */
+	zexpect_equal(cell0.phys_addr, (uintptr_t)DT_REG_ADDR(nvmem0));
+	zexpect_equal(cell10.phys_addr, (uintptr_t)DT_REG_ADDR(nvmem0));
+#else
 	zexpect_equal_ptr(cell0.dev, DEVICE_DT_GET(nvmem0));
+	zexpect_equal_ptr(cell10.dev, DEVICE_DT_GET(nvmem0));
+#endif
+
+	zexpect_true(nvmem_cell_is_ready(&cell0));
 	zexpect_equal(cell0.offset, 0);
 	zexpect_equal(cell0.size, 0x10);
 	zexpect_false(nvmem_cell_is_read_only(&cell0));
 
-	zexpect_equal_ptr(cell10.dev, DEVICE_DT_GET(nvmem0));
+	zexpect_true(nvmem_cell_is_ready(&cell10));
 	zexpect_equal(cell10.offset, 0x10);
 	zexpect_equal(cell10.size, 0x10);
 	zexpect_true(nvmem_cell_is_read_only(&cell10));

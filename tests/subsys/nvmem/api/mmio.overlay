@@ -1,0 +1,48 @@
+/**
+ * Copyright (c) 2026, Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_consumer0: test-consumer0 {
+		compatible = "vnd,nvmem-consumer";
+		nvmem-cells = <&cell0>, <&cell10>;
+		nvmem-cell-names = "cell0", "cell10";
+	};
+
+	/*
+	 * Carve a fixed region out of the top of SRAM so it has a real,
+	 * dereferenceable physical address for the MMIO access path. sram0 is
+	 * shrunk below to make sure nothing else is linked here.
+	 */
+	test_nvmem0: sram@2000ffe0 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2000ffe0 0x20>;
+		zephyr,memory-region = "NVMEM";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			mmio;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			cell0: cell@0 {
+				reg = <0x0 0x10>;
+				#nvmem-cell-cells = <0>;
+			};
+
+			cell10: cell@10 {
+				reg = <0x10 0x10>;
+				read-only;
+				#nvmem-cell-cells = <0>;
+			};
+		};
+	};
+};
+
+&sram0 {
+	reg = <0x20000000 (60 * 1024)>;
+};
