@@ -195,6 +195,7 @@ K_HEAP_DEFINE(lifo_alloc_pool, 256);
  * data pointer is returned by a subsequent get.
  *
  * @see k_lifo_alloc_put()
+ * @verifies ZEP-SRS-23-3
  */
 ZTEST(lifo_contexts, test_lifo_alloc_put)
 {
