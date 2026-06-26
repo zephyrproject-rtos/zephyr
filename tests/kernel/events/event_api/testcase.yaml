@@ -1,3 +1,5 @@
 tests:
   kernel.events:
-    tags: kernel
+    tags:
+      - kernel
+      - userspace
