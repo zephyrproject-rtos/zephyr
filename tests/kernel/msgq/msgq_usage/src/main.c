@@ -259,6 +259,35 @@ static void start_client(void)
 				  0, K_NO_WAIT);
 }
 
+/**
+ * @addtogroup tests_kernel_msgq
+ * @{
+ */
+
+/**
+ * @brief Verify message queues coordinate a multi-service registry scenario.
+ *
+ * @details
+ * Exercises message queues as the IPC backbone of a realistic service registry:
+ * a manager thread, two service threads and a client thread each own a queue and
+ * communicate by put/get to register services, query them, issue
+ * request/response calls, and tear services down (with k_msgq_purge() waking
+ * waiters). The flow must complete without loss or deadlock and the client must
+ * observe each service's running response.
+ *
+ * Test steps:
+ * - Start the service manager, two services that register, and a client.
+ * - The client queries the manager, calls each service, and validates replies.
+ * - Tear down each service and join all threads.
+ *
+ * Expected result:
+ * - Services register, the client receives correct responses, and all threads
+ *   complete cleanly.
+ *
+ * @see k_msgq_put()
+ * @see k_msgq_get()
+ * @see k_msgq_purge()
+ */
 ZTEST(msgq_usage, test_msgq_usage)
 {
 	start_service_manager();
@@ -283,5 +312,9 @@ ZTEST(msgq_usage, test_msgq_usage)
 	k_thread_join(tclient, K_FOREVER);
 	k_thread_abort(tservice_manager);
 }
+
+/**
+ * @}
+ */
 
 ZTEST_SUITE(msgq_usage, NULL, NULL, NULL, NULL, NULL);
