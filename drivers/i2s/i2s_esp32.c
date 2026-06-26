@@ -1600,12 +1600,32 @@ static int i2s_esp32_write(const struct device *dev, void *mem_block, size_t siz
 #endif /* I2S_ESP32_IS_DIR_EN(tx) */
 }
 
+static enum i2s_state i2s_esp32_state_get(const struct device *dev, enum i2s_dir dir)
+{
+	struct i2s_esp32_data *dev_data = dev->data;
+
+#if I2S_ESP32_IS_DIR_EN(tx)
+	if (dir == I2S_DIR_TX) {
+		return dev_data->state;
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(tx) */
+
+#if I2S_ESP32_IS_DIR_EN(rx)
+	if (dir == I2S_DIR_RX) {
+		return dev_data->state;
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(rx) */
+
+	return I2S_STATE_UNKNOWN;
+}
+
 static DEVICE_API(i2s, i2s_esp32_driver_api) = {
 	.configure = i2s_esp32_configure,
 	.config_get = i2s_esp32_config_get,
 	.trigger = i2s_esp32_trigger,
 	.read = i2s_esp32_read,
-	.write = i2s_esp32_write
+	.write = i2s_esp32_write,
+	.state_get = i2s_esp32_state_get,
 };
 
 #if SOC_GDMA_SUPPORTED
