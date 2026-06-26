@@ -5,10 +5,10 @@
  */
 #include <zephyr/kernel.h>
 
-#include "tfm_platform_api.h"
+#include <tfm_platform_api.h>
 
 #if defined(TFM_PSA_API)
-#include "psa_manifest/sid.h"
+#include <psa_manifest/sid.h>
 #endif /* TFM_PSA_API */
 
 /**
