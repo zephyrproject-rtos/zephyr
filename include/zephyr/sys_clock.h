@@ -10,4 +10,6 @@
  * @deprecated Please include zephyr/sys/clock.h straight instead
  */
 
+#warning "include/zephyr/sys_clock.h is deprecated, please use 'include/zephyr/sys/clock.h' instead"
+
 #include <zephyr/sys/clock.h>
