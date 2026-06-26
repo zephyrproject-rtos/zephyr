@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Infineon low-power modes sample"
+
+# Role and capability selection for the low-power modes sample.
+#
+# The sample is split into a device-under-test (DUT) image that drives the
+# power-management sequence and an optional companion image that a second core
+# runs to receive low-power commands over an inter-core mailbox.  The defaults
+# below reproduce the PSE84 behavior out of the box:
+#
+#   * TF-M / SRF two-application flow (PSOC_EDGE_M55_SRF_SUPPORT=y): the CM55 is
+#     the DUT with the deep power-down modes and the mailbox enabled; the CM33-NS
+#     builds as the companion.
+#   * sysbuild flow with pse84_boot.c (SRF support off): the CM55 is the DUT but
+#     runs regular DeepSleep only, with no companion and no mailbox.
+#
+# A new single-core SoC needs no change here: it is not the companion, so it
+# defaults to the DUT role.  Enable APP_DEEP_MODES once its SoC power management
+# implements the retained/power-down modes; leave APP_COMPANION_MBOX off because
+# it owns all the power-management registers directly.
+
+config APP_ROLE_COMPANION
+	bool "Build the companion-core application"
+	default y if SOC_SERIES_PSE84_M33
+	help
+	  Build main_companion.c: the second-core image that receives low-power
+	  mode commands from the DUT over the inter-core mailbox and enters the
+	  requested DeepSleep mode.  Enabled by default for the PSE84 CM33-NS
+	  companion.
+
+config APP_ROLE_DUT
+	bool "Build the device-under-test application"
+	default y if !APP_ROLE_COMPANION
+	help
+	  Build main_dut.c: the application that drives the power-management test
+	  sequence and exercises each peripheral's pm_action callback.  This is
+	  the default role for any single-image target.
+
+config APP_COMPANION_MBOX
+	bool "Command a companion core over the inter-core mailbox"
+	depends on APP_ROLE_DUT
+	default y if PSOC_EDGE_M55_SRF_SUPPORT
+	help
+	  On multi-core targets the DUT commands the companion core into the same
+	  low-power mode over an inter-core mailbox before it sleeps.  Disable on
+	  single-core targets that own all the power-management registers directly
+	  and therefore have no companion to notify.
+
+config APP_DEEP_MODES
+	bool "Exercise the retained and power-down deep sleep modes"
+	depends on APP_ROLE_DUT
+	default y if PSOC_EDGE_M55_SRF_SUPPORT
+	help
+	  Run the DeepSleep-RAM, DeepSleep-OFF and hibernate phases in addition to
+	  regular DeepSleep.  Leave disabled on targets whose SoC power management
+	  only implements regular DeepSleep, so the sample runs the shallow phases
+	  only.
+
+source "Kconfig.zephyr"
