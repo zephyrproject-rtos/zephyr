@@ -8,7 +8,7 @@
 #include <soc.h>
 #include <zephyr/dt-bindings/rdc/imx_rdc.h>
 #include <zephyr/devicetree.h>
-#include "wdog_imx.h"
+#include <wdog_imx.h>
 
 /* Initialize clock. */
 __weak void SOC_ClockInit(void)

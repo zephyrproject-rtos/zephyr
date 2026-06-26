@@ -9,7 +9,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/types.h>
-#include "soc.h"
+#include <soc.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -18,7 +18,7 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/drivers/timer/nxp_os_timer.h>
 #include <zephyr/platform/hooks.h>
-#include "fsl_power.h"
+#include <fsl_power.h>
 
 #include <zephyr/logging/log.h>
 
