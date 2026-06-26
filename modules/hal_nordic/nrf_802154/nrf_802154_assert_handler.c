@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include "nrf_802154_assert_zephyr.h"
+#include <nrf_802154_assert_zephyr.h>
 
 #if defined(CONFIG_NRF_802154_ASSERT_ZEPHYR_MINIMAL)
 

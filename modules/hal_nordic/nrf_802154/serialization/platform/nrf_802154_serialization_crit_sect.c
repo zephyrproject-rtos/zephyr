@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nrf_802154_serialization_crit_sect.h"
+#include <nrf_802154_serialization_crit_sect.h>
 
 #ifndef TEST
 #include <zephyr/irq.h>
