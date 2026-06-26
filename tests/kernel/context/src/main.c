@@ -760,10 +760,8 @@ static void kernel_thread_entry(void *_thread_id, void *arg1, void *arg2)
 	ARG_UNUSED(arg2);
 
 	thread_evidence++;      /* Prove that the thread has run */
-	k_sem_take(&sem_thread, K_FOREVER);
 
 	_test_kernel_thread((k_tid_t) _thread_id);
-
 }
 
 /*
@@ -1084,7 +1082,7 @@ ZTEST(context_one_cpu, test_k_yield)
 }
 
 /**
- * @brief Verify a created thread runs and observes correct context state.
+ * @brief Verify a cooperative thread observes correct identity and ISR context.
  *
  * @ingroup tests_kernel_context
  *
@@ -1092,27 +1090,42 @@ ZTEST(context_one_cpu, test_k_yield)
  * A thread started with k_thread_create() must actually run, and from both
  * thread and ISR context the kernel must report the correct identity and
  * execution context (k_current_get(), k_is_in_isr()) for a cooperative thread.
+ * This complements test_ctx_thread(), which covers the preemptible case.
  *
  * Test steps:
- * - Create a cooperative thread whose entry runs the context checks against
- *   its own thread id, including triggering an ISR that reports back.
- * - The worker asserts its id differs from the parent, that k_is_in_isr() is
- *   true inside the ISR and false in the thread, and that it is cooperative.
+ * - Create a cooperative thread, passing the spawning thread's id as its arg.
+ * - In the worker: confirm its own id differs from the spawner, trigger an ISR
+ *   that reports back the interrupted thread's id and K_ISR context, and confirm
+ *   k_is_in_isr() is false and the priority is cooperative in thread context.
+ * - Join the worker and confirm it ran exactly once.
  *
  * Expected result:
- * - The created thread runs and all context/identity checks pass.
+ * - The worker runs to completion, its identity differs from the spawner, and
+ *   all context/identity checks pass.
  *
  * @see k_thread_create()
  * @see k_current_get()
  * @see k_is_in_isr()
  */
-ZTEST(context_one_cpu, test_thread)
+ZTEST(context_one_cpu, test_ctx_coop_thread)
 {
+	k_tid_t tid;
 
-	k_thread_create(&thread_data3, thread_stack3, THREAD_STACKSIZE,
-			kernel_thread_entry, NULL, NULL,
-			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, K_NO_WAIT);
+	thread_evidence = 0;
 
+	tid = k_thread_create(&thread_data3, thread_stack3, THREAD_STACKSIZE,
+			      kernel_thread_entry, k_current_get(), NULL,
+			      NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, K_NO_WAIT);
+
+	/* Wait for the cooperative worker to finish its context checks so any
+	 * failed assertion it raises is observed before the test returns.
+	 */
+	zassert_equal(k_thread_join(tid, K_FOREVER), 0,
+		      "join with cooperative worker failed");
+
+	zassert_equal(thread_evidence, 1,
+		      "cooperative thread did not run exactly once: %d",
+		      thread_evidence);
 }
 
 static void *context_setup(void)
