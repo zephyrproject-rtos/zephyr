@@ -3,6 +3,10 @@
 Stacks
 ######
 
+.. design:: DESIGN-STACKS Stacks
+   :fulfills: ZEP-SRS-30-1 ZEP-SRS-30-2 ZEP-SRS-30-3 ZEP-SRS-30-4 ZEP-SRS-30-5 ZEP-SRS-30-6 ZEP-SRS-30-7 ZEP-SRS-30-8 ZEP-SRS-30-9 ZEP-SRS-30-10
+
+
 A :dfn:`stack` is a kernel object that implements a traditional
 last in, first out (LIFO) queue, allowing threads and ISRs
 to add and remove a limited number of integer data values.
