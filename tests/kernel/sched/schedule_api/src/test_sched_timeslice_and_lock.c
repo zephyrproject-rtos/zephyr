@@ -90,7 +90,7 @@ static void thread_handler(void *p1, void *p2, void *p3)
  * @brief Validate the behavior of cooperative thread
  * when it yields
  *
- * @ingroup kernel_sched_tests
+ * @ingroup tests_kernel_sched
  *
  * @details Create 3 threads of priority -2, -1 and 0.
  * Yield the main thread which is cooperative. Check
@@ -121,7 +121,7 @@ ZTEST(threads_scheduling, test_yield_cooperative)
  * thread in timeout queue by calling k_sleep() which is cooperative.
  * Check if all the threads gets executed.
  *
- * @ingroup kernel_sched_tests
+ * @ingroup tests_kernel_sched
  */
 ZTEST(threads_scheduling, test_sleep_cooperative)
 {
@@ -140,6 +140,26 @@ ZTEST(threads_scheduling, test_sleep_cooperative)
 	teardown_threads();
 }
 
+/**
+ * @brief Verify k_busy_wait() in a cooperative thread blocks other threads.
+ *
+ * @details
+ * k_busy_wait() spins without yielding the CPU. From a cooperative thread (which
+ * is never preempted), no other ready thread may run for the whole busy-wait
+ * duration, unlike k_sleep() which would let them execute.
+ *
+ * Test steps:
+ * - Set the current thread to a cooperative priority and spawn worker threads.
+ * - Call k_busy_wait() for 100 ms.
+ * - Verify none of the workers executed during the busy-wait.
+ *
+ * Expected result:
+ * - No other thread runs while the cooperative thread busy-waits.
+ *
+ * @ingroup tests_kernel_sched
+ *
+ * @see k_busy_wait()
+ */
 ZTEST(threads_scheduling, test_busy_wait_cooperative)
 {
 	/* set current thread to a cooperative priority */
@@ -167,7 +187,7 @@ ZTEST(threads_scheduling, test_busy_wait_cooperative)
  *
  * @see k_wakeup()
  *
- * @ingroup kernel_sched_tests
+ * @ingroup tests_kernel_sched
  */
 ZTEST(threads_scheduling, test_sleep_wakeup_preemptible)
 {
@@ -206,7 +226,7 @@ static void coop_thread(void *p1, void *p2, void *p3)
  *
  * @see k_wakeup()
  *
- * @ingroup kernel_sched_tests
+ * @ingroup tests_kernel_sched
  */
 ZTEST(threads_scheduling, test_pending_thread_wakeup)
 {
@@ -241,7 +261,7 @@ ZTEST(threads_scheduling, test_pending_thread_wakeup)
  * time slice for threads with priority 0. Make sure the threads
  * with equal priorities are executed in time slice.
  *
- * @ingroup kernel_sched_tests
+ * @ingroup tests_kernel_sched
  */
 ZTEST(threads_scheduling, test_time_slicing_preemptible)
 {
@@ -280,7 +300,7 @@ ZTEST(threads_scheduling, test_time_slicing_preemptible)
  *
  * @see k_busy_wait()
  *
- * @ingroup kernel_sched_tests
+ * @ingroup tests_kernel_sched
  */
 ZTEST(threads_scheduling, test_time_slicing_disable_preemptible)
 {
@@ -312,7 +332,7 @@ ZTEST(threads_scheduling, test_time_slicing_disable_preemptible)
  * threads are not executed. Call k_sleep() and check if the threads
  * have executed.
  *
- * @ingroup kernel_sched_tests
+ * @ingroup tests_kernel_sched
  */
 ZTEST(threads_scheduling, test_lock_preemptible)
 {
@@ -347,7 +367,7 @@ ZTEST(threads_scheduling, test_lock_preemptible)
  *
  * @see k_sched_lock(), k_sched_unlock()
  *
- * @ingroup kernel_sched_tests
+ * @ingroup tests_kernel_sched
  */
 ZTEST(threads_scheduling, test_unlock_preemptible)
 {
@@ -384,7 +404,7 @@ ZTEST(threads_scheduling, test_unlock_preemptible)
  *
  * @see k_sched_lock(), k_sched_unlock()
  *
- * @ingroup kernel_sched_tests
+ * @ingroup tests_kernel_sched
  */
 ZTEST(threads_scheduling, test_unlock_nested_sched_lock)
 {
@@ -433,7 +453,7 @@ ZTEST(threads_scheduling, test_unlock_nested_sched_lock)
  *
  * @see k_wakeup()
  *
- * @ingroup kernel_sched_tests
+ * @ingroup tests_kernel_sched
  */
 ZTEST(threads_scheduling, test_wakeup_expired_timer_thread)
 {
