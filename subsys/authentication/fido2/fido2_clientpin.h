@@ -110,22 +110,23 @@ enum fido2_status fido2_clientpin_cmd_set_pin(uint8_t protocol, const uint8_t *p
 					      const uint8_t *pin_uv_auth_param);
 
 /**
- * Handle getPinToken.
+ * Handle getPinToken / getPinUvAuthTokenUsingPinWithPermissions.
  *
  * @param protocol PIN/UV auth protocol version.
  * @param platform_key Platform's ECDH public key.
  * @param platform_key_len Length of @p platform_key in bytes.
  * @param pin_hash_enc Encrypted PIN hash.
  * @param pin_hash_enc_len Length of @p pin_hash_enc in bytes.
+ * @param permissions Permissions that the token must have.
+ * @param rp_id Relying party ID.
  * @param cbor_out Output buffer for the CBOR-encoded response.
  * @param cbor_out_cap Size of @p cbor_out in bytes.
  * @param cbor_out_len Set to the number of bytes written to @p cbor_out.
  * @return FIDO2_OK on success, FIDO2_ERR_* on failure.
  */
-enum fido2_status fido2_clientpin_cmd_get_pin_token(uint8_t protocol, const uint8_t *platform_key,
-						    size_t platform_key_len,
-						    const uint8_t *pin_hash_enc,
-						    size_t pin_hash_enc_len, uint8_t *cbor_out,
-						    size_t cbor_out_cap, size_t *cbor_out_len);
+enum fido2_status fido2_clientpin_cmd_get_pin_token_pin_w_perms(
+	uint8_t protocol, const uint8_t *platform_key, size_t platform_key_len,
+	const uint8_t *pin_hash_enc, size_t pin_hash_enc_len, uint8_t permissions,
+	const char *rp_id, uint8_t *cbor_out, size_t cbor_out_cap, size_t *cbor_out_len);
 
 #endif /* FIDO2_CLIENTPIN_H_ */
