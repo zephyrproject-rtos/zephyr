@@ -95,6 +95,10 @@ by calling one of the following macros:
 * :c:macro:`K_MSGQ_DEFINE` -- Defines a public message queue.
 * :c:macro:`K_MSGQ_DEFINE_STATIC` -- Defines a private (static scope) message
   queue.
+* :c:macro:`K_MSGQ_DEFINE_TYPE` -- Defines a public message queue for given
+  item type.
+* :c:macro:`K_MSGQ_DEFINE_TYPE_STATIC` -- Defines a private message queue for
+  given item type.
 
 The following code has the same effect as the code segment above. Observe
 that the macro defines both the message queue and its buffer.
@@ -102,6 +106,14 @@ that the macro defines both the message queue and its buffer.
 .. code-block:: c
 
     K_MSGQ_DEFINE(my_msgq, sizeof(struct data_item_type), 10, 1);
+
+The :c:macro:`K_MSGQ_DEFINE_TYPE` shorthand can be used if the queue item type
+is known at compile time. This macro configures the queue item size and
+alignment automatically:
+
+.. code-block:: c
+
+    K_MSGQ_DEFINE_TYPE(my_msgq, struct data_item_type, 10);
 
 Writing to a Message Queue
 ==========================
