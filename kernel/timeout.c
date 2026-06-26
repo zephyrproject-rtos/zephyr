@@ -11,7 +11,7 @@
 #include <timeout_q.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/timer/system_timer.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/llext/symbol.h>
 
 #include <timeslicing.h>
