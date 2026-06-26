@@ -6,7 +6,7 @@
 
 #include <errno.h>
 #include <zephyr/acpi/acpi.h>
-#include "soc.h"
+#include <soc.h>
 #include "soc_gpio.h"
 #include <zephyr/logging/log.h>
 

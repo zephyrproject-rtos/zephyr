@@ -14,7 +14,7 @@
 #include <adsp_shim.h>
 #include <adsp_memory.h>
 #include <cpu_init.h>
-#include "manifest.h"
+#include <manifest.h>
 
 #ifdef CONFIG_PM
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
