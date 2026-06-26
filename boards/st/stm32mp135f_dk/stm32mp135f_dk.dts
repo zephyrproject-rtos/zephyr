@@ -8,7 +8,7 @@
 
 #include <st/mp13/stm32mp135.dtsi>
 #include <st/mp13/stm32mp135faex-pinctrl.dtsi>
-#include "zephyr/dt-bindings/display/panel.h"
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
