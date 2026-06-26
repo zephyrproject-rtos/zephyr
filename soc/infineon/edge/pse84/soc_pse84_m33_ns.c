@@ -14,20 +14,20 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 
-#include "cy_pdl.h"
+#include <cy_pdl.h>
 #include <system_edge.h>
 
 #if defined(CONFIG_BUILD_WITH_TFM)
-#include "cy_syslib.h"
-#include "mtb_srf_pool_init.h"
+#include <cy_syslib.h>
+#include <mtb_srf_pool_init.h>
 #endif
 
 #if defined(CONFIG_PSOC_EDGE_M55_SRF_SUPPORT)
-#include "cyabs_rtos.h"
-#include "mtb_ipc.h"
+#include <cyabs_rtos.h>
+#include <mtb_ipc.h>
 #include "mtb_ipc_config.h"
-#include "mtb_srf_ipc.h"
-#include "mtb_srf_ipc_init.h"
+#include <mtb_srf_ipc.h>
+#include <mtb_srf_ipc_init.h>
 #endif
 
 #define PSE84_CPU_FREQ_HZ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
