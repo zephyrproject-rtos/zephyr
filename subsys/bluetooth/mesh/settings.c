@@ -15,7 +15,7 @@
 #include <common/bt_settings_commit.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#include "host/hci_core.h"
+#include <host/hci_core.h>
 #include "mesh.h"
 #include "subnet.h"
 #include "app_keys.h"

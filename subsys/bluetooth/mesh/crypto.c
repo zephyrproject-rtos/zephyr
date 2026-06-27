@@ -11,7 +11,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 #include "mesh.h"
 #include "crypto.h"
