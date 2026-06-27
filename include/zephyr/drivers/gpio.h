@@ -865,9 +865,9 @@ static inline bool gpio_is_ready_dt(const struct gpio_dt_spec *spec)
  *
  * @isr_ok
  *
- * @param port Pointer to device structure for the driver instance.
- * @param pin Pin number.
- * @param flags Interrupt configuration flags as defined by GPIO_INT_*.
+ * @param[in] port Pointer to device structure for the driver instance.
+ * @param[in] pin Pin number.
+ * @param[in] flags Interrupt configuration flags as defined by GPIO_INT_*.
  *
  * @retval 0 If successful.
  * @retval -ENOSYS If the operation is not implemented by the driver.
@@ -979,9 +979,9 @@ static inline int gpio_pin_interrupt_configure_dt(const struct gpio_dt_spec *spe
 /**
  * @brief Configure a single pin.
  *
- * @param port Pointer to device structure for the driver instance.
- * @param pin Pin number to configure.
- * @param flags Flags for pin configuration: 'GPIO input/output configuration
+ * @param[in] port Pointer to device structure for the driver instance.
+ * @param[in] pin Pin number to configure.
+ * @param[in] flags Flags for pin configuration: 'GPIO input/output configuration
  *        flags', 'GPIO pin drive flags', 'GPIO pin bias flags'.
  *
  * @retval 0 If successful.
