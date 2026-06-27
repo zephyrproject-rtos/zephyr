@@ -124,6 +124,21 @@ static void common_obj_core_test(uint32_t type_id, const char *str,
 	}
 }
 
+/**
+ * @brief Test thread objects in the object core framework
+ *
+ * @ingroup kernel_obj_core_tests
+ *
+ * @details Verify that thread objects are registered with the object core
+ * framework: the thread object type can be found with k_obj_type_find(), and
+ * walking that type with k_obj_type_walk_locked()/_unlocked() finds the
+ * registered (statically and dynamically created) thread objects.
+ *
+ * @see k_obj_type_find(), k_obj_type_walk_locked(), k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
+ */
 ZTEST(obj_core, test_obj_core_thread)
 {
 	k_thread_create(&thread2, thread2_stack,

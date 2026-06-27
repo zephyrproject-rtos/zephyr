@@ -29,6 +29,11 @@ static void test_thread_entry(void *p1, void *p2, void *p3)
 	k_sem_take(&test_sem, K_FOREVER);
 }
 
+/**
+ * @brief Exercise object core statistics API (test_obj_core_stats_enable)
+ * @ingroup kernel_obj_core_tests
+ * @verifies ZEP-SRS-35-6
+ */
 ZTEST(obj_core_stats_api, test_obj_core_stats_enable)
 {
 	int  status;
@@ -60,6 +65,11 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_enable)
 	k_mutex_unlock(&test_mutex);
 }
 
+/**
+ * @brief Exercise object core statistics API (test_obj_core_stats_disable)
+ * @ingroup kernel_obj_core_tests
+ * @verifies ZEP-SRS-35-6
+ */
 ZTEST(obj_core_stats_api, test_obj_core_stats_disable)
 {
 	int  status;
@@ -91,6 +101,11 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_disable)
 	k_mutex_unlock(&test_mutex);
 }
 
+/**
+ * @brief Exercise object core statistics API (test_obj_core_stats_reset)
+ * @ingroup kernel_obj_core_tests
+ * @verifies ZEP-SRS-35-7
+ */
 ZTEST(obj_core_stats_api, test_obj_core_stats_reset)
 {
 	int  status;
@@ -122,6 +137,11 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_reset)
 	k_mutex_unlock(&test_mutex);
 }
 
+/**
+ * @brief Exercise object core statistics API (test_obj_core_stats_query)
+ * @ingroup kernel_obj_core_tests
+ * @verifies ZEP-SRS-35-5
+ */
 ZTEST(obj_core_stats_api, test_obj_core_stats_query)
 {
 	int  status;
@@ -156,6 +176,11 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_query)
 	k_mutex_unlock(&test_mutex);
 }
 
+/**
+ * @brief Exercise object core statistics API (test_obj_core_stats_raw)
+ * @ingroup kernel_obj_core_tests
+ * @verifies ZEP-SRS-35-5
+ */
 ZTEST(obj_core_stats_api, test_obj_core_stats_raw)
 {
 	int  status;
@@ -217,6 +242,11 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_raw)
 	k_mutex_unlock(&test_mutex);
 }
 
+/**
+ * @brief Exercise object core statistics API (test_obj_core_stats_dereg)
+ * @ingroup kernel_obj_core_tests
+ * @verifies ZEP-SRS-35-6
+ */
 ZTEST(obj_core_stats_api, test_obj_core_stats_dereg)
 {
 	int  status;
@@ -253,6 +283,11 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_dereg)
 	k_mutex_unlock(&test_mutex);
 }
 
+/**
+ * @brief Exercise object core statistics API (test_obj_core_stats_register)
+ * @ingroup kernel_obj_core_tests
+ * @verifies ZEP-SRS-35-6
+ */
 ZTEST(obj_core_stats_api, test_obj_core_stats_register)
 {
 	int  status;
