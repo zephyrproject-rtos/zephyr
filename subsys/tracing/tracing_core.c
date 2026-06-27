@@ -31,6 +31,7 @@ enum tracing_state {
 
 static atomic_t tracing_state;
 static atomic_t tracing_packet_drop_num;
+struct k_spinlock tracing_lock;
 /*
  * Output is fanned out to every registered backend. The common case is a single
  * backend, so cache it and a "more than one" flag to keep the hot path a direct
