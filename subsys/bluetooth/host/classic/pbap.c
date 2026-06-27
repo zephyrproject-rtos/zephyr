@@ -14,7 +14,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/kernel.h>
 
-#include "psa/crypto.h"
+#include <psa/crypto.h>
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -27,7 +27,7 @@
 
 #include <mbedtls/constant_time.h>
 
-#include "host/conn_internal.h"
+#include <host/conn_internal.h>
 #include "l2cap_br_internal.h"
 #include "rfcomm_internal.h"
 #include "obex_internal.h"

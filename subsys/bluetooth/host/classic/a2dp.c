@@ -23,7 +23,7 @@
 #include <zephyr/bluetooth/classic/a2dp_codec_sbc.h>
 #include <zephyr/bluetooth/classic/a2dp.h>
 
-#include "common/assert.h"
+#include <common/assert.h>
 
 #define A2DP_SBC_PAYLOAD_TYPE (0x60U)
 
@@ -41,9 +41,9 @@
 #define CTRL_PARAM(_ctrl_param) CONTAINER_OF(_ctrl_param, struct bt_a2dp, ctrl_param)
 #define DELAY_REPORT_REQ(_req)  CONTAINER_OF(_req, struct bt_avdtp_delay_report_params, req)
 
-#include "host/hci_core.h"
-#include "host/conn_internal.h"
-#include "host/l2cap_internal.h"
+#include <host/hci_core.h>
+#include <host/conn_internal.h>
+#include <host/l2cap_internal.h>
 #include "avdtp_internal.h"
 #include "a2dp_internal.h"
 
