@@ -165,6 +165,15 @@ static int device_visitor(const struct device *dev,
 	return -ENOSPC;
 }
 
+/**
+ * @brief Test querying the devices a device requires
+ *
+ * @details Verify device_required_handles_get() and device_required_foreach()
+ * report the devices that a given device depends on.
+ *
+ * @see device_required_handles_get, device_required_foreach
+ * @verifies ZEP-SRS-14-11
+ */
 ZTEST(devicetree_devices, test_requires)
 {
 	size_t nhdls = 0;
@@ -278,6 +287,15 @@ ZTEST(devicetree_devices, test_get_or_null)
 	zassert_is_null(dev);
 }
 
+/**
+ * @brief Test querying the devices that depend on a device
+ *
+ * @details Verify device_supported_handles_get() and
+ * device_supported_foreach() report the devices that depend on a given device.
+ *
+ * @see device_supported_handles_get, device_supported_foreach
+ * @verifies ZEP-SRS-14-11
+ */
 ZTEST(devicetree_devices, test_supports)
 {
 	size_t nhdls = 0;
