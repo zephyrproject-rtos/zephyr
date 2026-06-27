@@ -19,6 +19,13 @@ static void __ondemand_func evictable_function(void)
 	printk("This %s code, count=%d\n", message, ++count);
 }
 
+/**
+ * @brief Exercise on-demand evictable code and data sections.
+ *
+ * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-8
+ * @verifies ZEP-SRS-36-15
+ */
 ZTEST(ondemand_section, test_ondemand_basic)
 {
 	unsigned long faults_before, faults_after;
