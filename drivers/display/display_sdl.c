@@ -1394,7 +1394,7 @@ static DEVICE_API(display, sdl_display_api) = {
                                                                                                    \
 	static uint8_t sdl_buf_##n[4 * DT_INST_PROP(n, height) * DT_INST_PROP(n, width)];          \
 	static uint8_t sdl_read_buf_##n[4 * DT_INST_PROP(n, height) * DT_INST_PROP(n, width)];     \
-	K_MSGQ_DEFINE(sdl_task_msgq_##n, sizeof(struct sdl_display_task), 1, 4);                   \
+	K_MSGQ_DEFINE_STATIC_TYPE(sdl_task_msgq_##n, struct sdl_display_task, 1);                  \
 	static struct sdl_display_data sdl_data_##n = {                                            \
 		COND_CODE_1(HAS_COLOR_PALETTE(n),                                                  \
 			    (.color_dither = DISPLAY_COLOR_DITHER_INIT(n),), ())                   \
