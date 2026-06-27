@@ -845,6 +845,7 @@ ZTEST(mbox_api, test_mbox_put_timeout)
  *
  * @see k_mbox_put()
  * @see k_mbox_get()
+ * @verifies ZEP-SRS-25-6
  * @verifies ZEP-SRS-25-13
  * @verifies ZEP-SRS-25-17
  */
