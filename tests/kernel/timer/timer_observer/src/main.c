@@ -64,6 +64,15 @@ static void obs_on_expiry(struct k_timer *timer)
 	}
 }
 
+/**
+ * @brief Test that a registered timer observer sees lifecycle events
+ *
+ * @details Register a timer observer and verify it is notified of timer
+ * initialization, start, stop, and expiry events.
+ *
+ * @ingroup kernel_timer_tests
+ * @verifies ZEP-SRS-4-18
+ */
 ZTEST(timer_observer, test_periodic_expiry_and_explicit_stop)
 {
 	const int dur_ms = 80;
