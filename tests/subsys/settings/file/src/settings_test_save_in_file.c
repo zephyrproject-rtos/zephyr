@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "settings_test.h"
-#include "settings/settings_file.h"
+#include <settings_test.h>
+#include <settings/settings_file.h>
 
 #define CF_FILE_CONTENT_1 "\x0d\x00myfoo/mybar=\x08"
 #define CF_FILE_CONTENT_2 "\x0d\x00myfoo/mybar=\x2b"
