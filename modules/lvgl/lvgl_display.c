@@ -16,7 +16,7 @@ K_SEM_DEFINE(flush_complete, 0, 1);
 /* Needed because the wait callback might be called even if not flush is pending */
 K_SEM_DEFINE(flush_required, 0, 1);
 /* Message queue will only ever need to queue one message */
-K_MSGQ_DEFINE(flush_queue, sizeof(struct lvgl_display_flush), 1, 1);
+K_MSGQ_DEFINE_STATIC_TYPE(flush_queue, struct lvgl_display_flush, 1);
 
 void lvgl_flush_thread_entry(void *arg1, void *arg2, void *arg3)
 {
