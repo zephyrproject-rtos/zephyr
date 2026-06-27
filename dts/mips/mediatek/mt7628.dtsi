@@ -1,0 +1,79 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <freq.h>
+
+#include "skeleton.dtsi"
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "mti,mips24KEc";
+			/* 580 MHz with a 40 MHz crystal. */
+			clock-frequency = <DT_FREQ_M(580)>;
+			reg = <0>;
+
+			cpu_intc: interrupt-controller {
+				compatible = "mti,cpu-intc";
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		interrupt-parent = <&cpu_intc>;
+
+		/*
+		 * The peripherals are at physical address 0x10000000. They are
+		 * accessed through the uncached KSEG1 segment, so the bus is
+		 * placed at the corresponding virtual address.
+		 */
+		palmbus: palmbus@b0000000 {
+			compatible = "simple-bus";
+			reg = <0xb0000000 0x200000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xb0000000 0x200000>;
+
+			uart0: uart@c00 {
+				compatible = "ns16550";
+				reg = <0xc00 0x100>;
+				reg-shift = <2>;
+				clock-frequency = <DT_FREQ_M(40)>;
+				status = "disabled";
+			};
+
+			uart1: uart@d00 {
+				compatible = "ns16550";
+				reg = <0xd00 0x100>;
+				reg-shift = <2>;
+				clock-frequency = <DT_FREQ_M(40)>;
+				status = "disabled";
+			};
+
+			uart2: uart@e00 {
+				compatible = "ns16550";
+				reg = <0xe00 0x100>;
+				reg-shift = <2>;
+				clock-frequency = <DT_FREQ_M(40)>;
+				status = "disabled";
+			};
+		};
+	};
+};
