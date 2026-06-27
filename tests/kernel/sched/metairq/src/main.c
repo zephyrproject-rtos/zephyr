@@ -189,6 +189,18 @@ void join_participant_threads(void)
 	JOIN_PARTICIPANT_THREAD(coop_thread2_id);
 }
 
+/**
+ * @brief Test scheduling a thread in response to an event via a meta-IRQ
+ *
+ * @details Exercise event-driven scheduling: a meta-IRQ thread is kept blocked
+ * until an event (a semaphore give) occurs, at which point it is scheduled and
+ * preempts the cooperative thread currently executing. Verify that after the
+ * meta-IRQ thread runs it returns to the preempted cooperative thread, and the
+ * high-priority cooperative thread it unblocked is scheduled afterwards.
+ *
+ * @see k_sem_give(), K_PRIO_COOP()
+ * @verifies ZEP-SRS-2-4
+ */
 ZTEST(suite_preempt_metairq, test_preempt_metairq)
 {
 	create_participant_threads();
