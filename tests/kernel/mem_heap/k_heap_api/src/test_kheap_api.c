@@ -511,6 +511,7 @@ ZTEST(k_heap_api, test_z_k_heap_double_free)
  * an allocation larger than the region fails, and the block can be freed.
  *
  * @see k_heap_init()
+ * @verifies ZEP-SRS-9-4
  */
 ZTEST(k_heap_api, test_k_heap_init)
 {
