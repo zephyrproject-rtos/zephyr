@@ -34,7 +34,7 @@ struct latmon_message {
 	int latmus; /* latmus connection */
 };
 
-K_MSGQ_DEFINE(latmon_msgq, sizeof(struct latmon_message), 2, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(latmon_msgq, struct latmon_message, 2);
 
 /*
  * Note: Using a small period (e.g., less than 100 microseconds) may result in
@@ -64,7 +64,7 @@ struct latmon_data {
 };
 
 /* Message queue for sample data transfers */
-K_MSGQ_DEFINE(xfer_msgq, sizeof(struct latmon_data), 10, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(xfer_msgq, struct latmon_data, 10);
 
 /* Network transfer thread: sends data to Latmus  */
 #define XFER_THREAD_STACK_SIZE CONFIG_NET_LATMON_XFER_THREAD_STACK_SIZE
