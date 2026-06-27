@@ -43,6 +43,8 @@ exceptions and clarifications:
   * For header files located ``drivers/``, the header guard name should
     reflects the path of the header file in the Zephyr source tree but
      using ``ZEPHYR_DRIVERS_`` prefix (instead of plain ``DRIVERS_``).
+* Be strict in using ``#include <>`` to include a non-local header file
+  and ``#include ""`` only for local header files.
 
 .. _Linux kernel coding style:
    https://kernel.org/doc/html/latest/process/coding-style.html

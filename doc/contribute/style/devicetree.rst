@@ -22,6 +22,8 @@ Devicetree Style Guidelines
     value on the same line as the opening bracket (``<`` or ``[``). Place the
     closing bracket and semicolon (``>;`` or ``];``) on the same line after
     the final value of the property.
+  * Be strict in using ``#include <>`` to include a non-local DTSI file
+    and ``#include ""`` only for DTSI header files.
 
 Examples:
 
