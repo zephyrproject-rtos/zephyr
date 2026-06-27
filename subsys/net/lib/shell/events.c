@@ -49,8 +49,7 @@ struct event_msg {
 	uint8_t data[MAX_EVENT_INFO_SIZE];
 };
 
-K_MSGQ_DEFINE(event_mon_msgq, sizeof(struct event_msg),
-	      CONFIG_NET_MGMT_EVENT_QUEUE_SIZE, sizeof(intptr_t));
+K_MSGQ_DEFINE_STATIC_TYPE(event_mon_msgq, struct event_msg, CONFIG_NET_MGMT_EVENT_QUEUE_SIZE);
 
 static void event_handler(struct net_mgmt_event_callback *cb,
 			  uint64_t mgmt_event, struct net_if *iface)
