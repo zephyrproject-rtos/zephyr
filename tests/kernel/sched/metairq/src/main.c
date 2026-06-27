@@ -211,6 +211,7 @@ void join_participant_threads(void)
  *   thread runs after it, confirming the meta-IRQ returns to its preemptee.
  *
  * @ingroup tests_kernel_sched
+ * @verifies ZEP-SRS-2-4
  */
 ZTEST(suite_preempt_metairq, test_preempt_metairq)
 {
