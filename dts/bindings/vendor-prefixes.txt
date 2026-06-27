@@ -758,6 +758,7 @@ ubnt	Ubiquiti Networks
 ucrobotics	uCRobotics
 udoo	Udoo
 ugoos	Ugoos Industrial Co., Ltd.
+uiap	Umeta & Ikki Automotive Parts
 ultrachip	UltraChip Inc.
 uniwest	United Western Technologies Corp (UniWest)
 up-bridge-the-gap	UP Bridge the Gap
