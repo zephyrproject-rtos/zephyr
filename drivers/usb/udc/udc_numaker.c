@@ -3241,8 +3241,8 @@ static const struct udc_api udc_numaker_api = {
 	static struct numaker_usbd_ep                                                              \
 		numaker_usbd_ep_pool_##inst[DT_INST_PROP(inst, num_bidir_endpoints)];              \
                                                                                                    \
-	K_MSGQ_DEFINE(numaker_usbd_msgq_##inst, sizeof(struct numaker_usbd_msg),                   \
-		      CONFIG_UDC_NUMAKER_MSG_QUEUE_SIZE, 4);                                       \
+	K_MSGQ_DEFINE_STATIC_TYPE(numaker_usbd_msgq_##inst, struct numaker_usbd_msg,               \
+		      CONFIG_UDC_NUMAKER_MSG_QUEUE_SIZE);                                          \
                                                                                                    \
 	static struct udc_numaker_data udc_priv_##inst = {                                         \
 		.msgq = &numaker_usbd_msgq_##inst,                                                 \
