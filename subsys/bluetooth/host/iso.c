@@ -34,10 +34,10 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/toolchain.h>
 
-#include "common/assert.h"
-#include "host/buf_view.h"
-#include "host/hci_core.h"
-#include "host/conn_internal.h"
+#include <common/assert.h>
+#include <host/buf_view.h>
+#include <host/hci_core.h>
+#include <host/conn_internal.h>
 #include "iso_internal.h"
 
 LOG_MODULE_REGISTER(bt_iso, CONFIG_BT_ISO_LOG_LEVEL);
