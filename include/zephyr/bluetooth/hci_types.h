@@ -51,10 +51,59 @@ extern "C" {
 
 /* Bluetooth spec v5.4 Vol 4, Part E - 5.4.3 HCI Synchronous Data Packets */
 struct bt_hci_sco_hdr {
-	uint16_t handle; /* 12 bit handle, 2 bit Packet Status Flag, 1 bit RFU */
+	uint16_t handle; /* 12 bit handle, 2 bit Packet Status Flag, 2 bit RFU */
 	uint8_t  len;
 } __packed;
 #define BT_HCI_SCO_HDR_SIZE             3
+
+/**
+ * @name SCO Packet Status Flag values
+ * @anchor bt_sco_pkt_status
+ *
+ * Packet Status Flag values in the HCI SCO handle field. Only valid when
+ * erroneous data reporting is enabled in the controller.
+ * @{
+ */
+/** SCO data received correctly */
+#define BT_SCO_PKT_STATUS_CORRECT       0x00
+/** SCO data may be invalid */
+#define BT_SCO_PKT_STATUS_POSSIBLY_INVALID 0x01
+/** No SCO data received */
+#define BT_SCO_PKT_STATUS_NO_DATA       0x02
+/** SCO data partially lost */
+#define BT_SCO_PKT_STATUS_PARTIALLY_LOST 0x03
+/** @} */
+
+/**
+ * @brief Extract the connection handle from an HCI SCO handle field.
+ * @def bt_sco_handle()
+ *
+ * @param h HCI SCO handle field value.
+ *
+ * @return 12-bit connection handle.
+ */
+#define bt_sco_handle(h)                ((h) & BIT_MASK(12))
+
+/**
+ * @brief Extract the Packet Status Flag from an HCI SCO handle field.
+ * @def bt_sco_flags()
+ *
+ * @param h HCI SCO handle field value.
+ *
+ * @return Packet Status Flag (@ref bt_sco_pkt_status).
+ */
+#define bt_sco_flags(h)                 (((h) >> 12) & BIT_MASK(2))
+
+/**
+ * @brief Pack a connection handle and Packet Status Flag into an HCI SCO handle field.
+ * @def bt_sco_handle_pack()
+ *
+ * @param h 12-bit connection handle.
+ * @param f Packet Status Flag (@ref bt_sco_pkt_status).
+ *
+ * @return HCI SCO handle field value.
+ */
+#define bt_sco_handle_pack(h, f)        ((h) | (((f) & BIT_MASK(2)) << 12))
 
 /* Bluetooth spec v5.4 Vol 4, Part E - 5.4.4 HCI Event Packet */
 struct bt_hci_evt_hdr {
@@ -919,6 +968,20 @@ struct bt_hci_cp_host_buffer_size {
 	uint8_t  sco_mtu;
 	uint16_t acl_pkts;
 	uint16_t sco_pkts;
+} __packed;
+
+/** SCO flow control disabled. */
+#define BT_HCI_SCO_FLOW_CTRL_DISABLED           0x00
+/** SCO flow control enabled. */
+#define BT_HCI_SCO_FLOW_CTRL_ENABLED            0x01
+/** HCI opcode for Write SCO Flow Control Enable. */
+#define BT_HCI_OP_WRITE_SCO_FLOW_CONTROL        BT_OP(BT_OGF_BASEBAND, 0x002F) /* 0x0c2f */
+/** HCI command parameters for Write SCO Flow Control Enable. */
+struct bt_hci_cp_write_sco_flow_control {
+	/** SCO flow control enable. Use @ref BT_HCI_SCO_FLOW_CTRL_ENABLED or
+	 *  @ref BT_HCI_SCO_FLOW_CTRL_DISABLED.
+	 */
+	uint8_t flow_enable;
 } __packed;
 
 struct bt_hci_handle_count {

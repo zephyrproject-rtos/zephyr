@@ -52,6 +52,11 @@ struct bt_sco_chan {
 	/** Channel operations reference */
 	const struct bt_sco_chan_ops *ops;
 
+#if defined(CONFIG_BT_SCO_OVER_HCI)
+	/** SCO over HCI data receive callback */
+	void (*recv)(struct bt_conn *sco_conn, struct net_buf *buf);
+#endif
+
 	/** Voice setting for the connection */
 	uint8_t                      voice_setting;
 
@@ -288,6 +293,29 @@ int bt_sco_hci_cb_register(struct bt_sco_hci_cb *cb);
  * @retval -ENOENT if @p cb was not registered.
  */
 int bt_sco_hci_cb_unregister(struct bt_sco_hci_cb *cb);
+
+/** @brief Initialize SCO over HCI transport.
+ *
+ *  Configures the controller for SCO data routing over HCI.
+ *
+ *  @return 0 on success or negative error code on failure.
+ */
+int bt_sco_over_hci_init(void);
+
+#if defined(CONFIG_BT_SCO_OVER_HCI)
+/** @brief Process incoming HCI SCO data packet.
+ *
+ *  @param buf Buffer containing HCI SCO data (with H:4 type byte).
+ */
+void hci_sco(struct net_buf *buf);
+#endif /* CONFIG_BT_SCO_OVER_HCI */
+
+/** @brief Allocate a buffer for incoming SCO data.
+ *
+ *  @param timeout Allocation timeout.
+ *  @return Allocated buffer or NULL.
+ */
+struct net_buf *bt_sco_get_rx(k_timeout_t timeout);
 
 /**
  *  @brief Register a callback structure for SCO HCI activity.
