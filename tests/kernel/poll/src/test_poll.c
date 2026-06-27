@@ -886,3 +886,65 @@ ZTEST(poll_api_1cpu, test_poll_zero_events)
 
 	zassert_equal(k_poll(&event, 0, K_MSEC(50)), -EAGAIN);
 }
+
+static struct k_poll_signal persist_signal;
+
+/**
+ * @brief Test that a raised poll signal persists until it is reset
+ *
+ * @ingroup kernel_poll_tests
+ *
+ * @details Raise a poll signal and verify it stays in the signaled state: it is
+ * reported signaled by k_poll_signal_check(), and because a signal is not
+ * consumed by polling it remains ready across repeated k_poll() calls. Only
+ * after k_poll_signal_reset() does it return to the unsignaled state.
+ *
+ * @see k_poll_signal_raise(), k_poll_signal_check(), k_poll_signal_reset()
+ * @verifies ZEP-SRS-33-8
+ */
+ZTEST(poll_api, test_poll_signal_persist)
+{
+	struct k_poll_event event;
+	unsigned int signaled;
+	int result;
+
+	k_poll_signal_init(&persist_signal);
+
+	/* Initially unsignaled. */
+	k_poll_signal_check(&persist_signal, &signaled, &result);
+	zassert_equal(signaled, 0, "signal should start unsignaled");
+
+	/* Raise it with a known result value. */
+	k_poll_signal_raise(&persist_signal, SIGNAL_RESULT);
+	k_poll_signal_check(&persist_signal, &signaled, &result);
+	zassert_not_equal(signaled, 0, "signal should be signaled after raise");
+	zassert_equal(result, SIGNAL_RESULT);
+
+	k_poll_event_init(&event, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
+			  &persist_signal);
+
+	/* A raised signal is not consumed by polling, so it stays signaled
+	 * across repeated k_poll() calls until it is explicitly reset.
+	 */
+	for (int i = 0; i < 3; i++) {
+		event.state = K_POLL_STATE_NOT_READY;
+		zassert_equal(k_poll(&event, 1, K_NO_WAIT), 0,
+			      "poll %d: a raised signal should be ready", i);
+		zassert_equal(event.state, K_POLL_STATE_SIGNALED,
+			      "poll %d: event should be signaled", i);
+		k_poll_signal_check(&persist_signal, &signaled, &result);
+		zassert_not_equal(signaled, 0,
+			      "poll %d: signal must remain signaled (persistence)", i);
+		zassert_equal(result, SIGNAL_RESULT);
+	}
+
+	/* After an explicit reset the signal returns to the unsignaled state. */
+	k_poll_signal_reset(&persist_signal);
+	k_poll_signal_check(&persist_signal, &signaled, &result);
+	zassert_equal(signaled, 0, "signal should be unsignaled after reset");
+
+	event.state = K_POLL_STATE_NOT_READY;
+	zassert_equal(k_poll(&event, 1, K_NO_WAIT), -EAGAIN,
+		      "a reset signal should no longer be ready");
+	zassert_equal(event.state, K_POLL_STATE_NOT_READY);
+}
