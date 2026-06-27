@@ -600,6 +600,34 @@ ZTEST(mbox_api, test_mbox_timed_out_mbox_get)
 }
 
 /**
+ * @brief Test synchronous send timeout when no receiver is available.
+ *
+ * @details Perform a synchronous k_mbox_put() with a finite timeout to a
+ * mailbox that has no waiting receiver, and verify the call returns -EAGAIN
+ * once the timeout elapses without the message being processed.
+ *
+ * @see k_mbox_put()
+ * @verifies ZEP-SRS-25-6
+ */
+ZTEST(mbox_api, test_mbox_put_timeout)
+{
+	struct k_mbox put_timeout_mbox;
+	struct k_mbox_msg mmsg = {0};
+	int ret;
+
+	k_mbox_init(&put_timeout_mbox);
+
+	mmsg.size = 0;
+	mmsg.tx_data = NULL;
+	mmsg.tx_target_thread = K_ANY;
+
+	/* No receiver is waiting, so the synchronous send must time out. */
+	ret = k_mbox_put(&put_timeout_mbox, &mmsg, TIMEOUT);
+	zassert_equal(ret, -EAGAIN,
+		      "synchronous send should time out with -EAGAIN, got %d", ret);
+}
+
+/**
  * @brief Test case for mailbox message thread ID mismatch.
  * @verifies ZEP-SRS-25-13
  * @verifies ZEP-SRS-25-17
