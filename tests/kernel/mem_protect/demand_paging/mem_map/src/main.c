@@ -83,6 +83,12 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 #define HALF_BYTES	(HALF_PAGES * CONFIG_MMU_PAGE_SIZE)
 static const char *nums = "0123456789";
 
+/**
+ * @brief Map an anonymous demand-paged memory arena.
+ *
+ * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-8
+ */
 ZTEST(demand_paging, test_map_anon_pages)
 {
 	arena_size = k_mem_free_get() + HALF_BYTES;
@@ -200,21 +206,46 @@ static void touch_anon_pages(bool zig, bool zag)
 	}
 }
 
+/**
+ * @brief Touch demand-paged memory, forcing page faults and eviction.
+ *
+ * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-8
+ * @verifies ZEP-SRS-36-9
+ */
 ZTEST(demand_paging, test_touch_anon_pages)
 {
 	touch_anon_pages(false, false);
 }
 
+/**
+ * @brief Touch demand-paged memory in a zig-zag access pattern.
+ *
+ * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-8
+ */
 ZTEST(demand_paging, test_touch_anon_pages_zigzag1)
 {
 	touch_anon_pages(true, false);
 }
 
+/**
+ * @brief Touch demand-paged memory in the reverse zig-zag access pattern.
+ *
+ * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-8
+ */
 ZTEST(demand_paging, test_touch_anon_pages_zigzag2)
 {
 	touch_anon_pages(false, true);
 }
 
+/**
+ * @brief Unmap a demand-paged region and confirm it is inaccessible.
+ *
+ * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-2
+ */
 ZTEST(demand_paging, test_unmap_anon_pages)
 {
 	 k_mem_unmap(arena, arena_size);
@@ -259,6 +290,12 @@ static void test_k_mem_page_out(void)
 
 }
 
+/**
+ * @brief Page a region back in and confirm no faults on access.
+ *
+ * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-10
+ */
 ZTEST(demand_paging_api, test_k_mem_page_in)
 {
 	unsigned long faults;
@@ -286,6 +323,12 @@ ZTEST(demand_paging_api, test_k_mem_page_in)
 		      faults);
 }
 
+/**
+ * @brief Pin a region and confirm it is never paged out.
+ *
+ * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-11
+ */
 ZTEST(demand_paging_api, test_k_mem_pin)
 {
 	unsigned long faults;
@@ -314,6 +357,13 @@ ZTEST(demand_paging_api, test_k_mem_pin)
 	k_mem_unpin(arena, HALF_BYTES);
 }
 
+/**
+ * @brief Unpin a region and confirm it can be paged out again.
+ *
+ * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-9
+ * @verifies ZEP-SRS-36-12
+ */
 ZTEST(demand_paging_api, test_k_mem_unpin)
 {
 	/* Pin the memory (which we know works from prior test) */
@@ -329,6 +379,9 @@ ZTEST(demand_paging_api, test_k_mem_unpin)
 /* Show that even if we map enough anonymous memory to fill the backing
  * store, we can still handle pagefaults.
  * This eats up memory so should be last in the suite.
+ *
+ * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-8
  */
 ZTEST(demand_paging_stat, test_backing_store_capacity)
 {
@@ -367,7 +420,12 @@ ZTEST(demand_paging_stat, test_backing_store_capacity)
 	zassert_not_equal(faults, 0, "should have had some pagefaults");
 }
 
-/* Test if we can get paging statistics under usermode */
+/**
+ * @brief Query demand paging statistics from user mode.
+ *
+ * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-13
+ */
 ZTEST_USER(demand_paging_stat, test_user_get_stats)
 {
 	struct k_mem_paging_stats_t stats;
@@ -425,7 +483,12 @@ static bool print_histogram(struct k_mem_paging_histogram_t *hist)
 	return has_non_zero;
 }
 
-/* Test if we can get paging timing histograms */
+/**
+ * @brief Query demand paging timing histograms from user mode.
+ *
+ * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-14
+ */
 ZTEST_USER(demand_paging_stat, test_user_get_hist)
 {
 	struct k_mem_paging_histogram_t hist;

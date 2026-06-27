@@ -51,6 +51,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
  * Show that mapping an irregular size buffer works and RW flag is respected
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-1
  */
 ZTEST(mem_map, test_k_mem_map_phys_bare_rw)
 {
@@ -142,6 +143,7 @@ static void transplanted_function(bool *executed)
  * Show that mapping with/without K_MEM_PERM_EXEC works as expected
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-1
  */
 ZTEST(mem_map, test_k_mem_map_phys_bare_exec)
 {
@@ -187,6 +189,7 @@ ZTEST(mem_map, test_k_mem_map_phys_bare_exec)
  * Show that memory mapping doesn't have unintended side effects
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-1
  */
 ZTEST(mem_map, test_k_mem_map_phys_bare_side_effect)
 {
@@ -216,6 +219,7 @@ ZTEST(mem_map, test_k_mem_map_phys_bare_side_effect)
  * accessible afterwards.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-2
  */
 ZTEST(mem_map, test_k_mem_unmap_phys_bare)
 {
@@ -244,6 +248,7 @@ ZTEST(mem_map, test_k_mem_unmap_phys_bare)
  * Show that k_mem_unmap_phys_bare() can reclaim the virtual region correctly.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-3
  */
 ZTEST(mem_map, test_k_mem_map_phys_bare_unmap_reclaim_addr)
 {
@@ -283,6 +288,9 @@ ZTEST(mem_map, test_k_mem_map_phys_bare_unmap_reclaim_addr)
  * Basic k_mem_map() and k_mem_unmap() functionality
  *
  * Does not exercise K_MEM_MAP_* control flags, just default behavior
+ *
+ * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-4
  */
 ZTEST(mem_map_api, test_k_mem_map_unmap)
 {
@@ -355,6 +363,9 @@ ZTEST(mem_map_api, test_k_mem_map_unmap)
 
 /**
  * Test that the "before" guard page is in place for k_mem_map().
+ *
+ * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-5
  */
 ZTEST(mem_map_api, test_k_mem_map_guard_before)
 {
@@ -383,6 +394,9 @@ ZTEST(mem_map_api, test_k_mem_map_guard_before)
 
 /**
  * Test that the "after" guard page is in place for k_mem_map().
+ *
+ * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-5
  */
 ZTEST(mem_map_api, test_k_mem_map_guard_after)
 {
@@ -409,6 +423,12 @@ ZTEST(mem_map_api, test_k_mem_map_guard_after)
 	ztest_test_fail();
 }
 
+/**
+ * Test that k_mem_map() reports failure once mappable memory is exhausted.
+ *
+ * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-7
+ */
 ZTEST(mem_map_api, test_k_mem_map_exhaustion)
 {
 	/* With demand paging enabled, there is backing store
@@ -520,6 +540,9 @@ static void user_function(void *p1, void *p2, void *p3)
 /**
  * Test that the allocated region will be only accessible to userspace when
  * K_MEM_PERM_USER is used.
+ *
+ * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-36-6
  */
 ZTEST(mem_map_api, test_k_mem_map_user)
 {
