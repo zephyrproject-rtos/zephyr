@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_MT7XXX
+	bool
+
+config SOC_FAMILY
+	default "mt7xxx" if SOC_FAMILY_MT7XXX
+
+config SOC_SERIES_MT76X8
+	bool
+	select SOC_FAMILY_MT7XXX
+	help
+	  Mediatek MT76x8
+
+config SOC_SERIES
+	default "mt76x8" if SOC_SERIES_MT76X8
+
+rsource "*/Kconfig.soc"
