@@ -85,6 +85,7 @@ void thread_callback_unlocked(const struct k_thread *thread, void *user_data)
  * callback function.
  *
  * @see k_thread_foreach()
+ * @verifies ZEP-SRS-1-26
  */
 ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach)
 {
@@ -131,6 +132,7 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach)
  *
  * @see k_thread_foreach_unlocked()
  * @ingroup kernel_thread_tests
+ * @verifies ZEP-SRS-1-26
  */
 ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_unlocked)
 {

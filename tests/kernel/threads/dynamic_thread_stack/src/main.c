@@ -122,7 +122,11 @@ ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_pool)
 	}
 }
 
-/** @brief Exercise the heap-based thread stack allocator */
+/**
+ * @brief Exercise the heap-based thread stack allocator
+ * @verifies ZEP-SRS-1-24
+ * @verifies ZEP-SRS-1-25
+ */
 ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_alloc)
 {
 	size_t N;

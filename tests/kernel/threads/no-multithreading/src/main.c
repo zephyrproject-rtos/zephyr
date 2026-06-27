@@ -139,6 +139,16 @@ static int sys_init_result;
 
 FOR_EACH(SYS_INIT_CREATE, (;), PRE_KERNEL_1, PRE_KERNEL_2, POST_KERNEL);
 
+/**
+ * @brief Test system operation with multithreading disabled
+ *
+ * @details This suite is built with CONFIG_MULTITHREADING=n, so the
+ * application runs as a single thread of control with no scheduler. Verify
+ * that system initialization completes and the registered init functions run
+ * in this single-thread configuration.
+ *
+ * @verifies ZEP-SRS-1-22
+ */
 ZTEST(no_multithreading, test_sys_init)
 {
 	zassert_equal(init_order, 3, "SYS_INIT failed: %d", init_order);
