@@ -1364,7 +1364,7 @@ int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
  * @param max_frames Maximum number of CAN frames that can be queued.
  */
 #define CAN_MSGQ_DEFINE(name, max_frames) \
-	K_MSGQ_DEFINE(name, sizeof(struct can_frame), max_frames, 4)
+	K_MSGQ_DEFINE_TYPE(name, struct can_frame, max_frames)
 
 /**
  * @brief Simple wrapper function for adding a message queue for a given filter
