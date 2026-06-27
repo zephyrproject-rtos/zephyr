@@ -720,7 +720,7 @@ static DEVICE_API(dmic, dmic_ops) = {
 			    DEVICE_DT_INST_GET(index), 0);                                         \
 	}                                                                                          \
                                                                                                    \
-	K_MSGQ_DEFINE(dmic_msgq##index, sizeof(void *), CONFIG_DMIC_INFINEON_QUEUE_SIZE, 1);       \
+	K_MSGQ_DEFINE_STATIC_TYPE(dmic_msgq##index, void *, CONFIG_DMIC_INFINEON_QUEUE_SIZE);      \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
                                                                                                    \
