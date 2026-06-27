@@ -1513,7 +1513,7 @@ static DEVICE_API(sdhc, sdhc_api) = {
                                                                                                    \
 	COND_CODE_1(DT_NUM_PINCTRL_STATES(DT_DRV_INST(n)),                                         \
 			  (PINCTRL_DT_DEFINE(DT_DRV_INST(n));), (EMPTY))                           \
-	K_MSGQ_DEFINE(sdhc##n##_queue, sizeof(struct sdmmc_event), SDMMC_EVENT_QUEUE_LENGTH, 1);   \
+	K_MSGQ_DEFINE_STATIC_TYPE(sdhc##n##_queue, struct sdmmc_event, SDMMC_EVENT_QUEUE_LENGTH);  \
                                                                                                    \
 	static const struct sdhc_esp32_config sdhc_esp32_##n##_config = {                          \
 		.sdio_hw = (const sdmmc_dev_t *)DT_REG_ADDR(DT_INST_PARENT(n)),                    \
