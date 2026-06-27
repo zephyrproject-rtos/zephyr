@@ -662,7 +662,7 @@ static DEVICE_API(mipi_dbi, mipi_dbi_pico_pio_driver_api) = {
 			     DT_INST_PROP(n, pio_clock_div) <= UINT16_MAX,                         \
 		     "pio-clock-div has to be between 1 and 65536");                               \
                                                                                                    \
-	K_MSGQ_DEFINE(msgq_##n, sizeof(int), MIPI_DBI_MAX_SPLITS, 4);                              \
+	K_MSGQ_DEFINE_STATIC_TYPE(msgq_##n, int, MIPI_DBI_MAX_SPLITS);                             \
                                                                                                    \
 	static void inst_##n##_irq_config(void)                                                    \
 	{                                                                                          \
