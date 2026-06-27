@@ -21,9 +21,9 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys_clock.h>
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 
-#include "btp/btp.h"
+#include <btp/btp.h>
 
 LOG_MODULE_REGISTER(bsim_btp, CONFIG_BSIM_BTTESTER_LOG_LEVEL);
 
