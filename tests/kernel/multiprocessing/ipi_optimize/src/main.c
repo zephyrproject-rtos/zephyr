@@ -187,6 +187,7 @@ void busy_threads_priority_set(int priority, int delta)
 
 /**
  * Verify that arch_sched_broadcast_ipi() broadcasts IPIs as expected.
+ * @verifies ZEP-SRS-34-11
  */
 ZTEST(ipi, test_arch_sched_broadcast_ipi)
 {

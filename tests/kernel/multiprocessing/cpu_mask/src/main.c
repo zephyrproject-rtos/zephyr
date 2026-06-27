@@ -97,6 +97,7 @@ static void reset_state(void)
  * @see k_thread_cpu_mask_enable()
  * @see k_thread_cpu_mask_disable()
  * @see k_thread_cpu_pin()
+ * @verifies ZEP-SRS-34-13
  */
 ZTEST(cpu_mask, test_api_rejects_running_thread)
 {
@@ -148,6 +149,7 @@ ZTEST(cpu_mask, test_api_rejects_running_thread)
  * - The thread never runs (its ran flag stays 0).
  *
  * @see k_thread_cpu_mask_clear()
+ * @verifies ZEP-SRS-34-2
  */
 ZTEST(cpu_mask, test_mask_clear_prevents_execution)
 {
@@ -202,6 +204,7 @@ ZTEST(cpu_mask, test_mask_clear_prevents_execution)
  * - The thread runs: the semaphore take succeeds and the ran flag is set.
  *
  * @see k_thread_cpu_mask_enable_all()
+ * @verifies ZEP-SRS-34-2
  */
 ZTEST(cpu_mask, test_mask_enable_all_allows_execution)
 {
@@ -259,6 +262,7 @@ ZTEST(cpu_mask, test_mask_enable_all_allows_execution)
  * - The thread runs, and it runs on a CPU other than the excluded one.
  *
  * @see k_thread_cpu_mask_disable()
+ * @verifies ZEP-SRS-34-2
  */
 ZTEST(cpu_mask, test_mask_disable_local_cpu)
 {
@@ -315,6 +319,7 @@ ZTEST(cpu_mask, test_mask_disable_local_cpu)
  * - The thread runs on the target CPU.
  *
  * @see k_thread_cpu_pin()
+ * @verifies ZEP-SRS-34-12
  */
 ZTEST(cpu_mask, test_cpu_pin_runs_on_target)
 {
@@ -367,6 +372,7 @@ ZTEST(cpu_mask, test_cpu_pin_runs_on_target)
  * - Every thread runs, and thread i runs on CPU i.
  *
  * @see k_thread_cpu_pin()
+ * @verifies ZEP-SRS-34-12
  */
 ZTEST(cpu_mask, test_pin_each_thread_to_distinct_cpu)
 {
@@ -433,6 +439,7 @@ ZTEST(cpu_mask, test_pin_each_thread_to_distinct_cpu)
  *
  * @see k_thread_cpu_mask_enable()
  * @see k_thread_cpu_mask_disable()
+ * @verifies ZEP-SRS-34-2
  */
 ZTEST(cpu_mask, test_individual_cpu_enable_disable)
 {
@@ -504,6 +511,7 @@ ZTEST(cpu_mask, test_individual_cpu_enable_disable)
  * - The thread runs on the target CPU.
  *
  * @see k_thread_cpu_pin()
+ * @verifies ZEP-SRS-34-12
  */
 ZTEST(cpu_mask, test_coop_thread_pinned_cpu)
 {
@@ -608,6 +616,7 @@ ZTEST(cpu_mask, test_pin_only_single_cpu)
  *
  * @see k_thread_cpu_pin()
  * @see k_thread_cpu_mask_enable_all()
+ * @verifies ZEP-SRS-34-12
  */
 ZTEST(cpu_mask, test_pinned_and_free_thread_coexist)
 {
@@ -700,6 +709,7 @@ static void check_affinity(void *arg0, void *arg1, void *arg2)
  *
  * @see k_thread_cpu_pin()
  * @see k_yield()
+ * @verifies ZEP-SRS-34-12
  */
 ZTEST(cpu_mask, test_pin_affinity_across_yield)
 {

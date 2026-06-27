@@ -78,6 +78,7 @@ static void timer_func(struct k_timer *tmr)
  * Waiting covers two scenarios
  *  1. From thread level
  *  2. From a k_timer (ISR).
+ * @verifies ZEP-SRS-34-11
  */
 ZTEST(ipi_work, test_ipi_work_simple)
 {
