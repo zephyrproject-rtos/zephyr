@@ -16,11 +16,11 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/settings/settings.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
-#include "host/hci_core.h"
-#include "host/settings.h"
-#include "host/keys.h"
+#include <host/hci_core.h>
+#include <host/settings.h>
+#include <host/keys.h>
 
 #define LOG_LEVEL CONFIG_BT_KEYS_LOG_LEVEL
 #include <zephyr/logging/log.h>
