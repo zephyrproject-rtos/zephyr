@@ -42,6 +42,7 @@ static void thread_fn(void *a, void *b, void *c)
  *
  * @see k_smp_cpu_start()
  * @verifies ZEP-SRS-34-7
+ * @verifies ZEP-SRS-34-14
  */
 ZTEST(smp_boot_delay, test_smp_boot_delay)
 {
