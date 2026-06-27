@@ -125,6 +125,9 @@ static void t2_fn(void *a, void *b, void *c)
  *
  * @details Multi processing is verified by checking whether
  * 2 cooperative threads run simultaneously at different cores
+ *
+ * @verifies ZEP-SRS-34-1
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp, test_smp_coop_threads)
 {
@@ -191,6 +194,7 @@ static void child_fn(void *p1, void *p2, void *p3)
  * core than its parent.
  *
  * @verifies ZEP-SRS-12-9
+ * @verifies ZEP-SRS-34-5
  */
 ZTEST(smp, test_cpu_id_threads)
 {
@@ -741,6 +745,7 @@ void z_trace_sched_ipi(void)
  *   , only x86_64 and arc supported.
  *
  * @see arch_sched_broadcast_ipi()
+ * @verifies ZEP-SRS-34-11
  */
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
 ZTEST(smp, test_smp_ipi)
