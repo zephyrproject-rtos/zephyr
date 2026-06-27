@@ -424,6 +424,13 @@ source "subsys/logging/Kconfig.template.log_config_inherit"
 module = BT_HID_HOST
 module-str = Bluetooth Human Interface Device Host (HID Host)
 source "subsys/logging/Kconfig.template.log_config_inherit"
+module = BT_BNEP
+module-str = "Bluetooth Network Encapsulation Protocol (BNEP)"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_PAN
+module-str = "Bluetooth Personal Area Networking Profile (PAN)"
+source "subsys/logging/Kconfig.template.log_config_inherit"
 
 endmenu # Bluetooth Classic
 endif # BT_CLASSIC
