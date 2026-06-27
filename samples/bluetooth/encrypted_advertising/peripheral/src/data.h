@@ -11,7 +11,7 @@
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/bluetooth.h>
 
-#include "common.h"
+#include <common.h>
 
 #define LF_ID_MSB ((BT_COMP_ID_LF >> 8) & 0xff)
 #define LF_ID_LSB ((BT_COMP_ID_LF) & 0xff)
