@@ -10,32 +10,32 @@
 
 #include <zephyr/bluetooth/hci.h>
 
-#include "hal/cpu_vendor_hal.h"
-#include "hal/ccm.h"
+#include <hal/cpu_vendor_hal.h>
+#include <hal/ccm.h>
 
-#include "util/mem.h"
-#include "util/mfifo.h"
-#include "util/memq.h"
-#include "util/dbuf.h"
-#include "util.h"
+#include <util/mem.h>
+#include <util/mfifo.h>
+#include <util/memq.h>
+#include <util/dbuf.h>
+#include <util.h>
 
-#include "pdu_df.h"
-#include "lll/pdu_vendor.h"
-#include "pdu.h"
-#include "ll.h"
-#include "ll_feat.h"
-#include "ll_settings.h"
-#include "lll.h"
-#include "lll/lll_vendor.h"
-#include "lll/lll_adv_types.h"
-#include "lll_adv.h"
-#include "lll/lll_adv_pdu.h"
-#include "lll_scan.h"
-#include "lll_sync.h"
-#include "lll/lll_df_types.h"
-#include "lll_conn.h"
+#include <pdu_df.h>
+#include <lll/pdu_vendor.h>
+#include <pdu.h>
+#include <ll.h>
+#include <ll_feat.h>
+#include <ll_settings.h>
+#include <lll.h>
+#include <lll/lll_vendor.h>
+#include <lll/lll_adv_types.h>
+#include <lll_adv.h>
+#include <lll/lll_adv_pdu.h>
+#include <lll_scan.h>
+#include <lll_sync.h>
+#include <lll/lll_df_types.h>
+#include <lll_conn.h>
 
-#include "ull_conn_internal.h"
+#include <ull_conn_internal.h>
 
 #define EVENT_DONE_MAX 3
 /* Backing storage for elements in mfifo_done */

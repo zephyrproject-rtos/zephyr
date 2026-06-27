@@ -13,40 +13,40 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
-#include "hal/ccm.h"
+#include <hal/ccm.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/dbuf.h>
 
-#include "pdu_df.h"
-#include "lll/pdu_vendor.h"
-#include "pdu.h"
-#include "ll.h"
-#include "ll_feat.h"
-#include "ll_settings.h"
+#include <pdu_df.h>
+#include <lll/pdu_vendor.h>
+#include <pdu.h>
+#include <ll.h>
+#include <ll_feat.h>
+#include <ll_settings.h>
 
-#include "lll.h"
-#include "lll/lll_df_types.h"
-#include "lll_conn.h"
-#include "lll_conn_iso.h"
+#include <lll.h>
+#include <lll/lll_df_types.h>
+#include <lll_conn.h>
+#include <lll_conn_iso.h>
 
-#include "ull_tx_queue.h"
+#include <ull_tx_queue.h>
 
-#include "isoal.h"
-#include "ull_iso_types.h"
-#include "ull_conn_iso_types.h"
-#include "ull_internal.h"
-#include "ull_conn_types.h"
-#include "ull_llcp.h"
-#include "ull_conn_internal.h"
-#include "ull_llcp_internal.h"
-#include "ull_llcp_features.h"
+#include <isoal.h>
+#include <ull_iso_types.h>
+#include <ull_conn_iso_types.h>
+#include <ull_internal.h>
+#include <ull_conn_types.h>
+#include <ull_llcp.h>
+#include <ull_conn_internal.h>
+#include <ull_llcp_internal.h>
+#include <ull_llcp_features.h>
 
-#include "helper_pdu.h"
-#include "helper_util.h"
-#include "helper_features.h"
+#include <helper_pdu.h>
+#include <helper_util.h>
+#include <helper_features.h>
 
 static struct ll_conn conn;
 

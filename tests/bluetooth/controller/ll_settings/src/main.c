@@ -12,7 +12,7 @@
 
 #include <zephyr/settings/settings.h>
 
-#include "ll_settings.h"
+#include <ll_settings.h>
 
 ZTEST_SUITE(test_ll_settings, NULL, NULL, NULL, NULL, NULL);
 

@@ -8,16 +8,16 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/ztest.h>
-#include "util.h"
+#include <util.h>
 
-#include "pdu_df.h"
-#include "lll/pdu_vendor.h"
-#include "pdu.h"
+#include <pdu_df.h>
+#include <lll/pdu_vendor.h>
+#include <pdu.h>
 
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/mayfly.h"
-#include "lll.h"
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/mayfly.h>
+#include <lll.h>
 
 /**
  * @brief Population count: Count the number of bits set to 1

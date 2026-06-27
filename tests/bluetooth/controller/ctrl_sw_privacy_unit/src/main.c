@@ -20,7 +20,7 @@
 #define CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY 1
 #define CONFIG_BT_LOG_LEVEL 1
 
-#include "ll_sw/ull_filter.c"
+#include <ll_sw/ull_filter.c>
 
 /*
  * Unit test of SW deferred privacy data structure and related methods

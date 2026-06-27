@@ -8,7 +8,7 @@
 #include <zephyr/types.h>
 #include <zephyr/ztest.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
 uint8_t ticker_update(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
 		       uint32_t ticks_drift_plus, uint32_t ticks_drift_minus,
