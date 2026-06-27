@@ -562,6 +562,7 @@ ZTEST(cpu_mask, test_coop_thread_pinned_cpu)
  * - The thread runs only on CPU 0.
  *
  * @see k_thread_cpu_pin()
+ * @verifies ZEP-SRS-34-15
  */
 ZTEST(cpu_mask, test_pin_only_single_cpu)
 {

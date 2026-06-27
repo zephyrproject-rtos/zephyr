@@ -224,6 +224,7 @@ ZTEST(ipi, test_arch_sched_broadcast_ipi)
 #ifdef CONFIG_ARCH_HAS_DIRECTED_IPIS
 /**
  * Verify that arch_sched_directed_ipi() directs IPIs as expected.
+ * @verifies ZEP-SRS-34-17
  */
 ZTEST(ipi, test_arch_sched_directed_ipi)
 {
@@ -269,6 +270,7 @@ ZTEST(ipi, test_arch_sched_directed_ipi)
 /**
  * Verify that waking a thread whose priority is lower than any other
  * currently executing thread does not result in any IPIs being sent.
+ * @verifies ZEP-SRS-34-16
  */
 ZTEST(ipi, test_low_thread_wakes_no_ipis)
 {
@@ -317,6 +319,7 @@ ZTEST(ipi, test_low_thread_wakes_no_ipis)
 /**
  * Verify that waking a thread whose priority is higher than all currently
  * executing threads results in the proper IPIs being sent and processed.
+ * @verifies ZEP-SRS-34-16
  */
 ZTEST(ipi, test_high_thread_wakes_some_ipis)
 {
@@ -426,9 +429,10 @@ ZTEST(ipi, test_thread_priority_set_lower)
 	zassert_true(set[id] == 0, "Current CPU got %u IPI(s).\n", set[id]);
 }
 
-/*
+/**
  * Verify that IPIs are not sent to CPUs that are executing cooperative
  * threads.
+ * @verifies ZEP-SRS-34-16
  */
 ZTEST(ipi, test_thread_coop_no_ipis)
 {

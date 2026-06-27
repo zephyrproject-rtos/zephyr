@@ -189,6 +189,7 @@ void thread2_entry(void *p1, void *p2, void *p3)
  * the CPUs. This exercises the inter-processor reschedule signalling.
  *
  * @verifies ZEP-SRS-34-11
+ * @verifies ZEP-SRS-34-18
  */
 ZTEST(ipi_cascade, test_ipi_cascade)
 {
