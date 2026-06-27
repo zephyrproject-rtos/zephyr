@@ -52,6 +52,16 @@ static void *test_setup(void)
 
 ZTEST_SUITE(workqueue_work_timeout, NULL, test_setup, NULL, NULL, NULL);
 
+/**
+ * @brief Test workqueue work item timeout monitoring
+ *
+ * @details Submit work items to a work queue configured with a work timeout
+ * and verify the work queue thread is aborted when a work item handler runs
+ * longer than the configured timeout.
+ *
+ * @ingroup kernel_work_tests
+ * @verifies ZEP-SRS-26-26
+ */
 ZTEST(workqueue_work_timeout, test_work)
 {
 	int ret;

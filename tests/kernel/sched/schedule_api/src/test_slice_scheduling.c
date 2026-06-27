@@ -193,6 +193,16 @@ static void slice_perthread_fn(void *a, void *b, void *c)
 	}
 }
 
+/**
+ * @brief Check per-thread time slice configuration
+ *
+ * @details Set an individual time slice and expiry callback on a specific
+ * thread and verify the callback fires and the thread is rescheduled when
+ * its per-thread slice expires.
+ *
+ * @ingroup kernel_sched_tests
+ * @verifies ZEP-SRS-2-18
+ */
 ZTEST(threads_scheduling, test_slice_perthread)
 {
 	if (!IS_ENABLED(CONFIG_TIMESLICE_PER_THREAD)) {
