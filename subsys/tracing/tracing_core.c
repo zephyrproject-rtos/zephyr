@@ -31,7 +31,14 @@ enum tracing_state {
 
 static atomic_t tracing_state;
 static atomic_t tracing_packet_drop_num;
-static struct tracing_backend *working_backend;
+/*
+ * Output is fanned out to every registered backend. The common case is a single
+ * backend, so cache it and a "more than one" flag to keep the hot path a direct
+ * call rather than a section walk (which is measurably slower for high-rate
+ * synchronous backends).
+ */
+static struct tracing_backend *primary_backend;
+static bool multiple_backends;
 
 #ifdef CONFIG_TRACING_ASYNC
 #define TRACING_THREAD_NAME "tracing_thread"
@@ -78,13 +85,32 @@ static void tracing_set_state(enum tracing_state state)
 	atomic_set(&tracing_state, state);
 }
 
+void tracing_set_enabled(bool enable)
+{
+	tracing_set_state(enable ? TRACING_ENABLE : TRACING_DISABLE);
+}
+
 static int tracing_init(void)
 {
-
 	tracing_buffer_init();
 
-	working_backend = tracing_backend_get(CONFIG_TRACING_BACKEND_NAME);
-	tracing_backend_init(working_backend);
+	/*
+	 * Output goes to the configured backend (CONFIG_TRACING_BACKEND_NAME) plus
+	 * any additional backend registered under a different name - e.g. one added
+	 * by an out-of-tree module with TRACING_BACKEND_DEFINE(), which then receives
+	 * the same stream with no edits to the core tree. Backends sharing the
+	 * configured name (used by some tests to substitute a capture backend) are
+	 * treated as an override: only the configured one runs, as before.
+	 */
+	primary_backend = tracing_backend_get(CONFIG_TRACING_BACKEND_NAME);
+	tracing_backend_init(primary_backend);
+
+	STRUCT_SECTION_FOREACH(tracing_backend, backend) {
+		if (strcmp(backend->name, CONFIG_TRACING_BACKEND_NAME) != 0) {
+			tracing_backend_init(backend);
+			multiple_backends = true;
+		}
+	}
 
 	atomic_set(&tracing_packet_drop_num, 0);
 
@@ -147,10 +173,44 @@ void tracing_cmd_handle(uint8_t *buf, uint32_t length)
 
 void tracing_buffer_handle(uint8_t *data, uint32_t length)
 {
-	tracing_backend_output(working_backend, data, length);
+	tracing_backend_output(primary_backend, data, length);
+
+	if (!multiple_backends) {
+		return;
+	}
+
+	STRUCT_SECTION_FOREACH(tracing_backend, backend) {
+		if (strcmp(backend->name, CONFIG_TRACING_BACKEND_NAME) != 0) {
+			tracing_backend_output(backend, data, length);
+		}
+	}
 }
 
 void tracing_packet_drop_handle(void)
 {
 	atomic_inc(&tracing_packet_drop_num);
+}
+
+uint32_t tracing_packet_drop_count_get(void)
+{
+	return (uint32_t)atomic_get(&tracing_packet_drop_num);
+}
+
+int tracing_backends_flush(void)
+{
+	int ret = tracing_backend_flush(primary_backend);
+
+	if (multiple_backends) {
+		STRUCT_SECTION_FOREACH(tracing_backend, backend) {
+			if (strcmp(backend->name, CONFIG_TRACING_BACKEND_NAME) != 0) {
+				int backend_ret = tracing_backend_flush(backend);
+
+				if ((backend_ret != 0) && (ret == 0)) {
+					ret = backend_ret;
+				}
+			}
+		}
+	}
+
+	return ret;
 }

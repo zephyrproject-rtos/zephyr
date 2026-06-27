@@ -26,6 +26,30 @@ extern "C" {
 bool is_tracing_enabled(void);
 
 /**
+ * @brief Enable or disable emission of tracing data at runtime.
+ *
+ * @param enable True to enable tracing, false to disable it.
+ */
+void tracing_set_enabled(bool enable);
+
+/**
+ * @brief Get the number of tracing packets dropped since boot.
+ *
+ * Packets are dropped when the tracing buffer is full at the time of a put.
+ *
+ * @return Cumulative dropped-packet count.
+ */
+uint32_t tracing_packet_drop_count_get(void);
+
+/**
+ * @brief Flush every registered tracing backend.
+ *
+ * @retval 0 on success.
+ * @retval -errno first backend-reported failure (remaining backends still flushed).
+ */
+int tracing_backends_flush(void);
+
+/**
  * @brief Give tracing buffer to backend.
  *
  * @param data Tracing buffer address.
