@@ -27,7 +27,8 @@ struct ocpp_msg_table {
 static K_THREAD_STACK_DEFINE(ocpp_int_handler_stack, CONFIG_OCPP_INT_THREAD_STACKSIZE);
 static K_THREAD_STACK_DEFINE(ocpp_wsreader_stack, CONFIG_OCPP_WSREADER_THREAD_STACKSIZE);
 
-K_MSGQ_DEFINE(ocpp_iq, OCPP_INTERNAL_MSG_SIZE, CONFIG_OCPP_INTERNAL_MSGQ_CNT, sizeof(uint32_t));
+K_MSGQ_DEFINE_STATIC(ocpp_iq, OCPP_INTERNAL_MSG_SIZE, CONFIG_OCPP_INTERNAL_MSGQ_CNT,
+		     sizeof(uint32_t));
 
 struct ocpp_info *gctx;
 
