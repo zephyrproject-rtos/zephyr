@@ -411,6 +411,11 @@ RTC
   ``32k-gpios`` usage to ``freq-32khz-gpios``, and replace ``maxim_ds3231_*`` helper API usage with
   generic RTC subsystem APIs.
 
+* :dtcompatible:`microcrystal,rv3032` properties ``trickle-resistor-ohms`` and
+  ``trickle-charger-mode`` have moved to the parent
+  :dtcompatible:`microcrystal,rv3032-mfd` device. The parent MFD device now
+  handles configuring the backup supply mode for all child devices.
+
 SD Host Controller
 ==================
 
