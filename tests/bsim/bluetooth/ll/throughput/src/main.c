@@ -11,10 +11,10 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 
-#include "bs_types.h"
-#include "bs_tracing.h"
-#include "time_machine.h"
-#include "bstests.h"
+#include <bs_types.h>
+#include <bs_tracing.h>
+#include <time_machine.h>
+#include <bstests.h>
 
 /* There are 13 iterations of PHY update every 5 seconds, and based on actual
  * simulation COUNT iterations are sufficient to finish these iterations with
