@@ -34,18 +34,18 @@
 #include <zephyr/ztest_test.h>
 #include <sys/types.h>
 
-#include "assert.h"
-#include "ascs.h"
-#include "audio/ascs_internal.h"
-#include "ascs_expects.h"
-#include "bap_stream.h"
-#include "bap_stream_expects.h"
-#include "conn.h"
-#include "gatt.h"
-#include "gatt_expects.h"
-#include "iso.h"
+#include <assert.h>
+#include <ascs.h>
+#include <audio/ascs_internal.h>
+#include <ascs_expects.h>
+#include <bap_stream.h>
+#include <bap_stream_expects.h>
+#include <conn.h>
+#include <gatt.h>
+#include <gatt_expects.h>
+#include <iso.h>
 
-#include "test_common.h"
+#include <test_common.h>
 
 DEFINE_FFF_GLOBALS;
 

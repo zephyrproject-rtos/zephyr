@@ -27,9 +27,9 @@
 #include <zephyr/ztest_test.h>
 #include <zephyr/ztest_assert.h>
 
-#include "gatt.h"
-#include "conn.h"
-#include "common/bt_str.h"
+#include <gatt.h>
+#include <conn.h>
+#include <common/bt_str.h>
 
 #define LOG_LEVEL CONFIG_BT_GATT_LOG_LEVEL
 #include <zephyr/logging/log.h>

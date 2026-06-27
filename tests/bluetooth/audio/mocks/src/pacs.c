@@ -16,9 +16,9 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
-#include "audio/pacs_internal.h"
+#include <audio/pacs_internal.h>
 
-#include "pacs.h"
+#include <pacs.h>
 
 /* List of fakes used by this unit tester */
 #define PACS_FFF_FAKES_LIST(FAKE) \

@@ -19,11 +19,11 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/ztest_assert.h>
 
-#include "audio/bap_endpoint.h"
-#include "cap_initiator.h"
-#include "conn.h"
-#include "expects_util.h"
-#include "test_common.h"
+#include <audio/bap_endpoint.h>
+#include <cap_initiator.h>
+#include <conn.h>
+#include <expects_util.h>
+#include <test_common.h>
 
 DEFINE_FFF_GLOBALS;
 
