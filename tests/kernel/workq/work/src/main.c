@@ -307,8 +307,10 @@ ZTEST(work, test_null_queue)
  * @brief Verify submitting a work item to a started queue runs its handler.
  * @ingroup kernel_workqueue_tests
  * @verifies ZEP-SRS-26-1
+ * @verifies ZEP-SRS-26-9
  * @verifies ZEP-SRS-26-11
  * @verifies ZEP-SRS-26-13
+ * @verifies ZEP-SRS-26-16
  */
 ZTEST(work_1cpu, test_1cpu_simple_queue)
 {
@@ -1032,6 +1034,7 @@ ZTEST(work_1cpu, test_1cpu_drain_wait)
  * @brief Verify submission is blocked while a queue is plugged for drain.
  * @ingroup kernel_workqueue_tests
  * @verifies ZEP-SRS-26-6
+ * @verifies ZEP-SRS-26-7
  */
 ZTEST(work_1cpu, test_1cpu_plugged_drain)
 {

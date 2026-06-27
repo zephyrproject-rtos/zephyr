@@ -21,6 +21,18 @@ static void work_handler(struct k_work *work)
 	k_msleep(CONFIG_TEST_WORK_ITEM_WAIT_MS);
 }
 
+/**
+ * @brief Verify starting and stopping a work queue's dedicated thread
+ *
+ * @details Start a work queue, submit and drain work items, and verify the
+ * queue's dedicated thread can be stopped with k_work_queue_stop() (and that
+ * stopping reports the appropriate error when the queue is uninitialized or
+ * still running).
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_queue_start(), k_work_queue_stop()
+ * @verifies ZEP-SRS-26-8
+ */
 ZTEST(workqueue_api, test_k_work_queue_start_stop)
 {
 	size_t i;

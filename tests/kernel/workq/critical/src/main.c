@@ -180,9 +180,11 @@ void regression_thread(void *arg1, void *arg2, void *arg3)
  * @brief Verify thread context
  *
  * @details Check whether variable value per-thread is saved
- * during context switch
+ * during context switch. Work items are submitted to the offload work queue
+ * from an interrupt service routine.
  *
  * @ingroup kernel_workqueue_tests
+ * @verifies ZEP-SRS-26-12
  */
 ZTEST(kernel_offload_wq, test_offload_workqueue)
 {
