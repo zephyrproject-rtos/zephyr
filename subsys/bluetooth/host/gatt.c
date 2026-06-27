@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "sys/types.h"
+#include <sys/types.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <stdbool.h>
@@ -47,11 +47,11 @@
 
 #include "att_internal.h"
 #include "conn_internal.h"
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 #include "gatt_internal.h"
 #include "hci_core.h"
 #include "keys.h"
-#include "common/long_wq.h"
+#include <common/long_wq.h>
 #include "l2cap_internal.h"
 #include "settings.h"
 #include "smp.h"

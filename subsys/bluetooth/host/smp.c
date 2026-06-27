@@ -38,9 +38,9 @@
 #include <zephyr/toolchain.h>
 
 #include "conn_internal.h"
-#include "common/bt_str.h"
-#include "common/rpa.h"
-#include "crypto/bt_crypto.h"
+#include <common/bt_str.h>
+#include <common/rpa.h>
+#include <crypto/bt_crypto.h>
 #include "ecc.h"
 #include "hci_core.h"
 #include "keys.h"

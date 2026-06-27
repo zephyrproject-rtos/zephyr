@@ -27,8 +27,8 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
-#include "common/bt_shell_private.h"
-#include "host/shell/bt.h"
+#include <common/bt_shell_private.h>
+#include <host/shell/bt.h>
 
 static int check_cs_sync_antenna_selection_input(uint16_t input)
 {
