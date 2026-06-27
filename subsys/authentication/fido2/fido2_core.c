@@ -39,7 +39,7 @@ static struct fido2_msg rx_enqueue_msg;
 /* Reused to minimize thread stack usage. */
 static struct fido2_msg rx_dequeue_msg;
 
-K_MSGQ_DEFINE(fido2_msgq, sizeof(struct fido2_msg), 2, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(fido2_msgq, struct fido2_msg, 2);
 
 static K_THREAD_STACK_DEFINE(fido2_stack, CONFIG_FIDO2_THREAD_STACK_SIZE);
 static struct k_thread fido2_thread;
