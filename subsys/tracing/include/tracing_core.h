@@ -7,16 +7,24 @@
 #ifndef _TRACE_CORE_H
 #define _TRACE_CORE_H
 
-#include <zephyr/irq.h>
+#include <zephyr/spinlock.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define TRACING_LOCK()		{ int key; key = irq_lock()
+/*
+ * Serialize access to the single tracing ring buffer across producers. A
+ * spinlock (rather than a bare irq_lock) is required so concurrent producers on
+ * different CPUs are serialized on SMP; on uniprocessor it degrades to the same
+ * interrupt-lock with no added cost.
+ */
+extern struct k_spinlock tracing_lock;
 
-#define TRACING_UNLOCK()	{ irq_unlock(key); } }
+#define TRACING_LOCK()		{ k_spinlock_key_t key; key = k_spin_lock(&tracing_lock)
+
+#define TRACING_UNLOCK()	{ k_spin_unlock(&tracing_lock, key); } }
 
 /**
  * @brief Check tracing enabled or not.
