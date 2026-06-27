@@ -8,8 +8,8 @@
 #include <zephyr/usb/usbd.h>
 #include <zephyr/usb/usbh.h>
 
-#include "usbh_ch9.h"
-#include "usbh_device.h"
+#include <usbh_ch9.h>
+#include <usbh_device.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_test, LOG_LEVEL_INF);
