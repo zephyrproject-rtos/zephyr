@@ -7,6 +7,7 @@
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
+#include <zephyr/cache.h>
 #include <ksched.h>
 
 #if CONFIG_MP_MAX_NUM_CPUS < 2
@@ -713,6 +714,36 @@ ZTEST(smp, test_num_cpus)
 	zassert_between_inclusive(num_cpus, 1, CONFIG_MP_MAX_NUM_CPUS,
 				  "active CPUs (%u) outside the configured range [1, %d]",
 				  num_cpus, CONFIG_MP_MAX_NUM_CPUS);
+}
+
+/* A statically defined kernel object lives in shared kernel data. */
+static K_SEM_DEFINE(coherence_sem, 0, 1);
+
+/**
+ * @brief Verify shared kernel data is placed in coherent memory
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details On cache-incoherent multiprocessors with CONFIG_KERNEL_COHERENCE
+ * enabled, shared kernel data must be placed in cache-coherent memory. Verify a
+ * statically defined kernel object resides in coherent memory. The test is
+ * skipped on configurations where kernel coherence is not enabled (e.g.
+ * cache-coherent architectures).
+ *
+ * @see cache_is_mem_coherent()
+ * @verifies ZEP-SRS-34-19
+ */
+ZTEST(smp, test_kernel_coherence)
+{
+#ifdef CONFIG_KERNEL_COHERENCE
+	/* The coherence-checking API is only available on architectures that
+	 * can report it, which is exactly where KERNEL_COHERENCE applies.
+	 */
+	zassert_true(sys_cache_is_mem_coherent(&coherence_sem),
+		     "shared kernel object is not in coherent memory");
+#else
+	ztest_test_skip();
+#endif
 }
 
 #ifdef CONFIG_TRACE_SCHED_IPI
