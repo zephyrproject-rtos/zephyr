@@ -1,0 +1,12 @@
+sample:
+  name: Bluetooth HID Device
+tests:
+  sample.bluetooth.hid_device:
+    harness: bluetooth
+    platform_allow:
+      - sf32lb52_devkit_lcd/sf32lb525uc6
+      - qemu_cortex_m3
+      - qemu_x86
+    tags: bluetooth
+    integration_platforms:
+      - sf32lb52_devkit_lcd/sf32lb525uc6
