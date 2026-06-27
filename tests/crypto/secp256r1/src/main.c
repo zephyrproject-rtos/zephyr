@@ -16,9 +16,9 @@
 #include <zephyr/ztest.h>
 
 #if defined(CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW)
-#include "p256-m.h"
+#include <p256-m.h>
 #else /* CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW */
-#include "psa/crypto.h"
+#include <psa/crypto.h>
 #endif /* CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW */
 
 #if defined(CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW)
