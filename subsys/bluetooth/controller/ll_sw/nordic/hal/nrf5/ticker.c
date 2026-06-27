@@ -10,16 +10,16 @@
 
 #include <zephyr/sys/util.h>
 
-#include "hal/cntr.h"
+#include <hal/cntr.h>
 
-#include "util/memq.h"
-#include "util/mayfly.h"
+#include <util/memq.h>
+#include <util/mayfly.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
-#include "ll_sw/lll.h"
+#include <ll_sw/lll.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #define TICKER_MAYFLY_CALL_ID_ISR     TICKER_USER_ID_LLL
 #define TICKER_MAYFLY_CALL_ID_TRIGGER TICKER_USER_ID_ULL_HIGH

@@ -8,12 +8,12 @@
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 
-#include "util/mem.h"
-#include "util/memq.h"
+#include <util/mem.h>
+#include <util/memq.h>
 
 #include "lll.h"
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 /**
  * @brief Common entry point for LLL event prepare invocations from ULL.

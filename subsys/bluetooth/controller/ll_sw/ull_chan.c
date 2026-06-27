@@ -11,22 +11,22 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util.h>
 
-#include "util/util.h"
-#include "util/memq.h"
-#include "util/mem.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/memq.h>
+#include <util/mem.h>
+#include <util/dbuf.h>
 
-#include "hal/ccm.h"
+#include <hal/ccm.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll/lll_adv_types.h"
+#include <lll/lll_adv_types.h>
 #include "lll_adv.h"
-#include "lll/lll_adv_pdu.h"
-#include "lll/lll_df_types.h"
+#include <lll/lll_adv_pdu.h>
+#include <lll/lll_df_types.h>
 #include "lll_conn.h"
 
 #include "ull_adv_types.h"

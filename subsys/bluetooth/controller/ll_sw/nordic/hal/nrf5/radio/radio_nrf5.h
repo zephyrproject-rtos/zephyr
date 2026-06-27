@@ -79,7 +79,7 @@
 #include "radio_nrf5_fem.h"
 
 /* Include RTC/GRTC Compare Index used to Trigger Radio TXEN/RXEN */
-#include "hal/cntr.h"
+#include <hal/cntr.h>
 
 #if defined(CONFIG_SOC_SERIES_NRF51) || defined(CONFIG_SOC_COMPATIBLE_NRF52X)
 #include <hal/nrf_ppi.h>

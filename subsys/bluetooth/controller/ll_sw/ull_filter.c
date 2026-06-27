@@ -11,29 +11,29 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "hal/cpu.h"
-#include "hal/ccm.h"
+#include <hal/cpu.h>
+#include <hal/ccm.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/mayfly.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/mayfly.h>
+#include <util/dbuf.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll/lll_adv_types.h"
+#include <lll/lll_adv_types.h>
 #include "lll_adv.h"
-#include "lll/lll_adv_pdu.h"
+#include <lll/lll_adv_pdu.h>
 #include "lll_scan.h"
-#include "lll/lll_df_types.h"
+#include <lll/lll_df_types.h>
 #include "lll_conn.h"
 #include "lll_filter.h"
 
-#include "ll_sw/ull_tx_queue.h"
+#include <ll_sw/ull_tx_queue.h>
 
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
@@ -45,9 +45,9 @@
 #include "ull_scan_internal.h"
 #include "ull_conn_internal.h"
 
-#include "ll.h"
+#include <ll.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -60,7 +60,7 @@ LOG_MODULE_REGISTER(bt_ctlr_ull_filter);
 static struct lll_filter fal_filter;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-#include "common/rpa.h"
+#include <common/rpa.h>
 
 /* Filter Accept List peer list */
 static struct lll_fal fal[CONFIG_BT_CTLR_FAL_SIZE];

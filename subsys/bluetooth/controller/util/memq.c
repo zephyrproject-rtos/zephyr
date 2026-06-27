@@ -36,7 +36,7 @@
 
 #include <soc.h>
 
-#include "hal/cpu.h"
+#include <hal/cpu.h>
 
 #include "memq.h"
 

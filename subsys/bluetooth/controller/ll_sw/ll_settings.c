@@ -6,13 +6,13 @@
 
 #include <zephyr/settings/settings.h>
 
-#include "ll_settings.h"
+#include <ll_settings.h>
 
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bt_ctlr_ll_settings, LOG_LEVEL_DBG);
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #if defined(CONFIG_BT_CTLR_VERSION_SETTINGS)
 

@@ -11,36 +11,36 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
-#include "hal/cpu.h"
-#include "hal/ccm.h"
-#include "hal/radio.h"
-#include "hal/ticker.h"
+#include <hal/cpu.h>
+#include <hal/ccm.h>
+#include <hal/radio.h>
+#include <hal/ticker.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
 
-#include "pdu_df.h"
+#include <pdu_df.h>
 #include "pdu_vendor.h"
-#include "pdu.h"
+#include <pdu.h>
 
-#include "lll.h"
-#include "lll_clock.h"
-#include "lll_chan.h"
+#include <lll.h>
+#include <lll_clock.h>
+#include <lll_chan.h>
 #include "lll_vendor.h"
 #include "lll_adv_types.h"
-#include "lll_adv.h"
+#include <lll_adv.h>
 #include "lll_adv_pdu.h"
-#include "lll_adv_iso.h"
-#include "lll_iso_tx.h"
+#include <lll_adv_iso.h>
+#include <lll_iso_tx.h>
 
 #include "lll_internal.h"
 #include "lll_adv_iso_internal.h"
 #include "lll_prof_internal.h"
 
-#include "ll_feat.h"
+#include <ll_feat.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #define TEST_WITH_DUMMY_PDU 0
 

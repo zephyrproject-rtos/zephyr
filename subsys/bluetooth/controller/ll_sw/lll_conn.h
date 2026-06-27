@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #if defined(CONFIG_BT_CTLR_CONN_META)
-#include "lll_conn_meta.h"
+#include <lll_conn_meta.h>
 #endif /* CONFIG_BT_CTLR_CONN_META */
 
 #define LLL_CONN_RSSI_SAMPLE_COUNT 10

@@ -10,21 +10,21 @@
 
 #include <zephyr/toolchain.h>
 
-#include "hal/ccm.h"
-#include "hal/radio.h"
-#include "hal/ticker.h"
+#include <hal/ccm.h>
+#include <hal/radio.h>
+#include <hal/ticker.h>
 
-#include "util/memq.h"
+#include <util/memq.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
-#include "pdu_df.h"
+#include <pdu_df.h>
 #include "pdu_vendor.h"
-#include "pdu.h"
+#include <pdu.h>
 
-#include "lll.h"
+#include <lll.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 /* Below profiling measurements using a sample with:
  * 1 connectable legacy advertising or 1 peripheral ACL,
