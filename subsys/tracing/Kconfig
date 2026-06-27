@@ -74,6 +74,19 @@ config TRACING_CUSTOM
 
 endchoice
 
+config TRACING_FORMAT_HEADER
+	string
+	help
+	  Name of a tracing format header to include from
+	  <zephyr/tracing/tracing.h>, pulled in with a computed #include. This
+	  lets an out-of-tree module supply its own tracing format without
+	  editing the core tree: the module's Kconfig sets this string (for
+	  example, default "my_format.h" if TRACING_MY_FORMAT) and adds its
+	  header directory to the include path. The header should define the
+	  sys_port_trace_* hooks it records and end with
+	  #include <zephyr/tracing/tracing_hooks.h> so any hook it does not
+	  define falls back to a no-op. It is only consulted when none of the
+	  in-tree formats above is selected.
 
 config TRACING_CTF_TIMESTAMP
 	bool "CTF internal timestamp"
