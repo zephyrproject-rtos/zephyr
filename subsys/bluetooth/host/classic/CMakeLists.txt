@@ -25,6 +25,11 @@ zephyr_library_sources_ifdef(
   )
 
 zephyr_library_sources_ifdef(
+  CONFIG_BT_SCO_OVER_HCI
+  sco_data.c
+  )
+
+zephyr_library_sources_ifdef(
   CONFIG_BT_HFP_HF
   hfp_hf.c
   at.c
