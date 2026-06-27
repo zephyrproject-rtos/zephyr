@@ -705,8 +705,8 @@ static DEVICE_API(dmic, dmic_ops) = {
 		*pdm_channels##idx[FSL_FEATURE_DMIC_CHANNEL_NUM] = {		\
 			PDM_DMIC_CHANNELS_GET(idx)				\
 	};									\
-	K_MSGQ_DEFINE(dmic_msgq##idx, sizeof(void *),				\
-		      CONFIG_DMIC_MCUX_QUEUE_SIZE, 1);				\
+	K_MSGQ_DEFINE_STATIC_TYPE(dmic_msgq##idx, void *,			\
+		      CONFIG_DMIC_MCUX_QUEUE_SIZE);				\
 	static struct mcux_dmic_drv_data mcux_dmic_data##idx = {		\
 		.pdm_channels = pdm_channels##idx,				\
 		.base_address = (DMIC_Type *) DT_INST_REG_ADDR(idx),		\
