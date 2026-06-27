@@ -33,6 +33,7 @@
 #include "did_internal.h"
 #include "rfcomm_internal.h"
 #include "sdp_internal.h"
+#include "bnep_internal.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
@@ -6434,6 +6435,10 @@ void bt_l2cap_br_init(void)
 
 	if (IS_ENABLED(CONFIG_BT_DID)) {
 		bt_did_init();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_BNEP)) {
+		bt_bnep_init();
 	}
 }
 
