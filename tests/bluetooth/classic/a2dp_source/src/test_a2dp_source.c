@@ -24,8 +24,8 @@
 
 #include <zephyr/shell/shell.h>
 
-#include "host/shell/bt.h"
-#include "common/bt_shell_private.h"
+#include <host/shell/bt.h>
+#include <common/bt_shell_private.h>
 
 static struct bt_a2dp *default_a2dp;
 static bool a2dp_initialized;

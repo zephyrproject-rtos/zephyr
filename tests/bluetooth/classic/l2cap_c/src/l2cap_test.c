@@ -24,8 +24,8 @@
 
 #include <zephyr/shell/shell.h>
 
-#include "host/shell/bt.h"
-#include "common/bt_shell_private.h"
+#include <host/shell/bt.h>
+#include <common/bt_shell_private.h>
 
 static uint16_t data_bredr_mtu = 48;
 #define DATA_POOL_SIZE 200
