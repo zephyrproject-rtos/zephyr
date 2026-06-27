@@ -34,7 +34,9 @@ void child_fn(void *a, void *b, void *c)
  *       Otherwise, the test is skipped.
  *
  * @ingroup kernel_thread_tests
- * @verifies ZEP-SRS-2-2
+ * @verifies ZEP-SRS-34-2
+ * @verifies ZEP-SRS-34-12
+ * @verifies ZEP-SRS-34-13
  */
 ZTEST(threads_lifecycle_1cpu, test_threads_cpu_mask)
 {
