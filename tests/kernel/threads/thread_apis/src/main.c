@@ -705,6 +705,7 @@ static int small_stack(size_t *space)
  *
  * @ingroup kernel_thread_tests
  * @verifies ZEP-SRS-1-8
+ * @verifies ZEP-SRS-1-27
  */
 ZTEST_USER(threads_lifecycle, test_k_thread_stack_space_get_user)
 {

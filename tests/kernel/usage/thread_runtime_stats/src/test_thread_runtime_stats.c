@@ -64,6 +64,8 @@ void busy_loop(uint32_t ticks)
  * 5. Busy loop for 3 ticks
  *    - Idle time should not increase
  *    - current, peak and average cycles should be different
+ * @verifies ZEP-SRS-1-28
+ * @verifies ZEP-SRS-1-29
  */
 ZTEST(usage_api, test_all_stats_usage)
 {

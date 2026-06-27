@@ -182,6 +182,14 @@ static void start_tls_test(uint32_t thread_options)
 	zassert_true(passed, "Test failed");
 }
 
+/**
+ * @brief Test thread-local storage
+ *
+ * @details Verify that variables declared thread-local resolve to a separate
+ * per-thread instance, so each thread observes and modifies only its own copy.
+ *
+ * @verifies ZEP-SRS-1-23
+ */
 ZTEST(thread_tls, test_tls)
 {
 	if (IS_ENABLED(CONFIG_USERSPACE)) {

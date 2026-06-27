@@ -207,6 +207,7 @@ ZTEST(runtime_stack_safety, test_threshold_bytes_set_get)
  *   passed the correct thread, unused amount and argument.
  *
  * @see k_thread_runtime_stack_safety_full_check()
+ * @verifies ZEP-SRS-1-30
  */
 ZTEST(runtime_stack_safety, test_full_check)
 {
@@ -303,6 +304,7 @@ ZTEST(runtime_stack_safety, test_full_check_null_handler)
  *
  * @see k_thread_runtime_stack_safety_threshold_check()
  * @see k_thread_runtime_stack_safety_full_check()
+ * @verifies ZEP-SRS-1-30
  */
 ZTEST(runtime_stack_safety, test_threshold_check)
 {
