@@ -980,6 +980,67 @@ ZTEST(timer_api, test_timer_expiry_in_isr)
 	k_timer_stop(&isr_ctx_timer);
 }
 
+#if defined(CONFIG_MULTITHREADING)
+static struct k_timer cleanup_pending_timer;
+static struct k_thread cleanup_thread;
+static K_THREAD_STACK_DEFINE(cleanup_stack, 512 + CONFIG_TEST_EXTRA_STACK_SIZE);
+static K_SEM_DEFINE(cleanup_started, 0, 1);
+static void cleanup_waiter(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	k_sem_give(&cleanup_started);
+	/* Block on the timer's wait queue. The timer is armed far in the
+	 * future, so this thread stays pending until the timer is stopped.
+	 */
+	k_timer_status_sync(&cleanup_pending_timer);
+}
+#endif
+
+/**
+ * @brief Test cleaning up a timer that still has waiting threads
+ *
+ * @ingroup kernel_timer_tests
+ *
+ * @details Arm a timer with a far-future expiry and have a separate thread
+ * block on it via k_timer_status_sync(). While that thread is pending on the
+ * timer, call k_timer_cleanup() and verify it returns -EAGAIN, indicating the
+ * cleanup could not be performed. Then stop the timer to release the waiter.
+ *
+ * @see k_timer_cleanup(), k_timer_status_sync()
+ */
+ZTEST(timer_api, test_timer_cleanup_pending)
+{
+#if !defined(CONFIG_MULTITHREADING)
+	ztest_test_skip();
+#else
+	k_timer_init(&cleanup_pending_timer, NULL, NULL);
+	/* Far-future one-shot: the timeout stays active but does not fire,
+	 * so a thread synchronizing on it pends on the timer's wait queue.
+	 */
+	k_timer_start(&cleanup_pending_timer, K_SECONDS(3600), K_NO_WAIT);
+
+	k_tid_t tid = k_thread_create(&cleanup_thread, cleanup_stack,
+				      K_THREAD_STACK_SIZEOF(cleanup_stack),
+				      cleanup_waiter, NULL, NULL, NULL,
+				      K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
+
+	k_sem_take(&cleanup_started, K_FOREVER);
+	/* Give the waiter time to reach k_timer_status_sync() and pend. */
+	k_msleep(10);
+
+	/* A thread is pending on the timer, so cleanup must be refused. */
+	zassert_equal(k_timer_cleanup(&cleanup_pending_timer), -EAGAIN,
+		      "cleanup with a pending waiter should return -EAGAIN");
+
+	/* Release the waiter and join it. */
+	k_timer_stop(&cleanup_pending_timer);
+	k_thread_join(tid, K_FOREVER);
+#endif
+}
+
 static void timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
 		       k_timer_stop_t stop_fn)
 {
