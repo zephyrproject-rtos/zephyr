@@ -13,7 +13,7 @@
 #ifdef CONFIG_LV_Z_FLUSH_THREAD
 
 /* There can be up to DISPLAY_COUNT flush events at the same time*/
-K_MSGQ_DEFINE(flush_queue, sizeof(struct lvgl_display_flush), DT_ZEPHYR_DISPLAYS_COUNT, 1);
+K_MSGQ_DEFINE_STATIC_TYPE(flush_queue, struct lvgl_display_flush, DT_ZEPHYR_DISPLAYS_COUNT);
 
 void lvgl_flush_thread_entry(void *arg1, void *arg2, void *arg3)
 {
