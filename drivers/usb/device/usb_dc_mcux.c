@@ -143,8 +143,8 @@ static struct usb_ep_ctrl_data s_ep_ctrl[NUM_OF_EP_MAX];
 static struct usb_dc_state dev_state;
 
 /* Message queue for the usb thread */
-K_MSGQ_DEFINE(usb_dc_msgq, sizeof(usb_device_callback_message_struct_t),
-	CONFIG_USB_DC_MSG_QUEUE_LEN, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(usb_dc_msgq, usb_device_callback_message_struct_t,
+	CONFIG_USB_DC_MSG_QUEUE_LEN);
 
 #if defined(CONFIG_USB_DC_NXP_EHCI)
 /* EHCI device driver interface */
