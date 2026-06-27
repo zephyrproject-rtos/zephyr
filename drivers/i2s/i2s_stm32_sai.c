@@ -1053,7 +1053,8 @@ static DEVICE_API(i2s, i2s_stm32_sai_api) = {
 	};                                                                                         \
 	DEVICE_DT_DEFINE(node, &sai_sub_init, NULL, &sub_data_##node, &sub_cfg_##node,             \
 			 POST_KERNEL, CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_sai_api);               \
-	K_MSGQ_DEFINE(queue_##node, sizeof(struct queue_item), CONFIG_I2S_STM32_SAI_BLOCK_COUNT, 4);
+	K_MSGQ_DEFINE_STATIC_TYPE(queue_##node, struct queue_item,                                 \
+				  CONFIG_I2S_STM32_SAI_BLOCK_COUNT);
 
 /* Controller Node */
 #define SAI_INIT(inst)                                                                             \
