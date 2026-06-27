@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc.h"
+#include <soc.h>
 #include <zephyr/kernel.h>
-#include "posix_board_if.h"
+#include <posix_board_if.h>
 
 /**
  * @brief Test NATIVE_TASK hook for native builds
