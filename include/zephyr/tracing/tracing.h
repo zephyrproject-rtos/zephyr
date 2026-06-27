@@ -32,6 +32,22 @@
  * definitions win; only gaps are filled.
  */
 #include "tracing_hooks.h"
+#elif defined(CONFIG_TRACING_FORMAT_HEADER)
+/*
+ * Out-of-tree / module-provided tracing format. The module sets
+ * CONFIG_TRACING_FORMAT_HEADER (a Kconfig string) to the name of its hook header,
+ * which is pulled in here with a computed #include - no edits to this file are
+ * required. Reached only when no in-tree format above is selected.
+ */
+#include CONFIG_TRACING_FORMAT_HEADER
+/*
+ * Backfill canonical no-ops for any hook the format header did not define. The
+ * #ifndef guards keep the format's own definitions; only gaps are filled. (A
+ * format header that itself pulls in <kernel.h> before defining its hooks should
+ * also include tracing_hooks.h at its own end, as the in-tree headers do; the
+ * include guard makes this second include harmless.)
+ */
+#include "tracing_hooks.h"
 #else
 /**
  * @brief Interfaces for the tracing subsystem.
