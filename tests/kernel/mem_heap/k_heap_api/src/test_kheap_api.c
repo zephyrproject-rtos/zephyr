@@ -480,6 +480,42 @@ ZTEST(k_heap_api, test_z_k_heap_double_free)
 	ztest_test_fail();
 }
 
+/**
+ * @brief Test initializing a memory heap at run time over a provided region
+ *
+ * @ingroup k_heap_api_tests
+ *
+ * @details Initialize a k_heap at run time over a caller-provided memory buffer
+ * with k_heap_init(), then confirm the heap is usable: a block can be allocated
+ * (and the returned memory lies within the provided region and is writable),
+ * an allocation larger than the region fails, and the block can be freed.
+ *
+ * @see k_heap_init()
+ */
+ZTEST(k_heap_api, test_k_heap_init)
+{
+	static char __aligned(8) heap_mem[1024];
+	struct k_heap runtime_heap;
+	char *p;
+
+	k_heap_init(&runtime_heap, heap_mem, sizeof(heap_mem));
+
+	/* The heap is usable: allocate a modest block from the provided region. */
+	p = k_heap_alloc(&runtime_heap, 64, K_NO_WAIT);
+	zassert_not_null(p, "allocation from a run-time initialized heap failed");
+	zassert_true(p >= heap_mem && (p + 64) <= (heap_mem + sizeof(heap_mem)),
+		     "allocated block is outside the provided memory region");
+
+	/* The memory is writable. */
+	memset(p, 0xa5, 64);
+
+	/* The heap is bounded by the provided region. */
+	zassert_is_null(k_heap_alloc(&runtime_heap, sizeof(heap_mem) * 2, K_NO_WAIT),
+			"allocation larger than the heap region should fail");
+
+	k_heap_free(&runtime_heap, p);
+}
+
 /* One (size, expectation) pair driving the parameterized alloc-size test. */
 struct heap_alloc_case {
 	size_t alloc_size;
