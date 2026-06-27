@@ -1010,6 +1010,31 @@ ZTEST(timer_api, test_timer_expiry_in_isr)
 	k_timer_stop(&isr_ctx_timer);
 }
 
+static struct k_timer cleanup_timer;
+
+/**
+ * @brief Test releasing the resources associated with a timer
+ *
+ * @ingroup kernel_timer_tests
+ *
+ * @details Start and stop a timer so it has no pending waiters, then call
+ * k_timer_cleanup() and verify it succeeds (returns 0), indicating the timer's
+ * resources may be released.
+ *
+ * @see k_timer_cleanup()
+ * @verifies ZEP-SRS-4-16
+ */
+ZTEST(timer_api, test_timer_cleanup)
+{
+	k_timer_init(&cleanup_timer, NULL, NULL);
+	k_timer_start(&cleanup_timer, K_MSEC(DURATION), K_NO_WAIT);
+	k_timer_stop(&cleanup_timer);
+
+	/* No threads are waiting on the timer, so cleanup must succeed. */
+	zassert_equal(k_timer_cleanup(&cleanup_timer), 0,
+		      "cleanup of an idle timer should succeed");
+}
+
 #if defined(CONFIG_MULTITHREADING)
 static struct k_timer cleanup_pending_timer;
 static struct k_thread cleanup_thread;
@@ -1040,6 +1065,7 @@ static void cleanup_waiter(void *p1, void *p2, void *p3)
  * cleanup could not be performed. Then stop the timer to release the waiter.
  *
  * @see k_timer_cleanup(), k_timer_status_sync()
+ * @verifies ZEP-SRS-4-17
  */
 ZTEST(timer_api, test_timer_cleanup_pending)
 {
