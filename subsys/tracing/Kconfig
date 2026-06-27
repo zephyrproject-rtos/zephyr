@@ -235,6 +235,13 @@ config TRACING_OBJECT_TRACKING
 	help
 	  Keep lists to track kernel objects.
 
+config TRACING_SHELL
+	bool "Tracing shell commands"
+	depends on TRACING_CORE && SHELL
+	help
+	  Enable the "tracing" shell command for runtime enable/disable of
+	  tracing output, dropped-packet statistics, and backend flush.
+
 menu "Tracing Configuration"
 
 config TRACING_SYSCALL
