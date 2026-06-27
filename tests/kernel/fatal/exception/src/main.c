@@ -309,6 +309,10 @@ void check_stack_overflow(k_thread_entry_t handler, uint32_t flags)
  * @verifies ZEP-SRS-16-1
  * @verifies ZEP-SRS-16-2
  * @verifies ZEP-SRS-16-4
+ * @verifies ZEP-SRS-16-5
+ * @verifies ZEP-SRS-16-6
+ * @verifies ZEP-SRS-16-7
+ * @verifies ZEP-SRS-16-8
  */
 ZTEST(fatal_exception, test_fatal)
 {

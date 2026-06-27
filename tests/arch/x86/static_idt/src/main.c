@@ -151,7 +151,11 @@ void idt_spur_task(void *arg1, void *arg2, void *arg3)
  * @brief Test entry point to static IDT
  * @details this test is to generate the interrupt, exception,
  * and spurious interrupt using various method, the registered handler
- * should get called
+ * should get called. A specific handler is assigned to the divide-error
+ * exception with _EXCEPTION_CONNECT_NOCODE(); triggering the exception
+ * confirms the assigned handler is invoked.
+ *
+ * @verifies ZEP-SRS-16-3
  */
 
 ZTEST(static_idt, test_static_idt)
