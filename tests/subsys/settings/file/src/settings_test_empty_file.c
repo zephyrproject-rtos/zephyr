@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "settings_test.h"
-#include "settings/settings_file.h"
+#include <settings_test.h>
+#include <settings/settings_file.h>
 #include <zephyr/fs/fs.h>
 
 ZTEST(settings_config_fs, test_config_empty_file)

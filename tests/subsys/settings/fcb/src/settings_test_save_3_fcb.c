@@ -6,7 +6,7 @@
  */
 
 #include "settings_test.h"
-#include "settings/settings_fcb.h"
+#include <settings/settings_fcb.h>
 
 #ifdef TEST_LONG
 #define TESTS_S3_FCB_ITERATIONS 4096

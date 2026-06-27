@@ -5,7 +5,7 @@
  */
 #include <stdlib.h>
 
-#include "settings_priv.h"
+#include <settings_priv.h>
 #include <zephyr/ztest.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/bluetooth/bluetooth.h>

@@ -6,7 +6,7 @@
  */
 
 #include "settings_test.h"
-#include "settings/settings_fcb.h"
+#include <settings/settings_fcb.h>
 
 static int test_config_save_one_byte_value(const char *name, uint8_t val)
 {
