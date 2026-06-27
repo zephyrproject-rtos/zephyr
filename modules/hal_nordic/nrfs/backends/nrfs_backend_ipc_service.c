@@ -19,8 +19,8 @@ LOG_MODULE_REGISTER(NRFS_BACKEND, CONFIG_NRFS_BACKEND_LOG_LEVEL);
 
 #define MAX_PACKET_DATA_SIZE (CONFIG_NRFS_MAX_BACKEND_PACKET_SIZE)
 
-K_MSGQ_DEFINE(ipc_transmit_msgq, sizeof(struct ipc_data_packet),
-							CONFIG_NRFS_BACKEND_TX_MSG_QUEUE_SIZE, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(ipc_transmit_msgq, struct ipc_data_packet,
+			  CONFIG_NRFS_BACKEND_TX_MSG_QUEUE_SIZE);
 
 static struct k_work backend_send_work;
 
