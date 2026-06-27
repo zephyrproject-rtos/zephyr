@@ -448,6 +448,16 @@ ZTEST(device, test_abstraction_driver_common)
 	zassert_true(baz == 2, "common API do_that fail");
 }
 
+/**
+ * @brief Test deferred device initialization
+ *
+ * @details Verify a device marked for deferred initialization is not ready
+ * at boot and becomes ready after an explicit device_init() at runtime.
+ *
+ * @see device_init
+ * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-14-7
+ */
 ZTEST(device, test_deferred_init)
 {
 	int ret;
@@ -475,6 +485,7 @@ static int fakedeferdriver_init(const struct device *dev)
  *
  * @see device_init
  * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-14-8
  */
 ZTEST(device, test_deferred_init_failure)
 {
@@ -602,6 +613,13 @@ ZTEST(device, test_device_api_extends_sibling)
 	zexpect_equal(ret, 50);
 }
 
+/**
+ * @brief Test deferred device initialization from user mode
+ *
+ * @see device_init
+ * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-14-7
+ */
 ZTEST_USER(device, test_deferred_init_user)
 {
 	int ret;
@@ -614,6 +632,16 @@ ZTEST_USER(device, test_deferred_init_user)
 	zassert_true(device_is_ready(FAKEDEFERDRIVER1));
 }
 
+/**
+ * @brief Test that de-initialization is rejected when unsupported
+ *
+ * @details Verify device_deinit() returns -ENOTSUP for a device that does
+ * not provide a de-initialization function.
+ *
+ * @see device_deinit
+ * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-14-10
+ */
 ZTEST(device, test_deinit_not_supported)
 {
 	const struct device *dev = device_get_binding(DUMMY_NOINIT);
@@ -634,6 +662,16 @@ static int dummy_deinit(const struct device *dev)
 DEVICE_DEINIT_DEFINE(dummy_deinit, DUMMY_DEINIT, NULL, dummy_deinit, NULL, NULL, NULL, POST_KERNEL,
 		     CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
+/**
+ * @brief Test de-initializing a device at runtime
+ *
+ * @details Verify device_deinit() succeeds for a device that provides a
+ * de-initialization function, and that a subsequent de-init is rejected.
+ *
+ * @see device_deinit
+ * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-14-9
+ */
 ZTEST(device, test_deinit_success_and_redeinit)
 {
 	const struct device *dev = device_get_binding(DUMMY_DEINIT);
@@ -652,6 +690,16 @@ ZTEST(device, test_deinit_success_and_redeinit)
 DEVICE_DT_DEFINE(FAKEDRIVER0_NODEID, NULL, NULL, NULL, NULL, POST_KERNEL,
 		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
+/**
+ * @brief Test obtaining a device by its devicetree node label
+ *
+ * @details Verify device_get_by_dt_nodelabel() returns the expected device
+ * for a valid node label and NULL for an unknown one.
+ *
+ * @see device_get_by_dt_nodelabel
+ * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-14-12
+ */
 ZTEST(device, test_device_get_by_dt_nodelabel)
 {
 	const struct device *dev = DEVICE_DT_GET(FAKEDRIVER0_NODEID);
