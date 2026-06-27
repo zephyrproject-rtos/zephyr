@@ -23,6 +23,11 @@
 #if SOC_PAU_SUPPORTED
 #include <esp_private/sleep_clock.h>
 #endif
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+#include <hal/pmu_ll.h>
+#include <hal/pmu_types.h>
+extern esp_err_t sleep_clock_icg_startup_init(void);
+#endif
 #if defined(CONFIG_ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP)
 #include <esp_private/sleep_cpu.h>
 #endif
@@ -296,6 +301,17 @@ static int sleep_retention_init(void)
 {
 	esp_err_t err;
 	int ret = 0;
+
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+	/* pmu_init() turns on all LP clocks; narrow it to FOSC (RC_SLOW) only. */
+	pmu_ll_lp_set_clk_power(&PMU, PMU_MODE_LP_ACTIVE, BIT(30));
+
+	err = sleep_clock_icg_startup_init();
+	if (err != ESP_OK) {
+		LOG_ERR("sleep_clock_icg_startup_init failed (%d)", err);
+		ret = err;
+	}
+#endif
 
 	err = sleep_clock_startup_init();
 	if (err != ESP_OK) {

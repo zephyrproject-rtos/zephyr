@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_UTILS_LOG_LEVEL);
 struct net_addr_test_data {
 	net_sa_family_t family;
 	bool pton;
+	bool valid;
 
 	struct {
 		char c_addr[16];
@@ -52,6 +53,7 @@ struct net_addr_test_data {
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_1 = {
 	.family = NET_AF_INET,
 	.pton = true,
+	.valid = true,
 	.ipv4.c_addr = "192.0.0.1",
 	.ipv4.verify.s4_addr = { 192, 0, 0, 1 },
 };
@@ -59,6 +61,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_pton_1 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_2 = {
 	.family = NET_AF_INET,
 	.pton = true,
+	.valid = true,
 	.ipv4.c_addr = "192.1.0.0",
 	.ipv4.verify.s4_addr = { 192, 1, 0, 0 },
 };
@@ -66,6 +69,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_pton_2 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_3 = {
 	.family = NET_AF_INET,
 	.pton = true,
+	.valid = true,
 	.ipv4.c_addr = "192.0.0.0",
 	.ipv4.verify.s4_addr = { 192, 0, 0, 0 },
 };
@@ -73,6 +77,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_pton_3 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_4 = {
 	.family = NET_AF_INET,
 	.pton = true,
+	.valid = true,
 	.ipv4.c_addr = "255.255.255.255",
 	.ipv4.verify.s4_addr = { 255, 255, 255, 255 },
 };
@@ -80,6 +85,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_pton_4 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_5 = {
 	.family = NET_AF_INET,
 	.pton = true,
+	.valid = true,
 	.ipv4.c_addr = "0.0.0.0",
 	.ipv4.verify.s4_addr = { 0, 0, 0, 0 },
 };
@@ -87,6 +93,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_pton_5 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_6 = {
 	.family = NET_AF_INET,
 	.pton = true,
+	.valid = true,
 	.ipv4.c_addr = "0.0.0.1",
 	.ipv4.verify.s4_addr = { 0, 0, 0, 1 },
 };
@@ -94,6 +101,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_pton_6 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_7 = {
 	.family = NET_AF_INET,
 	.pton = true,
+	.valid = true,
 	.ipv4.c_addr = "0.0.1.0",
 	.ipv4.verify.s4_addr = { 0, 0, 1, 0 },
 };
@@ -101,6 +109,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_pton_7 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_pton_8 = {
 	.family = NET_AF_INET,
 	.pton = true,
+	.valid = true,
 	.ipv4.c_addr = "0.1.0.0",
 	.ipv4.verify.s4_addr = { 0, 1, 0, 0 },
 };
@@ -108,6 +117,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_pton_8 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_1 = {
 	.family = NET_AF_INET6,
 	.pton = true,
+	.valid = true,
 	.ipv6.c_addr = "ff08::",
 	.ipv6.verify.s6_addr16 = { net_htons(0xff08), 0, 0, 0, 0, 0, 0, 0 },
 };
@@ -115,6 +125,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_pton_1 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_2 = {
 	.family = NET_AF_INET6,
 	.pton = true,
+	.valid = true,
 	.ipv6.c_addr = "::",
 	.ipv6.verify.s6_addr16 = { 0 },
 };
@@ -122,6 +133,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_pton_2 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_3 = {
 	.family = NET_AF_INET6,
 	.pton = true,
+	.valid = true,
 	.ipv6.c_addr = "ff08::1",
 	.ipv6.verify.s6_addr16 = { net_htons(0xff08), 0, 0, 0, 0, 0, 0, net_htons(1) },
 };
@@ -129,6 +141,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_pton_3 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_4 = {
 	.family = NET_AF_INET6,
 	.pton = true,
+	.valid = true,
 	.ipv6.c_addr = "2001:db8::1",
 	.ipv6.verify.s6_addr16 = { net_htons(0x2001), net_htons(0xdb8),
 				   0, 0, 0, 0, 0, net_htons(1) },
@@ -137,6 +150,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_pton_4 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_5 = {
 	.family = NET_AF_INET6,
 	.pton = true,
+	.valid = true,
 	.ipv6.c_addr = "2001:db8::2:1",
 	.ipv6.verify.s6_addr16 = { net_htons(0x2001), net_htons(0xdb8),
 				   0, 0, 0, 0, net_htons(2), net_htons(1) },
@@ -145,6 +159,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_pton_5 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_6 = {
 	.family = NET_AF_INET6,
 	.pton = true,
+	.valid = true,
 	.ipv6.c_addr = "ff08:1122:3344:5566:7788:9900:aabb:ccdd",
 	.ipv6.verify.s6_addr16 = { net_htons(0xff08), net_htons(0x1122),
 				   net_htons(0x3344), net_htons(0x5566),
@@ -155,14 +170,37 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_pton_6 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_7 = {
 	.family = NET_AF_INET6,
 	.pton = true,
+	.valid = true,
 	.ipv6.c_addr = "0:ff08::",
 	.ipv6.verify.s6_addr16 = { 0, net_htons(0xff08), 0, 0, 0, 0, 0, 0 },
+};
+
+static ZTEST_DMEM struct net_addr_test_data ipv6_pton_8 = {
+	.family = NET_AF_INET6,
+	.pton = true,
+	.valid = false,
+	.ipv6.c_addr = "2001::db8::2:1",
+};
+
+static ZTEST_DMEM struct net_addr_test_data ipv6_pton_9 = {
+	.family = NET_AF_INET6,
+	.pton = true,
+	.valid = false,
+	.ipv6.c_addr = "2001:::db8:2:1",
+};
+
+static ZTEST_DMEM struct net_addr_test_data ipv6_pton_10 = {
+	.family = NET_AF_INET6,
+	.pton = true,
+	.valid = false,
+	.ipv6.c_addr = "::0::ffff:c0a8:5e4",
 };
 
 /* net_addr_ntop test cases */
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_1 = {
 	.family = NET_AF_INET,
 	.pton = false,
+	.valid = true,
 	.ipv4.c_verify = "192.0.0.1",
 	.ipv4.addr.s4_addr = { 192, 0, 0, 1 },
 };
@@ -170,6 +208,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_1 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_2 = {
 	.family = NET_AF_INET,
 	.pton = false,
+	.valid = true,
 	.ipv4.c_verify = "192.1.0.0",
 	.ipv4.addr.s4_addr = { 192, 1, 0, 0 },
 };
@@ -177,6 +216,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_2 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_3 = {
 	.family = NET_AF_INET,
 	.pton = false,
+	.valid = true,
 	.ipv4.c_verify = "192.0.0.0",
 	.ipv4.addr.s4_addr = { 192, 0, 0, 0 },
 };
@@ -184,6 +224,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_3 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_4 = {
 	.family = NET_AF_INET,
 	.pton = false,
+	.valid = true,
 	.ipv4.c_verify = "255.255.255.255",
 	.ipv4.addr.s4_addr = { 255, 255, 255, 255 },
 };
@@ -191,6 +232,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_4 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_5 = {
 	.family = NET_AF_INET,
 	.pton = false,
+	.valid = true,
 	.ipv4.c_verify = "0.0.0.0",
 	.ipv4.addr.s4_addr = { 0, 0, 0, 0 },
 };
@@ -198,6 +240,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_5 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_6 = {
 	.family = NET_AF_INET,
 	.pton = false,
+	.valid = true,
 	.ipv4.c_verify = "0.0.0.1",
 	.ipv4.addr.s4_addr = { 0, 0, 0, 1 },
 };
@@ -205,6 +248,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_6 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_7 = {
 	.family = NET_AF_INET,
 	.pton = false,
+	.valid = true,
 	.ipv4.c_verify = "0.0.1.0",
 	.ipv4.addr.s4_addr = { 0, 0, 1, 0 },
 };
@@ -212,6 +256,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_7 = {
 static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_8 = {
 	.family = NET_AF_INET,
 	.pton = false,
+	.valid = true,
 	.ipv4.c_verify = "0.1.0.0",
 	.ipv4.addr.s4_addr = { 0, 1, 0, 0 },
 };
@@ -219,6 +264,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv4_ntop_8 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_1 = {
 	.family = NET_AF_INET6,
 	.pton = false,
+	.valid = true,
 	.ipv6.c_verify = "ff08::",
 	.ipv6.addr.s6_addr16 = { net_htons(0xff08), 0, 0, 0, 0, 0, 0, 0 },
 };
@@ -226,6 +272,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_1 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_2 = {
 	.family = NET_AF_INET6,
 	.pton = false,
+	.valid = true,
 	.ipv6.c_verify = "::",
 	.ipv6.addr.s6_addr16 = { 0 },
 };
@@ -233,6 +280,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_2 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_3 = {
 	.family = NET_AF_INET6,
 	.pton = false,
+	.valid = true,
 	.ipv6.c_verify = "ff08::1",
 	.ipv6.addr.s6_addr16 = { net_htons(0xff08), 0, 0, 0, 0, 0, 0, net_htons(1) },
 };
@@ -240,6 +288,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_3 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_4 = {
 	.family = NET_AF_INET6,
 	.pton = false,
+	.valid = true,
 	.ipv6.c_verify = "2001:db8::1",
 	.ipv6.addr.s6_addr16 = { net_htons(0x2001), net_htons(0xdb8),
 				 0, 0, 0, 0, 0, net_htons(1) },
@@ -248,6 +297,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_4 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_5 = {
 	.family = NET_AF_INET6,
 	.pton = false,
+	.valid = true,
 	.ipv6.c_verify = "2001:db8::2:1",
 	.ipv6.addr.s6_addr16 = { net_htons(0x2001), net_htons(0xdb8),
 				 0, 0, 0, 0, net_htons(2), net_htons(1) },
@@ -256,6 +306,7 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_5 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_6 = {
 	.family = NET_AF_INET6,
 	.pton = false,
+	.valid = true,
 	.ipv6.c_verify = "ff08:1122:3344:5566:7788:9900:aabb:ccdd",
 	.ipv6.addr.s6_addr16 = { net_htons(0xff08), net_htons(0x1122),
 				 net_htons(0x3344), net_htons(0x5566),
@@ -266,14 +317,17 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_6 = {
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_7 = {
 	.family = NET_AF_INET6,
 	.pton = false,
+	.valid = true,
 	.ipv6.c_verify = "0:ff08::",
 	.ipv6.addr.s6_addr16 = { 0, net_htons(0xff08), 0, 0, 0, 0, 0, 0 },
 };
 
-static const struct {
+struct net_addr_test_case {
 	const char *name;
 	struct net_addr_test_data *data;
-} tests[] = {
+};
+
+static const struct net_addr_test_case net_addr_test_cases[] = {
 	/* IPv4 net_addr_pton */
 	{ "test_ipv4_pton_1", &ipv4_pton_1},
 	{ "test_ipv4_pton_2", &ipv4_pton_2},
@@ -292,6 +346,9 @@ static const struct {
 	{ "test_ipv6_pton_5", &ipv6_pton_5},
 	{ "test_ipv6_pton_6", &ipv6_pton_6},
 	{ "test_ipv6_pton_7", &ipv6_pton_7},
+	{ "test_ipv6_pton_8", &ipv6_pton_8},
+	{ "test_ipv6_pton_9", &ipv6_pton_9},
+	{ "test_ipv6_pton_10", &ipv6_pton_10},
 
 	/* IPv4 net_addr_ntop */
 	{ "test_ipv4_ntop_1", &ipv4_ntop_1},
@@ -313,41 +370,77 @@ static const struct {
 	{ "test_ipv6_ntop_7", &ipv6_ntop_7},
 };
 
+static const char *net_addr_test_name(size_t index, const void *value)
+{
+	const struct net_addr_test_case *tc = value;
+
+	ARG_UNUSED(index);
+	return tc->name;
+}
+
+static const struct ztest_param_values net_addr_cases = {
+	.values    = net_addr_test_cases,
+	.count     = ARRAY_SIZE(net_addr_test_cases),
+	.elem_size = sizeof(net_addr_test_cases[0]),
+	.name_cb   = net_addr_test_name,
+};
+
 static bool check_net_addr(struct net_addr_test_data *data)
 {
+	char *ptr;
+	int ret;
+
 	switch (data->family) {
 	case NET_AF_INET:
 		if (data->pton) {
-			if (net_addr_pton(NET_AF_INET, (char *)data->ipv4.c_addr,
-					  &data->ipv4.addr) < 0) {
-				printk("Failed to convert %s\n",
-				       data->ipv4.c_addr);
+			ret = net_addr_pton(NET_AF_INET, (char *)data->ipv4.c_addr,
+					    &data->ipv4.addr);
+
+			if (data->valid && ret < 0) {
+				printk("Failed to convert %s\n", data->ipv4.c_addr);
 
 				return false;
 			}
 
-			if (!net_ipv4_addr_cmp(&data->ipv4.addr,
-					       &data->ipv4.verify)) {
-				printk("Failed to verify %s\n",
-				       data->ipv4.c_addr);
+			if (!data->valid && ret == 0) {
+				printk("Convert did not fail for %s\n", data->ipv4.c_addr);
+
+				return false;
+			}
+
+			if (!data->valid) {
+				break;
+			}
+
+			if (!net_ipv4_addr_cmp(&data->ipv4.addr, &data->ipv4.verify)) {
+				printk("Failed to verify %s\n", data->ipv4.c_addr);
 
 				return false;
 			}
 		} else {
-			if (!net_addr_ntop(NET_AF_INET, &data->ipv4.addr,
-					   data->ipv4.c_addr,
-					   sizeof(data->ipv4.c_addr))) {
+			ptr = net_addr_ntop(NET_AF_INET, &data->ipv4.addr, data->ipv4.c_addr,
+					    sizeof(data->ipv4.c_addr));
+			if (data->valid && !ptr) {
 				printk("Failed to convert %s\n",
 				       net_sprint_ipv4_addr(&data->ipv4.addr));
 
 				return false;
 			}
 
+			if (!data->valid && ptr) {
+				printk("Convert did not fail for %s\n",
+				       net_sprint_ipv4_addr(&data->ipv4.addr));
+
+				return false;
+			}
+
+			if (!data->valid) {
+				break;
+			}
+
 			if (strcmp(data->ipv4.c_addr, data->ipv4.c_verify)) {
-				printk("Failed to verify %s\n",
-				       data->ipv4.c_addr);
-				printk("against %s\n",
-				       data->ipv4.c_verify);
+				printk("Failed to verify %s\n", data->ipv4.c_addr);
+				printk("against %s\n", data->ipv4.c_verify);
 
 				return false;
 			}
@@ -357,43 +450,60 @@ static bool check_net_addr(struct net_addr_test_data *data)
 
 	case NET_AF_INET6:
 		if (data->pton) {
-			if (net_addr_pton(NET_AF_INET6, (char *)data->ipv6.c_addr,
-					  &data->ipv6.addr) < 0) {
-				printk("Failed to convert %s\n",
-				       data->ipv6.c_addr);
+			ret = net_addr_pton(NET_AF_INET6, (char *)data->ipv6.c_addr,
+					    &data->ipv6.addr);
+
+			if (data->valid && ret < 0) {
+				printk("Failed to convert %s\n", data->ipv6.c_addr);
 
 				return false;
 			}
 
-			if (!net_ipv6_addr_cmp(&data->ipv6.addr,
-					       &data->ipv6.verify)) {
+			if (!data->valid && ret == 0) {
+				printk("Convert did not fail for %s\n", data->ipv6.c_addr);
+
+				return false;
+			}
+
+			if (!data->valid) {
+				break;
+			}
+
+			if (!net_ipv6_addr_cmp(&data->ipv6.addr, &data->ipv6.verify)) {
 				printk("Failed to verify %s\n",
 				       net_sprint_ipv6_addr(&data->ipv6.addr));
-				printk("against %s\n",
-				       net_sprint_ipv6_addr(
-							&data->ipv6.verify));
+				printk("against %s\n", net_sprint_ipv6_addr(&data->ipv6.verify));
 
 				return false;
 			}
 		} else {
-			if (!net_addr_ntop(NET_AF_INET6, &data->ipv6.addr,
-					   data->ipv6.c_addr,
-					   sizeof(data->ipv6.c_addr))) {
+			ptr = net_addr_ntop(NET_AF_INET6, &data->ipv6.addr, data->ipv6.c_addr,
+					    sizeof(data->ipv6.c_addr));
+
+			if (data->valid && !ptr) {
 				printk("Failed to convert %s\n",
 				       net_sprint_ipv6_addr(&data->ipv6.addr));
 
 				return false;
 			}
 
-			if (strcmp(data->ipv6.c_addr, data->ipv6.c_verify)) {
-				printk("Failed to verify %s\n",
-				       data->ipv6.c_addr);
-				printk("against %s\n",
-				       data->ipv6.c_verify);
+			if (!data->valid && ptr) {
+				printk("Convert did not fail for %s\n",
+				       net_sprint_ipv6_addr(&data->ipv6.addr));
 
 				return false;
 			}
 
+			if (!data->valid) {
+				break;
+			}
+
+			if (strcmp(data->ipv6.c_addr, data->ipv6.c_verify)) {
+				printk("Failed to verify %s\n", data->ipv6.c_addr);
+				printk("against %s\n", data->ipv6.c_verify);
+
+				return false;
+			}
 		}
 
 		break;
@@ -402,22 +512,12 @@ static bool check_net_addr(struct net_addr_test_data *data)
 	return true;
 }
 
-ZTEST(test_utils_fn, test_net_addr)
+ZTEST_P(test_utils_fn, test_net_addr)
 {
-	int count, pass;
+	const struct net_addr_test_case *tc =
+		ZTEST_GET_PARAM_PTR(struct net_addr_test_case);
 
-	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
-		TC_PRINT("Running test: %s: ", tests[count].name);
-
-		if (check_net_addr(tests[count].data)) {
-			TC_PRINT("passed\n");
-			pass++;
-		} else {
-			TC_PRINT("failed\n");
-		}
-	}
-
-	zassert_equal(pass, ARRAY_SIZE(tests), "check_net_addr error");
+	zassert_true(check_net_addr(tc->data), "check_net_addr failed: %s", tc->name);
 }
 
 ZTEST(test_utils_fn, test_addr_parse)
@@ -914,7 +1014,7 @@ static const char *check_ipaddr(const char *addresses)
 
 		zassert_mem_equal(addr_str, expecting,
 				  *addresses == '\0' ? strlen(orig) : addresses - orig - 1,
-				  "Address mismatch, expecing %s, got %s (len %td)\n",
+				  "Address mismatch, expecting %s, got %s (len %td)\n",
 				  expecting, addr_str, addresses - orig - 1);
 	} while (addresses != NULL && *addresses != '\0');
 
@@ -1792,3 +1892,4 @@ ZTEST(test_utils_fn, test_parse_ipv6_overflow)
 }
 
 ZTEST_SUITE(test_utils_fn, NULL, NULL, NULL, NULL, NULL);
+ZTEST_INSTANTIATE_TEST_SUITE_P(all, test_utils_fn, test_net_addr, net_addr_cases);

@@ -159,7 +159,7 @@ struct dai_intel_ssp_pdata {
 	uint32_t sscr1;
 	uint32_t psp;
 	struct dai_config config;
-	struct dai_properties props;
+	struct dai_properties props[2];
 };
 
 struct dai_intel_ssp {

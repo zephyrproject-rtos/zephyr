@@ -22,8 +22,4 @@ config ARM_TRUSTZONE_M
 	default y
 	depends on SOC_SERIES_PIC32CM_SG00
 
-config CPU_HAS_ARM_SAU
-	default y
-	depends on SOC_SERIES_PIC32CM_SG00
-
 endif # SOC_FAMILY_MICROCHIP_PIC32CM_SG_GC

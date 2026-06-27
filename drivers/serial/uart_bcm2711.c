@@ -53,7 +53,7 @@
 struct bcm2711_uart_config {
 	DEVICE_MMIO_ROM; /* Must be first */
 	uint32_t baud_rate;
-	uint32_t clocks;
+	uint32_t pclk;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
 #endif
@@ -141,7 +141,7 @@ static int uart_bcm2711_init(const struct device *dev)
 		return err;
 	}
 
-	bcm2711_mu_lowlevel_init(uart_data->uart_addr, 1, uart_cfg->baud_rate, uart_cfg->clocks);
+	bcm2711_mu_lowlevel_init(uart_data->uart_addr, 1, uart_cfg->baud_rate, uart_cfg->pclk);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_cfg->irq_config_func(dev);
@@ -342,7 +342,7 @@ static DEVICE_API(uart, uart_bcm2711_driver_api) = {
 	static const struct bcm2711_uart_config bcm2711_uart_##port##_config = {                   \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(port)),                                           \
 		.baud_rate = DT_INST_PROP(port, current_speed),                                    \
-		.clocks = DT_INST_PROP(port, clock_frequency),                                     \
+		.pclk = DT_INST_PROP_BY_PHANDLE(port, clocks, clock_frequency),                    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(port),                                    \
 		UART_BCM2711_IRQ_CONF_FUNC_SET(port)}
 

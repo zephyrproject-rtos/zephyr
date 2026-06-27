@@ -2009,17 +2009,33 @@ The Solicitation PDU RPL Client model is an optional mesh subsystem that can be 
 	* ``RngLen``: Range length for the SSRC addresses to be cleared from the solicitiation RPL list. This parameter is optional; if absent, only a single SSRC address will be cleared.
 
 
-Frame statistic
-===============
+Statistic
+=========
 
-``mesh stat get``
------------------
+The statistic is an optional mesh module that can be enabled through the :kconfig:option:`CONFIG_BT_MESH_STATISTIC` configuration option.
+
+``mesh stat adv_get``
+---------------------
 
 	Get the frame statistic. The command prints numbers of received frames, as well as numbers
 	of planned and succeeded transmission attempts.
 
 
-``mesh stat clear``
--------------------
+``mesh stat adv_clear``
+-----------------------
 
-	Clear all statistics collected before.
+	Clear frame statistics collected before.
+
+
+``mesh stat lpn_get``
+---------------------
+
+	Get the measured LPN friendship timing parameters.
+	The command prints ReceiveDelay and ReceiveWindow values derived from timestamps taken during poll cycles.
+	Requires :kconfig:option:`CONFIG_BT_MESH_LOW_POWER`.
+
+
+``mesh stat lpn_clear``
+-----------------------
+
+	Clear LPN timing statistics collected before. Requires :kconfig:option:`CONFIG_BT_MESH_LOW_POWER`.

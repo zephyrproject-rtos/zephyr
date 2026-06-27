@@ -172,11 +172,7 @@ typedef struct s_isrList {
  */
 #define _VECTOR_ARG(irq_p)	(-1)
 
-#ifdef CONFIG_LINKER_USE_PINNED_SECTION
-#define IRQSTUBS_TEXT_SECTION	".pinned_text.irqstubs"
-#else
 #define IRQSTUBS_TEXT_SECTION	".text.irqstubs"
-#endif
 
 /* Internally this function does a few things:
  *

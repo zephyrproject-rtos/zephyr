@@ -41,7 +41,7 @@ import re
 import sys
 
 # Requires PyGithub
-from github import Github
+from github import Auth, Github
 
 
 # https://gist.github.com/monkut/e60eea811ef085a6540f
@@ -49,7 +49,7 @@ def valid_date_type(arg_date_str):
     """custom argparse *date* type for user dates values given from the
     command line"""
     try:
-        return datetime.strptime(arg_date_str, "%Y-%m-%d")
+        return datetime.strptime(arg_date_str, "%Y-%m-%d").replace(tzinfo=datetime.UTC)
     except ValueError:
         msg = "Given Date ({0}) not valid! Expected format, YYYY-MM-DD!".format(arg_date_str)
         raise argparse.ArgumentTypeError(msg)
@@ -57,50 +57,98 @@ def valid_date_type(arg_date_str):
 
 def parse_args():
     parser = argparse.ArgumentParser(allow_abbrev=False)
-    parser.add_argument('-t', '--token', dest='tokenfile',
-                        help='File containing GitHub token (alternatively, use GITHUB_TOKEN env variable)', metavar='FILE')
-    parser.add_argument('-b', '--base', dest='base',
-                        help='branch (base) for PRs (e.g. v2.7-branch)', metavar='BRANCH', required=True)
-    parser.add_argument('-j', '--json', dest='json', action='store_true',
-                        help='print output in JSON rather than RST')
-    parser.add_argument('-s', '--start', dest='start', help='start date (YYYY-mm-dd)',
-                        metavar='START_DATE', type=valid_date_type)
-    parser.add_argument('-e', '--end', dest='end', help='end date (YYYY-mm-dd)',
-                        metavar='END_DATE', type=valid_date_type)
-    parser.add_argument("-o", "--org", default="zephyrproject-rtos",
-                        help="Github organization")
-    parser.add_argument('-p', '--include-pull', dest='includes',
-                        help='include pull request (can be specified multiple times)',
-                        metavar='PR', type=int, action='append', default=[])
-    parser.add_argument('-P', '--exclude-pull', dest='excludes',
-                        help='exlude pull request (can be specified multiple times, helpful for version bumps and release notes)',
-                        metavar='PR', type=int, action='append', default=[])
-    parser.add_argument("-r", "--repo", default="zephyr",
-                        help="Github repository")
+    parser.add_argument(
+        '-t',
+        '--token',
+        dest='tokenfile',
+        help='File containing GitHub token (alternatively, use GITHUB_TOKEN env variable)',
+        metavar='FILE',
+    )
+    parser.add_argument(
+        '-b',
+        '--base',
+        dest='base',
+        help='branch (base) for PRs (e.g. v2.7-branch)',
+        metavar='BRANCH',
+        required=True,
+    )
+    parser.add_argument(
+        '-j',
+        '--json',
+        dest='json',
+        action='store_true',
+        help='print output in JSON rather than RST',
+    )
+    parser.add_argument(
+        '-s',
+        '--start',
+        dest='start',
+        help='start date (YYYY-mm-dd)',
+        metavar='START_DATE',
+        type=valid_date_type,
+    )
+    parser.add_argument(
+        '-e',
+        '--end',
+        dest='end',
+        help='end date (YYYY-mm-dd)',
+        metavar='END_DATE',
+        type=valid_date_type,
+    )
+    parser.add_argument("-o", "--org", default="zephyrproject-rtos", help="Github organization")
+    parser.add_argument(
+        '-p',
+        '--include-pull',
+        dest='includes',
+        help='include pull request (can be specified multiple times)',
+        metavar='PR',
+        type=int,
+        action='append',
+        default=[],
+    )
+    parser.add_argument(
+        '-P',
+        '--exclude-pull',
+        dest='excludes',
+        help='exlude pull request (can be specified multiple times, helpful for version bumps and release notes)',
+        metavar='PR',
+        type=int,
+        action='append',
+        default=[],
+    )
+    parser.add_argument("-r", "--repo", default="zephyr", help="Github repository")
+    parser.add_argument(
+        '-c',
+        '--check',
+        dest='check',
+        action='store_true',
+        help='check mode: verify a single PR has an associated issue '
+        'and post a comment on the PR if one is missing',
+    )
 
     args = parser.parse_args()
 
-    if args.includes:
+    if args.check:
+        if len(args.includes) != 1:
+            logging.error('--check requires exactly one -p/--include-pull PR number')
+            return None
+    elif args.includes:
         if getattr(args, 'start'):
-            logging.error(
-                'the --start argument should not be used with --include-pull')
+            logging.error('the --start argument should not be used with --include-pull')
             return None
         if getattr(args, 'end'):
-            logging.error(
-                'the --end argument should not be used with --include-pull')
+            logging.error('the --end argument should not be used with --include-pull')
             return None
     else:
         if not getattr(args, 'start'):
-            logging.error(
-                'if --include-pr PR is not used, --start START_DATE is required')
+            logging.error('if --include-pr PR is not used, --start START_DATE is required')
             return None
 
         if not getattr(args, 'end'):
-            setattr(args, 'end', datetime.now())
+            setattr(args, 'end', datetime.now(datetime.UTC))
 
         if args.end < args.start:
-            logging.error(
-                f'end date {args.end} is before start date {args.start}')
+            logging.error(f'end date {args.end} is before start date {args.start}')
             return None
 
     if args.tokenfile:
@@ -135,8 +183,7 @@ class Backport(object):
 
         pulls = []
 
-        unfiltered_pulls = repo.get_pulls(
-            base=base, state='closed')
+        unfiltered_pulls = repo.get_pulls(base=base, state='closed')
         for p in unfiltered_pulls:
             if not p.merged:
                 # only consider merged backports
@@ -175,8 +222,7 @@ class Backport(object):
                 return None
 
             if p.base.ref != base:
-                logging.error(
-                    f'{i} is not a valid pull request for base {base} ({p.base.label})')
+                logging.error(f'{i} is not a valid pull request for base {base} ({p.base.label})')
                 return None
 
             pulls.append(p)
@@ -204,7 +250,9 @@ class Backport(object):
             obj = {}
             obj['id'] = i.number
             obj['title'] = Backport.sanitize_title(i.title)
-            obj['url'] = f'https://github.com/{self._repo.organization.login}/{self._repo.name}/pull/{i.number}'
+            obj['url'] = (
+                f'https://github.com/{self._repo.organization.login}/{self._repo.name}/pull/{i.number}'
+            )
             issue_objects.append(obj)
 
         print(json.dumps(issue_objects))
@@ -224,33 +272,35 @@ class Backport(object):
         for p in self._pulls:
             # check for issues in this pr
             issues_for_this_pr = {}
-            with io.StringIO(p.body) as buf:
+            with io.StringIO(p.body or '') as buf:
                 for line in buf.readlines():
                     line = line.strip()
                     match = re.search(r"^Fixes[:]?\s*#([1-9][0-9]*).*", line)
                     if not match:
                         match = re.search(
-                            rf"^Fixes[:]?\s*https://github\.com/{self._repo.organization.login}/{self._repo.name}/issues/([1-9][0-9]*).*", line)
+                            rf"^Fixes[:]?\s*https://github\.com/{self._repo.organization.login}/{self._repo.name}/issues/([1-9][0-9]*).*",
+                            line,
+                        )
                     if not match:
                         continue
                     issue_number = int(match[1])
                     issue = self._repo.get_issue(issue_number)
                     if not issue:
                         if not self._pulls_with_invalid_issues[p.number]:
-                            self._pulls_with_invalid_issues[p.number] = [
-                                issue_number]
+                            self._pulls_with_invalid_issues[p.number] = [issue_number]
                         else:
-                            self._pulls_with_invalid_issues[p.number].append(
-                                issue_number)
+                            self._pulls_with_invalid_issues[p.number].append(issue_number)
                         logging.error(
-                            f'https://github.com/{self._repo.organization.login}/{self._repo.name}/pull/{p.number} references invalid issue number {issue_number}')
+                            f'https://github.com/{self._repo.organization.login}/{self._repo.name}/pull/{p.number} references invalid issue number {issue_number}'
+                        )
                         continue
                     issues_for_this_pr[issue_number] = issue
 
             # report prs missing issues later
             if len(issues_for_this_pr) == 0:
                 logging.error(
-                    f'https://github.com/{self._repo.organization.login}/{self._repo.name}/pull/{p.number} does not have an associated issue')
+                    f'https://github.com/{self._repo.organization.login}/{self._repo.name}/pull/{p.number} does not have an associated issue'
+                )
                 self._pulls_without_an_issue.append(p)
                 continue
 
@@ -283,6 +333,22 @@ class Backport(object):
         return self._pulls_with_invalid_issues
 
 
+BACKPORT_CHECK_MARKER = '<!-- backport-issue-check -->'
+
+
+def clear_bot_comments(pr):
+    """Delete any previous bot comments on pr that contain the marker."""
+    try:
+        for c in pr.get_issue_comments():
+            if BACKPORT_CHECK_MARKER in c.body:
+                try:
+                    c.delete()
+                except Exception as e:
+                    logging.warning(f'failed to delete comment {c.id} on PR #{pr.number}: {e}')
+    except Exception as e:
+        logging.warning(f'failed to list comments on PR #{pr.number}: {e}')
+
+
 def main():
     args = parse_args()
 
@@ -290,7 +356,7 @@ def main():
         return os.EX_DATAERR
 
     try:
-        gh = Github(args.token)
+        gh = Github(auth=Auth.Token(args.token))
     except Exception:
         logging.error('failed to authenticate with GitHub')
         return os.EX_DATAERR
@@ -305,8 +371,7 @@ def main():
     if args.includes:
         bp = Backport.by_included_prs(repo, args.base, set(args.includes))
     else:
-        bp = Backport.by_date_range(repo, args.base,
-                                    args.start, args.end, set(args.excludes))
+        bp = Backport.by_date_range(repo, args.base, args.start, args.end, set(args.excludes))
 
     if not bp:
         return os.EX_DATAERR
@@ -314,20 +379,50 @@ def main():
     pulls_with_invalid_issues = bp.get_pulls_with_invalid_issues()
     if pulls_with_invalid_issues:
         logging.error('The following PRs link to invalid issues:')
-        for (p, lst) in pulls_with_invalid_issues:
+        for p, lst in pulls_with_invalid_issues:
             logging.error(
-                f'\nhttps://github.com/{repo.organization.login}/{repo.name}/pull/{p.number}: {lst}')
+                f'\nhttps://github.com/{repo.organization.login}/{repo.name}/pull/{p.number}: {lst}'
+            )
         return os.EX_DATAERR
 
     pulls_without_issues = bp.get_pulls_without_issues()
     if pulls_without_issues:
+        if args.check:
+            comment = (
+                BACKPORT_CHECK_MARKER + '\n'
+                'This pull request to a release branch does not have an '
+                'associated GitHub issue.\n\n'
+                'Please update the pull request description to include a reference to '
+                'the issue being fixed, for example:\n\n'
+                '```\nFixes #<issue_number>\n```\n\n'
+                'For stable releases, all changes MUST have a reference to an issue or '
+                'a published advisory documenting:\n'
+                '- the issue being fixed\n'
+                '- its severity/impact\n'
+                '\nSee https://docs.zephyrproject.org/latest/project/release_process.html#issue-tracking-during-feature-freeze '
+                'for more details.'
+            )
+            for p in pulls_without_issues:
+                clear_bot_comments(p)
+                try:
+                    p.create_issue_comment(comment)
+                except Exception as e:
+                    logging.error(f'failed to post comment on PR #{p.number}: {e}')
         logging.error(
-            'Please ensure the body of each PR to a release branch contains "Fixes #1234"')
+            'Please ensure the body of each PR to a release branch contains "Fixes #1234"'
+        )
         logging.error('The following PRs are lacking associated issues:')
         for p in pulls_without_issues:
             logging.error(
-                f'https://github.com/{repo.organization.login}/{repo.name}/pull/{p.number}')
+                f'https://github.com/{repo.organization.login}/{repo.name}/pull/{p.number}'
+            )
         return os.EX_DATAERR
+
+    if args.check:
+        # clean up any previous failure comments now that the PR is valid
+        for p in bp.get_pulls():
+            clear_bot_comments(p)
+        return os.EX_OK
 
     if args.json:
         bp.print_json()

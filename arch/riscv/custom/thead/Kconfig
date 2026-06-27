@@ -1,21 +1,96 @@
 # Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
 # SPDX-License-Identifier: Apache-2.0
 
-config CPU_HAS_THEAD_CMO
+config RISCV_ISA_EXT_XTHEAD_BA
 	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),xtheadba)
 	help
-	  The Xuantie core supports XTHeadCmo extension.
+	  T-head address calculation extension
+
+config RISCV_ISA_EXT_XTHEAD_BB
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),xtheadbb)
+	help
+	  T-head basic bit-manipulation extension
+
+config RISCV_ISA_EXT_XTHEAD_BS
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),xtheadbs)
+	help
+	  T-head single-bit instructions extension
+
+config RISCV_ISA_EXT_XTHEAD_CMO
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),xtheadcmo)
+	help
+	  T-head cache management operations extension
+
+config RISCV_ISA_EXT_XTHEAD_CONDMOV
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),xtheadcondmov)
+	help
+	  T-head conditional move extension
+
+config RISCV_ISA_EXT_XTHEAD_FMEMIDX
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),xtheadfmemidx)
+	depends on RISCV_ISA_EXT_F
+	help
+	  T-head indexed memory operations for floating-point registers extension
+
+config RISCV_ISA_EXT_XTHEAD_FMV
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),xtheadfmv)
+	depends on RISCV_ISA_EXT_D
+	help
+	  T-head double floating-point high-bit data transmission extension
+
+config RISCV_ISA_EXT_XTHEAD_INT
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),xtheadint)
+	help
+	  T-head acceleration interruption extension
+
+config RISCV_ISA_EXT_XTHEAD_MAC
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),xtheadmac)
+	help
+	  T-head multiply-accumulate extension
+
+config RISCV_ISA_EXT_XTHEAD_MEMIDX
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),xtheadmemidx)
+	help
+	  T-head indexed memory operation extension
+
+config RISCV_ISA_EXT_XTHEAD_MEMPAIR
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),xtheadmempair)
+	help
+	  T-head two-GPR memory operation extension
+
+config RISCV_ISA_EXT_XTHEAD_SYNC
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),xtheadsync)
+	help
+	  T-head multi-core synchronization extension
+
+config RISCV_ISA_EXT_XTHEAD_VECTOR
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),xtheadvector)
+	help
+	  T-head vector extension
 
 config RISCV_CUSTOM_CSR_THEAD_CMO
 	bool
-	depends on CPU_HAS_THEAD_CMO
+	depends on RISCV_ISA_EXT_XTHEAD_CMO
 	default y if CACHE_MANAGEMENT
 	help
 	  This option enables the cache operation for XuanTie family of CPUs.
 
 config RISCV_CUSTOM_CSR_THEAD_CMO_E907
 	bool
-	depends on CPU_HAS_THEAD_CMO
+	depends on RISCV_ISA_EXT_XTHEAD_CMO
 	depends on DT_HAS_XUANTIE_E907_ENABLED
 	default y if CACHE_MANAGEMENT
 	help

@@ -224,7 +224,7 @@ int flash_stm32_ex_op_update_rdp(const struct device *dev, bool enable,
 		LOG_INF("RDP changed from 0x%02x to 0x%02x", current_level,
 			target_level);
 
-		flash_stm32_set_rdp_level(dev, target_level);
+		return flash_stm32_set_rdp_level(dev, target_level);
 	}
 	return 0;
 }
@@ -335,7 +335,11 @@ int flash_stm32_ex_op(const struct device *dev, uint16_t code,
 		defined(CONFIG_DT_HAS_ST_STM32F7_FLASH_CONTROLLER_ENABLED) || \
 		defined(CONFIG_DT_HAS_ST_STM32G0_FLASH_CONTROLLER_ENABLED) || \
 		defined(CONFIG_DT_HAS_ST_STM32G4_FLASH_CONTROLLER_ENABLED) || \
-		defined(CONFIG_DT_HAS_ST_STM32L4_FLASH_CONTROLLER_ENABLED))
+		defined(CONFIG_DT_HAS_ST_STM32L4_FLASH_CONTROLLER_ENABLED) || \
+		defined(CONFIG_DT_HAS_ST_STM32U3_FLASH_CONTROLLER_ENABLED) || \
+		(defined(CONFIG_DT_HAS_ST_STM32L5_FLASH_CONTROLLER_ENABLED) && \
+		 (defined(CONFIG_SOC_SERIES_STM32L5X) || \
+		  defined(CONFIG_SOC_SERIES_STM32U5X))))
 	case FLASH_STM32_EX_OP_OPTB_READ:
 		if (out == NULL) {
 			rv = -EINVAL;
@@ -350,7 +354,7 @@ int flash_stm32_ex_op(const struct device *dev, uint16_t code,
 		int rv2;
 
 		rv = flash_stm32_option_bytes_lock(dev, false);
-		if (rv > 0) {
+		if (rv != 0) {
 			break;
 		}
 
@@ -358,7 +362,7 @@ int flash_stm32_ex_op(const struct device *dev, uint16_t code,
 		/* returned later, we always re-lock */
 
 		rv = flash_stm32_option_bytes_lock(dev, true);
-		if (rv > 0) {
+		if (rv != 0) {
 			break;
 		}
 

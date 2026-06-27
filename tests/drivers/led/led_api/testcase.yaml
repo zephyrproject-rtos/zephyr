@@ -1,7 +1,12 @@
+common:
+  tags:
+    - drivers
+    - led
 tests:
+  drivers.led.api.fake:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
   drivers.led.api.i2c:
-    tags:
-      - drivers
-      - led
     depends_on: led
     filter: dt_alias_exists("led-controller-0")

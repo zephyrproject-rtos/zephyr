@@ -12,11 +12,11 @@
 
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 
 #include <zephyr/toolchain.h>
 #include <wait_q.h>
 #include <ksched.h>
+#include <scheduler.h>
 #include <zephyr/init.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <kernel_internal.h>
@@ -27,7 +27,8 @@ struct alloc_node {
 	void *data;
 };
 
-void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free)
+/* The queue must have its spinlock held before calling this function. */
+static void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free)
 {
 	void *ret;
 
@@ -78,12 +79,6 @@ static inline void z_vrfy_k_queue_init(struct k_queue *queue)
 #include <zephyr/syscalls/k_queue_init_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-static void prepare_thread_to_run(struct k_thread *thread, void *data)
-{
-	z_thread_return_value_set_with_data(thread, 0, data);
-	z_ready_thread(thread);
-}
-
 static inline bool handle_poll_events(struct k_queue *queue, uint32_t state)
 {
 #ifdef CONFIG_POLL
@@ -101,14 +96,10 @@ void z_impl_k_queue_cancel_wait(struct k_queue *queue)
 	SYS_PORT_TRACING_OBJ_FUNC(k_queue, cancel_wait, queue);
 
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
-	struct k_thread *first_pending_thread;
 	bool resched = false;
 
-	first_pending_thread = z_unpend_first_thread(&queue->wait_q);
-
-	if (first_pending_thread != NULL) {
+	if (z_sched_wake(&queue->wait_q, 0, NULL)) {
 		resched = true;
-		prepare_thread_to_run(first_pending_thread, NULL);
 	}
 
 	resched = handle_poll_events(queue, K_POLL_STATE_CANCELLED) || resched;
@@ -129,11 +120,14 @@ static inline void z_vrfy_k_queue_cancel_wait(struct k_queue *queue)
 #include <zephyr/syscalls/k_queue_cancel_wait_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+/*
+ * Common code for inserting a node into the queue.
+ * The queue's spinlock must be held prior to entry.
+ * However, that same spinlock will be unlocked before it returns.
+ */
 static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
-			    bool alloc, bool is_append)
+			    bool alloc, bool is_append, k_spinlock_key_t key)
 {
-	struct k_thread *first_pending_thread;
-	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 	int32_t result = 0;
 	bool resched = false;
 
@@ -142,12 +136,9 @@ static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 	if (is_append) {
 		prev = sys_sflist_peek_tail(&queue->data_q);
 	}
-	first_pending_thread = z_unpend_first_thread(&queue->wait_q);
 
-	if (unlikely(first_pending_thread != NULL)) {
+	if (z_sched_wake(&queue->wait_q, 0, data)) {
 		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_queue, queue_insert, queue, alloc, K_FOREVER);
-
-		prepare_thread_to_run(first_pending_thread, data);
 		resched = true;
 		goto out;
 	}
@@ -187,7 +178,8 @@ void k_queue_insert(struct k_queue *queue, void *prev, void *data)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, insert, queue);
 
-	(void)queue_insert(queue, prev, data, false, false);
+	(void)queue_insert(queue, prev, data, false, false,
+			   k_spin_lock(&queue->lock));
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, insert, queue);
 }
@@ -196,7 +188,8 @@ void k_queue_append(struct k_queue *queue, void *data)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, append, queue);
 
-	(void)queue_insert(queue, NULL, data, false, true);
+	(void)queue_insert(queue, NULL, data, false, true,
+			   k_spin_lock(&queue->lock));
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, append, queue);
 }
@@ -205,7 +198,8 @@ void k_queue_prepend(struct k_queue *queue, void *data)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, prepend, queue);
 
-	(void)queue_insert(queue, NULL, data, false, false);
+	(void)queue_insert(queue, NULL, data, false, false,
+			   k_spin_lock(&queue->lock));
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, prepend, queue);
 }
@@ -214,7 +208,8 @@ int32_t z_impl_k_queue_alloc_append(struct k_queue *queue, void *data)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, alloc_append, queue);
 
-	int32_t ret = queue_insert(queue, NULL, data, true, true);
+	int32_t ret = queue_insert(queue, NULL, data, true, true,
+				   k_spin_lock(&queue->lock));
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, alloc_append, queue, ret);
 
@@ -235,7 +230,8 @@ int32_t z_impl_k_queue_alloc_prepend(struct k_queue *queue, void *data)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, alloc_prepend, queue);
 
-	int32_t ret = queue_insert(queue, NULL, data, true, false);
+	int32_t ret = queue_insert(queue, NULL, data, true, false,
+				   k_spin_lock(&queue->lock));
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, alloc_prepend, queue, ret);
 
@@ -265,17 +261,10 @@ int k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
-	struct k_thread *thread = NULL;
 
-	if (head != NULL) {
-		thread = z_unpend_first_thread(&queue->wait_q);
-	}
-
-	while ((head != NULL) && (thread != NULL)) {
+	while ((head != NULL) && z_sched_wake(&queue->wait_q, 0, head)) {
 		resched = true;
-		prepare_thread_to_run(thread, head);
 		head = *(void **)head;
-		thread = z_unpend_first_thread(&queue->wait_q);
 	}
 
 	if (head != NULL) {
@@ -370,8 +359,10 @@ void *z_impl_k_queue_get(struct k_queue *queue, k_timeout_t timeout)
 bool k_queue_remove(struct k_queue *queue, void *data)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, remove, queue);
-
+	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 	bool ret = sys_sflist_find_and_remove(&queue->data_q, (sys_sfnode_t *)data);
+
+	k_spin_unlock(&queue->lock, key);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, remove, queue, ret);
 
@@ -381,18 +372,20 @@ bool k_queue_remove(struct k_queue *queue, void *data)
 bool k_queue_unique_append(struct k_queue *queue, void *data)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, unique_append, queue);
+	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 
 	sys_sfnode_t *test;
 
 	SYS_SFLIST_FOR_EACH_NODE(&queue->data_q, test) {
 		if (test == (sys_sfnode_t *) data) {
+			k_spin_unlock(&queue->lock, key);
 			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, unique_append, queue, false);
 
 			return false;
 		}
 	}
 
-	k_queue_append(queue, data);
+	(void)queue_insert(queue, NULL, data, false, true, key);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, unique_append, queue, true);
 
@@ -401,7 +394,10 @@ bool k_queue_unique_append(struct k_queue *queue, void *data)
 
 void *z_impl_k_queue_peek_head(struct k_queue *queue)
 {
+	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 	void *ret = z_queue_node_peek(sys_sflist_peek_head(&queue->data_q), false);
+
+	k_spin_unlock(&queue->lock, key);
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_queue, peek_head, queue, ret);
 
@@ -410,7 +406,10 @@ void *z_impl_k_queue_peek_head(struct k_queue *queue)
 
 void *z_impl_k_queue_peek_tail(struct k_queue *queue)
 {
+	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 	void *ret = z_queue_node_peek(sys_sflist_peek_tail(&queue->data_q), false);
+
+	k_spin_unlock(&queue->lock, key);
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_queue, peek_tail, queue, ret);
 

@@ -1817,7 +1817,7 @@ static int cmd_mcc_send_search_ioptest(const struct shell *sh, size_t argc,
 	/* Length is length of type, plus length of param w/o termination */
 	sci_1.len = sizeof(sci_1.type) + strlen(sci_1.param);
 
-	search.len = 0;
+	search.len = 0U;
 	memcpy(&search.search[search.len], &sci_1.len, sizeof(sci_1.len));
 	search.len += sizeof(sci_1.len);
 
@@ -1864,7 +1864,7 @@ static int cmd_mcc_test_send_search_iop_invalid_type(const struct shell *sh,
 	search.search[0] = 2;
 	search.search[1] = (char)14; /* Invalid type value */
 	search.search[2] = 't';  /* Anything */
-	search.len = 3;
+	search.len = 3U;
 
 	shell_print(sh, "Search string: ");
 	shell_hexdump(sh, (uint8_t *)&search.search, search.len);
@@ -1891,7 +1891,7 @@ static int cmd_mcc_test_send_search_invalid_sci_len(const struct shell *sh,
 
 	char offending_search[9] = {6, 1, 't', 'r', 'a', 'c', 'k', 0, 1 };
 
-	search.len = 9;
+	search.len = 9U;
 	memcpy(&search.search, offending_search, search.len);
 
 	shell_print(sh, "Search string: ");

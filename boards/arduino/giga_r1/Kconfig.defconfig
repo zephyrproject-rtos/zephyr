@@ -19,4 +19,12 @@ endchoice
 
 endif # BT
 
+if WIFI_AIROC
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 20480
+
+endif # WIFI_AIROC
+
 endif # BOARD_ARDUINO_GIGA_R1

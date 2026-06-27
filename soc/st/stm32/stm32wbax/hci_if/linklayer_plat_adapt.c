@@ -17,13 +17,7 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(linklayer_plat_adapt);
 
-#if defined(CONFIG_BT_STM32WBA)
-#define RADIO_NODE DT_NODELABEL(bt_hci_wba)
-#elif defined(CONFIG_IEEE802154_STM32WBA)
-#define RADIO_NODE DT_NODELABEL(ieee802154)
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(RADIO_NODE)
+#define RADIO_NODE DT_INST(0, st_stm32wba_radio)
 #define STM32WBA_RADIO_IRQ_NUM DT_IRQ_BY_NAME(RADIO_NODE, radio, irq)
 #define STM32WBA_RADIO_INTR_PRIO_HIGH DT_IRQ_BY_NAME(RADIO_NODE, radio, priority)
 #if DT_IRQ_HAS_NAME(RADIO_NODE, radio_sw_low)
@@ -31,7 +25,6 @@ LOG_MODULE_REGISTER(linklayer_plat_adapt);
 #define STM32WBA_RADIO_SW_LOW_INTR_PRIO DT_IRQ_BY_NAME(RADIO_NODE, radio_sw_low, priority)
 #else
 #error "Radio SW low interrupt is not defined in DTS"
-#endif
 #endif
 
 #define STM32WBA_RADIO_INTR_PRIO_HIGH_Z (STM32WBA_RADIO_INTR_PRIO_HIGH + _IRQ_PRIO_OFFSET)

@@ -1,0 +1,18 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MIMX9529_M7
+	select ARM
+	select CPU_CORTEX_M7
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ARM_MPU
+	select ARM_MPU
+	select SOC_EARLY_INIT_HOOK
+	select HAS_MCUX
+	select HAS_MCUX_CACHE
+	select HAS_PM
+	select PM_STATE_SET_IRQ_UNLOCKED

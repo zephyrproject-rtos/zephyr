@@ -39,6 +39,18 @@
 		};
 	};
 
+	rmii_default: rmii_default {
+		group1 {
+			pinmux = <RMII_CLK_GPIO0>,
+				 <RMII_TX_EN_GPIO21>,
+				 <RMII_TXD0_GPIO19>,
+				 <RMII_TXD1_GPIO22>,
+				 <RMII_CRS_DV_GPIO27>,
+				 <RMII_RXD0_GPIO25>,
+				 <RMII_RXD1_GPIO26>;
+		};
+	};
+
 	i2s0_default: i2s0_default {
 		group1 {
 			pinmux = <I2S0_O_WS_GPIO34>,

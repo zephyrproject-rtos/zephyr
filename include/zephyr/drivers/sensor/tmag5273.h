@@ -15,7 +15,7 @@
 /**
  * @brief Texas Instruments TMAG5273 Low-Power Linear 3D Hall-Effect Sensor
  * @defgroup tmag5273_interface TMAG5273
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_ti
  * @{
  */
 

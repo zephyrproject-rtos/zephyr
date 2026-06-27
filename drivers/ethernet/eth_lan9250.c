@@ -761,10 +761,8 @@ static void lan9250_thread(void *p1, void *p2, void *p3)
 			/* Read PHY interrupt source register */
 			lan9250_read_phy_reg(dev, LAN9250_PHY_INTERRUPT_SOURCE, &tmp);
 			if (tmp & LAN9250_PHY_INTERRUPT_SOURCE_LINK_UP) {
-				LOG_DBG("LINK UP");
 				net_eth_carrier_on(context->iface);
 			} else if (tmp & LAN9250_PHY_INTERRUPT_SOURCE_LINK_DOWN) {
-				LOG_DBG("LINK DOWN");
 				net_eth_carrier_off(context->iface);
 			}
 		}

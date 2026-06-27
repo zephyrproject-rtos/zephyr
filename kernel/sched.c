@@ -40,7 +40,8 @@ struct k_spinlock _sched_spinlock;
 __incoherent struct k_thread _thread_dummy;
 
 static ALWAYS_INLINE void update_cache(int preempt_ok);
-static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state);
+static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state,
+				      k_spinlock_key_t *key);
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
 
 /* Clear the halting bits (_THREAD_ABORTING and _THREAD_SUSPENDING) */
@@ -56,8 +57,13 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 {
 #ifdef CONFIG_SMP
 	if (z_is_thread_halting(_current)) {
+		/* NULL key: scheduler context, no retry possible. _current
+		 * cannot have an in-flight timeout (a running thread's
+		 * timeout already fired and its handler returned), so the
+		 * abort inside halt_thread won't see -EAGAIN.
+		 */
 		halt_thread(_current, z_is_thread_aborting(_current) ?
-				      _THREAD_DEAD : _THREAD_SUSPENDED);
+				      _THREAD_DEAD : _THREAD_SUSPENDED, NULL);
 	}
 #endif /* CONFIG_SMP */
 
@@ -263,7 +269,8 @@ static void thread_halt_spin(struct k_thread *thread, k_spinlock_key_t key)
 {
 	if (z_is_thread_halting(_current)) {
 		halt_thread(_current,
-			    z_is_thread_aborting(_current) ? _THREAD_DEAD : _THREAD_SUSPENDED);
+			    z_is_thread_aborting(_current) ? _THREAD_DEAD : _THREAD_SUSPENDED,
+			    &key);
 	}
 	k_spin_unlock(&_sched_spinlock, key);
 	while (z_is_thread_halting(thread)) {
@@ -315,8 +322,22 @@ void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 			add_to_waitq_locked(_current, wq);
 			z_swap(&_sched_spinlock, key);
 		}
+		/* The target's next_up self-halt path passed NULL to
+		 * halt_thread() and could not retry on -EAGAIN; an
+		 * in-flight handler on a third CPU may not have run yet
+		 * (it is blocked on _sched_spinlock and will only acquire
+		 * it after we drop it via the swap/spin above). Wait now,
+		 * outside any lock, before the caller may free the thread
+		 * storage. The handler, when it runs, sees _THREAD_DEAD /
+		 * _THREAD_SUSPENDED and either bails (killed check) or
+		 * no-ops in ready_thread() (z_is_thread_ready() rejects
+		 * suspended threads). After this loop returns, no further
+		 * dereference of thread->base will occur.
+		 */
+		while (z_try_abort_thread_timeout(thread) == -EAGAIN) {
+		}
 	} else {
-		halt_thread(thread, terminate ? _THREAD_DEAD : _THREAD_SUSPENDED);
+		halt_thread(thread, terminate ? _THREAD_DEAD : _THREAD_SUSPENDED, &key);
 		if ((thread == _current) && !arch_is_in_isr()) {
 			if (z_is_thread_essential(thread)) {
 				k_spin_unlock(&_sched_spinlock, key);
@@ -461,22 +482,21 @@ void z_sched_wake_thread_locked(struct k_thread *thread)
 /* Timeout handler for *_thread_timeout() APIs */
 void z_thread_timeout(struct _timeout *timeout)
 {
-	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
-
-	if (z_is_timeout_handler_canceled(timeout)) {
-		/*
-		 * The timeout handler was canceled by a thread on another
-		 * CPU or another ISR. Bail.
-		 */
-		k_spin_unlock(&_sched_spinlock, key);
-		return;
-	}
-
 	struct k_thread *thread = CONTAINER_OF(timeout,
 					       struct k_thread, base.timeout);
 
-	z_sched_wake_thread_locked(thread);
-	k_spin_unlock(&_sched_spinlock, key);
+	K_SPINLOCK(&_sched_spinlock) {
+		/* A concurrent waker (e.g. a sem give on another CPU) may
+		 * have unpended and readied the thread, after which the
+		 * thread could run and re-pend elsewhere -- possibly with no
+		 * timeout. Such a waker aborts this timeout, flagging it
+		 * superseded; bail so we don't wake the thread from its new
+		 * wait.
+		 */
+		if (!z_timeout_inflight_superseded(timeout)) {
+			z_sched_wake_thread_locked(thread);
+		}
+	}
 }
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
 
@@ -519,12 +539,16 @@ struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q)
 
 void z_unpend_thread(struct k_thread *thread)
 {
-	K_SPINLOCK(&_sched_spinlock) {
-		if (thread->base.pended_on != NULL) {
-			unpend_thread_no_timeout(thread);
-		}
-		z_abort_thread_timeout(thread);
+	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+
+	if (thread->base.pended_on != NULL) {
+		unpend_thread_no_timeout(thread);
 	}
+	while (z_try_abort_thread_timeout(thread) == -EAGAIN) {
+		k_spin_unlock(&_sched_spinlock, key);
+		key = k_spin_lock(&_sched_spinlock);
+	}
+	k_spin_unlock(&_sched_spinlock, key);
 }
 
 /* Priority set utility that does no rescheduling, it just changes the
@@ -702,7 +726,7 @@ void *z_get_next_switch_handle(void *interrupted)
 			 * confused when the "wrong" thread tries to
 			 * release the lock.
 			 */
-			z_spin_lock_set_owner(&_sched_spinlock);
+			z_spin_lock_transfer_owner(&_sched_spinlock);
 #endif /* CONFIG_SPIN_VALIDATE */
 
 			/* A queued (runnable) old/current thread
@@ -741,27 +765,23 @@ void *z_get_next_switch_handle(void *interrupted)
 }
 #endif /* CONFIG_USE_SWITCH */
 
-int z_unpend_all_locked(_wait_q_t *wait_q)
+int z_unpend_all(_wait_q_t *wait_q)
 {
 	int need_sched = 0;
 	struct k_thread *thread;
-
-	__ASSERT(z_spin_is_locked(&_sched_spinlock), "sched lock not held");
+	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 
 	for (thread = z_waitq_head(wait_q); thread != NULL; thread = z_waitq_head(wait_q)) {
 		unpend_thread_no_timeout(thread);
-		z_abort_thread_timeout(thread);
+		/* Abort the timeout and ready the thread unconditionally. If
+		 * the timeout handler is in flight on another CPU, the abort
+		 * flags it superseded and z_thread_timeout() bails when it
+		 * runs -- so it will NOT ready the thread, we must.
+		 */
+		(void)z_try_abort_thread_timeout(thread);
 		ready_thread(thread);
 		need_sched = 1;
 	}
-
-	return need_sched;
-}
-
-int z_unpend_all(_wait_q_t *wait_q)
-{
-	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
-	int need_sched = z_unpend_all_locked(wait_q);
 
 	k_spin_unlock(&_sched_spinlock, key);
 	return need_sched;
@@ -773,8 +793,11 @@ static inline void unpend_all(_wait_q_t *wait_q)
 
 	for (thread = z_waitq_head(wait_q); thread != NULL; thread = z_waitq_head(wait_q)) {
 		unpend_thread_no_timeout(thread);
-		z_abort_thread_timeout(thread);
 		arch_thread_return_value_set(thread, 0);
+		/* See z_unpend_all(): the in-flight handler bails on the
+		 * superseded mark, so we ready the thread unconditionally.
+		 */
+		(void)z_try_abort_thread_timeout(thread);
 		ready_thread(thread);
 	}
 }
@@ -791,7 +814,8 @@ extern void thread_abort_hook(struct k_thread *thread);
  * @param thread Identify the thread to halt
  * @param new_state New thread state (_THREAD_DEAD or _THREAD_SUSPENDED)
  */
-static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state)
+static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state,
+				      k_spinlock_key_t *key)
 {
 	bool dummify = false;
 
@@ -808,7 +832,29 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 			if (thread->base.pended_on != NULL) {
 				unpend_thread_no_timeout(thread);
 			}
-			z_abort_thread_timeout(thread);
+			/* Wait for any in-flight handler to complete before
+			 * we proceed: the caller may free this thread's
+			 * storage (dynamic threads), and an in-flight handler
+			 * would UAF when it eventually runs z_thread_timeout()
+			 * and dereferences thread->base. _THREAD_DEAD is
+			 * already set, so once the handler runs it bails via
+			 * z_sched_wake_thread_locked()'s killed check.
+			 *
+			 * NULL key is the next_up() self-halt path on a
+			 * running _current that has no linked timeout; there
+			 * is nothing to do here. That path is always reached
+			 * via z_thread_halt()'s IF branch, which spins on
+			 * z_try_abort_thread_timeout(thread) outside any lock
+			 * after the halt-queue wait completes, closing any
+			 * remaining in-flight window before the caller of
+			 * z_thread_halt() returns.
+			 */
+			if (key != NULL) {
+				while (z_try_abort_thread_timeout(thread) == -EAGAIN) {
+					k_spin_unlock(&_sched_spinlock, *key);
+					*key = k_spin_lock(&_sched_spinlock);
+				}
+			}
 			unpend_all(&thread->join_queue);
 
 			/* Edge case: aborting _current from within an
@@ -871,6 +917,17 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 		if (dummify && !IS_ENABLED(CONFIG_ARCH_POSIX)) {
 #ifdef CONFIG_USE_SWITCH
 			_current->switch_handle = (void *)1;
+#endif
+#ifdef CONFIG_SPIN_VALIDATE
+			/* On arches where exceptions run as ISRs (e.g. Xtensa),
+			 * the dying thread's lock tracking is never cleared via the
+			 * normal abort path.  Reset it here before _thread_dummy
+			 * takes over.  Sentinel-gated so genuine bugs still assert.
+			 */
+			if (thread->base.swap_data ==
+			    (void *)&z_spinlock_abort_sentinel) {
+				z_spin_validate_reset(true);
+			}
 #endif
 			z_dummy_thread_init(&_thread_dummy);
 

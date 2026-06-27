@@ -17,4 +17,7 @@ config COUNTER
 
 endif # PM
 
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x1e1f432d"
+
 endif # SOC_SERIES_STM32L1X

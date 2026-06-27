@@ -153,7 +153,7 @@
 			reg = <0x402d0000 0x400>, <0x40310000 0xd50>;
 			reg-names = "m_can", "message_ram";
 			clocks = <&rcc STM32_CLOCK(FDCAN, STM32_CLK)>;
-			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
+			bosch,mram-cfg = <0x0 28 8 6 0 0 3 3>;
 			status = "disabled";
 		};
 
@@ -162,7 +162,7 @@
 			reg = <0x402e0000 0x400>, <0x40310000 0x1aa0>;
 			reg-names = "m_can", "message_ram";
 			clocks = <&rcc STM32_CLOCK(FDCAN, STM32_CLK)>;
-			bosch,mram-cfg = <0xd50 28 8 3 3 0 3 3>;
+			bosch,mram-cfg = <0xd50 28 8 6 0 0 3 3>;
 			status = "disabled";
 		};
 

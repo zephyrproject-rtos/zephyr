@@ -40,23 +40,27 @@ properties:
     description: |
         Prescaler for PLLx
         input clock
-        Valid range: 1 - 63
+    min: 1
+    max: 63
 
   mul-n:
     type: int
     required: true
     description: |
         PLLx multiplication factor for VCO
-        Valid range: 16 - 2500
+    min: 16
+    max: 2500
 
   div-p1:
     type: int
     description: |
         PLLx DIVP1 division factor
-        Valid range: 1 - 7
+    min: 1
+    max: 7
 
   div-p2:
     type: int
     description: |
         PLLx DIVP2 division factor
-        Valid range: 1 - 7
+    min: 1
+    max: 7

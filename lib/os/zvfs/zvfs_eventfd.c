@@ -27,8 +27,8 @@ struct zvfs_eventfd {
 static ssize_t zvfs_eventfd_rw_op(void *obj, void *buf, size_t sz,
 			     int (*op)(struct zvfs_eventfd *efd, zvfs_eventfd_t *value));
 
-SYS_BITARRAY_DEFINE_STATIC(efds_bitarray, CONFIG_ZVFS_EVENTFD_MAX);
-static struct zvfs_eventfd efds[CONFIG_ZVFS_EVENTFD_MAX];
+SYS_BITARRAY_DEFINE_STATIC(efds_bitarray, ZVFS_EVENTFD_SIZE);
+static struct zvfs_eventfd efds[ZVFS_EVENTFD_SIZE];
 static const struct fd_op_vtable zvfs_eventfd_fd_vtable;
 
 static inline bool zvfs_eventfd_is_in_use(struct zvfs_eventfd *efd)

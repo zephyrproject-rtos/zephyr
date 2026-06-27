@@ -79,3 +79,9 @@ set(ai_m62_12f_DEPRECATED
 set(ai_wb2_12f_DEPRECATED
     ai_wb2_12f_kit
 )
+set(bl54l15u_dvk/nrf54l15/cpuapp_DEPRECATED
+    bl54l15_dvk/nrf54l15/cpuapp
+)
+set(bl54l15u_dvk/nrf54l15/cpuflpr_DEPRECATED
+    bl54l15_dvk/nrf54l15/cpuflpr
+)

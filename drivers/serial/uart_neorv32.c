@@ -427,6 +427,7 @@ static int neorv32_uart_pm_action(const struct device *dev,
 	struct neorv32_uart_data *data = dev->data;
 	k_spinlock_key_t key;
 	uint32_t ctrl;
+	int rv = 0;
 
 	key = k_spin_lock(&data->lock);
 	ctrl = neorv32_uart_read_ctrl(dev);
@@ -439,13 +440,15 @@ static int neorv32_uart_pm_action(const struct device *dev,
 		ctrl |= NEORV32_UART_CTRL_EN;
 		break;
 	default:
-		return -ENOTSUP;
+		rv = -ENOTSUP;
 	}
 
-	neorv32_uart_write_ctrl(dev, ctrl);
+	if (rv != -ENOTSUP) {
+		neorv32_uart_write_ctrl(dev, ctrl);
+	}
 	k_spin_unlock(&data->lock, key);
 
-	return 0;
+	return rv;
 }
 #endif /* CONFIG_PM_DEVICE */
 

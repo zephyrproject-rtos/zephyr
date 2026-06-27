@@ -93,11 +93,17 @@ static int mtx_timedlock_fn(void *arg)
 {
 	struct timespec time_point;
 	mtx_t *mtx = (mtx_t *)arg;
+	int ret;
 
 	zassume_ok(sys_clock_gettime(SYS_CLOCK_MONOTONIC, &time_point));
 	timespec_add_ms(&time_point, TIMEDLOCK_TIMEOUT_MS);
 
-	return mtx_timedlock(mtx, &time_point);
+	ret = mtx_timedlock(mtx, &time_point);
+	if (ret == thrd_success) {
+		(void)mtx_unlock(mtx);
+	}
+
+	return ret;
 }
 
 ZTEST(libc_mtx, test_mtx_timedlock)

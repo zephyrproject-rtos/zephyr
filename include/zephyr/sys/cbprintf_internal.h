@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Internal helpers backing the cbprintf() implementation.
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_CBPRINTF_INTERNAL_H_
 #define ZEPHYR_INCLUDE_SYS_CBPRINTF_INTERNAL_H_
 
@@ -15,6 +20,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/arch/cpu.h>
+
+/** @cond INTERNAL_HIDDEN */
 
 /*
  * Special alignment cases
@@ -53,6 +60,8 @@
 #ifndef VA_STACK_ALIGN
 #define VA_STACK_ALIGN(type)	MAX(VA_STACK_MIN_ALIGN, __alignof__(type))
 #endif
+
+/** @endcond */
 
 static inline void z_cbprintf_wcpy(int *dst, int *src, size_t len)
 {

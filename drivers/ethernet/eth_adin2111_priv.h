@@ -263,4 +263,8 @@ struct adin2111_port_config {
 	const uint16_t phy_addr;
 };
 
+int eth_adin2111_reg_write(const struct device *dev, const uint16_t reg, uint32_t val);
+
+int eth_adin2111_reg_read(const struct device *dev, const uint16_t reg, uint32_t *val);
+
 #endif /* ETH_ADIN2111_PRIV_H__ */

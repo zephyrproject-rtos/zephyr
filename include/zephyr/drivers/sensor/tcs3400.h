@@ -16,7 +16,7 @@
 /**
  * @brief AMS TCS3400 RGBC sensor
  * @defgroup tcs3400_interface TCS3400
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_ams
  * @{
  */
 

@@ -16,7 +16,7 @@
 /**
  * @brief Angst+Pfister FCX-MLDX5 O<sub>2</sub> sensor
  * @defgroup fcx_mldx5_interface FCX-MLDX5
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_ap
  * @{
  */
 

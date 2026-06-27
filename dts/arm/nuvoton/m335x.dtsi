@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/reset/numaker_m335x_reset.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	chosen {
@@ -272,7 +273,7 @@
 			clocks = <&pcc NUMAKER_CANFD0_MODULE
 				  NUMAKER_CLK_CLKSEL0_CANFD0SEL_HCLK
 				  NUMAKER_CLK_CLKDIV1_CANFD0(1)>;
-			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
+			bosch,mram-cfg = <0x0 12 10 6 0 3 3 3>;
 			status = "disabled";
 		};
 
@@ -286,7 +287,7 @@
 			clocks = <&pcc NUMAKER_CANFD1_MODULE
 				  NUMAKER_CLK_CLKSEL0_CANFD1SEL_HCLK
 				  NUMAKER_CLK_CLKDIV1_CANFD1(1)>;
-			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
+			bosch,mram-cfg = <0x0 12 10 6 0 3 3 3>;
 			status = "disabled";
 		};
 
@@ -423,6 +424,32 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+		};
+
+		eadc0: eadc@40043000 {
+			compatible = "nuvoton,numaker-adc";
+			reg = <0x40043000 0x1000>;
+			interrupts = <42 0>;
+			resets = <&rst NUMAKER_EADC0_RST>;
+			clocks = <&pcc NUMAKER_EADC0_MODULE
+				  NUMAKER_CLK_CLKSEL0_EADC0SEL_HCLK
+				  NUMAKER_CLK_CLKDIV0_EADC0(12)>;
+			channels = <19>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		eadc1: eadc@4004b000 {
+			compatible = "nuvoton,numaker-adc";
+			reg = <0x4004b000 0x1000>;
+			interrupts = <104 0>;
+			resets = <&rst NUMAKER_EADC1_RST>;
+			clocks = <&pcc NUMAKER_EADC1_MODULE
+				  NUMAKER_CLK_CLKSEL0_EADC1SEL_HCLK
+				  NUMAKER_CLK_CLKDIV2_EADC1(12)>;
+			channels = <19>;
+			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 	};
 };

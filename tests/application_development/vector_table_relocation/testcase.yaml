@@ -19,11 +19,21 @@ tests:
     # As such, the vector table can't be relocated to CCM.
     filter: CONFIG_CPU_CORTEX_M_HAS_VTOR and dt_chosen_enabled("zephyr,dtcm")
             and not CONFIG_SOC_SERIES_STM32F4X
+    # Exclude RAM-target boards where DTCM aliases SRAM: .sram_vt and .data
+    # then overlap due to independent linker counters at the same address.
+    platform_exclude:
+      - frdm_imxrt1186/mimxrt1186/cm7
+      - mimxrt1180_evk/mimxrt1189/cm7
     extra_configs:
       - CONFIG_ARM_VECTOR_TABLE_DTCM=y
 
   application_development.vector_table_relocation.itcm:
     arch_allow: arm
     filter: CONFIG_CPU_CORTEX_M_HAS_VTOR and dt_chosen_enabled("zephyr,itcm")
+    # Exclude RAM-target boards where ITCM aliases flash: .sram_vt and
+    # .rom_start then overlap due to independent linker counters.
+    platform_exclude:
+      - frdm_imxrt1186/mimxrt1186/cm7
+      - mimxrt1180_evk/mimxrt1189/cm7
     extra_configs:
       - CONFIG_ARM_VECTOR_TABLE_ITCM=y

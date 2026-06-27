@@ -414,6 +414,7 @@ struct ifx_autanalog_child {
 
 struct ifx_autanalog_mfd_data {
 	struct ifx_autanalog_child children[IFX_AUTANALOG_PERIPH_COUNT];
+	struct ifx_autanalog_child fifo_child;
 	uint32_t interrupt_mask;
 };
 
@@ -441,6 +442,15 @@ void ifx_autanalog_set_irq_handler(const struct device *dev, const struct device
 	/* Enable the interrupt mask for this peripheral */
 	data->interrupt_mask |= ifx_autanalog_intr_masks[periph];
 	Cy_AutAnalog_SetInterruptMask(data->interrupt_mask);
+}
+
+void ifx_autanalog_set_fifo_irq_handler(const struct device *dev, const struct device *child_dev,
+					ifx_autanalog_child_isr_t handler)
+{
+	struct ifx_autanalog_mfd_data *data = dev->data;
+
+	data->fifo_child.dev = child_dev;
+	data->fifo_child.isr = handler;
 }
 
 int ifx_autanalog_start_autonomous_control(const struct device *dev)
@@ -481,6 +491,21 @@ static void autanalog_mfd_isr(const struct device *dev)
 	}
 
 	Cy_AutAnalog_ClearInterrupt(int_source);
+}
+
+/**
+ * @brief FIFO ISR for the AutAnalog subsystem
+ *
+ * The FIFO has a dedicated interrupt line. This ISR dispatches to the
+ * registered FIFO handler (typically the SAR ADC driver).
+ */
+static void autanalog_mfd_fifo_isr(const struct device *dev)
+{
+	struct ifx_autanalog_mfd_data *data = dev->data;
+
+	if (data->fifo_child.isr != NULL) {
+		data->fifo_child.isr(data->fifo_child.dev);
+	}
 }
 
 /**
@@ -598,9 +623,16 @@ int ifx_autanalog_init(void)
 	static void ifx_autanalog_mfd_config_func_##n(const struct device *dev)                \
 	{                                                                                      \
 		ARG_UNUSED(dev);                                                               \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), autanalog_mfd_isr,      \
-			    DEVICE_DT_INST_GET(n), 0);                                         \
-		irq_enable(DT_INST_IRQN(n));                                                   \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, autanalog, irq),                             \
+			    DT_INST_IRQ_BY_NAME(n, autanalog, priority),                        \
+			    autanalog_mfd_isr, DEVICE_DT_INST_GET(n), 0);                       \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, autanalog, irq));                           \
+		IF_ENABLED(DT_INST_IRQ_HAS_NAME(n, autanalog_fifo), (                       \
+			IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, autanalog_fifo, irq),               \
+				    DT_INST_IRQ_BY_NAME(n, autanalog_fifo, priority),           \
+				    autanalog_mfd_fifo_isr, DEVICE_DT_INST_GET(n), 0);          \
+			irq_enable(DT_INST_IRQ_BY_NAME(n, autanalog_fifo, irq));               \
+		))                                                                      \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_AUTANALOG_MFD_INIT)

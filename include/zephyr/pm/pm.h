@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Power Management API.
+ * @ingroup subsys_pm
+ */
+
 #ifndef ZEPHYR_INCLUDE_PM_PM_H_
 #define ZEPHYR_INCLUDE_PM_PM_H_
 
@@ -117,8 +123,7 @@ void pm_notifier_register(struct pm_notifier *notifier);
  *
  * @param notifier pm_notifier object to be unregistered.
  *
- * @return 0 if the notifier was successfully removed, a negative value
- * otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 int pm_notifier_unregister(struct pm_notifier *notifier);
 
@@ -129,7 +134,8 @@ int pm_notifier_unregister(struct pm_notifier *notifier);
  * SoC.
  *
  * @param cpu CPU index.
- * @return next pm_state_info that will be used
+ *
+ * @return Next pm_state_info that will be used.
  */
 const struct pm_state_info *pm_state_next_get(uint8_t cpu);
 
@@ -168,11 +174,18 @@ void pm_system_resume(void);
  *
  * This function implements the SoC specific details necessary
  * to put the processor into available power states. Implementations that select
- * CONFIG_PM_STATE_SET_IRQ_LOCKED must not unmask interrupts or otherwise
- * dispatch pending wake-source ISRs from this hook. Architecture helpers may
- * adjust interrupt state immediately around the low-power instruction, but the
- * kernel idle path restores the original interrupt state after PM resume
- * housekeeping is complete.
+ * CONFIG_PM_STATE_SET_IRQ_UNLOCKED may still follow the legacy behavior of
+ * unmasking interrupts from this hook. Other implementations must not unmask
+ * interrupts or otherwise dispatch pending wake-source ISRs from this hook.
+ * Architecture helpers may adjust interrupt state immediately around the
+ * low-power instruction, but the kernel idle path restores the original
+ * interrupt state after PM resume housekeeping is complete.
+ *
+ * @note When system PM keeps interrupts locked across resume, the locked-resume
+ *       ordering guarantee covers only interrupts that arch_irq_lock() can mask.
+ *       A zero-latency interrupt (IRQ_ZERO_LATENCY) is outside this ordering and
+ *       must be PM-wake-safe, or its interrupt source must be masked or disabled
+ *       while the system state does not allow the ISR to execute.
  *
  * @param state Power state.
  * @param substate_id Power substate id.
@@ -185,11 +198,17 @@ void pm_state_set(enum pm_state state, uint8_t substate_id);
  * This function is a place holder to do any operations that may be needed after
  * a sleep state exits. It is called after any system-managed devices have been
  * resumed and while interrupts are still locked, before PM exit notifications
- * and system clock idle-exit accounting have completed. Implementations must
- * use this hook for hardware resume operations only. They must not unmask
- * interrupts or otherwise dispatch pending wake-source ISRs from this hook; the
- * kernel idle path restores the original interrupt state after PM resume
- * housekeeping is complete.
+ * and system clock idle-exit accounting have completed. Implementations that do
+ * not select CONFIG_PM_STATE_SET_IRQ_UNLOCKED must use this hook for hardware
+ * resume operations only. They must not unmask interrupts or otherwise dispatch
+ * pending wake-source ISRs from this hook; the kernel idle path restores the
+ * original interrupt state after PM resume housekeeping is complete.
+ *
+ * @note As with @ref pm_state_set, when system PM keeps interrupts locked
+ *       across resume, this ordering covers only interrupts that
+ *       arch_irq_lock() can mask. A zero-latency interrupt (IRQ_ZERO_LATENCY)
+ *       may run during the resume window before this hook completes and must be
+ *       PM-wake-safe (see @ref pm_state_set).
  *
  * @param state Power state.
  * @param substate_id Power substate id.
@@ -200,7 +219,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id);
  * @}
  */
 
-#else  /* CONFIG_PM */
+#else /* CONFIG_PM */
 
 static inline void pm_notifier_register(struct pm_notifier *notifier)
 {

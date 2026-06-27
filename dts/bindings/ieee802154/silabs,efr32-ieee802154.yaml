@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Silicon Labs EFR32 IEEE 802.15.4 radio
+
+compatible: "silabs,efr32-ieee802154"
+
+include: base.yaml
+
+properties:
+  hfxo:
+    type: phandle
+    description: |
+      Optional phandle to the HFXO (high-frequency crystal oscillator) node.
+      The driver reads the referenced node's "precision" property (ppm) and
+      always includes it in get_sch_acc, because the radio's awake-time
+      timing reference (RAIL/protimer) is derived from the HFXO.
+
+      When omitted, get_sch_acc uses a 250 ppm fallback for the HFXO term.
+
+      Boards typically set this in the same dtsi where they configure
+      &hfxo, e.g. hfxo = <&hfxo>;.
+
+  sleep-clock:
+    type: phandle
+    description: |
+      Optional phandle to the low-frequency oscillator that keeps time
+      while the SoC is sleeping (typically &lfxo). The referenced node
+      must have a "precision" property (ppm). When
+      CONFIG_OPENTHREAD_MTD_SED is enabled, the driver adds this value
+      to the scheduling accuracy to account for sleep-clock drift.
+
+      When omitted, 0 ppm is assumed for the sleep-clock term.

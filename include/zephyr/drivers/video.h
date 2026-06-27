@@ -337,7 +337,7 @@ typedef int (*video_api_flush_t)(const struct device *dev, bool cancel);
  * @param enable If true, start streaming, otherwise stop streaming.
  * @param type The type of the buffers stream to start or stop.
  *
- * @retval 0 on success, otherwise a negative errno code.
+ * @return 0 on success, negative errno value on failure.
  */
 typedef int (*video_api_set_stream_t)(const struct device *dev, bool enable,
 				      enum video_buf_type type);
@@ -458,9 +458,9 @@ __subsystem struct video_driver_api {
  * @param dev Pointer to the device structure for the driver instance.
  * @param fmt Pointer to a video format struct.
  *
- * @retval 0 Is successful.
- * @retval -EINVAL If parameters are invalid.
- * @retval -ENOTSUP If format is not supported.
+ * @retval 0 on success.
+ * @retval -EINVAL Parameters are invalid.
+ * @retval -ENOTSUP Format is not supported.
  * @retval -EIO General input / output error.
  */
 static inline int video_set_format(const struct device *dev, struct video_format *fmt)
@@ -516,9 +516,9 @@ static inline int video_get_format(const struct device *dev, struct video_format
  * @param dev Pointer to the device structure for the driver instance.
  * @param frmival Pointer to a video frame interval struct.
  *
- * @retval 0 If successful.
- * @retval -ENOSYS If API is not implemented.
- * @retval -EINVAL If parameters are invalid.
+ * @retval 0 on success.
+ * @retval -ENOSYS API is not implemented.
+ * @retval -EINVAL Parameters are invalid.
  * @retval -EIO General input / output error.
  */
 static inline int video_set_frmival(const struct device *dev, struct video_frmival *frmival)
@@ -549,9 +549,9 @@ static inline int video_set_frmival(const struct device *dev, struct video_frmiv
  * @param dev Pointer to the device structure for the driver instance.
  * @param frmival Pointer to a video frame interval struct.
  *
- * @retval 0 If successful.
- * @retval -ENOSYS If API is not implemented.
- * @retval -EINVAL If parameters are invalid.
+ * @retval 0 on success.
+ * @retval -ENOSYS API is not implemented.
+ * @retval -EINVAL Parameters are invalid.
  * @retval -EIO General input / output error.
  */
 static inline int video_get_frmival(const struct device *dev, struct video_frmival *frmival)
@@ -582,9 +582,9 @@ static inline int video_get_frmival(const struct device *dev, struct video_frmiv
  * @param dev Pointer to the device structure for the driver instance.
  * @param fie Pointer to a video frame interval enumeration struct.
  *
- * @retval 0 If successful.
- * @retval -ENOSYS If API is not implemented.
- * @retval -EINVAL If parameters are invalid.
+ * @retval 0 on success.
+ * @retval -ENOSYS API is not implemented.
+ * @retval -EINVAL Parameters are invalid.
  * @retval -EIO General input / output error.
  */
 static inline int video_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
@@ -612,8 +612,8 @@ static inline int video_enum_frmival(const struct device *dev, struct video_frmi
  * @param dev Pointer to the device structure for the driver instance.
  * @param buf Pointer to the video buffer.
  *
- * @retval 0 Is successful.
- * @retval -EINVAL If parameters are invalid.
+ * @retval 0 on success.
+ * @retval -EINVAL Parameters are invalid.
  * @retval -EIO General input / output error.
  */
 int video_enqueue(const struct device *dev, struct video_buffer *buf);
@@ -628,8 +628,8 @@ int video_enqueue(const struct device *dev, struct video_buffer *buf);
  * @param buf Pointer a video buffer pointer.
  * @param timeout Timeout
  *
- * @retval 0 Is successful.
- * @retval -EINVAL If parameters are invalid.
+ * @retval 0 on success.
+ * @retval -EINVAL Parameters are invalid.
  * @retval -EIO General input / output error.
  */
 static inline int video_dequeue(const struct device *dev, struct video_buffer **buf,
@@ -660,7 +660,7 @@ static inline int video_dequeue(const struct device *dev, struct video_buffer **
  * @param cancel If true, cancel buffer processing instead of waiting for
  *        completion.
  *
- * @retval 0 Is successful, -ERRNO code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 static inline int video_flush(const struct device *dev, bool cancel)
 {
@@ -690,7 +690,7 @@ static inline int video_flush(const struct device *dev, bool cancel)
  * @param dev Pointer to the device structure.
  * @param type The type of the buffers stream to start.
  *
- * @retval 0 Successful.
+ * @retval 0 on success.
  * @retval -EINVAL Parameters are invalid.
  * @retval -EIO General input / output error.
  */
@@ -719,7 +719,7 @@ static inline int video_stream_start(const struct device *dev, enum video_buf_ty
  * @param dev Pointer to the device structure.
  * @param type The type of the buffers stream to stop.
  *
- * @retval 0 Successful.
+ * @retval 0 on success.
  * @retval -EINVAL Parameters are invalid.
  * @retval -EIO General input / output error.
  */
@@ -749,7 +749,7 @@ static inline int video_stream_stop(const struct device *dev, enum video_buf_typ
  * @param dev Pointer to the device structure for the driver instance.
  * @param caps Pointer to the video_caps struct to fill.
  *
- * @retval 0 Is successful, -ERRNO code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 static inline int video_get_caps(const struct device *dev, struct video_caps *caps)
 {
@@ -796,7 +796,7 @@ static inline int video_get_caps(const struct device *dev, struct video_caps *ca
  * @param type The @ref video_buf_type of the resulting transformed cap.
  * @param ind Index of the resulting transformed cap.
  *
- * @retval 0 Success.
+ * @retval 0 on success.
  * @retval -ENOSYS API is not implemented.
  * @retval -EINVAL Parameters are invalid.
  * @retval -ENOTSUP The transformation is not supported.
@@ -831,9 +831,9 @@ static inline int video_transform_cap(const struct device *const dev,
  * @param dev Pointer to the device structure for the driver instance.
  * @param control Pointer to the video control struct.
  *
- * @retval 0 Is successful.
- * @retval -EINVAL If parameters are invalid.
- * @retval -ENOTSUP If format is not supported.
+ * @retval 0 on success.
+ * @retval -EINVAL Parameters are invalid.
+ * @retval -ENOTSUP Format is not supported.
  * @retval -EIO General input / output error.
  */
 int video_set_ctrl(const struct device *dev, struct video_control *control);
@@ -847,9 +847,9 @@ int video_set_ctrl(const struct device *dev, struct video_control *control);
  * @param dev Pointer to the device structure.
  * @param control Pointer to the video control struct.
  *
- * @retval 0 Is successful.
- * @retval -EINVAL If parameters are invalid.
- * @retval -ENOTSUP If format is not supported.
+ * @retval 0 on success.
+ * @retval -EINVAL Parameters are invalid.
+ * @retval -ENOTSUP Format is not supported.
  * @retval -EIO General input / output error.
  */
 int video_get_ctrl(const struct device *dev, struct video_control *control);
@@ -870,9 +870,9 @@ struct video_ctrl_query;
  *
  * @param cq Pointer to the control query struct.
  *
- * @retval 0 If successful.
- * @retval -EINVAL If the control id is invalid.
- * @retval -ENOTSUP If the control id is not supported.
+ * @retval 0 on success.
+ * @retval -EINVAL Control id is invalid.
+ * @retval -ENOTSUP Control id is not supported.
  */
 int video_query_ctrl(struct video_ctrl_query *cq);
 
@@ -881,7 +881,7 @@ int video_query_ctrl(struct video_ctrl_query *cq);
  *
  * Print all the information of a control including its name, type, flag, range,
  * menu (if any) and current value, i.e. by invoking the video_get_ctrl(), in a
- * human readble format.
+ * human readable format.
  *
  * @param cq Pointer to the control query struct.
  */
@@ -897,7 +897,7 @@ void video_print_ctrl(const struct video_ctrl_query *const cq);
  * @param dev Pointer to the device structure for the driver instance.
  * @param sig Pointer to k_poll_signal
  *
- * @retval 0 Is successful, -ERRNO code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 static inline int video_set_signal(const struct device *dev, struct k_poll_signal *sig)
 {
@@ -929,9 +929,9 @@ static inline int video_set_signal(const struct device *dev, struct k_poll_signa
  * @param dev Pointer to the device structure for the driver instance.
  * @param sel Pointer to a video selection structure
  *
- * @retval 0 Is successful.
- * @retval -EINVAL If parameters are invalid.
- * @retval -ENOTSUP If format is not supported.
+ * @retval 0 on success.
+ * @retval -EINVAL Parameters are invalid.
+ * @retval -ENOTSUP Format is not supported.
  * @retval -EIO General input / output error.
  */
 static inline int video_set_selection(const struct device *dev, struct video_selection *sel)
@@ -962,9 +962,9 @@ static inline int video_set_selection(const struct device *dev, struct video_sel
  * @param dev Pointer to the device structure for the driver instance.
  * @param sel Pointer to a video selection structure, @c type and @c target set by the caller
  *
- * @retval 0 Is successful.
- * @retval -EINVAL If parameters are invalid.
- * @retval -ENOTSUP If format is not supported.
+ * @retval 0 on success.
+ * @retval -EINVAL Parameters are invalid.
+ * @retval -ENOTSUP Format is not supported.
  * @retval -EIO General input / output error.
  */
 static inline int video_get_selection(const struct device *dev, struct video_selection *sel)
@@ -1009,7 +1009,7 @@ struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout);
  *
  * @param buf Pointer to the video buffer to release.
  *
- * @retval 0 on success or a negative errno on failure
+ * @return 0 on success, negative errno value on failure.
  */
 int video_buffer_release(struct video_buffer *buf);
 
@@ -1101,7 +1101,7 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
  * compressed frame.
  *
  * @param fmt Pointer to the video format structure
- * @return 0 on success, otherwise a negative errno code
+ * @return 0 on success, negative errno value on failure.
  */
 int video_estimate_fmt_size(struct video_format *fmt);
 
@@ -1119,9 +1119,9 @@ int video_estimate_fmt_size(struct video_format *fmt);
  * @param dev Pointer to the video device struct to set format
  * @param fmt Pointer to a video format struct.
  *
- * @retval 0 Is successful.
- * @retval -EINVAL If parameters are invalid.
- * @retval -ENOTSUP If format is not supported.
+ * @retval 0 on success.
+ * @retval -EINVAL Parameters are invalid.
+ * @retval -ENOTSUP Format is not supported.
  * @retval -EIO General input / output error.
  */
 int video_set_compose_format(const struct device *dev, struct video_format *fmt);
@@ -1138,7 +1138,7 @@ int video_set_compose_format(const struct device *dev, struct video_format *fmt)
  * @param sink_type	Video buffer type on the sink device
  * @param timeout	Timeout to be applied on dequeue
  *
- * @return 0 on success, otherwise a negative errno code
+ * @return 0 on success, negative errno value on failure.
  */
 int video_transfer_buffer(const struct device *src, const struct device *sink,
 			  enum video_buf_type src_type, enum video_buf_type sink_type,
@@ -2026,7 +2026,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 	X(VIDEO_PIX_FMT_NV42, __VA_ARGS__)
 
 /**
- * Chroma (U/V) are subsampled horizontaly and vertically
+ * Chroma (U/V) are subsampled horizontally and vertically
  *
  * @code{.unparsed}
  * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
@@ -2050,7 +2050,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_NV12 VIDEO_FOURCC('N', 'V', '1', '2')
 
 /**
- * Chroma (U/V) are subsampled horizontaly and vertically
+ * Chroma (U/V) are subsampled horizontally and vertically
  *
  * @code{.unparsed}
  * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
@@ -2074,7 +2074,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_NV21 VIDEO_FOURCC('N', 'V', '2', '1')
 
 /**
- * Chroma (U/V) are subsampled horizontaly
+ * Chroma (U/V) are subsampled horizontally
  *
  * @code{.unparsed}
  * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
@@ -2100,7 +2100,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_NV16 VIDEO_FOURCC('N', 'V', '1', '6')
 
 /**
- * Chroma (U/V) are subsampled horizontaly
+ * Chroma (U/V) are subsampled horizontally
  *
  * @code{.unparsed}
  * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
@@ -2189,7 +2189,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 	X(VIDEO_PIX_FMT_YVU420, __VA_ARGS__)
 
 /**
- * Chroma (U/V) are subsampled horizontaly and vertically
+ * Chroma (U/V) are subsampled horizontally and vertically
  *
  * @code{.unparsed}
  * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
@@ -2218,7 +2218,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_YUV420 VIDEO_FOURCC('Y', 'U', '1', '2')
 
 /**
- * Chroma (U/V) are subsampled horizontaly and vertically
+ * Chroma (U/V) are subsampled horizontally and vertically
  *
  * @code{.unparsed}
  * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
@@ -2374,8 +2374,8 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
  *
  * @param pixfmt FourCC pixel format value (@ref video_pixel_formats).
  *
- * @retval 0 if the format is unhandled or if it is variable number of bits
- * @retval >0 bit size of one pixel for this format
+ * @retval 0 The format is unhandled or has a variable number of bits.
+ * @return Bit size of one pixel for this format.
  */
 static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 {

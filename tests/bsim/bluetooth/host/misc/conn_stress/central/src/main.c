@@ -292,7 +292,7 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 
 		err = bt_gatt_subscribe(conn, &conn_info_ref->subscribe_params);
 		if (err == -ENOMEM || err == -ENOTCONN || err == -EALREADY) {
-			LOG_DBG("Subcription failed (err %d)", err);
+			LOG_DBG("Subscription failed (err %d)", err);
 			atomic_set_bit(conn_info_ref->flags, CONN_INFO_SUBSCRIPTION_FAILED);
 			goto retry;
 		}
@@ -561,13 +561,13 @@ static void subscribe_to_service(struct bt_conn *conn, void *data)
 		return;
 	}
 
-	/* If subcription attempt failed before (due to most likely lack of TX buffers),
+	/* If subscription attempt failed before (due to most likely lack of TX buffers),
 	 *  make a new attempt here.
 	 */
 	if (atomic_test_bit(conn_info_ref->flags, CONN_INFO_SUBSCRIPTION_FAILED)) {
 		err = bt_gatt_subscribe(conn, &conn_info_ref->subscribe_params);
 		if (err != -ENOMEM) {
-			__ASSERT(!err, "Subcription failed");
+			__ASSERT(!err, "Subscription failed");
 		} else {
 			return;
 		}

@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  timeout: 600
+  filter: CONFIG_MP_MAX_NUM_CPUS > 1
+  tags:
+    - benchmark
+    - kernel
+    - smp
+  integration_platforms:
+    - qemu_cortex_a53/qemu_cortex_a53/smp
+    - qemu_riscv64/qemu_virt_riscv64/smp
+
+tests:
+  # SCHED_SIMPLE (default)
+  benchmark.smp.cpu_mask:
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
+
+  benchmark.smp.cpu_mask.scalable:
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
+      - CONFIG_SCHED_SCALABLE=y
+
+  benchmark.smp.cpu_mask.multiq:
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
+      - CONFIG_SCHED_MULTIQ=y
+
+  # PIN_ONLY mode: only k_thread_cpu_pin is valid; the api suite
+  # skips the non-pin-safe benchmarks via #if guards in main.c.
+  benchmark.smp.cpu_mask.pin_only:
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
+      - CONFIG_SCHED_CPU_MASK_PIN_ONLY=y
+
+  benchmark.smp.cpu_mask.pin_only.scalable:
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
+      - CONFIG_SCHED_CPU_MASK_PIN_ONLY=y
+      - CONFIG_SCHED_SCALABLE=y
+
+  benchmark.smp.cpu_mask.pin_only.multiq:
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
+      - CONFIG_SCHED_CPU_MASK_PIN_ONLY=y
+      - CONFIG_SCHED_MULTIQ=y

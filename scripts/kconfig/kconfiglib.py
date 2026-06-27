@@ -4409,7 +4409,7 @@ class Symbol(object):
                                 num2str(low), num2str(high)))
                 else:
                     # If the user value is well-formed and satisfies range
-                    # contraints, it is stored in exactly the same form as
+                    # constraints, it is stored in exactly the same form as
                     # specified in the assignment (with or without "0x", etc.)
                     val = self.user_value
                     use_defaults = False

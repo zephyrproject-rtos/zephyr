@@ -6,10 +6,12 @@ from packaging.version import Version
 
 SPDX_VERSION_2_2 = Version("2.2")
 SPDX_VERSION_2_3 = Version("2.3")
+SPDX_VERSION_3_0 = Version("3.0")
 
 SUPPORTED_SPDX_VERSIONS = [
     SPDX_VERSION_2_2,
     SPDX_VERSION_2_3,
+    SPDX_VERSION_3_0,
 ]
 
 

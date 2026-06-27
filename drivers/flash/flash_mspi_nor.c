@@ -27,9 +27,11 @@ LOG_MODULE_REGISTER(flash_mspi_nor, CONFIG_FLASH_LOG_LEVEL);
 			  MSPI_DEVICE_CONFIG_READ_CMD | \
 			  MSPI_DEVICE_CONFIG_WRITE_CMD | \
 			  MSPI_DEVICE_CONFIG_RX_DUMMY | \
-			  MSPI_DEVICE_CONFIG_TX_DUMMY)
+			  MSPI_DEVICE_CONFIG_TX_DUMMY | \
+			  MSPI_DEVICE_CONFIG_IO_MODE)
 
-#define NON_XIP_DEV_CFG_MASK (MSPI_DEVICE_CONFIG_ALL & ~XIP_DEV_CFG_MASK)
+#define NON_XIP_DEV_CFG_MASK ((MSPI_DEVICE_CONFIG_ALL & ~XIP_DEV_CFG_MASK) | \
+			      MSPI_DEVICE_CONFIG_IO_MODE)
 
 static void set_up_xfer(const struct device *dev, enum mspi_xfer_direction dir,
 			enum mspi_xfer_mode xfer_mode);
@@ -728,7 +730,7 @@ static int exit_dpd(const struct device *const dev)
 	int rc = 0;
 
 	if (dev_config->has_dpd) {
-		/* When relasing the flash chip from DPD mode, make sure that
+		/* When releasing the flash chip from DPD mode, make sure that
 		 * enough time has passed since the DPD command was issued,
 		 * otherwise the request might get ignored by the chip.
 		 * This minimal interval is the sum of the time the flash
@@ -1315,6 +1317,7 @@ static int flash_chip_init(const struct device *dev)
 	/* Enable XIP access for this chip if specified so in DT. */
 	if (dev_config->xip_cfg.enable) {
 		struct mspi_dev_cfg mspi_cfg = {
+			.io_mode = dev_config->read_io_mode,
 			.addr_length = dev_data->cmd_info.uses_4byte_addr
 				     ? 4 : 3,
 			.rx_dummy = get_rx_dummy(dev),

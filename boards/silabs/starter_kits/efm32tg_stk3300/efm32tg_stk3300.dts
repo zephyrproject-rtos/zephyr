@@ -59,6 +59,15 @@
 	clock-frequency = <32000000>;
 };
 
+&clk_hfxo {
+	clock-frequency = <32000000>;
+	status = "okay";
+};
+
+&clk_hf {
+	clocks = <&clk_hfxo>;
+};
+
 &gpiob {
 	status = "okay";
 };

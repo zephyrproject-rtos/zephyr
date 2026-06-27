@@ -32,6 +32,7 @@ tests:
   sample.tfm.tfm_ipc.bl2.rsa2048:
     platform_allow:
       - mps2/an521/cpu0/ns
+      - stm32h573i_dk/stm32h573xx/ns
     extra_configs:
       - CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE="RSA-2048"
   sample.tfm.tfm_ipc.bl2.rsa3072:
@@ -52,10 +53,12 @@ tests:
       - bl5340_dvk/nrf5340/cpuapp/ns
       - frdm_mcxn947/mcxn947/cpu0/ns
       - frdm_mcxa577/mcxa577/ns
+      - stm32h573i_dk/stm32h573xx/ns
     extra_configs:
       - CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE="EC-P256"
   sample.tfm.tfm_ipc.bl2.ecp384:
     platform_allow:
       - mps2/an521/cpu0/ns
+      - stm32h573i_dk/stm32h573xx/ns
     extra_configs:
       - CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE="EC-P384"

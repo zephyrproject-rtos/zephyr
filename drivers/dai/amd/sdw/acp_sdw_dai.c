@@ -18,10 +18,52 @@
 #include <acp70_chip_reg.h>
 #define DAI_BASE_SW (PU_REGISTER_BASE + ACP_AUDIO_RX_RINGBUFADDR)
 #endif
+#ifdef CONFIG_SOC_ACP_7_X
+#include <acp7x_chip_offsets.h>
+#include <acp7x_chip_reg.h>
+#endif
 
 LOG_MODULE_REGISTER(amd_dai_acpsdw, CONFIG_DAI_LOG_LEVEL);
 
 #define DT_DRV_COMPAT amd_acp_sdw_dai
+
+#ifdef CONFIG_SOC_ACP_7_X
+#define SDW_INSTANCES         4
+#define SDW_PINS_PER_INSTANCE 22
+static const int acp_sdw_channel_map[SDW_INSTANCES][SDW_PINS_PER_INSTANCE] = {
+	{0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 8, 8, 9, 10, 11, 12, 13, 14, 15}, /* SDW0 */
+	{16, 16, 16, 16, 17, 18, 19, 20, 21, 22, 23,
+	 24, 24, 24, 24, 25, 26, 27, 28, 29, 30, 31}, /* SDW1 */
+	{32, 32, 32, 32, 33, 34, 35, 36, 37, 38, 39,
+	 40, 40, 40, 40, 41, 42, 43, 44, 45, 46, 47}, /* SDW2 */
+	{48, 48, 48, 48, 49, 50, 51, 52, 53, 54, 55,
+	 56, 56, 56, 56, 57, 58, 59, 60, 61, 62, 63} /* SDW3 */
+};
+
+static uint32_t acp_sdw_get_dma_channel(int pin_index)
+{
+	int sdw_instance = -1; /* Invalid value */
+
+	if (pin_index < 64) {
+		sdw_instance = 0;
+	} else if (pin_index < 128) {
+		sdw_instance = 1;
+	} else if (pin_index < 192) {
+		sdw_instance = 2;
+	} else if (pin_index < 256) {
+		sdw_instance = 3;
+	} else {
+		LOG_ERR("invalid SDW pin index %d", pin_index);
+		return UINT32_MAX;
+	}
+	/* Check for valid instance before array access */
+	if (sdw_instance < 0 || sdw_instance >= SDW_INSTANCES) {
+		LOG_ERR("invalid SDW pin index %d", pin_index);
+		return UINT32_MAX;
+	}
+	return acp_sdw_channel_map[sdw_instance][pin_index % 64];
+}
+#endif
 
 static inline int acp_sdwdai_get_config(const struct device *dev, struct dai_config *cfg,
 					enum dai_dir dir)
@@ -100,6 +142,11 @@ static const struct dai_properties *acp_sdwdai_get_properties(const struct devic
 		return NULL;
 	}
 #endif
+#ifdef CONFIG_SOC_ACP_7_X
+	prop->dma_hs_id = acp_sdw_get_dma_channel(params->dai_index);
+	return prop;
+#endif
+	return NULL;
 }
 
 static DEVICE_API(dai, acp_sdwdai_driver_ops) = {
@@ -131,10 +178,14 @@ static int amd_dai_acp_sdw_init(const struct device *dev)
 		.type = DAI_AMD_SDW,                                                               \
 		.dai_index = DT_INST_PROP_OR(inst, dai_index, 0),                                  \
 	};                                                                                         \
+	static struct dai_config dai_acp_sdw_config_##inst = {                                     \
+		.type = DAI_AMD_SDW,                                                               \
+		.dai_index = DT_INST_PROP_OR(inst, dai_index, 0),                                  \
+	};                                                                                         \
 	static struct acp_dai_pdata acp_dai_sdw_pdata_##inst = {                                   \
 		.priv_data = &acp_dai_sdw_config_##inst,                                           \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, &amd_dai_acp_sdw_init, NULL, &acp_dai_sdw_pdata_##inst,        \
-			      &acp_dai_sdw_config_##inst, POST_KERNEL, CONFIG_DAI_INIT_PRIORITY,   \
+			      &dai_acp_sdw_config_##inst, POST_KERNEL, CONFIG_DAI_INIT_PRIORITY,   \
 			      &acp_sdwdai_driver_ops)
 DT_INST_FOREACH_STATUS_OKAY(AMD_DAI_ACP_SDW_INIT);

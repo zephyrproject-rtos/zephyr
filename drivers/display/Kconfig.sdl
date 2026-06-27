@@ -9,6 +9,7 @@ menuconfig SDL_DISPLAY
 	default y
 	depends on DT_HAS_ZEPHYR_SDL_DC_ENABLED
 	select HAS_SDL
+	select DISPLAY_COLOR_DITHER_SUPPORTED
 	help
 	  Enable SDL based emulated display compliant with display driver API.
 

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* TODO: This overlay file need to update once mc146818 driver eneable for acpi support.
+/* TODO: This overlay file need to update once mc146818 driver enable for acpi support.
  */
 
 / {

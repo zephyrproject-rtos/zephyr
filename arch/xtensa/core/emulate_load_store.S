@@ -452,7 +452,7 @@ _Handle_L32IN:
 
 _Handle_L32I_Common:
 	/* 32-bit load/stores cannot generate an exception due to accessing IRAM,
-	 * only due to mis-alignment (in either IRAM or DRAM). For every exception,
+	 * only due to misalignment (in either IRAM or DRAM). For every exception,
 	 * we need to load both upper/lower dwords, since the fault address cannot
 	 * be dword-aligned. Get the lower dword in place.
 	 */

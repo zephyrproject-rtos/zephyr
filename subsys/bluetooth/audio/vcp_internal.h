@@ -21,13 +21,13 @@
 #include <zephyr/sys/atomic.h>
 
 /* VCS opcodes */
-#define BT_VCP_OPCODE_REL_VOL_DOWN                      0x00
-#define BT_VCP_OPCODE_REL_VOL_UP                        0x01
-#define BT_VCP_OPCODE_UNMUTE_REL_VOL_DOWN               0x02
-#define BT_VCP_OPCODE_UNMUTE_REL_VOL_UP                 0x03
-#define BT_VCP_OPCODE_SET_ABS_VOL                       0x04
-#define BT_VCP_OPCODE_UNMUTE                            0x05
-#define BT_VCP_OPCODE_MUTE                              0x06
+#define BT_VCP_OPCODE_REL_VOL_DOWN                      0x00U
+#define BT_VCP_OPCODE_REL_VOL_UP                        0x01U
+#define BT_VCP_OPCODE_UNMUTE_REL_VOL_DOWN               0x02U
+#define BT_VCP_OPCODE_UNMUTE_REL_VOL_UP                 0x03U
+#define BT_VCP_OPCODE_SET_ABS_VOL                       0x04U
+#define BT_VCP_OPCODE_UNMUTE                            0x05U
+#define BT_VCP_OPCODE_MUTE                              0x06U
 
 struct vcs_state {
 	uint8_t volume;

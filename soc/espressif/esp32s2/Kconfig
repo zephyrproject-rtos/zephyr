@@ -84,4 +84,6 @@ config ESP32S2_DATA_CACHE_SIZE
 
 endmenu  # Cache config
 
+rsource "Kconfig.caps"
+
 endif # SOC_SERIES_ESP32S2

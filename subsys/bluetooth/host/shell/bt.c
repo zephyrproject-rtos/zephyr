@@ -744,10 +744,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 done:
 	/* clear connection reference for sec mode 3 pairing */
-	if (pairing_conn) {
-		bt_conn_unref(pairing_conn);
-		pairing_conn = NULL;
-	}
+	bt_conn_drop(&pairing_conn);
 }
 
 static void disconnected_set_new_default_conn_cb(struct bt_conn *conn, void *user_data)
@@ -788,8 +785,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		if (err != 0) {
 			bt_shell_error("Unable to get info: conn %p (err %d)", conn, err);
 		}
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
+		bt_conn_drop(&default_conn);
 
 		if (err == 0) {
 			/* If we are connected to other devices, set one of them as default */
@@ -4409,10 +4405,7 @@ static void auth_cancel(struct bt_conn *conn)
 	bt_shell_print("Pairing cancelled: %s", bt_conn_dst_str(conn));
 
 	/* clear connection reference for sec mode 3 pairing */
-	if (pairing_conn) {
-		bt_conn_unref(pairing_conn);
-		pairing_conn = NULL;
-	}
+	bt_conn_drop(&pairing_conn);
 }
 
 static void auth_pairing_confirm(struct bt_conn *conn)

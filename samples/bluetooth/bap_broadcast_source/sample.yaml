@@ -2,7 +2,7 @@ sample:
   description: Bluetooth Low Energy Broadcast Audio Source sample
   name: Bluetooth Low Energy Broadcast Audio Source sample
 tests:
-  sample.bluetooth.bap_broadcast_source:
+  sample.bluetooth.audio.bap_broadcast_source:
     harness: bluetooth
     platform_allow:
       - qemu_cortex_m3
@@ -14,7 +14,7 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
     tags: bluetooth
     sysbuild: true
-  sample.bluetooth.bap_broadcast_source.nrf5340_audio_dk_cpuapp.fem:
+  sample.bluetooth.audio.bap_broadcast_source.nrf5340_audio_dk_cpuapp.fem:
     harness: bluetooth
     platform_allow:
       - nrf5340_audio_dk/nrf5340/cpuapp
@@ -25,7 +25,7 @@ tests:
       - hci_ipc_DTC_OVERLAY_FILE=boards/nrf5340_audio_dk_nrf5340_cpunet_nrf21540_ek.overlay
     tags: bluetooth
     sysbuild: true
-  sample.bluetooth.bap_broadcast_source.bt_ll_sw_split:
+  sample.bluetooth.audio.bap_broadcast_source.bt_ll_sw_split:
     harness: bluetooth
     platform_allow:
       - nrf52_bsim

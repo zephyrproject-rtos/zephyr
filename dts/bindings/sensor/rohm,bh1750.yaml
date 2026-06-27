@@ -25,6 +25,7 @@ properties:
       - 0
       - 1
       - 2
+
   mtreg:
     type: int
     default: 69
@@ -34,4 +35,5 @@ properties:
       and greater accuracy. After sensor power-on
       mtreg register is set to default value of
       this property (chosen by sensor manufacturer): 69.
-      Valid values are in range 31-254 (inclusive).
+    min: 31
+    max: 254

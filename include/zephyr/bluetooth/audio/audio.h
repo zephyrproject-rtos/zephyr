@@ -42,7 +42,7 @@ extern "C" {
 #endif
 
 /** Size of the broadcast ID in octets */
-#define BT_AUDIO_BROADCAST_ID_SIZE               3
+#define BT_AUDIO_BROADCAST_ID_SIZE               3U
 /** Maximum broadcast ID value */
 #define BT_AUDIO_BROADCAST_ID_MAX                0xFFFFFFU
 /** Indicates that the server have no preference for the presentation delay */
@@ -53,7 +53,7 @@ extern "C" {
 #define BT_AUDIO_RTN_PREF_NONE                   0xFFU
 
 /** Size of the stream language value, e.g. "eng" */
-#define BT_AUDIO_LANG_SIZE 3
+#define BT_AUDIO_LANG_SIZE 3U
 
 /**
  * @brief Channel count support capability
@@ -91,9 +91,9 @@ struct bt_audio_codec_octets_per_codec_frame {
  * @{
  */
 /** Unicast Server is connectable and is requesting a connection. */
-#define BT_AUDIO_UNICAST_ANNOUNCEMENT_GENERAL    0x00
+#define BT_AUDIO_UNICAST_ANNOUNCEMENT_GENERAL    0x00U
 /** Unicast Server is connectable but is not requesting a connection. */
-#define BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED   0x01
+#define BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED   0x01U
 /** @} */
 
 /**

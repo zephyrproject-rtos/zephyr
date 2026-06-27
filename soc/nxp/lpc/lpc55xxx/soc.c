@@ -239,6 +239,8 @@ __weak void clock_init(void)
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt0), nxp_lpc_wwdt, okay)
 	/* Enable 1 MHz FRO clock for WWDT */
 	SYSCON->CLOCK_CTRL |= SYSCON_CLOCK_CTRL_FRO1MHZ_CLK_ENA_MASK;
+	/* Set clock divider for WWDT clock source. */
+	CLOCK_SetClkDiv(kCLOCK_DivWdtClk, 1U, true);
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(mailbox0), nxp_lpc_mailbox, okay)

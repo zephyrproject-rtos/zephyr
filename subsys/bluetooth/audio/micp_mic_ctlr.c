@@ -130,7 +130,7 @@ static uint8_t micp_mic_ctlr_read_mute_cb(struct bt_conn *conn, uint8_t err,
 {
 	struct bt_micp_mic_ctlr *mic_ctlr = mic_ctlr_get_by_conn(conn);
 	uint8_t cb_err = err;
-	uint8_t mute_val = 0;
+	uint8_t mute_val = 0U;
 
 	ARG_UNUSED(params);
 
@@ -497,19 +497,14 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 
 static void micp_mic_ctlr_reset(struct bt_micp_mic_ctlr *mic_ctlr)
 {
-	mic_ctlr->start_handle = 0;
-	mic_ctlr->end_handle = 0;
-	mic_ctlr->mute_handle = 0;
+	mic_ctlr->start_handle = 0U;
+	mic_ctlr->end_handle = 0U;
+	mic_ctlr->mute_handle = 0U;
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
-	mic_ctlr->aics_inst_cnt = 0;
+	mic_ctlr->aics_inst_cnt = 0U;
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 
-	if (mic_ctlr->conn != NULL) {
-		struct bt_conn *conn = mic_ctlr->conn;
-
-		bt_conn_unref(conn);
-		mic_ctlr->conn = NULL;
-	}
+	bt_conn_drop(&mic_ctlr->conn);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
@@ -530,6 +525,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 int bt_micp_mic_ctlr_discover(struct bt_conn *conn, struct bt_micp_mic_ctlr **mic_ctlr_out)
 {
 	struct bt_micp_mic_ctlr *mic_ctlr;
+	struct bt_conn *ref;
 	int err;
 
 	/*
@@ -552,6 +548,12 @@ int bt_micp_mic_ctlr_discover(struct bt_conn *conn, struct bt_micp_mic_ctlr **mi
 		LOG_DBG("Instance is busy");
 
 		return -EBUSY;
+	}
+
+	ref = bt_conn_ref(conn);
+	if (ref == NULL) {
+		err = -ENOTCONN;
+		goto cleanup;
 	}
 
 	(void)memset(&mic_ctlr->discover_params, 0,
@@ -581,7 +583,9 @@ int bt_micp_mic_ctlr_discover(struct bt_conn *conn, struct bt_micp_mic_ctlr **mi
 				mic_ctlrs[i].aics[j] = bt_aics_client_free_instance_get();
 
 				if (mic_ctlrs[i].aics[j] == NULL) {
-					return -ENOMEM;
+					bt_conn_unref(ref);
+					err = -ENOMEM;
+					goto cleanup;
 				}
 
 				bt_aics_client_cb_register(mic_ctlrs[i].aics[j], &aics_cb);
@@ -592,20 +596,27 @@ int bt_micp_mic_ctlr_discover(struct bt_conn *conn, struct bt_micp_mic_ctlr **mi
 	}
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 
-	mic_ctlr->conn = bt_conn_ref(conn);
 	mic_ctlr->discover_params.func = primary_discover_func;
 	mic_ctlr->discover_params.uuid = mics_uuid;
 	mic_ctlr->discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 	mic_ctlr->discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	mic_ctlr->discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
+	mic_ctlr->conn = ref;
+
 	err = bt_gatt_discover(conn, &mic_ctlr->discover_params);
-	if (err == 0) {
-		*mic_ctlr_out = mic_ctlr;
-	} else {
-		atomic_clear_bit(mic_ctlr->flags, BT_MICP_MIC_CTLR_FLAG_BUSY);
+	if (err != 0) {
+		bt_conn_unref(ref);
+		mic_ctlr->conn = NULL;
+		goto cleanup;
 	}
 
+	*mic_ctlr_out = mic_ctlr;
+
+	return 0;
+
+cleanup:
+	atomic_clear_bit(mic_ctlr->flags, BT_MICP_MIC_CTLR_FLAG_BUSY);
 	return err;
 }
 
@@ -704,7 +715,7 @@ int bt_micp_mic_ctlr_mute_get(struct bt_micp_mic_ctlr *mic_ctlr)
 	}
 
 	mic_ctlr->read_params.func = micp_mic_ctlr_read_mute_cb;
-	mic_ctlr->read_params.handle_count = 1;
+	mic_ctlr->read_params.handle_count = 1U;
 	mic_ctlr->read_params.single.handle = mic_ctlr->mute_handle;
 	mic_ctlr->read_params.single.offset = 0U;
 

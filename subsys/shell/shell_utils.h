@@ -64,7 +64,7 @@ const struct shell_static_entry *z_shell_find_cmd(
 					struct shell_static_entry *dloc);
 
 /* @internal @brief Function returns pointer to a shell's subcommands array
- * for a level given by argc and matching command patter provided in argv.
+ * for a level given by argc and matching command pattern provided in argv.
  *
  * @param sh		Entry. NULL for root entry.
  * @param argc		Number of arguments.

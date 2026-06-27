@@ -6,6 +6,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the MCUmgr OS management group API.
+ * @ingroup mcumgr_os_mgmt
+ */
+
 #ifndef H_OS_MGMT_
 #define H_OS_MGMT_
 

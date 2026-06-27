@@ -89,7 +89,19 @@
 	clock-frequency = <DT_FREQ_M(200)>;
 };
 
+&porta {
+	status = "okay";
+};
+
+&portb {
+	status = "okay";
+};
+
 &gpio0 {
+	status = "okay";
+};
+
+&waketimer0 {
 	status = "okay";
 };
 

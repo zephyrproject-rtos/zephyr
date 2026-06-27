@@ -51,6 +51,60 @@
 		pinctrl: pinctrl@e0014000 {
 			compatible = "microchip,sama7g5-pinctrl";
 			reg = <0xe0014000 0x800>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0xe0014000 0xe0014000 0x800>;
+
+			pioa: gpio@e0014000 {
+				compatible = "microchip,sam-pio4";
+				reg = <0xe0014000 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 10>;
+			};
+
+			piob: gpio@e0014040 {
+				compatible = "microchip,sam-pio4";
+				reg = <0xe0014040 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 10>;
+			};
+
+			pioc: gpio@e0014080 {
+				compatible = "microchip,sam-pio4";
+				reg = <0xe0014080 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 12 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 10>;
+			};
+
+			piod: gpio@e00140c0 {
+				compatible = "microchip,sam-pio4";
+				reg = <0xe00140c0 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 10>;
+			};
+
+			pioe: gpio@e0014100 {
+				compatible = "microchip,sam-pio4";
+				reg = <0xe0014100 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 10>;
+				gpio-reserved-ranges = <14 18>;
+			};
 		};
 
 		pmc: clock-controller@e0018000 {
@@ -93,7 +147,7 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_GCK 58>;
 			clock-names = "gck";
-			bosch,mram-cfg = <0x3400 15 15 8 8 0 15 15>;
+			bosch,mram-cfg = <0x3400 15 15 16 0 0 15 15>;
 			status = "disabled";
 		};
 
@@ -107,7 +161,7 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_GCK 59>;
 			clock-names = "gck";
-			bosch,mram-cfg = <0x7800 15 15 8 8 0 15 15>;
+			bosch,mram-cfg = <0x7800 15 15 16 0 0 15 15>;
 			status = "disabled";
 		};
 
@@ -121,7 +175,7 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_GCK 60>;
 			clock-names = "gck";
-			bosch,mram-cfg = <0xbc00 15 15 8 8 0 15 15>;
+			bosch,mram-cfg = <0xbc00 15 15 16 0 0 15 15>;
 			status = "disabled";
 		};
 
@@ -135,7 +189,7 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_GCK 61>;
 			clock-names = "gck";
-			bosch,mram-cfg = <0x0 15 15 8 8 0 15 15>;
+			bosch,mram-cfg = <0x0 15 15 16 0 0 15 15>;
 			status = "disabled";
 		};
 
@@ -149,7 +203,7 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_GCK 62>;
 			clock-names = "gck";
-			bosch,mram-cfg = <0x4400 15 15 8 8 0 15 15>;
+			bosch,mram-cfg = <0x4400 15 15 16 0 0 15 15>;
 			status = "disabled";
 		};
 

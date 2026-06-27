@@ -882,6 +882,10 @@ use_interface_mtu:
 		}
 
 		if (mtu < pkt_len) {
+			if (net_pkt_dont_fragment(pkt)) {
+				return NET_DROP;
+			}
+
 			ret = net_ipv6_send_fragmented_pkt(net_pkt_iface(pkt),
 							   pkt, pkt_len, mtu);
 			if (ret < 0) {
@@ -2515,8 +2519,13 @@ static inline bool handle_ra_6co(struct net_pkt *pkt, uint8_t len)
 	 * bits in the Context Prefix field that are valid.  The value ranges
 	 * from 0 to 128.  If it is more than 64, then the Length MUST be 3.
 	 */
-	if ((context->context_len > 64 && len != 3U) ||
+	if (context->context_len > 128U ||
+	    (context->context_len > 64 && len != 3U) ||
 	    (context->context_len <= 64U && len != 2U)) {
+		/* Per RFC 6775 the context length is at most 128. A larger
+		 * value makes context_len/8 exceed the prefix size and
+		 * underflows the memset length below.
+		 */
 		return false;
 	}
 

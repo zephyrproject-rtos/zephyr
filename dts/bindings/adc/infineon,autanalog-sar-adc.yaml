@@ -135,5 +135,23 @@ child-binding:
       description: |
         Bypass the Hi-Z buffers for MUX channels.
 
+    fifo-sel:
+      type: int
+      default: 0
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+      description: |
+        Route this channel's conversion result to a FIFO buffer.
+        Use IFX_AUTANALOG_SAR_FIFO_* constants from
+        <dt-bindings/adc/infineon-autanalog-sar.h>.
+          IFX_AUTANALOG_SAR_FIFO_DISABLED (0) - FIFO disabled (default)
+          IFX_AUTANALOG_SAR_FIFO_0        (1) - Route to FIFO buffer 0
+          IFX_AUTANALOG_SAR_FIFO_1        (2) - Route to FIFO buffer 1
+          IFX_AUTANALOG_SAR_FIFO_2        (3) - Route to FIFO buffer 2
+          IFX_AUTANALOG_SAR_FIFO_3        (4) - Route to FIFO buffer 3
+          IFX_AUTANALOG_SAR_FIFO_4        (5) - Route to FIFO buffer 4
+          IFX_AUTANALOG_SAR_FIFO_5        (6) - Route to FIFO buffer 5
+          IFX_AUTANALOG_SAR_FIFO_6        (7) - Route to FIFO buffer 6
+          IFX_AUTANALOG_SAR_FIFO_7        (8) - Route to FIFO buffer 7
+
 io-channel-cells:
   - input

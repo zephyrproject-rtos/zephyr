@@ -561,7 +561,7 @@ static int sys_clock_driver_init(void)
 	}
 #endif
 
-#if DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout)
 	uint32_t timeout = DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout);
 
 	if (timeout > (lptim_clock_presc * 0xFFFF) / lptim_clock_freq) {

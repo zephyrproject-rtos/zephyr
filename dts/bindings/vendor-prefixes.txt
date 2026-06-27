@@ -82,6 +82,7 @@ arduino	Arduino
 aries	Aries Embedded GmbH
 arm	ARM Ltd.
 armadeus	ARMadeus Systems SARL
+armfly	Armfly
 arrow	Arrow Electronics
 artesyn	Artesyn Embedded Technologies Inc.
 asahi-kasei	Asahi Kasei Corp.
@@ -105,6 +106,7 @@ azoteq	Azoteq (Pty) Ltd
 azw	Shenzhen AZW Technology Co., Ltd.
 baikal	BAIKAL ELECTRONICS, JSC
 bananapi	BIPAI KEJI LIMITED
+barth	Barth Elektronik GmbH
 bbc	BBC
 bcdevices	Blue Clover Devices
 beacon	Compass Electronics Group, LLC
@@ -130,6 +132,7 @@ calxeda	Calxeda
 canaan	Canaan, Inc.
 caninos	Caninos Loucos Program
 canis	Canis Automotive Labs
+canmodule	CAN-module, FOP
 capella	Capella Microsystems, Inc
 cascoda	Cascoda, Ltd.
 catalyst	Catalyst Semiconductor, Inc.
@@ -478,6 +481,7 @@ mti	Imagination Technologies Ltd. (formerly MIPS Technologies Inc.)
 multi-inno	Multi-Inno Technology Co.,Ltd
 mundoreader	Mundo Reader S.L.
 murata	Murata Manufacturing Co., Ltd.
+muselab	MuseLab Electronics
 mxchip	Shanghai MXCHIP Information Technology Co., Ltd.
 mxicy	Macronix International Co., Ltd.
 myir	MYIR Tech Limited
@@ -746,6 +750,7 @@ tronfy	Tronfy
 tronsmart	Tronsmart
 truly	Truly Semiconductors Limited
 tsd	Theobroma Systems Design und Consulting GmbH
+tuya	Tuya Inc.
 tyan	Tyan Computer Corporation
 u-blox	u-blox
 u-boot	U-Boot bootloader

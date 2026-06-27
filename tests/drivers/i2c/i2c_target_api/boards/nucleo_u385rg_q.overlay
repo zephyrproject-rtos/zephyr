@@ -16,6 +16,8 @@
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_pa7 &i2c3_sda_pc1>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioa 7 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 
 	eeprom0: eeprom@54 {

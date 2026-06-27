@@ -174,10 +174,9 @@ __subsystem struct wdt_driver_api {
  * @param dev Watchdog device instance.
  * @param options Configuration options (see @ref WDT_OPT).
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP If any of the set options is not supported.
- * @retval -EBUSY If watchdog instance has been already setup.
- * @retval -errno In case of any other failure.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP Any of the set options is not supported.
+ * @retval -EBUSY Watchdog instance has been already setup.
  */
 __syscall int wdt_setup(const struct device *dev, uint8_t options);
 
@@ -195,10 +194,9 @@ static inline int z_impl_wdt_setup(const struct device *dev, uint8_t options)
  *
  * @param dev Watchdog device instance.
  *
- * @retval 0 If successful.
- * @retval -EFAULT If watchdog instance is not enabled.
- * @retval -EPERM If watchdog can not be disabled directly by application code.
- * @retval -errno In case of any other failure.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EFAULT Watchdog instance is not enabled.
+ * @retval -EPERM Watchdog can not be disabled directly by application code.
  */
 __syscall int wdt_disable(const struct device *dev);
 
@@ -216,18 +214,16 @@ static inline int z_impl_wdt_disable(const struct device *dev)
  * @param dev Watchdog device instance.
  * @param[in] cfg Timeout configuration.
  *
- * @retval channel_id If successful, a non-negative value indicating the index
- * of the channel to which the timeout was assigned. This value is supposed to
- * be used as the parameter in calls to wdt_feed().
- * @retval -EBUSY If timeout can not be installed while watchdog has already
+ * @return Channel ID on success (to be used as parameter in calls to
+ *         wdt_feed()), negative errno value on failure.
+ * @retval -EBUSY Timeout can not be installed while watchdog has already
  * been setup.
- * @retval -ENOMEM If no more timeouts can be installed.
- * @retval -ENOTSUP If any of the set flags is not supported.
- * @retval -EINVAL If any of the window timeout value is out of possible range.
+ * @retval -ENOMEM No more timeouts can be installed.
+ * @retval -ENOTSUP Any of the set flags is not supported.
+ * @retval -EINVAL Any of the window timeout value is out of possible range.
  * This value is also returned if watchdog supports only one timeout value for
  * all timeouts and the supplied timeout window differs from windows for alarms
  * installed so far.
- * @retval -errno In case of any other failure.
  */
 static inline int wdt_install_timeout(const struct device *dev,
 				      const struct wdt_timeout_cfg *cfg)
@@ -241,12 +237,11 @@ static inline int wdt_install_timeout(const struct device *dev,
  * @param dev Watchdog device instance.
  * @param channel_id Channel index.
  *
- * @retval 0 If successful.
- * @retval -EAGAIN If completing the feed operation would stall the caller, for
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EAGAIN Completing the feed operation would stall the caller, for
  * example due to an in-progress watchdog operation such as a previous
  * wdt_feed() call.
- * @retval -EINVAL If there is no installed timeout for supplied channel.
- * @retval -errno In case of any other failure.
+ * @retval -EINVAL There is no installed timeout for supplied channel.
  */
 __syscall int wdt_feed(const struct device *dev, int channel_id);
 

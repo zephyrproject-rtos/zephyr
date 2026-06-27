@@ -28,6 +28,7 @@
 extern "C" {
 #endif
 
+/** Version of the SCMI system power protocol supported by this driver */
 #define SCMI_SYSTEM_POWER_PROTOCOL_SUPPORTED_VERSION 0x20001
 
 /**
@@ -35,15 +36,15 @@ extern "C" {
  * @{
  */
 
-/**< Shutdown off */
+/** Shutdown off */
 #define SCMI_SYSTEM_POWER_STATE_SHUTDOWN      0x00000000U
-/**< Cold reset */
+/** Cold reset */
 #define SCMI_SYSTEM_POWER_STATE_COLD_RESET    0x00000001U
-/**< Warm reset */
+/** Warm reset */
 #define SCMI_SYSTEM_POWER_STATE_WARM_RESET    0x00000002U
-/**< Power up */
+/** Power up */
 #define SCMI_SYSTEM_POWER_STATE_POWER_UP      0x00000003U
-/**< Suspend */
+/** Suspend */
 #define SCMI_SYSTEM_POWER_STATE_SUSPEND       0x00000004U
 
 /** @} */
@@ -57,15 +58,14 @@ extern "C" {
 #define SCMI_SYSTEM_POWER_FLAG_SHIFT	(0)
 /** @endcond */
 
-/**< Forceful request */
+/** Forceful request */
 #define SCMI_SYSTEM_POWER_FLAG_FORCEFUL	(0 << SCMI_SYSTEM_POWER_FLAG_SHIFT)
-/**< Graceful request */
+/** Graceful request */
 #define SCMI_SYSTEM_POWER_FLAG_GRACEFUL	(1 << SCMI_SYSTEM_POWER_FLAG_SHIFT)
 
 /** @} */
 
-
-/*!
+/**
  * @name SCMI system message attributes
  * @{
  */
@@ -75,9 +75,9 @@ extern "C" {
 #define SCMI_SYSTEM_MSG_ATTR_WARM_RESET_SHIFT	(31U)
 /** @endcond */
 
-/*! System suspend support */
+/** System suspend support */
 #define SCMI_SYSTEM_MSG_ATTR_SUSPEND	(1 << SCMI_SYSTEM_MSG_ATTR_SUSPEND_SHIFT)
-/*! System warm reset support */
+/** System warm reset support */
 #define SCMI_SYSTEM_MSG_ATTR_WARM_RESET	(1 << SCMI_SYSTEM_MSG_ATTR_WARM_RESET_SHIFT)
 
 /** @} */
@@ -87,7 +87,9 @@ extern "C" {
  * @brief System power state configuration
  */
 struct scmi_system_power_state_config {
+	/** Request flags (see SCMI_SYSTEM_POWER_FLAG_*) */
 	uint32_t flags;
+	/** Target system power state (see SCMI_SYSTEM_POWER_STATE_*) */
 	uint32_t system_state;
 };
 
@@ -96,8 +98,7 @@ struct scmi_system_power_state_config {
  *
  * @param version Protocol version
  *
- * @retval 0 if successful
- * @retval negative errno if failure
+ * @return 0 on success, negative errno value on failure.
  */
 int scmi_system_protocol_version(uint32_t *version);
 
@@ -106,8 +107,7 @@ int scmi_system_protocol_version(uint32_t *version);
  *
  * @param attributes Protocol attributes
  *
- * @retval 0 if successful
- * @retval negative errno if failure
+ * @return 0 on success, negative errno value on failure.
  */
 int scmi_system_protocol_attributes(uint32_t *attributes);
 
@@ -117,28 +117,25 @@ int scmi_system_protocol_attributes(uint32_t *attributes);
  * @param message_id Message ID of the message
  * @param attributes Message attributes
  *
- * @retval 0 if successful
- * @retval negative errno if failure
+ * @return 0 on success, negative errno value on failure.
  */
 int scmi_system_protocol_message_attributes(uint32_t message_id, uint32_t *attributes);
 
 /**
  * @brief Negotiate protocol version
  *
- * @param version desired protocol version
+ * @param version Desired protocol version
  *
- * @retval 0 if successful
- * @retval negative errno if failure
+ * @return 0 on success, negative errno value on failure.
  */
 int scmi_system_protocol_version_negotiate(uint32_t version);
 
 /**
  * @brief Set system power state
  *
- * @param cfg pointer to power state configuration
+ * @param cfg Pointer to power state configuration
  *
- * @retval 0 if successful
- * @retval negative errno if failure
+ * @return 0 on success, negative errno value on failure.
  */
 int scmi_system_power_state_set(struct scmi_system_power_state_config *cfg);
 

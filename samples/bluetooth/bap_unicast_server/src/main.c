@@ -12,6 +12,7 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/lc3.h>
@@ -153,7 +154,7 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 			printk("  Channel allocation: 0x%x\n", chan_allocation);
 		}
 
-		printk("  Octets per frame: %d (negative means value not pressent)\n",
+		printk("  Octets per frame: %d (negative means value not present)\n",
 		       bt_audio_codec_cfg_get_octets_per_frame(codec_cfg));
 		printk("  Frames per SDU: %d\n",
 		       bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true));
@@ -564,8 +565,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	printk("Disconnected: %s, reason 0x%02x %s\n", bt_conn_dst_str(conn),
 	       reason, bt_hci_err_to_str(reason));
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 
 	k_sem_give(&sem_disconnected);
 }
@@ -698,11 +698,29 @@ int main(void)
 		stream_tx_init();
 	}
 
-	bt_bap_unicast_server_register(&param);
-	bt_bap_unicast_server_register_cb(&unicast_server_cb);
+	err = bt_bap_unicast_server_register(&param);
+	if (err != 0) {
+		printk("Could not register unicast server (err %d)\n", err);
+		return 0;
+	}
 
-	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
-	bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
+	err = bt_bap_unicast_server_register_cb(&unicast_server_cb);
+	if (err != 0) {
+		printk("Could not register unicast server callbacks (err %d)\n", err);
+		return 0;
+	}
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
+	if (err != 0) {
+		printk("Could not register sink capability (err %d)\n", err);
+		return 0;
+	}
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
+	if (err != 0) {
+		printk("Could not register source capability (err %d)\n", err);
+		return 0;
+	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(sink_streams); i++) {
 		bt_bap_stream_cb_register(&sink_streams[i].stream, &stream_ops);

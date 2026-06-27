@@ -3,6 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Map values in a linear range to a range index.
+ * @ingroup linear_range
+ */
+
 #ifndef INCLUDE_ZEPHYR_SYS_LINEAR_RANGE_H_
 #define INCLUDE_ZEPHYR_SYS_LINEAR_RANGE_H_
 

@@ -110,6 +110,10 @@
 	status = "okay";
 };
 
+&waketimer0 {
+	status = "okay";
+};
+
 &edma0 {
 	status = "okay";
 };
@@ -222,4 +226,10 @@
 
 &crc {
 	status = "okay";
+};
+
+&flexpwm0_pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm0_pwm0>;
+	pinctrl-names = "default";
 };

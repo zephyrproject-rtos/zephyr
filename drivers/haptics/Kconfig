@@ -25,6 +25,14 @@ config HAPTICS_SHELL
 	help
 	  Enable Haptics-related shell commands.
 
+config HAPTICS_SHELL_BUFFER_SIZE
+	int "Haptics shell buffer size"
+	depends on HAPTICS_SHELL
+	default 16
+	help
+	  Size of the buffer in bytes used when streaming samples to a haptic
+	  driver. Note that the buffer is allocated on the stack.
+
 # zephyr-keep-sorted-start
 source "drivers/haptics/cirrus/Kconfig"
 source "drivers/haptics/ti/Kconfig"

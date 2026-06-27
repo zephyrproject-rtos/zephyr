@@ -25,6 +25,216 @@
 @{
 @}
 
+@defgroup sensor_interface_ext_adi Analog Devices
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Analog Devices.
+@{
+@}
+
+@defgroup sensor_interface_ext_ams AMS
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from AMS.
+@{
+@}
+
+@defgroup sensor_interface_ext_ap Angst+Pfister
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Angst+Pfister.
+@{
+@}
+
+@defgroup sensor_interface_ext_avago Avago Technologies
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Avago Technologies.
+@{
+@}
+
+@defgroup sensor_interface_ext_avia Avia Semiconductor
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Avia Semiconductor.
+@{
+@}
+
+@defgroup sensor_interface_ext_bosch Bosch Sensortec
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Bosch Sensortec.
+@{
+@}
+
+@defgroup sensor_interface_ext_brcm Broadcom
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Broadcom.
+@{
+@}
+
+@defgroup sensor_interface_ext_fintek Fintek
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Fintek.
+@{
+@}
+
+@defgroup sensor_interface_ext_festo Festo
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Festo.
+@{
+@}
+
+@defgroup sensor_interface_ext_gss Gas Sensing Solutions
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Gas Sensing Solutions.
+@{
+@}
+
+@defgroup sensor_interface_ext_hzgrow Hangzhou Grow
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Hangzhou Grow.
+@{
+@}
+
+@defgroup sensor_interface_ext_iclegend Iclegend
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Iclegend.
+@{
+@}
+
+@defgroup sensor_interface_ext_infineon Infineon
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Infineon.
+@{
+@}
+
+@defgroup sensor_interface_ext_ite ITE
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from ITE.
+@{
+@}
+
+@defgroup sensor_interface_ext_meas Measurement Specialties
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Measurement Specialties.
+@{
+@}
+
+@defgroup sensor_interface_ext_melexis Melexis
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Melexis.
+@{
+@}
+
+@defgroup sensor_interface_ext_memsic MEMSIC
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from MEMSIC.
+@{
+@}
+
+@defgroup sensor_interface_ext_microchip Microchip
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Microchip.
+@{
+@}
+
+@defgroup sensor_interface_ext_national National Semiconductor
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from National Semiconductor.
+@{
+@}
+
+@defgroup sensor_interface_ext_nordic Nordic Semiconductor
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Nordic Semiconductor.
+@{
+@}
+
+@defgroup sensor_interface_ext_nuvoton Nuvoton
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Nuvoton.
+@{
+@}
+
+@defgroup sensor_interface_ext_nxp NXP
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from NXP.
+@{
+@}
+
+@defgroup sensor_interface_ext_pixart PixArt
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from PixArt.
+@{
+@}
+
+@defgroup sensor_interface_ext_phosense Phosense
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Phosense.
+@{
+@}
+
+@defgroup sensor_interface_ext_pni PNI
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from PNI.
+@{
+@}
+
+@defgroup sensor_interface_ext_realtek Realtek
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Realtek.
+@{
+@}
+
+@defgroup sensor_interface_ext_rohm ROHM
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from ROHM.
+@{
+@}
+
+@defgroup sensor_interface_ext_sciosense ScioSense
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from ScioSense.
+@{
+@}
+
+@defgroup sensor_interface_ext_sensirion Sensirion
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Sensirion.
+@{
+@}
+
+@defgroup sensor_interface_ext_st STMicroelectronics
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from STMicroelectronics.
+@{
+@}
+
+@defgroup sensor_interface_ext_tdk TDK InvenSense
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from TDK InvenSense.
+@{
+@}
+
+@defgroup sensor_interface_ext_ti Texas Instruments
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Texas Instruments.
+@{
+@}
+
+@defgroup sensor_interface_ext_vishay Vishay
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Vishay.
+@{
+@}
+
+@defgroup sensor_interface_ext_we Wurth Elektronik
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Wurth Elektronik.
+@{
+@}
+
+@defgroup sensor_interface_ext_winsen Winsen
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Winsen.
+@{
+@}
+
 @defgroup misc_interfaces Miscellaneous Devices
 @ingroup io_interfaces
 @brief Interfaces for hardware peripherals that do not have a dedicated driver class.
@@ -57,6 +267,13 @@
 @brief Device Management
 @defgroup device_mgmt Device Management
 @ingroup os_services
+@{
+@}
+
+@brief Xen hypervisor support
+@defgroup xen_support Xen support
+@ingroup os_services
+@details Interfaces for running Zephyr as a Xen guest or as Xen Dom0.
 @{
 @}
 
@@ -109,6 +326,12 @@
 
 @brief Memory Management APIs
 @defgroup mem_mgmt Memory Management APIs
+@{
+@}
+
+@brief Authentication
+@defgroup authentication Authentication
+@ingroup os_services
 @{
 @}
 

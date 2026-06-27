@@ -113,6 +113,8 @@
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-1 = <&analog_pb6 &analog_pb7>;
 	pinctrl-names = "default", "sleep";
+	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 
 	haptic_0: haptic@30 {
 		compatible = "cirrus,cs40l50";
@@ -160,12 +162,13 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
 			read-only;
@@ -177,21 +180,25 @@
 		 */
 
 		slot0_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(64)>;
 		};
 
 		slot1_partition: partition@30000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x00030000 DT_SIZE_K(64)>;
 		};
 
 		scratch_partition: partition@40000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-scratch";
 			reg = <0x00040000 DT_SIZE_K(64)>;
 		};
 
 		storage_partition: partition@50000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x00050000 DT_SIZE_K(64)>;
 		};

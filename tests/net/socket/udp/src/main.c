@@ -939,7 +939,10 @@ struct eth_fake_context {
 	uint8_t mac_address[6];
 };
 
-static struct eth_fake_context eth_fake_data;
+static struct eth_fake_context eth_fake_data = {
+	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+	.mac_address = { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x00 },
+};
 static ZTEST_BMEM struct net_sockaddr_in6 udp_server_addr;
 
 /* The semaphore is there to wait the data to be received. */
@@ -1612,7 +1615,7 @@ static void comm_sendmsg_recvmsg(int client_sock,
 			      0U, msg->msg_controllen);
 	}
 
-	/* Then check that the trucation flag is set correctly */
+	/* Then check that the truncation flag is set correctly */
 	sent = zsock_sendmsg(client_sock, client_msg, 0);
 	zassert_true(sent > 0, "sendmsg failed (%d)", -errno);
 

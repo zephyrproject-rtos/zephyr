@@ -3,6 +3,7 @@
 
 config RASPBERRYPI_FIRMWARE
 	bool "Raspberry Pi VideoCore firmware"
+	default y
 	depends on DT_HAS_RASPBERRYPI_BCM283X_FIRMWARE_ENABLED
 	select MBOX
 	help
@@ -13,7 +14,7 @@ if RASPBERRYPI_FIRMWARE
 
 config RASPBERRYPI_FIRMWARE_INIT_PRIORITY
 	int "Raspberry Pi VideoCore firmware init priority"
-	default 60
+	default 45
 	help
 	  Must be higher (later) than CONFIG_MBOX_INIT_PRIORITY so the
 	  mailbox device is ready before this drivers initialization runs.

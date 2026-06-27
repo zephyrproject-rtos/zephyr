@@ -3,6 +3,7 @@
 /*
  * Copyright (c) 2023 Codecoup
  * Copyright (c) 2024 Demant A/S
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -26,7 +28,7 @@
 #include <zephyr/ztest_test.h>
 #include <sys/types.h>
 
-#include "bap_unicast_server.h"
+#include "ascs.h"
 #include "bap_stream.h"
 #include "conn.h"
 #include "gatt_expects.h"
@@ -54,18 +56,16 @@ static void *test_ase_control_params_setup(void)
 static void test_ase_control_params_before(void *f)
 {
 	struct test_ase_control_params_fixture *fixture = f;
-	struct bt_bap_unicast_server_register_param param = {
-		CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
-		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+	struct bt_ascs_register_param param = {
+		.snk_cnt = CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
+		.src_cnt = CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
+		.cb = &mock_ascs_cb,
 	};
 	int err;
 
 	ARG_UNUSED(fixture);
 
-	err = bt_bap_unicast_server_register(&param);
-	zassert_equal(err, 0, "unexpected err response %d", err);
-
-	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	err = bt_ascs_register(&param);
 	zassert_equal(err, 0, "unexpected err response %d", err);
 
 	test_conn_init(&fixture->conn);
@@ -85,13 +85,7 @@ static void test_ase_control_params_after(void *f)
 
 	ARG_UNUSED(f);
 
-	err = bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
-	zassert_equal(err, 0, "unexpected err response %d", err);
-
-	/* Sleep to trigger any pending state changes from unregister_cb */
-	k_sleep(K_SECONDS(1));
-
-	err = bt_bap_unicast_server_unregister();
+	err = bt_ascs_unregister();
 	zassert_equal(err, 0, "Unexpected err response %d", err);
 }
 
@@ -377,12 +371,12 @@ static struct bt_bap_stream test_stream;
 static const struct bt_bap_qos_cfg_pref qos_pref =
 	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02U, 10U, 40000U, 40000U, 40000U, 40000U);
 
-static int unicast_server_cb_config_custom_fake(struct bt_conn *conn, const struct bt_bap_ep *ep,
-						enum bt_audio_dir dir,
-						const struct bt_audio_codec_cfg *codec_cfg,
-						struct bt_bap_stream **stream,
-						struct bt_bap_qos_cfg_pref *const pref,
-						struct bt_bap_ascs_rsp *rsp)
+static int ascs_cb_config_custom_fake(struct bt_conn *conn, const struct bt_bap_ep *ep,
+				      enum bt_audio_dir dir,
+				      const struct bt_audio_codec_cfg *codec_cfg,
+				      struct bt_bap_stream **stream,
+				      struct bt_bap_qos_cfg_pref *const pref,
+				      struct bt_bap_ascs_rsp *rsp)
 {
 	ARG_UNUSED(conn);
 	ARG_UNUSED(ep);
@@ -439,7 +433,7 @@ ZTEST_F(test_ase_control_params, test_codec_configure_invalid_ase_id_unavailable
 		0x00U,          /* Reason[1] */
 	};
 
-	mock_bap_unicast_server_cb_config_fake.custom_fake = unicast_server_cb_config_custom_fake;
+	mock_ascs_cb_config_fake.custom_fake = ascs_cb_config_custom_fake;
 
 	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, sizeof(buf), 0, 0);
 

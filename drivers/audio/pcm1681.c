@@ -338,7 +338,7 @@ static int pcm1681_apply_properties(const struct device *dev)
 	return 0;
 }
 
-static const struct audio_codec_api pcm1681_api = {
+static DEVICE_API(audio_codec, pcm1681_api) = {
 	.configure = pcm1681_configure,
 	.start_output = pcm1681_start_output,
 	.stop_output = pcm1681_stop_output,

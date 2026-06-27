@@ -15,6 +15,9 @@ config NUM_IRQS
 config ARCH_SW_ISR_TABLE_ALIGN
 	default 64
 
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x11de784a"
+
 config RISCV_MCAUSE_EXCEPTION_MASK
 	default 0x3FF
 

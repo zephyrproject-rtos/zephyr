@@ -17,6 +17,11 @@
 #include <acp70_chip_offsets.h>
 #include <acp70_chip_reg.h>
 #endif
+#ifdef CONFIG_SOC_ACP_7_X
+#include <acp7x_fw_scratch_mem.h>
+#include <acp7x_chip_offsets.h>
+#include <acp7x_chip_reg.h>
+#endif
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
@@ -458,7 +463,7 @@ static int acp_host_dma_reload(const struct device *dev, uint32_t channel, uint3
 		/* Known Data hack */
 		psrc_dscr[strt_idx].dest_addr = (ptr_data->wr_ptr | ACP_SRAM);
 		psrc_dscr[strt_idx].trns_cnt.bits.trns_cnt = bytes;
-		/* Configure a single descrption */
+		/* Configure a single description */
 		dma_config_descriptor(strt_idx, 1, psrc_dscr, pdest_dscr);
 		io_reg_write(PU_REGISTER_BASE + ACP_DMA_DSCR_CNT_0, 1);
 		if (ptr_data->rd_size + bytes > ptr_data->sys_buff_size) {
@@ -523,7 +528,7 @@ static int acp_host_dma_reload(const struct device *dev, uint32_t channel, uint3
 		psrc_dscr[strt_idx].src_addr = (ptr_data->rd_ptr | ACP_SRAM);
 		psrc_dscr[strt_idx].dest_addr = ptr_data->wr_ptr;
 		psrc_dscr[strt_idx].trns_cnt.bits.trns_cnt = bytes;
-		/* Configure a single descrption */
+		/* Configure a single description */
 		dma_config_descriptor(strt_idx, 1, psrc_dscr, pdest_dscr);
 		io_reg_write(PU_REGISTER_BASE + ACP_DMA_DSCR_CNT_0, 1);
 		/* Check for wrap-around case for system  buffer */
@@ -554,7 +559,7 @@ static int acp_host_dma_reload(const struct device *dev, uint32_t channel, uint3
 
 	dma_cntl.bits.dmachrun = 0;
 	io_reg_write(PU_REGISTER_BASE + ACP_DMA_CNTL_0, dma_cntl.u32all);
-	/* Load start index of decriptor and priority */
+	/* Load start index of descriptor and priority */
 	io_reg_write(PU_REGISTER_BASE + ACP_DMA_DSCR_STRT_IDX_0, strt_idx);
 	io_reg_write(PU_REGISTER_BASE + ACP_DMA_PRIO_0, 1);
 	chan->state = ACP_DMA_PREPARED;

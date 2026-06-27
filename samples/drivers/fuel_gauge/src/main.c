@@ -20,10 +20,10 @@ LOG_MODULE_REGISTER(app);
 const char *fuel_gauge_prop_to_str(enum fuel_gauge_prop_type prop)
 {
 	switch (prop) {
-	case FUEL_GAUGE_AVG_CURRENT:
-		return "FUEL_GAUGE_AVG_CURRENT";
-	case FUEL_GAUGE_CURRENT:
-		return "FUEL_GAUGE_CURRENT";
+	case FUEL_GAUGE_AVG_CURRENT_UA:
+		return "FUEL_GAUGE_AVG_CURRENT_UA";
+	case FUEL_GAUGE_CURRENT_UA:
+		return "FUEL_GAUGE_CURRENT_UA";
 	case FUEL_GAUGE_CHARGE_CUTOFF:
 		return "FUEL_GAUGE_CHARGE_CUTOFF";
 	case FUEL_GAUGE_CYCLE_COUNT:
@@ -32,50 +32,50 @@ const char *fuel_gauge_prop_to_str(enum fuel_gauge_prop_type prop)
 		return "FUEL_GAUGE_CONNECT_STATE";
 	case FUEL_GAUGE_FLAGS:
 		return "FUEL_GAUGE_FLAGS";
-	case FUEL_GAUGE_FULL_CHARGE_CAPACITY:
-		return "FUEL_GAUGE_FULL_CHARGE_CAPACITY";
+	case FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH:
+		return "FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH";
 	case FUEL_GAUGE_PRESENT_STATE:
 		return "FUEL_GAUGE_PRESENT_STATE";
-	case FUEL_GAUGE_REMAINING_CAPACITY:
-		return "FUEL_GAUGE_REMAINING_CAPACITY";
-	case FUEL_GAUGE_RUNTIME_TO_EMPTY:
-		return "FUEL_GAUGE_RUNTIME_TO_EMPTY";
-	case FUEL_GAUGE_RUNTIME_TO_FULL:
-		return "FUEL_GAUGE_RUNTIME_TO_FULL";
+	case FUEL_GAUGE_REMAINING_CAPACITY_UAH:
+		return "FUEL_GAUGE_REMAINING_CAPACITY_UAH";
+	case FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS:
+		return "FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS";
+	case FUEL_GAUGE_RUNTIME_TO_FULL_MINS:
+		return "FUEL_GAUGE_RUNTIME_TO_FULL_MINS";
 	case FUEL_GAUGE_SBS_MFR_ACCESS:
 		return "FUEL_GAUGE_SBS_MFR_ACCESS";
-	case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE:
-		return "FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE";
-	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
-		return "FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE";
-	case FUEL_GAUGE_TEMPERATURE:
-		return "FUEL_GAUGE_TEMPERATURE";
-	case FUEL_GAUGE_VOLTAGE:
-		return "FUEL_GAUGE_VOLTAGE";
+	case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE_PCT:
+		return "FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE_PCT";
+	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT:
+		return "FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT";
+	case FUEL_GAUGE_TEMPERATURE_DK:
+		return "FUEL_GAUGE_TEMPERATURE_DK";
+	case FUEL_GAUGE_VOLTAGE_UV:
+		return "FUEL_GAUGE_VOLTAGE_UV";
 	case FUEL_GAUGE_SBS_MODE:
 		return "FUEL_GAUGE_SBS_MODE";
-	case FUEL_GAUGE_CHARGE_CURRENT:
-		return "FUEL_GAUGE_CHARGE_CURRENT";
-	case FUEL_GAUGE_CHARGE_VOLTAGE:
-		return "FUEL_GAUGE_CHARGE_VOLTAGE";
+	case FUEL_GAUGE_CHARGE_CURRENT_UA:
+		return "FUEL_GAUGE_CHARGE_CURRENT_UA";
+	case FUEL_GAUGE_CHARGE_VOLTAGE_UV:
+		return "FUEL_GAUGE_CHARGE_VOLTAGE_UV";
 	case FUEL_GAUGE_STATUS:
 		return "FUEL_GAUGE_STATUS";
 	case FUEL_GAUGE_DESIGN_CAPACITY:
 		return "FUEL_GAUGE_DESIGN_CAPACITY";
-	case FUEL_GAUGE_DESIGN_VOLTAGE:
-		return "FUEL_GAUGE_DESIGN_VOLTAGE";
+	case FUEL_GAUGE_DESIGN_VOLTAGE_MV:
+		return "FUEL_GAUGE_DESIGN_VOLTAGE_MV";
 	case FUEL_GAUGE_SBS_ATRATE:
 		return "FUEL_GAUGE_SBS_ATRATE";
-	case FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL:
-		return "FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL";
-	case FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY:
-		return "FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY";
+	case FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL_MINS:
+		return "FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL_MINS";
+	case FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY_MINS:
+		return "FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY_MINS";
 	case FUEL_GAUGE_SBS_ATRATE_OK:
 		return "FUEL_GAUGE_SBS_ATRATE_OK";
 	case FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM:
 		return "FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM";
-	case FUEL_GAUGE_SBS_REMAINING_TIME_ALARM:
-		return "FUEL_GAUGE_SBS_REMAINING_TIME_ALARM";
+	case FUEL_GAUGE_SBS_REMAINING_TIME_ALARM_MINS:
+		return "FUEL_GAUGE_SBS_REMAINING_TIME_ALARM_MINS";
 	case FUEL_GAUGE_MANUFACTURER_NAME:
 		return "FUEL_GAUGE_MANUFACTURER_NAME";
 	case FUEL_GAUGE_DEVICE_NAME:
@@ -84,10 +84,10 @@ const char *fuel_gauge_prop_to_str(enum fuel_gauge_prop_type prop)
 		return "FUEL_GAUGE_DEVICE_CHEMISTRY";
 	case FUEL_GAUGE_CURRENT_DIRECTION:
 		return "FUEL_GAUGE_CURRENT_DIRECTION";
-	case FUEL_GAUGE_STATE_OF_CHARGE_ALARM:
-		return "FUEL_GAUGE_STATE_OF_CHARGE_ALARM";
-	case FUEL_GAUGE_LOW_VOLTAGE_ALARM:
-		return "FUEL_GAUGE_LOW_VOLTAGE_ALARM";
+	case FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT:
+		return "FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT";
+	case FUEL_GAUGE_LOW_VOLTAGE_ALARM_UV:
+		return "FUEL_GAUGE_LOW_VOLTAGE_ALARM_UV";
 	case FUEL_GAUGE_THERM_VOLTAGE_UV:
 		return "FUEL_GAUGE_THERM_VOLTAGE_UV";
 	default:
@@ -119,40 +119,40 @@ int main(void)
 		LOG_INF("Info: not all properties are supported by all fuel gauges!");
 
 		fuel_gauge_prop_t test_props[] = {
-			FUEL_GAUGE_AVG_CURRENT,
-			FUEL_GAUGE_CURRENT,
+			FUEL_GAUGE_AVG_CURRENT_UA,
+			FUEL_GAUGE_CURRENT_UA,
 			FUEL_GAUGE_CHARGE_CUTOFF,
 			FUEL_GAUGE_CYCLE_COUNT,
 			FUEL_GAUGE_CONNECT_STATE,
 			FUEL_GAUGE_FLAGS,
-			FUEL_GAUGE_FULL_CHARGE_CAPACITY,
+			FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH,
 			FUEL_GAUGE_PRESENT_STATE,
-			FUEL_GAUGE_REMAINING_CAPACITY,
-			FUEL_GAUGE_RUNTIME_TO_EMPTY,
-			FUEL_GAUGE_RUNTIME_TO_FULL,
+			FUEL_GAUGE_REMAINING_CAPACITY_UAH,
+			FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS,
+			FUEL_GAUGE_RUNTIME_TO_FULL_MINS,
 			FUEL_GAUGE_SBS_MFR_ACCESS,
-			FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE,
-			FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE,
-			FUEL_GAUGE_TEMPERATURE,
-			FUEL_GAUGE_VOLTAGE,
+			FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE_PCT,
+			FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT,
+			FUEL_GAUGE_TEMPERATURE_DK,
+			FUEL_GAUGE_VOLTAGE_UV,
 			FUEL_GAUGE_SBS_MODE,
-			FUEL_GAUGE_CHARGE_CURRENT,
-			FUEL_GAUGE_CHARGE_VOLTAGE,
+			FUEL_GAUGE_CHARGE_CURRENT_UA,
+			FUEL_GAUGE_CHARGE_VOLTAGE_UV,
 			FUEL_GAUGE_STATUS,
 			FUEL_GAUGE_DESIGN_CAPACITY,
-			FUEL_GAUGE_DESIGN_VOLTAGE,
+			FUEL_GAUGE_DESIGN_VOLTAGE_MV,
 			FUEL_GAUGE_SBS_ATRATE,
-			FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL,
-			FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY,
+			FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL_MINS,
+			FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY_MINS,
 			FUEL_GAUGE_SBS_ATRATE_OK,
 			FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM,
-			FUEL_GAUGE_SBS_REMAINING_TIME_ALARM,
+			FUEL_GAUGE_SBS_REMAINING_TIME_ALARM_MINS,
 			FUEL_GAUGE_MANUFACTURER_NAME,
 			FUEL_GAUGE_DEVICE_NAME,
 			FUEL_GAUGE_DEVICE_CHEMISTRY,
 			FUEL_GAUGE_CURRENT_DIRECTION,
-			FUEL_GAUGE_STATE_OF_CHARGE_ALARM,
-			FUEL_GAUGE_LOW_VOLTAGE_ALARM,
+			FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT,
+			FUEL_GAUGE_LOW_VOLTAGE_ALARM_UV,
 			FUEL_GAUGE_STATE_OF_HEALTH,
 			FUEL_GAUGE_THERM_VOLTAGE_UV,
 		};
@@ -228,12 +228,12 @@ int main(void)
 						fuel_gauge_prop_to_str(test_props[i]));
 
 					switch (test_props[i]) {
-					case FUEL_GAUGE_AVG_CURRENT:
+					case FUEL_GAUGE_AVG_CURRENT_UA:
 						LOG_INF("  Avg current: %d",
-							test_vals[i].avg_current);
+							test_vals[i].avg_current_ua);
 						break;
-					case FUEL_GAUGE_CURRENT:
-						LOG_INF("  Current: %d", test_vals[i].current);
+					case FUEL_GAUGE_CURRENT_UA:
+						LOG_INF("  Current: %d", test_vals[i].current_ua);
 						break;
 					case FUEL_GAUGE_CYCLE_COUNT:
 						LOG_INF("  Cycle count: %" PRIu32,
@@ -246,56 +246,56 @@ int main(void)
 					case FUEL_GAUGE_FLAGS:
 						LOG_INF("  Flags: 0x%" PRIx32, test_vals[i].flags);
 						break;
-					case FUEL_GAUGE_FULL_CHARGE_CAPACITY:
+					case FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH:
 						LOG_INF("  Full charge capacity: %" PRIu32,
-							test_vals[i].full_charge_capacity);
+							test_vals[i].full_charge_capacity_uah);
 						break;
 					case FUEL_GAUGE_PRESENT_STATE:
 						LOG_INF("  Present state: %d",
 							test_vals[i].present_state);
 						break;
-					case FUEL_GAUGE_REMAINING_CAPACITY:
+					case FUEL_GAUGE_REMAINING_CAPACITY_UAH:
 						LOG_INF("  Remaining capacity: %" PRIu32,
-							test_vals[i].remaining_capacity);
+							test_vals[i].remaining_capacity_uah);
 						break;
-					case FUEL_GAUGE_RUNTIME_TO_EMPTY:
+					case FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS:
 						LOG_INF("  Runtime to empty: %" PRIu32,
-							test_vals[i].runtime_to_empty);
+							test_vals[i].runtime_to_empty_mins);
 						break;
-					case FUEL_GAUGE_RUNTIME_TO_FULL:
+					case FUEL_GAUGE_RUNTIME_TO_FULL_MINS:
 						LOG_INF("  Runtime to full: %" PRIu32,
-							test_vals[i].runtime_to_full);
+							test_vals[i].runtime_to_full_mins);
 						break;
 					case FUEL_GAUGE_SBS_MFR_ACCESS:
 						LOG_INF("  SBS MFR access: %" PRIu16,
 							test_vals[i].sbs_mfr_access_word);
 						break;
-					case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE:
+					case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE_PCT:
 						LOG_INF("  Absolute state of charge: %" PRIu8,
-							test_vals[i].absolute_state_of_charge);
+							test_vals[i].absolute_state_of_charge_pct);
 						break;
-					case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
+					case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT:
 						LOG_INF("  Relative state of charge: %" PRIu8,
-							test_vals[i].relative_state_of_charge);
+							test_vals[i].relative_state_of_charge_pct);
 						break;
-					case FUEL_GAUGE_TEMPERATURE:
+					case FUEL_GAUGE_TEMPERATURE_DK:
 						LOG_INF("  Temperature: %" PRIu16,
-							test_vals[i].temperature);
+							test_vals[i].temperature_dk);
 						break;
-					case FUEL_GAUGE_VOLTAGE:
-						LOG_INF("  Voltage: %d", test_vals[i].voltage);
+					case FUEL_GAUGE_VOLTAGE_UV:
+						LOG_INF("  Voltage: %d", test_vals[i].voltage_uv);
 						break;
 					case FUEL_GAUGE_SBS_MODE:
 						LOG_INF("  SBS mode: %" PRIu16,
 							test_vals[i].sbs_mode);
 						break;
-					case FUEL_GAUGE_CHARGE_CURRENT:
+					case FUEL_GAUGE_CHARGE_CURRENT_UA:
 						LOG_INF("  Charge current: %" PRIu32,
-							test_vals[i].chg_current);
+							test_vals[i].chg_current_ua);
 						break;
-					case FUEL_GAUGE_CHARGE_VOLTAGE:
+					case FUEL_GAUGE_CHARGE_VOLTAGE_UV:
 						LOG_INF("  Charge voltage: %" PRIu32,
-							test_vals[i].chg_voltage);
+							test_vals[i].chg_voltage_uv);
 						break;
 					case FUEL_GAUGE_STATUS:
 						LOG_INF("  Status: 0x%" PRIx16,
@@ -305,21 +305,22 @@ int main(void)
 						LOG_INF("  Design capacity: %" PRIu16,
 							test_vals[i].design_cap);
 						break;
-					case FUEL_GAUGE_DESIGN_VOLTAGE:
+					case FUEL_GAUGE_DESIGN_VOLTAGE_MV:
 						LOG_INF("  Design voltage: %" PRIx16,
-							test_vals[i].design_volt);
+							test_vals[i].design_volt_mv);
 						break;
 					case FUEL_GAUGE_SBS_ATRATE:
 						LOG_INF("  SBS at rate: %" PRIi16,
 							test_vals[i].sbs_at_rate);
 						break;
-					case FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL:
+					case FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL_MINS:
 						LOG_INF("  SBS at rate time to full: %" PRIu16,
-							test_vals[i].sbs_at_rate_time_to_full);
+							test_vals[i].sbs_at_rate_time_to_full_mins);
 						break;
-					case FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY:
+					case FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY_MINS:
 						LOG_INF("  SBS at rate time to empty: %" PRIu16,
-							test_vals[i].sbs_at_rate_time_to_empty);
+							test_vals[i]
+								.sbs_at_rate_time_to_empty_mins);
 						break;
 					case FUEL_GAUGE_SBS_ATRATE_OK:
 						LOG_INF("  SBS at rate ok: %d",
@@ -329,21 +330,21 @@ int main(void)
 						LOG_INF("  SBS remaining capacity alarm: %" PRIu16,
 							test_vals[i].sbs_remaining_capacity_alarm);
 						break;
-					case FUEL_GAUGE_SBS_REMAINING_TIME_ALARM:
+					case FUEL_GAUGE_SBS_REMAINING_TIME_ALARM_MINS:
 						LOG_INF("  SBS remaining time alarm: %" PRIu16,
-							test_vals[i].sbs_remaining_time_alarm);
+							test_vals[i].sbs_remaining_time_alarm_mins);
 						break;
 					case FUEL_GAUGE_CURRENT_DIRECTION:
 						LOG_INF("  Current direction: %" PRIu16,
 							test_vals[i].current_direction);
 						break;
-					case FUEL_GAUGE_STATE_OF_CHARGE_ALARM:
+					case FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT:
 						LOG_INF("  State of charge alarm: %" PRIu8,
-							test_vals[i].state_of_charge_alarm);
+							test_vals[i].state_of_charge_alarm_pct);
 						break;
-					case FUEL_GAUGE_LOW_VOLTAGE_ALARM:
+					case FUEL_GAUGE_LOW_VOLTAGE_ALARM_UV:
 						LOG_INF("  Low voltage alarm: %" PRIu32,
-							test_vals[i].low_voltage_alarm);
+							test_vals[i].low_voltage_alarm_uv);
 						break;
 					case FUEL_GAUGE_STATE_OF_HEALTH:
 						LOG_INF(" State of Health (SOH): %" PRIu32,
@@ -359,13 +360,13 @@ int main(void)
 		}
 	}
 
-	LOG_INF("Polling fuel gauge data 'FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE' & "
-		"'FUEL_GAUGE_VOLTAGE'");
+	LOG_INF("Polling fuel gauge data 'FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT' & "
+		"'FUEL_GAUGE_VOLTAGE_UV'");
 
 	while (1) {
 		fuel_gauge_prop_t poll_props[] = {
-			FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE,
-			FUEL_GAUGE_VOLTAGE,
+			FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT,
+			FUEL_GAUGE_VOLTAGE_UV,
 		};
 
 		union fuel_gauge_prop_val poll_vals[ARRAY_SIZE(poll_props)];
@@ -376,7 +377,8 @@ int main(void)
 			LOG_ERR("Error: cannot get properties");
 		} else {
 			LOG_INF("Fuel gauge data: Charge: %d%%, Voltage: %dmV",
-				poll_vals[0].relative_state_of_charge, poll_vals[1].voltage / 1000);
+				poll_vals[0].relative_state_of_charge_pct,
+				poll_vals[1].voltage_uv / 1000);
 		}
 
 		k_sleep(K_MSEC(5000));

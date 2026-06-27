@@ -1,0 +1,10 @@
+# Copyright (c) 2026 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: M5Stack M5PM1 watchdog
+
+compatible: "m5stack,m5pm1-wdt"
+
+include: base.yaml
+
+on-bus: m5pm1

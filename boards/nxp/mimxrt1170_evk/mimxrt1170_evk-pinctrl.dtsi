@@ -412,4 +412,15 @@
 			slew-rate = "fast";
 		};
 	};
+
+	pinmux_micfil: pinmux_micfil {
+		group0 {
+			pinmux = <&iomuxc_lpsr_gpio_lpsr_08_mic_clk>,
+				 <&iomuxc_lpsr_gpio_lpsr_09_mic_bitstream00>,
+				 <&iomuxc_lpsr_gpio_lpsr_10_mic_bitstream01>;
+			slew-rate = "fast";
+			drive-strength = "normal";
+			input-enable;
+		};
+	};
 };

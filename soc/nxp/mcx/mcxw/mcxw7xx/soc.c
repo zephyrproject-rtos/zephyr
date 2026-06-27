@@ -98,10 +98,25 @@ void soc_early_init_hook(void)
 	/* disable interrupts */
 	oldLevel = irq_lock();
 
+#ifdef CONFIG_SOC_MCXW70AC
+	/* This is temporarily placed in the SoC layer.
+	 * Once TSTMR support is available, this logic should be moved to the
+	 * dedicated TSTMR implementation.
+	 */
+	CLOCK_EnableClock(kCLOCK_Tstmr0);
+	CLOCK_EnableClock(kCLOCK_Fro_hf_div);
+#endif
+
 #ifndef CONFIG_SOC_MCXW70AC
 	/* Smart power switch initialization */
 	vbat_init();
 #endif
+
+	/* Apply the active-mode DCDC output voltage from device tree. This is
+	 * required (independently of CONFIG_PM) to reach the configured BLE TX
+	 * power, and is a no-op when no voltage is configured.
+	 */
+	nxp_mcxw7x_dcdc_init();
 
 	if (IS_ENABLED(CONFIG_PM)) {
 		nxp_mcxw7x_power_init();

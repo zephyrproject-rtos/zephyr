@@ -35,6 +35,7 @@ zephyr_library_sources_ifdef(
 )
 
 add_subdirectory_ifdef(CONFIG_HL78XX_EVT_MONITOR hl78xx_evt_monitor)
+add_subdirectory_ifdef(CONFIG_HL78XX_AT_MONITOR hl78xx_at_monitor)
 
 zephyr_library_include_directories(
   ./

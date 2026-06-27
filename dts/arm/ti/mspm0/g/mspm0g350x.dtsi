@@ -49,7 +49,7 @@
 			reg-names = "ti_canfd", "m_can", "message_ram";
 			interrupts = <6 0>;
 			clocks = <&ckm MSPM0_CLOCK_CANCLK>;
-			bosch,mram-cfg = <0x0 20 8 3 3 0 3 3>;
+			bosch,mram-cfg = <0x0 20 8 6 0 0 3 3>;
 			ti,divider = <1>;
 			status = "disabled";
 		};

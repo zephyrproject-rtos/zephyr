@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024, 2026 NXP
  * Copyright (c) 2025 Michael Smorto
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -23,6 +23,7 @@ struct ov767x_config {
 	struct i2c_dt_spec bus;
 	uint32_t camera_model;
 	const struct video_format_cap *fmts;
+	bool pclk_hb_disable;
 #if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ovti_ov7670, reset_gpios) ||                                \
 	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ovti_ov7675, reset_gpios)
 	struct gpio_dt_spec reset;
@@ -133,6 +134,9 @@ struct ov767x_data {
 #define OV767X_HAECC5             0xA8
 #define OV767X_HAECC6             0xA9
 
+/* COM10 bit definitions */
+#define OV767X_PCLK_NO_HBLANK 0x20 /* PCLK does not toggle during HBLANK */
+
 /* Addition defines to support OV7675 */
 #define OV767X_RGB444               0x8C /* REG444 */
 #define OV767X_COM3_DCW_EN          0x04 /* DCW enable */
@@ -186,18 +190,16 @@ static const struct video_format_cap ov7675_fmts[] = {
 
 /*
  * This initialization table is based on the MCUX SDK driver for the OV7670.
- * Note that this table assumes the camera is fed a 6MHz XCLK signal
+ * Note that this table assumes the camera is fed a 24MHz XCLK signal
  */
 static const struct video_reg8 ov767x_init_regtbl[] = {
 	{OV767X_MVFP, 0x00}, /* MVFP: Mirror/VFlip,Normal image */
 
 	/* configure the output timing */
-	/* PCLK does not toggle during horizontal blank, one PCLK, one pixel */
-	{OV767X_COM10, 0x20}, /* COM10 */
 	{OV767X_COM12, 0x00}, /* COM12,No HREF when VSYNC is low */
 	/* Brightness Control, with signal -128 to +128, 0x00 is middle value */
 	{OV767X_BRIGHT, 0x2f},
-	{OV767X_CLKRC, 0x81}, /* Clock Div, Input/(n+1), bit6 set to 1 to disable divider */
+	{OV767X_CLKRC, 0x87}, /* Clock Div: 24MHz / (7+1) = 3MHz internal (for 24MHz XCLK) */
 
 	/* SCALING_PCLK_DIV */
 	/* 0: Enable clock divider, 010: Divided by 4 */
@@ -256,7 +258,7 @@ static const struct video_reg8 ov767x_init_regtbl[] = {
 	{OV767X_COM13, 0x80}, /* Common Control 13 */
 	{OV767X_MANU, 0x11},  /* Manual U Value */
 	{OV767X_MANV, 0xFF},  /* Manual V Value */
-	/* config the output window data, this can be configured later */
+	/* config the output window data, this can be configured later in ov767x_set_fmt */
 	{OV767X_HSTART, 0x15}, /*  HSTART */
 	{OV767X_HSTOP, 0x03},  /*  HSTOP */
 	{OV767X_VSTRT, 0x02},  /*  VSTRT */
@@ -378,16 +380,27 @@ static const struct video_reg8 ov767x_rgb565_regs[] = {
 
 
 #if DT_HAS_COMPAT_STATUS_OKAY(ovti_ov7670)
-/* Resolution settings for camera, based on those present in MCUX SDK */
 static const struct video_reg8 ov7670_regs_qcif[] = {
-	{OV767X_COM7, 0x2c},
-	{OV767X_COM3, 0x00},
+	{OV767X_COM3, 0x0C},
+	{OV767X_COM3, 0x04},
 	{OV767X_COM14, 0x11},
-	{OV767X_SCALING_XSC, 0x3a},
-	{OV767X_SCALING_YSC, 0x35},
-	{OV767X_SCALING_DCWCTR, 0x11},
 	{OV767X_SCALING_PCLK_DIV, 0xf1},
-	{OV767X_SCALING_PCLK_DELAY, 0x52},
+	{OV767X_GAM1, 0x1C},
+	{OV767X_GAM2, 0x28},
+	{OV767X_GAM3, 0x3C},
+	{OV767X_GAM5, 0x69},
+	{OV767X_COM9, 0x38},
+	{0xA1, 0x0B},
+	{0x74, 0x19},
+	{0x9A, 0x80},
+	{OV767X_AWBC1, 0x14},
+	{OV767X_COM13, 0xC0},
+	{OV767X_HSTART, 0x39},
+	{OV767X_HSTOP, 0x03},
+	{OV767X_HREF, 0x80},
+	{OV767X_VSTRT, 0x03},
+	{OV767X_VSTOP, 0x7B},
+	{OV767X_VREF, 0x0A},
 };
 
 static const struct video_reg8 ov7670_regs_qvga[] = {
@@ -403,13 +416,14 @@ static const struct video_reg8 ov7670_regs_qvga[] = {
 
 static const struct video_reg8 ov7670_regs_cif[] = {
 	{OV767X_COM7, 0x24},
-	{OV767X_COM3, 0x08},
-	{OV767X_COM14, 0x11},
-	{OV767X_SCALING_XSC, 0x3a},
-	{OV767X_SCALING_YSC, 0x35},
-	{OV767X_SCALING_DCWCTR, 0x11},
-	{OV767X_SCALING_PCLK_DIV, 0xf1},
-	{OV767X_SCALING_PCLK_DELAY, 0x02},
+	{OV767X_COM3, 0x00},
+	{OV767X_COM14, 0x00},
+	{OV767X_HSTART, 0x15},
+	{OV767X_HSTOP, 0x0b},
+	{OV767X_HREF, 0x92},
+	{OV767X_VSTRT, 0x03},
+	{OV767X_VSTOP, 0x7b},
+	{OV767X_VREF, 0x0a},
 };
 
 static const struct video_reg8 ov7670_regs_vga[] = {
@@ -419,8 +433,12 @@ static const struct video_reg8 ov7670_regs_vga[] = {
 	{OV767X_SCALING_XSC, 0x3a},
 	{OV767X_SCALING_YSC, 0x35},
 	{OV767X_SCALING_DCWCTR, 0x11},
-	{OV767X_SCALING_PCLK_DIV, 0xf0},
-	{OV767X_SCALING_PCLK_DELAY, 0x02},
+	{OV767X_HREF, 0x36},
+	{OV767X_HSTART, 0x13},
+	{OV767X_HSTOP, 0x01},
+	{OV767X_VREF, 0x0a},
+	{OV767X_VSTRT, 0x02},
+	{OV767X_VSTOP, 0x7a},
 };
 #endif
 
@@ -497,7 +515,7 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 				ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_qcif,
 								 ARRAY_SIZE(ov7670_regs_qcif));
 				break;
-			case 352: /* QCIF */
+			case 352: /* CIF */
 				ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_cif,
 								 ARRAY_SIZE(ov7670_regs_cif));
 				break;
@@ -511,7 +529,7 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 				break;
 			default: /* QVGA */
 				ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_qvga,
-								 ARRAY_SIZE(ov7670_regs_vga));
+								 ARRAY_SIZE(ov7670_regs_qvga));
 				break;
 			}
 			if (ret < 0) {
@@ -740,14 +758,22 @@ static int ov767x_init(const struct device *dev)
 	/* Delay after reset */
 	k_msleep(5);
 
+	/* Write initialization values to OV767X */
+	ret = video_write_cci_multiregs8(&config->bus, ov767x_init_regtbl,
+					 ARRAY_SIZE(ov767x_init_regtbl));
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Set video format after initialization */
 	ret = ov767x_set_fmt(dev, &fmt);
 	if (ret < 0) {
 		return ret;
 	}
 
-	/* Write initialization values to OV767X */
-	ret = video_write_cci_multiregs8(&config->bus, ov767x_init_regtbl,
-					 ARRAY_SIZE(ov767x_init_regtbl));
+	/* Configure PCLK behavior during horizontal blanking */
+	ret = video_write_cci_reg(&config->bus, OV767X_REG8(OV767X_COM10),
+				  config->pclk_hb_disable ? OV767X_PCLK_NO_HBLANK : 0);
 	if (ret < 0) {
 		return ret;
 	}
@@ -804,6 +830,7 @@ static DEVICE_API(video, ov767x_api) = {
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.camera_model = id,                                                                \
 		.fmts = ov##id##_fmts,                                                             \
+		.pclk_hb_disable = DT_INST_PROP(inst, pclk_hb_disable),                            \
 		OV767X_RESET_GPIO(inst)	OV767X_PWDN_GPIO(inst)};                                   \
                                                                                                    \
 	static struct ov767x_data ov##id##_data##inst;                                             \

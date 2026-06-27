@@ -75,8 +75,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	bt_conn_unref(conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 	k_work_submit(&advertise_work);
 }
 

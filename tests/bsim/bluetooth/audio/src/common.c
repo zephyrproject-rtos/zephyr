@@ -127,8 +127,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 
 	if (err != 0) {
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
+		bt_conn_drop(&default_conn);
 
 		FAIL("Failed to connect to %s (0x%02x)\n", bt_conn_dst_str(conn), err);
 		return;
@@ -146,8 +145,7 @@ void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	printk("Disconnected: %s (reason 0x%02x)\n", bt_conn_dst_str(conn), reason);
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 	UNSET_FLAG(flag_connected);
 	UNSET_FLAG(flag_conn_updated);
 	SET_FLAG(flag_disconnected);
@@ -220,7 +218,10 @@ void setup_connectable_adv(struct bt_le_ext_adv **ext_adv)
 	if (err != 0) {
 		FAIL("Unable to set extended advertising data: %d\n", err);
 
-		bt_le_ext_adv_delete(*ext_adv);
+		err = bt_le_ext_adv_delete(*ext_adv);
+		if (err != 0) {
+			FAIL("Failed to delete extended advertising set (err %d)\n", err);
+		}
 
 		return;
 	}
@@ -229,7 +230,10 @@ void setup_connectable_adv(struct bt_le_ext_adv **ext_adv)
 	if (err != 0) {
 		FAIL("Failed to start advertising set (err %d)\n", err);
 
-		bt_le_ext_adv_delete(*ext_adv);
+		err = bt_le_ext_adv_delete(*ext_adv);
+		if (err != 0) {
+			FAIL("Failed to delete extended advertising set (err %d)\n", err);
+		}
 
 		return;
 	}

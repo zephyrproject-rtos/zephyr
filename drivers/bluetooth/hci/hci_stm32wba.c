@@ -34,10 +34,6 @@ LOG_MODULE_REGISTER(hci_wba);
 
 #define DT_DRV_COMPAT st_hci_stm32wba
 
-struct hci_data {
-	bt_hci_recv_t recv;
-};
-
 static K_SEM_DEFINE(hci_sem, 1, 1);
 
 #if defined(CONFIG_BT_HCI_SETUP)
@@ -233,7 +229,6 @@ static struct net_buf *treat_iso(const uint8_t *data, size_t len,
 static int receive_data(const struct device *dev, const uint8_t *data, size_t len,
 			const uint8_t *ext_data, size_t ext_len)
 {
-	struct hci_data *hci = dev->data;
 	uint8_t pkt_indicator;
 	struct net_buf *buf;
 	int err = 0;
@@ -261,7 +256,7 @@ static int receive_data(const struct device *dev, const uint8_t *data, size_t le
 	}
 
 	if (buf) {
-		hci->recv(dev, buf);
+		bt_hci_recv(dev, buf);
 	} else {
 		err = -ENOMEM;
 		ll_state_busy = 1;
@@ -301,7 +296,6 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 {
 	uint8_t hci_cmd_buf[MAX(BT_BUF_CMD_TX_SIZE, BT_BUF_EVT_SIZE(255U))];
-	struct hci_data *hci = dev->data;
 	struct net_buf *evt_buf = NULL;
 	uint16_t event_length;
 	uint8_t *data;
@@ -348,7 +342,7 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 			} else {
 				net_buf_reset(evt_buf);
 				net_buf_add_mem(evt_buf, hci_cmd_buf, event_length);
-				hci->recv(dev, evt_buf);
+				bt_hci_recv(dev, evt_buf);
 			}
 		} else {
 			net_buf_unref(evt_buf);
@@ -414,9 +408,8 @@ static int bt_ble_ctlr_init(void)
 	return 0;
 }
 
-static int bt_hci_stm32wba_open(const struct device *dev, bt_hci_recv_t recv)
+static int bt_hci_stm32wba_open(const struct device *dev)
 {
-	struct hci_data *data = dev->data;
 	int ret = 0;
 	/* Initialization of the thread dedicated to BLE Host Controller IP */
 	stm32wba_ble_ctlr_thread_init();
@@ -433,9 +426,6 @@ static int bt_hci_stm32wba_open(const struct device *dev, bt_hci_recv_t recv)
 	link_layer_register_isr(false);
 
 	ret = bt_ble_ctlr_init();
-	if (ret == 0) {
-		data->recv = recv;
-	}
 
 	/* TODO. Enable Flash manager once available */
 	if (IS_ENABLED(CONFIG_FLASH)) {
@@ -630,10 +620,13 @@ static DEVICE_API(bt_hci, drv) = {
 };
 
 #define HCI_DEVICE_INIT(inst) \
-	static struct hci_data hci_data_##inst = {}; \
+	static struct bt_hci_driver_data hci_data_##inst = {}; \
+	static const struct bt_hci_driver_config hci_config_##inst = \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \
 	PM_DEVICE_DT_INST_DEFINE(inst, radio_pm_action); \
-	DEVICE_DT_INST_DEFINE(inst, NULL, PM_DEVICE_DT_INST_GET(inst), &hci_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv);
+	DEVICE_DT_INST_DEFINE(inst, NULL, PM_DEVICE_DT_INST_GET(inst), &hci_data_##inst, \
+			      &hci_config_##inst, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			      &drv);
 
 /* Only one instance supported */
 HCI_DEVICE_INIT(0)

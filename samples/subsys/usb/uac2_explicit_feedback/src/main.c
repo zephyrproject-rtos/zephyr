@@ -47,7 +47,7 @@ struct usb_i2s_ctx {
 	bool i2s_started;
 	bool microframes;
 	/* Number of blocks written, used to determine when to start I2S.
-	 * Overflows are not a problem becuse this variable is not necessary
+	 * Overflows are not a problem because this variable is not necessary
 	 * after I2S is started.
 	 */
 	uint8_t i2s_blocks_written;

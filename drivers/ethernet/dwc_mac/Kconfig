@@ -1,0 +1,115 @@
+# Synopsys DesignWare MAC configuration options
+
+# Copyright (c) 2021 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Synopsys DesignWare MAC driver"
+
+DT_CHOSEN_Z_DTCM := zephyr,dtcm
+
+config ETH_DWC_ETHER_QOS_CORE
+	bool
+	depends on NET_BUF_FIXED_DATA_SIZE
+	select CACHE_MANAGEMENT if DCACHE
+	help
+	  This is a driver for the Synopsys DesignWare Ethernet MAC 10/100/1G Quality-of-Service,
+	  also referred to as "dwc_ether_qos".
+	  IP versions v4.x and v5.x are supported.
+
+config ETH_DWC_ETHER_1000_CORE
+	bool
+	depends on NET_BUF_FIXED_DATA_SIZE
+	select CACHE_MANAGEMENT if DCACHE
+	help
+	  This is a driver for the Synopsys DesignWare Ethernet MAC 10/100/1G Universal,
+	  also referred to as "dwc_ether_mac10_100_1000_universal".
+	  IP version v3.x is supported.
+
+config ETH_STM32_DWC_ETHER_QOS
+	bool "Driver for DWC Ethernet QoS-based STM32"
+	depends on !ETH_STM32_HAL
+	depends on SOC_SERIES_STM32H5X \
+		   || SOC_SERIES_STM32H7X \
+		   || SOC_SERIES_STM32H7RSX
+	depends on DT_HAS_ST_STM32_ETHERNET_ENABLED
+	select ETH_DWC_ETHER_QOS_CORE
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select PINCTRL
+	select HWINFO
+	select CRC
+	default y
+	help
+	  This enables the Synopsys DesignWare MAC driver on STM32 H5/H7/H7RS
+	  series SoCs.
+
+config ETH_STM32_DWC_ETHER_1000
+	bool "Driver for DWC Ethernet MAC-based STM32"
+	depends on !ETH_STM32_HAL
+	depends on SOC_SERIES_STM32F7X || \
+		   SOC_SERIES_STM32F4X || \
+		   SOC_SERIES_STM32F2X || \
+		   SOC_SERIES_STM32F1X
+	depends on DT_HAS_ST_STM32_ETHERNET_ENABLED
+	select ETH_DWC_ETHER_1000_CORE
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT \
+				 && !$(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
+	select PINCTRL
+	select HWINFO
+	select CRC
+	default y
+	help
+	  This enables the Synopsys DesignWare MAC driver for STM32 SoCs.
+	  Applicable for STM32F1/F2/F4/F7 series; tested only on F2/F4/F7.
+
+config ETH_DWMAC_MMU
+	bool "Synopsys DesignWare MAC driver for MMU based platforms"
+	depends on MMU
+	depends on DT_HAS_SNPS_DESIGNWARE_ETHERNET_ENABLED
+	select ETH_DWC_ETHER_QOS_CORE
+	default y
+	help
+	  This enables the Synopsys DesignWare MAC driver on MMU based
+	  platforms.
+
+if ETH_DWC_ETHER_QOS_CORE || ETH_DWC_ETHER_1000_CORE
+
+configdefault NET_BUF_ALIGNMENT
+	default DCACHE_LINE_SIZE if DCACHE
+
+config DWMAC_NB_TX_DESCS
+	int "Number of entries in the transmit descriptor ring"
+	default 16
+	range 4 128
+	help
+	  A higher number allows for more packets to be queued which may
+	  improve throughput, but that requires more transient memory.
+	  However there must be enough descriptors to hold all fragments
+	  of a full-size packet to be transmitted or the packet will be
+	  dropped.
+
+	  Fragment size is influenced by CONFIG_NET_BUF_DATA_SIZE.
+
+config DWMAC_NB_RX_DESCS
+	int "Number of entries in the receive descriptor ring"
+	default 16
+	range 4 128
+	help
+	  Received packets are spread across the required number of fragment
+	  buffers. Each RX fragment has a size of CONFIG_NET_BUF_DATA_SIZE.
+	  There is one descriptor entry per fragment.
+
+	  A higher number allows for more packets to be received without
+	  immediate intervention from the CPU but requires more transient
+	  memory. A smaller number increases the risk of an overflow and
+	  dropped packets.
+
+config ETH_DWMAC_RX_REFILL_THREAD_PRIORITY
+	int "Receive buffer refill thread priority"
+	default 0
+	help
+	  Priority level of the internal thread which is used to refill
+	  the receive buffer pool.
+
+endif # ETH_DWC_ETHER_QOS_CORE || ETH_DWC_ETHER_1000_CORE
+
+endmenu

@@ -112,6 +112,16 @@
 				};
 			};
 
+			test_i2c_m5pm1: pmic@6e {
+				compatible = "m5stack,m5pm1";
+				reg = <0x6e>;
+
+				test_i2c_m5pm1_adc: adc {
+					compatible = "m5stack,m5pm1-adc";
+					#io-channel-cells = <1>;
+				};
+			};
+
 			test_i2c_tla2021: tla2021@a {
 				compatible = "ti,tla2021";
 				reg = <0xa>;

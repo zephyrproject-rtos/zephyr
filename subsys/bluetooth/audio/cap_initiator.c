@@ -15,6 +15,7 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/cap.h>
@@ -263,7 +264,7 @@ int bt_cap_initiator_broadcast_audio_create(
 	}
 
 	*broadcast_source = NULL;
-	for (size_t i = 0; i < ARRAY_SIZE(broadcast_sources); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sources); i++) {
 		if (broadcast_sources[i].bap_broadcast == NULL) {
 			*broadcast_source = &broadcast_sources[i];
 			break;
@@ -980,7 +981,7 @@ int bt_cap_unicast_group_create(const struct bt_cap_unicast_group_param *param,
 	*unicast_group = NULL;
 
 	(void)k_mutex_lock(&list_mutex, K_FOREVER);
-	for (size_t i = 0; i < ARRAY_SIZE(unicast_groups); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(unicast_groups); i++) {
 		if (unicast_groups[i].bap_unicast_group == NULL) {
 			*unicast_group = &unicast_groups[i];
 			break;

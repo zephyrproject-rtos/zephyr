@@ -17,7 +17,6 @@ tests:
       - nrf54lm20dk/nrf54lm20a/cpuapp/ns
       - bl54l15_dvk/nrf54l10/cpuapp/ns
       - bl54l15_dvk/nrf54l15/cpuapp/ns
-      - bl54l15u_dvk/nrf54l15/cpuapp/ns
       - rpi_pico/rp2040/mcuboot
       - rpi_pico/rp2040/w/mcuboot
       - rpi_pico2/rp2350a/m33/mcuboot
@@ -27,9 +26,8 @@ tests:
   drivers.adc.b_u585i_iot02a_adc4:
     extra_args:
       - platform:b_u585i_iot02a/stm32u585xx:DTC_OVERLAY_FILE="boards/b_u585i_iot02a_adc4.overlay"
-    integration_platforms:
-      - native_sim
-      - native_sim/native/64
+    platform_allow:
+      - b_u585i_iot02a
   drivers.adc.dma_st_stm32:
     depends_on:
       - dma

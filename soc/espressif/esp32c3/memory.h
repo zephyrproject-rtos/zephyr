@@ -75,11 +75,8 @@
 	(BOOTLOADER_IRAM_SEG_START - IRAM_DRAM_OFFSET - BOOTLOADER_DRAM_SEG_LEN)
 
 /* Flash */
-#ifdef CONFIG_FLASH_SIZE
-#define FLASH_SIZE         CONFIG_FLASH_SIZE
-#else
-#define FLASH_SIZE         0x400000
-#endif
+#define FLASH_SIZE         DT_REG_SIZE(DT_CHOSEN(zephyr_flash))
+#define FLASH_BASE_ADDRESS DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
 
 /* Cached memory */
 #define CACHE_ALIGN        CONFIG_MMU_PAGE_SIZE

@@ -7,11 +7,11 @@ common:
     - s32z2xxdc2/s32z270/rtu1 # See commit 18a0660
     # platforms that are always skipped by the runtime filter
     - qemu_cortex_m0
-    - mps2/an383
     - qemu_xtensa/dc233c/mmu
   integration_platforms:
     - qemu_cortex_a9          # ARM Cortex-A9 (ARMv7-A ISA)
     - qemu_cortex_r5          # ARM Cortex-R5 (ARMv7-R ISA)
+    - mps2/an383              # ARM Cortex-M0+ (ARMv6-M ISA)
     - mps2/an385              # ARM Cortex-M3 (ARMv7-M ISA)
     - mps2/an521/cpu0         # ARM Cortex-M33 (ARMv8-M ISA)
   extra_configs:
@@ -104,6 +104,12 @@ tests:
       - CONFIG_LLEXT_HEAP_SIZE=128 # qemu_cortex_a9 requires larger heap
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
       - CONFIG_LLEXT_RODATA_NO_RELOC=y
+      # On RISC-V (no MMU, no userspace) llext copies code into RAM and runs it
+      # in machine mode, so the loaded text region must stay executable. DEP
+      # installs a locked catch-all PMP entry that makes all RAM non-executable
+      # with no way to mark the region executable. Setting an unknown symbol to
+      # 'n' is a no-op, so this is safe on the MMU arches.
+      - CONFIG_PMP_DATA_EXECUTION_PREVENTION=n
   llext.readonly_mmu.memblk:
     arch_allow:
       - arm64
@@ -119,6 +125,9 @@ tests:
       - CONFIG_LLEXT_HEAP_MEMBLK=y
       - CONFIG_LLEXT_EXT_HEAP_SIZE=64
       - CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE=4096
+      # See note above: RISC-V executes loaded code from RAM in machine mode,
+      # which is incompatible with DEP's locked catch-all PMP entry.
+      - CONFIG_PMP_DATA_EXECUTION_PREVENTION=n
   llext.writable:
     arch_allow:
       - arm

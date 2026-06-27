@@ -14,6 +14,8 @@ properties:
       three key codes.
     min: 0
     max: 65535
+    min-len: 3
+    max-len: 3
 
   poll-period-ms:
     type: int

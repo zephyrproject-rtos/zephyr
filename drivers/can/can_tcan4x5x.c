@@ -6,7 +6,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/can.h>
-#include <zephyr/drivers/can/can_mcan.h>
+#include "can_mcan.h"
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log.h>
@@ -914,8 +914,7 @@ static const struct can_mcan_ops tcan4x5x_ops = {
                                                                                                    \
 	static struct tcan4x5x_data tcan4x5x_data_##inst;                                          \
                                                                                                    \
-	static struct can_mcan_data can_mcan_data_##inst =                                         \
-		CAN_MCAN_DATA_INITIALIZER(&tcan4x5x_data_##inst);                                  \
+	CAN_MCAN_DATA_DEFINE(can_mcan_data_##inst, &tcan4x5x_data_##inst);                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, tcan4x5x_pm_control);                                       \
 	CAN_DEVICE_DT_INST_DEFINE(inst, tcan4x5x_init, PM_DEVICE_DT_INST_GET(inst),                \

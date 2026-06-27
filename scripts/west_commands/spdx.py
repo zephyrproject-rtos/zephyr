@@ -2,20 +2,23 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import logging
 import os
 import sys
 import uuid
 
 from west.commands import WestCommand
 
+from build_helpers import forward_logging_to_west
+
 script_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, os.path.join(script_dir, "pylib/"))
-from zspdx.sbom import SBOMConfig, makeSPDX, setupCmakeQuery  # noqa: E402
+from zspdx.sbom import SBOMConfig, make_spdx, setup_cmake_query  # noqa: E402
 from zspdx.version import SPDX_VERSION_2_3, SUPPORTED_SPDX_VERSIONS, parse  # noqa: E402
 
 SPDX_DESCRIPTION = """\
-This command creates an SPDX 2.2 or 2.3 tag-value bill of materials
-following the completion of a Zephyr build.
+This command creates an SPDX bill of materials following the completion
+of a Zephyr build.
 
 Prior to the build, an empty file must be created at
 BUILDDIR/.cmake/api/v1/query/codemodel-v2 in order to enable
@@ -23,38 +26,43 @@ the CMake file-based API, which the SPDX command relies upon.
 This can be done by calling `west spdx --init` prior to
 calling `west build`."""
 
+
 class ZephyrSpdx(WestCommand):
     def __init__(self):
-        super().__init__(
-                'spdx',
-                '',
-                description=SPDX_DESCRIPTION)
+        super().__init__('spdx', '', description=SPDX_DESCRIPTION)
 
     def do_add_parser(self, parser_adder):
-        parser = parser_adder.add_parser(self.name,
-                description = self.description)
+        parser = parser_adder.add_parser(self.name, description=self.description)
 
         # If you update these options, make sure to keep the docs in
         # doc/guides/west/zephyr-cmds.rst up to date.
-        parser.add_argument('-i', '--init', action="store_true",
-                help="initialize CMake file-based API")
-        parser.add_argument('-d', '--build-dir',
-                help="build directory")
-        parser.add_argument('-n', '--namespace-prefix',
-                help="namespace prefix")
-        parser.add_argument('-s', '--spdx-dir',
-                help="SPDX output directory")
-        parser.add_argument('--spdx-version', choices=[str(v) for v in SUPPORTED_SPDX_VERSIONS],
-                default=str(SPDX_VERSION_2_3),
-                help="SPDX specification version to use (default: 2.3)")
-        parser.add_argument('--analyze-includes', action="store_true",
-                help="also analyze included header files")
-        parser.add_argument('--include-sdk', action="store_true",
-                help="also generate SPDX document for SDK")
+        parser.add_argument(
+            '-i', '--init', action="store_true", help="initialize CMake file-based API"
+        )
+        parser.add_argument('-d', '--build-dir', help="build directory")
+        parser.add_argument('-n', '--namespace-prefix', help="namespace prefix")
+        parser.add_argument('-s', '--spdx-dir', help="SPDX output directory")
+        parser.add_argument(
+            '--spdx-version',
+            choices=[str(v) for v in SUPPORTED_SPDX_VERSIONS],
+            default=str(SPDX_VERSION_2_3),
+            help="SPDX specification version to use (default: 2.3)",
+        )
+        parser.add_argument(
+            '--analyze-includes', action="store_true", help="also analyze included header files"
+        )
+        parser.add_argument(
+            '--include-sdk', action="store_true", help="also generate SPDX document for SDK"
+        )
 
         return parser
 
     def do_run(self, args, unknown_args):
+        # Forward debug output from the zspdx package so module-level
+        # logging is visible under "west -v" / "west -vv".
+        forward_logging_to_west(self, 'zspdx')
+        logging.getLogger('zspdx').propagate = False
+
         self.dbg("running zephyr SPDX generator")
 
         self.dbg("  --init is", args.init)
@@ -77,13 +85,15 @@ class ZephyrSpdx(WestCommand):
             self.die("Build directory not specified; call `west spdx --init --build-dir=BUILD_DIR`")
 
         # initialize CMake file-based API - empty query file
-        query_ready = setupCmakeQuery(args.build_dir)
+        query_ready = setup_cmake_query(args.build_dir)
         if query_ready:
             self.inf("initialized; run `west build` then run `west spdx`")
         else:
-            self.die("Couldn't create CMake file-based API query directory\n"
-                     "You can manually create an empty file at "
-                     "$BUILDDIR/.cmake/api/v1/query/codemodel-v2")
+            self.die(
+                "Couldn't create CMake file-based API query directory\n"
+                "You can manually create an empty file at "
+                "$BUILDDIR/.cmake/api/v1/query/codemodel-v2"
+            )
 
     def do_run_spdx(self, args):
         if not args.build_dir:
@@ -91,37 +101,37 @@ class ZephyrSpdx(WestCommand):
 
         # create the SPDX files
         cfg = SBOMConfig()
-        cfg.buildDir = args.build_dir
+        cfg.build_dir = args.build_dir
         try:
             version_obj = parse(args.spdx_version)
         except Exception:
             self.die(f"Invalid SPDX version: {args.spdx_version}")
-        cfg.spdxVersion = version_obj
+        cfg.spdx_version = version_obj
         if args.namespace_prefix:
-            cfg.namespacePrefix = args.namespace_prefix
+            cfg.namespace_prefix = args.namespace_prefix
         else:
             # create default namespace according to SPDX spec
             # note that this is intentionally _not_ an actual URL where
             # this document will be stored
-            cfg.namespacePrefix = f"http://spdx.org/spdxdocs/zephyr-{str(uuid.uuid4())}"
+            cfg.namespace_prefix = f"http://spdx.org/spdxdocs/zephyr-{str(uuid.uuid4())}"
         if args.spdx_dir:
-            cfg.spdxDir = args.spdx_dir
+            cfg.spdx_dir = args.spdx_dir
         else:
-            cfg.spdxDir = os.path.join(args.build_dir, "spdx")
+            cfg.spdx_dir = os.path.join(args.build_dir, "spdx")
         if args.analyze_includes:
-            cfg.analyzeIncludes = True
+            cfg.analyze_includes = True
         if args.include_sdk:
-            cfg.includeSDK = True
+            cfg.include_sdk = True
 
         # make sure SPDX directory exists, or create it if it doesn't
-        if os.path.exists(cfg.spdxDir):
-            if not os.path.isdir(cfg.spdxDir):
-                self.err(f'SPDX output directory {cfg.spdxDir} exists but is not a directory')
+        if os.path.exists(cfg.spdx_dir):
+            if not os.path.isdir(cfg.spdx_dir):
+                self.err(f'SPDX output directory {cfg.spdx_dir} exists but is not a directory')
                 return
             # directory exists, we're good
         else:
             # create the directory
-            os.makedirs(cfg.spdxDir, exist_ok=False)
+            os.makedirs(cfg.spdx_dir, exist_ok=False)
 
-        if not makeSPDX(cfg):
+        if not make_spdx(cfg):
             self.die("Failed to create SPDX output")

@@ -6,7 +6,7 @@ menuconfig I2S_SILABS_SIWX91X
 	default y
 	depends on DT_HAS_SILABS_SIWX91X_I2S_ENABLED
 	depends on CLOCK_CONTROL
-	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
+	select CACHE_MANAGEMENT if DCACHE
 	select DMA
 	select PINCTRL
 	select GPIO

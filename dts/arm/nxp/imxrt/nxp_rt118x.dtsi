@@ -861,6 +861,7 @@
 		clocks = <&ccm IMX_CCM_SYSCTR_BASE_CLK 0x0 0>,
 			 <&ccm IMX_CCM_SYSCTR_SLOW_CLK 0x0 0>;
 		clock-names = "base", "slow";
+		clock-frequency = <DT_FREQ_M(24)>;
 		status = "disabled";
 	};
 

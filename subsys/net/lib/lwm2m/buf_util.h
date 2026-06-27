@@ -8,6 +8,7 @@
 #define ZEPHYR_INCLUDE_BUF_UTIL_H_
 
 #include <zephyr/types.h>
+#include <zephyr/sys/byteorder.h>
 #include <errno.h>
 #include <string.h>
 
@@ -116,7 +117,7 @@ static inline int buf_read_be32(uint32_t *value, uint8_t *src, uint16_t src_len,
 	uint8_t v32[4];
 
 	ret = buf_read(v32, sizeof(uint32_t), src, src_len, offset);
-	*value = v32[0] << 24 | v32[1] << 16 | v32[2] << 8 | v32[3];
+	*value = sys_get_be32(v32);
 
 	return ret;
 }

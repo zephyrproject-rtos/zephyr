@@ -182,7 +182,7 @@ static int handle_get_idle(const struct device *dev,
 	}
 
 	/*
-	 * There is no Get Idle callback in the leagacy API, do not issue a
+	 * There is no Get Idle callback in the legacy API, do not issue a
 	 * protocol error if no callback is provided but ID is 0.
 	 */
 	if (id != 0U && ops->get_idle == NULL) {
@@ -199,6 +199,34 @@ static int handle_get_idle(const struct device *dev,
 
 	LOG_DBG("Get Idle, Report ID %u Duration %u", id, duration);
 	net_buf_add_u8(buf, duration);
+
+	return 0;
+}
+
+static int verify_set_report(const struct device *dev,
+			     const struct usb_setup_packet *const setup)
+{
+	const uint8_t type = HID_GET_REPORT_TYPE(setup->wValue);
+	const uint8_t id = HID_GET_REPORT_ID(setup->wValue);
+	struct hid_device_data *const ddata = dev->data;
+	const struct hid_device_ops *ops = ddata->ops;
+
+	if (ops->set_report == NULL) {
+		errno = -ENOTSUP;
+		LOG_DBG("Set Report not supported");
+		return 0;
+	}
+
+	if ((type != HID_REPORT_TYPE_INPUT) &&
+	    (type != HID_REPORT_TYPE_OUTPUT) &&
+	    (type != HID_REPORT_TYPE_FEATURE)) {
+		errno = -EINVAL;
+		return 0;
+	}
+
+	if (ops->verify_set_report != NULL) {
+		errno = ops->verify_set_report(dev, type, id, setup->wLength);
+	}
 
 	return 0;
 }
@@ -378,6 +406,15 @@ static int usbd_hid_ctd(struct usbd_class_data *const c_data,
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	int ret = 0;
+
+	if (setup->wLength && (buf == NULL)) {
+		if (setup->bRequest == USB_HID_SET_REPORT) {
+			return verify_set_report(dev, setup);
+		}
+
+		errno = -ENOTSUP;
+		return 0;
+	}
 
 	switch (setup->bRequest) {
 	case USB_HID_SET_IDLE:

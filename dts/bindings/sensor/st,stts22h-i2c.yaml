@@ -24,21 +24,22 @@ properties:
     default: 0
     description: |
       HIGH temperature threshold above which an alarm is triggered.
-      Valid range is 0 to 255. It defaults to 0 (alarm off) which is
-      the configuration at power-up. This threshold must be calculated
-      from a temperature T in Celsius using the formula
-      temperature-hi-threshold = 63 + T/0.64 C.
-
+      It defaults to 0 (alarm off) which is the configuration at power-up.
+      This threshold must be calculated from a temperature T in Celsius
+      using the formula temperature-hi-threshold = 63 + T/0.64 C.
+    min: 0
+    max: 255
 
   temperature-lo-threshold:
     type: int
     default: 0
     description: |
       LOW temperature threshold below which an alarm is triggered.
-      Valid range is 0 to 255. It defaults to 0 (alarm off) which is
-      the configuration at power-up. This threshold must be calculated
-      from a temperature T in Celsius using the formula
-      temperature-lo-threshold = 63 + T/0.64 C.
+      It defaults to 0 (alarm off) which is the configuration at power-up.
+      This threshold must be calculated from a temperature T in Celsius
+      using the formula temperature-lo-threshold = 63 + T/0.64 C.
+    min: 0
+    max: 255
 
   sampling-rate:
     type: int

@@ -2112,7 +2112,7 @@ static void test_rx_priv_multi_net_id(void)
 					net_ctx[old_idx].recv_cnt = 0;
 					old_idx = i;
 
-					/* The test ends when all itterations are completed */
+					/* The test ends when all iterations are completed */
 					itr--;
 
 					net_ctx[i].start = k_uptime_get();

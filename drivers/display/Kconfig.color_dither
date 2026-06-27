@@ -1,0 +1,96 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config DISPLAY_COLOR_DITHER_SUPPORTED
+	bool
+	help
+	  Selected by display drivers that integrate the color dithering helper.
+
+menuconfig DISPLAY_COLOR_DITHER
+	bool "Color dithering"
+	default y
+	depends on DISPLAY_COLOR_PALETTE
+	depends on DISPLAY_COLOR_DITHER_SUPPORTED
+	help
+	  Enable a helper library that lets palette-backed display drivers that integrate it
+	  automatically accept RGB565 and/or RGB888 writes and dither them down to the panel's
+	  native I_4 palette format.
+
+if DISPLAY_COLOR_DITHER
+
+config DISPLAY_COLOR_DITHER_INPUT_RGB565
+	bool "Accept RGB565 input"
+	default y
+	help
+	  Let palette-backed drivers accept RGB565 frames and dither them to their I_4 palette. Adds
+	  a per-instance conversion buffer sized for one full I_4 frame.
+
+config DISPLAY_COLOR_DITHER_INPUT_RGB888
+	bool "Accept RGB888 input"
+	help
+	  Let palette-backed drivers accept RGB888 frames and dither them to their I_4 palette. Adds
+	  a per-instance conversion buffer sized for one full I_4 frame.
+
+choice DISPLAY_COLOR_DITHER_ALGORITHM
+	prompt "Dithering algorithm"
+	default DISPLAY_COLOR_DITHER_ALGORITHM_ATKINSON
+	help
+	  Algorithm used when non-I_4 writes are converted to the panel's I_4 palette format.
+
+config DISPLAY_COLOR_DITHER_ALGORITHM_NONE
+	bool "None (nearest-palette only)"
+	help
+	  Map each source pixel to its nearest palette entry. Fastest option, preserves hard edges
+	  in text, icons and exact palette artwork.
+
+config DISPLAY_COLOR_DITHER_ALGORITHM_ORDERED_BAYER_4X4
+	bool "Ordered Bayer 4x4"
+	help
+	  Good general-purpose choice for small displays and simple graphics.
+
+config DISPLAY_COLOR_DITHER_ALGORITHM_ORDERED_BAYER_8X8
+	bool "Ordered Bayer 8x8"
+	help
+	  Smoother gradients than 4x4 ordered dithering, at the cost of a larger visible ordered
+	  pattern.
+
+config DISPLAY_COLOR_DITHER_ALGORITHM_FLOYD_STEINBERG
+	bool "Floyd-Steinberg"
+	help
+	  Diffuses quantization error between neighbouring pixels. Typically slower and uses two
+	  extra per-row signed-error buffers, but gives the best average tone and hue accuracy for
+	  photos and gradients.
+
+config DISPLAY_COLOR_DITHER_ALGORITHM_ATKINSON
+	bool "Atkinson"
+	help
+	  Error-diffusion variant from the original Macintosh imaging stack.
+	  A good fit for monochrome and few-colour palettes (e-paper, retro UI). Uses three extra
+	  per-row signed-error buffers.
+
+endchoice
+
+choice DISPLAY_COLOR_DITHER_DEFAULT_FORMAT
+	prompt "Default pixel format reported by opt-in drivers"
+	default DISPLAY_COLOR_DITHER_DEFAULT_RGB888 if DISPLAY_COLOR_DITHER_INPUT_RGB888
+	default DISPLAY_COLOR_DITHER_DEFAULT_RGB565 if DISPLAY_COLOR_DITHER_INPUT_RGB565
+	default DISPLAY_COLOR_DITHER_DEFAULT_I4
+	help
+	  Palette-backed I_4 drivers that use this helper advertise this as their input pixel format
+	  on boot. Applications that never call display_set_pixel_format() will write in this
+	  format.
+
+config DISPLAY_COLOR_DITHER_DEFAULT_I4
+	bool "I_4"
+
+config DISPLAY_COLOR_DITHER_DEFAULT_RGB565
+	bool "RGB565"
+	depends on DISPLAY_COLOR_DITHER_INPUT_RGB565
+
+config DISPLAY_COLOR_DITHER_DEFAULT_RGB888
+	bool "RGB888"
+	depends on DISPLAY_COLOR_DITHER_INPUT_RGB888
+
+endchoice
+
+endif # DISPLAY_COLOR_DITHER

@@ -82,6 +82,16 @@
 		clock-frequency = <32000000>;
 		#clock-cells = <0>;
 	};
+
+	/*
+	 * 32.768 kHz RTC oscillator (RTCOSC32K) that clocks the OS event timer
+	 * when OSTIMER is selected as the system timer (MCXW23 RM 45.4.11.2.24).
+	 */
+	clk_32k: clock-32k {
+		compatible = "fixed-clock";
+		clock-frequency = <32768>;
+		#clock-cells = <0>;
+	};
 };
 
 &sram {

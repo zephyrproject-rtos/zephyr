@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2026 Siratul Islam <email@sirat.me>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/input/esp32-touch-sensor-input.h>
+
+/ {
+	chosen {
+		zephyr,console = &board_cdc_acm_uart;
+		zephyr,shell-uart = &board_cdc_acm_uart;
+		zephyr,fido2-hid = &fido2_hid;
+		zephyr,fido2-up-input = &touch;
+	};
+};
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+
+	board_cdc_acm_uart: board_cdc_acm_uart {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+
+	fido2_hid: fido2_hid {
+		compatible = "zephyr,hid-device";
+		in-report-size = <64>;
+		in-polling-period-us = <1000>;
+	};
+};
+
+&touch {
+	status = "okay";
+
+	touch_sensor_set: touch_sensor_0 {
+		channel-num = <9>;
+		channel-sens = <20>;
+		zephyr,code = <INPUT_KEY_0>;
+	};
+
+	touch_sensor_play: touch_sensor_1 {
+		channel-num = <8>;
+		channel-sens = <20>;
+		zephyr,code = <INPUT_KEY_1>;
+	};
+
+	touch_sensor_vol_inc: touch_sensor_2 {
+		channel-num = <6>;
+		channel-sens = <20>;
+		zephyr,code = <INPUT_KEY_2>;
+	};
+
+	touch_sensor_vol_dec: touch_sensor_3 {
+		channel-num = <4>;
+		channel-sens = <20>;
+		zephyr,code = <INPUT_KEY_3>;
+	};
+};

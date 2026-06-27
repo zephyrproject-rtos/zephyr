@@ -18,6 +18,7 @@ supported:
   - can
   - counter
   - dma
+  - entropy
   - flash
   - gpio
   - i2c

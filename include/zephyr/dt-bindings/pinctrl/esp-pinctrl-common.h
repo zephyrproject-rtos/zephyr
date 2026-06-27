@@ -38,6 +38,43 @@
 	 ((sig_o & ESP32_PIN_SIGO_MASK) << ESP32_PIN_SIGO_SHIFT))
 
 /**
+ * @brief Ethernet RMII pin encoding.
+ *
+ * RMII pads use dedicated EMAC IOMUX functions instead of the GPIO
+ * matrix, so they cannot use the ESP32_PINMUX() encoding. An RMII cell
+ * carries only the signal slot and GPIO number; the Ethernet driver
+ * resolves the IOMUX function and applies it. The ESP32_RMII_MARKER bit
+ * distinguishes these cells from ESP32_PINMUX() cells.
+ */
+#define ESP32_RMII_SLOT_SHIFT 24U     /**< RMII signal slot field shift */
+#define ESP32_RMII_SLOT_MASK  0xFU    /**< RMII signal slot field mask */
+#define ESP32_RMII_MARKER     BIT(30) /**< Marks a cell as an RMII pinmux */
+
+/**
+ * @name Ethernet RMII signal slots
+ * @{
+ */
+#define ESP_RMII_CLK        0 /**< RMII reference clock */
+#define ESP_RMII_TX_EN      1 /**< RMII transmit enable */
+#define ESP_RMII_TXD0       2 /**< RMII transmit data 0 */
+#define ESP_RMII_TXD1       3 /**< RMII transmit data 1 */
+#define ESP_RMII_CRS_DV     4 /**< RMII carrier sense / data valid */
+#define ESP_RMII_RXD0       5 /**< RMII receive data 0 */
+#define ESP_RMII_RXD1       6 /**< RMII receive data 1 */
+#define ESP_RMII_SLOT_COUNT 7 /**< Number of ESP_RMII_* signal slots above */
+/** @} */
+
+/**
+ * @brief Construct an Ethernet RMII pinmux value
+ *
+ * @param pin   GPIO pin number
+ * @param slot  RMII signal slot (ESP_RMII_*)
+ */
+#define ESP32_RMII_PINMUX(pin, slot)                                                               \
+	(ESP32_RMII_MARKER | (((slot) & ESP32_RMII_SLOT_MASK) << ESP32_RMII_SLOT_SHIFT) |          \
+	 (((pin) & ESP32_PIN_NUM_MASK) << ESP32_PIN_NUM_SHIFT))
+
+/**
  * @brief ESP32 pin configuration bit field.
  *
  * This field encodes pin configuration options used by the ESP32

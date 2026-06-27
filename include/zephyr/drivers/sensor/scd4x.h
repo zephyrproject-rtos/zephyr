@@ -16,7 +16,7 @@
 /**
  * @brief Sensirion SCD4X CO<sub>2</sub> sensor
  * @defgroup scd4x_interface SCD4X
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_sensirion
  * @{
  */
 

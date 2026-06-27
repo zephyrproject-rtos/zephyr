@@ -1,10 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_syscall_header_ifdef(
-  CONFIG_COUNTER_MAXIM_DS3231
-  ${ZEPHYR_BASE}/include/zephyr/drivers/rtc/maxim_ds3231.h
-)
-
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/counter.h)
 
 zephyr_library()
@@ -31,7 +26,6 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_INFINEON_CAT1 counter_infineon.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_INFINEON_TCPWM counter_infineon_tcpwm.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_ITE_IT51XXX counter_ite_it51xxx.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_ITE_IT8XXX2 counter_ite_it8xxx2.c)
-zephyr_library_sources_ifdef(CONFIG_COUNTER_MAXIM_DS3231 maxim_ds3231.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCHP_G1_TCC counter_mchp_tcc_g1.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCHP_RTC_G1 counter_mchp_rtc_g1.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCHP_SAM_PIT64B counter_mchp_sam_pit64b.c)
@@ -50,6 +44,7 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_SNVS counter_mcux_snvs.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_STM counter_mcux_stm.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_SYSCTR counter_mcux_sysctr.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_TPM counter_mcux_tpm.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_WAKE_TIMER counter_mcux_wake_timer.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MICROCHIP_MCP7940N rtc_mcp7940n.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MSPM0_TIMER counter_mspm0_timer.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NATIVE_SIM counter_native_sim.c)
@@ -57,6 +52,7 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_NEORV32_GPTMR counter_neorv32_gptmr.
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NPCX_LCT counter_npcx_lct.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NRF_RTC counter_nrfx_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NRF_TIMER counter_nrfx_timer.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_NXP_IRTC counter_nxp_irtc.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NXP_MRT counter_nxp_mrt.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NXP_PIT counter_nxp_pit.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NXP_S32_SYS_TIMER counter_nxp_s32_sys_timer.c)
@@ -88,6 +84,7 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_TMR_ESP32 counter_esp32_tmr.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_WUT_MAX32 counter_max32_wut.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_XEC counter_mchp_xec.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_XLNX_AXI_TIMER counter_xlnx_axi_timer.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_XLNX_ZYNQMP_RTC counter_xlnx_zynqmp_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_TIMER_DTMR_CMSDK_APB timer_dtmr_cmsdk_apb.c)
 zephyr_library_sources_ifdef(CONFIG_TIMER_TMR_CMSDK_APB timer_tmr_cmsdk_apb.c)
 # zephyr-keep-sorted-stop

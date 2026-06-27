@@ -297,7 +297,7 @@ static int espi_peci_send(const struct device *dev, struct peci_msg *msg)
 		oob_peci_req.rd_len = 0;
 	} else {
 		oob_peci_req.rd_len = msg->rx_buffer.len;
-		/* Payload length plus commmand byte */
+		/* Payload length plus command byte */
 		oob_peci_req.wr_len = msg->tx_buffer.len + 1;
 	}
 	oob_hdr->byte_cnt = OOB_PACKET_HEADER_SIZE + oob_peci_req.wr_len;

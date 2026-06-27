@@ -273,7 +273,7 @@ int pbuf_get_initial_buf(struct pbuf *pb, volatile char **buf, uint16_t *len);
  * @brief Remap embedded addresses to native addresses.
  *
  * This function is to be used only with native simulator based targets and
- * remaps addresses of a pbuf from devicetree addesses to
+ * remaps addresses of a pbuf from devicetree addresses to
  * allocated native memory address ranges.
  * This is only used in the IPC backend implementations.
  *

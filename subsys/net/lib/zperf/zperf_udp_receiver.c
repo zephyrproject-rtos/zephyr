@@ -320,7 +320,8 @@ static int udp_recv_data(struct net_socket_service_event *pev)
 {
 	static uint8_t buf[UDP_RECEIVER_BUF_SIZE];
 	int ret = 1;
-	int family, sock_error;
+	int family, sock_error = 0;
+	int default_error = EIO;
 	struct net_sockaddr addr;
 	net_socklen_t optlen = sizeof(int);
 	net_socklen_t addrlen = sizeof(addr);
@@ -330,11 +331,22 @@ static int udp_recv_data(struct net_socket_service_event *pev)
 	}
 
 	if ((pev->event.revents & ZSOCK_POLLERR) ||
-	    (pev->event.revents & ZSOCK_POLLNVAL)) {
+	    (pev->event.revents & ZSOCK_POLLNVAL) ||
+	    (pev->event.revents & ZSOCK_POLLHUP)) {
+		if (pev->event.revents & ZSOCK_POLLNVAL) {
+			default_error = EBADF;
+		} else if (pev->event.revents & ZSOCK_POLLHUP) {
+			default_error = ENOTCONN;
+		}
+
 		(void)zsock_getsockopt(pev->event.fd, ZSOCK_SOL_SOCKET,
 				       ZSOCK_SO_DOMAIN, &family, &optlen);
-		(void)zsock_getsockopt(pev->event.fd, ZSOCK_SOL_SOCKET,
-				       ZSOCK_SO_ERROR, &sock_error, &optlen);
+		if (zsock_getsockopt(pev->event.fd, ZSOCK_SOL_SOCKET,
+				     ZSOCK_SO_ERROR, &sock_error, &optlen) < 0 ||
+		    sock_error == 0) {
+			sock_error = default_error;
+		}
+
 		NET_ERR("UDP receiver IPv%d socket error (%d)",
 			family == NET_AF_INET ? 4 : 6, sock_error);
 		ret = -sock_error;

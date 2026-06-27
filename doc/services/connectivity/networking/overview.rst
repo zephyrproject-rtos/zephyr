@@ -42,6 +42,9 @@ can be disabled if not needed.
     (:rfc:`2131`).
   * The IPv4 address can also be configured manually. Static IPv4 addresses
     are supported by default.
+  * IPv4 NAT (Network Address Translation) is supported. Packets can
+    hop between interfaces by performing SNAT and DNAT. Connection tracking
+    and iptable rules are used to filter and forward packets across subnets.
 
 * **Dual stack support.** The networking stack allows a developer to configure
   the system to use both IPv6 and IPv4 at the same time.

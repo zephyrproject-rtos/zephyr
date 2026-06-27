@@ -164,7 +164,7 @@ static int intel_adsp_wdt_init(const struct device *dev)
 
 #if WDT_INTEL_ADSP_INTERRUPT_SUPPORT
 	IRQ_CONNECT(DT_IRQN(DEV_NODE), DT_IRQ(DEV_NODE, priority), intel_adsp_wdt_isr,
-		    DEVICE_DT_GET(DEV_NODE), DT_IRQ(DEV_NODE, sense));
+		    DEVICE_DT_GET(DEV_NODE), DT_IRQ(DEV_NODE, flags));
 	irq_enable(DT_IRQN(DEV_NODE));
 #endif
 

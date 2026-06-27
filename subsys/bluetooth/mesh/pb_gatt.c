@@ -39,10 +39,7 @@ static struct prov_link link;
 
 static void reset_state(void)
 {
-	if (link.conn) {
-		bt_conn_unref(link.conn);
-		link.conn = NULL;
-	}
+	bt_conn_drop(&link.conn);
 
 	/* If this fails, the protocol timeout handler will exit early. */
 	(void)k_work_cancel_delayable(&link.prot_timer);

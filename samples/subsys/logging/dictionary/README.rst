@@ -80,3 +80,46 @@ Running the Log Parser
       [    301600] <dbg> hello_world: main: For HeXdUmP!
                                     48 45 58 44 55 4d 50 21  20 48 45 58 44 55 4d 50 |HEXDUMP!  HEXDUMP
                                     40 20 48 45 58 44 55 4d  50 23                   |@ HEXDUM P#
+
+
+Running the Live Log Parser
+===========================
+
+For real-time decoding on a running device, use the live log parser instead.
+It continuously reads binary log data from a serial port or JLink RTT and
+decodes it on the fly. Note that the live parser only supports binary
+dictionary output (not hex-encoded).
+
+**Over UART:**
+
+First, build and flash the binary dictionary sample to a board:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/logging/dictionary
+   :board: nrf5340dk/nrf5340/cpuapp
+   :goals: flash
+   :gen-args: -DCONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_BIN=y
+   :compact:
+
+Then run the live parser on the serial port:
+
+.. code-block:: console
+
+   ./scripts/logging/dictionary/live_log_parser.py build/zephyr/log_dictionary.json serial /dev/ttyACM0 115200
+
+**Over JLink RTT:**
+
+Build and flash using the RTT backend:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/logging/dictionary
+   :board: nrf5340dk/nrf5340/cpuapp
+   :goals: flash
+   :gen-args: -DCONFIG_LOG_BACKEND_RTT=y -DCONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY=y -DCONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY_HEX=n -DCONFIG_USE_SEGGER_RTT=y
+   :compact:
+
+Then run the live parser over RTT (requires ``pip install pylink-square``):
+
+.. code-block:: console
+
+   ./scripts/logging/dictionary/live_log_parser.py build/zephyr/log_dictionary.json jlink-rtt nrf5340_xxaa_app

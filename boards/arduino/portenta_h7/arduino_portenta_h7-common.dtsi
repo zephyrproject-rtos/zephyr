@@ -88,6 +88,8 @@
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_ph7 &i2c3_sda_ph8>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioh 7 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioh 8 GPIO_ACTIVE_HIGH>;
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
@@ -95,6 +97,8 @@
 zephyr_i2c: &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
@@ -102,6 +106,8 @@ zephyr_i2c: &i2c1 {
 &i2c4 {
 	pinctrl-0 = <&i2c4_scl_ph11 &i2c4_sda_ph12>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioh 11 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioh 12 GPIO_ACTIVE_HIGH>;
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
@@ -109,6 +115,8 @@ zephyr_i2c: &i2c1 {
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_ph7 &i2c3_sda_ph8>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioh 7 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioh 8 GPIO_ACTIVE_HIGH>;
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 

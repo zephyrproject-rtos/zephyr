@@ -189,17 +189,17 @@ static int max17048_get_single_prop_impl(const struct device *dev, fuel_gauge_pr
 	int rc = 0;
 
 	switch (prop) {
-	case FUEL_GAUGE_RUNTIME_TO_EMPTY:
-		val->runtime_to_empty = data->time_to_empty;
+	case FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS:
+		val->runtime_to_empty_mins = data->time_to_empty;
 		break;
-	case FUEL_GAUGE_RUNTIME_TO_FULL:
-		val->runtime_to_full = data->time_to_full;
+	case FUEL_GAUGE_RUNTIME_TO_FULL_MINS:
+		val->runtime_to_full_mins = data->time_to_full;
 		break;
-	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
-		val->relative_state_of_charge = data->charge;
+	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT:
+		val->relative_state_of_charge_pct = data->charge;
 		break;
-	case FUEL_GAUGE_VOLTAGE:
-		val->voltage = data->voltage;
+	case FUEL_GAUGE_VOLTAGE_UV:
+		val->voltage_uv = data->voltage;
 		break;
 	default:
 		rc = -ENOTSUP;

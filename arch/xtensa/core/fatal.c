@@ -5,12 +5,12 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/kernel_structs.h>
 #include <inttypes.h>
 #include <xtensa/config/specreg.h>
 #include <xtensa_backtrace.h>
 #include <zephyr/arch/common/exc_handle.h>
 
+#include <xtensa_exc.h>
 #include <xtensa_internal.h>
 
 #include <zephyr/logging/log.h>
@@ -72,10 +72,10 @@ char *xtensa_exccause(unsigned int cause_code)
 		return "store prohibited";
 	case 32: case 33: case 34: case 35: case 36: case 37: case 38: case 39:
 		return "coprocessor disabled";
-	case 63:
+	case XTENSA_EXCCAUSE_CUSTOM_ZEPHYR_EXCEPTION:
 		/* i.e. z_except_reason */
 		return "zephyr exception";
-	case 64:
+	case XTENSA_EXCCAUSE_CUSTOM_KERNEL_OOPS:
 		return "kernel oops";
 	default:
 		return "unknown/reserved";

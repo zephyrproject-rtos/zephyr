@@ -19,10 +19,6 @@ LOG_MODULE_REGISTER(bt_hci_driver_efr32);
 
 #define DT_DRV_COMPAT silabs_bt_hci_efr32
 
-struct hci_data {
-	bt_hci_recv_t recv;
-};
-
 #if defined(CONFIG_BT_MAX_CONN)
 #define MAX_CONN CONFIG_BT_MAX_CONN
 #else
@@ -217,7 +213,6 @@ static void slz_ll_thread_func(void *p1, void *p2, void *p3)
 static void slz_rx_thread_func(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
-	struct hci_data *hci = dev->data;
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -225,7 +220,7 @@ static void slz_rx_thread_func(void *p1, void *p2, void *p3)
 	while (true) {
 		struct net_buf *buf = k_fifo_get(&slz_rx_fifo, K_FOREVER);
 
-		hci->recv(dev, buf);
+		bt_hci_recv(dev, buf);
 	}
 }
 
@@ -241,11 +236,12 @@ static void slz_set_tx_power(int16_t max_power_dbm)
 	}
 }
 
-static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
+static int slz_bt_open(const struct device *dev)
 {
-	struct hci_data *hci = dev->data;
 	int ret;
 	sl_status_t sl_status;
+
+	ARG_UNUSED(dev);
 
 	BUILD_ASSERT(CONFIG_NUM_METAIRQ_PRIORITIES > 0,
 		     "Config NUM_METAIRQ_PRIORITIES must be greater than 0");
@@ -300,8 +296,6 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 	/* Set up interrupts after Controller init, because it will overwrite them. */
 	rail_isr_installer();
 
-	hci->recv = recv;
-
 	LOG_DBG("SiLabs BT HCI started");
 
 	return 0;
@@ -346,9 +340,11 @@ static DEVICE_API(bt_hci, drv) = {
 };
 
 #define HCI_DEVICE_INIT(inst) \
-	static struct hci_data hci_data_##inst = { \
+	static struct bt_hci_driver_data hci_data_##inst = { \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, NULL, \
+	static const struct bt_hci_driver_config hci_config_##inst =                               \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, &hci_config_##inst,              \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported right now */

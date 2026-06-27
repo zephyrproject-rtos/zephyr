@@ -244,11 +244,36 @@ Create a configuration file for ptp4l, for example
     tx_timestamp_timeout   20
     summary_interval       1
 
-and start it like this:
+Start this E2E configuration like this:
 
 .. code-block:: console
 
     sudo ./ptp4l -i zeth -f /path/to/config/e2e.cfg -m
+
+For a Zephyr build using :kconfig:option:`CONFIG_PTP_DELAY_MECHANISM_P2P`,
+create a separate configuration file such as :file:`p2p.cfg` and use ``P2P``
+on the Linux host as well:
+
+.. code-block:: ini
+
+    [global]
+    delay_mechanism         P2P
+    time_stamping           hardware
+    network_transport       UDPv4
+    domainNumber            0
+    logSyncInterval         -3
+    logMinPdelayReqInterval -3
+    tx_timestamp_timeout    20
+    summary_interval        1
+
+Zephyr currently supports two-step P2P delay measurement. One-step
+``Pdelay_Resp`` packets are rejected and logged.
+
+Start the P2P configuration like this:
+
+.. code-block:: console
+
+    sudo ./ptp4l -i zeth -f /path/to/config/p2p.cfg -m
 
 Use Linux host with native_sim
 ------------------------------

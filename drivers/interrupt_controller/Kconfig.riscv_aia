@@ -30,10 +30,19 @@ config RISCV_APLIC_MSI
 	  Enable MSI delivery mode for the APLIC.
 	  Routes wired interrupts to IMSIC as Message-Signaled Interrupts.
 
+config RISCV_APLIC_DIRECT
+	bool "RISC-V APLIC direct delivery mode"
+	default y
+	depends on RISCV_APLIC
+	depends on !$(dt_compat_all_has_prop,$(DT_COMPAT_RISCV_APLIC),msi-parent)
+	help
+	  Enable direct delivery mode for the APLIC.
+	  Routes wired interrupts directly to the Hart's MEXT interrupt line.
+
 config RISCV_AIA
 	bool "RISC-V AIA unified coordinator"
 	default y
-	depends on RISCV_APLIC_MSI
+	depends on RISCV_APLIC_MSI || RISCV_APLIC_DIRECT
 	select MULTI_LEVEL_INTERRUPTS
 	select 2ND_LEVEL_INTERRUPTS
 	help

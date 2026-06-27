@@ -164,7 +164,7 @@ static int uart_ra_sci_err_check(const struct device *dev)
 			errors |= UART_ERROR_FRAMING;
 			ssr |= R_SCI0_SSR_FER_Msk;
 		}
-		cfg->regs->SSR &= ~ssr;
+		cfg->regs->SSR = ~ssr;
 	}
 
 	return errors;
@@ -341,7 +341,6 @@ static int uart_ra_sci_fifo_read(const struct device *dev, uint8_t *rx_data, con
 			/* Receive a character (8bit , parity none) */
 			rx_data[num_rx++] = cfg->regs->RDR;
 		}
-		cfg->regs->SSR &= (uint8_t)~R_SCI0_SSR_RDRF_Msk;
 	}
 
 	return num_rx;
@@ -401,11 +400,8 @@ static void uart_ra_sci_irq_rx_enable(const struct device *dev)
 #if CONFIG_UART_RA_SCI_UART_FIFO_ENABLE
 	if (data->sci.fifo_depth != 0) {
 		cfg->regs->SSR_FIFO &= (uint8_t) ~(SCI_UART_SSR_FIFO_DR_RDF);
-	} else
-#endif
-	{
-		cfg->regs->SSR_b.RDRF = 0U;
 	}
+#endif
 	cfg->regs->SCR_b.RIE = 1U;
 }
 
@@ -497,8 +493,8 @@ static void uart_ra_sci_irq_update(const struct device *dev)
 	{
 		data->ssr = cfg->regs->SSR;
 		uint8_t ssr =
-			data->ssr ^ (R_SCI0_SSR_ORER_Msk | R_SCI0_SSR_FER_Msk | R_SCI0_SSR_PER_Msk);
-		cfg->regs->SSR_FIFO &= ssr;
+			data->ssr & (R_SCI0_SSR_ORER_Msk | R_SCI0_SSR_FER_Msk | R_SCI0_SSR_PER_Msk);
+		cfg->regs->SSR = ~ssr;
 	}
 }
 

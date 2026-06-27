@@ -20,7 +20,14 @@ config TF_PSA_CRYPTO_USER_CONFIG
 
 config MBEDTLS_ECP_NIST_OPTIM
 	bool "NIST curves optimization"
+	default y
 	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
+	help
+	  Enable specific 'modulo p' routines for each NIST prime. Depending on the
+	  prime and architecture, makes operations 4 to 8 times faster on the
+	  corresponding curve.
+
+	  The cost is a small amount of flash for the reduction tables.
 
 comment "Supported ciphers and cipher modes"
 
@@ -206,7 +213,9 @@ config MBEDTLS_PEM_WRITE_C
 
 config MBEDTLS_HAVE_ASM
 	bool "Use of assembly code"
-	default y if !ARM
+	# Enabled by default on ARMv7-M and ARMv8-M mainline cores because it brings performance improvement and footprint reduction.
+	# Disabled on other ARM architectures (e.g., ARMv6-M) because the footprint increases.
+	default y if !ARM || ARMV7_M_ARMV8_M_MAINLINE
 	help
 	  Enable use of assembly code in Mbed TLS. This improves the performance
 	  of asymmetric cryptography, however this might have an impact on the
@@ -418,12 +427,13 @@ config MBEDTLS_NIST_KW_C
 config MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 	bool "Legacy crypto support (private)"
 	help
-	  Legacy crypto is now private inside TF-PSA-Crypto and they should
-	  no more be directly accessed. However there might be code that still
-	  needs to be transitioned and in this case enabling this Kconfig
-	  allows internal headers related to legacy crypto to be made public.
-	  The long term goal is to get rid of this support so all the code
-	  should be transitioned to the PSA Crypto API as soon as possible.
+	  Legacy crypto is now private inside TF-PSA-Crypto and should not be
+	  used from new code. Enable this only while transitioning callers that
+	  still need legacy declarations: with MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+	  defined, those APIs are reachable via mbedtls/private/*.h (under the
+	  TF-PSA-Crypto builtin include path exported by the mbedtls target).
+	  The long term goal is to remove this option once all users are on the
+	  PSA Crypto API.
 
 config TF_PSA_CRYPTO_PQCP_MLDSA_ENABLED
 	bool "mldsa-native from the PQCP (post-quantum code package) driver [EXPERIMENTAL]"

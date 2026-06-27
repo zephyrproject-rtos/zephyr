@@ -16,6 +16,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/util.h>
 
@@ -25,12 +26,6 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_rtio);
 
 #include "i2c_stm32.h"
 #include "i2c-priv.h"
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
-#define DT_DRV_COMPAT st_stm32_i2c_v2
-#else
-#define DT_DRV_COMPAT st_stm32_i2c_v1
-#endif
 
 /* This symbol takes the value 1 if one of the device instances */
 /* is configured in dts with a domain clock */
@@ -91,14 +86,17 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	return ret;
 }
 
-bool i2c_stm32_start(const struct device *dev)
+/* Return true when message is started and will complete from an interrupt
+ * handler, otherwise return false and set return status in @param status.
+ */
+static bool i2c_stm32_start(const struct device *dev, int *status)
 {
 	struct i2c_stm32_data *data = dev->data;
 	struct i2c_rtio *ctx = data->ctx;
 	struct rtio_sqe *sqe = &ctx->txn_curr->sqe;
 	struct i2c_dt_spec *dt_spec = sqe->iodev->data;
 	uint8_t flags = sqe->iodev_flags;
-	int res = 0;
+	int error;
 
 #ifdef CONFIG_I2C_STM32_V2
 	struct rtio_iodev_sqe *iodev_sqe_next = rtio_txn_next(ctx->txn_curr);
@@ -112,20 +110,59 @@ bool i2c_stm32_start(const struct device *dev)
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
-		return i2c_stm32_msg_start(dev, I2C_MSG_READ | flags, sqe->rx.buf,
-					   sqe->rx.buf_len, dt_spec->addr);
+		error = i2c_stm32_msg_start(dev, I2C_MSG_READ | flags, sqe->rx.buf, sqe->rx.buf_len,
+					    dt_spec->addr);
+		break;
 	case RTIO_OP_TINY_TX:
-		return i2c_stm32_msg_start(dev, flags, sqe->tiny_tx.buf,
-					   sqe->tiny_tx.buf_len, dt_spec->addr);
+		error = i2c_stm32_msg_start(dev, flags, sqe->tiny_tx.buf, sqe->tiny_tx.buf_len,
+					    dt_spec->addr);
+		break;
 	case RTIO_OP_TX:
-		return i2c_stm32_msg_start(dev, flags, (uint8_t *)sqe->tx.buf,
-					   sqe->tx.buf_len, dt_spec->addr);
+		error = i2c_stm32_msg_start(dev, flags, (uint8_t *)sqe->tx.buf, sqe->tx.buf_len,
+					    dt_spec->addr);
+		break;
 	case RTIO_OP_I2C_CONFIGURE:
-		res = i2c_stm32_runtime_configure(dev, sqe->i2c_config);
-		return i2c_rtio_complete(data->ctx, res);
+		*status = i2c_stm32_runtime_configure(dev, sqe->i2c_config);
+		return false;
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
-		return i2c_rtio_complete(data->ctx, -EINVAL);
+		*status = -EINVAL;
+		return false;
+	}
+
+	/* Reaching this point, no asynchronous sequence is started only if an error was reported */
+	if (error != 0) {
+		*status = error;
+		return false;
+	}
+
+	return true;
+}
+
+static void i2c_stm32_start_or_complete(const struct device *dev)
+{
+	struct i2c_stm32_data *data = dev->data;
+	int status;
+
+	/* Process all synchronous sequences until an async one is started (which will complete
+	 * from an asynchronous handler) or the synchronous sequence is the last queued one.
+	 */
+	while (!i2c_stm32_start(dev, &status)) {
+		if (!i2c_rtio_complete(data->ctx, status)) {
+			i2c_stm32_pm_put(dev);
+			return;
+		}
+	}
+}
+
+void i2c_stm32_rtio_complete(const struct device *dev, int status)
+{
+	struct i2c_stm32_data *data = dev->data;
+
+	if (i2c_rtio_complete(data->ctx, status)) {
+		i2c_stm32_start_or_complete(dev);
+	} else {
+		i2c_stm32_pm_put(dev);
 	}
 }
 
@@ -141,7 +178,7 @@ static int i2c_stm32_configure(const struct device *dev,
 #define OPERATION(msg)	((msg)->flags & I2C_MSG_RW_MASK)
 
 static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msgs,
-				   uint8_t num_msgs, uint16_t addr)
+			      uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_stm32_data *data = dev->data;
 	struct i2c_rtio *const ctx = data->ctx;
@@ -199,17 +236,24 @@ int i2c_stm32_get_config(const struct device *dev, uint32_t *config)
 static void i2c_stm32_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	struct i2c_stm32_data *data = dev->data;
-	struct i2c_rtio *const ctx = data->ctx;
+	int ret;
 
 	/* Always set I2C_MSG_RESTART flag on first message in order to send start condition */
 	iodev_sqe->sqe.iodev_flags |= RTIO_IODEV_I2C_RESTART;
 
-	if (i2c_rtio_submit(ctx, iodev_sqe)) {
-		i2c_stm32_start(dev);
+	if (i2c_rtio_submit(data->ctx, iodev_sqe)) {
+		ret = i2c_stm32_pm_get(dev);
+		if (ret < 0) {
+			/* Flush pending requests since we failed to get the device */
+			do {
+			} while (i2c_rtio_complete(data->ctx, ret));
+		} else {
+			i2c_stm32_start_or_complete(dev);
+		}
 	}
 }
 
-static DEVICE_API(i2c, api_funcs) = {
+DEVICE_API(i2c, i2c_stm32_driver_api) = {
 	.configure = i2c_stm32_configure,
 	.transfer = i2c_stm32_transfer,
 	.get_config = i2c_stm32_get_config,
@@ -220,7 +264,7 @@ static DEVICE_API(i2c, api_funcs) = {
 #endif
 };
 
-static int i2c_stm32_init(const struct device *dev)
+int i2c_stm32_init(const struct device *dev)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct i2c_stm32_config *cfg = dev->config;
@@ -264,52 +308,10 @@ static int i2c_stm32_init(const struct device *dev)
 		return ret;
 	}
 
-	(void)pm_device_runtime_enable(dev);
+	ret = pm_device_runtime_enable(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }
-
-#define I2C_STM32_INIT(index)									\
-	I2C_STM32_IRQ_HANDLER_DECL(index);							\
-												\
-	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2),					\
-		   (static const uint32_t i2c_timings_##index[] =				\
-			DT_INST_PROP_OR(index, timings, {});))					\
-												\
-	PINCTRL_DT_INST_DEFINE(index);								\
-												\
-	static const struct stm32_pclken pclken_##index[] = STM32_DT_INST_CLOCKS(index);	\
-												\
-	static const struct i2c_stm32_config i2c_stm32_cfg_##index = {				\
-		.i2c = (I2C_TypeDef *)DT_INST_REG_ADDR(index),					\
-		.pclken = pclken_##index,							\
-		.pclk_len = DT_INST_NUM_CLOCKS(index),						\
-		I2C_STM32_IRQ_HANDLER_FUNCTION(index)						\
-		.bitrate = DT_INST_PROP(index, clock_frequency),				\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),					\
-		IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2),				\
-			   (.timings = (const struct i2c_config_timing *)i2c_timings_##index,	\
-			    .n_timings =							\
-			sizeof(i2c_timings_##index) / (sizeof(struct i2c_config_timing)),))	\
-	};											\
-												\
-	I2C_RTIO_DEFINE(CONCAT(_i2c, index, _stm32_rtio),					\
-			DT_INST_PROP_OR(index, sq_size, CONFIG_I2C_RTIO_SQ_SIZE),		\
-			DT_INST_PROP_OR(index, cq_size, CONFIG_I2C_RTIO_CQ_SIZE));		\
-												\
-	static struct i2c_stm32_data i2c_stm32_dev_data_##index = {				\
-		.ctx = &CONCAT(_i2c, index, _stm32_rtio),					\
-	};											\
-												\
-	PM_DEVICE_DT_INST_DEFINE(index, i2c_stm32_pm_action);					\
-												\
-	I2C_DEVICE_DT_INST_DEFINE(index, i2c_stm32_init,					\
-				  PM_DEVICE_DT_INST_GET(index),					\
-				  &i2c_stm32_dev_data_##index,					\
-				  &i2c_stm32_cfg_##index,					\
-				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,			\
-				  &api_funcs);							\
-												\
-	I2C_STM32_IRQ_HANDLER(index)
-
-DT_INST_FOREACH_STATUS_OKAY(I2C_STM32_INIT)

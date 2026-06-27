@@ -46,6 +46,7 @@
 		zephyr,ieee802154 = &ieee802154;
 		zephyr,canbus = &can0;
 		zephyr,display = &ramfb0;
+		zephyr,touch = &input0;
 	};
 
 	pcie0: pcie0 {
@@ -78,6 +79,24 @@
 			interrupt-parent = <&intc>;
 
 			status = "okay";
+		};
+
+		virtio_input_pci: virtio-input-pci {
+			compatible = "virtio,pci";
+
+			vendor-id = <0x1af4>;
+			device-id = <0x1052>;
+
+			interrupts = <10 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+			interrupt-parent = <&intc>;
+
+			status = "okay";
+
+			input0: virtio-input {
+				compatible = "virtio,input";
+				display = <&ramfb0>;
+				status = "okay";
+			};
 		};
 	};
 
@@ -164,7 +183,7 @@
 
 &flash_sim0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -173,21 +192,25 @@
 		 * if enabled.
 		 */
 		storage_partition: partition@1000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x00001000 0x00010000>;
 		};
 
 		slot0_partition: partition@11000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00011000 0x00010000>;
 		};
 
 		slot1_partition: partition@21000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x00021000 0x00010000>;
 		};
 
 		eepromemu_partition: partition@31000 {
+			compatible = "zephyr,mapped-partition";
 			label = "eeprom-emu";
 			reg = <0x00031000 0x00010000>;
 		};

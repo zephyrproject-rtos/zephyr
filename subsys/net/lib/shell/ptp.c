@@ -282,32 +282,40 @@ static void ptp_print_port_info(const struct shell *sh, uint16_t port_id)
 	PR("port identity        : %s-%u\n", port_clock_id, port->port_ds.id.port_number);
 
 	PR("\nConfiguration:\n");
-	PR("state                : %s\n", ptp_port_state2str(ptp_port_state(port)));
-	PR("enabled              : %s\n", port->port_ds.enable ? "yes" : "no");
-	PR("protocol             : %s\n", ptp_net_protocol2str());
-	PR("time transmitter only: %s\n", port->port_ds.time_transmitter_only ? "yes" : "no");
-	PR("announce log itv     : %d\n", port->port_ds.log_announce_interval);
-	PR("announce timeout     : %u\n", port->port_ds.announce_receipt_timeout);
-	PR("sync log itv         : %d\n", port->port_ds.log_sync_interval);
-	PR("min delay_req log itv: %d\n", port->port_ds.log_min_delay_req_interval);
-	PR("delay mechanism      : %s\n", ptp_delay_mechanism2str(port->port_ds.delay_mechanism));
-	PR("delay asymmetry      : %" PRId64 " ns\n",
+	PR("state                 : %s\n", ptp_port_state2str(ptp_port_state(port)));
+	PR("enabled               : %s\n", port->port_ds.enable ? "yes" : "no");
+	PR("protocol              : %s\n", ptp_net_protocol2str());
+	PR("time transmitter only : %s\n", port->port_ds.time_transmitter_only ? "yes" : "no");
+	PR("announce log itv      : %d\n", port->port_ds.log_announce_interval);
+	PR("announce timeout      : %u\n", port->port_ds.announce_receipt_timeout);
+	PR("sync log itv          : %d\n", port->port_ds.log_sync_interval);
+	PR("min delay_req log itv : %d\n", port->port_ds.log_min_delay_req_interval);
+	PR("min pdelay_req log itv: %d\n", port->port_ds.log_min_pdelay_req_interval);
+	PR("delay mechanism       : %s\n", ptp_delay_mechanism2str(port->port_ds.delay_mechanism));
+	PR("delay asymmetry       : %" PRId64 " ns\n",
 	   ptp_timeinterval_to_ns(port->port_ds.delay_asymmetry));
-	PR("mean link delay      : %" PRId64 " ns\n",
+	PR("mean link delay       : %" PRId64 " ns\n",
 	   ptp_timeinterval_to_ns(port->port_ds.mean_link_delay));
+	PR("neighbor rate ratio   : %s (%" PRId64 " ppb)\n",
+	   port->neighbor_rate_ratio_valid ? "valid" : "nominal",
+	   (int64_t)((port->neighbor_rate_ratio - 1.0) * 1000000000.0));
 
 	PR("\nRuntime:\n");
-	PR("seq announce/delay/signaling/sync: %u / %u / %u / %u\n", port->seq_id.announce,
-	   port->seq_id.delay, port->seq_id.signaling, port->seq_id.sync);
-	PR("timeouts bits      : announce=%u delay=%u sync=%u qualification=%u\n",
+	PR("seq announce/delay/signaling/sync/pdelay: %u / %u / %u / %u / %u\n",
+	   port->seq_id.announce, port->seq_id.delay, port->seq_id.signaling, port->seq_id.sync,
+	   port->seq_id.pdelay);
+	PR("pdelay pending seq : %u\n", port->pdelay_req_sequence_id);
+	PR("timeouts bits      : announce=%u delay=%u sync=%u qualification=%u pdelay=%u\n",
 	   atomic_test_bit(&port->timeouts, PTP_PORT_TIMER_ANNOUNCE_TO),
 	   atomic_test_bit(&port->timeouts, PTP_PORT_TIMER_DELAY_TO),
 	   atomic_test_bit(&port->timeouts, PTP_PORT_TIMER_SYNC_TO),
-	   atomic_test_bit(&port->timeouts, PTP_PORT_TIMER_QUALIFICATION_TO));
-	PR("timer remaining ms : announce=%d delay=%d sync=%d qualification=%d\n",
+	   atomic_test_bit(&port->timeouts, PTP_PORT_TIMER_QUALIFICATION_TO),
+	   atomic_test_bit(&port->timeouts, PTP_PORT_TIMER_PDELAY_TO));
+	PR("timer remaining ms : announce=%d delay=%d sync=%d qualification=%d pdelay=%d\n",
 	   k_timer_remaining_get(&port->timers.announce),
 	   k_timer_remaining_get(&port->timers.delay), k_timer_remaining_get(&port->timers.sync),
-	   k_timer_remaining_get(&port->timers.qualification));
+	   k_timer_remaining_get(&port->timers.qualification),
+	   k_timer_remaining_get(&port->timers.pdelay));
 	ptp_print_hw_timestamp(sh, port->iface, "PHC now            ");
 
 	best = ptp_port_best_foreign_ds(port);

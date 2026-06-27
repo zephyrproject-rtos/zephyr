@@ -80,12 +80,39 @@ A common pattern is to declare this slab statically:
 In this example, each slab block stores one PCM buffer and ``BUFFER_COUNT`` sets how many buffers
 can be queued internally before the application reads them using :c:func:`dmic_read`.
 
+Shell commands
+**************
+
+When :kconfig:option:`CONFIG_AUDIO_DMIC_SHELL` is enabled, a set of ``dmic`` commands is available.
+They allow capturing audio from a DMIC device interactively without having to write a dedicated
+application.
+
+Each subcommand takes the DMIC device name as its first argument, optionally followed by the audio
+capture parameters (sample rate, number of channels, and PCM sample width).
+
+The following subcommands are available:
+
+``dmic read <device> [<count> [<rate_hz> [<channels> [<pcm_width>]]]]``
+  Capture ``count`` audio blocks and print the peak level per channel.
+  The default ``count`` is 5; each block is 50 ms of audio.
+
+``dmic vu <device> [<rate_hz> [<channels> [<pcm_width>]]]``
+  Display a live, color-coded level meter with peak-hold and clip indication, one bar per channel.
+  Runs until any key is pressed.
+
+``dmic dump <device> [<seconds> [<rate_hz> [<channels> [<pcm_width>]]]]``
+  Capture ``seconds`` of audio and print it as base64-encoded raw PCM, together with the host
+  commands needed to decode and play it back. The default duration is 2 seconds.
+
+The built-in help (e.g. ``dmic read --help``) lists the arguments and their defaults.
+
 Configuration Options
 *********************
 
 Related configuration options:
 
 * :kconfig:option:`CONFIG_AUDIO_DMIC`
+* :kconfig:option:`CONFIG_AUDIO_DMIC_SHELL`
 
 API Reference
 *************

@@ -986,7 +986,7 @@ ZTEST(dhcpv4_server_tests, test_declined_reuse)
 	test_pkt_free();
 
 	zassert_equal(oldest_addr.s_addr, test_ctx.assigned_ip.s_addr,
-		      "Should've reassing oldest declined address");
+		      "Should've reassign oldest declined address");
 }
 
 /* Verify that the DHCP server replies with ACK for a Inform message, w/o

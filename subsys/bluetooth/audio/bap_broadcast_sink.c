@@ -50,7 +50,7 @@ LOG_MODULE_REGISTER(bt_bap_broadcast_sink, CONFIG_BT_BAP_BROADCAST_SINK_LOG_LEVE
 #include "common/bt_str.h"
 
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
-#define BROADCAST_SYNC_MIN_INDEX  (BIT(1))
+#define BROADCAST_SYNC_MIN_INDEX          (BIT(1U))
 
 static struct bt_bap_ep broadcast_sink_eps[CONFIG_BT_BAP_BROADCAST_SNK_COUNT]
 					  [CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
@@ -639,7 +639,7 @@ static bool base_decode_subgroup_cb(const struct bt_bap_base_subgroup *subgroup,
 
 	uint32_t *subgroup_bis_indexes = &sink->subgroups[sink->subgroup_count].bis_indexes;
 
-	*subgroup_bis_indexes = 0;
+	*subgroup_bis_indexes = 0U;
 
 	ret = bt_bap_base_subgroup_codec_to_codec_cfg(subgroup, &codec_cfg);
 	if (ret < 0) {
@@ -709,8 +709,8 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 
 		/* Store newest BASE info until we are BIG synced */
 		if (sink->big == NULL) {
-			sink->subgroup_count = 0;
-			sink->valid_indexes_bitfield = 0;
+			sink->subgroup_count = 0U;
+			sink->valid_indexes_bitfield = 0U;
 			bt_bap_base_foreach_subgroup(base, base_decode_subgroup_cb, sink);
 
 			LOG_DBG("Updating BASE for sink %p with %d subgroups\n", sink,
@@ -982,7 +982,7 @@ static void broadcast_sink_ep_init(struct bt_bap_ep *ep)
 
 static struct bt_bap_ep *broadcast_sink_new_ep(uint8_t index)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(broadcast_sink_eps[index]); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sink_eps[index]); i++) {
 		struct bt_bap_ep *ep = &broadcast_sink_eps[index][i];
 
 		/* If ep->stream is NULL the endpoint is unallocated */
@@ -1069,7 +1069,7 @@ static void broadcast_sink_cleanup_streams(struct bt_bap_broadcast_sink *sink)
 		sys_slist_remove(&sink->streams, NULL, &stream->_node);
 	}
 
-	sink->stream_count = 0;
+	sink->stream_count = 0U;
 	sink->indexes_bitfield = 0U;
 }
 
@@ -1368,7 +1368,7 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 
 	stream_count = data.stream_count;
 
-	for (size_t i = 0; i < stream_count; i++) {
+	for (size_t i = 0U; i < stream_count; i++) {
 		if (streams[i] == NULL) {
 			LOG_DBG("streams[%zu] is NULL", i);
 			return -EINVAL;
@@ -1376,7 +1376,7 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 	}
 
 	sink->stream_count = 0U;
-	for (size_t i = 0; i < stream_count; i++) {
+	for (size_t i = 0U; i < stream_count; i++) {
 		struct bt_bap_stream *stream;
 		const struct bt_audio_codec_cfg *codec_cfg;
 
@@ -1417,7 +1417,7 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 	}
 
 	sink->indexes_bitfield = indexes_bitfield;
-	for (size_t i = 0; i < stream_count; i++) {
+	for (size_t i = 0U; i < stream_count; i++) {
 		struct bt_bap_ep *ep = streams[i]->ep;
 
 		broadcast_sink_set_ep_state(ep, BT_BAP_EP_STATE_QOS_CONFIGURED);

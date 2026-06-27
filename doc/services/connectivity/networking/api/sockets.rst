@@ -96,6 +96,29 @@ See :zephyr:code-sample:`sockets-echo-server` and :zephyr:code-sample:`sockets-e
 sample applications to learn how to create a simple server or client BSD socket based
 application.
 
+.. _ip_socket_options:
+
+IPv4 and IPv6 socket options
+****************************
+
+Zephyr supports IP-level socket options through :c:func:`zsock_setsockopt` and
+:c:func:`zsock_getsockopt` at the ``NET_IPPROTO_IP`` (IPv4) and ``NET_IPPROTO_IPV6``
+(IPv6) protocol levels. Option availability may depend on Kconfig settings and
+socket address family.
+
+IPv4 options
+============
+
+.. doxygengroup:: ipv4_socket_options
+
+IPv6 options
+============
+
+.. doxygengroup:: ipv6_socket_options
+
+The :c:macro:`ZSOCK_IP_DONTFRAG` and :c:macro:`ZSOCK_IPV6_DONTFRAG` options are
+used internally by the QUIC stack during DPLPMTUD probing (see :ref:`quic_dplpmtud`).
+
 .. _secure_sockets_interface:
 
 Secure Sockets

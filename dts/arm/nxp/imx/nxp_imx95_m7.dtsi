@@ -219,6 +219,24 @@
 			status = "disabled";
 		};
 
+		edma1: dma@44000000 {
+			compatible = "nxp,mcux-edma";
+			reg = <0x44000000 0x4000>;
+			#dma-cells = <2>;
+			nxp,version = <4>;
+			dma-channels = <32>;
+			dma-requests = <32>;
+			interrupts = <96 0>, <97 0>, <98 0>, <99 0>,
+				     <100 0>, <101 0>, <102 0>, <103 0>,
+				     <104 0>, <105 0>, <106 0>, <107 0>,
+				     <108 0>, <109 0>, <110 0>, <111 0>,
+				     <112 0>, <113 0>, <114 0>, <115 0>,
+				     <116 0>, <117 0>, <118 0>, <119 0>,
+				     <120 0>, <121 0>, <122 0>, <123 0>,
+				     <124 0>, <125 0>, <126 0>;
+			status = "disabled";
+		};
+
 		edma2: dma@42000000 {
 			compatible = "nxp,mcux-edma";
 			reg = <0x42000000 0x4000>;
@@ -447,6 +465,19 @@
 			status = "disabled";
 		};
 
+		sai3_2: sai@42650000 {
+			compatible = "nxp,mcux-i2s";
+			reg = <0x42650000 DT_SIZE_K(64)>;
+			clocks = <&scmi_clk IMX95_CLK_SAI3>;
+			interrupts = <170 0>;
+			nxp,tx-channel = <1>;
+			dmas = <&edma2 4 60>, <&edma2 5 61>;
+			dma-names = "tx", "rx";
+			nxp,tx-dma-channel = <4>;
+			nxp,rx-dma-channel = <5>;
+			status = "disabled";
+		};
+
 		lpuart7: serial@42690000 {
 			compatible = "nxp,imx-lpuart", "nxp,lpuart";
 			reg = <0x42690000 DT_SIZE_K(64)>;
@@ -659,6 +690,68 @@
 			prescale-glitch-filter-bypass;
 			resolution = <32>;
 			status = "disabled";
+		};
+
+		lpit1: timer@442f0000 {
+			compatible = "nxp,lpit";
+			reg = <0x442f0000 0x1000>;
+			interrupts = <15 0>;
+			clocks = <&scmi_clk IMX95_CLK_BUSAON>;
+			max-load-value = <0xffffffff>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			lpit1_channel0: lpit-channel@0 {
+				compatible = "nxp,lpit-channel";
+				reg = <0>;
+			};
+
+			lpit1_channel1: lpit-channel@1 {
+				compatible = "nxp,lpit-channel";
+				reg = <1>;
+			};
+
+			lpit1_channel2: lpit-channel@2 {
+				compatible = "nxp,lpit-channel";
+				reg = <2>;
+			};
+
+			lpit1_channel3: lpit-channel@3 {
+				compatible = "nxp,lpit-channel";
+				reg = <3>;
+			};
+		};
+
+		lpit2: timer@424c0000 {
+			compatible = "nxp,lpit";
+			reg = <0x424c0000 0x1000>;
+			interrupts = <60 0>;
+			clocks = <&scmi_clk IMX95_CLK_BUSWAKEUP>;
+			max-load-value = <0xffffffff>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			lpit2_channel0: lpit-channel@0 {
+				compatible = "nxp,lpit-channel";
+				reg = <0>;
+			};
+
+			lpit2_channel1: lpit-channel@1 {
+				compatible = "nxp,lpit-channel";
+				reg = <1>;
+			};
+
+			lpit2_channel2: lpit-channel@2 {
+				compatible = "nxp,lpit-channel";
+				reg = <2>;
+			};
+
+			lpit2_channel3: lpit-channel@3 {
+				compatible = "nxp,lpit-channel";
+				reg = <3>;
+			};
 		};
 
 		i3c1: i3c@44330000 {

@@ -87,6 +87,11 @@ static void espi_reset_handler(const struct device *dev, struct espi_callback *c
 	if (event.evt_type == ESPI_BUS_RESET) {
 		espi_rst_sts = event.evt_data;
 		LOG_INF("eSPI BUS reset %d", event.evt_data);
+
+		/* Re-enable interrupts after eSPI reset event */
+		if (espi_rst_sts) {
+			espi_interrupt_config(espi_dev, ESPI_INT_ALL_MASK, 0);
+		}
 	}
 }
 
@@ -206,12 +211,7 @@ int espi_init(void)
 	espi_add_callback(espi_dev, &oob_cb);
 #endif
 
-#if defined(CONFIG_SOC_SERIES_NPCX4) || defined(CONFIG_SOC_SERIES_NPCX9)
-	uint32_t enable = 1;
-
-	espi_write_lpc_request(espi_dev, ECUSTOM_HOST_SUBS_INTERRUPT_EN, &enable);
-#endif
-
+	espi_interrupt_config(espi_dev, ESPI_INT_BUS_ONLY_MASK, 0);
 	LOG_INF("complete");
 
 	return ret;

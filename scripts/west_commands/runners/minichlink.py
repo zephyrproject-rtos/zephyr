@@ -18,7 +18,6 @@ class MiniChLinkBinaryRunner(ZephyrBinaryRunner):
         minichlink: str,
         erase: bool,
         reset: bool,
-        dt_flash: bool,
         terminal: bool,
     ):
         super().__init__(cfg)
@@ -26,7 +25,6 @@ class MiniChLinkBinaryRunner(ZephyrBinaryRunner):
         self.minichlink = minichlink
         self.erase = erase
         self.reset = reset
-        self.dt_flash = dt_flash
         self.terminal = terminal
 
     @classmethod
@@ -57,7 +55,6 @@ class MiniChLinkBinaryRunner(ZephyrBinaryRunner):
             minichlink=args.minichlink,
             erase=args.erase,
             reset=args.reset,
-            dt_flash=args.dt_flash,
             terminal=args.terminal,
         )
 
@@ -77,10 +74,7 @@ class MiniChLinkBinaryRunner(ZephyrBinaryRunner):
         if self.erase:
             cmd.append("-E")
 
-        flash_addr = 0
-        if self.dt_flash:
-            flash_addr = self.flash_address_from_build_conf(self.build_conf)
-
+        flash_addr = self.flash_address_from_build_conf(self.build_conf)
         cmd.extend(["-w", self.cfg.bin_file or "", f"0x{flash_addr:x}"])
 
         if self.reset or self.terminal:

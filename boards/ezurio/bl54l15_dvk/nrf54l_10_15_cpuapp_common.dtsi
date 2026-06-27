@@ -11,11 +11,11 @@
 
 / {
 	chosen {
-		zephyr,console = &uart20;
-		zephyr,shell-uart = &uart20;
-		zephyr,uart-mcumgr = &uart20;
-		zephyr,bt-mon-uart = &uart20;
-		zephyr,bt-c2h-uart = &uart20;
+		zephyr,console = &uart30;
+		zephyr,shell-uart = &uart30;
+		zephyr,uart-mcumgr = &uart30;
+		zephyr,bt-mon-uart = &uart30;
+		zephyr,bt-c2h-uart = &uart30;
 		zephyr,flash-controller = &rram_controller;
 		zephyr,flash = &cpuapp_rram;
 		zephyr,ieee802154 = &ieee802154;
@@ -52,7 +52,11 @@
 	status = "okay";
 };
 
-&uart20 {
+&uart30 {
+	status = "okay";
+};
+
+&uart21 {
 	status = "okay";
 };
 
@@ -92,9 +96,30 @@
 	status = "okay";
 };
 
+&i2c22 {
+	status = "okay";
+
+	npm1300: npm1300@6b {
+		status = "okay";
+		compatible = "nordic,npm1300";
+		reg = <0x6b>;
+
+		npm1300_charger: charger {
+			compatible = "nordic,npm1300-charger";
+			vbus-limit-microamp = <500000>;
+			thermistor-ohms = <10000>;
+			thermistor-beta = <3380>;
+			term-microvolt = <4150000>;
+			current-microamp = <150000>;
+			dischg-limit-microamp = <1000000>;
+		};
+	};
+};
+
 &spi00 {
 	status = "okay";
-	cs-gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpio2 5 GPIO_ACTIVE_LOW>,
+		   <&gpio2 9 GPIO_ACTIVE_LOW>; /* shared with LED0 */
 	pinctrl-0 = <&spi00_default>;
 	pinctrl-1 = <&spi00_sleep>;
 	pinctrl-names = "default", "sleep";
@@ -113,9 +138,17 @@
 		has-dpd;
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <35000>;
+		wp-gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 	};
 };
 
 &adc {
 	status = "okay";
 };
+
+mikrobus_i2c: &i2c22 {};
+
+mikrobus_spi: &spi00 {};
+
+mikrobus_uart: &uart21 {};

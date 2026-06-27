@@ -436,7 +436,7 @@ static void msc_process_read(struct msc_bot_ctx *ctx)
 		ctx->scsi_bytes = 0;
 	}
 
-	/* Fill SCSI Data IN buffer if there is avaialble buffer and data */
+	/* Fill SCSI Data IN buffer if there is available buffer and data */
 	while ((ctx->num_in_queued < MSC_NUM_BUFFERS) &&
 	       (ctx->state == MSC_BBB_PROCESS_READ) &&
 	       (len = msc_next_in_transfer_length(ctx->class_node))) {

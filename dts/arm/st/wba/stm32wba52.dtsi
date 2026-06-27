@@ -94,7 +94,6 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			dma-channels = <8>;
 			dma-requests = <52>;
-			dma-offset = <0>;
 			status = "disabled";
 		};
 
@@ -105,13 +104,9 @@
 			interrupts = <0 0>;
 			status = "disabled";
 		};
-	};
 
-	bt_hci_wba: bt_hci_wba {
-		interrupts = <66 0>;
-	};
-
-	ieee802154: ieee802154 {
-		interrupts = <66 0>;
+		radio: radio@48020000 {
+			interrupts = <66 0>;
+		};
 	};
 };

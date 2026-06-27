@@ -33,4 +33,9 @@ config IDLE_STACK_SIZE
 
 endif # PM
 
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x6d0922fa" if SOC_STM32F407XE
+	default "0x8fb060fe" if SOC_STM32F407XG
+	default "0x57755a57"
+
 endif # SOC_SERIES_STM32F4X

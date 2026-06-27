@@ -39,5 +39,5 @@ Declarations in these files not necessarily have to be referenced."
 -config=MC3A2.R15.6,reports={relied, "all_area(context(^z_object_lookup\\(const char\\*, size_t\\)$))"}
 
 -doc="The following declarations are in generated files: not in all configuration they are implemented.
-    Chainging the generators could be dangerous and the advantages in enforcing the rule do not outweight these dangers."
+    Changing the generators could be dangerous and the advantages in enforcing the rule do not outweigh these dangers."
 -config=MC3A2.R8.6,declarations+={safe, "loc(top(file(^zephyr/build/zephyr/include/generated/.*$)))"}

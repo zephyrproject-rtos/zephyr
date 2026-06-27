@@ -245,7 +245,7 @@ static int create_answer(enum dns_rr_type qtype,
 	if ((net_buf_max_len(query) - query->len) < (DNS_MSG_HEADER_SIZE + 1 +
 					  (DNS_QTYPE_LEN + DNS_QCLASS_LEN) * 2 +
 					  DNS_TTL_LEN + DNS_RDLENGTH_LEN +
-					  addr_len + query->len)) {
+					  addr_len)) {
 		return -ENOBUFS;
 	}
 
@@ -485,9 +485,9 @@ static int dns_read(int sock,
 			dns_qtype_to_str(qtype), "IN",
 			result->data, ret);
 
-		/* If the query matches to our hostname, then send reply */
-		if (!strncasecmp(hostname, result->data, hostname_len) &&
-		    (result->len) >= hostname_len) {
+		if (!strncasecmp(hostname, result->data,
+				 MIN(hostname_len, result->len)) &&
+		    (result->len) == hostname_len) {
 			NET_DBG("%s query to our hostname %s", "LLMNR",
 				hostname);
 			ret = send_response(sock, src_addr, addrlen, result, qtype,

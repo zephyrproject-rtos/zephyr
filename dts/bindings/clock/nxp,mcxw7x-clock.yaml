@@ -148,6 +148,14 @@ properties:
       System clock divider for core clock.
       Valid range: 1 to 16.
 
+  sys-clk-div-plat:
+    type: int
+    description: |
+      System clock divider for platform clock.
+      This property is only applicable to MCXW70 SoC which has an
+      additional platform clock divider in the SCG system clock
+      configuration.
+
   enable-sosc:
     type: boolean
     description: |

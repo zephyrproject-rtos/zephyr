@@ -194,10 +194,6 @@ static int i2c_imx_transfer(const struct device *dev, struct i2c_msg *msgs,
 	uint16_t timeout = UINT16_MAX;
 	int result = -EIO;
 
-	if (!num_msgs) {
-		return 0;
-	}
-
 	/* Wait until bus not busy */
 	while ((I2C_I2SR_REG(base) & i2cStatusBusBusy) && (--timeout)) {
 	}

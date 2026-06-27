@@ -620,6 +620,7 @@ static void i2c_dw_isr(const struct device *port)
 		if (intr_stat.bits.rx_full) {
 			if (dw->state != I2C_DW_CMD_SEND) {
 				dw->state = I2C_DW_CMD_SEND;
+				dw->read_in_progress = false;
 				if (slave_cb->write_requested) {
 					slave_cb->write_requested(dw->slave_cfg);
 				}
@@ -843,9 +844,6 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	uint32_t value = 0;
 
 	__ASSERT_NO_MSG(msgs);
-	if (!num_msgs) {
-		return 0;
-	}
 
 	/* semaphore to support I2C_CALLBACK */
 	ret = k_sem_take(&dw->bus_sem, K_FOREVER);
@@ -1267,6 +1265,16 @@ static int i2c_dw_initialize(const struct device *dev)
 	uint32_t scl_timeout = rom->scl_timeout_value * CONFIG_I2C_DW_CLOCK_SPEED * 1000;
 #endif
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+	if (rom->clk_dev != NULL) {
+		ret = clock_control_on(rom->clk_dev, rom->clk_id);
+		if (ret < 0) {
+			LOG_ERR("Failed to enable the clock");
+			return ret;
+		}
+	}
+#endif
+
 #if defined(CONFIG_RESET)
 	if (rom->reset.dev) {
 		ret = reset_line_toggle_dt(&rom->reset);
@@ -1412,6 +1420,17 @@ static int i2c_dw_initialize(const struct device *dev)
 #define RESET_DW_CONFIG(n)
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_i2c)
+#define I2C_DW_CLK_ID	clk_id
+#else
+#define I2C_DW_CLK_ID	clkid
+#endif
+
+#define CLOCK_DW_CONFIG(n)                                                                         \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, clocks),                                               \
+			(.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                         \
+			 .clk_id = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, I2C_DW_CLK_ID),))
+
 #define I2C_DW_INIT_PCIE0(n)
 #define I2C_DW_INIT_PCIE1(n) DEVICE_PCIE_INST_INIT(n, pcie),
 #define I2C_DW_INIT_PCIE(n)  _CONCAT(I2C_DW_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
@@ -1420,10 +1439,9 @@ static int i2c_dw_initialize(const struct device *dev)
 #define I2C_DEFINE_PCIE1(n) DEVICE_PCIE_INST_DECLARE(n)
 #define I2C_PCIE_DEFINE(n)  _CONCAT(I2C_DEFINE_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 
-#define I2C_DW_IRQ_FLAGS_SENSE0(n) 0
-#define I2C_DW_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
-#define I2C_DW_IRQ_FLAGS_SENSE(n)  _CONCAT(I2C_DW_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))
-#define I2C_DW_IRQ_FLAGS(n)        I2C_DW_IRQ_FLAGS_SENSE(n)(n)
+#define I2C_DW_IRQ_FLAGS0(n) 0
+#define I2C_DW_IRQ_FLAGS1(n) DT_INST_IRQ(n, flags)
+#define I2C_DW_IRQ_FLAGS(n)  _CONCAT(I2C_DW_IRQ_FLAGS, DT_INST_IRQ_HAS_CELL(n, flags))(n)
 
 /* not PCI(e) */
 #define I2C_DW_IRQ_CONFIG_PCIE0(n)                                                                 \
@@ -1441,8 +1459,6 @@ static int i2c_dw_initialize(const struct device *dev)
 	{                                                                                          \
 		BUILD_ASSERT(DT_INST_IRQN(n) == PCIE_IRQ_DETECT,                                   \
 			     "Only runtime IRQ configuration is supported");                       \
-		BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),                                \
-			     "DW I2C PCI needs CONFIG_DYNAMIC_INTERRUPTS");                        \
 		const struct i2c_dw_rom_config *const dev_cfg = port->config;                      \
 		unsigned int irq = pcie_alloc_irq(dev_cfg->pcie->bdf);                             \
 		if (irq == PCIE_CONF_INTR_IRQ_NONE) {                                              \
@@ -1492,7 +1508,7 @@ static int i2c_dw_initialize(const struct device *dev)
 		.fs_spk_len = MAX((uint8_t)DT_INST_PROP_OR(n, fs_spike_len, 0), DW_IC_SPKLEN_MIN), \
 		.hs_spk_len = MAX((uint8_t)DT_INST_PROP_OR(n, hs_spike_len, 0), DW_IC_SPKLEN_MIN), \
 		TIMEOUT_DW_CONFIG(n) RESET_DW_CONFIG(n) PINCTRL_DW_CONFIG(n) I2C_DW_INIT_PCIE(n)   \
-			I2C_CONFIG_DMA_INIT(n)};                                                   \
+			I2C_CONFIG_DMA_INIT(n) CLOCK_DW_CONFIG(n)};                                \
 	BUILD_ASSERT(DT_INST_PROP_OR(n, sda_hold_tx, 0) <= 0xffff, "Invalid SDA_HOLD_TX value");   \
 	BUILD_ASSERT(DT_INST_PROP_OR(n, sda_hold_rx, 0) <= 0xff, "Invalid SDA_HOLD_RX value");     \
 	static struct i2c_dw_dev_config i2c_##n##_runtime;                                         \

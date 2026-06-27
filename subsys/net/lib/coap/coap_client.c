@@ -12,6 +12,7 @@
 LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 
 #include <zephyr/net/socket.h>
+#include <zephyr/zvfs/eventfd.h>
 
 #include <zephyr/net/coap.h>
 #include <zephyr/net/coap_client.h>
@@ -27,6 +28,19 @@ static K_MUTEX_DEFINE(coap_client_mutex);
 static struct coap_client *clients[CONFIG_COAP_CLIENT_MAX_INSTANCES];
 static int num_clients;
 static K_SEM_DEFINE(coap_client_recv_sem, 0, 1);
+
+/* Wakeup channel for the recv thread's poll(). coap_client_cancel_requests()
+ * writes the eventfd to interrupt poll() immediately (instead of waiting up to
+ * COAP_PERIODIC_TIMEOUT for the timeout) and waits on the ack sem until the
+ * recv thread has cycled past poll(), so no poll() references a cancelled
+ * request when cancel returns. The cancel mutex serialises waiters; the tid
+ * lets a cancel issued from the recv thread (a response callback) skip the
+ * self-wait.
+ */
+static int coap_client_recv_fd = -1;
+static k_tid_t coap_client_recv_tid;
+static K_SEM_DEFINE(coap_client_cancel_ack_sem, 0, 1);
+static K_MUTEX_DEFINE(coap_client_cancel_mutex);
 
 static bool timeout_expired(const struct coap_client_internal_request *internal_req);
 static void cancel_requests_with(struct coap_client *client, int error);
@@ -708,8 +722,18 @@ static int handle_poll(void)
 {
 	int ret = 0;
 
-	struct zsock_pollfd fds[CONFIG_COAP_CLIENT_MAX_INSTANCES] = {0};
+	/* +1 for the cancel-wakeup eventfd, kept at index 0. */
+	struct zsock_pollfd fds[CONFIG_COAP_CLIENT_MAX_INSTANCES + 1] = {0};
 	int nfds = 0;
+	int event_idx = -1;
+	int timeout = 0;
+
+	if (coap_client_recv_fd >= 0) {
+		fds[nfds].fd = coap_client_recv_fd;
+		fds[nfds].events = ZSOCK_POLLIN;
+		event_idx = nfds;
+		nfds++;
+	}
 
 	for (int i = 0; i < num_clients; i++) {
 		if (!has_ongoing_exchange(clients[i])) {
@@ -721,7 +745,18 @@ static int handle_poll(void)
 		nfds++;
 	}
 
-	ret = zsock_poll(fds, nfds, get_next_timeout());
+	/* Block only when there is a client socket to watch. If the set holds
+	 * just the cancel-wakeup eventfd (event_idx + 1 == nfds, e.g. after a
+	 * cancel left no ongoing exchanges), keep the timeout at 0: drain a
+	 * pending wakeup and let the recv loop fall through to wait on the
+	 * semaphore, where a new request wakes it immediately rather than after
+	 * the periodic timeout.
+	 */
+	if (nfds > event_idx + 1) {
+		timeout = get_next_timeout();
+	}
+
+	ret = zsock_poll(fds, nfds, timeout);
 
 	if (ret < 0) {
 		ret = -errno;
@@ -729,11 +764,24 @@ static int handle_poll(void)
 		return ret;
 	}
 
+	/* Drain wakeup eventfd and release any cancel waiting on this poll cycle to complete. */
+	if (event_idx >= 0 && (fds[event_idx].revents & ZSOCK_POLLIN)) {
+		zvfs_eventfd_t value;
+
+		(void)zvfs_eventfd_read(coap_client_recv_fd, &value);
+		k_sem_give(&coap_client_cancel_ack_sem);
+	}
+
 	for (int i = 0; i < nfds; i++) {
-		struct coap_client *client = get_client(fds[i].fd);
+		struct coap_client *client;
 		struct net_sockaddr_storage addr = {0};
 		net_socklen_t addrlen = sizeof(addr);
 
+		if (i == event_idx) {
+			continue;
+		}
+
+		client = get_client(fds[i].fd);
 		if (!client) {
 			LOG_ERR("No client found for socket %d", fds[i].fd);
 			continue;
@@ -1247,11 +1295,55 @@ static void cancel_requests_with(struct coap_client *client, int error)
 
 }
 
+/* Wait until the recv thread has cycled past any poll() that referenced the
+ * just-cancelled requests, so its poll() no longer references their socket when
+ * coap_client_cancel_requests() returns. (A datagram that arrived in the same
+ * poll cycle may still be read once more, but handle_response() drops it under
+ * client->lock since the request is no longer ongoing.) Wake the poll() at once
+ * through the eventfd and wait for the recv thread to acknowledge, with the
+ * periodic timeout only as a fallback should the recv thread be wedged.
+ */
+static void coap_client_wait_for_recv_cycle(void)
+{
+	/* Called from the recv thread itself (a response callback): it will
+	 * re-evaluate when the callback returns, and waiting here would deadlock.
+	 */
+	if (k_current_get() == coap_client_recv_tid) {
+		return;
+	}
+
+	/* Eventfd creation failed, so there is no channel to wake poll() early;
+	 * sleep long enough for the recv thread's poll() to time out and unwind
+	 * on its own.
+	 */
+	if (coap_client_recv_fd < 0) {
+		k_sleep(K_MSEC(COAP_PERIODIC_TIMEOUT));
+		return;
+	}
+
+	k_mutex_lock(&coap_client_cancel_mutex, K_FOREVER);
+
+	k_sem_reset(&coap_client_cancel_ack_sem);
+	/* Interrupt a blocked poll(), and give the recv semaphore in case the
+	 * thread is idle (no ongoing exchanges) and not currently polling.
+	 */
+	(void)zvfs_eventfd_write(coap_client_recv_fd, 1);
+	k_sem_give(&coap_client_recv_sem);
+
+	(void)k_sem_take(&coap_client_cancel_ack_sem, K_MSEC(COAP_PERIODIC_TIMEOUT));
+
+	k_mutex_unlock(&coap_client_cancel_mutex);
+}
+
 void coap_client_cancel_requests(struct coap_client *client)
 {
+	/* cancel_requests_with() clears request_ongoing and fires the waiting
+	 * callbacks synchronously, all under client->lock, so the recv thread
+	 * (which takes the same lock in handle_response()) can no longer
+	 * deliver a response for a cancelled request.
+	 */
 	cancel_requests_with(client, -ECANCELED);
-	/* Wait until after zsock_poll() can time out and return. */
-	k_sleep(K_MSEC(COAP_PERIODIC_TIMEOUT));
+	coap_client_wait_for_recv_cycle();
 }
 
 static bool requests_match(struct coap_client_request *a, struct coap_client_request *b)
@@ -1379,6 +1471,14 @@ int coap_client_deregister_observe(struct coap_client *client, struct coap_clien
 void coap_client_recv(void *coap_cl, void *a, void *b)
 {
 	int ret;
+
+	coap_client_recv_tid = k_current_get();
+	coap_client_recv_fd = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
+	if (coap_client_recv_fd < 0) {
+		LOG_ERR("Failed to create cancel-wakeup eventfd (%d); "
+			"coap_client_cancel_requests() will fall back to a timeout",
+			-errno);
+	}
 
 	k_sem_take(&coap_client_recv_sem, K_FOREVER);
 	while (true) {

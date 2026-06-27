@@ -231,14 +231,12 @@ static void acl_read_cb(uint8_t ep, int size, void *priv)
 
 		if (pkt_len == 0) {
 			LOG_ERR("Failed to get packet length");
-			net_buf_unref(buf);
-			buf = NULL;
+			net_buf_drop(&buf);
 		}
 	} else {
 		if (net_buf_tailroom(buf) < size) {
 			LOG_ERR("Buffer tailroom too small");
-			net_buf_unref(buf);
-			buf = NULL;
+			net_buf_drop(&buf);
 			goto restart_out_transfer;
 		}
 

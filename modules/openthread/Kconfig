@@ -513,6 +513,17 @@ config OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4
 	help
 	  This configuration enables IPV4 communication.
 
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_MDNS_AUTO_NAMING
+	bool "Automatically generate and register the OpenThread mDNS hostname"
+	default y
+	help
+	  When enabled, the OpenThread Border Router automatically generates
+	  and registers a local mDNS hostname on behalf of the application.
+	  Disable this option when the mDNS hostname lifecycle is managed
+	  externally by the application layer (e.g., Matter applications
+	  that assign a device-specific hostname during the commissioning
+	  process).
+
 config OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR
 	bool "Border Router NAT64 translator"
 	default y

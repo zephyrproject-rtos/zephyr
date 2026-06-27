@@ -4,6 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Compiler-builtin implementation of the memory barrier API.
+ *
+ * The public documentation for these barriers lives in <zephyr/sys/barrier.h>.
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_BARRIER_BUILTIN_H_
 #define ZEPHYR_INCLUDE_SYS_BARRIER_BUILTIN_H_
 

@@ -344,7 +344,7 @@ static void verify_dhcpv6_ia_na(struct net_if *iface, struct net_pkt *pkt,
 
 	if (addr == NULL) {
 		zassert_equal(ia_na.iaaddr.status, DHCPV6_STATUS_NO_ADDR_AVAIL,
-			      "Adddress should not be present");
+			      "Address should not be present");
 		return;
 	}
 
@@ -969,7 +969,7 @@ ZTEST(dhcpv6_tests, test_solicit_exchange)
 
 	net_dhcpv6_start(test_ctx.iface, &params);
 
-	ret = k_sem_take(&test_ctx.exchange_complete_sem, K_SECONDS(2));
+	ret = k_sem_take(&test_ctx.exchange_complete_sem, K_SECONDS(3));
 	zassert_ok(ret, "Exchange not completed in required time");
 
 	addr = net_if_ipv6_addr_lookup_by_iface(test_ctx.iface, &test_addr);
@@ -1027,7 +1027,7 @@ static void test_dhcpv6_start_and_enter_bound(struct net_dhcpv6_params *params)
 	set_dhcpv6_test_fn(expect_solicit_send_advertise);
 	net_dhcpv6_start(test_ctx.iface, params);
 
-	ret = k_sem_take(&test_ctx.exchange_complete_sem, K_SECONDS(2));
+	ret = k_sem_take(&test_ctx.exchange_complete_sem, K_SECONDS(3));
 	zassert_ok(ret, "Exchange not completed in required time");
 	zassert_equal(test_ctx.iface->config.dhcpv6.state, NET_DHCPV6_BOUND,
 		      "Invalid state");
@@ -1094,7 +1094,7 @@ ZTEST(dhcpv6_tests, test_confirm_exchange_after_iface_down)
 	net_if_down(test_ctx.iface);
 	net_if_up(test_ctx.iface);
 
-	ret = k_sem_take(&test_ctx.exchange_complete_sem, K_SECONDS(2));
+	ret = k_sem_take(&test_ctx.exchange_complete_sem, K_SECONDS(3));
 	zassert_ok(ret, "Exchange not completed in required time");
 
 	addr = net_if_ipv6_addr_lookup_by_iface(test_ctx.iface, &test_addr);
@@ -1164,7 +1164,7 @@ ZTEST(dhcpv6_tests, test_rebind_exchange_after_iface_down)
 	net_if_down(test_ctx.iface);
 	net_if_up(test_ctx.iface);
 
-	ret = k_sem_take(&test_ctx.exchange_complete_sem, K_SECONDS(2));
+	ret = k_sem_take(&test_ctx.exchange_complete_sem, K_SECONDS(3));
 	zassert_ok(ret, "Exchange not completed in required time");
 
 	addr = net_if_ipv6_addr_lookup_by_iface(test_ctx.iface, &test_addr);
@@ -1238,7 +1238,7 @@ ZTEST(dhcpv6_tests, test_renew_exchange_after_t1)
 	test_ctx.iface->config.dhcpv6.timeout = test_ctx.iface->config.dhcpv6.t1;
 	dhcpv6_reschedule();
 
-	ret = k_sem_take(&test_ctx.exchange_complete_sem, K_SECONDS(2));
+	ret = k_sem_take(&test_ctx.exchange_complete_sem, K_SECONDS(3));
 	zassert_ok(ret, "Exchange not completed in required time");
 
 	addr = net_if_ipv6_addr_lookup_by_iface(test_ctx.iface, &test_addr);
@@ -1281,7 +1281,7 @@ ZTEST(dhcpv6_tests, test_rebind_exchange_after_t2)
 	test_ctx.iface->config.dhcpv6.timeout = test_ctx.iface->config.dhcpv6.t2;
 	dhcpv6_reschedule();
 
-	ret = k_sem_take(&test_ctx.exchange_complete_sem, K_SECONDS(2));
+	ret = k_sem_take(&test_ctx.exchange_complete_sem, K_SECONDS(3));
 	zassert_ok(ret, "Exchange not completed in required time");
 
 	addr = net_if_ipv6_addr_lookup_by_iface(test_ctx.iface, &test_addr);

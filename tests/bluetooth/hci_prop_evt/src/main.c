@@ -20,10 +20,6 @@
 
 #define DT_DRV_COMPAT zephyr_bt_hci_test
 
-struct driver_data {
-	bt_hci_recv_t recv;
-};
-
 /* HCI Proprietary vendor event */
 const uint8_t hci_prop_evt_prefix[2] = { 0xAB, 0xBA };
 
@@ -95,7 +91,6 @@ static int cmd_handle(const struct device *dev,
 		      const struct cmd_handler *handlers,
 		      size_t num_handlers)
 {
-	struct driver_data *drv = dev->data;
 	struct net_buf *evt = NULL;
 	struct bt_hci_evt_cc_status *ccst;
 	struct bt_hci_cmd_hdr *chdr;
@@ -113,7 +108,7 @@ static int cmd_handle(const struct device *dev,
 	}
 
 	if (evt) {
-		drv->recv(dev, evt);
+		bt_hci_recv(dev, evt);
 	}
 
 	return err;
@@ -215,12 +210,9 @@ static const struct cmd_handler cmds[] = {
 };
 
 /* HCI driver open. */
-static int driver_open(const struct device *dev, bt_hci_recv_t recv)
+static int driver_open(const struct device *dev)
 {
-	struct driver_data *drv = dev->data;
-
-	drv->recv = recv;
-
+	ARG_UNUSED(dev);
 	return 0;
 }
 
@@ -245,9 +237,11 @@ static DEVICE_API(bt_hci, driver_api) = {
 };
 
 #define TEST_DEVICE_INIT(inst) \
-	static struct driver_data driver_data_##inst = { \
+	static struct bt_hci_driver_data driver_data_##inst = { \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &driver_data_##inst, NULL, \
+	static const struct bt_hci_driver_config driver_config_##inst = \
+						BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &driver_data_##inst, &driver_config_##inst, \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(TEST_DEVICE_INIT)
@@ -264,13 +258,12 @@ struct bt_recv_job_data {
 static void bt_recv_job_cb(struct k_work *item)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct driver_data *drv = dev->data;
 	struct bt_recv_job_data *data =
 		CONTAINER_OF(item, struct bt_recv_job_data, work);
 	struct k_sem *sync = job(data->buf)->sync;
 
 	/* Send net buffer to host */
-	drv->recv(dev, data->buf);
+	bt_hci_recv(dev, data->buf);
 	data->buf = NULL;
 
 	/* Wake up bt_recv_job_submit */
@@ -352,7 +345,7 @@ static void *prop_evt(struct net_buf *buf, uint8_t pelen)
 	return net_buf_add(buf, pelen);
 }
 
-/* Send a prop event report wit the given data. */
+/* Send a prop event report with the given data. */
 static void send_prop_report(uint8_t *data, uint8_t data_len)
 {
 	struct net_buf *buf;

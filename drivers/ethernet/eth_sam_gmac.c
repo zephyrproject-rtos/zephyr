@@ -355,8 +355,7 @@ static void free_rx_bufs(struct net_buf **rx_frag_list, uint16_t len)
 {
 	for (int i = 0; i < len; i++) {
 		if (rx_frag_list[i]) {
-			net_buf_unref(rx_frag_list[i]);
-			rx_frag_list[i] = NULL;
+			net_buf_drop(&rx_frag_list[i]);
 		}
 	}
 }
@@ -1669,8 +1668,6 @@ static void phy_link_state_changed(const struct device *pdev,
 	is_up = state->is_up;
 
 	if (is_up && !dev_data->link_up) {
-		LOG_INF("%s Link up", dev->name);
-
 		/* Announce link up status */
 		dev_data->link_up = true;
 		net_eth_carrier_on(dev_data->iface);
@@ -1678,8 +1675,6 @@ static void phy_link_state_changed(const struct device *pdev,
 		/* Set up link */
 		link_configure((Gmac *)DEVICE_MMIO_GET(dev), state->speed);
 	} else if (!is_up && dev_data->link_up) {
-		LOG_INF("%s Link down", dev->name);
-
 		/* Announce link down status */
 		dev_data->link_up = false;
 		net_eth_carrier_off(dev_data->iface);

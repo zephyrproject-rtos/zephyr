@@ -90,6 +90,18 @@ static void setup_priv_stack(struct k_thread *thread)
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *stack_ptr,
 		     k_thread_entry_t entry, void *p1, void *p2, void *p3)
 {
+
+#if defined(CONFIG_FP_HARDABI) || defined(CONFIG_FP_SOFTABI)
+	/*
+	 * Both CONFIG_FP_HARDABI and CONFIG_FP_SOFTABI allow the compiler
+	 * to generate FP instructions--even without explicit use of FP types.
+	 * All threads must thus be considered as using FP registers and
+	 * tagged with K_FP_REGS.
+	 */
+	thread->base.user_options |= K_FP_REGS;
+#endif
+
+
 #ifdef CONFIG_MPU_STACK_GUARD
 #if defined(CONFIG_USERSPACE)
 	if (z_stack_is_user_capable(stack)) {
@@ -474,9 +486,11 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 {
 	uint32_t sp = min_stack(fault_addr, psp);
 
-	if (sp != 0 && IS_ENABLED(CONFIG_USE_SWITCH)) {
+#if defined(CONFIG_USE_SWITCH)
+	if (sp != 0) {
 		sp += arm_m_switch_stack_buffer;
 	}
+#endif
 	return sp;
 }
 
@@ -678,6 +692,21 @@ FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(k_thread_entry_t main_
 
 	/* Set PSP to the highest address of the main stack. */
 	char *psp = K_THREAD_STACK_BUFFER(z_main_stack) + K_THREAD_STACK_SIZEOF(z_main_stack);
+
+#if defined(CONFIG_THREAD_LOCAL_STORAGE)
+	/* On Cortex-M, TLS uses a global variable as pointer to
+	 * the thread local storage area. With multithreading disabled
+	 * there is no context switch to set it, so it must be
+	 * initialized here, carving the TLS area out of the top of
+	 * the main stack.
+	 */
+	extern uintptr_t z_arm_tls_ptr;
+	size_t tls_size;
+
+	tls_size = arch_tls_stack_setup(&z_main_thread, psp);
+	z_arm_tls_ptr = z_main_thread.tls;
+	psp -= tls_size;
+#endif
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
 	char *psplim = (K_THREAD_STACK_BUFFER(z_main_stack));

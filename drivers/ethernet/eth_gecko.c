@@ -342,7 +342,6 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 		if (res == 0) {
 			if (dev_data->link_up != true) {
 				dev_data->link_up = true;
-				LOG_INF("Link up");
 				eth_gecko_setup_mac(dev);
 				net_eth_carrier_on(dev_data->iface);
 			}
@@ -353,14 +352,12 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 			if (phy_gecko_is_linked(&cfg->phy)) {
 				if (dev_data->link_up != true) {
 					dev_data->link_up = true;
-					LOG_INF("Link up");
 					eth_gecko_setup_mac(dev);
 					net_eth_carrier_on(dev_data->iface);
 				}
 			} else   {
 				if (dev_data->link_up != false) {
 					dev_data->link_up = false;
-					LOG_INF("Link down");
 					net_eth_carrier_off(dev_data->iface);
 				}
 			}

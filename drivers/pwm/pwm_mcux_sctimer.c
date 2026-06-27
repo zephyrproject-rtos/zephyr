@@ -40,6 +40,7 @@ typedef struct pwm_channel_config {
 struct pwm_mcux_sctimer_config {
 	SCT_Type *base;
 	uint32_t prescale;
+	uint8_t out_init_state;
 	const struct pinctrl_dev_config *pincfg;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
@@ -722,6 +723,7 @@ static int mcux_sctimer_pwm_init_common(const struct device *dev)
 	SCTIMER_GetDefaultConfig(&pwm_config);
 
 	pwm_config.prescale_l = config->prescale - 1;
+	pwm_config.outInitState = config->out_init_state;
 
 	status = SCTIMER_Init(config->base, &pwm_config);
 	if (status != kStatus_Success) {
@@ -772,7 +774,9 @@ static int mcux_sctimer_pwm_pm_action(const struct device *dev, enum pm_device_a
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 #ifdef CONFIG_PM_DEVICE
-		SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
+		if (data->pwm_channel_active) {
+			SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
+		}
 #endif /* CONFIG_PM_DEVICE */
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 		if (err < 0 && err != -ENOENT) {
@@ -837,6 +841,7 @@ static DEVICE_API(pwm, pwm_mcux_sctimer_driver_api) = {
 	static const struct pwm_mcux_sctimer_config pwm_mcux_sctimer_config_##n = { \
 		.base = (SCT_Type *)DT_INST_REG_ADDR(n),				\
 		.prescale = DT_INST_PROP(n, prescaler),					\
+		.out_init_state = DT_INST_PROP(n, out_init_state),			\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\

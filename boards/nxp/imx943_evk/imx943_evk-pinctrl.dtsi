@@ -12,7 +12,7 @@
 				 <&iomuxc_eth4_mdio_gpio2_netc_emdio_netc_emdio>;
 			bias-pull-down;
 			slew-rate = "slightly_fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 	};
 
@@ -32,7 +32,7 @@
 				 <&iomuxc_eth0_txd3_netc_swt_eth_txd_netc_swt_eth0_txd3>;
 			bias-pull-down;
 			slew-rate = "slightly_fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 
 		group2 {
@@ -40,7 +40,7 @@
 				 <&iomuxc_eth0_tx_clk_netc_swt_eth_tx_clk_netc_swt_eth0_tx_clk>;
 			bias-pull-down;
 			slew-rate = "fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 	};
 
@@ -60,7 +60,7 @@
 				 <&iomuxc_eth1_txd3_netc_swt_eth_txd_netc_swt_eth1_txd3>;
 			bias-pull-down;
 			slew-rate = "slightly_fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 
 		group2 {
@@ -68,7 +68,7 @@
 				 <&iomuxc_eth1_tx_clk_netc_swt_eth_tx_clk_netc_swt_eth1_tx_clk>;
 			bias-pull-down;
 			slew-rate = "fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 	};
 
@@ -76,13 +76,13 @@
 		eth2_default_group1: group1 {
 			bias-pull-down;
 			slew-rate = "slightly_fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 
 		eth2_default_group2: group2 {
 			bias-pull-down;
 			slew-rate = "fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 	};
 
@@ -90,13 +90,13 @@
 		group1 {
 			bias-pull-down;
 			slew-rate = "slightly_fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 
 		group2 {
 			bias-pull-down;
 			slew-rate = "fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 	};
 
@@ -104,13 +104,13 @@
 		eth4_default_group_1: group1 {
 			bias-pull-down;
 			slew-rate = "slightly_fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 
 		eth4_default_group_2: group2 {
 			bias-pull-down;
 			slew-rate = "fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 	};
 

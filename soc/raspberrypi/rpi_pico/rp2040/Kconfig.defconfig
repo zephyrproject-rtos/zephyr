@@ -8,6 +8,9 @@ if SOC_SERIES_RP2040
 
 rsource "Kconfig.defconfig.rp2*"
 
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0xe48bff56"
+
 config NUM_IRQS
 	default 26
 

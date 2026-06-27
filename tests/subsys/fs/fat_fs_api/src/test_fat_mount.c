@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
  * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 
 #include "test_fat.h"
 
@@ -89,6 +89,26 @@ void test_fat_mount(void)
 	zassert_false(test_unmount() == TC_PASS);
 	zassert_true(test_mount_no_format() == TC_PASS);
 	zassert_true(test_mount_rd_only_no_sys() == TC_PASS);
+
+/*
+ * When using an SD card partition table (MBR), format only within the
+ * partition (no FM_SFD), then mount.
+ */
+#if defined(CONFIG_FS_FATFS_MULTI_PARTITION)
+	MKFS_PARM mkfs_opt = {
+		.fmt = FM_ANY, /* IMPORTANT: do not set FM_SFD (super-floppy) */
+		.n_fat = 1,
+		.align = 0,
+		.n_root = CONFIG_FS_FATFS_MAX_ROOT_ENTRIES,
+		.au_size = 0,
+	};
+
+	/* fatfs_mkfs expects a "drive:" style string, not a Zephyr "/SD:" path */
+	int rc = fs_mkfs(FS_FATFS, (uintptr_t)DISK_NAME ":", &mkfs_opt, 0);
+
+	zassert_equal(rc, 0, "mkfs failed (%d)", rc);
+#endif
+
 	zassert_true(test_mount_use_disk_access() == TC_PASS);
 	zassert_true(test_unmount() == TC_PASS);
 	zassert_true(test_mount() == TC_PASS);

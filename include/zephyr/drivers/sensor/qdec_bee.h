@@ -18,7 +18,7 @@
 /**
  * @brief Realtek Bee QDEC
  * @defgroup qdec_bee_interface Realtek Bee QDEC
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_realtek
  *
  * Realtek Bee QDEC provides custom sensor channels for raw X/Y/Z axis counts.
  * @{

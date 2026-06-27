@@ -570,7 +570,7 @@ New Boards
 * Ezurio
 
    * :zephyr:board:`bl54l15_dvk` (``bl54l15_dvk``)
-   * :zephyr:board:`bl54l15u_dvk` (``bl54l15u_dvk``)
+   * ``bl54l15u_dvk``
 
 * FANKE Technology Co., Ltd.
 

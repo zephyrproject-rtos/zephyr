@@ -1,0 +1,48 @@
+# Copyright 2026 CampOS
+# SPDX-License-Identifier: Apache-2.0
+
+config GNSS_U_BLOX_M10
+	bool "U-BLOX M10 GNSS Module"
+	default y
+	depends on GNSS
+	depends on DT_HAS_U_BLOX_M10_ENABLED
+	depends on GNSS_REFERENCE_FRAME_WGS84
+	select MODEM_MODULES
+	select MODEM_BACKEND_UART
+	select GNSS_PARSE
+	select GNSS_U_BLOX
+	select GNSS_U_BLOX_PROTOCOL
+	select UART_USE_RUNTIME_CONFIGURE
+	help
+		Enable U-BLOX M10 GNSS modem driver.
+
+if GNSS_U_BLOX_M10
+
+choice GNSS_U_BLOX_M10_NAV_MODE_HIGH_DYN
+	prompt "High Dynamics mode setting"
+	default GNSS_U_BLOX_M10_NAV_MODE_HIGH_DYN_AIRBORNE_2G
+	help
+	  Choose what the High Dynamics Navigation mode should be for your
+	  application use-case.
+
+config GNSS_U_BLOX_M10_NAV_MODE_HIGH_DYN_AIRBORNE_1G
+	bool "Consider High Dynamics mode as 1G Airborne"
+
+config GNSS_U_BLOX_M10_NAV_MODE_HIGH_DYN_AIRBORNE_2G
+	bool "Consider High Dynamics mode as 2G Airborne"
+
+config GNSS_U_BLOX_M10_NAV_MODE_HIGH_DYN_AIRBORNE_4G
+	bool "Consider High Dynamics mode as 4G Airborne"
+
+config GNSS_U_BLOX_M10_NAV_MODE_HIGH_DYN_AUTOMOTIVE
+	bool "Consider High Dynamics mode as Automotive mode"
+
+config GNSS_U_BLOX_M10_NAV_MODE_HIGH_DYN_SEA
+	bool "Consider High Dynamics mode as Sea mode"
+
+config GNSS_U_BLOX_M10_NAV_MODE_HIGH_DYN_BIKE
+	bool "Consider High Dynamics mode as Bike mode"
+
+endchoice
+
+endif # GNSS_U_BLOX_M10

@@ -51,4 +51,4 @@ tests:
     build: false
     required_applications:
       # first required_application is taken as the current application, as `build` is false
-      - name: multidut.basic
+      - application: multidut.basic

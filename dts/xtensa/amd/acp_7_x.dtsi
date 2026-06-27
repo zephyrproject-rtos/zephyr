@@ -1,0 +1,582 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 AMD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <xtensa/xtensa.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@9eac0000 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx7";
+			clock-frequency = <600000000>;
+			reg = <0x9eac0000>;
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		acp_intc: acp-intc {
+			compatible = "amd,acp-intc";
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			status = "okay";
+		};
+
+		acp_host_dma: acp-host-dma {
+			compatible = "amd,acp-host-dma";
+			#dma-cells = <3>;
+			status = "okay";
+		};
+
+		sdw_dai: acp-sdw-dai {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+		};
+
+		acp_sdw_dma: acp-sdw-dma@1243a00 {
+			compatible = "amd,acp-sdw-dma";
+			dma-channels = <64>;
+			#dma-cells = <3>;
+			reg = <0x1243a00 4>;
+			status = "okay";
+		};
+
+		sdw_dai0: acp-sdw-dai0 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <0>;
+		};
+
+		sdw_dai1: acp-sdw-dai1 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <1>;
+		};
+
+		sdw_dai2: acp-sdw-dai2 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <2>;
+		};
+
+		sdw_dai3: acp-sdw-dai3 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <3>;
+		};
+
+		sdw_dai4: acp-sdw-dai4 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <4>;
+		};
+
+		sdw_dai5: acp-sdw-dai5 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <5>;
+		};
+
+		sdw_dai6: acp-sdw-dai6 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <6>;
+		};
+
+		sdw_dai7: acp-sdw-dai7 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <7>;
+		};
+
+		sdw_dai8: acp-sdw-dai8 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <8>;
+		};
+
+		sdw_dai9: acp-sdw-dai9 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <9>;
+		};
+
+		sdw_dai10: acp-sdw-dai10 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <10>;
+		};
+
+		sdw_dai11: acp-sdw-dai11 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <11>;
+		};
+
+		sdw_dai12: acp-sdw-dai12 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <12>;
+		};
+
+		sdw_dai13: acp-sdw-dai13 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <13>;
+		};
+
+		sdw_dai14: acp-sdw-dai14 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <14>;
+		};
+
+		sdw_dai15: acp-sdw-dai15 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <15>;
+		};
+
+		sdw_dai16: acp-sdw-dai16 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <16>;
+		};
+
+		sdw_dai17: acp-sdw-dai17 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <17>;
+		};
+
+		sdw_dai18: acp-sdw-dai18 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <18>;
+		};
+
+		sdw_dai19: acp-sdw-dai19 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <19>;
+		};
+
+		sdw_dai20: acp-sdw-dai20 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <20>;
+		};
+
+		sdw_dai21: acp-sdw-dai21 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <21>;
+		};
+
+		sdw_dai22: acp-sdw-dai22 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <64>;
+		};
+
+		sdw_dai23: acp-sdw-dai23 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <65>;
+		};
+
+		sdw_dai24: acp-sdw-dai24 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <66>;
+		};
+
+		sdw_dai25: acp-sdw-dai25 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <67>;
+		};
+
+		sdw_dai26: acp-sdw-dai26 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <68>;
+		};
+
+		sdw_dai27: acp-sdw-dai27 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <69>;
+		};
+
+		sdw_dai28: acp-sdw-dai28 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <70>;
+		};
+
+		sdw_dai29: acp-sdw-dai29 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <71>;
+		};
+
+		sdw_dai30: acp-sdw-dai30 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <72>;
+		};
+
+		sdw_dai31: acp-sdw-dai31 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <73>;
+		};
+
+		sdw_dai32: acp-sdw-dai32 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <74>;
+		};
+
+		sdw_dai33: acp-sdw-dai33 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <75>;
+		};
+
+		sdw_dai34: acp-sdw-dai34 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <76>;
+		};
+
+		sdw_dai35: acp-sdw-dai35 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <77>;
+		};
+
+		sdw_dai36: acp-sdw-dai36 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <78>;
+		};
+
+		sdw_dai37: acp-sdw-dai37 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <79>;
+		};
+
+		sdw_dai38: acp-sdw-dai38 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <80>;
+		};
+
+		sdw_dai39: acp-sdw-dai39 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <81>;
+		};
+
+		sdw_dai40: acp-sdw-dai40 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <82>;
+		};
+
+		sdw_dai41: acp-sdw-dai41 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <83>;
+		};
+
+		sdw_dai42: acp-sdw-dai42 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <84>;
+		};
+
+		sdw_dai43: acp-sdw-dai43 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <85>;
+		};
+
+		sdw_dai44: acp-sdw-dai44 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <128>;
+		};
+
+		sdw_dai45: acp-sdw-dai45 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <129>;
+		};
+
+		sdw_dai46: acp-sdw-dai46 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <130>;
+		};
+
+		sdw_dai47: acp-sdw-dai47 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <131>;
+		};
+
+		sdw_dai48: acp-sdw-dai48 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <132>;
+		};
+
+		sdw_dai49: acp-sdw-dai49 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <133>;
+		};
+
+		sdw_dai50: acp-sdw-dai50 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <134>;
+		};
+
+		sdw_dai51: acp-sdw-dai51 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <135>;
+		};
+
+		sdw_dai52: acp-sdw-dai52 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <136>;
+		};
+
+		sdw_dai53: acp-sdw-dai53 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <137>;
+		};
+
+		sdw_dai54: acp-sdw-dai54 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <138>;
+		};
+
+		sdw_dai55: acp-sdw-dai55 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <139>;
+		};
+
+		sdw_dai56: acp-sdw-dai56 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <140>;
+		};
+
+		sdw_dai57: acp-sdw-dai57 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <141>;
+		};
+
+		sdw_dai58: acp-sdw-dai58 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <142>;
+		};
+
+		sdw_dai59: acp-sdw-dai59 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <143>;
+		};
+
+		sdw_dai60: acp-sdw-dai60 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <144>;
+		};
+
+		sdw_dai61: acp-sdw-dai61 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <145>;
+		};
+
+		sdw_dai62: acp-sdw-dai62 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <146>;
+		};
+
+		sdw_dai63: acp-sdw-dai63 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <147>;
+		};
+
+		sdw_dai64: acp-sdw-dai64 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <148>;
+		};
+
+		sdw_dai65: acp-sdw-dai65 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <149>;
+		};
+
+		sdw_dai66: acp-sdw-dai66 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <192>;
+		};
+
+		sdw_dai67: acp-sdw-dai67 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <193>;
+		};
+
+		sdw_dai68: acp-sdw-dai68 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <194>;
+		};
+
+		sdw_dai69: acp-sdw-dai69 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <195>;
+		};
+
+		sdw_dai70: acp-sdw-dai70 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <196>;
+		};
+
+		sdw_dai71: acp-sdw-dai71 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <197>;
+		};
+
+		sdw_dai72: acp-sdw-dai72 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <198>;
+		};
+
+		sdw_dai73: acp-sdw-dai73 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <199>;
+		};
+
+		sdw_dai74: acp-sdw-dai74 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <200>;
+		};
+
+		sdw_dai75: acp-sdw-dai75 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <201>;
+		};
+
+		sdw_dai76: acp-sdw-dai76 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <202>;
+		};
+
+		sdw_dai77: acp-sdw-dai77 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <203>;
+		};
+
+		sdw_dai78: acp-sdw-dai78 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <204>;
+		};
+
+		sdw_dai79: acp-sdw-dai79 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <205>;
+		};
+
+		sdw_dai80: acp-sdw-dai80 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <206>;
+		};
+
+		sdw_dai81: acp-sdw-dai81 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <207>;
+		};
+
+		sdw_dai82: acp-sdw-dai82 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <208>;
+		};
+
+		sdw_dai83: acp-sdw-dai83 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <209>;
+		};
+
+		sdw_dai84: acp-sdw-dai84 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <210>;
+		};
+
+		sdw_dai85: acp-sdw-dai85 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <211>;
+		};
+
+		sdw_dai86: acp-sdw-dai86 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <212>;
+		};
+
+		sdw_dai87: acp-sdw-dai87 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <213>;
+		};
+	};
+};

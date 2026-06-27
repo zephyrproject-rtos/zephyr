@@ -10,7 +10,7 @@
 #include <zephyr/dt-bindings/clock/esp32c6_clock.h>
 
 #include <hal/uart_hal.h>
-#if defined(CONFIG_SOC_ESP32C6_HPCORE)
+#if defined(CONFIG_SOC_ESP32C6_HPCORE) || defined(CONFIG_SOC_ESP32P4_HPCORE)
 #include <hal/uart_ll.h>
 #include <hal/clk_tree_ll.h>
 #include <hal/clk_tree_hal.h>
@@ -69,7 +69,7 @@ static void lp_uart_esp32_poll_out(const struct device *dev, unsigned char c)
 	uart_hal_write_txfifo(&data->hal, (const void *)&c, 1, &tx_len);
 }
 
-#if defined(CONFIG_SOC_ESP32C6_HPCORE)
+#if defined(CONFIG_SOC_ESP32C6_HPCORE) || defined(CONFIG_SOC_ESP32P4_HPCORE)
 
 static int lp_uart_esp32_param_config(const struct device *dev)
 {
@@ -169,7 +169,7 @@ static int lp_uart_esp32_init(const struct device *dev)
 	return 0;
 }
 
-#endif /* CONFIG_SOC_ESP32C6_HPCORE */
+#endif /* CONFIG_SOC_ESP32C6_HPCORE || CONFIG_SOC_ESP32P4_HPCORE */
 
 static DEVICE_API(uart, lp_uart_esp32_api) = {
 	.poll_in = lp_uart_esp32_poll_in,
@@ -196,7 +196,7 @@ static const struct lp_uart_esp32_config lp_uart_esp32_cfg = {
 	.lp_uart_source_clk = LP_UART_SCLK_DEFAULT,
 };
 
-#if defined(CONFIG_SOC_ESP32C6_HPCORE)
+#if defined(CONFIG_SOC_ESP32C6_HPCORE) || defined(CONFIG_SOC_ESP32P4_HPCORE)
 #define LP_UART_ESP32_INIT_FUNC lp_uart_esp32_init
 #else
 #define LP_UART_ESP32_INIT_FUNC NULL

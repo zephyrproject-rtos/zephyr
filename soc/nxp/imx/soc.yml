@@ -47,6 +47,9 @@ family:
       - name: m33
       - name: m7_0
       - name: m7_1
+    - name: mimx9529
+      cpuclusters:
+      - name: m7
     - name: mimx9596
       cpuclusters:
       - name: a55

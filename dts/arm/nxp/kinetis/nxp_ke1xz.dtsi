@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -582,6 +582,11 @@
 		smc: smc@4007e000 {
 			compatible = "nxp,smc";
 			reg = <0x4007e000 0x1000>;
+		};
+
+		rcm: rcm@4007f000 {
+			compatible = "nxp,rcm-hwinfo";
+			reg = <0x4007f000 0x1000>;
 		};
 
 		crc: crc@40032000 {

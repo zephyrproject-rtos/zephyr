@@ -6,16 +6,54 @@
 
 /**
  * @file
- * @brief Renesas RA2A1 Event Link Controller (ELC) definitions
+ * @brief Devicetree macros for the Renesas RA2A1 Event Link Controller (ELC).
+ * @ingroup dt_renesas_ra2a1_elc
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_MISC_RENESAS_RA_ELC_RA2A1_ELC_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_MISC_RENESAS_RA_ELC_RA2A1_ELC_H_
 
 /**
- * @name Event codes for Renesas RA2A1 Event Link Controller (ELC).
+ * @addtogroup dt_renesas_ra_elc Devicetree Renesas RA ELC helpers
+ * @ingroup devicetree
+ */
+
+/**
+ * @defgroup dt_renesas_ra2a1_elc Renesas RA2A1 ELC devicetree macros
+ * @brief Devicetree event and peripheral macros for Renesas RA2A1 ELC routing.
+ * @ingroup dt_renesas_ra_elc
+ *
+ * This header provides macros for event and peripheral values used with the <tt>renesas,ra-elc</tt>
+ * devicetree binding.
+ *
+ * Use <tt>RA_ELC_EVENT_*</tt> values for the @c event cell and <tt>RA_ELC_PERIPHERAL_*</tt>
+ * values for the @c peripheral cell in the @c renesas-elcs phandle-array property.
+ *
+ * @code{.dts}
+ * #include <zephyr/dt-bindings/misc/renesas/ra-elc/ra2a1-elc.h>
+ *
+ * &pwm0 {
+ *         renesas-elcs = <&elc RA_ELC_PERIPHERAL_GPT_A RA_ELC_EVENT_ELC_SOFTWARE_EVENT_0>,
+ *                        <&elc RA_ELC_PERIPHERAL_GPT_B RA_ELC_EVENT_ELC_SOFTWARE_EVENT_1>;
+ *         renesas-elc-names = "start", "stop";
+ * };
+ * @endcode
+ *
+ * Valid cell values are device-specific:
+ *
+ * - @c event: any <tt>RA_ELC_EVENT_*</tt> macro from this header. Common prefixes include
+ *   <tt>RA_ELC_EVENT_ELC_SOFTWARE_EVENT_*</tt>, <tt>RA_ELC_EVENT_GPT*</tt>,
+ *   <tt>RA_ELC_EVENT_ADC*</tt>, <tt>RA_ELC_EVENT_IOPORT_EVENT_*</tt>, and serial, DMA,
+ *   or clock event names present on the device.
+ * - @c peripheral: any <tt>RA_ELC_PERIPHERAL_*</tt> macro from this header, for example
+ *   @c RA_ELC_PERIPHERAL_GPT_A, @c RA_ELC_PERIPHERAL_ADC0, etc.
+ *
  * @{
  */
+
+/** @cond INTERNAL_HIDDEN */
+
+/* Event codes for Renesas RA2A1 Event Link Controller (ELC). */
 #define RA_ELC_EVENT_NONE                   0x0   /**< Link disabled. */
 #define RA_ELC_EVENT_ICU_IRQ0               0x001 /**< External pin interrupt 0. */
 #define RA_ELC_EVENT_ICU_IRQ1               0x002 /**< External pin interrupt 1. */
@@ -159,12 +197,7 @@
 #define RA_ELC_EVENT_AES_RDREQ              0x08C /**< AES Read Request. */
 #define RA_ELC_EVENT_TRNG_RDREQ             0x08D /**< TRNG Read Request. */
 
-/** @} */
-
-/**
- * @name Renesas RA ELC possible peripherals to be linked to event signals
- * @{
- */
+/* Renesas RA ELC peripherals that can be linked to event signals. */
 #define RA_ELC_PERIPHERAL_GPT_A   0  /**< General PWM Timer A */
 #define RA_ELC_PERIPHERAL_GPT_B   1  /**< General PWM Timer B */
 #define RA_ELC_PERIPHERAL_GPT_C   2  /**< General PWM Timer C */
@@ -178,6 +211,8 @@
 #define RA_ELC_PERIPHERAL_DA8_0   19 /**< DA8_0 */
 #define RA_ELC_PERIPHERAL_DA8_1   20 /**< DA8_1 */
 #define RA_ELC_PERIPHERAL_SDADC0  22 /**< SDADC0 */
+
+/** @endcond */
 
 /** @} */
 

@@ -269,6 +269,16 @@ bool net_route_ipv6_get_info(struct net_if *iface,
 			     struct net_in6_addr **nexthop);
 
 /**
+ * @brief Decrement IPv6 hop limit for a forwarded packet.
+ *
+ * @param pkt Network packet.
+ *
+ * @return 0 on success, -ETIMEDOUT if hop limit has expired,
+ * or a negative errno value otherwise.
+ */
+int net_route_ipv6_decrement_hop_limit(struct net_pkt *pkt);
+
+/**
  * @brief Send the network packet to network via some intermediate host.
  *
  * @param pkt Network packet to send.

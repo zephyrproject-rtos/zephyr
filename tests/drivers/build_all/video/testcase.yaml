@@ -11,6 +11,16 @@ tests:
     depends_on:
       - gpio
       - i2c
+  drivers.video.spi.build:
+    extra_args: DTC_OVERLAY_FILE="spi_devices.overlay"
+    extra_configs:
+      - CONFIG_SPI=y
+    platform_allow:
+      - native_sim
+    min_ram: 32
+    depends_on:
+      - gpio
+      - spi
   drivers.video.mcux_csi.build:
     platform_allow:
       - mimxrt1064_evk
@@ -50,6 +60,11 @@ tests:
       - CONFIG_VIDEO_ENCODER_H264=y
   drivers.video.stm32_jpeg.build:
     platform_allow:
+      - stm32f769i_disco/stm32f769xx
+      - stm32h5f5j_dk/stm32h5f5xx
+      - stm32h747i_disco/stm32h747xx/m7
+      - stm32h7s78_dk/stm32h7s7xx
       - stm32n6570_dk/stm32n657xx/sb
+      - stm32u5g9j_dk1/stm32u5g9xx
     extra_configs:
       - CONFIG_VIDEO_ENCODER_JPEG=y

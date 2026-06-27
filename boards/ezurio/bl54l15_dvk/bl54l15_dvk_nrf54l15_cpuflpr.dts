@@ -14,8 +14,8 @@
 	compatible = "ezurio,bl54l15_dvk_nrf54l15-cpuflpr";
 
 	chosen {
-		zephyr,console = &uart30;
-		zephyr,shell-uart = &uart30;
+		zephyr,console = &uart20;
+		zephyr,shell-uart = &uart20;
 		zephyr,code-partition = &cpuflpr_code_partition;
 		zephyr,flash = &cpuflpr_rram;
 		zephyr,sram = &cpuflpr_sram;
@@ -41,7 +41,7 @@
 	status = "okay";
 };
 
-&uart30 {
+&uart20 {
 	status = "okay";
 };
 

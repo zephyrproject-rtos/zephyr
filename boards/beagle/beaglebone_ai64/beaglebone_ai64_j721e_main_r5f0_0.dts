@@ -52,6 +52,12 @@
 		mboxes = <&mbox1 0>, <&mbox1 1>;
 		mbox-names = "tx", "rx";
 	};
+
+	onboard_osc: onboard-osc {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_K(19200)>;
+		#clock-cells = <0>;
+	};
 };
 
 &i2c6 {

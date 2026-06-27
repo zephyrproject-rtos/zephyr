@@ -12,7 +12,6 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
-#include <zephyr/kernel_structs.h>
 #include <ipi.h>
 #include <zephyr/init.h>
 #include <zephyr/platform/hooks.h>

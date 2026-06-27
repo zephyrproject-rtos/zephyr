@@ -14,12 +14,14 @@ supported:
   - counter
   - display
   - dma
+  - dmic
   - eeprom
   - netif:eth
   - mspi
   - usb_device
   - adc
   - i2c
+  - i2s
   - spi
   - gpio
   - rtc

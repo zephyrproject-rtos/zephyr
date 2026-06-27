@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
 
 / {
 	aliases {
@@ -181,16 +182,23 @@
 		interrupts = <1 0>;
 	};
 
+	uid: uid@14810 {
+		compatible = "nxp,lpc-uid";
+		reg = <0x14810 0x10>;
+	};
+
 	spc: system-modules@16000 {
 		compatible = "nxp,spc";
 		reg = <0x16000 0x1000>;
 		interrupts = <21 0>;
+		active-dcdc-output-microvolt = <2500000>;
 	};
 
 	wuu: system-modules@19000 {
-		compatible = "nxp,wuu";
+		compatible = "nxp,wuc-wuu", "nxp,wuu";
 		reg = <0x19000 0x1000>;
 		interrupts = <22 0>;
+		#wakeup-ctrl-cells = <1>;
 	};
 
 	clk_ctrl: clock-controller {
@@ -421,6 +429,8 @@
 		prescale-glitch-filter-bypass;
 		resolution = <32>;
 		status = "disabled";
+		wakeup-source;
+		wakeup-ctrls = <&wuu NXP_WUU_MODULE_0_INT>;
 	};
 
 	lptmr1: timer@2e000 {
@@ -438,10 +448,11 @@
 		compatible = "nxp,nbu";
 		interrupts = <48 2>;
 		interrupt-names = "nbu_rx_int";
-		max-tx-power-support = <0 7>; /* TODO: Add 10dbm support */
+		max-tx-power-support = <0 7 10>;
 		/* Max TX power can be overridden by the board */
-		max-tx-power-dbm = <7>;
+		max-tx-power-dbm = <10>;
 		wakeup-source;
+		wakeup-ctrls = <&wuu NXP_WUU_MODULE_2_DMA>;
 	};
 
 	hci: hci_ble {
@@ -568,6 +579,9 @@
 	crc: crc@23000 {
 		compatible = "nxp,crc";
 		reg = <0x23000 0x1000>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0x8c, MCXW_CLK_IP_MUX_NONE,
+					       MCXW_CLK_DIV_NONE,
+					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		status = "disabled";
 	};
 };

@@ -1322,11 +1322,6 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #    DTCM_SECTION  Inside the dtcm data section.
 #    SECTIONS      Near the end of the file. Don't use this when linking into
 #                  RAMABLE_REGION, use RAM_SECTIONS instead.
-#    PINNED_RODATA Similar to RODATA but pinned in memory.
-#    PINNED_RAM_SECTIONS
-#                  Similar to RAM_SECTIONS but pinned in memory.
-#    PINNED_DATA_SECTIONS
-#                  Similar to DATA_SECTIONS but pinned in memory.
 # <sort_key> is an optional key to sort by inside of each location. The key must
 #    be alphanumeric, and the keys are sorted alphabetically. If no key is
 #    given, the key 'default' is used. Keys are case-sensitive.
@@ -1376,10 +1371,6 @@ function(zephyr_linker_sources location)
   set(itcm_path          "${snippet_base}/snippets-itcm-section.ld")
   set(dtcm_path          "${snippet_base}/snippets-dtcm-section.ld")
 
-  set(pinned_ram_sections_path  "${snippet_base}/snippets-pinned-ram-sections.ld")
-  set(pinned_data_sections_path "${snippet_base}/snippets-pinned-data-sections.ld")
-  set(pinned_rodata_path        "${snippet_base}/snippets-pinned-rodata.ld")
-
   # Clear destination files if this is the first time the function is called.
   get_property(cleared GLOBAL PROPERTY snippet_files_cleared)
   if(NOT DEFINED cleared)
@@ -1396,9 +1387,6 @@ function(zephyr_linker_sources location)
     file(WRITE ${nocache_path} "")
     file(WRITE ${itcm_path} "")
     file(WRITE ${dtcm_path} "")
-    file(WRITE ${pinned_ram_sections_path} "")
-    file(WRITE ${pinned_data_sections_path} "")
-    file(WRITE ${pinned_rodata_path} "")
     set_property(GLOBAL PROPERTY snippet_files_cleared true)
   endif()
 
@@ -1441,12 +1429,6 @@ function(zephyr_linker_sources location)
               "location.")
     endif()
     set(snippet_path "${dtcm_path}")
-  elseif("${location}" STREQUAL "PINNED_RAM_SECTIONS")
-    set(snippet_path "${pinned_ram_sections_path}")
-  elseif("${location}" STREQUAL "PINNED_DATA_SECTIONS")
-    set(snippet_path "${pinned_data_sections_path}")
-  elseif("${location}" STREQUAL "PINNED_RODATA")
-    set(snippet_path "${pinned_rodata_path}")
   else()
     message(fatal_error "Must choose valid location for linker snippet.")
   endif()
@@ -1593,6 +1575,31 @@ function(zephyr_code_relocate)
   endif()
   if(CODE_REL_PHDR)
     set(CODE_REL_LOCATION "${CODE_REL_LOCATION}\ :${CODE_REL_PHDR}")
+  endif()
+  # Disable LTO for relocated files. LTO changes section names (e.g. .text
+  # becomes .gnu.debuglto_.text) which breaks gen_relocate_app.py section
+  # parsing. See issue #69730.
+  if(CODE_REL_FILES AND NOT no_genex STREQUAL CODE_REL_FILES)
+    # File list contains generator expressions - LTO cannot be disabled
+    # statically. Warn so the developer is aware LTO remains active for
+    # these files and the section name mangling issue (#69730) may still
+    # occur.
+    message(WARNING "zephyr_code_relocate(): file list contains generator "
+      "expressions, LTO cannot be disabled for these files. "
+      "Avoid combining CONFIG_LTO with CONFIG_CODE_DATA_RELOCATION when "
+      "using generator expressions (see issue #69730).")
+  elseif(CODE_REL_FILES)
+    set_source_files_properties(${file_list} PROPERTIES
+      COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
+  elseif(CODE_REL_LIBRARY)
+    # DEFER is required here: library targets such as drivers__serial are
+    # created later in the CMake configure step (after the SoC CMakeLists.txt
+    # runs), so the target does not exist yet when zephyr_code_relocate() is
+    # called. cmake_language(DEFER CALL ...) defers the set_property() call
+    # until the end of the current directory scope, by which point all targets
+    # have been created.
+    cmake_language(DEFER CALL set_property TARGET ${CODE_REL_LIBRARY} APPEND PROPERTY
+      COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
   endif()
   # Each code relocation directive is placed on an independent line, instead of
   # using set_property(APPEND) to produce a ";"-separated CMake list. This way,
@@ -2109,7 +2116,7 @@ endfunction()
 
 # 3.1. *_ifdef
 #
-# Functions for conditionally executing CMake functions with oneliners
+# Functions for conditionally executing CMake functions with one-liners
 # e.g.
 #
 # if(CONFIG_FFT)
@@ -6167,6 +6174,10 @@ function(add_llext_target target_name)
             $<TARGET_PROPERTY:bintools,elfconvert_flag_strip_unneeded>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.xt.*
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.xtensa.info
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.ARM.exidx*
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.rel.ARM.exidx*
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.ARM.extab*
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.rel.ARM.extab*
             $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${llext_pkg_input}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>

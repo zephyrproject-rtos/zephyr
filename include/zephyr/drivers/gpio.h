@@ -917,11 +917,13 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 		 "Only one of GPIO_INT_LOW_0, GPIO_INT_HIGH_1 can be "
 		 "enabled for a level interrupt.");
 
+/** @cond INTERNAL_HIDDEN */
 #ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
 #define GPIO_INT_ENABLE_DISABLE_ONLY_VALUE  GPIO_INT_ENABLE_DISABLE_ONLY
 #else
 #define GPIO_INT_ENABLE_DISABLE_ONLY_VALUE  0
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
+/** @endcond */
 
 	__ASSERT(((flags & GPIO_INT_ENABLE) == 0) ||
 			 ((flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) != 0) ||
@@ -1805,9 +1807,8 @@ static inline void gpio_init_callback(struct gpio_callback *callback,
  * @brief Add an application callback.
  * @param port Pointer to the device structure for the driver instance.
  * @param callback A valid Application's callback structure pointer.
- * @retval 0 If successful
- * @retval -ENOSYS If driver does not implement the operation
- * @retval -errno Other negative errno code on failure.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Driver does not implement the operation.
  *
  * @note Callbacks may be added to the device from within a callback
  * handler invocation, but whether they are invoked for the current
@@ -1854,9 +1855,8 @@ static inline int gpio_add_callback_dt(const struct gpio_dt_spec *spec,
  * @brief Remove an application callback.
  * @param port Pointer to the device structure for the driver instance.
  * @param callback A valid application's callback structure pointer.
- * @retval 0 If successful
- * @retval -ENOSYS If driver does not implement the operation
- * @retval -errno Other negative errno code on failure.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Driver does not implement the operation.
  *
  * @warning It is explicitly permitted, within a callback handler, to
  * remove the registration for the callback that is running, i.e. @p

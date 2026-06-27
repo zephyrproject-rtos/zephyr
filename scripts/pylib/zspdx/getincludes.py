@@ -2,9 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import logging
 from subprocess import run
 
-from west import log
+_logger = logging.getLogger(__name__)
 
 
 # Given a path to the applicable C compiler, a C source file, and the
@@ -15,11 +16,11 @@ from west import log
 #   2) C source file being analyzed
 #   3) TargetCompileGroup for the current target
 # Returns: list of paths to include files, or [] on error or empty findings.
-def getCIncludes(compilerPath, srcFile, tcg):
-    log.dbg(f"    - getting includes for {srcFile}")
+def get_c_includes(compiler_path, src_file, tcg):
+    _logger.debug("    - getting includes for %s", src_file)
 
     # prepare fragments
-    fragments = [fr for fr in tcg.compileCommandFragments if fr.strip() != ""]
+    fragments = [fr for fr in tcg.compile_command_fragments if fr.strip() != ""]
 
     # prepare include arguments
     includes = ["-I" + incl.path for incl in tcg.includes]
@@ -28,19 +29,19 @@ def getCIncludes(compilerPath, srcFile, tcg):
     defines = ["-D" + d.define for d in tcg.defines]
 
     # prepare command invocation
-    cmd = [compilerPath, "-E", "-H"] + fragments + includes + defines + [srcFile]
+    cmd = [compiler_path, "-E", "-H"] + fragments + includes + defines + [src_file]
 
     cp = run(cmd, capture_output=True, text=True)
     if cp.returncode != 0:
-        log.dbg(f"    - calling {compilerPath} failed with error code {cp.returncode}")
+        _logger.debug("    - calling %s failed with error code %d", compiler_path, cp.returncode)
         return []
     else:
         # response will be in cp.stderr, not cp.stdout
-        return extractIncludes(cp.stderr)
+        return extract_includes(cp.stderr)
 
 
 # Parse the response from the CC -E -H call, to extract the include file paths
-def extractIncludes(resp):
+def extract_includes(resp):
     includes = set()
 
     # lines we want will start with one or more periods, followed by
@@ -62,6 +63,6 @@ def extractIncludes(resp):
                 continue
             includes.add(sline[1])
 
-    includesList = list(includes)
-    includesList.sort()
-    return includesList
+    includes_list = list(includes)
+    includes_list.sort()
+    return includes_list

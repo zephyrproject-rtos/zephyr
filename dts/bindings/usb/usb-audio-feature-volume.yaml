@@ -17,7 +17,8 @@ properties:
       attention: this attribute is a signed value.
       This attribute represents the maximum volume level.
       The range from +127.9961 dB (0x7FFF) down to -127.9961 dB (0x8001).
-      Valid range: 0 - 0xFFFF
+    min: 0
+    max: 0xFFFF
   volume-min:
     type: int
     default: 0xBA00
@@ -25,7 +26,8 @@ properties:
       attention: this attribute is a signed value.
       This attribute represents the minimum volume level.
       The range from +127.9961 dB (0x7FFF) down to -127.9961 dB (0x8001).
-      Valid range: 0 - 0xFFFF
+    min: 0
+    max: 0xFFFF
   volume-res:
     type: int
     default: 0x100
@@ -34,4 +36,5 @@ properties:
       This attribute represents the volume resolution(step).
       1 = 1/256 dB or 0.00390625 dB.
       0x100(256) = 1dB.
-      Valid range: 1 - 0x7FFF
+    min: 1
+    max: 0x7FFF

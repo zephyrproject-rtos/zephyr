@@ -18,6 +18,7 @@
 #endif /* CONFIG_AP */
 
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/sys/util.h>
 
 /* Re-defines MAC2STR with address of the element */
 #define MACADDR2STR(a) &(a)[0], &(a)[1], &(a)[2], &(a)[3], &(a)[4], &(a)[5]
@@ -295,6 +296,271 @@ int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code)
 					       sizeof(int));
 }
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+/* Parse ssi=<hex_string> from NAN event string */
+static void nan_parse_ssi(const char *event_str, uint8_t *ssi, size_t *ssi_len)
+{
+	const char *pos = strstr(event_str, "ssi=");
+	const char *ssi_start;
+	const char *ssi_end;
+	size_t ssi_hex_len;
+
+	if (pos == NULL) {
+		return;
+	}
+
+	ssi_start = pos + 4;
+	ssi_end = ssi_start;
+
+	while (*ssi_end && *ssi_end != ' ' && *ssi_end != '\n' && *ssi_end != '\r') {
+		ssi_end++;
+	}
+
+	ssi_hex_len = ssi_end - ssi_start;
+
+	if (ssi_hex_len > 0 && ssi_hex_len % 2 == 0) {
+		*ssi_len = ssi_hex_len / 2;
+		if (*ssi_len > WIFI_NAN_MAX_SSI_LEN) {
+			*ssi_len = WIFI_NAN_MAX_SSI_LEN;
+		}
+		hex2bin(ssi_start, ssi_hex_len, ssi, WIFI_NAN_MAX_SSI_LEN);
+	}
+}
+
+static void wifi_mgmt_raise_nan_discovery_result_event(struct net_if *iface,
+							const char *event_str)
+{
+	struct wifi_nan_discovery_result_event event;
+	const char *pos;
+	char *end;
+
+	memset(&event, 0, sizeof(event));
+
+	/* Parse subscribe_id=<value> */
+	pos = strstr(event_str, "subscribe_id=");
+	if (pos != NULL) {
+		event.subscribe_id = strtol(pos + 13, &end, 10);
+	}
+
+	/* Parse publish_id=<value> */
+	pos = strstr(event_str, "publish_id=");
+	if (pos != NULL) {
+		event.publish_id = strtol(pos + 11, &end, 10);
+	}
+
+	/* Parse address=<MAC> */
+	pos = strstr(event_str, "address=");
+	if (pos != NULL) {
+		if (hwaddr_aton(pos + 8, event.peer_addr) < 0) {
+			wpa_printf(MSG_ERROR, "Failed to parse peer address");
+		}
+	}
+
+	/* Parse fsd=<value> */
+	pos = strstr(event_str, "fsd=");
+	if (pos != NULL) {
+		event.fsd = (strtol(pos + 4, &end, 10) != 0);
+	}
+
+	/* Parse fsd_gas=<value> */
+	pos = strstr(event_str, "fsd_gas=");
+	if (pos != NULL) {
+		event.fsd_gas = (strtol(pos + 8, &end, 10) != 0);
+	}
+
+	/* Parse srv_proto_type=<value> */
+	pos = strstr(event_str, "srv_proto_type=");
+	if (pos != NULL) {
+		event.srv_proto_type = strtol(pos + 15, &end, 10);
+	}
+
+	/* Parse ssi=<hex_string> */
+	nan_parse_ssi(event_str, event.ssi, &event.ssi_len);
+
+	wpa_printf(MSG_DEBUG, "NAN_DISCOVERY_RESULT parsed: subscribe_id=%d publish_id=%d "
+		   "address=" MACSTR " fsd=%d fsd_gas=%d srv_proto_type=%u ssi_len=%zu",
+		   event.subscribe_id, event.publish_id,
+		   MAC2STR(event.peer_addr), event.fsd, event.fsd_gas,
+		   event.srv_proto_type, event.ssi_len);
+
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_NAN_DISCOVERY_RESULT,
+					iface, &event, sizeof(event));
+}
+
+static void wifi_mgmt_raise_nan_replied_event(struct net_if *iface,
+					       const char *event_str)
+{
+	struct wifi_nan_replied_event event;
+	const char *pos;
+	char *end;
+
+	memset(&event, 0, sizeof(event));
+
+	/* Parse publish_id=<value> */
+	pos = strstr(event_str, "publish_id=");
+	if (pos != NULL) {
+		event.publish_id = strtol(pos + 11, &end, 10);
+	}
+
+	/* Parse address=<MAC> */
+	pos = strstr(event_str, "address=");
+	if (pos != NULL) {
+		if (hwaddr_aton(pos + 8, event.peer_addr) < 0) {
+			wpa_printf(MSG_ERROR, "Failed to parse peer address");
+		}
+	}
+
+	/* Parse subscribe_id=<value> */
+	pos = strstr(event_str, "subscribe_id=");
+	if (pos != NULL) {
+		event.subscribe_id = strtol(pos + 13, &end, 10);
+	}
+
+	/* Parse srv_proto_type=<value> */
+	pos = strstr(event_str, "srv_proto_type=");
+	if (pos != NULL) {
+		event.srv_proto_type = strtol(pos + 15, &end, 10);
+	}
+
+	/* Parse ssi=<hex_string> */
+	nan_parse_ssi(event_str, event.ssi, &event.ssi_len);
+
+	wpa_printf(MSG_DEBUG, "NAN_REPLIED parsed: publish_id=%d address=" MACSTR
+		   " subscribe_id=%d srv_proto_type=%u ssi_len=%zu",
+		   event.publish_id, MAC2STR(event.peer_addr),
+		   event.subscribe_id, event.srv_proto_type, event.ssi_len);
+
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_NAN_REPLIED,
+					iface, &event, sizeof(event));
+}
+
+static void wifi_mgmt_raise_nan_publish_terminated_event(struct net_if *iface,
+							  const char *event_str)
+{
+	struct wifi_nan_terminated_event event;
+	const char *pos;
+	char *end;
+
+	memset(&event, 0, sizeof(event));
+
+	/* Parse publish_id=<value> */
+	pos = strstr(event_str, "publish_id=");
+	if (pos != NULL) {
+		event.id = strtol(pos + 11, &end, 10);
+	}
+
+	/* Parse reason=<string> */
+	pos = strstr(event_str, "reason=");
+	if (pos != NULL) {
+		const char *reason_start = pos + 7;
+		const char *reason_end = reason_start;
+		size_t len;
+
+		while (*reason_end && *reason_end != ' '
+		       && *reason_end != '\n' && *reason_end != '\r') {
+			reason_end++;
+		}
+		len = reason_end - reason_start;
+
+		if (len >= sizeof(event.reason)) {
+			len = sizeof(event.reason) - 1;
+		}
+		memcpy(event.reason, reason_start, len);
+		event.reason[len] = '\0';
+	}
+
+	wpa_printf(MSG_INFO, "NAN_PUBLISH_TERMINATED parsed: publish_id=%d reason=%s",
+		   event.id, event.reason);
+
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_NAN_PUBLISH_TERMINATED,
+					iface, &event, sizeof(event));
+}
+
+static void wifi_mgmt_raise_nan_subscribe_terminated_event(struct net_if *iface,
+							    const char *event_str)
+{
+	struct wifi_nan_terminated_event event;
+	const char *pos;
+	char *end;
+
+	memset(&event, 0, sizeof(event));
+
+	/* Parse subscribe_id=<value> */
+	pos = strstr(event_str, "subscribe_id=");
+	if (pos != NULL) {
+		event.id = strtol(pos + 13, &end, 10);
+	}
+
+	/* Parse reason=<string> */
+	pos = strstr(event_str, "reason=");
+	if (pos != NULL) {
+		const char *reason_start = pos + 7;
+		const char *reason_end = reason_start;
+		size_t len;
+
+		while (*reason_end && *reason_end != ' '
+		       && *reason_end != '\n' && *reason_end != '\r') {
+			reason_end++;
+		}
+
+		len = reason_end - reason_start;
+
+		if (len >= sizeof(event.reason)) {
+			len = sizeof(event.reason) - 1;
+		}
+		memcpy(event.reason, reason_start, len);
+		event.reason[len] = '\0';
+	}
+
+	wpa_printf(MSG_INFO, "NAN_SUBSCRIBE_TERMINATED parsed: subscribe_id=%d reason=%s",
+		   event.id, event.reason);
+
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_NAN_SUBSCRIBE_TERMINATED,
+					iface, &event, sizeof(event));
+}
+
+static void wifi_mgmt_raise_nan_receive_event(struct net_if *iface,
+					       const char *event_str)
+{
+	struct wifi_nan_receive_event event;
+	const char *pos;
+	char *end;
+
+	memset(&event, 0, sizeof(event));
+
+	/* Parse id=<value> */
+	pos = strstr(event_str, "id=");
+	if (pos) {
+		event.id = strtol(pos + 3, &end, 10);
+	}
+
+	/* Parse peer_instance_id=<value> */
+	pos = strstr(event_str, "peer_instance_id=");
+	if (pos) {
+		event.peer_instance_id = strtol(pos + 17, &end, 10);
+	}
+
+	/* Parse address=<MAC> */
+	pos = strstr(event_str, "address=");
+	if (pos) {
+		if (hwaddr_aton(pos + 8, event.peer_addr) < 0) {
+			wpa_printf(MSG_ERROR, "Failed to parse peer address");
+		}
+	}
+
+	/* Parse ssi=<hex_string> */
+	nan_parse_ssi(event_str, event.ssi, &event.ssi_len);
+
+	wpa_printf(MSG_INFO, "NAN_RECEIVE parsed: id=%d peer_instance_id=%d "
+		   "address=" MACSTR " ssi_len=%zu",
+		   event.id, event.peer_instance_id,
+		   MAC2STR(event.peer_addr), event.ssi_len);
+
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_NAN_RECEIVE,
+					iface, &event, sizeof(event));
+}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+
 #ifdef CONFIG_AP
 static enum wifi_link_mode get_sta_link_mode(struct wpa_supplicant *wpa_s, struct sta_info *sta)
 {
@@ -403,6 +669,28 @@ int supplicant_send_wifi_mgmt_event(const char *ifname, enum net_event_wifi_cmd 
 	case NET_EVENT_WIFI_CMD_NEIGHBOR_REP_COMPLETE:
 		net_mgmt_event_notify_with_info(NET_EVENT_WIFI_NEIGHBOR_REP_COMP,
 						iface, NULL, 0);
+		break;
+#endif
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+	case NET_EVENT_WIFI_CMD_NAN_DISCOVERY_RESULT:
+		wifi_mgmt_raise_nan_discovery_result_event(iface,
+			(const char *)supplicant_status);
+		break;
+	case NET_EVENT_WIFI_CMD_NAN_REPLIED:
+		wifi_mgmt_raise_nan_replied_event(iface,
+			(const char *)supplicant_status);
+		break;
+	case NET_EVENT_WIFI_CMD_NAN_PUBLISH_TERMINATED:
+		wifi_mgmt_raise_nan_publish_terminated_event(iface,
+			(const char *)supplicant_status);
+		break;
+	case NET_EVENT_WIFI_CMD_NAN_SUBSCRIBE_TERMINATED:
+		wifi_mgmt_raise_nan_subscribe_terminated_event(iface,
+			(const char *)supplicant_status);
+		break;
+	case NET_EVENT_WIFI_CMD_NAN_RECEIVE:
+		wifi_mgmt_raise_nan_receive_event(iface,
+			(const char *)supplicant_status);
 		break;
 #endif
 #ifdef CONFIG_AP

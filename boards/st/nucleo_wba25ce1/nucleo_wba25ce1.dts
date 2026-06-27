@@ -142,6 +142,8 @@
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_pb2 &i2c3_sda_pa11>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioa 11 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -184,10 +186,14 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 };
 
-&bt_hci_wba {
-	/* Use HASH IRQ to allocate Radio SW Low Process (Warning HASH is not used) */
+&radio {
+	/* Use HASH IRQn as Radio SW IRQ (HASH peripheral must not be enabled!) */
 	interrupts = <60 0>, <55 14>;
 	interrupt-names = "radio", "radio-sw-low";
+
+	bt_hci_wba: bluetooth {
+		status = "okay";
+	};
 };
 
 &flash0 {

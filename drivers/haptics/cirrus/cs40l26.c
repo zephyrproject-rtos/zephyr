@@ -1227,7 +1227,14 @@ static int cs40l26_stop_output(const struct device *const dev)
 	return ret;
 }
 
+static int cs40l26_select_source(const struct device *dev, const enum haptics_source src,
+				 const union haptics_config *const cfg)
+{
+	return -ENOTSUP;
+}
+
 static DEVICE_API(haptics, cs40l26_driver_api) = {
+	.select_source = &cs40l26_select_source,
 	.start_output = &cs40l26_start_output,
 	.stop_output = &cs40l26_stop_output,
 	.register_error_callback = &cs40l26_register_error_callback,

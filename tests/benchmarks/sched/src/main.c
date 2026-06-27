@@ -16,7 +16,7 @@
  * then sleeps using z_pend_curr().  From this initial
  * state:
  *
- * 1. The main thread calls z_unpend_first_thread()
+ * 1. The main thread calls z_unpend_first_thread_locked()
  * 2. The main thread calls z_ready_thread()
  * 3. The main thread calls k_yield()
  *    (the kernel switches to the partner thread)
@@ -133,13 +133,11 @@ int main(void)
 	uint64_t tot = 0U;
 	uint32_t runs = 0U;
 
-	int key;
-
 	for (int i = 0; i < N_RUNS + N_SETTLE; i++) {
-		key = arch_irq_lock();
 		stamp(UNPENDING);
-		z_unpend_first_thread(&waitq);
-		arch_irq_unlock(key);
+		LOCK_SCHED_SPINLOCK {
+			z_unpend_first_thread_locked(&waitq);
+		}
 		stamp(UNPENDED_READYING);
 		z_ready_thread(th);
 		stamp(READIED_YIELDING);

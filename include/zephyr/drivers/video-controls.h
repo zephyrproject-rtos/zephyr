@@ -21,7 +21,7 @@
  *
  * The Video control IDs (CIDs) are introduced with the same name as
  * Linux V4L2 subsystem and under the same class. This facilitates
- * inter-operability and debugging devices end-to-end across Linux and
+ * interoperability and debugging devices end-to-end across Linux and
  * Zephyr.
  *
  * This list is maintained compatible to the Linux kernel definitions in

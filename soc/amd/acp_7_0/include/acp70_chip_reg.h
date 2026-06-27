@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2026 AMD
+/**
+ * SPDX-FileCopyrightText: Copyright (c) 2026 AMD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@ typedef union acp_dma_cntl_0 {
 		unsigned int dmachrst: 1;
 		unsigned int dmachrun: 1;
 		unsigned int dmachiocen: 1;
-		unsigned int: 29;
+		unsigned int reserved: 29;
 	} bits;
 	unsigned int u32all;
 } acp_dma_cntl_0_t;
@@ -25,16 +25,16 @@ typedef union acp_dma_cntl_0 {
 typedef union acp_dma_ch_sts {
 	struct {
 		unsigned int dmachrunsts: 8;
-		unsigned int: 24;
+		unsigned int reserved: 24;
 	} bits;
 	unsigned int u32all;
 } acp_dma_ch_sts_t;
 
 typedef union acp_dsp_sw_intr_cntl {
 	struct {
-		unsigned int: 2;
+		unsigned int reserved0: 2;
 		unsigned int dsp0_to_host_intr_mask: 1;
-		unsigned int: 29;
+		unsigned int reserved1: 29;
 	} bits;
 	unsigned int u32all;
 } acp_dsp_sw_intr_cntl_t;
@@ -42,7 +42,7 @@ typedef union acp_dsp_sw_intr_cntl {
 typedef union acp_external_intr_enb {
 	struct {
 		unsigned int acpextintrenb: 1;
-		unsigned int: 31;
+		unsigned int reserved: 31;
 	} bits;
 	unsigned int u32all;
 } acp_external_intr_enb_t;
@@ -101,6 +101,73 @@ struct acp_dma_dev_data {
 	ATOMIC_DEFINE(atomic, ACP_DMA_CHAN_COUNT);
 	struct dma_config *dma_config;
 	void *dai_index_ptr;
+};
+
+/* ITER: TX enable register */
+typedef union acp_tdm_iter {
+	struct {
+		uint32_t tdm_txen: 1;
+		uint32_t tdm_tx_protocol_mode: 1;
+		uint32_t tdm_tx_data_path_mode: 1;
+		uint32_t tdm_tx_samp_len: 3;
+		uint32_t reserved0: 1;
+		uint32_t reserved1: 25;
+	} bits;
+	uint32_t u32all;
+} acp_tdm_iter_t;
+
+/* IRER: RX enable register */
+typedef union acp_tdm_irer {
+	struct {
+		uint32_t tdm_rx_en: 1;
+		uint32_t tdm_rx_protocol_mode: 1;
+		uint32_t tdm_rx_data_path_mode: 1;
+		uint32_t tdm_rx_samplen: 3;
+		uint32_t reserved0: 1;
+		uint32_t reserved1: 25;
+	} bits;
+	uint32_t u32all;
+} acp_tdm_irer_t;
+
+/* IER: global instance enable register */
+typedef union acp_tdm_ier {
+	struct {
+		uint32_t tdm_ien: 1;
+		uint32_t reserved: 31;
+	} bits;
+	uint32_t u32all;
+} acp_tdm_ier_t;
+
+/* MSTRCLKGEN: master clock generation register */
+union acp_tdm_mstrclkgen {
+	struct {
+		unsigned int tdm_master_mode : 1;
+		unsigned int tdm_format_mode : 1;
+		unsigned int tdm_lrclk_div_val : 11;
+		unsigned int tdm_bclk_div_val : 11;
+		unsigned int reserved: 8;
+	} bits;
+	unsigned int  u32all;
+};
+
+/* FRMT: TDM frame format register */
+union acp_tdm_frmt {
+	struct {
+		uint32_t num_slots: 4;
+		uint32_t slot_len: 5;
+		uint32_t reserved: 23;
+	} bits;
+	uint32_t u32all;
+};
+
+/* TDM context: tracks which DMA channel belongs to which TDM instance */
+struct acp_tdm_context {
+	uint64_t prev_pos;
+	uint32_t buff_size;
+	uint32_t tdm_instance;
+	uint32_t pin_dir;
+	uint32_t dma_channel;
+	uint32_t index;
 };
 
 static ALWAYS_INLINE void io_reg_write(uint32_t reg, uint32_t val)

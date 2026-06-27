@@ -42,26 +42,30 @@ properties:
     description: |
         Prescaler for PLLx
         input clock
-        Valid range: 1 - 16
+    min: 1
+    max: 16
 
   mul-n:
     type: int
     required: true
     description: |
         PLLx multiplication factor for VCO
-        Valid range: 4 - 512
+    min: 4
+    max: 512
 
   div-p:
     type: int
     description: |
         PLLx DIVP division factor
-        Valid range: 1 - 128
+    min: 1
+    max: 128
 
   div-q:
     type: int
     description: |
         PLLx DIVQ division factor
-        Valid range: 1 - 128
+    min: 1
+    max: 128
 
   div-r:
     type: int
@@ -70,10 +74,12 @@ properties:
         PLLx DIVR division factor
         On PLL1, only division by 1 and even division values are allowed.
         No restrictions for PLL2 and PLL3
-        Valid range: 1 - 128
+    min: 1
+    max: 128
 
   fracn:
     type: int
     description: |
         PLLx FRACN value
-        Valid range: 0 - 8191
+    min: 0
+    max: 8191

@@ -10,6 +10,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/display.h>
+#include <zephyr/drivers/display/color_dither.h>
 
 #include <nsi_tracing.h>
 #include <string.h>
@@ -54,6 +55,7 @@ struct sdl_display_config {
 };
 
 struct sdl_display_data {
+	struct display_color_dither_state color_dither;
 	void *window;
 	void *renderer;
 	void *mutex;
@@ -196,6 +198,21 @@ static int sdl_display_init(const struct device *dev)
 			CONFIG_SDL_DISPLAY_THREAD_PRIORITY, 0, K_NO_WAIT);
 	/* Ensure task thread has performed the init */
 	k_sem_take(&disp_data->task_sem, K_FOREVER);
+
+	/*
+	 * SDL has native RGB paths. Only keep the dither helper active when the instance starts as
+	 * an I_4 palette display (i.e. pixel format was set as such in devicetree); otherwise force
+	 * native SDL formats to bypass helper conversion.
+	 */
+	if (disp_data->current_pixel_format == PIXEL_FORMAT_I_4) {
+		if (display_color_dither_set_input_format(&disp_data->color_dither,
+							  COLOR_DITHER_DEFAULT_FMT) == 0) {
+			disp_data->current_pixel_format = COLOR_DITHER_DEFAULT_FMT;
+		}
+	} else {
+		(void)display_color_dither_set_input_format(&disp_data->color_dither,
+							    PIXEL_FORMAT_I_4);
+	}
 
 	return 0;
 }
@@ -586,6 +603,7 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 			     const struct display_buffer_descriptor *desc,
 			     const void *buf)
 {
+	struct display_buffer_descriptor scratch;
 	const struct sdl_display_config *config = dev->config;
 	struct sdl_display_data *disp_data = dev->data;
 	struct sdl_display_task task = {
@@ -596,6 +614,12 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 			.desc = desc,
 		},
 	};
+	int ret;
+
+	ret = display_color_dither_prepare(dev, &disp_data->color_dither, &desc, &buf, &scratch);
+	if (ret < 0) {
+		return ret;
+	}
 
 	LOG_DBG("Writing %dx%d (w,h) bitmap @ %dx%d (x,y)", desc->width,
 			desc->height, x, y);
@@ -617,7 +641,9 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 	}
 
 	k_mutex_lock(&disp_data->task_mutex, K_FOREVER);
-	if (disp_data->current_pixel_format == PIXEL_FORMAT_ARGB_8888) {
+	if (desc == &scratch) {
+		sdl_display_write_i4(dev, desc, buf);
+	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_ARGB_8888) {
 		sdl_display_write_argb8888(disp_data->buf, desc, buf);
 	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_XRGB_8888) {
 		sdl_display_write_xrgb8888(disp_data->buf, desc, buf);
@@ -1256,12 +1282,28 @@ static void sdl_display_get_capabilities(
 	capabilities->screen_info =
 		(IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED) ? SCREEN_INFO_MONO_VTILED : 0) |
 		(IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_MSB_FIRST) ? SCREEN_INFO_MONO_MSB_FIRST : 0);
+
+	display_color_dither_patch_caps(&disp_data->color_dither, capabilities);
 }
 
 static int sdl_display_set_pixel_format(const struct device *dev,
 					const enum display_pixel_format pixel_format)
 {
 	struct sdl_display_data *disp_data = dev->data;
+
+	/*
+	 * Only palette-backed I_4 SDL instances should route RGB formats through the color
+	 * dithering helper.
+	 */
+	if ((disp_data->current_pixel_format == PIXEL_FORMAT_I_4 ||
+	     display_color_dither_is_active(&disp_data->color_dither,
+					    disp_data->current_pixel_format)) &&
+	    display_color_dither_set_input_format(&disp_data->color_dither, pixel_format) == 0) {
+		disp_data->current_pixel_format = pixel_format;
+		return 0;
+	}
+
+	(void)display_color_dither_set_input_format(&disp_data->color_dither, PIXEL_FORMAT_I_4);
 
 	switch (pixel_format) {
 	case PIXEL_FORMAT_ARGB_8888:
@@ -1335,13 +1377,16 @@ static DEVICE_API(display, sdl_display_api) = {
 	.set_orientation = sdl_display_set_orientation,
 };
 
+#define HAS_COLOR_PALETTE(n) DT_NODE_EXISTS(DT_INST_CHILD(n, color_palette))
+
 #define DISPLAY_SDL_DEFINE(n)                                                                      \
+	COND_CODE_1(HAS_COLOR_PALETTE(n), (DISPLAY_COLOR_DITHER_DEFINE(n);), ())                   \
 	static const struct sdl_display_config sdl_config_##n = {                                  \
 		.height = DT_INST_PROP(n, height),                                                 \
 		.width = DT_INST_PROP(n, width),                                                   \
 		.title = DT_INST_PROP_OR(n, title, "Zephyr Display"),                              \
 		IF_ENABLED(CONFIG_DISPLAY_COLOR_PALETTE,                                           \
-			   (COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(n, color_palette)),           \
+			   (COND_CODE_1(HAS_COLOR_PALETTE(n),                                      \
 					(.color_palette = DT_PROP(DT_INST_CHILD(n, color_palette), \
 								  colors),),                       \
 					())))                                                      \
@@ -1351,6 +1396,8 @@ static DEVICE_API(display, sdl_display_api) = {
 	static uint8_t sdl_read_buf_##n[4 * DT_INST_PROP(n, height) * DT_INST_PROP(n, width)];     \
 	K_MSGQ_DEFINE(sdl_task_msgq_##n, sizeof(struct sdl_display_task), 1, 4);                   \
 	static struct sdl_display_data sdl_data_##n = {                                            \
+		COND_CODE_1(HAS_COLOR_PALETTE(n),                                                  \
+			    (.color_dither = DISPLAY_COLOR_DITHER_INIT(n),), ())                   \
 		.current_pixel_format = DT_INST_PROP(n, pixel_format),                             \
 		.buf = sdl_buf_##n,                                                                \
 		.read_buf = sdl_read_buf_##n,                                                      \

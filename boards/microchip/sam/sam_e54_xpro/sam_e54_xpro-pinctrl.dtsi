@@ -85,4 +85,17 @@
 			pinmux = <PA2B_DAC_VOUT0>;
 		};
 	};
+
+	sdhc1_default: sdmmc1_default {
+		group1 {
+			pinmux = <PD20I_SDHC1_SDCD>,
+				 <PD21I_SDHC1_SDWP>,
+				 <PA20I_SDHC1_SDCMD>,
+				 <PA21I_SDHC1_SDCK>,
+				 <PB18I_SDHC1_SDDAT0>,
+				 <PB19I_SDHC1_SDDAT1>,
+				 <PB20I_SDHC1_SDDAT2>,
+				 <PB21I_SDHC1_SDDAT3>;
+		};
+	};
 };

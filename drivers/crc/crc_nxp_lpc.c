@@ -70,6 +70,7 @@ static int crc_nxp_lpc_prepare_config(const struct crc_ctx *ctx, crc_config_t *c
 		cfg->seed &= 0xFFFFU;
 		break;
 	case CRC16_CCITT:
+	case CRC16_ITU_T:
 		if (ctx->polynomial != CRC16_CCITT_POLY) {
 			return -EINVAL;
 		}
@@ -83,6 +84,15 @@ static int crc_nxp_lpc_prepare_config(const struct crc_ctx *ctx, crc_config_t *c
 		cfg->polynomial = kCRC_Polynomial_CRC_32;
 		/* IEEE uses final XOR */
 		cfg->complementOut = true;
+		break;
+	case CRC32_MPEG2:
+		if (ctx->polynomial != CRC32_IEEE_POLY) {
+			return -EINVAL;
+		}
+		cfg->polynomial = kCRC_Polynomial_CRC_32;
+		/* MPEG-2 uses no reflection and no final XOR; both already
+		 * default to false above.
+		 */
 		break;
 	default:
 		return -ENOTSUP;
@@ -147,7 +157,7 @@ static int crc_nxp_lpc_update(const struct device *dev, struct crc_ctx *ctx, con
 	}
 
 	/* Keep an updated result for streaming verification */
-	if (ctx->type == CRC32_IEEE) {
+	if ((ctx->type == CRC32_IEEE) || (ctx->type == CRC32_MPEG2)) {
 		ctx->result = CRC_Get32bitResult(config->base);
 	} else {
 		ctx->result = (uint32_t)CRC_Get16bitResult(config->base);
@@ -168,7 +178,7 @@ static int crc_nxp_lpc_finish(const struct device *dev, struct crc_ctx *ctx)
 		return -EINVAL;
 	}
 
-	if (ctx->type == CRC32_IEEE) {
+	if ((ctx->type == CRC32_IEEE) || (ctx->type == CRC32_MPEG2)) {
 		ctx->result = CRC_Get32bitResult(config->base);
 	} else {
 		ctx->result = (uint32_t)CRC_Get16bitResult(config->base);

@@ -350,10 +350,6 @@ static int i2c_numaker_transfer(const struct device *dev, struct i2c_msg *msgs, 
 	}
 #endif
 
-	if (num_msgs == 0) {
-		goto cleanup;
-	}
-
 	/* Prepare to start transfer */
 	data->master_xfer.addr = addr;
 	data->master_xfer.msgs_beg = msgs;
@@ -395,9 +391,9 @@ i2c_stop:
 	if (data->slave_xfer.slave_config) {
 		I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk | I2C_CTL0_AA_Msk);
 	}
-#endif
 
 cleanup:
+#endif
 
 	irq_enable(config->irq_n);
 	k_sem_give(&data->lock);

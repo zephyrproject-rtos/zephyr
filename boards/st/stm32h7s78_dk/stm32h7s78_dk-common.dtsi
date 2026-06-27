@@ -68,7 +68,7 @@
 	};
 
 	dcmi_camera_connector: connector_dcmi_camera {
-		compatible = "st,stm32-dcmi-camera-fpu-330zh";
+		compatible = "st,dvp-cam-zif-30-connector";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
@@ -241,6 +241,8 @@
 st_cam_i2c: &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	/*
 	 * Make sure FDCAN and i2c1 are not enabled at the same time
 	 * because they share the pb9 pin
@@ -289,6 +291,10 @@ st_cam_i2c: &i2c1 {
 		compatible = "ethernet-phy";
 		reg = <0x00>;
 	};
+};
+
+&xspim {
+	status = "okay";
 };
 
 &xspi1 {
@@ -441,5 +447,9 @@ st_cam_dvp: &dcmipp {
 };
 
 &crc {
+	status = "okay";
+};
+
+zephyr_jpegenc: &jpeg {
 	status = "okay";
 };

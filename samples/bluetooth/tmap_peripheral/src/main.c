@@ -26,6 +26,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
@@ -126,8 +127,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	printk("Disconnected: %s, reason 0x%02x %s\n", bt_conn_dst_str(conn),
 	       reason, bt_hci_err_to_str(reason));
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 
 	k_sem_give(&sem_disconnected);
 }
@@ -275,14 +275,19 @@ int main(void)
 	}
 
 	printk("Advertising successfully started\n");
-	k_sem_take(&sem_connected, K_FOREVER);
-	k_sem_take(&sem_security_updated, K_FOREVER);
+	err = k_sem_take(&sem_connected, K_FOREVER);
+	__ASSERT_NO_MSG(err == 0);
+
+	err = k_sem_take(&sem_security_updated, K_FOREVER);
+	__ASSERT_NO_MSG(err == 0);
 
 	err = bt_tmap_discover(default_conn, &tmap_callbacks);
 	if (err != 0) {
 		return err;
 	}
-	k_sem_take(&sem_discovery_done, K_FOREVER);
+
+	err = k_sem_take(&sem_discovery_done, K_FOREVER);
+	__ASSERT_NO_MSG(err == 0);
 
 	err = ccp_call_ctrl_init(default_conn);
 	if (err != 0) {

@@ -16,6 +16,9 @@
 extern "C" {
 #endif
 
+/* Size of intermediate buffer used for write alignment */
+#define WRITE_ALIGNMENT_BUFFER_SIZE 16
+
 #define FCB_CRC_SZ	sizeof(uint8_t)
 #define FCB_TMP_BUF_SZ	32
 

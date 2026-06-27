@@ -10,7 +10,6 @@ static int quic_connection_init(struct quic_context *ctx,
 {
 	struct quic_endpoint *ep;
 	int ret;
-	size_t token_len;
 
 	k_mutex_lock(&endpoints_lock, K_FOREVER);
 
@@ -34,44 +33,34 @@ static int quic_connection_init(struct quic_context *ctx,
 						&net_sin(local_addr)->sin_addr));
 		}
 	} else {
-		ep = find_endpoint(remote_addr, local_addr, NULL, 0, NULL, 0);
+		/*
+		 * Always allocate a dedicated client endpoint per connection
+		 * context. Drop any orphaned client endpoints for this remote
+		 * first so we do not exhaust the endpoint pool or leave stale
+		 * UDP sockets behind from a prior failed client open.
+		 */
+		k_mutex_unlock(&endpoints_lock);
+		quic_release_orphan_client_endpoints(remote_addr);
+		k_mutex_lock(&endpoints_lock, K_FOREVER);
+
+		ep = alloc_endpoint(ctx, remote_addr, local_addr);
 		if (ep == NULL) {
-			ep = alloc_endpoint(ctx, remote_addr, local_addr);
-			if (ep == NULL) {
-				k_mutex_unlock(&endpoints_lock);
-				return -ENOMEM;
-			}
-
-			ep->is_server = false;
-			ctx->listen = NULL;
-			ctx->is_listening = false;
-
-			/* For client, generate random connection IDs:
-			 * - peer_cid: DCID sent to server (server's CID from client's perspective)
-			 * - my_cid: SCID we use to identify ourselves
-			 */
-			ep->peer_cid_len = 8;
-			sys_rand_get(ep->peer_cid, ep->peer_cid_len);
-
-			ep->my_cid_len = 8;
-			sys_rand_get(ep->my_cid, ep->my_cid_len);
-			ep->token.client_initial_dcid_len = ep->peer_cid_len;
-			memcpy(ep->token.client_initial_dcid, ep->peer_cid, ep->peer_cid_len);
-
-			token_len = quic_token_cache_take(remote_addr, ep->token.initial,
-							  sizeof(ep->token.initial));
-			if (token_len > 0U) {
-				ep->token.initial_len = token_len;
-				ep->token.initial_type = QUIC_TOKEN_NEW;
-			}
-
-			NET_DBG("[EP:%p/%d] Created new endpoint from %s to %s", ep,
-				quic_get_by_ep(ep), local_addr == NULL ? "ANY" :
-				net_sprint_addr(local_addr->sa_family,
-						&net_sin(local_addr)->sin_addr),
-				net_sprint_addr(remote_addr->sa_family,
-						&net_sin(remote_addr)->sin_addr));
+			k_mutex_unlock(&endpoints_lock);
+			return -ENOMEM;
 		}
+
+		ep->is_server = false;
+		ctx->listen = NULL;
+		ctx->is_listening = false;
+
+		quic_client_endpoint_init_cids(ep, remote_addr);
+
+		NET_DBG("[EP:%p/%d] Created new endpoint from %s to %s", ep,
+			quic_get_by_ep(ep), local_addr == NULL ? "ANY" :
+			net_sprint_addr(local_addr->sa_family,
+					&net_sin(local_addr)->sin_addr),
+			net_sprint_addr(remote_addr->sa_family,
+					&net_sin(remote_addr)->sin_addr));
 	}
 
 	ctx->stream_id_counter = 0ULL;
@@ -649,7 +638,11 @@ static int quic_ctx_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 static bool quic_stream_can_send(struct quic_stream *stream)
 {
 	struct quic_endpoint *ep = stream->ep;
-	size_t tx_free = sizeof(stream->tx_buf.data) - stream->tx_buf.len;
+	size_t tx_free;
+
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	tx_free = sizeof(stream->tx_buf.data) - stream->tx_buf.len;
+	k_mutex_unlock(&stream->tx_lock);
 
 	/* Check TX retransmit buffer space. We need meaningful space, not just 1 byte */
 	if (tx_free < 64) {
@@ -822,6 +815,7 @@ static int quic_send_stream_fin(struct quic_stream *stream)
 {
 	uint8_t frame[32]; /* 1 type + max 8 stream_id + max 8 offset + max 2 len */
 	size_t frame_len = 0;
+	uint64_t sent_pn;
 	int ret;
 
 	if (stream->ep == NULL) {
@@ -859,8 +853,8 @@ static int quic_send_stream_fin(struct quic_stream *stream)
 	}
 	frame_len += quic_get_varint_size(0ULL);
 
-	ret = quic_send_packet(stream->ep, QUIC_SECRET_LEVEL_APPLICATION,
-			       frame, frame_len);
+	ret = quic_send_packet_with_pn(stream->ep, QUIC_SECRET_LEVEL_APPLICATION,
+				       frame, frame_len, &sent_pn);
 	if (ret < 0) {
 		NET_DBG("[ST:%p/%d] Failed to send FIN for stream %" PRIu64 " : %d",
 			stream, quic_get_by_stream(stream), stream->id, ret);
@@ -868,9 +862,9 @@ static int quic_send_stream_fin(struct quic_stream *stream)
 	}
 
 	/* Annotate the packet for loss recovery / retransmission tracking */
-	quic_annotate_last_sent_stream(stream->ep, QUIC_SECRET_LEVEL_APPLICATION,
-				       stream->id, stream->bytes_sent,
-				       0 /* data_len */, true /* stream_fin */);
+	quic_annotate_sent_stream(stream->ep, QUIC_SECRET_LEVEL_APPLICATION,
+				  sent_pn, stream->id, stream->bytes_sent,
+				  0 /* data_len */, true /* stream_fin */);
 
 	NET_DBG("[ST:%p/%d] Sent FIN for stream %" PRIu64 " at offset %" PRIu64,
 		stream, quic_get_by_stream(stream), stream->id, stream->bytes_sent);
@@ -893,6 +887,7 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	size_t max_payload_size;
 	size_t frame_len = 0;
 	uint8_t frame_type;
+	uint64_t sent_pn;
 	int state;
 	int ret;
 
@@ -979,14 +974,12 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	to_send = MIN(to_send, max_payload_size);
 
 	/* Also limit by TX retransmit buffer space */
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
 	tx = &stream->tx_buf;
 	tx_free = sizeof(tx->data) - tx->len;
 
 	if (tx_free == 0) {
-		/* Buffer full, peer is not ACKing fast enough.
-		 * Caller should retry; the PTO timer will eventually
-		 * unblock things by retransmitting stalled data.
-		 */
+		k_mutex_unlock(&stream->tx_lock);
 		NET_DBG("[ST:%p/%d] TX retransmit buffer full on stream %" PRIu64,
 			stream, quic_get_by_stream(stream), stream->id);
 		return -EAGAIN;
@@ -996,15 +989,12 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 		to_send = tx_free;
 	}
 
-	/* Record the stream offset before updating bytes_sent */
 	this_offset = stream->bytes_sent;
+	k_mutex_unlock(&stream->tx_lock);
 
-	/* Copy into retransmit buffer BEFORE sending.
-	 * If the send fails the data is still here; it will be
-	 * retransmitted by the PTO or loss detection.
-	 */
-	memcpy(&tx->data[tx->len], buf, to_send);
-	tx->len += to_send;
+	if (to_send == 0) {
+		return -EAGAIN;
+	}
 
 	if (to_send != buf_len) {
 		NET_DBG("[ST:%p/%d] Limiting send from %zd to %zd bytes due to flow control/buffer",
@@ -1053,11 +1043,33 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	memcpy(&frame[frame_len], buf, to_send);
 	frame_len += to_send;
 
+	/* Copy into retransmit buffer before sending. If the send fails the
+	 * data stays here for PTO / loss detection retransmission.
+	 */
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	memcpy(&tx->data[tx->len], buf, to_send);
+	tx->len += to_send;
+	k_mutex_unlock(&stream->tx_lock);
+
 	/* Send the packet */
-	ret = quic_send_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, frame_len);
+	ret = quic_send_packet_with_pn(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, frame_len,
+				       &sent_pn);
 	if (ret < 0) {
 		/* Roll back TX buffer on send failure */
-		tx->len -= to_send;
+		k_mutex_lock(&stream->tx_lock, K_FOREVER);
+		if (stream->bytes_sent == this_offset) {
+			size_t buf_off = (size_t)(this_offset - tx->base_offset);
+
+			if (buf_off < tx->len && buf_off + to_send <= tx->len) {
+				if (buf_off + to_send < tx->len) {
+					memmove(&tx->data[buf_off],
+						&tx->data[buf_off + to_send],
+						tx->len - buf_off - to_send);
+				}
+				tx->len -= to_send;
+			}
+		}
+		k_mutex_unlock(&stream->tx_lock);
 
 		NET_DBG("[ST:%p/%d] Failed to send STREAM frame: %d",
 			stream, quic_get_by_stream(stream), ret);
@@ -1071,9 +1083,9 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	/* Annotate the sent_pkt ring-buffer entry with stream frame info
 	 * so loss detection knows what to retransmit.
 	 */
-	quic_annotate_last_sent_stream(ep, QUIC_SECRET_LEVEL_APPLICATION,
-				       stream->id, this_offset,
-				       (uint16_t)to_send, false);
+	quic_annotate_sent_stream(ep, QUIC_SECRET_LEVEL_APPLICATION, sent_pn,
+				  stream->id, this_offset,
+				  (uint16_t)to_send, false);
 
 	NET_DBG("[ST:%p/%d] Sent %zd bytes, stream total=%" PRIu64 ", conn total=%" PRIu64,
 		stream, quic_get_by_stream(stream), to_send, stream->bytes_sent,

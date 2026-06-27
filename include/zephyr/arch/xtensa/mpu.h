@@ -285,6 +285,21 @@ struct xtensa_mpu_range {
 
 	/** Access rights for the memory region. */
 	const uint8_t access_rights:4;
+} __packed;
+
+/**
+ * Struct to describe the memory type of a memory region [start, end).
+ */
+struct xtensa_mpu_mem_type_region {
+	/** Start address (inclusive) of the memory region. */
+	const uintptr_t start;
+
+	/**
+	 * End address (exclusive) of the memory region.
+	 *
+	 * Use 0xFFFFFFFF for the end of memory.
+	 */
+	const uintptr_t end;
 
 	/**
 	 * Memory type for the region.
@@ -293,24 +308,33 @@ struct xtensa_mpu_range {
 	 * for general description, and the processor manual for processor
 	 * specific information.
 	 */
-	const uint16_t memory_type:9;
-} __packed;
+	const uint16_t memory_type;
+};
 
 /**
- * @brief Additional memory regions required by SoC.
+ * @brief MPU memory regions at boot.
  *
  * These memory regions will be setup by MPU initialization code at boot.
- *
- * Must be defined in the SoC layer.
  */
-extern const struct xtensa_mpu_range xtensa_soc_mpu_ranges[];
+extern const struct xtensa_mpu_range xtensa_mpu_ranges[];
 
 /**
- * @brief Number of SoC additional memory regions.
- *
- * Must be defined in the SoC layer.
+ * @brief Number of MPU memory regions at boot.
  */
-extern const int xtensa_soc_mpu_ranges_num;
+extern const unsigned int xtensa_mpu_ranges_num;
+
+/**
+ * @brief MPU memory type table.
+ *
+ * This will be used to determine the memory types used in the MPU entries.
+ * The memory regions here should correspond to hardware configuration.
+ */
+extern const struct xtensa_mpu_mem_type_region xtensa_mpu_mem_type_ranges[];
+
+/**
+ * @brief Number of entries in MPU memory type table.
+ */
+extern const unsigned int xtensa_mpu_mem_type_ranges_num;
 
 /**
  * @brief Initialize hardware MPU.

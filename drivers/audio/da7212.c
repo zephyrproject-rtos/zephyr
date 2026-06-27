@@ -642,7 +642,7 @@ static int da7212_apply_properties(const struct device *dev)
 	return 0;
 }
 
-static const struct audio_codec_api da7212_driver_api = {
+static DEVICE_API(audio_codec, da7212_driver_api) = {
 	.configure = da7212_configure,
 	.start_output = da7212_start_output,
 	.stop_output = da7212_stop_output,

@@ -1174,7 +1174,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	adv->tx_power = rp->tx_power;
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
-	net_buf_unref(rsp);
+	net_buf_drop(&rsp);
 
 	atomic_set_bit(adv->flags, BT_ADV_PARAMS_SET);
 

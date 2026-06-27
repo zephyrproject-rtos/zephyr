@@ -5,7 +5,7 @@
 
 #include <string.h>
 #include <zephyr/drivers/hwinfo.h>
-#include <zephyr/drivers/syscon.h>
+#include <zephyr/drivers/otp.h>
 #include <zephyr/sys/byteorder.h>
 
 /*
@@ -37,12 +37,12 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 		return -ENODEV;
 	}
 
-	err = syscon_read_reg(efuse, EFUSE_WIFI_MAC_LOW_OFFSET, &mac_low);
+	err = otp_read(efuse, EFUSE_WIFI_MAC_LOW_OFFSET, &mac_low, sizeof(uint32_t));
 	if (err != 0) {
 		return err;
 	}
 
-	err = syscon_read_reg(efuse, EFUSE_WIFI_MAC_HIGH_OFFSET, &mac_high);
+	err = otp_read(efuse, EFUSE_WIFI_MAC_HIGH_OFFSET, &mac_high, sizeof(uint32_t));
 	if (err != 0) {
 		return err;
 	}
@@ -62,7 +62,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	parity_cl =  (DEVICE_ID_LENGTH_EFUSE * BITS_PER_BYTE)
 		- (sys_count_bits(id, DEVICE_ID_LENGTH_EFUSE) & EFUSE_WIFI_MAC_PARITY_MSK);
 	/* BL70x/L stores parity elsewhere */
-	err = syscon_read_reg(efuse, EFUSE_DATA_0_EF_KEY_SLOT_5_W2, &mac_high);
+	err = otp_read(efuse, EFUSE_DATA_0_EF_KEY_SLOT_5_W2, &mac_high, sizeof(uint32_t));
 	if (err != 0) {
 		return err;
 	}

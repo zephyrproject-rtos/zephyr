@@ -14,6 +14,7 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
@@ -856,8 +857,8 @@ static bool bap_stream_valid_ase_op(const struct bt_conn *conn, const struct bt_
 		valid_op = false;
 	}
 
-	LOG_DBG("ASE operation (dir %d) %u in state %s is%s valid", ep_dir, ase_op,
-		bt_bap_ep_state_str(ep_state), valid_op ? "" : " not");
+	LOG_DBG("ASE operation (dir %s) %u in state %s is%s valid", bt_audio_dir_str(ep_dir),
+		ase_op, bt_bap_ep_state_str(ep_state), valid_op ? "" : " not");
 
 	return valid_op;
 }
@@ -931,7 +932,7 @@ static bool valid_snk_state_transition(enum bt_bap_ep_state old_state,
 	case BT_BAP_EP_STATE_RELEASING:
 		switch (new_state) {
 		case BT_BAP_EP_STATE_IDLE:
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
 			valid_transition = true;
 			break;
 		default:
@@ -1029,7 +1030,7 @@ static bool valid_src_state_transition(enum bt_bap_ep_state old_state,
 	case BT_BAP_EP_STATE_RELEASING:
 		switch (new_state) {
 		case BT_BAP_EP_STATE_IDLE:
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
 			valid_transition = true;
 			break;
 		default:
@@ -1076,7 +1077,7 @@ bool bt_bap_stream_valid_state_transition(const struct bt_bap_ep *ep, enum bt_ba
 		valid_transition = false;
 	}
 
-	LOG_DBG("state transition (dir %d): %s -> %s is%s valid", ep_dir,
+	LOG_DBG("state transition (dir %s): %s -> %s is%s valid", bt_audio_dir_str(ep_dir),
 		bt_bap_ep_state_str(ep_state), bt_bap_ep_state_str(state),
 		valid_transition ? "" : " not");
 
@@ -1145,10 +1146,7 @@ void bt_bap_stream_detach(struct bt_bap_stream *stream)
 {
 	LOG_DBG("stream %p conn %p ep %p", stream, (void *)stream->conn, (void *)stream->ep);
 
-	if (stream->conn != NULL) {
-		bt_conn_unref(stream->conn);
-		stream->conn = NULL;
-	}
+	bt_conn_drop(&stream->conn);
 	stream->codec_cfg = NULL;
 
 	if (stream->ep != NULL) {

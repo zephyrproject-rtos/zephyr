@@ -428,8 +428,8 @@ static int arducam_mega_await_bus_idle(const struct spi_dt_spec *spec, int tries
 	return 0;
 }
 
-static int arducam_mega_write_reg_wait(const struct arducam_mega_bus *bus, uint16_t reg,
-				       uint8_t value, uint32_t idle_timeout_ms)
+static int arducam_mega_write_reg_wait(const struct spi_dt_spec *bus, uint16_t reg, uint8_t value,
+				       uint32_t idle_timeout_ms)
 {
 	int ret = 0;
 
@@ -581,7 +581,7 @@ static int arducam_mega_set_jpeg_quality(const struct device *dev, enum mega_ima
 	const struct arducam_mega_config *cfg = dev->config;
 	struct arducam_mega_data *drv_data = dev->data;
 
-	LOG_DBG("JPEG quality level: %d", __func__, qc);
+	LOG_DBG("JPEG quality level: %d", qc);
 
 	if (drv_data->fmt.pixelformat != VIDEO_PIX_FMT_JPEG) {
 		LOG_ERR("Image format does not support setting JPEG quality");
@@ -1242,7 +1242,7 @@ static int arducam_mega_init_controls(const struct device *dev)
 	if (drv_data->features & MEGA_HAS_FOCUS) {
 		ret = video_init_ctrl(
 			&ctrls->focus_auto, dev, VIDEO_CID_FOCUS_AUTO,
-			(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
+			(struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
 		if (ret < 0) {
 			return ret;
 		}
@@ -1353,7 +1353,7 @@ static int arducam_mega_init(const struct device *dev)
 	static const struct arducam_mega_config arducam_mega_cfg_##inst = {                        \
 		.bus = SPI_DT_SPEC_INST_GET(                                                       \
 			inst,                                                                      \
-			SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_LOCK_ON, 0), \
+			SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_LOCK_ON),    \
 	};                                                                                         \
                                                                                                    \
 	static struct arducam_mega_data arducam_mega_data_##inst;                                  \

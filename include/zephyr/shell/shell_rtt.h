@@ -6,8 +6,8 @@
 
 /**
  * @file
- * @brief RTT shell backend
- * @ingroup shell_api
+ * @brief Header file for the RTT shell backend.
+ * @ingroup shell_rtt
  */
 
 #ifndef ZEPHYR_INCLUDE_SHELL_RTT_H_
@@ -19,6 +19,7 @@
 extern "C" {
 #endif
 
+/** @cond INTERNAL_HIDDEN */
 extern const struct shell_transport_api shell_rtt_transport_api;
 
 struct shell_rtt {
@@ -26,7 +27,20 @@ struct shell_rtt {
 	struct k_timer timer;
 	void *context;
 };
+/** @endcond */
 
+/**
+ * @defgroup shell_rtt RTT shell backend
+ * @ingroup shell_backends
+ * @brief Shell access over a SEGGER RTT channel.
+ * @{
+ */
+
+/**
+ * @brief Define an RTT shell transport instance.
+ *
+ * @param _name Name of the transport instance.
+ */
 #define SHELL_RTT_DEFINE(_name)					\
 	static struct shell_rtt _name##_shell_rtt;			\
 	struct shell_transport _name = {				\
@@ -43,6 +57,9 @@ struct shell_rtt {
  * @returns Pointer to the shell instance.
  */
 const struct shell *shell_backend_rtt_get_ptr(void);
+
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif

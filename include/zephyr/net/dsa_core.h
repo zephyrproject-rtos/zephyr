@@ -108,13 +108,13 @@ struct dsa_api {
 	int (*port_init)(const struct device *dev);
 
 	/** Port link change */
-	void (*port_phylink_change)(const struct device *dev, struct phy_link_state *state,
-				    void *user_data);
+	void (*port_phylink_change)(const struct device *phy_dev, struct phy_link_state *state,
+				    const struct device *dev);
 
-#if defined(CONFIG_NET_L2_PTP) || defined(__DOXYGEN__)
+#if defined(CONFIG_NET_L2_PTP_TIMESTAMPING) || defined(__DOXYGEN__)
 	/**
 	 * Port TX timestamp handling
-	 * @kconfig_dep{CONFIG_NET_L2_PTP}
+	 * @kconfig_dep{CONFIG_NET_L2_PTP_TIMESTAMPING}
 	 */
 	int (*port_txtstamp)(const struct device *dev, struct net_pkt *pkt);
 #endif
@@ -154,10 +154,10 @@ struct dsa_port_config {
 	const int tag_proto;
 	/** Ethernet device connected to the port */
 	const struct device *ethernet_connection;
-#if defined(CONFIG_NET_L2_PTP) || defined(__DOXYGEN__)
+#if defined(CONFIG_NET_L2_PTP_TIMESTAMPING) || defined(__DOXYGEN__)
 	/**
 	 * PTP clock used on the port
-	 * @kconfig_dep{CONFIG_NET_L2_PTP}
+	 * @kconfig_dep{CONFIG_NET_L2_PTP_TIMESTAMPING}
 	 */
 	const struct device *ptp_clock;
 #endif

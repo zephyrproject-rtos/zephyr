@@ -59,6 +59,15 @@ Example building for NXP's MCXW72 FRDM (host).
    :goals: build
    :compact:
 
+Example building for Silicon Labs EFR32MG24 4187c radio board:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/openthread/shell
+   :board: xg24_rb4187c
+   :conf: "prj.conf"
+   :goals: build
+   :compact:
+
 
 Sample console interaction
 ==========================

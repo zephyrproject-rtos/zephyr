@@ -48,6 +48,27 @@ static inline bool any_cpu_announcing(void)
 	return announcing_cpu != -1;
 }
 
+/* Timeout whose handler is currently being dispatched, or NULL when no
+ * handler is in flight. The announcing CPU sets the pointer before
+ * calling the handler and clears it afterwards; any aborter may set the
+ * low "superseded" bit (struct _timeout is pointer-aligned so bit 0 is
+ * free). Accessors below mask the bit.
+ */
+static struct _timeout *inflight_timeout;
+
+#define INFLIGHT_SUPERSEDED_BIT 1UL
+
+static inline struct _timeout *inflight_ptr(void)
+{
+	return (struct _timeout *)((uintptr_t)inflight_timeout & ~INFLIGHT_SUPERSEDED_BIT);
+}
+
+static inline void inflight_mark_superseded(void)
+{
+	inflight_timeout = (struct _timeout *)((uintptr_t)inflight_timeout |
+					       INFLIGHT_SUPERSEDED_BIT);
+}
+
 static struct _timeout *first(void)
 {
 	sys_dnode_t *t = sys_dlist_peek_head(&timeout_list);
@@ -191,7 +212,7 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 	return ticks;
 }
 
-int z_abort_timeout(struct _timeout *to)
+int z_try_abort_timeout(struct _timeout *to)
 {
 	int ret = -EINVAL;
 
@@ -200,17 +221,45 @@ int z_abort_timeout(struct _timeout *to)
 			bool is_first = (to == first());
 
 			remove_timeout(to);
-			to->dticks = TIMEOUT_DTICKS_ABORTED;
 			ret = 0;
 			if (is_first) {
 				sys_clock_set_timeout(next_timeout(elapsed()), false);
 			}
-		} else if (to->dticks == TIMEOUT_DTICKS_ANNOUNCING) {
-			to->dticks = TIMEOUT_DTICKS_ABORTED;
+		} else if (IS_ENABLED(CONFIG_SMP) && inflight_ptr() == to &&
+			   !this_cpu_announcing()) {
+			/* Handler in flight on another CPU. Free-safety
+			 * callers retry on -EAGAIN to wait it out; others
+			 * rely on the superseded mark below and don't.
+			 */
+			ret = -EAGAIN;
+		}
+
+		/* Record that the in-flight timeout has been aborted, so a
+		 * handler that checks (z_timeout_inflight_superseded) can
+		 * tell its dispatch was overtaken.
+		 */
+		if (inflight_ptr() == to) {
+			inflight_mark_superseded();
 		}
 	}
 
+	if (ret == -EAGAIN) {
+		arch_spin_relax();
+	}
+
 	return ret;
+}
+
+bool z_timeout_inflight_superseded(const struct _timeout *to)
+{
+	bool superseded = false;
+
+	K_SPINLOCK(&timeout_lock) {
+		superseded = inflight_timeout ==
+			     (struct _timeout *)((uintptr_t)to | INFLIGHT_SUPERSEDED_BIT);
+	}
+
+	return superseded;
 }
 
 /* must be locked */
@@ -306,11 +355,12 @@ void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key)
 		announce_remaining -= t->dticks;
 
 		sys_dlist_remove(&t->node);
-		t->dticks = TIMEOUT_DTICKS_ANNOUNCING;
+		inflight_timeout = t;
 
 		k_spin_unlock(&timeout_lock, key);
 		handler(t);
 		key = k_spin_lock(&timeout_lock);
+		inflight_timeout = NULL;
 	}
 
 	if (t != NULL) {

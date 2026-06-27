@@ -54,6 +54,8 @@ const char *wifi_security_txt(enum wifi_security_type security)
 	switch (security) {
 	case WIFI_SECURITY_TYPE_NONE:
 		return "OPEN";
+	case WIFI_SECURITY_TYPE_OWE:
+		return "OWE";
 	case WIFI_SECURITY_TYPE_PSK:
 		return "WPA2-PSK";
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
@@ -494,6 +496,12 @@ static int wifi_connect(uint64_t mgmt_request, struct net_if *iface,
 	case WIFI_SECURITY_TYPE_SAE_AUTO:
 		if ((!params->psk_length || !params->psk) &&
 		    (!params->sae_password_length || !params->sae_password)) {
+			return -EINVAL;
+		}
+		break;
+	case WIFI_SECURITY_TYPE_OWE:
+		/* OWE uses ECDH; no credentials are expected. */
+		if (params->psk_length || params->sae_password_length) {
 			return -EINVAL;
 		}
 		break;
@@ -1410,6 +1418,28 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP, wifi_dpp);
 
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+static int wifi_nan(uint64_t mgmt_request, struct net_if *iface,
+		    void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_nan_params *params = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->nan_cfg == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	return wifi_mgmt_api->nan_cfg(dev, iface, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_NAN, wifi_nan);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+
 static int wifi_pmksa_flush(uint64_t mgmt_request, struct net_if *iface,
 					   void *data, size_t len)
 {
@@ -1482,7 +1512,7 @@ static int wifi_get_rts_threshold(uint64_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD_CONFIG, wifi_get_rts_threshold);
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+#ifdef CONFIG_WIFI_CERTIFICATE_LIB
 static int wifi_set_enterprise_creds(uint64_t mgmt_request, struct net_if *iface,
 					   void *data, size_t len)
 {
@@ -1742,6 +1772,8 @@ static inline const char *wpa_supp_security_txt(enum wifi_security_type security
 	switch (security) {
 	case WIFI_SECURITY_TYPE_NONE:
 		return "NONE";
+	case WIFI_SECURITY_TYPE_OWE:
+		return "OWE";
 	case WIFI_SECURITY_TYPE_PSK:
 		return "WPA-PSK";
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
@@ -1846,6 +1878,10 @@ static int add_static_network_config(struct net_if *iface)
 
 #if defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OPEN)
 	creds.header.type = WIFI_SECURITY_TYPE_NONE;
+	creds.password_len = 0;
+#elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OWE)
+	creds.header.type = WIFI_SECURITY_TYPE_OWE;
+	creds.password_len = 0;
 #elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_PSK)
 	creds.header.type = WIFI_SECURITY_TYPE_PSK;
 #elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_PSK_SHA256)
@@ -1860,8 +1896,11 @@ static int add_static_network_config(struct net_if *iface)
 
 	memcpy(creds.header.ssid, CONFIG_WIFI_CREDENTIALS_STATIC_SSID,
 	       strlen(CONFIG_WIFI_CREDENTIALS_STATIC_SSID));
+#if !defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OPEN) && \
+	!defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OWE)
 	memcpy(creds.password, CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD,
 	       strlen(CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD));
+#endif
 
 	LOG_DBG("Adding statically configured WiFi network [%s] to internal list.",
 		CONFIG_WIFI_CREDENTIALS_STATIC_SSID);

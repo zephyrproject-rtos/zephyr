@@ -1,0 +1,158 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Generate artifacts on PUSH
+
+# Generate multiple artifacts in one place:
+#
+# - Generates a JSON database mapping every Zephyr board/target to its
+#   devicetree compatible strings.  The artifact produced here can be
+#   downloaded by downstream workflows for hardware-coverage analysis,
+#   board-search tooling, or CI queries.
+
+on:
+  push:
+    branches:
+      - main
+      - v*-branch
+      - collab-*
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    name: Generate Artifacts
+    if: |
+      github.repository_owner == 'zephyrproject-rtos'
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.2.20260422
+      options: '--entrypoint /bin/bash'
+    timeout-minutes: 360
+    env:
+      CATALOG_ARTIFACT_NAME: dts-hardware-catalog
+
+    steps:
+      - name: Print cloud service information
+        run: |
+          echo "ZEPHYR_RUNNER_CLOUD_PROVIDER = ${ZEPHYR_RUNNER_CLOUD_PROVIDER}"
+          echo "ZEPHYR_RUNNER_CLOUD_NODE     = ${ZEPHYR_RUNNER_CLOUD_NODE}"
+          echo "ZEPHYR_RUNNER_CLOUD_POD      = ${ZEPHYR_RUNNER_CLOUD_POD}"
+
+      - name: Apply container owner mismatch workaround
+        run: |
+          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+          #        match the container user UID because of the way GitHub
+          #        Actions runner is implemented.  Remove this workaround when
+          #        GitHub comes up with a fundamental fix for this problem.
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+      - name: Clone cached Zephyr repository
+        continue-on-error: true
+        run: |
+          git clone --shared /repo-cache/zephyrproject/zephyr .
+          git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
+
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Environment Setup
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+          west init -l . || true
+          west config --global update.narrow true
+          west update \
+            --path-cache /repo-cache/zephyrproject 2>&1 | tee west.update.log \
+            || west update \
+              --path-cache /repo-cache/zephyrproject 2>&1 | tee west.update.log \
+            || (
+              rm -rf ../modules ../bootloader ../tools
+              west update --path-cache /repo-cache/zephyrproject
+            )
+          west forall -c 'git reset --hard HEAD'
+
+          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$(cat SDK_VERSION)" \
+            >> $GITHUB_ENV
+
+      - name: Install Python packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+          west packages pip --install
+
+      - name: Generate DTS hardware catalog
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+
+          python3 scripts/ci/gen_catalogs.py \
+            --dts-db dts_catalog.json \
+            --kconfig-db kconfig.json \
+            --compile-db compile.json \
+            -v
+
+      - name: Annotate catalog with commit metadata
+        run: |
+          python3 - <<'EOF'
+          import json, os, sys
+          path = "dts_catalog.json"
+          with open(path) as f:
+              db = json.load(f)
+          db["git_sha"]    = os.environ.get("GITHUB_SHA", "unknown")
+          db["git_ref"]    = os.environ.get("GITHUB_REF_NAME", "unknown")
+          db["repository"] = os.environ.get("GITHUB_REPOSITORY", "unknown")
+          with open(path, "w") as f:
+              json.dump(db, f, indent=2)
+          n_boards = len(db["boards"])
+          n_compat = len(db["compatibles"])
+          print(f"Catalog: {n_boards} boards, {n_compat} compatibles")
+          print(f"SHA: {db['git_sha']}  ref: {db['git_ref']}")
+          EOF
+
+      - name: Set artifact name
+        id: set-artifact-name
+        run: |
+          short_sha=$(printf '%.8s' "${GITHUB_SHA}")
+          name="${CATALOG_ARTIFACT_NAME}-${short_sha}"
+          echo "name=${name}" >> $GITHUB_OUTPUT
+          echo "Artifact name: ${name}"
+
+      - name: Upload DTS catalog artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ steps.set-artifact-name.outputs.name }}
+          path: |
+            dts_catalog.json
+            kconfig.json
+            compile.json
+          retention-days: 90
+          if-no-files-found: error
+
+      # The following steps save and upload the list of Python packages installed in the container.
+      # This is useful for debugging and reproducing the environment used in this workflow.
+
+      - name: Save the list of Python packages
+        shell: bash
+        run: |
+          FREEZE_FILE="frozen-requirements.txt"
+          timestamp="$(date)"
+          version="$(git describe --abbrev=12 --always)"
+          echo -e "# Generated at $timestamp ($version)\n" > $FREEZE_FILE
+          pip freeze | tee -a $FREEZE_FILE
+
+      - name: Upload the list of Python packages
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Frozen PIP package set
+          path: |
+            frozen-requirements.txt

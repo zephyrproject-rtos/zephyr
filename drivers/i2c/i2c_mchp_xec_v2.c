@@ -109,9 +109,12 @@ struct i2c_xec_data {
 	uint8_t speed_id;
 	uint8_t i2c_error;
 	struct k_mutex mux;
-	struct i2c_target_config *target_cfg;
+#ifdef CONFIG_I2C_TARGET
+	struct i2c_target_config *targets[XEC_I2C_MAX_TARGETS];
+	uint8_t active_slot;
 	bool target_attached;
 	bool target_read;
+#endif
 };
 
 static const struct xec_i2c_timing xec_i2c_nl_timing_tbl[] = {
@@ -306,6 +309,47 @@ static void i2c_xec_initial_cfg(const struct device *dev)
 	sys_write32(val, rb + XEC_I2C_CFG_OFS);
 }
 
+#ifdef CONFIG_I2C_TARGET
+/* Find a free OwnAddr slot. Returns slot index or -1 if both occupied. */
+static int find_free_slot(struct i2c_xec_data *data)
+{
+	for (uint8_t i = 0; i < XEC_I2C_MAX_TARGETS; i++) {
+		if (data->targets[i] == NULL) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+/* Find slot whose registered 7-bit address matches addr7. Returns slot or -1. */
+static int find_slot_by_addr(struct i2c_xec_data *data, uint8_t addr7)
+{
+	for (uint8_t i = 0; i < XEC_I2C_MAX_TARGETS; i++) {
+		if ((data->targets[i] != NULL) &&
+		    (data->targets[i]->address == addr7)) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+/* Compose and write the OwnAddr register from both slots. PCR reset clears OA,
+ * so this is invoked from reset_config and from target (un)register.
+ */
+static void program_own_addresses(const struct i2c_xec_config *cfg,
+				  struct i2c_xec_data *data)
+{
+	uint32_t oa = 0;
+
+	for (uint8_t i = 0; i < XEC_I2C_MAX_TARGETS; i++) {
+		if (data->targets[i] != NULL) {
+			oa |= XEC_I2C_OA_SET(i, data->targets[i]->address);
+		}
+	}
+	sys_write32(oa, cfg->base_addr + XEC_I2C_OA_OFS);
+}
+#endif /* CONFIG_I2C_TARGET */
+
 static int i2c_xec_reset_config(const struct device *dev)
 {
 	struct i2c_xec_data *const data = dev->data;
@@ -326,9 +370,7 @@ static int i2c_xec_reset_config(const struct device *dev)
 	i2c_ctl_wr(dev, BIT(XEC_I2C_CR_PIN_POS));
 
 #ifdef CONFIG_I2C_TARGET
-	if (data->target_cfg != NULL) {
-		sys_write32(XEC_I2C_OA_1_SET(data->target_cfg->address), rb + XEC_I2C_OA_OFS);
-	}
+	program_own_addresses(drvcfg, data);
 #endif
 	/* Port number and filter enable MUST be written before enabling controller */
 	i2c_xec_initial_cfg(dev);
@@ -912,10 +954,11 @@ static int i2c_xec_v2_transfer(const struct device *dev, struct i2c_msg *msgs, u
 static int target_wr_req_cb(const struct device *dev, const struct i2c_target_callbacks *tcbs)
 {
 	struct i2c_xec_data *const data = dev->data;
+	uint8_t cfg_idx = data->active_slot;
 
 	if ((tcbs != NULL) && (tcbs->write_requested != NULL)) {
 		/* ask the application if it can accept data */
-		return tcbs->write_requested(data->target_cfg);
+		return tcbs->write_requested(data->targets[cfg_idx]);
 	}
 
 	return -ENODATA;
@@ -928,6 +971,7 @@ static void target_tx_handler(const struct device *dev, const struct i2c_target_
 	const struct i2c_xec_config *drvcfg = dev->config;
 	mm_reg_t rb = drvcfg->base_addr;
 	uint8_t val = XEC_I2C_TARGET_DFLT_DATA_VAL;
+	uint8_t cfg_idx = data->active_slot;
 
 	/* Did the external controller NAK'd the byte we transmitted */
 	if (soc_test_bit8(rb + XEC_I2C_SR_OFS, XEC_I2C_SR_LRB_AD0_POS) != 0) {
@@ -949,7 +993,7 @@ static void target_tx_handler(const struct device *dev, const struct i2c_target_
 	} else {
 		/* get data to send from application via callback */
 		if ((tcbs != NULL) && (tcbs->read_processed != NULL)) {
-			tcbs->read_processed(data->target_cfg, &val);
+			tcbs->read_processed(data->targets[cfg_idx], &val);
 		}
 
 		sys_write8(val, rb + XEC_I2C_DATA_OFS);
@@ -970,22 +1014,33 @@ static void target_rx_handler(const struct device *dev, const struct i2c_target_
 	const struct i2c_xec_config *drvcfg = dev->config;
 	mm_reg_t rb = drvcfg->base_addr;
 	uint8_t val = sys_read8(rb + XEC_I2C_DATA_OFS);
+	uint8_t cfg_idx = data->active_slot;
 
 	/* if no callback or callback returns non-zero NAK incoming data */
 	if ((tcbs == NULL) || (tcbs->write_received == NULL) ||
-	    (tcbs->write_received(data->target_cfg, val) != 0)) {
+	    (tcbs->write_received(data->targets[cfg_idx], val) != 0)) {
 		/* Clear auto-ACK enable bit. This controller will NAK future bytes */
 		target_config_for_nack(dev);
 	}
 }
 
-static void target_addr_handler(const struct device *dev, const struct i2c_target_callbacks *tcbs)
+static void target_addr_handler(const struct device *dev)
 {
 	struct i2c_xec_data *const data = dev->data;
 	const struct i2c_xec_config *drvcfg = dev->config;
 	mm_reg_t rb = drvcfg->base_addr;
+	const struct i2c_target_callbacks *tcbs = NULL;
+	struct i2c_target_config *tcfg = NULL;
 	uint8_t val = XEC_I2C_TARGET_DFLT_DATA_VAL;
 	uint8_t rx_data = sys_read8(rb + XEC_I2C_DATA_OFS);
+	uint8_t addr7 = (uint8_t)((rx_data >> 1) & XEC_I2C_TARGET_ADDR_MSK);
+	int slot = find_slot_by_addr(data, addr7);
+
+	if (slot >= 0) {
+		data->active_slot = (uint8_t)slot;
+		tcfg = data->targets[slot];
+		tcbs = tcfg->callbacks;
+	}
 
 	if ((rx_data & BIT(I2C_READ_WRITE_POS)) != 0) {
 		/* target transmitter mode */
@@ -993,7 +1048,7 @@ static void target_addr_handler(const struct device *dev, const struct i2c_targe
 
 		/* request data from app otherwise send default data value */
 		if ((tcbs != NULL) && (tcbs->read_requested != NULL)) {
-			tcbs->read_requested(data->target_cfg, &val);
+			tcbs->read_requested(tcfg, &val);
 		}
 
 		/*
@@ -1024,7 +1079,8 @@ static void i2c_xec_v2_isr(const struct device *dev)
 	struct i2c_xec_data *const data = dev->data;
 	const struct i2c_xec_config *drvcfg = dev->config;
 	mm_reg_t rb = drvcfg->base_addr;
-	struct i2c_target_config *tcfg = data->target_cfg;
+	uint8_t cfg_idx = data->active_slot;
+	struct i2c_target_config *tcfg = data->targets[cfg_idx];
 	const struct i2c_target_callbacks *tcbs = NULL;
 	uint32_t status = 0, compl_status = 0, config = 0;
 
@@ -1044,7 +1100,7 @@ static void i2c_xec_v2_isr(const struct device *dev)
 
 		if ((status & BIT(XEC_I2C_SR_NBB_POS)) != 0) {
 			if ((tcbs != NULL) && (tcbs->stop != NULL)) {
-				tcbs->stop(data->target_cfg);
+				tcbs->stop(tcfg);
 			}
 			restart_target(dev);
 			goto clear_iag;
@@ -1061,17 +1117,20 @@ static void i2c_xec_v2_isr(const struct device *dev)
 			data->i2c_error = I2C_XEC_ERR_BUS;
 		}
 		if ((tcbs != NULL) && (tcbs->stop != NULL)) {
-			tcbs->stop(data->target_cfg);
+			tcbs->stop(tcfg);
 		}
 
 		restart_target(dev);
 		goto clear_iag;
 	}
 
-	/* Address byte handling. AAT status is only valid if PIN status bit == 0 */
+	/* Address byte handling. AAT status is only valid if PIN status bit == 0.
+	 * target_addr_handler decodes the matched slot itself; do not use the
+	 * stale active_slot from a prior transaction here.
+	 */
 	if ((status & (BIT(XEC_I2C_SR_AAT_POS) | BIT(XEC_I2C_SR_PIN_POS))) ==
 	    BIT(XEC_I2C_SR_AAT_POS)) {
-		target_addr_handler(dev, tcbs);
+		target_addr_handler(dev);
 		goto clear_iag;
 	}
 
@@ -1092,38 +1151,56 @@ static int i2c_xec_v2_target_register(const struct device *dev, struct i2c_targe
 {
 	const struct i2c_xec_config *drvcfg = dev->config;
 	struct i2c_xec_data *const data = dev->data;
+	unsigned int key = 0;
+	int slot = 0;
 	int ret = 0;
 
-	if (config == NULL) {
+	if ((config == NULL) || (config->callbacks == NULL)) {
 		return -EINVAL;
 	}
 
-	if (data->target_attached == true) {
+	if ((config->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) != 0U) {
+		return -ENOTSUP;
+	}
+
+	slot = find_free_slot(data);
+	if (slot < 0) {
 		return -EBUSY;
 	}
 
-	/* Wait for any outstanding transactions to complete so that
-	 * the bus is free
-	 */
-	ret = wait_bus_free(dev, WAIT_INTERVAL_US);
-	if (ret != 0) {
-		return ret;
+	if (data->target_attached == false) {
+
+		/* Wait for any outstanding transactions to complete so that
+		 * the bus is free
+		 */
+		ret = wait_bus_free(dev, WAIT_INTERVAL_US);
+		if (ret != 0) {
+			return ret;
+		}
+
+		data->targets[slot] = config;
+
+		ret = i2c_xec_reset_config(dev);
+		if (ret != 0) {
+			data->targets[slot] = NULL;
+			return ret;
+		}
+
+		restart_target(dev);
+		data->target_attached = true;
+
+		/* Clear before enabling girq bit */
+		soc_ecia_girq_status_clear(drvcfg->girq, drvcfg->girq_pos);
+		soc_ecia_girq_ctrl(drvcfg->girq, drvcfg->girq_pos, 1U);
+	} else {
+		/* Second slot: controller already running. Update OA only,
+		 * under irq_lock so the ISR sees a consistent view.
+		 */
+		key = irq_lock();
+		data->targets[slot] = config;
+		program_own_addresses(drvcfg, data);
+		irq_unlock(key);
 	}
-
-	data->target_cfg = config;
-
-	ret = i2c_xec_reset_config(dev);
-	if (ret != 0) {
-		return ret;
-	}
-
-	restart_target(dev);
-
-	data->target_attached = true;
-
-	/* Clear before enabling girq bit */
-	soc_ecia_girq_status_clear(drvcfg->girq, drvcfg->girq_pos);
-	soc_ecia_girq_ctrl(drvcfg->girq, drvcfg->girq_pos, 1U);
 
 	return 0;
 }
@@ -1132,16 +1209,39 @@ static int i2c_xec_v2_target_unregister(const struct device *dev, struct i2c_tar
 {
 	const struct i2c_xec_config *drvcfg = dev->config;
 	struct i2c_xec_data *const data = dev->data;
+	unsigned int key;
+	int slot = -1;
 
 	if (data->target_attached == false) {
 		return -EINVAL;
 	}
 
-	data->target_cfg = NULL;
-	data->target_attached = false;
+	if (config == NULL) {
+		return -EINVAL;
+	}
 
-	soc_ecia_girq_ctrl(drvcfg->girq, drvcfg->girq_pos, 0);
-	soc_ecia_girq_status_clear(drvcfg->girq, drvcfg->girq_pos);
+	key = irq_lock();
+	for (int i = 0; i < XEC_I2C_MAX_TARGETS; i++) {
+		if (data->targets[i] == config) {
+			slot = i;
+			data->targets[i] = NULL;
+			break;
+		}
+	}
+	if (slot < 0) {
+		irq_unlock(key);
+		return -EINVAL;
+	}
+
+	/* Clear that slot's OA bits so it stops matching incoming addresses. */
+	program_own_addresses(drvcfg, data);
+
+	if ((data->targets[0] == NULL) && (data->targets[1] == NULL)) {
+		data->target_attached = false;
+		soc_ecia_girq_ctrl(drvcfg->girq, drvcfg->girq_pos, 0);
+		soc_ecia_girq_status_clear(drvcfg->girq, drvcfg->girq_pos);
+	}
+	irq_unlock(key);
 
 	return 0;
 }
@@ -1167,8 +1267,14 @@ static int i2c_xec_v2_init(const struct device *dev)
 	uint32_t bitrate_cfg = 0;
 
 	data->state = I2C_XEC_STATE_STOPPED;
-	data->target_cfg = NULL;
+
+#ifdef CONFIG_I2C_TARGET
+	for (uint8_t i = 0; i < XEC_I2C_MAX_TARGETS; i++) {
+		data->targets[i] = NULL;
+	}
+	data->active_slot = 0;
 	data->target_attached = false;
+#endif
 
 	ret = pinctrl_apply_state(drvcfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {

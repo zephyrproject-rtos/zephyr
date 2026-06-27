@@ -164,6 +164,48 @@ config SYS_HEAP_CANARIES_RANDOM
 	  Without this, canaries are still effective at detecting
 	  accidental corruption but are predictable.
 
+config SYS_HEAP_SANITIZER_HOOKS
+	bool
+	help
+	  Hidden symbol selected by any sys_heap sanitizer backend. When set,
+	  heap.c emits the generic poison/unpoison hook calls
+	  (heap_sanitizer_on_init / _alloc / _free) at the public-API boundary. The
+	  active backend implements those three entry points. Keeping the call
+	  sites gated on this single symbol means heap.c carries no
+	  backend-specific conditionals.
+
+config SYS_HEAP_SANITIZER_ASAN
+	bool "Full Address Sanitizer (ASAN) heap poisoning (native_sim)"
+	depends on ASAN && ARCH_POSIX
+	depends on SYS_HEAP_BIG_ONLY || (64BIT && !SYS_HEAP_SMALL_ONLY)
+	select SYS_HEAP_SANITIZER_HOOKS
+	help
+	  Enables integration with the toolchain's Address Sanitizer (ASAN)
+	  runtime to implement memory poisoning for the sys_heap allocator.
+
+	  The whole heap buffer is poisoned at initialization; an allocation
+	  unpoisons the user region it returns and a free re-poisons it. This
+	  lets ASAN report accesses to freed, never-allocated and out-of-bounds
+	  heap memory with a full backtrace and shadow dump.
+
+	  When enabled, the following classes of memory error are detected:
+	  - Use-after-free: accessing memory after it has been freed
+	  - Unallocated access: accessing memory that was never allocated
+	  - Buffer overruns: writing beyond the requested allocation size
+
+	  This feature is only available on native simulator based platforms
+	  where ASAN is supported. It works with any toolchain that provides
+	  the ASAN runtime and the manual poisoning API, e.g. GCC (libasan) or
+	  Clang/LLVM (compiler-rt).
+
+	  The big-heap chunk format is required so the user pointer and the end
+	  of the usable region are 8-byte aligned, matching ASAN's shadow
+	  granularity. On 64-bit this is implied; on 32-bit SYS_HEAP_BIG_ONLY
+	  must be chosen explicitly, which means the small-heap chunk format is
+	  not exercised under this configuration.
+
+	  Use for debugging and validation only.
+
 module = SYS_HEAP
 module-str = sys_heap
 source "subsys/logging/Kconfig.template.log_config"

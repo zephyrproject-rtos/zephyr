@@ -132,6 +132,9 @@ choice NRF_APPROTECT_HANDLING
 	help
 	  Specifies how the SystemInit() function handles the AP-Protect
 	  mechanism.
+	  This choice does not apply to nRF9160 and older HW build codes
+	  of nRF52 Series devices where AP-Protect is controlled solely by
+	  hardware, i.e. the UICR.APPROTECT register.
 
 config NRF_APPROTECT_DISABLE
 	bool "Disable"
@@ -176,6 +179,8 @@ choice NRF_SECURE_APPROTECT_HANDLING
 	  Specifies how the SystemInit() function handles the Secure
 	  AP-Protect mechanism. Secure AP-Protect is available for SoCs or SiPs
 	  that support ARM TrustZone and different processing environments.
+	  This choice does not apply to nRF9160 where AP-Protect is controlled
+	  solely by hardware, i.e. the UICR.APPROTECT register.
 
 config NRF_SECURE_APPROTECT_DISABLE
 	bool "Disable"

@@ -10,7 +10,7 @@
 #if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) ||                    \
 	defined(CONFIG_SOC_SERIES_ESP32H2)
 #include <soc/lp_aon_reg.h>
-#else
+#elif !defined(CONFIG_SOC_SERIES_ESP32P4)
 #include <soc/rtc_cntl_reg.h>
 #endif
 #include <soc/timer_group_reg.h>

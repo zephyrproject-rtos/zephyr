@@ -436,7 +436,7 @@ class TestInstance:
         fns = glob.glob(os.path.join(build_dir, "zephyr", "*.elf"))
         fns.extend(glob.glob(os.path.join(build_dir, "testbinary")))
         blocklist = [
-                'remapped', # used for xtensa plaforms
+                'remapped', # used for xtensa platforms
                 'zefi', # EFI for Zephyr
                 'qemu', # elf files generated after running in qemu
                 '_pre']

@@ -263,12 +263,11 @@ static void esp_hosted_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	esp_hosted_data_t *data = dev->data;
-	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 	struct wifi_nm_instance *nm = wifi_nm_get_instance("nm");
 	size_t itf = esp_hosted_get_iface(dev);
 
 	data->iface[itf] = iface;
-	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
+	net_eth_set_if_type_wifi(iface);
 
 	/* Set mac address. */
 	net_if_set_link_addr(iface, data->mac_addr[itf], 6, NET_LINK_ETHERNET);

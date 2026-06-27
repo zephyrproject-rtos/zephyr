@@ -116,6 +116,8 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
@@ -124,6 +126,8 @@ stm32_lp_tick_source: &lptim1 {
 	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pd13>;
 	/* use      <&i2c4_scl_pf14 &i2c4_sda_pf15> for the JMISC connector */
 	pinctrl-names = "default";
+	scl-gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
@@ -253,4 +257,54 @@ zephyr_udc0: &usbotg_fs {
 
 &gpiog {
 	status = "okay";
+};
+
+/*
+ * On-board 13x8 charlieplexed LED matrix (104 LEDs) driven across STM32
+ * port F lines PF0..PF10 and scanned by TIM17. See the
+ * charlieplex-led-matrix binding; the pixel-pairs table maps each
+ * framebuffer pixel to its {high,low} GPIO pin-pair.
+ */
+
+/ {
+	chosen {
+		zephyr,display = &led_matrix;
+	};
+
+	led_matrix: charlieplex-led-matrix {
+		compatible = "charlieplex-led-matrix";
+		gpios = <&gpiof 0 0>, <&gpiof 1 0>, <&gpiof 2 0>,
+			<&gpiof 3 0>, <&gpiof 4 0>, <&gpiof 5 0>,
+			<&gpiof 6 0>, <&gpiof 7 0>, <&gpiof 8 0>,
+			<&gpiof 9 0>, <&gpiof 10 0>;
+		counter = <&counter_matrix>;
+		refresh-frequency = <100>;
+		width = <13>;
+		height = <8>;
+		grayscale-bits = <3>;
+		pixel-pairs = <0x0001 0x0100 0x0002 0x0200 0x0102 0x0201 0x0003 0x0300 0x0103 0x0301
+			       0x0203 0x0302 0x0004 0x0400 0x0104 0x0401 0x0204 0x0402 0x0304 0x0403
+			       0x0005 0x0500 0x0105 0x0501 0x0205 0x0502 0x0305 0x0503 0x0405 0x0504
+			       0x0006 0x0600 0x0106 0x0601 0x0206 0x0602 0x0306 0x0603 0x0406 0x0604
+			       0x0506 0x0605 0x0007 0x0700 0x0107 0x0701 0x0207 0x0702 0x0307 0x0703
+			       0x0407 0x0704 0x0507 0x0705 0x0607 0x0706 0x0008 0x0800 0x0108 0x0801
+			       0x0208 0x0802 0x0308 0x0803 0x0408 0x0804 0x0508 0x0805 0x0608 0x0806
+			       0x0708 0x0807 0x0009 0x0900 0x0109 0x0901 0x0209 0x0902 0x0309 0x0903
+			       0x0409 0x0904 0x0509 0x0905 0x0609 0x0906 0x0709 0x0907 0x0809 0x0908
+			       0x000a 0x0a00 0x010a 0x0a01 0x020a 0x0a02 0x030a 0x0a03 0x040a 0x0a04
+			       0x050a 0x0a05 0x060a 0x0a06>;
+	};
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&timers17 {
+	status = "okay";
+	st,prescaler = <4>;
+
+	counter_matrix: counter {
+		status = "okay";
+	};
 };

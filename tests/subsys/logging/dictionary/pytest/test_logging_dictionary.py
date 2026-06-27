@@ -8,6 +8,7 @@
 Pytest harness to test the output of the dictionary logging.
 '''
 
+import contextlib
 import logging
 import os
 import re
@@ -157,15 +158,116 @@ def regex_matching(decoded_logs, expected_regex):
     return all(regex_results)
 
 
-def test_logging_dictionary(dut: DeviceAdapter, is_fpu_build):
+def _extract_qemu_cmd(build_dir):
+    '''
+    Extract the QEMU run command from build.ninja.
+
+    NOTE: This parses the ninja build file directly because there is no
+    stable interface to get the QEMU command with custom serial options.
+    '''
+    ninja_file = os.path.join(build_dir, "build.ninja")
+    assert os.path.isfile(ninja_file)
+
+    with open(ninja_file, encoding='utf-8') as f:
+        for line in f:
+            if 'qemu-system' in line and '-chardev pipe' in line:
+                parts = line.strip().split('&&')
+                for part in parts:
+                    part = part.strip()
+                    if 'qemu-system' in part:
+                        return part
+
+    return None
+
+
+def _strip_boot_preamble(raw):
+    '''
+    Strip SeaBIOS boot preamble from raw serial data.
+    x86 QEMU prepends text before dictionary data; no-op on other platforms.
+    '''
+    boot_end = raw.find(b"Booting from ROM..")
+    if boot_end != -1:
+        newline_after = raw.find(b"\n", boot_end)
+        if newline_after != -1:
+            return raw[newline_after + 1 :]
+    return raw
+
+
+def process_binary_logs(build_dir):
+    '''
+    Run QEMU with serial output to file, strip boot preamble,
+    and parse the binary log through the dictionary logging parser.
+
+    Returns the decoded log lines.
+    '''
+    uart_bin = os.path.join(build_dir, "uart.bin")
+
+    qemu_cmd = _extract_qemu_cmd(build_dir)
+    assert qemu_cmd, "Could not find QEMU command in build.ninja"
+
+    # Build intermediate targets (e.g. objcopy ELFs needed by x86_64).
+    # This target may not exist on all platforms; failure is non-fatal.
+    subprocess.run(
+        ["west", "build", "-d", build_dir, "-t", "zephyr/qemu_kernel_target"],
+        capture_output=True,
+        timeout=60,
+    )
+
+    # Replace pipe chardev with file-based serial output
+    qemu_cmd = re.sub(r'-chardev pipe,id=con,mux=on,path=\S+', '', qemu_cmd)
+    qemu_cmd = qemu_cmd.replace('-serial chardev:con', f'-serial file:{uart_bin}')
+    qemu_cmd = qemu_cmd.replace('-mon chardev=con,mode=readline', '-monitor none')
+    qemu_cmd = re.sub(r'-pidfile \S+', '', qemu_cmd)
+    qemu_cmd = re.sub(r'-S -gdb \S+', '', qemu_cmd)
+
+    cmd = shlex.split(qemu_cmd)
+    logger.info(f'Running QEMU: {shlex.join(cmd)}')
+    # QEMU exits when the sample finishes; timeout is a safety net.
+    with contextlib.suppress(subprocess.TimeoutExpired):
+        subprocess.run(cmd, capture_output=True, timeout=30)
+
+    assert os.path.isfile(uart_bin), f"Binary log file not found: {uart_bin}"
+    logger.info(f'Binary log: {uart_bin} ({os.path.getsize(uart_bin)} bytes)')
+
+    with open(uart_bin, 'rb') as f:
+        raw = _strip_boot_preamble(f.read())
+    trimmed_bin = os.path.join(build_dir, "uart_trimmed.bin")
+    with open(trimmed_bin, 'wb') as f:
+        f.write(raw)
+    logger.info(f'Trimmed log: {len(raw)} bytes')
+
+    # Run the log parser in binary mode (no --hex flag)
+    parser_script = os.path.join(ZEPHYR_BASE, "scripts", "logging", "dictionary", "log_parser.py")
+    assert os.path.isfile(parser_script)
+
+    dictionary_json = os.path.join(build_dir, "zephyr", "log_dictionary.json")
+    assert os.path.isfile(dictionary_json)
+
+    cmd = [parser_script, dictionary_json, trimmed_bin]
+    logger.info(f'Running parser: {shlex.join(cmd)}')
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    decoded_logs = result.stdout
+    logger.info(f'Decoded logs: {decoded_logs}')
+    if result.stderr:
+        logger.info(f'Parser stderr: {result.stderr}')
+
+    return decoded_logs
+
+
+def test_logging_dictionary(unlaunched_dut: DeviceAdapter, is_fpu_build, is_bin_build):
     '''
     Main entrance to setup test result validation.
     '''
-    build_dir = dut.device_config.app_build_dir
+    build_dir = str(unlaunched_dut.device_config.app_build_dir)
 
-    logger.info(f'FPU build? {is_fpu_build}')
+    logger.info(f'FPU build? {is_fpu_build}, BIN build? {is_bin_build}')
 
-    decoded_logs = process_logs(dut, build_dir)
+    if is_bin_build:
+        decoded_logs = process_binary_logs(build_dir)
+    else:
+        unlaunched_dut.launch()
+        decoded_logs = process_logs(unlaunched_dut, build_dir)
 
     assert regex_matching(decoded_logs, expected_regex_common())
 

@@ -303,7 +303,7 @@ int coap_client_deregister_observe(struct coap_client *client, struct coap_clien
 /**
  * @brief Initialise a Block2 option to be added to a request
  *
- * If the application expects a request to require a blockwise transfer, it may pre-emptively
+ * If the application expects a request to require a blockwise transfer, it may preemptively
  * suggest a maximum block size to the server - see RFC7959 Figure 3: Block-Wise GET with Early
  * Negotiation.
  *

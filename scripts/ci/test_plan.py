@@ -27,8 +27,9 @@ except ImportError:
 if "ZEPHYR_BASE" not in os.environ:
     exit("$ZEPHYR_BASE environment variable undefined.")
 
-# These are globaly used variables. They are assigned in __main__ and are visible in further methods
-# however, pylint complains that it doesn't recognized them when used (used-before-assignment).
+# These are globally used variables. They are assigned in __main__ and are
+# visible in further methods however, pylint complains that it doesn't
+# recognized them when used (used-before-assignment).
 zephyr_base = Path(os.environ['ZEPHYR_BASE'])
 repository_path = zephyr_base
 repo_to_scan = Repo(zephyr_base)

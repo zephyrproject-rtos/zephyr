@@ -96,7 +96,7 @@ ZTEST(video_common, test_video_frmival)
 
 		switch (fie.type) {
 		case VIDEO_FRMIVAL_TYPE_STEPWISE:
-			/* Get everthing under the same denominator */
+			/* Get everything under the same denominator */
 			q.denominator = fie.stepwise.min.denominator *
 					fie.stepwise.max.denominator *
 					fie.stepwise.step.denominator;

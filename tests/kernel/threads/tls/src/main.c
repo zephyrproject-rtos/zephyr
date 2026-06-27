@@ -6,7 +6,6 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/sys/libc-hooks.h>
 #include <zephyr/sys/util.h>

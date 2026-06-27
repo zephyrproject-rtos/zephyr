@@ -4,6 +4,12 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/can.h)
 
 zephyr_library()
 
+# CAN subsystem include paths for out-of-tree drivers
+# zephyr-keep-sorted-start
+zephyr_library_include_directories_ifdef(CONFIG_CAN_MCAN .)
+zephyr_library_include_directories_ifdef(CONFIG_CAN_SJA1000 .)
+# zephyr-keep-sorted-stop
+
 # CAN subsystem common files
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_CAN can_common.c)
@@ -14,6 +20,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE can_handlers.c)
 # CAN subsystem driver files
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_CAN_ESP32_TWAI can_esp32_twai.c)
+zephyr_library_sources_ifdef(CONFIG_CAN_ESP32_TWAIFD can_esp32_twaifd.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_FAKE can_fake.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_INFINEON_MCAN can_infineon.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_KVASER_PCI can_kvaser_pci.c)

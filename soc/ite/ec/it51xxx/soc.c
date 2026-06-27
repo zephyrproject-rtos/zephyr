@@ -122,8 +122,13 @@ void soc_prep_hook(void)
 	struct gpio_ite_ec_regs *const gpio_regs = GPIO_ITE_EC_REGS_BASE;
 	struct gctrl_ite_ec_regs *const gctrl_regs = GCTRL_ITE_EC_REGS_BASE;
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb0), disabled)
 	/* USB pull down disable */
 	gpio_regs->GPIO_GCR35 &= ~IT51XXX_GPIO_USBPDEN;
+
+	/* disable usb host/device on gpio pins by default */
+	gpio_regs->GPIO_USBGPIOCR &= ~USB_ON_GPIO_PINS_ENABLE_MSK;
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(usb0), disabled) */
 
 	/* Set FSPI pins are tri-state */
 	sys_write8(sys_read8(IT51XXX_SMFI_FLHCTRL3R) | IT51XXX_SMFI_FFSPITRI,
@@ -136,13 +141,31 @@ void soc_prep_hook(void)
 	gctrl_regs->GCTRL_SPCTRL9 |= IT51XXX_GCTRL_ALTIE;
 
 	/* UART1 and UART2 board init */
-	/* bit3: UART1 and UART2 belong to the EC side. */
-	gctrl_regs->GCTRL_RSTDMMC |= IT51XXX_GCTRL_UART1SD | IT51XXX_GCTRL_UART2SD;
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1))
+	/* bit3: UART1 belong to the EC side. */
+	gctrl_regs->GCTRL_RSTDMMC |= IT51XXX_GCTRL_UART1SD;
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1)) */
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2))
+	/* bit2: UART2 belong to the EC side. */
+	gctrl_regs->GCTRL_RSTDMMC |= IT51XXX_GCTRL_UART2SD;
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) */
+
 	/* Reset UART before config it */
 	gctrl_regs->GCTRL_RSTC4 = IT51XXX_GCTRL_RUART;
-	/* Switch UART1 and UART2 on without hardware flow control */
-	gpio_regs->GPIO_GCR1 |=
-		IT51XXX_GPIO_U1CTRL_SIN0_SOUT0_EN | IT51XXX_GPIO_U2CTRL_SIN1_SOUT1_EN;
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1))
+	/* Switch UART1 on without hardware flow control */
+	gpio_regs->GPIO_GCR1 |= IT51XXX_GPIO_U1CTRL_SIN0_SOUT0_EN;
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1)) */
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2))
+	/* Switch UART2 on without hardware flow control */
+	gpio_regs->GPIO_GCR1 |= IT51XXX_GPIO_U2CTRL_SIN1_SOUT1_EN;
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) */
+
+	/* disable pwrsw wdt 2 by default */
+	gpio_regs->GPIO_GCR8 &= ~IT51XXX_GPIO_PWRSW2EN1;
 
 	/*
 	 * Disable this feature that can detect pre-define hardware target A, B, C through

@@ -281,10 +281,10 @@ int sy24561_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		     union fuel_gauge_prop_val *val)
 {
 	switch (prop) {
-	case FUEL_GAUGE_VOLTAGE:
-		return sy24561_get_voltage(dev, &val->voltage);
-	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
-		return sy24561_get_soc(dev, &val->relative_state_of_charge);
+	case FUEL_GAUGE_VOLTAGE_UV:
+		return sy24561_get_voltage(dev, &val->voltage_uv);
+	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT:
+		return sy24561_get_soc(dev, &val->relative_state_of_charge_pct);
 	case FUEL_GAUGE_STATUS:
 		return sy24561_get_status(dev, &val->fg_status);
 	case FUEL_GAUGE_CURRENT_DIRECTION:
@@ -302,10 +302,10 @@ static int sy24561_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	int ret = 0;
 
 	switch (prop) {
-	case FUEL_GAUGE_STATE_OF_CHARGE_ALARM:
-		return sy24561_set_alarm_threshold(dev, val.state_of_charge_alarm);
-	case FUEL_GAUGE_TEMPERATURE:
-		return sy24561_set_temperature(dev, val.temperature);
+	case FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT:
+		return sy24561_set_alarm_threshold(dev, val.state_of_charge_alarm_pct);
+	case FUEL_GAUGE_TEMPERATURE_DK:
+		return sy24561_set_temperature(dev, val.temperature_dk);
 	case FUEL_GAUGE_STATUS:
 		return sy24561_set_status(dev, val.fg_status);
 	default:

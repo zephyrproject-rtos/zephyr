@@ -300,8 +300,7 @@ config SCHED_MULTIQ
 	  But it requires a fairly large RAM budget to store those list
 	  heads, and the limited features make it incompatible with
 	  features like deadline scheduling that need to sort threads
-	  more finely, and SMP affinity which need to traverse the list
-	  of threads.  Typical applications with small numbers of runnable
+	  more finely.  Typical applications with small numbers of runnable
 	  threads probably want the simple scheduler.
 
 endchoice # SCHED_ALGORITHM
@@ -844,6 +843,13 @@ config STACK_CANARIES_TLS
 	bool "Stack canaries using thread local storage"
 	depends on THREAD_LOCAL_STORAGE
 	depends on ARCH_HAS_STACK_CANARIES_TLS
+	# Clang's RISC-V backend rejects the -mstack-protector-guard=tls family of
+	# flags, so the canary cannot be anchored to the TLS base register. Without
+	# them Clang emits an absolute reference to the thread-local __stack_chk_guard
+	# symbol (which resolves to address 0), producing an image that faults in the
+	# prologue of the first canary-instrumented function. Disallow the
+	# combination so it cannot be selected into a silently broken build.
+	depends on !(RISCV && "$(TOOLCHAIN_VARIANT_COMPILER)" = "llvm")
 	help
 	  This option enables compiler stack canaries on TLS.
 
@@ -979,6 +985,14 @@ config STATIC_INIT_GNU
 	  doesn't need any initializers, you can disable this option. The linker
 	  will emit an error if constructors are needed and this option has been
 	  disabled.
+
+config DEVICE_API_ASSERT
+	bool "Assert on DEVICE_API_GET"
+	default y
+	depends on ASSERT
+	help
+	  Enable asserts on DEVICE_API_GET checking for NULL pointers and
+	  device API type, disable to save some flash space.
 
 endmenu
 

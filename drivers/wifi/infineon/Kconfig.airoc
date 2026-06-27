@@ -7,7 +7,6 @@ menuconfig WIFI_AIROC
 	depends on DT_HAS_INFINEON_AIROC_WIFI_ENABLED
 	default y
 	select THREAD_CUSTOM_DATA
-	select WIFI_OFFLOAD
 	select NET_L2_ETHERNET
 	select NET_L2_WIFI_MGMT
 	select GPIO
@@ -52,7 +51,7 @@ config AIROC_WLAN_MFG_FIRMWARE
 	  Enable WLAN Manufacturing Firmware.
 
 config WHD_WIFI_COUNTRY
-	string "Wifi couuntry option"
+	string "Wifi country option"
 	default "WHD_COUNTRY_UNITED_STATES" if CYW55572 || CYW55500
 	default "WHD_COUNTRY_AUSTRALIA"
 	help
@@ -64,6 +63,12 @@ config WHD_DISABLE_SDIO_PULLUP_DURING_SPI_SLEEP
 	help
 	  Clears SDIO pullups when the SPI bus is configured for sleep.
 	  By default, this option is set to n, so SDIO pullups will be enabled.
+
+config IFX_WIFI_SOFTAP_SUPPORT
+	bool
+	default n
+	help
+	  Enable WiFi SoftAP support in the driver
 
 config AIROC_WIFI_CUSTOM
 	bool "Custom CYW43xx device/module"

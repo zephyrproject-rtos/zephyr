@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
+/**
  * @file
  * @brief Header-file for min-heap data structure
  * @ingroup min_heap_apis

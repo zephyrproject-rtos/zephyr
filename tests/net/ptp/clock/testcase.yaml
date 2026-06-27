@@ -5,8 +5,9 @@ common:
     - frdm_k64f
     - sam_e70_xplained/same70q21
     - native_sim
+    - native_sim/native/64
   integration_platforms:
-    - native_sim
+    - native_sim/native/64
 tests:
   net.ptp.clock:
     min_ram: 32

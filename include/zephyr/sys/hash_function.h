@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Hash functions for use with hashmaps.
+ * @ingroup hash_functions
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_HASH_FUNCTION_H_
 #define ZEPHYR_INCLUDE_SYS_HASH_FUNCTION_H_
 

@@ -800,7 +800,6 @@ function(section_to_string)
     if(${length} GREATER 0)
       if(NOT "${idx}" STREQUAL "${last_index}")
         set(TEMP "${TEMP},")
-      elseif()
       endif()
     endif()
 

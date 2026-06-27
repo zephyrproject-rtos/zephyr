@@ -6,7 +6,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/cpu_freq/policy.h>

@@ -18,8 +18,7 @@ void arch_icache_enable(void)
 	__asm__ volatile (
 		"fence\n"
 		"fence.i\n"
-		/* th.icache.iall */
-		".insn 0x100000B\n"
+		"th.icache.iall\n"
 	);
 	__asm__ volatile(
 		"csrr %0, " THEAD_MHCR
@@ -42,8 +41,7 @@ void arch_dcache_enable(void)
 	__asm__ volatile (
 		"fence\n"
 		"fence.i\n"
-		/* th.dcache.iall */
-		".insn 0x20000B\n"
+		"th.dcache.iall\n"
 	);
 	__asm__ volatile(
 		"csrr %0, " THEAD_MHCR
@@ -66,8 +64,7 @@ void arch_icache_disable(void)
 	__asm__ volatile (
 		"fence\n"
 		"fence.i\n"
-		/* th.icache.iall */
-		".insn 0x100000B\n"
+		"th.icache.iall\n"
 	);
 	__asm__ volatile(
 		"csrr %0, " THEAD_MHCR
@@ -90,8 +87,7 @@ void arch_dcache_disable(void)
 	__asm__ volatile (
 		"fence\n"
 		"fence.i\n"
-		/* th.dcache.iall */
-		".insn 0x20000B\n"
+		"th.dcache.iall\n"
 	);
 	__asm__ volatile(
 		"csrr %0, " THEAD_MHCR

@@ -17,6 +17,7 @@ tests:
       - native_sim
       - apollo3p_evb
       - apollo510_evb
+      - nrf7120dk/nrf7120/cpuapp
     integration_platforms:
       - native_sim
       - apollo3p_evb

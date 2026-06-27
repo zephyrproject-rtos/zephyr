@@ -9,7 +9,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/toolchain.h>
 #include <string.h>
@@ -22,8 +21,8 @@
 #define SKIP_EXECUTE_TESTS
 #endif
 
-/* RISC-V have no mechanism to restrict execution */
-#if defined(CONFIG_RISCV)
+/* RISC-V does not always have a mechanism to restrict execution */
+#if defined(CONFIG_RISCV) && !defined(CONFIG_PMP_DATA_EXECUTION_PREVENTION)
 #define SKIP_EXECUTE_TESTS
 #endif
 

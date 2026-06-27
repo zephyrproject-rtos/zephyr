@@ -1,5 +1,5 @@
 /*
- * Copyright 2021,2024-2025 NXP
+ * Copyright 2021,2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
+#include <zephyr/sys/util.h>
 #include <fsl_clock.h>
 #if defined(CONFIG_SOC_MIMX9352)
 #include <soc.h>
@@ -16,6 +17,49 @@
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control);
+
+#if defined(CONFIG_SOC_SERIES_IMXRT11XX)
+/*
+ * The RT11xx MCUX clock table maps MIC root mux slot 6 to Audio PLL output.
+ * On boards that leave Audio PLL uninitialized, CLOCK_GetRootClockFreq()
+ * asserts instead of reporting that the rate is unavailable.
+ */
+#define RT11XX_MICFIL_NODE            DT_NODELABEL(micfil)
+#define RT11XX_MIC_ROOT_AUDIO_PLL_MUX kCLOCK_MIC_ClockRoot_MuxAudioPllOut
+
+static const uint32_t rt11xx_audio_pll_loop_div =
+	DT_PHA_BY_NAME_OR(RT11XX_MICFIL_NODE, pll_clocks, lp, value, 0U);
+static const uint32_t rt11xx_audio_pll_post_div =
+	DT_PHA_BY_NAME_OR(RT11XX_MICFIL_NODE, pll_clocks, pd, value, 0U);
+static const uint32_t rt11xx_audio_pll_numerator =
+	DT_PHA_BY_NAME_OR(RT11XX_MICFIL_NODE, pll_clocks, num, value, 0U);
+static const uint32_t rt11xx_audio_pll_denominator =
+	DT_PHA_BY_NAME_OR(RT11XX_MICFIL_NODE, pll_clocks, den, value, 0U);
+
+static bool mcux_ccm_rt11xx_audio_pll_ready(void)
+{
+	uint32_t reg = ANADIG_PLL->PLL_AUDIO_CTRL;
+	uint32_t ready_mask = ANADIG_PLL_PLL_AUDIO_CTRL_PLL_AUDIO_STABLE_MASK |
+			      ANADIG_PLL_PLL_AUDIO_CTRL_ENABLE_CLK_MASK;
+
+	return (reg & ready_mask) == ready_mask;
+}
+
+static void mcux_ccm_rt11xx_init_audio_pll(void)
+{
+	static const clock_audio_pll_config_t audio_pll_cfg = {
+		.loopDivider = rt11xx_audio_pll_loop_div,
+		.postDivider = rt11xx_audio_pll_post_div,
+		.numerator = rt11xx_audio_pll_numerator,
+		.denominator = rt11xx_audio_pll_denominator,
+		.ss = NULL,
+		.ssEnable = false,
+	};
+
+	CLOCK_InitAudioPll(&audio_pll_cfg);
+}
+
+#endif
 
 static int mcux_ccm_on(const struct device *dev,
 				  clock_control_subsys_t sub_system)
@@ -49,6 +93,11 @@ static int mcux_ccm_on(const struct device *dev,
 		CLOCK_EnableClock(kCLOCK_Sai1 + instance);
 		return 0;
 #endif
+#endif
+#if defined(CONFIG_SOC_SERIES_IMXRT11XX)
+	case IMX_CCM_PDM_CLK:
+		CLOCK_EnableClock(kCLOCK_Pdm);
+		return 0;
 #endif
 #ifdef CONFIG_MEMC_MCUX_FLEXSPI
 #ifdef CONFIG_SOC_MIMX9352
@@ -195,6 +244,22 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 #endif
+#if defined(CONFIG_SOC_SERIES_IMXRT11XX)
+	case IMX_CCM_PDM_CLK:
+		if (DT_NODE_HAS_PROP(RT11XX_MICFIL_NODE, pll_clocks) &&
+		    !mcux_ccm_rt11xx_audio_pll_ready()) {
+			mcux_ccm_rt11xx_init_audio_pll();
+		}
+
+		if ((CLOCK_GetRootClockMux(kCLOCK_Root_Mic) == RT11XX_MIC_ROOT_AUDIO_PLL_MUX) &&
+		    !mcux_ccm_rt11xx_audio_pll_ready()) {
+			*rate = 0U;
+			return -ENOTSUP;
+		}
+
+		*rate = CLOCK_GetRootClockFreq(kCLOCK_Root_Mic);
+		return 0;
+#endif
 
 #ifdef CONFIG_ETH_NXP_ENET
 	case IMX_CCM_ENET_CLK:
@@ -324,6 +389,19 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 			break;
 		case 2:
 			clock_root = kCLOCK_Root_Lpit3;
+			break;
+		default:
+			return -EINVAL;
+		}
+		break;
+#elif defined(CONFIG_SOC_MIMX9352_M33)
+	case IMX_CCM_LPIT_CLK:
+		switch (instance) {
+		case 0:
+			clock_root = kCLOCK_Root_BusAon;
+			break;
+		case 1:
+			clock_root = kCLOCK_Root_BusWakeup;
 			break;
 		default:
 			return -EINVAL;

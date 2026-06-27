@@ -209,7 +209,7 @@ static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 }
 
 /*
- * There is no easy (or generic) way to figure out if a thread is runnining
+ * There is no easy (or generic) way to figure out if a thread is running
  * in un-privileged mode. Reading the current ring (PS.CRING) is a privileged
  * instruction and not thread local storage is not available in xcc.
  */

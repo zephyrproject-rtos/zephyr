@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Aesc Silicon
+# SPDX-FileCopyrightText: 2025 Aesc Silicon
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_NITROGEN
@@ -6,10 +6,23 @@ if SOC_SERIES_NITROGEN
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
 
-config NUM_IRQS
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+config 2ND_LVL_ISR_TBL_OFFSET
 	default 12
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 11
 
 config XIP
 	default n
+
+if SOC_ELEMRV_N
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_ELEMRV_N
 
 endif # SOC_SERIES_NITROGEN

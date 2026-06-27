@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Intel Corporation
+ * Copyright (c) 2024, 2026 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,5 +12,39 @@
 #include <zephyr/arch/xtensa/mpu.h>
 #include <zephyr/sys/util.h>
 
-const struct xtensa_mpu_range xtensa_soc_mpu_ranges[0];
-const int xtensa_soc_mpu_ranges_num;
+#define PHYS_SRAM0_ADDR (DT_REG_ADDR(DT_NODELABEL(sram0)))
+#define PHYS_SRAM0_SIZE (DT_REG_SIZE(DT_NODELABEL(sram0)))
+
+#define PHYS_ROM0_ADDR  (DT_REG_ADDR(DT_NODELABEL(srom0)))
+#define PHYS_ROM0_SIZE  (DT_REG_SIZE(DT_NODELABEL(srom0)))
+
+const struct xtensa_mpu_mem_type_region xtensa_mpu_mem_type_ranges[] = {
+	{
+		.start = 0x00000000,
+		.end   = 0x3FFC0000,
+		/* device, sharable, interruptible, not cached in L1 */
+		.memory_type = 0x07,
+	},
+	{
+		/* dram*.bss */
+		.start = 0x3FFC0000,
+		.end   = 0x40000000,
+		/* non-cacheable memory, non-shareable, non-bufferable, interruptible */
+		.memory_type = 0x18,
+	},
+	{
+		/* Vectors, vector helpers, ROM and RAM */
+		.start = 0x40000000,
+		.end   = PHYS_SRAM0_ADDR + PHYS_SRAM0_SIZE,
+		/* non-cacheable memory, non-shareable, non-bufferable, interruptible */
+		.memory_type = 0x18,
+	},
+	{
+		.start = PHYS_SRAM0_ADDR + PHYS_SRAM0_SIZE,
+		.end = 0xFFFFFFFF,
+		/* device, sharable, interruptible, not cached in L1 */
+		.memory_type = 0x07,
+	},
+};
+
+const unsigned int xtensa_mpu_mem_type_ranges_num = ARRAY_SIZE(xtensa_mpu_mem_type_ranges);

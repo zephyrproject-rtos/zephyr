@@ -1,0 +1,14 @@
+identifier: weact_ra4m1_core
+name: WeAct RA4M1 Core Board
+type: mcu
+arch: arm
+ram: 32
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+  - watchdog
+vendor: weact

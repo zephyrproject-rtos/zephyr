@@ -1000,13 +1000,13 @@ static inline bool spi_is_ready_dt(const struct spi_dt_spec *spec)
  *
  * @note This function is synchronous.
  *
- * @note In master mode, the chip select line will remain asserted (active) for
+ * @note In controller mode, the chip select line will remain asserted (active) for
  *       the entire duration of the transfer of all buffers in the provided buf sets.
  *       Only after all buffers have been transferred will CS be deasserted.
  *
- * @note In peripheral mode, data transfer happens when the master asserts CS and
- *       provides the clock. The function will wait for the master to complete
- *       the transfer before returning. The CS is controlled by master
+ * @note In peripheral mode, data transfer happens when the controller asserts CS and
+ *       provides the clock. The function will wait for the controller to complete
+ *       the transfer before returning. The CS is controlled by the controller
  *       and therefore may not be continuously asserted for the whole transfer.
  *
  * @param dev Pointer to the device structure for the driver instance
@@ -1018,12 +1018,11 @@ static inline bool spi_is_ready_dt(const struct spi_dt_spec *spec)
  * @param rx_bufs Buffer array where data to be read will be written to,
  *        or NULL if none.
  *
- * @retval frames Positive number of frames received in slave mode.
- * @retval 0 If successful in master mode.
- * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ * @return Number of frames received in peripheral mode, 0 on success in
+ *         controller mode, negative errno value on failure.
+ * @retval -ENOTSUP The spi config is not supported either by the
  *	   device hardware or the driver software.
- * @retval -EINVAL means that some parameter of the spi_config is invalid.
- * @retval -errno Negative errno code on failure.
+ * @retval -EINVAL Some parameter of the spi_config is invalid.
  */
 __syscall int spi_transceive(const struct device *dev,
 			     const struct spi_config *config,
@@ -1077,12 +1076,11 @@ static inline int spi_transceive_dt(const struct spi_dt_spec *spec,
  *        previous operations.
  * @param rx_bufs Buffer array where data to be read will be written to.
  *
- * @retval frames Positive number of frames received in slave mode.
- * @retval 0 If successful.
- * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ * @return Number of frames received in peripheral mode, 0 on success in
+ *         controller mode, negative errno value on failure.
+ * @retval -ENOTSUP The spi config is not supported either by the
  *	   device hardware or the driver software.
- * @retval -EINVAL means that some parameter of the spi_config is invalid.
- * @retval -errno Negative errno code on failure.
+ * @retval -EINVAL Some parameter of the spi_config is invalid.
  */
 static inline int spi_read(const struct device *dev,
 			   const struct spi_config *config,
@@ -1122,11 +1120,10 @@ static inline int spi_read_dt(const struct spi_dt_spec *spec,
  *        previous operations.
  * @param tx_bufs Buffer array where data to be sent originates from.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP The spi config is not supported either by the
  *	   device hardware or the driver software.
- * @retval -EINVAL means that some parameter of the spi_config is invalid.
- * @retval -errno Negative errno code on failure.
+ * @retval -EINVAL Some parameter of the spi_config is invalid.
  */
 static inline int spi_write(const struct device *dev,
 			    const struct spi_config *config,
@@ -1189,12 +1186,11 @@ static inline int spi_write_dt(const struct spi_dt_spec *spec,
  *        successfully or not).
  * @param userdata Userdata passed to callback
  *
- * @retval frames Positive number of frames received in slave mode.
- * @retval 0 If successful in master mode.
- * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ * @return Number of frames received in peripheral mode, 0 on success in
+ *         controller mode, negative errno value on failure.
+ * @retval -ENOTSUP The spi config is not supported either by the
  *	   device hardware or the driver software.
- * @retval -EINVAL means that some parameter of the spi_config is invalid.
- * @retval -errno Negative errno code on failure.
+ * @retval -EINVAL Some parameter of the spi_config is invalid.
  */
 static inline int spi_transceive_cb(const struct device *dev,
 				    const struct spi_config *config,
@@ -1236,12 +1232,11 @@ void z_spi_transfer_signal_cb(const struct device *dev, int result, void *userda
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
  *
- * @retval frames Positive number of frames received in slave mode.
- * @retval 0 If successful in master mode.
- * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ * @return Number of frames received in peripheral mode, 0 on success in
+ *         controller mode, negative errno value on failure.
+ * @retval -ENOTSUP The spi config is not supported either by the
  *	   device hardware or the driver software.
- * @retval -EINVAL means that some parameter of the spi_config is invalid.
- * @retval -errno Negative errno code on failure.
+ * @retval -EINVAL Some parameter of the spi_config is invalid.
  */
 static inline int spi_transceive_signal(const struct device *dev,
 				       const struct spi_config *config,
@@ -1273,12 +1268,11 @@ static inline int spi_transceive_signal(const struct device *dev,
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
  *
- * @retval frames Positive number of frames received in slave mode.
- * @retval 0 If successful
- * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ * @return Number of frames received in peripheral mode, 0 on success in
+ *         controller mode, negative errno value on failure.
+ * @retval -ENOTSUP The spi config is not supported either by the
  *	   device hardware or the driver software.
- * @retval -EINVAL means that some parameter of the spi_config is invalid.
- * @retval -errno Negative errno code on failure.
+ * @retval -EINVAL Some parameter of the spi_config is invalid.
  */
 static inline int spi_read_signal(const struct device *dev,
 				 const struct spi_config *config,
@@ -1307,11 +1301,10 @@ static inline int spi_read_signal(const struct device *dev,
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP The spi config is not supported either by the
  *	   device hardware or the driver software.
- * @retval -EINVAL means that some parameter of the spi_config is invalid.
- * @retval -errno Negative errno code on failure.
+ * @retval -EINVAL Some parameter of the spi_config is invalid.
  */
 static inline int spi_write_signal(const struct device *dev,
 				  const struct spi_config *config,
@@ -1418,8 +1411,7 @@ static inline bool spi_is_ready_iodev(const struct rtio_iodev *spi_iodev)
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
  *
- * @retval 0 If successful.
- * @retval -errno Negative errno code on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int spi_release(const struct device *dev,
 			  const struct spi_config *config);

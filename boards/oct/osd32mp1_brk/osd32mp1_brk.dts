@@ -78,6 +78,8 @@
 &i2c5 {
 	pinctrl-0 = <&i2c5_scl_pd1 &i2c5_sda_pd0>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiod 1 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiod 0 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };

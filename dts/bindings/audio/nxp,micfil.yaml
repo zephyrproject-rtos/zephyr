@@ -19,6 +19,23 @@ properties:
   clocks:
     required: true
 
+  clock-mux:
+    type: int
+    description: Clock mux source for MICFIL root clock
+
+  podf:
+    type: int
+    description: Root clock divider for MICFIL
+
+  pll-clocks:
+    type: phandle-array
+    description: Audio PLL settings used for MICFIL clocking
+    specifier-space: pll-clock
+
+  pll-clock-names:
+    type: string-array
+    description: Provided names of pll-clock specifiers
+
   quality-mode:
     type: int
     enum: [0, 1, 4, 5, 6, 7]

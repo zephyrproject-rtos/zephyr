@@ -92,6 +92,14 @@ Socket Options
   One needs to select proper value here depending on how many BSD sockets are created in
   the system.
 
+:kconfig:option:`CONFIG_ZVFS_EVENTFD_MAX`
+  Maximum number of ZVFS eventfd's. Several networking subsystems (e.g. the HTTP server,
+  CoAP server, LwM2M engine, PTP, SSH and the socket service) allocate an eventfd to wake
+  up their poll loop. Each such subsystem declares its requirement through a
+  ``CONFIG_ZVFS_EVENTFD_ADD_SIZE_*`` option, and the actual eventfd count is the larger of
+  this option and the sum of all those requirements. Only set this option explicitly if an
+  application creates additional eventfds on its own.
+
 :kconfig:option:`CONFIG_NET_SOCKETPAIR_BUFFER_SIZE`
   This option is used by socketpair() function. It sets the size of the
   internal intermediate buffer, in bytes. This sets the limit how large

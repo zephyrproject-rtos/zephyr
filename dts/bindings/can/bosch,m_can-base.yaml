@@ -6,6 +6,8 @@ properties:
   bosch,mram-cfg:
     type: array
     required: true
+    min-len: 8
+    max-len: 8
     description: |
       Bosch M_CAN message RAM configuration. The cells in the array have the following format:
 

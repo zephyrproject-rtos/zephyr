@@ -4,8 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief STM32 reset controller devicetree helper macros for STM32MP2
+ * @ingroup reset_controller_stm32
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RESET_STM32MP2_RESET_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_RESET_STM32MP2_RESET_H_
+
+/** @cond INTERNAL_HIDDEN */
 
 /**
  * Pack RCC register offset and bit in one 32-bit value.
@@ -38,5 +46,7 @@
 #define STM32_RESET_PERIPH_I3C2		0x8CC
 #define STM32_RESET_PERIPH_I3C3		0x8D0
 #define STM32_RESET_PERIPH_I3C4		0x8D4
+
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_RESET_STM32MP2_RESET_H_ */

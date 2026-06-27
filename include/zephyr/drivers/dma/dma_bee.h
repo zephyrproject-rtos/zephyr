@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief Realtek Bee DMA Configuration Macros
+ * @ingroup dma_bee_macros
  *
  * This header contains helper macros to extract DMA configuration parameters
  * (such as direction, data size, burst size, etc.) from the Devicetree
@@ -19,6 +20,7 @@
 /**
  * @defgroup dma_bee_macros Realtek Bee DMA Macros
  * @brief Macros for extracting DMA configuration from Devicetree
+ * @ingroup dma_interface
  * @{
  */
 

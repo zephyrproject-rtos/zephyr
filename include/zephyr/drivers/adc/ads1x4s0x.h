@@ -30,8 +30,7 @@
  * @param pin Pin number.
  * @param initial_value Initial value of the pin.
  *
- * @retval 0 success.
- * @retval -errno negative errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int ads1x4s0x_gpio_set_output(const struct device *dev, uint8_t pin, bool initial_value);
 
@@ -41,8 +40,7 @@ int ads1x4s0x_gpio_set_output(const struct device *dev, uint8_t pin, bool initia
  * @param dev Pointer to the device structure for the driver instance.
  * @param pin Pin number.
  *
- * @retval 0 success.
- * @retval -errno negative errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int ads1x4s0x_gpio_set_input(const struct device *dev, uint8_t pin);
 
@@ -52,8 +50,7 @@ int ads1x4s0x_gpio_set_input(const struct device *dev, uint8_t pin);
  * @param dev Pointer to the device structure for the driver instance.
  * @param pin Pin number.
  *
- * @retval 0 success.
- * @retval -errno negative errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int ads1x4s0x_gpio_deconfigure(const struct device *dev, uint8_t pin);
 
@@ -64,8 +61,7 @@ int ads1x4s0x_gpio_deconfigure(const struct device *dev, uint8_t pin);
  * @param pin Pin number.
  * @param value Value to set.
  *
- * @retval 0 success.
- * @retval -errno negative errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int ads1x4s0x_gpio_set_pin_value(const struct device *dev, uint8_t pin,
 				bool value);
@@ -77,8 +73,7 @@ int ads1x4s0x_gpio_set_pin_value(const struct device *dev, uint8_t pin,
  * @param pin Pin number.
  * @param value Pointer to where the value will be stored.
  *
- * @retval 0 success.
- * @retval -errno negative errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int ads1x4s0x_gpio_get_pin_value(const struct device *dev, uint8_t pin,
 				bool *value);
@@ -89,8 +84,7 @@ int ads1x4s0x_gpio_get_pin_value(const struct device *dev, uint8_t pin,
  * @param dev Pointer to the device structure for the driver instance.
  * @param value Pointer to where the port value will be stored.
  *
- * @retval 0 success.
- * @retval -errno negative errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int ads1x4s0x_gpio_port_get_raw(const struct device *dev,
 			       gpio_port_value_t *value);
@@ -102,8 +96,7 @@ int ads1x4s0x_gpio_port_get_raw(const struct device *dev,
  * @param mask Mask of pins to change.
  * @param value Value to set.
  *
- * @retval 0 success.
- * @retval -errno negative errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int ads1x4s0x_gpio_port_set_masked_raw(const struct device *dev,
 				      gpio_port_pins_t mask,
@@ -115,8 +108,7 @@ int ads1x4s0x_gpio_port_set_masked_raw(const struct device *dev,
  * @param dev Pointer to the device structure for the driver instance.
  * @param pins Mask of pins to toggle.
  *
- * @retval 0 success.
- * @retval -errno negative errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int ads1x4s0x_gpio_port_toggle_bits(const struct device *dev,
 				   gpio_port_pins_t pins);

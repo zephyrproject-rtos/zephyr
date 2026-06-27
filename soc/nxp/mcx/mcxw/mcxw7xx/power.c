@@ -8,36 +8,16 @@
 #include <fsl_cmc.h>
 #include <fsl_spc.h>
 #include <fsl_vbat.h>
-#include <fsl_wuu.h>
 
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
-#define MCXW7_WUU_ADDR (WUU_Type *)DT_REG_ADDR(DT_INST(0, nxp_wuu))
 #define MCXW7_CMC_ADDR (CMC_Type *)DT_REG_ADDR(DT_INST(0, nxp_cmc))
 #define MCXW7_VBAT_ADDR (VBAT_Type *)DT_REG_ADDR(DT_INST(0, nxp_vbat))
 #define MCXW7_SPC_ADDR (SPC_Type *)DT_REG_ADDR(DT_INST(0, nxp_spc))
 
-/* Get the IRQ number for lptmr0 */
-#define MCXW7_LPTMR0_IRQ_N           DT_IRQN(DT_NODELABEL(lptmr0))
-#define MCXW7_WUU_WAKEUP_LPTMR_IDX   0
-/* Get the IRQ number used by NBU */
-#define MCXW7_RF_IMU0_IRQ_N          DT_IRQN(DT_NODELABEL(nbu))
-#define MCXW7_WUU_WAKEUP_RF_IMU0_IDX 2
-
 #define MCXW7_LPWKUP_DELAY_10MHz (0xAAU)
-
-void mcxw7xx_set_wakeup(int32_t irqn)
-{
-	if (irqn == MCXW7_LPTMR0_IRQ_N) {
-		WUU_SetInternalWakeUpModulesConfig(MCXW7_WUU_ADDR, MCXW7_WUU_WAKEUP_LPTMR_IDX,
-						   kWUU_InternalModuleInterrupt);
-	} else if (irqn == MCXW7_RF_IMU0_IRQ_N) {
-		WUU_SetInternalWakeUpModulesConfig(MCXW7_WUU_ADDR, MCXW7_WUU_WAKEUP_RF_IMU0_IDX,
-						   kWUU_InternalModuleDMATrigger);
-	}
-}
 
 /*
  * 1. Set power mode protection
@@ -129,8 +109,10 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 }
 
 /*
- * In active mode, all HVDs/LVDs are disabled.
- * DCDC regulated to 1.8V, Core LDO regulated to 1.1V;
+ * In active mode, all HVDs/LVDs are disabled, Core LDO regulated to 1.1V.
+ * The active-mode DCDC output voltage is configured separately and earlier by
+ * nxp_mcxw7x_dcdc_init() (see soc_dcdc.c), driven by the SPC device tree node,
+ * so it is intentionally not touched here.
  * In low power modes, all HVDs/LVDs are disabled.
  * Bandgap is disabled, DCDC regulated to 1.25V, Core LDO regulated to 1.05V.
  */
@@ -150,9 +132,6 @@ __weak void set_spc_configuration(void)
 
 	active_mode_regulator.bandgapMode = kSPC_BandgapEnabledBufferDisabled;
 	active_mode_regulator.lpBuff = false;
-	/* DCDC regulate to 1.8V. */
-	active_mode_regulator.DCDCOption.DCDCVoltage = kSPC_DCDC_SafeModeVoltage;
-	active_mode_regulator.DCDCOption.DCDCDriveStrength = kSPC_DCDC_NormalDriveStrength;
 	active_mode_regulator.SysLDOOption.SysLDOVoltage = kSPC_SysLDO_NormalVoltage;
 	active_mode_regulator.SysLDOOption.SysLDODriveStrength = kSPC_SysLDO_NormalDriveStrength;
 	/* Core LDO regulate to 1.1V. */
@@ -161,10 +140,10 @@ __weak void set_spc_configuration(void)
 	active_mode_regulator.CoreLDOOption.CoreLDODriveStrength = kSPC_CoreLDO_NormalDriveStrength;
 #endif /* FSL_FEATURE_SPC_HAS_CORELDO_VDD_DS */
 
-	SPC_SetActiveModeDCDCRegulatorConfig(MCXW7_SPC_ADDR, &active_mode_regulator.DCDCOption);
-
-	while (SPC_GetBusyStatusFlag(MCXW7_SPC_ADDR)) {
-	}
+	/*
+	 * Active-mode DCDC voltage is owned by nxp_mcxw7x_dcdc_init(); do not
+	 * reconfigure it here so the device tree configured value is preserved.
+	 */
 
 	SPC_SetActiveModeSystemLDORegulatorConfig(MCXW7_SPC_ADDR,
 						  &active_mode_regulator.SysLDOOption);
@@ -196,6 +175,4 @@ __weak void set_spc_configuration(void)
 void nxp_mcxw7x_power_init(void)
 {
 	set_spc_configuration();
-	/* Enable LPTMR0 as wakeup source */
-	NXP_ENABLE_WAKEUP_SIGNAL(MCXW7_LPTMR0_IRQ_N);
 }

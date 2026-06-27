@@ -1,9 +1,10 @@
-# Copyright (c) 2025 Aesc Silicon
+# SPDX-FileCopyrightText: 2025 Aesc Silicon
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_NITROGEN
 	select RISCV
 	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
 	select INCLUDE_RESET_VECTOR
 	select PINCTRL
 

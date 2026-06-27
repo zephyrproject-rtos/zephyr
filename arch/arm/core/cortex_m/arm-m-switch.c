@@ -460,7 +460,7 @@ bool arm_m_must_switch(void)
 
 	__asm__ volatile("msr basepri, %0" ::"r"(pri));
 
-	/* Secure mode transistions can push a non-thread frame to the
+	/* Secure mode transitions can push a non-thread frame to the
 	 * stack.  If not enabled, we already know by construction
 	 * that we're handling the bottom level of the interrupt stack
 	 * and returning to thread mode.

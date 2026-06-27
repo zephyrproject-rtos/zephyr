@@ -16,3 +16,11 @@ config ESP32_SOC_PAU_SUPPORTED
 config ESP32_SOC_PM_CPU_RETENTION_BY_SW
 	bool
 	default y
+
+config ESP32_SOC_FLASH_SUPPORTED
+	bool
+	default y
+
+config ESP32_SOC_PM_SUPPORT_VDDSDIO_PD
+	bool
+	default y

@@ -20,3 +20,8 @@ config SOC_A320
 	bool
 	select ARM64
 	select CPU_CORTEX_A320
+
+config SOC_V8A_AARCH32
+	bool
+	select ARM
+	select CPU_CORTEX_A32

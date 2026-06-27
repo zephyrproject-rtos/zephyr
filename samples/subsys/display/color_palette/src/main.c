@@ -119,6 +119,17 @@ int main(void)
 		return 0;
 	}
 
+	/*
+	 * This sample writes packed I_4 palette indices directly. Palette-backed drivers may
+	 * advertise an RGB input format by default (e.g. when the color dithering helper is
+	 * enabled), so explicitly request the native I_4 format before querying capabilities.
+	 */
+	ret = display_set_pixel_format(display, PIXEL_FORMAT_I_4);
+	if (ret < 0) {
+		LOG_ERR("Failed to select I_4 pixel format: %d", ret);
+		return 0;
+	}
+
 	display_get_capabilities(display, &caps);
 
 	LOG_INF("Display: %ux%u, pixel format: %u", caps.x_resolution, caps.y_resolution,

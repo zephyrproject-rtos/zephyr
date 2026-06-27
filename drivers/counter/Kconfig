@@ -60,6 +60,13 @@ config COUNTER_64BITS_TICKS
 	  64-bit typedef. It is up to the driver to implement the necessary
 	  functions to supports.
 
+config COUNTER_CALIBRATION
+	bool "Counter driver calibration support"
+	help
+	  Enable support for counter clock calibration. Calibration
+	  is specified in parts per billion (ppb). A positive value
+	  speeds up the counter, a negative value slows it down.
+
 module = COUNTER
 module-str = counter
 source "subsys/logging/Kconfig.template.log_config"
@@ -88,7 +95,6 @@ source "drivers/counter/Kconfig.k3_rtc_counter"
 source "drivers/counter/Kconfig.max32_rtc"
 source "drivers/counter/Kconfig.max32_timer"
 source "drivers/counter/Kconfig.max32_wut"
-source "drivers/counter/Kconfig.maxim_ds3231"
 source "drivers/counter/Kconfig.mchp"
 source "drivers/counter/Kconfig.mchp_sam_pit64b"
 source "drivers/counter/Kconfig.mcp7940n"
@@ -105,11 +111,13 @@ source "drivers/counter/Kconfig.mcux_snvs"
 source "drivers/counter/Kconfig.mcux_stm"
 source "drivers/counter/Kconfig.mcux_sysctr"
 source "drivers/counter/Kconfig.mcux_tpm"
+source "drivers/counter/Kconfig.mcux_wake_timer"
 source "drivers/counter/Kconfig.mspm0"
 source "drivers/counter/Kconfig.native_sim"
 source "drivers/counter/Kconfig.neorv32"
 source "drivers/counter/Kconfig.npcx"
 source "drivers/counter/Kconfig.nrfx"
+source "drivers/counter/Kconfig.nxp_irtc"
 source "drivers/counter/Kconfig.nxp_mrt"
 source "drivers/counter/Kconfig.nxp_pit"
 source "drivers/counter/Kconfig.nxp_s32"
@@ -128,6 +136,7 @@ source "drivers/counter/Kconfig.stm32_timer"
 source "drivers/counter/Kconfig.tmr_cmsdk_apb"
 source "drivers/counter/Kconfig.xec"
 source "drivers/counter/Kconfig.xlnx"
+source "drivers/counter/Kconfig.xlnx_zynqmp_rtc"
 # zephyr-keep-sorted-stop
 
 source "drivers/counter/Kconfig.rv3032_counter"

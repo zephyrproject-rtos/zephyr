@@ -101,7 +101,7 @@ struct dai_intel_alh_plat_data {
 
 struct dai_intel_alh_pdata {
 	struct dai_config config;
-	struct dai_properties props;
+	struct dai_properties props[2];
 	struct dai_intel_ipc3_alh_params params;
 };
 

@@ -138,7 +138,8 @@ static ssize_t tp_recvfrom(struct mqtt_sn_client *client, void *buffer, size_t l
 {
 	if (recvfrom_data.data && recvfrom_data.sz > 0 && length >= recvfrom_data.sz) {
 		memcpy(buffer, recvfrom_data.data, recvfrom_data.sz);
-		memcpy(src_addr, recvfrom_data.src_addr, recvfrom_data.addrlen);
+		memcpy(src_addr, recvfrom_data.src_addr,
+		       MIN(*addrlen, recvfrom_data.addrlen));
 		*addrlen = recvfrom_data.addrlen;
 
 		k_sem_give(&mqtt_sn_rx_sem);
@@ -623,8 +624,8 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_wait_regack)
  *
  * 6.9 Client’s Topic Subscribe/Un-subscribe Procedure
  * ...
- * As for the REGISTER procedure, a client may have only one SUBSCRIBE or one UNSUBCRIBE transaction
- * open at a time.
+ * As for the REGISTER procedure, a client may have only one SUBSCRIBE or one
+ * UNSUBSCRIBE transaction open at a time.
  */
 static ZTEST(mqtt_sn_client, test_mqtt_sn_wait_suback)
 {

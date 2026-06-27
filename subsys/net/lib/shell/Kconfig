@@ -248,4 +248,12 @@ config NET_SHELL_REQUIRE_TX_THREAD
 	  Hidden symbol indicating that network shell requires separate TX
 	  thread due to possible deadlocks during shell/net stack operations.
 
+config NET_SHELL_IP_TABLE_SUPPORTED
+	bool "IP table for IP forward"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_IPV4_NAT
+	help
+	  Add IP table rules to allow specific IPv4 packets to be
+	  forwarded through interfaces and subnets.
+
 endif # NET_SHELL

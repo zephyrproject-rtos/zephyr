@@ -9,7 +9,6 @@
 #ifndef ZEPHYR_ARCH_ARC_INCLUDE_SWAP_MACROS_H_
 #define ZEPHYR_ARCH_ARC_INCLUDE_SWAP_MACROS_H_
 
-#include <zephyr/kernel_structs.h>
 #include <offsets_short.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/arch/cpu.h>

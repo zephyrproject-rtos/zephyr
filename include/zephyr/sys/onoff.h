@@ -5,6 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for on-off service for managing shared resources.
+ * @ingroup resource_mgmt_onoff_apis
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_ONOFF_H_
 #define ZEPHYR_INCLUDE_SYS_ONOFF_H_
 

@@ -130,7 +130,7 @@ struct k_p4wq_initparam {
  * @brief Statically initialize a P4 Work Queue
  *
  * Same like K_P4WQ_DEFINE_WITH_DONE_HANDLER but without an
- * optional handler which is called everytime when work is executed
+ * optional handler which is called every time when work is executed
  * and not used anymore by the p4wq
  */
 #define K_P4WQ_DEFINE(name, n_threads, stack_sz)			\
@@ -169,7 +169,7 @@ struct k_p4wq_initparam {
  * @brief Statically initialize an array of P4 Work Queues
  *
  * Same like K_P4WQ_ARRAY_DEFINE_WITH_DONE_HANDLER but without an
- * optional handler which is called everytime when work is executed
+ * optional handler which is called every time when work is executed
  * and not used anymore by the p4wq
  */
 #define K_P4WQ_ARRAY_DEFINE(name, n_threads, stack_sz, flg)		\

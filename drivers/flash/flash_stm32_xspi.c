@@ -2164,15 +2164,6 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		}
 	}
 
-	if (dev_cfg->has_pclken_mgr) {
-		/* Clock domain corresponding to the IO-Mgr (XSPIM) */
-		if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				(clock_control_subsys_t) &dev_cfg->pclken_mgr) != 0) {
-			LOG_ERR("Could not enable XSPI Manager clock");
-			return -EIO;
-		}
-	}
-
 	for (; prescaler <= STM32_XSPI_CLOCK_PRESCALER_MAX; prescaler++) {
 		uint32_t clk = STM32_XSPI_CLOCK_COMPUTE(ahb_clock_freq, prescaler);
 
@@ -2212,27 +2203,6 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	}
 
 	LOG_DBG("XSPI Init'd");
-
-#if (defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)) && \
-	!defined(CONFIG_STM32_XSPIM)
-	/* XSPI I/O manager init Function */
-	XSPIM_CfgTypeDef xspi_mgr_cfg;
-
-	if (dev_data->hxspi.Instance == STM32_XSPI1) {
-		xspi_mgr_cfg.IOPort = HAL_XSPIM_IOPORT_1;
-	} else if (dev_data->hxspi.Instance == STM32_XSPI2) {
-		xspi_mgr_cfg.IOPort = HAL_XSPIM_IOPORT_2;
-	}
-	xspi_mgr_cfg.nCSOverride = HAL_XSPI_CSSEL_OVR_DISABLED;
-	xspi_mgr_cfg.Req2AckTime = 1;
-
-	if (HAL_XSPIM_Config(&dev_data->hxspi, &xspi_mgr_cfg,
-		HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-		LOG_ERR("XSPI M config failed");
-		return -EIO;
-	}
-
-#endif /* (HAL_XSPIM_IOPORT_1 || HAL_XSPIM_IOPORT_2) && !(xspim node) */
 
 #if defined(XSPI_DCR1_DLYBYP)
 	/* XSPI delay block init Function */
@@ -2543,10 +2513,6 @@ static int flash_stm32_xspi_init(const struct device *dev)
 			.has_pclken_ker = true,							\
 			.pclken_ker = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE(inst), xspi_ker),\
 		))										\
-		IF_ENABLED(DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE(inst),  xspi_mgr), (		\
-			.has_pclken_mgr = true,							\
-			.pclken_mgr = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE(inst), xspi_mgr),\
-		))										\
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_XSPI_NODE(inst)),			\
 		.irq_config = flash_stm32_xspi_irq_config_func_##inst,				\
 		.mem_map_based_address = DT_REG_ADDR_BY_IDX(STM32_XSPI_NODE(inst), 1),		\
@@ -2587,9 +2553,10 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		.qer_type = DT_QER_PROP_OR(inst, JESD216_DW15_QER_VAL_S1B6),			\
 		.write_opcode = DT_WRITEOC_PROP_OR(inst, SPI_NOR_WRITEOC_NONE),			\
 		.page_size = SPI_NOR_PAGE_SIZE, /* by default, to be updated by sfdp */		\
-		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, jedec_id), (				\
-			.jedec_id = DT_INST_PROP(inst, jedec_id),				\
-		))										\
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, jedec_id), (			\
+			IF_ENABLED(CONFIG_FLASH_JESD216_API,				\
+				(.jedec_id = DT_INST_PROP(inst, jedec_id),))			\
+		))									\
 												\
 		XSPI_DMA_CHANNEL(STM32_XSPI_NODE(inst), tx, TX, MEMORY, PERIPHERAL)		\
 		XSPI_DMA_CHANNEL(STM32_XSPI_NODE(inst), rx, RX, PERIPHERAL, MEMORY)		\
@@ -2597,7 +2564,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 												\
 	DEVICE_DT_INST_DEFINE(inst, &flash_stm32_xspi_init, NULL,				\
 			      &flash_stm32_xspi_dev_data_##inst, &flash_stm32_xspi_cfg_##inst,	\
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
+			      POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,				\
 			      &flash_stm32_xspi_driver_api);
 
 #define XSPI_STM32_INIT(inst)							\

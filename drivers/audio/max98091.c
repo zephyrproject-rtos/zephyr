@@ -301,7 +301,7 @@ static int max98091_configure(const struct device *dev, struct audio_codec_cfg *
 	return 0;
 }
 
-static const struct audio_codec_api max98091_api = {
+static DEVICE_API(audio_codec, max98091_api) = {
 	.configure = max98091_configure,
 	.start_output = max98091_start_output,
 	.stop_output = max98091_stop_output,

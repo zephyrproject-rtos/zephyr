@@ -133,7 +133,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-f", "--format", metavar="FORMAT", choices=supported_formats, required=True,
-        help="Format to convert guidlines to. Supported formats are: " + str(supported_formats)
+        help="Format to convert guidelines to. Supported formats are: " + str(supported_formats)
     )
     parser.add_argument(
         "-o", "--output", metavar="OUTPUT_FILE", type=Path, required=False,

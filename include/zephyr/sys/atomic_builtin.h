@@ -7,6 +7,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Compiler-builtin implementation of the atomic operations API.
+ *
+ * The public documentation for these operations lives in <zephyr/sys/atomic.h>.
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_ATOMIC_BUILTIN_H_
 #define ZEPHYR_INCLUDE_SYS_ATOMIC_BUILTIN_H_
 
@@ -19,6 +26,8 @@ extern "C" {
 #endif
 
 /* Included from <atomic.h> */
+
+/** @cond INTERNAL_HIDDEN */
 
 static inline bool atomic_cas(atomic_t *target, atomic_val_t old_value,
 			  atomic_val_t new_value)
@@ -109,6 +118,8 @@ static inline atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value)
 {
 	return __atomic_fetch_nand(target, value, __ATOMIC_SEQ_CST);
 }
+
+/** @endcond */
 
 #ifdef __cplusplus
 }

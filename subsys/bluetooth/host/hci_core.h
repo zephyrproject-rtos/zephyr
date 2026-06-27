@@ -440,8 +440,6 @@ extern const struct bt_conn_auth_cb *bt_auth;
 extern sys_slist_t bt_auth_info_cbs;
 enum bt_security_err bt_security_err_get(uint8_t hci_err);
 
-int bt_hci_recv(const struct device *dev, struct net_buf *buf);
-
 /* Data type to store state related with command to be updated
  * when command completes successfully.
  */

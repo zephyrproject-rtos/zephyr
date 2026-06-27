@@ -13,7 +13,7 @@
 				 <&iomuxc_enet2_mdio_netc_mdio_netc_mdio>;
 			bias-pull-down;
 			slew-rate = "slightly_fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 	};
 
@@ -31,7 +31,7 @@
 				 <&iomuxc_enet1_td3_eth_rgmii_td_eth0_rgmii_td3>;
 			bias-pull-down;
 			slew-rate = "slightly_fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 
 		group2 {
@@ -39,7 +39,7 @@
 				 <&iomuxc_enet1_txc_eth_rgmii_tx_clk_eth0_rgmii_tx_clk>;
 			bias-pull-down;
 			slew-rate = "fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 	};
 

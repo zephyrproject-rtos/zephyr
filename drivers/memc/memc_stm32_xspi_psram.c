@@ -75,7 +75,6 @@ struct memc_stm32_xspi_psram_config {
 	const struct pinctrl_dev_config *pcfg;
 	const struct stm32_pclken pclken;
 	const struct stm32_pclken pclken_ker;
-	const struct stm32_pclken pclken_mgr;
 	size_t memory_size;
 	uint32_t max_frequency;
 };
@@ -275,15 +274,6 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	}
 #endif
 
-#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_mgr)
-	/* Clock domain corresponding to the IO-Mgr (XSPIM) */
-	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				(clock_control_subsys_t) &dev_cfg->pclken_mgr) != 0) {
-		LOG_ERR("Could not enable XSPI Manager clock");
-		return -EIO;
-	}
-#endif
-
 	for (; prescaler <= STM32_XSPI_CLOCK_PRESCALER_MAX; prescaler++) {
 		uint32_t clk = STM32_XSPI_CLOCK_COMPUTE(ahb_clock_freq, prescaler);
 
@@ -304,29 +294,6 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 		LOG_ERR("XSPI Init failed");
 		return -EIO;
 	}
-
-#if !defined(CONFIG_STM32_XSPIM)
-	if (!IS_ENABLED(CONFIG_STM32_APP_IN_EXT_FLASH)) {
-		/*
-		 * Do not configure the XSPIManager if running on the ext flash
-		 * since this includes stopping each XSPI instance during configuration
-		 */
-		XSPIM_CfgTypeDef cfg = {0};
-
-		if (hxspi->Instance == STM32_XSPI1) {
-			cfg.IOPort = HAL_XSPIM_IOPORT_1;
-		} else if (hxspi->Instance == STM32_XSPI2) {
-			cfg.IOPort = HAL_XSPIM_IOPORT_2;
-		} else {
-			LOG_ERR("XSPIMgr Instance failed");
-			return -EIO;
-		}
-		if (HAL_XSPIM_Config(hxspi, &cfg, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-			LOG_ERR("XSPIMgr Init failed");
-			return -EIO;
-		}
-	}
-#endif /* !CONFIG_STM32_XSPIM */
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 	/* DELAYBlock Enable for the stm32H5 boards */
@@ -432,9 +399,6 @@ static const struct memc_stm32_xspi_psram_config memc_stm32_xspi_cfg = {
 	.pclken = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE, xspix),
 #if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_ker)
 	.pclken_ker = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE, xspi_ker),
-#endif
-#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_mgr)
-	.pclken_mgr = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE, xspi_mgr),
 #endif
 	.memory_size = DT_INST_PROP(0, size) / 8, /* In Bytes */
 	.max_frequency = DT_INST_PROP(0, max_frequency),

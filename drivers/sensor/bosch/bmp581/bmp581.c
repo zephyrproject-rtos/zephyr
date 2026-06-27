@@ -832,13 +832,6 @@ static DEVICE_API(sensor, bmp581_driver_api) = {
 
 #define BMP581_INIT(i)                                                                             \
                                                                                                    \
-	BUILD_ASSERT(COND_CODE_1(DT_INST_NODE_HAS_PROP(i, fifo_watermark),                         \
-				 (DT_INST_PROP(i, fifo_watermark) > 0 &&                           \
-				  DT_INST_PROP(i, fifo_watermark) < 16),                           \
-				 (true)),                                                          \
-		     "fifo-watermark must be between 1 and 15. Please set it in "                  \
-		     "the device-tree node properties");                                           \
-                                                                                                   \
 	RTIO_DEFINE(bmp581_rtio_ctx_##i, 16, 16);                                                  \
 	BMP581_BUS_IODEV_DEFINE(i);                                                                \
                                                                                                    \

@@ -534,13 +534,11 @@ static int dma_mcux_edma_configure_hardware(const struct device *dev, uint32_t c
 
 	dma_mcux_edma_configure_muxes(dev, channel, config);
 
-#if (defined(CONFIG_DMA_MCUX_EDMA_V3) || defined(CONFIG_DMA_MCUX_EDMA_V4)) && \
-	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
-	if (transfer_type == kEDMA_MemoryToMemory && (sg_mode || config->block_count > 1)) {
+	if (transfer_type == kEDMA_MemoryToMemory && !DT_INST_PROP(0, nxp_a_on) &&
+	    (sg_mode || config->block_count > 1)) {
 		LOG_WRN("mem2mem xfer scatter gather not supported");
 		return -ENOTSUP;
 	}
-#endif
 
 	if (sg_mode && config->cyclic) {
 		dma_mcux_edma_configure_sg_loop(dev, channel, config, transfer_type);
@@ -639,22 +637,23 @@ static inline void dma_mcux_edma_set_xfer_settings(const struct device *dev, uin
 	struct dma_mcux_channel_transfer_edma_settings *xfer_settings = &data->transfer_settings;
 
 	xfer_settings->source_burst_length = config->source_burst_length;
-#if (defined(CONFIG_DMA_MCUX_EDMA_V3) || defined(CONFIG_DMA_MCUX_EDMA_V4)) && \
-	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
-	struct dma_block_config *block_config = config->head_block;
-
-	/* Only collapse the minor loop into the whole block for genuine
-	 * software-triggered mem2mem transfers. When a peripheral request is
-	 * routed via the channel mux (dma_slot != 0), each minor loop is
-	 * paced by that request and the caller-chosen burst length must be
-	 * preserved (e.g. FlexIO LCDIF expects one minor loop per shifter
-	 * round).
+	/* Collapse the minor loop into the whole block for m2m transfers that
+	 * are NOT paced by an external always-on DMAMUX (nxp,a-on). When
+	 * always-on is available the DMAMUX keeps triggering each minor loop,
+	 * so the caller-chosen burst length must be preserved. Without it the
+	 * channel is either V3 sw-triggered (one EDMA_TriggerChannelStart per
+	 * start) or V4 with EDMA_StartTransfer setting TCD_CSR[START] only
+	 * once -- in both cases CITER must be 1 to transfer the whole block.
+	 * Also keep the user burst when dma_slot != 0 (peripheral-routed m2m,
+	 * e.g. FlexIO LCDIF expects one minor loop per shifter round).
 	 */
 	if (xfer_settings->transfer_type == kEDMA_MemoryToMemory &&
-	    !config->source_chaining_en && config->dma_slot == 0) {
+	    !config->source_chaining_en && !DT_INST_PROP(0, nxp_a_on) &&
+	    config->dma_slot == 0) {
+		struct dma_block_config *block_config = config->head_block;
+
 		xfer_settings->source_burst_length = block_config->block_size;
 	}
-#endif
 	xfer_settings->source_data_size = config->source_data_size;
 	xfer_settings->dest_data_size = config->dest_data_size;
 	xfer_settings->direction = config->channel_direction;
@@ -737,14 +736,25 @@ static int dma_mcux_edma_start(const struct device *dev, uint32_t channel)
 #endif
 	data->busy = true;
 	EDMA_StartTransfer(DEV_EDMA_HANDLE(dev, channel));
+	/*
+	 * Manually kick the first minor loop on instances where
+	 * EDMA_StartTransfer does not auto-trigger:
+	 *  - V3 builds without an external DMAMUX peripheral.
+	 *  - V4 instances without a CH_MUX register (e.g. MCXE31x, i.MX 8MP).
+	 * V4 instances that have a CH_MUX register self-trigger inside
+	 * EDMA_StartTransfer when CH_MUX == 0, so skip on those to avoid
+	 * a double trigger.
+	 */
+	if (data->transfer_settings.transfer_type == kEDMA_MemoryToMemory) {
 #if defined(CONFIG_DMA_MCUX_EDMA_V3) && \
 	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
-	struct dma_mcux_channel_transfer_edma_settings *xfer_settings = &data->transfer_settings;
-
-	if (xfer_settings->transfer_type == kEDMA_MemoryToMemory) {
 		EDMA_TriggerChannelStart(DEV_BASE(dev), channel);
-	}
+#elif defined(CONFIG_DMA_MCUX_EDMA_V4) && defined(FSL_FEATURE_EDMA_HAS_CHANNEL_MUX)
+		if (FSL_FEATURE_EDMA_INSTANCE_HAS_CHANNEL_MUXn((void *)DEV_BASE(dev)) == 0) {
+			EDMA_TriggerChannelStart(DEV_BASE(dev), channel);
+		}
 #endif
+	}
 	return 0;
 }
 
@@ -774,15 +784,11 @@ static int dma_mcux_edma_suspend(const struct device *dev, uint32_t channel)
 {
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 
-#if (defined(CONFIG_DMA_MCUX_EDMA_V3) || defined(CONFIG_DMA_MCUX_EDMA_V4)) && \
-	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
-	struct dma_mcux_channel_transfer_edma_settings *xfer_settings = &data->transfer_settings;
-
-	if (xfer_settings->transfer_type == kEDMA_MemoryToMemory) {
+	if (data->transfer_settings.transfer_type == kEDMA_MemoryToMemory &&
+	    !DT_INST_PROP(0, nxp_a_on)) {
 		/* can't suspend this transfer, effectively a not implemented function */
 		return -ENOSYS;
 	}
-#endif
 
 	if (!data->busy) {
 		return -EINVAL;

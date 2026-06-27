@@ -16,26 +16,16 @@ import sys
 from pathlib import Path
 
 from west.commands import Verbosity
-from west.configuration import config
-from west.util import escapes_directory
+from west.configuration import Configuration
+from west.util import WestNotFound, escapes_directory, west_topdir
 
 import zcmake
 
 # Explicit, flat name: avoids colliding with scripts/pylib/build_helpers/
 # domains.py (which grabs `logging.getLogger('build_helpers')` at import
-# time), and avoids the `west.*` namespace whose NullHandler would defeat
-# the hasHandlers() guard in forward_logging_to_west.
+# time).
 BUILD_HELPERS_LOGGER = 'zephyr_build_helpers'
 _logger = logging.getLogger(BUILD_HELPERS_LOGGER)
-
-
-class WestLogFormatter(logging.Formatter):
-
-    def __init__(self):
-        # Match the format used by west's own LogFormatter
-        # (west/app/main.py) so bridged records render identically to
-        # records emitted by west itself.
-        super().__init__(fmt='%(name)s: %(levelname)s: %(message)s')
 
 
 class WestLogHandler(logging.Handler):
@@ -53,7 +43,10 @@ class WestLogHandler(logging.Handler):
     def __init__(self, command, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._command = command
-        self.setFormatter(WestLogFormatter())
+        # No formatter is set: WestCommand.err/wrn/die already add
+        # "ERROR: " etc., and west itself doesn't carry a logger-name
+        # prefix on its output. The default formatter passes the raw
+        # message through unchanged ('%(message)s').
 
     def emit(self, record):
         fmt = self.format(record)
@@ -79,18 +72,51 @@ def forward_logging_to_west(command, logger_names):
 
     ``logger_names`` may be a single logger name or an iterable of names.
 
-    Safe to call more than once: handlers are not duplicated.
+    This simply adds a custom handler to each logger. If you forget to
+    forward to any West command, then Python's ``logging.lastResort``
+    should still print warnings and higher to stderr while discarding
+    lower priorities, see the
+    https://docs.python.org/3/library/logging.html HOWTO for details.
+
+    While not tested, you could in theory forward to different West
+    commands at the same time. Forwarding multiple times to the _same_
+    West command will print an error and be ignored.
     '''
     if isinstance(logger_names, str):
         logger_names = [logger_names]
     for name in logger_names:
         logger = logging.getLogger(name)
-        # Drop DEBUG records at the logger unless the user asked for them,
-        # so they don't reach attached handlers (ours or anyone else's).
-        logger.setLevel(1 if command.verbosity >= Verbosity.DBG else logging.INFO)
-        if not logger.hasHandlers():
-            # Only add a log handler if none has been added already.
-            logger.addHandler(WestLogHandler(command))
+        _fwd_logger(logger, command)
+
+
+def _fwd_logger(logger, west_cmd):
+
+    # Note logger.handlers are only the _directly_ attached handlers,
+    # ignoring propagation up
+    for handler in logger.handlers:
+        match handler:
+            case WestLogHandler():
+                prev_cmd = handler._command
+                hdlr_print = f"WestLogHandler({prev_cmd.name})"
+                if prev_cmd == west_cmd:
+                    west_cmd.err(
+                        f"logger('{logger.name}') was already forwarded to {hdlr_print}!"
+                    )
+                    return
+            case _:
+                hdlr_print = f"{handler}"
+
+        west_cmd.dbg(f"logger('{logger.name}') already had handler: {hdlr_print}")
+
+    # Drop DEBUG records at the logger unless the user asked for them,
+    # so they don't reach attached handlers (ours or anyone else's).
+    logger.setLevel(1 if west_cmd.verbosity >= Verbosity.DBG else logging.INFO)
+
+    logger.addHandler(WestLogHandler(west_cmd))
+    # Use immediately.  This starts with "logger %(name)s" thanks
+    # to WestLogHandler.__init__() above
+    logger.debug(f"forwarded to WestLogHandler({west_cmd.name}). propagate={logger.propagate}")
+
 
 # Domains.py must be imported from the pylib directory, since
 # twister also uses the implementation
@@ -155,7 +181,7 @@ def _resolve_build_dir(fmt, guess, cwd, **kwargs):
                     return str(curr)
     return str(b)
 
-def find_build_dir(dir, guess=False, **kwargs):
+def find_build_dir(dir, guess=False, *, config=None, **kwargs):
     '''Heuristic for finding a build directory.
     If `dir` is specified, this directory is returned as the build directory.
     Otherwise, the default build directory is determined according to the
@@ -166,11 +192,20 @@ def find_build_dir(dir, guess=False, **kwargs):
     3. Resolved `build.dir-fmt` configuration option, no matter if it is an
        already existing build directory.
     4. DEFAULT_BUILD_DIR
+
+    `config` is a west.configuration.Configuration object. When None, one is
+    instantiated from the current west workspace; if we are not inside a
+    workspace, `build.dir-fmt` lookup is skipped.
     '''
 
     build_dir = dir
     cwd = os.getcwd()
-    dir_fmt = config.get('build', 'dir-fmt', fallback=None)
+    if config is None:
+        try:
+            config = Configuration(topdir=west_topdir())
+        except WestNotFound:
+            config = None
+    dir_fmt = config.get('build.dir-fmt', default=None) if config is not None else None
     if dir_fmt:
         _logger.debug('config dir-fmt: %s', dir_fmt)
         dir_fmt = _resolve_build_dir(dir_fmt, guess, cwd, **kwargs)

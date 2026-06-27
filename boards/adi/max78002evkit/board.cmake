@@ -1,7 +1,7 @@
 # Copyright (c) 2024-2025 Analog Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-board_runner_args(jlink "--device=MAX78002" "--reset-after-load")
+board_runner_args(jlink "--device=MAX78002" "--reset-after-load" "--reset-type=12")
 
 include(${ZEPHYR_BASE}/boards/common/openocd-adi-max32.boards.cmake)
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)

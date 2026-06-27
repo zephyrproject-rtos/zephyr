@@ -425,6 +425,7 @@ static int uart_rza2m_scif_configure(const struct device *dev, const struct uart
 		reg_16 |= RZA2M_SMR_PE;
 		break;
 	default:
+		k_spin_unlock(&data->lock, key);
 		return -ENOTSUP;
 	}
 	if (cfg->stop_bits == UART_CFG_STOP_BITS_2) {
@@ -438,6 +439,7 @@ static int uart_rza2m_scif_configure(const struct device *dev, const struct uart
 	/* Set baudrate */
 	err = uart_rza2m_scif_set_baudrate(dev, data->channel, cfg->baudrate);
 	if (err) {
+		k_spin_unlock(&data->lock, key);
 		return -EIO;
 	}
 

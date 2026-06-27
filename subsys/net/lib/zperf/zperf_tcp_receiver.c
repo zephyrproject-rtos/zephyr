@@ -29,8 +29,6 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 #define SOCK_ID_IPV6_LISTEN 1
 #define SOCK_ID_MAX         (CONFIG_NET_ZPERF_MAX_SESSIONS + 2)
 
-#define TCP_RECEIVER_BUF_SIZE 1500
-
 static zperf_callback tcp_session_cb;
 static void *tcp_user_data;
 static bool tcp_server_running;
@@ -124,9 +122,10 @@ static void tcp_receiver_cleanup(void)
 
 static int tcp_recv_data(struct net_socket_service_event *pev)
 {
-	static uint8_t buf[TCP_RECEIVER_BUF_SIZE];
+	static uint8_t buf[CONFIG_NET_ZPERF_TCP_RECEIVER_BUF_SIZE];
 	int i, ret = 0;
-	int family, sock, sock_error;
+	int family, sock, sock_error = 0;
+	int default_error = EIO;
 	struct net_sockaddr addr_incoming_conn;
 	net_socklen_t optlen = sizeof(int);
 	net_socklen_t addrlen = sizeof(struct net_sockaddr);
@@ -136,11 +135,22 @@ static int tcp_recv_data(struct net_socket_service_event *pev)
 	}
 
 	if ((pev->event.revents & ZSOCK_POLLERR) ||
-	    (pev->event.revents & ZSOCK_POLLNVAL)) {
+	    (pev->event.revents & ZSOCK_POLLNVAL) ||
+	    (pev->event.revents & ZSOCK_POLLHUP)) {
+		if (pev->event.revents & ZSOCK_POLLNVAL) {
+			default_error = EBADF;
+		} else if (pev->event.revents & ZSOCK_POLLHUP) {
+			default_error = ENOTCONN;
+		}
+
 		(void)zsock_getsockopt(pev->event.fd, ZSOCK_SOL_SOCKET,
 				       ZSOCK_SO_DOMAIN, &family, &optlen);
-		(void)zsock_getsockopt(pev->event.fd, ZSOCK_SOL_SOCKET,
-				       ZSOCK_SO_ERROR, &sock_error, &optlen);
+		if (zsock_getsockopt(pev->event.fd, ZSOCK_SOL_SOCKET,
+				     ZSOCK_SO_ERROR, &sock_error, &optlen) < 0 ||
+		    sock_error == 0) {
+			sock_error = default_error;
+		}
+
 		NET_ERR("TCP receiver IPv%d socket error (%d)",
 			family == NET_AF_INET ? 4 : 6, sock_error);
 		ret = -sock_error;

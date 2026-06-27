@@ -4,7 +4,7 @@ common:
     - mcuboot
   modules:
     - tf-m-tests
-  filter: CONFIG_BUILD_WITH_TFM
+  filter: CONFIG_BUILD_WITH_TFM and not CONFIG_TFM_LOG_LEVEL_SILENCE
   integration_platforms:
     - mps2/an521/cpu0/ns
   harness: console

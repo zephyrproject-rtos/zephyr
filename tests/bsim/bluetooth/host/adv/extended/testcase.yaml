@@ -25,5 +25,5 @@ tests:
         - bsim_multi_test
     build: false
     required_applications:
-      - name: bluetooth.host.adv.extended.advertiser
-      - name: bluetooth.host.adv.extended.scanner
+      - application: bluetooth.host.adv.extended.advertiser
+      - application: bluetooth.host.adv.extended.scanner

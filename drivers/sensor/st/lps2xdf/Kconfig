@@ -18,6 +18,8 @@ menuconfig LPS2XDF
 		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS28DFW),i3c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22DF),spi) ||\
 		      $(dt_compat_on_bus,$(DT_COMPAT_ST_ILPS22QS),spi)
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LPS22DF),drdy-gpios) ||\
+		       $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LPS28DFW),drdy-gpios)
 	select HAS_STMEMSC
 	select USE_STDC_ILPS22QS if DT_HAS_ST_ILPS22QS_ENABLED
 	select USE_STDC_LPS22DF if DT_HAS_ST_LPS22DF_ENABLED

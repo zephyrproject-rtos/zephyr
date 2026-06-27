@@ -11,8 +11,8 @@
 #include <hal/ledc_ll.h>
 #include <hal/ledc_types.h>
 #include <esp_clk_tree.h>
+#include <esp_private/esp_clk_tree_common.h>
 #include <soc/rtc.h>
-#include <clk_ctrl_os.h>
 
 #include <soc.h>
 #include <errno.h>
@@ -170,16 +170,16 @@ static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *chan
 	 */
 	for (int i = 0; i < clock_src_num; i++) {
 		if (clock_src[i] == LEDC_SLOW_CLK_RC_FAST) {
-			uint32_t rc_fast_freq = periph_rtc_dig_clk8m_get_freq();
+			uint32_t rc_fast_freq = 0;
 
-			if (!rtc_dig_8m_enabled() || rc_fast_freq == 0) {
-				/* RC_FAST requires enabling and calibrating */
-				if (!periph_rtc_dig_clk8m_enable()) {
-					/* skip RC_FAST as clock source */
-					continue;
-				}
-				rc_fast_freq = periph_rtc_dig_clk8m_get_freq();
+			/* RC_FAST requires enabling and calibrating */
+			if (esp_clk_tree_enable_src(SOC_MOD_CLK_RC_FAST, true) != ESP_OK) {
+				/* skip RC_FAST as clock source */
+				continue;
 			}
+			esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RC_FAST,
+						     ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX,
+						     &rc_fast_freq);
 
 			channel->clock_src = clock_src[i];
 			channel->clock_src_hz = rc_fast_freq;

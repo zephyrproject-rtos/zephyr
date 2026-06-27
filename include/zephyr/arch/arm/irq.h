@@ -107,6 +107,12 @@ extern void z_arm_interrupt_init(void);
  * in the interrupt's priority argument). If CONFIG_ZERO_LATENCY_LEVELS is
  * greater 1 it has the priority level assigned by the argument.
  * The interrupt will run even if irq_lock() is active. Be careful!
+ *
+ * This also applies when system power management keeps interrupts locked across
+ * PM resume: because such an interrupt runs above the interrupt-lock level, it
+ * is outside the locked-resume ordering. It must be PM-wake-safe, or the
+ * interrupt source must be masked or disabled while the system state does not
+ * allow the ISR to execute.
  */
 #define IRQ_ZERO_LATENCY	BIT(0)
 

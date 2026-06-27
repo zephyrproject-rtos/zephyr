@@ -10,6 +10,8 @@ menuconfig LIS2DE12
 	depends on ZEPHYR_HAL_ST_MODULE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DE12),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DE12),spi)
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LIS2DE12),int1-gpios) || \
+		       $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LIS2DE12),int2-gpios)
 	select HAS_STMEMSC
 	select USE_STDC_LIS2DE12
 	help

@@ -8,6 +8,7 @@ menuconfig LSM9DS0_GYRO
 	default y
 	depends on DT_HAS_ST_LSM9DS0_GYRO_ENABLED
 	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM9DS0_GYRO),irq-gpios)
 	help
 	  Enable driver for LSM9DS0 I2C-based gyroscope sensor.
 

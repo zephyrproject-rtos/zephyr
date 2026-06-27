@@ -151,7 +151,7 @@ async def sm_bonding_init_001(hci_port, shell, dut, address, snoop_file) -> None
         )
         assert server is not None
 
-        # Initiator ceate connection
+        # Initiator create connection
         await send_cmd_to_iut(
             shell, dut, f"br connect {bumble_address}", f"Connected: {bumble_address}"
         )

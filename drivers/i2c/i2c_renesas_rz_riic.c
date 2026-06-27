@@ -225,10 +225,6 @@ static int i2c_rz_riic_transfer(const struct device *dev, struct i2c_msg *msgs, 
 	fsp_err_t err;
 	int ret = 0;
 
-	if (!num_msgs) {
-		return 0;
-	}
-
 	/* Check for validity of all messages before transfer */
 	current = msgs;
 

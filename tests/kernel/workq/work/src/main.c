@@ -19,6 +19,12 @@
 
 #define DELAY_MS 100
 #define DELAY_TIMEOUT K_MSEC(DELAY_MS)
+#define DELAY_TOLERANCE_TICKS (IS_ENABLED(CONFIG_BOARD_QEMU_CORTEX_A9) ? 10U : 1U)
+
+static uint32_t delay_max_ms(void)
+{
+	return k_ticks_to_ms_ceil32(DELAY_TOLERANCE_TICKS + k_ms_to_ticks_ceil32(DELAY_MS));
+}
 
 BUILD_ASSERT(COOPHI_PRIORITY < CONFIG_SYSTEM_WORKQUEUE_PRIORITY,
 	     "COOPHI not higher priority than system workqueue");
@@ -326,6 +332,46 @@ ZTEST(work_1cpu, test_1cpu_simple_queue)
 	/* Flush the sync state from completion */
 	rc = k_sem_take(&sync_sem, K_NO_WAIT);
 	zassert_equal(rc, 0);
+}
+
+/* Single CPU check that work submitted while the queue's runner
+ * thread is suspended is queued (not lost or rejected) and runs as
+ * soon as the thread is resumed.
+ */
+ZTEST(work_1cpu, test_1cpu_suspend_resume_queue)
+{
+	int rc;
+	k_tid_t wq_tid = k_work_queue_thread_get(&coophi_queue);
+
+	zassert_not_null(wq_tid);
+
+	/* Reset state and use the non-blocking handler */
+	reset_counters();
+	k_work_init(&common_work, counter_handler);
+	zassert_equal(k_work_busy_get(&common_work), 0);
+
+	/* Suspend the workqueue's runner thread. */
+	k_thread_suspend(wq_tid);
+
+	/* Submission should still succeed and the work should be queued. */
+	rc = k_work_submit_to_queue(&coophi_queue, &common_work);
+	zassert_equal(rc, 1);
+	zassert_equal(k_work_busy_get(&common_work), K_WORK_QUEUED);
+	zassert_equal(k_work_is_pending(&common_work), true);
+
+	/* Sleeping must not let the work run while the runner is suspended. */
+	k_sleep(K_MSEC(DELAY_MS));
+	zassert_equal(coophi_counter(), 0);
+	zassert_equal(k_work_busy_get(&common_work), K_WORK_QUEUED);
+	zassert_equal(k_sem_take(&sync_sem, K_NO_WAIT), -EBUSY);
+
+	/* Resuming the runner should drain the pending work. */
+	k_thread_resume(wq_tid);
+
+	rc = k_sem_take(&sync_sem, DELAY_TIMEOUT);
+	zassert_equal(rc, 0);
+	zassert_equal(coophi_counter(), 1);
+	zassert_equal(k_work_busy_get(&common_work), 0);
 }
 
 /* Basic SMP check submitting with a non-blocking handler. */
@@ -996,8 +1042,7 @@ ZTEST(work_1cpu, test_1cpu_basic_schedule)
 {
 	int rc;
 	uint32_t sched_ms;
-	uint32_t max_ms = k_ticks_to_ms_ceil32(1U
-				+ k_ms_to_ticks_ceil32(DELAY_MS));
+	uint32_t max_ms = delay_max_ms();
 	uint32_t elapsed_ms;
 	struct k_work *wp = &dwork.work; /* whitebox testing */
 
@@ -1146,8 +1191,7 @@ ZTEST(work_1cpu, test_1cpu_basic_reschedule)
 {
 	int rc;
 	uint32_t sched_ms;
-	uint32_t max_ms = k_ticks_to_ms_ceil32(1U
-				+ k_ms_to_ticks_ceil32(DELAY_MS));
+	uint32_t max_ms = delay_max_ms();
 	uint32_t elapsed_ms;
 	struct k_work *wp = &dwork.work; /* whitebox testing */
 
@@ -1372,8 +1416,7 @@ ZTEST(work_1cpu, test_1cpu_system_schedule)
 {
 	int rc;
 	uint32_t sched_ms;
-	uint32_t max_ms = k_ticks_to_ms_ceil32(1U
-				+ k_ms_to_ticks_ceil32(DELAY_MS));
+	uint32_t max_ms = delay_max_ms();
 	uint32_t elapsed_ms;
 
 	/* Reset state and use non-blocking handler */
@@ -1416,8 +1459,7 @@ ZTEST(work_1cpu, test_1cpu_system_reschedule)
 {
 	int rc;
 	uint32_t sched_ms;
-	uint32_t max_ms = k_ticks_to_ms_ceil32(1U
-				+ k_ms_to_ticks_ceil32(DELAY_MS));
+	uint32_t max_ms = delay_max_ms();
 	uint32_t elapsed_ms;
 
 	/* Reset state and use non-blocking handler */

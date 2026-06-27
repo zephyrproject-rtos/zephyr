@@ -13,7 +13,6 @@ import sysconfig
 
 import yaml
 from west.commands import Verbosity
-from west.configuration import config
 from west.util import WestNotFound, west_topdir
 from west.version import __version__
 
@@ -63,12 +62,6 @@ whether the build directory is made pristine before the build
 is done. A bare '--pristine' with no value is the same as
 --pristine=always. Setting --pristine=auto uses heuristics to
 guess if a pristine build may be necessary."""
-
-def config_get(option, fallback):
-    return config.get('build', option, fallback=fallback)
-
-def config_getboolean(option, fallback):
-    return config.getboolean('build', option, fallback=fallback)
 
 def python_properties():
     python_properties = {}
@@ -219,7 +212,7 @@ class Build(Forceable):
 
     def do_run(self, args, remainder):
         self.args = args        # Avoid having to pass them around
-        self.config_board = config_get('board', None)
+        self.config_board = self.config.get('build.board', default=None)
         # Forward debug output from the build_helpers/zcmake module
         # loggers so it is visible under "west -v" / "west -vv".
         forward_logging_to_west(self, [BUILD_HELPERS_LOGGER, 'zcmake'])
@@ -243,7 +236,7 @@ class Build(Forceable):
             pristine = args.pristine
         else:
             # Load the pristine={auto, always, never} configuration value
-            pristine = config_get('pristine', 'never')
+            pristine = self.config.get('build.pristine', default='never')
             if pristine not in ['auto', 'always', 'never']:
                 self.wrn(
                     f'treating unknown build.pristine value "{pristine}" as "never"')
@@ -288,18 +281,7 @@ class Build(Forceable):
 
         # Parse test definition file for additional options.
         if self.args.test_item:
-            # we get path + testitem
-            item = os.path.basename(self.args.test_item)
-            if self.args.source_dir:
-                test_path = self.args.source_dir
-            else:
-                test_path = os.path.dirname(self.args.test_item)
-            if test_path and os.path.exists(test_path):
-                self.args.source_dir = test_path
-                if not self._parse_test_item(item, board):
-                    self.die("No test metadata found")
-            else:
-                self.die("test item path does not exist")
+            self._resolve_test_item(board)
 
         self._run_cmake(board, origin)
         if args.cmake_only:
@@ -364,6 +346,23 @@ class Build(Forceable):
             return elem[2]
         else:
             return arg
+
+    def _resolve_test_item(self, board):
+        """Resolve --test-item: derive source_dir from the test path and
+        parse sample/testcase YAML metadata for additional build options.
+        """
+        item = os.path.basename(self.args.test_item)
+        if self.args.source_dir:
+            test_path = self.args.source_dir
+        else:
+            test_path = os.path.dirname(self.args.test_item)
+        if test_path and os.path.exists(test_path):
+            self.args.source_dir = test_path
+            self.source_dir = os.path.abspath(test_path)
+            if not self._parse_test_item(item, board):
+                self.die("No test metadata found")
+        else:
+            self.die("test item path does not exist")
 
     def _parse_test_item(self, test_item, board):
         found_test_metadata = False
@@ -517,7 +516,7 @@ class Build(Forceable):
         # The CMake Cache has not been loaded yet, so this is safe
 
         context = self._get_dir_fmt_context()
-        build_dir = find_build_dir(self.args.build_dir, **context)
+        build_dir = find_build_dir(self.args.build_dir, config=self.config, **context)
         if not build_dir:
             self.die('Unable to determine a default build folder. Check '
                     'your build.dir-fmt configuration option')
@@ -660,7 +659,7 @@ class Build(Forceable):
                 self._sanity_check_source_dir()
 
     def _run_cmake(self, board, origin):
-        if board is None and config_getboolean('board_warn', True):
+        if board is None and self.config.getboolean('build.board_warn', default=True):
             self.wrn('This looks like a fresh build and BOARD is unknown;',
                     "so it probably won't work. To fix, use",
                     '--board=<your-board>.')
@@ -692,11 +691,11 @@ class Build(Forceable):
                 f'{";".join(self.args.extra_dtc_overlay_files)}'
             )
 
-        user_args = config_get('cmake-args', None)
+        user_args = self.config.get('build.cmake-args', default=None)
         if user_args:
             cmake_opts.extend(shlex.split(user_args))
 
-        config_sysbuild = config_getboolean('sysbuild', False)
+        config_sysbuild = self.config.getboolean('build.sysbuild', default=False)
         if self.args.sysbuild is True or (config_sysbuild and self.args.sysbuild is not False):
             cmake_opts.extend([f'-S{SYSBUILD_PROJ_DIR}'])
             cmake_env = os.environ.copy()
@@ -711,11 +710,13 @@ class Build(Forceable):
         # to Just Work:
         #
         # west build -- -DOVERLAY_CONFIG=relative-path.conf
-        final_cmake_args = [f'-DWEST_PYTHON={pathlib.Path(sys.executable).as_posix()}',
-                            f'-DWEST_TOPDIR={pathlib.Path(str(west_topdir(self.source_dir))).as_posix()}',
-                            f'-DWEST_VERSION={str(__version__)}',
-                            f'-B{self.build_dir}',
-                            f'-G{config_get("generator", DEFAULT_CMAKE_GENERATOR)}']
+        final_cmake_args = [
+            f'-DWEST_PYTHON={pathlib.Path(sys.executable).as_posix()}',
+            f'-DWEST_TOPDIR={pathlib.Path(str(west_topdir(self.source_dir))).as_posix()}',
+            f'-DWEST_VERSION={str(__version__)}',
+            f'-B{self.build_dir}',
+            f'-G{self.config.get("build.generator", default=DEFAULT_CMAKE_GENERATOR)}',
+        ]
 
         properties = python_properties()
         if properties:

@@ -23,3 +23,5 @@ properties:
   peers:
     type: phandles
     description: Peer device nodes, must contain two phandles
+    min-len: 2
+    max-len: 2

@@ -9,7 +9,6 @@ menuconfig WIFI_ESP_HOSTED
 	default y
 	select GPIO
 	select SPI
-	select WIFI_OFFLOAD
 	select WIFI_NM
 	select NANOPB
 	select NANOPB_ENABLE_MALLOC

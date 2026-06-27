@@ -56,9 +56,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	printk("Disconnected: %s (reason 0x%02x)\n", bt_conn_dst_str(conn), reason);
 
-	bt_conn_unref(g_conn);
+	bt_conn_drop(&g_conn);
 
-	g_conn = NULL;
 	UNSET_FLAG(flag_is_connected);
 }
 
@@ -107,7 +106,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 		if (unhandled_chrc_handle == 0 ||
 		    unauthorized_chrc_handle == 0 ||
 		    authorized_chrc_handle == 0) {
-			TEST_FAIL("Did not discover required characterstics");
+			TEST_FAIL("Did not discover required characteristics");
 		}
 
 		(void)memset(params, 0, sizeof(*params));

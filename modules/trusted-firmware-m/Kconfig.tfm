@@ -25,6 +25,7 @@ config TFM_BOARD
 	default "arm/musca_b1" if BOARD_V2M_MUSCA_B1
 	default "arm/musca_s1" if BOARD_V2M_MUSCA_S1
 	default "infineon/pse84" if BOARD_KIT_PSE84_EVAL_PSE846GPS2DBZC4A_M33_NS
+	default "infineon/pse84" if BOARD_KIT_PSE84_AI_PSE846GPS2DBZC4A_M33_NS
 	default "nxp/lpcxpresso55s69" if BOARD_LPCXPRESSO55S69_LPC55S69_CPU0_NS
 	default "stm/b_u585i_iot02a" if BOARD_B_U585I_IOT02A
 	default "stm/nucleo_l552ze_q" if BOARD_NUCLEO_L552ZE_Q
@@ -347,16 +348,26 @@ config TFM_MCUBOOT_IMAGE_NUMBER
 	  updated in one atomic operation. When this is 2, they are split and
 	  can be updated independently if dependency requirements are met.
 
+if TFM_PARTITION_INITIAL_ATTESTATION
+
 config TFM_QCBOR_PATH
-	string
-	prompt "Path to QCBOR or DOWNLOAD to fetch automatically"
-	default ""
+	string "Path to QCBOR or DOWNLOAD to fetch automatically"
 	help
 	  Path to QCBOR for TF-M builds. Due to a license issue with this
 	  library Zephyr does not ship with this library.
 	  If the application wishes to still use this library they can point
 	  to their own checkout of this library, or set to DOWNLOAD to allow
-	  TF-M build system to automatically download this.
+	  the TF-M build system to automatically download it.
+
+config TFM_T_COSE_PATH
+	string "Path to t_cose or DOWNLOAD to fetch automatically"
+	help
+	  Path to t_cose for TF-M builds. Zephyr does not ship with this library.
+	  If the application wishes to still use this library they can point
+	  to their own checkout of this library, or set to DOWNLOAD to allow
+	  the TF-M build system to automatically download it.
+
+endif # TFM_PARTITION_INITIAL_ATTESTATION
 
 config TFM_MCUBOOT_DATA_SHARING
 	bool "Share app-specific data between TF-M and MCUBoot"

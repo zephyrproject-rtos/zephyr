@@ -555,7 +555,7 @@ int icm45686_stream_init(const struct device *dev)
 
 		int_pin_config.int_polarity = INTX_CONFIG2_INTX_POLARITY_HIGH;
 		int_pin_config.int_mode = INTX_CONFIG2_INTX_MODE_PULSE;
-		int_pin_config.int_drive = INTX_CONFIG2_INTX_DRIVE_OD;
+		int_pin_config.int_drive = INTX_CONFIG2_INTX_DRIVE_PP;
 		err = icm456xx_set_pin_config_int(&data->driver, INV_IMU_INT1, &int_pin_config);
 
 		if (err) {

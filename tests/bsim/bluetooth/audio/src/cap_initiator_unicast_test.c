@@ -12,6 +12,7 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
@@ -841,7 +842,7 @@ static void cap_initiator_unicast_audio_stop(struct bt_cap_unicast_group *unicas
 
 	/* Stop without release first to verify that we enter the QoS Configured state */
 	UNSET_FLAG(flag_stopped);
-	printk("Stopping without relasing\n");
+	printk("Stopping without releasing\n");
 
 	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {
@@ -862,7 +863,7 @@ static void cap_initiator_unicast_audio_stop(struct bt_cap_unicast_group *unicas
 	/* Stop with release first to verify that we enter the idle state */
 	UNSET_FLAG(flag_stopped);
 	param.release = true;
-	printk("Relasing\n");
+	printk("Releasing\n");
 
 	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {
@@ -1544,8 +1545,7 @@ static void test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 			FAIL("Failed to disconnect conn[%zu]: %d\n", i, err);
 		}
 
-		bt_conn_unref(connected_conns[i]);
-		connected_conns[i] = NULL;
+		bt_conn_drop(&connected_conns[i]);
 	}
 
 	PASS("CAP initiator passed for %s with Sink Preset %s and Source Preset %s\n", param->name,

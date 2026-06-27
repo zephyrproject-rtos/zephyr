@@ -7,10 +7,13 @@
 #define DT_DRV_COMPAT espressif_esp32_counter
 
 #include <esp_attr.h>
+#include <esp_rom_sys.h>
 #include <esp_clk_tree.h>
+#include <esp_private/esp_clk_tree_common.h>
 #include <hal/timer_hal.h>
 #include <hal/timer_ll.h>
 #include <hal/timer_types.h>
+#include <hal/timg_ll.h>
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
@@ -122,13 +125,17 @@ static int counter_esp32_init(const struct device *dev)
 	data->top_data.auto_reload = false;
 	data->top_data.ticks = cfg->counter_info.max_top_value;
 
-	/* Enable timer clock before any register access */
+	timg_ll_enable_bus_clock(cfg->group, true);
 	timer_ll_enable_clock(cfg->group, cfg->index, true);
+
 	timer_hal_init(&data->hal_ctx, cfg->group, cfg->index);
 	timer_ll_enable_intr(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id),
 			     false);
 	timer_ll_clear_intr_status(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id));
 	timer_ll_enable_auto_reload(data->hal_ctx.dev, data->hal_ctx.timer_id, false);
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+	esp_clk_tree_enable_src(GPTIMER_CLK_SRC_DEFAULT, true);
+#endif
 	timer_ll_set_clock_source(cfg->group, data->hal_ctx.timer_id, GPTIMER_CLK_SRC_DEFAULT);
 	timer_ll_set_clock_prescale(data->hal_ctx.dev, data->hal_ctx.timer_id, cfg->prescaler);
 	timer_ll_set_count_direction(data->hal_ctx.dev, data->hal_ctx.timer_id, GPTIMER_COUNT_UP);

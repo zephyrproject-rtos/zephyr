@@ -85,7 +85,7 @@ config UDC_STM32_STUSB_ISO_OUT_EP_NUM
 	  This option is used to reserve endpoints for configuration in
 	  isochronous mode, as it requires special handling which cannot
 	  be done easily with the current stack design. This option works
-	  toghether with the CONFIG_UDC_STM32_STUSB_ISO_IN_EP_NUM option.
+	  together with the CONFIG_UDC_STM32_STUSB_ISO_IN_EP_NUM option.
 
 	  The first CONFIG_UDC_STM32_STUSB_ISO_OUT_EP_NUM endpoints are
 	  reserved and can only be configured as isochronous OUT. The

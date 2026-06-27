@@ -117,6 +117,8 @@ struct pwm_stm32_config {
 	uint32_t countermode;
 	uint32_t deadtime;
 	uint32_t mastermode;
+	uint32_t slavemode;
+	uint32_t slave_trigger;
 	const struct stm32_pclken *pclken;
 	size_t pclk_len;
 	const struct pinctrl_dev_config *pcfg;
@@ -342,7 +344,7 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 
 	if (!LL_TIM_CC_IsEnabledChannel(timer, current_ll_channel)) {
 #ifdef CONFIG_PWM_CAPTURE
-		if (IS_TIM_SLAVE_INSTANCE(timer)) {
+		if (IS_TIM_SLAVE_INSTANCE(timer) && !cfg->four_channel_capture_support) {
 			LL_TIM_SetSlaveMode(timer,
 					LL_TIM_SLAVEMODE_DISABLED);
 			LL_TIM_SetTriggerInput(timer, LL_TIM_TS_ITR0);
@@ -456,7 +458,9 @@ static int pwm_stm32_configure_capture(const struct device *dev,
 	cpt->prescaler_bits = prescaler_bits;
 
 	/* Prevents faulty behavior while making changes */
-	LL_TIM_SetSlaveMode(timer, LL_TIM_SLAVEMODE_DISABLED);
+	if (!cfg->four_channel_capture_support) {
+		LL_TIM_SetSlaveMode(timer, LL_TIM_SLAVEMODE_DISABLED);
+	}
 
 	init_capture_channels(dev, channel, flags);
 
@@ -782,6 +786,16 @@ static int pwm_stm32_init(const struct device *dev)
 		}
 	}
 
+	if (IS_TIM_SLAVE_INSTANCE(timer)) {
+		LL_TIM_SetSlaveMode(timer, cfg->slavemode);
+		LL_TIM_SetTriggerInput(timer, cfg->slave_trigger);
+	} else {
+		if (cfg->slavemode != LL_TIM_SLAVEMODE_DISABLED || cfg->slave_trigger != 0) {
+			LOG_ERR("%s: Timer does not support slave mode", dev->name);
+			return -ENOTSUP;
+		}
+	}
+
 #ifdef IS_TIM_BREAK_INSTANCE
 	/* Use the macro IS_TIM_BREAK_INSTANCE to check for supporting the
 	 * break instance timers since some socs like L0/L1 will not
@@ -872,11 +886,28 @@ static int pwm_stm32_init(const struct device *dev)
 						  DT_STRING_TOKEN(PWM(index),	\
 						  st_mastermode))),		\
 					  (0)),					\
+		.slavemode = CONCAT(LL_TIM_SLAVEMODE_,				\
+					DT_STRING_UPPER_TOKEN(PWM(index),	\
+						st_slavemode)),			\
+		.slave_trigger = CONCAT(LL_TIM_TS_,				\
+					DT_STRING_TOKEN(PWM(index),		\
+						st_trigger_selection)),		\
 		.pclken = pclken_##index,					\
 		.pclk_len = DT_NUM_CLOCKS(PWM(index)),				\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 		CAPTURE_INIT(index)						\
 	};									\
+										\
+	IF_ENABLED(CONFIG_PWM_CAPTURE, (					\
+		BUILD_ASSERT(							\
+			DT_INST_PROP(index, four_channel_capture_support) == 1	\
+			|| CONCAT(LL_TIM_SLAVEMODE_,				\
+				DT_STRING_UPPER_TOKEN(PWM(index), st_slavemode))\
+			== LL_TIM_SLAVEMODE_DISABLED,				\
+			"Slave mode is only compatible with capture mode in "	\
+			"`four-channel-capture-support` mode!");		\
+		)								\
+	)									\
 										\
 	DEVICE_DT_INST_DEFINE(index, &pwm_stm32_init, NULL,			\
 			    &pwm_stm32_data_##index,				\

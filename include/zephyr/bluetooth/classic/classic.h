@@ -64,7 +64,7 @@ struct bt_br_discovery_result {
 	/** Remote device address */
 	bt_addr_t addr;
 
-	/** RSSI from inquiry */
+	/** RSSI from inquiry in dBm. Range: -127 to +20. */
 	int8_t rssi;
 
 	/** Class of Device */
