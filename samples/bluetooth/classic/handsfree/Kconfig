@@ -3,6 +3,40 @@
 
 source "Kconfig.zephyr"
 
+choice HFP_AUDIO_PATH
+	prompt "HFP audio data path"
+	default HFP_AUDIO_PATH_SCO_HCI if SOC_SERIES_SF32LB52X
+	default HFP_AUDIO_PATH_PCM
+	help
+	  Select the audio data path used for HFP voice streaming.
+
+config HFP_AUDIO_PATH_PCM
+	bool "PCM/I2S interface to controller"
+	help
+	  Route voice data through PCM/I2S pins on the Bluetooth controller.
+	  Requires devicetree aliases for pcm-rxtx or pcm-rx/pcm-tx and
+	  i2s-codec-rx/i2s-codec-tx.
+
+config HFP_AUDIO_PATH_SCO_HCI
+	bool "SCO over HCI transport"
+	select BT_SCO_OVER_HCI
+	help
+	  Route voice data as SCO packets over the HCI transport between
+	  the host and controller. Required for controllers without PCM pins,
+	  such as the SiFli SF32LB52.
+
+endchoice
+
+config HFP_SCO_HCI_MSBC
+	bool "Enable mSBC wideband codec for SCO over HCI"
+	depends on HFP_AUDIO_PATH_SCO_HCI
+	select LIBSBC
+	default y if BT_HFP_HF_CODEC_MSBC
+	help
+	  Enable mSBC encode/decode for wideband voice when the SCO air mode
+	  is transparent. Requires CONFIG_BT_HFP_HF_CODEC_NEG and
+	  CONFIG_BT_HFP_HF_CODEC_MSBC for codec negotiation with the peer.
+
 config AUDIO_TRANSFER_INTERVAL
 	int "Audio transfer interval"
 	default 10
