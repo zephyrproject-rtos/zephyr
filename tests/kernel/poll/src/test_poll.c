@@ -902,6 +902,7 @@ static struct k_poll_signal persist_signal;
  * after k_poll_signal_reset() does it return to the unsignaled state.
  *
  * @see k_poll_signal_raise(), k_poll_signal_check(), k_poll_signal_reset()
+ * @verifies ZEP-SRS-33-8
  */
 ZTEST(poll_api, test_poll_signal_persist)
 {
