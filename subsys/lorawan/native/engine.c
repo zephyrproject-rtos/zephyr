@@ -43,7 +43,7 @@ LOG_MODULE_REGISTER(lorawan_native_engine, CONFIG_LORAWAN_LOG_LEVEL);
 
 #define ENGINE_MSGQ_DEPTH	8
 
-K_MSGQ_DEFINE(engine_msgq, sizeof(struct lwan_req), ENGINE_MSGQ_DEPTH, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(engine_msgq, struct lwan_req, ENGINE_MSGQ_DEPTH);
 
 static K_THREAD_STACK_DEFINE(engine_stack,
 			     CONFIG_LORAWAN_NATIVE_ENGINE_STACK_SIZE);
