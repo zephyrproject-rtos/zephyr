@@ -178,6 +178,18 @@ void thread2_entry(void *p1, void *p2, void *p3)
 	zassert_true(false, "This message should not appear!");
 }
 
+/**
+ * @brief Test inter-processor reschedule signalling under cascading IPIs
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details With CPU-mask affinity and cascading IPIs enabled, a thread
+ * preempted by a CPU-mask-restricted thread triggers additional IPIs so the
+ * system settles on a valid set of highest-priority runnable threads across
+ * the CPUs. This exercises the inter-processor reschedule signalling.
+ *
+ * @verifies ZEP-SRS-34-11
+ */
 ZTEST(ipi_cascade, test_ipi_cascade)
 {
 	int  key;

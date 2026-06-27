@@ -31,6 +31,18 @@ static void thread_fn(void *a, void *b, void *c)
 	mp_flag = true;
 }
 
+/**
+ * @brief Test starting a secondary CPU at run time after a delayed boot
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details With CONFIG_SMP_BOOT_DELAY the secondary CPUs are not booted
+ * automatically at start up. Bring up a secondary CPU at run time with
+ * k_smp_cpu_start() and verify a thread becomes able to run on it.
+ *
+ * @see k_smp_cpu_start()
+ * @verifies ZEP-SRS-34-7
+ */
 ZTEST(smp_boot_delay, test_smp_boot_delay)
 {
 	k_tid_t thr;
@@ -88,6 +100,19 @@ void custom_init_fn(void *arg)
 	*flag = true;
 }
 
+/**
+ * @brief Test invoking a caller-supplied function on a CPU started at run time
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details Start a secondary CPU at run time with k_smp_cpu_start() passing a
+ * custom initialization function, and verify the function is invoked on the
+ * started CPU before it begins scheduling.
+ *
+ * @see k_smp_cpu_start()
+ * @verifies ZEP-SRS-34-7
+ * @verifies ZEP-SRS-34-8
+ */
 ZTEST(smp_boot_delay, test_smp_custom_start)
 {
 	k_tid_t thr;
