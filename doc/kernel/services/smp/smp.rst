@@ -3,6 +3,9 @@
 Symmetric Multiprocessing
 #########################
 
+.. design:: DESIGN-SMP Symmetric Multiprocessing
+   :fulfills: ZEP-SRS-34-1 ZEP-SRS-34-2 ZEP-SRS-34-3 ZEP-SRS-34-4 ZEP-SRS-34-5 ZEP-SRS-34-6 ZEP-SRS-34-7 ZEP-SRS-34-8 ZEP-SRS-34-9 ZEP-SRS-34-10 ZEP-SRS-34-11 ZEP-SRS-34-12 ZEP-SRS-34-13
+
 On multiprocessor architectures, Zephyr supports the use of multiple
 physical CPUs running Zephyr application code.  This support is
 "symmetric" in the sense that no specific CPU is treated specially by
