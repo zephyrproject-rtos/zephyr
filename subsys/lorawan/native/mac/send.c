@@ -379,7 +379,8 @@ static void mac_dispatch_dl_notify(struct lwan_ctx *ctx,
 				   const struct dl_frame_info *frame_info,
 				   int16_t rssi, int8_t snr)
 {
-	if (frame_info->ack_received) {
+	/* Report an ACK or a flag (e.g. FPending) even on an empty downlink. */
+	if (frame_info->ack_received || frame_info->flags != 0) {
 		mac_dispatch_downlink(ctx, 0, frame_info->flags, rssi, snr,
 				      NULL, 0);
 	} else if (mac_cmd_has_pending_delivery(ctx)) {
