@@ -17,8 +17,8 @@
 
 #include <zephyr/shell/shell.h>
 
-#include "host/shell/bt.h"
-#include "common/bt_shell_private.h"
+#include <host/shell/bt.h>
+#include <common/bt_shell_private.h>
 
 static int cmd_reboot(const struct shell *sh, size_t argc, char *argv[])
 {
