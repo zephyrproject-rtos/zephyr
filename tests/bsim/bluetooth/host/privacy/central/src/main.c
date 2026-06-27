@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bstests.h"
+#include <bstests.h>
 
 void tester_procedure(void);
 void tester_procedure_periph_delayed_start_of_conn_adv(void);

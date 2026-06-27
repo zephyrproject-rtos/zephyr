@@ -15,12 +15,12 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
-#include "babblekit/flags.h"
-#include "babblekit/sync.h"
-#include "babblekit/testcase.h"
+#include <babblekit/flags.h>
+#include <babblekit/sync.h>
+#include <babblekit/testcase.h>
 
 #include "common.h"
-#include "iso_tx.h"
+#include <iso_tx.h>
 
 LOG_MODULE_REGISTER(bis_receiver, LOG_LEVEL_INF);
 

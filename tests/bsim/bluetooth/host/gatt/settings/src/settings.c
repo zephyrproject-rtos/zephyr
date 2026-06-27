@@ -12,10 +12,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/types.h>
-#include "errno.h"
-#include "argparse.h"
-#include "posix_native_task.h"
-#include "nsi_host_trampolines.h"
+#include <errno.h>
+#include <argparse.h>
+#include <posix_native_task.h>
+#include <nsi_host_trampolines.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(settings_backend, 3);

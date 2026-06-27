@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bstests.h"
+#include <bstests.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_bsim_ead_sample_data, CONFIG_BT_EAD_LOG_LEVEL);

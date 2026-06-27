@@ -9,11 +9,11 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/l2cap.h>
 
-#include "host/hci_core.h"
-#include "common.h"
+#include <host/hci_core.h>
+#include <common.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
 
 #define LOG_MODULE_NAME main
 #include <zephyr/logging/log.h>

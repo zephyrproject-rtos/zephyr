@@ -15,7 +15,7 @@
 #include <testlib/scan.h>
 #include <testlib/security.h>
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 #include "../common_defs.h"
 
 LOG_MODULE_REGISTER(client, LOG_LEVEL_DBG);

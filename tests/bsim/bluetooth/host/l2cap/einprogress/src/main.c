@@ -4,8 +4,8 @@
 
 #include <zephyr/kernel.h>
 
-#include "bstests.h"
-#include "babblekit/testcase.h"
+#include <bstests.h>
+#include <babblekit/testcase.h>
 
 extern void entrypoint_dut(void);
 extern void entrypoint_tester(void);

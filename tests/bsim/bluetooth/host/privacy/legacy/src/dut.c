@@ -19,8 +19,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/sync.h"
+#include <babblekit/testcase.h>
+#include <babblekit/sync.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dut, 4);

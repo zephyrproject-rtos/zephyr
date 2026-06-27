@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bs_bt_utils.h"
+#include <bs_bt_utils.h>
 #include "utils.h"
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
 
 BUILD_ASSERT(CONFIG_BT_MAX_PAIRED >= 2, "CONFIG_BT_MAX_PAIRED is too small.");
 BUILD_ASSERT(CONFIG_BT_ID_MAX >= 3, "CONFIG_BT_ID_MAX is too small.");

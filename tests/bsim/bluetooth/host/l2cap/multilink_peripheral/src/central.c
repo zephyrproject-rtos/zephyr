@@ -11,12 +11,12 @@
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/logging/log.h>
 
-#include "testlib/scan.h"
-#include "testlib/conn.h"
+#include <testlib/scan.h>
+#include <testlib/conn.h>
 
-#include "babblekit/flags.h"
-#include "babblekit/sync.h"
-#include "babblekit/testcase.h"
+#include <babblekit/flags.h>
+#include <babblekit/sync.h>
+#include <babblekit/testcase.h>
 
 /* local includes */
 #include "data.h"

@@ -10,7 +10,7 @@
 
 #include <testlib/adv.h>
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 #include "../common_defs.h"
 
 LOG_MODULE_REGISTER(server, LOG_LEVEL_DBG);

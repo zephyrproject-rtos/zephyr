@@ -4,7 +4,7 @@
 
 #include <zephyr/kernel.h>
 
-#include "bstests.h"
+#include <bstests.h>
 #include <string.h>
 
 #include <zephyr/logging/log.h>

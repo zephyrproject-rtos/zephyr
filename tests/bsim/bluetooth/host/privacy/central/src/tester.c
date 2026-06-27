@@ -12,9 +12,9 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/toolchain.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
-#include "babblekit/sync.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
+#include <babblekit/sync.h>
 
 DEFINE_FLAG_STATIC(flag_new_address);
 DEFINE_FLAG_STATIC(flag_connected);

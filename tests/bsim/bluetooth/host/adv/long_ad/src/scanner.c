@@ -13,8 +13,8 @@
 
 #include "ad.h"
 
-#include "babblekit/flags.h"
-#include "babblekit/testcase.h"
+#include <babblekit/flags.h>
+#include <babblekit/testcase.h>
 
 LOG_MODULE_REGISTER(scanner, LOG_LEVEL_INF);
 

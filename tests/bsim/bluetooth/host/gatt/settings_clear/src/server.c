@@ -15,12 +15,12 @@
 
 #include <zephyr/logging/log.h>
 
-#include "testlib/conn.h"
-#include "testlib/scan.h"
+#include <testlib/conn.h>
+#include <testlib/scan.h>
 
-#include "babblekit/flags.h"
-#include "babblekit/sync.h"
-#include "babblekit/testcase.h"
+#include <babblekit/flags.h>
+#include <babblekit/sync.h>
+#include <babblekit/testcase.h>
 
 #include "common.h"
 #include "bt_settings_hook.h"
