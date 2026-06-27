@@ -663,6 +663,7 @@ static void thread_get_cpu_entry(void *p1, void *p2, void *p3)
  *   , only x86_64, arc and xtensa supported.
  *
  * @see arch_curr_cpu()
+ * @verifies ZEP-SRS-34-6
  */
 static int _cpu_id;
 ZTEST(smp, test_get_cpu)
@@ -690,6 +691,28 @@ ZTEST(smp, test_get_cpu)
 
 	k_thread_abort(thread_id);
 	k_thread_join(thread_id, K_FOREVER);
+}
+
+/**
+ * @brief Verify the number of active CPUs honors the configured maximum
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details The maximum number of CPUs is configurable via
+ * CONFIG_MP_MAX_NUM_CPUS. Verify that the number of CPUs the kernel brought up
+ * and reports through arch_num_cpus() is at least one and never exceeds the
+ * configured maximum.
+ *
+ * @see arch_num_cpus()
+ * @verifies ZEP-SRS-34-4
+ */
+ZTEST(smp, test_num_cpus)
+{
+	unsigned int num_cpus = arch_num_cpus();
+
+	zassert_between_inclusive(num_cpus, 1, CONFIG_MP_MAX_NUM_CPUS,
+				  "active CPUs (%u) outside the configured range [1, %d]",
+				  num_cpus, CONFIG_MP_MAX_NUM_CPUS);
 }
 
 #ifdef CONFIG_TRACE_SCHED_IPI
