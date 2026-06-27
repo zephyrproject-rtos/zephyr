@@ -31,8 +31,8 @@
 #include "../../../../../subsys/bluetooth/host/hci_core.h"
 #include "common.h"
 #include "bap_common.h"
-#include "bstests.h"
-#include "syscalls/kernel.h"
+#include <bstests.h>
+#include <syscalls/kernel.h>
 
 #ifdef CONFIG_BT_BAP_BROADCAST_ASSISTANT
 

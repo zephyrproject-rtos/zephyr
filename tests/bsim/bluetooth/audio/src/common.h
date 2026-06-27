@@ -32,9 +32,9 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/types.h>
 
-#include "bstests.h"
-#include "bs_types.h"
-#include "bs_tracing.h"
+#include <bstests.h>
+#include <bs_types.h>
+#include <bs_tracing.h>
 
 /* Generate 1 KiB of mock data going 0x00, 0x01, ..., 0xff, 0x00, 0x01, ..., 0xff, etc */
 #define ISO_DATA_GEN(_i, _) ((uint8_t)(_i))

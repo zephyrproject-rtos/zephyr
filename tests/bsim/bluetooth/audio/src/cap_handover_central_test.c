@@ -39,7 +39,7 @@
 #include "bap_common.h"
 #include "bap_stream_tx.h"
 #include "bap_stream_rx.h"
-#include "bstests.h"
+#include <bstests.h>
 #include "common.h"
 
 LOG_MODULE_REGISTER(cap_handover_central, LOG_LEVEL_DBG);

@@ -13,7 +13,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/toolchain.h>
 
-#include "bstests.h"
+#include <bstests.h>
 #include "common.h"
 
 #ifdef CONFIG_BT_IAS_CLIENT

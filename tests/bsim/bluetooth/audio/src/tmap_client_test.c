@@ -25,7 +25,7 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "bstests.h"
+#include <bstests.h>
 #include "common.h"
 
 #ifdef CONFIG_BT_TMAP

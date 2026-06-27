@@ -15,7 +15,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/toolchain.h>
 
-#include "bstests.h"
+#include <bstests.h>
 #include "common.h"
 
 #ifdef CONFIG_BT_MICP_MIC_CTLR

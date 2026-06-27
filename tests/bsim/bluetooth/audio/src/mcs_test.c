@@ -10,7 +10,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/sys/printk.h>
 
-#include "bstests.h"
+#include <bstests.h>
 #include "common.h"
 
 #ifdef CONFIG_BT_MCS

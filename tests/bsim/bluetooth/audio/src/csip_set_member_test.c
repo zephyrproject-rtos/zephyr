@@ -17,8 +17,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
-#include "bs_tracing.h"
-#include "bstests.h"
+#include <bs_tracing.h>
+#include <bstests.h>
 #include "common.h"
 #ifdef CONFIG_BT_CSIP_SET_MEMBER
 static struct bt_csip_set_member_svc_inst *svc_inst;

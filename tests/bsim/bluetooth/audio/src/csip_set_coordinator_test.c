@@ -23,7 +23,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
-#include "bstests.h"
+#include <bstests.h>
 #include "common.h"
 
 #ifdef CONFIG_BT_CSIP_SET_COORDINATOR

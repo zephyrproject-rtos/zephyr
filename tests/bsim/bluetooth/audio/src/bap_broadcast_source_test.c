@@ -33,7 +33,7 @@
 
 #include "bap_common.h"
 #include "bap_stream_tx.h"
-#include "bstests.h"
+#include <bstests.h>
 #include "common.h"
 
 #define SUPPORTED_CHAN_COUNTS          BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 2)
