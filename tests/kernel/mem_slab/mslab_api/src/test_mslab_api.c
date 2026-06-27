@@ -239,6 +239,7 @@ ZTEST(mslab_api, test_mslab_kinit)
  * @ingroup kernel_memory_slab_tests
  *
  * @see k_mem_slab_init(), k_mem_slab_alloc(), k_mem_slab_free()
+ * @verifies ZEP-SRS-9-2
  */
 ZTEST(mslab_api, test_mslab_object)
 {
