@@ -452,9 +452,8 @@ struct zbus_channel_observation {
  * @param[in] _enable The subscriber initial enable state.
  */
 #define ZBUS_SUBSCRIBER_DEFINE_WITH_ENABLE(_name, _queue_size, _enable)       \
-	K_MSGQ_DEFINE(_zbus_observer_queue_##_name,                           \
-		      sizeof(struct zbus_channel *),                          \
-		      _queue_size, sizeof(struct zbus_channel *)              \
+	K_MSGQ_DEFINE_STATIC_TYPE(_zbus_observer_queue_##_name,               \
+				  struct zbus_channel *, _queue_size          \
 	);                                                                    \
 	static struct zbus_observer_data _CONCAT(_zbus_obs_data_, _name) = {  \
 		.enabled = _enable,                                           \
