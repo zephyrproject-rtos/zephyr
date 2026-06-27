@@ -157,6 +157,7 @@ ZTEST(workqueue_api, test_k_work_queue_run_stop)
  *
  * @ingroup kernel_workqueue_tests
  * @see k_work_queue_start(), k_work_queue_thread_get()
+ * @verifies ZEP-SRS-26-2
  */
 ZTEST(workqueue_api, test_k_work_queue_priority)
 {
@@ -191,6 +192,7 @@ static void remaining_noop_handler(struct k_work *work)
  *
  * @ingroup kernel_workqueue_tests
  * @see k_work_schedule(), k_work_delayable_remaining_get()
+ * @verifies ZEP-SRS-26-25
  */
 ZTEST(workqueue_api, test_k_work_delayable_remaining)
 {

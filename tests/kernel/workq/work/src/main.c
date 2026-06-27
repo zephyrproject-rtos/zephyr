@@ -1611,6 +1611,7 @@ static void order_handler(struct k_work *work)
 /**
  * @brief Verify a work queue processes work items in submission order
  * @ingroup kernel_workqueue_tests
+ * @verifies ZEP-SRS-26-3
  */
 ZTEST(work_1cpu, test_1cpu_queue_order)
 {
@@ -1694,6 +1695,7 @@ static void yield_w1_handler(struct k_work *work)
  * item, producing the interleaving "0C1".
  *
  * @ingroup kernel_workqueue_tests
+ * @verifies ZEP-SRS-26-4
  */
 ZTEST(work_1cpu, test_1cpu_queue_yield)
 {
