@@ -442,18 +442,13 @@ static __ramfunc void flash_bflb_if2_enable(struct flash_bflb_bank_data *data, b
 	}
 }
 
-static __ramfunc uintptr_t flash_bflb_set_sahb(struct flash_bflb_bank_data *data)
+static __ramfunc void flash_bflb_set_sahb(struct flash_bflb_bank_data *data)
 {
 	if (data->bank == BANK2) {
-
 		flash_bflb_if2_enable(data, true);
-
-		return data->reg + SF_CTRL_SF_IF2_SAHB_0_OFFSET;
+	} else {
+		flash_bflb_if2_enable(data, false);
 	}
-
-	flash_bflb_if2_enable(data, false);
-
-	return data->reg + SF_CTRL_SF_IF_SAHB_0_OFFSET;
 }
 
 static __ramfunc void flash_bflb_release_sahb(struct flash_bflb_bank_data *data)
@@ -481,14 +476,14 @@ static __ramfunc uintptr_t flash_bflb_get_if(struct flash_bflb_bank_data *data)
 
 #if defined(CONFIG_SOC_SERIES_BL60X)
 
-static __ramfunc uintptr_t flash_bflb_set_sahb(struct flash_bflb_bank_data *data)
+static __ramfunc void flash_bflb_set_sahb(struct flash_bflb_bank_data *data)
 {
-	return data->reg + SF_CTRL_SF_IF_SAHB_0_OFFSET;
+	/* No BANK2 on BL60X */
 }
 
 #else
 
-static __ramfunc uintptr_t flash_bflb_set_sahb(struct flash_bflb_bank_data *data)
+static __ramfunc void flash_bflb_set_sahb(struct flash_bflb_bank_data *data)
 {
 	uint32_t tmp;
 
@@ -499,8 +494,6 @@ static __ramfunc uintptr_t flash_bflb_set_sahb(struct flash_bflb_bank_data *data
 		tmp &= ~SF_CTRL_SF_IF_0_BK_SEL_MSK;
 	}
 	FLASH_WRITE32(tmp, data->reg + SF_CTRL_2_OFFSET);
-
-	return data->reg + SF_CTRL_SF_IF_SAHB_0_OFFSET;
 }
 
 #endif
