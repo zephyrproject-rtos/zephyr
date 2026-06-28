@@ -2,6 +2,9 @@
 
 System Calls
 ############
+.. design:: DESIGN-SYSCALLS System Calls
+   :fulfills: ZEP-SRS-8-10
+
 User threads run with a reduced set of privileges than supervisor threads:
 certain CPU instructions may not be used, and they have access to only a
 limited part of the memory map. System calls (may) allow user threads to
@@ -278,6 +281,9 @@ Verification functions should be declared using these macros.
 Argument Validation
 ===================
 
+.. design:: DESIGN-SYSCALL-VALIDATION System Call Argument Validation
+   :fulfills: ZEP-SRS-8-14
+
 Several macros exist to validate arguments:
 
 * :c:macro:`K_SYSCALL_OBJ()` Checks a memory address to assert that it is
@@ -368,6 +374,9 @@ For example:
 
 Verification Memory Access Policies
 ===================================
+
+.. design:: DESIGN-SYSCALL-MEMACCESS System Call Memory Access Verification
+   :fulfills: ZEP-SRS-8-15
 
 Parameters passed to system calls by reference require special handling,
 because the value of these parameters can be changed at any time by any
@@ -565,6 +574,9 @@ The following constraints need to be met:
 
 Verification Return Value Policies
 ==================================
+
+.. design:: DESIGN-SYSCALL-INVALID Invalid System Call Handling
+   :fulfills: ZEP-SRS-8-4 ZEP-SRS-8-5
 
 When verifying system calls, it's important to note which kinds of verification
 failures should propagate a return value to the caller, and which should

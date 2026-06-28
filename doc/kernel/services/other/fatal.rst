@@ -201,6 +201,9 @@ then the kernel will generate a fatal error with the reason code
 Stack Overflows
 ===============
 
+.. design:: DESIGN-STACK-PROTECTION Stack Corruption Protection
+   :fulfills: ZEP-SRS-8-25 ZEP-SRS-8-26 ZEP-SRS-8-27
+
 In the event that a thread pushes more data onto its execution stack than its
 stack buffer provides, the kernel may be able to detect this situation and
 generate a fatal error with a reason code of ``K_ERR_STACK_CHK_FAIL``.
