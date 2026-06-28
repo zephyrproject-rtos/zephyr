@@ -894,6 +894,8 @@ ZTEST_USER(condvar_tests, test_condvar_usecase_signal)
  *
  * @see k_condvar_broadcast()
  * @see k_condvar_wait()
+ * @verifies ZEP-SRS-21-4
+ * @verifies ZEP-SRS-21-8
  */
 ZTEST_USER(condvar_tests, test_condvar_usecase_broadcast)
 {
@@ -946,6 +948,7 @@ static void *condvar_tests_setup(void)
  * @see k_mutex_unlock()
  * @verifies ZEP-SRS-21-7
  * @verifies ZEP-SRS-21-8
+ * @verifies ZEP-SRS-21-10
  */
 ZTEST(condvar_tests, test_condvar_wait_timeout_relocks_mutex)
 {
@@ -1042,6 +1045,7 @@ static void recursive_mtx_contender(void *p1, void *p2, void *p3)
  *
  * @see k_condvar_signal()
  * @see k_condvar_broadcast()
+ * @verifies ZEP-SRS-21-3
  */
 ZTEST_USER(condvar_tests, test_condvar_signal_wakes_one)
 {
@@ -1089,6 +1093,8 @@ ZTEST_USER(condvar_tests, test_condvar_signal_wakes_one)
  *       run concurrently, so a strict wakeup order is not guaranteed.
  *
  * @see k_condvar_signal()
+ * @verifies ZEP-SRS-21-3
+ * @verifies ZEP-SRS-21-9
  */
 ZTEST_USER(condvar_tests, test_condvar_signal_wakes_highest_priority)
 {
@@ -1155,6 +1161,8 @@ ZTEST_USER(condvar_tests, test_condvar_signal_wakes_highest_priority)
  *
  * @see k_condvar_wait()
  * @see k_mutex_unlock()
+ * @verifies ZEP-SRS-21-5
+ * @verifies ZEP-SRS-21-10
  */
 ZTEST(condvar_tests, test_condvar_wait_nowait_keeps_mutex)
 {
@@ -1186,6 +1194,8 @@ ZTEST(condvar_tests, test_condvar_wait_nowait_keeps_mutex)
  *
  * @see k_condvar_wait()
  * @see k_mutex_unlock()
+ * @verifies ZEP-SRS-21-9
+ * @verifies ZEP-SRS-21-10
  */
 ZTEST(condvar_tests, test_condvar_wait_signaled_keeps_mutex)
 {
@@ -1264,6 +1274,8 @@ ZTEST(condvar_tests, test_condvar_static_define)
  *
  * @see k_condvar_signal()
  * @see k_condvar_broadcast()
+ * @verifies ZEP-SRS-21-3
+ * @verifies ZEP-SRS-21-4
  */
 ZTEST_USER(condvar_tests, test_condvar_wake_no_waiters)
 {
@@ -1299,6 +1311,8 @@ ZTEST_USER(condvar_tests, test_condvar_wake_no_waiters)
  *
  * @see k_condvar_wait()
  * @see k_mutex_lock()
+ * @verifies ZEP-SRS-21-8
+ * @verifies ZEP-SRS-21-10
  */
 ZTEST(condvar_tests, test_condvar_wait_recursive_mutex_not_released)
 {

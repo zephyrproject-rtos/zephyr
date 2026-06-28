@@ -509,6 +509,8 @@ static void tThread_mutex_lock_should_fail(void *p1, void *p2, void *p3)
  * @ingroup kernel_mutex_tests
  *
  * @see k_mutex_lock()
+ * @verifies ZEP-SRS-6-7
+ * @verifies ZEP-SRS-6-12
  */
 ZTEST(mutex_api_1cpu, test_mutex_timeout_race_during_priority_inversion)
 {

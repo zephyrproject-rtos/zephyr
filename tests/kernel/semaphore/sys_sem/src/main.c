@@ -75,6 +75,9 @@ static void thread_high_prio_sem_take(void *p1, void *p2, void *p3)
  * - Use semaphore with different priority threads
  *
  * @ingroup kernel_semaphore_tests
+ * @see sys_sem_init(), sys_sem_give(), sys_sem_take()
+ * @verifies ZEP-SRS-5-2
+ * @verifies ZEP-SRS-5-14
  */
 ZTEST_USER(kernel_sys_sem, test_multiple_thread_sem_usage)
 {
@@ -170,6 +173,9 @@ static void multi_thread_sem_take(void *p1, void *p2, void *p3)
  * - Take sem by multiple threads and verify if sem count is correct.
  *
  * @ingroup kernel_semaphore_tests
+ * @see sys_sem_give(), sys_sem_take(), sys_sem_count_get()
+ * @verifies ZEP-SRS-5-3
+ * @verifies ZEP-SRS-5-19
  */
 ZTEST_USER(kernel_sys_sem, test_multi_thread_sem_limit)
 {
