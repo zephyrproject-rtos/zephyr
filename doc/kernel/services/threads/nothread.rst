@@ -3,6 +3,9 @@
 Operation without Threads
 #########################
 
+.. design:: DESIGN-NOTHREAD Operation without Threads
+   :fulfills: ZEP-SRS-1-22
+
 Thread support is not necessary in some applications:
 
 * Bootloaders
