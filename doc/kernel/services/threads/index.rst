@@ -80,6 +80,9 @@ re-spawned before it can be used.
 Starting a Thread
 =================
 
+.. design:: DESIGN-THREAD-START Starting a Thread
+   :fulfills: ZEP-SRS-1-14
+
 A thread that is created with :c:macro:`K_FOREVER` as its start delay is not
 added to the scheduler's ready queue and does not begin executing until it is
 explicitly started. The :c:func:`k_thread_start` function starts such an
@@ -91,6 +94,9 @@ execution deferred until the application has completed additional setup.
 
 Thread Termination
 ===================
+
+.. design:: DESIGN-THREAD-TERMINATION Thread Termination
+   :fulfills: ZEP-SRS-1-20
 
 Once a thread is started it typically executes forever. However, a thread may
 synchronously end its execution by returning from its entry point function.
@@ -194,7 +200,7 @@ Thread Stack objects
 ********************
 
 .. design:: DESIGN-THREAD-STACK Thread Stack objects
-   :fulfills: ZEP-SRS-1-8
+   :fulfills: ZEP-SRS-1-8 ZEP-SRS-1-24 ZEP-SRS-1-25
 
 Every thread requires its own stack buffer for the CPU to push context.
 Depending on configuration, there are several constraints that must be
@@ -350,6 +356,9 @@ very high priority threads and should not be used as such.
 Thread Options
 ***************
 
+.. design:: DESIGN-THREAD-OPTIONS Thread Options
+   :fulfills: ZEP-SRS-1-11
+
 The kernel supports a small set of :dfn:`thread options` that allow a thread
 to receive special treatment under specific circumstances. The set of options
 associated with a thread are specified when the thread is spawned.
@@ -400,6 +409,9 @@ The following thread options are supported.
 Thread Custom Data
 ******************
 
+.. design:: DESIGN-THREAD-CUSTOM-DATA Thread Custom Data
+   :fulfills: ZEP-SRS-1-12
+
 Every thread has a 32-bit :dfn:`custom data` area, accessible only by
 the thread itself, and may be used by the application for any purpose
 it chooses. The default custom data value for a thread is zero.
@@ -449,6 +461,9 @@ by using the custom data as a pointer to a data structure owned by the thread.
 Thread Name
 ***********
 
+.. design:: DESIGN-THREAD-NAME Thread Name
+   :fulfills: ZEP-SRS-1-17 ZEP-SRS-1-18
+
 When :kconfig:option:`CONFIG_THREAD_NAME` is enabled, a human-readable name can
 be associated with each thread. Names are primarily an aid for debugging,
 logging, and shell introspection; the kernel does not use them for scheduling.
@@ -472,6 +487,9 @@ returns ``NULL``.
 
 Thread Introspection
 ********************
+
+.. design:: DESIGN-THREAD-INTROSPECTION Thread Introspection
+   :fulfills: ZEP-SRS-1-16 ZEP-SRS-1-19 ZEP-SRS-1-21 ZEP-SRS-1-26 ZEP-SRS-1-27 ZEP-SRS-1-33
 
 The kernel provides several interfaces for inspecting threads at run time.
 
@@ -522,6 +540,9 @@ Implementation
 
 Spawning a Thread
 =================
+
+.. design:: DESIGN-THREAD-DEFINE Static Thread Definition and Entry Arguments
+   :fulfills: ZEP-SRS-1-13 ZEP-SRS-1-15
 
 A thread is spawned by defining its stack area and its thread control block,
 and then calling :c:func:`k_thread_create`.
@@ -637,6 +658,9 @@ calling thread will be terminated:
 Dropping Permissions
 ====================
 
+.. design:: DESIGN-THREAD-PRIVILEGES Thread Privileges
+   :fulfills: ZEP-SRS-1-9
+
 If :kconfig:option:`CONFIG_USERSPACE` is enabled, a thread running in supervisor mode
 may perform a one-way transition to user mode using the
 :c:func:`k_thread_user_mode_enter` API. This is a one-way operation which
@@ -670,6 +694,9 @@ mark the thread and stack objects as uninitialized so that they may be reused.
 
 Runtime Statistics
 ******************
+
+.. design:: DESIGN-THREAD-RUNTIME-STATS Thread Runtime Statistics
+   :fulfills: ZEP-SRS-1-28 ZEP-SRS-1-29 ZEP-SRS-1-34
 
 Thread runtime statistics can be gathered and retrieved if
 :kconfig:option:`CONFIG_THREAD_RUNTIME_STATS` is enabled, for example, total number of
@@ -705,6 +732,9 @@ bookkeeping overhead incurred on each context switch.
 
 Runtime Stack Safety
 ********************
+
+.. design:: DESIGN-THREAD-STACK-SAFETY Runtime Stack Safety
+   :fulfills: ZEP-SRS-1-30
 
 When :kconfig:option:`CONFIG_THREAD_RUNTIME_STACK_SAFETY` is enabled, the kernel
 provides routines that scan a thread's stack at runtime to determine how much of
