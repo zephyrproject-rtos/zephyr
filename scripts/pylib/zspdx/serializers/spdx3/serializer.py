@@ -712,11 +712,12 @@ class SPDX3Serializer:
         if self.tool:
             elements.append(self.tool)
 
+        seen_ids = {getattr(elem, '_id', None) for elem in elements}
+
         referenced_ids = {
             elem._id for elem in getattr(document, 'element', []) if getattr(elem, '_id', None)
         }
 
-        # First-occurrence wins, mirroring the original linear search.
         elements_by_id = {}
         for elem in self.elements:
             elem_id = getattr(elem, '_id', None)
@@ -724,8 +725,11 @@ class SPDX3Serializer:
                 elements_by_id[elem_id] = elem
 
         for elem_id in referenced_ids:
+            if elem_id in seen_ids:
+                continue
             elem = elements_by_id.get(elem_id)
-            if elem is not None and elem not in elements:
+            if elem is not None:
                 elements.append(elem)
+                seen_ids.add(elem_id)
 
         return elements
