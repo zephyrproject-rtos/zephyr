@@ -631,6 +631,9 @@ has joined, and then frees the dynamically allocated thread stack.
 User Mode Constraints
 ---------------------
 
+.. design:: DESIGN-USERMODE-THREAD-CREATE User Mode Thread Creation Constraints
+   :fulfills: ZEP-SRS-8-6 ZEP-SRS-8-8
+
 This section only applies if :kconfig:option:`CONFIG_USERSPACE` is enabled, and a user
 thread tries to create a new thread. The :c:func:`k_thread_create` API is
 still used, but there are additional constraints which must be met or the

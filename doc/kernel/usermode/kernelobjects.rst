@@ -98,6 +98,9 @@ the access control aspects of the permission system are not enforced.
 Implementation Details
 ======================
 
+.. design:: DESIGN-KOBJ-PERMISSIONS Kernel Object Permissions
+   :fulfills: ZEP-SRS-8-2 ZEP-SRS-8-7 ZEP-SRS-8-16
+
 The :ref:`gen_kobject_list.py` script is a post-build step which finds all the
 valid kernel object instances in the binary. It accomplishes this by parsing
 the DWARF debug information present in the generated ELF file for the kernel.
