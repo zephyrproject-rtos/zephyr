@@ -173,6 +173,7 @@ ZTEST_USER(mutex_api_error, test_mutex_lock_null)
  * @ingroup kernel_mutex_tests
  *
  * @see k_mutex_lock()
+ * @verifies ZEP-SRS-6-4
  */
 /* TESTPOINT: Pass a invalid kobject into the API k_mutex_lock */
 ZTEST_USER(mutex_api_error, test_mutex_lock_invalid_obj)
@@ -205,6 +206,7 @@ ZTEST_USER(mutex_api_error, test_mutex_unlock_null)
  * @ingroup kernel_mutex_tests
  *
  * @see k_mutex_unlock()
+ * @verifies ZEP-SRS-6-10
  */
 /* TESTPOINT: Pass a invalid kobject into the API k_mutex_unlock */
 ZTEST_USER(mutex_api_error, test_mutex_unlock_invalid_obj)

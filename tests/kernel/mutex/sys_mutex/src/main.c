@@ -325,6 +325,10 @@ void join_participant_threads(void)
  * This thread will lock on mutex_1, mutex_2, mutex_3 and mutex_4. It later
  * recursively locks private_mutex, releases it, then re-locks it.
  *
+ * @ingroup kernel_mutex_tests
+ * @see sys_mutex_lock(), sys_mutex_unlock()
+ * @verifies ZEP-SRS-6-9
+ * @verifies ZEP-SRS-6-12
  */
 
 ZTEST_USER_OR_NOT(mutex_complex, test_mutex)
@@ -442,6 +446,10 @@ ZTEST_USER_OR_NOT(mutex_complex, test_mutex)
  * (which is just a very thin wrapper to k_mutex) is exercised.
  * This requires us to not attempt to start the tests in user
  * mode, as this will otherwise fail an assertion in the thread code.
+ *
+ * @ingroup kernel_mutex_tests
+ * @see sys_mutex_lock(), sys_mutex_unlock()
+ * @verifies ZEP-SRS-6-4
  */
 ZTEST(mutex_complex, test_supervisor_access)
 {
@@ -465,6 +473,16 @@ ZTEST(mutex_complex, test_supervisor_access)
 	zassert_true(rv == -EINVAL, "mutex wasn't locked");
 }
 
+/**
+ * @brief Verify user-mode access control for sys_mutex objects
+ *
+ * @details A user thread cannot operate on a sys_mutex located outside the
+ * memory domain it has been granted access to.
+ *
+ * @ingroup kernel_mutex_tests
+ * @see sys_mutex_lock()
+ * @verifies ZEP-SRS-6-1
+ */
 ZTEST_USER_OR_NOT(mutex_complex, test_user_access)
 {
 #ifdef CONFIG_USERSPACE
