@@ -201,24 +201,28 @@ static bool log_test_process(void)
 	}
 }
 
-/**
- * @brief Support multi-processor systems
- *
- * @details Logging system identify domain/processor by domain_id which is now
- *          statically configured by Z_LOG_LOCAL_DOMAIN_ID
- *
- * @addtogroup logging
- */
-
 #ifndef CONFIG_USERSPACE
 
 /**
- * @brief Create Tests for Dynamic Loadable Logging Backends
+ * @brief Verify dynamic activation and deactivation of a logging backend.
  *
- * @details Test the three APIs, log_backend_activate, log_backend_is_active and
- *          log_backend_deactivate.
+ * @details
+ * A logging backend can be brought online and taken offline at runtime so that
+ * log messages are routed to (or withheld from) a given system resource. The
+ * test exercises the backend lifecycle API and confirms the active state is
+ * reported correctly after each transition.
  *
- * @addtogroup logging
+ * Test steps:
+ * - Initialize the logging core.
+ * - Activate the test backend and confirm it reports as active.
+ * - Deactivate it and confirm it reports as inactive.
+ *
+ * Expected result:
+ * - log_backend_is_active() tracks the activate/deactivate transitions.
+ *
+ * @see log_backend_activate()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-5
  */
 ZTEST(test_log_core_additional, test_log_backend)
 {
@@ -231,6 +235,26 @@ ZTEST(test_log_core_additional, test_log_backend)
 	zassert_false(log_backend_is_active(&backend1));
 }
 
+/**
+ * @brief Verify a dispatched message carries the local domain identifier.
+ *
+ * @details
+ * The logging core tags each message with the domain (processor) that produced
+ * it so that multi-domain deployments can attribute messages to their source.
+ * The test emits a message and confirms the backend receives it stamped with
+ * the statically configured local domain id.
+ *
+ * Test steps:
+ * - Set up the logging core with a single backend that checks the domain id.
+ * - Emit one informational message.
+ * - Process the log and confirm the backend received it.
+ *
+ * Expected result:
+ * - The backend receives the message with the expected local domain id.
+ *
+ * @see LOG_INF()
+ * @ingroup logging_tests
+ */
 ZTEST(test_log_core_additional, test_log_domain_id)
 {
 	log_setup(false);
@@ -248,12 +272,25 @@ ZTEST(test_log_core_additional, test_log_domain_id)
 }
 
 /**
- * @brief Synchronous processing of logging messages.
+ * @brief Verify messages are processed immediately in immediate logging mode.
  *
- * @details if CONFIG_LOG_MODE_IMMEDIATE is enabled, log message is
- *          handled immediately
+ * @details
+ * In immediate mode each log message is rendered and delivered in the context
+ * that generated it rather than being queued for deferred processing. The test
+ * emits messages with CONFIG_LOG_MODE_IMMEDIATE enabled and confirms the
+ * backend handled them synchronously without an explicit processing step.
  *
- * @addtogroup logging
+ * Test steps:
+ * - Skip the test unless CONFIG_LOG_MODE_IMMEDIATE is enabled.
+ * - Set up the logging core and emit two informational messages.
+ * - Confirm both were handled synchronously by the backend.
+ *
+ * Expected result:
+ * - Both messages are delivered immediately, with no deferred processing.
+ *
+ * @see LOG_INF()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-8
  */
 ZTEST(test_log_core_additional, test_log_sync)
 {
@@ -273,11 +310,27 @@ ZTEST(test_log_core_additional, test_log_sync)
 }
 
 /**
- * @brief Early logging
- * @details Handle log message attempts as well as creating new log contexts
- *         instance, before the backend are active
+ * @brief Verify messages logged before a backend is active are buffered and
+ * later delivered.
  *
- * @addtogroup logging
+ * @details
+ * In deferred mode log messages are queued by the core and processed later, so
+ * messages generated before any backend is enabled must not be lost. The test
+ * emits messages while no backend is active, then enables a backend and
+ * confirms all the buffered messages are eventually delivered.
+ *
+ * Test steps:
+ * - Skip in immediate mode; otherwise initialize the core and deactivate all
+ *   backends.
+ * - Emit info, warning and error messages with no backend active.
+ * - Enable the test backend, process the queue and confirm all messages arrive.
+ *
+ * Expected result:
+ * - Every message logged before backend activation is delivered after it.
+ *
+ * @see LOG_INF()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-6
  */
 ZTEST(test_log_core_additional, test_log_early_logging)
 {
@@ -314,12 +367,28 @@ ZTEST(test_log_core_additional, test_log_early_logging)
 }
 
 /**
- * @brief Log severity
+ * @brief Verify messages are delivered with their severity level and below-level
+ * messages are removed at compile time.
  *
- * @details This module is registered with LOG_LEVEL_INF, LOG_LEVEL_DBG will be
- *          filtered out at compile time, only 3 message handled
+ * @details
+ * The module is registered at LOG_LEVEL_INF, so debug messages are stripped from
+ * the build while info, warning and error messages are retained. The test emits
+ * one message at each retained level and confirms the backend receives them with
+ * the correct severity, demonstrating both multi-level severity support and
+ * compile-time level filtering.
  *
- * @addtogroup logging
+ * Test steps:
+ * - Set up the logging core with a backend that checks severity.
+ * - Emit info, warning and error messages.
+ * - Process the log and confirm each message carries its expected severity.
+ *
+ * Expected result:
+ * - Three messages are delivered, each tagged with its severity level.
+ *
+ * @see LOG_INF()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-7
+ * @verifies ZEP-SRS-11-9
  */
 ZTEST(test_log_core_additional, test_log_severity)
 {
@@ -343,11 +412,25 @@ ZTEST(test_log_core_additional, test_log_severity)
 }
 
 /**
- * @brief Customizable timestamping in log messages
+ * @brief Verify a user-supplied timestamp function stamps log messages.
  *
- * @details Log core permit user to register customized timestamp function
+ * @details
+ * The logging core allows the application to register a custom timestamp source
+ * and frequency so that each message records the time it was generated. The test
+ * registers a counter-based timestamp function, emits messages and confirms each
+ * one is stamped with the expected monotonically increasing value, and that a
+ * NULL function is rejected.
  *
- * @addtogroup logging
+ * Test steps:
+ * - Register a custom timestamp function (and verify NULL is rejected).
+ * - Enable the backend with timestamp checking and expected values.
+ * - Emit three messages and confirm each carries its expected timestamp.
+ *
+ * Expected result:
+ * - Each delivered message carries the timestamp produced by the custom source.
+ *
+ * @see log_set_timestamp_func()
+ * @ingroup logging_tests
  */
 ZTEST(test_log_core_additional, test_log_timestamping)
 {
@@ -390,12 +473,25 @@ ZTEST(test_log_core_additional, test_log_timestamping)
 }
 
 /**
- * @brief Multiple logging backends
+ * @brief Verify the logging system supports multiple concurrent backends.
  *
- * @details Enable two backends in this module and enable UART backend
- *          by CONFIG_LOG_BACKEND_UART, there are three backends at least.
+ * @details
+ * Log messages can be routed to several backends (system resources) at once.
+ * The test enables two test backends and confirms at least two backends are
+ * registered, and additionally that the UART backend is present when configured,
+ * demonstrating that logging can target multiple destinations simultaneously.
  *
- * @addtogroup logging
+ * Test steps:
+ * - Enable both test backends via the setup helper.
+ * - Count the registered backends and assert there are at least two.
+ * - When CONFIG_LOG_BACKEND_UART is set, confirm the UART backend is present.
+ *
+ * Expected result:
+ * - Multiple backends are registered and discoverable concurrently.
+ *
+ * @see log_backend_enable()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-5
  */
 
 #define UART_BACKEND "log_backend_uart"
@@ -423,9 +519,27 @@ ZTEST(test_log_core_additional, test_multiple_backends)
 }
 
 /**
- * @brief Process all logging activities using a dedicated thread
+ * @brief Verify queued log messages are processed by the dedicated logging
+ * thread.
  *
- * @addtogroup logging
+ * @details
+ * When the dedicated logging thread is enabled, messages are buffered and
+ * processed asynchronously by that thread, isolating log processing from the
+ * contexts that generate messages. The test emits messages, confirms data is
+ * pending, then waits for the logging thread to drain the queue.
+ *
+ * Test steps:
+ * - Set up the logging core and confirm no data is pending.
+ * - Emit info, warning and error messages and confirm data is now pending.
+ * - Wait for the logging thread to process and confirm the queue is drained.
+ *
+ * Expected result:
+ * - The dedicated logging thread delivers all messages and clears the queue.
+ *
+ * @see log_data_pending()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-1
+ * @verifies ZEP-SRS-11-6
  */
 
 #ifdef CONFIG_LOG_PROCESS_THREAD
@@ -462,9 +576,27 @@ ZTEST(test_log_core_additional, test_log_thread)
 #endif
 
 /**
- * @brief Process all logging activities using a dedicated thread (trigger immediate processing)
+ * @brief Verify the logging thread can be triggered to process queued messages
+ * immediately.
  *
- * @addtogroup logging
+ * @details
+ * The dedicated logging thread normally processes buffered messages on its own
+ * schedule, but it can be triggered to drain the queue as soon as possible. The
+ * test emits messages, confirms they are pending, triggers the thread and
+ * confirms the queue is drained shortly afterwards.
+ *
+ * Test steps:
+ * - Set up the logging core and confirm no data is pending.
+ * - Emit info, warning and error messages and confirm data is pending.
+ * - Call log_thread_trigger(), then confirm the queue is drained.
+ *
+ * Expected result:
+ * - Triggering the logging thread promptly delivers all queued messages.
+ *
+ * @see log_thread_trigger()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-1
+ * @verifies ZEP-SRS-11-6
  */
 
 #ifdef CONFIG_LOG_PROCESS_THREAD
@@ -505,6 +637,27 @@ static void call_log_generic(const char *fmt, ...)
 	va_end(ap);
 }
 
+/**
+ * @brief Verify log_generic() renders messages with printf-style arguments.
+ *
+ * @details
+ * log_generic() accepts a format string and a va_list, letting callers emit log
+ * messages with printf-style argument substitution. The test issues several
+ * messages with differing format specifiers and argument counts and confirms the
+ * core accepts and processes each one.
+ *
+ * Test steps:
+ * - Set up the logging core with a single backend.
+ * - Call log_generic() with no-arg, string and integer format variants.
+ * - Process the log queue.
+ *
+ * Expected result:
+ * - All formatted messages are accepted and processed without error.
+ *
+ * @see log_generic()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(test_log_core_additional, test_log_generic)
 {
 	char *log_msg = "log user space";
@@ -521,6 +674,28 @@ ZTEST(test_log_core_additional, test_log_generic)
 	}
 }
 
+/**
+ * @brief Verify log messages can be created via the low-level message
+ * construction primitives.
+ *
+ * @details
+ * The logging core exposes runtime, stack and macro-based primitives for
+ * building a log message with explicit domain, source, level and payload. The
+ * test, in deferred mode, constructs messages through each primitive and
+ * confirms they are accepted and processed by the backend.
+ *
+ * Test steps:
+ * - Set up the logging core; run only in deferred mode.
+ * - Create messages via z_log_msg_runtime_create(), Z_LOG_MSG_STACK_CREATE()
+ *   and Z_LOG_MSG_CREATE() with explicit domain and level.
+ * - Process the log queue.
+ *
+ * Expected result:
+ * - Messages built through each primitive are processed successfully.
+ *
+ * @see z_log_msg_runtime_create()
+ * @ingroup logging_tests
+ */
 ZTEST(test_log_core_additional, test_log_msg_create)
 {
 	log_setup(false);
@@ -551,6 +726,27 @@ ZTEST(test_log_core_additional, test_log_msg_create)
 
 #else
 
+/**
+ * @brief Verify log messages can be created from user space via the low-level
+ * primitives.
+ *
+ * @details
+ * Mirrors the message-construction coverage in supervisor mode, but exercises
+ * the runtime, stack and macro message-creation primitives from a user-mode
+ * thread to confirm they are usable across the user/kernel boundary. The
+ * constructed messages are then processed by the core.
+ *
+ * Test steps:
+ * - From a user-mode thread, build messages via z_log_msg_runtime_create(),
+ *   Z_LOG_MSG_STACK_CREATE() and Z_LOG_MSG_CREATE().
+ * - Process the log queue.
+ *
+ * Expected result:
+ * - Messages built from user space are processed without fault.
+ *
+ * @see z_log_msg_runtime_create()
+ * @ingroup logging_tests
+ */
 ZTEST_USER(test_log_core_additional, test_log_msg_create_user)
 {
 	int mode;
