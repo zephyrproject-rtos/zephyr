@@ -112,6 +112,9 @@ returns the timer's status and resets it to zero.
 Timer Observers
 ***************
 
+.. design:: DESIGN-TIMER-OBSERVERS Timer Observers
+   :fulfills: ZEP-SRS-4-18
+
 When :kconfig:option:`CONFIG_TIMER_OBSERVER` is enabled, code can register
 :dfn:`timer observers` that are notified of timer lifecycle events across all
 timers in the system. An observer is a set of optional callbacks invoked when a
