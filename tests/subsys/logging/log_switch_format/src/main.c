@@ -182,7 +182,7 @@ ZTEST(log_switch_format, test_log_switch_format)
 	test_log_switch_format_func_t_get();
 }
 
-#if CONFIG_LOG_CUSTOM_FORMAT_SUPPORT
+#if CONFIG_LOG_CUSTOM_FORMAT_SUPPORT || defined(__DOXYGEN__)
 void custom_formatting(const struct log_output *output, struct log_msg *msg, uint32_t flags)
 {
 	uint8_t buffer[] = "Hello world";
