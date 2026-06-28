@@ -14,6 +14,9 @@ by threads and ISRs in an uninterruptible manner. It is a 32-bit variable on
 Concepts
 ********
 
+.. design:: DESIGN-ATOMIC Atomic Operations
+   :fulfills: ZEP-SRS-19-1
+
 Any number of atomic variables can be defined (limited only by available RAM).
 
 Using the kernel's atomic APIs to manipulate an atomic variable
