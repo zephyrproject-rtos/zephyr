@@ -56,6 +56,7 @@ void __attribute__((__constructor__(1000))) __constructor_init_priority_1000(voi
  *   1000 ran second, and the unprioritized constructor ran last.
  *
  * @see ZTEST_SUITE()
+ * @verifies ZEP-SRS-12-10
  */
 ZTEST(constructor, test_constructor)
 {
