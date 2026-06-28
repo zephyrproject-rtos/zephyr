@@ -292,6 +292,7 @@ ZTEST(k_heap_api, test_k_heap_calloc)
  * @details The test ensures that valid values are returned
  *
  * @see k_heap_array_get()
+ * @verifies ZEP-SRS-9-18
  */
 ZTEST(k_heap_api, test_k_heap_array_get)
 {
