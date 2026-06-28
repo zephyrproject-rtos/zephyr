@@ -36,6 +36,8 @@
 #include "lll_tim_internal.h"
 #include "lll_prof_internal.h"
 
+#include "isoal.h"
+
 #include "ll_feat.h"
 
 #include "hal/debug.h"
@@ -53,6 +55,7 @@ static void isr_done(void *param);
 static void payload_count_flush(struct lll_conn_iso_stream *cis_lll);
 static void payload_count_rx_flush_or_txrx_inc(struct lll_conn_iso_stream *cis_lll);
 static void payload_count_lazy(struct lll_conn_iso_stream *cis_lll, uint16_t lazy);
+static void iso_rx_data_lost(struct lll_conn_iso_stream *cis_lll);
 
 static uint8_t next_chan_use;
 static uint16_t data_chan_id;
@@ -1746,6 +1749,56 @@ isr_done_common:
 	lll_isr_cleanup(param);
 }
 
+static void iso_rx_data_lost(struct lll_conn_iso_stream *cis_lll)
+{
+	struct lll_conn_iso_group *cig_lll;
+	struct node_rx_iso_meta *iso_meta;
+	struct node_rx_pdu *node_rx;
+	struct pdu_cis *pdu_rx;
+
+	/* Only report lost ISO data when an Rx data path is set up to consume
+	 * it, e.g. to drive Packet Loss Concealment (PLC) in the LC3 codec.
+	 */
+	if (!cis_lll->datapath_ready_rx) {
+		return;
+	}
+
+	/* Two free Rx buffers are required: one is consumed to report the lost
+	 * ISO data and the other ensures a buffer remains available for the
+	 * radio DMA to receive in subsequent subevents/events.
+	 */
+	node_rx = ull_iso_pdu_rx_alloc_peek(2U);
+	if (!node_rx) {
+		return;
+	}
+
+	ull_iso_pdu_rx_alloc();
+
+	pdu_rx = (void *)node_rx->pdu;
+	pdu_rx->ll_id = PDU_CIS_LLID_START_CONTINUE;
+	pdu_rx->len = 0U;
+
+	node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
+	node_rx->hdr.handle = cis_lll->handle;
+
+	iso_meta = &node_rx->rx_iso_meta;
+	iso_meta->payload_number = cis_lll->rx.payload_count + cis_lll->rx.bn_curr - 1U;
+	iso_meta->timestamp = cis_lll->offset +
+		HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
+		radio_tmr_aa_restore() - cis_offset_first -
+		addr_us_get(cis_lll->rx.phy);
+	cig_lll = ull_conn_iso_lll_group_get_by_stream(cis_lll);
+	iso_meta->timestamp -= (cis_lll->event_count -
+				(cis_lll->rx.payload_count / cis_lll->rx.bn)) *
+			       cig_lll->iso_interval_us;
+	iso_meta->timestamp %=
+		HAL_TICKER_TICKS_TO_US_64BIT(BIT64(HAL_TICKER_CNTR_MSBIT + 1U));
+	iso_meta->status = ISOAL_PDU_STATUS_LOST_DATA;
+
+	iso_rx_put(node_rx->hdr.link, node_rx);
+	iso_rx_sched();
+}
+
 static void payload_count_flush(struct lll_conn_iso_stream *cis_lll)
 {
 	if (cis_lll->tx.bn) {
@@ -1793,6 +1846,12 @@ static void payload_count_flush(struct lll_conn_iso_stream *cis_lll)
 		      ((cis_lll->rx.payload_count / cis_lll->rx.bn) <= cis_lll->event_count)) ||
 		     ((cis_lll->rx.bn_curr == cis_lll->rx.bn) &&
 		      ((cis_lll->rx.payload_count / cis_lll->rx.bn) < cis_lll->event_count)))) {
+			/* Generate HCI ISO data with lost status for the Rx
+			 * payload whose flush timeout has elapsed without a
+			 * successful reception.
+			 */
+			iso_rx_data_lost(cis_lll);
+
 			/* sn and nesn are 1-bit, only Least Significant bit is needed */
 			cis_lll->nesn++;
 			cis_lll->rx.bn_curr++;
@@ -1834,6 +1893,12 @@ static void payload_count_rx_flush_or_txrx_inc(struct lll_conn_iso_stream *cis_l
 			(cis_lll->event_count + 1U)) ||
 		       ((((cis_lll->rx.payload_count / cis_lll->rx.bn) + cis_lll->rx.ft) ==
 			 (cis_lll->event_count + 1U)) && (u <= (cis_lll->nse + 1U)))) {
+			/* Generate HCI ISO data with lost status for the Rx
+			 * payload that is being flushed without a successful
+			 * reception when closing the isochronous event.
+			 */
+			iso_rx_data_lost(cis_lll);
+
 			/* sn and nesn are 1-bit, only Least Significant bit is needed */
 			cis_lll->nesn++;
 			cis_lll->rx.bn_curr++;
@@ -1898,6 +1963,12 @@ static void payload_count_lazy(struct lll_conn_iso_stream *cis_lll, uint16_t laz
 				cis_lll->event_count) ||
 			       ((((cis_lll->rx.payload_count / cis_lll->rx.bn) + cis_lll->rx.ft) ==
 				 cis_lll->event_count) && (u <= cis_lll->nse))) {
+				/* Generate HCI ISO data with lost status for the
+				 * Rx payload of a CIG event that was skipped due
+				 * to overlapping other events (laziness).
+				 */
+				iso_rx_data_lost(cis_lll);
+
 				/* sn and nesn are 1-bit, only Least Significant bit is needed */
 				cis_lll->nesn++;
 				cis_lll->rx.bn_curr++;
