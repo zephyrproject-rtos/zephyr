@@ -14,9 +14,25 @@ LOG_MODULE_REGISTER(test_log_ratelimited, CONFIG_LOG_DEFAULT_LEVEL);
 static uint8_t test_data[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
 
 /**
- * @brief Test compilation of all rate-limited macros.
- * This test primarily checks for compilation errors and does not assert log
- * counts, as log levels might filter some messages depending on Kconfig.
+ * @brief Verify all rate-limited logging macros compile and run.
+ *
+ * @details
+ * Exercise the full set of rate-limited logging macros (LOG_*_RATELIMIT,
+ * LOG_*_RATELIMIT_RATE and their hexdump variants) at every severity level. The
+ * test primarily ensures the macros expand and build correctly and can be
+ * invoked at runtime; it does not assert log counts because severity filtering
+ * may suppress some messages depending on Kconfig.
+ *
+ * Test steps:
+ * - Invoke each rate-limited message macro once.
+ * - Invoke each rate-limited message macro with an explicit rate.
+ * - Invoke each rate-limited hexdump macro, with and without an explicit rate.
+ *
+ * Expected result:
+ * - All macros compile and execute without error.
+ *
+ * @see LOG_INF_RATELIMIT()
+ * @ingroup logging_tests
  */
 ZTEST(log_ratelimited, test_compilation)
 {
