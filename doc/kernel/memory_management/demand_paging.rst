@@ -3,6 +3,9 @@
 Demand Paging
 #############
 
+.. design:: DESIGN-DEMAND-PAGING Demand Paging
+   :fulfills: ZEP-SRS-36-8 ZEP-SRS-36-9 ZEP-SRS-36-10 ZEP-SRS-36-11 ZEP-SRS-36-12 ZEP-SRS-36-15
+
 Demand paging provides a mechanism where data is only brought into physical
 memory as required by current execution context. The physical memory is
 conceptually divided in page-sized page frames as regions to hold data.
@@ -119,6 +122,9 @@ K_MEM_SCRATCH_PAGE
 
 Paging Statistics
 *****************
+
+.. design:: DESIGN-DEMAND-PAGING-STATS Demand Paging Statistics
+   :fulfills: ZEP-SRS-36-13 ZEP-SRS-36-14
 
 Paging statistics can be obtained via various function calls when
 :kconfig:option:`CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS` is enabled:
