@@ -158,6 +158,30 @@ static bool dbg_enabled(void)
 	return IS_ENABLED(CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG) || (CONFIG_LOG_OVERRIDE_LEVEL == 4);
 }
 
+/**
+ * @brief Verify log messages are emitted at every severity level with formatted
+ * arguments.
+ *
+ * @details
+ * Log messages are generated at the debug, info, warning and error severity
+ * levels using a variety of printf-style format specifiers. The mock frontend
+ * and backend record the expected formatted output, and the test confirms each
+ * message is delivered with the correct severity and rendered text.
+ *
+ * Test steps:
+ * - Configure the logging core with a single backend.
+ * - Emit LOG_DBG/LOG_INF/LOG_WRN/LOG_ERR messages with assorted arguments.
+ * - Flush and validate the frontend and backend received the expected records.
+ *
+ * Expected result:
+ * - Every message is delivered at its severity level with correctly formatted
+ *   text.
+ *
+ * @see LOG_ERR(), LOG_WRN(), LOG_INF(), LOG_DBG()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-7
+ */
 ZTEST(test_log_api, test_log_various_messages)
 {
 	char str[128];
@@ -227,10 +251,32 @@ ZTEST(test_log_api, test_log_various_messages)
 #undef TEST_MSG_1
 }
 
-/*
- * Test is using 2 backends and runtime filtering is enabled. After first call
- * filtering for backend2 is reduced to warning. It is expected that next INFO
- * level log message will be passed only to backend1.
+/**
+ * @brief Verify per-backend runtime severity filtering routes messages
+ * independently.
+ *
+ * @details
+ * With two backends enabled and runtime filtering active, the severity filter
+ * of one backend (and the frontend) is lowered to warning while the other stays
+ * at info. Subsequent info-level messages must reach only the backend that
+ * still accepts them, while warning-level messages reach both, demonstrating
+ * independent per-source/per-backend runtime filtering.
+ *
+ * Test steps:
+ * - Enable two backends and confirm their initial filter levels.
+ * - Lower backend2's (and the frontend's) filter to warning with
+ *   log_filter_set()/log_frontend_filter_set().
+ * - Emit info and warning messages (including hexdumps) and validate routing.
+ *
+ * Expected result:
+ * - Info messages reach only the higher-level backend; warning messages reach
+ *   both backends and the frontend.
+ *
+ * @see log_filter_set(), log_filter_get(), log_frontend_filter_set()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-4
+ * @verifies ZEP-SRS-11-5
+ * @verifies ZEP-SRS-11-10
  */
 ZTEST(test_log_api, test_log_backend_runtime_filtering)
 {
@@ -386,13 +432,31 @@ static size_t get_long_hexdump(void)
 		sizeof("hexdump");
 }
 
-/*
- * When LOG_MODE_OVERFLOW is enabled, logger should discard oldest messages when
- * there is no room. However, if after discarding all messages there is still no
- * room then current log is discarded.
- */
 static uint8_t log_buf[CONFIG_LOG_BUFFER_SIZE];
 
+/**
+ * @brief Verify the deferred log buffer discards the oldest messages on
+ * overflow.
+ *
+ * @details
+ * In deferred mode with overflow handling enabled, the logging buffer discards
+ * the oldest pending messages to make room for new ones; if a single message
+ * still does not fit after discarding, that message is dropped. This test fills
+ * the buffer and confirms the expected messages survive and the expected ones
+ * are reported as dropped.
+ *
+ * Test steps:
+ * - Emit messages and a large hexdump that overflow the deferred buffer.
+ * - Flush and validate which records survived and the drop notification count.
+ *
+ * Expected result:
+ * - The oldest message is discarded to make room, and an oversized message that
+ *   cannot fit is dropped.
+ *
+ * @see LOG_HEXDUMP_INF(), LOG_INF()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-6
+ */
 ZTEST(test_log_api, test_log_overflow)
 {
 	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
@@ -472,6 +536,27 @@ ZTEST(test_log_api, test_log_overflow)
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_INF, str); \
 } while (0)
 
+/**
+ * @brief Verify log messages with varying numbers of arguments are formatted
+ * correctly.
+ *
+ * @details
+ * The logging formatter must correctly process messages carrying a wide range
+ * of argument counts. This test emits info messages with between zero and
+ * fourteen integer arguments and confirms the frontend and backend render each
+ * message exactly as expected.
+ *
+ * Test steps:
+ * - Emit LOG_INF() messages with increasing numbers of arguments.
+ * - Flush and validate the recorded text after each batch.
+ *
+ * Expected result:
+ * - Every message is formatted with all of its arguments rendered correctly.
+ *
+ * @see LOG_INF()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(test_log_api, test_log_arguments)
 {
 	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
@@ -530,9 +615,26 @@ ZTEST(test_log_api, test_log_arguments)
 	process_and_validate(false, false);
 }
 
-/* Function comes from the file which is part of test module. It is
- * expected that logs coming from it will have same source_id as current
- * module (this file).
+/**
+ * @brief Verify logs from a declared module share the module's log source.
+ *
+ * @details
+ * Code split across multiple files but belonging to the same logging module
+ * (declared with LOG_MODULE_DECLARE) must register as a single log source. This
+ * test calls functions from a separate file of the test module and confirms
+ * their messages carry the same source id as the current module.
+ *
+ * Test steps:
+ * - Resolve the test module's source id.
+ * - Invoke functions from the module's other file that emit log messages.
+ * - Validate the recorded messages use the module's source id.
+ *
+ * Expected result:
+ * - Messages from the declared module's other file use the module's source id.
+ *
+ * @see LOG_MODULE_DECLARE(), log_source_id_get()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-11
  */
 ZTEST(test_log_api, test_log_from_declared_module)
 {
@@ -630,13 +732,27 @@ static void log_n_messages(uint32_t n_msg, uint32_t exp_dropped)
 	mock_log_backend_reset(&backend1);
 }
 
-/*
- * Test checks if backend receives notification about dropped messages. It
- * first blocks threads to ensure full control of log processing time and
- * then logs certain log messages, expecting dropped notification.
+/**
+ * @brief Verify a backend is notified of the number of dropped messages.
  *
- * With multiple cpus you may not get consistent message dropping
- * as other core may process logs. Executing on 1 cpu only.
+ * @details
+ * When deferred logging overflows, the backend must be told how many messages
+ * were dropped. By controlling the processing time (single CPU, overflow mode)
+ * the test logs more messages than the buffer can hold and confirms the backend
+ * receives a drop notification matching the number of lost messages.
+ *
+ * Test steps:
+ * - Fill the buffer exactly to capacity and confirm no drops are reported.
+ * - Log one and two messages beyond capacity.
+ * - Validate the backend's drop notification count for each case.
+ *
+ * Expected result:
+ * - The backend's reported drop count matches the number of messages that did
+ *   not fit.
+ *
+ * @see log_backend_dropped()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-6
  */
 ZTEST(test_log_api_1cpu, test_log_msg_dropped_notification)
 {
@@ -666,8 +782,30 @@ ZTEST(test_log_api_1cpu, test_log_msg_dropped_notification)
 	log_n_messages(capacity + 2, 2);
 }
 
-/* Test checks if panic is correctly executed. On panic logger should flush all
- * messages and process logs in place (not in deferred way).
+/**
+ * @brief Verify log_panic() flushes pending messages and switches to in-place
+ * processing.
+ *
+ * @details
+ * When the system enters panic (e.g. on a fatal error) the logging subsystem
+ * must flush all pending messages and then process any further messages
+ * immediately in the caller's context rather than deferring them. This test
+ * queues messages, calls log_panic(), and confirms everything is flushed and
+ * that subsequent messages are processed in place.
+ *
+ * Test steps:
+ * - Emit messages while deferred, then call log_panic().
+ * - Validate all pending messages were flushed.
+ * - Emit a further message and confirm it is processed immediately.
+ *
+ * Expected result:
+ * - Pending messages are flushed on panic and later messages are processed in
+ *   place.
+ *
+ * @see log_panic()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-8
+ * @verifies ZEP-SRS-11-13
  */
 ZTEST(test_log_api, test_log_panic)
 {
@@ -701,6 +839,24 @@ ZTEST(test_log_api, test_log_panic)
 	process_and_validate(false, true);
 }
 
+/**
+ * @brief Verify printk() output is routed through the logging subsystem.
+ *
+ * @details
+ * When CONFIG_LOG_PRINTK is enabled, printk() output is captured by logging as
+ * raw-string records. This test emits printk() output, triggers a panic flush,
+ * and confirms the backend received the raw-string records.
+ *
+ * Test steps:
+ * - Emit printk() output and call log_panic() to flush.
+ * - Validate the backend recorded the raw-string output.
+ *
+ * Expected result:
+ * - printk() output appears on the backend as raw-string log records.
+ *
+ * @see printk()
+ * @ingroup logging_tests
+ */
 ZTEST(test_log_api, test_log_printk)
 {
 	if (!IS_ENABLED(CONFIG_LOG_PRINTK)) {
@@ -726,6 +882,24 @@ ZTEST(test_log_api, test_log_printk)
 	process_and_validate(false, true);
 }
 
+/**
+ * @brief Verify LOG_PRINTK() and LOG_RAW() emit raw-string log records.
+ *
+ * @details
+ * LOG_PRINTK() and LOG_RAW() both produce raw (unformatted-header) log records
+ * rather than normal severity-tagged messages. This test emits one of each and
+ * confirms the frontend and backend record them as raw strings.
+ *
+ * Test steps:
+ * - Emit a LOG_PRINTK() and a LOG_RAW() message.
+ * - Flush and validate both are recorded as raw-string records.
+ *
+ * Expected result:
+ * - Both macros produce raw-string records on the frontend and backend.
+ *
+ * @see LOG_PRINTK(), LOG_RAW()
+ * @ingroup logging_tests
+ */
 ZTEST(test_log_api, test_log_printk_vs_raw)
 {
 	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
@@ -749,6 +923,27 @@ ZTEST(test_log_api, test_log_printk_vs_raw)
 	process_and_validate(false, false);
 }
 
+/**
+ * @brief Verify log message arguments are evaluated exactly once.
+ *
+ * @details
+ * Arguments passed to a log macro must be evaluated exactly once, including when
+ * the message's severity level is disabled (so the message itself is dropped).
+ * Debug-level arguments are additionally only evaluated when debug logging is
+ * enabled. This test uses post-increment counters as arguments and checks the
+ * evaluation counts.
+ *
+ * Test steps:
+ * - Emit an info and a debug message whose arguments increment counters.
+ * - Compare the counters against the expected evaluation counts.
+ *
+ * Expected result:
+ * - Each argument is evaluated exactly once; debug arguments are evaluated only
+ *   when debug logging is enabled.
+ *
+ * @see LOG_INF(), LOG_DBG()
+ * @ingroup logging_tests
+ */
 ZTEST(test_log_api, test_log_arg_evaluation)
 {
 	char str[128];
@@ -806,6 +1001,24 @@ static void log_wrn_once_run(int i)
 	LOG_WRN_ONCE("once %d", i);
 }
 
+/**
+ * @brief Verify LOG_WRN_ONCE() emits a warning only on its first invocation.
+ *
+ * @details
+ * LOG_WRN_ONCE() must log its warning message the first time it is reached and
+ * stay silent on all subsequent invocations. This test invokes it several times
+ * and confirms only the first call produces a record.
+ *
+ * Test steps:
+ * - Invoke LOG_WRN_ONCE() three times.
+ * - Flush and validate exactly one warning was recorded.
+ *
+ * Expected result:
+ * - Only the first invocation produces a log message.
+ *
+ * @see LOG_WRN_ONCE()
+ * @ingroup logging_tests
+ */
 ZTEST(test_log_api, test_log_wrn_once)
 {
 	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
@@ -824,6 +1037,29 @@ ZTEST(test_log_api, test_log_wrn_once)
 	process_and_validate(false, false);
 }
 
+/**
+ * @brief Verify CONFIG_LOG_OVERRIDE_LEVEL forces the compile-time severity of
+ * all modules.
+ *
+ * @details
+ * The CONFIG_LOG_OVERRIDE_LEVEL build option overrides the compile-time log
+ * level of every module, regardless of each module's own configured level. This
+ * test exercises a module configured with a low level and confirms that, when
+ * the override raises the level, the module's debug/error messages are compiled
+ * in and recorded.
+ *
+ * Test steps:
+ * - Invoke a module whose own level is below the override.
+ * - Validate which of its messages were emitted given the override level.
+ *
+ * Expected result:
+ * - The module's messages are filtered according to the override level rather
+ *   than its own configured level.
+ *
+ * @see CONFIG_LOG_OVERRIDE_LEVEL
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-9
+ */
 ZTEST(test_log_api, test_log_override_level)
 {
 	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
