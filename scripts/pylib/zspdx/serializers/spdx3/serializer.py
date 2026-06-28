@@ -505,23 +505,26 @@ class SPDX3Serializer:
             self._create_license_expression(lic)
 
     def _collect_relationship_ids(self, element_ids: set):
-        """Add relationships owned by this document, along with their endpoints.
+        """Add this document's relationships and their endpoints to ``element_ids``.
 
-        A relationship belongs to the document when its original (pre-reversal)
-        "from" element is already part of ``element_ids``. This matches SPDX 2.x
-        behavior: e.g. ".a GENERATED_FROM .c" reversed to ".c generates .a" still
-        lands in the document that owns ".a". Each matching relationship pulls in
-        its own ID and both endpoints, so ``element_ids`` grows in place.
+        A relationship belongs to the document that owns its original
+        (pre-reversal) "from" element. Ownership is tested against a snapshot
+        of the document's own elements so that pulling in endpoints does not
+        draw in unrelated relationships.
         """
+        owned = set(element_ids)
         relationship_ids = set()
+        endpoint_ids = set()
         for rel in self.relationship_elements:
             from_id = getattr(rel, 'from_', None)
             original_from_id = self.relationship_original_from.get(rel._id, from_id)
-            if original_from_id in element_ids or from_id in element_ids:
+            if original_from_id in owned:
                 relationship_ids.add(rel._id)
-                element_ids.add(from_id)
-                element_ids.update(rel.to)
+                if from_id:
+                    endpoint_ids.add(from_id)
+                endpoint_ids.update(rel.to)
         element_ids.update(relationship_ids)
+        element_ids.update(endpoint_ids)
 
     def _populate_document(self, document: spdx.SpdxDocument, element_ids: set, components):
         """Attach the selected elements and root components to the document."""
