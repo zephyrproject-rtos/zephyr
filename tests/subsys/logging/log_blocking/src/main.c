@@ -170,6 +170,29 @@ K_THREAD_DEFINE(test_blocking_thread, 4096, test_blocking_thread_entry, NULL, NU
 #if WILL_STALL
 ZTEST_EXPECT_FAIL(log_blocking, test_blocking);
 #endif
+/**
+ * @brief Verify blocking-mode logging never drops messages.
+ *
+ * @details
+ * In blocking mode the logging subsystem stalls the producer when the deferred
+ * buffer is full instead of dropping messages. A high-priority producer thread
+ * logs a fixed number of messages at a configured input rate while the backend
+ * consumes at a configured output rate. The test validates that, when the rates
+ * allow forward progress, all messages are handled and none are dropped.
+ *
+ * Test steps:
+ * - Start the producer thread that logs CONFIG_TEST_NUM_LOGS messages.
+ * - Wait for the run window to elapse and join the producer thread.
+ * - Check the backend's dropped and handled counters.
+ *
+ * Expected result:
+ * - Zero messages are dropped and all messages are handled (in the stalled
+ *   configuration the test is expected to fail).
+ *
+ * @see LOG_INF()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-6
+ */
 ZTEST(log_blocking, test_blocking)
 {
 #if WILL_STALL
