@@ -223,6 +223,7 @@ static bool log_test_process(void)
  * @see log_backend_activate()
  * @ingroup logging_tests
  * @verifies ZEP-SRS-11-5
+ * @verifies ZEP-SRS-11-21
  */
 ZTEST(test_log_core_additional, test_log_backend)
 {
@@ -431,6 +432,8 @@ ZTEST(test_log_core_additional, test_log_severity)
  *
  * @see log_set_timestamp_func()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-14
+ * @verifies ZEP-SRS-11-15
  */
 ZTEST(test_log_core_additional, test_log_timestamping)
 {

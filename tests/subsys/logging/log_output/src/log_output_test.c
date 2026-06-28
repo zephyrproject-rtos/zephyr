@@ -214,6 +214,7 @@ ZTEST(test_log_output, test_level_flag)
  * @ingroup logging_tests
  * @verifies ZEP-SRS-11-3
  * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-14
  */
 ZTEST(test_log_output, test_ts_flag)
 {
@@ -255,6 +256,7 @@ ZTEST(test_log_output, test_ts_flag)
  * @ingroup logging_tests
  * @verifies ZEP-SRS-11-3
  * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-14
  */
 ZTEST(test_log_output, test_format_ts)
 {
