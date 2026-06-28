@@ -35,8 +35,26 @@ LOG_BACKEND_DEFINE(log_backend_mock, mock_log_backend_api, false);
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_DBG);
 
 /**
- * @brief Testcase to validate that the mock backend would use the expected
- * processing function from the function pointer table format_table
+ * @brief Verify the correct format processing function is selected for the active output format.
+ *
+ * @details
+ * The log output subsystem resolves the rendering function for a given output
+ * format from an internal function-pointer table. This test confirms that when
+ * MIPI SyS-T output is enabled the SyS-T processing function is selected, and
+ * otherwise the plain text processing function is selected, ensuring log
+ * messages are rendered into the configured machine-parseable format.
+ *
+ * Test steps:
+ * - Query the format function for the active output type via log_format_func_t_get().
+ * - Compare the returned pointer against the expected SyS-T or text processor.
+ *
+ * Expected result:
+ * - The returned function pointer matches the processor for the active format.
+ *
+ * @see log_format_func_t_get()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
  */
 ZTEST(log_syst, test_log_syst_format_table_selection)
 {
@@ -74,7 +92,28 @@ const char *module_id = "00";
 #define SUB_TYPE "0B"
 #endif
 
-/* Testcase to validate the SYST output of log data */
+/**
+ * @brief Verify a single-argument log message is rendered into the expected SyS-T payload.
+ *
+ * @details
+ * Emits a debug message with one integer argument and validates that the mock
+ * backend captures a MIPI SyS-T encoded record whose type, flags, module id,
+ * sub-type and payload match the expected hex sequence. This confirms log
+ * content is rendered into the structured, machine-parseable SyS-T format for
+ * post processing.
+ *
+ * Test steps:
+ * - Emit a debug log with a formatted string and one integer argument.
+ * - Validate the captured SyS-T message fields and payload against expected values.
+ *
+ * Expected result:
+ * - The captured SyS-T record matches the expected encoded message and argument.
+ *
+ * @see validate_msg()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(log_syst, test_log_syst_data)
 {
 	LOG_DBG("Debug message example, %d", 1);
@@ -86,7 +125,27 @@ ZTEST(log_syst, test_log_syst_data)
 	validate_msg(type, optional_flags, module_id, sub_type, payload);
 }
 
-/* Testcase to validate the SYST output of data with multiple arguments */
+/**
+ * @brief Verify a multi-argument log message is rendered into the expected SyS-T payload.
+ *
+ * @details
+ * Emits a debug message with several integer arguments and validates that the
+ * mock backend captures a MIPI SyS-T encoded record with the expected payload.
+ * This exercises printf-style rendering of multiple arguments into the
+ * machine-parseable SyS-T output used for post processing.
+ *
+ * Test steps:
+ * - Emit a debug log with a formatted string and multiple integer arguments.
+ * - Validate the captured SyS-T message fields and payload against expected values.
+ *
+ * Expected result:
+ * - The captured SyS-T record matches the expected encoded message and arguments.
+ *
+ * @see validate_msg()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(log_syst, test_log_syst_data_multiple_args)
 {
 	LOG_DBG("Debug message example, %d, %d, %d", 1, 2, 3);
@@ -97,7 +156,27 @@ ZTEST(log_syst, test_log_syst_data_multiple_args)
 	validate_msg(type, optional_flags, module_id, sub_type, payload);
 }
 
-/* Testcase to validate the SYST output of float data */
+/**
+ * @brief Verify a floating-point log message is rendered into the expected SyS-T payload.
+ *
+ * @details
+ * Emits a debug message with a floating-point argument and validates that the
+ * mock backend captures a MIPI SyS-T encoded record with the expected payload.
+ * This confirms printf-style rendering of floating-point arguments into the
+ * machine-parseable SyS-T output used for post processing.
+ *
+ * Test steps:
+ * - Emit a debug log with a formatted string and a floating-point argument.
+ * - Validate the captured SyS-T message fields and payload against expected values.
+ *
+ * Expected result:
+ * - The captured SyS-T record matches the expected encoded message and float value.
+ *
+ * @see validate_msg()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(log_syst, test_log_syst_float_data)
 {
 	LOG_DBG("Debug message example, %f", 1.223);
@@ -111,16 +190,67 @@ ZTEST(log_syst, test_log_syst_float_data)
 
 #else
 
+/**
+ * @brief Verify single-argument SyS-T rendering is skipped when SyS-T support is disabled.
+ *
+ * @details
+ * When MIPI SyS-T output is not enabled in the build the SyS-T payload cannot
+ * be produced, so this test is reported as skipped rather than failing. This
+ * keeps the SyS-T post-processing checks contingent on the configured format.
+ *
+ * Test steps:
+ * - Mark the test as skipped because SyS-T support is not enabled.
+ *
+ * Expected result:
+ * - The test is reported as skipped.
+ *
+ * @see ztest_test_skip()
+ * @ingroup logging_tests
+ */
 ZTEST(log_syst, test_log_syst_data)
 {
 	ztest_test_skip();
 }
 
+/**
+ * @brief Verify multi-argument SyS-T rendering is skipped when SyS-T support is disabled.
+ *
+ * @details
+ * When MIPI SyS-T output is not enabled in the build the SyS-T payload cannot
+ * be produced, so this test is reported as skipped rather than failing. This
+ * keeps the SyS-T post-processing checks contingent on the configured format.
+ *
+ * Test steps:
+ * - Mark the test as skipped because SyS-T support is not enabled.
+ *
+ * Expected result:
+ * - The test is reported as skipped.
+ *
+ * @see ztest_test_skip()
+ * @ingroup logging_tests
+ */
 ZTEST(log_syst, test_log_syst_data_multiple_args)
 {
 	ztest_test_skip();
 }
 
+/**
+ * @brief Verify floating-point SyS-T rendering is skipped when SyS-T support is disabled.
+ *
+ * @details
+ * When MIPI SyS-T output is not enabled in the build the SyS-T payload cannot
+ * be produced, so this test is reported as skipped rather than failing. This
+ * keeps the SyS-T post-processing checks contingent on the configured format.
+ *
+ * Test steps:
+ * - Mark the test as skipped because SyS-T support is not enabled.
+ *
+ * Expected result:
+ * - The test is reported as skipped.
+ *
+ * @see ztest_test_skip()
+ * @ingroup logging_tests
+ */
 ZTEST(log_syst, test_log_syst_float_data)
 {
 	ztest_test_skip();
