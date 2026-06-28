@@ -21,6 +21,7 @@ static struct k_poll_signal signal_err;
  * @see k_poll()
  *
  * @ingroup kernel_poll_tests
+ * @verifies ZEP-SRS-33-1
  */
 ZTEST_USER(poll_api, test_k_poll_user_num_err)
 {
@@ -39,6 +40,7 @@ ZTEST_USER(poll_api, test_k_poll_user_num_err)
  * @see k_poll()
  *
  * @ingroup kernel_poll_tests
+ * @verifies ZEP-SRS-33-1
  */
 ZTEST_USER(poll_api, test_k_poll_user_mem_err)
 {
@@ -55,6 +57,7 @@ ZTEST_USER(poll_api, test_k_poll_user_mem_err)
  * @see k_poll()
  *
  * @ingroup kernel_poll_tests
+ * @verifies ZEP-SRS-33-2
  */
 ZTEST_USER(poll_api, test_k_poll_user_type_sem_err)
 {
@@ -77,6 +80,7 @@ ZTEST_USER(poll_api, test_k_poll_user_type_sem_err)
  * @see k_poll()
  *
  * @ingroup kernel_poll_tests
+ * @verifies ZEP-SRS-33-2
  */
 ZTEST_USER(poll_api, test_k_poll_user_type_signal_err)
 {
@@ -99,6 +103,7 @@ ZTEST_USER(poll_api, test_k_poll_user_type_signal_err)
  * @see k_poll()
  *
  * @ingroup kernel_poll_tests
+ * @verifies ZEP-SRS-33-2
  */
 ZTEST_USER(poll_api, test_k_poll_user_type_fifo_err)
 {
@@ -121,6 +126,7 @@ ZTEST_USER(poll_api, test_k_poll_user_type_fifo_err)
  * @see k_poll()
  *
  * @ingroup kernel_poll_tests
+ * @verifies ZEP-SRS-33-2
  */
 ZTEST_USER(poll_api, test_k_poll_user_type_msgq_err)
 {
