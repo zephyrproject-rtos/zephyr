@@ -53,13 +53,27 @@ static void *test_setup(void)
 ZTEST_SUITE(workqueue_work_timeout, NULL, test_setup, NULL, NULL, NULL);
 
 /**
- * @brief Test workqueue work item timeout monitoring
+ * @brief Verify a work queue thread is aborted when a work item exceeds the
+ * configured timeout.
  *
- * @details Submit work items to a work queue configured with a work timeout
- * and verify the work queue thread is aborted when a work item handler runs
- * longer than the configured timeout.
+ * @details
+ * A work queue configured with a work timeout monitors how long each work item
+ * handler runs. This test submits several short items (which must not trip the
+ * timeout) followed by a blocking item that runs forever, and confirms the work
+ * queue thread is aborted only when work timeout monitoring is enabled.
  *
- * @ingroup kernel_work_tests
+ * Test steps:
+ * - Submit several work items that each run for less than the timeout.
+ * - Confirm the work queue thread is not aborted while processing them.
+ * - Submit a work item whose handler blocks forever.
+ * - Join the work queue thread.
+ *
+ * Expected result:
+ * - With CONFIG_WORKQUEUE_WORK_TIMEOUT enabled the thread is aborted (join
+ *   returns 0); otherwise the join times out with -EAGAIN.
+ *
+ * @see k_work_queue_start(), k_work_submit_to_queue()
+ * @ingroup kernel_workqueue_tests
  * @verifies ZEP-SRS-26-26
  */
 ZTEST(workqueue_work_timeout, test_work)
