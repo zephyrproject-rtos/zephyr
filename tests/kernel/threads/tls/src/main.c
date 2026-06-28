@@ -200,6 +200,14 @@ ZTEST(thread_tls, test_tls)
 	start_tls_test(0);
 }
 
+/**
+ * @brief Test thread-local storage from user mode
+ *
+ * @details Verify that thread-local variables resolve to a separate per-thread
+ * instance for user mode threads as well.
+ *
+ * @verifies ZEP-SRS-1-23
+ */
 ZTEST_USER(thread_tls, test_tls_userspace)
 {
 	/* TLS test in supervisor mode */

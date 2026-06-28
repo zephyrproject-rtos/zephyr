@@ -8,6 +8,12 @@
 #include <zephyr/device.h>
 #include <zephyr/ztest.h>
 
+/**
+ * @brief Verify k_busy_wait() delays for the requested time without multithreading
+ *
+ * @see k_busy_wait()
+ * @verifies ZEP-SRS-28-13
+ */
 ZTEST(no_multithreading, test_k_busy_wait)
 {
 	int64_t now = k_uptime_get();
@@ -39,6 +45,16 @@ static void timeout_handler(struct k_timer *timer)
 
 K_TIMER_DEFINE(timer, timeout_handler, NULL);
 
+/**
+ * @brief Verify locking interrupts prevents a timer ISR from running
+ *
+ * @details With interrupts globally locked, a started timer's expiry handler
+ * must not run until interrupts are unlocked again.
+ *
+ * @see irq_lock(), irq_unlock()
+ * @verifies ZEP-SRS-7-8
+ * @verifies ZEP-SRS-7-9
+ */
 ZTEST(no_multithreading, test_irq_locking)
 {
 	volatile bool timeout_run = false;

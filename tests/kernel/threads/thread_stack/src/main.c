@@ -412,6 +412,7 @@ void scenario_entry(void *stack_obj, size_t obj_size, size_t reported_size,
  * read/write operations.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-1-8
  */
 ZTEST(userspace_thread_stack, test_stack_buffer)
 {

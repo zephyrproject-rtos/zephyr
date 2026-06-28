@@ -171,6 +171,17 @@ static void user_start_thread(void *p1, void *p2, void *p3)
 {
 	*(int *)p1 = 100;
 }
+
+/**
+ * @brief Test starting an inactive thread from user mode
+ *
+ * @details Create a thread with a K_FOREVER start delay (inactive) from a user
+ * thread and start it with k_thread_start(), confirming it then runs.
+ *
+ * @ingroup kernel_thread_tests
+ * @see k_thread_start()
+ * @verifies ZEP-SRS-1-14
+ */
 ZTEST_USER(threads_lifecycle, test_thread_start_user)
 {
 	tp2 = 5;
