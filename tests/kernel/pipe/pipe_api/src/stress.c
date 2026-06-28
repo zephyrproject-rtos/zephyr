@@ -43,6 +43,7 @@ static struct k_pipe pipe;
  * @see k_pipe_write()
  */
 ZTEST(k_pipe_stress, test_pipe_write)
+ * @verifies ZEP-SRS-32-3
 {
 	int rc;
 	const size_t len = WRITE_LEN;
@@ -81,6 +82,7 @@ ZTEST(k_pipe_stress, test_pipe_write)
  * @see k_pipe_read()
  */
 ZTEST(k_pipe_stress, test_pipe_read)
+ * @verifies ZEP-SRS-32-4
 {
 	int rc;
 	const size_t len = READ_LEN;

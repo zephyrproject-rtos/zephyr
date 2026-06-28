@@ -310,6 +310,7 @@ static void test_thread_timeout_reply_values_wfe(void *p1, void *p2, void *p3)
  * - The timed get returns NULL after the timeout; K_NO_WAIT returns NULL at once.
  *
  * @see k_fifo_get()
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_timeout_1cpu, test_timeout_empty_fifo)
 {
@@ -347,6 +348,7 @@ ZTEST(fifo_timeout_1cpu, test_timeout_empty_fifo)
  *
  * @see k_fifo_get()
  * @see k_fifo_put()
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_timeout, test_timeout_non_empty_fifo)
 {
@@ -390,6 +392,7 @@ ZTEST(fifo_timeout, test_timeout_non_empty_fifo)
  *
  * @see k_fifo_get()
  * @see k_fifo_put()
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_timeout_1cpu, test_timeout_fifo_thread)
 {
@@ -489,6 +492,7 @@ ZTEST(fifo_timeout_1cpu, test_timeout_fifo_thread)
  * - Threads time out strictly in increasing-timeout order (within one tick).
  *
  * @see k_fifo_get()
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_on_fifo)
 {
@@ -519,6 +523,7 @@ ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_on_fifo)
  * - Threads time out in increasing-timeout order across both FIFOs.
  *
  * @see k_fifo_get()
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_on_dual_fifos)
 {
@@ -555,6 +560,7 @@ ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_on_dual_fifos)
  *
  * @see k_fifo_get()
  * @see k_fifo_put()
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_fail_on_fifo)
 {

@@ -218,6 +218,8 @@ static void test_thread_put_timeout(void *p1, void *p2, void *p3)
  *
  * @see k_lifo_put()
  * @see k_lifo_get()
+ * @verifies ZEP-SRS-23-2
+ * @verifies ZEP-SRS-23-4
  */
 ZTEST(lifo_usage, test_lifo_nowait)
 {
@@ -258,6 +260,8 @@ ZTEST(lifo_usage, test_lifo_nowait)
  *
  * @see k_lifo_get()
  * @see k_lifo_put()
+ * @verifies ZEP-SRS-23-2
+ * @verifies ZEP-SRS-23-4
  */
 ZTEST(lifo_usage_1cpu, test_lifo_wait)
 {
@@ -300,6 +304,7 @@ ZTEST(lifo_usage_1cpu, test_lifo_wait)
  * - The timed get returns NULL after the timeout; K_NO_WAIT returns NULL at once.
  *
  * @see k_lifo_get()
+ * @verifies ZEP-SRS-23-4
  */
 ZTEST(lifo_usage_1cpu, test_timeout_empty_lifo)
 {
@@ -339,6 +344,8 @@ ZTEST(lifo_usage_1cpu, test_timeout_empty_lifo)
  *
  * @see k_lifo_get()
  * @see k_lifo_put()
+ * @verifies ZEP-SRS-23-2
+ * @verifies ZEP-SRS-23-4
  */
 ZTEST(lifo_usage, test_timeout_non_empty_lifo)
 {
@@ -381,6 +388,8 @@ ZTEST(lifo_usage, test_timeout_non_empty_lifo)
  *
  * @see k_lifo_get()
  * @see k_lifo_put()
+ * @verifies ZEP-SRS-23-2
+ * @verifies ZEP-SRS-23-4
  */
 ZTEST(lifo_usage_1cpu, test_timeout_lifo_thread)
 {
@@ -496,6 +505,7 @@ void test_thread_pend_and_timeout(void *p1, void *p2, void *p3)
  * - Threads time out strictly in increasing-timeout order.
  *
  * @see k_lifo_get()
+ * @verifies ZEP-SRS-23-4
  */
 ZTEST(lifo_usage_1cpu, test_timeout_threads_pend_on_lifo)
 {

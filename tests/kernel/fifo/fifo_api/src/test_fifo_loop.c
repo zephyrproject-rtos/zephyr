@@ -100,6 +100,8 @@ static void tfifo_read_write(struct k_fifo *pfifo)
  *
  * @see k_fifo_put()
  * @see k_fifo_get()
+ * @verifies ZEP-SRS-24-3
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_api_1cpu, test_fifo_loop)
 {

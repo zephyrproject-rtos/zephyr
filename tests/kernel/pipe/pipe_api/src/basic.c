@@ -104,6 +104,8 @@ ZTEST(k_pipe_basic, test_pipe_write_read_one)
  * @see k_pipe_read()
  */
 ZTEST(k_pipe_basic, test_pipe_write_read_multiple)
+ * @verifies ZEP-SRS-32-3
+ * @verifies ZEP-SRS-32-4
 {
 	uint8_t buffer[10];
 	uint8_t data = 0x55;
@@ -191,6 +193,8 @@ ZTEST(k_pipe_basic, test_pipe_read_empty)
  * @see k_pipe_read()
  */
 ZTEST(k_pipe_basic, test_pipe_read_write_full)
+ * @verifies ZEP-SRS-32-3
+ * @verifies ZEP-SRS-32-4
 {
 	uint8_t buffer[10];
 	uint8_t input[10];
@@ -226,6 +230,8 @@ ZTEST(k_pipe_basic, test_pipe_read_write_full)
  * @see k_pipe_read()
  */
 ZTEST(k_pipe_basic, test_pipe_read_write_wrap_around)
+ * @verifies ZEP-SRS-32-3
+ * @verifies ZEP-SRS-32-4
 {
 	uint8_t buffer[12];
 	uint8_t input[8];

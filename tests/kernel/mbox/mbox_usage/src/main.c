@@ -112,6 +112,8 @@ static void test_send(void *p1, void *p2, void *p3)
  *
  * @see k_mbox_get()
  * @see k_mbox_put()
+ * @verifies ZEP-SRS-25-5
+ * @verifies ZEP-SRS-25-9
  */
 ZTEST(mbox_usage, test_msg_receiver)
 {
@@ -151,6 +153,8 @@ static void test_send_un(void *p1, void *p2, void *p3)
  *
  * @see k_mbox_get()
  * @see k_mbox_put()
+ * @verifies ZEP-SRS-25-9
+ * @verifies ZEP-SRS-25-11
  */
 ZTEST(mbox_usage, test_msg_receiver_unlimited)
 {
@@ -218,6 +222,9 @@ static void thread_high_prio(void *p1, void *p2, void *p3)
  *
  * @see k_mbox_put()
  * @see k_mbox_get()
+ * @verifies ZEP-SRS-25-4
+ * @verifies ZEP-SRS-25-14
+ * @verifies ZEP-SRS-25-15
  */
 ZTEST(mbox_usage_1cpu, test_multi_thread_send_get)
 {

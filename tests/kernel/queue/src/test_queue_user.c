@@ -82,6 +82,9 @@ void child_thread_get(void *p1, void *p2, void *p3)
  * @see k_queue_alloc_append()
  * @see k_queue_get()
  * @see k_queue_cancel_wait()
+ * @verifies ZEP-SRS-20-3
+ * @verifies ZEP-SRS-20-6
+ * @verifies ZEP-SRS-20-15
  */
 ZTEST(queue_api_1cpu, test_queue_supv_to_user)
 {
@@ -236,6 +239,7 @@ ZTEST_USER(queue_api, test_queue_alloc_append_user)
  * @ingroup tests_kernel_queue
  *
  * @see k_queue_alloc_append()
+ * @verifies ZEP-SRS-20-14
  */
 ZTEST(queue_api, test_auto_free)
 {

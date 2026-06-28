@@ -335,6 +335,8 @@ ZTEST(msgq_api_1cpu, test_msgq_thread)
  *
  * @see k_msgq_put()
  * @see k_msgq_get()
+ * @verifies ZEP-SRS-31-4
+ * @verifies ZEP-SRS-31-9
  */
 ZTEST(msgq_api, test_msgq_thread_overflow)
 {
@@ -410,6 +412,8 @@ ZTEST_USER(msgq_api, test_msgq_user_thread)
  * @see k_msgq_alloc_init()
  * @see k_msgq_put()
  * @see k_msgq_get()
+ * @verifies ZEP-SRS-31-4
+ * @verifies ZEP-SRS-31-9
  */
 ZTEST_USER(msgq_api, test_msgq_user_thread_overflow)
 {
@@ -650,6 +654,7 @@ ZTEST(msgq_api_1cpu, test_msgq_full)
  *
  * @see k_msgq_put()
  * @see k_msgq_put_front()
+ * @verifies ZEP-SRS-31-6
  */
 ZTEST(msgq_api_1cpu, test_msgq_thread_pending)
 {

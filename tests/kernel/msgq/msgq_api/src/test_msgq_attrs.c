@@ -86,6 +86,8 @@ ZTEST(msgq_api, test_msgq_attrs_get)
  *
  * @see k_msgq_get_attrs()
  * @see k_msgq_alloc_init()
+ * @verifies ZEP-SRS-31-15
+ * @verifies ZEP-SRS-31-16
  */
 ZTEST_USER(msgq_api, test_msgq_user_attrs_get)
 {

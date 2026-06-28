@@ -85,6 +85,7 @@ ZTEST(msgq_api_1cpu, test_msgq_put_fail)
  *
  * @see k_msgq_put()
  * @see k_msgq_alloc_init()
+ * @verifies ZEP-SRS-31-7
  */
 ZTEST_USER(msgq_api, test_msgq_user_put_fail)
 {
@@ -138,6 +139,7 @@ ZTEST(msgq_api_1cpu, test_msgq_get_fail)
  *
  * @see k_msgq_get()
  * @see k_msgq_alloc_init()
+ * @verifies ZEP-SRS-31-11
  */
 ZTEST_USER(msgq_api, test_msgq_user_get_fail)
 {
