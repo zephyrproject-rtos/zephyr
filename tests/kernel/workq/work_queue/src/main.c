@@ -568,6 +568,7 @@ static void test_triggered_trigger(void)
  * - Every triggered handler runs with a poll result of 0.
  *
  * @see k_work_poll_init(), k_work_poll_submit()
+ * @verifies ZEP-SRS-26-27
  */
 ZTEST(workqueue_triggered, test_triggered)
 {
@@ -611,6 +612,7 @@ ZTEST(workqueue_triggered, test_triggered)
  * - Every triggered handler runs with a poll result of 0.
  *
  * @see k_work_poll_init(), k_work_poll_submit()
+ * @verifies ZEP-SRS-26-27
  */
 ZTEST(workqueue_triggered, test_already_triggered)
 {
@@ -673,6 +675,7 @@ static void triggered_resubmit_work_handler(struct k_work *work)
  * - The handler runs once per iteration and all results are recorded in order.
  *
  * @see k_work_poll_init(), k_work_poll_submit()
+ * @verifies ZEP-SRS-26-27
  */
 ZTEST(workqueue_triggered, test_triggered_resubmit)
 {
@@ -727,6 +730,7 @@ ZTEST(workqueue_triggered, test_triggered_resubmit)
  * - Every triggered handler runs with a poll result of 0.
  *
  * @see k_work_poll_init(), k_work_poll_submit()
+ * @verifies ZEP-SRS-26-27
  */
 ZTEST(workqueue_triggered, test_triggered_no_wait)
 {
@@ -769,6 +773,7 @@ ZTEST(workqueue_triggered, test_triggered_no_wait)
  * - Every triggered handler runs with a poll result of -EAGAIN.
  *
  * @see k_work_poll_init(), k_work_poll_submit()
+ * @verifies ZEP-SRS-26-27
  */
 ZTEST(workqueue_triggered, test_triggered_no_wait_expired)
 {
@@ -809,6 +814,7 @@ ZTEST(workqueue_triggered, test_triggered_no_wait_expired)
  * - Every triggered handler runs with a poll result of 0.
  *
  * @see k_work_poll_init(), k_work_poll_submit()
+ * @verifies ZEP-SRS-26-27
  */
 ZTEST(workqueue_triggered, test_triggered_wait)
 {
@@ -854,6 +860,7 @@ ZTEST(workqueue_triggered, test_triggered_wait)
  *   poll result of -EAGAIN.
  *
  * @see k_work_poll_init(), k_work_poll_submit()
+ * @verifies ZEP-SRS-26-27
  */
 ZTEST(workqueue_triggered, test_triggered_wait_expired)
 {
@@ -950,6 +957,7 @@ static void test_triggered_from_msgq_start(void)
  *   the message queue lock.
  *
  * @see k_work_poll_init(), k_work_poll_submit_to_queue()
+ * @verifies ZEP-SRS-26-27
  */
 ZTEST(workqueue_triggered, test_triggered_from_msgq)
 {
@@ -1015,6 +1023,7 @@ ZTEST(workqueue_triggered, test_delayed_work_define)
  *   return -EINVAL.
  *
  * @see k_work_poll_cancel()
+ * @verifies ZEP-SRS-26-28
  */
 ZTEST(workqueue_triggered, test_triggered_cancel)
 {

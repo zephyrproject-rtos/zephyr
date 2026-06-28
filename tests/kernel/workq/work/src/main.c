@@ -212,6 +212,11 @@ static void test_delayable_init(void)
 }
 
 /* Check that submission to an unstarted queue is diagnosed. */
+/**
+ * @brief Submitting to an unstarted work queue returns -ENODEV
+ *
+ * @verifies ZEP-SRS-26-11
+ */
 ZTEST(work, test_unstarted)
 {
 	int rc;
@@ -291,6 +296,11 @@ static void test_queue_start(void)
 }
 
 /* Check validation of submission without a destination queue. */
+/**
+ * @brief Submitting to a NULL work queue returns -EINVAL
+ *
+ * @verifies ZEP-SRS-26-11
+ */
 ZTEST(work, test_null_queue)
 {
 	int rc;
@@ -346,6 +356,7 @@ ZTEST(work_1cpu, test_1cpu_simple_queue)
 /* Single CPU check that work submitted while the queue's runner
  * thread is suspended is queued (not lost or rejected) and runs as
  * soon as the thread is resumed.
+ * @verifies ZEP-SRS-26-13
  */
 ZTEST(work_1cpu, test_1cpu_suspend_resume_queue)
 {
@@ -384,6 +395,12 @@ ZTEST(work_1cpu, test_1cpu_suspend_resume_queue)
 }
 
 /* Basic SMP check submitting with a non-blocking handler. */
+/**
+ * @brief Work submitted to a queue runs on another CPU
+ *
+ * @verifies ZEP-SRS-26-11
+ * @verifies ZEP-SRS-26-13
+ */
 ZTEST(work, test_smp_simple_queue)
 {
 	if (!IS_ENABLED(CONFIG_SMP) || (CONFIG_MP_MAX_NUM_CPUS == 1)) {
@@ -506,6 +523,7 @@ ZTEST(work_1cpu, test_1cpu_reentrant_queue)
 
 /* Single CPU submit two work items and wait for flush in order
  * before they get started.
+ * @verifies ZEP-SRS-26-15
  */
 ZTEST(work_1cpu, test_1cpu_queued_flush)
 {
@@ -581,6 +599,11 @@ ZTEST(work_1cpu, test_1cpu_running_flush)
 }
 
 /* Single CPU schedule a work item and wait for flush. */
+/**
+ * @brief Flushing a delayable work item waits for its completion
+ *
+ * @verifies ZEP-SRS-26-15
+ */
 ZTEST(work_1cpu, test_1cpu_delayed_flush)
 {
 	int rc;
@@ -703,6 +726,11 @@ ZTEST(work_1cpu, test_1cpu_delayed_cancel)
 
 
 /* Single CPU cancel before scheduled work item is queued should not wait. */
+/**
+ * @brief Cancel-and-wait of a delayable work item
+ *
+ * @verifies ZEP-SRS-26-24
+ */
 ZTEST(work_1cpu, test_1cpu_delayed_cancel_sync)
 {
 	int rc;
@@ -731,6 +759,12 @@ ZTEST(work_1cpu, test_1cpu_delayed_cancel_sync)
 }
 
 /* Single CPU cancel after delayable item starts should wait. */
+/**
+ * @brief Cancel-and-wait of a running delayable work item
+ *
+ * @verifies ZEP-SRS-26-19
+ * @verifies ZEP-SRS-26-24
+ */
 ZTEST(work_1cpu, test_1cpu_delayed_cancel_sync_wait)
 {
 	int rc;
@@ -851,6 +885,8 @@ ZTEST(work_1cpu, test_1cpu_running_cancel)
 
 /* Single CPU test wait-for-cancellation after the work item has
  * started running.
+ * @verifies ZEP-SRS-26-18
+ * @verifies ZEP-SRS-26-19
  */
 ZTEST(work_1cpu, test_1cpu_running_cancel_sync)
 {
@@ -913,6 +949,7 @@ ZTEST(work_1cpu, test_1cpu_running_cancel_sync)
 
 /* SMP cancel after work item is started should succeed but require
  * wait.
+ * @verifies ZEP-SRS-26-18
  */
 ZTEST(work, test_smp_running_cancel)
 {
@@ -956,6 +993,11 @@ ZTEST(work, test_smp_running_cancel)
 }
 
 /* Drain with no active workers completes immediately. */
+/**
+ * @brief Draining an empty work queue completes immediately
+ *
+ * @verifies ZEP-SRS-26-5
+ */
 ZTEST(work, test_drain_empty)
 {
 	int rc;
@@ -1175,6 +1217,11 @@ static void handle_1cpu_basic_schedule_running(struct k_work *work)
 }
 
 /* Single CPU test that schedules when running */
+/**
+ * @brief A delayable work handler can reschedule itself
+ *
+ * @verifies ZEP-SRS-26-23
+ */
 ZTEST(work_1cpu, test_1cpu_basic_schedule_running)
 {
 	int rc;
@@ -1211,6 +1258,11 @@ ZTEST(work_1cpu, test_1cpu_basic_schedule_running)
 }
 
 /* Single CPU test schedule without delay is queued immediately. */
+/**
+ * @brief Scheduling a delayable work item with no delay queues it immediately
+ *
+ * @verifies ZEP-SRS-26-21
+ */
 ZTEST(work_1cpu, test_1cpu_immed_schedule)
 {
 	int rc;
@@ -1307,6 +1359,7 @@ ZTEST(work_1cpu, test_1cpu_basic_reschedule)
 
 /* Single CPU test that delayed work can be immediately queued by
  * reschedule API.
+ * @verifies ZEP-SRS-26-23
  */
 ZTEST(work_1cpu, test_1cpu_immed_reschedule)
 {
@@ -1440,6 +1493,11 @@ static bool try_queue_no_yield(struct k_work_q *wq)
 }
 
 /* Verify that no-yield policy works */
+/**
+ * @brief Work queue no-yield option processes items without yielding
+ *
+ * @verifies ZEP-SRS-26-4
+ */
 ZTEST(work_1cpu, test_1cpu_queue_no_yield)
 {
 	/* This test needs two slots available in the sem! */
@@ -1484,6 +1542,12 @@ ZTEST(work_1cpu, test_1cpu_system_queue)
 	zassert_equal(rc, 0);
 }
 
+/**
+ * @brief Scheduling a delayable work item on the system work queue
+ *
+ * @verifies ZEP-SRS-26-10
+ * @verifies ZEP-SRS-26-21
+ */
 ZTEST(work_1cpu, test_1cpu_system_schedule)
 {
 	int rc;
@@ -1527,6 +1591,12 @@ ZTEST(work_1cpu, test_1cpu_system_schedule)
 		     "long %u > %u\n", elapsed_ms, max_ms);
 }
 
+/**
+ * @brief Rescheduling a delayable work item on the system work queue
+ *
+ * @verifies ZEP-SRS-26-10
+ * @verifies ZEP-SRS-26-23
+ */
 ZTEST(work_1cpu, test_1cpu_system_reschedule)
 {
 	int rc;

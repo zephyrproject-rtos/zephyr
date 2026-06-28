@@ -191,6 +191,12 @@ void *workq_setup(void)
 	return NULL;
 }
 
+/**
+ * @brief Submitting and running work from user mode
+ *
+ * @verifies ZEP-SRS-26-11
+ * @verifies ZEP-SRS-26-13
+ */
 ZTEST_USER(workqueue_api, test_workq_user_mode)
 {
 	/* Do not disturb the ordering of these test cases */
