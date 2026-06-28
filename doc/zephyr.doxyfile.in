@@ -1058,6 +1058,7 @@ INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
 			 @ZEPHYR_BASE@/tests/arch \
 			 @ZEPHYR_BASE@/tests/lib/multi_heap \
 			 @ZEPHYR_BASE@/tests/lib/devicetree/devices \
+			 @ZEPHYR_BASE@/tests/subsys/logging \
                          @DOXY_REQ_INPUT@ \
 
 # This tag can be used to specify the character encoding of the source files

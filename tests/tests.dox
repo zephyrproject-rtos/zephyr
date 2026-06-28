@@ -25,4 +25,9 @@
 @{
 @}
 
+@defgroup logging_tests Logging
+@ingroup all_tests
+@{
+@}
+
 */
