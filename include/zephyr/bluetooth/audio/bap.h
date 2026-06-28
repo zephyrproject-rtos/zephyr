@@ -108,7 +108,7 @@ extern "C" {
 /**
  * @brief Recommended connection parameters for coexistence of ACL and ISO
  *
- * Defined by Table 8.3 in BAP 1.0.2
+ * Defined by Table 8.4 in BAP 1.0.2
  */
 #define BT_BAP_CONN_PARAM_RELAXED                                                                  \
 	BT_LE_CONN_PARAM(BT_GAP_MS_TO_CONN_INTERVAL(50), BT_GAP_MS_TO_CONN_INTERVAL(70), 0,        \
