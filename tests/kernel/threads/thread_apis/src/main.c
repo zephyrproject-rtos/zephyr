@@ -42,6 +42,8 @@ static ZTEST_DMEM int tp = 10;
 /**
  * @ingroup kernel_thread_tests
  * @brief Verify main thread
+ *
+ * @verifies ZEP-SRS-1-31
  */
 ZTEST(threads_lifecycle, test_systhreads_main)
 {
@@ -51,6 +53,8 @@ ZTEST(threads_lifecycle, test_systhreads_main)
 /**
  * @ingroup kernel_thread_tests
  * @brief Verify idle thread
+ *
+ * @verifies ZEP-SRS-1-32
  */
 ZTEST(threads_lifecycle, test_systhreads_idle)
 {
@@ -528,6 +532,8 @@ static void user_start_thread(void *p1, void *p2, void *p3)
  * @brief Test case for verifying thread timeout expiration and remaining time.
  *
  * @ingroup kernel_thread_tests
+ * @see k_thread_timeout_remaining_ticks(), k_thread_timeout_expires_ticks()
+ * @verifies ZEP-SRS-1-33
  */
 
 ZTEST_USER(threads_lifecycle, test_thread_timeout_remaining_expires)
@@ -590,7 +596,9 @@ static void foreach_callback(const struct k_thread *thread, void *user_data)
  * total.
  *
  * @ingroup kernel_thread_tests
- * @see k_thread_runtime_stats_get()
+ * @see k_thread_runtime_stats_get(), k_thread_runtime_stats_all_get()
+ * @verifies ZEP-SRS-1-28
+ * @verifies ZEP-SRS-1-29
  */
 ZTEST(threads_lifecycle, test_thread_runtime_stats_get)
 {
@@ -616,6 +624,10 @@ ZTEST(threads_lifecycle, test_thread_runtime_stats_get)
  *
  * This test verifies the accuracy of the `k_busy_wait` function by checking
  * the thread's execution cycle statistics before and after calling the function.
+ *
+ * @ingroup kernel_thread_tests
+ * @see k_busy_wait()
+ * @verifies ZEP-SRS-28-13
  */
 ZTEST(threads_lifecycle, test_k_busy_wait)
 {
@@ -660,6 +672,8 @@ static void tp_entry(void *p1, void *p2, void *p3)
  *        in user mode.
  *
  * @ingroup kernel_thread_tests
+ * @see k_busy_wait()
+ * @verifies ZEP-SRS-28-13
  */
 ZTEST_USER(threads_lifecycle_1cpu, test_k_busy_wait_user)
 {

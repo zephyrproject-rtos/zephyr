@@ -186,6 +186,7 @@ static void create_negative_test_thread(int choice)
  * @ingroup kernel_thread_tests
  *
  * @see k_thread_start()
+ * @verifies ZEP-SRS-1-14
  */
 ZTEST_USER(thread_error_case, test_thread_start_error)
 {
@@ -201,6 +202,7 @@ ZTEST_USER(thread_error_case, test_thread_start_error)
  * @ingroup kernel_thread_tests
  *
  * @see k_float_disable()
+ * @verifies ZEP-SRS-29-3
  */
 ZTEST_USER(thread_error_case, test_float_disable)
 {
@@ -217,6 +219,7 @@ ZTEST_USER(thread_error_case, test_float_disable)
  * @ingroup kernel_thread_tests
  *
  * @see k_thread_timeout_remaining_ticks()
+ * @verifies ZEP-SRS-1-33
  */
 ZTEST_USER(thread_error_case, test_timeout_remaining_ticks)
 {
@@ -233,6 +236,7 @@ ZTEST_USER(thread_error_case, test_timeout_remaining_ticks)
  * @ingroup kernel_thread_tests
  *
  * @see k_thread_timeout_expires_ticks()
+ * @verifies ZEP-SRS-1-33
  */
 ZTEST_USER(thread_error_case, test_timeout_expires_ticks)
 {
@@ -249,6 +253,7 @@ ZTEST_USER(thread_error_case, test_timeout_expires_ticks)
  * @ingroup kernel_thread_tests
  *
  * @see k_thread_create()
+ * @verifies ZEP-SRS-1-1
  */
 ZTEST_USER(thread_error_case, test_thread_create_uninit)
 {
@@ -265,6 +270,7 @@ ZTEST_USER(thread_error_case, test_thread_create_uninit)
  * @ingroup kernel_thread_tests
  *
  * @see k_thread_create()
+ * @verifies ZEP-SRS-1-1
  */
 ZTEST_USER(thread_error_case, test_thread_create_stack_null)
 {
@@ -282,6 +288,7 @@ ZTEST_USER(thread_error_case, test_thread_create_stack_null)
  * @ingroup kernel_thread_tests
  *
  * @see k_thread_create()
+ * @verifies ZEP-SRS-1-1
  */
 ZTEST_USER(thread_error_case, test_thread_create_stack_overflow)
 {
@@ -297,6 +304,7 @@ ZTEST_USER(thread_error_case, test_thread_create_stack_overflow)
  * @ingroup kernel_thread_tests
  *
  * @see k_thread_suspend()
+ * @verifies ZEP-SRS-1-3
  */
 ZTEST_USER(thread_error_case, test_thread_suspend_null)
 {
@@ -312,6 +320,7 @@ ZTEST_USER(thread_error_case, test_thread_suspend_null)
  * @ingroup kernel_thread_tests
  *
  * @see k_thread_resume()
+ * @verifies ZEP-SRS-1-4
  */
 ZTEST_USER(thread_error_case, test_thread_resume_null)
 {
@@ -327,6 +336,7 @@ ZTEST_USER(thread_error_case, test_thread_resume_null)
  * @ingroup kernel_thread_tests
  *
  * @see k_thread_priority_set()
+ * @verifies ZEP-SRS-1-2
  */
 ZTEST_USER(thread_error_case, test_thread_priority_set_null)
 {
@@ -342,6 +352,7 @@ ZTEST_USER(thread_error_case, test_thread_priority_set_null)
  * @ingroup kernel_thread_tests
  *
  * @see k_thread_priority_get()
+ * @verifies ZEP-SRS-1-16
  */
 ZTEST_USER(thread_error_case, test_thread_priority_get_null)
 {
@@ -357,6 +368,7 @@ ZTEST_USER(thread_error_case, test_thread_priority_get_null)
  * @ingroup kernel_thread_tests
  *
  * @see k_wakeup()
+ * @verifies ZEP-SRS-28-11
  */
 ZTEST_USER(thread_error_case, test_thread_wakeup_null)
 {
@@ -375,6 +387,7 @@ ZTEST_USER(thread_error_case, test_thread_wakeup_null)
  * @ingroup kernel_thread_tests
  *
  * @see k_thread_create()
+ * @verifies ZEP-SRS-8-8
  */
 ZTEST_USER(thread_error_case, test_thread_create_supervisor)
 {
@@ -393,6 +406,7 @@ ZTEST_USER(thread_error_case, test_thread_create_supervisor)
  * @ingroup kernel_thread_tests
  *
  * @see k_thread_create()
+ * @verifies ZEP-SRS-8-8
  */
 ZTEST_USER(thread_error_case, test_thread_create_essential)
 {

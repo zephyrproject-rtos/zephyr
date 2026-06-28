@@ -90,6 +90,7 @@ ZTEST_USER(threads_lifecycle, test_threads_abort_others)
  * @brief Test abort on an already terminated thread
  *
  * @see k_thread_abort()
+ * @verifies ZEP-SRS-1-6
  */
 ZTEST(threads_lifecycle_1cpu, test_threads_abort_repeat)
 {

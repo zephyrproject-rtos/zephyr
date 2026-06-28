@@ -35,7 +35,12 @@ static void func(void *arg1, void *arg2, void *arg3)
 	*flag = true;
 }
 
-/** @brief Check we can create a thread from userspace, using dynamic objects */
+/**
+ * @brief Check we can create a thread from userspace, using dynamic objects
+ *
+ * @verifies ZEP-SRS-1-24
+ * @verifies ZEP-SRS-1-25
+ */
 ZTEST_USER(dynamic_thread_stack, test_dynamic_thread_stack_userspace_dyn_obj)
 {
 	k_tid_t tid;
@@ -71,7 +76,12 @@ ZTEST_USER(dynamic_thread_stack, test_dynamic_thread_stack_userspace_dyn_obj)
 	zassert_ok(k_thread_stack_free(stack));
 }
 
-/** @brief Exercise the pool-based thread stack allocator */
+/**
+ * @brief Exercise the pool-based thread stack allocator
+ *
+ * @verifies ZEP-SRS-1-24
+ * @verifies ZEP-SRS-1-25
+ */
 ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_pool)
 {
 	static k_tid_t tid[CONFIG_DYNAMIC_THREAD_POOL_SIZE];
@@ -214,7 +224,12 @@ static void perm_func_violator(void *arg1, void *arg2, void *arg3)
 	zassert_unreachable("should not reach here");
 }
 
-/** @brief Exercise stack permissions */
+/**
+ * @brief Exercise stack permissions
+ *
+ * @verifies ZEP-SRS-1-24
+ * @verifies ZEP-SRS-1-25
+ */
 ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_permission)
 {
 	static k_tid_t tid[2];

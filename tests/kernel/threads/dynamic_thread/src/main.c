@@ -191,6 +191,10 @@ ZTEST(thread_dynamic, test_thread_index_management)
  *
  * @details This is a simple test to create a user thread
  * dynamically via k_object_alloc() under a kernel thread.
+ *
+ * @see k_thread_create(), k_object_alloc()
+ * @verifies ZEP-SRS-1-1
+ * @verifies ZEP-SRS-1-9
  */
 ZTEST(thread_dynamic, test_kernel_create_dyn_user_thread)
 {
@@ -207,6 +211,10 @@ ZTEST(thread_dynamic, test_kernel_create_dyn_user_thread)
  *
  * @details This is a simple test to create a user thread
  * dynamically via k_object_alloc() under a user thread.
+ *
+ * @see k_thread_create(), k_object_alloc()
+ * @verifies ZEP-SRS-1-1
+ * @verifies ZEP-SRS-1-9
  */
 ZTEST_USER(thread_dynamic, test_user_create_dyn_user_thread)
 {
