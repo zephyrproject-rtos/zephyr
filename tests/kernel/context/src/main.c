@@ -226,7 +226,10 @@ void irq_enable_wrapper(int irq)
 	irq_enable(irq);
 }
 
-#if defined(HAS_POWERSAVE_INSTRUCTION)
+/* __DOXYGEN__ is predefined in the traceability build so the
+ * requirement-annotated CPU-idle tests below stay visible to Doxygen.
+ */
+#if defined(HAS_POWERSAVE_INSTRUCTION) || defined(__DOXYGEN__)
 #if defined(CONFIG_TICKLESS_KERNEL)
 static struct k_timer idle_timer;
 
@@ -329,6 +332,7 @@ static void _test_kernel_cpu_idle(int atomic)
  *   duration within tolerance.
  *
  * @see k_cpu_atomic_idle()
+ * @verifies ZEP-SRS-13-14
  */
 ZTEST(context_cpu_idle, test_cpu_idle_atomic)
 {
@@ -363,6 +367,7 @@ ZTEST(context_cpu_idle, test_cpu_idle_atomic)
  * - The CPU idles and resumes after the expected time has elapsed.
  *
  * @see k_cpu_idle()
+ * @verifies ZEP-SRS-13-14
  */
 ZTEST(context_cpu_idle, test_cpu_idle)
 {
