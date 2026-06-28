@@ -1019,26 +1019,51 @@ ZTEST(userspace, test_object_recycle)
 	z_except_reason(provided); \
 } while (false)
 
+/**
+ * @brief Test oops panic
+ *
+ * @verifies ZEP-SRS-16-7
+ */
 ZTEST_USER(userspace, test_oops_panic)
 {
 	test_oops(K_ERR_KERNEL_PANIC, K_ERR_KERNEL_OOPS);
 }
 
+/**
+ * @brief Test oops oops
+ *
+ * @verifies ZEP-SRS-16-7
+ */
 ZTEST_USER(userspace, test_oops_oops)
 {
 	test_oops(K_ERR_KERNEL_OOPS, K_ERR_KERNEL_OOPS);
 }
 
+/**
+ * @brief Test oops exception
+ *
+ * @verifies ZEP-SRS-16-7
+ */
 ZTEST_USER(userspace, test_oops_exception)
 {
 	test_oops(K_ERR_CPU_EXCEPTION, K_ERR_KERNEL_OOPS);
 }
 
+/**
+ * @brief Test oops maxint
+ *
+ * @verifies ZEP-SRS-16-7
+ */
 ZTEST_USER(userspace, test_oops_maxint)
 {
 	test_oops(INT_MAX, K_ERR_KERNEL_OOPS);
 }
 
+/**
+ * @brief Test oops stackcheck
+ *
+ * @verifies ZEP-SRS-16-7
+ */
 ZTEST_USER(userspace, test_oops_stackcheck)
 {
 	test_oops(K_ERR_STACK_CHK_FAIL, K_ERR_STACK_CHK_FAIL);
@@ -1065,6 +1090,11 @@ static inline void z_vrfy_check_syscall_context(void)
 }
 #include <zephyr/syscalls/check_syscall_context_mrsh.c>
 
+/**
+ * @brief Test userspace syscall context
+ *
+ * @verifies ZEP-SRS-8-10
+ */
 ZTEST_USER(userspace, test_userspace_syscall_context)
 {
 	check_syscall_context();
@@ -1082,6 +1112,11 @@ static void tls_leakage_user_part(void *p1, void *p2, void *p3)
 }
 #endif
 
+/**
+ * @brief Test tls leakage
+ *
+ * @verifies ZEP-SRS-8-24
+ */
 ZTEST(userspace, test_tls_leakage)
 {
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
@@ -1109,6 +1144,11 @@ void tls_entry(void *p1, void *p2, void *p3)
 }
 #endif
 
+/**
+ * @brief Test tls pointer
+ *
+ * @verifies ZEP-SRS-8-24
+ */
 ZTEST(userspace, test_tls_pointer)
 {
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
@@ -1195,6 +1235,11 @@ static K_KERNEL_THREAD_DEFINE(kernel_only_thread,
 			      kernel_only_thread_entry, NULL, NULL, NULL,
 			      0, 0, 0);
 
+/**
+ * @brief Test kernel only thread
+ *
+ * @verifies ZEP-SRS-8-9
+ */
 ZTEST(userspace, test_kernel_only_thread)
 {
 	kernel_only_thread_ran = false;

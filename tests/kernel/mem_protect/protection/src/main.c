@@ -87,6 +87,7 @@ static void execute_from_buffer(uint8_t *dst)
  * @brief Test write to read only section
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
  */
 ZTEST(protection, test_write_ro)
 {
@@ -116,6 +117,7 @@ ZTEST(protection, test_write_ro)
  * @brief Test to execute on text section
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
  */
 ZTEST(protection, test_write_text)
 {
@@ -147,6 +149,7 @@ ZTEST(protection, test_write_text)
  * @brief Test execution from data section
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
  */
 ZTEST(protection, test_exec_data)
 {
@@ -162,6 +165,7 @@ ZTEST(protection, test_exec_data)
  * @brief Test execution from stack section
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
  */
 ZTEST(protection, test_exec_stack)
 {
@@ -179,6 +183,7 @@ ZTEST(protection, test_exec_stack)
  * @brief Test execution from heap
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-1
  */
 ZTEST(protection, test_exec_heap)
 {

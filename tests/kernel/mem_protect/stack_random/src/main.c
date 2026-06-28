@@ -53,6 +53,7 @@ static struct k_thread alt_thread_data;
  *
  * @ingroup kernel_memprotect_tests
  *
+ * @verifies ZEP-SRS-8-27
  */
 ZTEST(stack_pointer_randomness, test_stack_pt_randomization)
 {

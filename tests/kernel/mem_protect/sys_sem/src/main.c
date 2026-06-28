@@ -153,6 +153,8 @@ static void sem_multiple_threads_wait_helper(void *p1, void *p2, void *p3)
  * - The valid initialization succeeds and the take/give cycle completes.
  *
  * @see sys_sem_init()
+ * @verifies ZEP-SRS-5-2
+ * @verifies ZEP-SRS-5-18
  */
 ZTEST(sys_sem, test_basic_sem_test)
 {
@@ -208,6 +210,8 @@ ZTEST(sys_sem, test_basic_sem_test)
  *
  * @see sys_sem_give()
  * @see sys_sem_count_get()
+ * @verifies ZEP-SRS-5-12
+ * @verifies ZEP-SRS-5-20
  */
 ZTEST(sys_sem, test_simple_sem_from_isr)
 {
@@ -243,6 +247,7 @@ ZTEST(sys_sem, test_simple_sem_from_isr)
  *
  * @see sys_sem_give()
  * @see sys_sem_count_get()
+ * @verifies ZEP-SRS-5-12
  */
 ZTEST_USER(sys_sem, test_simple_sem_from_task)
 {
@@ -277,6 +282,8 @@ ZTEST_USER(sys_sem, test_simple_sem_from_task)
  *
  * @see sys_sem_take()
  * @see sys_sem_count_get()
+ * @verifies ZEP-SRS-5-6
+ * @verifies ZEP-SRS-5-7
  */
 ZTEST_USER(sys_sem, test_sem_take_no_wait_syssem)
 {
@@ -316,6 +323,7 @@ ZTEST_USER(sys_sem, test_sem_take_no_wait_syssem)
  * - Every take returns -ETIMEDOUT and the count stays 0.
  *
  * @see sys_sem_take()
+ * @verifies ZEP-SRS-5-11
  */
 ZTEST_USER(sys_sem, test_sem_take_no_wait_fails_syssem)
 {
@@ -352,6 +360,7 @@ ZTEST_USER(sys_sem, test_sem_take_no_wait_fails_syssem)
  * - Every take returns -ETIMEDOUT after the timeout elapses.
  *
  * @see sys_sem_take()
+ * @verifies ZEP-SRS-5-10
  */
 ZTEST_USER(sys_sem_1cpu, test_sem_take_timeout_fails_syssem)
 {
@@ -384,6 +393,8 @@ ZTEST_USER(sys_sem_1cpu, test_sem_take_timeout_fails_syssem)
  *
  * @see sys_sem_take()
  * @see sys_sem_give()
+ * @verifies ZEP-SRS-5-8
+ * @verifies ZEP-SRS-5-9
  */
 ZTEST_USER(sys_sem, test_sem_take_timeout_syssem)
 {
@@ -425,6 +436,7 @@ ZTEST_USER(sys_sem, test_sem_take_timeout_syssem)
  *
  * @see sys_sem_take()
  * @see sys_sem_give()
+ * @verifies ZEP-SRS-5-8
  */
 ZTEST_USER(sys_sem_1cpu, test_sem_take_timeout_forever_syssem)
 {
@@ -466,6 +478,8 @@ ZTEST_USER(sys_sem_1cpu, test_sem_take_timeout_forever_syssem)
  *
  * @see sys_sem_take()
  * @see sys_sem_give()
+ * @verifies ZEP-SRS-5-9
+ * @verifies ZEP-SRS-5-20
  */
 ZTEST(sys_sem_1cpu, test_sem_take_timeout_isr)
 {
@@ -513,6 +527,7 @@ static void sem_take_kernel_user(void *p1, void *p2, void *p3)
  *
  * @see sys_sem_take()
  * @see sys_sem_give()
+ * @verifies ZEP-SRS-5-2
  */
 ZTEST(sys_sem_1cpu, test_sem_take_kernel_user)
 {
@@ -559,6 +574,7 @@ ZTEST(sys_sem_1cpu, test_sem_take_kernel_user)
  *
  * @see sys_sem_take()
  * @see sys_sem_give()
+ * @verifies ZEP-SRS-5-14
  */
 ZTEST_USER(sys_sem_1cpu, test_sem_take_multiple_syssem)
 {
@@ -679,6 +695,7 @@ ZTEST_USER(sys_sem_1cpu, test_sem_take_multiple_syssem)
  * @see sys_sem_give()
  * @see sys_sem_take()
  * @see sys_sem_count_get()
+ * @verifies ZEP-SRS-5-20
  */
 ZTEST(sys_sem, test_sem_give_take_from_isr_syssem)
 {
@@ -726,6 +743,8 @@ ZTEST(sys_sem, test_sem_give_take_from_isr_syssem)
  *
  * @see sys_sem_give()
  * @see sys_sem_count_get()
+ * @verifies ZEP-SRS-5-3
+ * @verifies ZEP-SRS-5-19
  */
 ZTEST_USER(sys_sem, test_sem_give_limit)
 {
@@ -786,6 +805,7 @@ ZTEST_USER(sys_sem, test_sem_give_limit)
  * @see sys_sem_take()
  * @see sys_sem_give()
  * @see sys_sem_count_get()
+ * @verifies ZEP-SRS-5-12
  */
 ZTEST_USER(sys_sem_1cpu, test_sem_multiple_threads_wait)
 {

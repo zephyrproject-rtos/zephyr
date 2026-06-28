@@ -10,6 +10,11 @@ K_SEM_DEFINE(obj_access, 0, 1);
 K_SEM_DEFINE(obj_no_access, 0, 1);
 int no_obj;
 
+/**
+ * @brief Test access
+ *
+ * @verifies ZEP-SRS-8-2
+ */
 ZTEST_USER(userspace_access_check, test_access)
 {
 	zexpect_equal(k_object_access_check(&obj_access), 0, "should have access but doesn't");

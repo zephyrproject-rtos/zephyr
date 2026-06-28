@@ -23,6 +23,7 @@ static volatile K_APP_BMEM(ztest_mem_partition) int bss_var;
  * variables using macros K_APP_BMEM() and K_APP_DMEM
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-19
  */
 ZTEST_USER(mem_protect_part, test_mem_part_assign_bss_vars_zero)
 {
