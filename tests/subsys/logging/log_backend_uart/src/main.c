@@ -53,6 +53,29 @@ static void uart_emul_before(void *f)
 	}
 }
 
+/**
+ * @brief Verify the UART log backend delivers output to every instance.
+ *
+ * @details
+ * Validate that the UART logging backend can be instantiated multiple times and
+ * that a single raw log record is delivered to the UART of every backend
+ * instance. Emulated UARTs are used to capture and compare the transmitted
+ * bytes, confirming logging to multiple UART backends/system resources.
+ *
+ * Test steps:
+ * - Confirm the number of registered backends matches the number of emulated
+ *   UARTs.
+ * - Emit one raw log record.
+ * - Read the TX data of each emulated UART and compare against the expected
+ *   string.
+ *
+ * Expected result:
+ * - Every UART backend instance transmits exactly the logged string.
+ *
+ * @see LOG_RAW()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-5
+ */
 ZTEST_F(log_backend_uart, test_log_backend_uart_multi_instance)
 {
 	/* Prevent stack overflow by making it static */
