@@ -308,6 +308,71 @@ ZTEST(sleep, test_sleep_forever)
 	k_sem_take(&test_thread_sem, K_FOREVER);
 }
 
+static volatile int32_t wakeup_remaining;
+
+static void early_wake_thread_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	/* Sleep for a long duration; the main thread wakes us well before it
+	 * elapses. Capture the remaining time reported by k_sleep().
+	 */
+	wakeup_remaining = k_sleep(K_SECONDS(10));
+	k_sem_give(&test_thread_sem);
+}
+
+/**
+ * @brief Verify k_sleep() reports the remaining time when woken early
+ *
+ * @details Put a thread to sleep for a long, finite duration and wake it with
+ * k_wakeup() before that duration elapses. k_sleep() must return the amount of
+ * time that was still remaining, which is non-zero and does not exceed the
+ * originally requested duration.
+ *
+ * Test steps:
+ * - Start a thread that sleeps for 10 seconds and stores k_sleep()'s return.
+ * - Yield so the thread begins sleeping, let ~100 ms pass, then wake it with
+ *   k_wakeup().
+ * - Inspect the stored return value.
+ *
+ * Expected result:
+ * - k_sleep() returns a value greater than zero and less than the requested
+ *   10000 ms, i.e. it reports the time that was still remaining.
+ *
+ * @see k_sleep()
+ * @see k_wakeup()
+ * @verifies ZEP-SRS-28-12
+ */
+ZTEST(sleep, test_sleep_wakeup_returns_remaining)
+{
+	test_objects_init();
+	wakeup_remaining = 0;
+
+	test_thread_id = k_thread_create(&test_thread_data,
+					 test_thread_stack,
+					 THREAD_STACK,
+					 early_wake_thread_entry,
+					 0, 0, NULL, TEST_THREAD_PRIORITY,
+					 0, K_NO_WAIT);
+
+	/* Allow early_wake_thread_entry to start. */
+	k_yield();
+
+	/* Let part of the sleep elapse, then wake it well before 10 seconds. */
+	k_msleep(100);
+	k_wakeup(test_thread_id);
+	k_sem_take(&test_thread_sem, K_FOREVER);
+
+	zassert_true(wakeup_remaining > 0,
+		     "k_sleep() reported %d ms remaining; expected > 0",
+		     wakeup_remaining);
+	zassert_true(wakeup_remaining < 10000,
+		     "k_sleep() reported %d ms remaining; expected less than the "
+		     "requested 10000", wakeup_remaining);
+}
+
 /*test case main entry*/
 static void *sleep_setup(void)
 {

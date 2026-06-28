@@ -57,12 +57,19 @@ static ZTEST_BMEM struct timer_data tdata;
  * - Spin until k_uptime_get_32() advances by at least 5 ms.
  * - Sample the 32-bit uptime, align to a millisecond boundary, and confirm it grew.
  * - Seed a delta reference, then spin until k_uptime_delta() returns non-zero.
+ * - Spin until k_uptime_ticks() advances, confirming uptime in system ticks.
+ * - Sample k_uptime_seconds() between two k_uptime_get() readings and confirm it
+ *   equals the floor of the millisecond uptime in seconds.
  *
  * Expected result:
  * - Uptime readings increase over time and k_uptime_delta() reports elapsed time.
+ * - Uptime is also reported in system ticks and in whole seconds, consistent with
+ *   the millisecond reading.
  *
- * @see k_uptime_get(), k_uptime_get_32(), k_uptime_delta()
+ * @see k_uptime_get(), k_uptime_get_32(), k_uptime_delta(), k_uptime_ticks(), k_uptime_seconds()
  * @verifies ZEP-SRS-28-1
+ * @verifies ZEP-SRS-28-2
+ * @verifies ZEP-SRS-28-3
  * @verifies ZEP-SRS-28-4
  */
 ZTEST_USER(clock, test_clock_uptime)
@@ -92,6 +99,23 @@ ZTEST_USER(clock, test_clock_uptime)
 	while (k_uptime_delta(&d64) == 0) {
 		Z_SPIN_DELAY(50);
 	}
+
+	/**TESTPOINT: uptime in system ticks advances*/
+	int64_t ticks = k_uptime_ticks();
+
+	while (k_uptime_ticks() <= ticks) {
+		Z_SPIN_DELAY(50);
+	}
+
+	/**TESTPOINT: uptime in seconds is consistent with the millisecond reading*/
+	uint64_t ms_before = k_uptime_get();
+	uint32_t secs = k_uptime_seconds();
+	uint64_t ms_after = k_uptime_get();
+
+	zassert_true(secs >= (ms_before / MSEC_PER_SEC),
+		     "uptime seconds %u below floor of %llu ms", secs, ms_before);
+	zassert_true(secs <= (ms_after / MSEC_PER_SEC),
+		     "uptime seconds %u above floor of %llu ms", secs, ms_after);
 }
 
 /**
