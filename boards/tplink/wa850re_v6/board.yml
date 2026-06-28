@@ -1,0 +1,6 @@
+board:
+  name: wa850re_v6
+  full_name: TP-Link TL-WA850RE v6
+  vendor: tplink
+  socs:
+  - name: mt7628
