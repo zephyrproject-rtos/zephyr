@@ -46,6 +46,10 @@ static struct k_timer tm;
  * time periods but not others due to implementation details. This test should catch those.
  *
  * The ramp is logrithmic up to what amounts to approximately 10 seconds of ticks.
+ *
+ * @ingroup kernel_timer_tests
+ * @see k_timer_start()
+ * @verifies ZEP-SRS-4-5
  */
 ZTEST(timer_ramp, test_timer_ramp)
 {

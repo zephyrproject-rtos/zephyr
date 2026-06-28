@@ -339,6 +339,17 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		     "Drift (in microseconds) outside expected bound");
 }
 
+/**
+ * @brief Measure jitter and drift of a periodic timer
+ *
+ * @details Collect expiry samples from a periodic timer using its built-in
+ * auto-restart and verify the jitter and drift relative to the configured
+ * period stay within expected bounds.
+ *
+ * @ingroup kernel_timer_tests
+ * @see k_timer_start()
+ * @verifies ZEP-SRS-4-5
+ */
 ZTEST(timer_jitter_drift, test_jitter_drift_timer_period)
 {
 	TC_PRINT("periodic timer behavior test using built-in restart mechanism\n");
@@ -353,6 +364,17 @@ ZTEST(timer_jitter_drift, test_jitter_drift_timer_period)
 	do_test_using(collect_timer_period_time_samples, "builtin");
 }
 
+/**
+ * @brief Measure jitter and drift of a timer restarted with a delay
+ *
+ * @details Collect expiry samples by explicitly restarting the timer with a
+ * delay each period and verify the jitter and drift relative to the configured
+ * period stay within expected bounds.
+ *
+ * @ingroup kernel_timer_tests
+ * @see k_timer_start()
+ * @verifies ZEP-SRS-4-5
+ */
 ZTEST(timer_jitter_drift, test_jitter_drift_timer_startdelay)
 {
 	TC_PRINT("periodic timer behavior test using explicit start with delay\n");
