@@ -207,6 +207,9 @@ only when dealing with lower priority threads that are less time-sensitive.
 Per-Thread Time Slicing
 =======================
 
+.. design:: DESIGN-SCHED-TIMESLICE-THREAD Per-Thread Time Slicing
+   :fulfills: ZEP-SRS-2-18
+
 The time slice configured with :c:func:`k_sched_time_slice_set` applies globally
 to every preemptible thread at or below a given priority. When
 :kconfig:option:`CONFIG_TIMESLICE_PER_THREAD` is enabled, an individual thread
@@ -275,6 +278,9 @@ context switch from the current thread to another thread and then back again.
 Forcing a Scheduling Decision
 =============================
 
+.. design:: DESIGN-SCHED-RESCHEDULE Forcing a Scheduling Decision
+   :fulfills: ZEP-SRS-2-19
+
 A thread can force the scheduler to make an immediate scheduling decision on the
 current CPU by calling :c:func:`k_reschedule`. When invoked from a thread (with
 interrupts unlocked) the scheduler runs immediately; when invoked from an ISR the
@@ -287,6 +293,9 @@ routine.
 
 Querying Preemptibility
 =======================
+
+.. design:: DESIGN-SCHED-PREEMPTIBILITY Querying Preemptibility
+   :fulfills: ZEP-SRS-2-20
 
 Code whose behavior depends on whether it can be preempted can query the current
 context with :c:func:`k_is_preempt_thread`. This returns a non-zero value only
@@ -321,6 +330,9 @@ Configuration Options
 
 CPU Idling
 ##########
+
+.. design:: DESIGN-CPU-IDLE CPU Idling
+   :fulfills: ZEP-SRS-13-14
 
 Although normally reserved for the idle thread, in certain special
 applications, a thread might want to make the CPU idle.
