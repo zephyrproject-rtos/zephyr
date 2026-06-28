@@ -48,11 +48,29 @@ static void thread_func(void *p1, void *p2, void *p3)
 	}
 }
 
-/*
- * Test create number of threads with different priorities. Each thread logs
- * data and sleeps. This creates environment where multiple threads are
- * preempted during logging (in immediate mode). Test checks that system does
- * not hit any assert or other fault during frequent preemptions.
+/**
+ * @brief Verify immediate-mode logging is robust under thread preemption.
+ *
+ * @details
+ * In immediate mode a log message is processed in the context that generated it.
+ * This test creates several threads of different priorities that continuously
+ * log text and hexdump data and then sleep, so that lower-priority threads are
+ * frequently preempted mid-logging by higher-priority ones. It validates that
+ * the subsystem handles such interleaved in-context processing without hitting
+ * an assert or fault.
+ *
+ * Test steps:
+ * - Create NUM_THREADS threads at staggered priorities, each logging in a loop.
+ * - Let them run and preempt each other for a few seconds.
+ * - Abort all threads.
+ *
+ * Expected result:
+ * - The system survives frequent preemption during immediate logging with no
+ *   assertion or fault.
+ *
+ * @see LOG_INF()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-8
  */
 ZTEST(log_immediate, test_log_immediate_preemption)
 {
