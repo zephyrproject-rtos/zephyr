@@ -67,6 +67,7 @@ atomic_t total_atomic;
  * atomic_test_and_set_bit(), atomic_clear_bit(), atomic_set_bit(),
  * ATOMIC_DEFINE
  *
+ * @verifies ZEP-SRS-19-1
  */
 ZTEST_USER(atomic, test_atomic)
 {
@@ -315,6 +316,7 @@ void atomic_handler(void *p1, void *p2, void *p3)
  * - The shared atomic equals TEST_CYCLE * THREADS_NUM.
  *
  * @see atomic_inc()
+ * @verifies ZEP-SRS-19-1
  */
 ZTEST(atomic, test_threads_access_atomic)
 {
@@ -363,6 +365,7 @@ ZTEST(atomic, test_threads_access_atomic)
  *   the expected wrapped boundary value.
  *
  * @see atomic_inc()
+ * @verifies ZEP-SRS-19-1
  */
 ZTEST(atomic, test_atomic_overflow)
 {
