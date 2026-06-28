@@ -3,6 +3,9 @@
 System Threads
 ##############
 
+.. design:: DESIGN-SYSTEM-THREADS System Threads
+   :fulfills: ZEP-SRS-1-31 ZEP-SRS-1-32
+
 .. contents::
     :local:
     :depth: 2

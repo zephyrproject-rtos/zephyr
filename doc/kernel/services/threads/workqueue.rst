@@ -60,6 +60,9 @@ when no work items are available.
 Work Item Lifecycle
 ********************
 
+.. design:: DESIGN-WORKQ-LIFECYCLE Work Item Lifecycle
+   :fulfills: ZEP-SRS-26-3 ZEP-SRS-26-13 ZEP-SRS-26-14 ZEP-SRS-26-16 ZEP-SRS-26-17 ZEP-SRS-26-18
+
 Any number of **work items** can be defined. Each work item is referenced
 by its memory address.
 
@@ -133,6 +136,9 @@ the processing of other work items in the workqueue's queue.
 Delayable Work
 **************
 
+.. design:: DESIGN-WORKQ-DELAYABLE Delayable Work
+   :fulfills: ZEP-SRS-26-20 ZEP-SRS-26-21 ZEP-SRS-26-22 ZEP-SRS-26-23 ZEP-SRS-26-24 ZEP-SRS-26-25 ZEP-SRS-26-26
+
 An ISR or a thread may need to schedule a work item that is to be processed
 only after a specified period of time, rather than immediately. This can be
 done by **scheduling** a **delayable work item** to be submitted to a
@@ -165,6 +171,9 @@ delayable work object use this idiom:
 
 Triggered Work
 **************
+
+.. design:: DESIGN-WORKQ-TRIGGERED Triggered Work
+   :fulfills: ZEP-SRS-26-27 ZEP-SRS-26-28
 
 The :c:func:`k_work_poll_submit` interface schedules a triggered work
 item in response to a **poll event** (see :ref:`polling_v2`), that will
@@ -201,6 +210,9 @@ Otherwise the cancellation cannot be performed.
 System Workqueue
 *****************
 
+.. design:: DESIGN-WORKQ-SYSTEM System Workqueue
+   :fulfills: ZEP-SRS-26-10
+
 The kernel defines a workqueue known as the *system workqueue*, which is
 available to any application or kernel code that requires workqueue support.
 The system workqueue is optional, and only exists if the application makes
@@ -220,6 +232,9 @@ How to Use Workqueues
 
 Defining and Controlling a Workqueue
 ====================================
+
+.. design:: DESIGN-WORKQ-MANAGEMENT Work Queue Management
+   :fulfills: ZEP-SRS-26-1 ZEP-SRS-26-2 ZEP-SRS-26-4 ZEP-SRS-26-5 ZEP-SRS-26-6 ZEP-SRS-26-7 ZEP-SRS-26-8
 
 A workqueue is defined using a variable of type :c:struct:`k_work_q`.
 The workqueue is initialized by defining the stack area used by its
@@ -266,6 +281,9 @@ The following API can be used to interact with a workqueue:
 
 Submitting a Work Item
 ======================
+
+.. design:: DESIGN-WORKQ-SUBMIT Work Item Submission
+   :fulfills: ZEP-SRS-26-9 ZEP-SRS-26-11 ZEP-SRS-26-12
 
 A work item is defined using a variable of type :c:struct:`k_work`.  It must
 be initialized by calling :c:func:`k_work_init`, unless it is defined using
@@ -386,6 +404,9 @@ with the work item:
 
 Synchronizing with Work Items
 =============================
+
+.. design:: DESIGN-WORKQ-SYNC Synchronizing with Work Items
+   :fulfills: ZEP-SRS-26-15 ZEP-SRS-26-19
 
 While the state of both regular and delayable work items can be determined
 from any context using :c:func:`k_work_busy_get()` and
