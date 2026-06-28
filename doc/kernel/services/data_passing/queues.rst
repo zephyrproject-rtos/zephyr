@@ -16,6 +16,9 @@ to a FIFO and serves as the underlying implementation for both :ref:`k_fifo
 Cancelling a Wait
 *****************
 
+.. design:: DESIGN-QUEUE-CANCEL-WAIT Cancelling a Wait
+   :fulfills: ZEP-SRS-20-15
+
 A thread that is blocked waiting to retrieve an item from a queue can be released
 without an item by calling :c:func:`k_queue_cancel_wait` from another thread or
 an ISR. The first thread pending on the queue returns from its
