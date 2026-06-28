@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2025 The Zephyr Project Contributors
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,12 +12,13 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #define PSM              0x29
 #define SEND_INTERVAL_MS 2000
 #define DATA_MTU         23
 
-NET_BUF_POOL_FIXED_DEFINE(data_pool, 1, DATA_MTU, 8, NULL);
+NET_BUF_POOL_FIXED_DEFINE(data_pool, 1, BT_L2CAP_SDU_BUF_SIZE(DATA_MTU), 8, NULL);
 
 K_THREAD_STACK_DEFINE(send_thread_stack, 1024);
 static struct k_thread send_thread_data;
@@ -42,7 +45,12 @@ static void send_task(void *p1, void *p2, void *p3)
 {
 	struct bt_l2cap_chan *chan = p1;
 
-	while (channel_connected) {
+	while (1) {
+		if (!channel_connected) {
+			k_sleep(K_MSEC(100));
+			continue;
+		}
+
 		const char *msg = "Hello from client";
 		struct net_buf *buf;
 
@@ -77,10 +85,6 @@ static void client_chan_connected(struct bt_l2cap_chan *chan)
 {
 	printk("L2CAP channel connected\n");
 	channel_connected = true;
-
-	k_thread_create(&send_thread_data, send_thread_stack,
-			K_THREAD_STACK_SIZEOF(send_thread_stack), send_task, chan, NULL, NULL,
-			K_PRIO_PREEMPT(7), 0, K_NO_WAIT);
 }
 
 static void client_chan_disconnected(struct bt_l2cap_chan *chan)
@@ -93,13 +97,19 @@ static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
 		printk("Connection failed (err %u)\n", err);
-		bt_conn_unref(conn);
+		if (default_conn == conn) {
+			bt_conn_unref(default_conn);
+			default_conn = NULL;
+		}
 		start_scan();
 		return;
 	}
 
 	printk("Connected\n");
-	default_conn = bt_conn_ref(conn);
+
+	if (conn != default_conn) {
+		return;
+	}
 
 	int rc = bt_l2cap_chan_connect(default_conn, &client_chan.chan, PSM);
 
@@ -114,7 +124,10 @@ static void connected(struct bt_conn *conn, uint8_t err)
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Disconnected (reason %u)\n", reason);
-	bt_conn_drop(&default_conn);
+	if (default_conn) {
+		bt_conn_unref(default_conn);
+		default_conn = NULL;
+	}
 	channel_connected = false;
 	start_scan();
 }
@@ -124,12 +137,39 @@ static struct bt_conn_cb conn_callbacks = {
 	.disconnected = disconnected,
 };
 
+#define MAX_NAME_LEN 30
+
+static bool data_cb(struct bt_data *data, void *user_data)
+{
+	char *name = user_data;
+	int len;
+
+	switch (data->type) {
+	case BT_DATA_NAME_SHORTENED:
+	case BT_DATA_NAME_COMPLETE:
+		len = MIN(data->data_len, MAX_NAME_LEN);
+		memcpy(name, data->data, len);
+		name[len] = '\0';
+		return false;
+	default:
+		return true;
+	}
+}
+
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
+	char dev_name[MAX_NAME_LEN + 1];
 	int err;
 
-	printk("Found device: %s (RSSI %d)\n", bt_addr_le_str(addr), rssi);
+	memset(dev_name, 0, sizeof(dev_name));
+	bt_data_parse(ad, data_cb, dev_name);
+
+	if (strcmp(dev_name, "L2CAP_ACCEPTOR") != 0) {
+		return;
+	}
+
+	printk("Found L2CAP Acceptor device: %s (RSSI %d)\n", bt_addr_le_str(addr), rssi);
 
 	err = bt_le_scan_stop();
 	if (err) {
@@ -178,6 +218,11 @@ int main(void)
 	printk("Bluetooth initialized\n");
 
 	bt_conn_cb_register(&conn_callbacks);
+
+	k_thread_create(&send_thread_data, send_thread_stack,
+			K_THREAD_STACK_SIZEOF(send_thread_stack),
+			send_task, &client_chan.chan, NULL, NULL,
+			K_PRIO_PREEMPT(7), 0, K_NO_WAIT);
 
 	start_scan();
 	return 0;
