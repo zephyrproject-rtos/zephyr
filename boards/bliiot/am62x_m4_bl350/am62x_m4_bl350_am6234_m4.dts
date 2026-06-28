@@ -22,20 +22,20 @@
 		zephyr,ipc        = &ipc0;
 	};
 
-	rsc_table: memory@9ce00000 {
+	rsc_table: memory@9cc00000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x9ce00000 DT_SIZE_K(4)>;
+		reg = <0x9cc00000 DT_SIZE_K(4)>;
 		zephyr,memory-region = "RSC_TABLE";
 	};
 
-	ddr0: memory@9ce01000 {
+	ddr0: memory@9cc01000 {
 		compatible = "mmio-sram";
-		reg = <0x9ce01000 (DT_SIZE_M(1) - DT_SIZE_K(4))>;
+		reg = <0x9cc01000 (DT_SIZE_M(1) - DT_SIZE_K(4))>;
 	};
 
-	ddr1: memory@9cf00000 {
+	ddr1: memory@9cd00000 {
 		compatible = "mmio-sram";
-		reg = <0x9cf00000 DT_SIZE_M(1)>;
+		reg = <0x9cd00000 DT_SIZE_M(1)>;
 	};
 
 	reserved-memory {
@@ -43,9 +43,9 @@
 		#size-cells = <1>;
 		ranges;
 
-		ipc_carveout: ipc@9c800000 {
+		ipc_carveout: ipc@9cb00000 {
 			compatible = "shared-dma-pool";
-			reg = <0x9C800000 0x400000>; /* 4 MB */
+			reg = <0x9Cb00000 0x48000>; /* 288 KB */
 			no-map;
 		};
 
@@ -58,7 +58,7 @@
 	ipc0: ipc {
 		compatible = "zephyr,ipc-openamp-static-vrings";
 		memory-region = <&ipc_carveout>;
-		mboxes = <&mbox0 0>, <&mbox0 1>;
+		mboxes = <&mbox0 13>, <&mbox0 13>;
 		mbox-names = "tx", "rx";
 		role = "remote";
 		status = "okay";

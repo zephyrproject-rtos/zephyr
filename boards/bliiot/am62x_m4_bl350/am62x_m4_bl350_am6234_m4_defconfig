@@ -14,9 +14,7 @@ CONFIG_SERIAL=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
-# Enable OpenAMP resource table needed for remoteproc booting
-CONFIG_OPENAMP_RSC_TABLE=y
-CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF=256
+# We will provide our own custom resource table in the application
 
 # Peripherals
 CONFIG_CAN=y
