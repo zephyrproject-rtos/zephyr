@@ -1079,7 +1079,7 @@ static __ramfunc int flash_bflb_flash_set_burst(struct flash_bflb_bank_data *dat
 		return ret;
 	}
 
-	/* Burst wrap commands are usually in QO mode */
+	/* Burst wrap commands are usually in QIO mode */
 	enable_burstwrap.spi_mode = BUS_QIO;
 	enable_burstwrap.dummy_clks = data->cfg.cmd.burstwrap_dmycy;
 	enable_burstwrap.cmd_buf[0] = data->cfg.cmd.burstwrap << 24;
