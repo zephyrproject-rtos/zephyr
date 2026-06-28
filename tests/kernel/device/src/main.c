@@ -686,7 +686,7 @@ ZTEST(device, test_deinit_success_and_redeinit)
 	zassert_equal(ret, -EPERM, "device_deinit should fail when not init or already deinit");
 }
 
-#ifdef CONFIG_DEVICE_DT_METADATA
+#if defined(CONFIG_DEVICE_DT_METADATA) || defined(__DOXYGEN__)
 DEVICE_DT_DEFINE(FAKEDRIVER0_NODEID, NULL, NULL, NULL, NULL, POST_KERNEL,
 		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
