@@ -8,3 +8,4 @@ CPU Frequency Scaling Policies
 
    on_demand.rst
    pressure.rst
+   side_channel_defense.rst
