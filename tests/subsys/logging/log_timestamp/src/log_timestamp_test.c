@@ -77,6 +77,7 @@ int custom_timestamp(const struct log_output *output,
  * @see log_custom_timestamp_set()
  * @ingroup logging_tests
  * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-15
  */
 ZTEST(test_timestamp, test_custom_timestamp)
 {

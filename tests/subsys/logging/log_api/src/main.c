@@ -456,6 +456,7 @@ static uint8_t log_buf[CONFIG_LOG_BUFFER_SIZE];
  * @see LOG_HEXDUMP_INF(), LOG_INF()
  * @ingroup logging_tests
  * @verifies ZEP-SRS-11-6
+ * @verifies ZEP-SRS-11-22
  */
 ZTEST(test_log_api, test_log_overflow)
 {
@@ -753,6 +754,7 @@ static void log_n_messages(uint32_t n_msg, uint32_t exp_dropped)
  * @see log_backend_dropped()
  * @ingroup logging_tests
  * @verifies ZEP-SRS-11-6
+ * @verifies ZEP-SRS-11-22
  */
 ZTEST(test_log_api_1cpu, test_log_msg_dropped_notification)
 {
@@ -856,6 +858,7 @@ ZTEST(test_log_api, test_log_panic)
  *
  * @see printk()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-20
  */
 ZTEST(test_log_api, test_log_printk)
 {

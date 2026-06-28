@@ -108,6 +108,7 @@ static void check_msg(int exp_timestamp, int line)
  *
  * @see z_log_msg_enqueue()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-26
  */
 ZTEST(log_link_order, test_log_only_local)
 {
@@ -210,6 +211,7 @@ ZTEST(log_link_order, test_log_local_unordered)
  *
  * @see z_log_msg_enqueue()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-26
  */
 ZTEST(log_link_order, test_log_one_remote_ordering)
 {

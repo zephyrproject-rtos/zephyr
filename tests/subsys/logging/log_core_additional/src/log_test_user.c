@@ -43,6 +43,7 @@ LOG_MODULE_REGISTER(user);
  * @see log_process()
  * @ingroup logging_tests
  * @verifies ZEP-SRS-11-6
+ * @verifies ZEP-SRS-11-19
  */
 ZTEST_USER(test_log_core_additional, test_log_from_user)
 {
@@ -199,6 +200,8 @@ ZTEST_USER(test_log_core_additional, test_log_panic)
  *
  * @see LOG_PRINTK()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-19
+ * @verifies ZEP-SRS-11-20
  */
 ZTEST_USER(test_log_core_additional, test_log_printk_from_user)
 {

@@ -192,6 +192,7 @@ ZTEST_EXPECT_FAIL(log_blocking, test_blocking);
  * @see LOG_INF()
  * @ingroup logging_tests
  * @verifies ZEP-SRS-11-6
+ * @verifies ZEP-SRS-11-23
  */
 ZTEST(log_blocking, test_blocking)
 {

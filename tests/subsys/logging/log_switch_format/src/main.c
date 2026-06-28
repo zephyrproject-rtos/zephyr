@@ -172,6 +172,7 @@ void test_log_switch_format_func_t_get(void)
  * @ingroup logging_tests
  * @verifies ZEP-SRS-11-2
  * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-17
  */
 ZTEST(log_switch_format, test_log_switch_format)
 {
@@ -209,6 +210,7 @@ void custom_formatting(const struct log_output *output, struct log_msg *msg, uin
  * @see log_custom_output_msg_set()
  * @ingroup logging_tests
  * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-18
  */
 ZTEST(log_switch_format, test_log_switch_format_custom_output_handles_null)
 {
@@ -247,6 +249,7 @@ ZTEST(log_switch_format, test_log_switch_format_custom_output_handles_null)
  * @see log_custom_output_msg_set()
  * @ingroup logging_tests
  * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-18
  */
 ZTEST(log_switch_format, test_log_switch_format_custom_output_called_when_set)
 {
