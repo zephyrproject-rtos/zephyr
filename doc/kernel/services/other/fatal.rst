@@ -162,6 +162,9 @@ With GCC, the output resembles:
 Kernel Oops
 ===========
 
+.. design:: DESIGN-FATAL-OOPS Kernel Oops
+   :fulfills: ZEP-SRS-16-5
+
 A kernel oops is a software triggered fatal error invoked by
 :c:func:`k_oops()`.  This should be used to indicate an unrecoverable condition
 in application logic.
@@ -170,6 +173,9 @@ The fatal error reason code generated will be ``K_ERR_KERNEL_OOPS``.
 
 Kernel Panic
 ============
+
+.. design:: DESIGN-FATAL-PANIC Kernel Panic
+   :fulfills: ZEP-SRS-16-6
 
 A kernel error is a software triggered fatal error invoked by
 :c:func:`k_panic()`.  This should be used to indicate that the Zephyr kernel is
@@ -242,6 +248,9 @@ Any other type of unhandled CPU exception will generate an error code of
 
 Fatal Error Handling
 ********************
+
+.. design:: DESIGN-FATAL-HANDLING Fatal Error Handling
+   :fulfills: ZEP-SRS-16-1 ZEP-SRS-16-2 ZEP-SRS-16-3 ZEP-SRS-16-4 ZEP-SRS-16-7 ZEP-SRS-16-8
 
 The policy for what to do when encountering a fatal error is determined by the
 implementation of the :c:func:`k_sys_fatal_error_handler()` function.  This
