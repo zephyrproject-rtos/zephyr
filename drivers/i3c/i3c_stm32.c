@@ -1814,9 +1814,8 @@ static void i3c_stm32_event_isr_tx(const struct device *dev)
 		LL_I3C_DisableIT_TXFNF(i3c);
 
 		/* Find the device in the device list */
-		ret = i3c_dev_list_daa_addr_helper(&data->drv_data.attached_dev.addr_slots,
-						   &config->drv_cfg.dev_list, data->pid, false,
-						   false, &target, &dyn_addr);
+		ret = i3c_dev_list_daa_addr_helper(dev, data->pid, false, false, &target,
+						   &dyn_addr);
 		if (ret != 0) {
 			/* TODO: figure out what is the correct sequence to exit form this error
 			 * It is expected that a TX overrun error to occur which triggers err isr

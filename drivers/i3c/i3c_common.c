@@ -537,10 +537,13 @@ void i3c_sec_handoffed(struct k_work *work)
 #endif /* CONFIG_I3C_USE_IBI */
 #endif /* CONFIG_I3C_TARGET */
 
-int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
-				 const struct i3c_dev_list *dev_list, uint64_t pid, bool must_match,
+int i3c_dev_list_daa_addr_helper(const struct device *dev, uint64_t pid, bool must_match,
 				 bool assigned_okay, struct i3c_device_desc **target, uint8_t *addr)
 {
+	struct i3c_driver_data *data = (struct i3c_driver_data *)dev->data;
+	const struct i3c_driver_config *config = (const struct i3c_driver_config *)dev->config;
+	struct i3c_addr_slots *addr_slots = &data->attached_dev.addr_slots;
+	const struct i3c_dev_list *dev_list = &config->dev_list;
 	struct i3c_device_desc *desc;
 	const uint16_t vendor_id = (uint16_t)(pid >> 32);
 	const uint32_t part_no = (uint32_t)(pid & 0xFFFFFFFFU);
@@ -552,6 +555,10 @@ int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
 	/* If a device was not found, try to allocate a descriptor */
 	if (desc == NULL) {
 		desc = i3c_device_desc_alloc();
+		if (desc != NULL) {
+			desc->bus = dev;
+			desc->pid = pid;
+		}
 	}
 	if (must_match && (desc == NULL)) {
 		/*
