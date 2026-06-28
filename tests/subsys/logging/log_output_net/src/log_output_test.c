@@ -47,6 +47,31 @@ LOG_OUTPUT_DEFINE(log_output, mock_output_func, log_output_buf, sizeof(log_outpu
 
 BUILD_ASSERT(IS_ENABLED(CONFIG_LOG_BACKEND_NET), "syslog backend not enabled");
 
+/**
+ * @brief Verify a log message is rendered in RFC 5424 syslog format.
+ *
+ * @details
+ * Drives the log_output formatter with the syslog format flag (as used by the
+ * network backend) and confirms the rendered message follows the syslog wire
+ * format: priority, version, ISO timestamp, host, and the domain/source
+ * message body. This validates the structured, machine-parseable output
+ * produced for the network (syslog) logging backend.
+ *
+ * Test steps:
+ * - Set the output timestamp frequency to 1 MHz.
+ * - Package a message and process it with timestamp, format-timestamp and
+ *   syslog format flags.
+ * - Compare the rendered buffer against the expected syslog frame.
+ *
+ * Expected result:
+ * - Output equals the expected "<134>1 ... domain/src: test" syslog string.
+ *
+ * @see log_output_process()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-5
+ * @verifies ZEP-SRS-11-2
+ */
 ZTEST(test_log_output_net, test_format)
 {
 	char package[256];
