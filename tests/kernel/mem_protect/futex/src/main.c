@@ -166,6 +166,7 @@ static void futex_multiple_wait_wake_task(void *p1, void *p2, void *p3)
 
 /**
  * @brief Test k_futex_wait() forever
+ * @verifies ZEP-SRS-37-1
  */
 ZTEST(futex, test_futex_wait_forever)
 {
@@ -187,6 +188,11 @@ ZTEST(futex, test_futex_wait_forever)
 	k_thread_abort(&futex_tid);
 }
 
+/**
+ * @brief Test futex wait timeout
+ *
+ * @verifies ZEP-SRS-37-1
+ */
 ZTEST(futex, test_futex_wait_timeout)
 {
 	timeout = k_ms_to_ticks_ceil32(50);
@@ -207,6 +213,11 @@ ZTEST(futex, test_futex_wait_timeout)
 	k_thread_abort(&futex_tid);
 }
 
+/**
+ * @brief Test futex wait nowait
+ *
+ * @verifies ZEP-SRS-37-1
+ */
 ZTEST(futex, test_futex_wait_nowait)
 {
 	timeout = 0;
@@ -228,6 +239,8 @@ ZTEST(futex, test_futex_wait_nowait)
 
 /**
  * @brief Test k_futex_wait() and k_futex_wake()
+ * @verifies ZEP-SRS-37-1
+ * @verifies ZEP-SRS-37-2
  */
 ZTEST(futex, test_futex_wait_forever_wake)
 {
@@ -261,6 +274,12 @@ ZTEST(futex, test_futex_wait_forever_wake)
 	k_thread_abort(&futex_tid);
 }
 
+/**
+ * @brief Test futex wait timeout wake
+ *
+ * @verifies ZEP-SRS-37-1
+ * @verifies ZEP-SRS-37-2
+ */
 ZTEST(futex, test_futex_wait_timeout_wake)
 {
 	woken = 1;
@@ -294,6 +313,11 @@ ZTEST(futex, test_futex_wait_timeout_wake)
 	k_thread_abort(&futex_tid);
 }
 
+/**
+ * @brief Test futex wait nowait wake
+ *
+ * @verifies ZEP-SRS-37-2
+ */
 ZTEST(futex, test_futex_wait_nowait_wake)
 {
 	woken = 0;
@@ -321,6 +345,11 @@ ZTEST(futex, test_futex_wait_nowait_wake)
 	k_thread_abort(&futex_tid);
 }
 
+/**
+ * @brief Test futex wait forever wake from isr
+ *
+ * @verifies ZEP-SRS-37-2
+ */
 ZTEST(futex, test_futex_wait_forever_wake_from_isr)
 {
 	timeout = K_TICKS_FOREVER;
@@ -346,6 +375,11 @@ ZTEST(futex, test_futex_wait_forever_wake_from_isr)
 	k_thread_abort(&futex_tid);
 }
 
+/**
+ * @brief Test futex multiple threads wait wake
+ *
+ * @verifies ZEP-SRS-37-2
+ */
 ZTEST(futex, test_futex_multiple_threads_wait_wake)
 {
 	timeout = K_TICKS_FOREVER;
@@ -381,6 +415,12 @@ ZTEST(futex, test_futex_multiple_threads_wait_wake)
 	}
 }
 
+/**
+ * @brief Test multiple futex wait wake
+ *
+ * @verifies ZEP-SRS-37-1
+ * @verifies ZEP-SRS-37-2
+ */
 ZTEST(futex, test_multiple_futex_wait_wake)
 {
 	woken = 1;
@@ -416,6 +456,11 @@ ZTEST(futex, test_multiple_futex_wait_wake)
 	}
 }
 
+/**
+ * @brief Test user futex bad
+ *
+ * @verifies ZEP-SRS-37-3
+ */
 ZTEST_USER(futex, test_user_futex_bad)
 {
 	int ret;
@@ -499,6 +544,7 @@ static void futex_wake(void *p1, void *p2, void *p3)
  * @see atomic_set(), atomic_sub(), k_futex_wake(), k_futex_wait()
  *
  * @ingroup kernel_futex_tests
+ * @verifies ZEP-SRS-37-3
  */
 ZTEST_USER(futex, test_futex_locate_access)
 {

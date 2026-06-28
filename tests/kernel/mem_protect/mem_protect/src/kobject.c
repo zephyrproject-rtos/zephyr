@@ -79,6 +79,7 @@ ZTEST(mem_protect_kobj, test_kobject_access_grant_error)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_thread_access_grant()
+ * @verifies ZEP-SRS-8-2
  */
 ZTEST_USER(mem_protect_kobj, test_kobject_access_grant_error_user)
 {
@@ -110,6 +111,7 @@ ZTEST_USER(mem_protect_kobj, test_kobject_access_grant_error_user)
  * @see k_thread_access_grant()
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-2
  */
 ZTEST_USER(mem_protect_kobj, test_kobject_access_grant_error_user_null)
 {
@@ -127,6 +129,7 @@ ZTEST_USER(mem_protect_kobj, test_kobject_access_grant_error_user_null)
  * @see k_thread_access_all_grant()
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-2
  */
 ZTEST_USER(mem_protect_kobj, test_kobject_access_all_grant_error)
 {
@@ -156,6 +159,7 @@ static void syscall_invalid_kobject_user_part(void *p1, void *p2, void *p3)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_thread_access_grant()
+ * @verifies ZEP-SRS-8-14
  */
 ZTEST(mem_protect_kobj, test_syscall_invalid_kobject)
 {
@@ -187,6 +191,7 @@ static void thread_without_kobject_permission_user_part(void *p1, void *p2,
  * @ingroup kernel_memprotect_tests
  *
  * @see k_thread_access_grant(), k_thread_user_mode_enter()
+ * @verifies ZEP-SRS-8-16
  */
 ZTEST(mem_protect_kobj, test_thread_without_kobject_permission)
 {
@@ -313,6 +318,7 @@ static void grant_access_kobj_invalid_child(void *p1, void *p2, void *p3)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_thread_access_grant()
+ * @verifies ZEP-SRS-8-2
  */
 ZTEST(mem_protect_kobj, test_kobject_grant_access_kobj_invalid)
 {
@@ -411,6 +417,7 @@ static void access_check_child(void *p1, void *p2, void *p3)
  * @see k_object_access_all_grant()
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-2
  */
 ZTEST(mem_protect_kobj, test_kobject_access_all_grant)
 {
@@ -503,6 +510,7 @@ static void residual_permissions_child_fail(void *p1, void *p2, void *p3)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_thread_access_grant()
+ * @verifies ZEP-SRS-8-16
  */
 ZTEST(mem_protect_kobj, test_thread_has_residual_permissions)
 {
@@ -538,6 +546,7 @@ ZTEST(mem_protect_kobj, test_thread_has_residual_permissions)
  *
  * @see k_object_access_grant(), k_object_access_revoke(),
  * k_object_find()
+ * @verifies ZEP-SRS-8-2
  */
 ZTEST(mem_protect_kobj, test_kobject_access_grant_to_invalid_thread)
 {
@@ -559,6 +568,7 @@ ZTEST(mem_protect_kobj, test_kobject_access_grant_to_invalid_thread)
  * @details Test syscall on a kobject which is not present in the hash table.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-14
  */
 ZTEST_USER(mem_protect_kobj, test_kobject_access_invalid_kobject)
 {
@@ -577,6 +587,7 @@ ZTEST_USER(mem_protect_kobj, test_kobject_access_invalid_kobject)
  * and has no access
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-14
  */
 ZTEST_USER(mem_protect_kobj, test_access_kobject_without_init_access)
 {
@@ -602,6 +613,7 @@ static void without_init_with_access_child(void *p1, void *p2, void *p3)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_thread_access_grant()
+ * @verifies ZEP-SRS-8-14
  */
 ZTEST(mem_protect_kobj, test_access_kobject_without_init_with_access)
 {
@@ -645,6 +657,7 @@ static void reinitialize_thread_kobj_child(void *p1, void *p2, void *p3)
  * @brief Test to reinitialize the k_thread object
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-16
  */
 ZTEST(mem_protect_kobj, test_kobject_reinitialize_thread_kobj)
 {
@@ -691,6 +704,7 @@ static void new_thread_from_user_child(void *p1, void *p2, void *p3)
  *   by aborting itself.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-2
  */
 ZTEST(mem_protect_kobj, test_create_new_thread_from_user)
 {
@@ -741,6 +755,7 @@ static void new_user_thrd_child_with_in_use_stack(void *p1, void *p2, void *p3)
  * memory protection is working correctly.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-16
  */
 ZTEST(mem_protect_kobj, test_new_user_thread_with_in_use_stack_obj)
 {
@@ -785,6 +800,7 @@ static void from_user_no_access_stack_child_entry(void *p1, void *p2, void *p3)
  * _handler_k_thread_create validation.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-2
  */
 ZTEST(mem_protect_kobj, test_create_new_thread_from_user_no_access_stack)
 {
@@ -828,6 +844,7 @@ static void from_user_invalid_stacksize_child(void *p1, void *p2, void *p3)
  * size which overflows. This is _handler_k_thread_create validation.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-14
  */
 ZTEST(mem_protect_kobj, test_create_new_thread_from_user_invalid_stacksize)
 {
@@ -878,6 +895,7 @@ static void user_huge_stacksize_child(void *p1, void *p2, void *p3)
  * validation.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-14
  */
 
 ZTEST(mem_protect_kobj, test_create_new_thread_from_user_huge_stacksize)
@@ -976,6 +994,7 @@ static void essential_thread_from_user_child(void *p1, void *p2, void *p3)
  * @brief Create a new essential thread from user.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-8
  */
 ZTEST(mem_protect_kobj, test_create_new_essential_thread_from_user)
 {
@@ -1107,6 +1126,7 @@ static void thread_stack_init_objects(void *p1, void *p2, void *p3)
  * the exiting thread and thread stack object as uninitialized
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-16
  */
 ZTEST(mem_protect_kobj, test_mark_thread_exit_uninitialized)
 {
@@ -1160,6 +1180,7 @@ static void tThread_object_free_error(void *p1, void *p2, void *p3)
  * @see k_object_free()
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-16
  */
 ZTEST(mem_protect_kobj, test_kobject_free_error)
 {
@@ -1187,6 +1208,7 @@ ZTEST(mem_protect_kobj, test_kobject_free_error)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_object_alloc()
+ * @verifies ZEP-SRS-8-16
  */
 ZTEST_USER(mem_protect_kobj, test_kobject_init_error)
 {
@@ -1210,6 +1232,7 @@ ZTEST_USER(mem_protect_kobj, test_kobject_init_error)
  * @see k_object_alloc()
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-16
  */
 ZTEST(mem_protect_kobj, test_kobj_create_out_of_memory)
 {
@@ -1253,6 +1276,7 @@ extern uint8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
  * @see k_object_alloc()
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-16
  */
 ZTEST(mem_protect_kobj, test_thread_alloc_out_of_idx)
 {
@@ -1305,6 +1329,7 @@ ZTEST(mem_protect_kobj, test_thread_alloc_out_of_idx)
  * @see k_object_alloc()
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-16
  */
 ZTEST(mem_protect_kobj, test_alloc_kobjects)
 {
@@ -1405,6 +1430,7 @@ static void entry_error_perm(void *p1, void *p2, void *p3)
  * @see k_thread_access_grant()
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-2
  */
 ZTEST(mem_protect_kobj, test_kobject_perm_error)
 {

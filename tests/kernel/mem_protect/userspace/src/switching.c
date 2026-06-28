@@ -158,6 +158,11 @@ static void run_switching(int num_kernel_threads)
 #endif /* CONFIG_USERSPACE_SWITCHING_TESTS */
 }
 
+/**
+ * @brief Verify context switching among kernel-only threads (baseline)
+ *
+ * @verifies ZEP-SRS-8-23
+ */
 ZTEST(userspace_domain_switching, test_kernel_only_switching)
 {
 	/*
@@ -170,12 +175,22 @@ ZTEST(userspace_domain_switching, test_kernel_only_switching)
 	run_switching(NUM_THREADS);
 }
 
+/**
+ * @brief Verify memory-domain switching among user-only threads
+ *
+ * @verifies ZEP-SRS-8-23
+ */
 ZTEST(userspace_domain_switching, test_user_only_switching)
 {
 	/* Run with all user threads. */
 	run_switching(0);
 }
 
+/**
+ * @brief Verify memory-domain switching among mixed kernel and user threads
+ *
+ * @verifies ZEP-SRS-8-23
+ */
 ZTEST(userspace_domain_switching, test_kernel_user_mix_switching)
 {
 	/* Run with one kernel thread while others are all user threads. */

@@ -428,6 +428,7 @@ ZTEST(mem_protect_domain, test_mem_domain_migration)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_mem_domain_add_partition()
+ * @verifies ZEP-SRS-8-21
  */
 ZTEST(mem_protect_domain, test_mem_part_overlap)
 {
@@ -457,6 +458,7 @@ K_MEM_PARTITION_DEFINE(exceed_part, exceed_buf, sizeof(exceed_buf),
  *   k_mem_domain_add_partition() returns non-zero.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-21
  */
 ZTEST(mem_protect_domain, test_mem_part_assert_add_overmax)
 {
@@ -490,6 +492,7 @@ K_MEM_PARTITION_DEFINE(find_no_part, misc_buf, sizeof(misc_buf),
  * k_mem_domain_remove_partition() should return non-zero.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-22
  */
 ZTEST(mem_protect_domain, test_mem_domain_remove_part_fail)
 {
@@ -515,6 +518,7 @@ ZTEST(mem_protect_domain, test_mem_domain_remove_part_fail)
  * k_mem_domain_init() should return non-zero.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-20
  */
 ZTEST(mem_protect_domain, test_mem_domain_init_fail)
 {
@@ -541,6 +545,7 @@ ZTEST(mem_protect_domain, test_mem_domain_init_fail)
  * conditions.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-20
  */
 ZTEST(mem_protect_domain, test_mem_domain_deinit_fail)
 {
@@ -588,6 +593,7 @@ ZTEST(mem_protect_domain, test_mem_domain_deinit_fail)
  * k_mem_domain_add_partition() should return error.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-21
  */
 ZTEST(mem_protect_domain, test_mem_part_add_error_null)
 {
@@ -610,6 +616,7 @@ K_MEM_PARTITION_DEFINE(nonsize_part, nosize_buf, sizeof(nosize_buf),
  * k_mem_domain_add_partition() should return error.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-21
  */
 ZTEST(mem_protect_domain, test_mem_part_add_error_zerosize)
 {
@@ -632,6 +639,7 @@ ZTEST(mem_protect_domain, test_mem_part_add_error_zerosize)
  * k_mem_domain_add_partition() should return error.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-21
  */
 ZTEST(mem_protect_domain, test_mem_part_error_wraparound)
 {
@@ -658,6 +666,7 @@ ZTEST(mem_protect_domain, test_mem_part_error_wraparound)
  * in k_mem_domain_remove_partition() returning error.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-22
  */
 ZTEST(mem_protect_domain, test_mem_part_remove_error_zerosize)
 {
