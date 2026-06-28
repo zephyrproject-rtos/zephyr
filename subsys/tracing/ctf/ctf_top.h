@@ -52,17 +52,43 @@
 
 #ifdef CONFIG_TRACING_CTF_TIMESTAMP
 #include <zephyr/timing/timing.h>
+#include <zephyr/spinlock.h>
 
+/*
+ * Return a monotonically increasing 64-bit nanosecond timestamp.
+ *
+ * timing_counter_get() may be backed by a counter narrower than 64 bits (e.g. a
+ * 32-bit hardware cycle counter). Converting an instantaneous narrow counter
+ * value to nanoseconds would wrap back to (near) zero every time the counter
+ * rolls over, producing non-monotonic timestamps that crash CTF readers such as
+ * babeltrace2. Instead, accumulate the per-call cycle delta into a 64-bit total
+ * before converting to nanoseconds. timing_cycles_get() resolves a single
+ * counter rollover between two readings, so this stays correct as long as no
+ * more than one rollover happens between consecutive traced events.
+ */
 static inline uint64_t ctf_top_timestamp_get(void)
 {
-	timing_t bigbang = 0;
-	timing_t now;
-	uint64_t now_cycles;
+	static struct k_spinlock lock;
+	static timing_t last;
+	static uint64_t total_cycles;
+	static bool initialized;
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	timing_t now = timing_counter_get();
+	uint64_t ns;
 
-	now = timing_counter_get();
-	now_cycles = timing_cycles_get(&bigbang, &now);
+	if (!initialized) {
+		last = now;
+		initialized = true;
+	}
 
-	return timing_cycles_to_ns(now_cycles);
+	total_cycles += timing_cycles_get(&last, &now);
+	last = now;
+
+	ns = timing_cycles_to_ns(total_cycles);
+
+	k_spin_unlock(&lock, key);
+
+	return ns;
 }
 
 #define CTF_EVENT(...)                                                                             \
