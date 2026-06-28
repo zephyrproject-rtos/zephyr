@@ -55,6 +55,29 @@ int custom_timestamp(const struct log_output *output,
 	return printer(output, "%s", buffer);
 }
 
+/**
+ * @brief Verify a user-supplied custom timestamp formatter feeds log output.
+ *
+ * @details
+ * Registers a custom timestamp callback and confirms that, when custom
+ * timestamp formatting is enabled, the formatter emits the callback's text in
+ * place of the default numeric timestamp; otherwise it falls back to the
+ * default bracketed timestamp. The rendered timestamp supports later
+ * post-processing of the log stream.
+ *
+ * Test steps:
+ * - Register custom_timestamp() when custom-timestamp formatting is enabled.
+ * - Package a message and process it with the timestamp flag set.
+ * - Compare the rendered buffer against the expected (custom or default) form.
+ *
+ * Expected result:
+ * - Output uses the custom timestamp text when enabled, else the default
+ *   numeric timestamp.
+ *
+ * @see log_custom_timestamp_set()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ */
 ZTEST(test_timestamp, test_custom_timestamp)
 {
 	if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP)) {
