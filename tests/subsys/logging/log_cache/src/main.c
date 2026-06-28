@@ -76,6 +76,28 @@ static void cache_get(struct log_cache *cache, uintptr_t id,
 	}
 }
 
+/**
+ * @brief Verify basic operation of the logging cache utility.
+ *
+ * @details
+ * Exercise the internal log cache helper used by the logging subsystem: lookups
+ * report hit/miss correctly and update statistics, entries can be stored and
+ * retrieved, and when the cache is full the least-recently-used entry is evicted.
+ * This validates the cache data structure itself, not a logging requirement.
+ *
+ * Test steps:
+ * - Initialize a cache sized for three entries.
+ * - Miss then insert several IDs, verifying hit/miss counters.
+ * - Insert beyond capacity to force eviction of the oldest entry.
+ * - Confirm evicted entries miss and reinserted entries hit.
+ *
+ * Expected result:
+ * - Hit/miss results and counters match expectations and the oldest entry is
+ *   evicted when capacity is exceeded.
+ *
+ * @see log_cache_get()
+ * @ingroup logging_tests
+ */
 ZTEST(test_log_cache, test_log_cache_basic)
 {
 	/* Space for 3 entries */
