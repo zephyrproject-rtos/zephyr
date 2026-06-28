@@ -190,11 +190,59 @@ static void test_stress(uint32_t delay)
 	validate(ctx_cnt);
 }
 
+/**
+ * @brief Verify message integrity under stress with fast processing.
+ *
+ * @details
+ * Exercise the logging subsystem under concurrent load from multiple contexts
+ * (timer and threads) with a short backend processing delay. The test validates
+ * that, accounting for the deferred buffer dropping messages under pressure, the
+ * number of dropped messages exactly matches the number detected as missing and
+ * that the total of handled plus dropped equals the total generated.
+ *
+ * Test steps:
+ * - Run ztress with one timer and two thread contexts logging messages, using a
+ *   short (10 us) processing delay.
+ * - Drain pending messages and log a final round per context.
+ * - Validate that dropped count equals missing count and totals balance.
+ *
+ * Expected result:
+ * - No message is silently lost: dropped equals missing and in-count equals
+ *   handled plus dropped.
+ *
+ * @see LOG_INF()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-6
+ */
 ZTEST(log_stress, test_stress_fast_processing)
 {
 	test_stress(10);
 }
 
+/**
+ * @brief Verify message integrity under stress with slow processing.
+ *
+ * @details
+ * Same concurrent stress scenario as the fast-processing case but with a longer
+ * backend processing delay, which increases buffer pressure and the likelihood
+ * of deferred-mode drops. The test validates that dropped messages are precisely
+ * accounted for: dropped equals missing and handled plus dropped equals the
+ * total generated.
+ *
+ * Test steps:
+ * - Run ztress with one timer and two thread contexts logging messages, using a
+ *   longer (100 us) processing delay.
+ * - Drain pending messages and log a final round per context.
+ * - Validate that dropped count equals missing count and totals balance.
+ *
+ * Expected result:
+ * - No message is silently lost: dropped equals missing and in-count equals
+ *   handled plus dropped.
+ *
+ * @see LOG_INF()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-6
+ */
 ZTEST(log_stress, test_stress_slow_processing)
 {
 	test_stress(100);
