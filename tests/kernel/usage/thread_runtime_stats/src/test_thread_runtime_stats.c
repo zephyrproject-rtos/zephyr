@@ -197,9 +197,13 @@ ZTEST(usage_api, test_all_stats_usage)
 #endif
 }
 
-#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+/* __DOXYGEN__ is predefined in the traceability build so the
+ * requirement-annotated test stays visible to Doxygen.
+ */
+#if defined(CONFIG_SCHED_THREAD_USAGE_ANALYSIS) || defined(__DOXYGEN__)
 /**
  * @brief Test the k_thread_runtime_stats_enable/disable APIs
+ * @verifies ZEP-SRS-1-34
  */
 ZTEST(usage_api, test_thread_stats_enable_disable)
 {
@@ -277,9 +281,10 @@ ZTEST(usage_api, test_thread_stats_enable_disable)
 }
 #endif
 
-#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+#if defined(CONFIG_SCHED_THREAD_USAGE_ALL) || defined(__DOXYGEN__)
 /**
  * @brief Test the k_sys_runtime_stats_enable/disable APIs
+ * @verifies ZEP-SRS-1-34
  */
 ZTEST(usage_api, test_sys_stats_enable_disable)
 {

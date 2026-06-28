@@ -91,6 +91,12 @@ ZTEST(no_multithreading, test_irq_locking)
 	zassert_true(timeout_run, "Timeout should expire because irq got unlocked");
 }
 
+/**
+ * @brief Verify k_cpu_idle() idles the CPU until a timer interrupt wakes it
+ *
+ * @see k_cpu_idle()
+ * @verifies ZEP-SRS-13-14
+ */
 ZTEST(no_multithreading, test_cpu_idle)
 {
 	volatile bool timeout_run = false;
