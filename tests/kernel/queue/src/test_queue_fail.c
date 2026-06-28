@@ -253,14 +253,15 @@ ZTEST_USER(queue_api, test_queue_peek_tail_null)
 }
 
 /**
- * @brief Test k_queue_merge_slist() failure scenario
+ * @brief Test k_queue_cancel_wait() error scenario
  *
- * @details Verify that the parameter of the API is
- * NULL, what will happen.
+ * @details Verify that cancelling the wait on a queue causes a blocked
+ * k_queue_get() to return without an item.
  *
  * @ingroup kernel_queue_tests
  *
- * @see k_queue_merge_slist()
+ * @see k_queue_cancel_wait()
+ * @verifies ZEP-SRS-20-15
  */
 ZTEST_USER(queue_api, test_queue_cancel_wait_error)
 {

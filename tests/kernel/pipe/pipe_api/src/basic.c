@@ -51,6 +51,12 @@ ZTEST(k_pipe_basic, test_write_read_one)
 	zassert_true(read_data == data, "Unexpected data received from pipe");
 }
 
+/**
+ * @brief Write then read multiple items through a pipe
+ *
+ * @verifies ZEP-SRS-32-3
+ * @verifies ZEP-SRS-32-4
+ */
 ZTEST(k_pipe_basic, test_write_read_multiple)
 {
 	uint8_t buffer[10];
@@ -96,6 +102,12 @@ ZTEST(k_pipe_basic, test_read_empty)
 		"Should not be able to read from empty pipe");
 }
 
+/**
+ * @brief Write and read a full pipe buffer
+ *
+ * @verifies ZEP-SRS-32-3
+ * @verifies ZEP-SRS-32-4
+ */
 ZTEST(k_pipe_basic, test_read_write_full)
 {
 	uint8_t buffer[10];
@@ -112,6 +124,12 @@ ZTEST(k_pipe_basic, test_read_write_full)
 		"Unexpected data received from pipe");
 }
 
+/**
+ * @brief Read and write across the pipe ring-buffer wrap-around
+ *
+ * @verifies ZEP-SRS-32-3
+ * @verifies ZEP-SRS-32-4
+ */
 ZTEST(k_pipe_basic, test_read_write_wrapp_around)
 {
 	uint8_t buffer[12];

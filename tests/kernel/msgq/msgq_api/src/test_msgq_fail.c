@@ -59,6 +59,7 @@ ZTEST(msgq_api_1cpu, test_msgq_put_fail)
 /**
  * @brief Test returned error code during writing in msgq
  * @see k_msgq_alloc_init()
+ * @verifies ZEP-SRS-31-7
  */
 ZTEST_USER(msgq_api, test_msgq_user_put_fail)
 {
@@ -86,6 +87,7 @@ ZTEST(msgq_api_1cpu, test_msgq_get_fail)
 /**
  * @brief Test returned error code during reading from msgq
  * @see k_msgq_alloc_init(), k_msgq_get()
+ * @verifies ZEP-SRS-31-11
  */
 ZTEST_USER(msgq_api, test_msgq_user_get_fail)
 {

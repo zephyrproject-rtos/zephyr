@@ -146,6 +146,11 @@ ZTEST(k_pipe_concurrency, test_reset_on_write)
 		"pipe should continue to be open after pipe is reset");
 }
 
+/**
+ * @brief Partial read from a pipe returns the available bytes
+ *
+ * @verifies ZEP-SRS-32-4
+ */
 ZTEST(k_pipe_concurrency, test_partial_read)
 {
 	k_tid_t tid;
@@ -165,6 +170,11 @@ ZTEST(k_pipe_concurrency, test_partial_read)
 	k_thread_join(tid, K_FOREVER);
 }
 
+/**
+ * @brief Partial write to a pipe writes into the available space
+ *
+ * @verifies ZEP-SRS-32-3
+ */
 ZTEST(k_pipe_concurrency, test_partial_write)
 {
 	k_tid_t tid;
@@ -205,6 +215,12 @@ static void zero_thread_read_write(void *arg1, void *arg2, void *arg3)
 	      "Failed to write to pipe");
 }
 
+/**
+ * @brief Read and write operations on a zero-size pipe
+ *
+ * @verifies ZEP-SRS-32-3
+ * @verifies ZEP-SRS-32-4
+ */
 ZTEST(k_pipe_concurrency, test_zero_size_pipe_read_write)
 {
 	k_tid_t tid;

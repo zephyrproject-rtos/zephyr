@@ -259,6 +259,12 @@ static void start_client(void)
 				  0, K_NO_WAIT);
 }
 
+/**
+ * @brief Message queue producer/consumer usage scenario
+ *
+ * @verifies ZEP-SRS-31-4
+ * @verifies ZEP-SRS-31-8
+ */
 ZTEST(msgq_usage, test_msgq_usage)
 {
 	start_service_manager();

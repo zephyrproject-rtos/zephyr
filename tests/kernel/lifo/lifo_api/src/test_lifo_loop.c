@@ -95,6 +95,8 @@ static void tlifo_read_write(struct k_lifo *plifo)
  *   -# lifo data pass correctly and stably across contexts
  *
  * @see k_lifo_init(), k_fifo_put(), k_fifo_get()
+ * @verifies ZEP-SRS-23-2
+ * @verifies ZEP-SRS-23-4
  */
 ZTEST(lifo_loop, test_lifo_loop)
 {

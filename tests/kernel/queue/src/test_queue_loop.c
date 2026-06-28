@@ -106,6 +106,10 @@ static void tqueue_read_write(struct k_queue *pqueue)
  * @ingroup kernel_queue_tests
  * @see k_queue_append(), k_queue_get(),
  * k_queue_init(), k_queue_remove()
+ * @verifies ZEP-SRS-20-3
+ * @verifies ZEP-SRS-20-4
+ * @verifies ZEP-SRS-20-5
+ * @verifies ZEP-SRS-20-6
  */
 ZTEST(queue_api_1cpu, test_queue_loop)
 {

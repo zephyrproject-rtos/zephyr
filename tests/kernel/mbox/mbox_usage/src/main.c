@@ -91,6 +91,12 @@ static void test_send(void *p1, void *p2, void *p3)
 }
 
 /* Receive message from any thread with no wait */
+/**
+ * @brief Receive a mailbox message without waiting
+ *
+ * @verifies ZEP-SRS-25-5
+ * @verifies ZEP-SRS-25-9
+ */
 ZTEST(mbox_usage, test_msg_receiver)
 {
 	static k_tid_t tid;
@@ -113,6 +119,12 @@ static void test_send_un(void *p1, void *p2, void *p3)
 }
 
 /* Receive message from thread tid1 */
+/**
+ * @brief Receive a mailbox message, blocking until one is available
+ *
+ * @verifies ZEP-SRS-25-9
+ * @verifies ZEP-SRS-25-11
+ */
 ZTEST(mbox_usage, test_msg_receiver_unlimited)
 {
 	info_type = PUT_GET_NULL;
@@ -160,6 +172,13 @@ static void thread_high_prio(void *p1, void *p2, void *p3)
 	k_sem_give(&sync_sema);
 }
 
+/**
+ * @brief Multiple threads exchange mailbox messages by priority
+ *
+ * @verifies ZEP-SRS-25-4
+ * @verifies ZEP-SRS-25-14
+ * @verifies ZEP-SRS-25-15
+ */
 ZTEST(mbox_usage_1cpu, test_multi_thread_send_get)
 {
 	static k_tid_t low_prio, high_prio;

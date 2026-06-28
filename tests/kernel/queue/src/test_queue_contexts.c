@@ -349,6 +349,7 @@ static void queue_poll_race_consume(void *p1, void *p2, void *p3)
  * with an insert but then steal it with a higher priority thread
  * before it got a chance to run, and the lower priority thread would
  * then return NULL before its timeout expired.
+ * @verifies ZEP-SRS-20-6
  */
 ZTEST(queue_api_1cpu, test_queue_poll_race)
 {
@@ -401,6 +402,12 @@ ZTEST(queue_api_1cpu, test_queue_poll_race)
  * @see k_queue_init()
  */
 #define QUEUE_NUM 10
+/**
+ * @brief Operate on multiple independent queues
+ *
+ * @verifies ZEP-SRS-20-3
+ * @verifies ZEP-SRS-20-6
+ */
 ZTEST(queue_api, test_multiple_queues)
 {
 	/*define multiple queues*/
@@ -440,6 +447,8 @@ void user_access_queue_private_data(void *p1, void *p2, void *p3)
  *   thread doesn't have permission on k_queue object with private kernel data.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-20-8
+ * @verifies ZEP-SRS-20-10
  */
 ZTEST(queue_api, test_access_kernel_obj_with_priv_data)
 {
@@ -492,6 +501,7 @@ static void high_prio_t2_wait_for_queue(void *p1, void *p2, void *p3)
  * thread that has waited longest.
  *
  * @ingroup kernel_queue_tests
+ * @verifies ZEP-SRS-20-6
  */
 ZTEST(queue_api_1cpu, test_queue_multithread_competition)
 {

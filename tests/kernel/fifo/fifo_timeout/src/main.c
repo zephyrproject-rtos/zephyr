@@ -296,6 +296,7 @@ static void test_thread_timeout_reply_values_wfe(void *p1, void *p2, void *p3)
 /**
  * @brief Test empty fifo with timeout and K_NO_WAIT
  * @see k_fifo_get()
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_timeout_1cpu, test_timeout_empty_fifo)
 {
@@ -319,6 +320,7 @@ ZTEST(fifo_timeout_1cpu, test_timeout_empty_fifo)
 /**
  * @brief Test non empty fifo with timeout and K_NO_WAIT
  * @see k_fifo_get(), k_fifo_put()
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_timeout, test_timeout_non_empty_fifo)
 {
@@ -348,6 +350,7 @@ ZTEST(fifo_timeout, test_timeout_non_empty_fifo)
  * k_fifo_get with timeout of K_FOREVER and the fifo should be filled by
  * the child thread based on the data availability on another fifo.
  * @see k_fifo_get(), k_fifo_put()
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_timeout_1cpu, test_timeout_fifo_thread)
 {
@@ -435,6 +438,7 @@ ZTEST(fifo_timeout_1cpu, test_timeout_fifo_thread)
  * @details test multiple threads pending on the same fifo with
  * different timeouts
  * @see k_fifo_get(), k_fifo_put()
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_on_fifo)
 {
@@ -454,6 +458,7 @@ ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_on_fifo)
  * @details test multiple threads pending on different fifos
  * with different timeouts
  * @see k_fifo_get(), k_fifo_put()
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_on_dual_fifos)
 {
@@ -475,6 +480,7 @@ ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_on_dual_fifos)
  * @details test multiple threads pending on the same fifo with
  * different timeouts but getting the data in time
  * @see k_fifo_get(), k_fifo_put()
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_fail_on_fifo)
 {

@@ -20,6 +20,11 @@ ZTEST_SUITE(k_pipe_stress, NULL, NULL, NULL, NULL, NULL);
 
 static struct k_pipe pipe;
 
+/**
+ * @brief Stress test concurrent pipe writes
+ *
+ * @verifies ZEP-SRS-32-3
+ */
 ZTEST(k_pipe_stress, test_write)
 {
 	int rc;
@@ -41,6 +46,11 @@ ZTEST(k_pipe_stress, test_write)
 	LOG_INF("Elapsed cycles: %u\n", end_cycles - start_cycles);
 }
 
+/**
+ * @brief Stress test concurrent pipe reads
+ *
+ * @verifies ZEP-SRS-32-4
+ */
 ZTEST(k_pipe_stress, test_read)
 {
 	int rc;

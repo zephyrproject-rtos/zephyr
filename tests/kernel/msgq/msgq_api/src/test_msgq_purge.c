@@ -68,6 +68,7 @@ ZTEST(msgq_api_1cpu, test_msgq_purge_when_put)
 /**
  * @brief Test purge a message queue
  * @see k_msgq_init(), k_msgq_purge(), k_msgq_put()
+ * @verifies ZEP-SRS-31-14
  */
 ZTEST_USER(msgq_api, test_msgq_user_purge_when_put)
 {

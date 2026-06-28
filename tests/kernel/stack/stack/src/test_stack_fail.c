@@ -124,6 +124,7 @@ ZTEST_USER(stack_fail, test_stack_user_init_null)
  * @brief Verify that alloc and initialize a stack with
  * 0 memory.
  * @see k_stack_alloc_init()
+ * @verifies ZEP-SRS-30-3
  */
 ZTEST_USER(stack_fail, test_stack_user_init_invalid_value)
 {
@@ -138,6 +139,7 @@ ZTEST_USER(stack_fail, test_stack_user_init_invalid_value)
  * @brief Verify that push some data into a NULL
  * pointer.
  * @see k_stack_push()
+ * @verifies ZEP-SRS-30-4
  */
 ZTEST_USER(stack_fail, test_stack_user_push_null)
 {
@@ -148,6 +150,7 @@ ZTEST_USER(stack_fail, test_stack_user_push_null)
 /**
  * @brief Verifies pop data from a NULL pointer.
  * @see k_stack_pop()
+ * @verifies ZEP-SRS-30-6
  */
 ZTEST_USER(stack_fail, test_stack_user_pop_null)
 {
@@ -159,6 +162,7 @@ ZTEST_USER(stack_fail, test_stack_user_pop_null)
  * @brief Verifies cleanup a stack that its data still be waited by
  * another thread.
  * @see k_stack_pop()
+ * @verifies ZEP-SRS-30-9
  */
 ZTEST_USER(stack_fail, test_stack_user_pop_permission)
 {

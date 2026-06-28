@@ -212,6 +212,8 @@ static void test_thread_put_timeout(void *p1, void *p2, void *p3)
 /**
  * @brief Test last in, first out queue using LIFO
  * @see k_sem_init(), k_lifo_put(), k_lifo_get()
+ * @verifies ZEP-SRS-23-2
+ * @verifies ZEP-SRS-23-4
  */
 ZTEST(lifo_usage, test_lifo_nowait)
 {
@@ -236,6 +238,8 @@ ZTEST(lifo_usage, test_lifo_nowait)
 /**
  * @brief Test pending reader in LIFO
  * @see k_lifo_init(), k_lifo_get(), k_lifo_put()
+ * @verifies ZEP-SRS-23-2
+ * @verifies ZEP-SRS-23-4
  */
 ZTEST(lifo_usage_1cpu, test_lifo_wait)
 {
@@ -264,6 +268,7 @@ ZTEST(lifo_usage_1cpu, test_lifo_wait)
 /**
  * @brief Test reading empty LIFO
  * @see k_lifo_get()
+ * @verifies ZEP-SRS-23-4
  */
 ZTEST(lifo_usage_1cpu, test_timeout_empty_lifo)
 {
@@ -289,6 +294,8 @@ ZTEST(lifo_usage_1cpu, test_timeout_empty_lifo)
 /**
  * @brief Test read and write operation in LIFO with timeout
  * @see k_lifo_put(), k_lifo_get()
+ * @verifies ZEP-SRS-23-2
+ * @verifies ZEP-SRS-23-4
  */
 ZTEST(lifo_usage, test_timeout_non_empty_lifo)
 {
@@ -311,6 +318,8 @@ ZTEST(lifo_usage, test_timeout_non_empty_lifo)
 /**
  * @brief Test LIFO with timeout
  * @see k_lifo_put(), k_lifo_get()
+ * @verifies ZEP-SRS-23-2
+ * @verifies ZEP-SRS-23-4
  */
 ZTEST(lifo_usage_1cpu, test_timeout_lifo_thread)
 {
@@ -415,6 +424,7 @@ void test_thread_pend_and_timeout(void *p1, void *p2, void *p3)
  * @details test multiple threads pending on the same lifo
  * with different timeouts
  * @see k_lifo_get()
+ * @verifies ZEP-SRS-23-4
  */
 ZTEST(lifo_usage_1cpu, test_timeout_threads_pend_on_lifo)
 {

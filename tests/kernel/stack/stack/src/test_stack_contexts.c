@@ -166,6 +166,10 @@ ZTEST(stack_contexts, test_stack_thread2isr)
 /**
  * @see k_stack_alloc_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop(),
  * k_stack_cleanup()
+ * @verifies ZEP-SRS-30-3
+ * @verifies ZEP-SRS-30-4
+ * @verifies ZEP-SRS-30-6
+ * @verifies ZEP-SRS-30-10
  */
 ZTEST(stack_contexts, test_stack_alloc_thread2thread)
 {
@@ -238,6 +242,7 @@ static void high_prio_t2_wait_for_stack(void *p1, void *p2, void *p3)
  * thread that has waited longest.
  *
  * @ingroup kernel_stack_tests
+ * @verifies ZEP-SRS-30-6
  */
 ZTEST(stack_contexts, test_stack_multithread_competition)
 {

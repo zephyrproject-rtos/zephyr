@@ -298,6 +298,8 @@ ZTEST(msgq_api_1cpu, test_msgq_thread)
 /**
  * @brief Test thread to thread data passing via message queue
  * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
+ * @verifies ZEP-SRS-31-4
+ * @verifies ZEP-SRS-31-9
  */
 ZTEST(msgq_api, test_msgq_thread_overflow)
 {
@@ -343,6 +345,8 @@ ZTEST_USER(msgq_api, test_msgq_user_thread)
 /**
  * @brief Test thread to thread data passing via message queue
  * @see k_msgq_alloc_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
+ * @verifies ZEP-SRS-31-4
+ * @verifies ZEP-SRS-31-9
  */
 ZTEST_USER(msgq_api, test_msgq_user_thread_overflow)
 {
@@ -501,6 +505,7 @@ ZTEST(msgq_api_1cpu, test_msgq_full)
  * - Thread A get all messages from message queue and check the behavior.
  *
  * @see k_msgq_put(), k_msgq_put_front()
+ * @verifies ZEP-SRS-31-6
  */
 ZTEST(msgq_api_1cpu, test_msgq_thread_pending)
 {
