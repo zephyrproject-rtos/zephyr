@@ -45,6 +45,27 @@ static int mock_output_func(uint8_t *buf, size_t size, void *ctx)
 LOG_OUTPUT_DEFINE(log_output, mock_output_func,
 		  log_output_buf, sizeof(log_output_buf));
 
+/**
+ * @brief Verify a log message renders with source name and no extra prefixes.
+ *
+ * @details
+ * Drives the log_output formatter with zero output flags to confirm that the
+ * baseline rendering of a message is "<source>: <text>" terminated by CRLF.
+ * This exercises the printf-style formatting of a log message into text with
+ * the default decorations only.
+ *
+ * Test steps:
+ * - Package a simple string with cbprintf_package().
+ * - Process it through log_output with flags = 0.
+ * - Compare the rendered buffer against the expected string.
+ *
+ * Expected result:
+ * - Output equals "src: test\r\n".
+ *
+ * @see log_output_process()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(test_log_output, test_no_flags)
 {
 	char package[256];
@@ -61,6 +82,27 @@ ZTEST(test_log_output, test_no_flags)
 	zassert_str_equal(exp_str, mock_buffer);
 }
 
+/**
+ * @brief Verify a raw-string log message is rendered without any decoration.
+ *
+ * @details
+ * Processes a message tagged as an internal raw string and confirms the
+ * formatter emits only the payload text, with no source prefix, level marker,
+ * or trailing CRLF. This validates the formatter's handling of unformatted
+ * passthrough content.
+ *
+ * Test steps:
+ * - Package a simple string with cbprintf_package().
+ * - Process it through log_output with LOG_LEVEL_INTERNAL_RAW_STRING.
+ * - Compare the rendered buffer against the raw payload.
+ *
+ * Expected result:
+ * - Output equals "test" with no added prefix or newline.
+ *
+ * @see log_output_process()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(test_log_output, test_raw)
 {
 	char package[256];
@@ -77,6 +119,26 @@ ZTEST(test_log_output, test_raw)
 	zassert_str_equal(exp_str, mock_buffer);
 }
 
+/**
+ * @brief Verify a log message renders with domain and source name prefix.
+ *
+ * @details
+ * Supplies both a domain name and a source name to the formatter and confirms
+ * the rendered message is prefixed with "domain/src:". This validates that the
+ * formatter composes the message prefix from domain and source identifiers.
+ *
+ * Test steps:
+ * - Package a simple string with cbprintf_package().
+ * - Process it through log_output supplying both DNAME and SNAME.
+ * - Compare the rendered buffer against the expected string.
+ *
+ * Expected result:
+ * - Output equals "domain/src: test\r\n".
+ *
+ * @see log_output_process()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(test_log_output, test_no_flags_dname)
 {
 	char package[256];
@@ -93,6 +155,27 @@ ZTEST(test_log_output, test_no_flags_dname)
 	zassert_str_equal(exp_str, mock_buffer);
 }
 
+/**
+ * @brief Verify the severity level marker is rendered when requested.
+ *
+ * @details
+ * Enables LOG_OUTPUT_FLAG_LEVEL and confirms the formatter prepends the
+ * textual severity marker (e.g. "<inf>") ahead of the domain/source prefix.
+ * This validates rendering of the message severity into the formatted output.
+ *
+ * Test steps:
+ * - Package a simple string with cbprintf_package().
+ * - Process it at LOG_LEVEL_INF with the level flag set.
+ * - Compare the rendered buffer against the expected string.
+ *
+ * Expected result:
+ * - Output equals "<inf> domain/src: test\r\n".
+ *
+ * @see log_output_process()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-7
+ */
 ZTEST(test_log_output, test_level_flag)
 {
 	char package[256];
@@ -110,6 +193,28 @@ ZTEST(test_log_output, test_level_flag)
 	zassert_str_equal(exp_str, mock_buffer);
 }
 
+/**
+ * @brief Verify a raw timestamp is rendered when the timestamp flag is set.
+ *
+ * @details
+ * Enables LOG_OUTPUT_FLAG_TIMESTAMP and confirms the formatter prepends the
+ * numeric timestamp in brackets, sized according to the 32/64-bit timestamp
+ * configuration. A timestamped, machine-readable prefix supports later
+ * post-processing of the log stream.
+ *
+ * Test steps:
+ * - Package a simple string with cbprintf_package().
+ * - Process it with the timestamp flag set.
+ * - Compare the rendered buffer against the expected bracketed timestamp.
+ *
+ * Expected result:
+ * - Output is prefixed with "[00000000] " (or 64-bit form) followed by the message.
+ *
+ * @see log_output_process()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-2
+ */
 ZTEST(test_log_output, test_ts_flag)
 {
 	char package[256];
@@ -129,6 +234,28 @@ ZTEST(test_log_output, test_ts_flag)
 	zassert_str_equal(exp_str, mock_buffer);
 }
 
+/**
+ * @brief Verify a timestamp is rendered as a formatted date/time string.
+ *
+ * @details
+ * Sets the timestamp frequency and enables both the timestamp and
+ * format-timestamp flags so the raw tick value is converted into a human and
+ * machine readable date/time string (plain, date, or ISO8601 per Kconfig).
+ * This validates timestamp formatting that supports post-processing of logs.
+ *
+ * Test steps:
+ * - Set the output timestamp frequency to 1 MHz.
+ * - Package a simple string and process it with timestamp + format flags.
+ * - Compare the rendered buffer against the expected formatted timestamp.
+ *
+ * Expected result:
+ * - Output is prefixed with the configured formatted timestamp string.
+ *
+ * @see log_output_process()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-2
+ */
 ZTEST(test_log_output, test_format_ts)
 {
 #ifdef CONFIG_LOG_OUTPUT_FORMAT_DATE_TIMESTAMP
@@ -156,6 +283,26 @@ ZTEST(test_log_output, test_format_ts)
 	zassert_str_equal(exp_str, mock_buffer);
 }
 
+/**
+ * @brief Verify timestamp ticks are converted to microseconds correctly.
+ *
+ * @details
+ * Exercises the timestamp-to-microseconds conversion helper at two different
+ * timestamp frequencies and confirms the scaled results. Correct conversion
+ * underpins the timestamps emitted into formatted log output.
+ *
+ * Test steps:
+ * - Set frequency to 1 MHz and convert 1000 ticks.
+ * - Set frequency to 32768 Hz and convert 10 ticks.
+ * - Assert the converted microsecond values.
+ *
+ * Expected result:
+ * - Conversions yield 1000 us and 305 us respectively.
+ *
+ * @see log_output_timestamp_to_us()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(test_log_output, test_ts_to_us)
 {
 	log_output_timestamp_freq_set(1000000);
@@ -183,6 +330,28 @@ static bool use_func_prefix(uint8_t level)
 	}
 }
 
+/**
+ * @brief Verify each severity level renders its corresponding text marker.
+ *
+ * @details
+ * Iterates over the error, warning, info and debug levels and confirms the
+ * formatter renders the matching marker ("<err>", "<wrn>", "<inf>", "<dbg>"),
+ * optionally including the function-name prefix when configured. This
+ * validates rendering of all supported severity levels into formatted output.
+ *
+ * Test steps:
+ * - For each level, package a message and process it with the level flag.
+ * - Account for the function-name prefix when enabled for that level.
+ * - Assert the rendered length and string for each level.
+ *
+ * Expected result:
+ * - Each message carries the correct severity marker and text.
+ *
+ * @see log_output_process()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-7
+ */
 ZTEST(test_log_output, test_levels)
 {
 	char package[256];
@@ -222,6 +391,28 @@ ZTEST(test_log_output, test_levels)
 	}
 }
 
+/**
+ * @brief Verify color escape codes wrap messages per severity when enabled.
+ *
+ * @details
+ * Enables the level and colors flags and confirms the formatter surrounds each
+ * message with the ANSI color escape sequence associated with its severity
+ * (or the default sequence when colors are disabled in the build). This
+ * validates color decoration of formatted, severity-tagged output.
+ *
+ * Test steps:
+ * - For each level, build the expected colored string and package a message.
+ * - Process it with the level + colors flags set.
+ * - Assert the rendered length and string for each level.
+ *
+ * Expected result:
+ * - Each message is wrapped with the expected color codes for its level.
+ *
+ * @see log_output_process()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-7
+ */
 ZTEST(test_log_output, test_colors)
 {
 #define LOG_COLOR_CODE_DEFAULT "\x1B[0m"
@@ -288,6 +479,26 @@ ZTEST(test_log_output, test_colors)
 	}
 }
 
+/**
+ * @brief Verify the originating thread identity is rendered when requested.
+ *
+ * @details
+ * Enables the thread flag and confirms the formatter prepends the originating
+ * thread's priority and name (or pointer when names are disabled) to the
+ * message. This validates rendering of thread context into formatted output.
+ *
+ * Test steps:
+ * - Skip unless CONFIG_LOG_THREAD_ID_PREFIX is enabled.
+ * - Build the expected string from the current thread's priority and name.
+ * - Package a message and process it with the level + thread flags.
+ *
+ * Expected result:
+ * - Output includes the "[prio name]" thread prefix ahead of the message.
+ *
+ * @see log_output_process()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(test_log_output, test_thread_id)
 {
 	if (!IS_ENABLED(CONFIG_LOG_THREAD_ID_PREFIX)) {
@@ -321,6 +532,26 @@ ZTEST(test_log_output, test_thread_id)
 	zassert_str_equal(exp_str, mock_buffer);
 }
 
+/**
+ * @brief Verify the source prefix is omitted when the skip-source flag is set.
+ *
+ * @details
+ * Enables LOG_OUTPUT_FLAG_SKIP_SOURCE and confirms the formatter renders only
+ * the message payload and CRLF, without the source-name prefix. This validates
+ * the formatter's ability to suppress source decoration in the output.
+ *
+ * Test steps:
+ * - Package a simple string with cbprintf_package().
+ * - Process it with the skip-source flag set.
+ * - Compare the rendered buffer against the expected string.
+ *
+ * Expected result:
+ * - Output equals "test\r\n" with no source prefix.
+ *
+ * @see log_output_process()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(test_log_output, test_skip_src)
 {
 	char package[256];
