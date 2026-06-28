@@ -110,6 +110,30 @@ LOG_BACKEND_DEFINE(backend2, backend_api, true, &context2);
  * ready it will not receive this message. Second message is created when
  * both backends are initialized so both receives the message.
  */
+/**
+ * @brief Verify staged auto-start initialization of multiple backends.
+ *
+ * @details
+ * Two autostarted backends with different (delayed) readiness times are
+ * registered. Logging starts processing once at least one backend is ready, so a
+ * message emitted between the two readiness points reaches only the ready
+ * backend, while a later message reaches both. This validates correct routing to
+ * multiple backends as each becomes ready during startup.
+ *
+ * Test steps:
+ * - Skip if exactly two backends are not present.
+ * - Emit a first message before either backend is ready.
+ * - Wait until both backends become ready, then emit a second message.
+ * - Allow processing and check each backend's received message count.
+ *
+ * Expected result:
+ * - The earlier-ready backend receives both messages; the later-ready backend
+ *   receives only the second message.
+ *
+ * @see log_backend_enable()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-5
+ */
 ZTEST(log_backend_init, test_log_backends_initialization)
 {
 	int cnt;
