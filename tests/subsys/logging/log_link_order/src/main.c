@@ -89,6 +89,26 @@ static void check_msg(int exp_timestamp, int line)
 
 #define CHECK_MSG(t) check_msg(t, __LINE__)
 
+/**
+ * @brief Verify ordering of local and remote-link messages by timestamp.
+ *
+ * @details
+ * Messages may originate locally or arrive via a log link (remote domain). This
+ * test commits a local message and then enqueues a remote-link message with a
+ * later timestamp, validating that messages are claimed in timestamp order.
+ *
+ * Test steps:
+ * - Allocate and commit a local message (timestamp 0).
+ * - Enqueue a remote-link message (timestamp 1).
+ * - Claim messages and check their timestamps.
+ *
+ * Expected result:
+ * - Messages are claimed in ascending timestamp order (0, then 1).
+ * - No further messages remain.
+ *
+ * @see z_log_msg_enqueue()
+ * @ingroup logging_tests
+ */
 ZTEST(log_link_order, test_log_only_local)
 {
 	struct log_msg log2;
@@ -115,6 +135,27 @@ ZTEST(log_link_order, test_log_only_local)
 	CHECK_MSG(-1);
 }
 
+/**
+ * @brief Verify out-of-order remote-link messages sharing the core buffer.
+ *
+ * @details
+ * When a remote-link message arrives later but carries an earlier timestamp,
+ * and the link has no dedicated buffer, it shares the core message queue. This
+ * test validates that messages are claimed in the order they were committed to
+ * the shared queue rather than strictly by timestamp.
+ *
+ * Test steps:
+ * - Take a timestamp for the remote message before the local one.
+ * - Commit the local message, then enqueue the earlier-timestamped remote one.
+ * - Claim messages and check their timestamps.
+ *
+ * Expected result:
+ * - Messages are claimed in commit order (local first, then remote).
+ * - No further messages remain.
+ *
+ * @see z_log_msg_enqueue()
+ * @ingroup logging_tests
+ */
 ZTEST(log_link_order, test_log_local_unordered)
 {
 	struct log_msg *log1;
@@ -148,6 +189,28 @@ ZTEST(log_link_order, test_log_local_unordered)
 	CHECK_MSG(-1);
 }
 
+/**
+ * @brief Verify timestamp ordering when a link has a dedicated buffer.
+ *
+ * @details
+ * When a log link has its own dedicated buffer, the processing logic selects the
+ * earliest message across the local queue and the link buffers. This test
+ * enqueues a remote message with an earlier timestamp to a dedicated-buffer link
+ * and validates that messages are reordered and claimed by ascending timestamp.
+ *
+ * Test steps:
+ * - Take an early timestamp for the remote message before committing local.
+ * - Commit the local message and enqueue two remote messages to a dedicated
+ *   buffer link (earlier then later timestamp).
+ * - Claim messages and check their timestamps.
+ *
+ * Expected result:
+ * - Messages are claimed in ascending timestamp order (0, 1, 2).
+ * - No further messages remain.
+ *
+ * @see z_log_msg_enqueue()
+ * @ingroup logging_tests
+ */
 ZTEST(log_link_order, test_log_one_remote_ordering)
 {
 	struct log_msg *log1;
