@@ -66,6 +66,10 @@ static void test_multi_level_bit_masks_fn(uint32_t irq1, uint32_t irq2, uint32_t
 	}
 }
 
+/**
+ * @brief Encode and decode level-1 multi-level interrupt numbers
+ * @ingroup kernel_interrupt_tests
+ */
 ZTEST(gen_isr_table_multilevel, test_multi_level_bit_masks_l1)
 {
 	uint32_t irq1;
@@ -83,6 +87,10 @@ ZTEST(gen_isr_table_multilevel, test_multi_level_bit_masks_l1)
 	test_multi_level_bit_masks_fn(irq1, 0, 0);
 }
 
+/**
+ * @brief Encode and decode level-2 multi-level interrupt numbers
+ * @ingroup kernel_interrupt_tests
+ */
 ZTEST(gen_isr_table_multilevel, test_multi_level_bit_masks_l2)
 {
 	if (!IS_ENABLED(CONFIG_2ND_LEVEL_INTERRUPTS)) {
@@ -108,6 +116,10 @@ ZTEST(gen_isr_table_multilevel, test_multi_level_bit_masks_l2)
 	test_multi_level_bit_masks_fn(irq1, irq2, 0);
 }
 
+/**
+ * @brief Encode and decode level-3 multi-level interrupt numbers
+ * @ingroup kernel_interrupt_tests
+ */
 ZTEST(gen_isr_table_multilevel, test_multi_level_bit_masks_l3)
 {
 	if (!IS_ENABLED(CONFIG_3RD_LEVEL_INTERRUPTS)) {
