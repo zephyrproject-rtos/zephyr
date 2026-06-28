@@ -325,7 +325,7 @@ installation.
 
             .. parsed-literal::
 
-               west init ~ -m https://github.com/zephyrproject-rtos/zephyr/zephyrproject --mr v |zephyr-version-ltrim|
+               west init -m https://github.com/zephyrproject-rtos/zephyr ~/zephyrproject --mr v |zephyr-version-ltrim|
                cd ~/zephyrproject
                west update
 
@@ -335,7 +335,7 @@ installation.
 
             .. code-block:: bash
 
-               west init ~ -m https://github.com/zephyrproject-rtos/zephyr/zephyrproject
+               west init -m https://github.com/zephyrproject-rtos/zephyr ~/zephyrproject
                cd ~/zephyrproject
                west update
 
@@ -343,7 +343,7 @@ installation.
 
             .. parsed-literal::
 
-               west init ~ -m https://github.com/zephyrproject-rtos/zephyr/zephyrproject --mr v |zephyr-version-ltrim|
+               west init -m https://github.com/zephyrproject-rtos/zephyr ~/zephyrproject --mr v |zephyr-version-ltrim|
                cd ~/zephyrproject
                west update
 
