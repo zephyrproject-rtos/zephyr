@@ -3,6 +3,9 @@
 Thread Local Storage (TLS)
 ##########################
 
+.. design:: DESIGN-TLS Thread Local Storage
+   :fulfills: ZEP-SRS-1-23
+
 Thread Local Storage (TLS) allows variables to be allocated on a per-thread
 basis. These variables are stored in the thread stack which means every
 thread has its own copy of these variables.
