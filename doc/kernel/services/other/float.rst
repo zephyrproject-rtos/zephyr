@@ -22,6 +22,9 @@ configurations that support these registers.
 Concepts
 ********
 
+.. design:: DESIGN-FLOAT-SERVICES Floating Point Services
+   :fulfills: ZEP-SRS-29-1 ZEP-SRS-29-2 ZEP-SRS-29-3 ZEP-SRS-29-4 ZEP-SRS-29-5 ZEP-SRS-29-6
+
 The kernel can be configured to provide only the floating point services
 required by an application. Three modes of operation are supported,
 which are described below. In addition, the kernel's support for the SSE
