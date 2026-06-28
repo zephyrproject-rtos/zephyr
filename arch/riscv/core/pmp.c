@@ -1262,6 +1262,21 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 		if (IS_WITHIN(start, size, ro_start, ro_size)) {
 			return 0;
 		}
+
+		/*
+		 * On SoCs whose flash-mapped read-only data lives in a window
+		 * separate from the executable text (so __rom_region only spans
+		 * the text), the rodata - which holds const data and string
+		 * literals passed to syscalls - is covered by its own globally
+		 * readable region. Accept it here too.
+		 */
+		uintptr_t rodata_start = (uintptr_t)__rodata_region_start;
+		uintptr_t rodata_end = (uintptr_t)__rodata_region_end;
+
+		if (rodata_end > rodata_start &&
+		    IS_WITHIN(start, size, rodata_start, rodata_end - rodata_start)) {
+			return 0;
+		}
 	}
 
 	/* Look for a matching partition in our memory domain */
