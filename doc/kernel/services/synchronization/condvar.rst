@@ -4,7 +4,7 @@ Condition Variables
 ###################
 
 .. design:: DESIGN-CONDVAR Condition Variables
-   :fulfills: ZEP-SRS-21-1 ZEP-SRS-21-2 ZEP-SRS-21-3 ZEP-SRS-21-4 ZEP-SRS-21-5 ZEP-SRS-21-6 ZEP-SRS-21-7 ZEP-SRS-21-8 ZEP-SRS-21-9
+   :fulfills: ZEP-SRS-21-1 ZEP-SRS-21-2 ZEP-SRS-21-3 ZEP-SRS-21-4 ZEP-SRS-21-5 ZEP-SRS-21-6 ZEP-SRS-21-7 ZEP-SRS-21-8 ZEP-SRS-21-9 ZEP-SRS-21-10
 
 
 A :dfn:`condition variable` is a synchronization primitive
@@ -38,6 +38,11 @@ the condition using :c:func:`k_condvar_signal` or
 
 #. Re-acquires the mutex previously released.
 #. Returns from :c:func:`k_condvar_wait`.
+
+Regardless of why the wait completes -- whether the thread was signaled, the
+supplied timeout elapsed, or the wait was requested without blocking --
+:c:func:`k_condvar_wait` always returns with the associated mutex re-locked by
+the calling thread.
 
 A condition variable must be initialized before it can be used.
 
