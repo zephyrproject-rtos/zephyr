@@ -2139,7 +2139,6 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 	net_pkt_set_captured(clone_pkt, net_pkt_is_captured(pkt));
 	net_pkt_set_eof(clone_pkt, net_pkt_eof(pkt));
 	net_pkt_set_ppp(clone_pkt, net_pkt_is_ppp(pkt));
-	net_pkt_set_lldp(clone_pkt, net_pkt_is_lldp(pkt));
 	net_pkt_set_ipv4_acd(clone_pkt, net_pkt_ipv4_acd(pkt));
 	net_pkt_set_tx_timestamping(clone_pkt, net_pkt_is_tx_timestamping(pkt));
 	net_pkt_set_rx_timestamping(clone_pkt, net_pkt_is_rx_timestamping(pkt));

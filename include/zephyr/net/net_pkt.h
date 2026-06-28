@@ -240,12 +240,6 @@ struct net_pkt {
 					* NET_AF_INET.
 					*/
 #endif
-#if defined(CONFIG_NET_LLDP)
-	uint8_t lldp_pkt : 1; /* Is this pkt an LLDP message.
-			       * Note: family needs to be
-			       * NET_AF_UNSPEC.
-			       */
-#endif
 	uint8_t ppp_msg : 1; /* This is a PPP message */
 	uint8_t captured : 1;	  /* Set to 1 if this packet is already being
 				   * captured
@@ -1480,31 +1474,6 @@ static inline void net_pkt_set_ipv4_acd(struct net_pkt *pkt,
 	ARG_UNUSED(is_acd_arp_msg);
 }
 #endif /* CONFIG_NET_IPV4_ACD */
-
-#if defined(CONFIG_NET_LLDP)
-static inline bool net_pkt_is_lldp(struct net_pkt *pkt)
-{
-	return !!(pkt->lldp_pkt);
-}
-
-static inline void net_pkt_set_lldp(struct net_pkt *pkt, bool is_lldp)
-{
-	pkt->lldp_pkt = is_lldp;
-}
-#else
-static inline bool net_pkt_is_lldp(struct net_pkt *pkt)
-{
-	ARG_UNUSED(pkt);
-
-	return false;
-}
-
-static inline void net_pkt_set_lldp(struct net_pkt *pkt, bool is_lldp)
-{
-	ARG_UNUSED(pkt);
-	ARG_UNUSED(is_lldp);
-}
-#endif /* CONFIG_NET_LLDP */
 
 #if defined(CONFIG_NET_L2_PPP)
 static inline bool net_pkt_is_ppp(struct net_pkt *pkt)
