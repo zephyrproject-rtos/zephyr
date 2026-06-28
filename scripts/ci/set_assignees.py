@@ -147,17 +147,24 @@ maintainer is added as a reviewer.
 Manifest / MAINTAINERS.yml change handling
 -------------------------------------------
 west.yml and submanifests/optional.yaml:
-  If --updated-manifest is provided, the old and new manifest files are
-  compared to find added, removed, and updated west projects.  Each changed
-  project is looked up in MAINTAINERS.yml under "West project: <name>" and
-  the corresponding collaborators are added to the reviewer candidate list.
+  If --updated-manifest is provided, it (the PR's manifest) is compared against
+  --base-manifest to find added, removed, and updated west projects.  Each
+  changed project is looked up in MAINTAINERS.yml under "West project: <name>"
+  and the corresponding collaborators are added to the reviewer candidate list.
+  --base-manifest must be the manifest the PR forked from (the merge ref's
+  first parent); comparing against the moving base-branch tip instead would
+  also pick up every project that advanced on the base branch after the PR was
+  created and add all their maintainers as reviewers (see #110422).  When
+  --base-manifest is omitted it defaults to the checked-out west.yml.
 
 MAINTAINERS.yml:
-  If --updated-maintainer-file is provided, the old and new versions of
-  MAINTAINERS.yml are diffed field-by-field (maintainers, collaborators,
-  labels, files, files-regex, status).  Maintainers of every area that
-  changed are appended to the reviewer candidate list so that the people
-  responsible for each changed area are automatically notified.
+  If --updated-maintainer-file is provided, it (the PR's version) is diffed
+  field-by-field against --base-maintainer-file (maintainers, collaborators,
+  labels, files, files-regex, status).  Maintainers of every area that changed
+  are appended to the reviewer candidate list so that the people responsible
+  for each changed area are automatically notified.  As with the manifest, the
+  base file must be the version the PR forked from, not the base-branch tip;
+  it defaults to the checked-out MAINTAINERS.yml when omitted.
 
 Issue assignment
 ----------------
@@ -262,13 +269,34 @@ def parse_args():
     parser.add_argument(
         "--updated-manifest",
         default=None,
-        help="Updated manifest file to compare against current west.yml",
+        help="Manifest file as it appears in the pull request.",
+    )
+
+    parser.add_argument(
+        "--base-manifest",
+        default=None,
+        help=(
+            "Manifest file to compare --updated-manifest against. Should be the "
+            "version the PR forked from (the merge ref's first parent), not the "
+            "base-branch tip. Defaults to the checked-out west.yml when omitted."
+        ),
     )
 
     parser.add_argument(
         "--updated-maintainer-file",
         default=None,
-        help="Updated maintainer file to compare against current MAINTAINERS.yml",
+        help="Maintainer file as it appears in the pull request.",
+    )
+
+    parser.add_argument(
+        "--base-maintainer-file",
+        default=None,
+        help=(
+            "Maintainer file to compare --updated-maintainer-file against. Should "
+            "be the version the PR forked from (the merge ref's first parent), not "
+            "the base-branch tip. Defaults to the checked-out MAINTAINERS.yml when "
+            "omitted."
+        ),
     )
 
     parser.add_argument(
@@ -321,21 +349,29 @@ def load_areas(filename: str) -> dict:
     }
 
 
-def process_manifest(old_manifest_file: str) -> list:
-    """Return area name strings for projects that changed between two west.yml files."""
+def process_manifest(pr_manifest_file: str, base_manifest_file: str = "west.yml") -> list:
+    """Return area name strings for projects that changed between two west.yml files.
+
+    *pr_manifest_file* is the manifest as it appears in the pull request, and
+    *base_manifest_file* is the manifest it should be compared against.  The
+    base must be the version the PR actually forked from (the merge ref's first
+    parent), not the moving base-branch tip; otherwise projects that advanced on
+    the base branch after the PR was created are wrongly reported as changed and
+    their maintainers get spuriously added as reviewers (see #110422).
+    """
     logger.info("Processing manifest changes")
 
-    if not os.path.isfile("west.yml"):
-        logger.warning("west.yml not found; skipping manifest processing")
-        return []
-    if not os.path.isfile(old_manifest_file):
+    if not os.path.isfile(base_manifest_file):
         logger.warning(
-            "Old manifest '%s' not found; skipping manifest processing", old_manifest_file
+            "Base manifest '%s' not found; skipping manifest processing", base_manifest_file
         )
         return []
+    if not os.path.isfile(pr_manifest_file):
+        logger.warning("PR manifest '%s' not found; skipping manifest processing", pr_manifest_file)
+        return []
 
-    old_manifest = Manifest.from_file(old_manifest_file)
-    new_manifest = Manifest.from_file("west.yml")
+    old_manifest = Manifest.from_file(base_manifest_file)
+    new_manifest = Manifest.from_file(pr_manifest_file)
 
     old_projs = {(p.name, p.revision) for p in old_manifest.projects}
     new_projs = {(p.name, p.revision) for p in new_manifest.projects}
@@ -725,7 +761,10 @@ def process_pr(gh, args, maintainer_file, number: int):
                     "No --updated-manifest provided; skipping manifest diff for %s", filename
                 )
                 continue
-            parsed_areas = process_manifest(old_manifest_file=args.updated_manifest)
+            parsed_areas = process_manifest(
+                pr_manifest_file=args.updated_manifest,
+                base_manifest_file=args.base_manifest or "west.yml",
+            )
             for area_name in parsed_areas:
                 area_matches = maintainer_file.name2areas(area_name)
                 if area_matches:
@@ -735,8 +774,12 @@ def process_pr(gh, args, maintainer_file, number: int):
         elif filename == 'MAINTAINERS.yml':
             areas = maintainer_file.path2areas(filename)
             if args.updated_maintainer_file:
-                old_areas = load_areas(args.updated_maintainer_file)
-                new_areas = load_areas('MAINTAINERS.yml')
+                # Compare the PR's MAINTAINERS.yml against the version it forked
+                # from (the merge ref's first parent), not the base-branch tip,
+                # so areas changed on the base branch after the PR was created
+                # are not wrongly attributed to this PR (see #110422).
+                old_areas = load_areas(args.base_maintainer_file or 'MAINTAINERS.yml')
+                new_areas = load_areas(args.updated_maintainer_file)
                 changed_area_names = compare_areas(old_areas, new_areas)
                 for area_name in changed_area_names:
                     area_matches = maintainer_file.name2areas(area_name)

@@ -45,8 +45,14 @@ jobs:
         github.event_name == 'pull_request_target' && github.base_ref == 'main'
       run: |
         git fetch origin pull/${{ github.event.pull_request.number }}/merge
+        # FETCH_HEAD is the PR merge commit; its first parent (FETCH_HEAD^1) is
+        # the base the merge was computed from. Diffing the PR version against
+        # that base (rather than the moving base-branch tip) isolates exactly
+        # the changes the PR introduces (see #110422).
         git show FETCH_HEAD:west.yml > pr_west.yml
+        git show FETCH_HEAD^1:west.yml > base_west.yml
         git show FETCH_HEAD:MAINTAINERS.yml > pr_MAINTAINERS.yml
+        git show FETCH_HEAD^1:MAINTAINERS.yml > base_MAINTAINERS.yml
 
     - name: west setup
       if: >
@@ -66,7 +72,10 @@ jobs:
         FLAGS+=" -M MAINTAINERS.yml"
         if [ "${{ github.event_name }}" = "pull_request_target" ]; then
           if [ "${{ github.base_ref }}" = "main" ]; then
-            FLAGS+=" -P ${{ github.event.pull_request.number }} --updated-manifest pr_west.yml --updated-maintainer-file pr_MAINTAINERS.yml"
+            FLAGS+=" -P ${{ github.event.pull_request.number }}"
+            FLAGS+=" --updated-manifest pr_west.yml --base-manifest base_west.yml"
+            FLAGS+=" --updated-maintainer-file pr_MAINTAINERS.yml"
+            FLAGS+=" --base-maintainer-file base_MAINTAINERS.yml"
           else
             FLAGS+=" -P ${{ github.event.pull_request.number }}"
           fi
