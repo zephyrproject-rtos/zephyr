@@ -9,6 +9,9 @@ dynamically allocate memory.
 Synchronized Heap Allocator
 ***************************
 
+.. design:: DESIGN-HEAP-SYNC Synchronized Heap Allocator
+   :fulfills: ZEP-SRS-9-3 ZEP-SRS-9-4 ZEP-SRS-9-5 ZEP-SRS-9-6 ZEP-SRS-9-7 ZEP-SRS-9-8 ZEP-SRS-9-9 ZEP-SRS-9-10
+
 Creating a Heap
 ===============
 
@@ -141,6 +144,9 @@ a configuration parameter.  Memory allocated from any of the managed
 
 System Heap
 ***********
+
+.. design:: DESIGN-HEAP-SYSTEM System Heap
+   :fulfills: ZEP-SRS-9-1 ZEP-SRS-9-11 ZEP-SRS-9-18
 
 The :dfn:`system heap` is a predefined memory allocator that allows
 threads to dynamically allocate memory from a common memory region in

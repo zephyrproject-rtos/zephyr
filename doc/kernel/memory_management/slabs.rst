@@ -16,6 +16,9 @@ and avoiding memory fragmentation concerns.
 Concepts
 ********
 
+.. design:: DESIGN-MEMSLAB-CONCEPTS Memory Slabs
+   :fulfills: ZEP-SRS-9-2 ZEP-SRS-9-12 ZEP-SRS-9-13 ZEP-SRS-9-14 ZEP-SRS-9-15 ZEP-SRS-9-16 ZEP-SRS-9-17
+
 Any number of memory slabs can be defined (limited only by available RAM). Each
 memory slab is referenced by its memory address.
 
