@@ -33,7 +33,7 @@ static const char *tag(void)
 	return buf;
 }
 
-ZTEST(starve_fn, test_starve)
+ZTEST(starve_fn, test_timer_starve)
 {
 	static struct k_timer tmr;
 	static struct k_spinlock lock;
