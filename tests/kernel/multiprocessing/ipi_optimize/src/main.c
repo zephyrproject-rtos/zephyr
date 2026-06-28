@@ -221,7 +221,10 @@ ZTEST(ipi, test_arch_sched_broadcast_ipi)
 	}
 }
 
-#ifdef CONFIG_ARCH_HAS_DIRECTED_IPIS
+/* __DOXYGEN__ is predefined in the traceability build so the
+ * requirement-annotated test below stays visible to Doxygen.
+ */
+#if defined(CONFIG_ARCH_HAS_DIRECTED_IPIS) || defined(__DOXYGEN__)
 /**
  * Verify that arch_sched_directed_ipi() directs IPIs as expected.
  * @verifies ZEP-SRS-34-17
@@ -377,6 +380,8 @@ ZTEST(ipi, test_high_thread_wakes_some_ipis)
  * If directed IPIs are enabled, then only the CPU executing that active
  * thread ought to receive the IPI. Otherwise if IPIs are broadcast, then all
  * other CPUs save the current CPU ought to receive IPIs.
+ * @verifies ZEP-SRS-34-16
+ * @verifies ZEP-SRS-34-17
  */
 ZTEST(ipi, test_thread_priority_set_lower)
 {

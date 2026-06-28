@@ -52,6 +52,11 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	}
 }
 
+/**
+ * @brief Chained cross-CPU suspend/resume without starvation
+ *
+ * @verifies ZEP-SRS-34-10
+ */
 ZTEST(smp_suspend_resume, test_smp_thread_suspend_resume_stress)
 {
 	unsigned int  i;

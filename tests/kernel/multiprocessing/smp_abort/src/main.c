@@ -62,6 +62,11 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	zassert_true(false, "Thread %u did not abort!", index);
 }
 
+/**
+ * @brief Circular cross-CPU thread abort from ISR without deadlock
+ *
+ * @verifies ZEP-SRS-34-10
+ */
 ZTEST(smp_abort, test_smp_thread_abort_deadlock)
 {
 	unsigned int  i;
