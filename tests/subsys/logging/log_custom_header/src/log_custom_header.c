@@ -48,6 +48,29 @@ static const struct log_backend_api backend_api = {
 
 LOG_BACKEND_DEFINE(backend, backend_api, false);
 
+/**
+ * @brief Verify a user-supplied custom log prefix is prepended to messages.
+ *
+ * @details
+ * Logs at each severity level through a backend that renders the message
+ * package and confirms every rendered line is prefixed with the custom log
+ * header (CUSTOM_LOG_PREFIX) ahead of the formatted text and arguments. This
+ * validates that a custom header configured by the user is included in the
+ * formatted log message.
+ *
+ * Test steps:
+ * - Emit LOG_DBG/LOG_INF/LOG_WRN/LOG_ERR messages with format arguments.
+ * - Process the log after each call so the backend renders the message.
+ * - Assert the processed count and that each output carries the custom prefix.
+ *
+ * Expected result:
+ * - Each rendered message begins with CUSTOM_LOG_PREFIX followed by the
+ *   formatted text and arguments.
+ *
+ * @see log_msg_get_package()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(log_custom_header, test_macro_prefix)
 {
 	zassert_equal(count, 0);
