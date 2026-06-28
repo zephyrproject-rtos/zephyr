@@ -7,7 +7,12 @@
 #include <zephyr/ztest.h>
 #include "test_sched.h"
 
-#ifdef CONFIG_TIMESLICING
+/*
+ * Build the real, requirement-annotated test body for Doxygen (__DOXYGEN__ is
+ * predefined in the traceability build) as well as when CONFIG_TIMESLICING is
+ * set, so the @verifies link is not lost to the #else skip-stub below.
+ */
+#if defined(CONFIG_TIMESLICING) || defined(__DOXYGEN__)
 
 #define NUM_THREAD 3
 

@@ -195,6 +195,7 @@ extern void idle(void *p1, void *p2, void *p3);
  * - Every case returns its expected validity verdict.
  *
  * @ingroup tests_kernel_sched
+ * @verifies ZEP-SRS-2-8
  */
 ZTEST(threads_scheduling, test_bad_priorities)
 {

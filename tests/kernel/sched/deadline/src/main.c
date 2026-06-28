@@ -176,6 +176,7 @@ void yield_worker(void *p1, void *p2, void *p3)
  * @ingroup tests_kernel_sched
  *
  * @see k_yield()
+ * @verifies ZEP-SRS-2-15
  */
 ZTEST(suite_deadline, test_yield)
 {
@@ -277,7 +278,11 @@ ZTEST(suite_deadline, test_unqueued)
 	}
 }
 
-#if (CONFIG_MP_MAX_NUM_CPUS == 1)
+/* __DOXYGEN__ is predefined in the traceability build so the
+ * requirement-annotated test below is visible to Doxygen even though
+ * CONFIG_MP_MAX_NUM_CPUS is not defined there.
+ */
+#if (CONFIG_MP_MAX_NUM_CPUS == 1) || defined(__DOXYGEN__)
 static void reschedule_wrapper(const void *param)
 {
 	ARG_UNUSED(param);
@@ -349,6 +354,8 @@ static void thread_offload(void (*f)(const void *p), const void *param)
  *
  * @see k_reschedule()
  * @see k_thread_deadline_set()
+ * @verifies ZEP-SRS-2-19
+ * @verifies ZEP-SRS-2-17
  */
 ZTEST(suite_deadline, test_thread_reschedule)
 {
