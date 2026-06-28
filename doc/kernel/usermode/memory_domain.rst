@@ -18,6 +18,9 @@ Zephyr memory protection features are enabled, which we will describe here:
 Boot Time Memory Configuration
 ******************************
 
+.. design:: DESIGN-BOOT-MEM-POLICY Boot Time Memory Configuration
+   :fulfills: ZEP-SRS-8-13
+
 This is the configuration of the MPU after the kernel has started up. It should
 contain the following:
 
@@ -46,6 +49,9 @@ text/ro-data, this is sufficient for the boot time configuration.
 
 Hardware Stack Overflow
 ***********************
+
+.. design:: DESIGN-HW-STACK-OVERFLOW Stack Overflow Detection
+   :fulfills: ZEP-SRS-8-11 ZEP-SRS-8-12
 
 :kconfig:option:`CONFIG_HW_STACK_PROTECTION` is an optional feature which detects stack
 buffer overflows when the system is running in supervisor mode. This
@@ -97,6 +103,9 @@ the stacks of other user threads outside of their memory domains.
 Thread Resource Pools
 *********************
 
+.. design:: DESIGN-THREAD-RESOURCE-POOL Thread Resource Pools
+   :fulfills: ZEP-SRS-8-18
+
 A small subset of kernel APIs, invoked as system calls, require heap memory
 allocations. This memory is used only by the kernel and is not accessible
 directly by user mode. In order to use these system calls, invoking threads
@@ -141,6 +150,9 @@ logical applications running on the system to have their own pools.
 
 Memory Domains
 **************
+
+.. design:: DESIGN-MEMORY-DOMAINS Memory Domains and Partitions
+   :fulfills: ZEP-SRS-8-19 ZEP-SRS-8-20
 
 The kernel ensures that any user thread will have access to its own stack
 buffer, plus program text and read-only data. The memory domain APIs are the
@@ -341,6 +353,9 @@ The following code defines and initializes an empty memory domain.
 Add Memory Partitions into a Memory Domain
 ------------------------------------------
 
+.. design:: DESIGN-MEMDOMAIN-ADD Adding Memory Partitions
+   :fulfills: ZEP-SRS-8-17 ZEP-SRS-8-21
+
 There are two ways to add memory partitions into a memory domain.
 
 This first code sample shows how to add memory partitions while creating
@@ -390,6 +405,9 @@ memory domain one by one.
 Memory Domain Assignment
 ------------------------
 
+.. design:: DESIGN-MEMDOMAIN-ASSIGN Memory Domain Assignment
+   :fulfills: ZEP-SRS-8-23
+
 Any thread may join a memory domain, and any memory domain may have multiple
 threads assigned to it. Threads are assigned to memory domains with an API
 call:
@@ -406,6 +424,9 @@ child thread, that thread will belong to the domain as well.
 
 Remove a Memory Partition from a Memory Domain
 ----------------------------------------------
+
+.. design:: DESIGN-MEMDOMAIN-REMOVE Removing Memory Partitions
+   :fulfills: ZEP-SRS-8-22
 
 The following code shows how to remove a memory partition from a memory
 domain.

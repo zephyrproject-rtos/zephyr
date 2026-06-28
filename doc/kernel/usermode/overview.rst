@@ -6,6 +6,9 @@ Overview
 Threat Model
 ************
 
+.. design:: DESIGN-USERMODE-PROTECTION User Mode Memory Protection
+   :fulfills: ZEP-SRS-8-1 ZEP-SRS-8-3 ZEP-SRS-8-9 ZEP-SRS-8-24
+
 User mode threads are considered to be untrusted by Zephyr and are therefore
 isolated from other user mode threads and from the kernel. A flawed or
 malicious user mode thread cannot leak or modify the private data/resources
