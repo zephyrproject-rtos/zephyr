@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 Shankar Sridhar
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32c6/esp32c6_lpcore_wroom_n4.dtsi>
+#include <espressif/partitions_0x0_default.dtsi>
+
+/ {
+	model = "Waveshare ESP32-C6-LCD-1.47 LP Core";
+	compatible = "espressif,esp32c6";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &ulp_ram;
+		zephyr,code-partition = &slot0_lpcore_partition;
+		zephyr,console = &lp_uart;
+		zephyr,shell-uart = &lp_uart;
+	};
+};
+
+&lp_uart {
+	status = "okay";
+	current-speed = <115200>;
+};
