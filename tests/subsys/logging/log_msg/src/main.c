@@ -197,6 +197,29 @@ void validate_base_message_set(const struct log_source_const_data *source,
 			t, data, data_len, str);
 }
 
+/**
+ * @brief Verify creation and read-back of a log message with no format arguments.
+ *
+ * @details
+ * Builds the same zero-argument log message three ways (zero-copy static, from-stack
+ * static, and runtime), confirms each packaging path selects the expected creation
+ * mode, then claims the queued messages and validates that the structured message
+ * round-trips its source, domain, level, timestamp and rendered string. This exercises
+ * the structured, machine-readable log message that underpins post-processing.
+ *
+ * Test steps:
+ * - Initialize the log message subsystem and timestamp source.
+ * - Create the "0 args" message via Z_LOG_MSG_CREATE3 (zero-copy and from-stack) and runtime.
+ * - Assert the creation mode for each path.
+ * - Claim and validate the resulting messages against the expected fields.
+ *
+ * Expected result:
+ * - All three paths produce equivalent messages that decode to the original fields and text.
+ *
+ * @see z_log_msg_runtime_create()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ */
 ZTEST(log_msg, test_log_msg_0_args_msg)
 {
 #undef TEST_MSG
@@ -225,6 +248,30 @@ ZTEST(log_msg, test_log_msg_0_args_msg)
 				   NULL, 0, TEST_MSG);
 }
 
+/**
+ * @brief Verify packing and rendering of a log message carrying various argument types.
+ *
+ * @details
+ * Creates a log message whose format string mixes signed/unsigned chars, long long and
+ * pointer arguments, across all packaging paths, then claims the messages and renders the
+ * stored cbprintf package back to a string. Confirms the packed arguments reproduce the
+ * reference snprintf output, validating printf-style formatting/argument packing in the
+ * structured message.
+ *
+ * Test steps:
+ * - Initialize the subsystem and define a multi-argument format string.
+ * - Create the message via zero-copy, from-stack and runtime packaging.
+ * - Produce a reference rendering with snprintfcb.
+ * - Claim and validate the messages render to the reference string.
+ *
+ * Expected result:
+ * - The packed message renders to exactly the printf-formatted reference output.
+ *
+ * @see z_log_msg_runtime_create()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(log_msg, test_log_msg_various_args)
 {
 #undef TEST_MSG
@@ -259,6 +306,28 @@ ZTEST(log_msg, test_log_msg_various_args)
 				   NULL, 0, str);
 }
 
+/**
+ * @brief Verify a log message that carries only a binary data payload.
+ *
+ * @details
+ * Creates a log message with a raw byte array and no format string, across the packaging
+ * paths, then claims the messages and confirms the attached data payload round-trips
+ * byte-for-byte. This covers logging of binary data carried by the structured message
+ * (the basis for hexdump-style output).
+ *
+ * Test steps:
+ * - Initialize the subsystem.
+ * - Create the message with a byte array payload via static and runtime paths.
+ * - Claim and validate the data payload matches the original array.
+ *
+ * Expected result:
+ * - The binary payload is preserved and read back unchanged.
+ *
+ * @see z_log_msg_runtime_create()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-12
+ */
 ZTEST(log_msg, test_log_msg_only_data)
 {
 	static const uint8_t domain = 3;
@@ -285,6 +354,29 @@ ZTEST(log_msg, test_log_msg_only_data)
 				   array, sizeof(array), NULL);
 }
 
+/**
+ * @brief Verify a log message that carries both a format string and binary data.
+ *
+ * @details
+ * Creates a log message combining a text format string with a binary byte array, across
+ * the packaging paths, then claims the messages and confirms both the rendered string and
+ * the attached data payload round-trip correctly. This validates that the structured
+ * message can simultaneously carry formatted text and a binary (hexdump) payload.
+ *
+ * Test steps:
+ * - Initialize the subsystem.
+ * - Create the message with both a format string and a data array via static and runtime paths.
+ * - Claim and validate both the text and the data payload.
+ *
+ * Expected result:
+ * - Both the rendered string and binary payload are read back intact.
+ *
+ * @see z_log_msg_runtime_create()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-12
+ */
 ZTEST(log_msg, test_log_msg_string_and_data)
 {
 #undef TEST_MSG
@@ -314,6 +406,30 @@ ZTEST(log_msg, test_log_msg_string_and_data)
 				   array, sizeof(array), TEST_MSG);
 }
 
+/**
+ * @brief Verify packing and rendering of a log message with floating-point arguments.
+ *
+ * @details
+ * When floating-point cbprintf support is available, creates a log message whose format
+ * string includes float and double arguments alongside integers and pointers, across the
+ * packaging paths, then claims and renders the stored package and compares against a
+ * reference snprintf rendering. Validates printf-style formatting of floating-point
+ * arguments in the structured message.
+ *
+ * Test steps:
+ * - Skip when FP/cbprintf FP support is not enabled.
+ * - Create the message with mixed integer/float/double/pointer arguments.
+ * - Produce a reference rendering with snprintfcb.
+ * - Claim and validate the messages render to the reference string.
+ *
+ * Expected result:
+ * - The packed floating-point arguments render to the printf-formatted reference output.
+ *
+ * @see z_log_msg_runtime_create()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(log_msg, test_log_msg_fp)
 {
 	if (!(IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT) && IS_ENABLED(CONFIG_FPU))) {
@@ -366,6 +482,27 @@ static void get_msg_validate_length(uint32_t exp_len)
 	z_log_msg_free(msg);
 }
 
+/**
+ * @brief Verify message length for a plain-string log message.
+ *
+ * @details
+ * Creates a log message holding only a plain (no-argument) string and checks that the
+ * claimed message occupies the precisely computed word length (header plus package
+ * header, rounded to alignment). Confirms the structured message is laid out
+ * deterministically so it can be stored and post-processed reliably.
+ *
+ * Test steps:
+ * - Create a plain-string message via zero-copy and from-stack paths and assert the mode.
+ * - Compute the expected aligned word length.
+ * - Claim the messages and validate their measured length.
+ *
+ * Expected result:
+ * - The message word length matches the computed expected length.
+ *
+ * @see log_msg_generic_get_wlen()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ */
 ZTEST(log_msg, test_mode_size_plain_string)
 {
 	static const uint8_t domain = 3;
@@ -398,6 +535,28 @@ ZTEST(log_msg, test_mode_size_plain_string)
 	get_msg_validate_length(exp_len);
 }
 
+/**
+ * @brief Verify message length for a data-only log message.
+ *
+ * @details
+ * Creates a log message carrying only a binary data array and checks that the claimed
+ * message occupies the computed word length (header plus data, rounded to alignment) and
+ * that the presence of data forces from-stack creation. Confirms deterministic layout of
+ * a structured message carrying a binary payload.
+ *
+ * Test steps:
+ * - Create a data-only message and assert it uses the from-stack mode.
+ * - Compute the expected aligned word length.
+ * - Claim the message and validate its measured length.
+ *
+ * Expected result:
+ * - The message word length matches the computed expected length.
+ *
+ * @see log_msg_generic_get_wlen()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-12
+ */
 ZTEST(log_msg, test_mode_size_data_only)
 {
 	static const uint8_t domain = 3;
@@ -426,6 +585,28 @@ ZTEST(log_msg, test_mode_size_data_only)
 	get_msg_validate_length(exp_len);
 }
 
+/**
+ * @brief Verify message length for a log message with a plain string and data.
+ *
+ * @details
+ * Creates a log message combining a plain string and a binary data array and checks that
+ * the claimed message occupies the computed word length (header plus data plus package
+ * header, rounded to alignment). Confirms deterministic layout when a structured message
+ * carries both text and a binary payload.
+ *
+ * Test steps:
+ * - Create a string+data message and assert it uses the from-stack mode.
+ * - Compute the expected aligned word length.
+ * - Claim the message and validate its measured length.
+ *
+ * Expected result:
+ * - The message word length matches the computed expected length.
+ *
+ * @see log_msg_generic_get_wlen()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-12
+ */
 ZTEST(log_msg, test_mode_size_plain_str_data)
 {
 	static const uint8_t domain = 3;
@@ -455,6 +636,28 @@ ZTEST(log_msg, test_mode_size_plain_str_data)
 	get_msg_validate_length(exp_len);
 }
 
+/**
+ * @brief Verify message length for a log message with a format string and one string argument.
+ *
+ * @details
+ * Creates a log message with a format string and a single string-pointer argument and
+ * checks that the claimed message occupies the computed word length (header plus package
+ * header plus one pointer, rounded to alignment). Confirms deterministic packing of a
+ * formatted message with string arguments.
+ *
+ * Test steps:
+ * - Create the message accepting one string pointer via zero-copy and from-stack paths and assert the mode.
+ * - Compute the expected aligned word length.
+ * - Claim the messages and validate their measured length.
+ *
+ * Expected result:
+ * - The message word length matches the computed expected length.
+ *
+ * @see log_msg_generic_get_wlen()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(log_msg, test_mode_size_str_with_strings)
 {
 	static const uint8_t domain = 3;
@@ -492,6 +695,28 @@ ZTEST(log_msg, test_mode_size_str_with_strings)
 	get_msg_validate_length(exp_len);
 }
 
+/**
+ * @brief Verify message length for a log message with two string arguments.
+ *
+ * @details
+ * Creates a log message with a format string and two string-pointer arguments (one
+ * accepted by reference, one copied in) and checks that the claimed message occupies the
+ * computed word length accounting for the copied string. Confirms deterministic packing
+ * when a formatted message embeds string arguments.
+ *
+ * Test steps:
+ * - Create the message with two string arguments via zero-copy and from-stack paths and assert the mode.
+ * - Compute the expected aligned word length including the copied string.
+ * - Claim the messages and validate their measured length.
+ *
+ * Expected result:
+ * - The message word length matches the computed expected length.
+ *
+ * @see log_msg_generic_get_wlen()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(log_msg, test_mode_size_str_with_2strings)
 {
 #undef TEST_STR
@@ -540,6 +765,29 @@ static log_timestamp_t timestamp_get_inc(void)
 	return timestamp++;
 }
 
+/**
+ * @brief Verify message buffer saturation and message dropping when overflow is disabled.
+ *
+ * @details
+ * With overflow mode disabled, fills the log message buffer to capacity, then confirms
+ * that further messages are dropped and counted, and that the buffered messages can still
+ * be claimed in order by their timestamps until the buffer is empty. This validates the
+ * deferred-logging buffering behavior: messages are queued and surplus ones are dropped
+ * rather than overwriting existing entries.
+ *
+ * Test steps:
+ * - Skip when overflow mode is enabled.
+ * - Fill the buffer to its computed capacity and assert no drops yet.
+ * - Create additional messages and assert the dropped count increments accordingly.
+ * - Claim all buffered messages in order, then assert the buffer is empty.
+ *
+ * Expected result:
+ * - Surplus messages are dropped and counted; buffered messages are claimed in order.
+ *
+ * @see z_log_dropped_read_and_clear()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-6
+ */
 ZTEST(log_msg, test_saturate)
 {
 	if (IS_ENABLED(CONFIG_LOG_MODE_OVERFLOW)) {
