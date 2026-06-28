@@ -1496,9 +1496,8 @@ static int npcx_i3c_do_daa(const struct device *dev)
 			LOG_DBG("DAA: Rcvd PID 0x%04x%08x", vendor_id, part_no);
 
 			/* Find a usable address during ENTDAA */
-			ret = i3c_dev_list_daa_addr_helper(&data->common.attached_dev.addr_slots,
-							   &config->common.dev_list, pid, false,
-							   false, &target, &dyn_addr);
+			ret = i3c_dev_list_daa_addr_helper(dev, pid, false, false, &target,
+							   &dyn_addr);
 			if (ret != 0) {
 				LOG_ERR("%s: Assign new DA error", __func__);
 				break;
