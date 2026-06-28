@@ -38,6 +38,18 @@ void busy_thread_entry(void *p1, void *p2, void *p3)
 #endif
 /** @endcond */
 
+/**
+ * @brief Object core statistics tests
+ *
+ * Verify the run-time statistics interface of the object core framework:
+ * querying, resetting, enabling and disabling per-object statistics for system,
+ * thread, memory block and memory slab object cores.
+ *
+ * @defgroup kernel_obj_core_stats_tests Object Core Statistics
+ * @ingroup all_tests
+ * @{
+ */
+
 /***************** SYSTEM (CPUs and KERNEL) ******************/
 
 /*
@@ -47,6 +59,30 @@ void busy_thread_entry(void *p1, void *p2, void *p3)
  */
 
 #if !defined(CONFIG_ARCH_POSIX) && !defined(CONFIG_SPARC) && !defined(CONFIG_MIPS)
+/**
+ * @brief Verify run-time statistics can be queried for the kernel and CPU
+ * object cores.
+ *
+ * @details
+ * The kernel and per-CPU object cores expose run-time statistics. This test
+ * obtains both the raw and queried statistics for these object cores and checks
+ * the expected aggregation relationships hold (per-CPU sampling is at least as
+ * large as kernel sampling, and the sum across CPUs is at least the kernel
+ * total).
+ *
+ * Test steps:
+ * - Optionally spin up a busy thread per extra CPU to generate activity.
+ * - Fetch raw stats for the kernel and each CPU with k_obj_core_stats_raw().
+ * - Fetch queried stats for the kernel and each CPU with
+ *   k_obj_core_stats_query() and sum the per-CPU values.
+ *
+ * Expected result:
+ * - Each call returns 0 and the per-CPU/aggregate values are no smaller than
+ *   the corresponding kernel values.
+ *
+ * @see k_obj_core_stats_raw(), k_obj_core_stats_query()
+ * @verifies ZEP-SRS-35-5
+ */
 ZTEST(obj_core_stats_system, test_obj_core_stats_system)
 {
 	int  status;
@@ -139,6 +175,22 @@ ZTEST(obj_core_stats_system, test_obj_core_stats_system)
 }
 #endif  /* !CONFIG_ARCH_POSIX && !CONFIG_SPARC && !CONFIG_MIPS */
 
+/**
+ * @brief Verify resetting statistics is unsupported for CPU object cores.
+ *
+ * @details
+ * CPU object cores do not implement a statistics reset operation. Confirm that
+ * requesting a reset for each CPU object core is rejected.
+ *
+ * Test steps:
+ * - Call k_obj_core_stats_reset() for each CPU object core.
+ *
+ * Expected result:
+ * - Each call returns -ENOTSUP.
+ *
+ * @see k_obj_core_stats_reset()
+ * @verifies ZEP-SRS-35-7
+ */
 ZTEST(obj_core_stats_system, test_obj_core_stats_cpu_reset)
 {
 	int  status;
@@ -151,6 +203,23 @@ ZTEST(obj_core_stats_system, test_obj_core_stats_cpu_reset)
 	}
 }
 
+/**
+ * @brief Verify disabling statistics is unsupported for CPU object cores.
+ *
+ * @details
+ * CPU object cores collect statistics unconditionally and do not implement a
+ * disable operation. Confirm that requesting a disable for each CPU object core
+ * is rejected.
+ *
+ * Test steps:
+ * - Call k_obj_core_stats_disable() for each CPU object core.
+ *
+ * Expected result:
+ * - Each call returns -ENOTSUP.
+ *
+ * @see k_obj_core_stats_disable()
+ * @verifies ZEP-SRS-35-6
+ */
 ZTEST(obj_core_stats_system, test_obj_core_stats_cpu_disable)
 {
 	int  status;
@@ -163,6 +232,23 @@ ZTEST(obj_core_stats_system, test_obj_core_stats_cpu_disable)
 	}
 }
 
+/**
+ * @brief Verify enabling statistics is unsupported for CPU object cores.
+ *
+ * @details
+ * CPU object cores collect statistics unconditionally and do not implement an
+ * enable operation. Confirm that requesting an enable for each CPU object core
+ * is rejected.
+ *
+ * Test steps:
+ * - Call k_obj_core_stats_enable() for each CPU object core.
+ *
+ * Expected result:
+ * - Each call returns -ENOTSUP.
+ *
+ * @see k_obj_core_stats_enable()
+ * @verifies ZEP-SRS-35-6
+ */
 ZTEST(obj_core_stats_system, test_obj_core_stats_cpu_enable)
 {
 	int  status;
@@ -175,6 +261,22 @@ ZTEST(obj_core_stats_system, test_obj_core_stats_cpu_enable)
 	}
 }
 
+/**
+ * @brief Verify resetting statistics is unsupported for the kernel object core.
+ *
+ * @details
+ * The kernel object core does not implement a statistics reset operation.
+ * Confirm that requesting a reset for the kernel object core is rejected.
+ *
+ * Test steps:
+ * - Call k_obj_core_stats_reset() for the kernel object core.
+ *
+ * Expected result:
+ * - The call returns -ENOTSUP.
+ *
+ * @see k_obj_core_stats_reset()
+ * @verifies ZEP-SRS-35-7
+ */
 ZTEST(obj_core_stats_system, test_obj_core_stats_kernel_reset)
 {
 	int  status;
@@ -184,6 +286,23 @@ ZTEST(obj_core_stats_system, test_obj_core_stats_kernel_reset)
 		      -ENOTSUP, status);
 }
 
+/**
+ * @brief Verify disabling statistics is unsupported for the kernel object core.
+ *
+ * @details
+ * The kernel object core collects statistics unconditionally and does not
+ * implement a disable operation. Confirm that requesting a disable for the
+ * kernel object core is rejected.
+ *
+ * Test steps:
+ * - Call k_obj_core_stats_disable() for the kernel object core.
+ *
+ * Expected result:
+ * - The call returns -ENOTSUP.
+ *
+ * @see k_obj_core_stats_disable()
+ * @verifies ZEP-SRS-35-6
+ */
 ZTEST(obj_core_stats_system, test_obj_core_stats_kernel_disable)
 {
 	int  status;
@@ -193,6 +312,23 @@ ZTEST(obj_core_stats_system, test_obj_core_stats_kernel_disable)
 		      -ENOTSUP, status);
 }
 
+/**
+ * @brief Verify enabling statistics is unsupported for the kernel object core.
+ *
+ * @details
+ * The kernel object core collects statistics unconditionally and does not
+ * implement an enable operation. Confirm that requesting an enable for the
+ * kernel object core is rejected.
+ *
+ * Test steps:
+ * - Call k_obj_core_stats_enable() for the kernel object core.
+ *
+ * Expected result:
+ * - The call returns -ENOTSUP.
+ *
+ * @see k_obj_core_stats_enable()
+ * @verifies ZEP-SRS-35-6
+ */
 ZTEST(obj_core_stats_system, test_obj_core_stats_kernel_enable)
 {
 	int  status;
@@ -220,6 +356,39 @@ void test_thread_entry(void *p1, void *p2, void *p3)
 	}
 }
 
+/**
+ * @brief Verify the full statistics life cycle for a thread object core.
+ *
+ * @details
+ * Thread object cores expose query, raw, reset, enable and disable statistics
+ * operations backed by the thread run-time stats. This test drives a helper
+ * thread through known busy/blocked phases and validates the statistics
+ * interface end to end:
+ * - while the thread is blocked its stats do not change;
+ * - while it runs its execution/total cycles increase;
+ * - the object core query matches k_thread_runtime_stats_get();
+ * - resetting clears the counters;
+ * - disabling freezes the counters and re-enabling resumes collection.
+ *
+ * Test steps:
+ * - Sample raw and queried stats while the helper thread is blocked, busy-wait,
+ *   and confirm the samples are unchanged.
+ * - Let the thread run, re-sample, and confirm cycles increased and the object
+ *   core query equals k_thread_runtime_stats_get().
+ * - Reset the stats and confirm the counters are zero.
+ * - Disable the stats, let the thread run, and confirm the counters are frozen.
+ * - Re-enable the stats, let the thread run, and confirm the counters advance.
+ *
+ * Expected result:
+ * - Every operation returns 0 and the sampled statistics behave as described.
+ *
+ * @see k_obj_core_stats_raw(), k_obj_core_stats_query(),
+ *      k_obj_core_stats_reset(), k_obj_core_stats_enable(),
+ *      k_obj_core_stats_disable()
+ * @verifies ZEP-SRS-35-5
+ * @verifies ZEP-SRS-35-6
+ * @verifies ZEP-SRS-35-7
+ */
 ZTEST(obj_core_stats_thread, test_obj_core_stats_thread_test)
 {
 	struct k_cycle_stats raw1;
@@ -383,6 +552,23 @@ ZTEST(obj_core_stats_thread, test_obj_core_stats_thread_test)
 
 /***************** SYSTEM MEMORY BLOCKS *********************/
 
+/**
+ * @brief Verify enabling statistics is unsupported for memory block object
+ * cores.
+ *
+ * @details
+ * System memory block object cores collect statistics unconditionally and do
+ * not implement an enable operation. Confirm the enable request is rejected.
+ *
+ * Test steps:
+ * - Call k_obj_core_stats_enable() for the memory block object core.
+ *
+ * Expected result:
+ * - The call returns -ENOTSUP.
+ *
+ * @see k_obj_core_stats_enable()
+ * @verifies ZEP-SRS-35-6
+ */
 ZTEST(obj_core_stats_mem_block, test_sys_mem_block_enable)
 {
 	int  status;
@@ -393,6 +579,23 @@ ZTEST(obj_core_stats_mem_block, test_sys_mem_block_enable)
 		      status, -ENOTSUP);
 }
 
+/**
+ * @brief Verify disabling statistics is unsupported for memory block object
+ * cores.
+ *
+ * @details
+ * System memory block object cores collect statistics unconditionally and do
+ * not implement a disable operation. Confirm the disable request is rejected.
+ *
+ * Test steps:
+ * - Call k_obj_core_stats_disable() for the memory block object core.
+ *
+ * Expected result:
+ * - The call returns -ENOTSUP.
+ *
+ * @see k_obj_core_stats_disable()
+ * @verifies ZEP-SRS-35-6
+ */
 ZTEST(obj_core_stats_mem_block, test_sys_mem_block_disable)
 {
 	int  status;
@@ -455,6 +658,31 @@ static void test_mem_block_query(const char *str,
 #endif
 }
 
+/**
+ * @brief Verify querying and resetting statistics for a memory block object
+ * core.
+ *
+ * @details
+ * System memory block object cores report raw and queried statistics that track
+ * allocations. This test exercises the statistics interface across a sequence
+ * of allocations and frees, checking the reported free/allocated bytes and used
+ * block counts after each operation, and that resetting the statistics rebases
+ * the maximum-usage counters to the current usage.
+ *
+ * Test steps:
+ * - Sample initial raw and queried stats.
+ * - Allocate two blocks, freeing one, re-sampling after each step.
+ * - Reset the stats with k_obj_core_stats_reset() and re-sample.
+ *
+ * Expected result:
+ * - Every sample matches the expected values and reset rebases the max-usage
+ *   counters to the current usage.
+ *
+ * @see k_obj_core_stats_raw(), k_obj_core_stats_query(),
+ *      k_obj_core_stats_reset()
+ * @verifies ZEP-SRS-35-5
+ * @verifies ZEP-SRS-35-7
+ */
 ZTEST(obj_core_stats_mem_block, test_obj_core_stats_mem_block)
 {
 	struct sys_mem_blocks_info  raw =  {
@@ -543,6 +771,22 @@ ZTEST(obj_core_stats_mem_block, test_obj_core_stats_mem_block)
 
 /***************** MEMORY SLABS *********************/
 
+/**
+ * @brief Verify enabling statistics is unsupported for memory slab object cores.
+ *
+ * @details
+ * Memory slab object cores collect statistics unconditionally and do not
+ * implement a toggle operation. Confirm the request is rejected.
+ *
+ * Test steps:
+ * - Request the toggle operation for the memory slab object core.
+ *
+ * Expected result:
+ * - The call returns -ENOTSUP.
+ *
+ * @see k_obj_core_stats_enable(), k_obj_core_stats_disable()
+ * @verifies ZEP-SRS-35-6
+ */
 ZTEST(obj_core_stats_mem_slab,  test_mem_slab_enable)
 {
 	int  status;
@@ -553,6 +797,23 @@ ZTEST(obj_core_stats_mem_slab,  test_mem_slab_enable)
 		      status, -ENOTSUP);
 }
 
+/**
+ * @brief Verify disabling statistics is unsupported for memory slab object
+ * cores.
+ *
+ * @details
+ * Memory slab object cores collect statistics unconditionally and do not
+ * implement a disable operation. Confirm the disable request is rejected.
+ *
+ * Test steps:
+ * - Call k_obj_core_stats_disable() for the memory slab object core.
+ *
+ * Expected result:
+ * - The call returns -ENOTSUP.
+ *
+ * @see k_obj_core_stats_disable()
+ * @verifies ZEP-SRS-35-6
+ */
 ZTEST(obj_core_stats_mem_slab,  test_mem_slab_disable)
 {
 	int  status;
@@ -612,6 +873,31 @@ static void test_mem_slab_query(const char *str,
 		      query.max_allocated_bytes);
 }
 
+/**
+ * @brief Verify querying and resetting statistics for a memory slab object
+ * core.
+ *
+ * @details
+ * Memory slab object cores report raw and queried statistics that track block
+ * usage. This test exercises the statistics interface across a sequence of
+ * allocations and frees, checking the reported free/allocated bytes and used
+ * block counts after each operation, and that resetting the statistics rebases
+ * the maximum-usage counters to the current usage.
+ *
+ * Test steps:
+ * - Sample initial raw and queried stats.
+ * - Allocate two blocks, freeing one, re-sampling after each step.
+ * - Reset the stats with k_obj_core_stats_reset() and re-sample.
+ *
+ * Expected result:
+ * - Every sample matches the expected values and reset rebases the max-usage
+ *   counters to the current usage.
+ *
+ * @see k_obj_core_stats_raw(), k_obj_core_stats_query(),
+ *      k_obj_core_stats_reset()
+ * @verifies ZEP-SRS-35-5
+ * @verifies ZEP-SRS-35-7
+ */
 ZTEST(obj_core_stats_mem_slab, test_obj_core_stats_mem_slab)
 {
 	struct k_mem_slab_info  raw =  {
@@ -694,6 +980,10 @@ ZTEST(obj_core_stats_mem_slab, test_obj_core_stats_mem_slab)
 	/* Cleanup - Free 2nd block */
 	k_mem_slab_free(&mem_slab, mem2);
 }
+
+/**
+ * @}
+ */
 
 ZTEST_SUITE(obj_core_stats_system, NULL, NULL,
 	    ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
