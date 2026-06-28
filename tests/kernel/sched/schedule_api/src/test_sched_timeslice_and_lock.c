@@ -143,6 +143,17 @@ ZTEST(threads_scheduling, test_sleep_cooperative)
 	teardown_threads();
 }
 
+/**
+ * @brief Verify k_busy_wait() in a cooperative thread does not yield the CPU
+ *
+ * @details A cooperative thread that busy-waits keeps the CPU; other ready
+ * threads do not run until it yields or blocks.
+ *
+ * @ingroup kernel_sched_tests
+ * @see k_busy_wait()
+ * @verifies ZEP-SRS-2-14
+ * @verifies ZEP-SRS-28-13
+ */
 ZTEST(threads_scheduling, test_busy_wait_cooperative)
 {
 	/* set current thread to a cooperative priority */
@@ -171,6 +182,7 @@ ZTEST(threads_scheduling, test_busy_wait_cooperative)
  * @see k_wakeup()
  *
  * @ingroup kernel_sched_tests
+ * @verifies ZEP-SRS-28-11
  */
 ZTEST(threads_scheduling, test_sleep_wakeup_preemptible)
 {
@@ -210,6 +222,7 @@ static void coop_thread(void *p1, void *p2, void *p3)
  * @see k_wakeup()
  *
  * @ingroup kernel_sched_tests
+ * @verifies ZEP-SRS-28-11
  */
 ZTEST(threads_scheduling, test_pending_thread_wakeup)
 {
@@ -285,6 +298,7 @@ ZTEST(threads_scheduling, test_time_slicing_preemptible)
  * @see k_busy_wait()
  *
  * @ingroup kernel_sched_tests
+ * @verifies ZEP-SRS-2-11
  */
 ZTEST(threads_scheduling, test_time_slicing_disable_preemptible)
 {
@@ -391,6 +405,7 @@ ZTEST(threads_scheduling, test_unlock_preemptible)
  * @see k_sched_lock(), k_sched_unlock()
  *
  * @ingroup kernel_sched_tests
+ * @verifies ZEP-SRS-2-16
  */
 ZTEST(threads_scheduling, test_unlock_nested_sched_lock)
 {
@@ -440,6 +455,7 @@ ZTEST(threads_scheduling, test_unlock_nested_sched_lock)
  * @see k_wakeup()
  *
  * @ingroup kernel_sched_tests
+ * @verifies ZEP-SRS-28-11
  */
 ZTEST(threads_scheduling, test_wakeup_expired_timer_thread)
 {

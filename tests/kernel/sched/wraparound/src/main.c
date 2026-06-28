@@ -17,6 +17,9 @@ K_TIMER_DEFINE(alarm, alarm_callback, NULL);
 
 /**
  * @brief Test 32-bit tick wraparound during k_sleep() execution
+ *
+ * @see k_sleep()
+ * @verifies ZEP-SRS-28-8
  */
 ZTEST(wraparound, test_tick_wraparound_in_sleep)
 {

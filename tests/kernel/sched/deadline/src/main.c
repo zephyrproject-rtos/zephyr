@@ -147,6 +147,16 @@ void yield_worker(void *p1, void *p2, void *p3)
 	CODE_UNREACHABLE;
 }
 
+/**
+ * @brief Verify k_yield() round-robins equal-deadline, equal-priority threads
+ *
+ * @details With several threads sharing the same priority and deadline, each
+ * yielding thread lets the others run before any of them exits.
+ *
+ * @ingroup kernel_sched_tests
+ * @see k_yield()
+ * @verifies ZEP-SRS-2-15
+ */
 ZTEST(suite_deadline, test_yield)
 {
 	/* Test that yield works across threads with the
@@ -234,7 +244,11 @@ ZTEST(suite_deadline, test_unqueued)
 	}
 }
 
-#if (CONFIG_MP_MAX_NUM_CPUS == 1)
+/* __DOXYGEN__ is predefined in the traceability build so the
+ * requirement-annotated test below is visible to Doxygen even though
+ * CONFIG_MP_MAX_NUM_CPUS is not defined there.
+ */
+#if (CONFIG_MP_MAX_NUM_CPUS == 1) || defined(__DOXYGEN__)
 static void reschedule_wrapper(const void *param)
 {
 	ARG_UNUSED(param);
@@ -284,6 +298,17 @@ static void thread_offload(void (*f)(const void *p), const void *param)
 	f(param);
 }
 
+/**
+ * @brief Verify k_reschedule() forces an immediate scheduling decision
+ *
+ * @details After changing a ready thread's deadline, k_reschedule() forces the
+ * scheduler to re-evaluate and switch to the now-preferred thread immediately.
+ *
+ * @ingroup kernel_sched_tests
+ * @see k_reschedule(), k_thread_deadline_set()
+ * @verifies ZEP-SRS-2-19
+ * @verifies ZEP-SRS-2-17
+ */
 ZTEST(suite_deadline, test_thread_reschedule)
 {
 	k_thread_create(&worker_threads[0], worker_stacks[0], STACK_SIZE,

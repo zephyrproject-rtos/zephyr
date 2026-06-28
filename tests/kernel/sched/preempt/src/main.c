@@ -298,6 +298,10 @@ void worker(void *p1, void *p2, void *p3)
  * @brief Test preemption
  *
  * @ingroup kernel_sched_tests
+ * @verifies ZEP-SRS-2-4
+ * @verifies ZEP-SRS-2-9
+ * @verifies ZEP-SRS-2-14
+ * @verifies ZEP-SRS-2-16
  */
 ZTEST(suite_preempt, test_preempt)
 {

@@ -29,6 +29,13 @@ static void sleepy_thread(void *p1, void *p2, void *p3)
 	k_sem_give(&user_sem);
 }
 
+/**
+ * @brief Verify k_wakeup() can wake a sleeping thread from user mode
+ *
+ * @ingroup kernel_sched_tests
+ * @see k_wakeup()
+ * @verifies ZEP-SRS-28-11
+ */
 ZTEST_USER(threads_scheduling, test_user_k_wakeup)
 {
 	k_tid_t tid = k_thread_create(&user_thread, ustack, STACK_SIZE, sleepy_thread,
@@ -52,6 +59,13 @@ static void preempt_test_thread(void *p1, void *p2, void *p3)
 	k_sem_give(&user_sem);
 }
 
+/**
+ * @brief Verify k_is_preempt_thread() from user mode reflects thread priority
+ *
+ * @ingroup kernel_sched_tests
+ * @see k_is_preempt_thread()
+ * @verifies ZEP-SRS-2-20
+ */
 ZTEST_USER(threads_scheduling, test_user_k_is_preempt)
 {
 	/* thread_was_preempt is volatile, and static analysis doesn't
@@ -116,6 +130,7 @@ static void thread_suspend_init_null(void *p1, void *p2, void *p3)
  * @ingroup kernel_sched_tests
  *
  * @see k_thread_suspend()
+ * @verifies ZEP-SRS-1-3
  */
 ZTEST_USER(threads_scheduling, test_k_thread_suspend_init_null)
 {
@@ -157,6 +172,7 @@ static void thread_resume_init_null(void *p1, void *p2, void *p3)
  * @ingroup kernel_sched_tests
  *
  * @see k_thread_resume()
+ * @verifies ZEP-SRS-1-4
  */
 ZTEST_USER(threads_scheduling, test_k_thread_resume_init_null)
 {
@@ -198,6 +214,7 @@ static void thread_priority_get_init_null(void *p1, void *p2, void *p3)
  * @ingroup kernel_sched_tests
  *
  * @see thread_k_thread_priority_get()
+ * @verifies ZEP-SRS-1-16
  */
 ZTEST_USER(threads_scheduling, test_k_thread_priority_get_init_null)
 {
@@ -239,6 +256,7 @@ static void thread_priority_set_init_null(void *p1, void *p2, void *p3)
  * @ingroup kernel_sched_tests
  *
  * @see k_thread_priority_set()
+ * @verifies ZEP-SRS-1-2
  */
 ZTEST_USER(threads_scheduling, test_k_thread_priority_set_init_null)
 {
@@ -281,6 +299,7 @@ static void thread_priority_set_overmax(void *p1, void *p2, void *p3)
  * @ingroup kernel_sched_tests
  *
  * @see k_thread_priority_set()
+ * @verifies ZEP-SRS-1-2
  */
 ZTEST_USER(threads_scheduling, test_k_thread_priority_set_overmax)
 {
@@ -325,6 +344,7 @@ static void thread_priority_set_upgrade(void *p1, void *p2, void *p3)
  * @ingroup kernel_sched_tests
  *
  * @see k_thread_priority_set()
+ * @verifies ZEP-SRS-1-2
  */
 ZTEST_USER(threads_scheduling, test_k_thread_priority_set_upgrade)
 {
@@ -366,6 +386,7 @@ static void thread_wakeup_init_null(void *p1, void *p2, void *p3)
  * @ingroup kernel_sched_tests
  *
  * @see k_wakeup()
+ * @verifies ZEP-SRS-28-11
  */
 ZTEST_USER(threads_scheduling, test_k_wakeup_init_null)
 {

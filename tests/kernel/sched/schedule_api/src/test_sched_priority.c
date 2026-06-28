@@ -185,6 +185,7 @@ extern void idle(void *p1, void *p2, void *p3);
  * do so here.
  *
  * @ingroup kernel_sched_tests
+ * @verifies ZEP-SRS-2-8
  */
 ZTEST(threads_scheduling, test_bad_priorities)
 {
