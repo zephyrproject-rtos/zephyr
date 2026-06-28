@@ -38,6 +38,27 @@ FAKE_VALUE_FUNC(log_format_func_t, log_format_func_t_get, uint32_t);
 int write_log_to_file(uint8_t *data, size_t length, void *ctx);
 
 
+/**
+ * @brief Verify the filesystem backend writes a log before the filesystem is mounted.
+ *
+ * @details
+ * On a non-automounting configuration, writes a log entry through the filesystem backend
+ * while the filesystem is not yet mounted, then mounts it. Confirms the backend handles
+ * writing to the filesystem resource without a pre-existing mount and that the mount can
+ * subsequently be brought up. Skipped when the filesystem auto-mounts.
+ *
+ * Test steps:
+ * - Skip if the filesystem is configured to auto-mount.
+ * - Write a log entry to the file via the backend write path.
+ * - Mount the filesystem partition.
+ *
+ * Expected result:
+ * - The write reports the expected length and the mount succeeds.
+ *
+ * @see fs_mount()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-5
+ */
 ZTEST(test_log_backend_fs, test_fs_nonexist)
 {
 	#if TEST_AUTOMOUNT
@@ -55,6 +76,25 @@ ZTEST(test_log_backend_fs, test_fs_nonexist)
 	#endif
 }
 
+/**
+ * @brief Verify removal of pre-existing log files from the backend log directory.
+ *
+ * @details
+ * Iterates the logging directory and unlinks any files matching the backend log prefix to
+ * provide a clean starting state for subsequent backend tests. This is a maintenance step
+ * over the filesystem backend's output files rather than a behavioral requirement check.
+ *
+ * Test steps:
+ * - Open the configured log directory (return early if it does not yet exist).
+ * - Read each directory entry.
+ * - Unlink every regular file matching the log prefix.
+ *
+ * Expected result:
+ * - All prior log files are removed, leaving a clean log directory.
+ *
+ * @see fs_unlink()
+ * @ingroup logging_tests
+ */
 ZTEST(test_log_backend_fs, test_wipe_fs_logs)
 {
 	int rc;
@@ -93,6 +133,28 @@ ZTEST(test_log_backend_fs, test_wipe_fs_logs)
 	(void)fs_closedir(&dir);
 }
 
+/**
+ * @brief Verify that logged text is correctly persisted to the backend log file.
+ *
+ * @details
+ * Writes a known log string through the filesystem backend, signals the backend to flush,
+ * then opens the resulting log file and reads it back to confirm the content matches.
+ * Repeats with a second entry and a seek to confirm sequential appends. This validates
+ * that the backend stores log output to a filesystem resource for later inspection.
+ *
+ * Test steps:
+ * - Write a known string and notify the backend that processing is done.
+ * - Open the log file and read back its content, asserting it matches.
+ * - Write a second string, flush, seek past the first, and read back the second entry.
+ *
+ * Expected result:
+ * - The file contains exactly the logged strings in the order written.
+ *
+ * @see fs_read()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-5
+ */
 ZTEST(test_log_backend_fs, test_log_fs_file_content)
 {
 	int rc;
@@ -139,6 +201,28 @@ ZTEST(test_log_backend_fs, test_log_fs_file_content)
 	zassert_equal(fs_close(&file), 0, "Can not close log file.");
 }
 
+/**
+ * @brief Verify the backend rotates to a new file when the size limit is reached.
+ *
+ * @details
+ * Writes enough log entries to exceed the configured per-file size limit, flushes the
+ * backend, then confirms the first file is capped at the limit and a second file was
+ * created to hold the overflow. This validates the filesystem backend's file-rotation
+ * mechanics that keep the log resource bounded.
+ *
+ * Test steps:
+ * - Write entries until the first file exceeds the configured size limit and flush.
+ * - Stat the first file and assert its size is bounded as expected.
+ * - Stat the second file and assert it holds the overflow entry.
+ * - Count log files in the directory and assert two exist.
+ *
+ * Expected result:
+ * - The first file is size-bounded and a second file holds the remaining output.
+ *
+ * @see fs_stat()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-5
+ */
 ZTEST(test_log_backend_fs, test_log_fs_file_size)
 {
 	int rc;
@@ -198,6 +282,27 @@ ZTEST(test_log_backend_fs, test_log_fs_file_size)
 	zassert_equal(file_ctr, 2, "File changing failed");
 }
 
+/**
+ * @brief Verify the backend enforces the maximum log file count by rotating oldest files.
+ *
+ * @details
+ * Writes enough log entries to exceed the configured maximum number of log files, flushes
+ * the backend, then counts the remaining files and checks their numbering. Confirms the
+ * filesystem backend caps the number of stored files and discards the oldest, keeping the
+ * log resource bounded on disk.
+ *
+ * Test steps:
+ * - Write entries spanning more than the configured file-count limit and flush.
+ * - Enumerate the log directory, counting files and recording their indices.
+ * - Assert the file count equals the configured limit and the surviving indices are the newest.
+ *
+ * Expected result:
+ * - Exactly the configured maximum number of files remain, retaining the newest entries.
+ *
+ * @see fs_readdir()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-5
+ */
 ZTEST(test_log_backend_fs, test_log_fs_files_max)
 {
 	int rc;
