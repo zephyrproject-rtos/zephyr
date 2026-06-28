@@ -68,6 +68,25 @@ ZTEST(workqueue_api, test_k_work_queue_start_stop)
 		      "Succeeded to submit work item to non-initialized work queue");
 }
 
+/**
+ * @brief Verify an essential work queue thread cannot be stopped.
+ *
+ * @details
+ * A work queue started with the essential configuration flag runs an essential
+ * thread that must not be torn down. This test confirms k_work_queue_stop()
+ * refuses to stop such a queue even after it has been drained and plugged.
+ *
+ * Test steps:
+ * - Start a work queue configured as essential.
+ * - Drain and plug the queue.
+ * - Attempt to stop the queue with k_work_queue_stop().
+ *
+ * Expected result:
+ * - k_work_queue_stop() returns -ENOTSUP.
+ *
+ * @see k_work_queue_start(), k_work_queue_stop()
+ * @verifies ZEP-SRS-26-8
+ */
 ZTEST(workqueue_api, test_k_work_queue_stop_sys_thread)
 {
 	struct k_work_q work_q = {};
@@ -106,6 +125,30 @@ static void run_q_main(void *workq_ptr, void *sem_ptr, void *p3)
 	k_sem_give(sem);
 }
 
+/**
+ * @brief Verify a work queue served by k_work_queue_run() can be stopped.
+ *
+ * @details
+ * k_work_queue_run() turns the calling thread into a work queue's server thread.
+ * This test runs a queue from a dedicated thread, submits and drains work, and
+ * confirms the queue can then be stopped (and that stop is rejected while the
+ * queue is running and unplugged, and that submitting to a stopped queue fails).
+ *
+ * Test steps:
+ * - Start a thread that serves a work queue via k_work_queue_run().
+ * - Submit work items and wait for them to complete.
+ * - Confirm k_work_queue_stop() returns -EBUSY while running and unplugged.
+ * - Drain and plug the queue, then stop it.
+ * - Confirm submitting to the stopped queue and the server thread exiting both
+ *   behave as expected.
+ *
+ * Expected result:
+ * - The queue stops cleanly once drained and plugged, submitting afterwards
+ *   returns -ENODEV, and the server thread releases its completion semaphore.
+ *
+ * @see k_work_queue_run(), k_work_queue_stop(), k_work_queue_drain()
+ * @verifies ZEP-SRS-26-8
+ */
 ZTEST(workqueue_api, test_k_work_queue_run_stop)
 {
 	int rc;

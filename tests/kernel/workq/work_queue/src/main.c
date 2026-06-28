@@ -217,11 +217,26 @@ static void resubmit_work_handler(struct k_work *work)
 	}
 }
 /**
- * @brief Test work queue item resubmission
+ * @brief Verify a work item handler can resubmit its own work item.
  *
- * @ingroup kernel_workqueue_tests
+ * @details
+ * A work item handler resubmits the same work item (with an incremented key)
+ * each time it runs, until a target count is reached. This confirms the work
+ * queue thread invokes the handler for every submission and that a completed
+ * work item may be submitted again from within its own handler.
  *
- * @see k_work_submit()
+ * Test steps:
+ * - Initialize a work item whose handler resubmits itself until the target
+ *   count is reached.
+ * - Submit the work item once and wait for all iterations to complete.
+ * - Verify the handler ran once per iteration in sequence.
+ *
+ * Expected result:
+ * - The handler is invoked for every (re)submission and all results are
+ *   recorded in order.
+ *
+ * @see k_work_submit(), k_work_schedule()
+ * @verifies ZEP-SRS-26-13
  */
 ZTEST(workqueue_triggered, test_resubmit)
 {
@@ -326,12 +341,25 @@ static void coop_delayed_work_cancel_main(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test work queue delayed cancel
+ * @brief Verify a scheduled delayable work item can be cancelled before it is
+ * submitted.
  *
- * @ingroup kernel_workqueue_tests
+ * @details
+ * A delayable work item is scheduled with a future delay and then cancelled
+ * (from both a preempt and a co-op thread) before the delay elapses. Because
+ * the item never reaches its work queue, its handler must not run.
  *
- * @see k_work_delayable_init(), k_work_schedule(),
- * k_work_cancel_delayable()
+ * Test steps:
+ * - Schedule a delayable work item with a future delay.
+ * - Cancel it with k_work_cancel_delayable() before the delay elapses.
+ * - Repeat the schedule/cancel from a co-op thread.
+ * - Wait past the delay and confirm no handler ran.
+ *
+ * Expected result:
+ * - The handler is never invoked (zero results recorded).
+ *
+ * @see k_work_schedule(), k_work_cancel_delayable()
+ * @verifies ZEP-SRS-26-24
  */
 ZTEST(workqueue_delayed, test_delayed_cancel)
 {
@@ -354,6 +382,28 @@ ZTEST(workqueue_delayed, test_delayed_cancel)
 	reset_results();
 }
 
+/**
+ * @brief Verify the pending status of a delayable work item.
+ *
+ * @details
+ * k_work_delayable_is_pending() reports whether a delayable work item is queued
+ * or waiting for its delay to elapse. This test confirms an uninitialized item
+ * is not pending, that scheduling it (immediately and with a delay) marks it
+ * pending, and that it stops being pending once processed.
+ *
+ * Test steps:
+ * - Initialize a delayable work item and confirm it is not pending.
+ * - Schedule it with K_NO_WAIT and confirm it becomes pending then clears once
+ *   processed.
+ * - Schedule it with a delay and confirm it is pending until the delay elapses.
+ *
+ * Expected result:
+ * - k_work_delayable_is_pending() reflects the item's queued/waiting state at
+ *   each step.
+ *
+ * @see k_work_delayable_is_pending(), k_work_schedule()
+ * @verifies ZEP-SRS-26-16
+ */
 ZTEST(workqueue_delayed, test_delayed_pending)
 {
 	LOG_DBG("Starting delayed pending test");
@@ -386,11 +436,29 @@ ZTEST(workqueue_delayed, test_delayed_pending)
 }
 
 /**
- * @brief Test delayed work items
+ * @brief Verify delayable work items are submitted to their queue when their
+ * delay elapses.
  *
- * @ingroup kernel_workqueue_tests
+ * @details
+ * Multiple delayable work items are scheduled (and rescheduled) from preempt
+ * and co-op threads with increasing delays. Each item must be submitted to its
+ * work queue when its delay elapses and then have its handler invoked, so that
+ * every item completes.
  *
- * @see k_work_init_delayable(), k_work_schedule()
+ * Test steps:
+ * - Initialize the delayable work items.
+ * - Schedule and reschedule them with staggered, increasing delays from two
+ *   threads.
+ * - Wait for all delays to elapse.
+ * - Verify every item's handler ran.
+ *
+ * Expected result:
+ * - All delayable work items are submitted on delay expiry and processed.
+ *
+ * @see k_work_schedule(), k_work_reschedule()
+ * @verifies ZEP-SRS-26-21
+ * @verifies ZEP-SRS-26-22
+ * @verifies ZEP-SRS-26-23
  */
 ZTEST(workqueue_delayed, test_delayed)
 {
@@ -484,9 +552,20 @@ static void test_triggered_trigger(void)
 }
 
 /**
- * @brief Test triggered work items
+ * @brief Verify triggered (poll) work items run once their event is signalled.
  *
- * @ingroup kernel_workqueue_tests
+ * @details
+ * Triggered work items are submitted against poll events and only run once the
+ * event becomes ready. This test submits the items, then raises their signals,
+ * and confirms each handler runs and observes a successful poll result.
+ *
+ * Test steps:
+ * - Initialize the triggered work items and their poll signals/events.
+ * - Submit the items with k_work_poll_submit() (K_FOREVER timeout).
+ * - Raise each signal and wait for the handlers to run.
+ *
+ * Expected result:
+ * - Every triggered handler runs with a poll result of 0.
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -515,9 +594,21 @@ ZTEST(workqueue_triggered, test_triggered)
 }
 
 /**
- * @brief Test already triggered work items
+ * @brief Verify triggered (poll) work items run when their event is already
+ * signalled at submission.
  *
- * @ingroup kernel_workqueue_tests
+ * @details
+ * If the poll event of a triggered work item is already signalled before the
+ * item is submitted, the item must still run. This test raises the signals
+ * first and submits the items afterwards.
+ *
+ * Test steps:
+ * - Initialize the triggered work items and their poll signals/events.
+ * - Raise each signal before submitting.
+ * - Submit the items with k_work_poll_submit() and wait for them to run.
+ *
+ * Expected result:
+ * - Every triggered handler runs with a poll result of 0.
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -565,9 +656,21 @@ static void triggered_resubmit_work_handler(struct k_work *work)
 }
 
 /**
- * @brief Test resubmission of triggered work queue item
+ * @brief Verify a triggered (poll) work item can resubmit itself from its
+ * handler.
  *
- * @ingroup kernel_workqueue_tests
+ * @details
+ * A triggered work item handler resets its signal and resubmits the same item
+ * each time it runs, until a target count is reached. This confirms a triggered
+ * item may be resubmitted from within its own handler and re-runs each time its
+ * event is signalled.
+ *
+ * Test steps:
+ * - Initialize a triggered work item whose handler resubmits itself.
+ * - Submit it and repeatedly raise its signal up to the target count.
+ *
+ * Expected result:
+ * - The handler runs once per iteration and all results are recorded in order.
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -608,9 +711,20 @@ ZTEST(workqueue_triggered, test_triggered_resubmit)
 }
 
 /**
- * @brief Test triggered work items with K_NO_WAIT timeout
+ * @brief Verify triggered (poll) work items submitted with K_NO_WAIT run when
+ * already signalled.
  *
- * @ingroup kernel_workqueue_tests
+ * @details
+ * When a triggered work item is submitted with a K_NO_WAIT timeout and its poll
+ * event is already signalled, the item must run rather than expire. This test
+ * raises the signals first, then submits with K_NO_WAIT.
+ *
+ * Test steps:
+ * - Initialize the triggered work items.
+ * - Raise each signal, then submit the items with a K_NO_WAIT timeout.
+ *
+ * Expected result:
+ * - Every triggered handler runs with a poll result of 0.
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -639,9 +753,20 @@ ZTEST(workqueue_triggered, test_triggered_no_wait)
 }
 
 /**
- * @brief Test expired triggered work items with K_NO_WAIT timeout
+ * @brief Verify triggered (poll) work items submitted with K_NO_WAIT expire
+ * when not signalled.
  *
- * @ingroup kernel_workqueue_tests
+ * @details
+ * When a triggered work item is submitted with a K_NO_WAIT timeout and its poll
+ * event is not signalled, the item must run immediately reporting an expired
+ * poll result. This test submits with K_NO_WAIT without raising any signal.
+ *
+ * Test steps:
+ * - Initialize the triggered work items.
+ * - Submit the items with a K_NO_WAIT timeout and do not raise their signals.
+ *
+ * Expected result:
+ * - Every triggered handler runs with a poll result of -EAGAIN.
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -667,9 +792,21 @@ ZTEST(workqueue_triggered, test_triggered_no_wait_expired)
 }
 
 /**
- * @brief Test triggered work items with arbitrary timeout
+ * @brief Verify triggered (poll) work items run when signalled before a finite
+ * timeout elapses.
  *
- * @ingroup kernel_workqueue_tests
+ * @details
+ * When a triggered work item is submitted with a finite timeout and its poll
+ * event is signalled before the timeout elapses, the item must run reporting a
+ * successful poll result. This test raises the signals, then submits with a
+ * finite timeout.
+ *
+ * Test steps:
+ * - Initialize the triggered work items.
+ * - Raise each signal, then submit the items with a finite timeout.
+ *
+ * Expected result:
+ * - Every triggered handler runs with a poll result of 0.
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -698,9 +835,23 @@ ZTEST(workqueue_triggered, test_triggered_wait)
 }
 
 /**
- * @brief Test expired triggered work items with arbitrary timeout
+ * @brief Verify triggered (poll) work items expire after a finite timeout when
+ * never signalled.
  *
- * @ingroup kernel_workqueue_tests
+ * @details
+ * When a triggered work item is submitted with a finite timeout and its poll
+ * event is never signalled, the item must not run until the timeout elapses, at
+ * which point it runs reporting an expired poll result. This test checks the
+ * items have not run before the timeout and have run (as expired) afterwards.
+ *
+ * Test steps:
+ * - Initialize and submit the triggered work items with a finite timeout.
+ * - Confirm none have run before the timeout elapses.
+ * - Wait past the timeout and confirm all have run.
+ *
+ * Expected result:
+ * - No handler runs before the timeout; afterwards every handler runs with a
+ *   poll result of -EAGAIN.
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -779,20 +930,26 @@ static void test_triggered_from_msgq_start(void)
 	k_thread_start(triggered_from_msgq_test.tid);
 }
 /**
- * @brief Test triggered work item, triggered by a msgq message.
+ * @brief Verify a triggered (poll) work item can be triggered by a message
+ * queue becoming readable.
  *
- * Regression test for issue #45267:
+ * @details
+ * Regression test for issue #45267: when an object-availability event triggers
+ * a k_work_poll item, the triggering object's lock must no longer be held while
+ * the work callback runs, so the callback can safely access that object. The
+ * test arms a triggered work item on a K_POLL_TYPE_MSGQ_DATA_AVAILABLE event and
+ * has a provider thread put a message, whose handler then drains the queue.
  *
- * When an object availability event triggers a k_work_poll item,
- * the object lock should not be held anymore during the execution
- * of the work callback.
+ * Test steps:
+ * - Initialize a message queue, a consumer work queue and a triggered work item
+ *   armed on the message queue's data-available event.
+ * - Start a provider thread that puts a message into the queue.
  *
- * Tested with msgq with K_POLL_TYPE_MSGQ_DATA_AVAILABLE.
+ * Expected result:
+ * - The triggered handler runs and consumes the message without deadlocking on
+ *   the message queue lock.
  *
- * @ingroup kernel_workqueue_tests
- *
- * @see k_work_poll_init(), k_work_poll_submit()
- *
+ * @see k_work_poll_init(), k_work_poll_submit_to_queue()
  */
 ZTEST(workqueue_triggered, test_triggered_from_msgq)
 {
@@ -808,11 +965,25 @@ ZTEST(workqueue_triggered, test_triggered_from_msgq)
 }
 
 /**
- * @brief Test delayed work queue define macro.
+ * @brief Verify K_WORK_DELAYABLE_DEFINE() initializes a delayable work item
+ * identically to k_work_init_delayable().
  *
- * @ingroup kernel_workqueue_tests
+ * @details
+ * A delayable work item can be defined statically with K_WORK_DELAYABLE_DEFINE()
+ * or initialized at run time with k_work_init_delayable(). This test confirms
+ * both produce a byte-for-byte identical delayable work item for the same
+ * handler.
  *
- * @see K_WORK_DELAYABLE_DEFINE()
+ * Test steps:
+ * - Define a delayable work item with K_WORK_DELAYABLE_DEFINE().
+ * - Initialize another with k_work_init_delayable() using the same handler.
+ * - Compare the two structures.
+ *
+ * Expected result:
+ * - The statically defined and run-time initialized items are identical.
+ *
+ * @see K_WORK_DELAYABLE_DEFINE(), k_work_init_delayable()
+ * @verifies ZEP-SRS-26-20
  */
 ZTEST(workqueue_triggered, test_delayed_work_define)
 {
@@ -827,12 +998,21 @@ ZTEST(workqueue_triggered, test_delayed_work_define)
 }
 
 /**
- * @brief Verify k_work_poll_cancel()
+ * @brief Verify k_work_poll_cancel() return values for triggered work items.
  *
- * @ingroup kernel_workqueue_tests
+ * @details
+ * Cancelling a submitted triggered work item succeeds, while cancelling an item
+ * that is no longer cancellable, or a NULL item, must report an error. This
+ * test exercises each case in turn.
  *
- * @details Cancel a triggered work item repeatedly,
- * see if it returns expected value.
+ * Test steps:
+ * - Submit a triggered work item and cancel it with k_work_poll_cancel().
+ * - Cancel the same item again.
+ * - Cancel a NULL work item.
+ *
+ * Expected result:
+ * - The first cancel returns 0; the repeated cancel and the NULL cancel both
+ *   return -EINVAL.
  *
  * @see k_work_poll_cancel()
  */
