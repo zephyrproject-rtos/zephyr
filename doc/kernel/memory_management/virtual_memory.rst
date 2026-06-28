@@ -133,6 +133,9 @@ below.
 Virtual Memory Mappings
 ***********************
 
+.. design:: DESIGN-VM-MAPPING Virtual Memory Mapping
+   :fulfills: ZEP-SRS-36-1 ZEP-SRS-36-2 ZEP-SRS-36-3 ZEP-SRS-36-7
+
 Setting up Mappings at Boot
 ===========================
 
@@ -166,6 +169,9 @@ usually include device MMIO regions needed to setup the hardware.
 
 Mapping Anonymous Memory
 ========================
+
+.. design:: DESIGN-VM-ANON Anonymous Memory Mapping
+   :fulfills: ZEP-SRS-36-4 ZEP-SRS-36-5 ZEP-SRS-36-6
 
 The unused physical memory can be mapped in virtual address space on demand.
 This is conceptually similar to memory allocation from heap, but these
