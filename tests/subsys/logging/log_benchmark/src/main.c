@@ -97,8 +97,24 @@ struct backend_cb backend_ctrl_blk;
 	} \
 } while (0)
 
-/** Test how many messages fits in the logging buffer in deferred mode. Test
- * serves as the comparison between logging versions.
+/**
+ * @brief Measure how many log messages fit in the deferred buffer.
+ *
+ * @details
+ * Benchmark that counts how many messages, for argument counts from 0 to 8, can
+ * be stored in the deferred logging buffer before the first message is dropped.
+ * It serves as a comparison point of buffer efficiency between logging versions;
+ * it measures capacity rather than asserting a functional requirement.
+ *
+ * Test steps:
+ * - For each argument count 0..8, log messages until a drop is reported.
+ * - Accumulate and print the total number of stored messages.
+ *
+ * Expected result:
+ * - The number of messages stored before a drop is reported for each case.
+ *
+ * @see LOG_ERR()
+ * @ingroup logging_tests
  */
 ZTEST(test_log_benchmark, test_log_capacity)
 {
@@ -157,6 +173,26 @@ static void run_log_message_store_time_no_overwrite(void)
 		total_cyc / total_msg, total_us / total_msg);
 }
 
+/**
+ * @brief Measure the time to store a log message without buffer overflow.
+ *
+ * @details
+ * Benchmark that measures the average number of cycles needed to store a log
+ * message in the deferred buffer when the buffer never overflows, across
+ * argument counts 0 to 8. It characterizes logging performance and does not
+ * assert a functional requirement.
+ *
+ * Test steps:
+ * - For each argument count, fill up to capacity then time logging that many
+ *   messages.
+ * - Accumulate cycles and message counts and print the average.
+ *
+ * Expected result:
+ * - The average cycles/microseconds per stored message is reported.
+ *
+ * @see LOG_ERR()
+ * @ingroup logging_tests
+ */
 ZTEST(test_log_benchmark, test_log_message_store_time_no_overwrite)
 {
 	run_log_message_store_time_no_overwrite();
@@ -180,6 +216,26 @@ ZTEST(test_log_benchmark, test_log_message_store_time_no_overwrite)
 			_msg_cnt, cyc); \
 } while (0)
 
+/**
+ * @brief Measure the time to store a log message under buffer overflow.
+ *
+ * @details
+ * Benchmark that measures the average number of cycles needed to store a log
+ * message when the deferred buffer is already saturated and each new message
+ * overwrites the oldest one, across argument counts 0 to 8. It characterizes
+ * overwrite-mode performance and does not assert a functional requirement.
+ *
+ * Test steps:
+ * - For each argument count, saturate the buffer then time logging additional
+ *   messages that trigger overwrites.
+ * - Accumulate cycles and message counts and print the average.
+ *
+ * Expected result:
+ * - The average overwrite cycles/microseconds per message is reported.
+ *
+ * @see LOG_ERR()
+ * @ingroup logging_tests
+ */
 ZTEST(test_log_benchmark, test_log_message_store_time_overwrite)
 {
 	uint32_t total_cyc = 0;
@@ -201,6 +257,25 @@ ZTEST(test_log_benchmark, test_log_message_store_time_overwrite)
 		total_cyc / total_msg, total_us / total_msg);
 }
 
+/**
+ * @brief Measure log message store time from a user-mode thread.
+ *
+ * @details
+ * Benchmark equivalent of the no-overflow store-time measurement, but executed
+ * from a userspace thread to characterize the cost of logging across the
+ * user/kernel boundary. It reports timing and does not assert a functional
+ * requirement; it is skipped when userspace is not enabled.
+ *
+ * Test steps:
+ * - Skip if CONFIG_USERSPACE is not enabled.
+ * - Run the no-overflow store-time measurement from user context.
+ *
+ * Expected result:
+ * - The average store time per message from userspace is reported.
+ *
+ * @see LOG_ERR()
+ * @ingroup logging_tests
+ */
 ZTEST_USER(test_log_benchmark, test_log_message_store_time_no_overwrite_from_user)
 {
 	if (!IS_ENABLED(CONFIG_USERSPACE)) {
@@ -211,6 +286,25 @@ ZTEST_USER(test_log_benchmark, test_log_message_store_time_no_overwrite_from_use
 	run_log_message_store_time_no_overwrite();
 }
 
+/**
+ * @brief Measure the time to log a message containing a transient string.
+ *
+ * @details
+ * Benchmark that measures the average number of cycles needed to log a message
+ * with a "%s" transient string argument, which requires the logging subsystem
+ * to duplicate the string. It characterizes the cost of string duplication and
+ * does not assert a functional requirement.
+ *
+ * Test steps:
+ * - Log a message with a transient string a fixed number of times while timing.
+ * - Compute and print the average cycles/microseconds per message.
+ *
+ * Expected result:
+ * - The average time to log a transient-string message is reported.
+ *
+ * @see LOG_ERR()
+ * @ingroup logging_tests
+ */
 ZTEST(test_log_benchmark, test_log_message_with_string)
 {
 	test_helpers_log_setup();
