@@ -148,6 +148,31 @@ void test_log_switch_format_func_t_get(void)
 	}
 }
 
+/**
+ * @brief Verify log output format can be switched at runtime across active backends.
+ *
+ * @details
+ * Drives the full format-switching flow: it toggles active backends between
+ * SyS-T and text output and confirms each emitted message is rendered in the
+ * currently selected format, validates error handling for unknown backends and
+ * out-of-range format types, confirms switching all active backends at once,
+ * and checks the format function-pointer table maps each output type to its
+ * renderer. This ensures logs can be produced in a machine-parseable format and
+ * that messages are formatted according to the selected output type.
+ *
+ * Test steps:
+ * - Switch all active backends between SyS-T and text and validate each render.
+ * - Exercise error returns for invalid backend and unsupported format type.
+ * - Switch all active backends and verify the function-pointer table entries.
+ *
+ * Expected result:
+ * - Messages render in the selected format and all format APIs behave as expected.
+ *
+ * @see log_format_set_all_active_backends()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(log_switch_format, test_log_switch_format)
 {
 	test_log_switch_format_success_case();
@@ -164,6 +189,27 @@ void custom_formatting(const struct log_output *output, struct log_msg *msg, uin
 	output->func((uint8_t *)buffer, sizeof(buffer), (void *)output);
 }
 
+/**
+ * @brief Verify the custom output format produces no output when no handler is set.
+ *
+ * @details
+ * Selects the custom output format on the default backend but clears the custom
+ * formatting callback. Emitting messages must then produce no rendered output,
+ * confirming the custom format path safely handles a NULL handler instead of
+ * formatting messages.
+ *
+ * Test steps:
+ * - Set the default backend to the custom output format.
+ * - Clear the custom output handler and emit log messages.
+ * - Validate that no formatted output is produced.
+ *
+ * Expected result:
+ * - No output is rendered for the custom format with a NULL handler.
+ *
+ * @see log_custom_output_msg_set()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(log_switch_format, test_log_switch_format_custom_output_handles_null)
 {
 	const char *backend_name;
@@ -181,6 +227,27 @@ ZTEST(log_switch_format, test_log_switch_format_custom_output_handles_null)
 	validate_log_type("", LOG_OUTPUT_CUSTOM);
 }
 
+/**
+ * @brief Verify a registered custom output handler is invoked to format messages.
+ *
+ * @details
+ * Selects the custom output format on the default backend and registers a
+ * custom formatting callback that emits a fixed string. Emitting messages must
+ * then produce that string, confirming the custom format renderer is invoked
+ * and its output is captured.
+ *
+ * Test steps:
+ * - Set the default backend to the custom output format.
+ * - Register a custom output handler and emit log messages.
+ * - Validate that the handler's output is rendered.
+ *
+ * Expected result:
+ * - The custom handler is invoked and its formatted output is produced.
+ *
+ * @see log_custom_output_msg_set()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(log_switch_format, test_log_switch_format_custom_output_called_when_set)
 {
 	uint32_t log_type;
@@ -203,6 +270,27 @@ ZTEST(log_switch_format, test_log_switch_format_custom_output_called_when_set)
 	validate_log_type(raw_data_str, log_type);
 }
 
+/**
+ * @brief Verify the custom output format produces no output when left uninitialized.
+ *
+ * @details
+ * Selects the custom output format on the default backend without ever
+ * registering a custom formatting callback. Emitting messages must then produce
+ * no rendered output, confirming the custom format path does not log when its
+ * handler has not been initialized.
+ *
+ * Test steps:
+ * - Set the default backend to the custom output format without a handler.
+ * - Emit log messages.
+ * - Validate that no formatted output is produced.
+ *
+ * Expected result:
+ * - No output is rendered while the custom format handler is uninitialized.
+ *
+ * @see log_backend_format_set()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(log_switch_format, test_log_switch_format_does_not_log_when_uninit)
 {
 	const char *backend_name;
