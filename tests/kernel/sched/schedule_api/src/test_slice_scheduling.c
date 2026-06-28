@@ -7,7 +7,12 @@
 #include <zephyr/ztest.h>
 #include "test_sched.h"
 
-#ifdef CONFIG_TIMESLICING
+/*
+ * Build the real, requirement-annotated test bodies for Doxygen (__DOXYGEN__ is
+ * predefined in the traceability build) as well as when CONFIG_TIMESLICING is
+ * set, so the @verifies links are not lost to the #else skip-stubs below.
+ */
+#if defined(CONFIG_TIMESLICING) || defined(__DOXYGEN__)
 
 /* nrf 51 has lower ram, so creating less number of threads */
 #if (DT_CHOSEN_SRAM_SIZE / 1024) <= 24
