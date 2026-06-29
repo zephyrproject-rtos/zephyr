@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(st_stm32_mdf, CONFIG_AUDIO_DMIC_LOG_LEVEL);
 #define MDF_MAX_FILTERS 6
 #define MDF_MAX_SITFS   6
 
-#define MDF_DATA_RES 24
+#define MDF_DATA_RES  24
 #define MDF_MCICD_MIN 2
 
 struct dmic_stm32_mdf_log10 {
@@ -191,10 +191,10 @@ static const unsigned int cic_max_decim_sitf[] = {512, 512, 512, 322, 76, 32};
  * This prevents from computing each prime numbers.
  */
 static const struct dmic_stm32_mdf_log10 log_table[] = {
-	{2, 301},    {3, 477},    {5, 699},   {7, 845},   {11, 1041},  {13, 1114},  {17, 1230},
-	{19, 1279},  {23, 1362},  {29, 1462}, {31, 1491}, {37, 1568},  {41, 1613},  {43, 1633},
-	{47, 1672},  {53, 1724},  {59, 1771}, {61, 1785}, {67, 1826},  {71, 1851},  {73, 1863},
-	{79, 1898},  {83, 1919},  {89, 1949}, {97, 1987}, {101, 2004}, {103, 2013}, {107, 2029},
+	{2, 301},    {3, 477},    {5, 699},    {7, 845},   {11, 1041},  {13, 1114},  {17, 1230},
+	{19, 1279},  {23, 1362},  {29, 1462},  {31, 1491}, {37, 1568},  {41, 1613},  {43, 1633},
+	{47, 1672},  {53, 1724},  {59, 1771},  {61, 1785}, {67, 1826},  {71, 1851},  {73, 1863},
+	{79, 1898},  {83, 1919},  {89, 1949},  {97, 1987}, {101, 2004}, {103, 2013}, {107, 2029},
 	{109, 2037}, {113, 2053}, {127, 2104},
 };
 
@@ -761,7 +761,8 @@ static int dmic_stm32_mdf_device_init(const struct device *dev)
 #define HIGHPASS_FILTER(flt)                                                                       \
 	.HighPassFilter = {                                                                        \
 		.Activation = DT_NODE_HAS_PROP(flt, st_highpass_filter_cutoff),                    \
-		.CutOffFrequency = DT_PROP(flt, st_highpass_filter_cutoff) << MDF_DFLTRSFR_HPFC_Pos,  \
+		.CutOffFrequency = DT_PROP(flt, st_highpass_filter_cutoff)                         \
+				   << MDF_DFLTRSFR_HPFC_Pos,                                       \
 	},
 
 #define MDF_FILTERS_DEFINE(flt)                                                                    \
