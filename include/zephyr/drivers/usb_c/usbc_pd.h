@@ -11,8 +11,8 @@
  * Specification Revision 3.0, Version 2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_PD_H_
-#define ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_PD_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_USB_C_USBC_PD_H_
+#define ZEPHYR_INCLUDE_DRIVERS_USB_C_USBC_PD_H_
 
 /**
  * @brief USB Power Delivery
@@ -1056,4 +1056,4 @@ struct pd_msg {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_PD_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_USB_C_USBC_PD_H_ */
