@@ -441,7 +441,6 @@ if SHELL_REMOTE_CLI
 
 config SHELL_REMOTE_CLI_SKIP_RO_STRINGS
 	bool "Skip read-only strings in remote message"
-	default y
 	help
 	  When enabled, read-only strings are not included in the remote message.
 	  This can save some memory (for example, stack space) and reduces the size of
