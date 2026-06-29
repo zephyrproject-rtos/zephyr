@@ -1,0 +1,117 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32 MDF (Multi-function Digital Filter)
+
+description: |
+  The MDF is a sigma-delta (Σ∆) analog-to-digital converter dedicated to
+  interface external Σ∆ modulators to STM32 MCUs.
+
+  It features up to 6 serial digital interfaces (SITFx) and
+  digital filters (DFLTx) and up to 24-bit final resolution.
+
+
+compatible: "st,stm32-mdf"
+
+include: ["base.yaml", "reset-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  resets:
+    required: true
+
+child-binding:
+  description: Filter instances linked to the MDF device.
+
+  include:
+    - name: base.yaml
+      property-allowlist:
+        - reg
+        - interrupts
+    - name: pinctrl-device.yaml
+
+  properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
+
+    delay:
+      type: int
+      description: Delay to apply on data source in number of samples.
+      default: 0
+      min: 0
+      max: 255
+
+    filter-order:
+      type: int
+      description: |
+        SinC filter order from 0 to 5.
+        - 0: FastSinC
+        - [1-5]: order 1 to 5.
+        For audio purpose it is recommended to use order 3 to 5.
+      default: 4
+      min: 0
+      max: 5
+
+    offset:
+      type: int
+      description: Offset error compensation.
+      default: 0
+      min: 0
+      max: 67108863
+
+    gain:
+      type: int
+      description: Filter gain in dB. Value must be a multiple of 3dB.
+      default: 0
+      min: -48
+      max: 72
+
+    st-reshape-filter-decimation:
+      type: int
+      description: Reshape filter decimation ratio.  Adding this property
+        enables the reshape filter.
+      enum: [1, 4]
+
+    st-highpass-filter-cutoff:
+      type: int
+      description: |
+        High pass filter cut-off frequency.
+        - 0: 0.000625 x FPCM
+        - 1: 0.00125 x FPCM
+        - 2: 0.00250 x FPCM
+        - 3: 0.00950 x FPCM
+      min: 0
+      max: 3
+
+    st-integrator-on:
+      type: boolean
+      description: Enable the integrator.
+
+    st-sound-activity-on:
+      type: boolean
+      description: Enable the sound activity interrupts.
+
+    discard-samples:
+      type: int
+      description: |
+        Number of samples to be discarded every time the filter is re-started.
+      default: 0
+      min: 0
+      max: 255

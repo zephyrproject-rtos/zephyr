@@ -24,12 +24,22 @@ config DMIC_STM32_DFSDM_MAX_SAMPLES
 
 endif # AUDIO_DMIC_STM32_DFSDM
 
+config AUDIO_DMIC_STM32_MDF
+	bool "STM32 MDF DMIC driver"
+	default y
+	depends on DT_HAS_ST_STM32_MDF_ENABLED
+	select USE_STM32_HAL_MDF
+	select RESET
+	select PINCTRL
+	help
+	  Enable support for STM32 DMIC driver.
+
 config AUDIO_DMIC_STM32_QUEUE_SIZE
 	int "DMIC message queue size"
 	default 8
-	depends on AUDIO_DMIC_STM32_DFSDM
+	depends on AUDIO_DMIC_STM32_DFSDM || AUDIO_DMIC_STM32_MDF
 	help
 	  Number of pending audio buffer messages that can be queued.  Higher
 	  values mean more buffering and audio data, but more RAM footprint.
 	  Lower values mean less memory footprint and latency, but possibly
-	  more overruns.
+	  more overruns.  This option is common for all STM32 DMIC drivers.
