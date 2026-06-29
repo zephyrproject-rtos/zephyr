@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(renesas_rcar_mfis_mbox);
 
 #define DT_DRV_COMPAT renesas_rcar_mfis_mbox
 
+#if CONFIG_SOC_SERIES_RCAR_GEN5
 /* Register domain offsets */
 #define RCAR_MFIS_REG_OFFS	      0x000000
 #define RCAR_MFIS_SCP_REG_OFFS	      0x040000
@@ -87,6 +88,76 @@ LOG_MODULE_REGISTER(renesas_rcar_mfis_mbox);
 #define RCAR_MFIS_IMBR(ch) (RCAR_MFIS_IICR(ch) + 0x40)
 /* Outbound message buffer register */
 #define RCAR_MFIS_EMBR(ch) (RCAR_MFIS_IMBR(ch) + 0x4)
+
+#elif CONFIG_SOC_R8A779G0_R52
+/* CPU communication control register AP Core i to RT Core k. i = [0,3], k = [0,1] */
+#define MFISARIICR(i, k) (0x1400u + 0x1008u * i + 0x20u * k)
+/* CPU communication control register AP Core i to RT Core k. i = [0,3], k = 2 */
+#define MFISARIICR_2(i)  (0x1500u + 0x1008u * i)
+/* CPU communication control register RT Core k to AP Core i. k = [0,1], i = [0,3] */
+#define MFISAREICR(k, i) (0x9404u + 0x1020u * k + 0x8u * i)
+/* CPU communication control register RT Core k to AP Core i. k = 2, i = [0,3] */
+#define MFISAREICR_2(i)  (0xb504u + 0x8u * i)
+
+/* CPU communication message register AP Core i to RT Core k. i = [0,3], k = [0,2] */
+#define MFISARIMBR(i, k) (0x1440u + 0x1004u * i + 0x10u * k)
+/* CPU communication message register RT Core k to AP Core i. k = [0,2], i = [0,3] */
+#define MFISAREMBR(k, i) (0x9460u + 0x4u * i + 0x1010u * k)
+
+#define RCAR_MFIS_IRQ_BIT BIT(0)
+
+/* Write protection control register */
+#define RCAR_MFIS_WPCNTR                  (0x0900u)
+/* Write access control register */
+#define RCAR_MFIS_WACNTR(ch)              (0x0904u)
+/* Write access mask: lower 16 bits of target address */
+#define RCAR_MFIS_WACNTR_REGADDR_MASK(ch) GENMASK(15, 0)
+/* Write access control code value */
+#define RCAR_MFIS_WACNTR_CODEVAL(ch)      (0xacce0000)
+
+#define RCAR_MFIS_MBOX_SIZE    sizeof(uint32_t)
+#define RCAR_MFIS_MAX_CHANNELS (8u)
+
+#define RCAR_MFIS_IS_SCP_CH(ch)	    (false)
+#define RCAR_MFIS_IS_INVALID_CH(ch) ((ch) >= RCAR_MFIS_MAX_CHANNELS)
+
+typedef struct {
+	uint32_t ctrl_offset; /* CPU communication control register */
+	uint32_t msg_offset;  /* CPU communication message register */
+} st_channel_t;
+
+/* List of all supported MFIS channels, one pair of inbound/outbound register stays together.
+ * The order of channels and interrupt IDs in devicetree must match.
+ */
+static const st_channel_t mfis_channels[] = {
+	{.ctrl_offset = MFISARIICR(0u, 0u), .msg_offset = MFISARIMBR(0u, 0u)}, /* AP0 -> RT0 */
+	{.ctrl_offset = MFISAREICR(0u, 0u), .msg_offset = MFISAREMBR(0u, 0u)}, /* RT0 -> AP0 */
+	{.ctrl_offset = MFISARIICR_2(0u),   .msg_offset = MFISARIMBR(0u, 2u)}, /* AP0 -> RT2 */
+	{.ctrl_offset = MFISAREICR_2(0u),   .msg_offset = MFISAREMBR(2u, 0u)}, /* RT2 -> AP0 */
+	{.ctrl_offset = MFISARIICR(1u, 0u), .msg_offset = MFISARIMBR(1u, 0u)}, /* AP1 -> RT0 */
+	{.ctrl_offset = MFISAREICR(0u, 1u), .msg_offset = MFISAREMBR(0u, 1u)}, /* RT0 -> AP1 */
+	{.ctrl_offset = MFISARIICR_2(1u),   .msg_offset = MFISARIMBR(1u, 2u)}, /* AP1 -> RT2 */
+	{.ctrl_offset = MFISAREICR_2(1u),   .msg_offset = MFISAREMBR(2u, 1u)}, /* RT2 -> AP1 */
+	{.ctrl_offset = MFISARIICR(2u, 0u), .msg_offset = MFISARIMBR(2u, 0u)}, /* AP2 -> RT0 */
+	{.ctrl_offset = MFISAREICR(0u, 2u), .msg_offset = MFISAREMBR(0u, 2u)}, /* RT0 -> AP2 */
+	{.ctrl_offset = MFISARIICR_2(2u),   .msg_offset = MFISARIMBR(2u, 2u)}, /* AP2 -> RT2 */
+	{.ctrl_offset = MFISAREICR_2(2u),   .msg_offset = MFISAREMBR(2u, 2u)}, /* RT2 -> AP2 */
+	{.ctrl_offset = MFISARIICR(3u, 0u), .msg_offset = MFISARIMBR(3u, 0u)}, /* AP3 -> RT0 */
+	{.ctrl_offset = MFISAREICR(0u, 3u), .msg_offset = MFISAREMBR(0u, 3u)}, /* RT0 -> AP3 */
+	{.ctrl_offset = MFISARIICR_2(3u),   .msg_offset = MFISARIMBR(3u, 2u)}, /* AP3 -> RT2 */
+	{.ctrl_offset = MFISAREICR_2(3u),   .msg_offset = MFISAREMBR(2u, 3u)}, /* RT2 -> AP3 */
+};
+
+/* Inbound communication control register */
+#define RCAR_MFIS_IICR(ch) (mfis_channels[2 * ch].ctrl_offset)
+/* Outbound communication control register */
+#define RCAR_MFIS_EICR(ch) (mfis_channels[2 * ch + 1].ctrl_offset)
+/* Inbound message buffer register */
+#define RCAR_MFIS_IMBR(ch) (mfis_channels[2 * ch].msg_offset)
+/* Outbound message buffer register */
+#define RCAR_MFIS_EMBR(ch) (mfis_channels[2 * ch + 1].msg_offset)
+
+#endif /* CONFIG_SOC_SERIES_RCAR_GEN5 */
 
 struct rcar_mfis_ch_data {
 	bool enabled;
