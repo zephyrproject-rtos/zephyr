@@ -10,8 +10,8 @@
  * @ingroup tmp11x_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_TI_TMP11X_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_TI_TMP11X_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_TMP11X_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_TMP11X_H_
 
 /**
  * @addtogroup tmp11x_interface
@@ -48,4 +48,4 @@
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_TI_TMP11X_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_TMP11X_H_ */
