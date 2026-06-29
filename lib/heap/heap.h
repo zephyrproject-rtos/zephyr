@@ -13,12 +13,11 @@
  * Internal heap APIs
  */
 
-#include <zephyr/sys/atomic.h>
-
 /* These validation checks are non-trivially expensive, so enable
  * only when debugging the heap code.  They shouldn't be routine
  * assertions.
  */
+
 #ifdef CONFIG_SYS_HEAP_VALIDATE
 #define CHECK(x) __ASSERT(x, "")
 #else
@@ -75,14 +74,18 @@ typedef struct { char bytes[CHUNK_UNIT]; } chunk_unit_t;
 typedef uint32_t chunkid_t;
 typedef uint32_t chunksz_t;
 
-#ifdef CONFIG_SYS_HEAP_CANARIES
+#if defined(CONFIG_SYS_HEAP_CANARIES) || \
+    defined(CONFIG_SYS_HEAP_THREAD_STATS) || \
+    defined(CONFIG_SYS_HEAP_CALLER_POINTER)
 
 #ifdef CONFIG_SYS_HEAP_THREAD_STATS
 struct k_thread;
 #endif
 
 struct z_heap_chunk_trailer {
+#ifdef CONFIG_SYS_HEAP_CANARIES
 	uint32_t canary;
+#endif
 #ifdef CONFIG_SYS_HEAP_THREAD_STATS
 	struct k_thread *thread;
 #endif
@@ -97,7 +100,7 @@ struct z_heap_chunk_trailer {
 
 #define CHUNK_TRAILER_SIZE 0
 
-#endif /* CONFIG_SYS_HEAP_CANARIES */
+#endif
 
 #ifdef CONFIG_SYS_HEAP_THREAD_STATS
 
@@ -109,15 +112,11 @@ struct z_heap_thread_stat {
 	size_t total_alloc;
 };
 
-/*
- * Per-heap statistics block.  Lives in a pre-allocated pool (see heap.c)
- * and is pointed to by z_heap::stats.
- */
 struct z_heap_stats {
-	atomic_t num_threads;
-	atomic_t isr_alloc_bytes;
-	atomic_t boot_alloc_bytes;
-	atomic_t overflow_alloc_bytes;
+	size_t isr_alloc_bytes;
+	size_t boot_alloc_bytes;
+	size_t overflow_alloc_bytes;
+	size_t num_threads;
 	struct z_heap_thread_stat threads[CONFIG_SYS_HEAP_STATS_MAX_TRACKED_THREADS];
 };
 
@@ -374,7 +373,9 @@ static inline void get_alloc_info(struct z_heap *h, size_t *alloc_bytes,
 	}
 }
 
-#ifdef CONFIG_SYS_HEAP_CANARIES
+#if defined(CONFIG_SYS_HEAP_CANARIES) || \
+    defined(CONFIG_SYS_HEAP_THREAD_STATS) || \
+    defined(CONFIG_SYS_HEAP_CALLER_POINTER)
 
 /* Returns pointer to the chunk trailer (at the end of the chunk) */
 static inline struct z_heap_chunk_trailer *chunk_trailer(struct z_heap *h,
@@ -386,7 +387,20 @@ static inline struct z_heap_chunk_trailer *chunk_trailer(struct z_heap *h,
 						   - CHUNK_TRAILER_SIZE];
 }
 
-#endif /* CONFIG_SYS_HEAP_CANARIES */
+#endif
+
+#ifdef CONFIG_SYS_HEAP_THREAD_STATS
+void z_heap_stats_on_init(struct sys_heap *heap);
+void z_heap_stats_on_alloc(struct sys_heap *heap, chunkid_t c, void *mem);
+void z_heap_stats_on_free(struct sys_heap *heap, chunkid_t c, void *mem);
+void z_heap_stats_on_realloc(struct sys_heap *heap, chunkid_t c, void *ptr,
+			     size_t old_usable, struct k_thread *old_owner);
+#else
+#define z_heap_stats_on_init(heap)                    do { } while (false)
+#define z_heap_stats_on_alloc(heap, c, mem)           do { } while (false)
+#define z_heap_stats_on_free(heap, c, mem)            do { } while (false)
+#define z_heap_stats_on_realloc(heap, c, ptr, ob, oo) do { } while (false)
+#endif
 
 #ifdef CONFIG_SYS_HEAP_VALIDATE
 bool z_heap_full_check(struct z_heap *h);

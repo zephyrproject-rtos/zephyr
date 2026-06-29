@@ -8,7 +8,6 @@
 #include <zephyr/sys/sys_heap.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/heap_listener.h>
-#include <zephyr/sys/atomic.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <string.h>
@@ -90,163 +89,6 @@ static inline void poison_chunk_canary(struct z_heap *h, chunkid_t c)
 #define verify_chunk_canary(h, c, mem) do { } while (false)
 #define poison_chunk_canary(h, c) do { } while (false)
 #endif /* CONFIG_SYS_HEAP_CANARIES */
-
-#ifdef CONFIG_SYS_HEAP_THREAD_STATS
-
-/* Pre-allocated pool of per-heap stats blocks; one slot per tracked heap. */
-static struct z_heap_stats z_heap_stats_pool[CONFIG_SYS_HEAP_STATS_TRACKED_HEAPS];
-
-/* Monotonic index into z_heap_stats_pool */
-static atomic_t z_heap_stats_count;
-
-static inline struct k_thread *z_heap_stats_current_thread(void)
-{
-	if (k_is_in_isr()) {
-		return NULL;
-	} else if (k_is_pre_kernel()) {
-		return Z_HEAP_BOOT_SENTINEL;
-	}
-	return k_current_get();
-}
-
-static void z_heap_stats_record_alloc(struct z_heap *h,
-				      struct k_thread *thread,
-				      size_t usable_bytes)
-{
-	struct z_heap_stats *s = h->stats;
-	struct z_heap_thread_stat *e;
-#if defined(CONFIG_THREAD_NAME)
-	const char *name;
-#endif
-	size_t i, n;
-
-	n = (size_t)atomic_get(&s->num_threads);
-
-	for (i = 0; i < n; i++) {
-		if (s->threads[i].thread == thread) {
-			s->threads[i].total_alloc += usable_bytes;
-#if defined(CONFIG_THREAD_NAME)
-			/*
-			 * Refresh stored name if empty, e.g. thread called
-			 * k_thread_name_set() after its first allocation.
-			 */
-			if (s->threads[i].name[0] == '\0') {
-				name = k_thread_name_get(thread);
-				if (name != NULL) {
-					strncpy(s->threads[i].name, name,
-						sizeof(s->threads[i].name) - 1);
-					s->threads[i].name[sizeof(s->threads[i].name) - 1] = '\0';
-				}
-			}
-#endif
-			return;
-		}
-	}
-
-	if (n >= CONFIG_SYS_HEAP_STATS_MAX_TRACKED_THREADS) {
-		atomic_add(&s->overflow_alloc_bytes, (atomic_val_t)usable_bytes);
-		return;
-	}
-
-	e = &s->threads[n];
-
-	e->thread = thread;
-	e->total_alloc = usable_bytes;
-
-#if defined(CONFIG_THREAD_NAME)
-	name = k_thread_name_get(thread);
-
-	if (name != NULL) {
-		strncpy(e->name, name, sizeof(e->name) - 1);
-		e->name[sizeof(e->name) - 1] = '\0';
-	} else {
-		e->name[0] = '\0';
-	}
-#endif
-
-	atomic_set(&s->num_threads, (atomic_val_t)(n + 1));
-}
-
-static void z_heap_stats_record_free(struct z_heap *h,
-				     struct k_thread *thread,
-				     size_t usable_bytes)
-{
-	struct z_heap_stats *s = h->stats;
-	size_t i;
-	size_t n = (size_t)atomic_get(&s->num_threads);
-
-	for (i = 0; i < n; i++) {
-		if (s->threads[i].thread == thread) {
-			if (s->threads[i].total_alloc >= usable_bytes) {
-				s->threads[i].total_alloc -= usable_bytes;
-			} else {
-				s->threads[i].total_alloc = 0;
-			}
-			return;
-		}
-	}
-
-	/*
-	 * Thread not found.  Either the table was full at alloc time (bytes
-	 * are in overflow_alloc_bytes) or the TCB was recycled between alloc
-	 * and free
-	 */
-	if ((size_t)atomic_get(&s->overflow_alloc_bytes) >= usable_bytes) {
-		atomic_sub(&s->overflow_alloc_bytes, (atomic_val_t)usable_bytes);
-	} else {
-		atomic_set(&s->overflow_alloc_bytes, 0);
-	}
-}
-
-/*
- * Update allocation statistics when ownership of bytes changes.
- * Debits @old_bytes from @old_owner and credits @new_bytes to @new_owner.
- * Handles NULL (ISR), Z_HEAP_BOOT_SENTINEL (pre-kernel boot), and normal
- * thread pointers.  h->stats must be non-NULL.
- *
- * Pass old_bytes=0 to skip the debit (pure credit, e.g. on alloc).
- * Pass new_bytes=0 to skip the credit (pure debit, e.g. on free).
- */
-static void z_heap_stats_update(struct z_heap *h,
-				struct k_thread *old_owner, size_t old_bytes,
-				struct k_thread *new_owner, size_t new_bytes)
-{
-	struct z_heap_stats *s = h->stats;
-
-	if (old_bytes > 0) {
-		if (old_owner == NULL) {
-			if ((size_t)atomic_get(&s->isr_alloc_bytes) >= old_bytes) {
-				atomic_sub(&s->isr_alloc_bytes,
-					   (atomic_val_t)old_bytes);
-			} else {
-				atomic_set(&s->isr_alloc_bytes, 0);
-			}
-		} else if (old_owner == Z_HEAP_BOOT_SENTINEL) {
-			if ((size_t)atomic_get(&s->boot_alloc_bytes) >= old_bytes) {
-				atomic_sub(&s->boot_alloc_bytes,
-					   (atomic_val_t)old_bytes);
-			} else {
-				atomic_set(&s->boot_alloc_bytes, 0);
-			}
-		} else {
-			z_heap_stats_record_free(h, old_owner, old_bytes);
-		}
-	}
-
-	/* Credit new owner (skipped when new_bytes == 0) */
-	if (new_bytes == 0) {
-		return;
-	}
-	if (new_owner == NULL) {
-		atomic_add(&s->isr_alloc_bytes, (atomic_val_t)new_bytes);
-	} else if (new_owner == Z_HEAP_BOOT_SENTINEL) {
-		atomic_add(&s->boot_alloc_bytes, (atomic_val_t)new_bytes);
-	} else {
-		z_heap_stats_record_alloc(h, new_owner, new_bytes);
-	}
-}
-
-#endif
 
 static void *chunk_mem(struct z_heap *h, chunkid_t c)
 {
@@ -507,31 +349,12 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 		k_panic();
 	}
 
-	/*
-	 * Capture stats metadata before set_chunk_used() and free_chunk()
-	 * because the latter may merge this chunk with a neighbour, making
-	 * the original trailer inaccessible.
-	 */
-#ifdef CONFIG_SYS_HEAP_THREAD_STATS
-	struct k_thread *alloc_thread = NULL;
-	size_t freed_usable = 0;
-
-	if (h->stats != NULL) {
-		alloc_thread = chunk_trailer(h, c)->thread;
-		freed_usable = chunk_usable_bytes(h, c) - mem_align_gap(h, mem);
-	}
-#endif
-
 	set_chunk_used(h, c, false);
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	h->allocated_bytes -= chunk_usable_bytes(h, c);
 #endif
 
-#ifdef CONFIG_SYS_HEAP_THREAD_STATS
-	if (h->stats != NULL) {
-		z_heap_stats_update(h, alloc_thread, freed_usable, NULL, 0);
-	}
-#endif
+	IF_ENABLED(CONFIG_SYS_HEAP_THREAD_STATS, (z_heap_stats_on_free(heap, c, mem)));
 
 #ifdef CONFIG_SYS_HEAP_LISTENER
 	heap_listener_notify_free(HEAP_ID_FROM_POINTER(heap), mem,
@@ -642,23 +465,11 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 		set_chunk_canary(h, c);
 	}
 
-#ifdef CONFIG_SYS_HEAP_THREAD_STATS
-	if (h->stats != NULL) {
-		/*
-		 * Attribute to the calling context: NULL for ISR,
-		 * Z_HEAP_BOOT_SENTINEL for pre-kernel, current thread otherwise.
-		 */
-		struct k_thread *t = z_heap_stats_current_thread();
-
-		chunk_trailer(h, c)->thread = t;
-		z_heap_stats_update(h, NULL, 0, t, chunk_usable_bytes(h, c));
-	}
-#endif
+	mem = chunk_mem(h, c);
 #ifdef CONFIG_SYS_HEAP_CALLER_POINTER
 	chunk_trailer(h, c)->caller = HEAP_CAPTURE_CALLER();
 #endif
-
-	mem = chunk_mem(h, c);
+	IF_ENABLED(CONFIG_SYS_HEAP_THREAD_STATS, (z_heap_stats_on_alloc(heap, c, mem)));
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	increase_allocated_bytes(h, chunk_usable_bytes(h, c));
@@ -749,18 +560,10 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 		set_chunk_canary(h, c);
 	}
 
-#ifdef CONFIG_SYS_HEAP_THREAD_STATS
-	if (h->stats != NULL) {
-		struct k_thread *t = z_heap_stats_current_thread();
-
-		chunk_trailer(h, c)->thread = t;
-		z_heap_stats_update(h, NULL, 0, t,
-				   chunk_usable_bytes(h, c) - mem_align_gap(h, mem));
-	}
-#endif
 #ifdef CONFIG_SYS_HEAP_CALLER_POINTER
 	chunk_trailer(h, c)->caller = HEAP_CAPTURE_CALLER();
 #endif
+	IF_ENABLED(CONFIG_SYS_HEAP_THREAD_STATS, (z_heap_stats_on_alloc(heap, c, mem)));
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	increase_allocated_bytes(h, chunk_usable_bytes(h, c));
@@ -771,6 +574,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 				   chunk_usable_bytes(h, c) - mem_align_gap(h, mem));
 #endif
 
+	IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS, (heap_sanitizer_on_alloc(heap, mem, bytes)));
 	IF_ENABLED(CONFIG_MSAN, (__msan_allocated_memory(mem, bytes)));
 	IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS, (heap_sanitizer_on_alloc(heap, mem, bytes)));
 	return mem;
@@ -816,22 +620,14 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 	 * Capture trailer metadata before any resize.  split_chunks() and
 	 * merge_chunks() change chunk_size(h, c), which moves the trailer to
 	 * a new position; we must write it there after set_chunk_canary().
-	 * old_usable is needed to keep the per-thread byte count accurate.
 	 */
 #ifdef CONFIG_SYS_HEAP_THREAD_STATS
-	struct k_thread *saved_thread = NULL;
-	struct k_thread *current_thread = NULL;
+	struct k_thread *old_owner = NULL;
 	size_t old_usable = 0;
 
 	if (h->stats != NULL) {
-		saved_thread = chunk_trailer(h, c)->thread;
+		old_owner = chunk_trailer(h, c)->thread;
 		old_usable = chunk_usable_bytes(h, c) - align_gap;
-		/*
-		 * Capture the calling thread before any resize moves the
-		 * trailer.  Same-size realloc by a different thread (early-return above)
-		 * will not transfer ownership; this is a known limitation.
-		 */
-		current_thread = z_heap_stats_current_thread();
 	}
 #endif
 #ifdef CONFIG_SYS_HEAP_CALLER_POINTER
@@ -857,13 +653,7 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 
 		/* Restore trailer at the new (smaller) position. */
 #ifdef CONFIG_SYS_HEAP_THREAD_STATS
-		if (h->stats != NULL) {
-			size_t new_usable = chunk_usable_bytes(h, c) - align_gap;
-
-			chunk_trailer(h, c)->thread = current_thread;
-			z_heap_stats_update(h, saved_thread, old_usable,
-					    current_thread, new_usable);
-		}
+		z_heap_stats_on_realloc(heap, c, ptr, old_usable, old_owner);
 #endif
 #ifdef CONFIG_SYS_HEAP_CALLER_POINTER
 		chunk_trailer(h, c)->caller = saved_caller;
@@ -921,15 +711,7 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 			set_chunk_canary(h, c);
 		}
 
-#ifdef CONFIG_SYS_HEAP_THREAD_STATS
-		if (h->stats != NULL) {
-			size_t new_usable = chunk_usable_bytes(h, c) - align_gap;
-
-			chunk_trailer(h, c)->thread = current_thread;
-			z_heap_stats_update(h, saved_thread, old_usable,
-					    current_thread, new_usable);
-		}
-#endif
+		z_heap_stats_on_realloc(heap, c, ptr, old_usable, old_owner);
 #ifdef CONFIG_SYS_HEAP_CALLER_POINTER
 		chunk_trailer(h, c)->caller = saved_caller;
 #endif
@@ -1078,20 +860,7 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	h->max_allocated_bytes = 0;
 #endif
 
-#ifdef CONFIG_SYS_HEAP_THREAD_STATS
-	{
-		atomic_val_t idx = atomic_inc(&z_heap_stats_count);
-
-		if (idx < (atomic_val_t)CONFIG_SYS_HEAP_STATS_TRACKED_HEAPS) {
-			h->stats = &z_heap_stats_pool[idx];
-			memset(h->stats, 0, sizeof(*h->stats));
-		} else {
-			LOG_WRN("sys_heap: stats pool exhausted, heap %p untracked",
-				(void *)h);
-			h->stats = NULL;
-		}
-	}
-#endif
+	IF_ENABLED(CONFIG_SYS_HEAP_THREAD_STATS, (z_heap_stats_on_init(heap)));
 
 #if CONFIG_SYS_HEAP_ARRAY_SIZE
 	sys_heap_array_save(heap);
