@@ -11,8 +11,8 @@
  * This API is used to interact with MAX32 RV32 interrupt controller
  */
 
-#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_MAX32_RV32_H_
-#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_MAX32_RV32_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_MAX32_RV32_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_MAX32_RV32_H_
 
 /**
  * @brief Clear the pending interrupt line in the controller.
@@ -21,4 +21,4 @@
  */
 void intc_max32_rv32_irq_clear_pending(int source);
 
-#endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_MAX32_RV32_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_MAX32_RV32_H_ */

@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_RX_ICU_H_
-#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_RX_ICU_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_RX_ICU_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_RX_ICU_H_
 
 #define IRQ_CFG_PCLK_DIV1  (0)
 #define IRQ_CFG_PCLK_DIV8  (1)
@@ -34,4 +34,4 @@ extern int rx_icu_get_ir_flag(unsigned int irqn);
 extern int rx_icu_set_irq_control(unsigned int pin_irqn, enum icu_irq_mode mode);
 extern void rx_icu_set_irq_dig_filt(unsigned int pin_irqn, rx_irq_dig_filt_t dig_filt);
 
-#endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_RX_ICU_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_RX_ICU_H_ */

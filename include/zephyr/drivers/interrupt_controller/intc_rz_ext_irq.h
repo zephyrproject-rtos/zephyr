@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_RZ_EXT_IRQ_H_
-#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_RZ_EXT_IRQ_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_RZ_EXT_IRQ_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_RZ_EXT_IRQ_H_
 
 #define RZ_EXT_IRQ_TRIG_FALLING   0
 #define RZ_EXT_IRQ_TRIG_RISING    1
@@ -51,4 +51,4 @@ int intc_rz_ext_irq_set_callback(const struct device *dev, intc_rz_ext_irq_callb
  */
 int intc_rz_ext_irq_set_type(const struct device *dev, uint8_t trig);
 
-#endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_RZ_EXT_IRQ_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_RZ_EXT_IRQ_H_ */
