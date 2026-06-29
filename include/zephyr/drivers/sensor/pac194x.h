@@ -9,8 +9,8 @@
   * @brief Header file for extended sensor API of PAC194x/PAC195x sensor
   */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSORS_PAC194X_H
-#define ZEPHYR_INCLUDE_DRIVERS_SENSORS_PAC194X_H
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_PAC194X_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_PAC194X_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -101,4 +101,4 @@ enum pac194x_sensor_channel {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSORS_PAC194X_H */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_PAC194X_H_ */
