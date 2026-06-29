@@ -18,6 +18,7 @@
 #include <zephyr/drivers/usb/usb_buf.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/sys/dlist.h>
+#include <zephyr/sys/ref.h>
 
 /**
  * @brief USB host controller (UHC) driver API
@@ -120,6 +121,8 @@ enum uhc_control_stage {
 struct uhc_transfer {
 	/** dlist node */
 	sys_dnode_t node;
+	/** Reference count */
+	struct sys_ref ref;
 	/** Control transfer setup packet */
 	uint8_t setup_pkt[8];
 	/** Transfer data buffer */
@@ -452,6 +455,25 @@ struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
 					     void *const cb,
 					     void *const cb_priv,
 					     size_t size);
+
+/**
+ * @brief Increment the UHC transfer reference
+ *
+ * @param[in] xfer A valid pointer on a UHC transfer
+ */
+void uhc_xfer_ref(struct uhc_transfer *const xfer);
+
+/**
+ * @brief Decrement the UHC transfer reference
+ *
+ * Decrement the reference and release once the last one is dropped.
+ * It is safe to be called from any context.
+ *
+ * @param[in] xfer A valid pointer on a UHC transfer
+ *
+ * @return true if the transfer was released, false otherwise.
+ */
+bool uhc_xfer_unref(struct uhc_transfer *const xfer);
 
 /**
  * @brief Free UHC transfer and any buffers
