@@ -15,6 +15,11 @@
 #include <zephyr/dt-bindings/clock/mchp_pic32cm_jh_clock.h>
 #endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 
+#if defined CONFIG_SOC_FAMILY_MICROCHIP_PIC32CZ_CA
+#include <zephyr/drivers/clock_control/mchp_clock_pic32cz_ca.h>
+#include <zephyr/dt-bindings/clock/mchp_pic32cz_ca_clock.h>
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CZ_CA */
+
 #define XOSC_STARTUP_US 500
 
 static const struct device_subsys_data subsys_data[] = {
@@ -38,6 +43,15 @@ static const struct device_subsys_data subsys_data[] = {
 	{.subsys = (void *)CLOCK_MCHP_XOSC32K_ID_XOSC1K}
 #endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 
+#if defined CONFIG_SOC_FAMILY_MICROCHIP_PIC32CZ_CA
+	{.subsys = (void *)CLOCK_MCHP_MCLKPERIPH_ID_SERCOM3},
+	{.subsys = (void *)CLOCK_MCHP_GCLKPERIPH_ID_SERCOM4_CORE},
+	{
+		.subsys = (void *)CLOCK_MCHP_XOSC_ID,
+		.startup_us = XOSC_STARTUP_US,
+	},
+	{.subsys = (void *)CLOCK_MCHP_XOSC32K_ID}
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CZ_CA */
 };
 
 static const struct device_data devices[] = {{.dev = DEVICE_DT_GET(DT_NODELABEL(clock)),
