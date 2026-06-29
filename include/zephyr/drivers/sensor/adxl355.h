@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_ADXL355_ADXL355_H_
-#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_ADXL355_ADXL355_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_ADXL355_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_ADXL355_H_
 
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/dt-bindings/sensor/adxl355.h>
@@ -67,4 +67,4 @@ enum adxl355_hpf_corner {
 	/** High-pass filter corner at 0.0238e-4 times ODR */
 	ADXL355_HPF_0_0238e_4,
 };
-#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_ADXL355_ADXL355_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_ADXL355_H_ */
