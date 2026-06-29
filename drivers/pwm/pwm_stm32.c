@@ -831,6 +831,19 @@ static int pwm_stm32_init(const struct device *dev)
 
 #define PWM(index) DT_INST_PARENT(index)
 
+/*
+ * The trigger input (TRGI) source is only used when the timer runs in slave
+ * mode. Some series (e.g., WB0) lack some or all internal trigger (ITRx)
+ * source macros, so only resolve LL_TIM_TS_* when slave mode is enabled;
+ * otherwise use 0.
+ */
+#define PWM_SLAVE_TRIGGER(index)						\
+	COND_CODE_0(DT_ENUM_HAS_VALUE(PWM(index), st_slavemode, disabled),	\
+		    (CONCAT(LL_TIM_TS_,						\
+			    DT_STRING_TOKEN(PWM(index),				\
+					    st_trigger_selection))),		\
+		    (0))
+
 #ifdef CONFIG_PWM_CAPTURE
 #define IRQ_CONNECT_AND_ENABLE_BY_NAME(index, name)				\
 	{									\
@@ -889,9 +902,7 @@ static int pwm_stm32_init(const struct device *dev)
 		.slavemode = CONCAT(LL_TIM_SLAVEMODE_,				\
 					DT_STRING_UPPER_TOKEN(PWM(index),	\
 						st_slavemode)),			\
-		.slave_trigger = CONCAT(LL_TIM_TS_,				\
-					DT_STRING_TOKEN(PWM(index),		\
-						st_trigger_selection)),		\
+		.slave_trigger = PWM_SLAVE_TRIGGER(index),			\
 		.pclken = pclken_##index,					\
 		.pclk_len = DT_NUM_CLOCKS(PWM(index)),				\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
