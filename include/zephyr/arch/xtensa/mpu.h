@@ -11,8 +11,8 @@
 
 #include <xtensa/config/core-isa.h>
 
-#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_MPU_H
-#define ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_MPU_H
+#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_MPU_H_
+#define ZEPHYR_INCLUDE_ARCH_XTENSA_MPU_H_
 
 /**
  * @defgroup xtensa_mpu_apis Xtensa Memory Protection Unit (MPU) APIs
@@ -347,4 +347,4 @@ void xtensa_mpu_init(void);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_MPU_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_MPU_H_ */

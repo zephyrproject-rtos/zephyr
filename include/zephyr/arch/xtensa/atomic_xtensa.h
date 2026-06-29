@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ATOMIC_XTENSA_H_
-#define ZEPHYR_INCLUDE_ATOMIC_XTENSA_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_ATOMIC_XTENSA_H_
+#define ZEPHYR_INCLUDE_ARCH_XTENSA_ATOMIC_XTENSA_H_
 
 /* Included from <zephyr/sys/atomic.h> */
 
@@ -221,4 +221,4 @@ static ALWAYS_INLINE void *atomic_ptr_clear(atomic_ptr_t *target)
 	return (void *) atomic_set((atomic_t *) target, 0);
 }
 
-#endif /* ZEPHYR_INCLUDE_ATOMIC_XTENSA_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_ATOMIC_XTENSA_H_ */
