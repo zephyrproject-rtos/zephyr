@@ -1,7 +1,9 @@
-# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+# Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
 #
 # SPDX-License-Identifier: Apache-2.0
 #
+
+title: Microchip Pin Controller
 
 description: |
   Microchip SAMA7G5 Pinctrl container node
@@ -13,6 +15,11 @@ include: base.yaml
 properties:
   reg:
     required: true
+
+  no-slew-rate-ctrl:
+    type: boolean
+    description: If present, PIO driver should not compile the code for slew
+      rate control.
 
 child-binding:
   description: |

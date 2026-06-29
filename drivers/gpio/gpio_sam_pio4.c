@@ -127,10 +127,12 @@ static int gpio_sam_config(const struct device *dev, gpio_pin_t pin,
 	/* Processing SAM PIO4 specific flags */
 	if ((flags & SAM_GPIO_DIS_SLEWRATE) != 0U) {
 		/* Disable slew rate control. */
-		conf &= ~PIO_CFGR_SR_Msk;
+		IF_DISABLED(DT_PROP(DT_INST_PARENT(0), no_slew_rate_ctrl),
+			    (conf &= ~PIO_CFGR_SR_Msk;))
 	} else {
 		/* Enable slew rate control by default. */
-		conf |= PIO_CFGR_SR(PIO_CFGR_SR_ENABLED_Val);
+		IF_DISABLED(DT_PROP(DT_INST_PARENT(0), no_slew_rate_ctrl),
+			    (conf |= PIO_CFGR_SR(PIO_CFGR_SR_ENABLED_Val);))
 	}
 	if ((flags & SAM_GPIO_DEBOUNCE) != 0U) {
 		conf |= PIO_CFGR_IFEN(PIO_CFGR_IFEN_ENABLED_Val);
