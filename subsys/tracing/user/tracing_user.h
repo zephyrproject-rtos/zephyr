@@ -299,6 +299,7 @@ void sys_trace_rtio_chain_next_exit(const struct rtio *r, const struct rtio_iode
 #define sys_port_trace_k_queue_unique_append_exit(queue, ret)
 #define sys_port_trace_k_queue_peek_head(queue, ret)
 #define sys_port_trace_k_queue_peek_tail(queue, ret)
+#define sys_port_trace_k_queue_peek_next(queue, data, ret)
 
 #define sys_port_trace_k_fifo_init_enter(fifo)
 #define sys_port_trace_k_fifo_init_exit(fifo)
@@ -318,6 +319,8 @@ void sys_trace_rtio_chain_next_exit(const struct rtio *r, const struct rtio_iode
 #define sys_port_trace_k_fifo_peek_head_exit(fifo, ret)
 #define sys_port_trace_k_fifo_peek_tail_enter(fifo)
 #define sys_port_trace_k_fifo_peek_tail_exit(fifo, ret)
+#define sys_port_trace_k_fifo_peek_next_enter(fifo, data)
+#define sys_port_trace_k_fifo_peek_next_exit(fifo, data, ret)
 
 #define sys_port_trace_k_lifo_init_enter(lifo)
 #define sys_port_trace_k_lifo_init_exit(lifo)

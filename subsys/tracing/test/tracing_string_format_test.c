@@ -485,6 +485,11 @@ void sys_trace_k_queue_peek_tail(struct k_queue *queue, void *ret)
 	TRACING_STRING("%s: %p\n", __func__, queue);
 }
 
+void sys_trace_k_queue_peek_next(struct k_queue *queue, void *data, void *ret)
+{
+	TRACING_STRING("%s: %p\n", __func__, queue);
+}
+
 void sys_trace_k_queue_alloc_append_enter(struct k_queue *queue, void *data)
 {
 	TRACING_STRING("%s: %p\n", __func__, queue);

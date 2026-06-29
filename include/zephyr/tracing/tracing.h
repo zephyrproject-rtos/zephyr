@@ -1099,6 +1099,13 @@
  */
 #define sys_port_trace_k_queue_peek_tail(queue, ret)
 
+/**
+ * @brief Trace Queue peek next
+ * @param queue Queue object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_queue_peek_next(queue, data, ret)
+
 /** @} */ /* end of subsys_tracing_apis_queue */
 
 /**
@@ -1230,6 +1237,19 @@
  * @param ret Return value
  */
 #define sys_port_trace_k_fifo_peek_tail_exit(fifo, ret)
+
+/**
+ * @brief Trace FIFO Queue peek next entry
+ * @param fifo FIFO object
+ */
+#define sys_port_trace_k_fifo_peek_next_enter(fifo)
+
+/**
+ * @brief Trace FIFO Queue peek next exit
+ * @param fifo FIFO object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_fifo_peek_next_exit(fifo, ret)
 
 /** @} */ /* end of subsys_tracing_apis_fifo */
 
