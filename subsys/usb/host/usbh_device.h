@@ -103,6 +103,7 @@ static inline struct net_buf *usbh_xfer_buf_alloc(struct usb_device *udev,
 static inline struct uhc_transfer *usbh_xfer_alloc_with_buf(struct usb_device *const udev,
 							    const uint8_t ep,
 							    size_t size,
+							    size_t rec_len,
 							    void *const cb,
 							    void *const cb_priv,
 							    const k_timeout_t timeout)
@@ -115,7 +116,7 @@ static inline struct uhc_transfer *usbh_xfer_alloc_with_buf(struct usb_device *c
 		return NULL;
 	}
 
-	xfer = usbh_xfer_alloc(udev, ep, cb, cb_priv, timeout);
+	xfer = usbh_xfer_alloc(udev, ep, rec_len, cb, cb_priv, timeout);
 	if (xfer == NULL) {
 		net_buf_unref(buf);
 		return NULL;

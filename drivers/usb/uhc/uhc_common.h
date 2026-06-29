@@ -78,7 +78,7 @@ void uhc_xfer_return(const struct device *dev,
  * @param frame_number The current USB frame number
  */
 void uhc_xfer_reschedule_periodic(const struct device *dev, struct uhc_transfer *const xfer,
-				  uint16_t frame_number);
+				  uint32_t frame_number);
 
 /**
  * @brief Helper to get next transfer to process.
@@ -91,7 +91,7 @@ void uhc_xfer_reschedule_periodic(const struct device *dev, struct uhc_transfer 
  *
  * @return pointer to the next transfer or NULL on error.
  */
-struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint16_t frame_number);
+struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t frame_number);
 
 /**
  * @brief Helper to append a transfer to internal list.
