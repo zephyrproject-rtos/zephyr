@@ -10,8 +10,8 @@
  * @ingroup gpio_ambiq_interface
  */
 
-#ifndef ZEPHYR_DRIVERS_GPIO_GPIO_AMBIQ_H_
-#define ZEPHYR_DRIVERS_GPIO_GPIO_AMBIQ_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_AMBIQ_H_
+#define ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_AMBIQ_H_
 
 /**
  * @defgroup gpio_ambiq_interface Ambiq
@@ -45,4 +45,4 @@ gpio_pin_t ambiq_gpio_get_pinnum(const struct device *dev, gpio_pin_t pin);
  * @}
  */
 
-#endif /* ZEPHYR_DRIVERS_GPIO_GPIO_AMBIQ_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_AMBIQ_H_ */
