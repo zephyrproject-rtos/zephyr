@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_PROMETHEUS_COLLECTOR_H_
-#define ZEPHYR_INCLUDE_PROMETHEUS_COLLECTOR_H_
+#ifndef ZEPHYR_INCLUDE_NET_PROMETHEUS_COLLECTOR_H_
+#define ZEPHYR_INCLUDE_NET_PROMETHEUS_COLLECTOR_H_
 
 /**
  * @file
@@ -174,4 +174,4 @@ static inline int prometheus_collector_walk_init(struct prometheus_collector_wal
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_PROMETHEUS_COLLECTOR_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_PROMETHEUS_COLLECTOR_H_ */

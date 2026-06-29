@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_NET_HTTP_SERVER_HPACK_H_
-#define ZEPHYR_INCLUDE_NET_HTTP_SERVER_HPACK_H_
+#ifndef ZEPHYR_INCLUDE_NET_HTTP_HPACK_H_
+#define ZEPHYR_INCLUDE_NET_HTTP_HPACK_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -148,4 +148,4 @@ int http_hpack_encode_header(uint8_t *buf, size_t buflen,
  * @}
  */
 
-#endif
+#endif /* ZEPHYR_INCLUDE_NET_HTTP_HPACK_H_ */
