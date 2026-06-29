@@ -16,6 +16,7 @@
 #include <hal/nrf_uarte.h>
 #include <hal/nrf_timer.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 #include <soc.h>
@@ -1109,7 +1110,7 @@ static uint32_t fill_usr_buf(const struct device *dev, uint32_t len)
 	uint8_t *buf = cfg->bounce_buf[cbwt_data->bounce_idx];
 	uint32_t usr_rem = async_rx->buf_len - cbwt_data->usr_wr_off;
 	uint32_t bounce_rem = cbwt_data->bounce_limit - cbwt_data->bounce_off;
-	uint32_t cpy_len = MIN(bounce_rem, MIN(usr_rem, len));
+	uint32_t cpy_len = min3(bounce_rem, usr_rem, len);
 
 	__ASSERT(cpy_len + cbwt_data->bounce_off <= cfg->bounce_buf_len,
 		"Exceeding the buffer cpy_len:%d off:%d limit:%d",
