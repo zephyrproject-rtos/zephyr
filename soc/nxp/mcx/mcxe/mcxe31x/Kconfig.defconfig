@@ -9,8 +9,13 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
 
+# The RTC system timer derives its cycle rate at runtime (clock-frequency /
+# prescaler); 1000 ticks/sec divides the 32 kHz RTC clock without rounding.
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000 if MCUX_RTC_JDP_TIMER
+
 config CORTEX_M_SYSTICK
-	default n if (MCUX_LPTMR_TIMER || MCUX_OS_TIMER || MCUX_STM_TIMER)
+	default n if (MCUX_LPTMR_TIMER || MCUX_OS_TIMER || MCUX_STM_TIMER || MCUX_RTC_JDP_TIMER)
 
 config ROM_START_OFFSET
 	default 0x1000
