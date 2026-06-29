@@ -717,8 +717,12 @@ ZTEST_USER(timer_api, test_timer_remaining)
 	 * the k_timer api is limited by the system tick abstraction. As result
 	 * the value obtained through k_timer_remaining_get() could be larger
 	 * than actual remaining time with maximum error equal to one tick.
+	 * That one tick of error has to be converted to ms by rounding up:
+	 * a tick shorter than a millisecond would otherwise round down to a
+	 * zero tolerance and the legitimate one-tick overshoot would trip the
+	 * check on high tick rate platforms.
 	 */
-	zassert_true(rem_ms <= (DURATION / 2) + k_ticks_to_ms_floor64(1),
+	zassert_true(rem_ms <= (DURATION / 2) + k_ticks_to_ms_ceil64(1),
 		     NULL);
 
 	/* Half the value of DURATION in ticks may not be the value of
