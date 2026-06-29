@@ -26,8 +26,8 @@
  * Copyright (c) 2003-2004, K A Fraser.
  */
 
-#ifndef __XEN_PUBLIC_EVENT_CHANNEL_H__
-#define __XEN_PUBLIC_EVENT_CHANNEL_H__
+#ifndef ZEPHYR_INCLUDE_XEN_PUBLIC_EVENT_CHANNEL_H_
+#define ZEPHYR_INCLUDE_XEN_PUBLIC_EVENT_CHANNEL_H_
 
 #include "xen.h"
 
@@ -213,4 +213,4 @@ typedef struct evtchn_set_priority evtchn_set_priority_t;
 
 #define EVTCHN_2L_NR_CHANNELS (sizeof(xen_ulong_t) * sizeof(xen_ulong_t) * 64)
 
-#endif /* __XEN_PUBLIC_EVENT_CHANNEL_H__ */
+#endif /* ZEPHYR_INCLUDE_XEN_PUBLIC_EVENT_CHANNEL_H_ */

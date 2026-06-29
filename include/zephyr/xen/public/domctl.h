@@ -8,8 +8,8 @@
  * Copyright (c) 2002-2006, K Fraser
  */
 
-#ifndef __XEN_PUBLIC_DOMCTL_H__
-#define __XEN_PUBLIC_DOMCTL_H__
+#ifndef ZEPHYR_INCLUDE_XEN_PUBLIC_DOMCTL_H_
+#define ZEPHYR_INCLUDE_XEN_PUBLIC_DOMCTL_H_
 
 #ifndef CONFIG_XEN_DOM0
 #error "domctl operations are intended for use by node control tools only"
@@ -531,4 +531,4 @@ struct xen_domctl {
 typedef struct xen_domctl xen_domctl_t;
 DEFINE_XEN_GUEST_HANDLE(xen_domctl_t);
 
-#endif /* __XEN_PUBLIC_DOMCTL_H__ */
+#endif /* ZEPHYR_INCLUDE_XEN_PUBLIC_DOMCTL_H_ */

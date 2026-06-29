@@ -10,8 +10,8 @@
  * @ingroup xen_grant_tables
  */
 
-#ifndef __XEN_GNTTAB_H__
-#define __XEN_GNTTAB_H__
+#ifndef ZEPHYR_INCLUDE_XEN_GNTTAB_H_
+#define ZEPHYR_INCLUDE_XEN_GNTTAB_H_
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -148,4 +148,4 @@ const char *gnttabop_error(int16_t status);
 
 /** @} */
 
-#endif /* __XEN_GNTTAB_H__ */
+#endif /* ZEPHYR_INCLUDE_XEN_GNTTAB_H_ */

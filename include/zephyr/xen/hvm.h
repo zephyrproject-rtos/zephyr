@@ -10,8 +10,8 @@
  * @ingroup xen_hvm
  */
 
-#ifndef __XEN_HVM_H__
-#define __XEN_HVM_H__
+#ifndef ZEPHYR_INCLUDE_XEN_HVM_H_
+#define ZEPHYR_INCLUDE_XEN_HVM_H_
 
 #include <zephyr/xen/public/hvm/hvm_op.h>
 #include <zephyr/xen/public/hvm/params.h>
@@ -49,4 +49,4 @@ int hvm_get_parameter(int idx, int domid, uint64_t *value);
 
 /** @} */
 
-#endif /* __XEN_HVM_H__ */
+#endif /* ZEPHYR_INCLUDE_XEN_HVM_H_ */

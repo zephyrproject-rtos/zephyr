@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef __XEN_PUBLIC_HVM_DM_OP_H__
-#define __XEN_PUBLIC_HVM_DM_OP_H__
+#ifndef ZEPHYR_INCLUDE_XEN_PUBLIC_HVM_DM_OP_H_
+#define ZEPHYR_INCLUDE_XEN_PUBLIC_HVM_DM_OP_H_
 
 #include "../xen.h"
 #include "../event_channel.h"
@@ -490,7 +490,7 @@ DEFINE_XEN_GUEST_HANDLE(xen_dm_op_buf_t);
  * passing extra information to or from the domain.
  */
 
-#endif /* __XEN_PUBLIC_HVM_DM_OP_H__ */
+#endif /* ZEPHYR_INCLUDE_XEN_PUBLIC_HVM_DM_OP_H_ */
 
 /*
  * Local variables:
