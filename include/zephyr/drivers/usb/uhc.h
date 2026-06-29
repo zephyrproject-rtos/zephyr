@@ -130,10 +130,18 @@ struct uhc_transfer {
 	uint8_t type;
 	/** Maximum packet size */
 	uint16_t mps;
-	/** Interval, used for periodic transfers only */
-	uint16_t interval;
+	/**
+	 * Tick interval converted from the bInterval, used for periodic transfers only.
+	 * For Low Speed and Full Speed interrupt endpoints its equal to bInterval * 8
+	 * For Full Speed isochronous endpoints its equal to 2^(bInterval - 1) * 8
+	 * For High Speed and Super Speed endpoints its equal to 2^(bInterval - 1)
+	 * 1 tick = 125 microseconds
+	 */
+	uint32_t interval;
+	/** Unconverted bInterval, used for periodic transfers only */
+	uint16_t bInterval;
 	/** Start frame, used for periodic transfers only */
-	uint16_t start_frame;
+	uint32_t start_frame;
 	/** Flag marks request buffer is queued */
 	unsigned int queued : 1;
 	/** Control stage status, up to the driver to use it or not */
