@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef CSR_H_
-#define CSR_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_RISCV_CSR_H_
+#define ZEPHYR_INCLUDE_ARCH_RISCV_CSR_H_
 
 #define MSTATUS_UIE	0x00000001
 #define MSTATUS_SIE	0x00000002
@@ -299,4 +299,4 @@
 
 #endif /* !_ASMLANGUAGE */
 
-#endif /* CSR_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_RISCV_CSR_H_ */

@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_
-#define ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_IRQ_H_
+#define ZEPHYR_INCLUDE_ARCH_XTENSA_IRQ_H_
 
 #include <stdint.h>
 
@@ -303,4 +303,4 @@ int xtensa_irq_is_enabled(unsigned int irq);
 
 #include <zephyr/irq.h>
 
-#endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_IRQ_H_ */

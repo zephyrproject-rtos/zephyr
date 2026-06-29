@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_ARCH_RISCV_ELF_H
-#define ZEPHYR_ARCH_RISCV_ELF_H
+#ifndef ZEPHYR_INCLUDE_ARCH_RISCV_ELF_H_
+#define ZEPHYR_INCLUDE_ARCH_RISCV_ELF_H_
 
 #include <stdint.h>
 #include <zephyr/sys/util_macro.h>
@@ -295,4 +295,4 @@ typedef uint32_t r_riscv_wordclass_t;
 }
 #endif
 
-#endif /* ZEPHYR_ARCH_RISCV_ELF_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_RISCV_ELF_H_ */

@@ -3,8 +3,8 @@
  * Copyright The Zephyr Project Contributors
  */
 
-#ifndef ZEPHYR_ARCH_COMMON_INIT_H_
-#define ZEPHYR_ARCH_COMMON_INIT_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_COMMON_INIT_H_
+#define ZEPHYR_INCLUDE_ARCH_COMMON_INIT_H_
 
 FUNC_NORETURN void z_cstart(void);
 
@@ -23,4 +23,4 @@ static inline void arch_bss_zero_boot(void)
 }
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION */
 
-#endif /* ZEPHYR_ARCH_COMMON_INIT_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_COMMON_INIT_H_ */

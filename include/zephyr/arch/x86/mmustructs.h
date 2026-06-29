@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_X86_MMU_H
-#define ZEPHYR_INCLUDE_ARCH_X86_MMU_H
+#ifndef ZEPHYR_INCLUDE_ARCH_X86_MMUSTRUCTS_H_
+#define ZEPHYR_INCLUDE_ARCH_X86_MMUSTRUCTS_H_
 
 #include <zephyr/sys/util.h>
 
@@ -96,4 +96,4 @@ struct arch_mem_domain {
 };
 #endif /* CONFIG_X86_PAE */
 #endif /* _ASMLANGUAGE */
-#endif /* ZEPHYR_INCLUDE_ARCH_X86_MMU_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_X86_MMUSTRUCTS_H_ */
