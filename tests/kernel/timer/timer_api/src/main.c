@@ -683,7 +683,6 @@ ZTEST_USER(timer_api, test_timer_user_data)
 
 ZTEST_USER(timer_api, test_timer_remaining)
 {
-	uint32_t dur_ticks = k_ms_to_ticks_ceil32(DURATION);
 	uint32_t target_rem_ticks = k_ms_to_ticks_ceil32(DURATION / 2);
 	uint32_t rem_ms, rem_ticks, exp_ticks;
 	uint32_t latency_ticks;
@@ -725,11 +724,14 @@ ZTEST_USER(timer_api, test_timer_remaining)
 	zassert_true(rem_ms <= (DURATION / 2) + k_ticks_to_ms_ceil64(1),
 		     NULL);
 
-	/* Half the value of DURATION in ticks may not be the value of
-	 * half DURATION in ticks, when DURATION/2 is not an integer
-	 * multiple of ticks, so target_rem_ticks is used rather than
-	 * dur_ticks/2.  Also set a threshold based on expected clock
-	 * skew.
+	/* We stopped half way through the wait, so the remaining ticks
+	 * should match the half duration converted to ticks. That is
+	 * target_rem_ticks, k_ms_to_ticks_ceil32(DURATION / 2). Halving
+	 * the full duration in ticks would not do: it truncates when
+	 * DURATION / 2 is not a whole number of ticks (at a 2048 Hz tick
+	 * rate the full duration rounds to 205 ticks, half of which floors
+	 * to 102 while ceil(50 ms) is 103). Allow the larger of the
+	 * busy-wait clock skew and the read latency.
 	 */
 	delta_ticks = (int32_t)(rem_ticks - target_rem_ticks);
 	slew_ticks = BUSY_SLEW_THRESHOLD_TICKS(DURATION * USEC_PER_MSEC / 2U);
@@ -737,17 +739,19 @@ ZTEST_USER(timer_api, test_timer_remaining)
 		     "tick/busy slew %d larger than test threshold %u",
 		     delta_ticks, slew_ticks);
 
-	/* Note +1 tick precision: even though we're calculating in
-	 * ticks, we're waiting in k_busy_wait(), not for a timer
-	 * interrupt, so it's possible for that to take 1 tick longer
-	 * than expected on systems where the requested microsecond
-	 * delay cannot be exactly represented as an integer number of
-	 * ticks.
-	 * As above, use higher tolerance on platforms where the clock used
-	 * by the kernel timer and the one used for busy-waiting may be skewed.
+	/* k_timer_expires_ticks() returns the absolute expiry tick, so
+	 * "now" plus the remaining ticks must land on it. This checks the
+	 * three queries agree; it is not another half-way check, so neither
+	 * the duration nor the busy-wait slew enter into it.
+	 *
+	 * rem_ticks, now and exp_ticks are read in three separate syscalls.
+	 * exp_ticks is invariant over time, but "now" can only have advanced
+	 * past the rem_ticks sample, so (exp_ticks - now) is at most rem_ticks
+	 * and falls short of it by at most the read latency.
 	 */
-	zassert_true(((int64_t)exp_ticks - (int64_t)now)
-		     <= (dur_ticks / 2) + 1 + slew_ticks, NULL);
+	zassert_between_inclusive((int64_t)rem_ticks -
+				  ((int64_t)exp_ticks - (int64_t)now),
+				  0, latency_ticks, NULL);
 }
 
 ZTEST_USER(timer_api, test_timeout_abs)
