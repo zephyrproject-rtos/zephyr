@@ -222,6 +222,10 @@ arduino_i2c: &lpi2c1 {};
 	status = "okay";
 };
 
+&tstmr0 {
+	status = "okay";
+};
+
 &ieee802154 {
 	counter = <&lptmr1>;
 };

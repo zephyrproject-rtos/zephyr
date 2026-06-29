@@ -91,3 +91,11 @@
 &gpio4 {
 	status = "okay";
 };
+
+&tstmr1 {
+	status = "okay";
+};
+
+&tstmr2 {
+	status = "okay";
+};

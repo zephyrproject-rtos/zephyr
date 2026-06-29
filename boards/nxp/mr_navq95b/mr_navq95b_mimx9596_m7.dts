@@ -235,3 +235,7 @@
 	pinctrl-0 = <&tpm5_pwm6_pwm7>;
 	pinctrl-names = "default";
 };
+
+&tstmr2 {
+	status = "okay";
+};
