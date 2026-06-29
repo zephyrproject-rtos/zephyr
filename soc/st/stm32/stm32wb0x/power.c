@@ -214,5 +214,4 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		while (LL_RCC_HSE_IsReady() == 0U) {
 		}
 	}
-	__enable_irq();
 }

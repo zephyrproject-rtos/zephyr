@@ -303,12 +303,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 /* Handle SOC specific activity after Low Power Mode Exit */
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
-	/*
-	 * System is now in active mode.
-	 * Reenable interrupts which were disabled
-	 * when OS started idling code.
-	 */
-	irq_unlock(0);
+	/* Nothing to do */
 }
 
 #ifdef CONFIG_PM_CUSTOM_TICKS_HOOK
