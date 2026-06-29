@@ -10,8 +10,8 @@
  * @ingroup mcumgr_transport_serial
  */
 
-#ifndef ZEPHYR_INCLUDE_MGMT_SERIAL_H_
-#define ZEPHYR_INCLUDE_MGMT_SERIAL_H_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_SERIAL_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_SERIAL_H_
 
 /**
  * @brief This allows to use the MCUmgr SMP protocol over serial.
@@ -116,4 +116,4 @@ int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb);
  * @}
  */
 
-#endif
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_SERIAL_H_ */

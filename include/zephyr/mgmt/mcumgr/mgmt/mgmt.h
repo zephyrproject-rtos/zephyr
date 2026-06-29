@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef H_MGMT_MGMT_
-#define H_MGMT_MGMT_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_MGMT_MGMT_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_MGMT_MGMT_H_
 
 #include <inttypes.h>
 #include <zephyr/sys/slist.h>
@@ -198,4 +198,4 @@ smp_translate_error_fn mgmt_find_error_translation_function(uint16_t group_id);
 }
 #endif
 
-#endif /* MGMT_MGMT_H_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_MGMT_MGMT_H_ */

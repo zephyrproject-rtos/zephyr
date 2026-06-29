@@ -11,8 +11,8 @@
  * @ingroup mcumgr_transport_udp
  */
 
-#ifndef ZEPHYR_INCLUDE_MGMT_SMP_UDP_H_
-#define ZEPHYR_INCLUDE_MGMT_SMP_UDP_H_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_SMP_UDP_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_SMP_UDP_H_
 
 #include <zephyr/mgmt/mcumgr/smp/smp_client.h>
 #include <zephyr/net/net_ip.h>
@@ -69,4 +69,4 @@ int smp_client_udp_set_host_addr(struct smp_client_object *obj, struct net_socka
  * @}
  */
 
-#endif
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_SMP_UDP_H_ */
