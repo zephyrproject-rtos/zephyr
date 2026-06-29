@@ -9,8 +9,8 @@
  * @brief Buffers for USB device support
  */
 
-#ifndef ZEPHYR_INCLUDE_USB_BUF_H
-#define ZEPHYR_INCLUDE_USB_BUF_H
+#ifndef ZEPHYR_INCLUDE_DRIVERS_USB_USB_BUF_H_
+#define ZEPHYR_INCLUDE_DRIVERS_USB_USB_BUF_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
@@ -222,4 +222,4 @@ extern const struct net_buf_data_cb net_buf_dma_cb;
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_UDC_BUF_H */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_USB_USB_BUF_H_ */

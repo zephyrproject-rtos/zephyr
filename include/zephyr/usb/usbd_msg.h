@@ -9,8 +9,8 @@
  * @brief USB support message types and structure
  */
 
-#ifndef ZEPHYR_INCLUDE_USBD_MSG_H_
-#define ZEPHYR_INCLUDE_USBD_MSG_H_
+#ifndef ZEPHYR_INCLUDE_USB_USBD_MSG_H_
+#define ZEPHYR_INCLUDE_USB_USBD_MSG_H_
 
 #include <stdint.h>
 
@@ -119,4 +119,4 @@ static inline const char *usbd_msg_type_string(const enum usbd_msg_type type)
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_USBD_MSG_H_ */
+#endif /* ZEPHYR_INCLUDE_USB_USBD_MSG_H_ */

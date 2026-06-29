@@ -10,8 +10,8 @@
  * @brief USB HID Class device API header
  */
 
-#ifndef ZEPHYR_INCLUDE_USB_HID_CLASS_DEVICE_H_
-#define ZEPHYR_INCLUDE_USB_HID_CLASS_DEVICE_H_
+#ifndef ZEPHYR_INCLUDE_USB_CLASS_USB_HID_H_
+#define ZEPHYR_INCLUDE_USB_CLASS_USB_HID_H_
 
 #include <zephyr/usb/class/hid.h>
 #include <zephyr/usb/usb_ch9.h>
@@ -147,4 +147,4 @@ __deprecated int usb_hid_init(const struct device *dev);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_USB_HID_CLASS_DEVICE_H_ */
+#endif /* ZEPHYR_INCLUDE_USB_CLASS_USB_HID_H_ */

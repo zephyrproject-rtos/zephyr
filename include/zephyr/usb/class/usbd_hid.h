@@ -9,8 +9,8 @@
  * @brief USBD HID device API header
  */
 
-#ifndef ZEPHYR_INCLUDE_USBD_HID_CLASS_DEVICE_H_
-#define ZEPHYR_INCLUDE_USBD_HID_CLASS_DEVICE_H_
+#ifndef ZEPHYR_INCLUDE_USB_CLASS_USBD_HID_H_
+#define ZEPHYR_INCLUDE_USB_CLASS_USBD_HID_H_
 
 #include <stdint.h>
 #include <zephyr/device.h>
@@ -264,4 +264,4 @@ int hid_device_set_out_polling(const struct device *dev, const unsigned int peri
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_USBD_HID_CLASS_DEVICE_H_ */
+#endif /* ZEPHYR_INCLUDE_USB_CLASS_USBD_HID_H_ */

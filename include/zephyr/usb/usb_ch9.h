@@ -17,8 +17,8 @@
 #include <zephyr/math/ilog2.h>
 #include <zephyr/usb/class/usb_hub.h>
 
-#ifndef ZEPHYR_INCLUDE_USB_CH9_H_
-#define ZEPHYR_INCLUDE_USB_CH9_H_
+#ifndef ZEPHYR_INCLUDE_USB_USB_CH9_H_
+#define ZEPHYR_INCLUDE_USB_USB_CH9_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -765,4 +765,4 @@ struct usb_association_descriptor {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_USB_CH9_H_ */
+#endif /* ZEPHYR_INCLUDE_USB_USB_CH9_H_ */
