@@ -139,4 +139,22 @@
 			slew-rate = "fast";
 		};
 	};
+
+	pinmux_i3c0: pinmux_i3c0 {
+		group0 {
+			pinmux = <I3C0_SDA_P0_20>,
+				 <I3C0_SCL_P0_21>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+		};
+
+		group1 {
+			pinmux = <I3C0_PUR_P0_2>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
 };

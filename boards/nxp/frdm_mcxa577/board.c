@@ -236,6 +236,12 @@ void board_early_init_hook(void)
 #endif
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i3c0))
+	CLOCK_AttachClk(kFRO_LF_DIV_to_I3C0FCLK);
+	CLOCK_SetClockDiv(kCLOCK_DivI3C0_FCLK, 1U);
+	RESET_ReleasePeripheralReset(kI3C0_RST_SHIFT_RSTn);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpcmp0))
 	CLOCK_AttachClk(kFRO_LF_DIV_to_CMP0);
 	CLOCK_SetClockDiv(kCLOCK_DivCMP0_FUNC, 1U);
