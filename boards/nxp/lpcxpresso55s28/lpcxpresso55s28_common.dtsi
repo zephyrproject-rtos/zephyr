@@ -136,3 +136,23 @@ arduino_spi: &hs_lspi {
 arduino_gpio: &gpio1 {};
 
 mikrobus_spi: &hs_lspi {};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&ctimer1 {
+	status = "okay";
+};
+
+&ctimer2 {
+	status = "okay";
+};
+
+&ctimer3 {
+	status = "okay";
+};
+
+&ctimer4 {
+	status = "okay";
+};
