@@ -55,7 +55,7 @@ enum fuel_gauge_prop_type {
 	FUEL_GAUGE_CURRENT __deprecated = FUEL_GAUGE_CURRENT_UA,
 	/** Whether the battery underlying the fuel-gauge is cut off from charge */
 	FUEL_GAUGE_CHARGE_CUTOFF,
-	/** Cycle count in 1/100ths (number of charge/discharge cycles) */
+	/** Cycle count in charge/discharge cycles */
 	FUEL_GAUGE_CYCLE_COUNT,
 	/** Connect state of battery */
 	FUEL_GAUGE_CONNECT_STATE,
