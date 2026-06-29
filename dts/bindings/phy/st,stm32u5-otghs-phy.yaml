@@ -27,18 +27,17 @@ properties:
     type: string
     required: true
     enum:
-      - "SYSCFG_OTG_HS_PHY_CLK_16MHz"
-      - "SYSCFG_OTG_HS_PHY_CLK_19.2MHz"
-      - "SYSCFG_OTG_HS_PHY_CLK_20MHz"
-      - "SYSCFG_OTG_HS_PHY_CLK_24MHz"
-      - "SYSCFG_OTG_HS_PHY_CLK_26MHz"
-      - "SYSCFG_OTG_HS_PHY_CLK_32MHz"
+      - "16M"
+      - "19.2M"
+      - "20M"
+      - "24M"
+      - "26M"
+      - "32M"
     description: |
-      OTG_HS PHY reference clock frequency selection.
+      Input frequency of the HS PHY (in MHz: "1M" = 1 MHz)
 
-      This value selects the reference clock frequency to be used in the OTG_HS PHY PLL
-      in the SYSCFG OTG_HS PHY register (SYSCFG_OTGHSPHYCR). The selection of this value
-      should take in consideration the OTGHSSEL dependency to avoid miss configurations.
+      The correct value depends on the system's clock configuration,
+      including the `clocks` property of this node.
 
 examples:
   - |

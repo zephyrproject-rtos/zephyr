@@ -86,6 +86,6 @@ zephyr_udc0: &usbotg_hs {
 };
 
 &otghs_phy {
-	clock-reference = "SYSCFG_OTG_HS_PHY_CLK_16MHz";
+	clock-reference = "16M";
 	status = "okay";
 };
