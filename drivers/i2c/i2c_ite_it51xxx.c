@@ -426,7 +426,59 @@ static void i2c_ite_pm_policy_state_lock_put(struct i2c_it51xxx_data *data,
 #endif /* CONFIG_PM */
 
 #ifdef CONFIG_I2C_TARGET
+static void clear_target_status(const struct device *dev, uint8_t status)
+{
+	const struct i2c_it51xxx_config *config = dev->config;
+
+	/* Write to clear a specific status */
+#ifdef CONFIG_SOC_IT51526AW
+	sys_write8(status, config->i2cbase_mapping + SMB_SLSTA(config->port));
+#else
+	sys_write8(status, config->target_base + SMB_SLSTn);
+#endif
+}
+
 #ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+static void target_i2c_reset_fifo(const struct device *dev)
+{
+	const struct i2c_it51xxx_config *config = dev->config;
+	uint8_t sdfpctl;
+
+	/* Disable FIFO mode to clear left count */
+	sdfpctl = sys_read8(config->target_base + SMB_SnDFPCTL);
+	sys_write8(sdfpctl & ~SMB_SADFE, config->target_base + SMB_SnDFPCTL);
+	/* Target n FIFO Enable */
+	sdfpctl = sys_read8(config->target_base + SMB_SnDFPCTL);
+	sys_write8(sdfpctl | SMB_SADFE, config->target_base + SMB_SnDFPCTL);
+}
+
+static bool target_i2c_fifo_read_to_buf(const struct device *dev, uint32_t count)
+{
+	const struct i2c_it51xxx_config *config = dev->config;
+	struct i2c_it51xxx_data *data = dev->data;
+
+	if (data->w_index + count > sizeof(data->target_in_buffer)) {
+		LOG_ERR("I2CS ch%d: write OOB (w_index=%d + count=%d > buf_size=%d), aborting",
+			config->port, data->w_index, count, sizeof(data->target_in_buffer));
+		target_i2c_reset_fifo(dev);
+
+		return false;
+	}
+
+	for (int i = 0; i < count; i++) {
+#ifdef CONFIG_SOC_IT51526AW
+		data->target_in_buffer[i + data->w_index] =
+			sys_read8(config->i2cbase_mapping + SMB_SLDA(config->port));
+#else
+		data->target_in_buffer[i + data->w_index] =
+			sys_read8(config->target_base + SMB_SLDn);
+#endif
+	}
+	data->w_index += count;
+
+	return true;
+}
+
 static void target_i2c_isr_fifo(const struct device *dev)
 {
 	const struct i2c_it51xxx_config *config = dev->config;
@@ -434,7 +486,6 @@ static void target_i2c_isr_fifo(const struct device *dev)
 	struct i2c_target_config *target_cfg;
 	const struct i2c_target_callbacks *target_cb;
 	uint32_t count, len;
-	uint8_t sdfpctl;
 	uint8_t target_status, fifo_status, target_idx;
 
 #ifdef CONFIG_SOC_IT51526AW
@@ -446,10 +497,13 @@ static void target_i2c_isr_fifo(const struct device *dev)
 	/* bit0-4 : FIFO byte count */
 	count = fifo_status & GENMASK(4, 0);
 
-	/* Any error */
+	/* Timeout status occurs */
 	if (target_status & SMB_STS) {
+		LOG_ERR("I2CS ch%d timeout occurs", config->port);
+
 		data->w_index = 0;
 		data->r_index = 0;
+		target_i2c_reset_fifo(dev);
 		goto done;
 	}
 
@@ -463,16 +517,18 @@ static void target_i2c_isr_fifo(const struct device *dev)
 		if (target_status & SMB_RCS) {
 			uint8_t *rdata = NULL;
 
-			/* Read data callback function */
-			if (target_cb->buf_read_requested) {
-				target_cb->buf_read_requested(target_cfg, &rdata, &len);
-			}
+			if (data->r_index == 0) {
+				/* Read data callback function */
+				if (target_cb->buf_read_requested) {
+					target_cb->buf_read_requested(target_cfg, &rdata, &len);
+				}
 
-			if (len > sizeof(data->target_out_buffer)) {
-				LOG_ERR("I2CS ch%d: The length exceeds out_buffer size=%d",
-					config->port, sizeof(data->target_out_buffer));
-			} else {
-				memcpy(data->target_out_buffer, rdata, len);
+				if (len > sizeof(data->target_out_buffer)) {
+					LOG_ERR("I2CS ch%d: The length exceeds out_buffer size=%d",
+						config->port, sizeof(data->target_out_buffer));
+				} else {
+					memcpy(data->target_out_buffer, rdata, len);
+				}
 			}
 
 			for (int i = 0; i < SMB_TARGET_IT51XXX_MAX_FIFO_SIZE; i++) {
@@ -488,57 +544,21 @@ static void target_i2c_isr_fifo(const struct device *dev)
 			/* Index to next 16 bytes of read buffer */
 			data->r_index += SMB_TARGET_IT51XXX_MAX_FIFO_SIZE;
 		} else {
-			for (int i = 0; i < count; i++) {
-				/* Host transmitting, target receiving */
-#ifdef CONFIG_SOC_IT51526AW
-				data->target_in_buffer[i + data->w_index] =
-					sys_read8(config->i2cbase_mapping + SMB_SLDA(config->port));
-#else
-				data->target_in_buffer[i + data->w_index] =
-					sys_read8(config->target_base + SMB_SLDn);
-#endif
-			}
-
-			/* Write data done callback function */
-			if (target_cb->buf_write_received) {
-				target_cb->buf_write_received(target_cfg, data->target_in_buffer,
-							      count);
-			}
-
-			/* Index to next 16 bytes of write buffer */
-			data->w_index += count;
-			if (data->w_index > sizeof(data->target_in_buffer)) {
-				LOG_ERR("I2CS ch%d: The write size exceeds in buffer size=%d",
-					config->port, sizeof(data->target_in_buffer));
-			}
+			target_i2c_fifo_read_to_buf(dev, count);
 		}
 	}
 	/* Stop condition, indicate stop condition detected. */
 	if (target_status & SMB_SPDS) {
 		/* Read data less 16 bytes status */
 		if (target_status & SMB_RCS) {
-			/* Disable FIFO mode to clear left count */
-			sdfpctl = sys_read8(config->target_base + SMB_SnDFPCTL);
-			sys_write8(sdfpctl & ~SMB_SADFE, config->target_base + SMB_SnDFPCTL);
-			/* Target n FIFO Enable */
-			sdfpctl = sys_read8(config->target_base + SMB_SnDFPCTL);
-			sys_write8(sdfpctl | SMB_SADFE, config->target_base + SMB_SnDFPCTL);
+			target_i2c_reset_fifo(dev);
 		} else {
-			for (int i = 0; i < count; i++) {
-				/* Host transmitting, target receiving */
-#ifdef CONFIG_SOC_IT51526AW
-				data->target_in_buffer[i + data->w_index] =
-					sys_read8(config->i2cbase_mapping + SMB_SLDA(config->port));
-#else
-				data->target_in_buffer[i + data->w_index] =
-					sys_read8(config->target_base + SMB_SLDn);
-#endif
-			}
-
-			/* Write data done callback function */
-			if (target_cb->buf_write_received) {
-				target_cb->buf_write_received(target_cfg, data->target_in_buffer,
-							      count);
+			if (target_i2c_fifo_read_to_buf(dev, count)) {
+				/* Write data done callback function */
+				if (target_cb->buf_write_received) {
+					target_cb->buf_write_received(
+						target_cfg, data->target_in_buffer, data->w_index);
+				}
 			}
 		}
 
@@ -551,26 +571,10 @@ static void target_i2c_isr_fifo(const struct device *dev)
 	}
 
 done:
-	/* W/C */
-#ifdef CONFIG_SOC_IT51526AW
-	sys_write8(target_status, config->i2cbase_mapping + SMB_SLSTA(config->port));
-#else
-	sys_write8(target_status, config->target_base + SMB_SLSTn);
-#endif
+	/* Write to clear a target status */
+	clear_target_status(dev, target_status);
 }
 #endif /* CONFIG_I2C_TARGET_BUFFER_MODE */
-
-static void clear_target_status(const struct device *dev, uint8_t status)
-{
-	const struct i2c_it51xxx_config *config = dev->config;
-
-	/* Write to clear a specific status */
-#ifdef CONFIG_SOC_IT51526AW
-	sys_write8(status, config->i2cbase_mapping + SMB_SLSTA(config->port));
-#else
-	sys_write8(status, config->target_base + SMB_SLSTn);
-#endif
-}
 
 static void target_i2c_isr_pio(const struct device *dev)
 {
