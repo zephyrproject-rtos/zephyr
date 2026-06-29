@@ -10,8 +10,8 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include "net_shell_private.h"
 
-#include <../ip/route_ipv6.h>
-#include <../ip/route_ipv4.h>
+#include <route_ipv6.h>
+#include <route_ipv4.h>
 
 #if defined(CONFIG_WIREGUARD)
 #include <zephyr/net/virtual.h>
