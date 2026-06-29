@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# MCUXpresso SDK Time Stamp Timer (TSTMR)
+
+config COUNTER_MCUX_TSTMR
+	bool "MCUX Time Stamp Timer (TSTMR) driver"
+	default y
+	depends on DT_HAS_NXP_TSTMR_ENABLED
+	select COUNTER_SUPPORTS_64BITS_TICKS
+	help
+	  Enable support for the NXP Time Stamp Timer (TSTMR).
+	  TSTMR is a 56-bit, free-running up-counter; its frequency is
+	  SoC-specific (see the clock-frequency devicetree property). It does
+	  not provide compare, alarm, top-value, or interrupt functionality.
