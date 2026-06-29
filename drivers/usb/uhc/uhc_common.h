@@ -59,6 +59,42 @@ static inline int uhc_unlock_internal(const struct device *dev)
 }
 
 /**
+ * @brief Compare microframe numbers of xfers to determine which one should be sent first.
+ *
+ * @return Negative value if a < b, positive if a > b, 0 if a == b
+ */
+static inline int32_t xfer_seq_cmp(uint32_t a, uint32_t b)
+{
+	/*
+	 * Use serial-number arithmetic for the unsigned 32-bit microframe counter. The
+	 * wrapped subtraction is interpreted as a signed delta, so values just
+	 * after rollover compare newer than values just before it. Comparisons
+	 * are meaningful only within half the counter range.
+	 */
+	return (int32_t)(a - b);
+}
+
+/**
+ * @brief Convert from bInterval value from USB descriptors to number of microframe ticks
+ *
+ * The microframe ticks are in 125 us units.
+ *
+ * @return The value in microframes ticks.
+ */
+uint32_t uhc_xfer_bInterval_to_microframe(const struct usb_device *const udev,
+					  uint16_t bInterval, uint8_t ep_type);
+
+/**
+ * @brief Encode a number of microframe ticks into a bInterval as used in USB descriptors
+ *
+ * The microframe ticks are in 125 us units.
+ *
+ * @return The bInterval value.
+ */
+uint32_t uhc_xfer_microframe_to_bInterval(const struct usb_device *const udev,
+					  uint32_t microframe_interval, uint8_t ep_type);
+
+/**
  * @brief Helper function to return UHC transfer to a higher level.
  *
  * Function to dequeue transfer and send UHC event to a higher level.
