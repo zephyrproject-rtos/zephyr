@@ -10,8 +10,8 @@
  * @ingroup subsys_cpu_load
  */
 
-#ifndef ZEPHYR_SUBSYS_CPU_LOAD_H_
-#define ZEPHYR_SUBSYS_CPU_LOAD_H_
+#ifndef ZEPHYR_INCLUDE_SYS_CPU_LOAD_H_
+#define ZEPHYR_INCLUDE_SYS_CPU_LOAD_H_
 
 #include <stdint.h>
 
@@ -50,4 +50,4 @@ int cpu_load_metric_get(int cpu_id);
 }
 #endif
 
-#endif /* ZEPHYR_SUBSYS_CPU_LOAD_H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_CPU_LOAD_H_ */
