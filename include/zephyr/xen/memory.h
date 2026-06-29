@@ -9,8 +9,8 @@
  * @ingroup xen_memory_management
  */
 
-#ifndef ZEPHYR_XEN_MEMORY_H_
-#define ZEPHYR_XEN_MEMORY_H_
+#ifndef ZEPHYR_INCLUDE_XEN_MEMORY_H_
+#define ZEPHYR_INCLUDE_XEN_MEMORY_H_
 
 #include <xen/public/xen.h>
 #include <xen/public/memory.h>
@@ -150,4 +150,4 @@ int xendom_acquire_resource(domid_t domid, uint16_t type, uint32_t id, uint64_t 
 
 /** @} */
 
-#endif /* ZEPHYR_XEN_MEMORY_H_ */
+#endif /* ZEPHYR_INCLUDE_XEN_MEMORY_H_ */
