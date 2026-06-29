@@ -122,7 +122,7 @@ int usbh_req_setup(struct usb_device *const udev,
 	ret = xfer->err;
 
 buf_alloc_err:
-	usbh_xfer_free(udev, xfer);
+	(void)uhc_xfer_unref(xfer);
 
 unlock:
 	k_mutex_unlock(&ch9_req_lock);
