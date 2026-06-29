@@ -9,8 +9,8 @@
  * @brief Dummy transport for the mcumgr SMP protocol for unit testing.
  * @ingroup mcumgr_transport_dummy
  */
-#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_DUMMY_H_
-#define ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_DUMMY_H_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_SMP_DUMMY_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_SMP_DUMMY_H_
 
 /**
  * @brief This allows to use the MCUmgr SMP protocol over a dummy transport, usually for testing
@@ -115,4 +115,4 @@ bool smp_dummy_get_status(void);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_DUMMY_H_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_SMP_DUMMY_H_ */

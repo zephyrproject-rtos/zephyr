@@ -10,8 +10,8 @@
  * @ingroup mcumgr_img_mgmt_client
  */
 
-#ifndef H_IMG_MGMT_CLIENT_
-#define H_IMG_MGMT_CLIENT_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_IMG_MGMT_IMG_MGMT_CLIENT_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_IMG_MGMT_IMG_MGMT_CLIENT_H_
 
 #include <inttypes.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt_defines.h>
@@ -208,4 +208,4 @@ int img_mgmt_client_erase(struct img_mgmt_client *client, uint32_t slot);
 }
 #endif
 
-#endif /* H_IMG_MGMT_CLIENT_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_IMG_MGMT_IMG_MGMT_CLIENT_H_ */

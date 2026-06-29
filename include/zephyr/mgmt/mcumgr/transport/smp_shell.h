@@ -9,8 +9,8 @@
  * @ingroup mcumgr_transport_shell
  */
 
-#ifndef ZEPHYR_INCLUDE_MGMT_SMP_SHELL_H_
-#define ZEPHYR_INCLUDE_MGMT_SMP_SHELL_H_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_SMP_SHELL_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_SMP_SHELL_H_
 
 /**
  * @brief This allows to use the MCUmgr SMP protocol over Zephyr shell.
@@ -78,4 +78,4 @@ int smp_shell_init(void);
  * @}
  */
 
-#endif
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_TRANSPORT_SMP_SHELL_H_ */

@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef H_MGMT_MCUMGR_GRP_FS_MGMT_CHKSUM_
-#define H_MGMT_MCUMGR_GRP_FS_MGMT_CHKSUM_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_FS_MGMT_FS_MGMT_HASH_CHECKSUM_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_FS_MGMT_FS_MGMT_HASH_CHECKSUM_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/fs/fs.h>
@@ -94,4 +94,4 @@ void fs_mgmt_hash_checksum_find_handlers(fs_mgmt_hash_checksum_list_cb cb, void 
 }
 #endif
 
-#endif /* ifndef H_MGMT_MCUMGR_GRP_FS_MGMT_CHKSUM_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_FS_MGMT_FS_MGMT_HASH_CHECKSUM_H_ */

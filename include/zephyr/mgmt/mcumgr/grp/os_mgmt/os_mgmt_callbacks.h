@@ -10,8 +10,8 @@
  * @ingroup mcumgr_callback_api_os_mgmt
  */
 
-#ifndef H_MCUMGR_OS_MGMT_CALLBACKS_
-#define H_MCUMGR_OS_MGMT_CALLBACKS_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_OS_MGMT_OS_MGMT_CALLBACKS_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_OS_MGMT_OS_MGMT_CALLBACKS_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -101,4 +101,4 @@ struct os_mgmt_bootloader_info_data {
 }
 #endif
 
-#endif
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_OS_MGMT_OS_MGMT_CALLBACKS_H_ */

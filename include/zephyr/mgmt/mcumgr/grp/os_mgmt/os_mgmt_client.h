@@ -10,8 +10,8 @@
  * @ingroup mcumgr_os_mgmt_client
  */
 
-#ifndef H_OS_MGMT_CLIENT_
-#define H_OS_MGMT_CLIENT_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_OS_MGMT_OS_MGMT_CLIENT_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_OS_MGMT_OS_MGMT_CLIENT_H_
 
 #include <inttypes.h>
 #include <zephyr/mgmt/mcumgr/smp/smp_client.h>
@@ -76,4 +76,4 @@ int os_mgmt_client_reset(struct os_mgmt_client *client);
 }
 #endif
 
-#endif /* H_OS_MGMT_CLIENT_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_OS_MGMT_OS_MGMT_CLIENT_H_ */

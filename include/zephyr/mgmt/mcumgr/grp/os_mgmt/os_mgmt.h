@@ -12,8 +12,8 @@
  * @ingroup mcumgr_os_mgmt
  */
 
-#ifndef H_OS_MGMT_
-#define H_OS_MGMT_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_OS_MGMT_OS_MGMT_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_OS_MGMT_OS_MGMT_H_
 
 /**
  * @brief MCUmgr OS Management API
@@ -142,4 +142,4 @@ struct os_mgmt_info_append {
  * @}
  */
 
-#endif /* H_OS_MGMT_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_OS_MGMT_OS_MGMT_H_ */
