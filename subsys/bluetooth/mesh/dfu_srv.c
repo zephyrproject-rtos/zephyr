@@ -77,10 +77,27 @@ static void apply_rsp_sent(int err, void *cb_params)
 {
 	struct bt_mesh_dfu_srv *srv = cb_params;
 
-	if (err) {
-		/* return phase back to give client one more chance. */
+	if (err == -ETIMEDOUT) {
+		/* The response was transmitted N times without receiving a
+		 * segment ack. A spec-compliant client that received any
+		 * complete copy of the Firmware Update Status message
+		 * containing status Success and phase Applying Update has
+		 * accepted it as terminal for the Apply step (MshDFUv1.0
+		 * Section 7.1.2.6) and will not retry Update Apply. Proceed
+		 * with the apply so our state matches what the client
+		 * believes; if the client did miss the response, its retry
+		 * hits handle_apply's idempotent APPLYING branch.
+		 */
+		LOG_WRN("Apply response ack timeout, applying anyway");
+	} else if (err) {
+		/* Any other end-of-send error (buffer exhaustion, cancellation,
+		 * etc.) means the response was not successfully placed on air.
+		 * Revert the phase so a client retry of Update Apply is
+		 * accepted as a fresh apply request.
+		 */
 		srv->update.phase = BT_MESH_DFU_PHASE_VERIFY_OK;
-		LOG_WRN("Apply response failed, wait for retry (err %d)", err);
+		LOG_WRN("Apply response send failed (err %d), wait for retry",
+			err);
 		return;
 	}
 
@@ -106,6 +123,9 @@ static void apply_rsp_sent(int err, void *cb_params)
 static void apply_rsp_sending(uint16_t duration, int err, void *cb_params)
 {
 	if (err) {
+		/* Start-of-send errors are never -ETIMEDOUT, so this falls
+		 * into apply_rsp_sent's revert-to-VERIFY_OK branch.
+		 */
 		apply_rsp_sent(err, cb_params);
 	}
 }

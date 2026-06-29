@@ -801,6 +801,19 @@ static int handle_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
 			blob_cli_broadcast_rsp(&cli->blob, &target->blob);
 			return 0;
 		}
+
+		/* MshDFUv1.0 Section 7.1.2.6: a target that responds with
+		 * status Success and phase Applying Update has accepted the
+		 * Firmware Update Apply message. A target that remains
+		 * provisioned may also respond with phase Idle once the apply
+		 * has already completed. Both responses are terminal for the
+		 * Apply step, and the Firmware Update Apply message is
+		 * idempotent, so further retries cannot change the response.
+		 * Acknowledge the target on the first such response.
+		 */
+		LOG_DBG("Target 0x%04x accepted apply (phase %u)",
+			target->blob.addr, phase);
+		blob_cli_broadcast_rsp(&cli->blob, &target->blob);
 		return 0;
 	} else if (cli->xfer.state == STATE_CONFIRM) {
 		if (phase == BT_MESH_DFU_PHASE_APPLYING) {
