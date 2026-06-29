@@ -10,8 +10,8 @@
  * @ingroup log_backend_net
  */
 
-#ifndef ZEPHYR_LOG_BACKEND_NET_H_
-#define ZEPHYR_LOG_BACKEND_NET_H_
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_NET_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_NET_H_
 
 /**
  * @brief Network log backend API
@@ -96,4 +96,4 @@ void log_backend_net_start(void);
 
 /** @} */
 
-#endif /* ZEPHYR_LOG_BACKEND_NET_H_ */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_NET_H_ */
