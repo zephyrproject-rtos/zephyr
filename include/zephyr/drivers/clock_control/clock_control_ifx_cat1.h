@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_IFX_CAT1_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_IFX_CAT1_H_
+
 /**
  * @file
  * @brief Clock control definitions for Infineon CAT1 (PSoC 6 family) devices.
@@ -646,3 +649,5 @@ static inline uint8_t ifx_cat1_utils_peri_pclk_get_hfclk(uint8_t peri_group)
 #endif
 
 /** @} */
+
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_IFX_CAT1_H_ */
