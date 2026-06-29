@@ -29,6 +29,7 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_CC32XX gpio_cc32xx.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_CMSDK_AHB gpio_cmsdk_ahb.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_CY8C95XX gpio_cy8c95xx.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_CYW43 gpio_cyw43.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_CYW43_RPI_PICO gpio_cyw43_rpi_pico.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_DAVINCI gpio_davinci.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_DW gpio_dw.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_EFINIX_SAPPHIRE gpio_efinix_sapphire.c)
@@ -154,6 +155,14 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_HOGS gpio_hogs.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_SHELL gpio_shell.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE gpio_handlers.c)
 # zephyr-keep-sorted-stop
+
+if(CONFIG_GPIO_CYW43_RPI_PICO)
+  set(hal_rpi_pico_cyw43_driver ${ZEPHYR_HAL_RPI_PICO_MODULE_DIR}/lib/cyw43-driver)
+  zephyr_library_include_directories(
+    ${hal_rpi_pico_cyw43_driver}/src
+    ${ZEPHYR_BASE}/drivers/wifi/rpi_pico_cyw43
+  )
+endif()
 
 if(CONFIG_GPIO_EMUL_SDL)
   zephyr_library_sources(gpio_emul_sdl.c)
