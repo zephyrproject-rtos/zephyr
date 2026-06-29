@@ -10,8 +10,8 @@
  * @ingroup clock_control_mchp_xec
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_XEC_H_
-#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_XEC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_XEC_CLOCK_CONTROL_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_XEC_CLOCK_CONTROL_H_
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
@@ -54,4 +54,4 @@ void mchp_xec_clk_ctrl_sys_sleep_disable(void);
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_XEC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_XEC_CLOCK_CONTROL_H_ */

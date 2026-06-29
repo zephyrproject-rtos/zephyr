@@ -12,8 +12,8 @@
  * for pic32cm_sg_gc family
  */
 
-#ifndef INCLUDE_ZEPHYR_DRIVERS_CLOCK_CONTROL_MCHP_CLOCK_PIC32CM_SG_GC_H_
-#define INCLUDE_ZEPHYR_DRIVERS_CLOCK_CONTROL_MCHP_CLOCK_PIC32CM_SG_GC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_CLOCK_PIC32CM_SG_GC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_CLOCK_PIC32CM_SG_GC_H_
 
 #include <zephyr/dt-bindings/clock/mchp_pic32cm_sg_gc_clock.h>
 
@@ -190,4 +190,4 @@ struct clock_mchp_subsys_mclkcpu_config {
  */
 typedef uint32_t *clock_mchp_rate_t;
 
-#endif /* INCLUDE_ZEPHYR_DRIVERS_CLOCK_CONTROL_MCHP_CLOCK_PIC32CM_SG_GC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_CLOCK_PIC32CM_SG_GC_H_ */
