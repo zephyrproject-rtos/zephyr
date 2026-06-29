@@ -10,8 +10,8 @@
  * @ingroup shell_rpmsg
  */
 
-#ifndef ZEPHYR_INCLUDE_SHELL_RPMSG_H_
-#define ZEPHYR_INCLUDE_SHELL_RPMSG_H_
+#ifndef ZEPHYR_INCLUDE_SHELL_SHELL_RPMSG_H_
+#define ZEPHYR_INCLUDE_SHELL_SHELL_RPMSG_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
@@ -106,4 +106,4 @@ const struct shell *shell_backend_rpmsg_get_ptr(void);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_SHELL_RPMSG_H_ */
+#endif /* ZEPHYR_INCLUDE_SHELL_SHELL_RPMSG_H_ */
