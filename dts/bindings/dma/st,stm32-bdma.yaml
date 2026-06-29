@@ -86,7 +86,7 @@ properties:
       plus the nb of dma channels of the 1st dma instance, etc.
 
   "#dma-cells":
-    const: 4
+    const: 3
 
 # Parameter syntax of stm32 follows the dma client dts syntax
 # in the Linux kernel declared in
