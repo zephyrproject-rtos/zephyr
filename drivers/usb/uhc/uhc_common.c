@@ -91,6 +91,75 @@ void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf)
 	net_buf_unref(buf);
 }
 
+uint32_t uhc_xfer_bInterval_to_microframe(const struct usb_device *const udev,
+					  uint16_t bInterval, uint8_t ep_type)
+{
+	/* See USB 2.0 Specification Table 9-13 */
+	switch (udev->speed) {
+	case USB_SPEED_SPEED_SS:
+	case USB_SPEED_SPEED_HS:
+		if (!IN_RANGE(bInterval, 1, 16)) {
+			LOG_ERR("Invalid bInterval %u, not in range [1, 16]", bInterval);
+			bInterval = CLAMP(bInterval, 1, 16);
+		}
+
+		/* 2^(bInterval - 1) * 125 us */
+		return 1U << (bInterval - 1);
+
+	case USB_SPEED_SPEED_FS:
+		if (ep_type == USB_EP_TYPE_ISO) {
+			if (!IN_RANGE(bInterval, 1, 16)) {
+				LOG_ERR("Invalid bInterval %u, not in range [1, 16]", bInterval);
+				bInterval = CLAMP(bInterval, 1, 16);
+			}
+
+			/* 2^(bInterval - 1) * 1 ms */
+			return (1U << (bInterval - 1)) * 8;
+		} else {
+			if (!IN_RANGE(bInterval, 10, 255)) {
+				LOG_WRN("Invalid bInterval %u, not in range [10, 255]", bInterval);
+				bInterval = CLAMP(bInterval, 10, 255);
+			}
+
+			return bInterval * 8;
+		}
+		break;
+	case USB_SPEED_SPEED_LS:
+	case USB_SPEED_UNKNOWN:
+		if (!IN_RANGE(bInterval, 10, 255)) {
+			LOG_WRN("Invalid bInterval %u, not in range [10, 255]", bInterval);
+			bInterval = CLAMP(bInterval, 10, 255);
+		}
+
+		return bInterval * 8;
+	}
+
+	return 0;
+}
+
+uint32_t uhc_xfer_microframe_to_bInterval(const struct usb_device *const udev,
+					  uint32_t microframe_interval, uint8_t ep_type)
+{
+	/* See USB 2.0 Specification Table 9-13 */
+	switch (udev->speed) {
+	case USB_SPEED_SPEED_SS:
+	case USB_SPEED_SPEED_HS:
+		/* inverse of 2^(bInterval - 1) * 125 us */
+		return LOG2(microframe_interval) + 1;
+	case USB_SPEED_SPEED_FS:
+		if (ep_type == USB_EP_TYPE_ISO) {
+			/* inverse of 2^(bInterval - 1) * 1 ms */
+			return LOG2(microframe_interval / 8) - 1;
+		}
+		return microframe_interval / 8;
+	case USB_SPEED_SPEED_LS:
+	case USB_SPEED_UNKNOWN:
+		return microframe_interval / 8;
+	}
+
+	return 0;
+}
+
 struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const uint8_t ep,
 				    struct usb_device *const udev,
@@ -101,7 +170,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
 	struct uhc_transfer *xfer = NULL;
 	uint16_t mps;
-	uint16_t interval;
+	uint16_t bInterval;
 	uint8_t type;
 
 	api->lock(dev);
@@ -111,7 +180,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	}
 
 	if (ep_idx == 0) {
-		interval = 0;
+		bInterval = 0;
 		type = USB_EP_TYPE_CONTROL;
 		mps = udev->dev_desc.bMaxPacketSize0;
 	} else {
@@ -129,7 +198,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 		}
 
 		mps = ep_desc->wMaxPacketSize;
-		interval = ep_desc->bInterval;
+		bInterval = ep_desc->bInterval;
 		type = ep_desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK;
 	}
 
@@ -144,7 +213,8 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	sys_ref_init(&xfer->ref);
 	xfer->ep = ep;
 	xfer->mps = mps;
-	xfer->interval = interval;
+	xfer->microframe_interval = uhc_xfer_bInterval_to_microframe(udev, bInterval, type);
+	xfer->bInterval = bInterval;
 	xfer->type = type;
 	xfer->udev = udev;
 	xfer->cb = cb;
