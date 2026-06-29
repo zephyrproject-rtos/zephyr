@@ -18,8 +18,8 @@
  * * the low power alarm can be used to assert a wake-up
  * * the counter has a fixed 1Hz period
  */
-#ifndef ZEPHYR_INCLUDE_DRIVERS_RTC_MCUX_SNVS_H_
-#define ZEPHYR_INCLUDE_DRIVERS_RTC_MCUX_SNVS_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_RTC_MCUX_SNVS_RTC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_RTC_MCUX_SNVS_RTC_H_
 
 #include <zephyr/device.h>
 
@@ -44,4 +44,4 @@ int mcux_snvs_rtc_set(const struct device *dev, uint32_t ticks);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_RTC_MCUX_SNVS_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_RTC_MCUX_SNVS_RTC_H_ */

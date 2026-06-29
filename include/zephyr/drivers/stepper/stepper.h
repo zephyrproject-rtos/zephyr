@@ -10,8 +10,8 @@
  * @brief Main header file for stepper hardware driver API.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_STEPPER_H_
-#define ZEPHYR_INCLUDE_DRIVERS_STEPPER_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_STEPPER_STEPPER_H_
+#define ZEPHYR_INCLUDE_DRIVERS_STEPPER_STEPPER_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -272,4 +272,4 @@ static inline int z_impl_stepper_set_event_cb(const struct device *dev,
 
 #include <zephyr/syscalls/stepper.h>
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_STEPPER_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_STEPPER_STEPPER_H_ */

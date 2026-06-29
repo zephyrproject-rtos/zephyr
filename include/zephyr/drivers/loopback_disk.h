@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_LOOPBACK_DISK_ACCESS_H_
-#define ZEPHYR_INCLUDE_DRIVERS_LOOPBACK_DISK_ACCESS_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_LOOPBACK_DISK_H_
+#define ZEPHYR_INCLUDE_DRIVERS_LOOPBACK_DISK_H_
 
 #include <zephyr/drivers/disk.h>
 #include <zephyr/fs/fs_interface.h>
@@ -54,4 +54,4 @@ int loopback_disk_access_register(struct loopback_disk_access *ctx, const char *
  */
 int loopback_disk_access_unregister(struct loopback_disk_access *ctx);
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_LOOPBACK_DISK_ACCESS_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_LOOPBACK_DISK_H_ */

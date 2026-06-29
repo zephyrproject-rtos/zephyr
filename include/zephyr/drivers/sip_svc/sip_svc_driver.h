@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_SIP_SVC_DRIVER_H_
-#define ZEPHYR_INCLUDE_SIP_SVC_DRIVER_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SIP_SVC_SIP_SVC_DRIVER_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SIP_SVC_SIP_SVC_DRIVER_H_
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
@@ -349,4 +349,4 @@ static inline void z_impl_sip_svc_plat_free_async_memory(const struct device *de
 
 #include <zephyr/syscalls/sip_svc_driver.h>
 
-#endif /* ZEPHYR_INCLUDE_SIP_SVC_DRIVER_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SIP_SVC_SIP_SVC_DRIVER_H_ */

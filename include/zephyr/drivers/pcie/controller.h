@@ -9,8 +9,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_CONTROLLERS_H_
-#define ZEPHYR_INCLUDE_DRIVERS_PCIE_CONTROLLERS_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_CONTROLLER_H_
+#define ZEPHYR_INCLUDE_DRIVERS_PCIE_CONTROLLER_H_
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
@@ -381,4 +381,4 @@ struct pcie_ctrl_config {
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_PCIE_CONTROLLERS_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_PCIE_CONTROLLER_H_ */

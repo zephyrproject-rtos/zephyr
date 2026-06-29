@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_SPI_SPI_EMUL_H_
-#define ZEPHYR_INCLUDE_DRIVERS_SPI_SPI_EMUL_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SPI_EMUL_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SPI_EMUL_H_
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/emul.h>
@@ -103,4 +103,4 @@ uint32_t spi_emul_get_config(const struct device *dev);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_SPI_SPI_EMUL_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SPI_EMUL_H_ */

@@ -10,8 +10,8 @@
  * @ingroup hl78xx_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_HL78XX_APIS_H_
-#define ZEPHYR_INCLUDE_DRIVERS_HL78XX_APIS_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MODEM_HL78XX_APIS_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MODEM_HL78XX_APIS_H_
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
@@ -1551,4 +1551,4 @@ int hl78xx_gnss_assist_data_delete(const struct device *dev);
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_HL78XX_APIS_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MODEM_HL78XX_APIS_H_ */

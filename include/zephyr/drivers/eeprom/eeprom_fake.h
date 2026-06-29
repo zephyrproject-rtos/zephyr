@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_EEPROM_FAKE_EEPROM_H_
-#define ZEPHYR_INCLUDE_DRIVERS_EEPROM_FAKE_EEPROM_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_EEPROM_EEPROM_FAKE_H_
+#define ZEPHYR_INCLUDE_DRIVERS_EEPROM_EEPROM_FAKE_H_
 
 #include <zephyr/drivers/eeprom.h>
 #include <zephyr/fff.h>
@@ -24,4 +24,4 @@ DECLARE_FAKE_VALUE_FUNC(size_t, fake_eeprom_size, const struct device *);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_EEPROM_FAKE_EEPROM_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_EEPROM_EEPROM_FAKE_H_ */

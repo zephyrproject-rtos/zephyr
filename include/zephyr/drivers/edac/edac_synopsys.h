@@ -10,8 +10,8 @@
  * @ingroup edac_interface_ext
  */
 
-#ifndef ZEPHYR_DRIVERS_EDAC_EDAC_SYNOPSYS_H_
-#define ZEPHYR_DRIVERS_EDAC_EDAC_SYNOPSYS_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_EDAC_EDAC_SYNOPSYS_H_
+#define ZEPHYR_INCLUDE_DRIVERS_EDAC_EDAC_SYNOPSYS_H_
 
 /**
  * @brief Synopsys DDR controller EDAC driver
@@ -65,4 +65,4 @@ struct edac_synopsys_callback_data {
 
 /** @} */
 
-#endif /* ZEPHYR_DRIVERS_EDAC_EDAC_SYNOPSYS_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_EDAC_EDAC_SYNOPSYS_H_ */
