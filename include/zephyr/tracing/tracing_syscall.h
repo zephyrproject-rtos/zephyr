@@ -10,8 +10,8 @@
  * @brief Header file for syscall tracing API.
  */
 
-#ifndef ZEPHYR_INCLUDE_TRACING_SYSCALL_H_
-#define ZEPHYR_INCLUDE_TRACING_SYSCALL_H_
+#ifndef ZEPHYR_INCLUDE_TRACING_TRACING_SYSCALL_H_
+#define ZEPHYR_INCLUDE_TRACING_TRACING_SYSCALL_H_
 
 #if defined CONFIG_SEGGER_SYSTEMVIEW
 #include "tracing_sysview_syscall.h"
@@ -47,4 +47,4 @@
 
 #endif
 
-#endif /* ZEPHYR_INCLUDE_TRACING_SYSCALL_H_ */
+#endif /* ZEPHYR_INCLUDE_TRACING_TRACING_SYSCALL_H_ */

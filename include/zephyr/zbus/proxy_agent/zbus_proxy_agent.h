@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_H_
-#define ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_H_
+#ifndef ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_ZBUS_PROXY_AGENT_H_
+#define ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_ZBUS_PROXY_AGENT_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/iterable_sections.h>
@@ -331,4 +331,4 @@ void zbus_proxy_agent_log_shadow_pub_denied(const struct zbus_proxy_agent *agent
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_H_ */
+#endif /* ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_ZBUS_PROXY_AGENT_H_ */

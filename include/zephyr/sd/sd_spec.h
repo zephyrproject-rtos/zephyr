@@ -8,8 +8,8 @@
  * SD card specification
  */
 
-#ifndef ZEPHYR_SUBSYS_SD_SPEC_H_
-#define ZEPHYR_SUBSYS_SD_SPEC_H_
+#ifndef ZEPHYR_INCLUDE_SD_SD_SPEC_H_
+#define ZEPHYR_INCLUDE_SD_SD_SPEC_H_
 
 #include <stdint.h>
 #include <zephyr/sys/util.h>
@@ -931,4 +931,4 @@ struct sdio_cis {
 }
 #endif
 
-#endif /* ZEPHYR_SUBSYS_SD_SPEC_H_ */
+#endif /* ZEPHYR_INCLUDE_SD_SD_SPEC_H_ */

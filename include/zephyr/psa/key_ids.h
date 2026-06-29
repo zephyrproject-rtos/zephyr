@@ -1,8 +1,8 @@
 /* Copyright (c) 2025 Nordic Semiconductor
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_PSA_KEY_IDS_H_
-#define ZEPHYR_PSA_KEY_IDS_H_
+#ifndef ZEPHYR_INCLUDE_PSA_KEY_IDS_H_
+#define ZEPHYR_INCLUDE_PSA_KEY_IDS_H_
 
 /**
  * @file zephyr/psa/key_ids.h
@@ -52,4 +52,4 @@ typedef uint32_t psa_key_id_t;
 #define ZEPHYR_PSA_APPLICATION_KEY_ID_RANGE_BEGIN (psa_key_id_t)0x30000000
 #define ZEPHYR_PSA_APPLICATION_KEY_ID_RANGE_SIZE  0x100000 /* 1 Mi */
 
-#endif /* ZEPHYR_PSA_KEY_IDS_H_ */
+#endif /* ZEPHYR_INCLUDE_PSA_KEY_IDS_H_ */

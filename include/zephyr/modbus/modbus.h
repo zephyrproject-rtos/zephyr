@@ -27,8 +27,8 @@
  * @{
  */
 
-#ifndef ZEPHYR_INCLUDE_MODBUS_H_
-#define ZEPHYR_INCLUDE_MODBUS_H_
+#ifndef ZEPHYR_INCLUDE_MODBUS_MODBUS_H_
+#define ZEPHYR_INCLUDE_MODBUS_MODBUS_H_
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/slist.h>
@@ -637,4 +637,4 @@ int modbus_register_user_fc(const int iface, struct modbus_custom_fc *custom_fc)
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_MODBUS_H_ */
+#endif /* ZEPHYR_INCLUDE_MODBUS_MODBUS_H_ */

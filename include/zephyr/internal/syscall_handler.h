@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_SYSCALL_HANDLER_H_
-#define ZEPHYR_INCLUDE_SYSCALL_HANDLER_H_
+#ifndef ZEPHYR_INCLUDE_INTERNAL_SYSCALL_HANDLER_H_
+#define ZEPHYR_INCLUDE_INTERNAL_SYSCALL_HANDLER_H_
 
 /**
  * @brief User mode and Syscall APIs
@@ -656,4 +656,4 @@ static inline int k_object_validation_check(struct k_object *ko,
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_SYSCALL_HANDLER_H_ */
+#endif /* ZEPHYR_INCLUDE_INTERNAL_SYSCALL_HANDLER_H_ */

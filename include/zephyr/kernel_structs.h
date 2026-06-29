@@ -17,8 +17,8 @@
  *    included.
  */
 
-#ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_STRUCTS_H_
-#define ZEPHYR_KERNEL_INCLUDE_KERNEL_STRUCTS_H_
+#ifndef ZEPHYR_INCLUDE_KERNEL_STRUCTS_H_
+#define ZEPHYR_INCLUDE_KERNEL_STRUCTS_H_
 
 #if !defined(_ASMLANGUAGE)
 #include <zephyr/sys/atomic.h>
@@ -315,4 +315,4 @@ typedef void (*k_thread_timeslice_fn_t)(struct k_thread *thread, void *data);
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_KERNEL_INCLUDE_KERNEL_STRUCTS_H_ */
+#endif /* ZEPHYR_INCLUDE_KERNEL_STRUCTS_H_ */

@@ -9,8 +9,8 @@
  * @brief Public API for Shared Multi-Heap framework
  */
 
-#ifndef ZEPHYR_INCLUDE_MULTI_HEAP_MANAGER_SMH_H_
-#define ZEPHYR_INCLUDE_MULTI_HEAP_MANAGER_SMH_H_
+#ifndef ZEPHYR_INCLUDE_MULTI_HEAP_SHARED_MULTI_HEAP_H_
+#define ZEPHYR_INCLUDE_MULTI_HEAP_SHARED_MULTI_HEAP_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -208,4 +208,4 @@ void *shared_multi_heap_realloc(enum shared_multi_heap_attr attr, void *ptr, siz
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_MULTI_HEAP_MANAGER_SMH_H_ */
+#endif /* ZEPHYR_INCLUDE_MULTI_HEAP_SHARED_MULTI_HEAP_H_ */
