@@ -84,7 +84,7 @@ err_free:
 	if (buf != NULL) {
 		usbh_xfer_buf_free(hub_data->udev, buf);
 	}
-	usbh_xfer_free(hub_data->udev, xfer);
+	(void)uhc_xfer_unref(xfer);
 	hub_data->interrupt_transfer = NULL;
 
 	return ret;
@@ -571,7 +571,7 @@ cleanup:
 		net_buf_unref(buf);
 	}
 
-	usbh_xfer_free(hub_data->udev, xfer);
+	(void)uhc_xfer_unref(xfer);
 	return 0;
 }
 
