@@ -61,6 +61,7 @@ set_variable_ifdef(CONFIG_COUNTER_MCUX_SYSCTR   CONFIG_MCUX_COMPONENT_driver.sys
 set_variable_ifdef(CONFIG_MCUX_STM_TIMER        CONFIG_MCUX_COMPONENT_driver.stm)
 set_variable_ifdef(CONFIG_COUNTER_MCUX_RTC      CONFIG_MCUX_COMPONENT_driver.rtc)
 set_variable_ifdef(CONFIG_COUNTER_MCUX_RTC_JDP  CONFIG_MCUX_COMPONENT_driver.rtc_jdp)
+set_variable_ifdef(CONFIG_MCUX_RTC_JDP_TIMER    CONFIG_MCUX_COMPONENT_driver.rtc_jdp)
 set_variable_ifdef(CONFIG_RTC_NXP_RTC_ANALOG    CONFIG_MCUX_COMPONENT_driver.rtc_analog)
 set_variable_ifdef(CONFIG_DAC_MCUX_DAC          CONFIG_MCUX_COMPONENT_driver.dac)
 set_variable_ifdef(CONFIG_DAC_MCUX_DAC12        CONFIG_MCUX_COMPONENT_driver.dac12)
