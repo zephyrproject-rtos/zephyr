@@ -283,14 +283,10 @@ config SHARED_MULTI_HEAP
 
 config SYS_HEAP_STATS_LOGGING
 	bool "Heap statistics logging framework"
-	select SYS_HEAP_CANARIES
 	help
 	  Enable the heap statistics logging framework. Provides infrastructure
 	  for per-thread allocation tracking and caller-pointer capture. Each
 	  sub-feature is controlled by its own option below.
-
-	  Automatically selects SYS_HEAP_CANARIES because statistics
-	  metadata is stored in the per-chunk trailer alongside the canary.
 
 config SYS_HEAP_THREAD_STATS
 	bool "Per-thread heap allocation tracking"
@@ -301,27 +297,27 @@ config SYS_HEAP_THREAD_STATS
 	  every heap that has a statistics slot assigned.
 
 	  Allocations that cannot be attributed to a tracked thread are counted
-	  in one of three aggregate atomic counters per heap:
+	  in one of three aggregate counters per heap:
 	    - isr_alloc_bytes:      allocated in ISR context (k_is_in_isr()).
 	    - boot_alloc_bytes:     allocated before the scheduler started
-	                            (k_is_pre_kernel()), useful for diagnosing
-	                            early-boot memory consumption.
+	                            (k_is_pre_kernel()).
 	    - overflow_alloc_bytes: allocated by threads beyond the
 	                            SYS_HEAP_STATS_MAX_TRACKED_THREADS limit.
+
+	  Access to these counters is serialised by the same caller-side lock
+	  that protects sys_heap itself; concurrent access without external
+	  locking produces undefined results.
 
 	  Caveats:
 	    - When a k_thread TCB is recycled for a new thread the stats
 	      table cannot distinguish the two. Any live allocations from the
-	      original thread become attributed to the new one. Freeing all
-	      allocations from a thread before it exits avoids this.
+	      original thread become attributed to the new one.
 	    - Thread names are captured on first allocation.  If the thread
 	      had not yet called k_thread_name_set() at that point, the name
 	      is refreshed on the next allocation once it becomes available.
-	      Renaming a thread after its name is already stored has no effect.
-	    - sys_heap_init() consumes one slot from the pool of size
-	      SYS_HEAP_STATS_TRACKED_HEAPS on each call; slots are not
-	      released, so re-initialising heaps dynamically exhausts the pool.
-	      For static heaps this is a non-issue.
+	    - sys_heap_init() detects re-init and reuses the existing slot;
+	      for the first init it consumes one slot from the pool of size
+	      SYS_HEAP_STATS_TRACKED_HEAPS.
 
 config SYS_HEAP_STATS_TRACKED_HEAPS
 	int "Maximum number of heaps with per-thread statistics"

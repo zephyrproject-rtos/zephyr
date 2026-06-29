@@ -310,16 +310,12 @@ int sys_heap_array_get(struct sys_heap ***heap);
 /** @brief Log per-thread heap allocation statistics
  *
  * Prints per-thread allocation statistics for the given heap using the
- * kernel logging subsystem at INFO level.  Each entry shows the thread
- * pointer (and name when CONFIG_THREAD_NAME is set) together with the
- * current outstanding allocation byte count.
+ * kernel logging subsystem at INFO level.
  *
- * Available only when CONFIG_SYS_HEAP_STATS_LOGGING and
- * CONFIG_SYS_HEAP_THREAD_STATS are both set.
+ * Available only when CONFIG_SYS_HEAP_THREAD_STATS is set.
  *
- * Concurrency: the call iterates the per-thread table without holding
- * any allocator lock.  Callers must ensure no allocation or free on the
- * same heap is in flight while the function runs
+ * Concurrency: the caller must ensure no concurrent allocation or free
+ * on the same heap; the same serialisation contract as sys_heap itself.
  *
  * @param heap Heap whose per-thread statistics are to be logged
  */
