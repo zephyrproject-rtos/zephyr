@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&igf {
+	status = "okay";
+
+	channel@5 {
+		reg = <5>;
+		rising-filter = "integrating";
+		falling-filter = "integrating";
+		rising-threshold = <4>;
+		falling-threshold = <4>;
+		status = "okay";
+	};
+};
