@@ -13,6 +13,7 @@ supported:
   - counter
   - crc
   - dma
+  - dmic
   - i2c
   - gpio
   - memc
