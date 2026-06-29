@@ -10,8 +10,8 @@
  * @brief Main header file for keyboard matrix input devices.
  */
 
-#ifndef ZEPHYR_INCLUDE_INPUT_KBD_MATRIX_H_
-#define ZEPHYR_INCLUDE_INPUT_KBD_MATRIX_H_
+#ifndef ZEPHYR_INCLUDE_INPUT_INPUT_KBD_MATRIX_H_
+#define ZEPHYR_INCLUDE_INPUT_INPUT_KBD_MATRIX_H_
 
 /**
  * @defgroup input_kbd_matrix Keyboard Matrix
@@ -369,4 +369,4 @@ bool input_kbd_matrix_active(const struct device *dev);
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_INPUT_KBD_MATRIX_H_ */
+#endif /* ZEPHYR_INCLUDE_INPUT_INPUT_KBD_MATRIX_H_ */
