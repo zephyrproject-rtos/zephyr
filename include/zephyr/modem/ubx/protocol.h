@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_MODEM_UBX_PROTOCOL_
-#define ZEPHYR_MODEM_UBX_PROTOCOL_
+#ifndef ZEPHYR_INCLUDE_MODEM_UBX_PROTOCOL_H_
+#define ZEPHYR_INCLUDE_MODEM_UBX_PROTOCOL_H_
 
 #include <stdint.h>
 #include <zephyr/modem/ubx/checksum.h>
@@ -542,4 +542,4 @@ static inline int ubx_frame_encode(uint8_t class, uint8_t id,
 		},										   \
 	}
 
-#endif /* ZEPHYR_MODEM_UBX_PROTOCOL_ */
+#endif /* ZEPHYR_INCLUDE_MODEM_UBX_PROTOCOL_H_ */

@@ -12,8 +12,8 @@
 
 #include <zephyr/modem/pipe.h>
 
-#ifndef ZEPHYR_MODEM_BACKEND_TTY_
-#define ZEPHYR_MODEM_BACKEND_TTY_
+#ifndef ZEPHYR_INCLUDE_MODEM_BACKEND_TTY_H_
+#define ZEPHYR_INCLUDE_MODEM_BACKEND_TTY_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,4 +42,4 @@ struct modem_pipe *modem_backend_tty_init(struct modem_backend_tty *backend,
 }
 #endif
 
-#endif /* ZEPHYR_MODEM_BACKEND_TTY_ */
+#endif /* ZEPHYR_INCLUDE_MODEM_BACKEND_TTY_H_ */
