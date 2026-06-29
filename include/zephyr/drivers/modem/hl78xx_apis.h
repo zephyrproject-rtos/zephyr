@@ -452,7 +452,7 @@ struct hl78xx_network_operator {
 	/** Operator is available. */
 	bool has_operator;
 	/** Operator name in the currently selected +COPS format. */
-	char operator[MDM_MODEL_LENGTH];
+	char operator_name[MDM_MODEL_LENGTH];
 	/** MCC is available. */
 	bool has_mcc;
 	/** Mobile country code. */
@@ -470,7 +470,7 @@ struct hl78xx_network_operator {
  */
 struct hl78xx_network_info {
 	/** Cached network operator information. */
-	struct hl78xx_network_operator operator;
+	struct hl78xx_network_operator operator_info;
 	/** IP address. */
 	char ip_address[HL78XX_NETWORK_ADDRESS_MAX_LEN];
 	/** Primary DNS server. */

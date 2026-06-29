@@ -1156,33 +1156,36 @@ void hl78xx_on_cops(struct modem_chat *chat, char **argv, uint16_t argc, void *u
 		return;
 	}
 
-	safe_strncpy((char *)data->status.network_info.operator.operator, argv[3],
-		     sizeof(data->status.network_info.operator.operator));
-	data->status.network_info.operator.has_mcc = false;
-	data->status.network_info.operator.has_mnc = false;
-	if (data->status.network_info.operator.operator[0] != '\0') {
-		data->status.network_info.operator.has_operator = true;
-		hl78xx_trim_surrounding_quotes((char *)data->status.network_info.operator.operator);
+	safe_strncpy((char *)data->status.network_info.operator_info.operator_name, argv[3],
+		     sizeof(data->status.network_info.operator_info.operator_name));
+	data->status.network_info.operator_info.has_mcc = false;
+	data->status.network_info.operator_info.has_mnc = false;
+	if (data->status.network_info.operator_info.operator_name[0] != '\0') {
+		data->status.network_info.operator_info.has_operator = true;
+		hl78xx_trim_surrounding_quotes(
+			(char *)data->status.network_info.operator_info.operator_name);
 	} else {
-		data->status.network_info.operator.has_operator = false;
-		data->status.network_info.operator.operator[0] = '\0';
+		data->status.network_info.operator_info.has_operator = false;
+		data->status.network_info.operator_info.operator_name[0] = '\0';
 	}
-	data->status.network_info.operator.format = ATOI(argv[2], 0, "network_operator_format");
-	if (data->status.network_info.operator.format == HL78XX_OPERATOR_FORMAT_NUMERIC) {
-		if (hl78xx_parse_plmn(data->status.network_info.operator.operator,
-				      &data->status.network_info.operator.mcc,
-				      &data->status.network_info.operator.mnc)) {
-			data->status.network_info.operator.has_mcc = true;
-			data->status.network_info.operator.has_mnc = true;
+	data->status.network_info.operator_info.format =
+		ATOI(argv[2], 0, "network_operator_format");
+	if (data->status.network_info.operator_info.format == HL78XX_OPERATOR_FORMAT_NUMERIC) {
+		if (hl78xx_parse_plmn(data->status.network_info.operator_info.operator_name,
+				      &data->status.network_info.operator_info.mcc,
+				      &data->status.network_info.operator_info.mnc)) {
+			data->status.network_info.operator_info.has_mcc = true;
+			data->status.network_info.operator_info.has_mnc = true;
 		} else {
-			data->status.network_info.operator.has_mcc = false;
-			data->status.network_info.operator.has_mnc = false;
+			data->status.network_info.operator_info.has_mcc = false;
+			data->status.network_info.operator_info.has_mnc = false;
 		}
 	}
 	LOG_DBG("Operator: %s, format: %d, mcc: %d, mnc: %d",
-		data->status.network_info.operator.operator,
-		data->status.network_info.operator.format, data->status.network_info.operator.mcc,
-		data->status.network_info.operator.mnc);
+		data->status.network_info.operator_info.operator_name,
+		data->status.network_info.operator_info.format,
+		data->status.network_info.operator_info.mcc,
+		data->status.network_info.operator_info.mnc);
 }
 
 #ifdef CONFIG_MODEM_HL78XX_HAS_CTZEU_URC
