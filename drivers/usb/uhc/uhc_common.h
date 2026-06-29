@@ -59,6 +59,37 @@ static inline int uhc_unlock_internal(const struct device *dev)
 }
 
 /**
+ * @brief Compare microframe numbers of xfers to determine which one should be sent first.
+ *
+ * @return Negative value if a < b, positive if a > b, 0 if a == b
+ */
+static inline int32_t xfer_seq_cmp(uint32_t a, uint32_t b)
+{
+	/*
+	 * Use serial-number arithmetic for the unsigned 32-bit microframe counter. The
+	 * wrapped subtraction is interpreted as a signed delta, so values just
+	 * after rollover compare newer than values just before it. Comparisons
+	 * are meaningful only within half the counter range.
+	 */
+	return (int32_t)(a - b);
+}
+
+/**
+ * @brief Convert from bInterval value from USB descriptors to number of microframe ticks
+ *
+ * The microframe ticks are in 125 us units.
+ *
+ * @param[in] bInterval    Interval value from the descriptors
+ * @param[out] microframe_interval Decoded interval value
+ * @param[in] speed        Enumerated USB device speed
+ * @param[in] ep_type      Endpoint type for this bInterval
+ *
+ * @return The value in microframes ticks.
+ */
+int uhc_xfer_bInterval_to_microframe(uint16_t bInterval, uint32_t *microframe_interval,
+				     enum usb_device_speed speed, uint8_t ep_type);
+
+/**
  * @brief Helper function to return UHC transfer to a higher level.
  *
  * Function to dequeue transfer and send UHC event to a higher level.
@@ -78,9 +109,11 @@ void uhc_xfer_return(const struct device *dev,
  * from the lists.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] microframe_number Current microframe number as reported by the driver.
+ *
  * @return pointer to the next transfer or NULL on error.
  */
-struct uhc_transfer *uhc_xfer_get_next(const struct device *dev);
+struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t microframe_number);
 
 /**
  * @brief Helper to append a transfer to internal list.
