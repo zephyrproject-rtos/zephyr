@@ -50,7 +50,8 @@ static struct gic_reg_region gic_reg_regions[] = {
 /* Redistributor base addresses for each core */
 mem_addr_t gic_rdists[CONFIG_MP_MAX_NUM_CPUS];
 
-#if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
+#if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_ARMV7_A_NS) \
+	|| defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
 #define IGROUPR_VAL 0xFFFFFFFFU
 #else
 #define IGROUPR_VAL 0x0U
@@ -145,7 +146,8 @@ static bool arm_gic_lpi_is_enabled(unsigned int intid)
 }
 #endif
 
-#if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
+#if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_ARMV7_A_NS) \
+	|| defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
 static inline void arm_gic_write_irouter(uint64_t val, unsigned int intid)
 {
 	mem_addr_t addr;
@@ -228,11 +230,13 @@ void arm_gic_irq_enable(unsigned int intid)
 	uint32_t idx = GIC_IS_ESPI(intid) ? ((intid - GIC_ESPI_START) / GIC_NUM_INTR_PER_REG)
 					  : (intid / GIC_NUM_INTR_PER_REG);
 
-#if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
+#if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_ARMV7_A_NS) \
+	|| defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
 	/*
-	 * Affinity routing is enabled for Armv8-A Non-secure state (GICD_CTLR.ARE_NS
-	 * is set to '1') and for GIC single security state (GICD_CTRL.ARE is set to '1'),
-	 * so need to set SPI's affinity, now set it to be the PE on which it is enabled.
+	 * Affinity routing is enabled for Armv8-A and Armv7-A Non-secure states
+	 * (GICD_CTLR.ARE_NS is set to '1') and for GIC single security state
+	 * (GICD_CTRL.ARE is set to '1'), so need to set SPI's affinity, now set
+	 * it to be the PE on which it is enabled.
 	 */
 	if (GIC_IS_SPI(intid) || GIC_IS_ESPI(intid)) {
 		arm_gic_write_irouter(MPIDR_TO_CORE(GET_MPIDR()), intid);
@@ -627,7 +631,7 @@ static void gicv3_dist_init(void)
 		sys_write32(0, ICFGRnE(base, idx));
 	}
 
-#ifdef CONFIG_ARMV8_A_NS
+#if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_ARMV7_A_NS)
 	/* Enable distributor with ARE */
 	sys_write32(BIT(GICD_CTRL_ARE_NS) | BIT(GICD_CTLR_ENABLE_G1NS), GICD_CTLR);
 #elif defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
