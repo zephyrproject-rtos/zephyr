@@ -9,8 +9,8 @@
  * but that iccarm lacks. Only those that Zephyr requires are provided here.
  */
 
-#ifndef ZEPHYR_INCLUDE_TOOLCHAIN_ICCARM_MISSING_DEFS_H_
-#define ZEPHYR_INCLUDE_TOOLCHAIN_ICCARM_MISSING_DEFS_H_
+#ifndef ZEPHYR_INCLUDE_TOOLCHAIN_IAR_IAR_MISSING_DEFS_H_
+#define ZEPHYR_INCLUDE_TOOLCHAIN_IAR_IAR_MISSING_DEFS_H_
 
  /* We need to define NULL with a parenthesis around _NULL
   * otherwise the DEBRACE macros won't work correctly
@@ -158,4 +158,4 @@
 
 #endif /* __IAR_SYSTEMS_ICC__ */
 
-#endif
+#endif /* ZEPHYR_INCLUDE_TOOLCHAIN_IAR_IAR_MISSING_DEFS_H_ */
