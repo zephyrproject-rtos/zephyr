@@ -45,6 +45,8 @@ NODELABEL_TO_KWARGS = {
     "dppic130": {"add_ppib_channel_links": False},
     # The interrupts for this node are not managed in IRQMAP.
     "canpll": {"has_irq_mapping": False},
+    # Skip SPU PERIPHCONF generation for audiopll.
+    "audio_auxpll": {"has_irq_mapping": False, "skip_spu_periph_perm": True},
 }
 
 
