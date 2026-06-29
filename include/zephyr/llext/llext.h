@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_LLEXT_H
-#define ZEPHYR_LLEXT_H
+#ifndef ZEPHYR_INCLUDE_LLEXT_LLEXT_H_
+#define ZEPHYR_INCLUDE_LLEXT_LLEXT_H_
 
 #include <zephyr/sys/slist.h>
 #include <zephyr/llext/elf.h>
@@ -530,4 +530,4 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 
 #include <zephyr/syscalls/llext.h>
 
-#endif /* ZEPHYR_LLEXT_H */
+#endif /* ZEPHYR_INCLUDE_LLEXT_LLEXT_H_ */
