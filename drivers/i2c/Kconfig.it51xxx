@@ -35,8 +35,12 @@ endif # I2C_ITE_IT51XXX
 if I2C_TARGET
 
 config I2C_TARGET_IT51XXX_MAX_BUF_SIZE
-	int "It is allowed to configure the dedicated FIFO size up to 256 bytes."
+	int "I2C target driver buffer size"
 	default 256
+	range 32 2048
+	help
+	  Size of the buffer used by the I2C target driver, used to accumulate
+	  data across multiple FIFO transfers.
 
 config I2C_IT51XXX_MAX_SHARE_FIFO_SIZE
 	int "It is allowed to configure the shared FIFO size up to 256 bytes."
