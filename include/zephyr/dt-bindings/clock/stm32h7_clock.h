@@ -8,6 +8,8 @@
 
 #include "stm32_common_clocks.h"
 
+/** @cond INTERNAL_HIDDEN */
+
 /** Domain clocks */
 
 /* RM0468, Table 56 Kernel clock dictribution summary */
@@ -85,6 +87,9 @@
 /** D2CCIP1R devices */
 #define SAI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 0, D2CCIP1R_REG)
 #define SAI23_SEL(val)		STM32_DT_CLOCK_SELECT((val), 8, 6, D2CCIP1R_REG)
+/* Device domain clocks selection helpers for SAI2A and SAI2B (RM0455.pdf) */
+#define SAI2A_SEL(val)		SAI23_SEL(val)
+#define SAI2B_SEL(val)		STM32_DT_CLOCK_SELECT((val), 11, 9, D2CCIP1R_REG)
 #define SPI123_SEL(val)		STM32_DT_CLOCK_SELECT((val), 14, 12, D2CCIP1R_REG)
 #define SPI45_SEL(val)		STM32_DT_CLOCK_SELECT((val), 18, 16, D2CCIP1R_REG)
 #define SPDIF_SEL(val)		STM32_DT_CLOCK_SELECT((val), 21, 20, D2CCIP1R_REG)
@@ -147,5 +152,7 @@
 #define MCO2_SEL_PLL1PCLK	3
 #define MCO2_SEL_CSI		4
 #define MCO2_SEL_LSI		5
+
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H7_CLOCK_H_ */
