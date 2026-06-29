@@ -16,6 +16,7 @@
  *   -# Data is transferred correctly from src to dest
  */
 
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/ztest.h>
@@ -91,6 +92,14 @@ static int test_task(const struct device *dma, uint32_t chan_id, uint32_t blen)
 
 	k_sem_reset(&transfer_end_sem);
 
+	/*
+	 * Flush tx_data so the DMA reads committed data from memory, and
+	 * invalidate rx_data (including guard area) so the CPU will not observe
+	 * stale cache lines after the DMA writes to it.
+	 */
+	sys_cache_data_flush_range(tx_data, TEST_BUF_SIZE);
+	sys_cache_data_invd_range(rx_data, TEST_BUF_SIZE + GUARD_BUF_SIZE);
+
 	if (dma_start(dma, chan_id)) {
 		TC_PRINT("ERROR: transfer\n");
 		return TC_FAIL;
@@ -114,6 +123,12 @@ static int test_task(const struct device *dma, uint32_t chan_id, uint32_t blen)
 		TC_PRINT("DMA transfer error\n");
 		return TC_FAIL;
 	}
+
+	/*
+	 * Invalidate rx_data again after DMA completion to ensure the CPU reads
+	 * what the DMA actually wrote, not any speculatively cached lines.
+	 */
+	sys_cache_data_invd_range(rx_data, TEST_BUF_SIZE + GUARD_BUF_SIZE);
 
 	TC_PRINT("DMA transfer successful\n");
 	TC_PRINT("%s\n", rx_data);
