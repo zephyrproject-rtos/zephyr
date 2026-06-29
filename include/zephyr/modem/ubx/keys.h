@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_MODEM_UBX_KEYS_
-#define ZEPHYR_MODEM_UBX_KEYS_
+#ifndef ZEPHYR_INCLUDE_MODEM_UBX_KEYS_H_
+#define ZEPHYR_INCLUDE_MODEM_UBX_KEYS_H_
 
 enum ubx_keys_msg_out {
 	UBX_KEY_MSG_OUT_NMEA_GGA_UART1 = 0x209100bb,
@@ -59,4 +59,4 @@ enum ubx_keys_nav_hp_cfg {
 	UBX_KEY_NAV_HP_CFG_GNSS_MODE = 0x20140011,
 };
 
-#endif /* ZEPHYR_MODEM_UBX_KEYS_ */
+#endif /* ZEPHYR_INCLUDE_MODEM_UBX_KEYS_H_ */

@@ -7,8 +7,8 @@
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
 
-#ifndef ZEPHYR_MODEM_STATS_
-#define ZEPHYR_MODEM_STATS_
+#ifndef ZEPHYR_INCLUDE_MODEM_STATS_H_
+#define ZEPHYR_INCLUDE_MODEM_STATS_H_
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -47,4 +47,4 @@ void modem_stats_buffer_init(struct modem_stats_buffer *buffer,
  */
 void modem_stats_buffer_advertise_length(struct modem_stats_buffer *buffer, uint32_t length);
 
-#endif /* ZEPHYR_MODEM_STATS_ */
+#endif /* ZEPHYR_INCLUDE_MODEM_STATS_H_ */
