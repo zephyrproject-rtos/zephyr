@@ -924,8 +924,12 @@ static uint8_t sl_802154_construct_enh_ack_mhr(struct sl_802154_data *data, bool
 		};
 		/* Will set later in sl_802154_security_process_tx */
 		enh_sec_hdr.frame_counter = 0;
-
-		enh_sec_hdr.kif = (struct ieee802154_key_identifier_field){0};
+		/* Thread enhanced ACK security uses the same key identifier context
+		 * as the received secured frame. Preserve the key identifier bytes
+		 * so ACK key lookup can resolve the proper key before we assign a
+		 * fresh ACK frame counter.
+		 */
+		enh_sec_hdr.kif = data->rx_mhr.aux_sec->kif;
 	}
 
 	tmp_mhr.fs = &enh_ack_fs;
@@ -1015,6 +1019,14 @@ static bool sl_802154_match_ack_src_addr(struct sl_802154_data *data)
 		      IEEE802154_EXT_ADDR_LENGTH) == 0;
 }
 
+static void sl_802154_reset_ack_metadata(struct sl_802154_data *data)
+{
+	data->mac_data.ack_seb = false;
+	data->mac_data.ack_fpb = false;
+	data->mac_data.ack_fc = 0U;
+	data->mac_data.ack_key_id = 0U;
+}
+
 /* Return 0 if the caller should continue with immediate ACK / frame-pending logic.
  * Return non-zero if this handler path is finished; the caller should then return
  * the status stored in @p write_enh_ack_status (from sl_rail_ieee802154_write_enh_ack when
@@ -1092,9 +1104,7 @@ static int sl_802154_write_enhanced_ack(struct sl_802154_data *data,
 		enh_ack_len += (uint8_t)ie_total;
 	}
 
-	data->mac_data.ack_seb = data->enh_ack_mhr.fs->fc.security_enabled;
-
-	if (data->mac_data.ack_seb) {
+	if (data->enh_ack_mhr.fs->fc.security_enabled) {
 		uint8_t mic_len =
 			mic_size_table[data->enh_ack_mhr.aux_sec->control.security_level];
 		size_t mpdu_len = (size_t)enh_ack_len - SL_802154_PHR_BYTES + mic_len +
@@ -1104,12 +1114,15 @@ static int sl_802154_write_enhanced_ack(struct sl_802154_data *data,
 						  data->enh_ack_buffer + SL_802154_PHR_BYTES,
 						  (uint8_t)mpdu_len, &data->enh_ack_mhr,
 						  false) < 0) {
+			sl_802154_reset_ack_metadata(data);
 			/* Skip writing a malformed ACK; peer will retransmit. */
 			return 1;
 		}
 
 		enh_ack_len += mic_len;
 	}
+
+	data->mac_data.ack_seb = data->enh_ack_mhr.fs->fc.security_enabled;
 
 	data->enh_ack_buffer[0] =
 		(uint8_t)(enh_ack_len - SL_802154_PHR_BYTES + IEEE802154_FCS_LENGTH);
@@ -1144,6 +1157,8 @@ static sl_rail_status_t sl_802154_handle_data_request_command(struct sl_802154_d
 
 	size_t initial_pkt_read_bytes = 0U;
 	sl_rail_status_t enh_ack_write_status = SL_RAIL_STATUS_NO_ERROR;
+
+	sl_802154_reset_ack_metadata(data);
 
 	if (!IS_ENABLED(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)) {
 		if (sl_802154_write_enhanced_ack(data, &pkt_info, timestamp,
@@ -1374,6 +1389,10 @@ static void sl_802154_handle_rx_data(const struct device *dev, uint16_t length,
 
 	if (!data->promiscuous && length < 4) {
 		return;
+	}
+
+	if (!data->rx_mhr.fs->fc.ar) {
+		sl_802154_reset_ack_metadata(data);
 	}
 
 	pkt = net_pkt_rx_alloc_with_buffer(data->iface, length, NET_AF_UNSPEC, 0, K_NO_WAIT);
