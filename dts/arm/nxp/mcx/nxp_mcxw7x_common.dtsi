@@ -444,6 +444,13 @@
 		status = "disabled";
 	};
 
+	tstmr0: timer@30000 {
+		compatible = "nxp,tstmr";
+		reg = <0x30000 0x8>;
+		clock-frequency = <DT_FREQ_M(1)>;
+		status = "disabled";
+	};
+
 	nbu: nbu {
 		compatible = "nxp,nbu";
 		interrupts = <48 2>;

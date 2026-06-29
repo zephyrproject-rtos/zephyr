@@ -662,6 +662,20 @@
 			clocks = <&scmi_clk IMX943_CLK_GPT4>;
 		};
 
+		tstmr1: timer@442c0000 {
+			compatible = "nxp,tstmr";
+			reg = <0x442c0000 0x8>;
+			clock-frequency = <DT_FREQ_M(1)>;
+			status = "disabled";
+		};
+
+		tstmr2: timer@42480000 {
+			compatible = "nxp,tstmr";
+			reg = <0x42480000 0x8>;
+			clock-frequency = <DT_FREQ_M(1)>;
+			status = "disabled";
+		};
+
 		netc: ethernet {
 			compatible = "nxp,imx-netc";
 			interrupts = <294 0>;

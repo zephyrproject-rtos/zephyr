@@ -273,6 +273,13 @@
 		};
 	};
 
+	tstmr_0: timer@199000 {
+		compatible = "nxp,tstmr";
+		reg = <0x199000 0x8>;
+		clock-frequency = <DT_FREQ_M(1)>;
+		status = "disabled";
+	};
+
 	lpuart_1: serial@27000 {
 		compatible = "nxp,lpuart";
 		reg = <0x27000 0x800>;
