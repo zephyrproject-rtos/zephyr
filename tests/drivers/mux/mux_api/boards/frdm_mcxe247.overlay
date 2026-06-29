@@ -1,0 +1,28 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+&{/soc} {
+	trgmux: trgmux@40063000 {
+		compatible = "nxp,trgmux";
+		reg = <0x40063000 0x1000>;
+		#mux-control-cells = <2>;
+		#mux-state-cells = <3>;
+		status = "okay";
+	};
+};
+
+/ {
+	mux_consumer: mux-consumer {
+		compatible = "vnd,mux-consumer-test";
+		/* control idx0: ExtOut0, input 0 - driven at runtime and read back.
+		 * state:        ExtOut0, input 0, source LpitCh0 (17), baked in DT.
+		 */
+		mux-controls = <&trgmux 1 0>;
+		mux-states = <&trgmux 1 0 17>;
+		status = "okay";
+	};
+};
