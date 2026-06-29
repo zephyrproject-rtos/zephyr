@@ -1,0 +1,109 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP i.MX Input Glitch Filter (IGF).
+
+  The IGF is a single-instance peripheral with 32 independent channels that
+  filter glitches/noise out of input signals before they propagate to the
+  on-chip interconnect. Each used channel is described by a child node and is
+  configured statically by the driver at init time; the peripheral has no
+  runtime configuration API.
+
+  Example:
+
+      &igf {
+          status = "okay";
+
+          channel@5 {
+              reg = <5>;
+              rising-filter = "integrating";
+              falling-filter = "integrating";
+              rising-threshold = <4>;
+              falling-threshold = <4>;
+              status = "okay";
+          };
+      };
+
+compatible: "nxp,imx-igf"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+child-binding:
+  description: |
+    Static configuration for a single IGF channel. The driver applies the
+    configuration and enables the channel during initialization.
+
+  properties:
+    reg:
+      type: array
+      required: true
+      description: IGF channel index (0..31).
+
+    rising-filter:
+      type: string
+      default: "bypass"
+      enum:
+        - "bypass"
+        - "windowing"
+        - "integrating"
+        - "integrating-hold"
+        - "windowing-post-sample"
+      description: Filter type applied to the rising edge.
+
+    falling-filter:
+      type: string
+      default: "bypass"
+      enum:
+        - "bypass"
+        - "windowing"
+        - "integrating"
+        - "integrating-hold"
+        - "windowing-post-sample"
+      description: Filter type applied to the falling edge.
+
+    rising-threshold:
+      type: int
+      default: 4
+      min: 0
+      max: 16777215
+      description: Rising-edge filter threshold (RTHR.RTH, 24-bit field).
+
+    falling-threshold:
+      type: int
+      default: 4
+      min: 0
+      max: 16777215
+      description: Falling-edge filter threshold (FTHR.FTH, 24-bit field).
+
+    prescaler:
+      type: int
+      default: 0
+      min: 0
+      max: 1023
+      description: Filter prescaler value (PRESR.FPRE, 10-bit field).
+
+    invert-output:
+      type: boolean
+      description: Invert the filtered output polarity (MCR.POL).
+
+    immediate-propagation:
+      type: boolean
+      description: Propagate edges immediately instead of through the prescaler (MCR.IMM).
+
+    external-prescaler:
+      type: boolean
+      description: Use the external prescaler source instead of the internal one (MCR.PSSEL).
