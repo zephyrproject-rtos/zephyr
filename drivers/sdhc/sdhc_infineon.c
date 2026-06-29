@@ -43,6 +43,10 @@
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/cache.h>
 #include "sdhc_helpers.h"
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/pm.h>
 
 #include "cy_sd_host.h"
 #include "cy_sysclk.h"
@@ -546,6 +550,14 @@ static int sdhc_infineon_request(const struct device *dev, struct sdhc_command *
 	/* Reset semaphore */
 	k_sem_reset(&sdhc_data->transfer_sem);
 
+	/*
+	 * Reference the device for the duration of the request. With device
+	 * runtime PM this resumes the controller; inert under system-managed PM.
+	 */
+	(void)pm_device_runtime_get(dev);
+	/* Block power-loss states for the duration of the request. */
+	pm_policy_device_power_lock_get(dev);
+
 	cy_stc_sd_host_cmd_config_t cmd_config = {
 		.commandIndex = cmd->opcode,
 		.commandArgument = cmd->arg,
@@ -676,6 +688,9 @@ end:
 	} else {
 		sdhc_data->app_cmd = false;
 	}
+
+	pm_policy_device_power_lock_put(dev);
+	(void)pm_device_runtime_put(dev);
 	k_sem_give(&sdhc_data->thread_lock);
 
 	return result;
@@ -1033,6 +1048,46 @@ static int sdhc_infineon_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int sdhc_infineon_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct sdhc_infineon_config *const config = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Refuse while a command or data transfer is on the bus. */
+		if ((Cy_SD_Host_GetPresentState(config->reg_addr) &
+		     (CY_SD_HOST_CMD_INHIBIT | CY_SD_HOST_CMD_CMD_INHIBIT_DAT)) != 0U) {
+			return -EBUSY;
+		}
+		/* Leave enabled for a wakeup source; gating would disable DeepSleep wake. */
+		if (pm_device_wakeup_is_enabled(dev)) {
+			break;
+		}
+		/* Clock gate the block; clock tree left untouched. */
+		Cy_SD_Host_Disable(config->reg_addr);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/* Re-enable the block; configuration is retained. */
+		Cy_SD_Host_Enable(config->reg_addr);
+		break;
+#if defined(CONFIG_PM_S2RAM) || defined(CONFIG_PM_DEVICE_POWER_DOMAIN)
+	case PM_DEVICE_ACTION_TURN_ON:
+		/*
+		 * Power was lost: fully re-init the controller - re-apply pinctrl,
+		 * re-assign the clock divider, re-enable and re-init the SD host,
+		 * and clear the slot so the card is re-initialized on next set_io().
+		 */
+		return sdhc_infineon_init(dev);
+#endif /* CONFIG_PM_S2RAM || CONFIG_PM_DEVICE_POWER_DOMAIN */
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(sdhc, sdhc_infineon_api) = {
 	.reset = sdhc_infineon_reset,
 	.request = sdhc_infineon_request,
@@ -1097,8 +1152,14 @@ static DEVICE_API(sdhc, sdhc_infineon_api) = {
                                                                                                    \
 	static int sdhc_infineon_init##n(const struct device *dev)                                 \
 	{                                                                                          \
+		int ret;                                                                           \
+                                                                                                   \
 		IFX_SDHC_IRQ_CONFIG(n);                                                            \
-		return sdhc_infineon_init(dev);                                                    \
+		ret = sdhc_infineon_init(dev);                                                     \
+		if (ret < 0) {                                                                     \
+			return ret;                                                                \
+		}                                                                                  \
+		return pm_device_runtime_enable(dev);                                              \
 	}                                                                                          \
                                                                                                    \
 	static const struct sdhc_infineon_config sdhc_infineon_##n##_config = {                    \
@@ -1136,8 +1197,10 @@ static DEVICE_API(sdhc, sdhc_infineon_api) = {
 			  .hs400_support = false},                                                 \
 		IFX_SDHC_PERI_CLOCK_INIT(n)};                                                      \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &sdhc_infineon_init##n, NULL, &sdhc_infineon_##n##_data,          \
-			      &sdhc_infineon_##n##_config, POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, \
-			      &sdhc_infineon_api);
+	PM_DEVICE_DT_INST_DEFINE(n, sdhc_infineon_pm_action);                                      \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &sdhc_infineon_init##n, PM_DEVICE_DT_INST_GET(n),                 \
+			      &sdhc_infineon_##n##_data, &sdhc_infineon_##n##_config, POST_KERNEL, \
+			      CONFIG_SDHC_INIT_PRIORITY, &sdhc_infineon_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_SDHC_INIT)
