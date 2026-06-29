@@ -10,8 +10,8 @@
  * @ingroup shell_telnet
  */
 
-#ifndef ZEPHYR_INCLUDE_SHELL_TELNET_H_
-#define ZEPHYR_INCLUDE_SHELL_TELNET_H_
+#ifndef ZEPHYR_INCLUDE_SHELL_SHELL_TELNET_H_
+#define ZEPHYR_INCLUDE_SHELL_SHELL_TELNET_H_
 
 #include <zephyr/net/socket.h>
 #include <zephyr/shell/shell.h>
@@ -107,4 +107,4 @@ const struct shell *shell_backend_telnet_get_ptr(void);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_SHELL_TELNET_H_ */
+#endif /* ZEPHYR_INCLUDE_SHELL_SHELL_TELNET_H_ */
