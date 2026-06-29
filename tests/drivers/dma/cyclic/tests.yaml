@@ -7,4 +7,5 @@ tests:
     platform_allow:
       - xmc47_relax_kit
       - xmc45_relax_kit
+      - pic32cz_ca80_cult
     filter: dt_nodelabel_enabled("tst_dma0")
