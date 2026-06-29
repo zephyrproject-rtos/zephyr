@@ -318,13 +318,13 @@ def main() -> int:
 
     parser.add_argument(
         'path',
-        nargs="?",
+        nargs="*",
         default=None,
         metavar="PATH",
-        help="""A path under include/zephyr/: the include/zephyr
-                             directory itself, a sub-directory, or a single *.h
-                             header file (default: <repo>/include/zephyr relative
-                             to this script).""",
+        help="""
+        A list of paths under include/zephyr/: the include/zephyr directory
+        itself, its sub-directoreis and/or *.h header files. Default to
+        <repo>/include/zephyr relative to this script if no path provided.""",
     )
     parser.add_argument(
         '-w', '--apply', action='store_true', help='Write changes to disk (default is a dry run).'
@@ -334,52 +334,64 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    if args.path is not None:
-        target = Path(args.path).resolve()
+    target_list = []
+    if args.path is None:
+        # scripts/zephyr_header_guards.py -> repo root is the parent of scripts/.
+        target_list = Path(__file__).resolve().parent.parent / "include" / "zephyr"
     else:
-        # scripts/fix_header_guards.py -> repo root is the parent of scripts/.
-        target = Path(__file__).resolve().parent.parent / "include" / "zephyr"
+        target_list = args.path
 
-    if not target.exists():
-        print(f"error: no such file or directory: {target}", file=sys.stderr)
-        return 2
-
-    # The convention only applies under include/zephyr/, and the guard name
-    # always reflects the full header path relative to that root.  Locate it
-    # (works for a single file, the root itself, or any sub-directory) and
-    # reject anything outside of include/zephyr/.
-    include_root = find_include_root(target)
-    if include_root is None:
-        print(f"error: path is not under include/zephyr/: {target}", file=sys.stderr)
-        return 2
-
-    if target.is_dir():
-        headers = sorted(target.rglob("*.h"))
-    else:
-        headers = [target]
+    total = 0
     counts = {"ok": 0, "renamed": 0, "pragma": 0, "added": 0, "error": 0}
+    for raw in target_list:
+        target = Path(raw).resolve()
 
-    for header in headers:
-        guard = expected_guard(header, include_root)
-        try:
-            original = header.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
-            print(f"SKIP (non-utf8): {header}", file=sys.stderr)
-            counts["error"] += 1
+        if not target.exists():
+            print(f"error: no such file or directory: {target}", file=sys.stderr)
+            return 2
+
+        if target.suffix not in ".h":
+            if args.verbose:
+                print(f"SKIPPED: not a header file: {target}")
             continue
 
-        new_text, action = process(original, guard)
-        counts[action] += 1
+        # The convention only applies under include/zephyr/, and the guard name
+        # always reflects the full header path relative to that root.  Locate it
+        # (works for a single file, the root itself, or any sub-directory) and
+        # reject anything outside of include/zephyr/.
+        include_root = find_include_root(target)
+        if include_root is None:
+            if args.verbose:
+                print(f"SKIPPED: path is not under include/zephyr/: {target}", file=sys.stderr)
+            continue
 
-        rel = header.relative_to(include_root)
-        if action != "ok":
-            print(f"{action.upper():8} {rel}  ->  {guard}")
-            if args.apply and new_text != original:
-                header.write_text(new_text, encoding="utf-8")
-        elif args.verbose:
-            print(f"{'OK':8} {rel}")
+        if target.is_dir():
+            headers = sorted(target.rglob("*.h"))
+        else:
+            headers = [target]
 
-    total = len(headers)
+        for header in headers:
+            guard = expected_guard(header, include_root)
+            try:
+                original = header.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                print(f"SKIP (non-utf8): {header}", file=sys.stderr)
+                counts["error"] += 1
+                continue
+
+            new_text, action = process(original, guard)
+            counts[action] += 1
+
+            rel = header.relative_to(include_root)
+            if action != "ok":
+                print(f"{action.upper():8} {rel}  ->  {guard}")
+                if args.apply and new_text != original:
+                    header.write_text(new_text, encoding="utf-8")
+            elif args.verbose:
+                print(f"{'OK':8} {rel}")
+
+        total += len(headers)
+
     print(
         f"\n{total} header(s): "
         f"{counts['ok']} ok, {counts['renamed']} renamed, "
