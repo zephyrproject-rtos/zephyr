@@ -49,7 +49,7 @@
 		pinctrl-names = "default";
 		status = "okay";
 
-		airoc-wifi@0 {
+		airoc_wifi: airoc-wifi@0 {
 			compatible = "infineon,airoc-wifi";
 			reg = <0>;
 			wifi-reg-on-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
@@ -69,6 +69,22 @@
 				#gpio-cells = <2>;
 				ngpios = <3>;
 			};
+		};
+
+		cyw43_wifi: cyw43-wifi@0 {
+			compatible = "raspberrypi,cyw43-wifi";
+			reg = <0>;
+
+			wl-on-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
+			bus-select-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+			host-wake-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+
+			spi-max-frequency = <20000000>;
+
+			pinctrl-0 = <&airoc_wifi_default>;
+			pinctrl-1 = <&airoc_wifi_host_wake>;
+			pinctrl-names = "default", "host_wake";
+			status = "disabled";
 		};
 	};
 };

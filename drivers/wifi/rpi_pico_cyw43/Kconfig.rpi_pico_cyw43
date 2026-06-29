@@ -1,0 +1,101 @@
+# Copyright (c) 2023 Beechwoods Software
+# Copyright (c) 2026 Igalia S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIFI_RPI_PICO_CYW43
+	bool "Infineon CYW43 SoC Wifi support for Raspberry Pi Pico W boards"
+	depends on DT_HAS_RASPBERRYPI_CYW43_WIFI_ENABLED
+	default y
+	select NET_L2_WIFI_MGMT
+	select NET_L2_ETHERNET
+	select NET_L2_ETHERNET_MGMT
+	select WIFI_USE_NATIVE_NETWORKING
+	select SPI
+	help
+	  Enable Infineon CYW43439 SoC Wi-Fi support for Raspberry Pi Pico W boards.
+
+if WIFI_RPI_PICO_CYW43
+
+config WIFI_RPI_PICO_CYW43_USE_FIXED_MAC_ADDRESS
+	bool "Use a fixed MAC address instead of reading it from OTP"
+	default n
+	help
+	  Use a fixed MAC address instead of reading it from OTP
+
+config WIFI_RPI_PICO_CYW43_FIXED_MAC_ADDRESS
+	string "Fixed MAC address with format XX:XX:XX:XX:XX:XX"
+	depends on WIFI_RPI_PICO_CYW43_USE_FIXED_MAC_ADDRESS
+	default "00:00:5E:00:53:01"
+	help
+	  For testing only. This defines a fixed MAC address to use instead of reading it from OTP.
+
+config WIFI_RPI_PICO_CYW43_PM_MODE
+	int "Power save mode (0=off 1=PM1 aggressive 2=PM2 performance)"
+	range 0 2
+	default 0
+	help
+	  Select the CYW43 power save mode.  PM1 saves more power but reduces
+	  throughput.  PM2 has little impact on throughput.
+
+config WIFI_RPI_PICO_CYW43_PM2_SLEEP_RET_MS
+	int "PM2 sleep return time (0-255 x 10 ms)"
+	range 0 255
+	default 200
+	help
+	  Maximum time to wait before going back to sleep in PM2 mode.
+
+config WIFI_RPI_PICO_CYW43_PM_LI_BEACON_PERIOD
+	int "Listen interval in beacon periods (0-15)"
+	range 0 15
+	default 1
+
+config WIFI_RPI_PICO_CYW43_PM_LI_DTIM_PERIOD
+	int "Listen interval in DTIMs (0-15, 0 means use beacon period)"
+	range 0 15
+	default 1
+
+config WIFI_RPI_PICO_CYW43_PM_LI_ASSOC
+	int "Wake interval sent to AP (0-15)"
+	range 0 15
+	default 10
+
+config WIFI_RPI_PICO_CYW43_AP_DHCPV4_ADDRESS
+	string "IP address to set when acting as an DHCP server (AP mode)"
+	depends on NET_DHCPV4_SERVER
+	default "192.168.10.1"
+	help
+	  IP address to set when acting as an DHCP server (AP mode)
+
+config WIFI_RPI_PICO_CYW43_AP_DHCPV4_BASE_ADDRESS
+	string "DHCP base address (AP mode)"
+	depends on NET_DHCPV4_SERVER
+	default "192.168.10.2"
+	help
+	  DHCP base address (AP mode)
+
+config WIFI_RPI_PICO_CYW43_AP_DHCPV4_NETMASK
+	string "IP netmask (AP mode)"
+	depends on NET_DHCPV4_SERVER
+	default "255.255.255.0"
+	help
+	  IP netmask (AP mode)
+
+config WIFI_RPI_PICO_CYW43_JOIN_ATTEMPTS
+	int "Number of consecutive attempts to join a network"
+	range 1 10
+	default 2
+	help
+	  Number of consecutive attempts to join a network.
+
+config WIFI_RPI_PICO_CYW43_LINK_UP_WAIT_SECS
+	int "Time to wait for a link up event after joining a network, in seconds"
+	range 1 255
+	default 10
+	help
+	  Time to wait for a link up event after joining a network, in seconds.
+
+comment "Consider setting SYSTEM_WORKQUEUE_STACK_SIZE >= 2048 when NET_DHCPV4_SERVER is enabled"
+	depends on NET_DHCPV4_SERVER
+	depends on SYSTEM_WORKQUEUE_STACK_SIZE < 2048
+
+endif # WIFI_RPI_PICO_CYW43
