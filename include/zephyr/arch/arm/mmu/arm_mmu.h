@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_AARCH32_ARM_MMU_H_
-#define ZEPHYR_INCLUDE_ARCH_AARCH32_ARM_MMU_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_MMU_ARM_MMU_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_MMU_ARM_MMU_H_
 
 #ifndef _ASMLANGUAGE
 
@@ -144,4 +144,4 @@ int z_arm_mmu_init(void);
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_AARCH32_ARM_MMU_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_MMU_ARM_MMU_H_ */
