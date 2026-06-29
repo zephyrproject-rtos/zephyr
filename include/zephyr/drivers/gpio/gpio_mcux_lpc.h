@@ -10,8 +10,8 @@
  * @ingroup gpio_mcux_lpc_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_MCUX_LPC_H_
-#define ZEPHYR_INCLUDE_DRIVERS_GPIO_MCUX_LPC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_MCUX_LPC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_MCUX_LPC_H_
 
 /**
  * @defgroup gpio_mcux_lpc_interface NXP MCUX LPC
@@ -38,4 +38,4 @@ void gpio_mcux_lpc_trigger_cb(const struct device *dev, uint32_t pins);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_GPIO_MCUX_LPC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_MCUX_LPC_H_ */
