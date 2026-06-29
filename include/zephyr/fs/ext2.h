@@ -28,7 +28,7 @@ struct ext2_cfg {
 	uint32_t fs_size; /* Number of blocks that we want to take. */
 	uint32_t bytes_per_inode;
 	uint8_t uuid[16];
-	uint8_t volume_name[17]; /* If first byte is 0 then name ext2" is given. */
+	uint8_t volume_name[16]; /* If first byte is 0 then name ext2" is given. */
 	bool set_uuid;
 };
 
