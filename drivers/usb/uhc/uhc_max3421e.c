@@ -39,10 +39,10 @@ struct max3421e_data {
 	struct gpio_callback gpio_cb;
 	struct uhc_transfer *last_xfer;
 	struct k_sem irq_sem;
+	uint32_t frame_number;
 	atomic_t state;
 	uint16_t tog_in;
 	uint16_t tog_out;
-	uint16_t frame_number;
 	uint8_t addr;
 	uint8_t hirq;
 	uint8_t hien;
@@ -864,7 +864,11 @@ static void uhc_max3421e_thread(void *p1, void *p2, void *p3)
 
 		/* Frame Generator Interrupt */
 		if (priv->hirq & MAX3421E_FRAME) {
-			priv->frame_number++;
+			/*
+			 * 1 tick = 125 microseconds, we get a FRAMEIRQ every milisecond,
+			 * thus we increment by 1 milisecond / 125 microseconds = 8 ticks
+			 */
+			priv->frame_number += 8;
 			schedule = !HRSLT_IS_BUSY(priv->hrsl) && priv->skip_frames <= 0;
 			if (priv->skip_frames > 0) {
 				priv->skip_frames--;

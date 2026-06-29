@@ -63,15 +63,15 @@ static inline int uhc_unlock_internal(const struct device *dev)
  *
  * @return Negative value if a < b, positive if a > b, 0 if a == b
  */
-static inline int16_t xfer_seq_cmp(uint16_t a, uint16_t b)
+static inline int32_t xfer_seq_cmp(uint32_t a, uint32_t b)
 {
 	/*
-	 * Use serial-number arithmetic for the unsigned 16-bit frame counter. The
+	 * Use serial-number arithmetic for the unsigned 32-bit frame counter. The
 	 * wrapped subtraction is interpreted as a signed delta, so values just
 	 * after rollover compare newer than values just before it. Comparisons
 	 * are meaningful only within half the counter range.
 	 */
-	return (int16_t)(a - b);
+	return (int32_t)(a - b);
 }
 
 /**
@@ -94,7 +94,7 @@ void uhc_xfer_return(const struct device *dev,
  * @param frame_number The current USB frame number
  */
 void uhc_xfer_reschedule_periodic(const struct device *dev, struct uhc_transfer *const xfer,
-				  uint16_t frame_number);
+				  uint32_t frame_number);
 
 /**
  * @brief Helper to get next transfer to process.
@@ -107,7 +107,7 @@ void uhc_xfer_reschedule_periodic(const struct device *dev, struct uhc_transfer 
  *
  * @return pointer to the next transfer or NULL on error.
  */
-struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint16_t frame_number);
+struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t frame_number);
 
 /**
  * @brief Helper to append a transfer to internal list.
