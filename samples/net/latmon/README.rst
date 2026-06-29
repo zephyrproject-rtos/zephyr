@@ -21,7 +21,7 @@ GPIO events using:
   and generate histogram data.
 
 This project is part of the open-source initiative
-`EVL Project - Latmus GPIO Response Time <https://evlproject.org/core/benchmarks/#latmus-gpio-response-time>`_.
+`EVL Project - Latmus GPIO Response Time <https://v4.xenomai.org/core/benchmarks/#latmus-gpio-response-time>`_.
 
 The main program is designed to monitor latency using GPIO pins on a Zephyr-based system. It generates a
 pulse signal on a GPIO pin and measures the time it takes for the SUT (executing Latmus) to respond to
@@ -100,7 +100,7 @@ Setup and Usage
 
 - **Run Latmus on the SUT**
 
-  Request the appropriate options with `Latmus <https://evlproject.org/core/testing/#latmus-program>`_. Users
+  Request the appropriate options with `Latmus <https://v4.xenomai.org/core/testing/#latmus-program>`_. Users
   can for example modify the sampling period with the ``-p`` option or generate histogram data for
   postprocessing with the ``-g`` option,
 
