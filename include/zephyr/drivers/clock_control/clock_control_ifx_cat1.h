@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
- * an affiliate of Cypress Semiconductor Corporation
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -470,6 +470,30 @@ static inline cy_rslt_t ifx_cat1_utils_peri_pclk_enable_divider(en_clk_dst_t clk
 #else
 	CY_UNUSED_PARAMETER(clk_dest);
 	return Cy_SysClk_PeriphEnableDivider(
+		IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(_clock->block), _clock->channel);
+#endif
+}
+
+/**
+ * @brief Disable the divider associated with a peripheral clock.
+ *
+ * A programmable divider must be disabled before its value is changed; the
+ * caller re-enables it afterwards so the new value takes effect cleanly.
+ *
+ * @param clk_dest Peripheral clock destination.
+ * @param _clock Clock descriptor.
+ * @return Result code from the underlying PDL call.
+ */
+static inline cy_rslt_t
+ifx_cat1_utils_peri_pclk_disable_divider(en_clk_dst_t clk_dest, const struct ifx_cat1_clock *_clock)
+{
+#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+	return Cy_SysClk_PeriPclkDisableDivider(
+		clk_dest, IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(_clock->block),
+		_clock->channel);
+#else
+	CY_UNUSED_PARAMETER(clk_dest);
+	return Cy_SysClk_PeriphDisableDivider(
 		IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(_clock->block), _clock->channel);
 #endif
 }
