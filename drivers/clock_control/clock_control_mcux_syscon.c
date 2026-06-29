@@ -654,21 +654,43 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 	case MCUX_I3C_CLK:
 #if CONFIG_SOC_FAMILY_MCXN
 		*rate = CLOCK_GetI3cClkFreq(0);
+#elif CONFIG_SOC_SERIES_MCXAXX7
+		*rate = CLOCK_GetI3CFClkFreq(0);
 #elif CONFIG_SOC_FAMILY_MCXA
 		*rate = CLOCK_GetI3CFClkFreq();
 #else
 		*rate = CLOCK_GetI3cClkFreq();
 #endif
 		break;
-#if (FSL_FEATURE_SOC_I3C_COUNT == 2)
+#if (FSL_FEATURE_SOC_I3C_COUNT >= 2)
 	case MCUX_I3C2_CLK:
 #if CONFIG_SOC_FAMILY_MCXN
 		*rate = CLOCK_GetI3cClkFreq(1);
+#elif CONFIG_SOC_SERIES_MCXAXX7
+		*rate = CLOCK_GetI3CFClkFreq(1);
 #else
 		*rate = CLOCK_GetI3cClkFreq();
 #endif
 		break;
-#endif /* (FSL_FEATURE_SOC_I3C_COUNT == 2) */
+#endif /* (FSL_FEATURE_SOC_I3C_COUNT >= 2) */
+#if (FSL_FEATURE_SOC_I3C_COUNT >= 3)
+	case MCUX_I3C3_CLK:
+#if CONFIG_SOC_SERIES_MCXAXX7
+		*rate = CLOCK_GetI3CFClkFreq(2);
+#else
+		*rate = CLOCK_GetI3cClkFreq(2);
+#endif
+		break;
+#endif /* (FSL_FEATURE_SOC_I3C_COUNT >= 3) */
+#if (FSL_FEATURE_SOC_I3C_COUNT >= 4)
+	case MCUX_I3C4_CLK:
+#if CONFIG_SOC_SERIES_MCXAXX7
+		*rate = CLOCK_GetI3CFClkFreq(3);
+#else
+		*rate = CLOCK_GetI3cClkFreq(3);
+#endif
+		break;
+#endif /* (FSL_FEATURE_SOC_I3C_COUNT >= 4) */
 
 #endif /* CONFIG_I3C_MCUX */
 
