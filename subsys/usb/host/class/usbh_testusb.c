@@ -136,7 +136,6 @@ static int testusb_submit(struct testusb_data *const data)
 
 	buf = net_buf_alloc_len(&testusb_buf_pool, data->length, K_NO_WAIT);
 	if (buf == NULL) {
-		usbh_xfer_free(udev, xfer);
 		ret = -ENOMEM;
 		goto err;
 	}
@@ -150,7 +149,6 @@ static int testusb_submit(struct testusb_data *const data)
 	ret = usbh_xfer_buf_add(udev, xfer, buf);
 	if (ret != 0) {
 		net_buf_unref(buf);
-		usbh_xfer_free(udev, xfer);
 		goto err;
 	}
 
@@ -160,7 +158,6 @@ static int testusb_submit(struct testusb_data *const data)
 	if (ret != 0) {
 		usbh_class_xfer_unanchor(xfer);
 		net_buf_unref(buf);
-		usbh_xfer_free(udev, xfer);
 		goto err;
 	}
 
@@ -169,6 +166,10 @@ static int testusb_submit(struct testusb_data *const data)
 	return 0;
 
 err:
+	if (xfer != NULL) {
+		(void)uhc_xfer_unref(xfer);
+	}
+
 	atomic_clear(&data->to_submit);
 	return ret;
 }
@@ -180,7 +181,7 @@ static int testusb_xfer_cb(struct usb_device *const udev,
 	const int err = xfer->err;
 
 	net_buf_unref(xfer->buf);
-	usbh_xfer_free(udev, xfer);
+	(void)uhc_xfer_unref(xfer);
 
 	if (err == 0) {
 		data->success++;
