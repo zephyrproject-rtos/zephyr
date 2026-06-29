@@ -15,8 +15,8 @@
  * Set point control is implemented at the soc level (see pm_state_set())
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PM_IMX_SPC_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_PM_IMX_SPC_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_POWER_IMX_SPC_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_POWER_IMX_SPC_H_
 
 #define IMX_GPC_RUN		0x0
 #define IMX_GPC_WAIT	0x1
@@ -115,4 +115,4 @@
 #define IMX_SPC_SET_POINT_15_SUSPEND	(IMX_SPC_15 | IMX_GPC_SUSPEND)
 
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PM_IMX_SPC_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_POWER_IMX_SPC_H_ */

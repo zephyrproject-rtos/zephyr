@@ -20,8 +20,8 @@
  *   Bits [7:0]   - Event type (0=INT, 1=DMA, 2=TRIGGER)
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_WUC_NXP_WUU_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_WUC_NXP_WUU_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_WUC_WUC_NXP_WUU_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_WUC_WUC_NXP_WUU_H_
 
 /** Bit position of the source-type field in an encoded wakeup source. */
 #define NXP_WUU_SOURCE_TYPE_POS  24
@@ -799,4 +799,4 @@
 /** Pin 31 any edge trigger */
 #define NXP_WUU_PIN_31_ANY_TRIGGER     NXP_WUU_PIN(31, NXP_WUU_EDGE_ANY, NXP_WUU_EVENT_TRIGGER)
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_WUC_NXP_WUU_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_WUC_WUC_NXP_WUU_H_ */
