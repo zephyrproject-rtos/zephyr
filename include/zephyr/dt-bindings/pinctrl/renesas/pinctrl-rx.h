@@ -13,8 +13,8 @@
  * pinctrl subsystem to describe peripheral pin mappings.
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_PINCTRL_RX_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_PINCTRL_RX_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RX_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RX_H_
 
 /**
  * @name Multi-Function Pin Controller (MPC) Definitions for Renesas RX SoCs.
@@ -503,4 +503,4 @@
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_PINCTRL_RX_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RX_H_ */
