@@ -61,11 +61,6 @@ LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 
 #define L2CAP_BR_PSM_SDP	0x0001
 
-#define L2CAP_BR_ZL_I_FRAME_FLAG_MASK 0xfffffeffU
-#define L2CAP_BR_ZL_I_FRAME_UD_FLAG   0xfffffeff
-#define L2CAP_BR_IS_ZERO_LEN_I_FRAME(flag)                                       \
-	((POINTER_TO_UINT(flag) & L2CAP_BR_ZL_I_FRAME_FLAG_MASK) == L2CAP_BR_ZL_I_FRAME_UD_FLAG)
-
 #define L2CAP_BR_INFO_TIMEOUT    K_SECONDS(4)
 #define L2CAP_BR_CFG_TIMEOUT     K_SECONDS(4)
 #define L2CAP_BR_DISCONN_TIMEOUT K_SECONDS(1)
@@ -415,6 +410,67 @@ static void cancel_data_ready(struct bt_l2cap_br_chan *br_chan)
 }
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
+struct l2cap_br_closure {
+	struct closure closure;
+	uint16_t sdu_len;
+	bool sent;
+} __packed;
+
+BUILD_ASSERT(sizeof(struct l2cap_br_closure) <= CONFIG_BT_CONN_TX_USER_DATA_SIZE);
+
+static inline void l2cap_br_make_closure(void *storage, void *cb, void *data, uint16_t sdu_len)
+{
+	((struct l2cap_br_closure *)storage)->closure.cb = cb;
+	((struct l2cap_br_closure *)storage)->closure.data = data;
+	((struct l2cap_br_closure *)storage)->sdu_len = sdu_len;
+	((struct l2cap_br_closure *)storage)->sent = false;
+}
+
+static inline void *l2cap_br_closure_cb(void *storage)
+{
+	return ((struct l2cap_br_closure *)storage)->closure.cb;
+}
+
+static inline void *l2cap_br_closure_data(void *storage)
+{
+	return ((struct l2cap_br_closure *)storage)->closure.data;
+}
+
+static inline uint16_t l2cap_br_closure_sdu_len(void *storage)
+{
+	return ((struct l2cap_br_closure *)storage)->sdu_len;
+}
+
+static inline bool l2cap_br_closure_sent(void *storage)
+{
+	return ((struct l2cap_br_closure *)storage)->sent;
+}
+
+static inline void l2cap_br_update_closure_sent(void *storage, bool sent)
+{
+	((struct l2cap_br_closure *)storage)->sent = sent;
+}
+
+static inline bool l2cap_br_sdu_is_pending(struct net_buf *sdu)
+{
+	return !l2cap_br_closure_sent(sdu->user_data);
+}
+
+static inline void l2cap_br_sdu_pull(struct net_buf *sdu, uint16_t len)
+{
+	net_buf_pull(sdu, len);
+	if (sdu->len == 0) {
+		l2cap_br_update_closure_sent(sdu->user_data, true);
+	}
+}
+
+static inline void l2cap_br_sdu_restore(struct net_buf *sdu,
+					struct net_buf_simple_state *state)
+{
+	net_buf_simple_restore(&sdu->b, state);
+	l2cap_br_update_closure_sent(sdu->user_data, false);
+}
+
 enum l2cap_br_timer_type {
 	BT_L2CAP_BR_TIMER_RET,
 	BT_L2CAP_BR_TIMER_MONITOR,
@@ -572,9 +628,9 @@ static void l2cap_br_sdu_is_done(struct bt_l2cap_br_chan *br_chan, struct net_bu
 		LOG_WRN("SDU %p is not found", sdu);
 	}
 
-	cb = closure_cb(sdu->user_data);
+	cb = l2cap_br_closure_cb(sdu->user_data);
 	if (cb) {
-		cb(br_chan->chan.conn, closure_data(sdu->user_data), err);
+		cb(br_chan->chan.conn, l2cap_br_closure_data(sdu->user_data), err);
 	}
 
 	/* Remove the pdu */
@@ -613,13 +669,7 @@ static int bt_l2cap_br_update_req_seq_direct(struct bt_l2cap_br_chan *br_chan, u
 		if (tx_win) {
 			sdu = tx_win->sdu;
 			__ASSERT(sdu, "Invalid sdu buffer on chan %p", br_chan);
-			net_buf_simple_restore(&sdu->b, &tx_win->sdu_state);
-			if ((tx_win->sar == BT_L2CAP_CONTROL_SAR_UNSEG) ||
-			    (tx_win->sar == BT_L2CAP_CONTROL_SAR_START)) {
-				br_chan->_sdu_total_len = 0;
-			} else {
-				br_chan->_sdu_total_len = tx_win->sdu_total_len;
-			}
+			l2cap_br_sdu_restore(sdu, &tx_win->sdu_state);
 			br_chan->next_tx_seq = tx_win->tx_seq;
 		}
 
@@ -631,8 +681,8 @@ static int bt_l2cap_br_update_req_seq_direct(struct bt_l2cap_br_chan *br_chan, u
 				sdu = tx_win->sdu;
 				__ASSERT(sdu, "Invalid sdu buffer on chan %p", br_chan);
 				if ((tx_win->sar == BT_L2CAP_CONTROL_SAR_UNSEG) ||
-					(tx_win->sar == BT_L2CAP_CONTROL_SAR_START)) {
-					net_buf_simple_restore(&sdu->b, &tx_win->sdu_state);
+				    (tx_win->sar == BT_L2CAP_CONTROL_SAR_START)) {
+					l2cap_br_sdu_restore(sdu, &tx_win->sdu_state);
 				}
 			}
 		}
@@ -829,12 +879,66 @@ static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	return true;
 }
 
+static int bt_l2cap_br_basic_mode_send_buf_init(struct bt_l2cap_br_chan *chan, struct net_buf *buf,
+						bt_conn_tx_cb_t cb, void *user_data)
+{
+	struct bt_l2cap_hdr *hdr;
+
+	hdr = net_buf_push(buf, sizeof(*hdr));
+	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
+	hdr->cid = sys_cpu_to_le16(chan->tx.cid);
+
+	if (buf->user_data_size < sizeof(struct closure)) {
+		LOG_WRN("not enough room in user_data %d < %d pool %u",
+			buf->user_data_size,
+			CONFIG_BT_CONN_TX_USER_DATA_SIZE,
+			buf->pool_id);
+		return -EINVAL;
+	}
+
+	LOG_DBG("push PDU: cb %p userdata %p", cb, user_data);
+
+	make_closure(buf->user_data, cb, user_data);
+
+	return 0;
+}
+
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+static int bt_l2cap_br_non_basic_mode_send_buf_init(struct net_buf *buf, bt_conn_tx_cb_t cb,
+						    void *user_data)
+{
+	if (buf->user_data_size < sizeof(struct l2cap_br_closure)) {
+		LOG_WRN("not enough room in user_data %d < %d pool %u",
+			buf->user_data_size,
+			CONFIG_BT_CONN_TX_USER_DATA_SIZE,
+			buf->pool_id);
+		return -EINVAL;
+	}
+
+	LOG_DBG("push PDU: cb %p userdata %p sdu_len %u", cb, user_data, buf->len);
+
+	l2cap_br_make_closure(buf->user_data, cb, user_data, buf->len);
+	return 0;
+}
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+
+static int bt_l2cap_br_send_buf_init(struct bt_l2cap_br_chan *chan, struct net_buf *buf,
+				     bt_conn_tx_cb_t cb, void *user_data)
+{
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	if (chan->tx.mode != BT_L2CAP_BR_LINK_MODE_BASIC) {
+		return bt_l2cap_br_non_basic_mode_send_buf_init(buf, cb, user_data);
+	}
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+	return bt_l2cap_br_basic_mode_send_buf_init(chan, buf, cb, user_data);
+}
+
 int bt_l2cap_br_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
 			bt_conn_tx_cb_t cb, void *user_data)
 {
 	struct bt_l2cap_chan *ch = bt_l2cap_br_lookup_tx_cid(conn, cid);
 	struct bt_l2cap_br_chan *br_chan;
-	struct bt_l2cap_hdr *hdr;
+	int err;
 
 	if (ch == NULL) {
 		LOG_WRN("CID %d is not found on conn %p", cid, conn);
@@ -858,34 +962,11 @@ int bt_l2cap_br_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_BT_L2CAP_RET_FC)
-	if (br_chan->tx.mode == BT_L2CAP_BR_LINK_MODE_BASIC) {
-		hdr = net_buf_push(buf, sizeof(*hdr));
-		hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
-		hdr->cid = sys_cpu_to_le16(cid);
-	} else {
-		if ((cb == NULL) && (user_data == NULL) && (buf->len == 0)) {
-			/* Mask it is a zero-length I-frame */
-			user_data = UINT_TO_POINTER(L2CAP_BR_ZL_I_FRAME_UD_FLAG);
-		}
-	}
-#else
-	hdr = net_buf_push(buf, sizeof(*hdr));
-	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
-	hdr->cid = sys_cpu_to_le16(cid);
-#endif /* CONFIG_BT_L2CAP_RET_FC */
-
-	if (buf->user_data_size < sizeof(struct closure)) {
-		LOG_WRN("not enough room in user_data %d < %d pool %u",
-			buf->user_data_size,
-			CONFIG_BT_CONN_TX_USER_DATA_SIZE,
-			buf->pool_id);
-		return -EINVAL;
+	err = bt_l2cap_br_send_buf_init(br_chan, buf, cb, user_data);
+	if (err != 0) {
+		return err;
 	}
 
-	LOG_DBG("push PDU: cb %p userdata %p", cb, user_data);
-
-	make_closure(buf->user_data, cb, user_data);
 	sys_slist_append(&br_chan->_pdu_tx_queue, &buf->node);
 	raise_data_ready(br_chan);
 
@@ -1094,11 +1175,7 @@ static struct net_buf *l2cap_br_get_next_sdu(struct bt_l2cap_br_chan *br_chan)
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&br_chan->_pdu_tx_queue, sdu, next, node) {
-		if (sdu->len) {
-			return sdu;
-		}
-
-		if (L2CAP_BR_IS_ZERO_LEN_I_FRAME(closure_data(sdu->user_data))) {
+		if (l2cap_br_sdu_is_pending(sdu)) {
 			return sdu;
 		}
 	}
@@ -1347,16 +1424,12 @@ send_i_frame:
 		if (first) {
 			bool last_seg;
 			bool start_seg;
+			uint16_t sdu_len;
 
-			start_seg = br_chan->_sdu_total_len ? false : true;
-
-			if (start_seg) {
-				br_chan->_sdu_total_len = pdu->len;
-			} else {
-				if (br_chan->_sdu_total_len <= pdu->len) {
-					start_seg = true;
-				}
-			}
+			sdu_len = l2cap_br_closure_sdu_len(pdu->user_data);
+			start_seg = sdu_len > pdu->len ? false : true;
+			__ASSERT(sdu_len >= pdu->len, "SDU length mismatch %u < %u", sdu_len,
+				 pdu->len);
 
 			net_buf_simple_save(&pdu->b, &tx_win->sdu_state);
 
@@ -1403,7 +1476,6 @@ send_i_frame:
 			tx_win->retransmit = false;
 			tx_win->sar = sar;
 			tx_win->transmit_counter = 1;
-			tx_win->sdu_total_len = br_chan->_sdu_total_len;
 			tx_win->sdu = pdu;
 
 			LOG_DBG("Sending I-frame %u: buf %p chan %p len %zu", tx_win->tx_seq, pdu,
@@ -1467,11 +1539,7 @@ send_i_frame:
 			br_chan->next_tx_seq =
 				bt_l2cap_br_update_seq(br_chan, br_chan->next_tx_seq + 1);
 
-			if (L2CAP_BR_IS_ZERO_LEN_I_FRAME(closure_data(pdu->user_data))) {
-				make_closure(pdu->user_data, NULL, NULL);
-			}
-
-			net_buf_pull(pdu, pdu_len);
+			l2cap_br_sdu_pull(pdu, pdu_len);
 
 			if (br_chan->rx.mode != BT_L2CAP_BR_LINK_MODE_STREAM) {
 				sys_slist_append(&br_chan->_pdu_outstanding, &tx_win->node);
@@ -1510,9 +1578,6 @@ done:
 	} else {
 		net_buf_drop(&br_chan->_pdu_buf);
 		br_chan->_pdu_remaining = 0;
-		if (pdu && !pdu->len) {
-			br_chan->_sdu_total_len = 0;
-		}
 
 		LOG_DBG("done sending PDU");
 
