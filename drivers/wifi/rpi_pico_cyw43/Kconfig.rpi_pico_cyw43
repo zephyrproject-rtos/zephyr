@@ -16,6 +16,10 @@ menuconfig WIFI_RPI_PICO_CYW43
 
 if WIFI_RPI_PICO_CYW43
 
+config RPI_PICO_CYW43_GPIO_INIT_PRIORITY
+	int "Wifi gpio driver init priority"
+	default 80
+
 config WIFI_RPI_PICO_CYW43_USE_FIXED_MAC_ADDRESS
 	bool "Use a fixed MAC address instead of reading it from OTP"
 	default n
