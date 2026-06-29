@@ -249,7 +249,7 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	sb->s_last_orphan         = sys_cpu_to_le32(0);
 
 	memcpy(sb->s_uuid, cfg->uuid, 16);
-	strcpy(sb->s_volume_name, cfg->volume_name);
+	strncpy(sb->s_volume_name, cfg->volume_name, sizeof(sb->s_volume_name));
 
 	if (ext2_write_block(fs, sb_block) < 0) {
 		ret = -EIO;
