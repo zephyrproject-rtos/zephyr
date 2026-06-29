@@ -180,5 +180,29 @@ ZTEST(dma_m2m, test_tst_dma1_m2m_chan1_burst16)
 #endif /* CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS > 1 */
 
 #if CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS > 2
-#error "Update test_dma.c to add ZTEST cases for tst_dma2 and beyond."
+ZTEST(dma_m2m, test_tst_dma2_m2m_chan0_burst8)
+{
+	RUN_DMA_M2M_TEST(tst_dma2, CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 8);
+}
+
+ZTEST(dma_m2m, test_tst_dma2_m2m_chan1_burst8)
+{
+	RUN_DMA_M2M_TEST(tst_dma2, CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 8);
+}
+
+#if CONFIG_DMA_TRANSFER_BURST16
+ZTEST(dma_m2m, test_tst_dma2_m2m_chan0_burst16)
+{
+	RUN_DMA_M2M_TEST(tst_dma2, CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 16);
+}
+
+ZTEST(dma_m2m, test_tst_dma2_m2m_chan1_burst16)
+{
+	RUN_DMA_M2M_TEST(tst_dma2, CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 16);
+}
+#endif
+#endif /* CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS > 2 */
+
+#if CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS > 3
+#error "Update test_dma.c to add ZTEST cases for tst_dma3 and beyond."
 #endif
