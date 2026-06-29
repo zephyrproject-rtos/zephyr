@@ -234,7 +234,8 @@ enum net_l2_flags virtual_flags(struct net_if *iface)
 	return ctx->virtual_l2_flags;
 }
 
-#if defined(CONFIG_NET_L2_ETHERNET_RESERVE_HEADER) && defined(CONFIG_NET_VLAN)
+#if defined(CONFIG_NET_L2_ETHERNET_RESERVE_HEADER) && defined(CONFIG_NET_VLAN) \
+	&& CONFIG_NET_VLAN_COUNT > 0
 extern int vlan_alloc_buffer(struct net_if *iface, struct net_pkt *pkt,
 			     size_t size, uint16_t proto, k_timeout_t timeout);
 

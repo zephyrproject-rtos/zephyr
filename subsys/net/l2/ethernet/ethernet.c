@@ -553,10 +553,19 @@ static inline size_t get_reserve_ll_header_size(struct net_if *iface)
 	bool is_vlan = false;
 
 #if defined(CONFIG_NET_VLAN)
+#if CONFIG_NET_VLAN_COUNT > 0
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
 		iface = net_eth_get_vlan_main(iface);
 		is_vlan = true;
 	}
+#else
+	/* When CONFIG_NET_VLAN_COUNT = 0, priority-tagged
+	 * frames are supported on the main Ethernet interface.
+	 */
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+		is_vlan = true;
+	}
+#endif
 #endif
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
@@ -581,7 +590,6 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 {
 	struct net_if *orig_iface = iface;
 	struct net_buf *hdr_frag;
-	struct net_eth_hdr *hdr;
 	size_t reserve_ll_header;
 	size_t hdr_len;
 	bool is_vlan;
@@ -597,11 +605,6 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 	if (reserve_ll_header > 0) {
 		hdr_len = reserve_ll_header;
 		hdr_frag = pkt->buffer;
-
-		NET_DBG("Making room for link header %zd bytes", hdr_len);
-
-		/* Make room for the header */
-		net_buf_push(pkt->buffer, hdr_len);
 	} else {
 		hdr_len = IS_ENABLED(CONFIG_NET_VLAN) ?
 			sizeof(struct net_eth_vlan_hdr) :
@@ -616,9 +619,14 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 	if (is_vlan) {
 		struct net_eth_vlan_hdr *hdr_vlan;
 
+		NET_ASSERT(hdr_len >= sizeof(struct net_eth_vlan_hdr));
+		hdr_len = sizeof(struct net_eth_vlan_hdr);
+
 		if (reserve_ll_header == 0U) {
-			hdr_len = sizeof(struct net_eth_vlan_hdr);
 			net_buf_add(hdr_frag, hdr_len);
+		} else {
+			/* Make room for the header */
+			net_buf_push(pkt->buffer, hdr_len);
 		}
 
 		hdr_vlan = (struct net_eth_vlan_hdr *)(hdr_frag->data);
@@ -642,12 +650,19 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 				    hdr_len,
 				    &hdr_vlan->src, &hdr_vlan->dst, false);
 	} else {
-		hdr = (struct net_eth_hdr *)(hdr_frag->data);
+		struct net_eth_hdr *hdr;
+
+		NET_ASSERT(hdr_len >= sizeof(struct net_eth_hdr));
+		hdr_len = sizeof(struct net_eth_hdr);
 
 		if (reserve_ll_header == 0U) {
-			hdr_len = sizeof(struct net_eth_hdr);
 			net_buf_add(hdr_frag, hdr_len);
+		} else {
+			/* Make room for the header */
+			net_buf_push(pkt->buffer, hdr_len);
 		}
+
+		hdr = (struct net_eth_hdr *)(hdr_frag->data);
 
 		if (ptype == net_htons(NET_ETH_PTYPE_ARP) ||
 		    (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr->dst) &&
