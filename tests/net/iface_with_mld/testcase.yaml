@@ -6,3 +6,6 @@ common:
     - iface
 tests:
   net.iface.with_mld: {}
+  net.iface.with_mld.no_dad:
+    extra_configs:
+      - CONFIG_NET_IPV6_DAD=n

@@ -47,10 +47,20 @@
 static struct net_if *slow_iface;
 static struct net_if *fast_iface;
 
+/* Dedicated interface for the solicited-node multicast join regression test,
+ * kept separate so it does not perturb the deadlock test above.
+ */
+static struct net_if *dad_iface;
+
 static struct net_in6_addr slow_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0xaa, 0, 0, 0,
 					     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 static struct net_in6_addr fast_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0xbb, 0, 0, 0,
 					     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+/* Added while dad_iface is up, so addr_add() must join the solicited-node
+ * group on its own (rather than relying on the interface bring-up path).
+ */
+static struct net_in6_addr dad_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0xcc, 0, 0, 0,
+					    0, 0, 0, 0, 0, 0xab, 0xcd, 0xef } } };
 
 static atomic_t slow_start_armed;
 static K_SEM_DEFINE(slow_in_start, 0, 1);
@@ -66,6 +76,9 @@ static struct dummy_dev_data slow_data = {
 };
 static struct dummy_dev_data fast_data = {
 	.mac = { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x02 },
+};
+static struct dummy_dev_data dad_data = {
+	.mac = { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x03 },
 };
 
 static void dummy_iface_init(struct net_if *iface)
@@ -125,12 +138,22 @@ static struct dummy_api fast_api = {
 	.stop = dummy_dev_stop,
 };
 
+static struct dummy_api dad_api = {
+	.iface_api.init = dummy_iface_init,
+	.send = dummy_dev_send,
+	.stop = dummy_dev_stop,
+};
+
 NET_DEVICE_INIT(slow_iface_dev, "slow_iface", NULL, NULL, &slow_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &slow_api, DUMMY_L2,
 		NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 
 NET_DEVICE_INIT(fast_iface_dev, "fast_iface", NULL, NULL, &fast_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &fast_api, DUMMY_L2,
+		NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
+
+NET_DEVICE_INIT(dad_iface_dev, "dad_iface", NULL, NULL, &dad_data, NULL,
+		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &dad_api, DUMMY_L2,
 		NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 
 static K_THREAD_STACK_DEFINE(slow_stack, 2048);
@@ -164,9 +187,11 @@ static void *iface_with_mld_setup(void)
 
 	slow_iface = net_if_lookup_by_dev(DEVICE_GET(slow_iface_dev));
 	fast_iface = net_if_lookup_by_dev(DEVICE_GET(fast_iface_dev));
+	dad_iface = net_if_lookup_by_dev(DEVICE_GET(dad_iface_dev));
 
 	zassert_not_null(slow_iface, "slow_iface not found");
 	zassert_not_null(fast_iface, "fast_iface not found");
+	zassert_not_null(dad_iface, "dad_iface not found");
 
 	ifaddr = net_if_ipv6_addr_add(slow_iface, &slow_addr, NET_ADDR_MANUAL, 0);
 	zassert_not_null(ifaddr, "Cannot add IPv6 address to slow_iface");
@@ -205,6 +230,52 @@ ZTEST(net_iface_with_mld, test_concurrent_bringup_no_deadlock)
 
 	zassert_true(net_if_is_up(slow_iface), "slow_iface is not up");
 	zassert_true(net_if_is_up(fast_iface), "fast_iface is not up");
+}
+
+/*
+ * Adding a unicast address to an up, multicast-capable interface must join the
+ * corresponding solicited-node multicast group (RFC 4291 ch 2.8) so that the
+ * node answers neighbor solicitations for it. This must happen regardless of
+ * whether Duplicate Address Detection is enabled (CONFIG_NET_IPV6_DAD); a
+ * regression once tied the join to DAD being active, leaving addresses added at
+ * runtime with DAD disabled unreachable. The no_dad test variant exercises that
+ * case.
+ */
+ZTEST(net_iface_with_mld, test_addr_add_joins_solicited_node)
+{
+	struct net_in6_addr solicited;
+	struct net_if_addr *ifaddr;
+	struct net_if_mcast_addr *maddr;
+	int ret;
+
+	/* Bring the interface up first, with no address yet, so the join can
+	 * only come from the address add below (not the bring-up path).
+	 */
+	ret = net_if_up(dad_iface);
+	zassert_ok(ret, "Cannot bring dad_iface up");
+
+	net_ipv6_addr_create_solicited_node(&dad_addr, &solicited);
+
+	/* The solicited-node group must not be joined yet. */
+	maddr = net_if_ipv6_maddr_lookup(&solicited, &dad_iface);
+	zassert_is_null(maddr, "Solicited-node group joined before address add");
+
+	ifaddr = net_if_ipv6_addr_add(dad_iface, &dad_addr, NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr, "Cannot add IPv6 address to dad_iface");
+
+	/* Adding the address must have joined the solicited-node group. */
+	maddr = net_if_ipv6_maddr_lookup(&solicited, &dad_iface);
+	zassert_not_null(maddr,
+			 "Solicited-node group not joined on address add");
+
+	if (!IS_ENABLED(CONFIG_NET_IPV6_DAD)) {
+		/* Without DAD the address must be usable immediately. */
+		zassert_equal(ifaddr->addr_state, NET_ADDR_PREFERRED,
+			      "Address not preferred when DAD is disabled");
+	}
+
+	ret = net_if_ipv6_addr_rm(dad_iface, &dad_addr);
+	zassert_true(ret, "Cannot remove IPv6 address from dad_iface");
 }
 
 ZTEST_SUITE(net_iface_with_mld, NULL, iface_with_mld_setup, NULL, NULL, NULL);
