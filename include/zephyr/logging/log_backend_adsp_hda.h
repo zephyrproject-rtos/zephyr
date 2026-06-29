@@ -10,8 +10,8 @@
  * @ingroup log_backend_adsp_hda
  */
 
-#ifndef ZEPHYR_LOG_BACKEND_ADSP_HDA_H_
-#define ZEPHYR_LOG_BACKEND_ADSP_HDA_H_
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_ADSP_HDA_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_ADSP_HDA_H_
 
 /**
  * @brief Intel ADSP HDA log backend API
@@ -44,4 +44,4 @@ void adsp_hda_log_init(adsp_hda_log_hook_t hook, uint32_t channel);
 
 /** @} */
 
-#endif /* ZEPHYR_LOG_BACKEND_ADSP_HDA_H_ */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_ADSP_HDA_H_ */

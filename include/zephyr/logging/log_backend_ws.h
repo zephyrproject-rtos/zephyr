@@ -10,8 +10,8 @@
  * @ingroup log_backend_ws
  */
 
-#ifndef ZEPHYR_LOG_BACKEND_WS_H_
-#define ZEPHYR_LOG_BACKEND_WS_H_
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_WS_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_WS_H_
 
 /**
  * @brief Websocket log backend API
@@ -68,4 +68,4 @@ void log_backend_ws_start(void);
 
 /** @} */
 
-#endif /* ZEPHYR_LOG_BACKEND_WS_H_ */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_WS_H_ */

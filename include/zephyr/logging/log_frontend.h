@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef LOG_FRONTEND_H_
-#define LOG_FRONTEND_H_
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_FRONTEND_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_FRONTEND_H_
 
 #include <zephyr/logging/log_core.h>
 
@@ -81,4 +81,4 @@ void log_frontend_simple_2(const void *source, uint32_t level,
 /** @brief Panic state notification. */
 void log_frontend_panic(void);
 
-#endif /* LOG_FRONTEND_H_ */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_FRONTEND_H_ */

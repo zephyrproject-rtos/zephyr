@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_LOG_BACKEND_STD_H_
-#define ZEPHYR_LOG_BACKEND_STD_H_
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_STD_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_STD_H_
 
 #include <zephyr/logging/log_msg.h>
 #include <zephyr/logging/log_output.h>
@@ -94,4 +94,4 @@ log_backend_std_dropped(const struct log_output *const output, uint32_t cnt)
 }
 #endif
 
-#endif /* ZEPHYR_LOG_BACKEND_STD_H_ */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_STD_H_ */
