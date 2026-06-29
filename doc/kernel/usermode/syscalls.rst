@@ -383,6 +383,13 @@ the copy and not the original data sent by the user. The
 :c:func:`k_usermode_to_copy()` and :c:func:`k_usermode_from_copy()` APIs exist for
 this purpose.
 
+C strings passed from user mode need similar care, since their length is not
+known in advance and the terminating ``NUL`` must be located without reading
+past memory the caller can access. The :c:func:`k_usermode_string_copy()` and
+:c:func:`k_usermode_string_alloc_copy()` helpers safely validate and copy a
+user-supplied string into kernel-controlled memory before it is used by the
+implementation function.
+
 There is one exception in place, with respect to large data buffers which are
 only used to provide a memory area that is either only written to, or whose
 contents are never used for any validation or control flow. Further
