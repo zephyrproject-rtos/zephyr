@@ -63,7 +63,7 @@ static int get_passkey_confirmation(struct bt_conn *conn)
 	k_sleep(K_SECONDS(1));
 	k_poll_signal_reset(&button_pressed_signal);
 
-	return err ? -1 : 0;
+	return err;
 }
 
 static int setup_btn(void)
@@ -74,21 +74,21 @@ static int setup_btn(void)
 
 	if (!gpio_is_ready_dt(&button)) {
 		LOG_ERR("Error: button device %s is not ready", button.port->name);
-		return -1;
+		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&button, GPIO_INPUT);
 	if (ret != 0) {
 		LOG_ERR("Error %d: failed to configure %s pin %d", ret, button.port->name,
 			button.pin);
-		return -1;
+		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret != 0) {
 		LOG_ERR("Error %d: failed to configure interrupt on %s pin %d", ret,
 			button.port->name, button.pin);
-		return -1;
+		return ret;
 	}
 
 	gpio_init_callback(&button_cb_data, button_pressed, BIT(button.pin));
