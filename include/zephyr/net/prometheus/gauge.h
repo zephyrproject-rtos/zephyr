@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_PROMETHEUS_GAUGE_H_
-#define ZEPHYR_INCLUDE_PROMETHEUS_GAUGE_H_
+#ifndef ZEPHYR_INCLUDE_NET_PROMETHEUS_GAUGE_H_
+#define ZEPHYR_INCLUDE_NET_PROMETHEUS_GAUGE_H_
 
 /**
  * @file
@@ -87,4 +87,4 @@ int prometheus_gauge_set(struct prometheus_gauge *gauge, double value);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_PROMETHEUS_GAUGE_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_PROMETHEUS_GAUGE_H_ */

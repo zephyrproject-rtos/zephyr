@@ -9,8 +9,8 @@
  * @brief HTTP2 frame information.
  */
 
-#ifndef ZEPHYR_INCLUDE_NET_HTTP_SERVER_FRAME_H_
-#define ZEPHYR_INCLUDE_NET_HTTP_SERVER_FRAME_H_
+#ifndef ZEPHYR_INCLUDE_NET_HTTP_FRAME_H_
+#define ZEPHYR_INCLUDE_NET_HTTP_FRAME_H_
 
 #include <stdint.h>
 
@@ -89,4 +89,4 @@ enum http2_settings {
 }
 #endif
 
-#endif
+#endif /* ZEPHYR_INCLUDE_NET_HTTP_FRAME_H_ */
