@@ -10,8 +10,8 @@
  * @ingroup reset_controller_gigadevice
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RESET_GD32_RESET_COMMON_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_RESET_GD32_RESET_COMMON_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RESET_GD32_COMMON_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_RESET_GD32_COMMON_H_
 
 /**
  * @defgroup reset_controller_gigadevice GigaDevice reset controller helpers
@@ -58,4 +58,4 @@
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_RESET_GD32_RESET_COMMON_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_RESET_GD32_COMMON_H_ */
