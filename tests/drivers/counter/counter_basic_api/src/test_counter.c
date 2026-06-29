@@ -81,6 +81,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_SYSCTR
 	DEVS_FOR_DT_COMPAT(nxp_sysctr)
 #endif
+#ifdef CONFIG_COUNTER_MCUX_TSTMR
+	DEVS_FOR_DT_COMPAT(nxp_tstmr)
+#endif
 #ifdef CONFIG_COUNTER_MCUX_CTIMER
 	DEVS_FOR_DT_COMPAT(nxp_lpc_ctimer)
 #endif
