@@ -668,7 +668,7 @@ static int hl78xx_get_operator_format(struct hl78xx_data *data, void *info, size
 		return -EINVAL;
 	}
 
-	if (!data->status.network_info.operator.has_operator) {
+	if (!data->status.network_info.operator_info.has_operator) {
 		ret = hl78xx_refresh_network_operator(data);
 		if (ret < 0) {
 			return ret;
@@ -677,10 +677,11 @@ static int hl78xx_get_operator_format(struct hl78xx_data *data, void *info, size
 
 	k_mutex_lock(&data->api_lock, K_FOREVER);
 
-	if (!data->status.network_info.operator.has_operator) {
+	if (!data->status.network_info.operator_info.has_operator) {
 		ret = -ENODATA;
 	} else {
-		*(enum hl78xx_operator_format *)info = data->status.network_info.operator.format;
+		*(enum hl78xx_operator_format *)info =
+			data->status.network_info.operator_info.format;
 	}
 
 	k_mutex_unlock(&data->api_lock);
@@ -695,8 +696,8 @@ static int hl78xx_prepare_operator_format(const struct device *dev, struct hl78x
 	bool already_set;
 
 	k_mutex_lock(&data->api_lock, K_FOREVER);
-	already_set = data->status.network_info.operator.has_operator &&
-		      (data->status.network_info.operator.format == format);
+	already_set = data->status.network_info.operator_info.has_operator &&
+		      (data->status.network_info.operator_info.format == format);
 	k_mutex_unlock(&data->api_lock);
 
 	if (already_set) {
@@ -728,11 +729,12 @@ static int hl78xx_get_operator_string(const struct device *dev, struct hl78xx_da
 
 	k_mutex_lock(&data->api_lock, K_FOREVER);
 
-	if (!data->status.network_info.operator.has_operator) {
+	if (!data->status.network_info.operator_info.has_operator) {
 		ret = -ENODATA;
 	} else {
 		safe_strncpy((char *)info,
-			     (const char *)data->status.network_info.operator.operator, size);
+			     (const char *)data->status.network_info.operator_info.operator_name,
+			     size);
 	}
 
 	k_mutex_unlock(&data->api_lock);
@@ -771,10 +773,10 @@ static int hl78xx_get_mcc(struct hl78xx_data *data, void *info, size_t size)
 
 	k_mutex_lock(&data->api_lock, K_FOREVER);
 
-	if (!data->status.network_info.operator.has_mcc) {
+	if (!data->status.network_info.operator_info.has_mcc) {
 		ret = -ENODATA;
 	} else {
-		*(uint16_t *)info = data->status.network_info.operator.mcc;
+		*(uint16_t *)info = data->status.network_info.operator_info.mcc;
 	}
 
 	k_mutex_unlock(&data->api_lock);
@@ -792,10 +794,10 @@ static int hl78xx_get_mnc(struct hl78xx_data *data, void *info, size_t size)
 
 	k_mutex_lock(&data->api_lock, K_FOREVER);
 
-	if (!data->status.network_info.operator.has_mnc) {
+	if (!data->status.network_info.operator_info.has_mnc) {
 		ret = -ENODATA;
 	} else {
-		*(uint16_t *)info = data->status.network_info.operator.mnc;
+		*(uint16_t *)info = data->status.network_info.operator_info.mnc;
 	}
 
 	k_mutex_unlock(&data->api_lock);
