@@ -93,7 +93,9 @@ static int discard_ep_request(struct usbh_context *const ctx,
 		uhc_xfer_buf_free(dev, xfer->buf);
 	}
 
-	return uhc_xfer_free(dev, xfer);
+	(void)uhc_xfer_unref(xfer);
+
+	return 0;
 }
 
 static ALWAYS_INLINE int usbh_event_handler(struct usbh_context *const ctx,
