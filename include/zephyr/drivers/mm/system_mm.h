@@ -12,8 +12,8 @@
  * driver. Only one instance is permitted on the system.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_SYSTEM_MM_H_
-#define ZEPHYR_INCLUDE_DRIVERS_SYSTEM_MM_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MM_SYSTEM_MM_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MM_SYSTEM_MM_H_
 
 #include <zephyr/types.h>
 
@@ -488,4 +488,4 @@ void sys_mm_drv_query_memory_regions_free(const struct sys_mm_drv_region *region
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_SYSTEM_MM_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MM_SYSTEM_MM_H_ */
