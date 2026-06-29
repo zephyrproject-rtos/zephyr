@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_GD32_H_
-#define ZEPHYR_INCLUDE_DRIVERS_DMA_GD32_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_GD32_H_
+#define ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_GD32_H_
 
 #define GD32_DMA_CONFIG_DIRECTION(config)	     ((config >> 6) & 0x3)
 #define GD32_DMA_CONFIG_PERIPH_ADDR_INC(config)	     ((config >> 9) & 0x1)
@@ -17,4 +17,4 @@
 
 #define GD32_DMA_FEATURES_FIFO_THRESHOLD(threshold) (threshold & 0x3)
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_GD32_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_GD32_H_ */
