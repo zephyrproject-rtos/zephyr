@@ -6078,8 +6078,7 @@ void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf)
 
 	if (buf->len < sizeof(*hdr)) {
 		LOG_ERR("Too small L2CAP PDU received");
-		net_buf_unref(buf);
-		return;
+		goto done;
 	}
 
 	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
@@ -6088,8 +6087,7 @@ void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf)
 	chan = bt_l2cap_br_lookup_rx_cid(conn, cid);
 	if (!chan) {
 		LOG_WRN("Ignoring data for unknown channel ID 0x%04x", cid);
-		net_buf_unref(buf);
-		return;
+		goto done;
 	}
 
 	/*
@@ -6097,6 +6095,11 @@ void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf)
 	 * Response we connect channel here.
 	 */
 	check_fixed_channel(chan);
+
+	if (BR_CHAN(chan)->state < BT_L2CAP_CONNECTED) {
+		LOG_ERR("Chan %p in invalid state %u, ignoring data", chan, BR_CHAN(chan)->state);
+		goto done;
+	}
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	if (BR_CHAN(chan)->rx.mode != BT_L2CAP_BR_LINK_MODE_BASIC) {
@@ -6109,6 +6112,8 @@ void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf)
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	}
 #endif /* CONFIG_BT_L2CAP_RET_FC */
+
+done:
 	net_buf_unref(buf);
 }
 
