@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +43,13 @@
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/cache.h>
 #include "sdhc_helpers.h"
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/pm.h>
+
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+#include <power.h>
+#endif
 
 #include "cy_sd_host.h"
 #include "cy_sysclk.h"
@@ -86,6 +93,10 @@ struct __aligned(CONFIG_SDHC_BUFFER_ALIGNMENT) sdhc_infineon_data {
 	struct sdhc_host_props props;
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 	struct ifx_cat1_clock clock;
+#endif
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+	/* Warm-boot generation this instance was last rebuilt at (retained). */
+	uint32_t warm_boot_gen;
 #endif
 	uint32_t irq_cause;
 	void *sdio_cb_user_data;
@@ -546,6 +557,21 @@ static int sdhc_infineon_request(const struct device *dev, struct sdhc_command *
 	/* Reset semaphore */
 	k_sem_reset(&sdhc_data->transfer_sem);
 
+	/*
+	 * Reference the device for the duration of the request. With device
+	 * runtime PM this resumes the controller; inert under system-managed PM.
+	 */
+	(void)pm_device_runtime_get(dev);
+
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+	/*
+	 * If a DeepSleep-RAM warm boot happened since this instance was last
+	 * used, rebuild the host controller here, in the caller's thread
+	 * context, before issuing the command.  A no-op on every other call.
+	 */
+	(void)ifx_pm_warm_boot_reinit(dev, &sdhc_data->warm_boot_gen);
+#endif
+
 	cy_stc_sd_host_cmd_config_t cmd_config = {
 		.commandIndex = cmd->opcode,
 		.commandArgument = cmd->arg,
@@ -676,6 +702,8 @@ end:
 	} else {
 		sdhc_data->app_cmd = false;
 	}
+
+	(void)pm_device_runtime_put(dev);
 	k_sem_give(&sdhc_data->thread_lock);
 
 	return result;
@@ -1033,6 +1061,73 @@ static int sdhc_infineon_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int sdhc_infineon_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct sdhc_infineon_config *const config = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/*
+		 * Refuse to suspend while a command or data transfer is still on
+		 * the bus: entering DeepSleep gates the SDHC clock and would
+		 * corrupt the in-flight transaction (the controller stops driving
+		 * the clock mid-transfer).  The present-state command and data
+		 * inhibit bits are set while the respective lines are busy.
+		 * Returning -EBUSY aborts the low-power transition; the PM
+		 * subsystem retries once the bus is idle.
+		 */
+		if ((Cy_SD_Host_GetPresentState(config->reg_addr) &
+		     (CY_SD_HOST_CMD_INHIBIT | CY_SD_HOST_CMD_CMD_INHIBIT_DAT)) != 0U) {
+			return -EBUSY;
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/*
+		 * A regular DeepSleep gates the clocks but retains the SDHC
+		 * configuration, so nothing needs restoring on that path.  The
+		 * DeepSleep-RAM warm-boot case, where the peripheral domain is
+		 * power-cycled and all SDHC state is lost, is a power-loss
+		 * transition handled by PM_DEVICE_ACTION_TURN_ON.
+		 */
+		break;
+#if defined(CONFIG_PM_S2RAM)
+	case PM_DEVICE_ACTION_TURN_ON:
+		/*
+		 * Power-loss recovery.  A DeepSleep-RAM warm boot power-cycles the
+		 * peripheral domain and loses all SDHC state, so fully re-initialize
+		 * the controller: re-apply pinctrl, re-assign the peripheral clock
+		 * divider, re-enable and re-init the SD host block, and clear the
+		 * slot data so the card is re-initialized on the next set_io().
+		 * This action is emitted only on a genuine DS-RAM warm boot, by the
+		 * SoC's deferred re-init worker running in thread context.
+		 */
+		return sdhc_infineon_init(dev);
+#endif /* CONFIG_PM_S2RAM */
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
+/*
+ * Enable device runtime PM on cold boot only. sdhc_infineon_init() doubles as
+ * the PM TURN_ON handler and re-runs on every warm boot, so the enable lives in
+ * this helper (called from the per-instance init wrapper) instead.
+ */
+static int sdhc_infineon_pm_runtime_enable(const struct device *dev)
+{
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	/* System-managed PM still applies when the device is left unreferenced. */
+	return pm_device_runtime_enable(dev);
+#else
+	ARG_UNUSED(dev);
+	return 0;
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
+}
+
 static DEVICE_API(sdhc, sdhc_infineon_api) = {
 	.reset = sdhc_infineon_reset,
 	.request = sdhc_infineon_request,
@@ -1097,8 +1192,14 @@ static DEVICE_API(sdhc, sdhc_infineon_api) = {
                                                                                                    \
 	static int sdhc_infineon_init##n(const struct device *dev)                                 \
 	{                                                                                          \
+		int ret;                                                                           \
+                                                                                                   \
 		IFX_SDHC_IRQ_CONFIG(n);                                                            \
-		return sdhc_infineon_init(dev);                                                    \
+		ret = sdhc_infineon_init(dev);                                                     \
+		if (ret < 0) {                                                                     \
+			return ret;                                                                \
+		}                                                                                  \
+		return sdhc_infineon_pm_runtime_enable(dev);                                       \
 	}                                                                                          \
                                                                                                    \
 	static const struct sdhc_infineon_config sdhc_infineon_##n##_config = {                    \
@@ -1108,7 +1209,7 @@ static DEVICE_API(sdhc, sdhc_infineon_api) = {
 		.irq_priority = DT_INST_IRQ(n, priority),                                          \
 		IRQ_INFO(n),                                                                       \
 		IF_ENABLED(CONFIG_SOC_FAMILY_INFINEON_EDGE,                                        \
-			   (.clk_dst = DT_INST_PROP(n, clk_dst),)) };                              \
+			   (.clk_dst = DT_INST_PROP(n, clk_dst),)) }; \
                                                                                                    \
 	static struct sdhc_infineon_data sdhc_infineon_##n##_data = {                              \
 		.power_mode = SDHC_POWER_ON,                                                       \
@@ -1131,13 +1232,15 @@ static DEVICE_API(sdhc, sdhc_infineon_api) = {
 					.sdr104_support = false,                                   \
 					.sdr50_support = true,                                     \
 					.bus_8_bit_support = false},                               \
-			  .bus_4_bit_support = (DT_INST_PROP(n, bus_width) == 4),		   \
-			  .hs200_support = false,						   \
+			  .bus_4_bit_support = (DT_INST_PROP(n, bus_width) == 4),                  \
+			  .hs200_support = false,                                                  \
 			  .hs400_support = false},                                                 \
 		IFX_SDHC_PERI_CLOCK_INIT(n)};                                                      \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &sdhc_infineon_init##n, NULL, &sdhc_infineon_##n##_data,          \
-			      &sdhc_infineon_##n##_config, POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, \
-			      &sdhc_infineon_api);
+	PM_DEVICE_DT_INST_DEFINE(n, sdhc_infineon_pm_action);                                      \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &sdhc_infineon_init##n, PM_DEVICE_DT_INST_GET(n),                 \
+			      &sdhc_infineon_##n##_data, &sdhc_infineon_##n##_config, POST_KERNEL, \
+			      CONFIG_SDHC_INIT_PRIORITY, &sdhc_infineon_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_SDHC_INIT)
