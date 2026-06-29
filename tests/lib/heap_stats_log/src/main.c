@@ -31,7 +31,7 @@ static struct z_heap_thread_stat *find_stat(struct sys_heap *heap,
 		return NULL;
 	}
 
-	for (size_t i = 0; i < (size_t)atomic_get(&h->stats->num_threads); i++) {
+	for (size_t i = 0; i < h->stats->num_threads; i++) {
 		if (h->stats->threads[i].thread == thread) {
 			return &h->stats->threads[i];
 		}
@@ -101,17 +101,17 @@ ZTEST(lib_heap_stats_log, test_isr_alloc_tracked)
 	zassert_not_null(isr_alloc_ptr, "ISR alloc must succeed");
 
 	/* ISR alloc must not create a thread entry */
-	zassert_equal((size_t)atomic_get(&heap.heap->stats->num_threads), 0,
+	zassert_equal(heap.heap->stats->num_threads, 0,
 		      "ISR alloc must not create a thread entry");
 
 	/* isr_alloc_bytes must reflect the outstanding ISR allocation */
 	usable = sys_heap_usable_size(&heap, isr_alloc_ptr);
-	zassert_equal((size_t)atomic_get(&heap.heap->stats->isr_alloc_bytes),
+	zassert_equal(heap.heap->stats->isr_alloc_bytes,
 		      usable, "isr_alloc_bytes must equal usable size");
 
 	/* Free from thread context; isr_alloc_bytes must return to zero */
 	sys_heap_free(&heap, isr_alloc_ptr);
-	zassert_equal((size_t)atomic_get(&heap.heap->stats->isr_alloc_bytes),
+	zassert_equal(heap.heap->stats->isr_alloc_bytes,
 		      0, "isr_alloc_bytes must reach 0 after free");
 	zassert_true(sys_heap_validate(&heap), "heap invalid after ISR free");
 
@@ -235,7 +235,7 @@ ZTEST(lib_heap_stats_log, test_two_threads_tracked_separately)
 	zassert_not_null(worker_a_ptr, "worker_a allocation failed");
 	zassert_not_null(worker_b_ptr, "worker_b allocation failed");
 
-	zassert_equal((size_t)atomic_get(&thread_heap.heap->stats->num_threads),
+	zassert_equal(thread_heap.heap->stats->num_threads,
 		      2, "exactly 2 threads must be tracked");
 
 	sa = find_stat(&thread_heap, &worker_tcb_a);
@@ -403,19 +403,18 @@ ZTEST(lib_heap_stats_log, test_thread_table_caps_with_real_threads)
 
 	k_sem_init(&ovf_done, 0, OVF_WORKERS);
 
+	/* Spawn one thread at a time so sys_heap access is serialised. */
 	for (i = 0; i < OVF_WORKERS; i++) {
 		ovf_ptrs[i] = NULL;
 		k_thread_create(&ovf_threads[i], ovf_stacks[i], STACK_SZ,
 				ovf_worker_fn, &ovf_heap, INT_TO_POINTER(i),
 				NULL, K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
-	}
-	for (i = 0; i < OVF_WORKERS; i++) {
 		k_sem_take(&ovf_done, K_FOREVER);
 		k_thread_join(&ovf_threads[i], K_FOREVER);
 	}
 
-	zassert_equal((size_t)atomic_get(&ovf_heap.heap->stats->num_threads),
-		      CONFIG_SYS_HEAP_STATS_MAX_TRACKED_THREADS,
+	zassert_equal(ovf_heap.heap->stats->num_threads,
+		      (size_t)CONFIG_SYS_HEAP_STATS_MAX_TRACKED_THREADS,
 		      "num_threads must be capped at CONFIG_SYS_HEAP_STATS_MAX_TRACKED_THREADS");
 
 	for (i = 0; i < OVF_WORKERS; i++) {
