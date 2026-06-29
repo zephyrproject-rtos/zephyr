@@ -11,8 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef INCLUDE_ZEPHYR_DEVICETREE_NVMEM_H_
-#define INCLUDE_ZEPHYR_DEVICETREE_NVMEM_H_
+#ifndef ZEPHYR_INCLUDE_DEVICETREE_NVMEM_H_
+#define ZEPHYR_INCLUDE_DEVICETREE_NVMEM_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -324,4 +324,4 @@ extern "C" {
 }
 #endif
 
-#endif /* INCLUDE_ZEPHYR_DEVICETREE_NVMEM_H_ */
+#endif /* ZEPHYR_INCLUDE_DEVICETREE_NVMEM_H_ */

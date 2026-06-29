@@ -10,8 +10,8 @@
  * @ingroup sensing_sensor
  */
 
-#ifndef ZEPHYR_INCLUDE_SENSING_SENSOR_H_
-#define ZEPHYR_INCLUDE_SENSING_SENSOR_H_
+#ifndef ZEPHYR_INCLUDE_SENSING_SENSING_SENSOR_H_
+#define ZEPHYR_INCLUDE_SENSING_SENSING_SENSOR_H_
 
 #include <stdbool.h>
 #include <zephyr/device.h>
@@ -436,4 +436,4 @@ int sensing_sensor_get_state(
 }
 #endif
 
-#endif /*ZEPHYR_INCLUDE_SENSING_SENSOR_H_*/
+#endif /* ZEPHYR_INCLUDE_SENSING_SENSING_SENSOR_H_ */

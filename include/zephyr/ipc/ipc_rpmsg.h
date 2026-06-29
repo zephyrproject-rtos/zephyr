@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_IPC_SERVICE_IPC_RPMSG_H_
-#define ZEPHYR_INCLUDE_IPC_SERVICE_IPC_RPMSG_H_
+#ifndef ZEPHYR_INCLUDE_IPC_IPC_RPMSG_H_
+#define ZEPHYR_INCLUDE_IPC_IPC_RPMSG_H_
 
 #include <zephyr/ipc/ipc_service.h>
 #include <openamp/open_amp.h>
@@ -150,4 +150,4 @@ int ipc_rpmsg_register_ept(struct ipc_rpmsg_instance *instance, unsigned int rol
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_IPC_SERVICE_IPC_RPMSG_H_ */
+#endif /* ZEPHYR_INCLUDE_IPC_IPC_RPMSG_H_ */
