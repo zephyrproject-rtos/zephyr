@@ -35,7 +35,6 @@ repository_path = zephyr_base
 repo_to_scan = Repo(zephyr_base)
 args = None
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
-logging.getLogger("pykwalify.core").setLevel(50)
 
 sys.path.append(os.path.join(zephyr_base, 'scripts'))
 import list_boards  # noqa: E402
