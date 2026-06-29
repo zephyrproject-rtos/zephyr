@@ -30,6 +30,7 @@
 	};
 
 	aliases {
+		dmic0 = &pdm0;
 		led0 = &green_led_1;
 		led1 = &red_led_2;
 		rtc = &rtc;
@@ -192,6 +193,12 @@
 &ic6 {
 	pll-src = <3>;
 	ic-div = <2>;
+	status = "okay";
+};
+
+&ic8 {
+	pll-src = <3>;
+	ic-div = <1>;
 	status = "okay";
 };
 
@@ -619,4 +626,21 @@ zephyr_jpegenc: &jpeg {
 
 &gpu2d {
 	status = "okay";
+};
+
+&mdf1 {
+	clocks = <&rcc STM32_CLOCK(AHB2, 16)>,
+		 <&rcc STM32_SRC_IC8 MDF1_SEL(3)>;
+	clock-names = "pclk", "aclk";
+	status = "okay";
+
+	pdm0: filter@52025080 {
+		pinctrl-0 = <&mdf1_cck0_pe2
+			     &mdf1_sdi0_pe8>;
+		pinctrl-names = "default";
+		filter-order = <4>;
+		st,reshape-filter-decimation = <4>;
+		st,highpass-filter-cutoff = <0>;
+		status = "okay";
+	};
 };
