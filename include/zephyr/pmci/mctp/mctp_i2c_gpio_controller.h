@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef ZEPHYR_MCTP_I2C_GPIO_CONTROLLER_H_
-#define ZEPHYR_MCTP_I2C_GPIO_CONTROLLER_H_
+#ifndef ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I2C_GPIO_CONTROLLER_H_
+#define ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I2C_GPIO_CONTROLLER_H_
 
 #include <stdint.h>
 #include <zephyr/kernel.h>
@@ -153,4 +153,4 @@ int mctp_i2c_gpio_controller_tx(struct mctp_binding *binding, struct mctp_pktbuf
 		.tx_lock = &_name##_tx_lock,                                                       \
 	};
 
-#endif /* ZEPHYR_MCTP_I2C_GPIO_CONTROLLER_H_ */
+#endif /* ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I2C_GPIO_CONTROLLER_H_ */
