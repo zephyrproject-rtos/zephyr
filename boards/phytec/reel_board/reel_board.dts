@@ -95,7 +95,7 @@
 };
 
 &spi1 {
-	compatible = "nordic,nrf-spi";
+	compatible = "nordic,nrf-spim";
 	status = "okay";
 	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 
