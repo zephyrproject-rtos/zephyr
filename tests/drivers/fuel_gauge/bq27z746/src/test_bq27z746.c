@@ -128,7 +128,7 @@ ZTEST_USER_F(bq27z746, test_get_props__returns_ok)
 #if CONFIG_EMUL
 	/* When emulating, check for the fixed values coming from the emulator */
 	zassert_equal(vals[0].avg_current_ua, -2000);
-	zassert_equal(vals[1].cycle_count, 100);
+	zassert_equal(vals[1].cycle_count, 1);
 	zassert_equal(vals[2].current_ua, -2000);
 	zassert_equal(vals[3].full_charge_capacity_uah, 1000);
 	zassert_equal(vals[4].remaining_capacity_uah, 1000);
@@ -147,23 +147,23 @@ ZTEST_USER_F(bq27z746, test_get_props__returns_ok)
 	zassert_equal(vals[17].state_of_health, 1);
 #else
 	/* When having a real device, check for the valid ranges */
-	zassert_between_inclusive(vals[0].avg_current_ua, -32768 * 1000, 32767 * 1000);
-	zassert_between_inclusive(vals[1].cycle_count, 0, 6553500);
-	zassert_between_inclusive(vals[2].current_ua, -32768 * 1000, 32767 * 1000);
-	zassert_between_inclusive(vals[3].full_charge_capacity_uah, 0, 32767 * 1000);
-	zassert_between_inclusive(vals[4].remaining_capacity_uah, 0, 32767 * 1000);
-	zassert_between_inclusive(vals[5].runtime_to_empty_mins, 0, 65535);
-	zassert_between_inclusive(vals[6].runtime_to_full_mins, 0, 65535);
+	zassert_between_inclusive(vals[0].avg_current_ua, INT16_MIN * 1000, INT16_MAX * 1000);
+	zassert_between_inclusive(vals[1].cycle_count, 0, UINT16_MAX);
+	zassert_between_inclusive(vals[2].current_ua, INT16_MIN * 1000, INT16_MAX * 1000);
+	zassert_between_inclusive(vals[3].full_charge_capacity_uah, 0, INT16_MAX * 1000);
+	zassert_between_inclusive(vals[4].remaining_capacity_uah, 0, INT16_MAX * 1000);
+	zassert_between_inclusive(vals[5].runtime_to_empty_mins, 0, UINT16_MAX);
+	zassert_between_inclusive(vals[6].runtime_to_full_mins, 0, UINT16_MAX);
 	/* Not testing props[7]. This is the manufacturer access and has only status bits */
 	zassert_between_inclusive(vals[8].relative_state_of_charge_pct, 0, 100);
-	zassert_between_inclusive(vals[9].temperature_dk, 0, 32767);
-	zassert_between_inclusive(vals[10].voltage_uv, 0, 32767 * 1000);
-	zassert_between_inclusive(vals[11].sbs_at_rate, -32768, 32767);
-	zassert_between_inclusive(vals[12].sbs_at_rate_time_to_empty_mins, 0, 65535);
-	zassert_between_inclusive(vals[13].chg_voltage_uv, 0, 32767);
-	zassert_between_inclusive(vals[14].chg_current_ua, 0, 32767);
+	zassert_between_inclusive(vals[9].temperature_dk, 0, INT16_MAX);
+	zassert_between_inclusive(vals[10].voltage_uv, 0, INT16_MAX * 1000);
+	zassert_between_inclusive(vals[11].sbs_at_rate, INT16_MIN, INT16_MAX);
+	zassert_between_inclusive(vals[12].sbs_at_rate_time_to_empty_mins, 0, UINT16_MAX);
+	zassert_between_inclusive(vals[13].chg_voltage_uv, 0, INT16_MAX);
+	zassert_between_inclusive(vals[14].chg_current_ua, 0, INT16_MAX);
 	/* Not testing props[15]. This property is the status and only has only status bits */
-	zassert_between_inclusive(vals[16].design_cap, 0, 32767);
+	zassert_between_inclusive(vals[16].design_cap, 0, INT16_MAX);
 	zassert_between_inclusive(vals[17].state_of_health, 0, 100);
 #endif
 }
