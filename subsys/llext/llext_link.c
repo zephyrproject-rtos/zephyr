@@ -538,6 +538,21 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 				return ret;
 			}
 
+			/*
+			 * The relocation writes a field starting at r_offset
+			 * within the target section. Reject an offset at or past
+			 * the section end before applying it. This bounds the
+			 * start of the write; the field width is relocation-type
+			 * specific and left to the per-arch handler.
+			 */
+			if (rel.r_offset >= ext->sect_hdrs[shdr->sh_info].sh_size) {
+				LOG_ERR("relocation r_offset %#zx out of section %d "
+					"(size %#zx)",
+					(size_t)rel.r_offset, shdr->sh_info,
+					(size_t)ext->sect_hdrs[shdr->sh_info].sh_size);
+				return -ENOEXEC;
+			}
+
 #if CONFIG_LLEXT_LOG_LEVEL > LOG_LEVEL_INF /* also gets skipped without CONFIG_LOG */
 			uintptr_t link_addr;
 			uintptr_t op_loc = llext_get_reloc_instruction_location(ldr, ext,
