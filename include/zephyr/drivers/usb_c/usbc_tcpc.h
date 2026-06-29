@@ -12,8 +12,8 @@
  * APIs described in this file.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_TCPC_H_
-#define ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_TCPC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_USB_C_USBC_TCPC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_USB_C_USBC_TCPC_H_
 
 /**
  * @brief USB Type-C Port Controller API
@@ -1158,4 +1158,4 @@ static inline int tcpc_sop_prime_enable(const struct device *dev, bool enable)
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_TCPC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_USB_C_USBC_TCPC_H_ */

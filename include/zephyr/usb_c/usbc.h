@@ -10,8 +10,8 @@
  * This file contains the USB-C Device APIs.
  */
 
-#ifndef ZEPHYR_INCLUDE_USBC_H_
-#define ZEPHYR_INCLUDE_USBC_H_
+#ifndef ZEPHYR_INCLUDE_USB_C_USBC_H_
+#define ZEPHYR_INCLUDE_USB_C_USBC_H_
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
@@ -540,4 +540,4 @@ void usbc_set_policy_cb_set_port_partner_snk_cap(const struct device *dev,
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_USBC_H_ */
+#endif /* ZEPHYR_INCLUDE_USB_C_USBC_H_ */

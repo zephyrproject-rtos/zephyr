@@ -5,8 +5,8 @@
  * This is based on Linux, documentation:
  *   https://github.com/torvalds/linux/blob/v5.19/include/dt-bindings/usb/pd.h
  */
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_USBC_PD_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_USBC_PD_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_USB_C_PD_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_USB_C_PD_H_
 
 /**
  * @file
@@ -170,4 +170,4 @@
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_USBC_PD_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_USB_C_PD_H_ */
