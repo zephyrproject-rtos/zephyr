@@ -1003,6 +1003,20 @@
 		status = "disabled";
 	};
 
+	tstmr1: timer@442c0000 {
+		compatible = "nxp,tstmr";
+		reg = <0x442c0000 0x8>;
+		clock-frequency = <DT_FREQ_M(1)>;
+		status = "disabled";
+	};
+
+	tstmr2: timer@42480000 {
+		compatible = "nxp,tstmr";
+		reg = <0x42480000 0x8>;
+		clock-frequency = <DT_FREQ_M(1)>;
+		status = "disabled";
+	};
+
 	flexio1: flexio@25c0000 {
 		compatible = "nxp,flexio";
 		reg = <0x25c0000 0x4000>;
