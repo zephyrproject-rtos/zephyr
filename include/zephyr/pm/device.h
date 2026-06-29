@@ -56,6 +56,8 @@ enum pm_device_flag {
 	PM_DEVICE_FLAG_RUNTIME_AUTO,
 	/** Indicates that device runtime PM supports suspending and resuming from any context. */
 	PM_DEVICE_FLAG_ISR_SAFE,
+	/** Indicates the device was suspended by its power domain, not the PM subsystem. */
+	PM_DEVICE_FLAG_PD_FORCE_SUSPENDED,
 };
 
 /** @endcond */
