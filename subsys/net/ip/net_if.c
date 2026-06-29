@@ -3631,14 +3631,12 @@ static void iface_ipv6_start(struct net_if *iface)
 
 	if (IS_ENABLED(CONFIG_NET_IPV6_DAD)) {
 		net_if_start_dad(iface);
-	} else {
-		struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
-
-		if (ipv6 != NULL) {
-			join_mcast_nodes(iface,
-					 &ipv6->mcast[0].address.in6_addr);
-		}
 	}
+
+	/* The all-nodes and per-address solicited-node multicast groups are
+	 * (re)joined by rejoin_ipv6_mcast_groups(), which runs just before this
+	 * from notify_iface_up() regardless of DAD. No extra join is needed here.
+	 */
 
 	net_if_start_rs(iface);
 }
