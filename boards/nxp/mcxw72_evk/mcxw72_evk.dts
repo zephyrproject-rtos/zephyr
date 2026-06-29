@@ -159,6 +159,10 @@
 	status = "okay";
 };
 
+&tstmr0 {
+	status = "okay";
+};
+
 &ieee802154 {
 	counter = <&lptmr1>;
 };

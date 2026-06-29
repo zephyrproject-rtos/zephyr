@@ -98,6 +98,14 @@
 	status = "okay";
 };
 
+&tstmr1 {
+	status = "okay";
+};
+
+&tstmr2 {
+	status = "okay";
+};
+
 &tpm2 {
 	pinctrl-0 = <&tpm2_default>;
 	pinctrl-names = "default";
