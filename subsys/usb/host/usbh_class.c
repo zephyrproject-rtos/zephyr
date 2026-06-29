@@ -227,6 +227,7 @@ void usbh_class_xfer_anchor(struct usbh_class_data *const c_data,
 	k_mutex_lock(&c_data->mutex, K_FOREVER);
 	xfer->anchor = c_data;
 	sys_dlist_append(&c_data->xfer_anchor_list, &xfer->anchor_node);
+	uhc_xfer_ref(xfer);
 	k_mutex_unlock(&c_data->mutex);
 }
 
@@ -250,6 +251,7 @@ int usbh_class_xfer_acquire(struct usbh_class_data *const c_data)
 struct usbh_class_data *usbh_class_xfer_unanchor(struct uhc_transfer *const xfer)
 {
 	struct usbh_class_data *const c_data = xfer->anchor;
+	bool linked = false;
 
 	if (c_data == NULL) {
 		return NULL;
@@ -258,11 +260,16 @@ struct usbh_class_data *usbh_class_xfer_unanchor(struct uhc_transfer *const xfer
 	k_mutex_lock(&c_data->mutex, K_FOREVER);
 
 	if (sys_dnode_is_linked(&xfer->anchor_node)) {
+		linked = true;
 		sys_dlist_remove(&xfer->anchor_node);
 	}
 
 	xfer->anchor = NULL;
 	k_mutex_unlock(&c_data->mutex);
+
+	if (linked) {
+		(void)uhc_xfer_unref(xfer);
+	}
 
 	return c_data;
 }
