@@ -9,8 +9,8 @@
  * @brief Renesas RX DTC Driver Header File
  */
 
-#ifndef ZEPHYR_DRIVERS_MISC_RENESAS_RX_DTC_H_
-#define ZEPHYR_DRIVERS_MISC_RENESAS_RX_DTC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MISC_RENESAS_RX_DTC_RENESAS_RX_DTC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MISC_RENESAS_RX_DTC_RENESAS_RX_DTC_H_
 
 #include <zephyr/drivers/gpio.h>
 
@@ -259,4 +259,4 @@ static ALWAYS_INLINE bool is_valid_activation_irq(uint8_t activation_irq)
 	return true;
 }
 
-#endif /* ZEPHYR_DRIVERS_MISC_RENESAS_RX_DTC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MISC_RENESAS_RX_DTC_RENESAS_RX_DTC_H_ */

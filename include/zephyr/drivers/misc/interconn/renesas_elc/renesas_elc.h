@@ -10,8 +10,8 @@
  * @ingroup renesas_elc_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_MISC_RENESAS_ELC_H_
-#define ZEPHYR_INCLUDE_DRIVERS_MISC_RENESAS_ELC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MISC_INTERCONN_RENESAS_ELC_RENESAS_ELC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MISC_INTERCONN_RENESAS_ELC_RENESAS_ELC_H_
 
 /**
  * @brief Interfaces for Renesas Event Link Controller (ELC).
@@ -465,4 +465,4 @@ static inline int z_impl_renesas_elc_disable(const struct device *dev)
 
 #include <zephyr/syscalls/renesas_elc.h>
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_MISC_RENESAS_ELC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MISC_INTERCONN_RENESAS_ELC_RENESAS_ELC_H_ */
