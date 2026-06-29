@@ -10,8 +10,8 @@
  *
  */
 
-#ifndef INCLUDE_ZEPHYR_DRIVERS_TISCI_H_
-#define INCLUDE_ZEPHYR_DRIVERS_TISCI_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_TISCI_TISCI_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_TISCI_TISCI_H_
 
 #include <zephyr/device.h>
 
@@ -996,4 +996,4 @@ int tisci_cmd_rm_irq_set(const struct device *dev, struct tisci_irq_set_req *req
  * @return 0 if successful, or an error code
  */
 int tisci_cmd_rm_irq_release(const struct device *dev, struct tisci_irq_release_req *req);
-#endif
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_TISCI_TISCI_H_ */
