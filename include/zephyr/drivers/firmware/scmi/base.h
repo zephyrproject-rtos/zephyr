@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef DRIVERS_ARM_SCMI_BASE_H_
-#define DRIVERS_ARM_SCMI_BASE_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_BASE_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_BASE_H_
 
 /**
  * @file
@@ -101,4 +101,4 @@ int scmi_base_reset_agent_cfg(uint32_t agent_id, bool reset_perm);
  * @}
  */
 
-#endif /* DRIVERS_ARM_SCMI_BASE_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_BASE_H_ */

@@ -10,8 +10,8 @@
  * @brief Header file for the NXP SCMI CPU Domain Protocol.
  */
 
-#ifndef _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_CPU_H_
-#define _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_CPU_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_NXP_CPU_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_NXP_CPU_H_
 
 #include <zephyr/drivers/firmware/scmi/protocol.h>
 #if __has_include("scmi_cpu_soc.h")
@@ -192,4 +192,4 @@ int scmi_nxp_cpu_info_get(uint32_t cpu_id, struct scmi_nxp_cpu_info *cfg);
  * @}
  */
 
-#endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_CPU_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_NXP_CPU_H_ */

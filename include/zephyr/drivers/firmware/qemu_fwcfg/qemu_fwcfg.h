@@ -10,8 +10,8 @@
  * @brief Header for the QEMU firmware configuration (fw_cfg) driver
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_QEMU_FWCFG_H_
-#define ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_QEMU_FWCFG_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_QEMU_FWCFG_QEMU_FWCFG_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_QEMU_FWCFG_QEMU_FWCFG_H_
 
 /**
  * @defgroup qemu_fwcfg_interface QEMU fw_cfg
@@ -110,4 +110,4 @@ bool qemu_fwcfg_dma_supported(const struct device *dev);
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_QEMU_FWCFG_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_QEMU_FWCFG_QEMU_FWCFG_H_ */
