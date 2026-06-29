@@ -15,6 +15,7 @@ toolchain:
   - gnuarmemb
 supported:
   - can
+  - counter
   - flash
   - gpio
   - gint

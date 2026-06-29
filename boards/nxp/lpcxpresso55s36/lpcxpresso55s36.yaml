@@ -17,13 +17,14 @@ supported:
   - adc
   - arduino_gpio
   - can
+  - comparator
+  - counter
   - dac
   - flash
   - gpio
+  - gint
   - pwm
   - usb_device
   - usbd
-  - comparator
-  - gint
   - watchdog
 vendor: nxp
