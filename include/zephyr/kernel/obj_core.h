@@ -207,6 +207,31 @@ struct k_obj_core_desc {
 			    sizeof(((struct _struct *)0)->_member))
 
 /**
+ * @brief Register an object type without linking any static objects
+ *
+ * Like K_OBJ_TYPE_DEFINE(), but for object types that have no statically
+ * defined instances to walk and link at boot (e.g. threads, which link their
+ * own object core as they are created). Only the object type (and its stats
+ * descriptor, if any) is initialized.
+ *
+ * @param _type_var Object type storage (struct k_obj_type) to initialize
+ * @param _struct   Object struct type with an obj_core member
+ * @param _id       Unique type ID
+ * @param _stats    Pointer to a k_obj_core_stats_desc, or NULL
+ */
+#define K_OBJ_TYPE_DEFINE_TYPE_ONLY(_type_var, _struct, _id, _stats)           \
+	static const STRUCT_SECTION_ITERABLE(k_obj_core_desc,                  \
+					     _obj_core_desc_##_struct) = {     \
+		.type = &(_type_var),                                          \
+		.objs_start = NULL,                                            \
+		.objs_end = NULL,                                              \
+		.obj_core_offset = offsetof(struct _struct, obj_core),         \
+		.obj_size = sizeof(struct _struct),                            \
+		.type_id = (_id),                                              \
+		Z_OBJ_CORE_STATS_DESC(_stats, 0, 0)                            \
+	}
+
+/**
  * INTERNAL_HIDDEN @endcond
  */
 
