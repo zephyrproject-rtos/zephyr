@@ -209,6 +209,8 @@ struct fs_file_system_t {
 	 */
 	int (*mkfs)(uintptr_t dev_id, void *cfg, int flags);
 #endif
+	int (*ioctl)(struct fs_file_t *filp, unsigned long request,
+					va_list args);
 	/** @} */
 };
 

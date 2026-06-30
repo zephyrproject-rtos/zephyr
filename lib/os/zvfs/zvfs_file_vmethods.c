@@ -72,8 +72,7 @@ int zvfs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		break;
 	}
 	default:
-		errno = EOPNOTSUPP;
-		return -1;
+		rc = fs_ioctl(ptr, request, args);
 	}
 
 	if (rc < 0) {

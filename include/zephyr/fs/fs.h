@@ -9,6 +9,7 @@
 #define ZEPHYR_INCLUDE_FS_FS_H_
 
 #include <sys/types.h>
+#include <stdarg.h>
 
 #include <zephyr/sys/dlist.h>
 #include <zephyr/fs/fs_interface.h>
@@ -63,6 +64,9 @@ enum {
 
 	/** Identifier for in-tree Virtiofs file system. */
 	FS_VIRTIOFS,
+
+	/** Identifier for in-tree device file system. */
+	FS_DEVFS,
 
 	/** Identifier for in-tree Native Simulator mount file system. */
 	FS_NATIVE_MOUNT,
@@ -707,6 +711,28 @@ int fs_unregister(int type, const struct fs_file_system_t *fs);
  * @retval <0 another negative errno code on error.
  */
 int fs_gc(struct fs_mount_t *mp);
+
+/**
+ * @brief Perform a control operation on an open file
+ *
+ * Execute a file system–specific control operation (ioctl) on an
+ * already opened file. This function allows passing optional,
+ * variable-length arguments depending on the requested operation.
+ *
+ * The supported ioctl commands and their expected arguments are
+ * defined by the underlying file system implementation.
+ *
+ * @param zfp     Pointer to an open file object
+ * @param request Control request identifier
+ * @param args    Variable argument list for the given request
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if the request is invalid or unsupported
+ * @retval -EBADF if the file descriptor is not valid
+ * @retval -ENOTTY if the ioctl operation is not supported by the file system
+ * @retval -EIO on low-level I/O error
+ */
+int fs_ioctl(struct fs_file_t *zfp, unsigned int request, va_list args);
 
 /**
  * @}
