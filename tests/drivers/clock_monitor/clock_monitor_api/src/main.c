@@ -36,6 +36,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_monitor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
@@ -47,6 +48,11 @@ struct clkmon_fixture {
 	/* 0 = no accuracy check for this instance. */
 	uint32_t measure_expected_hz;
 	uint32_t measure_tolerance_ppm;
+	/* Alternate reference cookie for the set_source() test; 0 = skip. */
+	uint32_t switch_reference;
+	/* Alternate target cookie + its expected measured Hz; 0 = skip. */
+	uint32_t switch_target;
+	uint32_t switch_target_expected_hz;
 };
 
 #if DT_HAS_COMPAT_STATUS_OKAY(test_clock_monitor)
@@ -57,6 +63,9 @@ struct clkmon_fixture {
 		.measure_expected_hz = DT_PROP(node_id, measure_expected_hz),  \
 		.measure_tolerance_ppm =                                       \
 			DT_PROP(node_id, measure_tolerance_ppm),               \
+		.switch_reference = DT_PROP(node_id, switch_reference),        \
+		.switch_target = DT_PROP(node_id, switch_target),             \
+		.switch_target_expected_hz = DT_PROP(node_id, switch_target_expected_hz), \
 	},
 
 static const struct clkmon_fixture fixtures[] = {
@@ -71,6 +80,31 @@ static const struct clkmon_fixture fixtures[] = {
 static const struct clkmon_fixture fixtures[] = { {NULL, 0U, 0U} };
 
 #define NUM_CLOCK_DEVICES 0U
+
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(test_required_clocks)
+
+#define REQUIRED_CLOCK_ON(node_id, prop, idx)                                  \
+	do {                                                                   \
+		const struct device *_clk =                                    \
+			DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_IDX(node_id, idx));    \
+		if (device_is_ready(_clk)) {                                   \
+			(void)clock_control_on(_clk,                           \
+				(clock_control_subsys_t)(uintptr_t)            \
+				DT_CLOCKS_CELL_BY_IDX(node_id, idx, name));    \
+		}                                                              \
+	} while (0)
+
+static void enable_required_clocks(void)
+{
+	DT_FOREACH_PROP_ELEM_SEP(DT_COMPAT_GET_ANY_STATUS_OKAY(test_required_clocks),
+				 clocks, REQUIRED_CLOCK_ON, (;));
+}
+
+#else
+
+static void enable_required_clocks(void) {}
 
 #endif
 
@@ -221,6 +255,15 @@ static void foreach_device_with_mode(enum clock_monitor_mode mode,
 	}
 }
 
+static void *clkmon_setup(void)
+{
+	/* Enable the board's declared required clocks once, before any test
+	 * configures or starts a measurement.
+	 */
+	enable_required_clocks();
+	return NULL;
+}
+
 static void before_each(void *fixture)
 {
 	ARG_UNUSED(fixture);
@@ -229,7 +272,7 @@ static void before_each(void *fixture)
 	}
 }
 
-ZTEST_SUITE(clock_monitor_api, NULL, NULL, before_each, NULL, NULL);
+ZTEST_SUITE(clock_monitor_api, NULL, clkmon_setup, before_each, NULL, NULL);
 
 /* WINDOW path */
 static void body_window_check_stop(const struct device *dev)
@@ -627,6 +670,129 @@ ZTEST(clock_monitor_api, test_get_rate_enosys_without_measure_hw)
 		zassert_equal(clock_monitor_get_rate(dev, &hz), -ENOSYS,
 			      "get_rate on measurement-less %s must be "
 			      "-ENOSYS", dev->name);
+		ran = true;
+	}
+	if (!ran) {
+		ztest_test_skip();
+	}
+}
+
+static struct cb_capture setsrc_cap;
+
+static void body_set_source_switch_reference(const struct device *dev)
+{
+	const struct clkmon_fixture *fx = fixture_of(dev);
+	struct clock_monitor_config cfg = measure_cfg;
+
+	/* Error contract (no side effects on the current selection). */
+	zassert_equal(clock_monitor_set_source(dev, 0U, 0U), -EINVAL,
+		      "set_source(unchanged, unchanged) must be -EINVAL on %s",
+		      dev->name);
+	zassert_equal(clock_monitor_set_source(dev, 0xFFFFFFFFU, 0U), -EINVAL,
+		      "unknown reference cookie must be -EINVAL on %s", dev->name);
+
+	/* Baseline measurement with the power-on sources. */
+	cb_capture_init(&setsrc_cap, false, 0);
+	cfg.callback = measure_cb;
+	cfg.user_data = &setsrc_cap;
+	zassert_ok(clock_monitor_configure(dev, &cfg),
+		   "baseline configure failed on %s", dev->name);
+	zassert_ok(clock_monitor_start(dev), NULL);
+	zassert_ok(k_sem_take(&setsrc_cap.sem, K_MSEC(100)),
+		   "no baseline measurement on %s", dev->name);
+	zassert_true(setsrc_cap.last_hz > 0U, NULL);
+
+	/* Switch only the reference; the target is left unchanged. */
+	zassert_ok(clock_monitor_set_source(dev, fx->switch_reference, 0U),
+		   "set_source(switch-reference) failed on %s", dev->name);
+
+	/* A source switch drops the device to the unconfigured state: start()
+	 * must fail until a fresh configure().
+	 */
+	zassert_equal(clock_monitor_start(dev), -EINVAL,
+		      "start() after set_source must be -EINVAL on %s", dev->name);
+
+	/* Reconfigure and re-measure the same target: a correctly re-queried
+	 * reference rate leaves the measured value unchanged.
+	 */
+	cb_capture_init(&setsrc_cap, false, 0);
+	zassert_ok(clock_monitor_configure(dev, &cfg),
+		   "reconfigure after switch failed on %s", dev->name);
+	zassert_ok(clock_monitor_start(dev), NULL);
+	zassert_ok(k_sem_take(&setsrc_cap.sem, K_MSEC(100)),
+		   "no measurement after reference switch on %s", dev->name);
+	zassert_true((setsrc_cap.last_events &
+		      CLOCK_MONITOR_EVT_MEASURE_DONE) != 0U, NULL);
+
+	if (fx->measure_expected_hz != 0U) {
+		uint32_t tol = (uint32_t)(((uint64_t)fx->measure_expected_hz *
+			fx->measure_tolerance_ppm) / 1000000U);
+
+		zassert_within(setsrc_cap.last_hz, fx->measure_expected_hz, tol,
+			       "post-switch measured %u Hz outside %u +/- %u Hz "
+			       "on %s", setsrc_cap.last_hz, fx->measure_expected_hz,
+			       tol, dev->name);
+	}
+
+	/* Target switch: change only the target and re-measure. The result is
+	 * the new target's absolute frequency (independent of the reference
+	 * when the back-end is correct), so it differs from the default target
+	 * measured above - proving the target was actually re-routed.
+	 */
+	if (fx->switch_target != 0U) {
+		zassert_ok(clock_monitor_set_source(dev, 0U, fx->switch_target),
+			   "set_source(switch-target) failed on %s", dev->name);
+		zassert_equal(clock_monitor_start(dev), -EINVAL,
+			      "start() after target switch must be -EINVAL on %s",
+			      dev->name);
+
+		cb_capture_init(&setsrc_cap, false, 0);
+		zassert_ok(clock_monitor_configure(dev, &cfg),
+			   "reconfigure after target switch failed on %s", dev->name);
+		zassert_ok(clock_monitor_start(dev), NULL);
+		zassert_ok(k_sem_take(&setsrc_cap.sem, K_MSEC(100)),
+			   "no measurement after target switch on %s", dev->name);
+		TC_PRINT("%s: target-switched measurement = %u Hz\n",
+			 dev->name, setsrc_cap.last_hz);
+		zassert_true(setsrc_cap.last_hz > 0U, NULL);
+
+		if (fx->switch_target_expected_hz != 0U) {
+			uint32_t tol = (uint32_t)(((uint64_t)fx->switch_target_expected_hz *
+				fx->measure_tolerance_ppm) / 1000000U);
+
+			zassert_within(setsrc_cap.last_hz,
+				       fx->switch_target_expected_hz, tol,
+				       "target-switch measured %u Hz outside %u +/- %u "
+				       "Hz on %s", setsrc_cap.last_hz,
+				       fx->switch_target_expected_hz, tol, dev->name);
+		}
+	}
+	(void)clock_monitor_stop(dev);
+}
+
+ZTEST(clock_monitor_api, test_set_source_switch_reference)
+{
+	bool ran = false;
+
+	for (size_t i = 0; i < NUM_CLOCK_DEVICES; i++) {
+		const struct device *dev = fixtures[i].dev;
+
+		zassert_true(device_is_ready(dev), "%s not ready", dev->name);
+
+		/* Probe support: (unchanged, unchanged) returns -ENOSYS when
+		 * set_source is unimplemented, -EINVAL when implemented, and has
+		 * no side effects either way.
+		 */
+		if (clock_monitor_set_source(dev, 0U, 0U) == -ENOSYS) {
+			continue;
+		}
+		/* Needs an alternate reference cookie and MEASURE support. */
+		if (fixtures[i].switch_reference == 0U ||
+		    !dev_supports_mode(dev, CLOCK_MONITOR_MODE_MEASURE)) {
+			continue;
+		}
+		clean_slate(dev);
+		body_set_source_switch_reference(dev);
 		ran = true;
 	}
 	if (!ran) {
