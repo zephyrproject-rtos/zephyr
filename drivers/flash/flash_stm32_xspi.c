@@ -912,19 +912,13 @@ static int stm32_xspi_set_memorymap(const struct device *dev)
 					: dev_data->read_opcode)
 				: SPI_NOR_OCMD_DTR_RD;
 
-	uint32_t address_mode_xspi_str = HAL_XSPI_ADDRESS_1_LINE;
-	if (dev_cfg->data_mode == XSPI_OCTO_MODE) {
-		address_mode_xspi_str = HAL_XSPI_ADDRESS_8_LINES;
-	} else if (dev_cfg->data_mode == XSPI_QUAD_MODE &&
-		   dev_data->read_mode == JESD216_MODE_144) {
-		address_mode_xspi_str = HAL_XSPI_ADDRESS_4_LINES;  /* 1-4-4 */
-	} else {
-		address_mode_xspi_str = HAL_XSPI_ADDRESS_1_LINE;   /* SPI, DUAL, 1-1-4 */
-	}
-
 	s_command.AddressMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
-				? address_mode_xspi_str
-				: HAL_XSPI_ADDRESS_8_LINES;
+				? ((dev_cfg->data_mode == XSPI_OCTO_MODE)
+					? HAL_XSPI_ADDRESS_8_LINES
+					: ((dev_cfg->data_mode == XSPI_QUAD_MODE &&
+					    dev_data->read_mode == JESD216_MODE_144)
+						? HAL_XSPI_ADDRESS_4_LINES  /* 1-4-4 */
+						: HAL_XSPI_ADDRESS_1_LINE)) /* SPI, DUAL, 1-1-4 */
 	s_command.AddressDTRMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
 				? HAL_XSPI_ADDRESS_DTR_DISABLE
 				: HAL_XSPI_ADDRESS_DTR_ENABLE;
@@ -941,20 +935,13 @@ static int stm32_xspi_set_memorymap(const struct device *dev)
 	s_command.DataDTRMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
 				? HAL_XSPI_DATA_DTR_DISABLE
 				: HAL_XSPI_DATA_DTR_ENABLE;
-
-	uint32_t dummy_cycles_str;
-	if (dev_cfg->data_mode == XSPI_OCTO_MODE) {
-		dummy_cycles_str = SPI_NOR_DUMMY_RD_OCTAL;
-	} else if (dev_cfg->data_mode == XSPI_QUAD_MODE) {
-		dummy_cycles_str = dev_data->read_dummy; /* from SFDP */
-	} else {
-		dummy_cycles_str = SPI_NOR_DUMMY_RD;     /* SPI */
-	}
-
 	s_command.DummyCycles = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
-				? dummy_cycles_str
+				? ((dev_cfg->data_mode == XSPI_OCTO_MODE)
+					? SPI_NOR_DUMMY_RD_OCTAL
+					: (dev_cfg->data_mode == XSPI_QUAD_MODE)
+						? dev_data->read_dummy /* from SFDP */
+						: SPI_NOR_DUMMY_RD)    /* SPI */
 				: SPI_NOR_DUMMY_RD_OCTAL_DTR;
-
 	s_command.DQSMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
 				? HAL_XSPI_DQS_DISABLE
 				: HAL_XSPI_DQS_ENABLE;
