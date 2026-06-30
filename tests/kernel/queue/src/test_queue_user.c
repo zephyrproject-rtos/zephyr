@@ -11,9 +11,11 @@
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define LIST_LEN        5
 
+/** @cond INTERNAL_HIDDEN */
 static K_THREAD_STACK_DEFINE(child_stack, STACK_SIZE);
 static struct k_thread child_thread;
 static ZTEST_BMEM struct qdata qdata[LIST_LEN * 2];
+/** @endcond */
 
 /**
  * @brief Tests for queue

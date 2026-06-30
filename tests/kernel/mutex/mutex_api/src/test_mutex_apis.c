@@ -11,11 +11,12 @@
 #define THREAD_MID_PRIORITY 3
 #define THREAD_LOW_PRIORITY 5
 
+/** @cond INTERNAL_HIDDEN */
 /* use to pass case type to threads */
 static ZTEST_DMEM int case_type;
 static ZTEST_DMEM int thread_ret = TC_FAIL;
 
-/**TESTPOINT: init via K_MUTEX_DEFINE*/
+/* TESTPOINT: init via K_MUTEX_DEFINE */
 K_MUTEX_DEFINE(kmutex);
 static struct k_mutex tmutex;
 
@@ -25,6 +26,7 @@ static K_THREAD_STACK_DEFINE(tstack3, STACK_SIZE);
 static struct k_thread tdata;
 static struct k_thread tdata2;
 static struct k_thread tdata3;
+/** @endcond */
 
 
 

@@ -21,6 +21,7 @@ struct fifo_msg {
 #define PIPE_DATA "atad_epip"
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
+/** @cond INTERNAL_HIDDEN */
 /* verify k_poll() without waiting */
 static struct k_sem no_wait_sem;
 static struct k_fifo no_wait_fifo;
@@ -39,6 +40,7 @@ K_MSGQ_DEFINE(msgq_high_prio_thread, sizeof(unsigned int), 4, 4);
 static K_THREAD_STACK_DEFINE(high_prio_stack_area, 4096);
 static struct k_thread high_prio_data;
 static volatile bool wake_up_by_poll = true;
+/** @endcond */
 
 /**
  * @brief Test cases to verify poll
