@@ -522,19 +522,19 @@ class TestPlan:
 
     def _register_testsuite(self, suite: TestSuite) -> None:
         """Add a suite to testsuites, raising on duplicate from a different file."""
-        if suite.name in self.testsuites:
+        if suite.id in self.testsuites:
             msg = (
                 f"test suite '{suite.name}' in '{suite.yamlfile}' is already added"
             )
-            if suite.yamlfile == self.testsuites[suite.name].yamlfile:
+            if suite.yamlfile == self.testsuites[suite.id].yamlfile:
                 logger.debug(f"Skip - {msg}")
             else:
                 msg = (
-                    f"Duplicate {msg} from '{self.testsuites[suite.name].yamlfile}'"
+                    f"Duplicate {msg} from '{self.testsuites[suite.id].yamlfile}'"
                 )
                 raise TwisterRuntimeError(msg)
         else:
-            self.testsuites[suite.name] = suite
+            self.testsuites[suite.id] = suite
 
     def _is_testsuite_selected(self, suite: TestSuite, testsuite_filter, testsuite_patterns_r):
         """Check if the testsuite is selected by the user."""
@@ -751,8 +751,9 @@ class TestPlan:
                         )
                     if filter_platform and platform.name not in filter_platform:
                         continue
+                    testsuite_id = testsuite.rsplit('/', 1)[-1]
                     instance = TestInstance(
-                        self.testsuites[testsuite], platform, toolchain, self.env.outdir
+                        self.testsuites[testsuite_id], platform, toolchain, self.env.outdir
                     )
                     if ts.get("run_id"):
                         instance.run_id = ts.get("run_id")
