@@ -62,25 +62,12 @@ static struct k_mutex nrf_mramc_mutex;
  */
 static bool validate_action(uint32_t addr, size_t len, bool must_align)
 {
-	bool valid = true;
-
-#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-	valid = (addr >= MRAM_BASE && addr < (MRAM_BASE + MRAM_SIZE));
-#else
-	valid = nrfx_mramc_valid_address_check(addr, true);
-#endif
-	if (!valid) {
+	if (addr < MRAM_BASE || addr >= (MRAM_BASE + MRAM_SIZE)) {
 		LOG_ERR("Invalid address: %x", addr);
 		return false;
 	}
 
-#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-	valid = (((addr - (uint32_t)MRAM_BASE) < MRAM_SIZE) &&
-		(len <= ((uint32_t)MRAM_BASE + MRAM_SIZE - addr)));
-#else
-	valid = nrfx_mramc_fits_memory_check(addr, true, len);
-#endif
-	if (!valid) {
+	if (len > ((uint32_t)MRAM_BASE + MRAM_SIZE - addr)) {
 		LOG_ERR("Address %x with length %zu exceeds MRAM size", addr, len);
 		return false;
 	}
