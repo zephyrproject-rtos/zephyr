@@ -187,7 +187,6 @@ K_HEAP_DEFINE(lifo_alloc_pool, 256);
  * calling thread's resource pool. Verify the call succeeds and that the same
  * data pointer is returned by a subsequent get.
  *
- * @ingroup kernel_lifo_tests
  * @see k_lifo_alloc_put()
  */
 ZTEST(lifo_contexts, test_lifo_alloc_put)
