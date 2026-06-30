@@ -1816,6 +1816,14 @@ static int api_timing_config(const struct device *dev,
 	struct mspi_dw_data *dev_data = dev->data;
 	struct mspi_dw_timing_cfg *config = cfg;
 
+	/* MSPI_TIMING_PARAM_DUMMY indicates that the caller has no
+	 * platform-specific timing parameters to configure. Accept
+	 * it as a no-op.
+	 */
+	if (param_mask == MSPI_TIMING_PARAM_DUMMY) {
+		return 0;
+	}
+
 	if (param_mask & MSPI_DW_RX_TIMING_CFG) {
 		dev_data->rx_sample_dly = config->rx_sample_dly;
 		return 0;
