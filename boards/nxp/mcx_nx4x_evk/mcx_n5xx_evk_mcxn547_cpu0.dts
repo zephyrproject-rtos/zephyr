@@ -12,3 +12,7 @@
 / {
 	model = "NXP MCX-N5XX-EVK board";
 };
+
+&freqme0 {
+	status = "okay";
+};

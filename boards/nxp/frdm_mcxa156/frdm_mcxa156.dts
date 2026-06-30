@@ -328,3 +328,7 @@ zephyr_udc0: &usb {
 &crc {
 	status = "okay";
 };
+
+&freqme0 {
+	status = "okay";
+};

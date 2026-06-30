@@ -15,7 +15,7 @@ description: |
   node per selectable source, pairing an INPUTMUX route with a frequency
   provider. The child marked "default-source" is the power-on selection.
   clock_monitor_set_source() switches between the declared sources at
-  runtime, keyed by the INPUTMUX connection cookie (see inputmux-connection).
+  runtime, keyed by the INPUTMUX connection cookie (see mux-states).
 
   A source's frequency provider is either "clock-frequency" (a fixed
   constant in Hz, used verbatim) or "clocks" (queried through
@@ -62,22 +62,23 @@ child-binding:
       frequency provider. The source's status property is not consulted;
       every child is a candidate source.
 
+    include: [mux-consumer.yaml]
+
     properties:
-      inputmux-connection:
-        type: phandle-array
-        specifier-space: inputmux
+      mux-states:
         required: true
         description: |
-          INPUTMUX route for this source, given as
-          <&inputmuxN channel connection> where:
-            - &inputmuxN is the INPUTMUX node providing the route
-            - channel is the destination index (0 for FREQME)
+          INPUTMUX route for this source, given as a single mux-states
+          entry <&inputmuxN index connection> where:
+            - &inputmuxN is the INPUTMUX mux controller providing the route
+            - index is the destination index (0 for FREQME)
             - connection is an inputmux_connection_t cookie from
               fsl_inputmux_connections.h. Use the NXP_FREQME_REF_* /
               NXP_FREQME_TAR_* macros in
               <zephyr/dt-bindings/clock-monitor/nxp-freqme.h>.
-          This cookie is also the runtime clock_monitor_set_source() selector
-          for this source.
+          The route is applied through the mux subsystem (mux_state_apply()).
+          The connection cookie is also the runtime
+          clock_monitor_set_source() selector for this source.
 
       clocks:
         type: phandle-array
