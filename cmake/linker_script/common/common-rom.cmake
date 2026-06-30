@@ -207,6 +207,10 @@ if(CONFIG_DEVICE_DEPS)
   zephyr_linker_section_configure(SECTION device_deps INPUT .__device_deps_pass2* KEEP SORT NAME PASS NOT LINKER_DEVICE_DEPS_PASS1)
 endif()
 
+zephyr_iterable_section(NAME k_kernel_init_pre_entry KVMA RAM_REGION GROUP RODATA_REGION)
+
+zephyr_iterable_section(NAME k_kernel_init_post_entry KVMA RAM_REGION GROUP RODATA_REGION)
+
 zephyr_iterable_section(NAME _static_thread_data KVMA RAM_REGION GROUP RODATA_REGION)
 
 if(CONFIG_BT_IAS)
