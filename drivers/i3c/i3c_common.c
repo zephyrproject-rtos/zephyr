@@ -378,7 +378,7 @@ int i3c_sec_get_basic_info(const struct device *dev, uint8_t dynamic_addr, uint8
 			   uint8_t bcr, uint8_t dcr)
 {
 	struct i3c_ccc_getpid getpid;
-	struct i3c_device_desc temp_desc;
+	struct i3c_device_desc temp_desc = {0};
 	struct i3c_device_desc *desc;
 	struct i3c_device_id id;
 	const struct i3c_driver_config *config = dev->config;
@@ -423,16 +423,22 @@ int i3c_sec_get_basic_info(const struct device *dev, uint8_t dynamic_addr, uint8
 	/* Detach that temporary device */
 	ret = i3c_detach_i3c_device(&temp_desc);
 	if (ret != 0) {
-		return ret;
+		goto free_desc;
 	}
 	ret = i3c_attach_i3c_device(desc);
 	if (ret != 0) {
-		return ret;
+		goto free_desc;
 	}
 
 	/* Skip reading BCR and DCR as they came from DEFTGTS */
 	ret = i3c_device_adv_info_get(desc);
 
+	return ret;
+
+free_desc:
+	if (i3c_device_desc_in_pool(desc)) {
+		i3c_device_desc_free(desc);
+	}
 	return ret;
 }
 
@@ -455,6 +461,10 @@ int i3c_sec_i2c_attach(const struct device *dev, uint8_t static_addr, uint8_t lv
 	}
 
 	ret = i3c_attach_i2c_device(i2c_desc);
+	if (ret != 0 && i3c_i2c_device_desc_in_pool(i2c_desc)) {
+		i3c_i2c_device_desc_free(i2c_desc);
+	}
+
 	return ret;
 }
 
