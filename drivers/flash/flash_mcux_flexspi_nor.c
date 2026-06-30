@@ -353,14 +353,14 @@ static int flash_flexspi_nor_page_program(struct flash_flexspi_nor_data *data,
 	return memc_flexspi_transfer(&data->controller, &transfer);
 }
 
-static int flash_flexspi_nor_wait_bus_busy(struct flash_flexspi_nor_data *data)
+static int flash_flexspi_nor_wait_bus_busy_retries(struct flash_flexspi_nor_data *data,
+						    int retries)
 {
 	uint32_t status = 0;
 	int ret;
 
-	while (1) {
+	do {
 		ret = flash_flexspi_nor_read_status(data, &status);
-		LOG_DBG("status: 0x%x", status);
 		if (ret) {
 			LOG_ERR("Could not read status");
 			return ret;
@@ -368,16 +368,23 @@ static int flash_flexspi_nor_wait_bus_busy(struct flash_flexspi_nor_data *data)
 
 		if (data->legacy_poll) {
 			if ((status & BIT(0)) == 0) {
-				break;
+				return 0;
 			}
 		} else {
 			if (status & BIT(7)) {
-				break;
+				return 0;
 			}
 		}
-	}
+	} while (--retries > 0);
 
-	return 0;
+	LOG_ERR("Timed out waiting for flash ready (status=0x%x)", status);
+	return -ETIMEDOUT;
+}
+
+static int flash_flexspi_nor_wait_bus_busy(struct flash_flexspi_nor_data *data)
+{
+	return flash_flexspi_nor_wait_bus_busy_retries(data,
+		CONFIG_FLASH_MCUX_FLEXSPI_NOR_TIMEOUT_RETRIES);
 }
 
 static int flash_flexspi_nor_read(const struct device *dev, off_t offset, void *buffer, size_t len)
@@ -514,6 +521,8 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		memc_flexspi_wait_bus_idle(&data->controller);
 	}
 
+	int ret = 0;
+
 	while (len) {
 		/* If the offset isn't a multiple of the NOR page size, we first need
 		 * to write the remaining part that fits, otherwise the write could
@@ -530,17 +539,30 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 			memc_flexspi_wait_bus_idle(&data->controller);
 		}
 #endif
-		flash_flexspi_nor_write_enable(data);
+		ret = flash_flexspi_nor_write_enable(data);
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
-		flash_flexspi_nor_page_program(data, offset, nor_write_buf, i);
+		if (ret == 0) {
+			ret = flash_flexspi_nor_page_program(data, offset, nor_write_buf, i);
+		}
 #else
-		flash_flexspi_nor_page_program(data, offset, src, i);
+		if (ret == 0) {
+			ret = flash_flexspi_nor_page_program(data, offset, src, i);
+		}
 #endif
-		flash_flexspi_nor_wait_bus_busy(data);
+		if (ret == 0) {
+			ret = flash_flexspi_nor_wait_bus_busy(data);
+		}
 		memc_flexspi_reset(&data->controller);
 		src += i;
 		offset += i;
 		len -= i;
+		if (ret != 0) {
+			break;
+		}
+	}
+
+	if (ret != 0) {
+		memc_flexspi_reset(&data->controller);
 	}
 
 	if (memc_flexspi_is_running_xip(&data->controller)) {
@@ -565,7 +587,7 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 
 	flash_flexspi_nor_unlock(dev);
 
-	return 0;
+	return ret;
 }
 
 static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
@@ -613,42 +635,60 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 		memc_flexspi_wait_bus_idle(&data->controller);
 	}
 
+	int ret = 0;
+
 	if ((offset == 0) && (size == data->config.flashSize * KB(1))) {
-		flash_flexspi_nor_write_enable(data);
-		flash_flexspi_nor_erase_chip(data);
-		flash_flexspi_nor_wait_bus_busy(data);
+		if (memc_flexspi_is_running_xip(&data->controller)) {
+			LOG_WRN("Chip erase under XIP: interrupts disabled for up to 200s");
+		}
+		ret = flash_flexspi_nor_write_enable(data);
+		if (ret == 0) {
+			ret = flash_flexspi_nor_erase_chip(data);
+		}
+		if (ret == 0) {
+			ret = flash_flexspi_nor_wait_bus_busy_retries(data,
+				CONFIG_FLASH_MCUX_FLEXSPI_NOR_CHIP_ERASE_TIMEOUT_RETRIES);
+		}
 		memc_flexspi_reset(&data->controller);
 	} else {
-		/* Increase erase efficiency: use block erase when possible,
-		 * sector erase for remainder.
-		 */
 		size_t remaining_size = size;
 		off_t current_offset = offset;
-		/* Step 1: Handle unaligned start - erase sectors until block aligned */
-		while (remaining_size > 0 && (current_offset % SPI_NOR_BLOCK_SIZE) != 0) {
-			flash_flexspi_nor_write_enable(data);
-			flash_flexspi_nor_erase_sector(data, current_offset);
-			flash_flexspi_nor_wait_bus_busy(data);
+
+		while (remaining_size > 0 && (current_offset % SPI_NOR_BLOCK_SIZE) != 0
+		       && ret == 0) {
+			ret = flash_flexspi_nor_write_enable(data);
+			if (ret == 0) {
+				ret = flash_flexspi_nor_erase_sector(data, current_offset);
+			}
+			if (ret == 0) {
+				ret = flash_flexspi_nor_wait_bus_busy(data);
+			}
 			memc_flexspi_reset(&data->controller);
 			current_offset += SPI_NOR_SECTOR_SIZE;
 			remaining_size -= SPI_NOR_SECTOR_SIZE;
 		}
 
-		/* Step 2: Erase whole blocks */
-		while (remaining_size >= SPI_NOR_BLOCK_SIZE) {
-			flash_flexspi_nor_write_enable(data);
-			flash_flexspi_nor_erase_block(data, current_offset);
-			flash_flexspi_nor_wait_bus_busy(data);
+		while (remaining_size >= SPI_NOR_BLOCK_SIZE && ret == 0) {
+			ret = flash_flexspi_nor_write_enable(data);
+			if (ret == 0) {
+				ret = flash_flexspi_nor_erase_block(data, current_offset);
+			}
+			if (ret == 0) {
+				ret = flash_flexspi_nor_wait_bus_busy(data);
+			}
 			memc_flexspi_reset(&data->controller);
 			current_offset += SPI_NOR_BLOCK_SIZE;
 			remaining_size -= SPI_NOR_BLOCK_SIZE;
 		}
 
-		/* Step 3: Erase remaining sectors */
-		while (remaining_size > 0) {
-			flash_flexspi_nor_write_enable(data);
-			flash_flexspi_nor_erase_sector(data, current_offset);
-			flash_flexspi_nor_wait_bus_busy(data);
+		while (remaining_size > 0 && ret == 0) {
+			ret = flash_flexspi_nor_write_enable(data);
+			if (ret == 0) {
+				ret = flash_flexspi_nor_erase_sector(data, current_offset);
+			}
+			if (ret == 0) {
+				ret = flash_flexspi_nor_wait_bus_busy(data);
+			}
 			memc_flexspi_reset(&data->controller);
 			current_offset += SPI_NOR_SECTOR_SIZE;
 			remaining_size -= SPI_NOR_SECTOR_SIZE;
@@ -678,7 +718,7 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 
 	flash_flexspi_nor_unlock(dev);
 
-	return 0;
+	return ret;
 }
 
 static const struct flash_parameters *flash_flexspi_nor_get_parameters(
@@ -859,7 +899,41 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 	}
 
 	/* Wait for QE bit to complete programming */
-	return flash_flexspi_nor_wait_bus_busy(data);
+	ret = flash_flexspi_nor_wait_bus_busy(data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/*
+	 * Readback verify: re-read status register and confirm QE is set.
+	 * SCRATCH_CMD was programmed above to read SR1 (1-byte QER) or SR2
+	 * (2-byte QER), so re-using it here returns the correct register.
+	 */
+	buffer = 0;
+	transfer.dataSize = 1;
+	transfer.seqIndex = SCRATCH_CMD;
+	transfer.cmdType = kFLEXSPI_Read;
+	ret = memc_flexspi_transfer(&data->controller, &transfer);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (rd_size == 2) {
+		/* 2-byte QER: bit is in SR2, SCRATCH_CMD reads SR2 as 1 byte */
+		if (!(buffer & (bit >> 8))) {
+			LOG_ERR("QE readback failed: SR2=0x%02x, expected bit 0x%02x",
+				(uint8_t)(buffer & 0xFF), (uint8_t)(bit >> 8));
+			return -EIO;
+		}
+	} else {
+		if (!(buffer & bit)) {
+			LOG_ERR("QE readback failed: SR=0x%02x, expected bit 0x%02x",
+				(uint8_t)(buffer & 0xFF), (uint8_t)bit);
+			return -EIO;
+		}
+	}
+
+	return 0;
 }
 
 /*
@@ -1162,8 +1236,7 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 		bool xip_cfg = memc_flexspi_is_running_xip(&data->controller);
 
 		if (!xip_cfg || data->size > MB(16)) {
-			ret = flash_flexspi_nor_4byte_enable(data, flexspi_lut,
-							     dw16.enter_4ba);
+			ret = flash_flexspi_nor_4byte_enable(data, flexspi_lut, dw16.enter_4ba);
 		} else {
 			/* ≤16MB under XIP: 24-bit addressing covers full range, skip */
 			ret = 0;
@@ -1283,6 +1356,31 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 						0x4, kFLEXSPI_Command_STOP,
 						kFLEXSPI_1PAD, 0x0);
 			}
+		}
+
+		if (ret == -EIO || ret == -ENOTSUP) {
+			/* QE not supported or verify failed — revert to 1-1-1 */
+			LOG_WRN("Quad enable failed (%d), falling back to 1-1-1", ret);
+			flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
+					kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
+					SPI_NOR_CMD_READ, kFLEXSPI_Command_RADDR_SDR,
+					kFLEXSPI_1PAD, addr_width);
+			flexspi_lut[READ][1] = FLEXSPI_LUT_SEQ(
+					kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD,
+					0x1, kFLEXSPI_Command_STOP,
+					kFLEXSPI_1PAD, 0x0);
+			flexspi_lut[READ][2] = 0;
+			flexspi_lut[READ][3] = 0;
+			flexspi_lut[PAGE_PROGRAM][0] = FLEXSPI_LUT_SEQ(
+					kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
+					SPI_NOR_CMD_PP, kFLEXSPI_Command_RADDR_SDR,
+					kFLEXSPI_1PAD, addr_width);
+			flexspi_lut[PAGE_PROGRAM][1] = FLEXSPI_LUT_SEQ(
+					kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD,
+					0x04, kFLEXSPI_Command_STOP,
+					kFLEXSPI_1PAD, 0x0);
+		} else if (ret != 0) {
+			return ret;
 		}
 
 	} else if (jesd216_bfp_read_support(&header->phdr[0], bfp,
@@ -1406,6 +1504,9 @@ flash_flexspi_nor_is25_clear_dummy_cycles(struct flash_flexspi_nor_data *data,
 	}
 
 	ret = memc_flexspi_transfer(&data->controller, &transfer);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/*
 	 * IS25LPXXX -> 0xff
