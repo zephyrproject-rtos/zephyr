@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_H_
 
 /**
  * @brief Bluetooth Basic Audio Profile (BAP)
@@ -3026,4 +3026,4 @@ int bt_bap_broadcast_assistant_read_recv_state(struct bt_conn *conn, uint8_t idx
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_H_ */

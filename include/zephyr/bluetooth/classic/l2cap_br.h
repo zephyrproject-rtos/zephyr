@@ -7,8 +7,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_L2CAP_BR_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_L2CAP_BR_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_L2CAP_BR_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_L2CAP_BR_H_
 
 /**
  * @brief Bluetooth Logical Link Control and Adaptation Protocol (L2CAP) for BR/EDR
@@ -255,4 +255,4 @@ int bt_l2cap_br_connless_send(struct bt_conn *conn, uint16_t psm, struct net_buf
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_L2CAP_BR_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_L2CAP_BR_H_ */

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_DF_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_DF_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_DIRECTION_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_DIRECTION_H_
 
 #include <stdint.h>
 
@@ -362,4 +362,4 @@ int bt_df_conn_cte_rsp_enable(struct bt_conn *conn);
  */
 int bt_df_conn_cte_rsp_disable(struct bt_conn *conn);
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_DF_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_DIRECTION_H_ */

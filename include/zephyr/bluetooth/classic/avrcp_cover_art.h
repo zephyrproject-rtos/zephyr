@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AVRCP_COVER_ART_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AVRCP_COVER_ART_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_AVRCP_COVER_ART_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_AVRCP_COVER_ART_H_
 
 /**
  * @brief Audio Video Remote Control Cover Art Profile (AVRCP-CA)
@@ -436,4 +436,4 @@ int bt_avrcp_cover_art_tg_get_linked_thumbnail(struct bt_avrcp_cover_art_tg *tg,
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AVRCP_COVER_ART_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_AVRCP_COVER_ART_H_ */

@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_GOEP_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_GOEP_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_GOEP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_GOEP_H_
 
 /**
  * @brief Generic Object Exchange Profile (GOEP)
@@ -482,4 +482,4 @@ struct net_buf *bt_goep_create_pdu(struct bt_goep *goep, struct net_buf_pool *po
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_GOEP_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_GOEP_H_ */
