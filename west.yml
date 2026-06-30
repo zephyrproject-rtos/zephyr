@@ -32,7 +32,7 @@ manifest:
   projects:
     - name: reqmgmt
       path: doc/reqmgmt
-      revision: main
+      revision: collab-requirements
     - name: acpica
       revision: 8d24867bc9c9d81c81eeac59391cda59333affd4
       path: modules/lib/acpica
