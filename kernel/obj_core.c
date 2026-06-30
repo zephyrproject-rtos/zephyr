@@ -64,9 +64,19 @@ static int z_obj_core_init_all(void)
 		for (const uint8_t *obj = desc->objs_start;
 		     obj < (const uint8_t *)desc->objs_end;
 		     obj += desc->obj_size) {
-			k_obj_core_init_and_link((struct k_obj_core *)
-						 (obj + desc->obj_core_offset),
-						 desc->type);
+			struct k_obj_core *obj_core =
+				(struct k_obj_core *)(obj + desc->obj_core_offset);
+
+			k_obj_core_init_and_link(obj_core, desc->type);
+#ifdef CONFIG_OBJ_CORE_STATS
+			if ((desc->stats_desc != NULL) &&
+			    (desc->stats_size != 0)) {
+				k_obj_core_stats_register(
+					obj_core,
+					(void *)(obj + desc->stats_offset),
+					desc->stats_size);
+			}
+#endif /* CONFIG_OBJ_CORE_STATS */
 		}
 	}
 

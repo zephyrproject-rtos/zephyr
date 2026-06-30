@@ -90,6 +90,11 @@ static struct k_obj_core_stats_desc mem_slab_stats_desc = {
 	.disable = NULL,
 	.enable = NULL,
 };
+
+K_OBJ_TYPE_DEFINE_STATS(obj_type_mem_slab, k_mem_slab, K_OBJ_TYPE_MEM_SLAB_ID,
+			&mem_slab_stats_desc, info);
+#else
+K_OBJ_TYPE_DEFINE(obj_type_mem_slab, k_mem_slab, K_OBJ_TYPE_MEM_SLAB_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_STATS_MEM_SLAB */
 #endif /* CONFIG_OBJ_CORE_MEM_SLAB */
 
@@ -139,26 +144,18 @@ static int create_free_list(struct k_mem_slab *slab)
 /**
  * @brief Complete initialization of statically defined memory slabs.
  *
- * Perform any initialization that wasn't done at build time.
+ * Build the free block list for each statically defined slab. This is
+ * mandatory functional initialization, required whether or not the object
+ * core framework is enabled, so it stays as its own init rather than moving
+ * into the object core registration (see K_OBJ_TYPE_DEFINE_STATS above, which
+ * handles this slab type's object core duties).
  *
  * @retval 0 Success.
  * @retval -EINVAL Slab contains invalid configuration and/or values.
  */
-static int init_mem_slab_obj_core_list(void)
+static int init_mem_slab_module(void)
 {
 	int rc = 0;
-
-	/* Initialize mem_slab object type */
-
-#ifdef CONFIG_OBJ_CORE_MEM_SLAB
-	z_obj_type_init(&obj_type_mem_slab, K_OBJ_TYPE_MEM_SLAB_ID,
-			offsetof(struct k_mem_slab, obj_core));
-#ifdef CONFIG_OBJ_CORE_STATS_MEM_SLAB
-	k_obj_type_stats_init(&obj_type_mem_slab, &mem_slab_stats_desc);
-#endif /* CONFIG_OBJ_CORE_STATS_MEM_SLAB */
-#endif /* CONFIG_OBJ_CORE_MEM_SLAB */
-
-	/* Initialize statically defined mem_slabs */
 
 	STRUCT_SECTION_FOREACH(k_mem_slab, slab) {
 		rc = create_free_list(slab);
@@ -166,21 +163,13 @@ static int init_mem_slab_obj_core_list(void)
 			goto out;
 		}
 		k_object_init(slab);
-
-#ifdef CONFIG_OBJ_CORE_MEM_SLAB
-		k_obj_core_init_and_link(K_OBJ_CORE(slab), &obj_type_mem_slab);
-#ifdef CONFIG_OBJ_CORE_STATS_MEM_SLAB
-		k_obj_core_stats_register(K_OBJ_CORE(slab), &slab->info,
-					  sizeof(struct k_mem_slab_info));
-#endif /* CONFIG_OBJ_CORE_STATS_MEM_SLAB */
-#endif /* CONFIG_OBJ_CORE_MEM_SLAB */
 	}
 
 out:
 	return rc;
 }
 
-SYS_INIT(init_mem_slab_obj_core_list, PRE_KERNEL_1,
+SYS_INIT(init_mem_slab_module, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
