@@ -503,27 +503,22 @@ void i2c_stm32_event(const struct device *dev)
 	}
 #endif
 
-	if (data->burst_len != 0U) {
-		if (use_dma) {
-			goto skip_bytewise_xfer;
-		}
-
-		/* Send next byte */
+	if (!use_dma && (data->burst_len != 0U)) {
 		if (LL_I2C_IsActiveFlag_TXIS(i2c)) {
+			/* Send next byte */
 			LL_I2C_TransmitData8(i2c, *data->xfer_buf);
-		}
-
-		/* Receive next byte */
-		if (LL_I2C_IsActiveFlag_RXNE(i2c)) {
+			data->xfer_buf++;
+			data->xfer_len--;
+			data->burst_len--;
+		} else if (LL_I2C_IsActiveFlag_RXNE(i2c)) {
+			/* Receive next byte */
 			*data->xfer_buf = LL_I2C_ReceiveData8(i2c);
+			data->xfer_buf++;
+			data->xfer_len--;
+			data->burst_len--;
 		}
-
-		data->xfer_buf++;
-		data->xfer_len--;
-		data->burst_len--;
 	}
 
-skip_bytewise_xfer:
 	/* NACK received */
 	if (LL_I2C_IsActiveFlag_NACK(i2c)) {
 		LL_I2C_ClearFlag_NACK(i2c);
@@ -545,8 +540,8 @@ skip_bytewise_xfer:
 		return;
 	}
 
-	if (LL_I2C_IsActiveFlag_TC(i2c) ||
-	    LL_I2C_IsActiveFlag_TCR(i2c)) {
+	if (LL_I2C_IsEnabledIT_TC(i2c) &&
+	    (LL_I2C_IsActiveFlag_TC(i2c) || LL_I2C_IsActiveFlag_TCR(i2c))) {
 		if (use_dma && (data->burst_len != 0U)) {
 			data->xfer_len -= data->burst_len;
 			data->xfer_buf += data->burst_len;
