@@ -143,6 +143,13 @@ static inline void stats(struct net_if *iface)
 			 GET_STAT(iface, icmp.typeerr),
 			 GET_STAT(iface, icmp.chkerr));
 
+#if defined(CONFIG_NET_STATISTICS_IGMP)
+		NET_INFO("IGMP recv      %u\tsent\t%u\tdrop\t%u",
+			 GET_STAT(iface, ipv4_igmp.recv),
+			 GET_STAT(iface, ipv4_igmp.sent),
+			 GET_STAT(iface, ipv4_igmp.drop));
+#endif /* CONFIG_NET_STATISTICS_IGMP */
+
 #if defined(CONFIG_NET_STATISTICS_UDP)
 		NET_INFO("UDP recv       %u\tsent\t%u\tdrop\t%u",
 			 GET_STAT(iface, udp.recv),
