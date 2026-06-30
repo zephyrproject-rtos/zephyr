@@ -59,7 +59,7 @@ def test_testplan_add_testsuites_short(class_testplan):
     assert sorted(testsuite_list) == sorted(expected_testsuites)
 
     # Test 2 : Assert Testcase name is expected & all testsuites values are testcase class objects
-    suite = class_testplan.testsuites.get(tests_rel_dir + 'test_a/test_a.check_1')
+    suite = class_testplan.testsuites.get('test_a.check_1')
     assert suite.name == tests_rel_dir + 'test_a/test_a.check_1'
     assert all(isinstance(n, TestSuite) for n in class_testplan.testsuites.values())
 
@@ -427,7 +427,7 @@ def test_add_instances_short(tmp_path, class_env, all_testsuites_dict, platforms
         instance_list.append(instance)
     plan.add_instances(instance_list)
     assert list(plan.instances.keys()) == \
-		   [platform.name + '/zephyr/' + s for s in list(all_testsuites_dict.keys())]
+		   [platform.name + '/zephyr/' + s.name for s in all_testsuites_dict.values()]
     assert all(isinstance(n, TestInstance) for n in list(plan.instances.values()))
     assert list(plan.instances.values()) == instance_list
 
@@ -512,16 +512,16 @@ def test_quarantine_short(class_testplan, platforms_list, test_data,
 
 
 TESTDATA_PART4 = [
-    (os.path.join('test_d', 'test_d.check_1'), ['dummy'],
+    ('test_d.check_1', ['dummy'],
      None, 'Snippet not supported'),
-    (os.path.join('test_c', 'test_c.check_1'), ['cdc-acm-console'],
+    ('test_c.check_1', ['cdc-acm-console'],
      0, None),
-    (os.path.join('test_d', 'test_d.check_1'), ['dummy', 'cdc-acm-console'],
+    ('test_d.check_1', ['dummy', 'cdc-acm-console'],
      2, 'Snippet not supported'),
 ]
 
 @pytest.mark.parametrize(
-    'testpath, required_snippets, expected_filtered_len, expected_filtered_reason',
+    'testsuite_id, required_snippets, expected_filtered_len, expected_filtered_reason',
     TESTDATA_PART4,
     ids=['app', 'global', 'multiple']
 )
@@ -529,19 +529,17 @@ def test_required_snippets_short(
     class_testplan,
     all_testsuites_dict,
     platforms_list,
-    testpath,
+    testsuite_id,
     required_snippets,
     expected_filtered_len,
     expected_filtered_reason
 ):
     """ Testing required_snippets function of TestPlan class in Twister """
     plan = class_testplan
-    testpath = os.path.join('scripts', 'tests', 'twister', 'test_data',
-                            'testsuites', 'tests', testpath)
-    testsuite = class_testplan.testsuites.get(testpath)
+    testsuite = all_testsuites_dict.get(testsuite_id)
     plan.platforms = platforms_list
     plan.platform_names = [p.name for p in platforms_list]
-    plan.testsuites = {testpath: testsuite}
+    plan.testsuites = {testsuite_id: testsuite}
 
     for _, testcase in plan.testsuites.items():
         testcase.exclude_platform = []
@@ -1341,14 +1339,14 @@ def test_testplan_get_all_tests():
 
 
 TESTDATA_9 = [
-    ([], False, True, 11, 1),
+    ([], False, True, 7, 2),
     ([], False, False, 7, 2),
     ([], True, False, 9, 1),
     ([], True, True, 9, 1),
     ([], True, False, 9, 1),
     (['good_test/dummy.common.1', 'good_test/dummy.common.2', 'good_test/dummy.common.3'], False, True, 3, 1),
     (['good_test/dummy.common.1', 'good_test/dummy.common.2',
-      'duplicate_test/dummy.common.1', 'duplicate_test/dummy.common.2'], False, True, 4, 1),
+      'duplicate_test/dummy.common.1', 'duplicate_test/dummy.common.2'], False, True, 2, 2),
     (['dummy.common.1', 'dummy.common.2'], False, False, 2, 2),
     (['good_test/dummy.common.1', 'good_test/dummy.common.2', 'good_test/dummy.common.3'], True, True, 0, 1),
 ]
@@ -1363,7 +1361,7 @@ TESTDATA_9 = [
         'no filter, alt root, detailed id',
         'no filter, alt root, short id',
         'testsuite filter',
-        'testsuite filter and valid duplicate',
+        'testsuite filter and duplicate',
         'testsuite filter, short id and duplicate',
         'testsuite filter, alt root',
     ]
@@ -1433,9 +1431,8 @@ tests:
 
     tmp_duplicate_test_dir = tmp_test_root_dir / 'duplicate_test'
     tmp_duplicate_test_dir.mkdir()
-    # The duplicate needs to have the same number of tests as these configurations
-    # can be read either with duplicate_test first, or good_test first, so number
-    # of selected tests needs to be the same in both situations.
+    # duplicated testcases should be detected and reported as an error,
+    # no matter if --detailed-test-id is used or not
     testcase_yaml_4 = """\
 tests:
   dummy.common.1:
