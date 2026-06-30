@@ -59,7 +59,8 @@ int gptp_set_port_number(struct net_if *iface, uint16_t port)
 		return -ENODEV;
 	}
 
-	if (port < GPTP_PORT_START || port > GPTP_PORT_END) {
+	if (port < GPTP_PORT_START ||
+	    port >= (GPTP_PORT_START + CONFIG_NET_GPTP_NUM_PORTS)) {
 		return -EINVAL;
 	}
 
