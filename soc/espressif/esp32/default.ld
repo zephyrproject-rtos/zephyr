@@ -507,6 +507,7 @@ SECTIONS
     *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
 #endif /* CONFIG_ESP32_WIFI_RX_IRAM_OPT */
 
+    KEEP(*(.text.z_shared_isr*))
     . = ALIGN(4);
 
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)

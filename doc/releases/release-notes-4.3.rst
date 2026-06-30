@@ -156,6 +156,7 @@ New APIs and options
 * Architectures
 
   * :kconfig:option:`CONFIG_ARCH_HAS_HW_SHADOW_STACK`
+  * :kconfig:option:`CONFIG_ARCH_HAS_INTERRUPT_MATRIX`
   * :kconfig:option:`CONFIG_SRAM_SW_ISR_TABLE`
 
   * x86 Intel CET support

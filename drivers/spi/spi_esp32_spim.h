@@ -34,9 +34,7 @@ struct spi_esp32_config {
 	const struct device *clock_dev;
 	int duty_cycle;
 	int input_delay_ns;
-	int irq_source;
-	int irq_priority;
-	int irq_flags;
+	void (*irq_configure)(void);
 	const struct pinctrl_dev_config *pcfg;
 	clock_control_subsys_t clock_subsys;
 	bool use_iomux;

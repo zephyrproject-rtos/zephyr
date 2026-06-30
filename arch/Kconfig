@@ -893,6 +893,12 @@ config ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET
 config ARCH_HAS_HW_SHADOW_STACK
 	bool
 
+config ARCH_HAS_INTERRUPT_MATRIX
+	bool
+	help
+	  Selected by SoC families that include a hardware interrupt matrix
+	  for routing peripheral interrupt sources to CPU IRQ lines.
+
 #
 # Other architecture related options
 #

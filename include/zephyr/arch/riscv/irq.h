@@ -58,8 +58,17 @@ extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);
 extern int arch_irq_is_enabled(unsigned int irq);
 
+#if defined(CONFIG_ARCH_HAS_INTERRUPT_MATRIX)
+/* For SOCs with interrupt matrix, delegate to SOC-specific implementations */
+void z_soc_irq_enable(unsigned int irq, unsigned int source);
+void z_soc_irq_disable(unsigned int irq, unsigned int source);
+
+#define arch_irq_matrix_enable(irq, source)  z_soc_irq_enable(irq, source)
+#define arch_irq_matrix_disable(irq, source) z_soc_irq_disable(irq, source)
+#endif /* CONFIG_ARCH_HAS_INTERRUPT_MATRIX */
+
 #if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_CLIC) ||                            \
-	defined(CONFIG_RISCV_HAS_AIA)
+	defined(CONFIG_RISCV_HAS_AIA) || (CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
 extern void z_riscv_irq_priority_set(unsigned int irq,
 				     unsigned int prio,
 				     uint32_t flags);

@@ -317,6 +317,28 @@ void z_smp_global_unlock(unsigned int key);
  */
 #define irq_is_enabled(irq) arch_irq_is_enabled(irq)
 
+#ifdef CONFIG_ARCH_HAS_INTERRUPT_MATRIX
+/**
+ * @brief Enable an IRQ source in the interrupt matrix.
+ *
+ * This routine enables interrupts from the specified source for the given IRQ line.
+ *
+ * @param irq IRQ line.
+ * @param source IRQ source.
+ */
+#define irq_matrix_enable(irq, source) arch_irq_matrix_enable(irq, source)
+
+/**
+ * @brief Disable an IRQ source in the interrupt matrix.
+ *
+ * This routine disables interrupts from the specified source for the given IRQ line.
+ *
+ * @param irq IRQ line.
+ * @param source IRQ source.
+ */
+#define irq_matrix_disable(irq, source) arch_irq_matrix_disable(irq, source)
+#endif /* CONFIG_ARCH_HAS_INTERRUPT_MATRIX */
+
 /**
  * @}
  */
