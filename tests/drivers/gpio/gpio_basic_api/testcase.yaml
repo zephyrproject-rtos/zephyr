@@ -58,6 +58,7 @@ tests:
     extra_args: "DTC_OVERLAY_FILE=arduino_D2D3.overlay"
     extra_configs:
       - CONFIG_SKIP_PULL_TEST=y
+      - CONFIG_GPIO_TEST_READ_DELAY=10
     integration_platforms:
       - frdm_k64f
     platform_exclude:
