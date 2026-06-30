@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/init.h>
 #include <zephyr/kernel/obj_core.h>
+#include <kernel_internal.h>
 
 static struct k_spinlock  obj_core_lock;
 
@@ -48,7 +48,7 @@ void k_obj_core_init_and_link(struct k_obj_core *obj_core,
 	k_obj_core_link(obj_core);
 }
 
-static int z_obj_core_init_all(void)
+static void z_obj_core_init_all(void)
 {
 	STRUCT_SECTION_FOREACH(k_obj_core_desc, desc) {
 		z_obj_type_init(desc->type, desc->type_id,
@@ -79,12 +79,9 @@ static int z_obj_core_init_all(void)
 #endif /* CONFIG_OBJ_CORE_STATS */
 		}
 	}
-
-	return 0;
 }
 
-SYS_INIT(z_obj_core_init_all, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+K_KERNEL_INIT_PRE(z_obj_core_init_all);
 
 void k_obj_core_unlink(struct k_obj_core *obj_core)
 {
