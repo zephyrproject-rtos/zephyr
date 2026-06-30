@@ -373,6 +373,7 @@ struct hostapd_config *hostapd_config_read2(const char *fname)
 	conf->ht_capab |= HT_CAP_INFO_SHORT_GI20MHZ;
 	bss->auth_algs = 1;
 	bss->okc = 1;
+	bss->sae_require_mfp = 1;
 	conf->no_pri_sec_switch = 1;
 	conf->ht_op_mode_fixed  = 1;
 #if CONFIG_WIFI_NM_WPA_SUPPLICANT_11AC
