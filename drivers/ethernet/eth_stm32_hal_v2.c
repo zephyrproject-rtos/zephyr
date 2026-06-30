@@ -537,12 +537,10 @@ static void eth_stm32_update_dma_error(struct eth_stm32_hal_dev_data *dev_data, 
 		eth_stats_update_errors_tx(dev_data->iface);
 	}
 #else
-	if ((dma_error & ETH_DMASR_RWTS) || (dma_error & ETH_DMASR_RPSS) ||
-	    (dma_error & ETH_DMASR_RBUS)) {
+	if (dma_error & (ETH_DMASR_RWTS | ETH_DMASR_RPSS | ETH_DMASR_RBUS)) {
 		eth_stats_update_errors_rx(dev_data->iface);
 	}
-	if ((dma_error & ETH_DMASR_ETS) || (dma_error & ETH_DMASR_TPSS) ||
-	    (dma_error & ETH_DMASR_TJTS)) {
+	if (dma_error & (ETH_DMASR_ETS | ETH_DMASR_TPSS | ETH_DMASR_TJTS)) {
 		eth_stats_update_errors_tx(dev_data->iface);
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
