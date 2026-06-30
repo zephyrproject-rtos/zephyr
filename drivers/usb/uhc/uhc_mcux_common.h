@@ -53,9 +53,9 @@ int uhc_mcux_bus_suspend(const struct device *dev);
 /* Signal bus resume event, 20ms K-state + low-speed EOP */
 int uhc_mcux_bus_resume(const struct device *dev);
 
-int uhc_mcux_ep_enable(const struct device *dev, struct usb_host_pipe *pipe);
+int uhc_mcux_pipe_enable(const struct device *dev, struct usb_host_pipe *pipe);
 
-int uhc_mcux_ep_disable(const struct device *dev, struct usb_host_pipe *pipe);
+int uhc_mcux_pipe_disable(const struct device *dev, struct usb_host_pipe *pipe);
 
 int uhc_mcux_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
 

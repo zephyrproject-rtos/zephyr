@@ -817,7 +817,7 @@ static int max3421e_dequeue(const struct device *dev,
 	return 0;
 }
 
-static int max3421e_ep_enable(const struct device *dev, struct usb_host_pipe *pipe)
+static int max3421e_pipe_enable(const struct device *dev, struct usb_host_pipe *pipe)
 {
 	(void)dev;
 	(void)pipe;
@@ -825,7 +825,7 @@ static int max3421e_ep_enable(const struct device *dev, struct usb_host_pipe *pi
 	return 0;
 }
 
-static int max3421e_ep_disable(const struct device *dev, struct usb_host_pipe *pipe)
+static int max3421e_pipe_disable(const struct device *dev, struct usb_host_pipe *pipe)
 {
 	(void)dev;
 	(void)pipe;
@@ -1135,10 +1135,10 @@ static const struct uhc_api max3421e_uhc_api = {
 	.bus_suspend = max3421e_bus_suspend,
 	.bus_resume = max3421e_bus_resume,
 
-	.ep_enable = max3421e_ep_enable,
-	.ep_disable = max3421e_ep_disable,
-	.ep_enqueue = max3421e_enqueue,
-	.ep_dequeue = max3421e_dequeue,
+	.pipe_enable = max3421e_pipe_enable,
+	.pipe_disable = max3421e_pipe_disable,
+	.pipe_enqueue = max3421e_enqueue,
+	.pipe_dequeue = max3421e_dequeue,
 };
 
 static struct max3421e_data max3421e_data = {

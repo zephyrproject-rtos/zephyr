@@ -274,7 +274,7 @@ static usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev, struct us
 	return mcux_ep;
 }
 
-int uhc_mcux_ep_enable(const struct device *dev, struct usb_host_pipe *pipe)
+int uhc_mcux_pipe_enable(const struct device *dev, struct usb_host_pipe *pipe)
 {
 	if ((pipe->desc == NULL) || (pipe->udev == NULL)) {
 		return -EINVAL;
@@ -283,7 +283,7 @@ int uhc_mcux_ep_enable(const struct device *dev, struct usb_host_pipe *pipe)
 	return uhc_mcux_init_hal_ep(dev, pipe) == NULL ? -ENOMEM : 0;
 }
 
-int uhc_mcux_ep_disable(const struct device *dev, struct usb_host_pipe *pipe)
+int uhc_mcux_pipe_disable(const struct device *dev, struct usb_host_pipe *pipe)
 {
 	struct uhc_mcux_data *priv = uhc_get_private(dev);
 	usb_host_pipe_t *mcux_ep;

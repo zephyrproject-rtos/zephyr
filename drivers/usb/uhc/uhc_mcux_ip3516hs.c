@@ -256,10 +256,10 @@ static const struct uhc_api mcux_uhc_api = {
 	.bus_suspend = uhc_mcux_bus_suspend,
 	.bus_resume = uhc_mcux_bus_resume,
 
-	.ep_enable = uhc_mcux_ep_enable,
-	.ep_disable = uhc_mcux_ep_disable,
-	.ep_enqueue = uhc_mcux_enqueue,
-	.ep_dequeue = uhc_mcux_dequeue,
+	.pipe_enable = uhc_mcux_pipe_enable,
+	.pipe_disable = uhc_mcux_pipe_disable,
+	.pipe_enqueue = uhc_mcux_enqueue,
+	.pipe_dequeue = uhc_mcux_dequeue,
 };
 
 static const usb_host_controller_interface_t uhc_mcux_if = {

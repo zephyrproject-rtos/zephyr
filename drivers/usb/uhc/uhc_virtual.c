@@ -592,7 +592,7 @@ static int uhc_vrt_dequeue(const struct device *dev,
 	return 0;
 }
 
-static int uhc_vrt_ep_enable(const struct device *dev, struct usb_host_pipe *pipe)
+static int uhc_vrt_pipe_enable(const struct device *dev, struct usb_host_pipe *pipe)
 {
 	(void)dev;
 	(void)pipe;
@@ -600,7 +600,7 @@ static int uhc_vrt_ep_enable(const struct device *dev, struct usb_host_pipe *pip
 	return 0;
 }
 
-static int uhc_vrt_ep_disable(const struct device *dev, struct usb_host_pipe *pipe)
+static int uhc_vrt_pipe_disable(const struct device *dev, struct usb_host_pipe *pipe)
 {
 	(void)dev;
 	(void)pipe;
@@ -674,10 +674,10 @@ static const struct uhc_api uhc_vrt_api = {
 	.bus_suspend = uhc_vrt_bus_suspend,
 	.bus_resume = uhc_vrt_bus_resume,
 
-	.ep_enable = uhc_vrt_ep_enable,
-	.ep_disable = uhc_vrt_ep_disable,
-	.ep_enqueue = uhc_vrt_enqueue,
-	.ep_dequeue = uhc_vrt_dequeue,
+	.pipe_enable = uhc_vrt_pipe_enable,
+	.pipe_disable = uhc_vrt_pipe_disable,
+	.pipe_enqueue = uhc_vrt_enqueue,
+	.pipe_dequeue = uhc_vrt_dequeue,
 };
 
 #define DT_DRV_COMPAT zephyr_uhc_virtual

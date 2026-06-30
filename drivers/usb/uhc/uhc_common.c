@@ -210,7 +210,7 @@ int uhc_ep_enable(const struct device *dev, struct usb_device *const udev, uint8
 		goto ep_enable_error;
 	}
 
-	if (api->ep_enable == NULL) {
+	if (api->pipe_enable == NULL) {
 		ret = -ENOSYS;
 		goto ep_enable_error;
 	}
@@ -221,8 +221,8 @@ int uhc_ep_enable(const struct device *dev, struct usb_device *const udev, uint8
 		goto ep_enable_error;
 	}
 
-	pipe->udev = udev; /* it is needed in ep_enable */
-	ret = api->ep_enable(dev, pipe);
+	pipe->udev = udev; /* it is needed in pipe_enable */
+	ret = api->pipe_enable(dev, pipe);
 	pipe->enabled = ret ? false : true;
 	pipe->udev = ret ? NULL : udev;
 
@@ -245,7 +245,7 @@ int uhc_ep_disable(const struct device *dev, struct usb_device *const udev, uint
 		goto ep_disable_error;
 	}
 
-	if (api->ep_disable == NULL) {
+	if (api->pipe_disable == NULL) {
 		ret = -ENOSYS;
 		goto ep_disable_error;
 	}
@@ -256,7 +256,7 @@ int uhc_ep_disable(const struct device *dev, struct usb_device *const udev, uint
 		goto ep_disable_error;
 	}
 
-	ret = api->ep_disable(dev, pipe);
+	ret = api->pipe_disable(dev, pipe);
 	if (ret == 0) {
 		pipe->enabled = false;
 		pipe->udev = NULL;
@@ -288,7 +288,7 @@ int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
 	}
 
 	xfer->queued = 1;
-	ret = api->ep_enqueue(dev, xfer);
+	ret = api->pipe_enqueue(dev, xfer);
 	if (ret) {
 		xfer->queued = 0;
 	}
@@ -319,7 +319,7 @@ int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
 		goto ep_dequeue_error;
 	}
 
-	ret = api->ep_dequeue(dev, xfer);
+	ret = api->pipe_dequeue(dev, xfer);
 	xfer->queued = 0;
 
 ep_dequeue_error:

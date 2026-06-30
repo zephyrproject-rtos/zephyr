@@ -316,12 +316,12 @@ struct uhc_api {
 	int (*bus_suspend)(const struct device *dev);
 	int (*bus_resume)(const struct device *dev);
 
-	int (*ep_enable)(const struct device *dev, struct usb_host_pipe *pipe);
-	int (*ep_disable)(const struct device *dev, struct usb_host_pipe *pipe);
-	int (*ep_enqueue)(const struct device *dev,
-			  struct uhc_transfer *const xfer);
-	int (*ep_dequeue)(const struct device *dev,
-			  struct uhc_transfer *const xfer);
+	int (*pipe_enable)(const struct device *dev, struct usb_host_pipe *pipe);
+	int (*pipe_disable)(const struct device *dev, struct usb_host_pipe *pipe);
+	int (*pipe_enqueue)(const struct device *dev,
+			    struct uhc_transfer *const xfer);
+	int (*pipe_dequeue)(const struct device *dev,
+			    struct uhc_transfer *const xfer);
 };
 /**
  * @endcond
