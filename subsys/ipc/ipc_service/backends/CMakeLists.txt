@@ -6,3 +6,4 @@ zephyr_sources_ifdef(CONFIG_IPC_SERVICE_BACKEND_ICMSG_ME_FOLLOWER	ipc_icmsg_me_f
 zephyr_sources_ifdef(CONFIG_IPC_SERVICE_BACKEND_ICBMSG			ipc_icbmsg.c)
 zephyr_sources_ifdef(CONFIG_IPC_SERVICE_BACKEND_INTEL_ADSP_HOST_IPC	ipc_intel_adsp_host_ipc.c)
 zephyr_sources_ifdef(CONFIG_IPC_SERVICE_BACKEND_RPMSG			ipc_rpmsg_static_vrings.c)
+zephyr_sources_ifdef(CONFIG_IPC_SERVICE_BACKEND_RPMSG_LITE			ipc_rpmsg_lite.c)
