@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,8 +84,13 @@ static const struct arm_mpu_region mpu_regions[] = {
 			 REGION_FLASH_ATTR(REGION_QSPI_FLASH_SIZE)),
 #endif
 
+	/*
+	 * PERIPHERAL region must be Execute-Never (XN=1) to prevent Cortex-M7
+	 * speculative instruction fetches into peripheral space.
+	 */
 	MPU_REGION_ENTRY("PERIPHERAL", REGION_PERIPHERAL_BASE_ADDRESS,
-			 REGION_PPB_ATTR(REGION_PERIPHERAL_SIZE)),
+			 {STRONGLY_ORDERED_SHAREABLE | MPU_RASR_XN_Msk |
+			  REGION_PERIPHERAL_SIZE | P_RW_U_NA_Msk}),
 };
 
 const struct arm_mpu_config mpu_config = {
