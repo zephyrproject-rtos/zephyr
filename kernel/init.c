@@ -175,6 +175,14 @@ static struct k_obj_core_stats_desc  kernel_stats_desc = {
 	.disable = NULL,
 	.enable  = NULL,
 };
+
+/* CPU object cores have no static instances to walk; each CPU links its own
+ * object core in z_init_cpu(). Register the type only.
+ */
+K_OBJ_TYPE_DEFINE_TYPE_ONLY(obj_type_cpu, _cpu, K_OBJ_TYPE_CPU_ID,
+			    &cpu_stats_desc);
+#else
+K_OBJ_TYPE_DEFINE_TYPE_ONLY(obj_type_cpu, _cpu, K_OBJ_TYPE_CPU_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
 #endif /* CONFIG_OBJ_CORE_SYSTEM */
 
@@ -604,20 +612,6 @@ FUNC_NORETURN void z_cstart(void)
 }
 
 #ifdef CONFIG_OBJ_CORE_SYSTEM
-static int init_cpu_obj_core_list(void)
-{
-	/* Initialize CPU object type */
-
-	z_obj_type_init(&obj_type_cpu, K_OBJ_TYPE_CPU_ID,
-			offsetof(struct _cpu, obj_core));
-
-#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
-	k_obj_type_stats_init(&obj_type_cpu, &cpu_stats_desc);
-#endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
-
-	return 0;
-}
-
 static int init_kernel_obj_core_list(void)
 {
 	/* Initialize kernel object type */
@@ -637,9 +631,6 @@ static int init_kernel_obj_core_list(void)
 
 	return 0;
 }
-
-SYS_INIT(init_cpu_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 SYS_INIT(init_kernel_obj_core_list, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
