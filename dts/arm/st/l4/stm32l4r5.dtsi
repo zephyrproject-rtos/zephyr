@@ -72,5 +72,16 @@
 				status = "disabled";
 			};
 		};
+
+		sai1: sai1@40015400 {
+			/* L4R/S SAI DMA Request differs from L4P/Q */
+			sai1_a: sai1a@4 {
+				dmas = <&dma2 1 36 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+			};
+
+			sai1_b: sai1b@24 {
+				dmas = <&dma2 2 37 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+			};
+		};
 	};
 };
