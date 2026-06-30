@@ -36,3 +36,9 @@
 	pinctrl-0 = <&uart_default>;
 	pinctrl-names = "default";
 };
+
+&clkctrl {
+	status = "okay";
+	clocks = <&clk_hse>;
+	clock-divider = <5>; /* 6.4 MHz */
+};
