@@ -561,34 +561,79 @@ def try_making_symlink(source: str, link: str):
         shutil.copy(source, temp_filename)
         os.replace(temp_filename, link)
 
-def choose_gcov_tool(options, is_system_gcov):
-    gcov_tool = None
-    if not options.gcov_tool:
-        zephyr_sdk_gcov_tool = os.path.join(
-            os.environ.get("ZEPHYR_SDK_INSTALL_DIR", default=""),
-            "gnu/x86_64-zephyr-elf/bin/x86_64-zephyr-elf-gcov")
-        if os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT", "").endswith("/llvm"):
-            llvm_path = os.environ.get("LLVM_TOOLCHAIN_PATH")
-            if llvm_path is not None:
-                llvm_path = os.path.join(llvm_path, "bin")
-            llvm_cov = shutil.which("llvm-cov", path=llvm_path)
-            llvm_cov_ext = pathlib.Path(llvm_cov).suffix
-            gcov_lnk = os.path.join(options.outdir, f"gcov{llvm_cov_ext}")
-            try_making_symlink(llvm_cov, gcov_lnk)
-            gcov_tool = gcov_lnk
-        elif is_system_gcov:
-            gcov_tool = "gcov"
-        elif os.path.exists(zephyr_sdk_gcov_tool):
-            gcov_tool = zephyr_sdk_gcov_tool
-        else:
-            logger.error(
-                "Can't find a suitable gcov tool. Use --gcov-tool or set ZEPHYR_SDK_INSTALL_DIR."
-            )
-            sys.exit(1)
-    else:
-        gcov_tool = str(options.gcov_tool)
+def read_cmake_cache_var(build_dir, var):
+    """ Return the value of a CMake cache variable from build_dir, or None. """
+    cache = os.path.join(build_dir, "CMakeCache.txt")
+    # CMake cache entries look like 'NAME:TYPE=VALUE'.
+    pattern = re.compile(rf"^{re.escape(var)}:[^=]*=(.*)$")
+    try:
+        with open(cache) as f:
+            for line in f:
+                match = pattern.match(line.strip())
+                if match:
+                    return match.group(1).strip()
+    except OSError:
+        return None
 
-    return gcov_tool
+    return None
+
+
+def find_cached_path_in_builds(instances, var):
+    """ Find a CMake cache path variable across the given instances' builds.
+
+    Each Zephyr build resolves the gcov tool matching its toolchain and
+    records it (CMAKE_GCOV) in CMakeCache.txt, so reading it back gives a
+    binary that is guaranteed to match the gcno/gcda data. Returns the first
+    value that exists on disk, or None.
+    """
+    for instance in (instances or {}).values():
+        value = read_cmake_cache_var(instance.build_dir, var)
+        if value and os.path.exists(value):
+            return value
+
+    return None
+
+
+def choose_gcov_tool(options, is_system_gcov, instances=None):
+    if options.gcov_tool:
+        return str(options.gcov_tool)
+
+    if os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT", "").endswith("/llvm"):
+        llvm_path = os.environ.get("LLVM_TOOLCHAIN_PATH")
+        if llvm_path is not None:
+            llvm_path = os.path.join(llvm_path, "bin")
+        llvm_cov = shutil.which("llvm-cov", path=llvm_path)
+        llvm_cov_ext = pathlib.Path(llvm_cov).suffix
+        gcov_lnk = os.path.join(options.outdir, f"gcov{llvm_cov_ext}")
+        try_making_symlink(llvm_cov, gcov_lnk)
+        return gcov_lnk
+
+    if is_system_gcov:
+        return "gcov"
+
+    # Auto-detect the gcov tool used by the builds. Zephyr's CMake toolchain
+    # logic resolves the gcov binary (CMAKE_GCOV) when configuring each build,
+    # which for the Zephyr SDK points at the SDK's cross gcov. Preferring it
+    # avoids depending on ZEPHYR_SDK_INSTALL_DIR being exported and works for
+    # any target architecture.
+    gcov_tool = find_cached_path_in_builds(instances, "CMAKE_GCOV")
+    if gcov_tool:
+        return gcov_tool
+
+    # Fall back to deriving the path from the Zephyr SDK install dir, taken
+    # from the environment or, failing that, from what a build recorded.
+    sdk_dir = os.environ.get("ZEPHYR_SDK_INSTALL_DIR") or \
+        find_cached_path_in_builds(instances, "ZEPHYR_SDK_INSTALL_DIR")
+    if sdk_dir:
+        zephyr_sdk_gcov_tool = os.path.join(
+            sdk_dir, "gnu/x86_64-zephyr-elf/bin/x86_64-zephyr-elf-gcov")
+        if os.path.exists(zephyr_sdk_gcov_tool):
+            return zephyr_sdk_gcov_tool
+
+    logger.error(
+        "Can't find a suitable gcov tool. Use --gcov-tool or set ZEPHYR_SDK_INSTALL_DIR."
+    )
+    sys.exit(1)
 
 
 def run_coverage_tool(options, outdir, is_system_gcov, instances,
@@ -597,7 +642,7 @@ def run_coverage_tool(options, outdir, is_system_gcov, instances,
     if not coverage_tool:
         return False, {}
 
-    coverage_tool.gcov_tool = str(choose_gcov_tool(options, is_system_gcov))
+    coverage_tool.gcov_tool = str(choose_gcov_tool(options, is_system_gcov, instances))
     logger.debug(f"Using gcov tool: {coverage_tool.gcov_tool}")
 
     coverage_tool.instances = instances
