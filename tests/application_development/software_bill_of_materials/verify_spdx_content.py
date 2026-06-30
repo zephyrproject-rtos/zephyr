@@ -237,7 +237,7 @@ class TestAppDocument:
         copyright_text = str(main_c_spdx.copyright_text)
         expected = [
             "Copyright The Zephyr Project Contributors",
-            "Copyright (c) 2026 The Linux Foundation",
+            "Copyright (C) 2026 The Linux Foundation",
         ]
         for s in expected:
             assert s in copyright_text, f"main.c copyright missing '{s}', got '{copyright_text}'"
