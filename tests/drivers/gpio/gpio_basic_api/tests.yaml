@@ -47,6 +47,14 @@ tests:
     harness_config:
       fixture: fgpio_loopback
 
+  drivers.gpio.2pin_ke15z_fgpio:
+    min_flash: 34
+    platform_allow:
+      - frdm_ke15z
+    extra_args: "DTC_OVERLAY_FILE=boards/frdm_ke15z_fgpio.overlay"
+    harness_config:
+      fixture: fgpio_loopback
+
   drivers.gpio.2pin_arduino:
     min_flash: 34
     depends_on:
