@@ -53,24 +53,17 @@ static struct k_obj_core_stats_desc  thread_stats_desc = {
 };
 #endif /* CONFIG_OBJ_CORE_STATS_THREAD */
 
-static int init_thread_obj_core_list(void)
-{
-	/* Initialize mem_slab object type */
-
-#ifdef CONFIG_OBJ_CORE_THREAD
-	z_obj_type_init(&obj_type_thread, K_OBJ_TYPE_THREAD_ID,
-			offsetof(struct k_thread, obj_core));
-#endif /* CONFIG_OBJ_CORE_THREAD */
-
+/* Threads have no statically defined instances to walk; each thread links its
+ * own object core as it is created (see z_setup_new_thread()). Register the
+ * type only.
+ */
 #ifdef CONFIG_OBJ_CORE_STATS_THREAD
-	k_obj_type_stats_init(&obj_type_thread, &thread_stats_desc);
+K_OBJ_TYPE_DEFINE_TYPE_ONLY(obj_type_thread, k_thread, K_OBJ_TYPE_THREAD_ID,
+			    &thread_stats_desc);
+#else
+K_OBJ_TYPE_DEFINE_TYPE_ONLY(obj_type_thread, k_thread, K_OBJ_TYPE_THREAD_ID,
+			    NULL);
 #endif /* CONFIG_OBJ_CORE_STATS_THREAD */
-
-	return 0;
-}
-
-SYS_INIT(init_thread_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif /* CONFIG_OBJ_CORE_THREAD */
 
 
