@@ -19,4 +19,26 @@ config TFA_MAKE_BUILD_TYPE_DEBUG
 	help
 	  When enabled, the build type of TF-A would be debug.
 
+config TFA_BUILD_FIP
+	bool "Generate FIP (Firmware Image Package)"
+	default n
+	help
+	  Generate ARM Firmware Image Package (FIP) containing all boot stages.
+	  Platforms using FIP should enable this explicitly in their board
+	  defconfig.
+
+config TFA_BUILD_BL33
+	bool "Include BL33 (Non-Secure firmware) in TF-A build"
+	default y if TFA_BUILD_FIP
+	default n
+	help
+	  Pass Zephyr binary as BL33 to TF-A build.
+
+config TFA_PLATFORM
+	string "TF-A PLAT parameter"
+	default ""
+	help
+	  Platform name for TF-A build (PLAT= parameter).
+	  Leave empty to set via board.cmake.
+
 endif # BUILD_WITH_TFA

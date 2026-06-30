@@ -1,0 +1,379 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security board configuration for AM62Lx SoC
+#
+
+sec-cfg:
+  rev:
+    boardcfg_abi_maj: 0x0
+    boardcfg_abi_min: 0x1
+
+  processor_acl_list:
+    subhdr:
+      magic: 0xF1EA
+      size: 164
+
+    proc_acl_entries:
+      -  # 1
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 2
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 3
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 4
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 5
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 6
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 7
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 8
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 9
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 10
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 11
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 12
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 13
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 14
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 15
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 16
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 17
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 18
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 19
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 20
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 21
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 22
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 23
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 24
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 25
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 26
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 27
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 28
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 29
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 30
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 31
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+      -  # 32
+        processor_id: 0
+        proc_access_master: 0
+        proc_access_secondary: [0, 0, 0]
+  host_hierarchy:
+    subhdr:
+      magic: 0x8D27
+      size: 68
+    host_hierarchy_entries:
+      -  # 1
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 2
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 3
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 4
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 5
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 6
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 7
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 8
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 9
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 10
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 11
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 12
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 13
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 14
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 15
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 16
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 17
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 18
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 19
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 20
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 21
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 22
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 23
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 24
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 25
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 26
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 27
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 28
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 29
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 30
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 31
+        host_id: 0
+        supervisor_host_id: 0
+      -  # 32
+        host_id: 0
+        supervisor_host_id: 0
+  otp_config:
+    subhdr:
+      magic: 0x4081
+      size: 69
+    otp_entry:
+      -  # 1
+        host_id: 10
+        host_perms: 2
+      -  # 2
+        host_id: 10
+        host_perms: 2
+      -  # 3
+        host_id: 10
+        host_perms: 2
+      -  # 4
+        host_id: 10
+        host_perms: 2
+      -  # 5
+        host_id: 10
+        host_perms: 2
+      -  # 6
+        host_id: 10
+        host_perms: 2
+      -  # 7
+        host_id: 10
+        host_perms: 2
+      -  # 8
+        host_id: 10
+        host_perms: 2
+      -  # 9
+        host_id: 10
+        host_perms: 2
+      -  # 10
+        host_id: 10
+        host_perms: 2
+      -  # 11
+        host_id: 10
+        host_perms: 2
+      -  # 12
+        host_id: 10
+        host_perms: 2
+      -  # 13
+        host_id: 10
+        host_perms: 2
+      -  # 14
+        host_id: 10
+        host_perms: 2
+      -  # 15
+        host_id: 10
+        host_perms: 2
+      -  # 16
+        host_id: 10
+        host_perms: 2
+      -  # 17
+        host_id: 10
+        host_perms: 2
+      -  # 18
+        host_id: 10
+        host_perms: 2
+      -  # 19
+        host_id: 10
+        host_perms: 2
+      -  # 20
+        host_id: 10
+        host_perms: 2
+      -  # 21
+        host_id: 10
+        host_perms: 2
+      -  # 22
+        host_id: 10
+        host_perms: 2
+      -  # 23
+        host_id: 10
+        host_perms: 2
+      -  # 24
+        host_id: 10
+        host_perms: 2
+      -  # 25
+        host_id: 10
+        host_perms: 2
+      -  # 26
+        host_id: 10
+        host_perms: 2
+      -  # 27
+        host_id: 10
+        host_perms: 2
+      -  # 28
+        host_id: 10
+        host_perms: 2
+      -  # 29
+        host_id: 10
+        host_perms: 2
+      -  # 30
+        host_id: 10
+        host_perms: 2
+      -  # 31
+        host_id: 10
+        host_perms: 2
+      -  # 32
+        host_id: 10
+        host_perms: 2
+    write_host_id: 10
+  dkek_config:
+    subhdr:
+      magic: 0x5170
+      size: 12
+    allowed_hosts: [128, 0, 0, 0]
+    allow_dkek_export_tisci: 0x5A
+    rsvd: [0, 0, 0]
+  sa2ul_cfg:
+    subhdr:
+      magic: 0x0
+      size: 0
+    auth_resource_owner: 0
+    enable_saul_psil_global_config_writes: 0x0
+    rsvd: [0, 0]
+  sec_dbg_config:
+    subhdr:
+      magic: 0x42AF
+      size: 16
+    allow_jtag_unlock: 0x5A
+    allow_wildcard_unlock: 0x5A
+    allowed_debug_level_rsvd: 0
+    rsvd: 0
+    min_cert_rev: 0x0
+    jtag_unlock_hosts: [0, 0, 0, 0]
+  sec_handover_cfg:
+    subhdr:
+      magic: 0x0
+      size: 10
+    handover_msg_sender: 0
+    handover_to_host_id: 0
+    rsvd: [0, 0, 0, 0]
