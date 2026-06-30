@@ -22,6 +22,7 @@ config SOC_MCXN947_CPU0
 	select CPU_HAS_ICACHE
 	select HAS_MCUX_SYSCON_LPCAC
 	select HAS_PM
+	select WUC if PM
 	select HAS_POWEROFF
 
 config SOC_MCXN947_CPU1
@@ -45,6 +46,7 @@ config SOC_MCXN547_CPU0
 	select CPU_HAS_ICACHE
 	select HAS_MCUX_SYSCON_LPCAC
 	select HAS_PM
+	select WUC if PM
 	select HAS_POWEROFF
 
 config SOC_MCXN547_CPU1
@@ -65,6 +67,7 @@ config SOC_MCXN236
 	select CPU_HAS_ICACHE
 	select HAS_MCUX_SYSCON_LPCAC
 	select HAS_PM
+	select WUC if PM
 	select HAS_POWEROFF
 
 if SOC_FAMILY_MCXN
