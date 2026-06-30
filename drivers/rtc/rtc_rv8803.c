@@ -510,7 +510,7 @@ static int rv8803_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 	}
 
 	/* Update WADA bit */
-	if ((mask & RTC_ALARM_TIME_MASK_MONTHDAY) || (mask & RTC_ALARM_TIME_MASK_WEEKDAY)) {
+	if (mask & (RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_WEEKDAY)) {
 		reg_val = (mask & RTC_ALARM_TIME_MASK_MONTHDAY) ? RV8803_EXTENSION_WADA_BIT : 0;
 		err = rv8803_update_reg8(dev, RV8803_EXTENSION_REG, RV8803_EXTENSION_WADA_BIT,
 					 reg_val);
