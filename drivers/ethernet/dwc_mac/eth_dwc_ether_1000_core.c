@@ -125,7 +125,7 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 	barrier_dmem_fence_full();
 
 	d = &p->tx_descs[p->tx_desc_head];
-	d->des0 = TDES0_OWN | TDES0_FS | TDES0_FLAGS_DEFAULT;
+	d->des0 |= TDES0_OWN | TDES0_FS;
 
 	barrier_dmem_fence_full();
 	p->tx_desc_head = d_idx;
