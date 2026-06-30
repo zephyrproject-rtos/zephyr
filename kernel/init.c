@@ -301,6 +301,16 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #if CONFIG_IRQ_OFFLOAD
 	arch_irq_offload_init();
 #endif
+
+	/* Run kernel post-init hooks before POST_KERNEL device init, so that
+	 * drivers initialized there may use them (e.g. submit to the system
+	 * work queue). Entries are present only for subsystems that are linked
+	 * in (pay-per-use); the walk references only the section bounds.
+	 */
+	STRUCT_SECTION_FOREACH(k_kernel_init_post_entry, entry) {
+		entry->init_fn();
+	}
+
 	z_sys_init_run_level(INIT_LEVEL_POST_KERNEL);
 
 	soc_late_init_hook();
@@ -560,6 +570,15 @@ FUNC_NORETURN void z_cstart(void)
 
 	board_early_init_hook();
 
+	/* Run kernel pre-init hooks before PRE_KERNEL device init, so those
+	 * drivers may use the kernel objects initialized here. Entries are
+	 * present only for subsystems that are linked in (pay-per-use); the
+	 * walk references only the section bounds.
+	 */
+	STRUCT_SECTION_FOREACH(k_kernel_init_pre_entry, entry) {
+		entry->init_fn();
+	}
+
 	/* perform basic hardware initialization */
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_1);
 #if defined(CONFIG_SMP)
@@ -612,7 +631,7 @@ FUNC_NORETURN void z_cstart(void)
 }
 
 #ifdef CONFIG_OBJ_CORE_SYSTEM
-static int init_kernel_obj_core_list(void)
+static void init_kernel_obj_core_list(void)
 {
 	/* Initialize kernel object type */
 
@@ -628,10 +647,7 @@ static int init_kernel_obj_core_list(void)
 	k_obj_core_stats_register(K_OBJ_CORE(&_kernel), _kernel.usage,
 				  sizeof(_kernel.usage));
 #endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
-
-	return 0;
 }
 
-SYS_INIT(init_kernel_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+K_KERNEL_INIT_PRE(init_kernel_obj_core_list);
 #endif /* CONFIG_OBJ_CORE_SYSTEM */

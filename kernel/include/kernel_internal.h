@@ -35,6 +35,43 @@ void z_init_thread_base(struct _thread_base *thread_base, int priority,
 
 FUNC_NORETURN void z_cstart(void);
 
+/*
+ * Lean kernel-internal init model.
+ *
+ * A subsystem registers a parameterless init function that the boot path runs
+ * at a fixed phase, without the SYS_INIT level/priority machinery (kernel init
+ * order is fixed at compile time). Each entry is emitted into the subsystem's
+ * own translation unit, so it -- and its init -- is linked only when the
+ * subsystem itself is linked, preserving the pay-per-use linkage that SYS_INIT
+ * provides. The entry holds a single function pointer (no device back-pointer
+ * and no priority), so it is half the size of a SYS_INIT init_entry.
+ */
+struct k_kernel_init_pre_entry {
+	void (*init_fn)(void);
+};
+
+struct k_kernel_init_post_entry {
+	void (*init_fn)(void);
+};
+
+/* Register a kernel init function to run before multithreading starts (the
+ * PRE_KERNEL phase), ahead of PRE_KERNEL device init.
+ */
+#define K_KERNEL_INIT_PRE(_fn)                                                 \
+	static const STRUCT_SECTION_ITERABLE(k_kernel_init_pre_entry,          \
+					     _kernel_init_pre_##_fn) = {       \
+		.init_fn = (_fn),                                              \
+	}
+
+/* Register a kernel init function to run after the kernel is up (the
+ * POST_KERNEL phase), before POST_KERNEL device init.
+ */
+#define K_KERNEL_INIT_POST(_fn)                                                \
+	static const STRUCT_SECTION_ITERABLE(k_kernel_init_post_entry,         \
+					     _kernel_init_post_##_fn) = {      \
+		.init_fn = (_fn),                                              \
+	}
+
 extern FUNC_NORETURN void z_thread_entry(k_thread_entry_t entry,
 			  void *p1, void *p2, void *p3);
 
