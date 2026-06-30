@@ -12,4 +12,5 @@ zephyr_library_sources_ifdef(CONFIG_OTP_NXP_RT7XX_OCOTP otp_nxp_rt7xx_ocotp.c)
 zephyr_library_sources_ifdef(CONFIG_OTP_SIFLI_EFUSE otp_sifli_efuse.c)
 zephyr_library_sources_ifdef(CONFIG_OTP_STM32_BSEC otp_bsec_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_OTP_STM32_NVM otp_nvm_stm32.c)
+zephyr_library_sources_ifdef(CONFIG_OTP_SUNXI otp_sunxi.c)
 # zephyr-keep-sorted-stop
