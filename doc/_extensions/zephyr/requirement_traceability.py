@@ -11,8 +11,9 @@ the *test side*: it parses the Doxygen XML produced by the ``doxyrunner`` plugin
 (which already runs at ``builder-inited``) and, for every test function carrying
 ``\\verifies`` / ``\\satisfies`` links, emits an mlx ``item`` with a
 ``validates`` / ``implements`` relationship to the requirement. It then writes a
-traceability page with a coverage chart, a requirement<->test matrix and a
-requirement hierarchy tree.
+traceability page with verification and implementation coverage charts, a
+requirement<->test matrix, a requirement<->implementation matrix, a
+requirement<->design matrix and a requirement hierarchy tree.
 
 Doxygen only emits a resolvable ``refid`` for links that point at a real
 requirement, so the XML is effectively pre-validated.
@@ -177,25 +178,49 @@ def _render_page(symbols: dict[str, dict]) -> str:
         "#" * len(title),
         "",
         "Traceability between the imported requirements and the tests that verify",
-        "them (and the code that implements them), derived from the ``@verifies`` /",
+        "them and the code that implements them, derived from the ``@verifies`` and",
         "``@satisfies`` links in the source.",
         "",
         "Coverage",
         "========",
         "",
+        "Share of software requirements with at least one verifying test, and with",
+        "at least one implementing symbol.",
+        "",
         ".. item-piechart:: Requirement verification coverage",
         "   :id_set: ZEP-SRS test_",
         "   :label_set: unverified, verified",
         "",
+        ".. item-piechart:: Requirement implementation coverage",
+        "   :id_set: ZEP-SRS ^(?!ZEP-|DESIGN-|test_).+",
+        "   :label_set: unimplemented, implemented",
+        "",
         "Requirement / test matrix",
         "=========================",
         "",
+        "Software requirements and the tests that verify them (``@verifies``).",
+        "",
         ".. item-matrix:: Requirements and their verifying tests",
-        "   :source: ZEP-S",
+        "   :source: ZEP-SRS",
         "   :target: test_",
         "   :sourcetitle: Requirement",
-        "   :targettitle: Verifying test / implementation",
-        "   :type: validated_by implemented_by",
+        "   :targettitle: Verifying test",
+        "   :type: validated_by",
+        "   :nocaptions:",
+        "   :stats:",
+        "",
+        "Requirement / implementation matrix",
+        "===================================",
+        "",
+        "Software requirements and the source symbols (functions and macros) that",
+        "implement them (``@satisfies``).",
+        "",
+        ".. item-matrix:: Requirements and the code that implements them",
+        "   :source: ZEP-SRS",
+        "   :target: .",
+        "   :sourcetitle: Requirement",
+        "   :targettitle: Implementing symbol",
+        "   :type: implemented_by",
         "   :nocaptions:",
         "   :stats:",
         "",
