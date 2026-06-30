@@ -32,16 +32,16 @@
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
 
-#include "audio/ascs_internal.h"
+#include <audio/ascs_internal.h>
 
-#include "ascs.h"
-#include "ascs_expects.h"
-#include "bap_stream.h"
-#include "bap_stream_expects.h"
-#include "conn.h"
-#include "iso.h"
+#include <ascs.h>
+#include <ascs_expects.h>
+#include <bap_stream.h>
+#include <bap_stream_expects.h>
+#include <conn.h>
+#include <iso.h>
 
-#include "test_common.h"
+#include <test_common.h>
 
 #define test_sink_ase_state_transition_fixture test_ase_state_transition_fixture
 #define test_source_ase_state_transition_fixture test_ase_state_transition_fixture

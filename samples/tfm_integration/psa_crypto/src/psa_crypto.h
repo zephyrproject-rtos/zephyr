@@ -6,8 +6,8 @@
 
 #include <zephyr/kernel.h>
 
-#include "psa/crypto.h"
-#include "psa/error.h"
+#include <psa/crypto.h>
+#include <psa/error.h>
 
 #ifdef __cplusplus
 extern "C" {

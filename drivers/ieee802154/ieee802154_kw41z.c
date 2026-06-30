@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/random/random.h>
 
-#include "fsl_xcvr.h"
+#include <fsl_xcvr.h>
 
 #if defined(CONFIG_NET_L2_OPENTHREAD)
 #include <zephyr/net/openthread.h>

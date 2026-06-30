@@ -16,13 +16,13 @@
 
 #include <zephyr/settings/settings.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
 #include "common.h"
-#include "settings.h"
+#include <settings.h>
 
-#include "argparse.h"
-#include "bs_pc_backchannel.h"
+#include <argparse.h>
+#include <bs_pc_backchannel.h>
 
 #define GOOD_CLIENT_CHAN 0
 #define BAD_CLIENT_CHAN 1

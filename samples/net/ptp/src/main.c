@@ -13,8 +13,8 @@ LOG_MODULE_REGISTER(net_ptp_sample, LOG_LEVEL_DBG);
 #include <errno.h>
 #include <stdlib.h>
 
-#include "ptp/clock.h"
-#include "ptp/port.h"
+#include <ptp/clock.h>
+#include <ptp/port.h>
 
 static int run_duration = CONFIG_NET_SAMPLE_RUN_DURATION;
 static struct k_work_delayable stop_sample;

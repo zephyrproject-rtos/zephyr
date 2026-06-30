@@ -19,7 +19,7 @@
 #include <zephyr/drivers/interrupt_controller/intc_exti_stm32.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
-#include "stm32_hsem.h"
+#include <stm32_hsem.h>
 #include "intc_exti_stm32_priv.h"
 
 LOG_MODULE_REGISTER(exti_stm32, CONFIG_INTC_LOG_LEVEL);

@@ -7,7 +7,7 @@
 
 #include <zephyr/net/wifi_mgmt.h>
 
-#include "sl_wifi_types.h"
+#include <sl_wifi_types.h>
 
 int siwx91x_scan(const struct device *dev,
 		 struct net_if *iface,

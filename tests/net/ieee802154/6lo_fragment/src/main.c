@@ -28,11 +28,11 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
 #include <zephyr/tc_util.h>
 
-#include "6lo.h"
-#include "ieee802154_6lo_fragment.h"
+#include <6lo.h>
+#include <ieee802154_6lo_fragment.h>
 
 #define NET_LOG_ENABLED 1
-#include "net_private.h"
+#include <net_private.h>
 
 #define DEBUG 0
 

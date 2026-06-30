@@ -14,8 +14,8 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/mem_blocks.h>
 
-#include "em_ldma.h"
-#include "dmadrv.h"
+#include <em_ldma.h>
+#include <dmadrv.h>
 
 #define DT_DRV_COMPAT silabs_ldma
 

@@ -11,8 +11,8 @@
 #include <zephyr/irq.h>
 #include <soc.h>
 #include <zephyr/logging/log.h>
-#include "r_rspi_rx_if.h"
-#include "iodefine.h"
+#include <r_rspi_rx_if.h>
+#include <iodefine.h>
 
 LOG_MODULE_REGISTER(rx_rspi);
 #include "spi_context.h"

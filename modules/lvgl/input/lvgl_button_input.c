@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT zephyr_lvgl_button_input
 
-#include "lvgl_common_input.h"
-#include "lvgl_button_input.h"
+#include <lvgl_common_input.h>
+#include <lvgl_button_input.h>
 
 #include <zephyr/logging/log.h>
 

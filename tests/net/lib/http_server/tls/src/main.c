@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "server_internal.h"
+#include <server_internal.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/http/service.h>
 #include <zephyr/net/net_core.h>
@@ -48,7 +48,7 @@ HTTPS_SERVICE_DEFINE(test_http_service, MY_IPV4_ADDR, &test_http_service_port,
 		     sizeof(server_tag_list_verify));
 
 static const unsigned char ca[] = {
-#include "ca.inc"
+#include <ca.inc>
 };
 
 /**
@@ -57,7 +57,7 @@ static const unsigned char ca[] = {
  * This is the public key of the server.
  */
 static const unsigned char server[] = {
-#include "server.inc"
+#include <server.inc>
 };
 
 /**
@@ -66,7 +66,7 @@ static const unsigned char server[] = {
  * This is the private key of the server.
  */
 static const unsigned char server_privkey[] = {
-#include "server_privkey.inc"
+#include <server_privkey.inc>
 };
 
 /**
@@ -75,7 +75,7 @@ static const unsigned char server_privkey[] = {
  * This is the public key of the client.
  */
 static const unsigned char client[] = {
-#include "client.inc"
+#include <client.inc>
 };
 
 /**
@@ -84,11 +84,11 @@ static const unsigned char client[] = {
  * This is the private key of the client.
  */
 static const unsigned char client_privkey[] = {
-#include "client_privkey.inc"
+#include <client_privkey.inc>
 };
 
 static const unsigned char index_html_gz[] = {
-#include "index.html.gz.inc"
+#include <index.html.gz.inc>
 };
 
 static const unsigned char compressed_inc_file[] = {

@@ -6,8 +6,8 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/buf.h>
-#include "mocks/id.h"
-#include "mocks/id_expects.h"
+#include <mocks/id.h>
+#include <mocks/id_expects.h>
 
 void expect_single_call_bt_id_del(struct bt_keys *keys)
 {

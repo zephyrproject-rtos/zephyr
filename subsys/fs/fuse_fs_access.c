@@ -9,8 +9,8 @@
 #include <zephyr/fs/fs.h>
 #include <nsi_errno.h>
 
-#include "cmdline.h"
-#include "soc.h"
+#include <cmdline.h>
+#include <soc.h>
 
 #include "fuse_fs_access_bottom.h"
 

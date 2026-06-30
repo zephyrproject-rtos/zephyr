@@ -6,10 +6,10 @@
 
 #include <zephyr/kernel.h>
 
-#include "bs_tracing.h"
-#include "bstests.h"
-#include "babblekit/testcase.h"
-#include "testlib/log_utils.h"
+#include <bs_tracing.h>
+#include <bstests.h>
+#include <babblekit/testcase.h>
+#include <testlib/log_utils.h>
 
 extern void entrypoint_dut(void);
 extern enum bst_result_t bst_result;

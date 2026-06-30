@@ -23,7 +23,7 @@
 #include <cyhal_dma_dw.h>
 
 #if CYHAL_DRIVER_AVAILABLE_SYSPM && CONFIG_PM
-#include "cyhal_syspm_impl.h"
+#include <cyhal_syspm_impl.h>
 #endif
 
 #include <zephyr/devicetree.h>

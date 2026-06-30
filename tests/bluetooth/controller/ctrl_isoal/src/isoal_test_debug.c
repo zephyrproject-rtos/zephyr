@@ -21,18 +21,18 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
 
-#include "util/memq.h"
+#include <util/memq.h>
 
-#include "pdu_df.h"
-#include "lll/pdu_vendor.h"
-#include "pdu.h"
+#include <pdu_df.h>
+#include <lll/pdu_vendor.h>
+#include <pdu.h>
 
-#include "ll.h"
-#include "lll.h"
-#include "lll_conn_iso.h"
-#include "lll_iso_tx.h"
-#include "isoal.h"
-#include "ull_iso_types.h"
+#include <ll.h>
+#include <lll.h>
+#include <lll_conn_iso.h>
+#include <lll_iso_tx.h>
+#include <isoal.h>
+#include <ull_iso_types.h>
 
 #include "isoal_test_common.h"
 #include "isoal_test_debug.h"

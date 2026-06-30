@@ -13,7 +13,7 @@
 #include <adsp_shim.h>
 #include <cavs-idc.h>
 #include <adsp_interrupt.h>
-#include "soc.h"
+#include <soc.h>
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 #include <zephyr/sw_isr_table.h>

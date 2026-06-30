@@ -20,7 +20,7 @@
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 
-#include "vl53l1_api.h"
+#include <vl53l1_api.h>
 #include "vl53l1_platform.h"
 
 LOG_MODULE_REGISTER(VL53L1X, CONFIG_SENSOR_LOG_LEVEL);

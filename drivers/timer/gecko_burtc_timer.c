@@ -25,9 +25,9 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/logging/log.h>
 
-#include "em_device.h"
-#include "em_cmu.h"
-#include "em_burtc.h"
+#include <em_device.h>
+#include <em_cmu.h>
+#include <em_burtc.h>
 
 
 LOG_MODULE_REGISTER(gecko_burtc_timer);

@@ -22,8 +22,8 @@
 #include <zephyr/logging/log.h>
 
 #include <infineon_kconfig.h>
-#include "mtb_serial_memory.h"
-#include "cy_device_headers.h"
+#include <mtb_serial_memory.h>
+#include <cy_device_headers.h>
 
 #ifdef CONFIG_FLASH_INFINEON_SMIF_HW_INIT
 PINCTRL_DT_INST_DEFINE(0);

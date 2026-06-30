@@ -16,7 +16,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/util.h>
 #include <stmemsc.h>
-#include "lsm6dso_reg.h"
+#include <lsm6dso_reg.h>
 
 #if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lsm6dso, spi) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lsm6dso32, spi)

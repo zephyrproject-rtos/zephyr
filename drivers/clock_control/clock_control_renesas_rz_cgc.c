@@ -7,7 +7,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/renesas_rztn_clock.h>
 #include <zephyr/kernel.h>
-#include "bsp_api.h"
+#include <bsp_api.h>
 
 #define DT_DRV_COMPAT renesas_rz_cgc
 

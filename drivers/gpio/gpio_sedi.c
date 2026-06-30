@@ -5,7 +5,7 @@
 
 #define DT_DRV_COMPAT intel_sedi_gpio
 
-#include "sedi_driver_gpio.h"
+#include <sedi_driver_gpio.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>

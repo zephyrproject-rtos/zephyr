@@ -11,25 +11,25 @@
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/sys/util.h>
 
-#include "includes.h"
-#include "common.h"
-#include "common/defs.h"
-#include "common/ieee802_11_defs.h"
-#include "common/ieee802_11_common.h"
-#include "wpa_supplicant/config.h"
-#include "wpa_supplicant_i.h"
-#include "driver_i.h"
+#include <includes.h>
+#include <common.h>
+#include <common/defs.h>
+#include <common/ieee802_11_defs.h>
+#include <common/ieee802_11_common.h>
+#include <wpa_supplicant/config.h>
+#include <wpa_supplicant_i.h>
+#include <driver_i.h>
 
 #include "supp_main.h"
 #include "supp_api.h"
-#include "wpa_cli_zephyr.h"
+#include <wpa_cli_zephyr.h>
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-#include "eap_peer/eap.h"
+#include <eap_peer/eap.h>
 #endif
 #include "supp_events.h"
-#include "hostapd.h"
+#include <hostapd.h>
 #include "hapd_api.h"
-#include "wpa_supplicant/bss.h"
+#include <wpa_supplicant/bss.h>
 
 extern struct k_sem wpa_supplicant_ready_sem;
 extern struct wpa_global *global;

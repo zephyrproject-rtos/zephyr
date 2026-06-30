@@ -15,7 +15,7 @@
 #include <zephyr/sys/util.h>
 #include <soc.h>
 
-#include "sss_crypto.h"
+#include <sss_crypto.h>
 
 struct entropy_ele_data_str {
 	struct k_sem sem_lock;

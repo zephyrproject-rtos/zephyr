@@ -20,13 +20,13 @@
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/logging/log.h>
-#include "clock_update.h"
+#include <clock_update.h>
 
-#include "rsi_rom_clks.h"
-#include "rsi_rom_ulpss_clk.h"
-#include "rsi_power_save.h"
-#include "rsi_pll.h"
-#include "rsi_ulpss_clk.h"
+#include <rsi_rom_clks.h>
+#include <rsi_rom_ulpss_clk.h>
+#include <rsi_power_save.h>
+#include <rsi_pll.h>
+#include <rsi_ulpss_clk.h>
 
 #define DMA_MAX_TRANSFER_COUNT 1024
 #define I2S_SIWX91X_UNSUPPORTED_OPTIONS                                                            \

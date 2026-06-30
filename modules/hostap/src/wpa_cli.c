@@ -19,13 +19,13 @@
 
 #include "supp_main.h"
 
-#include "common.h"
-#include "wpa_supplicant_i.h"
-#include "wpa_cli_zephyr.h"
+#include <common.h>
+#include <wpa_supplicant_i.h>
+#include <wpa_cli_zephyr.h>
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-#include "hostapd.h"
+#include <hostapd.h>
 #include "hapd_main.h"
-#include "hostapd_cli_zephyr.h"
+#include <hostapd_cli_zephyr.h>
 #endif
 
 static int cmd_wpa_cli(const struct shell *sh, size_t argc, const char *argv[])

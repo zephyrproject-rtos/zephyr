@@ -20,9 +20,9 @@ LOG_MODULE_REGISTER(net_arp, CONFIG_NET_ARP_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 
 #include "arp.h"
-#include "ipv4.h"
-#include "route_ipv4.h"
-#include "net_private.h"
+#include <ipv4.h>
+#include <route_ipv4.h>
+#include <net_private.h>
 
 #define NET_BUF_TIMEOUT K_MSEC(100)
 #define ARP_REQUEST_TIMEOUT (2 * MSEC_PER_SEC)

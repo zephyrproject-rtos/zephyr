@@ -23,9 +23,9 @@
 #include <zephyr/bluetooth/hci_raw.h>
 #include <zephyr/bluetooth/iso.h>
 
-#include "edtt_driver.h"
-#include "bs_tracing.h"
-#include "commands.h"
+#include <edtt_driver.h>
+#include <bs_tracing.h>
+#include <commands.h>
 
 #if defined(CONFIG_BT_HCI_CORE_LOG_LEVEL_DBG)
 #define LOG_LEVEL LOG_LEVEL_DBG

@@ -5,8 +5,8 @@
  */
 
 #include <stdint.h>
-#include "bflb_soc.h"
-#include "hbn_reg.h"
+#include <bflb_soc.h>
+#include <hbn_reg.h>
 
 void board_early_init_hook(void)
 {

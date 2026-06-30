@@ -28,7 +28,7 @@
  *
  */
 
-#include "soc_miwu.h"
+#include <soc_miwu.h>
 
 #include <assert.h>
 
@@ -39,7 +39,7 @@
 #include <zephyr/logging/log.h>
 
 #include <soc.h>
-#include "soc_dbg.h"
+#include <soc_dbg.h>
 LOG_MODULE_REGISTER(wdt_npcx, CONFIG_WDT_LOG_LEVEL);
 
 /* Watchdog operating frequency is fixed to LFCLK (32.768) kHz */

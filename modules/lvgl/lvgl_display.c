@@ -8,7 +8,7 @@
 #include <zephyr/kernel.h>
 #include <errno.h>
 
-#include "lvgl_display.h"
+#include <lvgl_display.h>
 
 #ifdef CONFIG_LV_Z_FLUSH_THREAD
 

@@ -15,7 +15,7 @@
 #include <zephyr/net/udp.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "msg.h"
+#include <msg.h>
 
 #define PTP_EVENT_PORT 319U
 #define TEST_VLAN_TAG  100U

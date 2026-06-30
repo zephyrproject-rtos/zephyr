@@ -12,27 +12,27 @@
 #include <zephyr/ztest.h>
 #include <zephyr/sys/util.h>
 
-#include "hal/cpu.h"
-#include "hal/ccm.h"
-#include "hal/radio.h"
+#include <hal/cpu.h>
+#include <hal/ccm.h>
+#include <hal/radio.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/mfifo.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/mfifo.h>
+#include <util/dbuf.h>
 
-#include "pdu_df.h"
-#include "lll/pdu_vendor.h"
-#include "pdu.h"
+#include <pdu_df.h>
+#include <lll/pdu_vendor.h>
+#include <pdu.h>
 
-#include "lll.h"
-#include "lll/lll_df_types.h"
-#include "lll_conn.h"
+#include <lll.h>
+#include <lll/lll_df_types.h>
+#include <lll_conn.h>
 
-#include "lll/lll_internal.h"
-#include "lll/lll_tim_internal.h"
-#include "lll/lll_prof_internal.h"
+#include <lll/lll_internal.h>
+#include <lll/lll_tim_internal.h>
+#include <lll/lll_prof_internal.h>
 
 void lll_conn_flush(uint16_t handle, struct lll_conn *lll)
 {

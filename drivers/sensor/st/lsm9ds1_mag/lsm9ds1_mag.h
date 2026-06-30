@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_LSM9DS1_MAG_LSM9DS1_MAG_H_
 #define ZEPHYR_DRIVERS_SENSOR_LSM9DS1_MAG_LSM9DS1_MAG_H_
 
-#include "lsm9ds1_reg.h"
+#include <lsm9ds1_reg.h>
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <zephyr/drivers/spi.h>

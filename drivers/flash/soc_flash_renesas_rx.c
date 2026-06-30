@@ -13,7 +13,7 @@
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
 #include "soc_flash_renesas_rx.h"
-#include "r_flash_rx_if.h"
+#include <r_flash_rx_if.h>
 
 /*
  * The extern function below is implemented in the r_flash_nofcu.c source file.

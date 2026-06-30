@@ -15,7 +15,7 @@
 #include <zephyr/sys/barrier.h>
 #include "flash_priv.h"
 
-#include "fsl_common.h"
+#include <fsl_common.h>
 #include <zephyr/cache.h>
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
@@ -45,19 +45,19 @@ LOG_MODULE_REGISTER(flash_mcux);
 #endif
 
 #if defined(SOC_HAS_IAP) && !defined(CONFIG_SOC_LPC55S36)
-#include "fsl_iap.h"
+#include <fsl_iap.h>
 #elif defined(CONFIG_SOC_FAMILY_MCXA)
 #if defined(CONFIG_SOC_SERIES_MCXAXX7)
-#include "fsl_flash.h"
+#include <fsl_flash.h>
 #else
-#include "fsl_romapi.h"
+#include <fsl_romapi.h>
 #endif
 #define FLASH_Erase   FLASH_EraseSector
 #define FLASH_Program FLASH_ProgramPhrase
 #elif defined(CONFIG_MCUX_FLASH_K4_API)
-#include "fsl_k4_flash.h"
+#include <fsl_k4_flash.h>
 #else
-#include "fsl_flash.h"
+#include <fsl_flash.h>
 #endif /* SOC_HAS_IAP && !CONFIG_SOC_LPC55S36*/
 
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)

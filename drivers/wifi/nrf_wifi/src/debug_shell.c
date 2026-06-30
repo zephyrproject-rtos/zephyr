@@ -9,8 +9,8 @@
  */
 #include <stdlib.h>
 #include <zephyr/shell/shell.h>
-#include "host_rpu_umac_if.h"
-#include "fmac_main.h"
+#include <host_rpu_umac_if.h>
+#include <fmac_main.h>
 
 extern struct nrf_wifi_drv_priv_zep rpu_drv_priv_zep;
 struct nrf_wifi_ctx_zep *dbg_ctx = &rpu_drv_priv_zep.rpu_ctx_zep;

@@ -47,9 +47,9 @@ LOG_MODULE_REGISTER(net_quic, CONFIG_QUIC_LOG_LEVEL);
 #include <zephyr_mbedtls_priv.h>
 #endif
 
-#include "net_private.h"
-#include "sockets_internal.h"
-#include "tls_internal.h"
+#include <net_private.h>
+#include <sockets_internal.h>
+#include <tls_internal.h>
 #include "quic_internal.h"
 #include "quic_stats.h"
 

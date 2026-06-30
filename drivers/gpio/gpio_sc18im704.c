@@ -16,7 +16,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_sc18im, CONFIG_GPIO_LOG_LEVEL);
 
-#include "i2c/i2c_sc18im704.h"
+#include <i2c/i2c_sc18im704.h>
 
 #define GPIO_SC18IM_MAX_PINS		8
 

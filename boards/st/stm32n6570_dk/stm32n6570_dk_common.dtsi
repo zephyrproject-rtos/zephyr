@@ -6,7 +6,7 @@
 
 #include <st/n6/stm32n657X0.dtsi>
 #include <st/n6/stm32n657x0hxq-pinctrl.dtsi>
-#include "zephyr/dt-bindings/display/panel.h"
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>

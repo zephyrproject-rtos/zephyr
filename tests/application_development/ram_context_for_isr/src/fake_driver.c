@@ -6,7 +6,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/irq.h>
-#include "fake_driver.h"
+#include <fake_driver.h>
 
 #define DT_DRV_COMPAT fakedriver
 

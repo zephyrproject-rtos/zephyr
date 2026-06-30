@@ -19,7 +19,7 @@
 #if defined(__GNUC__)
 #include "test_asm_inline_gcc.h"
 #else
-#include "test_asm_inline_other.h"
+#include <test_asm_inline_other.h>
 #endif
 
 /* These vectors are somewhat arbitrary. We try and use unused vectors */

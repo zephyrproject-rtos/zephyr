@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "xtensa/corebits.h"
-#include "xtensa_backtrace.h"
+#include <xtensa/corebits.h>
+#include <xtensa_backtrace.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/arch/exception.h>
 #if defined(CONFIG_SOC_SERIES_ESP32)
 #include <esp_memory_utils.h>
 #elif defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
-#include "debug_helpers.h"
+#include <debug_helpers.h>
 #elif defined(CONFIG_SOC_XTENSA_DC233C) || defined(CONFIG_SOC_MIMXRT595S_F1)
-#include "backtrace_helpers.h"
+#include <backtrace_helpers.h>
 #endif
 
 #include <xtensa_asm2_context.h>

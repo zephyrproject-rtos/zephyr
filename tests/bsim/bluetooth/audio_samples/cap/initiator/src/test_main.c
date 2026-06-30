@@ -5,7 +5,7 @@
  */
 #include <stddef.h>
 
-#include "bstests.h"
+#include <bstests.h>
 
 extern struct bst_test_list *test_cap_initiator_sample_install(struct bst_test_list *tests);
 

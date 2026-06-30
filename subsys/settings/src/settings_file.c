@@ -12,7 +12,7 @@
 #include <zephyr/fs/fs.h>
 
 #include <zephyr/settings/settings.h>
-#include "settings/settings_file.h"
+#include <settings/settings_file.h>
 #include "settings_priv.h"
 
 #include <zephyr/logging/log.h>

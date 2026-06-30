@@ -15,7 +15,7 @@
 #include <zephyr/posix/unistd.h>
 #include <zephyr/posix/arpa/inet.h>
 
-#include "net_sample_common.h"
+#include <net_sample_common.h>
 
 LOG_MODULE_REGISTER(coap_upload, LOG_LEVEL_INF);
 

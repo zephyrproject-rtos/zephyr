@@ -10,7 +10,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/ztest.h>
 
-#include "ina237.h"
+#include <ina237.h>
 #include "emul_ina228.h"
 
 struct ina228_fixture {

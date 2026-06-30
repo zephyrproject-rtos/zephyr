@@ -36,7 +36,7 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
 
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-#include "tls_internal.h"
+#include <tls_internal.h>
 #include <zephyr/net/tls_credentials.h>
 #endif
 

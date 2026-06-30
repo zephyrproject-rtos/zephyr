@@ -8,7 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/phy.h>
-#include "fsl_tenbaset_phy.h"
+#include <fsl_tenbaset_phy.h>
 
 #define LOG_MODULE_NAME phy_nxp_t1s
 #define LOG_LEVEL       CONFIG_PHY_LOG_LEVEL

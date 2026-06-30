@@ -18,8 +18,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV4_ROUTE_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_ip.h>
 
-#include "route_ipv4.h"
-#include "arp.h"
+#include <route_ipv4.h>
+#include <arp.h>
 
 static struct net_in_addr my_addr = { .s4_addr = { 192, 0, 2, 1 } };
 static struct net_in_addr my_addr_alt = { .s4_addr = { 192, 0, 3, 1 } };

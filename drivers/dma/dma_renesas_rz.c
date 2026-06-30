@@ -14,7 +14,7 @@
 #endif /* CONFIG_CPU_CORTEX_A */
 
 #ifdef CONFIG_USE_RZ_FSP_DMAC_B
-#include "r_dmac_b.h"
+#include <r_dmac_b.h>
 
 static const transfer_api_t *const rz_g_transfer_on_dma = &g_transfer_on_dmac_b;
 #define dma_instance_ctrl_t dmac_b_instance_ctrl_t
@@ -28,7 +28,7 @@ void dmac_b_err_isr(void *irq);
 #define RZ_DMA_ERR_ISR(irq) dmac_b_err_isr((void *)irq)
 
 #else /* CONFIG_USE_RZ_FSP_DMAC */
-#include "r_dmac.h"
+#include <r_dmac.h>
 
 static const transfer_api_t *const rz_g_transfer_on_dma = &g_transfer_on_dmac;
 #define dma_instance_ctrl_t dmac_instance_ctrl_t

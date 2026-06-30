@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 #include <zephyr/sys/byteorder.h>
 
 #ifdef CONFIG_ARCH_POSIX
-#include "posix_board_if.h"
+#include <posix_board_if.h>
 #endif
 
 #include "display.h"

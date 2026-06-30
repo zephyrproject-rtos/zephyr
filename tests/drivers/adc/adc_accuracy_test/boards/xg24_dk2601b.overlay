@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "dt-bindings/adc/silabs-adc.h"
+#include <dt-bindings/adc/silabs-adc.h>
 
 / {
 	zephyr,user {

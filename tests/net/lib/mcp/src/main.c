@@ -10,9 +10,9 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "mcp_transport_mock.h"
-#include "mcp_server_internal.h"
-#include "mcp_common.h"
+#include <mcp_transport_mock.h>
+#include <mcp_server_internal.h>
+#include <mcp_common.h>
 
 /* Tool execution test callbacks with different behaviors */
 static int tool_execution_count;

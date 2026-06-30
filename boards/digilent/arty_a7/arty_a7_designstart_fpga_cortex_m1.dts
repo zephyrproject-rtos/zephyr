@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <arm/armv6-m.dtsi>
-#include "arty_a7_arm_designstart.dtsi"
+#include <arty_a7_arm_designstart.dtsi>
 
 / {
 	model = "Digilent Arty A7 ARM DesignStart Cortex-M1";

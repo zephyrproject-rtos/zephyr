@@ -6,7 +6,7 @@
  */
 
 #include "settings_test.h"
-#include "settings/settings_fcb.h"
+#include <settings/settings_fcb.h>
 
 ZTEST(settings_config_fcb, test_config_save_1_fcb)
 {

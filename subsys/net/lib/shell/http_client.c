@@ -351,7 +351,7 @@ static int http_client_connect(struct http_client_sh_ctx *ctx)
 
 #if defined(CONFIG_NET_SHELL_HTTP_CLIENT_HAS_CERTIFICATE)
 static const uint8_t ca_certificate[] = {
-#include "net_shell_http_client_ca.der.inc"
+#include <net_shell_http_client_ca.der.inc>
 };
 
 static int http_client_certificate(void)

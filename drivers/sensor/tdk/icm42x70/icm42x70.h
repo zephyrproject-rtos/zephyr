@@ -15,9 +15,9 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>
 
-#include "imu/inv_imu_driver.h"
+#include <imu/inv_imu_driver.h>
 #ifdef CONFIG_TDK_APEX
-#include "imu/inv_imu_apex.h"
+#include <imu/inv_imu_apex.h>
 #endif
 
 union icm42x70_bus {

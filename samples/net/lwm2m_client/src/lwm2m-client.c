@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/conn_mgr_connectivity.h>
 #include "modules.h"
-#include "lwm2m_resource_ids.h"
+#include <lwm2m_resource_ids.h>
 /* NTN (Non-Terrestrial Network) has high latency (~10-15 sec RTT)
  * Increase DTLS handshake timeouts accordingly
  */

@@ -13,7 +13,7 @@
 #include <soc.h>
 #include <zephyr/sys/util.h>
 #include <altera_common.h>
-#include "altera_avalon_i2c.h"
+#include <altera_avalon_i2c.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>

@@ -16,7 +16,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/util.h>
 #include <stmemsc.h>
-#include "lis2de12_reg.h"
+#include <lis2de12_reg.h>
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <zephyr/drivers/spi.h>

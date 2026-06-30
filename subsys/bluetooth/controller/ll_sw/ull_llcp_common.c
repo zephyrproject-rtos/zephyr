@@ -12,32 +12,32 @@
 
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "hal/ccm.h"
+#include <hal/ccm.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/dbuf.h"
-#include "util/mayfly.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/dbuf.h>
+#include <util/mayfly.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
-#include "ll.h"
-#include "ll_settings.h"
+#include <ll.h>
+#include <ll_settings.h>
 
 #include "lll.h"
-#include "ll_feat.h"
-#include "lll/lll_df_types.h"
+#include <ll_feat.h>
+#include <lll/lll_df_types.h>
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
 #include "lll_scan.h"
-#include "lll/lll_adv_types.h"
+#include <lll/lll_adv_types.h>
 #include "lll_adv.h"
-#include "lll/lll_adv_pdu.h"
+#include <lll/lll_adv_pdu.h>
 
 #include "ull_tx_queue.h"
 
@@ -62,7 +62,7 @@
 #include "ull_llcp_internal.h"
 
 #include <soc.h>
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 /* LLCP Local Procedure FSM states */
 enum {

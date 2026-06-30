@@ -7,7 +7,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/kernel.h>
 
-#include "mocks/conn.h"
+#include <mocks/conn.h>
 
 DEFINE_FAKE_VOID_FUNC(bt_conn_unref, struct bt_conn *);
 DEFINE_FAKE_VALUE_FUNC(int, bt_le_create_conn_cancel);

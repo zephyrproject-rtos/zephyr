@@ -16,7 +16,7 @@
 #include <zephyr/drivers/misc/renesas_rx_external_interrupt/renesas_rx_external_interrupt.h>
 #include <zephyr/irq.h>
 #include <soc.h>
-#include "r_mpc_rx_if.h"
+#include <r_mpc_rx_if.h>
 
 struct gpio_rx_irq_info {
 	const struct device *port_irq;

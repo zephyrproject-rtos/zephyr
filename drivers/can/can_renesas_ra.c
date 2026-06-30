@@ -9,8 +9,8 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/can/transceiver.h>
-#include "r_can_api.h"
-#include "r_canfd.h"
+#include <r_can_api.h>
+#include <r_canfd.h>
 
 LOG_MODULE_REGISTER(can_renesas_ra, CONFIG_CAN_LOG_LEVEL);
 

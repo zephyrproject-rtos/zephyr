@@ -17,12 +17,12 @@
 #include <zephyr/settings/settings.h>
 
 #include "common.h"
-#include "settings.h"
+#include <settings.h>
 
-#include "argparse.h"
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
-#include "babblekit/sync.h"
+#include <argparse.h>
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
+#include <babblekit/sync.h>
 
 #define CLIENT_CHAN 0
 

@@ -26,7 +26,7 @@
 #include <infineon_autanalog.h>
 #include <infineon_autanalog_prb.h>
 
-#include "cy_pdl.h"
+#include <cy_pdl.h>
 
 LOG_MODULE_REGISTER(mfd_infineon_autanalog_prb, CONFIG_MFD_LOG_LEVEL);
 

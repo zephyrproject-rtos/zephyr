@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT telink_b91_zb
 
-#include "rf.h"
-#include "stimer.h"
+#include <rf.h>
+#include <stimer.h>
 
 #define LOG_MODULE_NAME ieee802154_b91
 #if defined(CONFIG_IEEE802154_DRIVER_LOG_LEVEL)

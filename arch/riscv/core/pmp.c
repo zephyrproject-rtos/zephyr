@@ -26,7 +26,7 @@
  * modified.
  */
 
-#include "zephyr/toolchain.h"
+#include <zephyr/toolchain.h>
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <zephyr/linker/linker-defs.h>

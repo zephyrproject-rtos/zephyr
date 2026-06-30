@@ -14,33 +14,33 @@
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "hal/cpu.h"
-#include "hal/ecb.h"
-#include "hal/ccm.h"
-#include "hal/cntr.h"
-#include "hal/ticker.h"
+#include <hal/cpu.h>
+#include <hal/ecb.h>
+#include <hal/ccm.h>
+#include <hal/cntr.h>
+#include <hal/ticker.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/mfifo.h"
-#include "util/memq.h"
-#include "util/mayfly.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/mfifo.h>
+#include <util/memq.h>
+#include <util/mayfly.h>
+#include <util/dbuf.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll/lll_vendor.h"
-#include "lll/lll_adv_types.h"
+#include <lll/lll_vendor.h>
+#include <lll/lll_adv_types.h>
 #include "lll_adv.h"
-#include "lll/lll_adv_pdu.h"
+#include <lll/lll_adv_pdu.h>
 #include "lll_chan.h"
 #include "lll_scan.h"
-#include "lll/lll_df_types.h"
+#include <lll/lll_df_types.h>
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
 #include "lll_iso_tx.h"
@@ -51,14 +51,14 @@
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"
-#include "ll_sw/ull_tx_queue.h"
+#include <ll_sw/ull_tx_queue.h>
 #include "ull_conn_types.h"
 #include "ull_filter.h"
 #include "ull_df_types.h"
 #include "ull_df_internal.h"
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
-#include "ull_vendor.h"
+#include <ull_vendor.h>
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
 #include "isoal.h"
@@ -81,14 +81,14 @@
 #include "ull_conn_iso_internal.h"
 #include "ull_peripheral_iso_internal.h"
 
-#include "ll.h"
-#include "ll_feat.h"
+#include <ll.h>
+#include <ll_feat.h>
 #include "ll_test.h"
-#include "ll_settings.h"
+#include <ll_settings.h>
 
-#include "lll/lll_prof_internal.h"
+#include <lll/lll_prof_internal.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #define TEST_TICKER_NODES         (TICKER_NODES)
 #define TEST_TICKER_TICKS_SLOT_US 100000U

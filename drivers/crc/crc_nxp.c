@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(nxp_crc, CONFIG_CRC_LOG_LEVEL);
 
 /* Namespace collision process: there are crc_result_t defined in both mcux and Zephyr */
 #define crc_result_t mcux_crc_result_t
-#include "fsl_crc.h"
+#include <fsl_crc.h>
 #undef crc_result_t
 
 struct crc_nxp_config {

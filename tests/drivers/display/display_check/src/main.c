@@ -5,7 +5,7 @@
 
 #include <zephyr/ztest.h>
 
-#include "display.h"
+#include <display.h>
 
 ZTEST(display_test, test_display_by_capture)
 {

@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <zephyr/arch/rx/sw_nmi_table.h>
 
-#include "r_iwdt_rx_if.h"
+#include <r_iwdt_rx_if.h>
 
 #include <platform.h>
 

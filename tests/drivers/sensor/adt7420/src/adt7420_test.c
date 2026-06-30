@@ -11,7 +11,7 @@
 #include <zephyr/drivers/sensor/adt7420.h>
 #include <zephyr/ztest.h>
 
-#include "adt7420_emul.h"
+#include <adt7420_emul.h>
 
 #include <zephyr/logging/log.h>
 

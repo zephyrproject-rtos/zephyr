@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(ameba_spi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
 
 #if CONFIG_SPI_AMEBA_DMA
-#include "dma_ameba_gdma.h"
+#include <dma_ameba_gdma.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/cache.h>
 

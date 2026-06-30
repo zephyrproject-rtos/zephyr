@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "analog.h"
+#include <analog.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/pinctrl/b91-pinctrl.h>
 #include <zephyr/init.h>

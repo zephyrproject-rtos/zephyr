@@ -11,9 +11,9 @@
 #include <zephyr/drivers/pinctrl.h>
 
 #if defined(CONFIG_I2C_RENESAS_RZ_RIIC)
-#include "r_riic_master.h"
+#include <r_riic_master.h>
 #else /* CONFIG_I2C_RENESAS_RZ_IIC */
-#include "r_iic_master.h"
+#include <r_iic_master.h>
 typedef iic_master_extended_cfg_t riic_master_extended_cfg_t;
 #define FSP_PRIV_CLOCK_P0CLK FSP_PRIV_CLOCK_PCLKL
 #endif

@@ -8,7 +8,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/cache.h>
 #include <zephyr/logging/log.h>
-#include "fsl_sdma.h"
+#include <fsl_sdma.h>
 
 LOG_MODULE_REGISTER(nxp_sdma);
 

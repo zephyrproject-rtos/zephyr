@@ -9,7 +9,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "conn.h"
+#include <conn.h>
 
 void test_conn_init(struct bt_conn *conn)
 {

@@ -21,18 +21,18 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #endif
 #include <zephyr/device.h>
 #include <soc.h>
-#include "esp_private/wifi.h"
-#include "esp_event.h"
-#include "esp_rom_sys.h"
-#include "esp_timer.h"
-#include "esp_system.h"
-#include "esp_wifi.h"
-#include "esp_wpa.h"
+#include <esp_private/wifi.h>
+#include <esp_event.h>
+#include <esp_rom_sys.h>
+#include <esp_timer.h>
+#include <esp_system.h>
+#include <esp_wifi.h>
+#include <esp_wpa.h>
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
-#include "esp_eap_client.h"
+#include <esp_eap_client.h>
 #endif
 #include <esp_mac.h>
-#include "wifi/wifi_event.h"
+#include <wifi/wifi_event.h>
 
 #if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
 #include <esp_private/adc_share_hw_ctrl.h>

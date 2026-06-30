@@ -9,7 +9,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 
-#include "rsi_rom_rng.h"
+#include <rsi_rom_rng.h>
 
 struct rng_siwx91x_config {
 	HWRNG_Type *reg;

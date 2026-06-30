@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "icm45686.h"
-#include "icm456xx_h/imu/inv_imu.h"
-#include "imu/inv_imu_driver.h"
-#include "imu/inv_imu_edmp.h"
-#include "imu/inv_imu_driver_advanced.h"
+#include <icm456xx_h/imu/inv_imu.h>
+#include <imu/inv_imu_driver.h>
+#include <imu/inv_imu_edmp.h>
+#include <imu/inv_imu_driver_advanced.h>
 
 int icm45686_apex_enable(inv_imu_device_t *s)
 {

@@ -15,8 +15,8 @@
 LOG_MODULE_REGISTER(flash_stm32wba, CONFIG_FLASH_LOG_LEVEL);
 
 #include "flash_stm32.h"
-#include "flash_manager.h"
-#include "flash_driver.h"
+#include <flash_manager.h>
+#include <flash_driver.h>
 
 #include <stm32_ll_utils.h>
 

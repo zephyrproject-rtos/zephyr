@@ -161,7 +161,7 @@ To use external Arduino libraries with your Zephyr project:
 
    .. code-block:: cpp
 
-      #include "MyLibrary.h"
+      #include <MyLibrary.h>
 
 For more details on using external libraries, see the `Arduino libraries documentation`_.
 

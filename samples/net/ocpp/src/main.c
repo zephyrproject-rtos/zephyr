@@ -25,7 +25,7 @@
 #include <zephyr/random/random.h>
 #include <zephyr/zbus/zbus.h>
 
-#include "net_sample_common.h"
+#include <net_sample_common.h>
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 #include "credentials/certificate.h"

@@ -43,6 +43,6 @@
 
 #include <zephyr/dsp/print_format.h>
 
-#include "zdsp_backend.h"
+#include <zdsp_backend.h>
 
 #endif /* ZEPHYR_INCLUDE_DSP_DSP_H_ */

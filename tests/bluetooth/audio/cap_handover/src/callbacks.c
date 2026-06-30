@@ -14,8 +14,8 @@
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
 
-#include "cap_handover.h"
-#include "test_common.h"
+#include <cap_handover.h>
+#include <test_common.h>
 
 static void cap_handover_callbacks_test_suite_after(void *f)
 {

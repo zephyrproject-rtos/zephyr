@@ -27,14 +27,14 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_DHCPV4_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/dummy.h>
 
-#include "ipv4.h"
-#include "udp_internal.h"
+#include <ipv4.h>
+#include <udp_internal.h>
 
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
 
 #define NET_LOG_ENABLED 1
-#include "net_private.h"
+#include <net_private.h>
 
 /* Sample DHCP offer (420 bytes) */
 static const unsigned char offer[] = {

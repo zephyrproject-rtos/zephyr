@@ -9,7 +9,7 @@
 
 /* Generated content from Renesas QE Capacitive Touch */
 
-#include "hal_data.h"
+#include <hal_data.h>
 #include "qe_touch_define.h"
 
 extern const ctsu_instance_t g_qe_ctsu_instance_config01;

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdbool.h>
-#include "NHW_misc.h"
+#include <NHW_misc.h>
 
 bool native_emb_addr_remap(void **addr)
 {

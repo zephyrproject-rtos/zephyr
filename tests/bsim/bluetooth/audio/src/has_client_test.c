@@ -21,9 +21,9 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
-#include "../../subsys/bluetooth/audio/has_internal.h"
+#include <../../subsys/bluetooth/audio/has_internal.h>
 
-#include "bstests.h"
+#include <bstests.h>
 #include "common.h"
 
 LOG_MODULE_REGISTER(has_client_test, LOG_LEVEL_DBG);

@@ -15,7 +15,7 @@
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/logging/log.h>
 
-#include "reg/reg_tacho.h"
+#include <reg/reg_tacho.h>
 
 LOG_MODULE_REGISTER(tach_rts5912, CONFIG_SENSOR_LOG_LEVEL);
 

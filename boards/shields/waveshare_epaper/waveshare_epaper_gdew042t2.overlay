@@ -3,7 +3,7 @@
  *
  */
 
-#include "waveshare_epaper_common.dtsi"
+#include <waveshare_epaper_common.dtsi>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {

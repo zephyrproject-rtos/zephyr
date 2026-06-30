@@ -15,7 +15,7 @@
 #include <zephyr/drivers/clock_control/clock_control_rts5912.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/rts5912_clock.h>
-#include "reg/reg_spi.h"
+#include <reg/reg_spi.h>
 
 #define RTS5912_SPI_TIMEOUT_ROUND              100
 #define RTS5912_SPI_TX_FIFO_LIMIT              128

@@ -15,8 +15,8 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 #include <soc.h>
-#include "soc_miwu.h"
-#include "soc_power.h"
+#include <soc_miwu.h>
+#include <soc_power.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>

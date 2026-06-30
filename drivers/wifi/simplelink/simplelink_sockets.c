@@ -21,8 +21,8 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 #include <ti/net/slnetif.h>
 #include "simplelink_support.h"
 
-#include "sockets_internal.h"
-#include "tls_internal.h"
+#include <sockets_internal.h>
+#include <tls_internal.h>
 
 #define FAILED (-1)
 

@@ -24,7 +24,7 @@
 #include <zephyr/data/json.h>
 #include <zephyr/random/random.h>
 #include <zephyr/logging/log.h>
-#include "net_sample_common.h"
+#include <net_sample_common.h>
 
 
 #if defined(CONFIG_MBEDTLS_MEMORY_DEBUG)

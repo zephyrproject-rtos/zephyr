@@ -14,11 +14,11 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-#include "util.h"
-#include "system/fmac_api.h"
-#include "system/fmac_tx.h"
-#include "fmac_main.h"
-#include "wifi_mgmt_scan.h"
+#include <util.h>
+#include <system/fmac_api.h>
+#include <system/fmac_tx.h>
+#include <fmac_main.h>
+#include <wifi_mgmt_scan.h>
 
 LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 

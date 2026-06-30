@@ -9,9 +9,9 @@
 #include <zephyr/device.h>
 #include <zephyr/sw_isr_table.h>
 
-#include "em_device.h"
+#include <em_device.h>
 #include "power.h"
-#include "sl_si91x_hal_soc_soft_reset.h"
+#include <sl_si91x_hal_soc_soft_reset.h>
 
 
 void soc_early_init_hook(void)

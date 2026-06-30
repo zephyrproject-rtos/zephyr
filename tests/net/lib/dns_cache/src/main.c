@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <zephyr/fff.h>
 #include <zephyr/ztest.h>
-#include "dns_cache.h"
+#include <dns_cache.h>
 
 #define TEST_DNS_CACHE_SIZE        12
 #define TEST_DNS_CACHE_DEFAULT_TTL 1

@@ -28,14 +28,14 @@ LOG_MODULE_REGISTER(nsos_sockets);
 #include <zephyr/sys/dlist.h>
 #include <zephyr/spinlock.h>
 
-#include "sockets_internal.h"
+#include <sockets_internal.h>
 #include "nsos.h"
-#include "nsi_errno.h"
-#include "nsi_fcntl.h"
+#include <nsi_errno.h>
+#include <nsi_fcntl.h>
 #include "nsos_netdb.h"
 #include "nsos_socket.h"
 
-#include "nsi_host_trampolines.h"
+#include <nsi_host_trampolines.h>
 
 BUILD_ASSERT(K_HEAP_MEM_POOL_SIZE > 0);
 

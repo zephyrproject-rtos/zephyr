@@ -11,12 +11,12 @@
 #define CA_CERTIFICATE_TAG 1
 
 static const unsigned char server_certificate[] = {
-    #include "servercert.der.inc"
+    #include <servercert.der.inc>
 };
 
 
 static const unsigned char private_key[] = {
-    #include "privkey.der.inc"
+    #include <privkey.der.inc>
 };
 
 #endif

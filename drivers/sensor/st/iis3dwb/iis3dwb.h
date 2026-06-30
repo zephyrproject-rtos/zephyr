@@ -21,7 +21,7 @@
 #include <stmemsc.h>
 #include <zephyr/rtio/regmap.h>
 
-#include "iis3dwb_reg.h"
+#include <iis3dwb_reg.h>
 #include <zephyr/dt-bindings/sensor/iis3dwb.h>
 #include <zephyr/drivers/sensor_clock.h>
 

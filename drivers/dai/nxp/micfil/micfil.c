@@ -9,7 +9,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 
-#include "fsl_pdm.h"
+#include <fsl_pdm.h>
 
 #define DT_DRV_COMPAT nxp_dai_micfil
 LOG_MODULE_REGISTER(nxp_dai_micfil);

@@ -10,10 +10,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-#include "btca.h"
-#include "clock.h"
-#include "msg.h"
-#include "port.h"
+#include <btca.h>
+#include <clock.h>
+#include <msg.h>
+#include <port.h>
 
 /* Port foreign-master tests only need basic announce comparison and ref handling. */
 int ptp_msg_announce_cmp(const struct ptp_announce_msg *m1, const struct ptp_announce_msg *m2)

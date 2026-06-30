@@ -9,7 +9,7 @@
 #include <zephyr/autoconf.h>
 
 #ifdef CONFIG_LV_Z_MEM_POOL_SYS_HEAP
-#include "lvgl_mem.h"
+#include <lvgl_mem.h>
 #endif
 
 #ifdef CONFIG_LV_USE_MONKEY

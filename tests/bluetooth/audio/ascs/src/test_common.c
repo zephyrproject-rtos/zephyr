@@ -28,15 +28,15 @@
 #include <zephyr/ztest_assert.h>
 #include <sys/types.h>
 
-#include "ascs.h"
-#include "audio/ascs_internal.h"
-#include "bap_stream.h"
-#include "conn.h"
-#include "gatt.h"
-#include "iso.h"
-#include "pacs.h"
+#include <ascs.h>
+#include <audio/ascs_internal.h>
+#include <bap_stream.h>
+#include <conn.h>
+#include <gatt.h>
+#include <iso.h>
+#include <pacs.h>
 
-#include "test_common.h"
+#include <test_common.h>
 
 void test_mocks_init(void)
 {

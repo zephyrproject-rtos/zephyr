@@ -12,7 +12,7 @@
 LOG_MODULE_REGISTER(main);
 
 #if (CONFIG_SOC_SERIES_BSIM_NRFXX)
-#include "nsi_cpu_if.h"
+#include <nsi_cpu_if.h>
 
 /* For simulation, we can define shared memory variables linkable from
  * other MCUs just by using NATIVE_SIMULATOR_IF

@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(net_txtime_sample, LOG_LEVEL_DBG);
 #include <zephyr/posix/sys/socket.h>
 #include <zephyr/posix/unistd.h>
 
-#include "net_sample_common.h"
+#include <net_sample_common.h>
 
 #define APP_BANNER "Run SO_TXTIME client"
 

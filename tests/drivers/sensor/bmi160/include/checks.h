@@ -10,7 +10,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/spi.h>
 
-#include "bmi160.h"
+#include <bmi160.h>
 
 static inline bool bmi160_i2c_is_touching_reg(struct i2c_msg *msgs, int num_msgs, int reg)
 {

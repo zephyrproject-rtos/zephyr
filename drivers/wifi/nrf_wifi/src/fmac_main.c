@@ -23,7 +23,7 @@
 
 
 #include <util.h>
-#include "common/fmac_util.h"
+#include <common/fmac_util.h>
 #include <fmac_main.h>
 #include <zephyr/drivers/wifi/nrf_wifi/bus/rpu_hw_if.h>
 

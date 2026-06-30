@@ -48,8 +48,8 @@
 #include "classic/conn_br_internal.h"
 #include "classic/sco_internal.h"
 #include "classic/ssp.h"
-#include "common/assert.h"
-#include "common/bt_str.h"
+#include <common/assert.h>
+#include <common/bt_str.h>
 #include "conn_internal.h"
 #include "direction_internal.h"
 #include "gatt_gap_svc_validate.h"

@@ -10,7 +10,7 @@
  * This posix architecture "bottom" will be used when building with the native simulator.
  */
 
-#include "nct_if.h"
+#include <nct_if.h>
 
 static void *te_state;
 

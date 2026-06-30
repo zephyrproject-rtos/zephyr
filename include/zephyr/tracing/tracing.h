@@ -17,15 +17,15 @@
 #include "tracking.h"
 
 #if defined CONFIG_SEGGER_SYSTEMVIEW
-#include "tracing_sysview.h"
+#include <tracing_sysview.h>
 #elif defined CONFIG_TRACING_CTF
-#include "tracing_ctf.h"
+#include <tracing_ctf.h>
 #elif defined CONFIG_TRACING_TEST
-#include "tracing_test.h"
+#include <tracing_test.h>
 #elif defined CONFIG_TRACING_USER
-#include "tracing_user.h"
+#include <tracing_user.h>
 #elif defined CONFIG_TRACING_CUSTOM
-#include "zephyr_custom_tracing.h"
+#include <zephyr_custom_tracing.h>
 #else
 /**
  * @brief Interfaces for the tracing subsystem.
@@ -2810,7 +2810,7 @@
 /** @} */ /* end of subsys_tracing_apis_rtio */
 
 #if defined(CONFIG_PERCEPIO_TRACERECORDER)
-#include "tracing_tracerecorder.h"
+#include <tracing_tracerecorder.h>
 
 /**
  * @brief Called when the cpu exits the idle state

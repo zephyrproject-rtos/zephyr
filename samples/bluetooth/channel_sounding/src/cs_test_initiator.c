@@ -11,9 +11,9 @@
 #include <zephyr/bluetooth/cs.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/gatt.h>
-#include "distance_estimation.h"
-#include "common.h"
-#include "cs_test_params.h"
+#include <distance_estimation.h>
+#include <common.h>
+#include <cs_test_params.h>
 
 static K_SEM_DEFINE(sem_results_available, 0, 1);
 static K_SEM_DEFINE(sem_test_complete, 0, 1);

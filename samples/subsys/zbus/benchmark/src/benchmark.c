@@ -12,7 +12,7 @@
 #include <zephyr/zbus/zbus.h>
 
 #if defined(CONFIG_BOARD_NATIVE_SIM)
-#include "native_rtc.h"
+#include <native_rtc.h>
 #define GET_ARCH_TIME_NS() (native_rtc_gettime_us(RTC_CLOCK_PSEUDOHOSTREALTIME) * NSEC_PER_USEC)
 #elif defined(CONFIG_ARCH_POSIX)
 #error "This sample cannot be built for other POSIX arch boards than native_sim"

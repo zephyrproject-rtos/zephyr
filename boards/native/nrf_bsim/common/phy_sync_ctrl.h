@@ -7,7 +7,7 @@
 #ifndef BOARDS_POSIX_BSIM_COMMON_PHY_SYNC_CTRL_H
 #define BOARDS_POSIX_BSIM_COMMON_PHY_SYNC_CTRL_H
 
-#include "bs_types.h"
+#include <bs_types.h>
 
 #ifdef __cplusplus
 extern "C"{

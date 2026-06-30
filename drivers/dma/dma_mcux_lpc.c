@@ -14,7 +14,7 @@
 #include <fsl_dma.h>
 #include <fsl_inputmux.h>
 #if defined(FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET) && (FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET == 1)
-#include "fsl_memory.h"
+#include <fsl_memory.h>
 #endif
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>

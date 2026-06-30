@@ -18,7 +18,7 @@
 #include <zephyr/kernel_structs.h>
 #include <ksched.h>
 
-#include "posix_core.h"
+#include <posix_core.h>
 #include <zephyr/arch/posix/posix_soc_if.h>
 
 #ifdef CONFIG_TRACING

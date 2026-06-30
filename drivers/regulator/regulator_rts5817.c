@@ -12,8 +12,8 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/syscon.h>
-#include "dlink_sys_reg.h"
-#include "dlink_ldo_reg.h"
+#include <dlink_sys_reg.h>
+#include <dlink_ldo_reg.h>
 
 LOG_MODULE_REGISTER(regulator_rts5817, CONFIG_REGULATOR_LOG_LEVEL);
 

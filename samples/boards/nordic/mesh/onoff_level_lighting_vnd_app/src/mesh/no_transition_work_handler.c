@@ -5,11 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "common.h"
+#include <common.h>
 #include "ble_mesh.h"
 #include "device_composition.h"
 #include "state_binding.h"
-#include "storage.h"
+#include <storage.h>
 
 static void unsolicitedly_publish_states_work_handler(struct k_work *work)
 {

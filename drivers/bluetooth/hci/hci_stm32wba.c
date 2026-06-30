@@ -17,16 +17,16 @@
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/pm.h>
-#include "linklayer_plat.h"
+#include <linklayer_plat.h>
 #include <linklayer_plat_local.h>
 #include <hci_if.h>
 
 #include <zephyr/sys/byteorder.h>
 
-#include "blestack.h"
-#include "app_conf.h"
-#include "ll_sys.h"
-#include "flash_driver.h"
+#include <blestack.h>
+#include <app_conf.h>
+#include <ll_sys.h>
+#include <flash_driver.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>

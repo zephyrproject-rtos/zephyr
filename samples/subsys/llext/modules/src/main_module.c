@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(app);
 #include <zephyr/llext/buf_loader.h>
 
 static uint8_t llext_buf[] = {
-#include "hello_world_ext.inc"
+#include <hello_world_ext.inc>
 };
 
 int main(void)

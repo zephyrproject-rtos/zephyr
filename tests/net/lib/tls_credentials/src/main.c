@@ -6,7 +6,7 @@
 
 #include <zephyr/ztest.h>
 
-#include "tls_internal.h"
+#include <tls_internal.h>
 
 static const char test_ca_cert[] = "Test CA certificate";
 static const char test_server_cert[] = "Test server certificate";

@@ -14,7 +14,7 @@
 #include <instances/r_sci_b_spi.h>
 
 #ifndef CONFIG_SPI_RENESAS_RA_SCI_B_INTERRUPT
-#include "rp_sci_b_spi.h"
+#include <rp_sci_b_spi.h>
 #endif /* CONFIG_SPI_RENESAS_RA_SCI_B_INTERRUPT */
 
 #ifdef CONFIG_SPI_RENESAS_RA_SCI_B_DTC

@@ -14,7 +14,7 @@
 #include <zephyr/drivers/virtio.h>
 #include <zephyr/drivers/virtio/virtqueue.h>
 #include "virtio_common.h"
-#include "assert.h"
+#include <assert.h>
 
 #define DT_DRV_COMPAT virtio_pci
 

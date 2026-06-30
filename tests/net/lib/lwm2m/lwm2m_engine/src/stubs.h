@@ -15,7 +15,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/net/tls_credentials.h>
 
-#include "lwm2m_message_handling.h"
+#include <lwm2m_message_handling.h>
 
 #define ZSOCK_POLLIN  1
 #define ZSOCK_POLLOUT 4

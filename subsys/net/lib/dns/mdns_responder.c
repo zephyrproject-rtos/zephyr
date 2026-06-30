@@ -35,10 +35,10 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 
 #include "dns_sd.h"
 #include "dns_pack.h"
-#include "ipv6.h"
+#include <ipv6.h>
 #include "../../ip/net_stats.h"
 
-#include "net_private.h"
+#include <net_private.h>
 
 /*
  * GCC complains about struct net_sockaddr accesses due to the various

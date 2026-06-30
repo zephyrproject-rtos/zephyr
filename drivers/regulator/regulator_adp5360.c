@@ -14,7 +14,7 @@
 #include <zephyr/sys/linear_range.h>
 #include <zephyr/sys/util.h>
 
-#include "mfd_adp5360.h"
+#include <mfd_adp5360.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(regulator_adp5360, CONFIG_REGULATOR_LOG_LEVEL);

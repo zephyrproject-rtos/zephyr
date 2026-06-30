@@ -20,22 +20,22 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "hal/cpu.h"
-#include "hal/ccm.h"
-#include "hal/cntr.h"
-#include "hal/ticker.h"
+#include <hal/cpu.h>
+#include <hal/ccm.h>
+#include <hal/cntr.h>
+#include <hal/ticker.h>
 
-#include "util/memq.h"
+#include <util/memq.h>
 
-#include "pdu_df.h"
-#include "lll/pdu_vendor.h"
-#include "pdu.h"
+#include <pdu_df.h>
+#include <lll/pdu_vendor.h>
+#include <pdu.h>
 
-#include "ll.h"
-#include "lll.h"
-#include "lll_conn_iso.h"
-#include "lll_iso_tx.h"
-#include "isoal.h"
+#include <ll.h>
+#include <lll.h>
+#include <lll_conn_iso.h>
+#include <lll_iso_tx.h>
+#include <isoal.h>
 
 #include "isoal_test_common.h"
 #include "isoal_test_debug.h"

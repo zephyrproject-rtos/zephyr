@@ -15,17 +15,17 @@
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 
-#include "os_queue.h"
-#include "os_msg.h"
-#include "os_mem.h"
-#include "os_sched.h"
-#include "os_sync.h"
-#include "os_timer.h"
-#include "os_task.h"
-#include "mem_types.h"
+#include <os_queue.h>
+#include <os_msg.h>
+#include <os_mem.h>
+#include <os_sched.h>
+#include <os_sync.h>
+#include <os_timer.h>
+#include <os_task.h>
+#include <mem_types.h>
 
-#include "osif_zephyr.h"
-#include "osif_zephyr_impl.h"
+#include <osif_zephyr.h>
+#include <osif_zephyr_impl.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(osif);

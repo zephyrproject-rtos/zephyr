@@ -15,11 +15,11 @@
 #include <zephyr/drivers/edac.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
-#include "fsl_mecc.h"
+#include <fsl_mecc.h>
 
 #if defined(CONFIG_CACHE_MANAGEMENT)
 #include <zephyr/cache.h>
-#include "fsl_cache.h"
+#include <fsl_cache.h>
 #endif
 
 LOG_MODULE_REGISTER(edac_nxp_mecc, CONFIG_EDAC_LOG_LEVEL);

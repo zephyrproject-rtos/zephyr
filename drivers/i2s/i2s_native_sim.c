@@ -15,9 +15,9 @@
 #include <nsi_host_trampolines.h>
 #include <nsi_hw_scheduler.h>
 
-#include "cmdline.h"
+#include <cmdline.h>
 #include "i2s_native_sim_bottom.h"
-#include "soc.h"
+#include <soc.h>
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2s.h>

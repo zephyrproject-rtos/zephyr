@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/net/dummy.h>
 
 #define NET_LOG_ENABLED 1
-#include "net_private.h"
+#include <net_private.h>
 
 #if defined(CONFIG_NET_IPV6_LOG_LEVEL) || defined(CONFIG_NET_IPV4_LOG_LEVEL)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)

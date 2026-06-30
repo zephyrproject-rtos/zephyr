@@ -11,12 +11,12 @@
 LOG_MODULE_DECLARE(smp_sample);
 
 static const unsigned char server_certificate[] = {
-#include "echo-apps-cert.der.inc"
+#include <echo-apps-cert.der.inc>
 };
 
 /* This is the private key in pkcs#8 format. */
 static const unsigned char private_key[] = {
-#include "echo-apps-key.der.inc"
+#include <echo-apps-key.der.inc>
 };
 
 int setup_udp_dtls(void)

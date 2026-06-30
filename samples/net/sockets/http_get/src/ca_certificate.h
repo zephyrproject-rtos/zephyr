@@ -18,7 +18,7 @@
 static const unsigned char ca_certificate[] = "globalsign_r1.der";
 #else
 static const unsigned char ca_certificate[] = {
-#include "globalsign_r1.der.inc"
+#include <globalsign_r1.der.inc>
 };
 #endif
 

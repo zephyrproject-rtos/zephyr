@@ -13,7 +13,7 @@
 #include <zephyr/sys/linear_range.h>
 #include <errno.h>
 
-#include "mfd_adp5360.h"
+#include <mfd_adp5360.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(fuel_gauge_adp5360, CONFIG_FUEL_GAUGE_LOG_LEVEL);

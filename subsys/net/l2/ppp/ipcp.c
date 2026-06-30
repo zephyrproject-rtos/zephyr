@@ -15,7 +15,7 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 #include <zephyr/net/ppp.h>
 #include <zephyr/net/dns_resolve.h>
 
-#include "net_private.h"
+#include <net_private.h>
 
 #include "ppp_internal.h"
 

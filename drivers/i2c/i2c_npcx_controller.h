@@ -9,7 +9,7 @@
 
 #include <zephyr/device.h>
 
-#include "soc_miwu.h"
+#include <soc_miwu.h>
 
 #ifdef __cplusplus
 extern "C" {

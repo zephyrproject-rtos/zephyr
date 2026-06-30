@@ -15,11 +15,11 @@
 #include <zephyr/irq.h>
 
 #include "adc_context.h"
-#include "rsi_adc.h"
-#include "rsi_bod.h"
-#include "rsi_ipmu.h"
-#include "rsi_system_config.h"
-#include "aux_reference_volt_config.h"
+#include <rsi_adc.h>
+#include <rsi_bod.h>
+#include <rsi_ipmu.h>
+#include <rsi_system_config.h>
+#include <aux_reference_volt_config.h>
 
 LOG_MODULE_REGISTER(adc_silabs_siwx91x, CONFIG_ADC_LOG_LEVEL);
 

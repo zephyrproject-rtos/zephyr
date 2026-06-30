@@ -7,8 +7,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-#include "lwm2m_engine.h"
-#include "lwm2m_rw_link_format.h"
+#include <lwm2m_engine.h>
+#include <lwm2m_rw_link_format.h>
 
 #define TEST_SSID 101
 #define TEST_PMIN 5

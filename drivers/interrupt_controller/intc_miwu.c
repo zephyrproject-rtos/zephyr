@@ -53,8 +53,8 @@
 #include <zephyr/irq_nextlevel.h>
 #include <zephyr/drivers/gpio.h>
 
-#include "soc_miwu.h"
-#include "soc_gpio.h"
+#include <soc_miwu.h>
+#include <soc_gpio.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>

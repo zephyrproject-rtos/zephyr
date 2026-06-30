@@ -30,13 +30,13 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
-#include "bs_cmd_line.h"
-#include "bs_dynargs.h"
-#include "bs_pc_backchannel.h"
-#include "posix_native_task.h"
-#include "bs_types.h"
-#include "bsim_args_runner.h"
-#include "bstests.h"
+#include <bs_cmd_line.h>
+#include <bs_dynargs.h>
+#include <bs_pc_backchannel.h>
+#include <posix_native_task.h>
+#include <bs_types.h>
+#include <bsim_args_runner.h>
+#include <bstests.h>
 #include "common.h"
 
 extern enum bst_result_t bst_result;

@@ -23,8 +23,8 @@ LOG_MODULE_REGISTER(net_quic_echo_client_svc_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/quic.h>
 
 /* from samples/net/common/ */
-#include "net_sample_common.h"
-#include "quic_certificate.h"
+#include <net_sample_common.h>
+#include <quic_certificate.h>
 
 /* Turn off the progress printing so that shell can be used.
  * Set to true if you want to see progress output.

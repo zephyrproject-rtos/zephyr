@@ -24,12 +24,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(central, LOG_LEVEL_INF);
 
-#include "bstests.h"
-#include "bs_types.h"
-#include "bs_tracing.h"
-#include "bs_pc_backchannel.h"
+#include <bstests.h>
+#include <bs_types.h>
+#include <bs_tracing.h>
+#include <bs_pc_backchannel.h>
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 
 #define DEFAULT_CONN_INTERVAL	   20
 #define PERIPHERAL_DEVICE_NAME	   "Zephyr Peripheral"

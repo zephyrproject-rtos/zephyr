@@ -8,29 +8,29 @@
 #include <soc.h>
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "util/util.h"
-#include "util/memq.h"
-#include "util/mem.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/memq.h>
+#include <util/mem.h>
+#include <util/dbuf.h>
 
-#include "hal/cpu.h"
-#include "hal/ccm.h"
-#include "hal/radio_df.h"
+#include <hal/cpu.h>
+#include <hal/ccm.h>
+#include <hal/radio_df.h>
 
-#include "pdu_df.h"
+#include <pdu_df.h>
 #include "pdu_vendor.h"
-#include "pdu.h"
+#include <pdu.h>
 
-#include "lll.h"
+#include <lll.h>
 #include "lll_adv_types.h"
-#include "lll_adv.h"
+#include <lll_adv.h>
 #include "lll_adv_pdu.h"
 #include "lll_df_types.h"
-#include "lll_sync.h"
-#include "lll_df.h"
+#include <lll_sync.h>
+#include <lll_df.h>
 #include "lll_df_internal.h"
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 /* Minimum number of antenna switch patterns required by Direction Finding Extension to be
  * configured in SWTICHPATTER register. The value is set to 2, even though the radio peripheral

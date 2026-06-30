@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "argparse.h"
-#include "bs_types.h"
+#include <argparse.h>
+#include <bs_types.h>
 
 unsigned int bk_device_get_number(void)
 {

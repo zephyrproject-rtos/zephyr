@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "mocks/smp.h"
-#include "mocks/smp_expects.h"
+#include <mocks/smp.h>
+#include <mocks/smp_expects.h>
 
 #include <zephyr/kernel.h>
 

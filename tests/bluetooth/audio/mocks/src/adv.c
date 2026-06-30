@@ -12,7 +12,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/sys/atomic.h>
 
-#include "bluetooth.h"
+#include <bluetooth.h>
 
 int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv, struct bt_le_ext_adv_info *info)
 {

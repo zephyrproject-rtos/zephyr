@@ -16,7 +16,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/ztest_assert.h>
 
-#include "test_sbs_gauge.h"
+#include <test_sbs_gauge.h>
 
 static void *sbs_gauge_new_api_setup(void)
 {

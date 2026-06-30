@@ -13,9 +13,9 @@
 #include <soc.h>
 #include <zephyr/drivers/dma.h>
 #include <altera_common.h>
-#include "altera_msgdma_csr_regs.h"
-#include "altera_msgdma_descriptor_regs.h"
-#include "altera_msgdma.h"
+#include <altera_msgdma_csr_regs.h>
+#include <altera_msgdma_descriptor_regs.h>
+#include <altera_msgdma.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>

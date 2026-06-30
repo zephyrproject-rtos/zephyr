@@ -9,10 +9,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-#include "btca.h"
-#include "clock.h"
-#include "msg.h"
-#include "port.h"
+#include <btca.h>
+#include <clock.h>
+#include <msg.h>
+#include <port.h>
 
 #define MAX_TRACKED_PORTS 16
 

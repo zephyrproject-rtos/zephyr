@@ -13,8 +13,8 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/sensor.h>
-#include "Icp201xx.h"
-#include "Icp201xxSerif.h"
+#include <Icp201xx.h>
+#include <Icp201xxSerif.h>
 
 union icp201xx_bus {
 #if CONFIG_SPI

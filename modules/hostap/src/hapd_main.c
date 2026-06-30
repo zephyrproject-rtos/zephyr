@@ -6,15 +6,15 @@
 
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/wifi_nm.h>
-#include "includes.h"
-#include "common.h"
-#include "eloop.h"
-#include "wpa_supplicant_i.h"
-#include "hostapd.h"
-#include "hostapd_cli_zephyr.h"
-#include "eap_register.h"
-#include "ap_drv_ops.h"
-#include "l2_packet/l2_packet.h"
+#include <includes.h>
+#include <common.h>
+#include <eloop.h>
+#include <wpa_supplicant_i.h>
+#include <hostapd.h>
+#include <hostapd_cli_zephyr.h>
+#include <eap_register.h>
+#include <ap_drv_ops.h>
+#include <l2_packet/l2_packet.h>
 #include "supp_main.h"
 #include "hapd_main.h"
 #include "supp_api.h"

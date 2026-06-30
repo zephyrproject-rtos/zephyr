@@ -9,7 +9,7 @@
 
 #include <zephyr/ipc/ipc_service.h>
 
-#include "common.h"
+#include <common.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(remote, LOG_LEVEL_INF);

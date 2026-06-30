@@ -7,10 +7,10 @@
 #ifndef ZEPHYR_DRIVERS_WIFI_AMEBA_AMEBA_WIFI_H_
 #define ZEPHYR_DRIVERS_WIFI_AMEBA_AMEBA_WIFI_H_
 
-#include "os_wrapper_semaphore.h"
-#include "rtw_wifi_defs.h"
-#include "wifi_intf_drv_to_app_basic.h"
-#include "os_wrapper_memory.h"
+#include <os_wrapper_semaphore.h>
+#include <rtw_wifi_defs.h>
+#include <wifi_intf_drv_to_app_basic.h>
+#include <os_wrapper_memory.h>
 
 #define DT_DRV_COMPAT         realtek_ameba_wifi
 #define DHCPV4_MASK           (NET_EVENT_IPV4_DHCP_BOUND | NET_EVENT_IPV4_DHCP_STOP)

@@ -16,7 +16,7 @@
 
 #ifdef CONFIG_HAS_MCUX
 /* MCUX HAL uses a different header file than the i.MX HAL for this IP block */
-#include "fsl_mu.h"
+#include <fsl_mu.h>
 #else
 #include <mu_imx.h>
 #endif

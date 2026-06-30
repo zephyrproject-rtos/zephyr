@@ -12,15 +12,15 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/logging/log.h>
 
-#include "testlib/conn.h"
-#include "testlib/scan.h"
-#include "testlib/log_utils.h"
+#include <testlib/conn.h>
+#include <testlib/scan.h>
+#include <testlib/log_utils.h>
 
-#include "babblekit/flags.h"
-#include "babblekit/testcase.h"
+#include <babblekit/flags.h>
+#include <babblekit/testcase.h>
 
 /* For the radio shenanigans */
-#include "hw_testcheat_if.h"
+#include <hw_testcheat_if.h>
 
 /* local includes */
 #include "data.h"

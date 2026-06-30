@@ -15,7 +15,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/types.h>
-#include "sl_si91x_pwm.h"
+#include <sl_si91x_pwm.h>
 
 #define DT_DRV_COMPAT silabs_siwx91x_pwm
 

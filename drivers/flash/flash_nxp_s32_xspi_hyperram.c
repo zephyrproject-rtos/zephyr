@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(nxp_s32_xspi_hyperram, CONFIG_FLASH_LOG_LEVEL);
 
 #include <Xspi_Ip.h>
 
-#include "memc_nxp_s32_xspi.h"
+#include <memc_nxp_s32_xspi.h>
 
 #define XSPI_TIMEOUT_CYCLES		0xFFFFFF
 #define XSPI_ERASE_VALUE		0xFF

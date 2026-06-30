@@ -34,7 +34,7 @@
 
 #include "bap_common.h"
 #include "bap_stream_rx.h"
-#include "bstests.h"
+#include <bstests.h>
 #include "common.h"
 
 #if defined(CONFIG_BT_PBP)

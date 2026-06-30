@@ -13,8 +13,8 @@
 #include <soc.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
-#include "soc_gpio.h"
-#include "soc_miwu.h"
+#include <soc_gpio.h>
+#include <soc_miwu.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_npcx, CONFIG_GPIO_LOG_LEVEL);

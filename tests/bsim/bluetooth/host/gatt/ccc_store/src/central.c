@@ -19,13 +19,13 @@
 #include <zephyr/settings/settings.h>
 
 #include "common.h"
-#include "settings.h"
+#include <settings.h>
 
-#include "argparse.h"
+#include <argparse.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
-#include "babblekit/sync.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
+#include <babblekit/sync.h>
 
 #define SERVER_CHAN 0
 

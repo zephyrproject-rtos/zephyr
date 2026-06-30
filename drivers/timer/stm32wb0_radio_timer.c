@@ -12,7 +12,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/sys/util.h>
-#include "stm32wb0x_hal_radio_timer.h"
+#include <stm32wb0x_hal_radio_timer.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(radio_timer_driver, CONFIG_KERNEL_LOG_LEVEL);

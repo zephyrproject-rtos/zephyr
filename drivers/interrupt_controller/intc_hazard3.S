@@ -5,8 +5,8 @@
 
 #include <zephyr/toolchain.h>
 
-#include "hardware/platform_defs.h"
-#include "hardware/regs/rvcsr.h"
+#include <hardware/platform_defs.h>
+#include <hardware/regs/rvcsr.h>
 
 /* imports */
 #ifdef CONFIG_TRACING

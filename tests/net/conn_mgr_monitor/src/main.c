@@ -17,7 +17,7 @@
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/conn_mgr_connectivity.h>
-#include "conn_mgr_private.h"
+#include <conn_mgr_private.h>
 #include "test_ifaces.h"
 #include <zephyr/net/net_ip.h>
 

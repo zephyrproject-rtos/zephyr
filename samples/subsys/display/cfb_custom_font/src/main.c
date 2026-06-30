@@ -9,7 +9,7 @@
 #include <zephyr/display/cfb.h>
 #include <zephyr/sys/printk.h>
 
-#include "cfb_font_dice.h"
+#include <cfb_font_dice.h>
 
 int main(void)
 {

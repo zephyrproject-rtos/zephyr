@@ -6,7 +6,7 @@
 
 #include <zephyr/ztest.h>
 
-#include "../../../../drivers/rtc/rtc_utils.h"
+#include <../../../../drivers/rtc/rtc_utils.h>
 
 ZTEST(rtc_utils, test_rtc_utils_validate_rtc_time)
 {

@@ -13,8 +13,8 @@
 #include <soc.h>
 #include "flash_priv.h"
 
-#include "fsl_common.h"
-#include "fsl_flashiap.h"
+#include <fsl_common.h>
+#include <fsl_flashiap.h>
 
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_iap_fmc11))

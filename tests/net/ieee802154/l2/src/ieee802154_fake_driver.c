@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(net_ieee802154_fake_driver, LOG_LEVEL_DBG);
 /** FAKE ieee802.15.4 driver **/
 #include <zephyr/net/ieee802154_radio.h>
 
-#include "net_private.h"
+#include <net_private.h>
 #include <zephyr/net/ieee802154_frame.h>
 
 struct net_pkt *current_pkt;

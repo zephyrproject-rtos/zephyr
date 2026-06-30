@@ -19,9 +19,9 @@
 #include "proxy.h"
 #include "settings.h"
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
-#include "host/hci_core.h"
+#include <host/hci_core.h>
 
 #define LOG_LEVEL CONFIG_BT_MESH_MODEL_LOG_LEVEL
 #include <zephyr/logging/log.h>

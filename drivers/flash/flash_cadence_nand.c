@@ -5,7 +5,7 @@
  */
 #define DT_DRV_COMPAT cdns_nand
 
-#include "socfpga_system_manager.h"
+#include <socfpga_system_manager.h>
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>

@@ -17,8 +17,8 @@
 #include <zephyr/drivers/clock_control/clock_control_rts5912.h>
 #include "rtc_utils.h"
 
-#include "reg/reg_system.h"
-#include "reg/reg_rtc.h"
+#include <reg/reg_system.h>
+#include <reg/reg_rtc.h>
 
 LOG_MODULE_REGISTER(rtc_rts5912, CONFIG_RTC_LOG_LEVEL);
 

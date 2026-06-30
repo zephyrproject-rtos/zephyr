@@ -16,10 +16,10 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
-#include "cy_syslib.h"
-#include "cy_sysclk.h"
-#include "cy_scb_uart.h"
-#include "cy_sysint.h"
+#include <cy_syslib.h>
+#include <cy_sysclk.h>
+#include <cy_scb_uart.h>
+#include <cy_sysint.h>
 
 /* UART desired baud rate is 115200 bps (Standard mode).
  * The UART baud rate = (SCB clock frequency / Oversample).

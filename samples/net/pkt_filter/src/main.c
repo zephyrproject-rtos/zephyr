@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(net_stats_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_pkt_filter.h>
 
-#include "net_sample_common.h"
+#include <net_sample_common.h>
 
 #define MAX_INTERFACES 3
 

@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "includes.h"
-#include "common.h"
-#include "ap/sta_info.h"
-#include "ap/ieee802_11.h"
-#include "ap/hostapd.h"
-#include "wpa_supplicant_i.h"
+#include <includes.h>
+#include <common.h>
+#include <ap/sta_info.h>
+#include <ap/ieee802_11.h>
+#include <ap/hostapd.h>
+#include <wpa_supplicant_i.h>
 #include <zephyr/net/wifi_mgmt.h>
 #include "hapd_events.h"
 #include "supp_events.h"

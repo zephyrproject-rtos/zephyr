@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <lvgl.h>
 #include <string.h>
-#include "lvgl_display.h"
+#include <lvgl_display.h>
 
 #define COLOR_PALETTE_HEADER_SIZE (8)
 

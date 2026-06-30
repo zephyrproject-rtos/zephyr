@@ -14,8 +14,8 @@
 #include <zephyr/net/http/service.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
-#include "zephyr/device.h"
-#include "zephyr/sys/util.h"
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/drivers/led.h>
 #include <zephyr/data/json.h>
 #include <zephyr/sys/util_macro.h>
@@ -43,11 +43,11 @@ static const struct json_obj_descr led_command_descr[] = {
 static const struct device *leds_dev = DEVICE_DT_GET_ANY(gpio_leds);
 
 static uint8_t index_html_gz[] = {
-#include "index.html.gz.inc"
+#include <index.html.gz.inc>
 };
 
 static uint8_t main_js_gz[] = {
-#include "main.js.gz.inc"
+#include <main.js.gz.inc>
 };
 
 static struct http_resource_detail_static index_html_gz_resource_detail = {

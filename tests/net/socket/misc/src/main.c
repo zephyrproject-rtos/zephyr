@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/socket.h>
 #include <zephyr/net/dummy.h>
 
-#include "net_private.h"
+#include <net_private.h>
 
 #include "../../socket_helpers.h"
 

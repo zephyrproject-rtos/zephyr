@@ -13,7 +13,7 @@
 #endif
 #include <string.h>
 
-#include "common.h"
+#include <common.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(host, LOG_LEVEL_INF);

@@ -8,7 +8,7 @@
 #include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/arch/common/semihost.h>
-#include "semihost_types.h"
+#include <semihost_types.h>
 
 char semihost_poll_in(void)
 {

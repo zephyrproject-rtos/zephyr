@@ -9,7 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/watchdog.h>
-#include "r_wdt.h"
+#include <r_wdt.h>
 #include <math.h>
 
 LOG_MODULE_REGISTER(wdt_renesas_rz, CONFIG_WDT_LOG_LEVEL);

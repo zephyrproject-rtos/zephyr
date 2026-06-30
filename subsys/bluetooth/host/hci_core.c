@@ -49,10 +49,10 @@
 #include "addr_internal.h"
 #include "adv.h"
 #include "classic/br.h"
-#include "common/hci_common_internal.h"
-#include "common/bt_str.h"
-#include "common/rpa.h"
-#include "common/assert.h"
+#include <common/hci_common_internal.h>
+#include <common/bt_str.h>
+#include <common/rpa.h>
+#include <common/assert.h>
 #include "conn_internal.h"
 #include "crypto.h"
 #include "ecc.h"

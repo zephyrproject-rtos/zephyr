@@ -42,33 +42,33 @@
 #if defined(__GNUC__)
 #include "float_regs_x86_gcc.h"
 #else
-#include "float_regs_x86_other.h"
+#include <float_regs_x86_other.h>
 #endif /* __GNUC__ */
 #elif defined(CONFIG_ARM)
 #if defined(CONFIG_ARMV7_M_ARMV8_M_FP) || defined(CONFIG_ARMV7_R_FP) || defined(CONFIG_CPU_HAS_VFP)
 #if defined(__GNUC__) || defined(__ICCARM__)
 #include "float_regs_arm_gcc.h"
 #else
-#include "float_regs_arm_other.h"
+#include <float_regs_arm_other.h>
 #endif /* __GNUC__ */
 #endif
 #elif defined(CONFIG_ARM64)
 #if defined(__GNUC__)
 #include "float_regs_arm64_gcc.h"
 #else
-#include "float_regs_arm64_other.h"
+#include <float_regs_arm64_other.h>
 #endif /* __GNUC__ */
 #elif defined(CONFIG_ISA_ARCV2)
 #if defined(__GNUC__)
 #include "float_regs_arc_gcc.h"
 #else
-#include "float_regs_arc_other.h"
+#include <float_regs_arc_other.h>
 #endif /* __GNUC__ */
 #elif defined(CONFIG_RISCV)
 #if defined(__GNUC__)
 #include "float_regs_riscv_gcc.h"
 #else
-#include "float_regs_riscv_other.h"
+#include <float_regs_riscv_other.h>
 #endif /* __GNUC__ */
 #elif defined(CONFIG_SPARC)
 #include "float_regs_sparc.h"

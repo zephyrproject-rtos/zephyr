@@ -5,7 +5,7 @@
  */
 
 #include <stm32_ll_gpio.h>
-#include "stm32_hsem.h"
+#include <stm32_hsem.h>
 
 #define CPU_CLOCK CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
 #define FAST_BITBANG_HW_SUPPORT 1

@@ -16,7 +16,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 
 void client_round_0(void)
 {

@@ -19,9 +19,9 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
-#include "bstests.h"
+#include <bstests.h>
 #include "common.h"
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 LOG_MODULE_REGISTER(pacs_notify_client_test, LOG_LEVEL_DBG);
 

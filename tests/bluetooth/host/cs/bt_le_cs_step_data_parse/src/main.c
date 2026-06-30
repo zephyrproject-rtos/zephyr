@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "mocks/conn.h"
-#include "mocks/hci_core.h"
-#include "mocks/net_buf.h"
+#include <mocks/conn.h>
+#include <mocks/hci_core.h>
+#include <mocks/net_buf.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/cs.h>

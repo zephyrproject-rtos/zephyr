@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(aes_silabs_si32);
 #include <SI32_AES_A_Type.h>
 #include <SI32_CLKCTRL_A_Type.h>
 #include <SI32_DMACTRL_A_Type.h>
-#include "SI32_DMAXBAR_A_Type.h"
+#include <SI32_DMAXBAR_A_Type.h>
 #include <si32_device.h>
 
 #include <errno.h>

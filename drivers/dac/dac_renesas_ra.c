@@ -9,8 +9,8 @@
 #include <zephyr/drivers/dac.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
-#include "r_dac_api.h"
-#include "r_dac.h"
+#include <r_dac_api.h>
+#include <r_dac.h>
 
 LOG_MODULE_REGISTER(dac_renesas_ra, CONFIG_DAC_LOG_LEVEL);
 

@@ -17,11 +17,11 @@ LOG_MODULE_REGISTER(net_test, CONFIG_QUIC_LOG_LEVEL);
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/quic.h>
 
-#include "net_private.h"
-#include "quic_internal.h"
-#include "quic_stats.h"
+#include <net_private.h>
+#include <quic_internal.h>
+#include <quic_stats.h>
 #include "quic_test.h"
-#include "certificate.h"
+#include <certificate.h>
 
 #if defined(CONFIG_QUIC_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)

@@ -67,5 +67,5 @@ eflash_sig:
 
 /* optional project-specific extension */
 #ifdef CONFIG_SOC_IT51XXX_SIGNATURE_DATA_EXTENSION
-#include "signature_custom.S"
+#include <signature_custom.S>
 #endif /* CONFIG_SOC_IT51XXX_SIGNATURE_DATA_EXTENSION */

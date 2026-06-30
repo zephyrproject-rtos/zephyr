@@ -44,7 +44,7 @@ LOG_MODULE_REGISTER(net_openthread_platform, CONFIG_OPENTHREAD_PLATFORM_LOG_LEVE
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
 
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
-#include "openthread_border_router.h"
+#include <openthread_border_router.h>
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
 #define OT_STACK_SIZE (CONFIG_OPENTHREAD_THREAD_STACK_SIZE)

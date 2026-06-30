@@ -14,9 +14,9 @@
 #include <zephyr/drivers/usb/uhc.h>
 
 #include "uhc_common.h"
-#include "usb.h"
-#include "usb_host_config.h"
-#include "usb_host_mcux_drv_port.h"
+#include <usb.h>
+#include <usb_host_config.h>
+#include <usb_host_mcux_drv_port.h>
 #include "uhc_mcux_common.h"
 
 #include <zephyr/logging/log.h>

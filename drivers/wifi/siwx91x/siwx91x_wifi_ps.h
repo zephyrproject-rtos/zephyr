@@ -5,7 +5,7 @@
 #ifndef SIWX91X_WIFI_PS_H
 #define SIWX91X_WIFI_PS_H
 
-#include "sl_wifi_types.h"
+#include <sl_wifi_types.h>
 
 struct device;
 struct siwx91x_dev;

@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT renesas_ra_glcdc
 
 #include "display_renesas_ra.h"
-#include "r_glcdc.h"
+#include <r_glcdc.h>
 #include <zephyr/drivers/clock_control/renesas_ra_cgc.h>
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/drivers/gpio.h>

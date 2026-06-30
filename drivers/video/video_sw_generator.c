@@ -43,20 +43,20 @@ struct sw_ctrls {
 
 /* Static JPEG frame buffers. 2 320x160 color-bar pattern frames, h-flipped. */
 static uint8_t jpeg_frame_buffer[] = {
-#include "jpeg_frame_buffer.inc"
+#include <jpeg_frame_buffer.inc>
 };
 
 static uint8_t jpeg_frame_buffer_hflip[] = {
-#include "jpeg_frame_buffer_hflip.inc"
+#include <jpeg_frame_buffer_hflip.inc>
 };
 
 /* Static PNG frame buffers. 2 320x160 color-bar pattern frames, h-flipped. */
 static uint8_t png_frame_buffer[] = {
-#include "png_frame_buffer.inc"
+#include <png_frame_buffer.inc>
 };
 
 static uint8_t png_frame_buffer_hflip[] = {
-#include "png_frame_buffer_hflip.inc"
+#include <png_frame_buffer_hflip.inc>
 };
 
 #ifdef CONFIG_VIDEO_SW_GENERATOR_H264
@@ -65,7 +65,7 @@ static uint8_t png_frame_buffer_hflip[] = {
 
 /* Static H.264 Annex-B test stream generated at build time. */
 static const uint8_t h264_frame_buffer[] = {
-#include "video_sw_generator_h264.inc"
+#include <video_sw_generator_h264.inc>
 };
 
 static const uint8_t h264_start_code_3[] = {0x00, 0x00, 0x01};

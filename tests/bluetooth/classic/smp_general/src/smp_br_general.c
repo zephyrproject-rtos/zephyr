@@ -25,8 +25,8 @@
 
 #include <zephyr/shell/shell.h>
 
-#include "host/shell/bt.h"
-#include "common/bt_shell_private.h"
+#include <host/shell/bt.h>
+#include <common/bt_shell_private.h>
 
 #define DATA_BREDR_MTU          48
 #define SDP_CLIENT_USER_BUF_LEN 4096

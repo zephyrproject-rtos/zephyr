@@ -6,8 +6,8 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/buf.h>
-#include "mocks/settings.h"
-#include "mocks/settings_expects.h"
+#include <mocks/settings.h>
+#include <mocks/settings_expects.h>
 
 void expect_single_call_bt_settings_encode_key_with_not_null_key(const bt_addr_le_t *addr)
 {

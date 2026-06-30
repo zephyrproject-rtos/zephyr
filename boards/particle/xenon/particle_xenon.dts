@@ -7,7 +7,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
-#include "mesh_feather.dtsi"
+#include <mesh_feather.dtsi>
 #include "particle_xenon-pinctrl.dtsi"
 
 / {

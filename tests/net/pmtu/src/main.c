@@ -34,15 +34,15 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_PMTU_LOG_LEVEL);
 
 #include "../../socket/socket_helpers.h"
 
-#include "route.h"
-#include "icmpv6.h"
-#include "icmpv4.h"
-#include "ipv6.h"
-#include "ipv4.h"
-#include "pmtu.h"
+#include <route.h>
+#include <icmpv6.h>
+#include <icmpv4.h>
+#include <ipv6.h>
+#include <ipv4.h>
+#include <pmtu.h>
 
 #define NET_LOG_ENABLED 1
-#include "net_private.h"
+#include <net_private.h>
 
 #if defined(CONFIG_BOARD_NATIVE_SIM) || defined(CONFIG_BOARD_NATIVE_SIM_NATIVE_64)
 #define WAIT_PROPERLY 0

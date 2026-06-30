@@ -7,7 +7,7 @@
 #include <zephyr/ztest.h>
 #include <string.h>
 
-#include "gnss_nmea0183.h"
+#include <gnss_nmea0183.h>
 
 #define TEST_DDMM_MMMM_MAX_ROUNDING_ERROR_NDEG (1)
 

@@ -25,7 +25,7 @@
  */
 
 #include <zephyr/ztest.h>
-#include "fxarc.h"
+#include <fxarc.h>
 #include "dsp_context.h"
 #include "test_common.h"
 

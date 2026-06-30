@@ -13,10 +13,10 @@
 
 #ifndef __cplusplus
 
-#include "rdc.h"
-#include "rdc_defs_imx7d.h"
-#include "ccm_imx7d.h"
-#include "clock_freq.h"
+#include <rdc.h>
+#include <rdc_defs_imx7d.h>
+#include <ccm_imx7d.h>
+#include <clock_freq.h>
 #include "soc_clk_freq.h"
 #include <soc_common.h>
 

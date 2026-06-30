@@ -14,8 +14,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
-#include "msg.h"
-#include "transport.h"
+#include <msg.h>
+#include <transport.h>
 
 struct fake_recv_action {
 	int ret;

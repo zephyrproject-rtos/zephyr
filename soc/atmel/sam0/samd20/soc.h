@@ -55,7 +55,7 @@
 
 #endif /* _ASMLANGUAGE */
 
-#include "adc_fixup_sam0.h"
+#include <adc_fixup_sam0.h>
 #include "../common/soc_port.h"
 #include "../common/atmel_sam0_dt.h"
 

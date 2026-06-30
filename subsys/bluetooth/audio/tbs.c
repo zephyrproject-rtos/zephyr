@@ -39,7 +39,7 @@
 
 #include "audio_internal.h"
 #include "tbs_internal.h"
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 LOG_MODULE_REGISTER(bt_tbs, CONFIG_BT_TBS_LOG_LEVEL);
 

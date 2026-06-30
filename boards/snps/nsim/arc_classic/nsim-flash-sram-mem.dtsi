@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "skeleton.dtsi"
+#include <skeleton.dtsi>
 #include <mem.h>
 
 #define DT_FLASH_SIZE		DT_SIZE_M(4)

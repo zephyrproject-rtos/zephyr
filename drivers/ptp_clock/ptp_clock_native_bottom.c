@@ -9,7 +9,7 @@
 #include <time.h>
 #include <errno.h>
 
-#include "nsi_errno.h"
+#include <nsi_errno.h>
 #include "ptp_clock_native_bottom.h"
 
 int ptp_clock_native_gettime(uint64_t *second, uint32_t *nanosecond)

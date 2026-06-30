@@ -8,8 +8,8 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/can/transceiver.h>
-#include "r_can_api.h"
-#include "r_canfd.h"
+#include <r_can_api.h>
+#include <r_canfd.h>
 #include <zephyr/drivers/clock_control.h>
 
 LOG_MODULE_REGISTER(can_renesas_rz_canfd, CONFIG_CAN_LOG_LEVEL);

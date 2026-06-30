@@ -21,8 +21,8 @@
 #include <zephyr/ztest_test.h>
 #include <zephyr/ztest_assert.h>
 
-#include "conn.h"
-#include "test_common.h"
+#include <conn.h>
+#include <test_common.h>
 
 struct ccp_call_control_client_procedures_test_suite_fixture {
 	struct bt_ccp_call_control_client_cb client_cbs;

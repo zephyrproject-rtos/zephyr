@@ -23,7 +23,7 @@
 #ifndef SOC_INFINEON_EDGE_PSE84_MTB_SRF_CONFIG_H_
 #define SOC_INFINEON_EDGE_PSE84_MTB_SRF_CONFIG_H_
 
-#include "mtb_srf_iovec.h"
+#include <mtb_srf_iovec.h>
 
 /** Maximum input argument count in bytes, adjusting the default BSP-generated pool */
 #define MTB_SRF_MAX_ARG_IN_SIZE                 (5U * sizeof(uint32_t))

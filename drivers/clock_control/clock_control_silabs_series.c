@@ -11,8 +11,8 @@
 #include <zephyr/sys/util.h>
 #include <soc.h>
 
-#include "sl_clock_manager.h"
-#include "sl_status.h"
+#include <sl_clock_manager.h>
+#include <sl_status.h>
 
 struct silabs_clock_control_config {
 	CMU_TypeDef *cmu;

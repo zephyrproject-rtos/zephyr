@@ -32,7 +32,7 @@
 #include <zephyr/types.h>
 
 #include "aics_internal.h"
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 LOG_MODULE_REGISTER(bt_aics_client, CONFIG_BT_AICS_CLIENT_LOG_LEVEL);
 

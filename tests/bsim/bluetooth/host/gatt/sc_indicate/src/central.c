@@ -16,8 +16,8 @@
 #include <zephyr/settings/settings.h>
 #include <zephyr/bluetooth/bluetooth.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test_central, LOG_LEVEL_DBG);

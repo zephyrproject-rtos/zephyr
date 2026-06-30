@@ -11,7 +11,7 @@
 #include <zephyr/dsp/dsp.h>
 #include <zephyr/dsp/utils.h>
 
-#include "common/test_common.h"
+#include <common/test_common.h>
 
 #define DEFINE_MULTIPLE_TEST_CASES(constructor, variant, array)                                    \
 	FOR_EACH_IDX_FIXED_ARG(constructor, (), variant, array)

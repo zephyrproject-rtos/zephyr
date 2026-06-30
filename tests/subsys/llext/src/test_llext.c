@@ -267,7 +267,7 @@ void load_call_unload(const struct llext_test *test_case)
 #define ELF_ALIGN __aligned(4096)
 
 static LLEXT_CONST uint8_t hello_world_ext[] LLEXT_SECT ELF_ALIGN = {
-	#include "hello_world.inc"
+	#include <hello_world.inc>
 };
 LLEXT_LOAD_UNLOAD(hello_world,
 	.kernel_only = true
@@ -276,7 +276,7 @@ LLEXT_LOAD_UNLOAD(hello_world,
 /* When compiled with CCAC, init_fini's sections are unfixably out of order */
 #if !defined(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB) && !defined(__CCAC__)
 static LLEXT_CONST uint8_t init_fini_ext[] LLEXT_SECT ELF_ALIGN = {
-	#include "init_fini.inc"
+	#include <init_fini.inc>
 };
 
 static void init_fini_test_cleanup(struct llext *ext)
@@ -298,44 +298,44 @@ LLEXT_LOAD_UNLOAD(init_fini,
 #endif
 
 static LLEXT_CONST uint8_t logging_ext[] LLEXT_SECT ELF_ALIGN = {
-	#include "logging.inc"
+	#include <logging.inc>
 };
 LLEXT_LOAD_UNLOAD(logging)
 
 static LLEXT_CONST uint8_t relative_jump_ext[] LLEXT_SECT ELF_ALIGN = {
-	#include "relative_jump.inc"
+	#include <relative_jump.inc>
 };
 LLEXT_LOAD_UNLOAD(relative_jump)
 
 static LLEXT_CONST uint8_t object_ext[] LLEXT_SECT ELF_ALIGN = {
-	#include "object.inc"
+	#include <object.inc>
 };
 LLEXT_LOAD_UNLOAD(object)
 
 static LLEXT_CONST uint8_t syscalls_ext[] LLEXT_SECT ELF_ALIGN = {
-	#include "syscalls.inc"
+	#include <syscalls.inc>
 };
 LLEXT_LOAD_UNLOAD(syscalls)
 
 static LLEXT_CONST uint8_t threads_kernel_objects_ext[] LLEXT_SECT ELF_ALIGN = {
-	#include "threads_kernel_objects.inc"
+	#include <threads_kernel_objects.inc>
 };
 LLEXT_LOAD_UNLOAD(threads_kernel_objects,
 	.test_setup = threads_objects_test_setup,
 )
 
 static LLEXT_CONST uint8_t align_ext[] LLEXT_SECT ELF_ALIGN = {
-	#include "align.inc"
+	#include <align.inc>
 };
 LLEXT_LOAD_UNLOAD(align)
 
 static LLEXT_CONST uint8_t inspect_ext[] LLEXT_SECT ELF_ALIGN = {
-	#include "inspect.inc"
+	#include <inspect.inc>
 };
 
 #if defined(CONFIG_LLEXT_RODATA_NO_RELOC)
 static LLEXT_CONST uint8_t rodata_no_reloc_ext[] ELF_ALIGN = {
-	#include "rodata_no_reloc.inc"
+	#include <rodata_no_reloc.inc>
 };
 const void *rodata_no_reloc_ext_ptr = rodata_no_reloc_ext;
 EXPORT_SYMBOL(rodata_no_reloc_ext_ptr);
@@ -424,20 +424,20 @@ ZTEST(llext, test_inspect)
 
 #ifndef CONFIG_LLEXT_TYPE_ELF_OBJECT
 static LLEXT_CONST uint8_t multi_file_ext[] LLEXT_SECT ELF_ALIGN = {
-	#include "multi_file.inc"
+	#include <multi_file.inc>
 };
 LLEXT_LOAD_UNLOAD(multi_file)
 
 #if defined(CONFIG_RISCV) && defined(CONFIG_RISCV_ISA_EXT_C)
 static LLEXT_CONST uint8_t riscv_edge_case_cb_type_ext[] ELF_ALIGN = {
-	#include "riscv_edge_case_cb_type.inc"
+	#include <riscv_edge_case_cb_type.inc>
 };
 LLEXT_LOAD_UNLOAD(riscv_edge_case_cb_type)
 #endif /* CONFIG_RISCV && CONFIG_RISCV_ISA_EXT_C */
 
 #if defined(CONFIG_RISCV)
 static LLEXT_CONST uint8_t riscv_edge_case_non_paired_hi20_lo12_ext[] ELF_ALIGN = {
-	#include "riscv_edge_case_non_paired_hi20_lo12.inc"
+	#include <riscv_edge_case_non_paired_hi20_lo12.inc>
 };
 LLEXT_LOAD_UNLOAD(riscv_edge_case_non_paired_hi20_lo12)
 #endif /* CONFIG_RISCV */
@@ -446,18 +446,18 @@ LLEXT_LOAD_UNLOAD(riscv_edge_case_non_paired_hi20_lo12)
 
 #ifdef CONFIG_LLEXT_VENEERS
 static LLEXT_CONST uint8_t veneer_ext[] ELF_ALIGN = {
-	#include "veneer.inc"
+	#include <veneer.inc>
 };
 LLEXT_LOAD_UNLOAD(veneer)
 #endif /* CONFIG_LLEXT_VENEERS */
 
 #ifndef CONFIG_USERSPACE
 static LLEXT_CONST uint8_t export_dependent_ext[] LLEXT_SECT ELF_ALIGN = {
-	#include "export_dependent.inc"
+	#include <export_dependent.inc>
 };
 
 static LLEXT_CONST uint8_t export_dependency_ext[] LLEXT_SECT ELF_ALIGN = {
-	#include "export_dependency.inc"
+	#include <export_dependency.inc>
 };
 
 ZTEST(llext, test_inter_ext)
@@ -492,7 +492,7 @@ ZTEST(llext, test_inter_ext)
 
 #if defined(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE) && defined(CONFIG_XTENSA)
 static LLEXT_CONST uint8_t pre_located_ext[] LLEXT_SECT ELF_ALIGN = {
-	#include "pre_located.inc"
+	#include <pre_located.inc>
 };
 
 ZTEST(llext, test_pre_located)
@@ -520,7 +520,7 @@ ZTEST(llext, test_pre_located)
 
 #if defined(CONFIG_LLEXT_STORAGE_WRITABLE)
 static LLEXT_CONST uint8_t find_section_ext[] LLEXT_SECT ELF_ALIGN = {
-	#include "find_section.inc"
+	#include <find_section.inc>
 };
 
 ZTEST(llext, test_find_section)
@@ -574,7 +574,7 @@ static LLEXT_CONST uint8_t test_detached_ext[] Z_GENERIC_SECTION(.text) ELF_ALIG
 #else
 static LLEXT_CONST uint8_t test_detached_ext[] LLEXT_SECT ELF_ALIGN = {
 #endif
-	#include "detached_fn.inc"
+	#include <detached_fn.inc>
 };
 
 static struct llext_loader *detached_loader;

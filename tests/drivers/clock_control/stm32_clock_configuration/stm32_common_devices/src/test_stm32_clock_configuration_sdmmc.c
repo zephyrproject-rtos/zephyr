@@ -24,7 +24,7 @@
 #warning "Missing clock I2S PLL clock"
 #endif
 
-#include "stm32_ll_rcc.h"
+#include <stm32_ll_rcc.h>
 
 ZTEST(stm32_common_devices_clocks, test_sdmmc_clk_config)
 {

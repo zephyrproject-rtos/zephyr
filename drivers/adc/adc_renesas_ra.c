@@ -12,7 +12,7 @@
 #include <zephyr/sys/util_internal.h>
 #include <instances/r_adc.h>
 
-#include "rp_adc.h"
+#include <rp_adc.h>
 
 #include <zephyr/irq.h>
 

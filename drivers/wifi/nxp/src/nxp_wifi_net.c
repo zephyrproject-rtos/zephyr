@@ -7,11 +7,11 @@
  * Wi-Fi L2 layer
  */
 
-#include "wifi.h"
+#include <wifi.h>
 #include <osa.h>
 #include <nxp_wifi_net.h>
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
-#include "supp_events.h"
+#include <supp_events.h>
 #endif
 #ifdef CONFIG_DNS_RESOLVER
 #include <zephyr/net/dns_resolve.h>

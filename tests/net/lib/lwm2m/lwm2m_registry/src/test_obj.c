@@ -7,8 +7,8 @@
 #include <stdint.h>
 #include <zephyr/init.h>
 
-#include "lwm2m_object.h"
-#include "lwm2m_engine.h"
+#include <lwm2m_object.h>
+#include <lwm2m_engine.h>
 
 #define TEST_OBJ_ID 32768
 

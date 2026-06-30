@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "sw_isr_common.h"
+#include <sw_isr_common.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/__assert.h>

@@ -8,37 +8,37 @@
 
 #include <zephyr/sys/byteorder.h>
 
-#include "hal/ccm.h"
-#include "hal/radio.h"
-#include "hal/ticker.h"
+#include <hal/ccm.h>
+#include <hal/radio.h>
+#include <hal/ticker.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/dbuf.h>
 
-#include "pdu_df.h"
+#include <pdu_df.h>
 #include "pdu_vendor.h"
-#include "pdu.h"
+#include <pdu.h>
 
-#include "lll.h"
-#include "lll_clock.h"
-#include "lll/lll_df_types.h"
-#include "lll_chan.h"
+#include <lll.h>
+#include <lll_clock.h>
+#include <lll/lll_df_types.h>
+#include <lll_chan.h>
 #include "lll_vendor.h"
-#include "lll_conn.h"
-#include "lll_conn_iso.h"
-#include "lll_peripheral_iso.h"
+#include <lll_conn.h>
+#include <lll_conn_iso.h>
+#include <lll_peripheral_iso.h>
 
-#include "lll_iso_tx.h"
+#include <lll_iso_tx.h>
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
 #include "lll_prof_internal.h"
 
-#include "ll_feat.h"
+#include <ll_feat.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);

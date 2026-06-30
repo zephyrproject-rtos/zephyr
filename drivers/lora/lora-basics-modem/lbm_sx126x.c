@@ -15,12 +15,12 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/pm/device.h>
 
-#include "ral.h"
+#include <ral.h>
 
-#include "ralf_sx126x.h"
-#include "ral_sx126x_bsp.h"
-#include "sx126x_hal.h"
-#include "sx126x.h"
+#include <ralf_sx126x.h>
+#include <ral_sx126x_bsp.h>
+#include <sx126x_hal.h>
+#include <sx126x.h>
 
 #include "lbm_common.h"
 

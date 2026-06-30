@@ -13,10 +13,10 @@
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 
-#include "fmac_main.h"
-#include "common/fmac_util.h"
-#include "wifi_mgmt.h"
-#include "wpa_supp_if.h"
+#include <fmac_main.h>
+#include <common/fmac_util.h>
+#include <wifi_mgmt.h>
+#include <wpa_supp_if.h>
 #include <system/fmac_peer.h>
 
 

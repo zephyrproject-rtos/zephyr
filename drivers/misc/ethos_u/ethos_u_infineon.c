@@ -15,11 +15,11 @@
 #include "ethos_u_common.h"
 
 /* Infineon HAL for clock and power control */
-#include "cy_sysclk.h"
-#include "cy_syspm_ppu.h"
-#include "cy_syspm_pdcm.h"
-#include "ppu_v1.h"
-#include "cy_device.h"
+#include <cy_sysclk.h>
+#include <cy_syspm_ppu.h>
+#include <cy_syspm_pdcm.h>
+#include <ppu_v1.h>
+#include <cy_device.h>
 
 #define DT_DRV_COMPAT infineon_edge_npu
 

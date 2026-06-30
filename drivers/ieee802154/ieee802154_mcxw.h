@@ -11,7 +11,7 @@
 
 #include <zephyr/net/ieee802154_radio.h>
 
-#include "PhyInterface.h"
+#include <PhyInterface.h>
 
 #define TX_ENCRYPT_DELAY_SYM 200
 

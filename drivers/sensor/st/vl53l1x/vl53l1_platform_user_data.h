@@ -9,7 +9,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_VL53L1X_VL53L1_PLATFORM_USER_DATA_H_
 #define ZEPHYR_DRIVERS_SENSOR_VL53L1X_VL53L1_PLATFORM_USER_DATA_H_
 
-#include "vl53l1_def.h"
+#include <vl53l1_def.h>
 
 #ifdef __cplusplus
 extern "C" {

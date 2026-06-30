@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <lvgl.h>
-#include "lvgl_display.h"
+#include <lvgl_display.h>
 
 void lvgl_flush_cb_8bit(lv_display_t *display, const lv_area_t *area, uint8_t *px_map)
 {

@@ -11,8 +11,8 @@
 #include <zephyr/irq.h>
 #include <zephyr/drivers/counter.h>
 
-#include "r_agt.h"
-#include "rp_agt.h"
+#include <r_agt.h>
+#include <rp_agt.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(counter_renesas_ra_agt, CONFIG_COUNTER_LOG_LEVEL);

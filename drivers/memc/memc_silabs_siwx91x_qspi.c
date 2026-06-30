@@ -10,8 +10,8 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 
-#include "rsi_qspi_proto.h"
-#include "sl_si91x_psram_handle.h"
+#include <rsi_qspi_proto.h>
+#include <sl_si91x_psram_handle.h>
 
 LOG_MODULE_REGISTER(siwx91x_memc, CONFIG_MEMC_LOG_LEVEL);
 

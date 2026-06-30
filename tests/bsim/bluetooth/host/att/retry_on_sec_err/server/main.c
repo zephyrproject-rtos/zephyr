@@ -9,10 +9,10 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "testlib/adv.h"
-#include "testlib/security.h"
+#include <testlib/adv.h>
+#include <testlib/security.h>
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 
 #include "../common_defs.h"
 

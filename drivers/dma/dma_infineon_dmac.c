@@ -17,9 +17,9 @@
 #include <zephyr/logging/log.h>
 #include <string.h>
 
-#include "cy_dmac.h"
-#include "cy_device.h"
-#include "cy_trigmux.h"
+#include <cy_dmac.h>
+#include <cy_device.h>
+#include <cy_trigmux.h>
 
 LOG_MODULE_REGISTER(dmac_infineon, CONFIG_DMA_LOG_LEVEL);
 

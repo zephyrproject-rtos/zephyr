@@ -14,11 +14,11 @@
 #include <zephyr/ztest.h>
 #include <zephyr/zvfs/eventfd.h>
 
-#include "btca.h"
-#include "clock.h"
-#include "msg.h"
-#include "port.h"
-#include "transport.h"
+#include <btca.h>
+#include <clock.h>
+#include <msg.h>
+#include <port.h>
+#include <transport.h>
 
 static struct net_if fake_iface;
 static uint8_t fake_mac[NET_ETH_ADDR_LEN] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x01};

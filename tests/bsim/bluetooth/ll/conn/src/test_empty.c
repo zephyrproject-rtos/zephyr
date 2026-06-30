@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
-#include "bs_types.h"
-#include "bs_tracing.h"
-#include "time_machine.h"
-#include "bstests.h"
+#include <bs_types.h>
+#include <bs_tracing.h>
+#include <time_machine.h>
+#include <bstests.h>
 
 /*
  * This is just a demo of the test framework facilities

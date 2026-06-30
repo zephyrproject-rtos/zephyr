@@ -11,8 +11,8 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <soc.h>
-#include "r_sci_uart.h"
-#include "r_dtc.h"
+#include <r_sci_uart.h>
+#include <r_dtc.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ra_sci_uart);

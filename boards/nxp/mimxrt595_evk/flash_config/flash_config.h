@@ -9,7 +9,7 @@
 #define FLASH_CONFIG_H_
 
 #include <stdint.h>
-#include "fsl_iap.h"
+#include <fsl_iap.h>
 
 /* FLEXSPI memory config block related definitions */
 #define FLEXSPI_CFG_BLK_TAG     (0x42464346UL) /* ascii "FCFB" Big Endian */

@@ -4,4 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "adafruit_2_8_tft_touch_v2.dtsi"
+#include <adafruit_2_8_tft_touch_v2.dtsi>

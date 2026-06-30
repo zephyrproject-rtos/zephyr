@@ -11,21 +11,21 @@
 #include <zephyr/devicetree.h>
 
 #if defined(CONFIG_ADC_RENESAS_RZ_ADC_C)
-#include "r_adc_c.h"
+#include <r_adc_c.h>
 typedef adc_c_channel_cfg_t adc_channel_cfg_t;
 typedef adc_c_instance_ctrl_t adc_instance_ctrl_t;
 typedef adc_c_extended_cfg_t adc_extended_cfg_t;
 void adc_c_scan_end_isr(void *irq);
 #define ADC_SCAN_END_ISR adc_c_scan_end_isr
 #elif defined(CONFIG_ADC_RENESAS_RZ_ADC_E)
-#include "r_adc_e.h"
+#include <r_adc_e.h>
 typedef adc_e_channel_cfg_t adc_channel_cfg_t;
 typedef adc_e_instance_ctrl_t adc_instance_ctrl_t;
 typedef adc_e_extended_cfg_t adc_extended_cfg_t;
 void adc_e_scan_end_isr(void *irq);
 #define ADC_SCAN_END_ISR adc_e_scan_end_isr
 #else /* CONFIG_ADC_RENESAS_RZ */
-#include "r_adc.h"
+#include <r_adc.h>
 void adc_scan_end_isr(void *irq);
 #define ADC_SCAN_END_ISR adc_scan_end_isr
 #endif

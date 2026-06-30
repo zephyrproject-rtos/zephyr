@@ -21,15 +21,15 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
-#include "supp_api.h"
-#include "supp_main.h"
+#include <supp_api.h>
+#include <supp_main.h>
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-#include "hapd_main.h"
-#include "hapd_api.h"
+#include <hapd_main.h>
+#include <hapd_api.h>
 #endif
 #endif
 #ifdef CONFIG_NET_DHCPV4_SERVER
-#include "zephyr/net/dhcpv4_server.h"
+#include <zephyr/net/dhcpv4_server.h>
 #endif
 #include <mlan_api.h>
 #include <wmlog.h>

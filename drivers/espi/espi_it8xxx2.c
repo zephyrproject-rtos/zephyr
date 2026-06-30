@@ -15,7 +15,7 @@
 #include <zephyr/sys/util.h>
 #include <soc.h>
 #include <soc_dt.h>
-#include "soc_espi.h"
+#include <soc_espi.h>
 #include "espi_utils.h"
 
 #include <zephyr/logging/log.h>

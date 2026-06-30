@@ -20,7 +20,7 @@
 DEFINE_FFF_GLOBALS;
 
 /* Include the DUT */
-#include "ll_sw/isoal.c"
+#include <ll_sw/isoal.c>
 
 #include "isoal_test_common.h"
 #include "isoal_test_debug.h"

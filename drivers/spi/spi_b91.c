@@ -9,11 +9,11 @@
 /*  Redefine 'spi_read' and 'spi_write' functions names from HAL */
 #define spi_read    hal_spi_read
 #define spi_write   hal_spi_write
-#include "spi.c"
+#include <spi.c>
 #undef spi_read
 #undef spi_write
 
-#include "clock.h"
+#include <clock.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_telink);

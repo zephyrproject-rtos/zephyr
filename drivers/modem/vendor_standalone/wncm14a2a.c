@@ -28,13 +28,13 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/net_pkt.h>
 #if defined(CONFIG_NET_IPV6)
-#include "ipv6.h"
+#include <ipv6.h>
 #endif
 #if defined(CONFIG_NET_IPV4)
-#include "ipv4.h"
+#include <ipv4.h>
 #endif
 #if defined(CONFIG_NET_UDP)
-#include "udp_internal.h"
+#include <udp_internal.h>
 #endif
 
 #include "../modem_receiver.h"

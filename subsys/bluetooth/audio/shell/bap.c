@@ -55,8 +55,8 @@
 #include <zephyr/toolchain.h>
 
 #include "audio.h"
-#include "common/bt_shell_private.h"
-#include "host/shell/bt.h"
+#include <common/bt_shell_private.h>
+#include <host/shell/bt.h>
 
 /* Determines if we can initiate streaming */
 #define IS_BAP_INITIATOR                                                                           \
@@ -292,7 +292,7 @@ uint16_t get_next_seq_num(struct bt_bap_stream *bap_stream)
 NET_BUF_POOL_FIXED_DEFINE(sine_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT, SINE_TX_POOL_SIZE,
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
-#include "math.h"
+#include <math.h>
 
 #define AUDIO_VOLUME            (INT16_MAX - 3000) /* codec does clipping above INT16_MAX - 3000 */
 #define AUDIO_TONE_FREQUENCY_HZ   400U

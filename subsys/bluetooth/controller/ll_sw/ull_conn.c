@@ -13,32 +13,32 @@
 
 #include <soc.h>
 
-#include "hal/cpu.h"
-#include "hal/ecb.h"
-#include "hal/ccm.h"
-#include "hal/ticker.h"
+#include <hal/cpu.h>
+#include <hal/ecb.h>
+#include <hal/ccm.h>
+#include <hal/ticker.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/mfifo.h"
-#include "util/mayfly.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/mfifo.h>
+#include <util/mayfly.h>
+#include <util/dbuf.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
 #include "lll.h"
 #include "lll_clock.h"
-#include "lll/lll_df_types.h"
+#include <lll/lll_df_types.h>
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
-#include "lll/lll_vendor.h"
+#include <lll/lll_vendor.h>
 
-#include "ll_sw/ull_tx_queue.h"
+#include <ll_sw/ull_tx_queue.h>
 
 #include "isoal.h"
 #include "ull_iso_types.h"
@@ -46,7 +46,7 @@
 #include "ull_conn_iso_types.h"
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
-#include "ull_vendor.h"
+#include <ull_vendor.h>
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
 #include "ull_internal.h"
@@ -61,7 +61,7 @@
 #include "ull_conn_iso_internal.h"
 #include "ull_central_iso_internal.h"
 #include "ull_peripheral_iso_internal.h"
-#include "lll/lll_adv_types.h"
+#include <lll/lll_adv_types.h>
 #include "lll_adv.h"
 #include "ull_adv_types.h"
 #include "ull_adv_internal.h"
@@ -72,14 +72,14 @@
 #include "ull_scan_types.h"
 #include "ull_sync_internal.h"
 
-#include "ll.h"
-#include "ll_feat.h"
-#include "ll_settings.h"
+#include <ll.h>
+#include <ll_feat.h>
+#include <ll_settings.h>
 
-#include "ll_sw/ull_llcp.h"
-#include "ll_sw/ull_llcp_features.h"
+#include <ll_sw/ull_llcp.h>
+#include <ll_sw/ull_llcp_features.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>

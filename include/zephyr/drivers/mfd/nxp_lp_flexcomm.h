@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_DRIVERS_NXP_LP_FLEXCOMM_H_
 #define ZEPHYR_DRIVERS_NXP_LP_FLEXCOMM_H_
 
-#include "fsl_lpflexcomm.h"
+#include <fsl_lpflexcomm.h>
 
 typedef void (*child_isr_t)(const struct device *dev);
 

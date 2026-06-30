@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(net_ppp_stats, CONFIG_NET_L2_PPP_LOG_LEVEL);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/ppp.h>
 
-#include "net_stats.h"
+#include <net_stats.h>
 
 #if defined(CONFIG_NET_STATISTICS_USER_API)
 

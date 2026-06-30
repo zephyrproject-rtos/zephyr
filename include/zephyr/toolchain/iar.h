@@ -136,7 +136,7 @@
 #include "iar/iccarm.h"
 #endif
 #ifdef __ICCRISCV__
-#include "iar/iccriscv.h"
+#include <iar/iccriscv.h>
 #endif
 
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_ICCARM_H_ */

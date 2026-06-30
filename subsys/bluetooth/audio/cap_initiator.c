@@ -44,7 +44,7 @@
 
 LOG_MODULE_REGISTER(bt_cap_initiator, CONFIG_BT_CAP_INITIATOR_LOG_LEVEL);
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 static const struct bt_cap_initiator_cb *cap_cb;
 

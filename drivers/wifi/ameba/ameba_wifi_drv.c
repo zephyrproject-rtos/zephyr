@@ -5,7 +5,7 @@
  */
 
 #if defined(CONFIG_BT_COEXIST)
-#include "rtw_coex_ipc.h"
+#include <rtw_coex_ipc.h>
 #endif
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
@@ -14,7 +14,7 @@
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/device.h>
 #include <soc.h>
-#include "diag.h"
+#include <diag.h>
 
 #include "ameba_wifi.h"
 #include <zephyr/sys/minmax.h>

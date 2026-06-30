@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(sha256_hw_rtk, CONFIG_CRYPTO_LOG_LEVEL);
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "only one realtek,rts5912-sha compatible node can be supported");
 
-#include "reg/reg_crypto.h"
+#include <reg/reg_crypto.h>
 #include "crypto_rts5912_priv.h"
 
 #define RTS5912_SHA2DMA_MAXIMUM_BLOCK_NUM      (0x1FFUL)

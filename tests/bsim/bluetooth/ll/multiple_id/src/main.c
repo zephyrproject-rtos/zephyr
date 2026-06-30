@@ -13,10 +13,10 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 
-#include "bs_types.h"
-#include "bs_tracing.h"
-#include "time_machine.h"
-#include "bstests.h"
+#include <bs_types.h>
+#include <bs_tracing.h>
+#include <time_machine.h>
+#include <bstests.h>
 
 /* The test case is performing 250 simultaneous connections and managing
  * parallel control procedures utilizing the available/configured minimum

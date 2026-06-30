@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "fsl_power.h"
+#include <fsl_power.h>
 #include "flash_clock_setup.h"
 
 #define FLEXSPI_DLL_LOCK_RETRY (10)

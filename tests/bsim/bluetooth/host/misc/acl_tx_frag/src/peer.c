@@ -11,14 +11,14 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/logging/log.h>
 
-#include "testlib/adv.h"
-#include "testlib/att_read.h"
-#include "testlib/att_write.h"
-#include "testlib/conn.h"
-#include "testlib/log_utils.h"
+#include <testlib/adv.h>
+#include <testlib/att_read.h>
+#include <testlib/att_write.h>
+#include <testlib/conn.h>
+#include <testlib/log_utils.h>
 
-#include "babblekit/flags.h"
-#include "babblekit/testcase.h"
+#include <babblekit/flags.h>
+#include <babblekit/testcase.h>
 
 /* local includes */
 #include "data.h"

@@ -12,8 +12,8 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
 
 void central(void)
 {

@@ -20,15 +20,15 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 
-#include "subsys/bluetooth/host/hci_core.h"
-#include "subsys/bluetooth/controller/include/ll.h"
-#include "subsys/bluetooth/controller/util/memq.h"
-#include "subsys/bluetooth/controller/ll_sw/lll.h"
+#include <subsys/bluetooth/host/hci_core.h>
+#include <subsys/bluetooth/controller/include/ll.h>
+#include <subsys/bluetooth/controller/util/memq.h>
+#include <subsys/bluetooth/controller/ll_sw/lll.h>
 
-#include "bs_types.h"
-#include "bs_tracing.h"
-#include "time_machine.h"
-#include "bstests.h"
+#include <bs_types.h>
+#include <bs_tracing.h>
+#include <time_machine.h>
+#include <bstests.h>
 
 static struct bt_conn *default_conn;
 

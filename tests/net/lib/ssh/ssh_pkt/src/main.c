@@ -6,7 +6,7 @@
 
 #include <zephyr/ztest.h>
 
-#include "ssh_pkt.h"
+#include <ssh_pkt.h>
 
 static struct ssh_payload payload;
 static uint8_t payload_buf[4096];

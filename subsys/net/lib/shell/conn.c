@@ -11,7 +11,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include "net_shell_private.h"
 
 #if defined(CONFIG_NET_TCP)
-#include "tcp_internal.h"
+#include <tcp_internal.h>
 #include <zephyr/sys/slist.h>
 #endif
 

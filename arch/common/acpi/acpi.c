@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "acpi.h"
-#include "accommon.h"
-#include "acapps.h"
+#include <acpi.h>
+#include <accommon.h>
+#include <acapps.h>
 #include <aecommon.h>
 
 #include <zephyr/drivers/pcie/pcie.h>

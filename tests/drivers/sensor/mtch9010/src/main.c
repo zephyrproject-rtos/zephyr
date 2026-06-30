@@ -16,8 +16,8 @@
 #include <zephyr/ztest_assert.h>
 #include <zephyr/dt-bindings/sensor/mtch9010.h>
 
-#include "../drivers/sensor/microchip/mtch9010/mtch9010_priv.h"
-#include "zephyr/drivers/sensor/mtch9010.h"
+#include <../drivers/sensor/microchip/mtch9010/mtch9010_priv.h>
+#include <zephyr/drivers/sensor/mtch9010.h>
 
 #define DUT_NODE DT_NODELABEL(dut)
 

@@ -13,7 +13,7 @@ LOG_MODULE_DECLARE(lvgl, CONFIG_LV_Z_LOG_LEVEL);
 
 #ifdef CONFIG_LV_Z_USE_OSAL
 
-#include "lvgl_zephyr_osal.h"
+#include <lvgl_zephyr_osal.h>
 
 typedef void (*lv_thread_entry)(void *);
 static void thread_entry(void *thread, void *cb, void *user_data);

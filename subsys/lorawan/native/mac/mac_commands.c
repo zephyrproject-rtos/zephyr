@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "lorawan.h"
+#include <lorawan.h>
 #include "mac_commands.h"
 
 size_t mac_cmd_build_ul_fopts(struct lwan_ctx *ctx,

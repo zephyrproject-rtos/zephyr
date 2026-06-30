@@ -36,7 +36,7 @@
 #include <infineon_hppass.h>
 #include <infineon_kconfig.h>
 
-#include "cy_hppass.h"
+#include <cy_hppass.h>
 #include "mfd_infineon_hppass_regs.h"
 
 LOG_MODULE_REGISTER(mfd_infineon_hppass, CONFIG_MFD_LOG_LEVEL);

@@ -16,7 +16,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/util.h>
 #include <stmemsc.h>
-#include "stts22h_reg.h"
+#include <stts22h_reg.h>
 
 #include <zephyr/drivers/i2c.h>
 

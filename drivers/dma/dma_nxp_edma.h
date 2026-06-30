@@ -14,7 +14,7 @@
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/device.h>
 
-#include "fsl_edma_soc_rev2.h"
+#include <fsl_edma_soc_rev2.h>
 
 LOG_MODULE_REGISTER(nxp_edma);
 

@@ -15,8 +15,8 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/flash/ra_flash_api_extensions.h>
 #include "spi_nor.h"
-#include "r_spi_flash_api.h"
-#include "r_qspi.h"
+#include <r_spi_flash_api.h>
+#include <r_qspi.h>
 
 /* Flash QPI (4-4-4) opcodes */
 #define QSPI_QPI_CMD_QPIID  (0xAF) /* QPI ID Read */

@@ -12,7 +12,7 @@
 #if defined(__GNUC__)
 #include "test_asm_inline_gcc.h"
 #else
-#include "test_asm_inline_other.h"
+#include <test_asm_inline_other.h>
 #endif
 
 static volatile int int_handler_executed;

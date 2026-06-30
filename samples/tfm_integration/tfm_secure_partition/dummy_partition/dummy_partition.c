@@ -8,8 +8,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "psa/service.h"
-#include "psa_manifest/tfm_dummy_partition.h"
+#include <psa/service.h>
+#include <psa_manifest/tfm_dummy_partition.h>
 
 #define NUM_SECRETS 5
 

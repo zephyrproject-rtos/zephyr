@@ -7,7 +7,7 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/irq.h>
 #include <fsl_rtc.h>
-#include "fsl_power.h"
+#include <fsl_power.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
 

@@ -32,13 +32,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_MODEM_LOG_LEVEL);
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/offloaded_netdev.h>
 #if defined(CONFIG_NET_IPV6)
-#include "ipv6.h"
+#include <ipv6.h>
 #endif
 #if defined(CONFIG_NET_IPV4)
-#include "ipv4.h"
+#include <ipv4.h>
 #endif
 #if defined(CONFIG_NET_UDP)
-#include "udp_internal.h"
+#include <udp_internal.h>
 #endif
 
 #ifdef CONFIG_MODEM_HL7800_FW_UPDATE

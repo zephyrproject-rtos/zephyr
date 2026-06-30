@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "mocks/crypto.h"
-#include "mocks/crypto_expects.h"
+#include <mocks/crypto.h>
+#include <mocks/crypto_expects.h>
 
 #include <zephyr/kernel.h>
 

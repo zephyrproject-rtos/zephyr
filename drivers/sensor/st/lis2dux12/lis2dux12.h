@@ -18,11 +18,11 @@
 #include <zephyr/rtio/regmap.h>
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_lis2dux12)
-#include "lis2dux12_reg.h"
+#include <lis2dux12_reg.h>
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_lis2duxs12)
-#include "lis2duxs12_reg.h"
+#include <lis2duxs12_reg.h>
 #endif
 
 #if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lis2dux12, spi) || \

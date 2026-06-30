@@ -19,7 +19,7 @@
 #include <stm32_ll_utils.h>
 
 #include "flash_stm32.h"
-#include "stm32_hsem.h"
+#include <stm32_hsem.h>
 
 #define LOG_DOMAIN flash_stm32h7
 #define LOG_LEVEL  CONFIG_FLASH_LOG_LEVEL

@@ -16,7 +16,7 @@
  * const char *const sys_errlist[sys_nerr];
  * const uint8_t sys_errlen[sys_nerr];
  */
-#include "libc/minimal/strerror_table.h"
+#include <libc/minimal/strerror_table.h>
 
 /*
  * See https://pubs.opengroup.org/onlinepubs/9699919799/functions/strerror.html

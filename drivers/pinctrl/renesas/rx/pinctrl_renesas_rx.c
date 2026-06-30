@@ -8,9 +8,9 @@
 #include <soc.h>
 
 /* Renesas FIT module for iodefine.h data structures */
-#include "platform.h"
-#include "r_gpio_rx_if.h"
-#include "r_mpc_rx_if.h"
+#include <platform.h>
+#include <r_gpio_rx_if.h>
+#include <r_mpc_rx_if.h>
 
 #define PORT_POS (8)
 

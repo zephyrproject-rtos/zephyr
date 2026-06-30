@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include "mocks/prng.h"
+#include <mocks/prng.h>
 
 DEFINE_FAKE_VALUE_FUNC(psa_status_t, psa_crypto_init);
 DEFINE_FAKE_VALUE_FUNC(psa_status_t, psa_generate_random, uint8_t *, size_t);

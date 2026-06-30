@@ -17,8 +17,8 @@ LOG_MODULE_REGISTER(spi_silabs_usart);
 #include "spi_rtio.h"
 #include <soc.h>
 
-#include "em_cmu.h"
-#include "em_usart.h"
+#include <em_cmu.h>
+#include <em_usart.h>
 
 #include <stdbool.h>
 

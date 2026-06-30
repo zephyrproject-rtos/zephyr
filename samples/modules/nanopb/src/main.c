@@ -10,7 +10,7 @@
 
 #include <pb_encode.h>
 #include <pb_decode.h>
-#include "src/simple.pb.h"
+#include <src/simple.pb.h>
 
 bool encode_message(uint8_t *buffer, size_t buffer_size, size_t *message_length)
 {

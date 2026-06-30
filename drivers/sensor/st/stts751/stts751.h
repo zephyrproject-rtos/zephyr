@@ -19,7 +19,7 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
 #include <stmemsc.h>
-#include "stts751_reg.h"
+#include <stts751_reg.h>
 
 struct stts751_config {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)

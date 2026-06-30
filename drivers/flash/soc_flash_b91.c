@@ -8,7 +8,7 @@
 #define FLASH_SIZE   DT_REG_SIZE(DT_INST(0, soc_nv_flash))
 #define FLASH_ORIGIN DT_REG_ADDR(DT_INST(0, soc_nv_flash))
 
-#include "flash.h"
+#include <flash.h>
 #include <string.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>

@@ -14,24 +14,24 @@
 #include <zephyr/irq.h>
 #include <errno.h>
 
-#include "util/mem.h"
+#include <util/mem.h>
 
-#include "hal/ccm.h"
-#include "hal/radio.h"
+#include <hal/ccm.h>
+#include <hal/radio.h>
 
-#include "lll/pdu_vendor.h"
-#include "ll_sw/pdu.h"
+#include <lll/pdu_vendor.h>
+#include <ll_sw/pdu.h>
 
-#include "fsl_xcvr.h"
-#include "hal/cntr.h"
-#include "hal/ticker.h"
-#include "hal/swi.h"
-#include "fsl_cau3_ble.h"	/* must be after irq.h */
+#include <fsl_xcvr.h>
+#include <hal/cntr.h>
+#include <hal/ticker.h>
+#include <hal/swi.h>
+#include <fsl_cau3_ble.h>	/* must be after irq.h */
 
-#include "common/assert.h"
+#include <common/assert.h>
 
 #include <soc.h>
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>

@@ -7,7 +7,7 @@
 #ifndef _SOC_IRQ_H
 #define _SOC_IRQ_H
 
-#include "board_irq.h"
+#include <board_irq.h>
 
 /*
  * This SOC relies on the boards providing all the IRQ support

@@ -11,7 +11,7 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/printk.h>
 
-#include "hal/cpu.h"
+#include <hal/cpu.h>
 
 #include "memq.h"
 #include "mayfly.h"

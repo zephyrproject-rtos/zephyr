@@ -6,7 +6,7 @@
  */
 
 #include "reboot_bottom.h"
-#include "posix_board_if.h"
+#include <posix_board_if.h>
 
 void sys_arch_reboot(int type)
 {

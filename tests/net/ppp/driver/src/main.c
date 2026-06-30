@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/net/net_log.h>
 
 #define NET_LOG_ENABLED 1
-#include "net_private.h"
+#include <net_private.h>
 
 typedef enum net_verdict (*ppp_l2_callback_t)(struct net_if *iface,
 					      struct net_pkt *pkt);

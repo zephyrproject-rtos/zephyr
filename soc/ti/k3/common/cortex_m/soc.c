@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "ctrl_partitions.h"
+#include <ctrl_partitions.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>

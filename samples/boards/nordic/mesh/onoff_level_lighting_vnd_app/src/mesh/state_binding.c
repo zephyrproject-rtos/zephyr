@@ -10,7 +10,7 @@
 #include "ble_mesh.h"
 #include "device_composition.h"
 #include "state_binding.h"
-#include "storage.h"
+#include <storage.h>
 #include "transition.h"
 
 static int32_t ceiling(float num)

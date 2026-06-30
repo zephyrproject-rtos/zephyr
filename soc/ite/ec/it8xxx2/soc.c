@@ -11,8 +11,8 @@
 #include <zephyr/init.h>
 #include "ilm.h"
 #include <soc_common.h>
-#include "soc_espi.h"
-#include "soc_timer.h"
+#include <soc_espi.h>
+#include <soc_timer.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 
 /*

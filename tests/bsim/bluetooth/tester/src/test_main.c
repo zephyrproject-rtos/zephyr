@@ -5,7 +5,7 @@
  */
 #include <stddef.h>
 
-#include "bstests.h"
+#include <bstests.h>
 
 extern struct bst_test_list *test_bap_broadcast_sink_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_bap_broadcast_source_install(struct bst_test_list *tests);

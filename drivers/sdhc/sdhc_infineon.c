@@ -44,8 +44,8 @@
 #include <zephyr/cache.h>
 #include "sdhc_helpers.h"
 
-#include "cy_sd_host.h"
-#include "cy_sysclk.h"
+#include <cy_sd_host.h>
+#include <cy_sysclk.h>
 
 LOG_MODULE_REGISTER(sdhc_infineon, CONFIG_SDHC_LOG_LEVEL);
 

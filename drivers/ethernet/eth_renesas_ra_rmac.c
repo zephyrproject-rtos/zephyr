@@ -16,8 +16,8 @@
 #include <zephyr/net/phy.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
-#include "r_rmac.h"
-#include "r_layer3_switch.h"
+#include <r_rmac.h>
+#include <r_layer3_switch.h>
 #include "eth.h"
 
 LOG_MODULE_REGISTER(eth_renesas_ra, CONFIG_ETHERNET_LOG_LEVEL);

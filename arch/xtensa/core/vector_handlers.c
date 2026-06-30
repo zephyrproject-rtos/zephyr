@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "xtensa/corebits.h"
+#include <xtensa/corebits.h>
 #include <string.h>
 #include <xtensa_asm2_context.h>
 #include <zephyr/kernel.h>

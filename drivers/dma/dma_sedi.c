@@ -17,8 +17,8 @@
 #include <zephyr/cache.h>
 #include <soc.h>
 
-#include "sedi_driver_dma.h"
-#include "sedi_driver_core.h"
+#include <sedi_driver_dma.h>
+#include <sedi_driver_core.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sedi_dma, CONFIG_DMA_LOG_LEVEL);

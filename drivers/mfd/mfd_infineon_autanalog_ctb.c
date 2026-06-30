@@ -36,7 +36,7 @@
 #include <infineon_autanalog.h>
 #include <infineon_autanalog_ctb.h>
 
-#include "cy_pdl.h"
+#include <cy_pdl.h>
 
 LOG_MODULE_REGISTER(mfd_infineon_autanalog_ctb, CONFIG_MFD_LOG_LEVEL);
 

@@ -25,10 +25,10 @@
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
 
-#include "ascs.h"
-#include "bap_stream.h"
+#include <ascs.h>
+#include <bap_stream.h>
 
-#include "test_common.h"
+#include <test_common.h>
 
 static void ascs_register_test_suite_after(void *f)
 {

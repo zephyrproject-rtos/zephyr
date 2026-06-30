@@ -6,7 +6,7 @@
 
 #include <math.h>
 #include <zephyr/bluetooth/cs.h>
-#include "distance_estimation.h"
+#include <distance_estimation.h>
 
 #define CS_FREQUENCY_MHZ(ch)    (2402u + 1u * (ch))
 #define CS_FREQUENCY_HZ(ch)     (CS_FREQUENCY_MHZ(ch) * 1000000.0f)

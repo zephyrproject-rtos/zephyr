@@ -16,9 +16,9 @@
 
 #include <zephyr/net/wifi_credentials.h>
 
-#include "wifi_credentials_internal.h"
-#include "psa/crypto_types.h"
-#include "psa/crypto_values.h"
+#include <wifi_credentials_internal.h>
+#include <psa/crypto_types.h>
+#include <psa/crypto_values.h>
 
 #define SSID1     "test1"
 #define PSK1      "super secret"

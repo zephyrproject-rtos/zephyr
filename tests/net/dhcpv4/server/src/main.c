@@ -12,10 +12,10 @@
 #include <zephyr/net/dhcpv4.h>
 #include <zephyr/net/dhcpv4_server.h>
 
-#include "dhcpv4/dhcpv4_internal.h"
-#include "icmpv4.h"
-#include "ipv4.h"
-#include "udp_internal.h"
+#include <dhcpv4/dhcpv4_internal.h>
+#include <icmpv4.h>
+#include <ipv4.h>
+#include <udp_internal.h>
 
 /* 00-00-5E-00-53-xx Documentation RFC 7042 */
 static uint8_t server_mac_addr[] = { 0x00, 0x00, 0x5E, 0x00, 0x53, 0x01 };

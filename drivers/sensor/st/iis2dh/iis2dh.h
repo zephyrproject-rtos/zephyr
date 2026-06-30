@@ -18,7 +18,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
 #include <stmemsc.h>
-#include "iis2dh_reg.h"
+#include <iis2dh_reg.h>
 
 /*
  * Return ODR reg value based on data rate set

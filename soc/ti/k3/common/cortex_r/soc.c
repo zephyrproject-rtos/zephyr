@@ -8,7 +8,7 @@
 #include <zephyr/fatal.h>
 
 #include "soc.h"
-#include "ctrl_partitions.h"
+#include <ctrl_partitions.h>
 #include <zephyr/cache.h>
 
 unsigned int z_soc_irq_get_active(void)

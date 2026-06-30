@@ -10,9 +10,9 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/ztest.h>
 
-#include "bmi160.h"
-#include "checks.h"
-#include "fixture.h"
+#include <bmi160.h>
+#include <checks.h>
+#include <fixture.h>
 
 static int mock_i2c_transfer_fail_reg_number = -1;
 

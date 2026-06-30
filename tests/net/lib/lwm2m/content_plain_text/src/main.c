@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-#include "lwm2m_rw_plain_text.h"
+#include <lwm2m_rw_plain_text.h>
 
 static struct lwm2m_output_context test_out;
 static struct lwm2m_input_context test_in;

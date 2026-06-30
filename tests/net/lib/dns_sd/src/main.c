@@ -14,8 +14,8 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/socket.h>
 
-#include "dns_pack.h"
-#include "dns_sd.h"
+#include <dns_pack.h>
+#include <dns_sd.h>
 
 #define BUFSZ 256
 

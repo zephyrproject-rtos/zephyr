@@ -29,14 +29,14 @@
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
 
-#include "audio/bap_endpoint.h"
-#include "audio/bap_iso.h"
-#include "bluetooth.h"
-#include "cap_initiator.h"
-#include "cap_handover.h"
-#include "conn.h"
-#include "expects_util.h"
-#include "test_common.h"
+#include <audio/bap_endpoint.h>
+#include <audio/bap_iso.h>
+#include <bluetooth.h>
+#include <cap_initiator.h>
+#include <cap_handover.h>
+#include <conn.h>
+#include <expects_util.h>
+#include <test_common.h>
 
 static void mock_init_rule_before(const struct ztest_unit_test *test, void *fixture)
 {

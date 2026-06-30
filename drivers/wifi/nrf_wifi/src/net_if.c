@@ -22,15 +22,15 @@ LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/reboot.h>
 
-#include "net_private.h"
+#include <net_private.h>
 
-#include "util.h"
-#include "common/fmac_util.h"
-#include "system/fmac_peer.h"
-#include "shim.h"
-#include "fmac_main.h"
-#include "wpa_supp_if.h"
-#include "net_if.h"
+#include <util.h>
+#include <common/fmac_util.h>
+#include <system/fmac_peer.h>
+#include <shim.h>
+#include <fmac_main.h>
+#include <wpa_supp_if.h>
+#include <net_if.h>
 
 #ifdef CONFIG_NRF70_STA_MODE
 static struct net_if_mcast_monitor mcast_monitor;

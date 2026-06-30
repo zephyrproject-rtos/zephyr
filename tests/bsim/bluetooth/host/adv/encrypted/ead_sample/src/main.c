@@ -12,14 +12,14 @@
 #include <zephyr/bluetooth/ead.h>
 #include <zephyr/bluetooth/conn.h>
 
-#include "bs_types.h"
-#include "bs_tracing.h"
-#include "bstests.h"
+#include <bs_types.h>
+#include <bs_tracing.h>
+#include <bstests.h>
 
 #include <zephyr/logging/log.h>
 
-#include "data.h"
-#include "common.h"
+#include <data.h>
+#include <common.h>
 
 LOG_MODULE_REGISTER(bt_bsim_ead_sample, CONFIG_BT_EAD_LOG_LEVEL);
 

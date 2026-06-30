@@ -5,13 +5,13 @@
  */
 
 #include <zephyr/net/wifi_mgmt.h>
-#include "includes.h"
-#include "common.h"
-#include "common/defs.h"
-#include "wpa_supplicant_i.h"
-#include "hostapd.h"
-#include "hostapd_cli_zephyr.h"
-#include "ap_drv_ops.h"
+#include <includes.h>
+#include <common.h>
+#include <common/defs.h>
+#include <wpa_supplicant_i.h>
+#include <hostapd.h>
+#include <hostapd_cli_zephyr.h>
+#include <ap_drv_ops.h>
 #include "hapd_main.h"
 #include "hapd_api.h"
 #include "supp_events.h"

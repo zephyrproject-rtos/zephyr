@@ -25,7 +25,7 @@ LOG_MODULE_DECLARE(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/sys/iterable_sections.h>
 
 #if defined(CONFIG_SOCKS)
-#include "socks.h"
+#include <socks.h>
 #endif
 
 #include <zephyr/net/igmp.h>

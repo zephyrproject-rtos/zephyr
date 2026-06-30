@@ -30,7 +30,7 @@ static const char psk_id[] = "PSK_identity";
 #if !defined(USE_PSK_KEY_EXCHANGE)
 #define USE_CERTIFICATE
 static const unsigned char certificate[] = {
-#include "ec.crt.inc"
+#include <ec.crt.inc>
 };
 #endif
 

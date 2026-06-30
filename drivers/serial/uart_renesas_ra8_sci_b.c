@@ -14,9 +14,9 @@
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
 #include <soc.h>
-#include "r_sci_b_uart.h"
-#include "r_dtc.h"
-#include "r_transfer_api.h"
+#include <r_sci_b_uart.h>
+#include <r_dtc.h>
+#include <r_transfer_api.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ra8_uart_sci_b);

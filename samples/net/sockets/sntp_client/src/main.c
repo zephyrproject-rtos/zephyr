@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(net_sntp_client_sample, LOG_LEVEL_DBG);
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include "net_sample_common.h"
+#include <net_sample_common.h>
 
 static K_SEM_DEFINE(sntp_async_received, 0, 1);
 static void sntp_service_handler(struct net_socket_service_event *pev);

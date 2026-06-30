@@ -6,8 +6,8 @@
 
 #include "common.h"
 
-#include "argparse.h"
-#include "bs_pc_backchannel.h"
+#include <argparse.h>
+#include <bs_pc_backchannel.h>
 
 void backchannel_sync_send(uint channel, uint device_nbr)
 {

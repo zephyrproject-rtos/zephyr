@@ -9,12 +9,12 @@
 #include <zephyr/ztest.h>
 #include <zephyr/net/socket.h>
 
-#include "lwm2m_engine.h"
-#include "lwm2m_rd_client.h"
+#include <lwm2m_engine.h>
+#include <lwm2m_rd_client.h>
 
 #include "stubs.h"
 #if defined(CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
-#include "nsi_timer_model.h"
+#include <nsi_timer_model.h>
 #endif
 
 #define LOG_LEVEL	LOG_LEVEL_DBG

@@ -8,9 +8,9 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/ztest.h>
 
-#include "akm09918c.h"
-#include "akm09918c_emul.h"
-#include "akm09918c_reg.h"
+#include <akm09918c.h>
+#include <akm09918c_emul.h>
+#include <akm09918c_reg.h>
 
 struct akm09918c_fixture {
 	const struct device *dev;

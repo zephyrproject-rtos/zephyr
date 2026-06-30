@@ -12,7 +12,7 @@
 #if defined(CONFIG_BOARD_RV32M1_VEGA)
 #include <fsl_port.h>
 #elif defined(CONFIG_BOARD_UDOO_NEO_FULL_MCIMX6X_M4)
-#include "device_imx.h"
+#include <device_imx.h>
 #elif defined(CONFIG_BOARD_MIMXRT1050_EVK)
 #include <fsl_iomuxc.h>
 #elif defined(CONFIG_BOARD_NRF52_BSIM)

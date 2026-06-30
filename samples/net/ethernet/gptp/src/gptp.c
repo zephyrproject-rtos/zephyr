@@ -14,8 +14,8 @@ LOG_MODULE_DECLARE(net_gptp_sample);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/gptp.h>
 
-#include "ethernet/gptp/gptp_messages.h"
-#include "ethernet/gptp/gptp_data_set.h"
+#include <ethernet/gptp/gptp_messages.h>
+#include <ethernet/gptp/gptp_data_set.h>
 
 static int run_duration = CONFIG_NET_SAMPLE_RUN_DURATION;
 static struct k_work_delayable stop_sample;

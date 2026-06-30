@@ -24,7 +24,7 @@
 #include <zephyr/logging/log.h>
 #include <infineon_autanalog.h>
 
-#include "cy_pdl.h"
+#include <cy_pdl.h>
 
 LOG_MODULE_REGISTER(mfd_infineon_autanalog, CONFIG_MFD_LOG_LEVEL);
 

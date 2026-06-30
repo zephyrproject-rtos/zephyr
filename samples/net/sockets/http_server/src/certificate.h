@@ -15,12 +15,12 @@ enum tls_tag {
 };
 
 static const unsigned char server_certificate[] = {
-#include "server_cert.der.inc"
+#include <server_cert.der.inc>
 };
 
 /* This is the private key in pkcs#8 format. */
 static const unsigned char private_key[] = {
-#include "server_privkey.der.inc"
+#include <server_privkey.der.inc>
 };
 
 #if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)

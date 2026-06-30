@@ -29,7 +29,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/barrier.h>
-#include "stm32_hsem.h"
+#include <stm32_hsem.h>
 
 #include "entropy_stm32.h"
 

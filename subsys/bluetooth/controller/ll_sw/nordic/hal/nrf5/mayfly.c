@@ -7,14 +7,14 @@
 
 #include <soc.h>
 
-#include "hal/nrf5/swi.h"
+#include <hal/nrf5/swi.h>
 
-#include "util/memq.h"
-#include "util/mayfly.h"
+#include <util/memq.h>
+#include <util/mayfly.h>
 
-#include "ll_sw/lll.h"
+#include <ll_sw/lll.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #define MAYFLY_CALL_ID_LLL    TICKER_USER_ID_LLL
 #define MAYFLY_CALL_ID_WORKER TICKER_USER_ID_ULL_HIGH

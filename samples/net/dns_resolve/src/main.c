@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(net_dns_resolve_client_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/dns_resolve.h>
 
-#include "net_sample_common.h"
+#include <net_sample_common.h>
 
 #if defined(CONFIG_MDNS_RESOLVER)
 #if defined(CONFIG_NET_IPV4)

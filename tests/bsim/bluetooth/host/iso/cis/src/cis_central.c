@@ -21,11 +21,11 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
-#include "bstests.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
+#include <bstests.h>
 #include "common.h"
-#include "iso_tx.h"
+#include <iso_tx.h>
 
 #define EXPECTED_TX_CNT 100U
 

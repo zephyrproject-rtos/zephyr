@@ -15,7 +15,7 @@
 #include <zephyr/stats/stats.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/sys/crc.h>
-#include "zms_priv.h"
+#include <zms_priv.h>
 
 #define TEST_ZMS_AREA        storage_partition
 #define TEST_ZMS_AREA_OFFSET PARTITION_OFFSET(TEST_ZMS_AREA)

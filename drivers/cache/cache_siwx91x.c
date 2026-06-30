@@ -7,7 +7,7 @@
 #include <zephyr/drivers/cache.h>
 #include <zephyr/sys/barrier.h>
 
-#include "rsi_pll.h"
+#include <rsi_pll.h>
 
 /*
  * The SiWx91x has an external AHB instruction cache for the QSPI flash. It

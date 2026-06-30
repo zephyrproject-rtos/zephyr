@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include "../../socket_helpers.h"
 
-#include "dns_pack.h"
+#include <dns_pack.h>
 
 #define QUERY_HOST "www.zephyrproject.org"
 

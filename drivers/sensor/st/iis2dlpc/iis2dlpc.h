@@ -15,7 +15,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/sensor.h>
 #include <stmemsc.h>
-#include "iis2dlpc_reg.h"
+#include <iis2dlpc_reg.h>
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <zephyr/drivers/spi.h>

@@ -18,7 +18,7 @@
 #include <zephyr/sys/crc.h>
 #include <zephyr/sys/util.h>
 
-#include "memc_mcux_flexspi.h"
+#include <memc_mcux_flexspi.h>
 
 LOG_MODULE_REGISTER(flash_flexspi_nand, CONFIG_FLASH_LOG_LEVEL);
 

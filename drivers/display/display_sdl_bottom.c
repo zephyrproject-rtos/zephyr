@@ -11,7 +11,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <SDL.h>
-#include "nsi_tracing.h"
+#include <nsi_tracing.h>
 
 static int sdl_create_rounded_display_mask(uint16_t width, uint16_t height, uint32_t mask_color,
 					   void **round_disp_mask, void *renderer)

@@ -9,10 +9,10 @@
 #define pse84_s_system_h
 
 #include <infineon_kconfig.h>
-#include "cy_syspm.h"
-#include "system_edge.h"
-#include "cy_sysclk.h"
-#include "cy_syspm_pdcm.h"
+#include <cy_syspm.h>
+#include <system_edge.h>
+#include <cy_sysclk.h>
+#include <cy_syspm_pdcm.h>
 #include "pse84_s_mpc.h"
 
 #define CY_CFG_PWR_MODE_LP            0x01UL

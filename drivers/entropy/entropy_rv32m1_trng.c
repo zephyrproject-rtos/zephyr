@@ -11,7 +11,7 @@
 #include <zephyr/random/random.h>
 #include <zephyr/init.h>
 
-#include "fsl_trng.h"
+#include <fsl_trng.h>
 
 struct rv32m1_entropy_config {
 	TRNG_Type *base;

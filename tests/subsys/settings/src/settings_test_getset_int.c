@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "settings_test.h"
+#include <settings_test.h>
 
 ZTEST(settings_config, test_config_getset_int)
 {

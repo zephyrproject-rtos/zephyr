@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(flash_rts5912);
 #include <string.h>
 
 #include "spi_nor.h"
-#include "reg/reg_spic.h"
+#include <reg/reg_spic.h>
 
 #define FLASH_CMD_RDSFDP         0x5A /* Read SFDP */
 #define FLASH_CMD_EX4B           0xE9 /* Exit 4-byte mode */

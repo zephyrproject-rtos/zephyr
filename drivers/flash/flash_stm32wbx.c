@@ -19,9 +19,9 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/sys/__assert.h>
 
 #include "flash_stm32.h"
-#include "stm32_hsem.h"
+#include <stm32_hsem.h>
 #if defined(CONFIG_BT)
-#include "shci.h"
+#include <shci.h>
 #endif
 
 #define STM32WBX_PAGE_SHIFT	12

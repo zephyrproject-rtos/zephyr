@@ -16,7 +16,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/util.h>
 #include <stmemsc.h>
-#include "lsm6dsv16x_reg.h"
+#include <lsm6dsv16x_reg.h>
 #include <zephyr/rtio/regmap.h>
 
 #define DT_DRV_COMPAT_LSM6DSV16X st_lsm6dsv16x

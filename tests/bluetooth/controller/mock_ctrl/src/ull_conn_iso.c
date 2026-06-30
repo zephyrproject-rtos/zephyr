@@ -9,38 +9,38 @@
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 
-#include "hal/ccm.h"
-#include "hal/ticker.h"
-#include "hal/cpu.h"
+#include <hal/ccm.h>
+#include <hal/ticker.h>
+#include <hal/cpu.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/dbuf.h"
-#include "util/mayfly.h"
-#include "util/mfifo.h"
-#include "ticker/ticker.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/dbuf.h>
+#include <util/mayfly.h>
+#include <util/mfifo.h>
+#include <ticker/ticker.h>
 
-#include "pdu_df.h"
-#include "lll/pdu_vendor.h"
-#include "pdu.h"
-#include "lll.h"
-#include "lll/lll_df_types.h"
-#include "lll_conn.h"
+#include <pdu_df.h>
+#include <lll/pdu_vendor.h>
+#include <pdu.h>
+#include <lll.h>
+#include <lll/lll_df_types.h>
+#include <lll_conn.h>
 
-#include "ull_tx_queue.h"
+#include <ull_tx_queue.h>
 
-#include "isoal.h"
-#include "ull_iso_types.h"
-#include "ull_conn_types.h"
-#include "lll_conn_iso.h"
-#include "ull_conn_iso_types.h"
-#include "ull_conn_internal.h"
-#include "ull_conn_iso_internal.h"
-#include "ull_internal.h"
-#include "lll/lll_vendor.h"
+#include <isoal.h>
+#include <ull_iso_types.h>
+#include <ull_conn_types.h>
+#include <lll_conn_iso.h>
+#include <ull_conn_iso_types.h>
+#include <ull_conn_internal.h>
+#include <ull_conn_iso_internal.h>
+#include <ull_internal.h>
+#include <lll/lll_vendor.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 static struct ll_conn_iso_group group = { 0 };
 static struct ll_conn_iso_stream stream = { .established = 1, .group = &group };

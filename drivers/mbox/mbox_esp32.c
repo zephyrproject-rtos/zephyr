@@ -7,7 +7,7 @@
 
 #define DT_DRV_COMPAT espressif_mbox_esp32
 #if !defined(CONFIG_SOC_SERIES_ESP32C5) && !defined(CONFIG_SOC_SERIES_ESP32C6)
-#include "soc/dport_reg.h"
+#include <soc/dport_reg.h>
 #else
 #include <ulp_lp_core.h>
 #include <soc/pmu_reg.h>
@@ -19,7 +19,7 @@
 #endif
 #endif
 
-#include "soc/gpio_periph.h"
+#include <soc/gpio_periph.h>
 
 #include <stdint.h>
 #include <string.h>

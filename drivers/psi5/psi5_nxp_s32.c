@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(nxp_s32_psi5, CONFIG_PSI5_LOG_LEVEL);
 
 #include <zephyr/drivers/psi5/psi5.h>
 
-#include "Psi5_Ip.h"
+#include <Psi5_Ip.h>
 
 struct psi5_nxp_s32_config {
 	uint8_t ctrl_inst;

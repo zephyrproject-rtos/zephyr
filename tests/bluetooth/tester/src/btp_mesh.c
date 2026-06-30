@@ -30,9 +30,9 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
 
-#include "mesh/access.h"
-#include "mesh/dfu_slot.h"
-#include "mesh/testing.h"
+#include <mesh/access.h>
+#include <mesh/dfu_slot.h>
+#include <mesh/testing.h>
 
 #include "btp/btp.h"
 

@@ -17,7 +17,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_TIMER_IFX_TCPWM_TIMER_H
 
 #include <stdint.h>
-#include "cy_tcpwm.h"
+#include <cy_tcpwm.h>
 
 /** @cond INTERNAL_HIDDEN */
 #define IFX_TCPWM_Block_EnableCompare0Swap(ADDRESS, ENABLE)                                        \

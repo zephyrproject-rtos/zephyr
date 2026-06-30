@@ -6,11 +6,11 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
-#include "argparse.h"
-#include "bs_types.h"
-#include "bs_tracing.h"
-#include "time_machine.h"
-#include "bs_pc_backchannel.h"
+#include <argparse.h>
+#include <bs_types.h>
+#include <bs_tracing.h>
+#include <time_machine.h>
+#include <bs_pc_backchannel.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sync, CONFIG_LOG_DEFAULT_LEVEL);

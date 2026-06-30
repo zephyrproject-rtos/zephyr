@@ -10,9 +10,9 @@
 #include <zephyr/net/ptp.h>
 #include <zephyr/ztest.h>
 
-#include "clock.h"
-#include "msg.h"
-#include "tlv.h"
+#include <clock.h>
+#include <msg.h>
+#include <tlv.h>
 
 static struct ptp_parent_ds test_parent_ds;
 static struct ptp_tlv_container tlv_pool[4];

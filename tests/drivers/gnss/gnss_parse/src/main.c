@@ -6,7 +6,7 @@
 
 #include <zephyr/ztest.h>
 
-#include "gnss_parse.h"
+#include <gnss_parse.h>
 
 struct test_atoi_sample {
 	const char *str;

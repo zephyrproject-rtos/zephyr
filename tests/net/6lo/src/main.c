@@ -27,11 +27,11 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_6LO_LOG_LEVEL);
 
 #include <zephyr/tc_util.h>
 
-#include "6lo.h"
-#include "icmpv6.h"
+#include <6lo.h>
+#include <icmpv6.h>
 
 #define NET_LOG_ENABLED 1
-#include "net_private.h"
+#include <net_private.h>
 
 #define DEBUG 0
 

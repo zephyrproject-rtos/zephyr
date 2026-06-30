@@ -7,8 +7,8 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/logging/log.h>
 #include <stdint.h>
-#include "soc.h"
-#include "r_dmac.h"
+#include <soc.h>
+#include <r_dmac.h>
 
 LOG_MODULE_REGISTER(dma_renesas_ra, CONFIG_DMA_LOG_LEVEL);
 

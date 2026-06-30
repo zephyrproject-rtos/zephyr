@@ -11,17 +11,17 @@
 
 #include <host/conn_internal.h>
 
-#include "mocks/addr_internal.h"
-#include "mocks/att_internal.h"
-#include "mocks/buf_view.h"
-#include "mocks/hci_core.h"
-#include "mocks/id.h"
-#include "mocks/kernel.h"
-#include "mocks/l2cap_internal.h"
-#include "mocks/scan.h"
-#include "mocks/smp.h"
-#include "mocks/spinlock.h"
-#include "mocks/sys_clock.h"
+#include <mocks/addr_internal.h>
+#include <mocks/att_internal.h>
+#include <mocks/buf_view.h>
+#include <mocks/hci_core.h>
+#include <mocks/id.h>
+#include <mocks/kernel.h>
+#include <mocks/l2cap_internal.h>
+#include <mocks/scan.h>
+#include <mocks/smp.h>
+#include <mocks/spinlock.h>
+#include <mocks/sys_clock.h>
 
 DEFINE_FFF_GLOBALS;
 

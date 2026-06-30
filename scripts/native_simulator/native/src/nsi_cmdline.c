@@ -8,12 +8,12 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include "nsi_cmdline.h"
+#include <nsi_cmdline.h>
 #include "nsi_cmdline_internal.h"
-#include "nsi_tracing.h"
-#include "nsi_timer_model.h"
-#include "nsi_hw_scheduler.h"
-#include "nsi_tasks.h"
+#include <nsi_tracing.h>
+#include <nsi_timer_model.h>
+#include <nsi_hw_scheduler.h>
+#include <nsi_tasks.h>
 
 static int s_argc, test_argc;
 static char **s_argv, **test_argv;

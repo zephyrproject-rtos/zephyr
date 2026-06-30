@@ -10,7 +10,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
-#include "nsi_cmdline.h"
+#include <nsi_cmdline.h>
 
 #ifdef __cplusplus
 extern "C" {

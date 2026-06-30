@@ -22,7 +22,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor/vl53l0x.h>
 
-#include "vl53l0x_api.h"
+#include <vl53l0x_api.h>
 #include "vl53l0x_platform.h"
 
 LOG_MODULE_REGISTER(VL53L0X, CONFIG_SENSOR_LOG_LEVEL);

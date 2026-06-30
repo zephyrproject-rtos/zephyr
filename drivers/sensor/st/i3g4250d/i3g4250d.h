@@ -18,7 +18,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/util.h>
 #include <stmemsc.h>
-#include "i3g4250d_reg.h"
+#include <i3g4250d_reg.h>
 
 #define DT_DRV_COMPAT_I3G4250D st_i3g4250d
 

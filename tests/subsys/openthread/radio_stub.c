@@ -27,4 +27,4 @@
 #define CONFIG_OPENTHREAD_DEFAULT_TX_POWER 0
 
 /* file itself */
-#include "radio.c"
+#include <radio.c>

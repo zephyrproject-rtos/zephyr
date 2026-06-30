@@ -47,7 +47,7 @@
 
 LOG_MODULE_REGISTER(bt_bap_broadcast_sink, CONFIG_BT_BAP_BROADCAST_SINK_LOG_LEVEL);
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define BROADCAST_SYNC_MIN_INDEX          (BIT(1U))

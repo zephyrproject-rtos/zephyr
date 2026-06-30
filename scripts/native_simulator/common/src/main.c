@@ -15,12 +15,12 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "nsi_cpun_if.h"
-#include "nsi_tasks.h"
-#include "nsi_cmdline_main_if.h"
-#include "nsi_utils.h"
-#include "nsi_hw_scheduler.h"
+#include <nsi_tasks.h>
+#include <nsi_cmdline_main_if.h>
+#include <nsi_utils.h>
+#include <nsi_hw_scheduler.h>
 #include "nsi_config.h"
-#include "nsi_cpu_ctrl.h"
+#include <nsi_cpu_ctrl.h>
 
 int nsi_exit_inner(int exit_code)
 {

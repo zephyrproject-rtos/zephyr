@@ -18,7 +18,7 @@
 
 LOG_MODULE_REGISTER(entropy, CONFIG_ENTROPY_LOG_LEVEL);
 
-#include "hal/rtc_timer_hal.h"
+#include <hal/rtc_timer_hal.h>
 
 #if defined CONFIG_SOC_SERIES_ESP32S3
 /* If APB clock is 80 MHz, the maximum sampling frequency is around 45 KHz */

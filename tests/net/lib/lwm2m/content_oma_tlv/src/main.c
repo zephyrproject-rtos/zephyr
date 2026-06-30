@@ -7,8 +7,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-#include "lwm2m_util.h"
-#include "lwm2m_rw_oma_tlv.h"
+#include <lwm2m_util.h>
+#include <lwm2m_rw_oma_tlv.h>
 
 #define TEST_RESOURCE_ID_SHORT 0xAA
 #define TEST_RESOURCE_ID_LONG 0xAABB

@@ -13,15 +13,15 @@
 #include <stmemsc.h>
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_ilps22qs)
-#include "ilps22qs_reg.h"
+#include <ilps22qs_reg.h>
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_lps28dfw)
-#include "lps28dfw_reg.h"
+#include <lps28dfw_reg.h>
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_lps22df)
-#include "lps22df_reg.h"
+#include <lps22df_reg.h>
 #endif
 
 #include <zephyr/drivers/spi.h>

@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(entropy_npcx_drbg, CONFIG_ENTROPY_LOG_LEVEL);
 
-#include "soc_ncl.h"
+#include <soc_ncl.h>
 
 /* Reseed after 100 number generations */
 #define NPCX_DRBG_SECURITY_STRENGTH                                                                \

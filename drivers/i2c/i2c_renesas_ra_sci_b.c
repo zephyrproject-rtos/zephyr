@@ -16,9 +16,9 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 
-#include "r_sci_b_i2c.h"
+#include <r_sci_b_i2c.h>
 #ifdef CONFIG_I2C_RENESAS_RA_SCI_B_DTC
-#include "r_dtc.h"
+#include <r_dtc.h>
 #endif
 
 #include <soc.h>

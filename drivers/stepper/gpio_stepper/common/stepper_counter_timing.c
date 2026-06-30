@@ -5,7 +5,7 @@
 
 #include <zephyr/drivers/counter.h>
 #include <gpio_stepper_common.h>
-#include "stepper_timing_source.h"
+#include <stepper_timing_source.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(gpio_stepper_common);

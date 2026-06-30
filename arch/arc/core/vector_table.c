@@ -25,7 +25,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/toolchain.h>
-#include "vector_table.h"
+#include <vector_table.h>
 
 struct vector_table {
 	uintptr_t reset;

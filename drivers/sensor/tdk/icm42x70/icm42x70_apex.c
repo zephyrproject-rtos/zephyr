@@ -5,7 +5,7 @@
  */
 
 #include "icm42x70.h"
-#include "imu/inv_imu_apex.h"
+#include <imu/inv_imu_apex.h>
 
 int icm42x70_apex_enable(inv_imu_device_t *s)
 {

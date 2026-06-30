@@ -7,7 +7,7 @@
 
 #define DT_DRV_COMPAT nuvoton_npcx_kbd
 
-#include "soc_miwu.h"
+#include <soc_miwu.h>
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
