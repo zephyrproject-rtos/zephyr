@@ -23,6 +23,8 @@ when the reqmgmt module is present); when the tag is absent the extension is a
 no-op.
 """
 
+import json
+import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -44,6 +46,13 @@ DESIGN_OPTIONS = ("fulfills", "implements", "satisfies", "realizes", "trace", "s
 
 # Doxygen XML <name> prefix for requirement compounds.
 REQ_REFID_PREFIX = "requirement_"
+
+# Software-requirement UID -> component prefix (ZEP-SRS-5-2 -> ZEP-SRS-5).
+REQ_PREFIX_RE = re.compile(r"^(ZEP-S\w*-\d+)-\d+$")
+
+
+def _slug(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_") or "component"
 
 # Map Doxygen link element -> mlx relationship (test/impl item -> requirement).
 LINK_RELATIONSHIPS = {
@@ -171,126 +180,203 @@ def _collect(xml_dir: Path) -> dict[str, dict]:
     return symbols
 
 
-def _render_page(symbols: dict[str, dict]) -> str:
-    title = "Requirements Traceability"
-    out = [
-        title,
-        "#" * len(title),
-        "",
-        "Traceability between the imported requirements and the tests that verify",
-        "them and the code that implements them, derived from the ``@verifies`` and",
-        "``@satisfies`` links in the source.",
-        "",
-        "Coverage",
-        "========",
-        "",
-        "Share of software requirements with at least one verifying test, and with",
-        "at least one implementing symbol.",
-        "",
-        ".. item-piechart:: Requirement verification coverage",
-        "   :id_set: ZEP-SRS test_",
-        "   :label_set: unverified, verified",
-        "",
-        ".. item-piechart:: Requirement implementation coverage",
-        "   :id_set: ZEP-SRS ^(?!ZEP-|DESIGN-|test_).+",
-        "   :label_set: unimplemented, implemented",
-        "",
-        "Requirement / test matrix",
-        "=========================",
-        "",
-        "Software requirements and the tests that verify them (``@verifies``).",
-        "",
-        ".. item-matrix:: Requirements and their verifying tests",
-        "   :source: ZEP-SRS",
-        "   :target: test_",
-        "   :sourcetitle: Requirement",
-        "   :targettitle: Verifying test",
-        "   :type: validated_by",
-        "   :nocaptions:",
-        "   :stats:",
-        "",
-        "Requirement / implementation matrix",
-        "===================================",
-        "",
-        "Software requirements and the source symbols (functions and macros) that",
-        "implement them (``@satisfies``).",
-        "",
-        ".. item-matrix:: Requirements and the code that implements them",
-        "   :source: ZEP-SRS",
-        "   :target: .",
-        "   :sourcetitle: Requirement",
-        "   :targettitle: Implementing symbol",
-        "   :type: implemented_by",
-        "   :nocaptions:",
-        "   :stats:",
-        "",
-        "Requirement / design matrix",
-        "===========================",
-        "",
-        "Design and architecture elements (``DESIGN-*`` items declared with the",
-        "``design`` directive in the design documents) and the requirements they",
-        "fulfill.",
-        "",
-        ".. item-matrix:: Requirements and the design elements that fulfill them",
-        "   :source: ZEP-S",
-        "   :target: DESIGN-",
-        "   :sourcetitle: Requirement",
-        "   :targettitle: Design / architecture element",
-        "   :type: fulfilled_by",
-        "   :nocaptions:",
-        "   :stats:",
-        "",
-        "Requirement hierarchy",
-        "=====================",
-        "",
-        ".. item-tree:: Requirement hierarchy",
-        "   :top: ZEP-SYRS",
-        "   :type: backtrace",
-        "",
-        "Verifying tests and implementations",
-        "===================================",
-        "",
-    ]
+def _heading(text: str, char: str) -> list[str]:
+    return [text, char * max(len(text), 3), ""]
 
+
+# The standalone view pages (one matrix/chart family each), keyed by file stem.
+# Splitting these onto separate pages keeps each one small and quick to load,
+# and lets a reader jump straight to the view they need.
+def _view_pages() -> dict[str, list[str]]:
+    return {
+        "coverage": [
+            *_heading("Coverage", "#"),
+            "Share of software requirements with at least one verifying test, and",
+            "with at least one implementing symbol.",
+            "",
+            ".. item-piechart:: Requirement verification coverage",
+            "   :id_set: ZEP-SRS test_",
+            "   :label_set: unverified, verified",
+            "",
+            ".. item-piechart:: Requirement implementation coverage",
+            "   :id_set: ZEP-SRS ^(?!ZEP-|DESIGN-|test_).+",
+            "   :label_set: unimplemented, implemented",
+            "",
+        ],
+        "matrix_test": [
+            *_heading("Requirement / test matrix", "#"),
+            "Software requirements and the tests that verify them (``@verifies``).",
+            "",
+            ".. item-matrix:: Requirements and their verifying tests",
+            "   :source: ZEP-SRS",
+            "   :target: test_",
+            "   :sourcetitle: Requirement",
+            "   :targettitle: Verifying test",
+            "   :type: validated_by",
+            "   :nocaptions:",
+            "   :stats:",
+            "",
+        ],
+        "matrix_implementation": [
+            *_heading("Requirement / implementation matrix", "#"),
+            "Software requirements and the source symbols (functions and macros)",
+            "that implement them (``@satisfies``).",
+            "",
+            ".. item-matrix:: Requirements and the code that implements them",
+            "   :source: ZEP-SRS",
+            "   :target: .",
+            "   :sourcetitle: Requirement",
+            "   :targettitle: Implementing symbol",
+            "   :type: implemented_by",
+            "   :nocaptions:",
+            "   :stats:",
+            "",
+        ],
+        "matrix_design": [
+            *_heading("Requirement / design matrix", "#"),
+            "Design and architecture elements (``DESIGN-*`` items declared with the",
+            "``design`` directive in the design documents) and the requirements",
+            "they fulfill.",
+            "",
+            ".. item-matrix:: Requirements and the design elements that fulfill them",
+            "   :source: ZEP-S",
+            "   :target: DESIGN-",
+            "   :sourcetitle: Requirement",
+            "   :targettitle: Design / architecture element",
+            "   :type: fulfilled_by",
+            "   :nocaptions:",
+            "   :stats:",
+            "",
+        ],
+        "hierarchy": [
+            *_heading("Requirement hierarchy", "#"),
+            "System requirements and the software requirements that refine them.",
+            "",
+            ".. item-tree:: Requirement hierarchy",
+            "   :top: ZEP-SYRS",
+            "   :type: backtrace",
+            "",
+        ],
+    }
+
+
+def _render_symbols_page(title: str, symbols: dict[str, dict]) -> str:
+    out = _heading(f"{title} tests and implementations", "#")
     for name in sorted(symbols):
         entry = symbols[name]
-        caption = f".. item:: {name} {entry['brief']}".rstrip()
-        out.append(caption)
+        out.append(f".. item:: {name} {entry['brief']}".rstrip())
         for rel in sorted(entry["rels"]):
             out.append(f"   :{rel}: {' '.join(sorted(entry['rels'][rel]))}")
         out.append("")
-        # Link to the full test/implementation documentation in the Doxygen
-        # output (resolved by the doxybridge extension).
+        # Link to the full documentation in the Doxygen output (doxybridge).
         out.append(f"   Documented at :c:func:`{name}`.")
         out.append("")
         for line in entry["body"]:
             out.append(f"   {line}" if line else "")
         out.append("")
-
-    if not symbols:
-        out.append("No traceability links were found in this build.")
-        out.append("")
-
     return "\n".join(out)
+
+
+def _render_index(symbol_pages: list[tuple[str, str]], have_symbols: bool) -> str:
+    title = "Requirements Traceability"
+    out = [
+        *_heading(title, "#"),
+        "Traceability between the imported requirements and the tests that verify",
+        "them and the code that implements them, derived from the ``@verifies`` and",
+        "``@satisfies`` links in the source. Each view below is a separate page.",
+        "",
+        ".. toctree::",
+        "   :maxdepth: 1",
+        "   :caption: Coverage and matrices",
+        "",
+        "   coverage",
+        "   matrix_test",
+        "   matrix_implementation",
+        "   matrix_design",
+        "   hierarchy",
+        "",
+    ]
+    if symbol_pages:
+        out += [
+            ".. toctree::",
+            "   :maxdepth: 1",
+            "   :caption: Verifying tests and implementations",
+            "",
+        ]
+        out += [f"   {stem}" for _name, stem in symbol_pages]
+        out.append("")
+    elif not have_symbols:
+        out += ["No traceability links were found in this build.", ""]
+    return "\n".join(out)
+
+
+def _component_of(entry: dict, components: dict) -> tuple[str, str]:
+    """Assign a symbol to a component (slug, name) by the most frequent
+    requirement-UID prefix among its links; fall back to a generic group."""
+    counts: dict[str, int] = {}
+    for uids in entry["rels"].values():
+        for uid in uids:
+            m = REQ_PREFIX_RE.match(uid)
+            if m:
+                counts[m.group(1)] = counts.get(m.group(1), 0) + 1
+    if not counts:
+        return "other", "Other"
+    prefix = max(counts, key=lambda k: (counts[k], k))
+    comp = components.get(prefix)
+    if comp:
+        return comp["slug"], comp["name"]
+    return _slug(prefix), prefix
 
 
 def generate_traceability(app: Sphinx) -> None:
     if not app.tags.has("reqmgmt"):
         return
 
-    out_file = Path(app.srcdir) / "build" / "requirements" / "traceability.rst"
+    base = Path(app.srcdir) / "build" / "requirements" / "traceability"
+    base.mkdir(parents=True, exist_ok=True)
 
     xml_dir = _xml_dir(app)
     if xml_dir is None:
-        logger.warning("requirement_traceability: Doxygen XML not found; writing empty page")
+        logger.warning("requirement_traceability: Doxygen XML not found; empty views")
         symbols: dict[str, dict] = {}
     else:
         symbols = _collect(xml_dir)
 
-    logger.info("requirement_traceability: %d traceable symbols", len(symbols))
+    # Component map (prefix -> {name, slug}) shared with gen_requirements so the
+    # per-symbol pages are grouped by the same components as the requirements.
+    components: dict[str, dict] = {}
+    comp_file = base.parent / "components.json"
+    if comp_file.is_file():
+        try:
+            components = json.loads(comp_file.read_text())
+        except (ValueError, OSError):
+            logger.warning("requirement_traceability: could not read components.json")
 
-    out_file.parent.mkdir(parents=True, exist_ok=True)
-    out_file.write_text(_render_page(symbols))
+    # Group the traceable symbols by component.
+    groups: dict[str, dict] = {}
+    for name, entry in symbols.items():
+        slug, cname = _component_of(entry, components)
+        group = groups.setdefault(slug, {"name": cname, "symbols": {}})
+        group["symbols"][name] = entry
+
+    # Standalone matrix/coverage/tree pages.
+    for stem, lines in _view_pages().items():
+        (base / f"{stem}.rst").write_text("\n".join(lines))
+
+    # Per-component "tests and implementations" pages.
+    symbol_pages: list[tuple[str, str]] = []
+    for slug in sorted(groups, key=lambda s: groups[s]["name"].lower()):
+        group = groups[slug]
+        stem = f"symbols_{slug}"
+        (base / f"{stem}.rst").write_text(_render_symbols_page(group["name"], group["symbols"]))
+        symbol_pages.append((group["name"], stem))
+
+    (base / "index.rst").write_text(_render_index(symbol_pages, bool(symbols)))
+
+    logger.info(
+        "requirement_traceability: %d symbols across %d component pages",
+        len(symbols), len(symbol_pages),
+    )
 
 
 class DesignDirective(Directive):

@@ -459,7 +459,7 @@ external_content_keep = [
     "build/dts/api/compatibles/**/*",
     "build/requirements/*",
     "build/requirements/**/*",
-    "build/requirements/traceability.rst",
+    "build/requirements/traceability/**/*",
 ]
 
 # -- Options for zephyr.domain --------------------------------------------
