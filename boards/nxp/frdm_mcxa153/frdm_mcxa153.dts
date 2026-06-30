@@ -292,6 +292,10 @@ zephyr_udc0: &usb {
 	status = "okay";
 };
 
+&inputmux0 {
+	status = "okay";
+};
+
 &freqme0 {
 	status = "okay";
 };

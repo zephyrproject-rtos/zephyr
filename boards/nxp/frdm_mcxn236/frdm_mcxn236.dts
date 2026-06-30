@@ -484,6 +484,10 @@ dvp_20pin_interface: &video_sdma {};
 	status = "okay";
 };
 
+&inputmux0 {
+	status = "okay";
+};
+
 &freqme0 {
 	status = "okay";
 };

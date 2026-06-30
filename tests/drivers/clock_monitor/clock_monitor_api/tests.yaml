@@ -8,3 +8,4 @@ common:
 tests:
   drivers.clock_monitor.api.nxp:
     filter: dt_compat_enabled("nxp,cmu-fc") or dt_compat_enabled("nxp,cmu-fm")
+      or dt_compat_enabled("nxp,freqme")
