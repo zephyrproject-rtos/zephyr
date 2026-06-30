@@ -9,7 +9,7 @@
 #include <zephyr/devicetree/mapped-partition.h>
 #include <image_info.h>
 #include <rom_uuid.h>
-#include <version.h>
+#include <zephyr/version.h>
 
 extern void z_arm_reset(void);
 
