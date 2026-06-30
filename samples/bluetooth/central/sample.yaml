@@ -46,7 +46,9 @@ tests:
     harness: bluetooth
     platform_allow:
       - lp_em_cc2340r5
+      - lp_em_cc2340r5moda
       - lp_em_cc2340r53
+      - lp_em_cc2340r53_wcsp
     extra_args: EXTRA_DTC_OVERLAY_FILE=boards/cc23xx_coex_3wire.overlay
     extra_configs:
       - CONFIG_RCL_COEX=y
@@ -55,6 +57,9 @@ tests:
     harness: bluetooth
     platform_allow:
       - lp_em_cc2745r10_q1/cc2745r10_q1
+      - lp_em_cc2745r10_q1/cc2755r10
+      - lp_em_cc2755p10
+      - lp_em_cc2755p20
     extra_args: EXTRA_DTC_OVERLAY_FILE=boards/cc27xx_coex_3wire.overlay
     extra_configs:
       - CONFIG_RCL_COEX=y
