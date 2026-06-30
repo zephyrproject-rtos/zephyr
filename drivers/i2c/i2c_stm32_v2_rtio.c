@@ -595,6 +595,18 @@ int i2c_stm32_error(const struct device *dev)
 		ret = -EIO;
 	}
 
+	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
+		LL_I2C_ClearFlag_BERR(i2c);
+#if defined(CONFIG_I2C_TARGET)
+		if (!data->controller_active) {
+			if (error_cb != NULL) {
+				error_cb(data->target_cfg, I2C_ERROR_GENERIC);
+			}
+			ret = -EIO;
+		}
+#endif
+	}
+
 #if defined(CONFIG_I2C_TARGET)
 	if (data->target_attached && !data->controller_active) {
 		return ret;
