@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -7,6 +7,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/gpio.h>
@@ -151,6 +152,9 @@ struct adc_ad405x_config {
 	uint8_t has_gp0;
 #endif
 	struct gpio_dt_spec conversion;
+	bool has_conversion_gpio;
+	struct pwm_dt_spec cnv_pwm;
+	bool has_cnv_pwm;
 	uint16_t chip_id;
 	const struct adc_dt_spec spec;
 #ifdef CONFIG_AD405X_STREAM
@@ -391,6 +395,7 @@ static void ad405x_gpio1_callback(const struct device *dev, struct gpio_callback
 {
 	struct adc_ad405x_data *drv_data = CONTAINER_OF(cb, struct adc_ad405x_data, gpio1_cb);
 	const struct adc_ad405x_config *cfg = drv_data->dev->config;
+
 	gpio_flags_t gpio_flag = GPIO_INT_EDGE_TO_ACTIVE;
 
 	gpio_pin_interrupt_configure_dt(&cfg->gp1_interrupt, GPIO_INT_DISABLE);
@@ -398,9 +403,28 @@ static void ad405x_gpio1_callback(const struct device *dev, struct gpio_callback
 	switch (drv_data->gp1_mode) {
 	case AD405X_DEV_READY:
 		k_sem_give(&drv_data->sem_devrdy);
+		gpio_flag = GPIO_INT_EDGE_TO_INACTIVE;
 		break;
 	case AD405X_DATA_READY:
 #ifdef CONFIG_AD405X_STREAM
+		if (drv_data->sqe == NULL) {
+			LOG_DBG("GP1: sqe NULL\n");
+			k_sem_give(&drv_data->sem_drdy);
+			goto done;
+		}
+
+		if (drv_data->sqe->sqe.iodev == NULL) {
+			LOG_DBG("GP1: iodev NULL\n");
+			k_sem_give(&drv_data->sem_drdy);
+			goto done;
+		}
+
+		if (drv_data->sqe->sqe.iodev->data == NULL) {
+			LOG_DBG("GP1: iodev data NULL\n");
+			k_sem_give(&drv_data->sem_drdy);
+			goto done;
+		}
+
 		const struct adc_read_config *cfg_adc = drv_data->sqe->sqe.iodev->data;
 
 		if (cfg_adc->is_streaming) {
@@ -413,10 +437,13 @@ static void ad405x_gpio1_callback(const struct device *dev, struct gpio_callback
 #endif /* CONFIG_AD405X_STREAM */
 		gpio_flag = GPIO_INT_EDGE_TO_INACTIVE;
 		break;
-	default: /* TODO */
+	default:
+		LOG_WRN("Unhandled GP1 mode: %d", drv_data->gp1_mode);
+		gpio_flag = GPIO_INT_EDGE_TO_INACTIVE;
 		break;
 	}
 
+done:
 	gpio_pin_interrupt_configure_dt(&cfg->gp1_interrupt, gpio_flag);
 }
 
@@ -432,6 +459,24 @@ static void ad405x_gpio0_callback(const struct device *dev, struct gpio_callback
 	switch (drv_data->gp0_mode) {
 	case AD405X_DATA_READY:
 #ifdef CONFIG_AD405X_STREAM
+		if (drv_data->sqe == NULL) {
+			LOG_DBG("GP0: sqe NULL\n");
+			k_sem_give(&drv_data->sem_drdy);
+			goto done;
+		}
+
+		if (drv_data->sqe->sqe.iodev == NULL) {
+			LOG_DBG("GP0: iodev NULL\n");
+			k_sem_give(&drv_data->sem_drdy);
+			goto done;
+		}
+
+		if (drv_data->sqe->sqe.iodev->data == NULL) {
+			LOG_DBG("GP0: iodev data NULL\n");
+			k_sem_give(&drv_data->sem_drdy);
+			goto done;
+		}
+
 		const struct adc_read_config *cfg_adc = drv_data->sqe->sqe.iodev->data;
 
 		if (cfg_adc->is_streaming) {
@@ -448,29 +493,36 @@ static void ad405x_gpio0_callback(const struct device *dev, struct gpio_callback
 		break;
 	}
 
+done:
 	gpio_pin_interrupt_configure_dt(&cfg->gp0_interrupt, gpio_flag);
-
 }
 #endif
 
 int ad405x_init_conv(const struct device *dev)
 {
 	const struct adc_ad405x_config *cfg = dev->config;
-	struct adc_ad405x_data *drv_data = dev->data;
-	int ret;
+	int ret = 0;
 
-	if (!gpio_is_ready_dt(&cfg->conversion)) {
-		LOG_ERR("GPIO port %s not ready", cfg->conversion.port->name);
-		return -EINVAL;
+	if (cfg->has_cnv_pwm) {
+		if (!device_is_ready(cfg->cnv_pwm.dev)) {
+			LOG_ERR("CNV PWM device not ready");
+			return -ENODEV;
+		}
+		LOG_DBG("External CNV PWM configured; application controls PWM start");
+	} else if (cfg->has_conversion_gpio) {
+		if (!gpio_is_ready_dt(&cfg->conversion)) {
+			LOG_ERR("GPIO port %s not ready", cfg->conversion.port->name);
+			return -EINVAL;
+		}
+
+		ret = gpio_pin_configure_dt(&cfg->conversion, GPIO_OUTPUT_INACTIVE);
+		if (ret) {
+			return ret;
+		}
+	} else {
+		LOG_WRN("No CNV PWM or GPIO configured; using software-only path");
 	}
 
-	ret = gpio_pin_configure_dt(&cfg->conversion, GPIO_OUTPUT_INACTIVE);
-	if (ret != 0) {
-		return ret;
-	}
-
-	ret = gpio_pin_set_dt(&cfg->conversion, 0);
-	drv_data->dev = dev;
 	return ret;
 }
 
@@ -574,6 +626,15 @@ static int ad405x_conv_start(const struct device *dev)
 	const struct adc_ad405x_config *cfg = dev->config;
 	int ret;
 
+	if (cfg->has_cnv_pwm) {
+		/* CNV is driven externally, for example by PWM */
+		return 0;
+	}
+
+	if (!cfg->has_conversion_gpio) {
+		return -ENODEV;
+	}
+
 	ret = gpio_pin_set_dt(&cfg->conversion, 1);
 	if (ret != 0) {
 		return ret;
@@ -591,7 +652,6 @@ static int ad405x_conv_start(const struct device *dev)
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
-
 	struct adc_ad405x_data *data = CONTAINER_OF(ctx, struct adc_ad405x_data, ctx);
 	const struct adc_ad405x_config *cfg = (struct adc_ad405x_config *)data->dev->config;
 
@@ -603,13 +663,17 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	case AD405X_SAMPLE_MODE_OP:
 		len = 2;
 		ad405x_conv_start(data->dev);
+
 		break;
+
 	case AD405X_BURST_AVERAGING_MODE_OP:
 		if (cfg->chip_id == AD4052_CHIP_ID) {
 			len = 3;
 		}
+
 		ad405x_conv_start(data->dev);
 		break;
+
 	case AD405X_AVERAGING_MODE_OP:
 		if (cfg->chip_id == AD4052_CHIP_ID) {
 			len = 3;
@@ -620,6 +684,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 			ad405x_conv_start(data->dev);
 		}
 		break;
+
 	default:
 		len = 2;
 		break;
@@ -926,6 +991,12 @@ static int adc_ad405x_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	/*
+	 * Set before any interrupt can be armed below, since the GP0/GP1
+	 * callbacks dereference data->dev.
+	 */
+	data->dev = dev;
+
 #if CONFIG_AD405X_TRIGGER
 	ret = ad405x_init_interrupt(dev);
 	if (ret != 0) {
@@ -1005,14 +1076,17 @@ static int adc_ad405x_init(const struct device *dev)
 
 #if CONFIG_AD405X_TRIGGER
 	if (cfg->has_gp1 != 0) {
-		ad405x_set_gpx_mode(dev, AD405X_GP1, AD405X_DATA_READY);
+		ret = ad405x_set_gpx_mode(dev, AD405X_GP1, AD405X_DATA_READY);
+		if (ret < 0) {
+			LOG_ERR("Failed to set GP1 as DATA_READY: %d", ret);
+			return ret;
+		}
 		k_sem_init(&data->sem_drdy, 0, 1);
 		data->has_drdy = 1;
 	}
 #endif
 
 	adc_context_unlock_unconditionally(&data->ctx);
-	data->dev = dev;
 	return ret;
 }
 
@@ -1022,7 +1096,7 @@ void ad405x_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev
 	struct adc_ad405x_data *data = (struct adc_ad405x_data *)dev->data;
 	const struct adc_ad405x_config *cfg_405 = (const struct adc_ad405x_config *)dev->config;
 
-	if (data->data_ready_gpio > AD405X_GP1)	{
+	if (data->data_ready_gpio > AD405X_GP1) {
 		LOG_ERR("DATA_READY irq is not enabled!");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 		return;
@@ -1050,7 +1124,9 @@ void ad405x_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev
 			LOG_ERR("Set operation mode failed!");
 			return;
 		}
-		ad405x_timer_init(dev);
+		if (!cfg_405->has_cnv_pwm) {
+			ad405x_timer_init(dev);
+		}
 	}
 
 	if (data->data_ready_gpio == AD405X_GP0) {
@@ -1067,7 +1143,14 @@ void ad405x_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev
 	}
 
 	data->sqe = iodev_sqe;
-	ad405x_timer_start(dev);
+	if (!cfg_405->has_cnv_pwm) {
+		/*
+		 * With PWM-driven CNV, each completed conversion is read out
+		 * as soon as GP1 DATA_READY fires; there is no internal
+		 * sampling timer to (re)start.
+		 */
+		ad405x_timer_start(dev);
+	}
 }
 
 static const uint32_t adc_ad405x_resolution[] = {
@@ -1359,8 +1442,13 @@ static DEVICE_API(adc, ad405x_api_funcs) = {
 	};											\
 	static const struct adc_ad405x_config ad##t##_config_##n =  {				\
 		.bus = {.spi = SPI_DT_SPEC_GET(DT_INST_AD405X(n, t), AD405X_SPI_CFG)},		\
-		.conversion = GPIO_DT_SPEC_GET_BY_IDX(DT_INST_AD405X(n, t),			\
-							conversion_gpios, 0),			\
+		.conversion =								\
+			GPIO_DT_SPEC_GET_OR(DT_INST_AD405X(n, t), conversion_gpios, {}),\
+		.has_conversion_gpio =							\
+			DT_NODE_HAS_PROP(DT_INST_AD405X(n, t), conversion_gpios),	\
+		.cnv_pwm =								\
+			PWM_DT_SPEC_GET_BY_NAME_OR(DT_INST_AD405X(n, t), cnv, {}),		\
+		.has_cnv_pwm = DT_NODE_HAS_PROP(DT_INST_AD405X(n, t), pwms),		\
 		IF_ENABLED(CONFIG_AD405X_TRIGGER, (AD405X_GPIO(t, n)))				\
 		.chip_id = t,									\
 		.active_mode = AD405X_SAMPLE_MODE_OP,						\
