@@ -191,6 +191,13 @@ static inline void stats(struct net_if *iface)
 		NET_INFO("TCP pkt drop   %u", GET_STAT(iface, tcp.drop));
 #endif
 
+#if defined(CONFIG_NET_STATISTICS_DNS)
+		NET_INFO("DNS recv       %u\tsent\t%u\tdrop\t%u",
+			 GET_STAT(iface, dns.recv),
+			 GET_STAT(iface, dns.sent),
+			 GET_STAT(iface, dns.drop));
+#endif /* CONFIG_NET_STATISTICS_DNS */
+
 		NET_INFO("Bytes received %llu", GET_STAT(iface, bytes.received));
 		NET_INFO("Bytes sent     %llu", GET_STAT(iface, bytes.sent));
 		NET_INFO("Processing err %u",
