@@ -170,3 +170,13 @@ add_custom_target(
   USES_TERMINAL
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
+
+add_custom_target(
+  partition_map
+  ${PYTHON_EXECUTABLE}
+  ${ZEPHYR_BASE}/scripts/build/partition_map.py
+  --build-dir ${CMAKE_BINARY_DIR}
+  --output ${CMAKE_BINARY_DIR}/partition_map
+  USES_TERMINAL
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  )
