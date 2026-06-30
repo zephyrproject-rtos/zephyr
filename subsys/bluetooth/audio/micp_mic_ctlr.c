@@ -32,7 +32,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 #include "micp_internal.h"
 
 LOG_MODULE_REGISTER(bt_micp_mic_ctlr, CONFIG_BT_MICP_MIC_CTLR_LOG_LEVEL);

@@ -30,8 +30,8 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include "common/bt_shell_private.h"
-#include "host/shell/bt.h"
+#include <common/bt_shell_private.h>
+#include <host/shell/bt.h>
 
 static size_t ad_cap_announcement_data_add(struct bt_data data[], size_t data_size)
 {

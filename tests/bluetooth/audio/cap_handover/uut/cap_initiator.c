@@ -9,7 +9,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/fff.h>
 
-#include "cap_initiator.h"
+#include <cap_initiator.h>
 
 /* List of fakes used by this unit tester */
 #define FFF_FAKES_LIST(FAKE) FAKE(mock_unicast_start_complete_cb)

@@ -33,13 +33,13 @@
 #include <zephyr/ztest_test.h>
 #include <sys/types.h>
 
-#include "ascs.h"
-#include "audio/ascs_internal.h"
-#include "bap_stream.h"
-#include "conn.h"
-#include "gatt_expects.h"
+#include <ascs.h>
+#include <audio/ascs_internal.h>
+#include <bap_stream.h>
+#include <conn.h>
+#include <gatt_expects.h>
 
-#include "test_common.h"
+#include <test_common.h>
 
 struct test_ase_state_transition_invalid_fixture {
 	const struct bt_gatt_attr *ase_cp;
@@ -569,7 +569,7 @@ static void test_server_disable_expect_error(struct bt_bap_stream *stream)
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
-#include "bap_endpoint.h"
+#include <bap_endpoint.h>
 
 static void test_server_config_qos_expect_error(struct bt_bap_stream *stream)
 {

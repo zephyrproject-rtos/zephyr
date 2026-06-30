@@ -20,10 +20,10 @@
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
 
-#include "cap_initiator.h"
-#include "conn.h"
-#include "expects_util.h"
-#include "test_common.h"
+#include <cap_initiator.h>
+#include <conn.h>
+#include <expects_util.h>
+#include <test_common.h>
 
 static void mock_init_rule_before(const struct ztest_unit_test *test, void *fixture)
 {

@@ -38,8 +38,8 @@
 #include <zephyr/types.h>
 
 #include "audio.h"
-#include "common/bt_shell_private.h"
-#include "host/shell/bt.h"
+#include <common/bt_shell_private.h>
+#include <host/shell/bt.h>
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 #define UNICAST_SINK_SUPPORTED (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0)

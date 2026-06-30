@@ -35,9 +35,9 @@
 
 #include <audio/bap_internal.h>
 #include "audio.h"
-#include "common/bt_shell_private.h"
-#include "common/bt_str.h"
-#include "host/shell/bt.h"
+#include <common/bt_shell_private.h>
+#include <common/bt_str.h>
+#include <host/shell/bt.h>
 
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP              5U

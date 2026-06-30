@@ -13,7 +13,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/fff.h>
 
-#include "ascs.h"
+#include <ascs.h>
 
 /* List of fakes used by this unit tester */
 #define FFF_FAKES_LIST(FAKE)                                                                       \

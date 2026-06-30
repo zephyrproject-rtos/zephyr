@@ -29,11 +29,11 @@
 
 #include <sys/errno.h>
 
-#include "audio/bap_endpoint.h"
-#include "cap_initiator.h"
-#include "conn.h"
-#include "expects_util.h"
-#include "test_common.h"
+#include <audio/bap_endpoint.h>
+#include <cap_initiator.h>
+#include <conn.h>
+#include <expects_util.h>
+#include <test_common.h>
 
 BUILD_ASSERT(CONFIG_BT_MAX_CONN * (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT +
 				   CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT) >=

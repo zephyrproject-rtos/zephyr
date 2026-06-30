@@ -27,11 +27,11 @@
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
 
-#include "cap_commander.h"
-#include "conn.h"
-#include "expects_util.h"
-#include "cap_mocks.h"
-#include "test_common.h"
+#include <cap_commander.h>
+#include <conn.h>
+#include <expects_util.h>
+#include <cap_mocks.h>
+#include <test_common.h>
 
 LOG_MODULE_REGISTER(bt_broadcast_reception_test, CONFIG_BT_CAP_COMMANDER_LOG_LEVEL);
 

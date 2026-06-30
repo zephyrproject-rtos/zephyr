@@ -38,8 +38,8 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/toolchain.h>
 
-#include "common/bt_shell_private.h"
-#include "host/shell/bt.h"
+#include <common/bt_shell_private.h>
+#include <host/shell/bt.h>
 
 #define SHELL_PRINT_INDENT_LEVEL_SIZE 2U
 #define MAX_CODEC_FRAMES_PER_SDU      4U
@@ -66,7 +66,7 @@ size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_a
 #include <zephyr/bluetooth/audio/cap.h>
 
 #if defined(CONFIG_LIBLC3)
-#include "lc3.h"
+#include <lc3.h>
 
 #define USB_SAMPLE_RATE            48000U
 #define LC3_MAX_SAMPLE_RATE        48000U

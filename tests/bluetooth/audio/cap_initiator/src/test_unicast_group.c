@@ -27,8 +27,8 @@
 #include <zephyr/ztest_test.h>
 #include <sys/errno.h>
 
-#include "audio/bap_endpoint.h"
-#include "test_common.h"
+#include <audio/bap_endpoint.h>
+#include <test_common.h>
 
 struct cap_initiator_test_unicast_group_fixture {
 	struct bt_cap_unicast_group_param *group_param;

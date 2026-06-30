@@ -21,8 +21,8 @@
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/toolchain.h>
 
-#include "host/shell/bt.h"
-#include "common/bt_shell_private.h"
+#include <host/shell/bt.h>
+#include <common/bt_shell_private.h>
 
 static struct bt_has *inst;
 

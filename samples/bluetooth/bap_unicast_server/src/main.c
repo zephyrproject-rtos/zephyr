@@ -93,7 +93,7 @@ static const struct bt_data ad[] = {
 
 #if defined(CONFIG_LIBLC3)
 
-#include "lc3.h"
+#include <lc3.h>
 
 #define MAX_SAMPLE_RATE         48000U
 #define MAX_FRAME_DURATION_US   10000U

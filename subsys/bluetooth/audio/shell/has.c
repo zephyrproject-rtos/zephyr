@@ -22,7 +22,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/toolchain.h>
 
-#include "common/bt_shell_private.h"
+#include <common/bt_shell_private.h>
 
 static int preset_select(uint8_t index, bool sync)
 {

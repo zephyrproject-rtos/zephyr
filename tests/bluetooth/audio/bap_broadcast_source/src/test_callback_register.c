@@ -15,7 +15,7 @@
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
 
-#include "bap_broadcast_source.h"
+#include <bap_broadcast_source.h>
 
 #define FFF_GLOBALS
 

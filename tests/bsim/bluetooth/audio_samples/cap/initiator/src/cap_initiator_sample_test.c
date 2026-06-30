@@ -10,10 +10,10 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
-#include "bs_types.h"
-#include "bs_tracing.h"
-#include "bs_utils.h"
-#include "bstests.h"
+#include <bs_types.h>
+#include <bs_tracing.h>
+#include <bs_utils.h>
+#include <bstests.h>
 
 #define WAIT_TIME 15 /* Seconds */
 

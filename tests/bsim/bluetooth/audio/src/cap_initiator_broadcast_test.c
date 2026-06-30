@@ -32,7 +32,7 @@
 
 #include "bap_common.h"
 #include "bap_stream_tx.h"
-#include "bstests.h"
+#include <bstests.h>
 #include "common.h"
 
 #if defined(CONFIG_BT_CAP_INITIATOR) && defined(CONFIG_BT_BAP_BROADCAST_SOURCE)

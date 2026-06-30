@@ -39,8 +39,8 @@
 
 LOG_MODULE_REGISTER(bt_ascs, CONFIG_BT_ASCS_LOG_LEVEL);
 
-#include "common/assert.h"
-#include "common/bt_str.h"
+#include <common/assert.h>
+#include <common/bt_str.h>
 
 #include "../host/att_internal.h"
 

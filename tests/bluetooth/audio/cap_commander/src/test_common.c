@@ -8,10 +8,10 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "cap_commander.h"
-#include "conn.h"
-#include "cap_mocks.h"
-#include "test_common.h"
+#include <cap_commander.h>
+#include <conn.h>
+#include <cap_mocks.h>
+#include <test_common.h>
 
 void test_mocks_init(void)
 {

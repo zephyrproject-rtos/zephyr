@@ -33,7 +33,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 #include "tbs_internal.h"
 
 LOG_MODULE_REGISTER(bt_tbs_client, CONFIG_BT_TBS_CLIENT_LOG_LEVEL);

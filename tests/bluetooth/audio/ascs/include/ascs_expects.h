@@ -14,7 +14,7 @@
 #include <zephyr/ztest_assert.h>
 
 #include "ascs.h"
-#include "expects_util.h"
+#include <expects_util.h>
 
 static inline void expect_bt_ascs_cb_config_called(unsigned int expected_count,
 						   struct bt_conn *conns[], struct bt_bap_ep *eps[],

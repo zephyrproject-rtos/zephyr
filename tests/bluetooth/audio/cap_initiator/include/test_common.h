@@ -14,7 +14,7 @@
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/conn.h>
 
-#include "conn.h"
+#include <conn.h>
 
 void test_mocks_init(void);
 void test_mocks_cleanup(void);

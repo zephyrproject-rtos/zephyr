@@ -16,7 +16,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/types.h>
 
-#include "bstests.h"
+#include <bstests.h>
 #include "common.h"
 
 #ifdef CONFIG_BT_IAS

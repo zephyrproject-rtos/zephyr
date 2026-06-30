@@ -37,7 +37,7 @@
 #include <zephyr/types.h>
 
 #include "../services/ots/ots_client_internal.h"
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 #include "mcc_internal.h"
 #include "mcs_internal.h"
 

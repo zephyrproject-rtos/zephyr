@@ -22,7 +22,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 
-#include "bstests.h"
+#include <bstests.h>
 #include "common.h"
 
 LOG_MODULE_REGISTER(pacs_notify_server_test, LOG_LEVEL_DBG);

@@ -17,8 +17,8 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/ztest_assert.h>
 
-#include "bap_broadcast_assistant.h"
-#include "test_common.h"
+#include <bap_broadcast_assistant.h>
+#include <test_common.h>
 
 static sys_slist_t broadcast_assistant_cbs = SYS_SLIST_STATIC_INIT(&broadcast_assistant_cbs);
 

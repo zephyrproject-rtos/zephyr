@@ -16,7 +16,7 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
-#include "bstests.h"
+#include <bstests.h>
 #include "common.h"
 
 LOG_MODULE_REGISTER(has_test, LOG_LEVEL_DBG);

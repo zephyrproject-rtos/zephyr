@@ -92,7 +92,7 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_48_2
 #define MAX_NUM_SAMPLES       ((MAX_FRAME_DURATION_US * MAX_SAMPLE_RATE) / USEC_PER_SEC)
 
 #if defined(CONFIG_LIBLC3)
-#include "lc3.h"
+#include <lc3.h>
 
 #if defined(CONFIG_USE_USB_AUDIO_INPUT)
 #include <zephyr/usb/usb_device.h>

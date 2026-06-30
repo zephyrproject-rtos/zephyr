@@ -27,7 +27,7 @@
 
 #include "bap_endpoint.h"
 #include "cap_internal.h"
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 #include "csip_internal.h"
 
 LOG_MODULE_REGISTER(bt_cap_handover, CONFIG_BT_CAP_HANDOVER_LOG_LEVEL);
