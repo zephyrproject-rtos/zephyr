@@ -397,13 +397,31 @@ st_cam_i2c: &i2c1 {
 	};
 };
 
+/* USB1 port of board = OTG_HS */
+usb1: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_dm_pm5 &usb_otg_hs_dp_pm6>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&usbphyc {
+	/*
+	 * There is no need to change `clocks` because
+	 * we use the default configuration after reset:
+	 *  USBPHYC kernel clock = HSE @ 24 MHz
+	 */
+	status = "okay";
+};
+
+/* USB2 port of board = OTG_FS */
 usb2: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pm12 &usb_otg_fs_dp_pm11>;
 	pinctrl-names = "default";
 	status = "okay";
 };
 
-zephyr_udc0: &usb2 {};
+/* USB port selection: use USB1 by default */
+zephyr_udc0: &usb1 {};
 
 &ltdc {
 	pinctrl-0 = <&ltdc_r0_pf9 &ltdc_r1_pf10 &ltdc_r2_pf0 &ltdc_r3_pb4
