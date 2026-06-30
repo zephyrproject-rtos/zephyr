@@ -1,497 +1,204 @@
 /*
- * Copyright (c) 2017 Linaro, Ltd.
  * Copyright (c) 2026 Zephyr Project Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /** @file
- * @brief SPI transport for the mcumgr SMP protocol.
+ * @brief SPI transport for the MCUmgr SMP protocol.
  */
 
+#include <errno.h>
 #include <string.h>
-#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/net_buf.h>
-#include <zephyr/sys/crc.h>
-#include <zephyr/sys/util.h>
-#include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/transport/smp.h>
-#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #include <mgmt/mcumgr/transport/smp_internal.h>
+#include <mgmt/mcumgr/transport/smp_reassembly.h>
 
 LOG_MODULE_DECLARE(mcumgr_smp, CONFIG_MCUMGR_TRANSPORT_LOG_LEVEL);
 
-#define SMP_SPI_NODE DT_NODELABEL(smp_spi)
+#define DT_DRV_COMPAT zephyr_smp_spi
+
+#define SMP_SPI_NODE DT_DRV_INST(0)
 
 #if !DT_NODE_HAS_STATUS(SMP_SPI_NODE, okay)
-#error "smp_spi devicetree node is missing or disabled"
+#error "zephyr,smp-spi devicetree node is missing or disabled"
 #endif
 
-static const struct device *const spi_dev = DEVICE_DT_GET(DT_PHANDLE(SMP_SPI_NODE, spi_dev));
+#define SMP_SPI_OPERATION (SPI_OP_MODE_SLAVE | SPI_WORD_SET(8) | SPI_TRANSFER_MSB)
 
-#define SPI_BUF_SIZE CONFIG_MCUMGR_TRANSPORT_SPI_MTU
-#define SPI_MODE_FLAGS (SPI_MODE_CPOL | SPI_MODE_CPHA)
+static const struct spi_dt_spec smp_spi = SPI_DT_SPEC_GET(SMP_SPI_NODE, SMP_SPI_OPERATION);
+static const struct gpio_dt_spec request_gpio = GPIO_DT_SPEC_GET(SMP_SPI_NODE, request_gpios);
+static const struct gpio_dt_spec data_ready_gpio =
+	GPIO_DT_SPEC_GET(SMP_SPI_NODE, data_ready_gpios);
 
-#define HDR_MAGIC0 0xA5
-#define HDR_MAGIC1 0x5A
-#define HDR_SIZE   10
-#define PAYLOAD_MAX (SPI_BUF_SIZE - HDR_SIZE)
+static uint8_t rx_buf[CONFIG_MCUMGR_TRANSPORT_SPI_MTU];
+static uint8_t tx_buf[CONFIG_MCUMGR_TRANSPORT_SPI_MTU];
+static uint8_t tx_packet[CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE];
 
-#define FLAG_SYNC  0x01
-#define FLAG_ACK   0x02
-#define FLAG_DATA  0x04
-#define FLAG_POLL  0x08
-#define FLAG_RESET 0x10
-
-#define SMP_HDR_SIZE 8
-#define SEG_HDR_SIZE 6 /* u16 total, u16 offset, u8 flags, u8 rsv */
-#define SEG_FLAG_LAST 0x01
-
-#define SMP_BUF_MAX (PAYLOAD_MAX * 2)
-
-#if defined(CONFIG_MCUMGR_TRANSPORT_SPI_REASSEMBLY)
-#define SMP_REASSEMBLY_TIMEOUT_MS CONFIG_MCUMGR_TRANSPORT_SPI_REASSEMBLY_TIMEOUT_MS
-#else
-#define SMP_REASSEMBLY_TIMEOUT_MS 0
-#endif
-
-#if defined(CONFIG_MCUMGR_TRANSPORT_SPI_DEBUG)
-#define SPI_DBG(...) LOG_DBG(__VA_ARGS__)
-#else
-#define SPI_DBG(...) do { } while (0)
-#endif
-
-static uint8_t smp_buf[SMP_BUF_MAX];
-static uint16_t smp_expected_len;
-static uint16_t smp_filled;
-static int64_t smp_last_seg_ms;
-
-static uint8_t rx_buf[SPI_BUF_SIZE];
-static uint8_t tx_buf[SPI_BUF_SIZE];
-static uint8_t seg_payload[PAYLOAD_MAX];
-
-static uint8_t smp_tx_buf[SMP_BUF_MAX];
-static uint16_t smp_tx_len;
-static uint16_t smp_tx_offset;
-static bool smp_tx_ready;
-static bool tx_seg_pending;
-static uint16_t tx_seg_chunk;
-static bool tx_seg_last;
+static struct k_mutex tx_lock;
+static K_SEM_DEFINE(tx_sem, 1, 1);
+static uint16_t tx_len;
+static uint16_t tx_offset;
 
 static struct smp_transport smp_spi_transport;
+static struct gpio_callback request_gpio_cb;
 
-static K_THREAD_STACK_DEFINE(smp_spi_stack,
-			     CONFIG_MCUMGR_TRANSPORT_SPI_RX_THREAD_STACK_SIZE);
-static struct k_thread smp_spi_thread_data;
-
-static const struct spi_config smp_spi_cfg = {
-	.operation = SPI_OP_MODE_SLAVE | SPI_WORD_SET(8) | SPI_TRANSFER_MSB |
-		     SPI_MODE_FLAGS,
-	.frequency = 50000U,
-	.slave = CONFIG_MCUMGR_TRANSPORT_SPI_SLAVE,
-};
-
-static uint32_t smp_spi_crc32(uint8_t flags, uint8_t seq,
-			      uint16_t payload_len,
-			      const uint8_t *payload);
-
-static void smp_spi_dump_smp_header(const uint8_t *smp);
-
-static void build_frame(uint8_t flags, uint8_t seq, const uint8_t *payload,
-			uint16_t payload_len);
-
-static void smp_spi_reset_rx_state(void)
+static bool smp_spi_empty_header(const uint8_t *data)
 {
-	smp_expected_len = 0;
-	smp_filled = 0;
-}
-
-static void smp_spi_reset_tx_state(void)
-{
-	smp_tx_ready = false;
-	smp_tx_len = 0;
-	smp_tx_offset = 0;
-	tx_seg_pending = false;
-}
-
-static void smp_spi_reset_all_state(void)
-{
-	smp_spi_reset_rx_state();
-	smp_spi_reset_tx_state();
-}
-
-static void smp_spi_finish_tx_segment(void)
-{
-	if (!tx_seg_pending) {
-		return;
+	for (size_t i = 0; i < sizeof(struct smp_hdr); i++) {
+		if (data[i] != 0) {
+			return false;
+		}
 	}
 
-	smp_tx_offset = (uint16_t)(smp_tx_offset + tx_seg_chunk);
-	if (tx_seg_last || smp_tx_offset >= smp_tx_len) {
-		smp_tx_ready = false;
-	}
-	tx_seg_pending = false;
-}
-
-static uint32_t smp_spi_crc32(uint8_t flags, uint8_t seq,
-			      uint16_t payload_len,
-			      const uint8_t *payload)
-{
-	uint8_t hdr_bytes[4];
-	uint32_t crc;
-
-	hdr_bytes[0] = flags;
-	hdr_bytes[1] = seq;
-	hdr_bytes[2] = (uint8_t)(payload_len & 0xFF);
-	hdr_bytes[3] = (uint8_t)((payload_len >> 8) & 0xFF);
-
-	crc = crc32_ieee_update(0U, hdr_bytes, sizeof(hdr_bytes));
-
-	if ((payload_len > 0U) && (payload != NULL)) {
-		crc = crc32_ieee_update(crc, payload, payload_len);
-	}
-
-	return crc;
-}
-
-static bool smp_spi_validate_frame(uint8_t flags, uint8_t seq, uint16_t *len)
-{
-	uint32_t crc_rx;
-	uint32_t crc_calc;
-
-	if (*len > PAYLOAD_MAX) {
-		*len = PAYLOAD_MAX;
-	}
-
-	crc_rx = (uint32_t)rx_buf[6] |
-		 ((uint32_t)rx_buf[7] << 8) |
-		 ((uint32_t)rx_buf[8] << 16) |
-		 ((uint32_t)rx_buf[9] << 24);
-	crc_calc = smp_spi_crc32(flags, seq, *len, rx_buf + HDR_SIZE);
-
-	if (crc_calc == crc_rx) {
-		return true;
-	}
-
-	LOG_WRN("SPI bad-crc flags=%02x seq=%u len=%u", flags, seq, *len);
-	if (smp_expected_len > 0) {
-		SPI_DBG("SMP reassembly reset due to CRC error");
-		smp_spi_reset_rx_state();
-	}
-
-	return false;
-}
-
-static void smp_spi_submit_packet(const uint8_t *buf, uint16_t len)
-{
-	struct net_buf *nb = smp_packet_alloc();
-
-	if (nb == NULL) {
-		LOG_ERR("SMP packet alloc failed");
-		return;
-	}
-
-	if (len > net_buf_tailroom(nb)) {
-		LOG_ERR("SMP buf too large for net_buf: %u", len);
-		smp_packet_free(nb);
-		return;
-	}
-
-	net_buf_add_mem(nb, buf, len);
-	SPI_DBG("SMP rx submit len=%u", len);
-	smp_rx_req(&smp_spi_transport, nb);
-}
-
-static void smp_spi_handle_reset(uint8_t seq)
-{
-	SPI_DBG("SPI reset seq=%u", seq);
-	smp_spi_reset_all_state();
-	build_frame(FLAG_ACK, seq, NULL, 0);
-}
-
-static void smp_spi_handle_poll(uint8_t seq)
-{
-	SPI_DBG("SPI poll seq=%u", seq);
-	if (!smp_tx_ready && !tx_seg_pending) {
-		build_frame(FLAG_ACK, seq, NULL, 0);
-	}
-}
-
-static void smp_spi_handle_sync(uint8_t seq)
-{
-	SPI_DBG("SPI sync seq=%u", seq);
-	smp_spi_reset_tx_state();
-	build_frame(FLAG_ACK, seq, NULL, 0);
-}
-
-static void smp_spi_handle_data_no_reassembly(uint8_t seq, uint16_t len)
-{
-	if (len < SMP_HDR_SIZE) {
-		build_frame(FLAG_ACK, seq, NULL, 0);
-		return;
-	}
-
-	smp_spi_submit_packet(rx_buf + HDR_SIZE, len);
-
-	if (!tx_seg_pending) {
-		build_frame(FLAG_ACK, seq, NULL, 0);
-	}
-}
-
-static bool smp_spi_segment_too_large(uint16_t total, uint8_t seq)
-{
-	if (total <= sizeof(smp_buf)) {
-		return false;
-	}
-
-	LOG_WRN("SMP total too large: %u", total);
-	build_frame(FLAG_ACK, seq, NULL, 0);
 	return true;
 }
 
-static void smp_spi_store_segment(uint16_t offset, uint16_t data_len, int64_t now_ms)
+static void smp_spi_data_ready_set(bool ready)
 {
-	if (offset + data_len <= sizeof(smp_buf)) {
-		memcpy(&smp_buf[offset], &rx_buf[HDR_SIZE + SEG_HDR_SIZE], data_len);
-		smp_filled += data_len;
-		smp_last_seg_ms = now_ms;
+	int ret;
+
+	ret = gpio_pin_set_dt(&data_ready_gpio, ready ? 1 : 0);
+	if (ret < 0) {
+		LOG_ERR("Failed to set SPI SMP data-ready GPIO: %d", ret);
 	}
 }
 
-static void smp_spi_complete_reassembly(void)
+static int smp_spi_reassembly_collect(const uint8_t *data)
 {
-	if (smp_expected_len >= SMP_HDR_SIZE) {
-		smp_spi_dump_smp_header(smp_buf);
-	}
+	uint16_t chunk_len;
+	int expected;
+	int rc;
 
-	SPI_DBG("SMP reassembly done len=%u", smp_expected_len);
-	smp_spi_submit_packet(smp_buf, smp_expected_len);
-	smp_spi_reset_rx_state();
-}
+	expected = smp_reassembly_expected(&smp_spi_transport);
+	if (expected < 0) {
+		const struct smp_hdr *hdr = (const struct smp_hdr *)data;
+		uint16_t packet_len;
 
-static void smp_spi_handle_segmented_data(uint8_t seq, uint16_t len, int64_t now_ms)
-{
-	uint16_t total;
-	uint16_t offset;
-	uint8_t sflags;
-	uint16_t data_len;
-
-	if (len < SEG_HDR_SIZE) {
-		if (!tx_seg_pending) {
-			build_frame(FLAG_ACK, seq, NULL, 0);
+		if (smp_spi_empty_header(data)) {
+			return 0;
 		}
-		return;
+
+		packet_len = sys_be16_to_cpu(hdr->nh_len) + sizeof(struct smp_hdr);
+		if (packet_len > CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE) {
+			LOG_ERR("SPI SMP packet length exceeds net_buf size: %u", packet_len);
+			return -EMSGSIZE;
+		}
+
+		chunk_len = MIN(packet_len, sizeof(rx_buf));
+	} else {
+		chunk_len = MIN((uint16_t)expected, sizeof(rx_buf));
 	}
 
-	total = (uint16_t)rx_buf[HDR_SIZE] |
-		((uint16_t)rx_buf[HDR_SIZE + 1] << 8);
-	offset = (uint16_t)rx_buf[HDR_SIZE + 2] |
-		 ((uint16_t)rx_buf[HDR_SIZE + 3] << 8);
-	sflags = rx_buf[HDR_SIZE + 4];
-	data_len = len - SEG_HDR_SIZE;
-
-	SPI_DBG("SEG total=%u offset=%u data_len=%u last=%u",
-		total, offset, data_len, (sflags & SEG_FLAG_LAST) ? 1 : 0);
-
-	if (smp_spi_segment_too_large(total, seq)) {
-		return;
+	rc = smp_reassembly_collect(&smp_spi_transport, data, chunk_len);
+	if (rc == 0) {
+		rc = smp_reassembly_complete(&smp_spi_transport, false);
+		if (rc) {
+			LOG_ERR("SPI SMP reassembly complete failed: %d", rc);
+		}
+	} else if (rc < 0) {
+		LOG_ERR("SPI SMP reassembly collect failed: %d", rc);
 	}
 
-	if (offset == 0) {
-		smp_expected_len = total;
-		smp_filled = 0;
-		smp_last_seg_ms = now_ms;
-	}
-
-	smp_spi_store_segment(offset, data_len, now_ms);
-
-	if ((sflags & SEG_FLAG_LAST) &&
-	    smp_expected_len > 0 &&
-	    smp_expected_len <= sizeof(smp_buf)) {
-		smp_spi_complete_reassembly();
-	}
-
-	if (!tx_seg_pending) {
-		build_frame(FLAG_ACK, seq, NULL, 0);
-	}
-}
-
-static void smp_spi_handle_data(uint8_t seq, uint16_t len, int64_t now_ms)
-{
-	SPI_DBG("SPI data seq=%u len=%u", seq, len);
-
-#if !defined(CONFIG_MCUMGR_TRANSPORT_SPI_REASSEMBLY)
-	smp_spi_handle_data_no_reassembly(seq, len);
-#else
-	smp_spi_handle_segmented_data(seq, len, now_ms);
-#endif
-}
-
-static void smp_spi_handle_other(uint8_t flags, uint8_t seq, uint16_t len)
-{
-	SPI_DBG("SPI frame flags=%02x seq=%u len=%u", flags, seq, len);
-	if (!tx_seg_pending) {
-		build_frame(FLAG_ACK, seq, NULL, 0);
-	}
-}
-
-static void smp_spi_process_frame(uint8_t flags, uint8_t seq, uint16_t len, int64_t now_ms)
-{
-	if (flags == FLAG_ACK) {
-		return;
-	}
-
-	if (flags & FLAG_RESET) {
-		smp_spi_handle_reset(seq);
-		return;
-	}
-
-	if (flags & FLAG_POLL) {
-		smp_spi_handle_poll(seq);
-		return;
-	}
-
-	if (flags & FLAG_SYNC) {
-		smp_spi_handle_sync(seq);
-		return;
-	}
-
-	if (flags & FLAG_DATA) {
-		smp_spi_handle_data(seq, len, now_ms);
-		return;
-	}
-
-	smp_spi_handle_other(flags, seq, len);
+	return rc;
 }
 
 static int smp_spi_tx_pkt(struct net_buf *nb)
 {
-	uint16_t len = nb->len;
+	int ret = 0;
 
-	if (len > sizeof(smp_tx_buf)) {
-		len = sizeof(smp_tx_buf);
+	k_sem_take(&tx_sem, K_FOREVER);
+	k_mutex_lock(&tx_lock, K_FOREVER);
+
+	if (nb->len > sizeof(tx_packet)) {
+		LOG_ERR("SPI SMP response too large: %u", nb->len);
+		ret = -EMSGSIZE;
+		goto out;
 	}
-	memcpy(smp_tx_buf, nb->data, len);
-	smp_tx_len = len;
-	smp_tx_offset = 0;
-	smp_tx_ready = true;
-	SPI_DBG("SMP tx queued len=%u", len);
+
+	memcpy(tx_packet, nb->data, nb->len);
+	tx_len = nb->len;
+	tx_offset = 0;
+	smp_spi_data_ready_set(true);
+
+out:
+	k_mutex_unlock(&tx_lock);
+	if (ret != 0) {
+		k_sem_give(&tx_sem);
+	}
 	smp_packet_free(nb);
-	return 0;
-}
 
-static void prepare_tx_segment(uint8_t seq)
-{
-	if (tx_seg_pending) {
-		return;
-	}
-
-	if (!(smp_tx_ready && smp_tx_offset < smp_tx_len)) {
-		return;
-	}
-
-	uint16_t total = smp_tx_len;
-	uint16_t offset = smp_tx_offset;
-	uint16_t chunk = total - offset;
-	uint16_t max_chunk = PAYLOAD_MAX - SEG_HDR_SIZE;
-
-	if (chunk > max_chunk) {
-		chunk = max_chunk;
-	}
-
-	uint8_t seg_flags = (offset + chunk >= total) ? SEG_FLAG_LAST : 0;
-
-	seg_payload[0] = (uint8_t)(total & 0xFF);
-	seg_payload[1] = (uint8_t)((total >> 8) & 0xFF);
-	seg_payload[2] = (uint8_t)(offset & 0xFF);
-	seg_payload[3] = (uint8_t)((offset >> 8) & 0xFF);
-	seg_payload[4] = seg_flags;
-	seg_payload[5] = 0;
-	memcpy(&seg_payload[SEG_HDR_SIZE], &smp_tx_buf[offset], chunk);
-
-	build_frame(FLAG_DATA, seq, seg_payload, (uint16_t)(SEG_HDR_SIZE + chunk));
-
-	SPI_DBG("SMP tx seg offset=%u len=%u last=%u",
-	       offset, chunk, (seg_flags & SEG_FLAG_LAST) ? 1 : 0);
-
-	tx_seg_pending = true;
-	tx_seg_chunk = chunk;
-	tx_seg_last = (seg_flags & SEG_FLAG_LAST) ? true : false;
-}
-
-static void smp_spi_dump_smp_header(const uint8_t *smp)
-{
-#if defined(CONFIG_MCUMGR_TRANSPORT_SPI_DEBUG)
-	uint8_t op = smp[0];
-	uint8_t fl = smp[1];
-	uint16_t slen = ((uint16_t)smp[2] << 8) | smp[3];
-	uint16_t sgroup = ((uint16_t)smp[4] << 8) | smp[5];
-	uint8_t sseq = smp[6];
-	uint8_t sid = smp[7];
-	uint8_t op_dec = op & 0x07;
-	uint8_t ver_dec = (op >> 3) & 0x03;
-	const struct mgmt_group *grp = mgmt_find_group(sgroup);
-	const struct mgmt_handler *h = grp ? mgmt_get_handler(grp, sid) : NULL;
-
-	SPI_DBG("SMP raw hdr bytes: %02x %02x %02x %02x %02x %02x %02x %02x",
-		smp[0], smp[1], smp[2], smp[3],
-		smp[4], smp[5], smp[6], smp[7]);
-	SPI_DBG("SMP hdr op=0x%02x (op=%u ver=%u) flags=%02x len=%u group=%u seq=%u id=%u",
-		op, op_dec, ver_dec, fl, slen, sgroup, sseq, sid);
-	SPI_DBG("MCUMGR lookup group=%u found handler=%s read=%d write=%d",
-		sgroup, h ? "yes" : "no", h ? h->mh_read != NULL : 0,
-		h ? h->mh_write != NULL : 0);
-#else
-	ARG_UNUSED(smp);
-#endif
+	return ret;
 }
 
 static uint16_t smp_spi_get_mtu(const struct net_buf *nb)
 {
 	ARG_UNUSED(nb);
-	return SMP_BUF_MAX;
+
+	return CONFIG_MCUMGR_TRANSPORT_SPI_MTU;
 }
 
-static void build_frame(uint8_t flags, uint8_t seq, const uint8_t *payload,
-			uint16_t payload_len)
+/*
+ * The SPI controller toggles request-gpios for each raw SMP chunk transaction.
+ * The peripheral drives data-ready-gpios while response chunks are queued.
+ */
+static uint16_t smp_spi_prepare_tx(void)
 {
-	uint32_t crc;
+	uint16_t chunk_len = 0;
 
-	if (payload_len > PAYLOAD_MAX) {
-		payload_len = PAYLOAD_MAX;
-	}
+	k_mutex_lock(&tx_lock, K_FOREVER);
 
 	memset(tx_buf, 0, sizeof(tx_buf));
-	tx_buf[0] = HDR_MAGIC0;
-	tx_buf[1] = HDR_MAGIC1;
-	tx_buf[2] = flags;
-	tx_buf[3] = seq;
-	tx_buf[4] = (uint8_t)(payload_len & 0xFF);
-	tx_buf[5] = (uint8_t)((payload_len >> 8) & 0xFF);
 
-	if ((payload_len > 0U) && (payload != NULL)) {
-		memcpy(tx_buf + HDR_SIZE, payload, payload_len);
+	if (tx_offset < tx_len) {
+		chunk_len = MIN((uint16_t)(tx_len - tx_offset), (uint16_t)sizeof(tx_buf));
+		memcpy(tx_buf, &tx_packet[tx_offset], chunk_len);
 	}
 
-	crc = smp_spi_crc32(flags, seq, payload_len, payload);
+	k_mutex_unlock(&tx_lock);
 
-	tx_buf[6] = (uint8_t)(crc & 0xFF);
-	tx_buf[7] = (uint8_t)((crc >> 8) & 0xFF);
-	tx_buf[8] = (uint8_t)((crc >> 16) & 0xFF);
-	tx_buf[9] = (uint8_t)((crc >> 24) & 0xFF);
+	return chunk_len;
 }
 
-static void smp_spi_thread(void *p1, void *p2, void *p3)
+static void smp_spi_finish_tx(uint16_t chunk_len)
 {
-	ARG_UNUSED(p1);
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
+	bool drained = false;
 
+	k_mutex_lock(&tx_lock, K_FOREVER);
+
+	if (chunk_len > 0) {
+		tx_offset += chunk_len;
+	}
+
+	if (tx_offset >= tx_len) {
+		tx_len = 0;
+		tx_offset = 0;
+		drained = chunk_len > 0;
+		smp_spi_data_ready_set(false);
+	} else {
+		smp_spi_data_ready_set(true);
+	}
+
+	k_mutex_unlock(&tx_lock);
+
+	if (drained) {
+		k_sem_give(&tx_sem);
+	}
+}
+
+static void smp_spi_work_handler(struct k_work *work)
+{
 	struct spi_buf rx = {
 		.buf = rx_buf,
 		.len = sizeof(rx_buf),
@@ -508,56 +215,91 @@ static void smp_spi_thread(void *p1, void *p2, void *p3)
 		.buffers = &tx,
 		.count = 1,
 	};
+	int ret;
+	uint16_t tx_chunk_len;
 
-	while (1) {
-		int ret;
-		int64_t now_ms = k_uptime_get();
+	ARG_UNUSED(work);
 
-#if defined(CONFIG_MCUMGR_TRANSPORT_SPI_REASSEMBLY)
-		if (smp_expected_len > 0 &&
-		    (now_ms - smp_last_seg_ms) > SMP_REASSEMBLY_TIMEOUT_MS) {
-			SPI_DBG("SMP reassembly timeout; dropping partial message");
-			smp_expected_len = 0;
-			smp_filled = 0;
-		}
-#endif
+	memset(rx_buf, 0, sizeof(rx_buf));
+	tx_chunk_len = smp_spi_prepare_tx();
 
-		memset(rx_buf, 0, sizeof(rx_buf));
-		ret = spi_transceive(spi_dev, &smp_spi_cfg, &tx_set, &rx_set);
-
-		if (ret < 0) {
-			LOG_ERR("spi_transceive failed: %d", ret);
-			k_sleep(K_MSEC(100));
-			continue;
-		}
-
-		smp_spi_finish_tx_segment();
-
-		if (rx_buf[0] != HDR_MAGIC0 || rx_buf[1] != HDR_MAGIC1) {
-			continue;
-		}
-
-		uint8_t flags = rx_buf[2];
-		uint8_t seq = rx_buf[3];
-		uint16_t len = (uint16_t)rx_buf[4] | ((uint16_t)rx_buf[5] << 8);
-
-		if (!smp_spi_validate_frame(flags, seq, &len)) {
-			continue;
-		}
-
-		smp_spi_process_frame(flags, seq, len, now_ms);
-		prepare_tx_segment(seq);
+	ret = spi_transceive_dt(&smp_spi, &tx_set, &rx_set);
+	if (ret < 0) {
+		LOG_ERR("SPI SMP transceive failed: %d", ret);
+		goto out;
 	}
+
+	smp_spi_finish_tx(tx_chunk_len);
+	(void)smp_spi_reassembly_collect(rx_buf);
+
+out:
+	ret = gpio_pin_interrupt_configure_dt(&request_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable SPI SMP request GPIO interrupt: %d", ret);
+	}
+}
+
+static K_WORK_DEFINE(smp_spi_work, smp_spi_work_handler);
+
+static void smp_spi_request_gpio_callback(const struct device *port,
+					  struct gpio_callback *cb,
+					  gpio_port_pins_t pins)
+{
+	int ret;
+
+	ARG_UNUSED(port);
+	ARG_UNUSED(cb);
+	ARG_UNUSED(pins);
+
+	ret = gpio_pin_interrupt_configure_dt(&request_gpio, GPIO_INT_DISABLE);
+	if (ret < 0) {
+		LOG_ERR("Failed to disable SPI SMP request GPIO interrupt: %d", ret);
+	}
+
+	(void)k_work_submit(&smp_spi_work);
 }
 
 static int smp_spi_init(void)
 {
 	int rc;
 
-	if (!device_is_ready(spi_dev)) {
+	if (!spi_is_ready_dt(&smp_spi)) {
 		LOG_ERR("SPI device not ready");
 		return -ENODEV;
 	}
+
+	if (!gpio_is_ready_dt(&request_gpio)) {
+		LOG_ERR("SPI SMP request GPIO not ready");
+		return -ENODEV;
+	}
+
+	if (!gpio_is_ready_dt(&data_ready_gpio)) {
+		LOG_ERR("SPI SMP data-ready GPIO not ready");
+		return -ENODEV;
+	}
+
+	rc = gpio_pin_configure_dt(&request_gpio, GPIO_INPUT);
+	if (rc < 0) {
+		LOG_ERR("Failed to configure SPI SMP request GPIO: %d", rc);
+		return rc;
+	}
+
+	rc = gpio_pin_configure_dt(&data_ready_gpio, GPIO_OUTPUT_INACTIVE);
+	if (rc < 0) {
+		LOG_ERR("Failed to configure SPI SMP data-ready GPIO: %d", rc);
+		return rc;
+	}
+
+	gpio_init_callback(&request_gpio_cb, smp_spi_request_gpio_callback,
+			   BIT(request_gpio.pin));
+
+	rc = gpio_add_callback(request_gpio.port, &request_gpio_cb);
+	if (rc < 0) {
+		LOG_ERR("Failed to add SPI SMP request GPIO callback: %d", rc);
+		return rc;
+	}
+
+	k_mutex_init(&tx_lock);
 
 	smp_spi_transport.functions.output = smp_spi_tx_pkt;
 	smp_spi_transport.functions.get_mtu = smp_spi_get_mtu;
@@ -568,16 +310,6 @@ static int smp_spi_init(void)
 		return rc;
 	}
 
-	build_frame(FLAG_ACK, 0, NULL, 0);
-
-	LOG_INF("SPI SMP transport initialized");
-
-	k_thread_create(&smp_spi_thread_data, smp_spi_stack,
-			K_THREAD_STACK_SIZEOF(smp_spi_stack),
-			smp_spi_thread, NULL, NULL, NULL,
-			CONFIG_MCUMGR_TRANSPORT_SPI_RX_THREAD_PRIO, 0, K_NO_WAIT);
-	k_thread_name_set(&smp_spi_thread_data, "smp_spi");
-
 #ifdef CONFIG_SMP_CLIENT
 	static struct smp_client_transport_entry smp_spi_client_transport;
 
@@ -585,6 +317,12 @@ static int smp_spi_init(void)
 	smp_spi_client_transport.smpt_type = SMP_SPI_TRANSPORT;
 	smp_client_transport_register(&smp_spi_client_transport);
 #endif
+
+	rc = gpio_pin_interrupt_configure_dt(&request_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	if (rc < 0) {
+		LOG_ERR("Failed to enable SPI SMP request GPIO interrupt: %d", rc);
+		return rc;
+	}
 
 	return 0;
 }

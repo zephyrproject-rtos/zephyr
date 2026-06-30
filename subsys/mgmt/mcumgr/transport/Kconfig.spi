@@ -15,60 +15,26 @@ menuconfig MCUMGR_TRANSPORT_SPI
 	bool "SPI MCUmgr SMP transport"
 	depends on SPI_SLAVE
 	depends on SPI
+	depends on GPIO
+	select MCUMGR_TRANSPORT_REASSEMBLY
 	help
 	  Enables handling of SMP commands received over SPI. The device operates
-	  as an SPI peripheral (slave) and uses a SYNC/POLL protocol to exchange
-	  requests and responses with the controller (master).
+	  as an SPI peripheral and exchanges raw SMP packets with the SPI
+	  controller. A request GPIO tells the peripheral to service an SPI
+	  transaction and a data-ready GPIO signals when a response is available
+	  for the controller to read.
 
 if MCUMGR_TRANSPORT_SPI
 
-config MCUMGR_TRANSPORT_SPI_SLAVE
-	int "SPI slave select"
-	default 0
-	help
-	  Slave select index used by the SPI controller for MCUmgr SMP.
-
 config MCUMGR_TRANSPORT_SPI_MTU
 	int "SPI SMP MTU"
+	range 8 MCUMGR_TRANSPORT_NETBUF_SIZE
 	default 256
 	help
-	  Maximum size of SMP frames sent and received over SPI, in bytes.
+	  Maximum size of a raw SMP chunk sent and received in one SPI
+	  transaction, in bytes.
 	  This value must satisfy the following relation:
 	  MCUMGR_TRANSPORT_SPI_MTU <= MCUMGR_TRANSPORT_NETBUF_SIZE
-
-config MCUMGR_TRANSPORT_SPI_RX_THREAD_STACK_SIZE
-	int "SPI SMP RX thread stack size"
-	default 2048
-	help
-	  Stack size of the SPI SMP transport receive thread.
-
-config MCUMGR_TRANSPORT_SPI_RX_THREAD_PRIO
-	int "SPI SMP RX thread priority"
-	default 3
-	help
-	  Scheduling priority of the SPI SMP transport receive thread.
-
-config MCUMGR_TRANSPORT_SPI_REASSEMBLY
-	bool "Reassemble SPI SMP messages"
-	select MCUMGR_TRANSPORT_REASSEMBLY
-	help
-	  Will reassemble SPI messages to allow for messages larger than a single
-	  SPI transaction to be received. If disabled, each SPI transaction must
-	  contain a complete SMP packet.
-
-config MCUMGR_TRANSPORT_SPI_REASSEMBLY_TIMEOUT_MS
-	int "SPI SMP reassembly timeout (ms)"
-	depends on MCUMGR_TRANSPORT_SPI_REASSEMBLY
-	default 1000
-	help
-	  Timeout in milliseconds to drop a partially received SMP message
-	  if no new segments arrive.
-
-config MCUMGR_TRANSPORT_SPI_DEBUG
-	bool "SPI SMP debug logging"
-	default n
-	help
-	  Enable verbose debug prints for the SPI SMP transport.
 
 module = MCUMGR_TRANSPORT_SPI
 module-str = SPI MCUmgr SMP transport
