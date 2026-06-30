@@ -32,57 +32,12 @@ class ScannerConfig:
     # each File's license, based on its detected license(s)?
     should_conclude_file_licenses: bool = True
 
-    # number of lines to scan for SPDX-License-Identifier (0 = all)
-    # defaults to 20
-    num_lines_scanned: int = 20
-
     # should we calculate SHA256 hashes for each Component's Files?
     # note that SHA1 hashes are mandatory, per SPDX 2.3
     do_sha256: bool = True
 
     # should we calculate MD5 hashes for each Component's Files?
     do_md5: bool = False
-
-
-def parse_line_for_expression(line):
-    """Return parsed SPDX expression if tag found in line, or None otherwise."""
-    p = line.partition("SPDX-License-Identifier:")
-    if p[2] == "":
-        return None
-    # strip away trailing comment marks and whitespace, if any
-    expression = p[2].strip()
-    expression = expression.rstrip("/*")
-    expression = expression.strip()
-    return expression
-
-
-def get_expression_data(file_path, num_lines):
-    """
-    Scans the specified file for the first SPDX-License-Identifier:
-    tag in the file.
-
-    Arguments:
-        - file_path: path to file to scan.
-        - num_lines: number of lines to scan for an expression before
-                    giving up. If 0, will scan the entire file.
-    Returns: parsed expression if found; None if not found.
-    """
-    _logger.debug("  - getting licenses for %s", file_path)
-
-    with open(file_path) as f:
-        try:
-            for lineno, line in enumerate(f, start=1):
-                if lineno > num_lines > 0:
-                    break
-                expression = parse_line_for_expression(line)
-                if expression is not None:
-                    return expression
-        except UnicodeDecodeError:
-            # invalid UTF-8 content
-            return None
-
-    # if we get here, we didn't find an expression
-    return None
 
 
 def split_expression(expression):
@@ -242,25 +197,16 @@ def scan_sbom_graph(cfg, sbom_graph):
                 f.hashes["MD5"] = h_md5
 
             # get licenses for file
-            expression = get_expression_data(f.path, cfg.num_lines_scanned)
             reuse_licenses, copyrights = get_reuse_info(reuse_project, f.path)
 
-            if expression:
-                # in-file SPDX-License-Identifier tag takes priority
+            if reuse_licenses:
                 if cfg.should_conclude_file_licenses:
-                    f.concluded_license = expression
-                f.license_info_in_file = split_expression(expression)
-            elif reuse_licenses:
-                # fall back to REUSE.toml / .reuse/dep5 bulk annotation
-                combined = " AND ".join(
-                    f"({e})" if " " in e else e for e in reuse_licenses
+                    f.concluded_license = " AND ".join(
+                        f"({e})" if " " in e else e for e in reuse_licenses
+                    )
+                f.license_info_in_file = sorted(
+                    {lic for expr in reuse_licenses for lic in split_expression(expr)}
                 )
-                if cfg.should_conclude_file_licenses:
-                    f.concluded_license = combined
-                f.license_info_in_file = []
-                for lic_expr in reuse_licenses:
-                    f.license_info_in_file.extend(split_expression(lic_expr))
-                f.license_info_in_file = sorted(set(f.license_info_in_file))
 
             if copyrights:
                 f.copyright_text = "<text>\n" + "\n".join(copyrights) + "\n</text>"
