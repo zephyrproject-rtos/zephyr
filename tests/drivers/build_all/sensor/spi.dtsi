@@ -531,3 +531,20 @@ test_spi_adis1647x: adis1647x@40 {
 	drdy-gpios = <&test_gpio 0 0>;
 	reset-gpios = <&test_gpio 0 0>;
 };
+
+test_spi_icm56686: icm56686@0 {
+	compatible = "invensense,icm56686";
+	reg = <0>;
+	spi-max-frequency = <1000000>;
+	int-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
+
+	accel-fs = <0>;
+	accel-odr = <13>;
+	accel-lpf = <1>;
+	accel-pwr-mode = <2>;
+
+	gyro-fs = <0>;
+	gyro-odr = <13>;
+	gyro-lpf = <1>;
+	gyro-pwr-mode = <2>;
+};
