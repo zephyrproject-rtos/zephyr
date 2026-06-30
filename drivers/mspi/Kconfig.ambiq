@@ -34,7 +34,6 @@ config MSPI_AMBIQ_AP5
 
 config MSPI_AMBIQ_BUFF_RAM_LOCATION
 	hex "Byte offset to SRAM_BASE_ADDRESS"
-	default SOC_AMBIQ_DMA_BUFF_LOCATION if SOC_SERIES_APOLLO5X
 	default 0x40000 if SOC_APOLLO3_BLUE
 	default 0x50000
 	help
@@ -43,7 +42,6 @@ config MSPI_AMBIQ_BUFF_RAM_LOCATION
 config MSPI_AMBIQ_BUFF_ALIGNMENT
 	int "Byte alignment of the MSPI buffer"
 	default 8 if MSPI_AMBIQ_AP3
-	default SOC_AMBIQ_DMA_BUFF_ALIGNMENT if SOC_SERIES_APOLLO5X
 	help
 	  This option specifies the mspi buffer alignment
 
