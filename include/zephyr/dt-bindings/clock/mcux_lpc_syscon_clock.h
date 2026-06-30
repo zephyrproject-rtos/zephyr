@@ -241,4 +241,22 @@
 /** PowerQuad DSP coprocessor clock identifier. */
 #define MCUX_POWERQUAD_CLK MCUX_LPC_CLK_ID(0x39, 0x00)
 
+/** FRO high-frequency clock (FRO_HF) rate identifier. */
+#define MCUX_FRO_HF_CLK MCUX_LPC_CLK_ID(0x40, 0x00)
+
+/** FRO_HF divided output (FRO_HF_DIV) rate identifier. */
+#define MCUX_FRO_HF_DIV_CLK MCUX_LPC_CLK_ID(0x41, 0x00)
+
+/** FRO 12 MHz clock (FRO_12M) rate identifier. */
+#define MCUX_FRO_12M_CLK MCUX_LPC_CLK_ID(0x42, 0x00)
+
+/** FREQME peripheral gate clock identifier. */
+#define MCUX_FREQME_CLK MCUX_LPC_CLK_ID(0x43, 0x00)
+
+/** CPU / AHB (core system) clock rate identifier. */
+#define MCUX_CPU_AHB_CLK MCUX_LPC_CLK_ID(0x44, 0x00)
+
+/** External (system oscillator / CLK_IN) clock rate identifier. */
+#define MCUX_EXT_CLK MCUX_LPC_CLK_ID(0x45, 0x00)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */
