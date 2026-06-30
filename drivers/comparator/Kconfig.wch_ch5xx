@@ -6,3 +6,4 @@ config COMPARATOR_WCH_CH5XX
 	default y
 	depends on DT_HAS_WCH_CH5XX_COMPARATOR_ENABLED
 	select PINCTRL
+	select CLOCK_CONTROL

@@ -62,6 +62,7 @@
 			reg = <0x40003400 0xf>;
 			interrupt-parent = <&pfic>;
 			interrupts = <27>;
+			clocks = <&clkctrl CH570_CLOCK_UART>;
 			status = "disabled";
 		};
 
@@ -87,7 +88,6 @@
 			compatible = "wch,ch570-clkctrl";
 			reg = <0x40001008 0x54>;
 			#clock-cells = <1>;
-			status = "disabled";
 		};
 
 		cmp0: cmp@40001054 {
@@ -95,11 +95,8 @@
 			reg = <0x40001054 4>;
 			interrupt-parent = <&pfic>;
 			interrupts = <29>;
+			clocks = <&clkctrl CH570_CLOCK_CMP>;
 			status = "disabled";
 		};
 	};
-};
-
-&cpu0 {
-	clock-frequency = <DT_FREQ_K(6400)>;
 };
