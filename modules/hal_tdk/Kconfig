@@ -76,4 +76,18 @@ config USE_EMD_TAD2144
 	imply TDK_HAL
 	depends on ZEPHYR_HAL_TDK_MODULE
 	depends on DT_HAS_INVENSENSE_TAD2144_ENABLED
+
+config USE_EMD_ICM56622
+	bool
+	default y
+	imply TDK_HAL
+	depends on ZEPHYR_HAL_TDK_MODULE
+	depends on ICM566XX
+
+config USE_EMD_ICM56686
+	bool
+	default y
+	imply TDK_HAL
+	depends on ZEPHYR_HAL_TDK_MODULE
+	depends on ICM566XX
 endmenu
