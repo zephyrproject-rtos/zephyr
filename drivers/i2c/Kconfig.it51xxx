@@ -56,10 +56,6 @@ config I2C_IT51XXX_MAX_SHARE_FIFO_SIZE
 	range 16 256
 	default 256
 
-config SOC_IT51XXX_CPU_IDLE_GATING
-	default y
-	help
-	  This option is used when the I2C target shared FIFO property is enabled.
-
 endif # I2C_TARGET
+
 endif # I2C_ITE_IT51XXX
