@@ -639,6 +639,7 @@ int i2c_stm32_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf, s
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 	uint32_t transfer;
+	bool generate_start = true;
 
 #if defined(CONFIG_I2C_STM32_V2_DMA)
 	/* i2c_stm32_xfer_will_use_dma() flushes cache on write message if needed */
@@ -653,6 +654,7 @@ int i2c_stm32_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf, s
 	if (LL_I2C_IsEnabledReloadMode(i2c)) {
 		__ASSERT_NO_MSG((flags & I2C_MSG_RESTART) == 0U);
 		i2c_stm32_reload_burst(dev);
+		generate_start = false;
 		goto out;
 	}
 
@@ -696,8 +698,6 @@ int i2c_stm32_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf, s
 
 	LL_I2C_Enable(i2c);
 
-	LL_I2C_GenerateStartCondition(i2c);
-
 out:
 	if (using_dma(data) && dma_xfer_start(dev) != 0) {
 		i2c_stm32_controller_mode_end(dev);
@@ -712,6 +712,10 @@ out:
 		} else {
 			LL_I2C_EnableIT_TX(i2c);
 		}
+	}
+
+	if (generate_start) {
+		LL_I2C_GenerateStartCondition(i2c);
 	}
 
 	return 0;
