@@ -55,4 +55,9 @@ zephyr_library_sources_ifdef(
   pbap.c
   )
 
+if(CONFIG_BT_PBAP)
+  message(WARNING "CONFIG_BT_PBAP: PBAP v1.x uses MD5 for authentication, which is "
+                  "cryptographically weak.")
+endif()
+
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)

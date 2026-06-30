@@ -967,6 +967,9 @@ int bt_pbap_pse_abort_rsp(struct bt_pbap_pse *pbap_pse, uint8_t rsp_code, struct
  *               (@ref BT_OBEX_CHALLENGE_TAG_NONCE_LEN bytes).
  *
  *  @return 0 on success, negative error code on failure.
+ *
+ *  @warning PBAP v1.x uses MD5 for authentication, which is cryptographically weak.
+ *           PBAP authentication provides limited security.
  */
 int bt_pbap_calculate_nonce(const uint8_t *pwd, uint8_t nonce[BT_OBEX_CHALLENGE_TAG_NONCE_LEN]);
 
@@ -983,6 +986,9 @@ int bt_pbap_calculate_nonce(const uint8_t *pwd, uint8_t nonce[BT_OBEX_CHALLENGE_
  *                    (@ref BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN bytes).
  *
  *  @return 0 on success, negative error code on failure.
+ *
+ *  @warning PBAP v1.x uses MD5 for authentication, which is cryptographically weak.
+ *           PBAP authentication provides limited security.
  */
 int bt_pbap_calculate_rsp_digest(const uint8_t *pwd,
 				 const uint8_t nonce[BT_OBEX_CHALLENGE_TAG_NONCE_LEN],
@@ -1001,6 +1007,9 @@ int bt_pbap_calculate_rsp_digest(const uint8_t *pwd,
  *  @param pwd Password string used for authentication (null-terminated).
  *
  *  @return 0 if authentication is successful, negative error code on failure.
+ *
+ *  @warning PBAP v1.x uses MD5 for authentication, which is cryptographically weak.
+ *           PBAP authentication provides limited security.
  */
 int bt_pbap_verify_authentication(uint8_t nonce[BT_OBEX_CHALLENGE_TAG_NONCE_LEN],
 				  uint8_t rsp_digest[BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN],
