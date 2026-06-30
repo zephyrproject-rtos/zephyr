@@ -6,7 +6,7 @@
  */
 
 #include "ble_mesh.h"
-#include "common.h"
+#include <common.h>
 #include "device_composition.h"
 #include "state_binding.h"
 #include "transition.h"

@@ -5,13 +5,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bs_types.h"
-#include "bs_tracing.h"
-#include "bs_utils.h"
-#include "time_machine.h"
-#include "bstests.h"
+#include <bs_types.h>
+#include <bs_tracing.h>
+#include <bs_utils.h>
+#include <time_machine.h>
+#include <bstests.h>
 
-#include "common.h" /* From echo_client */
+#include <common.h> /* From echo_client */
 
 #if defined(CONFIG_NET_L2_OPENTHREAD)
 /* Open thread takes ~15 seconds to connect in ideal conditions */

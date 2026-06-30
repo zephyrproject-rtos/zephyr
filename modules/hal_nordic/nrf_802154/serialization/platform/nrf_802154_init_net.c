@@ -6,8 +6,8 @@
 
 #include <zephyr/init.h>
 
-#include "nrf_802154.h"
-#include "nrf_802154_serialization.h"
+#include <nrf_802154.h>
+#include <nrf_802154_serialization.h>
 
 static int serialization_init(void)
 {

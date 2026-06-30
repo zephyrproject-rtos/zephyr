@@ -11,7 +11,7 @@
  *
  */
 
-#include "platform/nrf_802154_temperature.h"
+#include <platform/nrf_802154_temperature.h>
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>

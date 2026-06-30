@@ -8,7 +8,7 @@
 #define BOARDS_POSIX_BSIM_COMMON_BSIM_ARGS_RUNNER_H
 
 #include <stdint.h>
-#include "bs_cmd_line.h"
+#include <bs_cmd_line.h>
 
 #ifdef __cplusplus
 extern "C" {

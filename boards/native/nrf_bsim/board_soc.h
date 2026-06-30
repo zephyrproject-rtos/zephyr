@@ -28,8 +28,8 @@
 #include <stddef.h>
 #include <zephyr/irq.h>
 #include <nrfx.h>
-#include "cmsis.h"
-#include "soc_nrf_common.h"
+#include <cmsis.h>
+#include <soc_nrf_common.h>
 
 /* For offloading interrupts we can use any free interrupt */
 #if defined(CONFIG_BOARD_NRF52_BSIM)

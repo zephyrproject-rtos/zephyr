@@ -25,9 +25,9 @@
 
 /* Include babble-sim configuration. */
 #if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
-#include "nrfx_config_bsim.h"
+#include <nrfx_config_bsim.h>
 #endif
 
 /* Use defaults for undefined symbols. */
-#include "nrfx_templates_config.h"
+#include <nrfx_templates_config.h>
 #endif // NRFX_CONFIG_H__

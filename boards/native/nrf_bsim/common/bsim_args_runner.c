@@ -16,18 +16,18 @@
 #include <stdbool.h>
 #include <limits.h>
 #include <string.h>
-#include "bs_cmd_line.h"
-#include "bs_cmd_line_typical.h"
-#include "bs_dynargs.h"
-#include "bs_tracing.h"
-#include "bs_dump_files.h"
-#include "bs_rand_main.h"
-#include "nsi_cpu_if.h"
-#include "nsi_tasks.h"
-#include "nsi_main.h"
-#include "nsi_cpu_ctrl.h"
-#include "NRF_HWLowL.h"
-#include "NHW_misc.h"
+#include <bs_cmd_line.h>
+#include <bs_cmd_line_typical.h>
+#include <bs_dynargs.h>
+#include <bs_tracing.h>
+#include <bs_dump_files.h>
+#include <bs_rand_main.h>
+#include <nsi_cpu_if.h>
+#include <nsi_tasks.h>
+#include <nsi_main.h>
+#include <nsi_cpu_ctrl.h>
+#include <NRF_HWLowL.h>
+#include <NHW_misc.h>
 
 static bs_args_struct_t *args_struct;
 /* Direct use of this global is deprecated, use bsim_args_get_global_device_nbr() instead */

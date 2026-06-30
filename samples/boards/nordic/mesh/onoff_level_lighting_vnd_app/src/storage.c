@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "ble_mesh.h"
-#include "device_composition.h"
+#include <ble_mesh.h>
+#include <device_composition.h>
 #include "storage.h"
 
 static uint8_t storage_id;

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdarg.h>
-#include "bs_tracing.h"
+#include <bs_tracing.h>
 
 /*
  * Provide the posix_print_* functions required from all POSIX arch boards

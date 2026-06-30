@@ -6,7 +6,7 @@
 #ifndef _BSTESTS_ENTRY_H
 #define _BSTESTS_ENTRY_H
 
-#include "bs_types.h"
+#include <bs_types.h>
 
 #ifdef __cplusplus
 extern "C" {
