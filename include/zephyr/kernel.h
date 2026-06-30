@@ -141,6 +141,7 @@ typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
  * @note This API uses @ref k_spin_lock to protect the _kernel.threads
  * list which means creation of new threads and terminations of existing
  * threads are blocked until this API returns.
+ * @satisfies ZEP-SRS-1-26
  */
 void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
 
@@ -202,6 +203,7 @@ void k_thread_foreach_filter_by_cpu(unsigned int cpu,
  * while it is something different right now.
  * Do not reuse the memory that was occupied by k_thread structure of aborted
  * task if it was aborted after this function was called in any context.
+ * @satisfies ZEP-SRS-1-26
  */
 void k_thread_foreach_unlocked(
 	k_thread_user_cb_t user_cb, void *user_data);
@@ -373,6 +375,8 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * - @ref K_USER allocate a userspace thread (requires @kconfig{CONFIG_USERSPACE})
  *
  * @see @kconfig{CONFIG_DYNAMIC_THREAD}
+ * @satisfies ZEP-SRS-1-8
+ * @satisfies ZEP-SRS-1-24
  */
 __syscall k_thread_stack_t *k_thread_stack_alloc(size_t size, int flags);
 
@@ -387,6 +391,7 @@ __syscall k_thread_stack_t *k_thread_stack_alloc(size_t size, int flags);
  * @retval -ENOSYS if dynamic thread stack allocation is disabled
  *
  * @see @kconfig{CONFIG_DYNAMIC_THREAD}
+ * @satisfies ZEP-SRS-1-25
  */
 __syscall int k_thread_stack_free(k_thread_stack_t *stack);
 
@@ -440,6 +445,9 @@ __syscall int k_thread_stack_free(k_thread_stack_t *stack);
  *
  * @return ID of new thread.
  *
+ * @satisfies ZEP-SRS-1-1
+ * @satisfies ZEP-SRS-1-5
+ * @satisfies ZEP-SRS-1-15
  */
 __syscall k_tid_t k_thread_create(struct k_thread *new_thread,
 				  k_thread_stack_t *stack,
@@ -468,6 +476,7 @@ __syscall k_tid_t k_thread_create(struct k_thread *new_thread,
  * @param p1 1st entry point parameter
  * @param p2 2nd entry point parameter
  * @param p3 3rd entry point parameter
+ * @satisfies ZEP-SRS-1-9
  */
 FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 						   void *p1, void *p2,
@@ -529,6 +538,7 @@ static inline void k_thread_heap_assign(struct k_thread *thread,
  * #return -ENOTSUP Forbidden by hardware policy
  * @return -EINVAL Thread is uninitialized or exited (user mode only)
  * @return -EFAULT Bad memory address for unused_ptr (user mode only)
+ * @satisfies ZEP-SRS-1-27
  */
 __syscall int k_thread_stack_space_get(const struct k_thread *thread,
 				       size_t *unused_ptr);
@@ -610,6 +620,7 @@ typedef void (*k_thread_stack_safety_handler_t)(const struct k_thread *thread,
  * @param arg Argument to pass to handler
  *
  * @return 0 on success, -ENOTSUP if forbidden by hardware policy
+ * @satisfies ZEP-SRS-1-30
  */
 int k_thread_runtime_stack_safety_full_check(const struct k_thread *thread,
 					     size_t *unused_ptr,
@@ -629,6 +640,7 @@ int k_thread_runtime_stack_safety_full_check(const struct k_thread *thread,
  * @param arg Argument to pass to handler
  *
  * @return 0 on success, -ENOTSUP if forbidden by hardware policy
+ * @satisfies ZEP-SRS-1-30
  */
 int k_thread_runtime_stack_safety_threshold_check(const struct k_thread *thread,
 						  size_t *unused_ptr,
@@ -670,6 +682,7 @@ void k_thread_system_pool_assign(struct k_thread *thread);
  * @retval -EAGAIN waiting period timed out
  * @retval -EDEADLK target thread is joining on the caller, or target thread
  *                  is the caller
+ * @satisfies ZEP-SRS-1-20
  */
 __syscall int k_thread_join(struct k_thread *thread, k_timeout_t timeout);
 
@@ -831,6 +844,7 @@ static inline bool k_is_pre_kernel(void)
  *
  * @return ID of current thread.
  *
+ * @satisfies ZEP-SRS-1-19
  */
 __attribute_const__
 static inline k_tid_t k_current_get(void)
@@ -866,6 +880,7 @@ static inline k_tid_t k_current_get(void)
  * other CPUs.
  *
  * @param thread ID of thread to abort.
+ * @satisfies ZEP-SRS-1-6
  */
 __syscall void k_thread_abort(k_tid_t thread);
 
@@ -880,6 +895,7 @@ k_ticks_t z_timeout_remaining(const struct _timeout *timeout);
  * This routine computes the system uptime when a waiting thread next
  * executes, in units of system ticks.  If the thread is not waiting,
  * it returns current system time.
+ * @satisfies ZEP-SRS-1-33
  */
 __syscall k_ticks_t k_thread_timeout_expires_ticks(const struct k_thread *thread);
 
@@ -895,6 +911,7 @@ static inline k_ticks_t z_impl_k_thread_timeout_expires_ticks(
  * This routine computes the time remaining before a waiting thread
  * next executes, in units of system ticks.  If the thread is not
  * waiting, it returns zero.
+ * @satisfies ZEP-SRS-1-33
  */
 __syscall k_ticks_t k_thread_timeout_remaining_ticks(const struct k_thread *thread);
 
@@ -1001,6 +1018,7 @@ struct _static_thread_data {
  * affect anything in the OS per se, but consider it bad practice.
  * Use a SYS_INIT() callback if you need to run code before entrance
  * to the application main().
+ * @satisfies ZEP-SRS-1-13
  */
 #define K_THREAD_DEFINE(name, stack_size,                                \
 			entry, p1, p2, p3,                               \
@@ -1054,6 +1072,7 @@ struct _static_thread_data {
  * @param thread ID of thread whose priority is needed.
  *
  * @return Priority of @a thread.
+ * @satisfies ZEP-SRS-1-16
  */
 __syscall int k_thread_priority_get(k_tid_t thread);
 
@@ -1081,6 +1100,7 @@ __syscall int k_thread_priority_get(k_tid_t thread);
  *
  * @warning Changing the priority of a thread currently involved in mutex
  * priority inheritance may result in undefined behavior.
+ * @satisfies ZEP-SRS-1-2
  */
 __syscall void k_thread_priority_set(k_tid_t thread, int prio);
 
@@ -1290,6 +1310,7 @@ int k_thread_cpu_pin(k_tid_t thread, int cpu);
  * If @a thread is already suspended, the routine has no effect.
  *
  * @param thread ID of thread to suspend.
+ * @satisfies ZEP-SRS-1-3
  */
 __syscall void k_thread_suspend(k_tid_t thread);
 
@@ -1303,6 +1324,7 @@ __syscall void k_thread_suspend(k_tid_t thread);
  * If @a thread is not currently suspended, the routine has no effect.
  *
  * @param thread ID of thread to resume.
+ * @satisfies ZEP-SRS-1-4
  */
 __syscall void k_thread_resume(k_tid_t thread);
 
@@ -1318,6 +1340,7 @@ __syscall void k_thread_resume(k_tid_t thread);
  * special handling for "start".
  *
  * @param thread thread to start
+ * @satisfies ZEP-SRS-1-14
  */
 static inline void k_thread_start(k_tid_t thread)
 {
@@ -1487,6 +1510,7 @@ void k_sched_unlock(void);
  *
  * @param value New custom data value.
  *
+ * @satisfies ZEP-SRS-1-12
  */
 __syscall void k_thread_custom_data_set(void *value);
 
@@ -1496,6 +1520,7 @@ __syscall void k_thread_custom_data_set(void *value);
  * This routine returns the custom data for the current thread.
  *
  * @return Current custom data value.
+ * @satisfies ZEP-SRS-1-12
  */
 __syscall void *k_thread_custom_data_get(void);
 
@@ -1511,6 +1536,7 @@ __syscall void *k_thread_custom_data_get(void);
  * @retval -EFAULT Memory access error with supplied string
  * @retval -ENOSYS Thread name configuration option not enabled
  * @retval -EINVAL Thread name too long
+ * @satisfies ZEP-SRS-1-17
  */
 __syscall int k_thread_name_set(k_tid_t thread, const char *str);
 
@@ -1521,6 +1547,7 @@ __syscall int k_thread_name_set(k_tid_t thread, const char *str);
  *
  * @param thread Thread ID
  * @return Thread name, or NULL if @kconfig{CONFIG_THREAD_NAME} not enabled
+ * @satisfies ZEP-SRS-1-18
  */
 const char *k_thread_name_get(k_tid_t thread);
 
@@ -1534,6 +1561,7 @@ const char *k_thread_name_get(k_tid_t thread);
  * @retval -EFAULT Memory access error
  * @retval -ENOSYS Thread name feature not enabled
  * @retval 0 Success
+ * @satisfies ZEP-SRS-1-18
  */
 __syscall int k_thread_name_copy(k_tid_t thread, char *buf,
 				 size_t size);
@@ -1549,6 +1577,7 @@ __syscall int k_thread_name_copy(k_tid_t thread, char *buf,
  * @param buf_size Size of the buffer
  *
  * @return Pointer to @a buf if data was copied, else a pointer to "".
+ * @satisfies ZEP-SRS-1-21
  */
 const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
 
@@ -7068,6 +7097,7 @@ __syscall int k_float_enable(struct k_thread *thread, unsigned int options);
  * @param thread ID of thread.
  * @param stats Pointer to struct to copy statistics into.
  * @return -EINVAL if null pointers, otherwise 0
+ * @satisfies ZEP-SRS-1-28
  */
 int k_thread_runtime_stats_get(k_tid_t thread,
 			       k_thread_runtime_stats_t *stats);
@@ -7077,6 +7107,7 @@ int k_thread_runtime_stats_get(k_tid_t thread,
  *
  * @param stats Pointer to struct to copy statistics into.
  * @return -EINVAL if null pointers, otherwise 0
+ * @satisfies ZEP-SRS-1-29
  */
 int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats);
 
@@ -7097,6 +7128,7 @@ int k_thread_runtime_stats_cpu_get(int cpu, k_thread_runtime_stats_t *stats);
  *
  * @param thread ID of thread
  * @return -EINVAL if invalid thread ID, otherwise 0
+ * @satisfies ZEP-SRS-1-34
  */
 int k_thread_runtime_stats_enable(k_tid_t thread);
 
@@ -7108,6 +7140,7 @@ int k_thread_runtime_stats_enable(k_tid_t thread);
  *
  * @param thread ID of thread
  * @return -EINVAL if invalid thread ID, otherwise 0
+ * @satisfies ZEP-SRS-1-34
  */
 int k_thread_runtime_stats_disable(k_tid_t thread);
 
