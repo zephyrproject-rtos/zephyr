@@ -147,14 +147,31 @@ struct k_obj_core_desc {
 	uint32_t           type_id;     /**< Unique type ID */
 #ifdef CONFIG_OBJ_CORE_STATS
 	struct k_obj_core_stats_desc *stats_desc; /**< Stats descriptor or NULL */
+	size_t             stats_offset; /**< Offset of per-object stats buffer */
+	size_t             stats_size;   /**< Per-object stats buffer size (0=none) */
 #endif /* CONFIG_OBJ_CORE_STATS */
 };
 
 #ifdef CONFIG_OBJ_CORE_STATS
-#define Z_OBJ_CORE_STATS_DESC(_stats) .stats_desc = (_stats),
+#define Z_OBJ_CORE_STATS_DESC(_stats, _soff, _ssz) \
+	.stats_desc = (_stats), .stats_offset = (_soff), .stats_size = (_ssz),
 #else
-#define Z_OBJ_CORE_STATS_DESC(_stats)
+#define Z_OBJ_CORE_STATS_DESC(_stats, _soff, _ssz)
 #endif /* CONFIG_OBJ_CORE_STATS */
+
+#define Z_K_OBJ_TYPE_DEFINE(_type_var, _struct, _id, _stats, _soff, _ssz)      \
+	STRUCT_SECTION_START_EXTERN(_struct);                                  \
+	STRUCT_SECTION_END_EXTERN(_struct);                                    \
+	static const STRUCT_SECTION_ITERABLE(k_obj_core_desc,                  \
+					     _obj_core_desc_##_struct) = {     \
+		.type = &(_type_var),                                          \
+		.objs_start = STRUCT_SECTION_START(_struct),                   \
+		.objs_end = STRUCT_SECTION_END(_struct),                       \
+		.obj_core_offset = offsetof(struct _struct, obj_core),         \
+		.obj_size = sizeof(struct _struct),                            \
+		.type_id = (_id),                                              \
+		Z_OBJ_CORE_STATS_DESC(_stats, _soff, _ssz)                     \
+	}
 
 /**
  * @brief Register an object type with the object core framework
@@ -170,18 +187,24 @@ struct k_obj_core_desc {
  * @param _stats    Pointer to a k_obj_core_stats_desc, or NULL
  */
 #define K_OBJ_TYPE_DEFINE(_type_var, _struct, _id, _stats)                     \
-	STRUCT_SECTION_START_EXTERN(_struct);                                  \
-	STRUCT_SECTION_END_EXTERN(_struct);                                    \
-	static const STRUCT_SECTION_ITERABLE(k_obj_core_desc,                  \
-					     _obj_core_desc_##_struct) = {     \
-		.type = &(_type_var),                                          \
-		.objs_start = STRUCT_SECTION_START(_struct),                   \
-		.objs_end = STRUCT_SECTION_END(_struct),                       \
-		.obj_core_offset = offsetof(struct _struct, obj_core),         \
-		.obj_size = sizeof(struct _struct),                            \
-		.type_id = (_id),                                              \
-		Z_OBJ_CORE_STATS_DESC(_stats)                                  \
-	}
+	Z_K_OBJ_TYPE_DEFINE(_type_var, _struct, _id, _stats, 0, 0)
+
+/**
+ * @brief Register an object type that also gathers per-object statistics
+ *
+ * Like K_OBJ_TYPE_DEFINE(), but additionally registers each statically defined
+ * object's embedded statistics buffer with the object core framework at boot.
+ *
+ * @param _type_var Object type storage (struct k_obj_type) to initialize
+ * @param _struct   Object struct type with obj_core and stats members
+ * @param _id       Unique type ID
+ * @param _stats    Pointer to a k_obj_core_stats_desc
+ * @param _member   Name of the per-object stats buffer member within @a _struct
+ */
+#define K_OBJ_TYPE_DEFINE_STATS(_type_var, _struct, _id, _stats, _member)      \
+	Z_K_OBJ_TYPE_DEFINE(_type_var, _struct, _id, _stats,                   \
+			    offsetof(struct _struct, _member),                 \
+			    sizeof(((struct _struct *)0)->_member))
 
 /**
  * INTERNAL_HIDDEN @endcond
