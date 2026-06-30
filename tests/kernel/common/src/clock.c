@@ -13,6 +13,7 @@
 			Z_SPIN_DELAY(50);      \
 	} while (0)
 
+/** @cond INTERNAL_HIDDEN */
 struct timer_data {
 	int duration_count;
 	int stop_count;
@@ -20,10 +21,11 @@ struct timer_data {
 static void duration_expire(struct k_timer *timer);
 static void stop_expire(struct k_timer *timer);
 
-/** TESTPOINT: init timer via K_TIMER_DEFINE */
+/* TESTPOINT: init timer via K_TIMER_DEFINE */
 K_TIMER_DEFINE(ktimer, duration_expire, stop_expire);
 
 static ZTEST_BMEM struct timer_data tdata;
+/** @endcond */
 
 #define DURATION 100
 #define LESS_DURATION 70
