@@ -308,6 +308,18 @@
 			status = "disabled";
 		};
 
+		lptim1: timers@44004400 {
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44004400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB3, 11)>;
+			resets = <&rctl STM32_RESET(APB3, 11)>;
+			interrupts = <57 0>;
+			interrupt-names = "wakeup";
+			status = "disabled";
+		};
+
 		lpuart1: serial@44002400 {
 			compatible = "st,stm32-lpuart", "st,stm32-uart";
 			reg = <0x44002400 0x400>;
