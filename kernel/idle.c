@@ -19,6 +19,15 @@
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
+/**
+ * @brief Entry point of the kernel's idle thread
+ *
+ * This routine is executed by the per-CPU idle thread when no other thread is
+ * ready to run. It activates the board's power management support where
+ * available, otherwise it performs a low-power "do nothing" loop.
+ *
+ * @satisfies ZEP-SRS-1-32
+ */
 void idle(void *unused1, void *unused2, void *unused3)
 {
 	ARG_UNUSED(unused1);

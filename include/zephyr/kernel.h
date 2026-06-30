@@ -271,7 +271,9 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
 
 /**
  * @brief system thread that must not abort
- * */
+ *
+ * @satisfies ZEP-SRS-1-11
+ */
 #define K_ESSENTIAL (BIT(0))
 
 #define K_FP_IDX 1
@@ -283,6 +285,8 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * registers. This instructs the kernel to take additional steps to save
  * and restore the contents of these registers when scheduling the thread.
  * No effect if @kconfig{CONFIG_FPU_SHARING} is not enabled.
+ *
+ * @satisfies ZEP-SRS-1-11
  */
 #define K_FP_REGS (BIT(K_FP_IDX))
 
@@ -291,6 +295,8 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  *
  * This thread has dropped from supervisor mode to user mode and consequently
  * has additional restrictions
+ *
+ * @satisfies ZEP-SRS-1-11
  */
 #define K_USER (BIT(2))
 
@@ -301,6 +307,8 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * Indicates that the thread being created should inherit all kernel object
  * permissions from the thread that created it. No effect if
  * @kconfig{CONFIG_USERSPACE} is not enabled.
+ *
+ * @satisfies ZEP-SRS-1-11
  */
 #define K_INHERIT_PERMS (BIT(3))
 

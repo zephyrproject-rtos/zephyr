@@ -280,6 +280,10 @@ static void z_static_init_gnu(void)
  *
  * This routine completes kernel initialization by invoking the remaining
  * init functions, then invokes application's main() routine.
+ *
+ * This is the entry point of the kernel's main system thread.
+ *
+ * @satisfies ZEP-SRS-1-31
  */
 __boot_func
 static void bg_thread_main(void *unused1, void *unused2, void *unused3)
@@ -533,7 +537,7 @@ void __weak z_early_rand_get(uint8_t *buf, size_t length)
  * processor must be running in 32-bit mode, and the BSS must have been
  * cleared/zeroed.
  *
- * @return Does not return
+ * @note This function does not return.
  */
 __boot_func
 FUNC_NO_STACK_PROTECTOR
