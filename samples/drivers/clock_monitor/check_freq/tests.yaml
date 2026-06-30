@@ -9,15 +9,32 @@ sample:
 
     The expected frequency, tolerance and measurement window are all
     Kconfig-tunable (see Kconfig in this sample).
+common:
+  tags:
+    - drivers
+    - clock_monitor
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "heartbeat: clock check running"
 tests:
   sample.drivers.clock_monitor.check_freq:
     platform_allow:
       - frdm_mcxe31b
-    tags:
-      - drivers
-      - clock_monitor
-    harness: console
-    harness_config:
-      type: one_line
-      regex:
-        - "heartbeat: clock check running"
+
+  sample.drivers.clock_monitor.check_freq.freqme:
+    platform_allow:
+      - frdm_mcxa153
+      - frdm_mcxa156
+      - frdm_mcxa344
+      - frdm_mcxa266
+      - frdm_mcxa366
+      - frdm_mcxa577
+      - frdm_mcxn236
+      - mcx_n5xx_evk/mcxn547/cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0
+      - frdm_mcxl255/mcxl255/cpu0
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="../clock_monitor.overlay"

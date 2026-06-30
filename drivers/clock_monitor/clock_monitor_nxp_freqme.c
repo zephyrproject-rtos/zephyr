@@ -270,10 +270,10 @@ static uint8_t nxp_freqme_default_idx(const struct nxp_freqme_source *srcs, uint
 
 /*
  * Resolved hardware parameters computed from a clock_monitor_config before
- * any registers are touched. Passed from freqme_resolve_params() to
+ * any registers are touched. Passed from freqme_derive_hw_params() to
  * freqme_hw_apply() so the two steps can be read and tested independently.
  */
-struct freqme_cfg_params {
+struct freqme_hw_params {
 	uint32_t ref_hz;     /* reference clock rate in Hz                    */
 	uint8_t  ref_scale;  /* REF_SCALE exponent (window = 2^N ref periods) */
 	uint32_t min_val;    /* WINDOW MIN counter threshold (0 in MEASURE)   */
@@ -282,17 +282,21 @@ struct freqme_cfg_params {
 };
 
 /*
- * Resolve hardware parameters from @p cfg and the current source pair
- * (@p ref, @p tar). Pure computation — no register writes. On success
- * fills @p out and returns 0; on failure returns a negative errno.
+ * Translate a clock_monitor_config into FREQME register-level parameters:
+ *   - queries @p ref for the reference clock rate (ref_hz)
+ *   - converts the requested window duration to a REF_SCALE exponent
+ *   - for WINDOW mode: resolves the expected target frequency (from @p tar
+ *     when cfg->window.expected_hz == 0) and computes MIN/MAX result-counter
+ *     thresholds at the given tolerance
+ *   - selects the matching interrupt-enable mask (ready / over- or under-range)
  *
- * Called outside the spinlock; the caller must snapshot ref/tar indices
- * while holding the lock and then pass the resulting source pointers here.
+ * Results are written to @p out. Returns 0 on success, negative errno on
+ * failure (rate unavailable, window out of range, thresholds overflow).
  */
-static int freqme_resolve_params(const struct clock_monitor_config *cfg,
+static int freqme_derive_hw_params(const struct clock_monitor_config *cfg,
 				 const struct nxp_freqme_source *ref,
 				 const struct nxp_freqme_source *tar,
-				 struct freqme_cfg_params *out)
+				 struct freqme_hw_params *out)
 {
 	int ret;
 	uint32_t window_ns;
@@ -347,14 +351,14 @@ static int freqme_resolve_params(const struct clock_monitor_config *cfg,
 }
 
 /*
- * Write a resolved parameter set into the FREQME peripheral registers.
- * Called after freqme_resolve_params() succeeds, still outside the spinlock.
- * Does not touch driver state — the caller commits data->cfg / data->state
- * under the spinlock after this returns.
+ * Program a freqme_hw_params set into the FREQME peripheral: initialises the
+ * HAL config struct (measurement mode, REF_SCALE, continuous-mode flag),
+ * calls FREQME_Init(), then arms the MIN/MAX result-counter thresholds and
+ * enables the appropriate interrupts (ready / over- and under-range).
  */
 static void freqme_hw_apply(FREQME_Type *base,
 			    const struct clock_monitor_config *cfg,
-			    const struct freqme_cfg_params *p)
+			    const struct freqme_hw_params *p)
 {
 	freq_measure_config_t hal_cfg;
 
@@ -375,7 +379,7 @@ static int nxp_freqme_configure(const struct device *dev,
 {
 	const struct nxp_freqme_config *config = dev->config;
 	struct nxp_freqme_data *data = dev->data;
-	struct freqme_cfg_params params;
+	struct freqme_hw_params params;
 	k_spinlock_key_t key;
 	enum nxp_freqme_state prev_state;
 	uint8_t ref_idx;
@@ -419,7 +423,7 @@ static int nxp_freqme_configure(const struct device *dev,
 	 * the results to hardware. Both run outside the spinlock; the caller
 	 * must ensure the selected source clocks are already running.
 	 */
-	ret = freqme_resolve_params(cfg,
+	ret = freqme_derive_hw_params(cfg,
 				    &config->ref_srcs[ref_idx],
 				    &config->tar_srcs[tar_idx],
 				    &params);

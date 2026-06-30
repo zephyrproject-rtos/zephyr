@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+
+/ {
+	clock-monitor-required-clocks {
+		compatible = "clock-monitor-required-clocks";
+		clocks = <&syscon MCUX_FRO_12M_CLK>,
+			 <&syscon MCUX_FRO_HF_CLK>;
+	};
+};
