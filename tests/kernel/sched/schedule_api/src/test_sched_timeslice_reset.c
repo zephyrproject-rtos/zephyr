@@ -101,8 +101,13 @@ ZTEST(threads_scheduling, test_slice_reset)
 	/* disable timeslice */
 	k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
 
-	/* Cycle-domain length of half a slice for the busy-wait below. */
-	uint32_t half_slice_cyc = k_ticks_to_cyc_ceil32(HALF_SLICE_TICKS);
+	/* Size the busy-wait as a whole number of ticks using the driver's
+	 * real cycles per tick, floor(HW/ticks). Converting the half-slice
+	 * with the fractional ratio (k_ticks_to_cyc_ceil32()) would skew the
+	 * measured ticks where a tick isn't a whole number of cycles.
+	 */
+	uint32_t cyc_per_tick = k_ticks_to_cyc_floor32(1);
+	uint32_t half_slice_cyc = HALF_SLICE_TICKS * cyc_per_tick;
 
 	for (int j = 0; j < 2; j++) {
 		k_sem_reset(&sema);
@@ -127,7 +132,9 @@ ZTEST(threads_scheduling, test_slice_reset)
 		/* initialize reference timestamp */
 		ticks_delta(&elapsed_slice);
 
-		/* current thread (ztest native) consumed a half timeslice */
+		/* consume half a timeslice, timed on the free-running cycle
+		 * counter (independent of the tick interrupt)
+		 */
 		t32 = k_cycle_get_32();
 		while (k_cycle_get_32() - t32 < half_slice_cyc) {
 			Z_SPIN_DELAY(50);
