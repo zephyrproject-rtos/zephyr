@@ -429,7 +429,7 @@ static inline bool i2c_bflb_errored(const struct device *dev)
 	const struct i2c_bflb_cfg *config = dev->config;
 	uint32_t tmp = sys_read32(config->base + I2C_INT_STS_OFFSET);
 
-	return (tmp & I2C_ARB_INT) != 0 || (tmp & I2C_FER_INT) != 0;
+	return (tmp & (I2C_ARB_INT | I2C_FER_INT)) != 0;
 }
 
 static int i2c_bflb_write(const struct device *dev, uint8_t *buf, uint8_t len)
