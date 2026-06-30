@@ -37,9 +37,29 @@
 #define ZVFS_F_SETFD 2
 #define ZVFS_F_GETFL 3
 #define ZVFS_F_SETFL 4
+#define ZVFS_F_GETLK 5
+#define ZVFS_F_SETLK 6
+#define ZVFS_F_SETLKW 7
 #define ZVFS_F_DUPFD_CLOEXEC 10
 
 #define ZVFS_FD_CLOEXEC 1
+
+#define ZVFS_F_RDLCK 1
+#define ZVFS_F_WRLCK 2
+#define ZVFS_F_UNLCK 3
+
+#define ZVFS_SEEK_SET 0
+#define ZVFS_SEEK_CUR 1
+#define ZVFS_SEEK_END 2
+
+/** POSIX record-lock description; layout matches @c struct flock. */
+struct zvfs_flock {
+	short l_type;
+	short l_whence;
+	uint64_t l_start;
+	uint64_t l_len;
+	pid_t l_pid;
+};
 
 /* File mode bits */
 #define ZVFS_MODE_IFMT   0170000

@@ -124,6 +124,7 @@ int zvfs_open(const char *name, int flags, int mode)
 		goto out_err;
 	}
 
+	ptr->flags = flags & (ZVFS_O_ACCMODE | ZVFS_O_APPEND | ZVFS_O_NONBLOCK);
 	zvfs_finalize_typed_fd(fd, ptr, &fs_fd_op_vtable, ZVFS_MODE_IFREG);
 
 	return fd;
@@ -144,6 +145,7 @@ static int fs_close_vmeth(void *obj)
 	int rc;
 
 	rc = fs_close(&ptr->file);
+	zvfs_record_lock_drop_obj(ptr);
 	zvfs_fs_desc_free(ptr);
 
 	return rc;
@@ -220,6 +222,16 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 			return -1;
 		}
 		break;
+	}
+	case ZVFS_F_GETFL:
+		return ptr->flags;
+	case ZVFS_F_SETFL: {
+		int set = va_arg(args, int);
+
+		/* the file system honors neither append nor non-blocking mode */
+		ptr->flags = (ptr->flags & ZVFS_O_ACCMODE) |
+			     (set & (ZVFS_O_APPEND | ZVFS_O_NONBLOCK));
+		return 0;
 	}
 	default:
 		errno = EOPNOTSUPP;

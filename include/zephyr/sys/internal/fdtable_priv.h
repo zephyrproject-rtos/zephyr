@@ -54,6 +54,8 @@ int zvfs_unlock_file(FILE *file);
 int zvfs_getc_unlocked(FILE *stream);
 int zvfs_putc_unlocked(int c, FILE *stream);
 
+int zvfs_record_lock_fcntl(struct fd_entry *entry, int cmd, struct zvfs_flock *lock);
+
 #ifdef __cplusplus
 }
 #endif

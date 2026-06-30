@@ -34,6 +34,8 @@ struct zvfs_fs_desc {
 		struct fs_file_t file;
 		struct fs_dir_t dir;
 	};
+	/** Open flags (ZVFS_O_*) reported by F_GETFL */
+	int flags;
 	bool is_dir: 1;
 	bool used: 1;
 };
@@ -64,6 +66,13 @@ struct zvfs_fs_desc *zvfs_fs_desc_alloc(bool is_dir);
  * @param ptr Descriptor previously returned by zvfs_fs_desc_alloc().
  */
 void zvfs_fs_desc_free(struct zvfs_fs_desc *ptr);
+
+/**
+ * @brief Drop POSIX record locks associated with a ZVFS FS object.
+ *
+ * @param obj Open file description object (zvfs_fs_desc pointer).
+ */
+void zvfs_record_lock_drop_obj(void *obj);
 
 #ifdef __cplusplus
 }

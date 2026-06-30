@@ -84,6 +84,15 @@ config ZVFS_FS_DESC_MAX
 	  Maximum concurrent Zephyr FS objects tracked by the ZVFS FS descriptor
 	  pool (open files and directory streams).
 
+config ZVFS_FS_RECORD_LOCK_MAX
+	int
+	depends on ZVFS_FS
+	default 4
+	range 1 32
+	help
+	  Maximum POSIX record locks (fcntl F_SETLK/F_GETLK) stored per open file
+	  description backed by zvfs_fs_desc.
+
 config ZVFS_OPEN_ADD_SIZE_FS
 	int
 	depends on ZVFS_FS
