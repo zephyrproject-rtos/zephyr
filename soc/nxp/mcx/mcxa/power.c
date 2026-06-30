@@ -6,10 +6,8 @@
 
 #include <zephyr/pm/pm.h>
 #include <zephyr/arch/arch_interface.h>
-#include <zephyr/device.h>
 #include <fsl_cmc.h>
 #include <fsl_spc.h>
-#include <fsl_wuu.h>
 #include <zephyr/platform/hooks.h>
 #include <soc.h>
 
@@ -20,9 +18,7 @@
 #include <zephyr/arch/common/pm_s2ram.h>
 #endif
 
-#define WUU_WAKEUP_LPTMR0_IDX	6U
 #define MCXA_WAKEUP_DELAY	DT_PROP_OR(DT_INST(0, nxp_spc), wakeup_delay, 0)
-#define MCXA_WUU_ADDR		(WUU_Type *)DT_REG_ADDR(DT_INST(0, nxp_wuu))
 #define MCXA_CMC_ADDR		(CMC_Type *)DT_REG_ADDR(DT_INST(0, nxp_cmc))
 #define MCXA_SPC_ADDR		(SPC_Type *)DT_REG_ADDR(DT_INST(0, nxp_spc))
 
@@ -31,8 +27,6 @@ static void pm_enter_hook(void)
 	CMC_SetPowerModeProtection(MCXA_CMC_ADDR, kCMC_AllowAllLowPowerModes);
 	CMC_EnableDebugOperation(MCXA_CMC_ADDR, false);
 	CMC_ConfigFlashMode(MCXA_CMC_ADDR, true, true, false);
-	WUU_SetInternalWakeUpModulesConfig(MCXA_WUU_ADDR, WUU_WAKEUP_LPTMR0_IDX,
-					   kWUU_InternalModuleInterrupt);
 }
 
 static void enter_low_power(void)
