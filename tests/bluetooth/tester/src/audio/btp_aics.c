@@ -26,7 +26,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
-#include <bap_endpoint.h>
+#include <audio/bap_endpoint.h>
 #include <btp/btp.h>
 
 #define LOG_MODULE_NAME bttester_aics

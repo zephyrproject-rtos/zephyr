@@ -20,7 +20,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
-#include <../bluetooth/audio/csip_internal.h>
+#include <audio/csip_internal.h>
 #include <btp/btp.h>
 
 #define LOG_MODULE_NAME bttester_csip

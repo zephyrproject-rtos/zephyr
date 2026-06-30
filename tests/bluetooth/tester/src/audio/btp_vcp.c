@@ -23,9 +23,9 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
-#include <../../subsys/bluetooth/audio/aics_internal.h>
-#include <../../subsys/bluetooth/audio/vcp_internal.h>
-#include <../../subsys/bluetooth/audio/vocs_internal.h>
+#include <audio/aics_internal.h>
+#include <audio/vcp_internal.h>
+#include <audio/vocs_internal.h>
 #include <btp/btp.h>
 
 #define LOG_MODULE_NAME bttester_vcp

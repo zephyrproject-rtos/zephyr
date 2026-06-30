@@ -29,7 +29,7 @@
 #include "btp_bap_unicast.h"
 #include "btp_bap_broadcast.h"
 
-#include <hci_core.h>
+#include <host/hci_core.h>
 
 #define LOG_MODULE_NAME bttester_bap
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);

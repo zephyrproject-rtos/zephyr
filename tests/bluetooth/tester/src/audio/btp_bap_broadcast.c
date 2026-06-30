@@ -36,7 +36,7 @@
 #include <zephyr/types.h>
 
 #include "btp_bap_audio_stream.h"
-#include <bap_endpoint.h>
+#include <audio/bap_endpoint.h>
 #include <btp/btp.h>
 #include "btp_bap_broadcast.h"
 
