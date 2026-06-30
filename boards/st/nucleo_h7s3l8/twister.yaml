@@ -15,6 +15,7 @@ supported:
   - canfd
   - netif:eth
   - rtc
+  - usbd
 vendor: st
 variants:
   nucleo_h7s3l8/stm32h7s3xx:
