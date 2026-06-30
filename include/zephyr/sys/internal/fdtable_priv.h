@@ -29,6 +29,10 @@ struct fd_entry {
 struct fd_entry *zvfs_fd_entry_get(int fd);
 struct fd_entry *zvfs_fd_syscall_verify(int fd);
 
+int zvfs_fd_obj_refcount(void *obj);
+
+void zvfs_fd_offset_set(struct fd_entry *entry, size_t offset);
+
 /** zvfs_poll_prepare_fd() armed *pev with the fd's wait condition(s) */
 #define ZVFS_POLL_PREPARED 0
 /** zvfs_poll_prepare_fd() found the fd ready without waiting */

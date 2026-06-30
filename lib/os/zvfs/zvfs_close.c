@@ -17,9 +17,11 @@ int z_impl_zvfs_close(int fd)
 	}
 
 	(void)k_mutex_lock(&entry->lock, K_FOREVER);
-	if (entry->vtable->close != NULL) {
+	if (entry->vtable->close != NULL && entry->obj != NULL &&
+	    zvfs_fd_obj_refcount(entry->obj) <= 1) {
 		if (entry->mode & ZVFS_MODE_IFSOCK) {
 			res = entry->vtable->close2(entry->obj, fd);
+			zvfs_socket_close_hook(fd);
 		} else {
 			res = entry->vtable->close(entry->obj);
 		}

@@ -24,7 +24,7 @@ static inline off_t zvfs_lseek_wrap(struct fd_entry *entry, int cmd, ...)
 		case ZVFS_MODE_IFBLK:
 		case ZVFS_MODE_IFSHM:
 		case ZVFS_MODE_IFREG:
-			entry->offset = res;
+			zvfs_fd_offset_set(entry, (size_t)res);
 			break;
 		default:
 			break;

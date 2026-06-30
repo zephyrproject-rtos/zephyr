@@ -116,6 +116,26 @@ __syscall int zvfs_ftruncate(int fd, off_t length);
 int zvfs_fcntl(int fd, int cmd, va_list args);
 
 /**
+ * @brief Duplicate a file descriptor to the lowest available slot >= minfd.
+ *
+ * @param fd File descriptor to duplicate.
+ * @param minfd Minimum value for the new descriptor.
+ *
+ * @return New file descriptor on success, or -1 on error (errno is set).
+ */
+__syscall int zvfs_dup(int fd, int minfd);
+
+/**
+ * @brief Duplicate a file descriptor to a specific descriptor number.
+ *
+ * @param fd File descriptor to duplicate.
+ * @param newfd Target descriptor number.
+ *
+ * @return @p newfd on success, or -1 on error (errno is set).
+ */
+__syscall int zvfs_dup2(int fd, int newfd);
+
+/**
  * @brief Dispatch an I/O control request on a file descriptor.
  *
  * @param fd File descriptor.

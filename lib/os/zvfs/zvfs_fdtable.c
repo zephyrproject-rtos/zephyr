@@ -128,6 +128,172 @@ static int _find_fd_entry(void)
 	return -1;
 }
 
+static int _find_fd_entry_at_or_above(int minfd)
+{
+	int fd;
+
+	if (minfd < 0) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	for (fd = minfd; fd < ARRAY_SIZE(fdtable); fd++) {
+		if (!atomic_get(&fdtable[fd].refcount)) {
+			return fd;
+		}
+	}
+
+	errno = EMFILE;
+	return -1;
+}
+
+int zvfs_fd_obj_refcount(void *obj)
+{
+	int count = 0;
+
+	if (obj == NULL) {
+		return 0;
+	}
+
+	for (int fd = 0; fd < ARRAY_SIZE(fdtable); fd++) {
+		if (atomic_get(&fdtable[fd].refcount) && fdtable[fd].obj == obj) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
+void zvfs_fd_offset_set(struct fd_entry *entry, size_t offset)
+{
+	void *obj = entry->obj;
+
+	if (obj == NULL) {
+		entry->offset = offset;
+		return;
+	}
+
+	for (int fd = 0; fd < ARRAY_SIZE(fdtable); fd++) {
+		if (atomic_get(&fdtable[fd].refcount) && fdtable[fd].obj == obj) {
+			fdtable[fd].offset = offset;
+		}
+	}
+}
+
+static int zvfs_dup_entry_locked(struct fd_entry *src, int newfd)
+{
+#if defined(CONFIG_USERSPACE)
+	k_object_recycle(&fdtable[newfd]);
+#endif
+	(void)z_fd_ref(newfd);
+	fdtable[newfd].obj = src->obj;
+	fdtable[newfd].vtable = src->vtable;
+	fdtable[newfd].mode = src->mode;
+	fdtable[newfd].offset = src->offset;
+	k_mutex_init(&fdtable[newfd].lock);
+	k_condvar_init(&fdtable[newfd].cond);
+
+	return newfd;
+}
+
+int z_impl_zvfs_dup(int oldfd, int minfd)
+{
+	struct fd_entry *src = zvfs_fd_entry_get(oldfd);
+	int fd;
+
+	if (src == NULL) {
+		return -1;
+	}
+
+	(void)k_mutex_lock(&fdtable_lock, K_FOREVER);
+
+	fd = _find_fd_entry_at_or_above(minfd);
+	if (fd >= 0) {
+		fd = zvfs_dup_entry_locked(src, fd);
+	}
+
+	k_mutex_unlock(&fdtable_lock);
+
+	return fd;
+}
+
+#ifdef CONFIG_USERSPACE
+static int z_vrfy_zvfs_dup(int oldfd, int minfd)
+{
+	if (zvfs_fd_syscall_verify(oldfd) == NULL) {
+		return -1;
+	}
+
+	return z_impl_zvfs_dup(oldfd, minfd);
+}
+#include <zephyr/syscalls/zvfs_dup_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+int z_impl_zvfs_dup2(int oldfd, int newfd)
+{
+	struct fd_entry *src;
+
+	if (oldfd == newfd) {
+		if (zvfs_fd_entry_get(oldfd) == NULL) {
+			return -1;
+		}
+
+		return newfd;
+	}
+
+	src = zvfs_fd_entry_get(oldfd);
+	if (src == NULL) {
+		return -1;
+	}
+
+	if (newfd < 0 || newfd >= ARRAY_SIZE(fdtable)) {
+		errno = EBADF;
+		return -1;
+	}
+
+	if (zvfs_fd_entry_get(newfd) != NULL) {
+		if (zvfs_close(newfd) < 0) {
+			return -1;
+		}
+	}
+
+	(void)k_mutex_lock(&fdtable_lock, K_FOREVER);
+
+	if (atomic_get(&fdtable[newfd].refcount)) {
+		errno = EBADF;
+		k_mutex_unlock(&fdtable_lock);
+		return -1;
+	}
+
+	newfd = zvfs_dup_entry_locked(src, newfd);
+
+	k_mutex_unlock(&fdtable_lock);
+
+	return newfd;
+}
+
+#ifdef CONFIG_USERSPACE
+static int z_vrfy_zvfs_dup2(int oldfd, int newfd)
+{
+	if (zvfs_fd_syscall_verify(oldfd) == NULL) {
+		return -1;
+	}
+
+	/*
+	 * The implementation closes an in-use newfd via z_impl_zvfs_close(),
+	 * which skips the ownership check; verify it here so a user thread
+	 * cannot close a descriptor it has no K_OBJ_FILE grant for. An unused
+	 * newfd returns NULL, which is not an error.
+	 */
+	if (oldfd != newfd) {
+		(void)zvfs_fd_syscall_verify(newfd);
+	}
+
+	return z_impl_zvfs_dup2(oldfd, newfd);
+}
+#include <zephyr/syscalls/zvfs_dup2_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
 struct fd_entry *zvfs_fd_entry_get(int fd)
 {
 	if ((fd < 0) || (fd >= ARRAY_SIZE(fdtable))) {

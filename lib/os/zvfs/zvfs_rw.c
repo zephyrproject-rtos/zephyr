@@ -52,7 +52,7 @@ static int zvfs_rw_entry(struct fd_entry *entry, void *buf, size_t sz, bool is_w
 	}
 
 	if (res > 0 && from_offset == NULL) {
-		entry->offset += res;
+		zvfs_fd_offset_set(entry, entry->offset + (size_t)res);
 	}
 
 	return res;
