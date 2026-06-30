@@ -35,6 +35,11 @@
 
 #define LPTIM (LPTIM_TypeDef *) DT_INST_REG_ADDR(0)
 
+#if defined(CONFIG_SOC_SERIES_STM32MP1X)
+#define LL_LPTIM_ClearFlag_ARRM  LL_LPTIM_ClearFLAG_ARRM
+#define LL_LPTIM_ClearFlag_CMPM  LL_LPTIM_ClearFLAG_CMPM
+#endif /* CONFIG_SOC_SERIES_STM32MP1X */
+
 static const struct stm32_pclken lptim_clk[] = STM32_DT_INST_CLOCKS(0);
 
 static const struct device *const clk_ctrl = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
@@ -246,7 +251,7 @@ static void lptim_irq_handler(const struct device *unused)
 		k_spinlock_key_t key = k_spin_lock(&lock);
 
 		/* do not change ARR yet, sys_clock_announce will do */
-		LL_LPTIM_ClearFLAG_ARRM(LPTIM);
+		LL_LPTIM_ClearFlag_ARRM(LPTIM);
 
 		/* increase the total nb of autoreload count
 		 * used in the sys_clock_cycle_get_32() function.
@@ -645,18 +650,18 @@ static int sys_clock_driver_init(void)
 
 	LL_LPTIM_DisableIT_CC1(LPTIM);
 	stm32_lptim_wait_ready();
-	LL_LPTIM_ClearFLAG_CC1(LPTIM);
+	LL_LPTIM_ClearFlag_CC1(LPTIM);
 #else
 	/* LPTIM interrupt set-up before enabling */
 	/* no Compare match Interrupt */
 	LL_LPTIM_DisableIT_CMPM(LPTIM);
-	LL_LPTIM_ClearFLAG_CMPM(LPTIM);
+	LL_LPTIM_ClearFlag_CMPM(LPTIM);
 #endif
 
 	/* Autoreload match Interrupt */
 	LL_LPTIM_EnableIT_ARRM(LPTIM);
 	stm32_lptim_wait_ready();
-	LL_LPTIM_ClearFLAG_ARRM(LPTIM);
+	LL_LPTIM_ClearFlag_ARRM(LPTIM);
 
 	/* ARROK bit validates the write operation to ARR register */
 	autoreload_ready = true;
