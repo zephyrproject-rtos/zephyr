@@ -166,5 +166,11 @@
 			allwinner,hw-bank = <8>;
 			status = "disabled";
 		};
+
+		sid: efuse@3006000 {
+			compatible = "allwinner,sunxi-sid";
+			reg = <0x03006000 0x1000>;
+			status = "okay";
+		};
 	};
 };
