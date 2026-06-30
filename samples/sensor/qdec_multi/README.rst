@@ -35,7 +35,7 @@ Any Zephyr-supported quadrature decoder driver that exposes multiple
 units as DT children and implements a :c:struct:`sensor_decoder_api`.
 At the time of writing the ESP32 PCNT driver is the only upstream
 driver that follows this pattern. Overlays for ESP32, ESP32-S2,
-ESP32-S3, ESP32-C5, ESP32-C6 and ESP32-H2 are provided under
+ESP32-S3, ESP32-C5, ESP32-C6, ESP32-H2 and ESP32-P4 are provided under
 ``boards/``.
 
 Connect two rotary encoders (or any source of quadrature pulses) to

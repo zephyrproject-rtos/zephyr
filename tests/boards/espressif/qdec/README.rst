@@ -42,6 +42,7 @@ Supported Boards
 * ``esp32c5_devkitc/esp32c5/hpcore``
 * ``esp32c6_devkitc/esp32c6/hpcore``
 * ``esp32h2_devkitm/esp32h2``
+* ``esp32p4_function_ev_board/esp32p4/hpcore``
 
 Building and Running
 ********************
