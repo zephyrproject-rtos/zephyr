@@ -7,8 +7,32 @@
 #include <freq.h>
 #include <mem.h>
 #include <wch/qingke-v3c.dtsi>
+#include <zephyr/dt-bindings/clock/ch570_clock.h>
 
 / {
+	clocks {
+		clk_hse: clk-hse {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(32)>;
+			status = "okay";
+		};
+
+		clk_lsi: clk-lsi {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_K(32)>;
+			status = "okay";
+		};
+
+		pll: pll {
+			#clock-cells = <0>;
+			compatible = "wch,ch5xx-pll-clock";
+			clocks = <&clk_hse>;
+			status = "okay";
+		};
+	};
+
 	soc {
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
@@ -57,6 +81,13 @@
 				interrupts = <17>;
 				port = "port-a";
 			};
+		};
+
+		clkctrl: clock-controller@40001008 {
+			compatible = "wch,ch570-clkctrl";
+			reg = <0x40001008 0x54>;
+			#clock-cells = <1>;
+			status = "disabled";
 		};
 
 		cmp0: cmp@40001054 {
