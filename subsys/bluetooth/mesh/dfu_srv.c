@@ -25,10 +25,27 @@ BUILD_ASSERT((DFU_UPDATE_INFO_STATUS_MSG_MINLEN +
 	     "The Firmware Update Info Status message does not fit into the maximum outgoing SDU "
 	     "size.");
 
+struct dfu_srv_persistent_state {
+	uint8_t effect;
+	uint8_t phase;
+	uint8_t ttl;
+	uint8_t idx;
+	uint16_t timeout_base;
+	uint16_t meta;
+} __packed;
+
 static void store_state(struct bt_mesh_dfu_srv *srv)
 {
-	bt_mesh_model_data_store(srv->mod, false, NULL, &srv->update,
-				 sizeof(srv->update));
+	struct dfu_srv_persistent_state state = {
+		.effect = srv->update.effect,
+		.phase = srv->update.phase,
+		.ttl = srv->update.ttl,
+		.idx = srv->update.idx,
+		.timeout_base = srv->update.timeout_base,
+		.meta = srv->update.meta,
+	};
+
+	bt_mesh_model_data_store(srv->mod, false, NULL, &state, sizeof(state));
 }
 
 static void erase_state(struct bt_mesh_dfu_srv *srv)
@@ -494,16 +511,24 @@ static int dfu_srv_settings_set(const struct bt_mesh_model *mod, const char *nam
 				void *cb_arg)
 {
 	struct bt_mesh_dfu_srv *srv = mod->rt->user_data;
+	struct dfu_srv_persistent_state state;
 	ssize_t len;
 
-	if (len_rd < sizeof(srv->update)) {
+	if (len_rd < sizeof(state)) {
 		return -EINVAL;
 	}
 
-	len = read_cb(cb_arg, &srv->update, sizeof(srv->update));
+	len = read_cb(cb_arg, &state, sizeof(state));
 	if (len < 0) {
 		return len;
 	}
+
+	srv->update.effect = state.effect;
+	srv->update.phase = state.phase;
+	srv->update.ttl = state.ttl;
+	srv->update.idx = state.idx;
+	srv->update.timeout_base = state.timeout_base;
+	srv->update.meta = state.meta;
 
 	LOG_DBG("Recovered transfer (phase: %u, idx: %u)", srv->update.phase,
 		srv->update.idx);
