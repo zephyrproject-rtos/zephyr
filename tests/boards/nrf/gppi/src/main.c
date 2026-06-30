@@ -263,6 +263,7 @@ ZTEST(gppi, test_attach_event)
 
 	/* TIMER1 should be incremented twice by both events. */
 	nrf_timer_task_trigger(timer1, NRF_TIMER_TASK_CAPTURE0);
+	nrf_barrier_r();
 	zassert_equal(nrf_timer_cc_get(timer1, NRF_TIMER_CC_CHANNEL0), 2);
 
 	/* Clean up. */
@@ -372,6 +373,7 @@ ZTEST(gppi, test_group)
 	/* Start both timers. */
 	nrf_timer_task_trigger(timer1, NRF_TIMER_TASK_START);
 	nrf_timer_task_trigger(timer1, NRF_TIMER_TASK_CAPTURE0);
+	nrf_barrier_r();
 	zassert_equal(nrf_timer_cc_get(timer1, NRF_TIMER_CC_CHANNEL0), 0);
 
 	nrf_timer_task_trigger(timer0, NRF_TIMER_TASK_START);
@@ -389,6 +391,7 @@ ZTEST(gppi, test_group)
 
 	/* Validate that TIMER1 counter got incremented exactly once. */
 	nrf_timer_task_trigger(timer1, NRF_TIMER_TASK_CAPTURE0);
+	nrf_barrier_r();
 	cc = nrf_timer_cc_get(timer1, NRF_TIMER_CC_CHANNEL0);
 	zassert_equal(cc, 1, "Unexpected cc:%d (exp:%d)", cc, 1);
 
