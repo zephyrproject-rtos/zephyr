@@ -132,6 +132,22 @@ static inline int z_vrfy_k_thread_priority_get(k_tid_t thread)
 #include <zephyr/syscalls/k_thread_priority_get_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+#ifdef CONFIG_THREAD_NAME
+static void set_thread_name(struct k_thread *thread, const char *str)
+{
+	if (str != NULL) {
+		strncpy(thread->name, str, CONFIG_THREAD_MAX_NAME_LEN - 1);
+		/* Ensure NULL termination, truncate if longer */
+		thread->name[CONFIG_THREAD_MAX_NAME_LEN - 1] = '\0';
+#ifdef CONFIG_ARCH_HAS_THREAD_NAME_HOOK
+		arch_thread_name_set(thread, str);
+#endif /* CONFIG_ARCH_HAS_THREAD_NAME_HOOK */
+	} else {
+		thread->name[0] = '\0';
+	}
+}
+#endif /* CONFIG_THREAD_NAME */
+
 int z_impl_k_thread_name_set(k_tid_t thread, const char *str)
 {
 #ifdef CONFIG_THREAD_NAME
@@ -139,12 +155,7 @@ int z_impl_k_thread_name_set(k_tid_t thread, const char *str)
 		thread = _current;
 	}
 
-	strncpy(thread->name, str, CONFIG_THREAD_MAX_NAME_LEN - 1);
-	thread->name[CONFIG_THREAD_MAX_NAME_LEN - 1] = '\0';
-
-#ifdef CONFIG_ARCH_HAS_THREAD_NAME_HOOK
-	arch_thread_name_set(thread, str);
-#endif /* CONFIG_ARCH_HAS_THREAD_NAME_HOOK */
+	set_thread_name(thread, str);
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, name_set, thread, 0);
 
@@ -663,17 +674,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	k_spin_unlock(&z_thread_monitor_lock, key);
 #endif /* CONFIG_THREAD_MONITOR */
 #ifdef CONFIG_THREAD_NAME
-	if (name != NULL) {
-		strncpy(new_thread->name, name,
-			CONFIG_THREAD_MAX_NAME_LEN - 1);
-		/* Ensure NULL termination, truncate if longer */
-		new_thread->name[CONFIG_THREAD_MAX_NAME_LEN - 1] = '\0';
-#ifdef CONFIG_ARCH_HAS_THREAD_NAME_HOOK
-		arch_thread_name_set(new_thread, name);
-#endif /* CONFIG_ARCH_HAS_THREAD_NAME_HOOK */
-	} else {
-		new_thread->name[0] = '\0';
-	}
+	set_thread_name(new_thread, name);
 #endif /* CONFIG_THREAD_NAME */
 #ifdef CONFIG_SCHED_CPU_MASK
 	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
