@@ -198,6 +198,22 @@ static inline void stats(struct net_if *iface)
 			 GET_STAT(iface, dns.drop));
 #endif /* CONFIG_NET_STATISTICS_DNS */
 
+#if defined(CONFIG_NET_STATISTICS_PKT_FILTER)
+		NET_INFO("Filter drop rx %u"
+			 IF_ENABLED(CONFIG_NET_PKT_FILTER_IPV4_HOOK, ("\tIPv4\t%u"))
+			 IF_ENABLED(CONFIG_NET_PKT_FILTER_IPV6_HOOK, ("\tIPv6\t%u"))
+			 IF_ENABLED(CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK, ("\tlocal\t%u"))
+			 "\ttx\t%u",
+			 GET_STAT(iface, pkt_filter.rx.drop),
+			 IF_ENABLED(CONFIG_NET_PKT_FILTER_IPV4_HOOK,
+				    (GET_STAT(iface, pkt_filter.rx.ipv4_drop),))
+			 IF_ENABLED(CONFIG_NET_PKT_FILTER_IPV6_HOOK,
+				    (GET_STAT(iface, pkt_filter.rx.ipv6_drop),))
+			 IF_ENABLED(CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK,
+				    (GET_STAT(iface, pkt_filter.rx.local_drop),))
+			 GET_STAT(iface, pkt_filter.tx.drop));
+#endif /* CONFIG_NET_STATISTICS_PKT_FILTER */
+
 		NET_INFO("Bytes received %llu", GET_STAT(iface, bytes.received));
 		NET_INFO("Bytes sent     %llu", GET_STAT(iface, bytes.sent));
 		NET_INFO("Processing err %u",
