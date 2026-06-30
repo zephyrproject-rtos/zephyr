@@ -62,6 +62,7 @@ struct udc_max32_data {
 	struct k_thread thread_data;
 	MXC_USB_Req_t *ep_request;
 	struct req_cb_data *req_cb_data;
+	bool nodata_setup;
 };
 
 /*
@@ -92,6 +93,8 @@ static void udc_event_xfer_out_callback(void *cbdata)
 	k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 }
 
+static void udc_event_xfer_in_done(const struct device *dev, struct udc_ep_config *ep_cfg);
+
 /*
  * Thread-context handlers for triggering xfer in / out
  */
@@ -114,6 +117,14 @@ static void udc_event_xfer_in(const struct device *dev, struct udc_ep_config *ep
 		return;
 	}
 
+	/* Hardware requires explicit ACK for NODATA setup stage */
+	if (ep_cfg->addr == USB_CONTROL_EP_IN && buf->len == 0 && priv->nodata_setup) {
+		priv->nodata_setup = false;
+		MXC_USB_Ackstat(0);
+		udc_event_xfer_in_done(dev, ep_cfg);
+		return;
+	}
+
 	req_cb_data->dev = dev;
 	req_cb_data->ep = ep_cfg->addr;
 
@@ -129,6 +140,7 @@ static void udc_event_xfer_in(const struct device *dev, struct udc_ep_config *ep
 	}
 
 	udc_ep_set_busy(ep_cfg, true);
+
 	ret = MXC_USB_WriteEndpoint(ep_request);
 	if (ret != 0) {
 		udc_ep_set_busy(ep_cfg, false);
@@ -266,6 +278,7 @@ static void udc_event_xfer_out_done(const struct device *dev, struct udc_ep_conf
 
 static int udc_event_setup(const struct device *dev)
 {
+	struct udc_max32_data *priv = udc_get_private(dev);
 	int ret = 0;
 	MXC_USB_SetupPkt setup_pkt;
 
@@ -276,9 +289,8 @@ static int udc_event_setup(const struct device *dev)
 		return ret;
 	}
 
-	/* Hardware requires explicit ACK for SETUP if no follow-on data */
 	if (setup_pkt.wLength == 0) {
-		MXC_USB_Ackstat(0);
+		priv->nodata_setup = true;
 	}
 
 	/* Clear EP0 previous requests */
