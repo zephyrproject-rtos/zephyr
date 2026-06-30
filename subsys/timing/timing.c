@@ -6,6 +6,7 @@
 
 #include <stdbool.h>
 #include <zephyr/kernel.h>
+#include <zephyr/spinlock.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/timing/timing.h>
 
@@ -72,4 +73,36 @@ void timing_stop(void)
 #else
 	arch_timing_stop();
 #endif
+}
+
+uint64_t timing_timestamp_get(void)
+{
+	static struct k_spinlock lock;
+	static timing_t last;
+	static uint64_t total_cycles;
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	timing_t now = timing_counter_get();
+
+	/*
+	 * The timing counter may be narrower than 64 bits and wrap. Accumulate
+	 * the interval since the previous reading rather than the raw counter,
+	 * so the returned timestamp stays monotonic across wraps. Each interval
+	 * is a non-negative value, so the total never decreases regardless of
+	 * how often this is called: monotonicity is guaranteed unconditionally.
+	 * timing_cycles_get() resolves only a single wrap though, so if more
+	 * than one wrap happens between two calls the total undercounts the
+	 * elapsed time; the timestamp stays monotonic but loses absolute
+	 * accuracy. The spinlock keeps the shared accumulator consistent on SMP.
+	 *
+	 * The accumulator is deliberately not seeded on the first call, so
+	 * timestamps are offset by the counter value at that point rather than
+	 * starting from zero. That only shifts the origin, not monotonicity, and
+	 * avoids a first-call test on every subsequent call.
+	 */
+	total_cycles += timing_cycles_get(&last, &now);
+	last = now;
+
+	k_spin_unlock(&lock, key);
+
+	return timing_cycles_to_ns(total_cycles);
 }
