@@ -1281,3 +1281,10 @@ void bt_mesh_dfu_cli_timeout_set(int32_t t)
 {
 	dfu_cli_timeout = t;
 }
+
+void bt_mesh_dfu_cli_restore(struct bt_mesh_dfu_cli *cli,
+			    const struct bt_mesh_blob_cli_inputs *inputs)
+{
+	cli->xfer.state = STATE_APPLIED;
+	cli->blob.inputs = inputs;
+}

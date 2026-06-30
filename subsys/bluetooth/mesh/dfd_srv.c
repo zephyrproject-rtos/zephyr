@@ -1097,6 +1097,8 @@ static int dfd_srv_settings_set(const struct bt_mesh_model *mod, const char *nam
 				 &srv->targets[i].blob.n);
 	}
 
+	bt_mesh_dfu_cli_restore(&srv->dfu, &srv->inputs);
+
 	/* Slot pointer is resolved in dfd_srv_start() since the slot
 	 * settings subtree may not be loaded yet at this point.
 	 */

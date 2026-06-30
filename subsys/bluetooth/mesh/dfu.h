@@ -20,6 +20,9 @@
 					   CONFIG_BT_MESH_DFU_URI_MAXLEN)
 #define DFU_UPDATE_START_MSG_MAXLEN (12 + CONFIG_BT_MESH_DFU_METADATA_MAXLEN)
 
+void bt_mesh_dfu_cli_restore(struct bt_mesh_dfu_cli *cli,
+			    const struct bt_mesh_blob_cli_inputs *inputs);
+
 static inline uint16_t dfu_metadata_checksum(struct net_buf_simple *buf)
 {
 	/* Simple Fletcher-16 checksum to ensure duplicate start messages don't
