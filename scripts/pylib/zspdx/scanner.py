@@ -14,6 +14,11 @@ from .util import get_hashes
 
 _logger = logging.getLogger(__name__)
 
+# Quiet the reuse library's own logger as it may warn about REUSE-compliance
+# issues (e.g. malformed LICENSES/ file names) that otherwise do not
+# affect the license/copyright extraction.
+logging.getLogger("reuse").setLevel(logging.ERROR)
+
 
 # ScannerConfig contains settings used to configure how the SBOM
 # scanning should occur.
@@ -159,30 +164,40 @@ def normalize_expression(lics_concluded):
     return " AND ".join(revised)
 
 
-def get_copyright_info(file_path):
+def get_reuse_info(project, file_path):
     """
-    Scans the specified file for copyright information using REUSE tools.
+    Retrieve SPDX license expressions and copyright notices for a file using
+    the REUSE library.
 
     Arguments:
+        - project: reuse.project.Project for the file's component, rooted at
+          the component's base_dir so that REUSE.toml are found; may be None
         - file_path: path to file to scan
 
-    Returns: list of copyright statements if found; empty list if not found
+    Returns: (list of license expression strings, list of copyright strings)
     """
-    _logger.debug("  - getting copyright info for %s", file_path)
+    if project is None:
+        return [], []
+
+    _logger.debug("  - getting REUSE info for %s", file_path)
 
     try:
-        project = Project(os.path.dirname(file_path))
         infos = project.reuse_info_of(file_path)
+        licenses = []
         copyrights = []
 
         for info in infos:
+            for expr in info.spdx_expressions:
+                licenses.append(str(expr))
             for notice in info.copyright_notices:
-                copyrights.extend([notice.original])
+                copyrights.append(str(notice))
 
-        return copyrights
+        # the reuse library returns these as sets, so sort them to keep the
+        # generated SBOM reproducible across runs
+        return sorted(licenses), sorted(copyrights)
     except Exception:
-        _logger.warning("Error getting copyright info for %s", file_path, exc_info=True)
-        return []
+        _logger.warning("Error getting REUSE info for %s", file_path, exc_info=True)
+        return [], []
 
 
 def scan_sbom_graph(cfg, sbom_graph):
@@ -196,6 +211,18 @@ def scan_sbom_graph(cfg, sbom_graph):
     """
     for component in sbom_graph.components.values():
         _logger.info("scanning files in component %s", component.name)
+
+        # build the REUSE project once per component, rooted at the
+        # component's own base_dir so that REUSE.toml files are found, and
+        # reuse it for all of its files. Skip components that own no files.
+        reuse_project = None
+        if component.files and component.base_dir:
+            try:
+                reuse_project = Project.from_directory(str(component.base_dir))
+            except Exception:
+                _logger.warning(
+                    "Error building REUSE project for %s", component.base_dir, exc_info=True
+                )
 
         # first, gather File data for this component
         for f in component.files.values():
@@ -216,12 +243,26 @@ def scan_sbom_graph(cfg, sbom_graph):
 
             # get licenses for file
             expression = get_expression_data(f.path, cfg.num_lines_scanned)
+            reuse_licenses, copyrights = get_reuse_info(reuse_project, f.path)
+
             if expression:
+                # in-file SPDX-License-Identifier tag takes priority
                 if cfg.should_conclude_file_licenses:
                     f.concluded_license = expression
                 f.license_info_in_file = split_expression(expression)
+            elif reuse_licenses:
+                # fall back to REUSE.toml / .reuse/dep5 bulk annotation
+                combined = " AND ".join(
+                    f"({e})" if " " in e else e for e in reuse_licenses
+                )
+                if cfg.should_conclude_file_licenses:
+                    f.concluded_license = combined
+                f.license_info_in_file = []
+                for lic_expr in reuse_licenses:
+                    f.license_info_in_file.extend(split_expression(lic_expr))
+                f.license_info_in_file = sorted(set(f.license_info_in_file))
 
-            if copyrights := get_copyright_info(f.path):
+            if copyrights:
                 f.copyright_text = "<text>\n" + "\n".join(copyrights) + "\n</text>"
 
             # check if any custom license IDs should be flagged for SBOM
