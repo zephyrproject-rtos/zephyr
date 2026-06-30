@@ -499,7 +499,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	 * previous version that did not enforce this requirement.
 	 */
 	if ((keys->flags & BT_KEYS_AUTHENTICATED) &&
-	    !((keys->flags & BT_KEYS_OOB) || (keys->flags & BT_KEYS_SC))) {
+	    !(keys->flags & (BT_KEYS_OOB | BT_KEYS_SC))) {
 		LOG_WRN("The keys for %s are downgraded to unauthenticated as they no longer meet "
 			"authentication requirements",
 			bt_addr_le_str(&addr));
