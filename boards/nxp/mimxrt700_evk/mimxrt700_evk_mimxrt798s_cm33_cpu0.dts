@@ -143,6 +143,10 @@
 	status = "okay";
 };
 
+&freqme0 {
+	status = "okay";
+};
+
 /*
  * RT700-EVK board cm33_cpu0 uses OS timer as the kernel timer
  * In case we need to switch to SYSTICK timer, then
