@@ -104,6 +104,11 @@ config USE_INFINEON_TRNG
 	help
 	  Enable True Random Number Generator (TRNG) HAL module driver for Infineon devices
 
+config USE_INFINEON_MXCRYPTOLITE_TRNG
+	bool
+	help
+	  Enable Infineon MXCRYPTOLITE PDL TRNG hardware accelerator sources
+
 config USE_INFINEON_MXCRYPTOLITE_AES
 	bool
 	help

@@ -68,6 +68,10 @@ if(CONFIG_USE_INFINEON_TRNG)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto_core_trng_v2.c)
 endif()
 
+if(CONFIG_USE_INFINEON_MXCRYPTOLITE_TRNG)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_cryptolite_trng.c)
+endif()
+
 if(CONFIG_USE_INFINEON_MXCRYPTOLITE_SHA256)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_cryptolite_utils.c)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_cryptolite_sha256.c)
