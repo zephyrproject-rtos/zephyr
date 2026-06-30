@@ -55,14 +55,7 @@
 
 static inline uint64_t ctf_top_timestamp_get(void)
 {
-	timing_t bigbang = 0;
-	timing_t now;
-	uint64_t now_cycles;
-
-	now = timing_counter_get();
-	now_cycles = timing_cycles_get(&bigbang, &now);
-
-	return timing_cycles_to_ns(now_cycles);
+	return timing_timestamp_get();
 }
 
 #define CTF_EVENT(...)                                                                             \
