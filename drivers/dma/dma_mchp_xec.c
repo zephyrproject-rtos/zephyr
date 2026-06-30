@@ -129,8 +129,6 @@ struct dma_xec_channel {
 	uint8_t rsvd[1];
 	dma_callback_t cb;
 	void *user_data;
-	uint32_t total_req_xfr_len;
-	uint32_t total_curr_xfr_len;
 };
 
 #define DMA_XEC_CHAN_FLAGS_CB_EOB_POS		0
@@ -256,8 +254,6 @@ static int check_blocks(struct dma_xec_channel *chdata, struct dma_block_config 
 		return -EINVAL;
 	}
 
-	chdata->total_req_xfr_len = 0;
-
 	for (uint32_t i = 0; i < block_count; i++) {
 		if ((block->source_addr_adj == DMA_ADDR_ADJ_DECREMENT) ||
 		    (block->dest_addr_adj == DMA_ADDR_ADJ_DECREMENT)) {
@@ -279,8 +275,6 @@ static int check_blocks(struct dma_xec_channel *chdata, struct dma_block_config 
 			LOG_ERR("XEC DMA supports a single block; next_block must be NULL");
 			return -EINVAL;
 		}
-
-		chdata->total_req_xfr_len += block->block_size;
 	}
 
 	return 0;
@@ -372,9 +366,6 @@ static int dma_xec_configure(const struct device *dev, uint32_t channel,
 	if (xec_dma_chan_is_busy(chregs)) {
 		return -EBUSY;
 	}
-
-	chdata->total_req_xfr_len = 0;
-	chdata->total_curr_xfr_len = 0;
 
 	xec_dma_chan_clr(chregs, info);
 
@@ -502,8 +493,6 @@ static int dma_xec_reload(const struct device *dev, uint32_t channel,
 	}
 
 	chdata->mend = chdata->mstart + size;
-	chdata->total_req_xfr_len = size;
-	chdata->total_curr_xfr_len = 0;
 
 	sys_write32(chdata->mstart, chregs + XEC_DMA_CHAN_MEM_ADDR);
 	sys_write32(chdata->mend, chregs + XEC_DMA_CHAN_MEM_ADDR_END);
@@ -621,19 +610,23 @@ static int dma_xec_get_status(const struct device *dev, uint32_t channel,
 	struct dma_xec_channel *chan_data = &data->channels[channel];
 	mm_reg_t chregs = xec_chan_regs(regs, channel);
 
+	status->busy = false;
+	if (xec_dma_chan_is_busy(chregs)) {
+		status->busy = true;
+	}
+
 	chan_ctrl = sys_read32(chregs + XEC_DMA_CHAN_CTRL);
 
-	if (chan_ctrl & BIT(XEC_DMA_CHAN_CTRL_BUSY_POS)) {
-		uint32_t rem = sys_read32(chregs + XEC_DMA_CHAN_MEM_ADDR_END) -
-			       sys_read32(chregs + XEC_DMA_CHAN_MEM_ADDR);
+	status->free = 0;
+	status->write_position = 0;
+	status->read_position = 0;
 
-		status->busy = true;
-		/* number of bytes remaining in channel */
-		status->pending_length = chan_data->total_req_xfr_len - rem;
-	} else {
-		status->pending_length = chan_data->total_req_xfr_len -
-						chan_data->total_curr_xfr_len;
-		status->busy = false;
+	uint32_t msa = sys_read32(chregs + XEC_DMA_CHAN_MEM_ADDR);
+	uint32_t mea = sys_read32(chregs + XEC_DMA_CHAN_MEM_ADDR_END);
+
+	status->pending_length = 0;
+	if (mea > msa) {
+		status->pending_length = mea - msa;
 	}
 
 	if (chan_ctrl & BIT(XEC_DMA_CHAN_CTRL_DIS_HWFL_POS)) {
@@ -644,7 +637,7 @@ static int dma_xec_get_status(const struct device *dev, uint32_t channel,
 		status->dir = PERIPHERAL_TO_MEMORY;
 	}
 
-	status->total_copied = chan_data->total_curr_xfr_len;
+	status->total_copied = 0;
 
 	/* Report a latched bus error from the last transfer */
 	if (chan_data->isr_hw_status & BIT(XEC_DMA_CHAN_IES_BERR_POS)) {
@@ -759,8 +752,6 @@ static void dma_xec_irq_handler(const struct device *dev, uint32_t channel)
 	soc_ecia_girq_status_clear(info[channel].gid, info[channel].gpos);
 
 	chan_data->isr_hw_status = sts;
-	chan_data->total_curr_xfr_len +=
-		(sys_read32(regs + XEC_DMA_CHAN_MEM_ADDR) - chan_data->mstart);
 
 	if (sts & BIT(XEC_DMA_CHAN_IES_BERR_POS)) {/* Bus Error? */
 		cb_status = -EIO;
