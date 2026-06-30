@@ -33,6 +33,7 @@
 #define FAKEDRIVER0_NODEID    DT_PATH(fakedriver_e0000000)
 #define FAKEDRIVER0_NODELABEL "fake_driver_label"
 
+/** @cond INTERNAL_HIDDEN */
 /* A device without init call */
 DEVICE_DEFINE(dummy_noinit, DUMMY_NOINIT, NULL, NULL, NULL, NULL,
 	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
@@ -52,6 +53,7 @@ static int fakedeferdriver_init(const struct device *dev);
 
 DEVICE_DT_DEFINE(DT_INST(2, fakedeferdriver), fakedeferdriver_init, NULL, NULL, NULL, POST_KERNEL,
 		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+/** @endcond */
 
 /**
  * @brief Test cases to verify device objects
