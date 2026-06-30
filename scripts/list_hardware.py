@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2023 Nordic Semiconductor ASA
+# Copyright (c) 2023-2026 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
@@ -313,6 +313,17 @@ def dump_v2_archs(args):
 
 
 def dump_v2_system(args, type, system):
+    if args.soc is not None and system.name != args.soc:
+        return
+
+    if args.soc_family is not None and (type != "soc" or system.family is None or \
+       system.family != args.soc_family):
+        return
+
+    if args.soc_series is not None and (type != "soc" or system.series is None or \
+       system.series != args.soc_series):
+        return
+
     if args.cmakeformat is not None:
         info = args.cmakeformat.format(
            TYPE='TYPE;' + type,
