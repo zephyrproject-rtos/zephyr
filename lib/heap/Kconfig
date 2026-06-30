@@ -315,9 +315,9 @@ config SYS_HEAP_THREAD_STATS
 	    - Thread names are captured on first allocation.  If the thread
 	      had not yet called k_thread_name_set() at that point, the name
 	      is refreshed on the next allocation once it becomes available.
-	    - sys_heap_init() detects re-init and reuses the existing slot;
-	      for the first init it consumes one slot from the pool of size
-	      SYS_HEAP_STATS_TRACKED_HEAPS.
+	    - Each unique sys_heap pointer consumes one slot from the pool of
+	      size SYS_HEAP_STATS_TRACKED_HEAPS; re-init of the same pointer
+	      reuses the existing slot automatically.
 
 config SYS_HEAP_STATS_TRACKED_HEAPS
 	int "Maximum number of heaps with per-thread statistics"
