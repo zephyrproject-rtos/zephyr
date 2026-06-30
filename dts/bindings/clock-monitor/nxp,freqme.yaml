@@ -1,0 +1,100 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Frequency Measurement (FREQME) module.
+
+  Measures a target clock against a reference clock and returns the result
+  in Hz. The reference and target inputs are routed through the INPUTMUX
+  peripheral. Exposed through the Zephyr clock_monitor API: MEASURE
+  (one-shot) and WINDOW (continuous MIN/MAX threshold) modes are both
+  supported, built on the FREQME frequency measurement operate mode.
+
+  Selectable clock sources are declared with two container child nodes,
+  "reference-sources" and "target-sources". Each container holds one child
+  node per selectable source, pairing an INPUTMUX route with a frequency
+  provider. The child marked "default-source" is the power-on selection.
+  clock_monitor_set_source() switches between the declared sources at
+  runtime, keyed by the INPUTMUX connection cookie (see inputmux-connection).
+
+  A source's frequency provider is either "clock-frequency" (a fixed
+  constant in Hz, used verbatim) or "clocks" (queried through
+  clock_control_get_rate()). When both are present "clock-frequency" wins
+  and "clocks" is ignored. A reference source must resolve to a nonzero
+  frequency; a target source only needs one for WINDOW auto-derive
+  (window.expected_hz == 0).
+
+  The driver does not enable the selected source clocks. The application must
+  ensure the chosen reference and target clocks are running before configure()/start();
+  a source left off simply measures zero edges and is reported as CLOCK_LOST.
+
+  Place NXP_FREQME_REF_* cookies in "reference-sources" and NXP_FREQME_TAR_*
+  cookies in "target-sources"; the axis is not checked at build time. See
+  <zephyr/dt-bindings/clock-monitor/nxp-freqme.h>.
+
+compatible: "nxp,freqme"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+    description: |
+      NVIC interrupt for measurement-ready, over-range, and under-range events.
+
+  clocks:
+    required: true
+    description: |
+      The FREQME peripheral gate clock, enabled by the driver via
+      clock_control_on().
+
+child-binding:
+  description: |
+    Container for a set of selectable FREQME clock sources. Instantiated
+    twice per FREQME node, as "reference-sources" and "target-sources".
+
+  child-binding:
+    description: |
+      One selectable FREQME clock source: an INPUTMUX route paired with a
+      frequency provider. The source's status property is not consulted;
+      every child is a candidate source.
+
+    properties:
+      inputmux-connection:
+        type: phandle-array
+        specifier-space: inputmux
+        required: true
+        description: |
+          INPUTMUX route for this source, given as
+          <&inputmuxN channel connection> where:
+            - &inputmuxN is the INPUTMUX node providing the route
+            - channel is the destination index (0 for FREQME)
+            - connection is an inputmux_connection_t cookie from
+              fsl_inputmux_connections.h. Use the NXP_FREQME_REF_* /
+              NXP_FREQME_TAR_* macros in
+              <zephyr/dt-bindings/clock-monitor/nxp-freqme.h>.
+          This cookie is also the runtime clock_monitor_set_source() selector
+          for this source.
+
+      clocks:
+        type: phandle-array
+        description: |
+          Frequency provider queried through clock_control_get_rate().
+          Ignored when clock-frequency is present.
+
+      clock-frequency:
+        type: int
+        description: |
+          Fixed frequency provider in Hz, used verbatim without querying
+          clock_control. Takes precedence over clocks. Use for sources whose
+          rate the clock_control driver cannot report (e.g. an external
+          crystal).
+
+      default-source:
+        type: boolean
+        description: |
+          Marks this source as the power-on selection for its container.
+          Exactly one child of each container must set it.
