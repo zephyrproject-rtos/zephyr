@@ -131,7 +131,7 @@ static void assign_ep_desc_ptr(struct usb_device *const udev,
 {
 	uint8_t idx = USB_EP_GET_IDX(ep) & 0xF;
 
-	/* Control endpoints only need one `struct usb_host_ep`.
+	/* Control endpoints only need one `struct usb_host_pipe`.
 	 * If both directions are needed for some vendors controllers, this needs to be improved.
 	 */
 	if (USB_EP_DIR_IS_IN(ep) || (idx == 0)) {
@@ -139,12 +139,12 @@ static void assign_ep_desc_ptr(struct usb_device *const udev,
 			uint16_t mps = ptr != NULL ?
 					((struct usb_ep_descriptor *)ptr)->wMaxPacketSize : 0;
 
-			udev->ep_in[idx].control_mps = mps;
+			udev->pipe_in[idx].control_mps = mps;
 		} else {
-			udev->ep_in[idx].desc = ptr;
+			udev->pipe_in[idx].desc = ptr;
 		}
 	} else {
-		udev->ep_out[idx].desc = ptr;
+		udev->pipe_out[idx].desc = ptr;
 	}
 }
 
@@ -219,7 +219,7 @@ static void disable_all_eps(struct usb_device *const udev)
 	k_mutex_lock(&udev->mutex, K_FOREVER);
 
 	(void)disable_control_ep(udev);
-	for (uint8_t i = 1; i < ARRAY_SIZE(udev->ep_out); i++) {
+	for (uint8_t i = 1; i < ARRAY_SIZE(udev->pipe_out); i++) {
 		(void)handle_ep_op(udev, EP_OP_DOWN, USB_EP_DIR_OUT | i, NULL);
 		(void)handle_ep_op(udev, EP_OP_DOWN, USB_EP_DIR_IN | i, NULL);
 	}
@@ -434,8 +434,8 @@ static void reset_configuration(struct usb_device *const udev)
 	disable_all_eps(udev);
 
 	/* Reset all endpoint pointers */
-	memset(udev->ep_in, 0, sizeof(udev->ep_in));
-	memset(udev->ep_out, 0, sizeof(udev->ep_out));
+	memset(udev->pipe_in, 0, sizeof(udev->pipe_in));
+	memset(udev->pipe_out, 0, sizeof(udev->pipe_out));
 
 	/* Reset all interface pointers */
 	memset(udev->ifaces, 0, sizeof(udev->ifaces));

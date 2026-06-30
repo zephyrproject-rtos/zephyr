@@ -63,8 +63,11 @@ struct usb_host_interface {
 	uint8_t alternate;
 };
 
-struct usb_host_ep {
-	/** Endpoint specific info */
+/**
+ * @brief USB host pipe that represents a device endpoint
+ */
+struct usb_host_pipe {
+	/** Pipe specific info */
 	union {
 		/** Pointer to the endpoint descriptor */
 		struct usb_ep_descriptor *desc;
@@ -73,9 +76,9 @@ struct usb_host_ep {
 	};
 	/** Pointer to USB device */
 	struct usb_device *udev;
-	/** Opaque controller endpoint handle, NULL if not used */
-	void *controller_ep;
-	/** Endpoint is enabled */
+	/** Opaque controller pipe handle, NULL if not used */
+	void *controller_pipe;
+	/** Pipe is enabled */
 	uint32_t enabled : 1;
 };
 
@@ -103,10 +106,10 @@ struct usb_device {
 	void *cfg_desc;
 	/** Pointers to device interfaces */
 	struct usb_host_interface ifaces[UHC_INTERFACES_MAX + 1];
-	/** Pointers to device OUT endpoints */
-	struct usb_host_ep ep_out[16];
-	/** Pointers to device IN endpoints */
-	struct usb_host_ep ep_in[16];
+	/** Pointers to device OUT pipes */
+	struct usb_host_pipe pipe_out[16];
+	/** Pointers to device IN pipes */
+	struct usb_host_pipe pipe_in[16];
 };
 
 /**
@@ -313,8 +316,8 @@ struct uhc_api {
 	int (*bus_suspend)(const struct device *dev);
 	int (*bus_resume)(const struct device *dev);
 
-	int (*ep_enable)(const struct device *dev, struct usb_host_ep *hep);
-	int (*ep_disable)(const struct device *dev, struct usb_host_ep *hep);
+	int (*ep_enable)(const struct device *dev, struct usb_host_pipe *pipe);
+	int (*ep_disable)(const struct device *dev, struct usb_host_pipe *pipe);
 	int (*ep_enqueue)(const struct device *dev,
 			  struct uhc_transfer *const xfer);
 	int (*ep_dequeue)(const struct device *dev,

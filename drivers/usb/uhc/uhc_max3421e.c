@@ -817,18 +817,18 @@ static int max3421e_dequeue(const struct device *dev,
 	return 0;
 }
 
-static int max3421e_ep_enable(const struct device *dev, struct usb_host_ep *hep)
+static int max3421e_ep_enable(const struct device *dev, struct usb_host_pipe *pipe)
 {
 	(void)dev;
-	(void)hep;
+	(void)pipe;
 
 	return 0;
 }
 
-static int max3421e_ep_disable(const struct device *dev, struct usb_host_ep *hep)
+static int max3421e_ep_disable(const struct device *dev, struct usb_host_pipe *pipe)
 {
 	(void)dev;
-	(void)hep;
+	(void)pipe;
 
 	return 0;
 }

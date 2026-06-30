@@ -59,24 +59,24 @@ static inline int uhc_unlock_internal(const struct device *dev)
 }
 
 /**
- * @brief Get USB device endpoint context by endpoint address.
+ * @brief Get USB device pipe context by endpoint address.
  *
  * @param[in] udev Pointer to USB device instance
  * @param[in] ep   Endpoint address
  *
- * @return Pointer to IN or OUT endpoint context.
+ * @return Pointer to IN or OUT pipe context.
  */
-static inline struct usb_host_ep *uhc_get_udev_hep(struct usb_device *udev, uint8_t ep)
+static inline struct usb_host_pipe *uhc_get_udev_pipe(struct usb_device *udev, uint8_t ep)
 {
 	uint8_t idx = USB_EP_GET_IDX(ep) & 0xFU;
 
-	/* Control endpoints only need one `struct usb_host_ep`.
+	/* Control endpoints only need one `struct usb_host_pipe`.
 	 * If both directions are needed for some vendors controllers, this needs to be improved.
 	 */
 	if (USB_EP_DIR_IS_IN(ep) || (idx == 0)) {
-		return &udev->ep_in[idx];
+		return &udev->pipe_in[idx];
 	} else {
-		return &udev->ep_out[idx];
+		return &udev->pipe_out[idx];
 	}
 }
 
@@ -84,19 +84,19 @@ static inline struct usb_host_ep *uhc_get_udev_hep(struct usb_device *udev, uint
  * @brief Get USB device endpoint address by endpoint context.
  *
  * @param[in] udev Pointer to USB device instance
- * @param[in] hep  Pointer to endpoint context
+ * @param[in] pipe Pointer to pipe
  *
  * @return Endpoint address on success, negative errno code on error.
  * @retval -EINVAL if endpoint context is not found
  */
-static inline int uhc_get_udev_ep(struct usb_device *udev, struct usb_host_ep *hep)
+static inline int uhc_get_udev_ep(struct usb_device *udev, struct usb_host_pipe *pipe)
 {
 	for (size_t i = 0; i < 16; i++) {
-		if (hep == &udev->ep_in[i]) {
+		if (pipe == &udev->pipe_in[i]) {
 			return i | USB_EP_DIR_IN;
 		}
 
-		if (hep == &udev->ep_out[i]) {
+		if (pipe == &udev->pipe_out[i]) {
 			return i | USB_EP_DIR_OUT;
 		}
 	}
@@ -117,13 +117,15 @@ static inline uint16_t uhc_get_udev_ep_mps(struct usb_device *udev, uint8_t ep)
 	uint8_t idx = USB_EP_GET_IDX(ep) & 0xFU;
 
 	if (idx == 0) {
-		return udev->ep_in[0].control_mps;
+		return udev->pipe_in[0].control_mps;
 	}
 
 	if (USB_EP_DIR_IS_IN(ep)) {
-		return udev->ep_in[idx].desc != NULL ? udev->ep_in[idx].desc->wMaxPacketSize : 0;
+		return udev->pipe_in[idx].desc != NULL ?
+			udev->pipe_in[idx].desc->wMaxPacketSize : 0;
 	} else {
-		return udev->ep_out[idx].desc != NULL ? udev->ep_out[idx].desc->wMaxPacketSize : 0;
+		return udev->pipe_out[idx].desc != NULL ?
+			udev->pipe_out[idx].desc->wMaxPacketSize : 0;
 	}
 }
 
@@ -144,9 +146,9 @@ static inline uint8_t uhc_get_udev_ep_interval(struct usb_device *udev, uint8_t 
 	}
 
 	if (USB_EP_DIR_IS_IN(ep)) {
-		return udev->ep_in[idx].desc != NULL ? udev->ep_in[idx].desc->bInterval : 0;
+		return udev->pipe_in[idx].desc != NULL ? udev->pipe_in[idx].desc->bInterval : 0;
 	} else {
-		return udev->ep_out[idx].desc != NULL ? udev->ep_out[idx].desc->bInterval : 0;
+		return udev->pipe_out[idx].desc != NULL ? udev->pipe_out[idx].desc->bInterval : 0;
 	}
 }
 

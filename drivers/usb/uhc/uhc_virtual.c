@@ -592,18 +592,18 @@ static int uhc_vrt_dequeue(const struct device *dev,
 	return 0;
 }
 
-static int uhc_vrt_ep_enable(const struct device *dev, struct usb_host_ep *hep)
+static int uhc_vrt_ep_enable(const struct device *dev, struct usb_host_pipe *pipe)
 {
 	(void)dev;
-	(void)hep;
+	(void)pipe;
 
 	return 0;
 }
 
-static int uhc_vrt_ep_disable(const struct device *dev, struct usb_host_ep *hep)
+static int uhc_vrt_ep_disable(const struct device *dev, struct usb_host_pipe *pipe)
 {
 	(void)dev;
-	(void)hep;
+	(void)pipe;
 
 	return 0;
 }

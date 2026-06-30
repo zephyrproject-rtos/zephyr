@@ -218,16 +218,16 @@ usb_status_t USB_HostHelperGetPeripheralInformation(usb_device_handle deviceHand
 usb_host_pipe_handle uhc_mcux_get_hal_ep(struct usb_device *udev,
 					 uint8_t ep)
 {
-	struct usb_host_ep *hep = uhc_get_udev_hep(udev, ep);
+	struct usb_host_pipe *pipe = uhc_get_udev_pipe(udev, ep);
 
-	if (hep == NULL) {
+	if (pipe == NULL) {
 		return NULL;
 	}
 
-	return hep->controller_ep;
+	return pipe->controller_pipe;
 }
 
-static usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev, struct usb_host_ep *hep)
+static usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev, struct usb_host_pipe *pipe)
 {
 	usb_status_t status;
 	usb_host_pipe_t *mcux_ep;
@@ -236,31 +236,31 @@ static usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev, struct us
 	uint8_t idx;
 	uint8_t ep;
 
-	ep = uhc_get_udev_ep(hep->udev, hep);
+	ep = uhc_get_udev_ep(pipe->udev, pipe);
 	if (ep < 0) {
 		return NULL;
 	}
 	idx = USB_EP_GET_IDX(ep) & 0xFU;
 
 	/* USB_HostHelperGetPeripheralInformation uses this value as first parameter */
-	pipe_init.devInstance = hep->udev;
+	pipe_init.devInstance = pipe->udev;
 	pipe_init.nakCount = USB_HOST_CONFIG_MAX_NAK;
 	if (idx == 0) {
-		pipe_init.maxPacketSize = hep->control_mps;
+		pipe_init.maxPacketSize = pipe->control_mps;
 		pipe_init.endpointAddress = 0;
 		pipe_init.direction = USB_OUT;
 		pipe_init.numberPerUframe = 1;
 		pipe_init.interval = 0;
 		pipe_init.pipeType = USB_EP_TYPE_CONTROL;
 	} else {
-		pipe_init.maxPacketSize = USB_MPS_EP_SIZE(hep->desc->wMaxPacketSize);
-		pipe_init.endpointAddress = USB_EP_GET_IDX(hep->desc->bEndpointAddress);
-		pipe_init.direction = USB_EP_GET_IDX(hep->desc->bEndpointAddress) == 0 ? USB_OUT :
-				USB_EP_GET_DIR(hep->desc->bEndpointAddress) ? USB_IN : USB_OUT;
+		pipe_init.maxPacketSize = USB_MPS_EP_SIZE(pipe->desc->wMaxPacketSize);
+		pipe_init.endpointAddress = USB_EP_GET_IDX(pipe->desc->bEndpointAddress);
+		pipe_init.direction = USB_EP_GET_IDX(pipe->desc->bEndpointAddress) == 0 ? USB_OUT :
+				USB_EP_GET_DIR(pipe->desc->bEndpointAddress) ? USB_IN : USB_OUT;
 		pipe_init.numberPerUframe =
-				USB_MPS_ADDITIONAL_TRANSACTIONS(hep->desc->wMaxPacketSize);
-		pipe_init.interval = hep->desc->bInterval;
-		pipe_init.pipeType = hep->desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK;
+				USB_MPS_ADDITIONAL_TRANSACTIONS(pipe->desc->wMaxPacketSize);
+		pipe_init.interval = pipe->desc->bInterval;
+		pipe_init.pipeType = pipe->desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK;
 	}
 
 	status = priv->mcux_if->controllerOpenPipe(priv->mcux_host.controllerHandle,
@@ -270,30 +270,30 @@ static usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev, struct us
 		return NULL;
 	}
 
-	hep->controller_ep = mcux_ep;
+	pipe->controller_pipe = mcux_ep;
 	return mcux_ep;
 }
 
-int uhc_mcux_ep_enable(const struct device *dev, struct usb_host_ep *hep)
+int uhc_mcux_ep_enable(const struct device *dev, struct usb_host_pipe *pipe)
 {
-	if ((hep->desc == NULL) || (hep->udev == NULL)) {
+	if ((pipe->desc == NULL) || (pipe->udev == NULL)) {
 		return -EINVAL;
 	}
 
-	return uhc_mcux_init_hal_ep(dev, hep) == NULL ? -ENOMEM : 0;
+	return uhc_mcux_init_hal_ep(dev, pipe) == NULL ? -ENOMEM : 0;
 }
 
-int uhc_mcux_ep_disable(const struct device *dev, struct usb_host_ep *hep)
+int uhc_mcux_ep_disable(const struct device *dev, struct usb_host_pipe *pipe)
 {
 	struct uhc_mcux_data *priv = uhc_get_private(dev);
 	usb_host_pipe_t *mcux_ep;
 	usb_status_t status;
 
-	if ((hep->desc == NULL) || (hep->udev == NULL)) {
+	if ((pipe->desc == NULL) || (pipe->udev == NULL)) {
 		return -EINVAL;
 	}
 
-	mcux_ep = hep->controller_ep;
+	mcux_ep = pipe->controller_pipe;
 	if (mcux_ep == NULL) {
 		return 0;
 	}
@@ -304,6 +304,7 @@ int uhc_mcux_ep_disable(const struct device *dev, struct usb_host_ep *hep)
 		return -EIO;
 	}
 
+	pipe->controller_pipe = NULL;
 	return 0;
 }
 
