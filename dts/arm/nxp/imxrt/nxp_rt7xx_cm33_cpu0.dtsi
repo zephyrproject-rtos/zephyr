@@ -5,6 +5,7 @@
  */
 
 #include "nxp_rt7xx_common.dtsi"
+#include <zephyr/dt-bindings/clock-monitor/nxp-freqme.h>
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 #include <zephyr/dt-bindings/misc/nxp_rtxxx_dsp_ctrl.h>
 
@@ -107,6 +108,95 @@
 		compatible = "nxp,lpc-syscon";
 		reg = <0x1000 0x1000>;
 		#clock-cells = <1>;
+	};
+
+	inputmux0: inputmux@26000 {
+		compatible = "nxp,inputmux";
+		reg = <0x26000 0x1000>;
+		#inputmux-cells = <2>;
+	};
+
+	freqme0: freqme@23000 {
+		compatible = "nxp,freqme";
+		reg = <0x23000 0x10>;
+		interrupts = <124 0>;
+		clocks = <&clkctl0 MCUX_FREQME_CLK>;
+		status = "disabled";
+
+		reference-sources {
+			ref-osc {
+				default-source;
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_RT7XX_REF_OSC_CLK>;
+				clocks = <&clkctl0 MCUX_EXT_CLK>;
+			};
+
+			ref-fro1 {
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_RT7XX_REF_FRO1>;
+				clocks = <&clkctl0 MCUX_FRO_HF_CLK>;
+			};
+
+			ref-fro1-div8 {
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_RT7XX_REF_FRO1_DIV8>;
+				clock-frequency = <24000000>;
+			};
+
+			ref-osc32k {
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_RT7XX_REF_OSC32K>;
+				clock-frequency = <32768>;
+			};
+		};
+
+		target-sources {
+			/*
+			 * Targets without a clocks / clock-frequency provider are
+			 * MEASURE only (no WINDOW auto-derive): LPOSC and FRO0 have no
+			 * fixed nominal rate here; GPIO_A / GPIO_B are GPIO clock
+			 * domains.
+			 */
+			tar-fro1 {
+				default-source;
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_RT7XX_TAR_FRO1>;
+				clocks = <&clkctl0 MCUX_FRO_HF_CLK>;
+			};
+
+			tar-osc {
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_RT7XX_TAR_OSC_CLK>;
+				clocks = <&clkctl0 MCUX_EXT_CLK>;
+			};
+
+			tar-fro1-div8 {
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_RT7XX_TAR_FRO1_DIV8>;
+				clock-frequency = <24000000>;
+			};
+
+			tar-lposc {
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_RT7XX_TAR_LPOSC>;
+			};
+
+			tar-osc32k {
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_RT7XX_TAR_OSC32K>;
+				clock-frequency = <32768>;
+			};
+
+			tar-fro0 {
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_RT7XX_TAR_FRO0>;
+			};
+
+			tar-fro2 {
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_RT7XX_TAR_FRO2>;
+				clock-frequency = <300000000>;
+			};
+
+			tar-gpio-a {
+				inputmux-connection = <&inputmux0 0
+						       NXP_FREQME_RT7XX_TAR_GPIO_A_CLK>;
+			};
+
+			tar-gpio-b {
+				inputmux-connection = <&inputmux0 0
+						       NXP_FREQME_RT7XX_TAR_GPIO_B_CLK>;
+			};
+		};
 	};
 
 	ctimer0: timer@28000 {

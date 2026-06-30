@@ -483,3 +483,7 @@ dvp_20pin_interface: &video_sdma {};
 &otpc {
 	status = "okay";
 };
+
+&freqme0 {
+	status = "okay";
+};

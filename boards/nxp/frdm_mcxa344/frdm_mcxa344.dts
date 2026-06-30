@@ -233,6 +233,10 @@
 	status = "okay";
 };
 
+&freqme0 {
+	status = "okay";
+};
+
 &flexpwm0_pwm0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm0_pwm0>;
