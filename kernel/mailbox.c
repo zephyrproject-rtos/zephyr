@@ -443,23 +443,5 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 }
 
 #ifdef CONFIG_OBJ_CORE_MAILBOX
-
-static int init_mailbox_obj_core_list(void)
-{
-	/* Initialize mailbox object type */
-
-	z_obj_type_init(&obj_type_mailbox, K_OBJ_TYPE_MBOX_ID,
-			offsetof(struct k_mbox, obj_core));
-
-	/* Initialize and link statically defined mailboxes */
-
-	STRUCT_SECTION_FOREACH(k_mbox, mbox) {
-		k_obj_core_init_and_link(K_OBJ_CORE(mbox), &obj_type_mailbox);
-	}
-
-	return 0;
-}
-
-SYS_INIT(init_mailbox_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+K_OBJ_TYPE_DEFINE(obj_type_mailbox, k_mbox, K_OBJ_TYPE_MBOX_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_MAILBOX */

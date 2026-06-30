@@ -194,22 +194,5 @@ static inline int z_vrfy_k_stack_pop(struct k_stack *stack,
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_STACK
-static int init_stack_obj_core_list(void)
-{
-	/* Initialize stack object type */
-
-	z_obj_type_init(&obj_type_stack, K_OBJ_TYPE_STACK_ID,
-			offsetof(struct k_stack, obj_core));
-
-	/* Initialize and link statically defined stacks */
-
-	STRUCT_SECTION_FOREACH(k_stack, stack) {
-		k_obj_core_init_and_link(K_OBJ_CORE(stack), &obj_type_stack);
-	}
-
-	return 0;
-}
-
-SYS_INIT(init_stack_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+K_OBJ_TYPE_DEFINE(obj_type_stack, k_stack, K_OBJ_TYPE_STACK_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_STACK */

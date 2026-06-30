@@ -325,22 +325,5 @@ static inline int z_vrfy_k_mutex_unlock(struct k_mutex *mutex)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_MUTEX
-static int init_mutex_obj_core_list(void)
-{
-	/* Initialize mutex object type */
-
-	z_obj_type_init(&obj_type_mutex, K_OBJ_TYPE_MUTEX_ID,
-			offsetof(struct k_mutex, obj_core));
-
-	/* Initialize and link statically defined mutexes */
-
-	STRUCT_SECTION_FOREACH(k_mutex, mutex) {
-		k_obj_core_init_and_link(K_OBJ_CORE(mutex), &obj_type_mutex);
-	}
-
-	return 0;
-}
-
-SYS_INIT(init_mutex_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+K_OBJ_TYPE_DEFINE(obj_type_mutex, k_mutex, K_OBJ_TYPE_MUTEX_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_MUTEX */
