@@ -44,14 +44,8 @@ int sys_heap_runtime_stats_reset_max(struct sys_heap *heap)
 
 #ifdef CONFIG_SYS_HEAP_THREAD_STATS
 
-/* Pre-allocated pool of per-heap stats blocks; one slot per tracked heap. */
 static struct z_heap_stats z_heap_stats_pool[CONFIG_SYS_HEAP_STATS_TRACKED_HEAPS];
-
-/*
- * Monotonic counter indexing z_heap_stats_pool.  Incremented once per
- * sys_heap_init() call; never reclaimed.  SYS_INIT handlers run serially
- * so no synchronisation is needed.
- */
+static const struct sys_heap *z_heap_stats_heaps[CONFIG_SYS_HEAP_STATS_TRACKED_HEAPS];
 static int z_heap_stats_count;
 
 static struct k_thread *heap_stats_current_thread(void)
@@ -170,20 +164,22 @@ static void heap_stats_update(struct z_heap_stats *s,
 void z_heap_stats_on_init(struct sys_heap *heap)
 {
 	struct z_heap *h = heap->heap;
+	int i;
 
-	/*
-	 * Detect re-init: if a stats slot was assigned on a previous init of
-	 * this heap buffer, reuse it after zeroing rather than consuming a
-	 * new slot from the pool.
-	 */
-	if (h->stats != NULL) {
-		memset(h->stats, 0, sizeof(*h->stats));
-		return;
+	for (i = 0; i < z_heap_stats_count; i++) {
+		if (z_heap_stats_heaps[i] == heap) {
+			memset(&z_heap_stats_pool[i], 0,
+			       sizeof(z_heap_stats_pool[i]));
+			h->stats = &z_heap_stats_pool[i];
+			return;
+		}
 	}
 
 	if (z_heap_stats_count < CONFIG_SYS_HEAP_STATS_TRACKED_HEAPS) {
-		h->stats = &z_heap_stats_pool[z_heap_stats_count++];
-		memset(h->stats, 0, sizeof(*h->stats));
+		i = z_heap_stats_count++;
+		z_heap_stats_heaps[i] = heap;
+		memset(&z_heap_stats_pool[i], 0, sizeof(z_heap_stats_pool[i]));
+		h->stats = &z_heap_stats_pool[i];
 	} else {
 		LOG_WRN("sys_heap: stats pool exhausted, heap %p untracked",
 			(void *)h);
