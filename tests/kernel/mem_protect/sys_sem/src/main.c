@@ -154,10 +154,21 @@ static void sem_multiple_threads_wait_helper(void *p1, void *p2, void *p3)
  *
  * @see sys_sem_init()
  */
-#ifdef CONFIG_USERSPACE
 ZTEST(sys_sem, test_basic_sem_test)
 {
 	int32_t ret_value;
+
+	if (!IS_ENABLED(CONFIG_USERSPACE)) {
+		/*
+		 * The argument validation exercised below (returning -EINVAL)
+		 * only exists in the userspace sys_sem_init(). The supervisor
+		 * build is a thin k_sem wrapper that performs no validation, so
+		 * skip rather than compile the case out: keeping it always
+		 * compiled lets twister observe a reported result on
+		 * non-userspace platforms instead of a missing (None) status.
+		 */
+		ztest_test_skip();
+	}
 
 	ret_value = sys_sem_init(NULL, SEM_INIT_VAL, SEM_MAX_VAL);
 	zassert_true(ret_value == -EINVAL,
@@ -179,7 +190,6 @@ ZTEST(sys_sem, test_basic_sem_test)
 	sys_sem_take(&simple_sem, SEM_TIMEOUT);
 	sys_sem_give(&simple_sem);
 }
-#endif
 
 /**
  * @brief Verify sys_sem_give() from an ISR increments the count.
