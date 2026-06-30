@@ -148,23 +148,5 @@ int z_vrfy_k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_CONDVAR
-static int init_condvar_obj_core_list(void)
-{
-	/* Initialize condvar object type */
-
-	z_obj_type_init(&obj_type_condvar, K_OBJ_TYPE_CONDVAR_ID,
-			offsetof(struct k_condvar, obj_core));
-
-	/* Initialize and link statically defined condvars */
-
-	STRUCT_SECTION_FOREACH(k_condvar, condvar) {
-		k_obj_core_init_and_link(K_OBJ_CORE(condvar),
-					 &obj_type_condvar);
-	}
-
-	return 0;
-}
-
-SYS_INIT(init_condvar_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+K_OBJ_TYPE_DEFINE(obj_type_condvar, k_condvar, K_OBJ_TYPE_CONDVAR_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_CONDVAR */

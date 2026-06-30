@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/init.h>
 #include <zephyr/kernel/obj_core.h>
 
 static struct k_spinlock  lock;
@@ -46,6 +47,34 @@ void k_obj_core_init_and_link(struct k_obj_core *obj_core,
 	k_obj_core_init(obj_core, type);
 	k_obj_core_link(obj_core);
 }
+
+static int z_obj_core_init_all(void)
+{
+	STRUCT_SECTION_FOREACH(k_obj_core_desc, desc) {
+		z_obj_type_init(desc->type, desc->type_id,
+				desc->obj_core_offset);
+#ifdef CONFIG_OBJ_CORE_STATS
+		if (desc->stats_desc != NULL) {
+			k_obj_type_stats_init(desc->type, desc->stats_desc);
+		}
+#endif /* CONFIG_OBJ_CORE_STATS */
+
+		/* Initialize and link every statically defined object */
+
+		for (const uint8_t *obj = desc->objs_start;
+		     obj < (const uint8_t *)desc->objs_end;
+		     obj += desc->obj_size) {
+			k_obj_core_init_and_link((struct k_obj_core *)
+						 (obj + desc->obj_core_offset),
+						 desc->type);
+		}
+	}
+
+	return 0;
+}
+
+SYS_INIT(z_obj_core_init_all, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 void k_obj_core_unlink(struct k_obj_core *obj_core)
 {

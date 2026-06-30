@@ -450,46 +450,10 @@ static inline void *z_vrfy_k_queue_peek_tail(struct k_queue *queue)
 
 #ifdef CONFIG_OBJ_CORE_FIFO
 struct k_obj_type _obj_type_fifo;
-
-static int init_fifo_obj_core_list(void)
-{
-	/* Initialize fifo object type */
-
-	z_obj_type_init(&_obj_type_fifo, K_OBJ_TYPE_FIFO_ID,
-			offsetof(struct k_fifo, obj_core));
-
-	/* Initialize and link statically defined fifos */
-
-	STRUCT_SECTION_FOREACH(k_fifo, fifo) {
-		k_obj_core_init_and_link(K_OBJ_CORE(fifo), &_obj_type_fifo);
-	}
-
-	return 0;
-}
-
-SYS_INIT(init_fifo_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+K_OBJ_TYPE_DEFINE(_obj_type_fifo, k_fifo, K_OBJ_TYPE_FIFO_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_FIFO */
 
 #ifdef CONFIG_OBJ_CORE_LIFO
 struct k_obj_type _obj_type_lifo;
-
-static int init_lifo_obj_core_list(void)
-{
-	/* Initialize lifo object type */
-
-	z_obj_type_init(&_obj_type_lifo, K_OBJ_TYPE_LIFO_ID,
-			offsetof(struct k_lifo, obj_core));
-
-	/* Initialize and link statically defined lifo */
-
-	STRUCT_SECTION_FOREACH(k_lifo, lifo) {
-		k_obj_core_init_and_link(K_OBJ_CORE(lifo), &_obj_type_lifo);
-	}
-
-	return 0;
-}
-
-SYS_INIT(init_lifo_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+K_OBJ_TYPE_DEFINE(_obj_type_lifo, k_lifo, K_OBJ_TYPE_LIFO_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_LIFO */
