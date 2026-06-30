@@ -89,7 +89,7 @@ static int gpio_aw9523b_pin_configure(const struct device *dev, gpio_pin_t pin, 
 		}
 	}
 
-	if ((flags & GPIO_INPUT) && ((flags & GPIO_PULL_UP) || (flags & GPIO_PULL_DOWN))) {
+	if ((flags & GPIO_INPUT) && (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN))) {
 		return -ENOTSUP;
 	}
 

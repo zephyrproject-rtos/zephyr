@@ -319,7 +319,7 @@ static int gpio_rza2m_pin_configure(const struct device *port_dev, gpio_pin_t pi
 		return -EINVAL;
 	}
 
-	if ((flags & GPIO_PULL_UP) || (flags & GPIO_PULL_DOWN)) {
+	if (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
 		return -ENOTSUP;
 	}
 
