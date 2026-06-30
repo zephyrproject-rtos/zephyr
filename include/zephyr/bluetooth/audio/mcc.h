@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCC_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCC_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCC_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCC_H_
 
 /**
  * @brief Bluetooth Media Control Client (MCC) interface
@@ -999,4 +999,4 @@ struct bt_ots_client *bt_mcc_otc_inst(struct bt_conn *conn);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCC__ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCC_H_ */
