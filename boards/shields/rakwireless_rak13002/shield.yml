@@ -1,0 +1,6 @@
+shield:
+  name: rakwireless_rak13002
+  full_name: RAK13002 WisBlock IO Module
+  vendor: rakwireless
+  supported_features:
+    - gpio

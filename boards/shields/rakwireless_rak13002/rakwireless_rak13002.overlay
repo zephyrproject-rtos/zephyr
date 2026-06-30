@@ -1,0 +1,42 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+#include <zephyr/dt-bindings/gpio/wisblock-io-slot.h>
+
+/ {
+	zephyr,user {
+		/* J2 GPIOs */
+		io1-gpios = <&wisblock_io WISBLOCK_IO_IO1 0>;
+		io3-gpios = <&wisblock_io WISBLOCK_IO_IO3 0>;
+		io4-gpios = <&wisblock_io WISBLOCK_IO_IO4 0>;
+		io5-gpios = <&wisblock_io WISBLOCK_IO_IO5 0>;
+		io6-gpios = <&wisblock_io WISBLOCK_IO_IO6 0>;
+		io7-gpios = <&wisblock_io WISBLOCK_IO_IO7 0>;
+
+		/* J3 GPIOs */
+		scl1-gpios = <&wisblock_io WISBLOCK_IO_I2C1_SCL 0>;
+		sda1-gpios = <&wisblock_io WISBLOCK_IO_I2C1_SDA 0>;
+		scl2-gpios = <&wisblock_io WISBLOCK_IO_I2C2_SCL 0>;
+		sda2-gpios = <&wisblock_io WISBLOCK_IO_I2C2_SDA 0>;
+		led1-gpios = <&wisblock_io WISBLOCK_IO_LED1 0>;
+		led2-gpios = <&wisblock_io WISBLOCK_IO_LED2 0>;
+
+		/* J4 GPIOs */
+		cs-gpios = <&wisblock_io WISBLOCK_IO_SPI_CS 0>;
+		sdi-gpios = <&wisblock_io WISBLOCK_IO_SPI_MISO 0>;
+		sdo-gpios = <&wisblock_io WISBLOCK_IO_SPI_MOSI 0>;
+		sck-gpios = <&wisblock_io WISBLOCK_IO_SPI_CLK 0>;
+		/* RST */
+		sw1-gpios = <&wisblock_io WISBLOCK_IO_SW1 0>;
+
+		/* J5 GPIOs */
+		txd0-gpios = <&wisblock_io WISBLOCK_IO_TXD0 0>;
+		rxd0-gpios = <&wisblock_io WISBLOCK_IO_RXD0 0>;
+		txd1-gpios = <&wisblock_io WISBLOCK_IO_TXD1 0>;
+		rxd1-gpios = <&wisblock_io WISBLOCK_IO_RXD1 0>;
+		ain0-gpios = <&wisblock_io WISBLOCK_IO_AIN0 0>;
+		ain1-gpios = <&wisblock_io WISBLOCK_IO_AIN1 0>;
+	};
+};
