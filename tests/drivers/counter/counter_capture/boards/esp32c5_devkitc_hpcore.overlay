@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/*
+ * The capture input is driven and captured on the same pad (GPIO2). A PWM
+ * channel drives the pad and the GPIO matrix loops it back to the ETM capture
+ * event, so no external wire is required.
+ */
+
+/ {
+	zephyr,user {
+		pwms = <&ledc0 0 PWM_USEC(100) PWM_POLARITY_NORMAL>;
+	};
+
+	counter_loopback_0: counter_loopback {
+		compatible = "test-counter-capture";
+		test-counter-captures = <&capture 0 0>;
+	};
+};
+
+&pinctrl {
+	ledc0_default: ledc0_default {
+		group1 {
+			pinmux = <LEDC_CH0_GPIO2>;
+			/* Keep the input path live so the same pad feeds the capture event. */
+			input-enable;
+		};
+	};
+};
+
+&ledc0 {
+	pinctrl-0 = <&ledc0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel0@0 {
+		reg = <0x0>;
+		timer = <0>;
+	};
+};
+
+&timer0 {
+	status = "okay";
+
+	capture: counter {
+		status = "okay";
+		#counter-capture-cells = <2>;
+		capture-gpios = <&gpio0 2 0>;
+	};
+};
