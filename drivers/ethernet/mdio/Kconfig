@@ -26,6 +26,7 @@ config MDIO_SHELL
 # overridden (by defining symbols in multiple locations)
 # zephyr-keep-sorted-start
 rsource "Kconfig.adin2111"
+rsource "Kconfig.bcmgenet"
 rsource "Kconfig.dwcxgmac"
 rsource "Kconfig.dwmac"
 rsource "Kconfig.esp32"
