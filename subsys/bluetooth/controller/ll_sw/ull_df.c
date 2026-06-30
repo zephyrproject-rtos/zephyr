@@ -820,7 +820,7 @@ uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types, uint8_t
 	}
 
 	/* Check antenna switching pattern only whether CTE TX in AoD mode is allowed */
-	if (((cte_types & BT_HCI_LE_AOD_CTE_RSP_1US) || (cte_types & BT_HCI_LE_AOD_CTE_RSP_2US)) &&
+	if ((cte_types & (BT_HCI_LE_AOD_CTE_RSP_1US | BT_HCI_LE_AOD_CTE_RSP_2US)) &&
 	    (switch_pattern_len < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
 	     switch_pattern_len > BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN || !ant_ids)) {
 		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
