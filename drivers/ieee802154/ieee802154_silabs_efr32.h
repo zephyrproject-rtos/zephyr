@@ -234,6 +234,10 @@ struct sl_802154_data {
 	bool promiscuous;
 
 	bool pan_coordinator;
+
+#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
+	bool testing;
+#endif
 };
 
 /* Provided by the Simplicity SDK OpenThread blob, or by blob_stubs.c when
