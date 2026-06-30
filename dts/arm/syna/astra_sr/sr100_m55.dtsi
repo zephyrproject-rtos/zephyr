@@ -183,12 +183,13 @@
 		};
 
 		usb0: usb@50100000 {
-			compatible = "snps,dwc2";
+			compatible = "syna,sr100-usb", "snps,dwc2";
 			reg = <0x50100000 0xffff>;
 			interrupts = <48 0>;
 			num-out-eps = <8>;
 			num-in-eps = <8>;
 			clocks = <&gcr SYNA_USB_CLK>;
+			resets = <&reset SYNA_USB_RST>;
 			ghwcfg1 = <0x00000000>;
 			ghwcfg2 = <0x02882054>; // 8 endpoints, dynamic sizing
 			ghwcfg4 = <0xe2003e20>; // 9 in endpoints, desc-DMA
