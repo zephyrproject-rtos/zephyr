@@ -107,7 +107,7 @@ static inline int usbh_xfer_enqueue(const struct usb_device *udev,
 {
 	struct usbh_context *const ctx = udev->ctx;
 
-	return uhc_ep_enqueue(ctx->dev, xfer);
+	return uhc_pipe_enqueue(ctx->dev, xfer);
 }
 
 static inline int usbh_xfer_dequeue(const struct usb_device *udev,
@@ -115,7 +115,7 @@ static inline int usbh_xfer_dequeue(const struct usb_device *udev,
 {
 	struct usbh_context *const ctx = udev->ctx;
 
-	return uhc_ep_dequeue(ctx->dev, xfer);
+	return uhc_pipe_dequeue(ctx->dev, xfer);
 }
 
 #endif /* ZEPHYR_INCLUDE_USBH_DEVICE_H */

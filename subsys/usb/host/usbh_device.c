@@ -167,14 +167,14 @@ static int handle_ep_op(struct usb_device *const udev,
 		old_desc_prt = usbh_desc_get_endpoint(udev, ep);
 		assign_ep_desc_ptr(udev, ep, ep_desc);
 
-		err = uhc_ep_enable(uhs_ctx->dev, udev, ep);
+		err = uhc_pipe_enable(uhs_ctx->dev, udev, ep);
 		if (err != 0) {
 			assign_ep_desc_ptr(udev, ep, (void *const)old_desc_prt);
 			return err;
 		}
 		break;
 	case EP_OP_DOWN:
-		err = uhc_ep_disable(uhs_ctx->dev, udev, ep);
+		err = uhc_pipe_disable(uhs_ctx->dev, udev, ep);
 		if (err != 0) {
 			return err;
 		}
