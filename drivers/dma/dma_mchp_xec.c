@@ -191,6 +191,18 @@ static void xec_dma_chan_clr(mm_reg_t chregs, const struct dma_xec_irq_info *inf
 	soc_ecia_girq_status_clear(info->gid, info->gpos);
 }
 
+static bool xec_dma_chan_is_busy(mm_reg_t chregs)
+{
+	uint32_t ctrl = sys_read32(chregs + XEC_DMA_CHAN_CTRL);
+
+	if ((ctrl & (BIT(XEC_DMA_CHAN_CTRL_HWFL_RUN_POS) | BIT(XEC_DMA_CHAN_CTRL_SWFL_GO_POS))) &&
+	    (ctrl & BIT(XEC_DMA_CHAN_CTRL_BUSY_POS))) {
+		return true;
+	}
+
+	return false;
+}
+
 static int is_dma_config_valid(const struct device *dev, struct dma_config *config)
 {
 	const struct dma_xec_config * const devcfg = dev->config;
@@ -357,7 +369,7 @@ static int dma_xec_configure(const struct device *dev, uint32_t channel,
 	struct dma_xec_channel *chdata = &data->channels[channel];
 
 	/* Do not reconfigure a channel with a transfer in progress */
-	if (sys_test_bit(chregs + XEC_DMA_CHAN_CTRL, XEC_DMA_CHAN_CTRL_BUSY_POS)) {
+	if (xec_dma_chan_is_busy(chregs)) {
 		return -EBUSY;
 	}
 
@@ -470,7 +482,7 @@ static int dma_xec_reload(const struct device *dev, uint32_t channel,
 	struct dma_xec_channel *chdata = &data->channels[channel];
 	mm_reg_t chregs = xec_chan_regs(regs, channel);
 
-	if (sys_read32(chregs + XEC_DMA_CHAN_CTRL) & BIT(XEC_DMA_CHAN_CTRL_BUSY_POS)) {
+	if (xec_dma_chan_is_busy(chregs)) {
 		return -EBUSY;
 	}
 
@@ -513,7 +525,7 @@ static int dma_xec_start(const struct device *dev, uint32_t channel)
 
 	mm_reg_t chregs = xec_chan_regs(regs, channel);
 
-	if (sys_read32(chregs + XEC_DMA_CHAN_CTRL) & BIT(XEC_DMA_CHAN_CTRL_BUSY_POS)) {
+	if (xec_dma_chan_is_busy(chregs)) {
 		return -EBUSY;
 	}
 
