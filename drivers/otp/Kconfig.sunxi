@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Khai Do
+# SPDX-License-Identifier: Apache-2.0
+
+config OTP_SUNXI
+	bool "Allwinner sunXi SID/eFuse driver"
+	default y
+	depends on DT_HAS_ALLWINNER_SUNXI_SID_ENABLED
+	help
+	  Enable Allwinner sunXi Security ID (SID) eFuse driver.
