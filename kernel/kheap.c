@@ -5,11 +5,11 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/init.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/iterable_sections.h>
 /* private kernel APIs */
 #include <ksched.h>
+#include <kernel_internal.h>
 #include <wait_q.h>
 
 int k_heap_array_get(struct k_heap **heap)
@@ -32,15 +32,14 @@ void k_heap_init(struct k_heap *heap, void *mem, size_t bytes)
 	SYS_PORT_TRACING_OBJ_INIT(k_heap, heap);
 }
 
-static int statics_init(void)
+static void statics_init(void)
 {
 	STRUCT_SECTION_FOREACH(k_heap, heap) {
 		k_heap_init(heap, heap->heap.init_mem, heap->heap.init_bytes);
 	}
-	return 0;
 }
 
-SYS_INIT_NAMED(statics_init_pre, statics_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+K_KERNEL_INIT_PRE(statics_init);
 
 typedef void * (sys_heap_allocator_t)(struct sys_heap *heap, size_t align, size_t bytes);
 
