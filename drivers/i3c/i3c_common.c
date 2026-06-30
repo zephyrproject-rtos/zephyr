@@ -412,8 +412,9 @@ int i3c_sec_get_basic_info(const struct device *dev, uint8_t dynamic_addr, uint8
 			i3c_detach_i3c_device(&temp_desc);
 			return -ENOMEM;
 		}
+		desc->bus = dev;
 		desc->pid = id.pid;
-		temp_desc.static_addr = (uint16_t)static_addr;
+		desc->static_addr = static_addr;
 	}
 	desc->dynamic_addr = dynamic_addr;
 	desc->bcr = bcr;
@@ -448,7 +449,7 @@ int i3c_sec_i2c_attach(const struct device *dev, uint8_t static_addr, uint8_t lv
 		if (!i2c_desc) {
 			return -ENOMEM;
 		}
-		*(const struct device **)&i2c_desc->bus = dev;
+		i2c_desc->bus = dev;
 		i2c_desc->addr = (uint16_t)static_addr;
 		i2c_desc->lvr = lvr;
 	}
