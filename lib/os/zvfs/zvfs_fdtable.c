@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 Linaro Limited
- * Copyright (c) 2024 Tenstorrent AI ULC
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  * Copyright (c) 2025 Antmicro
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -22,14 +22,11 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/fdtable.h>
+#include <zephyr/sys/internal/fdtable_priv.h>
 #include <zephyr/sys/internal/kobject_internal.h>
 #include <zephyr/sys/speculation.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/fs/fs.h>
-
-K_MEM_SLAB_DEFINE_TYPE(file_desc_slab, struct fs_file_t, ZVFS_OPEN_SIZE);
-
 #ifdef CONFIG_ZVFS_RESERVE_STDIO_FDS
 static const struct fd_op_vtable stdinout_fd_op_vtable;
 BUILD_ASSERT(ZVFS_OPEN_SIZE >= 3, "ZVFS_OPEN_SIZE >= 3 to reserve stdin/stdout/stderr fds");
@@ -190,6 +187,7 @@ static int zvfs_dup_entry_locked(struct fd_entry *src, int newfd)
 	fdtable[newfd].vtable = src->vtable;
 	fdtable[newfd].mode = src->mode;
 	fdtable[newfd].offset = src->offset;
+	fdtable[newfd].fd_flags = 0;
 	k_mutex_init(&fdtable[newfd].lock);
 	k_condvar_init(&fdtable[newfd].cond);
 
@@ -433,6 +431,7 @@ int zvfs_reserve_fd(void)
 		fdtable[fd].obj = NULL;
 		fdtable[fd].vtable = NULL;
 		fdtable[fd].offset = 0;
+		fdtable[fd].fd_flags = 0;
 		k_mutex_init(&fdtable[fd].lock);
 		k_condvar_init(&fdtable[fd].cond);
 	}

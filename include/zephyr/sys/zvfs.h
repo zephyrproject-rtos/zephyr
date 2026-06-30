@@ -105,15 +105,17 @@ __syscall int zvfs_ftruncate(int fd, off_t length);
 /**
  * @brief Dispatch a control request on a file descriptor.
  *
- * Callers marshal arguments before dispatching through the fd vtable.
+ * @p arg is command-specific: an @c int for most requests, or a pointer to
+ * @ref zvfs_flock for record-lock commands. Commands and flag values use ZVFS
+ * constants (see @ref fdtable.h), not POSIX @c fcntl.h values.
  *
  * @param fd File descriptor.
- * @param cmd Control command.
- * @param args Command arguments.
+ * @param cmd ZVFS control command.
+ * @param arg Command argument.
  *
  * @return Command-specific result, or -1 on error (errno is set).
  */
-int zvfs_fcntl(int fd, int cmd, va_list args);
+__syscall int zvfs_fcntl(int fd, int cmd, uintptr_t arg);
 
 /**
  * @brief Duplicate a file descriptor to the lowest available slot >= minfd.

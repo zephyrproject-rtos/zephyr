@@ -33,8 +33,13 @@
 #define ZVFS_O_NONBLOCK 0x4000
 
 #define ZVFS_F_DUPFD 0
+#define ZVFS_F_GETFD 1
+#define ZVFS_F_SETFD 2
 #define ZVFS_F_GETFL 3
 #define ZVFS_F_SETFL 4
+#define ZVFS_F_DUPFD_CLOEXEC 10
+
+#define ZVFS_FD_CLOEXEC 1
 
 /* File mode bits */
 #define ZVFS_MODE_IFMT   0170000

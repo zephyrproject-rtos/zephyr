@@ -24,6 +24,7 @@ struct fd_entry {
 	struct k_condvar cond;
 	size_t offset;
 	uint32_t mode;
+	uint8_t fd_flags;
 };
 
 struct fd_entry *zvfs_fd_entry_get(int fd);
