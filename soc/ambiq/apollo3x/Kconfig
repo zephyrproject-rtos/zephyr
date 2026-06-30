@@ -11,5 +11,6 @@ config SOC_SERIES_APOLLO3X
 	select HAS_SWO
 	select AMBIQ_HAL
 	select HAS_PM
+	select PINCTRL
 	select PM_STATE_SET_IRQ_UNLOCKED
 	select SOC_EARLY_INIT_HOOK
