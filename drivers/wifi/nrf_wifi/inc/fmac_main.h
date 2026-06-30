@@ -119,6 +119,7 @@ struct nrf_wifi_ctx_zep {
 	struct nrf_wifi_vif_ctx_zep vif_ctx_zep[MAX_NUM_VIFS];
 #ifdef CONFIG_NRF70_UTIL
 	struct rpu_conf_params conf_params;
+	unsigned int extended_sleep_sec;
 #endif /* CONFIG_NRF70_UTIL */
 #endif /* CONFIG_NRF70_RADIO_TEST */
 	unsigned char *extended_capa, *extended_capa_mask;
