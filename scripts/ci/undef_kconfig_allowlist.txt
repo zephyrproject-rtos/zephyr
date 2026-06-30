@@ -137,6 +137,8 @@ SHIFT
 SINGLE_APPLICATION_SLOT  # Used in sysbuild for MCUboot configuration
 SINGLE_APPLICATION_SLOT_RAM_LOAD  # Used in sysbuild for MCUboot configuration
 SOC_SDKNG_UNSUPPORTED  # Used in modules/hal_nxp/mcux/CMakeLists.txt
+RL_API_HAS_ZEROCOPY  # Provided by RPMSG-Lite integration Kconfig (hal_nxp)
+RL_USE_STATIC_API  # Provided by RPMSG-Lite integration Kconfig (hal_nxp)
 SOC_SERIES_  # Used as regex in scripts/utils/board_v1_to_v2.py
 SOC_WATCH  # Issue 13749
 SOME_BOOL
