@@ -517,7 +517,7 @@
 		};
 
 		lptim1: timers@46004400 {
-			compatible = "st,stm32-lptim";
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x46004400 0x400>;
@@ -529,7 +529,7 @@
 		};
 
 		lptim2: timers@40009400 {
-			compatible = "st,stm32-lptim";
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40009400 0x400>;
