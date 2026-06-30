@@ -69,6 +69,9 @@ tests:
       # In S-mode only SSIP (IRQ 1) can be triggered from software; the
       # shared interrupt test requires two independent triggerable IRQ lines.
       - qemu_riscv64/qemu_virt_riscv64/smode
+      # On it8xxx2_evb, current trigger_irq implementation of RISC-V architecture
+      # does not trigger interrupts
+      - it8xxx2_evb
     arch_exclude:
       # test needs 2 working interrupt lines
       - xtensa
