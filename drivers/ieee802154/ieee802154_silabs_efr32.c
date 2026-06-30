@@ -1990,10 +1990,7 @@ static int silabs_efr32_filter(const struct device *dev, bool set, enum ieee8021
 {
 	struct sl_802154_data *data = dev->data;
 
-	if (!set) {
-		return -ENOTSUP;
-	}
-	if (filter == NULL) {
+	if (set && filter == NULL) {
 		return -EINVAL;
 	}
 	if (!data->radio_data.rail_initialized) {
@@ -2001,17 +1998,22 @@ static int silabs_efr32_filter(const struct device *dev, bool set, enum ieee8021
 	}
 	switch (type) {
 	case IEEE802154_FILTER_TYPE_PAN_ID:
-		data->pan_id = filter->pan_id;
+		data->pan_id = set ? filter->pan_id : IEEE802154_BROADCAST_PAN_ID;
 		sl_rail_ieee802154_set_pan_id(data->radio_data.rail_handle, filter->pan_id, 0);
 		break;
 	case IEEE802154_FILTER_TYPE_SHORT_ADDR:
-		data->short_addr = filter->short_addr;
+		data->short_addr = set ? filter->short_addr : IEEE802154_NO_SHORT_ADDRESS_ASSIGNED;
 		sl_rail_ieee802154_set_short_address(data->radio_data.rail_handle,
 						     filter->short_addr, 0);
 		break;
 	case IEEE802154_FILTER_TYPE_IEEE_ADDR:
-		sys_memcpy_swap(data->ext_addr, filter->ieee_addr, IEEE802154_EXT_ADDR_LENGTH);
-		sl_rail_ieee802154_set_long_address(data->radio_data.rail_handle, filter->ieee_addr,
+		uint8_t long_addr[8] = {0};
+
+		if (set) {
+			memcpy(long_addr, filter->ieee_addr, sizeof(long_addr));
+		}
+		sys_memcpy_swap(data->ext_addr, long_addr, IEEE802154_EXT_ADDR_LENGTH);
+		sl_rail_ieee802154_set_long_address(data->radio_data.rail_handle, long_addr,
 						    0);
 		break;
 	default:
@@ -2528,11 +2530,19 @@ static int silabs_efr32_continuous_carrier(const struct device *dev)
 	struct sl_802154_data *data = dev->data;
 	sl_rail_status_t ret;
 
+	/* Check if the driver is already in TESTING state */
+	if (data->testing == true) {
+		return -EALREADY;
+	}
+
 	ret = sl_rail_start_tx_stream(data->radio_data.rail_handle, data->current_channel,
 				      SL_RAIL_STREAM_CARRIER_WAVE, tx_options);
 	if (ret != SL_RAIL_STATUS_NO_ERROR) {
 		return -EIO;
 	}
+	/* Update driver state */
+	data->testing = true;
+
 	return 0;
 }
 
