@@ -61,7 +61,44 @@ static size_t minimal_zvfs_stream_write(int fd, const void *ptr, size_t nbyte)
 
 	return written;
 }
+
+static size_t minimal_zvfs_stream_read(int fd, void *ptr, size_t nbyte)
+{
+	char *p = ptr;
+	size_t nread = 0;
+
+	while (nread < nbyte) {
+		long ret = zvfs_read(fd, p + nread, nbyte - nread);
+
+		if (ret <= 0) {
+			break;
+		}
+
+		nread += ret;
+	}
+
+	return nread;
+}
 #endif
+
+static size_t minimal_stream_read(void *ptr, size_t nbyte, FILE *stream)
+{
+#if defined(CONFIG_ZVFS)
+	int fd = zvfs_libc_fileno(stream);
+
+	if (fd < 3) {
+		return 0;
+	}
+
+	return minimal_zvfs_stream_read(fd, ptr, nbyte);
+#else
+	ARG_UNUSED(ptr);
+	ARG_UNUSED(nbyte);
+	ARG_UNUSED(stream);
+#endif
+
+	return 0;
+}
 
 static size_t minimal_stream_write(const void *ptr, size_t nbyte, FILE *stream)
 {
@@ -173,6 +210,37 @@ size_t fwrite(const void *ZRESTRICT ptr, size_t size, size_t nitems,
 			  FILE *ZRESTRICT stream)
 {
 	return zephyr_fwrite(ptr, size, nitems, stream);
+}
+
+size_t z_impl_zephyr_fread(void *ZRESTRICT ptr, size_t size, size_t nitems,
+			   FILE *ZRESTRICT stream)
+{
+	size_t nbyte;
+	size_t nread;
+
+	if ((nitems == 0) || (size == 0)) {
+		return 0;
+	}
+
+	nbyte = size * nitems;
+	nread = minimal_stream_read(ptr, nbyte, stream);
+
+	return nread / size;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline size_t z_vrfy_zephyr_fread(void *ZRESTRICT ptr, size_t size,
+					 size_t nitems, FILE *ZRESTRICT stream)
+{
+	K_OOPS(K_SYSCALL_MEMORY_ARRAY_WRITE(ptr, nitems, size));
+	return z_impl_zephyr_fread(ptr, size, nitems, stream);
+}
+#include <zephyr/syscalls/zephyr_fread_mrsh.c>
+#endif
+
+size_t fread(void *ZRESTRICT ptr, size_t size, size_t nitems, FILE *ZRESTRICT stream)
+{
+	return zephyr_fread(ptr, size, nitems, stream);
 }
 
 int fflush(FILE *stream)

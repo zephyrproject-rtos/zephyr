@@ -40,6 +40,9 @@ __syscall int zephyr_fputc(int c, FILE * stream);
 
 __syscall size_t zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
 				size_t nitems, FILE *ZRESTRICT stream);
+
+__syscall size_t zephyr_fread(void *ZRESTRICT ptr, size_t size, size_t nitems,
+			      FILE *ZRESTRICT stream);
 #endif
 
 #endif /* CONFIG_NEWLIB_LIBC */
