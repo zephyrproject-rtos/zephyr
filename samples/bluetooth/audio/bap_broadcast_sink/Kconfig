@@ -8,7 +8,7 @@ config SCAN_OFFLOAD
 	default y
 	# enable PAST support if we can
 	select BT_PER_ADV_SYNC_TRANSFER_RECEIVER if (!HAS_BT_CTLR || \
-						     BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT)
+							BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT)
 	help
 	  If set to true, the sample will start advertising connectable for
 	  Broadcast Assistants.
@@ -49,7 +49,8 @@ config ENABLE_LC3
 	# By default let's enable it in the platforms we know are capable of supporting it
 	default y
 	depends on CPU_HAS_FPU && \
-		(ARCH_POSIX || SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF5340_CPUAPP || SOC_MIMXRT1062 || SOC_SF32LB525UC6)
+		(ARCH_POSIX || SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF5340_CPUAPP || \
+			SOC_MIMXRT1062 || SOC_SF32LB525UC6)
 	select LIBLC3
 	select FPU
 
@@ -78,7 +79,8 @@ config USE_SPECIFIC_BROADCAST_CHANNEL
 	default y
 	depends on USE_USB_AUDIO_OUTPUT
 	help
-	  Enables the use of a specific Channel Audio Location (see config TARGET_BROADCAST_CHANNEL).
+	  Enables the use of a specific Channel Audio Location
+	  (see config TARGET_BROADCAST_CHANNEL).
 
 config TARGET_BROADCAST_CHANNEL
 	int "Broadcast Channel Audio Location to sync to"
