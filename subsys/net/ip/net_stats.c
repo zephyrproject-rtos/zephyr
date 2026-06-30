@@ -163,24 +163,25 @@ static inline void stats(struct net_if *iface)
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_TCP)
-		NET_INFO("TCP bytes recv %llu\tsent\t%llu",
+		NET_INFO("TCP bytes recv %llu\tsent\t%llu\tresent\t%u",
 			 GET_STAT(iface, tcp.bytes.received),
-			 GET_STAT(iface, tcp.bytes.sent));
+			 GET_STAT(iface, tcp.bytes.sent),
+			 GET_STAT(iface, tcp.resent));
 		NET_INFO("TCP seg recv   %u\tsent\t%u\tdrop\t%u",
 			 GET_STAT(iface, tcp.recv),
 			 GET_STAT(iface, tcp.sent),
-			 GET_STAT(iface, tcp.drop));
+			 GET_STAT(iface, tcp.seg_drop));
 		NET_INFO("TCP seg resent %u\tchkerr\t%u\tackerr\t%u",
-			 GET_STAT(iface, tcp.resent),
+			 GET_STAT(iface, tcp.rexmit),
 			 GET_STAT(iface, tcp.chkerr),
 			 GET_STAT(iface, tcp.ackerr));
-		NET_INFO("TCP seg rsterr %u\trst\t%u\tre-xmit\t%u",
+		NET_INFO("TCP seg rsterr %u\trst\t%u",
 			 GET_STAT(iface, tcp.rsterr),
-			 GET_STAT(iface, tcp.rst),
-			 GET_STAT(iface, tcp.rexmit));
+			 GET_STAT(iface, tcp.rst));
 		NET_INFO("TCP conn drop  %u\tconnrst\t%u",
 			 GET_STAT(iface, tcp.conndrop),
 			 GET_STAT(iface, tcp.connrst));
+		NET_INFO("TCP pkt drop   %u", GET_STAT(iface, tcp.drop));
 #endif
 
 		NET_INFO("Bytes received %llu", GET_STAT(iface, bytes.received));
