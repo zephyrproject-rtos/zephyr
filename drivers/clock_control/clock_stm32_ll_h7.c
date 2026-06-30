@@ -21,6 +21,9 @@
 #include <stm32_backup_domain.h>
 #include <stm32_hsem.h>
 
+/* Power supply / regulator configuration node */
+#define PWRC_NODE DT_INST(0, st_stm32h7_pwr)
+
 /* Macros to fill up prescaler values */
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #define hsi_divider(v) CONCAT(LL_RCC_HSI_DIV_, v)
@@ -285,16 +288,37 @@ static uint32_t get_sysclk_frequency(void)
 
 static int32_t prepare_regulator_voltage_scale(void)
 {
-	/* Make sure to put the CPU in highest Voltage scale during clock configuration */
-	/* Highest voltage is SCALE0 */
+	/* Put the CPU in the highest voltage scale supported by the board */
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	/* VOS0 is always safe to use on STM32H7RS */
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
 	while (LL_PWR_IsActiveFlag_VOSRDY() == 0) {
+	}
+#elif defined(SYSCFG_PWRCR_ODEN)
+	/*
+	 * On STM32H74x/H75x lines, VOS0 is the overdrive scale entered by
+	 * setting SYSCFG_PWRCR.ODEN, and is only valid when Vcore is generated
+	 * by the LDO (H7 Data Sheets; stm32h7xx_hal_pwr.h). Other supply modes
+	 * (e.g. SMPS-direct, LDO off) are limited to VOS1.
+	 */
+	if (DT_ENUM_HAS_VALUE(PWRC_NODE, power_supply, ldo) ||
+	    DT_ENUM_HAS_VALUE(PWRC_NODE, power_supply, smps_ldo) ||
+	    DT_ENUM_HAS_VALUE(PWRC_NODE, power_supply, smps_ext_ldo)) {
+		/* Enable the SYSCFG clock so the ODEN write takes effect. */
+		LL_APB4_GRP1_EnableClock(LL_APB4_GRP1_PERIPH_SYSCFG);
+		__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
+	} else {
+		__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+	}
+
+	while (LL_PWR_IsActiveFlag_VOS() == 0) {
+	}
 #else
+	/* On other STM32H7 lines VOS0 does not use ODEN and is always safe */
 	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
 	while (LL_PWR_IsActiveFlag_VOS() == 0) {
-#endif
 	}
+#endif
 
 	return 0;
 }
