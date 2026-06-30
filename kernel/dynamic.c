@@ -121,8 +121,7 @@ int z_impl_k_thread_stack_free(k_thread_stack_t *stack)
 	k_thread_foreach(dyn_cb, &data);
 
 	if (data.tid != NULL) {
-		if (!(z_is_thread_state_set(data.tid, _THREAD_DUMMY) ||
-		      z_is_thread_state_set(data.tid, _THREAD_DEAD))) {
+		if (!z_is_thread_state_set(data.tid, _THREAD_DUMMY | _THREAD_DEAD)) {
 			LOG_ERR("tid %p is in use!", data.tid);
 			return -EBUSY;
 		}
