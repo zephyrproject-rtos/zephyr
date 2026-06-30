@@ -1115,6 +1115,10 @@ int net_configure_address(struct net_ip_config *addr, void *intrfc_handle)
 		 * DAD finished event from zephyr.
 		 */
 		net_if_dormant_off(if_handle->netif);
+#ifndef CONFIG_NXP_WIFI_IPV6
+		(void)wlan_wlcmgr_send_msg(WIFI_EVENT_UAP_NET_ADDR_CONFIG,
+					   WIFI_EVENT_REASON_SUCCESS, NULL);
+#endif
 	}
 #endif
 	else { /* Do Nothing */
