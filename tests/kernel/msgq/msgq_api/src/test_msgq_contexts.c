@@ -678,7 +678,6 @@ ZTEST(msgq_api_1cpu, test_msgq_thread_pending)
  * count stays unchanged). Also verify that peeking at an index beyond the
  * number of queued messages returns -ENOMSG.
  *
- * @ingroup kernel_message_queue_tests
  * @see k_msgq_peek_at()
  */
 ZTEST_USER(msgq_api, test_msgq_peek_at)

@@ -284,7 +284,6 @@ ZTEST(fifo_api, test_fifo_is_empty_isr)
  * removing them (a subsequent get still returns both items in order). Peeking an
  * empty FIFO returns NULL.
  *
- * @ingroup kernel_fifo_tests
  * @see k_fifo_peek_head(), k_fifo_peek_tail()
  */
 ZTEST(fifo_api, test_fifo_peek)
@@ -317,7 +316,6 @@ K_HEAP_DEFINE(fifo_alloc_pool, 256);
  * calling thread's resource pool. Verify the call succeeds and that the same
  * data pointer is returned by a subsequent get.
  *
- * @ingroup kernel_fifo_tests
  * @see k_fifo_alloc_put()
  */
 ZTEST(fifo_api, test_fifo_alloc_put)
