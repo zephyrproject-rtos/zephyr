@@ -813,6 +813,7 @@ extern void thread_abort_hook(struct k_thread *thread);
  *
  * @param thread Identify the thread to halt
  * @param new_state New thread state (_THREAD_DEAD or _THREAD_SUSPENDED)
+ * @param key Pointer to the scheduler spinlock key held by the caller
  */
 static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state,
 				      k_spinlock_key_t *key)

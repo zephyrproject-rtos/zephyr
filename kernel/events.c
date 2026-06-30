@@ -5,7 +5,8 @@
  */
 
 /**
- * @file event objects library
+ * @file
+ * @brief event objects library
  *
  * Event objects are used to signal one or more threads that a custom set of
  * events has occurred. Threads wait on event objects until another thread or
