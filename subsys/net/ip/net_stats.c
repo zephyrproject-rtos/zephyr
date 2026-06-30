@@ -205,14 +205,15 @@ static inline void stats(struct net_if *iface)
 
 #if NET_TC_RX_COUNT > 1
 		NET_INFO("RX traffic class statistics:");
-		NET_INFO("TC  Priority\tRecv pkts\tbytes");
+		NET_INFO("TC  Priority\tRecv pkts\tDrop pkts\tbytes");
 
 		for (i = 0; i < NET_TC_RX_COUNT; i++) {
-			NET_INFO("[%d] %s (%u)\t%u\t\t%llu", i,
+			NET_INFO("[%d] %s (%u)\t%u\t\t%u\t\t%llu", i,
 				 priority2str(GET_STAT(iface,
 						       tc.recv[i].priority)),
 				 GET_STAT(iface, tc.recv[i].priority),
 				 GET_STAT(iface, tc.recv[i].pkts),
+				 GET_STAT(iface, tc.recv[i].dropped),
 				 GET_STAT(iface, tc.recv[i].bytes));
 		}
 #endif
