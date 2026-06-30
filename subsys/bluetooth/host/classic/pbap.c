@@ -843,6 +843,8 @@ int bt_pbap_calculate_nonce(const uint8_t *pwd, uint8_t nonce[BT_OBEX_CHALLENGE_
 		return -EINVAL;
 	}
 
+	LOG_WRN("PBAP authentication relies on legacy MD5-based OBEX authentication");
+
 	memcpy(hash_input, &timestamp, sizeof(timestamp));
 	hash_input[sizeof(timestamp)] = ':';
 	memcpy(hash_input + sizeof(timestamp) + 1U, pwd, pwd_len);
@@ -885,6 +887,8 @@ int bt_pbap_calculate_rsp_digest(const uint8_t *pwd,
 		LOG_ERR("Password is invalid");
 		return -EINVAL;
 	}
+
+	LOG_WRN("PBAP authentication relies on legacy MD5-based OBEX authentication");
 
 	memcpy(hash_input, nonce, BT_OBEX_CHALLENGE_TAG_NONCE_LEN);
 	hash_input[BT_OBEX_CHALLENGE_TAG_NONCE_LEN] = ':';
