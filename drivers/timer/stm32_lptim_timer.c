@@ -472,7 +472,6 @@ static uint32_t sys_clock_lp_time_get(void)
 	return lp_time;
 }
 
-
 uint32_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
@@ -631,32 +630,30 @@ static int sys_clock_driver_init(void)
 	/* the LPTIM clock freq is affected by the prescaler */
 	LL_LPTIM_SetPrescaler(LPTIM, (__CLZ(__RBIT(lptim_clock_presc)) << LPTIM_CFGR_PRESC_Pos));
 
-#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32H5X) ||                  \
-	defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32U0X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_lptim)
 	LL_LPTIM_OC_SetPolarity(LPTIM, LL_LPTIM_CHANNEL_CH1, LL_LPTIM_OUTPUT_POLARITY_REGULAR);
-#else
+#else /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_lptim) */
 	LL_LPTIM_SetPolarity(LPTIM, LL_LPTIM_OUTPUT_POLARITY_REGULAR);
-#endif
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_lptim) */
 	LL_LPTIM_SetUpdateMode(LPTIM, LL_LPTIM_UPDATE_MODE_IMMEDIATE);
 	LL_LPTIM_SetCounterMode(LPTIM, LL_LPTIM_COUNTER_MODE_INTERNAL);
 	LL_LPTIM_DisableTimeout(LPTIM);
 	/* counting start is initiated by software */
 	LL_LPTIM_TrigSw(LPTIM);
 
-#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32H5X) ||                  \
-	defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32U0X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_lptim)
 	/* Enable the LPTIM before proceeding with configuration */
 	LL_LPTIM_Enable(LPTIM);
 
 	LL_LPTIM_DisableIT_CC1(LPTIM);
 	stm32_lptim_wait_ready();
 	LL_LPTIM_ClearFlag_CC1(LPTIM);
-#else
+#else /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_lptim) */
 	/* LPTIM interrupt set-up before enabling */
 	/* no Compare match Interrupt */
 	LL_LPTIM_DisableIT_CMPM(LPTIM);
 	LL_LPTIM_ClearFlag_CMPM(LPTIM);
-#endif
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_lptim) */
 
 	/* Autoreload match Interrupt */
 	LL_LPTIM_EnableIT_ARRM(LPTIM);
@@ -669,12 +666,10 @@ static int sys_clock_driver_init(void)
 	stm32_lptim_wait_ready();
 	LL_LPTIM_ClearFlag_ARROK(LPTIM);
 
-#if !defined(CONFIG_SOC_SERIES_STM32U5X) && \
-	!defined(CONFIG_SOC_SERIES_STM32H5X) && \
-	!defined(CONFIG_SOC_SERIES_STM32WBAX)
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_lptim)
 	/* Enable the LPTIM counter */
 	LL_LPTIM_Enable(LPTIM);
-#endif
+#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_lptim) */
 
 	/* Set the Autoreload value once the timer is enabled */
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
