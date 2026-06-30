@@ -5,7 +5,8 @@
  */
 
 /**
- * @file @brief mutex kernel services
+ * @file
+ * @brief mutex kernel services
  *
  * This module contains routines for handling mutex locking and unlocking.
  *
