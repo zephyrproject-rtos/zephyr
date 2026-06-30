@@ -35,6 +35,14 @@ config MODEM_CELLULAR
 
 if MODEM_CELLULAR
 
+config MODEM_CELLULAR_STATS
+	bool "Operational statistics"
+	help
+	  Maintain cumulative operational counters (outage time, registration
+	  losses, command failures, recoveries, ...) and expose them through
+	  cellular_get_stats(). Adds a small amount of RAM per instance and a
+	  few increments on existing code paths.
+
 config MODEM_CELLULAR_INIT_PRIORITY
 	int "Cellular modem driver initialization priority"
 	default 91

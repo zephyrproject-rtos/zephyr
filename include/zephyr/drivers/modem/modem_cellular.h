@@ -216,6 +216,13 @@ struct modem_cellular_data {
 	atomic_t periodic_paused;
 	/** Set when a TIMEOUT is swallowed while paused; cleared on KICK. */
 	bool periodic_timeout_skipped;
+
+#if defined(CONFIG_MODEM_CELLULAR_STATS)
+	/** Operational statistics, exposed via cellular_get_stats(). */
+	struct cellular_stats stats;
+	/** k_uptime (ms) when registration was last lost; 0 while registered. */
+	uint32_t stats_outage_start_ms;
+#endif
 	/** @endcond */
 };
 

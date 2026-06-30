@@ -192,6 +192,28 @@ struct cellular_evt_network_status {
 };
 
 /**
+ * @brief Cellular link operational statistics.
+ *
+ * Counters are cumulative since boot.
+ */
+struct cellular_stats {
+	/** Cumulative time the modem was not registered, in milliseconds. */
+	uint32_t outage_ms;
+	/** Registered to not-registered transitions. */
+	uint32_t deregistrations;
+	/** Data-link carrier losses. */
+	uint32_t link_drops;
+	/** Control-channel command failures. */
+	uint32_t command_failures;
+	/** `+CME ERROR` responses. */
+	uint32_t command_errors_cme;
+	/** Recovery transitions entered. */
+	uint32_t recoveries;
+	/** CMUX desync/disconnect events. */
+	uint32_t cmux_disconnects;
+};
+
+/**
  * @brief Prototype for cellular event callbacks.
  *
  * @param dev       Cellular device that generated the event
@@ -243,6 +265,9 @@ typedef int (*cellular_api_set_apn)(const struct device *dev, const char *apn);
 typedef int (*cellular_api_set_callback)(const struct device *dev, cellular_event_mask_t mask,
 					 cellular_event_cb_t cb, void *user_data);
 
+/** API for reading operational statistics */
+typedef const struct cellular_stats *(*cellular_api_get_stats)(const struct device *dev);
+
 /**
  * @driver_ops{Cellular}
  */
@@ -261,6 +286,8 @@ __subsystem struct cellular_driver_api {
 	cellular_api_set_apn set_apn;
 	/** @driver_ops_optional @copybrief cellular_set_callback */
 	cellular_api_set_callback set_callback;
+	/** @driver_ops_optional @copybrief cellular_get_stats */
+	cellular_api_get_stats get_stats;
 };
 
 /** @} */
@@ -441,6 +468,25 @@ static inline int cellular_set_callback(const struct device *dev, cellular_event
 	}
 
 	return api->set_callback(dev, mask, cb, user_data);
+}
+
+/**
+ * @brief Read operational statistics from the cellular device
+ *
+ * @param dev Cellular network device instance.
+ *
+ * @return Pointer to the device's live statistics, or `NULL` if the device does
+ *         not implement the API.
+ */
+static inline const struct cellular_stats *cellular_get_stats(const struct device *dev)
+{
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
+
+	if (api->get_stats == NULL) {
+		return NULL;
+	}
+
+	return api->get_stats(dev);
 }
 
 #ifdef __cplusplus
