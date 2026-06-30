@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2024 Centro de Inovacao EDGE
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +9,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/pwm.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/kernel.h>
@@ -32,10 +33,20 @@ static void init_adc(void)
 	int i, ret;
 
 	ret = adc_is_ready_dt(&adc_channels[0]);
+	if (!ret) {
+		printk("ADC device %s not ready\n", adc_channels[0].dev->name);
+		return;
+	}
 
 	for (i = 0; i < adc_channels_count; i++) {
 		ret = adc_channel_setup_dt(&adc_channels[i]);
+		if (ret < 0) {
+			printk("ADC channel %d setup failed: %d\n", i, ret);
+			return;
+		}
 	}
+
+	printk("ADC device: %s, channels: %d\n", adc_channels[0].dev->name, adc_channels_count);
 }
 
 /* Define triggers for ADC stream. Trigger stands for an event that
@@ -47,6 +58,7 @@ static void init_adc(void)
  * For more information about supported triggers and data operations,
  * refer to the enums adc_trigger_type and adc_stream_data_opt.
  */
+
 #define SAMPLE_ADC_TRIGGERS					\
 	{ADC_TRIG_FIFO_FULL, ADC_STREAM_DATA_INCLUDE},		\
 	{ADC_TRIG_FIFO_WATERMARK, ADC_STREAM_DATA_INCLUDE}
@@ -59,6 +71,7 @@ ADC_DT_STREAM_IODEV(iodev, SAMPLE_ADC_NODE, adc_channels, SAMPLE_ADC_TRIGGERS);
  * footprint. sizeof(void *) is used so memory blocks are properly aligned for different
  * platforms.
  */
+
 RTIO_DEFINE_WITH_MEMPOOL(adc_ctx, 16, 16, 20, 256, sizeof(void *));
 
 static int print_adc_stream(const struct device *adc, struct rtio_iodev *local_iodev)
@@ -88,7 +101,6 @@ static int print_adc_stream(const struct device *adc, struct rtio_iodev *local_i
 		}
 
 		rc = rtio_cqe_get_mempool_buffer(&adc_ctx, cqe, &buf, &buf_len);
-
 		if (rc != 0) {
 			printk("get mempool buffer failed %d\n", rc);
 			return rc;
@@ -97,7 +109,6 @@ static int print_adc_stream(const struct device *adc, struct rtio_iodev *local_i
 		rtio_cqe_release(&adc_ctx, cqe);
 
 		rc = adc_get_decoder(adc, &decoder);
-
 		if (rc != 0) {
 			printk("sensor_get_decoder failed %d\n", rc);
 			return rc;
@@ -112,7 +123,6 @@ static int print_adc_stream(const struct device *adc, struct rtio_iodev *local_i
 			uint16_t frame_count;
 
 			rc = decoder->get_frame_count(buf, channel, &frame_count);
-
 			if (rc != 0) {
 				printk("get_frame_count failed %d\n", rc);
 				return rc;
@@ -144,11 +154,13 @@ int main(void)
 	read_cfg->sequence = &sequence;
 
 	init_adc();
+
 	ret = adc_sequence_init_dt(&adc_channels[0], &sequence);
 	if (ret < 0) {
 		printk("Failed to initialize ADC sequence: %d\n", ret);
 		return 0;
 	}
+
 	for (int i = 1; i < adc_channels_count; i++) {
 		sequence.channels |= BIT(adc_channels[i].channel_id);
 	}

@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	zephyr,user {
+		io-channels = <&adc4052_eval_ad4052_ardz 0>;
+	};
+};
+
+&adc {
+	status = "disabled";
+};
+
+&timer1 {
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+	prescaler = <1>;
+	status = "okay";
+
+	timer1_pwm: pwm {
+		pinctrl-0 = <&tmr1b_ioa_p0_7>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&adc4052_eval_ad4052_ardz {
+	pwms = <&timer1_pwm 0 500000 PWM_POLARITY_NORMAL>;
+	pwm-names = "cnv";
+	/delete-property/ conversion-gpios;
+};
