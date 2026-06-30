@@ -1536,6 +1536,9 @@ static int initiate_transfer(struct uvc_host_data *const host_data,
 		return -ENOMEM;
 	}
 
+	/* Increase the reference so the buffer is reused across resubmissions. */
+	buf = net_buf_ref(buf);
+
 	buf->len = 0;
 	host_data->vbuf_offset = 0;
 	xfer->buf = buf;
@@ -1546,6 +1549,7 @@ static int initiate_transfer(struct uvc_host_data *const host_data,
 	if (ret != 0) {
 		LOG_ERR("Enqueue failed: ret=%d", ret);
 		usbh_class_xfer_unanchor(xfer);
+		net_buf_unref(buf);
 		net_buf_unref(buf);
 		(void)uhc_xfer_unref(xfer);
 		return ret;
@@ -1558,18 +1562,12 @@ static int initiate_transfer(struct uvc_host_data *const host_data,
 static int continue_transfer(struct uvc_host_data *const host_data,
 			     struct uhc_transfer *const xfer, struct video_buffer *vbuf)
 {
-	struct uvc_stream_iface_info *const stream_info = &host_data->current_stream_iface_info;
-	struct net_buf *buf;
+	struct net_buf *buf = xfer->buf;
 	int ret;
 
-	buf = usbh_xfer_buf_alloc(host_data->udev, stream_info->ep_mps_mult);
-	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
-		return -ENOMEM;
-	}
-
-	buf->len = 0;
-	xfer->buf = buf;
+	/* Reset and reuse the buffer. */
+	net_buf_reset(buf);
+	buf = net_buf_ref(buf);
 
 	usbh_class_xfer_anchor(host_data->c_data, xfer);
 
@@ -1727,6 +1725,7 @@ static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *
 	k_mutex_unlock(&host_data->lock);
 
 cleanup:
+	/* Drop the transfer reference but, keep the buffer alive for reuse. */
 	net_buf_unref(buf);
 
 	/*
@@ -1738,6 +1737,7 @@ cleanup:
 		return 0;
 	}
 
+	net_buf_unref(buf);
 	(void)uhc_xfer_unref(xfer);
 
 	return 0;
