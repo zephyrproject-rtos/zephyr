@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <xtensa_asm2_context.h>
 
-#include <offsets.h>
+#include <zephyr/offsets.h>
 
 static struct xtensa_register gdb_reg_list[] = {
 	{
