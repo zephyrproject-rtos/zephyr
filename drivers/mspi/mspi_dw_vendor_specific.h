@@ -215,8 +215,8 @@ static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 {
 	struct mspi_dw_data *dev_data = dev->data;
 	const struct mspi_dw_config *config = dev->config;
-	const struct mspi_xfer_packet *packet =
-		&dev_data->xfer.packets[dev_data->packets_done];
+	const struct mspi_xfer_packet *packet = &dev_data->sub_pkt;
+
 	NRF_MSPI_Type *preg = (NRF_MSPI_Type *)config->wrapper_regs;
 
 	/* Use vendor-specific data from config - stores job and transfer lists */
