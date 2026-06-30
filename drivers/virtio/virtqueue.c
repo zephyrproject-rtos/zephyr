@@ -54,6 +54,7 @@ int virtq_create(struct virtq *v, size_t size)
 		return -ENOMEM;
 	}
 
+	memset(v, 0, sizeof(*v));
 	v->num = size;
 	v->desc = (struct virtq_desc *)v_area;
 	v->avail = (struct virtq_avail *)((uint8_t *)v->desc + descriptor_table_size);
