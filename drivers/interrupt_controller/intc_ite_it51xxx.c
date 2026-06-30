@@ -147,14 +147,14 @@ void ite_intc_irq_polarity_set(unsigned int irq, unsigned int flags)
 	i = irq % MAX_REGISR_IRQ_NUM;
 
 	tri = sys_read8(intc_base + INTC_GRPNIPOLR(g));
-	if ((flags & IRQ_TYPE_LEVEL_HIGH) || (flags & IRQ_TYPE_EDGE_RISING)) {
+	if (flags & (IRQ_TYPE_LEVEL_HIGH | IRQ_TYPE_EDGE_RISING)) {
 		sys_write8(tri & ~BIT(i), intc_base + INTC_GRPNIPOLR(g));
 	} else {
 		sys_write8(tri | BIT(i), intc_base + INTC_GRPNIPOLR(g));
 	}
 
 	tri = sys_read8(intc_base + INTC_GRPNIELMR(g));
-	if ((flags & IRQ_TYPE_LEVEL_LOW) || (flags & IRQ_TYPE_LEVEL_HIGH)) {
+	if (flags & (IRQ_TYPE_LEVEL_LOW | IRQ_TYPE_LEVEL_HIGH)) {
 		sys_write8(tri & ~BIT(i), intc_base + INTC_GRPNIELMR(g));
 	} else {
 		sys_write8(tri | BIT(i), intc_base + INTC_GRPNIELMR(g));
