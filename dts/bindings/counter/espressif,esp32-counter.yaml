@@ -7,6 +7,10 @@ compatible: "espressif,esp32-counter"
 
 include: base.yaml
 
+counter-capture-cells:
+  - channel
+  - flags
+
 properties:
   capture-gpios:
     type: phandle-array
