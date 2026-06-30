@@ -21,6 +21,7 @@
 #include <bootloader_flash.h>
 #include <esp_flash_internal.h>
 #include <esp_log.h>
+#include <esp_private/esp_clk_tree_common.h>
 
 #include <console_init.h>
 #include <flash_init.h>
@@ -69,6 +70,7 @@ int hardware_init(void)
 	esp_cpu_configure_invalid_regions();
 
 	bootloader_clock_configure();
+	esp_clk_tree_initialize();
 
 #ifdef CONFIG_ESP_CONSOLE
 	esp_console_init();
