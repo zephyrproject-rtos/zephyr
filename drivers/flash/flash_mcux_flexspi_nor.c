@@ -103,6 +103,12 @@ struct flash_flexspi_nor_data {
 #if defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR_MUTEX)
 	struct k_mutex lock;
 #endif
+#if defined(FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT) && (FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT > 0)
+	struct {
+		off_t offset;
+		size_t len;
+	} iped_erased[FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT];
+#endif
 };
 
 static inline void flash_flexspi_nor_lock(const struct device *dev)
@@ -396,6 +402,64 @@ static int flash_flexspi_nor_read(const struct device *dev, off_t offset, void *
 		return -EINVAL;
 	}
 
+#if defined(FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT) && (FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT > 0)
+	/*
+	 * If this read falls entirely within an IPED-protected region, it must go
+	 * through the AHB memory-mapped path so IPED decrypts inline.  The default
+	 * IP-command read path below bypasses IPED and would return ciphertext.
+	 */
+	{
+		bool iped_gcm = false;
+		size_t iped_idx = 0U;
+
+		if (memc_flexspi_offset_in_iped_region(&data->controller, data->port, offset, len,
+						       &iped_gcm, &iped_idx)) {
+			uint8_t *src;
+			unsigned int ahb_key = 0U;
+			bool ahb_xip;
+
+			if (data->iped_erased[iped_idx].len > 0U &&
+			    offset >= data->iped_erased[iped_idx].offset &&
+			    (offset + (off_t)len) <= (data->iped_erased[iped_idx].offset +
+						      (off_t)data->iped_erased[iped_idx].len)) {
+				memset(buffer, 0xFF, len);
+				flash_flexspi_nor_unlock(dev);
+				return 0;
+			}
+
+			if (iped_gcm) {
+				LOG_DBG("IPED GCM region read off 0x%lx len %zu (best-effort)",
+					(long)offset, len);
+			}
+
+			src = memc_flexspi_get_ahb_address(&data->controller, data->port, offset);
+			if (!src) {
+				flash_flexspi_nor_unlock(dev);
+				return -EINVAL;
+			}
+
+#ifdef CONFIG_HAS_MCUX_CACHE
+			DCACHE_InvalidateByRange((uintptr_t)src, len);
+#endif
+
+			ahb_xip = memc_flexspi_is_running_xip(&data->controller);
+			if (ahb_xip) {
+				ahb_key = irq_lock();
+				memc_flexspi_wait_bus_idle(&data->controller);
+			}
+
+			memcpy(buffer, src, len);
+
+			if (ahb_xip) {
+				irq_unlock(ahb_key);
+			}
+
+			flash_flexspi_nor_unlock(dev);
+			return 0;
+		}
+	}
+#endif /* FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT */
+
 	xip = memc_flexspi_is_running_xip(&data->controller);
 
 	if (xip) {
@@ -451,8 +515,12 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		const void *buffer, size_t len)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
-#ifdef CONFIG_HAS_MCUX_CACHE
-	size_t size = len;
+#if defined(FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT) && (FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT > 0)
+	off_t write_offset = offset;
+#endif
+#if defined(CONFIG_HAS_MCUX_CACHE) || (defined(FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT) &&           \
+				       (FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT > 0))
+	size_t write_len = len;
 #endif
 	if (!buffer) {
 		return -EINVAL;
@@ -523,7 +591,18 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 	}
 
 #ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_InvalidateByRange((uintptr_t)dst, size);
+	DCACHE_InvalidateByRange((uintptr_t)dst, write_len);
+#endif
+
+#if defined(FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT) && (FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT > 0)
+	{
+		size_t wr_iped_idx = 0U;
+
+		if (memc_flexspi_offset_in_iped_region(&data->controller, data->port, write_offset,
+						       write_len, NULL, &wr_iped_idx)) {
+			data->iped_erased[wr_iped_idx].len = 0U;
+		}
+	}
 #endif
 
 	flash_flexspi_nor_unlock(dev);
@@ -625,6 +704,18 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 
 #ifdef CONFIG_HAS_MCUX_CACHE
 	DCACHE_InvalidateByRange((uintptr_t)dst, size);
+#endif
+
+#if defined(FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT) && (FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT > 0)
+	{
+		size_t er_iped_idx = 0U;
+
+		if (memc_flexspi_offset_in_iped_region(&data->controller, data->port, offset, size,
+						       NULL, &er_iped_idx)) {
+			data->iped_erased[er_iped_idx].offset = offset;
+			data->iped_erased[er_iped_idx].len = size;
+		}
+	}
 #endif
 
 	flash_flexspi_nor_unlock(dev);
