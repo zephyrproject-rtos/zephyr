@@ -17,7 +17,8 @@
 #include <ti/driverlib/dl_trng.h>
 #include <ti/devices/msp/peripherals/hw_trng.h>
 
-#define TRNG_DECIMATION_RATE	CONFIG_ENTROPY_MSPM0_TRNG_DECIMATION_RATE
+#define TRNG_DECIMATION_RATE                                                                       \
+	CONCAT(DL_TRNG_DECIMATION_RATE_, CONFIG_ENTROPY_MSPM0_TRNG_DECIMATION_RATE)
 #define TRNG_SAMPLE_SIZE	4
 
 #define TRNG_CLOCK_DIVIDE_RATIO		CONCAT(DL_TRNG_CLOCK_DIVIDE_, DT_INST_PROP(0, ti_clk_div))
