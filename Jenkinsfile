@@ -8,7 +8,6 @@ pipeline {
     }
 
     triggers {
-        // cron('H 0 * * *')
         pollSCM('H/5 * * * *')
     }
     
@@ -26,10 +25,9 @@ pipeline {
 
         stage('Execute Containerized Tests') {
             steps {
-                echo 'Spawning clean Ubuntu environment and running tests...'
+                echo 'Spawning Zephyr CI environment and running QEMU tests...'
                 
-                // Back to the clean, simple command
-                bat 'docker run --rm -v "%WORKSPACE%":/build -w /build ubuntu:24.04 bash ./ci-test.sh'
+                bat 'docker run --rm -v "%WORKSPACE%":/build -w /build zephyrprojectrtos/ci:latest bash ./ci-test.sh'
             }
         }
     }

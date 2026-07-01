@@ -1,33 +1,20 @@
 #!/bin/bash
 set -e
 
-echo "=== 1. Installing Zephyr System Dependencies ==="
-apt-get update && apt-get install -y --no-install-recommends \
-    git cmake ninja-build gperf ccache dfu-util device-tree-compiler \
-    wget python3-dev python3-pip python3-venv xz-utils file make \
-    gcc gcc-multilib g++-multilib libsdl2-dev libmagic1
-
-echo "=== 2. Setting up Python Virtual Environment & West ==="
-# Zephyr strictly requires a virtual environment
-python3 -m venv /build/.venv
-source /build/.venv/bin/activate
-pip install west
-
-echo "=== 3. Initializing Zephyr Workspace ==="
-# Tells west to use the current repository as the manifest
+echo "=== 1. Initializing Zephyr Workspace ==="
+# The zephyrprojectrtos/ci image already has QEMU, CMake, Python, and the SDK installed.
+# We just need to pull in the Zephyr modules for this specific workspace.
 west init -l .
 west update
 west zephyr-export
-pip install -r scripts/requirements.txt
+pip3 install -r scripts/requirements.txt
 
-echo "=== 4. Executing Build ==="
-# Tell Zephyr to use the container's built-in GCC/G++ compiler
-export ZEPHYR_TOOLCHAIN_VARIANT=host
+echo "=== 2. Executing Build for QEMU ==="
+# We removed the 'host' toolchain override so Zephyr uses the container's built-in SDK cross-compilers.
+# Building the basic blinky sample for an emulated ARM Cortex-M3.
+west build -b qemu_cortex_m3 samples/basic/blinky
 
-# Building a standard sample application for the native Linux simulator
-west build -b native_sim samples/basic/blinky
-
-echo "=== 5. Running Native Tests ==="
-# Executes Zephyr's built-in testing framework (Twister)
-# Scoped to only run lightweight 'smoke' tests to prevent Robot Framework dependency errors
-west twister -p native_sim -T tests/kernel -v
+echo "=== 3. Running QEMU Tests ==="
+# Execute Twister targeting the QEMU ARM board. 
+# Twister will automatically boot the QEMU VM, run the tests, parse the serial output, and shut it down.
+west twister -p qemu_cortex_m3 -T tests/kernel -v
