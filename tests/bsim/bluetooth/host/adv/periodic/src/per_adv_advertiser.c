@@ -162,7 +162,6 @@ static void start_per_adv_set(struct bt_le_ext_adv *adv)
 	printk("done.\n");
 }
 
-#if defined(CONFIG_BT_PER_ADV)
 static void set_per_adv_data(struct bt_le_ext_adv *adv)
 {
 	int err;
@@ -179,7 +178,6 @@ static void set_per_adv_data(struct bt_le_ext_adv *adv)
 	}
 	printk("done.\n");
 }
-#endif
 
 static void stop_ext_adv_set(struct bt_le_ext_adv *adv)
 {
@@ -339,7 +337,6 @@ static void main_per_adv_conn_privacy_advertiser(void)
 
 static void main_per_adv_long_data_advertiser(void)
 {
-#if defined(CONFIG_BT_PER_ADV)
 	struct bt_le_ext_adv *per_adv;
 
 	common_init();
@@ -358,7 +355,7 @@ static void main_per_adv_long_data_advertiser(void)
 
 	delete_adv_set(per_adv);
 	per_adv = NULL;
-#endif
+
 	TEST_PASS("Periodic long data advertiser passed");
 }
 
