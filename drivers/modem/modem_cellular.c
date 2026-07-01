@@ -625,16 +625,24 @@ static void modem_cellular_build_apn_script(struct modem_cellular_data *data)
 	const struct modem_cellular_config *config = data->dev->config;
 	uint8_t steps = 0;
 	const char *apn_value = data->apn;
+	int ret;
 
 	if (config->use_default_apn) {
 		/* Omit the APN name AT+CGDCONT=1,"IP","" */
 		apn_value = "";
 	}
-	append_apn_cmd(data, &steps, "AT+CGDCONT=1,\"IP\",\"%s\"", apn_value);
 
-	/* Vendor‑specific extras */
+	ret = append_apn_cmd(data, &steps, "AT+CGDCONT=1,\"IP\",\"%s\"", apn_value);
+	if (ret < 0) {
+		LOG_ERR("failed to build APN command (%d)", ret);
+	}
+
+	/* Vendor-specific extras */
 #if DT_HAS_COMPAT_STATUS_OKAY(swir_hl7800)
-	append_apn_cmd(data, &steps, "AT+KCNXCFG=1,\"GPRS\",\"%s\",,,\"IPV4\"", apn_value);
+	ret = append_apn_cmd(data, &steps, "AT+KCNXCFG=1,\"GPRS\",\"%s\",,,\"IPV4\"", apn_value);
+	if (ret < 0) {
+		LOG_ERR("failed to build vendor APN command (%d)", ret);
+	}
 #endif
 
 	/* Glue the array into the script object */
