@@ -1112,9 +1112,20 @@ static void resync_pmp_domain(struct k_thread *thread,
 				   PMP_U_MODE(thread));
 #endif
 
-		__ASSERT(ok,
-			 "no PMP slot left for %d remaining partitions in domain %p",
-			 remaining_partitions + 1, domain);
+		/*
+		 * The available slot count is an optimistic estimate (see
+		 * arch_mem_domain_max_partitions_get), so a domain may hold more
+		 * partitions than fit in this thread's remaining PMP entries. If we
+		 * run out, stop programming rather than asserting: the thread runs
+		 * with the partitions that fit and faults - only that thread - on an
+		 * access to an unmapped one, which is recoverable, whereas an assert
+		 * here runs during a context switch and takes down the whole system.
+		 */
+		if (!ok) {
+			LOG_ERR("no PMP slot left for %d remaining partitions in domain %p",
+				remaining_partitions + 1, domain);
+			break;
+		}
 	}
 
 	thread->arch.u_mode_pmp_end_index = index;
