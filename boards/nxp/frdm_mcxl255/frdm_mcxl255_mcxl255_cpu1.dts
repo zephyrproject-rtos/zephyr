@@ -35,3 +35,7 @@
 &systick {
 	status = "okay";
 };
+
+&mbox_b {
+	status = "okay";
+};
