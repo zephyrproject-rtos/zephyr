@@ -891,12 +891,6 @@ void gptp_send_pdelay_resp(int port, struct net_pkt *pkt,
 			   struct net_ptp_time *treq)
 {
 	struct gptp_pdelay_resp *resp;
-	struct gptp_hdr *hdr;
-
-	hdr = GPTP_HDR(pkt);
-
-	/* No Fractional nsec .*/
-	hdr->correction_field = 0;
 
 	resp = GPTP_PDELAY_RESP(pkt);
 	resp->req_receipt_ts_secs_high = net_htons(treq->_sec.high);
@@ -914,12 +908,6 @@ void gptp_send_pdelay_follow_up(int port, struct net_pkt *pkt,
 				struct net_ptp_time *tresp)
 {
 	struct gptp_pdelay_resp_follow_up *follow_up;
-	struct gptp_hdr *hdr;
-
-	hdr = GPTP_HDR(pkt);
-
-	/* No Fractional nsec .*/
-	hdr->correction_field = 0;
 
 	follow_up = GPTP_PDELAY_RESP_FOLLOWUP(pkt);
 	follow_up->resp_orig_ts_secs_high = net_htons(tresp->_sec.high);
