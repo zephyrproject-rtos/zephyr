@@ -73,4 +73,13 @@
 		alarms-count = <3>;
 		status = "disabled";
 	};
+
+	mbox_b: mbox@84000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x84000 0x1000>;
+		interrupts = <7 0>, <8 0>, <9 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
 };
