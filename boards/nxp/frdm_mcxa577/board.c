@@ -354,6 +354,11 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_GateDAC0);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rtc))
+	/* RTC uses the OSC32K (32.768 kHz) as its clock source */
+	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToAll);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 }
