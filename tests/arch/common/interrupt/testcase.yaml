@@ -4,7 +4,11 @@ common:
     - interrupt
 tests:
   arch.interrupt:
-    platform_exclude: qemu_cortex_m0
+    platform_exclude:
+      - qemu_cortex_m0
+      # No trigger_irq implementation for the BCM2836 L1 + BCM2835 ARMC
+      # interrupt controller pair in interrupt_util.h yet.
+      - rpi_zero_2w
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
   arch.interrupt.qemu_cortex_m0:
     platform_allow: qemu_cortex_m0
@@ -13,7 +17,11 @@ tests:
       - CONFIG_QEMU_ICOUNT=y
   arch.interrupt.minimallibc:
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_MINIMAL_LIBC_SUPPORTED
-    platform_exclude: qemu_cortex_m0
+    platform_exclude:
+      - qemu_cortex_m0
+      # No trigger_irq implementation for the BCM2836 L1 + BCM2835 ARMC
+      # interrupt controller pair in interrupt_util.h yet.
+      - rpi_zero_2w
     tags:
       - libc
     extra_configs:
@@ -44,6 +52,9 @@ tests:
       # In S-mode only SSIP (IRQ 1) can be triggered from software; the
       # shared interrupt test requires two independent triggerable IRQ lines.
       - qemu_riscv64/qemu_virt_riscv64/smode
+      # No trigger_irq implementation for the BCM2836 L1 + BCM2835 ARMC
+      # interrupt controller pair in interrupt_util.h yet.
+      - rpi_zero_2w
     arch_exclude:
       # test needs 2 working interrupt lines
       - xtensa
@@ -69,6 +80,9 @@ tests:
       # In S-mode only SSIP (IRQ 1) can be triggered from software; the
       # shared interrupt test requires two independent triggerable IRQ lines.
       - qemu_riscv64/qemu_virt_riscv64/smode
+      # No trigger_irq implementation for the BCM2836 L1 + BCM2835 ARMC
+      # interrupt controller pair in interrupt_util.h yet.
+      - rpi_zero_2w
     arch_exclude:
       # test needs 2 working interrupt lines
       - xtensa
