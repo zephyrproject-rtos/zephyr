@@ -14,7 +14,7 @@ if(SB_CONFIG_NET_CORE_IMAGE_HCI_IPC)
   )
 
   set(${NET_APP}_EXTRA_CONF_FILE
-    ${ZEPHYR_BASE}/samples/bluetooth/cap_handover/overlay-bt_ll_sw_split.conf
+    ${ZEPHYR_BASE}/samples/bluetooth/audio/cap_handover/overlay-bt_ll_sw_split.conf
     CACHE INTERNAL ""
   )
 
