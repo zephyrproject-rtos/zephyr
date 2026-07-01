@@ -22,11 +22,12 @@ config ENTROPY_MSPM0_TRNG_POOL_SIZE
 	  TRNG hardware.
 
 config ENTROPY_MSPM0_TRNG_DECIMATION_RATE
-	int "TRNG decimation rate (0-7)"
+	int "TRNG decimation rate (1-8)"
 	default 4
-	range 0 7
+	range 1 8
 	help
 	  The decimation rate controls the sampling rate of the TRNG. Higher values
 	  provide better entropy quality. A decimation rate of 4 or greater is recommended per TRM.
-	  Valid values are 0-7.
+	  Valid values are 1-8.
+
 endif # ENTROPY_MSPM0_TRNG
