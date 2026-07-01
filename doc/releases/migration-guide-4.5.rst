@@ -708,6 +708,9 @@ USB
   renamed to :dtcompatible:`espressif,esp32-usb-otg-fs`. The internal PHY D+/D- pad numbers are
   now provided through the ``phy-dp-pin`` and ``phy-dm-pin`` properties. Out-of-tree devicetrees
   using the old compatible must update the node compatible and add the two pin properties.
+* The ``clock-names`` property is now required on :dtcompatible:`st,stm32-usbphyc` nodes.
+  A default value is provided at SoC DTSI level but *might* need to be overridden by board DTS.
+  (:github:`112477`)
 
 * The USB host controller API struct ``uhc_api`` got renamed to :c:struct:`uhc_driver_api`.
   It now also uses :c:macro:`DEVICE_API`. Out-of-tree USB host controller drivers must rename
