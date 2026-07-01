@@ -13,6 +13,7 @@
 #include "dfd_srv_internal.h"
 #include "net.h"
 #include "transport.h"
+#include "access.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_DFU_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -870,6 +871,42 @@ static void dfu_suspended(struct bt_mesh_dfu_cli *cli)
 	dfd_phase_set(srv, BT_MESH_DFD_PHASE_TRANSFER_SUSPENDED);
 }
 
+static struct bt_mesh_dfu_srv *self_target_dfu_srv(struct bt_mesh_dfd_srv *srv)
+{
+	/* The spec requires the DFU Server (Target role element Y) to be on
+	 * a different element from the DFD Server (Distributor role element
+	 * X). Find the local DFU Server by looking up the element that owns
+	 * the self-target unicast address stored in the receivers list.
+	 */
+	uint16_t cnt = MIN(srv->target_cnt, ARRAY_SIZE(srv->targets));
+
+	for (int i = 0; i < cnt; i++) {
+		if (bt_mesh_has_addr(srv->targets[i].blob.addr)) {
+			const struct bt_mesh_elem *elem =
+				bt_mesh_elem_find(srv->targets[i].blob.addr);
+			const struct bt_mesh_model *mod =
+				bt_mesh_model_find(elem, BT_MESH_MODEL_ID_DFU_SRV);
+
+			return mod ? mod->rt->user_data : NULL;
+		}
+	}
+
+	return NULL;
+}
+
+static void trigger_self_apply(struct bt_mesh_dfd_srv *srv)
+{
+	struct bt_mesh_dfu_srv *dfu_srv = self_target_dfu_srv(srv);
+
+	/* Trigger self-target apply after distribution completes or fails.
+	 * The DFU Server deferred its apply callback to let the
+	 * Distributor finish the confirm step first.
+	 */
+	if (dfu_srv) {
+		bt_mesh_dfu_srv_apply_deferred(dfu_srv);
+	}
+}
+
 static void dfu_ended(struct bt_mesh_dfu_cli *cli,
 		      enum bt_mesh_dfu_status reason)
 {
@@ -890,6 +927,11 @@ static void dfu_ended(struct bt_mesh_dfu_cli *cli,
 
 	if (reason != BT_MESH_DFU_SUCCESS) {
 		dfd_phase_set(srv, BT_MESH_DFD_PHASE_FAILED);
+		/* Remote targets failed to confirm (e.g. no target
+		 * reported new FWID). Distribution is over, safe to
+		 * apply deferred self-update.
+		 */
+		trigger_self_apply(srv);
 		return;
 	}
 
@@ -933,9 +975,28 @@ static void dfu_confirmed(struct bt_mesh_dfu_cli *cli)
 {
 	struct bt_mesh_dfd_srv *srv =
 		CONTAINER_OF(cli, struct bt_mesh_dfd_srv, dfu);
+	struct bt_mesh_dfu_srv *dfu_srv;
 
 	if (srv->phase != BT_MESH_DFD_PHASE_APPLYING_UPDATE &&
 	    srv->phase != BT_MESH_DFD_PHASE_CANCELING_UPDATE) {
+		return;
+	}
+
+	/* MshDFUv1.0 Section 6.2.2.4 Confirm step requires the DFD Server to
+	 * wait until the Target nodes have applied the new firmware before
+	 * setting Distribution Phase to Completed. In a self-update, the
+	 * distributor is one of those Target nodes, so trigger the deferred
+	 * self-apply first. If the apply callback reboots the device (real
+	 * firmware), execution does not return: the DFD phase stays in
+	 * APPLYING_UPDATE with state persisted, and dfd_srv_start() finishes
+	 * the Confirm step on the next boot. If the self-target is still in
+	 * APPLYING after the callback (async apply or pending reboot), keep
+	 * DFD in APPLYING_UPDATE so state remains persisted for resume.
+	 */
+	trigger_self_apply(srv);
+
+	dfu_srv = self_target_dfu_srv(srv);
+	if (dfu_srv && dfu_srv->update.phase == BT_MESH_DFU_PHASE_APPLYING) {
 		return;
 	}
 

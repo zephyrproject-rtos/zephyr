@@ -129,6 +129,11 @@ static void apply_rsp_sent(int err, void *cb_params)
 
 	store_state(srv);
 
+	if (srv->update.self_update) {
+		LOG_DBG("Self-update: deferring apply");
+		return;
+	}
+
 	err = srv->cb->apply(srv, &srv->imgs[srv->update.idx]);
 	if (err) {
 		srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
@@ -371,6 +376,7 @@ static int handle_start(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 		 * self-update. Skip the transfer phase and proceed to
 		 * verifying update.
 		 */
+		srv->update.self_update = bt_mesh_has_addr(ctx->addr);
 		status = BT_MESH_DFU_SUCCESS;
 		srv->update.idx = idx;
 		srv->blob.state.xfer.id = blob_id;
@@ -658,6 +664,27 @@ bool bt_mesh_dfu_srv_is_busy(const struct bt_mesh_dfu_srv *srv)
 	return srv->update.phase != BT_MESH_DFU_PHASE_IDLE &&
 	       srv->update.phase != BT_MESH_DFU_PHASE_TRANSFER_ERR &&
 	       srv->update.phase != BT_MESH_DFU_PHASE_VERIFY_FAIL;
+}
+
+void bt_mesh_dfu_srv_apply_deferred(struct bt_mesh_dfu_srv *srv)
+{
+	int err;
+
+	if (srv->update.phase != BT_MESH_DFU_PHASE_APPLYING) {
+		return;
+	}
+
+	if (!srv->cb->apply || srv->update.idx == UPDATE_IDX_NONE) {
+		srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
+		erase_state(srv);
+		return;
+	}
+
+	err = srv->cb->apply(srv, &srv->imgs[srv->update.idx]);
+	if (err) {
+		srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
+		erase_state(srv);
+	}
 }
 
 uint8_t bt_mesh_dfu_srv_progress(const struct bt_mesh_dfu_srv *srv)

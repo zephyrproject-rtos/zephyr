@@ -183,6 +183,7 @@ struct bt_mesh_dfu_srv {
 	/** Number of updatable images. */
 	size_t img_count;
 
+	/** @cond INTERNAL_HIDDEN */
 	/* Runtime state */
 	const struct bt_mesh_model *mod;
 	struct {
@@ -194,7 +195,9 @@ struct bt_mesh_dfu_srv {
 		uint8_t idx;
 		uint16_t timeout_base;
 		uint16_t meta;
+		bool self_update;
 	} update;
+	/** @endcond */
 };
 
 /** @brief Accept the received DFU transfer.
