@@ -22,6 +22,7 @@
 typedef void (*clk_ctrl_func_t)(void);
 
 typedef struct {
+	const struct device *dev;
 	struct onoff_manager mgr;
 	clock_control_cb_t cb;
 	void *user_data;
@@ -60,6 +61,30 @@ void common_onoff_started_callback(const struct device *dev, clock_control_subsy
 void common_clkstarted_handle(const struct device *dev);
 
 void common_clear_pending_irq(void);
+
+int common_api_start(const struct device *dev, clock_control_subsys_t subsys, clock_control_cb_t cb,
+		     void *user_data);
+
+int common_api_blocking_start(const struct device *dev, clock_control_subsys_t subsys);
+
+int common_api_stop(const struct device *dev, clock_control_subsys_t subsys);
+
+enum clock_control_status common_api_get_status(const struct device *dev,
+						clock_control_subsys_t subsys);
+
+int common_api_request(const struct device *dev, const struct nrf_clock_spec *spec,
+		       struct onoff_client *cli);
+
+int common_api_release(const struct device *dev, const struct nrf_clock_spec *spec);
+
+int common_api_cancel_or_release(const struct device *dev, const struct nrf_clock_spec *spec,
+				 struct onoff_client *cli);
+
+void common_onoff_start(struct onoff_manager *manager, onoff_notify_fn notify);
+
+void common_onoff_stop(struct onoff_manager *manager, onoff_notify_fn notify);
+
+int common_clk_init(const struct device *dev);
 
 #endif /* !CONFIG_CLOCK_CONTROL_NRF */
 
