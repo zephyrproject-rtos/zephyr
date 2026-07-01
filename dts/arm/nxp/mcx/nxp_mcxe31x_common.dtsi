@@ -1229,9 +1229,10 @@
 	};
 
 	wkpu: wkpu@2b4000 {
-		compatible = "nxp,wkpu";
+		compatible = "nxp,wuc-wkpu";
 		reg = <0x2b4000 0x90>;
 		interrupts = <83 0>;
+		#wakeup-ctrl-cells = <1>;
 		status = "disabled";
 	};
 

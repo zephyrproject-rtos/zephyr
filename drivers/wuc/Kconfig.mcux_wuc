@@ -8,6 +8,13 @@ config WUC_MCUX_LLWU
 	help
 	  Enable support for NXP LLWU(Low Leakage Wakeup Unit) wakeup controller driver.
 
+config WUC_MCUX_WKPU
+	bool "NXP WKPU wakeup control"
+	default y
+	depends on DT_HAS_NXP_WUC_WKPU_ENABLED
+	help
+	  Enable support for NXP WKPU (Wake-up Unit) wakeup controller driver.
+
 config WUC_MCUX_WUU
 	bool "NXP WUU wakeup control"
 	default y

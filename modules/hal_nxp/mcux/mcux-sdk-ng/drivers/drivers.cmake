@@ -121,6 +121,7 @@ set_variable_ifdef(CONFIG_UART_MCUX_IUART       CONFIG_MCUX_COMPONENT_driver.iua
 set_variable_ifdef(CONFIG_ADC_MCUX_12B1MSPS_SAR CONFIG_MCUX_COMPONENT_driver.adc_12b1msps_sar)
 set_variable_ifdef(CONFIG_HWINFO_MCUX_SRC       CONFIG_MCUX_COMPONENT_driver.src)
 set_variable_ifdef(CONFIG_DT_HAS_NXP_WUU_ENABLED CONFIG_MCUX_COMPONENT_driver.wuu)
+set_variable_ifdef(CONFIG_WUC_MCUX_WKPU         CONFIG_MCUX_COMPONENT_driver.wkpu)
 set_variable_ifdef(CONFIG_HWINFO_MCUX_SIM       CONFIG_MCUX_COMPONENT_driver.sim)
 set_variable_ifdef(CONFIG_HWINFO_MCUX_RCM       CONFIG_MCUX_COMPONENT_driver.rcm)
 set_variable_ifdef(CONFIG_IPM_MCUX              CONFIG_MCUX_COMPONENT_driver.mailbox)
