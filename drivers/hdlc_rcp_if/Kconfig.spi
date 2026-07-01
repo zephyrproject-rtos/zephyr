@@ -31,4 +31,17 @@ config HDLC_RCP_IF_SPI_SMALL_PACKET_SIZE
 	  Specify the smallest packet we can receive in a single transaction.
 	  Larger packets will require multiple transactions.
 
+config HDLC_RCP_IF_SPI_DEFERRED_INIT
+	bool "Defer SPI RCP interface start until explicitly requested"
+	depends on HDLC_RCP_IF_SPI
+	help
+	  When enabled, prevents net_if_post_init() from automatically
+	  bringing up the OpenThread interface at boot, and defers SPI
+	  interrupt arming until hdlc_api.deferred_init() is called.
+	  This is required when the RCP firmware is loaded asynchronously
+	  (e.g. IW61X firmware uploaded via BT UART H4 before SPI is active).
+	  hdlc_api.deferred_init() can be called once the firmware is ready.
+	  the SPI IRQ is armed and the network interface is brought up.
+	  When disabled, SPI IRQ is armed during init and the interface
+	  is brought up automatically.
 endif
