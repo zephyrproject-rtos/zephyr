@@ -352,6 +352,49 @@ function. The display sample can be built for this module like so:
    :goals: build
    :compact:
 
+Flash Memory Configuration
+==========================
+
+By default the board boots and executes in place (XIP) from the on-board octal
+SPI NOR (MX25UM51345G) on XSPI0.
+
+Boards that have been reworked to populate the on-board Winbond W25Q512NW quad
+SPI NOR on XSPI0 instead are supported through the ``w25q512nw`` board revision,
+which selects the quad flash device, the matching boot flash configuration block
+(FCB) used by the boot ROM for XIP, and the corresponding XSPI0 clock setup. The
+spi flash sample can be built for this revision like so:
+
+.. zephyr-app-commands::
+   :board: mimxrt700_evk@w25q512nw/mimxrt798s/cm33_cpu0
+   :zephyr-app: samples/drivers/spi_flash
+   :west-args: -p always
+   :goals: build
+   :compact:
+
+The hardware rework routes XSPI0 to the W25Q512NW quad SPI NOR by changing the
+following resistors:
+
+- Removed: R396, R397, R400, R402
+- Populated: R386, R694, R695, R701, R707, R708
+
+Building without a revision qualifier selects the default ``mx25um51345g``
+revision, which targets the as-shipped octal flash.
+
+.. note::
+
+   The ``w25q512nw`` revision is flashed with LinkServer
+   (``west flash --runner linkserver``); the default J-Link runner does not
+   support this part. LinkServer drives the secure XSPI0 region through the
+   ``MIMXRT700_XSPI0_Quad_S.cfx`` flash algorithm, which is provided separately
+   by NXP. Copy it into ``<LinkServer>/binaries/Flash/``.
+
+   .. code-block:: shell
+
+      west flash --runner linkserver -- \
+        --override=/board/memory/1/flash-driver=MIMXRT700_XSPI0_Quad_S.cfx
+      # west flash --runner linkserver -- \
+      #   --override=/device/memory/5/flash-driver=MIMXRT700_XSPI0_Quad_S.cfx
+
 .. include:: ../../common/board-footer.rst.inc
 
 .. _i.MX RT700 Website:
