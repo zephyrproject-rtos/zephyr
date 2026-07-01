@@ -2,42 +2,38 @@ Title: Test to verify the SW Vector Relay feature (ARM Only)
 
 Description:
 
-This test verifies that the vector table relay feature
-(CONFIG_SW_VECTOR_RELAY=y) works as expected. Only for
-ARM Cortex-M targets.
+This test verifies that the software vector table relay feature
+(CONFIG_SW_VECTOR_RELAY=y) works as expected. It runs only on ARM
+Cortex-M targets.
+
+The arm_sw_vector_relay suite verifies that the relay vector table entries
+(other than the first two, reserved for the initial MSP and the reset
+handler) all point to the relay handling function, and that the vector
+table pointer is set up correctly: on targets with VTOR the forwarding and
+real vector tables respect the VTOR.TBLOFF alignment requirement and VTOR
+points to the real table, while on targets without VTOR the vector table
+pointer points to the start of the real vector table.
 
 ---------------------------------------------------------------------------
 
-Building and Running Project:
+Building and Running:
 
-This project outputs to the console.  It can be built and executed on QEMU as
-follows:
+Build and run with twister, for example on an ARM Cortex-M QEMU platform:
 
-    ninja/make run
+    twister -p mps2/an385 -T tests/arch/arm/arm_sw_vector_relay
 
----------------------------------------------------------------------------
+Or build and run a single platform directly with west:
 
-Troubleshooting:
-
-Problems caused by out-dated project information can be addressed by
-issuing one of the following commands then rebuilding the project:
-
-    ninja/make clean    # discard results of previous builds
-                        # but keep existing configuration info
-or
-    ninja/make pristine # discard results of previous builds
-                        # and restore pre-defined configuration info
+    west build -b mps2/an385 tests/arch/arm/arm_sw_vector_relay
+    west build -t run
 
 ---------------------------------------------------------------------------
 
 Sample Output:
 
-***** Booting Zephyr OS build zephyr-v1.14.0-1726-gb95a71960622 *****
-Running test suite arm_sw_vector_relay
+Running TESTSUITE arm_sw_vector_relay
 ===================================================================
-starting test - test_arm_sw_vector_relay
-PASS - test_arm_sw_vector_relay
+START - test_arm_sw_vector_relay
+ PASS - test_arm_sw_vector_relay
 ===================================================================
-Test suite arm_sw_vector_relay succeeded
-===================================================================
-PROJECT EXECUTION SUCCESSFUL
+TESTSUITE arm_sw_vector_relay succeeded
