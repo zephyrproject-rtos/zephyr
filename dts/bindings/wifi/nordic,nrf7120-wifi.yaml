@@ -10,3 +10,14 @@ compatible: "nordic,nrf7120-wifi"
 include:
   - "wifi-tx-power-2g.yaml"
   - "wifi-tx-power-5g.yaml"
+
+properties:
+  nordic,wifi-xo-freq-offset:
+    type: int
+    default: 0
+    description: |
+      Crystal oscillator (XO) frequency offset trim, applied by the Wi-Fi
+      firmware for frequency/temperature/voltage-dependent calibration.
+      This is a board-level value that depends on the crystal used.
+      The typical default is 0. Interpreted by the firmware as a signed
+      8-bit value.
