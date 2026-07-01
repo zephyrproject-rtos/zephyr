@@ -92,6 +92,8 @@ NET_BUF_POOL_FIXED_DEFINE(disc_pool, 1,
 	__l2cap_lookup_ident(conn, ident, req_opcode, true)
 
 static sys_slist_t servers = SYS_SLIST_STATIC_INIT(&servers);
+
+static uint16_t le_cid_next[CONFIG_BT_MAX_CONN];
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 /* L2CAP signalling channel specific context */
@@ -122,11 +124,33 @@ static uint8_t get_ident(void)
 }
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+static inline void bt_l2cap_le_cid_init(struct bt_conn *conn)
+{
+	size_t index;
+
+	index = (size_t)bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(le_cid_next), "Index is out of bounds");
+
+	le_cid_next[index] = L2CAP_LE_CID_DYN_START;
+}
+
+static inline uint16_t bt_l2cap_le_cid_increase(uint16_t cid)
+{
+	cid++;
+
+	if (cid > L2CAP_LE_CID_DYN_END) {
+		cid = L2CAP_LE_CID_DYN_START;
+	}
+	return cid;
+}
+
 static struct bt_l2cap_le_chan *l2cap_chan_alloc_cid(struct bt_conn *conn,
 						     struct bt_l2cap_chan *chan)
 {
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
-	uint16_t cid;
+	uint16_t start;
+	uint16_t sentinel;
+	size_t index;
 
 	/*
 	 * No action needed if there's already a CID allocated, e.g. in
@@ -136,12 +160,26 @@ static struct bt_l2cap_le_chan *l2cap_chan_alloc_cid(struct bt_conn *conn,
 		return le_chan;
 	}
 
-	for (cid = L2CAP_LE_CID_DYN_START; cid <= L2CAP_LE_CID_DYN_END; cid++) {
-		if (!bt_l2cap_le_lookup_rx_cid(conn, cid)) {
-			le_chan->rx.cid = cid;
+	index = (size_t)bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(le_cid_next), "Index is out of bounds");
+
+	start = le_cid_next[index];
+	sentinel = le_cid_next[index];
+
+	if (start < L2CAP_LE_CID_DYN_START || start > L2CAP_LE_CID_DYN_END) {
+		start = L2CAP_LE_CID_DYN_START;
+		sentinel = L2CAP_LE_CID_DYN_START;
+	}
+
+	do {
+		if (bt_l2cap_le_lookup_rx_cid(conn, start) == NULL) {
+			le_chan->rx.cid = start;
+			le_cid_next[index] = bt_l2cap_le_cid_increase(start);
 			return le_chan;
 		}
-	}
+
+		start = bt_l2cap_le_cid_increase(start);
+	} while (start != sentinel);
 
 	return NULL;
 }
@@ -418,6 +456,10 @@ void bt_l2cap_connected(struct bt_conn *conn)
 		bt_l2cap_br_connected(conn);
 		return;
 	}
+
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	bt_l2cap_le_cid_init(conn);
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 	STRUCT_SECTION_FOREACH(bt_l2cap_fixed_chan, fchan) {
 		struct bt_l2cap_le_chan *le_chan;
