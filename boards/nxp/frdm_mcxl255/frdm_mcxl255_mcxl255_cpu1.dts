@@ -41,3 +41,7 @@
 	pinctrl-0 = <&pinmux_aon_lpi2c0>;
 	pinctrl-names = "default";
 };
+
+&mbox_b {
+	status = "okay";
+};

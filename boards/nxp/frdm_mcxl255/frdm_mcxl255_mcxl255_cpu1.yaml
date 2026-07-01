@@ -13,4 +13,5 @@ toolchain:
 supported:
   - uart
   - i2c
+  - mbox
 vendor: nxp

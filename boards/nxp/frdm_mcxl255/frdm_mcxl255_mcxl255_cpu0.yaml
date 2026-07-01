@@ -18,4 +18,5 @@ supported:
   - rtc
   - crc
   - watchdog
+  - mbox
 vendor: nxp
