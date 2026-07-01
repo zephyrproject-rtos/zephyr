@@ -659,8 +659,8 @@ Bluetooth HCI:
   status: maintained
   maintainers:
     - jhedberg
-    - alwa-nordic
   collaborators:
+    - alwa-nordic
     - hermabe
     - Thalley
     - sjanc
@@ -685,8 +685,8 @@ Bluetooth Host:
   status: maintained
   maintainers:
     - jhedberg
-    - alwa-nordic
   collaborators:
+    - alwa-nordic
     - hermabe
     - rugeGerritsen
     - sjanc
