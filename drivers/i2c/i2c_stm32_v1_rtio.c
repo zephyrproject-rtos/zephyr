@@ -69,6 +69,7 @@ static void i2c_stm32_controller_mode_end(const struct device *dev, int status)
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
+	bool disable_i2c = true;
 
 	i2c_stm32_disable_transfer_interrupts(dev);
 
@@ -77,14 +78,15 @@ static void i2c_stm32_controller_mode_end(const struct device *dev, int status)
 	if (data->target_attached) {
 		i2c_stm32_enable_transfer_interrupts(dev);
 		LL_I2C_AcknowledgeNextData(i2c, LL_I2C_ACK);
-		return;
+		disable_i2c = false;
 	}
 #endif
 
-	LL_I2C_Disable(i2c);
-	if (data->xfer_len == 0U) {
-		i2c_stm32_rtio_complete(dev, status);
+	if (disable_i2c) {
+		LL_I2C_Disable(i2c);
 	}
+
+	i2c_stm32_rtio_complete(dev, status);
 }
 
 static void handle_sb(const struct device *dev)
