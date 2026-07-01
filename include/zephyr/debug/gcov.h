@@ -9,10 +9,12 @@
 
 #ifdef CONFIG_COVERAGE_GCOV
 void gcov_coverage_dump(void);
+void gcov_coverage_dump_tagged(const char *tag);
 void gcov_coverage_semihost(void);
 void gcov_static_init(void);
 #else
 static inline void gcov_coverage_dump(void) { }
+static inline void gcov_coverage_dump_tagged(const char *tag) { (void)tag; }
 static inline void gcov_static_init(void) { }
 
 #endif	/* CONFIG_COVERAGE_GCOV */
