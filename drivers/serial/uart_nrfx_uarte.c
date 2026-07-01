@@ -1623,6 +1623,7 @@ static int count_byte_with_timer_common_init(const struct device *dev)
 
 	ret = nrfx_gppi_conn_alloc(evt, tsk, &async_rx->ppi_h);
 	if (ret < 0) {
+		LOG_ERR("GPPI allocation failed: %d", ret);
 		return ret;
 	}
 
@@ -3391,22 +3392,27 @@ static int uarte_instance_deinit(const struct device *dev)
  *
  * Macro determines if delayed initialization needs to be applied.
  */
-#define UARTE_INIT_AFTER_GPPI(idx)					       \
-	COND_CODE_1(UTIL_AND(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER,   \
-			     UARTE_HAS_PROP(idx, timer)),		       \
-		    (UTIL_AND(IS_ENABLED(CONFIG_NRFX_GPPI_SD2PPI_GLOBAL),      \
-			      IS_ENABLED(CONFIG_IRONSIDE_SE_CALL))), (0))
+#define UARTE_INIT_AFTER_GPPI(idx)							\
+	COND_CODE_1(UTIL_AND(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER,		\
+			     UARTE_HAS_PROP(idx, timer)),				\
+		    (UTIL_OR(IS_ENABLED(CONFIG_GPPI_EXT_ALLOCATOR_CLI),			\
+			     UTIL_AND(IS_ENABLED(CONFIG_NRFX_GPPI_SD2PPI_GLOBAL),	\
+				      IS_ENABLED(CONFIG_IRONSIDE_SE_CALL)))), (0))
 
 /* Init phase is delayed to POST_KERNEL if it relies on Ironside+GPPI being ready. */
 #define UARTE_INIT_PHASE(idx)						       \
 	COND_CODE_1(UARTE_INIT_AFTER_GPPI(idx), (POST_KERNEL), (PRE_KERNEL_1))
 
+#define UARTE_INIT_BASE_PRIO COND_CODE_1(CONFIG_GPPI_EXT_ALLOCATOR_CLI,			\
+			(UTIL_INC(UTIL_INC(CONFIG_IPC_SERVICE_REG_BACKEND_PRIORITY))),	\
+			(UTIL_INC(UTIL_INC(CONFIG_IRONSIDE_SE_CALL_INIT_PRIORITY))))
+
 /* If delayed initialization is used then init priority is derived from Ironside
- * communication initialization priority.
+ * communication initialization priority or GPPI external allocator backend priority.
  */
-#define UARTE_INIT_PRIO(idx)						       \
-	COND_CODE_1(UARTE_INIT_AFTER_GPPI(idx),				       \
-		   (UTIL_INC(UTIL_INC(CONFIG_IRONSIDE_SE_CALL_INIT_PRIORITY))),\
+#define UARTE_INIT_PRIO(idx)								\
+	COND_CODE_1(UARTE_INIT_AFTER_GPPI(idx),						\
+		   (UARTE_INIT_BASE_PRIO),						\
 		   (CONFIG_SERIAL_INIT_PRIORITY))
 
 #define UART_NRF_UARTE_DEVICE(idx)					       \
