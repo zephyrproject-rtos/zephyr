@@ -172,3 +172,18 @@ def test_xsdbbinaryrunner_create(check_call, path_exists, tc, runner_config):
     runner.do_run("flash")
 
     assert check_call.call_args_list == [call(tc["expected_cmd"])]
+
+
+@patch("runners.xsdb.os.path.exists")
+def test_xsdbbinaryrunner_default_config_prefers_tcl(path_exists, runner_config):
+    '''Default config lookup prefers xsdb_cfg.tcl over xsdb.cfg.'''
+
+    def exists_side_effect(path):
+        return path.endswith("xsdb_cfg.tcl") or path.endswith("xsdb.cfg")
+
+    path_exists.side_effect = exists_side_effect
+
+    with patch("runners.xsdb.os.path.join", side_effect=lambda *parts: "/".join(parts)):
+        runner = XSDBBinaryRunner(cfg=runner_config)
+
+    assert runner.xsdb_cfg_file == f"{runner_config.board_dir}/support/xsdb_cfg.tcl"

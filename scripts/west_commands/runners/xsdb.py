@@ -18,9 +18,11 @@ class XSDBBinaryRunner(ZephyrBinaryRunner):
         self.elf_file = cfg.elf_file
         if not config:
             cfgfile_path = os.path.join(cfg.board_dir, 'support')
-            default = os.path.join(cfgfile_path, 'xsdb.cfg')
-            if os.path.exists(default):
-                config = default
+            for name in ('xsdb_cfg.tcl', 'xsdb.cfg'):
+                candidate = os.path.join(cfgfile_path, name)
+                if os.path.exists(candidate):
+                    config = candidate
+                    break
         self.xsdb_cfg_file = config
         self.bitstream = bitstream
         self.fsbl = fsbl
