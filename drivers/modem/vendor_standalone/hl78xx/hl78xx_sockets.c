@@ -3764,23 +3764,26 @@ static bool offload_is_supported(int family, int type, int proto)
 	return false;
 }
 
-#define MODEM_HL78XX_DEFINE_OFFLOAD_INSTANCE(inst)                                                 \
-	static struct hl78xx_socket_data hl78xx_socket_data_##inst = {                             \
-		.devices.hl78xx = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),                     \
+#define HL78XX_OFFLOAD_ID(node_id) UTIL_CAT(hl78xx_offload_, DT_NODE_HASH(node_id))
+
+#define HL78XX_SOCKET_DATA_NAME(node_id) UTIL_CAT(hl78xx_socket_data_, DT_NODE_HASH(node_id))
+
+#define MODEM_HL78XX_DEFINE_OFFLOAD_NODE(node_id)                                                  \
+	static struct hl78xx_socket_data HL78XX_SOCKET_DATA_NAME(node_id) = {                      \
+		.devices.hl78xx = DEVICE_DT_GET(DT_PARENT(node_id)),                               \
 	};                                                                                         \
-	NET_DEVICE_OFFLOAD_INIT(                                                                   \
-		inst, "hl78xx_dev", hl78xx_socket_init, NULL, &hl78xx_socket_data_##inst, NULL,    \
-		CONFIG_MODEM_HL78XX_OFFLOAD_INIT_PRIORITY, &api_funcs, MDM_MAX_DATA_LENGTH);       \
+	NET_DEVICE_OFFLOAD_INIT(HL78XX_OFFLOAD_ID(node_id), "hl78xx_dev", hl78xx_socket_init,      \
+				NULL, &HL78XX_SOCKET_DATA_NAME(node_id), NULL,                     \
+				CONFIG_MODEM_HL78XX_OFFLOAD_INIT_PRIORITY, &api_funcs,             \
+				MDM_MAX_DATA_LENGTH);                                              \
                                                                                                    \
-	NET_SOCKET_OFFLOAD_REGISTER(inst, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, NET_AF_UNSPEC,      \
+	NET_SOCKET_OFFLOAD_REGISTER(HL78XX_OFFLOAD_ID(node_id),                                    \
+				    CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, NET_AF_UNSPEC,            \
 				    offload_is_supported, offload_socket);
 
-#define MODEM_OFFLOAD_DEVICE_SWIR_HL78XX(inst) MODEM_HL78XX_DEFINE_OFFLOAD_INSTANCE(inst)
+#define MODEM_OFFLOAD_DEVICE_SWIR_HL7812(node_id) MODEM_HL78XX_DEFINE_OFFLOAD_NODE(node_id)
 
-#define DT_DRV_COMPAT swir_hl7812_offload
-DT_INST_FOREACH_STATUS_OKAY(MODEM_OFFLOAD_DEVICE_SWIR_HL78XX)
-#undef DT_DRV_COMPAT
+#define MODEM_OFFLOAD_DEVICE_SWIR_HL7800(node_id) MODEM_HL78XX_DEFINE_OFFLOAD_NODE(node_id)
 
-#define DT_DRV_COMPAT swir_hl7800_offload
-DT_INST_FOREACH_STATUS_OKAY(MODEM_OFFLOAD_DEVICE_SWIR_HL78XX)
-#undef DT_DRV_COMPAT
+DT_FOREACH_STATUS_OKAY(swir_hl7812_offload, MODEM_OFFLOAD_DEVICE_SWIR_HL7812)
+DT_FOREACH_STATUS_OKAY(swir_hl7800_offload, MODEM_OFFLOAD_DEVICE_SWIR_HL7800)
