@@ -147,4 +147,13 @@
 				 <I2C1_SCL_GPIO45>;
 		};
 	};
+
+	i2s_gpio18: i2s-gpio18 {
+		group1 {
+			pinmux = <PCM_CLK_GPIO18>,
+				 <PCM_FS_GPIO19>,
+				 <PCM_DIN_GPIO20>,
+				 <PCM_DOUT_GPIO21>;
+		};
+	};
 };

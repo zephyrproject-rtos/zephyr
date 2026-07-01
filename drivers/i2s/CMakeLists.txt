@@ -8,6 +8,7 @@ zephyr_library_sources(i2s_common.c)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_I2S_AMBIQ i2s_ambiq.c)
+zephyr_library_sources_ifdef(CONFIG_I2S_BCM2835 i2s_bcm2835.c)
 zephyr_library_sources_ifdef(CONFIG_I2S_ESP32 i2s_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_I2S_INFINEON i2s_infineon.c)
 zephyr_library_sources_ifdef(CONFIG_I2S_LITEX i2s_litex.c)
