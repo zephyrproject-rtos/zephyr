@@ -340,6 +340,32 @@ static void send_info_get(struct bt_mesh_blob_cli *b, uint16_t dst)
 	struct bt_mesh_dfu_cli *cli = DFU_CLI(b);
 	struct bt_mesh_msg_ctx ctx = MSG_CTX(cli, dst);
 
+	if (bt_mesh_has_addr(dst)) {
+		const struct bt_mesh_elem *elem = bt_mesh_elem_find(dst);
+		const struct bt_mesh_model *mod =
+			elem ? bt_mesh_model_find(elem, BT_MESH_MODEL_ID_DFU_SRV) : NULL;
+		struct bt_mesh_dfu_srv *dfu_srv = mod ? mod->rt->user_data : NULL;
+
+		if (dfu_srv &&
+		    dfu_srv->update.phase == BT_MESH_DFU_PHASE_APPLYING) {
+			struct bt_mesh_dfu_target *target = target_get(cli, dst);
+
+			/* The local DFU Server defers its apply callback until
+			 * the Confirm step completes (see dfu_confirmed() in
+			 * dfd_srv.c), so it will reject Firmware Update
+			 * Information Get with EBUSY per MshDFUv1.0 Section 7.2.
+			 * Retrying only delays confirmed() from triggering the
+			 * deferred apply. Ack the self-target immediately and
+			 * drive the broadcast state machine forward.
+			 */
+			if (target) {
+				blob_cli_broadcast_rsp(&cli->blob, &target->blob);
+			}
+			blob_cli_broadcast_tx_complete(&cli->blob);
+			return;
+		}
+	}
+
 	cli->req.img_cnt = 0xff;
 
 	info_get(cli, &ctx, 0, cli->req.img_cnt, &send_cb);
@@ -652,6 +678,14 @@ static void confirmed(struct bt_mesh_blob_cli *b)
 			target->phase = BT_MESH_DFU_PHASE_APPLY_FAIL;
 			target_failed(cli, target, BT_MESH_DFU_ERR_INTERNAL);
 		} else if (!target->blob.acked) {
+			if (bt_mesh_has_addr(target->blob.addr)) {
+				/* Self-target deferred apply until distribution
+				 * completes, so it can't confirm yet.
+				 */
+				success = true;
+				continue;
+			}
+
 			LOG_DBG("Target 0x%04x failed to respond", target->blob.addr);
 			target->phase = BT_MESH_DFU_PHASE_APPLY_FAIL;
 			target_failed(cli, target, BT_MESH_DFU_ERR_INTERNAL);
