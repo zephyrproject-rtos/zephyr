@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig J1939
+	bool "CAN J1939 stack"
+	depends on CAN
+	help
+	  Enable the J1939 stack imported under drivers/j1939.
+	  This stack uses a compatibility shim layer and is separate from
+	  Zephyr's native J1939 support.
+
+if J1939
+
+config J1939_MAX_NODES_IN_SYSTEM
+	int "Max number of CAN nodes possible on a single bus"
+	range 1 253
+	default 1
+	help
+	  Maximum number of CAN nodes that are expected to be on a single CAN bus.
+	  Used to store tracking of CAN name of other nodes.
+	  253 is max since the source address is only a byte and 0xFE is NULL and 0xFF is global.
+
+config J1939_MAX_PGN_REQUEST_MESSAGES
+    int "Max number of request messages this node supports"
+    range 3 255
+    default 10
+    help
+      How many requests for PGN's this module supports on each address node
+      ECU ID, Software ID, Protocol ID
+
+config J1939_LEGACY_CAN_RX_BUFFER_SIZE
+	int "Legacy shim RX queue capacity"
+	range 8 256
+	default 64
+	help
+	  Compatibility value used by the imported stack's configuration checks.
+
+config J1939_LEGACY_CAN_TX_BUFFER_SIZE_PER_NODE
+	int "Legacy shim TX queue capacity per node"
+	range 8 512
+	default 64
+	help
+	  Compatibility value used by the imported stack's configuration checks.
+
+config J1939_LEGACY_TIME_APP_SOURCE
+	bool "Use legacy J1939Timer_App.c time source"
+	default n
+	help
+	  Enable this only if you provide a target-specific implementation in
+	  Application/J1939Timer_App.c. By default the Zephyr glue drives
+	  time via J1939Timer_Update().
+
+config J1939_LEGACY_AUTO_INIT
+	bool "Auto initialize and schedule J1939 task"
+	default y
+	help
+	  Initialize J1939 at boot and run J1939_Task periodically.
+
+config J1939_LEGACY_TASK_PERIOD_MS
+	int "J1939 periodic task interval (ms)"
+	range 1 1000
+	default 10
+	depends on J1939_LEGACY_AUTO_INIT
+	help
+	  Period used by the Zephyr delayed work loop that calls J1939_Task.
+
+endif # J1939
