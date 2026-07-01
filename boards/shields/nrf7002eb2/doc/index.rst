@@ -48,12 +48,17 @@ The shield can be used in any application by setting ``--shield nrf7002eb2`` whe
 Console and UART impact
 ***********************
 
-On nRF54L15 DK and nRF54LM20 DK, the expansion header pins conflict with the pins used by
+On the nRF54L15 DK, the expansion header pins conflict with the pins used by
 Virtual Serial Port 1 (VCOM1).
 
 Because the application core (CPUAPP) is essential, the shield overlay disables the conflicting
 UART20 and reroutes the application console (including shell, mcumgr, and Bluetooth monitor) to
 UART30, which maps to VCOM0.
+
+.. note::
+   The nRF54LM20 DK is not affected. Its UART20 pins (P1.16-P1.19) do not overlap any nRF7002
+   EB II signal, so UART20 (VCOM1) remains the default console when the shield is attached, and
+   all buttons stay usable. The rest of this section applies to the nRF54L15 DK only.
 
 Key changes and requirements
 ----------------------------
