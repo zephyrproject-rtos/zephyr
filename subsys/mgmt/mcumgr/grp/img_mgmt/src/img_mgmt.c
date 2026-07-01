@@ -240,20 +240,10 @@ int img_mgmt_active_slot(int image)
 	/* Multi image does not support DirectXIP or RAM load currently */
 #if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 1
 	slot = (image << 1);
-#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
-	/* RAM load requires querying bootloader */
-	int rc;
-	uint8_t temp_slot;
-
-	rc = blinfo_lookup(BLINFO_RUNNING_SLOT, &temp_slot, sizeof(temp_slot));
-
-	if (rc <= 0) {
-		LOG_ERR("Failed to fetch active slot: %d", rc);
-
-		return 255;
-	}
-
-	slot = (int)temp_slot;
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_USES_HW_IMAGE_SWAP)
+	slot = boot_fetch_active_slot_number();
 #else
 	/* This covers single image, including DirectXiP */
 	if (PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition)) {

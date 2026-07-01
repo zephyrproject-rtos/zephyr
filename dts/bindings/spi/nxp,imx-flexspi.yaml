@@ -105,6 +105,19 @@ properties:
       the FLEXSPI IP. When set, all memory accesses that cross an address
       boundary of the specified size will be divided into smaller sub accesses.
 
+  nxp,remap-alignment:
+    type: int
+    default: 4096
+    description: |
+      Alignment for address remapping.
+
+  nxp,remap-provide-hwimageswap:
+    type: boolean
+    description: |
+      Use FlexSPI address remapping for HW Image Swapping. This is intended
+      to be used with MCUboot with HW_IMAGE_SWAP option enabled. Slot1 will be
+      remapped onto slot0 if image in slot1 is selected for run by the bootloader.
+
 child-binding:
   description: NXP FlexSPI port
 

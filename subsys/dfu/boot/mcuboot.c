@@ -21,10 +21,12 @@
 #include <zephyr/dfu/mcuboot.h>
 
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
-	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_USES_HW_IMAGE_SWAP)
 /* For RAM LOAD mode, the active image must be fetched from the bootloader */
 #include <bootutil/boot_status.h>
 #include <zephyr/retention/blinfo.h>
+#include <zephyr/drivers/memc/hwimageswap.h>
 
 #define SLOT0_PARTITION		slot0_partition
 #define SLOT1_PARTITION		slot1_partition
@@ -74,10 +76,10 @@ enum IMAGE_INDEXES {
 };
 
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
-	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_USES_HW_IMAGE_SWAP)
 /* For RAM LOAD mode, the active image must be fetched from the bootloader */
-#define ACTIVE_SLOT_FLASH_AREA_ID boot_fetch_active_slot()
-#define INVALID_SLOT_ID 255
+#define ACTIVE_SLOT_FLASH_AREA_ID boot_fetch_active_slot_area_id()
 #else
 /* Get active partition. zephyr,code-partition chosen node must be defined */
 #define ACTIVE_SLOT_FLASH_AREA_ID DT_PARTITION_ID(DT_CHOSEN(zephyr_code_partition))
@@ -107,19 +109,34 @@ struct mcuboot_v1_raw_header {
  */
 
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
-	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
-uint8_t boot_fetch_active_slot(void)
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_USES_HW_IMAGE_SWAP)
+uint8_t boot_fetch_active_slot_number(void)
 {
-	int rc;
+	int rc = 0;
 	uint8_t slot;
 
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_USES_HW_IMAGE_SWAP)
+	slot = boot_hwimageswap_get_active_slot();
+	(void) rc;
+#else
 	rc = blinfo_lookup(BLINFO_RUNNING_SLOT, &slot, sizeof(slot));
 
 	if (rc <= 0) {
 		LOG_ERR("Failed to fetch active slot: %d", rc);
 
-		return INVALID_SLOT_ID;
+		return BOOT_INVALID_SLOT_ID;
 	}
+#endif
+
+	return slot;
+}
+
+uint8_t boot_fetch_active_slot_area_id(void)
+{
+	uint8_t slot;
+
+	slot = boot_fetch_active_slot_number();
 
 	LOG_DBG("Active slot: %d", slot);
 	/* Map slot number back to flash area ID */
@@ -206,12 +223,12 @@ uint8_t boot_fetch_active_slot(void)
 		break;
 	}
 
-	return INVALID_SLOT_ID;
+	return BOOT_INVALID_SLOT_ID;
 }
 #else  /* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD ||
 	* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT
 	*/
-uint8_t boot_fetch_active_slot(void)
+uint8_t boot_fetch_active_slot_area_id(void)
 {
 	return ACTIVE_SLOT_FLASH_AREA_ID;
 }
