@@ -1642,3 +1642,12 @@ test_i2c_tmp451: tmp451@d5 {
 	reg = <0xd5>;
 	alert-gpios = <&test_gpio 0 0>;
 };
+
+sen6x: sen6x@6b {
+	compatible = "sensirion,sen6x";
+	reg = <0x6b>;
+	model = "SEN66";
+	auto-clear-device-status;
+	start-measurement-on-init;
+	status = "okay";
+};
