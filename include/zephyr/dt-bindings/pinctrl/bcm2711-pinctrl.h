@@ -148,4 +148,21 @@
 #define I2C6_SDA_GPIO22   BCM2711_PINMUX(22, BCM2711_FSEL_ALT5)
 #define I2C6_SCL_GPIO23   BCM2711_PINMUX(23, BCM2711_FSEL_ALT5)
 
+/* SPI0 pinmux. The "main" SPI controller (spi@7e204000) routes to
+ * GPIO 7..11 via ALT0 on the BCM283x family: CE1 / CE0 / MISO / MOSI /
+ * SCLK. Boards that drive chip-select from a plain GPIO -- the common
+ * Zephyr pattern, and what the Zephyr driver expects -- leave GPIO 7
+ * and 8 unmuxed and use only MISO / MOSI / SCLK here.
+ */
+/** @brief SPI0 chip-select 1 on GPIO 7 via ALT0. */
+#define SPI0_CE1_GPIO7    BCM2711_PINMUX(7,  BCM2711_FSEL_ALT0)
+/** @brief SPI0 chip-select 0 on GPIO 8 via ALT0. */
+#define SPI0_CE0_GPIO8    BCM2711_PINMUX(8,  BCM2711_FSEL_ALT0)
+/** @brief SPI0 MISO on GPIO 9 via ALT0. */
+#define SPI0_MISO_GPIO9   BCM2711_PINMUX(9,  BCM2711_FSEL_ALT0)
+/** @brief SPI0 MOSI on GPIO 10 via ALT0. */
+#define SPI0_MOSI_GPIO10  BCM2711_PINMUX(10, BCM2711_FSEL_ALT0)
+/** @brief SPI0 SCLK on GPIO 11 via ALT0. */
+#define SPI0_SCLK_GPIO11  BCM2711_PINMUX(11, BCM2711_FSEL_ALT0)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_BCM2711_PINCTRL_H_ */
