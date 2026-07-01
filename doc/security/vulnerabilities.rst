@@ -330,6 +330,97 @@ This has been fixed in main for v4.4.0
 - `PR 102110 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/102110>`_
 
+:cve:`2026-7007`
+----------------
+
+Under embargo until 2026-07-23
+
+:cve:`2026-7656`
+----------------
+
+Broken IPv6 Neighbor Discovery input validation allows spoofed RA/NS/NA acceptance in Zephyr net stack
+
+The IPv6 Neighbor Discovery handlers in ``subsys/net/ip/ipv6_nbr.c``
+(``handle_ra_input``, ``handle_ns_input``, ``handle_na_input``) used an incorrect
+boolean expression that combined the RFC 4861 validity checks with the ICMPv6 code check
+using the wrong operator precedence: the form was '((length/hop/source/target checks) &&
+(icmp_hdr->code != 0))'. Because every legitimate ND message carries ICMPv6 code 0, an
+attacker setting code == 0 (the normal value) caused the entire predicate to evaluate
+false, so the packet was never dropped and all of the other checks were silently
+skipped. The bypassed checks include the mandatory Hop Limit == 255 verification (which
+proves an ND packet originated on-link and was not forwarded) and, for Router
+Advertisements, the requirement that the source be a link-local address, as well as
+multicast-target sanity checks. As a result, an adjacent on-link attacker — and, because
+the Hop-Limit-255 guard is bypassed, potentially a remote/off-link attacker whose
+packets would otherwise be rejected — can have forged Router Advertisement, Neighbor
+Solicitation, and Neighbor Advertisement messages accepted. A forged RA lets the
+attacker reconfigure the victim's default router, on-link prefixes (SLAAC), MTU,
+reachable/retransmit timers, and (with ``CONFIG_NET_IPV6_RA_RDNSS``) DNS servers, while
+forged NS/NA enable neighbor-cache poisoning, enabling man-in-the-middle, traffic
+redirection, and denial of service. The flaw is an input-validation/authentication
+weakness rather than a memory-safety issue: the underlying packet-parsing primitives
+(``net_pkt_get_data``, ``net_pkt_read``, ``net_pkt_skip``) are independently bounds-safe
+and the validated 'length' is the true buffer length, so skipping the length check
+causes no out-of-bounds access. The defect has existed since the logic was introduced in
+2018 and shipped in all releases through v4.4.0; it is fixed by splitting the condition
+so any failing check drops the packet.
+
+- `Zephyr project bug tracker GHSA-cpjw-rvwx-ph9f
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-cpjw-rvwx-ph9f>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 107902 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107902>`_
+
+- `PR 108195 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108195>`_
+
+- `PR 108192 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108192>`_
+
+- `PR 108131 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108131>`_
+
+:cve:`2026-8023`
+----------------
+
+Path traversal in Zephyr HTTP server static-filesystem resource handler allows unauthenticated remote arbitrary file read
+
+Zephyr's HTTP server (``subsys/net/lib/http``) provides a static-filesystem resource
+type (``HTTP_RESOURCE_TYPE_STATIC_FS``, available when ``CONFIG_FILE_SYSTEM`` is
+enabled) that serves files from a configured root directory. Before this fix, both the
+HTTP/1 and HTTP/2 front-ends placed the raw, attacker-controlled request path into
+``client->url_buffer`` (assembled in ``on_url()`` for HTTP/1 and copied verbatim from
+the :path pseudo-header for HTTP/2) without resolving ``.``/``..`` segments. The static-FS
+handler then built the on-disk filename by directly concatenating the configured root
+with that raw URL (``snprintk(fname, ..., "%s%s", static_fs_detail->fs_path,
+client->url_buffer)`` at ``http_server_http1.c:603`` and ``http_server_http2.c:490``)
+and opened it with ``fs_open(fname, FS_O_READ)``. Because the handler is reached via
+wildcard/leading-dir (``fnmatch`` ``FNM_LEADING_DIR``) or fallback resource matching, a
+request such as GET /<prefix>/../../<file> is dispatched to the handler and, after the
+underlying filesystem (e.g. LittleFS/FAT) resolves the ``..`` segments, escapes the
+configured web root, letting an unauthenticated remote client read arbitrary readable
+files on the mounted volume (information disclosure). The HTTP server requires no TLS or
+authentication to reach this path. The fix adds ``http_server_remove_dot_segments()``,
+which canonicalizes the path portion of the URL before resource lookup in both protocol
+handlers, neutralizing the traversal. Affects releases v4.0.0 through v4.4.0 for
+deployments that register a static-filesystem resource.
+
+- `Zephyr project bug tracker GHSA-hch3-53g6-jj3h
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hch3-53g6-jj3h>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 108531 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108531>`_
+
+- `PR 111346 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111346>`_
+
+- `PR 111347 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111347>`_
+
 :cve:`2026-8718`
 ----------------
 
@@ -377,6 +468,16 @@ This has been fixed in main for v4.5.0
 
 - `PR 109617 fix for v4.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/109617>`_
+
+:cve:`2026-9728`
+----------------
+
+Under embargo until 2026-08-23
+
+:cve:`2026-9771`
+----------------
+
+Under embargo until 2026-08-16
 
 :cve:`2026-10593`
 -----------------
@@ -1538,107 +1639,6 @@ Under embargo until 2026-08-11
 -----------------
 
 Under embargo until 2026-08-13
-
-:cve:`2026-7007`
-----------------
-
-Under embargo until 2026-07-23
-
-:cve:`2026-7656`
-----------------
-
-Broken IPv6 Neighbor Discovery input validation allows spoofed RA/NS/NA acceptance in Zephyr net stack
-
-The IPv6 Neighbor Discovery handlers in ``subsys/net/ip/ipv6_nbr.c``
-(``handle_ra_input``, ``handle_ns_input``, ``handle_na_input``) used an incorrect
-boolean expression that combined the RFC 4861 validity checks with the ICMPv6 code check
-using the wrong operator precedence: the form was '((length/hop/source/target checks) &&
-(icmp_hdr->code != 0))'. Because every legitimate ND message carries ICMPv6 code 0, an
-attacker setting code == 0 (the normal value) caused the entire predicate to evaluate
-false, so the packet was never dropped and all of the other checks were silently
-skipped. The bypassed checks include the mandatory Hop Limit == 255 verification (which
-proves an ND packet originated on-link and was not forwarded) and, for Router
-Advertisements, the requirement that the source be a link-local address, as well as
-multicast-target sanity checks. As a result, an adjacent on-link attacker — and, because
-the Hop-Limit-255 guard is bypassed, potentially a remote/off-link attacker whose
-packets would otherwise be rejected — can have forged Router Advertisement, Neighbor
-Solicitation, and Neighbor Advertisement messages accepted. A forged RA lets the
-attacker reconfigure the victim's default router, on-link prefixes (SLAAC), MTU,
-reachable/retransmit timers, and (with ``CONFIG_NET_IPV6_RA_RDNSS``) DNS servers, while
-forged NS/NA enable neighbor-cache poisoning, enabling man-in-the-middle, traffic
-redirection, and denial of service. The flaw is an input-validation/authentication
-weakness rather than a memory-safety issue: the underlying packet-parsing primitives
-(``net_pkt_get_data``, ``net_pkt_read``, ``net_pkt_skip``) are independently bounds-safe
-and the validated 'length' is the true buffer length, so skipping the length check
-causes no out-of-bounds access. The defect has existed since the logic was introduced in
-2018 and shipped in all releases through v4.4.0; it is fixed by splitting the condition
-so any failing check drops the packet.
-
-- `Zephyr project bug tracker GHSA-cpjw-rvwx-ph9f
-  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-cpjw-rvwx-ph9f>`_
-
-This has been fixed in main for v4.5.0
-
-- `PR 107902 fix for main
-  <https://github.com/zephyrproject-rtos/zephyr/pull/107902>`_
-
-- `PR 108195 fix for v3.7
-  <https://github.com/zephyrproject-rtos/zephyr/pull/108195>`_
-
-- `PR 108192 fix for v4.3
-  <https://github.com/zephyrproject-rtos/zephyr/pull/108192>`_
-
-- `PR 108131 fix for v4.4
-  <https://github.com/zephyrproject-rtos/zephyr/pull/108131>`_
-
-:cve:`2026-8023`
-----------------
-
-Path traversal in Zephyr HTTP server static-filesystem resource handler allows unauthenticated remote arbitrary file read
-
-Zephyr's HTTP server (``subsys/net/lib/http``) provides a static-filesystem resource
-type (``HTTP_RESOURCE_TYPE_STATIC_FS``, available when ``CONFIG_FILE_SYSTEM`` is
-enabled) that serves files from a configured root directory. Before this fix, both the
-HTTP/1 and HTTP/2 front-ends placed the raw, attacker-controlled request path into
-``client->url_buffer`` (assembled in ``on_url()`` for HTTP/1 and copied verbatim from
-the :path pseudo-header for HTTP/2) without resolving ``.``/``..`` segments. The static-FS
-handler then built the on-disk filename by directly concatenating the configured root
-with that raw URL (``snprintk(fname, ..., "%s%s", static_fs_detail->fs_path,
-client->url_buffer)`` at ``http_server_http1.c:603`` and ``http_server_http2.c:490``)
-and opened it with ``fs_open(fname, FS_O_READ)``. Because the handler is reached via
-wildcard/leading-dir (``fnmatch`` ``FNM_LEADING_DIR``) or fallback resource matching, a
-request such as GET /<prefix>/../../<file> is dispatched to the handler and, after the
-underlying filesystem (e.g. LittleFS/FAT) resolves the ``..`` segments, escapes the
-configured web root, letting an unauthenticated remote client read arbitrary readable
-files on the mounted volume (information disclosure). The HTTP server requires no TLS or
-authentication to reach this path. The fix adds ``http_server_remove_dot_segments()``,
-which canonicalizes the path portion of the URL before resource lookup in both protocol
-handlers, neutralizing the traversal. Affects releases v4.0.0 through v4.4.0 for
-deployments that register a static-filesystem resource.
-
-- `Zephyr project bug tracker GHSA-hch3-53g6-jj3h
-  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hch3-53g6-jj3h>`_
-
-This has been fixed in main for v4.5.0
-
-- `PR 108531 fix for main
-  <https://github.com/zephyrproject-rtos/zephyr/pull/108531>`_
-
-- `PR 111346 fix for v4.3
-  <https://github.com/zephyrproject-rtos/zephyr/pull/111346>`_
-
-- `PR 111347 fix for v4.4
-  <https://github.com/zephyrproject-rtos/zephyr/pull/111347>`_
-
-:cve:`2026-9728`
-----------------
-
-Under embargo until 2026-08-23
-
-:cve:`2026-9771`
-----------------
-
-Under embargo until 2026-08-16
 
 :cve:`2026-12363`
 -----------------
