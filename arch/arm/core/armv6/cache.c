@@ -1,201 +1,194 @@
 /*
- * Copyright 2023 NXP
+ * Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
  *
  * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
- * @file
- * @brief Cortex-A/R AArch32 L1-cache maintenance operations.
  *
- * This module implement the cache API for Cortex-A/R AArch32 cores using CMSIS.
- * Only L1-cache maintenance operations is supported.
+ * ARM1176 (ARMv6) L1 cache maintenance via CP15. Replaces the
+ * cortex_a_r-derived cache.c that used CMSIS-Core(A) L1C_* helpers --
+ * ARM1176 is not a CMSIS target, so those symbols are unavailable and
+ * the CP15 c7 register bank is driven directly. Cache line size is
+ * fixed at 32 bytes on ARM1176JZF-S.
+ *
+ * References: ARM ARM (DDI 0100I) chapter B6, ARM1176JZF-S TRM
+ * (DDI 0301H) chapter 6.
  */
 
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
-#include <cmsis_core.h>
 #include <zephyr/sys/barrier.h>
+#include "../mmu/armv6_cp15.h"
 
-/* Cache Type Register */
-#define CTR_DMINLINE_SHIFT 16
-#define CTR_DMINLINE_MASK  BIT_MASK(4)
+#define SCTLR_C_Msk	BIT(2)
+#define SCTLR_I_Msk	BIT(12)
+
+#define ARM1176_CACHE_LINE_BYTES	32
+
+static inline void cp15_dcache_clean_all(void)
+{
+	uint32_t zero = 0;
+
+	__asm__ volatile("mcr p15, 0, %0, c7, c10, 0" : : "r"(zero) : "memory");
+}
+
+static inline void cp15_dcache_invd_all(void)
+{
+	uint32_t zero = 0;
+
+	__asm__ volatile("mcr p15, 0, %0, c7, c6, 0" : : "r"(zero) : "memory");
+}
+
+static inline void cp15_dcache_flush_invd_all(void)
+{
+	uint32_t zero = 0;
+
+	__asm__ volatile("mcr p15, 0, %0, c7, c14, 0" : : "r"(zero) : "memory");
+}
+
+static inline void cp15_dcache_clean_mva(void *mva)
+{
+	__asm__ volatile("mcr p15, 0, %0, c7, c10, 1" : : "r"(mva) : "memory");
+}
+
+static inline void cp15_dcache_invd_mva(void *mva)
+{
+	__asm__ volatile("mcr p15, 0, %0, c7, c6, 1" : : "r"(mva) : "memory");
+}
+
+static inline void cp15_dcache_flush_invd_mva(void *mva)
+{
+	__asm__ volatile("mcr p15, 0, %0, c7, c14, 1" : : "r"(mva) : "memory");
+}
+
+static inline void cp15_icache_invd_all(void)
+{
+	uint32_t zero = 0;
+
+	__asm__ volatile("mcr p15, 0, %0, c7, c5, 0" : : "r"(zero) : "memory");
+}
+
+static inline void cp15_icache_invd_mva(void *mva)
+{
+	__asm__ volatile("mcr p15, 0, %0, c7, c5, 1" : : "r"(mva) : "memory");
+}
 
 #ifdef CONFIG_DCACHE
 
-static size_t dcache_line_size;
-
-/**
- * @brief Get the smallest D-cache line size.
- *
- * Get the smallest D-cache line size of all the data and unified caches that
- * the processor controls.
- */
 size_t arch_dcache_line_size_get(void)
 {
-	uint32_t val;
-	uint32_t dminline;
-
-	if (!dcache_line_size) {
-		val = read_sysreg(ctr);
-		dminline = (val >> CTR_DMINLINE_SHIFT) & CTR_DMINLINE_MASK;
-		/* Log2 of the number of words */
-		dcache_line_size = 4 << dminline;
-	}
-
-	return dcache_line_size;
+	return ARM1176_CACHE_LINE_BYTES;
 }
 
 void arch_dcache_enable(void)
 {
-	uint32_t val;
+	uint32_t v = __get_SCTLR();
 
-	val = __get_SCTLR();
-
-	/* Check if cache is already enabled */
-	if (val & SCTLR_C_Msk) {
-		/* Cache already enabled - clean and invalidate to ensure coherency */
-		L1C_CleanInvalidateDCacheAll();
+	if (v & SCTLR_C_Msk) {
+		cp15_dcache_flush_invd_all();
+		barrier_dsync_fence_full();
 		return;
 	}
 
-	/* Cache not enabled - safe to invalidate (no dirty lines) */
-	arch_dcache_invd_all();
-
-	val |= SCTLR_C_Msk;
+	cp15_dcache_invd_all();
 	barrier_dsync_fence_full();
-	__set_SCTLR(val);
+	__set_SCTLR(v | SCTLR_C_Msk);
 	barrier_isync_fence_full();
 }
 
 void arch_dcache_disable(void)
 {
-	uint32_t val;
+	uint32_t v;
 
-	L1C_CleanInvalidateDCacheAll();
-
-	val = __get_SCTLR();
-	val &= ~SCTLR_C_Msk;
+	cp15_dcache_flush_invd_all();
 	barrier_dsync_fence_full();
-	__set_SCTLR(val);
+
+	v = __get_SCTLR();
+	__set_SCTLR(v & ~SCTLR_C_Msk);
 	barrier_isync_fence_full();
 }
 
 int arch_dcache_flush_all(void)
 {
-	L1C_CleanDCacheAll();
-
+	cp15_dcache_clean_all();
+	barrier_dsync_fence_full();
 	return 0;
 }
 
 int arch_dcache_invd_all(void)
 {
-	L1C_InvalidateDCacheAll();
-
+	cp15_dcache_invd_all();
+	barrier_dsync_fence_full();
 	return 0;
 }
 
 int arch_dcache_flush_and_invd_all(void)
 {
-	L1C_CleanInvalidateDCacheAll();
-
+	cp15_dcache_flush_invd_all();
+	barrier_dsync_fence_full();
 	return 0;
 }
 
 int arch_dcache_flush_range(void *start_addr, size_t size)
 {
-	size_t line_size;
-	uintptr_t addr = (uintptr_t)start_addr;
-	uintptr_t end_addr = addr + size;
+	ARG_UNUSED(start_addr);
+	ARG_UNUSED(size);
 
-	/* Align address to line size */
-	line_size = arch_dcache_line_size_get();
-	addr &= ~(line_size - 1);
-
-	while (addr < end_addr) {
-		L1C_CleanDCacheMVA((void *)addr);
-		addr += line_size;
-	}
-
+	/* DIAGNOSTIC (Zero W WiFi bring-up): fall back to clean-all for
+	 * parity with invd_range. If DMA then produces correct data, every
+	 * MVA-by-line op is broken and needs a different encoding.
+	 */
+	cp15_dcache_clean_all();
+	barrier_dsync_fence_full();
 	return 0;
 }
 
 int arch_dcache_invd_range(void *start_addr, size_t size)
 {
-	size_t line_size;
-	uintptr_t addr = (uintptr_t)start_addr;
-	uintptr_t end_addr = addr + size;
+	ARG_UNUSED(start_addr);
+	ARG_UNUSED(size);
 
-	line_size = arch_dcache_line_size_get();
-
-	/*
-	 * Clean and invalidate the partial cache lines at both ends of the
-	 * given range to prevent data corruption
+	/* DIAGNOSTIC (Zero W WiFi bring-up 2026-07-01): the MVA-per-line
+	 * loop appears to leave stale L1 cache lines behind (chipid reads
+	 * return the pre-DMA sentinel). Fall back to clean+invalidate the
+	 * whole D-cache to isolate the bug. If this fixes SDIO DMA reads,
+	 * the MVA loop is broken; if it doesn't, DMA is writing somewhere
+	 * the CPU can't see (dma_bcm2835 bus-address translation).
 	 */
-	if (end_addr & (line_size - 1)) {
-		end_addr &= ~(line_size - 1);
-		L1C_CleanInvalidateDCacheMVA((void *)end_addr);
-	}
-
-	if (addr & (line_size - 1)) {
-		addr &= ~(line_size - 1);
-		if (addr == end_addr) {
-			goto done;
-		}
-		L1C_CleanInvalidateDCacheMVA((void *)addr);
-		addr += line_size;
-	}
-
-	/* Align address to line size */
-	addr &= ~(line_size - 1);
-
-	while (addr < end_addr) {
-		L1C_InvalidateDCacheMVA((void *)addr);
-		addr += line_size;
-	}
-
-done:
+	cp15_dcache_flush_invd_all();
+	barrier_dsync_fence_full();
 	return 0;
 }
 
 int arch_dcache_flush_and_invd_range(void *start_addr, size_t size)
 {
-	size_t line_size;
-	uintptr_t addr = (uintptr_t)start_addr;
-	uintptr_t end_addr = addr + size;
+	ARG_UNUSED(start_addr);
+	ARG_UNUSED(size);
 
-	/* Align address to line size */
-	line_size = arch_dcache_line_size_get();
-	addr &= ~(line_size - 1);
-
-	while (addr < end_addr) {
-		L1C_CleanInvalidateDCacheMVA((void *)addr);
-		addr += line_size;
-	}
-
+	/* DIAGNOSTIC (Zero W WiFi bring-up): parity with invd_range. */
+	cp15_dcache_flush_invd_all();
+	barrier_dsync_fence_full();
 	return 0;
 }
 
-#endif
+#endif /* CONFIG_DCACHE */
 
 #ifdef CONFIG_ICACHE
 
+size_t arch_icache_line_size_get(void)
+{
+	return ARM1176_CACHE_LINE_BYTES;
+}
+
 void arch_icache_enable(void)
 {
-	uint32_t val;
+	uint32_t v = __get_SCTLR();
 
-	val = __get_SCTLR();
-
-	/* Check if cache is already enabled */
-	if (val & SCTLR_I_Msk) {
-		/* I-cache already enabled - invalidate to ensure coherency */
-		L1C_InvalidateICacheAll();
+	if (v & SCTLR_I_Msk) {
+		cp15_icache_invd_all();
+		barrier_isync_fence_full();
 		return;
 	}
-
-	/* Cache not enabled - invalidate before enabling */
-	arch_icache_invd_all();
-	__set_SCTLR(val | SCTLR_I_Msk);
+	cp15_icache_invd_all();
+	__set_SCTLR(v | SCTLR_I_Msk);
 	barrier_isync_fence_full();
 }
 
@@ -212,8 +205,8 @@ int arch_icache_flush_all(void)
 
 int arch_icache_invd_all(void)
 {
-	L1C_InvalidateICacheAll();
-
+	cp15_icache_invd_all();
+	barrier_isync_fence_full();
 	return 0;
 }
 
@@ -226,20 +219,19 @@ int arch_icache_flush_range(void *start_addr, size_t size)
 {
 	ARG_UNUSED(start_addr);
 	ARG_UNUSED(size);
-
 	return -ENOTSUP;
 }
 
 int arch_icache_invd_range(void *start_addr, size_t size)
 {
-	ARG_UNUSED(start_addr);
-	ARG_UNUSED(size);
-	/* Cortex A/R do have the ICIMVAU operation to selectively invalidate
-	 * the instruction cache, but not currently supported by CMSIS.
-	 * For now, invalidate the entire cache.
-	 */
-	L1C_InvalidateICacheAll();
+	uintptr_t addr = (uintptr_t)start_addr & ~(ARM1176_CACHE_LINE_BYTES - 1);
+	uintptr_t end = (uintptr_t)start_addr + size;
 
+	while (addr < end) {
+		cp15_icache_invd_mva((void *)addr);
+		addr += ARM1176_CACHE_LINE_BYTES;
+	}
+	barrier_isync_fence_full();
 	return 0;
 }
 
@@ -247,12 +239,14 @@ int arch_icache_flush_and_invd_range(void *start_addr, size_t size)
 {
 	ARG_UNUSED(start_addr);
 	ARG_UNUSED(size);
-
 	return -ENOTSUP;
 }
 
-#endif
+#endif /* CONFIG_ICACHE */
 
 void arch_cache_init(void)
 {
+	/* Caches are enabled by the MMU init path once the tables are up;
+	 * there is nothing extra to configure here.
+	 */
 }

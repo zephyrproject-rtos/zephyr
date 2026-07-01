@@ -21,12 +21,16 @@ config CPU_AARCH32_ARMV6
 	select ISA_ARM
 	select ATOMIC_OPERATIONS_BUILTIN
 	select CPU_HAS_MMU
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
 	help
 	  This option signifies the use of a classic ARMv6/ARMv6K CPU (ARM11),
 	  e.g. the ARM1176JZF-S in the BCM2835 (Raspberry Pi Zero / Zero W).
 	  ARM1176 is ARMv6K, so it provides ldrex/strex, TPIDRURO and srs/cps;
 	  it has no GIC (uses ARM_CUSTOM_INTERRUPT_CONTROLLER) and no
-	  architected timer.
+	  architected timer. L1 D/I-caches are driven via CP15 c7 (the
+	  cortex_a_r-derived cache.c had used CMSIS L1C_* helpers, which
+	  ARM1176 does not provide -- see arch/arm/core/armv6/cache.c).
 
 config CPU_CORTEX_M
 	bool
