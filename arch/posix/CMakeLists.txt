@@ -170,4 +170,4 @@ if(NOT ${LLVM_SANITIZERS_ARG} STREQUAL "")
 endif()
 
 include(natsim_optional.cmake)
-add_subdirectory(core)
+add_subdirectory_ifdef(CONFIG_ARCH_POSIX core)

@@ -45,4 +45,4 @@ if(CONFIG_X86_SSE)
 
 endif()
 
-add_subdirectory(core)
+add_subdirectory_ifdef(CONFIG_X86_64 core)

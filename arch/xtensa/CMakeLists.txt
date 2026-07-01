@@ -2,7 +2,7 @@
 
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/arch/xtensa/arch.h)
 set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-xtensa-le)
-add_subdirectory(core)
+add_subdirectory_ifdef(CONFIG_XTENSA core)
 
 if(CONFIG_XTENSA_INSECURE_USERSPACE)
   message(WARNING "

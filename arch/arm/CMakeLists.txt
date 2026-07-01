@@ -6,4 +6,4 @@ else()
   set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-littlearm)
 endif()
 
-add_subdirectory(core)
+add_subdirectory_ifdef(CONFIG_ARM core)

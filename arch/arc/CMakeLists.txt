@@ -24,7 +24,7 @@ if(NOT COMPILER STREQUAL arcmwdt)
   endif()
 endif()
 
-add_subdirectory(core)
+add_subdirectory_ifdef(CONFIG_ARC core)
 
 if(COMPILER STREQUAL arcmwdt)
   add_subdirectory(arcmwdt)

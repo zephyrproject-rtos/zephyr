@@ -12,5 +12,5 @@ else()
   set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT "elf32-littlemips")
 endif()
 
-add_subdirectory(core)
+add_subdirectory_ifdef(CONFIG_MIPS core)
 zephyr_include_directories(include)

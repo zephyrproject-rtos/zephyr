@@ -117,7 +117,7 @@ add_custom_command(
   )
 
 # Must be last so that soc/ can override default exception handlers
-add_subdirectory(core)
+add_subdirectory_ifdef(CONFIG_X86 core)
 
 get_property(OUTPUT_ARCH   GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH)
 get_property(OUTPUT_FORMAT GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
