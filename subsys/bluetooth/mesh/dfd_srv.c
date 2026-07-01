@@ -1099,6 +1099,40 @@ static void dfd_srv_reset(const struct bt_mesh_model *mod)
 	bt_mesh_dfu_slot_del_all();
 }
 
+static int dfd_srv_start(const struct bt_mesh_model *mod)
+{
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
+
+	if (srv->phase != BT_MESH_DFD_PHASE_APPLYING_UPDATE) {
+		return 0;
+	}
+
+	/* Resolve the slot pointer deferred from settings_set(). All
+	 * settings are loaded by the time .start fires.
+	 */
+	srv->dfu.xfer.slot = bt_mesh_dfu_slot_at(srv->slot_idx);
+	if (!srv->dfu.xfer.slot) {
+		LOG_WRN("Slot %u lost, failing distribution", srv->slot_idx);
+		dfd_phase_set(srv, BT_MESH_DFD_PHASE_FAILED);
+		return 0;
+	}
+
+	/* Self-update resume: if the local DFU Server is still in APPLYING,
+	 * the reboot means apply succeeded. Transition it to IDLE so it
+	 * responds to Firmware Update Information Get with the new FWID.
+	 */
+	struct bt_mesh_dfu_srv *dfu_srv = self_target_dfu_srv(srv);
+
+	if (dfu_srv && dfu_srv->update.phase == BT_MESH_DFU_PHASE_APPLYING) {
+		bt_mesh_dfu_srv_applied(dfu_srv);
+	}
+
+	/* Resume confirm step to verify targets report new FWID. */
+	(void)bt_mesh_dfu_cli_confirm(&srv->dfu);
+
+	return 0;
+}
+
 static int dfd_srv_settings_set(const struct bt_mesh_model *mod, const char *name,
 				size_t len_rd, settings_read_cb read_cb,
 				void *cb_arg)
@@ -1172,6 +1206,7 @@ static int dfd_srv_settings_set(const struct bt_mesh_model *mod, const char *nam
 
 const struct bt_mesh_model_cb _bt_mesh_dfd_srv_cb = {
 	.init = dfd_srv_init,
+	.start = dfd_srv_start,
 	.settings_set = dfd_srv_settings_set,
 	.reset = dfd_srv_reset,
 };
