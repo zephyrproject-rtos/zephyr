@@ -205,10 +205,15 @@ In addition to the usual aggregated report (whose HTML is rendered with
 ``genhtml --show-details`` so per-test attribution is browsable), this produces:
 
 * one ``<scenario>.<test>.info`` tracefile per test under each build's
-  ``coverage/tests/`` directory, and
+  ``coverage/tests/`` directory,
 * ``twister-out/coverage/test_matrix.json``, a machine-readable matrix with a
   ``by_line`` view (``{file: {line: [tests]}}``) and a ``by_test`` view
-  (``{test: {file: [lines]}}``).
+  (``{test: {file: [lines]}}``), and
+* ``twister-out/coverage/test_matrix.html``, a self-contained interactive
+  dashboard. It lists, per test, how many files and lines it covers and how
+  many lines it covers *uniquely* (that no other test reaches -- useful for
+  spotting redundant or load-bearing tests), and lets you drill into the files
+  a test covers or look up which tests cover a given file and line.
 
 .. note::
 
