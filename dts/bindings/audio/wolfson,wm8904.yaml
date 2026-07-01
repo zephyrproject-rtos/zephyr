@@ -23,6 +23,13 @@ properties:
     enum:
       - "MCLK"
       - "FLL"
+  fll-ref-clk:
+    type: int
+    description: |
+      FLL reference clock frequency in Hz. This property is required when
+      the "clock-source" property is set to "FLL". The FLL reference clock
+      is supplied by the host and is used to generate the codec's internal
+      clock signal (SYSCLK).
   fs-ratio:
     type: int
     default: 256
