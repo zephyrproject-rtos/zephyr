@@ -13,5 +13,6 @@ supported:
   - uart
   - spi
   - i2c
+  - dma
   - entropy
   - pwm
