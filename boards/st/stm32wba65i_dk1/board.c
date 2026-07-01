@@ -9,20 +9,21 @@
 #include <stm32_ll_rcc.h>
 #include <stddef.h>
 
-typedef struct __packed {
+struct __packed stm32_board_otp_data {
 	uint8_t additional_data[8];	/* 64 bits of data to fill OTP slot Ex: MB184510 */
 	uint8_t bd_address[6];		/* Bluetooth Device Address */
 	uint8_t hsetune;		/* Load capacitance to be applied on HSE pad */
 	uint8_t index;			/* Structure index */
-} board_otp_data;
+};
 
 #define DEFAULT_OTP_IDX     0
 
-static board_otp_data *get_otp_ptr(uint8_t index)
+static struct stm32_board_otp_data *get_otp_ptr(uint8_t index)
 {
-	board_otp_data *otp_ptr = (board_otp_data *)(FLASH_OTP_BASE + FLASH_OTP_SIZE);
+	struct stm32_board_otp_data *otp_ptr =
+		(struct stm32_board_otp_data *)(FLASH_OTP_BASE + FLASH_OTP_SIZE);
 
-	while (--otp_ptr >= (board_otp_data *)FLASH_OTP_BASE) {
+	while (--otp_ptr >= (struct stm32_board_otp_data *)FLASH_OTP_BASE) {
 		if (otp_ptr->index == index) {
 			return otp_ptr;
 		}
@@ -33,7 +34,7 @@ static board_otp_data *get_otp_ptr(uint8_t index)
 
 void board_late_init_hook(void)
 {
-	board_otp_data *otp_ptr = get_otp_ptr(DEFAULT_OTP_IDX);
+	struct stm32_board_otp_data *otp_ptr = get_otp_ptr(DEFAULT_OTP_IDX);
 
 	if (otp_ptr != NULL) {
 		LL_RCC_HSE_SetClockTrimming(otp_ptr->hsetune);
