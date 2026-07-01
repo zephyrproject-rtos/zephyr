@@ -78,9 +78,11 @@ config STM32_IOCELL_CHECK_ENABLE
 config STM32_XSPIM
 	bool "STM32 XSPI Manager"
 	select USE_STM32_HAL_XSPI
+	depends on !STM32_APP_IN_EXT_FLASH
 	default y if DT_HAS_ST_STM32_XSPIM_ENABLED
 	help
-	  Enables support for XSPI Manager.
+	  Enables support for XSPI Manager. Shouldn't be used by applications
+	  running from external flash as it reinitializes the serial bus controllers.
 
 if STM32_XSPIM
 
