@@ -1740,6 +1740,8 @@ enum wifi_p2p_op {
 	WIFI_P2P_INVITE,
 	/** P2P power save */
 	WIFI_P2P_POWER_SAVE,
+	/** P2P list stored persistent networks */
+	WIFI_P2P_LIST_NETWORKS,
 };
 
 /** Wi-Fi P2P discovery type */
@@ -1764,6 +1766,7 @@ enum wifi_p2p_connection_method {
 
 /** Maximum number of P2P peers that can be returned in a single query */
 #define WIFI_P2P_MAX_PEERS CONFIG_WIFI_P2P_MAX_PEERS
+#define WIFI_P2P_LIST_NETWORKS_BUF_SIZE 2048
 
 /** Wi-Fi P2P parameters */
 struct wifi_p2p_params {
@@ -1847,6 +1850,13 @@ struct wifi_p2p_params {
 		/** GO device address length */
 		uint8_t go_dev_addr_length;
 	} invite;
+	/** List networks specific parameters */
+	struct {
+		/** Buffer to hold the LIST_NETWORKS response. */
+		char *buf;
+		/** Size of the allocated buffer in bytes */
+		size_t buf_size;
+	} list_networks;
 };
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
