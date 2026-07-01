@@ -456,14 +456,17 @@ static bool hl78xx_should_request_kcellmeas_manual(struct hl78xx_data *data)
 #endif
 	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
-	if (data->status.lpm.kcellmeas_bootstrap_done) {
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	if (data->status.kcellmeas.bootstrap_done) {
 		return false;
 	}
-	bool first_attach = !data->status.lpm.registration.is_registered_previously;
+
+	bool first_attach = !data->status.registration.is_registered_previously;
 
 	if (!first_attach) {
 		return false;
 	}
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
 	/* HL7800-like variants need an explicit KCELLMEAS on first attach. */
 	if (config->variant->socket_lpm_recreate_required) {
@@ -572,7 +575,7 @@ static void hl78xx_update_registration_flags_and_delegate(struct hl78xx_data *da
 		data->status.registration.is_registered_currently = true;
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_REGISTERED);
 #ifdef CONFIG_MODEM_HL78XX_STAY_IN_BOOT_MODE_FOR_ROAMING
-		k_sem_give(&data->stay_in_boot_mode_sem);
+		k_sem_give(&data->sems.stay_in_boot_mode_sem);
 #endif /* CONFIG_MODEM_HL78XX_STAY_IN_BOOT_MODE_FOR_ROAMING */
 #if defined(CONFIG_MODEM_HL78XX_POWER_DOWN) &&                                                     \
 	defined(CONFIG_MODEM_HL78XX_USE_ACTIVE_TIME_BASED_POWER_DOWN)
@@ -3646,8 +3649,10 @@ static int hl78xx_driver_pm_action(const struct device *dev, enum pm_device_acti
 static int hl78xx_init(const struct device *dev)
 {
 	int ret;
-	const struct hl78xx_config *config = dev->config;
 	struct hl78xx_data *data = (struct hl78xx_data *)dev->data;
+#if GPIO_CONFIG_LEN > 0
+	const struct hl78xx_config *config = dev->config;
+#endif /* GPIO_CONFIG_LEN > 0 */
 
 	k_mutex_init(&data->api_lock);
 	k_mutex_init(&data->tx_lock);
@@ -3694,9 +3699,10 @@ static int hl78xx_init(const struct device *dev)
 #ifdef CONFIG_MODEM_HL78XX_AUTOBAUD_START_WITH_TARGET_BAUDRATE
 	/* Update baud rate */
 	configure_uart_for_auto_baudrate(data, data->status.uart.target_baudrate);
-#endif /* CONFIG_MODEM_HL78XX_AUTOBAUD_START_WITH_TARGET_BAUDRATE */
-#endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
+#endif  /* CONFIG_MODEM_HL78XX_AUTOBAUD_START_WITH_TARGET_BAUDRATE */
+#endif  /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
 	/* GPIO validation */
+#if GPIO_CONFIG_LEN > 0
 	const struct gpio_dt_spec *gpio_pins[GPIO_CONFIG_LEN] = {
 #if HAS_RESET_GPIO
 		&config->mdm_gpio_reset,
@@ -3823,6 +3829,7 @@ static int hl78xx_init(const struct device *dev)
 		goto error;
 	}
 #endif /* HAS_GPIO6_GPIO */
+#endif /* GPIO_CONFIG_LEN > 0 */
 	/* UART pipe initialization */
 	(void)hl78xx_init_pipe(dev);
 
@@ -3832,7 +3839,7 @@ static int hl78xx_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_MODEM_HL78XX_STAY_IN_BOOT_MODE_FOR_ROAMING
-	k_sem_take(&data->stay_in_boot_mode_sem, K_FOREVER);
+	k_sem_take(&data->sems.stay_in_boot_mode_sem, K_FOREVER);
 #endif
 	LOG_INF("Modem HL78xx initialized");
 	/* Register the power management handler */
