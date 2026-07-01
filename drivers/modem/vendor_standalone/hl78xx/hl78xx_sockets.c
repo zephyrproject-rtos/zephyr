@@ -1128,7 +1128,7 @@ void hl78xx_on_cgdcontrdp(struct modem_chat *chat, char **argv, uint16_t argc, v
 
 #ifdef CONFIG_NET_IPV6
 	if (addr_field && strchr(addr_field, ':') &&
-	    !parse_ip(false, addr_field, &socket_data->ipv6.new_addr)) {
+	    !parse_ip(false, addr_field, &socket_data->network.ipv6.new_addr)) {
 		return;
 	}
 #endif
@@ -1275,10 +1275,12 @@ static void set_iface(struct hl78xx_socket_data *socket_data, bool is_ipv4)
 	}
 #ifdef CONFIG_NET_IPV6
 	else {
-		net_if_ipv6_addr_rm(socket_data->network.net_iface, &socket_data->ipv6.addr);
+		net_if_ipv6_addr_rm(socket_data->network.net_iface,
+				    &socket_data->network.ipv6.addr);
 
 		if (!net_if_ipv6_addr_add(socket_data->network.net_iface,
-					  &socket_data->ipv6.new_addr, NET_ADDR_MANUAL, 0)) {
+					  &socket_data->network.ipv6.new_addr, NET_ADDR_MANUAL,
+					  0)) {
 			LOG_ERR("Failed to set IPv6 interface address.");
 		} else {
 			LOG_DBG("IPv6 interface configuration complete.");
@@ -1364,10 +1366,10 @@ static int hl78xx_socket_get_network_context(struct hl78xx_data *data)
 	if (data->status.network_info.ip_address[0] == '\0') {
 		const struct net_in6_addr *ipv6_addr = NULL;
 
-		if (!net_ipv6_is_addr_unspecified(&socket_data->ipv6.addr)) {
-			ipv6_addr = &socket_data->ipv6.addr;
-		} else if (!net_ipv6_is_addr_unspecified(&socket_data->ipv6.new_addr)) {
-			ipv6_addr = &socket_data->ipv6.new_addr;
+		if (!net_ipv6_is_addr_unspecified(&socket_data->network.ipv6.addr)) {
+			ipv6_addr = &socket_data->network.ipv6.addr;
+		} else if (!net_ipv6_is_addr_unspecified(&socket_data->network.ipv6.new_addr)) {
+			ipv6_addr = &socket_data->network.ipv6.new_addr;
 		} else {
 			LOG_DBG("No IPv6 address available in socket data");
 		}
@@ -1818,9 +1820,10 @@ void notif_carrier_off(const struct device *dev)
 #endif /* CONFIG_NET_IPV4 */
 #ifdef CONFIG_NET_IPV6
 	if (socket_data->network.net_iface &&
-	    !net_ipv6_addr_cmp(&socket_data->ipv6.addr, net_ipv6_unspecified_address())) {
-		net_if_ipv6_addr_rm(socket_data->network.net_iface, &socket_data->ipv6.addr);
-		memset(&socket_data->ipv6.addr, 0, sizeof(socket_data->ipv6.addr));
+	    !net_ipv6_addr_cmp(&socket_data->network.ipv6.addr, net_ipv6_unspecified_address())) {
+		net_if_ipv6_addr_rm(socket_data->network.net_iface,
+				    &socket_data->network.ipv6.addr);
+		memset(&socket_data->network.ipv6.addr, 0, sizeof(socket_data->network.ipv6.addr));
 	}
 #endif /* CONFIG_NET_IPV6 */
 }
@@ -1976,8 +1979,7 @@ static int on_cmd_sockread_common(int socket_id, uint16_t socket_data_length, ui
 		errno = ECONNABORTED;
 		return -ECONNABORTED;
 	}
-	if ((len <= 0) || socket_data_length <= 0 ||
-	    socket_data->rx.collected_buf_len == 0U) {
+	if ((len <= 0) || socket_data_length <= 0 || socket_data->rx.collected_buf_len == 0U) {
 		LOG_ERR("%d Invalid data length: %d %d %d Aborting!", __LINE__, socket_data_length,
 			(int)len, socket_data->rx.collected_buf_len);
 		reset_receive_transaction_state(socket_data);
