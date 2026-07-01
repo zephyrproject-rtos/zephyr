@@ -444,3 +444,7 @@ nxp_pmod_touch_panel_i2c: &arduino_i2c {
 &powerquad {
 	status = "okay";
 };
+
+&fmeas {
+	status = "okay";
+};

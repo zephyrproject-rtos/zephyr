@@ -479,3 +479,7 @@ zephyr_udc0: &usbhs {
 	dc-cutoff = "155hz";
 	dc-gain = <1>;
 };
+
+&fmeas {
+	status = "okay";
+};

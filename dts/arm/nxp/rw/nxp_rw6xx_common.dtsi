@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/clock-monitor/nxp-fmeas.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -169,6 +170,61 @@
 		compatible = "nxp,lpc-syscon";
 		reg = <0x21000 0x1000>;
 		#clock-cells = <1>;
+	};
+
+	inputmux: inputmux@26000 {
+		compatible = "nxp,inputmux";
+		reg = <0x26000 0x1000>;
+		#mux-control-cells = <1>;
+		#mux-state-cells = <2>;
+		status = "okay";
+	};
+
+	fmeas: fmeas@2f000 {
+		compatible = "nxp,fmeas";
+		reg = <0x2f000 0x1000>;
+		clocks = <&clkctl1 MCUX_FREQME_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(1, 31)>;
+		status = "disabled";
+
+		reference-sources {
+			ref-c0-fr-hclk {
+				default-source;
+				mux-states = <&inputmux 0 NXP_FMEAS_RW6XX_C0_FR_HCLK>;
+				clocks = <&clkctl0 MCUX_SYSTEM_CLK>;
+			};
+		};
+
+		target-sources {
+			tar-sfro {
+				default-source;
+				mux-states = <&inputmux 1 NXP_FMEAS_RW6XX_SFRO>;
+			};
+
+			tar-ffro {
+				mux-states = <&inputmux 1 NXP_FMEAS_RW6XX_FFRO>;
+			};
+
+			tar-c0-fr-hclk {
+				mux-states = <&inputmux 1 NXP_FMEAS_RW6XX_C0_FR_HCLK>;
+			};
+
+			tar-sysosc {
+				mux-states = <&inputmux 1 NXP_FMEAS_RW6XX_SYSOSC>;
+			};
+
+			tar-lposc {
+				mux-states = <&inputmux 1 NXP_FMEAS_RW6XX_LPOSC>;
+			};
+
+			tar-xtal-32k {
+				mux-states = <&inputmux 1 NXP_FMEAS_RW6XX_XTAL_32K>;
+			};
+
+			tar-gpio-clk {
+				mux-states = <&inputmux 1 NXP_FMEAS_RW6XX_FREQME_GPIO_CLK>;
+			};
+		};
 	};
 
 	rstctl0: reset@0 {

@@ -578,3 +578,7 @@ zephyr_udc0: &usbhs {
 &mrt_channel0 {
 	status = "okay";
 };
+
+&fmeas {
+	status = "okay";
+};
