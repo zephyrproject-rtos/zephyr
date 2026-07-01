@@ -366,18 +366,37 @@ class Lcov(CoverageTool):
         # TODO: Add LCOV summary coverage report.
         return ret, { 'report': coveragefile, 'ztest': ztestfile, 'summary': None }
 
+    def discover_per_test_serial(self, build_dir):
+        """Group tagged per-test gcov dumps from serial handler.log files.
+
+        Returns {tag: {canonical_gcda_path: ("bytes", data)}} for every
+        'GCOV_COVERAGE_DUMP_START <tag>' block, the console transport used on
+        platforms without semihosting.
+        """
+        tags = collections.defaultdict(dict)
+        for log in glob.glob(f"{build_dir}/**/handler.log", recursive=True):
+            for tag, files in retrieve_tagged_gcov_data(log).items():
+                for filename, hexdumps in files.items():
+                    if "kobject_hash" in filename:
+                        continue
+                    tags[tag][filename] = ("bytes", self.merge_hexdumps(hexdumps))
+        return tags
+
     def capture_per_test(self, build_dir, scenario, coveragelog):
         """Generate one TN-tagged .info file per Ztest test.
 
         CONFIG_ZTEST_COVERAGE_PER_TEST makes the target write an isolated set
-        of tagged gcda files per test. With the semihosting transport these
-        land on the host as "<canonical>.gcda@@<suite>.<test>". Each tag is
-        materialized to its canonical path (next to the matching .gcno),
+        of tagged gcda dumps per test. With the semihosting transport these
+        land on the host as "<canonical>.gcda@@<suite>.<test>"; otherwise they
+        are emitted as tagged blocks on the serial console. Each tag is
+        materialized to its canonical gcda path (next to the matching .gcno),
         captured with lcov under a per-test TN name, and cleaned up again.
 
         Returns the list of generated per-test tracefiles.
         """
-        tags = discover_per_test_gcda(build_dir)
+        tags = discover_per_test_semihost(build_dir)
+        if not tags:
+            tags = self.discover_per_test_serial(build_dir)
         if not tags:
             return []
 
@@ -386,7 +405,7 @@ class Lcov(CoverageTool):
 
         # Drop any untagged canonical .gcda (end-of-run leftovers) so that each
         # per-test capture sees only the data we materialize for that test.
-        for canonical in {c for entries in tags.values() for c, _ in entries}:
+        for canonical in {c for entries in tags.values() for c in entries}:
             with contextlib.suppress(OSError):
                 os.remove(canonical)
 
@@ -402,8 +421,8 @@ class Lcov(CoverageTool):
             used_names.add(name)
 
             created = []
-            for canonical, tagged in tags[tag]:
-                shutil.copyfile(tagged, canonical)
+            for canonical, spec in tags[tag].items():
+                materialize_canonical_gcda(canonical, spec)
                 created.append(canonical)
 
             info = os.path.join(per_test_dir, sanitize_coverage_name(name) + ".info")
@@ -585,19 +604,72 @@ def sanitize_coverage_name(name):
     return re.sub(r"[^A-Za-z0-9_.]", "_", name)
 
 
-def discover_per_test_gcda(build_dir):
-    """Group tagged per-test gcda dumps by their <suite>.<test> tag.
+def discover_per_test_semihost(build_dir):
+    """Group tagged per-test gcda dumps written by the semihosting transport.
 
-    Returns {tag: [(canonical_gcda_path, tagged_path), ...]} for every
-    "<canonical>.gcda@@<tag>" file written by the semihosting transport.
+    Returns {tag: {canonical_gcda_path: ("file", tagged_path)}} for every
+    "<canonical>.gcda@@<tag>" file found under build_dir.
     """
-    tags = collections.defaultdict(list)
+    tags = collections.defaultdict(dict)
     for tagged in glob.glob(f"{build_dir}/**/*@@*", recursive=True):
         canonical, sep, tag = tagged.rpartition("@@")
         if not sep or not canonical.endswith(".gcda") or not tag:
             continue
-        tags[tag].append((canonical, tagged))
+        tags[tag][canonical] = ("file", tagged)
     return tags
+
+
+def retrieve_tagged_gcov_data(input_file):
+    """Parse tagged per-test gcov dumps from a serial handler.log.
+
+    Returns {tag: {filename: [hex_bytes, ...]}} for every
+    'GCOV_COVERAGE_DUMP_START <tag>' block. Untagged blocks (produced by a
+    plain end-of-run dump) are ignored, as they carry no per-test attribution.
+    """
+    tagged = collections.defaultdict(lambda: collections.defaultdict(list))
+    current = None
+    capture = False
+    start_re = re.compile(r"GCOV_COVERAGE_DUMP_START\s*(\S+)?")
+    with open(input_file) as fp:
+        for line in fp:
+            match = start_re.search(line)
+            if match:
+                current = match.group(1)
+                capture = current is not None
+                continue
+            if re.search("GCOV_COVERAGE_DUMP_END", line):
+                capture = False
+                current = None
+                continue
+            if not capture:
+                continue
+            if line.startswith("*"):
+                sp = line.split("<")
+                if len(sp) > 1:
+                    file_name = sp[0][1:]
+                    hex_dump = sp[1].rstrip("\n")
+                    try:
+                        tagged[current][file_name].append(bytes.fromhex(hex_dump))
+                    except ValueError:
+                        logger.exception(
+                            f"Unable to convert hex data for file: {file_name}")
+    return tagged
+
+
+def materialize_canonical_gcda(canonical, spec):
+    """Write a per-test gcda to its canonical path, from a file or raw bytes."""
+    kind, value = spec
+    os.makedirs(os.path.dirname(canonical), exist_ok=True)
+    if kind == "file":
+        shutil.copyfile(value, canonical)
+    else:
+        with open(canonical, "wb") as fp:
+            fp.write(value)
+
+
+# Source paths matching these substrings are omitted from the per-test matrix,
+# mirroring the directories excluded from the regular coverage reports.
+_MATRIX_IGNORE_SUBSTRINGS = ("/generated/", "/tests/", "/samples/")
 
 
 def build_test_matrix(info_files, out_json, base_dir=None):
@@ -612,6 +684,7 @@ def build_test_matrix(info_files, out_json, base_dir=None):
     for info in info_files:
         test_name = None
         source = None
+        ignored = False
         try:
             with open(info) as fp:
                 for raw in fp:
@@ -621,10 +694,12 @@ def build_test_matrix(info_files, out_json, base_dir=None):
                             os.path.splitext(os.path.basename(info))[0]
                     elif line.startswith("SF:"):
                         source = line[3:]
+                        ignored = any(s in source
+                                      for s in _MATRIX_IGNORE_SUBSTRINGS)
                         if base_dir:
                             with contextlib.suppress(ValueError):
                                 source = os.path.relpath(source, base_dir)
-                    elif line.startswith("DA:") and source is not None:
+                    elif line.startswith("DA:") and source is not None and not ignored:
                         fields = line[3:].split(",")
                         lineno = int(fields[0])
                         hits = int(fields[1]) if len(fields) > 1 else 0
@@ -633,6 +708,7 @@ def build_test_matrix(info_files, out_json, base_dir=None):
                             by_test[test_name][source].add(lineno)
                     elif line == "end_of_record":
                         source = None
+                        ignored = False
         except OSError:
             logger.error("Unable to read per-test tracefile: %s", info)
 
