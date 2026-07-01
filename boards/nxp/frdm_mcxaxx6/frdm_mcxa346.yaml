@@ -29,4 +29,5 @@ supported:
   - arduino_gpio
   - edac
   - pwm
+  - rtc
 vendor: nxp

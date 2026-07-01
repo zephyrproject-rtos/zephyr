@@ -20,6 +20,7 @@
 		wakeup-button = &user_button_2;
 		watchdog0 = &wwdt0;
 		die-temp0 = &temp0;
+		rtc = &counter_rtc;
 	};
 
 	chosen {
@@ -247,6 +248,14 @@
 };
 
 &lptmr0 {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&counter_rtc {
 	status = "okay";
 };
 
