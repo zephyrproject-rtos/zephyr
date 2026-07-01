@@ -4,61 +4,42 @@ Standard Libraries
 Description:
 
 This test verifies kernel access to the dynamic memory allocation functions
-provided by standard C libraries supported in Zephyr:
-NEWLIB and MINIMAL_LIB.
-It is intended to catch issues in which a library is completely absent
-or non-functional, and is NOT intended to be a comprehensive test suite
-of all functionality provided by the libraries.
+provided by the standard C libraries supported in Zephyr (minimal libc,
+newlib, newlib-nano and picolibc).  It is intended to catch issues in which a
+library is completely absent or non-functional, and is NOT intended to be a
+comprehensive test suite of all functionality provided by the libraries.
 
---------------------------------------------------------------------------------
+The c_lib_dynamic_memalloc suite exercises malloc(), calloc(), realloc(),
+reallocarray() and free(), covering allocation, reuse, alignment,
+data-preservation and overflow/failure handling.  The exact set of cases
+depends on the selected libc and its heap configuration: when the common
+libc malloc arena is present the allocating cases run, and when the arena
+size is zero the "no memory" cases run instead.
 
-Building and Running Project:
+See the Doxygen comments on the individual test functions for per-case
+details.
 
-This project outputs to the console.  It can be built and executed
-on QEMU as follows:
+---------------------------------------------------------------------------
 
-    make run
+Building and Running:
 
---------------------------------------------------------------------------------
+Build and run with twister, for example on QEMU:
 
-Troubleshooting:
+    twister -p qemu_x86 -T tests/lib/mem_alloc
 
-Problems caused by outdated project information can be addressed by
-issuing one of the following commands then rebuilding the project:
+Or build and run a single platform directly with west:
 
-    make clean          # discard results of previous builds
-                        # but keep existing configuration info
-or
-    make pristine       # discard results of previous builds
-                        # and restore pre-defined configuration info
+    west build -b qemu_x86 tests/lib/mem_alloc
+    west build -t run
 
---------------------------------------------------------------------------------
+---------------------------------------------------------------------------
 
 Sample Output:
 
-***** BOOTING ZEPHYR OS vxxxx - BUILD: xxxx *****
-Running test suite test_c_lib_dynamic_memalloc
+Running TESTSUITE c_lib_dynamic_memalloc
 ===================================================================
-starting test - test_malloc
-PASS - test_malloc
+START - test_malloc
+ PASS - test_malloc
+...
 ===================================================================
-starting test - test_free
-PASS - test_free
-===================================================================
-starting test - test_calloc
-PASS - test_calloc
-===================================================================
-starting test - test_realloc
-PASS - test_realloc
-===================================================================
-starting test - test_reallocarray
-PASS - test_reallocarray
-===================================================================
-starting test - test_memalloc_all
-PASS - test_memalloc_all
-===================================================================
-starting test - test_memalloc_max
-PASS - test_memalloc_max
-===================================================================
-===================================================================
-PROJECT EXECUTION SUCCESSFUL
+TESTSUITE c_lib_dynamic_memalloc succeeded
