@@ -1,0 +1,9 @@
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+module = TEST_CLASSIC_L2CAP_ECHO_SIM
+module-str = test_classic_l2cap_echo_sim
+source "subsys/logging/Kconfig.template.log_config"
