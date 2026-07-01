@@ -3525,6 +3525,28 @@ int supplicant_p2p_oper(const struct device *dev __unused, struct net_if *iface,
 		}
 		ret = 0;
 		break;
+	case WIFI_P2P_LIST_NETWORKS: {
+		if (params->list_networks.buf == NULL ||
+		    params->list_networks.buf_size == 0) {
+			wpa_printf(MSG_ERROR,
+				   "P2P list_networks: buffer not provided");
+			return -EINVAL;
+		}
+
+		ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn,
+						      "LIST_NETWORKS",
+						      params->list_networks.buf);
+		if (ret < 0) {
+			wpa_printf(MSG_ERROR, "LIST_NETWORKS command failed");
+			return -EIO;
+		}
+		if (strncmp(params->list_networks.buf, "FAIL", 4) == 0) {
+			wpa_printf(MSG_ERROR, "LIST_NETWORKS returned FAIL");
+			return -EIO;
+		}
+		ret = 0;
+		break;
+	}
 
 	default:
 		wpa_printf(MSG_ERROR, "Unknown P2P operation: %d", params->oper);

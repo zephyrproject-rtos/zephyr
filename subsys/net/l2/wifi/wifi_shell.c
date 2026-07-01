@@ -4486,6 +4486,45 @@ static int cmd_wifi_p2p_power_save(const struct shell *sh, size_t argc, char *ar
 	PR("P2P power save %s\n", power_save_enable ? "enabled" : "disabled");
 	return 0;
 }
+
+static int cmd_wifi_p2p_list_networks(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+	char *buf;
+	int ret;
+
+	context.sh = sh;
+
+	/* Dynamically allocate response buffer to avoid large stack usage */
+	buf = k_malloc(WIFI_P2P_LIST_NETWORKS_BUF_SIZE);
+	if (buf == NULL) {
+		PR_ERROR("Failed to allocate buffer for list_networks\n");
+		return -ENOMEM;
+	}
+	memset(buf, 0, WIFI_P2P_LIST_NETWORKS_BUF_SIZE);
+
+	params.oper = WIFI_P2P_LIST_NETWORKS;
+	params.list_networks.buf = buf;
+	params.list_networks.buf_size = WIFI_P2P_LIST_NETWORKS_BUF_SIZE;
+
+	ret = net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params));
+	if (ret) {
+		PR_WARNING("P2P list_networks request failed\n");
+		k_free(buf);
+		return -ENOEXEC;
+	}
+
+	if (buf[0] == '\0') {
+		PR("No persistent P2P networks stored\n");
+	} else {
+		PR("Stored P2P networks:\n");
+		PR("%s\n", buf);
+	}
+
+	k_free(buf);
+	return 0;
+}
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
@@ -5640,6 +5679,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "<on>: Enable P2P power save\n"
 				 "<off>: Disable P2P power save"),
 		      cmd_wifi_p2p_power_save, 2, 3),
+	SHELL_CMD_ARG(list_networks, NULL,
+		      SHELL_HELP("List stored persistent P2P networks",
+				 "[-i, --iface=<interface index>]"),
+		      cmd_wifi_p2p_list_networks, 1, 2),
 	SHELL_SUBCMD_SET_END
 );
 
