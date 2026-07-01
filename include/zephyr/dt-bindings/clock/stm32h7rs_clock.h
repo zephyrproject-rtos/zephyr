@@ -8,6 +8,7 @@
 
 #include "stm32_common_clocks.h"
 
+/** @cond INTERNAL_HIDDEN */
 /** Domain clocks */
 
 /* RM0477  */
@@ -138,5 +139,7 @@
 #define MCO_PRE_DIV_13 13
 #define MCO_PRE_DIV_14 14
 #define MCO_PRE_DIV_15 15
+
+/** INTERNAL_HIDDEN @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H7RS_CLOCK_H_ */
