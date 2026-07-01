@@ -122,7 +122,7 @@ static void apply_rsp_sent(int err, void *cb_params)
 
 	if (!srv->cb->apply || srv->update.idx == UPDATE_IDX_NONE) {
 		srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
-		store_state(srv);
+		erase_state(srv);
 		LOG_DBG("Prerequisites for apply callback are wrong");
 		return;
 	}
@@ -132,7 +132,7 @@ static void apply_rsp_sent(int err, void *cb_params)
 	err = srv->cb->apply(srv, &srv->imgs[srv->update.idx]);
 	if (err) {
 		srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
-		store_state(srv);
+		erase_state(srv);
 		LOG_DBG("Application apply callback failed (err %d)", err);
 	}
 }
@@ -426,6 +426,7 @@ static int handle_cancel(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
 
 	bt_mesh_blob_srv_cancel(&srv->blob);
 	srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
+	erase_state(srv);
 	xfer_failed(srv);
 
 rsp:
