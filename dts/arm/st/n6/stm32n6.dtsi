@@ -1441,6 +1441,7 @@
 				reg = <0x5803fc00 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB5, 27)>,
 					 <&rcc STM32_SRC_HSE OTGPHY1_SEL(3)>;
+				clock-names = "gate", "mux";
 				#phy-cells = <0>;
 			};
 
@@ -1449,6 +1450,7 @@
 				reg = <0x580c0000 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB5, 28)>,
 					 <&rcc STM32_SRC_HSE OTGPHY2_SEL(3)>;
+				clock-names = "gate", "mux";
 				#phy-cells = <0>;
 			};
 
