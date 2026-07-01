@@ -1887,24 +1887,23 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
  * Device instantiation
  * -------------------------------------------------------------------------
  */
-#define HL78XX_GNSS_DEVICE_DEFINE(inst)                                                            \
-	static const struct hl78xx_gnss_config hl78xx_gnss_config_##inst = {                       \
-		.parent_modem = DEVICE_DT_GET(DT_INST_PARENT(inst)),                               \
-		.fix_rate_default = DT_INST_PROP_OR(inst, fix_rate, 1000),                         \
+#define HL78XX_GNSS_CONFIG_NAME(node_id) UTIL_CAT(hl78xx_gnss_config_, DT_NODE_HASH(node_id))
+
+#define HL78XX_GNSS_DATA_NAME(node_id) UTIL_CAT(hl78xx_gnss_data_, DT_NODE_HASH(node_id))
+
+#define HL78XX_GNSS_DEVICE_DEFINE(node_id)                                                         \
+	static const struct hl78xx_gnss_config HL78XX_GNSS_CONFIG_NAME(node_id) = {                \
+		.parent_modem = DEVICE_DT_GET(DT_PARENT(node_id)),                                 \
+		.fix_rate_default = DT_PROP_OR(node_id, fix_rate, 1000),                           \
 	};                                                                                         \
                                                                                                    \
-	static struct hl78xx_gnss_data hl78xx_gnss_data_##inst;                                    \
+	static struct hl78xx_gnss_data HL78XX_GNSS_DATA_NAME(node_id);                             \
                                                                                                    \
-	PM_DEVICE_DT_INST_DEFINE(inst, hl78xx_gnss_pm_action);                                     \
+	PM_DEVICE_DT_DEFINE(node_id, hl78xx_gnss_pm_action);                                       \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, hl78xx_gnss_init, PM_DEVICE_DT_INST_GET(inst),                 \
-			      &hl78xx_gnss_data_##inst, &hl78xx_gnss_config_##inst, POST_KERNEL,   \
-			      CONFIG_GNSS_INIT_PRIORITY, &hl78xx_gnss_api);
+	DEVICE_DT_DEFINE(node_id, hl78xx_gnss_init, PM_DEVICE_DT_GET(node_id),                     \
+			 &HL78XX_GNSS_DATA_NAME(node_id), &HL78XX_GNSS_CONFIG_NAME(node_id),       \
+			 POST_KERNEL, CONFIG_GNSS_INIT_PRIORITY, &hl78xx_gnss_api);
 
-#define DT_DRV_COMPAT swir_hl7812_gnss
-DT_INST_FOREACH_STATUS_OKAY(HL78XX_GNSS_DEVICE_DEFINE)
-#undef DT_DRV_COMPAT
-
-#define DT_DRV_COMPAT swir_hl7800_gnss
-DT_INST_FOREACH_STATUS_OKAY(HL78XX_GNSS_DEVICE_DEFINE)
-#undef DT_DRV_COMPAT
+DT_FOREACH_STATUS_OKAY(swir_hl7812_gnss, HL78XX_GNSS_DEVICE_DEFINE)
+DT_FOREACH_STATUS_OKAY(swir_hl7800_gnss, HL78XX_GNSS_DEVICE_DEFINE)
