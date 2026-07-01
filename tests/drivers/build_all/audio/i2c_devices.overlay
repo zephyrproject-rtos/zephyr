@@ -22,6 +22,12 @@
 			reg0: REG0 {};
 		};
 
+		test_mclk: test-mclk {
+			compatible = "fixed-clock";
+			clock-frequency = <12288000>;
+			#clock-cells = <0>;
+		};
+
 		test_i2c: i2c@11112222 {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -79,6 +85,8 @@
 				compatible = "wolfson,wm8904";
 				status = "okay";
 				reg = <0x7>;
+				clocks = <&test_mclk>;
+				clock-names = "mclk";
 			};
 
 			test_i2c_cs35l56: cs35l56@8 {
