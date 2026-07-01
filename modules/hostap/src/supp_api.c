@@ -3529,6 +3529,7 @@ int supplicant_p2p_oper(const struct device *dev __unused, struct net_if *iface,
 		}
 		ret = 0;
 		break;
+
 	case WIFI_P2P_LIST_NETWORKS: {
 		if (params->list_networks.buf == NULL ||
 		    params->list_networks.buf_size == 0) {
@@ -3547,6 +3548,72 @@ int supplicant_p2p_oper(const struct device *dev __unused, struct net_if *iface,
 		if (strncmp(params->list_networks.buf, "FAIL", 4) == 0) {
 			wpa_printf(MSG_ERROR, "LIST_NETWORKS returned FAIL");
 			return -EIO;
+		}
+		ret = 0;
+		break;
+	}
+
+	case WIFI_P2P_PERSISTENT_REMOVE: {
+		if (params->persistent_remove.id == -1) {
+			/* Remove ALL saved networks */
+			snprintk(cmd_buf, sizeof(cmd_buf), "REMOVE_NETWORK all");
+			ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn,
+							      cmd_buf, resp_buf);
+			if (ret < 0) {
+				wpa_printf(MSG_ERROR,
+					   "REMOVE_NETWORK all command failed: %d", ret);
+				return -EIO;
+			}
+			if (strncmp(resp_buf, "FAIL", 4) == 0) {
+				wpa_printf(MSG_ERROR,
+					   "REMOVE_NETWORK all returned FAIL");
+				return -EIO;
+			}
+		} else if (params->persistent_remove.id >= 0) {
+			/*
+			 * Sanity check: use GET_NETWORK <id> ssid to verify
+			 * the network exists before attempting removal.
+			 * wpa_supplicant returns "FAIL" if the ID is unknown.
+			 */
+			snprintk(cmd_buf, sizeof(cmd_buf), "GET_NETWORK %d ssid",
+				 params->persistent_remove.id);
+			ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn,
+							      cmd_buf, resp_buf);
+			if (ret < 0) {
+				wpa_printf(MSG_ERROR,
+					   "GET_NETWORK %d ssid command failed: %d",
+					   params->persistent_remove.id, ret);
+				return -EIO;
+			}
+			if (strncmp(resp_buf, "FAIL", 4) == 0) {
+				wpa_printf(MSG_ERROR,
+					   "P2P persistent_remove: network ID %d not found",
+					   params->persistent_remove.id);
+				return -ENOENT;
+			}
+
+			/* Network exists, proceed with removal */
+			snprintk(cmd_buf, sizeof(cmd_buf), "REMOVE_NETWORK %d",
+				 params->persistent_remove.id);
+			ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn,
+							      cmd_buf, resp_buf);
+			if (ret < 0) {
+				wpa_printf(MSG_ERROR,
+					   "REMOVE_NETWORK %d command failed: %d",
+					   params->persistent_remove.id, ret);
+				return -EIO;
+			}
+			if (strncmp(resp_buf, "FAIL", 4) == 0) {
+				wpa_printf(MSG_ERROR,
+					   "REMOVE_NETWORK %d returned FAIL",
+					   params->persistent_remove.id);
+				return -EIO;
+			}
+		} else {
+			wpa_printf(MSG_ERROR,
+				   "P2P persistent_remove: invalid id %d",
+				   params->persistent_remove.id);
+			return -EINVAL;
 		}
 		ret = 0;
 		break;

@@ -1742,6 +1742,8 @@ enum wifi_p2p_op {
 	WIFI_P2P_POWER_SAVE,
 	/** P2P list stored persistent networks */
 	WIFI_P2P_LIST_NETWORKS,
+	/** P2P remove persistent network(s) */
+	WIFI_P2P_PERSISTENT_REMOVE,
 };
 
 /** Wi-Fi P2P discovery type */
@@ -1857,6 +1859,14 @@ struct wifi_p2p_params {
 		/** Size of the allocated buffer in bytes */
 		size_t buf_size;
 	} list_networks;
+	/** Persistent network remove specific parameters */
+	struct {
+		/** Network ID to remove.
+		 *  >= 0 : remove the specific network with this ID.
+		 *  -1   : remove ALL saved networks.
+		 */
+		int id;
+	} persistent_remove;
 };
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
