@@ -277,12 +277,7 @@ Test Scenario, Test Suite, and Test Case names must follow to these basic rules:
    subsection names delimited with a dot (``.``). For example, a test scenario
    that covers semaphores in the kernel shall start with ``kernel.semaphore``.
 
-#. All Test Scenario identifiers within a Test Configuration (``testcase.yaml`` file)
-   need to be unique.
-   For example a ``testcase.yaml`` file covering semaphores in the kernel can have:
-
-   * ``kernel.semaphore``: For general semaphore tests
-   * ``kernel.semaphore.stress``: Stress testing semaphores in the kernel.
+#. All Test Scenario names must be unique for the Twister execution scope.
 
 #. The full canonical name of a Test Suite is:
    ``<Test Application Project path>/<Test Scenario identifier>``
@@ -299,15 +294,6 @@ Test Scenario, Test Suite, and Test Case names must follow to these basic rules:
      a Test Scenario identifier from the corresponding ``tests.yaml`` file where
      the last section signifies the standalone
      Test Case name, for example: ``debug.coredump.logging_backend``.
-
-
-The ``--no-detailed-test-id`` command line option modifies the above rules in this way:
-
-#. A Test Suite name has only ``<Test Scenario identifier>`` component.
-   Its Application Project path can be found in ``twister.json`` report as ``path:`` property.
-
-#. With short Test Suite names in this mode, all corresponding Test Scenario names
-   must be unique for the Twister execution scope.
 
 
 The following is an example test configuration with a few options that are
