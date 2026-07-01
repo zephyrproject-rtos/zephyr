@@ -271,6 +271,7 @@ config MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT
 	bool "MCUboot has been configured for RAM LOAD with revert"
 	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
 	select MCUBOOT_BOOTLOADER_NO_DOWNGRADE
+	imply MCUBOOT_GENERATE_CONFIRMED_IMAGE
 	help
 	  MCUboot expects slot0_partition and slot1_partition to exist in DT. In this mode, MCUboot
 	  will select the image with the higher version number, copy it to RAM and begin execution
