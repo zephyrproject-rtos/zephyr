@@ -3517,7 +3517,7 @@ int supplicant_p2p_oper(const struct device *dev __unused, struct net_if *iface,
 	}
 
 	case WIFI_P2P_POWER_SAVE:
-		snprintk(cmd_buf, sizeof(cmd_buf), "p2p_set ps %d", params->power_save ? 1 : 0);
+		snprintk(cmd_buf, sizeof(cmd_buf), "P2P_SET ps %d", params->power_save ? 1 : 0);
 		ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn, cmd_buf, resp_buf);
 		if (ret < 0) {
 			wpa_printf(MSG_ERROR, "p2p_set ps command failed: %d", ret);
