@@ -446,7 +446,15 @@ void net_if_stats_reset_all(void)
 
 static inline void init_iface(struct net_if *iface)
 {
-	const struct net_if_api *api = net_if_get_device(iface)->api;
+	const struct device *dev = net_if_get_device(iface);
+	const struct net_if_api *api;
+
+	if (!device_is_ready(dev)) {
+		NET_ERR("Iface %p device not ready", iface);
+		return;
+	}
+
+	api = dev->api;
 
 	if (!api || !api->init) {
 		NET_ERR("Iface %p driver API init NULL", iface);
