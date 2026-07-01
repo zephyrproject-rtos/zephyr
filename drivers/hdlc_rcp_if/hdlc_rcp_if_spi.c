@@ -62,6 +62,7 @@ struct hdlc_rcp_if_spi_data {
 
 	bool tx_ready;
 	bool frame_sent;
+	uint16_t tx_refused_count;
 };
 
 BUILD_ASSERT(CONFIG_HDLC_RCP_IF_SPI_SMALL_PACKET_SIZE <=
@@ -167,6 +168,7 @@ static void hdlc_rcp_if_push_pull_spi(struct k_work *work)
 	uint16_t peer_max_rx;
 	uint16_t fcs;
 	int ret;
+	uint16_t accept_len;
 
 	data->tx_buf[0] = SPI_HEADER_PATTERN_VALUE;
 	if (!data->frame_sent) {
@@ -180,8 +182,9 @@ static void hdlc_rcp_if_push_pull_spi(struct k_work *work)
 		rx_frame.len += data->rx_len;
 		sys_put_le16(data->rx_len, &data->tx_buf[1]);
 	} else {
-		rx_frame.len += CONFIG_HDLC_RCP_IF_SPI_SMALL_PACKET_SIZE;
-		sys_put_le16(CONFIG_HDLC_RCP_IF_SPI_SMALL_PACKET_SIZE, &data->tx_buf[1]);
+		accept_len = MAX(CONFIG_HDLC_RCP_IF_SPI_SMALL_PACKET_SIZE, data->tx_len);
+		rx_frame.len += accept_len;
+		sys_put_le16(accept_len, &data->tx_buf[1]);
 	}
 
 	LOG_HEXDUMP_DBG(data->tx_buf, SPI_HEADER_LEN, "TX Header");
@@ -214,8 +217,18 @@ static void hdlc_rcp_if_push_pull_spi(struct k_work *work)
 	data->rx_len = sys_get_le16(&rx_buf[3]);
 
 	if (data->tx_len > peer_max_rx) {
-		LOG_WRN("Peer not ready to receive our frame (%u > %u)", data->tx_len, peer_max_rx);
+		data->tx_refused_count++;
+		if (data->tx_refused_count == 1) {
+			LOG_WRN("Peer not ready to receive our frame (%u > %u), need to retry",
+				data->tx_len, peer_max_rx);
+		}
+		/* Keep tx_ready to retry the packet on next SPI transaction. */
+		data->tx_ready = true;
+		return;
 	}
+
+	/* TX accepted by peer — reset refused count */
+	data->tx_refused_count = 0;
 
 	LOG_HEXDUMP_DBG(rx_buf, SPI_HEADER_LEN, "RX Header");
 
