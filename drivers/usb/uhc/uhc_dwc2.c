@@ -23,6 +23,8 @@ LOG_MODULE_REGISTER(uhc_dwc2, CONFIG_UHC_DRIVER_LOG_LEVEL);
 #define RESET_RECOVERY_MS	CONFIG_UHC_DWC2_RESET_RECOVERY_MS
 #define SET_ADDR_DELAY_MS	CONFIG_UHC_DWC2_SET_ADDR_DELAY_MS
 #define MAX_CHANNELS		16
+#define PERIODIC_FRAME_MASK	0x3FFFU
+#define PERIODIC_FRAME_HALF	0x2000U
 
 enum uhc_dwc2_event {
 	/* A device has been connected to the port */
@@ -41,6 +43,8 @@ enum uhc_dwc2_event {
 	UHC_DWC2_EVENT_SUSPEND,
 	/* USB host stack requested resume or device initiated Remote Wakeup */
 	UHC_DWC2_EVENT_RESUME,
+	/* An indication of SOF, micro SOF or Keep-Alive */
+	UHC_DWC2_EVENT_SOF,
 	/* First of MAX_CHANNELS pending channel event bits, keep last */
 	UHC_DWC2_EVENT_PORT_PEND_CHANNEL,
 };
@@ -58,6 +62,8 @@ enum uhc_dwc2_channel_event {
 	UHC_DWC2_CHANNEL_DO_REINIT,
 	/* Need to rewind the buffer being transmitted. Channel is now halted */
 	UHC_DWC2_CHANNEL_DO_REWIND,
+	/* The channel is periodic, active and wait for scheduling. Channel is now halted */
+	UHC_DWC2_CHANNEL_DO_WAIT_SOF,
 	/* The transfer was cancelled. Channel is now halted */
 	UHC_DWC2_CHANNEL_EVENT_CANCELLED,
 };
@@ -84,9 +90,22 @@ enum uhc_dwc2_channel_event {
 					 USB_DWC2_HCINT_BBLERR |		\
 					 USB_DWC2_HCINT_XACTERR)
 
+/* Mask of the status interrupt bits for port */
+#define USB_DWC2_GINTSTS_BITS		(USB_DWC2_GINTSTS_PRTINT |		\
+					 USB_DWC2_GINTSTS_HCHINT |		\
+					 USB_DWC2_GINTSTS_WKUPINT|		\
+					 USB_DWC2_GINTSTS_SOF)
+
 /* TODO: rename to pipe_data and expand with udev */
 struct uhc_dwc2_channel_data {
+	/* PID value, used for the next data stage transfer */
 	uint8_t next_pid;
+	/* Next scheduled frame for the periodic transfer */
+	uint16_t scheduled_frame;
+	/* Periodic transfer has been queued and active */
+	bool periodic_started;
+	/* Periodic transfer has been scheduled and waiting for the SOF */
+	bool periodic_scheduled;
 };
 
 struct uhc_dwc2_channel {
@@ -155,6 +174,20 @@ static inline uint8_t calc_next_pid(const uint8_t pid, const uint32_t pkt_cnt)
 	return (pid == USB_DWC2_HCTSIZ_PID_DATA0) ?
 		USB_DWC2_HCTSIZ_PID_DATA1 :
 		USB_DWC2_HCTSIZ_PID_DATA0;
+}
+
+static inline bool periodic_frame_overrun(uint16_t current_frame, uint16_t scheduled_frame)
+{
+	uint16_t delta;
+
+	delta = (scheduled_frame - current_frame) & PERIODIC_FRAME_MASK;
+
+	/* When delta == 0, it means the scheduled frame is already current
+	 * and we missed the scheduling.
+	 * A delta in the upper half of the frame-number space means
+	 * the scheduled frame is behind current_frame.
+	 */
+	return delta == 0U || delta >= PERIODIC_FRAME_HALF;
 }
 
 static inline void dwc2_set_reset(struct usb_dwc2_reg *const base, const bool reset)
@@ -247,7 +280,7 @@ static void dwc2_config_timings(struct usb_dwc2_reg *const base)
 
 	switch (usb_dwc2_get_hprt_prtspd(hprt)) {
 	case USB_DWC2_HPRT_PRTSPD_HIGH:
-		frint = 125U * phy_clock_mhz - 1;
+		frint = 125U * phy_clock_mhz - 1U;
 		break;
 	case USB_DWC2_HPRT_PRTSPD_FULL:
 		frint = 1000U * phy_clock_mhz - 1U;
@@ -612,8 +645,8 @@ static int port_reset(const struct device *dev)
 		return ret;
 	}
 
-	/* TODO: set frame list for the ISOC/INTR xfer */
-	/* TODO: enable periodic transfer */
+	/* Enable periodic scheduling */
+	sys_set_bits((mem_addr_t)&base->hcfg, USB_DWC2_HCFG_PERSCHEDENA);
 
 	return 0;
 }
@@ -717,7 +750,7 @@ static inline void ch_process_control(const struct device *dev,
 	if (xfer->stage == UHC_CONTROL_STAGE_SETUP) {
 		/* Just finished UHC_CONTROL_STAGE_SETUP */
 		if (setup->wLength == 0) {
-			/* No data stage. Go strait to status */
+			/* No data stage. Go straight to status */
 			next_dir_is_in = true;
 			xfer->stage = UHC_CONTROL_STAGE_STATUS;
 		} else {
@@ -941,6 +974,60 @@ static inline uint32_t ch_handle_out_bulk_control(const struct device *dev,
 	return ch_handle_xfer_complete(dev, ch, ch_events);
 }
 
+static uint32_t ch_handle_in_interrupt(struct uhc_dwc2_channel *const ch,
+				       uint32_t hcint)
+{
+	uint32_t ch_events = 0;
+
+	if (hcint & USB_DWC2_HCINT_CHHLTD) {
+		if (hcint & (USB_DWC2_HCINT_XFERCOMPL | USB_DWC2_HCINT_STALL |
+			     USB_DWC2_HCINT_BBLERR)) {
+			/* Transfer completed, STALLed or Babble Error */
+			ch->error_count = 0;
+			/* TODO: Mask ACK */
+
+			if (hcint & USB_DWC2_HCINT_XFERCOMPL) {
+				ch_events |= BIT(UHC_DWC2_CHANNEL_EVENT_CPLT);
+			} else if (hcint & USB_DWC2_HCINT_STALL) {
+				ch_events |= BIT(UHC_DWC2_CHANNEL_EVENT_STALL);
+			} else {
+				ch_events |= BIT(UHC_DWC2_CHANNEL_EVENT_ERROR);
+			}
+			ch_events |= BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
+		} else if (hcint & USB_DWC2_HCINT_XACTERR) {
+			ch->error_count++;
+			if (ch->error_count >= 3) {
+				LOG_ERR("IN channel%d error retry limit, HCINT 0x%08x",
+					ch->index, hcint);
+				ch_events |= BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
+				ch_events |= BIT(UHC_DWC2_CHANNEL_EVENT_ERROR);
+			} else {
+				/* TODO: Unmask ACK, NAK, DTGERR */
+				LOG_DBG("IN channel%d error, HCINT 0x%08x, retry %u",
+					ch->index, hcint, ch->error_count);
+				ch_events |= BIT(UHC_DWC2_CHANNEL_DO_REINIT);
+			}
+		} else if (hcint & (USB_DWC2_HCINT_NAK | USB_DWC2_HCINT_FRMOVRUN)) {
+			/* Channel NAKed */
+			ch->error_count = 0;
+			/* TODO: Optimize by handling transfer with bInterval=1 immediately */
+			ch_events |= BIT(UHC_DWC2_CHANNEL_DO_WAIT_SOF);
+		} else {
+			/* TODO: Add handling for other cases */
+			LOG_WRN("IN halted, unhandled HCINT 0x%08x", hcint);
+		}
+	} else if (hcint & (USB_DWC2_HCINT_ACK | USB_DWC2_HCINT_NAK | USB_DWC2_HCINT_DTGERR)) {
+		ch->error_count = 0;
+		/* TODO: Mask ACK, NAK, DTGERR */
+		LOG_WRN("ACK, NAK or DTG Error");
+	} else {
+		/* TODO: Add handling for other cases */
+		LOG_WRN("IN not halted, unhandled HCINT 0x%08x", hcint);
+	}
+
+	return ch_events;
+}
+
 static uint32_t ch_handle_irq_events(const struct device *dev,
 				     struct uhc_dwc2_channel *const ch)
 {
@@ -987,9 +1074,18 @@ static uint32_t ch_handle_irq_events(const struct device *dev,
 		} else {
 			ch_events = ch_handle_out_bulk_control(dev, ch, hcint);
 		}
+	} else if (xfer->type == USB_EP_TYPE_INTERRUPT) {
+		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+			ch_events = ch_handle_in_interrupt(ch, hcint);
+		} else {
+			LOG_ERR("Interrupt OUT isn't supported yet");
+			ch_events = BIT(UHC_DWC2_CHANNEL_EVENT_ERROR) |
+				    BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
+		}
 	} else {
 		LOG_ERR("Unhandled transfer type %u, HCINT 0x%08x", xfer->type, hcint);
-		ch_events = 0;
+		ch_events = BIT(UHC_DWC2_CHANNEL_EVENT_ERROR) |
+			    BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
 	}
 
 	return ch_events;
@@ -1020,8 +1116,7 @@ static inline void port_enable(const struct device *dev)
 	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 
 	sys_clear_bits((mem_addr_t)&base->haintmsk, 0xFFFFFFFFUL);
-	sys_set_bits((mem_addr_t)&base->gintmsk, USB_DWC2_GINTSTS_PRTINT |
-		     USB_DWC2_GINTSTS_HCHINT | USB_DWC2_GINTSTS_WKUPINT);
+	sys_set_bits((mem_addr_t)&base->gintmsk, USB_DWC2_GINTSTS_BITS);
 	dwc2_set_power(base, true);
 }
 
@@ -1030,8 +1125,7 @@ static inline void port_disable(const struct device *dev)
 	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 
 	sys_clear_bits((mem_addr_t)&base->haintmsk, 0xFFFFFFFFUL);
-	sys_clear_bits((mem_addr_t)&base->gintmsk, USB_DWC2_GINTSTS_PRTINT |
-		     USB_DWC2_GINTSTS_HCHINT | USB_DWC2_GINTSTS_WKUPINT);
+	sys_clear_bits((mem_addr_t)&base->gintmsk, USB_DWC2_GINTSTS_BITS);
 	dwc2_set_power(base, false);
 }
 
@@ -1104,6 +1198,11 @@ static int ch_claim(const struct device *const dev,
 	/* Save channel characteristics of the underlying channel */
 	ch->xfer = xfer;
 	ch->data = &priv->ch_data[ep_dir_idx][ep_num];
+
+	ch->data->scheduled_frame = 0;
+	ch->data->periodic_started = false;
+	ch->data->periodic_scheduled = false;
+
 	priv->free_chs--;
 
 	*ch_p = ch;
@@ -1152,25 +1251,23 @@ static int ch_configure(const struct device *const dev, struct uhc_dwc2_channel 
 		hcchar |= USB_DWC2_HCCHAR_LSPDDEV;
 	}
 
-	if (xfer->type == USB_EP_TYPE_INTERRUPT) {
-		hcchar |= USB_DWC2_HCCHAR_ODDFRM;
-	}
-
 	sys_write32(hcchar, (mem_addr_t)&ch->regs->hcchar);
 
 	return 0;
 }
 
-static void ch_complete_bulk(const struct device *dev, struct uhc_dwc2_channel *const ch)
+static void ch_complete_data(const struct device *dev, struct uhc_dwc2_channel *const ch)
 {
 	struct uhc_transfer *const xfer = ch->xfer;
 	uint32_t actual_len = ch->length;
 	uint32_t pkt_cnt;
+	uint32_t hctsiz;
+	uint32_t remaining;
 
 	/* Add net buffer after IN stage */
 	if (USB_EP_DIR_IS_IN(xfer->ep)) {
-		uint32_t hctsiz = sys_read32((mem_addr_t)&ch->regs->hctsiz);
-		uint16_t remaining = usb_dwc2_get_hctsiz_xfersize(hctsiz);
+		hctsiz = sys_read32((mem_addr_t)&ch->regs->hctsiz);
+		remaining = usb_dwc2_get_hctsiz_xfersize(hctsiz);
 
 		/* Device may send a short packet, use the actual length */
 		actual_len = ch->length - remaining;
@@ -1182,12 +1279,12 @@ static void ch_complete_bulk(const struct device *dev, struct uhc_dwc2_channel *
 	pkt_cnt = calc_packet_count(actual_len, xfer->mps);
 	ch->data->next_pid = calc_next_pid(ch->data->next_pid, pkt_cnt);
 
-	LOG_DBG("Release channel%u, prog=%u, act=%u, len=%u, mps=%u, next_pid=%u",
+	LOG_DBG("Data on channel%u, prog=%u, act=%u, len=%u, mps=%u, next_pid=%u",
 		ch->index, ch->length, actual_len, xfer->buf->len,
 		xfer->mps, ch->data->next_pid);
 }
 
-static void ch_complete(const struct device *dev, struct uhc_dwc2_channel *ch)
+static void ch_complete(const struct device *dev, struct uhc_dwc2_channel *const ch)
 {
 	struct uhc_transfer *const xfer = ch->xfer;
 	const struct usb_setup_packet *setup;
@@ -1201,7 +1298,8 @@ static void ch_complete(const struct device *dev, struct uhc_dwc2_channel *ch)
 		}
 		break;
 	case USB_EP_TYPE_BULK:
-		ch_complete_bulk(dev, ch);
+	case USB_EP_TYPE_INTERRUPT:
+		ch_complete_data(dev, ch);
 		break;
 	default:
 		/* Nothing special before release */
@@ -1209,7 +1307,7 @@ static void ch_complete(const struct device *dev, struct uhc_dwc2_channel *ch)
 	}
 }
 
-static void ch_release(const struct device *dev, struct uhc_dwc2_channel *ch)
+static void ch_release(const struct device *dev, struct uhc_dwc2_channel *const ch)
 {
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
@@ -1218,7 +1316,12 @@ static void ch_release(const struct device *dev, struct uhc_dwc2_channel *ch)
 
 	/* Release channel */
 	ch->xfer = NULL;
+
+	ch->data->scheduled_frame = 0;
+	ch->data->periodic_started = false;
+	ch->data->periodic_scheduled = false;
 	ch->data = NULL;
+
 	ch->halt_cancel = false;
 	priv->free_chs++;
 
@@ -1232,7 +1335,7 @@ static void ch_release(const struct device *dev, struct uhc_dwc2_channel *ch)
  * false if the channel was not running and the caller must finish the
  * cancellation itself.
  */
-static bool ch_halt_initiate(struct uhc_dwc2_channel *ch)
+static bool ch_halt_initiate(struct uhc_dwc2_channel *const ch)
 {
 	uint32_t hcchar;
 
@@ -1358,6 +1461,106 @@ static void ch_start_bulk(const struct device *dev,
 	sys_write32(hcchar, (mem_addr_t)&ch->regs->hcchar);
 }
 
+static void ch_schedule_interrupt(const struct device *dev,
+				  struct uhc_dwc2_channel *const ch)
+{
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
+	struct uhc_transfer *const xfer = ch->xfer;
+	uint32_t hfnum;
+	uint16_t current_frame;
+
+	hfnum = sys_read32((mem_addr_t)&base->hfnum);
+	current_frame = usb_dwc2_get_hfnum_frnum(hfnum);
+
+	if (!ch->data->periodic_started) {
+		/*
+		 * We don't start the interrupt transfer immediately,
+		 * just schedule at the next frame
+		 * and calculate the parity in ch_start_interrupt()
+		 */
+		ch->data->scheduled_frame = (current_frame + 1U) & PERIODIC_FRAME_MASK;
+		ch->data->periodic_started = true;
+	} else {
+		/*
+		 * The interrupt transfer is already active,
+		 * preserve periodic phase by using the polling interval
+		 * and mark the channel for periodic transfer in the closest SOF
+		 */
+
+		/* TODO: Consider the High-speed microframes as well, only Full-speed for now */
+		ch->data->scheduled_frame = (ch->data->scheduled_frame + xfer->interval) &
+					     PERIODIC_FRAME_MASK;
+		ch->data->periodic_scheduled = true;
+	}
+}
+
+static void ch_start_interrupt(const struct device *dev,
+			       struct uhc_dwc2_channel *const ch)
+{
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
+	struct uhc_transfer *const xfer = ch->xfer;
+	mem_addr_t dma_addr;
+	uint16_t pkt_cnt;
+	uint32_t hctsiz;
+	uint32_t hcchar;
+	uint32_t hfnum;
+	uint16_t frame;
+
+	ch->length = MIN(net_buf_tailroom(xfer->buf), xfer->mps);
+	dma_addr = (mem_addr_t)net_buf_tail(xfer->buf);
+
+	LOG_DBG("INT IN, ch=%u, ep=%02Xh, mps=%u, interval=%u, size=%u, pid=%u, frame=%u",
+		ch->index,
+		xfer->ep,
+		xfer->mps,
+		xfer->interval,
+		ch->length,
+		ch->data->next_pid,
+		ch->data->scheduled_frame);
+
+	pkt_cnt = calc_packet_count(ch->length, xfer->mps);
+
+	/* TODO: Do not forget to flush pids on the device disconnection */
+
+	hctsiz = usb_dwc2_set_hctsiz_pid(ch->data->next_pid) |
+		 usb_dwc2_set_hctsiz_pktcnt(pkt_cnt) |
+		 usb_dwc2_set_hctsiz_xfersize(ch->length);
+
+	if (ch->length > 0) {
+		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+			sys_cache_data_invd_range((void *)dma_addr, ch->length);
+		} else {
+			sys_cache_data_flush_range((void *)dma_addr, ch->length);
+		}
+	}
+
+	uhc_dwc2_quirk_dma_addr_xlate(dev, &dma_addr);
+	sys_write32(hctsiz, (mem_addr_t)&ch->regs->hctsiz);
+	sys_write32((uint32_t)dma_addr, (mem_addr_t)&ch->regs->hcdma);
+
+	hfnum = sys_read32((mem_addr_t)&base->hfnum);
+	frame = usb_dwc2_get_hfnum_frnum(hfnum);
+
+	if (periodic_frame_overrun(frame, ch->data->scheduled_frame)) {
+		/* We already missed the frame, schedule to the next suitable frame */
+		ch_schedule_interrupt(dev, ch);
+		/* TODO: Emulate the situation, when we passed two frame intervals */
+		return;
+	}
+
+	hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
+
+	if (ch->data->scheduled_frame & 1U) {
+		hcchar |= USB_DWC2_HCCHAR_ODDFRM;
+	} else {
+		hcchar &= ~USB_DWC2_HCCHAR_ODDFRM;
+	}
+
+	hcchar |= USB_DWC2_HCCHAR_CHENA;
+	hcchar &= ~USB_DWC2_HCCHAR_CHDIS;
+	sys_write32(hcchar, (mem_addr_t)&ch->regs->hcchar);
+}
+
 static void ch_reinit(const struct device *dev,
 		      struct uhc_dwc2_channel *const ch)
 {
@@ -1379,9 +1582,40 @@ static void ch_reinit(const struct device *dev,
 	case USB_EP_TYPE_BULK:
 		ch_start_bulk(dev, ch);
 		break;
+	case USB_EP_TYPE_INTERRUPT:
+		ch_schedule_interrupt(dev, ch);
+		ch_start_interrupt(dev, ch);
+		break;
 	default:
 		LOG_ERR("Reinit channel with type=%u isn't supported yet", ch->xfer->type);
 		break;
+	}
+}
+
+static void port_start_periodic(const struct device *dev)
+{
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
+	uint32_t hfnum;
+	uint16_t next_frame;
+
+	hfnum = sys_read32((mem_addr_t)&base->hfnum);
+	next_frame = (usb_dwc2_get_hfnum_frnum(hfnum) + 1U) & PERIODIC_FRAME_MASK;
+
+	for (uint8_t idx = 0; idx < priv->numhstchnl; idx++) {
+		struct uhc_dwc2_channel *const ch = &priv->ch[idx];
+
+		if (ch->xfer == NULL || ch->data == NULL || !ch->data->periodic_scheduled) {
+			continue;
+		}
+
+		if (next_frame == ch->data->scheduled_frame) {
+			LOG_DBG("TODO: Channel%d schedule periodic to frame=%u",
+				ch->index,
+				ch->data->scheduled_frame);
+			ch->data->periodic_scheduled = false;
+			ch_start_interrupt(dev, ch);
+		}
 	}
 }
 
@@ -1547,6 +1781,59 @@ static int validate_bulk_xfer(const struct uhc_transfer *xfer)
 	return 0;
 }
 
+
+static int validate_interrupt_xfer(const struct uhc_transfer *xfer)
+{
+	if (USB_EP_GET_IDX(xfer->ep) == 0) {
+		LOG_ERR("Interrupt transfer cannot use endpoint 0");
+		return -EINVAL;
+	}
+
+	if (xfer->buf == NULL) {
+		LOG_ERR("Interrupt transfer requires buffer");
+		return -EINVAL;
+	}
+	/* TODO: Support only IN EP for now */
+	if (!USB_EP_DIR_IS_IN(xfer->ep)) {
+		LOG_ERR("Interrupt OUT is not supported yet");
+		return -ENOTSUP;
+	}
+
+	if (xfer->mps == 0U || xfer->mps > 1024U) {
+		LOG_ERR("Invalid interrupt MPS %u", xfer->mps);
+		return -EINVAL;
+	}
+
+	/* TODO: Support High-bandwidth with several transactions per microframe */
+	if (USB_MPS_ADDITIONAL_TRANSACTIONS(xfer->mps) != 0U) {
+		LOG_ERR("High-bandwidth interrupt endpoints are not supported yet");
+		return -ENOTSUP;
+	}
+
+	if (xfer->interval == 0U) {
+		LOG_ERR("Interrupt transfer interval is zero");
+		return -EINVAL;
+	}
+
+	/* The buffer must have space for at least one packet. */
+	if (net_buf_tailroom(xfer->buf) == 0) {
+		LOG_ERR("Interrupt IN transfer has no tailroom");
+		return -ENOMEM;
+	}
+
+	/*
+	 * DWC2 DMA mode requires word-aligned DMA buffers.
+	 * For IN, DMA writes to net_buf_tail().
+	 */
+	if (!IS_ALIGNED(net_buf_tail(xfer->buf), 4)) {
+		LOG_ERR("Interrupt IN buffer tail %p is not 4-byte aligned",
+			net_buf_tail(xfer->buf));
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int submit_xfer(const struct device *const dev, struct uhc_transfer *const xfer)
 {
 	struct uhc_dwc2_channel *ch = NULL;
@@ -1563,10 +1850,12 @@ static int submit_xfer(const struct device *const dev, struct uhc_transfer *cons
 	case USB_EP_TYPE_BULK:
 		ret = validate_bulk_xfer(xfer);
 		break;
+	case USB_EP_TYPE_INTERRUPT:
+		ret = validate_interrupt_xfer(xfer);
+		break;
 	default:
 		LOG_ERR("Submit xfer with type=%u isn't supported yet", xfer->type);
-		ret = -EINVAL;
-		break;
+		return -EINVAL;
 	}
 
 	if (ret != 0) {
@@ -1595,6 +1884,10 @@ static int submit_xfer(const struct device *const dev, struct uhc_transfer *cons
 		break;
 	case USB_EP_TYPE_BULK:
 		ch_start_bulk(dev, ch);
+		break;
+	case USB_EP_TYPE_INTERRUPT:
+		ch_schedule_interrupt(dev, ch);
+		ch_start_interrupt(dev, ch);
 		break;
 	default:
 		LOG_ERR("Start channel with type %d isn't supported yet", xfer->type);
@@ -1718,6 +2011,10 @@ static void port_handle_events(const struct device *dev, uint32_t event_mask)
 	if (event_mask & BIT(UHC_DWC2_EVENT_RESUME)) {
 		port_resume(dev);
 	}
+
+	if (event_mask & BIT(UHC_DWC2_EVENT_SOF)) {
+		port_start_periodic(dev);
+	}
 }
 
 static void ch_handle_events(const struct device *dev, struct uhc_dwc2_channel *ch)
@@ -1763,6 +2060,10 @@ static void ch_handle_events(const struct device *dev, struct uhc_dwc2_channel *
 
 		if (events & BIT(UHC_DWC2_CHANNEL_DO_REINIT)) {
 			ch_reinit(dev, ch);
+		}
+
+		if (events & BIT(UHC_DWC2_CHANNEL_DO_WAIT_SOF)) {
+			ch_schedule_interrupt(dev, ch);
 		}
 	}
 }
@@ -1856,6 +2157,10 @@ static void uhc_dwc2_isr_handler(const struct device *dev)
 		k_event_post(&priv->events, BIT(UHC_DWC2_EVENT_RESUME));
 	}
 
+	if (gintsts & USB_DWC2_GINTSTS_SOF) {
+		k_event_post(&priv->events, BIT(UHC_DWC2_EVENT_SOF));
+	}
+
 	(void)uhc_dwc2_quirk_irq_clear(dev);
 }
 
@@ -1938,7 +2243,7 @@ static void uhc_dwc2_thread(void *arg0, void *arg1, void *arg2)
 		/* Handle port events */
 		port_handle_events(dev, event_mask);
 
-		/* Interate channels events */
+		/* Iterate channels events */
 		for (uint32_t index = 0; index < MAX_CHANNELS; index++) {
 			if (event_mask & BIT(UHC_DWC2_EVENT_PORT_PEND_CHANNEL + index)) {
 				ch_handle_events(dev, &priv->ch[index]);
@@ -2100,6 +2405,8 @@ static int uhc_dwc2_init(const struct device *const dev)
 	uint32_t gsnpsid;
 	uint32_t gintsts;
 	int ret;
+
+	memset(priv->ch_data, 0, sizeof(priv->ch_data));
 
 	for (uint32_t idx = 0; idx < MAX_CHANNELS; idx++) {
 		priv->ch[idx].length = 0;
