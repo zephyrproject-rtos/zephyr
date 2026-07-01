@@ -49,6 +49,10 @@ tests:
     extra_args: EXTRA_CONF_FILE=modem_cellular.conf
     extra_configs:
       - CONFIG_UART_ASYNC_API=y
+  drivers.modem.modem_cellular.stats.build:
+    extra_args: EXTRA_CONF_FILE=modem_cellular.conf
+    extra_configs:
+      - CONFIG_MODEM_CELLULAR_STATS=y
   drivers.modem.modem_simcom_sim7080.interrupt_driven.build:
     extra_args: EXTRA_CONF_FILE=modem_simcom_sim7080.conf
     extra_configs:
