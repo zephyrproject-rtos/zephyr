@@ -1,0 +1,6 @@
+board:
+  name: rpi_zero_2w
+  full_name: Raspberry Pi Zero 2 W (Cortex-A53)
+  vendor: raspberrypi
+  socs:
+  - name: bcm2710
