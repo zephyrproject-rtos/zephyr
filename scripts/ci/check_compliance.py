@@ -2551,6 +2551,33 @@ class Ruff(ComplianceTest):
                 self.fmtd_failure("error", "Python format error", file, desc=desc)
 
 
+class WestLinkCheck(ComplianceTest):
+    """
+    West link synchronization check
+    """
+
+    name = "WestLink"
+    doc = "Check that west link files are in sync."
+
+    def run(self):
+        cmd = [
+            "west",
+            "ln",
+            "--status",
+            COMMIT_RANGE,
+        ]
+        try:
+            result = subprocess.run(cmd, check=False, capture_output=True, cwd=GIT_TOP)
+        except Exception as ex:
+            self.error(f"Failed to run west ln --status: {ex}")
+        output = result.stdout.decode("utf-8")
+        for line in output.splitlines()[1:]:
+            state, line = line.split(":")
+            if state in ('!', '-', '?'):
+                self.failure(output)
+                break
+
+
 class PythonCompatCheck(ComplianceTest):
     """
     Python Compatibility Check
