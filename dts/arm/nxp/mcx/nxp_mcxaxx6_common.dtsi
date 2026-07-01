@@ -250,6 +250,24 @@
 			status = "disabled";
 		};
 
+		rtc: rtc@400ee000 {
+			compatible = "nxp,rtc";
+			reg = <0x400ee000 0x1000>;
+			interrupts = <119 0>, <120 0>;
+			interrupt-names = "alarm", "seconds";
+			clock-frequency = <32768>;
+			prescaler = <32768>;
+			/* OSC32k is not available on this device */
+			clock-source = "LPO";
+			status = "disabled";
+
+			counter_rtc: counter_rtc {
+				compatible = "zephyr,rtc-counter";
+				alarms-count = <1>;
+				status = "disabled";
+			};
+		};
+
 		ctimer0: ctimer@40004000 {
 			compatible = "nxp,lpc-ctimer";
 			reg = <0x40004000 0x1000>;
