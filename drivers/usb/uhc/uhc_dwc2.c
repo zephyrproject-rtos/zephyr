@@ -241,7 +241,7 @@ static void dwc2_config_timings(struct usb_dwc2_reg *const base)
 
 	switch (usb_dwc2_get_hprt_prtspd(hprt)) {
 	case USB_DWC2_HPRT_PRTSPD_HIGH:
-		frint = 125U * phy_clock_mhz - 1;
+		frint = 125U * phy_clock_mhz - 1U;
 		break;
 	case USB_DWC2_HPRT_PRTSPD_FULL:
 		frint = 1000U * phy_clock_mhz - 1U;
@@ -600,8 +600,8 @@ static int port_reset(const struct device *dev)
 		return ret;
 	}
 
-	/* TODO: set frame list for the ISOC/INTR xfer */
-	/* TODO: enable periodic transfer */
+	/* Enable periodic scheduling */
+	sys_set_bits((mem_addr_t)&base->hcfg, USB_DWC2_HCFG_PERSCHEDENA);
 
 	return 0;
 }
@@ -622,7 +622,7 @@ static inline void ch_process_control(struct uhc_dwc2_channel *ch)
 	if (xfer->stage == UHC_CONTROL_STAGE_SETUP) {
 		/* Just finished UHC_CONTROL_STAGE_SETUP */
 		if (setup->wLength == 0) {
-			/* No data stage. Go strait to status */
+			/* No data stage. Go straight to status */
 			next_dir_is_in = true;
 			xfer->stage = UHC_CONTROL_STAGE_STATUS;
 		} else {
@@ -824,6 +824,60 @@ static inline uint32_t ch_handle_out_bulk_control(struct uhc_dwc2_channel *ch, u
 	return ch_handle_xfer_complete(ch, ch_events);
 }
 
+static uint32_t ch_handle_in_interrupt(struct uhc_dwc2_channel *ch, uint32_t hcint)
+{
+	uint32_t ch_events = 0;
+
+	if (hcint & USB_DWC2_HCINT_CHHLTD) {
+		if (hcint & (USB_DWC2_HCINT_XFERCOMPL | USB_DWC2_HCINT_STALL |
+			     USB_DWC2_HCINT_BBLERR)) {
+			/* Transfer completed, STALLed or Babble Error */
+			ch->error_count = 0;
+			/* TODO: Mask ACK */
+
+			if (hcint & USB_DWC2_HCINT_XFERCOMPL) {
+				ch_events |= BIT(UHC_DWC2_CHANNEL_EVENT_CPLT);
+			} else if (hcint & USB_DWC2_HCINT_STALL) {
+				ch_events |= BIT(UHC_DWC2_CHANNEL_EVENT_STALL);
+			} else {
+				ch_events |= BIT(UHC_DWC2_CHANNEL_EVENT_ERROR);
+			}
+			ch_events |= BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
+		} else if (hcint & USB_DWC2_HCINT_XACTERR) {
+			ch->error_count++;
+			if (ch->error_count >= 3) {
+				LOG_ERR("IN channel%d error retry limit, HCINT 0x%08x",
+					ch->index, hcint);
+				ch_events |= BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
+				ch_events |= BIT(UHC_DWC2_CHANNEL_EVENT_ERROR);
+			} else {
+				/* TODO: Unmask ACK, NAK, DTGERR */
+				LOG_DBG("IN channel%d error, HCINT 0x%08x, retry %u",
+					ch->index, hcint, ch->error_count);
+				ch_events |= BIT(UHC_DWC2_CHANNEL_DO_REINIT);
+			}
+		} else if (hcint & USB_DWC2_HCINT_NAK) {
+			/* TODO: verify against specification */
+			/* Channel NAKed */
+			ch->error_count = 0;
+			ch_events |= BIT(UHC_DWC2_CHANNEL_DO_REINIT);
+		} else {
+			/* TODO: Add handling for other cases */
+			LOG_WRN("IN halted, unhandled HCINT 0x%08x", hcint);
+		}
+	} else if (hcint & (USB_DWC2_HCINT_ACK | USB_DWC2_HCINT_NAK | USB_DWC2_HCINT_DTGERR)) {
+		ch->error_count = 0;
+		/* TODO: Mask ACK, NAK, DTGERR */
+		LOG_WRN("ACK, NAK or DTG Error");
+	} else {
+		/* TODO: Add handling for other cases */
+		LOG_WRN("IN not halted, unhandled HCINT 0x%08x", hcint);
+	}
+
+	return ch_events;
+}
+
+
 static uint32_t ch_handle_irq_events(struct uhc_dwc2_channel *ch)
 {
 	struct uhc_transfer *const xfer = ch->xfer;
@@ -869,9 +923,18 @@ static uint32_t ch_handle_irq_events(struct uhc_dwc2_channel *ch)
 		} else {
 			ch_events = ch_handle_out_bulk_control(ch, hcint);
 		}
+	} else if (xfer->type == USB_EP_TYPE_INTERRUPT) {
+		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+			ch_events = ch_handle_in_interrupt(ch, hcint);
+		} else {
+			LOG_ERR("Interrupt OUT isn't supported yet");
+			ch_events = BIT(UHC_DWC2_CHANNEL_EVENT_ERROR) |
+				    BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
+		}
 	} else {
 		LOG_ERR("Unhandled transfer type %u, HCINT 0x%08x", xfer->type, hcint);
-		ch_events = 0;
+		ch_events = BIT(UHC_DWC2_CHANNEL_EVENT_ERROR) |
+			    BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
 	}
 
 	return ch_events;
@@ -1032,10 +1095,6 @@ static int ch_configure(const struct device *const dev, struct uhc_dwc2_channel 
 
 	if (false /* TODO: Support Hubs channel->ls_via_fs_hub */) {
 		hcchar |= USB_DWC2_HCCHAR_LSPDDEV;
-	}
-
-	if (xfer->type == USB_EP_TYPE_INTERRUPT) {
-		hcchar |= USB_DWC2_HCCHAR_ODDFRM;
 	}
 
 	sys_write32(hcchar, (mem_addr_t)&ch->regs->hcchar);
@@ -1225,7 +1284,54 @@ static void ch_start_bulk(struct uhc_dwc2_channel *ch)
 	sys_write32(hcchar, (mem_addr_t)&ch->regs->hcchar);
 }
 
-static void ch_reinit(struct uhc_dwc2_channel *ch)
+static void ch_start_interrupt(const struct device *dev, struct uhc_dwc2_channel *ch)
+{
+	const struct uhc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const base = config->base;
+	struct uhc_transfer *const xfer = ch->xfer;
+	uint16_t pkt_cnt;
+	uint32_t hctsiz;
+	uint32_t hcchar;
+	uint32_t hfnum;
+	uint16_t frame;
+	uint8_t *dma_addr;
+
+	ch->length = MIN(net_buf_tailroom(xfer->buf), xfer->mps);
+	dma_addr = net_buf_tail(xfer->buf);
+
+	LOG_DBG("INT IN ep=%02Xh, mps=%u, interval=%u, size=%u, pid=%u",
+		xfer->ep,
+		xfer->mps,
+		xfer->interval,
+		ch->length,
+		ch->data->next_pid);
+
+	pkt_cnt = calc_packet_count(ch->length, xfer->mps);
+
+	/* TODO: Do not forget to flush pids on the device disconnection */
+
+	hctsiz = usb_dwc2_set_hctsiz_pid(ch->data->next_pid) |
+		 usb_dwc2_set_hctsiz_pktcnt(pkt_cnt) |
+		 usb_dwc2_set_hctsiz_xfersize(ch->length);
+
+	sys_write32(hctsiz, (mem_addr_t)&ch->regs->hctsiz);
+	sys_write32((uint32_t)dma_addr, (mem_addr_t)&ch->regs->hcdma);
+
+	hfnum = sys_read32((mem_addr_t)&base->hfnum);
+	frame = usb_dwc2_get_hfnum_frnum(hfnum);
+
+	hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
+	if (frame & 1U) {
+		hcchar &= ~USB_DWC2_HCCHAR_ODDFRM;
+	} else {
+		hcchar |= USB_DWC2_HCCHAR_ODDFRM;
+	}
+	hcchar |= USB_DWC2_HCCHAR_CHENA;
+	hcchar &= ~USB_DWC2_HCCHAR_CHDIS;
+	sys_write32(hcchar, (mem_addr_t)&ch->regs->hcchar);
+}
+
+static void ch_reinit(const struct device *dev, struct uhc_dwc2_channel *ch)
 {
 	uint32_t hcchar;
 
@@ -1244,6 +1350,9 @@ static void ch_reinit(struct uhc_dwc2_channel *ch)
 		break;
 	case USB_EP_TYPE_BULK:
 		ch_start_bulk(ch);
+		break;
+	case USB_EP_TYPE_INTERRUPT:
+		ch_start_interrupt(dev, ch);
 		break;
 	default:
 		LOG_ERR("Reinit channel with type=%u isn't supported yet", ch->xfer->type);
@@ -1413,6 +1522,53 @@ static int validate_bulk_xfer(const struct uhc_transfer *xfer)
 	return 0;
 }
 
+
+static int validate_interrupt_xfer(const struct uhc_transfer *xfer)
+{
+	if (USB_EP_GET_IDX(xfer->ep) == 0) {
+		LOG_ERR("Interrupt transfer cannot use endpoint 0");
+		return -EINVAL;
+	}
+
+	if (xfer->buf == NULL) {
+		LOG_ERR("Interrupt transfer requires buffer");
+		return -EINVAL;
+	}
+	/* TODO: Support only IN EP for now */
+	if (!USB_EP_DIR_IS_IN(xfer->ep)) {
+		LOG_ERR("Interrupt OUT is not supported yet");
+		return -ENOTSUP;
+	}
+
+	if (xfer->mps == 0U || xfer->mps > 1024U) {
+		LOG_ERR("Invalid interrupt MPS %u", xfer->mps);
+		return -EINVAL;
+	}
+
+	if (xfer->interval == 0U) {
+		LOG_ERR("Interrupt transfer interval is zero");
+		return -EINVAL;
+	}
+
+	/* The buffer must have space for at least one packet. */
+	if (net_buf_tailroom(xfer->buf) == 0) {
+		LOG_ERR("Interrupt IN transfer has no tailroom");
+		return -ENOMEM;
+	}
+
+	/*
+	 * DWC2 DMA mode requires word-aligned DMA buffers.
+	 * For IN, DMA writes to net_buf_tail().
+	 */
+	if (!IS_ALIGNED(net_buf_tail(xfer->buf), 4)) {
+		LOG_ERR("Interrupt IN buffer tail %p is not 4-byte aligned",
+			net_buf_tail(xfer->buf));
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int submit_xfer(const struct device *const dev, struct uhc_transfer *const xfer)
 {
 	struct uhc_dwc2_channel *ch = NULL;
@@ -1429,10 +1585,12 @@ static int submit_xfer(const struct device *const dev, struct uhc_transfer *cons
 	case USB_EP_TYPE_BULK:
 		ret = validate_bulk_xfer(xfer);
 		break;
+	case USB_EP_TYPE_INTERRUPT:
+		ret = validate_interrupt_xfer(xfer);
+		break;
 	default:
 		LOG_ERR("Submit xfer with type=%u isn't supported yet", xfer->type);
-		ret = -EINVAL;
-		break;
+		return -EINVAL;
 	}
 
 	if (ret != 0) {
@@ -1461,6 +1619,9 @@ static int submit_xfer(const struct device *const dev, struct uhc_transfer *cons
 		break;
 	case USB_EP_TYPE_BULK:
 		ch_start_bulk(ch);
+		break;
+	case USB_EP_TYPE_INTERRUPT:
+		ch_start_interrupt(dev, ch);
 		break;
 	default:
 		LOG_ERR("Start channel with type %d isn't supported yet", xfer->type);
@@ -1620,7 +1781,7 @@ static void ch_handle_events(const struct device *dev, struct uhc_dwc2_channel *
 		}
 
 		if (events & BIT(UHC_DWC2_CHANNEL_DO_REINIT)) {
-			ch_reinit(ch);
+			ch_reinit(dev, ch);
 		}
 	}
 }
@@ -1792,7 +1953,7 @@ static void uhc_dwc2_thread(void *arg0, void *arg1, void *arg2)
 		/* Handle port events */
 		port_handle_events(dev, event_mask);
 
-		/* Interate channels events */
+		/* Iterate channels events */
 		for (uint32_t index = 0; index < MAX_CHANNELS; index++) {
 			if (event_mask & BIT(UHC_DWC2_EVENT_PORT_PEND_CHANNEL + index)) {
 				ch_handle_events(dev, &priv->ch[index]);
