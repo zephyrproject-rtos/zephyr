@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Firmwave
+ * Copyright (c) 2026 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -81,9 +82,49 @@ static int tmp112_set_threshold(const struct device *dev, uint8_t reg, int64_t m
 	return tmp112_reg_write(dev->config, reg, reg_value);
 }
 
+/*
+ * Trigger a one-shot conversion and block until the chip reports completion.
+ *
+ * The chip stays in SHUTDOWN; we write OS=1 on top of the cached config (which
+ * already has SD=1), wait the typical conversion time, then poll the OS bit
+ * which reads back as 1 once the conversion finishes.
+ */
+static int tmp112_one_shot_convert(const struct device *dev)
+{
+	const struct tmp112_config *cfg = dev->config;
+	struct tmp112_data *drv_data = dev->data;
+	uint16_t cfg_val;
+	int64_t deadline;
+	int rc;
+
+	rc = tmp112_reg_write(cfg, TMP112_REG_CONFIG, drv_data->config_reg | TMP112_ONE_SHOT);
+	if (rc < 0) {
+		return rc;
+	}
+
+	k_msleep(TMP112_ONE_SHOT_INITIAL_WAIT_MS);
+
+	deadline = k_uptime_get() + TMP112_ONE_SHOT_TIMEOUT_MS;
+	for (;;) {
+		rc = tmp112_reg_read(cfg, TMP112_REG_CONFIG, &cfg_val);
+		if (rc < 0) {
+			return rc;
+		}
+		if (cfg_val & TMP112_ONE_SHOT) {
+			return 0;
+		}
+		if (k_uptime_get() >= deadline) {
+			LOG_ERR("One-shot conversion timed out");
+			return -ETIMEDOUT;
+		}
+		k_msleep(1);
+	}
+}
+
 static int tmp112_attr_set(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr, const struct sensor_value *val)
 {
+	struct tmp112_data *drv_data = dev->data;
 	uint16_t value;
 	uint16_t cr;
 
@@ -115,10 +156,15 @@ static int tmp112_attr_set(const struct device *dev, enum sensor_channel chan,
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		/* conversion rate in mHz */
 		cr = val->val1 * 1000 + val->val2 / 1000;
+		drv_data->one_shot = false;
 
-		/* the sensor supports 0.25Hz, 1Hz, 4Hz and 8Hz */
-		/* conversion rate */
+		/* the sensor supports 0 (shutdown/one-shot), 0.25, 1, 4 and 8 Hz */
 		switch (cr) {
+		case 0:
+			value = TMP112_CONFIG_SD;
+			drv_data->one_shot = true;
+			break;
+
 		case 250:
 			value = TMP112_CONV_RATE(TMP112_CONV_RATE_025);
 			break;
@@ -139,7 +185,8 @@ static int tmp112_attr_set(const struct device *dev, enum sensor_channel chan,
 			return -ENOTSUP;
 		}
 
-		if (tmp112_update_config(dev, TMP112_CONV_RATE_MASK, value) < 0) {
+		if (tmp112_update_config(dev, TMP112_CONFIG_SD | TMP112_CONV_RATE_MASK, value) <
+		    0) {
 			LOG_DBG("Failed to set attribute!");
 			return -EIO;
 		}
@@ -167,6 +214,14 @@ static int tmp112_sample_fetch(const struct device *dev, enum sensor_channel cha
 	uint16_t val;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
+
+	if (drv_data->one_shot) {
+		int rc = tmp112_one_shot_convert(dev);
+
+		if (rc < 0) {
+			return rc;
+		}
+	}
 
 	if (tmp112_reg_read(cfg, TMP112_REG_TEMPERATURE, &val) < 0) {
 		return -EIO;
@@ -210,8 +265,10 @@ int tmp112_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	data->config_reg = TMP112_CONV_RATE(cfg->cr) | TMP112_CONV_RES_MASK |
-			   (cfg->extended_mode ? TMP112_CONFIG_EM : 0);
+	data->one_shot = (cfg->cr == 0);
+	data->config_reg = TMP112_CONV_RATE(data->one_shot ? 0 : cfg->cr - 1) |
+			   TMP112_CONV_RES_MASK | (cfg->extended_mode ? TMP112_CONFIG_EM : 0) |
+			   (data->one_shot ? TMP112_CONFIG_SD : 0);
 
 	ret = tmp112_update_config(dev, 0, 0);
 	if (ret) {
