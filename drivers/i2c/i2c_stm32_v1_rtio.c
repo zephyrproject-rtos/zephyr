@@ -163,6 +163,7 @@ static void handle_addr(const struct device *dev)
 		LL_I2C_EnableBitPOS(i2c);
 	}
 	LL_I2C_ClearFlag_ADDR(i2c);
+	LL_I2C_EnableIT_BUF(i2c);
 }
 
 static void handle_txe(const struct device *dev)
@@ -454,10 +455,16 @@ void i2c_stm32_event(const struct device *dev)
 		handle_addr(dev);
 	} else if (LL_I2C_IsActiveFlag_BTF(i2c)) {
 		handle_btf(dev);
-	} else if (LL_I2C_IsActiveFlag_TXE(i2c) && ((data->xfer_flags & I2C_MSG_READ) == 0)) {
-		handle_txe(dev);
-	} else if (LL_I2C_IsActiveFlag_RXNE(i2c) && ((data->xfer_flags & I2C_MSG_READ) != 0)) {
-		handle_rxne(dev);
+	} else {
+		bool is_write = (data->xfer_flags & I2C_MSG_READ) == 0;
+
+		if (LL_I2C_IsActiveFlag_TXE(i2c) && is_write) {
+			handle_txe(dev);
+		} else if (LL_I2C_IsActiveFlag_TXE(i2c) && !is_write) {
+			LL_I2C_DisableIT_BUF(i2c);
+		} else if (LL_I2C_IsActiveFlag_RXNE(i2c) && !is_write) {
+			handle_rxne(dev);
+		}
 	}
 }
 
