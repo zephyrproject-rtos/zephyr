@@ -23,7 +23,6 @@ struct wm8904_driver_config {
 	int clock_source;
 	const struct device *mclk_dev;
 	clock_control_subsys_t mclk_name;
-	int fs_ratio;
 };
 
 struct wm8904_eq_band_reg {
@@ -935,8 +934,7 @@ static DEVICE_API(audio_codec, wm8904_driver_api) = {
 			(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, mclk))), (NULL)),            \
 		.mclk_name = COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(n, mclk),                         \
 			((clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, name)),      \
-			(NULL)),                                                                   \
-		.fs_ratio = DT_INST_PROP_OR(n, fs_ratio, 0)};                                      \
+			(NULL))};                                                                  \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &wm8904_device_data_##n, &wm8904_device_config_##n,   \
 			      POST_KERNEL, CONFIG_AUDIO_CODEC_INIT_PRIORITY, &wm8904_driver_api);
