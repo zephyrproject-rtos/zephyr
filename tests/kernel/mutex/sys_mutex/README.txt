@@ -1,43 +1,45 @@
-Title: Mutex APIs
+Title: System Mutex APIs
 
 Description:
 
-This test verifies that the kernel mutex APIs operate as expected.
+This test verifies that the sys_mutex APIs operate as expected, including
+when accessed from user mode on platforms that support userspace. The
+mutex_complex suite runs two cases:
 
---------------------------------------------------------------------------------
+1. test_mutex_multithread_competition
+   - Multiple threads contend for a sys_mutex and the priority-inheritance
+     and locking behavior is checked, including recursive locking.
 
-Building and Running Project:
+2. test_supervisor_access
+   - A supervisor thread accesses the mutex directly to confirm the
+     supervisor path behaves the same as the user-mode path.
 
-This project outputs to the console.  It can be built and executed
-on QEMU as follows:
+The kernel.mutex.system test builds with userspace enabled, while
+kernel.mutex.system.nouser builds with CONFIG_TEST_USERSPACE=n.
 
-    make run
+---------------------------------------------------------------------------
 
---------------------------------------------------------------------------------
+Building and Running:
 
-Troubleshooting:
+Build and run with twister, for example on QEMU:
 
-Problems caused by out-dated project information can be addressed by
-issuing one of the following commands then rebuilding the project:
+    twister -p qemu_x86 -T tests/kernel/mutex/sys_mutex
 
-    make clean          # discard results of previous builds
-                        # but keep existing configuration info
-or
-    make pristine       # discard results of previous builds
-                        # and restore pre-defined configuration info
+Or build and run a single platform directly with west:
 
---------------------------------------------------------------------------------
+    west build -b qemu_x86 tests/kernel/mutex/sys_mutex
+    west build -t run
+
+---------------------------------------------------------------------------
 
 Sample Output:
 
-***** BOOTING ZEPHYR OS vxxxx - BUILD: xxxxx *****
-tc_start() - Test kernel Mutex API
+Running TESTSUITE mutex_complex
 ===================================================================
-Done LOCKING!  Current priority = 5
-Testing recursive locking
-Recursive locking tests successful
+START - test_mutex_multithread_competition
+ PASS - test_mutex_multithread_competition
 ===================================================================
-PASS - RegressionTask.
+START - test_supervisor_access
+ PASS - test_supervisor_access
 ===================================================================
-PROJECT EXECUTION SUCCESSFUL
-
+TESTSUITE mutex_complex succeeded
