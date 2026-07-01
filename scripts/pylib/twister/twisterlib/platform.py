@@ -18,6 +18,8 @@ from twisterlib.constants import SUPPORTED_SIMS, ZEPHYR_BASE
 
 logger = logging.getLogger('twister')
 
+_PLATFORMS_CACHE: dict = {}
+
 
 class Simulator:
     """Class representing a simulator"""
@@ -213,6 +215,21 @@ def generate_platforms(board_roots, soc_roots, arch_roots):
     An exception is raised if not all platform files are valid YAML,
     or if not all platform names are unique.
     """
+    cache_key = (
+        tuple(sorted(str(r) for r in board_roots)),
+        tuple(sorted(str(r) for r in soc_roots)),
+        tuple(sorted(str(r) for r in arch_roots)),
+    )
+    if cache_key in _PLATFORMS_CACHE:
+        yield from _PLATFORMS_CACHE[cache_key]
+        return
+
+    platforms = list(_generate_platforms(board_roots, soc_roots, arch_roots))
+    _PLATFORMS_CACHE[cache_key] = platforms
+    yield from platforms
+
+
+def _generate_platforms(board_roots, soc_roots, arch_roots):
     alias2target = {}
     target2board = {}
     target2data = {}
