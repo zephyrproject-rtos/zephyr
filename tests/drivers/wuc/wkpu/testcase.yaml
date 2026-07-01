@@ -1,0 +1,17 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - wuc
+    - wkpu
+  harness: ztest
+tests:
+  drivers.wuc.nxp_wkpu:
+    # Exercises the WKPU WUC driver through the RTC-timeout internal wakeup
+    # source (no external pin stimulus required).
+    platform_allow:
+      - frdm_mcxe31b
+    integration_platforms:
+      - frdm_mcxe31b

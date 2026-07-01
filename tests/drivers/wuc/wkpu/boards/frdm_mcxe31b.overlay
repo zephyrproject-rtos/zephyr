@@ -1,0 +1,12 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Enable the WKPU wakeup controller. The RTC counter (the internal stimulus) is
+ * already enabled in the board devicetree.
+ */
+&wkpu {
+	status = "okay";
+};
