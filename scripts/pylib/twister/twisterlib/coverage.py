@@ -7,6 +7,7 @@ import collections
 import contextlib
 import filecmp
 import glob
+import json
 import logging
 import os
 import pathlib
@@ -36,6 +37,7 @@ class CoverageTool:
         self.coverage_capture = True
         self.coverage_report = True
         self.coverage_per_instance = False
+        self.coverage_per_test = False
         self.instances = {}
 
     @staticmethod
@@ -159,7 +161,12 @@ class CoverageTool:
         if not coverage_completed or not self.coverage_report:
             return coverage_completed, {}
         build_dirs = None
-        if not self.coverage_capture and self.coverage_report and self.coverage_per_instance:
+        if (not self.coverage_capture and self.coverage_report
+                and (self.coverage_per_instance or self.coverage_per_test)):
+            # Aggregate by merging the per-instance tracefiles. In per-test mode
+            # those already carry every per-test TN record, and no canonical
+            # .gcda exist at the top level to capture from (semihosting writes
+            # tagged files only).
             build_dirs = [instance.build_dir for instance in self.instances.values()]
         reports = {}
         with open(os.path.join(outdir, "coverage.log"), "a") as coveragelog:
@@ -349,7 +356,7 @@ class Lcov(CoverageTool):
         cmd = ["genhtml", "--legend", "--branch-coverage",
                "--prefix", self.base_dir,
                "-output-directory", os.path.join(outdir, "coverage")]
-        if self.coverage_per_instance:
+        if self.coverage_per_instance or self.coverage_per_test:
             cmd.append("--show-details")
         cmd += files
         ret = self.run_command(cmd, coveragelog)
@@ -358,6 +365,62 @@ class Lcov(CoverageTool):
 
         # TODO: Add LCOV summary coverage report.
         return ret, { 'report': coveragefile, 'ztest': ztestfile, 'summary': None }
+
+    def capture_per_test(self, build_dir, scenario, coveragelog):
+        """Generate one TN-tagged .info file per Ztest test.
+
+        CONFIG_ZTEST_COVERAGE_PER_TEST makes the target write an isolated set
+        of tagged gcda files per test. With the semihosting transport these
+        land on the host as "<canonical>.gcda@@<suite>.<test>". Each tag is
+        materialized to its canonical path (next to the matching .gcno),
+        captured with lcov under a per-test TN name, and cleaned up again.
+
+        Returns the list of generated per-test tracefiles.
+        """
+        tags = discover_per_test_gcda(build_dir)
+        if not tags:
+            return []
+
+        per_test_dir = os.path.join(build_dir, "coverage", "tests")
+        os.makedirs(per_test_dir, exist_ok=True)
+
+        # Drop any untagged canonical .gcda (end-of-run leftovers) so that each
+        # per-test capture sees only the data we materialize for that test.
+        for canonical in {c for entries in tags.values() for c, _ in entries}:
+            with contextlib.suppress(OSError):
+                os.remove(canonical)
+
+        infos = []
+        used_names = set()
+        for tag in sorted(tags):
+            _suite, _, test = tag.rpartition(".")
+            name = f"{scenario}.{test}" if test else f"{scenario}.{tag}"
+            # Fall back to the fully-qualified tag if two suites share a test
+            # name within the same scenario.
+            if name in used_names:
+                name = f"{scenario}.{tag}"
+            used_names.add(name)
+
+            created = []
+            for canonical, tagged in tags[tag]:
+                shutil.copyfile(tagged, canonical)
+                created.append(canonical)
+
+            info = os.path.join(per_test_dir, sanitize_coverage_name(name) + ".info")
+            cmd = ["--capture", "--directory", build_dir,
+                   "--test-name", name, "--output-file", info]
+            ret = self.run_lcov(cmd, coveragelog)
+
+            for canonical in created:
+                with contextlib.suppress(OSError):
+                    os.remove(canonical)
+
+            if ret == 0 and os.path.exists(info) and os.path.getsize(info) > 0:
+                infos.append(info)
+            else:
+                logger.error("Per-test coverage capture failed for %s", name)
+
+        return infos
 
 
 class Gcovr(CoverageTool):
@@ -517,6 +580,110 @@ class Gcovr(CoverageTool):
 
         return ret, { 'report': coverage_file, 'ztest': ztest_file, 'summary': coverage_summary }
 
+def sanitize_coverage_name(name):
+    """Make a coverage test name safe to use as a filename component."""
+    return re.sub(r"[^A-Za-z0-9_.]", "_", name)
+
+
+def discover_per_test_gcda(build_dir):
+    """Group tagged per-test gcda dumps by their <suite>.<test> tag.
+
+    Returns {tag: [(canonical_gcda_path, tagged_path), ...]} for every
+    "<canonical>.gcda@@<tag>" file written by the semihosting transport.
+    """
+    tags = collections.defaultdict(list)
+    for tagged in glob.glob(f"{build_dir}/**/*@@*", recursive=True):
+        canonical, sep, tag = tagged.rpartition("@@")
+        if not sep or not canonical.endswith(".gcda") or not tag:
+            continue
+        tags[tag].append((canonical, tagged))
+    return tags
+
+
+def build_test_matrix(info_files, out_json, base_dir=None):
+    """Build a test-to-code coverage matrix from TN-tagged lcov tracefiles.
+
+    Produces a JSON document with two views:
+      - "by_line": {source: {line: [tests that covered it]}}
+      - "by_test": {test: {source: [lines it covered]}}
+    """
+    by_line = collections.defaultdict(lambda: collections.defaultdict(set))
+    by_test = collections.defaultdict(lambda: collections.defaultdict(set))
+    for info in info_files:
+        test_name = None
+        source = None
+        try:
+            with open(info) as fp:
+                for raw in fp:
+                    line = raw.strip()
+                    if line.startswith("TN:"):
+                        test_name = line[3:] or \
+                            os.path.splitext(os.path.basename(info))[0]
+                    elif line.startswith("SF:"):
+                        source = line[3:]
+                        if base_dir:
+                            with contextlib.suppress(ValueError):
+                                source = os.path.relpath(source, base_dir)
+                    elif line.startswith("DA:") and source is not None:
+                        fields = line[3:].split(",")
+                        lineno = int(fields[0])
+                        hits = int(fields[1]) if len(fields) > 1 else 0
+                        if hits > 0 and test_name:
+                            by_line[source][lineno].add(test_name)
+                            by_test[test_name][source].add(lineno)
+                    elif line == "end_of_record":
+                        source = None
+        except OSError:
+            logger.error("Unable to read per-test tracefile: %s", info)
+
+    matrix = {
+        "by_line": {
+            src: {str(ln): sorted(tests) for ln, tests in sorted(lines.items())}
+            for src, lines in sorted(by_line.items())
+        },
+        "by_test": {
+            test: {src: sorted(lns) for src, lns in sorted(srcs.items())}
+            for test, srcs in sorted(by_test.items())
+        },
+    }
+    with open(out_json, "w") as fp:
+        json.dump(matrix, fp, indent=2, sort_keys=True)
+    return out_json
+
+
+def run_per_test_coverage(options, instance):
+    """Capture per-test coverage for one instance and build its matrix."""
+    coverage_tool = CoverageTool.factory(options.coverage_tool, jobs=options.jobs)
+    if not isinstance(coverage_tool, Lcov):
+        logger.error("Per-test coverage requires the 'lcov' coverage tool.")
+        return
+
+    coverage_tool.gcov_tool = str(choose_gcov_tool(
+        options, has_system_gcov(instance.platform),
+        instances={instance.name: instance}))
+    coverage_tool.base_dir = os.path.abspath(options.coverage_basedir)
+
+    scenario = sanitize_coverage_name(instance.testsuite.name)
+    build_dir = instance.build_dir
+    with open(os.path.join(build_dir, "coverage.log"), "a") as coveragelog:
+        infos = coverage_tool.capture_per_test(build_dir, scenario, coveragelog)
+        if not infos:
+            logger.debug(f"No per-test coverage data for {instance.name}")
+            return
+        # Merge the per-test tracefiles into the instance report so the standard
+        # aggregation picks up every per-test TN record.
+        merged = os.path.join(build_dir, "coverage.info")
+        cmd = ["--output-file", merged]
+        for info in infos:
+            cmd += ["--add-tracefile", info]
+        coverage_tool.run_lcov(cmd, coveragelog)
+
+    build_test_matrix(infos,
+                      os.path.join(build_dir, "coverage", "test_matrix.json"),
+                      base_dir=coverage_tool.base_dir)
+    logger.debug(f"Per-test coverage: {len(infos)} tests for {instance.name}")
+
+
 def try_making_symlink(source: str, link: str):
     """
     Attempts to create a symbolic link from source to link.
@@ -652,6 +819,7 @@ def run_coverage_tool(options, outdir, is_system_gcov, instances,
 
     coverage_tool.instances = instances
     coverage_tool.coverage_per_instance = options.coverage_per_instance
+    coverage_tool.coverage_per_test = getattr(options, "coverage_per_test", False)
     coverage_tool.coverage_capture = coverage_capture
     coverage_tool.coverage_report = coverage_report
     coverage_tool.base_dir = os.path.abspath(options.coverage_basedir)
@@ -684,17 +852,37 @@ def run_coverage(options, testplan) -> tuple[bool, dict]:
             is_system_gcov = True
             break
 
-    return run_coverage_tool(options, options.outdir, is_system_gcov,
-                             instances=testplan.instances,
-                             coverage_capture=False,
-                             coverage_report=True)
+    result = run_coverage_tool(options, options.outdir, is_system_gcov,
+                               instances=testplan.instances,
+                               coverage_capture=False,
+                               coverage_report=True)
+
+    if getattr(options, "coverage_per_test", False):
+        infos = []
+        for instance in testplan.instances.values():
+            infos += glob.glob(
+                os.path.join(instance.build_dir, "coverage", "tests", "*.info"))
+        if infos:
+            matrix_dir = os.path.join(options.outdir, "coverage")
+            os.makedirs(matrix_dir, exist_ok=True)
+            matrix = build_test_matrix(
+                infos, os.path.join(matrix_dir, "test_matrix.json"),
+                base_dir=os.path.abspath(options.coverage_basedir))
+            logger.info(f"Per-test coverage matrix generated: {matrix}")
+
+    return result
 
 
 def run_coverage_instance(options, instance):
     """ Per-instance code coverage called by ProjectBuilder ('coverage' operation).
     """
     is_system_gcov = has_system_gcov(instance.platform)
-    return run_coverage_tool(options, instance.build_dir, is_system_gcov,
-                             instances={instance.name: instance},
-                             coverage_capture=True,
-                             coverage_report=options.coverage_per_instance)
+    result = run_coverage_tool(options, instance.build_dir, is_system_gcov,
+                               instances={instance.name: instance},
+                               coverage_capture=True,
+                               coverage_report=options.coverage_per_instance)
+
+    if getattr(options, "coverage_per_test", False):
+        run_per_test_coverage(options, instance)
+
+    return result
