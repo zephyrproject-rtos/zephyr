@@ -9,6 +9,7 @@ supported:
   - adc
   - arduino_gpio
   - arduino_i2c
+  - arduino_i3c
   - arduino_serial
   - arduino_spi
   - can
