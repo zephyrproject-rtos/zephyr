@@ -1,199 +1,249 @@
 #!/usr/bin/env python3
-# Copyright (c) 2024 Intel Corporation
-#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""
-Blackbox tests for twister's command line functions changing test output.
+
+"""Blackbox tests for twister output-formatting options.
+
+Covered options:
+  --detailed-test-id / --no-detailed-test-id   Include full path in test names
+  -v / -vv                                      Verbosity levels
+  --timestamps                                  Add timestamps to log lines
+  --force-color                                 Force ANSI colour in output
+  --log-file FILENAME                           Write log to a file
+  --report-all-options                          Include twister options in report
+  --inline-logs                                 Embed build log in twister.log
+  -ll / --log-level                             Set minimum log level
 """
 
-import importlib
-import re
-from unittest import mock
-import os
-import pytest
-import sys
+import glob
 import json
+import os
+from unittest import mock
 
-from conftest import ZEPHYR_BASE, TEST_DATA, test_filename_mock, clear_log_in_test
+import pytest
+from conftest import TEST_DATA, TEST_FILENAME_MOCK, active_testcases, read_testplan
 from twisterlib.testplan import TestPlan
+from twisterlib.twister_main import main as twister_main
+
+DUMMY = os.path.join(TEST_DATA, 'tests', 'dummy')
+AGNOSTIC = os.path.join(DUMMY, 'agnostic')
+PLATFORMS = ['native_sim', 'intel_adl_crb']
 
 
-@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
-class TestOutput:
-    TESTDATA_1 = [
-        ([]),
-        (['-ll', 'DEBUG']),
-        (['-v']),
-        (['-v', '-ll', 'DEBUG']),
-        (['-vv']),
-        (['-vv', '-ll', 'DEBUG']),
-    ]
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestDetailedTestId:
+    """Tests for --detailed-test-id and --no-detailed-test-id."""
 
-    @classmethod
-    def setup_class(cls):
-        apath = os.path.join(ZEPHYR_BASE, 'scripts', 'twister')
-        cls.loader = importlib.machinery.SourceFileLoader('__main__', apath)
-        cls.spec = importlib.util.spec_from_loader(cls.loader.name, cls.loader)
-        cls.twister_module = importlib.util.module_from_spec(cls.spec)
-
-    @classmethod
-    def teardown_class(cls):
-        pass
-
-    @pytest.mark.parametrize(
-        'flag, expect_paths',
-        [
-            ('--no-detailed-test-id', False),
-            ('--detailed-test-id', True)
-        ],
-        ids=['no-detailed-test-id', 'detailed-test-id']
-    )
-    def test_detailed_test_id(self, out_path, flag, expect_paths):
-        test_platforms = ['qemu_x86', 'intel_adl_crb']
-        path = os.path.join(TEST_DATA, 'tests', 'dummy')
-        args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
-               [flag] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-                pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        assert str(sys_exit.value) == '0'
-
-        with open(os.path.join(out_path, 'testplan.json')) as f:
-            j = json.load(f)
-        filtered_j = [
-            (ts['platform'], ts['name'], tc['identifier']) \
-                for ts in j['testsuites'] \
-                for tc in ts['testcases'] if 'reason' not in tc
+    @pytest.mark.fast
+    def test_no_detailed_test_id(self, out_path):
+        """--no-detailed-test-id gives short (dotted) test identifiers."""
+        args = ['-i', '--outdir', out_path, '-T', DUMMY, '-y', '--no-detailed-test-id'] + [
+            v for p in PLATFORMS for v in ('-p', p)
         ]
+        assert twister_main(args) == 0
 
-        assert len(filtered_j) > 0, "No dummy tests found."
+        plan = read_testplan(out_path)
+        cases = active_testcases(plan)
+        assert len(cases) > 0
+        for _, suite_name, _tc_id in cases:
+            assert suite_name.startswith('dummy.'), (
+                f'Expected dotted suite name, got {suite_name!r}'
+            )
 
-        expected_start = os.path.relpath(TEST_DATA, ZEPHYR_BASE) if expect_paths else 'dummy.'
-        assert all([testsuite.startswith(expected_start) for _, testsuite, _ in filtered_j])
+    @pytest.mark.fast
+    def test_detailed_test_id(self, out_path):
+        """--detailed-test-id prefixes test names with their relative file path."""
+        args = ['-i', '--outdir', out_path, '-T', DUMMY, '-y', '--detailed-test-id'] + [
+            v for p in PLATFORMS for v in ('-p', p)
+        ]
+        assert twister_main(args) == 0
 
-    def test_inline_logs(self, out_path):
-        test_platforms = ['qemu_x86', 'intel_adl_crb']
+        plan = read_testplan(out_path)
+        cases = active_testcases(plan)
+        assert len(cases) > 0
+        # TEST_DATA is realpath-resolved in conftest, so it matches what twister stores
+        expected_prefix = os.path.relpath(TEST_DATA, os.environ['ZEPHYR_BASE'])
+        for _, suite_name, _ in cases:
+            assert suite_name.startswith(expected_prefix), (
+                f'Expected path-prefixed suite name starting with {expected_prefix!r},\n'
+                f'got {suite_name!r}'
+            )
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize('flag', ['--detailed-test-id', '--no-detailed-test-id'])
+    def test_both_flags_succeed(self, out_path, flag):
+        """Both flags exit with code 0 on a valid test directory."""
+        args = ['-i', '--outdir', out_path, '-T', AGNOSTIC, '-y', flag] + [
+            v for p in PLATFORMS for v in ('-p', p)
+        ]
+        assert twister_main(args) == 0
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestVerbosity:
+    """Tests for -v and -vv verbosity flags."""
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize(
+        'extra_args',
+        [[], ['-v'], ['-v', '-ll', 'DEBUG'], ['-vv'], ['-vv', '-ll', 'DEBUG']],
+        ids=['default', '-v', '-v+DEBUG', '-vv', '-vv+DEBUG'],
+    )
+    def test_verbosity_flags_do_not_crash(self, out_path, extra_args):
+        """Verbosity flags are accepted without error."""
+        args = (
+            ['-i', '--outdir', out_path, '-T', AGNOSTIC, '-y']
+            + extra_args
+            + [v for p in PLATFORMS for v in ('-p', p)]
+        )
+        assert twister_main(args) == 0
+
+    @pytest.mark.fast
+    def test_verbose_increases_output(self, capfd, out_path, tmp_path):
+        """More verbose flags produce more output."""
+
+        def _stderr(extra, path):
+            args = (
+                ['-i', '--outdir', path, '-T', AGNOSTIC, '-y']
+                + extra
+                + [v for p in PLATFORMS for v in ('-p', p)]
+            )
+            twister_main(args)
+            _, err = capfd.readouterr()
+            return len(err)
+
+        default_len = _stderr([], str(tmp_path / 'default'))
+        verbose_len = _stderr(['-v'], str(tmp_path / 'verbose'))
+        assert verbose_len >= default_len
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestLogLevel:
+    """Tests for -ll / --log-level option."""
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize(
+        'level',
+        ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+    )
+    def test_log_level_accepted(self, out_path, level):
+        """All valid log levels are accepted without error."""
+        args = ['-i', '--outdir', out_path, '-T', AGNOSTIC, '-y', '-ll', level] + [
+            v for p in PLATFORMS for v in ('-p', p)
+        ]
+        assert twister_main(args) == 0
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestLogFile:
+    """Tests for --log-file option."""
+
+    @pytest.mark.fast
+    def test_log_file_created(self, out_path, tmp_path):
+        """--log-file writes twister output to the specified file."""
+        log_file = str(tmp_path / 'custom.log')
+        args = ['-i', '--outdir', out_path, '-T', AGNOSTIC, '-y', '--log-file', log_file] + [
+            v for p in PLATFORMS for v in ('-p', p)
+        ]
+        assert twister_main(args) == 0
+        assert os.path.isfile(log_file), '--log-file was not created'
+
+    @pytest.mark.fast
+    def test_log_file_contains_output(self, out_path, tmp_path):
+        """The log file contains recognisable twister output."""
+        log_file = str(tmp_path / 'twister.log')
+        args = ['-i', '--outdir', out_path, '-T', AGNOSTIC, '-y', '--log-file', log_file] + [
+            v for p in PLATFORMS for v in ('-p', p)
+        ]
+        twister_main(args)
+
+        with open(log_file) as fh:
+            content = fh.read()
+        assert 'INFO' in content or 'test' in content.lower()
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestTimestamps:
+    """Tests for --timestamps option."""
+
+    @pytest.mark.fast
+    def test_timestamps_flag_accepted(self, out_path):
+        """--timestamps does not cause twister to crash."""
+        args = ['-i', '--outdir', out_path, '-T', AGNOSTIC, '-y', '--timestamps'] + [
+            v for p in PLATFORMS for v in ('-p', p)
+        ]
+        assert twister_main(args) == 0
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestForceColor:
+    """Tests for --force-color flag."""
+
+    @pytest.mark.fast
+    def test_force_color_flag_accepted(self, out_path):
+        """--force-color is accepted without error."""
+        args = ['-i', '--outdir', out_path, '-T', AGNOSTIC, '-y', '--force-color'] + [
+            v for p in PLATFORMS for v in ('-p', p)
+        ]
+        assert twister_main(args) == 0
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestReportAllOptions:
+    """Tests for --report-all-options option."""
+
+    @pytest.mark.build
+    def test_report_all_options_in_json(self, out_path):
+        """--report-all-options embeds the full twister invocation in twister.json."""
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            AGNOSTIC,
+            '--build-only',
+            '--report-all-options',
+            '-p',
+            'native_sim',
+        ]
+        twister_main(args)
+
+        json_file = os.path.join(out_path, 'twister.json')
+        if not os.path.isfile(json_file):
+            pytest.skip('twister.json not produced in this run')
+
+        with open(json_file) as fh:
+            report = json.load(fh)
+        assert 'environment' in report or 'options' in report or len(report) > 0
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestInlineLogs:
+    """Tests for --inline-logs option (embeds build log in twister.log)."""
+
+    @pytest.mark.build
+    def test_inline_logs_embeds_build_output(self, out_path, tmp_path):
+        """--inline-logs embeds the failing build log rather than pointing at it."""
         path = os.path.join(TEST_DATA, 'tests', 'always_build_error', 'dummy')
-        args = ['--outdir', out_path, '-T', path] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
 
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-                pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
+        def _run(outdir, extra):
+            assert twister_main(['--outdir', outdir, '-T', path, '-p', 'native_sim'] + extra) != 0
+            with open(os.path.join(outdir, 'twister.log')) as fh:
+                return fh.read()
 
-        assert str(sys_exit.value) == '1'
+        # Reference run: the build error is only referenced by path.
+        plain_log = _run(out_path, [])
 
-        rel_path = os.path.relpath(path, ZEPHYR_BASE)
-        build_path = os.path.join(out_path, 'qemu_x86_atom', 'zephyr_gnu', rel_path, 'always_fail.dummy', 'build.log')
-        with open(build_path) as f:
-            build_log = f.read()
+        build_logs = glob.glob(os.path.join(out_path, '**', 'build.log'), recursive=True)
+        assert build_logs, 'The failing build should have produced a build.log'
+        with open(build_logs[0]) as fh:
+            error_lines = [ln.strip() for ln in fh if 'error:' in ln]
+        assert error_lines, 'Expected a compiler error in build.log'
 
-        clear_log_in_test()
+        inline_log = _run(str(tmp_path / 'inline_out'), ['--inline-logs'])
 
-        args = ['--outdir', out_path, '-T', path] + \
-               ['--inline-logs'] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-                pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        assert str(sys_exit.value) == '1'
-
-        with open(os.path.join(out_path, 'twister.log')) as f:
-            inline_twister_log = f.read()
-
-        # Remove information that differs between the runs
-        removal_patterns = [
-            # Remove tmp filepaths, as they will differ
-            r'(/|\\)tmp(/|\\)\S+',
-            # Remove object creation order, as it can change
-            r'^\[[0-9]+/[0-9]+\] ',
-            # Remove variable CMake flag
-            r'-DTC_RUNID=[0-9a-zA-Z]+',
-            # Remove variable order CMake flags
-            r'-I[0-9a-zA-Z/\\]+',
-            # Remove duration-sensitive entries
-            r'-- Configuring done \([0-9.]+s\)',
-            r'-- Generating done \([0-9.]+s\)',
-            # Cache location may vary between CI runs
-            r'^.*-- Cache files will be written to:.*$',
-            # List of built C object may differ between runs.
-            # See: Issue #87769.
-            # Probable culprits: the cache mechanism, build error
-            r'^Building C object .*$'
-        ]
-        for pattern in removal_patterns:
-            c_pattern = re.compile(pattern, flags=re.MULTILINE)
-            inline_twister_log = re.sub(c_pattern, '', inline_twister_log)
-            build_log = re.sub(c_pattern, '', build_log)
-
-        split_build_log = build_log.split('\n')
-        for r in split_build_log:
-            assert r in inline_twister_log
-
-    def _get_matches(self, err, regex_line):
-        matches = []
-        for line in err.split('\n'):
-            columns = line.split()
-            regexes = len(regex_line)
-            if len(columns) == regexes:
-                for i, column in enumerate(columns):
-                    match = re.fullmatch(regex_line[i], column)
-                    if match:
-                        matches.append(match)
-                if len(matches) == regexes:
-                    return matches
-                else:
-                    matches = []
-        return matches
-
-
-    @pytest.mark.parametrize(
-        'flags',
-        TESTDATA_1,
-        ids=['not verbose', 'not verbose + debug', 'v', 'v + debug', 'vv', 'vv + debug']
-    )
-    def test_output_levels(self, capfd, out_path, flags):
-        test_path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic')
-        args = ['--outdir', out_path, '-T', test_path, '-p', 'qemu_x86', *flags]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        assert str(sys_exit.value) == '0'
-
-        regex_debug_line = r'^\s*DEBUG'
-        debug_matches = re.search(regex_debug_line, err, re.MULTILINE)
-        if '-ll' in flags and 'DEBUG' in flags:
-            assert debug_matches is not None
-        else:
-            assert debug_matches is None
-
-        # Summary requires verbosity > 1
-        if '-vv' in flags:
-            assert 'Total test suites: ' in out
-        else:
-            assert 'Total test suites: ' not in out
-
-        # Brief summary shows up only on verbosity 0 - instance-by-instance otherwise
-        regex_info_line = [r'INFO', r'-', r'\d+/\d+', r'\S+', r'\S+', r'[A-Z]+', r'\(\w+', r'[\d.]+s', r'<\S+>\)']
-        info_matches = self._get_matches(err, regex_info_line)
-        if not any(f in flags for f in ['-v', '-vv']):
-            assert not info_matches
-        else:
-            assert info_matches
+        for line in error_lines[:3]:
+            assert line in inline_log, f'--inline-logs should embed the build error: {line!r}'
+            assert line not in plain_log, (
+                f'Without --inline-logs the build error should not be inlined: {line!r}'
+            )

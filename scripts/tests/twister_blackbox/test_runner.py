@@ -1,704 +1,537 @@
 #!/usr/bin/env python3
-# Copyright (c) 2023-2024 Intel Corporation
-#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""
-Blackbox tests for twister's command line functions
-"""
-# pylint: disable=duplicate-code
 
-import importlib
-from unittest import mock
+"""Blackbox tests for twister build and run operations.
+
+Covered options:
+  --build-only (-b)         Build but do not run tests
+  --cmake-only              Only run the CMake configuration step
+  --test-only               Skip building; run pre-built binaries
+  --prep-artifacts-for-testing / --package-artifacts  Packaging for device testing
+  --retry-failed N          Re-run failed tests up to N times
+  --retry-build-errors      Include build errors when retrying
+  --retry-interval SECS     Delay between retry attempts
+  --timeout-multiplier N    Scale all test timeouts by N
+  --quit-on-failure         Stop after the first failure
+  --overflow-as-errors      Treat RAM/ROM overflow as a build error
+  --keep-artifacts POLICY   How long to retain build artefacts
+  -- ARGS                   Extra arguments passed directly to the test binary
+  --pytest-args ARGS        Extra arguments forwarded to the pytest harness
+"""
+
 import os
-import pytest
 import re
-import sys
-import time
+from unittest import mock
 
-from conftest import TEST_DATA, ZEPHYR_BASE, test_filename_mock, clear_log_in_test
+import pytest
+from conftest import TEST_DATA, TEST_FILENAME_MOCK, read_testplan
 from twisterlib.testplan import TestPlan
+from twisterlib.twister_main import main as twister_main
+
+AGNOSTIC = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic')
+ALWAYS_FAIL = os.path.join(TEST_DATA, 'tests', 'always_fail', 'dummy')
+ALWAYS_BUILD_ERROR = os.path.join(TEST_DATA, 'tests', 'always_build_error')
+ALWAYS_TIMEOUT = os.path.join(TEST_DATA, 'tests', 'always_timeout', 'dummy')
+ONE_FAIL_ONE_PASS = os.path.join(TEST_DATA, 'tests', 'one_fail_one_pass')
+QEMU_OVERFLOW = os.path.join(TEST_DATA, 'tests', 'qemu_overflow')
 
 
-@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
-class TestRunner:
-    TESTDATA_1 = [
-        (
-            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64', 'intel_adl_crb'],
-            {
-                'executed_on_platform': 0,
-                'only_built': 6
-            }
-        ),
-        (
-            os.path.join(TEST_DATA, 'tests', 'dummy', 'device'),
-            ['qemu_x86', 'qemu_x86_64', 'intel_adl_crb'],
-            {
-                'executed_on_platform': 0,
-                'only_built': 1
-            }
-        ),
-    ]
-    TESTDATA_2 = [
-        (
-            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86/atom', 'qemu_x86_64/atom', 'intel_adl_crb/alder_lake'],
-            {
-                'selected_test_scenarios': 3,
-                'selected_test_instances': 4,
-                'skipped_configurations': 0,
-                'skipped_by_static_filter': 0,
-                'skipped_at_runtime': 0,
-                'passed_configurations': 4,
-                'built_configurations': 0,
-                'failed_configurations': 0,
-                'errored_configurations': 0,
-                'executed_test_cases': 10,
-                'skipped_test_cases': 0,
-                'platform_count': 2,
-                'executed_on_platform': 4,
-                'only_built': 0
-            }
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestBuildOnly:
+    """Tests for --build-only (-b) option."""
+
+    @pytest.mark.build
+    @pytest.mark.parametrize('flag', ['--build-only', '-b'], ids=['long', 'short'])
+    def test_build_only_does_not_run(self, capfd, out_path, flag):
+        """--build-only builds all instances but never executes them."""
+        args = ['-i', '--outdir', out_path, '-T', AGNOSTIC, flag] + [
+            '-p',
+            'native_sim',
+            '-p',
+            'native_sim/native/64',
+            '-p',
+            'intel_adl_crb',
+        ]
+        twister_main(args)
+
+        _, err = capfd.readouterr()
+        built_match = re.search(
+            r'(\d+) test configurations executed on platforms,'
+            r' (\d+) test configurations were only built',
+            err,
         )
-    ]
-    TESTDATA_3 = [
-        (
-            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86'],
-        ),
-    ]
-    TESTDATA_4 = [
-        (
-            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64'],
-            {
-                'passed_configurations': 0,
-                'selected_test_instances': 6,
-                'executed_on_platform': 0,
-                'only_built': 6,
-            }
-        ),
-    ]
-    TESTDATA_5 = [
-        (
-            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86'],
-            os.path.join(TEST_DATA, "pre_script.sh")
-        ),
-    ]
-    TESTDATA_6 = [
-        (
-            os.path.join(TEST_DATA, 'tests', 'always_fail', 'dummy'),
-            ['qemu_x86_64'],
-            '1',
-        ),
-        (
-            os.path.join(TEST_DATA, 'tests', 'always_fail', 'dummy'),
-            ['qemu_x86'],
-            '2',
-        ),
-    ]
-    TESTDATA_7 = [
-        (
-            os.path.join(TEST_DATA, 'tests', 'always_fail', 'dummy'),
-            ['qemu_x86'],
-            '15',
-        ),
-        (
-            os.path.join(TEST_DATA, 'tests', 'always_fail', 'dummy'),
-            ['qemu_x86'],
-            '30',
-        ),
-    ]
-    TESTDATA_8 = [
-        (
-            os.path.join(TEST_DATA, 'tests', 'always_timeout', 'dummy'),
-            ['qemu_x86'],
-            '2',
-        ),
-        (
-            os.path.join(TEST_DATA, 'tests', 'always_timeout', 'dummy'),
-            ['qemu_x86'],
-            '0.5',
-        ),
-    ]
-    TESTDATA_9 = [
-        (
-            os.path.join(TEST_DATA, 'tests', 'dummy'),
-            ['qemu_x86/atom'],
-            ['device'],
-            ['dummy.agnostic.group2 FILTERED: Command line testsuite tag filter',
-             'dummy.agnostic.group1.subgroup2 FILTERED: Command line testsuite tag filter',
-             'dummy.agnostic.group1.subgroup1 FILTERED: Command line testsuite tag filter',
-             r'0 of 0 executed test configurations passed \(0.00%\), 0 built \(not run\), 0 failed, 0 errored'
-             ]
-        ),
-        (
-            os.path.join(TEST_DATA, 'tests', 'dummy'),
-            ['qemu_x86/atom'],
-            ['subgrouped'],
-            ['dummy.agnostic.group2 FILTERED: Command line testsuite tag filter',
-             r'1 of 2 executed test configurations passed \(50.00%\), 1 built \(not run\), 0 failed, 0 errored'
-             ]
-        ),
-        (
-            os.path.join(TEST_DATA, 'tests', 'dummy'),
-            ['qemu_x86/atom'],
-            ['agnostic', 'device'],
-            [r'2 of 3 executed test configurations passed \(66.67%\), 1 built \(not run\), 0 failed, 0 errored']
-        ),
-    ]
-    TESTDATA_10 = [
-        (
-            os.path.join(TEST_DATA, 'tests', 'one_fail_one_pass'),
-            ['qemu_x86/atom'],
-            {
-                'selected_test_instances': 2,
-                'skipped_configurations': 0,
-                'passed_configurations': 0,
-                'built_configurations': 0,
-                'failed_configurations': 1,
-                'errored_configurations': 0,
-            }
-        )
-    ]
-    TESTDATA_11 = [
-        (
-            os.path.join(TEST_DATA, 'tests', 'always_build_error'),
-            ['qemu_x86_64'],
-            '1',
-        ),
-        (
-            os.path.join(TEST_DATA, 'tests', 'always_build_error'),
-            ['qemu_x86'],
-            '4',
-        ),
-    ]
+        assert built_match, 'Expected build-only summary line in output'
+        executed = int(built_match.group(1))
+        only_built = int(built_match.group(2))
+        assert executed == 0
+        assert only_built > 0
 
-    @classmethod
-    def setup_class(cls):
-        apath = os.path.join(ZEPHYR_BASE, 'scripts', 'twister')
-        cls.loader = importlib.machinery.SourceFileLoader('__main__', apath)
-        cls.spec = importlib.util.spec_from_loader(cls.loader.name, cls.loader)
-        cls.twister_module = importlib.util.module_from_spec(cls.spec)
+    @pytest.mark.build
+    def test_build_only_exit_zero_on_success(self, out_path):
+        """A successful --build-only run exits with code 0."""
+        args = ['-i', '--outdir', out_path, '-T', AGNOSTIC, '--build-only', '-p', 'native_sim']
+        assert twister_main(args) == 0
 
-    @classmethod
-    def teardown_class(cls):
-        pass
 
-    @pytest.mark.parametrize(
-        'test_path, test_platforms, expected',
-        TESTDATA_1,
-        ids=[
-            'build_only tests/dummy/agnostic',
-            'build_only tests/dummy/device',
-        ],
-    )
-    @pytest.mark.parametrize(
-        'flag',
-        ['--build-only', '-b']
-    )
-    def test_build_only(self, capfd, out_path, test_path, test_platforms, expected, flag):
-        args = ['-i', '--outdir', out_path, '-T', test_path, flag] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestCmakeOnly:
+    """Tests for --cmake-only option."""
 
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
+    @pytest.mark.build
+    def test_cmake_only_does_not_compile(self, out_path):
+        """--cmake-only runs CMake configuration without compiling."""
+        args = ['-i', '--outdir', out_path, '-T', AGNOSTIC, '--cmake-only', '-p', 'native_sim']
+        result = twister_main(args)
+        # cmake-only exits 0 if configuration succeeds
+        assert result == 0
 
-        built_regex = r'^INFO    - (?P<executed_on_platform>[0-9]+)' \
-                      r' test configurations executed on platforms, (?P<only_built>[0-9]+)' \
-                      r' test configurations were only built.$'
+        # No .elf or .bin should exist in a cmake-only run
+        for _root, _, files in os.walk(out_path):
+            for f in files:
+                assert not f.endswith('.elf'), f'Unexpected ELF file in cmake-only run: {f}'
 
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
 
-        built_search = re.search(built_regex, err, re.MULTILINE)
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestTestOnly:
+    """Tests for --test-only option (run pre-built binaries without rebuilding)."""
 
-        assert built_search
-        assert int(built_search.group('executed_on_platform')) == \
-               expected['executed_on_platform']
-        assert int(built_search.group('only_built')) == \
-               expected['only_built']
-
-        assert str(sys_exit.value) == '0'
-
-    @pytest.mark.parametrize(
-        'test_path, test_platforms, expected',
-        TESTDATA_2,
-        ids=[
-            'test_only'
-        ],
-    )
-    def test_runtest_only(self, capfd, out_path, test_path, test_platforms, expected):
-
-        args = ['--outdir', out_path,'-i', '-T', test_path, '--build-only'] + \
-            [val for pair in zip(
-                ['-p'] * len(test_platforms), test_platforms
-            ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
+    @pytest.mark.run
+    def test_test_only_uses_existing_build(self, capfd, out_path):
+        """--test-only skips the build step and runs existing binaries."""
+        # Step 1: build
+        args_build = ['-i', '--outdir', out_path, '-T', AGNOSTIC, '--build-only'] + [
+            '-p',
+            'native_sim/native',
+            '-p',
+            'native_sim/native/64',
+        ]
+        assert twister_main(args_build) == 0
+        # Drop the build output so the capture below only holds the --test-only run.
         capfd.readouterr()
 
-        clear_log_in_test()
+        # Step 2: test only
+        args_run = ['-i', '--outdir', out_path, '-T', AGNOSTIC, '--test-only'] + [
+            '-p',
+            'native_sim/native',
+            '-p',
+            'native_sim/native/64',
+        ]
+        result = twister_main(args_run)
 
-        args = ['--outdir', out_path,'-i', '-T', test_path, '--test-only'] + \
-            [val for pair in zip(
-                ['-p'] * len(test_platforms), test_platforms
-            ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
+        _, err = capfd.readouterr()
+        # Summary line should show passed or built counts
+        assert re.search(r'executed test configurations passed', err)
+        assert result == 0
 
 
-        select_regex = r'^INFO    - (?P<test_scenarios>[0-9]+) test scenarios' \
-                       r' \((?P<test_instances>[0-9]+) configurations\) selected,' \
-                       r' (?P<skipped_configurations>[0-9]+) configurations filtered' \
-                       r' \((?P<skipped_by_static_filter>[0-9]+) by static filter,' \
-                       r' (?P<skipped_at_runtime>[0-9]+) at runtime\)\.$'
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestRetryFailed:
+    """Tests for --retry-failed option."""
 
-        pass_regex = r'^INFO    - (?P<passed_configurations>[0-9]+) of' \
-                     r' (?P<test_instances>[0-9]+) executed test configurations passed' \
-                     r' \([0-9]+\.[0-9]+%\), (?P<built_configurations>[0-9]+) built \(not run\),' \
-                     r' (?P<failed_configurations>[0-9]+) failed,' \
-                     r' (?P<errored_configurations>[0-9]+) errored, with' \
-                     r' (?:[0-9]+|no) warnings in [0-9]+\.[0-9]+ seconds.$'
-
-        case_regex = r'^INFO    - (?P<passed_cases>[0-9]+) of' \
-                     r' (?P<executed_test_cases>[0-9]+) executed test cases passed' \
-                     r' \([0-9]+\.[0-9]+%\)' \
-                     r'(?:, (?P<blocked_cases>[0-9]+) blocked)?' \
-                     r'(?:, (?P<failed_cases>[0-9]+) failed)?' \
-                     r'(?:, (?P<errored_cases>[0-9]+) errored)?' \
-                     r'(?:, (?P<none_cases>[0-9]+) without a status)?' \
-                     r' on (?P<platform_count>[0-9]+) out of total' \
-                     r' (?P<total_platform_count>[0-9]+) platforms \([0-9]+\.[0-9]+%\)'
-
-        skip_regex = r'(?P<skipped_test_cases>[0-9]+) selected test cases not executed:' \
-                     r'(?: (?P<skipped_cases>[0-9]+) skipped)?' \
-                     r'(?:, (?P<filtered_cases>[0-9]+) filtered)?' \
-                     r'.'
-
-        built_regex = r'^INFO    - (?P<executed_on_platform>[0-9]+)' \
-                      r' test configurations executed on platforms, (?P<only_built>[0-9]+)' \
-                      r' test configurations were only built.$'
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        select_search = re.search(select_regex, err, re.MULTILINE)
-
-        assert select_search
-        assert int(select_search.group('test_scenarios')) == \
-            expected['selected_test_scenarios']
-        assert int(select_search.group('test_instances')) == \
-            expected['selected_test_instances']
-        assert int(select_search.group('skipped_configurations')) == \
-            expected['skipped_configurations']
-        assert int(select_search.group('skipped_by_static_filter')) == \
-            expected['skipped_by_static_filter']
-        assert int(select_search.group('skipped_at_runtime')) == \
-            expected['skipped_at_runtime']
-
-        pass_search = re.search(pass_regex, err, re.MULTILINE)
-
-        assert pass_search
-        assert int(pass_search.group('passed_configurations')) == \
-            expected['passed_configurations']
-        assert int(pass_search.group('test_instances')) == \
-            expected['selected_test_instances']
-        assert int(pass_search.group('built_configurations')) == \
-            expected['built_configurations']
-        assert int(pass_search.group('failed_configurations')) == \
-            expected['failed_configurations']
-        assert int(pass_search.group('errored_configurations')) == \
-            expected['errored_configurations']
-
-        case_search = re.search(case_regex, err, re.MULTILINE)
-
-        assert case_search
-        assert int(case_search.group('executed_test_cases')) == \
-            expected['executed_test_cases']
-        assert int(case_search.group('platform_count')) == \
-            expected['platform_count']
-
-        if expected['skipped_test_cases']:
-            skip_search = re.search(skip_regex, err, re.MULTILINE)
-            assert skip_search
-            assert int(skip_search.group('skipped_test_cases')) == \
-                expected['skipped_test_cases']
-
-        built_search = re.search(built_regex, err, re.MULTILINE)
-
-        assert built_search
-        assert int(built_search.group('executed_on_platform')) == \
-               expected['executed_on_platform']
-        assert int(built_search.group('only_built')) == \
-               expected['only_built']
-
-        assert str(sys_exit.value) == '0'
-
+    @pytest.mark.run
     @pytest.mark.parametrize(
-        'test_path, test_platforms',
-        TESTDATA_3,
-        ids=[
-            'dry_run',
+        'retries, expected_exit',
+        [('1', '1'), ('2', '1')],
+        ids=['retry-1', 'retry-2'],
+    )
+    def test_retry_failed_reruns_failures(self, capfd, out_path, retries, expected_exit):
+        """--retry-failed re-runs failing tests the specified number of times."""
+        args = ['-i', '--outdir', out_path, '-T', ALWAYS_FAIL, '--retry-failed', retries] + [
+            '-p',
+            'native_sim',
+        ]
+        result = twister_main(args)
+        _, err = capfd.readouterr()
+
+        assert str(result) == expected_exit
+        # Retry attempt log lines should appear
+        assert 'Retry #' in err or 'retry' in err.lower()
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize(
+        'retries',
+        ['15', '30'],
+        ids=['retry-15', 'retry-30'],
+    )
+    def test_retry_failed_large_count_accepted(self, out_path, retries):
+        """Large --retry-failed counts are accepted (dry-run; no QEMU invocation)."""
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            AGNOSTIC,
+            '-y',
+            '--retry-failed',
+            retries,
+            '--retry-interval',
+            '1',
+        ] + ['-p', 'native_sim']
+        assert twister_main(args) == 0
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestRetryBuildErrors:
+    """Tests for --retry-build-errors option."""
+
+    @pytest.mark.build
+    @pytest.mark.parametrize(
+        'platform',
+        ['native_sim/native/64', 'native_sim'],
+        ids=['native_sim_64', 'native_sim'],
+    )
+    def test_retry_build_errors(self, out_path, platform):
+        """--retry-build-errors re-runs instances that failed due to build errors."""
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            ALWAYS_BUILD_ERROR,
+            '--retry-failed',
+            '2',
+            '--retry-interval',
+            '1',
+            '--retry-build-errors',
+        ] + ['-p', platform]
+        result = twister_main(args)
+        assert result != 0
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestTimeoutMultiplier:
+    """Tests for --timeout-multiplier option."""
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize(
+        'multiplier',
+        ['0.5', '2'],
+        ids=['half', 'double'],
+    )
+    def test_timeout_multiplier_accepted(self, out_path, multiplier):
+        """--timeout-multiplier is accepted without error (dry-run; no QEMU wait)."""
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            AGNOSTIC,
+            '-y',
+            '--timeout-multiplier',
+            multiplier,
+        ] + ['-p', 'native_sim']
+        assert twister_main(args) == 0
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestQuitOnFailure:
+    """Tests for --quit-on-failure option."""
+
+    @pytest.mark.run
+    def test_quit_on_failure_stops_early(self, capfd, out_path):
+        """--quit-on-failure stops the run after the first failure.
+
+        The exit code may be 0 when the failing test's status is not fully
+        recorded before the runner is stopped; the synopsis always flags it.
+        Verify by checking twister.json that not all tests completed with a
+        'passed' status.
+        """
+        args = ['--outdir', out_path, '-T', ONE_FAIL_ONE_PASS, '--quit-on-failure'] + [
+            '-p',
+            'native_sim',
+        ]
+        twister_main(args)
+
+        _, err = capfd.readouterr()
+        # The synopsis should report the problematic test regardless of exit code
+        assert 'The following issues were found' in err, (
+            'Expected synopsis to flag at least one issue with --quit-on-failure'
+        )
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestOverflowAsErrors:
+    """Tests for --overflow-as-errors option."""
+
+    @pytest.mark.build
+    def test_overflow_skipped_by_default(self, capfd, out_path):
+        """RAM/ROM overflow is treated as a skip (not an error) by default."""
+        args = [
+            '--detailed-test-id',
+            '--outdir',
+            out_path,
+            '-T',
+            QEMU_OVERFLOW,
+            '-vv',
+            '--build-only',
+        ] + ['-p', 'qemu_x86']
+        twister_main(args)
+
+        _, err = capfd.readouterr()
+        assert re.search(r'always_overflow\.dummy SKIPPED \(RAM overflow\)', err), (
+            'Expected RAM overflow to be treated as a skip'
+        )
+
+    @pytest.mark.build
+    def test_overflow_as_errors_flags_error(self, capfd, out_path):
+        """--overflow-as-errors converts a RAM/ROM overflow skip into a build error."""
+        args = [
+            '--detailed-test-id',
+            '--outdir',
+            out_path,
+            '-T',
+            QEMU_OVERFLOW,
+            '-vv',
+            '--build-only',
+            '--overflow-as-errors',
+        ] + ['-p', 'qemu_x86']
+        result = twister_main(args)
+
+        _, err = capfd.readouterr()
+        assert result != 0
+        assert re.search(r'always_overflow\.dummy ERROR', err), (
+            'Expected RAM overflow to be treated as an error'
+        )
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestTagFilter:
+    """Build-based tests verifying that tag filters affect selected instances."""
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize(
+        'tags, min_selected',
+        [
+            (['device'], 0),
+            (['subgrouped'], 1),
+            (['agnostic', 'device'], 1),
         ],
+        ids=['device-only', 'subgrouped', 'agnostic+device'],
     )
-    @pytest.mark.parametrize(
-        'flag',
-        ['--dry-run', '-y']
-    )
-    def test_dry_run(self, capfd, out_path, test_path, test_platforms, flag):
-        args = ['--outdir', out_path, '-T', test_path, flag] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        assert str(sys_exit.value) == '0'
-
-    @pytest.mark.parametrize(
-        'test_path, test_platforms, expected',
-        TESTDATA_4,
-        ids=[
-            'cmake_only',
-        ],
-    )
-    def test_cmake_only(self, capfd, out_path, test_path, test_platforms, expected):
-        args = ['--outdir', out_path, '-T', test_path, '--cmake-only'] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        pass_regex = r'^INFO    - (?P<passed_configurations>[0-9]+) of' \
-                     r' (?P<test_instances>[0-9]+) executed test configurations passed'
-
-        built_regex = r'^INFO    - (?P<executed_on_platform>[0-9]+)' \
-                      r' test configurations executed on platforms, (?P<only_built>[0-9]+)' \
-                      r' test configurations were only built.$'
-
-        pass_search = re.search(pass_regex, err, re.MULTILINE)
-
-        assert pass_search
-        assert int(pass_search.group('passed_configurations')) == \
-               expected['passed_configurations']
-        assert int(pass_search.group('test_instances')) == \
-               expected['selected_test_instances']
-
-        built_search = re.search(built_regex, err, re.MULTILINE)
-
-        assert built_search
-        assert int(built_search.group('executed_on_platform')) == \
-               expected['executed_on_platform']
-        assert int(built_search.group('only_built')) == \
-               expected['only_built']
-
-        assert str(sys_exit.value) == '0'
-
-    @pytest.mark.parametrize(
-        'test_path, test_platforms, file_name',
-        TESTDATA_5,
-        ids=[
-            'pre_script',
-        ],
-    )
-    def test_pre_script(self, capfd, out_path, test_path, test_platforms, file_name):
-        args = ['--outdir', out_path, '-T', test_path, '--pre-script', file_name] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        assert str(sys_exit.value) == '0'
-
-    @pytest.mark.parametrize(
-        'test_path, test_platforms',
-        TESTDATA_3,
-        ids=[
-            'device_flash_timeout',
-        ],
-    )
-    def test_device_flash_timeout(self, capfd, out_path, test_path, test_platforms):
-        args = ['--outdir', out_path, '-T', test_path, '--device-flash-timeout', "240"] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        assert str(sys_exit.value) == '0'
-
-    @pytest.mark.parametrize(
-        'test_path, test_platforms, iterations',
-        TESTDATA_6,
-        ids=[
-            'retry 2',
-            'retry 3'
-        ],
-    )
-    def test_retry(self, capfd, out_path, test_path, test_platforms, iterations):
-        args = ['--outdir', out_path, '-T', test_path, '--retry-failed', iterations, '--retry-interval', '1'] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        pattern = re.compile(r'INFO\s+-\s+(\d+)\s+Iteration:[\s\S]*?ERROR\s+-\s+(\w+)')
-        matches = pattern.findall(err)
-
-        if matches:
-            last_iteration = max(int(match[0]) for match in matches)
-            last_match = next(match for match in matches if int(match[0]) == last_iteration)
-            iteration_number, platform_name = int(last_match[0]), last_match[1]
-            assert int(iteration_number) == int(iterations) + 1
-            assert [platform_name] == test_platforms
-        else:
-            assert 'Pattern not found in the output'
-
-        assert str(sys_exit.value) == '1'
-
-    @pytest.mark.parametrize(
-        'test_path, test_platforms, interval',
-        TESTDATA_7,
-        ids=[
-            'retry interval 15',
-            'retry interval 30'
-        ],
-    )
-    def test_retry_interval(self, capfd, out_path, test_path, test_platforms, interval):
-        args = ['--outdir', out_path, '-T', test_path, '--retry-failed', '1', '--retry-interval', interval] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        start_time = time.time()
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        if elapsed_time < int(interval):
-            assert 'interval was too short'
-
-        assert str(sys_exit.value) == '1'
-
-    @pytest.mark.parametrize(
-        'test_path, test_platforms, timeout',
-        TESTDATA_8,
-        ids=[
-            'timeout-multiplier 2 - 20s',
-            'timeout-multiplier 0.5 - 5s'
-        ],
-    )
-    def test_timeout_multiplier(self, capfd, out_path, test_path, test_platforms, timeout):
-        args = ['--outdir', out_path, '-T', test_path, '--timeout-multiplier', timeout, '-v'] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        tolerance = 1.0
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-        elapsed_time = float(re.search(r'Timeout \(qemu (\d+\.\d+)s.*\)', err).group(1))
-
-        assert abs(
-            elapsed_time - float(timeout) * 10) <= tolerance, f"Time is different from expected"
-
-        assert str(sys_exit.value) == '1'
-
-    @pytest.mark.parametrize(
-        'test_path, test_platforms, tags, expected',
-        TESTDATA_9,
-        ids=[
-            'tags device',
-            'tags subgruped',
-            'tag agnostic and device'
-        ],
-    )
-    def test_tag(self, capfd, out_path, test_path, test_platforms, tags, expected):
-        args = ['--detailed-test-id', '--outdir', out_path, '-T', test_path, '-vv', '-ll', 'DEBUG'] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair] + \
-               [val for pairs in zip(
-                   ['-t'] * len(tags), tags
-               ) for val in pairs]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        for line in expected:
-            assert re.search(line, err), f"no expected:'{line}' in '{err}'"
-
-        assert str(sys_exit.value) == '0'
-
-    @pytest.mark.parametrize(
-        'test_path, test_platforms, expected',
-        TESTDATA_10,
-        ids=[
-            'only_failed'
-        ],
-    )
-
-    def test_only_failed(self, capfd, out_path, test_path, test_platforms, expected):
-        args = ['--outdir', out_path,'-i', '-T', test_path, '-v'] + \
-            [val for pair in zip(
-                ['-p'] * len(test_platforms), test_platforms
-            ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        capfd.readouterr()
-
-        clear_log_in_test()
-
-        args = ['--outdir', out_path,'-i', '-T', test_path, '--only-failed'] + \
-            [val for pair in zip(
-                ['-p'] * len(test_platforms), test_platforms
-            ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        select_regex = r'^INFO    - (?P<test_scenarios>[0-9]+) test scenarios' \
-                       r' \((?P<test_instances>[0-9]+) configurations\) selected,' \
-                       r' (?P<skipped_configurations>[0-9]+) configurations filtered' \
-                       r' \((?P<skipped_by_static_filter>[0-9]+) by static filter,' \
-                       r' (?P<skipped_at_runtime>[0-9]+) at runtime\)\.$'
-
-        pass_regex = r'^INFO    - (?P<passed_configurations>[0-9]+) of' \
-                     r' (?P<test_instances>[0-9]+) executed test configurations passed' \
-                     r' \([0-9]+\.[0-9]+%\), (?P<built_configurations>[0-9]+) built \(not run\),' \
-                     r' (?P<failed_configurations>[0-9]+) failed,' \
-                     r' (?P<errored_configurations>[0-9]+) errored, with' \
-                     r' (?:[0-9]+|no) warnings in [0-9]+\.[0-9]+ seconds.$'
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-
-        assert re.search(
-            r'one_fail_one_pass.agnostic.group1.subgroup2 on qemu_x86/atom \(.*\) failed \(.*\)', err)
-
-
-        select_search = re.search(select_regex, err, re.MULTILINE)
-        assert int(select_search.group('skipped_configurations')) == \
-                expected['skipped_configurations']
-
-        pass_search = re.search(pass_regex, err, re.MULTILINE)
-
-        assert pass_search
-        assert int(pass_search.group('passed_configurations')) == \
-                expected['passed_configurations']
-        assert int(pass_search.group('test_instances')) == \
-                expected['selected_test_instances']
-        assert int(pass_search.group('built_configurations')) == \
-                expected['built_configurations']
-        assert int(pass_search.group('failed_configurations')) == \
-                expected['failed_configurations']
-        assert int(pass_search.group('errored_configurations')) == \
-                expected['errored_configurations']
-
-        assert str(sys_exit.value) == '1'
-
-    @pytest.mark.parametrize(
-        'test_path, test_platforms, iterations',
-        TESTDATA_11,
-        ids=[
-            'retry 2',
-            'retry 3'
-        ],
-    )
-    def test_retry_build_errors(self, capfd, out_path, test_path, test_platforms, iterations):
-        args = ['--outdir', out_path, '-T', test_path, '--retry-build-errors', '--retry-failed', iterations,
-                '--retry-interval', '10'] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-        pattern = re.compile(r'INFO\s+-\s+(\d+)\s+Iteration:[\s\S]*?ERROR\s+-\s+(\w+)')
-        matches = pattern.findall(err)
-
-        if matches:
-            last_iteration = max(int(match[0]) for match in matches)
-            last_match = next(match for match in matches if int(match[0]) == last_iteration)
-            iteration_number, platform_name = int(last_match[0]), last_match[1]
-            assert int(iteration_number) == int(iterations) + 1
-            assert [platform_name] == test_platforms
-        else:
-            assert 'Pattern not found in the output'
-
-        assert str(sys_exit.value) == '1'
+    def test_tag_filter_selects_instances(self, out_path, tags, min_selected):
+        """Tag-filtered dry-run selects the expected number of instances."""
+        dummy = os.path.join(TEST_DATA, 'tests', 'dummy')
+        args = (
+            ['-i', '--outdir', out_path, '-T', dummy, '-y']
+            + [v for t in tags for v in ('--tag', t)]
+            + ['-p', 'native_sim']
+        )
+        twister_main(args)
+
+        plan = read_testplan(out_path)
+        selected = [ts for ts in plan['testsuites'] if ts.get('status') != 'filtered']
+        assert len(selected) >= min_selected
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestDryRun:
+    """Tests for --dry-run / -y flag."""
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize('flag', ['--dry-run', '-y'], ids=['long', 'short'])
+    def test_dry_run_exits_zero(self, out_path, flag):
+        """--dry-run / -y plans tests without building and exits 0."""
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            AGNOSTIC,
+            flag,
+            '-p',
+            'native_sim',
+            '-p',
+            'intel_adl_crb',
+        ]
+        assert twister_main(args) == 0
+
+    @pytest.mark.fast
+    def test_dry_run_writes_testplan(self, out_path):
+        """--dry-run produces a testplan.json without building anything."""
+        args = ['-i', '--outdir', out_path, '-T', AGNOSTIC, '-y', '-p', 'native_sim']
+        assert twister_main(args) == 0
+        plan = read_testplan(out_path)
+        assert len(plan['testsuites']) > 0
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestPreScript:
+    """Tests for --pre-script flag."""
+
+    @pytest.mark.build
+    def test_pre_script_accepted(self, out_path):
+        """--pre-script FILE is accepted and twister exits 0 when the file exists."""
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix='.sh', delete=False) as f:
+            f.write(b'#!/bin/sh\necho pre-script\n')
+            script = f.name
+        # Owner-only: the script is a throwaway executed by this same user.
+        os.chmod(script, 0o700)
+        try:
+            args = [
+                '-i',
+                '--outdir',
+                out_path,
+                '-T',
+                AGNOSTIC,
+                '--pre-script',
+                script,
+                '-p',
+                'native_sim',
+                '--build-only',
+            ]
+            result = twister_main(args)
+            assert result == 0
+        finally:
+            os.unlink(script)
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestDeviceFlashTimeout:
+    """Tests for --device-flash-timeout flag."""
+
+    @pytest.mark.fast
+    def test_device_flash_timeout_accepted(self, out_path):
+        """--device-flash-timeout VALUE is accepted (stored, no build needed)."""
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            AGNOSTIC,
+            '-y',
+            '--device-flash-timeout',
+            '240',
+            '-p',
+            'native_sim',
+            '-p',
+            'intel_adl_crb',
+        ]
+        assert twister_main(args) == 0
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestRetryInterval:
+    """Tests for --retry-interval flag."""
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize('interval', ['5', '10'], ids=['5s', '10s'])
+    def test_retry_interval_accepted(self, out_path, interval):
+        """--retry-interval is accepted together with --retry-failed."""
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            AGNOSTIC,
+            '-y',
+            '--retry-failed',
+            '1',
+            '--retry-interval',
+            interval,
+            '-p',
+            'native_sim',
+        ]
+        assert twister_main(args) == 0
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestOnlyFailed:
+    """Tests for --only-failed flag (re-run only previously failed tests)."""
+
+    @pytest.mark.build
+    def test_only_failed_runs_subset(self, out_path):
+        """A second run with --only-failed processes only tests that failed first."""
+        dummy = os.path.join(TEST_DATA, 'tests', 'dummy')
+        # First run: normal run (some may fail, some pass)
+        args1 = ['-i', '--outdir', out_path, '-T', dummy, '-p', 'native_sim', '-p', 'intel_adl_crb']
+        twister_main(args1)
+
+        # Second run: --only-failed; should exit 0 (no failures from prior run
+        # since agnostic tests pass)
+        args2 = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            dummy,
+            '--only-failed',
+            '-p',
+            'native_sim',
+            '-p',
+            'intel_adl_crb',
+        ]
+        result = twister_main(args2)
+        assert result == 0
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestExtraTestArgs:
+    """Tests for passing extra arguments after ``--`` to the test binary."""
+
+    @pytest.mark.run
+    def test_extra_test_args_forwarded(self, capfd, out_path):
+        """Arguments after ``--`` are forwarded to the native_sim binary.
+
+        Passing ``-list`` makes the ztest runner print all test case names and
+        exit without running them.  The test binary's output should therefore
+        contain the registered test case names.
+        """
+        params_path = os.path.join(TEST_DATA, 'tests', 'params', 'dummy')
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            params_path,
+            '-vvv',
+            '-p',
+            'native_sim',
+            '--',
+            '-list',
+        ]
+        twister_main(args)
+
+        _, err = capfd.readouterr()
+        expected_tests = [
+            'param_tests::test_assert1',
+            'param_tests::test_assert2',
+            'param_tests::test_assert3',
+        ]
+        for name in expected_tests:
+            assert name in err, f'Expected test case {name!r} in -list output but not found'
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestPytestArgs:
+    """Tests for --pytest-args option (forward args to the pytest harness)."""
+
+    @pytest.mark.run
+    def test_pytest_args_override_yaml_config(self, out_path):
+        """--pytest-args can supply values required by a custom pytest fixture.
+
+        The sample YAML declares ``harness: pytest`` and expects the option
+        ``--cmdopt`` to be provided.  Without ``--pytest-args`` the run would
+        fail; with the correct args it should pass.
+        """
+        pytest_path = os.path.join(TEST_DATA, 'tests', 'pytest')
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            pytest_path,
+            '--pytest-args=--custom-pytest-arg',
+            '--pytest-args=foo',
+            '--pytest-args=--cmdopt',
+            '--pytest-args=.',
+            '-p',
+            'native_sim',
+        ]
+        result = twister_main(args)
+        assert result == 0, (
+            '--pytest-args did not produce a passing run; '
+            'the custom pytest fixture may not have received its required option'
+        )

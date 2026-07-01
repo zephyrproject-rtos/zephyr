@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
 # Many of these are symbols used as examples. Note that the list is sorted
 # alphabetically, and skips the CONFIG_ prefix.
 # zephyr-keep-sorted-start re(^\s+")
@@ -151,6 +154,7 @@ STACK_SIZE  # Used as an example in the Kconfig docs
 STD_CPP  # Referenced in CMake comment
 SYMBOL # used as an example in ci scripts
 TEST1
+TEST_EXTRA_DEFINE  # Bogus define used by twister blackbox tests to exercise -x
 TFM_SPM_BACKEND_IPC  # Used in TFM sample dummy partition - belongs to TFM
 TFM_SPM_BACKEND_SFN  # Used in TFM sample dummy partition - belongs to TFM
 # Defined in modules/hal_nxp/mcux/mcux-sdk-ng/basic.cmake.
