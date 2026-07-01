@@ -33,6 +33,13 @@ void test_entry(void)
 {
 	int ret_value;
 
+	/*
+	 * The extension's writable data persists between the supervisor and
+	 * user-mode runs, and the call below mutates it, so restore the initial
+	 * value first to make the test repeatable across both runs.
+	 */
+	_data_segment_symbol = DATA_SEGMENT_SYMBOL_INITIAL;
+
 	ret_value = _riscv_edge_case_non_paired_hi20_lo12();
 
 	zassert_equal(ret_value, DATA_SEGMENT_SYMBOL_INITIAL);
