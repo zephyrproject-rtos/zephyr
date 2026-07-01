@@ -36,6 +36,8 @@ python-dotenv
 
 # Used to export requirements from the reqmgmt module (StrictDoc)
 strictdoc
-
+# Pinned: strictdoc 0.13.0 imports html2pdf4doc.html2pdf4doc, a submodule
+# removed after 0.0.22 (strictdoc's `>=0.0.22` pin is too loose).
+html2pdf4doc==0.0.22
 # Requirements traceability (items, matrices, coverage) in the Sphinx docs
 mlx.traceability
