@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+#
+description: Broadcom BCM283x DWC2 USB OTG controller
+
+compatible: "brcm,bcm2835-usb"
+
+include: ["snps,dwc2.yaml"]

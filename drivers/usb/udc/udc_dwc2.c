@@ -453,7 +453,13 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 			return -ENOTSUP;
 		}
 
-		sys_write32((uint32_t)(uintptr_t)(buf->data),
+		/* Program the controller's DMA master with the bus address for
+		 * this buffer. On SoCs where the DMA sits behind a bus whose
+		 * address space differs from the CPU's (e.g. BCM283x VideoCore,
+		 * bus = phys | 0xC0000000), the vendor quirk translates it;
+		 * otherwise this is the identity (CPU physical) address.
+		 */
+		sys_write32(dwc2_quirk_dma_addr(dev, buf->data),
 			    (mem_addr_t)&base->in_ep[ep_idx].diepdma);
 	}
 
@@ -1763,11 +1769,16 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	/*
-	 * Force device mode as we do no support role changes.
-	 * Wait 25ms for the change to take effect.
+	/* Force device mode (no role changes supported). Read-modify-
+	 * write to preserve PHY-config bits, and program USBTrdTim
+	 * explicitly per Linux dwc2 defaults (5 for 16-bit UTMI, 9 for
+	 * 8-bit). Wait 25ms for the change to take effect.
 	 */
-	gusbcfg = USB_DWC2_GUSBCFG_FORCEDEVMODE;
+	gusbcfg = sys_read32(gusbcfg_reg);
+	gusbcfg |= USB_DWC2_GUSBCFG_FORCEDEVMODE;
+	gusbcfg &= ~USB_DWC2_GUSBCFG_USBTRDTIM_MASK;
+	gusbcfg |= ((gusbcfg & USB_DWC2_GUSBCFG_PHYIF_16_BIT) ? 5u : 9u) <<
+		USB_DWC2_GUSBCFG_USBTRDTIM_POS;
 	sys_write32(gusbcfg, gusbcfg_reg);
 	k_msleep(25);
 
@@ -1936,6 +1947,14 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		/* Get available SPRAM size and calculate max allocatable RX fifo size */
 		val = sys_read32((mem_addr_t)&base->gdfifocfg);
 		spram_size = usb_dwc2_get_gdfifocfg_gdfifocfg(val);
+		if (spram_size == 0) {
+			/* Fall back to the silicon-fixed total DFIFO depth
+			 * when the ROM/bootloader has not initialised
+			 * GDFIFOCFG.
+			 */
+			spram_size = priv->dfifodepth;
+		}
+
 		max_rxfifo = ((spram_size * MAX_RXFIFO_GDFIFO_PERCENTAGE) / 100);
 
 		/* TODO: For proper runtime FIFO sizing UDC driver would have to
@@ -1956,7 +1975,14 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		/* Driver does not dynamically resize RxFIFO so there is no need
 		 * to store reset value. Read the reset value and make sure that
 		 * the programmed value is not greater than what driver sets.
+		 *
+		 * If GRXFSIZ reads 0 (POR on some integrations) the MIN
+		 * below would clamp to 0 and the RX FIFO would never see a
+		 * SETUP packet. Fall back to the driver default.
 		 */
+		if (priv->rxfifo_depth == 0) {
+			priv->rxfifo_depth = default_depth;
+		}
 		priv->rxfifo_depth = MIN(MIN(priv->rxfifo_depth, default_depth), max_rxfifo);
 		sys_write32(usb_dwc2_set_grxfsiz(priv->rxfifo_depth), grxfsiz_reg);
 
@@ -2624,12 +2650,27 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 
 		LOG_DBG("ep 0x%02x interrupt status: 0x%x", n, status);
 
-		/* StupPktRcvd is not enabled for interrupt, but must be checked
-		 * when XferComp hits to determine if SETUP token was received.
+		/* Buffer-DMA SETUP capture.
+		 *
+		 * Earlier in-tree code gated this on (XFERCOMPL && StupPktRcvd)
+		 * because StupPktRcvd (DOEPINTn bit 15) is the canonical
+		 * post-receipt indicator in newer Synopsys dwc2 revisions and
+		 * is sampled out-of-mask. Empirically (Pi Zero 2 W, dwc2 OT
+		 * 2.80a) StupPktRcvd is reserved-zero on this silicon, so
+		 * that guard never fires and priv->setup stays uninitialised
+		 * (USBD then sees an all-zero SETUP and STALLs everything).
+		 *
+		 * Mirror Linux dwc2/gadget.c which keys SETUP retrieval on
+		 * DXEPINT_SETUP (bit 3) only -- this is canonical across all
+		 * 13 dwc2 revisions Linux tracks. StupPktRcvd is still W1C'd
+		 * for any silicon where it does happen to set; XFERCOMPL is
+		 * still suppressed so the OUT-done handler doesn't process
+		 * the SETUP buffer as a data-stage completion. DOEPDMA
+		 * post-increment is verified on BCM283x, so the (addr - 8)
+		 * math reaches the SETUP location for the latest packet.
 		 */
-		if (dwc2_in_buffer_dma_mode(dev) &&
-		    (status & USB_DWC2_DOEPINT_XFERCOMPL) &&
-		    (doepint & USB_DWC2_DOEPINT_STUPPKTRCVD)) {
+		if (dwc2_in_buffer_dma_mode(dev) && n == 0 &&
+		    (status & USB_DWC2_DOEPINT_SETUP)) {
 			uint32_t addr;
 
 			sys_write32(USB_DWC2_DOEPINT_STUPPKTRCVD, doepint_reg);
