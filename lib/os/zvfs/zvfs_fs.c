@@ -191,9 +191,17 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	case ZFD_IOCTL_LSEEK: {
 		off_t offset;
 		int whence;
+		size_t cur_offset;
 
 		offset = va_arg(args, off_t);
 		whence = va_arg(args, int);
+		cur_offset = va_arg(args, size_t);
+
+		/* reads and writes go through the fd offset, not the file position */
+		if (whence == FS_SEEK_CUR) {
+			offset += (off_t)cur_offset;
+			whence = FS_SEEK_SET;
+		}
 
 		rc = fs_seek(&ptr->file, offset, whence);
 		if (rc == 0) {
@@ -245,6 +253,13 @@ static ssize_t fs_write_offs_vmeth(void *obj, const void *buffer, size_t count,
 {
 	struct zvfs_fs_desc *ptr = obj;
 	ssize_t rc;
+	long saved;
+
+	saved = fs_tell(&ptr->file);
+	if (saved < 0) {
+		errno = -saved;
+		return -1;
+	}
 
 	rc = fs_seek(&ptr->file, (off_t)offset, FS_SEEK_SET);
 	if (rc < 0) {
@@ -252,7 +267,17 @@ static ssize_t fs_write_offs_vmeth(void *obj, const void *buffer, size_t count,
 		return -1;
 	}
 
-	return fs_write_vmeth(obj, buffer, count);
+	rc = fs_write_vmeth(obj, buffer, count);
+	if (rc < 0) {
+		return rc;
+	}
+
+	if (fs_seek(&ptr->file, saved, FS_SEEK_SET) < 0) {
+		errno = EIO;
+		return -1;
+	}
+
+	return rc;
 }
 
 static ssize_t fs_read_vmeth(void *obj, void *buffer, size_t count)
@@ -273,6 +298,13 @@ static ssize_t fs_read_offs_vmeth(void *obj, void *buffer, size_t count, size_t 
 {
 	struct zvfs_fs_desc *ptr = obj;
 	ssize_t rc;
+	long saved;
+
+	saved = fs_tell(&ptr->file);
+	if (saved < 0) {
+		errno = -saved;
+		return -1;
+	}
 
 	rc = fs_seek(&ptr->file, (off_t)offset, FS_SEEK_SET);
 	if (rc < 0) {
@@ -280,7 +312,17 @@ static ssize_t fs_read_offs_vmeth(void *obj, void *buffer, size_t count, size_t 
 		return -1;
 	}
 
-	return fs_read_vmeth(obj, buffer, count);
+	rc = fs_read_vmeth(obj, buffer, count);
+	if (rc < 0) {
+		return rc;
+	}
+
+	if (fs_seek(&ptr->file, saved, FS_SEEK_SET) < 0) {
+		errno = EIO;
+		return -1;
+	}
+
+	return rc;
 }
 
 static struct fd_op_vtable fs_fd_op_vtable = {

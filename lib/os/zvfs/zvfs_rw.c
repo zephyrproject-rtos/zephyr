@@ -13,6 +13,7 @@ bool supports_pread_pwrite(uint32_t mode)
 {
 	switch (mode & ZVFS_MODE_IFMT) {
 	case ZVFS_MODE_IFSHM:
+	case ZVFS_MODE_IFREG:
 		return true;
 	default:
 		return false;
