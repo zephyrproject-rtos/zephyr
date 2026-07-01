@@ -2,5 +2,11 @@ board:
   name: mimxrt700_evk
   full_name: MIMXRT700-EVK
   vendor: nxp
+  revision:
+    format: custom
+    default: "mx25um51345g"
+    revisions:
+    - name: "mx25um51345g"
+    - name: "w25q512nw"
   socs:
   - name: mimxrt798s
