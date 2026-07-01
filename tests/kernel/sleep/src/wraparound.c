@@ -6,6 +6,11 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
+/**
+ * @addtogroup tests_kernel_sleep
+ * @{
+ */
+
 static k_tid_t thread_id;
 
 static void alarm_callback(struct k_timer *timer)
@@ -33,8 +38,6 @@ K_TIMER_DEFINE(alarm, alarm_callback, NULL);
  * Expected result:
  * - The sleep is woken early across the tick wraparound with correct accounting.
  *
- * @ingroup tests_kernel_sched
- *
  * @see k_sleep()
  * @see k_wakeup()
  */
@@ -59,3 +62,7 @@ ZTEST(wraparound, test_tick_wraparound_in_sleep)
 }
 
 ZTEST_SUITE(wraparound, NULL, NULL, NULL, NULL, NULL);
+
+/**
+ * @}
+ */
