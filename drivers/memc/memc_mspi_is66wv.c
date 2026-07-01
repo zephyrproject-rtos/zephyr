@@ -464,7 +464,8 @@ static int memc_mspi_is66wv_init(const struct device *psram)
 		.io_mode                = MSPI_IO_MODE_SINGLE,                                     \
 		.data_rate              = MSPI_DATA_RATE_SINGLE,                                   \
 		.cpp                    = MSPI_CPP_MODE_0,                                         \
-		.endian                 = MSPI_XFER_LITTLE_ENDIAN,                                 \
+		.endian                 = DT_ENUM_IDX_OR(DT_DRV_INST(n), mspi_endian,              \
+							 MSPI_XFER_BIG_ENDIAN),                    \
 		.ce_polarity            = MSPI_CE_ACTIVE_LOW,                                      \
 		.dqs_enable             = false,                                                   \
 		.rx_dummy               = 8,                                                       \
