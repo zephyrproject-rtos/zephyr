@@ -522,6 +522,16 @@ int i2c_stm32_error(const struct device *dev)
 #endif
 	}
 
+	if (LL_I2C_IsActiveFlag_OVR(i2c)) {
+		LL_I2C_ClearFlag_OVR(i2c);
+#if defined(CONFIG_I2C_TARGET)
+		if (error_cb != NULL) {
+			error_cb(data->target_cfg, I2C_ERROR_GENERIC);
+		}
+#endif
+		goto error;
+	}
+
 	return 0;
 error:
 #if defined(CONFIG_I2C_TARGET)
