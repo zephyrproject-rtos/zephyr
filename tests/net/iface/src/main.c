@@ -395,6 +395,17 @@ static void *iface_setup(void)
 	dev->state->init_res = 0;
 	device_ok = true;
 
+	/* The interface init was skipped because device was not ready during
+	 * system initialization. Now that the device is ready, we need to
+	 * manually initialize the interface to set the link address and
+	 * enable IPv4/IPv6 support (which are normally set in init_iface()).
+	 */
+	net_if_flag_set(iface1, NET_IF_IPV4);
+	net_if_flag_set(iface1, NET_IF_IPV6);
+	k_mutex_init(&iface1->lock);
+	k_mutex_init(&iface1->tx_lock);
+	net_iface_init(iface1);
+
 	/* We need to sleep a bit to let the interface
 	 * operational state change time to be set.
 	 */
