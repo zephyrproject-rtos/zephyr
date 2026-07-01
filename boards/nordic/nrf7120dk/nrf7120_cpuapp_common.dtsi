@@ -66,8 +66,6 @@
 	status = "okay";
 	firmware-lmacinitpc = <&wifi_lmac_rom>;
 	firmware-umacinitpc = <&wifi_umac_rom>;
-	firmware-lmacrompatchaddr = <&wifi_lmac_patch_partition>;
-	firmware-umacrompatchaddr = <&wifi_umac_patch_partition>;
 	ipcconfig-commandmbox = <&ipc_shm_cpuapp_cpuuma_0>;
 	ipcconfig-eventmbox = <&ipc_shm_cpuuma_cpuapp_0>;
 	ipcconfig-sparembox = <&ipc_shm_sparembox>;
