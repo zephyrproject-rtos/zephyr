@@ -18,3 +18,10 @@ properties:
 
   system-interrupts:
     description: Required for cat1c devices
+
+  infineon,wdt-lock:
+    type: boolean
+    description: |
+      The watchdog has lock/unlock protection registers. When set, the driver
+      unlocks the configuration registers before each update and locks them
+      afterwards to guard against unintended writes.
