@@ -188,29 +188,27 @@
 			status = "disabled";
 		};
 
-		pinctrl: pin-controller@400a0000 {
+		pinctrl: pin-controller@40428000 {
 			compatible = "ti,mspm0-pinctrl";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			reg = <0x400a0000 0x4000>;
+			reg = <0x40428000 0x400>;
+		};
 
-			gpioa: gpio@400a0000 {
-				compatible = "ti,mspm0-gpio";
-				reg = <0x400a0000 0x2000>;
-				interrupts = <1 0>;
-				status = "disabled";
-				gpio-controller;
-				#gpio-cells = <2>;
-			};
+		gpioa: gpio@400a0000 {
+			compatible = "ti,mspm0-gpio";
+			reg = <0x400a0000 0x2000>;
+			interrupts = <1 0>;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
 
-			gpiob: gpio@400a2000 {
-				compatible = "ti,mspm0-gpio";
-				reg = <0x400a2000 0x2000>;
-				interrupts = <1 0>;
-				status = "disabled";
-				gpio-controller;
-				#gpio-cells = <2>;
-			};
+		gpiob: gpio@400a2000 {
+			compatible = "ti,mspm0-gpio";
+			reg = <0x400a2000 0x2000>;
+			interrupts = <1 0>;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		uart0: uart@40108000 {
