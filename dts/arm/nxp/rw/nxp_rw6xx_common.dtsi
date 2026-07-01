@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/clock-monitor/nxp-fmeas.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -169,6 +170,24 @@
 		compatible = "nxp,lpc-syscon";
 		reg = <0x21000 0x1000>;
 		#clock-cells = <1>;
+	};
+
+	inputmux: inputmux@26000 {
+		compatible = "nxp,inputmux";
+		reg = <0x26000 0x1000>;
+		#inputmux-cells = <2>;
+		status = "okay";
+	};
+
+	fmeas: fmeas@2f000 {
+		compatible = "nxp,fmeas";
+		reg = <0x2f000 0x1000>;
+		clocks = <&clkctl1 MCUX_FREQME_CLK>, <&clkctl0 MCUX_SYSTEM_CLK>;
+		clock-names = "ipg", "reference";
+		resets = <&rstctl1 NXP_SYSCON_RESET(1, 31)>;
+		inputmux-connections = <&inputmux 0 NXP_FMEAS_RW6XX_C0_FR_HCLK>,
+				       <&inputmux 1 NXP_FMEAS_RW6XX_SFRO>;
+		status = "disabled";
 	};
 
 	rstctl0: reset@0 {

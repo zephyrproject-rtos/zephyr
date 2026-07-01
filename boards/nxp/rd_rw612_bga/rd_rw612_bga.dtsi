@@ -379,3 +379,7 @@ nxp_8080_touch_panel_i2c: &arduino_i2c {
 &standby {
 	min-residency-us = <1690>;
 };
+
+&fmeas {
+	status = "okay";
+};
