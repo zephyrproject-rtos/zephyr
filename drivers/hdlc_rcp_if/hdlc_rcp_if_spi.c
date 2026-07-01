@@ -303,14 +303,31 @@ static void hdlc_rcp_if_spi_isr(const struct device *port, struct gpio_callback 
 
 static void hdlc_iface_init(struct net_if *iface)
 {
-	otExtAddress eui64;
-
 	__ASSERT_NO_MSG(DEVICE_DT_INST_GET(0) == net_if_get_device(iface));
+
+#ifdef CONFIG_HDLC_RCP_IF_SPI_NO_AUTO_START
+	/* DO NOT call ieee802154_init() here:
+	 * It leads to send Spinel commands to the RCP which is not yet booted.
+	 * RCP firmware is loaded later
+	 */
+
+	/* Set a temporary link address — updated after firmware loads */
+	static uint8_t temp_eui64[8] = {
+		0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01
+	};
+	net_if_set_link_addr(iface, temp_eui64, 8, NET_LINK_IEEE802154);
+
+	/* Prevent net_if_post_init() from auto-starting the interface */
+	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	LOG_INF("hdlc_iface_init done — NO_AUTO_START set, waiting for RCP firmware");
+#else
+	otExtAddress eui64;
 
 	ieee802154_init(iface);
 
 	otPlatRadioGetIeeeEui64(openthread_get_default_instance(), eui64.m8);
 	net_if_set_link_addr(iface, eui64.m8, OT_EXT_ADDRESS_SIZE, NET_LINK_IEEE802154);
+#endif /* CONFIG_HDLC_RCP_IF_SPI_NO_AUTO_START */
 }
 
 static int hdlc_register_rx_cb(hdlc_rx_callback_t hdlc_rx_callback, void *param)
@@ -437,11 +454,13 @@ static int hdlc_rcp_if_spi_init(const struct device *dev)
 		return ret;
 	}
 
+#ifndef CONFIG_HDLC_RCP_IF_SPI_NO_AUTO_START
 	ret = gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
 		LOG_ERR("Failed to configure interrupt GPIO (%d)", ret);
 		return ret;
 	}
+#endif /* CONFIG_HDLC_RCP_IF_SPI_NO_AUTO_START */
 
 	gpio_init_callback(&data->int_gpio_cb, hdlc_rcp_if_spi_isr, BIT(cfg->int_gpio.pin));
 
@@ -451,19 +470,53 @@ static int hdlc_rcp_if_spi_init(const struct device *dev)
 		return ret;
 	}
 
+#ifndef CONFIG_HDLC_RCP_IF_SPI_NO_AUTO_START
 	ret = hdlc_rcp_if_spi_reset(dev);
 	if (ret < 0) {
 		LOG_ERR("Failed to reset HDLC SPI device (%d)", ret);
+		return ret;
+	}
+#endif /* CONFIG_HDLC_RCP_IF_SPI_NO_AUTO_START */
+
+	return 0;
+}
+
+#ifdef CONFIG_HDLC_RCP_IF_SPI_NO_AUTO_START
+static int hdlc_start(void)
+{
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct hdlc_rcp_if_spi_config *cfg = dev->config;
+	int ret;
+
+	LOG_INF("Arm SPI INT GPIO");
+
+	ret = gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
+					      GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure interrupt GPIO: %d", ret);
+		return ret;
+	}
+
+	/* clear NET_IF_NO_AUTO_START flag to bring up the interface */
+	struct net_if *iface = net_if_get_first_by_type(
+					&NET_L2_GET_NAME(OPENTHREAD));
+	if (iface) {
+		net_if_flag_clear(iface, NET_IF_NO_AUTO_START);
+		LOG_INF("NET_IF_NO_AUTO_START cleared");
 	}
 
 	return 0;
 }
+#endif /* CONFIG_HDLC_RCP_IF_SPI_NO_AUTO_START */
 
 static const struct hdlc_api spi_hdlc_api = {
 	.iface_api.init = hdlc_iface_init,
 	.register_rx_cb = hdlc_register_rx_cb,
 	.send = hdlc_send,
 	.deinit = hdlc_deinit,
+#ifdef CONFIG_HDLC_RCP_IF_SPI_NO_AUTO_START
+	.start = hdlc_start,
+#endif
 };
 
 #define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(OPENTHREAD_L2)
