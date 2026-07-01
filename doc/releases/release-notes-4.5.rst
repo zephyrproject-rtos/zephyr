@@ -137,6 +137,13 @@ Deprecated APIs and options
     :c:func:`ring_buf_item_get`, :c:func:`ring_buf_item_space_get`) has been deprecated in favor of
     :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`).
 
+* Networking
+
+  * Deprecated LLMNR support (:kconfig:option:`CONFIG_LLMNR_RESOLVER` and
+    :kconfig:option:`CONFIG_LLMNR_RESPONDER`). LLMNR is being phased out; use
+    mDNS (:kconfig:option:`CONFIG_MDNS_RESOLVER` /
+    :kconfig:option:`CONFIG_MDNS_RESPONDER`) instead.
+
 * Networking Link layer
 
   * Deprecated :kconfig:option:`CONFIG_NET_L2_PTP`.
