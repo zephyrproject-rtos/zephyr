@@ -4525,6 +4525,58 @@ static int cmd_wifi_p2p_list_networks(const struct shell *sh, size_t argc, char 
 	k_free(buf);
 	return 0;
 }
+
+static int cmd_wifi_p2p_persistent_remove(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+	int idx = 1;
+	long val;
+	char *endptr;
+
+	context.sh = sh;
+
+	if (argc < 2) {
+		PR_ERROR("Usage: wifi p2p persistent_remove <network_id|-1>\n"
+			 "  <network_id> : remove a single persistent network by ID (>= 0)\n"
+			 "  all          : remove all saved persistent networks\n");
+		return -EINVAL;
+	}
+
+	params.oper = WIFI_P2P_PERSISTENT_REMOVE;
+
+	/* Accept all (remove all) or >= 0 (remove by ID) */
+	if (strcmp(argv[idx], "all") == 0) {
+		val = -1;
+	} else {
+		val = strtol(argv[idx], &endptr, 10);
+		if (*endptr != '\0' || val < 0) {
+			PR_ERROR("Invalid network_id '%s': must be >= 0\n",
+				 argv[idx]);
+			return -EINVAL;
+		}
+	}
+
+	params.persistent_remove.id = (int)val;
+
+	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params))) {
+		if (params.persistent_remove.id == -1) {
+			PR_WARNING("P2P remove all networks request failed\n");
+		} else {
+			PR_WARNING("P2P persistent_remove network %d failed "
+				   "(network may not exist)\n",
+				   params.persistent_remove.id);
+		}
+		return -ENOEXEC;
+	}
+
+	if (params.persistent_remove.id == -1) {
+		PR("All P2P persistent networks removed\n");
+	} else {
+		PR("P2P persistent network %d removed\n", params.persistent_remove.id);
+	}
+	return 0;
+}
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
@@ -5683,6 +5735,16 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      SHELL_HELP("List stored persistent P2P networks",
 				 "[-i, --iface=<interface index>]"),
 		      cmd_wifi_p2p_list_networks, 1, 2),
+	SHELL_CMD_ARG(persistent_remove, NULL,
+		      SHELL_HELP("Remove P2P persistent network(s)",
+				 "[-i, --iface=<interface index>]\n"
+				 "<network_id|all>\n"
+				 "  <network_id> : Remove a single persistent network by ID (>= 0).\n"
+				 "  all           : Remove all saved persistent networks.\n"
+				 "Examples:\n"
+				 "  wifi p2p persistent_remove 0\n"
+				 "  wifi p2p persistent_remove all"),
+		      cmd_wifi_p2p_persistent_remove, 2, 3),
 	SHELL_SUBCMD_SET_END
 );
 
