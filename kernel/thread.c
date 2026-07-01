@@ -577,7 +577,220 @@ static void setup_shadow_stack(struct k_thread *new_thread,
 		k_panic();
 	}
 }
+#else
+/* No-op stub used when hardware shadow stacks are not configured. */
+static inline void setup_shadow_stack(struct k_thread *new_thread,
+				      k_thread_stack_t *stack)
+{
+	ARG_UNUSED(new_thread);
+	ARG_UNUSED(stack);
+}
 #endif
+
+/*
+ * The following init_thread_*()/assert_*() helpers each own one optional
+ * kernel feature. Building z_setup_new_thread() out of these calls keeps its
+ * body a readable, linear narrative instead of a wall of #ifdefs. Every helper
+ * is static inline and collapses to nothing when its feature is disabled, so
+ * this is purely a readability change with no runtime cost.
+ */
+
+/* Reset per-thread cleanup bookkeeping before a k_thread object is reused. */
+static inline void thread_abort_cleanup_check_reuse(struct k_thread *thread)
+{
+#ifdef CONFIG_THREAD_ABORT_NEED_CLEANUP
+	k_thread_abort_cleanup_check_reuse(thread);
+#else
+	ARG_UNUSED(thread);
+#endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
+}
+
+/* Register the thread with the object-core framework and its usage stats. */
+static inline void init_thread_obj_core(struct k_thread *thread)
+{
+#ifdef CONFIG_OBJ_CORE_THREAD
+	k_obj_core_init_and_link(K_OBJ_CORE(thread), &obj_type_thread);
+#ifdef CONFIG_OBJ_CORE_STATS_THREAD
+	k_obj_core_stats_register(K_OBJ_CORE(thread), &thread->base.usage,
+				  sizeof(thread->base.usage));
+#endif /* CONFIG_OBJ_CORE_STATS_THREAD */
+#else
+	ARG_UNUSED(thread);
+#endif /* CONFIG_OBJ_CORE_THREAD */
+}
+
+/*
+ * Initialize userspace bookkeeping: register the thread and stack kernel
+ * objects, record stack ownership, and grant the thread access to itself.
+ */
+static inline void init_thread_userspace(struct k_thread *thread,
+					 k_thread_stack_t *stack,
+					 uint32_t options)
+{
+#ifdef CONFIG_USERSPACE
+	__ASSERT((options & K_USER) == 0U || z_stack_is_user_capable(stack),
+		 "user thread %p with kernel-only stack %p", thread, stack);
+	k_object_init(thread);
+	k_object_init(stack);
+	thread->stack_obj = stack;
+	thread->syscall_frame = NULL;
+
+	/* Any given thread has access to itself */
+	k_object_access_grant(thread, thread);
+#else
+	ARG_UNUSED(thread);
+	ARG_UNUSED(stack);
+	ARG_UNUSED(options);
+#endif /* CONFIG_USERSPACE */
+}
+
+/* Assert the thread object is cache-coherent while its stack stays cached. */
+static inline void assert_thread_coherence(struct k_thread *thread,
+					   k_thread_stack_t *stack)
+{
+#ifdef CONFIG_KERNEL_COHERENCE
+	/* Check that the thread object is safe, but that the stack is
+	 * still cached!
+	 */
+	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(thread));
+
+	/* When dynamic thread stack is available, the stack may come from
+	 * uncached area.
+	 */
+#ifndef CONFIG_DYNAMIC_THREAD
+	__ASSERT_NO_MSG(!sys_cache_is_mem_coherent(stack));
+#endif /* CONFIG_DYNAMIC_THREAD */
+#endif /* CONFIG_KERNEL_COHERENCE */
+	ARG_UNUSED(thread);
+	ARG_UNUSED(stack);
+}
+
+/* Assert the arch layer populated switch_handle on USE_SWITCH builds. */
+static inline void assert_switch_handle(struct k_thread *thread)
+{
+#ifdef CONFIG_USE_SWITCH
+	/* switch_handle must be non-null except when inside z_swap()
+	 * for synchronization reasons.  Historically some notional
+	 * USE_SWITCH architectures have actually ignored the field
+	 */
+	__ASSERT(thread->switch_handle != NULL,
+		 "arch layer failed to initialize switch_handle");
+#endif /* CONFIG_USE_SWITCH */
+	ARG_UNUSED(thread);
+}
+
+/* Clear the opaque, kernel-managed per-thread custom data pointer. */
+static inline void init_thread_custom_data(struct k_thread *thread)
+{
+#ifdef CONFIG_THREAD_CUSTOM_DATA
+	/* Initialize custom data field (value is opaque to kernel) */
+	thread->custom_data = NULL;
+#else
+	ARG_UNUSED(thread);
+#endif /* CONFIG_THREAD_CUSTOM_DATA */
+}
+
+/*
+ * Record the entry point and parameters, then link the thread into the
+ * global thread-monitor list under the monitor spinlock.
+ */
+static inline void add_thread_to_monitor(struct k_thread *thread,
+					 k_thread_entry_t entry,
+					 void *p1, void *p2, void *p3)
+{
+#ifdef CONFIG_THREAD_MONITOR
+	thread->entry.pEntry = entry;
+	thread->entry.parameter1 = p1;
+	thread->entry.parameter2 = p2;
+	thread->entry.parameter3 = p3;
+
+	k_spinlock_key_t key = k_spin_lock(&z_thread_monitor_lock);
+
+	thread->next_thread = _kernel.threads;
+	_kernel.threads = thread;
+	k_spin_unlock(&z_thread_monitor_lock, key);
+#else
+	ARG_UNUSED(thread);
+	ARG_UNUSED(entry);
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+#endif /* CONFIG_THREAD_MONITOR */
+}
+
+/* Set the thread's name from the caller-supplied string (may be NULL). */
+static inline void init_thread_name(struct k_thread *thread, const char *name)
+{
+#ifdef CONFIG_THREAD_NAME
+	set_thread_name(thread, name);
+#else
+	ARG_UNUSED(thread);
+	ARG_UNUSED(name);
+#endif /* CONFIG_THREAD_NAME */
+}
+
+/* Set the thread's initial SMP CPU affinity mask. */
+static inline void init_thread_cpu_mask(struct k_thread *thread)
+{
+#ifdef CONFIG_SCHED_CPU_MASK
+	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
+		thread->base.cpu_mask = 1; /* must specify only one cpu */
+	} else {
+		thread->base.cpu_mask = -1; /* allow all cpus */
+	}
+#else
+	ARG_UNUSED(thread);
+#endif /* CONFIG_SCHED_CPU_MASK */
+}
+
+/* Attach the thread to its memory domain and inherit caller permissions
+ * when K_INHERIT_PERMS is requested.
+ */
+static inline void init_thread_userspace_perms(struct k_thread *thread,
+					       uint32_t options)
+{
+#ifdef CONFIG_USERSPACE
+	z_mem_domain_init_thread(thread);
+
+	if ((options & K_INHERIT_PERMS) != 0U) {
+		k_thread_perms_inherit(_current, thread);
+	}
+#else
+	ARG_UNUSED(thread);
+	ARG_UNUSED(options);
+#endif /* CONFIG_USERSPACE */
+}
+
+/* Clear the EDF scheduling deadline. */
+static inline void init_thread_deadline(struct k_thread *thread)
+{
+#ifdef CONFIG_SCHED_DEADLINE
+	thread->base.prio_deadline = 0;
+#else
+	ARG_UNUSED(thread);
+#endif /* CONFIG_SCHED_DEADLINE */
+}
+
+/* Initialize the wait queue used to synchronize SMP thread halt/abort. */
+static inline void init_thread_halt_queue(struct k_thread *thread)
+{
+#ifdef CONFIG_SMP
+	z_waitq_init(&thread->halt_queue);
+#else
+	ARG_UNUSED(thread);
+#endif /* CONFIG_SMP */
+}
+
+/* Initialize runtime CPU-usage tracking for the thread. */
+static inline void init_thread_usage(struct k_thread *thread)
+{
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	thread->base.usage = (struct k_cycle_stats) {};
+	thread->base.usage.track_usage = CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
+#else
+	ARG_UNUSED(thread);
+#endif /* CONFIG_SCHED_THREAD_USAGE */
+}
 
 /*
  * The provided stack_size value is presumed to be either the result of
@@ -594,123 +807,42 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 
 	Z_ASSERT_VALID_PRIO(prio, entry);
 
-#ifdef CONFIG_THREAD_ABORT_NEED_CLEANUP
-	k_thread_abort_cleanup_check_reuse(new_thread);
-#endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
+	thread_abort_cleanup_check_reuse(new_thread);
+	init_thread_obj_core(new_thread);
+	init_thread_userspace(new_thread, stack, options);
 
-#ifdef CONFIG_OBJ_CORE_THREAD
-	k_obj_core_init_and_link(K_OBJ_CORE(new_thread), &obj_type_thread);
-#ifdef CONFIG_OBJ_CORE_STATS_THREAD
-	k_obj_core_stats_register(K_OBJ_CORE(new_thread),
-				  &new_thread->base.usage,
-				  sizeof(new_thread->base.usage));
-#endif /* CONFIG_OBJ_CORE_STATS_THREAD */
-#endif /* CONFIG_OBJ_CORE_THREAD */
-
-#ifdef CONFIG_USERSPACE
-	__ASSERT((options & K_USER) == 0U || z_stack_is_user_capable(stack),
-		 "user thread %p with kernel-only stack %p",
-		 new_thread, stack);
-	k_object_init(new_thread);
-	k_object_init(stack);
-	new_thread->stack_obj = stack;
-	new_thread->syscall_frame = NULL;
-
-	/* Any given thread has access to itself */
-	k_object_access_grant(new_thread, new_thread);
-#endif /* CONFIG_USERSPACE */
 	z_waitq_init(&new_thread->join_queue);
 
 	/* Initialize various struct k_thread members */
 	z_init_thread_base(&new_thread->base, prio, _THREAD_SLEEPING, options);
 	stack_ptr = setup_thread_stack(new_thread, stack, stack_size);
 
-#ifdef CONFIG_HW_SHADOW_STACK
 	setup_shadow_stack(new_thread, stack);
-#endif
-
-#ifdef CONFIG_KERNEL_COHERENCE
-	/* Check that the thread object is safe, but that the stack is
-	 * still cached!
-	 */
-	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(new_thread));
-
-	/* When dynamic thread stack is available, the stack may come from
-	 * uncached area.
-	 */
-#ifndef CONFIG_DYNAMIC_THREAD
-	__ASSERT_NO_MSG(!sys_cache_is_mem_coherent(stack));
-#endif  /* CONFIG_DYNAMIC_THREAD */
-
-#endif /* CONFIG_KERNEL_COHERENCE */
+	assert_thread_coherence(new_thread, stack);
 
 	arch_new_thread(new_thread, stack, stack_ptr, entry, p1, p2, p3);
 
 	/* static threads overwrite it afterwards with real value */
 	new_thread->init_data = NULL;
 
-#ifdef CONFIG_USE_SWITCH
-	/* switch_handle must be non-null except when inside z_swap()
-	 * for synchronization reasons.  Historically some notional
-	 * USE_SWITCH architectures have actually ignored the field
-	 */
-	__ASSERT(new_thread->switch_handle != NULL,
-		 "arch layer failed to initialize switch_handle");
-#endif /* CONFIG_USE_SWITCH */
-#ifdef CONFIG_THREAD_CUSTOM_DATA
-	/* Initialize custom data field (value is opaque to kernel) */
-	new_thread->custom_data = NULL;
-#endif /* CONFIG_THREAD_CUSTOM_DATA */
-#ifdef CONFIG_THREAD_MONITOR
-	new_thread->entry.pEntry = entry;
-	new_thread->entry.parameter1 = p1;
-	new_thread->entry.parameter2 = p2;
-	new_thread->entry.parameter3 = p3;
+	assert_switch_handle(new_thread);
+	init_thread_custom_data(new_thread);
+	add_thread_to_monitor(new_thread, entry, p1, p2, p3);
+	init_thread_name(new_thread, name);
+	init_thread_cpu_mask(new_thread);
 
-	k_spinlock_key_t key = k_spin_lock(&z_thread_monitor_lock);
-
-	new_thread->next_thread = _kernel.threads;
-	_kernel.threads = new_thread;
-	k_spin_unlock(&z_thread_monitor_lock, key);
-#endif /* CONFIG_THREAD_MONITOR */
-#ifdef CONFIG_THREAD_NAME
-	set_thread_name(new_thread, name);
-#endif /* CONFIG_THREAD_NAME */
-#ifdef CONFIG_SCHED_CPU_MASK
-	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
-		new_thread->base.cpu_mask = 1; /* must specify only one cpu */
-	} else {
-		new_thread->base.cpu_mask = -1; /* allow all cpus */
-	}
-#endif /* CONFIG_SCHED_CPU_MASK */
-#ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
-	/* _current may be null if the dummy thread is not used */
-	if (!_current) {
+	/* _current may be NULL if the dummy thread is not used */
+	if (IS_ENABLED(CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN) &&
+	    (_current == NULL)) {
 		new_thread->resource_pool = NULL;
 		return stack_ptr;
 	}
-#endif /* CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN */
-#ifdef CONFIG_USERSPACE
-	z_mem_domain_init_thread(new_thread);
 
-	if ((options & K_INHERIT_PERMS) != 0U) {
-		k_thread_perms_inherit(_current, new_thread);
-	}
-#endif /* CONFIG_USERSPACE */
-#ifdef CONFIG_SCHED_DEADLINE
-	new_thread->base.prio_deadline = 0;
-#endif /* CONFIG_SCHED_DEADLINE */
+	init_thread_userspace_perms(new_thread, options);
+	init_thread_deadline(new_thread);
 	new_thread->resource_pool = _current->resource_pool;
-
-#ifdef CONFIG_SMP
-	z_waitq_init(&new_thread->halt_queue);
-#endif /* CONFIG_SMP */
-
-#ifdef CONFIG_SCHED_THREAD_USAGE
-	new_thread->base.usage = (struct k_cycle_stats) {};
-	new_thread->base.usage.track_usage =
-		CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
-#endif /* CONFIG_SCHED_THREAD_USAGE */
+	init_thread_halt_queue(new_thread);
+	init_thread_usage(new_thread);
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, create, new_thread);
 
