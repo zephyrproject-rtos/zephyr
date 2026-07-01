@@ -450,111 +450,9 @@
 "./scripts/tests/twister/test_twister.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
 ]
-"./scripts/tests/twister_blackbox/conftest.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/tests/twister_blackbox/test_addon.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/tests/twister_blackbox/test_config.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/tests/twister_blackbox/test_coverage.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
 "./scripts/tests/twister_blackbox/test_data/tests/pytest/pytest/test_sample.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM112",   # https://docs.astral.sh/ruff/rules/uncapitalized-environment-variables
-]
-"./scripts/tests/twister_blackbox/test_device.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
-"./scripts/tests/twister_blackbox/test_disable.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/tests/twister_blackbox/test_error.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/tests/twister_blackbox/test_filter.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/tests/twister_blackbox/test_footprint.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/tests/twister_blackbox/test_hardwaremap.py" = [
-    "B007",     # https://docs.astral.sh/ruff/rules/unused-loop-control-variable
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-]
-"./scripts/tests/twister_blackbox/test_outfile.py" = [
-    "B011",     # https://docs.astral.sh/ruff/rules/assert-false
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/tests/twister_blackbox/test_output.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/tests/twister_blackbox/test_platform.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/tests/twister_blackbox/test_printouts.py" = [
-    "B011",     # https://docs.astral.sh/ruff/rules/assert-false
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/tests/twister_blackbox/test_quarantine.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/tests/twister_blackbox/test_report.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "E701",     # https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon
-    "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
-"./scripts/tests/twister_blackbox/test_runner.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/tests/twister_blackbox/test_shuffle.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/tests/twister_blackbox/test_testlist.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/tests/twister_blackbox/test_testplan.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/tests/twister_blackbox/test_tooling.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
 "./scripts/tracing/parse_ctf.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
@@ -935,29 +833,8 @@ exclude = [
     "./scripts/tests/twister/test_testplan.py",
     "./scripts/tests/twister/test_testsuite.py",
     "./scripts/tests/twister/test_twister.py",
-    "./scripts/tests/twister_blackbox/conftest.py",
-    "./scripts/tests/twister_blackbox/test_addon.py",
-    "./scripts/tests/twister_blackbox/test_config.py",
-    "./scripts/tests/twister_blackbox/test_coverage.py",
     "./scripts/tests/twister_blackbox/test_data/tests/pytest/pytest/conftest.py",
     "./scripts/tests/twister_blackbox/test_data/tests/pytest/pytest/test_sample.py",
-    "./scripts/tests/twister_blackbox/test_device.py",
-    "./scripts/tests/twister_blackbox/test_disable.py",
-    "./scripts/tests/twister_blackbox/test_error.py",
-    "./scripts/tests/twister_blackbox/test_filter.py",
-    "./scripts/tests/twister_blackbox/test_footprint.py",
-    "./scripts/tests/twister_blackbox/test_hardwaremap.py",
-    "./scripts/tests/twister_blackbox/test_outfile.py",
-    "./scripts/tests/twister_blackbox/test_output.py",
-    "./scripts/tests/twister_blackbox/test_platform.py",
-    "./scripts/tests/twister_blackbox/test_printouts.py",
-    "./scripts/tests/twister_blackbox/test_quarantine.py",
-    "./scripts/tests/twister_blackbox/test_report.py",
-    "./scripts/tests/twister_blackbox/test_runner.py",
-    "./scripts/tests/twister_blackbox/test_shuffle.py",
-    "./scripts/tests/twister_blackbox/test_testlist.py",
-    "./scripts/tests/twister_blackbox/test_testplan.py",
-    "./scripts/tests/twister_blackbox/test_tooling.py",
     "./scripts/tracing/parse_ctf.py",
     "./scripts/tracing/trace_capture_uart.py",
     "./scripts/tracing/trace_capture_usb.py",
