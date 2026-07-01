@@ -28,7 +28,7 @@ typedef struct {
 	uint32_t round_threshold_ms;
 } wdt_ignore_bits_data_t;
 
-#if defined(CY_IP_MXS40SRSS) || defined(CY_IP_MXS40SSRSS) || defined(CY_IP_MXS22SRSS)
+#if DT_INST_PROP(0, infineon_wdt_lock)
 #define ifx_wdt_lock()   Cy_WDT_Lock()
 #define ifx_wdt_unlock() Cy_WDT_Unlock()
 #else

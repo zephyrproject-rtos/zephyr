@@ -359,6 +359,7 @@
 			reg = <0x40260180 0xc>;
 			interrupts = <22 6>;
 			status = "disabled";
+			infineon,wdt-lock;
 		};
 
 		counter0_0: counter@40380100 {
