@@ -454,10 +454,12 @@ h11==0.16.0 \
     # via
     #   uvicorn
     #   wsproto
-html2pdf4doc==0.0.33 \
-    --hash=sha256:5eee7f3f1fec69c46dae376f9a57c2c162da2ac37a38be60098be8e883fec759 \
-    --hash=sha256:f2c540cc367c7b441928fc686a128493a552dabf0fe8c3024ac2e247e3bba833
-    # via strictdoc
+html2pdf4doc==0.0.22 \
+    --hash=sha256:43131fe7874bcf18e1f20d22b6a99661087fd89843b029f96217341ad737dde8 \
+    --hash=sha256:fbddab693b15a3cf48779dab0706e2e8acb423b22faa84ffdb07ed585d153ddb
+    # via
+    #   -r requirements.in
+    #   strictdoc
 html5lib==1.1 \
     --hash=sha256:0d78f8fde1c230e99fe37986a60526d7049ed4bf8a9fadbad5f00e22e58e041d \
     --hash=sha256:b2e5b40261e20f354d198eae92afc10d750afb487ed5e50f9c4eaf07c184146f
