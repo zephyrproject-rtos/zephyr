@@ -264,11 +264,37 @@ uint8_t bt_l2cap_br_get_remote_fixed_chan(struct bt_conn *conn)
 	return br_chan_sig->info_fixed_chan;
 }
 
-static struct bt_l2cap_br_chan*
-l2cap_br_chan_alloc_cid(struct bt_conn *conn, struct bt_l2cap_chan *chan)
+static uint16_t br_cid_next[CONFIG_BT_MAX_CONN];
+
+static inline void bt_l2cap_br_cid_init(struct bt_conn *conn)
+{
+	size_t index;
+
+	index = (size_t)bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(br_cid_next), "Index is out of bounds");
+
+	br_cid_next[index] = L2CAP_BR_CID_DYN_START;
+}
+
+static inline uint16_t bt_l2cap_br_cid_increase(uint16_t cid)
+{
+	uint32_t next = cid;
+
+	next = next + 1;
+
+	if (next > L2CAP_BR_CID_DYN_END) {
+		next = L2CAP_BR_CID_DYN_START;
+	}
+	return (uint16_t)next;
+}
+
+static struct bt_l2cap_br_chan *l2cap_br_chan_alloc_cid(struct bt_conn *conn,
+							struct bt_l2cap_chan *chan)
 {
 	struct bt_l2cap_br_chan *br_chan = BR_CHAN(chan);
-	uint16_t cid;
+	uint16_t start;
+	uint16_t sentinel;
+	size_t index;
 
 	/*
 	 * No action needed if there's already a CID allocated, e.g. in
@@ -278,16 +304,29 @@ l2cap_br_chan_alloc_cid(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 		return br_chan;
 	}
 
-	/*
-	 * L2CAP_BR_CID_DYN_END is 0xffff so we don't check against it since
-	 * cid is uint16_t, just check against uint16_t overflow
+	index = (size_t)bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(br_cid_next), "Index is out of bounds");
+
+	start = br_cid_next[index];
+	sentinel = br_cid_next[index];
+
+	/* L2CAP_BR_CID_DYN_END is 0xffff so we don't check against it since
+	 * cid is uint16_t, just check against the start of the range.
 	 */
-	for (cid = L2CAP_BR_CID_DYN_START; cid; cid++) {
-		if (!bt_l2cap_br_lookup_rx_cid(conn, cid)) {
-			br_chan->rx.cid = cid;
+	if (start < L2CAP_BR_CID_DYN_START) {
+		start = L2CAP_BR_CID_DYN_START;
+		sentinel = L2CAP_BR_CID_DYN_START;
+	}
+
+	do {
+		if (bt_l2cap_br_lookup_rx_cid(conn, start) == NULL) {
+			br_chan->rx.cid = start;
+			br_cid_next[index] = bt_l2cap_br_cid_increase(start);
 			return br_chan;
 		}
-	}
+
+		start = bt_l2cap_br_cid_increase(start);
+	} while (start != sentinel);
 
 	return NULL;
 }
@@ -1982,6 +2021,8 @@ static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 void bt_l2cap_br_connected(struct bt_conn *conn)
 {
 	struct bt_l2cap_chan *chan;
+
+	bt_l2cap_br_cid_init(conn);
 
 	STRUCT_SECTION_FOREACH(bt_l2cap_br_fixed_chan, fchan) {
 		struct bt_l2cap_br_chan *br_chan;
