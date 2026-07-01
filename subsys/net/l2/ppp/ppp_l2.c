@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/iterable_sections.h>
 
-#include "net_private.h"
+#include <net_private.h>
 
 #include "ppp_stats.h"
 #include "ppp_internal.h"

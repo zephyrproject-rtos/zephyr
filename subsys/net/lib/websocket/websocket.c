@@ -33,8 +33,8 @@ LOG_MODULE_REGISTER(net_websocket, CONFIG_NET_WEBSOCKET_LOG_LEVEL);
 
 #include <psa/crypto.h>
 
-#include "net_private.h"
-#include "sockets_internal.h"
+#include <net_private.h>
+#include <sockets_internal.h>
 #include "websocket_internal.h"
 
 /* If you want to see the data that is being sent or received,

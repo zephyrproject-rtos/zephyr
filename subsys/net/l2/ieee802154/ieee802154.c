@@ -53,7 +53,7 @@ NET_BUF_POOL_DEFINE(tx_frame_buf_pool, 1, IEEE802154_MTU, 8, NULL);
 
 #ifdef CONFIG_NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET
 
-#include "net_private.h"
+#include <net_private.h>
 
 static inline void pkt_hexdump(const char *title, struct net_pkt *pkt, bool in)
 {

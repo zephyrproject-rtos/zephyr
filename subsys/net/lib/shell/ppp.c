@@ -13,7 +13,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include "net_shell_private.h"
 
 #if defined(CONFIG_NET_L2_PPP)
-#include "ppp/ppp_internal.h"
+#include <ppp/ppp_internal.h>
 #endif
 
 static int cmd_net_ppp_ping(const struct shell *sh, size_t argc, char *argv[])

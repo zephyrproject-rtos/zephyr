@@ -13,8 +13,8 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
 #include <zephyr/net/ppp.h>
 
-#include "net_private.h"
-#include "ipv6.h"
+#include <net_private.h>
+#include <ipv6.h>
 
 #include "ppp_internal.h"
 

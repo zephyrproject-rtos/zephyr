@@ -15,7 +15,7 @@ LOG_MODULE_DECLARE(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <openthread/ip6.h>
 #include <openthread/thread.h>
 
-#include "net_private.h"
+#include <net_private.h>
 #include "openthread_utils.h"
 
 #define ALOC16_MASK 0xfc

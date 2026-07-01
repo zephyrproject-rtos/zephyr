@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/psa/key_ids.h>
-#include "psa/crypto.h"
+#include <psa/crypto.h>
 
 #include "wifi_credentials_internal.h"
 

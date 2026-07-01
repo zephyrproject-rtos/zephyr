@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(net_http_client, CONFIG_NET_HTTP_LOG_LEVEL);
 #include <zephyr/net/http/client.h>
 #include <zephyr/net/http/status.h>
 
-#include "net_private.h"
+#include <net_private.h>
 
 #define HTTP_CONTENT_LEN_SIZE 11
 #define MAX_SEND_BUF_LEN CONFIG_HTTP_CLIENT_SEND_BUF_SIZE
