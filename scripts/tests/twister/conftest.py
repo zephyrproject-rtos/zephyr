@@ -20,6 +20,23 @@ pytest_plugins = ["pytester"]
 logging.getLogger("twister").setLevel(logging.DEBUG)  # requires for testing twister
 
 
+@pytest.fixture(autouse=True)
+def clear_twister_caches():
+    """Reset process-level caches so each unit test runs in isolation.
+
+    environment.py and generate_platforms() cache expensive git/cmake/platform
+    lookups to speed up repeated in-process twister_main() calls, but that
+    shared state would otherwise leak between unit tests.
+    """
+    import twisterlib.environment
+    import twisterlib.platform
+
+    twisterlib.environment._VERSION_CACHE.clear()
+    twisterlib.environment._TOOLCHAIN_CACHE.clear()
+    twisterlib.platform._PLATFORMS_CACHE.clear()
+    yield
+
+
 @pytest.fixture(name='test_data')
 def _test_data():
     """ Pytest fixture to load the test data directory"""

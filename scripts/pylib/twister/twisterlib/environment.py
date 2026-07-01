@@ -29,6 +29,13 @@ from twisterlib.log_helper import log_command
 
 logger = logging.getLogger('twister')
 
+# Cache the results of the git/cmake queries below so that repeated
+# twister_main() calls inside a single process (as the blackbox tests do) do not
+# re-run the same slow subprocesses. Both are keyed on nothing but ZEPHYR_BASE,
+# which is fixed for the lifetime of the process.
+_VERSION_CACHE: dict = {}
+_TOOLCHAIN_CACHE: dict = {}
+
 
 def _get_installed_packages() -> Generator[str, None, None]:
     """Return list of installed python packages."""
@@ -1129,6 +1136,13 @@ class TwisterEnv:
         self.run_date = datetime.now(UTC).isoformat(timespec='seconds')
 
     def check_zephyr_version(self):
+        if _VERSION_CACHE:
+            self.version = _VERSION_CACHE['version']
+            self.commit_date = _VERSION_CACHE['commit_date']
+            if self.version != "Unknown":
+                logger.info(f"Zephyr version: {self.version}")
+            return
+
         try:
             subproc = subprocess.run(["git", "describe", "--abbrev=12", "--always"],
                                      stdout=subprocess.PIPE,
@@ -1154,6 +1168,9 @@ class TwisterEnv:
                 self.commit_date = subproc.stdout.strip()
         except OSError:
             logger.exception("Failure while reading head commit date.")
+
+        # Populate in one step so the cache is never partially filled.
+        _VERSION_CACHE.update(version=self.version, commit_date=self.commit_date)
 
     @staticmethod
     def run_cmake_script(args: list[str]) -> dict[str, Any]:
@@ -1200,6 +1217,12 @@ class TwisterEnv:
         return results
 
     def get_toolchain(self):
+        if _TOOLCHAIN_CACHE:
+            self.toolchain = _TOOLCHAIN_CACHE['toolchain']
+            self.compiler = _TOOLCHAIN_CACHE['compiler']
+            logger.info(f"Using '{self.toolchain}' toolchain variant.")
+            return
+
         toolchain_script = Path(ZEPHYR_BASE) / Path('cmake/verify-toolchain.cmake')
         result = self.run_cmake_script([toolchain_script, "FORMAT=json"])
 
@@ -1213,3 +1236,6 @@ class TwisterEnv:
             # Only add "/..." if TOOLCHAIN_VARIANT_COMPILER is not empty
             self.toolchain += f"/{self.compiler}"
         logger.info(f"Using '{self.toolchain}' toolchain variant.")
+
+        # Populate in one step so the cache is never partially filled.
+        _TOOLCHAIN_CACHE.update(toolchain=self.toolchain, compiler=self.compiler)
