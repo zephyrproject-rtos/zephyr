@@ -19,7 +19,14 @@ static struct k_work_delayable interrupting_work;
 static volatile bool work_done;
 static char dummy_string[0x1000];
 static char dummy_digest_correct[HASH_LEN];
-static const uint32_t delay_ms = 1;
+/* Delay before the interrupting work preempts the main thread while it is
+ * executing a secure service call. It must be shorter than the duration of the
+ * secure call, otherwise the preemption lands after the call has already
+ * returned to non-secure state (which happens with fast, hardware-accelerated
+ * secure services such as CRACEN crypto on nRF54L). One tick reliably lands the
+ * preemption early inside the secure call, regardless of how fast it executes.
+ */
+static const uint32_t delay_us = 1;
 static volatile const struct k_thread *main_thread;
 
 static void do_hash(char *hash)
@@ -77,7 +84,7 @@ ZTEST(thread_swap_tz, test_thread_swap_tz)
 {
 	int err;
 	char dummy_digest[HASH_LEN];
-	k_timeout_t delay = K_MSEC(delay_ms);
+	k_timeout_t delay = K_USEC(delay_us);
 	k_tid_t curr;
 	psa_status_t status;
 
