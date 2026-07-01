@@ -188,8 +188,13 @@ class CoverageTool:
                         os.path.join(outdir, "coverage", "coverage.sonarqube.xml")
                     )
                 }
+                # Per-instance reports are generated one per test instance and
+                # would flood the console, so log them at debug level and keep
+                # only the aggregated report at info level.
+                per_instance_report = self.coverage_capture and self.coverage_per_instance
+                log = logger.debug if per_instance_report else logger.info
                 for r in self.output_formats.split(','):
-                    logger.info(report_log[r])
+                    log(report_log[r])
             else:
                 coverage_completed = False
         gcov_process_duration = time.time() - gcov_process_start
