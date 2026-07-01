@@ -5,7 +5,7 @@
 #include "skeleton.dtsi"
 
 / {
-	model = "Qemu OpenRISC 1000";
+	model = "QEMU OpenRISC 1000 virt";
 	compatible = "opencores,or1ksim";
 	interrupt-parent = <&pic>;
 
