@@ -1,0 +1,36 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * "w25q512nw" board revision: the RT700 EVK reworked to populate the on-board
+ * W25Q512NWEIQ quad SPI NOR on XSPI0 instead of the default octal
+ * MX25UM51345G. The chip is also 64 MB, so the size, partition map and
+ * chosen nodes are unchanged.
+ */
+
+#include <nxp/nxp_imx/rt/MIMXRT798SGFOB-pinctrl.h>
+
+&flash_controller0 {
+	/* Select the quad W25Q512NW device configuration in the XSPI NOR driver. */
+	device-name = "w25q512nw";
+	/*
+	 * W25Q512NW has no DQS pin. Sample read data with the controller-generated
+	 * strobe looped back through the DQS pad (LoopbackFromDqsPad = 2) — this is
+	 * the configuration the boot ROM/FCB uses, so the AHB/XIP read keeps working
+	 * when the driver re-applies the device config during init.
+	 */
+	sample-clk-source = <2>;
+};
+
+&pinmux_xspi0 {
+	group0 {
+		pinmux = <XSPI0_SCK_A_N_PIO6_0>,
+			 <XSPI0_SCK_A_PIO6_1>,
+			 <XSPI0_PCS_A_0_PIO6_2>,
+			 <XSPI0_DATA0_PIO6_3>,
+			 <XSPI0_DATA1_PIO6_4>,
+			 <XSPI0_DATA2_PIO6_5>,
+			 <XSPI0_DATA3_PIO6_6>;
+	};
+};

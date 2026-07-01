@@ -149,10 +149,18 @@ void board_early_init_hook(void)
 	/* Enable clock for Hifi4 access RAM arbiter1 (for SRAM start from 0x2058000000) */
 	CLOCK_EnableClock(kCLOCK_Hifi4AccessRamArbiter1);
 
-#if CONFIG_FLASH_MCUX_XSPI_XIP
+	/*
+	 * xspi_setup_clock() raises XSPI0 to the octal flash's high root clock and,
+	 * because the clock changes, re-inits the controller via flash_init(), which
+	 * busy-waits on the DDR DLL slave-lock (DLLSR.SLVA_LOCK). The W25Q512NW
+	 * revision is a no-DQS quad-SDR part the boot ROM/FCB already brought up at
+	 * its own (lower) clock: it needs no bump and never satisfies that DDR lock,
+	 * so running this would hang before the console. Keep the ROM's XSPI0 config.
+	 */
+#if CONFIG_FLASH_MCUX_XSPI_XIP && !defined(CONFIG_BOARD_REVISION_W25Q512NW)
 	/* Call function xspi_setup_clock() to set user configured clock for XSPI. */
 	xspi_setup_clock(XSPI0, 3U, 1U); /* Main PLL PDF1 DIV1. */
-#endif                                      /* CONFIG_FLASH_MCUX_XSPI_XIP */
+#endif /* CONFIG_FLASH_MCUX_XSPI_XIP && !CONFIG_BOARD_REVISION_W25Q512NW */
 
 #elif CONFIG_SOC_MIMXRT798S_CM33_CPU1
 	/* Power up OSC in case it's not enabled. */
