@@ -6,7 +6,6 @@
 
 #include <zephyr/device.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/iterable_sections.h>
 
 #include <zephyr/logging/log.h>
