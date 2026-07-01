@@ -1,0 +1,17 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Generic NXP M.2 IEEE 802.15.4 SPI RCP interface overlay.
+ * Supports IW612 (Murata 2EL) and IW610 (Murata 2LL) M.2 modules.
+ *
+ * Board-specific pinmux and GPIO assignments are in boards/<board>.overlay.
+ * The board overlay must define &lpspi4 with cs-gpios and pinctrl.
+ */
+
+/ {
+	chosen {
+		zephyr,ieee802154 = &hdlc_rcp_spi;
+		zephyr,hdlc-rcp-if = &hdlc_rcp_spi;
+	};
+};
