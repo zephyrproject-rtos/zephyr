@@ -545,7 +545,7 @@ static int usb_hid_init(fido2_transport_recv_cb_t cb, fido2_transport_cancel_cb_
 
 	k_work_queue_start(&hid_rx_work_q, hid_rx_work_q_stack,
 			   K_THREAD_STACK_SIZEOF(hid_rx_work_q_stack), K_PRIO_COOP(4), NULL);
-	k_thread_name_set(&hid_rx_work_q.thread, "fido2_hid_rx");
+	k_thread_name_set(hid_rx_work_q.thread_id, "fido2_hid_rx");
 
 	if (!device_is_ready(ctx.hid_dev)) {
 		LOG_ERR("HID device not ready");
