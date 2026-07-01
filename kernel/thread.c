@@ -388,48 +388,74 @@ static size_t random_offset(size_t stack_size)
 #endif /* CONFIG_STACK_GROWS_UP */
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 
-static char *setup_thread_stack(struct k_thread *new_thread,
-				k_thread_stack_t *stack, size_t stack_size)
+/*
+ * Geometry of a thread's stack object, computed once and threaded through the
+ * setup_thread_stack() helpers below.
+ */
+struct stack_geometry {
+	size_t obj_size;	/* size of the whole stack object */
+	char *buf_start;	/* start of the usable stack buffer */
+	size_t buf_size;	/* size of the usable stack buffer */
+};
+
+/*
+ * Derive the stack object geometry from the caller-supplied stack and size.
+ * User-capable stacks and kernel-only stacks reserve different amounts.
+ */
+static struct stack_geometry compute_stack_geometry(k_thread_stack_t *stack,
+						    size_t stack_size)
 {
-	size_t stack_obj_size, stack_buf_size;
-	char *stack_ptr, *stack_buf_start;
-	size_t delta = 0;
+	struct stack_geometry geo;
 
 #ifdef CONFIG_USERSPACE
 	if (z_stack_is_user_capable(stack)) {
-		stack_obj_size = K_THREAD_STACK_LEN(stack_size);
-		stack_buf_start = K_THREAD_STACK_BUFFER(stack);
-		stack_buf_size = stack_obj_size - K_THREAD_STACK_RESERVED;
+		geo.obj_size = K_THREAD_STACK_LEN(stack_size);
+		geo.buf_start = K_THREAD_STACK_BUFFER(stack);
+		geo.buf_size = geo.obj_size - K_THREAD_STACK_RESERVED;
 	} else
 #endif /* CONFIG_USERSPACE */
 	{
 		/* Object cannot host a user mode thread */
-		stack_obj_size = K_KERNEL_STACK_LEN(stack_size);
-		stack_buf_start = K_KERNEL_STACK_BUFFER(stack);
-		stack_buf_size = stack_obj_size - K_KERNEL_STACK_RESERVED;
+		geo.obj_size = K_KERNEL_STACK_LEN(stack_size);
+		geo.buf_start = K_KERNEL_STACK_BUFFER(stack);
+		geo.buf_size = geo.obj_size - K_KERNEL_STACK_RESERVED;
 
 #if defined(ARCH_KERNEL_STACK_RESERVED)
 		/* Zephyr treats stack overflow as an app bug.  But
 		 * this particular overflow can be seen by static
 		 * analysis so needs to be handled somehow.
 		 */
-		if (K_KERNEL_STACK_RESERVED > stack_obj_size) {
+		if (K_KERNEL_STACK_RESERVED > geo.obj_size) {
 			k_panic();
 		}
 #endif
 	}
 
+	return geo;
+}
+
+/*
+ * Return the initial (high end) stack pointer. When stacks are memory mapped
+ * this maps the object into virtual memory, records the mapping so it can be
+ * torn down at thread exit, and rebases buf_start onto the mapped address.
+ */
+static char *map_thread_stack(struct k_thread *new_thread,
+			      k_thread_stack_t *stack,
+			      struct stack_geometry *geo)
+{
+	char *stack_ptr;
+
 #ifdef CONFIG_THREAD_STACK_MEM_MAPPED
 	/* Map the stack into virtual memory and use that as the base to
 	 * calculate the initial stack pointer at the high end of the stack
-	 * object. The stack pointer may be reduced later in this function
-	 * by TLS or random offset.
+	 * object. The stack pointer may be reduced later by TLS or random
+	 * offset.
 	 *
 	 * K_MEM_MAP_UNINIT is used to mimic the behavior of non-mapped
 	 * stack. If CONFIG_INIT_STACKS is enabled, the stack will be
-	 * cleared below.
+	 * cleared later.
 	 */
-	void *stack_mapped = k_mem_map_phys_guard((uintptr_t)stack, stack_obj_size,
+	void *stack_mapped = k_mem_map_phys_guard((uintptr_t)stack, geo->obj_size,
 				K_MEM_PERM_RW | K_MEM_CACHE_WB | K_MEM_MAP_UNINIT,
 				false);
 
@@ -437,45 +463,71 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 
 #ifdef CONFIG_USERSPACE
 	if (z_stack_is_user_capable(stack)) {
-		stack_buf_start = K_THREAD_STACK_BUFFER(stack_mapped);
+		geo->buf_start = K_THREAD_STACK_BUFFER(stack_mapped);
 	} else
 #endif /* CONFIG_USERSPACE */
 	{
-		stack_buf_start = K_KERNEL_STACK_BUFFER(stack_mapped);
+		geo->buf_start = K_KERNEL_STACK_BUFFER(stack_mapped);
 	}
 
-	stack_ptr = (char *)stack_mapped + stack_obj_size;
+	stack_ptr = (char *)stack_mapped + geo->obj_size;
 
 	/* Need to store the info on mapped stack so we can remove the mappings
 	 * when the thread ends.
 	 */
 	new_thread->stack_info.mapped.addr = stack_mapped;
-	new_thread->stack_info.mapped.sz = stack_obj_size;
-
+	new_thread->stack_info.mapped.sz = geo->obj_size;
 #else /* CONFIG_THREAD_STACK_MEM_MAPPED */
+	ARG_UNUSED(new_thread);
 
 	/* Initial stack pointer at the high end of the stack object, may
-	 * be reduced later in this function by TLS or random offset
+	 * be reduced later by TLS or random offset
 	 */
-	stack_ptr = (char *)stack + stack_obj_size;
-
+	stack_ptr = (char *)stack + geo->obj_size;
 #endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
 
-	LOG_DBG("stack %p for thread %p: obj_size=%zu buf_start=%p "
-		" buf_size %zu stack_ptr=%p",
-		stack, new_thread, stack_obj_size, (void *)stack_buf_start,
-		stack_buf_size, (void *)stack_ptr);
+	return stack_ptr;
+}
 
+/* Pre-fill the stack buffer with a known pattern for usage measurement. */
+static inline void fill_init_stack(char *buf_start, size_t buf_size)
+{
 #ifdef CONFIG_INIT_STACKS
-	memset(stack_buf_start, 0xaa, stack_buf_size);
+	memset(buf_start, 0xaa, buf_size);
+#else
+	ARG_UNUSED(buf_start);
+	ARG_UNUSED(buf_size);
 #endif /* CONFIG_INIT_STACKS */
+}
+
+/* Place the overflow-detection sentinel at the low end of the stack buffer. */
+static inline void set_stack_sentinel(char *buf_start)
+{
 #ifdef CONFIG_STACK_SENTINEL
 	/* Put the stack sentinel at the lowest 4 bytes of the stack area.
 	 * We periodically check that it's still present and kill the thread
 	 * if it isn't.
 	 */
-	*((uint32_t *)stack_buf_start) = STACK_SENTINEL;
+	*((uint32_t *)buf_start) = STACK_SENTINEL;
+#else
+	ARG_UNUSED(buf_start);
 #endif /* CONFIG_STACK_SENTINEL */
+}
+
+/*
+ * Compute how much to reserve at the top of the stack buffer for TLS,
+ * userspace-local data and stack-pointer randomization, and return the
+ * aligned amount the initial stack pointer must be lowered by.
+ */
+static size_t reserve_stack_headroom(struct k_thread *new_thread,
+				     char *stack_ptr, size_t buf_size)
+{
+	size_t delta = 0;
+
+	ARG_UNUSED(new_thread);
+	ARG_UNUSED(stack_ptr);
+	ARG_UNUSED(buf_size);
+
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	/* TLS is always last within the stack buffer */
 	delta += arch_tls_stack_setup(new_thread, stack_ptr);
@@ -489,9 +541,16 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 		(struct _thread_userspace_local_data *)(stack_ptr - delta);
 #endif /* CONFIG_THREAD_USERSPACE_LOCAL_DATA */
 #if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
-	delta += random_offset(stack_buf_size);
+	delta += random_offset(buf_size);
 #endif /* CONFIG_STACK_POINTER_RANDOM */
-	delta = ROUND_UP(delta, ARCH_STACK_PTR_ALIGN);
+
+	return ROUND_UP(delta, ARCH_STACK_PTR_ALIGN);
+}
+
+/* Record the thread-accessible stack bounds (and runtime-safety threshold). */
+static inline void set_stack_info(struct k_thread *new_thread, char *buf_start,
+				  size_t buf_size, size_t delta)
+{
 #ifdef CONFIG_THREAD_STACK_INFO
 	/* Initial values. Arches which implement MPU guards that "borrow"
 	 * memory from the stack buffer (not tracked in K_THREAD_STACK_RESERVED)
@@ -500,19 +559,41 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 	 * The bounds tracked here correspond to the area of the stack object
 	 * that the thread can access, which includes TLS.
 	 */
-	new_thread->stack_info.start = (uintptr_t)stack_buf_start;
-	new_thread->stack_info.size = stack_buf_size;
+	new_thread->stack_info.start = (uintptr_t)buf_start;
+	new_thread->stack_info.size = buf_size;
 	new_thread->stack_info.delta = delta;
 
 #ifdef CONFIG_THREAD_RUNTIME_STACK_SAFETY
 	new_thread->stack_info.usage.unused_threshold =
 		(CONFIG_THREAD_RUNTIME_STACK_SAFETY_DEFAULT_UNUSED_THRESHOLD_PCT *
-		 stack_buf_size) / 100;
+		 buf_size) / 100;
 #endif
+#else
+	ARG_UNUSED(new_thread);
+	ARG_UNUSED(buf_start);
+	ARG_UNUSED(buf_size);
+	ARG_UNUSED(delta);
 #endif /* CONFIG_THREAD_STACK_INFO */
-	stack_ptr -= delta;
+}
 
-	return stack_ptr;
+static char *setup_thread_stack(struct k_thread *new_thread,
+				k_thread_stack_t *stack, size_t stack_size)
+{
+	struct stack_geometry geo = compute_stack_geometry(stack, stack_size);
+	char *stack_ptr = map_thread_stack(new_thread, stack, &geo);
+	size_t delta;
+
+	LOG_DBG("stack %p for thread %p: obj_size=%zu buf_start=%p "
+		" buf_size %zu stack_ptr=%p",
+		stack, new_thread, geo.obj_size, (void *)geo.buf_start,
+		geo.buf_size, (void *)stack_ptr);
+
+	fill_init_stack(geo.buf_start, geo.buf_size);
+	set_stack_sentinel(geo.buf_start);
+	delta = reserve_stack_headroom(new_thread, stack_ptr, geo.buf_size);
+	set_stack_info(new_thread, geo.buf_start, geo.buf_size, delta);
+
+	return stack_ptr - delta;
 }
 
 #ifdef CONFIG_HW_SHADOW_STACK
