@@ -37,6 +37,9 @@ int nrf_wifi_wpa_supp_associate(void *if_priv, struct wpa_driver_associate_param
 
 int nrf_wifi_wpa_set_supp_port(void *if_priv, int authorized, char *bssid);
 
+int nrf_wifi_wpa_tx_control_port(void *if_priv, const unsigned char *dest, unsigned short proto,
+				 const unsigned char *buf, size_t len, int no_encrypt);
+
 int nrf_wifi_wpa_supp_signal_poll(void *if_priv, struct wpa_signal_info *si,
 				 unsigned char *bssid);
 
