@@ -35,6 +35,7 @@ comparator	Comparator
 coredump	Core dump
 counter	Counter
 cpu	CPU (Central Processing Unit)
+cpu_enable  CPU (Central Processing Unit) enable
 cpu_freq	CPU (Central Processing Unit) frequency scaling
 crc	CRC (Cyclic Redundancy Check)
 crypto	Cryptographic accelerator
