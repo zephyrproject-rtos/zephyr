@@ -37,6 +37,8 @@ set_variable_ifdef(CONFIG_DMA_MCUX_LPC          CONFIG_MCUX_COMPONENT_driver.lpc
 set_variable_ifdef(CONFIG_GPIO_MCUX_LPC         CONFIG_MCUX_COMPONENT_driver.lpc_gpio)
 set_variable_ifdef(CONFIG_NXP_PINT              CONFIG_MCUX_COMPONENT_driver.pint)
 set_variable_ifdef(CONFIG_NXP_INPUTMUX          CONFIG_MCUX_COMPONENT_driver.inputmux)
+set_variable_ifdef(CONFIG_NXP_INPUTMUX          CONFIG_MCUX_COMPONENT_driver.inputmux_connections)
+set_variable_ifdef(CONFIG_CLOCK_MONITOR_NXP_FMEAS CONFIG_MCUX_COMPONENT_driver.fmeas)
 set_variable_ifdef(CONFIG_I2C_MCUX_FLEXCOMM     CONFIG_MCUX_COMPONENT_driver.flexcomm)
 set_variable_ifdef(CONFIG_I2C_MCUX_FLEXCOMM     CONFIG_MCUX_COMPONENT_driver.flexcomm_i2c)
 set_variable_ifdef(CONFIG_I2S_MCUX_FLEXCOMM     CONFIG_MCUX_COMPONENT_driver.flexcomm)
