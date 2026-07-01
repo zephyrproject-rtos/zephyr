@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/pmci/mctp/mctp_i3c_common.h>
+#include <zephyr/pmci/mctp/mctp_i3c_pec.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
@@ -21,14 +22,28 @@ void mctp_i3c_target_buf_write(struct i3c_target_config *config, uint8_t *val, u
 
 	LOG_DBG("I3C Target buffer write received, len=%d", len);
 
-	b->rx_pkt = mctp_pktbuf_alloc(&b->binding, len);
+	/* PEC verification as per DSP0233 1.0.0: CRC-8 seeded with the address byte
+	 * (dynamic_addr << 1 | W), computed over all received bytes except PEC.
+	 */
+	uint8_t addr_byte = b->i3c->dynamic_addr << 1U;
 
-	if (b->rx_pkt == NULL) {
-		LOG_WRN("Could not allocate pktbuf of len %d to receive I3C message", len);
+	if (mctp_i3c_verify_pec(val, len, addr_byte) != 0) {
+		LOG_WRN("PEC verification failed for received message");
 		return;
 	}
 
-	memcpy(b->rx_pkt->data, val, len);
+	/* Strip the trailing PEC byte before allocating pktbuf */
+	size_t payload_len = len - I3C_PROTOCOL_PEC_SZ;
+
+	b->rx_pkt = mctp_pktbuf_alloc(&b->binding, payload_len);
+
+	if (b->rx_pkt == NULL) {
+		LOG_WRN("Could not allocate pktbuf of len %zu to receive I3C message", payload_len);
+		return;
+	}
+
+	LOG_DBG("Read %zu bytes from controller (PEC ok)", payload_len);
+	memcpy(b->rx_pkt->data, val, payload_len);
 }
 
 int mctp_i3c_target_stop(struct i3c_target_config *config)
@@ -79,8 +94,24 @@ int mctp_i3c_target_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 
 	b->tx_pkt = pkt;
 
+	/* Calculate packet size and prepare TX buffer with PEC */
+	size_t pktsize = pkt->end - pkt->start;
+	uint8_t tx_buf[MCTP_PACKET_SIZE(MCTP_I3C_MAX_PKT_SIZE) + I3C_PROTOCOL_PEC_SZ];
+
+	if (pktsize > MCTP_PACKET_SIZE(MCTP_I3C_MAX_PKT_SIZE)) {
+		LOG_ERR("Packet too large to send: %zu bytes", pktsize);
+		ret = -EINVAL;
+		goto out;
+	}
+
+	/* Copy data and calculate PEC (Packet Error Code) */
+	memcpy(tx_buf, pkt->data + pkt->start, pktsize);
+	uint8_t addr_byte = b->i3c->dynamic_addr << 1U;
+
+	tx_buf[pktsize] = mctp_i3c_calculate_pec(tx_buf, pktsize, addr_byte);
+
 	/* Some I3C IP need to have data at TX fifo before raising IBI */
-	ret = i3c_target_tx_write(b->i3c, pkt->data + pkt->start, pkt->end - pkt->start, 0);
+	ret = i3c_target_tx_write(b->i3c, tx_buf, pktsize + I3C_PROTOCOL_PEC_SZ, 0);
 	if (ret < 0) {
 		LOG_ERR("i3c_target_tx_write failed: %d", ret);
 		goto out;
