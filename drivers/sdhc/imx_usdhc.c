@@ -272,11 +272,13 @@ static void imx_usdhc_init_host_props(const struct device *dev)
 	props->power_delay = cfg->power_delay_ms;
 	/* Read host capabilities */
 	USDHC_GetCapability(base, &caps);
+#if !(defined(FSL_FEATURE_USDHC_HAS_NO_VS18) && FSL_FEATURE_USDHC_HAS_NO_VS18)
 	if (cfg->no_180_vol) {
 		props->host_caps.vol_180_support = false;
 	} else {
 		props->host_caps.vol_180_support = (bool)(caps.flags & kUSDHC_SupportV180Flag);
 	}
+#endif
 	if (cfg->no_300_vol) {
 		props->host_caps.vol_300_support = false;
 	} else {
