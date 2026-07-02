@@ -44,7 +44,8 @@
 			device_type = "cpu";
 			clocks = <&hfpll>;
 			riscv,isa-base = "rv32e";
-			riscv,isa-extensions = "e", "m", "c", "zicsr";
+			riscv,isa-extensions = "e", "m", "c", "zicsr",
+					       "zba", "zbb", "zbc", "zbs", "zcb";
 			nordic,bus-width = <32>;
 		};
 	};
