@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+files=$(git diff --cached --name-only)
+sync_file=.westlinks
+
+for f in $files; do
+  new_object_hash=$(git hash-object $f )
+  link_hash=$(grep "^$f" $sync_file|cut -f2 -d' ')
+  link_files=$(grep $link_hash $sync_file|cut -f1 -d' ')
+  for l_f in $link_files; do
+    link_object_hash=$(git hash-object $l_f)
+    if [ "$new_object_hash" != "$link_object_hash" ]; then
+      if echo "$files" | grep -Eq "(^|[[:space:]])$l_f($|[[:space:]])"; then
+        echo "Linked files '$f' and '$l_f' are both staged for commit but with conflicting content.\nAborting" >&2
+        exit 1
+      fi
+    fi
+  done
+  for l_f in $link_files; do
+    link_object_hash=$(git hash-object $l_f)
+    if [ "$new_object_hash" != "$link_object_hash" ]; then
+      # Update linked file
+      cp $f $l_f
+      git add $l_f
+    fi
+  done
+done
