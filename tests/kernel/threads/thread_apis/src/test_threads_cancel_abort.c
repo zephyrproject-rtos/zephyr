@@ -108,9 +108,6 @@ ZTEST(threads_lifecycle_1cpu, test_threads_abort_repeat)
 	ztest_test_pass();
 }
 
-bool abort_called;
-void *block;
-
 static void delayed_thread_entry(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
@@ -154,9 +151,15 @@ ZTEST(threads_lifecycle_1cpu, test_delayed_thread_abort)
 
 	k_thread_abort(tid);
 
+	/* Sleep past the thread's original 100ms start deadline. A working
+	 * abort keeps execute_flag at 0; a broken abort would let the thread
+	 * start and set it to 1.
+	 */
+	k_msleep(100);
+
 	/* Test point: Test abort of thread before its execution*/
-	zassert_false(execute_flag == 1, "Delayed thread is has executed"
-		      " before cancellation");
+	zassert_true(execute_flag == 0, "Delayed thread has executed"
+		     " after its start deadline despite being aborted");
 
 	/* Restore the priority */
 	k_thread_priority_set(k_current_get(), current_prio);
