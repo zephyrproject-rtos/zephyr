@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Intel x86_64 CPU. Local test binding so that cpu-power-states can be
+    assigned to the qemu_x86_64 CPUs.
+
+compatible: "intel,x86_64"
+
+include: cpu.yaml
