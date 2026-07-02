@@ -222,17 +222,17 @@ void z_riscv_fault(struct arch_esf *esf)
 	{
 		unsigned long mcause;
 
-		__asm__ volatile("csrr %0, scause" : "=r"(mcause));
+		mcause = csr_read(scause);
 		mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
 
 		if (mcause == RISCV_EXC_INST_PAGE_FAULT ||
 		    mcause == RISCV_EXC_LOAD_PAGE_FAULT ||
 		    mcause == RISCV_EXC_STORE_PAGE_FAULT) {
 			/*
-			 * TODO: demand paging — pass the faulting address
-			 * (mtval) to z_page_fault() to allow the kernel to
-			 * resolve the fault on-demand.  For now fall through
-			 * to fatal error handling.
+			 * TODO: demand paging - pass the faulting address (stval)
+			 * to z_page_fault() to allow the kernel to resolve the
+			 * fault on-demand. For now fall through to fatal error
+			 * handling.
 			 */
 		}
 	}
