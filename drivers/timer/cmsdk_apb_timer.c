@@ -72,7 +72,7 @@ static uint32_t elapsed(uint32_t *val_out)
 	return data->load - value;
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
@@ -96,7 +96,11 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	data->cycle_count += pending_cycles;
 	unannounced_cycles = data->cycle_count - data->announced_cycles;
 
-	if (ticks == K_TICKS_FOREVER) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
+		/*
+		 * No pending timeout and no future timer interrupt required:
+		 * wait as long as the hardware allows.
+		 */
 		load_to_be_set = MAX_CYC;
 	} else if ((int32_t)unannounced_cycles < 0) {
 		load_to_be_set = MIN_DELAY_CYCLES;
