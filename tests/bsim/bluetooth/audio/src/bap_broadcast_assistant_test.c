@@ -32,7 +32,7 @@
 #include "common.h"
 #include "bap_common.h"
 #include "bstests.h"
-#include "syscalls/kernel.h"
+#include <zephyr/syscalls/kernel.h>
 
 #ifdef CONFIG_BT_BAP_BROADCAST_ASSISTANT
 
