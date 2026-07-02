@@ -7,7 +7,10 @@
 
 #include <zephyr/kernel.h>
 
+#include <answer.h>
+
 int main(void)
 {
-	return 0;
+	/* Reference the "used" module so its code is linked into the image. */
+	return sbom_used_module_answer() == 42 ? 0 : 1;
 }

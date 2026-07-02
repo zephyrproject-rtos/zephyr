@@ -28,11 +28,34 @@ FILE_LIBKERNEL_A = "./zephyr/kernel/libkernel.a"
 FILE_LIBZEPHYR_A = "./zephyr/libzephyr.a"
 FILE_ZEPHYR_ELF = "./zephyr/zephyr.elf"
 
+PKG_USED_MODULE_SOURCES = "sbom_used_module-sources"
+PKG_UNUSED_MODULE_SOURCES = "sbom_unused_module-sources"
+PKG_USED_MODULE_DEPS = "sbom_used_module-deps"
+PKG_UNUSED_MODULE_DEPS = "sbom_unused_module-deps"
+
+FILE_USED_MODULE_C = "./src/answer.c"
+FILE_UNUSED_MODULE_C = "unused.c"
+FILE_REUSE_TOML_C = "./src/no_header.c"
+
+# Common license and copyright strings as they appear in the SBOM.
+LICENSE_APACHE = "Apache-2.0"
+COPYRIGHT_ZEPHYR = "Copyright The Zephyr Project Contributors"
+COPYRIGHT_LINUX_FOUNDATION = "Copyright (c) 2026 The Linux Foundation"
+
+# answer.c declares its copyright with the SPDX tag, and the scanner stores each
+# notice canonically between newlines, so this is the exact value in the SBOM.
+EXPECTED_USED_MODULE_COPYRIGHT = f"\nSPDX-FileCopyrightText: {COPYRIGHT_ZEPHYR}\n"
+
 
 def find_file_by_name(doc, name):
     """Find a file in a document by exact name."""
 
     return next((f for f in doc.files if f.name == name), None)
+
+
+def file_license_ids(spdx_file):
+    """Return the list of license identifiers detected inside a file."""
+    return [str(lic) for lic in spdx_file.license_info_in_file]
 
 
 def find_package_by_name(doc, name):
@@ -224,8 +247,10 @@ class TestAppDocument:
         assert main_c_spdx.license_info_in_file, "app.spdx: main.c has no license_info_in_file"
 
         license_strs = [str(lic) for lic in main_c_spdx.license_info_in_file]
-        has_apache = any("Apache-2.0" in lic for lic in license_strs)
-        assert has_apache, f"app.spdx: main.c license should be Apache-2.0, got {license_strs}"
+        has_apache = any(LICENSE_APACHE in lic for lic in license_strs)
+        assert has_apache, (
+            f"app.spdx: main.c license should be {LICENSE_APACHE}, got {license_strs}"
+        )
 
     def test_main_c_copyright_correct(self, app_doc):
         """Test that main.c has correct copyright text."""
@@ -235,10 +260,8 @@ class TestAppDocument:
         assert main_c_spdx.copyright_text, "app.spdx: main.c has no copyright_text"
 
         copyright_text = str(main_c_spdx.copyright_text)
-        expected = [
-            "Copyright The Zephyr Project Contributors",
-            "Copyright (C) 2026 The Linux Foundation",
-        ]
+        # REUSE canonicalizes notices (e.g. "(c)" -> "(C)"), so match that form.
+        expected = [COPYRIGHT_ZEPHYR, COPYRIGHT_LINUX_FOUNDATION]
         for s in expected:
             assert s in copyright_text, f"main.c copyright missing '{s}', got '{copyright_text}'"
 
@@ -290,9 +313,11 @@ class TestZephyrDocument:
             f
             for f in zephyr_doc.files
             if f.license_info_in_file
-            and any("Apache-2.0" in str(lic) for lic in f.license_info_in_file)
+            and any(LICENSE_APACHE in str(lic) for lic in f.license_info_in_file)
         ]
-        assert len(files_with_apache) > 0, "zephyr.spdx: no files have Apache-2.0 license info"
+        assert len(files_with_apache) > 0, (
+            f"zephyr.spdx: no files have {LICENSE_APACHE} license info"
+        )
 
     def test_verification_code(self, zephyr_doc):
         """Test that verification code is present when files are analyzed."""
@@ -613,3 +638,193 @@ class TestBuildTraceability:
         source_names = [str(r.related_spdx_element_id) for r in generated_from_rels]
         found = any(expected_source in name for name in source_names)
         assert found, f"build.spdx: {FILE_LIBKERNEL_A} should be GENERATED_FROM {expected_source}"
+
+
+class TestExtraModules:
+    """Tests for the two extra Zephyr modules pulled into the SBOM.
+
+    The build adds two modules via EXTRA_ZEPHYR_MODULES:
+      * ``sbom_used_module``   compiled and called from main.c, so its Apache-2.0 source is analyzed
+      * ``sbom_unused_module`` declared but builds nothing, so it is present only as an empty source
+                               package and a dependency entry.
+
+    Both must surface as source packages in zephyr.spdx and as dependency packages in
+    modules-deps.spdx.
+    Only the compiled module contributes an analyzed, licensed source file; the declared-only module
+    should stay empty.
+    """
+
+    @pytest.mark.parametrize(
+        "pkg_name",
+        [PKG_USED_MODULE_SOURCES, PKG_UNUSED_MODULE_SOURCES],
+    )
+    def test_module_source_package_exists(self, zephyr_doc, pkg_name):
+        """Both module source packages must exist in zephyr.spdx."""
+        pkg = find_package_by_name(zephyr_doc, pkg_name)
+        pkg_names = [p.name for p in zephyr_doc.packages]
+        assert pkg is not None, f"zephyr.spdx: expected '{pkg_name}' package, got {pkg_names}"
+
+    @pytest.mark.parametrize(
+        "pkg_name",
+        [PKG_USED_MODULE_SOURCES, PKG_UNUSED_MODULE_SOURCES],
+    )
+    def test_module_source_package_spdx_id(self, zephyr_doc, pkg_name):
+        """Module source packages must have a valid, normalized SPDX ID."""
+        pkg = find_package_by_name(zephyr_doc, pkg_name)
+        assert pkg is not None, f"zephyr.spdx: '{pkg_name}' package not found"
+        expected_id = "SPDXRef-" + pkg_name.replace("_", "-")
+        assert pkg.spdx_id == expected_id, (
+            f"zephyr.spdx: {pkg_name} spdx_id is '{pkg.spdx_id}', expected '{expected_id}'"
+        )
+
+    def test_used_module_file_present(self, zephyr_doc):
+        """The used module contributes its source file to zephyr.spdx."""
+        f = find_file_by_name(zephyr_doc, FILE_USED_MODULE_C)
+        assert f is not None, f"zephyr.spdx: {FILE_USED_MODULE_C} not found"
+
+    def test_used_module_file_has_sha1(self, zephyr_doc):
+        """The used module's source file must carry a SHA1 checksum."""
+        f = find_file_by_name(zephyr_doc, FILE_USED_MODULE_C)
+        assert f is not None, f"zephyr.spdx: {FILE_USED_MODULE_C} not found"
+        sha1s = [c for c in f.checksums if c.algorithm == ChecksumAlgorithm.SHA1]
+        assert len(sha1s) > 0, f"zephyr.spdx: {FILE_USED_MODULE_C} has no SHA1 checksum"
+
+    def test_used_module_license_is_apache(self, zephyr_doc):
+        """The used module's file must be analyzed as Apache-2.0."""
+        f = find_file_by_name(zephyr_doc, FILE_USED_MODULE_C)
+        assert f is not None, f"zephyr.spdx: {FILE_USED_MODULE_C} not found"
+        licenses = file_license_ids(f)
+        assert any(LICENSE_APACHE in lic for lic in licenses), (
+            f"zephyr.spdx: {FILE_USED_MODULE_C} license should be {LICENSE_APACHE}, got {licenses}"
+        )
+
+    def test_used_module_files_analyzed(self, zephyr_doc):
+        """The used module package must be marked as having analyzed files."""
+        pkg = find_package_by_name(zephyr_doc, PKG_USED_MODULE_SOURCES)
+        assert pkg is not None, f"zephyr.spdx: '{PKG_USED_MODULE_SOURCES}' package not found"
+        assert pkg.files_analyzed, (
+            f"zephyr.spdx: {PKG_USED_MODULE_SOURCES} should have files_analyzed=True"
+        )
+
+    # --- REUSE.toml supplies license/copyright for a header-less source ---
+
+    def test_reuse_toml_file_present(self, zephyr_doc):
+        """The header-less source compiled by the used module is analyzed."""
+        f = find_file_by_name(zephyr_doc, FILE_REUSE_TOML_C)
+        assert f is not None, f"zephyr.spdx: {FILE_REUSE_TOML_C} not found"
+
+    def test_reuse_toml_license_applied(self, zephyr_doc):
+        """A file with no SPDX tag must get its license from REUSE.toml."""
+        f = find_file_by_name(zephyr_doc, FILE_REUSE_TOML_C)
+        assert f is not None, f"zephyr.spdx: {FILE_REUSE_TOML_C} not found"
+        licenses = file_license_ids(f)
+        assert any(LICENSE_APACHE in lic for lic in licenses), (
+            f"zephyr.spdx: {FILE_REUSE_TOML_C} license should be {LICENSE_APACHE} "
+            f"(from REUSE.toml), got {licenses}"
+        )
+
+    def test_reuse_toml_copyright_applied(self, zephyr_doc):
+        """A file with no SPDX tag must get its copyright from REUSE.toml."""
+        f = find_file_by_name(zephyr_doc, FILE_REUSE_TOML_C)
+        assert f is not None, f"zephyr.spdx: {FILE_REUSE_TOML_C} not found"
+        assert COPYRIGHT_ZEPHYR in str(f.copyright_text), (
+            f"zephyr.spdx: {FILE_REUSE_TOML_C} copyright should come from REUSE.toml "
+            f"('{COPYRIGHT_ZEPHYR}'), got '{f.copyright_text}'"
+        )
+
+    def test_reuse_toml_file_in_used_module_package(self, zephyr_doc):
+        """The header-less source must be attributed to the used module package."""
+        pkg = find_package_by_name(zephyr_doc, PKG_USED_MODULE_SOURCES)
+        assert pkg is not None, f"zephyr.spdx: '{PKG_USED_MODULE_SOURCES}' package not found"
+        f = find_file_by_name(zephyr_doc, FILE_REUSE_TOML_C)
+        assert f is not None, f"zephyr.spdx: {FILE_REUSE_TOML_C} not found"
+        contained = {
+            str(r.related_spdx_element_id)
+            for r in get_relationships_for_element(
+                zephyr_doc, pkg.spdx_id, RelationshipType.CONTAINS
+            )
+        }
+        assert f.spdx_id in contained, (
+            f"zephyr.spdx: {PKG_USED_MODULE_SOURCES} does not CONTAIN {FILE_REUSE_TOML_C}"
+        )
+
+    def test_unused_module_has_no_files(self, zephyr_doc):
+        """The unused module is declared but compiles nothing, its source package must therefore
+        exist yet stay empty.
+        """
+        pkg = find_package_by_name(zephyr_doc, PKG_UNUSED_MODULE_SOURCES)
+        assert pkg is not None, f"zephyr.spdx: '{PKG_UNUSED_MODULE_SOURCES}' package not found"
+        assert not pkg.files_analyzed, (
+            f"zephyr.spdx: {PKG_UNUSED_MODULE_SOURCES} should have files_analyzed=False"
+        )
+        contains = get_relationships_for_element(zephyr_doc, pkg.spdx_id, RelationshipType.CONTAINS)
+        assert len(contains) == 0, (
+            f"zephyr.spdx: {PKG_UNUSED_MODULE_SOURCES} should contain no files, got {len(contains)}"
+        )
+
+    def test_unused_module_source_absent_from_sbom(
+        self, app_doc, zephyr_doc, build_doc, modules_doc
+    ):
+        """A module's source file that is never compiled must not leak into the SBOM."""
+        docs = {
+            "app.spdx": app_doc,
+            "zephyr.spdx": zephyr_doc,
+            "build.spdx": build_doc,
+            "modules-deps.spdx": modules_doc,
+        }
+        for doc_name, doc in docs.items():
+            offenders = [
+                f.name for f in doc.files if os.path.basename(f.name) == FILE_UNUSED_MODULE_C
+            ]
+            assert not offenders, (
+                f"{doc_name}: lists un-compiled source(s) that should be absent: {offenders}"
+            )
+
+    def test_used_module_copyright(self, zephyr_doc):
+        """The used module file must expose exactly its copyright text."""
+        f = find_file_by_name(zephyr_doc, FILE_USED_MODULE_C)
+        assert f is not None, f"zephyr.spdx: {FILE_USED_MODULE_C} not found"
+        assert str(f.copyright_text) == EXPECTED_USED_MODULE_COPYRIGHT, (
+            f"zephyr.spdx: {FILE_USED_MODULE_C} copyright is '{f.copyright_text}', "
+            f"expected '{EXPECTED_USED_MODULE_COPYRIGHT}'"
+        )
+
+    def test_used_module_package_contains_its_file(self, zephyr_doc):
+        """The used module package must CONTAIN its source file."""
+        pkg = find_package_by_name(zephyr_doc, PKG_USED_MODULE_SOURCES)
+        assert pkg is not None, f"zephyr.spdx: '{PKG_USED_MODULE_SOURCES}' package not found"
+        f = find_file_by_name(zephyr_doc, FILE_USED_MODULE_C)
+        assert f is not None, f"zephyr.spdx: {FILE_USED_MODULE_C} not found"
+
+        contained = {
+            str(r.related_spdx_element_id)
+            for r in get_relationships_for_element(
+                zephyr_doc, pkg.spdx_id, RelationshipType.CONTAINS
+            )
+        }
+        assert f.spdx_id in contained, (
+            f"zephyr.spdx: {PKG_USED_MODULE_SOURCES} does not CONTAIN {FILE_USED_MODULE_C}"
+        )
+
+    @pytest.mark.parametrize(
+        "pkg_name",
+        [PKG_USED_MODULE_DEPS, PKG_UNUSED_MODULE_DEPS],
+    )
+    def test_module_deps_package_exists(self, modules_doc, pkg_name):
+        """Both modules must be listed as dependency packages in modules-deps.spdx."""
+        pkg = find_package_by_name(modules_doc, pkg_name)
+        pkg_names = [p.name for p in modules_doc.packages]
+        assert pkg is not None, f"modules-deps.spdx: expected '{pkg_name}' package, got {pkg_names}"
+
+    @pytest.mark.parametrize(
+        "pkg_name",
+        [PKG_USED_MODULE_DEPS, PKG_UNUSED_MODULE_DEPS],
+    )
+    def test_module_deps_depend_on_zephyr(self, modules_doc, pkg_name):
+        """Each module dependency must be a DEPENDENCY_OF the zephyr dependency."""
+        pkg = find_package_by_name(modules_doc, pkg_name)
+        assert pkg is not None, f"modules-deps.spdx: '{pkg_name}' package not found"
+        dep_rels = get_relationships_for_element(
+            modules_doc, pkg.spdx_id, RelationshipType.DEPENDENCY_OF
+        )
+        assert len(dep_rels) > 0, f"modules-deps.spdx: {pkg_name} has no DEPENDENCY_OF relationship"
