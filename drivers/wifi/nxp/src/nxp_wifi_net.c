@@ -77,6 +77,10 @@ interface_t g_mlan;
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 interface_t g_uap;
 #endif
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+interface_t g_wfd;
+int wfd_bss_type = BSS_TYPE_STA;
+#endif
 
 static int net_wlan_init_done;
 
@@ -128,11 +132,32 @@ void nxp_net_request_ap_disable(void)
 #endif
 #endif
 
+struct net_if *net_get_if_by_bss_type(int interface)
+{
+	if (interface == WLAN_BSS_TYPE_STA) {
+		return g_mlan.netif;
+	}
+#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
+	else if (interface == WLAN_BSS_TYPE_UAP) {
+		return g_uap.netif;
+	}
+#endif
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	else if (interface == WLAN_BSS_TYPE_WIFIDIRECT) {
+		return g_wfd.netif;
+	}
+#endif
+	else {
+		return NULL;
+	}
+}
+
 void deliver_packet_above(struct net_pkt *p, int recv_interface)
 {
 	int err = 0;
 	/* points to packet payload, which starts with an Ethernet header */
 	struct net_eth_hdr *ethhdr = NET_ETH_HDR(p);
+	struct net_if *iface = NULL;
 
 	switch (htons(ethhdr->type)) {
 	case NET_ETH_PTYPE_IP:
@@ -153,16 +178,16 @@ void deliver_packet_above(struct net_pkt *p, int recv_interface)
 			p = NULL;
 			break;
 		}
-#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-		/* full packet send to tcpip_thread to process */
-		if (recv_interface == WLAN_BSS_TYPE_UAP) {
-			err = net_internal_rx_callback(g_uap.netif, p);
-		} else {
-			err = net_internal_rx_callback(g_mlan.netif, p);
+
+		iface = net_get_if_by_bss_type(recv_interface);
+		if (iface == NULL) {
+			net_e("Failed to find net interface");
+			(void)net_pkt_unref(p);
+			p = NULL;
+			break;
 		}
-#else
-		err = net_internal_rx_callback(g_mlan.netif, p);
-#endif
+
+		err = net_internal_rx_callback(iface, p);
 		if (err != 0) {
 			net_e("Net input error");
 			(void)net_pkt_unref(p);
@@ -198,21 +223,18 @@ static struct net_pkt *gen_pkt_from_data(t_u8 interface, t_u8 *payload, t_u16 da
 {
 	struct net_pkt *pkt = NULL;
 	t_u8 retry_cnt = MAX_RETRY_GEN_PKT;
+	struct net_if *iface = NULL;
 
 retry:
-	/* We allocate a network buffer */
-#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-	if (interface == WLAN_BSS_TYPE_UAP) {
-		pkt = net_pkt_rx_alloc_with_buffer(g_uap.netif, datalen, get_packet_family(), 0,
-						   K_NO_WAIT);
-	} else {
-		pkt = net_pkt_rx_alloc_with_buffer(g_mlan.netif, datalen, get_packet_family(), 0,
-						   K_NO_WAIT);
+	iface = net_get_if_by_bss_type(interface);
+	if (iface == NULL) {
+		net_e("Failed to find net interface");
+		return NULL;
 	}
-#else
-	pkt = net_pkt_rx_alloc_with_buffer(g_mlan.netif, datalen, get_packet_family(), 0,
+
+	/* We allocate a network buffer */
+	pkt = net_pkt_rx_alloc_with_buffer(iface, datalen, get_packet_family(), 0,
 					   K_NO_WAIT);
-#endif
 	if (pkt == NULL) {
 		if (retry_cnt) {
 			retry_cnt--;
@@ -235,20 +257,18 @@ struct net_pkt *gen_tx_pkt_from_data(uint8_t interface, uint8_t *payload, uint16
 {
 	struct net_pkt *pkt = NULL;
 	uint8_t retry_cnt = MAX_RETRY_GEN_PKT;
+	struct net_if *iface = NULL;
 
 retry:
-	/* We allocate a network buffer */
-#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-	if (interface == WLAN_BSS_TYPE_UAP) {
-		pkt = net_pkt_alloc_with_buffer(g_uap.netif, datalen, get_packet_family(), 0,
-						K_NO_WAIT);
-	} else {
-		pkt = net_pkt_alloc_with_buffer(g_mlan.netif, datalen, get_packet_family(), 0,
-						K_NO_WAIT);
+	iface = net_get_if_by_bss_type(interface);
+	if (iface == NULL) {
+		net_e("Failed to find net interface");
+		return NULL;
 	}
-#else
-	pkt = net_pkt_alloc_with_buffer(g_mlan.netif, datalen, get_packet_family(), 0, K_NO_WAIT);
-#endif
+
+	/* We allocate a network buffer */
+	pkt = net_pkt_alloc_with_buffer(iface, datalen, get_packet_family(), 0,
+					K_NO_WAIT);
 	if (pkt == NULL) {
 		if (retry_cnt) {
 			retry_cnt--;
@@ -273,21 +293,18 @@ static struct net_pkt *gen_pkt_from_data_for_zerocopy(t_u8 interface, t_u8 *payl
 {
 	struct net_pkt *pkt = NULL;
 	t_u8 retry_cnt = MAX_RETRY_GEN_PKT;
+	struct net_if *iface = NULL;
 
 retry:
-	/* We allocate a network buffer */
-#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-	if (interface == WLAN_BSS_TYPE_UAP) {
-		pkt = net_pkt_rx_alloc_with_buffer(g_uap.netif, datalen, get_packet_family(), 0,
-						   K_NO_WAIT);
-	} else {
-		pkt = net_pkt_rx_alloc_with_buffer(g_mlan.netif, datalen, get_packet_family(), 0,
-						   K_NO_WAIT);
+	iface = net_get_if_by_bss_type(interface);
+	if (iface == NULL) {
+		net_e("Failed to find net interface");
+		return NULL;
 	}
-#else
-	pkt = net_pkt_rx_alloc_with_buffer(g_mlan.netif, datalen, get_packet_family(), 0,
+
+	/* We allocate a network buffer */
+	pkt = net_pkt_rx_alloc_with_buffer(iface, datalen, get_packet_family(), 0,
 					   K_NO_WAIT);
-#endif
 	if (pkt == NULL) {
 		if (retry_cnt) {
 			retry_cnt--;
@@ -357,7 +374,9 @@ static mlan_status process_mgmt_packet(t_u8 *data)
 	net_pkt_cursor_init(p);
 #endif
 
-	if (wifi_event_completion(WIFI_EVENT_MGMT_FRAME, WIFI_EVENT_REASON_SUCCESS, p) !=
+	if (wifi_event_completion((enum wlan_bss_type)rxpd->bss_type,
+				  WIFI_EVENT_MGMT_FRAME,
+				  WIFI_EVENT_REASON_SUCCESS, p) !=
 	    WM_SUCCESS) {
 		net_d("%s: send mgmt packet fail", __func__);
 		net_stack_buffer_free(p);
@@ -391,7 +410,11 @@ static void process_data_packet(const t_u8 *rcvdata, const t_u16 datalen)
 		}
 	}
 
-	if (recv_interface == MLAN_BSS_TYPE_STA || recv_interface == MLAN_BSS_TYPE_UAP) {
+	if (recv_interface == MLAN_BSS_TYPE_STA || recv_interface == MLAN_BSS_TYPE_UAP
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	    || recv_interface == MLAN_BSS_TYPE_WIFIDIRECT
+#endif
+	) {
 		g_data_nf_last = rxpd->nf;
 		g_data_snr_last = rxpd->snr;
 	}
@@ -450,9 +473,12 @@ static void process_data_packet(const t_u8 *rcvdata, const t_u16 datalen)
 		} else {
 			/* Remove the LLC header if not the AMSDU packet */
 			ethhdr->type = ethllchdr->type;
-			(void)memmove(payload + SIZEOF_ETH_LLC_HDR, payload, SIZEOF_ETH_HDR);
+			(void)memmove(net_pkt_data(p) + SIZEOF_ETH_LLC_HDR,
+				      net_pkt_data(p),
+				      SIZEOF_ETH_HDR);
 			net_buf_pull(p->frags, SIZEOF_ETH_LLC_HDR);
 			net_pkt_cursor_init(p);
+			ethhdr = NET_ETH_HDR(p);
 			header_type = htons(ethhdr->type);
 		}
 	}
@@ -466,7 +492,11 @@ static void process_data_packet(const t_u8 *rcvdata, const t_u16 datalen)
 		 * filter for dropping packets received on ports other than
 		 * pre-defined ports.
 		 */
-		if (recv_interface == MLAN_BSS_TYPE_STA || recv_interface == MLAN_BSS_TYPE_UAP) {
+		if (recv_interface == MLAN_BSS_TYPE_STA || recv_interface == MLAN_BSS_TYPE_UAP
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+		    || recv_interface == MLAN_BSS_TYPE_WIFIDIRECT
+#endif
+		) {
 			int rv = wrapper_wlan_handle_rx_packet(datalen, rxpd, p, payload);
 
 			if (rv != WM_SUCCESS) {
@@ -560,7 +590,11 @@ int nxp_wifi_internal_tx(const struct device *dev, struct net_pkt *pkt, bool pkt
 	}
 
 #ifndef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-	if (interface > WLAN_BSS_ROLE_STA) {
+	if (interface > WLAN_BSS_ROLE_STA
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	    && interface != WLAN_BSS_TYPE_WIFIDIRECT
+#endif
+	) {
 		return -ENOMEM;
 	}
 #endif
@@ -573,7 +607,11 @@ int nxp_wifi_internal_tx(const struct device *dev, struct net_pkt *pkt, bool pkt
 		}
 	}
 
-	if (interface > WLAN_BSS_TYPE_UAP) {
+	if (interface > WLAN_BSS_TYPE_UAP
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	    && interface != WLAN_BSS_TYPE_WIFIDIRECT
+#endif
+	) {
 		wifi_wmm_drop_no_media(interface);
 		return -ENOMEM;
 	}
@@ -692,13 +730,15 @@ int nxp_wifi_internal_tx(const struct device *dev, struct net_pkt *pkt, bool pkt
 #ifdef CONFIG_NXP_WIFI_PKT_FWD
 int net_wifi_packet_send(uint8_t interface, void *stack_buffer)
 {
-	if (interface == WLAN_BSS_TYPE_UAP) {
-		return nxp_wifi_internal_tx(net_if_get_device((void *)g_uap.netif),
-					    (struct net_pkt *)stack_buffer, 1);
-	} else {
-		return nxp_wifi_internal_tx(net_if_get_device((void *)g_mlan.netif),
-					    (struct net_pkt *)stack_buffer, 1);
+	struct net_if *iface = NULL;
+
+	iface = net_get_if_by_bss_type(interface);
+	if (iface == NULL) {
+		net_e("Failed to find net interface");
+		return -ENOMEM;
 	}
+	return nxp_wifi_internal_tx(net_if_get_device((void *)iface),
+				    (struct net_pkt *)stack_buffer, 1);
 }
 #endif
 
@@ -901,6 +941,23 @@ void *net_get_sta_handle(void)
 void *net_get_uap_handle(void)
 {
 	return &g_uap;
+}
+#endif
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+void *net_get_wfd_handle(void)
+{
+	return &g_wfd;
+}
+
+struct netif *net_get_wfd_interface(void)
+{
+	return (struct netif *)g_wfd.netif;
+}
+
+int netif_get_bss_type(void)
+{
+	return wfd_bss_type;
 }
 #endif
 
@@ -1457,6 +1514,19 @@ int net_wlan_init(void)
 				     NET_LINK_ETHERNET);
 		ethernet_init(g_uap.netif);
 #endif
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+		/* init WFD (P2P) netif */
+		ret = wlan_get_wfd_mac_address(g_wfd.state.ethaddr.addr);
+		if (ret != 0) {
+			net_e("could not get WFD wifi mac addr");
+			return ret;
+		}
+		net_if_set_link_addr(g_wfd.netif, g_wfd.state.ethaddr.addr,
+				     NET_MAC_ADDR_LEN, NET_LINK_ETHERNET);
+		ethernet_init(g_wfd.netif);
+#endif
+
 		net_wlan_init_done = 1;
 #if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 		status = OSA_TimerCreate((osa_timer_handle_t)dhcp_timer, MSEC_TO_TICK(DHCP_TIMEOUT),
@@ -1476,7 +1546,9 @@ int net_wlan_init(void)
 	return WM_SUCCESS;
 }
 
-void net_wlan_set_mac_address(unsigned char *sta_mac, unsigned char *uap_mac)
+void net_wlan_set_mac_address(unsigned char *sta_mac,
+			      unsigned char *uap_mac,
+			      unsigned char *wfd_mac)
 {
 	if (sta_mac != NULL) {
 #ifdef CONFIG_NXP_WIFI_IPV6
@@ -1495,6 +1567,17 @@ void net_wlan_set_mac_address(unsigned char *sta_mac, unsigned char *uap_mac)
 		(void)memcpy(g_uap.state.ethaddr.addr, &uap_mac[0], MLAN_MAC_ADDR_LENGTH);
 		net_if_set_link_addr(g_uap.netif, g_uap.state.ethaddr.addr, NET_MAC_ADDR_LEN,
 				     NET_LINK_ETHERNET);
+	}
+#endif
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	if (wfd_mac != NULL) {
+#ifdef CONFIG_NXP_WIFI_IPV6
+		net_clear_ipv6_ll_address(&g_wfd);
+#endif
+		(void)memcpy(g_wfd.state.ethaddr.addr, &wfd_mac[0], MLAN_MAC_ADDR_LENGTH);
+		net_if_set_link_addr(g_wfd.netif, g_wfd.state.ethaddr.addr,
+				     NET_MAC_ADDR_LEN, NET_LINK_ETHERNET);
 	}
 #endif
 }
@@ -1535,6 +1618,15 @@ int net_wlan_deinit(void)
 		return -WM_FAIL;
 	}
 #endif
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	ret = net_netif_deinit(g_wfd.netif);
+	if (ret != WM_SUCCESS) {
+		net_e("WFD interface deinit failed");
+		return -WM_FAIL;
+	}
+#endif
+
 #if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 	status = OSA_TimerDestroy((osa_timer_handle_t)dhcp_timer);
 	if (status != KOSA_StatusSuccess) {
@@ -1559,6 +1651,9 @@ void nxp_net_remove_all_networks(void)
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 	net_if_down((void *)net_get_uap_interface());
 #endif
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	net_if_down((void *)net_get_wfd_interface());
+#endif
 	/* wait for mgmt_event handled */
 	OSA_TimeDelay(500);
 }
@@ -1568,6 +1663,9 @@ void nxp_net_enable_all_networks(void)
 	net_if_up((void *)net_get_sta_interface());
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 	net_if_up((void *)net_get_uap_interface());
+#endif
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	net_if_up((void *)net_get_wfd_interface());
 #endif
 }
 
@@ -1726,13 +1824,13 @@ int net_stack_buffer_push(void *p, int len)
 
 void net_stack_buffer_set_iface(void *p, int interface)
 {
-#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-	if (interface == WLAN_BSS_TYPE_UAP) {
-		net_pkt_set_iface((struct net_pkt *)p, g_uap.netif);
-	} else {
-		net_pkt_set_iface((struct net_pkt *)p, g_mlan.netif);
+	struct net_if *iface = NULL;
+
+	iface = net_get_if_by_bss_type(interface);
+	if (iface == NULL) {
+		net_e("Failed to find net interface");
+		return;
 	}
-#else
-	net_pkt_set_iface((struct net_pkt *)p, g_mlan.netif);
-#endif
+
+	net_pkt_set_iface((struct net_pkt *)p, iface);
 }

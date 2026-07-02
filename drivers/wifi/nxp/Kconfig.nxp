@@ -20,6 +20,7 @@ if WIFI_NXP
 module = WIFI_NXP
 
 config HEAP_MEM_POOL_ADD_SIZE_NXP_WIFI
+	def_int 102400 if WIFI_NM_WPA_SUPPLICANT_P2P
 	def_int 25984 if WIFI_NM_WPA_SUPPLICANT
 	def_int 51200
 
@@ -453,6 +454,14 @@ config NXP_WIFI_SCAN_TASK_STACK_SIZE
 	default 2048
 	help
 	  This option specifies the size of the stack used by the wifi scan task.
+
+config NXP_WIFI_P2P_SUPPORT
+	bool "Wi-Fi P2P (Wi-Fi Direct) Support"
+	default y if WIFI_NM_WPA_SUPPLICANT_P2P
+	help
+	  Registers a dedicated Zephyr net_if for Wi-Fi P2P (Wi-Fi Direct).
+	  This enables IP networking over a P2P group interface and allows
+	  P2P shell commands to target the P2P iface directly.
 
 endmenu
 
