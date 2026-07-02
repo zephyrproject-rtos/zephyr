@@ -1533,40 +1533,39 @@ static bool br_sc_supported(void)
 
 static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
+	struct bt_smp_br *smp;
+	uint8_t index;
 	static const struct bt_l2cap_chan_ops ops = {
 		.connected = bt_smp_br_connected,
 		.disconnected = bt_smp_br_disconnected,
 		.recv = bt_smp_br_recv,
 	};
-	int i;
 
 	/* Check BR/EDR SC is supported */
 	if (!br_sc_supported()) {
 		return -ENOTSUP;
 	}
 
+	index = bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(bt_smp_br_pool), "Invalid ACL conn index");
+
 	LOG_DBG("conn %p handle %u", conn, conn->handle);
 
-	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
-		struct bt_smp_br *smp = &bt_smp_br_pool[i];
+	smp = &bt_smp_br_pool[index];
 
-		if (smp->chan.chan.conn) {
-			continue;
-		}
-
-		smp->chan.chan.ops = &ops;
-
-		*chan = &smp->chan.chan;
-
-		k_work_init_delayable(&smp->work, smp_br_timeout);
-		smp_br_reset(smp);
-
-		return 0;
+	if (smp->chan.state != BT_L2CAP_DISCONNECTED) {
+		LOG_ERR("SMP BR chan %p is not idle (state %u)", &smp->chan, smp->chan.state);
+		return -EBUSY;
 	}
 
-	LOG_ERR("No available SMP context for conn %p", conn);
+	smp->chan.chan.ops = &ops;
 
-	return -ENOMEM;
+	*chan = &smp->chan.chan;
+
+	k_work_init_delayable(&smp->work, smp_br_timeout);
+	smp_br_reset(smp);
+
+	return 0;
 }
 
 static struct bt_smp_br *smp_br_chan_get(struct bt_conn *conn)
