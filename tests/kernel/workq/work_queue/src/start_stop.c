@@ -25,7 +25,7 @@ ZTEST(workqueue_api, test_k_work_queue_start_stop)
 {
 	size_t i;
 	struct k_work work;
-	struct k_work_q work_q = {0};
+	struct k_work_q work_q = {};
 	struct k_work works[NUM_TEST_ITEMS];
 	struct k_work_queue_config cfg = {
 		.name = "test_work_q",
@@ -58,7 +58,7 @@ ZTEST(workqueue_api, test_k_work_queue_start_stop)
 
 ZTEST(workqueue_api, test_k_work_queue_stop_sys_thread)
 {
-	struct k_work_q work_q = {0};
+	struct k_work_q work_q = {};
 	struct k_work_queue_config cfg = {
 		.name = "test_work_q",
 		.no_yield = true,
@@ -100,7 +100,7 @@ ZTEST(workqueue_api, test_k_work_queue_run_stop)
 	size_t i;
 	struct k_thread thread;
 	struct k_work work;
-	struct k_work_q work_q = {0};
+	struct k_work_q work_q = {};
 	struct k_work works[NUM_TEST_ITEMS];
 	struct k_sem ret_sem;
 
@@ -148,7 +148,7 @@ ZTEST(workqueue_api, test_k_work_queue_run_stop)
  */
 ZTEST(workqueue_api, test_k_work_queue_priority)
 {
-	struct k_work_q work_q = {0};
+	struct k_work_q work_q = {};
 	struct k_work_queue_config cfg = {
 		.name = "prio_work_q",
 	};
