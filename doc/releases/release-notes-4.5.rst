@@ -78,6 +78,10 @@ Removed APIs and options
 
     * ``CONFIG_COUNTER_MAXIM_DS3231``
 
+* LLEXT
+
+    * ``llext_get_fn_table``, replaced by ``llext_get_fn_table_entry``
+
 * Networking
 
     * ``CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO``
