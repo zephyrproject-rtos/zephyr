@@ -289,6 +289,56 @@ ZTEST_USER(threads_lifecycle, test_user_mode)
 	k_thread_abort(tid);
 }
 
+static void current_get_entry(void *expected_tid, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	zassert_equal(k_current_get(), (k_tid_t)expected_tid,
+		      "k_current_get() does not identify the running thread");
+}
+
+/**
+ * @brief Verify k_current_get() identifies the currently executing thread.
+ *
+ * @details
+ * k_current_get() must return the thread id of the caller: the id is stable
+ * across repeated calls within one thread, a spawned child observes its own
+ * (different) id from inside its entry function, and the parent still reads
+ * its own id after the child has run.
+ *
+ * Test steps:
+ * - Read k_current_get() twice in the current thread and compare.
+ * - Spawn a child, passing the child's thread id as its argument.
+ * - The child asserts k_current_get() equals that id.
+ * - Join the child and verify the parent's id is unchanged and different
+ *   from the child's.
+ *
+ * Expected result:
+ * - Each thread sees its own thread id from k_current_get().
+ *
+ * @ingroup kernel_thread_tests
+ * @see k_current_get()
+ * @verifies ZEP-SRS-1-19
+ */
+ZTEST_USER(threads_lifecycle, test_thread_current_get)
+{
+	k_tid_t self = k_current_get();
+
+	zassert_equal(self, k_current_get(),
+		      "k_current_get() not stable within a thread");
+
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      current_get_entry, &tdata, NULL, NULL,
+				      K_PRIO_PREEMPT(0),
+				      K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	zassert_not_equal(self, tid, "child thread id equals parent's");
+	zassert_equal(k_thread_join(tid, K_FOREVER), 0);
+	zassert_equal(self, k_current_get(),
+		      "parent thread id changed across child execution");
+}
+
 struct k_thread join_thread;
 K_THREAD_STACK_DEFINE(join_stack, STACK_SIZE);
 

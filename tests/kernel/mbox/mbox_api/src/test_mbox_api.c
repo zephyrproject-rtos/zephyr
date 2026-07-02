@@ -642,6 +642,7 @@ ZTEST(mbox_api, test_mbox_put_get_buffer)
  * @see k_mbox_get()
  * @verifies ZEP-SRS-25-7
  * @verifies ZEP-SRS-25-8
+ * @verifies ZEP-SRS-25-10
  */
 ZTEST(mbox_api, test_mbox_async_put_get_buffer)
 {

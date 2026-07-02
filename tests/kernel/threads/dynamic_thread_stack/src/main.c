@@ -79,6 +79,10 @@ ZTEST_USER(dynamic_thread_stack, test_dynamic_thread_stack_userspace_dyn_obj)
 /**
  * @brief Exercise the pool-based thread stack allocator
  *
+ * Each spawned thread runs on its own pool-provided stack object,
+ * demonstrating that every thread has a dedicated stack.
+ *
+ * @verifies ZEP-SRS-1-8
  * @verifies ZEP-SRS-1-24
  * @verifies ZEP-SRS-1-25
  */
@@ -134,6 +138,11 @@ ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_pool)
 
 /**
  * @brief Exercise the heap-based thread stack allocator
+ *
+ * Each spawned thread runs on its own heap-allocated stack object,
+ * demonstrating that every thread has a dedicated stack.
+ *
+ * @verifies ZEP-SRS-1-8
  * @verifies ZEP-SRS-1-24
  * @verifies ZEP-SRS-1-25
  */
