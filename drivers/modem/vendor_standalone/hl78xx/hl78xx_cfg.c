@@ -1440,7 +1440,7 @@ static bool hl78xx_parse_quoted_hex_field(const char *src, uint32_t *value)
 	return true;
 }
 
-static void hl78xx_ctzeu_normalize_value(char *str)
+static void hl78xx_ctzeu_trim_whitespace(char *str)
 {
 	char *start;
 	char *end;
@@ -1453,16 +1453,7 @@ static void hl78xx_ctzeu_normalize_value(char *str)
 	while (isspace((unsigned char)*start)) {
 		start++;
 	}
-	if (start != str) {
-		memmove(str, start, strlen(start) + 1U);
-	}
 
-	hl78xx_trim_surrounding_quotes(str);
-
-	start = str;
-	while (isspace((unsigned char)*start)) {
-		start++;
-	}
 	if (start != str) {
 		memmove(str, start, strlen(start) + 1U);
 	}
@@ -1471,7 +1462,44 @@ static void hl78xx_ctzeu_normalize_value(char *str)
 	while ((end > str) && isspace((unsigned char)end[-1])) {
 		end--;
 	}
+
 	*end = '\0';
+}
+
+static void hl78xx_ctzeu_normalize_value(char *str)
+{
+	if (str == NULL) {
+		return;
+	}
+
+	/*
+	 * First trim whitespace so values such as:
+	 *
+	 *   " \"8\" "
+	 *
+	 * become:
+	 *
+	 *   "\"8\""
+	 *
+	 * before quote removal is attempted.
+	 */
+	hl78xx_ctzeu_trim_whitespace(str);
+
+	/*
+	 * Remove one pair of surrounding quotes, if present.
+	 */
+	hl78xx_trim_surrounding_quotes(str);
+
+	/*
+	 * Trim again so quoted values with internal padding such as:
+	 *
+	 *   "\" 8 \""
+	 *
+	 * normalize to:
+	 *
+	 *   "8"
+	 */
+	hl78xx_ctzeu_trim_whitespace(str);
 }
 
 static int hl78xx_ctzeu_parse_numeric_arg(const char *src, int min_value, int max_value, int *value)
@@ -1734,8 +1762,11 @@ bool hl78xx_parse_plmn(const char *operator, uint16_t *mcc, uint16_t *mnc)
 		return false;
 	}
 
-	while ((*operator != '\0') && (len < (sizeof(digits) - 1U))) {
+	while (*operator != '\0') {
 		if ((*operator >= '0') && (*operator <= '9')) {
+			if (len >= (sizeof(digits) - 1U)) {
+				return false;
+			}
 			digits[len++] = *operator;
 		}
 		operator++;
