@@ -148,6 +148,18 @@ These describe connections to cameras and displays (strictly speaking not shield
 - :dtcompatible:`weact,dcmi-camera-connector`
 
 
+ESP-01
+------
+
+This is an 8-pin header for ESP-01 Wi-Fi modules.
+
+Relevant devicetree node labels:
+
+- ``esp_01_header`` See :dtcompatible:`esp-01-header` for details on GPIO pin
+  definitions and includes for use in devicetree files.
+- ``esp_01_serial``
+
+
 Feather
 -------
 
