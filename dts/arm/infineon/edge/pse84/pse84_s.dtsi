@@ -1330,6 +1330,21 @@
 			status = "disabled";
 		};
 
+		crypto0: crypto@52440000 {
+			compatible = "infineon,mxcrypto";
+			reg = <0x52440000 0x10000>;
+
+			mxcrypto_trng: mxcrypto_trng {
+				compatible = "infineon,mxcrypto-trng";
+				status = "disabled";
+			};
+
+			mxcrypto_crypto: mxcrypto_crypto {
+				compatible = "infineon,mxcrypto-crypto";
+				status = "disabled";
+			};
+		};
+
 		dmic0: pdm@54400000 {
 			#address-cells = <1>;
 			#size-cells = <0>;
