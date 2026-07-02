@@ -83,7 +83,7 @@ static int do_pdm_transfer(const struct device *dmic_dev,
 
 int main(void)
 {
-	const struct device *const dmic_dev = DEVICE_DT_GET(DT_NODELABEL(dmic_dev));
+	const struct device *const dmic_dev = DEVICE_DT_GET(DT_ALIAS(dmic0));
 	int ret;
 
 	LOG_INF("DMIC sample");
