@@ -100,7 +100,7 @@ static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 	{2, 2},       /* 11 bit(s): min period: 2ms, max period: 2ms, round up from 2+ms */
 	{1, 1},       /* 12 bit(s): min period: 1ms, max period: 1ms, round up from 1+ms */
 };
-#elif (defined(CY_IP_MXS40SSRSS) || defined(CY_IP_MXS22SRSS)) && (IFX_WDT_MATCH_BITS == 22)
+#elif (IFX_WDT_MATCH_BITS == 22)
 /* ILO Frequency = 32768 Hz, ILO Period = 1 / 32768 Hz = .030518 ms */
 #define IFX_WDT_MAX_TIMEOUT_MS  384000
 #define IFX_WDT_MAX_IGNORE_BITS (IFX_WDT_MATCH_BITS - 4)
@@ -144,7 +144,7 @@ static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 	/* 18 bit(s): min period: 1ms, max period: 1ms, round up from 1+ms */
 	{1, 1},
 };
-#elif defined(CY_IP_MXS40SSRSS) && (IFX_WDT_MATCH_BITS == 32)
+#elif (IFX_WDT_MATCH_BITS == 32)
 /* ILO Frequency = 32768 Hz, ILO Period = 1 / 32768 Hz = .030518 ms */
 #define IFX_WDT_MAX_TIMEOUT_MS  393211435
 #define IFX_WDT_MAX_IGNORE_BITS (IFX_WDT_MATCH_BITS - 4)
