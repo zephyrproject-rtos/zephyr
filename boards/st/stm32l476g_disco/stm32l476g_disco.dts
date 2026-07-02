@@ -18,6 +18,7 @@
 	compatible = "st,stm32l476g-disco";
 
 	aliases {
+		dmic0 = &dmic_dev;
 		i2s-codec-tx = &sai1_a;
 	};
 
