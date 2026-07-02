@@ -57,7 +57,7 @@ static inline int z_vrfy_haptics_select_source(const struct device *dev,
 
 static inline int z_vrfy_haptics_set_level(const struct device *dev, const enum haptics_source src,
 					   const union haptics_config *const cfg,
-					   const uint8_t level)
+					   const uint32_t level)
 {
 	K_OOPS(K_SYSCALL_DRIVER_HAPTICS(dev, set_level));
 
