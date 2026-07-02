@@ -1127,23 +1127,26 @@ static inline int work_handler_out(const struct device *dev, uint8_t ep)
 
 	LOG_DBG("Handle data OUT, %zu | %zu", len, net_buf_tailroom(buf));
 
+	if (ep != USB_CONTROL_EP_OUT) {
+		atomic_clear_bit(&priv->out_fifo_state, IT82xx2_STATE_OUT_SHARED_FIFO_BUSY);
+	}
+
+	udc_ep_set_busy(ep_cfg, false);
+
 	if (net_buf_tailroom(buf) && len == udc_mps_ep_size(ep_cfg)) {
-		work_handler_xfer_continue(dev, ep, buf);
-		if (ep != USB_CONTROL_EP_OUT) {
-			err = udc_submit_ep_event(dev, buf, 0);
+		/* For non-control endpoints, the next out transfer will be started outside
+		 * this function. Do nothing here to avoid triggering it twice.
+		 */
+		if (ep == USB_CONTROL_EP_OUT) {
+			work_handler_xfer_continue(dev, ep, buf);
 		}
-		return err;
+
+		return 0;
 	}
 
 	buf = udc_buf_get(ep_cfg);
 	if (buf == NULL) {
 		return -ENODATA;
-	}
-
-	udc_ep_set_busy(ep_cfg, false);
-
-	if (ep != USB_CONTROL_EP_OUT) {
-		atomic_clear_bit(&priv->out_fifo_state, IT82xx2_STATE_OUT_SHARED_FIFO_BUSY);
 	}
 
 	err = udc_submit_ep_event(dev, buf, 0);
