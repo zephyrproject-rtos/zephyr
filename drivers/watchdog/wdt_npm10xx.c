@@ -11,6 +11,8 @@
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/logging/log.h>
 
+#include "mfd_npm10xx.h"
+
 LOG_MODULE_REGISTER(wdt_npm10xx, CONFIG_WDT_LOG_LEVEL);
 
 /* TIMER registers */
@@ -20,14 +22,6 @@ LOG_MODULE_REGISTER(wdt_npm10xx, CONFIG_WDT_LOG_LEVEL);
 #define TIMER_CONFIG_GEN   0x00U
 #define TIMER_CONFIG_RST   0x01U
 #define TIMER_CONFIG_PWRC  0x02U
-
-/* GPIO registers */
-#define NPM10_GPIO_USAGE0       0xA3U
-#define GPIO_USAGE_SEL_MASK     (BIT_MASK(4) << 0)
-#define GPIO_USAGE_SEL_WD       (3U << 0)
-#define GPIO_USAGE_SEL_WDSOFT   (4U << 0)
-#define GPIO_USAGE_SEL_TIMEREND (5U << 0)
-#define GPIO_USAGE_POL          BIT(4)
 
 struct wdt_npm10xx_data {
 	bool timeout_valid;
@@ -42,7 +36,6 @@ struct wdt_npm10xx_gpio_cfg {
 struct wdt_npm10xx_config {
 	const struct device *mfd;
 	const struct i2c_dt_spec i2c;
-	const struct device *gpio;
 	const struct wdt_npm10xx_gpio_cfg gpio_configs[3]; /* reset, pre-warn, timeout */
 };
 
@@ -146,7 +139,6 @@ static int wdt_npm10xx_init(const struct device *dev)
 {
 	const struct wdt_npm10xx_config *config = dev->config;
 	int ret;
-	uint8_t reg;
 
 	if (!device_is_ready(config->mfd)) {
 		LOG_ERR_DEVICE_NOT_READY(config->mfd);
@@ -157,25 +149,12 @@ static int wdt_npm10xx_init(const struct device *dev)
 			continue;
 		}
 
-		if (!device_is_ready(config->gpio)) {
-			LOG_ERR_DEVICE_NOT_READY(config->gpio);
-			return -ENODEV;
-		}
-
-		ret = gpio_pin_configure(config->gpio, config->gpio_configs[idx].pin,
-					 GPIO_OUTPUT | config->gpio_configs[idx].flags);
+		ret = mfd_npm10xx_pin_configure(config->mfd, config->gpio_configs[idx].pin,
+						config->gpio_configs[idx].usage,
+						config->gpio_configs[idx].flags | GPIO_OUTPUT);
 		if (ret < 0) {
-			return ret;
-		}
-
-		reg = config->gpio_configs[idx].usage;
-		if (config->gpio_configs[idx].flags & GPIO_ACTIVE_LOW) {
-			reg ^= GPIO_USAGE_POL;
-		}
-
-		ret = i2c_reg_write_byte_dt(&config->i2c,
-					    NPM10_GPIO_USAGE0 + config->gpio_configs[idx].pin, reg);
-		if (ret < 0) {
+			LOG_ERR("Failed to configure pin %u for Watchdog usage",
+				config->gpio_configs[idx].pin);
 			return ret;
 		}
 	}
@@ -183,10 +162,7 @@ static int wdt_npm10xx_init(const struct device *dev)
 	return 0;
 }
 
-#define DEFINE_GPIO(child)                                                                         \
-	COND_CODE_1(DT_NODE_HAS_COMPAT(child, nordic_npm10xx_gpio),                                \
-		    (.gpio = DEVICE_DT_GET(child),), ())
-
+/* clang-format off */
 #define GPIO_CONFIG(n, prop, usage)                                                                \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, prop),                                                \
 		    ({DT_INST_PROP_BY_IDX(n, prop, 0), usage, DT_INST_PROP_BY_IDX(n, prop, 1)}),   \
@@ -195,17 +171,17 @@ static int wdt_npm10xx_init(const struct device *dev)
 #define WDT_NPM10XX_DEFINE(n)                                                                      \
 	BUILD_ASSERT(COND_CODE_1(DT_INST_NODE_HAS_PROP(n, reset_gpio_config),                      \
 				 (DT_INST_PROP_BY_IDX(n, reset_gpio_config, 0)),                   \
-				 (0)) < 3,                                                         \
+				 (0)) < NPM10_PIN_NUM,                                             \
 		     "PMIC wdt reset output pin index out of range");                              \
                                                                                                    \
 	BUILD_ASSERT(COND_CODE_1(DT_INST_NODE_HAS_PROP(n, prewarn_gpio_config),                    \
 				 (DT_INST_PROP_BY_IDX(n, prewarn_gpio_config, 0)),                 \
-				 (0)) < 3,                                                         \
+				 (0)) < NPM10_PIN_NUM,                                             \
 		     "PMIC wdt pre-warn output pin index out of range");                           \
                                                                                                    \
 	BUILD_ASSERT(COND_CODE_1(DT_INST_NODE_HAS_PROP(n, timeout_gpio_config),                    \
 				 (DT_INST_PROP_BY_IDX(n, timeout_gpio_config, 0)),                 \
-				 (0)) < 3,                                                         \
+				 (0)) < NPM10_PIN_NUM,                                             \
 		     "PMIC wdt timeout output pin index out of range");                            \
                                                                                                    \
 	static struct wdt_npm10xx_data wdt_npm10xx_data##n;                                        \
@@ -213,16 +189,16 @@ static int wdt_npm10xx_init(const struct device *dev)
 	static const struct wdt_npm10xx_config wdt_npm10xx_config##n = {                           \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                                           \
 		.i2c = I2C_DT_SPEC_GET(DT_INST_PARENT(n)),                                         \
-		DT_FOREACH_CHILD_STATUS_OKAY(DT_INST_PARENT(n), DEFINE_GPIO)                       \
 		.gpio_configs = {                                                                  \
-			GPIO_CONFIG(n, reset_gpio_config, GPIO_USAGE_SEL_WDSOFT | GPIO_USAGE_POL), \
-			GPIO_CONFIG(n, prewarn_gpio_config, GPIO_USAGE_SEL_WD),                    \
-			GPIO_CONFIG(n, timeout_gpio_config, GPIO_USAGE_SEL_TIMEREND),              \
+			GPIO_CONFIG(n, reset_gpio_config, NPM10_PIN_WD_RST),                       \
+			GPIO_CONFIG(n, prewarn_gpio_config, NPM10_PIN_WD_WARN),                    \
+			GPIO_CONFIG(n, timeout_gpio_config, NPM10_PIN_TIMER_END),                  \
 		},                                                                                 \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &wdt_npm10xx_init, NULL, &wdt_npm10xx_data##n,                    \
 			      &wdt_npm10xx_config##n, POST_KERNEL,                                 \
 			      CONFIG_WDT_NPM10XX_INIT_PRIORITY, &wdt_npm10xx_api);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(WDT_NPM10XX_DEFINE)

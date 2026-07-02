@@ -6,6 +6,7 @@ zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
 
 # zephyr-keep-sorted-start
+zephyr_library_include_directories_ifdef(CONFIG_WDT_NPM10XX ${ZEPHYR_BASE}/drivers/mfd)
 zephyr_library_sources_ifdef(CONFIG_FWDGT_GD32 wdt_fwdgt_gd32.c)
 zephyr_library_sources_ifdef(CONFIG_IWDG_STM32 wdt_iwdg_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE wdt_handlers.c)
