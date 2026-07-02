@@ -265,7 +265,9 @@ class Lcov(CoverageTool):
 
         cmd_str = " ".join(cmd)
         logger.debug(f"Running {cmd_str}...")
-        return subprocess.call(cmd, stdout=coveragelog)
+        # Send lcov/genhtml diagnostics to the coverage log rather than the
+        # console, where they would otherwise flood a per-test run.
+        return subprocess.call(cmd, stdout=coveragelog, stderr=coveragelog)
 
     def run_lcov(self, args, coveragelog):
         if self.is_lcov_v2:
@@ -422,8 +424,9 @@ class Lcov(CoverageTool):
             with tempfile.TemporaryDirectory() as objdir:
                 gcda_paths = self._materialize_test_tree(objdir, build_dir, tags[tag])
                 if not self._gcov_capture(objdir, gcda_paths, name, info):
-                    cmd = ["--capture", "--directory", objdir,
-                           "--test-name", name, "--output-file", info]
+                    cmd = ["--capture", "--directory", objdir, "--test-name",
+                           re.sub(r"[^A-Za-z0-9_]", "_", name),
+                           "--output-file", info]
                     self.run_lcov(cmd, coveragelog)
 
             if os.path.exists(info) and os.path.getsize(info) > 0:
@@ -473,7 +476,8 @@ class Lcov(CoverageTool):
             return False
         try:
             tracefile = gcov_json_to_tracefile(
-                proc.stdout.decode("utf-8", "replace"), name)
+                proc.stdout.decode("utf-8", "replace"), name,
+                func_end_line=self.is_lcov_v2)
         except (ValueError, KeyError):
             logger.exception("Failed to parse gcov output for %s", name)
             return False
@@ -722,12 +726,17 @@ def _iter_gcov_json(text):
         yield obj
 
 
-def gcov_json_to_tracefile(text, test_name):
+def gcov_json_to_tracefile(text, test_name, func_end_line=False):
     """Convert gcov --json-format output into an lcov tracefile string.
 
     Preserves line, branch and function coverage under a single per-test TN
     record, so the result is equivalent to what "lcov --capture --test-name"
     would produce for the same gcda, but without lcov's per-invocation cost.
+
+    The test name is reduced to lcov's accepted character set, and (when
+    func_end_line is set, i.e. for lcov 2.x) function records carry the end
+    line, avoiding "invalid characters" and "derive_function_end_line"
+    warnings from lcov when the tracefiles are later merged.
     """
     files = {}
     for obj in _iter_gcov_json(text):
@@ -738,8 +747,10 @@ def gcov_json_to_tracefile(text, test_name):
                 name = fn.get("name")
                 if name is None:
                     continue
-                line, prev = fn.get("start_line", 0), rec["funcs"].get(name)
-                rec["funcs"][name] = (line, (prev[1] if prev else 0)
+                start = fn.get("start_line", 0)
+                end = fn.get("end_line", start)
+                prev = rec["funcs"].get(name)
+                rec["funcs"][name] = (start, end, (prev[2] if prev else 0)
                                       + fn.get("execution_count", 0))
             for line in entry.get("lines", []):
                 num, count = line["line_number"], line.get("count", 0)
@@ -754,15 +765,16 @@ def gcov_json_to_tracefile(text, test_name):
                         else:
                             counts.append(val)
 
-    out = [f"TN:{test_name}"]
+    out = [f"TN:{re.sub(r'[^A-Za-z0-9_]', '_', test_name)}"]
     for path in sorted(files):
         rec = files[path]
         out.append(f"SF:{path}")
         funcs = rec["funcs"]
-        for name, (line, _count) in sorted(funcs.items()):
-            out.append(f"FN:{line},{name}")
+        for name, (start, end, _count) in sorted(funcs.items()):
+            out.append(f"FN:{start},{end},{name}" if func_end_line
+                       else f"FN:{start},{name}")
         fnh = 0
-        for name, (_line, count) in sorted(funcs.items()):
+        for name, (_start, _end, count) in sorted(funcs.items()):
             out.append(f"FNDA:{count},{name}")
             fnh += count > 0
         if funcs:

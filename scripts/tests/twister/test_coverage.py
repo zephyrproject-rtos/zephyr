@@ -158,15 +158,19 @@ def test_gcov_json_to_tracefile():
         })
     )
 
-    tf = gcov_json_to_tracefile(text, "scn.test_a")
+    tf = gcov_json_to_tracefile(text, "scn.test_a", func_end_line=True)
     lines = tf.splitlines()
 
-    assert lines[0] == "TN:scn.test_a"
+    # Test name is reduced to lcov's accepted character set (no dots).
+    assert lines[0] == "TN:scn_test_a"
     assert "SF:/w/foo.c" in lines
     assert "SF:/w/bar.c" in lines
-    # function record
-    assert "FN:10,fn_a" in lines
+    # function record carries start,end line for lcov 2.x
+    assert "FN:10,10,fn_a" in lines
     assert "FNDA:3,fn_a" in lines
+    # lcov 1.x style omits the end line
+    tf_v1 = gcov_json_to_tracefile(text, "scn.test_a")
+    assert "FN:10,fn_a" in tf_v1.splitlines()
     # line 11 reported twice -> highest count wins
     assert "DA:11,5" in lines
     assert "DA:10,3" in lines
