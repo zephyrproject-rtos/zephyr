@@ -283,13 +283,11 @@ static int mcux_wwdt_init(const struct device *dev)
 		return ret;
 	}
 
-#if FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret) {
 		LOG_ERR("Failed to enable clock: %d", ret);
 		return ret;
 	}
-#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 	/* The rest of the device init is done from the
 	 * PM_DEVICE_ACTION_TURN_ON in the pm callback
