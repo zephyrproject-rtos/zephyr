@@ -10,11 +10,9 @@
 #include <zephyr/sys/linear_range.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(led_npm10xx, CONFIG_LED_LOG_LEVEL);
+#include "mfd_npm10xx.h"
 
-/* GPIO Register Offsets */
-#define NPM10_GPIO_CONFIG0 0xA0U
-#define NPM10_GPIO_USAGE0  0xA3U
+LOG_MODULE_REGISTER(led_npm10xx, CONFIG_LED_LOG_LEVEL);
 
 /* LED Driver Register Offsets */
 #define NPM10_LEDDRV_MODE0   0x90U
@@ -24,9 +22,6 @@ LOG_MODULE_REGISTER(led_npm10xx, CONFIG_LED_LOG_LEVEL);
 #define NPM10_LEDDRV_TASKS   0x98U
 #define NPM10_LEDDRV_CONFIG  0x99U
 #define NPM10_LEDDRV_STATUS  0x9AU
-
-/* GPIO USAGEx (0xA3–0xA5) */
-#define GPIO_USAGE_SEL_LED (7U << 0)
 
 /* LED MODEx (0x90–0x92) */
 #define LEDDRV_MODE_SEL_OFF    0U
@@ -41,15 +36,10 @@ LOG_MODULE_REGISTER(led_npm10xx, CONFIG_LED_LOG_LEVEL);
 #define LEDDRV_TASKS_BLINK BIT(0)
 
 /* LED CONFIG (0x99) */
-#define LEDDRV_CONFIG_ILED0        BIT(0)
-#define LEDDRV_CONFIG_ILED1        BIT(1)
-#define LEDDRV_CONFIG_ILED2        BIT(2)
 #define LEDDRV_CONFIG_RGB          BIT(3)
 #define LEDDRV_CONFIG_LOOP         BIT(4)
 #define LEDDRV_CONFIG_DOUBLE       BIT(5)
 #define LEDDRV_CONFIG_PWMFREQ_MASK (BIT_MASK(2) << 6)
-
-#define NPM10_LED_MAX_NUM 3U
 
 enum led_npm10xx_mode {
 	MODE_HOST = 0U,
@@ -79,6 +69,7 @@ struct led_npm10xx_node {
 };
 
 struct led_npm10xx_config {
+	const struct device *mfd;
 	struct i2c_dt_spec i2c;
 	enum led_npm10xx_blink_mode blink_mode;
 	const struct led_npm10xx_node *leds;
@@ -236,23 +227,17 @@ static int led_npm10xx_init(const struct device *dev)
 	const struct led_npm10xx_config *config = dev->config;
 	struct led_npm10xx_data *data = dev->data;
 
-	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C not ready");
+	if (!device_is_ready(config->mfd)) {
+		LOG_ERR_DEVICE_NOT_READY(config->mfd);
 		return -ENODEV;
 	}
 
 	for (size_t i = 0; i < config->leds_num; i++) {
-		/* writing 0 to config disconnects input/output buffers and pulls */
-		ret = i2c_reg_write_byte_dt(&config->i2c,
-					    NPM10_GPIO_CONFIG0 + config->leds[i].info.index, 0U);
+		ret = mfd_npm10xx_pin_configure(config->mfd, config->leds[i].info.index,
+						NPM10_PIN_LED, 0U);
 		if (ret < 0) {
-			return ret;
-		}
-
-		ret = i2c_reg_write_byte_dt(&config->i2c,
-					    NPM10_GPIO_USAGE0 + config->leds[i].info.index,
-					    GPIO_USAGE_SEL_LED);
-		if (ret < 0) {
+			LOG_ERR("Failed to configure pin %u for LED usage",
+				config->leds[i].info.index);
 			return ret;
 		}
 
@@ -300,7 +285,7 @@ static DEVICE_API(led, led_npm10xx_api) = {
 	},
 
 #define LED_NPM10XX_DEFINE(n)                                                                      \
-	BUILD_ASSERT(DT_INST_CHILD_NUM(n) <= NPM10_LED_MAX_NUM, "Too many LEDs (max 3 expected)"); \
+	BUILD_ASSERT(DT_INST_CHILD_NUM(n) <= NPM10_PIN_NUM, "Too many LEDs (max 3 expected)");     \
                                                                                                    \
 	static enum led_npm10xx_state led_npm10xx_states##n[DT_INST_CHILD_NUM(n)];                 \
 	static struct led_npm10xx_data led_npm10xx_data##n = {led_npm10xx_states##n};              \
@@ -308,6 +293,7 @@ static DEVICE_API(led, led_npm10xx_api) = {
 	const static struct led_npm10xx_node led_npm10xx_nodes##n[DT_INST_CHILD_NUM(n)] = {        \
 		DT_INST_FOREACH_CHILD(n, LED_NPM10XX_NODE_DEFINE)};                                \
 	static const struct led_npm10xx_config led_npm10xx_config##n = {                           \
+		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                                           \
 		.i2c = I2C_DT_SPEC_GET(DT_INST_PARENT(n)),                                         \
 		.pwm_freq = DT_INST_ENUM_IDX(n, pwm_freq_hz),                                      \
 		.blink_mode = DT_INST_ENUM_IDX(n, blink_mode),                                     \
