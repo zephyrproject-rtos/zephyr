@@ -12,6 +12,7 @@ import os
 from twisterlib.coverage import (
     build_test_matrix,
     discover_per_test_semihost,
+    gcov_json_to_tracefile,
     materialize_canonical_gcda,
     retrieve_tagged_gcov_data,
     sanitize_coverage_name,
@@ -128,3 +129,53 @@ def test_build_test_matrix(tmp_path):
     assert by_test["scn.test_b"] == {"foo.c": [10, 12]}
     # bar.c under tests/ is absent from every view.
     assert all("bar.c" not in os.path.basename(k) for k in by_line)
+
+
+def test_gcov_json_to_tracefile():
+    # Two concatenated gcov --stdout objects, and a line (11) reported twice
+    # with different counts (its max must win) and with branch data.
+    text = (
+        json.dumps({
+            "current_working_directory": "/w",
+            "files": [{
+                "file": "/w/foo.c",
+                "functions": [{"name": "fn_a", "start_line": 10, "execution_count": 3}],
+                "lines": [
+                    {"line_number": 10, "count": 3, "branches": []},
+                    {"line_number": 11, "count": 0,
+                     "branches": [{"count": 0}, {"count": 2}]},
+                    {"line_number": 11, "count": 5, "branches": []},
+                ],
+            }],
+        })
+        + "\n"
+        + json.dumps({
+            "files": [{
+                "file": "/w/bar.c",
+                "functions": [],
+                "lines": [{"line_number": 1, "count": 0, "branches": []}],
+            }],
+        })
+    )
+
+    tf = gcov_json_to_tracefile(text, "scn.test_a")
+    lines = tf.splitlines()
+
+    assert lines[0] == "TN:scn.test_a"
+    assert "SF:/w/foo.c" in lines
+    assert "SF:/w/bar.c" in lines
+    # function record
+    assert "FN:10,fn_a" in lines
+    assert "FNDA:3,fn_a" in lines
+    # line 11 reported twice -> highest count wins
+    assert "DA:11,5" in lines
+    assert "DA:10,3" in lines
+    # branch records from the first line-11 entry
+    assert "BRDA:11,0,0,0" in lines
+    assert "BRDA:11,0,1,2" in lines
+    # foo.c: 2 lines found, both hit
+    foo = tf.split("SF:/w/foo.c", 1)[1]
+    assert "LF:2" in foo and "LH:2" in foo
+    # bar.c: 1 line found, none hit
+    bar = tf.split("SF:/w/bar.c", 1)[1]
+    assert "LF:1" in bar and "LH:0" in bar

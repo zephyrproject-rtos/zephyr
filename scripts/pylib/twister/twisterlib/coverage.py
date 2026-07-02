@@ -392,9 +392,9 @@ class Lcov(CoverageTool):
 
         Each test is captured from its own temporary object tree, containing
         only that test's gcda files plus symlinks to the shared gcno files.
-        This keeps every lcov capture proportional to what the test actually
-        executed (rather than scanning the whole build tree), and avoids
-        serializing on the build tree's canonical gcda paths.
+        Coverage is extracted by invoking gcov directly (one process per test,
+        far cheaper than a full lcov capture); if that fails, it falls back to
+        lcov over the same tree.
 
         Returns the list of generated per-test tracefiles.
         """
@@ -420,29 +420,68 @@ class Lcov(CoverageTool):
 
             info = os.path.join(per_test_dir, sanitize_coverage_name(name) + ".info")
             with tempfile.TemporaryDirectory() as objdir:
-                for canonical, spec in tags[tag].items():
-                    rel = os.path.relpath(canonical, build_dir)
-                    if rel.startswith(".."):
-                        rel = canonical.lstrip(os.sep)
-                    dst_gcda = os.path.join(objdir, rel)
-                    materialize_canonical_gcda(dst_gcda, spec)
-                    # Pair each gcda with its (shared, immutable) gcno.
-                    gcno = canonical[:-len(".gcda")] + ".gcno"
-                    if os.path.exists(gcno):
-                        dst_gcno = dst_gcda[:-len(".gcda")] + ".gcno"
-                        with contextlib.suppress(OSError):
-                            os.symlink(gcno, dst_gcno)
+                gcda_paths = self._materialize_test_tree(objdir, build_dir, tags[tag])
+                if not self._gcov_capture(objdir, gcda_paths, name, info):
+                    cmd = ["--capture", "--directory", objdir,
+                           "--test-name", name, "--output-file", info]
+                    self.run_lcov(cmd, coveragelog)
 
-                cmd = ["--capture", "--directory", objdir,
-                       "--test-name", name, "--output-file", info]
-                ret = self.run_lcov(cmd, coveragelog)
-
-            if ret == 0 and os.path.exists(info) and os.path.getsize(info) > 0:
+            if os.path.exists(info) and os.path.getsize(info) > 0:
                 infos.append(info)
             else:
                 logger.error("Per-test coverage capture failed for %s", name)
 
         return infos
+
+    @staticmethod
+    def _materialize_test_tree(objdir, build_dir, entries):
+        """Populate objdir with a test's gcda plus symlinks to shared gcno.
+
+        Returns the list of materialized gcda paths.
+        """
+        gcda_paths = []
+        for canonical, spec in entries.items():
+            rel = os.path.relpath(canonical, build_dir)
+            if rel.startswith(".."):
+                rel = canonical.lstrip(os.sep)
+            dst_gcda = os.path.join(objdir, rel)
+            materialize_canonical_gcda(dst_gcda, spec)
+            gcda_paths.append(dst_gcda)
+            gcno = canonical[:-len(".gcda")] + ".gcno"
+            if os.path.exists(gcno):
+                with contextlib.suppress(OSError):
+                    os.symlink(gcno, dst_gcda[:-len(".gcda")] + ".gcno")
+        return gcda_paths
+
+    def _gcov_capture(self, objdir, gcda_paths, name, info):
+        """Capture one test's coverage by invoking gcov directly.
+
+        Writes a TN-tagged tracefile to info. Returns True on success, False if
+        gcov is unavailable or produced no usable data (so the caller can fall
+        back to lcov).
+        """
+        if not gcda_paths:
+            return False
+        cmd = [self.gcov_tool, "--stdout", "--json-format",
+               "--branch-probabilities", *gcda_paths]
+        try:
+            proc = subprocess.run(cmd, cwd=objdir, stdout=subprocess.PIPE,
+                                  stderr=subprocess.DEVNULL, check=False)
+        except OSError:
+            return False
+        if proc.returncode != 0 or not proc.stdout:
+            return False
+        try:
+            tracefile = gcov_json_to_tracefile(
+                proc.stdout.decode("utf-8", "replace"), name)
+        except (ValueError, KeyError):
+            logger.exception("Failed to parse gcov output for %s", name)
+            return False
+        if "SF:" not in tracefile:
+            return False
+        with open(info, "w") as fp:
+            fp.write(tracefile)
+        return True
 
 
 class Gcovr(CoverageTool):
@@ -668,6 +707,86 @@ def materialize_canonical_gcda(canonical, spec):
     else:
         with open(canonical, "wb") as fp:
             fp.write(value)
+
+
+def _iter_gcov_json(text):
+    """Yield each JSON object from a possibly concatenated gcov --stdout stream."""
+    decoder = json.JSONDecoder()
+    idx, length = 0, len(text)
+    while idx < length:
+        while idx < length and text[idx].isspace():
+            idx += 1
+        if idx >= length:
+            break
+        obj, idx = decoder.raw_decode(text, idx)
+        yield obj
+
+
+def gcov_json_to_tracefile(text, test_name):
+    """Convert gcov --json-format output into an lcov tracefile string.
+
+    Preserves line, branch and function coverage under a single per-test TN
+    record, so the result is equivalent to what "lcov --capture --test-name"
+    would produce for the same gcda, but without lcov's per-invocation cost.
+    """
+    files = {}
+    for obj in _iter_gcov_json(text):
+        for entry in obj.get("files", []):
+            path = entry["file"]
+            rec = files.setdefault(path, {"lines": {}, "branches": {}, "funcs": {}})
+            for fn in entry.get("functions", []):
+                name = fn.get("name")
+                if name is None:
+                    continue
+                line, prev = fn.get("start_line", 0), rec["funcs"].get(name)
+                rec["funcs"][name] = (line, (prev[1] if prev else 0)
+                                      + fn.get("execution_count", 0))
+            for line in entry.get("lines", []):
+                num, count = line["line_number"], line.get("count", 0)
+                rec["lines"][num] = max(rec["lines"].get(num, 0), count)
+                branches = line.get("branches", [])
+                if branches:
+                    counts = rec["branches"].setdefault(num, [])
+                    for idx, br in enumerate(branches):
+                        val = br.get("count", 0)
+                        if idx < len(counts):
+                            counts[idx] += val
+                        else:
+                            counts.append(val)
+
+    out = [f"TN:{test_name}"]
+    for path in sorted(files):
+        rec = files[path]
+        out.append(f"SF:{path}")
+        funcs = rec["funcs"]
+        for name, (line, _count) in sorted(funcs.items()):
+            out.append(f"FN:{line},{name}")
+        fnh = 0
+        for name, (_line, count) in sorted(funcs.items()):
+            out.append(f"FNDA:{count},{name}")
+            fnh += count > 0
+        if funcs:
+            out.append(f"FNF:{len(funcs)}")
+            out.append(f"FNH:{fnh}")
+        brf = brh = 0
+        for num in sorted(rec["branches"]):
+            for idx, count in enumerate(rec["branches"][num]):
+                out.append(f"BRDA:{num},0,{idx},{count}")
+                brf += 1
+                brh += count > 0
+        if brf:
+            out.append(f"BRF:{brf}")
+            out.append(f"BRH:{brh}")
+        lf = lh = 0
+        for num in sorted(rec["lines"]):
+            count = rec["lines"][num]
+            out.append(f"DA:{num},{count}")
+            lf += 1
+            lh += count > 0
+        out.append(f"LF:{lf}")
+        out.append(f"LH:{lh}")
+        out.append("end_of_record")
+    return "\n".join(out) + "\n"
 
 
 # Source paths matching these substrings are omitted from the per-test matrix,
