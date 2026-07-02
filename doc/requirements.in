@@ -35,7 +35,7 @@ coverxygen!=1.8.2 # See https://github.com/psycofdj/coverxygen/issues/37
 python-dotenv
 
 # Used to export requirements from the reqmgmt module (StrictDoc)
-strictdoc
+strictdoc>=0.25.1
 
 # Requirements traceability (items, matrices, coverage) in the Sphinx docs
 mlx.traceability
