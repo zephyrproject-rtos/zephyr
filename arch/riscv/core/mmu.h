@@ -12,15 +12,6 @@
 #include <zephyr/arch/riscv/csr.h>
 #include <stdbool.h>
 
-/* Set below flag to get debug prints */
-#define MMU_DEBUG_PRINTS 0
-
-#if MMU_DEBUG_PRINTS
-#define MMU_DEBUG(fmt, ...) printk(fmt, ##__VA_ARGS__)
-#else
-#define MMU_DEBUG(...)
-#endif
-
 /*
  * RISC-V Virtual Memory Layout (assumes 4KB page size)
  *
