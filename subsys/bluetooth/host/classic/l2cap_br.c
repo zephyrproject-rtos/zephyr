@@ -1796,6 +1796,7 @@ static void connect_fixed_channel(struct bt_l2cap_br_chan *chan)
 		return;
 	}
 
+	bt_l2cap_br_chan_set_state(&chan->chan, BT_L2CAP_CONNECTED);
 	if (chan->chan.ops && chan->chan.ops->connected) {
 		chan->chan.ops->connected(&chan->chan);
 	}
