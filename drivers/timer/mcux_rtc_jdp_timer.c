@@ -118,7 +118,7 @@ static void rtc_jdp_set_compare(uint32_t compare)
 	}
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -130,13 +130,13 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	uint32_t cycles;
 
-	if (ticks == K_TICKS_FOREVER) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
+		/*
+		 * No pending timeout and no future timer interrupt required:
+		 * wait as long as the hardware allows.
+		 */
 		cycles = cycles_max;
 	} else {
-		if (ticks < 0) {
-			ticks = 0;
-		}
-
 		uint64_t wait_ticks = (uint64_t)last_elapsed + (uint64_t)ticks;
 		uint64_t wait_cycles = wait_ticks * (uint64_t)cycles_per_tick;
 
