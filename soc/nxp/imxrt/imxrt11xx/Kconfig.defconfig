@@ -42,4 +42,18 @@ choice CACHE_TYPE
 	default EXTERNAL_CACHE if SOC_MIMXRT1176_CM4 || SOC_MIMXRT1166_CM4
 endchoice
 
+if MBEDTLS_PSA_CRYPTO_C
+config PSA_CRYPTO_DRIVER_CAAM
+	bool
+	default y
+
+config TEST_KEY_LOCATION
+	hex
+	default 0x000001
+
+config SECURE_STORAGE_ITS_MAX_DATA_SIZE
+	default 512
+
+endif # MBEDTLS_PSA_CRYPTO_C
+
 endif
