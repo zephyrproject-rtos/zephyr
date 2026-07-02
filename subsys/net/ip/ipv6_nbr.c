@@ -341,6 +341,34 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct net_in6_addr *addr)
 	return true;
 }
 
+void net_ipv6_nbr_clear_cache(struct net_if *iface)
+{
+	/* The lock is recursive, so it can be held across net_ipv6_nbr_rm(),
+	 * which takes it again. Removing an entry frees its slot, so the
+	 * indexed scan simply skips it on the next pass.
+	 */
+	net_ipv6_nbr_lock();
+
+	for (int i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+		struct net_nbr *nbr = get_nbr(i);
+		struct net_in6_addr addr;
+
+		if (!nbr->ref || nbr->iface != iface ||
+		    net_ipv6_nbr_data(nbr)->state == NET_IPV6_NBR_STATE_STATIC) {
+			continue;
+		}
+
+		/* Copy the address out first: net_ipv6_nbr_rm() frees the entry
+		 * and then reads the address it is passed, so a pointer into the
+		 * freed entry would be a use-after-free.
+		 */
+		net_ipaddr_copy(&addr, &net_ipv6_nbr_data(nbr)->addr);
+		net_ipv6_nbr_rm(iface, &addr);
+	}
+
+	net_ipv6_nbr_unlock();
+}
+
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
 #define NS_REPLY_TIMEOUT CONFIG_NET_IPV6_NS_TIMEOUT
 #else
