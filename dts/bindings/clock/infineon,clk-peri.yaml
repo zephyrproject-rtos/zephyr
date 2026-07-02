@@ -35,10 +35,12 @@ properties:
     description: peripheral clock divider instance
     required: true
 
+  ifx,pclk-count:
+    type: int
+    description: Number of PCLK outputs in this peripheral clock group
+
   "#clock-cells":
-    const: 3
+    const: 1
 
 clock-cells:
-  - rootclk-id
-  - divider-type
-  - divider-inst
+  - pclk-id
