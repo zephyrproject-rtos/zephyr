@@ -11,6 +11,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_IFX_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_IFX_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 
 /** PLL clock type */
@@ -30,14 +31,11 @@ struct ifx_clk {
 	uint8_t clk_id;
 };
 
-/** Infineon peripheral clock specifier */
+/** Infineon peripheral clock specifier (peripheral names only its PCLK id) */
 struct ifx_clk_peri {
-	/** Root clock ID */
-	uint8_t rootclk_id;
-	/** Divider type */
-	uint8_t divider_type;
-	/** Divider instance */
-	uint8_t divider_inst;
+	/** PCLK output id within the peripheral clock group */
+	uint16_t pclk_id;
+	bool integer_only;
 };
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_IFX_H_ */
