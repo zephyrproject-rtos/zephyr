@@ -45,7 +45,7 @@
  * Zone Config Memory Map
  * zoneid valid entries are [0x0-0xF]
  */
-#define ATAES_ZONECFG_REG(zoneid) (0xF0C0 + (zoneid < 2))
+#define ATAES_ZONECFG_REG(zoneid) (0xF0C0 + (zoneid << 2))
 
 /**
  * Counter Memory Map
