@@ -9,11 +9,8 @@ Tests for the per-test coverage helpers in twisterlib.coverage
 import json
 import os
 
-import re
-
 from twisterlib.coverage import (
     build_test_matrix,
-    build_test_matrix_html,
     discover_per_test_semihost,
     materialize_canonical_gcda,
     retrieve_tagged_gcov_data,
@@ -131,22 +128,3 @@ def test_build_test_matrix(tmp_path):
     assert by_test["scn.test_b"] == {"foo.c": [10, 12]}
     # bar.c under tests/ is absent from every view.
     assert all("bar.c" not in os.path.basename(k) for k in by_line)
-
-
-def test_build_test_matrix_html(tmp_path):
-    matrix = {
-        "by_line": {"foo.c": {"10": ["scn.test_a", "scn.test_b"]}},
-        "by_test": {"scn.test_a": {"foo.c": [10]},
-                    "scn.test_b": {"foo.c": [10]}},
-    }
-    out = tmp_path / "matrix.html"
-    build_test_matrix_html(matrix, str(out))
-    html = out.read_text()
-
-    # Placeholder fully substituted and the matrix is embedded as parseable JSON.
-    assert "__MATRIX_DATA__" not in html
-    embedded = re.search(r'application/json">(.*?)</script>', html, re.S).group(1)
-    assert json.loads(embedded.replace("<\\/", "</")) == matrix
-    # A few structural anchors the dashboard relies on.
-    for token in ('id="testTable"', 'id="fileView"', "Per-test coverage matrix"):
-        assert token in html

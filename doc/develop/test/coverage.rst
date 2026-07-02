@@ -205,21 +205,34 @@ In addition to the usual aggregated report (whose HTML is rendered with
 ``genhtml --show-details`` so per-test attribution is browsable), this produces:
 
 * one ``<scenario>.<test>.info`` tracefile per test under each build's
-  ``coverage/tests/`` directory,
+  ``coverage/tests/`` directory, and
 * ``twister-out/coverage/test_matrix.json``, a machine-readable matrix with a
   ``by_line`` view (``{file: {line: [tests]}}``) and a ``by_test`` view
-  (``{test: {file: [lines]}}``), and
-* ``twister-out/coverage/test_matrix.html``, a self-contained interactive
-  dashboard. It lists, per test, how many files and lines it covers and how
-  many lines it covers *uniquely* (that no other test reaches -- useful for
-  spotting redundant or load-bearing tests), and lets you drill into the files
-  a test covers or look up which tests cover a given file and line.
+  (``{test: {file: [lines]}}``).
 
 .. note::
 
    ``--coverage-per-test`` requires the ``lcov`` coverage tool, because the
    matrix relies on lcov's per-test ``TN`` tracefile records; ``gcovr`` has no
    equivalent. It also implies ``--coverage``.
+
+Visualizing the matrix
+----------------------
+
+``test_matrix.json`` can be turned into a self-contained, interactive HTML
+dashboard with the standalone :zephyr_file:`scripts/gen_test_matrix_dashboard.py`
+script (it has no dependency on Twister and can be run on any previously
+generated matrix):
+
+.. code-block:: console
+
+   $ scripts/gen_test_matrix_dashboard.py -i twister-out/coverage/test_matrix.json
+
+This writes ``twister-out/coverage/test_matrix.html``, which lists -- per test
+-- how many files and lines it covers and how many lines it covers *uniquely*
+(that no other test reaches, useful for spotting redundant or load-bearing
+tests), and lets you drill into the files a test covers or look up which tests
+cover a given file and line.
 
 .. _gcovr_symlinks:
    https://github.com/gcovr/gcovr/blob/main/doc/source/guide/filters.rst#filters-for-symlinks
