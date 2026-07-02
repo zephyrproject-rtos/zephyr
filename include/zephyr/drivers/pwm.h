@@ -437,6 +437,51 @@ typedef void (*pwm_capture_callback_handler_t)(const struct device *dev,
 					       uint32_t pulse_cycles,
 					       int status, void *user_data);
 
+/**
+ * @brief PWM capture batch configuration structure.
+ *
+ * This structure holds configuration for batch PWM capture,
+ * with the application buffers for period and pulse samples.
+ * The buffers must remain valid until capture is disabled.
+ *
+ * @note @kconfig{CONFIG_PWM_CAPTURE_BATCH} must be selected to enable
+ * this API.
+ */
+struct pwm_capture_batch {
+	uint32_t channel;
+	pwm_flags_t flags;
+	uint32_t *period_buf;
+	uint32_t *pulse_buf;
+	size_t buf_len_samples;
+	void (*callback)(const struct device *dev, uint32_t channel,
+			 const uint32_t *period_cycles,
+			 const uint32_t *pulse_cycles, uint32_t count,
+			 int status, void *user_data);
+	void *user_data;
+};
+
+/**
+ * @brief PWM capture batch callback handler function signature.
+ *
+ * @note The callback handler will be called in interrupt context.
+ *
+ * @note @kconfig{CONFIG_PWM_CAPTURE_BATCH} must be selected to enable
+ * this API.
+ *
+ * @param[in] dev PWM device instance.
+ * @param channel PWM channel.
+ * @param[in] period_cycles Pointer to captured PWM period samples (clock cycles).
+ * @param[in] pulse_cycles Pointer to captured PWM pulse samples (clock cycles).
+ * @param count Number of valid samples in period_cycles and pulse_cycles.
+ * @param status Status for the PWM capture (0 if no error, negative errno
+ *               otherwise).
+ * @param user_data User data passed to pwm_configure_capture_batch().
+ */
+typedef void (*pwm_capture_batch_callback_handler_t)(const struct device *dev, uint32_t channel,
+						     const uint32_t *period_cycles,
+						     const uint32_t *pulse_cycles, uint32_t count,
+						     int status, void *user_data);
+
 struct pwm_event_callback;
 
 /**
@@ -513,6 +558,15 @@ typedef int (*pwm_configure_capture_t)(const struct device *dev,
 				       pwm_capture_callback_handler_t cb,
 				       void *user_data);
 
+#if defined(CONFIG_PWM_CAPTURE_BATCH) || defined(__DOXYGEN__)
+/**
+ * @brief Callback API to configure PWM batch capture.
+ * See @a pwm_configure_capture_batch() for argument description.
+ */
+typedef int (*pwm_configure_capture_batch_t)(const struct device *dev,
+					     const struct pwm_capture_batch *batch);
+#endif /* CONFIG_PWM_CAPTURE_BATCH */
+
 /**
  * @brief Callback API to enable PWM capture.
  * See @a pwm_enable_capture() for argument description.
@@ -554,6 +608,13 @@ __subsystem struct pwm_driver_api {
 	 * @kconfig_dep{CONFIG_PWM_CAPTURE}
 	 */
 	pwm_configure_capture_t configure_capture;
+#if defined(CONFIG_PWM_CAPTURE_BATCH) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_optional @copybrief pwm_configure_capture_batch
+	 * @kconfig_dep{CONFIG_PWM_CAPTURE_BATCH}
+	 */
+	pwm_configure_capture_batch_t configure_capture_batch;
+#endif /* CONFIG_PWM_CAPTURE_BATCH */
 	/**
 	 * @driver_ops_optional @copybrief pwm_enable_capture
 	 * @kconfig_dep{CONFIG_PWM_CAPTURE}
@@ -838,6 +899,45 @@ static inline int pwm_configure_capture(const struct device *dev,
 	return api->configure_capture(dev, channel, flags, cb,
 					      user_data);
 }
+
+#if defined(CONFIG_PWM_CAPTURE_BATCH) || defined(__DOXYGEN__)
+/**
+ * @brief Configure PWM batch capture for a single PWM input.
+ *
+ * This configures DMA-driven capture with the application buffers and
+ * registers a batch callback. Use pwm_enable_capture() to start and
+ * pwm_disable_capture() to stop.
+ * The callback indicates how many samples are valid in each call.
+ *
+ * The application must ensure that the buffers (period_buf, pulse_buf) remain
+ * valid until capture is disabled via pwm_disable_capture().
+ *
+ * @note @kconfig{CONFIG_PWM_CAPTURE_BATCH} must be enabled.
+ * @note This function cannot be called from user context because it installs a
+ * callback pointer.
+ *
+ * @param[in] dev PWM device instance.
+ * @param[in] batch Batch capture configuration with the application buffers.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL Invalid function parameters were given.
+ * @retval -ENOSYS PWM capture is not supported or the given flags are not
+ *                 supported.
+ * @retval -EIO IO error occurred while configuring.
+ * @retval -EBUSY PWM capture is already in progress.
+ */
+static inline int pwm_configure_capture_batch(const struct device *dev,
+					      const struct pwm_capture_batch *batch)
+{
+	const struct pwm_driver_api *api = DEVICE_API_GET(pwm, dev);
+
+	if (api->configure_capture_batch == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->configure_capture_batch(dev, batch);
+}
+#endif /* CONFIG_PWM_CAPTURE_BATCH */
 #endif /* CONFIG_PWM_CAPTURE */
 
 /**
