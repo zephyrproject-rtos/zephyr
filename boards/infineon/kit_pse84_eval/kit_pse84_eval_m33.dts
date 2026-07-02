@@ -30,6 +30,7 @@
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
 		zephyr,bt-hci = &bt_hci_uart;
+		zephyr,entropy = &mxcrypto_trng;
 	};
 };
 
@@ -227,4 +228,12 @@ uart4: &scb4 {
 			hci-operation-speed = <115200>;
 		};
 	};
+};
+
+&mxcrypto_trng {
+	status = "okay";
+};
+
+&mxcrypto_crypto {
+	status = "okay";
 };
