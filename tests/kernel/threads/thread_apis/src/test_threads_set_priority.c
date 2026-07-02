@@ -141,7 +141,7 @@ ZTEST(threads_lifecycle, test_threads_priority_set)
  * @see k_thread_priority_set(), k_thread_priority_get()
  * @verifies ZEP-SRS-1-2
  */
-ZTEST(threads_lifecycle, test_isr_threads_priority_set_)
+ZTEST(threads_lifecycle, test_threads_priority_set_isr)
 {
 	int rv;
 	int prio = k_thread_priority_get(k_current_get());
