@@ -340,6 +340,7 @@ struct sem_init_case {
  * @see k_sem_init()
  * @verifies ZEP-SRS-5-2
  * @verifies ZEP-SRS-5-4
+ * @verifies ZEP-SRS-5-5
  * @verifies ZEP-SRS-5-18
  */
 ZTEST_USER_P(semaphore, test_sem_init_validity)
@@ -377,6 +378,45 @@ static const struct sem_init_case sem_init_cases[] = {
 ZTEST_DEFINE_PARAM_VALUES_ARRAY(sem_init_cases_vals, sem_init_cases);
 ZTEST_INSTANTIATE_TEST_SUITE_P(cases, semaphore,
 			       test_sem_init_validity, sem_init_cases_vals);
+
+/**
+ * @brief Verify k_sem_init() sets the initial semaphore count.
+ *
+ * @details
+ * A semaphore initialized at run time with a non-zero initial count must
+ * actually hold that many "units": it can be taken exactly that many times
+ * without blocking, after which a further no-wait take fails with -EBUSY.
+ * This proves the initial value is set and semantically effective, rather
+ * than only being reported back by the count getter.
+ *
+ * Test steps:
+ * - Initialize a semaphore with initial count 3 and a larger maximum.
+ * - Verify the reported count equals 3.
+ * - Take the semaphore three times with K_NO_WAIT; all must succeed.
+ * - Attempt a fourth no-wait take and verify it fails with -EBUSY.
+ * - Verify the count is now 0.
+ *
+ * Expected result:
+ * - Exactly the initial number of takes succeed and the count tracks them.
+ *
+ * @ingroup kernel_semaphore_tests
+ * @see k_sem_init(), k_sem_take(), k_sem_count_get()
+ * @verifies ZEP-SRS-5-5
+ */
+ZTEST_USER(semaphore, test_k_sem_init_initial_count)
+{
+	const uint32_t initial = 3U;
+
+	expect_k_sem_init_nomsg(&msg_sema, initial, SEM_MAX_VAL, 0);
+	expect_k_sem_count_get_nomsg(&msg_sema, initial);
+
+	for (uint32_t i = 0; i < initial; i++) {
+		expect_k_sem_take_nomsg(&msg_sema, K_NO_WAIT, 0);
+	}
+
+	expect_k_sem_take_nomsg(&msg_sema, K_NO_WAIT, -EBUSY);
+	expect_k_sem_count_get_nomsg(&msg_sema, 0);
+}
 
 /**
  * @brief Verify k_sem_reset() sets the semaphore count back to zero.
