@@ -896,8 +896,8 @@ void k_work_queue_start(struct k_work_q *queue,
 	}
 #endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
 
-	k_thread_start(&queue->thread);
 	queue->thread_id = &queue->thread;
+	k_thread_start(&queue->thread);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work_queue, start, queue);
 
