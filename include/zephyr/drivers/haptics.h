@@ -536,6 +536,6 @@ static inline int z_impl_haptics_stream_samples(const struct device *dev,
 }
 #endif /* __cplusplus */
 
-#include <syscalls/haptics.h>
+#include <zephyr/syscalls/haptics.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_HAPTICS_H_ */
