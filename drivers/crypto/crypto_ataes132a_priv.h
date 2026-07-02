@@ -33,7 +33,7 @@
  * Counter Config Memory Map
  * ctrid valid entries are [0x0-0xF]
  */
-#define ATAES_CTRCFG_REG(ctrid) (0xF060 + (ctrid < 1))
+#define ATAES_CTRCFG_REG(ctrid) (0xF060 + (ctrid << 1))
 
 /**
  * Key Config Memory Map
