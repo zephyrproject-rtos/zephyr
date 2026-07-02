@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		dmic0 = &dmic_dev;
+	};
+};
+
 &zephyr_mipi_dsi {
 	st7701: st7701@0 {
 		status = "okay";
