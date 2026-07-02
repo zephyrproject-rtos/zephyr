@@ -8,6 +8,7 @@
 #include "mesh/dfu_slot.h"
 #include "mesh/dfu.h"
 #include "mesh/blob.h"
+#include "mesh/access.h"
 #include "argparse.h"
 #include "dfu_blob_common.h"
 
@@ -56,6 +57,15 @@ static bool dfu_fail_confirm;
 static bool recover;
 static bool expect_fail;
 static enum bt_mesh_dfu_phase expected_stop_phase;
+
+/* When true, target_dfu_apply() emulates a device reboot in the middle of a
+ * self-update apply: the new firmware version is "installed" (target_fw_ver_curr
+ * is bumped to the new value) but bt_mesh_dfu_srv_applied() is NOT called, so
+ * the DFU Server's persisted phase stays APPLYING. On the next boot the DFD
+ * Server's start callback is expected to detect this and drive the confirm step
+ * to completion via bt_mesh_dfu_srv_applied() + bt_mesh_dfu_cli_confirm().
+ */
+static bool self_update_reboot_emulation;
 
 static void test_args_parse(int argc, char *argv[])
 {
@@ -253,6 +263,18 @@ static int target_dfu_apply(struct bt_mesh_dfu_srv *srv, const struct bt_mesh_df
 	}
 
 	ASSERT_TRUE(expect_dfu_apply);
+
+	if (self_update_reboot_emulation && srv->update.self_update) {
+		/* Simulate reboot in the middle of self-update apply:
+		 * install the new firmware image (bump the reported FWID) but
+		 * do NOT call bt_mesh_dfu_srv_applied(). The DFU Server's
+		 * persisted phase stays APPLYING; on the next boot the DFD
+		 * Server's start callback drives the resume path.
+		 */
+		target_fw_ver_curr = target_fw_ver_new;
+		k_sem_give(&dfu_ended);
+		return 0;
+	}
 
 	bt_mesh_dfu_srv_applied(srv);
 
@@ -486,7 +508,7 @@ static bool slot_add(const struct bt_mesh_dfu_slot **slot)
 	return true;
 }
 
-static void dist_dfu_start_and_confirm(void)
+static void dist_dfu_start(void)
 {
 	enum bt_mesh_dfd_status status;
 	struct bt_mesh_dfd_start_params start_params = {
@@ -501,13 +523,18 @@ static void dist_dfu_start_and_confirm(void)
 
 	status = bt_mesh_dfd_srv_start(&dfd_srv, &start_params);
 	ASSERT_EQUAL(BT_MESH_DFD_SUCCESS, status);
+}
+
+static void dist_dfu_start_and_confirm(void)
+{
+	enum bt_mesh_dfu_status expected_status;
+	enum bt_mesh_dfu_phase expected_phase;
+
+	dist_dfu_start();
 
 	if (k_sem_take(&dfu_dist_ended, K_SECONDS(DFU_TIMEOUT))) {
 		FAIL("DFU timed out");
 	}
-
-	enum bt_mesh_dfu_status expected_status;
-	enum bt_mesh_dfu_phase expected_phase;
 
 	if (dfu_fail_confirm) {
 		ASSERT_EQUAL(BT_MESH_DFD_PHASE_FAILED, dfd_srv.phase);
@@ -520,21 +547,21 @@ static void dist_dfu_start_and_confirm(void)
 	}
 
 	for (int i = 0; i < dfu_targets_cnt; i++) {
+		enum bt_mesh_dfu_phase target_expected_phase = expected_phase;
+
 		ASSERT_EQUAL(expected_status, dfd_srv.targets[i].status);
 
-		if (dfd_srv.targets[i].effect == BT_MESH_DFU_EFFECT_UNPROV) {
-			/* If device should unprovision itself after the update, the phase won't
-			 * change. If phase changes, DFU failed.
+		if (!dfu_fail_confirm &&
+		    dfd_srv.targets[i].effect == BT_MESH_DFU_EFFECT_UNPROV) {
+			/* If device should unprovision itself after the update, the phase
+			 * does not progress to APPLY_SUCCESS: the target reboots without
+			 * sending a Firmware Update Status with the final phase, so on the
+			 * Distributor it stays in APPLYING.
 			 */
-			if  (dfu_fail_confirm) {
-				ASSERT_EQUAL(BT_MESH_DFU_PHASE_APPLY_FAIL,
-					     dfd_srv.targets[i].phase);
-			} else {
-				ASSERT_EQUAL(BT_MESH_DFU_PHASE_APPLYING, dfd_srv.targets[i].phase);
-			}
-		} else {
-			ASSERT_EQUAL(expected_phase, dfd_srv.targets[i].phase);
+			target_expected_phase = BT_MESH_DFU_PHASE_APPLYING;
 		}
+
+		ASSERT_EQUAL(target_expected_phase, dfd_srv.targets[i].phase);
 	}
 }
 
@@ -560,11 +587,18 @@ static void test_dist_dfu(void)
 	PASS();
 }
 
-static void test_dist_dfu_self_update(void)
+static void dist_self_update_pre_reboot(void)
 {
 	enum bt_mesh_dfd_status status;
 
-	ASSERT_TRUE(dfu_targets_cnt > 0);
+	/* First run: perform the distribution up to the deferred self-target
+	 * apply and simulate a reboot by returning from target_dfu_apply()
+	 * without calling bt_mesh_dfu_srv_applied(). At that point the DFD
+	 * Server stays in APPLYING_UPDATE with state persisted, and the DFU
+	 * Server stays in APPLYING with state persisted. The next boot must
+	 * resume from that state and drive the distribution to COMPLETED.
+	 */
+	self_update_reboot_emulation = true;
 
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	bt_mesh_device_setup(&prov, &dist_comp_self_update);
@@ -581,11 +615,78 @@ static void test_dist_dfu_self_update(void)
 		ASSERT_EQUAL(BT_MESH_DFD_SUCCESS, status);
 	}
 
-	dist_dfu_start_and_confirm();
+	dist_dfu_start();
 
-	/* Check that DFU finished on distributor. */
+	/* Wait for the deferred self-target apply callback to run. It sets
+	 * target_fw_ver_curr = target_fw_ver_new (image "installed") and
+	 * returns without calling bt_mesh_dfu_srv_applied() - emulating a
+	 * reboot that happens before the DFU Server transitions to IDLE.
+	 */
 	if (k_sem_take(&dfu_ended, K_SECONDS(DFU_TIMEOUT))) {
-		FAIL("firmware was not applied");
+		FAIL("deferred apply callback did not fire");
+	}
+
+	/* Pre-reboot invariants that must be persisted for the resume path:
+	 *   - DFD Server is still in APPLYING_UPDATE (dfu_confirmed()
+	 *     intentionally skipped the transition to COMPLETED because the
+	 *     local DFU Server is still in APPLYING).
+	 *   - Local DFU Server is in APPLYING (apply callback returned
+	 *     without calling bt_mesh_dfu_srv_applied()).
+	 */
+	ASSERT_EQUAL(BT_MESH_DFD_PHASE_APPLYING_UPDATE, dfd_srv.phase);
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_APPLYING, dfu_srv.update.phase);
+}
+
+static void dist_self_update_post_reboot(void)
+{
+	/* Second (recover) run: no fresh provisioning or transfer. The DFD
+	 * Server, DFU Client and DFU Server states are all restored from
+	 * persistent storage during bt_mesh_device_setup(). The DFD Server's
+	 * start callback then transitions the local DFU Server out of APPLYING
+	 * (bt_mesh_dfu_srv_applied()) and resumes the confirm step
+	 * (bt_mesh_dfu_cli_confirm()), which polls all targets for their new
+	 * FWID and drives the distribution to BT_MESH_DFD_PHASE_COMPLETED.
+	 *
+	 * Emulate the effect of running the new firmware image on the
+	 * distributor by bumping target_fw_ver_curr to the value that the
+	 * metadata check callback stored in target_fw_ver_new on the previous
+	 * run. It has to be set before bt_mesh_device_setup() so the DFU
+	 * Server reports the new FWID when the resumed confirm step polls it.
+	 */
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+
+	/* The FWID persisted with the DFU slot equals the metadata committed
+	 * by slot_add() on the first run. See slot_add() for the value: 4
+	 * bytes {0xAA, 0xBB, 0xCC, 0xDD} interpreted as a little-endian
+	 * uint32_t.
+	 */
+	target_fw_ver_new = 0xDDCCBBAAU;
+	target_fw_ver_curr = target_fw_ver_new;
+
+	bt_mesh_device_setup(&prov, &dist_comp_self_update);
+
+	/* Wait for the resumed confirm step to reach COMPLETED. */
+	if (k_sem_take(&dfu_dist_ended, K_SECONDS(DFU_TIMEOUT))) {
+		FAIL("Resumed self-update did not complete");
+	}
+
+	ASSERT_EQUAL(BT_MESH_DFD_PHASE_COMPLETED, dfd_srv.phase);
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_IDLE, dfu_srv.update.phase);
+	for (int i = 0; i < dfu_targets_cnt; i++) {
+		ASSERT_EQUAL(BT_MESH_DFU_SUCCESS, dfd_srv.targets[i].status);
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_APPLY_SUCCESS,
+			     dfd_srv.targets[i].phase);
+	}
+}
+
+static void test_dist_dfu_self_update(void)
+{
+	ASSERT_TRUE(dfu_targets_cnt > 0);
+
+	if (recover) {
+		dist_self_update_post_reboot();
+	} else {
+		dist_self_update_pre_reboot();
 	}
 
 	PASS();
@@ -804,9 +905,33 @@ static void target_test_effect(enum bt_mesh_dfu_effect effect)
 	}
 }
 
+static void target_dfu_no_change_post_reboot(void)
+{
+	/* Recover run of the self-update mult_targets scenario: this device
+	 * is a remote DFU target that already completed its own apply on the
+	 * previous run. On boot it is re-provisioned from settings and merely
+	 * needs to respond to the Firmware Update Information Get poll that
+	 * the distributor sends during the resumed confirm step. Emulate
+	 * having booted the new firmware image by initializing
+	 * target_fw_ver_curr to the FWID the distributor's slot contains
+	 * before bt_mesh_device_setup().
+	 */
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+
+	/* See dist_self_update_post_reboot() for the origin of this constant. */
+	target_fw_ver_new = 0xDDCCBBAAU;
+	target_fw_ver_curr = target_fw_ver_new;
+
+	bt_mesh_device_setup(&prov, &target_comp);
+}
+
 static void test_target_dfu_no_change(void)
 {
-	target_test_effect(BT_MESH_DFU_EFFECT_NONE);
+	if (recover) {
+		target_dfu_no_change_post_reboot();
+	} else {
+		target_test_effect(BT_MESH_DFU_EFFECT_NONE);
+	}
 
 	PASS();
 }
