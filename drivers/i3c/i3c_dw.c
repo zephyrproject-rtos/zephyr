@@ -42,6 +42,19 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define HW_CAPABILITY_HDR_DDR_EN              BIT(3)
 #define HW_CAPABILITY_DEVICE_ROLE_CONFIG_MASK GENMASK(2, 0)
 
+/* HW_CAPABILITY[2:0] DEVICE_ROLE_CONFIG (IC_DEVICE_ROLE): fixed at synthesis. */
+#define HW_CAP_DEVICE_ROLE_MASTER     0x1 /* controller only */
+#define HW_CAP_DEVICE_ROLE_SEC_MASTER 0x3 /* dual-role       */
+#define HW_CAP_DEVICE_ROLE_SLAVE      0x4 /* target only     */
+
+/* Dual-role rejects SIR/MR via the reject registers; controller-only uses the DAT
+ * entry (databook Table 2-1).
+ */
+#define DW_IBI_REJECT_VIA_REG(role) ((role) == HW_CAP_DEVICE_ROLE_SEC_MASTER)
+/* BUS_AVAILABLE_TIME/BUS_IDLE_TIMING exist for 1 < IC_DEVICE_ROLE < 5. */
+#define DW_HAS_BUS_IDLE(role)                                                                      \
+	((role) == HW_CAP_DEVICE_ROLE_SEC_MASTER || (role) == HW_CAP_DEVICE_ROLE_SLAVE)
+
 #define COMMAND_QUEUE_PORT         0xc
 #define COMMAND_PORT_TOC           BIT(30)
 #define COMMAND_PORT_READ_TRANSFER BIT(28)
@@ -391,6 +404,9 @@ struct dw_i3c_data {
 	uint16_t datstartaddr;
 	uint16_t dctstartaddr;
 	uint16_t maxdevs;
+
+	/* IC_DEVICE_ROLE, cached from HW_CAPABILITY */
+	uint8_t role;
 
 	/* fifo depth is in words (32b) */
 	uint8_t ibififodepth;
@@ -1197,41 +1213,52 @@ static int i3c_dw_endis_ibi(const struct device *dev, struct i3c_device_desc *ta
 {
 	struct dw_i3c_data *data = dev->data;
 	const struct dw_i3c_config *config = dev->config;
+	uint32_t role = data->role;
 	uint32_t bitpos, sir_con;
 	struct i3c_ccc_events i3c_events;
 	int ret;
 	int pos;
 
-	pos = get_i3c_addr_pos(dev, target->dynamic_addr, false);
-	if (pos < 0) {
-		LOG_ERR("%s: Invalid Slave address", dev->name);
-		return pos;
-	}
+	if (!DW_IBI_REJECT_VIA_REG(role)) {
 
-	uint32_t reg = sys_read32(config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
+		/* controller-only: SIR via DAT entry */
 
-	if (i3c_ibi_has_payload(target)) {
-		reg |= DEV_ADDR_TABLE_IBI_WITH_DATA;
+		pos = get_i3c_addr_pos(dev, target->dynamic_addr, false);
+		if (pos < 0) {
+			LOG_ERR("%s: Invalid Slave address", dev->name);
+			return pos;
+		}
+
+		uint32_t reg =
+			sys_read32(config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
+
+		if (i3c_ibi_has_payload(target)) {
+			reg |= DEV_ADDR_TABLE_IBI_WITH_DATA;
+		} else {
+			reg &= ~DEV_ADDR_TABLE_IBI_WITH_DATA;
+		}
+		if (en) {
+			reg &= ~DEV_ADDR_TABLE_SIR_REJECT;
+		} else {
+			reg |= DEV_ADDR_TABLE_SIR_REJECT;
+		}
+		sys_write32(reg, config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
+
 	} else {
-		reg &= ~DEV_ADDR_TABLE_IBI_WITH_DATA;
-	}
-	if (en) {
-		reg &= ~DEV_ADDR_TABLE_SIR_REJECT;
-	} else {
-		reg |= DEV_ADDR_TABLE_SIR_REJECT;
-	}
-	sys_write32(reg, config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
 
-	sir_con = sys_read32(config->regs + IBI_SIR_REQ_REJECT);
-	/* TODO: what is this macro doing?? */
-	bitpos = IBI_SIR_REQ_ID(target->dynamic_addr);
+		/* dual-role: SIR via IBI_SIR_REQ_REJECT */
 
-	if (en) {
-		sir_con &= ~BIT(bitpos);
-	} else {
-		sir_con |= BIT(bitpos);
+		sir_con = sys_read32(config->regs + IBI_SIR_REQ_REJECT);
+		/* TODO: what is this macro doing?? */
+		bitpos = IBI_SIR_REQ_ID(target->dynamic_addr);
+
+		if (en) {
+			sir_con &= ~BIT(bitpos);
+		} else {
+			sir_con |= BIT(bitpos);
+		}
+		sys_write32(sir_con, config->regs + IBI_SIR_REQ_REJECT);
 	}
-	sys_write32(sir_con, config->regs + IBI_SIR_REQ_REJECT);
 
 	/* Tell target to enable IBI */
 	i3c_events.events = I3C_CCC_EVT_INTR;
@@ -1646,9 +1673,9 @@ static bool i3c_any_i2c_fast_mode(const struct i3c_dev_list *dev_list)
 static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_controller *ctrl_cfg)
 {
 	const struct dw_i3c_config *config = dev->config;
+	struct dw_i3c_data *data = dev->data;
 	uint32_t core_rate, scl_timing;
 #ifdef CONFIG_I3C_CONTROLLER
-	struct dw_i3c_data *data = dev->data;
 	uint32_t hcnt, lcnt, fmlcnt, fmplcnt, free_cnt;
 #endif /* CONFIG_I3C_CONTROLLER */
 
@@ -1730,15 +1757,18 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 	}
 #endif /* CONFIG_I3C_CONTROLLER */
 #ifdef CONFIG_I3C_TARGET
-	/* I3C Bus Available Time */
-	scl_timing = DIV_ROUND_UP(I3C_BUS_AVAILABLE_TIME_NS * (uint64_t)core_rate,
-					I3C_PERIOD_NS);
-	sys_write32(BUS_I3C_AVAIL_TIME(scl_timing), config->regs + BUS_FREE_TIMING);
+	/* Target bus timing (0xd4[31:16], 0xd8) exists for 1 < IC_DEVICE_ROLE < 5. */
+	if (DW_HAS_BUS_IDLE(data->role)) {
+		/* I3C Bus Available Time */
+		scl_timing = DIV_ROUND_UP(I3C_BUS_AVAILABLE_TIME_NS * (uint64_t)core_rate,
+					  I3C_PERIOD_NS);
+		sys_write32(BUS_I3C_AVAIL_TIME(scl_timing), config->regs + BUS_FREE_TIMING);
 
-	/* I3C Bus Idle Time */
-	scl_timing =
-		DIV_ROUND_UP(I3C_BUS_IDLE_TIME_NS * (uint64_t)core_rate, I3C_PERIOD_NS);
-	sys_write32(BUS_I3C_IDLE_TIME(scl_timing), config->regs + BUS_IDLE_TIMING);
+		/* I3C Bus Idle Time */
+		scl_timing =
+			DIV_ROUND_UP(I3C_BUS_IDLE_TIME_NS * (uint64_t)core_rate, I3C_PERIOD_NS);
+		sys_write32(BUS_I3C_IDLE_TIME(scl_timing), config->regs + BUS_IDLE_TIMING);
+	}
 #endif /* CONFIG_I3C_TARGET */
 
 	return 0;
@@ -2649,7 +2679,7 @@ static int dw_i3c_init(const struct device *dev)
 	int ret;
 	uint32_t hw_capabilities;
 	uint32_t queue_capability;
-	uint32_t device_ctrl_ext;
+	uint32_t role;
 
 	if (!device_is_ready(config->clock)) {
 		return -ENODEV;
@@ -2697,7 +2727,7 @@ static int dw_i3c_init(const struct device *dev)
 	data->respfifodepth = QUEUE_SIZE_CAPABILITY_RESP_BUF_DWORD_SIZE(queue_capability);
 	data->ibififodepth = QUEUE_SIZE_CAPABILITY_IBI_BUF_DWORD_SIZE(queue_capability);
 
-	/* get HDR capabilities */
+	/* get HDR capabilities and the device role (both live in HW_CAPABILITY) */
 	ctrl_config->supported_hdr = 0;
 	hw_capabilities = sys_read32(config->regs + HW_CAPABILITY);
 	if (hw_capabilities & HW_CAPABILITY_HDR_TS_EN) {
@@ -2707,24 +2737,46 @@ static int dw_i3c_init(const struct device *dev)
 		ctrl_config->supported_hdr |= I3C_MSG_HDR_DDR;
 	}
 
-	/* if the boot condition starts as a target, then it's a secondary controller */
-	device_ctrl_ext = sys_read32(config->regs + DEVICE_CTRL_EXTENDED);
-	if (DEVICE_CTRL_EXTENDED_DEV_OPERATION_MODE(device_ctrl_ext) &
-	    DEVICE_CTRL_EXTENDED_DEV_OPERATION_MODE_SLAVE) {
-		ctrl_config->is_secondary = true;
-	} else {
-		ctrl_config->is_secondary = false;
-	}
-	/*
-	 * Ensure that is_secondary is only set when CONFIG_I3C_TARGET is enabled,
-	 * or ensure that it is false when CONFIG_I3C_CONTROLLER is enabled.
-	 */
-	__ASSERT_NO_MSG((IS_ENABLED(CONFIG_I3C_TARGET) && ctrl_config->is_secondary) ||
-			(IS_ENABLED(CONFIG_I3C_CONTROLLER) && !ctrl_config->is_secondary));
+	/* Cache the synthesis-constant role from the HW_CAPABILITY word just read. */
+	data->role = FIELD_GET(HW_CAPABILITY_DEVICE_ROLE_CONFIG_MASK, hw_capabilities);
 
-	/* disable ibi */
-	sys_write32(IBI_REQ_REJECT_ALL, config->regs + IBI_SIR_REQ_REJECT);
-	sys_write32(IBI_REQ_REJECT_ALL, config->regs + IBI_MR_REQ_REJECT);
+	/* Derive is_secondary from the role and ASSERT it against the Kconfig selection.
+	 * DEV_OPERATION_MODE (0xb0) is read only for the dual-role part.
+	 */
+	role = data->role;
+	switch (role) {
+	case HW_CAP_DEVICE_ROLE_MASTER:
+		__ASSERT(IS_ENABLED(CONFIG_I3C_CONTROLLER),
+			 "HW is controller-only but CONFIG_I3C_CONTROLLER is not set");
+		ctrl_config->is_secondary = false;
+		break;
+	case HW_CAP_DEVICE_ROLE_SLAVE:
+		__ASSERT(IS_ENABLED(CONFIG_I3C_TARGET),
+			 "HW is target-only but CONFIG_I3C_TARGET is not set");
+		ctrl_config->is_secondary = true;
+		break;
+	case HW_CAP_DEVICE_ROLE_SEC_MASTER: {
+		/* dual-role: DEV_OPERATION_MODE selects the boot mode */
+		uint32_t device_ctrl_ext = sys_read32(config->regs + DEVICE_CTRL_EXTENDED);
+
+		ctrl_config->is_secondary =
+			(DEVICE_CTRL_EXTENDED_DEV_OPERATION_MODE(device_ctrl_ext) ==
+			 DEVICE_CTRL_EXTENDED_DEV_OPERATION_MODE_SLAVE);
+		__ASSERT((ctrl_config->is_secondary && IS_ENABLED(CONFIG_I3C_TARGET)) ||
+				 (!ctrl_config->is_secondary && IS_ENABLED(CONFIG_I3C_CONTROLLER)),
+			 "boot mode not supported by the selected Kconfig");
+		break;
+	}
+	default:
+		__ASSERT(false, "unexpected DEVICE_ROLE_CONFIG 0x%x", role);
+		return -ENOTSUP;
+	}
+
+	/* disable ibi (dual-role rejects via these regs */
+	if (DW_IBI_REJECT_VIA_REG(role)) {
+		sys_write32(IBI_REQ_REJECT_ALL, config->regs + IBI_SIR_REQ_REJECT);
+		sys_write32(IBI_REQ_REJECT_ALL, config->regs + IBI_MR_REQ_REJECT);
+	}
 
 	/* disable hot-join */
 	sys_write32(sys_read32(config->regs + DEVICE_CTRL) | (DEV_CTRL_HOT_JOIN_NACK),
