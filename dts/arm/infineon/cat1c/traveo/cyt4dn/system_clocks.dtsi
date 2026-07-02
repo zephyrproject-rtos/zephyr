@@ -255,9 +255,10 @@
 		periclocks {
 			clk_peri0: clk_peri0 {
 				compatible = "infineon,clk-peri";
-				#clock-cells = <3>;
+				#clock-cells = <1>;
 				clocks = <&clk_hf0>;
 				ifx,peri-clk-inst = <IFX_PERI_GRP_INST_SEL(0, 0)>;
+				ifx,pclk-count = <84>;
 				ifx,8-bit-max-divider = <9>;
 				ifx,16-bit-max-divider = <16>;
 				ifx,16-5-bit-max-divider = <7>;
@@ -266,9 +267,10 @@
 
 			clk_peri1: clk_peri1 {
 				compatible = "infineon,clk-peri";
-				#clock-cells = <3>;
+				#clock-cells = <1>;
 				clocks = <&clk_hf2>;
 				ifx,peri-clk-inst = <IFX_PERI_GRP_INST_SEL(1, 0)>;
+				ifx,pclk-count = <21>;
 				ifx,8-bit-max-divider = <3>;
 				ifx,16-bit-max-divider = <4>;
 				ifx,16-5-bit-max-divider = <0>;
