@@ -15,19 +15,35 @@ to answer the *true traceability* question: does a test that verifies a
 requirement actually exercise the code that implements that requirement?
 
 For every requirement the app computes an **adequacy verdict** by resolving its
-implementing symbols to function bodies in ``kernel/**/*.c`` (including the
-``z_impl_`` syscall bodies) and intersecting those line ranges with the union
-of the line coverage of the requirement's verifying tests:
+implementing symbols to their function bodies and intersecting those line
+ranges with the union of the line coverage of the requirement's verifying
+tests. Two subtleties matter for correct verdicts:
 
-* ``true``       -- every resolved implementing function is exercised by the
-                    requirement's own verifying tests
-* ``partial``    -- some implementing functions are exercised, others not
-* ``broken``     -- the verifying tests never touch the implementing code
-                    (the requirement *looks* verified but is not)
-* ``unresolved`` -- implementation links exist but none map to a function body
-                    (macros / static inlines)
-* ``no-impl``    -- the requirement has no ``implemented_by`` link
-* ``no-cov``     -- the verifying tests have no coverage data in this run
+* A syscall-capable API has *several* bodies -- the supervisor implementation
+  (``z_impl_<sym>``), the user-mode verifier (``z_vrfy_<sym>``, which is what a
+  ZTEST_USER test reaches and which may perform the operation without calling
+  the z_impl body at all), and possibly a header ``static inline``. All are
+  resolved, and exercising any of them counts.
+* Coverage line numbers refer to the sources of the *build that produced
+  them*. The build commit is taken from twister.json's
+  ``environment.zephyr_version`` and sources are read via ``git show`` at that
+  ref, so ranges stay correct even when the working tree has moved on.
+
+Verdicts:
+
+* ``true``         -- every resolved implementing symbol has at least one body
+                      exercised by the requirement's own verifying tests
+* ``partial``      -- some implementing symbols are exercised, others not
+* ``broken``       -- other tests reach the implementing code but the
+                      requirement's own verifying tests never do (the
+                      requirement *looks* verified but is not)
+* ``unattributed`` -- no test in the whole run covered the implementation
+                      lines (boot-time code, inlined away, or config'd out);
+                      coverage cannot adjudicate the link
+* ``unresolved``   -- implementation links exist but none map to a body
+                      (macros)
+* ``no-impl``      -- the requirement has no ``implemented_by`` link
+* ``no-cov``       -- the verifying tests have no coverage data in this run
 
 Everything is served from memory by a dependency-free stdlib HTTP server; the
 132 MB coverage matrix is indexed once at startup and queried on demand.
@@ -41,9 +57,11 @@ Usage (from the zephyr tree root)::
 """
 
 import argparse
+import fnmatch
 import glob
 import json
 import re
+import subprocess
 import sys
 import webbrowser
 from collections import defaultdict
@@ -165,36 +183,119 @@ def load_matrix(matrix_path, qual_map):
     return cov_by_fn, by_line
 
 
+# --- source access at the coverage build's commit -------------------------------
+
+class Source:
+    """Reads tree files at the commit the coverage run was built from.
+
+    Coverage line numbers are only meaningful against the sources of the build
+    that produced them. twister.json records that as
+    ``environment.zephyr_version`` (``vX.Y.Z-N-g<hash>``); when the hash is
+    resolvable in this git tree, files are read via ``git show <hash>:<path>``
+    so function ranges and the coverage browser line up exactly, even if the
+    working tree has moved on. Falls back to the working tree otherwise.
+    """
+
+    def __init__(self, root, zephyr_version=""):
+        self.root = root
+        self.ref = None
+        m = re.search(r"-g([0-9a-f]{7,})$", zephyr_version or "")
+        if m:
+            ref = m.group(1)
+            try:
+                subprocess.run(["git", "rev-parse", "--verify", ref + "^{commit}"],
+                               cwd=root, check=True, capture_output=True)
+                self.ref = ref
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                pass
+        self._ls = None
+
+    def describe(self):
+        return self.ref or "working tree"
+
+    def list(self, patterns):
+        """Relative paths matching any of the glob patterns."""
+        if not self.ref:
+            out = []
+            for pat in patterns:
+                for f in glob.glob(str(self.root / pat), recursive=True):
+                    out.append(str(Path(f).relative_to(self.root)))
+            return sorted(set(out))
+        if self._ls is None:
+            r = subprocess.run(["git", "ls-tree", "-r", "--name-only", self.ref],
+                               cwd=self.root, check=True, capture_output=True, text=True)
+            self._ls = r.stdout.split("\n")
+        return sorted({f for f in self._ls
+                       for pat in patterns if fnmatch.fnmatch(f, pat)})
+
+    def read(self, rel):
+        """File content (text) at the build ref, or None."""
+        if not self.ref:
+            p = (self.root / rel).resolve()
+            if not str(p).startswith(str(self.root)) or not p.is_file():
+                return None
+            return p.read_text(errors="replace")
+        r = subprocess.run(["git", "show", f"{self.ref}:{rel}"],
+                           cwd=self.root, capture_output=True, text=True,
+                           errors="replace")
+        return r.stdout if r.returncode == 0 else None
+
+
 # --- implementation symbol resolution -----------------------------------------
 
-def resolve_impl_symbols(root, symbols):
-    """Best-effort mapping of implementing symbols to function bodies in
-    kernel/**/*.c (name or z_impl_<name> definition at column 0, body ending at
-    a column-0 closing brace). Returns {sym: {"file", "a", "b"}}."""
+def resolve_impl_symbols(source, symbols):
+    """Best-effort mapping of implementing symbols to their function bodies in
+    kernel/**/*.c (definition at column 0, body ending at a column-0 closing
+    brace).
+
+    A syscall-capable API has more than one body: ``z_impl_<sym>`` is the
+    supervisor-mode implementation and ``z_vrfy_<sym>`` is the user-mode
+    verifier that a ZTEST_USER test reaches instead (it may perform the
+    operation itself without ever calling the z_impl body, as
+    z_vrfy_k_thread_create does). All bodies are collected, and exercising any
+    of them counts as exercising the implementation.
+
+    Returns {sym: [{"file", "a", "b", "variant"}, ...]}.
+    """
     sources = {}
-    for f in glob.glob(str(root / "kernel/**/*.c"), recursive=True):
-        rel = str(Path(f).relative_to(root))
-        sources[rel] = Path(f).read_text(errors="ignore").split("\n")
+    for rel in source.list(["kernel/*.c", "kernel/**/*.c", "include/zephyr/kernel.h",
+                            "include/zephyr/kernel/**/*.h", "include/zephyr/sys/**/*.h"]):
+        text = source.read(rel)
+        if text is not None:
+            sources[rel] = text.split("\n")
 
     resolved = {}
     for sym in symbols:
-        pats = [re.compile(r"^[A-Za-z_][\w \t\*]*\b" + re.escape(n) + r"\s*\(")
-                for n in (f"z_impl_{sym}", sym)]
-        hit = None
+        variants = [(f"z_impl_{sym}", "impl"), (f"z_vrfy_{sym}", "vrfy"),
+                    (sym, "def")]
+        pats = [(re.compile(r"^(static +(ALWAYS_INLINE +|__?always_inline +)?inline +)?"
+                            r"[A-Za-z_][\w \t\*]*\b" + re.escape(n) + r"\s*\("), v)
+                for n, v in variants]
+        bodies = []
         for f, lines in sources.items():
+            in_header = f.startswith("include/")
             for i, ln in enumerate(lines):
                 if ln.rstrip().endswith(";"):
                     continue
-                if any(p.match(ln) for p in pats):
-                    end = next((j + 1 for j in range(i + 1, min(i + 500, len(lines)))
-                                if lines[j] == "}"), None)
-                    if end:
-                        hit = {"file": f, "a": i + 1, "b": end}
+                # in headers only accept static-inline bodies (anything else
+                # is a prototype or macro), in .c files anything definition-like
+                if in_header and not ln.lstrip().startswith("static"):
+                    continue
+                for p, variant in pats:
+                    if p.match(ln):
+                        end = next((j + 1 for j in
+                                    range(i + 1, min(i + 500, len(lines)))
+                                    if lines[j] == "}"), None)
+                        if end:
+                            bodies.append({
+                                "file": f, "a": i + 1, "b": end,
+                                "variant": "inline" if in_header else variant})
                         break
-            if hit:
-                break
-        if hit:
-            resolved[sym] = hit
+        if bodies:
+            # stable order: impl first, then vrfy, inline, plain definitions
+            order = {"impl": 0, "vrfy": 1, "inline": 2, "def": 3}
+            bodies.sort(key=lambda x: (order[x["variant"]], x["file"], x["a"]))
+            resolved[sym] = bodies
     return resolved
 
 
@@ -225,7 +326,15 @@ class App:
 
         self.env, self.results, qual_map = load_results(args.twister)
         self.cov, self.by_line = load_matrix(args.matrix, qual_map)
-        self.impl_loc = resolve_impl_symbols(self.root, self.impls)
+
+        # Resolve implementation symbols against the sources of the commit the
+        # coverage run was built from -- line numbers are meaningless otherwise.
+        self.source = Source(self.root, self.env.get("zephyr_version", ""))
+        if not self.source.ref:
+            print("WARNING: coverage build commit not resolvable in this tree; "
+                  "using working-tree sources -- line ranges may be skewed for "
+                  "files changed since the twister run")
+        self.impl_loc = resolve_impl_symbols(self.source, self.impls)
 
         self.compute()
 
@@ -247,31 +356,45 @@ class App:
         syms = self.req_impls.get(uid, [])
         if not syms:
             return {"verdict": "no-impl", "impls": []}
-        detail, resolved, own_hits = [], 0, 0
+        detail, resolved, adjudicable, own_hits = [], 0, 0, 0
         tests_with_cov = [f for f in req["tests"] if f in self.cov]
         for sym in sorted(syms):
-            loc = self.impl_loc.get(sym)
-            if not loc:
-                detail.append({"sym": sym, "loc": None, "own": 0, "any": 0, "exec": 0})
+            bodies = self.impl_loc.get(sym)
+            if not bodies:
+                detail.append({"sym": sym, "variant": None, "loc": None,
+                               "own": 0, "any": 0, "exec": 0})
                 continue
             resolved += 1
-            f, a, b = loc["file"], loc["a"], loc["b"]
-            fl = self.by_line.get(f, {})
-            exec_lines = [ln for ln in fl if a <= ln <= b]
-            own = set()
-            for t in tests_with_cov:
-                own.update(ln for ln in self.cov[t].get(f, ()) if a <= ln <= b)
-            if own:
+            sym_hit = sym_seen = False
+            for body in bodies:
+                f, a, b = body["file"], body["a"], body["b"]
+                fl = self.by_line.get(f, {})
+                exec_lines = [ln for ln in fl if a <= ln <= b]
+                own = set()
+                for t in tests_with_cov:
+                    own.update(ln for ln in self.cov[t].get(f, ()) if a <= ln <= b)
+                if own:
+                    sym_hit = True
+                if exec_lines:
+                    sym_seen = True
+                detail.append({"sym": sym, "variant": body["variant"],
+                               "loc": f"{f}:{a}-{b}", "file": f, "a": a, "b": b,
+                               "own": len(own), "any": len(exec_lines),
+                               "exec": len(exec_lines)})
+            # a symbol whose bodies no test in the whole run ever covered
+            # (boot-time code, inlined-away, config'd out) cannot be
+            # adjudicated by coverage and must not count as "broken"
+            if sym_seen:
+                adjudicable += 1
+            if sym_hit:
                 own_hits += 1
-            detail.append({"sym": sym, "loc": f"{f}:{a}-{b}", "file": f, "a": a, "b": b,
-                           "own": len(own), "any": len(exec_lines), "exec": len(exec_lines)})
         if not resolved:
             verdict = "unresolved"
-        elif not req["tests"]:
-            verdict = "no-impl"          # unreachable; kept for clarity
         elif not tests_with_cov:
             verdict = "no-cov"
-        elif own_hits == resolved:
+        elif not adjudicable:
+            verdict = "unattributed"
+        elif own_hits == adjudicable:
             verdict = "true"
         elif own_hits:
             verdict = "partial"
@@ -314,6 +437,7 @@ class App:
             },
             "impl_symbols": len(self.impls),
             "impl_resolved": len(self.impl_loc),
+            "source_ref": self.source.describe(),
         })
 
         # per-test compact info for the tests tab
@@ -333,13 +457,16 @@ class App:
                 "klines": sum(len(v) for v in covd.values()) if covd else 0,
             }
 
-        # impl symbols for the model
+        # impl symbols for the model (loc = first body, for links; locs = all)
         m["implinfo"] = {}
         for sym, t in self.impls.items():
-            loc = self.impl_loc.get(sym)
+            bodies = self.impl_loc.get(sym) or []
             m["implinfo"][sym] = {
                 "implements": t["implements"], "caption": t["caption"],
-                "loc": f"{loc['file']}:{loc['a']}-{loc['b']}" if loc else None,
+                "loc": (f"{bodies[0]['file']}:{bodies[0]['a']}-{bodies[0]['b']}"
+                        if bodies else None),
+                "locs": [f"{x['file']}:{x['a']}-{x['b']} ({x['variant']})"
+                         for x in bodies],
             }
 
         m["tests"] = self.tests  # without impl symbols
@@ -403,13 +530,16 @@ class App:
 
     def file_detail(self, relpath):
         # only files we have coverage or impl info for, and inside the tree
-        known = set(self.by_line) | {loc["file"] for loc in self.impl_loc.values()}
-        if relpath not in known:
+        known = set(self.by_line) | {b["file"] for bodies in self.impl_loc.values()
+                                     for b in bodies}
+        if relpath not in known or ".." in relpath:
             return None
-        p = (self.root / relpath).resolve()
-        if not str(p).startswith(str(self.root)) or not p.is_file():
+        # serve the source at the coverage build's commit so that line
+        # annotations and function ranges line up with the coverage data
+        content = self.source.read(relpath)
+        if content is None:
             return None
-        text = p.read_text(errors="replace").split("\n")
+        text = content.split("\n")
         fl = self.by_line.get(relpath, {})
         # line -> requirement uids (via validating tests)
         reqline = {}
@@ -421,8 +551,10 @@ class App:
                 uids.update(self.tests.get(f, {}).get("validates", []))
             if uids:
                 reqline[ln] = sorted(uids, key=srs_sortkey)[:40]
-        fns_here = [{"sym": s, "a": loc["a"], "b": loc["b"]}
-                    for s, loc in self.impl_loc.items() if loc["file"] == relpath]
+        fns_here = [{"sym": f"{s} ({b['variant']})" if b["variant"] != "def" else s,
+                     "a": b["a"], "b": b["b"]}
+                    for s, bodies in self.impl_loc.items()
+                    for b in bodies if b["file"] == relpath]
         return {"file": relpath, "text": text, "cov": covline,
                 "reqs": reqline, "impl_fns": sorted(fns_here, key=lambda x: x["a"])}
 
@@ -560,6 +692,7 @@ tbody tr:hover{background:var(--panel)}
 .st-true{color:var(--ok);border-color:var(--ok)} .st-partial{color:var(--warn);border-color:var(--warn)}
 .st-broken{color:var(--bad);border-color:var(--bad);background:#f8514922}
 .st-unresolved,.st-no-impl,.st-no-cov{color:var(--muted);border-color:var(--line)}
+.st-unattributed{color:#a58ad0;border-color:#7a5ea8}
 .tag{display:inline-block;font-size:11px;padding:0 6px;border-radius:4px;background:var(--panel2);
   margin:1px 2px;color:var(--muted);cursor:default}
 .tag.t{color:var(--test)} .tag.d{color:var(--design)} .tag.s{color:var(--syrs)} .tag.i{color:var(--impl)}
@@ -631,11 +764,12 @@ const pct=(n,d)=>d?Math.round(100*n/d):0;
 const api=async p=>{const r=await fetch(p);if(!r.ok)throw new Error(p);return r.json();};
 const chip=(v)=>`<span class="st st-${esc(v)}">${esc(v)}</span>`;
 const EV_COLORS={passing:'var(--ok)',failing:'var(--bad)',skipped:'var(--warn)','no-run':'#5a6b7d',untested:'#39434f'};
-const ADQ_COLORS={true:'var(--ok)',partial:'var(--warn)',broken:'var(--bad)',unresolved:'#5a6b7d','no-impl':'#39434f','no-cov':'#4a5764'};
+const ADQ_COLORS={true:'var(--ok)',partial:'var(--warn)',broken:'var(--bad)',unattributed:'#7a5ea8',unresolved:'#5a6b7d','no-impl':'#39434f','no-cov':'#4a5764'};
 const ADQ_HELP={
  'true':'every resolved implementing function is exercised by the requirement’s own verifying tests',
  partial:'some implementing functions are exercised by the verifying tests, others are not',
  broken:'the verifying tests never execute the implementing code — verification does not reach the implementation',
+ unattributed:'no test in the whole run covered the implementation lines (boot-time code, inlined away, or config’d out) — coverage cannot adjudicate this link',
  unresolved:'implementation links exist but map to macros/inlines, not function bodies',
  'no-impl':'the requirement has no implemented_by link (@satisfies)',
  'no-cov':'the verifying tests have no coverage data in this run'};
@@ -652,7 +786,7 @@ async function boot(){
  M=await api('/api/model');
  document.getElementById('meta').textContent=
   `${M.summary.requirements} requirements · ${M.summary.tests} tests · run: ${M.summary.run.platform} `+
-  `(${M.summary.run.zephyr}) · generated __GENERATED__`;
+  `(${M.summary.run.zephyr}) · source @ ${M.summary.source_ref} · generated __GENERATED__`;
  const nav=document.getElementById('nav');
  TABS.forEach(([id,label],i)=>{const b=el(`<button data-t="${id}">${label}</button>`);
   if(i===0)b.classList.add('active');b.onclick=()=>tab(id);nav.appendChild(b);});
@@ -690,11 +824,14 @@ function Overview(){
  h+=`<h2>Verification evidence <span class="muted" style="font-weight:400">— requirement status from the twister run</span></h2>`;
  h+=stackBar(s.evidence,EV_COLORS,['passing','failing','skipped','no-run','untested'],'evFilter');
  h+=`<h2>True traceability <span class="muted" style="font-weight:400">— do verifying tests exercise the implementing code?</span></h2>`;
- h+=stackBar(s.adequacy,ADQ_COLORS,['true','partial','broken','unresolved','no-cov','no-impl'],'adqFilter');
+ h+=stackBar(s.adequacy,ADQ_COLORS,['true','partial','broken','unattributed','unresolved','no-cov','no-impl'],'adqFilter');
  h+=`<p class="note">Implementation linkage: <b>${s.impl_symbols}</b> symbols carry <code>@satisfies</code>;
    <b>${s.impl_resolved}</b> resolve to function bodies in <code>kernel/**/*.c</code>
-   (the rest are macros or inlines). A requirement has <i>true traceability</i> when the union of its
-   verifying tests’ line coverage intersects every resolved implementing function.</p>`;
+   (the rest are macros or inlines). Syscall-capable APIs have two bodies — the supervisor
+   implementation (<code>z_impl_*</code>) and the user-mode verifier (<code>z_vrfy_*</code>) that
+   ZTEST_USER tests reach instead — and exercising <i>either</i> counts. A requirement has
+   <i>true traceability</i> when every resolved implementing symbol has at least one body
+   exercised by the requirement’s own verifying tests.</p>`;
  h+=`<h2>Test run</h2><p class="note">${esc(r.zephyr)} on <b>${esc(r.platform)}</b>, ${esc(r.date)} —
    ${r.tests} test functions, ${r.cases} case instances.</p>`;
  document.getElementById('tab-overview').innerHTML=h;
@@ -726,7 +863,7 @@ function Adequacy(){
   if(adqSort.k===k)adqSort.d*=-1;else adqSort={k,d:1};renderAdq();});
  renderAdq();
 }
-const ADQ_RANK={broken:0,partial:1,'true':2,'no-cov':3,unresolved:4,'no-impl':5};
+const ADQ_RANK={broken:0,partial:1,'true':2,unattributed:3,'no-cov':4,unresolved:5,'no-impl':6};
 function renderAdq(){
  const q=(document.getElementById('adqsearch').value||'').toLowerCase();
  const sel=document.getElementById('adqsel').value;
@@ -743,12 +880,17 @@ function renderAdq(){
  document.getElementById('adqcount').textContent=`${rows.length} requirements`;
  const body=document.getElementById('adqbody');body.innerHTML='';
  for(const r of rows){
-  const res=r.adq_detail.filter(d=>d.loc);
-  const nhit=res.filter(d=>d.own>0).length;
+  // symbol-level rollup: a symbol may have several bodies (z_impl_/z_vrfy_);
+  // it counts as exercised when ANY of its bodies is hit by the req's tests.
+  const bySym={};
+  for(const d of r.adq_detail){const s=bySym[d.sym]||(bySym[d.sym]={res:false,hit:false});
+   if(d.loc){s.res=true;if(d.own>0)s.hit=true;}}
+  const nres=Object.values(bySym).filter(s=>s.res).length;
+  const nhit=Object.values(bySym).filter(s=>s.hit).length;
   const tr=el(`<tr><td><span class="expand">${r.id}</span></td><td>${esc(r.title)}</td>
    <td>${esc(r.component)}</td><td>${chip(r.evidence)}</td>
-   <td>${r.impls.length}${res.length<r.impls.length?` <span class="muted">(${r.impls.length-res.length} unresolved)</span>`:''}</td>
-   <td>${res.length?`${nhit}/${res.length}`:'<span class="muted">—</span>'}</td>
+   <td>${r.impls.length}${nres<r.impls.length?` <span class="muted">(${r.impls.length-nres} unresolved)</span>`:''}</td>
+   <td>${nres?`${nhit}/${nres}`:'<span class="muted">—</span>'}</td>
    <td title="${esc(ADQ_HELP[r.adequacy]||'')}">${chip(r.adequacy)}</td></tr>`);
   tr.querySelector('.expand').onclick=()=>toggleAdqDetail(tr,r);
   body.appendChild(tr);
@@ -758,12 +900,16 @@ async function toggleAdqDetail(tr,r){
  if(tr.nextSibling&&tr.nextSibling.classList&&tr.nextSibling.classList.contains('detail')){tr.nextSibling.remove();return;}
  const d=await api('/api/req/'+r.id);
  let impls='';
+ const symHit={};
+ for(const im of r.adq_detail){if(im.loc&&im.own>0)symHit[im.sym]=true;}
  for(const im of r.adq_detail){
-  impls+=`<tr><td class="mono">${im.sym}</td>
+  const variant=im.variant&&im.variant!=='def'
+    ?` <span class="muted">(${ {vrfy:'user-mode verifier',impl:'supervisor impl',inline:'header inline'}[im.variant]||im.variant })</span>`:'';
+  impls+=`<tr><td class="mono">${im.sym}${variant}</td>
    <td>${im.loc?`<a href="#" onclick="openSource('${im.file}',${im.a},${im.b});return false" class="mono">${im.loc}</a>`
        :'<span class="muted">unresolved (macro/inline)</span>'}</td>
    <td>${im.loc?`${im.own} <span class="muted">of ${im.exec} covered-in-run</span>`:'—'}</td>
-   <td>${im.loc?(im.own>0?chip('true'):chip('broken')):chip('unresolved')}</td></tr>`;
+   <td>${im.loc?(im.own>0?chip('true'):(symHit[im.sym]?'<span class="muted">not this path</span>':chip('broken'))):chip('unresolved')}</td></tr>`;
  }
  let tests='';
  for(const t of d.tests){
@@ -924,7 +1070,7 @@ function Coverage(){
  const list=M.covfiles.map(f=>`<div data-f="${f.file}" onclick="openSource('${f.file}')">
    <span class="mono">${f.file}</span><span class="muted">${f.lines}</span></div>`).join('');
  document.getElementById('tab-coverage').innerHTML=`
- <p class="note">Files with line coverage from this run. Green lines were executed by at least one test —
+ <p class="note">Files with line coverage from this run, shown at the coverage build's commit so line numbers match. Green lines were executed by at least one test —
   click one to see which tests ran it and which requirements those tests verify.
   Red left borders mark resolved implementing functions (<code>@satisfies</code>).</p>
  <div class="covwrap"><div class="filelist" id="filelist">${list}</div>
@@ -981,6 +1127,7 @@ function Gaps(){
    <div style="line-height:2.1">${ids.map(linkify).join(' ')}</div></details>`;};
  let h=`<p class="note">Ranked by risk: the first sections are requirements whose verification is an illusion.</p>`;
  h+=section('Broken true traceability','Verifying tests exist and ran with coverage, but <b>never execute the implementing code</b>.',I.broken_adequacy,rlink);
+ h+=section('Coverage cannot adjudicate','Implementation lines were covered by <b>no test at all</b> in this run — boot-time code, inlined-away bodies, or config’d-out paths.',Object.values(M.reqs).filter(r=>r.adequacy==='unattributed').map(r=>r.id),rlink);
  h+=section('Verified but failing','At least one verifying test failed in this run.',I.failing_evidence,rlink);
  h+=section('Verified but skipped everywhere','All verifying tests were skipped/blocked in this run — no execution evidence.',I.skipped_only,rlink);
  h+=section('Verified but never executed','Linked tests were not part of this twister run.',I.no_run,rlink);
