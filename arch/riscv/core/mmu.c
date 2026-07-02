@@ -794,7 +794,11 @@ static int arch_mem_init(void)
  */
 void z_riscv_mmu_map_guard_page(const struct k_thread *thread)
 {
+#if defined(CONFIG_USERSPACE)
 	uintptr_t guard = (uintptr_t)thread->stack_obj;
+#else
+	uintptr_t guard = thread->stack_info.start - ARCH_KERNEL_STACK_RESERVED;
+#endif
 	k_spinlock_key_t key = k_spin_lock(&xlat_lock);
 
 	/* unmap_pages_from sets PTEs to 0 (V=0) and issues sfence.vma */
@@ -917,7 +921,53 @@ static int domain_privatize_kernel_text(uint64_t *domain_root)
 		l1_base = ((uintptr_t)l0_idx << RISCV_PGLEVEL_SHIFT(0)) |
 			  ((uintptr_t)l1_idx << RISCV_PGLEVEL_SHIFT(1));
 
-		/* Stamp PTE_USER on text/rodata pages in this L2 */
+#if PGTABLE_LEVELS == 4
+		/*
+		 * Sv48: L2 entries are still intermediate nodes (VPN[1]).
+		 * Descend one more level: privatise each L2→L3 table and
+		 * stamp PTE_USER on the L3 leaf PTEs that cover kernel text.
+		 */
+		for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
+			pte_t l2_pte = private_l2[i];
+			uint64_t *private_l3;
+			unsigned int j;
+			uintptr_t l2_base;
+
+			if (!pte_is_valid(l2_pte) || pte_is_leaf(l2_pte)) {
+				continue;
+			}
+
+			private_l3 = new_table();
+			if (!private_l3) {
+				return -ENOMEM;
+			}
+			inc_table_ref(private_l3);
+			memcpy(private_l3, (void *)pte_to_phys(l2_pte), PAGE_SIZE);
+			private_l2[i] = pte_create((uintptr_t)private_l3, PTE_TYPE_TABLE);
+
+			for (j = 0; j < RISCV_PGTABLE_ENTRIES; j++) {
+				if (pte_is_valid(private_l3[j])) {
+					table_usage(private_l3, 1);
+				}
+			}
+
+			l2_base = l1_base | ((uintptr_t)i << RISCV_PGLEVEL_SHIFT(2));
+
+			for (j = 0; j < RISCV_PGTABLE_ENTRIES; j++) {
+				uintptr_t page_va =
+					l2_base + ((uintptr_t)j << PAGE_SIZE_SHIFT);
+				pte_t pte = private_l3[j];
+
+				if (!pte_is_valid(pte) || !pte_is_leaf(pte)) {
+					continue;
+				}
+				if (page_va >= text_start && page_va < rom_end) {
+					private_l3[j] = pte | PTE_USER;
+				}
+			}
+		}
+#else
+		/* Sv39: L2 entries are leaf PTEs - stamp PTE_USER directly. */
 		for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
 			uintptr_t page_va = l1_base + ((uintptr_t)i << PAGE_SIZE_SHIFT);
 			pte_t pte = private_l2[i];
@@ -929,10 +979,49 @@ static int domain_privatize_kernel_text(uint64_t *domain_root)
 				private_l2[i] = pte | PTE_USER;
 			}
 		}
+#endif
 	}
 
 	return 0;
 }
+
+#if PGTABLE_LEVELS == 4
+/*
+ * Sv48 helper for sync_domains(): propagate missing kernel L2 entries into a
+ * domain's private L2 table.  Called when both the kernel and the domain have
+ * private (diverged) L1 tables; the L1-level sync in sync_domains() cannot
+ * reach inside an already-present L1 entry, so we descend one extra level.
+ */
+static void sync_l2_from_kernel(uint64_t *k_l1, uint64_t *d_l1)
+{
+	unsigned int j;
+
+	for (j = 0; j < RISCV_PGTABLE_ENTRIES; j++) {
+		pte_t k_l1j = k_l1[j];
+		pte_t d_l1j = d_l1[j];
+		uint64_t *k_l2, *d_l2;
+		unsigned int k;
+
+		if (!pte_is_valid(k_l1j) || !pte_is_table(k_l1j) ||
+		    !pte_is_valid(d_l1j) || !pte_is_table(d_l1j)) {
+			continue;
+		}
+
+		k_l2 = (uint64_t *)pte_to_phys(k_l1j);
+		d_l2 = (uint64_t *)pte_to_phys(d_l1j);
+
+		if (k_l2 == d_l2) {
+			continue;
+		}
+
+		for (k = 0; k < RISCV_PGTABLE_ENTRIES; k++) {
+			if (pte_is_valid(k_l2[k]) && !pte_is_valid(d_l2[k])) {
+				d_l2[k] = k_l2[k];
+			}
+		}
+	}
+}
+#endif
 
 /*
  * Propagate new kernel root-table entries to all active domain page tables.
@@ -996,6 +1085,10 @@ static void sync_domains(void)
 						d_l1[j] = k_l1[j];
 					}
 				}
+
+#if PGTABLE_LEVELS == 4
+				sync_l2_from_kernel(k_l1, d_l1);
+#endif
 			}
 		}
 	}
