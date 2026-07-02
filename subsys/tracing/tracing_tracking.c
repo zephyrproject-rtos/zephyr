@@ -42,12 +42,24 @@ struct k_event *_track_list_k_event;
 struct k_spinlock _track_list_k_event_lock;
 #endif
 
-#define SYS_TRACK_LIST_PREPEND(list, obj) \
-	do { \
-		k_spinlock_key_t key = k_spin_lock(&list ## _lock); \
-		obj->_obj_track_next = list; \
-		list = obj; \
-		k_spin_unlock(&list ## _lock, key); \
+/* Iterates in the tracking list and prepends an object only when it doesn't exist */
+#define SYS_TRACK_LIST_PREPEND(list, obj)                                                          \
+	do {                                                                                       \
+		k_spinlock_key_t key = k_spin_lock(&list##_lock);                                  \
+		if ((obj) != (list)) {                                                             \
+			__typeof__(list) _cur = (list);                                            \
+			while (_cur != NULL) {                                                     \
+				if (_cur == (obj)) {                                               \
+					break;                                                     \
+				}                                                                  \
+				_cur = _cur->_obj_track_next;                                      \
+			}                                                                          \
+			if (_cur == NULL) {                                                        \
+				(obj)->_obj_track_next = (list);                                   \
+				(list) = (obj);                                                    \
+			}                                                                          \
+		}                                                                                  \
+		k_spin_unlock(&list##_lock, key);                                                  \
 	} while (false)
 
 #define SYS_TRACK_STATIC_INIT(type, ...) \
