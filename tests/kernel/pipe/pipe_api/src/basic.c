@@ -42,10 +42,11 @@ static struct k_pipe pipe;
  * - The pipe reports PIPE_FLAG_OPEN.
  *
  * @see k_pipe_init()
- */
-ZTEST(k_pipe_basic, test_pipe_init)
+ *
  * @verifies ZEP-SRS-32-1
  * @verifies ZEP-SRS-32-2
+ */
+ZTEST(k_pipe_basic, test_pipe_init)
 {
 	uint8_t buffer[10];
 
@@ -69,10 +70,11 @@ ZTEST(k_pipe_basic, test_pipe_init)
  *
  * @see k_pipe_write()
  * @see k_pipe_read()
- */
-ZTEST(k_pipe_basic, test_pipe_write_read_one)
+ *
  * @verifies ZEP-SRS-32-3
  * @verifies ZEP-SRS-32-4
+ */
+ZTEST(k_pipe_basic, test_pipe_write_read_one)
 {
 	uint8_t buffer[10];
 	uint8_t data = 0x55;
@@ -102,10 +104,11 @@ ZTEST(k_pipe_basic, test_pipe_write_read_one)
  *
  * @see k_pipe_write()
  * @see k_pipe_read()
- */
-ZTEST(k_pipe_basic, test_pipe_write_read_multiple)
+ *
  * @verifies ZEP-SRS-32-3
  * @verifies ZEP-SRS-32-4
+ */
+ZTEST(k_pipe_basic, test_pipe_write_read_multiple)
 {
 	uint8_t buffer[10];
 	uint8_t data = 0x55;
@@ -135,9 +138,10 @@ ZTEST(k_pipe_basic, test_pipe_write_read_multiple)
  * - The first write stores all bytes; the second returns -EAGAIN.
  *
  * @see k_pipe_write()
+ *
+ * @verifies ZEP-SRS-32-3
  */
 ZTEST(k_pipe_basic, test_pipe_write_full)
- * @verifies ZEP-SRS-32-3
 {
 	uint8_t buffer[10];
 	uint8_t data[10];
@@ -163,9 +167,10 @@ ZTEST(k_pipe_basic, test_pipe_write_full)
  * - k_pipe_read() returns -EAGAIN.
  *
  * @see k_pipe_read()
+ *
+ * @verifies ZEP-SRS-32-4
  */
 ZTEST(k_pipe_basic, test_pipe_read_empty)
- * @verifies ZEP-SRS-32-4
 {
 	uint8_t buffer[10];
 	uint8_t read_data;
@@ -191,10 +196,11 @@ ZTEST(k_pipe_basic, test_pipe_read_empty)
  *
  * @see k_pipe_write()
  * @see k_pipe_read()
- */
-ZTEST(k_pipe_basic, test_pipe_read_write_full)
+ *
  * @verifies ZEP-SRS-32-3
  * @verifies ZEP-SRS-32-4
+ */
+ZTEST(k_pipe_basic, test_pipe_read_write_full)
 {
 	uint8_t buffer[10];
 	uint8_t input[10];
@@ -228,10 +234,11 @@ ZTEST(k_pipe_basic, test_pipe_read_write_full)
  *
  * @see k_pipe_write()
  * @see k_pipe_read()
- */
-ZTEST(k_pipe_basic, test_pipe_read_write_wrap_around)
+ *
  * @verifies ZEP-SRS-32-3
  * @verifies ZEP-SRS-32-4
+ */
+ZTEST(k_pipe_basic, test_pipe_read_write_wrap_around)
 {
 	uint8_t buffer[12];
 	uint8_t input[8];
@@ -271,9 +278,10 @@ ZTEST(k_pipe_basic, test_pipe_read_write_wrap_around)
  * - The pipe remains functional after the reset.
  *
  * @see k_pipe_reset()
+ *
+ * @verifies ZEP-SRS-32-7
  */
 ZTEST(k_pipe_basic, test_pipe_reset)
- * @verifies ZEP-SRS-32-7
 {
 	uint8_t buffer[10];
 	uint8_t data = 0x55;
@@ -311,9 +319,10 @@ ZTEST(k_pipe_basic, test_pipe_reset)
  * @see k_pipe_close()
  * @see k_pipe_read()
  * @see k_pipe_write()
+ *
+ * @verifies ZEP-SRS-32-8
  */
 ZTEST(k_pipe_basic, test_pipe_close)
- * @verifies ZEP-SRS-32-8
 {
 	uint8_t buffer[12];
 	uint8_t input[8];
