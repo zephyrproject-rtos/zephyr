@@ -11,29 +11,17 @@
 #include <zephyr/dt-bindings/gpio/nordic-npm10xx-gpio.h>
 #include <zephyr/logging/log.h>
 
+#include "mfd_npm10xx.h"
+
 LOG_MODULE_REGISTER(gpio_npm10xx, CONFIG_GPIO_LOG_LEVEL);
 
-#define NPM10XX_GPIO_PINS 3U
-
 /* Register Offsets */
-#define NPM10_GPIO_CONFIG0 0xA0U
 #define NPM10_GPIO_OUTPUT0 0xA6U
 #define NPM10_GPIO_READ    0xACU
 
-/* CONFIGx (0xA0–0xA2) */
-#define GPIO_CONFIG_INPUT     BIT(0)
-#define GPIO_CONFIG_OUTPUT    BIT(1)
-#define GPIO_CONFIG_OPENDRAIN BIT(2)
-#define GPIO_CONFIG_PULLDOWN  BIT(3)
-#define GPIO_CONFIG_PULLUP    BIT(4)
-#define GPIO_CONFIG_DRIVE     BIT(5)
-#define GPIO_CONFIG_DEBOUNCE  BIT(6)
-
-/* USAGEx (0xA3–0xA5) */
-#define GPIO_USAGE_POL_INVERT BIT(4)
-
 struct gpio_npm10xx_config {
 	struct gpio_driver_config common;
+	const struct device *mfd;
 	struct i2c_dt_spec i2c;
 };
 
@@ -41,29 +29,30 @@ struct gpio_npm10xx_data {
 	struct gpio_driver_data common;
 };
 
+int gpio_npm10xx_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
+				     gpio_port_value_t value);
+
 int gpio_npm10xx_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_npm10xx_config *config = dev->config;
-	uint8_t conf;
+	int ret;
 
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
 	}
 
-	if (pin >= NPM10XX_GPIO_PINS) {
-		LOG_ERR("pin number out of range %d", pin);
-		return -EINVAL;
+	ret = mfd_npm10xx_pin_configure(config->mfd, pin, NPM10_PIN_GPIO, flags);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure pin %u for GPIO usage", pin);
+		return ret;
 	}
 
-	conf = FIELD_PREP(GPIO_CONFIG_INPUT, !!(flags & GPIO_INPUT)) |
-	       FIELD_PREP(GPIO_CONFIG_OUTPUT, !!(flags & GPIO_OUTPUT)) |
-	       FIELD_PREP(GPIO_CONFIG_OPENDRAIN, (flags & GPIO_OPEN_DRAIN) == GPIO_OPEN_DRAIN) |
-	       FIELD_PREP(GPIO_CONFIG_PULLDOWN, !!(flags & GPIO_PULL_DOWN)) |
-	       FIELD_PREP(GPIO_CONFIG_PULLUP, !!(flags & GPIO_PULL_UP)) |
-	       FIELD_PREP(GPIO_CONFIG_DRIVE, !!(flags & NPM10XX_GPIO_DRIVE_HIGH)) |
-	       FIELD_PREP(GPIO_CONFIG_DEBOUNCE, !!(flags & NPM10XX_GPIO_DEBOUNCE_ON));
+	if (flags & (GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH)) {
+		return gpio_npm10xx_port_set_masked_raw(
+			dev, BIT(pin), flags & GPIO_OUTPUT_INIT_HIGH ? BIT(pin) : 0U);
+	}
 
-	return i2c_reg_write_byte_dt(&config->i2c, NPM10_GPIO_CONFIG0 + pin, conf);
+	return 0;
 }
 
 int gpio_npm10xx_port_get_raw(const struct device *dev, gpio_port_value_t *value)
@@ -83,7 +72,7 @@ int gpio_npm10xx_port_set_masked_raw(const struct device *dev, gpio_port_pins_t 
 	const struct gpio_npm10xx_config *config = dev->config;
 	int ret;
 
-	for (size_t i = 0; i < NPM10XX_GPIO_PINS; i++) {
+	for (size_t i = 0; i < NPM10_PIN_NUM; i++) {
 		if (IS_BIT_SET(mask, i)) {
 			ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_GPIO_OUTPUT0 + i,
 						    IS_BIT_SET(value, i));
@@ -143,6 +132,7 @@ static DEVICE_API(gpio, gpio_npm10xx_api) = {
 #define GPIO_NPM10XX_DEFINE(n)                                                                     \
 	static const struct gpio_npm10xx_config gpio_npm10xx_config##n = {                         \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
+		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                                           \
 		.i2c = I2C_DT_SPEC_GET(DT_INST_PARENT(n)),                                         \
 	};                                                                                         \
                                                                                                    \
