@@ -484,10 +484,22 @@ int dwmac_probe(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+static struct net_stats_eth *dwmac_stats(const struct device *dev, struct net_if *iface __unused)
+{
+	struct dwmac_priv *p = dev->data;
+
+	return &p->stats;
+}
+#endif
+
 const struct ethernet_api dwmac_api = {
 	.iface_api.init = dwmac_iface_init,
 	.get_capabilities = dwmac_caps,
 	.set_config = dwmac_set_config,
 	.get_phy = dwmac_get_phy,
 	.send = dwmac_send,
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	.get_stats = dwmac_stats,
+#endif
 };
