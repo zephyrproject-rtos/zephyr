@@ -6186,7 +6186,7 @@ int k_mem_slab_runtime_stats_reset_max(struct k_mem_slab *slab);
 			K_MEM_SLAB_DEFINE(name, slab_block_size, slab_num_blocks, slab_align)            \
 
 struct k_mem_slab_ref {
-	struct k_mem_slab;
+	struct k_mem_slab slab;
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_mem_slab_rc)
 
@@ -6209,17 +6209,19 @@ struct k_mem_slab_ref_header {
 };
 
 /** 
- *  @addtogroup mem_slab_rc_apis
+ *  @addtogroup mem_slab_ref_apis
  *  @{
  */
 
 /**
- *  @brief Reference counted wrapper for k_mem_slab_init()
- */
-void k_mem_slab_ref_init(struct k_mem_slab_ref *kref);
-
-/**
- *  @brief
+ *  @brief Initialize a memory slab with reference counting.
+ *  
+ *  Initializes a memory slab and its corresponding reference count
+ *   
+ *  This function is a wrapper over k_mem_slab_init function with
+ *  additional 
+ *  
+ *  
  */
 int k_mem_slab_ref_init(struct k_mem_slab_ref_header *slab_ref_header,
                        void *buffer, size_t block_size, uint32_t num_blocks);

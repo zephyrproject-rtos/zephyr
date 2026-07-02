@@ -17,8 +17,8 @@
 #include <ksched.h>
 #include <wait_q.h>
 
-#define ATOMIC_INIT_n(i) { (i) }
-#define REFCOUNT_INIT_n(n) { .refs = ATOMIC_INIT_n(n), }
+#define ATOMIC_INIT(i) { (i) }
+#define REFCOUNT_INIT(n) { .refs = ATOMIC_INIT(n), }
 #define SLAB_RC_HEADER_SIZE WB_UP(sizeof(struct k_mem_slab_rc_header))
 
 typedef struct {
@@ -29,46 +29,49 @@ typedef struct {
     refcount_t refcount;
 } kref;
 
-struct k_mem_slab_rc_header {
+struct k_mem_slab_ref_header {
     struct kref kref;
-    struct k_mem_slab_rc *owner;
+    struct k_mem_slab_ref *owner;
 };
 
 /* Helper Functions */
-void kref_init_n(struct kref *kref);
-void kref_get_n(struct kref *kref);
-int kref_put_n(struct kref *kref, void(*release)(struct kref *ref));
-int kref_get_unless_zero_n(struct kref *kref);
-atomic_ptr_val_t kref_read_n(const struct kref_n *kref);
-int kref_put_mutex_n(struct kref *kref, void (*release)(struct kref_n *kref), 
+void kref_init(struct kref *kref);
+void kref_get(struct kref *kref);
+int kref_put(struct kref *kref, void(*release)(struct kref *ref));
+int kref_get_unless_zero(struct kref *kref);
+atomic_ptr_val_t kref_read(const struct kref *kref);
+int kref_put_mutex(struct kref *kref, void (*release)(struct kref *kref), 
                                                         struct k_mutex *k_mutex);
 
-void __refcount_add_n(int i, refcount_n_t *r, int *oldp);
-void __refcount_inc_n(refcount_n_t *r, int *oldp);
-void atomic_set_n(atomic_n_t *v, int i);
-bool __refcount_add_not_zero_n(int i, refcount_n_t *r, int *oldp);
-bool __refcount_inc_not_zero_n(refcount_n_t *r, int *oldp);
-bool __refcount_sub_and_test_n(int i, refcount_n_t *r, int *oldp); 
-bool __refcount_dec_and_test_n(refcount_n_t *r, int *oldp);
-void __refcount_dec_n(refcount_n_t *r, int *oldp);
+void __refcount_add(int i, refcount_t *r, int *oldp); void __refcount_inc(refcount_t *r, int *oldp); void atomic_set(atomic_t *v, int i);
+bool __refcount_add_not_zero(int i, refcount_t *r, int *oldp);
+bool __refcount_inc_not_zero(refcount_t *r, int *oldp);
+bool __refcount_sub_and_test(int i, refcount_t *r, int *oldp); 
+bool __refcount_dec_and_test(refcount_t *r, int *oldp);
+void __refcount_dec(refcount_t *r, int *oldp);
 
-atomic_ptr_val_t refcount_read_n(const refcount_n_t *r);
-void refcount_inc_n(refcount_n_t *r);
-bool refcount_inc_not_zero_n(refcount_n_t *r);
-void refcount_add_n(int i, refcount_n_t *r);
-bool refcount_add_not_zero(int i, refcount_n_t *r);
-bool refcount_dec_and_test_n(refcount_n_t *r);
-void refcount_dec_n(refcount_n_t *r);
-int  refcount_sub_and_test_n(int i, refcount_n_t *r);
-bool refcount_dec_if_one_n(refcount_n_t *r);
-bool refcount_dec_not_one_n(refcount_n_t *r);
-bool refcount_dec_and_mutex_lock_n(refcount_n_t *r, struct k_mutex *lock);
-bool refcount_dec_and_lock(refcount_n_t *r, struct k_spinlock *lock);
+atomic_ptr_val_t refcount_read(const refcount_t *r);
+void refcount_inc(refcount_t *r);
+bool refcount_inc_not_zero(refcount_t *r);
+void refcount_add(int i, refcount_t *r);
+bool refcount_add_not_zero(int i, refcount_t *r);
+bool refcount_dec_and_test(refcount_t *r);
+void refcount_dec(refcount_t *r);
+int  refcount_sub_and_test(int i, refcount_t *r);
+bool refcount_dec_if_one(refcount_t *r);
+bool refcount_dec_not_one(refcount_t *r);
+bool refcount_dec_and_mutex_lock(refcount_t *r, struct k_mutex *lock);
+bool refcount_dec_and_lock(refcount_t *r, struct k_spinlock *lock);
 
-
-
+/**
+ * 
+ */
 int k_mem_slab_ref_init(struct k_mem_slab_ref_header *slab_ref_header,
-                       void *buffer, size_t block_size, uint32_t num_blocks);
+                       void *buffer, size_t block_size, uint32_t num_blocks) {
+
+    kref_init(&slab_ref_header->kref);
+    return k_mem_slab_init(&header->slab, buffer, block_size, num_blocks);
+}
 
 /**
  *  @brief
@@ -129,42 +132,42 @@ static inline uint32_t k_mem_slab_ref_refcount_get(struct
     return (uint32_t)(slab_rc_header->kref.refcount.refs.counter);
 }
 
-void kref_init_n(struct kref_n *kref) {
-    refcount_set_n(&kref->refcount, 1);
+void kref_init(struct kref *kref) {
+    refcount_set(&kref->refcount, 1);
 }
 
-void kref_get_n(struct kref_n *kref) {
-    refcount_inc_n(&kref->refcount);
+void kref_get(struct kref *kref) {
+    refcount_inc(&kref->refcount);
 }
 
-atomic_ptr_val_t kref_read_n(const struct kref_n *kref) {
-    return refcount_read_n(&kref->refcount);
+atomic_ptr_val_t kref_read(const struct kref *kref) {
+    return refcount_read(&kref->refcount);
 }
 
-int kref_put_n(struct kref_n *kref, void(*release)(struct kref_n *ref)) {
+int kref_put(struct kref *kref, void(*release)(struct kref *ref)) {
 
-    if(refcount_dec_and_test_n(&kref->refcount)) {
+    if(refcount_dec_and_test(&kref->refcount)) {
         release(kref);
         return 1;
     }
     return 0;
 }
 
-int kref_put_mutex_n(struct kref_n *kref, 
-    void (*release)(struct kref_n *kref), struct k_mutex *k_mutex) {
+int kref_put_mutex(struct kref *kref, 
+    void (*release)(struct kref *kref), struct k_mutex *k_mutex) {
     
-    if(refcount_dec_and_mutex_lock_n(&kref->refcount, k_mutex)){
+    if(refcount_dec_and_mutex_lock(&kref->refcount, k_mutex)){
         release(kref);
         return 1;
     }
     return 0;
 }
 
-int kref_get_unless_zero_n(struct kref_n *kref) {
-    return refcount_inc_not_zero_n(&kref->refcount);
+int kref_get_unless_zero(struct kref *kref) {
+    return refcount_inc_not_zero(&kref->refcount);
 }
 
- void __refcount_add_n(int i, refcount_n_t *r, int *oldp) {
+ void __refcount_add(int i, refcount_t *r, int *oldp) {
 
     int old = atomic_add(&r->refs.counter, i);
 
@@ -173,27 +176,24 @@ int kref_get_unless_zero_n(struct kref_n *kref) {
     }
 
     if((!old)){
-        refcount_warn_saturate_n(r, REFCOUNT_ADD_UAF);
+        refcount_warn_saturate(r, REFCOUNT_ADD_UAF);
     }else if((old < 0 || old + i < 0)){
-        refcount_warn_saturate_n(r, REFCOUNT_ADD_OVF);
+        refcount_warn_saturate(r, REFCOUNT_ADD_OVF);
     }
 
 }
 
-// https://github.com/torvalds/linux/blob/master/include/linux/refcount.h#L364
- void __refcount_inc_n(refcount_n_t *r, int *oldp)
+ void __refcount_inc(refcount_t *r, int *oldp)
 {
-	__refcount_add_n(1, r, oldp);
+	__refcount_add(1, r, oldp);
 }
 
-// https://github.com/torvalds/linux/blob/master/tools/arch/x86/include/asm/atomic.h#L39
- void atomic_set_n(atomic_n_t *v, int i) {
+ void atomic_set(atomic_t *v, int i) {
     atomic_set(&v->counter, i);
 }
 
-// https://github.com/torvalds/linux/blob/master/include/linux/refcount.h#L174
- bool __refcount_add_not_zero_n(int i, refcount_n_t *r, int *oldp) {
-    atomic_val_t old = (atomic_val_t)refcount_read_n(r);
+ bool __refcount_add_not_zero(int i, refcount_t *r, int *oldp) {
+    atomic_val_t old = (atomic_val_t)refcount_read(r);
 
     do {
         if(!old){ // checks for 0
@@ -206,7 +206,7 @@ int kref_get_unless_zero_n(struct kref_n *kref) {
     }
 
     if((old < 0 || (int)old + i < 0)){
-        refcount_warn_saturate_n(r, REFCOUNT_ADD_NOT_ZERO_OVF);
+        // refcount_warn_saturate(r, REFCOUNT_ADD_NOT_ZERO_OVF);
     }
 
     return (bool)old;
@@ -214,13 +214,11 @@ int kref_get_unless_zero_n(struct kref_n *kref) {
     // if anything other than that, it would have suceeded
 }
 
-// https://github.com/torvalds/linux/blob/master/include/linux/refcount.h#L315
- bool __refcount_inc_not_zero_n(refcount_n_t *r, int *oldp) {
-    return __refcount_add_not_zero_n(1, r, oldp);
+ bool __refcount_inc_not_zero(refcount_t *r, int *oldp) {
+    return __refcount_add_not_zero(1, r, oldp);
 }
 
-// https://github.com/torvalds/linux/blob/master/include/linux/refcount.h#L387
- bool __refcount_sub_and_test_n(int i, refcount_n_t *r, int *oldp) {
+ bool __refcount_sub_and_test(int i, refcount_t *r, int *oldp) {
     int old = atomic_sub(&r->refs.counter, i); // from zephyr
 
     if (oldp) {
@@ -236,19 +234,17 @@ int kref_get_unless_zero_n(struct kref_n *kref) {
     }
 
     if((old <= 0 || old - i < 0)) {
-        refcount_warn_saturate_n(r, REFCOUNT_SUB_UAF);
+        // refcount_warn_saturate(r, REFCOUNT_SUB_UAF);
     }
 
     return false;
 }
 
-// https://github.com/torvalds/linux/blob/master/include/linux/refcount.h#L430
- bool __refcount_dec_and_test_n(refcount_n_t *r, int *oldp) {
-    return __refcount_sub_and_test_n(1, r, oldp);
+ bool __refcount_dec_and_test(refcount_t *r, int *oldp) {
+    return __refcount_sub_and_test(1, r, oldp);
 }
 
-// https://github.com/torvalds/linux/blob/master/include/linux/refcount.h#L453
- void __refcount_dec_n(refcount_n_t *r, int *oldp) {
+ void __refcount_dec(refcount_t *r, int *oldp) {
     int old = atomic_sub(&r->refs.counter, 1);
 
     if(oldp){
@@ -256,53 +252,45 @@ int kref_get_unless_zero_n(struct kref_n *kref) {
     }
 
     if((old <= 1)){
-        refcount_warn_saturate_n(r, REFCOUNT_DEC_LEAK);
+        refcount_warn_saturate(r, REFCOUNT_DEC_LEAK);
     }
 }
 
-atomic_ptr_val_t refcount_read_n(const refcount_n_t *r) {
+atomic_ptr_val_t refcount_read(const refcount_t *r) {
     // atomic_ptr_get belongs to zephyr
     return atomic_ptr_get((atomic_ptr_t*)&r->refs.counter); 
 }
 
-// https://github.com/torvalds/linux/blob/master/include/linux/refcount.h#L381
-void refcount_inc_n(refcount_n_t *r) {
-    __refcount_inc_n(r, NULL);
+void refcount_inc(refcount_t *r) {
+    __refcount_inc(r, NULL);
 }
 
-// https://github.com/torvalds/linux/blob/master/include/linux/refcount.h#L333
-bool refcount_inc_not_zero_n(refcount_n_t *r) {
-    return __refcount_inc_not_zero_n(r, NULL);
+bool refcount_inc_not_zero(refcount_t *r) {
+    return __refcount_inc_not_zero(r, NULL);
 }
 
-// https://github.com/torvalds/linux/blob/master/include/linux/refcount.h#L310
-void refcount_add_n(int i, refcount_n_t *r) {
-    __refcount_add_n(i, r, NULL);
+void refcount_add(int i, refcount_t *r) {
+    __refcount_add(i, r, NULL);
 }
 
-// https://github.com/torvalds/linux/blob/master/include/linux/refcount.h#L210
-bool refcount_add_not_zero(int i, refcount_n_t *r) {
-    return __refcount_add_not_zero_n(i, r, NULL);
+bool refcount_add_not_zero(int i, refcount_t *r) {
+    return __refcount_add_not_zero(i, r, NULL);
 }
 
-// https://github.com/torvalds/linux/blob/master/include/linux/refcount.h#L448
-bool refcount_dec_and_test_n(refcount_n_t *r) {
-    return __refcount_dec_and_test_n(r, NULL);
+bool refcount_dec_and_test(refcount_t *r) {
+    return __refcount_dec_and_test(r, NULL);
 }
 
-// https://github.com/torvalds/linux/blob/master/include/linux/refcount.h#L474
-void refcount_dec_n(refcount_n_t *r) {
-    __refcount_dec_n(r, NULL);
+void refcount_dec(refcount_t *r) {
+    __refcount_dec(r, NULL);
 }
 
-// https://github.com/torvalds/linux/blob/master/lib/refcount.c#L55
-bool refcount_dec_if_one_n(refcount_n_t *r) {
+bool refcount_dec_if_one(refcount_t *r) {
     int val = 1;
     return atomic_cas(&r->refs.counter, val, 0);
 }
 
-// https://github.com/torvalds/linux/blob/master/lib/refcount.c#L74
-bool refcount_dec_not_one_n(refcount_n_t *r) {
+bool refcount_dec_not_one(refcount_t *r) {
     unsigned int new, val = atomic_get(&r->refs.counter); // @atomic_get from zephyr
 
     do {
@@ -311,21 +299,20 @@ bool refcount_dec_not_one_n(refcount_n_t *r) {
 
         new = val - 1;
         if (new > val) { // to detect UAF (use-after-free)
-            LOG_WRN_ONCE("refcount_n_t: underflow use-after-free\n");
+            LOG_WRN_ONCE("refcount_t: underflow use-after-free\n");
         }
     }while(!atomic_cas(&r->refs.counter, val, new)); // #from Zephyr
 
     return true;
 }
 
-// https://github.com/torvalds/linux/blob/master/lib/refcount.c#L113
-bool refcount_dec_and_mutex_lock_n(refcount_n_t *r, struct k_mutex *lock) {
+bool refcount_dec_and_mutex_lock(refcount_t *r, struct k_mutex *lock) {
 
-    if(refcount_dec_not_one_n(r)) return false;
+    if(refcount_dec_not_one(r)) return false;
 
     k_mutex_lock(lock, K_NO_WAIT);
 
-    if(!refcount_dec_and_test_n(r)){
+    if(!refcount_dec_and_test(r)){
         k_mutex_unlock(lock);
         return false;
     }
@@ -333,9 +320,8 @@ bool refcount_dec_and_mutex_lock_n(refcount_n_t *r, struct k_mutex *lock) {
     return false;
 }
 
-// https://github.com/torvalds/linux/blob/master/lib/refcount.c#L144
-bool refcount_dec_and_lock(refcount_n_t *r, struct k_spinlock *lock) {
-   if(refcount_dec_not_one_n(r)){
+bool refcount_dec_and_lock(refcount_t *r, struct k_spinlock *lock) {
+   if(refcount_dec_not_one(r)){
     return false;
    }
 
@@ -343,7 +329,7 @@ bool refcount_dec_and_lock(refcount_n_t *r, struct k_spinlock *lock) {
    // refcount_dec_and_lock_irqsave() -> separate function is not needed
    k_spin_lock(lock);
 
-   if(!refcount_dec_and_test_n(r)) {
+   if(!refcount_dec_and_test(r)) {
     k_spin_release(lock);
     return false;
    }
