@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 /**
  * @file
  * @brief LED driver for the PCA953x I2C LED driver series
@@ -18,23 +17,29 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pca953x, CONFIG_LED_LOG_LEVEL);
 
-#define PCA953X_CHANNELS 4U /* LED0 - LED3 */
-#define PCA953X_ENGINES  2U
+#define PCA953X_ENGINES 2U
 
-#define PCA953X_INPUT 0x00 /* read-only pin state            */
-#define PCA953X_PSC0  0x01 /* BLINK0 period prescaler        */
-#define PCA953X_PWM0  0x02 /* BLINK0 duty                    */
-#define PCA953X_PSC1  0x03
-#define PCA953X_PWM1  0x04
-#define PCA953X_LS0   0x05 /* LED selector (2 bits per LED)  */
+#define LS_LED_BITS     2u /* 2 bits per LED in LS register  */
+#define LS_LEDS_PER_REG (8u / LS_LED_BITS)
+#define LS_SHIFT(led)   ((led % LS_LEDS_PER_REG) * LS_LED_BITS)
+#define LS_MASK(led)    (0x3u << LS_SHIFT(led))
+
+/* Register addresses */
+#define PCA953X_INPUT0          0x00 /* read-only pin state              */
+/* The following registers are offset by the number of input registers */
+#define PCA953X_PSC(config, ch)                   /* ch=0: PSC0; ch=1: PSC1           */           \
+	((ch ? 0x02 : 0x00) + config->ninput_reg) /* BLINK0/1 period prescaler        */
+#define PCA953X_PWM(config, ch)                   /* ch=0: PWM0; ch=1: PWM1           */           \
+	((ch ? 0x03 : 0x01) + config->ninput_reg) /* BLINK0/1 duty                    */
+#define PCA953X_LS(config, led)                                                                    \
+	(0x04 + config->ninput_reg +                                                               \
+	 led / LS_LEDS_PER_REG) /* LED selector LS0-LS3 (2 bits per LED)    */
 
 /* LS register bit fields (6.3.6, Table 10) */
 #define LS_FUNC_OFF  0x0 /* high-Z - LED off               */
 #define LS_FUNC_ON   0x1 /* output LOW - LED on            */
 #define LS_FUNC_PWM0 0x2
 #define LS_FUNC_PWM1 0x3
-#define LS_SHIFT(ch) ((ch) * 2) /* 2 bits per LED in LS register */
-#define LS_MASK(ch)  (0x3u << LS_SHIFT(ch))
 
 /* Blink period limits derived from PSC range 0 - 255 (6.3.2/6.3.4) */
 #define BLINK_MIN_MS 7U    /* (0+1)/152 = 6.58 ms  - ceil   */
@@ -45,6 +50,8 @@ LOG_MODULE_REGISTER(pca953x, CONFIG_LED_LOG_LEVEL);
 
 struct pca953x_config {
 	struct i2c_dt_spec i2c;
+	uint8_t nleds;
+	uint8_t ninput_reg;
 };
 
 struct pca953x_data {
@@ -72,14 +79,15 @@ static uint8_t ms_to_psc(uint32_t period_ms)
 /**
  * @brief Update LS bits for one LED (RMW operation)
  *
- * @param i2c I2C device specification
- * @param led LED index (0-3)
+ * @param config Device config
+ * @param led LED index (0-nleds)
  * @param func Desired function (LS_FUNC_*)
  * @return int 0 on success, negative errno on error
  */
-static int ls_update(const struct i2c_dt_spec *i2c, uint8_t led, uint8_t func)
+static int ls_update(const struct pca953x_config *config, uint8_t led, uint8_t func)
 {
-	return i2c_reg_update_byte_dt(i2c, PCA953X_LS0, LS_MASK(led), func << LS_SHIFT(led));
+	return i2c_reg_update_byte_dt(&config->i2c, PCA953X_LS(config, led), LS_MASK(led),
+				      func << LS_SHIFT(led));
 }
 
 /**
@@ -126,16 +134,20 @@ static int engine_find_match(const struct pca953x_data *data, uint8_t duty, uint
  * 2. Use free engine if available
  * 3. Return -EBUSY if no match
  *
- * @param data Driver data
+ * @param dev Device structure
  * @param duty Desired duty cycle (0-255)
  * @param psc Desired prescaler value
  * @param[out] out_ch Acquired engine ID (0 or 1)
  * @return int 0 on success, -EBUSY if no engine available
  */
-static int engine_acquire(struct pca953x_data *data, uint8_t duty, uint8_t psc, uint8_t *out_ch)
+static int engine_acquire(const struct device *dev, uint8_t duty, uint8_t psc, uint8_t *out_ch)
 {
+	const struct pca953x_config *config = dev->config;
+	struct pca953x_data *data = dev->data;
+	uint8_t ch;
+
 	/* Check for existing engine with matching parameters */
-	for (uint8_t ch = 0; ch < PCA953X_ENGINES; ch++) {
+	for (ch = 0; ch < PCA953X_ENGINES; ch++) {
 		if (data->engine_users[ch] && data->pwm_val[ch] == duty &&
 		    data->psc_val[ch] == psc) {
 			*out_ch = ch;
@@ -143,21 +155,38 @@ static int engine_acquire(struct pca953x_data *data, uint8_t duty, uint8_t psc, 
 		}
 	}
 	/* Find free engine */
-	for (uint8_t ch = 0; ch < PCA953X_ENGINES; ch++) {
+	for (ch = 0; ch < PCA953X_ENGINES; ch++) {
 		if (data->engine_users[ch] == 0) {
 			*out_ch = ch;
-			return 0;
+			break;
 		}
 	}
 
-	return -EBUSY;
+	if (ch == PCA953X_ENGINES) {
+		return -EBUSY;
+	}
+
+	/* Found a free engine, program it */
+	int ret = i2c_reg_write_byte_dt(&config->i2c, PCA953X_PSC(config, ch), psc);
+
+	if (ret == 0) {
+		data->psc_val[ch] = psc;
+		ret = i2c_reg_write_byte_dt(&config->i2c, PCA953X_PWM(config, ch), duty);
+	}
+	if (ret) {
+		LOG_ERR("Failed to program engine %u: %d", ch, ret);
+		return ret;
+	}
+	data->pwm_val[ch] = duty;
+
+	return 0;
 }
 
 /**
  * @brief Bind LED to a PWM engine
  *
  * @param data Driver data
- * @param led LED index (0-3)
+ * @param led LED index (0-nleds)
  * @param ch Engine ID (0 or 1)
  */
 static void engine_bind(struct pca953x_data *data, uint8_t led, uint8_t ch)
@@ -169,7 +198,7 @@ static void engine_bind(struct pca953x_data *data, uint8_t led, uint8_t ch)
  * @brief Release LED from its current PWM engine
  *
  * @param data Driver data
- * @param led LED index (0-3)
+ * @param led LED index (0-nleds)
  */
 static void engine_release(struct pca953x_data *data, uint8_t led)
 {
@@ -180,21 +209,72 @@ static void engine_release(struct pca953x_data *data, uint8_t led)
 	}
 }
 
+/**
+ * @brief Change the LEDs PWM settings in place
+ *
+ * ...or piggy-back on another PWM channel if its settings fit.
+ * The LED must be already in a PWM mode (not ON or OFF) and there is
+ * no further check if other LEDs are on the modified PWM.
+ *
+ * @param dev Device structure
+ * @param led LED index
+ * @param cur Current PWM engine assigned to LED (0-1)
+ * @param duty Desired duty cycle
+ * @param psc Desired prescaler value
+ * @return 0 on success
+ */
+static int led_change_pwm_settings(const struct device *dev, const uint8_t led, const uint8_t cur,
+				   const uint8_t duty, const uint8_t psc)
+{
+	const struct pca953x_config *config = dev->config;
+	struct pca953x_data *data = dev->data;
+
+	uint8_t match;
+
+	/* Can we piggy-back on an existing engine already at (duty, psc)? */
+	if (!engine_find_match(data, duty, psc, &match) && match != cur) {
+		LOG_DBG("LED%u moves from engine %u to matching engine %u", led, cur, match);
+		engine_release(data, led);
+		engine_bind(data, led, match);
+		return ls_update(config, led, match ? LS_FUNC_PWM1 : LS_FUNC_PWM0);
+	}
+
+	/* Otherwise retune in place */
+	int ret;
+
+	if (data->psc_val[cur] != psc) {
+		ret = i2c_reg_write_byte_dt(&config->i2c, PCA953X_PSC(config, cur), psc);
+		if (ret) {
+			return ret;
+		}
+		data->psc_val[cur] = psc;
+	}
+	if (data->pwm_val[cur] != duty) {
+		ret = i2c_reg_write_byte_dt(&config->i2c, PCA953X_PWM(config, cur), duty);
+		if (ret) {
+			return ret;
+		}
+		data->pwm_val[cur] = duty;
+	}
+
+	return 0;
+}
+
 static int pca953x_led_set_brightness(const struct device *dev, uint32_t led, uint8_t percent)
 {
 	const struct pca953x_config *config = dev->config;
 	struct pca953x_data *data = dev->data;
-	uint8_t cur, duty, ch;
+	uint8_t ch;
 	int ret;
 
-	if (led >= PCA953X_CHANNELS) {
+	if (led >= config->nleds) {
 		LOG_ERR("Invalid LED index: %u", led);
 		return -EINVAL;
 	}
 
 	if (percent == 0) {
 		LOG_DBG("LED%u -> OFF", led);
-		ret = ls_update(&config->i2c, led, LS_FUNC_OFF);
+		ret = ls_update(config, led, LS_FUNC_OFF);
 		if (ret == 0) {
 			engine_release(data, led);
 		}
@@ -202,71 +282,33 @@ static int pca953x_led_set_brightness(const struct device *dev, uint32_t led, ui
 	}
 	if (percent == LED_BRIGHTNESS_MAX) {
 		LOG_DBG("LED%u -> ON", led);
-		ret = ls_update(&config->i2c, led, LS_FUNC_ON);
+		ret = ls_update(config, led, LS_FUNC_ON);
 		if (ret == 0) {
 			engine_release(data, led);
 		}
 		return ret;
 	}
 
-	duty = (percent * UINT8_MAX) / LED_BRIGHTNESS_MAX;
-	cur = find_engine_for_led(data, led);
+	const uint8_t duty = (percent * UINT8_MAX) / LED_BRIGHTNESS_MAX;
+	const uint8_t cur = find_engine_for_led(data, led);
 
 	/* Sole-user fast-path, with reuse-check */
 	if (cur < PCA953X_ENGINES && data->engine_users[cur] == BIT(led)) {
-		uint8_t match;
-
-		/* Can we piggy-back on an existing engine already at (duty, default psc)? */
-		if (!engine_find_match(data, duty, PCA953X_DEFAULT_PSC, &match) && match != cur) {
-			LOG_DBG("LED%u moves from engine %u to matching engine %u", led, cur,
-				match);
-			engine_release(data, led);
-			engine_bind(data, led, match);
-			return ls_update(&config->i2c, led, match ? LS_FUNC_PWM1 : LS_FUNC_PWM0);
-		}
-
-		/* Otherwise retune in place */
-		ret = 0;
-		if (data->pwm_val[cur] != duty) {
-			LOG_DBG("LED%u retune duty %u on engine %u", led, duty, cur);
-			ret = i2c_reg_write_byte_dt(&config->i2c, cur ? PCA953X_PWM1 : PCA953X_PWM0,
-						    duty);
-			if (ret == 0) {
-				data->pwm_val[cur] = duty;
-			}
-		}
-		return ret;
+		return led_change_pwm_settings(dev, led, cur, duty, PCA953X_DEFAULT_PSC);
 	}
 
 	/* Acquire new engine - use default PSC for brightness control */
-	ret = engine_acquire(data, duty, PCA953X_DEFAULT_PSC, &ch);
+	ret = engine_acquire(dev, duty, PCA953X_DEFAULT_PSC, &ch);
 	if (ret) {
 		LOG_WRN("No PWM engine available for LED %u", led);
 		return ret;
-	}
-
-	/* If engine is new (no users), program its registers */
-	if (data->engine_users[ch] == 0) {
-		/* Set default period (152 Hz) */
-		ret = i2c_reg_write_byte_dt(&config->i2c, ch ? PCA953X_PSC1 : PCA953X_PSC0,
-					    PCA953X_DEFAULT_PSC);
-		if (ret == 0) {
-			ret = i2c_reg_write_byte_dt(&config->i2c, ch ? PCA953X_PWM1 : PCA953X_PWM0,
-						    duty);
-		}
-		if (ret) {
-			LOG_ERR("Failed to program engine %u: %d", ch, ret);
-			return ret;
-		}
-		data->psc_val[ch] = PCA953X_DEFAULT_PSC;
-		data->pwm_val[ch] = duty;
 	}
 
 	/* Bind LED to new engine and update hardware */
 	LOG_DBG("LED%u uses engine %u (duty %u)", led, ch, duty);
 	engine_release(data, led);
 	engine_bind(data, led, ch);
-	return ls_update(&config->i2c, led, ch ? LS_FUNC_PWM1 : LS_FUNC_PWM0);
+	return ls_update(config, led, ch ? LS_FUNC_PWM1 : LS_FUNC_PWM0);
 }
 
 static int pca953x_led_blink(const struct device *dev, uint32_t led, uint32_t delay_on,
@@ -274,16 +316,15 @@ static int pca953x_led_blink(const struct device *dev, uint32_t led, uint32_t de
 {
 	const struct pca953x_config *config = dev->config;
 	struct pca953x_data *data = dev->data;
-	int ret;
-	uint8_t ch, duty, psc, cur;
-	uint32_t period, duty32;
+	uint8_t ch;
 
-	if (led >= PCA953X_CHANNELS) {
+	if (led >= config->nleds) {
 		LOG_ERR("Invalid LED index: %u", led);
 		return -EINVAL;
 	}
 
-	period = delay_on + delay_off;
+	const uint32_t period = delay_on + delay_off;
+
 	if (period < BLINK_MIN_MS || period > BLINK_MAX_MS) {
 		LOG_ERR("Invalid blink period: %u ms (min: %u, max: %u)", period, BLINK_MIN_MS,
 			BLINK_MAX_MS);
@@ -291,67 +332,28 @@ static int pca953x_led_blink(const struct device *dev, uint32_t led, uint32_t de
 	}
 
 	/* Calculate duty cycle with overflow protection */
-	duty32 = (delay_on * 256U) / period;
-	duty = CLAMP(duty32, 0, UINT8_MAX);
-	psc = ms_to_psc(period);
-	cur = find_engine_for_led(data, led);
+	const uint32_t duty32 = (delay_on * 256U) / period;
+	const uint8_t duty = CLAMP(duty32, 0, UINT8_MAX);
+	const uint8_t psc = ms_to_psc(period);
+	const uint8_t cur = find_engine_for_led(data, led);
 
 	/* Sole-user fast-path with reuse-check */
 	if (cur < PCA953X_ENGINES && data->engine_users[cur] == BIT(led)) {
-		uint8_t match;
-
-		/* Look for another engine already at the desired (psc,duty) */
-		if (!engine_find_match(data, duty, psc, &match) && match != cur) {
-			LOG_DBG("LED%u moves from engine %u to matching engine %u (blink)", led,
-				cur, match);
-			engine_release(data, led);
-			engine_bind(data, led, match);
-			return ls_update(&config->i2c, led, match ? LS_FUNC_PWM1 : LS_FUNC_PWM0);
-		}
-
-		/* Otherwise update this engine in place */
-		ret = 0;
-		if (data->pwm_val[cur] != duty || data->psc_val[cur] != psc) {
-			ret = i2c_reg_write_byte_dt(&config->i2c, cur ? PCA953X_PSC1 : PCA953X_PSC0,
-						    psc);
-			if (ret == 0) {
-				ret = i2c_reg_write_byte_dt(
-					&config->i2c, cur ? PCA953X_PWM1 : PCA953X_PWM0, duty);
-			}
-			if (ret == 0) {
-				data->psc_val[cur] = psc;
-				data->pwm_val[cur] = duty;
-			}
-		}
-		return ret;
+		return led_change_pwm_settings(dev, led, cur, duty, psc);
 	}
 
 	/* Acquire new engine with desired parameters */
-	ret = engine_acquire(data, duty, psc, &ch);
+	const int ret = engine_acquire(dev, duty, psc, &ch);
+
 	if (ret) {
 		LOG_WRN("No PWM engine available for LED %u blink", led);
 		return ret;
 	}
 
-	/* If engine is new (no users), program it */
-	if (data->engine_users[ch] == 0) {
-		ret = i2c_reg_write_byte_dt(&config->i2c, ch ? PCA953X_PSC1 : PCA953X_PSC0, psc);
-		if (ret == 0) {
-			ret = i2c_reg_write_byte_dt(&config->i2c, ch ? PCA953X_PWM1 : PCA953X_PWM0,
-						    duty);
-		}
-		if (ret) {
-			LOG_ERR("Failed to program engine %u: %d", ch, ret);
-			return ret;
-		}
-		data->psc_val[ch] = psc;
-		data->pwm_val[ch] = duty;
-	}
-
 	LOG_DBG("LED%u now on engine %u (psc %u duty %u)", led, ch, psc, duty);
 	engine_release(data, led);
 	engine_bind(data, led, ch);
-	return ls_update(&config->i2c, led, ch ? LS_FUNC_PWM1 : LS_FUNC_PWM0);
+	return ls_update(config, led, ch ? LS_FUNC_PWM1 : LS_FUNC_PWM0);
 }
 
 static int pca953x_led_init_chip(const struct device *dev)
@@ -401,10 +403,11 @@ static DEVICE_API(led, pca953x_led_api) = {
 	.set_brightness = pca953x_led_set_brightness,
 };
 
-#define PCA953X_DEVICE(id, dev_name)                                                               \
+#define PCA953X_DEVICE(id, dev_name, led_channels)                                                 \
 	static const struct pca953x_config dev_name##_##id##_cfg = {                               \
 		.i2c = I2C_DT_SPEC_INST_GET(id),                                                   \
-	};                                                                                         \
+		.nleds = led_channels,                                                             \
+		.ninput_reg = (led_channels - 1) / 8 + 1};                                         \
 	static struct pca953x_data dev_name##_##id##_data;                                         \
 	PM_DEVICE_DT_INST_DEFINE(id, pca953x_pm_action);                                           \
 	DEVICE_DT_INST_DEFINE(id, &pca953x_led_init, PM_DEVICE_DT_INST_GET(id),                    \
@@ -412,5 +415,17 @@ static DEVICE_API(led, pca953x_led_api) = {
 			      CONFIG_LED_INIT_PRIORITY, &pca953x_led_api);
 
 #undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_pca9530
+DT_INST_FOREACH_STATUS_OKAY_VARGS(PCA953X_DEVICE, pca9530, 2)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_pca9531
+DT_INST_FOREACH_STATUS_OKAY_VARGS(PCA953X_DEVICE, pca9531, 8)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_pca9532
+DT_INST_FOREACH_STATUS_OKAY_VARGS(PCA953X_DEVICE, pca9532, 16)
+
+#undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_pca9533
-DT_INST_FOREACH_STATUS_OKAY_VARGS(PCA953X_DEVICE, pca9533)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(PCA953X_DEVICE, pca9533, 4)
