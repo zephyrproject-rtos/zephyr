@@ -1,0 +1,88 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Unified 2-image in-app DFU slot layout, shared by the CM33-NS and CM55
+ * smp_svr builds. Fixed image identity: image 0 (-n 0) = CM33-NS, image 1
+ * (-n 1) = CM55, so either core can update either image.
+ *
+ * Each image lives on its owner core's flash view (flash0 for CM33-NS,
+ * flash0_sahb for CM55) so that core still XIP-runs its own image; these are
+ * views of the same QSPI device and the driver programs by raw offset, so a
+ * core writes the other image through the shared controller.
+ *
+ * Rebinds slot0/1 -> flash0 and slot2/3 -> flash0_sahb, dropping the canonical
+ * labels from flash0_s to avoid duplicates. Build with
+ * UPDATEABLE_IMAGE_NUMBER=2 (+ MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER=2,
+ * MCUMGR_GRP_IMG_FRUGAL_LIST=y).
+ */
+
+&flash0_s {
+	partitions {
+		/delete-node/ partition@100000;
+		/delete-node/ partition@700000;
+		/delete-node/ partition@340000;
+		/delete-node/ partition@940000;
+
+		/* Secure slots without the canonical slot0/1 labels (rebound
+		 * below); keep m33s_xip for TF-M/SoC signing.
+		 */
+		slot0_s_partition: m33s_xip: partition@100000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x100000 0x240000>;
+		};
+
+		slot1_s_partition: partition@700000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x700000 0x240000>;
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		/delete-node/ partition@340000;
+		/delete-node/ partition@940000;
+
+		/* image 0 primary: CM33-NS (slot0, NS code XIP). */
+		slot0_partition: slot0_ns_partition: m33_xip: partition@340000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-2";
+			reg = <0x340000 0x1c0000>;
+		};
+
+		/* image 0 secondary: CM33-NS (slot1). */
+		slot1_partition: slot1_ns_partition: partition@940000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-3";
+			reg = <0x940000 0x1c0000>;
+		};
+	};
+};
+
+&flash0_sahb {
+	partitions {
+		/delete-node/ partition@580000;
+		/delete-node/ partition@b00000;
+
+		/* image 1 primary: CM55 (slot2, CM55 code XIP). */
+		slot2_partition: m55_xip: slot4_partition: partition@580000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-4";
+			reg = <0x580000 0x180000>;
+		};
+
+		/* image 1 secondary: CM55 (slot3). */
+		slot3_partition: slot5_partition: partition@b00000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-5";
+			reg = <0xb00000 0x180000>;
+		};
+	};
+};

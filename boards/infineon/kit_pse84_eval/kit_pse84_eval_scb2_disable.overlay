@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Disable SCB2 (KitProg3 VCOM) on the plain peer core that is NOT running
+ * the smp_svr. SCB2 carries the mcumgr transport (smp_app.overlay), so the
+ * peer must not re-init it. Console/log is moved to SCB1 (MiniProg4 VCOM)
+ * via the shared console overlay, since the board default console is SCB2.
+ */
+#include "kit_pse84_eval_console_scb1.dtsi"
+
+&scb2 {
+	status = "disabled";
+};

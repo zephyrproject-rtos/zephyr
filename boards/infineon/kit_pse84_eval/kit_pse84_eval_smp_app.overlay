@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Route the in-app SMP/mcumgr transport to SCB2 (KitProg3 VCOM) and move
+ * console/log to SCB1 (MiniProg4 VCOM) via the shared console overlay. Slots
+ * come from the MCUboot config (kit_pse84_eval_slot.conf).
+ */
+#include "kit_pse84_eval_console_scb1.dtsi"
+
+/ {
+	chosen {
+		zephyr,uart-mcumgr = &uart2;
+	};
+};
