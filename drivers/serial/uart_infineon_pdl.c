@@ -1530,9 +1530,7 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 #elif defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
 #define UART_PERI_CLOCK_INIT(n)                                                                    \
 	.clk_info = {                                                                              \
-		.rootclk_id = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, rootclk_id),                        \
-		.divider_type = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, divider_type),                    \
-		.divider_inst = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, divider_inst),                    \
+		.pclk_id = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, pclk_id),                              \
 	},
 #else
 #define UART_PERI_CLOCK_INIT(n)                                                                    \
