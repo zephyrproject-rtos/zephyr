@@ -66,6 +66,7 @@ static void thread_read(void *arg1, void *arg2, void *arg3)
  *
  * @see k_pipe_close()
  * @see k_pipe_read()
+ *
  */
 ZTEST(k_pipe_concurrency, test_pipe_close_on_read)
 {
@@ -101,6 +102,7 @@ ZTEST(k_pipe_concurrency, test_pipe_close_on_read)
  *
  * @see k_pipe_close()
  * @see k_pipe_write()
+ *
  */
 ZTEST(k_pipe_concurrency, test_pipe_close_on_write)
 {
@@ -140,6 +142,7 @@ ZTEST(k_pipe_concurrency, test_pipe_close_on_write)
  *
  * @see k_pipe_reset()
  * @see k_pipe_read()
+ *
  */
 ZTEST(k_pipe_concurrency, test_pipe_reset_on_read)
 {
@@ -178,6 +181,7 @@ ZTEST(k_pipe_concurrency, test_pipe_reset_on_read)
  *
  * @see k_pipe_reset()
  * @see k_pipe_write()
+ *
  */
 ZTEST(k_pipe_concurrency, test_pipe_reset_on_write)
 {
@@ -319,6 +323,7 @@ static void zero_thread_read_write(void *arg1, void *arg2, void *arg3)
  * @see k_pipe_init()
  * @see k_pipe_read()
  * @see k_pipe_write()
+ *
  */
 ZTEST(k_pipe_concurrency, test_pipe_zero_size_read_write)
 {

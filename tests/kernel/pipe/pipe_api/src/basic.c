@@ -43,6 +43,7 @@ static struct k_pipe pipe;
  * - The pipe reports PIPE_FLAG_OPEN.
  *
  * @see k_pipe_init()
+ *
  */
 ZTEST(k_pipe_basic, test_pipe_init)
 {
@@ -68,6 +69,7 @@ ZTEST(k_pipe_basic, test_pipe_init)
  *
  * @see k_pipe_write()
  * @see k_pipe_read()
+ *
  */
 ZTEST(k_pipe_basic, test_pipe_write_read_one)
 {
@@ -99,6 +101,7 @@ ZTEST(k_pipe_basic, test_pipe_write_read_one)
  *
  * @see k_pipe_write()
  * @see k_pipe_read()
+ *
  */
 ZTEST(k_pipe_basic, test_pipe_write_read_multiple)
 {
@@ -184,6 +187,7 @@ ZTEST(k_pipe_basic, test_pipe_read_empty)
  *
  * @see k_pipe_write()
  * @see k_pipe_read()
+ *
  */
 ZTEST(k_pipe_basic, test_pipe_read_write_full)
 {
@@ -219,6 +223,7 @@ ZTEST(k_pipe_basic, test_pipe_read_write_full)
  *
  * @see k_pipe_write()
  * @see k_pipe_read()
+ *
  */
 ZTEST(k_pipe_basic, test_pipe_read_write_wrap_around)
 {
