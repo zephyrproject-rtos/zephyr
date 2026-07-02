@@ -6,3 +6,8 @@ description: NXP PCA9530 2-bit LED dimmer
 compatible: "nxp,pca9530"
 
 include: nxp,pca953x.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: "Reset GPIO. The pin should be configured active-low if connected directly."
