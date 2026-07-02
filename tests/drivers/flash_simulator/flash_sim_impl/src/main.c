@@ -93,7 +93,7 @@ static int test_check_erase(const struct device *dev, off_t offset, size_t size)
 	while (i < size) {
 		size_t chunk = MIN(size - i, sizeof(buf));
 		/* The memset is done to set buf to something else than
-		 * FLASH_SIMULATOR_ERASE_VALUE, as we are trying to chek
+		 * FLASH_SIMULATOR_ERASE_VALUE, as we are trying to check
 		 * whether that is what is now in the memory.
 		 */
 		memset(buf, ~FLASH_SIMULATOR_ERASE_VALUE, sizeof(buf));

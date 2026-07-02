@@ -10,8 +10,8 @@
  * support it.
  */
 
-#ifndef ZEPHYR_INCLUDE_CONN_MGR_CONNECTIVITY_H_
-#define ZEPHYR_INCLUDE_CONN_MGR_CONNECTIVITY_H_
+#ifndef ZEPHYR_INCLUDE_NET_CONN_MGR_CONNECTIVITY_H_
+#define ZEPHYR_INCLUDE_NET_CONN_MGR_CONNECTIVITY_H_
 
 #include <zephyr/device.h>
 #include <zephyr/net/net_if.h>
@@ -391,4 +391,4 @@ int conn_mgr_all_if_disconnect(bool skip_ignored);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_CONN_MGR_CONNECTIVITY_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_CONN_MGR_CONNECTIVITY_H_ */

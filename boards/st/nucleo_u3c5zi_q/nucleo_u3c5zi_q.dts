@@ -8,6 +8,7 @@
 #include <st/u3/stm32u3c5Xi.dtsi>
 #include <st/u3/stm32u3c5zitxq-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "m2_memory_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -169,7 +170,7 @@
 };
 
 &i2c1 {
-	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
@@ -183,6 +184,17 @@
 	pinctrl-names = "default";
 
 	cs-gpios = <&gpiod 14 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&xspi1 {
+	pinctrl-0 = <&octospi1_clk_pg13 &octospi1_ncs_pg12
+		     &octospi1_io0_pg4 &octospi1_io1_pg5
+		     &octospi1_io2_pg8 &octospi1_io3_pg2
+		     &octospi1_io4_pg3 &octospi1_io5_pg6
+		     &octospi1_io6_pg9 &octospi1_io7_pg10
+		     &octospi1_dqs_pg15 &octospi1_nclk_pg14>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 

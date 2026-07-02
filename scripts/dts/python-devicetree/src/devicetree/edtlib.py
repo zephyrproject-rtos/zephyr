@@ -115,6 +115,9 @@ class Binding:
     path:
       The absolute path to the file defining the binding.
 
+    included_binding_paths:
+      Paths to included binding YAML files.
+
     title:
       The free-form title of the binding (optional).
 
@@ -235,6 +238,7 @@ class Binding:
         """
         self.path: Optional[str] = path
         self._fname2path: dict[str, str] = fname2path
+        self._included_binding_paths: set[str] = set()
 
         if raw is None:
             if path is None:
@@ -320,6 +324,11 @@ class Binding:
         "See the class docstring"
         return self.raw.get('on-bus')
 
+    @property
+    def included_binding_paths(self) -> list[str]:
+        "See the class docstring"
+        return sorted(self._included_binding_paths)
+
     def _merge_includes(self, raw: dict, binding_path: Optional[str]) -> dict:
         # Constructor helper. Merges included files in
         # 'raw["include"]' into 'raw' using 'self._include_paths' as a
@@ -397,6 +406,8 @@ class Binding:
 
         if not path:
             _err(f"'{fname}' not found")
+
+        self._included_binding_paths.add(path)
 
         with open(path, encoding="utf-8") as f:
             contents = yaml.load(f, Loader=_BindingLoader)
@@ -1103,6 +1114,9 @@ class Node:
       The 'compatible' string for the binding that matched the node, or None if
       the node has no binding
 
+    binding:
+      The Binding object for the node, or None if the node has no binding
+
     binding_path:
       The path to the binding file for the node, or None if the node has no
       binding
@@ -1248,6 +1262,11 @@ class Node:
             _err(f"{self!r} has non-hex unit address")
 
         return _translate(addr, self._node)
+
+    @property
+    def binding(self) -> Optional[Binding]:
+        "See the class docstring."
+        return self._binding
 
     @property
     def title(self) -> Optional[str]:
@@ -2159,7 +2178,7 @@ class Node:
         # unspecified.
 
         if not specifier_space:
-            specifier_space_groups = {"gpio", "io-channel"}
+            specifier_space_groups = {"gpio", "io-channel", "counter-capture"}
             for group in specifier_space_groups:
                 if prop.name.endswith(group + 's'):
                     # There's some slight special-casing for some properties in that

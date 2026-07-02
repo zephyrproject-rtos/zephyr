@@ -6,8 +6,8 @@
 
 /**
  * @file
- * @brief Websocket shell backend
- * @ingroup shell_api
+ * @brief Header file for the WebSocket shell backend.
+ * @ingroup shell_websocket
  */
 
 #ifndef ZEPHYR_INCLUDE_SHELL_WEBSOCKET_H_
@@ -21,6 +21,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** @cond INTERNAL_HIDDEN */
 
 #define SHELL_WEBSOCKET_SERVICE_COUNT CONFIG_SHELL_WEBSOCKET_BACKEND_COUNT
 
@@ -118,9 +120,28 @@ int shell_websocket_enable(const struct shell *sh);
 		     CONFIG_SHELL_WEBSOCKET_LOG_MESSAGE_QUEUE_TIMEOUT,		\
 		     SHELL_FLAG_OLF_CRLF);					\
 	DEFINE_WEBSOCKET_HTTP_SERVICE(_service)
+/** @endcond */
+
+/**
+ * @defgroup shell_websocket Websocket shell backend
+ * @ingroup shell_backends
+ * @brief Shell access over a WebSocket connection.
+ * @{
+ */
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 /* Use a secure connection only for Websocket. */
+/**
+ * @brief Define a websocket shell service.
+ *
+ * Defines the websocket shell transport, its shell instance, and the HTTP(S)
+ * service that exposes it at @kconfig{CONFIG_SHELL_WEBSOCKET_ENDPOINT_URL}.
+ *
+ * @param _service           Name of the websocket service instance.
+ * @param _sec_tag_list      TLS security tag list for the secure (HTTPS)
+ *                           connection. Ignored when TLS is not enabled.
+ * @param _sec_tag_list_size Number of entries in @p _sec_tag_list.
+ */
 #define WEBSOCKET_CONSOLE_DEFINE(_service, _sec_tag_list, _sec_tag_list_size) \
 	static uint16_t SHELL_WS_PORT_NAME(_service) =			  \
 		CONFIG_SHELL_WEBSOCKET_PORT;				  \
@@ -139,6 +160,17 @@ int shell_websocket_enable(const struct shell *sh);
 
 #else /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
 /* TLS not possible so define only normal HTTP service */
+/**
+ * @brief Define a websocket shell service.
+ *
+ * Defines the websocket shell transport, its shell instance, and the HTTP(S)
+ * service that exposes it at @kconfig{CONFIG_SHELL_WEBSOCKET_ENDPOINT_URL}.
+ *
+ * @param _service           Name of the websocket service instance.
+ * @param _sec_tag_list      TLS security tag list for the secure (HTTPS)
+ *                           connection. Ignored when TLS is not enabled.
+ * @param _sec_tag_list_size Number of entries in @p _sec_tag_list.
+ */
 #define WEBSOCKET_CONSOLE_DEFINE(_service, _sec_tag_list, _sec_tag_list_size) \
 	static uint16_t SHELL_WS_PORT_NAME(_service) =			\
 		CONFIG_SHELL_WEBSOCKET_PORT;				\
@@ -152,8 +184,15 @@ int shell_websocket_enable(const struct shell *sh);
 
 #endif /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
 
+/**
+ * @brief Enable a websocket shell service defined with @ref WEBSOCKET_CONSOLE_DEFINE.
+ *
+ * @param _service Name of the websocket service instance.
+ */
 #define WEBSOCKET_CONSOLE_ENABLE(_service)				\
 	(void)shell_websocket_enable(&GET_WS_SHELL_NAME(_service))
+
+/** @} */
 
 #ifdef __cplusplus
 }

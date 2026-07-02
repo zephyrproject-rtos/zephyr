@@ -257,7 +257,7 @@ static inline int _zbus_vded_exec(const struct zbus_channel *chan, k_timepoint_t
 	net_buf_add_mem(buf, zbus_chan_msg(chan), zbus_chan_msg_size(chan));
 #endif /* CONFIG_ZBUS_MSG_SUBSCRIBER */
 
-	LOG_DBG("Notifing %s's observers. Starting VDED:", _ZBUS_CHAN_NAME(chan));
+	LOG_DBG("Notifying %s's observers. Starting VDED:", _ZBUS_CHAN_NAME(chan));
 
 	int __maybe_unused index = 0;
 

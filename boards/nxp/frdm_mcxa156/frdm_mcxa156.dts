@@ -163,6 +163,10 @@
 	status = "okay";
 };
 
+&waketimer0 {
+	status = "okay";
+};
+
 &dac0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_dac0>;

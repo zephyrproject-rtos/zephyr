@@ -48,7 +48,7 @@
 #elif defined(CONFIG_TEST_WDT_OPT_PAUSE_HALTED_BY_DBG_SUPPORTED)
 #define DEFAULT_OPTIONS          (WDT_OPT_PAUSE_HALTED_BY_DBG)
 #else
-/* It is allowed for HW to NOT support pausing WDT timer in sleep, nor in debugg session. */
+/* It is allowed for HW to NOT support pausing WDT timer in sleep, nor in debug session. */
 #define DEFAULT_OPTIONS          (0)
 #endif
 

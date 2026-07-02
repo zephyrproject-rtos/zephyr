@@ -4,8 +4,34 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Espressif ESP32-C6 interrupt source definitions for devicetree
+ * @ingroup dt_esp32c6_intmux
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_ESP32C6_INTMUX_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_ESP32C6_INTMUX_H_
+
+/**
+ * @defgroup dt_esp32c6_intmux Espressif ESP32-C6 interrupt allocator
+ * @brief Devicetree interrupt source numbers for the Espressif ESP32-C6.
+ * @ingroup devicetree-interrupt_controller
+ *
+ * Interrupt source numbers for the Espressif ESP32-C6 interrupt allocator, used with the
+ * <tt>espressif,esp32-intc</tt> compatible interrupt controller. An interrupt is described by three
+ * cells: the interrupt source, the priority and a flags cell. Source numbers follow the pattern
+ * @c \<SIGNAL\>_INTR_SOURCE; @ref IRQ_DEFAULT_PRIORITY selects the default priority.
+ *
+ * @code{.dts}
+ * &uart0 {
+ *         interrupts = <UART0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+ * };
+ * @endcode
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
 
 #define WIFI_MAC_INTR_SOURCE                0  /* interrupt of WiFi MAC, level*/
 #define WIFI_MAC_NMI_SOURCE                 1  /* interrupt of WiFi MAC, NMI*/
@@ -97,5 +123,9 @@
 #define LP_CORE_UART_INTR_SOURCE  2
 #define LP_CORE_TIMER_INTR_SOURCE 3
 #define LP_CORE_PMU_INTR_SOURCE   5
+
+/** @endcond */
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_ESP32C6_INTMUX_H_ */

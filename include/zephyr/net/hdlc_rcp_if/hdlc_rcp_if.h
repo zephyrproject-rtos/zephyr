@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_NET_HDLC_RCP_IF_HDLC_RCP_IF_H_
+#define ZEPHYR_INCLUDE_NET_HDLC_RCP_IF_HDLC_RCP_IF_H_
+
 /**
  * @file
  * @brief Public APIs of HDLC RCP communication Interface
@@ -75,3 +78,5 @@ BUILD_ASSERT(offsetof(struct hdlc_api, iface_api) == 0);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* ZEPHYR_INCLUDE_NET_HDLC_RCP_IF_HDLC_RCP_IF_H_ */

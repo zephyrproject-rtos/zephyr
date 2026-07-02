@@ -132,6 +132,12 @@ config REBOOT
 	  needed to perform a "safe" reboot (e.g. to stop the system clock before
 	  issuing a reset).
 
+config RESET_ON_FATAL_ERROR
+	bool "Reset the system when a fatal error occurs after printing relevant debug output"
+	select REBOOT
+	help
+		Initiate a system reset when a fatal error would normally halt the system.
+
 config HAS_POWEROFF
 	bool
 	help

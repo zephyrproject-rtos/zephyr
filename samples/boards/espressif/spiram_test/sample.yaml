@@ -9,15 +9,21 @@ common:
       - "SPIRAM mem test pass"
       - "Internal mem test pass"
 tests:
-  sample.boards.esp32.spiram:
-    platform_allow: esp32_devkitc/esp32/procpu
-    tags: esp32
-  sample.boards.esp32s3.spiram:
+  sample.boards.espressif.spiram:
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32p4_function_ev_board/esp32p4/hpcore
+  sample.boards.espressif.spiram.octal_80m:
     platform_allow: esp32s3_devkitc/esp32s3/procpu
-    tags: esp32s3
-  sample.boards.esp32s3.spiram.octal_80m:
-    platform_allow: esp32s3_devkitc/esp32s3/procpu
-    tags: esp32s3
     extra_configs:
       - CONFIG_SPIRAM_SPEED_80M=y
       - CONFIG_SPIRAM_MODE_OCT=y
+  sample.boards.espressif.spiram.octal_flash:
+    platform_allow: esp32s3_devkitc/esp32s3/procpu
+    build_only: true
+    extra_configs:
+      - CONFIG_SPIRAM_MODE_OCT=y
+      - CONFIG_ESPTOOLPY_OCT_FLASH=y

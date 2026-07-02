@@ -13,6 +13,9 @@ tests:
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
   portability.posix.common.newlib:
+    toolchain_exclude:
+      - zephyr/gnu
+      - zephyr/llvm
     platform_exclude:
       - intel_ehl_crb
       - lpcxpresso55s06

@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Counter capture test configuration"
+
+source "Kconfig.zephyr"
+
+config NUM_OF_CONTINUOUS_CAPTURES
+	int "Number of continuous capture iterations"
+	default 5
+	range 1 255
+	help
+	  Number of capture iterations run by each continuous capture test case.
+
+config COUNTER_CAPTURE_TOLERANCE_US
+	int "Capture timestamp tolerance in microseconds"
+	default 100
+	help
+	  Maximum allowed difference in microseconds between the counter value
+	  sampled just before toggling the GPIO and the timestamp recorded by
+	  the capture callback.

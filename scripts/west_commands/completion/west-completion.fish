@@ -100,7 +100,7 @@ function __zephyr_west_use_subcommand
                     set -l prv_idx (math $idx - 1)
                     switch $tokens[$prv_idx]
                         # this option can be placed before subcommand and require a folder
-                        # if we don't do that the folder will be catched as a subcommand and
+                        # if we don't do that the folder will be caught as a subcommand and
                         # the subcommands will not be completed
                         case '-z' '--zephyr-base'
                             continue

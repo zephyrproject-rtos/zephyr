@@ -13,6 +13,7 @@ config SOC_SERIES_PSE84
 	select DYNAMIC_INTERRUPTS
 	select SOC_EARLY_INIT_HOOK
 	select HAS_PM
+	select PM_STATE_SET_IRQ_UNLOCKED
 	select HAS_POWEROFF
 	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 
@@ -30,6 +31,12 @@ config SOC_SERIES_PSE84_M55
 
 config SOC_SERIES_PSE84_M33
 	select SOC_LATE_INIT_HOOK
+
+config PSOC_EDGE_M55_SRF_SUPPORT
+	bool "Select whether to enable the SRF support on m55"
+	select USE_INFINEON_ABSTRACTION_RTOS
+	help
+	  This option enables the SRF support on m55 core on pse84 and the infrastructure setup on m33/ns to deal with that.
 
 if SOC_SERIES_PSE84_M33
 

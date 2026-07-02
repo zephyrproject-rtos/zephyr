@@ -7,7 +7,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_BMA4XX_BMA4XX_EMUL_H_
 
 #include <zephyr/drivers/emul.h>
-#include "zephyr/dsp/types.h"
+#include <zephyr/dsp/types.h>
 
 #ifdef __cplusplus
 extern "C" {

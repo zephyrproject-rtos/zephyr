@@ -24,6 +24,9 @@ tests:
       - CONFIG_NEWLIB_LIBC=n
       - CONFIG_THREAD_LOCAL_STORAGE=y
   posix.threads_base.tls.newlib:
+    toolchain_exclude:
+      - zephyr/gnu
+      - zephyr/llvm
     platform_exclude:
       - intel_ehl_crb
       - lpcxpresso55s06

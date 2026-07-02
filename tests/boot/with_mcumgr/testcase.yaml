@@ -1,9 +1,10 @@
 common:
   sysbuild: true
+  integration_platforms:
+    - nrf52840dk/nrf52840
   platform_allow:
-    - nrf5340dk/nrf5340/cpuapp
+    - nrf52840dk/nrf52840
     - nrf54l15dk/nrf54l15/cpuapp
-    - nrf9160dk/nrf9160
     - nucleo_c5a3zg
     - nucleo_f091rc
     - nucleo_g474re
@@ -27,20 +28,61 @@ common:
     - mcumgr
 tests:
   boot.with_mcumgr.test_upgrade:
-    platform_allow:
-      - nrf52840dk/nrf52840
-    integration_platforms:
-      - nrf52840dk/nrf52840
+    build: false
     harness: pytest
     harness_config:
       pytest_root:
-        - "pytest/test_upgrade.py"
+        - "pytest/test_upgrade.py::test_upgrade_with_confirm"
+        - "pytest/test_upgrade.py::test_upgrade_with_revert"
+    required_applications:
+      - application: boot.with_mcumgr.v1
+      - application: boot.with_mcumgr.v2
+
+  boot.with_mcumgr.test_downgrade_prevention:
+    build: false
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_upgrade.py::test_downgrade_prevention"
+    required_applications:
+      - application: boot.with_mcumgr.v1
+      - application: boot.with_mcumgr.v0
+
+  boot.with_mcumgr.test_signature:
+    build: false
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_upgrade.py::test_upgrade_wrong_signature"
+    required_applications:
+      - application: boot.with_mcumgr.v1
+      - application: boot.with_mcumgr.signature_ecdsa_p256
+
+  boot.with_mcumgr.v0:
+    build_only: true
+
+  boot.with_mcumgr.v1:
+    build_only: true
+    extra_args:
+      - mcuboot_CONFIG_MCUBOOT_DOWNGRADE_PREVENTION=y
+    extra_configs:
+      - CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION="1.0.0+0"
+
+  boot.with_mcumgr.v2:
+    build_only: true
+    extra_configs:
+      - CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION="2.0.0+0"
+
+  boot.with_mcumgr.signature_ecdsa_p256:
+    build_only: true
+    extra_args:
+      - SB_CONFIG_BOOT_SIGNATURE_TYPE_ECDSA_P256=y
+    extra_configs:
+      - CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION="2.0.0+1"
 
   boot.with_mcumgr.test_upgrade_ble:
-    platform_allow:
-      - nrf52840dk/nrf52840
-    platform_exclude:
-      - nrf9160dk/nrf9160
+    build: false
+    platform_exclude: &platform_exclude_ble
       - nucleo_c5a3zg
       - nucleo_f091rc
       - nucleo_g474re
@@ -56,35 +98,18 @@ tests:
       - stm32l562e_dk
       - stm32u083c_dk
       - stm32wba65i_dk1
-    integration_platforms:
-      - nrf52840dk/nrf52840
-    extra_args: EXTRA_CONF_FILE="overlay-bt.conf"
     harness: pytest
     harness_config:
       fixture: usb_hci
       pytest_root:
-        - "pytest/test_upgrade_ble.py"
+        - "pytest/test_upgrade.py::test_upgrade_ble_with_revert"
+    required_applications:
+      - application: boot.with_mcumgr.ble_v1
+      - application: boot.with_mcumgr.v2
 
-  boot.with_mcumgr.test_downgrade_prevention:
-    platform_allow:
-      - nrf52840dk/nrf52840
-    integration_platforms:
-      - nrf52840dk/nrf52840
-    harness: pytest
-    harness_config:
-      pytest_root:
-        - "pytest/test_downgrade_prevention.py"
-    extra_args:
-      - mcuboot_CONFIG_MCUBOOT_DOWNGRADE_PREVENTION=y
+  boot.with_mcumgr.ble_v1:
+    build_only: true
+    platform_exclude: *platform_exclude_ble
+    extra_args: EXTRA_CONF_FILE="bt.conf"
     extra_configs:
-      - CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION="1.1.1+1"
-
-  boot.with_mcumgr.test_upgrade.swap_using_offset:
-    integration_platforms:
-      - nrf5340dk/nrf5340/cpuapp
-    harness: pytest
-    harness_config:
-      pytest_root:
-        - "pytest/test_upgrade.py"
-    extra_args:
-      - SB_CONFIG_MCUBOOT_MODE_SWAP_USING_OFFSET=y
+      - CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION="1.0.1+0"

@@ -16,9 +16,14 @@ if(CONFIG_ENTROPY_VIRTIO)
   set(QEMU_VIRTIO_ENTROPY_FLAGS -device virtio-rng-device,bus=virtio-mmio-bus.0)
 endif()
 
+if(CONFIG_INPUT_VIRTIO)
+  set(QEMU_VIRTIO_INPUT_FLAGS -device virtio-tablet-device,bus=virtio-mmio-bus.3)
+endif()
+
 set(QEMU_FLAGS_${ARCH}
   -cpu ${QEMU_CPU_TYPE_${ARCH}}
   ${QEMU_VIRTIO_ENTROPY_FLAGS}
+  ${QEMU_VIRTIO_INPUT_FLAGS}
   -machine ${QEMU_MACH}
   )
 

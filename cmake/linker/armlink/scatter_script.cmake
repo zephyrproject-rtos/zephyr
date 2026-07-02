@@ -75,6 +75,8 @@ function(process_region)
       set(ZI "$$ZI")
     endif()
 
+    string(TOLOWER "${name_clean}" name_clean_lower)
+
     # Symbols translation here.
     set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${name_clean}${ZI}$$Base")
     set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${name_clean}${ZI}$$Length")
@@ -84,7 +86,17 @@ function(process_region)
       "RESOLVE __${name_clean}_start AS Image$$${name_clean}${ZI}$$Base\n"
       "RESOLVE __${name_clean}_load_start AS Load$$${name_clean}${ZI}$$Base\n"
       "EXPORT  __${name_clean}_start AS __${name_clean}_start\n"
+      "EXPORT  __${name_clean}_load_start AS __${name_clean}_load_start\n"
     )
+
+    if(NOT "${name_clean_lower}" STREQUAL "${name_clean}")
+      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+        "RESOLVE __${name_clean_lower}_start AS Image$$${name_clean}${ZI}$$Base\n"
+        "RESOLVE __${name_clean_lower}_load_start AS Load$$${name_clean}${ZI}$$Base\n"
+        "EXPORT  __${name_clean_lower}_start AS __${name_clean_lower}_start\n"
+        "EXPORT  __${name_clean_lower}_load_start AS __${name_clean_lower}_load_start\n"
+      )
+    endif()
 
     get_property(symbol_val GLOBAL PROPERTY SYMBOL_TABLE___${name_clean}_end)
     set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${symbol_val}${ZI}$$Limit")
@@ -95,11 +107,23 @@ function(process_region)
     if("${symbol_val}" STREQUAL "${name_clean}")
       set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
         "RESOLVE __${name_clean}_size AS Image$$${name_clean}${ZI}$$Length\n"
+        "EXPORT  __${name_clean}_size AS __${name_clean}_size\n"
       )
+      if(NOT "${name_clean_lower}" STREQUAL "${name_clean}")
+        set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+          "RESOLVE __${name_clean_lower}_size AS Image$$${name_clean}${ZI}$$Length\n"
+          "EXPORT  __${name_clean_lower}_size AS __${name_clean_lower}_size\n"
+        )
+      endif()
     else()
       create_symbol(OBJECT ${REGION_OBJECT} SYMBOL __${name_clean}_size
         EXPR "(ImageLimit(${symbol_val}${ZI}) - ImageBase(${name_clean}${ZI}))"
       )
+      if(NOT "${name_clean_lower}" STREQUAL "${name_clean}")
+        create_symbol(OBJECT ${REGION_OBJECT} SYMBOL __${name_clean_lower}_size
+          EXPR "(ImageLimit(${symbol_val}${ZI}) - ImageBase(${name_clean}${ZI}))"
+        )
+      endif()
     endif()
     set(ZI)
 

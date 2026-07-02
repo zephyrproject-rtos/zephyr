@@ -5,6 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the MCUmgr statistics management group API.
+ * @ingroup mcumgr_stat_mgmt
+ */
+
 #ifndef H_STAT_MGMT_
 #define H_STAT_MGMT_
 

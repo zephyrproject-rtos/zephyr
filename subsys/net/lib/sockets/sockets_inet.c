@@ -1032,6 +1032,12 @@ static int insert_pktinfo(struct net_msghdr *msg, int level, int type,
 		return -EINVAL;
 	}
 
+	/* Ensure the full element fits at the selected location, not just a header. */
+	if (cmsg_space > (size_t)((uint8_t *)msg->msg_control + msg->msg_controllen -
+				  (uint8_t *)cmsg)) {
+		return -ENOMEM;
+	}
+
 	cmsg->cmsg_len = NET_CMSG_LEN(pktinfo_len);
 	cmsg->cmsg_level = level;
 	cmsg->cmsg_type = type;
@@ -1484,12 +1490,30 @@ static ssize_t zsock_recv_stream_timed(struct net_context *ctx, struct net_msghd
 
 	for (end = sys_timepoint_calc(timeout); max_len > 0; timeout = sys_timepoint_timeout(end)) {
 
-		if (sock_is_error(ctx)) {
-			return -POINTER_TO_INT(ctx->user_data);
-		}
+		/* Drain any buffered data before reporting a pending error or
+		 * EOF. This ensures data received before the connection was
+		 * closed (for example just before a peer RST) is delivered to
+		 * the application prior to returning the error. If some data
+		 * was already received in this call (for example with
+		 * MSG_WAITALL), return it now and let the next recv() report
+		 * the pending error or EOF.
+		 */
+		if (k_fifo_is_empty(&ctx->recv_q)) {
+			if (sock_is_error(ctx)) {
+				if (recv_len > 0) {
+					break;
+				}
 
-		if (sock_is_eof(ctx)) {
-			return 0;
+				return -POINTER_TO_INT(ctx->user_data);
+			}
+
+			if (sock_is_eof(ctx)) {
+				if (recv_len > 0) {
+					break;
+				}
+
+				return 0;
+			}
 		}
 
 		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
@@ -1973,6 +1997,20 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_REUSEPORT)) {
 				ret = net_context_get_option(ctx,
 							     NET_OPT_REUSEPORT,
+							     optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+			break;
+
+		case ZSOCK_SO_LINGER:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_LINGER)) {
+				ret = net_context_get_option(ctx,
+							     NET_OPT_LINGER,
 							     optval, optlen);
 				if (ret < 0) {
 					errno = -ret;
@@ -2645,7 +2683,21 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 		}
 
 		case ZSOCK_SO_LINGER:
-			/* ignored. for compatibility purposes only */
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_LINGER)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_LINGER,
+							     optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			/* Without linger support, accept the option for
+			 * compatibility purposes only.
+			 */
 			return 0;
 
 		case ZSOCK_SO_KEEPALIVE:

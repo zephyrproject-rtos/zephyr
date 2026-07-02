@@ -23,6 +23,7 @@ using :c:func:`fuel_gauge_get_buffer_prop`.
 Properties are set by the client one at a time using :c:func:`fuel_gauge_set_prop`, or set in a
 batch using :c:func:`fuel_gauge_set_props`.
 
+
 Battery Cutoff
 ==============
 

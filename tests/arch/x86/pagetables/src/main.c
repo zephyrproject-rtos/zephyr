@@ -86,11 +86,7 @@ ZTEST(x86_pagetables, test_ram_perms)
 
 	pentry_t entry, flags, expected;
 
-#ifdef CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
 	const uint8_t *mem_range_end = K_MEM_KERNEL_VIRT_END;
-#else
-	const uint8_t *mem_range_end = (uint8_t *)lnkr_pinned_end;
-#endif /* CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 
 	for (pos = K_MEM_KERNEL_VIRT_START; pos < mem_range_end;
 	     pos += CONFIG_MMU_PAGE_SIZE) {
@@ -98,6 +94,19 @@ ZTEST(x86_pagetables, test_ram_perms)
 			/* We have another test specifically for NULL page */
 			continue;
 		}
+
+#ifdef CONFIG_USERSPACE
+		/* Each K_THREAD_STACK_DEFINE object in this region is laid
+		 * out as a supervisor-only privilege-stack header followed
+		 * by user-accessible pages. The per-page permissions vary
+		 * within the object; skip the region rather than enumerate
+		 * the layout here.
+		 */
+		if ((uint8_t *)pos >= (uint8_t *)z_user_stacks_start &&
+		    (uint8_t *)pos < (uint8_t *)z_user_stacks_end) {
+			continue;
+		}
+#endif
 
 		entry = get_entry(&flags, pos);
 
@@ -111,25 +120,16 @@ ZTEST(x86_pagetables, test_ram_perms)
 		} else if (IN_REGION(__gcov_bss, pos)) {
 			expected = MMU_P | MMU_RW | MMU_US | MMU_XD;
 #endif
-#if defined(CONFIG_LINKER_USE_PINNED_SECTION) && \
-	!defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
-		} else if (IN_REGION(_app_smem_pinned, pos)) {
-			expected = MMU_P | MMU_RW | MMU_US | MMU_XD;
-#endif
-#if !defined(CONFIG_X86_KPTI) && !defined(CONFIG_X86_COMMON_PAGE_TABLE) && \
-				  defined(CONFIG_USERSPACE)
+#if !defined(CONFIG_X86_KPTI) && defined(CONFIG_USERSPACE)
 		} else if (IN_REGION(_app_smem, pos)) {
-			/* If KPTI is not enabled, then the default memory
-			 * domain affects our page tables even though we are
-			 * in supervisor mode. We'd expect everything in
-			 * the _app_smem region to have US set since all the
-			 * partitions within it would be active in
-			 * k_mem_domain_default (ztest_partition and any libc
-			 * partitions)
-			 *
-			 * If we have a common page table, no thread has
-			 * entered user mode yet and no domain regions
-			 * will be programmed.
+			/* If KPTI is not enabled, every partition in
+			 * _app_smem is accessible from supervisor mode with
+			 * its US bit set: with a per-thread page table, the
+			 * default memory domain (ztest_partition and any libc
+			 * partitions) is programmed before reaching this
+			 * test; with a common page table, the same partitions
+			 * are programmed statically into the single page
+			 * table at boot.
 			 */
 			expected = MMU_P | MMU_US | MMU_RW | MMU_XD;
 #endif /* CONFIG_X86_KPTI */
@@ -137,12 +137,6 @@ ZTEST(x86_pagetables, test_ram_perms)
 		} else if (IN_REGION(lnkr_boot_text, pos)) {
 			expected = MMU_P | MMU_US;
 		} else if (IN_REGION(lnkr_boot_rodata, pos)) {
-			expected = MMU_P | MMU_US | MMU_XD;
-#endif
-#ifdef CONFIG_LINKER_USE_PINNED_SECTION
-		} else if (IN_REGION(lnkr_pinned_text, pos)) {
-			expected = MMU_P | MMU_US;
-		} else if (IN_REGION(lnkr_pinned_rodata, pos)) {
 			expected = MMU_P | MMU_US | MMU_XD;
 #endif
 #ifdef Z_LIBC_PARTITION_EXISTS

@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the MCUmgr SMP client API.
+ * @ingroup mcumgr_smp_client
+ */
+
 #ifndef H_SMP_CLIENT_
 #define H_SMP_CLIENT_
 

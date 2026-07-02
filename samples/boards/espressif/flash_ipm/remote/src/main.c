@@ -58,7 +58,7 @@ int main(void)
 		ets_printf("ERR\n");
 		return -1;
 	}
-	ets_printf("* Verifing page erased.. ");
+	ets_printf("* Verifying page erased.. ");
 	if (flash_read(flash_dev, TEST_PARTITION_ADDRESS, buf, PAGE_SIZE)) {
 		ets_printf("ERR\n");
 		return -1;
@@ -88,7 +88,7 @@ int main(void)
 	}
 
 	/* Verify written pattern */
-	ets_printf("Step 3: Verify\n* Verifing pattern.. ");
+	ets_printf("Step 3: Verify\n* Verifying pattern.. ");
 	memset(buf, 0, sizeof(buf));
 	if (flash_read(flash_dev, TEST_PARTITION_ADDRESS, buf, PAGE_SIZE)) {
 		ets_printf("ERR\n");

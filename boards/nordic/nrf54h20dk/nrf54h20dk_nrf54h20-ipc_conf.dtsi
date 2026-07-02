@@ -63,5 +63,26 @@
 			mboxes = <&cpurad_bellboard 6>,
 				 <&cpusys_vevif 18>;
 		};
+
+		cpurad_cpusys_gswdt_mbox: ipc-3-12-gswdt {
+			compatible = "zephyr,mbox-ipm";
+			status = "disabled";
+			mboxes = <&cpusys_vevif 22>;
+			mbox-names = "tx";
+		};
+
+		cpuapp_cpusys_gswdt_mbox: ipc-2-12-gswdt {
+			compatible = "zephyr,mbox-ipm";
+			status = "disabled";
+			mboxes = <&cpusys_vevif 16>;
+			mbox-names = "tx";
+		};
+
+		cpusec_cpusys_gswdt_mbox: ipc-1-12-gswdt {
+			compatible = "zephyr,mbox-ipm";
+			status = "disabled";
+			mboxes = <&cpusys_vevif 4>;
+			mbox-names = "tx";
+		};
 	};
 };

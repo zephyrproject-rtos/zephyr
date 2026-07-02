@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
@@ -21,7 +22,7 @@ void test_mocks_cleanup(void);
 void test_conn_init(struct bt_conn *conn, uint8_t index);
 
 void test_unicast_set_state(struct bt_cap_stream *cap_stream, struct bt_conn *conn,
-			    struct bt_bap_ep *ep, struct bt_bap_lc3_preset *preset,
+			    struct bt_bap_ep *ep, const struct bt_audio_codec_cfg *codec_cfg,
 			    enum bt_bap_ep_state state);
 void mock_discover(
 	struct bt_conn conns[CONFIG_BT_MAX_CONN],

@@ -124,6 +124,10 @@
 	status = "okay";
 };
 
+&waketimer0 {
+	status = "okay";
+};
+
 &gpio1 {
 	status = "okay";
 };
@@ -232,6 +236,12 @@
 	status = "okay";
 };
 
+&dac0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_dac0>;
+	pinctrl-names = "default";
+};
+
 &lptmr0 {
 	status = "okay";
 };
@@ -256,4 +266,10 @@
 
 &crc {
 	status = "okay";
+};
+
+&flexpwm0_pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm0_pwm0>;
+	pinctrl-names = "default";
 };

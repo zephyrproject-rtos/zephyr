@@ -458,7 +458,7 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_accept_to)
  * | UT  |          | LL_S  |                       | LT  |
  * +-----+          +-------+                       +-----+
  *    |                 |                               |
- *    |                 |   LL_CIS_REQ  (w. invald PHY) |
+ *    |                 |  LL_CIS_REQ  (w. invalid PHY) |
  *    |                 |<------------------------------|
  *    |                 |                               |
  *    |                 |                               |

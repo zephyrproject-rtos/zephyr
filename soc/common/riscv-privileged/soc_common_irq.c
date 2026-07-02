@@ -53,8 +53,6 @@ void z_riscv_irq_vector_set(unsigned int irq)
 
 void arch_irq_enable(unsigned int irq)
 {
-	uint32_t ie;
-
 #if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_AIA)
 	unsigned int level = irq_get_level(irq);
 #endif
@@ -72,20 +70,32 @@ void arch_irq_enable(unsigned int irq)
 #endif
 
 	/*
-	 * CSR mie/sie register is updated using atomic instruction csrrs
+	 * CSR mie/sie register is updated using atomic instruction csrs
 	 * (atomic read and set bits in CSR register)
 	 */
 #ifdef CONFIG_RISCV_S_MODE
-	ie = csr_read_set(sie, 1 << irq);
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SSAIA)
+	/* sie is 64 bits in AIA; upper 32 bits are accessed using sieh CSR for RV32 */
+	if (irq >= 32) {
+		csr_set(sieh, 1 << (irq - 32));
+		return;
+	}
+#endif
+	csr_set(sie, 1 << irq);
 #else
-	ie = csr_read_set(mie, 1 << irq);
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SMAIA)
+	/* mie is 64 bits in AIA; upper 32 bits are accessed using mieh CSR for RV32 */
+	if (irq >= 32) {
+		csr_set(mieh, 1 << (irq - 32));
+		return;
+	}
+#endif
+	csr_set(mie, 1 << irq);
 #endif
 }
 
 void arch_irq_disable(unsigned int irq)
 {
-	uint32_t ie;
-
 #if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_AIA)
 	unsigned int level = irq_get_level(irq);
 #endif
@@ -103,13 +113,27 @@ void arch_irq_disable(unsigned int irq)
 #endif
 
 	/*
-	 * Use atomic instruction csrrc to disable device interrupt in mie/sie CSR.
+	 * Use atomic instruction csrc to disable device interrupt in mie/sie CSR.
 	 * (atomic read and clear bits in CSR register)
 	 */
 #ifdef CONFIG_RISCV_S_MODE
-	ie = csr_read_clear(sie, 1 << irq);
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SSAIA)
+	/* sie is 64 bits in AIA; upper 32 bits are accessed using sieh CSR for RV32 */
+	if (irq >= 32) {
+		csr_clear(sieh, 1 << (irq - 32));
+		return;
+	}
+#endif
+	csr_clear(sie, 1 << irq);
 #else
-	ie = csr_read_clear(mie, 1 << irq);
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SMAIA)
+	/* mie is 64 bits in AIA; upper 32 bits are accessed using mieh CSR for RV32 */
+	if (irq >= 32) {
+		csr_clear(mieh, 1 << (irq - 32));
+		return;
+	}
+#endif
+	csr_clear(mie, 1 << irq);
 #endif
 }
 
@@ -132,8 +156,22 @@ int arch_irq_is_enabled(unsigned int irq)
 #endif
 
 #ifdef CONFIG_RISCV_S_MODE
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SSAIA)
+	/* sie is 64 bits in AIA; upper 32 bits are accessed using sieh CSR for RV32. */
+	if (irq >= 32) {
+		ie = csr_read(sieh);
+		return !!(ie & (1 << (irq - 32)));
+	}
+#endif
 	ie = csr_read(sie);
 #else
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SMAIA)
+	/* mie is 64 bits in AIA; upper 32 bits are accessed using mieh CSR for RV32. */
+	if (irq >= 32) {
+		ie = csr_read(mieh);
+		return !!(ie & (1 << (irq - 32)));
+	}
+#endif
 	ie = csr_read(mie);
 #endif
 
@@ -179,10 +217,18 @@ __weak void soc_interrupt_init(void)
 
 #ifdef CONFIG_RISCV_S_MODE
 	csr_write(sie, 0);
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SSAIA)
+	csr_write(sieh, 0);
+#endif
 	/* sip.STIP is read-only from S-mode; clearing sie is sufficient */
 #else
 	csr_write(mie, 0);
 	csr_write(mip, 0);
+#if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SMAIA)
+	/* mie/mip are 64 bits in AIA; upper 32 bits are accessed using mieh/miph CSR for RV32 */
+	csr_write(mieh, 0);
+	csr_write(miph, 0);
+#endif
 #endif
 }
 #endif

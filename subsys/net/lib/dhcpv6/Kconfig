@@ -4,7 +4,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-
 # Copyright (c) 2024 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -49,9 +48,11 @@ config NET_DHCPV6_DNS_SERVER_VIA_INTERFACE
 	  interface.
 
 if NET_DHCPV6
+
 module = NET_DHCPV6
 module-dep = NET_LOG
 module-str = Log level for DHCPv6 client
 module-help = Enables DHCPv6 client code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_DHCPV6

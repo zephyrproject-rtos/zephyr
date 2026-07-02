@@ -22,6 +22,9 @@ choice CACHE_TYPE
 	default EXTERNAL_CACHE
 endchoice
 
+config ROM_START_OFFSET
+	default 0x800 if BOOTLOADER_MCUBOOT && !BUILD_WITH_TFM
+
 endif # ARM
 
 if RISCV

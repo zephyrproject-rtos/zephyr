@@ -14,8 +14,8 @@
 #include <zephyr/net/http/service.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
-#include "zephyr/device.h"
-#include "zephyr/sys/util.h"
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/drivers/led.h>
 #include <zephyr/data/json.h>
 #include <zephyr/sys/util_macro.h>

@@ -17,6 +17,7 @@ config SOC_SERIES_APOLLO5X
 	select HAS_SWO
 	select AMBIQ_HAL
 	select HAS_PM
+	select PM_STATE_SET_IRQ_UNLOCKED
 	select SOC_EARLY_INIT_HOOK
 	select REQUIRES_FULL_LIBC
 

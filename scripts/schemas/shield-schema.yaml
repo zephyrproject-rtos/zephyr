@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright The Zephyr Project Contributors
+
+# JSON schema for basic validation of the structure of a shield metadata YAML file.
+#
+# The shield.yml file can contain either a single shield definition or a list of shields.
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://zephyrproject.org/schemas/zephyr/shield"
+title: Zephyr Shield Schema
+description: Schema for validating Zephyr shield metadata files
+type: object
+$defs:
+  shieldSchema:
+    type: object
+    properties:
+      name:
+        type: string
+        description: Name of the shield (used in Kconfig and build system)
+      full_name:
+        type: string
+        description: Full name of the shield (typically the commercial name)
+      vendor:
+        type: string
+        description: Manufacturer/vendor of the shield
+      supported_features:
+        type: array
+        items:
+          type: string
+          description: A hardware feature the shield supports (see dts/bindings/binding-types.txt)
+    required:
+      - name
+      - full_name
+      - vendor
+    additionalProperties: false
+properties:
+  shield:
+    $ref: "#/$defs/shieldSchema"
+  shields:
+    type: array
+    items:
+      $ref: "#/$defs/shieldSchema"
+dependentSchemas:
+  # A shield YAML file may define either a single shield or multiple shields, but not both.
+  shield:
+    not:
+      required: ["shields"]
+  shields:
+    not:
+      required: ["shield"]
+additionalProperties: false

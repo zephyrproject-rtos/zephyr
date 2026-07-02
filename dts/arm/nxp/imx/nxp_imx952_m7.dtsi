@@ -650,6 +650,20 @@
 			status = "disabled";
 		};
 
+		tstmr1: timer@442c0000 {
+			compatible = "nxp,tstmr";
+			reg = <0x442c0000 0x8>;
+			clock-frequency = <DT_FREQ_M(1)>;
+			status = "disabled";
+		};
+
+		tstmr2: timer@420a0000 {
+			compatible = "nxp,tstmr";
+			reg = <0x420a0000 0x8>;
+			clock-frequency = <DT_FREQ_M(1)>;
+			status = "disabled";
+		};
+
 		i3c1: i3c@44330000 {
 			compatible = "nxp,mcux-i3c";
 			reg = <0x44330000 0x1000>;

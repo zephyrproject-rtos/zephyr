@@ -23,6 +23,7 @@ supported:
   - watchdog
   - counter
   - dma
+  - dac
   - i3c
   - opamp
   - entropy
@@ -30,4 +31,5 @@ supported:
   - arduino_gpio
   - usbd
   - edac
+  - pwm
 vendor: nxp

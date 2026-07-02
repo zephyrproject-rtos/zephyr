@@ -131,18 +131,18 @@ static size_t copy_to_pending_readers(struct k_pipe *pipe, bool *need_resched,
 			} else {
 				/*
 				 * This reader has received all the data
-				 * it was waiting for: wake it up with
-				 * the scheduler lock still held.
+				 * it was waiting for. Set its return
+				 * value, unpend, abort its timeout, and
+				 * ready it, all under the scheduler lock
+				 * so a racing timeout handler cannot
+				 * observe a half-initialized wake-up.
 				 */
+				z_thread_return_value_set_with_data(reader, 0, NULL);
 				unpend_thread_no_timeout(reader);
-				z_abort_thread_timeout(reader);
+				(void)z_try_abort_thread_timeout(reader);
+				z_sched_ready_locked(reader);
+				*need_resched = true;
 			}
-		}
-		if (reader != NULL) {
-			/* rest of thread wake-up outside the scheduler lock */
-			z_thread_return_value_set_with_data(reader, 0, NULL);
-			z_ready_thread(reader);
-			*need_resched = true;
 		}
 	} while (reader != NULL && written < len);
 

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -24,7 +25,71 @@
 		compatible = "mmio-sram";
 	};
 
+	clocks {
+		clk_lfxo: clk-lfxo {
+			compatible = "silabs,series0-lfxo";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_K(32)>;
+			status = "disabled";
+		};
+
+		clk_lfrco: clk-lfrco {
+			compatible = "silabs,series0-lfrco";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_K(32)>;
+			status = "disabled";
+		};
+
+		clk_hfxo: clk-hfxo {
+			compatible = "silabs,series0-hfxo";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		clk_hfrco: clk-hfrco {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		clk_lfa: clk-lfa {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&clk_lfxo>;
+			status = "disabled";
+		};
+
+		clk_lfb: clk-lfb {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&clk_lfxo>;
+			status = "disabled";
+		};
+
+		clk_lfe: clk-lfe {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&clk_lfxo>;
+			status = "disabled";
+		};
+
+		clk_hf: clk-hf {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			status = "okay";
+		};
+	};
+
 	soc {
+		cmu: cmu@400e4000 {
+			compatible = "silabs,series0-cmu";
+			reg = <0x400e4000 0x200>;
+			clocks = <&clk_lfxo>, <&clk_lfrco>, <&clk_lfa>, <&clk_lfb>, <&clk_lfe>,
+				 <&clk_hfxo>, <&clk_hfrco>, <&clk_hf>;
+			clock-names = "lfxo", "lfrco", "lfa", "lfb", "lfe", "hfxo", "hfrco", "hf";
+			status = "okay";
+		};
+
 		msc: flash-controller@400e0000 {
 			compatible = "silabs,gecko-flash-controller";
 			reg = <0x400e0000 0x800>;

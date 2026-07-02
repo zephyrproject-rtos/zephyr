@@ -1,10 +1,23 @@
 sample:
   name: MSPI Flash Sample
+
+common:
+  tags:
+    - mspi
+    - flash
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "Test 1: Flash erase"
+      - "Flash erase succeeded!"
+      - "Test 2: Flash write"
+      - "Attempting to write 4 bytes"
+      - "Data read matches data written. Good!!"
+
 tests:
   sample.drivers.mspi.flash:
-    tags:
-      - mspi
-      - flash
     filter: dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("jedec,mspi-nor")
       or dt_compat_enabled("mspi-atxp032") or dt_compat_enabled("mspi-is25xX0xx")
     platform_exclude:
@@ -19,16 +32,42 @@ tests:
       - stm32h735g_disco
       - stm32l496g_disco
       - stm32l562e_dk
-    harness: console
-    harness_config:
-      type: multi_line
-      ordered: true
-      regex:
-        - "Test 1: Flash erase"
-        - "Flash erase succeeded!"
-        - "Test 2: Flash write"
-        - "Attempting to write 4 bytes"
-        - "Data read matches data written. Good!!"
     integration_platforms:
       - apollo3p_evb
       - apollo510_evb
+
+  sample.drivers.mspi.flash.b_m2mem_pack1_mb1927_18ba:
+    tags:
+      - shield
+    platform_allow:
+      - nucleo_u3c5zi_q
+    integration_platforms:
+      - nucleo_u3c5zi_q
+    extra_args: SHIELD=b_m2mem_pack1_mb1927_18ba
+
+  sample.drivers.mspi.flash.b_m2mem_pack1_mb1927_33ba:
+    tags:
+      - shield
+    platform_allow:
+      - nucleo_u3c5zi_q
+    integration_platforms:
+      - nucleo_u3c5zi_q
+    extra_args: SHIELD=b_m2mem_pack1_mb1927_33ba
+
+  sample.drivers.mspi.flash.b_m2mem_pack1_mb1928_33la:
+    tags:
+      - shield
+    platform_allow:
+      - nucleo_u3c5zi_q
+    integration_platforms:
+      - nucleo_u3c5zi_q
+    extra_args: SHIELD=b_m2mem_pack1_mb1928_33la
+
+  sample.drivers.mspi.flash.b_m2mem_pack1_mb1928_33lb:
+    tags:
+      - shield
+    platform_allow:
+      - nucleo_u3c5zi_q
+    integration_platforms:
+      - nucleo_u3c5zi_q
+    extra_args: SHIELD=b_m2mem_pack1_mb1928_33lb

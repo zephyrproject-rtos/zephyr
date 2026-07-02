@@ -181,6 +181,7 @@
 	counter0: counter {
 		status = "okay";
 		compatible = "zephyr,native-sim-counter";
+		#counter-capture-cells = <2>;
 	};
 
 	gpio0: gpio_emul {

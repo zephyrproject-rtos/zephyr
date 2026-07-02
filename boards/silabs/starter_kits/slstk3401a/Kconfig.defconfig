@@ -3,10 +3,4 @@
 
 if BOARD_SLSTK3401A
 
-config CMU_HFXO_FREQ
-	default 40000000
-
-config CMU_LFXO_FREQ
-	default 32768
-
 endif # BOARD_SLSTK3401A

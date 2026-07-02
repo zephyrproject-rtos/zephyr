@@ -16,6 +16,11 @@
 			      STM32_DMA_PERIPH_16BITS)>;
 	dma-names = "dmamux";
 
+	clocks = <&rcc STM32_CLOCK(APB2, 9)>,
+		 <&rcc STM32_SRC_PLL_P ADC_SEL(2)>;
+	clock-names = "adcx", "adc_ker";
+	st,adc-clock-source = "ASYNC";
+	st,adc-prescaler = <8>;
 	pinctrl-0 = <&adc_in4_pb2 &adc_in5_pb1>;
 	#address-cells = <1>;
 	#size-cells = <0>;

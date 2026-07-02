@@ -99,6 +99,15 @@
  * @}
  */
 
+#ifndef XTENSA_MPU_DEFAULT_ACCESS_RIGHTS
+/** Default MPU access rights */
+#define XTENSA_MPU_DEFAULT_ACCESS_RIGHTS		XTENSA_MPU_ACCESS_P_RW_U_NA
+#endif
+
+#ifndef XTENSA_MPU_DEFAULT_MEMORY_TYPE
+/** Default MPU memory type */
+#define XTENSA_MPU_DEFAULT_MEMORY_TYPE			0x6U
+#endif
 
 /**
  * Define one MPU entry of type struct xtensa_mpu_entry.

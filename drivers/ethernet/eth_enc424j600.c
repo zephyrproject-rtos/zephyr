@@ -475,11 +475,9 @@ static void enc424j600_rx_thread(void *p1, void *p2, void *p3)
 					      ENC424J600_SFRX_EIRL,
 					      ENC424J600_EIR_LINKIF);
 			if (estat & ENC424J600_ESTAT_PHYLNK) {
-				LOG_INF("Link up");
 				enc424j600_setup_mac(context->dev);
 				net_eth_carrier_on(context->iface);
 			} else {
-				LOG_INF("Link down");
 				net_eth_carrier_off(context->iface);
 			}
 		} else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 - 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2021 - 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,18 +7,37 @@
 #ifndef BT_OTS_DIR_LIST_INTERNAL_H_
 #define BT_OTS_DIR_LIST_INTERNAL_H_
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <sys/types.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <sys/types.h>
-#include <zephyr/types.h>
-#include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/services/ots.h>
 
 /** Maximum size of the Directory Listing Object Record. Table 4.1 in the OTS spec. */
 #define DIR_LIST_OBJ_RECORD_MIN_SIZE       13
-#define DIR_LIST_OBJ_RECORD_MAX_SIZE       172
+#define DIR_LIST_OBJ_RECORD_MAX_SIZE                                                               \
+	(2U /* len */ +                                                                            \
+	 6U /* id */ +                                                                             \
+	 1U /* name_len */ +                                                                       \
+	 CONFIG_BT_OTS_OBJ_MAX_NAME_LEN /* name */ +                                               \
+	 1U /* flags */ +                                                                          \
+	 BT_UUID_SIZE_128 /* UUID */ +                                                             \
+	 4U /* current size */ +                                                                   \
+	 4U /* alloc size */ +                                                                     \
+	 7U /* created ts */ +                                                                     \
+	 7U /* modified ts */ +                                                                    \
+	 4U /* properties */)
 #define DIR_LIST_MAX_SIZE (DIR_LIST_OBJ_RECORD_MAX_SIZE * CONFIG_BT_OTS_MAX_OBJ_CNT)
 
 /** @brief Directory Listing Buffer Size
@@ -29,6 +48,8 @@ extern "C" {
  */
 #define OTS_DIR_LIST_BUFFER_SIZE (DIR_LIST_OBJ_RECORD_MAX_SIZE * \
 	DIV_ROUND_UP(CONFIG_BT_OTS_L2CAP_CHAN_TX_MTU, DIR_LIST_OBJ_RECORD_MAX_SIZE))
+BUILD_ASSERT(!IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) || OTS_DIR_LIST_BUFFER_SIZE <= UINT16_MAX,
+	     "OTS directory listing buffer is too large for net_buf_simple");
 
 struct bt_ots_dir_list {
 	struct net_buf_simple net_buf;

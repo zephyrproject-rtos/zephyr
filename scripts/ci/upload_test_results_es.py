@@ -7,7 +7,7 @@
 This script uploads ``twister.json`` file to Elasticsearch index for reporting and analysis.
 see  https://kibana.zephyrproject.io/
 
-The script expects two evironment variables with the Elasticsearch server connection parameters:
+The script expects two environment variables with the Elasticsearch server connection parameters:
     `ELASTICSEARCH_SERVER`
     `ELASTICSEARCH_KEY`
 """

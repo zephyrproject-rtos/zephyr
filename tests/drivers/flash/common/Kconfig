@@ -21,7 +21,7 @@ config TEST_FORCE_STORAGE_PARTITION
 	default n
 	help
 	  This test prioritizes testing spi nor flash over
-	  the storage area by default. Set this config to priorize
+	  the storage area by default. Set this config to prioritize
 	  testing the storage partition instead.
 
 source "Kconfig.zephyr"

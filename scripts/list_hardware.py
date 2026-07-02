@@ -288,7 +288,7 @@ def dump_v2_archs(args):
                 NAME='NAME;' + arch['name'],
                 DIR='DIR;' + str(arch['path'].as_posix()),
                 HWM='HWM;' + arch['hwm'],
-                # Below is non exising for arch but is defined here to support
+                # Below is non existing for arch but is defined here to support
                 # common formatting string.
                 SERIES='',
                 FAMILY='',
@@ -301,7 +301,7 @@ def dump_v2_archs(args):
                 name=arch.get('name'),
                 dir=arch.get('path'),
                 hwm=arch.get('hwm'),
-                # Below is non exising for arch but is defined here to support
+                # Below is non existing for arch but is defined here to support
                 # common formatting string.
                 series='',
                 family='',

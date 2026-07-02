@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Header file for the MCUmgr Zephyr basic management group API.
+ * @ingroup mcumgr_zephyr_basic_mgmt
+ */
+
 #ifndef ZEPHYR_INCLUDE_ZEPHYR_MCUMGR_GRP_ZBASIC_H_
 #define ZEPHYR_INCLUDE_ZEPHYR_MCUMGR_GRP_ZBASIC_H_
 

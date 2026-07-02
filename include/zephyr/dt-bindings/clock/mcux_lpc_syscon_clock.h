@@ -225,4 +225,10 @@
 /** SLCD peripheral clock identifier. */
 #define MCUX_SLCD_CLK MCUX_LPC_CLK_ID(0x34, 0x00)
 
+/** CRC peripheral clock identifier. */
+#define MCUX_CRC_CLK MCUX_LPC_CLK_ID(0x35, 0x00)
+
+/** SYSTEM clock identifier. */
+#define MCUX_SYSTEM_CLK MCUX_LPC_CLK_ID(0x36, 0x00)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */

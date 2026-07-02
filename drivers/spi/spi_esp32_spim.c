@@ -275,11 +275,24 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	hal_trans->tx_bitlen = bit_len;
 	hal_trans->rx_bitlen = bit_len;
 
-	/* keep cs line active until last transmission */
+	/* Use the remaining length, not the buffer count, so trailing
+	 * zero-length buffers do not keep CS asserted.
+	 */
+	size_t tx_remaining =
+		(ctx->tx_len > transfer_len_frames) ? (ctx->tx_len - transfer_len_frames) : 0;
+	size_t rx_remaining =
+		(ctx->rx_len > transfer_len_frames) ? (ctx->rx_len - transfer_len_frames) : 0;
+
+	for (size_t i = 1; i < ctx->tx_count; i++) {
+		tx_remaining += ctx->current_tx[i].len;
+	}
+	for (size_t i = 1; i < ctx->rx_count; i++) {
+		rx_remaining += ctx->current_rx[i].len;
+	}
+
 	hal_trans->cs_keep_active =
 		(UTIL_OR(IS_ENABLED(DT_SPI_CTX_HAS_NO_CS_GPIOS), (ctx->num_cs_gpios == 0)) &&
-		 (ctx->rx_count > 1 || ctx->tx_count > 1 || ctx->rx_len > transfer_len_frames ||
-		  ctx->tx_len > transfer_len_frames));
+		 (tx_remaining > 0 || rx_remaining > 0));
 
 	/* configure SPI */
 	spi_hal_setup_trans(hal, hal_dev, hal_trans);
@@ -415,12 +428,140 @@ free:
 	return err;
 }
 
+#ifdef CONFIG_ESP32_SPI_TARGET
+/*
+ * A controller clocks the whole frame within one chip-select assertion, so the
+ * scattered transfer buffers are coalesced into a single FIFO-sized transfer.
+ */
+static void IRAM_ATTR spi_esp32_target_arm(const struct device *dev)
+{
+	struct spi_esp32_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	spi_slave_hal_context_t *hal = &data->target_hal;
+	size_t max_frames = SOC_SPI_MAXIMUM_BUFFER_SIZE / data->dfs;
+	size_t off = 0;
+	size_t frames = 0;
+
+	data->target_rx_seg_cnt = 0;
+
+	while (frames < max_frames && (spi_context_tx_on(ctx) || spi_context_rx_on(ctx))) {
+		size_t chunk = spi_context_max_continuous_chunk(ctx);
+
+		/* Stop gathering rather than clock data that could not be
+		 * scattered back: a receive buffer that does not fit in the
+		 * segment table would be silently dropped.
+		 */
+		if (ctx->rx_buf && data->target_rx_seg_cnt >= CONFIG_SPI_ESP32_TARGET_MAX_BUFS) {
+			LOG_WRN("Target rx segments exceed %d; truncating transfer",
+				CONFIG_SPI_ESP32_TARGET_MAX_BUFS);
+			break;
+		}
+
+		chunk = MIN(chunk, max_frames - frames);
+
+		if (ctx->tx_buf) {
+			memcpy(&data->target_tx_buf[off], ctx->tx_buf, chunk * data->dfs);
+		} else {
+			memset(&data->target_tx_buf[off], 0, chunk * data->dfs);
+		}
+
+		if (ctx->rx_buf) {
+			data->target_rx_seg[data->target_rx_seg_cnt].buf = ctx->rx_buf;
+			data->target_rx_seg[data->target_rx_seg_cnt].off = off;
+			data->target_rx_seg[data->target_rx_seg_cnt].len = chunk * data->dfs;
+			data->target_rx_seg_cnt++;
+		}
+
+		off += chunk * data->dfs;
+		frames += chunk;
+
+		spi_context_update_tx(ctx, data->dfs, chunk);
+		spi_context_update_rx(ctx, data->dfs, chunk);
+	}
+
+	data->target_frames = frames;
+
+	hal->tx_buffer = data->target_tx_buf;
+	hal->rx_buffer = data->target_rx_buf;
+	hal->bitlen = (frames * data->dfs) << 3;
+
+#ifdef SOC_GDMA_SUPPORTED
+	hal->use_dma = false;
+	spi_slave_hal_hw_reset(hal);
+	spi_slave_hal_push_tx_buffer(hal);
+	/* Reset the TX FIFO after the push so it reloads from the registers. */
+	spi_slave_hal_hw_fifo_reset(hal, true, false);
+	spi_slave_hal_set_trans_bitlen(hal);
+	spi_slave_hal_user_start(hal);
+#else
+	size_t len = frames * data->dfs;
+
+	hal->use_dma = true;
+
+	spi_esp32_dma_desc_setup(&data->dma_desc_tx, data->target_tx_buf, len, false);
+	spi_esp32_dma_desc_setup(&data->dma_desc_rx, data->target_rx_buf, len, true);
+
+	spi_slave_hal_hw_reset(hal);
+
+	spi_dma_ll_tx_reset((spi_dma_dev_t *)hal->hw, 0);
+	spi_dma_ll_rx_reset((spi_dma_dev_t *)hal->hw, 0);
+	spi_slave_hal_hw_prepare_tx(hal->hw);
+	spi_slave_hal_hw_prepare_rx(hal->hw);
+	spi_dma_ll_tx_start((spi_dma_dev_t *)hal->hw, 0, &data->dma_desc_tx);
+	spi_dma_ll_rx_start((spi_dma_dev_t *)hal->hw, 0, &data->dma_desc_rx);
+
+	spi_slave_hal_set_trans_bitlen(hal);
+	spi_slave_hal_enable_data_line(hal);
+	spi_slave_hal_user_start(hal);
+#endif
+}
+
+/* Scatter the received data back into the original spi_context RX buffers. */
+static void IRAM_ATTR spi_esp32_target_transfer(const struct device *dev)
+{
+	struct spi_esp32_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	spi_slave_hal_context_t *hal = &data->target_hal;
+	size_t rcv_bytes = 0;
+
+	spi_slave_hal_store_result(hal);
+
+	for (size_t i = 0; i < data->target_rx_seg_cnt; i++) {
+		memcpy(data->target_rx_seg[i].buf, &data->target_rx_buf[data->target_rx_seg[i].off],
+		       data->target_rx_seg[i].len);
+		rcv_bytes += data->target_rx_seg[i].len;
+	}
+
+	/* Arming counted all armed frames; report only those actually stored. */
+	ctx->recv_frames -= data->target_frames;
+	ctx->recv_frames += rcv_bytes / data->dfs;
+}
+#endif /* CONFIG_ESP32_SPI_TARGET */
+
 #ifdef CONFIG_SPI_ESP32_INTERRUPT
 static void IRAM_ATTR spi_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	const struct spi_esp32_config *cfg = dev->config;
 	struct spi_esp32_data *data = dev->data;
+
+#ifdef CONFIG_ESP32_SPI_TARGET
+	if (data->target_mode) {
+		spi_esp32_target_transfer(dev);
+
+		if (spi_esp32_transfer_ongoing(data)) {
+			spi_esp32_target_arm(dev);
+		} else {
+			spi_ll_disable_int(cfg->spi);
+			spi_ll_clear_int_stat(cfg->spi);
+			spi_context_complete(&data->ctx, dev, 0);
+#if CONFIG_PM
+			spi_esp32_pm_policy_state_lock_put(dev);
+#endif
+		}
+		return;
+	}
+#endif /* CONFIG_ESP32_SPI_TARGET */
 
 	do {
 		spi_esp32_transfer(dev);
@@ -524,6 +665,10 @@ static int spi_esp32_init(const struct device *dev)
 	/* Initialize SPI HAL */
 	spi_hal_init(&data->hal, cfg->dma_host + 1);
 
+#ifdef CONFIG_ESP32_SPI_TARGET
+	data->target_hal.hw = cfg->spi;
+#endif
+
 	/* Enable internal SPI clock - new HAL requires explicit call */
 	spi_ll_enable_clock(cfg->dma_host + 1, true);
 
@@ -620,8 +765,51 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	}
 
 	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+#ifdef CONFIG_ESP32_SPI_TARGET
+		spi_slave_hal_context_t *shal = &data->target_hal;
+
+		shal->mode = 0;
+		if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA) {
+			shal->mode = BIT(0);
+		}
+		if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL) {
+			shal->mode |= BIT(1);
+		}
+		shal->tx_lsbfirst = (spi_cfg->operation & SPI_TRANSFER_LSB) ? 1 : 0;
+		shal->rx_lsbfirst = (spi_cfg->operation & SPI_TRANSFER_LSB) ? 1 : 0;
+#ifdef SOC_GDMA_SUPPORTED
+		shal->use_dma = false;
+#else
+		/* CPU/FIFO slave mode drops the final received byte on these
+		 * socs, so the target is driven via the integrated SPI-DMA.
+		 */
+		if (!cfg->dma_enabled) {
+			LOG_ERR("Target mode on this soc requires dma-enabled");
+			return -EINVAL;
+		}
+		shal->use_dma = true;
+		shal->dmadesc_tx = (spi_dma_desc_t *)&data->dma_desc_tx;
+		shal->dmadesc_rx = (spi_dma_desc_t *)&data->dma_desc_rx;
+		shal->dmadesc_n = 1;
+#endif
+
+		/* spi_slave_hal_init force-enables a trans-done interrupt; mask
+		 * it until the device is armed in transceive().
+		 */
+		unsigned int key = irq_lock();
+
+		data->target_mode = true;
+		spi_slave_hal_init(shal, &(spi_slave_hal_config_t){.host_id = cfg->dma_host + 1});
+		spi_slave_hal_setup_device(shal);
+		spi_ll_disable_int(cfg->spi);
+		spi_ll_clear_int_stat(cfg->spi);
+
+		irq_unlock(key);
+		return 0;
+#else
+		LOG_ERR("Target mode requires CONFIG_ESP32_SPI_TARGET");
 		return -ENOTSUP;
+#endif /* CONFIG_ESP32_SPI_TARGET */
 	}
 
 	if (spi_cfg->operation & SPI_MODE_LOOP) {
@@ -760,6 +948,26 @@ static int transceive(const struct device *dev,
 	if (ret) {
 		goto done;
 	}
+
+#ifdef CONFIG_ESP32_SPI_TARGET
+	if (data->target_mode) {
+		spi_esp32_target_arm(dev);
+		spi_ll_enable_int(cfg->spi);
+
+		if (asynchronous) {
+			/* Delivered via the callback. Cannot use
+			 * spi_context_wait_for_completion(): arming advanced
+			 * recv_frames, which it would return instead of 0.
+			 */
+			return 0;
+		}
+
+		ret = spi_context_wait_for_completion(&data->ctx);
+
+		spi_context_release(&data->ctx, ret);
+		return ret;
+	}
+#endif /* CONFIG_ESP32_SPI_TARGET */
 
 	spi_context_cs_control(&data->ctx, true);
 

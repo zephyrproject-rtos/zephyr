@@ -193,6 +193,7 @@
 		flash_controller: flash-controller@38000000 {
 			compatible = "renesas,smartbond-flash-controller";
 			reg = <0x38000000 0xb0>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -204,6 +205,8 @@
 				compatible = "soc-nv-flash";
 				erase-block-size = <4096>;
 				write-block-size = <1>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 

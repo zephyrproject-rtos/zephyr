@@ -190,6 +190,11 @@
 #define STM32H7_BUS_CLK_REG	DT_REG_ADDR(DT_NODELABEL(rcc)) + 0x60
 #endif
 
+#if IS_ENABLED(STM32_PLL_P_ENABLED)
+BUILD_ASSERT(((STM32_PLL_P_DIVISOR == 1) || (STM32_PLL_P_DIVISOR % 2) == 0),
+	     "STM32H7/H7RS PLL1 DIVP divisor factor must be 1 or even");
+#endif /* STM32_PLL_P_ENABLED */
+
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 {
 	return clock / prescaler;

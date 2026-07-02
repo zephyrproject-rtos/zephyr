@@ -7,19 +7,24 @@
 #include <stdint.h>
 
 /**
- * @file clock_control_numicro.h
- * @brief Clock control header file for Nuvoton Numicro family.
+ * @file
+ * @brief Clock control header file for the Nuvoton NuMicro family.
  *
  * This file provides clock driver interface definitions and structures
- * fur Nuvoton Numicro family.
+ * for the Nuvoton NuMicro family.
+ * @ingroup clock_control_numicro
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVER_CLOCK_CONTROL_NUMICRO_H_
 #define ZEPHYR_INCLUDE_DRIVER_CLOCK_CONTROL_NUMICRO_H_
 
 /**
- * @brief SCC Subsystem ID
+ * @defgroup clock_control_numicro Nuvoton NuMicro
+ * @ingroup clock_control_interface_ext
+ * @{
  */
+
+/** @brief SCC subsystem ID for peripheral clock control (PCC). */
 #define NUMICRO_SCC_SUBSYS_ID_PCC 1
 
 /** @brief Peripheral clock control configuration structure */
@@ -58,5 +63,7 @@ struct numicro_scc_subsys {
 
 /** @brief Create Numicro peripheral clock subsystem configuration from device tree */
 #define DT_NUMICRO_CLOCK_PCC_SUBSYSTEM_INST(inst) DT_NUMICRO_CLOCK_PCC_SUBSYSTEM(DT_DRV_INST(inst))
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DRIVER_CLOCK_CONTROL_NUMICRO_H_ */

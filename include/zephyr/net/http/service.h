@@ -19,7 +19,7 @@
  * @{
  */
 
-#include "zephyr/net/http/server.h"
+#include <zephyr/net/http/server.h>
 #include <stdint.h>
 #include <stddef.h>
 

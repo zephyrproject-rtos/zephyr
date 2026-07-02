@@ -7,45 +7,7 @@
 /**
  * @file
  * @brief Statistics.
- *
- * Statistics are per-module event counters for troubleshooting, maintenance,
- * and usage monitoring.  Statistics are organized into named "groups", with
- * each group consisting of a set of "entries".  An entry corresponds to an
- * individual counter.  Each entry can optionally be named if the STATS_NAMES
- * setting is enabled.  Statistics can be retrieved with the mcumgr management
- * subsystem.
- *
- * There are two, largely duplicated, statistics sections here, in order to
- * provide the optional ability to name statistics.
- *
- * STATS_SECT_START/END actually declare the statistics structure definition,
- * STATS_SECT_DECL() creates the structure declaration so you can declare
- * these statistics as a global structure, and STATS_NAME_START/END are how
- * you name the statistics themselves.
- *
- * Statistics entries can be declared as any of several integer types.
- * However, all statistics in a given structure must be of the same size, and
- * they are all unsigned.
- *
- * - STATS_SECT_ENTRY(): default statistic entry, 32-bits.
- *
- * - STATS_SECT_ENTRY16(): 16-bits.  Smaller statistics if you need to fit into
- *   specific RAM or code size numbers.
- *
- * - STATS_SECT_ENTRY32(): 32-bits.
- *
- * - STATS_SECT_ENTRY64(): 64-bits.  Useful for storing chunks of data.
- *
- * Following the static entry declaration is the statistic names declaration.
- * This is compiled out when the CONFIGURE_STATS_NAME setting is undefined.
- *
- * When CONFIG_STATS_NAMES is defined, the statistics names are stored and
- * returned to the management APIs.  When the setting is undefined, temporary
- * names are generated as needed with the following format:
- *
- *     s<stat-idx>
- *
- * E.g., "s0", "s1", etc.
+ * @ingroup stats_apis
  */
 
 #ifndef ZEPHYR_INCLUDE_STATS_STATS_H_
@@ -58,12 +20,124 @@
 extern "C" {
 #endif
 
+/**
+ * @defgroup stats_apis Statistics
+ * @brief Track and report subsystem event counters.
+ * @ingroup os_services
+ *
+ * Statistics are per-module event counters for troubleshooting, maintenance,
+ * and usage monitoring.  Statistics are organized into named "groups", with
+ * each group consisting of a set of "entries".  An entry corresponds to an
+ * individual counter.  Each entry can optionally be named if the
+ * @kconfig{CONFIG_STATS_NAMES} setting is enabled.  Statistics can be retrieved
+ * with the @ref mcumgr_stat_mgmt subsystem.
+ *
+ * Statistics are useful for counting runtime events such as transfer attempts,
+ * bytes processed, recoverable errors, threshold hits, or other values that
+ * help diagnose behavior without adding custom management commands.
+ *
+ * There are two, largely duplicated, statistics sections here, in order to
+ * provide the optional ability to name statistics.
+ *
+ * @ref STATS_SECT_START and @ref STATS_SECT_END actually declare the
+ * statistics structure definition, @ref STATS_SECT_DECL creates the structure
+ * declaration so you can declare these statistics as a global structure, and
+ * @ref STATS_NAME_START and @ref STATS_NAME_END are how you name the
+ * statistics themselves.
+ *
+ * Statistics entries can be declared as any of several integer types.
+ * However, all statistics in a given structure must be of the same size, and
+ * they are all unsigned.
+ *
+ * - @ref STATS_SECT_ENTRY "STATS_SECT_ENTRY()": default statistic entry,
+ *   32-bits.
+ *
+ * - @ref STATS_SECT_ENTRY16 "STATS_SECT_ENTRY16()": 16-bits. Smaller
+ *   statistics if you need to fit into specific RAM or code size numbers.
+ *
+ * - @ref STATS_SECT_ENTRY32 "STATS_SECT_ENTRY32()": 32-bits.
+ *
+ * - @ref STATS_SECT_ENTRY64 "STATS_SECT_ENTRY64()": 64-bits. Useful for
+ *   storing chunks of data.
+ *
+ * Following the static entry declaration is the statistic names declaration.
+ * This is compiled out when the @kconfig{CONFIG_STATS_NAMES} setting is
+ * undefined.
+ *
+ * When @kconfig{CONFIG_STATS_NAMES} is defined, the statistics names are stored
+ * and returned to the management APIs. When the setting is undefined, temporary
+ * names are generated as needed with the following format:
+ *
+ *     s<stat-idx>
+ *
+ * E.g., "s0", "s1", etc.
+ *
+ * Example:
+ *
+ * @code{.c}
+ * STATS_SECT_START(my_driver_stats)
+ * STATS_SECT_ENTRY(rx_packets)
+ * STATS_SECT_ENTRY(rx_bytes)
+ * STATS_SECT_ENTRY(errors)
+ * STATS_SECT_END;
+ *
+ * STATS_NAME_START(my_driver_stats)
+ * STATS_NAME(my_driver_stats, rx_packets)
+ * STATS_NAME(my_driver_stats, rx_bytes)
+ * STATS_NAME(my_driver_stats, errors)
+ * STATS_NAME_END(my_driver_stats);
+ *
+ * static STATS_SECT_DECL(my_driver_stats) stats;
+ *
+ * static int my_driver_init(void)
+ * {
+ *     int rc;
+ *
+ *     rc = STATS_INIT_AND_REG(stats, STATS_SIZE_32, "my_driver");
+ *     if (rc != 0) {
+ *         return rc;
+ *     }
+ *
+ *     return 0;
+ * }
+ *
+ * static void my_driver_rx_complete(size_t len)
+ * {
+ *     STATS_INC(stats, rx_packets);
+ *     STATS_INCN(stats, rx_bytes, len);
+ * }
+ *
+ * static void my_driver_error(void)
+ * {
+ *     STATS_INC(stats, errors);
+ * }
+ * @endcode
+ *
+ * @{
+ */
+
+/**
+ * @brief Describe one generated statistic entry name.
+ *
+ * Name maps are normally generated with @ref STATS_NAME_START,
+ * @ref STATS_NAME, and @ref STATS_NAME_END rather than initialized by hand.
+ */
 struct stats_name_map {
+	/** @cond INTERNAL_HIDDEN */
 	uint16_t snm_off;
 	const char *snm_name;
+	/** @endcond */
 } __attribute__((packed));
 
+/**
+ * @brief Store metadata for one statistics group.
+ *
+ * Applications normally use this as an opaque group handle returned by
+ * stats_group_find(), received by walk callbacks, or embedded as the first
+ * member generated by @ref STATS_SECT_START.
+ */
 struct stats_hdr {
+	/** @cond INTERNAL_HIDDEN */
 	const char *s_name;
 	uint8_t s_size;
 	uint16_t s_cnt;
@@ -73,7 +147,13 @@ struct stats_hdr {
 	int s_map_cnt;
 #endif
 	struct stats_hdr *s_next;
+	/** @endcond */
 };
+
+/**
+ * @name Statistics group declarations
+ * @{
+ */
 
 /**
  * @brief Declares a stat group struct.
@@ -91,7 +171,7 @@ struct stats_hdr {
 /* The following macros depend on whether CONFIG_STATS is defined.  If it is
  * not defined, then invocations of these macros get compiled out.
  */
-#ifdef CONFIG_STATS
+#if defined(CONFIG_STATS) || defined(__DOXYGEN__)
 
 /**
  * @brief Begins a stats group struct definition.
@@ -129,6 +209,26 @@ struct stats_hdr {
  * @param var__                 The name to assign to the entry.
  */
 #define STATS_SECT_ENTRY64(var__) uint64_t var__;
+
+/**
+ * @brief 16-bit statistics entry size, in bytes.
+ */
+#define STATS_SIZE_16 (sizeof(uint16_t))
+/**
+ * @brief 32-bit statistics entry size, in bytes.
+ */
+#define STATS_SIZE_32 (sizeof(uint32_t))
+/**
+ * @brief 64-bit statistics entry size, in bytes.
+ */
+#define STATS_SIZE_64 (sizeof(uint64_t))
+
+/** @} */
+
+/**
+ * @name Counter update helpers
+ * @{
+ */
 
 /**
  * @brief Increases a statistic entry by the specified amount.
@@ -180,13 +280,18 @@ struct stats_hdr {
 #define STATS_CLEAR(group__, var__) \
 	((group__).var__ = 0)
 
-#define STATS_SIZE_16 (sizeof(uint16_t))
-#define STATS_SIZE_32 (sizeof(uint32_t))
-#define STATS_SIZE_64 (sizeof(uint64_t))
+/** @} */
 
+/** @cond INTERNAL_HIDDEN */
 #define STATS_SIZE_INIT_PARMS(group__, size__) \
 	(size__),			       \
 	((sizeof(group__)) - sizeof(struct stats_hdr)) / (size__)
+/** @endcond */
+
+/**
+ * @name Initialization and registration
+ * @{
+ */
 
 /**
  * @brief Initializes and registers a statistics group.
@@ -200,7 +305,8 @@ struct stats_hdr {
  *                                  This name must be unique among all
  *                                  statistics groups.
  *
- * @return                      0 on success; negative error code on failure.
+ * @retval 0                    Success.
+ * @retval -EALREADY            A statistics group with the same name has already been registered.
  */
 #define STATS_INIT_AND_REG(group__, size__, name__)			 \
 	stats_init_and_reg(						 \
@@ -213,7 +319,7 @@ struct stats_hdr {
 /**
  * @brief Initializes a statistics group.
  *
- * @param hdr                   The header of the statistics structure,
+ * @param shdr                  The header of the statistics structure,
  *                                  contains things like statistic section
  *                                  name, size of statistics entries, number of
  *                                  statistics, etc.
@@ -223,9 +329,6 @@ struct stats_hdr {
  * @param cnt                   The number of elements in the stats group.
  * @param map                   The mapping of stat offset to name.
  * @param map_cnt               The number of items in the statistics map
- *
- * @param group__               The group containing the entry to clear.
- * @param var__                 The statistic entry to clear.
  */
 void stats_init(struct stats_hdr *shdr, uint8_t size, uint16_t cnt,
 		const struct stats_name_map *map, uint16_t map_cnt);
@@ -240,7 +343,8 @@ void stats_init(struct stats_hdr *shdr, uint8_t size, uint16_t cnt,
  *                                 -EALREADY.
  * @param shdr                  The statistics group to register.
  *
- * @return 0 on success, non-zero error code on failure.
+ * @retval 0                    Success.
+ * @retval -EALREADY            A statistics group with the same name has already been registered.
  */
 int stats_register(const char *name, struct stats_hdr *shdr);
 
@@ -264,7 +368,8 @@ int stats_register(const char *name, struct stats_hdr *shdr);
  *                                  duplicate, this function will return
  *                                  -EALREADY.
  *
- * @return                      0 on success; negative error code on failure.
+ * @retval 0                    Success.
+ * @retval -EALREADY            A statistics group with the same name has already been registered.
  *
  * @see STATS_INIT_AND_REG
  */
@@ -279,7 +384,14 @@ int stats_init_and_reg(struct stats_hdr *hdr, uint8_t size, uint16_t cnt,
  */
 void stats_reset(struct stats_hdr *shdr);
 
-/** @typedef stats_walk_fn
+/** @} */
+
+/**
+ * @name Walking and lookup
+ * @{
+ */
+
+/**
  * @brief Function that gets applied to every stat entry during a walk.
  *
  * @param hdr                   The group containing the stat entry being
@@ -306,7 +418,7 @@ typedef int stats_walk_fn(struct stats_hdr *hdr, void *arg,
  */
 int stats_walk(struct stats_hdr *hdr, stats_walk_fn *walk_cb, void *arg);
 
-/** @typedef stats_group_walk_fn
+/**
  * @brief Function that gets applied to every registered stats group.
  *
  * @param hdr                   The stats group being walked.
@@ -349,6 +461,8 @@ struct stats_hdr *stats_group_get_next(const struct stats_hdr *cur);
  */
 struct stats_hdr *stats_group_find(const char *name);
 
+/** @} */
+
 #else /* CONFIG_STATS */
 
 #define STATS_SECT_START(group__) \
@@ -362,27 +476,70 @@ struct stats_hdr *stats_group_find(const char *name);
 #define STATS_SIZE_INIT_PARMS(group__, size__)
 #define STATS_INCN(group__, var__, n__)
 #define STATS_INC(group__, var__)
-#define STATS_SET(group__, var__)
+#define STATS_SET(group__, var__, n__)
 #define STATS_CLEAR(group__, var__)
 #define STATS_INIT_AND_REG(group__, size__, name__) (0)
 
-#endif /* !CONFIG_STATS */
+#endif /* CONFIG_STATS || __DOXYGEN__ */
 
-#ifdef CONFIG_STATS_NAMES
+#if defined(CONFIG_STATS_NAMES) || defined(__DOXYGEN__)
 
+/** @cond INTERNAL_HIDDEN */
 #define STATS_NAME_MAP_NAME(sectname__) stats_map_ ## sectname__
+/** @endcond */
 
+/**
+ * @name Optional statistic names
+ *
+ * These macros define the optional entry-name map used when
+ * @kconfig{CONFIG_STATS_NAMES} is enabled. When the option is disabled, the
+ * name macros compile out and statistics entries are reported as generated
+ * names such as "s0" and "s1".
+ *
+ * @{
+ */
+
+/**
+ * @brief Begin a statistics entry name map.
+ *
+ * Use this macro with @ref STATS_NAME and @ref STATS_NAME_END to define names
+ * for entries declared in a statistics group.
+ *
+ * @param sectname__ Statistics group name passed to @ref STATS_SECT_START.
+ */
 #define STATS_NAME_START(sectname__) \
 	static const struct stats_name_map STATS_NAME_MAP_NAME(sectname__)[] = {
 
+/**
+ * @brief Add an entry name to a statistics entry name map.
+ *
+ * @param sectname__ Statistics group name passed to @ref STATS_NAME_START.
+ * @param entry__ Entry name declared in the statistics group.
+ */
 #define STATS_NAME(sectname__, entry__)	\
 	{ offsetof(STATS_SECT_DECL(sectname__), entry__), #entry__ },
 
+/**
+ * @brief End a statistics entry name map.
+ *
+ * @param sectname__ Statistics group name passed to @ref STATS_NAME_START.
+ */
 #define STATS_NAME_END(sectname__) }
 
+/**
+ * @brief Expand name-map arguments for stats_init().
+ *
+ * This macro expands to the map pointer and map entry count expected by
+ * stats_init() or stats_init_and_reg(). When @kconfig{CONFIG_STATS_NAMES} is
+ * disabled, it expands to <tt>NULL, 0</tt>.
+ *
+ * @param name__ Statistics group name passed to @ref STATS_NAME_START.
+ */
 #define STATS_NAME_INIT_PARMS(name__)	    \
 	&(STATS_NAME_MAP_NAME(name__)[0]), \
 	(sizeof(STATS_NAME_MAP_NAME(name__)) / sizeof(struct stats_name_map))
+
+/** @} */
 
 #else /* CONFIG_STATS_NAMES */
 
@@ -392,6 +549,10 @@ struct stats_hdr *stats_group_find(const char *name);
 #define STATS_NAME_INIT_PARMS(name__) NULL, 0
 
 #endif /* CONFIG_STATS_NAMES */
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

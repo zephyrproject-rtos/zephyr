@@ -1,3 +1,7 @@
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
 if(CONFIG_NXP_MULTICORE)
     set(CONFIG_MCUX_COMPONENT_middleware.multicore.mcmgr ON)
     set_variable_ifdef(CONFIG_SOC_MCXW716C      CONFIG_MCUX_COMPONENT_middleware.multicore.mcmgr.mcxw716)
@@ -12,5 +16,11 @@ if(CONFIG_NXP_MULTICORE)
 
     add_subdirectory(${MCUX_SDK_NG_DIR}/middleware/mcuxsdk-middleware-multicore
         ${CMAKE_CURRENT_BINARY_DIR}/mcuxsdk-middleware-multicore
+    )
+endif()
+
+if(CONFIG_RPMSGLITE)
+    add_subdirectory(${MCUX_SDK_NG_DIR}/middleware/mcuxsdk-middleware-multicore/rpmsg-lite/zephyr
+        ${CMAKE_CURRENT_BINARY_DIR}/mcuxsdk-middleware-multicore-rpmsg-lite-zephyr
     )
 endif()

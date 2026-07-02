@@ -8,10 +8,11 @@ tests:
       - pwm
     filter: dt_compat_enabled("st,stm32-timers")
     platform_allow:
+      - nucleo_f072rb
       - nucleo_g070rb
       - nucleo_g071rb
     harness: console
     harness_config:
       type: one_line
       regex:
-        - "TRGO event will be generated every.*"
+        - "--> slave PWM T=200us, Ton=100us*"

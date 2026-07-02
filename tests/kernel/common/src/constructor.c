@@ -37,8 +37,25 @@ void __attribute__((__constructor__(1000))) __constructor_init_priority_1000(voi
 	constructor_values[constructor_number++] = 1000;
 }
 /**
- * @brief Test if constructors work
+ * @brief Verify C constructors run before main in priority order.
  *
+ * @ingroup kernel_constructor_tests
+ *
+ * @details
+ * Passing proves that functions marked with the GCC __constructor__ attribute
+ * are invoked during system startup before the test runs, and that prioritized
+ * constructors execute in ascending priority order ahead of unprioritized ones.
+ *
+ * Test steps:
+ * - Register three constructors that each record an identifier on invocation:
+ *   priority 101, priority 1000, and one with no explicit priority.
+ * - In the test body, inspect the recorded count and ordering.
+ *
+ * Expected result:
+ * - All three constructors ran (count is 3), priority 101 ran first, priority
+ *   1000 ran second, and the unprioritized constructor ran last.
+ *
+ * @see ZTEST_SUITE()
  */
 ZTEST(constructor, test_constructor)
 {

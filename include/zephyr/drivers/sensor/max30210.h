@@ -15,7 +15,7 @@
 /**
  * @brief Analog Devices MAX30210 High-Accuracy Temperature Sensor
  * @defgroup max30210_interface MAX30210
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_adi
  * @{
  */
 

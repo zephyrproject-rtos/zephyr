@@ -15,6 +15,18 @@
 
 LOG_MODULE_REGISTER(mcux_stm, CONFIG_COUNTER_LOG_LEVEL);
 
+#define COUNTER_MCUX_STM_IS_SYSTEM_TIMER(n) \
+	COND_CODE_1(DT_HAS_CHOSEN(zephyr_system_timer), \
+		(DT_SAME_NODE(DT_INST(n, nxp_stm), DT_CHOSEN(zephyr_system_timer))), \
+		(0))
+
+#define COUNTER_MCUX_STM_COUNT_USABLE(n) + (!COUNTER_MCUX_STM_IS_SYSTEM_TIMER(n))
+
+#define COUNTER_MCUX_STM_DEVICE_COUNT \
+	(0 DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_STM_COUNT_USABLE))
+
+#if COUNTER_MCUX_STM_DEVICE_COUNT > 0
+
 struct mcux_stm_channel_data {
 	counter_alarm_callback_t alarm_callback;
 	void *alarm_user_data;
@@ -262,3 +274,5 @@ static DEVICE_API(counter, mcux_stm_driver_api) = {
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_STM_DEVICE_INIT)
+
+#endif /* COUNTER_MCUX_STM_DEVICE_COUNT > 0 */

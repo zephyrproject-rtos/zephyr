@@ -10,6 +10,11 @@ if(CONFIG_CMSIS_NN)
 
   zephyr_library_compile_options($<TARGET_PROPERTY:compiler,optimization_fast>)
 
+  if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+    # Upstream CMSIS-NN uses GCC-only function attributes in some source files.
+    zephyr_library_compile_options(-Wno-unknown-attributes)
+  endif()
+
   zephyr_include_directories(${CMSIS_NN_DIR}/Include)
 
   zephyr_library_include_directories(${cmsis_glue_path}/CMSIS/Core/Include)

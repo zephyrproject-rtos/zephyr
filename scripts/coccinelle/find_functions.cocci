@@ -11,7 +11,7 @@
 // of the void* parameter in the first dict, and the actual number of
 // parameters in the second.
 // Then find_dev_usage.cocci can be used to verify if device instance
-// are not loosing their const qualifier.
+// are not losing their const qualifier.
 
 virtual patch
 virtual report

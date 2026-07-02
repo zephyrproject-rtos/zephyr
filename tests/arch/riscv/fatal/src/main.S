@@ -13,7 +13,7 @@
  * Value is register ABI name kinda spelled out,
  * followed by zeros to pad to 32 bits,
  * followed by FF00, followed by hex number of the register,
- * follwed by the "hex-coded-decimal" number of the register.
+ * followed by the "hex-coded-decimal" number of the register.
  */
 
 GTEXT(main)

@@ -1310,7 +1310,7 @@ static void avdtp_close_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8
 
 	err = avdtp_send_rsp(session, rsp_buf);
 
-	/* From AVDTP spec, endpoint state should be idle after responsing CLOSE.
+	/* From AVDTP spec, endpoint state should be idle after responding CLOSE.
 	 * But before the sep->chan is released, the sep can't be used from stack
 	 * perspective, so waiting the stream chan released.
 	 */

@@ -64,7 +64,6 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.send_11k_neighbor_request = supplicant_11k_neighbor_request,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
 	.candidate_scan = supplicant_candidate_scan,
-	.start_11r_roaming = supplicant_11r_roaming,
 #endif
 	.set_power_save = supplicant_set_power_save,
 	.set_twt = supplicant_set_twt,
@@ -95,6 +94,9 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 	.dpp_dispatch = supplicant_dpp_dispatch,
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+	.nan_cfg = supplicant_nan_cfg,
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 	.pmksa_flush = supplicant_pmksa_flush,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	.enterprise_creds = supplicant_add_enterprise_creds,
@@ -152,6 +154,11 @@ struct k_work_q *get_workq(void)
 
 /* found in hostap/wpa_supplicant/ctrl_iface_zephyr.c */
 extern int send_data(struct k_fifo *fifo, int sock, const char *buf, size_t len, int flags);
+
+/* Serializes wpa_s->ctrl_conn lifecycle (open/close) against its users in
+ * supp_api.c, so that the NULL checks there cannot race with teardown.
+ */
+extern struct k_mutex wpa_supplicant_mutex;
 
 int zephyr_wifi_send_event(const struct wpa_supplicant_event_msg *msg)
 {
@@ -254,6 +261,38 @@ static void zephyr_wpa_supplicant_msg(void *ctx, const char *txt, size_t len)
 						(void *)txt, len);
 #endif
 	}
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+	else if (strncmp(txt, "NAN-DISCOVERY-RESULT", 20) == 0) {
+		/* NAN discovery result (subscriber found publisher) */
+		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+			NET_EVENT_WIFI_CMD_NAN_DISCOVERY_RESULT,
+			(void *)txt, len);
+	} else if (strncmp(txt, "NAN-REPLIED", 11) == 0) {
+		/* NAN replied (publisher received subscribe request) */
+		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+			NET_EVENT_WIFI_CMD_NAN_REPLIED,
+			(void *)txt, len);
+	} else if (strncmp(txt, "NAN-PUBLISH-TERMINATED", 22) == 0) {
+		/* NAN publish terminated */
+		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+			NET_EVENT_WIFI_CMD_NAN_PUBLISH_TERMINATED,
+			(void *)txt, len);
+	} else if (strncmp(txt, "NAN-SUBSCRIBE-TERMINATED", 24) == 0) {
+		/* NAN subscribe terminated */
+		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+			NET_EVENT_WIFI_CMD_NAN_SUBSCRIBE_TERMINATED,
+			(void *)txt, len);
+	} else if (strncmp(txt, "NAN-RECEIVE", 11) == 0) {
+		/* NAN follow-up received event */
+		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+			NET_EVENT_WIFI_CMD_NAN_RECEIVE,
+			(void *)txt, len);
+	} else {
+		/* Unhandled NAN message */
+		wpa_printf(MSG_DEBUG, "Unhandled NAN event: %.*s",
+			(int)len, txt);
+	}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 }
 
 static const char *zephyr_hostap_msg_ifname_cb(void *ctx)
@@ -344,7 +383,9 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 		net_if_get_name(iface, ctx->if_name, CONFIG_NET_INTERFACE_NAME_LEN);
 	}
 
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
 	ret = zephyr_wpa_ctrl_init(wpa_s);
+	k_mutex_unlock(&wpa_supplicant_mutex);
 	if (ret) {
 		LOG_ERR("Failed to initialize supplicant control interface");
 		goto out;
@@ -438,7 +479,9 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 		goto out;
 	}
 
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
 	zephyr_wpa_ctrl_deinit(wpa_s);
+	k_mutex_unlock(&wpa_supplicant_mutex);
 
 	ret = zephyr_wpa_cli_global_cmd_v("interface_remove %s", ifname);
 	if (ret) {
@@ -636,6 +679,10 @@ static void event_socket_handler(int sock, void *eloop_ctx, void *user_data)
 			} else if (event_msg.event == EVENT_UNPROT_DISASSOC) {
 				os_free((char *)data->unprot_disassoc.sa);
 				os_free((char *)data->unprot_disassoc.da);
+			} else if (event_msg.event == EVENT_EXTERNAL_AUTH) {
+				os_free((char *)data->external_auth.bssid);
+				os_free((char *)data->external_auth.ssid);
+				os_free((char *)data->external_auth.mld_addr);
 			}
 
 			os_free(event_msg.data);

@@ -15,7 +15,7 @@
 #include <stdint.h>
 #include "cmsis_instr.h"
 #if defined(CONFIG_SOC_COMPATIBLE_NRF52833)
-#include "mdk/nrf52833.h"
+#include "mdk/nrf52/nrf52833/nrf52833.h"
 #endif
 
 #ifdef __cplusplus

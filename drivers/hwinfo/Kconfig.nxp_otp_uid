@@ -1,0 +1,12 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_NXP_OTP_UID
+	bool "NXP OTP unique chip identifier"
+	default y
+	depends on DT_HAS_NXP_OTP_UID_ENABLED
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable the hwinfo device-id backend that reads the unique chip
+	  identifier stored in the NXP OTP flash memory area, as described by the
+	  nxp,otp-uid devicetree node.

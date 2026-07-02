@@ -110,7 +110,7 @@ static void bt_clkreq_isr(const struct device *unused1, struct gpio_callback *un
 static void bt_apollo_controller_ready_wait(void)
 {
 	/* The CS pin is used to wake up the controller as well. If the controller is not ready
-	 * to receive the SPI packet, need to inactivate the CS at first and reconfigure the pin
+	 * to receive the SPI packet, need to deactivate the CS at first and reconfigure the pin
 	 * to CS function again before next sending attempt.
 	 */
 	gpio_pin_configure_dt(&cs_gpio, GPIO_OUTPUT_INACTIVE);

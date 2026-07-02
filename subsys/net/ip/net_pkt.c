@@ -45,7 +45,7 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 /* Make sure net_buf data size is large enough that IPv6
  * and possible extensions fit to the network buffer.
  * The check is done using an arbitrarily chosen value 96 by monitoring
- * wireshark traffic to see what the typical header lengts are.
+ * wireshark traffic to see what the typical header lengths are.
  * It is still recommended to use the default value 128 but allow smaller
  * value if really needed.
  */
@@ -2138,9 +2138,7 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 	net_pkt_set_orig_iface(clone_pkt, net_pkt_orig_iface(pkt));
 	net_pkt_set_captured(clone_pkt, net_pkt_is_captured(pkt));
 	net_pkt_set_eof(clone_pkt, net_pkt_eof(pkt));
-	net_pkt_set_ptp(clone_pkt, net_pkt_is_ptp(pkt));
 	net_pkt_set_ppp(clone_pkt, net_pkt_is_ppp(pkt));
-	net_pkt_set_lldp(clone_pkt, net_pkt_is_lldp(pkt));
 	net_pkt_set_ipv4_acd(clone_pkt, net_pkt_ipv4_acd(pkt));
 	net_pkt_set_tx_timestamping(clone_pkt, net_pkt_is_tx_timestamping(pkt));
 	net_pkt_set_rx_timestamping(clone_pkt, net_pkt_is_rx_timestamping(pkt));

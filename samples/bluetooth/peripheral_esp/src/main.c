@@ -2,6 +2,8 @@
 
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +23,22 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/services/bas.h>
+
+#ifdef CONFIG_ESP_USE_HARDWARE_SENSOR
+#include <zephyr/drivers/sensor.h>
+
+#if DT_NODE_HAS_STATUS(DT_ALIAS(ambient_temp0), okay)
+#define TEMP_NODE DT_ALIAS(ambient_temp0)
+#elif DT_NODE_HAS_STATUS(DT_ALIAS(dht0), okay)
+#define TEMP_NODE DT_ALIAS(dht0)
+#elif DT_NODE_HAS_STATUS(DT_ALIAS(die_temp0), okay)
+#define TEMP_NODE DT_ALIAS(die_temp0)
+#else
+#error "ESP_USE_HARDWARE_SENSOR requires a temperature sensor devicetree alias!"
+#endif
+
+static const struct device *temp_dev = DEVICE_DT_GET(TEMP_NODE);
+#endif
 
 #define SENSOR_1_NAME				"Temperature Sensor 1"
 #define SENSOR_2_NAME				"Temperature Sensor 2"
@@ -137,7 +155,7 @@ struct humidity_sensor {
 	struct es_measurement meas;
 };
 
-static bool simulate_temp;
+static bool ess_update;
 static struct temperature_sensor sensor_1 = {
 		.temp_value = 1200,
 		.lower_limit = -10000,
@@ -174,7 +192,7 @@ static struct humidity_sensor sensor_3 = {
 static void temp_ccc_cfg_changed(const struct bt_gatt_attr *attr,
 				 uint16_t value)
 {
-	simulate_temp = value == BT_GATT_CCC_NOTIFY;
+	ess_update = value == BT_GATT_CCC_NOTIFY;
 }
 
 struct read_es_measurement_rp {
@@ -358,23 +376,44 @@ BT_GATT_SERVICE_DEFINE(ess_svc,
 			   read_es_measurement, NULL, &sensor_3.meas),
 );
 
-static void ess_simulate(void)
+static void ess_update_data(void)
 {
 	static uint8_t i;
-	uint16_t val;
+	uint16_t val1 = 1200 + i;
+	uint16_t val2 = 1800 + i;
+	uint16_t humid = 6233 + (i % 13);
+
+#ifdef CONFIG_ESP_USE_HARDWARE_SENSOR
+	struct sensor_value temp_val, humid_val;
+	int rc;
+
+	if (temp_dev != NULL && sensor_sample_fetch(temp_dev) == 0) {
+		rc = sensor_channel_get(temp_dev, SENSOR_CHAN_AMBIENT_TEMP, &temp_val);
+		if (rc != 0) {
+			rc = sensor_channel_get(temp_dev, SENSOR_CHAN_DIE_TEMP, &temp_val);
+		}
+		if (rc == 0) {
+			val1 = (uint16_t)sensor_value_to_centi(&temp_val);
+			val2 = val1;
+		}
+
+		rc = sensor_channel_get(temp_dev, SENSOR_CHAN_HUMIDITY, &humid_val);
+		if (rc == 0) {
+			humid = (uint16_t)sensor_value_to_centi(&humid_val);
+		}
+	}
+#endif
 
 	if (!(i % SENSOR_1_UPDATE_IVAL)) {
-		val = 1200 + i;
-		update_temperature(NULL, &ess_svc.attrs[2], val, &sensor_1);
+		update_temperature(NULL, &ess_svc.attrs[2], val1, &sensor_1);
 	}
 
 	if (!(i % SENSOR_2_UPDATE_IVAL)) {
-		val = 1800 + i;
-		update_temperature(NULL, &ess_svc.attrs[9], val, &sensor_2);
+		update_temperature(NULL, &ess_svc.attrs[9], val2, &sensor_2);
 	}
 
 	if (!(i % SENSOR_3_UPDATE_IVAL)) {
-		sensor_3.humid_value = 6233 + (i % 13);
+		sensor_3.humid_value = humid;
 	}
 
 	if (!(i % INT8_MAX)) {
@@ -463,6 +502,15 @@ int main(void)
 {
 	int err;
 
+#ifdef CONFIG_ESP_USE_HARDWARE_SENSOR
+	if (!device_is_ready(temp_dev)) {
+		printk("Error: Temperature sensor device is not ready\n");
+		temp_dev = NULL;
+	} else {
+		printk("Temperature sensor device is ready\n");
+	}
+#endif
+
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
@@ -476,9 +524,9 @@ int main(void)
 	while (1) {
 		k_sleep(K_SECONDS(1));
 
-		/* Temperature simulation */
-		if (simulate_temp) {
-			ess_simulate();
+		/* Environmental Sensing update */
+		if (ess_update) {
+			ess_update_data();
 		}
 
 		/* Battery level simulation */

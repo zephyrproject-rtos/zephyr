@@ -25,6 +25,7 @@ requests>=2.32.4
 semver
 tqdm>=4.67.1
 reuse>=6.0.0
+spdx-python-model>=0.0.5
 
 # for ram/rom reports
 anytree

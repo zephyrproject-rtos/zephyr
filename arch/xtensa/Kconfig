@@ -36,17 +36,6 @@ config XTENSA_ENABLE_BACKTRACE
 	help
 	  Enable this config option to print backtrace on panic exception
 
-config XTENSA_BACKTRACE_EXCEPTION_DUMP_HOOK
-	bool "Send backtrace to exception dump hook"
-	depends on XTENSA_ENABLE_BACKTRACE && EXCEPTION_DUMP_HOOK
-	default y if EXCEPTION_DUMP_HOOK_ONLY
-	help
-	  Enable this option to forward Xtensa panic backtrace output to
-	  exception dump hook.
-
-	  When EXCEPTION_DUMP_HOOK_ONLY is enabled, this defaults to y to
-	  preserve hook-only backtrace output.
-
 config XTENSA_SMALL_VECTOR_TABLE_ENTRY
 	bool "Workaround for small vector table entries"
 	help
@@ -276,7 +265,7 @@ endif # CPU_HAS_MMU
 
 if CPU_HAS_MPU
 
-menuconfig XTENSA_MPU
+config XTENSA_MPU
 	bool "Xtensa MPU Support"
 	select MPU
 	select SRAM_REGION_PERMISSIONS
@@ -291,20 +280,6 @@ menuconfig XTENSA_MPU
 	help
 	  Enable support for Xtensa Memory Protection Unit.
 
-if XTENSA_MPU
-
-config XTENSA_MPU_DEFAULT_MEM_TYPE
-	hex "Default Memory Type"
-	default 0x6
-	help
-	  Default memory type for memory regions: device, shareable, not interruptible,
-	  and not cached.
-
-	  If userspace is enabled, it will be used to restore the memory type of
-	  the region being removed from a memory domain.
-
-endif # XTENSA_MPU
-
 endif # CPU_HAS_MPU
 
 config XTENSA_SYSCALL_USE_HELPER
@@ -315,6 +290,14 @@ config XTENSA_SYSCALL_USE_HELPER
 	  Use syscall helpers for passing more than 3 arguments.
 	  This is a workaround for toolchains where they have
 	  issue modeling register usage.
+
+config XTENSA_SYSCALL_USE_HELPER_ALL
+	bool "Use userspace syscall helper for all argument counts"
+	depends on XTENSA_SYSCALL_USE_HELPER
+	help
+	  Also route the 0-3 argument syscall invocations through the
+	  out-of-line helper functions, in addition to the 4-6 argument
+	  ones already handled by XTENSA_SYSCALL_USE_HELPER.
 
 config XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE
 	bool "Emulate unsupported unsigned loads / stores"

@@ -418,7 +418,8 @@ void nrf_wifi_rx_bcn_prb_resp_frm(void *vif_ctx,
 	k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
 	if (!rpu_ctx_zep->rpu_ctx) {
 		LOG_DBG("%s: RPU context not initialized", __func__);
-		goto out;
+		k_mutex_unlock(&vif_ctx_zep->vif_lock);
+		return;
 	}
 
 	frame_length = nrf_wifi_osal_nbuf_data_size(nwb);
@@ -434,14 +435,13 @@ void nrf_wifi_rx_bcn_prb_resp_frm(void *vif_ctx,
 				      frame_length);
 	}
 
+	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+
 	bcn_prb_resp_info.rssi = MBM_TO_DBM(val);
 	bcn_prb_resp_info.frequency = frequency;
 	bcn_prb_resp_info.frame_length = frame_length;
 
 	wifi_mgmt_raise_raw_scan_result_event(vif_ctx_zep->zep_net_if_ctx,
 					      &bcn_prb_resp_info);
-
-out:
-	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 }
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */

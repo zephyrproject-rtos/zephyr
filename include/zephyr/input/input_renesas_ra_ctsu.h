@@ -10,8 +10,8 @@
  * @ingroup renesas_ra_ctsu_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_ZEPHYR_INPUT_INPUT_RENESAS_RA_CTSU_H_
-#define ZEPHYR_INCLUDE_ZEPHYR_INPUT_INPUT_RENESAS_RA_CTSU_H_
+#ifndef ZEPHYR_INCLUDE_INPUT_INPUT_RENESAS_RA_CTSU_H_
+#define ZEPHYR_INCLUDE_INPUT_INPUT_RENESAS_RA_CTSU_H_
 
 /**
  * @defgroup renesas_ra_ctsu_interface Renesas RA CTSU
@@ -56,4 +56,4 @@ __syscall int renesas_ra_ctsu_group_configure(const struct device *dev,
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_ZEPHYR_INPUT_INPUT_RENESAS_RA_CTSU_H_ */
+#endif /* ZEPHYR_INCLUDE_INPUT_INPUT_RENESAS_RA_CTSU_H_ */

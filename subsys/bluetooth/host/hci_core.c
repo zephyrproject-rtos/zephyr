@@ -453,7 +453,8 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	 * syswq, then we cannot suspend and wait. We have to send the
 	 * command from the current context.
 	 */
-	if (!IS_ENABLED(CONFIG_BT_TX_PROCESSOR_THREAD) && k_current_get() == &k_sys_work_q.thread) {
+	if (!IS_ENABLED(CONFIG_BT_TX_PROCESSOR_THREAD) &&
+	    k_current_get() == k_sys_work_q.thread_id) {
 		/* drain the command queue until we get to send the command of interest. */
 		struct net_buf *cmd = NULL;
 
@@ -4677,7 +4678,7 @@ static void rx_work_handler(struct k_work *work)
 k_tid_t bt_testing_tx_tid_get(void)
 {
 	/* We now TX everything from the syswq */
-	return &k_sys_work_q.thread;
+	return k_sys_work_q.thread_id;
 }
 
 #if defined(CONFIG_BT_ISO)
@@ -4741,7 +4742,7 @@ int bt_enable(bt_ready_cb_t cb)
 	k_work_queue_start(&bt_workq, rx_thread_stack,
 			   CONFIG_BT_RX_STACK_SIZE,
 			   K_PRIO_COOP(CONFIG_BT_RX_PRIO), NULL);
-	k_thread_name_set(&bt_workq.thread, "BT RX WQ");
+	k_thread_name_set(bt_workq.thread_id, "BT RX WQ");
 #endif
 
 	err = bt_hci_open(bt_dev.hci, bt_recv);
@@ -4825,7 +4826,7 @@ int bt_disable(void)
 
 #if defined(CONFIG_BT_RECV_WORKQ_BT)
 	/* Abort RX thread */
-	k_thread_abort(&bt_workq.thread);
+	k_thread_abort(bt_workq.thread_id);
 #endif
 
 	/* Some functions rely on checking this bitfield */

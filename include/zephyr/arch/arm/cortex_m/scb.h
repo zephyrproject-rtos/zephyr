@@ -11,8 +11,8 @@
  * System control block context helpers for backup and restore
  */
 
-#ifndef ARM_CORTEX_M_SCB_H_
-#define ARM_CORTEX_M_SCB_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_SCB_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_SCB_H_
 
 #include <stdint.h>
 #include <cmsis_core.h>
@@ -85,4 +85,4 @@ void z_arm_restore_scb_context(const struct scb_context *context);
 
 /** @} */
 
-#endif /* ARM_CORTEX_M_SCB_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_SCB_H_ */

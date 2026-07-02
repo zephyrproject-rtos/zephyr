@@ -45,7 +45,7 @@ struct settings_line_dup_check_arg {
 };
 
 #ifdef CONFIG_SETTINGS_ENCODE_LEN
-/* in storage line contex */
+/* in storage line context */
 struct line_entry_ctx {
 	void *stor_ctx;
 	off_t seek; /* offset of id-value pair within the file */

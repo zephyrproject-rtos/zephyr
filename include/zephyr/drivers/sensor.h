@@ -20,7 +20,7 @@
  * @ingroup io_interfaces
  * @{
  *
- * @defgroup sensor_interface_ext Device-specific Sensor API extensions
+ * @defgroup sensor_interface_ext Device-specific Sensor API extensions and Devicetree constants.
  * @{
  * @}
  */

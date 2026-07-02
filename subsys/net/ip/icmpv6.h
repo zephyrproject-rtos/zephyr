@@ -106,7 +106,7 @@ struct net_icmpv6_mld_query {
 	uint16_t max_response_code;
 	uint16_t reserved;
 	uint8_t mcast_address[NET_IPV6_ADDR_SIZE];
-	uint16_t flagg; /*S, QRV & QQIC */
+	uint16_t flag; /*S, QRV & QQIC */
 	uint16_t num_sources;
 } __packed;
 

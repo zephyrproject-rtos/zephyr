@@ -38,7 +38,7 @@ BUILD_ASSERT((CONFIG_EC_HOST_CMD_HANDLER_BUFFER_ALIGN % UDC_BUF_ALIGN) == 0, "Bu
 
 /* Timeout for receiving entire request. */
 #define OUT_TRANSFER_TIMEOUT_MS 100
-/* Timeout for sending response, starting from notifing host that it is ready. */
+/* Timeout for sending response, starting from notifying host that it is ready. */
 #define IN_TRANSFER_TIMEOUT_MS  200
 
 enum ec_host_cmd_usb_irq_type {
@@ -65,12 +65,12 @@ enum ec_host_cmd_usb_state {
 
 	/*
 	 * Receiving ongoing. The first part of the host command request has been received,
-	 * potentialy waiting for the rest.
+	 * potentially waiting for the rest.
 	 */
 	USB_EC_HOST_CMD_STATE_RECEIVING,
 
 	/*
-	 * The host command request has been fully received and the command is being proccessed.
+	 * The host command request has been fully received and the command is being processed.
 	 * The host command handler always has to send a respond, even if the request is invalid.
 	 */
 	USB_EC_HOST_CMD_STATE_PROCESSING,

@@ -675,11 +675,11 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 
 		dns_postprocess_server(ctx, idx);
 
-		NET_DBG("[%d] %.*s%s%s%s%s%s%s%s", i, (int)server_len, servers[i],
+		NET_DBG("[%d] %.*s%s%s%s%s%s%s%s", idx, (int)server_len, servers[i],
 			IS_ENABLED(CONFIG_MDNS_RESOLVER) ?
-			(ctx->servers[i].is_mdns ? " mDNS" : "") : "",
+			(ctx->servers[idx].is_mdns ? " mDNS" : "") : "",
 			IS_ENABLED(CONFIG_LLMNR_RESOLVER) ?
-			(ctx->servers[i].is_llmnr ? " LLMNR" : "") : "",
+			(ctx->servers[idx].is_llmnr ? " LLMNR" : "") : "",
 			iface_str != NULL ? " via " : "",
 			iface_str != NULL ? iface_str : "",
 			source != DNS_SOURCE_UNKNOWN ? " (" : "",
@@ -725,13 +725,13 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 
 		dns_postprocess_server(ctx, idx);
 
-		NET_DBG("[%d] %s%s%s%s%s%s%s%s", i,
+		NET_DBG("[%d] %s%s%s%s%s%s%s%s", idx,
 			net_sprint_addr(servers_sa[i]->sa_family,
 					&net_sin(servers_sa[i])->sin_addr),
 			IS_ENABLED(CONFIG_MDNS_RESOLVER) ?
-			(ctx->servers[i].is_mdns ? " mDNS" : "") : "",
+			(ctx->servers[idx].is_mdns ? " mDNS" : "") : "",
 			IS_ENABLED(CONFIG_LLMNR_RESOLVER) ?
-			(ctx->servers[i].is_llmnr ? " LLMNR" : "") : "",
+			(ctx->servers[idx].is_llmnr ? " LLMNR" : "") : "",
 			interfaces != NULL ? " via " : "",
 			interfaces != NULL ? iface_str : "",
 			source != DNS_SOURCE_UNKNOWN ? " (" : "",

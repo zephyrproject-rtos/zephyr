@@ -75,8 +75,8 @@ See :zephyr_file:`share/zephyr-package/cmake` for details.
 Software bill of materials: ``west spdx``
 *****************************************
 
-This command generates SPDX 2.2 or 2.3 tag-value documents, creating relationships
-from source files to the corresponding generated build files.
+This command generates SPDX documents (2.2, 2.3 tag-value format, or 3.0 JSON-LD format),
+creating relationships from source files to the corresponding generated build files.
 ``SPDX-License-Identifier`` comments in source files are scanned and filled
 into the SPDX documents.
 
@@ -105,11 +105,12 @@ To use this command:
 
       west spdx -d BUILD_DIR
 
-   By default, this generates SPDX 2.3 documents. To generate SPDX 2.2 documents instead:
+   By default, this generates SPDX 2.3 tag-value documents. To generate SPDX 2.2 or 3.0 documents
+   instead, use the ``--spdx-version`` option. For example:
 
    .. code-block:: bash
 
-      west spdx -d BUILD_DIR --spdx-version 2.2
+      west spdx -d BUILD_DIR --spdx-version 3.0
 
 .. note::
 
@@ -126,18 +127,25 @@ To use this command:
 This generates the following SPDX bill-of-materials (BOM) documents in
 :file:`BUILD_DIR/spdx/`:
 
+**For SPDX 2.x (tag-value format):**
+
 - :file:`app.spdx`: BOM for the application source files used for the build
 - :file:`zephyr.spdx`: BOM for the specific Zephyr source code files used for the build
 - :file:`build.spdx`: BOM for the built output files
 - :file:`modules-deps.spdx`: BOM for modules dependencies. Check
   :ref:`modules <modules-vulnerability-monitoring>` for more details.
 
-Each file in the bill-of-materials is scanned, so that its hashes (SHA256 and
-SHA1) can be recorded, along with any detected licenses if an
+**For SPDX 3.0 (JSON-LD format):**
+
+Same file names as above, but with the ``.jsonld`` extension.
+
+Each file in the bill-of-materials is scanned, so that its hashes (SHA256, SHA1, and MD5)
+can be recorded, along with any detected licenses if an
 ``SPDX-License-Identifier`` comment appears in the file.
 
 Copyright notices are extracted using the third-party :command:`reuse` tool from the REUSE group.
-When found, these notices are added to SPDX documents as ``FileCopyrightText`` fields.
+When found, these notices are added to SPDX documents as ``FileCopyrightText`` fields (SPDX 2.x)
+or copyright properties (SPDX 3.0).
 
 .. note::
    Copyright extraction uses heuristics that may not capture complete notice text, so
@@ -157,9 +165,9 @@ source files that are compiled to generate the built library files.
 - ``-s SPDX_DIR``: specifies an alternate directory where the SPDX documents
   should be written instead of :file:`BUILD_DIR/spdx/`.
 
-- ``--spdx-version {2.2,2.3}``: specifies which SPDX specification version to use.
+- ``--spdx-version {2.2,2.3,3.0}``: specifies which SPDX specification version to use.
   Defaults to ``2.3``. SPDX 2.3 includes additional fields like ``PrimaryPackagePurpose``
-  that are not available in SPDX 2.2.
+  that are not available in SPDX 2.2. SPDX 3.0 generates JSON-LD format documents.
 
 - ``--analyze-includes``: in addition to recording the compiled source code
   files (e.g. ``.c``, ``.S``) in the bills-of-materials, also attempt to

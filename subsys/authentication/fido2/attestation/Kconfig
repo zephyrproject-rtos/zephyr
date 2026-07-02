@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Siratul Islam <email@sirat.me>
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Attestation"
+
+choice FIDO2_ATTESTATION_BACKEND
+	prompt "Attestation backend"
+	default FIDO2_ATTESTATION_SELF
+
+config FIDO2_ATTESTATION_SELF
+	bool "Self (packed, credential key)"
+	help
+	  Use self attestation. This is the simplest form of attestation
+	  and does not require any additional keys or certificates.
+
+config FIDO2_ATTESTATION_CUSTOM
+	bool "Custom (application-provided)"
+	help
+	  Use a custom attestation backend, where the authenticator uses
+	  application-provided keys or certificates for attestation.
+
+config FIDO2_ATTESTATION_NONE
+	bool "None"
+	help
+	  Do not provide any attestation.
+
+endchoice
+
+endmenu

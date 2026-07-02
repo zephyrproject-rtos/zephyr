@@ -929,7 +929,7 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 #define ZSOCK_SO_OOBINLINE 10
 /** Socket priority */
 #define ZSOCK_SO_PRIORITY 12
-/** Socket lingers on close (ignored, for compatibility) */
+/** Socket lingers on close. Takes a struct net_linger as argument. */
 #define ZSOCK_SO_LINGER 13
 /** Allow multiple sockets to reuse a single port */
 #define ZSOCK_SO_REUSEPORT 15

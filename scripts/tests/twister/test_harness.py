@@ -1063,6 +1063,7 @@ def test_gtest_failed(gtest):
         gtest.instance.get_case_by_name("id.suite_name.test_name").status
         == TwisterStatus.FAIL
     )
+    assert gtest.reason == "Gtest failure - failed test id.suite_name.test_name"
 
 def test_gtest_parametrized_failed(gtest):
     process_logs(
@@ -1091,6 +1092,7 @@ def test_gtest_parametrized_failed(gtest):
         gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name").status
         == TwisterStatus.FAIL
     )
+    assert gtest.reason == "Gtest failure - failed test id.suite_name.test_name.0.parametrized_test_name"
 
 
 def test_gtest_skipped(gtest):
@@ -1360,6 +1362,7 @@ def test_gtest_one_fail(gtest):
         ],
     )
     assert gtest.status == TwisterStatus.FAIL
+    assert gtest.reason == "Gtest failure"
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
     assert gtest.instance.get_case_by_name("id.suite_name.test0") != TwisterStatus.NONE
@@ -1402,6 +1405,7 @@ def test_gtest_parametrized_one_fail(gtest):
         ],
     )
     assert gtest.status == TwisterStatus.FAIL
+    assert gtest.reason == "Gtest failure"
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
     assert (
@@ -1420,6 +1424,38 @@ def test_gtest_parametrized_one_fail(gtest):
         gtest.instance.get_case_by_name("id.suite_name.test_name.1.parametrized_test_name").status
         == TwisterStatus.FAIL
     )
+
+def test_gtest_multiple_failures(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test0"
+            ),
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_FAIL_STATE, suite="suite_name", test="test0"
+            ),
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test1"
+            ),
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_FAIL_STATE, suite="suite_name", test="test1"
+            ),
+            SAMPLE_GTEST_END,
+        ],
+    )
+    assert gtest.status == TwisterStatus.FAIL
+    assert gtest.reason == "Gtest failure - 2 tests failed"
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test0").status
+        == TwisterStatus.FAIL
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test1").status
+        == TwisterStatus.FAIL
+    )
+
 
 def test_gtest_one_fail_with_variant(gtest):
     process_logs(
@@ -1442,6 +1478,7 @@ def test_gtest_one_fail_with_variant(gtest):
         ],
     )
     assert gtest.status == "failed"
+    assert gtest.reason == "Gtest failure"
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
     assert gtest.instance.get_case_by_name("id.suite_name.test0") is not None
@@ -1479,6 +1516,7 @@ def test_gtest_parametrized_one_fail_with_variant(gtest):
         ],
     )
     assert gtest.status == "failed"
+    assert gtest.reason == "Gtest failure"
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
     assert gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name") is not None
@@ -1508,6 +1546,7 @@ def test_gtest_one_fail_with_variant_and_param(gtest):
         ],
     )
     assert gtest.status == "failed"
+    assert gtest.reason == "Gtest failure"
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
     assert gtest.instance.get_case_by_name("id.suite_name.test0") is not None
@@ -1545,6 +1584,7 @@ def test_gtest_parametrized_one_fail_with_variant_and_param(gtest):
         ],
     )
     assert gtest.status == "failed"
+    assert gtest.reason == "Gtest failure"
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
     assert gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name") is not None
@@ -1743,6 +1783,26 @@ def test_gtest_parametrized_repeated_run(gtest):
                 ),
             ],
         )
+
+
+def test_gtest_did_not_finish(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name"
+            ),
+            # simulates a crash/hang mid-test
+            SAMPLE_GTEST_END,
+        ],
+    )
+    assert gtest.status == TwisterStatus.FAIL
+    assert gtest.reason == "Gtest failure - test id.suite_name.test_name did not finish"
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name").status
+        == TwisterStatus.STARTED
+    )
 
 
 def test_bsim_build(monkeypatch, tmp_path):

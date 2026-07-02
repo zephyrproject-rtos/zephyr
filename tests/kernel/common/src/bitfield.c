@@ -29,12 +29,28 @@
  */
 
 /**
- * @brief Test bitfield operations
+ * @brief Verify single-bit and bitfield set/clear/test primitives operate on the correct bit.
  *
- * @see sys_test_bit(), sys_set_bit(), sys_clear_bit(),
- * sys_bitfield_set_bit(), sys_bitfield_clear_bit(),
- * sys_bitfield_test_bit(), sys_bitfield_test_and_set_bit(),
- * sys_bitfield_test_and_clear_bit()
+ * @ingroup kernel_bitfield_tests
+ *
+ * @details
+ * Exercises the memory-mapped bit manipulation helpers across every bit of a word
+ * and of a large multi-byte bitfield. Passing proves each primitive sets, clears,
+ * tests and atomically test-and-set/clears only the addressed bit, returns the
+ * prior bit state, and leaves neighbouring bits untouched on both endiannesses.
+ *
+ * Test steps:
+ * - For each bit 0..31 of a 32-bit word: set, test, clear and re-test the bit, then
+ *   exercise sys_test_and_set_bit() and sys_test_and_clear_bit() checking returned
+ *   prior state and resulting value.
+ * - For each bit of a BITFIELD_SIZE-bit array: repeat the same sequence using the
+ *   sys_bitfield_* helpers, validating the affected byte via BIT_INDEX/BIT_VAL.
+ *
+ * Expected result:
+ * - Every set/clear/test reflects the expected bit value and every test-and-modify
+ *   call reports the correct previous state.
+ *
+ * @see sys_set_bit()
  */
 ZTEST(bitfield, test_bitfield)
 {

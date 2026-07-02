@@ -17,6 +17,7 @@
 		zephyr,flash-controller = &fmu;
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
+		zephyr,crc = &crc;
 	};
 
 	aliases {
@@ -99,6 +100,10 @@
 };
 
 &rtc {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };
 

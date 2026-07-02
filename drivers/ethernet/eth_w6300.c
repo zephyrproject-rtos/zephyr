@@ -393,7 +393,6 @@ static void w6300_update_link_status(const struct device *dev)
 
 	if (physr & W6300_PHYSR_LNK) {
 		if (!ctx->state.is_up) {
-			LOG_INF("%s: Link up", dev->name);
 			ctx->state.is_up = true;
 			net_eth_carrier_on(ctx->iface);
 		}
@@ -415,7 +414,6 @@ static void w6300_update_link_status(const struct device *dev)
 		}
 	} else {
 		if (ctx->state.is_up) {
-			LOG_INF("%s: Link down", dev->name);
 			ctx->state.is_up = false;
 			ctx->state.speed = 0;
 			net_eth_carrier_off(ctx->iface);
@@ -532,9 +530,6 @@ static int w6300_set_config(const struct device *dev,
 			ctx->mac_addr[2], ctx->mac_addr[3],
 			ctx->mac_addr[4], ctx->mac_addr[5]);
 
-		net_if_set_link_addr(iface, ctx->mac_addr,
-				     sizeof(ctx->mac_addr),
-				     NET_LINK_ETHERNET);
 		return 0;
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 		if (!IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE)) {

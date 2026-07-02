@@ -35,6 +35,9 @@ tests:
   printk.format:
     tags: clib
   printk.format_newlib:
+    toolchain_exclude:
+      - zephyr/gnu
+      - zephyr/llvm
     tags:
       - clib
       - newlib

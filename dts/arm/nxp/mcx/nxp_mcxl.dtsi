@@ -74,7 +74,7 @@
 		#clock-cells = <1>;
 
 		reset: reset {
-			compatible = "nxp,lpc-syscon-reset";
+			compatible = "nxp,mrcc-reset";
 			#reset-cells = <1>;
 		};
 	};
@@ -211,6 +211,8 @@
 	crc: crc@8a000 {
 		compatible = "nxp,crc";
 		reg = <0x8a000 0x1000>;
+		clocks = <&syscon MCUX_CRC_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(0, 9)>;
 		status = "disabled";
 	};
 };

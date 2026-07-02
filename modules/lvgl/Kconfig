@@ -12,6 +12,9 @@ config LVGL
 
 if LVGL
 
+config LV_DRAW_BUF_ALIGN
+	int
+
 config LV_USE_MONKEY
 	bool
 
@@ -190,6 +193,9 @@ endif # LV_Z_RUN_LVGL_ON_WORKQUEUE
 config LV_USE_DRAW_DMA2D
 	bool
 
+config LV_USE_DRAW_DMA2D_INTERRUPT
+	bool
+
 config LV_DRAW_DMA2D_HAL_INCLUDE
 	string
 	help
@@ -203,7 +209,6 @@ config LV_USE_DRAW_DAVE2D
 config LV_Z_USE_OSAL
 	bool "Use OSAL enabling parallel rendering"
 	depends on DYNAMIC_THREAD
-	select LV_USE_PRIVATE_API
 	help
 	  Use the Zephyr LVGL OSAL to enable parallel rendering
 	  pipelines.

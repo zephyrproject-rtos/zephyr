@@ -125,7 +125,7 @@ ZTEST(sensor_api, test_sensor_get_channels)
 	/* test fetch all channel */
 	zassert_equal(sensor_sample_fetch(dev), RETURN_SUCCESS,
 			"fail to fetch sample");
-	/* Get and check channels value except for chanel 0. */
+	/* Get and check channels value except for channel 0. */
 	for (int i = 1; i < TOTAL_CHAN_ELEMENTS; i++) {
 		zassert_equal(sensor_channel_get(dev, chan_elements[i].chan,
 				&data), RETURN_SUCCESS, "fail to get channel");

@@ -15,7 +15,7 @@
 /**
  * @brief ROHM Semiconductor BD8LB600FS open load and over-current detection
  * @defgroup bd8lb600fs_interface BD8LB600FS
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_rohm
  * @{
  */
 

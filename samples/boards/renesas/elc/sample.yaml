@@ -2,8 +2,14 @@ sample:
   name: renesas_elc
 tests:
   sample.boards.renesas.elc:
+    platform_type:
+      - mcu
     tags: renesas_elc
     filter: dt_compat_enabled("renesas,ra-elc")
+    vendor_allow:
+      - renesas
+    integration_platforms:
+      - ek_ra6m5/r7fa6m5bh3cfc
     harness: console
     harness_config:
       type: multi_line

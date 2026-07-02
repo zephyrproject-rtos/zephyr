@@ -21,7 +21,7 @@
 /**
  * @brief Bosch BMP581 Barometric pressure sensor
  * @defgroup bmp581_interface BMP581
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_bosch
  * @{
  */
 

@@ -330,7 +330,7 @@ static int init_ipc(void)
 		k_sem_take(&bound_sem, K_FOREVER);
 	} while (!ipc0_bounded);
 
-	LOG_INF("IPC connection estabilished");
+	LOG_INF("IPC connection established");
 
 	return 0;
 }

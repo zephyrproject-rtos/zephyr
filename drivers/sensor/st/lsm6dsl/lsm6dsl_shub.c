@@ -204,7 +204,7 @@ static struct lsm6dsl_shub_sens_list {
 #ifdef CONFIG_LSM6DSL_EXT0_LIS2MDL
 	{
 		/* LIS2MDL */
-		.i2c_addr       = { 0x1E },
+		.i2c_addr	= { 0x3C }, /* 8-bit address */
 		.wai_addr       = 0x4F,
 		.wai_val        = 0x40,
 		.out_data_addr  = 0x68,
@@ -216,7 +216,7 @@ static struct lsm6dsl_shub_sens_list {
 #ifdef CONFIG_LSM6DSL_EXT0_LIS3MDL
 	{
 		/* LIS3MDL */
-		.i2c_addr       = {0x1C, 0x1E},
+		.i2c_addr	= { 0x38, 0x3C }, /* 8-bit address */
 		.wai_addr       = 0x0F,
 		.wai_val        = 0x3D,
 		.out_data_addr  = 0x28,
@@ -228,7 +228,7 @@ static struct lsm6dsl_shub_sens_list {
 #ifdef CONFIG_LSM6DSL_EXT0_LPS22HB
 	{
 		/* LPS22HB */
-		.i2c_addr       = { 0x5C, 0x5D },
+		.i2c_addr	= { 0xB8, 0xBA }, /* 8-bit address */
 		.wai_addr       = 0x0F,
 		.wai_val        = 0xB1,
 		.out_data_addr  = 0x28,

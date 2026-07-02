@@ -2,6 +2,8 @@ sample:
   name: Stream sample on Data Ready trigger
 tests:
   sample.sensor.stream_drdy:
+    platform_type:
+      - mcu
     harness: console
     tags: sensors
     filter: dt_alias_exists("stream0")

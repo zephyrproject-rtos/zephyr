@@ -68,7 +68,7 @@
 			#clock-cells = <1>;
 
 			reset: reset {
-				compatible = "nxp,lpc-syscon-reset";
+				compatible = "nxp,mrcc-reset";
 				#reset-cells = <1>;
 			};
 		};
@@ -299,7 +299,7 @@
 				index = <0>;
 				interrupts = <46 0>;
 				#pwm-cells = <3>;
-				clocks = <&syscon MCUX_BUS_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
 				nxp,prescaler = <128>;
 				status = "disabled";
 				run-in-wait;
@@ -310,7 +310,7 @@
 				index = <1>;
 				interrupts = <47 0>;
 				#pwm-cells = <3>;
-				clocks = <&syscon MCUX_BUS_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
 				nxp,prescaler = <128>;
 				status = "disabled";
 				run-in-wait;
@@ -321,7 +321,7 @@
 				index = <2>;
 				interrupts = <48 0>;
 				#pwm-cells = <3>;
-				clocks = <&syscon MCUX_BUS_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
 				nxp,prescaler = <128>;
 				status = "disabled";
 				run-in-wait;
@@ -339,7 +339,7 @@
 				index = <0>;
 				interrupts = <81 0>;
 				#pwm-cells = <3>;
-				clocks = <&syscon MCUX_BUS_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
 				nxp,prescaler = <128>;
 				status = "disabled";
 				run-in-wait;
@@ -350,7 +350,7 @@
 				index = <1>;
 				interrupts = <82 0>;
 				#pwm-cells = <3>;
-				clocks = <&syscon MCUX_BUS_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
 				nxp,prescaler = <128>;
 				status = "disabled";
 				run-in-wait;
@@ -361,7 +361,7 @@
 				index = <2>;
 				interrupts = <83 0>;
 				#pwm-cells = <3>;
-				clocks = <&syscon MCUX_BUS_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
 				nxp,prescaler = <128>;
 				status = "disabled";
 				run-in-wait;
@@ -492,6 +492,13 @@
 			status = "disabled";
 		};
 
+		waketimer0: wake-timer@400ae000 {
+			compatible = "nxp,wake-timer";
+			reg = <0x400ae000 0x1000>;
+			interrupts = <58 0>;
+			status = "disabled";
+		};
+
 		temp0: temp0 {
 			compatible = "nxp,lpadc-temp40";
 			status = "disabled";
@@ -558,6 +565,8 @@
 		crc: crc@4008a000 {
 			compatible = "nxp,crc";
 			reg = <0x4008a000 0x1000>;
+			clocks = <&syscon MCUX_CRC_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(0, 13)>;
 			status = "disabled";
 		};
 	};

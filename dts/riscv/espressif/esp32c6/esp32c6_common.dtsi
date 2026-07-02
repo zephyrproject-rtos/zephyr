@@ -399,6 +399,12 @@
 		lp_uart: uart@600b1400 {
 			compatible = "espressif,esp32-lpuart";
 			reg = <0x600b1400 DT_SIZE_K(4)>;
+			interrupts = <LP_UART_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			tx-pin = <5>;
+			rx-pin = <4>;
+			rts-pin = <2>;
+			cts-pin = <3>;
 			status = "disabled";
 			current-speed = <115200>;
 		};

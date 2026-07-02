@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/mp13/stm32mp13.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32mp133", "st,stm32mp13", "simple-bus";
+
+		eth1: mac1: ethernet@5800e000 {
+			compatible = "st,stm32mp13-ethernet", "st,stm32h7-ethernet",
+				     "st,stm32-ethernet";
+			reg = <0x5800e000 0x2000>;
+			clock-names = "stm-eth", "mac-clk", "mac-clk-tx", "mac-clk-rx", "eth-ker";
+			clocks = <&rcc STM32_CLOCK(AHB6, 27)>,
+				 <&rcc STM32_CLOCK(AHB6, 28)>,
+				 <&rcc STM32_CLOCK(AHB6, 29)>,
+				 <&rcc STM32_CLOCK(AHB6, 30)>,
+				 <&rcc STM32_SRC_PLL4_P ETH2_SEL(0)>;
+			interrupts = <GIC_SPI 97 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 98 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+
+			mdio1: mdio {
+				compatible = "st,stm32-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+	};
+};

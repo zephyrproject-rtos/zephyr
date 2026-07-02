@@ -28,10 +28,9 @@ int main(void)
 	}
 
 #ifdef CONFIG_GROVE_LCD_RGB
-	const struct device *glcd;
+	const struct device *glcd = DEVICE_DT_GET_ANY(seeed_grove_lcd_rgb);
 
-	glcd = device_get_binding(GROVE_LCD_NAME);
-	if (glcd == NULL) {
+	if (!device_is_ready(glcd)) {
 		printf("Failed to get Grove LCD\n");
 		return 0;
 	}

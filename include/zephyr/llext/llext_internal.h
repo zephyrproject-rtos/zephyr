@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_LLEXT_INTERNAL_H
-#define ZEPHYR_LLEXT_INTERNAL_H
+#ifndef ZEPHYR_INCLUDE_LLEXT_LLEXT_INTERNAL_H_
+#define ZEPHYR_INCLUDE_LLEXT_LLEXT_INTERNAL_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +32,10 @@ const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct llext *ext, u
 static inline const char *llext_string(const struct llext_loader *ldr, const struct llext *ext,
 	enum llext_mem mem_idx, unsigned int idx)
 {
+	if (idx >= ext->mem_size[mem_idx]) {
+		return NULL;
+	}
+
 	return (const char *)ext->mem[mem_idx] + idx;
 }
 
@@ -55,6 +59,9 @@ static inline const char *llext_symbol_name(const struct llext_loader *ldr,
 					    const elf_sym_t *sym)
 {
 	if (ELF_ST_TYPE(sym->st_info) == STT_SECTION) {
+		if (sym->st_shndx >= ext->sect_cnt) {
+			return NULL;
+		}
 		return llext_section_name(ldr, ext, ext->sect_hdrs + sym->st_shndx);
 	} else {
 		return llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym->st_name);
@@ -122,4 +129,4 @@ int arch_elf_relocate_global(struct llext_loader *loader, struct llext *ext, con
 }
 #endif
 
-#endif /* ZEPHYR_LLEXT_INTERNAL_H */
+#endif /* ZEPHYR_INCLUDE_LLEXT_LLEXT_INTERNAL_H_ */

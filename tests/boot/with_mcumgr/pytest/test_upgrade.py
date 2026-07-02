@@ -7,10 +7,10 @@ import logging
 from pathlib import Path
 
 import pytest
-from twister_harness import DeviceAdapter, MCUmgr, Shell
-from twister_harness.helpers.utils import find_in_config, match_lines, match_no_lines
-from utils import check_with_mcumgr_command, check_with_shell_command
-from west_sign_wrapper import west_sign_with_imgtool
+from twister_harness import DeviceAdapter, MCUmgr, MCUmgrBle, Shell
+from twister_harness.helpers.domains_helper import get_default_domain_name
+from twister_harness.helpers.shell import ShellMCUbootCommandParsed
+from twister_harness.helpers.utils import find_in_config
 
 logger = logging.getLogger(__name__)
 
@@ -18,98 +18,88 @@ logger = logging.getLogger(__name__)
 WELCOME_STRING = "smp_sample: build time:"
 
 
-def create_signed_image(build_dir: Path, app_build_dir: Path, version: str) -> Path:
-    image_to_test = Path(build_dir) / 'test_{}.signed.bin'.format(
-        version.replace('.', '_').replace('+', '_'))
-    origin_key_file = find_in_config(
-        Path(build_dir) / 'mcuboot' / 'zephyr' / '.config',
-        'CONFIG_BOOT_SIGNATURE_KEY_FILE'
+def get_sign_version(app_build_dir: Path) -> str:
+    version = find_in_config(
+        Path(app_build_dir) / 'zephyr' / '.config',
+        'CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION'
     )
-    west_sign_with_imgtool(
-        build_dir=Path(app_build_dir),
-        output_bin=image_to_test,
-        key_file=Path(origin_key_file),
-        version=version
-    )
-    assert image_to_test.is_file()
-    return image_to_test
+    assert version is not None
+    return version
 
 
-def get_upgrade_string_to_verify(build_dir: Path) -> str:
-    sysbuild_config = Path(build_dir) / 'zephyr' / '.config'
-    if find_in_config(sysbuild_config, 'SB_CONFIG_MCUBOOT_MODE_SWAP_USING_OFFSET'):
-        return 'Starting swap using offset algorithm'
-    return 'Starting swap using move algorithm'
+def get_new_app_build_dir(
+        dut: DeviceAdapter, required_build_dirs: list[str], index: int = 0
+) -> Path:
+    assert len(required_build_dirs), "No required application provided"
+    # If `build: false` was set then first required application is used as main application
+    if str(dut.device_config.current_build_dir) == required_build_dirs[0]:
+        index += 1
+    assert len(required_build_dirs) > index, "Not enough required applications provided"
+    build_dir = Path(required_build_dirs[index])
+    app_build_dir = build_dir / get_default_domain_name(build_dir / 'domains.yaml')
+    assert app_build_dir.is_dir(), f"Application build dir {app_build_dir} does not exist"
+    return app_build_dir
 
 
-def clear_buffer(dut: DeviceAdapter) -> None:
-    disconnect = False
-    if not dut.is_device_connected():
-        dut.connect()
-        disconnect = True
+def reset_device(dut: DeviceAdapter) -> None:
+    """Reset DUT using shell command."""
+    dut.connect()
     dut.clear_buffer()
-    if disconnect:
-        dut.disconnect()
+    command = "kernel reboot cold"
+    logger.debug(f"Reset device from shell: {command}")
+    dut.write(f"{command}\n".encode())
 
 
-def run_upgrade_with_confirm(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
+def run_upgrade(dut: DeviceAdapter, mcumgr: MCUmgr, app_build_dir: Path) -> str:
+    """Run upgrade procedure: upload image, test it and reset device to trigger upgrade.
+
+    Returns hash of the image used to test.
     """
-    Verify that the application can be updated
-    1) Device flashed with MCUboot and an application that contains SMP server
-    2) Prepare an update of an application containing the SMP server
-    3) Upload the application update to slot 1 using mcumgr
-    4) Flag the application update in slot 1 as 'pending' by using mcumgr 'test'
-    5) Restart the device, verify that swapping process is initiated
-    6) Verify that the updated application is booted
-    7) Confirm the image using mcumgr
-    8) Restart the device, and verify that the new application is still booted
-    """
-    logger.info('Prepare upgrade image')
-    new_version = '0.0.2+0'
-    image_to_test = create_signed_image(dut.device_config.build_dir,
-                                        dut.device_config.app_build_dir, new_version)
-
+    image_to_test = Path(app_build_dir) / 'zephyr' / 'zephyr.signed.bin'
+    assert image_to_test.is_file()
     logger.info('Upload image with mcumgr')
     dut.disconnect()
     mcumgr.image_upload(image_to_test)
-
     logger.info('Test uploaded APP image')
     second_hash = mcumgr.get_hash_to_test()
     mcumgr.image_test(second_hash)
-    clear_buffer(dut)
-    mcumgr.reset_device()
+    reset_device(dut)
+    return second_hash
 
+
+def verify_upgrade_after_reset(
+        dut: DeviceAdapter, shell: Shell, version: str, swap_type: str = 'test'
+) -> None:
     dut.connect()
-    output = dut.readlines_until(regex=WELCOME_STRING)
-    upgrade_string_to_verify = get_upgrade_string_to_verify(dut.device_config.build_dir)
-    match_lines(output, [
-        'Swap type: test',
-        upgrade_string_to_verify
-    ])
+    lines = dut.readlines_until(regex=WELCOME_STRING, timeout=20)
+    pytest.LineMatcher(lines).fnmatch_lines([f"*Swap type: {swap_type}*", "*Starting swap*"])
     logger.info('Verify new APP is booted')
-    check_with_shell_command(shell, new_version, swap_type='test')
-    dut.disconnect()
-    check_with_mcumgr_command(mcumgr, new_version)
-
-    logger.info('Confirm the image')
-    mcumgr.image_confirm(second_hash)
-    mcumgr.reset_device()
-
-    dut.connect()
-    output = dut.readlines_until(regex=WELCOME_STRING)
-    match_no_lines(output, [
-        upgrade_string_to_verify
-    ])
-    logger.info('Verify new APP is still booted')
-    check_with_shell_command(shell, new_version)
+    check_with_shell_command(shell, version)
 
 
-def test_upgrade_with_confirm(mcumgr: MCUmgr, dut: DeviceAdapter, shell: Shell):
-    """Verify that the application can be updated over serial"""
-    run_upgrade_with_confirm(dut, shell, mcumgr)
+def check_with_shell_command(shell: Shell, version: str) -> None:
+    mcuboot_areas = ShellMCUbootCommandParsed.create_from_cmd_output(shell.exec_command('mcuboot'))
+    assert mcuboot_areas.areas[0].version == version
 
 
-def test_upgrade_with_revert(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
+def run_upgrade_with_revert(
+        dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr, required_build_dirs: list[str]
+) -> None:
+    origin_version = get_sign_version(dut.device_config.app_build_dir)
+    new_app_dir = get_new_app_build_dir(dut, required_build_dirs)
+    new_version = get_sign_version(new_app_dir)
+
+    run_upgrade(dut, mcumgr, new_app_dir)
+    verify_upgrade_after_reset(dut, shell, new_version)
+
+    logger.info('Revert images')
+    reset_device(dut)
+    verify_upgrade_after_reset(dut, shell, origin_version, swap_type='revert')
+
+
+def test_upgrade_with_revert(
+        dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr, required_build_dirs: list[str]
+):
     """
     Verify that MCUboot will roll back an image that is not confirmed
     1) Device flashed with MCUboot and an application that contains SMP server
@@ -121,102 +111,99 @@ def test_upgrade_with_revert(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     7) Reset the device without confirming the image
     8) Verify that MCUboot reverts update
     """
-    origin_version = find_in_config(
-        Path(dut.device_config.app_build_dir) / 'zephyr' / '.config',
-        'CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION'
-    )
-    logger.info('Prepare upgrade image')
-    new_version = '0.0.3+0'
-    image_to_test = create_signed_image(dut.device_config.build_dir,
-                                        dut.device_config.app_build_dir, new_version)
+    run_upgrade_with_revert(dut, shell, mcumgr, required_build_dirs)
 
-    logger.info('Upload image with mcumgr')
+
+def test_upgrade_ble_with_revert(
+        mcumgr_ble: MCUmgrBle, dut: DeviceAdapter, shell: Shell, required_build_dirs: list[str]
+):
+    """Verify that the application can be updated over BLE"""
+    run_upgrade_with_revert(dut, shell, mcumgr_ble, required_build_dirs)
+
+
+def test_upgrade_with_confirm(
+        dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr, required_build_dirs: list[str]
+):
+    """
+    Verify that the application can be updated
+    1) Device flashed with MCUboot and an application that contains SMP server
+    2) Prepare an update of an application containing the SMP server
+    3) Upload the application update to slot 1 using mcumgr
+    4) Flag the application update in slot 1 as 'pending' by using mcumgr 'test'
+    5) Restart the device, verify that swapping process is initiated
+    6) Verify that the updated application is booted
+    7) Confirm the image using mcumgr
+    8) Restart the device, and verify that the new application is still booted
+    """
+    new_app_dir = get_new_app_build_dir(dut, required_build_dirs)
+    new_version = get_sign_version(new_app_dir)
+
+    second_hash = run_upgrade(dut, mcumgr, new_app_dir)
+    verify_upgrade_after_reset(dut, shell, new_version)
+
     dut.disconnect()
-    mcumgr.image_upload(image_to_test)
+    logger.info('Confirm the image')
+    mcumgr.image_confirm(second_hash)
+    dut.connect()
+    reset_device(dut)
+    lines = dut.readlines_until(regex=WELCOME_STRING, timeout=20)
+    pytest.LineMatcher(lines).no_fnmatch_line("*Starting swap*")
+    logger.info('Verify new APP is still booted')
+    check_with_shell_command(shell, new_version)
 
-    logger.info('Test uploaded APP image')
-    second_hash = mcumgr.get_hash_to_test()
-    mcumgr.image_test(second_hash)
-    clear_buffer(dut)
-    mcumgr.reset_device()
+
+def test_downgrade_prevention(
+        dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr, required_build_dirs: list[str]
+):
+    """
+    Verify that the application is not downgraded
+    1) Device flashed with MCUboot and an application that contains SMP server.
+       Image version is 1.1.1+1
+    2) Prepare an update of an application containing the SMP server, where
+       image version is 0.0.0 (lower than version of the original app)
+    3) Upload the application update to slot 1 using mcumgr
+    4) Flag the application update in slot 1 as 'pending' by using mcumgr 'test'
+    5) Restart the device, verify that downgrade prevention mechanism
+       blocked the image swap
+    6) Verify that the original application is booted (version 1.1.1)
+    """
+    origin_version = get_sign_version(dut.device_config.app_build_dir)
+    new_app_dir = get_new_app_build_dir(dut, required_build_dirs)
+
+    run_upgrade(dut, mcumgr, new_app_dir)
 
     dut.connect()
-    output = dut.readlines_until(regex=WELCOME_STRING)
-    upgrade_string_to_verify = get_upgrade_string_to_verify(dut.device_config.build_dir)
-    match_lines(output, [
-        'Swap type: test',
-        upgrade_string_to_verify
-    ])
-    logger.info('Verify new APP is booted')
-    check_with_shell_command(shell, new_version, swap_type='test')
-    dut.disconnect()
-    check_with_mcumgr_command(mcumgr, new_version)
+    lines = dut.readlines_until(regex=WELCOME_STRING, timeout=20)
+    matcher = pytest.LineMatcher(lines)
+    matcher.no_fnmatch_line("*Starting swap*")
+    matcher.fnmatch_lines(["*erased due to downgrade prevention*"])
 
-    logger.info('Revert images')
-    mcumgr.reset_device()
-
-    dut.connect()
-    output = dut.readlines_until(regex=WELCOME_STRING)
-    match_lines(output, [
-        'Swap type: revert',
-        upgrade_string_to_verify
-    ])
-    logger.info('Verify that MCUboot reverts update')
+    logger.info('Verify that the original APP is booted')
     check_with_shell_command(shell, origin_version)
 
 
-@pytest.mark.parametrize(
-    'key_file', [None, 'root-ec-p256.pem'],
-    ids=['no_key', 'invalid_key']
-)
-def test_upgrade_signature(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr, key_file):
+def test_upgrade_wrong_signature(
+        dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr, required_build_dirs: list[str]
+):
     """
     Verify that the application is not updated when app is not signed or signed with invalid key
     1) Device flashed with MCUboot and an application that contains SMP server
     2) Prepare an update of an application containing the SMP server that has
-       been signed:
-       a) without any key
-       b) with a different key than MCUboot was compiled with
+       been signed with a different key than MCUboot was compiled with
     3) Upload the application update to slot 1 using mcumgr
     4) Flag the application update in slot 1 as 'pending' by using mcumgr 'test'
     5) Restart the device, verify that swap is not started
     """
-    if key_file:
-        origin_key_file = find_in_config(
-            Path(dut.device_config.build_dir) / 'mcuboot' / 'zephyr' / '.config',
-            'CONFIG_BOOT_SIGNATURE_KEY_FILE'
-        ).strip('"\'')
-        key_file = Path(origin_key_file).parent / key_file
-        assert key_file.is_file()
-        assert not key_file.samefile(origin_key_file)
-        image_to_test = Path(dut.device_config.build_dir) / 'test_invalid_key.bin'
-        logger.info('Sign second image with an invalid key')
-    else:
-        image_to_test = Path(dut.device_config.build_dir) / 'test_no_key.bin'
-        logger.info('Sign second imagewith no key')
+    origin_version = get_sign_version(dut.device_config.app_build_dir)
+    new_app_dir = get_new_app_build_dir(dut, required_build_dirs)
 
-    west_sign_with_imgtool(
-        build_dir=Path(dut.device_config.app_build_dir),
-        output_bin=image_to_test,
-        key_file=key_file,
-        version='0.0.3+4'  # must differ from the origin version, if not then hash is not updated
-    )
-    assert image_to_test.is_file()
-
-    logger.info('Upload image with mcumgr')
-    dut.disconnect()
-    mcumgr.image_upload(image_to_test)
-
-    logger.info('Test uploaded APP image')
-    second_hash = mcumgr.get_hash_to_test()
-    mcumgr.image_test(second_hash)
-
-    logger.info('Verify that swap is not started')
-    clear_buffer(dut)
-    mcumgr.reset_device()
+    run_upgrade(dut, mcumgr, new_app_dir)
 
     dut.connect()
-    output = dut.readlines_until(regex=WELCOME_STRING)
-    upgrade_string_to_verify = get_upgrade_string_to_verify(dut.device_config.build_dir)
-    match_no_lines(output, [upgrade_string_to_verify])
-    match_lines(output, ['Image in the secondary slot is not valid'])
+    lines = dut.readlines_until(regex=WELCOME_STRING, timeout=20)
+    matcher = pytest.LineMatcher(lines)
+    matcher.no_fnmatch_line("*Starting swap*")
+    matcher.fnmatch_lines(["*Image in the secondary slot is not valid*"])
+
+    logger.info('Verify that the original APP is booted')
+    check_with_shell_command(shell, origin_version)

@@ -8,8 +8,8 @@
  * DWARF Control Flow Integrity (CFI) support for architectures.
  */
 
-#ifndef ZEPHYR_INCLUDE_CFI_H_
-#define ZEPHYR_INCLUDE_CFI_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_CFI_H_
+#define ZEPHYR_INCLUDE_ARCH_CFI_H_
 
 #include <zephyr/arch/arch_interface.h>
 
@@ -38,4 +38,4 @@
 #define ARCH_CFI_UNDEFINED_RETURN_ADDRESS()
 #endif
 
-#endif /* ZEPHYR_INCLUDE_CFI_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_CFI_H_ */

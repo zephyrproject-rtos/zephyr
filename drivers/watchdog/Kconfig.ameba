@@ -1,0 +1,11 @@
+# AMEBA WDT configuration
+
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_AMEBA
+	bool "AMEBA Watchdog (WDT) Driver"
+	default y
+	depends on DT_HAS_REALTEK_AMEBA_WATCHDOG_ENABLED
+	help
+	  Enable WDT driver for AMEBA.

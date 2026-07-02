@@ -151,7 +151,6 @@ config DEMAND_PAGING_ALLOW_IRQ
 
 config DEMAND_PAGING_PAGE_FRAMES_RESERVE
 	int "Number of page frames reserved for paging"
-	default 32 if !LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
 	default 0
 	help
 	  This sets the number of page frames that will be reserved for

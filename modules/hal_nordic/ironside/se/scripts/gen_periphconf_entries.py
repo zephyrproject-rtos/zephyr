@@ -501,6 +501,7 @@ def lookup_tables_get(soc: Soc) -> SocLookupTables:
                 NrfPsel(fun=NrfFun.IGNORE, port=2, pin=3): Ctrlsel.VPR_GRC,
                 NrfPsel(fun=NrfFun.IGNORE, port=2, pin=5): Ctrlsel.VPR_GRC,
                 NrfPsel(fun=NrfFun.IGNORE, port=2, pin=6): Ctrlsel.VPR_GRC,
+                NrfPsel(fun=NrfFun.IGNORE, port=2, pin=7): Ctrlsel.VPR_GRC,
                 NrfPsel(fun=NrfFun.IGNORE, port=2, pin=8): Ctrlsel.VPR_GRC,
                 NrfPsel(fun=NrfFun.IGNORE, port=2, pin=9): Ctrlsel.VPR_GRC,
                 # P5

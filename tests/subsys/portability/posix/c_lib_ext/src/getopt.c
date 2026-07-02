@@ -72,7 +72,7 @@ ZTEST(posix_c_lib_ext, test_getopt)
 
 	argv = (char **)nargv;
 
-	/* Test uknown option */
+	/* Test unknown option */
 
 	c = getopt(argc, argv, test_opts);
 	zassert_equal(c, 'a', "unexpected opt character");

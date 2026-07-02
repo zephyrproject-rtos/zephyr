@@ -61,7 +61,7 @@ int bt_testlib_connect(const bt_addr_le_t *peer, struct bt_conn **connp)
 
 	k_condvar_init(&ctx.conn_cb_connected_match);
 
-	/* If multiple threads call into this funciton, they will wait
+	/* If multiple threads call into this function, they will wait
 	 * for their turn here. The Zephyr host does not support
 	 * concurrent connection creation.
 	 */
@@ -110,7 +110,7 @@ int bt_testlib_connect(const bt_addr_le_t *peer, struct bt_conn **connp)
 		}
 	}
 
-	/* Note: `connp` is never unrefed in this funciton, even in case
+	/* Note: `connp` is never unrefed in this function, even in case
 	 * of errors. This is as documented.
 	 */
 

@@ -63,7 +63,7 @@ fcb_append(struct fcb *fcb, uint16_t len, struct fcb_entry *append_loc)
 	struct fcb_entry *active;
 	int cnt;
 	int rc;
-	uint8_t tmp_str[MAX(8, fcb->f_align)];
+	uint8_t tmp_str[WRITE_ALIGNMENT_BUFFER_SIZE];
 
 	/* Ensure defined value of padding bytes */
 	memset(tmp_str, fcb->f_erase_value, sizeof(tmp_str));
@@ -121,7 +121,7 @@ int
 fcb_append_finish(struct fcb *fcb, struct fcb_entry *loc)
 {
 	int rc;
-	uint8_t em[fcb->f_align];
+	uint8_t em[WRITE_ALIGNMENT_BUFFER_SIZE];
 	off_t off;
 
 	(void)memset(em, 0xFF, sizeof(em));

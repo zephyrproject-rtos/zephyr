@@ -200,7 +200,7 @@ static int can_nrf_init(const struct device *dev)
 	static const struct can_mcan_config can_mcan_nrf_config##n = CAN_MCAN_DT_CONFIG_INST_GET(  \
 		n, &can_nrf_config##n, &can_mcan_nrf_ops, &can_mcan_nrf_cbs##n);                   \
                                                                                                    \
-	static struct can_mcan_data can_mcan_nrf_data##n = CAN_MCAN_DATA_INITIALIZER(NULL);        \
+	CAN_MCAN_DATA_DEFINE(can_mcan_nrf_data##n, NULL);                                          \
                                                                                                    \
 	CAN_DEVICE_DT_INST_DEFINE(n, can_nrf_init, NULL, &can_mcan_nrf_data##n,                    \
 				  &can_mcan_nrf_config##n, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,  \

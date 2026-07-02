@@ -279,14 +279,14 @@ static int monitor_fuel_gauge_status(const struct device *flgdev)
 	union fuel_gauge_prop_val fuel_gauge_val;
 	int ret;
 
-	ret = fuel_gauge_get_prop(flgdev, FUEL_GAUGE_VOLTAGE, &fuel_gauge_val);
+	ret = fuel_gauge_get_prop(flgdev, FUEL_GAUGE_VOLTAGE_UV, &fuel_gauge_val);
 	if (ret) {
 		printk("[%s]: Error getting Fuel Gauge Voltage on device! ret %d\n", now_str(),
 		       ret);
 		return -1;
 	}
 
-	printk("[%s]: Fuel gauge Voltage: %d\n", now_str(), fuel_gauge_val.voltage);
+	printk("[%s]: Fuel gauge Voltage: %d\n", now_str(), fuel_gauge_val.voltage_uv);
 
 	ret = fuel_gauge_get_prop(flgdev, FUEL_GAUGE_STATUS, &fuel_gauge_val);
 	if (ret) {
@@ -296,14 +296,15 @@ static int monitor_fuel_gauge_status(const struct device *flgdev)
 
 	printk("[%s]: Fuel gauge Status 0x%X\n", now_str(), fuel_gauge_val.fg_status);
 
-	ret = fuel_gauge_get_prop(flgdev, FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE, &fuel_gauge_val);
+	ret = fuel_gauge_get_prop(flgdev, FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE_PCT, &fuel_gauge_val);
 	if (ret) {
 		printk("[%s]: Error getting Fuel Gauge State of charge on device! ret %d\n",
 		       now_str(), ret);
 		return -1;
 	}
 
-	printk("[%s]: Fuel gauge SoC: %d\n", now_str(), fuel_gauge_val.absolute_state_of_charge);
+	printk("[%s]: Fuel gauge SoC: %d\n", now_str(),
+	       fuel_gauge_val.absolute_state_of_charge_pct);
 
 	return 0;
 }

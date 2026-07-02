@@ -94,8 +94,8 @@ struct mpc_region_override {
 	}
 
 static const struct mpc_region_override mpc00_region_overrides[] = {
-	/* Make RAM_00/01/02 (AMBIX00 + AMBIX03) accessible to all domains */
-	MPC_REGION_OVERRIDE_INIT(0x20000000, 0x200E0000, 0, 0),
+	/* Make RAM_00/01/02/03 (AMBIX00 + AMBIX03) accessible to all domains */
+	MPC_REGION_OVERRIDE_INIT(0x20000000, 0x200FE000, 0, 0),
 	/* Make MRAM accessible to all domains */
 	MPC_REGION_OVERRIDE_INIT(0x00000000, 0x01000000, 0, 0),
 #if CONFIG_SOC_NRF71_WIFI_DAP
@@ -105,8 +105,8 @@ static const struct mpc_region_override mpc00_region_overrides[] = {
 };
 
 static const struct mpc_region_override mpc03_region_overrides[] = {
-	/* Make RAM_02 (AMBIX03) accessible to the Wi-Fi domain for IPC */
-	MPC_REGION_OVERRIDE_INIT(0x200C0000, 0x200E0000, 0, 0),
+	/* Make RAM_02/03 (AMBIX03)  accessible to all domains */
+	MPC_REGION_OVERRIDE_INIT(0x200C0000, 0x200FE000, 0, 0),
 };
 
 static void set_mpc_region_override(NRF_MPC_Type *mpc,
@@ -155,6 +155,12 @@ static void grtc_configuration(void)
 	nrf_spu_feature_secattr_set(NRF_SPU20, NRF_SPU_FEATURE_GRTC_INTERRUPT, 5, 0, 0);
 	nrf_spu_feature_secattr_set(NRF_SPU20, NRF_SPU_FEATURE_GRTC_SYSCOUNTER, 0, 0, 0);
 }
+
+static void ipct_configuration(void)
+{
+	/* Grant secure access to IPCT, since NS by default */
+	nrf_spu_periph_perm_secattr_set(NRF_SPU10, 13, true);
+}
 #endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
 #if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
@@ -166,8 +172,8 @@ static void wifi_setup(void)
 		(LRCCONF_POWERON_MAIN_AlwaysOn << LRCCONF_POWERON_MAIN_Pos);
 	NRF_WIFICORE_LMAC_VPR->INITPC = NRF_WICR->RESERVED[0];
 	NRF_WIFICORE_LMAC_VPR->CPURUN = (VPR_CPURUN_EN_Running << VPR_CPURUN_EN_Pos);
-#endif
 }
+#endif
 #endif
 
 void soc_early_init_hook(void)
@@ -183,6 +189,7 @@ void soc_early_init_hook(void)
 	/* Skip for tf-m, configuration exist in target_cfg_71.c */
 	mpc_configuration();
 	grtc_configuration();
+	ipct_configuration();
 #endif
 
 #if defined(CONFIG_SOC_NRF71_WIFI_BOOT)

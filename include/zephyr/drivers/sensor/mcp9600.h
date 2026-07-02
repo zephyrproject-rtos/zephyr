@@ -16,7 +16,7 @@
 /**
  * @brief Microchip MCP9600 Thermocouple Electromotive Force (EMF) to °C Converter
  * @defgroup mcp9600_interface MCP9600
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_microchip
  * @{
  */
 

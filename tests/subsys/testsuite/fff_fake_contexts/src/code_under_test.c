@@ -5,27 +5,25 @@
  */
 
 #include <stdio.h> /* NULL */
-#include <zephyr/called_API.h>
+#include <zephyr/called_api.h>
 #include <zephyr/code_under_test.h>
-
 
 int code_under_test(void)
 {
 	int result = 0;
 
 	for (int i = 0; i < 2; ++i) {
-		const struct called_API_info *called_API = NULL;
+		const struct called_api_info *called_api = NULL;
 
-		result = called_API_open(&called_API);
+		result = called_api_open(&called_api);
 		if (result != 0) {
 			break;
 		}
 
-		result = called_API_close(called_API);
+		result = called_api_close(called_api);
 		if (result != 0) {
 			break;
 		}
-
 	}
 
 	return result;

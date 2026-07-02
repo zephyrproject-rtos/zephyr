@@ -12,7 +12,7 @@
 #include <string.h>
 
 #include "region.h"
-#include "lorawan.h"
+#include <lorawan.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lorawan_native_eu868, CONFIG_LORAWAN_LOG_LEVEL);

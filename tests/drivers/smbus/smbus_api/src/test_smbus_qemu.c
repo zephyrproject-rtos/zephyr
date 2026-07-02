@@ -87,7 +87,7 @@ ZTEST_USER(test_smbus_qemu, test_smbus_api_read_write)
 		zassert_ok(ret, "SMBUS write byte data failed, ret %d", ret);
 
 		/**
-		 * Reading is done through executing two consequitive
+		 * Reading is done through executing two consecutive
 		 * operations: write, which sets offset, followed by read, which
 		 * reads data from given offset
 		 */

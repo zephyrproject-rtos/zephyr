@@ -223,9 +223,10 @@
 };
 
 &fdcan2 {
+	/* Disable by default due to conflict with MAC (PB12) */
 	pinctrl-0 = <&fdcan2_tx_pb13 &fdcan2_rx_pb12>;
 	pinctrl-names = "default";
-	status = "okay";
+	status = "disabled";
 };
 
 &fdcan3 {
@@ -266,6 +267,35 @@
 };
 
 &vddcore {
+	status = "okay";
+};
+
+&mac {
+	pinctrl-0 = <&eth_rmii_ref_clk_pa1
+		     &eth_rmii_crs_dv_pd1
+		     &eth_rmii_rxd0_pc4
+		     &eth_rmii_rxd1_pe5
+		     &eth_rmii_tx_en_pb11
+		     &eth_rmii_txd0_pb12
+		     &eth_rmii_txd1_pg12>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&eth_mdio_pj6 &eth_mdc_pj7>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+	};
+};
+
+&xspim {
 	status = "okay";
 };
 
@@ -324,4 +354,8 @@
 		st,csbound = <10>;
 		status = "okay";
 	};
+};
+
+zephyr_jpegenc: &jpeg {
+	status = "okay";
 };

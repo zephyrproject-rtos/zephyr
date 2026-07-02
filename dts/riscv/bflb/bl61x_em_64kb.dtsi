@@ -11,6 +11,12 @@
  * usable RAM from 160 KB to 96 KB.
  */
 
-&sram1 {
-	reg = <0x63010000 DT_SIZE_K(96)>;
+&wram {
+	reg = <0x50000 DT_SIZE_K(96)>;
+	ranges = <0x0 0x50000 DT_SIZE_K(96)>;
+};
+
+&all_ram {
+	reg = <0x62fc0000 DT_SIZE_K(416)>;
+	ranges = <0x0 0x62fc0000 DT_SIZE_K(416)>;
 };

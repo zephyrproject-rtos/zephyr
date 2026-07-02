@@ -91,7 +91,7 @@ class HardwareAdapter(DeviceAdapter):
             elif runner == "esp32":
                 extra_args.append("--esp-device")
                 extra_args.append(board_id)
-            elif runner in ('nrfjprog', 'nrfutil', 'nrfutil_next'):
+            elif "nrf" in runner:
                 extra_args.append('--dev-id')
                 extra_args.append(board_id)
             elif runner == 'openocd' and self.device_config.product in [
@@ -106,7 +106,7 @@ class HardwareAdapter(DeviceAdapter):
             elif runner == "openocd" and self.device_config.product == "LPC-LINK2 CMSIS-DAP":
                 extra_args.append("--cmd-pre-init")
                 extra_args.append(f'adapter serial {board_id}')
-            elif runner == 'jlink' or (
+            elif runner in ('jlink', 'mplab_ipe') or (
                 runner == 'stm32cubeprogrammer' and self.device_config.product != "BOOT-SERIAL"
             ):
                 base_args.append('--dev-id')

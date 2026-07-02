@@ -200,6 +200,11 @@ struct sl_802154_data {
 	 */
 	int tx_errno;
 
+	/* ACK result: errno to return from tx() after a successful send for
+	 * packets which need to wait for an ack.
+	 */
+	int ack_errno;
+
 	/* Current channel (11-26 for 2.4 GHz O-QPSK). Set by set_channel(). */
 	uint16_t current_channel;
 

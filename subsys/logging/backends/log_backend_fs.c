@@ -65,7 +65,7 @@ static int create_log_dir(const char *path)
 	fs_dir_t_init(&dir);
 
 	/* the fist directory name is the mount point*/
-	/* the firs path's letter might be meaningless `/`, let's skip it */
+	/* the first path's letter might be meaningless `/`, let's skip it */
 	next = strchr(path + 1, '/');
 	if (!next) {
 		return 0;

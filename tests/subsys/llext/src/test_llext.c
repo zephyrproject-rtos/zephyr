@@ -225,7 +225,7 @@ void load_call_unload(const struct llext_test *test_case)
 	/* The ELF specification forbids shared libraries from defining init
 	 * entries, so calling llext_bootstrap here would be redundant. Use
 	 * this opportunity to test llext_call_fn, even though llext_bootstrap
-	 * would have behaved simlarly.
+	 * would have behaved similarly.
 	 */
 	zassert_ok(llext_call_fn(ext, "test_entry"),
 		   "test_entry call should succeed");
@@ -244,7 +244,7 @@ void load_call_unload(const struct llext_test *test_case)
 /*
  * Attempt to load, list, list symbols, call a fn, and unload each
  * extension in the test table. This exercises loading, calling into, and
- * unloading each extension which may itself excercise various APIs provided by
+ * unloading each extension which may itself exercise various APIs provided by
  * Zephyr.
  */
 #define LLEXT_LOAD_UNLOAD(_name, extra_args...)			\

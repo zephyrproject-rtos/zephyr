@@ -516,19 +516,19 @@ static int lc709203f_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	const struct lc709203f_config *config = dev->config;
 
 	switch (prop) {
-	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
-		rc = lc709203f_get_rsoc(dev, &val->relative_state_of_charge);
+	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT:
+		rc = lc709203f_get_rsoc(dev, &val->relative_state_of_charge_pct);
 		break;
-	case FUEL_GAUGE_TEMPERATURE:
+	case FUEL_GAUGE_TEMPERATURE_DK:
 		if (!config->thermistor) {
 			LOG_ERR("Thermistor not enabled");
 			return -ENOTSUP;
 		}
-		rc = lc709203f_get_cell_temperature(dev, &val->temperature);
+		rc = lc709203f_get_cell_temperature(dev, &val->temperature_dk);
 		break;
-	case FUEL_GAUGE_VOLTAGE:
+	case FUEL_GAUGE_VOLTAGE_UV:
 		rc = lc709203f_get_cell_voltage(dev, &tmp_val);
-		val->voltage = tmp_val * 1000;
+		val->voltage_uv = tmp_val * 1000;
 		break;
 	case FUEL_GAUGE_SBS_MODE:
 		rc = lc709203f_get_power_mode(dev, (enum lc709203f_power_mode *)&val->sbs_mode);
@@ -567,12 +567,12 @@ static int lc709203f_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		rc = lc709203f_get_current_direction(
 			dev, (enum lc709203f_current_direction *)&val->current_direction);
 		break;
-	case FUEL_GAUGE_STATE_OF_CHARGE_ALARM:
-		rc = lc709203f_get_alarm_low_rsoc(dev, &val->state_of_charge_alarm);
+	case FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT:
+		rc = lc709203f_get_alarm_low_rsoc(dev, &val->state_of_charge_alarm_pct);
 		break;
-	case FUEL_GAUGE_LOW_VOLTAGE_ALARM:
+	case FUEL_GAUGE_LOW_VOLTAGE_ALARM_UV:
 		rc = lc709203f_get_alarm_low_voltage(dev, &tmp_val);
-		val->low_voltage_alarm = tmp_val * 1000;
+		val->low_voltage_alarm_uv = tmp_val * 1000;
 		break;
 	default:
 		rc = -ENOTSUP;
@@ -595,11 +595,11 @@ static int lc709203f_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		rc = lc709203f_set_current_direction(
 			dev, lc709203f_num_to_current_direction(val.current_direction));
 		break;
-	case FUEL_GAUGE_STATE_OF_CHARGE_ALARM:
-		rc = lc709203f_set_alarm_low_rsoc(dev, val.state_of_charge_alarm);
+	case FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT:
+		rc = lc709203f_set_alarm_low_rsoc(dev, val.state_of_charge_alarm_pct);
 		break;
-	case FUEL_GAUGE_LOW_VOLTAGE_ALARM:
-		rc = lc709203f_set_alarm_low_voltage(dev, val.low_voltage_alarm / 1000);
+	case FUEL_GAUGE_LOW_VOLTAGE_ALARM_UV:
+		rc = lc709203f_set_alarm_low_voltage(dev, val.low_voltage_alarm_uv / 1000);
 		break;
 	default:
 		rc = -ENOTSUP;

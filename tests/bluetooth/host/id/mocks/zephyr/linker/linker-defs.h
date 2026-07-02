@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Undefine definitons that conflict in the unit_testing board build. */
+/* Undefine definitions that conflict in the unit_testing board build. */
 
 #ifdef DT_NODE_HAS_STATUS
 #undef DT_NODE_HAS_STATUS

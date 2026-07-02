@@ -1,0 +1,82 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-FileCopyrightText: Copyright 2025 - 2026 Siemens Mobility GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/am64x_r5f0_0.dtsi>
+#include "lp_am243_r5f0_0-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "AM243x LaunchPad R5F Cluster 0 Core 0";
+	compatible = "ti,lp_am243";
+
+	chosen {
+		zephyr,console = &main_uart0;
+		zephyr,shell-uart = &main_uart0;
+		zephyr,sram = &sram;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&main_gpio0 22 GPIO_ACTIVE_HIGH>;
+			label = "Test LED 1 Green";
+		};
+
+		led1: led_1 {
+			gpios = <&main_gpio1 55 GPIO_ACTIVE_HIGH>;
+			label = "Test LED 2 Red";
+		};
+
+		led2: led_2 {
+			gpios = <&main_gpio1 39 GPIO_ACTIVE_HIGH>;
+			label = "Test LED 3 Red";
+		};
+
+		led3: led_3 {
+			gpios = <&main_gpio1 38 GPIO_ACTIVE_HIGH>;
+			label = "Test LED 4 Red";
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+	};
+};
+
+&main_uart0 {
+	status = "okay";
+	pinctrl-0 = <&uart0_tx_default &uart0_rx_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&main_gpio0_0 {
+	status = "okay";
+	pinctrl-0 = <&led0_output>;
+	pinctrl-names = "default";
+};
+
+&main_gpio1_1 {
+	status = "okay";
+	pinctrl-0 = <&led1_output &led2_output &led3_output>;
+	pinctrl-names = "default";
+};
+
+&main_timer8 {
+	status = "okay";
+};
+
+/*
+ * The ROMSTART region from the linker script will occupy the first 0x3C byte
+ * with the exception vector. To avoid overlaps the ATCM needs to be shrunken
+ * down appropiatly. See the _defconfig for more details.
+ */
+&atcm {
+	reg = <0x3c (DT_SIZE_K(32) - 0x3c)>;
+};

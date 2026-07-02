@@ -7,7 +7,8 @@ config FPU
 	default y
 
 config NUM_IRQS
-	default 32
+	# 32 CPU interrupt lines plus RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET.
+	default 48
 
 config RISCV_MCAUSE_EXCEPTION_MASK
 	default 0xFFF

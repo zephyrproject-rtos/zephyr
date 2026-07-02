@@ -38,6 +38,7 @@ static struct net_in_addr subnet_addr = { .s4_addr = { 198, 51, 100, 99 } };
 static struct net_in_addr subnet_prefix = { .s4_addr = { 198, 51, 100, 0 } };
 static struct net_in_addr subnet_dest_addr = { .s4_addr = { 198, 51, 100, 42 } };
 static struct net_in_addr forward_src_addr = { .s4_addr = { 198, 51, 100, 200 } };
+static struct net_in_addr onlink_dest_addr_alt = { .s4_addr = { 192, 0, 3, 50 } };
 static struct net_eth_addr gateway_lladdr = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x10 } };
 static struct net_eth_addr gateway_lladdr_alt = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x11 } };
 
@@ -107,6 +108,9 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
 	const struct net_in_addr *resolve_addr;
+	struct net_pkt_cursor backup;
+	struct net_ipv4_hdr *hdr;
+	size_t ip_offset = sizeof(struct net_eth_hdr);
 
 	sent_pkt_seen = true;
 	sent_iface = net_if_lookup_by_dev(dev);
@@ -114,7 +118,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	sent_forwarding = net_pkt_forwarding(pkt);
 	sent_ll_proto_type = net_pkt_ll_proto_type(pkt);
 	sent_arp_request_seen = false;
-	sent_ipv4_ttl = 0U;
+	sent_ipv4_ttl = sent_forwarding ? net_pkt_ipv4_ttl(pkt) : 0U;
 
 	resolve_addr = net_pkt_ipv4_ll_resolve_addr(pkt);
 	if (resolve_addr != NULL) {
@@ -127,15 +131,18 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	if (net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_ARP &&
 	    net_pkt_get_len(pkt) >= sizeof(struct net_eth_hdr)) {
 		sent_arp_request_seen = true;
-	} else if (net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_IP &&
-		   net_pkt_get_len(pkt) >= sizeof(struct net_eth_hdr) +
-		   sizeof(struct net_ipv4_hdr)) {
-		struct net_pkt_cursor backup;
-		struct net_ipv4_hdr *hdr;
+	} else if (!sent_forwarding &&
+		   net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_IP &&
+		   net_pkt_get_len(pkt) >= sizeof(struct net_ipv4_hdr)) {
+		if (net_pkt_get_len(pkt) >= ip_offset + sizeof(struct net_ipv4_hdr)) {
+			ip_offset = sizeof(struct net_eth_hdr);
+		} else {
+			ip_offset = 0U;
+		}
 
 		net_pkt_cursor_backup(pkt, &backup);
 		net_pkt_cursor_init(pkt);
-		if (net_pkt_skip(pkt, sizeof(struct net_eth_hdr)) == 0) {
+		if (net_pkt_skip(pkt, ip_offset) == 0) {
 			hdr = (struct net_ipv4_hdr *)net_pkt_get_data(pkt, &ipv4_access);
 			if (hdr != NULL) {
 				sent_ipv4_ttl = hdr->ttl;
@@ -756,6 +763,118 @@ static void test_route_ipv4_forward_ttl_expired_drops(void)
 	zassert_ok(net_route_ipv4_del(route), "Forwarding route del failed");
 }
 
+static void test_route_ipv4_forward_onlink_packet_between_ifaces(void)
+{
+	struct net_pkt *pkt;
+	struct net_ipv4_hdr *hdr;
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_FORWARDING);
+
+	net_arp_clear_cache(my_iface_alt);
+	net_arp_update(my_iface_alt, &onlink_dest_addr_alt, &gateway_lladdr_alt,
+		       false, true);
+
+	reset_send_state();
+	drain_wait_data();
+
+	pkt = net_pkt_alloc_with_buffer(my_iface, sizeof(struct net_ipv4_hdr),
+					NET_AF_INET, 0, K_NO_WAIT);
+	zassert_not_null(pkt, "On-link forwarding packet alloc failed");
+
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
+
+	hdr = (struct net_ipv4_hdr *)net_buf_add(pkt->buffer,
+						 sizeof(struct net_ipv4_hdr));
+	zassert_not_null(hdr, "Cannot reserve IPv4 header");
+
+	memset(hdr, 0, sizeof(*hdr));
+	hdr->vhl = 0x45;
+	hdr->ttl = 2U;
+	hdr->proto = NET_IPPROTO_UDP;
+	hdr->len = net_htons(sizeof(struct net_ipv4_hdr));
+	net_ipv4_addr_copy_raw(hdr->src, forward_src_addr.s4_addr);
+	net_ipv4_addr_copy_raw(hdr->dst, onlink_dest_addr_alt.s4_addr);
+	hdr->chksum = ipv4_header_checksum(hdr);
+
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
+	net_pkt_set_ipv4_opts_len(pkt, 0U);
+	net_pkt_set_iface(pkt, my_iface);
+	net_pkt_set_family(pkt, NET_AF_INET);
+
+	ret = net_route_packet_if(pkt, my_iface_alt);
+	zassert_ok(ret, "On-link IPv4 route packet failed");
+
+	for (int i = 0; i < 5; i++) {
+		zassert_ok(k_sem_take(&wait_data, WAIT_TIME),
+			   "On-link forwarded packet was not sent");
+		if (sent_ll_proto_type != NET_ETH_PTYPE_ARP) {
+			break;
+		}
+	}
+
+	zassert_not_equal(sent_ll_proto_type, NET_ETH_PTYPE_ARP,
+			  "On-link forwarding should not stop at ARP");
+
+	zassert_true(sent_pkt_seen, "On-link forwarded packet not observed");
+	zassert_true(sent_forwarding, "On-link packet should be marked forwarded");
+	zassert_equal_ptr(sent_iface, my_iface_alt,
+			  "On-link forwarded packet used wrong egress interface");
+	zassert_equal_ptr(sent_orig_iface, my_iface,
+			  "On-link forwarded packet missing ingress interface");
+	zassert_equal(sent_ipv4_ttl, 1U,
+		      "On-link forwarded IPv4 packet should decrement TTL");
+}
+
+static void test_route_ipv4_forward_onlink_ttl_expired_drops(void)
+{
+	struct net_pkt *pkt;
+	struct net_ipv4_hdr *hdr;
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_FORWARDING);
+
+	net_arp_update(my_iface_alt, &onlink_dest_addr_alt, &gateway_lladdr_alt,
+		       false, true);
+
+	reset_send_state();
+	drain_wait_data();
+
+	pkt = net_pkt_alloc_with_buffer(my_iface, sizeof(struct net_ipv4_hdr),
+					NET_AF_INET, 0, K_NO_WAIT);
+	zassert_not_null(pkt, "On-link forwarding packet alloc failed");
+
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
+
+	hdr = (struct net_ipv4_hdr *)net_buf_add(pkt->buffer,
+						 sizeof(struct net_ipv4_hdr));
+	zassert_not_null(hdr, "Cannot reserve IPv4 header");
+
+	memset(hdr, 0, sizeof(*hdr));
+	hdr->vhl = 0x45;
+	hdr->ttl = 1U;
+	hdr->proto = NET_IPPROTO_UDP;
+	hdr->len = net_htons(sizeof(struct net_ipv4_hdr));
+	net_ipv4_addr_copy_raw(hdr->src, forward_src_addr.s4_addr);
+	net_ipv4_addr_copy_raw(hdr->dst, onlink_dest_addr_alt.s4_addr);
+	hdr->chksum = ipv4_header_checksum(hdr);
+
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
+	net_pkt_set_ipv4_opts_len(pkt, 0U);
+	net_pkt_set_iface(pkt, my_iface);
+	net_pkt_set_family(pkt, NET_AF_INET);
+
+	ret = net_route_packet_if(pkt, my_iface_alt);
+	zassert_equal(ret, -ETIMEDOUT,
+		      "TTL-expired on-link packet must not be forwarded");
+	zassert_not_equal(k_sem_take(&wait_data, WAIT_TIME), 0,
+			  "TTL-expired on-link packet unexpectedly sent");
+	zassert_false(sent_pkt_seen,
+		      "TTL-expired on-link packet unexpectedly sent");
+
+	net_pkt_unref(pkt);
+}
+
 ZTEST(route_test_suite, test_route)
 {
 	test_init();
@@ -782,6 +901,8 @@ ZTEST(route_test_suite, test_route)
 	test_route_ipv4_select_src_iface_uses_explicit_route();
 	test_route_ipv4_forward_ttl_expired_drops();
 	test_route_ipv4_forward_packet_between_ifaces();
+	test_route_ipv4_forward_onlink_packet_between_ifaces();
+	test_route_ipv4_forward_onlink_ttl_expired_drops();
 }
 
 ZTEST_SUITE(route_test_suite, NULL, NULL, NULL, NULL, NULL);

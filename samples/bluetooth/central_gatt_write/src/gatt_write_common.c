@@ -43,7 +43,7 @@ static uint32_t param_update_count;
 
 /* Calculate the Supervision Timeout to a Rounded up 10 ms unit
  *
- * Conform to required BT Specifiction defined minimum Supervision Timeout of 100 ms
+ * Conform to required BT Specification defined minimum Supervision Timeout of 100 ms
  */
 #define CONN_TIMEOUT(_timeout) \
 	BT_GAP_US_TO_CONN_TIMEOUT(DIV_ROUND_UP(MAX(100U * USEC_PER_MSEC, (_timeout)), \

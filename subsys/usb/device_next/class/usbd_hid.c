@@ -182,7 +182,7 @@ static int handle_get_idle(const struct device *dev,
 	}
 
 	/*
-	 * There is no Get Idle callback in the leagacy API, do not issue a
+	 * There is no Get Idle callback in the legacy API, do not issue a
 	 * protocol error if no callback is provided but ID is 0.
 	 */
 	if (id != 0U && ops->get_idle == NULL) {

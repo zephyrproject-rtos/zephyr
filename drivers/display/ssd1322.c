@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "zephyr/sys/util.h"
+#include <zephyr/sys/util.h>
 #define DT_DRV_COMPAT solomon_ssd1322
 
 #include <zephyr/logging/log.h>

@@ -344,7 +344,7 @@ static void verify_dhcpv6_ia_na(struct net_if *iface, struct net_pkt *pkt,
 
 	if (addr == NULL) {
 		zassert_equal(ia_na.iaaddr.status, DHCPV6_STATUS_NO_ADDR_AVAIL,
-			      "Adddress should not be present");
+			      "Address should not be present");
 		return;
 	}
 

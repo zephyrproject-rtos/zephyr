@@ -5,19 +5,7 @@
 
 if SOC_SERIES_STM32H5X
 
-config ICACHE
-	default y
-
-config ICACHE_LINE_SIZE
-	default 16
-
-config DCACHE
-	default y if !SOC_STM32H503XX
-
-config DCACHE_LINE_SIZE
-	default 16
-
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 choice CACHE_TYPE

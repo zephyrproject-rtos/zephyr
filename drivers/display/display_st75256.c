@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "zephyr/sys/util.h"
+#include <zephyr/sys/util.h>
 #define DT_DRV_COMPAT sitronix_st75256
 
 #include <zephyr/logging/log.h>

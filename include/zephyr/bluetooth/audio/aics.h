@@ -47,11 +47,11 @@ extern "C" {
  * @{
  */
 /** The mute state is unmuted */
-#define BT_AICS_STATE_UNMUTED                      0x00
+#define BT_AICS_STATE_UNMUTED                      0x00U
 /** The mute state is muted */
-#define BT_AICS_STATE_MUTED                        0x01
+#define BT_AICS_STATE_MUTED                        0x01U
 /** The mute state is disabled */
-#define BT_AICS_STATE_MUTE_DISABLED                0x02
+#define BT_AICS_STATE_MUTE_DISABLED                0x02U
 /** @} */
 
 /**
@@ -63,25 +63,25 @@ extern "C" {
  *
  * The gain can be controlled by the client.
  */
-#define BT_AICS_MODE_MANUAL_ONLY                   0x00
+#define BT_AICS_MODE_MANUAL_ONLY                   0x00U
 /**
  * @brief The gain mode is automatic only and cannot be changed to manual.
  *
  * The gain cannot be controlled by the client.
  */
-#define BT_AICS_MODE_AUTO_ONLY                     0x01
+#define BT_AICS_MODE_AUTO_ONLY                     0x01U
 /**
  * @brief The gain mode is manual.
  *
  * The gain can be controlled by the client.
  */
-#define BT_AICS_MODE_MANUAL                        0x02
+#define BT_AICS_MODE_MANUAL                        0x02U
 /**
  * @brief The gain mode is automatic.
  *
  * The gain cannot be controlled by the client.
  */
-#define BT_AICS_MODE_AUTO                          0x03
+#define BT_AICS_MODE_AUTO                          0x03U
 /** @} */
 
 /**
@@ -89,21 +89,21 @@ extern "C" {
  * @{
  */
 /** The input is unspecified */
-#define BT_AICS_INPUT_TYPE_UNSPECIFIED             0x00
+#define BT_AICS_INPUT_TYPE_UNSPECIFIED             0x00U
 /** The input is a Bluetooth Audio Stream */
-#define BT_AICS_INPUT_TYPE_BLUETOOTH               0x01
+#define BT_AICS_INPUT_TYPE_BLUETOOTH               0x01U
 /** The input is a microphone */
-#define BT_AICS_INPUT_TYPE_MICROPHONE              0x02
+#define BT_AICS_INPUT_TYPE_MICROPHONE              0x02U
 /** The input is analog */
-#define BT_AICS_INPUT_TYPE_ANALOG                  0x03
+#define BT_AICS_INPUT_TYPE_ANALOG                  0x03U
 /** The input is digital */
-#define BT_AICS_INPUT_TYPE_DIGITAL                 0x04
+#define BT_AICS_INPUT_TYPE_DIGITAL                 0x04U
 /** The input is a radio (AM/FM/XM/etc.) */
-#define BT_AICS_INPUT_TYPE_RADIO                   0x05
+#define BT_AICS_INPUT_TYPE_RADIO                   0x05U
 /** The input is a Streaming Audio Source */
-#define BT_AICS_INPUT_TYPE_STREAMING               0x06
+#define BT_AICS_INPUT_TYPE_STREAMING               0x06U
 /** The input is transparent / pass-through */
-#define BT_AICS_INPUT_TYPE_AMBIENT                 0x07
+#define BT_AICS_INPUT_TYPE_AMBIENT                 0x07U
 /** @} */
 
 /**
@@ -114,15 +114,15 @@ extern "C" {
  * The Change_Counter operand value does not match the Change_Counter field value of the
  * Audio Input State characteristic.
  */
-#define BT_AICS_ERR_INVALID_COUNTER                0x80
+#define BT_AICS_ERR_INVALID_COUNTER                0x80U
 /** An invalid opcode has been used in a control point procedure */
-#define BT_AICS_ERR_OP_NOT_SUPPORTED               0x81
+#define BT_AICS_ERR_OP_NOT_SUPPORTED               0x81U
 /** Mute/unmute commands are disabled.(see @ref BT_AICS_STATE_MUTE_DISABLED) */
-#define BT_AICS_ERR_MUTE_DISABLED                  0x82
+#define BT_AICS_ERR_MUTE_DISABLED                  0x82U
 /** An operand value used in a control point procedure is outside the permissible range */
-#define BT_AICS_ERR_OUT_OF_RANGE                   0x83
+#define BT_AICS_ERR_OUT_OF_RANGE                   0x83U
 /** A requested gain mode change is not allowed */
-#define BT_AICS_ERR_GAIN_MODE_NOT_ALLOWED          0x84
+#define BT_AICS_ERR_GAIN_MODE_NOT_ALLOWED          0x84U
 /** @} */
 
 /**

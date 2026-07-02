@@ -332,7 +332,7 @@ ZTEST(central_loc, test_conn_update_central_loc_accept)
 /*
  * Central-initiated Connection Parameters Request procedure.
  * Central requests change in LE connection parameters, peripheral’s Host accepts.
- * Parallel CPRs attemtped and rejected/cached
+ * Parallel CPRs attempted and rejected/cached
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_C  |                    | LT  |
@@ -2579,7 +2579,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_accept)
  *    |                           |    (only apm)             |
  *    |                           |<--------------------------|
  *    |                           |                           |
- *    |    Defered APM disabled   |                           |
+ *    |    Deferred APM disabled  |                           |
  *    |    '<---------'           |                           |
  *    |    So accepted right away |                           |
  *    |    '--------->'           |                           |
@@ -2629,7 +2629,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_apm_accept_right_away)
 								 .offset5 = 0xffffU };
 
 	/* Prepare mocked call to ull_handle_cpr_anchor_point_move */
-	/* No APM deferance, accept with error == 0 */
+	/* No APM deference, accept with error == 0 */
 	ztest_returns_value(ull_handle_cpr_anchor_point_move, false);
 	ztest_return_data(ull_handle_cpr_anchor_point_move, status, &error);
 
@@ -2728,7 +2728,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_apm_accept_right_away)
  *    |                           |    (only apm)             |
  *    |                           |<--------------------------|
  *    |                           |                           |
- *    |    Defered APM disabled   |                           |
+ *    |    Deferred APM disabled  |                           |
  *    |    '<---------'           |                           |
  *    |    So accepted right away |                           |
  *    |    but with error         |                           |
@@ -2765,7 +2765,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_apm_reject_right_away)
 	uint8_t error = reject_ext_ind.error_code;
 
 	/* Prepare mocked call to ull_handle_cpr_anchor_point_move */
-	/* No APM deferance, reject with some error code */
+	/* No APM deference, reject with some error code */
 	ztest_returns_value(ull_handle_cpr_anchor_point_move, false);
 	ztest_return_data(ull_handle_cpr_anchor_point_move, status, &error);
 
@@ -2838,12 +2838,12 @@ ZTEST(periph_rem, test_conn_update_periph_rem_apm_reject_right_away)
  *    |                           |    (only apm)             |
  *    |                           |<--------------------------|
  *    |                           |                           |
- *    |    Defered APM            |                           |
+ *    |    Deferred APM            |                           |
  *    |    '<---------'           |                           |
  *    |                           |                           |
  *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *    |                           |                           |
- *    |    Defered accept         |                           |
+ *    |    Deferred accept         |                           |
  *    |    '--------->'           |                           |
  *    |                           |                           |
  *    |                           | LL_CONNECTION_PARAM_RSP   |
@@ -3013,12 +3013,12 @@ ZTEST(periph_rem, test_conn_update_periph_rem_apm_accept_defered)
  *    |                           |    (only apm)             |
  *    |                           |<--------------------------|
  *    |                           |                           |
- *    |    Defered APM            |                           |
+ *    |    Deferred APM            |                           |
  *    |    '<---------'           |                           |
  *    |                           |                           |
  *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *    |                           |                           |
- *    |    Defered accept         |                           |
+ *    |    Deferred accept         |                           |
  *    |    but with error         |                           |
  *    |    '--------->'           |                           |
  *    |                           |                           |
@@ -3282,7 +3282,7 @@ ZTEST(periph_loc, test_conn_update_periph_loc_collision_reject_2nd_cpr)
 		/* Release Tx */
 		ull_cp_release_tx(&conn_2nd, tx);
 
-		/* There should be no 'extra' procedure on acount of the parallel CPR */
+		/* There should be no 'extra' procedure on account of the parallel CPR */
 		zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-2,
 		       "Free CTX buffers %d", llcp_ctx_buffers_free());
 	}
@@ -3315,7 +3315,7 @@ ZTEST(periph_loc, test_conn_update_periph_loc_collision_reject_2nd_cpr)
 		/* Release Tx */
 		ull_cp_release_tx(&conn_3rd, tx);
 
-		/* There should be no 'extra' procedure on acount of the parallel CPR */
+		/* There should be no 'extra' procedure on account of the parallel CPR */
 		zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-2,
 		       "Free CTX buffers %d", llcp_ctx_buffers_free());
 	}
@@ -3568,7 +3568,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_accept_reject_2nd_cpr)
 		/* Release Tx */
 		ull_cp_release_tx(&conn_2nd, tx);
 
-		/* There should be no 'extra' procedure on acount of the parallel CPR */
+		/* There should be no 'extra' procedure on account of the parallel CPR */
 		zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-1,
 		       "Free CTX buffers %d", llcp_ctx_buffers_free());
 	}
@@ -3601,7 +3601,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_accept_reject_2nd_cpr)
 		/* Release Tx */
 		ull_cp_release_tx(&conn_3rd, tx);
 
-		/* There should be no 'extra' procedure on acount of the parallel CPR */
+		/* There should be no 'extra' procedure on account of the parallel CPR */
 		zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-1,
 		       "Free CTX buffers %d", llcp_ctx_buffers_free());
 	}

@@ -84,8 +84,8 @@ static const uint8_t zero_key[WG_PUBLIC_KEY_LEN];
 static K_MUTEX_DEFINE(lock);
 
 static struct wg_peer peers[CONFIG_WIREGUARD_MAX_PEER];
-static sys_slist_t peer_list;
-static sys_slist_t active_peers;
+ZTESTABLE_STATIC sys_slist_t peer_list;
+ZTESTABLE_STATIC sys_slist_t active_peers;
 
 static struct wg_context {
 	struct k_work_delayable wg_periodic_timer;
@@ -788,7 +788,7 @@ static enum net_verdict wg_ctrl_recv(struct net_if *iface, struct net_pkt *pkt)
 	ip_hdr = net_pkt_vpn_ip_hdr(pkt);
 	udp_hdr = net_pkt_vpn_udp_hdr(pkt);
 
-	if (net_pkt_family(pkt) == NET_AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == NET_AF_INET) {
 		if (len < NET_IPV4UDPH_LEN + sizeof(struct wg_msg_hdr)) {
 			NET_DBG("DROP: Too short Wireguard header");
 			goto drop;
@@ -813,7 +813,7 @@ static enum net_verdict wg_ctrl_recv(struct net_if *iface, struct net_pkt *pkt)
 		net_sin(my_addr)->sin_port = udp_hdr->udp->dst_port;
 		net_sin(my_addr)->sin_family = NET_AF_INET;
 
-	} else if (net_pkt_family(pkt) == NET_AF_INET6) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == NET_AF_INET6) {
 		if (len < NET_IPV6UDPH_LEN + sizeof(struct wg_msg_hdr)) {
 			NET_DBG("DROP: Too short Wireguard header");
 			goto drop;
@@ -1813,7 +1813,7 @@ static struct wg_peer *peer_lookup_by_pubkey(struct wg_iface_context *ctx,
 	return NULL;
 }
 
-static struct wg_peer *peer_lookup_by_id(int id)
+ZTESTABLE_STATIC struct wg_peer *peer_lookup_by_id(int id)
 {
 	struct wg_peer *peer, *next;
 

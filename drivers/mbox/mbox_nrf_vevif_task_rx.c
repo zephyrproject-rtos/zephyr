@@ -135,8 +135,6 @@ LISTIFY(DT_NUM_IRQS(DT_DRV_INST(0)), VEVIF_IRQ_FUN, ())
 
 static int vevif_task_rx_init(const struct device *dev)
 {
-	nrf_vpr_csr_vevif_tasks_clear(NRF_VPR_TASK_TRIGGER_ALL_MASK);
-
 	LISTIFY(DT_NUM_IRQS(DT_DRV_INST(0)), VEVIF_IRQ_CONNECT, (;));
 
 	return 0;

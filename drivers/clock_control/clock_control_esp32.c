@@ -285,6 +285,32 @@ static int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 #endif
 		rtc_clk_slow_src_set(rtc_slow_clk_src);
 
+#if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) ||                    \
+	defined(CONFIG_SOC_SERIES_ESP32H2) || defined(CONFIG_SOC_SERIES_ESP32P4)
+		/*
+		 * The source enums differ per SoC (ESP32-C5 has no RC32K,
+		 * ESP32-P4 has no OSC_SLOW), so each term is computed under the
+		 * SoC guard where its enum exists.
+		 */
+		bool xpd_xtal32k = (rtc_slow_clk_src == ESP32_RTC_SLOW_CLK_SRC_XTAL32K);
+		bool xpd_rc32k = false;
+
+#if !defined(CONFIG_SOC_SERIES_ESP32P4)
+		xpd_xtal32k |= (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW);
+#endif
+#if !defined(CONFIG_SOC_SERIES_ESP32C5)
+		xpd_rc32k = (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K);
+#endif
+
+		pmu_lp_power_t lp_clk_power = {
+			.xpd_xtal32k = xpd_xtal32k,
+			.xpd_rc32k = xpd_rc32k,
+			.xpd_fosc = 1,
+			.pd_osc = 0,
+		};
+		pmu_ll_lp_set_clk_power(&PMU, PMU_MODE_LP_ACTIVE, lp_clk_power.val);
+#endif
+
 		if (CONFIG_CLOCK_CONTROL_ESP32_RTC_CLK_CAL_CYCLES > 0) {
 			cal_val = rtc_clk_cal(CLK_CAL_RTC_SLOW,
 					      CONFIG_CLOCK_CONTROL_ESP32_RTC_CLK_CAL_CYCLES);

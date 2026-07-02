@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Tracing sensor pipeline sample"
+
+choice
+	prompt "Shared bus lock primitive"
+	default SAMPLE_BUS_MUTEX
+	help
+	  Selects the primitive guarding the shared "bus" that the aggregator
+	  and the storage thread contend for. Switch to the semaphore variant
+	  to reproduce a priority inversion that is visible in the trace.
+
+config SAMPLE_BUS_MUTEX
+	bool "Mutex (priority inheritance, no inversion)"
+	help
+	  Guard the bus with a mutex. The high priority aggregator briefly
+	  boosts the low priority storage thread, so it never waits long.
+
+config SAMPLE_BUS_SEM
+	bool "Semaphore (no inheritance, demonstrates priority inversion)"
+	help
+	  Guard the bus with a plain semaphore. With no priority inheritance a
+	  medium priority consumer can run while the low priority storage
+	  thread holds the bus, leaving the high priority aggregator blocked.
+
+endchoice
+
+source "Kconfig.zephyr"

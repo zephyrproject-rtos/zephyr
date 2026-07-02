@@ -74,7 +74,7 @@
  * unsigned int arch_swap (unsigned int eflags);
  */
 
-SECTION_FUNC(PINNED_TEXT, arch_swap)
+SECTION_FUNC(TEXT, arch_swap)
 #if defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
 	pushl	%eax
 	call	z_thread_mark_switched_out
@@ -484,7 +484,7 @@ __sh_stk_done:
  * @return this routine does NOT return.
  */
 
-SECTION_FUNC(PINNED_TEXT, z_x86_thread_entry_wrapper)
+SECTION_FUNC(TEXT, z_x86_thread_entry_wrapper)
 	movl	$0, (%esp)
 	jmp	*%edi
 #endif /* _THREAD_WRAPPER_REQUIRED */
@@ -495,7 +495,7 @@ SECTION_FUNC(PINNED_TEXT, z_x86_thread_entry_wrapper)
 	 *
 	 * void arch_shadow_stack_reset(k_thread *thread);
 	 */
-SECTION_FUNC(PINNED_TEXT, arch_shadow_stack_reset)
+SECTION_FUNC(TEXT, arch_shadow_stack_reset)
 	movl 0x4(%esp), %eax /* *thread on EAX */
 	pushl %ebx
 

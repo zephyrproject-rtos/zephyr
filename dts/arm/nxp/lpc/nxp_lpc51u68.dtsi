@@ -198,6 +198,7 @@
 		crc: crc@40095000 {
 			compatible = "nxp,lpc-crc";
 			reg = <0x40095000 0x1000>;
+			clocks = <&syscon MCUX_CRC_CLK>;
 			status = "disabled";
 		};
 	};

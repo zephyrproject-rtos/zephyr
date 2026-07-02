@@ -39,6 +39,6 @@ config FTP_CLIENT_BUF_SIZE
 module=FTP_CLIENT
 module-dep=LOG
 module-str=FTP client
-source "$(ZEPHYR_BASE)/subsys/logging/Kconfig.template.log_config"
+source "subsys/logging/Kconfig.template.log_config"
 
 endif # FTP_CLIENT

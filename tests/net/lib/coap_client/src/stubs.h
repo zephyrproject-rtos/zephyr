@@ -36,7 +36,8 @@
 #define ZSOCK_POLLNVAL 0x20
 /** @} */
 
-#define NUM_FD 2
+/* Socket fds 0 and 1, plus the cancel-wakeup eventfd at NUM_FD - 1. */
+#define NUM_FD 3
 
 void set_socket_events(int fd, short events);
 void clear_socket_events(int fd, short events);

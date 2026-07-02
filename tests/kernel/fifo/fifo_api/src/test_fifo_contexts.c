@@ -126,13 +126,34 @@ static void tfifo_is_empty(void *p)
 }
 
 /**
- * @addtogroup kernel_fifo_tests
+ * @addtogroup tests_kernel_fifo
  * @{
  */
 
 /**
- * @brief Test thread to thread data passing via fifo
- * @see k_fifo_init(), k_fifo_put(), k_fifo_get(), k_fifo_put_list()
+ * @brief Verify FIFO data passing between two threads.
+ *
+ * @details
+ * A consumer thread blocks on k_fifo_get() while the main thread enqueues
+ * items via the single, list and slist put APIs. The consumer must receive
+ * every item in FIFO order. The scenario is run against both a k_fifo_init()ed
+ * and a K_FIFO_DEFINE()d FIFO to confirm both initialization paths behave the
+ * same.
+ *
+ * Test steps:
+ * - Create a preemptible consumer thread that drains the FIFO.
+ * - From the main thread, put items using k_fifo_put(), k_fifo_put_list() and
+ *   k_fifo_put_slist().
+ * - Synchronize on a semaphore once the consumer has read all items.
+ * - Repeat for a statically defined FIFO.
+ *
+ * Expected result:
+ * - The consumer dequeues every item in the order it was enqueued.
+ *
+ * @see k_fifo_put()
+ * @see k_fifo_put_list()
+ * @see k_fifo_put_slist()
+ * @see k_fifo_get()
  */
 ZTEST(fifo_api_1cpu, test_fifo_thread2thread)
 {
@@ -145,8 +166,23 @@ ZTEST(fifo_api_1cpu, test_fifo_thread2thread)
 }
 
 /**
- * @brief Test isr to thread data passing via fifo
- * @see k_fifo_init(), k_fifo_put(), k_fifo_get()
+ * @brief Verify FIFO data passing from an ISR to a thread.
+ *
+ * @details
+ * Items are enqueued from interrupt context (via irq_offload()) and dequeued in
+ * thread context, confirming k_fifo_put() is ISR-safe and the thread receives
+ * every item in FIFO order. Run against both an init()ed and a DEFINE()d FIFO.
+ *
+ * Test steps:
+ * - From an ISR, put items into the FIFO and assert it is not empty.
+ * - In thread context, get all items and verify their order.
+ * - Repeat for a statically defined FIFO.
+ *
+ * Expected result:
+ * - The thread dequeues every ISR-enqueued item in order.
+ *
+ * @see k_fifo_put()
+ * @see k_fifo_get()
  */
 ZTEST(fifo_api, test_fifo_thread2isr)
 {
@@ -159,8 +195,23 @@ ZTEST(fifo_api, test_fifo_thread2isr)
 }
 
 /**
- * @brief Test thread to isr data passing via fifo
- * @see k_fifo_init(), k_fifo_put(), k_fifo_get()
+ * @brief Verify FIFO data passing from a thread to an ISR.
+ *
+ * @details
+ * Items are enqueued in thread context and dequeued from interrupt context (via
+ * irq_offload()), confirming k_fifo_get() is ISR-safe and the ISR receives every
+ * item in FIFO order. Run against both an init()ed and a DEFINE()d FIFO.
+ *
+ * Test steps:
+ * - In thread context, put items into the FIFO.
+ * - From an ISR, get all items, verify their order, and assert the FIFO is empty.
+ * - Repeat for a statically defined FIFO.
+ *
+ * Expected result:
+ * - The ISR dequeues every thread-enqueued item in order.
+ *
+ * @see k_fifo_put()
+ * @see k_fifo_get()
  */
 ZTEST(fifo_api, test_fifo_isr2thread)
 {
@@ -173,8 +224,22 @@ ZTEST(fifo_api, test_fifo_isr2thread)
 }
 
 /**
- * @brief Test empty fifo
- * @see k_fifo_init(), k_fifo_is_empty(), k_fifo_put(), k_fifo_get()
+ * @brief Verify k_fifo_is_empty() tracks FIFO contents in thread context.
+ *
+ * @details
+ * k_fifo_is_empty() must report true for a freshly initialized FIFO, false once
+ * items are enqueued, and true again after they are all dequeued. All operations
+ * run in thread context.
+ *
+ * Test steps:
+ * - Initialize a FIFO and assert it is empty.
+ * - Put items and assert it is not empty.
+ * - Get all items and assert it is empty again.
+ *
+ * Expected result:
+ * - k_fifo_is_empty() reflects the presence or absence of queued data.
+ *
+ * @see k_fifo_is_empty()
  */
 ZTEST(fifo_api, test_fifo_is_empty_thread)
 {
@@ -187,14 +252,83 @@ ZTEST(fifo_api, test_fifo_is_empty_thread)
 }
 
 /**
- * @brief Test empty fifo in interrupt context
- * @see k_fifo_init(), fifo_is_empty(), k_fifo_put(), k_fifo_get()
+ * @brief Verify k_fifo_is_empty() tracks FIFO contents in ISR context.
+ *
+ * @details
+ * Same emptiness contract as the thread-context case, but the put/get/is_empty
+ * sequence is executed from interrupt context via irq_offload() to confirm
+ * k_fifo_is_empty() is ISR-safe.
+ *
+ * Test steps:
+ * - Initialize a FIFO and assert it is empty from thread context.
+ * - From an ISR, put items (not empty) then get them all (empty again).
+ *
+ * Expected result:
+ * - k_fifo_is_empty() reports the correct state when called from an ISR.
+ *
+ * @see k_fifo_is_empty()
  */
 ZTEST(fifo_api, test_fifo_is_empty_isr)
 {
 	k_fifo_init(&fifo);
 	/**TESTPOINT: check fifo is empty from isr*/
 	irq_offload((irq_offload_routine_t)tfifo_is_empty, &fifo);
+}
+
+/**
+ * @brief Test peeking at the front and back items of a FIFO
+ *
+ * @details Enqueue two data items, then use k_fifo_peek_head() and
+ * k_fifo_peek_tail() to inspect the items at the front and back of the FIFO and
+ * verify the returned pointers match the first and last enqueued items without
+ * removing them (a subsequent get still returns both items in order). Peeking an
+ * empty FIFO returns NULL.
+ *
+ * @see k_fifo_peek_head(), k_fifo_peek_tail()
+ */
+ZTEST(fifo_api, test_fifo_peek)
+{
+	k_fifo_init(&fifo);
+
+	k_fifo_put(&fifo, (void *)&data[0]);
+	k_fifo_put(&fifo, (void *)&data[1]);
+
+	/**TESTPOINT: peek front and back without removing*/
+	zassert_equal(k_fifo_peek_head(&fifo), (void *)&data[0]);
+	zassert_equal(k_fifo_peek_tail(&fifo), (void *)&data[1]);
+
+	/* Peeking does not dequeue: both items are still retrievable in order. */
+	zassert_equal(k_fifo_get(&fifo, K_NO_WAIT), (void *)&data[0]);
+	zassert_equal(k_fifo_get(&fifo, K_NO_WAIT), (void *)&data[1]);
+
+	/**TESTPOINT: peek of an empty fifo returns NULL*/
+	zassert_is_null(k_fifo_peek_head(&fifo));
+	zassert_is_null(k_fifo_peek_tail(&fifo));
+}
+
+K_HEAP_DEFINE(fifo_alloc_pool, 256);
+
+/**
+ * @brief Test enqueuing a data item to a FIFO with implicit memory allocation
+ *
+ * @details Use k_fifo_alloc_put() to enqueue a data item that does not reserve
+ * space for the bookkeeping word, so the kernel allocates the container from the
+ * calling thread's resource pool. Verify the call succeeds and that the same
+ * data pointer is returned by a subsequent get.
+ *
+ * @see k_fifo_alloc_put()
+ */
+ZTEST(fifo_api, test_fifo_alloc_put)
+{
+	static uint32_t payload = 0xDEADBEEF;
+
+	k_fifo_init(&fifo);
+	k_thread_heap_assign(k_current_get(), &fifo_alloc_pool);
+
+	/**TESTPOINT: allocate the queue container from the thread resource pool*/
+	zassert_equal(k_fifo_alloc_put(&fifo, &payload), 0);
+
+	zassert_equal(k_fifo_get(&fifo, K_NO_WAIT), (void *)&payload);
 }
 /**
  * @}

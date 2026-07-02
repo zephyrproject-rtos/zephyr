@@ -40,8 +40,8 @@ LOG_MODULE_REGISTER(bt_aics);
 #define VALID_AICS_OPCODE(opcode)                                              \
 	((opcode) >= BT_AICS_OPCODE_SET_GAIN && (opcode) <= BT_AICS_OPCODE_SET_AUTO)
 
-#define AICS_CP_LEN                 0x02
-#define AICS_CP_SET_GAIN_LEN        0x03
+#define AICS_CP_LEN                 0x02U
+#define AICS_CP_SET_GAIN_LEN        0x03U
 
 
 static ssize_t write_description(struct bt_conn *conn,
@@ -257,12 +257,12 @@ static uint8_t valid_control_point_write(uint16_t len, uint16_t offset,
 					 const struct bt_aics_gain_control *cp,
 					 uint8_t change_counter)
 {
-	if (offset != 0) {
+	if (offset != 0U) {
 		LOG_DBG("Invalid offset: %u", offset);
 		return BT_ATT_ERR_INVALID_OFFSET;
 	}
 
-	if (len == 0 || cp == NULL) {
+	if (len == 0U || cp == NULL) {
 		LOG_DBG("Invalid length (%u) or NULL data (%p)", len, cp);
 		return BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 	}

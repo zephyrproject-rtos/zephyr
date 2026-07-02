@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/hwinfo.h>
 
-#ifdef CONFIG_PTP_CLOCK
+#ifdef CONFIG_PTP_CLOCK_NXP_ENET
 #include <zephyr/drivers/ptp_clock.h>
 #endif
 
@@ -198,7 +198,7 @@ static inline void eth_wait_for_ptp_ts(const struct device *dev, struct net_pkt 
 #define eth_wait_for_ptp_ts(...)
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
-#ifdef CONFIG_PTP_CLOCK
+#ifdef CONFIG_PTP_CLOCK_NXP_ENET
 static const struct device *eth_nxp_enet_get_ptp_clock(const struct device *dev,
 						       struct net_if *iface __unused)
 {
@@ -206,7 +206,7 @@ static const struct device *eth_nxp_enet_get_ptp_clock(const struct device *dev,
 
 	return config->ptp_clock;
 }
-#endif /* CONFIG_PTP_CLOCK */
+#endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
 static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 {
@@ -477,13 +477,9 @@ static void nxp_enet_phy_cb(const struct device *phy,
 		}
 
 		ENET_SetMII(data->base, speed, duplex);
-
-		net_eth_carrier_on(data->iface);
-	} else {
-		net_eth_carrier_off(data->iface);
 	}
 
-	LOG_INF("Link is %s", state->is_up ? "up" : "down");
+	net_eth_carrier_set(data->iface, state->is_up);
 }
 
 static void eth_nxp_enet_iface_init(struct net_if *iface)
@@ -811,7 +807,7 @@ static const struct ethernet_api api_funcs = {
 	.set_config		= eth_nxp_enet_set_config,
 	.get_config		= eth_nxp_enet_get_config,
 	.send			= eth_nxp_enet_tx,
-#if defined(CONFIG_PTP_CLOCK)
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	.get_ptp_clock		= eth_nxp_enet_get_ptp_clock,
 #endif
 };

@@ -5,8 +5,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_CORTEX_R_MPU_ARM_MPU_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM64_CORTEX_R_MPU_ARM_MPU_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_CORTEX_R_ARM_MPU_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM64_CORTEX_R_ARM_MPU_H_
 
 /*
  * Convenience macros to represent the ARMv8-R64-specific configuration
@@ -261,4 +261,4 @@ struct dynamic_region_info {
 
 #endif	/* _ASMLANGUAGE */
 
-#endif	/* ZEPHYR_INCLUDE_ARCH_ARM64_CORTEX_R_MPU_ARM_MPU_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_CORTEX_R_ARM_MPU_H_ */

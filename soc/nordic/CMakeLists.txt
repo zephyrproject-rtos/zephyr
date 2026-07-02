@@ -38,11 +38,18 @@ endif()
 if(CONFIG_BUILD_WITH_TFM)
   set_property(TARGET zephyr_property_target
     APPEND PROPERTY TFM_CMAKE_OPTIONS -DHAL_NORDIC_PATH=${ZEPHYR_HAL_NORDIC_MODULE_DIR}
-    )
+  )
+
+  if(CONFIG_SOC_NRF7120_TFM_MRAMC_SERVICE)
+    set(nrf_mramc_service ON)
+  else()
+    set(nrf_mramc_service OFF)
+  endif()
 
   set_property(TARGET zephyr_property_target
     APPEND PROPERTY TFM_CMAKE_OPTIONS -DNRF_NS_STORAGE=${CONFIG_TFM_NRF_NS_STORAGE}
-    )
+    APPEND PROPERTY TFM_CMAKE_OPTIONS -DNRF_MRAMC_SERVICE=${nrf_mramc_service}
+  )
 endif()
 
 add_subdirectory(${SOC_SERIES})

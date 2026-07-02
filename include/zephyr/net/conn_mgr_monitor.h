@@ -9,8 +9,8 @@
  * @brief API for monitoring network connections and interfaces.
  */
 
-#ifndef ZEPHYR_INCLUDE_CONN_MGR_H_
-#define ZEPHYR_INCLUDE_CONN_MGR_H_
+#ifndef ZEPHYR_INCLUDE_NET_CONN_MGR_MONITOR_H_
+#define ZEPHYR_INCLUDE_NET_CONN_MGR_MONITOR_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -109,4 +109,4 @@ void conn_mgr_watch_l2(const struct net_l2 *l2);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_CONN_MGR_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_CONN_MGR_MONITOR_H_ */

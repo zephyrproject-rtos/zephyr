@@ -41,7 +41,7 @@ int log_cache_init(struct log_cache *cache, const struct log_cache_config *confi
 /** @brief Get cached entry or buffer to fill new data for caching.
  *
  * @param[in] cache Cache object.
- * @param[in] id Identication.
+ * @param[in] id Identification.
  * @param[out] data Location.
  *
  * @retval true if entry with given @p id was found and @p data contains pointer to it.

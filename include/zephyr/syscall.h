@@ -117,7 +117,6 @@ static ALWAYS_INLINE bool z_syscall_trap(void)
  * memory operations around the branch. Without a barrier, memory accesses related to the privileged
  * path may move before the context check or be speculated.
  */
-__pinned_func
 static inline bool k_is_user_context(void)
 {
 #ifdef CONFIG_USERSPACE

@@ -253,6 +253,7 @@ int net_route_ipv6_mcast_forward_packet(struct net_pkt *pkt,
 	int ret = 0;
 	int err = 0;
 
+	/* Decrement hop limit; required for forwarding. */
 	hdr->hop_limit--;
 	net_pkt_set_ipv6_hop_limit(pkt, hdr->hop_limit);
 
@@ -273,7 +274,7 @@ int net_route_ipv6_mcast_forward_packet(struct net_pkt *pkt,
 				continue;
 			}
 
-			pkt_cpy = net_pkt_shallow_clone(pkt, K_NO_WAIT);
+			pkt_cpy = net_pkt_clone(pkt, K_NO_WAIT);
 			if (pkt_cpy == NULL) {
 				err--;
 				continue;
@@ -291,6 +292,10 @@ int net_route_ipv6_mcast_forward_packet(struct net_pkt *pkt,
 			}
 		}
 	}
+
+	/* Restore initial hop limit for further processing. */
+	hdr->hop_limit++;
+	net_pkt_set_ipv6_hop_limit(pkt, hdr->hop_limit);
 
 	return (err == 0) ? ret : err;
 }
@@ -450,6 +455,27 @@ bool net_route_ipv6_get_info(struct net_if *iface,
 	return true;
 }
 
+int net_route_ipv6_decrement_hop_limit(struct net_pkt *pkt)
+{
+	struct net_ipv6_hdr *hdr;
+
+	NET_ASSERT(pkt);
+
+	hdr = NET_IPV6_HDR(pkt);
+	if (hdr == NULL) {
+		return -EINVAL;
+	}
+
+	if (hdr->hop_limit <= 1U) {
+		return -ETIMEDOUT;
+	}
+
+	hdr->hop_limit--;
+	net_pkt_set_ipv6_hop_limit(pkt, hdr->hop_limit);
+
+	return 0;
+}
+
 int net_route_ipv6_packet(struct net_pkt *pkt, const struct net_in6_addr *nexthop)
 {
 	struct net_linkaddr *lladdr = NULL;
@@ -508,12 +534,11 @@ int net_route_ipv6_packet(struct net_pkt *pkt, const struct net_in6_addr *nextho
 	}
 
 	if (forwarding) {
-		if (NET_IPV6_HDR(pkt)->hop_limit <= 1U) {
-			return -ETIMEDOUT;
-		}
+		int ret = net_route_ipv6_decrement_hop_limit(pkt);
 
-		NET_IPV6_HDR(pkt)->hop_limit--;
-		net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_HDR(pkt)->hop_limit);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	net_pkt_set_iface(pkt, out_iface);

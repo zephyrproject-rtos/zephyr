@@ -110,13 +110,6 @@ extern char _app_smem_size[];
 extern char _app_smem_rom_start[];
 extern char _app_smem_num_words[];
 
-#ifdef CONFIG_LINKER_USE_PINNED_SECTION
-extern char _app_smem_pinned_start[];
-extern char _app_smem_pinned_end[];
-extern char _app_smem_pinned_size[];
-extern char _app_smem_pinned_num_words[];
-#endif
-
 /* Memory owned by the kernel. Start and end will be aligned for memory
  * management/protection hardware for the target architecture.
  *
@@ -324,55 +317,6 @@ extern char lnkr_boot_noinit_start[];
 extern char lnkr_boot_noinit_end[];
 extern char lnkr_boot_noinit_size[];
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION */
-
-#ifdef CONFIG_LINKER_USE_PINNED_SECTION
-/* lnkr_pinned_start[] and lnkr_pinned_end[] must encapsulate
- * all the pinned sections as these are used by
- * the MMU code to mark the physical page frames with
- * K_MEM_PAGE_FRAME_PINNED.
- */
-extern char lnkr_pinned_start[];
-extern char lnkr_pinned_end[];
-
-extern char lnkr_pinned_text_start[];
-extern char lnkr_pinned_text_end[];
-extern char lnkr_pinned_text_size[];
-extern char lnkr_pinned_data_start[];
-extern char lnkr_pinned_data_end[];
-extern char lnkr_pinned_data_size[];
-extern char lnkr_pinned_rodata_start[];
-extern char lnkr_pinned_rodata_end[];
-extern char lnkr_pinned_rodata_size[];
-extern char lnkr_pinned_bss_start[];
-extern char lnkr_pinned_bss_end[];
-extern char lnkr_pinned_bss_size[];
-extern char lnkr_pinned_noinit_start[];
-extern char lnkr_pinned_noinit_end[];
-extern char lnkr_pinned_noinit_size[];
-
-__pinned_func
-static inline bool lnkr_is_pinned(uint8_t *addr)
-{
-	if ((addr >= (uint8_t *)lnkr_pinned_start) &&
-	    (addr < (uint8_t *)lnkr_pinned_end)) {
-		return true;
-	} else {
-		return false;
-	}
-}
-
-__pinned_func
-static inline bool lnkr_is_region_pinned(uint8_t *addr, size_t sz)
-{
-	if ((addr >= (uint8_t *)lnkr_pinned_start) &&
-	    ((addr + sz) < (uint8_t *)lnkr_pinned_end)) {
-		return true;
-	} else {
-		return false;
-	}
-}
-
-#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 #ifdef CONFIG_LINKER_USE_ONDEMAND_SECTION
 /* lnkr_ondemand_start[] and lnkr_ondemand_end[] must encapsulate

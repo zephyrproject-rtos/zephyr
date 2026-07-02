@@ -1030,12 +1030,12 @@ ZTEST(net_mld_test_suite, test_mcast_routes_in_mld)
 					   str, sizeof(str));
 	}
 
-	/* 1. Expect that report contains all iface's multicast addressses and no route */
+	/* 1. Expect that report contains all iface's multicast addresses and no route */
 	zassert_equal(info.records_count, get_mcast_addr_count(iface),
 		      "Different number of reported addresses");
 
 	/* 2. If CONFIG_NET_IPV6_MCAST_ROUTE_MLD_REPORTS is enabled check that
-	 * funtionality works
+	 * functionality works
 	 */
 	if (IS_ENABLED(CONFIG_NET_IPV6_MCAST_ROUTE_MLD_REPORTS)) {
 		verify_mcast_routes_in_mld(&info);

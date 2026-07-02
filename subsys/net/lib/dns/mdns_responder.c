@@ -1952,7 +1952,7 @@ static int mdns_responder_init(void)
 				   K_KERNEL_STACK_SIZEOF(mdns_work_q_stack),
 				   THREAD_PRIORITY, NULL);
 
-		k_thread_name_set(&mdns_work_q.thread, "mdns_work");
+		k_thread_name_set(mdns_work_q.thread_id, "mdns_work");
 	}
 
 	k_work_init_delayable(&init_listener_timer, do_init_listener);

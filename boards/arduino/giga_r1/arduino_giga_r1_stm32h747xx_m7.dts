@@ -60,6 +60,15 @@
 	status = "okay";
 };
 
+&pll2 {
+	clocks = <&clk_hse>;
+	div-m = <4>;
+	mul-n = <50>;
+	div-p = <50>;
+	div-q = <2>;
+	div-r = <2>;
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(480)>;
@@ -108,6 +117,18 @@
 	};
 };
 
+&pdm0 {
+	pinctrl-0 = <&dfsdm1_ckout_pd3
+		     &dfsdm1_datin0_pc1>;
+	pinctrl-names = "default";
+	dmas = <&dmamux1 0 101 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "rx";
+
+	dfsdm_channel_0: channel@0 {
+		reg = <0>;
+	};
+};
+
 &i2c4 {
 	status = "okay";
 	pinctrl-0 = <&i2c4_scl_pb6 &i2c4_sda_ph12>;
@@ -152,17 +173,19 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "bootloader";
 			reg = <0x0 0x40000>;
 			read-only;
 		};
 
 		slot0_partition: partition@40000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x40000 0x000c0000>;
 		};

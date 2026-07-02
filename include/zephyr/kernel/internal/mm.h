@@ -295,7 +295,7 @@ void k_mem_unmap_phys_bare(uint8_t *virt, size_t size);
  *             anonymous memory. Must be page-aligned.
  * @param size Size of the memory mapping. This must be page-aligned.
  * @param flags K_MEM_PERM_*, K_MEM_MAP_* control flags.
- * @param is_anon True is requesting mapping with anonymous memory.
+ * @param is_anon True if requesting mapping with anonymous memory.
  *
  * @return The mapped memory location, or NULL if insufficient virtual address
  *         space, insufficient physical memory to establish the mapping,

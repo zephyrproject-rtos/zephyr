@@ -10,31 +10,32 @@ properties:
 
   tx-pin:
     type: int
-    default: 5
-    enum:
-      - 5
-    description: In ESP32-C6, TX pin is fixed to GPIO5
+    description: |
+      LP UART TX pin. The LP UART pins are fixed in silicon and routed
+      through the LP IO mux. Defaults are set per SoC in the device tree.
 
   rx-pin:
     type: int
-    default: 4
-    enum:
-      - 4
-    description: In ESP32-C6, RX pin is fixed to GPIO4
+    description: |
+      LP UART RX pin. The LP UART pins are fixed in silicon and routed
+      through the LP IO mux. Defaults are set per SoC in the device tree.
 
   rts-pin:
     type: int
-    default: 2
-    enum:
-      - 2
-    description: In ESP32-C6, RTS pin is fixed to GPIO2
+    description: |
+      LP UART RTS pin. Only configured when hw-flow-control is enabled.
 
   cts-pin:
     type: int
-    default: 3
-    enum:
-      - 3
-    description: In ESP32-C6, CTS pin is fixed to GPIO3
+    description: |
+      LP UART CTS pin. Only configured when hw-flow-control is enabled.
 
   current-speed:
     type: int
+
+  loopback:
+    type: boolean
+    description: |
+      Enable the LP UART hardware internal loopback, tying TX to RX inside
+      the peripheral. Intended for self-test on hardware without external
+      wiring.

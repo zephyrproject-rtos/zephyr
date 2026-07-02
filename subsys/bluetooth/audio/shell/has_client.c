@@ -152,7 +152,7 @@ static int cmd_has_client_preset_set(const struct shell *sh, size_t argc, char *
 		return -ENOEXEC;
 	}
 
-	for (size_t argn = 2; argn < argc; argn++) {
+	for (size_t argn = 2U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (!strcmp(arg, "sync")) {
@@ -187,7 +187,7 @@ static int cmd_has_client_preset_next(const struct shell *sh, size_t argc, char 
 	bool sync = false;
 	int err;
 
-	for (size_t argn = 1; argn < argc; argn++) {
+	for (size_t argn = 1U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (!strcmp(arg, "sync")) {
@@ -222,7 +222,7 @@ static int cmd_has_client_preset_prev(const struct shell *sh, size_t argc, char 
 	bool sync = false;
 	int err;
 
-	for (size_t argn = 1; argn < argc; argn++) {
+	for (size_t argn = 1U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (!strcmp(arg, "sync")) {

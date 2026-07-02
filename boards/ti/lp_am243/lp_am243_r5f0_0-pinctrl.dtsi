@@ -1,0 +1,35 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-FileCopyrightText: Copyright 2025 - 2026 Siemens Mobility GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
+
+&main_pinctrl {
+	uart0_rx_default: uart0_rx_default {
+		pinmux = <K3_PINMUX(0x0230, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	uart0_tx_default: uart0_tx_default {
+		pinmux = <K3_PINMUX(0x0234, PIN_OUTPUT, MUX_MODE_0)>;
+	};
+
+	led0_output: led0_output { // GPIO0 22
+		pinmux = <K3_PINMUX(0x0058, PIN_OUTPUT, MUX_MODE_7)>;
+	};
+
+	led1_output: led1_output { // GPIO1 55
+		pinmux = <K3_PINMUX(0x023C, PIN_OUTPUT, MUX_MODE_7)>;
+	};
+
+	led2_output: led2_output { // GPIO1 39
+		pinmux = <K3_PINMUX(0x01FC, PIN_OUTPUT, MUX_MODE_7)>;
+	};
+
+	led3_output: led3_output { // GPIO1 38
+		pinmux = <K3_PINMUX(0x01F8, PIN_OUTPUT, MUX_MODE_7)>;
+	};
+
+	status = "okay";
+};

@@ -5,7 +5,7 @@
  *
  */
 
-#include "zephyr/pmci/mctp/mctp_i3c_common.h"
+#include <zephyr/pmci/mctp/mctp_i3c_common.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>

@@ -13,10 +13,10 @@
 	compatible = "sipeed,m0sense";
 
 	chosen {
-		zephyr,flash = &flash0;
+		zephyr,flash = &kh25v40;
+		zephyr,flash-controller = &sf_bank1;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,itcm = &itcm;
-		zephyr,dtcm = &dtcm;
 		zephyr,sram = &sram0_bt;
 		zephyr,entropy = &sec_eng_trng;
 		zephyr,bt-hci = &bt_hci_bflb;
@@ -127,33 +127,54 @@
 	clock-frequency = <DT_FREQ_M(144)>;
 };
 
-&flashctrl {
-	flash0: flash@23000000 {
-		compatible = "soc-nv-flash";
-		/* Capacity -Header -UF2 bootloader */
-		reg = <0x23000000 (DT_SIZE_K(512) - 0x2000 - 0x10000)>;
-		ranges = <0x0 0x23000000 (DT_SIZE_K(512) - 0x2000 - 0x10000)>;
+&sf_bank1 {
+	reg = <0x23000000 0x80000>;
+	ranges = <0x0 0x23000000 0x80000>;
+
+	kh25v40: flash@0 {
+		compatible = "bflb,sf-flash", "soc-nv-flash";
+		reg = <0 0x80000>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		write-block-size = <256>;
+		write-block-size = <4>;
 		erase-block-size = <DT_SIZE_K(4)>;
+
+		/* Sad flash can only do DO at best */
+		spi-bus-mode = <1>;
+		sf-pad = <2>;
+		jedec-id = [c2 20 13];
 
 		partitions {
 			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			slot0_partition: partition@0 {
+			boot_header_partition: partition@0 {
 				compatible = "zephyr,mapped-partition";
-				label = "image-0";
-				reg = <0x00000000 0x60000>;
+				label = "boot_header";
+				reg = <0x00000000 0x2000>;
 				read-only;
 			};
 
-			storage_partition: partition@60000 {
+			bootloader_partition: partition@2000 {
+				compatible = "zephyr,mapped-partition";
+				label = "bootloader";
+				reg = <0x00002000 0x10000>;
+				read-only;
+			};
+
+			slot0_partition: partition@12000 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-0";
+				reg = <0x00012000 0x60000>;
+				read-only;
+			};
+
+			storage_partition: partition@72000 {
 				compatible = "zephyr,mapped-partition";
 				label = "storage";
-				reg = <0x00060000 0xe000>;
+				reg = <0x00072000 0xe000>;
 			};
 		};
 	};

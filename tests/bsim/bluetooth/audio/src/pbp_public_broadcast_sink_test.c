@@ -25,6 +25,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
@@ -37,7 +38,6 @@
 #include "common.h"
 
 #if defined(CONFIG_BT_PBP)
-#define SEM_TIMEOUT K_SECONDS(30)
 
 extern enum bst_result_t bst_result;
 
@@ -383,19 +383,13 @@ static void test_main(void)
 
 		/* Wait for PA sync */
 		printk("Waiting for PA Sync\n");
-		err = k_sem_take(&sem_pa_synced, SEM_TIMEOUT);
-		if (err != 0) {
-			printk("sem_pa_synced timed out\n");
-			break;
-		}
+		err = k_sem_take(&sem_pa_synced, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 
 		/* Wait for BASE decode */
 		printk("Waiting for BASE\n");
-		err = k_sem_take(&sem_base_received, SEM_TIMEOUT);
-		if (err != 0) {
-			printk("sem_base_received timed out\n");
-			break;
-		}
+		err = k_sem_take(&sem_base_received, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 
 		/* Create broadcast sink */
 		printk("Creating broadcast sink\n");
@@ -406,11 +400,8 @@ static void test_main(void)
 		}
 
 		printk("Waiting for syncable\n");
-		err = k_sem_take(&sem_syncable, SEM_TIMEOUT);
-		if (err != 0) {
-			printk("sem_syncable timed out\n");
-			break;
-		}
+		err = k_sem_take(&sem_syncable, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 
 		/* Sync to broadcast source */
 		printk("Syncing broadcast sink\n");
@@ -428,7 +419,8 @@ static void test_main(void)
 
 		/* Wait for the stream to end */
 		printk("Waiting for sync lost\n");
-		k_sem_take(&sem_pa_sync_lost, SEM_TIMEOUT);
+		err = k_sem_take(&sem_pa_sync_lost, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 
 		count++;
 	}

@@ -114,6 +114,18 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if defined(CONFIG_CRC_DRIVER_NXP)
+	if ((uint32_t)sub_system == MCUX_CRC_CLK) {
+		CLOCK_EnableClock(kCLOCK_Crc0);
+	}
+#endif
+
+#if defined(CONFIG_CRC_DRIVER_NXP_LPC)
+	if ((uint32_t)sub_system == MCUX_CRC_CLK) {
+		CLOCK_EnableClock(kCLOCK_Crc);
+	}
+#endif
+
 #if defined(CONFIG_PINCTRL_NXP_PORT)
 	switch ((uint32_t)sub_system) {
 #if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
@@ -634,25 +646,51 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		break;
 #endif
 
+	case MCUX_SYSTEM_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_CoreSysClk);
+		break;
+
 #if defined(CONFIG_I3C_MCUX)
 	case MCUX_I3C_CLK:
 #if CONFIG_SOC_FAMILY_MCXN
 		*rate = CLOCK_GetI3cClkFreq(0);
+#elif CONFIG_SOC_SERIES_MCXAXX7
+		*rate = CLOCK_GetI3CFClkFreq(0);
 #elif CONFIG_SOC_FAMILY_MCXA
 		*rate = CLOCK_GetI3CFClkFreq();
 #else
 		*rate = CLOCK_GetI3cClkFreq();
 #endif
 		break;
-#if (FSL_FEATURE_SOC_I3C_COUNT == 2)
+#if (FSL_FEATURE_SOC_I3C_COUNT >= 2)
 	case MCUX_I3C2_CLK:
 #if CONFIG_SOC_FAMILY_MCXN
 		*rate = CLOCK_GetI3cClkFreq(1);
+#elif CONFIG_SOC_SERIES_MCXAXX7
+		*rate = CLOCK_GetI3CFClkFreq(1);
 #else
 		*rate = CLOCK_GetI3cClkFreq();
 #endif
 		break;
-#endif /* (FSL_FEATURE_SOC_I3C_COUNT == 2) */
+#endif /* (FSL_FEATURE_SOC_I3C_COUNT >= 2) */
+#if (FSL_FEATURE_SOC_I3C_COUNT >= 3)
+	case MCUX_I3C3_CLK:
+#if CONFIG_SOC_SERIES_MCXAXX7
+		*rate = CLOCK_GetI3CFClkFreq(2);
+#else
+		*rate = CLOCK_GetI3cClkFreq(2);
+#endif
+		break;
+#endif /* (FSL_FEATURE_SOC_I3C_COUNT >= 3) */
+#if (FSL_FEATURE_SOC_I3C_COUNT >= 4)
+	case MCUX_I3C4_CLK:
+#if CONFIG_SOC_SERIES_MCXAXX7
+		*rate = CLOCK_GetI3CFClkFreq(3);
+#else
+		*rate = CLOCK_GetI3cClkFreq(3);
+#endif
+		break;
+#endif /* (FSL_FEATURE_SOC_I3C_COUNT >= 4) */
 
 #endif /* CONFIG_I3C_MCUX */
 

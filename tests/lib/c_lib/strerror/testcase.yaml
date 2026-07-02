@@ -19,6 +19,9 @@ tests:
       - CONFIG_MINIMAL_LIBC_STRING_ERROR_TABLE=n
       - CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y
   libraries.libc.strerror.newlib:
+    toolchain_exclude:
+      - zephyr/gnu
+      - zephyr/llvm
     filter: CONFIG_NEWLIB_LIBC_SUPPORTED
     min_ram: 32
     tags: newlib
@@ -26,6 +29,9 @@ tests:
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
   libraries.libc.strerror.newlib_nano:
+    toolchain_exclude:
+      - zephyr/gnu
+      - zephyr/llvm
     filter: CONFIG_NEWLIB_LIBC_SUPPORTED and CONFIG_HAS_NEWLIB_LIBC_NANO
     tags: newlib
     ignore_faults: true

@@ -3,10 +3,26 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Internal Xen support helpers.
+ * @ingroup xen_internal
+ */
+
 #ifndef __XEN_GENERIC_H__
 #define __XEN_GENERIC_H__
 
 #include <zephyr/xen/public/xen.h>
+
+/**
+ * @defgroup xen_internal Xen internal support
+ * @ingroup xen_support
+ * @brief Share low-level helpers used by the Zephyr Xen support code.
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
 
 #define XEN_PAGE_SIZE		4096
 #define XEN_PAGE_SHIFT		12
@@ -31,5 +47,9 @@
 	__atomic_compare_exchange_n(ptr, &stored, new, 0, __ATOMIC_SEQ_CST, \
 				__ATOMIC_SEQ_CST) ? new : old; \
 })
+
+/** @endcond */
+
+/** @} */
 
 #endif /* __XEN_GENERIC_H__ */

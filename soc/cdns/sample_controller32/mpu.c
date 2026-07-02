@@ -22,7 +22,8 @@ const struct xtensa_mpu_mem_type_region xtensa_mpu_mem_type_ranges[] = {
 	{
 		.start = 0x00000000,
 		.end   = 0x3FFC0000,
-		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
+		/* device, sharable, interruptible, not cached in L1 */
+		.memory_type = 0x07,
 	},
 	{
 		/* dram*.bss */
@@ -41,7 +42,8 @@ const struct xtensa_mpu_mem_type_region xtensa_mpu_mem_type_ranges[] = {
 	{
 		.start = PHYS_SRAM0_ADDR + PHYS_SRAM0_SIZE,
 		.end = 0xFFFFFFFF,
-		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
+		/* device, sharable, interruptible, not cached in L1 */
+		.memory_type = 0x07,
 	},
 };
 

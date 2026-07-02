@@ -40,6 +40,8 @@ tests:
       - "boards/nrf528xx_rtc.overlay"
 
   sample.sensor.clock.system:
+    platform_type:
+      - mcu
     filter: CONFIG_SENSOR_CLOCK_SYSTEM
     tags:
       - drivers

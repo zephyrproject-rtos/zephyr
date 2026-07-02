@@ -20,7 +20,7 @@ tests:
     # LOG_MIPI_SYST_ENABLE=y --> CONFIG_MIPI_SYST_LIB --> \
     # --> REQUIRES_FULL_LIBC
     #
-    # Not all compillers announced in Zephyr support a full C library
+    # Not all compilers announced in Zephyr support a full C library
     filter: CONFIG_FULL_LIBC_SUPPORTED
     extra_configs:
       - CONFIG_REQUIRES_FULL_LIBC=y

@@ -29,12 +29,8 @@
 
 LOG_MODULE_REGISTER(eth_stm32_hal, CONFIG_ETHERNET_LOG_LEVEL);
 
-#if DT_INST_PROP(0, zephyr_random_mac_address)
-#define ETH_STM32_RANDOM_MAC
-#endif
-
-#if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) && \
-	    !DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
+#if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) &&                                       \
+	!DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
 #error DTCM for DMA buffer is activated but zephyr,dtcm is not present in dts
 #endif
 
@@ -42,21 +38,8 @@ LOG_MODULE_REGISTER(eth_stm32_hal, CONFIG_ETHERNET_LOG_LEVEL);
 #define ST_OUI_B1 0x80
 #define ST_OUI_B2 0xE1
 
-#define ETH_STM32_HAL_MTU NET_ETH_MTU
+#define ETH_STM32_HAL_MTU            NET_ETH_MTU
 #define ETH_STM32_HAL_FRAME_SIZE_MAX (ETH_STM32_HAL_MTU + 18)
-
-uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_STM32_RX_BUF_SIZE] __eth_stm32_buf;
-uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_STM32_TX_BUF_SIZE] __eth_stm32_buf;
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
-ETH_DMADescTypeDef dma_rx_desc_tab[ETH_DMA_RX_CH_CNT][ETH_RXBUFNB] __eth_stm32_desc __aligned(32);
-ETH_DMADescTypeDef dma_tx_desc_tab[ETH_DMA_TX_CH_CNT][ETH_TXBUFNB] __eth_stm32_desc __aligned(32);
-#else
-ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __eth_stm32_desc;
-ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __eth_stm32_desc;
-#endif
-
-const struct device *eth_stm32_phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle));
 
 static void rx_thread(void *arg1, void *unused1, void *unused2)
 {
@@ -77,8 +60,7 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 				iface = net_pkt_iface(pkt);
 				res = net_recv_data(iface, pkt);
 				if (res < 0) {
-					eth_stats_update_errors_rx(
-							net_pkt_iface(pkt));
+					eth_stats_update_errors_rx(net_pkt_iface(pkt));
 					LOG_ERR("Failed to enqueue frame "
 						"into RX queue: %d", res);
 					net_pkt_unref(pkt);
@@ -173,10 +155,9 @@ static int eth_initialize(const struct device *dev)
 		return -EIO;
 	}
 
-	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
-		dev_data->mac_addr[0], dev_data->mac_addr[1],
-		dev_data->mac_addr[2], dev_data->mac_addr[3],
-		dev_data->mac_addr[4], dev_data->mac_addr[5]);
+	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x", dev_data->mac_addr[0], dev_data->mac_addr[1],
+		dev_data->mac_addr[2], dev_data->mac_addr[3], dev_data->mac_addr[4],
+		dev_data->mac_addr[5]);
 
 	return 0;
 }
@@ -240,14 +221,13 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 	/* The hal also needs to be stopped before changing the MAC config.
 	 * The speed can change without receiving a link down callback before.
 	 */
-	eth_stm32_hal_stop(dev, dev_data->iface);
 	if (state->is_up) {
+		eth_stm32_hal_stop(dev, dev_data->iface);
 		eth_stm32_set_mac_config(dev, state);
 		eth_stm32_hal_start(dev, dev_data->iface);
-		net_eth_carrier_on(dev_data->iface);
-	} else {
-		net_eth_carrier_off(dev_data->iface);
 	}
+
+	net_eth_carrier_set(dev_data->iface, state->is_up);
 }
 
 static void eth_iface_init(struct net_if *iface)
@@ -260,8 +240,7 @@ static void eth_iface_init(struct net_if *iface)
 	dev_data->iface = iface;
 
 	/* Register Ethernet MAC Address with the upper layer */
-	net_if_set_link_addr(iface, dev_data->mac_addr,
-			     sizeof(dev_data->mac_addr),
+	net_if_set_link_addr(iface, dev_data->mac_addr, sizeof(dev_data->mac_addr),
 			     NET_LINK_ETHERNET);
 
 	ethernet_init(iface);
@@ -272,8 +251,8 @@ static void eth_iface_init(struct net_if *iface)
 
 	net_lldp_set_lldpdu(iface);
 
-	if (device_is_ready(eth_stm32_phy_dev)) {
-		phy_link_callback_set(eth_stm32_phy_dev, phy_link_state_changed, (void *)dev);
+	if (device_is_ready(cfg->phy_dev)) {
+		phy_link_callback_set(cfg->phy_dev, phy_link_state_changed, (void *)dev);
 	} else {
 		LOG_ERR("PHY device not ready");
 	}
@@ -284,8 +263,8 @@ static void eth_iface_init(struct net_if *iface)
 
 	/* Start interruption-poll thread */
 	k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,
-			K_KERNEL_STACK_SIZEOF(dev_data->rx_thread_stack),
-			rx_thread, (void *) dev, NULL, NULL,
+			K_KERNEL_STACK_SIZEOF(dev_data->rx_thread_stack), rx_thread, (void *)dev,
+			NULL, NULL,
 			IS_ENABLED(CONFIG_ETH_STM32_HAL_RX_THREAD_PREEMPTIVE)
 				? K_PRIO_PREEMPT(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO)
 				: K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
@@ -299,23 +278,22 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 {
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
 #if defined(CONFIG_NET_VLAN)
-		| ETHERNET_HW_VLAN
+	       | ETHERNET_HW_VLAN
 #endif
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
-		| ETHERNET_PROMISC_MODE
+	       | ETHERNET_PROMISC_MODE
 #endif
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-		| ETHERNET_PTP
+	       | ETHERNET_PTP
 #endif
 #if defined(CONFIG_NET_LLDP)
-		| ETHERNET_LLDP
+	       | ETHERNET_LLDP
 #endif
 #if defined(CONFIG_ETH_STM32_HW_CHECKSUM)
-		| ETHERNET_HW_RX_CHKSUM_OFFLOAD
-		| ETHERNET_HW_TX_CHKSUM_OFFLOAD
+	       | ETHERNET_HW_RX_CHKSUM_OFFLOAD | ETHERNET_HW_TX_CHKSUM_OFFLOAD
 #endif
 #if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
-		| ETHERNET_HW_FILTERING
+	       | ETHERNET_HW_FILTERING
 #endif
 		;
 }
@@ -323,8 +301,9 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 static const struct device *eth_stm32_hal_get_phy(const struct device *dev,
 						  struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-	return eth_stm32_phy_dev;
+	const struct eth_stm32_hal_dev_cfg *cfg = dev->config;
+
+	return cfg->phy_dev;
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
@@ -351,58 +330,90 @@ static const struct ethernet_api eth_api = {
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 };
 
-static void eth0_irq_config(void)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), eth_isr,
-		    DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQN(0));
-}
+#define ETH_STM32_HAS_PTP_CLOCK(n) DT_CLOCKS_HAS_NAME(DT_DRV_INST(n), mac_clk_ptp)
 
-PINCTRL_DT_INST_DEFINE(0);
+#define ETH_STM32_HAL_COMMON_DMA_BUF_DEFN(n)                                                       \
+	static struct eth_stm32_dma_buf eth##n##_dma_buf __eth_stm32_buf
 
-static const struct stm32_pclken eth0_pclken[] = STM32_DT_INST_CLOCKS(0);
+#define ETH_STM32_HAL_COMMON_DMA_DESC_DEFN(n)                                                      \
+	static struct eth_stm32_dma_desc eth##n##_dma_desc __eth_stm32_desc
 
-#define ETH_STM32_HAS_PTP_CLOCK	DT_INST_CLOCKS_HAS_NAME(0, mac_clk_ptp)
+#define ETH_STM32_HAL_COMMON_IRQ_CONFIG_DEFN(n)                                                    \
+	static void eth##n##_irq_config(void)                                                      \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), eth_isr,                    \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}
 
-static const struct eth_stm32_hal_dev_cfg eth0_config = {
-	.config_func = eth0_irq_config,
-	.pclken = eth0_pclken,
-	.pclken_cnt = DT_INST_NUM_CLOCKS(0),
-#ifdef CONFIG_PTP_CLOCK_STM32_HAL
-	/* If no dedicated PTP clock is defined, fall back to the MAC bus clock. */
-	.rate_pclken_idx = DT_PHA_ELEM_IDX_BY_NAME(DT_DRV_INST(0), clocks,
-						   COND_CODE_1(ETH_STM32_HAS_PTP_CLOCK,
-							       (mac_clk_ptp), (stm_eth))),
-#endif
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-	.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0),
-};
+#define ETH_STM32_HAL_COMMON_PINCTRL_DEFN(n) PINCTRL_DT_INST_DEFINE(n)
 
-BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii)
-	|| DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)
-	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet),
-	(|| DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rgmii)
-	 || DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, gmii))),
-			"Unsupported PHY connection type");
+#define ETH_STM32_HAL_COMMON_PCLK_DEFN(n)                                                          \
+	static const struct stm32_pclken eth##n##_pclken[] = STM32_DT_CLOCKS(DT_DRV_INST(n))
 
-static struct eth_stm32_hal_dev_data eth0_data = {
-	.heth = {
-		.Instance = (ETH_TypeDef *)DT_INST_REG_ADDR(0),
-		.Init = {
-#if defined(CONFIG_ETH_STM32_HAL_API_V1)
-			.RxMode = ETH_RXINTERRUPT_MODE,
-			.ChecksumMode = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
-					ETH_CHECKSUM_BY_HARDWARE : ETH_CHECKSUM_BY_SOFTWARE,
-#endif /* CONFIG_ETH_STM32_HAL_API_V1 */
-			.MediaInterface = STM32_ETH_PHY_MODE(0),
+#define ETH_STM32_HAL_COMMON_CFG_DEFN(n)                                                           \
+	static const struct eth_stm32_hal_dev_cfg eth##n##_config = {                              \
+		.config_func = eth##n##_irq_config,                                                \
+		.pclken = eth##n##_pclken,                                                         \
+		.pclken_cnt = DT_NUM_CLOCKS(DT_DRV_INST(n)),                                       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(n),                                     \
+		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),                          \
+		.dma_buf = &eth##n##_dma_buf,                                                      \
+		.dma_desc = &eth##n##_dma_desc,                                                    \
+		IF_ENABLED(CONFIG_PTP_CLOCK_STM32_HAL,                                             \
+			(.rate_pclken_idx = DT_PHA_ELEM_IDX_BY_NAME(                               \
+				DT_DRV_INST(n), clocks,                                            \
+				COND_CODE_1(ETH_STM32_HAS_PTP_CLOCK(n),                            \
+					    (mac_clk_ptp), (stm_eth))),)) }
+
+#define ETH_STM32_HAL_COMMON_BUILD_ASSERT(n)                                                       \
+	BUILD_ASSERT(                                                                              \
+		DT_INST_ENUM_HAS_VALUE(n, phy_connection_type, mii) ||                             \
+		DT_INST_ENUM_HAS_VALUE(n, phy_connection_type, rmii)                               \
+			IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet),                 \
+				(|| DT_INST_ENUM_HAS_VALUE(n, phy_connection_type, rgmii)          \
+				 || DT_INST_ENUM_HAS_VALUE(n, phy_connection_type, gmii))),        \
+		"Unsupported PHY connection type")
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32mp13_ethernet)
-			.ClockSelection = DT_INST_PROP(0, st_ext_phyclk) ? HAL_ETH1_REF_CLK_RCC
-							     : HAL_ETH1_REF_CLK_RX_CLK_PIN,
+#define ETH_STM32_HAL_COMMON_CLOCK_SELECTION(inst)                                                 \
+	.ClockSelection = (DT_INST_PROP(inst, st_ext_phyclk) ? HAL_ETH_REF_CLK_RCC                 \
+							     : HAL_ETH_REF_CLK_RX_CLK_PIN),
+#else
+#define ETH_STM32_HAL_COMMON_CLOCK_SELECTION(inst)
 #endif
-		},
-	},
-};
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_initialize,
-		    NULL, &eth0_data, &eth0_config,
-		    CONFIG_ETH_INIT_PRIORITY, &eth_api, ETH_STM32_HAL_MTU);
+#define ETH_STM32_HAL_COMMON_DATA_DEFN(n)                                                          \
+	static struct eth_stm32_hal_dev_data eth##n##_data = {                                     \
+		.heth = {                                                                          \
+			.Instance = (ETH_TypeDef *)DT_INST_REG_ADDR(n),                            \
+			.Init = {                                                                  \
+				IF_ENABLED(CONFIG_ETH_STM32_HAL_API_V1,                            \
+					(.RxMode = ETH_RXINTERRUPT_MODE,                           \
+					 .ChecksumMode =                                           \
+						IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?         \
+						ETH_CHECKSUM_BY_HARDWARE :                         \
+						ETH_CHECKSUM_BY_SOFTWARE,))                        \
+				.MediaInterface = STM32_ETH_PHY_MODE(n),                           \
+				ETH_STM32_HAL_COMMON_CLOCK_SELECTION(n)                            \
+			},                                                                         \
+		},                                                                                 \
+	}
+
+#define ETH_STM32_HAL_COMMON_DT_INST_DEFN(n)                                                       \
+	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_initialize, NULL, &eth##n##_data, &eth##n##_config,   \
+				      CONFIG_ETH_INIT_PRIORITY, &eth_api, ETH_STM32_HAL_MTU)
+
+#define ETH_STM32_HAL_COMMON_DEVICE(n)                                                             \
+	ETH_STM32_HAL_COMMON_DMA_BUF_DEFN(n);                                                      \
+	ETH_STM32_HAL_COMMON_DMA_DESC_DEFN(n);                                                     \
+	ETH_STM32_HAL_COMMON_IRQ_CONFIG_DEFN(n);                                                   \
+	ETH_STM32_HAL_COMMON_PINCTRL_DEFN(n);                                                      \
+	ETH_STM32_HAL_COMMON_PCLK_DEFN(n);                                                         \
+	ETH_STM32_HAL_COMMON_CFG_DEFN(n);                                                          \
+	ETH_STM32_HAL_COMMON_BUILD_ASSERT(n);                                                      \
+	ETH_STM32_HAL_COMMON_DATA_DEFN(n);                                                         \
+	ETH_STM32_HAL_COMMON_DT_INST_DEFN(n);
+
+DT_INST_FOREACH_STATUS_OKAY(ETH_STM32_HAL_COMMON_DEVICE)

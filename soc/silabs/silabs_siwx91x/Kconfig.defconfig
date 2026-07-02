@@ -3,6 +3,10 @@
 
 if SOC_FAMILY_SILABS_SIWX91X
 
+choice CACHE_TYPE
+	default EXTERNAL_CACHE if CACHE_MANAGEMENT
+endchoice
+
 configdefault CORTEX_M_SYSTICK
 	default n if SILABS_SLEEPTIMER_TIMER
 

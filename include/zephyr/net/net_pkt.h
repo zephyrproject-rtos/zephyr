@@ -226,10 +226,6 @@ struct net_pkt {
 
 	uint8_t overwrite : 1;	 /* Is packet content being overwritten? */
 	uint8_t eof : 1;	 /* Last packet before EOF */
-	uint8_t ptp_pkt : 1;	 /* For outgoing packet: is this packet
-				  * a L2 PTP packet.
-				  * Used only if defined (CONFIG_NET_L2_PTP)
-				  */
 	uint8_t forwarding : 1;	 /* Are we forwarding this pkt
 				  * Used only if defined(CONFIG_NET_IPV6_ROUTE)
 				  */
@@ -243,12 +239,6 @@ struct net_pkt {
 					* Note: family needs to be
 					* NET_AF_INET.
 					*/
-#endif
-#if defined(CONFIG_NET_LLDP)
-	uint8_t lldp_pkt : 1; /* Is this pkt an LLDP message.
-			       * Note: family needs to be
-			       * NET_AF_UNSPEC.
-			       */
 #endif
 	uint8_t ppp_msg : 1; /* This is a PPP message */
 	uint8_t captured : 1;	  /* Set to 1 if this packet is already being
@@ -520,16 +510,6 @@ static inline uint8_t net_pkt_family(struct net_pkt *pkt)
 static inline void net_pkt_set_family(struct net_pkt *pkt, uint8_t family)
 {
 	pkt->family = family;
-}
-
-static inline bool net_pkt_is_ptp(struct net_pkt *pkt)
-{
-	return !!(pkt->ptp_pkt);
-}
-
-static inline void net_pkt_set_ptp(struct net_pkt *pkt, bool is_ptp)
-{
-	pkt->ptp_pkt = is_ptp;
 }
 
 static inline bool net_pkt_is_tx_timestamping(struct net_pkt *pkt)
@@ -1494,31 +1474,6 @@ static inline void net_pkt_set_ipv4_acd(struct net_pkt *pkt,
 	ARG_UNUSED(is_acd_arp_msg);
 }
 #endif /* CONFIG_NET_IPV4_ACD */
-
-#if defined(CONFIG_NET_LLDP)
-static inline bool net_pkt_is_lldp(struct net_pkt *pkt)
-{
-	return !!(pkt->lldp_pkt);
-}
-
-static inline void net_pkt_set_lldp(struct net_pkt *pkt, bool is_lldp)
-{
-	pkt->lldp_pkt = is_lldp;
-}
-#else
-static inline bool net_pkt_is_lldp(struct net_pkt *pkt)
-{
-	ARG_UNUSED(pkt);
-
-	return false;
-}
-
-static inline void net_pkt_set_lldp(struct net_pkt *pkt, bool is_lldp)
-{
-	ARG_UNUSED(pkt);
-	ARG_UNUSED(is_lldp);
-}
-#endif /* CONFIG_NET_LLDP */
 
 #if defined(CONFIG_NET_L2_PPP)
 static inline bool net_pkt_is_ppp(struct net_pkt *pkt)

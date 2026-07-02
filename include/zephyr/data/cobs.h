@@ -5,6 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Consistent Overhead Byte Stuffing (COBS) encoding API.
+ * @ingroup cobs
+ */
+
 #ifndef ZEPHYR_INCLUDE_DATA_COBS_H_
 #define ZEPHYR_INCLUDE_DATA_COBS_H_
 
@@ -22,6 +28,18 @@ extern "C" {
 
 
 /**
+ * @defgroup cobs COBS (Consistent Overhead Byte Stuffing)
+ * @ingroup utilities
+ * @{
+ *
+ * @brief COBS encoding and decoding functions with custom delimiter support
+ *
+ * Provides functions for COBS encoding/decoding with configurable delimiters.
+ * The implementation handles both standard zero-delimited COBS and custom
+ * delimiter variants.
+ */
+
+ /**
  * @name COBS Encoder/Decoder Flags
  * @anchor COBS_FLAGS
  *
@@ -65,18 +83,6 @@ extern "C" {
 
 /**
  * @}
- */
-
-/**
- * @defgroup cobs COBS (Consistent Overhead Byte Stuffing)
- * @ingroup utilities
- * @{
- *
- * @brief COBS encoding and decoding functions with custom delimiter support
- *
- * Provides functions for COBS encoding/decoding with configurable delimiters.
- * The implementation handles both standard zero-delimited COBS and custom
- * delimiter variants.
  */
 
 /**

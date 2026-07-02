@@ -10,6 +10,10 @@ common:
 
 tests:
   drivers.interrupt_controller.intc_exti_stm32:
+    platform_type:
+      - mcu
+    vendor_allow:
+      - st
     extra_args:
       - DTC_OVERLAY_FILE="boards/exti_default_resources.overlay"
       - platform:nucleo_c071rb/stm32c071xx:EXTRA_DTC_OVERLAY_FILE="boards/nucleo_c071rb_stm32c071xx.overlay"

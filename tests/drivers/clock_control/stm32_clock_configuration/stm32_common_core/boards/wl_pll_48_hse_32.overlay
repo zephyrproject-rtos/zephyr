@@ -7,7 +7,7 @@
 /*
  * Warning: This overlay performs configuration from clean sheet.
  * It is assumed that it is applied after clear_clocks.overlay file.
- * It applies to the stm32wl where the hse prescaler is 2 and by-passed
+ * It applies to the stm32wl where the hse prescaler is 2 and bypassed
  */
 
 &clk_hse {

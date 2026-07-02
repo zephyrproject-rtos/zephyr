@@ -10,7 +10,7 @@
  * @brief Test commands executable by remote
  */
 enum ipc_test_commands {
-	IPC_TEST_CMD_NONE,     /**< Command to be ingored */
+	IPC_TEST_CMD_NONE,     /**< Command to be ignored */
 	IPC_TEST_CMD_PING,     /**< Respond with the @ref IPC_TEST_CMD_PONG message */
 	IPC_TEST_CMD_PONG,     /**< Expected response to IPC_TEST_CMD_PING */
 	IPC_TEST_CMD_ECHO,     /**< Respond with the same data */

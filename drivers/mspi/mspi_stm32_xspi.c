@@ -1209,29 +1209,6 @@ static int mspi_configure_delay_block(struct mspi_stm32_data *dev_data)
 	return 0;
 }
 
-static int mspi_stm32_config_xspim_ioport(struct mspi_stm32_data *dev_data)
-{
-#if (defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)) && !defined(CONFIG_STM32_XSPIM)
-	/* XSPI I/O manager config */
-	XSPIM_CfgTypeDef mspi_mgr_cfg;
-
-	if (dev_data->hmspi.xspi.Instance == XSPI1) {
-		mspi_mgr_cfg.IOPort = HAL_XSPIM_IOPORT_1;
-	}
-	if (dev_data->hmspi.xspi.Instance == XSPI2) {
-		mspi_mgr_cfg.IOPort = HAL_XSPIM_IOPORT_2;
-	}
-	mspi_mgr_cfg.nCSOverride = HAL_XSPI_CSSEL_OVR_DISABLED;
-	mspi_mgr_cfg.Req2AckTime = 1;
-	if (HAL_XSPIM_Config(&dev_data->hmspi.xspi, &mspi_mgr_cfg,
-			     HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-		LOG_ERR("XSPI M config failed");
-		return -EIO;
-	}
-#endif /* (HAL_XSPIM_IOPORT_1 || HAL_XSPIM_IOPORT_2) && !CONFIG_STM32_XSPIM */
-	return 0;
-}
-
 /**
  * API implementation of mspi_config : controller configuration.
  *
@@ -1293,11 +1270,6 @@ static int mspi_stm32_xspi_config(const struct mspi_dt_spec *spec)
 #endif
 
 	ret = mspi_hal_init(dev_cfg, dev_data, ahb_clock_freq);
-	if (ret != 0) {
-		goto end;
-	}
-
-	ret = mspi_stm32_config_xspim_ioport(dev_data);
 	if (ret != 0) {
 		goto end;
 	}

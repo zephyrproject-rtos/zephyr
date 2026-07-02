@@ -23,6 +23,7 @@ config SOC_MIMX94398_M33
 	select INIT_ARCH_HW_AT_BOOT
 	select SOC_EARLY_INIT_HOOK
 	select HAS_PM
+	select PM_STATE_SET_IRQ_UNLOCKED
 	select SOC_EARLY_RESET_HOOK
 
 config SOC_MIMX94398_M7_0
@@ -38,6 +39,7 @@ config SOC_MIMX94398_M7_0
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
 	select HAS_PM
+	select PM_STATE_SET_IRQ_UNLOCKED
 
 config SOC_MIMX94398_M7_1
 	select ARM
@@ -52,6 +54,7 @@ config SOC_MIMX94398_M7_1
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
 	select HAS_PM
+	select PM_STATE_SET_IRQ_UNLOCKED
 
 config SOC_IMX943_PM_MCORE
 	bool "i.MX943 multi-core PM shared logic"

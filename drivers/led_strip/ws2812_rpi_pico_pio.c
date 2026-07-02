@@ -54,6 +54,7 @@ struct ws2812_led_strip_data {
 
 struct ws2812_led_strip_config {
 	const struct device *piodev;
+	const struct device *parent_dev;
 	const uint8_t gpio_pin;
 	uint8_t num_colors;
 	size_t length;
@@ -72,6 +73,11 @@ struct ws2812_rpi_pico_pio_config {
 	struct pio_program program;
 };
 
+/* Holds runtime state for the parent PIO program device. */
+struct ws2812_rpi_pico_pio_data {
+	int program_offset;
+};
+
 static int ws2812_led_strip_sm_init(const struct device *dev)
 {
 	const struct ws2812_led_strip_config *config = dev->config;
@@ -88,13 +94,15 @@ static int ws2812_led_strip_sm_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	const struct ws2812_rpi_pico_pio_data *pio_data = config->parent_dev->data;
+
 	sm_config_set_sideset(&sm_config, 1, false, false);
 	sm_config_set_sideset_pins(&sm_config, config->gpio_pin);
 	sm_config_set_out_shift(&sm_config, false, true, (config->num_colors == 4 ? 32 : 24));
 	sm_config_set_fifo_join(&sm_config, PIO_FIFO_JOIN_TX);
 	sm_config_set_clkdiv(&sm_config, clkdiv);
 	pio_sm_set_consecutive_pindirs(pio, sm, config->gpio_pin, 1, true);
-	pio_sm_init(pio, sm, -1, &sm_config);
+	pio_sm_init(pio, sm, pio_data->program_offset, &sm_config);
 	pio_sm_set_enabled(pio, sm, true);
 
 	return sm;
@@ -296,6 +304,11 @@ static int ws2812_led_strip_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (!device_is_ready(config->parent_dev)) {
+		LOG_ERR("%s: parent PIO program device not ready", dev->name);
+		return -ENODEV;
+	}
+
 	for (uint32_t i = 0; i < config->num_colors; i++) {
 		switch (config->color_mapping[i]) {
 		case LED_COLOR_ID_WHITE:
@@ -332,6 +345,7 @@ static int ws2812_led_strip_init(const struct device *dev)
 static int ws2812_rpi_pico_pio_init(const struct device *dev)
 {
 	const struct ws2812_rpi_pico_pio_config *config = dev->config;
+	struct ws2812_rpi_pico_pio_data *data = dev->data;
 	PIO pio;
 
 	if (!device_is_ready(config->piodev)) {
@@ -341,7 +355,11 @@ static int ws2812_rpi_pico_pio_init(const struct device *dev)
 
 	pio = pio_rpi_pico_get_pio(config->piodev);
 
-	pio_add_program(pio, &config->program);
+	data->program_offset = pio_add_program(pio, &config->program);
+	if (data->program_offset < 0) {
+		LOG_ERR("%s: failed to load PIO program (%d)", dev->name, data->program_offset);
+		return -ENOMEM;
+	}
 
 	return pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 }
@@ -380,6 +398,7 @@ static int ws2812_rpi_pico_pio_init(const struct device *dev)
                                                                                                    \
 	static const struct ws2812_led_strip_config ws2812_led_strip_##node##_config = {           \
 		.piodev = DEVICE_DT_GET(DT_PARENT(DT_PARENT(node))),                               \
+		.parent_dev = DEVICE_DT_GET(DT_PARENT(node)),                                      \
 		.gpio_pin = DT_GPIO_PIN_BY_IDX(node, gpios, 0),                                    \
 		.num_colors = DT_PROP_LEN(node, color_mapping),                                    \
 		.length = DT_PROP(node, chain_length),                                             \
@@ -437,7 +456,10 @@ static int ws2812_rpi_pico_pio_init(const struct device *dev)
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &ws2812_rpi_pico_pio_init, NULL, NULL,                         \
+	static struct ws2812_rpi_pico_pio_data rpi_pico_pio_ws2812_##inst##_data;                  \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &ws2812_rpi_pico_pio_init, NULL,                               \
+			      &rpi_pico_pio_ws2812_##inst##_data,                                  \
 			      &rpi_pico_pio_ws2812_##inst##_config, POST_KERNEL,                   \
 			      CONFIG_LED_STRIP_INIT_PRIORITY, NULL);
 

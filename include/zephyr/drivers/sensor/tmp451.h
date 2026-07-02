@@ -23,7 +23,7 @@ extern "C" {
 /**
  * @brief TI TMP451 temperature sensor
  * @defgroup tmp451_interface TMP451
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_ti
  * @{
  */
 

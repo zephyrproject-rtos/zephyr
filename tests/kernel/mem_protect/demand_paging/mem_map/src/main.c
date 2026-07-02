@@ -60,10 +60,8 @@ k_mem_paging_backing_store_histogram_bounds[
 size_t arena_size;
 char *arena;
 
-__pinned_bss
 static bool expect_fault;
 
-__pinned_func
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
 	printk("Caught system error -- reason %d\n", reason);

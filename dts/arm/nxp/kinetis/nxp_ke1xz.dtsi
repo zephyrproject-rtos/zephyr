@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -584,9 +584,15 @@
 			reg = <0x4007e000 0x1000>;
 		};
 
+		rcm: rcm@4007f000 {
+			compatible = "nxp,rcm-hwinfo";
+			reg = <0x4007f000 0x1000>;
+		};
+
 		crc: crc@40032000 {
 			compatible = "nxp,crc";
 			reg = <0x40032000 0x1000>;
+			clocks = <&pcc 0xc8 KINETIS_PCC_SRC_NONE_OR_EXT>;
 			status = "disabled";
 		};
 	};

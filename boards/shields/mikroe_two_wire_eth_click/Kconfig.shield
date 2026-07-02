@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Siemens AG
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MIKROE_TWO_WIRE_ETH_CLICK
+	def_bool $(shields_list_contains,mikroe_two_wire_eth_click)

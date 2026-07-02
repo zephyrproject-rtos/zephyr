@@ -339,7 +339,7 @@ static void ep_recv(const void *data, size_t len, void *priv)
 {
 	struct shell_remote_cli *sh_remote = priv;
 
-	/* Shell print operations are acknoledged by sending a result message. */
+	/* Shell print operations are acknowledged by sending a result message. */
 	if (((struct shell_remote_msg_generic *)data)->id == SHELL_REMOTE_MSG_RESULT) {
 #ifdef CONFIG_MULTITHREADING
 		k_sem_give(&sh_remote->sem);

@@ -6,7 +6,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 # Simple selfchecking test for the CAP samples for broadcast.
 # It relies on the bs_tests hooks to register a test timer callback, which after a deadline
-# will check how many broadcast audio packets have been tranferred, and if over a threshold
+# will check how many broadcast audio packets have been transferred, and if over a threshold
 # it considers the test passed
 
 simulation_id="${BOARD_TS}_cap_broadcast_test"

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "skeleton.dtsi"
+#include <skeleton.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/intel-ioapic.h>
 #include <zephyr/dt-bindings/acpi/acpi.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>

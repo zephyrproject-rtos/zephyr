@@ -675,6 +675,14 @@ After that devices can lock these state calling
            k_timer_start(&data->timer, K_MSEC(500), K_NO_WAIT);
     }
 
+The same pattern applies to device paths that can produce
+:ref:`zero-latency interrupts <zlis>`. A zero-latency ISR must not call PM APIs
+or other kernel APIs. If the ISR depends on resources that are unavailable in
+some system power states, the normal driver path that arms the interrupt source
+can hold the device power policy lock while that path is active. The driver
+should mask or disable the interrupt source before releasing the lock when the
+path is no longer active.
+
 Wakeup capability
 *****************
 

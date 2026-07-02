@@ -646,14 +646,14 @@ static inline void device_unmap(mm_reg_t virt_addr, size_t size)
  */
 #ifdef DEVICE_MMIO_IS_IN_RAM
 #define DEVICE_MMIO_TOPLEVEL(name, node_id) \
-	__pinned_bss \
+	\
 	mm_reg_t Z_TOPLEVEL_RAM_NAME(name); \
-	__pinned_rodata \
+	\
 	const struct z_device_mmio_rom Z_TOPLEVEL_ROM_NAME(name) = \
 		Z_DEVICE_MMIO_ROM_INITIALIZER(node_id)
 #else
 #define DEVICE_MMIO_TOPLEVEL(name, node_id) \
-	__pinned_rodata \
+	\
 	const struct z_device_mmio_rom Z_TOPLEVEL_ROM_NAME(name) = \
 		Z_DEVICE_MMIO_ROM_INITIALIZER(node_id)
 #endif /* DEVICE_MMIO_IS_IN_RAM */
@@ -697,14 +697,14 @@ static inline void device_unmap(mm_reg_t virt_addr, size_t size)
  */
 #ifdef DEVICE_MMIO_IS_IN_RAM
 #define DEVICE_MMIO_TOPLEVEL_STATIC(name, node_id) \
-	__pinned_bss \
+	\
 	static mm_reg_t Z_TOPLEVEL_RAM_NAME(name); \
-	__pinned_rodata \
+	\
 	static const struct z_device_mmio_rom Z_TOPLEVEL_ROM_NAME(name) = \
 		Z_DEVICE_MMIO_ROM_INITIALIZER(node_id)
 #else
 #define DEVICE_MMIO_TOPLEVEL_STATIC(name, node_id) \
-	__pinned_rodata \
+	\
 	static const struct z_device_mmio_rom Z_TOPLEVEL_ROM_NAME(name) = \
 		Z_DEVICE_MMIO_ROM_INITIALIZER(node_id)
 #endif /* DEVICE_MMIO_IS_IN_RAM */

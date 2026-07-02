@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip G1 GMAC MDIO Controller
+
+description: |
+  Microchip GMAC MDIO
+
+  Group G1 MDIO device supports following hardware peripherals:
+    - module name="GMAC" id="U2005" version="1.0.0"
+
+  This bus shall be a DT subnode of an 'microchip,gmac-g1-eth'
+  compatible node and is used to access Ethernet PHY.
+
+compatible: "microchip,gmac-g1-mdio"
+
+include:
+  - name: mdio-controller.yaml
+  - name: pinctrl-device.yaml
+
+examples:
+  - |
+    &mdio {
+      compatible = "microchip,gmac-g1-mdio";
+    };

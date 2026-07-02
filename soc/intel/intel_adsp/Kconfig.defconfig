@@ -31,7 +31,7 @@ choice CACHE_TYPE
 	default SOC_CACHE
 endchoice
 
-config DCACHE_LINE_SIZE
+configdefault DCACHE_LINE_SIZE
 	default 64
 
 endif # SOC_FAMILY_INTEL_ADSP

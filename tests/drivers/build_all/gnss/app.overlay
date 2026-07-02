@@ -32,6 +32,10 @@
 				compatible = "u-blox,m8";
 			};
 
+			gnss_m10: m10 {
+				compatible = "u-blox,m10";
+			};
+
 			gnss_f9p: f9p {
 				compatible = "u-blox,f9p";
 			};

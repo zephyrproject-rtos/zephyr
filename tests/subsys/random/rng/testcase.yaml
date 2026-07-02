@@ -18,12 +18,14 @@ tests:
     min_ram: 16
     integration_platforms:
       - native_sim
+      - frdm_mcxn236
   crypto.rng.random_ctr_drbg:
     extra_args: CONF_FILE=prj_ctr_drbg.conf
     filter: CONFIG_ENTROPY_HAS_DRIVER
     min_ram: 16
     integration_platforms:
       - native_sim
+      - frdm_mcxn236
   drivers.rng.random_psa_crypto:
     filter: CONFIG_BUILD_WITH_TFM
     arch_exclude: posix

@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Bluetooth Mesh On-Demand Private GATT Proxy Client model API.
+ * @ingroup bt_mesh_od_priv_proxy_cli
+ */
+
 #ifndef BT_MESH_OD_PRIV_PROXY_CLI_H__
 #define BT_MESH_OD_PRIV_PROXY_CLI_H__
 

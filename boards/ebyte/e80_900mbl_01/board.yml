@@ -1,0 +1,6 @@
+board:
+  name: e80_900mbl_01
+  full_name: Ebyte E80 Module Development Board (HF)
+  vendor: ebyte
+  socs:
+    - name: stm32f103xb

@@ -70,6 +70,20 @@ static ALWAYS_INLINE void soc_max32_secondary_delay(int n)
 
 #endif
 
+#if defined(CONFIG_SOC_FAMILY_MAX32_HALT_AFTER_BOOTLOADER_SUPPORT)
+
+void soc_early_reset_hook(void)
+{
+	__asm__ volatile (
+		"mov r0, 8\n\t"
+		"ldr r0, [r0]\n\t"
+		"nop\n\t"
+		"nop\n\t"
+	);
+}
+
+#endif
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *

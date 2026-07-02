@@ -34,10 +34,10 @@ tests:
       - frdm_mcxn947/mcxn947/cpu0
   drivers.video.stm32_dcmi.build:
     platform_allow:
-      - stm32h7b3i_dk/stm32h7b3xx
+      - stm32h7b3i_dk
       - arduino_nicla_vision/stm32h747xx/m7
     extra_args:
-      - platform:stm32h7b3i_dk/stm32h7b3xx:SHIELD=st_b_cams_omv_mb1683
+      - platform:stm32h7b3i_dk:SHIELD=st_b_cams_omv_mb1683
   drivers.video.esp32_dvp.build:
     platform_allow:
       - esp32s3_eye/esp32s3/procpu
@@ -60,6 +60,11 @@ tests:
       - CONFIG_VIDEO_ENCODER_H264=y
   drivers.video.stm32_jpeg.build:
     platform_allow:
+      - stm32f769i_disco/stm32f769xx
+      - stm32h5f5j_dk/stm32h5f5xx
+      - stm32h747i_disco/stm32h747xx/m7
+      - stm32h7s78_dk/stm32h7s7xx
       - stm32n6570_dk/stm32n657xx/sb
+      - stm32u5g9j_dk1/stm32u5g9xx
     extra_configs:
       - CONFIG_VIDEO_ENCODER_JPEG=y

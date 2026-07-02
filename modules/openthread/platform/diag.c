@@ -14,7 +14,7 @@
 #include <openthread/platform/radio.h>
 
 #include "platform-zephyr.h"
-#include "zephyr/sys/util.h"
+#include <zephyr/sys/util.h>
 
 enum {
 	DIAG_TRANSMIT_MODE_IDLE,

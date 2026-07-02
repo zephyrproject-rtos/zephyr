@@ -745,6 +745,9 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_timer_stop_fn_expiry_exit(timer)                                          \
 	SEGGER_SYSVIEW_RecordEndCall(TID_TIMER_STOP_EXPIRY)
 
+#define sys_port_trace_k_timer_cleanup_enter(timer)
+#define sys_port_trace_k_timer_cleanup_exit(timer, ret)
+
 #define sys_port_trace_syscall_enter(id, name, ...)                                                \
 	SEGGER_SYSVIEW_RecordString(TID_SYSCALL, (const char *)#name)
 

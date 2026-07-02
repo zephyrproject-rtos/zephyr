@@ -6,3 +6,6 @@ board:
     - name: qemu_virt_riscv32
       variants:
         - name: smp
+        - name: aia-imsic
+          variants:
+            - name: smp

@@ -143,6 +143,8 @@ These describe connections to cameras and displays (strictly speaking not shield
 - :dtcompatible:`nxp,cam-44pins-connector`
 - :dtcompatible:`nxp,parallel-lcd-connector`
 - :dtcompatible:`raspberrypi,csi-connector`
+- :dtcompatible:`st,dsi-lcd-qsh-030-connector`
+- :dtcompatible:`st,dvp-cam-zif-30-connector`
 - :dtcompatible:`weact,dcmi-camera-connector`
 
 
@@ -298,6 +300,26 @@ Relevant devicetree node labels:
 
 - ``zephyr_i2c``
 
+ST M.2 serial memory connector
+------------------------------
+
+Some STMicroelectronics Nucleo-144 development boards expose an ST-specific
+M.2 serial memory connector used to interface with external serial memories
+through XSPI, together with auxiliary signals such as I2C and connector GPIOs.
+
+.. figure:: ../../../boards/shields/st_b_m2mem_pack1/doc/b_m2mem_pack1.webp
+   :align: center
+   :width: 300px
+   :alt: B-M2MEM-PACK1
+
+   B-M2MEM-PACK1, an example of an ST M.2 memory shield.
+
+Relevant devicetree node labels:
+
+- ``m2mem_connector``  See :dtcompatible:`st,m2-memory-connector` for details on GPIO pin definitions
+  and includes for use in devicetree files.
+- ``m2mem_i2c``
+- ``m2mem_xspi``
 
 .. _shield_porting_guide:
 

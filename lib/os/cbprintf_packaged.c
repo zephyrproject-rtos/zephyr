@@ -892,7 +892,7 @@ static bool is_fmt_spec(char c)
 	return (c >= 64) && (c <= 122);
 }
 
-/* Function checks if nth argument is a pointer (%p). Returns true is yes. Returns
+/* Function checks if nth argument is a pointer (%p). Returns true if yes. Returns
  * false if not or if string does not have nth argument.
  */
 bool is_ptr(const char *fmt, int n)
@@ -1066,10 +1066,24 @@ calculate_string_length:
 	 * shall remain in the output package.
 	 */
 	if (ro_cpy) {
+		__ASSERT_NO_MSG(ros_nbr <= sizeof(cpy_str_pos));
+		if (ros_nbr > sizeof(cpy_str_pos)) {
+			/* If assertions are not enabled, silently truncate
+			 * number of strings to avoid buffer overflow.
+			 */
+			ros_nbr = sizeof(cpy_str_pos);
+		}
 		scpy_cnt = ros_nbr;
 		keep_cnt = 0;
 		dst = cpy_str_pos;
 	} else if (ros_nbr && flags & CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR) {
+		__ASSERT_NO_MSG(ros_nbr <= sizeof(keep_str_pos));
+		if (ros_nbr > sizeof(keep_str_pos)) {
+			/* If assertions are not enabled, silently truncate
+			 * number of strings to avoid buffer overflow.
+			 */
+			ros_nbr = sizeof(keep_str_pos);
+		}
 		scpy_cnt = 0;
 		keep_cnt = ros_nbr;
 		dst = keep_str_pos;
@@ -1081,7 +1095,11 @@ calculate_string_length:
 	if (dst) {
 		memcpy(dst, str_pos, ros_nbr);
 	}
-	str_pos += ros_nbr;
+
+	/* As 'ros_nbr' may have been capped to prevent overflowing on local
+	 * arrays, adjust 'str_pos' by the actual number of strings.
+	 */
+	str_pos += in_desc->ro_str_cnt;
 
 	/* Go through read-write strings and identify which shall be appended.
 	 * Note that there may be read-only strings there. Use address evaluation
@@ -1101,21 +1119,29 @@ calculate_string_length:
 		if (is_ro) {
 			if (flags & CBPRINTF_PACKAGE_CONVERT_RO_STR) {
 				__ASSERT_NO_MSG(scpy_cnt < sizeof(cpy_str_pos));
-				cpy_str_pos[scpy_cnt++] = arg_pos;
+				if (scpy_cnt < sizeof(cpy_str_pos)) {
+					cpy_str_pos[scpy_cnt++] = arg_pos;
+				}
 			} else if (flags & CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR) {
 				__ASSERT_NO_MSG(keep_cnt < sizeof(keep_str_pos));
-				keep_str_pos[keep_cnt++] = arg_pos;
+				if (keep_cnt < sizeof(keep_str_pos)) {
+					keep_str_pos[keep_cnt++] = arg_pos;
+				}
 			} else {
 				/* Drop information about ro_str location. */
 			}
 		} else {
 			if (flags & CBPRINTF_PACKAGE_CONVERT_RW_STR) {
 				__ASSERT_NO_MSG(scpy_cnt < sizeof(cpy_str_pos));
-				cpy_str_pos[scpy_cnt++] = arg_pos;
+				if (scpy_cnt < sizeof(cpy_str_pos)) {
+					cpy_str_pos[scpy_cnt++] = arg_pos;
+				}
 			} else {
 				__ASSERT_NO_MSG(keep_cnt < sizeof(keep_str_pos));
-				keep_str_pos[keep_cnt++] = arg_idx;
-				keep_str_pos[keep_cnt++] = arg_pos;
+				if (keep_cnt < sizeof(keep_str_pos)) {
+					keep_str_pos[keep_cnt++] = arg_idx;
+					keep_str_pos[keep_cnt++] = arg_pos;
+				}
 			}
 		}
 	}

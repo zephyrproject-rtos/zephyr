@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  */
-#ifndef ZEPHYR_LLEXT_ELF_H
-#define ZEPHYR_LLEXT_ELF_H
+#ifndef ZEPHYR_INCLUDE_LLEXT_ELF_H_
+#define ZEPHYR_INCLUDE_LLEXT_ELF_H_
 
 #include <stdint.h>
 
@@ -520,4 +520,4 @@ typedef struct elf32_sym elf_sym_t;
  * @}
  */
 
-#endif /* ZEPHYR_LLEXT_ELF_H */
+#endif /* ZEPHYR_INCLUDE_LLEXT_ELF_H_ */

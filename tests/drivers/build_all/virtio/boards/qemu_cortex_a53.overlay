@@ -38,3 +38,5 @@
 		zephyr,random-mac-address;
 	};
 };
+
+/* virtio_mmio3 hosts the virtio,input device provided by the board. */

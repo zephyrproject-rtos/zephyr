@@ -14,7 +14,7 @@ static uint64_t exp_ts[10];
 static bool exp_marked[10];
 static int d_cnt;
 
-static void cb(enum mipi_stp_decoder_ctrl_type type, union mipi_stp_decoder_data data, uint64_t *ts,
+static bool cb(enum mipi_stp_decoder_ctrl_type type, union mipi_stp_decoder_data data, uint64_t *ts,
 	       bool marked)
 {
 	zassert_equal(exp_type[d_cnt], type, "Expected: %d got:%d", exp_type[d_cnt], type);
@@ -30,6 +30,8 @@ static void cb(enum mipi_stp_decoder_ctrl_type type, union mipi_stp_decoder_data
 	zassert_equal(
 		memcmp((uint8_t *)&exp_data[d_cnt], (uint8_t *)&data.data, exp_data_len[d_cnt]), 0);
 	d_cnt++;
+
+	return true;
 }
 
 static const struct mipi_stp_decoder_config config = {

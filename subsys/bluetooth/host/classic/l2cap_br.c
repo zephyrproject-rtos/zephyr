@@ -318,7 +318,7 @@ static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
 	 */
 	struct k_work_q *rtx_work_queue = br_chan->rtx_work.queue;
 
-	if (rtx_work_queue == NULL || k_current_get() != &rtx_work_queue->thread) {
+	if (rtx_work_queue == NULL || k_current_get() != rtx_work_queue->thread_id) {
 		k_work_cancel_delayable_sync(&br_chan->rtx_work, &br_chan->rtx_sync);
 	} else {
 		k_work_cancel_delayable(&br_chan->rtx_work);

@@ -13,6 +13,7 @@ config SOC_SERIES_IMXRT10XX
 	select HAS_MCUX_CACHE
 	select HAS_SWO
 	select HAS_PM
+	select PM_STATE_SET_IRQ_UNLOCKED
 	select SOC_RESET_HOOK
 	select SOC_EARLY_INIT_HOOK
 

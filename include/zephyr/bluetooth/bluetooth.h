@@ -1556,6 +1556,27 @@ int bt_le_per_adv_set_data(const struct bt_le_ext_adv *adv,
 			   const struct bt_data *ad, size_t ad_len);
 
 /**
+ * @brief Update the Advertising Data Identifier (DID) for periodic advertising
+ *        without changing the data.
+ *
+ * This sends a HCI command with operation set to "unchanged data" which causes
+ * the controller to update the ADI field (DID) in the periodic advertising PDU
+ * without modifying the advertising data payload.
+ *
+ * @kconfig_dep{CONFIG_BT_PER_ADV}
+ *
+ * @note The advertising set must have periodic advertising started
+ *       (via @ref bt_le_per_adv_start), must contain data, and ADI inclusion
+ *       must have been enabled via @ref BT_LE_PER_ADV_OPT_INCLUDE_ADI
+ *       before calling this function.
+ *
+ * @param adv       Advertising set object.
+ *
+ * @return 0 on success, negative errno value on failure.
+ */
+int bt_le_per_adv_update_did(const struct bt_le_ext_adv *adv);
+
+/**
  * @brief Parameters for setting data for a specific periodic advertising with response subevent.
  *
  * @details This struct provides the necessary information to set the data for a specific subevent

@@ -108,10 +108,6 @@
 		};
 	};
 
-	chosen {
-		zephyr,flash-controller = &flashctrl;
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -364,15 +360,35 @@
 			};
 		};
 
-		flashctrl: flash-controller@2000b000 {
-			compatible = "bflb,flash-controller";
+		sf_ctrl: sf@2000b000 {
+			compatible = "bflb,sf-controller";
 			reg = <0x2000b000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			status = "okay";
 
 			interrupts = <29 1>;
 			interrupt-parent = <&clic>;
+
+			sf_bank1: flash-controller@a0000000 {
+				compatible = "bflb,sf-bank";
+				reg = <0xa0000000 DT_SIZE_M(64)>;
+				ranges = <0x0 0xa0000000 DT_SIZE_M(64)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			sf_bank2: memory-controller@a4000000 {
+				/* Only have the memory-region compatible
+				 * when not using a pre-existing (ROM) memory region
+				 */
+				compatible = "bflb,sf-bank", "zephyr,memory-region";
+				zephyr,memory-region = "SF_BANK2";
+				reg = <0xa4000000 DT_SIZE_M(64)>;
+				ranges = <0x0 0xa4000000 DT_SIZE_M(64)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		dma0: dma@2000c000 {
@@ -421,8 +437,12 @@
 		};
 
 		retram: memory@20010000 {
-			compatible = "mmio-sram";
+			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x20010000 DT_SIZE_K(4)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x20010000 DT_SIZE_K(4)>;
+			zephyr,memory-region = "RETRAM";
 		};
 
 		memc: memc@20052000 {
@@ -448,20 +468,43 @@
 			interrupt-parent = <&clic>;
 		};
 
-		sram0: memory@62fc0000 {
+		/* All contiguous fast RAM
+		 * It is kept tightly coupled by the CPU's internal cache
+		 */
+		all_ram: memory@62fc0000 {
 			compatible = "mmio-sram";
-			reg = <0x62fc0000 DT_SIZE_K(320)>;
-		};
+			reg = <0x62fc0000 DT_SIZE_K(480)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x62fc0000 DT_SIZE_K(480)>;
 
-		sram1: memory@63010000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x63010000 DT_SIZE_K(160)>;
-			zephyr,memory-region = "ITCM";
+			/* OCRAM is slightly faster */
+			ocram: memory@0 {
+				compatible = "mmio-sram";
+				reg = <0x0 DT_SIZE_K(320)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x0 DT_SIZE_K(320)>;
+				status = "disabled";
+			};
+
+			/* WRAM is slightly slower, it can be used by the RF systems */
+			wram: memory@50000 {
+				compatible = "mmio-sram";
+				reg = <0x50000 DT_SIZE_K(160)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x50000 DT_SIZE_K(160)>;
+				status = "disabled";
+			};
 		};
 
 		psram: memory@a8000000 {
 			compatible = "zephyr,memory-region";
 			reg = <0xa8000000 DT_SIZE_M(128)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xa8000000 DT_SIZE_M(128)>;
 			zephyr,memory-region = "PSRAM";
 			status = "disabled";
 		};

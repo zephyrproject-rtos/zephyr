@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +8,7 @@
 #include <mem.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/adi_max32_clock.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	soc {
@@ -47,6 +49,14 @@
 				#dma-cells = <2>;
 			};
 		};
+	};
+
+	null_ptr_detect: null_ptr_detect@0 {
+		compatible = "zephyr,memory-region";
+		/* 0 - CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE> */
+		reg = <0x0 0x400>;
+		zephyr,memory-region = "NULL_PTR_DETECT";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 	};
 };
 

@@ -597,7 +597,7 @@ is_user_syscall:
 	 */
 	lr a0, ___cpu_t_current_OFFSET(s0)
 	call z_riscv_pmp_kernelmode_enable
-#endif
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
 
 	/* It is safe to re-enable IRQs now */
 	csrs RV_STATUS, STATUS_IE
@@ -684,7 +684,7 @@ is_interrupt:
 1:
 #endif
 2:
-#endif
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
 
 	/* Increment _current_cpu->nested */
 	lw t1, ___cpu_t_nested_OFFSET(s0)
@@ -875,7 +875,7 @@ fp_trap_exit:
 	/* Remove kernel mode configuration and Reconfigure PMP for user mode */
 	lr a0, ___cpu_t_current_OFFSET(s0)
 	call z_riscv_pmp_usermode_enable
-#endif
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
 
 #ifdef CONFIG_CUSTOM_STACK_GUARD
 	/* Disable the custom stack guard in user mode */

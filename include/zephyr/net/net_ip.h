@@ -310,6 +310,12 @@ struct net_cmsghdr {
 	z_max_align_t cmsg_data[]; /**< Flexible array member to force alignment of net_cmsghdr */
 };
 
+/** Linger option struct for the SO_LINGER socket option */
+struct net_linger {
+	int l_onoff;  /**< Whether the linger behaviour is enabled */
+	int l_linger; /**< Linger time in seconds */
+};
+
 /** @cond INTERNAL_HIDDEN */
 
 /* Alignment for headers and data. These are arch specific but define

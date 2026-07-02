@@ -14,10 +14,10 @@
 	compatible = "bflb,bl808";
 
 	chosen {
-		zephyr,flash-controller = &flashctrl;
-		zephyr,flash = &flash0;
+		zephyr,flash-controller = &sf_bank1;
+		zephyr,flash = &w25q128jv;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,sram = &sram0;
+		zephyr,sram = &all_ram;
 		zephyr,console = &uart0;
 		zephyr,log-uart = &log_uarts;
 		zephyr,shell-uart = &uart0;
@@ -34,37 +34,63 @@
 	};
 };
 
-&flashctrl {
-	flash0: flash@58000000 {
-		compatible = "soc-nv-flash", "winbond,w25q128jv";
-		reg = <0x58000000 (DT_SIZE_M(16) - DT_SIZE_K(8))>;
-		write-block-size = <1>;
+&clk_flash {
+	clocks = <&clk_bclk>;
+	divider = <1>;
+};
+
+&sf_ctrl {
+	override-bank1;
+};
+
+&sf_bank1 {
+	reg = <0x58000000 DT_SIZE_M(16)>;
+	ranges = <0x0 0x58000000 DT_SIZE_M(16)>;
+
+	w25q128jv: flash@0 {
+		compatible = "bflb,sf-flash", "soc-nv-flash";
+		reg = <0 DT_SIZE_M(16)>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		write-block-size = <4>;
 		erase-block-size = <DT_SIZE_K(4)>;
 
+		spi-bus-mode = <4>;
+		sf-pad = <2>;
+		jedec-id = [ef 40 18];
+
+		/* The flash equipped on M1S modules doesn't support useful SFDP, and the
+		 * flash header doesn't provide a working configuration.
+		 * Manually set configuration for best performance.
+		 */
+		read-command = <0xeb>;
+		read-dummy-cycles = <2>;
+		continuous-read-command = <0xa0>;
+
 		partitions {
-			compatible = "fixed-partitions";
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			boot_partition: partition@0 {
-				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(64)>;
+			boot_header_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				label = "boot_header";
+				reg = <0x00000000 0x2000>;
 				read-only;
 			};
 
-			slot0_partition: partition@10000 {
+			slot0_partition: partition@2000 {
+				compatible = "zephyr,mapped-partition";
 				label = "image-0";
-				reg = <0x00010000 (DT_SIZE_M(8) - DT_SIZE_K(64))>;
+				reg = <0x00002000 (DT_SIZE_M(8) - 0x2000)>;
+				read-only;
 			};
 
-			slot1_partition: partition@800000 {
-				label = "image-1";
-				reg = <0x00800000 (DT_SIZE_M(8) - DT_SIZE_K(64))>;
-			};
-
-			storage_partition: partition@ff0000 {
+			storage_partition: partition@800000 {
+				compatible = "zephyr,mapped-partition";
 				label = "storage";
-				reg = <0x00ff0000 (DT_SIZE_K(64) - DT_SIZE_K(8))>;
+				reg = <0x00800000 DT_SIZE_M(8)>;
 			};
 		};
 	};

@@ -384,6 +384,13 @@ Artificially long but functional example:
         help="""Only run device tests with current artifacts, do not build
              the code""")
 
+    parser.add_argument(
+        "--post-build-checks", action="store_true",
+        help="""Run post-build checks on each build directory once a build
+             completes, for example detecting git repositories accidentally
+             cloned into a build directory. Disabled by default; intended to
+             be enabled in CI.""")
+
     parser.add_argument("--timeout-multiplier", type=float, default=1,
         help="""Globally adjust tests timeouts by specified multiplier. The resulting test
         timeout would be multiplication of test timeout value, board-level timeout multiplier
@@ -447,8 +454,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
 
     parser.add_argument(
         "--shuffle-tests", action="store_true", default=None,
-        help="""Shuffle test execution order to get randomly distributed tests across subsets.
-                Used only when --subset is provided.""")
+        help="Shuffle test execution order to get randomly distributed tests.")
 
     parser.add_argument(
         "--shuffle-tests-seed", action="store", default=None,
@@ -973,10 +979,6 @@ def parse_arguments(
 
     if options.flash_before and options.device_flash_with_test:
         logger.error("--device-flash-with-test does not apply when --flash-before is used")
-        sys.exit(1)
-
-    if options.shuffle_tests and options.subset is None:
-        logger.error("--shuffle-tests requires --subset")
         sys.exit(1)
 
     if options.shuffle_tests_seed and options.shuffle_tests is None:

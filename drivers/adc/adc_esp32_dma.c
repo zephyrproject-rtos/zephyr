@@ -361,10 +361,10 @@ int adc_esp32_dma_read(const struct device *dev, const struct adc_sequence *seq)
 	int err = 0;
 	uint32_t adc_pattern_len, unit_attenuation;
 	adc_hal_digi_ctrlr_cfg_t adc_hal_digi_ctrlr_cfg;
-	adc_digi_pattern_config_t adc_digi_pattern_config[SOC_ADC_MAX_CHANNEL_NUM];
+	adc_digi_pattern_config_t adc_digi_pattern_config[ADC_LL_MAX_CHANNEL_NUM];
 
 	const struct adc_sequence_options *options = seq->options;
-	uint32_t sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_HIGH, number_of_samplings = 1;
+	uint32_t sample_freq_hz = ADC_LL_SAMPLE_FREQ_THRES_HIGH, number_of_samplings = 1;
 
 	if (options && options->callback) {
 		return -ENOTSUP;
@@ -372,8 +372,8 @@ int adc_esp32_dma_read(const struct device *dev, const struct adc_sequence *seq)
 
 	if (options && options->interval_us) {
 		sample_freq_hz = MHZ(1) / options->interval_us;
-		if (sample_freq_hz < SOC_ADC_SAMPLE_FREQ_THRES_LOW ||
-		    sample_freq_hz > SOC_ADC_SAMPLE_FREQ_THRES_HIGH) {
+		if (sample_freq_hz < ADC_LL_SAMPLE_FREQ_THRES_LOW ||
+		    sample_freq_hz > ADC_LL_SAMPLE_FREQ_THRES_HIGH) {
 			LOG_ERR("ADC sampling frequency out of range: %uHz", sample_freq_hz);
 			return -EINVAL;
 		}
@@ -444,7 +444,7 @@ int adc_esp32_dma_channel_setup(const struct device *dev, const struct adc_chann
 	__maybe_unused const struct adc_esp32_conf *conf =
 		(const struct adc_esp32_conf *)dev->config;
 
-	if (!SOC_ADC_DIG_SUPPORTED_UNIT(conf->unit)) {
+	if (!ADC_LL_DIG_SUPPORTED_UNIT(conf->unit)) {
 		LOG_ERR("ADC2 dma mode is no longer supported, please use ADC1!");
 		return -EINVAL;
 	}

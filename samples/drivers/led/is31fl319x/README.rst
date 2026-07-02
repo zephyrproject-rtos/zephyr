@@ -19,7 +19,7 @@ fade all of the defined LEDs by using the led_write_channels API.
 The sample will then check to see if this device contains an LED
 with a Red, Green and a Blue color defined. If so it will
 fade these colors, in the order Red, Green and Blue, and then it
-will cylcle through and display several different colors.
+will cycle through and display several different colors.
 
 It uses a helper function, that maps the RGB colors into the correct order
 for the actual hardware LED, as some hardware LEDs will be defined in

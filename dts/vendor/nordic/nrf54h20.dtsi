@@ -51,6 +51,7 @@
 			riscv,isa-base = "rv32e";
 			riscv,isa-extensions = "e", "m", "c", "zicsr";
 			nordic,bus-width = <32>;
+			nordic,vpr-ready-event = <15>;
 
 			cpuppr_vevif_rx: mailbox {
 				compatible = "nordic,nrf-vevif-task-rx";
@@ -901,6 +902,7 @@
 					status = "disabled";
 					#mbox-cells = <1>;
 					nordic,tasks = <16>;
+					nordic,vpr-ready-event = <15>;
 					nordic,tasks-mask = <0xfffffff0>;
 				};
 			};
@@ -1807,6 +1809,18 @@
 
 	temp_nrfs: temp {
 		compatible = "nordic,nrf-temp-nrfs";
+		status = "disabled";
+	};
+
+	cpuapp_gswdt: cpuapp_gswdt {
+		compatible = "nordic,nrf-gswdt";
+		mbox = <&cpuapp_cpusys_gswdt_mbox>;
+		status = "disabled";
+	};
+
+	cpurad_gswdt: cpurad_gswdt {
+		compatible = "nordic,nrf-gswdt";
+		mbox = <&cpurad_cpusys_gswdt_mbox>;
 		status = "disabled";
 	};
 };

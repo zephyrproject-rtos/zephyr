@@ -12,5 +12,6 @@ config SOC_SERIES_APOLLO4X
 	select HAS_SWO
 	select AMBIQ_HAL
 	select HAS_PM
+	select PM_STATE_SET_IRQ_UNLOCKED
 	select PINCTRL
 	select SOC_EARLY_INIT_HOOK

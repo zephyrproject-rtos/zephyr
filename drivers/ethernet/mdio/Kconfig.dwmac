@@ -5,7 +5,7 @@ config MDIO_DWMAC
 	bool "Synopsys DesignWare MAC MDIO driver"
 	default y
 	depends on DT_HAS_SNPS_DWMAC_MDIO_ENABLED
-	depends on ETH_DWMAC
+	depends on ETH_DWC_ETHER_QOS_CORE || ETH_DWC_ETHER_1000_CORE
 	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_SNPS_DWMAC_MDIO),pinctrl-0)
 	help
 	  Enable MDIO support for Synopsys DesignWare MAC devices that expose

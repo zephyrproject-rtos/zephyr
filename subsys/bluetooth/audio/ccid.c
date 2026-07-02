@@ -53,7 +53,7 @@ const struct bt_gatt_attr *bt_ccid_find_attr(uint8_t ccid)
 	};
 
 	bt_gatt_foreach_attr_type(BT_ATT_FIRST_ATTRIBUTE_HANDLE, BT_ATT_LAST_ATTRIBUTE_HANDLE,
-				  BT_UUID_CCID, NULL, 0, ccid_attr_cb, &search_param);
+				  BT_UUID_CCID, NULL, 0U, ccid_attr_cb, &search_param);
 
 	return search_param.attr;
 }

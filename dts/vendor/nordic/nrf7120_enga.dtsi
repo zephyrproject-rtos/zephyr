@@ -151,34 +151,42 @@
 
 		cpuapp_sram: memory@20000000 {
 			compatible = "mmio-sram";
-			reg = <0x20000000 DT_SIZE_K(512)>;
+			reg = <0x20000000 DT_SIZE_K(1016)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x20000000 0x80000>;
-		};
+			ranges = <0x0 0x20000000 0xfe000>;
 
-		ram01_sram: memory@20080000 {
-			compatible = "mmio-sram";
-			reg = <0x20080000 DT_SIZE_K(256)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x0 0x20080000 0x40000>;
-		};
+			ram00_sram: memory@0 {
+				compatible = "mmio-sram";
+				reg = <0x0 DT_SIZE_K(512)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x0 DT_SIZE_K(512)>;
+			};
 
-		ram02_sram: memory@200c0000 {
-			compatible = "mmio-sram";
-			reg = <0x200c0000 DT_SIZE_K(128)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x0 0x200c0000 0x20000>;
-		};
+			ram01_sram: memory@80000 {
+				compatible = "mmio-sram";
+				reg = <0x80000 DT_SIZE_K(256)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x80000 DT_SIZE_K(256)>;
+			};
 
-		ram03_sram: memory@200e0000 {
-			compatible = "mmio-sram";
-			reg = <0x200e0000 DT_SIZE_K(120)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x0 0x200e0000 0x1e000>;
+			ram02_sram: memory@c0000 {
+				compatible = "mmio-sram";
+				reg = <0xc0000 DT_SIZE_K(128)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0xc0000 DT_SIZE_K(128)>;
+			};
+
+			ram03_sram: memory@e0000 {
+				compatible = "mmio-sram";
+				reg = <0xe0000 DT_SIZE_K(120)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0xe0000 DT_SIZE_K(120)>;
+			};
 		};
 
 		/* Wi-Fi ROM regions */
@@ -188,6 +196,11 @@
 
 		wifi_umac_rom: memory@28180000 {
 			reg = <0x28180000 DT_SIZE_K(512)>;
+		};
+
+		/* Memory-mapped aperture for MSPI. */
+		memmap_aperture_uncached: memory@60000000 {
+			reg = <0x60000000 0x20000000>;
 		};
 
 #ifdef USE_NON_SECURE_ADDRESS_MAP
@@ -434,6 +447,8 @@
 				compatible = "nordic,nrf-ipct-global";
 				reg = <0x8d000 0x1000>;
 				interrupts = <141 NRF_DEFAULT_IRQ_PRIORITY>;
+				channels = <4>;
+				global-domain-id = <1>;
 				status = "disabled";
 			};
 
@@ -487,6 +502,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -520,6 +536,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -553,6 +570,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -745,6 +763,7 @@
 				clocks = <&lfxo>, <&pclk>;
 				clock-names = "lfclock", "hfclock";
 				status = "disabled";
+				extended-channels = <0>;
 			};
 
 			tdm: tdm@e8000 {
@@ -779,6 +798,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -812,6 +832,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -860,6 +881,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -1002,7 +1024,7 @@
 				reg = <0 DT_SIZE_K(4076)>;
 				ranges = <0x0 0 DT_SIZE_K(4076)>;
 				erase-block-size = <4096>;
-				write-block-size = <4>;
+				write-block-size = <16>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};

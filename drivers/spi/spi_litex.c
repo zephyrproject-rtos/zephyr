@@ -38,7 +38,7 @@ static void spi_set_frequency(const struct device *dev, const struct spi_config 
 	const struct spi_litex_cfg *dev_config = dev->config;
 
 	if (!dev_config->clk_divider_exists) {
-		/* The clk_divider is optional, thats why we check. */
+		/* The clk_divider is optional, that's why we check. */
 		LOG_WRN("No clk_divider found, can't change frequency");
 		return;
 	}

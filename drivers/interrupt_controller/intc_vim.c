@@ -15,7 +15,7 @@
 #include <zephyr/drivers/interrupt_controller/intc_vim.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include "zephyr/sys/__assert.h"
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util_macro.h>
 
 LOG_MODULE_REGISTER(vim);

@@ -2,6 +2,13 @@ tests:
   kernel.cleanup.api:
     tags:
       - kernel
-    toolchain_allow: gcc
+    toolchain_exclude:
+      - iar
     platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86
+      - qemu_cortex_m3
+      - qemu_riscv32
+    integration_platforms:
       - native_sim

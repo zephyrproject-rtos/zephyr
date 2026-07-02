@@ -182,11 +182,17 @@ static void *test_mutex_timedlock_fn(void *arg)
 {
 	struct timespec time_point;
 	pthread_mutex_t *mtx = (pthread_mutex_t *)arg;
+	int ret;
 
 	zassume_ok(clock_gettime(CLOCK_REALTIME, &time_point));
 	timespec_add_ms(&time_point, TIMEDLOCK_TIMEOUT_MS);
 
-	return INT_TO_POINTER(pthread_mutex_timedlock(mtx, &time_point));
+	ret = pthread_mutex_timedlock(mtx, &time_point);
+	if (ret == 0) {
+		(void)pthread_mutex_unlock(mtx);
+	}
+
+	return INT_TO_POINTER(ret);
 }
 
 /** @brief Test to verify @ref pthread_mutex_timedlock returns ETIMEDOUT */

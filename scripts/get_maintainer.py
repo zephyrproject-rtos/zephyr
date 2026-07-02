@@ -226,6 +226,8 @@ class Maintainers:
                     file_group.name = group_dict.get("name", "Unnamed Group")
                     file_group.description = group_dict.get("description")
                     file_group.collaborators = group_dict.get("collaborators", [])
+                    file_group.defer_to_other_areas = \
+                        bool(group_dict.get("defer-to-other-areas", False))
 
                     # Create match functions for this file group
                     file_group._match_fn = \
@@ -582,6 +584,25 @@ class Area:
                 return file_group
         return None
 
+    def is_deferred_for_path(self, path):
+        """
+        Returns True if *path* matches this area only through file-groups
+        that have ``defer-to-other-areas: true``.
+
+        When at least one non-deferred file-group (or the area's own
+        top-level patterns) matches the path this method returns False,
+        meaning the area claims normal maintainership for that file.
+        """
+        matched_via_deferred = False
+        for file_group in self.file_groups:
+            if file_group._contains(path):
+                if not getattr(file_group, 'defer_to_other_areas', False):
+                    return False  # non-deferred match wins
+                matched_via_deferred = True
+        # True only if matched solely via deferred file-groups; otherwise
+        # no file-group matched and the path is covered by area-level patterns.
+        return matched_via_deferred
+
     def __repr__(self):
         return "<Area {}>".format(self.name)
 
@@ -764,7 +785,8 @@ def _check_maintainers(maints_path, yaml):
                      .format(area_name))
 
             ok_group_keys = {"name", "description", "collaborators", "files",
-                           "files-exclude", "files-regex", "files-regex-exclude"}
+                           "files-exclude", "files-regex", "files-regex-exclude",
+                           "defer-to-other-areas"}
 
             for i, group_dict in enumerate(file_groups):
                 if not isinstance(group_dict, dict):
@@ -786,6 +808,13 @@ def _check_maintainers(maints_path, yaml):
                     if str_field in group_dict and not isinstance(group_dict[str_field], str):
                         ferr("malformed '{}' in file group {} in area '{}' -- should be a string"
                              .format(str_field, i, area_name))
+
+                # Validate defer-to-other-areas boolean
+                if "defer-to-other-areas" in group_dict:
+                    if not isinstance(group_dict["defer-to-other-areas"], bool):
+                        ferr("malformed 'defer-to-other-areas' in file group {} in area '{}'"
+                             " -- should be a boolean"
+                             .format(i, area_name))
 
                 # Validate list fields in file groups
                 for list_field in ["collaborators", "files", "files-exclude", "files-regex", "files-regex-exclude"]:

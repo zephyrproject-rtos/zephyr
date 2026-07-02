@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(osdp, CONFIG_OSDP_LOG_LEVEL);
 
@@ -436,10 +437,8 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		cmd.id = OSDP_CMD_COMSET;
 		cmd.comset.address = buf[pos++];
-		cmd.comset.baud_rate = buf[pos++];
-		cmd.comset.baud_rate |= buf[pos++] << 8;
-		cmd.comset.baud_rate |= buf[pos++] << 16;
-		cmd.comset.baud_rate |= buf[pos++] << 24;
+		cmd.comset.baud_rate = sys_get_le32(&buf[pos]);
+		pos += sizeof(uint32_t);
 		if (cmd.comset.address >= 0x7F ||
 		    (cmd.comset.baud_rate != 9600 &&
 		     cmd.comset.baud_rate != 19200 &&
@@ -895,7 +894,7 @@ static int pd_receive_and_process_command(struct osdp_pd *pd)
 	}
 
 	/**
-	 * We received some data on the bus; update pd->tstamp. A rouge CP can
+	 * We received some data on the bus; update pd->tstamp. A rogue CP can
 	 * send one byte at a time to extend this command's window but that
 	 * shouldn't cause any issues related to secure channel as it has it's
 	 * own timestamp.

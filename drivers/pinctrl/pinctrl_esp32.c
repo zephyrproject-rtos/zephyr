@@ -213,15 +213,12 @@ static int esp32_pin_configure(const uint32_t pin_mux, const uint32_t pin_cfg)
 		break;
 	}
 
-	switch (ESP32_PIN_EN_DIR(pin_cfg)) {
-	case ESP32_PIN_OUT_EN:
+	if (ESP32_PIN_EN_DIR(pin_cfg) & ESP32_PIN_OUT_EN) {
 		flags |= ESP32_PIN_OUT_EN_FLAG;
-		break;
-	case ESP32_PIN_IN_EN:
+	}
+
+	if (ESP32_PIN_EN_DIR(pin_cfg) & ESP32_PIN_IN_EN) {
 		flags |= ESP32_PIN_IN_EN_FLAG;
-		break;
-	default:
-		break;
 	}
 
 	if (ESP32_PIN_SLEEP_HOLD(pin_cfg) == ESP32_PIN_SLEEP_HOLD_EN) {

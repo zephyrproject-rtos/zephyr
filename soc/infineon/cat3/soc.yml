@@ -5,3 +5,4 @@ family:
     socs:
     - name: xmc4500
     - name: xmc4700
+    - name: xmc4800

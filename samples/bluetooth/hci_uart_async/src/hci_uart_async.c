@@ -181,7 +181,7 @@ static void recover_sync_by_reset_pattern(void)
 	LOG_DBG("Pattern found");
 	h2c_cmd_reset = bt_buf_get_tx(BT_BUF_CMD, K_FOREVER,
 				      &h4_cmd_reset[1], sizeof(h4_cmd_reset) - 1);
-	LOG_DBG("Fowarding reset");
+	LOG_DBG("Forwarding reset");
 
 	err = bt_send(h2c_cmd_reset);
 	__ASSERT(!err, "Failed to send reset: %d", err);

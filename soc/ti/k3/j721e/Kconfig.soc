@@ -15,11 +15,3 @@ config SOC_SERIES_J721E_R5
 config SOC_J721E_MAIN_R5F0_0
 	bool
 	select SOC_SERIES_J721E_R5
-
-config SOC_J722S_MAIN_R5F0_0
-	bool
-	select SOC_SERIES_J721E_R5
-
-config SOC_J722S_MCU_R5F0_0
-	bool
-	select SOC_SERIES_J721E_R5

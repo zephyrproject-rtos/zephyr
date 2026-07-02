@@ -130,7 +130,7 @@ ZTEST(esp_interrupt, test_nested_isr)
 	}
 
 	zassert_true(error_cnt == 0, "Errors occurred (%d)", error_cnt);
-	zassert_true(success_cnt == TEST_CYCLES, "Not all test cycles pssed (%d from %d)",
+	zassert_true(success_cnt == TEST_CYCLES, "Not all test cycles passed (%d from %d)",
 		     success_cnt, TEST_CYCLES);
 }
 

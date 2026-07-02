@@ -1,0 +1,13 @@
+common:
+  sysbuild: true
+  integration_platforms:
+    - esp32c6_devkitc/esp32c6/hpcore
+tests:
+  boards.espressif.lp_uart_lpcore.loopback:
+    tags:
+      - drivers
+      - uart
+    harness: ztest
+    platform_allow:
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore

@@ -125,27 +125,6 @@ int z_sched_waitq_walk(_wait_q_t *wait_q, _waitq_walk_cb_t walk_func,
 /*
  * future scheduler.h API implementations
  */
-bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data)
-{
-	struct k_thread *thread;
-	bool ret = false;
-
-	K_SPINLOCK(&_sched_spinlock) {
-		thread = _priq_wait_best(&wait_q->waitq);
-
-		if (thread != NULL) {
-			z_thread_return_value_set_with_data(thread,
-							    swap_retval,
-							    swap_data);
-			unpend_thread_no_timeout(thread);
-			z_abort_thread_timeout(thread);
-			z_sched_ready_locked(thread);
-			ret = true;
-		}
-	}
-
-	return ret;
-}
 
 int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
 		 _wait_q_t *wait_q, k_timeout_t timeout, void **data)

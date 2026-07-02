@@ -1120,7 +1120,7 @@ def dt_highest_controller_irq_number(kconfig, _, path, irq_cell_name):
 
 def normalize_upper(kconf, _, string):
     """
-    Normalize the string, so that the string only contains alpha-numeric
+    Normalize the string, so that the string only contains alphanumeric
     characters or underscores. All non-alpha-numeric characters are replaced
     with an underscore, '_'.
     When string has been normalized it will be converted into upper case.

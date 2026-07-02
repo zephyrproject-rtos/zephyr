@@ -69,6 +69,8 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 
 #include "net_stats.h"
 
+#include "../l2/ethernet/arp.h"
+
 #if defined(CONFIG_NET_NATIVE)
 static inline enum net_verdict process_data(struct net_pkt *pkt)
 {
@@ -162,6 +164,9 @@ again:
 /* Things to setup after we are able to RX and TX */
 static void net_post_init(void)
 {
+#if defined(CONFIG_NET_ARP)
+	net_arp_init();
+#endif
 #if defined(CONFIG_NET_LLDP)
 	net_lldp_init();
 #endif

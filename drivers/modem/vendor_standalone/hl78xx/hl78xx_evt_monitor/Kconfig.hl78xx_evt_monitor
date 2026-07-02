@@ -1,8 +1,6 @@
-#
-#  Copyright (c) 2025 Netfeasa Ltd.
-#
-#  SPDX-License-Identifier: Apache-2.0
-#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2025 Netfeasa Ltd.
+# SPDX-License-Identifier: Apache-2.0
 
 menuconfig HL78XX_EVT_MONITOR
 	bool "HL78XX AT notification monitor"
@@ -13,6 +11,21 @@ config HL78XX_EVT_MONITOR_HEAP_SIZE
 	int "Heap size for notifications"
 	range 64 4096
 	default 256
+	help
+	  Heap size used to copy and queue HL78xx event notifications for
+	  deferred monitor dispatch in the system workqueue.
+	  Direct runtime monitor dispatch does not use this heap.
+
+
+config HL78XX_EVT_MONITOR_MAX_INSTANCE_MONITORS
+	int "Maximum number of runtime HL78xx event monitors"
+	default 8
+	range 1 64
+	help
+	  Maximum number of runtime event monitors that can be registered.
+	  This bound allows event monitor dispatch to snapshot runtime monitors
+	  without allocating memory, including when dispatch is called from ISR
+	  context.
 
 config HL78XX_EVT_MONITOR_APP_INIT_PRIORITY
 	int "Sierra Wireless HL78XX event monitor app init priority"
@@ -24,6 +37,6 @@ config HL78XX_EVT_MONITOR_APP_INIT_PRIORITY
 module=HL78XX_EVT_MONITOR
 module-dep=LOG
 module-str= Event notification monitor library
-source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+source "subsys/logging/Kconfig.template.log_config"
 
 endif # HL78XX_EVT_MONITOR

@@ -1645,6 +1645,7 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 	 */
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
 	    bt_mesh_lpn_established() && rx->net_if == BT_MESH_NET_IF_ADV &&
+	    !bt_mesh_lpn_clearing() &&
 	    (!bt_mesh_lpn_waiting_update() || !rx->friend_cred)) {
 		LOG_WRN("Ignoring unexpected message in Low Power mode");
 		return -EAGAIN;

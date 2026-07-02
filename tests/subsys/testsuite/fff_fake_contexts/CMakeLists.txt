@@ -14,7 +14,7 @@ project(base)
 target_sources(${target} PRIVATE
   src/code_under_test.c
   src/main.c
-  src/fakes/called_API.c
+  src/fakes/called_api.c
 )
 
 target_include_directories(${target} PRIVATE

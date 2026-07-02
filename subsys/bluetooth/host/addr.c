@@ -13,6 +13,8 @@
 #include <zephyr/bluetooth/crypto.h>
 #include <zephyr/sys/util.h>
 
+#include "keys.h"
+
 #define ADDR_RESOLVED_BITMASK (0x02)
 
 static inline int create_random_addr(bt_addr_le_t *addr)
@@ -119,3 +121,32 @@ bool bt_addr_le_is_resolved(const bt_addr_le_t *addr)
 {
 	return (addr->type & ADDR_RESOLVED_BITMASK) != 0;
 }
+
+#if defined(CONFIG_BT_PRIVACY)
+int bt_addr_le_rpa_resolve(uint8_t id, const bt_addr_le_t *addr, bt_addr_le_t *resolved_addr)
+{
+	struct bt_keys *keys;
+
+	if (addr == NULL || resolved_addr == NULL) {
+		return -EINVAL;
+	}
+
+	if (id >= CONFIG_BT_ID_MAX) {
+		return -EINVAL;
+	}
+
+	if (!bt_addr_le_is_rpa(addr)) {
+		return -EINVAL;
+	}
+
+	keys = bt_keys_find_irk(id, addr);
+	if (keys != NULL) {
+		/* Found a matching IRK, return the identity address */
+		bt_addr_le_copy(resolved_addr, &keys->addr);
+		return 0;
+	}
+
+	/* No matching IRK found for this RPA */
+	return -ENOENT;
+}
+#endif /* CONFIG_BT_PRIVACY */

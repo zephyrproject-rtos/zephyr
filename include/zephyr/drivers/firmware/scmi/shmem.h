@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024,2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,10 @@
 /**
  * Channel flag: when set, the platform should raise an interrupt on
  * completion instead of relying on the agent polling the status.
+ */
+
+/**
+ * @brief Channel flag for IRQ signaling
  */
 #define SCMI_SHMEM_CHAN_FLAG_IRQ_BIT BIT(0)
 
@@ -75,6 +79,17 @@ struct scmi_message;
 int scmi_shmem_write_message(const struct device *shmem,
 			     struct scmi_message *msg,
 			     bool use_polling);
+
+/**
+ * @brief Read a message header from a SHMEM area
+ *
+ * @param shmem pointer to shmem device
+ * @param hdr message to write the data into
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_shmem_read_hdr(const struct device *shmem, uint32_t *hdr);
 
 /**
  * @brief Read a message from a SHMEM area
@@ -121,6 +136,16 @@ int scmi_shmem_vendor_write_message(struct scmi_shmem_layout *layout);
  * @return 0 on success, negative errno value on failure.
  */
 int scmi_shmem_vendor_read_message(const struct scmi_shmem_layout *layout);
+
+/**
+ * @brief Mark a SHMEM channel as free (acknowledge message consumption)
+ *
+ * Per SCMI spec: Bit[0]=1 means FREE, Bit[0]=0 means BUSY.
+ * This helper sets the BUSY bit to indicate the channel is free.
+ *
+ * @param dev pointer to shmem device
+ */
+void scmi_shmem_mark_channel_free(const struct device *dev);
 
 /**
  * @}

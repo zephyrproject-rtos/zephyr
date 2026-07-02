@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Bluetooth Mesh Solicitation PDU RPL Configuration Server model API.
+ * @ingroup bt_mesh_sol_pdu_rpl_srv
+ */
+
 #ifndef BT_MESH_SOL_PDU_RPL_SRV_H__
 #define BT_MESH_SOL_PDU_RPL_SRV_H__
 

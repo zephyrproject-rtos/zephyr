@@ -15,7 +15,7 @@
 
 /**
  * @defgroup lm95234_interface LM95234
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_national
  * @brief LM95234 Quad Remote Diode and Local Temperature Sensor
  * @{
  */

@@ -11,24 +11,26 @@ enable_testing()
 include(CTest)
 
 set(
-  SPDX_FILES
+  SPDX2_FILES
   app.spdx
   zephyr.spdx
   build.spdx
   modules-deps.spdx
 )
 
-set(SPDX_VERSIONS_TO_TEST "2.2" "2.3")
+set(
+  SPDX3_FILES
+  app.jsonld
+  zephyr.jsonld
+  build.jsonld
+  modules-deps.jsonld
+)
 
-foreach(spdx_version ${SPDX_VERSIONS_TO_TEST})
-  string(REPLACE "." "_" version_suffix ${spdx_version})
+set(SPDX_VERSIONS_TO_TEST "2.2" "2.3" "3.0")
 
-  add_test(
-    NAME spdx_gen_${version_suffix}
-    COMMAND west spdx -d ${CMAKE_BINARY_DIR} --spdx-version ${spdx_version}
-  )
-
-  foreach(spdx_file ${SPDX_FILES})
+function(add_spdx2_validation_tests spdx_version version_suffix)
+  foreach(spdx_file ${SPDX2_FILES})
+    # Smoke test: check spdx_file is a valid SPDX 2.x document as per pyspdxtools
     get_filename_component(basename ${spdx_file} NAME_WE)
 
     add_test(
@@ -56,4 +58,41 @@ foreach(spdx_version ${SPDX_VERSIONS_TO_TEST})
     spdx_content_validate_${version_suffix}
     PROPERTIES DEPENDS spdx_gen_${version_suffix}
   )
+endfunction()
+
+function(add_spdx3_validation_tests version_suffix)
+  foreach(spdx_file ${SPDX3_FILES})
+    # Smoke test: check spdx_file is a valid SPDX 3.x JSON-LD document
+    get_filename_component(basename ${spdx_file} NAME_WE)
+
+    add_test(
+      NAME spdx_validate_${basename}_${version_suffix}
+      COMMAND spdx3-validate --quiet --spdx-version auto
+                             --json ${CMAKE_BINARY_DIR}/spdx/${spdx_file}
+    )
+
+    set_tests_properties(
+      spdx_validate_${basename}_${version_suffix}
+      PROPERTIES DEPENDS spdx_gen_${version_suffix}
+    )
+  endforeach()
+endfunction()
+
+foreach(spdx_version ${SPDX_VERSIONS_TO_TEST})
+  string(REPLACE "." "_" version_suffix ${spdx_version})
+
+  add_test(
+    NAME spdx_gen_${version_suffix}
+    COMMAND west spdx -d ${CMAKE_BINARY_DIR} --spdx-version ${spdx_version}
+  )
+  set_tests_properties(
+    spdx_gen_${version_suffix}
+    PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  )
+
+  if(spdx_version VERSION_LESS "3.0")
+    add_spdx2_validation_tests(${spdx_version} ${version_suffix})
+  else()
+    add_spdx3_validation_tests(${version_suffix})
+  endif()
 endforeach()

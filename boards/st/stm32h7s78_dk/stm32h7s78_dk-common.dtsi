@@ -8,7 +8,7 @@
 #include <st/h7rs/stm32h7s7X8.dtsi>
 #include <st/h7/stm32h7s7l8hxh-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
-#include "zephyr/dt-bindings/display/panel.h"
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 /*
@@ -68,7 +68,7 @@
 	};
 
 	dcmi_camera_connector: connector_dcmi_camera {
-		compatible = "st,stm32-dcmi-camera-fpu-330zh";
+		compatible = "st,dvp-cam-zif-30-connector";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
@@ -293,6 +293,10 @@ st_cam_i2c: &i2c1 {
 	};
 };
 
+&xspim {
+	status = "okay";
+};
+
 &xspi1 {
 	pinctrl-0 = <&xspim_p1_ncs1_po0 &xspim_p1_dqs0_po2
 		     &xspim_p1_dqs1_po3 &xspim_p1_clk_po4
@@ -443,5 +447,9 @@ st_cam_dvp: &dcmipp {
 };
 
 &crc {
+	status = "okay";
+};
+
+zephyr_jpegenc: &jpeg {
 	status = "okay";
 };

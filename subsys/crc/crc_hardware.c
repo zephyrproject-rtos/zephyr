@@ -376,3 +376,30 @@ uint32_t crc32_k_4_2_update(uint32_t crc, const uint8_t *const data, const size_
 	return ctx.result;
 }
 #endif
+
+#ifdef CONFIG_CRC32_MPEG2
+uint32_t crc32_mpeg2_update(uint32_t crc, const uint8_t *data, size_t len)
+{
+	int ret;
+
+	struct crc_ctx ctx = {
+		.type = CRC32_MPEG2,
+		.polynomial = CRC32_IEEE_POLY,
+		.seed = crc,
+		.reversed = 0,
+	};
+
+	ret = crc_operation(crc_dev, &ctx, data, len);
+	if (ret != 0) {
+		__ASSERT_MSG_INFO("CRC operation failed: %d", ret);
+		return 0;
+	}
+
+	return ctx.result;
+}
+
+uint32_t crc32_mpeg2(const uint8_t *data, size_t len)
+{
+	return crc32_mpeg2_update(CRC32_MPEG2_INIT_VAL, data, len);
+}
+#endif

@@ -267,7 +267,7 @@ void test_procedure_0(void)
 	 *
 	 * [setup]
 	 * - connect ACL
-	 * - update data length (tinyhost doens't have recombination)
+	 * - update data length (tinyhost doesn't have recombination)
 	 * - dut: subscribe to INDICATE and NOTIFY on tester CHRC
 	 * - dut: send a handle the tester can write to
 	 *

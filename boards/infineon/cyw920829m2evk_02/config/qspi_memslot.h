@@ -8,7 +8,7 @@
 #ifndef QSPI_MEMSLOT_H
 #define QSPI_MEMSLOT_H
 
-#include "cy_smif_memslot.h"
+#include <cy_smif_memslot.h>
 
 /* Slave Select Pin */
 #define QSPI_SLAVE_SELECT (P2_0)

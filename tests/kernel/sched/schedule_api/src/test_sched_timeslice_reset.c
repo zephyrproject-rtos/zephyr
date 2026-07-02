@@ -71,6 +71,8 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 	k_sem_give(&sema);
 }
 
+#endif /* CONFIG_TIMESLICING */
+
 /* test cases */
 /**
  * @brief Check the behavior of preemptive threads when the
@@ -80,13 +82,16 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
  * priorities and few with same priorities and enable the time slice.
  * Ensure that each thread is given the time slice period to execute.
  *
+ * Skipped when CONFIG_TIMESLICING is disabled.
+ *
  * @see k_sched_time_slice_set(), k_sem_reset(), k_cycle_get_32(),
  *      k_uptime_get_32()
  *
- * @ingroup kernel_sched_tests
+ * @ingroup tests_kernel_sched
  */
 ZTEST(threads_scheduling, test_slice_reset)
 {
+#ifdef CONFIG_TIMESLICING
 	uint32_t t32;
 	k_tid_t tid[NUM_THREAD];
 	struct k_thread t[NUM_THREAD];
@@ -142,11 +147,7 @@ ZTEST(threads_scheduling, test_slice_reset)
 		k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
 	}
 	k_thread_priority_set(k_current_get(), old_prio);
-}
-
-#else /* CONFIG_TIMESLICING */
-ZTEST(threads_scheduling, test_slice_reset)
-{
+#else
 	ztest_test_skip();
-}
 #endif /* CONFIG_TIMESLICING */
+}

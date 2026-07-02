@@ -295,3 +295,9 @@ tests:
     extra_args:
       - DTC_OVERLAY_FILE="./boards/${BOARD}_andestech_qspi_nor_xip.overlay"
       - CONF_FILE="./prj.conf ./boards/${BOARD}_andestech_qspi_nor_xip.conf"
+  drivers.flash.common.infineon_rram:
+    filter: CONFIG_FLASH_INFINEON_RRAM
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+    integration_platforms:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns

@@ -183,7 +183,7 @@ static void iso_send(struct k_work *work)
 
 	buf = net_buf_alloc(&tx_pool, K_MSEC(BUF_ALLOC_TIMEOUT_MS));
 	if (!buf) {
-		/* Blocking in system work qeueue causes deadlock, hence yield
+		/* Blocking in system work queue causes deadlock, hence yield
 		 * and try getting the buffer again.
 		 */
 		if (retry_yield_wq) {

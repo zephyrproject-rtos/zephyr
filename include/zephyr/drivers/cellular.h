@@ -19,6 +19,10 @@
  * @defgroup cellular_interface Cellular
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup cellular_interface_ext Device-specific Cellular API extensions
+ * @{
+ * @}
  */
 
 #include <zephyr/types.h>
@@ -202,6 +206,12 @@ struct cellular_evt_network_status {
 typedef void (*cellular_event_cb_t)(const struct device *dev, enum cellular_event event,
 				    const void *payload, void *user_data);
 
+/**
+ * @def_driverbackendgroup{Cellular,cellular_interface}
+ * @ingroup cellular_interface
+ * @{
+ */
+
 /** API for configuring networks */
 typedef int (*cellular_api_configure_networks)(const struct device *dev,
 					       const struct cellular_network *networks,
@@ -233,16 +243,27 @@ typedef int (*cellular_api_set_apn)(const struct device *dev, const char *apn);
 typedef int (*cellular_api_set_callback)(const struct device *dev, cellular_event_mask_t mask,
 					 cellular_event_cb_t cb, void *user_data);
 
-/** Cellular driver API */
+/**
+ * @driver_ops{Cellular}
+ */
 __subsystem struct cellular_driver_api {
+	/** @driver_ops_optional @copybrief cellular_configure_networks */
 	cellular_api_configure_networks configure_networks;
+	/** @driver_ops_optional @copybrief cellular_get_supported_networks */
 	cellular_api_get_supported_networks get_supported_networks;
+	/** @driver_ops_optional @copybrief cellular_get_signal */
 	cellular_api_get_signal get_signal;
+	/** @driver_ops_optional @copybrief cellular_get_modem_info */
 	cellular_api_get_modem_info get_modem_info;
+	/** @driver_ops_optional @copybrief cellular_get_registration_status */
 	cellular_api_get_registration_status get_registration_status;
+	/** @driver_ops_optional @copybrief cellular_set_apn */
 	cellular_api_set_apn set_apn;
+	/** @driver_ops_optional @copybrief cellular_set_callback */
 	cellular_api_set_callback set_callback;
 };
+
+/** @} */
 
 /**
  * @brief Configure cellular networks for the device

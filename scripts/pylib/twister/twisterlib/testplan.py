@@ -312,20 +312,20 @@ class TestPlan:
 
             self.generate_subset(subset, int(sets))
 
+        elif self.options.shuffle_tests:
+            self._shuffle_instances()
+
     def generate_subset(self, subset, sets):
         self.instances = OrderedDict(sorted(self.instances.items(),
                                 key=lambda x: (x[1].testsuite.name, x[0])))
 
         if self.options.shuffle_tests:
-            seed_value = int.from_bytes(os.urandom(8), byteorder="big")
-            if self.options.shuffle_tests_seed is not None:
-                seed_value = self.options.shuffle_tests_seed
-
-            logger.info(f"Shuffle tests with seed: {seed_value}")
-            random.seed(seed_value)
-            temp_list = list(self.instances.items())
-            random.shuffle(temp_list)
-            self.instances = OrderedDict(temp_list)
+            if sets > 1 and self.options.shuffle_tests_seed is None:
+                logger.warning(
+                    "Shuffling with a random seed across multiple subsets might not cover all "
+                    "tests. Consider providing a fixed seed with --shuffle-tests-seed."
+                )
+            self._shuffle_instances()
 
         # Do calculation based on what is actually going to be run and evaluated
         # at runtime, ignore the cases we already know going to be skipped.
@@ -357,6 +357,18 @@ class TestPlan:
             self.instances.update(skipped)
             self.instances.update(errors)
 
+    def _shuffle_instances(self):
+        """Shuffle test execution order to get randomly distributed tests."""
+        if self.options.shuffle_tests_seed is not None:
+            seed_value = self.options.shuffle_tests_seed
+        else:
+            seed_value = int.from_bytes(os.urandom(8), byteorder="big")
+
+        logger.info(f"Shuffle tests with seed: {seed_value}")
+        random.seed(seed_value)
+        temp_list = list(self.instances.items())
+        random.shuffle(temp_list)
+        self.instances = OrderedDict(temp_list)
 
     def report(self):
         if self.options.test_tree:
@@ -455,9 +467,14 @@ class TestPlan:
         arch_roots = self.env.arch_roots
 
         for platform in generate_platforms(board_roots, soc_roots, arch_roots):
+            self.platforms.append(platform)
+
+            # Platforms with `twister: false` are kept in the platform list so
+            # that references to them in test definitions still resolve (and
+            # twister does not abort on unidentified platforms), but they are
+            # never assigned tests nor used as default platforms.
             if not platform.twister:
                 continue
-            self.platforms.append(platform)
 
             if not self.test_config.override_default_platforms:
                 if platform.default:
@@ -727,6 +744,11 @@ class TestPlan:
                     toolchain = ts["toolchain"]
 
                     platform = self.get_platform(ts["platform"])
+                    if platform is None:
+                        raise TwisterRuntimeError(
+                            f"{file}: unknown platform {ts['platform']} "
+                            f"for test {ts['name']}"
+                        )
                     if filter_platform and platform.name not in filter_platform:
                         continue
                     instance = TestInstance(
@@ -946,6 +968,10 @@ class TestPlan:
                     if this_snippet not in found_snippets:
                         missing_required_snippet = this_snippet
                         break
+
+            # Platforms with `twister: false` are listed only so test
+            # references to them resolve; they are never assigned tests.
+            platform_scope = [plat for plat in platform_scope if plat.twister]
 
             # list of instances per testsuite, aka configurations.
             instance_list = []

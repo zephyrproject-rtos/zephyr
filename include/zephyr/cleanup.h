@@ -123,6 +123,34 @@
 		}),                                                                                \
 		_type _T)
 
+/**
+ * @brief Define a conditional (failable) scoped guard type
+ *
+ * This macro defines a guard whose lock acquisition may fail, for use with
+ * @ref scoped_cond_guard. Unlike @ref SCOPE_GUARD_DEFINE, the acquire expression is
+ * evaluated for success: when it evaluates truthy the guard stores @p _type @c _T and
+ * the release expression runs on scope exit; when it evaluates falsy the guard stores
+ * @c NULL and nothing is released.
+ *
+ * @param _name Name of the guard (will be prefixed with guard_)
+ * @param _type Type of the lock object (must be a pointer type)
+ * @param _try_lock Expression evaluating truthy when the lock is acquired
+ *                  (can reference <tt>_T</tt>)
+ * @param _unlock Expression to release the lock (can reference <tt>_T</tt>)
+ *
+ * @kconfig_dep{CONFIG_SCOPE_CLEANUP_HELPERS}
+ *
+ * Usage:
+ * @code{.c}
+ * SCOPE_COND_GUARD_DEFINE(k_mutex_try, struct k_mutex *,
+ *                         k_mutex_lock(_T, K_NO_WAIT) == 0,
+ *                         (void)k_mutex_unlock(_T));
+ * @endcode
+ */
+#define SCOPE_COND_GUARD_DEFINE(_name, _type, _try_lock, _unlock)                                  \
+	SCOPE_VAR_DEFINE(guard_##_name, _type, if (_T != NULL) { _unlock; },                       \
+			 ((_try_lock) ? _T : NULL), _type _T)
+
 /** @cond INTERNAL_HIDDEN */
 
 #define Z_SCOPE_DEFER_DEFINE_VOID(_func)                                                           \
@@ -174,6 +202,30 @@
  * @internal
  */
 #define Z_UNIQUE_ID(_prefix) _CONCAT(_CONCAT(Z_UNIQUE_ID_, _prefix), __COUNTER__)
+
+/*
+ * Block-scope wrapper for @ref scoped_guard. A single-iteration nested for-loop ties the
+ * lifetime of the guard variable (_g) - and thus its cleanup/release - to the brace body
+ * that follows. The body is guarded on _g != NULL so that a conditional guard whose
+ * acquisition fails skips the body instead of running it without the lock held.
+ * For an unconditional guard _g is always non-NULL.
+ */
+#define Z_SCOPED_GUARD(_name, _g, _done, ...)                                                      \
+	for (int _done = 0; _done == 0; _done = 1)                                                 \
+		for (scope_var(guard_##_name, _g)(__VA_ARGS__); _done == 0 && _g != NULL;          \
+		     _done = 1)
+
+/*
+ * Block-scope wrapper for @ref scoped_cond_guard. Like Z_SCOPED_GUARD but the guard
+ * variable is named (_g) so the body can be guarded on whether the lock was acquired:
+ * when acquisition fails _g is NULL, _fail runs and the body is skipped.
+ */
+#define Z_SCOPED_COND_GUARD(_name, _g, _done, _fail, ...)                                          \
+	for (int _done = 0; _done == 0; _done = 1)                                                 \
+		for (scope_var(guard_##_name, _g)(__VA_ARGS__); _done == 0; _done = 1)             \
+			if (_g == NULL) {                                                          \
+				_fail;                                                             \
+			} else
 
 /** @endcond */
 
@@ -238,6 +290,70 @@
  * Usage: @code{.c} scope_guard(k_mutex)(&my_mutex); @endcode
  */
 #define scope_guard(_name) scope_var(guard_##_name, Z_UNIQUE_ID(guard))
+
+/**
+ * @brief Acquire a guard for the lifetime of the following block
+ *
+ * This macro acquires a scoped guard lock and holds it for the duration of the brace
+ * block that immediately follows, releasing it as soon as the block is exited. Unlike
+ * @ref scope_guard, whose guard lives until the end of the enclosing scope, the guard
+ * created here is bound to its own block.
+ *
+ * The block runs exactly once. The lock is released on any exit from the block,
+ * including <tt>break</tt>, <tt>return</tt> and <tt>goto</tt>. Note that, because the
+ * block is implemented with a hidden loop, <tt>break</tt> and <tt>continue</tt> leave
+ * the guarded block rather than affecting an enclosing loop.
+ *
+ * This macro also accepts a guard defined with @ref SCOPE_COND_GUARD_DEFINE. In that
+ * case the block is skipped (and nothing is held) if the lock cannot be acquired; use
+ * @ref scoped_cond_guard when you need to run a statement on acquisition failure.
+ *
+ * @param _name Name of the guard type (defined by @ref SCOPE_GUARD_DEFINE or
+ *              @ref SCOPE_COND_GUARD_DEFINE)
+ * @param ...   Arguments to acquire the guard (e.g. the lock object)
+ *
+ * @kconfig_dep{CONFIG_SCOPE_CLEANUP_HELPERS}
+ *
+ * Usage:
+ * @code{.c}
+ * scoped_guard(k_mutex, &my_mutex) {
+ *         // lock held only inside these braces
+ * }
+ * // lock released here
+ * @endcode
+ */
+#define scoped_guard(_name, ...)                                                                   \
+	Z_SCOPED_GUARD(_name, Z_UNIQUE_ID(scoped_g), Z_UNIQUE_ID(scoped_done), __VA_ARGS__)
+
+/**
+ * @brief Conditionally acquire a guard for the lifetime of the following block
+ *
+ * This macro attempts to acquire a conditional (failable) scoped guard and, on success,
+ * holds it for the duration of the brace block that immediately follows, releasing it as
+ * soon as the block is exited. If the lock cannot be acquired, @p _fail is executed and
+ * the block is skipped.
+ *
+ * On success the block runs exactly once and the lock is released on any exit from the
+ * block, including <tt>break</tt>, <tt>return</tt> and <tt>goto</tt> (<tt>continue</tt>
+ * behaves like <tt>break</tt>).
+ *
+ * @param _name Name of the guard type (defined by @ref SCOPE_COND_GUARD_DEFINE)
+ * @param _fail Statement executed when the lock cannot be acquired (e.g. <tt>break</tt>,
+ *              <tt>return -EBUSY</tt>, or <tt>{}</tt> to silently skip the block)
+ * @param ...   Arguments to acquire the guard (e.g. the lock object)
+ *
+ * @kconfig_dep{CONFIG_SCOPE_CLEANUP_HELPERS}
+ *
+ * Usage:
+ * @code{.c}
+ * scoped_cond_guard(k_mutex_try, return -EBUSY, &my_mutex) {
+ *         // lock held only inside these braces, runs only if acquired
+ * }
+ * @endcode
+ */
+#define scoped_cond_guard(_name, _fail, ...)                                                       \
+	Z_SCOPED_COND_GUARD(_name, Z_UNIQUE_ID(scoped_g), Z_UNIQUE_ID(scoped_done), _fail,         \
+			    __VA_ARGS__)
 
 /**
  * @brief Register a scoped deferred call

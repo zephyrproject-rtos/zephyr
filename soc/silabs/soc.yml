@@ -36,6 +36,9 @@ family:
           - name: efr32mg12p332f1024gl125
           - name: efr32mg12p432f1024gl125
           - name: efr32mg12p433f1024gm68
+      - name: efr32mg13p
+        socs:
+          - name: efr32mg13p732f512gm48
       - name: efm32gg11b
         socs:
           - name: efm32gg11b820f2048gl192

@@ -4,8 +4,39 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Peripheral reset identifiers for Nuvoton NuMaker M55M1X
+ * @ingroup reset_controller_nuvoton_m55m1x
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RESET_NUMAKER_M55M1X_RESET_H
 #define ZEPHYR_INCLUDE_DT_BINDINGS_RESET_NUMAKER_M55M1X_RESET_H
+
+/**
+ * @addtogroup reset_controller_numaker Nuvoton NuMaker reset controller helpers
+ * @{
+ */
+
+/**
+ * @defgroup reset_controller_nuvoton_m55m1x Nuvoton NuMaker M55M1X reset controller helpers
+ * @ingroup reset_controller_numaker
+ *
+ * @brief Peripheral reset-cell identifiers for M55M1X devices.
+ *
+ * Reset identifiers follow the pattern @c NUMAKER_SYS_\<PERIPHERAL\>RST, where
+ * @c \<PERIPHERAL\> is an M55M1X peripheral name (for example, @c NUMAKER_SYS_UART0RST resets
+ * UART0). Pass these identifiers directly to a @c resets property.
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @name Reset module IDs
+ * @brief Register bit positions and reset IDs for Nuvoton M55M1X
+ * @{
+ */
 
 /* Beginning of M55M1 BSP sys_reg.h reset module copy */
 
@@ -206,5 +237,13 @@
 #define NUMAKER_SYS_WWDT1RST        ((0x2E0UL<<20) | SYS_WWDTRST_WWDT1RST_Pos)
 
 /* End of M55M1 BSP sys.h reset module copy */
+
+/** @} */
+
+/** @endcond */
+
+/** @} */
+
+/** @} */
 
 #endif

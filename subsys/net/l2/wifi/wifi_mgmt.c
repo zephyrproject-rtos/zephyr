@@ -42,8 +42,9 @@ struct wifi_rrm_neighbor_report_t {
 };
 
 struct wifi_roaming_params {
-	bool is_11r_used;
 	struct wifi_rrm_neighbor_report_t neighbor_rep;
+	int roaming_cnt_11k;
+	int roaming_cnt_11v;
 };
 
 static struct wifi_roaming_params roaming_params;
@@ -54,6 +55,8 @@ const char *wifi_security_txt(enum wifi_security_type security)
 	switch (security) {
 	case WIFI_SECURITY_TYPE_NONE:
 		return "OPEN";
+	case WIFI_SECURITY_TYPE_OWE:
+		return "OWE";
 	case WIFI_SECURITY_TYPE_PSK:
 		return "WPA2-PSK";
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
@@ -497,6 +500,12 @@ static int wifi_connect(uint64_t mgmt_request, struct net_if *iface,
 			return -EINVAL;
 		}
 		break;
+	case WIFI_SECURITY_TYPE_OWE:
+		/* OWE uses ECDH; no credentials are expected. */
+		if (params->psk_length || params->sae_password_length) {
+			return -EINVAL;
+		}
+		break;
 #if !defined(CONFIG_WIFI_NM_WPA_SUPPLICANT) || defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP)
 	case WIFI_SECURITY_TYPE_WEP:
 	case WIFI_SECURITY_TYPE_WEP_OPEN:
@@ -511,7 +520,8 @@ static int wifi_connect(uint64_t mgmt_request, struct net_if *iface,
 	}
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
-	roaming_params.is_11r_used = params->ft_used;
+	roaming_params.roaming_cnt_11k = 0;
+	roaming_params.roaming_cnt_11v = 0;
 #endif
 
 	return wifi_mgmt_api->connect(dev, iface, params);
@@ -597,6 +607,12 @@ void wifi_mgmt_raise_connect_result_event(struct net_if *iface, int status)
 		.status = status,
 	};
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+	if (status == 0) {
+		roaming_params.roaming_cnt_11k = 0;
+		roaming_params.roaming_cnt_11v = 0;
+	}
+#endif
 	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_CONNECT_RESULT,
 					iface, &cnx_status,
 					sizeof(struct wifi_status));
@@ -619,6 +635,7 @@ static int wifi_start_roaming(uint64_t mgmt_request, struct net_if *iface,
 {
 	const struct device *dev = net_if_get_device(iface);
 	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	int ret = -ENOTSUP;
 
 	if (wifi_mgmt_api == NULL) {
 		return -ENOTSUP;
@@ -628,31 +645,42 @@ static int wifi_start_roaming(uint64_t mgmt_request, struct net_if *iface,
 		return -ENETDOWN;
 	}
 
-	if (roaming_params.is_11r_used) {
-		if (wifi_mgmt_api->start_11r_roaming == NULL) {
-			return -ENOTSUP;
-		}
-
-		return wifi_mgmt_api->start_11r_roaming(dev, iface);
-	} else if (wifi_mgmt_api->bss_support_neighbor_rep(dev, iface)) {
+	if (wifi_mgmt_api->bss_support_neighbor_rep(dev, iface) &&
+	    wifi_mgmt_api->send_11k_neighbor_request != NULL &&
+	    roaming_params.roaming_cnt_11k < CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING_RETRY) {
 		memset(&roaming_params.neighbor_rep, 0x0, sizeof(roaming_params.neighbor_rep));
-		if (wifi_mgmt_api->send_11k_neighbor_request == NULL) {
-			return -ENOTSUP;
+		ret = wifi_mgmt_api->send_11k_neighbor_request(dev, iface, NULL);
+		LOG_DBG("Start 11k roaming ret %d", ret);
+		if (ret == 0) {
+			roaming_params.roaming_cnt_11k++;
+			return 0;
+		} else if (ret == -EALREADY) {
+			return 0;
 		}
-
-		return wifi_mgmt_api->send_11k_neighbor_request(dev, iface, NULL);
-	} else if (wifi_mgmt_api->bss_ext_capab &&
-			wifi_mgmt_api->bss_ext_capab(dev, iface, WIFI_EXT_CAPAB_BSS_TRANSITION)) {
-		if (wifi_mgmt_api->btm_query) {
-			return wifi_mgmt_api->btm_query(dev, iface, 0x10);
-		} else {
-			return -ENOTSUP;
-		}
-	} else if (wifi_mgmt_api->legacy_roam) {
-		return wifi_mgmt_api->legacy_roam(dev, iface);
-	} else {
-		return -ENOTSUP;
+		roaming_params.roaming_cnt_11k++;
 	}
+
+	if (wifi_mgmt_api->bss_ext_capab &&
+	    wifi_mgmt_api->bss_ext_capab(dev, iface, WIFI_EXT_CAPAB_BSS_TRANSITION) &&
+	    wifi_mgmt_api->btm_query &&
+	    roaming_params.roaming_cnt_11v < CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING_RETRY) {
+		ret = wifi_mgmt_api->btm_query(dev, iface, 0x10);
+		LOG_DBG("Start 11v roaming ret %d", ret);
+		if (ret == 0) {
+			roaming_params.roaming_cnt_11v++;
+			return 0;
+		} else if (ret == -EALREADY) {
+			return 0;
+		}
+		roaming_params.roaming_cnt_11v++;
+	}
+
+	if (wifi_mgmt_api->legacy_roam) {
+		ret = wifi_mgmt_api->legacy_roam(dev, iface);
+		LOG_DBG("Start legacy roaming ret %d", ret);
+	}
+
+	return ret;
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_START_ROAMING, wifi_start_roaming);
@@ -1410,6 +1438,28 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP, wifi_dpp);
 
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+static int wifi_nan(uint64_t mgmt_request, struct net_if *iface,
+		    void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_nan_params *params = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->nan_cfg == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	return wifi_mgmt_api->nan_cfg(dev, iface, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_NAN, wifi_nan);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+
 static int wifi_pmksa_flush(uint64_t mgmt_request, struct net_if *iface,
 					   void *data, size_t len)
 {
@@ -1742,6 +1792,8 @@ static inline const char *wpa_supp_security_txt(enum wifi_security_type security
 	switch (security) {
 	case WIFI_SECURITY_TYPE_NONE:
 		return "NONE";
+	case WIFI_SECURITY_TYPE_OWE:
+		return "OWE";
 	case WIFI_SECURITY_TYPE_PSK:
 		return "WPA-PSK";
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
@@ -1846,6 +1898,10 @@ static int add_static_network_config(struct net_if *iface)
 
 #if defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OPEN)
 	creds.header.type = WIFI_SECURITY_TYPE_NONE;
+	creds.password_len = 0;
+#elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OWE)
+	creds.header.type = WIFI_SECURITY_TYPE_OWE;
+	creds.password_len = 0;
 #elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_PSK)
 	creds.header.type = WIFI_SECURITY_TYPE_PSK;
 #elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_PSK_SHA256)
@@ -1860,8 +1916,11 @@ static int add_static_network_config(struct net_if *iface)
 
 	memcpy(creds.header.ssid, CONFIG_WIFI_CREDENTIALS_STATIC_SSID,
 	       strlen(CONFIG_WIFI_CREDENTIALS_STATIC_SSID));
+#if !defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OPEN) && \
+	!defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OWE)
 	memcpy(creds.password, CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD,
 	       strlen(CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD));
+#endif
 
 	LOG_DBG("Adding statically configured WiFi network [%s] to internal list.",
 		CONFIG_WIFI_CREDENTIALS_STATIC_SSID);

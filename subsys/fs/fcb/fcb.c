@@ -117,6 +117,11 @@ int fcb_init(int f_area_id, struct fcb *fcbp)
 		return -EINVAL;
 	}
 
+	/* Buffer needs adjusting */
+	if (align > WRITE_ALIGNMENT_BUFFER_SIZE) {
+		return -ENOMEM;
+	}
+
 	/* Fill last used, first used */
 	for (i = 0; i < fcbp->f_sector_cnt; i++) {
 		sector = &fcbp->f_sectors[i];
@@ -140,6 +145,10 @@ int fcb_init(int f_area_id, struct fcb *fcbp)
 			oldest_sector = sector;
 		}
 	}
+
+	/* fcb_sector_hdr_init needs the alignment to be able to write */
+	fcbp->f_align = align;
+
 	if (oldest < 0) {
 		/*
 		 * No initialized areas.
@@ -151,7 +160,6 @@ int fcb_init(int f_area_id, struct fcb *fcbp)
 		}
 		newest = oldest = 0;
 	}
-	fcbp->f_align = align;
 	fcbp->f_oldest = oldest_sector;
 	fcbp->f_active.fe_sector = newest_sector;
 	fcbp->f_active.fe_elem_off = fcb_len_in_flash(fcbp, sizeof(struct fcb_disk_area));
@@ -254,15 +262,21 @@ int fcb_get_len(const struct fcb *fcbp, uint8_t *buf, uint16_t *len)
  */
 int fcb_sector_hdr_init(struct fcb *fcbp, struct flash_sector *sector, uint16_t id)
 {
-	struct fcb_disk_area fda;
+	/* Need to align fda size to write block size */
+	union {
+		struct fcb_disk_area fda;
+		uint8_t raw[WRITE_ALIGNMENT_BUFFER_SIZE];
+	} buf;
 	int rc;
 
-	fda.fd_magic = fcb_flash_magic(fcbp);
-	fda.fd_ver = fcbp->f_version;
-	fda._pad = fcbp->f_erase_value;
-	fda.fd_id = id;
+	memset(&buf, fcbp->f_erase_value, sizeof(buf));
 
-	rc = fcb_flash_write(fcbp, sector, 0, &fda, sizeof(fda));
+	buf.fda.fd_magic = fcb_flash_magic(fcbp);
+	buf.fda.fd_ver = fcbp->f_version;
+	buf.fda._pad = fcbp->f_erase_value;
+	buf.fda.fd_id = id;
+
+	rc = fcb_flash_write(fcbp, sector, 0, &buf, sizeof(buf));
 	if (rc != 0) {
 		return -EIO;
 	}

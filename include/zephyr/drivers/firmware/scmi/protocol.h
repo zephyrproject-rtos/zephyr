@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024,2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,6 +47,26 @@
 #define SCMI_MESSAGE_HDR_MAKE(id, type, proto, token)                                              \
 	(SCMI_FIELD_MAKE(id, GENMASK(7, 0), 0) | SCMI_FIELD_MAKE(type, GENMASK(1, 0), 8) |         \
 	 SCMI_FIELD_MAKE(proto, GENMASK(7, 0), 10) | SCMI_FIELD_MAKE(token, GENMASK(9, 0), 18))
+
+/**
+ * @brief Extract message ID (bits [7:0]) from SCMI message header
+ */
+#define SCMI_MESSAGE_HDR_TAKE_MSGID(hdr)    FIELD_GET(GENMASK(7, 0), (hdr))
+
+/**
+ * @brief Extract message type (bits [9:8]) from SCMI message header
+ */
+#define SCMI_MESSAGE_HDR_TAKE_TYPE(hdr)     FIELD_GET(GENMASK(9, 8), (hdr))
+
+/**
+ * @brief Extract protocol ID (bits [17:10]) from SCMI message header
+ */
+#define SCMI_MESSAGE_HDR_TAKE_PROTOCOL(hdr) FIELD_GET(GENMASK(17, 10), (hdr))
+
+/**
+ * @brief Extract token (bits [27:18]) from SCMI message header
+ */
+#define SCMI_MESSAGE_HDR_TAKE_TOKEN(hdr)    FIELD_GET(GENMASK(27, 18), (hdr))
 
 struct scmi_channel;
 
@@ -102,12 +122,44 @@ struct scmi_protocol {
 	uint32_t id;
 	/** TX channel */
 	struct scmi_channel *tx;
+	/** RX channel */
+	struct scmi_channel *rx;
 	/** Transport layer device */
 	const struct device *transport;
 	/** Protocol private data */
 	void *data;
 	/** Protocol supported version */
 	uint32_t version;
+	/** protocol events */
+	const struct scmi_protocol_events *events;
+};
+
+/**
+ * @typedef scmi_protocol_event_callback
+ * @brief Per‑protocol notification callback invoked by the SCMI core.
+ *
+ * Define event-specific information during the static registration phase
+ * of each SCMI protocol. When a P2A notification/interrupt is received,
+ * the SCMI core decodes the message and dispatches it to the corresponding
+ * protocol's callback.
+ *
+ * @param proto pointer to the SCMI protocol instance that received the notification.
+ * @param msg_id protocol-specific message ID.
+ */
+typedef void (*scmi_protocol_event_callback)(struct scmi_protocol *proto, uint32_t msg_id);
+
+/**
+ * @struct scmi_protocol_events
+ *
+ * @brief SCMI protocol events structure
+ */
+struct scmi_protocol_events {
+	/** Supported notification message IDs */
+	const uint32_t *evts;
+	/** Number of supported protocol notifications **/
+	uint32_t num_events;
+	/** protocol notification callback **/
+	scmi_protocol_event_callback cb;
 };
 
 /**
@@ -221,6 +273,17 @@ int scmi_protocol_message_attributes_get(struct scmi_protocol *proto, uint32_t m
  * @return 0 on success, negative errno value on failure.
  */
 int scmi_protocol_version_negotiate(struct scmi_protocol *proto, uint32_t version);
+
+/**
+ * @brief Read SCMI notification or delayed reply
+ *
+ * @param proto pointer to SCMI protocol
+ * @param msg pointer to SCMI message to read
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_read_message(struct scmi_protocol *proto, struct scmi_message *msg);
 
 /**
  * @}

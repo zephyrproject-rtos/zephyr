@@ -15,7 +15,7 @@
 /**
  * @brief ST VL53L0X time-of-flight ranging sensor
  * @defgroup vl53l0x_interface VL53L0X
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_st
  * @{
  */
 

@@ -6,8 +6,8 @@
 
 /**
  * @file
- * @brief Telnet shell backend
- * @ingroup shell_api
+ * @brief Header file for the Telnet shell backend.
+ * @ingroup shell_telnet
  */
 
 #ifndef ZEPHYR_INCLUDE_SHELL_TELNET_H_
@@ -20,6 +20,7 @@
 extern "C" {
 #endif
 
+/** @cond INTERNAL_HIDDEN */
 extern const struct shell_transport_api shell_telnet_transport_api;
 
 #define SHELL_TELNET_POLLFD_COUNT 3
@@ -69,7 +70,20 @@ struct shell_telnet {
 	/** If set, no output is sent to the TELNET client. */
 	bool output_lock;
 };
+/** @endcond */
 
+/**
+ * @defgroup shell_telnet Telnet shell backend
+ * @ingroup shell_backends
+ * @brief Shell access over a TELNET connection.
+ * @{
+ */
+
+/**
+ * @brief Define a Telnet shell transport instance.
+ *
+ * @param _name Name of the transport instance.
+ */
 #define SHELL_TELNET_DEFINE(_name)					\
 	static struct shell_telnet _name##_shell_telnet;		\
 	struct shell_transport _name = {				\
@@ -86,6 +100,8 @@ struct shell_telnet {
  * @returns Pointer to the shell instance.
  */
 const struct shell *shell_backend_telnet_get_ptr(void);
+
+/** @} */
 
 #ifdef __cplusplus
 }

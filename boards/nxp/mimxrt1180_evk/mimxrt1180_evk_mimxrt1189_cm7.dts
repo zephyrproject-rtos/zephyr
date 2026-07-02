@@ -16,8 +16,6 @@
 
 	chosen {
 		zephyr,sram = &dtcm;
-		zephyr,dtcm = &dtcm;
-		zephyr,itcm = &itcm;
 		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,flash = &itcm;
 		zephyr,console = &lpuart12;

@@ -57,12 +57,10 @@ else()
   file(WRITE "${_extram_inc}" "")
 endif()
 
-if(NOT (CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE OR CONFIG_SOC_ESP32P4_LPCORE))
-  # Get flash size in MB for esptool from the chosen zephyr,flash node
-  dt_chosen(dts_flash PROPERTY "zephyr,flash")
-  dt_reg_size(flash_size_bytes PATH ${dts_flash})
-  math(EXPR esptoolpy_flashsize "${flash_size_bytes} / 0x100000")
-endif()
+# Get flash size in MB for esptool from the chosen zephyr,flash node
+dt_chosen(dts_flash PROPERTY "zephyr,flash")
+dt_reg_size(flash_size_bytes PATH ${dts_flash})
+math(EXPR esptoolpy_flashsize "${flash_size_bytes} / 0x100000")
 
 # Get UART baudrate from DT
 dt_chosen(dts_shell_uart PROPERTY "zephyr,shell-uart")
@@ -89,8 +87,6 @@ if((CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT (CONFIG_SOC_ESP32C5_LPCORE
       ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME})
   endif()
 endif()
-
-set_property(TARGET bintools PROPERTY disassembly_flag_inline_source)
 
 if(CONFIG_ESP_SIMPLE_BOOT AND NOT (CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE OR CONFIG_SOC_ESP32P4_LPCORE))
   dt_nodelabel(image_part_path NODELABEL "boot_partition")

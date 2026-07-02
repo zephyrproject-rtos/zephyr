@@ -170,7 +170,7 @@ static void xilinx_axienet_rx_callback(const struct device *dma, void *user_data
 
 	LOG_DBG("Packet with %u bytes received!\n", packet_size);
 
-	/* we need to start a new DMA transfer irregardless of whether the DMA reported an error */
+	/* we need to start a new DMA transfer regardless of whether the DMA reported an error */
 	/* otherwise, the ethernet subsystem would just stop receiving */
 setup_new_transfer:
 	if (setup_dma_rx_transfer(ethdev, ethdev->config, ethdev->data)) {
@@ -458,14 +458,8 @@ static void phy_link_state_changed(const struct device *dev __unused, struct phy
 {
 	struct net_if *iface = (struct net_if *)user_data;
 
-	LOG_INF("Link state changed to: %s (speed %x)", state->is_up ? "up" : "down", state->speed);
-
 	/* inform the L2 driver about link event */
-	if (state->is_up) {
-		net_eth_carrier_on(iface);
-	} else {
-		net_eth_carrier_off(iface);
-	}
+	net_eth_carrier_set(iface, state->is_up);
 }
 
 static void xilinx_axienet_iface_init(struct net_if *iface)

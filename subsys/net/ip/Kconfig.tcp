@@ -133,6 +133,16 @@ config NET_TCP_RECV_QUEUE_TIMEOUT
 	  SEQ 2. But if we receive SEQs 5,4,3,7 then the SEQ 7 is discarded
 	  because the list would not be sequential as number 6 is be missing.
 
+config NET_TCP_ACK_DELAY
+	int "TCP delayed ACK timeout (in ms)"
+	default 100
+	range 0 1000
+	help
+	  How long, in milliseconds, TCP can delay an ACK for received data
+	  that is not ACKed immediately by the RFC 1122 "ACK every second
+	  full-sized segment" rule, for example when the received segment does
+	  not have PSH set. Set to 0 to schedule the ACK immediately.
+
 config NET_TCP_PKT_ALLOC_TIMEOUT
 	int "How long to wait for a TCP packet allocation (in ms)"
 	default 100

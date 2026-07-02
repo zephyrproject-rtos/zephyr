@@ -297,7 +297,7 @@ static int cmd_tbs_join(const struct shell *sh, size_t argc, char *argv[])
 	unsigned long call_index;
 	int result = 0;
 
-	for (size_t i = 1; i < argc; i++) {
+	for (size_t i = 1U; i < argc; i++) {
 		call_index = shell_strtoul(argv[i], 0, &result);
 		if (result != 0) {
 			shell_error(sh, "Could not parse call_index: %d",

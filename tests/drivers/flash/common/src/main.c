@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/drivers/mspi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/flash.h>
@@ -13,6 +14,8 @@
 
 #if defined(CONFIG_TEST_FORCE_STORAGE_PARTITION)
 #define TEST_AREA	storage_partition
+#elif defined(CONFIG_FLASH_INFINEON_RRAM)
+#define TEST_AREA storage_partition_rram
 #elif defined(CONFIG_NORDIC_QSPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, nordic_qspi_nor)
 #elif defined(SOC_SERIES_STM32N6X)
@@ -23,6 +26,8 @@
 #define TEST_AREA_DEV_NODE	DT_INST(0, jedec_spi_nor)
 #elif defined(CONFIG_FLASH_MSPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, jedec_mspi_nor)
+#define TEST_IS_DTR		DT_ENUM_HAS_VALUE(TEST_AREA_DEV_NODE, mspi_data_rate,              \
+						  mspi_data_rate_dual)
 #elif defined(CONFIG_FLASH_RENESAS_RA_QSPI)
 #define TEST_AREA_DEV_NODE DT_INST(0, renesas_ra_qspi_nor)
 #elif defined(CONFIG_FLASH_RENESAS_RZ_QSPI_XSPI)
@@ -35,7 +40,7 @@
 #define TEST_AREA	storage_partition
 #endif
 
-/* TEST_AREA is only defined for configurations that realy on
+/* TEST_AREA is only defined for configurations that rely on
  * fixed-partition nodes.
  */
 #ifdef TEST_AREA
@@ -165,6 +170,9 @@ ZTEST(flash_driver, test_read_unaligned_address)
 	const uint8_t canary = erase_value;
 	uint32_t start;
 
+	/* Require even length reads and even offsets for DTR configurations */
+	const uint8_t step = (IS_ENABLED(TEST_IS_DTR) ? 2 : 1);
+
 	if (IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE) && ebw_required) {
 		start = page_info.start_offset;
 		/* Erase a nb of pages aligned to the EXPECTED_SIZE */
@@ -184,9 +192,9 @@ ZTEST(flash_driver, test_read_unaligned_address)
 	zassert_equal(rc, 0, "Cannot write to flash");
 
 	/* read buffer length*/
-	for (off_t len = 0; len < 25; len++) {
+	for (off_t len = 0; len < 25; len += step) {
 		/* address offset */
-		for (off_t ad_o = 0; ad_o < 4; ad_o++) {
+		for (off_t ad_o = 0; ad_o < 4; ad_o += step) {
 			/* buffer offset; leave space for buffer guard */
 			for (off_t buf_o = 1; buf_o < 5; buf_o++) {
 				/* buffer overflow protection */
@@ -252,7 +260,7 @@ ZTEST(flash_driver, test_flash_fill)
 			break;
 		}
 	}
-	zassert_equal(i, EXPECTED_SIZE, "Expected device to be filled wth 0xaa");
+	zassert_equal(i, EXPECTED_SIZE, "Expected device to be filled with 0xaa");
 }
 
 ZTEST(flash_driver, test_flash_flatten)
@@ -284,7 +292,7 @@ ZTEST(flash_driver, test_flash_flatten)
 			break;
 		}
 	}
-	zassert_equal(i, EXPECTED_SIZE, "Expected device to be filled wth 0xaa");
+	zassert_equal(i, EXPECTED_SIZE, "Expected device to be filled with 0xaa");
 }
 
 ZTEST(flash_driver, test_flash_erase)
@@ -462,7 +470,7 @@ ZTEST(flash_driver, test_flash_page_layout)
 		     "page_count = %zu not equal to pages counted with cb = %zu", page_count,
 		     test_cb_data.page_counter);
 
-	/* Test that callback can cancell iteration */
+	/* Test that callback can cancel iteration */
 	test_cb_data.page_counter = 0;
 	test_cb_data.exit_page = page_count >> 1;
 	flash_page_foreach(flash_dev, flash_callback, &test_cb_data);
@@ -475,14 +483,14 @@ static void test_flash_copy_inner(const struct device *src_dev, off_t src_offset
 				  const struct device *dst_dev, off_t dst_offset, off_t size,
 				  uint8_t *buf, size_t buf_size, int expected_result)
 {
+	off_t remaining = size;
 	int actual_result;
 
 	if ((expected_result == 0) && (size != 0) && (src_offset != dst_offset)) {
 		/* prepare for successful copy */
-		zassert_ok(flash_flatten(flash_dev, page_info.start_offset, page_info.size));
-		zassert_ok(flash_fill(flash_dev, 0xaa, page_info.start_offset, page_info.size));
-		zassert_ok(flash_flatten(flash_dev, page_info.start_offset + page_info.size,
-					 page_info.size));
+		zassert_ok(flash_flatten(src_dev, src_offset, (size_t)size));
+		zassert_ok(flash_fill(src_dev, 0xaa, src_offset, (size_t)size));
+		zassert_ok(flash_flatten(dst_dev, dst_offset, (size_t)size));
 	}
 
 	/* perform copy (if args are valid) */
@@ -494,11 +502,16 @@ static void test_flash_copy_inner(const struct device *src_dev, off_t src_offset
 
 	if ((expected_result == 0) && (size != 0) && (src_offset != dst_offset)) {
 		/* verify a successful copy */
-		off_t copy_size = MIN(size, EXPECTED_SIZE);
+		while (remaining > 0) {
+			size_t read_size = MIN((size_t)remaining, buf_size);
 
-		zassert_ok(flash_read(flash_dev, TEST_AREA_OFFSET, expected, copy_size));
-		for (int i = 0; i < copy_size; i++) {
-			zassert_equal(buf[i], 0xaa, "incorrect data (%02x) at %d", buf[i], i);
+			zassert_ok(flash_read(dst_dev, dst_offset, buf, read_size));
+			for (size_t i = 0; i < read_size; i++) {
+				zassert_equal(buf[i], 0xaa, "incorrect data (%02x) at %zu", buf[i],
+					      (size_t)(size - remaining + i));
+			}
+			remaining -= (off_t)read_size;
+			dst_offset += (off_t)read_size;
 		}
 	}
 }

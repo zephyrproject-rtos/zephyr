@@ -15,7 +15,7 @@
 
 /**
  * @defgroup max17055_interface MAX17055
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_adi
  * @brief Maxim Integrated MAX17055 fuel gauge
  * @{
  */

@@ -11,6 +11,7 @@ import os
 import re
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 from twisterlib.constants import PYTEST_HARNESSES, canonical_zephyr_base
 from twisterlib.error import StatusAttributeError, TwisterException, TwisterRuntimeError
@@ -376,15 +377,16 @@ def _find_src_dir_path(test_dir_path):
 
 
 class TestCase:
+    """Class representing a single test case."""
     __test__ = False
 
-    def __init__(self, name):
-        self.duration = 0
+    def __init__(self, name: str) -> None:
         self.name = name
-        self._status = TwisterStatus.NONE
-        self.reason = None
-        self.output = ""
-        self.freeform = False
+        self.duration: float = 0
+        self._status: TwisterStatus = TwisterStatus.NONE
+        self.reason: str | None = None
+        self.output: str = ""
+        self.freeform: bool = False
 
     @property
     def status(self) -> TwisterStatus:
@@ -414,7 +416,14 @@ class TestSuite:
 
     __test__ = False
 
-    def __init__(self, suite_root, suite_path, name, data=None, detailed_test_id=True):
+    def __init__(
+        self,
+        suite_root: str | Path,
+        suite_path: str | Path,
+        name: str,
+        data: dict[str, Any] | None = None,
+        detailed_test_id: bool = True
+    ) -> None:
         """TestSuite constructor.
 
         This gets called by TestPlan as it finds and reads test yaml files.

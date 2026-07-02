@@ -27,8 +27,13 @@ config TLS_CREDENTIALS_BACKEND_VOLATILE
 
 config TLS_CREDENTIALS_BACKEND_PROTECTED_STORAGE
 	bool "TLS credentials management protected storage backend"
-	depends on BUILD_WITH_TFM
+	depends on BUILD_WITH_TFM || SECURE_STORAGE
 	select PSA_WANT_ALG_SHA_256
+	# This backend builds storage UIDs that use the full 64-bit range
+	# (see tls_credential_get_uid()). TF-M's Protected Storage supports that
+	# natively, but Zephyr's Secure Storage defaults to a 30-bit UID, so the
+	# 64-bit UID range must be enabled there for psa_ps_set() to accept them.
+	select SECURE_STORAGE_64_BIT_UID if SECURE_STORAGE
 	help
 	  TLS credentials management backend using the Protected Storage
 	  API to store credentials with integrity check against physical

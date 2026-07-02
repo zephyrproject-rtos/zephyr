@@ -44,3 +44,36 @@
 		};
 	};
 };
+
+&dmamux1 {
+	status = "okay";
+};
+
+/* Enable the underlying DMA controllers (if not already enabled by board)
+ * to use dfsdm with DMA
+ */
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+/* pll2 must be enable for dfsdm because it provides audio ck */
+&pll2 {
+	status = "okay";
+};
+
+&dfsdm {
+	status = "okay";
+};
+
+dmic_dev: &pdm0 {
+	compatible = "st,stm32-dfsdm-dmic";
+	status = "okay";
+
+	channel@0 {
+		status = "okay";
+	};
+};

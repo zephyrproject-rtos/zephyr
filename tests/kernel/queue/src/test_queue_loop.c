@@ -102,10 +102,27 @@ static void tqueue_read_write(struct k_queue *pqueue)
 
 /*test cases*/
 /**
- * @brief Test queue operations in loop
- * @ingroup kernel_queue_tests
- * @see k_queue_append(), k_queue_get(),
- * k_queue_init(), k_queue_remove()
+ * @brief Verify queue data integrity under repeated cross-context traffic.
+ *
+ * @details
+ * Stresses the queue by cycling append/prepend/get/remove operations through
+ * main-thread, ISR and spawned-thread contexts many times. Across every
+ * iteration the items must be passed and removed without loss, duplication or
+ * reordering.
+ *
+ * Test steps:
+ * - For LOOPS iterations: append/prepend from the main thread, find-and-remove
+ *   plus get/append from an ISR and a spawned thread, then drain.
+ * - Verify each get returns the expected item and each remove succeeds.
+ *
+ * Expected result:
+ * - Data passes correctly across all contexts on every iteration.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_append()
+ * @see k_queue_get()
+ * @see k_queue_remove()
  */
 ZTEST(queue_api_1cpu, test_queue_loop)
 {

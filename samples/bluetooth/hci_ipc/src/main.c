@@ -248,7 +248,7 @@ static void hci_ipc_send(struct net_buf *buf, bool is_fatal_err)
 			 * call can be from ISR context, hence there is no thread to yield. Besides
 			 * that both handlers implement a policy to provide error information and
 			 * stop the system in an infinite loop. The goal is to prevent any other
-			 * damage to the system if one of such exeptional situations occur, hence
+			 * damage to the system if one of such exceptional situations occur, hence
 			 * call to k_yield is against it.
 			 */
 			if (is_fatal_err) {

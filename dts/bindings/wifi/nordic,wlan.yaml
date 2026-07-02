@@ -8,4 +8,6 @@ description: |
   Wi-Fi chips. The interface is used to identify and name Wi-Fi network
   interfaces like wlan0.
 
+include: ethernet-controller.yaml
+
 compatible: "nordic,wlan"

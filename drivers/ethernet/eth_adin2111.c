@@ -656,11 +656,7 @@ static inline void adin2111_port_on_phyint(const struct device *dev)
 		return;
 	}
 
-	if (state.is_up) {
-		net_eth_carrier_on(data->iface);
-	} else {
-		net_eth_carrier_off(data->iface);
-	}
+	net_eth_carrier_set(data->iface, state.is_up);
 }
 
 static void adin2111_offload_thread(void *p1, void *p2, void *p3)
@@ -851,7 +847,6 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 	/* query remaining tx fifo space */
 	ret = adin2111_read_tx_space(adin, &tx_space);
 	if (ret < 0) {
-		eth_stats_update_errors_tx(data->iface);
 		LOG_ERR("Failed to read TX FIFO space, %d", ret);
 		goto end_unlock;
 	}
@@ -863,7 +858,6 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 	if (tx_space <
 	   (pkt_len + ADIN2111_FRAME_HEADER_SIZE + ADIN2111_INTERNAL_HEADER_SIZE)) {
 		/* tx buffer is full */
-		eth_stats_update_errors_tx(data->iface);
 		ret = -EBUSY;
 		goto end_unlock;
 	}
@@ -884,7 +878,6 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 	burst_size = ROUND_UP(padded_size, 4);
 	if ((burst_size + ADIN2111_WRITE_HEADER_SIZE) > CONFIG_ETH_ADIN2111_BUFFER_SIZE) {
 		ret = -ENOMEM;
-		eth_stats_update_errors_tx(data->iface);
 		goto end_unlock;
 	}
 
@@ -906,7 +899,6 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 			   (ctx->buf + header_size + ADIN2111_FRAME_HEADER_SIZE),
 			   pkt_len);
 	if (ret < 0) {
-		eth_stats_update_errors_tx(data->iface);
 		LOG_ERR("Port %u failed to read PKT into TX buffer, %d",
 			cfg->port_idx, ret);
 		goto end_unlock;
@@ -915,7 +907,6 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 	/* write transmit size */
 	ret = eth_adin2111_reg_write(adin, ADIN2111_TX_FSIZE, padded_size);
 	if (ret < 0) {
-		eth_stats_update_errors_tx(data->iface);
 		LOG_ERR("Port %u write FSIZE failed, %d", cfg->port_idx, ret);
 		goto end_unlock;
 	}
@@ -931,13 +922,8 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 			   &tx);
 end_check:
 	if (ret < 0) {
-		eth_stats_update_errors_tx(data->iface);
 		LOG_ERR("Port %u frame SPI write failed, %d", cfg->port_idx, ret);
-		goto end_unlock;
 	}
-
-	eth_stats_update_bytes_tx(data->iface, pkt_len);
-	eth_stats_update_pkts_tx(data->iface);
 
 end_unlock:
 	eth_adin2111_unlock(adin);

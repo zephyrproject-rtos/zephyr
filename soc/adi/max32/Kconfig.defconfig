@@ -6,6 +6,7 @@
 if SOC_FAMILY_MAX32
 
 rsource "Kconfig.defconfig.max*"
+rsource "sbt/Kconfig.defconfig"
 
 choice PM_PREWAKEUP_CONV_MODE
 	default PM_PREWAKEUP_CONV_MODE_CEIL

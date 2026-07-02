@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef WIFI_CREDENTIALS_H__
-#define WIFI_CREDENTIALS_H__
+#ifndef ZEPHYR_INCLUDE_NET_WIFI_CREDENTIALS_H_
+#define ZEPHYR_INCLUDE_NET_WIFI_CREDENTIALS_H_
 
 #include <zephyr/types.h>
 #include <zephyr/net/wifi.h>
@@ -269,4 +269,4 @@ void wifi_credentials_for_each_ssid(wifi_credentials_ssid_cb cb, void *cb_arg);
 
 /** @} */
 
-#endif /* WIFI_CREDENTIALS_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_WIFI_CREDENTIALS_H_ */

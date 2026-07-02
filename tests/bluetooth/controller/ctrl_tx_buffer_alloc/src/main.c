@@ -97,7 +97,7 @@ ZTEST(tx_buffer_alloc, test_tx_buffer_alloc)
 	zassert_equal(ctxs[0]->wait_reason, WAITING_FOR_TX_BUFFER);
 
 	for (int j = 1; j < CONFIG_BT_CTLR_LLCP_CONN; j++) {
-		/* Now global pool is exausted, but conn pool is not */
+		/* Now global pool is exhausted, but conn pool is not */
 		for (i = 0; i < CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM; i++) {
 			zassert_true(llcp_tx_alloc_peek(&conn[j], ctxs[j]));
 			tx[tx_alloc_idx] = llcp_tx_alloc(&conn[j], ctxs[j]);
@@ -150,7 +150,7 @@ ZTEST(tx_buffer_alloc, test_tx_buffer_alloc)
 	zassert_true((conn[2].llcp.tx_buffer_alloc <
 		       CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM), NULL);
 
-	/* global pool does not allow as ctxs[2] is not next up, but pre alloted is now avail */
+	/* global pool does not allow as ctxs[2] is not next up, but pre allotted is now avail */
 	zassert_equal(ctxs[2]->wait_reason, WAITING_FOR_TX_BUFFER);
 	zassert_not_null(ctxs[2]->wait_node.next, NULL);
 	zassert_true(llcp_tx_alloc_peek(&conn[2], ctxs[2]));

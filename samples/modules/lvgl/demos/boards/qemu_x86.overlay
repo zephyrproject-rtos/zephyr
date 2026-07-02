@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Use a smaller framebuffer to keep software rendering responsive under TCG. */
+&ramfb0 {
+	width = <480>;
+	height = <272>;
+};

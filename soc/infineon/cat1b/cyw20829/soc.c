@@ -14,7 +14,7 @@
 
 #include <cy_sysint.h>
 #include <system_cat1b.h>
-#include "cy_pdl.h"
+#include <cy_pdl.h>
 
 /* Power profiles definition */
 #define CY_CFG_PWR_MODE_POWER_PROFILE_0  0 /* LP MCU + Radio ON */

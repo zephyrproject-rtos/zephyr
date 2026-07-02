@@ -143,7 +143,12 @@ static bool virtio_pci_read_cap(
 			((uint32_t *)&tmp)[i] = pcie_conf_read(bdf, cap_off + i);
 		}
 		if (tmp.cfg_type == cfg_type) {
-			assert(tmp.cap_len == cap_struct_size);
+			if (tmp.cap_len < sizeof(struct virtio_pci_cap) ||
+			    tmp.cap_len > cap_struct_size) {
+				LOG_ERR("invalid virtio pci cap_len %u for bdf 0x%x",
+					tmp.cap_len, bdf);
+				return false;
+			}
 			size_t extra_data_words =
 				(tmp.cap_len - sizeof(struct virtio_pci_cap)) / sizeof(uint32_t);
 			size_t extra_data_offset =

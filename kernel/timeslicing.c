@@ -78,7 +78,11 @@ void z_time_slice_reset(struct k_thread *thread)
 	int cpu = _current_cpu->id;
 	int slice_size = z_time_slice_size(thread);
 
-	z_abort_timeout(&slice_timeouts[cpu]);
+	/* Best-effort cancel: if the slice timeout is already in flight,
+	 * its handler only flips slice_expired[cpu] (which we clear below)
+	 * and possibly raises an IPI -- harmless either way.
+	 */
+	(void)z_try_abort_timeout(&slice_timeouts[cpu]);
 	if (slice_size != 0) {
 		/* When invoked because the slicer just fired (this CPU or
 		 * via IPI from another), we're at a tick edge but past the

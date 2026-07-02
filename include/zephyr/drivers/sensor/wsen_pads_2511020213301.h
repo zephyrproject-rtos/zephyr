@@ -16,7 +16,7 @@
 /**
  * @brief Würth Elektronik WSEN-PADS-2511020213301 absolute pressure sensor
  * @defgroup wsen_pads_2511020213301_interface WSEN-PADS-2511020213301
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_we
  * @{
  */
 

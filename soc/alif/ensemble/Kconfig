@@ -18,6 +18,13 @@ config SOC_FAMILY_ENSEMBLE_RTSS
 	select SOC_RESET_HOOK
 	select XIP
 
+config SOC_FAMILY_ENSEMBLE_APSS
+	bool
+	select ARM
+	select CPU_CORTEX_A32
+	select ARM_ARCH_TIMER if SYS_CLOCK_EXISTS
+	imply XIP
+
 rsource "*/Kconfig"
 
 endif # SOC_FAMILY_ENSEMBLE

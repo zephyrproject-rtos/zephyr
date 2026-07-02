@@ -13,7 +13,8 @@
 #include <hal/i2c_ll.h>
 #include <hal/i2c_hal.h>
 #include <hal/gpio_hal.h>
-#include <clk_ctrl_os.h>
+#include <esp_clk_tree.h>
+#include <esp_private/esp_clk_tree_common.h>
 
 #include <soc.h>
 #include <errno.h>
@@ -135,8 +136,10 @@ static uint32_t i2c_get_src_clk_freq(i2c_clock_source_t clk_src)
 #endif
 #if SOC_I2C_SUPPORT_RTC
 	case I2C_CLK_SRC_RC_FAST:
-		periph_rtc_dig_clk8m_enable();
-		periph_src_clk_hz = periph_rtc_dig_clk8m_get_freq();
+		esp_clk_tree_enable_src(SOC_MOD_CLK_RC_FAST, true);
+		esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RC_FAST,
+					     ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX,
+					     &periph_src_clk_hz);
 		break;
 #endif
 #if SOC_I2C_SUPPORT_REF_TICK

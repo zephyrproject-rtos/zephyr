@@ -24,11 +24,15 @@ endif()
 
 zephyr_library_sources_ifdef(CONFIG_NET_MGMT_EVENT   net_mgmt.c)
 
+# The ICMP API supports offloading, so build it whenever IP is enabled
+# (not only for the native stack), keeping the ping command available on
+# offloaded-only devices.
+zephyr_library_sources_ifdef(CONFIG_NET_IP icmp.c)
+
 if(CONFIG_NET_NATIVE)
 zephyr_library_sources(net_context.c)
 zephyr_library_sources(net_pkt.c)
 zephyr_library_sources(net_tc.c)
-zephyr_library_sources(icmp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IP           connection.c)
 zephyr_library_sources_ifdef(CONFIG_NET_6LO          6lo.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV4_AUTO    ipv4_autoconf.c)

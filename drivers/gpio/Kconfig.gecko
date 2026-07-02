@@ -7,7 +7,7 @@ menuconfig GPIO_GECKO
 	bool "Gecko GPIO driver"
 	default y
 	depends on DT_HAS_SILABS_GECKO_GPIO_PORT_ENABLED
-	select SOC_GECKO_GPIO
+	select SILABS_GECKO_GPIO
 	help
 	  Enable the Gecko gpio driver.
 

@@ -8,8 +8,9 @@ common:
 tests:
   sample.ipc.icmsg:
     platform_allow:
-      - nrf5340dk/nrf5340/cpuapp
       - nrf5340bsim/nrf5340/cpuapp
+      - nrf5340dk/nrf5340/cpuapp
+      - nucleo_h755zi_q/stm32h755xx/m7
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340bsim/nrf5340/cpuapp

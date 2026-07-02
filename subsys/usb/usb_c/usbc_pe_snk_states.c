@@ -616,7 +616,7 @@ void pe_snk_transition_to_default_entry(void *obj)
 	 */
 	policy_notify(dev, SNK_TRANSITION_TO_DEFAULT);
 	/*
-	 * Request the Device Policy Manger that the Port Data Role is
+	 * Request the Device Policy Manager that the Port Data Role is
 	 * set to UFP
 	 */
 	policy_notify(dev, DATA_ROLE_IS_UFP);

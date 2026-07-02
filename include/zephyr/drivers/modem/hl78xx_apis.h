@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file hl78xx_apis.h
+ * @brief Header file for extended cellular API of HL78xx modems
+ * @ingroup hl78xx_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_HL78XX_APIS_H_
 #define ZEPHYR_INCLUDE_DRIVERS_HL78XX_APIS_H_
 
@@ -12,16 +19,18 @@
 #include <stddef.h>
 #include <zephyr/modem/chat.h>
 #include <zephyr/drivers/cellular.h>
-
+#include <zephyr/sys/util_macro.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @defgroup hl78xx_constants HL78xx Constants and Macros
+ * @defgroup hl78xx_interface HL78xx
+ * @brief Sierra Wireless HL78xx cellular modems
+ * @ingroup cellular_interface_ext
  * @{
  */
-
+/* clang-format off */
 /** Unknown RSSI value returned by AT+CSQ command */
 #define CSQ_RSSI_UNKNOWN         (99)
 /** Unknown RSRP value returned by AT+CESQ command */
@@ -52,7 +61,6 @@ extern "C" {
 #define PAUSED                   1
 /** Monitor is active, default */
 #define ACTIVE                   0
-
 /** Maximum length of modem manufacturer string */
 #define MDM_MANUFACTURER_LENGTH  20
 /** Maximum length of modem model string */
@@ -74,22 +82,100 @@ extern "C" {
 /** Maximum length of serial number string */
 #define MDM_SERIAL_NUMBER_LENGTH 32
 
-/** @} */
+/**
+ * @brief Initial active state for HL78xx monitors.
+ *
+ * Use this as the optional state argument when defining a monitor that should
+ * start in the active state.
+ */
+#define HL78XX_MONITOR_ACTIVE false
+
+/**
+ * @brief Initial paused state for HL78xx monitors.
+ *
+ * Use this as the optional state argument when defining a monitor that should
+ * start paused.
+ */
+#define HL78XX_MONITOR_PAUSED true
+
+/**
+ * @brief Resolve the optional monitor initial state argument.
+ *
+ * If no optional state argument is provided, the monitor starts active.
+ * Otherwise, the provided state value is used.
+ *
+ * @param ... Optional monitor initial state, either @c HL78XX_MONITOR_ACTIVE
+ *        or @c HL78XX_MONITOR_PAUSED.
+ */
+#define HL78XX_MONITOR_INITIAL_PAUSED(...) \
+	COND_CODE_1(IS_EMPTY(__VA_ARGS__), (false), (__VA_ARGS__))
+
+/* clang-format on */
 
 /**
  * @brief Define an Event monitor to receive notifications in the system workqueue thread.
  *
  * @param name The monitor name.
  * @param _handler The monitor callback.
- * @param ... Optional monitor initial state (@c PAUSED or @c ACTIVE).
+ * @param ... Optional monitor initial state (@c HL78XX_MONITOR_ACTIVE or @c HL78XX_MONITOR_PAUSED).
  *	      The default initial state of a monitor is active.
  */
 #define HL78XX_EVT_MONITOR(name, _handler, ...)                                                    \
 	static STRUCT_SECTION_ITERABLE(hl78xx_evt_monitor_entry, name) = {                         \
 		.handler = _handler,                                                               \
 		.next = NULL,                                                                      \
-		.flags.direct = false,                                                             \
-		COND_CODE_1(__VA_ARGS__, (.flags.paused = __VA_ARGS__,), ()) }
+		.flags = {                                                                         \
+			.direct = false,                                                           \
+			.paused = HL78XX_MONITOR_INITIAL_PAUSED(__VA_ARGS__),                      \
+		}}
+
+/** Monitor any parsed unsolicited AT notification */
+#define HL78XX_AT_MONITOR_ANY NULL
+
+/**
+ * @brief Define an AT monitor to receive parsed unsolicited AT notifications in the
+ * system workqueue thread.
+ *
+ * @param name The monitor name.
+ * @param _filter Exact unsolicited AT match pattern to receive, or
+ *        @c HL78XX_AT_MONITOR_ANY to receive all parsed notifications.
+ * @param _handler The monitor callback.
+ * @param ... Optional monitor initial state (@c HL78XX_MONITOR_ACTIVE or @c HL78XX_MONITOR_PAUSED).
+ *        The default initial state of a monitor is active.
+ */
+#define HL78XX_AT_MONITOR(name, _filter, _handler, ...)                                            \
+	static STRUCT_SECTION_ITERABLE(hl78xx_at_monitor_entry, name) = {                          \
+		.filter = _filter,                                                                 \
+		.handler = _handler,                                                               \
+		.next = NULL,                                                                      \
+		.flags = {                                                                         \
+			.direct = false,                                                           \
+			.paused = HL78XX_MONITOR_INITIAL_PAUSED(__VA_ARGS__),                      \
+		}}
+/**
+ * @brief Define an AT monitor to receive parsed unsolicited AT notifications directly
+ * in the HL78xx modem RX workqueue context.
+ *
+ * Direct monitor callbacks run in the HL78xx modem RX workqueue context.
+ * Handlers should keep processing short and must avoid operations that could
+ * block modem receive processing for a long time.
+ *
+ * @param name The monitor name.
+ * @param _filter Exact unsolicited AT match pattern to receive, or
+ *        @c HL78XX_AT_MONITOR_ANY to receive all parsed notifications.
+ * @param _handler The monitor callback.
+ * @param ... Optional monitor initial state (@c HL78XX_MONITOR_ACTIVE or @c HL78XX_MONITOR_PAUSED).
+ *        The default initial state of a monitor is active.
+ */
+#define HL78XX_AT_MONITOR_DIRECT(name, _filter, _handler, ...)                                     \
+	static STRUCT_SECTION_ITERABLE(hl78xx_at_monitor_entry, name) = {                          \
+		.filter = _filter,                                                                 \
+		.handler = _handler,                                                               \
+		.next = NULL,                                                                      \
+		.flags = {                                                                         \
+			.direct = true,                                                            \
+			.paused = HL78XX_MONITOR_INITIAL_PAUSED(__VA_ARGS__),                      \
+		}}
 
 /**
  * @brief Cellular radio access technologies
@@ -107,8 +193,8 @@ enum hl78xx_cell_rat_mode {
 #ifdef CONFIG_MODEM_HL78XX_12_FW_R6
 	/** NB-IoT Non-Terrestrial Network (HL7812 FW R6+) */
 	HL78XX_RAT_NBNTN,
-#endif
-#endif
+#endif /* CONFIG_MODEM_HL78XX_12_FW_R6 */
+#endif /* CONFIG_MODEM_HL78XX_12 */
 #ifdef CONFIG_MODEM_HL78XX_AUTORAT
 	/** Automatic RAT selection mode */
 	HL78XX_RAT_MODE_AUTO,
@@ -745,6 +831,75 @@ typedef int (*hl78xx_api_send_at_cmd)(const struct device *dev, const char *cmd,
 				      uint16_t matches_size);
 
 /**
+ * @brief Parsed unsolicited AT notification payload.
+ *
+ * The @p pattern field is the canonical unsolicited match pattern from the HL78xx
+ * driver table, while @p argv[0] contains the exact matched token produced by
+ * modem_chat.
+ */
+struct hl78xx_at_notification {
+	/** Canonical unsolicited match pattern from the driver table */
+	const char *pattern;
+	/** Parsed arguments, where argv[0] is the exact matched token */
+	const char *const *argv;
+	/** Number of parsed arguments */
+	uint16_t argc;
+};
+
+/**
+ * @brief AT monitor entry structure (forward declaration)
+ */
+struct hl78xx_at_monitor_entry;
+
+/**
+ * @brief AT monitor handler function type.
+ *
+ * User callback for receiving parsed unsolicited AT notifications.
+ *
+ * @param notif Pointer to the parsed AT notification.
+ * @param mon Pointer to the monitor entry that received the notification.
+ */
+typedef void (*hl78xx_at_monitor_handler_t)(const struct hl78xx_at_notification *notif,
+					    struct hl78xx_at_monitor_entry *mon);
+
+/**
+ * @brief AT monitor release function type.
+ *
+ * Called when an AT monitor entry is released and no longer referenced.
+ *
+ * @param mon Pointer to the monitor entry being released.
+ */
+typedef void (*hl78xx_at_monitor_release_t)(struct hl78xx_at_monitor_entry *mon);
+
+/**
+ * @brief AT monitor entry structure.
+ *
+ * Represents a registered parsed unsolicited AT monitor with callback, filter,
+ * and state.
+ */
+struct hl78xx_at_monitor_entry {
+	/** Exact unsolicited AT match pattern to monitor, or NULL for all */
+	const char *filter;
+	/** Monitor callback function */
+	const hl78xx_at_monitor_handler_t handler;
+	/** Optional callback invoked when the final runtime reference is dropped */
+	hl78xx_at_monitor_release_t release;
+	/** Link for runtime list */
+	struct hl78xx_at_monitor_entry *next;
+	/** Reference count for list membership and in-flight dispatch snapshots */
+	atomic_t refcnt;
+	/** Work item used to defer release out of unregister/dispatch context */
+	struct k_work release_work;
+	/** Monitor flags */
+	struct {
+		/** Monitor is paused */
+		uint8_t paused: 1;
+		/** Dispatch directly in HL78xx modem RX workqueue context */
+		uint8_t direct: 1;
+	} flags;
+};
+
+/**
  * @brief Event monitor entry structure (forward declaration)
  */
 struct hl78xx_evt_monitor_entry;
@@ -770,6 +925,15 @@ typedef void (*hl78xx_evt_monitor_handler_t)(struct hl78xx_evt *notif,
 					     struct hl78xx_evt_monitor_entry *mon);
 
 /**
+ * @brief Event monitor release function type
+ *
+ * Called when an event monitor entry is released and no longer referenced.
+ *
+ * @param mon Pointer to the monitor entry being released
+ */
+typedef void (*hl78xx_evt_monitor_release_t)(struct hl78xx_evt_monitor_entry *mon);
+
+/**
  * @brief Event monitor entry structure
  *
  * Represents a registered event monitor with callback and state
@@ -777,8 +941,14 @@ typedef void (*hl78xx_evt_monitor_handler_t)(struct hl78xx_evt *notif,
 struct hl78xx_evt_monitor_entry {
 	/** Monitor callback function */
 	const hl78xx_evt_monitor_handler_t handler;
+	/** Optional callback invoked when the final runtime reference is dropped */
+	hl78xx_evt_monitor_release_t release;
 	/** Link for runtime list */
 	struct hl78xx_evt_monitor_entry *next;
+	/** Reference count for list membership and in-flight dispatch snapshots */
+	atomic_t refcnt;
+	/** Work item used to defer release callback execution */
+	struct k_work release_work;
 	/** Monitor flags */
 	struct {
 		/** Monitor is paused */
@@ -1051,6 +1221,72 @@ static inline void hl78xx_evt_monitor_resume(struct hl78xx_evt_monitor_entry *mo
 {
 	mon->flags.paused = false;
 }
+
+/**
+ * @brief Pause AT monitor.
+ *
+ * Pause monitor @p mon from receiving parsed unsolicited AT notifications.
+ *
+ * @param mon The monitor to pause.
+ */
+static inline void hl78xx_at_monitor_pause(struct hl78xx_at_monitor_entry *mon)
+{
+	mon->flags.paused = true;
+}
+
+/**
+ * @brief Resume AT monitor.
+ *
+ * Resume forwarding parsed unsolicited AT notifications to monitor @p mon.
+ *
+ * @param mon The monitor to resume.
+ */
+static inline void hl78xx_at_monitor_resume(struct hl78xx_at_monitor_entry *mon)
+{
+	mon->flags.paused = false;
+}
+
+/**
+ * @brief Register an AT monitor.
+ *
+ * Adds a runtime monitor to the list of registered AT monitors. The monitor
+ * entry must not already be registered and must not have outstanding runtime
+ * references from a previous registration.
+ *
+ * Monitor entries should be zero-initialized before first registration.
+ *
+ * @param mon Pointer to the monitor entry to register.
+ *
+ * @return 0 on success.
+ * @return -EINVAL if @p mon is NULL.
+ * @return -EALREADY if @p mon is already registered.
+ * @return -EBUSY if @p mon still has outstanding runtime references.
+ * @return -ENOMEM if the maximum number of runtime monitors is reached.
+ */
+int hl78xx_at_monitor_register(struct hl78xx_at_monitor_entry *mon);
+
+/**
+ * @brief Unregister an AT monitor.
+ *
+ * Removes a runtime monitor from future dispatch snapshots. This function does
+ * not wait for callbacks that are already in progress or for snapshots that
+ * already captured the monitor entry.
+ *
+ * If the monitor entry is dynamically allocated, the caller must not free or
+ * reuse it immediately after this function returns. Instead, provide a release
+ * callback in the monitor entry and free the entry from that callback. The
+ * release callback is invoked after the final runtime reference is dropped.
+ *
+ * This function may be called from a monitor callback.
+ *
+ * @param mon Pointer to the monitor entry to unregister.
+ *
+ * @return 0 on success.
+ * @return -EINVAL if @p mon is NULL.
+ * @return -ENOENT if @p mon is not registered.
+ */
+int hl78xx_at_monitor_unregister(struct hl78xx_at_monitor_entry *mon);
+
 /**
  * @brief Set the event notification handler for HL78xx modem events.
  *
@@ -1067,23 +1303,43 @@ static inline void hl78xx_evt_monitor_resume(struct hl78xx_evt_monitor_entry *mo
 int hl78xx_evt_notif_handler_set(hl78xx_evt_monitor_dispatcher_t handler);
 
 /**
- * @brief Register an event monitor to receive HL78xx modem event notifications
+ * @brief Register an event monitor.
  *
- * Adds a monitor to the list of registered event monitors. Once registered,
- * the monitor will receive all modem events unless paused.
+ * Adds a runtime monitor to the list of registered event monitors. The monitor
+ * entry must not already be registered and must not have outstanding runtime
+ * references from a previous registration.
  *
- * @param mon Pointer to the monitor entry to register
- * @return 0 on success, negative errno on failure
+ * Monitor entries should be zero-initialized before first registration.
+ *
+ * @param mon Pointer to the monitor entry to register.
+ *
+ * @return 0 on success.
+ * @return -EINVAL if @p mon is NULL.
+ * @return -EALREADY if @p mon is already registered.
+ * @return -EBUSY if @p mon still has outstanding runtime references.
+ * @return -ENOMEM if the maximum number of runtime monitors is reached.
  */
 int hl78xx_evt_monitor_register(struct hl78xx_evt_monitor_entry *mon);
 
 /**
- * @brief Unregister an event monitor from receiving HL78xx modem event notifications
+ * @brief Unregister an event monitor.
  *
- * Removes a monitor from the list of registered event monitors.
+ * Removes a runtime monitor from future dispatch snapshots. This function does
+ * not wait for callbacks that are already in progress or for snapshots that
+ * already captured the monitor entry.
  *
- * @param mon Pointer to the monitor entry to unregister
- * @return 0 on success, negative errno on failure
+ * If the monitor entry is dynamically allocated, the caller must not free or
+ * reuse it immediately after this function returns. Instead, provide a release
+ * callback in the monitor entry and free the entry from that callback. The
+ * release callback is invoked after the final runtime reference is dropped.
+ *
+ * This function may be called from a monitor callback.
+ *
+ * @param mon Pointer to the monitor entry to unregister.
+ *
+ * @return 0 on success.
+ * @return -EINVAL if @p mon is NULL.
+ * @return -ENOENT if @p mon is not registered.
  */
 int hl78xx_evt_monitor_unregister(struct hl78xx_evt_monitor_entry *mon);
 
@@ -1292,5 +1548,7 @@ int hl78xx_gnss_assist_data_delete(const struct device *dev);
 #ifdef __cplusplus
 }
 #endif
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_HL78XX_APIS_H_ */

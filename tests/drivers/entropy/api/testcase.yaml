@@ -1,6 +1,8 @@
 tests:
   drivers.entropy:
     filter: CONFIG_ENTROPY_HAS_DRIVER
+    integration_platforms:
+      - frdm_mcxn236
     tags:
       - drivers
       - entropy

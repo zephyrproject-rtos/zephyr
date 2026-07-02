@@ -56,6 +56,14 @@ from elftools.elf.sections import SymbolTableSection
 
 MemoryRegion = NewType('MemoryRegion', str)
 
+LLEXT_HEAP_SECTIONS = (
+    ".llext_heap",
+    ".llext_ext_heap",
+    ".llext_data_heap",
+    ".llext_instr_heap",
+    ".llext_metadata_heap",
+)
+
 
 class SectionKind(Enum):
     TEXT = "text"
@@ -86,7 +94,7 @@ class SectionKind(Enum):
             return cls.DATA
         elif ".bss." in name:
             return cls.BSS
-        elif ".noinit." in name:
+        elif ".noinit." in name or name in LLEXT_HEAP_SECTIONS:
             return cls.NOINIT
         elif ".literal." in name:
             return cls.LITERAL
@@ -285,9 +293,14 @@ def assign_to_correct_mem_region(
     """
     use_section_kinds, memory_region = section_kinds_from_memory_region(memory_region)
 
+    # Split |COPY/|NOKEEP flags before the numeric align suffix, else a region
+    # like "SRAM_4|COPY" makes int("4|COPY") throw.
+    memory_region, sep, flags = memory_region.partition('|')
+    flags = sep + flags
     memory_region, _, align_size = memory_region.partition('_')
     if align_size:
         mpu_align[memory_region] = int(align_size)
+    memory_region = memory_region + flags
 
     keep_sections = '|NOKEEP' not in memory_region
     memory_region = memory_region.replace('|NOKEEP', '')

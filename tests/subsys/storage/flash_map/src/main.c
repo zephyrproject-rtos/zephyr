@@ -27,7 +27,7 @@ ZTEST(flash_map, test_flash_area_disabled_device)
 {
 	/* The test checks if Flash Map will report partition
 	 * non-existend if it is disabled, but it also assumes that
-	 * disabled parition will have an ID generated.
+	 * disabled partition will have an ID generated.
 	 * Custom partition maps may not be generating entries for
 	 * disabled partitions nor identifiers, which makes the
 	 * test fail with custom partition manager, for no real reason.
@@ -169,8 +169,13 @@ ZTEST(flash_map, test_fixed_partition_node_macros)
 	 */
 #if defined(CONFIG_TEST_FLASH_MAP_NODE_MACROS)
 	/* Test against changes in API */
+#if DT_NODE_HAS_COMPAT(SLOT1_PARTITION_NODE, zephyr_mapped_partition)
+	zassert_equal(PARTITION_NODE_ADDRESS(SLOT1_PARTITION_NODE),
+		DT_REG_ADDR(SLOT1_PARTITION_NODE));
+#else
 	zassert_equal(PARTITION_NODE_OFFSET(SLOT1_PARTITION_NODE),
 		DT_REG_ADDR(SLOT1_PARTITION_NODE));
+#endif
 	zassert_equal(PARTITION_NODE_SIZE(SLOT1_PARTITION_NODE),
 		DT_REG_SIZE(SLOT1_PARTITION_NODE));
 	zassert_equal(PARTITION_NODE_DEVICE(SLOT1_PARTITION_NODE),

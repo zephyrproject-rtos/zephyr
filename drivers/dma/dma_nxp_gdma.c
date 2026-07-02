@@ -326,8 +326,6 @@ static int dma_nxp_gdma_init(const struct device *dev)
 	/* Configure and enable interrupts */
 	config->irq_config_func(dev);
 
-	LOG_INF("NXP GDMA initialized with %d channels", config->num_channels);
-
 	return 0;
 }
 

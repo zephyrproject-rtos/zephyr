@@ -65,9 +65,14 @@ static void gmap_reset(struct bt_gmap_client *gmap_cli)
 {
 	if (gmap_cli->conn != NULL) {
 		bt_conn_unref(gmap_cli->conn);
+		gmap_cli->conn = NULL;
 	}
 
-	memset(gmap_cli, 0, sizeof(*gmap_cli));
+	gmap_cli->role = 0;
+	(void)memset(&gmap_cli->feat, 0, sizeof(gmap_cli->feat));
+	gmap_cli->svc_start_handle = 0U;
+	gmap_cli->svc_end_handle = 0U;
+	(void)memset(&gmap_cli->params, 0, sizeof(gmap_cli->params));
 }
 
 static struct bt_gmap_client *client_by_conn(struct bt_conn *conn)
@@ -102,7 +107,7 @@ static void discover_complete(struct bt_gmap_client *gmap_cli)
 
 	atomic_clear_bit(gmap_cli->flags, GMAP_CLIENT_FLAG_BUSY);
 
-	if (gmap_cb->discover != NULL) {
+	if (gmap_cb != NULL && gmap_cb->discover != NULL) {
 		gmap_cb->discover(gmap_cli->conn, 0, gmap_cli->role, gmap_cli->feat);
 	}
 }
@@ -115,7 +120,11 @@ static void discover_failed(struct bt_gmap_client *gmap_cli, int err)
 
 	LOG_DBG("conn %p err %d", (void *)conn, err);
 
-	gmap_cb->discover(conn, err, 0, (struct bt_gmap_feat){0});
+	atomic_clear_bit(gmap_cli->flags, GMAP_CLIENT_FLAG_BUSY);
+
+	if (gmap_cb != NULL && gmap_cb->discover != NULL) {
+		gmap_cb->discover(conn, err, 0, (struct bt_gmap_feat){0});
+	}
 }
 
 static uint8_t bgr_feat_read_cb(struct bt_conn *conn, uint8_t att_err,
@@ -646,6 +655,7 @@ static uint8_t gmas_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 int bt_gmap_discover(struct bt_conn *conn)
 {
 	struct bt_gmap_client *gmap_cli;
+	struct bt_conn *ref;
 	int err;
 
 	if (conn == NULL) {
@@ -662,6 +672,12 @@ int bt_gmap_discover(struct bt_conn *conn)
 		return -EBUSY;
 	}
 
+	ref = bt_conn_ref(conn);
+	if (ref == NULL) {
+		err = -ENOTCONN;
+		goto cleanup;
+	}
+
 	gmap_reset(gmap_cli);
 
 	gmap_cli->params.discover.func = gmas_discover_func;
@@ -670,18 +686,22 @@ int bt_gmap_discover(struct bt_conn *conn)
 	gmap_cli->params.discover.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	gmap_cli->params.discover.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
+	gmap_cli->conn = ref;
+
 	err = bt_gatt_discover(conn, &gmap_cli->params.discover);
 	if (err != 0) {
 		LOG_DBG("Failed to initiate discovery: %d", err);
-
-		atomic_clear_bit(gmap_cli->flags, GMAP_CLIENT_FLAG_BUSY);
-
-		return -ENOEXEC;
+		bt_conn_unref(ref);
+		gmap_cli->conn = NULL;
+		err = -ENOEXEC;
+		goto cleanup;
 	}
 
-	gmap_cli->conn = bt_conn_ref(conn);
-
 	return 0;
+
+cleanup:
+	atomic_clear_bit(gmap_cli->flags, GMAP_CLIENT_FLAG_BUSY);
+	return err;
 }
 
 int bt_gmap_cb_register(const struct bt_gmap_cb *cb)

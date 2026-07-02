@@ -28,7 +28,9 @@
 			width = <240>;
 			height = <320>;
 			pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
-			rotation = <90>;
+			rotation = <270>;
+			v-mirror;
+			red-blue-swap;
 			frmctr1 = [00 18];
 			pwctrl1 = [23 00];
 			vmctrl1 = [3e 28];
@@ -63,10 +65,8 @@
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		swapped-x-y;
-		inverted-x;
-		inverted-y;
-		screen-width = <320>;
-		screen-height = <240>;
+		screen-width = <240>;
+		screen-height = <320>;
 		/* Uncomment if IRQ line is available (requires to solder jumper) */
 		/* int-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_LOW>; */
 	};

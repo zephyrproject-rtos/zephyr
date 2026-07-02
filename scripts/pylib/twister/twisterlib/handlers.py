@@ -579,7 +579,7 @@ class DeviceHandler(Handler):
             board_id = hardware.probe_id or hardware.id
             product = hardware.product
             if board_id is not None:
-                if runner in ("pyocd", "nrfjprog", "nrfutil", "nrfutil_next", "spsdk"):
+                if "nrf" in runner or runner in ("pyocd", "spsdk"):
                     command_extra_args.append("--dev-id")
                     command_extra_args.append(board_id)
                 elif runner == "esp32":
@@ -599,7 +599,7 @@ class DeviceHandler(Handler):
                 elif runner == "openocd" and product == "LPC-LINK2 CMSIS-DAP":
                     command_extra_args.append("--cmd-pre-init")
                     command_extra_args.append(f"adapter serial {board_id}")
-                elif runner == "jlink":
+                elif runner in ("jlink", "mplab_ipe"):
                     command.append("--dev-id")
                     command.append(board_id)
                 elif runner == "linkserver":

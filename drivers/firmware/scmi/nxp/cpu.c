@@ -9,7 +9,7 @@
 #include <zephyr/kernel.h>
 
 DT_SCMI_PROTOCOL_DEFINE_NODEV(DT_INST(0, nxp_scmi_cpu), NULL,
-		SCMI_NXP_CPU_PROTOCOL_SUPPORTED_VERSION);
+		SCMI_NXP_CPU_PROTOCOL_SUPPORTED_VERSION, NULL);
 
 enum scmi_nxp_cpu_domain_message {
 	CPU_ATTRIBUTES = 0x3,

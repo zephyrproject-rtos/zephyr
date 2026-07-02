@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the MCUmgr image management client API.
+ * @ingroup mcumgr_img_mgmt_client
+ */
+
 #ifndef H_IMG_MGMT_CLIENT_
 #define H_IMG_MGMT_CLIENT_
 

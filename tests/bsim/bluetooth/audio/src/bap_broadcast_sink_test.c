@@ -25,6 +25,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
@@ -901,7 +902,8 @@ static void test_broadcast_stop(void)
 
 	printk("Waiting for %zu streams to be stopped\n", stream_sync_cnt);
 	for (size_t i = 0U; i < stream_sync_cnt; i++) {
-		k_sem_take(&sem_stream_stopped, K_FOREVER);
+		err = k_sem_take(&sem_stream_stopped, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	WAIT_FOR_UNSET_FLAG(flag_sink_started);
@@ -984,7 +986,8 @@ static void test_common(void)
 	/* Wait for all to be started */
 	printk("Waiting for %zu streams to be started\n", stream_sync_cnt);
 	for (size_t i = 0U; i < stream_sync_cnt; i++) {
-		k_sem_take(&sem_stream_started, K_FOREVER);
+		err = k_sem_take(&sem_stream_started, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	wait_for_data();
@@ -1006,7 +1009,10 @@ static void test_main(void)
 
 	printk("Waiting for %zu streams to be stopped\n", stream_sync_cnt);
 	for (size_t i = 0U; i < stream_sync_cnt; i++) {
-		k_sem_take(&sem_stream_stopped, K_FOREVER);
+		__maybe_unused int err;
+
+		err = k_sem_take(&sem_stream_stopped, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 	}
 	WAIT_FOR_UNSET_FLAG(flag_sink_started);
 
@@ -1034,7 +1040,9 @@ static void test_main_update(void)
 
 	printk("Waiting for %zu streams to be stopped\n", stream_sync_cnt);
 	for (size_t i = 0U; i < stream_sync_cnt; i++) {
-		k_sem_take(&sem_stream_stopped, K_FOREVER);
+		__maybe_unused int err = k_sem_take(&sem_stream_stopped, K_FOREVER);
+
+		__ASSERT_NO_MSG(err == 0);
 	}
 	WAIT_FOR_UNSET_FLAG(flag_sink_started);
 
@@ -1056,7 +1064,9 @@ static void test_sink_disconnect(void)
 	/* Wait for all to be started */
 	printk("Waiting for %zu streams to be started\n", stream_sync_cnt);
 	for (size_t i = 0U; i < stream_sync_cnt; i++) {
-		k_sem_take(&sem_stream_started, K_FOREVER);
+		__maybe_unused int err = k_sem_take(&sem_stream_started, K_FOREVER);
+
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	test_broadcast_stop();
@@ -1097,7 +1107,8 @@ static void test_sink_encrypted(void)
 	/* Wait for all to be started */
 	printk("Waiting for %zu streams to be started\n", stream_sync_cnt);
 	for (size_t i = 0U; i < stream_sync_cnt; i++) {
-		k_sem_take(&sem_stream_started, K_FOREVER);
+		err = k_sem_take(&sem_stream_started, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	wait_for_data();
@@ -1115,7 +1126,8 @@ static void test_sink_encrypted(void)
 
 	printk("Waiting for %zu streams to be stopped\n", stream_sync_cnt);
 	for (size_t i = 0U; i < stream_sync_cnt; i++) {
-		k_sem_take(&sem_stream_stopped, K_FOREVER);
+		err = k_sem_take(&sem_stream_stopped, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	PASS("Broadcast sink encrypted passed\n");
@@ -1151,7 +1163,8 @@ static void test_sink_encrypted_incorrect_code(void)
 	/* Wait for all to be started */
 	printk("Waiting for %zu streams to be started\n", stream_sync_cnt);
 	for (size_t i = 0U; i < stream_sync_cnt; i++) {
-		k_sem_take(&sem_stream_started, K_FOREVER);
+		err = k_sem_take(&sem_stream_started, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	wait_for_data();
@@ -1198,7 +1211,8 @@ static void broadcast_sink_with_assistant(void)
 	/* Wait for all to be started */
 	printk("Waiting for %zu streams to be started\n", stream_sync_cnt);
 	for (size_t i = 0U; i < stream_sync_cnt; i++) {
-		k_sem_take(&sem_stream_started, K_FOREVER);
+		err = k_sem_take(&sem_stream_started, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	wait_for_data();

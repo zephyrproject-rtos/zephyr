@@ -578,6 +578,7 @@ int card_read_blocks(struct sd_card *card, uint8_t *rbuf, uint32_t start_block, 
 		sector = 0;
 		buf_offset = rbuf;
 		while (sector < num_blocks) {
+			rlen = MIN(rlen, num_blocks - sector);
 			/* Read from disk to card buffer */
 			ret = card_read(card, card->card_buffer, sector + start_block, rlen);
 			if (ret) {
@@ -743,6 +744,7 @@ int card_write_blocks(struct sd_card *card, const uint8_t *wbuf, uint32_t start_
 		sector = 0;
 		buf_offset = wbuf;
 		while (sector < num_blocks) {
+			wlen = MIN(wlen, num_blocks - sector);
 			/* Copy data into card buffer */
 			memcpy(card->card_buffer, buf_offset, wlen * card->block_size);
 			/* Write card buffer to disk */

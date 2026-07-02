@@ -1921,7 +1921,7 @@ static int usb_init(void)
 			   K_KERNEL_STACK_SIZEOF(usbd_work_queue_stack),
 			   CONFIG_SYSTEM_WORKQUEUE_PRIORITY, NULL);
 
-	k_thread_name_set(&usbd_work_queue.thread, "usbd_workq");
+	k_thread_name_set(usbd_work_queue.thread_id, "usbd_workq");
 	k_work_init(&ctx->usb_work, usbd_work_handler);
 
 	return 0;

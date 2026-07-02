@@ -1633,6 +1633,13 @@ static int tisci_init(const struct device *dev)
 }
 
 /* Device Tree Instantiation */
+#define IS_MBOX_CHANNEL_ENABLED(node_id, channel)                                                  \
+	DT_NODE_HAS_STATUS_OKAY(DT_MBOX_CTLR_BY_NAME(node_id, channel))
+
+#define CHECK_MBOX_IS_ENABLED(node_id, channel)                                                    \
+	BUILD_ASSERT(IS_MBOX_CHANNEL_ENABLED(node_id, channel) == 1,                               \
+		     "Mailbox required by TISCI driver is disabled");
+
 #define TISCI_DEFINE(_n)                                                                           \
 	static uint8_t rx_message_buf_##_n[MAILBOX_MBOX_SIZE] = {0};                               \
 	static struct k_sem response_ready_sem_##_n;                                               \
@@ -1646,6 +1653,8 @@ static int tisci_init(const struct device *dev)
 			},                                                                         \
 		.data_sem = Z_SEM_INITIALIZER(tisci_data_##_n.data_sem, 1, 1),                     \
 	};                                                                                         \
+	CHECK_MBOX_IS_ENABLED(DT_DRV_INST(_n), tx)                                                 \
+	CHECK_MBOX_IS_ENABLED(DT_DRV_INST(_n), rx)                                                 \
 	static const struct tisci_config tisci_config_##_n = {                                     \
 		.mbox_tx = MBOX_DT_SPEC_INST_GET(_n, tx),                                          \
 		.mbox_rx = MBOX_DT_SPEC_INST_GET(_n, rx),                                          \

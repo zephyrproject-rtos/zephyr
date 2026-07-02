@@ -671,10 +671,16 @@ static int handle_download(struct usbd_class_data *const c_data,
 {
 	struct usbd_dfu_data *data = usbd_class_get_private(c_data);
 	struct usbd_dfu_image *const image = data->image;
-	uint16_t size = MIN(setup->wLength, buf->len);
+	const uint8_t *buf_data = NULL;
+	uint16_t size = 0;
 	int ret;
 
-	ret = image->write_cb(image->priv, setup->wValue, size, buf->data);
+	if (buf != NULL) {
+		size = MIN(setup->wLength, buf->len);
+		buf_data = buf->data;
+	}
+
+	ret = image->write_cb(image->priv, setup->wValue, size, buf_data);
 	if (ret < 0) {
 		errno = -ENOTSUP;
 		dfu_error(c_data, DFU_ERROR, ERR_UNKNOWN);

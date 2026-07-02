@@ -7,54 +7,27 @@
 /dts-v1/;
 
 #include <adi/max32/max78000-m4.dtsi>
+#include "max78000fthr.dtsi"
+
 #include <adi/max32/max78000-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/* Assign the M4 core console to the CMSIS-DAP serial pins */
+m4_serial: &cmsis_serial {};
 
 / {
 	model = "Analog Devices MAX78000FTHR";
 	compatible = "adi,max78000fthr";
 
 	chosen {
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
-		zephyr,sram = &sram2;
+		zephyr,console = &m4_serial;
+		zephyr,shell-uart = &m4_serial;
+		zephyr,sram = &m4_sram;
 		zephyr,flash = &flash0;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		led1: led_1 {
-			gpios = <&gpio2 0 GPIO_ACTIVE_HIGH>;
-			label = "Red LED";
-		};
-
-		led2: led_2 {
-			gpios = <&gpio2 1 GPIO_ACTIVE_HIGH>;
-			label = "Green LED";
-		};
-
-		led3: led_3 {
-			gpios = <&gpio2 2 GPIO_ACTIVE_HIGH>;
-			label = "Blue LED";
-		};
-	};
-
-	buttons {
-		compatible = "gpio-keys";
-
-		pb1: pb1 {
-			gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "SW1";
-			zephyr,code = <INPUT_KEY_0>;
-		};
-
-		pb2: pb2 {
-			gpios = <&gpio1 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "SW2";
-			zephyr,code = <INPUT_KEY_1>;
-		};
+		zephyr,code-partition = &m4_partition;
+		zephyr,settings-partition = &m4_storage_partition;
+		zephyr,code-rv32-partition = &rv32_partition;
 	};
 
 	/* These aliases are provided for compatibility with samples */
@@ -67,12 +40,12 @@
 	};
 };
 
-&uart0 {
-	pinctrl-0 = <&uart0a_tx_p0_1 &uart0a_rx_p0_0>;
+&cpu1 {
+	pinctrl-0 = <&rv_tck_p1_0 &rv_tms_p1_1 &rv_tdi_p1_2 &rv_tdo_p1_3>;
 	pinctrl-names = "default";
-	current-speed = <115200>;
-	data-bits = <8>;
-	parity = "none";
+};
+
+&m4_serial {
 	status = "okay";
 };
 
@@ -84,36 +57,8 @@
 	status = "okay";
 };
 
-&gpio0 {
-	status = "okay";
-};
-
-&gpio1 {
-	status = "okay";
-};
-
-&gpio2 {
-	status = "okay";
-};
-
-&gpio3 {
-	status = "okay";
-};
-
 &trng {
 	status = "okay";
-};
-
-&i2c0 {
-	status = "okay";
-	pinctrl-0 = <&i2c0_scl_p0_10 &i2c0_sda_p0_11>;
-	pinctrl-names = "default";
-};
-
-feather_i2c: &i2c1 {
-	status = "okay";
-	pinctrl-0 = <&i2c1_scl_p0_16 &i2c1_sda_p0_17>;
-	pinctrl-names = "default";
 };
 
 &spi0 {
@@ -128,11 +73,6 @@ feather_i2c: &i2c1 {
 
 &wdt0 {
 	status = "okay";
-};
-
-&w1 {
-	pinctrl-0 = <&owm_io_p0_6 &owm_pe_p0_7>;
-	pinctrl-names = "default";
 };
 
 &rtc_counter {

@@ -10,8 +10,8 @@
  * @ingroup input_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_INPUT_H_
-#define ZEPHYR_INCLUDE_INPUT_H_
+#ifndef ZEPHYR_INCLUDE_INPUT_INPUT_H_
+#define ZEPHYR_INCLUDE_INPUT_INPUT_H_
 
 /**
  * @brief Interfaces for input devices.
@@ -175,4 +175,4 @@ struct input_callback {
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_INPUT_H_ */
+#endif /* ZEPHYR_INCLUDE_INPUT_INPUT_H_ */

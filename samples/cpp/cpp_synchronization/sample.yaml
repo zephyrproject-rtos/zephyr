@@ -1,5 +1,5 @@
 sample:
-  name: Syncronisation (C++)
+  name: Synchronisation (C++)
 tests:
   sample.cpp.synchronization:
     tags: cpp

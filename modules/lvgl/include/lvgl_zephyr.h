@@ -40,9 +40,34 @@ int lvgl_init(void);
  * by LVGL core, allowing user to submit their own
  * work items to it.
  *
+ * @kconfig_dep{CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE}
+ *
  * @return pointer to LVGL's workqueue instance
  */
 struct k_work_q *lvgl_get_workqueue(void);
+
+/**
+ * @brief Pause periodic invocation of the LVGL timer handler.
+ *
+ * Inhibits further invocations of the LVGL timer handler on the internal
+ * workqueue until @ref lvgl_timer_handler_resume is called. An
+ * already-scheduled tick may still wake the workqueue once but will return
+ * without performing any LVGL work. Safe to call from any context,
+ * including interrupt handlers and LVGL event callbacks.
+ *
+ * @kconfig_dep{CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE}
+ */
+void lvgl_timer_handler_pause(void);
+
+/**
+ * @brief Resume periodic invocation of the LVGL timer handler.
+ *
+ * Re-enables the periodic LVGL timer handler and submits it for immediate
+ * execution. Safe to call from any context, including interrupt handlers.
+ *
+ * @kconfig_dep{CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE}
+ */
+void lvgl_timer_handler_resume(void);
 
 #endif /* CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE */
 

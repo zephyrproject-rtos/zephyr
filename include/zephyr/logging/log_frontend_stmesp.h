@@ -109,12 +109,12 @@ TYPE_SECTION_START_EXTERN(const char *, log_stmesp_ptr);
 
 #define LOG_FRONTEND_STMESP_LOG0(_source, ...)                                                     \
 	do {                                                                                       \
-		static const char _str[] __in_section(_log_stmesp_str, static, _)                  \
+		static const char _str[] __in_section(_log_stmesp_str, static, __COUNTER__)        \
 			__used __noasan __aligned(sizeof(uint32_t)) = GET_ARG_N(1, __VA_ARGS__);   \
-		static const char *_str_ptr __in_section(_log_stmesp_ptr, static, _)               \
+		static const char *str_ptr __in_section(_log_stmesp_ptr, static, __COUNTER__)      \
 			__used __noasan = _str;                                                    \
 		uint32_t _idx =                                                                    \
-			((uintptr_t)&_str_ptr - (uintptr_t)TYPE_SECTION_START(log_stmesp_ptr)) /   \
+			((uintptr_t)&str_ptr - (uintptr_t)TYPE_SECTION_START(log_stmesp_ptr)) /    \
 			sizeof(void *);                                                            \
 		log_frontend_stmesp_log0(_source, _idx);                                           \
 	} while (0)
@@ -126,12 +126,12 @@ TYPE_SECTION_START_EXTERN(const char *, log_stmesp_ptr);
  */
 #define LOG_FRONTEND_STMESP_LOG1(_source, ...)                                                     \
 	do {                                                                                       \
-		static const char _str[] __in_section(_log_stmesp_str, static, _)                  \
+		static const char _str[] __in_section(_log_stmesp_str, static, __COUNTER__)        \
 			__used __noasan __aligned(sizeof(uint32_t)) = GET_ARG_N(1, __VA_ARGS__);   \
-		static const char *_str_ptr __in_section(_log_stmesp_ptr, static, _)               \
+		static const char *str_ptr __in_section(_log_stmesp_ptr, static, __COUNTER__)      \
 			__used __noasan = _str;                                                    \
 		uint32_t _idx =                                                                    \
-			((uintptr_t)&_str_ptr - (uintptr_t)TYPE_SECTION_START(log_stmesp_ptr)) /   \
+			((uintptr_t)&str_ptr - (uintptr_t)TYPE_SECTION_START(log_stmesp_ptr)) /    \
 			sizeof(void *);                                                            \
 		log_frontend_stmesp_log1(_source, _idx, (uintptr_t)(GET_ARG_N(2, __VA_ARGS__)));   \
 	} while (0)

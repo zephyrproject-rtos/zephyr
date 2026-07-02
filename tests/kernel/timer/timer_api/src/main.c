@@ -939,6 +939,108 @@ ZTEST_USER(timer_api, test_sleep_abs)
 
 }
 
+static struct k_timer isr_ctx_timer;
+static volatile bool isr_ctx_expiry_ran;
+static volatile bool isr_ctx_expiry_in_isr;
+
+static void isr_ctx_expire(struct k_timer *timer)
+{
+	isr_ctx_expiry_in_isr = k_is_in_isr();
+	isr_ctx_expiry_ran = true;
+}
+
+/**
+ * @brief Test that a timer expiry function runs in interrupt context
+ *
+ * @ingroup kernel_timer_tests
+ *
+ * @details Start a one-shot timer whose expiry callback records, via
+ * k_is_in_isr(), whether it executes in interrupt context. After the timer has
+ * expired, verify the callback ran and that it observed itself running in
+ * interrupt context.
+ *
+ * @see k_timer_start(), k_is_in_isr()
+ */
+ZTEST(timer_api, test_timer_expiry_in_isr)
+{
+	isr_ctx_expiry_ran = false;
+	isr_ctx_expiry_in_isr = false;
+
+	k_timer_init(&isr_ctx_timer, isr_ctx_expire, NULL);
+	k_timer_start(&isr_ctx_timer, K_MSEC(DURATION), K_NO_WAIT);
+
+	/* Wait long enough for the one-shot timer to expire. */
+	k_msleep(DURATION * 2);
+
+	zassert_true(isr_ctx_expiry_ran,
+		     "timer expiry function did not run");
+	zassert_true(isr_ctx_expiry_in_isr,
+		     "timer expiry function did not run in interrupt context");
+
+	k_timer_stop(&isr_ctx_timer);
+}
+
+#if defined(CONFIG_MULTITHREADING)
+static struct k_timer cleanup_pending_timer;
+static struct k_thread cleanup_thread;
+static K_THREAD_STACK_DEFINE(cleanup_stack, 512 + CONFIG_TEST_EXTRA_STACK_SIZE);
+static K_SEM_DEFINE(cleanup_started, 0, 1);
+static void cleanup_waiter(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	k_sem_give(&cleanup_started);
+	/* Block on the timer's wait queue. The timer is armed far in the
+	 * future, so this thread stays pending until the timer is stopped.
+	 */
+	k_timer_status_sync(&cleanup_pending_timer);
+}
+#endif
+
+/**
+ * @brief Test cleaning up a timer that still has waiting threads
+ *
+ * @ingroup kernel_timer_tests
+ *
+ * @details Arm a timer with a far-future expiry and have a separate thread
+ * block on it via k_timer_status_sync(). While that thread is pending on the
+ * timer, call k_timer_cleanup() and verify it returns -EAGAIN, indicating the
+ * cleanup could not be performed. Then stop the timer to release the waiter.
+ *
+ * @see k_timer_cleanup(), k_timer_status_sync()
+ */
+ZTEST(timer_api, test_timer_cleanup_pending)
+{
+#if !defined(CONFIG_MULTITHREADING)
+	ztest_test_skip();
+#else
+	k_timer_init(&cleanup_pending_timer, NULL, NULL);
+	/* Far-future one-shot: the timeout stays active but does not fire,
+	 * so a thread synchronizing on it pends on the timer's wait queue.
+	 */
+	k_timer_start(&cleanup_pending_timer, K_SECONDS(3600), K_NO_WAIT);
+
+	k_tid_t tid = k_thread_create(&cleanup_thread, cleanup_stack,
+				      K_THREAD_STACK_SIZEOF(cleanup_stack),
+				      cleanup_waiter, NULL, NULL, NULL,
+				      K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
+
+	k_sem_take(&cleanup_started, K_FOREVER);
+	/* Give the waiter time to reach k_timer_status_sync() and pend. */
+	k_msleep(10);
+
+	/* A thread is pending on the timer, so cleanup must be refused. */
+	zassert_equal(k_timer_cleanup(&cleanup_pending_timer), -EAGAIN,
+		      "cleanup with a pending waiter should return -EAGAIN");
+
+	/* Release the waiter and join it. */
+	k_timer_stop(&cleanup_pending_timer);
+	k_thread_join(tid, K_FOREVER);
+#endif
+}
+
 static void timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
 		       k_timer_stop_t stop_fn)
 {

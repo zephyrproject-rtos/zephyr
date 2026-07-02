@@ -1,0 +1,6 @@
+board:
+  name: eora_hub_900tb
+  full_name: Ebyte EoRa-HUB-900TB Module Test Kit
+  vendor: ebyte
+  socs:
+    - name: esp32s3

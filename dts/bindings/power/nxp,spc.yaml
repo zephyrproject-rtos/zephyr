@@ -19,3 +19,12 @@ properties:
       to active modes (ACTIVE_CFG register), the
       LPWKUP_DELAY register must be configured to a
       minimum value.
+
+  active-dcdc-output-microvolt:
+    type: int
+    description: |
+      Active-mode DCDC regulator output voltage, in microvolts.
+      Legal values are SoC-specific; the SoC power init validates the
+      configured value against the levels the DCDC can actually produce.
+      When this property is absent, the SoC leaves the active-mode DCDC
+      output voltage untouched.

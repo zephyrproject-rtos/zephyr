@@ -38,10 +38,25 @@ class FakeSocket:
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(allow_abbrev=False)
+    parser = argparse.ArgumentParser(
+        allow_abbrev=False,
+        description=(
+            "GDB stub server for Zephyr coredumps. The coredump argument must be the "
+            "raw binary stream (same bytes as between #CD:BEGIN# / #CD:END# on the UART): "
+            "typically produced by coredump_serial_log_parser.py from a serial log, or "
+            "reassembled from UDP (same format)."
+        ),
+    )
 
     parser.add_argument("elffile", help="Zephyr ELF binary")
-    parser.add_argument("logfile", help="Coredump binary log file")
+    parser.add_argument(
+        "coredump_bin",
+        metavar="coredump_bin",
+        help=(
+            "Raw coredump binary (.bin): output of coredump_serial_log_parser.py "
+            "or an equivalent byte-for-byte capture (e.g. host UDP reassembly)"
+        ),
+    )
     parser.add_argument("--debug", action="store_true", help="Print extra debugging information")
     parser.add_argument("--port", type=int, default=1234, help="GDB server port")
     parser.add_argument("--pipe", action="store_true", help="Use stdio to communicate with gdb")
@@ -87,15 +102,15 @@ def main():
         logger.error(f"Cannot find file {args.elffile}, exiting...")
         sys.exit(1)
 
-    if not os.path.isfile(args.logfile):
-        logger.error(f"Cannot find file {args.logfile}, exiting...")
+    if not os.path.isfile(args.coredump_bin):
+        logger.error(f"Cannot find file {args.coredump_bin}, exiting...")
         sys.exit(1)
 
-    logger.info(f"Log file: {args.logfile}")
+    logger.info(f"Coredump file: {args.coredump_bin}")
     logger.info(f"ELF file: {args.elffile}")
 
-    # Parse the coredump binary log file
-    logf = CoredumpLogFile(args.logfile)
+    # Parse the coredump binary file
+    logf = CoredumpLogFile(args.coredump_bin)
     logf.open()
     if not logf.parse():
         logger.error("Cannot parse log file, exiting...")
@@ -138,7 +153,8 @@ def main():
 
         conn.close()
 
-    gdbserver.close()
+    if not args.pipe:
+        gdbserver.close()
 
     logger.info("GDB session finished.")
 

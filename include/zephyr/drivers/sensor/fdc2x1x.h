@@ -16,7 +16,7 @@
 /**
  * @brief Texas Instruments FDC2X1X capacitive sensor
  * @defgroup fdc2x1x_interface FDC2X1X
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_ti
  * @{
  */
 

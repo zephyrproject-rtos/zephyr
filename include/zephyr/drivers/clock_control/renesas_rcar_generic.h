@@ -7,10 +7,17 @@
 /**
  * @file
  * @brief Renesas R-Car generic access to clocks
+ * @ingroup clock_control_renesas_rcar
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_RENESAS_RCAR_GENERIC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_RENESAS_RCAR_GENERIC_H_
+
+/**
+ * @defgroup clock_control_renesas_rcar Renesas R-Car
+ * @ingroup clock_control_interface_ext
+ * @{
+ */
 
 /* Gen 5 boards deal with clocks through SCMI. */
 #ifdef CONFIG_CLOCK_CONTROL_ARM_SCMI
@@ -71,5 +78,7 @@ typedef struct rcar_generic_clk rcar_generic_clk_t;
 typedef struct rcar_cpg_clk rcar_generic_clk_t;
 
 #endif /* CONFIG_CLOCK_CONTROL_ARM_SCMI */
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_RENESAS_RCAR_GENERIC_H_ */

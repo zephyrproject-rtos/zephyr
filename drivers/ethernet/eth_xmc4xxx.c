@@ -844,12 +844,10 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 	bool is_up = state->is_up;
 
 	if (is_up && !dev_data->link_up) {
-		LOG_INF("Link up");
 		dev_data->link_up = true;
 		net_eth_carrier_on(dev_data->iface);
 		eth_xmc4xxx_set_link(dev_cfg->regs, state);
 	} else if (!is_up && dev_data->link_up) {
-		LOG_INF("Link down");
 		dev_data->link_up = false;
 		net_eth_carrier_off(dev_data->iface);
 	}

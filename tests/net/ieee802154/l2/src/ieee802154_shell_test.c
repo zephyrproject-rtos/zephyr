@@ -181,7 +181,7 @@ static void test_associate_shell_cmd(struct ieee802154_context *ctx)
 	zassert_equal(ctx->pan_id, EXPECTED_COORDINATOR_PAN_CPU_ORDER,
 		      "Association: did not get associated to the expected PAN.");
 	zassert_equal(ctx->short_addr, EXPECTED_ENDDEVICE_SHORT_ADDR,
-		      "Association: did not get the expected short address asigned.");
+		      "Association: did not get the expected short address assigned.");
 	zassert_equal(ctx->coord_short_addr, IEEE802154_NO_SHORT_ADDRESS_ASSIGNED,
 		      "Association: co-ordinator should not use short address.");
 	zassert_mem_equal(

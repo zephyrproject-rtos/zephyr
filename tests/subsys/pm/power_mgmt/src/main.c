@@ -176,7 +176,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(substate_id);
 	ARG_UNUSED(state);
 
-	if (IS_ENABLED(CONFIG_PM_STATE_SET_IRQ_LOCKED)) {
+	if (!IS_ENABLED(CONFIG_PM_STATE_SET_IRQ_UNLOCKED)) {
 		zassert_equal(_kernel.idle, 0,
 			      "PM state set ran before idle wake sentinel was cleared");
 	}

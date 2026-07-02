@@ -137,6 +137,8 @@ SHIFT
 SINGLE_APPLICATION_SLOT  # Used in sysbuild for MCUboot configuration
 SINGLE_APPLICATION_SLOT_RAM_LOAD  # Used in sysbuild for MCUboot configuration
 SOC_SDKNG_UNSUPPORTED  # Used in modules/hal_nxp/mcux/CMakeLists.txt
+RL_API_HAS_ZEROCOPY  # Provided by RPMSG-Lite integration Kconfig (hal_nxp)
+RL_USE_STATIC_API  # Provided by RPMSG-Lite integration Kconfig (hal_nxp)
 SOC_SERIES_  # Used as regex in scripts/utils/board_v1_to_v2.py
 SOC_WATCH  # Issue 13749
 SOME_BOOL
@@ -147,6 +149,7 @@ SPL_GZIP  # U-Boot, boards/luckfox/pico_ultra
 SRAM2  # Referenced in a comment in samples/application_development
 STACK_SIZE  # Used as an example in the Kconfig docs
 STD_CPP  # Referenced in CMake comment
+SYMBOL # used as an example in ci scripts
 TEST1
 TFM_SPM_BACKEND_IPC  # Used in TFM sample dummy partition - belongs to TFM
 TFM_SPM_BACKEND_SFN  # Used in TFM sample dummy partition - belongs to TFM
@@ -165,5 +168,6 @@ USE_STDC_
 WHATEVER
 ZEPHYR_TRY_MASS_ERASE  # MCUBoot setting described in sysbuild documentation
 ZTEST_FAIL_TEST_  # regex in tests/ztest/fail/CMakeLists.txt
+ZVFS_EVENTFD_ADD_SIZE_  # Used as an option matching prefix
 ZVFS_OPEN_ADD_SIZE_  # Used as an option matching prefix
 # zephyr-keep-sorted-stop

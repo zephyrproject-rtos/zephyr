@@ -68,11 +68,10 @@ static int32_t z_tick_sleep(k_timeout_t timeout)
 
 	(void)z_swap(&_sched_spinlock, key);
 
-	if (!z_is_aborted_thread_timeout(_current)) {
-		return 0;
-	}
-
-	/* We require a 32 bit unsigned subtraction to handle a wraparound */
+	/* We require a 32 bit unsigned subtraction to handle a wraparound.
+	 * A normal timeout-driven wakeup leaves zero (or a slightly negative)
+	 * remainder; only an early k_wakeup() yields a positive value.
+	 */
 	uint32_t left_ticks = expected_wakeup_ticks - sys_clock_tick_get_32();
 
 	/* Use signed comparison so past-due wakeups (negative remainder) return 0.

@@ -14,18 +14,12 @@ choice CYW55500_MODULE
 	default CYW55513IUBG_SM
 endchoice
 
-# Enable L2 Ethernet
-config NET_L2_ETHERNET
-	default y
-
 # Heap Pool Size
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
 	default 15000
 
 endif # WIFI
-
-if !BOARD_KIT_PSE84_EVAL_PSE846GPS2DBZC4A_M55
 
 if BT
 
@@ -43,4 +37,8 @@ config MAIN_STACK_SIZE
 
 endif # BT
 
-endif # BOARD_KIT_PSE84_EVAL_PSE846GPS2DBZC4A_M55
+if BOARD_KIT_PSE84_EVAL_PSE846GPS2DBZC4A_M55
+
+config CLOCK_CONTROL
+	default y if !PSOC_EDGE_M55_SRF_SUPPORT
+endif

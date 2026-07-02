@@ -93,6 +93,12 @@
 
 LOG_MODULE_REGISTER(uart_esp32, CONFIG_UART_LOG_LEVEL);
 
+/** Mask of all error-class UART interrupts. */
+#define UART_ESP32_ERR_INTR_MASK                                               \
+	(UART_INTR_PARITY_ERR | UART_INTR_FRAM_ERR | UART_INTR_BRK_DET |     \
+	 UART_INTR_RXFIFO_OVF | UART_INTR_RS485_PARITY_ERR |                  \
+	 UART_INTR_RS485_FRM_ERR | UART_INTR_RS485_CLASH)
+
 struct uart_esp32_config {
 	const struct device *clock_dev;
 	const struct pinctrl_dev_config *pcfg;
@@ -136,6 +142,12 @@ struct uart_esp32_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t irq_cb;
 	void *irq_cb_data;
+#endif
+#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM
+	/** Error flags saved by the ISR before it clears the hardware.
+	 *  Consumed and cleared by uart_err_check().
+	 */
+	uint32_t isr_error_flags;
 #endif
 #if CONFIG_UART_ASYNC_API
 	struct uart_esp32_async_data async;
@@ -235,10 +247,48 @@ static void uart_esp32_poll_out(const struct device *dev, unsigned char c)
 static int uart_esp32_err_check(const struct device *dev)
 {
 	struct uart_esp32_data *data = dev->data;
-	uint32_t mask = uart_hal_get_intsts_mask(&data->hal);
-	uint32_t err = mask & (UART_INTR_PARITY_ERR | UART_INTR_FRAM_ERR);
+	uint32_t mask;
+	int errors = 0;
 
-	return err;
+	/*
+	 * When the ISR is active, it saves error flags before clearing
+	 * hardware. Read the saved copy and also poll hardware for any
+	 * errors that arrived since the last ISR invocation. We always
+	 * need to poll the register since not all ISRs may be enabled.
+	 *
+	 * In pure polling mode (no ISR) read hardware directly.
+	 */
+#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM
+	unsigned int key = irq_lock();
+
+	mask = data->isr_error_flags;
+	data->isr_error_flags = 0;
+	mask |= uart_hal_get_intsts_mask(&data->hal) & UART_ESP32_ERR_INTR_MASK;
+	uart_hal_clr_intsts_mask(&data->hal, mask & UART_ESP32_ERR_INTR_MASK);
+
+	irq_unlock(key);
+#else
+	mask = uart_hal_get_intsts_mask(&data->hal);
+	uart_hal_clr_intsts_mask(&data->hal, mask & UART_ESP32_ERR_INTR_MASK);
+#endif
+
+	if (mask & (UART_INTR_PARITY_ERR | UART_INTR_RS485_PARITY_ERR)) {
+		errors |= UART_ERROR_PARITY;
+	}
+	if (mask & (UART_INTR_FRAM_ERR | UART_INTR_RS485_FRM_ERR)) {
+		errors |= UART_ERROR_FRAMING;
+	}
+	if (mask & UART_INTR_BRK_DET) {
+		errors |= UART_BREAK;
+	}
+	if (mask & UART_INTR_RXFIFO_OVF) {
+		errors |= UART_ERROR_OVERRUN;
+	}
+	if (mask & UART_INTR_RS485_CLASH) {
+		errors |= UART_ERROR_COLLISION;
+	}
+
+	return errors;
 }
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
@@ -539,22 +589,24 @@ static void uart_esp32_irq_err_enable(const struct device *dev)
 {
 	struct uart_esp32_data *data = dev->data;
 
-	/* enable framing, parity */
-	uart_hal_ena_intr_mask(&data->hal, UART_INTR_FRAM_ERR);
-	uart_hal_ena_intr_mask(&data->hal, UART_INTR_PARITY_ERR);
+	uart_hal_ena_intr_mask(&data->hal, UART_ESP32_ERR_INTR_MASK);
 }
 
 static void uart_esp32_irq_err_disable(const struct device *dev)
 {
 	struct uart_esp32_data *data = dev->data;
 
-	uart_hal_disable_intr_mask(&data->hal, UART_INTR_FRAM_ERR);
-	uart_hal_disable_intr_mask(&data->hal, UART_INTR_PARITY_ERR);
+	uart_hal_disable_intr_mask(&data->hal, UART_ESP32_ERR_INTR_MASK);
 }
 
 static int uart_esp32_irq_is_pending(const struct device *dev)
 {
-	return uart_esp32_irq_rx_ready(dev) || uart_esp32_irq_tx_ready(dev);
+	struct uart_esp32_data *data = dev->data;
+
+	/* Data ready or error-only interrupt (e.g. framing error with no data ready). */
+	return uart_esp32_irq_rx_ready(dev) ||
+	       uart_esp32_irq_tx_ready(dev) ||
+	       data->isr_error_flags;
 }
 
 static void uart_esp32_irq_update(const struct device *dev)
@@ -617,6 +669,12 @@ static void IRAM_ATTR uart_esp32_isr(void *arg)
 	if (uart_intr_status == 0) {
 		return;
 	}
+
+	/* Save error flags before clearing so that uart_err_check()
+	 * can report them from the user callback.
+	 */
+	data->isr_error_flags |= uart_intr_status & UART_ESP32_ERR_INTR_MASK;
+
 	uart_hal_clr_intsts_mask(&data->hal, uart_intr_status);
 
 #if CONFIG_PM
@@ -1246,9 +1304,15 @@ static int uart_esp32_init(const struct device *dev)
 		uhci_ll_init(data->uhci_dev);
 		uhci_ll_rx_set_eof_mode(data->uhci_dev, UHCI_RX_IDLE_EOF | UHCI_RX_LEN_EOF);
 
-		/* Configure SLIP encoding/decoding */
+		/*
+		 * Clear the escape_conf reset defaults (all bits 1) first, then
+		 * enable the C0 and DB escape pairs together as SLIP requires.
+		 */
+		data->uhci_dev->escape_conf.val = 0;
 		data->uhci_dev->escape_conf.tx_c0_esc_en = config->uhci_slip_tx ? 1 : 0;
+		data->uhci_dev->escape_conf.tx_db_esc_en = config->uhci_slip_tx ? 1 : 0;
 		data->uhci_dev->escape_conf.rx_c0_esc_en = config->uhci_slip_rx ? 1 : 0;
+		data->uhci_dev->escape_conf.rx_db_esc_en = config->uhci_slip_rx ? 1 : 0;
 
 		uhci_ll_attach_uart_port(data->uhci_dev, uart_hal_get_port_num(&data->hal));
 		data->uart_dev = dev;

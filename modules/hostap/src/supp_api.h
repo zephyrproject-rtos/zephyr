@@ -154,15 +154,6 @@ int supplicant_11k_neighbor_request(const struct device *dev, struct net_if *ifa
  */
 int supplicant_candidate_scan(const struct device *dev, struct net_if *iface,
 			      struct wifi_scan_params *params);
-
-/** Send 11r roaming request
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param iface Network interface to use
- *
- * @return 0 if ok, < 0 if error
- */
-int supplicant_11r_roaming(const struct device *dev, struct net_if *iface);
 #endif
 
 /**
@@ -429,6 +420,20 @@ int dpp_params_to_cmd(struct wifi_dpp_params *params, char *cmd, size_t max_len)
 int supplicant_dpp_dispatch(const struct device *dev, struct net_if *iface,
 			    struct wifi_dpp_params *params);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+#define SUPPLICANT_NAN_CMD_BUF_SIZE 1024
+
+/**
+ * @brief Dispatch NAN operations for STA
+ *
+ * @param dev Wi-Fi interface name to use
+ * @param nan_params NAN action enum and params in string
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_nan_cfg(const struct device *dev __unused, struct net_if *iface,
+		       struct wifi_nan_params *params);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 
 /**
  * @brief Wi-Fi STA configuration parameter.

@@ -273,7 +273,7 @@ static int cmd_cap_commander_change_volume(const struct shell *sh, size_t argc, 
 
 	param.count = 0U;
 	param.members = members;
-	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(connected_conns); i++) {
 		struct bt_conn *conn = connected_conns[i];
 
 		if (conn == NULL) {
@@ -325,7 +325,7 @@ static int cmd_cap_commander_change_volume_mute(const struct shell *sh, size_t a
 
 	param.count = 0U;
 	param.members = members;
-	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(connected_conns); i++) {
 		struct bt_conn *conn = connected_conns[i];
 
 		if (conn == NULL) {
@@ -352,7 +352,7 @@ static int cmd_cap_commander_change_volume_mute(const struct shell *sh, size_t a
 static int cmd_cap_commander_change_volume_offset(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_cap_commander_change_volume_offset_member_param member_params[CONFIG_BT_MAX_CONN];
-	const size_t cap_args = argc - 1; /* First argument is the command itself */
+	const size_t cap_argc = argc - 1; /* First argument is the command itself */
 	struct bt_cap_commander_change_volume_offset_param param = {
 		.type = BT_CAP_SET_TYPE_AD_HOC,
 		.param = member_params,
@@ -368,7 +368,7 @@ static int cmd_cap_commander_change_volume_offset(const struct shell *sh, size_t
 
 	/* Populate the array of connected connections */
 	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns, (void *)connected_conns);
-	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(connected_conns); i++) {
 		struct bt_conn *conn = connected_conns[i];
 
 		if (conn == NULL) {
@@ -378,7 +378,7 @@ static int cmd_cap_commander_change_volume_offset(const struct shell *sh, size_t
 		conn_cnt++;
 	}
 
-	if (cap_args > conn_cnt) {
+	if (cap_argc > conn_cnt) {
 		shell_error(sh, "Cannot use %zu arguments for %zu connections", argc, conn_cnt);
 
 		return -ENOEXEC;
@@ -386,8 +386,8 @@ static int cmd_cap_commander_change_volume_offset(const struct shell *sh, size_t
 
 	/* TODO: Add support for coordinated sets */
 
-	for (size_t i = 0U; i < cap_args; i++) {
-		const char *arg = argv[i + 1];
+	for (size_t i = 0U; i < cap_argc; i++) {
+		const char *arg = argv[i + 1U];
 		long volume_offset;
 
 		volume_offset = shell_strtol(arg, 10, &err);
@@ -453,7 +453,7 @@ static int cmd_cap_commander_change_microphone_mute(const struct shell *sh, size
 
 	param.count = 0U;
 	param.members = members;
-	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(connected_conns); i++) {
 		struct bt_conn *conn = connected_conns[i];
 
 		if (conn == NULL) {
@@ -483,7 +483,7 @@ static int cmd_cap_commander_change_microphone_gain(const struct shell *sh, size
 {
 	struct bt_cap_commander_change_microphone_gain_setting_member_param
 		member_params[CONFIG_BT_MAX_CONN];
-	const size_t cap_args = argc - 1; /* First argument is the command itself */
+	const size_t cap_argc = argc - 1; /* First argument is the command itself */
 	struct bt_cap_commander_change_microphone_gain_setting_param param = {
 		.type = BT_CAP_SET_TYPE_AD_HOC,
 		.param = member_params,
@@ -499,7 +499,7 @@ static int cmd_cap_commander_change_microphone_gain(const struct shell *sh, size
 
 	/* Populate the array of connected connections */
 	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns, (void *)connected_conns);
-	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(connected_conns); i++) {
 		struct bt_conn *conn = connected_conns[i];
 
 		if (conn == NULL) {
@@ -509,7 +509,7 @@ static int cmd_cap_commander_change_microphone_gain(const struct shell *sh, size
 		conn_cnt++;
 	}
 
-	if (cap_args > conn_cnt) {
+	if (cap_argc > conn_cnt) {
 		shell_error(sh, "Cannot use %zu arguments for %zu connections", argc, conn_cnt);
 
 		return -ENOEXEC;
@@ -517,8 +517,8 @@ static int cmd_cap_commander_change_microphone_gain(const struct shell *sh, size
 
 	/* TODO: Add support for coordinated sets */
 
-	for (size_t i = 0U; i < cap_args; i++) {
-		const char *arg = argv[i + 1];
+	for (size_t i = 0U; i < cap_argc; i++) {
+		const char *arg = argv[i + 1U];
 		long gain;
 
 		gain = shell_strtol(arg, 10, &err);
@@ -589,7 +589,7 @@ static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, s
 
 	/* Populate the array of connected connections */
 	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns, (void *)connected_conns);
-	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(connected_conns); i++) {
 		struct bt_conn *conn = connected_conns[i];
 
 		if (conn == NULL) {
@@ -697,7 +697,7 @@ static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, s
 		subgroup.metadata_len = metadata_len;
 	}
 
-	member_param->num_subgroups = 1;
+	member_param->num_subgroups = 1U;
 	memcpy(member_param->subgroups, &subgroup, sizeof(struct bt_bap_bass_subgroup));
 
 	member_param->member.member = connected_conns[0];
@@ -730,7 +730,7 @@ static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, s
 static int cmd_cap_commander_broadcast_reception_stop(const struct shell *sh, size_t argc,
 						      char *argv[])
 {
-	const size_t cap_args = argc - 1; /* First argument is the command itself */
+	const size_t cap_argc = argc - 1; /* First argument is the command itself */
 	struct bt_conn *connected_conns[CONFIG_BT_MAX_CONN] = {0};
 	size_t conn_cnt = 0U;
 	int err = 0;
@@ -757,7 +757,7 @@ static int cmd_cap_commander_broadcast_reception_stop(const struct shell *sh, si
 
 	/* Populate the array of connected connections */
 	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns, (void *)connected_conns);
-	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(connected_conns); i++) {
 		struct bt_conn *conn = connected_conns[i];
 
 		if (conn == NULL) {
@@ -767,14 +767,14 @@ static int cmd_cap_commander_broadcast_reception_stop(const struct shell *sh, si
 		conn_cnt++;
 	}
 
-	if (cap_args > conn_cnt) {
+	if (cap_argc > conn_cnt) {
 		shell_error(sh, "Cannot use %zu arguments for %zu connections", argc, conn_cnt);
 
 		return -ENOEXEC;
 	}
 
-	for (size_t i = 0U; i < cap_args; i++) {
-		const char *arg = argv[i + 1];
+	for (size_t i = 0U; i < cap_argc; i++) {
+		const char *arg = argv[i + 1U];
 		unsigned long src_id;
 
 		src_id = shell_strtoul(arg, 0, &err);
@@ -791,7 +791,7 @@ static int cmd_cap_commander_broadcast_reception_stop(const struct shell *sh, si
 		}
 
 		/* TODO: Allow for multiple subgroups */
-		cap_commander_reception_stop_member_params[i].num_subgroups = 1;
+		cap_commander_reception_stop_member_params[i].num_subgroups = 1U;
 		cap_commander_reception_stop_member_params[i].src_id = src_id;
 		cap_commander_reception_stop_member_params[i].member.member = connected_conns[i];
 		cap_commander_reception_stop_param.count++;
@@ -823,7 +823,6 @@ static int cmd_cap_commander_distribute_broadcast_code(const struct shell *sh, s
 		.type = BT_CAP_SET_TYPE_AD_HOC,
 		.param = member_params,
 	};
-
 	struct bt_conn *connected_conns[CONFIG_BT_MAX_CONN] = {0};
 	size_t conn_cnt = 0U;
 	int err = 0;
@@ -837,7 +836,7 @@ static int cmd_cap_commander_distribute_broadcast_code(const struct shell *sh, s
 
 	/* Populate the array of connected connections */
 	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns, (void *)connected_conns);
-	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(connected_conns); i++) {
 		struct bt_conn *conn = connected_conns[i];
 
 		if (conn == NULL) {
@@ -846,7 +845,7 @@ static int cmd_cap_commander_distribute_broadcast_code(const struct shell *sh, s
 		conn_cnt++;
 	}
 
-	/* The number of cap_args needs to be the number of connections + 1 since the last argument
+	/* The number of cap_argc needs to be the number of connections + 1 since the last argument
 	 * is the broadcast code
 	 */
 	if (cap_argc != conn_cnt + 1) {
@@ -861,8 +860,8 @@ static int cmd_cap_commander_distribute_broadcast_code(const struct shell *sh, s
 		return -ENOEXEC;
 	}
 
-	for (size_t i = 0; i < conn_cnt; i++) {
-		const char *arg = argv[i + 1];
+	for (size_t i = 0U; i < cap_argc - 1U; i++) {
+		const char *arg = argv[i + 1U];
 		unsigned long src_id;
 
 		src_id = shell_strtoul(arg, 0, &err);

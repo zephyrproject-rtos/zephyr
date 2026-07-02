@@ -130,3 +130,7 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
+&hash {
+	status = "okay";
+};

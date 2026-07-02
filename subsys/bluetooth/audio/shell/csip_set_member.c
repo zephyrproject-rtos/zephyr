@@ -86,7 +86,7 @@ static int cmd_csip_set_member_register(const struct shell *sh, size_t argc, cha
 		.cb = &csip_set_member_cbs,
 	};
 
-	for (size_t argn = 1; argn < argc; argn++) {
+	for (size_t argn = 1U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 		if (strcmp(arg, "size") == 0) {
 			unsigned long set_size;
@@ -150,7 +150,7 @@ static int cmd_csip_set_member_register(const struct shell *sh, size_t argc, cha
 
 			len = hex2bin(argv[argn], strlen(argv[argn]), param.sirk,
 				      sizeof(param.sirk));
-			if (len == 0) {
+			if (len == 0U) {
 				shell_error(sh, "Could not parse SIRK");
 				return -ENOEXEC;
 			}
@@ -398,7 +398,7 @@ SHELL_CMD_ARG_REGISTER(csip_set_member, &csip_set_member_cmds,
 size_t csis_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
 			const bool discoverable)
 {
-	size_t ad_len = 0;
+	size_t ad_len = 0U;
 
 	/* Advertise RSI in discoverable mode only */
 	if (svc_inst != NULL && discoverable) {

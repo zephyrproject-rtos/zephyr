@@ -10,8 +10,8 @@
  * conn_mgr_connectivity).
  */
 
-#ifndef ZEPHYR_INCLUDE_CONN_MGR_CONNECTIVITY_IMPL_H_
-#define ZEPHYR_INCLUDE_CONN_MGR_CONNECTIVITY_IMPL_H_
+#ifndef ZEPHYR_INCLUDE_NET_CONN_MGR_CONNECTIVITY_IMPL_H_
+#define ZEPHYR_INCLUDE_NET_CONN_MGR_CONNECTIVITY_IMPL_H_
 
 #include <zephyr/device.h>
 #include <zephyr/net/net_if.h>
@@ -372,4 +372,4 @@ static inline bool conn_mgr_binding_get_flag(struct conn_mgr_conn_binding *bindi
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_CONN_MGR_CONNECTIVITY_IMPL_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_CONN_MGR_CONNECTIVITY_IMPL_H_ */

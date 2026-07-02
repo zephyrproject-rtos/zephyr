@@ -171,7 +171,6 @@ static struct net_pkt *setup_gptp_frame(struct net_if *iface,
 	}
 
 	net_buf_add(pkt->buffer, sizeof(struct gptp_hdr) + extra_header);
-	net_pkt_set_ptp(pkt, true);
 	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_PTP);
 
 	(void)net_linkaddr_copy(net_pkt_lladdr_src(pkt),

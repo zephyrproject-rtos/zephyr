@@ -9,6 +9,7 @@ if(CONFIG_SOC_FAMILY_SILABS_S2)
   zephyr_sources_ifdef(CONFIG_PM soc_power_pmgr.c)
 endif()
 
+zephyr_sources_ifdef(CONFIG_DT_HAS_SILABS_SERIES0_CMU_ENABLED clock.c)
 zephyr_include_directories(.)
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")

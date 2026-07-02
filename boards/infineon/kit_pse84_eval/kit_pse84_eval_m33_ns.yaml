@@ -9,6 +9,7 @@ type: mcu
 arch: arm
 sysbuild: true
 ram: 5120
+twister: false
 toolchain:
   - zephyr
 supported:
@@ -17,3 +18,4 @@ supported:
   - pinctrl
   - bluetooth
   - wifi
+  - flash

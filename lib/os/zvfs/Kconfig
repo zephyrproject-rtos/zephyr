@@ -44,15 +44,24 @@ if ZVFS_EVENTFD
 
 config ZVFS_EVENTFD_MAX
 	int "Maximum number of ZVFS eventfd's"
-	default 8 if WIFI_NM_WPA_SUPPLICANT
 	default 1
 	range 1 4096
 	help
-	  The maximum number of supported event file descriptors.
+	  Maximum number of supported event file descriptors. If subsystems
+	  specify ZVFS_EVENTFD_ADD_SIZE_* options, these will be added together
+	  and the sum will be compared to the ZVFS_EVENTFD_MAX value.
+	  If the sum is greater than the ZVFS_EVENTFD_MAX option, then the actual
+	  eventfd count will be rounded up to the sum of the individual
+	  requirements (unless the ZVFS_EVENTFD_IGNORE_MIN option is enabled).
 
-config ZVFS_OPEN_ADD_SIZE_EVENTFD
-	int "Amount of file descriptors used by ZVFS eventfd"
-	default ZVFS_EVENTFD_MAX
+config ZVFS_EVENTFD_IGNORE_MIN
+	bool "Ignore the minimum eventfd count requirement"
+	help
+	  This option can be set to force setting a smaller eventfd count than
+	  what's specified by enabled subsystems via ZVFS_EVENTFD_ADD_SIZE_*
+	  options. This can be useful when optimizing memory usage and a more
+	  precise minimum eventfd count is known for a given application. When
+	  enabled, the ZVFS_EVENTFD_MAX value is used as-is.
 
 endif # ZVFS_EVENTFD
 

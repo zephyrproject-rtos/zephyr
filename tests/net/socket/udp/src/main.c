@@ -1615,7 +1615,7 @@ static void comm_sendmsg_recvmsg(int client_sock,
 			      0U, msg->msg_controllen);
 	}
 
-	/* Then check that the trucation flag is set correctly */
+	/* Then check that the truncation flag is set correctly */
 	sent = zsock_sendmsg(client_sock, client_msg, 0);
 	zassert_true(sent > 0, "sendmsg failed (%d)", -errno);
 

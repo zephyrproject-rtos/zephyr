@@ -288,6 +288,12 @@ static int cmd_add_network(const struct shell *sh, size_t argc, char *argv[])
 		shell_warn(sh, "Passphrase provided without security configuration\n");
 	}
 
+	if (creds.password_len > 0 && creds.header.type == WIFI_SECURITY_TYPE_OWE) {
+		shell_warn(sh, "Passphrase is not required for OWE connection\n");
+		memset(creds.password, 0, sizeof(creds.password));
+		creds.password_len = 0;
+	}
+
 	if (creds.header.ssid_len == 0) {
 		shell_error(sh, "SSID not provided\n");
 		shell_help(sh);

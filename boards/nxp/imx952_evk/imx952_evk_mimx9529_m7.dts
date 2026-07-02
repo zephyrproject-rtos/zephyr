@@ -30,3 +30,7 @@
 	pinctrl-0 = <&lpuart3_default>;
 	pinctrl-names = "default";
 };
+
+&tstmr2 {
+	status = "okay";
+};

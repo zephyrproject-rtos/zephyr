@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the shell string conversion helpers.
+ * @ingroup shell_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_SHELL_STRING_CONV_H_
 #define ZEPHYR_INCLUDE_SHELL_STRING_CONV_H_
 
@@ -13,6 +19,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @addtogroup shell_api
+ * @{
+ */
 
 /** @brief String to long conversion with error check.
  *
@@ -81,6 +92,8 @@ unsigned long long shell_strtoull(const char *str, int base, int *err);
  * @return Converted boolean value.
  */
 bool shell_strtobool(const char *str, int base, int *err);
+
+/** @} */
 
 #ifdef __cplusplus
 }

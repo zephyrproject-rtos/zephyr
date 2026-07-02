@@ -68,8 +68,8 @@ config AWS_QOS
 	help
 	  Quality of Service to use for publishing and subscribing to topics.
 	  Notes:
-	  	- Use QoS 0 when passing DQP test suite
-	  	- QoS 2 is not supported by AWS MQTT broker
+	    - Use QoS 0 when passing DQP test suite
+	    - QoS 2 is not supported by AWS MQTT broker
 
 
 config AWS_EXPONENTIAL_BACKOFF

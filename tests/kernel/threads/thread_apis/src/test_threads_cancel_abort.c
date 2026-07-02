@@ -191,7 +191,7 @@ extern struct k_sem offload_sem;
  *
  * @brief Show that threads can be aborted from interrupt context by itself
  *
- * @details Spwan a thread, then enter ISR context in child thread and abort
+ * @details Spawn a thread, then enter ISR context in child thread and abort
  * the child thread. Check if ISR completed and target thread was aborted.
  *
  * @see k_thread_abort()
@@ -245,7 +245,7 @@ static void entry_aborted_thread(void *p1, void *p2, void *p3)
  *
  * @brief Show that threads can be aborted from interrupt context
  *
- * @details Spwan a thread, then enter ISR context in main thread and abort
+ * @details Spawn a thread, then enter ISR context in main thread and abort
  * the child thread. Check if ISR completed and target thread was aborted.
  *
  * @see k_thread_abort()
@@ -263,7 +263,7 @@ ZTEST(threads_lifecycle, test_abort_from_isr_not_self)
 	/* wait for thread started */
 	k_sem_take(&sem_abort, K_FOREVER);
 
-	/* Simulate taking an interrupt which kills spwan thread */
+	/* Simulate taking an interrupt which kills spawn thread */
 	irq_offload(offload_func, (void *)tid);
 
 	zassert_true(isr_finished, "ISR did not complete");

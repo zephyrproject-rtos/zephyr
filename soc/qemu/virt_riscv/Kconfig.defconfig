@@ -28,4 +28,7 @@ config NUM_IRQS
 config PMP_SLOTS
 	default 16
 
+config RISCV_HAS_PLIC
+	default y if !RISCV_HAS_AIA
+
 endif # SOC_FAMILY_QEMU_VIRT_RISCV

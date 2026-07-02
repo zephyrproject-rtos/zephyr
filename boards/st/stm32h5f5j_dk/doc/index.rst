@@ -170,6 +170,7 @@ Default Zephyr Peripheral Mapping:
 - LD3 (blue) : PB9
 - LD4 (orange) : PD15
 - ADC1 channel 0 input : PA0
+- ETH: PA1/PD1/PC4/PE5/PB11/PB12/PG12/PJ6/PJ7
 
 System Clock
 ------------

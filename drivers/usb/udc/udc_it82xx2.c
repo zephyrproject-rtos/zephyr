@@ -547,7 +547,7 @@ static inline void ctrl_ep_stall_workaround(const struct device *dev)
 	 * to be cleared by firmware. The SETUP token will be STALLed, which isn't compliant to
 	 * USB specification, if firmware clears the STALL bit too late. Due to this hardware
 	 * limitations, device controller polls to check if the stall bit has been transmitted for
-	 * 3ms and then disables it after responsing STALLed.
+	 * 3ms and then disables it after responding STALLed.
 	 */
 	while (idx < 198 && !(ep_regs[0].ep_status & DC_STALL_SENT)) {
 		/* wait 15.15us */

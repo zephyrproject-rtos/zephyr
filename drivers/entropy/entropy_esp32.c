@@ -8,7 +8,7 @@
 
 #include <string.h>
 #include <soc/rtc.h>
-#include <soc/wdev_reg.h>
+#include <hal/rng_ll.h>
 #include <esp_system.h>
 #include <soc.h>
 #include <esp_cpu.h>
@@ -61,7 +61,7 @@ static inline uint32_t entropy_esp32_get_u32(void)
 	for (size_t i = 0; i < sizeof(result); i++) {
 		do {
 			ccount = esp_cpu_get_cycle_count();
-			result ^= REG_READ(WDEV_RND_REG);
+			result ^= rng_ll_read_data();
 		} while (ccount - last_ccount < cpu_to_apb_freq_ratio * APB_CYCLE_WAIT_NUM);
 #if SOC_RTC_TIMER_SUPPORTED
 		uint32_t current_rtc_timer_counter = (rtc_timer_hal_get_cycle_count(0) & 0xFF);
@@ -70,7 +70,7 @@ static inline uint32_t entropy_esp32_get_u32(void)
 #endif
 	}
 	last_ccount = ccount;
-	return result ^ REG_READ(WDEV_RND_REG);
+	return result ^ rng_ll_read_data();
 }
 
 static int entropy_esp32_get_entropy(const struct device *dev, uint8_t *buf,
@@ -102,6 +102,8 @@ static int entropy_esp32_init(const struct device *dev)
 	}
 
 	clock_control_on(clock_dev, clock_subsys);
+
+	rng_ll_enable();
 
 	return 0;
 }

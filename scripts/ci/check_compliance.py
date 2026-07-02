@@ -474,6 +474,82 @@ class ClangFormatCheck(ComplianceTest):
                     self._process_patch_error(file, patch)
 
 
+class KconfigFormatCheck(ComplianceTest):
+    """
+    Checks Kconfig files against the formatting style guidelines using
+    scripts/kconfig/kconfig_style.py. Only issues on lines touched by the change
+    are reported, so pre-existing formatting is not flagged.
+    """
+
+    name = "KconfigFormat"
+    doc = zephyr_doc_detail_builder("/contribute/style/kconfig.html")
+
+    # '<file>:<line>:<col>: [<rule>] <message>'
+    _ISSUE_RE = re.compile(r"^.+:(\d+):(\d+): \[([^\]]+)\] (.*)$")
+
+    def _changed_lines(self, file):
+        # Line numbers touched by the change in 'file' within COMMIT_RANGE.
+        diff = git("diff", "-U0", "--no-color", COMMIT_RANGE, "--", file)
+        changed = set()
+        if not diff.strip():
+            return changed
+        for patch in unidiff.PatchSet.from_string(diff):
+            for hunk in patch:
+                for line in hunk:
+                    if line.is_added and line.target_line_no is not None:
+                        changed.add(line.target_line_no)
+                # A pure deletion adds no lines but can still introduce a style
+                # issue on the lines now surrounding the gap (e.g. removing a
+                # blank line between declarations). With -U0 the deletion sits
+                # between target_start and target_start + 1, so flag both.
+                if hunk.removed:
+                    changed.update((hunk.target_start, hunk.target_start + 1))
+        return changed
+
+    def run(self):
+        tool = ZEPHYR_BASE / "scripts" / "kconfig" / "kconfig_style.py"
+
+        for file in get_files(filter="d"):
+            if "Kconfig" not in Path(file).name:
+                continue
+
+            changed = self._changed_lines(file)
+            if not changed:
+                continue
+
+            result = subprocess.run(
+                [sys.executable, str(tool), file],
+                cwd=GIT_TOP,
+                capture_output=True,
+                text=True,
+            )
+
+            # kconfig_style.py returns 0 (clean) or 1 (issues found); anything
+            # else, or any stderr output, means the checker itself failed (e.g.
+            # crashed before it could set its own error exit code).
+            if result.returncode not in (0, 1) or result.stderr.strip():
+                self.error(
+                    f"kconfig_style.py failed on '{file}' "
+                    f"(exit {result.returncode}):\n{result.stderr}"
+                )
+
+            for line in result.stdout.splitlines():
+                m = self._ISSUE_RE.match(line)
+                if not m:
+                    continue
+                lineno, col, rule, message = int(m[1]), int(m[2]), m[3], m[4]
+                if lineno not in changed:
+                    continue
+                self.fmtd_failure(
+                    "error",
+                    f"KconfigFormat ({rule})",
+                    file,
+                    lineno,
+                    col=col,
+                    desc=message,
+                )
+
+
 class DevicetreeBindingsCheck(ComplianceTest):
     """
     Checks for devicetree bindings.
@@ -1476,7 +1552,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
         # Warning: Needs to work with both --perl-regexp and the 're' module
         regex = r"\b" + self.CONFIG_ + r"[A-Z0-9_]+\b(?!\s*##|[$@{(.*])"
 
-        # Skip doc/releases and doc/security/vulnerabilities.rst, which often
+        # Skip doc/releases and doc/security/vulnerabilities, which often
         # reference removed symbols
         grep_stdout = git(
             "grep",
@@ -1489,6 +1565,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             ":!/doc/releases",
             ":!/doc/develop/manifest/external",
             ":!/doc/security/vulnerabilities.rst",
+            ":!/doc/security/vulnerabilities",
             cwd=GIT_TOP,
         )
 

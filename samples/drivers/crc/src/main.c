@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(crc_example, CONFIG_LOG_DEFAULT_LEVEL);
 /* The devicetree node identifier for the "crc" */
 #define CRC_NODE DT_CHOSEN(zephyr_crc)
 
-/* Pre-select CRC variant and constants via Kconfig */
+/* Preselect CRC variant and constants via Kconfig */
 #if defined(CONFIG_SAMPLE_CRC_VARIANT_CRC8)
 #if !IS_ENABLED(CONFIG_CRC_DRIVER_HAS_CRC8)
 #error "Selected CRC8 but driver/platform does not support it"

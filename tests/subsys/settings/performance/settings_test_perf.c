@@ -102,7 +102,7 @@ ZTEST(settings_perf, test_performance)
 	k_work_queue_start(&settings_work_q, settings_work_stack,
 			   K_THREAD_STACK_SIZEOF(settings_work_stack),
 			   K_PRIO_COOP(TEST_SETTINGS_WORKQ_PRIO), NULL);
-	k_thread_name_set(&settings_work_q.thread, "Settings workq");
+	k_thread_name_set(settings_work_q.thread_id, "Settings workq");
 	k_work_init_delayable(&pending_store, store_pending);
 
 	if (IS_ENABLED(CONFIG_BT)) {

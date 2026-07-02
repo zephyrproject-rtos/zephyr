@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(bap_broadcast_sink_self_tests)
 
-set(bap_broadcast_sink_path ${ZEPHYR_BASE}/samples/bluetooth/bap_broadcast_sink)
+set(bap_broadcast_sink_path ${ZEPHYR_BASE}/samples/bluetooth/audio/bap_broadcast_sink)
 
 target_sources(app PRIVATE
   ${bap_broadcast_sink_path}/src/main.c

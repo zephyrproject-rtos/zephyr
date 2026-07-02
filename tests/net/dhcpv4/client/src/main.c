@@ -623,7 +623,7 @@ static void option_invalid_cb(struct net_dhcpv4_option_callback *cb,
 	ARG_UNUSED(iface);
 
 	/* This function should never be called. If it is, the parser took a wrong turn. */
-	zassert_unreachable("Unexpected callback - incorrect parsing of vendor sepcific options");
+	zassert_unreachable("Unexpected callback - incorrect parsing of vendor specific options");
 }
 
 #ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC

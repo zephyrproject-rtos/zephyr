@@ -68,6 +68,8 @@ struct counter_alarm_cfg alarm_cfg;
 #endif
 #elif defined(CONFIG_COUNTER_TIMER_MAX32)
 #define SAMPLE_TIMER DT_NODELABEL(counter0)
+#elif defined(CONFIG_COUNTER_WUT_MAX32)
+#define SAMPLE_TIMER DT_NODELABEL(counter_wut1)
 #elif defined(CONFIG_COUNTER_RA_AGT)
 #define SAMPLE_TIMER DT_NODELABEL(counter0)
 #elif defined(CONFIG_COUNTER_RENESAS_RZ_GTM)
@@ -89,6 +91,8 @@ struct counter_alarm_cfg alarm_cfg;
 #elif defined(CONFIG_COUNTER_RENESAS_RZA2M_OSTM)
 #define SAMPLE_TIMER DT_INST(0, renesas_rza2m_ostm_counter)
 #elif defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG)
+#define SAMPLE_TIMER DT_ALIAS(counter)
+#elif defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH)
 #define SAMPLE_TIMER DT_ALIAS(counter)
 #elif defined(CONFIG_COUNTER_ITE_IT51XXX)
 #define SAMPLE_TIMER DT_NODELABEL(counter0)

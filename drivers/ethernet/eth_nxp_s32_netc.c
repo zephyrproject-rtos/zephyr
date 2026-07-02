@@ -140,29 +140,22 @@ int nxp_s32_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 	if (status != NETC_ETH_IP_STATUS_SUCCESS) {
 		LOG_ERR("Failed to get tx buffer: %d", status);
-		res = -ENOBUFS;
-		goto error;
+		return -ENOBUFS;
 	}
 	buf.length = (uint16_t)pkt_len;
 
 	res = net_pkt_read(pkt, buf.data, pkt_len);
 	if (res) {
 		LOG_ERR("Failed to copy packet to tx buffer: %d", res);
-		res = -ENOBUFS;
-		goto error;
+		return -ENOBUFS;
 	}
 
 	status = Netc_Eth_Ip_SendFrame(cfg->si_idx, cfg->tx_ring_idx, &buf, NULL);
 	if (status != NETC_ETH_IP_STATUS_SUCCESS) {
 		LOG_ERR("Failed to tx frame: %d", status);
-		res = -EIO;
-		goto error;
+		return -EIO;
 	}
 
-error:
-	if (res != 0) {
-		eth_stats_update_errors_tx(ctx->iface);
-	}
 	return res;
 }
 

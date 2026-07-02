@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Bluetooth Mesh Large Composition Data Server model API.
+ * @ingroup bt_mesh_large_comp_data_srv
+ */
+
 #ifndef BT_MESH_LARGE_COMP_DATA_SRV_H__
 #define BT_MESH_LARGE_COMP_DATA_SRV_H__
 

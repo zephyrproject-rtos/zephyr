@@ -20,3 +20,7 @@
 &enet_ptp_clock {
 	status = "okay";
 };
+
+&otpc {
+	status = "okay";
+};

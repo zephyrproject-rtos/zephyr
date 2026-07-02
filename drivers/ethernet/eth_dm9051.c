@@ -446,8 +446,7 @@ static int eth_dm9051_tx(const struct device *dev, struct net_pkt *pkt)
 
 	/* Read TX data from net_pkt */
 	if (net_pkt_read(pkt, data->tx_buf, len)) {
-		ret = -EIO;
-		goto out_update_errors_tx;
+		return -EIO;
 	}
 
 	k_mutex_lock(&data->spi_lock, K_FOREVER);
@@ -479,27 +478,13 @@ static int eth_dm9051_tx(const struct device *dev, struct net_pkt *pkt)
 	k_mutex_unlock(&data->spi_lock);
 
 	if (k_sem_take(&data->tx_done, K_MSEC(10))) {
-		ret = -EIO;
-		goto out_update_errors_tx;
-	}
-
-	/* Update ethernet statistics */
-	eth_stats_update_bytes_tx(data->iface, len);
-	eth_stats_update_pkts_tx(data->iface);
-	if (net_eth_is_addr_broadcast(&NET_ETH_HDR(pkt)->dst)) {
-		eth_stats_update_broadcast_tx(data->iface);
-	} else if (net_eth_is_addr_multicast(&NET_ETH_HDR(pkt)->dst)) {
-		eth_stats_update_multicast_tx(data->iface);
-	}  else {
-		/* Unicast frame */
+		return -EIO;
 	}
 
 	return 0;
 
 out_spi_unlock:
 	k_mutex_unlock(&data->spi_lock);
-out_update_errors_tx:
-	eth_stats_update_errors_tx(data->iface);
 	return ret;
 }
 
@@ -651,7 +636,6 @@ static int eth_dm9051_update_link_status(const struct device *dev)
 
 	if ((nsr & DM9051_NSR_LINKST) > 0) {
 		if (data->state.is_up != true) {
-			LOG_INF("%s: Link up", dev->name);
 			data->state.is_up = true;
 			net_eth_carrier_on(data->iface);
 		}
@@ -672,7 +656,6 @@ static int eth_dm9051_update_link_status(const struct device *dev)
 		}
 	} else {
 		if (data->state.is_up != false) {
-			LOG_INF("%s: Link down", dev->name);
 			data->state.is_up = false;
 			data->state.speed = 0;
 			net_eth_carrier_off(data->iface);

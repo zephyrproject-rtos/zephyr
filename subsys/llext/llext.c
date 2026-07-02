@@ -33,7 +33,12 @@ int llext_section_shndx(const struct llext_loader *ldr, const struct llext *ext,
 	for (i = 1; i < ext->sect_cnt; i++) {
 		const char *name = llext_section_name(ldr, ext, ext->sect_hdrs + i);
 
-		if (!strcmp(name, sect_name)) {
+		if (name == NULL) {
+			LOG_ERR("Out of bounds string table index %u "
+				"for section name of section %d",
+				ext->sect_hdrs[i].sh_name, i);
+			return -ENOEXEC;
+		} else if (strcmp(name, sect_name) == 0) {
 			return i;
 		}
 	}
@@ -65,14 +70,20 @@ ssize_t llext_find_section(struct llext_loader *ldr, const char *search_name)
 	     i < ldr->hdr.e_shnum;
 	     i++, pos += ldr->hdr.e_shentsize) {
 		shdr = llext_peek(ldr, pos);
-		if (!shdr) {
-			/* The peek() method isn't supported */
+		if (shdr == NULL) {
+			/* The peek() method isn't supported, or - less likely - shdr is
+			 * out of bounds
+			 */
 			return -ENOTSUP;
 		}
 
 		const char *name = llext_peek(ldr,
 					      ldr->sects[LLEXT_MEM_SHSTRTAB].sh_offset +
 					      shdr->sh_name);
+
+		if (name == NULL) {
+			return -ENOEXEC;
+		}
 
 		if (!strcmp(name, search_name)) {
 			return shdr->sh_offset;
@@ -198,13 +209,17 @@ const void *llext_find_sym(const struct llext_symtable *sym_table, const char *s
 		if (ordering_state == 0) {
 			const_syms = STRUCT_SECTION_START(llext_const_symbol);
 			STRUCT_SECTION_COUNT(llext_const_symbol, &sym_cnt);
+			/* Assume the table is sorted; downgrade to a linear scan as
+			 * soon as an out-of-order pair is found. The assignment must
+			 * not happen after the loop, or it would clobber the result.
+			 */
+			ordering_state = 1;
 			for (size_t i = 1; i < sym_cnt; i++) {
 				if (strcmp(const_syms[i - 1].name, const_syms[i].name) > 0) {
 					ordering_state = -1;
 					break;
 				}
 			}
-			ordering_state = 1;
 		}
 
 		if (ordering_state == 1) {
@@ -335,7 +350,17 @@ static int call_fn_table(struct llext *ext, bool is_init)
 	typedef void (*elf_void_fn_t)(void);
 
 	int fn_count = ret / sizeof(elf_void_fn_t);
-	elf_void_fn_t fn_table[fn_count];
+
+	if (fn_count == 0) {
+		return 0;
+	} else if (fn_count > CONFIG_LLEXT_MAX_INIT_FINI_FUNCTION_TABLE_ENTRIES) {
+		LOG_ERR("%s function table too large: %d entries (max %d)",
+			is_init ? "Bringup" : "Teardown", fn_count,
+			CONFIG_LLEXT_MAX_INIT_FINI_FUNCTION_TABLE_ENTRIES);
+		return -ENOEXEC;
+	}
+
+	elf_void_fn_t fn_table[CONFIG_LLEXT_MAX_INIT_FINI_FUNCTION_TABLE_ENTRIES];
 
 	ret = llext_get_fn_table(ext, is_init, &fn_table, sizeof(fn_table));
 	if (ret < 0) {

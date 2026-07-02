@@ -11,18 +11,20 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		/* Allocate 56 KiB for mcuboot */
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(56)>;
 		};
 
 		/* Allocate 640 KiB for application */
 		slot0_partition: partition@e000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x0000e000 DT_SIZE_K(640)>;
 		};

@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Main header file for the Sensing subsystem API.
+ * @ingroup sensing_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_SENSING_H_
 #define ZEPHYR_INCLUDE_SENSING_H_
 

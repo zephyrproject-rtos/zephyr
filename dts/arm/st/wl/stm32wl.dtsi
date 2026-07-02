@@ -512,7 +512,7 @@
 			};
 		};
 
-		aes: aes@58001800 {
+		aes: crypto@58001800 {
 			compatible = "st,stm32-aes";
 			reg = <0x58001800 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB3, 17)>;

@@ -246,7 +246,7 @@ static const struct can_mcan_ops nxp_lpc_mcan_ops = {
 	static const struct can_mcan_config can_mcan_config_##n = CAN_MCAN_DT_CONFIG_INST_GET(     \
 		n, &nxp_lpc_mcan_config_##n, &nxp_lpc_mcan_ops, &nxp_lpc_mcan_cbs_##n);            \
                                                                                                    \
-	static struct can_mcan_data can_mcan_data_##n = CAN_MCAN_DATA_INITIALIZER(NULL);           \
+	CAN_MCAN_DATA_DEFINE(can_mcan_data_##n, NULL);                                             \
                                                                                                    \
 	CAN_DEVICE_DT_INST_DEFINE(n, nxp_lpc_mcan_init, NULL, &can_mcan_data_##n,                  \
 				  &can_mcan_config_##n, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,     \

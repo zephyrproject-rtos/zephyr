@@ -32,7 +32,7 @@ int bt_pbp_get_announcement(const uint8_t meta[], size_t meta_len,
 		return -EINVAL;
 	}
 
-	if ((meta == NULL && meta_len != 0) || (meta != NULL && meta_len == 0)) {
+	if ((meta == NULL && meta_len != 0U) || (meta != NULL && meta_len == 0U)) {
 		LOG_DBG("Invalid metadata combination: %p %zu", meta, meta_len);
 
 		return -EINVAL;
@@ -58,7 +58,7 @@ int bt_pbp_parse_announcement(struct bt_data *data, enum bt_pbp_announcement_fea
 {
 	struct bt_uuid_16 adv_uuid;
 	struct net_buf_simple buf;
-	uint8_t meta_len = 0;
+	uint8_t meta_len = 0U;
 	void *uuid;
 
 	if (!data || !features || !meta) {

@@ -182,7 +182,7 @@ static int vl53l0x_start(const struct device *dev)
 	if (config->xshut.port) {
 		r = gpio_pin_configure_dt(&config->xshut, GPIO_OUTPUT_INACTIVE);
 		if (r < 0) {
-			LOG_ERR("[%s] Unable to inactivate XSHUT: %d",
+			LOG_ERR("[%s] Unable to deactivate XSHUT: %d",
 				dev->name, r);
 			return -EIO;
 		}

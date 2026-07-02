@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Parsers are gonig to have very similar code.
+# Parsers are going to have very similar code.
 # So tell pylint not to care.
 # pylint: disable=duplicate-code
 

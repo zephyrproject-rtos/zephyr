@@ -4,21 +4,49 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Peripheral reset identifiers for Nuvoton NuMaker M031X
+ * @ingroup reset_controller_nuvoton_m031x
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RESET_NUMAKER_M031X_RESET_H
 #define ZEPHYR_INCLUDE_DT_BINDINGS_RESET_NUMAKER_M031X_RESET_H
 
 /**
- * @file
- * @brief Reset module IDs for Nuvoton M031X
- * @ingroup reset_controller_nuvoton_m031x
+ * @addtogroup reset_controller_numaker Nuvoton NuMaker reset controller helpers
+ * @ingroup reset_controller_interface
+ *
+ * @brief Peripheral reset-cell identifiers for Nuvoton NuMaker devices.
+ *
+ * Devicetree macros for peripheral reset cells on Nuvoton NuMaker devices, for use with the
+ * <tt>nuvoton,numaker-rst</tt> compatible reset controller.
+ *
+ * Each SoC family header defines identifiers that encode the reset register location and bit
+ * position for a peripheral. The encoding is family-specific; use the provided identifiers
+ * directly rather than constructing reset cell values manually.
+ *
+ * @code{.dts}
+ * #include <zephyr/dt-bindings/reset/numaker_m031x_reset.h>
+ *
+ * &uart0 {
+ *         // ...
+ *         resets = <&rst NUMAKER_UART0_RST>;
+ *         // ...
+ * };
+ * @endcode
+ * @{
  */
 
 /**
- * @defgroup reset_controller_nuvoton_m031x Nuvoton NuMaker controller Devicetree helpers
- * @ingroup reset_controller_interface
+ * @defgroup reset_controller_nuvoton_m031x Nuvoton NuMaker M031X reset controller helpers
+ * @ingroup reset_controller_numaker
  *
- * @details Devicetree macos/defines for Nuvoton NuMaker devices,
- * for use with the <tt>nuvoton,numaker-rst</tt> binding.
+ * @brief Peripheral reset-cell identifiers for M031X devices.
+ *
+ * Reset identifiers follow the pattern @c NUMAKER_\<PERIPHERAL\>_RST, where @c \<PERIPHERAL\>
+ * is an M031X peripheral name (for example, @c NUMAKER_UART0_RST resets UART0). Pass these
+ * identifiers directly to a @c resets property.
  * @{
  */
 
@@ -109,7 +137,9 @@
 
 /** @} */
 
-/** @endcond INTERNAL_HIDDEN */
+/** @endcond */
+
+/** @} */
 
 /** @} */
 

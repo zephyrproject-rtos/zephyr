@@ -3,11 +3,8 @@
 Overview
 ********
 
-HelTec Wireless Stick Lite (V3) is a development board with Wi-Fi, Bluetooth and LoRa support.
-It is designed and produced by HelTec Automation(TM). See the `Heltec Wireless Stick Lite (v3) pages`_ for more details.
-
-Hardware
-********
+Heltec Wireless Stick Lite (V3) is a development board with Wi-Fi, Bluetooth and LoRa support.
+It is designed and produced by Heltec Automation(TM). See the `Heltec Wireless Stick Lite (v3) pages`_ for more details.
 
 The main hardware features are:
 
@@ -18,6 +15,9 @@ The main hardware features are:
 - Integrated WiFi and Bluetooth interfaces with 2.4GHz metal spring antenna and reserved IPEX (U.FL) interface for LoRa use.
 - Integrated CP2102 USB to serial port chip, convenient for program downloading, debugging information printing.
 - Good RF circuit design and low-power design.
+
+Hardware
+********
 
 .. include:: ../../../espressif/common/soc-esp32s3-features.rst
    :start-after: espressif-soc-esp32s3-features
@@ -30,14 +30,7 @@ Supported Features
 Connections and IOs
 ===================
 
-.. figure:: heltec_wireless_stick_lite_v3_pinout.webp
-   :width: 600px
-   :align: center
-   :alt: HelTec Wireless Stick Lite (V3) Pinout
-
-   Pinout (Credit: Chengdu HelTec Automation Technology Co., Ltd.)
-
-.. table:: HelTec Wireless Stick Lite (V3) Pinout
+.. table:: Heltec Wireless Stick Lite (V3) Pinout
    :widths: auto
 
    +--------+---------+-----------------------------+

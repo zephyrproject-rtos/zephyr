@@ -147,12 +147,12 @@ void prl_set_rev(const struct device *dev, const enum pd_packet_type type,
 		 const enum pd_rev_type rev);
 
 /**
- * @brief Gets the revision received assciated with a packet type
+ * @brief Gets the revision received associated with a packet type
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param type SOP* packet type to get the revision for
  *
- * @retval revsion associated with the packet type
+ * @retval revision associated with the packet type
  */
 enum pd_rev_type prl_get_rev(const struct device *dev, const enum pd_packet_type type);
 

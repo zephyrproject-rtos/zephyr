@@ -62,6 +62,7 @@ tests:
       - CONFIG_MPU_ALLOW_FLASH_WRITE=y
 
   sample.settings.tfm-ps:
+    timeout: 30
     tags:
       - trusted-firmware-m
     filter: CONFIG_TFM_PARTITION_PROTECTED_STORAGE

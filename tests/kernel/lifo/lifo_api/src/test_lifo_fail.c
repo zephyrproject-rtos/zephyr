@@ -10,15 +10,27 @@
 
 /*test cases*/
 /**
- * @addtogroup kernel_lifo_tests
+ * @addtogroup tests_kernel_lifo
  * @{
  */
 
 /**
- * @brief Test LIFO get fail
- * @details verify zephyr k_lifo_get, it returns NULL
- * when there is no data to read
- * @see k_lifo_init(), k_lifo_get()
+ * @brief Verify k_lifo_get() on an empty LIFO returns NULL.
+ *
+ * @details
+ * When no data is queued, k_lifo_get() must return NULL rather than block
+ * indefinitely or return stale data. The contract is checked both with
+ * K_NO_WAIT (immediate) and with a finite timeout that is allowed to expire.
+ *
+ * Test steps:
+ * - Initialize an empty LIFO.
+ * - Call k_lifo_get() with K_NO_WAIT and verify it returns NULL.
+ * - Call k_lifo_get() with a finite timeout and verify it returns NULL.
+ *
+ * Expected result:
+ * - Both k_lifo_get() calls return NULL.
+ *
+ * @see k_lifo_get()
  */
 ZTEST(lifo_fail, test_lifo_get_fail)
 {

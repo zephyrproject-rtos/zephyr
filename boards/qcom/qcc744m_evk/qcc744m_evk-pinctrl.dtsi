@@ -23,4 +23,18 @@
 			input-schmitt-enable;
 		};
 	};
+
+	sf2_default: sf2_default {
+		group1 {
+			pinmux = <GPIO4_SF2_CS>,
+				 <GPIO9_SF2_D3>,
+				 <GPIO6_SF2_D2>,
+				 <GPIO5_SF2_D1>,
+				 <GPIO7_SF2_D0>,
+				 <GPIO8_SF2_CLK>;
+			bias-pull-up;
+			input-schmitt-enable;
+			drive-strength = <3>;
+		};
+	};
 };

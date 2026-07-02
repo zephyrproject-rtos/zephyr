@@ -446,7 +446,7 @@ ZTEST(prf, test_v_c)
 	zassert_equal(rc, 1);
 	zassert_equal(buf[0], 'a');
 	if (!ENABLED_USE_LIBC) {
-		zassert_equal(buf[1], 'b', "wth %x", buf[1]);
+		zassert_equal(buf[1], 'b', "with %x", buf[1]);
 	}
 }
 

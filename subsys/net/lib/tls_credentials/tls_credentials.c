@@ -10,6 +10,7 @@
 
 #include "tls_internal.h"
 #include "tls_credentials_digest_raw.h"
+#include "tls_credentials_info_raw.h"
 
 #include <zephyr/logging/log.h>
 
@@ -202,6 +203,33 @@ int tls_credential_delete(sec_tag_t tag, enum tls_credential_type type)
 
 	(void)memset(credential, 0, sizeof(struct tls_credential));
 	credential->type = TLS_CREDENTIAL_NONE;
+
+exit:
+	credentials_unlock();
+
+	return ret;
+}
+
+int tls_credential_expiry(sec_tag_t tag, enum tls_credential_type type, time_t *expiry)
+{
+	struct tls_credential *credential;
+	int ret = 0;
+
+	if (type != TLS_CREDENTIAL_CA_CERTIFICATE &&
+	    type != TLS_CREDENTIAL_PUBLIC_CERTIFICATE) {
+		/* Only CA and server certificates have expiry information. */
+		return -EINVAL;
+	}
+
+	credentials_lock();
+
+	credential = credential_get(tag, type);
+	if (credential == NULL) {
+		ret = -ENOENT;
+		goto exit;
+	}
+
+	ret = credential_info_expiry_get(credential, expiry);
 
 exit:
 	credentials_unlock();

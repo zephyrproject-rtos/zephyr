@@ -1,0 +1,40 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * NVIC interrupt routing for peripherals common to all Ensemble SoCs
+ * (the bottom resource layer; see ensemble_common.dtsi). Included by the
+ * per-SoC <soc>_nvic_irq.dtsi.
+ */
+
+&uart0 {
+	interrupt-parent = <&nvic>;
+	interrupts = <124 0>;
+};
+
+&uart1 {
+	interrupt-parent = <&nvic>;
+	interrupts = <125 0>;
+};
+
+&uart2 {
+	interrupt-parent = <&nvic>;
+	interrupts = <126 0>;
+};
+
+&uart3 {
+	interrupt-parent = <&nvic>;
+	interrupts = <127 0>;
+};
+
+&uart4 {
+	interrupt-parent = <&nvic>;
+	interrupts = <128 0>;
+};
+
+&uart5 {
+	interrupt-parent = <&nvic>;
+	interrupts = <129 0>;
+};

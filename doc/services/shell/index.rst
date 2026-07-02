@@ -499,7 +499,7 @@ Simple command handler implementation:
 		ARG_UNUSED(argc);
 		ARG_UNUSED(argv);
 
-		shell_fprintf(shell, SHELL_INFO, "Print info message\n");
+		shell_fprintf(sh, SHELL_INFO, "Print info message\n");
 
 		shell_print(sh, "Print simple text.");
 

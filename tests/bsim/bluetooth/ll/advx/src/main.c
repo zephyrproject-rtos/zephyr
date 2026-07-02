@@ -514,7 +514,7 @@ static void test_advx_main(void)
 				     * random_delay of upto 10 ms) transmit in
 				     * the range of 400 to 440 ms
 				     */
-	ext_adv_param.timeout = 50; /* Check there is atmost 5 advertising
+	ext_adv_param.timeout = 50; /* Check there is at most 5 advertising
 				     * events in a timeout of 500 ms
 				     */
 	ext_adv_param.num_events = 0;

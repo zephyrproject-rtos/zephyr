@@ -289,12 +289,26 @@ static void test_thread_timeout_reply_values_wfe(void *p1, void *p2, void *p3)
 }
 
 /**
- * @addtogroup kernel_fifo_tests
+ * @addtogroup tests_kernel_fifo
  * @{
  */
 
 /**
- * @brief Test empty fifo with timeout and K_NO_WAIT
+ * @brief Verify k_fifo_get() timeout behavior on an empty FIFO.
+ *
+ * @details
+ * On an empty FIFO, k_fifo_get() with a finite timeout must block for at least
+ * the requested duration and then return NULL, while K_NO_WAIT must return NULL
+ * immediately. The elapsed time is measured to confirm the full timeout elapsed.
+ *
+ * Test steps:
+ * - Call k_fifo_get() on an empty FIFO with a 10 ms timeout; measure the wait.
+ * - Verify it returned NULL and that at least the timeout elapsed.
+ * - Call k_fifo_get() with K_NO_WAIT and verify it returns NULL.
+ *
+ * Expected result:
+ * - The timed get returns NULL after the timeout; K_NO_WAIT returns NULL at once.
+ *
  * @see k_fifo_get()
  */
 ZTEST(fifo_timeout_1cpu, test_timeout_empty_fifo)
@@ -317,8 +331,22 @@ ZTEST(fifo_timeout_1cpu, test_timeout_empty_fifo)
 }
 
 /**
- * @brief Test non empty fifo with timeout and K_NO_WAIT
- * @see k_fifo_get(), k_fifo_put()
+ * @brief Verify k_fifo_get() returns queued data without waiting.
+ *
+ * @details
+ * When data is already queued, k_fifo_get() must return it immediately
+ * regardless of the timeout argument. The contract is checked with both
+ * K_NO_WAIT and K_FOREVER, neither of which should block when data is present.
+ *
+ * Test steps:
+ * - Put an item, then k_fifo_get() with K_NO_WAIT and verify a non-NULL return.
+ * - Put an item, then k_fifo_get() with K_FOREVER and verify a non-NULL return.
+ *
+ * Expected result:
+ * - Both gets return the queued item without blocking.
+ *
+ * @see k_fifo_get()
+ * @see k_fifo_put()
  */
 ZTEST(fifo_timeout, test_timeout_non_empty_fifo)
 {
@@ -340,14 +368,28 @@ ZTEST(fifo_timeout, test_timeout_non_empty_fifo)
 }
 
 /**
- * @brief Test fifo with timeout and K_NO_WAIT
- * @details In first scenario test fifo with some timeout where child thread
- * puts data on the fifo on time. In second scenario test k_fifo_get with
- * timeout of K_NO_WAIT and the fifo should be filled by the child thread
- * based on the data availability on another fifo. In third scenario test
- * k_fifo_get with timeout of K_FOREVER and the fifo should be filled by
- * the child thread based on the data availability on another fifo.
- * @see k_fifo_get(), k_fifo_put()
+ * @brief Verify k_fifo_get() wakes when a thread supplies data within timeout.
+ *
+ * @details
+ * A getter pending with a timeout must be woken as soon as a producer thread
+ * puts data, returning that data rather than timing out. The test also covers
+ * the K_NO_WAIT and K_FOREVER variants where a child thread conditionally
+ * supplies data based on availability on a second FIFO, exercising the
+ * interaction between blocking gets and producer timing.
+ *
+ * Test steps:
+ * - Pend on k_fifo_get() with a timeout while a child puts data in time; verify
+ *   the data is returned within the timeout window.
+ * - With K_NO_WAIT, verify the child reports no data when the FIFO is empty and
+ *   reports data when it has been pre-filled.
+ * - With K_FOREVER, verify the child retrieves pre-filled data.
+ *
+ * Expected result:
+ * - The getter receives data supplied in time; the reply flags reflect FIFO
+ *   availability for each timeout variant.
+ *
+ * @see k_fifo_get()
+ * @see k_fifo_put()
  */
 ZTEST(fifo_timeout_1cpu, test_timeout_fifo_thread)
 {
@@ -431,10 +473,22 @@ ZTEST(fifo_timeout_1cpu, test_timeout_fifo_thread)
 }
 
 /**
- * @brief Test fifo with different timeouts
- * @details test multiple threads pending on the same fifo with
- * different timeouts
- * @see k_fifo_get(), k_fifo_put()
+ * @brief Verify multiple threads pending on one FIFO time out in timeout order.
+ *
+ * @details
+ * When several threads block on the same FIFO with different timeouts and no
+ * data arrives, each must time out in ascending-timeout order regardless of the
+ * order in which the threads were queued. This validates the timeout queue
+ * ordering for a single FIFO.
+ *
+ * Test steps:
+ * - Spawn several threads that pend on the same FIFO with distinct timeouts.
+ * - Each reports back as it times out; collect the order.
+ *
+ * Expected result:
+ * - Threads time out strictly in increasing-timeout order (within one tick).
+ *
+ * @see k_fifo_get()
  */
 ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_on_fifo)
 {
@@ -450,10 +504,21 @@ ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_on_fifo)
 }
 
 /**
- * @brief Test multiple fifos with different timeouts
- * @details test multiple threads pending on different fifos
- * with different timeouts
- * @see k_fifo_get(), k_fifo_put()
+ * @brief Verify threads pending on two FIFOs time out in global timeout order.
+ *
+ * @details
+ * Extends the single-FIFO ordering check to threads distributed across two
+ * FIFOs: timeouts must still fire in ascending-timeout order across the combined
+ * set, confirming the kernel timeout queue is global and not per-FIFO.
+ *
+ * Test steps:
+ * - Spawn threads that pend on two different FIFOs with distinct timeouts.
+ * - Each reports back as it times out; collect the combined order.
+ *
+ * Expected result:
+ * - Threads time out in increasing-timeout order across both FIFOs.
+ *
+ * @see k_fifo_get()
  */
 ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_on_dual_fifos)
 {
@@ -471,10 +536,25 @@ ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_on_dual_fifos)
 }
 
 /**
- * @brief Test same fifo with different timeouts
- * @details test multiple threads pending on the same fifo with
- * different timeouts but getting the data in time
- * @see k_fifo_get(), k_fifo_put()
+ * @brief Verify timeout is recomputed when pending getters are satisfied early.
+ *
+ * @details
+ * Several threads pend on the same FIFO with different timeouts; all but the
+ * last receive data in time (their timeouts are aborted), and the last one times
+ * out. This checks that removing satisfied waiters from the timeout queue leaves
+ * the remaining timeout computed correctly, so the final thread still times out
+ * as expected.
+ *
+ * Test steps:
+ * - Spawn threads pending on one FIFO with distinct timeouts.
+ * - Feed data so all but the last get it in queue order; the last gets none.
+ * - Verify each satisfied thread reports in order and the last times out.
+ *
+ * Expected result:
+ * - Satisfied threads report in queue order; the last thread times out cleanly.
+ *
+ * @see k_fifo_get()
+ * @see k_fifo_put()
  */
 ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_fail_on_fifo)
 {
@@ -491,8 +571,11 @@ ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_fail_on_fifo)
 }
 
 /**
- * @brief Test fifo init
- * @see k_fifo_init(), k_fifo_put()
+ * @}
+ */
+
+/* Suite setup: initialize the FIFOs used by the tests and pre-fill the scratch
+ * packet pool that the helpers draw from.
  */
 static void *test_timeout_setup(void)
 {
@@ -513,9 +596,6 @@ static void *test_timeout_setup(void)
 
 	return NULL;
 }
-/**
- * @}
- */
 
 ZTEST_SUITE(fifo_timeout, NULL, test_timeout_setup, NULL, NULL, NULL);
 

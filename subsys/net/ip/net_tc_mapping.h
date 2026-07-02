@@ -13,7 +13,7 @@
 #ifndef __TC_MAPPING_H
 #define __TC_MAPPING_H
 
-#include "zephyr/net/net_core.h"
+#include <zephyr/net/net_core.h>
 
 /* All the maps below use priorities and indexes, below is the list of them
  * according to 802.1Q - table I-2.

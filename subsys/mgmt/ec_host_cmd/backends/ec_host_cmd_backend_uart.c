@@ -237,7 +237,7 @@ static int ec_host_cmd_uart_init(const struct ec_host_cmd_backend *backend,
 	hc_uart->rx_ctx = rx_ctx;
 	hc_uart->tx_buf = tx;
 
-	/* Limit the requset/response max sizes */
+	/* Limit the request/response max sizes */
 	if (hc_uart->rx_ctx->len_max > UART_MAX_REQ_SIZE) {
 		hc_uart->rx_ctx->len_max = UART_MAX_REQ_SIZE;
 	}

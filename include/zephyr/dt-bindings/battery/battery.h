@@ -65,10 +65,11 @@
 /**
  * @brief Default open-circuit voltage curve for lithium-ion polymer (Li-ion) batteries.
  *
- * Based on Panasonic NCR18650BF.
+ * Based on Analog Devices OCV characterization data for a typical Li+ cell (Application Note 4189,
+ * Table 1).
  */
 #define BATTERY_OCV_CURVE_LITHIUM_ION_POLYMER_DEFAULT                                              \
-	2502000 3146000 3372000 3449000 3532000 3602000 3680000 3764000 3842000 3936000 4032000
+	3305545 3686654 3741018 3775129 3793250 3820965 3884009 3945074 4008118 4085934 4177454
 
 /**
  * @brief Default open-circuit voltage curve for lithium iron phosphate (LiFePO4) batteries.

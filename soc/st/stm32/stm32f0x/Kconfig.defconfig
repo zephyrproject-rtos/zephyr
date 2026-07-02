@@ -7,6 +7,12 @@
 
 if SOC_SERIES_STM32F0X
 
+# STM32F030x4 must be exposed as STM32F030x6 at HAL level.
+# STM32F072x8 must be exposed as STM32F072xB at HAL level.
+configdefault STM32CUBE_SOC_NAME_OVERRIDE
+	default "stm32f030x6" if SOC_STM32F030X4
+	default "stm32f072xb" if SOC_STM32F072X8
+
 config SRAM_VECTOR_TABLE
 	default y
 
@@ -139,5 +145,8 @@ configdefault SHARED_INTERRUPTS
 	default y if $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,usart7)
 	default y if $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,usart8)
 	default y if $(dt_nodelabel_enabled,usart7) && $(dt_nodelabel_enabled,usart8)
+
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x647824b6"
 
 endif # SOC_SERIES_STM32F0X

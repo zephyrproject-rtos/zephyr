@@ -33,9 +33,16 @@ extern "C" {
 /* Syscall invocation macros. x86-specific machine constraints used to ensure
  * args land in the proper registers, see implementation of
  * z_x86_syscall_entry_stub in userspace.S
+ *
+ * The arch_syscall_invoke* and arch_is_user_context implementations below
+ * are the x86 IA-32 versions of arch-internal stubs whose contract is
+ * documented on the prototypes in <zephyr/arch/arch_interface.h>. Hide
+ * them from Doxygen here to avoid double-counting the same interface
+ * across architectures.
  */
 
-__pinned_func
+/** @cond INTERNAL_HIDDEN */
+
 static inline uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
 					     uintptr_t arg3, uintptr_t arg4,
 					     uintptr_t arg5, uintptr_t arg6,
@@ -55,7 +62,6 @@ static inline uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
 	return ret;
 }
 
-__pinned_func
 static inline uintptr_t arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
 					     uintptr_t arg3, uintptr_t arg4,
 					     uintptr_t arg5,
@@ -71,7 +77,6 @@ static inline uintptr_t arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
 	return ret;
 }
 
-__pinned_func
 static inline uintptr_t arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
 					     uintptr_t arg3, uintptr_t arg4,
 					     uintptr_t call_id)
@@ -86,7 +91,6 @@ static inline uintptr_t arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
 	return ret;
 }
 
-__pinned_func
 static inline uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
 					     uintptr_t arg3,
 					     uintptr_t call_id)
@@ -100,7 +104,6 @@ static inline uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
 	return ret;
 }
 
-__pinned_func
 static inline uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
 					     uintptr_t call_id)
 {
@@ -114,7 +117,6 @@ static inline uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
 	return ret;
 }
 
-__pinned_func
 static inline uintptr_t arch_syscall_invoke1(uintptr_t arg1,
 					     uintptr_t call_id)
 {
@@ -128,7 +130,6 @@ static inline uintptr_t arch_syscall_invoke1(uintptr_t arg1,
 	return ret;
 }
 
-__pinned_func
 static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 {
 	uint32_t ret;
@@ -141,7 +142,6 @@ static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 	return ret;
 }
 
-__pinned_func
 static inline bool arch_is_user_context(void)
 {
 	int cs;
@@ -152,6 +152,7 @@ static inline bool arch_is_user_context(void)
 	return cs == USER_CODE_SEG;
 }
 
+/** @endcond */
 
 #ifdef __cplusplus
 }

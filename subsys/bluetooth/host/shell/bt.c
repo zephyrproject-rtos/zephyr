@@ -2934,6 +2934,28 @@ static int cmd_per_adv_data(const struct shell *sh, size_t argc,
 
 	return 0;
 }
+
+static int cmd_per_adv_update_did(const struct shell *sh, size_t argc, char *argv[])
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	const struct bt_le_ext_adv *adv = adv_sets[selected_adv];
+	int err;
+
+	if (adv == NULL) {
+		shell_error(sh, "No extended advertisement set selected");
+		return -EINVAL;
+	}
+
+	err = bt_le_per_adv_update_did(adv);
+	if (err != 0) {
+		shell_error(sh, "Failed to update periodic advertising DID (%d)", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
 #endif /* CONFIG_BT_PER_ADV */
 #endif /* CONFIG_BT_EXT_ADV */
 #endif /* CONFIG_BT_BROADCASTER */
@@ -5413,6 +5435,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      "[<interval-min> [<interval-max> [tx_power]]]",
 		      cmd_per_adv_param, 1, 3),
 	SHELL_CMD_ARG(per-adv-data, NULL, "[data]", cmd_per_adv_data, 1, 1),
+	SHELL_CMD_ARG(per-adv-update-did, NULL, "Update periodic advertising DID",
+		     cmd_per_adv_update_did, 1, 0),
 #endif /* CONFIG_BT_PER_ADV */
 #endif /* CONFIG_BT_EXT_ADV */
 #endif /* CONFIG_BT_BROADCASTER */

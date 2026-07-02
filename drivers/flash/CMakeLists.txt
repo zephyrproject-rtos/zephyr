@@ -52,11 +52,13 @@ zephyr_library_sources_ifdef(CONFIG_FLASH_RENESAS_RZ_QSPI_XSPI flash_renesas_rz_
 zephyr_library_sources_ifdef(CONFIG_FLASH_RPI_PICO flash_rpi_pico.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_S3AXX04 flash_s3axx04.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_SF32LB_MPI_QSPI_NOR flash_sf32lb_mpi_qspi_nor.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_SOC_LPC84X_IAP soc_flash_lpc84x_iap.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_STM32_OSPI flash_stm32_ospi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_STM32_QSPI flash_stm32_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_STM32_XSPI flash_stm32_xspi.c)
 zephyr_library_sources_ifdef(CONFIG_NORDIC_QSPI_NOR nrf_qspi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_AMEBA flash_ameba.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_BEE_NOR soc_flash_bee_nor.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_BFLB flash_bflb.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_CC13XX_CC26XX soc_flash_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_CC23X0 soc_flash_cc23x0.c)
@@ -94,6 +96,7 @@ zephyr_library_sources_ifdef(CONFIG_SPI_NOR spi_nor.c)
 
 if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
   zephyr_library_sources_ifdef(CONFIG_INFINEON_CAT1_QSPI_FLASH flash_infineon_serial_memory_qspi.c)
+  zephyr_library_sources_ifdef(CONFIG_FLASH_INFINEON_RRAM flash_infineon_rram.c)
 else()
   zephyr_library_sources_ifdef(CONFIG_INFINEON_CAT1_QSPI_FLASH flash_infineon_qspi.c)
 endif()
@@ -224,3 +227,10 @@ endif()
 
 # Do not use prologue and epilogue code that uses library function calls
 zephyr_library_compile_options_ifdef(CONFIG_FLASH_ANDES_QSPI_XIP -mno-save-restore)
+
+if(CONFIG_SOC_FLASH_BFLB)
+# JESD216 Will be used with XIP disabled if it is enabled
+  zephyr_code_relocate_ifdef(CONFIG_SOC_FLASH_BFLB FILES ${CMAKE_CURRENT_LIST_DIR}/jesd216.c
+    LOCATION RAM NOKEEP
+  )
+endif()

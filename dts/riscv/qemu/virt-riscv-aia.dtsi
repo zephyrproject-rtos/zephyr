@@ -1,0 +1,82 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&{/soc} {
+	aplic: interrupt-controller@c000000 {
+		compatible = "riscv,aplic";
+		reg = <0x0c000000 0x00008000>;
+		riscv,num-sources = <64>;
+		interrupt-controller;
+		#address-cells = <0>;
+		#interrupt-cells = <3>;
+		status = "okay";
+	};
+};
+
+&uart0 {
+	interrupt-parent = <&aplic>;
+	interrupts = <10 1 6>;
+};
+
+&virtio_mmio0 {
+	interrupt-parent = <&aplic>;
+	interrupts = <1 1 6>;
+};
+
+&virtio_mmio1 {
+	interrupt-parent = <&aplic>;
+	interrupts = <2 1 6>;
+};
+
+&virtio_mmio2 {
+	interrupt-parent = <&aplic>;
+	interrupts = <3 1 6>;
+};
+
+&virtio_mmio3 {
+	interrupt-parent = <&aplic>;
+	interrupts = <4 1 6>;
+};
+
+&virtio_mmio4 {
+	interrupt-parent = <&aplic>;
+	interrupts = <5 1 6>;
+};
+
+&virtio_mmio5 {
+	interrupt-parent = <&aplic>;
+	interrupts = <6 1 6>;
+};
+
+&virtio_mmio6 {
+	interrupt-parent = <&aplic>;
+	interrupts = <7 1 6>;
+};
+
+&virtio_mmio7 {
+	interrupt-parent = <&aplic>;
+	interrupts = <8 1 6>;
+};
+
+&pcie {
+	interrupt-map-mask = <0x1800 0x00 0x00 0x07>;
+	interrupt-map = <0x0000 0x00 0x00 1 &aplic 32 1 6
+			 0x0000 0x00 0x00 2 &aplic 33 1 6
+			 0x0000 0x00 0x00 3 &aplic 34 1 6
+			 0x0000 0x00 0x00 4 &aplic 35 1 6
+			 0x0800 0x00 0x00 1 &aplic 33 1 6
+			 0x0800 0x00 0x00 2 &aplic 34 1 6
+			 0x0800 0x00 0x00 3 &aplic 35 1 6
+			 0x0800 0x00 0x00 4 &aplic 32 1 6
+			 0x1000 0x00 0x00 1 &aplic 34 1 6
+			 0x1000 0x00 0x00 2 &aplic 35 1 6
+			 0x1000 0x00 0x00 3 &aplic 32 1 6
+			 0x1000 0x00 0x00 4 &aplic 33 1 6
+			 0x1800 0x00 0x00 1 &aplic 35 1 6
+			 0x1800 0x00 0x00 2 &aplic 32 1 6
+			 0x1800 0x00 0x00 3 &aplic 33 1 6
+			 0x1800 0x00 0x00 4 &aplic 34 1 6>;
+};

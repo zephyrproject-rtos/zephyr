@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_FLASH_SUPPORTS_UNALIGNED_OP
+	bool "Flash device under test supports unaligned operations"
+	default y if FLASH_INFINEON_RRAM
+	help
+	  Set this if the flash device under test supports unaligned
+	  read/write/erase/flatten operations (i.e. offset and size are not
+	  required to be page-aligned).
+
+source "Kconfig.zephyr"

@@ -309,7 +309,7 @@ static bool valid_gmap_features(enum bt_gmap_role role, struct bt_gmap_feat feat
 static void update_service(enum bt_gmap_role role)
 {
 	gmas.attrs = svc_attrs;
-	gmas.attr_count = 3; /* service + 2 attributes for BT_UUID_GMAP_ROLE */
+	gmas.attr_count = 3U; /* service + 2 attributes for BT_UUID_GMAP_ROLE */
 
 	/* Add characteristics based on the role selected and what is supported */
 #if defined(CONFIG_BT_GMAP_UGG_SUPPORTED)
@@ -376,7 +376,7 @@ int bt_gmap_set_role(enum bt_gmap_role role, struct bt_gmap_feat features)
 {
 	int err;
 
-	if (gmap_role == 0) { /* not registered if this is 0 */
+	if (gmap_role == 0U) { /* not registered if this is 0 */
 		LOG_DBG("GMAP not registered");
 
 		return -ENOEXEC;

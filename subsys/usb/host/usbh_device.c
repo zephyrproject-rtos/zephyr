@@ -120,7 +120,7 @@ static int alloc_device_address(struct usb_device *const udev, uint8_t *const ad
 }
 
 enum ep_op {
-	EP_OP_TEST, /* Verify endpont descriptor */
+	EP_OP_TEST, /* Verify endpoint descriptor */
 	EP_OP_UP,   /* Enable endpoint and update endpoint pointers */
 	EP_OP_DOWN, /* Disable endpoint and update endpoint pointers */
 };

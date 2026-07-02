@@ -184,6 +184,7 @@ struct coap_client_internal_request {
 	uint8_t request_tkl;
 	bool request_ongoing;
 	atomic_t in_callback;
+	int unreported_error;
 	struct coap_block_context recv_blk_ctx;
 	struct coap_block_context send_blk_ctx;
 	struct coap_pending pending;

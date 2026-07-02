@@ -6,9 +6,6 @@ DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM
 
 if SOC_FAMILY_MCXC
 
-configdefault MCUX_LPTMR_TIMER
-	default y if PM && $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
-
 configdefault CORTEX_M_SYSTICK
 	default n if MCUX_LPTMR_TIMER
 

@@ -5,7 +5,7 @@
 #include "bma4xx.h"
 #include "bma4xx_emul.h"
 
-#include "zephyr/sys/util.h"
+#include <zephyr/sys/util.h>
 
 #include <errno.h>
 #include <stdint.h>

@@ -16,7 +16,7 @@ extern "C" {
  * @file npm10xx.h
  * @brief Nordic's nPM10 Series PMIC Sensor driver custom channels and attributes
  * @defgroup sensor_interface_npm10xx nPM10xx Sensor interface
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_nordic
  * @{
  */
 

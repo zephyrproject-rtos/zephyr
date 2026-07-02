@@ -237,7 +237,7 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	pm_state_notify(true);
 	atomic_set_bit(z_post_ops_required, id);
 	/* IRQ-locked PM resume is owned by this PM core path, not by wake ISRs. */
-	if (IS_ENABLED(CONFIG_PM_STATE_SET_IRQ_LOCKED)) {
+	if (!IS_ENABLED(CONFIG_PM_STATE_SET_IRQ_UNLOCKED)) {
 		_kernel.idle = 0;
 	}
 	pm_state_set(z_cpus_pm_state[id]->state, z_cpus_pm_state[id]->substate_id);

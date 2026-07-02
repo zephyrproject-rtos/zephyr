@@ -6,8 +6,8 @@
 
 /**
  * @file
- * @brief ADSP memory window shell backend
- * @ingroup shell_api
+ * @brief Header file for the ADSP memory window shell backend.
+ * @ingroup shell_adsp_memory_window
  */
 
 #ifndef SHELL_ADSP_MEMORY_WINDOW_H__
@@ -20,6 +20,7 @@
 extern "C" {
 #endif
 
+/** @cond INTERNAL_HIDDEN */
 extern const struct shell_transport_api shell_adsp_memory_window_transport_api;
 
 struct sys_winstream;
@@ -43,7 +44,20 @@ struct shell_adsp_memory_window {
 	/** Last read sequence number */
 	uint32_t read_seqno;
 };
+/** @endcond */
 
+/**
+ * @defgroup shell_adsp_memory_window ADSP memory window shell backend
+ * @ingroup shell_backends
+ * @brief Shell access over an ADSP memory window.
+ * @{
+ */
+
+/**
+ * @brief Define an ADSP memory window shell transport instance.
+ *
+ * @param _name Name of the transport instance.
+ */
 #define SHELL_ADSP_MEMORY_WINDOW_DEFINE(_name)				\
 	static struct shell_adsp_memory_window _name##_shell_adsp_memory_window;\
 	struct shell_transport _name = {					\
@@ -60,6 +74,8 @@ struct shell_adsp_memory_window {
  * @returns Pointer to the shell instance.
  */
 const struct shell *shell_backend_adsp_memory_window_get_ptr(void);
+
+/** @} */
 
 #ifdef __cplusplus
 }

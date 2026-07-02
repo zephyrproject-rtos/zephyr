@@ -15,6 +15,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/usb/uhc.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control.h>
 
 #include "uhc_common.h"
 #include "usb.h"
@@ -40,6 +41,12 @@ K_HEAP_DEFINE_NOCACHE(mcux_transfer_alloc_pool,
 struct uhc_mcux_ehci_config {
 	struct uhc_mcux_config uhc_config;
 	usb_phy_config_struct_t *phy_config;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
+	clock_control_subsys_rate_t clock_rate;
+	const struct device *phy_clock_dev;
+	clock_control_subsys_t phy_clock_subsys;
+	clock_control_subsys_rate_t phy_clock_rate;
 };
 
 #if defined(CONFIG_NOCACHE_MEMORY)
@@ -298,13 +305,55 @@ static inline void uhc_mcux_get_hal_driver_id(struct uhc_mcux_data *priv,
 
 static int uhc_mcux_driver_preinit(const struct device *dev)
 {
-	const struct uhc_mcux_config *config = dev->config;
+	const struct uhc_mcux_ehci_config *ehci_config = dev->config;
+	const struct uhc_mcux_config *config = &ehci_config->uhc_config;
 	struct uhc_data *data = dev->data;
 	struct uhc_mcux_data *priv = uhc_get_private(dev);
+	int err;
 
 	uhc_mcux_get_hal_driver_id(priv, config);
 	if (priv->controller_id == 0xFFu) {
 		return -ENOMEM;
+	}
+
+	if (ehci_config->clock_dev && ehci_config->clock_rate) {
+		if (!device_is_ready(ehci_config->clock_dev)) {
+			return -ENODEV;
+		}
+
+		err = clock_control_on(ehci_config->clock_dev, ehci_config->clock_subsys);
+		if (err != 0) {
+			return err;
+		}
+
+		err = clock_control_set_rate(
+			ehci_config->clock_dev,
+			ehci_config->clock_subsys,
+			ehci_config->clock_rate
+		);
+		if (err != 0) {
+			return err;
+		}
+	}
+
+	if (ehci_config->phy_clock_dev && ehci_config->phy_clock_rate) {
+		if (!device_is_ready(ehci_config->phy_clock_dev)) {
+			return -ENODEV;
+		}
+
+		err = clock_control_on(ehci_config->phy_clock_dev, ehci_config->phy_clock_subsys);
+		if (err != 0) {
+			return err;
+		}
+
+		err = clock_control_set_rate(
+			ehci_config->phy_clock_dev,
+			ehci_config->phy_clock_subsys,
+			ehci_config->phy_clock_rate
+		);
+		if (err != 0) {
+			return err;
+		}
 	}
 
 	k_mutex_init(&data->mutex);
@@ -348,6 +397,27 @@ static const usb_host_controller_interface_t uhc_mcux_if = {
 
 #define UHC_MCUX_PHY_CFG_PTR_OR_NULL(n)                                                            \
 	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), phy_handle), (&phy_config_##n), (NULL))
+#define UHC_MCUX_USB_CLK_DEFINE(n)                                                                 \
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_IDX(n, 0)),                              \
+	.clock_subsys = (clock_control_subsys_t)                                                   \
+		DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name),                                            \
+	.clock_rate = (void *)(uintptr_t)DT_INST_PROP_BY_IDX(n, clock_rates, 0),
+
+#define UHC_MCUX_USB_CLK_DEFINE_OR(n)                                                              \
+	IF_ENABLED(DT_INST_CLOCKS_HAS_IDX(n, 0),                                                   \
+		   (IF_ENABLED(DT_INST_PROP_HAS_IDX(n, clock_rates, 0),                            \
+			       (UHC_MCUX_USB_CLK_DEFINE(n)))))
+
+#define UHC_MCUX_USB_PHY_CLK_DEFINE(n)                                                             \
+	.phy_clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_IDX(n, 1)),                          \
+	.phy_clock_subsys = (clock_control_subsys_t)                                               \
+		DT_INST_CLOCKS_CELL_BY_IDX(n, 1, name),                                            \
+	.phy_clock_rate = (void *)(uintptr_t)DT_INST_PROP_BY_IDX(n, clock_rates, 1),
+
+#define UHC_MCUX_USB_PHY_CLK_DEFINE_OR(n)                                                          \
+	IF_ENABLED(DT_INST_CLOCKS_HAS_IDX(n, 1),                                                   \
+		   (IF_ENABLED(DT_INST_PROP_HAS_IDX(n, clock_rates, 1),                            \
+			       (UHC_MCUX_USB_PHY_CLK_DEFINE(n)))))
 
 #define UHC_MCUX_EHCI_IRQ_DEFINE_OR(n)                                                             \
 	COND_CODE_1(CONFIG_UDC_NXP_EHCI,                                                           \
@@ -383,6 +453,8 @@ static const usb_host_controller_interface_t uhc_mcux_if = {
 			.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                               \
 		},                                                                                 \
 		.phy_config = UHC_MCUX_PHY_CFG_PTR_OR_NULL(n),                                     \
+		UHC_MCUX_USB_CLK_DEFINE_OR(n)                                                      \
+		UHC_MCUX_USB_PHY_CLK_DEFINE_OR(n)                                                  \
 	};                                                                                         \
                                                                                                    \
 	static struct uhc_mcux_data priv_data_##n = {                                              \

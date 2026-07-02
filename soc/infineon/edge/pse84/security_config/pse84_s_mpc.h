@@ -11,8 +11,8 @@
 #include <stdint.h>
 
 #include <infineon_kconfig.h>
-#include "cy_device.h"
-#include "cy_mpc.h"
+#include <cy_device.h>
+#include <cy_mpc.h>
 
 cy_rslt_t cy_mpc_init(void);
 

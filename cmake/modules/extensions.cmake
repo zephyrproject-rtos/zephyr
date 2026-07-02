@@ -19,6 +19,7 @@ include(CheckCXXCompilerFlag)
 # 1.3. generate_inc_*
 # 1.4. board_*
 # 1.5. Misc.
+# 1.6. Heap KASAN helpers
 # 2. Kconfig-aware extensions
 # 2.1 Misc
 # 3. CMake-generic extensions
@@ -1322,11 +1323,6 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #    DTCM_SECTION  Inside the dtcm data section.
 #    SECTIONS      Near the end of the file. Don't use this when linking into
 #                  RAMABLE_REGION, use RAM_SECTIONS instead.
-#    PINNED_RODATA Similar to RODATA but pinned in memory.
-#    PINNED_RAM_SECTIONS
-#                  Similar to RAM_SECTIONS but pinned in memory.
-#    PINNED_DATA_SECTIONS
-#                  Similar to DATA_SECTIONS but pinned in memory.
 # <sort_key> is an optional key to sort by inside of each location. The key must
 #    be alphanumeric, and the keys are sorted alphabetically. If no key is
 #    given, the key 'default' is used. Keys are case-sensitive.
@@ -1376,10 +1372,6 @@ function(zephyr_linker_sources location)
   set(itcm_path          "${snippet_base}/snippets-itcm-section.ld")
   set(dtcm_path          "${snippet_base}/snippets-dtcm-section.ld")
 
-  set(pinned_ram_sections_path  "${snippet_base}/snippets-pinned-ram-sections.ld")
-  set(pinned_data_sections_path "${snippet_base}/snippets-pinned-data-sections.ld")
-  set(pinned_rodata_path        "${snippet_base}/snippets-pinned-rodata.ld")
-
   # Clear destination files if this is the first time the function is called.
   get_property(cleared GLOBAL PROPERTY snippet_files_cleared)
   if(NOT DEFINED cleared)
@@ -1396,9 +1388,6 @@ function(zephyr_linker_sources location)
     file(WRITE ${nocache_path} "")
     file(WRITE ${itcm_path} "")
     file(WRITE ${dtcm_path} "")
-    file(WRITE ${pinned_ram_sections_path} "")
-    file(WRITE ${pinned_data_sections_path} "")
-    file(WRITE ${pinned_rodata_path} "")
     set_property(GLOBAL PROPERTY snippet_files_cleared true)
   endif()
 
@@ -1441,12 +1430,6 @@ function(zephyr_linker_sources location)
               "location.")
     endif()
     set(snippet_path "${dtcm_path}")
-  elseif("${location}" STREQUAL "PINNED_RAM_SECTIONS")
-    set(snippet_path "${pinned_ram_sections_path}")
-  elseif("${location}" STREQUAL "PINNED_DATA_SECTIONS")
-    set(snippet_path "${pinned_data_sections_path}")
-  elseif("${location}" STREQUAL "PINNED_RODATA")
-    set(snippet_path "${pinned_rodata_path}")
   else()
     message(fatal_error "Must choose valid location for linker snippet.")
   endif()
@@ -2033,6 +2016,107 @@ function(zephyr_constants_library)
 endfunction()
 
 ########################################################
+# 1.6. Heap KASAN helpers
+########################################################
+#
+# Heap KASAN is opt-in: instrument the code that uses sys_heap; must not be
+# applied to heap implementation sources.
+
+# Internal: full set of -fsanitize + -D macro-redirect flags for heap KASAN.
+macro(_zephyr_heap_kasan_flags VAR)
+  set(${VAR})
+  get_property(_heap_kasan_compiler_flags TARGET compiler PROPERTY heap_kasan)
+  list(APPEND ${VAR} ${_heap_kasan_compiler_flags})
+  # real calls instead of inlined __builtin_memcpy / __builtin_memset etc.
+  list(APPEND ${VAR}
+    -U_FORTIFY_SOURCE
+    -Dmemset=__asan_memset
+    -Dmemcpy=__asan_memcpy
+    -Dmemmove=__asan_memmove
+    -Dstrcpy=__asan_strcpy
+    -Dstrncpy=__asan_strncpy
+    -Dstrcat=__asan_strcat
+    -Dstrncat=__asan_strncat
+    -Dsprintf=__asan_sprintf
+    -Dsnprintf=__asan_snprintf
+    -Dvsprintf=__asan_vsprintf
+    -Dvsnprintf=__asan_vsnprintf
+  )
+  if(CONFIG_SYS_HEAP_KASAN_EXTENSIONS)
+    # POSIX/GNU feature macros so extension prototypes are visible after -D redirect.
+    list(APPEND ${VAR}
+      -D_POSIX_C_SOURCE=200809L
+      -D_GNU_SOURCE
+      -Dstrlcpy=__asan_strlcpy
+      -Dstrlcat=__asan_strlcat
+      -Dmemccpy=__asan_memccpy
+      -Dmempcpy=__asan_mempcpy
+      -Dstpcpy=__asan_stpcpy
+      -Dstpncpy=__asan_stpncpy
+      -Dfgets=__asan_fgets
+    )
+  endif()
+endmacro()
+
+# Internal: apply heap KASAN COMPILE_OPTIONS to each source file in _srcs.
+function(_zephyr_heap_kasan_apply_to_sources _target _srcs)
+  _zephyr_heap_kasan_flags(_flags)
+  foreach(_src IN LISTS _srcs)
+    set_property(SOURCE "${_src}"
+      TARGET_DIRECTORY ${_target}
+      APPEND PROPERTY COMPILE_OPTIONS ${_flags}
+    )
+  endforeach()
+endfunction()
+
+# Instrument all sources of <target> with heap KASAN compiler flags.
+# <target>: CMake target name (e.g. 'app').
+# Must be called after all sources have been added to the target.
+# Usage: zephyr_target_enable_heap_kasan(app)
+function(zephyr_target_enable_heap_kasan target)
+  if(NOT CONFIG_SYS_HEAP_KASAN)
+    return()
+  endif()
+  get_property(_srcs TARGET ${target} PROPERTY SOURCES)
+  _zephyr_heap_kasan_apply_to_sources(${target} "${_srcs}")
+endfunction()
+
+# Instrument sources under <dir> with heap KASAN compiler flags.
+# <dir>: directory to match, relative to CMAKE_CURRENT_SOURCE_DIR.
+# Must be called after all sources have been added to the target.
+# Usage: zephyr_heap_kasan_enable_directory(src)
+function(zephyr_heap_kasan_enable_directory dir)
+  if(NOT CONFIG_SYS_HEAP_KASAN)
+    return()
+  endif()
+
+  set(_target ${ZEPHYR_CURRENT_LIBRARY})
+
+  cmake_path(ABSOLUTE_PATH dir
+    BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    NORMALIZE OUTPUT_VARIABLE _abs_dir)
+
+  set(_matching)
+  get_property(_srcs TARGET ${_target} PROPERTY SOURCES)
+  foreach(_src IN LISTS _srcs)
+    cmake_path(ABSOLUTE_PATH _src
+      BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+      NORMALIZE OUTPUT_VARIABLE _abs_src)
+    cmake_path(IS_PREFIX _abs_dir "${_abs_src}" NORMALIZE _under_dir)
+    if(_under_dir)
+      list(APPEND _matching "${_src}")
+    endif()
+  endforeach()
+
+  if(NOT _matching)
+    message(WARNING "heap_kasan_enable_directory: no sources matched under '${_abs_dir}'")
+  endif()
+
+  _zephyr_heap_kasan_apply_to_sources(${_target} "${_matching}")
+endfunction()
+
+
+########################################################
 # 2. Kconfig-aware extensions
 ########################################################
 #
@@ -2134,7 +2218,7 @@ endfunction()
 
 # 3.1. *_ifdef
 #
-# Functions for conditionally executing CMake functions with oneliners
+# Functions for conditionally executing CMake functions with one-liners
 # e.g.
 #
 # if(CONFIG_FFT)
@@ -6192,6 +6276,10 @@ function(add_llext_target target_name)
             $<TARGET_PROPERTY:bintools,elfconvert_flag_strip_unneeded>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.xt.*
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.xtensa.info
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.ARM.exidx*
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.rel.ARM.exidx*
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.ARM.extab*
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.rel.ARM.extab*
             $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${llext_pkg_input}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>

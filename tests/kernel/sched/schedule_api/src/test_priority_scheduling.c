@@ -65,7 +65,7 @@ static void thread_tslice(void *p1, void *p2, void *p3)
  * current thread is also made preemptive. Check how the threads get chance to
  * execute based on their priorities
  *
- * @ingroup kernel_sched_tests
+ * @ingroup tests_kernel_sched
  */
 ZTEST(threads_scheduling, test_priority_scheduling)
 {

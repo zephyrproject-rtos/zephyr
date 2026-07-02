@@ -14,6 +14,10 @@
 
 LOG_MODULE_REGISTER(app);
 
+#ifdef CONFIG_CPP
+#include "cpp_logger.hpp"
+#endif
+
 #define TEST_LOG(rpt, item)                                                                        \
 	({                                                                                         \
 		uint32_t key = irq_lock();                                                         \
@@ -28,18 +32,27 @@ LOG_MODULE_REGISTER(app);
 		t;                                                                                 \
 	})
 
-static char *core_name = "unknown";
+static const char *core_name;
 
 static void get_core_name(void)
 {
-	if (strstr(CONFIG_BOARD_TARGET, "cpuapp")) {
-		core_name = "app";
-	} else if (strstr(CONFIG_BOARD_TARGET, "cpurad")) {
-		core_name = "rad";
-	} else if (strstr(CONFIG_BOARD_TARGET, "cpuppr")) {
-		core_name = "ppr";
-	} else if (strstr(CONFIG_BOARD_TARGET, "cpuflpr")) {
-		core_name = "flpr";
+	static const char app[] = "cpuapp";
+	static const char rad[] = "cpurad";
+	static const char ppr[] = "cpuppr";
+	static const char flpr[] = "cpuflpr";
+	static const char unknown[] = "unknown";
+	static const char board[] = CONFIG_BOARD_TARGET;
+
+	if ((uintptr_t)strstr(board, app) != 0) {
+		core_name = app;
+	} else if ((uintptr_t)strstr(board, rad) != 0) {
+		core_name = rad;
+	} else if ((uintptr_t)strstr(board, ppr) != 0) {
+		core_name = ppr;
+	} else if ((uintptr_t)strstr(board, flpr) != 0) {
+		core_name = flpr;
+	} else {
+		core_name = unknown;
 	}
 }
 
@@ -65,6 +78,12 @@ int main(void)
 	int load;
 
 	get_core_name();
+
+#ifdef CONFIG_CPP
+	CppLogger cpp_logger;
+
+	cpp_logger.log_test();
+#endif
 
 	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
 		(void)cpu_load_get(true);

@@ -23,7 +23,7 @@ extern "C" {
 /**
  * @brief Avago APDS9960 ambient light, RGB, proximity and gesture sensor
  * @defgroup apds9960_interface APDS9960
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_avago
  * @{
  */
 

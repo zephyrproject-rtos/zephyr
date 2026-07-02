@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
+/**
  * @file
  * @brief load/store portion of FPU sharing test
  *

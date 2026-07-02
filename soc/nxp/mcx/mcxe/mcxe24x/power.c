@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/arch/arch_interface.h>
 
 LOG_MODULE_DECLARE(power, CONFIG_PM_LOG_LEVEL);
 
@@ -27,18 +28,35 @@ __ramfunc static void wait_for_flash_prefetch_and_wfi(void)
 }
 #endif /* CONFIG_XIP */
 
+static void enter_low_power(void)
+{
+	unsigned int key;
+
+	key = arch_pm_state_set_prepare();
+	__DSB();
+	__ISB();
+	__WFI();
+	arch_pm_state_set_finish(key);
+}
+
+#ifdef CONFIG_XIP
+static void enter_low_power_from_ram(void)
+{
+	unsigned int key;
+
+	key = arch_pm_state_set_prepare();
+	wait_for_flash_prefetch_and_wfi();
+	arch_pm_state_set_finish(key);
+}
+#endif /* CONFIG_XIP */
+
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
-	__disable_irq();
-	__set_BASEPRI(0);
-
 	switch (state) {
 	case PM_STATE_RUNTIME_IDLE:
 		/* Cortex-M sleep: WFI with SLEEPDEEP cleared. */
 		SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
-		__DSB();
-		__ISB();
-		__WFI();
+		enter_low_power();
 		break;
 
 	case PM_STATE_SUSPEND_TO_IDLE:
@@ -59,13 +77,11 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 		/* readback to complete bus writes */
 		(void)SMC->PMCTRL;
-		__DSB();
-		__ISB();
 
 #ifdef CONFIG_XIP
-		wait_for_flash_prefetch_and_wfi();
+		enter_low_power_from_ram();
 #else
-		__WFI();
+		enter_low_power();
 #endif
 
 		if (SMC->PMCTRL & SMC_PMCTRL_STOPA_MASK) {
@@ -88,7 +104,4 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	if ((SCB->SCR & SCB_SCR_SLEEPDEEP_Msk) == SCB_SCR_SLEEPDEEP_Msk) {
 		SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
 	}
-
-	__enable_irq();
-	__ISB();
 }

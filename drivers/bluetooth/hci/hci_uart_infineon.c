@@ -184,7 +184,7 @@ static int bt_firmware_download(const uint8_t *firmware_image, uint32_t size)
 	struct net_buf *buf;
 	int err;
 
-	LOG_DBG("Executing Fw downloading for BT device");
+	LOG_DBG("Executing Fw downloading for BT device (%u bytes)", size);
 
 	/* Send hci_download_minidriver command */
 	err = bt_hci_cmd_send_sync(BT_HCI_VND_OP_DOWNLOAD_MINIDRIVER, NULL, NULL);
@@ -266,6 +266,7 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 
 	/* Check BT Uart instance */
 	if (!device_is_ready(dev)) {
+		LOG_ERR("BT UART device not ready");
 		return -EINVAL;
 	}
 
@@ -314,6 +315,7 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 	/* Send HCI_RESET */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
 	if (err) {
+		LOG_ERR("HCI_RESET (1st) failed (err %d)", err);
 		return err;
 	}
 
@@ -329,6 +331,7 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 	/* BT firmware download */
 	err = bt_firmware_download(brcm_patchram_buf, (uint32_t) brcm_patch_ram_length);
 	if (err) {
+		LOG_ERR("FW download failed (err %d)", err);
 		return err;
 	}
 
@@ -346,6 +349,7 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 	/* Send HCI_RESET */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
 	if (err) {
+		LOG_ERR("HCI_RESET (2nd) failed (err %d)", err);
 		return err;
 	}
 

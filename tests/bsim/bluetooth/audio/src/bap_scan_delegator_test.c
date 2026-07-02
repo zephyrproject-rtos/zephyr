@@ -678,7 +678,7 @@ static void mod_all_sources(void)
 				return;
 			}
 
-			printk("[%zu]: Source id modifed %u\n",
+			printk("[%zu]: Source id modified %u\n",
 			       i, state->src_id);
 		}
 	}

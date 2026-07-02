@@ -6,6 +6,8 @@ common:
     - drivers
     - i2c
   filter: dt_compat_enabled("atmel,at24")
+  platform_exclude:
+    - kv260_r5/zynqmp_rpu
   harness: ztest
   harness_config:
     fixture: i2c_at24

@@ -245,8 +245,7 @@ static const struct can_mcan_ops can_numaker_ops = {
                                                                                                    \
 	static uint32_t can_numaker_data_##inst;                                                   \
                                                                                                    \
-	static struct can_mcan_data can_mcan_data_##inst =                                         \
-		CAN_MCAN_DATA_INITIALIZER(&can_numaker_data_##inst);                               \
+	CAN_MCAN_DATA_DEFINE(can_mcan_data_##inst, &can_numaker_data_##inst);                      \
                                                                                                    \
 	CAN_DEVICE_DT_INST_DEFINE(inst, can_numaker_init, NULL, &can_mcan_data_##inst,             \
 				  &can_mcan_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,  \

@@ -90,7 +90,7 @@ static void validate(int ctx_cnt)
 	uint64_t out_cnt = 0;
 
 	for (int i = 0; i < ctx_cnt; i++) {
-		/* First exectution skips (-1) but there is one final round of logging
+		/* First execution skips (-1) but there is one final round of logging
 		 * when ztress execution is completed (+1).
 		 */
 		in_cnt += ztress_exec_count(i) - 1 + 1;

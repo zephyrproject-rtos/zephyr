@@ -4,37 +4,6 @@
 # Copyright (c) 2015-2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-config BT_LONG_WQ
-	bool "Dedicated workqueue for long-running tasks."
-	default y if BT_GATT_CACHING
-	help
-	  Adds an API for a workqueue dedicated to long-running tasks.
-
-if BT_LONG_WQ
-config BT_LONG_WQ_STACK_SIZE
-	int "Long workqueue stack size."
-	default 4096 if NO_OPTIMIZATIONS
-	default 1400 if BT_ECC
-	default 1300 if BT_GATT_CACHING
-	default 1024
-	help
-	  The stack size used for the long workqueue. In most cases it's best to use the default
-	  values, however since the actual requirement depends on the underlying crypto backend
-	  this option can be used to finetune the stack size.
-
-config BT_LONG_WQ_PRIO
-	int "Long workqueue priority. Should be preemptible."
-	default 10
-	range 0 NUM_PREEMPT_PRIORITIES
-
-config BT_LONG_WQ_INIT_PRIO
-	int "Long workqueue init priority"
-	default 50
-	help
-	  Init priority level to setup the long workqueue.
-
-endif # BT_LONG_WQ
-
 config BT_HCI_HOST
 	# Hidden option to make the conditions more intuitive
 	bool
@@ -867,9 +836,10 @@ rsource "../services/Kconfig"
 
 config BT_MAX_PAIRED
 	int "Maximum number of paired devices"
-	default 0 if !BT_SMP
-	default 1
+	range 1 250 if BT_SMP
+	default 1 if BT_SMP
 	range 0 250
+	default 0
 	help
 	  Maximum number of paired Bluetooth devices. The minimum (and
 	  default) number is 1.
@@ -1111,7 +1081,6 @@ config BT_ECC
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
 	select PSA_WANT_ECC_SECP_R1_256
 	imply MBEDTLS_PSA_P256M_DRIVER_ENABLED if MBEDTLS_PSA_CRYPTO_C
-	imply BT_LONG_WQ
 	help
 	  If this option is set, internal APIs will be available to perform ECDH operations through
 	  the long work queue (or system work queue). The operations are used e.g. by LE Secure

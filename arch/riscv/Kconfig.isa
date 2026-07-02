@@ -301,3 +301,55 @@ config RISCV_ISA_EXT_ZMMUL
 
 	  The Zmmul extension implements the multiplication subset of the M
 	  extension.
+
+config RISCV_ISA_EXT_SMAIA
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),smaia)
+	help
+	  (Smaia) - Smaia extension for AIA
+
+	  The Smaia extension encompasses all added CSRs and all modifications to
+	  interrupt response behavior that the AIA specifies for a hart, over
+	  all privilege levels. Per section 1.6 in the AIA spec the exact set of
+	  CSRs enabled depends on various factors; this extension is used to
+	  infer whether a certain CSR is enabled (e.g. if a hart implements
+	  RV32 and SMAIA the CSRs mieh/miph are enabled).
+
+config RISCV_ISA_EXT_SSAIA
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),ssaia)
+	help
+	  (Ssaia) - Ssaia extension for AIA
+
+	  The Ssaia extension encompasses all added CSRs and all modifications to
+	  interrupt response behavior that the AIA specifies for a hart, over
+	  all privilege levels. However, it excludes machine-level CSRs and behavior
+	  not directly visible to supervisor level. Per section 1.6 in the AIA spec
+	  the exact set of CSRs enabled depends on various factors; this extension
+	  is used to infer whether a certain CSR is enabled (e.g. if a hart
+	  implements RV32 and SSAIA the CSRs sieh/siph are enabled).
+
+config RISCV_ISA_EXT_ZK
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zk)
+	help
+	  (Zk) - Standard Extension for Scalar Cryptography
+
+	  The "Zk" extension provides support for NIST-standard scalar
+	  cryptography instructions, including sub-extensions Zbkb
+	  (bit manipulation for cryptography), Zbkc (carry-less
+	  multiplication), Zbkx (crossbar permutations), Zknd/Zkne
+	  (NIST AES decryption/encryption), Zknh (NIST hash functions
+	  such as SHA-256 and SHA-512), and Zkr (entropy source).
+
+config RISCV_ISA_EXT_ZKS
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zks)
+	help
+	  (Zks) - Standard Extension for ShangMi Suite
+
+	  The "Zks" extension provides support for the ShangMi
+	  Suite, which implements Chinese national cryptographic
+	  standards. It includes sub-extensions Zbkb, Zbkc, Zbkx
+	  (shared with Zk), Zksed (SM4 block cipher), and Zksh
+	  (SM3 hash function).

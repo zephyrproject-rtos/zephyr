@@ -18,7 +18,7 @@
 #include <zephyr/dt-bindings/sensor/it8xxx2_vcmp.h>
 #include <zephyr/dt-bindings/sensor/it8xxx2_tach.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
-#include "ite/it8xxx2-wuc-map.dtsi"
+#include <ite/it8xxx2-wuc-map.dtsi>
 
 / {
 	#address-cells = <1>;

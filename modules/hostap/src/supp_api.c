@@ -93,7 +93,11 @@ static K_WORK_DELAYABLE_DEFINE(wpa_supp_status_work,
 	({                                                                                         \
 		bool status;                                                                       \
                                                                                                    \
-		if (zephyr_wpa_cli_cmd_v(wpa_s->ctrl_conn, cmd, ##__VA_ARGS__) < 0) {              \
+		if (wpa_s->ctrl_conn == NULL) {                                                    \
+			wpa_printf(MSG_ERROR,                                                      \
+				   "Control interface not ready, dropping command: %s", cmd);      \
+			status = false;                                                            \
+		} else if (zephyr_wpa_cli_cmd_v(wpa_s->ctrl_conn, cmd, ##__VA_ARGS__) < 0) {       \
 			wpa_printf(MSG_ERROR, "Failed to execute wpa_cli command: %s", cmd);       \
 			status = false;                                                            \
 		} else {                                                                           \
@@ -414,6 +418,11 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 		}
 #endif
 		return WIFI_SECURITY_TYPE_NONE;
+	case WPA_KEY_MGMT_OWE:
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_OWE)
+		return WIFI_SECURITY_TYPE_OWE;
+#endif
+		return WIFI_SECURITY_TYPE_UNKNOWN;
 	case WPA_KEY_MGMT_PSK:
 		if (proto == WPA_PROTO_RSN) {
 			return WIFI_SECURITY_TYPE_PSK;
@@ -635,6 +644,60 @@ static void wpas_remove_certs(struct wpa_supplicant *wpa_s)
 }
 #endif
 
+static void pbkdf2_string_format(const uint8_t *psk, char output[WIFI_PSK_MAX_LEN + 1])
+{
+	uint8_t rem_len = WIFI_PSK_MAX_LEN + 1;
+
+	/* Chunk the formatting into 4 byte groups to reduce overhead */
+	for (int i = 0; i < WIFI_PSK_PBKDF2_KEY_LEN; i += 4) {
+		snprintf(output + (2 * i), rem_len, "%02x%02x%02x%02x", psk[i + 0], psk[i + 1],
+			 psk[i + 2], psk[i + 3]);
+		rem_len -= 8;
+	}
+}
+
+static int psk_validate(struct wifi_connect_req_params *params,
+			uint8_t output[WIFI_PSK_MAX_LEN + 1])
+{
+	if (params->psk == NULL ||
+	    params->security == WIFI_SECURITY_TYPE_WEP ||
+	    params->security == WIFI_SECURITY_TYPE_WEP_OPEN ||
+	    params->security == WIFI_SECURITY_TYPE_WEP_SHARED) {
+		/* No PSK or length validation not required */
+		return 0;
+	}
+
+	if (params->psk_is_pbkdf2) {
+		if ((params->security != WIFI_SECURITY_TYPE_PSK) &&
+		    (params->security != WIFI_SECURITY_TYPE_PSK_SHA256) &&
+		    (params->security != WIFI_SECURITY_TYPE_WPA_PSK) &&
+		    (params->security != WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL)) {
+			wpa_printf(MSG_ERROR,
+				   "PBKDF2 not supported for mode %d", params->security);
+			return -EINVAL;
+		}
+		if (params->psk_length != WIFI_PSK_PBKDF2_KEY_LEN) {
+			wpa_printf(MSG_ERROR,
+				   "PBKDF2 key must be %d bytes",
+				   WIFI_PSK_PBKDF2_KEY_LEN);
+			return -EINVAL;
+		}
+		/* Convert byte array to hex string */
+		pbkdf2_string_format(params->psk, output);
+	} else {
+		if ((params->psk_length < WIFI_PSK_MIN_LEN) ||
+			(params->psk_length > WIFI_PSK_MAX_LEN)) {
+			wpa_printf(MSG_ERROR,
+					"Passphrase should be in range (%d-%d) characters",
+					WIFI_PSK_MIN_LEN, WIFI_PSK_MAX_LEN);
+			return -EINVAL;
+		}
+		strncpy(output, params->psk, WIFI_PSK_MAX_LEN);
+		output[params->psk_length] = '\0';
+	}
+	return 0;
+}
+
 static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				       struct wifi_connect_req_params *params,
 				       bool mode_ap)
@@ -657,7 +720,17 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	wpas_remove_certs(wpa_s);
 #endif
 
+	/* Enforce NULL terminated PSK in all code paths */
+	psk_null_terminated[0] = '\0';
+
+	if (wpa_s->ctrl_conn == NULL) {
+		wpa_printf(MSG_ERROR, "Control interface not ready");
+		ret = -EAGAIN;
+		goto out;
+	}
+
 	if (!wpa_cli_cmd_v("remove_network all")) {
+		ret = -EINVAL;
 		goto out;
 	}
 
@@ -717,20 +790,17 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		}
 	}
 
+	if (params->security == WIFI_SECURITY_TYPE_OWE &&
+	    !IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_OWE)) {
+		wpa_printf(MSG_ERROR,
+			   "OWE requested but CONFIG_WIFI_NM_WPA_SUPPLICANT_OWE is not enabled");
+		return -ENOTSUP;
+	}
+
 	if (params->security != WIFI_SECURITY_TYPE_NONE) {
-		if (params->psk &&
-		    params->security != WIFI_SECURITY_TYPE_WEP &&
-		    params->security != WIFI_SECURITY_TYPE_WEP_OPEN &&
-		    params->security != WIFI_SECURITY_TYPE_WEP_SHARED) {
-			if ((params->psk_length < WIFI_PSK_MIN_LEN) ||
-			    (params->psk_length > WIFI_PSK_MAX_LEN)) {
-				wpa_printf(MSG_ERROR,
-					   "Passphrase should be in range (%d-%d) characters",
-					   WIFI_PSK_MIN_LEN, WIFI_PSK_MAX_LEN);
-				goto out;
-			}
-			strncpy(psk_null_terminated, params->psk, WIFI_PSK_MAX_LEN);
-			psk_null_terminated[params->psk_length] = '\0';
+		/* PSK validation */
+		if (psk_validate(params, psk_null_terminated) < 0) {
+			goto out;
 		}
 
 		/* SAP - only open and WPA2-PSK are supported for now */
@@ -751,6 +821,11 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 		}
+
+		/* Pre-computed key has no quotes */
+		const char *psk_format = params->psk_is_pbkdf2 ?
+			"set_network %d psk %s" :
+			"set_network %d psk \"%s\"";
 
 		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON) &&
 		    (params->security == WIFI_SECURITY_TYPE_SAE_HNP ||
@@ -808,9 +883,32 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			if (!wpa_cli_cmd_v("set_network %d pairwise CCMP", resp.network_id)) {
 				goto out;
 			}
-		} else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
-			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"",
-					   resp.network_id, psk_null_terminated)) {
+		}
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_OWE)
+		else if (params->security == WIFI_SECURITY_TYPE_OWE) {
+			if (!wpa_cli_cmd_v("set_network %d key_mgmt OWE", resp.network_id)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d ieee80211w 2", resp.network_id)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d proto RSN", resp.network_id)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d pairwise CCMP", resp.network_id)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d group CCMP", resp.network_id)) {
+				goto out;
+			}
+		}
+#endif
+		else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
+			if (!wpa_cli_cmd_v(psk_format, resp.network_id, psk_null_terminated)) {
 				goto out;
 			}
 
@@ -828,8 +926,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			}
 		} else if (params->security == WIFI_SECURITY_TYPE_PSK ||
 			   params->security == WIFI_SECURITY_TYPE_WPA_PSK) {
-			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"",
-					   resp.network_id, psk_null_terminated)) {
+			if (!wpa_cli_cmd_v(psk_format, resp.network_id, psk_null_terminated)) {
 				goto out;
 			}
 
@@ -853,8 +950,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
-			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"", resp.network_id,
-					   psk_null_terminated)) {
+			if (!wpa_cli_cmd_v(psk_format, resp.network_id, psk_null_terminated)) {
 				goto out;
 			}
 
@@ -1230,6 +1326,12 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		}
 	}
 
+	if (!wpa_cli_cmd_v("set_network %d ssid_protection %d",
+			   resp.network_id, params->ssid_protection)) {
+		goto out;
+	}
+
+
 	memcpy((void *)&mac, params->bssid, WIFI_MAC_ADDR_LEN);
 	if (net_eth_is_addr_broadcast(&mac) ||
 	    net_eth_is_addr_multicast(&mac)) {
@@ -1360,6 +1462,13 @@ int supplicant_connect(const struct device *dev __unused, struct net_if *iface,
 		goto out;
 	}
 
+	if (wpa_s->ctrl_conn == NULL) {
+		wpa_printf(MSG_ERROR,
+			   "Control interface not ready, supplicant still initializing");
+		ret = -EAGAIN;
+		goto out;
+	}
+
 	/* Allow connect in STA mode only even if we are connected already */
 	if  (wpa_s->current_ssid && wpa_s->current_ssid->mode != WPAS_MODE_INFRA) {
 		ret = -EBUSY;
@@ -1444,6 +1553,12 @@ int supplicant_status(const struct device *dev __unused, struct net_if *iface,
 
 	wpa_s = get_wpa_s_handle(iface);
 	if (!wpa_s) {
+		goto out;
+	}
+
+	if (wpa_s->ctrl_conn == NULL) {
+		wpa_printf(MSG_ERROR, "Control interface not ready");
+		ret = -EAGAIN;
 		goto out;
 	}
 
@@ -1690,7 +1805,7 @@ int supplicant_11k_neighbor_request(const struct device *dev, struct net_if *ifa
 	if (wpa_s->reassociate || (wpa_s->wpa_state >= WPA_AUTHENTICATING &&
 	    wpa_s->wpa_state < WPA_COMPLETED)) {
 		wpa_printf(MSG_INFO, "Reassociation is in progress, skip");
-		return 0;
+		return -EALREADY;
 	}
 
 	if (params) {
@@ -1761,38 +1876,6 @@ int supplicant_candidate_scan(const struct device *dev __unused, struct net_if *
 	}
 
 	return 0;
-}
-
-int supplicant_11r_roaming(const struct device *dev __unused, struct net_if *iface)
-{
-	struct wpa_supplicant *wpa_s;
-	int ret = 0;
-
-	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
-
-	wpa_s = get_wpa_s_handle(iface);
-	if (!wpa_s) {
-		ret = -1;
-		goto out;
-	}
-
-	if (wpa_s->reassociate || (wpa_s->wpa_state >= WPA_AUTHENTICATING &&
-	    wpa_s->wpa_state < WPA_COMPLETED)) {
-		wpa_printf(MSG_INFO, "Reassociation is in progress, skip");
-		ret = 0;
-		goto out;
-	}
-
-	if (!wpa_cli_cmd_v("reassociate")) {
-		wpa_printf(MSG_ERROR, "%s: cli cmd <reassociate> fail",
-			   __func__);
-		ret = -1;
-		goto out;
-	}
-
-out:
-	k_mutex_unlock(&wpa_supplicant_mutex);
-	return ret;
 }
 #endif
 
@@ -2020,7 +2103,7 @@ int supplicant_legacy_roam(const struct device *dev __unused, struct net_if *ifa
 	if (wpa_s->reassociate || (wpa_s->wpa_state >= WPA_AUTHENTICATING &&
 	    wpa_s->wpa_state < WPA_COMPLETED)) {
 		wpa_printf(MSG_INFO, "Reassociation is in progress, skip");
-		ret = 0;
+		ret = -EALREADY;
 		goto out;
 	}
 
@@ -2131,7 +2214,7 @@ int supplicant_btm_query(const struct device *dev __unused, struct net_if *iface
 	if (wpa_s->reassociate || (wpa_s->wpa_state >= WPA_AUTHENTICATING &&
 	    wpa_s->wpa_state < WPA_COMPLETED)) {
 		wpa_printf(MSG_INFO, "Reassociation is in progress, skip");
-		ret = 0;
+		ret = -EALREADY;
 		goto out;
 	}
 
@@ -2394,6 +2477,8 @@ out:
 }
 #endif /* CONFIG_AP */
 
+#define STR_CUR_TO_END(cur) (cur) = (&(cur)[0] + strlen((cur)))
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 static const char *dpp_params_to_args_curve(int curve)
 {
@@ -2460,8 +2545,6 @@ static void dpp_ssid_bin2str(char *dst, uint8_t *src, int max_len)
 		dst += 2;
 	}
 }
-
-#define STR_CUR_TO_END(cur) (cur) = (&(cur)[0] + strlen((cur)))
 
 int dpp_params_to_cmd(struct wifi_dpp_params *params, char *cmd, size_t max_len)
 {
@@ -2686,6 +2769,214 @@ int supplicant_dpp_dispatch(const struct device *dev __unused, struct net_if *if
 	return 0;
 }
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+
+static void append_nan_ssi(char **pos, char *end, const uint8_t *ssi, size_t ssi_len)
+{
+	if (ssi_len == 0) {
+		return;
+	}
+
+	snprintf(*pos, end - *pos, " ssi=");
+	STR_CUR_TO_END(*pos);
+
+	for (size_t i = 0; i < ssi_len; i++) {
+		snprintf(*pos, end - *pos, "%02x", ssi[i]);
+		STR_CUR_TO_END(*pos);
+	}
+}
+
+static void nan_publish_to_cmd(struct wifi_nan_params *params, char **pos, char *end)
+{
+	strncpy(*pos, "NAN_PUBLISH", end - *pos);
+	STR_CUR_TO_END(*pos);
+
+	if (params->publish.service_name[0]) {
+		snprintf(*pos, end - *pos, " service_name=%s",
+			 params->publish.service_name);
+		STR_CUR_TO_END(*pos);
+	}
+
+	if (params->publish.srv_proto_type > 0) {
+		snprintf(*pos, end - *pos, " srv_proto_type=%d",
+			 params->publish.srv_proto_type);
+		STR_CUR_TO_END(*pos);
+	}
+
+	if (params->publish.ttl > 0) {
+		snprintf(*pos, end - *pos, " ttl=%u", params->publish.ttl);
+		STR_CUR_TO_END(*pos);
+	}
+
+	if (params->publish.freq > 0) {
+		snprintf(*pos, end - *pos, " freq=%u", params->publish.freq);
+		STR_CUR_TO_END(*pos);
+	}
+
+	if (params->publish.freq_list[0] != '\0') {
+		snprintf(*pos, end - *pos, " freq_list=%s",
+			 params->publish.freq_list);
+		STR_CUR_TO_END(*pos);
+	}
+
+	append_nan_ssi(pos, end, params->publish.ssi, params->publish.ssi_len);
+
+	if (!params->publish.unsolicited) {
+		snprintf(*pos, end - *pos, " unsolicited=0");
+		STR_CUR_TO_END(*pos);
+	}
+
+	if (!params->publish.solicited) {
+		snprintf(*pos, end - *pos, " solicited=0");
+		STR_CUR_TO_END(*pos);
+	}
+
+	if (!params->publish.fsd) {
+		snprintf(*pos, end - *pos, " fsd=0");
+	}
+}
+
+static void nan_subscribe_to_cmd(struct wifi_nan_params *params, char **pos, char *end)
+{
+	strncpy(*pos, "NAN_SUBSCRIBE", end - *pos);
+	STR_CUR_TO_END(*pos);
+
+	if (params->subscribe.service_name[0]) {
+		snprintf(*pos, end - *pos, " service_name=%s",
+			 params->subscribe.service_name);
+		STR_CUR_TO_END(*pos);
+	}
+
+	if (params->subscribe.srv_proto_type > 0) {
+		snprintf(*pos, end - *pos, " srv_proto_type=%d",
+			 params->subscribe.srv_proto_type);
+		STR_CUR_TO_END(*pos);
+	}
+
+	if (params->subscribe.active) {
+		snprintf(*pos, end - *pos, " active=1");
+		STR_CUR_TO_END(*pos);
+	}
+
+	if (params->subscribe.ttl > 0) {
+		snprintf(*pos, end - *pos, " ttl=%u", params->subscribe.ttl);
+		STR_CUR_TO_END(*pos);
+	}
+
+	if (params->subscribe.freq > 0) {
+		snprintf(*pos, end - *pos, " freq=%u", params->subscribe.freq);
+		STR_CUR_TO_END(*pos);
+	}
+
+	append_nan_ssi(pos, end, params->subscribe.ssi, params->subscribe.ssi_len);
+}
+
+static void nan_update_publish_to_cmd(struct wifi_nan_params *params, char **pos, char *end)
+{
+	snprintf(*pos, end - *pos, "NAN_UPDATE_PUBLISH publish_id=%u",
+		 params->update_publish.publish_id);
+	STR_CUR_TO_END(*pos);
+
+	append_nan_ssi(pos, end, params->update_publish.ssi,
+		       params->update_publish.ssi_len);
+}
+
+static void nan_transmit_to_cmd(struct wifi_nan_params *params, char **pos, char *end)
+{
+	snprintf(*pos, end - *pos,
+		 "NAN_TRANSMIT handle=%u req_instance_id=%u "
+		 "address=%02x:%02x:%02x:%02x:%02x:%02x",
+		 params->transmit.handle,
+		 params->transmit.req_instance_id,
+		 params->transmit.peer_addr[0], params->transmit.peer_addr[1],
+		 params->transmit.peer_addr[2], params->transmit.peer_addr[3],
+		 params->transmit.peer_addr[4], params->transmit.peer_addr[5]);
+	STR_CUR_TO_END(*pos);
+
+	append_nan_ssi(pos, end, params->transmit.ssi, params->transmit.ssi_len);
+}
+
+static int nan_params_to_cmd(struct wifi_nan_params *params, char *cmd, size_t max_len)
+{
+	char *pos = cmd;
+	char *end = cmd + max_len;
+
+	if (!params || !cmd || max_len == 0) {
+		wpa_printf(MSG_ERROR, "%s: Invalid parameters", __func__);
+		return -EINVAL;
+	}
+
+	switch (params->op) {
+	case WIFI_NAN_OP_PUBLISH:
+		nan_publish_to_cmd(params, &pos, end);
+		break;
+
+	case WIFI_NAN_OP_CANCEL_PUBLISH:
+		snprintf(pos, end - pos, "NAN_CANCEL_PUBLISH publish_id=%u",
+			 params->cancel_id);
+		break;
+
+	case WIFI_NAN_OP_UPDATE_PUBLISH:
+		nan_update_publish_to_cmd(params, &pos, end);
+		break;
+
+	case WIFI_NAN_OP_SUBSCRIBE:
+		nan_subscribe_to_cmd(params, &pos, end);
+		break;
+
+	case WIFI_NAN_OP_CANCEL_SUBSCRIBE:
+		snprintf(pos, end - pos, "NAN_CANCEL_SUBSCRIBE subscribe_id=%u",
+			 params->cancel_id);
+		break;
+
+	case WIFI_NAN_OP_TRANSMIT:
+		nan_transmit_to_cmd(params, &pos, end);
+		break;
+
+	default:
+		wpa_printf(MSG_ERROR, "Unknown NAN action: %d", params->op);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int supplicant_nan_cfg(const struct device *dev __unused, struct net_if *iface,
+		       struct wifi_nan_params *params)
+{
+	int ret = 0;
+	char *cmd = NULL;
+	struct wpa_supplicant *wpa_s = get_wpa_s_handle(iface);
+
+	if (wpa_s == NULL || params == NULL) {
+		return -EINVAL;
+	}
+
+	cmd = os_zalloc(SUPPLICANT_NAN_CMD_BUF_SIZE);
+	if (cmd == NULL) {
+		return -ENOMEM;
+	}
+
+	/* leave two bytes: one for safety, one for null terminator */
+	ret = nan_params_to_cmd(params, cmd, SUPPLICANT_NAN_CMD_BUF_SIZE - 2);
+	if (ret) {
+		goto out;
+	}
+
+	if (zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn, cmd, params->resp)) {
+		ret = -ENOEXEC;
+		goto out;
+	}
+
+	ret = 0;
+
+out:
+	os_free(cmd);
+	return ret;
+}
+
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 
 int supplicant_config_params(const struct device *dev __unused, struct net_if *iface,
 			     struct wifi_config_params *params)

@@ -259,7 +259,7 @@ static void isoal_test_rx_common_before(void *f)
 }
 
 /**
- * Cacluate RX latency based on role and framing
+ * Calculate RX latency based on role and framing
  * @param  role              Peripheral / Central / Broadcast
  * @param  framed            PDU framing (Framed / Unframed)
  * @param  flush_timeout     FT

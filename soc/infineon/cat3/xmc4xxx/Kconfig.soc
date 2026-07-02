@@ -22,10 +22,22 @@ config SOC_XMC4700
 	help
 	  SOC_XMC4700
 
+config SOC_XMC4800
+	bool
+	select SOC_SERIES_XMC4XXX
+	help
+	  SOC_XMC4800
+
 config SOC_PART_NUMBER_F100X1024
 	bool
 
 config SOC_PART_NUMBER_F144X2048
+	bool
+
+config SOC_PART_NUMBER_E196X1024
+	bool
+
+config SOC_PART_NUMBER_E196X2048
 	bool
 
 config SOC_SERIES
@@ -34,7 +46,10 @@ config SOC_SERIES
 config SOC
 	default "xmc4500" if SOC_XMC4500
 	default "xmc4700" if SOC_XMC4700
+	default "xmc4800" if SOC_XMC4800
 
 config SOC_PART_NUMBER
 	default "F100x1024" if SOC_PART_NUMBER_F100X1024
 	default "F144x2048" if SOC_PART_NUMBER_F144X2048
+	default "E196x1024" if SOC_PART_NUMBER_E196X1024
+	default "E196x2048" if SOC_PART_NUMBER_E196X2048

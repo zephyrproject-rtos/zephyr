@@ -568,7 +568,7 @@
 			status = "disabled";
 		};
 
-		aes1: aes@50060000 {
+		aes1: crypto@50060000 {
 			compatible = "st,stm32-aes";
 			reg = <0x50060000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 16)>;

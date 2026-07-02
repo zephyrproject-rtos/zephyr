@@ -28,6 +28,7 @@ STRUCT_SECTION_ITERABLE(test_ram, ram4) = {0x04};
 STRUCT_SECTION_ITERABLE(test_ram, ram1) = {0x01};
 
 #define RAM_EXPECT 0x01020304
+#define RAM_EXPECT_REVERSE 0x04030201
 
 /* iterable section items can also be static */
 static const STRUCT_SECTION_ITERABLE_ALTERNATE(test_ram2, test_ram, ram5) = {RAM_EXPECT};
@@ -45,6 +46,7 @@ const STRUCT_SECTION_ITERABLE(test_ram_numeric, ramn_99999) = {0x04};
 const STRUCT_SECTION_ITERABLE(test_ram_numeric, ramn_11) = {0x03};
 
 #define NAMED_ALT_EXPECT 0x4273
+#define NAMED_ALT_EXPECT_REVERSE 0x7342
 
 /* alternate naming */
 const STRUCT_SECTION_ITERABLE_NAMED_ALTERNATE(test_ram_named, ramn_alt, R, ramn_42) = {0x42};
@@ -102,6 +104,47 @@ ZTEST(iterable_sections, test_ram)
 	}
 
 	zassert_equal(out, NAMED_ALT_EXPECT, "Check value incorrect (got: 0x%x)", out);
+
+	out = 0;
+	STRUCT_SECTION_FOREACH_REVERSE(test_ram, t)
+	{
+		out = (out << 8) | (t->i & ~CHECK_BIT);
+	}
+
+	zassert_equal(out, RAM_EXPECT_REVERSE, "Reverse check value incorrect (got: 0x%08x)", out);
+
+	out = 0;
+	STRUCT_SECTION_FOREACH_ALTERNATE_REVERSE(test_ram2, test_ram, t)
+	{
+		out = (out << 8) | t->i;
+	}
+
+	zassert_equal(out, RAM_EXPECT, "Reverse check value incorrect (got: 0x%08x)", out);
+
+	out = 0;
+	STRUCT_SECTION_FOREACH_REVERSE(test_ram_named, t)
+	{
+		out = (out << 8) | t->i;
+	}
+
+	zassert_equal(out, RAM_EXPECT_REVERSE, "Reverse check value incorrect (got: 0x%x)", out);
+
+	out = 0;
+	STRUCT_SECTION_FOREACH_REVERSE(test_ram_numeric, t)
+	{
+		out = (out << 8) | t->i;
+	}
+
+	zassert_equal(out, RAM_EXPECT_REVERSE, "Reverse check value incorrect (got: 0x%x)", out);
+
+	out = 0;
+	STRUCT_SECTION_FOREACH_ALTERNATE_REVERSE(ramn_alt, test_ram_named, t)
+	{
+		out = (out << 8) | t->i;
+	}
+
+	zassert_equal(out, NAMED_ALT_EXPECT_REVERSE, "Reverse check value incorrect (got: 0x%x)",
+		      out);
 }
 
 struct test_rom {
@@ -123,6 +166,7 @@ const STRUCT_SECTION_ITERABLE(test_rom, rom4) = {0x40};
 const STRUCT_SECTION_ITERABLE(test_rom, rom2) = {0x20};
 
 #define ROM_EXPECT 0x10203040
+#define ROM_EXPECT_REVERSE 0x40302010
 
 /* iterable section items can also be static */
 static const STRUCT_SECTION_ITERABLE_ALTERNATE(test_rom2, test_rom, rom5) = {ROM_EXPECT};
@@ -185,6 +229,47 @@ ZTEST(iterable_sections, test_rom)
 	}
 
 	zassert_equal(out, NAMED_ALT_EXPECT, "Check value incorrect (got: 0x%x)", out);
+
+	out = 0;
+	STRUCT_SECTION_FOREACH_REVERSE(test_rom, t)
+	{
+		out = (out << 8) | t->i;
+	}
+
+	zassert_equal(out, ROM_EXPECT_REVERSE, "Reverse check value incorrect (got: 0x%x)", out);
+
+	out = 0;
+	STRUCT_SECTION_FOREACH_ALTERNATE_REVERSE(test_rom2, test_rom, t)
+	{
+		out = (out << 8) | t->i;
+	}
+
+	zassert_equal(out, ROM_EXPECT, "Reverse check value incorrect (got: 0x%x)", out);
+
+	out = 0;
+	STRUCT_SECTION_FOREACH_REVERSE(test_rom_named, t)
+	{
+		out = (out << 8) | t->i;
+	}
+
+	zassert_equal(out, ROM_EXPECT_REVERSE, "Reverse check value incorrect (got: 0x%x)", out);
+
+	out = 0;
+	STRUCT_SECTION_FOREACH_REVERSE(test_rom_numeric, t)
+	{
+		out = (out << 8) | t->i;
+	}
+
+	zassert_equal(out, ROM_EXPECT_REVERSE, "Reverse check value incorrect (got: 0x%x)", out);
+
+	out = 0;
+	STRUCT_SECTION_FOREACH_ALTERNATE_REVERSE(romn_alt, test_rom_named, t)
+	{
+		out = (out << 8) | t->i;
+	}
+
+	zassert_equal(out, NAMED_ALT_EXPECT_REVERSE, "Reverse check value incorrect (got: 0x%x)",
+		      out);
 }
 
 ZTEST_SUITE(iterable_sections, NULL, NULL, NULL, NULL, NULL);

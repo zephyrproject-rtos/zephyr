@@ -1,0 +1,28 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/* To test this case, connect P0_19(J6-1) to P1_4(R132). */
+/ {
+	aliases {
+		test-comp = &lpcmp0;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>; /* FRDM-MCXA577 P0_19(J6-1) */
+	};
+};
+
+&lpcmp0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpcmp0>;
+	pinctrl-names = "default";
+	positive-mux-input = "IN2"; /* FRDM-MCXA577 P1_4(R132) */
+	negative-mux-input = "DAC";
+	dac-value = <160>;
+	dac-vref-source = "VREFH0";
+};

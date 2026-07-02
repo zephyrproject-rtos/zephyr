@@ -9,9 +9,9 @@
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <ipi.h>
 #include "boot.h"
-#include "zephyr/cache.h"
-#include "zephyr/kernel/thread_stack.h"
-#include "zephyr/toolchain/gcc.h"
+#include <zephyr/cache.h>
+#include <zephyr/kernel/thread_stack.h>
+#include <zephyr/toolchain/gcc.h>
 #include <zephyr/platform/hooks.h>
 
 #define INV_MPID	UINT32_MAX
@@ -20,7 +20,7 @@
 #define SGI_MMCFG_IPI	1
 #define SGI_FPU_IPI	2
 
-K_KERNEL_PINNED_STACK_ARRAY_DECLARE(z_interrupt_stacks,
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks,
 				   CONFIG_MP_MAX_NUM_CPUS,
 				   CONFIG_ISR_STACK_SIZE);
 

@@ -228,7 +228,7 @@ static int dmac_setup_desc(struct dma_block_config *desc_config, dma_descriptor_
 
 	val32 = ras | was | prio | auto_start;
 
-	/* If programed to a value greater than the maximum trigger index, or 0, all
+	/* If programmed to a value greater than the maximum trigger index, or 0, all
 	 * external triggers are disabled. Only software triggering is available.
 	 */
 	if (config->dma_slot <= DMAC_TRIG_MAX) {

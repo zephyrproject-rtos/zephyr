@@ -15,7 +15,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # Peripheral 3: disconnects after receiving first SDU
 # Peripheral 4: disconnects after receiving first PDU in second SDU
 # Peripheral 5: disconnects after receiving third PDU in third SDU
-# Peripheral 6: disconnects atfer receiving tenth PDU in tenth SDU
+# Peripheral 6: disconnects after receiving tenth PDU in tenth SDU
 #
 # The central and peripherals check that all tx_pool and rx_pool
 # buffers have been returned after the disconnect.

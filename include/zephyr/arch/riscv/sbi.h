@@ -18,8 +18,8 @@
  * (https://github.com/riscv-non-isa/riscv-sbi-doc)
  */
 
-#ifndef ZEPHYR_ARCH_RISCV_INCLUDE_SBI_H_
-#define ZEPHYR_ARCH_RISCV_INCLUDE_SBI_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_RISCV_SBI_H_
+#define ZEPHYR_INCLUDE_ARCH_RISCV_SBI_H_
 
 /** @brief SBI extension ID for the Timer extension (TIME) */
 #define SBI_EXT_TIME			0x54494D45
@@ -48,4 +48,4 @@
 /** @brief SBI return code: requested extension/function is not available */
 #define SBI_ERR_NOT_SUPPORTED		-1
 
-#endif /* ZEPHYR_ARCH_RISCV_INCLUDE_SBI_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_RISCV_SBI_H_ */

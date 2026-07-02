@@ -1,0 +1,13 @@
+# Copyright 2026 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config NATIVE_LINUX_LEDS
+	bool "Native Linux LEDs based LED device"
+	default y
+	depends on DT_HAS_ZEPHYR_NATIVE_LINUX_LEDS_ENABLED
+	depends on ARCH_POSIX
+	help
+	  Enable a native_sim LED driver backed by Linux sysfs LEDs.
+	  Each DT `native-linux-leds` child node provides a Linux LED name (as
+	  found under /sys/class/leds) via the 'path' property, and Zephyr LED
+	  brightness requests are mapped to /sys/class/leds/<path>/brightness.

@@ -5,18 +5,14 @@
 
 if BOARD_ADI_EVAL_ADIN2111D1Z
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y
 
 if ETH_ADIN2111
 
-config NET_IF_MAX_IPV4_COUNT
+configdefault NET_IF_MAX_IPV4_COUNT
 	default 2
 
 endif # ETH_ADIN2111
-
-endif # NETWORKING
 
 endif # BOARD_ADI_EVAL_ADIN2111D1Z

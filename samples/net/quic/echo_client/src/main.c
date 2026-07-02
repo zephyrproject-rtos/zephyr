@@ -568,7 +568,7 @@ skip_ipv6:
 	}
 
 	ret = setup_quic(net_sad(&remote_addr), net_sad(&local_addr),
-			 QUIC_STREAM_CLIENT,
+			 QUIC_STREAM_BIDIRECTIONAL,
 			 sec_tag_list, sizeof(sec_tag_list),
 			 (const char **)alpn_list, sizeof(alpn_list));
 	if (ret < 0) {

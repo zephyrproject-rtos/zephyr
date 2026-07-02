@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Time Stamp Timer (TSTMR)
+
+compatible: "nxp,tstmr"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: TSTMR counter frequency in Hz.

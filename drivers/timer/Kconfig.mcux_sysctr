@@ -1,0 +1,38 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
+DT_COMPAT_NXP_SYSCTR := nxp,sysctr
+
+config MCUX_SYSCTR_TIMER
+	bool "MCUX System Counter (SYS_CTR) timer"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
+	depends on $(dt_node_has_compat,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH),$(DT_COMPAT_NXP_SYSCTR))
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	help
+	  System clock driver for the NXP System Counter (SYS_CTR): a 56-bit
+	  free-running counter at 24 MHz with two compare frames. Only compare
+	  frame 0 is used, for the system timer; pick the instance with the
+	  zephyr,system-timer chosen property.
+
+	  Note that SYS_CTR is a time base shared by multiple cores, and this
+	  driver resets the whole block (counter and both compare frames) at
+	  init. So it must own that instance: don't enable it if another core
+	  or a boot stage is already using the same SYS_CTR.
+
+if MCUX_SYSCTR_TIMER
+
+config MCUX_SYSCTR_TIMER_MIN_DELAY
+	int "Minimum delay cycles for the timer match value"
+	default 1000
+	help
+	  Timer hardware requires a minimum setup time to reliably trigger
+	  interrupts. If a match value is set too close to the current timer
+	  count, the hardware may not have enough time to process it.
+	  Lower values can improve timing precision but may be less reliable.
+	  Higher values provide more safety margin but slightly reduce timing accuracy.
+
+endif # MCUX_SYSCTR_TIMER

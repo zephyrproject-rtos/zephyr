@@ -5,10 +5,12 @@ sample:
     for boards that expose a passive piezo via the pwm-buzzer compatible or an active buzzer via
     gpio-buzzer.
 common:
+  platform_type:
+    - mcu
   tags:
     - drivers
     - buzzer
   filter: dt_alias_exists("buzzer0")
 tests:
   sample.drivers.buzzer.tone:
-    build_only: true
+    harness: buzzer

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "zephyr/sys/__assert.h"
+#include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 #include <stdlib.h>
 #include <zephyr/shell/shell_remote_common.h>

@@ -16,6 +16,7 @@ toolchain:
 supported:
   - counter
   - gpio
+  - hwinfo
   - adc
   - flash
   - uart

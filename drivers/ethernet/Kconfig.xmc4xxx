@@ -52,6 +52,7 @@ config PTP_CLOCK_XMC4XXX
 	bool "XMC4XXX PTP clock driver support"
 	default y
 	depends on PTP_CLOCK
+	select NET_L2_PTP_TIMESTAMPING
 	help
 	  Enable XMC4XXX PTP Clock support.
 

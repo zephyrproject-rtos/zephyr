@@ -63,11 +63,11 @@ console program (e.g., minicom, putty, screen, etc).
 
   Step 1: Erase
   * Erasing first 4096 bytes of partition.. OK
-  * Verifing page erased.. OK
+  * Verifying page erased.. OK
   Step 2: Write
   * Write ascii pattern..OK
   Step 3: Verify
-  * Verifing pattern.. OK
+  * Verifying pattern.. OK
 
   uart:~$
   uart:~$ flash read 3b0000 100

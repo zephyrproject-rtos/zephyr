@@ -11,8 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_NET_PKT_FILTER_H_
-#define ZEPHYR_INCLUDE_NET_PKT_FILTER_H_
+#ifndef ZEPHYR_INCLUDE_NET_NET_PKT_FILTER_H_
+#define ZEPHYR_INCLUDE_NET_NET_PKT_FILTER_H_
 
 #include <limits.h>
 #include <stdbool.h>
@@ -767,4 +767,4 @@ const char *npf_test_get_str(struct npf_test *test, char *buf,
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_NET_PKT_FILTER_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_NET_PKT_FILTER_H_ */

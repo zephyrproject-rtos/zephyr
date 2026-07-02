@@ -481,6 +481,7 @@ config ESP32_WIFI_ENABLE_WPA3_OWE_STA
 	depends on ESP32_WIFI_ENABLE_WPA3_SAE
 	help
 	  Select this option to allow the device to establish OWE connection with eligible AP's.
+	  Note: On ESP32, OWE is currently supported for STA mode only.
 
 config ESP32_WIFI_ENABLE_SAE_H2E
 	bool "SAE Hash-to-Element (H2E)"

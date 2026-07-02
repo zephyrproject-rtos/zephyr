@@ -1,0 +1,21 @@
+identifier: eora_hub_900tb/esp32s3/procpu
+name: Ebyte EoRa-HUB-900TB Module Test Kit PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - can
+  - counter
+  - watchdog
+  - entropy
+  - pwm
+  - dma
+  - lora
+  - nvs
+  - display
+vendor: ebyte

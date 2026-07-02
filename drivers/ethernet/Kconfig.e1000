@@ -29,6 +29,7 @@ config ETH_E1000_VERBOSE_DEBUG
 config ETH_E1000_PTP_CLOCK
 	bool "PTP clock driver support [EXPERIMENTAL]"
 	depends on PTP_CLOCK
+	select NET_L2_PTP_TIMESTAMPING
 	select EXPERIMENTAL
 	default y
 	help

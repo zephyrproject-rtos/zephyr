@@ -1,28 +1,9 @@
-/***********************************************************************************************//**
- * \file cyabs_rtos_zephyr.c
- *
- * \brief
- * Implementation for Zephyr RTOS abstraction
- *
- ***************************************************************************************************
- * \copyright
- * Copyright 2018-2022 Cypress Semiconductor Corporation (an Infineon company) or
- * an affiliate of Cypress Semiconductor Corporation
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- **************************************************************************************************/
+ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -433,9 +414,11 @@ cy_rslt_t cy_rtos_get_semaphore(cy_semaphore_t *semaphore, cy_time_t timeout_ms,
 		/* Convert timeout value */
 		k_timeout_t k_timeout;
 
-		if (k_is_in_isr()) {
+		if (k_is_in_isr() || k_is_pre_kernel()) {
 			/* NOTE: Based on Zephyr documentation when k_sem_take
 			 * is called from ISR timeout must be set to K_NO_WAIT.
+			 * Also before the kernel is started k_sem_take cannot
+			 * block.
 			 */
 			k_timeout = K_NO_WAIT;
 		} else if (timeout_ms == CY_RTOS_NEVER_TIMEOUT) {

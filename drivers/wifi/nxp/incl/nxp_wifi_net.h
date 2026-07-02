@@ -29,7 +29,7 @@
 #endif
 #endif
 #ifdef CONFIG_NET_DHCPV4_SERVER
-#include "zephyr/net/dhcpv4_server.h"
+#include <zephyr/net/dhcpv4_server.h>
 #endif
 #include <mlan_api.h>
 #include <wmlog.h>
@@ -99,7 +99,7 @@ struct netif {
  */
 struct ethernetif {
 	struct net_eth_addr ethaddr;
-	/* Interface to bss type identification that tells the FW wherether
+	/* Interface to bss type identification that tells the FW whether
 	 * the data is for STA for UAP
 	 */
 	uint8_t interface;

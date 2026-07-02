@@ -35,12 +35,12 @@
 
 
 /* this is for storing sequence during initialization */
-__pinned_bss int init_level_sequence[3] = {0};
-__pinned_bss int init_priority_sequence[4] = {0};
-__pinned_bss int init_sub_priority_sequence[3] = {0};
-__pinned_bss unsigned int seq_level_cnt;
-__pinned_bss unsigned int seq_priority_cnt;
-__pinned_bss unsigned int seq_sub_priority_cnt;
+int init_level_sequence[3] = {0};
+int init_priority_sequence[4] = {0};
+int init_sub_priority_sequence[3] = {0};
+unsigned int seq_level_cnt;
+unsigned int seq_priority_cnt;
+unsigned int seq_sub_priority_cnt;
 
 /* define driver type 1: for testing initialize levels and priorities */
 typedef int (*my_api_configure_t)(const struct device *dev, int dev_config);
@@ -59,7 +59,6 @@ static const struct my_driver_api funcs_my_drivers = {
 };
 
 /* driver init function of testing level */
-__pinned_func
 static int my_driver_lv_1_init(const struct device *dev)
 {
 	init_level_sequence[seq_level_cnt] = LEVEL_PRE_KERNEL_1;
@@ -68,7 +67,6 @@ static int my_driver_lv_1_init(const struct device *dev)
 	return 0;
 }
 
-__pinned_func
 static int my_driver_lv_2_init(const struct device *dev)
 {
 	init_level_sequence[seq_level_cnt] = LEVEL_PRE_KERNEL_2;

@@ -54,6 +54,7 @@ tests:
       - frdm_mcxn947/mcxn947/cpu0
       - mcx_n9xx_evk/mcxn947/cpu0
       - frdm_mcxa156
+      - frdm_mcxa577
       - lpcxpresso55s36
       - same54_xpro
       - bl652_dvk
@@ -61,6 +62,16 @@ tests:
       - bl5340_dvk/nrf5340/cpuapp
       - lp_mspm0g3507
       - lp_mspm0g3519
+  drivers.dac.api.dac0_channel0_mcxaxx6:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dac0-channel0.overlay"
+    platform_allow:
+      - frdm_mcxa266
+      - frdm_mcxa346
+      - frdm_mcxa366
+    harness: ztest
+    harness_config:
+      fixture: dac_fixture
   drivers.dac.api.dac1_channel1:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="dac1-channel1.overlay"

@@ -10,7 +10,8 @@ menuconfig WIFI_NRF70
 	select NET_L2_WIFI_MGMT if NETWORKING
 	select NET_L2_ETHERNET_MGMT if NETWORKING && NET_L2_ETHERNET
 	select WIFI_USE_NATIVE_NETWORKING if NETWORKING
-	select EXPERIMENTAL if !SOC_SERIES_NRF53 && !SOC_SERIES_NRF91
+	select EXPERIMENTAL if !SOC_SERIES_NRF53 && !SOC_SERIES_NRF91 && \
+		!SOC_NRF54LM20A && !SOC_NRF54LM20B
 	select NRF70_BUSLIB
 	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 	default y
@@ -127,16 +128,13 @@ config NRF70_SYSTEM_WITH_RAW_MODES
 
 config NRF70_RAW_DATA_TX
 	bool "RAW TX data path in the driver"
-	select EXPERIMENTAL
 
 config NRF70_RAW_DATA_RX
 	bool "RAW RX sniffer operation in the driver"
-	select EXPERIMENTAL
 
 config NRF70_PROMISC_DATA_RX
 	bool "Promiscuous RX sniffer operation in the driver"
 	select WIFI_NM_WPA_SUPPLICANT
-	select EXPERIMENTAL
 	select NET_PROMISCUOUS_MODE
 
 config NRF70_DATA_TX
@@ -163,6 +161,25 @@ config NRF_WIFI_PATCHES_EXTERNAL
 	help
 	  Select this option to load nRF70 FW patches from an external tooling.
 endchoice
+
+config NRF70_PATCH_DL_CHUNK_SIZE
+	int "nRF70 firmware patch download chunk size (bytes)"
+	# Each chunk maps to a single SPI/QSPI transfer, so it must fit both the
+	# host EasyDMA MAXCNT and any DMA bounce region used by the bus driver.
+	# On the nRF54H the bounce buffer comes from the small 4 KB cpuapp DMA
+	# region that is shared with the console UART and other peripherals, so a
+	# 4 KB chunk cannot find contiguous space there and the download fails;
+	# default to 2048 on that SoC. 4096 elsewhere stays within the 13-bit
+	# nRF91 EasyDMA MAXCNT (8191 bytes).
+	default 2048 if SOC_SERIES_NRF54H
+	default 4096
+	range 256 8192
+	help
+	  Size of each chunk used when downloading the nRF70 firmware patches to
+	  the RPU over SPI/QSPI. Larger chunks load the firmware in fewer bus
+	  transfers, smaller chunks reduce the peak heap usage. The default is
+	  picked per SoC to stay within the bus DMA limits, so only lower this if
+	  your SoC is more constrained than the default already assumes.
 
 config NRF_WIFI_LOW_POWER
 	bool "Low power mode in nRF Wi-Fi chipsets"
@@ -726,7 +743,6 @@ config NRF_WIFI_RPU_RECOVERY
 	# Relies on power-save mode, so, LPM is needed
 	depends on NRF_WIFI_LOW_POWER
 	default y
-	select EXPERIMENTAL
 	help
 		Enable the RPU recovery mechanism to recover from an RPU (nRF70) hang.
 		This feature performs an interface reset (down and up), which triggers
@@ -866,6 +882,7 @@ config NRF_WIFI_MGMT_BUFF_OFFLOAD
 config NRF_WIFI_FEAT_KEEPALIVE
 	bool "Wi-Fi keepalive feature for connection maintenance"
 	depends on NRF70_STA_MODE
+	default y
 	help
 	  Enable the Wi-Fi keepalive feature to keep the connection alive by sending
 	  keepalive packets to the AP. This feature is primarily intended to interoperate with APs
@@ -933,9 +950,8 @@ config NRF_WIFI_DISPLAY_SCAN_ABORT_ON_BSS_LIMIT
 
 if NETWORKING
 config NRF_WIFI_ZERO_COPY_TX
-	bool "Zero copy Transmit path [EXPERIMENTAL]"
+	bool "Zero copy Transmit path"
 	select NET_L2_ETHERNET_RESERVE_HEADER
-	select EXPERIMENTAL
 	# 54L has lower RAM
 	default y if SOC_SERIES_NRF54L
 	help

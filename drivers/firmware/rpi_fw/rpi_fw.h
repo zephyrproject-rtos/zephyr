@@ -235,7 +235,7 @@ struct rpi_fw_tag_list {
  *
  * Wraps @p data in a ViedoCore mailbox envelope and submits
  * it to the VPU over mailbox channel. Blocks until the VPU responds
- * or a 100 miliseconds timeout elapses.
+ * or a 100 milliseconds timeout elapses.
  *
  * @param dev       Firmware device from DEVICE_DT_GET_ANY(raspberrypi_bcm283x_firmware).
  * @param tag       One of the RPI_FW_TAG_* defines.
@@ -244,7 +244,7 @@ struct rpi_fw_tag_list {
  *
  * @retval 0          Success.
  * @retval -EINVAL    Firmware returned an error status.
- * @retval -ETIMEDOUT Firmware did not respond within 100 miliseconds.
+ * @retval -ETIMEDOUT Firmware did not respond within 100 milliseconds.
  */
 int rpi_fw_transfer(const struct device *dev, uint32_t tag, void *data, uint32_t data_size);
 

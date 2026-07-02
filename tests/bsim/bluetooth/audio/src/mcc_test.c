@@ -2506,7 +2506,7 @@ static void reset_test_iteration(unsigned int i)
 }
 
 /* This function tests all commands in the API in sequence
- * The order of the sequence follows the order of the characterstics in the
+ * The order of the sequence follows the order of the characteristics in the
  * Media Control Service specification
  */
 void test_main(void)

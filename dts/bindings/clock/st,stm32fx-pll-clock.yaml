@@ -54,9 +54,9 @@ properties:
     required: true
     description: |
         Multiplication factor for VCO.
-        Valid range:
-          - 192 - 432 for STM32F2x and STM32F401
-          - 50 - 432 for other STM32F4x and for STM32F7x
+        Note: STM32F2x and STM32F401 have a specific valid range of [192 432].
+    min: 50
+    max: 432
 
   div-p:
     type: int

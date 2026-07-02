@@ -15,6 +15,8 @@
 #define NUM_THREADS (CONFIG_MP_MAX_NUM_CPUS - 1)
 
 #define DELAY_FOR_IPIS 200
+#define WAIT_FOR_IPIS_US 100000
+#define WAIT_FOR_THREAD_PENDING_US 100000
 
 static struct k_thread thread[NUM_THREADS];
 static struct k_thread alt_thread;
@@ -56,6 +58,27 @@ static void get_ipi_counts(uint32_t *set, size_t n_elem)
 	key = k_spin_lock(&ipilock);
 	memcpy(set, ipi_count, n_elem * sizeof(*set));
 	k_spin_unlock(&ipilock, key);
+}
+
+static bool ipi_counts_seen(uint32_t *set, size_t n_elem, uint32_t expected_mask)
+{
+	unsigned int i;
+
+	get_ipi_counts(set, n_elem);
+
+	for (i = 0; i < n_elem; i++) {
+		if (((expected_mask & BIT(i)) != 0U) && (set[i] == 0U)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static bool wait_for_ipis(uint32_t *set, size_t n_elem, uint32_t expected_mask)
+{
+	return WAIT_FOR(ipi_counts_seen(set, n_elem, expected_mask),
+			WAIT_FOR_IPIS_US, k_busy_wait(10));
 }
 
 static void busy_thread_entry(void *p1, void *p2, void *p3)
@@ -114,8 +137,8 @@ static void alt_thread_create(int priority, const char *desc)
 
 	/* Verify alt_thread is pending */
 
-	k_busy_wait(10000);
-	zassert_true(z_is_thread_pending(&alt_thread),
+	zassert_true(WAIT_FOR(z_is_thread_pending(&alt_thread),
+				WAIT_FOR_THREAD_PENDING_US, k_msleep(1)),
 		     "%s priority thread has not pended.\n", desc);
 }
 
@@ -180,8 +203,9 @@ ZTEST(ipi, test_arch_sched_broadcast_ipi)
 
 	clear_ipi_counts();
 	arch_sched_broadcast_ipi();
-	k_busy_wait(DELAY_FOR_IPIS);
-	get_ipi_counts(set, CONFIG_MP_MAX_NUM_CPUS);
+	zassert_true(wait_for_ipis(set, CONFIG_MP_MAX_NUM_CPUS,
+				  IPI_ALL_CPUS_MASK ^ BIT(id)),
+		     "Timed out waiting for broadcast IPIs.\n");
 
 	for (j = 0; j < CONFIG_MP_MAX_NUM_CPUS; j++) {
 		if (id == j) {
@@ -222,8 +246,9 @@ ZTEST(ipi, test_arch_sched_directed_ipi)
 
 		clear_ipi_counts();
 		arch_sched_directed_ipi(BIT(i));
-		k_busy_wait(DELAY_FOR_IPIS);
-		get_ipi_counts(set, CONFIG_MP_MAX_NUM_CPUS);
+		zassert_true(wait_for_ipis(set, CONFIG_MP_MAX_NUM_CPUS,
+					  BIT(i)),
+			     "Timed out waiting for directed IPI.\n");
 
 		for (j = 0; j < CONFIG_MP_MAX_NUM_CPUS; j++) {
 			if (i == j) {
@@ -323,8 +348,9 @@ ZTEST(ipi, test_high_thread_wakes_some_ipis)
 
 	clear_ipi_counts();
 	k_sem_give(&sem);
-	k_busy_wait(DELAY_FOR_IPIS);
-	get_ipi_counts(set, CONFIG_MP_MAX_NUM_CPUS);
+	zassert_true(wait_for_ipis(set, CONFIG_MP_MAX_NUM_CPUS,
+				  IPI_ALL_CPUS_MASK ^ BIT(id)),
+		     "Timed out waiting for wake IPIs.\n");
 
 	zassert_true(z_is_thread_ready(&alt_thread),
 		     "High priority thread is not ready.\n");
@@ -352,17 +378,31 @@ ZTEST(ipi, test_thread_priority_set_lower)
 {
 	uint32_t  set[CONFIG_MP_MAX_NUM_CPUS];
 	uint32_t  id;
+	uint32_t  expected_mask;
 	int priority;
 	unsigned int i;
 
 	priority = k_thread_priority_get(k_current_get());
 
 	id = busy_threads_create(priority - 1);
+	expected_mask = IPI_ALL_CPUS_MASK ^ BIT(id);
+
+#ifdef CONFIG_ARCH_HAS_DIRECTED_IPIS
+	expected_mask = 0U;
+	for (i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
+		if ((i != id) && (_kernel.cpus[i].current == &thread[0])) {
+			expected_mask = BIT(i);
+			break;
+		}
+	}
+	zassert_true(expected_mask != 0U,
+		     "thread[0] is not executing on another CPU\n");
+#endif
 
 	clear_ipi_counts();
 	k_thread_priority_set(&thread[0], priority);
-	k_busy_wait(DELAY_FOR_IPIS);
-	get_ipi_counts(set, CONFIG_MP_MAX_NUM_CPUS);
+	zassert_true(wait_for_ipis(set, CONFIG_MP_MAX_NUM_CPUS, expected_mask),
+		     "Timed out waiting for priority change IPIs.\n");
 
 	for (i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
 		if (i == id) {
@@ -370,18 +410,7 @@ ZTEST(ipi, test_thread_priority_set_lower)
 		}
 
 #ifdef CONFIG_ARCH_HAS_DIRECTED_IPIS
-		unsigned int j;
-
-		for (j = 0; j < NUM_THREADS; j++) {
-			if (_kernel.cpus[i].current == &thread[j]) {
-				break;
-			}
-		}
-
-		zassert_true(j < NUM_THREADS,
-			     "CPU%u not executing expected thread\n", i);
-
-		if (j == 0) {
+		if ((expected_mask & BIT(i)) != 0U) {
 			zassert_true(set[i] == 1, "CPU%u got %u IPIs.\n",
 				     i, set[i]);
 		} else {

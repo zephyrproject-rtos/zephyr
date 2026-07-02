@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 James Bennion-Pedley
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch32v317/ch32v317.dtsi>
+
+&gpiod {
+	gpio-reserved-ranges = <3 13>;
+};
+
+&gpioe {
+	gpio-reserved-ranges = <1 15>;
+};

@@ -159,6 +159,14 @@
 	pinctrl-names = "default", "sleep";
 };
 
+&tstmr1 {
+	status = "okay";
+};
+
+&tstmr2 {
+	status = "okay";
+};
+
 &lpuart3 {
 	pinctrl-0 = <&pinmux_lpuart3>;
 	pinctrl-1 = <&pinmux_lpuart3_sleep>;

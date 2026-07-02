@@ -129,7 +129,8 @@ endif #ETH_STM32_HAL2_API
 menuconfig PTP_CLOCK_STM32_HAL
 	bool "STM32 HAL PTP clock driver support"
 	default y
-	depends on PTP_CLOCK || NET_L2_PTP
+	depends on PTP_CLOCK
+	select NET_L2_PTP_TIMESTAMPING
 	depends on ETH_STM32_HAL_API_V2
 	depends on SOC_SERIES_STM32F7X \
 		   || SOC_SERIES_STM32H5X \

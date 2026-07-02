@@ -10,8 +10,8 @@
  * @ingroup input_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_INPUT_HID_H_
-#define ZEPHYR_INCLUDE_INPUT_HID_H_
+#ifndef ZEPHYR_INCLUDE_INPUT_INPUT_HID_H_
+#define ZEPHYR_INCLUDE_INPUT_INPUT_HID_H_
 
 /**
  * @addtogroup input_interface
@@ -45,4 +45,4 @@ uint8_t input_to_hid_modifier(uint16_t input_code);
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_INPUT_HID_H_ */
+#endif /* ZEPHYR_INCLUDE_INPUT_INPUT_HID_H_ */

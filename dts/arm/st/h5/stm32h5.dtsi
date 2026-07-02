@@ -32,6 +32,8 @@
 			compatible = "arm,cortex-m33";
 			reg = <0>;
 			cpu-power-states = <&stop>;
+			d-cache-line-size = <16>;
+			i-cache-line-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -95,16 +97,15 @@
 			status = "disabled";
 		};
 
-		/* The pll scheme is similar to stm32u5 */
 		pll1: pll: pll {
 			#clock-cells = <0>;
-			compatible = "st,stm32u5-pll-clock";
+			compatible = "st,stm32h5-pll-clock";
 			status = "disabled";
 		};
 
 		pll2: pll2 {
 			#clock-cells = <0>;
-			compatible = "st,stm32u5-pll-clock";
+			compatible = "st,stm32h5-pll-clock";
 			status = "disabled";
 		};
 	};
@@ -402,6 +403,7 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+				#counter-capture-cells = <2>;
 			};
 		};
 
@@ -424,6 +426,7 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+				#counter-capture-cells = <2>;
 			};
 		};
 
@@ -446,6 +449,7 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+				#counter-capture-cells = <2>;
 			};
 		};
 
@@ -468,6 +472,7 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+				#counter-capture-cells = <2>;
 			};
 		};
 
@@ -490,6 +495,7 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+				#counter-capture-cells = <2>;
 			};
 		};
 

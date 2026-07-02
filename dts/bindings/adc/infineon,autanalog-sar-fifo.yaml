@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon AutAnalog SAR ADC FIFO Configuration
+
+description: |
+  FIFO configuration for the Infineon AutAnalog SAR ADC.
+
+  The AutAnalog subsystem contains a shared FIFO that can be split into up to
+  8 independent buffers. ADC GPIO channels, MUX channels, and FIR filter
+  outputs can each be routed to one of these FIFO buffers using the fifo-sel
+  property on the respective channel or FIR node.
+
+  A single FIFO node named "fifo" must be placed under the parent SAR ADC
+  node. The FIFO has a dedicated interrupt line (autanalog_fifo) separate from
+  the main AutAnalog interrupt.
+
+  The number of entries in fifo-levels determines how the FIFO memory is
+  partitioned:
+    1 entry  -> SPLIT1 (single 512-word buffer)
+    2 entries -> SPLIT2 (two 256-word buffers)
+    4 entries -> SPLIT4 (four 128-word buffers)
+    8 entries -> SPLIT8 (eight 64-word buffers)
+
+  A watermark interrupt is automatically enabled for each buffer whose
+  fifo-levels entry is non-zero.
+
+compatible: "infineon,autanalog-sar-fifo"
+
+properties:
+  fifo-levels:
+    type: array
+    required: true
+    description: |
+      Array of FIFO buffer level thresholds. The length of this array
+      determines the FIFO split configuration:
+        1 entry  -> single 512-word buffer
+        2 entries -> two 256-word buffers
+        4 entries -> four 128-word buffers
+        8 entries -> eight 64-word buffers
+
+      When the number of words in a buffer reaches its level threshold,
+      a FIFO level interrupt is generated. Buffers with a threshold of 0
+      do not generate watermark interrupts. Valid threshold range depends
+      on the resulting buffer size.

@@ -15,7 +15,7 @@
 /**
  * @brief Fintek F75303 temperature sensor
  * @defgroup f75303_interface F75303
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_fintek
  * @{
  */
 

@@ -1,0 +1,26 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP IRTC wake timer exposed through the counter API.
+
+  The tick rate is selected by the "osc-div" property: 1024 Hz with the
+  divide-by-32 prescaler enabled, 32768 Hz without.
+
+  This is a one-shot down-counter, not a continuous free-running time
+  source. Both counter_start() and arming a relative alarm reload the
+  counter, so counter_get_value() restarts from zero at each of those
+  calls. Only relative alarms are supported; do not poll it as a
+  monotonic time source.
+
+compatible: "nxp,irtc-wake-timer"
+
+include: base.yaml
+
+properties:
+  osc-div:
+    type: boolean
+    description: |
+      Enable the wake timer's divide-by-32 prescaler (OSC_DIV_ENA), producing a
+      1024 Hz tick from the 32.768 kHz oscillator. When omitted the wake timer
+      runs directly at 32768 Hz.

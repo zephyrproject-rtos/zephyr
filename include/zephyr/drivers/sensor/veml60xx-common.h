@@ -15,7 +15,7 @@
 
 /**
  * @defgroup veml60xx_interface VEML60XX
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_vishay
  * @brief Vishay VEML60xx sensor family common attributes
  * @{
  */

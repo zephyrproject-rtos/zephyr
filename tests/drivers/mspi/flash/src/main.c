@@ -85,7 +85,7 @@ static int test_multi_sector_rw(const struct device *flash_dev)
 	size_t offs;
 
 	TC_PRINT("\n===================================================================\n");
-	TC_PRINT("Perform test on multiple consequtive sectors on %s\n", flash_dev->name);
+	TC_PRINT("Perform test on multiple consecutive sectors on %s\n", flash_dev->name);
 
 	TC_PRINT("\nTest 0: Get Flash page layout\n");
 
@@ -116,7 +116,7 @@ static int test_multi_sector_rw(const struct device *flash_dev)
 
 	/* Full flash erase if MSPI_FLASH_TEST_REGION_OFFSET = 0 and
 	 * MSPI_FLASH_SECTOR_SIZE = flash size
-	 * Erase 2 sectors for check for erase of consequtive sectors
+	 * Erase 2 sectors for check for erase of consecutive sectors
 	 */
 	rc = flash_erase(flash_dev, MSPI_FLASH_TEST_REGION_OFFSET, MSPI_FLASH_SECTOR_SIZE * 2);
 	if (rc != 0) {

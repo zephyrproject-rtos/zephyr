@@ -18,7 +18,7 @@ BUILD_ASSERT(ENTRY_MAX_LEN <= SETTINGS_MAX_VAL_LEN);
 #define WIFI_CREDENTIALS_SBE_BASE_KEY "wifi_cred"
 #define WIFI_CREDENTIALS_SBE_KEY_SIZE                                                              \
 	sizeof(WIFI_CREDENTIALS_SBE_BASE_KEY "/" STRINGIFY(CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES))
-#define WIFI_CREDENTIALS_SBE_KEY_FMT WIFI_CREDENTIALS_SBE_BASE_KEY "/%d"
+#define WIFI_CREDENTIALS_SBE_KEY_FMT WIFI_CREDENTIALS_SBE_BASE_KEY "/%zu"
 
 /* Type of the callback argument used in the function below. */
 struct zephyr_settings_backend_load_cb_arg {

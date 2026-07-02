@@ -37,23 +37,27 @@ properties:
     required: true
     description: |
         Division factor for the PLL input clock.
-        On L4 series, the division factor M is shared between PLL, PLLSAI1
+        On L4 series other than L4+, the division factor M is shared between PLL, PLLSAI1
         and PLLSAI2. For these series, valid range is 1 - 8.
-        On L4+ and L5 series, each PLL has an independent division factor M.
-        For these series, valid range is 1 - 16.
+    min: 1
+    max: 16
 
   mul-n:
     type: int
     required: true
     description: |
-        Multiplication factor for VCO. Valid range is 8 - 127 for L4+
-        series and 8 - 86 for other series.
+        Multiplication factor for VCO.
+        On L4 series other than L4+, valid range is [8 86].
+    min: 8
+    max: 127
 
   div-p:
     type: int
     description: |
-        Division factor for PLLx_P. Valid values are 2 - 31 for all
-        series except L47x/48x for which valid values are 7 or 17.
+        Division factor for PLLx_P.
+        For L47x and L48x lines, value can be only either 7 or 17.
+    min: 2
+    max: 31
 
   div-q:
     type: int

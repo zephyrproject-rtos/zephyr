@@ -9,11 +9,11 @@ _logger = logging.getLogger(__name__)
 
 # Parse a CMakeCache file and return a dict of key:value (discarding
 # type hints).
-def parseCMakeCacheFile(filePath):
-    _logger.debug("parsing CMake cache file at %s", filePath)
+def parse_cmake_cache_file(file_path):
+    _logger.debug("parsing CMake cache file at %s", file_path)
     kv = {}
     try:
-        with open(filePath) as f:
+        with open(file_path) as f:
             # should be a short file, so we'll use readlines
             lines = f.readlines()
 
@@ -37,5 +37,5 @@ def parseCMakeCacheFile(filePath):
             return kv
 
     except OSError:
-        _logger.exception("Error loading %s", filePath)
+        _logger.exception("Error loading %s", file_path)
         return {}

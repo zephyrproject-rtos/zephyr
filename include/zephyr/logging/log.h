@@ -13,7 +13,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util_macro.h>
 
-#if CONFIG_USERSPACE && CONFIG_LOG_ALWAYS_RUNTIME
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_LOG_ALWAYS_RUNTIME)
 #include <zephyr/app_memory/app_memdomain.h>
 #endif
 
@@ -730,7 +730,7 @@ void z_log_vprintk(const char *fmt, va_list ap);
 /* Determine if the data of the log module shall be in the partition
  * 'k_log_partition' to allow a user mode thread access to this data.
  */
-#if CONFIG_USERSPACE && CONFIG_LOG_ALWAYS_RUNTIME
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_LOG_ALWAYS_RUNTIME)
 extern struct k_mem_partition k_log_partition;
 #define Z_LOG_MODULE_PARTITION(_k_app_mem) _k_app_mem(k_log_partition)
 #else

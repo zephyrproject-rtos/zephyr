@@ -383,7 +383,7 @@ static int adc_esp32_init(const struct device *dev)
 	sar_periph_ctrl_adc_oneshot_power_acquire();
 #endif /* CONFIG_ADC_ESP32_DMA */
 
-	for (uint8_t i = 0; i < SOC_ADC_MAX_CHANNEL_NUM; i++) {
+	for (uint8_t i = 0; i < ADC_LL_MAX_CHANNEL_NUM; i++) {
 		data->resolution[i] = ADC_RESOLUTION_MAX;
 		data->attenuation[i] = ADC_ATTEN_DB_0;
 		data->cal_handle[i] = NULL;

@@ -132,6 +132,14 @@
 	status = "okay";
 };
 
+&tstmr1 {
+	status = "okay";
+};
+
+&tstmr2 {
+	status = "okay";
+};
+
 &flexcan1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan1>;

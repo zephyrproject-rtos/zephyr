@@ -9,7 +9,7 @@ CONFIG_ARMV8_A_NS=y
 
 # MMU Options
 # Increase the value when encounter the assert on the MAX_XLAT_TABLES
-CONFIG_MAX_XLAT_TABLES=24
+CONFIG_MAX_XLAT_TABLES=32
 
 # Cache Options
 CONFIG_CACHE_MANAGEMENT=y

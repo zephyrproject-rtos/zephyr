@@ -14,12 +14,18 @@ tests:
       - CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y
       - CONFIG_MINIMAL_LIBC_RAND=y
   libraries.libc.common.newlib:
+    toolchain_exclude:
+      - zephyr/gnu
+      - zephyr/llvm
     filter: CONFIG_NEWLIB_LIBC_SUPPORTED
     min_ram: 32
     tags: newlib
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
   libraries.libc.common.newlib_nano:
+    toolchain_exclude:
+      - zephyr/gnu
+      - zephyr/llvm
     filter: CONFIG_NEWLIB_LIBC_SUPPORTED and CONFIG_HAS_NEWLIB_LIBC_NANO
     tags: newlib
     extra_configs:

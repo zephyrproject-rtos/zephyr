@@ -10,7 +10,13 @@ zephyr_library_sources(board.c)
 if(CONFIG_BOARD_NXP_SPECIFIC_MPU_SETTINGS)
   if(CONFIG_SOC_MIMXRT1186_CM7)
     zephyr_library_sources(cm7/mpu_regions.c)
-    zephyr_linker_sources(DTCM_SECTION cm7/dtcm.ld)
+    # The DTCM_SECTION snippet only applies when a dedicated DTCM region is
+    # chosen. On the internal-memory CM7 variant DTCM is itself zephyr,sram, so
+    # no separate (overlapping) DTCM section group must be emitted.
+    dt_chosen(dtcm_chosen PROPERTY "zephyr,dtcm")
+    if(dtcm_chosen)
+      zephyr_linker_sources(DTCM_SECTION cm7/dtcm.ld)
+    endif()
   endif()
 endif()
 

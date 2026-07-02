@@ -26,14 +26,20 @@
 #include <soc/io_mux_reg.h>
 #include <soc/soc.h>
 #include <clk_ctrl_os.h>
+#include <esp_clk_tree.h>
+#include <esp_private/esp_clk_tree_common.h>
+
+LOG_MODULE_REGISTER(eth_esp32, CONFIG_ETHERNET_LOG_LEVEL);
 
 #include "eth.h"
 #include "eth_esp32_priv.h"
 
-LOG_MODULE_REGISTER(eth_esp32, CONFIG_ETHERNET_LOG_LEVEL);
-
 #define MAC_RESET_TIMEOUT_MS 100
 #define ETH_CRC_LENGTH       4
+
+BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii) ||
+	     DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii),
+	     "Unsupported PHY interface type. Only RMII and MII are supported.");
 
 /*
  * On SoCs with L2 cache (ESP32-P4), DMA data is accessed by the CPU
@@ -638,11 +644,7 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 {
 	struct net_if *iface = (struct net_if *)user_data;
 
-	if (state->is_up) {
-		net_eth_carrier_on(iface);
-	} else {
-		net_eth_carrier_off(iface);
-	}
+	net_eth_carrier_set(iface, state->is_up);
 }
 
 int eth_esp32_initialize(const struct device *dev)
@@ -698,27 +700,41 @@ int eth_esp32_initialize(const struct device *dev)
 	/* Configure phy for Media-Independent Interface (MII) or
 	 * Reduced Media-Independent Interface (RMII) mode
 	 */
-	const char *phy_connection_type = DT_INST_PROP_OR(0,
-						phy_connection_type,
-						"rmii");
 
-	if (strcmp(phy_connection_type, "rmii") == 0) {
+	if (DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)) {
 		int rmii_clk_gpio = -1;
 
 		res = esp32_emac_iomux_init_rmii_pinctrl(cfg->pcfg, &rmii_clk_gpio);
 		if (res != 0) {
 			goto err;
 		}
-#if !DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
+#if DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
+		BUILD_ASSERT(DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 0 ||
+			DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 16 ||
+			DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 17,
+			"Only GPIO0/16/17 are allowed as a GPIO REF_CLK source!");
+		int ref_clk_gpio = DT_INST_GPIO_PIN(0, ref_clk_output_gpios);
+
+		esp32_emac_iomux_rmii_clk_output(ref_clk_gpio);
+
+		/* Configure REF_CLK output when GPIO0 is used */
+		if (ref_clk_gpio == 0) {
+			REG_SET_FIELD(PIN_CTRL, CLK_OUT1, 6);
+		}
+
+		emac_ll_clock_enable_rmii_output(dev_data->hal.ext_regs);
+		esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, true);
+		res = esp32_emac_config_apll_clock();
+		if (res != 0) {
+			goto err;
+		}
+#else
 		eth_esp32_iomux_rmii_clk_input(rmii_clk_gpio);
 		emac_hal_clock_enable_rmii_input(&dev_data->hal);
 #endif
-	} else if (strcmp(phy_connection_type, "mii") == 0) {
+	} else { /* phy_connection_type: mii */
 		eth_esp32_iomux_init_mii();
 		emac_hal_clock_enable_mii(&dev_data->hal);
-	} else {
-		res = -EINVAL;
-		goto err;
 	}
 
 	/* Reset mac registers and wait until ready */

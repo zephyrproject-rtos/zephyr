@@ -279,27 +279,64 @@ ZTEST(semaphore, test_sem_thread2isr)
 }
 
 /**
- * @brief Test semaphore initialization at runtime
- * @details
- * - Initialize a semaphore with valid count and max limit.
- * - Initialize a semaphore with invalid max limit.
- * - Initialize a semaphore with invalid count.
+ * @brief Parameterized k_sem_init() validity test.
+ *
+ * The existing test_k_sem_init() checks 3 hardcoded (init, max) combinations
+ * in a single test body.  Here each combination is a separate named invocation
+ * so that Twister output immediately identifies which specific combination
+ * caused a failure (e.g. "test_sem_init_validity[cases/3]").
+ *
+ * Valid combinations must return 0; invalid ones must return -EINVAL:
+ *  - max == 0                          → -EINVAL
+ *  - init > max                        → -EINVAL
+ *  - init == max (boundary)            → 0
+ *  - init < max                        → 0
+ *  - large but valid max               → 0
+ *
  * @ingroup kernel_semaphore_tests
+ * @see k_sem_init()
  */
-ZTEST_USER(semaphore, test_k_sem_init)
+struct sem_init_case {
+	uint32_t init_val;
+	uint32_t max_val;
+	int      expected_ret;
+};
+
+ZTEST_USER_P(semaphore, test_sem_init_validity)
 {
-	/* initialize a semaphore with valid count and max limit */
-	expect_k_sem_init_nomsg(&msg_sema, SEM_INIT_VAL, SEM_MAX_VAL, 0);
+	const struct sem_init_case *tc =
+		ZTEST_GET_PARAM_PTR(struct sem_init_case);
 
-	k_sem_reset(&msg_sema);
+	expect_k_sem_init_nomsg(&msg_sema, tc->init_val, tc->max_val,
+				tc->expected_ret);
 
-	/* initialize a semaphore with invalid max limit */
-	expect_k_sem_init_nomsg(&msg_sema, SEM_INIT_VAL, 0, -EINVAL);
-
-	/* initialize a semaphore with invalid count */
-	expect_k_sem_init_nomsg(&msg_sema, SEM_MAX_VAL + 1, SEM_MAX_VAL, -EINVAL);
+	if (tc->expected_ret == 0) {
+		/* Verify the count was set as requested */
+		expect_k_sem_count_get_nomsg(&msg_sema, tc->init_val);
+		k_sem_reset(&msg_sema);
+	}
 }
 
+static const struct sem_init_case sem_init_cases[] = {
+	/* valid: init = 0, various max values */
+	{0U,              1U,          0},
+	{0U,              SEM_MAX_VAL, 0},
+	{0U,              UINT_MAX,    0},
+	/* valid: init == max (boundary) */
+	{1U,              1U,          0},
+	{SEM_MAX_VAL,     SEM_MAX_VAL, 0},
+	/* valid: 0 < init < max */
+	{SEM_MAX_VAL / 2, SEM_MAX_VAL, 0},
+	/* invalid: max == 0 */
+	{0U,              0U,          -EINVAL},
+	/* invalid: init > max */
+	{SEM_MAX_VAL + 1, SEM_MAX_VAL, -EINVAL},
+	{2U,              1U,          -EINVAL},
+};
+
+ZTEST_DEFINE_PARAM_VALUES_ARRAY(sem_init_cases_vals, sem_init_cases);
+ZTEST_INSTANTIATE_TEST_SUITE_P(cases, semaphore,
+			       test_sem_init_validity, sem_init_cases_vals);
 
 /**
  * @brief Test k_sem_reset() API

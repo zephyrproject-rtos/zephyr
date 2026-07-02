@@ -404,6 +404,7 @@ our $Attribute	= qr{
 			____cacheline_aligned|
 			____cacheline_aligned_in_smp|
 			____cacheline_internodealigned_in_smp|
+			__aligned\s*\((?:[^()]*|\([^()]*\))*\)|
 			__weak|
 			__syscall
 		  }x;

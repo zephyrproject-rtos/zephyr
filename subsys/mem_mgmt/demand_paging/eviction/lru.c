@@ -49,7 +49,7 @@
 
 /*
  * Number of bits needed to store a page frame index. Rounded up to a byte
- * boundary for best compromize between code performance and space saving.
+ * boundary for best compromise between code performance and space saving.
  * The extra entry is used to store head and tail indexes.
  */
 #define PF_IDX_BITS ROUND_UP(LOG2CEIL(K_MEM_NUM_PAGE_FRAMES + 1), BITS_PER_BYTE)

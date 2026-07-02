@@ -238,27 +238,81 @@ static inline void unpend_thread_no_timeout(struct k_thread *thread)
 }
 
 /*
- * In a multiprocessor system, z_unpend_first_thread() must lock the scheduler
- * spinlock _sched_spinlock. However, in a uniprocessor system, that is not
- * necessary as the caller has already taken precautions (in the form of
- * locking interrupts).
+ * Pick the best-priority waiter from @p wait_q, unpend it, and abort any
+ * timeout it had pending. Returns the thread, or NULL if the wait_q was
+ * empty.
+ *
+ * Caller MUST hold _sched_spinlock and MUST complete the wake (set return
+ * value, ready the thread) under the same lock acquisition before releasing
+ * it. Otherwise a racing in-flight timeout handler can ready the thread
+ * before the caller's wake state is in place, exposing the woken thread
+ * to a stale swap_retval. The pre-1b8c7a3 dticks-cancel check used to
+ * close this window; doing all the wake work atomically under the sched
+ * lock is now the way.
+ *
+ * z_sched_wake() is the convenient wrapper for the common case of
+ * "wake one waiter with this retval and this swap_data".
  */
-static ALWAYS_INLINE struct k_thread *z_unpend_first_thread(_wait_q_t *wait_q)
+static ALWAYS_INLINE struct k_thread *z_unpend_first_thread_locked(_wait_q_t *wait_q)
 {
-	struct k_thread *thread = NULL;
+	struct k_thread *thread = _priq_wait_best(&wait_q->waitq);
 
-	__ASSERT_EVAL(, int key = arch_irq_lock(); arch_irq_unlock(key),
-		      !arch_irq_unlocked(key), "");
+	if (unlikely(thread != NULL)) {
+		unpend_thread_no_timeout(thread);
+		/* Abort the thread's timeout. If its handler is in flight on
+		 * another CPU it is blocked on the sched lock; the abort flags
+		 * it superseded, and z_thread_timeout() bails on that flag when
+		 * it finally runs -- so it won't wake the thread from whatever
+		 * it has since re-pended on. We don't wait for it here.
+		 */
+		(void)z_try_abort_thread_timeout(thread);
+	}
+	return thread;
+}
+
+/**
+ * Wake up a thread pending on the provided wait queue
+ *
+ * Given a wait_q, wake up the highest priority thread on the queue. If the
+ * queue was empty just return false.
+ *
+ * Otherwise, do the following, in order,  holding _sched_spinlock the entire
+ * time so that the thread state is guaranteed not to change:
+ * - Set the thread's swap return values to swap_retval and swap_data
+ * - un-pend and ready the thread, but do not invoke the scheduler.
+ *
+ * Repeated calls to this function until it returns false is a suitable
+ * way to wake all threads on the queue.
+ *
+ * It is up to the caller to implement locking such that the return value of
+ * this function (whether a thread was woken up or not) does not immediately
+ * become stale. Calls to wait and wake on the same wait_q object must have
+ * synchronization. Calling this without holding any spinlock is a sign that
+ * this API is not being used properly.
+ *
+ * @param wait_q Wait queue to wake up the highest prio thread
+ * @param swap_retval Swap return value for woken thread
+ * @param swap_data Data return value to supplement swap_retval. May be NULL.
+ * @retval true If a thread was woken up
+ * @retval false If the wait_q was empty
+ */
+static ALWAYS_INLINE bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data)
+{
+	struct k_thread *thread;
+	bool ret = false;
 
 	LOCK_SCHED_SPINLOCK {
-		thread = _priq_wait_best(&wait_q->waitq);
-		if (unlikely(thread != NULL)) {
-			unpend_thread_no_timeout(thread);
-			z_abort_thread_timeout(thread);
+		thread = z_unpend_first_thread_locked(wait_q);
+		if (thread != NULL) {
+			z_thread_return_value_set_with_data(thread,
+							    swap_retval,
+							    swap_data);
+			z_sched_ready_locked(thread);
+			ret = true;
 		}
 	}
 
-	return thread;
+	return ret;
 }
 
 #ifdef __cplusplus

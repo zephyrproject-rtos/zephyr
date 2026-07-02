@@ -18,6 +18,12 @@ Configure this module using the following options.
 Here are the options to enable output backends for core dump:
 
 * ``DEBUG_COREDUMP_BACKEND_LOGGING``: use log module for core dump output.
+* ``DEBUG_COREDUMP_BACKEND_LOGGING_UDP``: same as logging backend with optional
+  raw UDP transfer; the peer is ``DEBUG_COREDUMP_LOGGING_UDP_HOST``, a string
+  parsed by ``net_ipaddr_parse()`` (IPv4 or IPv6, optional ``:port`` with default
+  UDP port ``17777`` when omitted). Use
+  :zephyr_file:`scripts/coredump/coredump_udp_receiver.py` to build the binary
+  for :zephyr_file:`scripts/coredump/coredump_gdbserver.py`.
 * ``DEBUG_COREDUMP_BACKEND_FLASH_PARTITION``: use flash partition for core
   dump output.
 * ``DEBUG_COREDUMP_BACKEND_NULL``: fallback core dump backend if other
@@ -59,6 +65,10 @@ This usually involves the following steps:
    the GDB server. For example,
    :zephyr_file:`scripts/coredump/coredump_serial_log_parser.py` can be used
    to convert the serial console log into a binary file.
+   If the UDP coredump backend is enabled
+   (``DEBUG_COREDUMP_BACKEND_LOGGING_UDP``), run
+   :zephyr_file:`scripts/coredump/coredump_udp_receiver.py` on the collector
+   host to reassemble UDP datagrams into the **same** raw binary format.
 
 3. Start the custom GDB server using the script
    :zephyr_file:`scripts/coredump/coredump_gdbserver.py` with the core dump
@@ -76,15 +86,16 @@ This usually involves the following steps:
    data is stored in the flash partition. The flash partition must be defined
    in the device tree:
 
-	.. code-block:: devicetree
+   .. code-block:: devicetree
 
-		&flash0 {
-			partitions {
-				coredump_partition: partition@255000 {
-					label = "coredump-partition";
-					reg = <0x255000 DT_SIZE_K(4)>;
-				};
-		};
+      &flash0 {
+         partitions {
+            coredump_partition: partition@255000 {
+               label = "coredump-partition";
+               reg = <0x255000 DT_SIZE_K(4)>;
+            };
+         };
+      };
 
 Example
 -------
@@ -418,6 +429,18 @@ the following needs to be done:
 #. Extend ``get_gdbstub()`` in
    :zephyr_file:`scripts/coredump/gdbstubs/__init__.py` to return
    the newly implemented GDB stub.
+
+UDP logging backend sample
+**************************
+
+Sample README pages that exercise the UDP coredump path are linked into this chapter so Sphinx
+includes them in the documentation tree:
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   ../../samples/subsys/debug/coredump_udp_demos/demo_shell/README
 
 API documentation
 *****************

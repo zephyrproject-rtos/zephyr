@@ -1296,7 +1296,7 @@ static void test_scp(void)
 /* This function tests all commands in the API in sequence for the provided player.
  * (Works by setting the provided player as the "current player".)
  *
- * The order of the sequence follows the order of the characterstics in the
+ * The order of the sequence follows the order of the characteristics in the
  * Media Control Service specification
  */
 void test_media_controller_player(struct media_player *player)

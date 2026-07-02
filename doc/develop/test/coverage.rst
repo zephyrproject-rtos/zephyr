@@ -62,12 +62,6 @@ These steps will produce an HTML coverage report for a single application.
 
      $ ninja -Cbuild run | tee log.log
 
-   or
-
-   .. code-block:: console
-
-     $ ninja -Cbuild run | tee log.log
-
 #. Generate the gcov ``.gcda`` and ``.gcno`` files from the log file that was
    saved:
 
@@ -87,13 +81,13 @@ These steps will produce an HTML coverage report for a single application.
 
    .. code-block:: console
 
-     $ mkdir -p gcov_report
+     $ mkdir -p coverage-report
 
 #. Run ``gcovr`` to get the reports:
 
    .. code-block:: console
 
-     $ gcovr -r $ZEPHYR_BASE . --html -o gcov_report/coverage.html --html-details --gcov-executable <gcov_path_in_SDK>
+     $ gcovr -r $ZEPHYR_BASE . --html -o coverage-report/coverage.html --html-details --gcov-executable <gcov_path_in_SDK>
 
    .. _coverage_posix:
 

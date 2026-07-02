@@ -6,10 +6,11 @@
 
 /**
  * @file
- * @brief Extended public API for 1-Wire Sensors
+ * @brief Extended public API for 1-Wire sensors
+ * @ingroup w1_sensor
  *
- * This header file exposes an attribute an helper function to allow the
- * runtime configuration of ROM IDs for 1-Wire Sensors.
+ * This header exposes a sensor attribute and helper functions to allow the
+ * runtime configuration of ROM IDs for 1-Wire sensors.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_W1_SENSOR_H_
@@ -26,19 +27,34 @@ extern "C" {
  * @brief 1-Wire Sensor API
  * @defgroup w1_sensor 1-Wire Sensor API
  * @ingroup w1_interface
+ * @ingroup sensor_interface_ext
  * @{
  */
 
+/**
+ * @brief Extended sensor attributes for 1-Wire sensors.
+ */
 enum sensor_attribute_w1 {
-	/** Device unique 1-Wire ROM */
+	/**
+	 * Device unique 1-Wire ROM identifier.
+	 *
+	 * 64-bit ROM (family code, serial number, and CRC) encoded as a
+	 * big-endian integer:
+	 *
+	 * - @c sensor_value.val1 is the lower 32 bits.
+	 * - @c sensor_value.val2 is the upper 32 bits.
+	 *
+	 * Use w1_rom_to_sensor_value() and w1_sensor_value_to_rom() to convert
+	 * between @ref w1_rom and @ref sensor_value.
+	 */
 	SENSOR_ATTR_W1_ROM = SENSOR_ATTR_PRIV_START,
 };
 
 /**
- * @brief Function to write a w1_rom struct to an sensor value ptr.
+ * @brief Encode a @ref w1_rom as a @ref sensor_value.
  *
- * @param rom  Pointer to the rom struct.
- * @param val  Pointer to the sensor value.
+ * @param[in] rom   Pointer to the ROM structure.
+ * @param[out] val  Pointer to the sensor value to populate.
  */
 static inline void w1_rom_to_sensor_value(const struct w1_rom *rom,
 					  struct sensor_value *val)
@@ -48,10 +64,10 @@ static inline void w1_rom_to_sensor_value(const struct w1_rom *rom,
 }
 
 /**
- * @brief Function to write an rom id stored in a sensor value to a struct w1_rom ptr.
+ * @brief Decode a @ref sensor_value into a @ref w1_rom.
  *
- * @param val  Sensor_value representing the rom.
- * @param rom  The rom struct ptr.
+ * @param[in]  val  Pointer to the sensor value containing the encoded ROM.
+ * @param[out] rom  Pointer to the ROM structure to populate.
  */
 static inline void w1_sensor_value_to_rom(const struct sensor_value *val,
 					  struct w1_rom *rom)

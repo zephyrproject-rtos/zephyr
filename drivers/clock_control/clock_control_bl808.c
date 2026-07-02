@@ -9,11 +9,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/otp.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/dt-bindings/clock/bflb_bl808_clock.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_bl808, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
+#include <soc.h>
 #include <bouffalolab/bl808/bflb_soc.h>
 #include <bouffalolab/bl808/aon_reg.h>
 #include <bouffalolab/bl808/cci_reg.h>
@@ -22,7 +24,6 @@ LOG_MODULE_REGISTER(clock_control_bl808, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #include <bouffalolab/bl808/mcu_misc_reg.h>
 #include <bouffalolab/bl808/mm_glb_reg.h>
 #include <bouffalolab/bl808/pds_reg.h>
-#include <bouffalolab/bl808/sf_ctrl_reg.h>
 #include <zephyr/drivers/clock_control/clock_control_bflb_common.h>
 
 /*
@@ -36,6 +37,8 @@ LOG_MODULE_REGISTER(clock_control_bl808, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define CLOCK_TIMEOUT        1024 /* polling iterations */
 #define ROOT_CLK_RANGE_DELIM DT_FREQ_M(500)
 #define CRYSTAL_VALUES_CNT   5
+
+#define BL808_TARGET_BASIC_CLOCK MHZ(40)
 
 /*
  * MCU_E907_RTC register CLK_SEL field (bit 29).
@@ -442,9 +445,6 @@ struct clock_control_bl808_bclk_config {
 struct clock_control_bl808_flashclk_config {
 	enum bl808_clkid source;
 	uint8_t divider;
-	uint8_t bank1_read_delay;
-	bool bank1_clock_invert;
-	bool bank1_rx_clock_invert;
 };
 
 struct clock_control_bl808_f32k_config {
@@ -522,7 +522,7 @@ static int clock_control_bl808_init_crystal(void)
  * Update HCLK and BCLK dividers using the hardware BCLK protection handshake.
  * Must be called with root clock on RC32M or XCLK to be safe.
  */
-static int clock_bflb_set_root_clock_dividers(uint32_t hclk_div, uint32_t bclk_div)
+static __bflb_critfunc int clock_bflb_set_root_clock_dividers(uint32_t hclk_div, uint32_t bclk_div)
 {
 	uint32_t tmp;
 	uint32_t old_rootclk;
@@ -1154,7 +1154,7 @@ static void clock_control_bl808_gate_pll(uint8_t pll)
 }
 
 /* Get XCLK frequency: RC32M when root_clk_sel[0]=0, crystal otherwise. */
-static uint32_t clock_control_bl808_get_xclk(const struct device *dev)
+static __ramfunc uint32_t clock_control_bl808_get_xclk(const struct device *dev)
 {
 	uint32_t tmp;
 
@@ -1167,7 +1167,7 @@ static uint32_t clock_control_bl808_get_xclk(const struct device *dev)
 }
 
 /* Get FCLK (CPU core clock): XCLK when root_clk_sel[1]=0, PLL output otherwise. */
-static uint32_t clock_control_bl808_get_fclk(const struct device *dev)
+static __ramfunc uint32_t clock_control_bl808_get_fclk(const struct device *dev)
 {
 	struct clock_control_bl808_data *data = dev->data;
 	uint32_t tmp;
@@ -1203,7 +1203,7 @@ static uint32_t clock_control_bl808_mtimer_get_fclk_src_div(const struct device 
 }
 
 /* Get HCLK (AHB bus clock): FCLK divided by (hclk_div + 1). */
-static uint32_t clock_control_bl808_get_hclk(const struct device *dev)
+static __ramfunc uint32_t clock_control_bl808_get_hclk(const struct device *dev)
 {
 	uint32_t tmp;
 	uint32_t clock_f;
@@ -1215,7 +1215,7 @@ static uint32_t clock_control_bl808_get_hclk(const struct device *dev)
 }
 
 /* Get BCLK (APB peripheral bus clock): HCLK divided by (bclk_div + 1). */
-static uint32_t clock_control_bl808_get_bclk(const struct device *dev)
+static __ramfunc uint32_t clock_control_bl808_get_bclk(const struct device *dev)
 {
 	uint32_t tmp;
 	uint32_t source_clock;
@@ -1253,7 +1253,7 @@ static uint32_t clock_control_bl808_get_160m(const struct device *dev)
 	}
 }
 
-static void clock_control_bl808_init_root_as_wifipll(const struct device *dev)
+static __bflb_critfunc void clock_control_bl808_init_root_as_wifipll(const struct device *dev)
 {
 	struct clock_control_bl808_data *data = dev->data;
 
@@ -1266,7 +1266,7 @@ static void clock_control_bl808_init_root_as_wifipll(const struct device *dev)
 	}
 }
 
-static void clock_control_bl808_init_root_as_aupll(const struct device *dev)
+static __bflb_critfunc void clock_control_bl808_init_root_as_aupll(const struct device *dev)
 {
 	struct clock_control_bl808_data *data = dev->data;
 
@@ -1279,7 +1279,7 @@ static void clock_control_bl808_init_root_as_aupll(const struct device *dev)
 	}
 }
 
-static void clock_control_bl808_init_root_as_cpupll(const struct device *dev)
+static __bflb_critfunc void clock_control_bl808_init_root_as_cpupll(const struct device *dev)
 {
 	struct clock_control_bl808_data *data = dev->data;
 
@@ -1292,7 +1292,7 @@ static void clock_control_bl808_init_root_as_cpupll(const struct device *dev)
 	}
 }
 
-static void clock_control_bl808_init_root_as_crystal(const struct device *dev)
+static __bflb_critfunc void clock_control_bl808_init_root_as_crystal(const struct device *dev)
 {
 	clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_XTAL);
 }
@@ -1423,46 +1423,43 @@ static int clock_control_bl808_update_f32k(const struct device *dev)
 	return 0;
 }
 
-static void clock_control_bl808_update_flash_clk(const struct device *dev)
+static __ramfunc void clock_control_bl808_update_flash_clk(const struct device *dev)
 {
 	struct clock_control_bl808_data *data = dev->data;
 	volatile uint32_t tmp;
-
-	tmp = *(volatile uint32_t *)(SF_CTRL_BASE + SF_CTRL_0_OFFSET);
-	tmp |= SF_CTRL_SF_IF_READ_DLY_EN_MSK;
-	tmp &= ~SF_CTRL_SF_IF_READ_DLY_N_MSK;
-	tmp |= (data->flashclk.bank1_read_delay << SF_CTRL_SF_IF_READ_DLY_N_POS);
-	if (data->flashclk.bank1_clock_invert) {
-		tmp |= SF_CTRL_SF_CLK_OUT_INV_SEL_MSK;
-	} else {
-		tmp &= ~SF_CTRL_SF_CLK_OUT_INV_SEL_MSK;
-	}
-	if (data->flashclk.bank1_rx_clock_invert) {
-		tmp |= SF_CTRL_SF_CLK_SF_RX_INV_SEL_MSK;
-	} else {
-		tmp &= ~SF_CTRL_SF_CLK_SF_RX_INV_SEL_MSK;
-	}
-	*(volatile uint32_t *)(SF_CTRL_BASE + SF_CTRL_0_OFFSET) = tmp;
+	uint32_t clk;
 
 	tmp = *(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET);
 	tmp &= GLB_SF_CLK_DIV_UMSK;
 	tmp &= GLB_SF_CLK_EN_UMSK;
-	tmp |= (data->flashclk.divider - 1) << GLB_SF_CLK_DIV_POS;
 	*(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET) = tmp;
 
 	tmp = *(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET);
 	tmp &= GLB_SF_CLK_SEL_UMSK;
 	tmp &= GLB_SF_CLK_SEL2_UMSK;
 	if (data->flashclk.source == bl808_clkid_clk_wifipll) {
+		clk = clock_control_bl808_get_hclk(dev);
 		tmp |= 0U << GLB_SF_CLK_SEL_POS;
 		tmp |= 0U << GLB_SF_CLK_SEL2_POS;
 	} else if (data->flashclk.source == bl808_clkid_clk_crystal) {
+		clk = clock_control_bl808_get_xclk(dev);
 		tmp |= 0U << GLB_SF_CLK_SEL_POS;
 		tmp |= 1U << GLB_SF_CLK_SEL2_POS;
 	} else {
+		clk = clock_control_bl808_get_bclk(dev);
 		/* BCLK fallback */
 		tmp |= 2U << GLB_SF_CLK_SEL_POS;
 	}
+
+	/* If flash controller will manage flash, set to standard speed
+	 * and let it set the divider.
+	 */
+#if defined(CONFIG_SOC_FLASH_BFLB)
+	clk = DIV_ROUND_CLOSEST(clk, BL808_TARGET_BASIC_CLOCK);
+	tmp |= clamp(clk - 1, 0x0, 0x7) << GLB_SF_CLK_DIV_POS;
+#else
+	tmp |= (data->flashclk.divider - 1) << GLB_SF_CLK_DIV_POS;
+#endif
 
 	*(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET) = tmp;
 
@@ -1473,7 +1470,7 @@ static void clock_control_bl808_update_flash_clk(const struct device *dev)
 	clock_bflb_settle();
 }
 
-static int clock_control_bl808_update_clocks(const struct device *dev)
+static __bflb_critfunc int clock_control_bl808_update_clocks(const struct device *dev)
 {
 	struct clock_control_bl808_data *data = dev->data;
 	const struct clock_control_bl808_config *config = dev->config;
@@ -2040,12 +2037,6 @@ static struct clock_control_bl808_data clock_control_bl808_data = {
 #else
 			.source = bl808_clkid_clk_bclk,
 #endif
-			.bank1_read_delay =
-				DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), read_delay),
-			.bank1_clock_invert =
-				DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), clock_invert),
-			.bank1_rx_clock_invert =
-				DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), rx_clock_invert),
 			.divider = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), divider),
 		},
 

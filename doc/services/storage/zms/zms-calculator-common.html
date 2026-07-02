@@ -1,0 +1,405 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2026 Nordic Semiconductor ASA
+SPDX-License-Identifier: Apache-2.0
+-->
+
+<style>
+/*
+ * Minimal layout-only styles. All colors are inherited from the Read the Docs
+ * theme (custom.css and the light/dark theme variables) so the calculators
+ * follow the active theme automatically.
+ */
+.zms-calculator {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    border-radius: 0.25rem;
+    background-color: var(--admonition-note-background-color);
+}
+
+.zms-calculator__header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.zms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.zms-calculator label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--body-color);
+}
+
+.zms-calculator input,
+.zms-calculator select,
+.zms-calculator textarea {
+    width: 100%;
+    padding: 0.5rem;
+    box-sizing: border-box;
+    border: 1px solid var(--code-border-color);
+    border-radius: 4px;
+    background-color: var(--input-background-color);
+    color: var(--body-color);
+    font-family: var(--monospace-font-family);
+}
+
+.zms-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 0.25rem 1.5rem;
+}
+
+.zms-results-grid > .zms-result {
+    margin: 0;
+}
+
+.zms-results-grid > .zms-result--tip strong {
+    text-decoration: underline dotted;
+    text-underline-offset: 2px;
+    cursor: help;
+}
+
+.zms-results-grid > hr,
+.zms-results-grid > ul,
+.zms-results-grid > .admonition,
+.zms-results-grid > .zms-result--full {
+    grid-column: 1 / -1;
+}
+</style>
+
+<script>
+function zmsRoundUpToMultiple(value, multiple) {
+    return Math.ceil(value / multiple) * multiple;
+}
+
+function zmsParseHexBytesCount(hexValue) {
+    let normalized = hexValue.trim();
+
+    if (normalized.startsWith('0x') || normalized.startsWith('0X')) {
+        normalized = normalized.slice(2);
+    }
+
+    normalized = normalized.replace(/\s+/g, '').replace(/_/g, '');
+
+    if (normalized.length === 0) {
+        return { ok: false, error: 'hex data is empty' };
+    }
+
+    if (!/^[0-9a-fA-F]+$/.test(normalized)) {
+        return { ok: false, error: 'hex data contains invalid characters' };
+    }
+
+    if ((normalized.length % 2) !== 0) {
+        return { ok: false, error: 'hex data must have an even number of characters' };
+    }
+
+    return { ok: true, bytesCount: normalized.length / 2 };
+}
+
+function zmsIsHexId(value) {
+    return /^(0x|0X)?[0-9a-fA-F]+$/.test(value);
+}
+
+function zmsGetUtf8ByteLength(value) {
+    return new TextEncoder().encode(value).length;
+}
+
+function zmsBindEnterToCalculate(selector, calculateFn) {
+    document.querySelectorAll(selector).forEach(function(element) {
+        element.addEventListener('keydown', function(event) {
+            if (event.key !== 'Enter') {
+                return;
+            }
+
+            if (event.target && event.target.tagName === 'TEXTAREA' && !event.ctrlKey) {
+                return;
+            }
+
+            calculateFn();
+        });
+    });
+}
+
+function zmsSetElementVisible(elementId, visible) {
+    document.getElementById(elementId).style.display = visible ? 'block' : 'none';
+}
+
+function zmsIsElementVisible(elementId) {
+    return document.getElementById(elementId).style.display !== 'none';
+}
+
+function zmsClearElement(element) {
+    while (element.firstChild) {
+        element.removeChild(element.firstChild);
+    }
+}
+
+function zmsInlineCode(text) {
+    const code = document.createElement('code');
+    code.className = 'docutils literal notranslate';
+
+    const span = document.createElement('span');
+    span.className = 'pre';
+    span.textContent = text;
+
+    code.appendChild(span);
+    return code;
+}
+
+function zmsAppendLabeledLine(element, label, value, tooltip) {
+    const line = document.createElement('p');
+    line.className = 'zms-result';
+
+    if (tooltip) {
+        line.title = tooltip;
+        line.classList.add('zms-result--tip');
+    }
+
+    const strong = document.createElement('strong');
+    strong.textContent = label + ':';
+    line.appendChild(strong);
+
+    if (value !== undefined && value !== null && value !== '') {
+        line.appendChild(document.createTextNode(' ' + value));
+    } else {
+        line.classList.add('zms-result--full');
+    }
+
+    element.appendChild(line);
+    return line;
+}
+
+function zmsAppendBullets(element, items) {
+    const list = document.createElement('ul');
+
+    items.forEach(function(text) {
+        const item = document.createElement('li');
+        item.textContent = text;
+        list.appendChild(item);
+    });
+
+    element.appendChild(list);
+    return list;
+}
+
+function zmsAppendDivider(element) {
+    const divider = document.createElement('hr');
+    element.appendChild(divider);
+    return divider;
+}
+
+function zmsAppendAdmonition(element, type, title, message) {
+    const box = document.createElement('div');
+    box.className = 'admonition ' + type;
+
+    const heading = document.createElement('p');
+    heading.className = 'admonition-title';
+    heading.textContent = title;
+    box.appendChild(heading);
+
+    if (Array.isArray(message)) {
+        zmsAppendBullets(box, message);
+    } else {
+        const body = document.createElement('p');
+        body.textContent = message;
+        box.appendChild(body);
+    }
+
+    element.appendChild(box);
+    return box;
+}
+
+function zmsRenderValidationErrors(element, errors) {
+    zmsClearElement(element);
+    zmsAppendAdmonition(element, 'danger', 'Validation errors', errors);
+}
+
+function zmsRenderAdvancedHelp(element, useSettings, settingsExample) {
+    zmsClearElement(element);
+
+    const fragment = document.createDocumentFragment();
+
+    if (useSettings) {
+        fragment.appendChild(document.createTextNode('Advanced mode: enter one pair per line in the format '));
+        fragment.appendChild(zmsInlineCode(settingsExample));
+        fragment.appendChild(document.createTextNode('. Path is plain text and data must be hexadecimal. Whitespace around the '));
+        fragment.appendChild(zmsInlineCode(':'));
+        fragment.appendChild(document.createTextNode(' separator is ignored. Empty lines and lines starting with '));
+        fragment.appendChild(zmsInlineCode('#'));
+        fragment.appendChild(document.createTextNode(' are ignored.'));
+    } else {
+        fragment.appendChild(document.createTextNode('Advanced mode: enter one pair per line in the format '));
+        fragment.appendChild(zmsInlineCode('0x01:010203'));
+        fragment.appendChild(document.createTextNode('. ID and data must be hexadecimal. Whitespace around the '));
+        fragment.appendChild(zmsInlineCode(':'));
+        fragment.appendChild(document.createTextNode(' separator is ignored (data may include spaces or underscores). Empty lines and lines starting with '));
+        fragment.appendChild(zmsInlineCode('#'));
+        fragment.appendChild(document.createTextNode(' are ignored.'));
+    }
+
+    element.appendChild(fragment);
+}
+
+function zmsRenderModeSummary(element, useSettings, advancedInfo, writeBlockSize, avgPathSize) {
+    if (useSettings) {
+        zmsAppendLabeledLine(element, 'Settings Mode', 'Enabled');
+        zmsAppendLabeledLine(
+            element,
+            'Average Path Size (rounded)',
+            zmsRoundUpToMultiple(avgPathSize, writeBlockSize) + ' bytes' + (advancedInfo ? ' (not used in advanced mode)' : '')
+        );
+    }
+
+    if (advancedInfo) {
+        zmsAppendLabeledLine(element, 'Advanced Mode', 'Enabled (ID:data lines)');
+        zmsAppendLabeledLine(element, 'Parsed Data Items', advancedInfo.entriesCount.toLocaleString());
+        zmsAppendLabeledLine(element, 'Total Parsed Data Bytes', advancedInfo.totalDataBytes.toLocaleString() + ' bytes');
+        zmsAppendLabeledLine(element, 'Total Parsed Effective Size', advancedInfo.totalEffectiveSize.toLocaleString() + ' bytes');
+    }
+}
+
+function zmsSyncSettingsUi(prefix, useSettings, advancedEnabled) {
+    zmsSetElementVisible(prefix + '-settings-path-container', useSettings && !advancedEnabled);
+
+    const idTypeContainerId = prefix + '-id-type-container';
+    const idTypeContainer = document.getElementById(idTypeContainerId);
+
+    if (idTypeContainer) {
+        zmsSetElementVisible(idTypeContainerId, !useSettings);
+
+        if (useSettings) {
+            const idTypeSelect = document.getElementById(prefix + '-id-type');
+            if (idTypeSelect) {
+                idTypeSelect.value = '32';
+            }
+        }
+    }
+}
+
+function zmsParseAdvancedEntriesFromTextarea(textareaId, useSettings) {
+    const textarea = document.getElementById(textareaId);
+    const lines = textarea.value.split('\n')
+        .map(function(line) { return line.trim(); })
+        .filter(function(line) { return line.length > 0 && !line.startsWith('#'); });
+
+    if (lines.length === 0) {
+        return { ok: false, error: 'Advanced mode is enabled but no entries were provided' };
+    }
+
+    const entries = [];
+
+    for (let index = 0; index < lines.length; index++) {
+        const line = lines[index];
+        const separatorIdx = line.indexOf(':');
+
+        if (separatorIdx <= 0 || separatorIdx >= line.length - 1) {
+            return { ok: false, error: 'Line ' + (index + 1) + ': expected ID:data format' };
+        }
+
+        const idPart = line.slice(0, separatorIdx).trim();
+        const dataPart = line.slice(separatorIdx + 1).trim();
+
+        if (idPart.length === 0) {
+            return { ok: false, error: 'Line ' + (index + 1) + ': ID is empty' };
+        }
+
+        if (!useSettings && !zmsIsHexId(idPart)) {
+            return { ok: false, error: 'Line ' + (index + 1) + ': ID must be hexadecimal (example 0x01)' };
+        }
+
+        const parsedHex = zmsParseHexBytesCount(dataPart);
+        if (!parsedHex.ok) {
+            return { ok: false, error: 'Line ' + (index + 1) + ': ' + parsedHex.error };
+        }
+
+        entries.push({
+            id: idPart,
+            dataBytes: parsedHex.bytesCount,
+            pathBytes: useSettings ? zmsGetUtf8ByteLength(idPart) : 0
+        });
+    }
+
+    return { ok: true, entries: entries };
+}
+
+function zmsEntryEffectiveSize(entry, useSettings, writeBlockSize, ateSize, avgPathSize, dataInsideATE) {
+    const roundedDataSize = zmsRoundUpToMultiple(entry.dataBytes, writeBlockSize);
+
+    if (useSettings) {
+        const pathSize = entry.pathBytes > 0 ? entry.pathBytes : avgPathSize;
+        const roundedPathSize = zmsRoundUpToMultiple(pathSize, writeBlockSize);
+
+        /*
+         * Settings ZMS backend stores each setting in multiple ZMS entries:
+         * - value entry
+         * - name/path entry
+         * - linked-list node entry (struct settings_hash_linked_list)
+         */
+        const SETTINGS_LL_NODE_BYTES = 8;
+        const roundedLlNodeSize = zmsRoundUpToMultiple(SETTINGS_LL_NODE_BYTES, writeBlockSize);
+        const nameEntrySize = pathSize <= dataInsideATE ? ateSize : (ateSize + roundedPathSize);
+        const llNodeEntrySize = SETTINGS_LL_NODE_BYTES <= dataInsideATE ? ateSize : (ateSize + roundedLlNodeSize);
+        const valueEntrySize = entry.dataBytes <= dataInsideATE ? ateSize : (ateSize + roundedDataSize);
+        return nameEntrySize + llNodeEntrySize + valueEntrySize;
+    }
+
+    return entry.dataBytes <= dataInsideATE ? ateSize : ateSize + roundedDataSize;
+}
+
+function zmsValidatePositiveNumber(errors, value, message) {
+    if (!Number.isFinite(value) || value <= 0) {
+        errors.push(message);
+        return false;
+    }
+
+    return true;
+}
+
+function zmsValidateMinimumNumber(errors, value, minimum, message) {
+    if (!Number.isFinite(value) || value < minimum) {
+        errors.push(message);
+        return false;
+    }
+
+    return true;
+}
+
+function zmsValidateSectorConstraints(errors, sectorSize, writeBlockSize, flashType, eraseBlockSize) {
+    const BASE_ATE_SIZE = 16;
+    const hasValidSector = Number.isFinite(sectorSize) && sectorSize > 0;
+    const hasValidWrite = Number.isFinite(writeBlockSize) && writeBlockSize > 0;
+
+    if (hasValidSector && hasValidWrite) {
+        const ateSize = zmsRoundUpToMultiple(BASE_ATE_SIZE, writeBlockSize);
+        const MIN_ATE_NUM = 5;
+        const minSectorSize = MIN_ATE_NUM * ateSize;
+
+        if (sectorSize <= minSectorSize) {
+            errors.push(`Sector size (${sectorSize}) must be greater than ${MIN_ATE_NUM} * ATE_SIZE (${minSectorSize})`);
+        }
+
+        if ((sectorSize % writeBlockSize) !== 0) {
+            errors.push(`Sector size (${sectorSize}) must be aligned to write block size (${writeBlockSize})`);
+        }
+    }
+
+    if (flashType === 'explicit-erase') {
+        const hasValidErase = Number.isFinite(eraseBlockSize) && eraseBlockSize > 0;
+
+        if (!hasValidErase) {
+            errors.push('Erase block size must be greater than 0');
+        }
+
+        if (hasValidSector && hasValidErase && ((sectorSize % eraseBlockSize) !== 0)) {
+            errors.push(`Sector size (${sectorSize}) must be aligned to erase block size (${eraseBlockSize})`);
+        }
+    }
+}
+</script>

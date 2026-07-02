@@ -401,7 +401,7 @@ static DEVICE_API(gpio, dummy_gpio_api) = {
 #define GPIO_PORT_DEVICE_INIT(__node, __suffix, __base_addr, __port)		\
 	static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {	\
 		.common = {							\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U),	\
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(__node),	\
 		},								\
 		.base = (void *)__base_addr,					\
 		.port = __port,							\

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bootutil/bootutil_public.h"
+#include <bootutil/bootutil_public.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/init.h>
 #include <zephyr/shell/shell.h>
@@ -88,6 +88,7 @@ static int cmd_mcuboot_erase(const struct shell *sh, size_t argc,
 			     char **argv)
 {
 	unsigned int id;
+	unsigned int active_slot;
 	int err;
 
 	id = strtoul(argv[1], NULL, 0);
@@ -100,12 +101,17 @@ static int cmd_mcuboot_erase(const struct shell *sh, size_t argc,
 	}
 #endif
 
-#if DT_PARTITION_EXISTS(DT_CHOSEN(zephyr_code_partition))
-	if (id == DT_PARTITION_ID(DT_CHOSEN(zephyr_code_partition))) {
+	active_slot = boot_fetch_active_slot();
+
+	if (active_slot == BOOT_INVALID_SLOT_ID) {
+		shell_error(sh, "Failed to determive active partition");
+		return -EFAULT;
+	}
+
+	if (id == active_slot) {
 		shell_error(sh, "Cannot erase active partitions");
 		return -EACCES;
 	}
-#endif
 
 	err = boot_erase_img_bank(id);
 	if (err) {

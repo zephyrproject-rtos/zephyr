@@ -92,7 +92,7 @@
 	};
 
 	dsi_lcd_qsh_030: connector_dsi_lcd {
-		compatible = "st,dsi-lcd-qsh-030";
+		compatible = "st,dsi-lcd-qsh-030-connector";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;

@@ -4,9 +4,6 @@
 
 if SOC_SERIES_BL808
 
-configdefault FPU
-	default y
-
 config SOC_RESET_HOOK
 	default y
 

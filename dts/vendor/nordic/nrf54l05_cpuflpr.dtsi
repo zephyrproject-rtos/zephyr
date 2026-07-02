@@ -9,12 +9,12 @@
 
 / {
 	soc {
-		cpuflpr_sram: memory@20010000 {
+		cpuflpr_sram: memory@2000fc00 {
 			compatible = "mmio-sram";
-			reg = <0x20010000 DT_SIZE_K(32)>;
+			reg = <0x2000fc00 DT_SIZE_K(32)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x20010000 DT_SIZE_K(32)>;
+			ranges = <0x0 0x2000fc00 DT_SIZE_K(32)>;
 		};
 	};
 };

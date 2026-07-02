@@ -34,5 +34,14 @@
 			resets = <&rctl STM32_RESET(APB2, 27)>;
 			status = "disabled";
 		};
+
+		jpeg: codec@50051000 {
+			compatible = "st,stm32-jpeg";
+			reg = <0x50051000 0x1000>;
+			interrupts = <108 0>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 1)>;
+			resets = <&rctl STM32_RESET(AHB2, 1)>;
+			status = "disabled";
+		};
 	};
 };

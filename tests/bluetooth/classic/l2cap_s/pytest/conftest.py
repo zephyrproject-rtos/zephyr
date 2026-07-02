@@ -17,7 +17,7 @@ def pytest_addoption(parser) -> None:
 
 @pytest.fixture(name='initialize', scope='session')
 def fixture_initialize(request, shell: Shell, dut: DeviceAdapter):
-    """Session initializtion"""
+    """Session initialization"""
     # Get HCI transport for bumble
     hci = request.config.getoption('--hci-transport')
 

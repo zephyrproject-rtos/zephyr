@@ -1,0 +1,6 @@
+board:
+  name: mimxrt685_aud_evk
+  full_name: MIMXRT685-AUD-EVK
+  vendor: nxp
+  socs:
+    - name: mimxrt685s

@@ -401,3 +401,7 @@ zephyr_udc0: &usbotg_hs {
 &vbat4 {
 	status = "okay";
 };
+
+zephyr_jpegenc: &jpeg {
+	status = "okay";
+};

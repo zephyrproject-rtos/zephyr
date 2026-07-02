@@ -102,6 +102,10 @@
 		lp_uart: uart@50121000 {
 			compatible = "espressif,esp32-lpuart";
 			reg = <0x50121000 DT_SIZE_K(4)>;
+			tx-pin = <14>;
+			rx-pin = <15>;
+			rts-pin = <16>;
+			cts-pin = <17>;
 			status = "disabled";
 		};
 

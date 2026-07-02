@@ -44,6 +44,8 @@ LOG_MODULE_DECLARE(net_route, ROUTE_LOG_LEVEL);
 #include <zephyr/net/virtual.h>
 
 #include "route.h"
+#include "route_ipv4.h"
+#include "route_ipv6.h"
 
 static size_t route_addr_len(net_sa_family_t family)
 {
@@ -594,6 +596,22 @@ int net_route_packet_if(struct net_pkt *pkt, struct net_if *iface)
 	}
 
 	net_pkt_set_forwarding(pkt, forwarding);
+
+	if (forwarding) {
+		int ret = 0;
+
+		if (IS_ENABLED(CONFIG_NET_IPV4_FORWARDING) &&
+		    net_pkt_family(pkt) == NET_PF_INET) {
+			ret = net_route_ipv4_decrement_ttl(pkt);
+		} else if (IS_ENABLED(CONFIG_NET_IPV6_FORWARDING) &&
+			   net_pkt_family(pkt) == NET_PF_INET6) {
+			ret = net_route_ipv6_decrement_hop_limit(pkt);
+		}
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
 
 	if (net_route_ll_addr_supported(iface)) {
 		memcpy(net_pkt_lladdr_src(pkt)->addr,

@@ -17,7 +17,7 @@
 
 /**
  * @defgroup veml6031_interface VEML6031
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_vishay
  * @brief Vishay VEML6031 High Accuracy Ambient Light Sensor
  * @{
  */

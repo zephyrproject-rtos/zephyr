@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2026 Filip Stojanovic <filipembedded@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+
+#include "b_m2mem_pack1_common.dtsi"
+
+&m2mem_xspi {
+	status = "okay";
+
+	m2mem_flash: is25lp032d: mspi-nor-flash@0 {
+		compatible = "jedec,mspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(32)>; /* 32 Mbits */
+		status = "okay";
+
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+		mspi-io-mode = "MSPI_IO_MODE_QUAD_1_4_4";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <0>;
+
+		read-command = <0xeb>;
+		write-command = <0x32>;
+		write-io-mode = "MSPI_IO_MODE_QUAD_1_1_4";
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_3_BYTE";
+		rx-dummy = <6>;
+		jedec-id = [9d 60 16];
+
+		reset-gpios = <&m2mem_ldo_en M2MEM_CONNECTOR_GPIO_LDO_EN GPIO_ACTIVE_LOW>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			m2mem_flash0: partition@0 {
+				label = "storage";
+				reg = <0x0 DT_SIZE_M(4)>;
+			};
+		};
+	};
+};

@@ -4,10 +4,25 @@ tests:
       - net
       - tls
     depends_on: netif
+  net.tls_credentials.parse_crt:
+    tags:
+      - net
+      - tls
+      - mbedtls
+    depends_on: netif
+    extra_args: EXTRA_CONF_FILE="./prj_parse_crt.conf"
   net.tls_credentials.trusted_tfm:
     filter: CONFIG_BUILD_WITH_TFM
-    extra_args: EXTRA_CONF_FILE=./prj_trusted_tfm.conf
+    extra_args: EXTRA_CONF_FILE="./prj_trusted_tfm.conf"
     tags:
       - net
       - tls
       - trusted-firmware-m
+  net.tls_credentials.trusted_tfm.parse_crt:
+    filter: CONFIG_BUILD_WITH_TFM
+    extra_args: EXTRA_CONF_FILE="./prj_trusted_tfm.conf;./prj_parse_crt.conf"
+    tags:
+      - net
+      - tls
+      - trusted-firmware-m
+      - mbedtls

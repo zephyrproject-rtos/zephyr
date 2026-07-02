@@ -166,3 +166,11 @@ tests:
       - s32k5xxcvb/s32k566/r52
     integration_platforms:
       - s32z2xxdc2/s32z270/rtu0
+  sample.drivers.watchdog.nrf_gswdt:
+    filter: dt_compat_enabled("nordic,nrf-gswdt")
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      - FILE_SUFFIX=nrf_gswdt

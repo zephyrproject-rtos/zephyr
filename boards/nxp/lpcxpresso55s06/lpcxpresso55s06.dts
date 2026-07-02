@@ -13,3 +13,7 @@
 	model = "NXP LPCXpresso55S06 board";
 	compatible = "nxp,lpc55xxx", "nxp,lpc";
 };
+
+&wwdt0 {
+	status = "okay";
+};

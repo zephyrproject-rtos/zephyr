@@ -1,0 +1,28 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		sram_tx: memory@38000000 {
+			reg = <0x38000000 DT_SIZE_K(32)>;
+		};
+
+		sram_rx: memory@38008000 {
+			reg = <0x38008000 DT_SIZE_K(32)>;
+		};
+	};
+
+	ipc0: ipc0 {
+		compatible = "zephyr,ipc-icmsg";
+		tx-region = <&sram_tx>;
+		rx-region = <&sram_rx>;
+		mboxes = <&mailbox 11>, <&mailbox 10>;
+		mbox-names = "tx", "rx";
+		status = "okay";
+	};
+};

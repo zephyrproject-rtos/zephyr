@@ -774,7 +774,9 @@ static int mcux_sctimer_pwm_pm_action(const struct device *dev, enum pm_device_a
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 #ifdef CONFIG_PM_DEVICE
-		SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
+		if (data->pwm_channel_active) {
+			SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
+		}
 #endif /* CONFIG_PM_DEVICE */
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 		if (err < 0 && err != -ENOENT) {

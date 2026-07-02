@@ -6,7 +6,7 @@
 
 / {
 	zephyr,user {
-		/* Reading mulitple pins not possible */
+		/* Reading multiple pins not possible */
 		io-channels = <&adc0 0x09>;
 		io-channel-names = "MB1_AN";
 

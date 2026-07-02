@@ -80,11 +80,7 @@ static void dsa_port_phylink_change(const struct device *phydev, struct phy_link
 		dsa_switch_ctx->dapi->port_phylink_change(phydev, state, dev);
 	}
 
-	if (state->is_up) {
-		net_eth_carrier_on(iface);
-	} else {
-		net_eth_carrier_off(iface);
-	}
+	net_eth_carrier_set(iface, state->is_up);
 }
 
 static void dsa_port_iface_init(struct net_if *iface)
@@ -141,7 +137,7 @@ static const struct device *dsa_port_get_phy(const struct device *dev,
 	return cfg->phy_dev;
 }
 
-#ifdef CONFIG_NET_L2_PTP
+#ifdef CONFIG_NET_L2_PTP_TIMESTAMPING
 const struct device *dsa_port_get_ptp_clock(const struct device *dev,
 					    struct net_if *iface __unused)
 {
@@ -157,7 +153,7 @@ enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev,
 	struct dsa_switch_context *dsa_switch_ctx = dev->data;
 	uint32_t caps = 0;
 
-#ifdef CONFIG_NET_L2_PTP
+#ifdef CONFIG_NET_L2_PTP_TIMESTAMPING
 	if (dsa_port_get_ptp_clock(dev, iface) != NULL) {
 		caps |= ETHERNET_PTP;
 	}
@@ -202,7 +198,7 @@ const struct ethernet_api dsa_eth_api = {
 	.iface_api.init = dsa_port_iface_init,
 	.get_phy = dsa_port_get_phy,
 	.send = dsa_xmit,
-#ifdef CONFIG_NET_L2_PTP
+#ifdef CONFIG_NET_L2_PTP_TIMESTAMPING
 	.get_ptp_clock = dsa_port_get_ptp_clock,
 #endif
 	.get_capabilities = dsa_port_get_capabilities,

@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT sensry_sy1xx_i2c
 
-#include "zephyr/sys/byteorder.h"
+#include <zephyr/sys/byteorder.h>
 
 #include <zephyr/sys/minmax.h>
 #include <zephyr/logging/log.h>

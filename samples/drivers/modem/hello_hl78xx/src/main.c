@@ -290,6 +290,7 @@ GNSS_AUX_DATA_CALLBACK_DEFINE(GNSS_DEVICE, gnss_aux_data_cb);
 
 #endif /* CONFIG_HL78XX_GNSS */
 
+#ifdef CONFIG_HL78XX_EVT_MONITOR
 static void evnt_listener(struct hl78xx_evt *event, struct hl78xx_evt_monitor_entry *context)
 {
 	switch (event->type) {
@@ -515,6 +516,22 @@ static void evnt_listener(struct hl78xx_evt *event, struct hl78xx_evt_monitor_en
 		break;
 	}
 }
+#endif /* CONFIG_HL78XX_EVT_MONITOR */
+
+#ifdef CONFIG_HL78XX_AT_MONITOR
+static void cereg_monitor_handler(const struct hl78xx_at_notification *notif,
+				  struct hl78xx_at_monitor_entry *monitor_context)
+{
+	ARG_UNUSED(monitor_context);
+
+	if (notif->argc < 2) {
+		return;
+	}
+
+	LOG_INF("CEREG event: registration status %s argc=%u", notif->argv[1],
+		(unsigned int)notif->argc);
+}
+#endif /* CONFIG_HL78XX_AT_MONITOR */
 
 static void hl78xx_on_ok(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
 {
@@ -562,8 +579,13 @@ static int resolve_broker_addr(struct net_sockaddr_in *broker)
 }
 
 MODEM_CHAT_MATCH_DEFINE(ok_match, "OK", "", hl78xx_on_ok);
-
+#ifdef CONFIG_HL78XX_EVT_MONITOR
 HL78XX_EVT_MONITOR(listener_evt, evnt_listener);
+#endif /* CONFIG_HL78XX_EVT_MONITOR */
+#ifdef CONFIG_HL78XX_AT_MONITOR
+HL78XX_AT_MONITOR(cereg_monitor, "+CEREG: ", cereg_monitor_handler);
+#endif /* CONFIG_HL78XX_AT_MONITOR */
+
 #if defined(CONFIG_HL78XX_GNSS) && defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)
 static void k_work_wake_fn(struct k_work *work)
 {

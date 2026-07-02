@@ -51,8 +51,8 @@
 
 #include "mac_internal.h"
 #include "mac_commands.h"
-#include "engine.h"
-#include "crypto/crypto.h"
+#include <engine.h>
+#include <crypto/crypto.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(lorawan_native_mac, CONFIG_LORAWAN_LOG_LEVEL);

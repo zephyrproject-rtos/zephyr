@@ -6,6 +6,7 @@
 #define DT_DRV_COMPAT nxp_lpc_crc
 
 #include <zephyr/drivers/crc.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
@@ -15,6 +16,8 @@ LOG_MODULE_REGISTER(nxp_lpc_crc, CONFIG_CRC_LOG_LEVEL);
 
 struct crc_nxp_lpc_config {
 	CRC_Type *base;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 };
 
 struct crc_nxp_lpc_data {
@@ -70,6 +73,7 @@ static int crc_nxp_lpc_prepare_config(const struct crc_ctx *ctx, crc_config_t *c
 		cfg->seed &= 0xFFFFU;
 		break;
 	case CRC16_CCITT:
+	case CRC16_ITU_T:
 		if (ctx->polynomial != CRC16_CCITT_POLY) {
 			return -EINVAL;
 		}
@@ -83,6 +87,15 @@ static int crc_nxp_lpc_prepare_config(const struct crc_ctx *ctx, crc_config_t *c
 		cfg->polynomial = kCRC_Polynomial_CRC_32;
 		/* IEEE uses final XOR */
 		cfg->complementOut = true;
+		break;
+	case CRC32_MPEG2:
+		if (ctx->polynomial != CRC32_IEEE_POLY) {
+			return -EINVAL;
+		}
+		cfg->polynomial = kCRC_Polynomial_CRC_32;
+		/* MPEG-2 uses no reflection and no final XOR; both already
+		 * default to false above.
+		 */
 		break;
 	default:
 		return -ENOTSUP;
@@ -147,7 +160,7 @@ static int crc_nxp_lpc_update(const struct device *dev, struct crc_ctx *ctx, con
 	}
 
 	/* Keep an updated result for streaming verification */
-	if (ctx->type == CRC32_IEEE) {
+	if ((ctx->type == CRC32_IEEE) || (ctx->type == CRC32_MPEG2)) {
 		ctx->result = CRC_Get32bitResult(config->base);
 	} else {
 		ctx->result = (uint32_t)CRC_Get16bitResult(config->base);
@@ -168,7 +181,7 @@ static int crc_nxp_lpc_finish(const struct device *dev, struct crc_ctx *ctx)
 		return -EINVAL;
 	}
 
-	if (ctx->type == CRC32_IEEE) {
+	if ((ctx->type == CRC32_IEEE) || (ctx->type == CRC32_MPEG2)) {
 		ctx->result = CRC_Get32bitResult(config->base);
 	} else {
 		ctx->result = (uint32_t)CRC_Get16bitResult(config->base);
@@ -187,19 +200,29 @@ static DEVICE_API(crc, crc_nxp_lpc_driver_api) = {
 
 static int crc_nxp_lpc_init(const struct device *dev)
 {
+	const struct crc_nxp_lpc_config *config = dev->config;
+	int ret;
+
 #ifdef CONFIG_MULTITHREADING
 	struct crc_nxp_lpc_data *data = dev->data;
-	int ret;
 
 	ret = k_sem_init(&data->lock, 1, 1);
 	if (ret != 0) {
 		return ret;
 	}
-
-#else
-	ARG_UNUSED(dev);
-
 #endif
+
+	if (config->clock_dev != NULL) {
+		if (!device_is_ready(config->clock_dev)) {
+			return -ENODEV;
+		}
+
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
 	return 0;
 }
 
@@ -207,6 +230,11 @@ static int crc_nxp_lpc_init(const struct device *dev)
 	static struct crc_nxp_lpc_data crc_nxp_lpc_data_##inst;                                    \
 	static const struct crc_nxp_lpc_config crc_nxp_lpc_config_##inst = {                       \
 		.base = (CRC_Type *)DT_INST_REG_ADDR(inst),                                        \
+		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks),                      \
+			(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst))), (NULL)),                       \
+		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks),                   \
+			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name)),                 \
+			((clock_control_subsys_t)0U)),                                             \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, crc_nxp_lpc_init, NULL, &crc_nxp_lpc_data_##inst,              \
 			      &crc_nxp_lpc_config_##inst, POST_KERNEL,                             \

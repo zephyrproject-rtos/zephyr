@@ -100,6 +100,7 @@ ZTEST(lwm2m_engine, test_start_stop)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	k_mutex_init(&ctx.lock);
 	ctx.remote_addr.sa_family = NET_AF_INET;
 	ctx.sock_fd = -1;
 	ctx.load_credentials = NULL;
@@ -130,6 +131,7 @@ ZTEST(lwm2m_engine, test_pause_resume)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	k_mutex_init(&ctx.lock);
 	ctx.remote_addr.sa_family = NET_AF_INET;
 	ctx.sock_fd = -1;
 	ctx.load_credentials = NULL;
@@ -155,6 +157,7 @@ ZTEST(lwm2m_engine, test_engine_add_service)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	k_mutex_init(&ctx.lock);
 	ctx.remote_addr.sa_family = NET_AF_INET;
 	ctx.load_credentials = NULL;
 
@@ -177,6 +180,7 @@ ZTEST(lwm2m_engine, test_no_sa_family)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	k_mutex_init(&ctx.lock);
 	ctx.sock_fd = -1;
 	ctx.load_credentials = NULL;
 
@@ -192,6 +196,7 @@ ZTEST(lwm2m_engine, test_connect_fail)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	k_mutex_init(&ctx.lock);
 	ctx.sock_fd = -1;
 	ctx.load_credentials = NULL;
 	ctx.remote_addr.sa_family = NET_AF_INET;
@@ -210,6 +215,7 @@ ZTEST(lwm2m_engine, test_socket_suspend_resume_connection)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	k_mutex_init(&ctx.lock);
 	ctx.sock_fd = -1;
 	ctx.load_credentials = NULL;
 	ctx.remote_addr.sa_family = NET_AF_INET;
@@ -233,6 +239,7 @@ ZTEST(lwm2m_engine, test_check_notifications)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	k_mutex_init(&ctx.lock);
 	ctx.sock_fd = -1;
 	ctx.load_credentials = NULL;
 	ctx.remote_addr.sa_family = NET_AF_INET;
@@ -266,6 +273,7 @@ ZTEST(lwm2m_engine, test_push_queued_buffers)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	k_mutex_init(&ctx.lock);
 	sys_slist_init(&ctx.queued_messages);
 	msg.ctx = &ctx;
 	msg.pending = &pending;
@@ -285,6 +293,7 @@ ZTEST(lwm2m_engine, test_validate_write_access)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	k_mutex_init(&ctx.lock);
 	ctx.bootstrap_mode = true;
 	msg.ctx = &ctx;
 	msg.path = LWM2M_OBJ(LWM2M_OBJECT_SECURITY_ID, 0);
@@ -345,6 +354,7 @@ ZTEST(lwm2m_engine, test_retransmit_request)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	k_mutex_init(&ctx.lock);
 	ctx.sock_fd = -1;
 	ctx.load_credentials = NULL;
 	ctx.remote_addr.sa_family = NET_AF_INET;
@@ -365,7 +375,7 @@ ZTEST(lwm2m_engine, test_retransmit_request)
 	k_sleep(K_MSEC(500));
 	ret = lwm2m_engine_stop(&ctx);
 	zassert_equal(ret, 0);
-	zassert_not_equal(lwm2m_reset_message_fake.call_count, 0, "Message was not reseted");
+	zassert_not_equal(lwm2m_reset_message_fake.call_count, 0, "Message was not reset");
 	zassert_not_equal(lwm2m_send_message_async_fake.call_count, 0, "Message was not sent");
 }
 
@@ -376,6 +386,7 @@ ZTEST(lwm2m_engine, test_socket_recv)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	k_mutex_init(&ctx.lock);
 	ctx.remote_addr.sa_family = NET_AF_INET;
 	ctx.sock_fd = -1;
 
@@ -399,6 +410,7 @@ ZTEST(lwm2m_engine, test_socket_send)
 
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
+	k_mutex_init(&ctx.lock);
 	ctx.remote_addr.sa_family = NET_AF_INET;
 	ctx.sock_fd = -1;
 	sys_slist_init(&ctx.queued_messages);
@@ -430,6 +442,7 @@ ZTEST(lwm2m_engine, test_security)
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 	my_data_len = snprintk(my_buf, sizeof(my_buf), "-----BEGIN SOMETHING");
 
+	k_mutex_init(&ctx.lock);
 	ctx.remote_addr.sa_family = NET_AF_INET;
 	ctx.sock_fd = -1;
 	ctx.load_credentials = NULL;
@@ -499,6 +512,7 @@ ZTEST(lwm2m_engine, test_socket_state)
 		.type = COAP_TYPE_ACK,
 	};
 
+	k_mutex_init(&ctx.lock);
 	sys_slist_init(&ctx.pending_sends);
 	ret = lwm2m_engine_start(&ctx);
 	zassert_equal(ret, 0);
@@ -524,7 +538,7 @@ ZTEST(lwm2m_engine, test_socket_state)
 	k_sleep(K_MSEC(100));
 	zassert_equal(last_state, LWM2M_SOCKET_STATE_ONGOING);
 
-	/* Only one Ack transmiting, nothing expected back -> LAST */
+	/* Only one Ack transmitting, nothing expected back -> LAST */
 	coap_pendings_count_fake.return_val = 0;
 	sys_slist_append(&ctx.pending_sends, &ack.node);
 	set_socket_events(ZSOCK_POLLOUT);

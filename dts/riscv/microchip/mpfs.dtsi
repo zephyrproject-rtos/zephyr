@@ -321,5 +321,16 @@
 			clock-frequency = <100000>;
 			status = "disabled";
 		};
+
+		rtc: rtc@20124000 {
+			compatible = "microchip,rtc-mss";
+			reg = <0x20124000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <80 1>, <81 1>;
+			clock-frequency = <125000000>;
+			prescaler = <786432>;
+			alarms-count = <2>;
+			status = "disabled";
+		};
 	};
 };

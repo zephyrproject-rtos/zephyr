@@ -84,13 +84,30 @@ static void tlifo_isr_thread(struct k_lifo *plifo)
 }
 
 /**
- * @addtogroup kernel_lifo_tests
+ * @addtogroup tests_kernel_lifo
  * @{
  */
 
 /**
- * @brief test thread to thread data passing via lifo
- * @see k_fifo_init(), k_lifo_put(), k_lifo_get()
+ * @brief Verify LIFO data passing between two threads in LIFO order.
+ *
+ * @details
+ * A consumer thread blocks on k_lifo_get() while the main thread enqueues items,
+ * and must receive them newest-first (LIFO order). Run against both a
+ * k_lifo_init()ed and a K_LIFO_DEFINE()d LIFO to confirm both initialization
+ * paths behave the same.
+ *
+ * Test steps:
+ * - Start a preemptible consumer thread that drains the LIFO.
+ * - From the main thread, put items onto the LIFO.
+ * - Synchronize on a semaphore once the consumer has read all items.
+ * - Repeat for a statically defined LIFO.
+ *
+ * Expected result:
+ * - The consumer dequeues items in reverse insertion order.
+ *
+ * @see k_lifo_put()
+ * @see k_lifo_get()
  */
 ZTEST(lifo_contexts_1cpu, test_lifo_thread2thread)
 {
@@ -103,8 +120,23 @@ ZTEST(lifo_contexts_1cpu, test_lifo_thread2thread)
 }
 
 /**
- * @brief test isr to thread data passing via lifo
- * @see k_fifo_init(), k_lifo_put(), k_lifo_get()
+ * @brief Verify LIFO data passing from an ISR to a thread.
+ *
+ * @details
+ * Items are enqueued from interrupt context (via irq_offload()) and dequeued in
+ * thread context, confirming k_lifo_put() is ISR-safe and the thread receives
+ * the items in LIFO order. Run against both an init()ed and a DEFINE()d LIFO.
+ *
+ * Test steps:
+ * - From an ISR, put items onto the LIFO.
+ * - In thread context, get the items and verify reverse insertion order.
+ * - Repeat for a statically defined LIFO.
+ *
+ * Expected result:
+ * - The thread dequeues every ISR-enqueued item newest-first.
+ *
+ * @see k_lifo_put()
+ * @see k_lifo_get()
  */
 ZTEST(lifo_contexts, test_lifo_thread2isr)
 {
@@ -117,8 +149,23 @@ ZTEST(lifo_contexts, test_lifo_thread2isr)
 }
 
 /**
- * @brief test thread to isr data passing via lifo
- * @see k_fifo_init(), k_lifo_put(), k_lifo_get()
+ * @brief Verify LIFO data passing from a thread to an ISR.
+ *
+ * @details
+ * Items are enqueued in thread context and dequeued from interrupt context (via
+ * irq_offload()), confirming k_lifo_get() is ISR-safe and the ISR receives the
+ * items in LIFO order. Run against both an init()ed and a DEFINE()d LIFO.
+ *
+ * Test steps:
+ * - In thread context, put items onto the LIFO.
+ * - From an ISR, get the items and verify reverse insertion order.
+ * - Repeat for a statically defined LIFO.
+ *
+ * Expected result:
+ * - The ISR dequeues every thread-enqueued item newest-first.
+ *
+ * @see k_lifo_put()
+ * @see k_lifo_get()
  */
 ZTEST(lifo_contexts, test_lifo_isr2thread)
 {
@@ -128,6 +175,31 @@ ZTEST(lifo_contexts, test_lifo_isr2thread)
 
 	/**TESTPOINT: test K_LIFO_DEFINE lifo*/
 	tlifo_isr_thread(&klifo);
+}
+
+K_HEAP_DEFINE(lifo_alloc_pool, 256);
+
+/**
+ * @brief Test enqueuing a data item to a LIFO with implicit memory allocation
+ *
+ * @details Use k_lifo_alloc_put() to enqueue a data item that does not reserve
+ * space for the bookkeeping word, so the kernel allocates the container from the
+ * calling thread's resource pool. Verify the call succeeds and that the same
+ * data pointer is returned by a subsequent get.
+ *
+ * @see k_lifo_alloc_put()
+ */
+ZTEST(lifo_contexts, test_lifo_alloc_put)
+{
+	static uint32_t payload = 0xDEADBEEF;
+
+	k_lifo_init(&lifo);
+	k_thread_heap_assign(k_current_get(), &lifo_alloc_pool);
+
+	/**TESTPOINT: allocate the queue container from the thread resource pool*/
+	zassert_equal(k_lifo_alloc_put(&lifo, &payload), 0);
+
+	zassert_equal(k_lifo_get(&lifo, K_NO_WAIT), (void *)&payload);
 }
 
 /**

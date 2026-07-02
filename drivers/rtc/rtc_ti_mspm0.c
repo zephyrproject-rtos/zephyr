@@ -56,19 +56,30 @@ static int rtc_ti_mspm0_set_time(const struct device *dev,
 {
 	const struct rtc_ti_mspm0_config *cfg = dev->config;
 	struct rtc_ti_mspm0_data *data = dev->data;
+	int mon, year;
 
 	if ((timeptr == NULL) || !rtc_utils_validate_rtc_time(timeptr, 0)) {
 		return -EINVAL;
 	}
 
+	mon = timeptr->tm_mon + 1;
+	year = timeptr->tm_year + 1900;
+
 	K_SPINLOCK(&data->lock) {
 		DL_RTC_Common_setCalendarSecondsBinary(cfg->regs, timeptr->tm_sec);
 		DL_RTC_Common_setCalendarMinutesBinary(cfg->regs, timeptr->tm_min);
 		DL_RTC_Common_setCalendarHoursBinary(cfg->regs, timeptr->tm_hour);
-		DL_RTC_Common_setCalendarDayOfWeekBinary(cfg->regs, timeptr->tm_wday);
-		DL_RTC_Common_setCalendarDayOfMonthBinary(cfg->regs, timeptr->tm_mday);
-		DL_RTC_Common_setCalendarMonthBinary(cfg->regs, timeptr->tm_mon);
-		DL_RTC_Common_setCalendarYearBinary(cfg->regs, timeptr->tm_year);
+		/*
+		 * Back to back writes to counter/calendar registers such as
+		 * SEC, MIN, HOUR, DAY, MON, YEAR need to be avoided since writes
+		 * to calendar registers take 2 to 3 RTCCLK cycles to take effect.
+		 */
+		DL_Common_updateReg(&cfg->regs->DAY,
+				    (uint32_t)timeptr->tm_wday |
+					    ((uint32_t)timeptr->tm_mday << RTC_DAY_DOMBIN_OFS),
+				    RTC_DAY_DOW_MASK | RTC_DAY_DOMBIN_MASK);
+		DL_RTC_Common_setCalendarMonthBinary(cfg->regs, mon);
+		DL_RTC_Common_setCalendarYearBinary(cfg->regs, year);
 	}
 
 	return 0;
@@ -89,12 +100,14 @@ static int rtc_ti_mspm0_get_time(const struct device *dev,
 		timeptr->tm_min  = DL_RTC_Common_getCalendarMinutesBinary(cfg->regs);
 		timeptr->tm_hour = DL_RTC_Common_getCalendarHoursBinary(cfg->regs);
 		timeptr->tm_mday = DL_RTC_Common_getCalendarDayOfMonthBinary(cfg->regs);
-		timeptr->tm_mon  = DL_RTC_Common_getCalendarMonthBinary(cfg->regs);
-		timeptr->tm_year = DL_RTC_Common_getCalendarYearBinary(cfg->regs);
+		timeptr->tm_mon = DL_RTC_Common_getCalendarMonthBinary(cfg->regs) - 1;
+		timeptr->tm_year = DL_RTC_Common_getCalendarYearBinary(cfg->regs) - 1900;
 		timeptr->tm_wday = DL_RTC_Common_getCalendarDayOfWeekBinary(cfg->regs);
-		timeptr->tm_nsec = 0;
-		timeptr->tm_isdst = -1;
 	}
+
+	timeptr->tm_yday = -1;
+	timeptr->tm_nsec = 0;
+	timeptr->tm_isdst = -1;
 
 	return 0;
 }

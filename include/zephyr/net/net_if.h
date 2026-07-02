@@ -1502,22 +1502,6 @@ struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr);
 struct net_if *net_if_lookup_by_dev(const struct device *dev);
 
 /**
- * @brief Get network interface IP config
- *
- * @param iface Interface to use.
- *
- * @return NULL if not found or pointer to correct config settings.
- */
-static inline struct net_if_config *net_if_config_get(struct net_if *iface)
-{
-	if (iface == NULL) {
-		return NULL;
-	}
-
-	return &iface->config;
-}
-
-/**
  * @brief Remove a router from the system
  *
  * @param router Pointer to existing router

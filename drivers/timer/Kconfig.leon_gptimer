@@ -8,6 +8,7 @@ config LEON_GPTIMER
 	default y
 	depends on DT_HAS_GAISLER_GPTIMER_ENABLED
 	select DYNAMIC_INTERRUPTS
+	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the GRLIB
 	  GPTIMER which is common in LEON systems.

@@ -371,7 +371,7 @@ void platformRadioInit(void)
 	k_work_queue_start(&ot_work_q, ot_task_stack,
 			   K_KERNEL_STACK_SIZEOF(ot_task_stack),
 			   OT_WORKER_PRIORITY, NULL);
-	k_thread_name_set(&ot_work_q.thread, "ot_radio_workq");
+	k_thread_name_set(ot_work_q.thread_id, "ot_radio_workq");
 
 	if ((radio_api->get_capabilities(radio_dev) &
 	     IEEE802154_HW_TX_RX_ACK) != IEEE802154_HW_TX_RX_ACK) {

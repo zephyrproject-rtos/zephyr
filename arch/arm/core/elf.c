@@ -103,6 +103,7 @@ LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
 #define SHIFT_THM_MOV_IMM4 12
 
 #ifdef CONFIG_LLEXT_VENEERS
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 /*
  * Thumb-2 veneer stub (8 bytes, 4-byte aligned):
  * LDR.W PC, [PC, #0]   ; loads PC from following word
@@ -119,6 +120,37 @@ struct arm_veneer_entry {
 	uint16_t ldr_lo;
 	uint32_t target;
 };
+#else  /* ARMv6-M / ARMv8-M Baseline */
+/*
+ * Thumb-1 veneer stub (16 bytes, 4-byte aligned):
+ * PUSH {R4}            ; save r4
+ * LDR  R4, [PC, #8]    ; load target into r4
+ * MOV  IP, R4          ; copy to ip
+ * POP  {R4}            ; restore r4
+ * BX   IP              ; tail call (LR preserved)
+ * NOP                  ; alignment
+ * <target>             ; 32-bit absolute address
+ *
+ * See ARMv6-M Architecture Reference Manual (ARM DDI 0419),
+ * Chapter A6 "Thumb Instruction Details" - all T1 encodings.
+ */
+#define THM_V6M_PUSH_R4   0xB410  /* PUSH {R4} */
+#define THM_V6M_LDR_R4_8  0x4C02  /* LDR R4, [PC, #8] */
+#define THM_V6M_MOV_IP_R4 0x46A4  /* MOV IP, R4 */
+#define THM_V6M_POP_R4    0xBC10  /* POP {R4} */
+#define THM_V6M_BX_IP     0x4760  /* BX IP */
+#define THM_V6M_NOP       0xBF00  /* NOP */
+
+struct arm_veneer_entry {
+	uint16_t push;
+	uint16_t ldr;
+	uint16_t mov;
+	uint16_t pop;
+	uint16_t bx;
+	uint16_t nop;
+	uint32_t target;
+};
+#endif
 #endif /* CONFIG_LLEXT_VENEERS */
 
 static inline int prel31_decode(elf_word reloc_type, uint32_t loc,
@@ -303,8 +335,17 @@ static int thm_jumps_handler(struct llext *ext, elf_word reloc_type,
 			}
 			if (stubs[k].target == 0) {
 				entry = &stubs[k];
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 				entry->ldr_hi = THM_LDR_PC_PC_HI;
 				entry->ldr_lo = THM_LDR_PC_PC_LO;
+#else
+				entry->push = THM_V6M_PUSH_R4;
+				entry->ldr  = THM_V6M_LDR_R4_8;
+				entry->mov  = THM_V6M_MOV_IP_R4;
+				entry->pop  = THM_V6M_POP_R4;
+				entry->bx   = THM_V6M_BX_IP;
+				entry->nop  = THM_V6M_NOP;
+#endif
 				entry->target = sym_base_addr;
 				break;
 			}

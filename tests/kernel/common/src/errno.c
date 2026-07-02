@@ -60,10 +60,26 @@ static void errno_thread(void *_n, void *_my_errno, void *_unused)
  * @{
  */
 /**
- * @brief Verify thread context
+ * @brief Verify each thread sees a private errno value preserved across context switches.
  *
- * @details Check whether variable value per-thread are saved during
- *	context switch
+ * @ingroup kernel_errno_tests
+ *
+ * @details
+ * Confirms that errno is thread-local: concurrent threads assigning distinct errno
+ * values, sleeping for different durations to force interleaving, must each still
+ * observe their own value when resumed, and the main thread's errno must be
+ * unaffected. Passing proves errno is saved and restored per thread on context switch.
+ *
+ * Test steps:
+ * - Set the main thread's errno to a known value and record it.
+ * - Spawn N_THREADS threads, each assigning a unique errno then sleeping a staggered
+ *   interval before re-reading and reporting its result via a FIFO.
+ * - Collect each thread's pass/fail result and re-check the main thread's errno.
+ *
+ * Expected result:
+ * - Every thread observes its own errno value and the main thread's errno is unchanged.
+ *
+ * @see k_thread_create()
  */
 ZTEST(common_errno, test_thread_context)
 {
@@ -133,10 +149,25 @@ void thread_entry_user(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Verify errno works well
+ * @brief Verify the C standard errno and Zephyr's per-thread errno storage stay in sync.
  *
- * @details Check whether a C standard errno can be stored successfully,
- *  no matter it is using tls or not.
+ * @ingroup kernel_errno_tests
+ *
+ * @details
+ * Confirms that writing to the standard errno updates the same location returned by
+ * Zephyr's per-thread errno accessor, whether or not thread-local storage is used.
+ * Passing proves errno reads and writes resolve to Zephyr's per-thread slot. Skipped
+ * when the native host C library owns errno.
+ *
+ * Test steps:
+ * - From a (possibly user-mode) thread, assign a known value to errno.
+ * - Read the value back through Zephyr's per-thread errno pointer accessor.
+ * - Join the spawned thread.
+ *
+ * Expected result:
+ * - The value read via the per-thread accessor equals the value assigned to errno.
+ *
+ * @see z_errno()
  */
 ZTEST_USER(common_errno, test_errno)
 {

@@ -561,11 +561,15 @@
 		};
 
 		lp_uart: uart@50121000 {
-			compatible = "espressif,esp32-uart";
+			compatible = "espressif,esp32-lpuart";
 			reg = <0x50121000 DT_SIZE_K(4)>;
 			status = "disabled";
 			interrupts = <LP_UART_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
+			tx-pin = <14>;
+			rx-pin = <15>;
+			rts-pin = <16>;
+			cts-pin = <17>;
 			current-speed = <115200>;
 		};
 
@@ -626,22 +630,22 @@
 				status = "disabled";
 			};
 		};
-	};
 
-	eth: eth {
-		compatible = "espressif,esp32-eth";
-		interrupts = <ETH_MAC_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
-		interrupt-parent = <&intc>;
-		clocks = <&clock ESP32_EMAC_MODULE>;
-		status = "disabled";
-	};
+		eth: eth@50098000 {
+			compatible = "espressif,esp32-eth";
+			reg = <0x50098000 0x4000>;
+			interrupts = <ETH_MAC_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_EMAC_MODULE>;
+			status = "disabled";
 
-	mdio: mdio {
-		compatible = "espressif,esp32-mdio";
-		clocks = <&clock ESP32_EMAC_MODULE>;
-		status = "disabled";
-		#address-cells = <1>;
-		#size-cells = <0>;
+			mdio: mdio {
+				compatible = "espressif,esp32-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+		};
 	};
 
 	ldo: ldo {

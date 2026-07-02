@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Bluetooth Mesh Remote Provisioning Server model API.
+ * @ingroup bt_mesh_rpr_srv
+ */
+
 #ifndef ZEPHYR_INCLUDE_BT_MESH_RPR_SRV_H__
 #define ZEPHYR_INCLUDE_BT_MESH_RPR_SRV_H__
 

@@ -1,0 +1,9 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_NXP_IRTC
+	bool "NXP IRTC wake timer counter driver"
+	default y
+	depends on DT_HAS_NXP_IRTC_WAKE_TIMER_ENABLED
+	help
+	  Enable the counter driver for the NXP IRTC wake timer.

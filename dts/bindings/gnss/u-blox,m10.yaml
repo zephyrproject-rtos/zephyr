@@ -1,0 +1,10 @@
+# Copyright (c) 2026 CampOS
+# SPDX-License-Identifier: Apache-2.0
+
+description: U-BLOX M10 GNSS Module
+
+compatible: "u-blox,m10"
+
+include:
+  - uart-device.yaml
+  - u-blox,common.yaml

@@ -17,13 +17,7 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(linklayer_plat_adapt);
 
-#if defined(CONFIG_BT_STM32WBA)
-#define RADIO_NODE DT_NODELABEL(bt_hci_wba)
-#elif defined(CONFIG_IEEE802154_STM32WBA)
-#define RADIO_NODE DT_NODELABEL(ieee802154)
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(RADIO_NODE)
+#define RADIO_NODE DT_INST(0, st_stm32wba_radio)
 #define STM32WBA_RADIO_IRQ_NUM DT_IRQ_BY_NAME(RADIO_NODE, radio, irq)
 #define STM32WBA_RADIO_INTR_PRIO_HIGH DT_IRQ_BY_NAME(RADIO_NODE, radio, priority)
 #if DT_IRQ_HAS_NAME(RADIO_NODE, radio_sw_low)
@@ -31,7 +25,6 @@ LOG_MODULE_REGISTER(linklayer_plat_adapt);
 #define STM32WBA_RADIO_SW_LOW_INTR_PRIO DT_IRQ_BY_NAME(RADIO_NODE, radio_sw_low, priority)
 #else
 #error "Radio SW low interrupt is not defined in DTS"
-#endif
 #endif
 
 #define STM32WBA_RADIO_INTR_PRIO_HIGH_Z (STM32WBA_RADIO_INTR_PRIO_HIGH + _IRQ_PRIO_OFFSET)
@@ -88,7 +81,7 @@ void LINKLAYER_PLAT_SetupSwLowIT(void (*intr_cb)())
 	low_isr_callback = intr_cb;
 }
 
-void radio_high_prio_isr(void)
+ISR_DIRECT_DECLARE(radio_high_prio_isr)
 {
 	radio_callback();
 
@@ -97,9 +90,11 @@ void radio_high_prio_isr(void)
 	__ISB();
 
 	ISR_DIRECT_PM();
+
+	return 1;
 }
 
-void radio_low_prio_isr(void)
+ISR_DIRECT_DECLARE(radio_low_prio_isr)
 {
 	irq_disable(STM32WBA_RADIO_SW_LOW_IRQ_NUM);
 
@@ -115,36 +110,19 @@ void radio_low_prio_isr(void)
 	irq_enable(STM32WBA_RADIO_SW_LOW_IRQ_NUM);
 
 	ISR_DIRECT_PM();
+
+	return 1;
 }
 
-
-void link_layer_register_isr(bool force)
+void link_layer_register_isr(void)
 {
-	static bool is_isr_registered;
-
-	if (!force && is_isr_registered) {
-		return;
-	}
-	is_isr_registered = true;
-
-	ARM_IRQ_DIRECT_DYNAMIC_CONNECT(STM32WBA_RADIO_IRQ_NUM, 0, 0, reschedule);
-
-	/* Ensure the IRQ is disabled before enabling it at run time */
 	irq_disable(STM32WBA_RADIO_IRQ_NUM);
-
-	irq_connect_dynamic(STM32WBA_RADIO_IRQ_NUM, STM32WBA_RADIO_INTR_PRIO_HIGH_Z,
-			    (void (*)(const void *))radio_high_prio_isr, NULL, 0);
-
-	irq_enable(STM32WBA_RADIO_IRQ_NUM);
-
-	ARM_IRQ_DIRECT_DYNAMIC_CONNECT(STM32WBA_RADIO_SW_LOW_IRQ_NUM, 0, 0, reschedule);
-
-	/* Ensure the IRQ is disabled before enabling it at run time */
 	irq_disable(STM32WBA_RADIO_SW_LOW_IRQ_NUM);
-
-	irq_connect_dynamic(STM32WBA_RADIO_SW_LOW_IRQ_NUM, STM32WBA_RADIO_SW_LOW_INTR_PRIO,
-			    (void (*)(const void *))radio_low_prio_isr, NULL, 0);
-
+	IRQ_DIRECT_CONNECT(STM32WBA_RADIO_IRQ_NUM, STM32WBA_RADIO_INTR_PRIO_HIGH_Z,
+			   radio_high_prio_isr, 0);
+	IRQ_DIRECT_CONNECT(STM32WBA_RADIO_SW_LOW_IRQ_NUM, STM32WBA_RADIO_SW_LOW_INTR_PRIO,
+			   radio_low_prio_isr, 0);
+	irq_enable(STM32WBA_RADIO_IRQ_NUM);
 	irq_enable(STM32WBA_RADIO_SW_LOW_IRQ_NUM);
 }
 

@@ -13,6 +13,10 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
+	chosen {
+		zephyr,entropy = &trng;
+	};
+
 	cpus: cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -665,6 +669,12 @@
 		status = "disabled";
 	};
 
+	otpc: otpc@c9000 {
+		compatible = "nxp,otpc";
+		reg = <0xc9000 0x1000>;
+		status = "disabled";
+	};
+
 	wwdt0: watchdog@16000 {
 		compatible = "nxp,lpc-wwdt";
 		reg = <0x16000 0x1000>;
@@ -1166,7 +1176,19 @@
 	crc: crc@cb000 {
 		compatible = "nxp,crc";
 		reg = <0xcb000 0x1000>;
+		clocks = <&syscon MCUX_CRC_CLK>;
 		status = "disabled";
+	};
+
+	crypto@54000 {
+		compatible = "nxp,els";
+		reg = <0x54000 0x200>;
+		clocks = <&syscon MCUX_ELS_CLK>;
+
+		trng: rng {
+			compatible = "nxp,els-trng";
+			status = "disabled";
+		};
 	};
 };
 

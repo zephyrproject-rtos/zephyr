@@ -40,13 +40,25 @@ static void get_fail(struct k_msgq *q)
 }
 
 /**
- * @addtogroup kernel_message_queue_tests
+ * @addtogroup tests_kernel_msgq
  * @{
  */
 
 /**
- * @brief Test returned error code during writing in msgq
- * @see k_msgq_init()
+ * @brief Verify k_msgq_put() error codes when the queue is full.
+ *
+ * @details
+ * Once a queue is full, a non-blocking put must return -ENOMSG and a put with a
+ * finite timeout must return -EAGAIN after the timeout elapses.
+ *
+ * Test steps:
+ * - Fill the queue, then put with K_NO_WAIT and expect -ENOMSG.
+ * - Put with a finite timeout and expect -EAGAIN.
+ *
+ * Expected result:
+ * - k_msgq_put() returns -ENOMSG (no wait) and -EAGAIN (timeout) when full.
+ *
+ * @see k_msgq_put()
  */
 ZTEST(msgq_api_1cpu, test_msgq_put_fail)
 {
@@ -56,7 +68,21 @@ ZTEST(msgq_api_1cpu, test_msgq_put_fail)
 
 #ifdef CONFIG_USERSPACE
 /**
- * @brief Test returned error code during writing in msgq
+ * @brief Verify k_msgq_put() full-queue error codes from user mode.
+ *
+ * @details
+ * User-mode counterpart of test_msgq_put_fail() on a queue created with
+ * k_msgq_alloc_init(): a full-queue put must return -ENOMSG (no wait) and
+ * -EAGAIN (timeout).
+ *
+ * Test steps:
+ * - Allocate and alloc-init a queue as a user thread and fill it.
+ * - Put with K_NO_WAIT (-ENOMSG) and with a finite timeout (-EAGAIN).
+ *
+ * Expected result:
+ * - The error codes match the supervisor case from user mode.
+ *
+ * @see k_msgq_put()
  * @see k_msgq_alloc_init()
  */
 ZTEST_USER(msgq_api, test_msgq_user_put_fail)
@@ -71,8 +97,20 @@ ZTEST_USER(msgq_api, test_msgq_user_put_fail)
 #endif /* CONFIG_USERSPACE */
 
 /**
- * @brief Test returned error code during reading from msgq
- * @see k_msgq_init(), k_msgq_put()
+ * @brief Verify k_msgq_get() error codes when the queue is empty.
+ *
+ * @details
+ * On an empty queue, a non-blocking get must return -ENOMSG and a get with a
+ * finite timeout must return -EAGAIN after the timeout elapses.
+ *
+ * Test steps:
+ * - On an empty queue, get with K_NO_WAIT and expect -ENOMSG.
+ * - Get with a finite timeout and expect -EAGAIN.
+ *
+ * Expected result:
+ * - k_msgq_get() returns -ENOMSG (no wait) and -EAGAIN (timeout) when empty.
+ *
+ * @see k_msgq_get()
  */
 ZTEST(msgq_api_1cpu, test_msgq_get_fail)
 {
@@ -82,8 +120,22 @@ ZTEST(msgq_api_1cpu, test_msgq_get_fail)
 
 #ifdef CONFIG_USERSPACE
 /**
- * @brief Test returned error code during reading from msgq
- * @see k_msgq_alloc_init(), k_msgq_get()
+ * @brief Verify k_msgq_get() empty-queue error codes from user mode.
+ *
+ * @details
+ * User-mode counterpart of test_msgq_get_fail() on a queue created with
+ * k_msgq_alloc_init(): an empty-queue get must return -ENOMSG (no wait) and
+ * -EAGAIN (timeout).
+ *
+ * Test steps:
+ * - Allocate and alloc-init a queue as a user thread.
+ * - Get with K_NO_WAIT (-ENOMSG) and with a finite timeout (-EAGAIN).
+ *
+ * Expected result:
+ * - The error codes match the supervisor case from user mode.
+ *
+ * @see k_msgq_get()
+ * @see k_msgq_alloc_init()
  */
 ZTEST_USER(msgq_api, test_msgq_user_get_fail)
 {

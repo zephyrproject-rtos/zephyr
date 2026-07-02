@@ -6,6 +6,7 @@
 
 #include <zephyr/debug/cpu_load.h>
 #include <lvgl.h>
+#include <lvgl_private.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(lvgl, CONFIG_LV_Z_LOG_LEVEL);

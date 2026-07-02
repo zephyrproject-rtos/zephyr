@@ -316,8 +316,9 @@
 		autanalog: analog@42e00000 {
 			compatible = "infineon,autanalog";
 			reg = <0x42e00000 0x100000>;
-			interrupts = <57 4>;
 			wakeup-source;
+			interrupts = <57 4>, <58 4>;
+			interrupt-names = "autanalog", "autanalog_fifo";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
