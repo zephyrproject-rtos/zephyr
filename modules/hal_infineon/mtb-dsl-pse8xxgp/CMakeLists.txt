@@ -57,10 +57,21 @@ endif()
 
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_LPCOMP ${pdl_drv_dir}/source/cy_lpcomp.c)
 
-if(CONFIG_USE_INFINEON_TRNG)
+if(CONFIG_USE_INFINEON_MXCRYPTO_AES OR CONFIG_USE_INFINEON_MXCRYPTO_SHA)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto.c)
-  zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto_core_trng_v1.c)
-  zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto_core_trng_v2.c)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto_core_hw.c)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto_core_hw_v1.c)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto_utils.c)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto_core_mem_v2.c)
+endif()
+
+if(CONFIG_USE_INFINEON_MXCRYPTO_AES)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto_core_aes_v2.c)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto_core_cmac_v2.c)
+endif()
+
+if(CONFIG_USE_INFINEON_MXCRYPTO_SHA)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto_core_sha_v2.c)
 endif()
 
 if(CONFIG_USE_INFINEON_UART OR CONFIG_USE_INFINEON_I2C OR CONFIG_USE_INFINEON_SPI)
