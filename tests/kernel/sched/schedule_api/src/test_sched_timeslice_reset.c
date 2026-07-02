@@ -67,6 +67,7 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 				  tick_delta, expected);
 #else
 	(void)tick_delta;
+	(void)expected;
 #endif /* CONFIG_COVERAGE_GCOV */
 
 	/* Keep this thread busy past one slice so the slicer fires and
