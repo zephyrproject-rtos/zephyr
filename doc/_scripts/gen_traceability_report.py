@@ -36,6 +36,10 @@ from pathlib import Path
 
 SRS_RE = re.compile(r"^ZEP-SRS-\d+-\d+$")
 SYRS_RE = re.compile(r"^ZEP-SYRS-\d+$")
+# Doxygen documents ZTEST functions as <suite>__<fn> (see ZTEST PREDEFINED in
+# zephyr.doxyfile.in); the suite prefix is optional here so bare test_* names
+# from older exports still classify as tests.
+TEST_RE = re.compile(r"^(?:\w+__)?test_")
 
 
 def classify(item_id):
@@ -45,7 +49,7 @@ def classify(item_id):
         return "syrs"
     if item_id.startswith("DESIGN-"):
         return "design"
-    if item_id.startswith("test_"):
+    if TEST_RE.match(item_id):
         return "test"
     return "other"
 

@@ -67,16 +67,29 @@ def slugify(name):
 # --- twister.json ------------------------------------------------------------
 
 def load_results(twister_path):
-    """Index twister results by ZTEST function name (test_<last id segment>).
+    """Index twister results by suite-qualified ZTEST function name.
 
-    Returns (env, results) where results[fn] = {"instances": [...], rollup...}.
+    Doxygen documents ZTEST functions as <ztest suite>__<fn> (ZTEST PREDEFINED
+    in zephyr.doxyfile.in). Twister identifiers are
+    <scenario>.<ztest suite>.<fn minus test_>, so the qualified name is
+    rebuilt from the last two segments. Qualifying by suite also keeps
+    same-named tests from different suites apart, which the previous bare
+    test_<fn> keying silently merged.
+
+    Returns (env, results, qual_map) where results[fn] = {"instances": [...],
+    rollup...} and qual_map[scenario][test_<fn>] = qualified name, used to
+    join the coverage matrix (whose keys only carry the scenario slug).
     """
     data = json.loads(Path(twister_path).read_text())
     env = data.get("environment", {})
     results = defaultdict(lambda: {"instances": []})
+    qual_map = defaultdict(dict)
     for suite in data.get("testsuites", []):
         for case in suite.get("testcases", []):
-            fn = "test_" + case["identifier"].split(".")[-1]
+            parts = case["identifier"].split(".")
+            bare = "test_" + parts[-1]
+            fn = parts[-2] + "__" + bare if len(parts) >= 2 else bare
+            qual_map[suite.get("name", "")][bare] = fn
             results[fn]["instances"].append({
                 "suite": suite.get("name", ""),
                 "platform": suite.get("platform", ""),
@@ -91,13 +104,20 @@ def load_results(twister_path):
         r["rollup"] = ("failing" if r["nfail"] else
                        "passing" if r["npass"] else
                        "skipped" if r["nskip"] else "no-run")
-    return env, dict(results)
+    return env, dict(results), dict(qual_map)
 
 
 # --- test_matrix.json ---------------------------------------------------------
 
-def load_matrix(matrix_path, suite_names):
+def load_matrix(matrix_path, qual_map):
     """Index the coverage matrix.
+
+    Matrix keys are <scenario slug>_<test fn>; the scenario slug does not
+    carry the ztest suite name, so the suite-qualified test name is recovered
+    via ``qual_map`` (scenario -> bare test_ name -> qualified) built from the
+    twister results. A bare name that is unambiguous across all scenarios is
+    resolved through the fallback map; otherwise the bare name is kept (it
+    simply won't join with the traceability model).
 
     Returns (cov_by_fn, by_line) where
 
@@ -105,15 +125,22 @@ def load_matrix(matrix_path, suite_names):
     * by_line[file] = {line(int): [instance keys]}           (as-is, tree files)
     """
     data = json.loads(Path(matrix_path).read_text())
-    slugs = sorted(((slugify(s), s) for s in suite_names),
+    slugs = sorted(((slugify(s), fns) for s, fns in qual_map.items()),
                    key=lambda kv: -len(kv[0]))  # longest slug wins
 
+    # bare test_ name -> qualified name, when unique across all scenarios
+    unique = {}
+    for fns in qual_map.values():
+        for bare, fn in fns.items():
+            unique[bare] = fn if unique.get(bare, fn) == fn else None
+
     def split_key(key):
-        for slug, _name in slugs:
+        for slug, fns in slugs:
             if key.startswith(slug + "_") and key[len(slug) + 1:].startswith("test_"):
-                return key[len(slug) + 1:]
+                bare = key[len(slug) + 1:]
+                return fns.get(bare) or unique.get(bare) or bare
         m = re.search(r"(test_[A-Za-z0-9_]+)$", key)
-        return m.group(1) if m else None
+        return (unique.get(m.group(1)) or m.group(1)) if m else None
 
     keep = lambda f: f.startswith(("kernel/", "include/", "lib/", "tests/"))
 
@@ -196,9 +223,8 @@ class App:
             for uid in t["implements"]:
                 self.req_impls[uid].append(sym)
 
-        self.env, self.results = load_results(args.twister)
-        suite_names = {i["suite"] for r in self.results.values() for i in r["instances"]}
-        self.cov, self.by_line = load_matrix(args.matrix, suite_names)
+        self.env, self.results, qual_map = load_results(args.twister)
+        self.cov, self.by_line = load_matrix(args.matrix, qual_map)
         self.impl_loc = resolve_impl_symbols(self.root, self.impls)
 
         self.compute()
