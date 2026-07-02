@@ -7,11 +7,6 @@
 #ifndef ZEPHYR_ARCH_RISCV_CORE_MMU_H_
 #define ZEPHYR_ARCH_RISCV_CORE_MMU_H_
 
-/* This header is only valid when MMU is enabled */
-#ifndef CONFIG_RISCV_MMU
-#error "This header requires CONFIG_RISCV_MMU to be enabled"
-#endif
-
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/arch/riscv/csr.h>

@@ -380,7 +380,7 @@ config RISCV_PMP
 	select THREAD_LOCAL_STORAGE if USERSPACE
 	select ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS
 	select MEM_DOMAIN_ISOLATED_STACKS if USERSPACE
-	select PMP_KERNEL_MODE_DYNAMIC if MEM_ATTR
+	select PMP_KERNEL_MODE_DYNAMIC if MEM_ATTR && !RISCV_MMU
 	select ARCH_HAS_EXECUTABLE_PAGE_BIT
 	help
 	  MCU implements Physical Memory Protection.
@@ -432,7 +432,7 @@ config PMP_GRANULARITY
 
 config PMP_NO_LOCK_GLOBAL
 	bool "Do not lock the global PMP entries"
-	select PMP_KERNEL_MODE_DYNAMIC
+	select PMP_KERNEL_MODE_DYNAMIC if !RISCV_MMU
 	help
 	  Configure the PMP entries as unlocked (L=0) to implement PMP relative
 	  features. This allows application to dynamically reconfigure PMP
@@ -478,7 +478,7 @@ config PMP_DATA_EXECUTION_PREVENTION
 	bool "Prevent data execution"
 	default y
 	depends on PMP_SLOTS >= 8 && !PMP_NO_NAPOT && !PMP_NO_LOCK_GLOBAL && !CODE_DATA_RELOCATION
-	select PMP_KERNEL_MODE_DYNAMIC if USERSPACE
+	select PMP_KERNEL_MODE_DYNAMIC if USERSPACE && !RISCV_MMU
 	help
 	  Configure PMP to prevent execution of data sections. This requires locked
 	  entries and currently does not work with relocation, because the target
@@ -707,6 +707,7 @@ config RISCV_MMU
 	bool "RISC-V MMU Support"
 	depends on RISCV_PRIVILEGED
 	depends on RISCV_S_MODE
+	depends on 64BIT
 	# All enabled harts must declare an mmu-type ...
 	depends on $(dt_compat_all_has_prop,riscv,$(RISCV_MMU_TYPE_PROP))
 	# ... that is not "riscv,none".
@@ -721,12 +722,12 @@ config RISCV_MMU
 	select ARCH_HAS_RESERVED_PAGE_FRAMES
 	select THREAD_LOCAL_STORAGE if USERSPACE
 	help
-		Enable Memory Management Unit (MMU) support for RISC-V.
-		This enables virtual memory management and is required for
-		demand paging and advanced memory protection features.
+	  Enable Memory Management Unit (MMU) support for RISC-V.
+	  This enables virtual memory management and is required for
+	  demand paging and advanced memory protection features.
 
-		Only enable this if your RISC-V processor supports Supervisor
-		mode and has an MMU (supports Sv39, Sv48, or Sv57).
+	  Only enable this if your RISC-V processor supports Supervisor
+	  mode and has an MMU (supports Sv39, Sv48, or Sv57).
 
 if RISCV_MMU
 
@@ -737,17 +738,17 @@ config RISCV_MMU_SV39
 	bool "Sv39 - 39-bit Virtual Address"
 	depends on $(dt_compat_all_has_prop,riscv,$(RISCV_MMU_TYPE_PROP),$(RISCV_MMU_TYPE_SV39))
 	help
-		Use Sv39 mode with 39-bit virtual addresses and 3-level page tables.
-		This is the most common MMU mode for RISC-V and supports up to
-		512GB of virtual address space.
+	  Use Sv39 mode with 39-bit virtual addresses and 3-level page tables.
+	  This is the most common MMU mode for RISC-V and supports up to
+	  512GB of virtual address space.
 
 config RISCV_MMU_SV48
 	bool "Sv48 - 48-bit Virtual Address"
 	depends on $(dt_compat_all_has_prop,riscv,$(RISCV_MMU_TYPE_PROP),$(RISCV_MMU_TYPE_SV48))
 	help
-		Use Sv48 mode with 48-bit virtual addresses and 4-level page tables.
-		This supports up to 256TB of virtual address space but requires
-		more memory for page tables.
+	  Use Sv48 mode with 48-bit virtual addresses and 4-level page tables.
+	  This supports up to 256TB of virtual address space but requires
+	  more memory for page tables.
 
 endchoice
 

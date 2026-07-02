@@ -201,9 +201,9 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 
 #ifdef CONFIG_RISCV_MMU
 	/* Switch to kernel address space before touching any kernel data. */
-	la	t1, z_riscv_kernel_satp_val
-	lr	t1, 0(t1)
-	csrw	satp, t1
+	la t1, z_riscv_kernel_satp_val
+	lr t1, 0(t1)
+	csrw satp, t1
 	sfence.vma
 #endif /* CONFIG_RISCV_MMU */
 
@@ -907,9 +907,9 @@ fp_trap_exit:
 	/* Switch to the thread's domain SATP before returning to user mode.
 	 * This code runs from the exception.entry section which has PTE_USER=0
 	 * in the domain page tables, so S-mode can safely execute it. */
-	lr	t0, ___cpu_t_current_OFFSET(s0)
-	lr	t0, _thread_offset_to_satp(t0)
-	csrw	satp, t0
+	lr t0, ___cpu_t_current_OFFSET(s0)
+	lr t0, _thread_offset_to_satp(t0)
+	csrw satp, t0
 	sfence.vma
 #endif /* CONFIG_RISCV_MMU */
 
