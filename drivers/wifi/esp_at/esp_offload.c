@@ -61,8 +61,6 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 			 sock->link_id, dst_addr_str, net_ntohs(net_sin(&dst)->sin_port));
 	} else {
 		if (src.sa_family == NET_AF_INET && net_sin(&src)->sin_port != 0) {
-			net_addr_ntop(src.sa_family, &net_sin(&src)->sin_addr, src_addr_str,
-				      sizeof(src_addr_str));
 			/* <mode>: In the UDP Wi-Fi passthrough
 			 *
 			 * 0: After UDP data is received, the parameters <"remote host">
@@ -91,10 +89,24 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 				mode = 0;
 			}
 
-			snprintk(connect_msg, sizeof(connect_msg),
-				 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d,%d,%d,\"%s\"", sock->link_id,
-				 dst_addr_str, net_ntohs(net_sin(&dst)->sin_port),
-				 net_ntohs(net_sin(&src)->sin_port), mode, src_addr_str);
+			int bytes_written =
+				snprintk(connect_msg, sizeof(connect_msg),
+					 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d,%d,%d", sock->link_id,
+					 dst_addr_str, net_ntohs(net_sin(&dst)->sin_port),
+					 net_ntohs(net_sin(&src)->sin_port), mode);
+
+			/* The local IP is optional; append it only when a specific
+			 * source address was bound. Emitting it for an unspecified
+			 * (0.0.0.0) address makes the modem reject the command.
+			 */
+			if (!net_ipv4_is_addr_unspecified(&net_sin(&src)->sin_addr)) {
+				net_addr_ntop(src.sa_family, &net_sin(&src)->sin_addr, src_addr_str,
+					      sizeof(src_addr_str));
+				snprintk(connect_msg + bytes_written,
+					 sizeof(connect_msg) - bytes_written, ",\"%s\"",
+					 src_addr_str);
+			}
+
 		} else {
 			snprintk(connect_msg, sizeof(connect_msg),
 				 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d", sock->link_id, dst_addr_str,
