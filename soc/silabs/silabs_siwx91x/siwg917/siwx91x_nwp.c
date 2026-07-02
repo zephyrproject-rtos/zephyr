@@ -535,20 +535,9 @@ static int siwx91x_nwp_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	/* WORKAROUND:
-	 * Only set the power profile if Bluetooth is not enabled.
-	 *
-	 * If bt is enabled, we need to wait for the bt setup to complete
-	 * before setting the power profile.
-	 *
-	 * Because of that, if CONFIG_BT_SILABS_SIWX91X is enabled and
-	 * bt_enable() is not called, you will never go in sleep.
-	 */
-	if (!IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
-		ret = siwx91x_nwp_apply_power_profile(dev, NULL);
-		if (ret) {
-			return -EINVAL;
-		}
+	ret = siwx91x_nwp_apply_power_profile(dev, NULL);
+	if (ret) {
+		return -EINVAL;
 	}
 
 	config->config_irq(dev);
