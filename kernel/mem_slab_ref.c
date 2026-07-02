@@ -19,14 +19,28 @@
 
 #define ATOMIC_INIT_n(i) { (i) }
 #define REFCOUNT_INIT_n(n) { .refs = ATOMIC_INIT_n(n), }
+#define SLAB_RC_HEADER_SIZE WB_UP(sizeof(struct k_mem_slab_rc_header))
+
+typedef struct {
+    atomic_t counter;
+} refcount_t;
+
+typedef struct {
+    refcount_t refcount;
+} kref;
+
+struct k_mem_slab_rc_header {
+    struct kref kref;
+    struct k_mem_slab_rc *owner;
+};
 
 /* Helper Functions */
-void kref_init_n(struct kref_n *kref);
-void kref_get_n(struct kref_n *kref);
-int kref_put_n(struct kref_n *kref, void(*release)(struct kref_n *ref));
-int kref_get_unless_zero_n(struct kref_n *kref);
+void kref_init_n(struct kref *kref);
+void kref_get_n(struct kref *kref);
+int kref_put_n(struct kref *kref, void(*release)(struct kref *ref));
+int kref_get_unless_zero_n(struct kref *kref);
 atomic_ptr_val_t kref_read_n(const struct kref_n *kref);
-int kref_put_mutex_n(struct kref_n *kref, void (*release)(struct kref_n *kref), 
+int kref_put_mutex_n(struct kref *kref, void (*release)(struct kref_n *kref), 
                                                         struct k_mutex *k_mutex);
 
 void __refcount_add_n(int i, refcount_n_t *r, int *oldp);
@@ -62,7 +76,18 @@ int k_mem_slab_ref_init(struct k_mem_slab_ref_header *slab_ref_header,
 int k_mem_slab_ref_alloc(struct k_mem_slab_ref *slab_ref, void **mem, 
 						k_timeout_t timeout) {
     void *blk = NULL;
-    int ret  = k_mem_slab_alloc(&slab_ref)
+    int ret  = k_mem_slab_alloc(&slab_ref->slab, &blk, timeout);
+
+    if(ret == 0) {
+        struct k_mem_slab_rc_header *header = (struct k_mem_slab_rc_header*)blk;
+
+        kref_init(&header->kref);
+        header->owner = slab_ref;
+
+        *mem = (uint8_t*)blk + SLAB_RC_HEADER_SIZE;
+
+    }
+    return ret;
 }
 
 /**
