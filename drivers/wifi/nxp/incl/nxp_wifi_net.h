@@ -268,7 +268,9 @@ static inline uint32_t net_inet_aton(const char *cp)
  * \param[in] uapmac uap MAC address.
  *
  */
-void net_wlan_set_mac_address(unsigned char *stamac, unsigned char *uapmac);
+void net_wlan_set_mac_address(unsigned char *sta_mac,
+			      unsigned char *uap_mac,
+			      unsigned char *wfd_mac);
 
 /* Skip a number of bytes at the start of a stack buffer
  *
@@ -473,6 +475,15 @@ struct netif *net_get_sta_interface(void);
  *
  */
 struct netif *net_get_uap_interface(void);
+#endif
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+/* Get P2P interface netif structure pointer
+ *
+ * \rerurn A pointer to P2P interface netif structure
+ *
+ */
+struct netif *net_get_wfd_interface(void);
 #endif
 
 /* NXP wrapper to get network interface name.
@@ -877,4 +888,15 @@ void nxp_wifi_internal_register_rx_cb(int (*rx_cb_fn)(struct net_if *iface, stru
  * @return Pointer to net_iface if found; NULL otherwise
  */
 const struct netif *net_if_get_binding(const char *ifname);
+
+/* Get net interface by BSS type
+ *
+ * This API searches for a network interface based on the bss type
+ * and returns the corresponding net_if instance.
+ *
+ * @param interface BSS type of the network interface
+ *
+ * @return pointer to net_if when found; NULL otherwise
+ */
+struct net_if *net_get_if_by_bss_type(int interface);
 #endif /* _NXP_WIFI_NET_H_ */
