@@ -624,6 +624,28 @@ For ``west flash`` to work, see :ref:`flash-and-debug-support` below. You can
 also just flash :file:`build/zephyr/zephyr.elf`, :file:`zephyr.hex`, or
 :file:`zephyr.bin` with any other tools you prefer.
 
+Before submitting a board upstream, verify that every board target you add can
+build at least one simple application using only code from the mainline Zephyr
+repository and its modules. For example:
+
+.. code-block:: console
+
+   west build -p always -b plank samples/hello_world
+
+For boards with multiple SoCs, CPU clusters, variants, or revisions, repeat the
+smoke build for each new board target, for example:
+
+.. code-block:: console
+
+   west build -p always -b plank/soc1/foo samples/hello_world
+   west build -p always -b plank@1.0.0/soc1/foo samples/hello_world
+
+Use :ref:`sysbuild` if the board target requires it. If ``hello_world`` is not a
+reasonable smoke test for the hardware, use an equivalent simple sample and
+explain the choice in the pull request. When using board testing metadata,
+such as ``testing: only_tags`` in the board target YAML file, make sure the
+new target still has at least one smoke build in local testing or CI.
+
 .. _porting-general-recommendations:
 
 General recommendations
