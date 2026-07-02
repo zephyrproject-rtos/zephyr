@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Van Petrosyan
 # SPDX-License-Identifier: Apache-2.0
 
-config PCA9533
+config PCA953X
 	bool "PCA9533 LED driver"
 	default y
 	depends on DT_HAS_NXP_PCA9533_ENABLED
