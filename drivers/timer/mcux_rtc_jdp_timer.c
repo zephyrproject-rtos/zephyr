@@ -20,7 +20,7 @@ BUILD_ASSERT(DT_HAS_CHOSEN(zephyr_system_timer),
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(RTC_NODE, nxp_rtc_jdp),
 	     "zephyr,system-timer must point to an nxp,rtc-jdp compatible node");
 
-#define RTC_BASE      ((RTC_Type *)DT_REG_ADDR(RTC_NODE))
+#define RTC_JDP_BASE  ((RTC_Type *)DT_REG_ADDR(RTC_NODE))
 #define RTC_IRQN      DT_IRQN(RTC_NODE)
 #define RTC_IRQ_PRIO  DT_IRQ(RTC_NODE, priority)
 #define RTC_CLK_SRC   DT_PROP(RTC_NODE, clock_source)
@@ -69,7 +69,7 @@ static uint32_t last_elapsed;
 static inline void rtc_jdp_wait_inv_clear(void)
 {
 	for (uint32_t i = 0U; i < RTC_JDP_SYNC_SPIN; i++) {
-		if ((RTC_GetStatusFlags(RTC_BASE) & (uint32_t)kRTC_InvalidRTCFlag) == 0U) {
+		if ((RTC_GetStatusFlags(RTC_JDP_BASE) & (uint32_t)kRTC_InvalidRTCFlag) == 0U) {
 			break;
 		}
 	}
@@ -99,8 +99,8 @@ static void rtc_jdp_set_compare(uint32_t compare)
 		 * Wait for a previous write to synchronize before programming.
 		 */
 		rtc_jdp_wait_inv_clear();
-		RTC_ClearInterruptFlags(RTC_BASE, kRTC_RTCInterruptFlag);
-		RTC_SetRTCValue(RTC_BASE, compare);
+		RTC_ClearInterruptFlags(RTC_JDP_BASE, kRTC_RTCInterruptFlag);
+		RTC_SetRTCValue(RTC_JDP_BASE, compare);
 
 		/*
 		 * Re-read the counter and, like the retry in mcux_stm_timer.c,
@@ -108,7 +108,7 @@ static void rtc_jdp_set_compare(uint32_t compare)
 		 * within the sync margin of) it, so the equality match is not lost
 		 * to the sync latency sampled above.
 		 */
-		now = RTC_GetCountValue(RTC_BASE);
+		now = RTC_GetCountValue(RTC_JDP_BASE);
 		if (likely((int32_t)(compare - now) > (int32_t)RTC_JDP_COMPARE_MARGIN)) {
 			break;
 		}
@@ -154,7 +154,7 @@ uint32_t sys_clock_elapsed(void)
 		return 0;
 	}
 
-	uint32_t now = RTC_GetCountValue(RTC_BASE);
+	uint32_t now = RTC_GetCountValue(RTC_JDP_BASE);
 	uint32_t delta_ticks = (now - last_count) / cycles_per_tick;
 
 	last_elapsed = delta_ticks;
@@ -164,7 +164,7 @@ uint32_t sys_clock_elapsed(void)
 uint32_t sys_clock_cycle_get_32(void)
 {
 	/* The free-running 32-bit RTC counter is the hardware cycle counter. */
-	return RTC_GetCountValue(RTC_BASE);
+	return RTC_GetCountValue(RTC_JDP_BASE);
 }
 
 void sys_clock_disable(void)
@@ -174,8 +174,8 @@ void sys_clock_disable(void)
 	 * counter resets the RTC logic, so neither the tick nor the cycle counter
 	 * resumes afterwards.
 	 */
-	RTC_DisableInterrupts(RTC_BASE, kRTC_RTCInterruptEnable);
-	RTC_DisableRTC(RTC_BASE);
+	RTC_DisableInterrupts(RTC_JDP_BASE, kRTC_RTCInterruptEnable);
+	RTC_DisableRTC(RTC_JDP_BASE);
 	irq_disable(RTC_IRQN);
 }
 
@@ -184,10 +184,10 @@ static void mcux_rtc_jdp_timer_isr(const void *arg)
 	ARG_UNUSED(arg);
 
 	k_spinlock_key_t key = sys_clock_lock();
-	uint32_t now = RTC_GetCountValue(RTC_BASE);
+	uint32_t now = RTC_GetCountValue(RTC_JDP_BASE);
 	uint32_t delta_ticks = (now - last_count) / cycles_per_tick;
 
-	RTC_ClearInterruptFlags(RTC_BASE, kRTC_RTCInterruptFlag);
+	RTC_ClearInterruptFlags(RTC_JDP_BASE, kRTC_RTCInterruptFlag);
 
 	last_count += delta_ticks * cycles_per_tick;
 	last_elapsed = 0U;
@@ -232,8 +232,8 @@ static int sys_clock_driver_init(void)
 	RTC_GetDefaultConfig(&config);
 	config.clockSource = (rtc_clock_source_t)RTC_CLK_SRC;
 	config.clockDivide = RTC_JDP_DIV_ENUM;
-	RTC_Init(RTC_BASE, &config);
-	RTC_ClearInterruptFlags(RTC_BASE, kRTC_AllInterruptFlags);
+	RTC_Init(RTC_JDP_BASE, &config);
+	RTC_ClearInterruptFlags(RTC_JDP_BASE, kRTC_AllInterruptFlags);
 
 	IRQ_CONNECT(RTC_IRQN, RTC_IRQ_PRIO, mcux_rtc_jdp_timer_isr, NULL, 0);
 	irq_enable(RTC_IRQN);
@@ -244,9 +244,9 @@ static int sys_clock_driver_init(void)
 	 * resets the RTC logic and starts the count from zero, committing the
 	 * RTCVAL written here (RM ch. 66).
 	 */
-	RTC_SetRTCValue(RTC_BASE, cycles_per_tick);
-	RTC_EnableInterrupts(RTC_BASE, kRTC_RTCInterruptEnable);
-	RTC_EnableRTC(RTC_BASE);
+	RTC_SetRTCValue(RTC_JDP_BASE, cycles_per_tick);
+	RTC_EnableInterrupts(RTC_JDP_BASE, kRTC_RTCInterruptEnable);
+	RTC_EnableRTC(RTC_JDP_BASE);
 
 	last_count = 0U;
 	last_elapsed = 0U;
