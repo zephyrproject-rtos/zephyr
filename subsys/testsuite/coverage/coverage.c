@@ -262,6 +262,27 @@ void gcov_reset_counts(struct gcov_info *info)
 	}
 }
 
+/*
+ * Returns true if any execution counter of this object is non-zero, i.e. the
+ * object contributed coverage since the last reset. Used to skip all-zero
+ * objects from per-test dumps, which speeds up both the on-target dump and the
+ * host-side processing without changing the resulting coverage.
+ */
+static bool gcov_info_has_data(struct gcov_info *info)
+{
+	for (uint32_t fn = 0U; fn < info->n_functions; fn++) {
+		struct gcov_ctr_info *ctrs = info->functions[fn]->ctrs;
+
+		for (uint32_t vi = 0U; vi < ctrs->num; vi++) {
+			if (ctrs->values[vi] != 0) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 void gcov_reset_all_counts(void)
 {
 	struct gcov_info *gcov_list = NULL;
@@ -327,6 +348,11 @@ void gcov_coverage_dump_tagged(const char *tag)
 		printk(" %s", tag);
 	}
 	while (gcov_list) {
+		/* For per-test (tagged) dumps skip objects with no coverage. */
+		if ((tag != NULL) && !gcov_info_has_data(gcov_list)) {
+			goto file_dump_end;
+		}
+
 		if ((strlen(CONFIG_COVERAGE_DUMP_PATH_EXCLUDE) > 0) &&
 		    (fnmatch(CONFIG_COVERAGE_DUMP_PATH_EXCLUDE, gcov_list->filename, 0) == 0)) {
 			/* Don't print a note here, it would be interpreted as dump data */
@@ -401,6 +427,15 @@ void gcov_coverage_dump_tagged(const char *tag)
 	while (gcov_list) {
 		const char *path = gcov_list->filename;
 		char *tagged_path = NULL;
+
+		/* For per-test (tagged) dumps skip objects with no coverage. */
+		if ((tag != NULL) && !gcov_info_has_data(gcov_list)) {
+			gcov_list = gcov_list->next;
+			if (gcov_list_first == gcov_list) {
+				goto coverage_dump_end;
+			}
+			continue;
+		}
 
 		if (tag != NULL) {
 			size_t path_size = strlen(gcov_list->filename) +

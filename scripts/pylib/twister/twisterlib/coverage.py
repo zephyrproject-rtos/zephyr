@@ -388,9 +388,13 @@ class Lcov(CoverageTool):
         CONFIG_ZTEST_COVERAGE_PER_TEST makes the target write an isolated set
         of tagged gcda dumps per test. With the semihosting transport these
         land on the host as "<canonical>.gcda@@<suite>.<test>"; otherwise they
-        are emitted as tagged blocks on the serial console. Each tag is
-        materialized to its canonical gcda path (next to the matching .gcno),
-        captured with lcov under a per-test TN name, and cleaned up again.
+        are emitted as tagged blocks on the serial console.
+
+        Each test is captured from its own temporary object tree, containing
+        only that test's gcda files plus symlinks to the shared gcno files.
+        This keeps every lcov capture proportional to what the test actually
+        executed (rather than scanning the whole build tree), and avoids
+        serializing on the build tree's canonical gcda paths.
 
         Returns the list of generated per-test tracefiles.
         """
@@ -403,12 +407,6 @@ class Lcov(CoverageTool):
         per_test_dir = os.path.join(build_dir, "coverage", "tests")
         os.makedirs(per_test_dir, exist_ok=True)
 
-        # Drop any untagged canonical .gcda (end-of-run leftovers) so that each
-        # per-test capture sees only the data we materialize for that test.
-        for canonical in {c for entries in tags.values() for c in entries}:
-            with contextlib.suppress(OSError):
-                os.remove(canonical)
-
         infos = []
         used_names = set()
         for tag in sorted(tags):
@@ -420,19 +418,24 @@ class Lcov(CoverageTool):
                 name = f"{scenario}.{tag}"
             used_names.add(name)
 
-            created = []
-            for canonical, spec in tags[tag].items():
-                materialize_canonical_gcda(canonical, spec)
-                created.append(canonical)
-
             info = os.path.join(per_test_dir, sanitize_coverage_name(name) + ".info")
-            cmd = ["--capture", "--directory", build_dir,
-                   "--test-name", name, "--output-file", info]
-            ret = self.run_lcov(cmd, coveragelog)
+            with tempfile.TemporaryDirectory() as objdir:
+                for canonical, spec in tags[tag].items():
+                    rel = os.path.relpath(canonical, build_dir)
+                    if rel.startswith(".."):
+                        rel = canonical.lstrip(os.sep)
+                    dst_gcda = os.path.join(objdir, rel)
+                    materialize_canonical_gcda(dst_gcda, spec)
+                    # Pair each gcda with its (shared, immutable) gcno.
+                    gcno = canonical[:-len(".gcda")] + ".gcno"
+                    if os.path.exists(gcno):
+                        dst_gcno = dst_gcda[:-len(".gcda")] + ".gcno"
+                        with contextlib.suppress(OSError):
+                            os.symlink(gcno, dst_gcno)
 
-            for canonical in created:
-                with contextlib.suppress(OSError):
-                    os.remove(canonical)
+                cmd = ["--capture", "--directory", objdir,
+                       "--test-name", name, "--output-file", info]
+                ret = self.run_lcov(cmd, coveragelog)
 
             if ret == 0 and os.path.exists(info) and os.path.getsize(info) > 0:
                 infos.append(info)
