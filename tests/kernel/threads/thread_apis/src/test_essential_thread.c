@@ -99,6 +99,7 @@ static void abort_thread_self(void *p1, void *p2, void *p3)
  * @ingroup kernel_thread_tests
  *
  * @see #K_ESSENTIAL(x)
+ * @verifies ZEP-SRS-1-11
  */
 
 ZTEST(threads_lifecycle, test_essential_thread_abort)
@@ -123,6 +124,7 @@ ZTEST(threads_lifecycle, test_essential_thread_abort)
  * @ingroup kernel_thread_tests
  *
  * @see #K_ESSENTIAL(x)
+ * @verifies ZEP-SRS-1-11
  */
 ZTEST(threads_lifecycle, test_essential_thread_abort_self)
 {
