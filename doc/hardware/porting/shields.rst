@@ -216,6 +216,7 @@ Relevant devicetree node labels:
   technical specifications.
 - ``mikrobus_adc``
 - ``mikrobus_i2c``
+- ``mikrobus_pwm``
 - ``mikrobus_spi``
 - ``mikrobus_serial``
 
@@ -279,7 +280,9 @@ Relevant devicetree node labels:
   details on GPIO pin definitions and includes for use in devicetree files.
 - ``stmod_adc``
 - ``stmod_i2c``
+- ``stmod_pwm``
 - ``stmod_serial``
+- ``stmod_spi``
 
 Boards may expose additional interface labels when a peripheral is wired to the
 STMod+ connector and enabled in the board devicetree.
