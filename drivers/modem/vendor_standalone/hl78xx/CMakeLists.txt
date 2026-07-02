@@ -32,6 +32,7 @@ zephyr_library_sources_ifdef(
     CONFIG_HL78XX_GNSS
     hl78xx_gnss.c
     hl78xx_gnssloc.c
+    hl78xx_gnss_aux_parse.c
     hl78xx_gnss_parsers.c
 )
 
