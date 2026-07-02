@@ -198,7 +198,6 @@ struct ataes132a_device_config {
 };
 
 struct ataes132a_device_data {
-	const struct device *i2c;
 	uint8_t command_buffer[64];
 	struct k_sem device_sem;
 };
