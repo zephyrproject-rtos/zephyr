@@ -17,6 +17,7 @@
 #include "hl78xx_gnss.h"
 #endif /* CONFIG_HL78XX_GNSS */
 #include "hl78xx_cfg.h"
+#include <zephyr/modem/chat.h>
 #include <zephyr/drivers/modem/hl78xx_apis.h>
 
 LOG_MODULE_REGISTER(hl78xx_apis, CONFIG_MODEM_LOG_LEVEL);
