@@ -8,7 +8,7 @@
 #ifndef __XTENSA_MEMORY_H__
 #define __XTENSA_MEMORY_H__
 
-#include <autoconf.h>
+#include <zephyr/autoconf.h>
 
 #define TEXT_BASE (CONFIG_RT685_ADSP_TEXT_MEM_ADDR)
 #define TEXT_SIZE (CONFIG_RT685_ADSP_TEXT_MEM_SIZE)
