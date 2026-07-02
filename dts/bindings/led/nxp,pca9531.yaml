@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PCA9531 8-bit LED dimmer
+
+compatible: "nxp,pca9531"
+
+include: nxp,pca953x.yaml

@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PCA9530 2-bit LED dimmer
+
+compatible: "nxp,pca9530"
+
+include: nxp,pca953x.yaml
