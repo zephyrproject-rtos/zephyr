@@ -15,4 +15,5 @@ supported:
   - gpio
   - rtc
   - crc
+  - wuc
 vendor: nxp
