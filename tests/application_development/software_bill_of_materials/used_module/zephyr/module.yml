@@ -1,0 +1,4 @@
+name: sbom_used_module
+
+build:
+  cmake: ./

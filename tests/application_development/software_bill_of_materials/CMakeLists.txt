@@ -2,6 +2,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 cmake_minimum_required(VERSION 3.20.0)
+
+# Pull two extra Zephyr modules into the build that we fully control so they are reflected in the
+# generated SBOM and we can verify various properties (license detection, source presence, etc.).
+# One of them (sbom_used_module) has code that is actually compiled and called from the application,
+# so its source is analyzed; the other (sbom_unused_module) is declared but builds nothing, so it
+# appears only as an empty source package and a dependency entry. Both modules live in-tree under
+# this application directory; 'west spdx' still attributes their sources to the owning module.
+list(APPEND EXTRA_ZEPHYR_MODULES
+  "${CMAKE_CURRENT_SOURCE_DIR}/used_module"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unused_module"
+)
+
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(sbom_spdx)
