@@ -2428,6 +2428,11 @@ ZTEST(net_ipv6, test_nd_reachability_hint)
 {
 	struct net_nbr *nbr;
 
+	/* Ensure the neighbor exists rather than relying on it surviving from
+	 * an earlier test: interface carrier toggles clear the neighbor cache.
+	 */
+	add_neighbor();
+
 	nbr = net_ipv6_nbr_lookup(TEST_NET_IF, &peer_addr);
 	zassert_not_null(nbr, "Neighbor %s not found in cache\n",
 			 net_sprint_ipv6_addr(&peer_addr));
