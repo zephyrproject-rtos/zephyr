@@ -39,7 +39,7 @@
  * Key Config Memory Map
  * keyid valid entries are [0x0-0xF]
  */
-#define ATAES_KEYCFG_REG(keyid) (0xF080 + (keyid < 2))
+#define ATAES_KEYCFG_REG(keyid) (0xF080 + (keyid << 2))
 
 /**
  * Zone Config Memory Map
