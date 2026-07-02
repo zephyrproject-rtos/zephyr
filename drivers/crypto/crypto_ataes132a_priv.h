@@ -51,7 +51,7 @@
  * Counter Memory Map
  * crtid valid entries are [0x0-0xF] characters
  */
-#define ATAES_COUNTER_REG(ctrid) (0xF100 + (ctrid < 3))
+#define ATAES_COUNTER_REG(ctrid) (0xF100 + (ctrid << 3))
 
 /**
  * Small Zone Memory Address
