@@ -32,6 +32,23 @@ config PWM_CAPTURE
 	  This option extends the Zephyr PWM API with the ability to capture PWM
 	  period/pulse widths.
 
+config PWM_CAPTURE_BATCH
+	bool "Provide API for PWM batch capture [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on PWM_CAPTURE
+	default y if PWM_CAPTURE_WITH_DMA
+	help
+	  This option extends the Zephyr PWM API with a batch capture feature.
+	  Backends may use DMA or other hardware buffering.The application provides
+	  output buffers via the pwm_capture_batch struct.
+
+config PWM_CAPTURE_WITH_DMA
+	bool "Use DMA to capture PWM signals using buffers"
+	depends on PWM_CAPTURE && DMA
+	help
+	  This option enables batch capture feature that uses DMA to capture buffers
+	  of PWM period and/or pulse samples.
+
 config PWM_EVENT
 	bool "Provide API for PWM event [EXPERIMENTAL]"
 	select EXPERIMENTAL
