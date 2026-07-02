@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		dmic0 = &dmic_dev;
+	};
+};
+
 &clock {
 	hfclkaudio-frequency = <12288000>;
 };
