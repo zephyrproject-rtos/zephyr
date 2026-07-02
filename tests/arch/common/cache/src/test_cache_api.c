@@ -94,9 +94,11 @@ ZTEST(cache_api, test_instr_cache_api)
  * still validated.
  *
  * Test steps:
- * - Call the whole-cache flush, invalidate and flush-and-invalidate ops. The
- *   invalidate is issued after a flush so it cannot drop dirty lines the
- *   framework still relies on.
+ * - Call the whole-cache flush op.
+ * - Temporarily disable d-cache, call whole-cache invalidate, then
+ *   re-enable d-cache so invalidate does not discard dirty lines from
+ *   the live test runtime.
+ * - Call the whole-cache flush-and-invalidate op.
  * - Call the by-range flush, invalidate and flush-and-invalidate ops over a
  *   known buffer.
  *
@@ -104,7 +106,9 @@ ZTEST(cache_api, test_instr_cache_api)
  * - Every call returns 0 or -ENOTSUP.
  *
  * @see sys_cache_data_flush_all()
+ * @see sys_cache_data_disable()
  * @see sys_cache_data_invd_all()
+ * @see sys_cache_data_enable()
  * @see sys_cache_data_flush_and_invd_all()
  * @see sys_cache_data_flush_range()
  * @see sys_cache_data_invd_range()
@@ -117,11 +121,14 @@ ZTEST(cache_api, test_data_cache_api)
 	ret = sys_cache_data_flush_all();
 	zassert_true((ret == 0) || (ret == -ENOTSUP));
 
-	/* Flush first so the whole-cache invalidate does not discard dirty
-	 * lines that the test framework still depends on.
+	/* Whole-cache invalidate can drop dirty lines from the running
+	 * framework. Disable d-cache first to make the operation safe,
+	 * then restore the test environment.
 	 */
+	sys_cache_data_disable();
 	ret = sys_cache_data_invd_all();
 	zassert_true((ret == 0) || (ret == -ENOTSUP));
+	sys_cache_data_enable();
 
 	ret = sys_cache_data_flush_and_invd_all();
 	zassert_true((ret == 0) || (ret == -ENOTSUP));
