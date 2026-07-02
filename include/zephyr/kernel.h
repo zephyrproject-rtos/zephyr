@@ -80,6 +80,7 @@ struct k_fifo;
 struct k_lifo;
 struct k_stack;
 struct k_mem_slab;
+struct k_mem_slab_ref;
 struct k_timer;
 struct k_poll_event;
 struct k_poll_signal;
@@ -6169,6 +6170,104 @@ int k_mem_slab_runtime_stats_get(struct k_mem_slab *slab, struct sys_memory_stat
  * @retval -EINVAL Memory slab is NULL
  */
 int k_mem_slab_runtime_stats_reset_max(struct k_mem_slab *slab);
+
+
+/** @} */
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+#define Z_MEM_SLAB_REF_INITIALIZER(_slab, _slab_buffer, _slab_block_size,  			\
+			       _slab_num_blocks)                      							\
+	Z_MEM_SLAB_INITIALIZER(_slab, _slab_buffer, _slab_block_size, _slab_num_blocks)
+
+#define K_MEM_SLAB_REF_DEFINE(name, slab_block_size, slab_num_blocks, slab_align) 	\
+			K_MEM_SLAB_DEFINE(name, slab_block_size, slab_num_blocks, slab_align)            \
+
+struct k_mem_slab_ref {
+	struct k_mem_slab;
+
+	SYS_PORT_TRACING_TRACKING_FIELD(k_mem_slab_rc)
+
+#ifdef CONFIG_OBJ_CORE_MEM_SLAB_RC
+	struct k_obj_core  obj_core;
+#endif
+};
+
+typedef struct k_mem_slab_ref_struct {
+   atomic_n_t refs;
+} k_mem_slab_ref_t;
+
+struct k_mem_slab_ref {
+	k_mem_slab_ref_t refcount;
+};
+
+struct k_mem_slab_ref_header {
+	struct k_mem_slab_ref kref;
+	struct k_mem_slab_ref *owner;
+};
+
+/** 
+ *  @addtogroup mem_slab_rc_apis
+ *  @{
+ */
+
+/**
+ *  @brief Reference counted wrapper for k_mem_slab_init()
+ */
+void k_mem_slab_ref_init(struct k_mem_slab_ref *kref);
+
+/**
+ *  @brief
+ */
+int k_mem_slab_ref_init(struct k_mem_slab_ref_header *slab_ref_header,
+                       void *buffer, size_t block_size, uint32_t num_blocks);
+
+/**
+ *  @brief
+ */
+int k_mem_slab_ref_alloc(struct k_mem_slab_ref *slab_ref, void **mem, 
+						k_timeout_t timeout);
+
+/**
+ *  @brief
+ */
+void k_mem_slab_ref_free(struct k_mem_slab_ref *slab_ref, void *mem);
+
+/**
+ *  @brief
+ */
+static inline uint32_t k_mem_slab_ref_num_used_get(struct k_mem_slab_ref *slab_ref);
+
+/**
+ *  @brief
+ */
+static inline uint32_t k_mem_slab_ref_max_used_get(struct k_mem_slab_ref *slab_ref);
+
+/**
+ *  @brief
+ */
+static inline uint32_t k_mem_slab_ref_num_free_get(struct k_mem_slab_ref *slab_ref);
+
+/**
+ *  @brief
+ */
+int k_mem_slab_ref_runtime_stats_get(struct k_mem_slab_ref *slab_ref, 
+						struct sys_memory_stats *stats);
+
+/**
+ *  @brief
+ */
+int k_mem_slab_ref_runtime_stats_reset_max(struct k_mem_slab_ref *slab_ref);
+
+/**
+ *  @brief 
+ */
+static inline uint32_t k_mem_slab_rc_refcount_get(struct 
+										k_mem_slab_rc_header *slab_rc_header) {
+    return (uint32_t)(slab_rc_header->kref.refcount.refs.counter);
+}
 
 /** @} */
 
