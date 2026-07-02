@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet_bridge.h>
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
@@ -303,6 +304,99 @@ static int cmd_bridge_fdb_show(const struct shell *sh, size_t argc, char *argv[]
 #endif /* CONFIG_NET_ETHERNET_BRIDGE_FDB */
 }
 
+#if defined(CONFIG_NET_BRIDGE_HW_OFFLOAD)
+struct hw_fdb_cb_data {
+	const struct shell *sh;
+	uint32_t count;
+};
+
+static void hw_fdb_entry_cb(const uint8_t *mac, uint32_t port_mask, bool dynamic,
+			    void *user_data)
+{
+	struct hw_fdb_cb_data *d = user_data;
+
+	shell_print(d->sh, "%02x:%02x:%02x:%02x:%02x:%02x  0x%04x  %s",
+		    mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
+		    port_mask, dynamic ? "dynamic" : "static");
+	d->count++;
+}
+
+struct find_bridge_data {
+	int target_idx;
+	struct eth_bridge_iface_context *found;
+};
+
+static void find_bridge_by_idx(struct eth_bridge_iface_context *ctx, void *user_data)
+{
+	struct find_bridge_data *fb = user_data;
+
+	if (eth_bridge_get_index(ctx->iface) == fb->target_idx) {
+		fb->found = ctx;
+	}
+}
+
+static int cmd_bridge_fdb_hwshow(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct find_bridge_data fb;
+	struct eth_bridge_iface_context *ctx;
+	struct hw_fdb_cb_data cb_data = {.sh = sh, .count = 0};
+	int br_idx, ret = 0;
+
+	br_idx = get_idx(sh, argv[1]);
+	if (br_idx < 0) {
+		return br_idx;
+	}
+
+	fb.target_idx = br_idx;
+	fb.found = NULL;
+	net_eth_bridge_foreach(find_bridge_by_idx, &fb);
+	if (fb.found == NULL) {
+		shell_warn(sh, "Bridge %d not found\n", br_idx);
+		return -ENOENT;
+	}
+
+	ctx = fb.found;
+
+	shell_print(sh, "HW FDB Table (bridge %d):", br_idx);
+	shell_print(sh, "MAC Address        Port mask   Flags");
+	shell_print(sh, "-------------------------------------------");
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+
+	ARRAY_FOR_EACH(ctx->eth_iface, i) {
+		struct net_if *iface = ctx->eth_iface[i];
+		const struct ethernet_api *api;
+		const struct device *dev;
+
+		if (iface == NULL) {
+			continue;
+		}
+
+		dev = net_if_get_device(iface);
+		api = (const struct ethernet_api *)dev->api;
+
+		if (api->bridge_fdb_dump == NULL) {
+			continue;
+		}
+
+		ret = api->bridge_fdb_dump(dev, iface, hw_fdb_entry_cb, &cb_data);
+		if (ret < 0) {
+			shell_error(sh, "HW FDB dump failed (%d)", ret);
+		}
+		/* HW FDB is per-switch: one successful dump covers all ports */
+		break;
+	}
+
+	k_mutex_unlock(&ctx->lock);
+
+	if (cb_data.count == 0) {
+		shell_print(sh, "(no entries)");
+	}
+
+	return ret;
+}
+#endif /* CONFIG_NET_BRIDGE_HW_OFFLOAD */
+
 SHELL_STATIC_SUBCMD_SET_CREATE(bridge_fdb_commands,
 	SHELL_CMD_ARG(add, NULL,
 		SHELL_HELP("Add fdb table entry", "<mac address> <interface index>"),
@@ -313,6 +407,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bridge_fdb_commands,
 	SHELL_CMD_ARG(show, NULL,
 		SHELL_HELP("Show fdb table", ""),
 		cmd_bridge_fdb_show, 1, 0),
+	COND_CODE_1(CONFIG_NET_BRIDGE_HW_OFFLOAD, (
+		SHELL_CMD_ARG(hwshow, NULL,
+			SHELL_HELP("Show hardware FDB table for a bridge", "<bridge_index>"),
+			cmd_bridge_fdb_hwshow, 2, 0),
+	), ())
 	SHELL_SUBCMD_SET_END
 );
 

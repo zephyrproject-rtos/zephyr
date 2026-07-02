@@ -7,6 +7,8 @@ config ETH_RENESAS_RA_RMAC
 	depends on DT_HAS_RENESAS_RA_ETHERNET_RMAC_ENABLED
 	select USE_RA_FSP_RMAC
 	select USE_RA_FSP_LAYER3_SWITCH
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select NET_BRIDGE_HW_OFFLOAD_SUPPORTED
 	help
 	  Add support for Renesas RA ethernet device driver.
 
@@ -23,13 +25,6 @@ config ETH_RENESAS_RA_RX_THREAD_PRIORITY
 	int "Renesas RA Ethernet receive thread priority"
 	default 2
 
-config ETH_RENESAS_RA_USE_ZERO_COPY
-	bool "Use zero-copy for ethernet buffers"
-	default y
-	help
-	  Enable this option to use zero-copy mode, allowing the driver to directly
-	  access DMA buffers without using a staging buffer.
-
 config ETH_RENESAS_RA_USE_HW_WRITEBACK
 	bool "Wait hardware writeback of ethernet buffers"
 	default y
@@ -37,5 +32,27 @@ config ETH_RENESAS_RA_USE_HW_WRITEBACK
 	  Enable this option to wait for Ethernet descriptor writeback, ensuring
 	  that the TX frame is written successfully. Note that enabling this option
 	  may cause ethernet write operations to take slightly longer.
+
+config ETH_RENESAS_RA_HW_BRIDGE
+	bool "Hardware bridge offload for RA8T2 RMAC"
+	depends on NET_BRIDGE_HW_OFFLOAD
+	default y
+	help
+	  Enable hardware-accelerated L2 bridge using the RA8T2 ESWM
+	  MAC forwarding table. Known unicast is forwarded between ports
+	  by hardware without CPU involvement. Unknown unicast and
+	  broadcast still pass through the CPU.
+
+config ETH_RENESAS_RA_HW_BRIDGE_MAC_AGING_TIME
+	int "Hardware bridge MAC table aging time (seconds)"
+	depends on ETH_RENESAS_RA_HW_BRIDGE
+	default 300
+	range 10 3600
+	help
+	  Time in seconds before an inactive hardware MAC table entry is
+	  removed from the ESWM forwarding table. Shorter values recover
+	  faster after a host moves to a different port; longer values
+	  reduce re-learning overhead on stable networks.
+	  IEEE 802.1D recommends 300 seconds as the default.
 
 endif

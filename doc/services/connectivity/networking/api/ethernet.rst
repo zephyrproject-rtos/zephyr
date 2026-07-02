@@ -36,10 +36,14 @@ Zephyr supports following Ethernet features:
 * :ref:`IEEE 802.1AS (gPTP) <gptp_interface>`
 * :ref:`IEEE 802.1Qav (credit based shaping) <8021Qav>`
 * :ref:`LLDP (Link Layer Discovery Protocol) <lldp_interface>`
+* Ethernet bridge hardware offloading
 
 Not all Ethernet device drivers support all of these features. You can
 see what is supported by ``net iface`` net-shell command. It will print
-currently supported Ethernet features.
+currently supported Ethernet features. Drivers that advertise bridge hardware
+offloading can be used by the Ethernet bridge layer to configure port membership
+and enable hardware forwarding while keeping the bridge interface visible to the
+stack.
 
 API Reference
 *************

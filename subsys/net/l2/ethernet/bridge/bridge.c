@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(net_eth_bridge, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 #include <zephyr/random/random.h>
 
 #include "net_private.h"
+#include "../arp.h"
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_TXRX_DEBUG)
 #define DEBUG_TX 1
@@ -42,6 +43,109 @@ static void lock_bridge(struct eth_bridge_iface_context *ctx)
 static void unlock_bridge(struct eth_bridge_iface_context *ctx)
 {
 	k_mutex_unlock(&ctx->lock);
+}
+
+static bool iface_has_bridge_offload(struct net_if *iface)
+{
+	return (net_eth_get_hw_capabilities(iface) & ETHERNET_HW_BRIDGE) != 0;
+}
+
+static int bridge_offload_addif(struct net_if *br, struct net_if *iface)
+{
+#if defined(CONFIG_NET_BRIDGE_HW_OFFLOAD)
+	const struct device *dev = net_if_get_device(iface);
+	const struct ethernet_api *api = dev->api;
+
+	if (!iface_has_bridge_offload(iface)) {
+		return 0;
+	}
+
+	if (api->bridge_setif == NULL) {
+		return -ENOTSUP;
+	}
+
+	return api->bridge_setif(dev, br, iface, NET_BRIDGE_IF_ADD);
+#else
+	return 0;
+#endif
+}
+
+static int bridge_offload_delif(struct net_if *br, struct net_if *iface)
+{
+#if defined(CONFIG_NET_BRIDGE_HW_OFFLOAD)
+	const struct device *dev = net_if_get_device(iface);
+	const struct ethernet_api *api = dev->api;
+
+	if (!iface_has_bridge_offload(iface)) {
+		return 0;
+	}
+
+	if (api->bridge_setif == NULL) {
+		return -ENOTSUP;
+	}
+
+	return api->bridge_setif(dev, br, iface, NET_BRIDGE_IF_DEL);
+#else
+	return 0;
+#endif
+}
+
+static int bridge_offload_set_status(struct net_if *br, struct net_if *iface, bool enable)
+{
+#if defined(CONFIG_NET_BRIDGE_HW_OFFLOAD)
+	const struct device *dev = net_if_get_device(iface);
+	const struct ethernet_api *api = dev->api;
+
+	if (!iface_has_bridge_offload(iface)) {
+		return 0;
+	}
+
+	if (api->bridge_setfwd == NULL) {
+		return -ENOTSUP;
+	}
+
+	return api->bridge_setfwd(dev, br, iface,
+				  enable ? NET_BRIDGE_FWD_START : NET_BRIDGE_FWD_STOP);
+#else
+	return 0;
+#endif
+}
+
+static bool bridge_has_hw_offload(struct eth_bridge_iface_context *ctx)
+{
+	if (ctx->count < 2) {
+		return false;
+	}
+
+	ARRAY_FOR_EACH(ctx->eth_iface, i) {
+		if (ctx->eth_iface[i] == NULL) {
+			continue;
+		}
+
+		if (!iface_has_bridge_offload(ctx->eth_iface[i])) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static int bridge_offload_set_status_all(struct eth_bridge_iface_context *ctx, bool enable)
+{
+	ARRAY_FOR_EACH(ctx->eth_iface, i) {
+		int ret;
+
+		if (ctx->eth_iface[i] == NULL) {
+			continue;
+		}
+
+		ret = bridge_offload_set_status(ctx->iface, ctx->eth_iface[i], enable);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
 }
 
 struct ud {
@@ -93,6 +197,7 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 {
 	struct eth_bridge_iface_context *ctx = net_if_get_device(br)->data;
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
+	bool already_added;
 	bool found = false;
 	int count = 0;
 	int ret;
@@ -100,12 +205,14 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 #if defined(CONFIG_NET_DSA)
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET) ||
 	    (eth_ctx->dsa_port != DSA_USER_PORT &&
-	     !(net_eth_get_hw_capabilities(iface) & ETHERNET_PROMISC_MODE))) {
+	     !(net_eth_get_hw_capabilities(iface) & ETHERNET_PROMISC_MODE) &&
+	     !(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_BRIDGE))) {
 		return -EINVAL;
 	}
 #else
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET) ||
-	    !(net_eth_get_hw_capabilities(iface) & ETHERNET_PROMISC_MODE)) {
+	    (!(net_eth_get_hw_capabilities(iface) & ETHERNET_PROMISC_MODE) &&
+	     !(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_BRIDGE))) {
 		return -EINVAL;
 	}
 #endif
@@ -116,7 +223,8 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 
 	lock_bridge(ctx);
 
-	if (eth_ctx->bridge == br) {
+	already_added = (eth_ctx->bridge == br);
+	if (already_added) {
 		/* This Ethernet interface was already added to the bridge */
 		found = true;
 	}
@@ -138,14 +246,26 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 		}
 	}
 
+	ctx->count = count;
+	ctx->hw_offload = bridge_has_hw_offload(ctx);
+
 	unlock_bridge(ctx);
 
 	if (!found) {
 		return -ENOMEM;
 	}
 
+	ret = already_added ? 0 : bridge_offload_addif(br, iface);
+	if (ret < 0) {
+		NET_DBG("iface %d bridge offload add failed: %d",
+			net_if_get_by_iface(iface), ret);
+		eth_bridge_iface_remove(br, iface);
+		return ret;
+	}
+
 #if defined(CONFIG_NET_DSA)
-	if (eth_ctx->dsa_port != DSA_USER_PORT) {
+	if (eth_ctx->dsa_port != DSA_USER_PORT &&
+	    !(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_BRIDGE)) {
 		ret = net_eth_promisc_mode(iface, true);
 		if (ret != 0 && ret != -EALREADY) {
 			NET_DBG("iface %d promiscuous mode failed: %d",
@@ -155,23 +275,32 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 		}
 	}
 #else
-	ret = net_eth_promisc_mode(iface, true);
-	if (ret != 0 && ret != -EALREADY) {
-		/* Ignore any errors when using native-sim driver,
-		 * we do not need host promiscuous working when testing
-		 * bridging using native-sim.
-		 */
-		if (!IS_ENABLED(CONFIG_ETH_NATIVE_TAP)) {
-			NET_DBG("iface %d promiscuous mode failed: %d",
-				net_if_get_by_iface(iface), ret);
+	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_BRIDGE)) {
+		ret = net_eth_promisc_mode(iface, true);
+		if (ret != 0 && ret != -EALREADY) {
+			/* Ignore any errors when using native-sim driver,
+			 * we do not need host promiscuous working when testing
+			 * bridging using native-sim.
+			 */
+			if (!IS_ENABLED(CONFIG_ETH_NATIVE_TAP)) {
+				NET_DBG("iface %d promiscuous mode failed: %d",
+					net_if_get_by_iface(iface), ret);
+				eth_bridge_iface_remove(br, iface);
+				return ret;
+			}
+		}
+	}
+#endif
+	NET_DBG("iface %d added to bridge %d", net_if_get_by_iface(iface),
+		net_if_get_by_iface(br));
+
+	if (ctx->status && ctx->hw_offload && !already_added) {
+		ret = bridge_offload_set_status(br, iface, true);
+		if (ret < 0) {
 			eth_bridge_iface_remove(br, iface);
 			return ret;
 		}
 	}
-
-#endif
-	NET_DBG("iface %d added to bridge %d", net_if_get_by_iface(iface),
-		net_if_get_by_iface(br));
 
 	if (count > 1) {
 		ctx->is_setup = true;
@@ -181,8 +310,6 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 		net_virtual_set_name(ctx->iface, "<config ok>");
 	}
 
-	ctx->count = count;
-
 	return 0;
 }
 
@@ -190,6 +317,7 @@ int eth_bridge_iface_remove(struct net_if *br, struct net_if *iface)
 {
 	struct eth_bridge_iface_context *ctx = net_if_get_device(br)->data;
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
+	bool was_hw_offload;
 	bool found = false;
 	int count = 0;
 
@@ -209,6 +337,8 @@ int eth_bridge_iface_remove(struct net_if *br, struct net_if *iface)
 #endif
 	lock_bridge(ctx);
 
+	was_hw_offload = ctx->hw_offload;
+
 	ARRAY_FOR_EACH(ctx->eth_iface, i) {
 		if (!found && ctx->eth_iface[i] == iface) {
 			ctx->eth_iface[i] = NULL;
@@ -226,7 +356,18 @@ int eth_bridge_iface_remove(struct net_if *br, struct net_if *iface)
 		}
 	}
 
+	ctx->count = count;
+	ctx->hw_offload = bridge_has_hw_offload(ctx);
+
 	unlock_bridge(ctx);
+
+	if (found) {
+		if (was_hw_offload && ctx->status) {
+			(void)bridge_offload_set_status(br, iface, false);
+		}
+
+		(void)bridge_offload_delif(br, iface);
+	}
 
 	NET_DBG("iface %d removed from bridge %d", net_if_get_by_iface(iface),
 		net_if_get_by_iface(br));
@@ -238,8 +379,6 @@ int eth_bridge_iface_remove(struct net_if *br, struct net_if *iface)
 
 		net_virtual_set_name(ctx->iface, "<no config>");
 	}
-
-	ctx->count = count;
 
 	return 0;
 }
@@ -308,6 +447,14 @@ static int bridge_iface_start(const struct device *dev)
 		return -EALREADY;
 	}
 
+	if (ctx->hw_offload) {
+		int ret = bridge_offload_set_status_all(ctx, true);
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	ctx->status = true;
 
 	NET_DBG("Starting iface %d", net_if_get_by_iface(ctx->iface));
@@ -325,6 +472,14 @@ static int bridge_iface_stop(const struct device *dev)
 
 	if (!ctx->status) {
 		return -EALREADY;
+	}
+
+	if (ctx->hw_offload) {
+		int ret = bridge_offload_set_status_all(ctx, false);
+
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	ctx->status = false;
@@ -418,6 +573,39 @@ int bridge_iface_send(struct net_if *iface, struct net_pkt *pkt)
 
 		net_pkt_hexdump(pkt, str);
 	}
+
+#if defined(CONFIG_NET_ARP)
+	/* Add ARP flow same as ethernet_send() for locally-generated IPv4 unicast
+	 * packets so the bridge IP stack gets correct L2 headers.
+	 */
+	if (!net_pkt_is_l2_bridged(pkt) && net_pkt_family(pkt) == NET_AF_INET &&
+	    net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_IP &&
+	    !net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt), NET_IPV4_HDR(pkt)->dst) &&
+	    !net_ipv4_is_addr_mcast_raw(NET_IPV4_HDR(pkt)->dst)) {
+		struct net_pkt *arp_pkt = NULL;
+		int ret;
+
+		net_linkaddr_set(net_pkt_lladdr_src(pkt),
+				 net_if_get_link_addr(iface)->addr,
+				 net_if_get_link_addr(iface)->len);
+		net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
+
+		ret = net_arp_prepare(pkt, (struct net_in_addr *)NET_IPV4_HDR(pkt)->dst,
+				      NULL, &arp_pkt);
+		switch (ret) {
+		case NET_ARP_COMPLETE:
+			break;
+		case NET_ARP_PKT_REPLACED:
+			net_pkt_unref(pkt);
+			pkt = arp_pkt;
+			break;
+		case NET_ARP_PKT_QUEUED:
+			return 0;
+		default:
+			return ret;
+		}
+	}
+#endif /* CONFIG_NET_ARP */
 
 	(void)bridge_iface_send_process(iface, pkt);
 
