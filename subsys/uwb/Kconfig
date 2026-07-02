@@ -1,0 +1,24 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig UWB
+    bool "Enable UWB subsystem"
+    default n
+    help 
+      Enable Ultra wideband subsystem
+
+if UWB
+
+config UWB_LOG_LEVEL
+	int
+	default 4 if UWB_LOG_LEVEL_DBG
+	default 3 if UWB_LOG_LEVEL_INF
+	default 2 if UWB_LOG_LEVEL_WRN
+	default 1 if UWB_LOG_LEVEL_ERR
+	default 3
+	range 0 4
+
+rsource "uci_lib/Kconfig"
+rsource "uwb_api/Kconfig"
+
+endif # UWB
