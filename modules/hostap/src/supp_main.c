@@ -378,7 +378,7 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 	wpa_s->conf->ap_scan = 1;
 
 	/* Default interface, kick start supplicant */
-	if (get_iface_count(ctx) > 0) {
+	if (get_iface_count(ctx) == 1) {
 		ctx->iface = iface;
 		net_if_get_name(iface, ctx->if_name, CONFIG_NET_INTERFACE_NAME_LEN);
 	}

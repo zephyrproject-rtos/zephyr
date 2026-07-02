@@ -108,6 +108,7 @@ static struct wifi_ap_sta_node sta_list[CONFIG_WIFI_SHELL_MAX_AP_STA];
 enum iface_type {
 	IFACE_TYPE_STA,
 	IFACE_TYPE_SAP,
+	IFACE_TYPE_P2P,
 };
 
 static struct net_if *get_iface(enum iface_type type, int argc, char *argv[])
@@ -148,10 +149,21 @@ static struct net_if *get_iface(enum iface_type type, int argc, char *argv[])
 		} else if (type == IFACE_TYPE_SAP) {
 			iface = net_if_get_wifi_sap();
 		}
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+		else if (type == IFACE_TYPE_P2P) {
+			iface = net_if_get_wifi_p2p();
+		}
+#endif
 
 		if (iface == NULL) {
 			LOG_ERR("No default interface found for type: %s",
-					type == IFACE_TYPE_STA ? "STA" : "SAP");
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+				type == IFACE_TYPE_STA ? "STA" :
+				type == IFACE_TYPE_SAP ? "SAP" : "P2P"
+#else
+				type == IFACE_TYPE_STA ? "STA" : "SAP"
+#endif
+			       );
 			return NULL;
 		}
 	}
@@ -4011,7 +4023,7 @@ static void print_peer_info(const struct shell *sh, int index,
 
 static int cmd_wifi_p2p_peer(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
 	struct wifi_p2p_params params = {0};
 	uint8_t mac_addr[WIFI_MAC_ADDR_LEN];
 	static struct wifi_p2p_device_info peers[WIFI_P2P_MAX_PEERS];
@@ -4066,7 +4078,7 @@ static int cmd_wifi_p2p_peer(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_wifi_p2p_find(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
 	struct wifi_p2p_params params = {0};
 
 	context.sh = sh;
@@ -4139,7 +4151,7 @@ static int cmd_wifi_p2p_find(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_wifi_p2p_stop_find(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
 	struct wifi_p2p_params params = {0};
 
 	context.sh = sh;
@@ -4156,7 +4168,7 @@ static int cmd_wifi_p2p_stop_find(const struct shell *sh, size_t argc, char *arg
 
 static int cmd_wifi_p2p_connect(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
 	struct wifi_p2p_params params = {0};
 	uint8_t mac_addr[WIFI_MAC_ADDR_LEN];
 	const char *method_arg = NULL;
@@ -4269,7 +4281,7 @@ static int cmd_wifi_p2p_connect(const struct shell *sh, size_t argc, char *argv[
 
 static int cmd_wifi_p2p_group_add(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
 	struct wifi_p2p_params params = {0};
 	int opt;
 	int opt_index = 0;
@@ -4371,7 +4383,7 @@ static int cmd_wifi_p2p_group_add(const struct shell *sh, size_t argc, char *arg
 
 static int cmd_wifi_p2p_group_remove(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
 	struct wifi_p2p_params params = {0};
 
 	context.sh = sh;
@@ -4396,7 +4408,7 @@ static int cmd_wifi_p2p_group_remove(const struct shell *sh, size_t argc, char *
 
 static int cmd_wifi_p2p_invite(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
 	struct wifi_p2p_params params = {0};
 	uint8_t mac_addr[WIFI_MAC_ADDR_LEN];
 	int opt;
@@ -4529,7 +4541,7 @@ static int cmd_wifi_p2p_invite(const struct shell *sh, size_t argc, char *argv[]
 
 static int cmd_wifi_p2p_power_save(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
 	struct wifi_p2p_params params = {0};
 	bool power_save_enable = false;
 
