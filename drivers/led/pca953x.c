@@ -11,6 +11,7 @@
 
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/led.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/kernel.h>
 
@@ -50,6 +51,7 @@ LOG_MODULE_REGISTER(pca953x, CONFIG_LED_LOG_LEVEL);
 
 struct pca953x_config {
 	struct i2c_dt_spec i2c;
+	struct gpio_dt_spec reset_gpio;
 	uint8_t nleds;
 	uint8_t ninput_reg;
 };
@@ -358,15 +360,43 @@ static int pca953x_led_blink(const struct device *dev, uint32_t led, uint32_t de
 
 static int pca953x_led_init_chip(const struct device *dev)
 {
+	const struct pca953x_config *config = dev->config;
 	struct pca953x_data *data = dev->data;
 
 	for (uint8_t i = 0; i < PCA953X_ENGINES; i++) {
 		data->engine_users[i] = 0;
 	}
 
-	/* The Power-On Reset already initializes the registers to their default state
-	 * no need to write them here. We'll just reset bookkeeping
+	/* If reset gpio is specified, go through the reset-cycle and ensure
+	 * the reset pin is high. Otherwise, assume Power-On reset happened.
 	 */
+	if (config->reset_gpio.port) {
+		if (!gpio_is_ready_dt(&config->reset_gpio)) {
+			LOG_ERR("Reset GPIO not ready");
+			return -ENODEV;
+		}
+
+		int ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
+
+		if (ret < 0) {
+			LOG_ERR("Failed to configure reset_gpio, err: %d", ret);
+			return ret;
+		}
+
+		/* Minimum reset hold time t_w(rst) = 10ns */
+		k_sleep(K_NSEC(10));
+
+		ret = gpio_pin_set_dt(&config->reset_gpio, 0);
+		if (ret < 0) {
+			LOG_ERR("Failed to unset reset_gpio, err: %d", ret);
+			return ret;
+		}
+	}
+
+	/* Reset time t_rst = 400ns, where no I2C communication is allowed.
+	 * Assuming Power-On reset takes the same amount
+	 */
+	k_sleep(K_NSEC(400));
 
 	return 0;
 }
@@ -407,7 +437,8 @@ static DEVICE_API(led, pca953x_led_api) = {
 	static const struct pca953x_config dev_name##_##id##_cfg = {                               \
 		.i2c = I2C_DT_SPEC_INST_GET(id),                                                   \
 		.nleds = led_channels,                                                             \
-		.ninput_reg = (led_channels - 1) / 8 + 1};                                         \
+		.ninput_reg = (led_channels - 1) / 8 + 1,                                          \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(id, reset_gpios, {0})};                     \
 	static struct pca953x_data dev_name##_##id##_data;                                         \
 	PM_DEVICE_DT_INST_DEFINE(id, pca953x_pm_action);                                           \
 	DEVICE_DT_INST_DEFINE(id, &pca953x_led_init, PM_DEVICE_DT_INST_GET(id),                    \
