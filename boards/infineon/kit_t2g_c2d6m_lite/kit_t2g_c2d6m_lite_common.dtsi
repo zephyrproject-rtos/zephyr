@@ -59,7 +59,7 @@
 uart7: &scb7 {
 	compatible = "infineon,uart";
 	current-speed = <115200>;
-	clocks = <&clk_peri1 15 0 1>;
+	clocks = <&clk_peri1 15>;
 
 	/* UART pins */
 	pinctrl-0 = <&p9_0_scb7_uart_rx &p9_1_scb7_uart_tx>;
@@ -69,7 +69,7 @@ uart7: &scb7 {
 uart9: &scb9 {
 	compatible = "infineon,uart";
 	current-speed = <115200>;
-	clocks = <&clk_peri1 17 0 0>;
+	clocks = <&clk_peri1 17>;
 
 	/* UART pins */
 	pinctrl-0 = <&p29_0_scb9_uart_rx &p29_1_scb9_uart_tx>;
