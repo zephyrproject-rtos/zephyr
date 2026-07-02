@@ -110,8 +110,8 @@
 
 #define CRC16_POLY 0x8005
 
-void ataes132a_atmel_crc(uint8_t *input, uint8_t length,
-			 uint8_t *output)
+static void ataes132a_atmel_crc(uint8_t *input, uint8_t length,
+				uint8_t *output)
 {
 	int i, j;
 	uint8_t bit;
