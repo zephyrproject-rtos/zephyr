@@ -9,7 +9,7 @@ family:
     - name: pic32cm5112gc00048
     - name: pic32cm5112gc00064
     - name: pic32cm5112gc00100
-  - name: pic32ck_sg00
+  - name: pic32cm_sg00
     socs:
     - name: pic32cm5112sg00048
     - name: pic32cm5112sg00064
