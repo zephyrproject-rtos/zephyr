@@ -320,6 +320,16 @@ config MDNS_RESPONDER_IFACE_LIST
 	  names are used instead of interface indexes because the indexes
 	  can change depending on configuration.
 
+config MDNS_RESPONDER_RUNTIME_IFACE_CONTROL
+	bool "Runtime control of the mDNS responder per interface"
+	help
+	  Provide mdns_responder_enable_iface() and
+	  mdns_responder_disable_iface() so that the application can enable or
+	  disable the mDNS responder on a specific network interface at
+	  runtime. The runtime setting overrides the build-time interface
+	  policy for that interface. When this option is not set, the
+	  responder follows the build-time interface policy only.
+
 config MDNS_RESPONDER_PROBE
 	bool "mDNS probing support [EXPERIMENTAL]"
 	select NET_CONNECTION_MANAGER
