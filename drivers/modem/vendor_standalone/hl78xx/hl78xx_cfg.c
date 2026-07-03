@@ -1669,7 +1669,7 @@ static bool hl78xx_copy_cereg_timer_field(const char *src, char *dst, size_t dst
 	return true;
 }
 
-void hl78xx_parse_cereg_info(struct hl78xx_data *data, char **argv, uint16_t argc, bool is_urc)
+void hl78xx_parse_cereg_info(struct hl78xx_data *data, char **argv, uint16_t argc, bool has_n_param)
 {
 	struct hl78xx_cxreg_status *cxreg;
 	int status_idx;
@@ -1697,7 +1697,7 @@ void hl78xx_parse_cereg_info(struct hl78xx_data *data, char **argv, uint16_t arg
 	cxreg->has_tau = false;
 	cxreg->tau[0] = '\0';
 
-	status_idx = is_urc ? 2 : 1;
+	status_idx = has_n_param ? 2 : 1;
 	tac_idx = status_idx + 1;
 	cell_idx = status_idx + 2;
 	act_idx = status_idx + 3;

@@ -610,7 +610,7 @@ void hl78xx_on_cxreg(struct modem_chat *chat, char **argv, uint16_t argc, void *
 	struct hl78xx_evt event = {.type = HL78XX_LTE_REGISTRATION_STAT_UPDATE};
 	enum hl78xx_cell_rat_mode rat_mode = HL78XX_RAT_MODE_NONE;
 	struct hl78xx_evt rat_event = {.type = HL78XX_LTE_RAT_UPDATE};
-	bool is_urc_message;
+	bool has_n_param;
 	bool rat_mode_updated = false;
 
 	ARG_UNUSED(chat);
@@ -620,10 +620,18 @@ void hl78xx_on_cxreg(struct modem_chat *chat, char **argv, uint16_t argc, void *
 	}
 
 	LOG_DBG("Received %s URC with argc: %d", argv[0], argc);
+	/*
+	 * Query responses include <n> before <stat>:
+	 *   +CEREG: <n>,<stat>,...
+	 *
+	 * URCs do not include <n>:
+	 *   +CEREG: <stat>,...
+	 *
+	 * The parser expects has_n_param=true when argv[1] is <n> and argv[2] is <stat>.
+	 */
+	has_n_param = (argc > 2 && strlen(argv[1]) == 1 && strlen(argv[2]) == 1);
 
-	is_urc_message = (argc > 2 && strlen(argv[1]) == 1 && strlen(argv[2]) == 1);
-
-	hl78xx_parse_cereg_info(data, argv, argc, is_urc_message);
+	hl78xx_parse_cereg_info(data, argv, argc, has_n_param);
 	rat_mode_updated = data->status.cxreg.has_rat_mode;
 	rat_mode = data->status.cxreg.rat_mode;
 	registration_status = data->status.cxreg.reg_status;

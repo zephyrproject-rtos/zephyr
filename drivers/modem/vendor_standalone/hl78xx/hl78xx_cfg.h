@@ -79,9 +79,10 @@ int hl78xx_ctzeu_parse_urc(char **argv, uint16_t argc, struct hl78xx_ctzeu_updat
  * @param data HL78XX data structure.
  * @param argv Tokenized URC arguments from modem chat.
  * @param argc Number of tokens in argv.
- * @param is_urc Indicates if the message is a URC.
+ * @param has_n_param Indicates if argv includes the query response <n> field.
  */
-void hl78xx_parse_cereg_info(struct hl78xx_data *data, char **argv, uint16_t argc, bool is_urc);
+void hl78xx_parse_cereg_info(struct hl78xx_data *data, char **argv, uint16_t argc,
+			     bool has_n_param);
 
 /**
  * @brief Set network operator format.
