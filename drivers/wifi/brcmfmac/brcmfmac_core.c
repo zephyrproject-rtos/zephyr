@@ -208,6 +208,20 @@ static int brcmfmac_process_clm_blob(struct brcmfmac_data *data)
 		hdr->flag &= ~BRCMF_DL_BEGIN;
 	}
 
+	/* The chip acks each chunk even when it rejects the blob; only
+	 * "clmload_status" reports the outcome (mirrors Linux
+	 * brcmf_c_process_clm_blob()).
+	 */
+	uint32_t status = 0;
+	int ret = brcmfmac_bcdc_iovar_get(data, "clmload_status",
+					  (uint8_t *)&status, sizeof(status));
+
+	if (ret < 0 || status != 0U) {
+		LOG_ERR("clmload_status=%u (ret=%d)", status, ret);
+		return -EIO;
+	}
+	LOG_INF("CLM blob loaded (%zu bytes)", brcmfmac_clm_blob_len);
+
 	return 0;
 }
 
@@ -241,11 +255,13 @@ static int brcmfmac_init(const struct device *dev)
 	}
 
 	/*
-	 * CLM blob upload. Chips that ship without built-in regulatory tables
-	 * (e.g. BCM43458F) require this; chips that have them (e.g. BCM43430A1)
-	 * still accept the iovar harmlessly. We always attempt the upload when
-	 * a blob is configured in the build via CONFIG_WIFI_BRCMFMAC_CLM_FILE;
-	 * an unconfigured build links an empty array (len==0) and we skip.
+	 * CLM blob upload. Trim-on-build (TOB) firmware images ship with the
+	 * CLM regulatory database stripped out (e.g. BCM43458F, or the
+	 * RPi-Distro 43430A1 image) and keep the radio country-disabled
+	 * until one is downloaded; images with a built-in CLM (e.g. 43436s)
+	 * don't need it. We upload when a blob is configured in the build
+	 * via CONFIG_WIFI_BRCMFMAC_CLM_FILE; an unconfigured build links an
+	 * empty array (len==0) and we skip.
 	 */
 	if (brcmfmac_clm_blob_len > 0) {
 		ret = brcmfmac_process_clm_blob(data);
@@ -268,14 +284,34 @@ static int brcmfmac_init(const struct device *dev)
 		data->chip_mac[3], data->chip_mac[4], data->chip_mac[5]);
 
 	/* WLC_UP: bring the MAC layer up. Most write IOCTLs (notably the
-	 * "escan" IOVAR) return BCME_NOTUP (-4) until this fires.
+	 * "escan" IOVAR) return BCME_NOTUP (-4) until this fires. The
+	 * command must carry a 4-byte zero payload, like Linux's
+	 * brcmf_fil_cmd_int_set(BRCMF_C_UP, 0): TOB firmware acks a
+	 * zero-length WLC_UP but leaves the radio down.
 	 */
-	ret = brcmfmac_bcdc_set_dcmd(data, BRCMFMAC_WLC_UP, NULL, 0);
+	const uint32_t up_arg = 0;
+
+	ret = brcmfmac_bcdc_set_dcmd(data, BRCMFMAC_WLC_UP,
+				     (const uint8_t *)&up_arg, sizeof(up_arg));
 	if (ret != 0) {
 		LOG_ERR("WLC_UP failed: %d", ret);
 		return ret;
 	}
-	LOG_INF("WLC_UP ok");
+
+	/* Read the up state back: a radio without a valid CLM/country acks
+	 * WLC_UP but stays down, and every later radio op fails BCME_NOTUP
+	 * with no other hint.
+	 */
+	uint32_t isup = 0;
+
+	ret = brcmfmac_bcdc_query_dcmd(data, BRCMFMAC_WLC_GET_UP, NULL, 0,
+				       (uint8_t *)&isup, sizeof(isup));
+	if (ret >= 0 && isup == 1U) {
+		LOG_INF("WLC_UP ok (isup=1)");
+	} else {
+		LOG_WRN("WLC_UP acked but radio not up (isup=%u) -- "
+			"missing CLM blob or no valid country?", isup);
+	}
 
 	/* Enable the events we care about in the chip's event mask. Read
 	 * current mask first so we don't clobber chip defaults. Events the

@@ -140,6 +140,7 @@
 #define BRCMFMAC_WLC_SET_PM             86  /* power mgmt: 0=OFF 1=MAX 2=FAST */
 #define BRCMFMAC_WLC_GET_RSSI           127
 #define BRCMFMAC_WLC_SET_WSEC           134
+#define BRCMFMAC_WLC_GET_UP             162
 #define BRCMFMAC_WLC_SET_WPA_AUTH       165
 #define BRCMFMAC_WLC_GET_VAR            262
 #define BRCMFMAC_WLC_SET_VAR            263

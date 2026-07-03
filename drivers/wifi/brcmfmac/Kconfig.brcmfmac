@@ -47,9 +47,12 @@ config WIFI_BRCMFMAC_CLM_FILE
 	help
 	  Optional Country Locale Matrix blob under
 	  ${ZEPHYR_HAL_BROADCOM_MODULE_DIR}/zephyr/blobs/img/brcmfmac/.
-	  Required by chips whose firmware ships without built-in regulatory
-	  tables (e.g. BCM43458F); chips that have them (e.g. BCM43430A1)
-	  still accept the upload harmlessly. Leave empty to skip CLM upload
+	  Required for trim-on-build (TOB) firmware images that ship with
+	  the CLM regulatory database stripped out (e.g. BCM43458F, or the
+	  RPi-Distro 43430A1 image): without it the radio stays
+	  country-disabled -- country reads back as the null code "#n" and
+	  radio ops fail BCME_NOTUP. Firmware with a built-in CLM (e.g. the
+	  43436s image) does not need it. Leave empty to skip CLM upload
 	  entirely -- the driver links a zero-length blob in that case.
 
 config WIFI_BRCMFMAC_RX_THREAD_STACK_SIZE
