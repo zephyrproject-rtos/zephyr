@@ -221,6 +221,23 @@ static inline bool z_is_thread_essential(const struct k_thread *thread)
 }
 
 
+/**
+ * @brief Decide whether the scheduler may switch away from the current thread.
+ *
+ * Returns true when the candidate thread may replace _current: when the
+ * switch was explicitly allowed (e.g. a yield), when _current can no
+ * longer run, or when _current runs at a preemptible priority. A
+ * cooperative _current (negative priority) is never preempted by another
+ * thread (MetaIRQ threads excepted); it keeps the CPU until it yields or
+ * blocks.
+ *
+ * @param thread Candidate thread selected by the scheduler.
+ * @param preempt_ok Non-zero if a switch is explicitly permitted.
+ *
+ * @satisfies ZEP-SRS-2-9
+ * @satisfies ZEP-SRS-2-10
+ * @satisfies ZEP-SRS-2-14
+ */
 static ALWAYS_INLINE bool should_preempt(const struct k_thread *thread,
 					 int preempt_ok)
 {

@@ -51,7 +51,34 @@ BUILD_ASSERT(sizeof(intptr_t) == sizeof(long));
 #error Zero available thread priorities defined!
 #endif
 
+/**
+ * @brief Compute a cooperative thread priority value.
+ *
+ * Maps @a x onto the negative (cooperative) region of the fixed numeric
+ * priority list. A thread running at a cooperative priority cannot be
+ * preempted by other threads; it remains the current thread until it
+ * yields or blocks.
+ *
+ * @param x Cooperative priority level, 0 to (CONFIG_NUM_COOP_PRIORITIES - 1).
+ *
+ * @satisfies ZEP-SRS-2-8
+ * @satisfies ZEP-SRS-2-10
+ * @satisfies ZEP-SRS-2-14
+ */
 #define K_PRIO_COOP(x) (-(CONFIG_NUM_COOP_PRIORITIES - (x)))
+
+/**
+ * @brief Compute a preemptible thread priority value.
+ *
+ * Maps @a x onto the non-negative (preemptible) region of the fixed
+ * numeric priority list. A thread running at a preemptible priority can
+ * be preempted at any time by a higher-priority ready thread.
+ *
+ * @param x Preemptible priority level, 0 to (CONFIG_NUM_PREEMPT_PRIORITIES - 1).
+ *
+ * @satisfies ZEP-SRS-2-8
+ * @satisfies ZEP-SRS-2-9
+ */
 #define K_PRIO_PREEMPT(x) (x)
 
 #define K_HIGHEST_THREAD_PRIO (-CONFIG_NUM_COOP_PRIORITIES)
@@ -790,6 +817,8 @@ bool k_can_yield(void);
  * This routine causes the current thread to yield execution to another
  * thread of the same or higher priority. If there are no other ready threads
  * of the same or higher priority, the routine returns immediately.
+ *
+ * @satisfies ZEP-SRS-2-15
  */
 __syscall void k_yield(void);
 
@@ -1160,6 +1189,7 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  * @param thread A thread on which to set the deadline
  * @param deadline A time delta, in cycle units
  *
+ * @satisfies ZEP-SRS-2-17
  */
 __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
 
@@ -1202,6 +1232,8 @@ __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
  *
  * @param thread A thread on which to set the deadline
  * @param deadline A timestamp, in cycle units
+ *
+ * @satisfies ZEP-SRS-2-17
  */
 __syscall void k_thread_absolute_deadline_set(k_tid_t thread, int deadline);
 #endif
@@ -1223,6 +1255,8 @@ __syscall void k_thread_absolute_deadline_set(k_tid_t thread, int deadline);
  * will not.
  *
  * Most applications will never use this routine.
+ *
+ * @satisfies ZEP-SRS-2-19
  */
 __syscall void k_reschedule(void);
 
@@ -1392,6 +1426,8 @@ static inline void k_thread_start(k_tid_t thread)
  *
  * @param slice Maximum time slice length (in milliseconds).
  * @param prio Highest thread priority level eligible for time slicing.
+ *
+ * @satisfies ZEP-SRS-2-11
  */
 void k_sched_time_slice_set(int32_t slice, int prio);
 
@@ -1432,6 +1468,8 @@ void k_sched_time_slice_set(int32_t slice, int prio);
  * @param slice_ticks Maximum timeslice, in ticks
  * @param expired Callback function called on slice expiration
  * @param data Parameter for the expiration handler
+ *
+ * @satisfies ZEP-SRS-2-18
  */
 void k_thread_time_slice_set(struct k_thread *th, int32_t slice_ticks,
 			     k_thread_timeslice_fn_t expired, void *data);
@@ -1471,6 +1509,8 @@ bool k_is_in_isr(void);
  *
  * @return 0 if invoked by an ISR or by a cooperative thread.
  * @return Non-zero if invoked by a preemptible thread.
+ *
+ * @satisfies ZEP-SRS-2-20
  */
 __syscall int k_is_preempt_thread(void);
 
@@ -1507,6 +1547,8 @@ __syscall int k_is_preempt_thread(void);
  * threads with MetaIRQ priorities from preempting the current thread.
  * In general this is a historical API not well-suited to modern
  * applications, use with care.
+ *
+ * @satisfies ZEP-SRS-2-16
  */
 void k_sched_lock(void);
 
@@ -1516,6 +1558,8 @@ void k_sched_lock(void);
  * This routine reverses the effect of a previous call to k_sched_lock().
  * A thread must call the routine once for each time it called k_sched_lock()
  * before the thread becomes preemptible.
+ *
+ * @satisfies ZEP-SRS-2-16
  */
 void k_sched_unlock(void);
 

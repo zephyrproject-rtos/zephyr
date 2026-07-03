@@ -295,6 +295,8 @@ static ALWAYS_INLINE struct k_thread *z_unpend_first_thread_locked(_wait_q_t *wa
  * @param swap_data Data return value to supplement swap_retval. May be NULL.
  * @retval true If a thread was woken up
  * @retval false If the wait_q was empty
+ *
+ * @satisfies ZEP-SRS-2-4
  */
 static ALWAYS_INLINE bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data)
 {
