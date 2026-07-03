@@ -832,6 +832,10 @@ static int z_ztest_run_test_dispatch(struct ztest_suite_node *suite,
 	int fail = 0;
 	bool any_inst = false;
 
+	if (!IS_ENABLED(CONFIG_ZTEST_PARAM_INST)) {
+		goto done;
+	}
+
 	STRUCT_SECTION_FOREACH(ztest_param_inst, inst) {
 		if (strcmp(inst->test_suite_name, suite->name) != 0 ||
 		    strcmp(inst->test_name, test->name) != 0) {

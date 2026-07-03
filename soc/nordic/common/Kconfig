@@ -125,6 +125,31 @@ config SHELL_REMOTE_MULTI_CLI
 
 endif # SHELL_REMOTE
 
+config GPPI_EXT_ALLOCATOR
+	bool "GPPI external allocator"
+	depends on IPC_SERVICE
+	depends on NRFX_GPPI && !NRFX_GPPI_V1
+	help
+	  Enable GPPI external allocator server role. Server registers an IPC
+	  endpoint used for cross-core GPPI resource allocation.
+
+config GPPI_EXT_ALLOCATOR_CLI
+	bool "GPPI external allocator client"
+	depends on IPC_SERVICE
+	depends on NRFX_GPPI && !NRFX_GPPI_V1
+	select NRFX_GPPI_EXT_ALLOCATOR
+	help
+	  Enable GPPI external allocator client role. Client core provides
+	  external GPPI allocation functions that delegate to the server over IPC.
+
+config GPPI_EXT_ALLOCATOR_TIMEOUT
+	int "GPPI external allocator IPC timeout (ms)"
+	default 1000
+	depends on GPPI_EXT_ALLOCATOR || GPPI_EXT_ALLOCATOR_CLI
+	help
+	  Timeout in milliseconds for GPPI external allocator IPC semaphore and
+	  mutex operations.
+
 rsource "vpr/Kconfig"
 rsource "uicr/Kconfig"
 rsource "Kconfig.tfm"

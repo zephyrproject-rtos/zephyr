@@ -118,6 +118,13 @@ config ZTEST_WARN_NO_OPTIMIZATIONS
 	  optimizations. Please don't file issues when running tests that are
 	  not explicitly tuned to work in this configuration.
 
+config ZTEST_PARAM_INST
+	bool "Parameterized instantiation of tests"
+	default y
+	help
+	  Enables use of ZTEST_INSTANTIATE_TEST_SUITE_P to instantiate tests.
+	  Disable to reduce code size.
+
 menu "ZTest provided rules"
 
 config ZTEST_RULE_1CPU

@@ -151,6 +151,12 @@ config NRFX_GPPI_SD2PPI_GLOBAL
 	  SD^2PPI architecture is using multiple instances of DPPI controllers and Ironside service
 	  to configure the security and ownership of the PPI resources.
 
+config NRFX_GPPI_EXT_ALLOCATOR
+	bool "External GPPI allocator"
+	help
+	  Indicates that external implementation for GPPI allocation and freeing functions
+	  is provided.
+
 config NRFX_GRTC
 	bool "GRTC driver"
 	depends on $(dt_nodelabel_exists,grtc)
