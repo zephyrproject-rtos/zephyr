@@ -706,6 +706,10 @@ __syscall int k_thread_join(struct k_thread *thread, k_timeout_t timeout);
  * sleep rounded up to the nearest millisecond (e.g. if the thread was
  * awoken by the \ref k_wakeup call).  Will be clamped to INT_MAX in
  * the case where the remaining time is unrepresentable in an int32_t.
+ *
+ * @satisfies ZEP-SRS-28-8
+ * @satisfies ZEP-SRS-28-10
+ * @satisfies ZEP-SRS-28-12
  */
 __syscall int32_t k_sleep(k_timeout_t timeout);
 
@@ -719,6 +723,8 @@ __syscall int32_t k_sleep(k_timeout_t timeout);
  * @return Zero if the requested time has elapsed or if the thread was woken up
  * by the \ref k_wakeup call, the time left to sleep rounded up to the nearest
  * millisecond.
+ *
+ * @satisfies ZEP-SRS-28-8
  */
 static inline int32_t k_msleep(int32_t ms)
 {
@@ -740,6 +746,8 @@ static inline int32_t k_msleep(int32_t ms)
  * @return Zero if the requested time has elapsed or if the thread was woken up
  * by the \ref k_wakeup call, the time left to sleep rounded up to the nearest
  * microsecond.
+ *
+ * @satisfies ZEP-SRS-28-9
  */
 __syscall int32_t k_usleep(int32_t us);
 
@@ -758,6 +766,8 @@ __syscall int32_t k_usleep(int32_t us);
  * @note In case when @kconfig{CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE} and
  * @kconfig{CONFIG_PM} options are enabled, this function may not work.
  * The timer/clock used for delay processing may be disabled/inactive.
+ *
+ * @satisfies ZEP-SRS-28-13
  */
 __syscall void k_busy_wait(uint32_t usec_to_wait);
 
@@ -791,6 +801,8 @@ __syscall void k_yield(void);
  * If @a thread is not currently sleeping, the routine has no effect.
  *
  * @param thread ID of thread to wake.
+ *
+ * @satisfies ZEP-SRS-28-11
  */
 __syscall void k_wakeup(k_tid_t thread);
 
@@ -1746,6 +1758,8 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
  *
  * @param t Tick uptime value
  * @return Timeout delay value
+ *
+ * @satisfies ZEP-SRS-28-14
  */
 #define K_TIMEOUT_ABS_TICKS(t) \
 	Z_TIMEOUT_TICKS(Z_TICK_ABS((k_ticks_t)CLAMP(t, 0, (INT64_MAX - 1))))
@@ -1921,6 +1935,8 @@ struct k_timer_observer {
  * invoked if the timer has been initialized with one.
  *
  * @param timer     Address of timer.
+ *
+ * @satisfies ZEP-SRS-4-15
  */
 typedef void (*k_timer_expiry_t)(struct k_timer *timer);
 
@@ -1950,6 +1966,10 @@ typedef void (*k_timer_stop_t)(struct k_timer *timer);
  * @param name Name of the timer variable.
  * @param expiry_fn Function to invoke each time the timer expires.
  * @param stop_fn   Function to invoke if the timer is stopped while running.
+ *
+ * @satisfies ZEP-SRS-4-1
+ * @satisfies ZEP-SRS-4-2
+ * @satisfies ZEP-SRS-4-3
  */
 #define K_TIMER_DEFINE(name, expiry_fn, stop_fn) \
 	STRUCT_SECTION_ITERABLE(k_timer, name) = \
@@ -1984,6 +2004,8 @@ typedef void (*k_timer_stop_t)(struct k_timer *timer);
  * @param start Pointer to start callback (or NULL).
  * @param stop Pointer to stop callback (or NULL).
  * @param expiry Pointer to expiry callback (or NULL).
+ *
+ * @satisfies ZEP-SRS-4-18
  */
 #define K_TIMER_OBSERVER_DEFINE(name, init, start, stop, expiry) \
 	static const STRUCT_SECTION_ITERABLE(k_timer_observer, name) = \
@@ -1999,6 +2021,11 @@ typedef void (*k_timer_stop_t)(struct k_timer *timer);
  * @param timer     Address of timer.
  * @param expiry_fn Function to invoke each time the timer expires.
  * @param stop_fn   Function to invoke if the timer is stopped while running.
+ *
+ * @satisfies ZEP-SRS-4-2
+ * @satisfies ZEP-SRS-4-3
+ * @satisfies ZEP-SRS-4-4
+ * @satisfies ZEP-SRS-4-8
  */
 void k_timer_init(struct k_timer *timer,
 			 k_timer_expiry_t expiry_fn,
@@ -2020,6 +2047,9 @@ void k_timer_init(struct k_timer *timer,
  * @param timer     Address of timer.
  * @param duration  Initial timer duration.
  * @param period    Timer period.
+ *
+ * @satisfies ZEP-SRS-4-5
+ * @satisfies ZEP-SRS-4-8
  */
 __syscall void k_timer_start(struct k_timer *timer,
 			     k_timeout_t duration, k_timeout_t period);
@@ -2039,6 +2069,8 @@ __syscall void k_timer_start(struct k_timer *timer,
  * @isr_ok
  *
  * @param timer     Address of timer.
+ *
+ * @satisfies ZEP-SRS-4-6
  */
 __syscall void k_timer_stop(struct k_timer *timer);
 
@@ -2053,6 +2085,9 @@ __syscall void k_timer_stop(struct k_timer *timer);
  * @param timer     Address of timer.
  *
  * @return Timer status.
+ *
+ * @satisfies ZEP-SRS-4-7
+ * @satisfies ZEP-SRS-4-8
  */
 __syscall uint32_t k_timer_status_get(struct k_timer *timer);
 
@@ -2072,6 +2107,9 @@ __syscall uint32_t k_timer_status_get(struct k_timer *timer);
  * @param timer     Address of timer.
  *
  * @return Timer status.
+ *
+ * @satisfies ZEP-SRS-4-8
+ * @satisfies ZEP-SRS-4-9
  */
 __syscall uint32_t k_timer_status_sync(struct k_timer *timer);
 
@@ -2086,6 +2124,8 @@ __syscall uint32_t k_timer_status_sync(struct k_timer *timer);
  *
  * @param timer The timer object
  * @return Uptime of expiration, in ticks
+ *
+ * @satisfies ZEP-SRS-4-10
  */
 __syscall k_ticks_t k_timer_expires_ticks(const struct k_timer *timer);
 
@@ -2104,6 +2144,8 @@ static inline k_ticks_t z_impl_k_timer_expires_ticks(
  *
  * @param timer The timer object
  * @return Remaining time until expiration, in ticks
+ *
+ * @satisfies ZEP-SRS-4-11
  */
 __syscall k_ticks_t k_timer_remaining_ticks(const struct k_timer *timer);
 
@@ -2122,6 +2164,8 @@ static inline k_ticks_t z_impl_k_timer_remaining_ticks(
  * @param timer     Address of timer.
  *
  * @return Remaining time (in milliseconds).
+ *
+ * @satisfies ZEP-SRS-4-12
  */
 static inline uint32_t k_timer_remaining_get(struct k_timer *timer)
 {
@@ -2141,6 +2185,8 @@ static inline uint32_t k_timer_remaining_get(struct k_timer *timer)
  *
  * @param timer     Address of timer.
  * @param user_data User data to associate with the timer.
+ *
+ * @satisfies ZEP-SRS-4-13
  */
 __syscall void k_timer_user_data_set(struct k_timer *timer, void *user_data);
 
@@ -2159,6 +2205,8 @@ static inline void z_impl_k_timer_user_data_set(struct k_timer *timer,
  * @param timer     Address of timer.
  *
  * @return The user data.
+ *
+ * @satisfies ZEP-SRS-4-14
  */
 __syscall void *k_timer_user_data_get(const struct k_timer *timer);
 
@@ -2186,6 +2234,9 @@ static inline void *z_impl_k_timer_user_data_get(const struct k_timer *timer)
  * @retval 0 on success.
  * @retval -EAGAIN when threads are still pending on the timer's
  *         wait queue (e.g. via k_timer_status_sync()).
+ *
+ * @satisfies ZEP-SRS-4-16
+ * @satisfies ZEP-SRS-4-17
  */
 int k_timer_cleanup(struct k_timer *timer);
 
@@ -2205,6 +2256,8 @@ int k_timer_cleanup(struct k_timer *timer);
  * fundamental unit of resolution of kernel timekeeping.
  *
  * @return Current uptime in ticks.
+ *
+ * @satisfies ZEP-SRS-28-2
  */
 __syscall int64_t k_uptime_ticks(void);
 
@@ -2220,6 +2273,8 @@ __syscall int64_t k_uptime_ticks(void);
  *    @kconfig{CONFIG_SYS_CLOCK_TICKS_PER_SEC} config option.
  *
  * @return Current uptime in milliseconds.
+ *
+ * @satisfies ZEP-SRS-28-1
  */
 static inline int64_t k_uptime_get(void)
 {
@@ -2244,6 +2299,8 @@ static inline int64_t k_uptime_get(void)
  *    @kconfig{CONFIG_SYS_CLOCK_TICKS_PER_SEC} config option
  *
  * @return The low 32 bits of the current uptime, in milliseconds.
+ *
+ * @satisfies ZEP-SRS-28-1
  */
 static inline uint32_t k_uptime_get_32(void)
 {
@@ -2257,6 +2314,8 @@ static inline uint32_t k_uptime_get_32(void)
  * in seconds.
  *
  * @return Current uptime in seconds.
+ *
+ * @satisfies ZEP-SRS-28-3
  */
 static inline uint32_t k_uptime_seconds(void)
 {
@@ -2273,6 +2332,8 @@ static inline uint32_t k_uptime_seconds(void)
  *                uptime upon return.
  *
  * @return Elapsed time.
+ *
+ * @satisfies ZEP-SRS-28-4
  */
 static inline int64_t k_uptime_delta(int64_t *reftime)
 {
@@ -2292,6 +2353,8 @@ static inline int64_t k_uptime_delta(int64_t *reftime)
  * clock.
  *
  * @return Current hardware clock up-counter (in cycles).
+ *
+ * @satisfies ZEP-SRS-28-5
  */
 static inline uint32_t k_cycle_get_32(void)
 {
@@ -2307,6 +2370,8 @@ static inline uint32_t k_cycle_get_32(void)
  * @see CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
  *
  * @return Current hardware clock up-counter (in cycles).
+ *
+ * @satisfies ZEP-SRS-28-6
  */
 static inline uint64_t k_cycle_get_64(void)
 {
