@@ -214,4 +214,9 @@ endif # DT_HAS_ST_STM32_DMA2D_ENABLED
 
 endif # STM32_LTDC && LVGL
 
+# All STM32 targets expect a 1024 bytes header when MCUboot is embedded.
+# All STM32 targets in TF-M expect a 1024 bytes header, BL2 being embedded or not.
+configdefault ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT || BUILD_WITH_TFM
+
 endif # SOC_FAMILY_STM32
