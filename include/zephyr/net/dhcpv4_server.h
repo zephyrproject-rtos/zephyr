@@ -12,7 +12,7 @@
 #define ZEPHYR_INCLUDE_NET_DHCPV4_SERVER_H_
 
 #include <zephyr/net/net_ip.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #ifdef __cplusplus
 extern "C" {

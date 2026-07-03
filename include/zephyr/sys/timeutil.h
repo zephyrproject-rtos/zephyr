@@ -28,7 +28,7 @@
 #include <stdint.h>
 #include <time.h>
 
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/time_units.h>
