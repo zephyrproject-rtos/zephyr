@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Vossloh AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 Secure AES co-processor
+
+compatible: "st,stm32-saes"
+
+include: st,stm32-crypto-common.yaml

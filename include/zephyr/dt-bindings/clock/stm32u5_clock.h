@@ -11,7 +11,7 @@
 
 /** Domain clocks */
 
-/* RM0456, Figure 36 Clock tree for STM32U5 Series */
+/* RM0456, Figure 38 Clock tree for STM32U5 Series */
 
 /** System clock */
 /* defined in stm32_common_clocks.h */
@@ -21,8 +21,9 @@
 #define STM32_SRC_HSI48		(STM32_SRC_HSI16 + 1)
 #define STM32_SRC_MSIS		(STM32_SRC_HSI48 + 1)
 #define STM32_SRC_MSIK		(STM32_SRC_MSIS + 1)
+#define STM32_SRC_SHSI		(STM32_SRC_MSIK + 1)
 /** Bus clock */
-#define STM32_SRC_HCLK		(STM32_SRC_MSIK + 1)
+#define STM32_SRC_HCLK		(STM32_SRC_SHSI + 1)
 #define STM32_SRC_PCLK1		(STM32_SRC_HCLK + 1)
 #define STM32_SRC_PCLK2		(STM32_SRC_PCLK1 + 1)
 #define STM32_SRC_PCLK3		(STM32_SRC_PCLK2 + 1)

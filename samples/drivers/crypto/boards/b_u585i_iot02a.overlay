@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 Vossloh AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&clk_hsi48 {
+	status = "okay"; /* for RNG */
+};
+
+&rng {
+	status = "okay";
+};
+
+&clk_shsi {
+	status = "okay"; /* for SAES */
+};
+
+&aes {
+	status = "disabled"; /* Only enable one AES crypto core */
+};
+
+&saes {
+	status = "okay";
+};

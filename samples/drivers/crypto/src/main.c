@@ -17,12 +17,44 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
+/* Opaque key tests
+ *
+ * To enable opaque key tests, one must define the following things:
+ *	- OPAQUE_KEY_DATATYPE: the type of the opaque key.
+ *	- OPAQUE_KEY_VALUES: a list of tuple of <key name, opaque key data> to
+ *		test, with their name and value, i.e. a list of structures of
+ *		the form:
+ *			{const char *name, const OPAQUE_KEY_DATATYPE key_data}
+ *
+ * Notes:
+ *	The opaque key tests will be run only if the crypto driver supports
+ *	opaque keys, i.e. if the crypto driver capabilities (given by
+ *	crypto_query_hwcaps()) include the CAP_OPAQUE_KEY_HNDL bit, and if
+ *	the OPAQUE_KEY_DATATYPE and OPAQUE_KEY_VALUES definitions are provided.
+ *
+ *	If the crypto driver does not support opaque keys, the
+ *	OPAQUE_KEY_DATATYPE and OPAQUE_KEY_VALUES definitions will be ignored,
+ *	and no opaque key test will be run.
+ */
+
 #ifdef CONFIG_CRYPTO_MBEDTLS_SHIM
 #define CRYPTO_DRV_NAME CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_cryp)
 #define CRYPTO_DEV_COMPAT st_stm32_cryp
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
 #define CRYPTO_DEV_COMPAT st_stm32_aes
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_saes)
+#include <zephyr/crypto/crypto_xaes_stm32.h>
+#define CRYPTO_DEV_COMPAT st_stm32_saes
+#define OPAQUE_KEY_DATATYPE uint32_t
+#define OPAQUE_KEY_DEFINE(key_name, key_mode)                                                     \
+	{#key_name "-" #key_mode, STM32_xAES_KEYDESC(CONCAT(STM32_xAES_KEY_SELECTION_, key_name), \
+						     CONCAT(STM32_xAES_KEY_MODE_, key_mode))}
+/* Only test the DHUK in normal mode.
+ * The BHK and XORK keys are not supported yet since they also require the
+ * TAMP IP properly configured.
+ */
+#define OPAQUE_KEY_VALUES OPAQUE_KEY_DEFINE(DHUK, NORMAL)
 #elif DT_HAS_COMPAT_STATUS_OKAY(microchip_aes_g1)
 #define CRYPTO_DEV_COMPAT microchip_aes_g1
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_dcp)
@@ -48,6 +80,19 @@ LOG_MODULE_REGISTER(main);
 #else
 #error "You need to enable one crypto device"
 #endif
+
+#if !defined(OPAQUE_KEY_DATATYPE)
+#define OPAQUE_KEY_DATATYPE void *
+#endif
+
+#if !defined(OPAQUE_KEY_VALUES)
+#define OPAQUE_KEY_VALUES /* No opaque keys */
+#endif
+
+static const struct {
+	const char *name;
+	OPAQUE_KEY_DATATYPE key_data;
+} opaque_keys[] = {OPAQUE_KEY_VALUES};
 
 /* Some crypto drivers require IO buffers to be aligned, i.e. due to underlying DMA requirements. */
 #define IO_ALIGNMENT_BYTES 4
@@ -95,12 +140,12 @@ static void print_buffer_comparison(const uint8_t *wanted_result,
 	printk("\n");
 }
 
-int validate_hw_compatibility(const struct device *dev)
+int validate_hw_compatibility(const struct device *dev, uint32_t key_cap_flag)
 {
 	uint32_t flags = 0U;
 
 	flags = crypto_query_hwcaps(dev);
-	if ((flags & CAP_RAW_KEY) == 0U) {
+	if ((flags & key_cap_flag) == 0U) {
 		LOG_INF("Please provision the key separately "
 			"as the module doesnt support a raw key");
 		return -1;
@@ -118,13 +163,13 @@ int validate_hw_compatibility(const struct device *dev)
 		return -1;
 	}
 
-	cap_flags = CAP_RAW_KEY | CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS;
+	cap_flags = key_cap_flag | CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS;
 
 	return 0;
 
 }
 
-void ecb_mode(const struct device *dev)
+void ecb_mode(const struct device *dev, void *key_handle)
 {
 	/* from FIPS-197 test vectors */
 	const uint8_t ecb_key[16] = {
@@ -140,9 +185,11 @@ void ecb_mode(const struct device *dev)
 
 	uint8_t encrypted[16] __aligned(IO_ALIGNMENT_BYTES) = {0};
 	uint8_t decrypted[16] __aligned(IO_ALIGNMENT_BYTES) = {0};
+
+	bool raw_key = (cap_flags & CAP_RAW_KEY) != 0U;
+
 	struct cipher_ctx ini = {
 		.keylen = sizeof(ecb_key),
-		.key.bit_stream = ecb_key,
 		.flags = cap_flags,
 	};
 	struct cipher_pkt encrypt = {
@@ -158,6 +205,12 @@ void ecb_mode(const struct device *dev)
 		.out_buf_max = sizeof(decrypted),
 	};
 
+	if (raw_key) {
+		ini.key.bit_stream = ecb_key;
+	} else {
+		ini.key.handle = key_handle;
+	}
+
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
 				 CRYPTO_CIPHER_MODE_ECB,
 				 CRYPTO_CIPHER_OP_ENCRYPT)) {
@@ -171,15 +224,18 @@ void ecb_mode(const struct device *dev)
 
 	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
-	if (memcmp(encrypt.out_buf, ecb_ciphertext, sizeof(ecb_ciphertext))) {
-		LOG_ERR("ECB mode ENCRYPT - Mismatch between expected and "
-			    "returned cipher text");
-		print_buffer_comparison(ecb_ciphertext, encrypt.out_buf,
-					sizeof(ecb_ciphertext));
-		goto out;
+	if (raw_key) {
+		if (memcmp(encrypt.out_buf, ecb_ciphertext, sizeof(ecb_ciphertext))) {
+			LOG_ERR("ECB mode ENCRYPT - Mismatch between expected and "
+				    "returned cipher text");
+			print_buffer_comparison(ecb_ciphertext, encrypt.out_buf,
+						sizeof(ecb_ciphertext));
+			goto out;
+		}
+
+		LOG_INF("ECB mode ENCRYPT - Match");
 	}
 
-	LOG_INF("ECB mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
@@ -203,7 +259,7 @@ void ecb_mode(const struct device *dev)
 		goto out;
 	}
 
-	LOG_INF("ECB mode DECRYPT - Match");
+	LOG_INF("ECB mode %s - Match", raw_key ? "DECRYPT" : "ROUNDTRIP");
 out:
 	cipher_free_session(dev, &ini);
 }
@@ -218,13 +274,15 @@ static const uint8_t cbc_ciphertext[80] = {
 	0x12, 0x0e, 0xca, 0x30, 0x75, 0x86, 0xe1, 0xa7
 };
 
-void cbc_mode(const struct device *dev)
+void cbc_mode(const struct device *dev, void *key_handle)
 {
 	uint8_t encrypted[80] __aligned(IO_ALIGNMENT_BYTES) = {0};
 	uint8_t decrypted[64] __aligned(IO_ALIGNMENT_BYTES) = {0};
+
+	bool raw_key = (cap_flags & CAP_RAW_KEY) != 0U;
+
 	struct cipher_ctx ini = {
 		.keylen = sizeof(key),
-		.key.bit_stream = key,
 		.flags = cap_flags,
 	};
 	struct cipher_pkt encrypt = {
@@ -245,6 +303,12 @@ void cbc_mode(const struct device *dev)
 		0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
 	};
 
+	if (raw_key) {
+		ini.key.bit_stream = key;
+	} else {
+		ini.key.handle = key_handle;
+	}
+
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
 				 CRYPTO_CIPHER_MODE_CBC,
 				 CRYPTO_CIPHER_OP_ENCRYPT)) {
@@ -258,15 +322,18 @@ void cbc_mode(const struct device *dev)
 
 	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
-	if (memcmp(encrypt.out_buf, cbc_ciphertext, sizeof(cbc_ciphertext))) {
-		LOG_ERR("CBC mode ENCRYPT - Mismatch between expected and "
-			    "returned cipher text");
-		print_buffer_comparison(cbc_ciphertext, encrypt.out_buf,
-					sizeof(cbc_ciphertext));
-		goto out;
+	if (raw_key) {
+		if (memcmp(encrypt.out_buf, cbc_ciphertext, sizeof(cbc_ciphertext))) {
+			LOG_ERR("CBC mode ENCRYPT - Mismatch between expected and "
+				    "returned cipher text");
+			print_buffer_comparison(cbc_ciphertext, encrypt.out_buf,
+						sizeof(cbc_ciphertext));
+			goto out;
+		}
+
+		LOG_INF("CBC mode ENCRYPT - Match");
 	}
 
-	LOG_INF("CBC mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
@@ -290,7 +357,7 @@ void cbc_mode(const struct device *dev)
 		goto out;
 	}
 
-	LOG_INF("CBC mode DECRYPT - Match");
+	LOG_INF("CBC mode %s - Match", raw_key ? "DECRYPT" : "ROUNDTRIP");
 out:
 	cipher_free_session(dev, &ini);
 }
@@ -471,13 +538,15 @@ static const uint8_t ctr_ciphertext[64] = {
 	0xa3, 0x5c, 0x85, 0x3a, 0xb9, 0x2c, 0x6, 0xbb
 };
 
-void ctr_mode(const struct device *dev)
+void ctr_mode(const struct device *dev, void *key_handle)
 {
 	uint8_t encrypted[64] __aligned(IO_ALIGNMENT_BYTES) = {0};
 	uint8_t decrypted[64] __aligned(IO_ALIGNMENT_BYTES) = {0};
+
+	bool raw_key = (cap_flags & CAP_RAW_KEY) != 0U;
+
 	struct cipher_ctx ini = {
 		.keylen = sizeof(key),
-		.key.bit_stream = key,
 		.flags = cap_flags,
 		/*  ivlen + ctrlen = keylen , so ctrlen is 128 - 96 = 32 bits */
 		.mode_params.ctr_info.ctr_len = 32,
@@ -499,6 +568,12 @@ void ctr_mode(const struct device *dev)
 		0xf8, 0xf9, 0xfa, 0xfb
 	};
 
+	if (raw_key) {
+		ini.key.bit_stream = key;
+	} else {
+		ini.key.handle = key_handle;
+	}
+
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
 				 CRYPTO_CIPHER_MODE_CTR,
 				 CRYPTO_CIPHER_OP_ENCRYPT)) {
@@ -512,15 +587,18 @@ void ctr_mode(const struct device *dev)
 
 	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
-	if (memcmp(encrypt.out_buf, ctr_ciphertext, sizeof(ctr_ciphertext))) {
-		LOG_ERR("CTR mode ENCRYPT - Mismatch between expected "
-			    "and returned cipher text");
-		print_buffer_comparison(ctr_ciphertext, encrypt.out_buf,
-					sizeof(ctr_ciphertext));
-		goto out;
+	if (raw_key) {
+		if (memcmp(encrypt.out_buf, ctr_ciphertext, sizeof(ctr_ciphertext))) {
+			LOG_ERR("CTR mode ENCRYPT - Mismatch between expected "
+				    "and returned cipher text");
+			print_buffer_comparison(ctr_ciphertext, encrypt.out_buf,
+						sizeof(ctr_ciphertext));
+			goto out;
+		}
+
+		LOG_INF("CTR mode ENCRYPT - Match");
 	}
 
-	LOG_INF("CTR mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
@@ -544,7 +622,7 @@ void ctr_mode(const struct device *dev)
 		goto out;
 	}
 
-	LOG_INF("CTR mode DECRYPT - Match");
+	LOG_INF("CTR mode %s - Match", raw_key ? "DECRYPT" : "ROUNDTRIP");
 out:
 	cipher_free_session(dev, &ini);
 }
@@ -569,13 +647,15 @@ static const uint8_t ccm_expected[31] = {0x58, 0x8c, 0x97, 0x9a, 0x61, 0xc6, 0x6
 					 0x6d, 0x5f, 0x6b, 0x61, 0xda, 0xc3, 0x84, 0x17,
 					 0xe8, 0xd1, 0x2c, 0xfd, 0xf9, 0x26, 0xe0};
 
-void ccm_mode(const struct device *dev)
+void ccm_mode(const struct device *dev, void *key_handle)
 {
 	uint8_t encrypted[50] __aligned(IO_ALIGNMENT_BYTES);
 	uint8_t decrypted[32] __aligned(IO_ALIGNMENT_BYTES);
+
+	bool raw_key = (cap_flags & CAP_RAW_KEY) != 0U;
+
 	struct cipher_ctx ini = {
 		.keylen = sizeof(ccm_key),
-		.key.bit_stream = ccm_key,
 		.mode_params.ccm_info = {
 			.nonce_len = sizeof(ccm_nonce),
 			.tag_len = 8,
@@ -601,6 +681,12 @@ void ccm_mode(const struct device *dev)
 		.out_buf_max = sizeof(decrypted),
 	};
 
+	if (raw_key) {
+		ini.key.bit_stream = ccm_key;
+	} else {
+		ini.key.handle = key_handle;
+	}
+
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
 				 CRYPTO_CIPHER_MODE_CCM,
 				 CRYPTO_CIPHER_OP_ENCRYPT)) {
@@ -615,15 +701,18 @@ void ccm_mode(const struct device *dev)
 
 	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
-	if (memcmp(encrypt.out_buf, ccm_expected, sizeof(ccm_expected))) {
-		LOG_ERR("CCM mode ENCRYPT - Mismatch between expected "
-			    "and returned cipher text");
-		print_buffer_comparison(ccm_expected,
-					encrypt.out_buf, sizeof(ccm_expected));
-		goto out;
+	if (raw_key) {
+		if (memcmp(encrypt.out_buf, ccm_expected, sizeof(ccm_expected))) {
+			LOG_ERR("CCM mode ENCRYPT - Mismatch between expected "
+				    "and returned cipher text");
+			print_buffer_comparison(ccm_expected,
+						encrypt.out_buf, sizeof(ccm_expected));
+			goto out;
+		}
+
+		LOG_INF("CCM mode ENCRYPT - Match");
 	}
 
-	LOG_INF("CCM mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
@@ -648,7 +737,7 @@ void ccm_mode(const struct device *dev)
 		goto out;
 	}
 
-	LOG_INF("CCM mode DECRYPT - Match");
+	LOG_INF("CCM mode %s - Match", raw_key ? "DECRYPT" : "ROUNDTRIP");
 out:
 	cipher_free_session(dev, &ini);
 }
@@ -675,13 +764,15 @@ static const uint8_t gcm_expected[58] = {
 	0x2e, 0x1c, 0x9b, 0x72, 0xee, 0xe7, 0xc9, 0xde, 0x7d, 0x52, 0xb3, 0xf3, 0xd6, 0xa5, 0x28,
 	0x4f, 0x4a, 0x6d, 0x3f, 0xe2, 0x2a, 0x5d, 0x6c, 0x2b, 0x96, 0x04, 0x94, 0xc3};
 
-void gcm_mode(const struct device *dev)
+void gcm_mode(const struct device *dev, void *key_handle)
 {
 	uint8_t encrypted[60] __aligned(IO_ALIGNMENT_BYTES) = {0};
 	uint8_t decrypted[44] __aligned(IO_ALIGNMENT_BYTES) = {0};
+
+	bool raw_key = (cap_flags & CAP_RAW_KEY) != 0U;
+
 	struct cipher_ctx ini = {
 		.keylen = sizeof(gcm_key),
-		.key.bit_stream = gcm_key,
 		.mode_params.gcm_info = {
 			.nonce_len = sizeof(gcm_nonce),
 			.tag_len = 16,
@@ -707,6 +798,12 @@ void gcm_mode(const struct device *dev)
 		.out_buf_max = sizeof(decrypted),
 	};
 
+	if (raw_key) {
+		ini.key.bit_stream = gcm_key;
+	} else {
+		ini.key.handle = key_handle;
+	}
+
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
 				 CRYPTO_CIPHER_MODE_GCM,
 				 CRYPTO_CIPHER_OP_ENCRYPT)) {
@@ -721,15 +818,18 @@ void gcm_mode(const struct device *dev)
 
 	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
-	if (memcmp(encrypt.out_buf, gcm_expected, sizeof(gcm_expected))) {
-		LOG_ERR("GCM mode ENCRYPT - Mismatch between expected "
-			    "and returned cipher text");
-		print_buffer_comparison(gcm_expected,
-					encrypt.out_buf, sizeof(gcm_expected));
-		goto out;
+	if (raw_key) {
+		if (memcmp(encrypt.out_buf, gcm_expected, sizeof(gcm_expected))) {
+			LOG_ERR("GCM mode ENCRYPT - Mismatch between expected "
+				    "and returned cipher text");
+			print_buffer_comparison(gcm_expected,
+						encrypt.out_buf, sizeof(gcm_expected));
+			goto out;
+		}
+
+		LOG_INF("GCM mode ENCRYPT - Match");
 	}
 
-	LOG_INF("GCM mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
@@ -754,14 +854,14 @@ void gcm_mode(const struct device *dev)
 		goto out;
 	}
 
-	LOG_INF("GCM mode DECRYPT - Match");
+	LOG_INF("GCM mode %s - Match", raw_key ? "DECRYPT" : "ROUNDTRIP");
 out:
 	cipher_free_session(dev, &ini);
 }
 
 struct mode_test {
 	const char *mode;
-	void (*mode_func)(const struct device *dev);
+	void (*mode_func)(const struct device *dev, void *key_handle);
 };
 
 int main(void)
@@ -791,18 +891,43 @@ int main(void)
 		{ .mode = "GCM Mode", .mode_func = gcm_mode },
 		{ },
 	};
-	int i;
+	int i, k;
 
-	if (validate_hw_compatibility(dev)) {
+	if (validate_hw_compatibility(dev, CAP_RAW_KEY)) {
 		LOG_ERR("Incompatible h/w");
 		return 0;
 	}
 
+	LOG_INF("Testing crypto device %s", dev->name);
+
+	LOG_INF("Raw key tests");
 	LOG_INF("Cipher Sample");
 
 	for (i = 0; modes[i].mode; i++) {
 		LOG_INF("%s", modes[i].mode);
-		modes[i].mode_func(dev);
+		modes[i].mode_func(dev, NULL);
 	}
+
+	if ((crypto_query_hwcaps(dev) & CAP_OPAQUE_KEY_HNDL) == 0U) {
+		LOG_INF("The device does not support opaque key handles");
+		return 0;
+	}
+
+	/* Opaque key handle tests */
+	if (validate_hw_compatibility(dev, CAP_OPAQUE_KEY_HNDL)) {
+		LOG_INF("Opaque key not supported by device %s", dev->name);
+		return 0;
+	}
+
+	LOG_INF("Opaque key tests");
+	LOG_INF("Cipher Sample");
+
+	for (i = 0; modes[i].mode; i++) {
+		for (k = 0; k < ARRAY_SIZE(opaque_keys); k++) {
+			LOG_INF("%s using %s", modes[i].mode, opaque_keys[k].name);
+			modes[i].mode_func(dev, (void *)&opaque_keys[k].key_data);
+		}
+	}
+
 	return 0;
 }

@@ -29,13 +29,18 @@ LOG_MODULE_REGISTER(stm32_backup_domain, CONFIG_SOC_LOG_LEVEL);
 static struct k_spinlock lock;
 static size_t refcount;
 
+bool stm32_backup_domain_is_enabled(void)
+{
+	return IS_ENABLED_BKUP_ACCESS();
+}
+
 void stm32_backup_domain_enable_access(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	if (refcount == 0U) {
 		ENABLE_BKUP_ACCESS();
-		while (!IS_ENABLED_BKUP_ACCESS()) {
+		while (!stm32_backup_domain_is_enabled()) {
 		}
 	}
 	refcount++;

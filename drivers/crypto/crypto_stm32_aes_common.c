@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Markus Fuchs <markus.fuchs@de.sauter-bc.com>
+ * Copyright (c) 2026 Vossloh AG
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,43 +10,38 @@
 #include <zephyr/device.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/crypto/crypto.h>
+#include <zephyr/crypto/crypto_xaes_stm32.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/sys/byteorder.h>
 #include <soc.h>
 
+#include <stm32_backup_domain.h>
+#include <stm32_bitops.h>
+
 #include "crypto_stm32_priv.h"
 
 #define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(crypto_stm32);
+LOG_MODULE_REGISTER(crypto_stm32_aes_common);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_cryp)
-#define DT_DRV_COMPAT st_stm32_cryp
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
-#define DT_DRV_COMPAT st_stm32_aes
-#else
-#error No STM32 HW Crypto Accelerator in device tree
-#endif
-
-#define CRYP_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
-		      CAP_NO_IV_PREFIX)
 #define BLOCK_LEN_BYTES 16
 #define BLOCK_LEN_WORDS (BLOCK_LEN_BYTES / sizeof(uint32_t))
-#define CRYPTO_MAX_SESSION CONFIG_CRYPTO_STM32_MAX_SESSION
 
 #if defined(CRYP_KEYSIZE_192B)
 #define STM32_CRYPTO_KEYSIZE_192B_SUPPORT
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_cryp)
-#define STM32_CRYPTO_TYPEDEF            CRYP_TypeDef
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
-#define STM32_CRYPTO_TYPEDEF            AES_TypeDef
+#if defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32H7RSX)         \
+	|| defined(CONFIG_SOC_SERIES_STM32MP13X) || defined(CONFIG_SOC_SERIES_STM32MP2X) \
+	|| defined(CONFIG_SOC_SERIES_STM32N6X) || defined(CONFIG_SOC_SERIES_STM32U3X)	 \
+	|| defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
+/* The key selection field is available only on the following series:
+ * STM32H5, STM32H7RS, STM32MP13, STM32MP2, STM32N6, STM32U3, STM32U5 and STM32WBAX.
+ */
+#define STM32_CRYPTO_HAS_KEYSEL
 #endif
-
-struct crypto_stm32_session crypto_stm32_sessions[CRYPTO_MAX_SESSION];
 
 typedef HAL_StatusTypeDef status_t;
 
@@ -303,40 +299,78 @@ static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
 	return ret;
 }
 
-static int crypto_stm32_get_unused_session_index(const struct device *dev)
+static int crypto_stm32_session_release(struct crypto_stm32_session *session)
 {
-	int i;
+	/* Clear session configuration from any sensitive data. */
+	memset(&session->config, 0, sizeof(session->config));
+	memset(session->key, 0, sizeof(session->key));
 
-	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(dev);
+	/* Mark session as not in use. */
+	session->in_use = false;
 
-	k_sem_take(&data->session_sem, K_FOREVER);
-
-	for (i = 0; i < CRYPTO_MAX_SESSION; i++) {
-		if (!crypto_stm32_sessions[i].in_use) {
-			crypto_stm32_sessions[i].in_use = true;
-			k_sem_give(&data->session_sem);
-			return i;
-		}
-	}
-
-	k_sem_give(&data->session_sem);
-
-	return -1;
+	return 0;
 }
 
-static int crypto_stm32_session_setup(const struct device *dev,
-				      struct cipher_ctx *ctx,
-				      enum cipher_algo algo,
-				      enum cipher_mode mode,
-				      enum cipher_op op_type)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_saes)
+static bool crypto_stm32_saes_bhk_is_available(void)
 {
-	int ctx_idx, ret;
-	struct crypto_stm32_session *session;
+#if !defined(TAMP)
+	return false;
+#else
+	/* Since BHK is stored in tamper registers (TAMP_BKP0R to TAMP_BKP7R registers),
+	 * this key only available when the backup domain is enabled and the BHK content
+	 * has been loaded in these registers and these registers are locked.
+	 *
+	 * Since the XORK is derived from the BHK, it is expected that the XORK availability
+	 * is subject to the same conditions as the BHK.
+	 */
+	if (!stm32_backup_domain_is_enabled()) {
+		LOG_ERR("Backup domain access is not enabled");
+		return false;
+	}
 
-	if (ctx->flags & ~(CRYP_SUPPORT)) {
+	if (stm32_reg_read_bits(&TAMP->SECCFGR, TAMP_SECCFGR_BHKLOCK) == 0) {
+		LOG_ERR("BHK registers are not locked, BHK key is not available");
+		return false;
+	}
+
+	return true;
+#endif /* TAMP */
+}
+#endif /* st_stm32_aes */
+
+int crypto_stm32_session_setup(const struct device *dev, struct cipher_ctx *ctx,
+			       enum cipher_algo algo, enum cipher_mode mode, enum cipher_op op_type,
+			       struct crypto_stm32_session *session)
+{
+	int ret;
+	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(dev);
+	bool raw_key = true;
+
+	if (ctx->flags & ~(crypto_query_hwcaps(dev))) {
 		LOG_ERR("Unsupported flag");
 		return -ENOTSUP;
 	}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_saes)
+	if ((ctx->flags & CAP_RAW_KEY) && (ctx->flags & CAP_OPAQUE_KEY_HNDL)) {
+		LOG_ERR("Unsupported key type combination");
+		return -ENOTSUP;
+	}
+
+	raw_key = (ctx->flags & CAP_RAW_KEY) != 0U;
+
+	if (raw_key && (ctx->key.bit_stream == NULL)) {
+		LOG_ERR("Invalid key buffer");
+		return -EINVAL;
+	}
+
+	if (!raw_key && (ctx->key.handle == NULL)) {
+		LOG_ERR("Invalid key handle");
+		return -EINVAL;
+	}
+
+#endif /* st_stm32_saes */
 
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
 		LOG_ERR("Unsupported algo");
@@ -352,9 +386,7 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	 * not a multiple of 128 bits. Therefore, CCM mode is not supported by
 	 * this driver.
 	 */
-	if ((mode != CRYPTO_CIPHER_MODE_ECB) &&
-	    (mode != CRYPTO_CIPHER_MODE_CBC) &&
-	    (mode != CRYPTO_CIPHER_MODE_CTR)) {
+	if ((BIT(mode) & (data->caps & CRYPTO_STM32_CAPS_AES_MODES_MSK)) == 0U) {
 		LOG_ERR("Unsupported mode");
 		return -ENOTSUP;
 	}
@@ -371,21 +403,13 @@ static int crypto_stm32_session_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	ctx_idx = crypto_stm32_get_unused_session_index(dev);
-	if (ctx_idx < 0) {
-		LOG_ERR("No free session for now");
-		return -ENOSPC;
-	}
-	session = &crypto_stm32_sessions[ctx_idx];
 	memset(&session->config, 0, sizeof(session->config));
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
-	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(dev);
-
 	if (data->hcryp.State == HAL_CRYP_STATE_RESET) {
 		if (HAL_CRYP_Init(&data->hcryp) != HAL_OK) {
 			LOG_ERR("Initialization error");
-			session->in_use = false;
+			crypto_stm32_session_release(session);
 			return -EIO;
 		}
 	}
@@ -453,13 +477,99 @@ static int crypto_stm32_session_setup(const struct device *dev,
 		}
 	}
 
-	ret = copy_words_adjust_endianness((uint8_t *)session->key, CRYPTO_STM32_AES_MAX_KEY_LEN,
-				 ctx->key.bit_stream, ctx->keylen);
-	if (ret != 0) {
-		return -EIO;
-	}
+	if (raw_key) {
+		/* Key is provided as raw bytes by the application through the crypto context. */
+		ret = copy_words_adjust_endianness((uint8_t *)session->key,
+						   CRYPTO_STM32_AES_MAX_KEY_LEN,
+						   ctx->key.bit_stream, ctx->keylen);
+		if (ret != 0) {
+			return -EIO;
+		}
 
-	session->config.pKey = CAST_VEC(session->key);
+		session->config.pKey = CAST_VEC(session->key);
+#if defined(STM32_CRYPTO_HAS_KEYSEL)
+		session->config.KeySelect = CRYP_KEYSEL_NORMAL;
+#endif /* STM32_CRYPTO_HAS_KEYSEL */
+	}
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_saes)
+	else {
+		/* Key is provided through opaque handle, i.e. from their ID passed to
+		 * the SAES co-processor, which will load their actual content from the
+		 * hardware, directly in its key registers which are not readable.
+		 * Thus, the actual key value is not available to the CPU, nor the driver.
+		 *
+		 * The keys available through SAES as opaque key are DHUK, BHK and XORK.
+		 */
+		uint32_t key_desc = 0;
+
+		memcpy(&key_desc, ctx->key.handle, sizeof(key_desc));
+
+		/* Setting the key selection based on the key descriptor given
+		 * through the configuration.
+		 */
+		switch (crypto_stm32_xaes_key_selection(key_desc)) {
+		case STM32_xAES_KEY_SELECTION_RAW: /* Software key, loaded in key registers */
+			/* This case should not happen as the RAW key selection is meant to
+			 * be specified by the cipher context flags (CAP_RAW_KEY) and the key
+			 * value should be provided through the raw bit_stream buffer.
+			 * The opaque key handle is meant to be used only with hardware keys
+			 * managed by the SAES engine.
+			 */
+			LOG_ERR("Invalid key configuration in SAES key handle");
+			return -EINVAL;
+		case STM32_xAES_KEY_SELECTION_DHUK: /* DHUK from SAES */
+			session->config.KeySelect = CRYP_KEYSEL_HW;
+			break;
+		case STM32_xAES_KEY_SELECTION_BHK: /* BHK from SAES */
+			if (!crypto_stm32_saes_bhk_is_available()) {
+				return -ENOTSUP;
+			}
+			session->config.KeySelect = CRYP_KEYSEL_SW;
+			break;
+		case STM32_xAES_KEY_SELECTION_XORK: /* XORK from SAES */
+			/* Since the XORK is derived from the BHK, it is expected that the
+			 * XORK availability is subject to the same conditions as the BHK.
+			 */
+			if (!crypto_stm32_saes_bhk_is_available()) {
+				return -ENOTSUP;
+			}
+			session->config.KeySelect = CRYP_KEYSEL_HSW;
+			break;
+		case STM32_xAES_KEY_SELECTION_TEST: /* HW constant 256-bit key 0xA5...A5 */
+			LOG_ERR("Unsupported key selection");
+			return -ENOTSUP;
+		default:
+			LOG_ERR("Invalid key selection");
+			return -EINVAL;
+		}
+
+		/* Setting the key mode based on the key descriptor given
+		 * through the configuration.
+		 */
+		switch (crypto_stm32_xaes_key_mode(key_desc)) {
+		case STM32_xAES_KEY_MODE_NORMAL: /* Normal key */
+			session->config.KeyMode = 0;
+			break;
+		case STM32_xAES_KEY_MODE_WRAPPED: /* Wrapped key from SAES */
+			session->config.KeyMode = AES_CR_KMOD_0;
+			break;
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
+		case STM32_xAES_KEY_MODE_SHARED: /* Shared key with AES engine from SAES */
+			session->config.KeyMode = AES_CR_KMOD_1;
+			LOG_ERR("Shared key mode is not implemented yet, "
+				"key will be used as normal key");
+
+			return -ENOTSUP;
+#endif /* st_stm32_aes */
+		default:
+			LOG_ERR("Invalid key mode");
+			return -EINVAL;
+		}
+
+		session->config.pKey = NULL;
+	}
+#endif /* st_stm32_saes */
+
 	session->config.DataType = CRYP_DATATYPE_8B;
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
@@ -472,25 +582,26 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	return 0;
 }
 
-static int crypto_stm32_session_free(const struct device *dev,
-				     struct cipher_ctx *ctx)
+int crypto_stm32_session_free(const struct device *dev, struct cipher_ctx *ctx,
+			      uint32_t sessions_in_use_count)
 {
-	int i;
-
 	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(dev);
 	const struct crypto_stm32_config *cfg = CRYPTO_STM32_CFG(dev);
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
-	session->in_use = false;
+	if (session != NULL) {
+		if (sessions_in_use_count > 0) {
+			sessions_in_use_count--;
+		}
+		crypto_stm32_session_release(session);
+	}
 
 	k_sem_take(&data->session_sem, K_FOREVER);
 
 	/* Disable peripheral only if there are no more active sessions. */
-	for (i = 0; i < CRYPTO_MAX_SESSION; i++) {
-		if (crypto_stm32_sessions[i].in_use) {
-			k_sem_give(&data->session_sem);
-			return 0;
-		}
+	if (sessions_in_use_count > 0) {
+		k_sem_give(&data->session_sem);
+		return 0;
 	}
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
@@ -509,12 +620,7 @@ static int crypto_stm32_session_free(const struct device *dev,
 	return 0;
 }
 
-static int crypto_stm32_query_caps(const struct device *dev)
-{
-	return CRYP_SUPPORT;
-}
-
-static int crypto_stm32_init(const struct device *dev)
+int crypto_stm32_init(const struct device *dev, uint32_t crypto_stm32_caps)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(dev);
@@ -524,6 +630,8 @@ static int crypto_stm32_init(const struct device *dev)
 		LOG_ERR("clock op failed\n");
 		return -EIO;
 	}
+
+	data->caps = crypto_stm32_caps;
 
 	k_sem_init(&data->device_sem, 1, 1);
 	k_sem_init(&data->session_sem, 1, 1);
@@ -535,26 +643,3 @@ static int crypto_stm32_init(const struct device *dev)
 
 	return 0;
 }
-
-static DEVICE_API(crypto, crypto_enc_funcs) = {
-	.cipher_begin_session = crypto_stm32_session_setup,
-	.cipher_free_session = crypto_stm32_session_free,
-	.cipher_async_callback_set = NULL,
-	.query_hw_caps = crypto_stm32_query_caps,
-};
-
-static struct crypto_stm32_data crypto_stm32_dev_data = {
-	.hcryp = {
-		.Instance = (STM32_CRYPTO_TYPEDEF *)DT_INST_REG_ADDR(0),
-	}
-};
-
-static const struct crypto_stm32_config crypto_stm32_dev_config = {
-	.reset = RESET_DT_SPEC_INST_GET(0),
-	.pclken = STM32_DT_INST_CLOCK_INFO(0),
-};
-
-DEVICE_DT_INST_DEFINE(0, crypto_stm32_init, NULL,
-		    &crypto_stm32_dev_data,
-		    &crypto_stm32_dev_config, POST_KERNEL,
-		    CONFIG_CRYPTO_INIT_PRIORITY, (void *)&crypto_enc_funcs);
