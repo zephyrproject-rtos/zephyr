@@ -18,6 +18,10 @@
 #include "rtc_utils.h"
 #include <ti/driverlib/dl_rtc_common.h>
 
+#define RTCCLK_FREQ (32768)
+/* Writes take ~ 3 RTCCLK cycles (32 kHz) to take effect. Approximate delay of 92us */
+#define WRITE_DELAY ((3 * USEC_PER_SEC) / RTCCLK_FREQ)
+
 #if defined(CONFIG_RTC_ALARM)
 #define RTC_TI_ALARM_1		0
 #define RTC_TI_ALARM_2		1
@@ -80,6 +84,7 @@ static int rtc_ti_mspm0_set_time(const struct device *dev,
 				    RTC_DAY_DOW_MASK | RTC_DAY_DOMBIN_MASK);
 		DL_RTC_Common_setCalendarMonthBinary(cfg->regs, mon);
 		DL_RTC_Common_setCalendarYearBinary(cfg->regs, year);
+		k_busy_wait(WRITE_DELAY);
 	}
 
 	return 0;
