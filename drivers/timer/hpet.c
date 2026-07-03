@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT intel_hpet
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/irq.h>
 #include <zephyr/linker/sections.h>
 
