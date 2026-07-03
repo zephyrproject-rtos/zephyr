@@ -8,13 +8,14 @@ import sys
 from pathlib import Path
 
 from west.commands import WestCommand
-from zephyr_ext_common import ZEPHYR_BASE
+from zephyr_ext_common import ZEPHYR_SCRIPTS
 
-# Use Zephyr's in-tree python-devicetree.
-sys.path.insert(
-    0,
-    os.fspath(ZEPHYR_BASE / "scripts" / "dts" / "python-devicetree" / "src"),
-)
+PYTHON_DEVICETREE = ZEPHYR_SCRIPTS / "dts" / "python-devicetree" / "src"
+
+# Use Zephyr's in-tree python-devicetree. This import must come after
+# updating sys.path because python-devicetree is not installed as a package.
+sys.path.insert(0, str(PYTHON_DEVICETREE))
+
 from devicetree import dtlib
 
 
