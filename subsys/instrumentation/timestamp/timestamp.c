@@ -19,5 +19,5 @@ int instr_timestamp_init(void)
 __no_instrumentation__
 uint64_t instr_timestamp_ns(void)
 {
-	return timing_timestamp_get();
+	return timing_ns_get();
 }

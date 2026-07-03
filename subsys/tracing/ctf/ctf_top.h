@@ -55,7 +55,7 @@
 
 static inline uint64_t ctf_top_timestamp_get(void)
 {
-	return timing_timestamp_get();
+	return timing_ns_get();
 }
 
 #define CTF_EVENT(...)                                                                             \
