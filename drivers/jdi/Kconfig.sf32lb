@@ -1,0 +1,21 @@
+# Copyright (c) 2026, Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config JDI_SF32LB
+	bool "SiFli SF32LB JDI LCD Bus Controller"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_JDI_ENABLED
+	select USE_SIFLI_HAL
+	select USE_SIFLI_HAL_LCD
+	help
+	  Enable JDI LCD Bus Controller driver for SiFli SF32LB series MCUs.
+
+if JDI_SF32LB
+
+config JDI_SF32LB_INIT_PRIORITY
+	int "JDI init priority"
+	default 45
+	help
+	  JDI driver init priority.
+
+endif # JDI_SF32LB
