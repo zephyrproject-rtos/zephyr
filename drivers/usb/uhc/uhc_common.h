@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +14,27 @@
 #define ZEPHYR_INCLUDE_UHC_COMMON_H
 
 #include <zephyr/drivers/usb/uhc.h>
+
+/**
+ * @brief Transfer types selectable by uhc_xfer_get_next().
+ *
+ * Combine values with bitwise OR to select multiple transfer types.
+ */
+enum uhc_xfer_mask {
+	UHC_XFER_MASK_CONTROL = BIT(USB_EP_TYPE_CONTROL),     /**< Control transfers. */
+	UHC_XFER_MASK_ISO = BIT(USB_EP_TYPE_ISO),             /**< Isochronous transfers. */
+	UHC_XFER_MASK_BULK = BIT(USB_EP_TYPE_BULK),           /**< Bulk transfers. */
+	UHC_XFER_MASK_INTERRUPT = BIT(USB_EP_TYPE_INTERRUPT), /**< Interrupt transfers. */
+	/** Periodic transfers: interrupt or isochronous. */
+	UHC_XFER_MASK_PERIODIC = UHC_XFER_MASK_INTERRUPT | UHC_XFER_MASK_ISO,
+	/** Non-periodic transfers: control or bulk. */
+	UHC_XFER_MASK_NON_PERIODIC = UHC_XFER_MASK_CONTROL | UHC_XFER_MASK_BULK,
+	/** All transfer types. */
+	UHC_XFER_MASK_ALL = UHC_XFER_MASK_PERIODIC | UHC_XFER_MASK_NON_PERIODIC,
+};
+
+/** Transfer filtering function used in uhc_xfer_get_next(). */
+typedef bool (*uhc_xfer_filter_func_t)(const struct uhc_transfer *xfer, void *priv);
 
 /**
  * @brief Get driver's private data
@@ -99,15 +121,34 @@ void uhc_xfer_reschedule_periodic(const struct device *dev, struct uhc_transfer 
 /**
  * @brief Helper to get next transfer to process.
  *
- * This is currently a draft, and simple picks a transfer
- * from the lists.
+ * Return the next transfer that matches the provided mask and is accepted by
+ * the optional filter function. Move the selected transfer to the active list.
  *
- * @param[in] dev    Pointer to device struct of the driver instance.
+ * If the mask matches more than one transfer type, prioritize transfers in this order:
+ *
+ * -# Most-overdue eligible periodic transfer, either interrupt or isochronous.
+ * -# Control transfer.
+ * -# Bulk transfer.
+ *
+ * To use a different priority order, call this function multiple times with masks that each
+ * match only one transfer type.
+ *
+ * @param[in] dev          Pointer to device struct of the driver instance.
  * @param[in] frame_number Current USB frame number used to determine periodic transfer eligibility.
+ * @param[in] mask         Bitmask of transfer types to consider. Combine UHC_XFER_MASK_* values
+ *                         with bitwise OR to select multiple transfer types.
+ * @param[in] filter       Optional function for further filtering transfers selected by @p mask.
+ *                         Return `true` to accept a transfer or `false` to skip it. Set to `NULL`
+ *                         to accept the first transfer selected by @p mask.
+ * @param[in] priv         Private data passed unchanged to @p filter. May be `NULL`.
  *
- * @return pointer to the next transfer or NULL on error.
+ * @return Next eligible transfer, or `NULL` if there are no pending matching non-periodic
+ *         transfers, no matching periodic transfer is due, or all otherwise eligible transfers
+ *         are rejected by @p filter.
  */
-struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t frame_number);
+struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t frame_number,
+				       enum uhc_xfer_mask mask, uhc_xfer_filter_func_t filter,
+				       void *priv);
 
 /**
  * @brief Helper to append a transfer to internal list.
