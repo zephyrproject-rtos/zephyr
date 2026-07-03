@@ -31,10 +31,20 @@ void _isr_wrapper(void);
 /* Spurious interrupt handler. Throws an error if called */
 void z_irq_spurious(const void *unused);
 
-/*
+/**
+ * @brief Software ISR table entry.
+ *
+ * Pairs a connected interrupt service routine with the parameter that
+ * was registered with it. When an enabled IRQ is asserted, the common
+ * interrupt dispatch code looks up this entry by IRQ line and invokes
+ * @a isr with @a arg.
+ *
  * Note the order: arg first, then ISR. This allows a table entry to be
  * loaded arg -> r0, isr -> r3 in _isr_wrapper with one ldmia instruction,
  * on ARM Cortex-M (Thumb2).
+ *
+ * @satisfies ZEP-SRS-7-15
+ * @satisfies ZEP-SRS-7-16
  */
 struct _isr_table_entry {
 	const void *arg;
