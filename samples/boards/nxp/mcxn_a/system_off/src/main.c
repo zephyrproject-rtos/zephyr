@@ -31,12 +31,13 @@ static const struct wuc_dt_spec wakeup = WUC_DT_SPEC_GET(DT_ALIAS(wakeup_button)
  * retention is armed before entering Deep Power Down. This mirrors the SoC
  * suspend-to-RAM retention path; a production application would share that code.
  *
- *   - MCXN: the VBAT SRAM LDO retains RAMA. The linker places .noinit (and so
- *     the counter) in RAMA because the board overlay points zephyr,sram there.
- *   - MCXA: the SPC SRAM retention LDO retains every array, so the counter is
- *     retained wherever it lands.
+ *   - MCXN / MCXAxx7: the VBAT backup SRAM regulator retains RAMA. The linker
+ *     places .noinit (and so the counter) in RAMA because the board overlay
+ *     points zephyr,sram there.
+ *   - other MCXA: the SPC SRAM retention LDO retains every array, so the counter
+ *     is retained wherever it lands.
  */
-#if defined(CONFIG_SOC_FAMILY_MCXN)
+#if defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_SERIES_MCXAXX7)
 #include <fsl_vbat.h>
 
 #define VBAT0_ADDR ((VBAT_Type *)DT_REG_ADDR(DT_INST(0, nxp_vbat)))

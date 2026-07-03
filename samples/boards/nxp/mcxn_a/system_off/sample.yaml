@@ -19,6 +19,7 @@ common:
     - frdm_mcxa266
     - frdm_mcxa346
     - frdm_mcxa366
+    - frdm_mcxa577
   integration_platforms:
     - frdm_mcxn947/mcxn947/cpu0
     - frdm_mcxa156
