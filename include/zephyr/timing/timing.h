@@ -305,7 +305,7 @@ void timing_stop(void);
  *
  * @return Monotonic timestamp in nanoseconds.
  */
-uint64_t timing_timestamp_get(void);
+uint64_t timing_ns_get(void);
 
 /**
  * @brief Return timing counter.
