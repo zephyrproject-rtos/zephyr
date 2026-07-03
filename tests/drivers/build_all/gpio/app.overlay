@@ -494,6 +494,7 @@
 
 			test_i2c_npm1012: pmic@1f {
 				reg = <0x1f>;
+				compatible = "nordic,npm10xx";
 
 				npm1012_gpio: gpio-controller {
 					compatible = "nordic,npm10xx-gpio";
