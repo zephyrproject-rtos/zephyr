@@ -1,0 +1,21 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	clock-monitor-test {
+		compatible = "test-clock-monitor";
+
+		/* fmeas: NXP FREQME (BASIC), MEASURE mode; measures SFRO (16 MHz). */
+		fmeas {
+			monitor = <&fmeas>;
+			measure-expected-hz = <16000000>;
+		};
+	};
+};
+
+&fmeas {
+	status = "okay";
+};
