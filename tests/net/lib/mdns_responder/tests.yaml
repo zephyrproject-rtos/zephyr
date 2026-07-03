@@ -7,3 +7,18 @@ tests:
   net.mdns:
     min_ram: 21
     timeout: 600
+  net.mdns.iface_allowlist:
+    min_ram: 21
+    timeout: 600
+    extra_configs:
+      # mDNS responder operates only on the listed interface (dummy0 == iface1).
+      - CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALLOWLIST=y
+      - CONFIG_MDNS_RESPONDER_IFACE_LIST="dummy0"
+  net.mdns.iface_denylist:
+    min_ram: 21
+    timeout: 600
+    extra_configs:
+      # mDNS responder operates on every interface except the listed one
+      # (dummy1 == iface2), so iface1 stays enabled and iface2 is excluded.
+      - CONFIG_MDNS_RESPONDER_IFACE_POLICY_DENYLIST=y
+      - CONFIG_MDNS_RESPONDER_IFACE_LIST="dummy1"
