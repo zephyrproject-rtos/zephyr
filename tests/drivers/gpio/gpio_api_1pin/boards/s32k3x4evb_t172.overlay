@@ -1,0 +1,19 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		/* Use the green LED pin for this test because it supports interrupts */
+		led0 = &user_led_green;
+	};
+};
+
+&eirq0_default {
+	group2 {
+		pinmux = <PTA30_EIRQ7>;
+		input-enable;
+	};
+};
