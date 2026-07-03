@@ -60,17 +60,23 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 		uint32_t tick_delta = ticks_delta(&elapsed_slice);
 
 		TC_PRINT("%c", thread_parameter);
-		/* Threads must run in round-robin order. */
+#ifndef CONFIG_COVERAGE_GCOV
+		/* TESTPOINT: threads run in round-robin order, and each
+		 * measured slice falls on either the configured tick boundary
+		 * or the next one (kernel "+1" round-up). Skipped under
+		 * coverage, where gcov instrumentation perturbs the slice
+		 * timing enough to reorder wakeups.
+		 */
 		zassert_equal(idx, thread_idx,
 			      "out of order: idx=%d thread_idx=%d",
 			      idx, thread_idx);
-		/* Each measured slice falls on either the configured tick
-		 * boundary or the next one (kernel "+1" round-up).
-		 */
 		zassert_between_inclusive(tick_delta, SLICE_TICKS,
 					  SLICE_TICKS + 1,
 					  "tick_delta=%u expected ~%u",
 					  tick_delta, SLICE_TICKS);
+#else
+		(void)tick_delta;
+#endif /* CONFIG_COVERAGE_GCOV */
 		thread_idx = (thread_idx + 1) % (NUM_THREAD);
 
 		k_sem_give(&sema1);
