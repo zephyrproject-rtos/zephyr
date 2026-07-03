@@ -603,6 +603,17 @@ bool k_work_cancel_sync(struct k_work *work,
 }
 
 #if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
+/**
+ * @brief Abort a work queue thread whose work item exceeded its timeout.
+ *
+ * Armed when a work item handler starts and disarmed when it completes;
+ * if it fires, the handler has run longer than the configured work
+ * timeout and the work queue thread is aborted (with an error logged).
+ *
+ * @param record Timeout record embedded in the work queue.
+ *
+ * @satisfies ZEP-SRS-26-26
+ */
 static void work_timeout_handler(struct _timeout *record)
 {
 	struct k_work_q *queue = CONTAINER_OF(record, struct k_work_q, work_timeout_record);
@@ -668,9 +679,19 @@ static void work_timeout_stop_locked(struct k_work_q *queue)
 }
 #endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
 
-/* Loop executed by a work queue thread.
+/**
+ * @brief Loop executed by a work queue thread.
+ *
+ * Removes work items from the queue in submission order and invokes
+ * each item's handler function. Unless the queue was configured with
+ * no_yield, the thread yields between items so it does not starve
+ * other threads.
  *
  * @param workq_ptr pointer to the work queue structure
+ *
+ * @satisfies ZEP-SRS-26-3
+ * @satisfies ZEP-SRS-26-4
+ * @satisfies ZEP-SRS-26-13
  */
 static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 {
@@ -1000,11 +1021,17 @@ int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout)
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
-/* Timeout handler for delayable work.
+/**
+ * @brief Timeout handler for delayable work.
  *
- * Invoked by timeout infrastructure.
+ * Invoked by the timeout infrastructure when a delayable work item's
+ * scheduled delay elapses; submits the work item to its target queue.
  * Takes and releases work lock.
  * Conditionally reschedules.
+ *
+ * @param to Timeout record embedded in the delayable work item.
+ *
+ * @satisfies ZEP-SRS-26-22
  */
 static void work_timeout(struct _timeout *to)
 {
