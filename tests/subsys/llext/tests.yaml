@@ -229,3 +229,18 @@ tests:
     extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
       - CONFIG_LLEXT_HEAP_DYNAMIC=y
+
+  # Exercise AArch64 local-exec TLS relocations: an extension referencing the
+  # thread-local errno (tls_ext.c). Toolchain picolibc with thread-local storage
+  # gives a __thread errno, so the extension emits R_AARCH64_TLSLE_ADD_TPREL_*
+  # relocations.
+  llext.tls:
+    # arm64-only, but expressed as a filter instead of arch_allow so the
+    # arm integration platforms inherited from common are filtered at
+    # build time instead of erroring the integration test plan
+    filter: CONFIG_ARM64
+    integration_platforms:
+      - qemu_cortex_a53         # ARM Cortex-A53 (ARMv8-A ISA)
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+      - CONFIG_THREAD_LOCAL_STORAGE=y

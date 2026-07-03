@@ -58,6 +58,17 @@ LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
 #define R_AARCH64_LDST64_ABS_LO12_NC  286
 #define R_AARCH64_LDST128_ABS_LO12_NC 299
 
+/* Local-exec TLS relocations (AArch64 ELF) */
+#define R_AARCH64_TLSLE_ADD_TPREL_HI12    549 /* 0x225 */
+#define R_AARCH64_TLSLE_ADD_TPREL_LO12_NC 551 /* 0x227 */
+
+/*
+ * Variant-I TLS: tpidr_el0 points at a two-pointer TCB, with the thread's
+ * TLS block immediately after it. Mirrors arch_tls_stack_setup() in
+ * arch/arm64/core/tls.c (stack_ptr -= sizeof(uintptr_t) * 2).
+ */
+#define AARCH64_TLS_TCB_SIZE (sizeof(uintptr_t) * 2)
+
 /* Masks for immediate values */
 #define AARCH64_MASK_IMM12 BIT_MASK(12)
 #define AARCH64_MASK_IMM14 BIT_MASK(14)
@@ -413,6 +424,47 @@ static int imm_reloc_handler(elf_rela_t *rel, elf_word reloc_type, uintptr_t loc
 }
 
 /**
+ * @brief Handler for AArch64 local-exec TLS relocations.
+ *
+ * The extension shares the loading thread's TLS block, so @p tls_value is the
+ * symbol's st_value (its offset within that block), not a resolved address. The
+ * thread-pointer-relative offset is computed and patched into the imm12 field of
+ * an ADD instruction.
+ *
+ * @param[in] rel Relocation data provided by ELF
+ * @param[in] reloc_type Type of relocation operation.
+ * @param[in] loc Address of an opcode to rewrite (P in AArch64 ELF).
+ * @param[in] tls_value TLS offset of the symbol (S in AArch64 ELF, st_value).
+ *
+ * @retval 0 Successful relocation
+ */
+static int tls_reloc_handler(elf_rela_t *rel, elf_word reloc_type, uintptr_t loc,
+			     uintptr_t tls_value)
+{
+	uint64_t tpoff = tls_value + rel->r_addend + AARCH64_TLS_TCB_SIZE;
+	uint32_t imm;
+	uint32_t opcode = sys_le32_to_cpu(*(uint32_t *)loc);
+
+	switch (reloc_type) {
+	case R_AARCH64_TLSLE_ADD_TPREL_HI12:
+		imm = (tpoff >> 12) & AARCH64_MASK_IMM12;
+		break;
+	case R_AARCH64_TLSLE_ADD_TPREL_LO12_NC:
+		imm = tpoff & AARCH64_MASK_IMM12;
+		break;
+	default:
+		CODE_UNREACHABLE;
+	}
+
+	opcode &= ~(AARCH64_MASK_IMM12 << 10);
+	opcode |= imm << 10;
+
+	*(uint32_t *)loc = sys_cpu_to_le32(opcode);
+
+	return 0;
+}
+
+/**
  * @brief Architecture specific function for relocating partially linked (static) elf
  *
  * Elf files contain a series of relocations described in a section. These relocation
@@ -519,6 +571,12 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 	case R_AARCH64_JUMP26:
 		ret = imm_reloc_handler(rel, reloc_type, loc, sym_base_addr);
 		/* TODO Handle case when address exceeds +/- 128MB */
+		break;
+
+	case R_AARCH64_TLSLE_ADD_TPREL_HI12:
+	case R_AARCH64_TLSLE_ADD_TPREL_LO12_NC:
+		overflow_check = false;
+		ret = tls_reloc_handler(rel, reloc_type, loc, sym.st_value);
 		break;
 
 	default:
