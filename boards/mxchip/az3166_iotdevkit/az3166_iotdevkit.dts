@@ -91,13 +91,13 @@
 		compatible = "gpio-keys";
 
 		button_a: button_a {
-			gpios = <&gpioa 4 (GPIO_ACTIVE_LOW | GPIO_PULL_DOWN)>;
+			gpios = <&gpioa 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			label = "Button A";
 			zephyr,code = <INPUT_KEY_A>;
 		};
 
 		button_b: button_b {
-			gpios = <&gpioa 10 (GPIO_ACTIVE_LOW | GPIO_PULL_DOWN)>;
+			gpios = <&gpioa 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			label = "Button B";
 			zephyr,code = <INPUT_KEY_B>;
 		};
