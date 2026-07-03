@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Anuj Deshpande
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_THEJAS32
+	bool
+	select SOC_FAMILY_CDAC
+	help
+	  C-DAC THEJAS32 SoC, based on the VEGA ET1031 32-bit RISC-V core.
+
+config SOC
+	default "thejas32" if SOC_THEJAS32
