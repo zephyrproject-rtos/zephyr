@@ -193,9 +193,9 @@ uint32_t hl78xx_edrx_idle_get_remaining_timetosleep(struct hl78xx_data *data);
 void hl78xx_psmev_init(struct hl78xx_data *data);
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 
-int binary_str_to_byte(const char *bin_str);
-void byte_to_binary_str(uint8_t byte, char *output);
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+void byte_to_binary_str(uint8_t byte, char *output);
+int binary_str_to_byte(const char *bin_str);
 
 bool hl78xx_is_rsrp_value_valid(int16_t rsrp);
 bool hl78xx_is_rsrq_value_valid(int16_t rsrq);

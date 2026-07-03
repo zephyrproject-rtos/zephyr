@@ -1984,8 +1984,7 @@ int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate)
 }
 #endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
 
-#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
-/* Convert 8-character binary string to byte (0–255) */
+/* Convert 8-character binary string to byte (0-255) */
 int binary_str_to_byte(const char *bin_str)
 {
 	if (strlen(bin_str) != 8) {
@@ -2019,4 +2018,3 @@ void byte_to_binary_str(uint8_t byte, char *output)
 	}
 	output[8] = '\0';
 }
-#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
