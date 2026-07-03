@@ -16,7 +16,10 @@ configdefault NET_L2_ETHERNET
 	default y if !NET_LOOPBACK && !NET_TEST
 
 configdefault ETH_NATIVE_TAP
-	default y if NET_L2_ETHERNET && ETH_DRIVER
+	default y if NET_L2_ETHERNET && ETH_DRIVER && !WIFI
+
+config WIFI_NM_WPA_SUPPLICANT
+	default y if WIFI && !WIFI_OFFLOAD
 
 if CONSOLE
 
