@@ -1029,9 +1029,9 @@ static const struct udc_api usbfsotg_api = {
 		bdt_##n[DT_INST_PROP(n, num_bidir_endpoints) * 2 * 2];		\
 										\
 	static struct udc_ep_config						\
-		ep_cfg_out[DT_INST_PROP(n, num_bidir_endpoints)];		\
+		ep_cfg_out_##n[DT_INST_PROP(n, num_bidir_endpoints)];		\
 	static struct udc_ep_config						\
-		ep_cfg_in[DT_INST_PROP(n, num_bidir_endpoints)];		\
+		ep_cfg_in_##n[DT_INST_PROP(n, num_bidir_endpoints)];		\
 										\
 	static struct usbfsotg_config priv_config_##n = {			\
 		.base = (USB_Type *)DT_INST_REG_ADDR(n),			\
@@ -1040,8 +1040,8 @@ static const struct udc_api usbfsotg_api = {
 		.irq_disable_func = udc_irq_disable_func##n,			\
 		.make_thread = usbfsotg_make_thread_##n,			\
 		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),		\
-		.ep_cfg_in = ep_cfg_in,						\
-		.ep_cfg_out = ep_cfg_out,					\
+		.ep_cfg_in = ep_cfg_in_##n,					\
+		.ep_cfg_out = ep_cfg_out_##n,					\
 	};									\
 										\
 	static struct usbfsotg_data priv_data_##n = {				\
