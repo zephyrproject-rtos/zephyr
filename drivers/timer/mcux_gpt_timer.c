@@ -9,7 +9,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <fsl_gpt.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/time_units.h>
 #include <zephyr/irq.h>

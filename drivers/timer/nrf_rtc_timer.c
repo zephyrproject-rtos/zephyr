@@ -12,7 +12,7 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/drivers/timer/nrf_rtc_timer.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/barrier.h>
 #include <haly/nrfy_rtc.h>
 #include <zephyr/irq.h>

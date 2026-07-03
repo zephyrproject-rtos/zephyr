@@ -38,7 +38,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/minmax.h>
 #include <zephyr/spinlock.h>
 #include <soc.h>
