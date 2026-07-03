@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <string.h>
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/ztest.h>
@@ -24,6 +25,10 @@
 
 #define SPIM_OP	 (SPI_OP_MODE_MASTER | SPI_MODE)
 #define SPIS_OP	 (SPI_OP_MODE_SLAVE | SPI_MODE)
+
+#if CONFIG_TEST_INCORRECT_SCK_STATE && DT_NODE_HAS_PROP(DT_PATH(zephyr_user), sck_gpios)
+static const struct gpio_dt_spec sck = GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), sck_gpios);
+#endif
 
 static struct spi_dt_spec spim = SPI_DT_SPEC_GET(DT_NODELABEL(dut_spi_dt), SPIM_OP);
 static const struct device *spis_dev = DEVICE_DT_GET(DT_NODELABEL(dut_spis));
@@ -100,6 +105,10 @@ static void work_handler(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct test_data *td = CONTAINER_OF(dwork, struct test_data, test_work);
 	int rv;
+
+#if CONFIG_TEST_INCORRECT_SCK_STATE && DT_NODE_HAS_PROP(DT_PATH(zephyr_user), sck_gpios)
+	gpio_pin_set_dt(&sck, CONFIG_TESTED_SPI_MODE > 1 ? 0 : 1);
+#endif
 
 	if (spim.config.operation & SPI_HALF_DUPLEX) {
 		spim.config.operation |= SPI_HOLD_ON_CS;
@@ -703,6 +712,10 @@ ZTEST(spi_controller_peripheral, test_half_duplex_split_peripheral_rx_buffers)
 static void before(void *not_used)
 {
 	ARG_UNUSED(not_used);
+
+#if CONFIG_TEST_INCORRECT_SCK_STATE && !DT_NODE_HAS_PROP(DT_PATH(zephyr_user), sck_gpios)
+	ztest_test_skip();
+#endif
 
 	memset(&tdata, 0, sizeof(tdata));
 	for (size_t i = 0; i < sizeof(spim_buffer); i++) {
