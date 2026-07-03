@@ -1,5 +1,7 @@
 /*
  * Copyright 2025 NXP
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +22,7 @@
 
 #define TEST_FLASH_CONTROLLER_NODE DT_MTD_FROM_PARTITION(TEST_FLASH_PART_NODE)
 
-#define PATTERN_SIZE 256
+#define PATTERN_SIZE CONFIG_TEST_FLASH_PATTERN_SIZE
 
 static const struct device *flash_controller = DEVICE_DT_GET(TEST_FLASH_CONTROLLER_NODE);
 
