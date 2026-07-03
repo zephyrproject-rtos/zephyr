@@ -126,4 +126,25 @@
 				 <I2C6_SCL_GPIO23>;
 		};
 	};
+
+	/* Arasan SDHCI on GPIO 34..39 (ALT3) plus GPCLK2 on GPIO 43
+	 * (ALT0): SD1_CLK / SD1_CMD / SD1_DAT0..3 + the wireless-module
+	 * reference clock. CLK and GPCLK2 take no pull; CMD and DAT0..3
+	 * pull-up so they idle high between transactions.
+	 */
+	emmc_gpio34: emmc-gpio34 {
+		group_clk {
+			pinmux = <EMMC_CLK_GPIO34>,
+				 <GPCLK2_GPIO43>;
+			bias-disable;
+		};
+		group_data {
+			pinmux = <EMMC_CMD_GPIO35>,
+				 <EMMC_DAT0_GPIO36>,
+				 <EMMC_DAT1_GPIO37>,
+				 <EMMC_DAT2_GPIO38>,
+				 <EMMC_DAT3_GPIO39>;
+			bias-pull-up;
+		};
+	};
 };

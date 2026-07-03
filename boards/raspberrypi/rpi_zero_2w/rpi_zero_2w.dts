@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <broadcom/bcm2710.dtsi>
+#include <broadcom/bcm2711-pinctrl.dtsi>
+
+/ {
+	model = "Raspberry Pi Zero 2 W";
+	compatible = "raspberrypi,model-zero-2-w", "brcm,bcm2710";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram0;
+	};
+
+	aliases {
+		sdhc0 = &emmc;
+	};
+};
+
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart1_gpio14>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};
+
+/* Arasan SDHCI -> on-module CYW43xx SDIO wireless chip. The slot is
+ * a board-level fact (PCB pad, GPIO 34..39 ALT3 + GPCLK2 on GPIO 43);
+ * the routing lives in the board DTS.
+ */
+&emmc {
+	pinctrl-names = "default";
+	pinctrl-0 = <&emmc_gpio34>;
+	status = "okay";
+};
