@@ -103,6 +103,7 @@
 			#dma-cells = <1>;
 			dma-channels = <16>;
 			brcm,dma-channel-mask = <0x7f30>;
+			brcm,sdram-bus-alias = <0xc0000000>;
 			dma-buf-addr-alignment = <64>;
 			status = "disabled";
 		};

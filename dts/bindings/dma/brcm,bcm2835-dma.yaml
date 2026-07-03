@@ -34,5 +34,16 @@ properties:
       channels not reserved by the VideoCore firmware and without
       special hardware functionality. Bit N corresponds to channel N.
 
+  brcm,sdram-bus-alias:
+    type: int
+    required: true
+    description: |
+      Base of the VideoCore-bus alias through which the DMA engine
+      reaches ARM SDRAM. The engine is a VC-bus master, so an ARM
+      address must have this alias OR-ed onto it before the engine can
+      use it. The value is per SoC: 0xc0000000 on the BCM2710 and
+      BCM2837 (uncached alias), 0x40000000 on the BCM2835 (L2-coherent
+      alias). Equivalent to the SoC's dma-ranges under Linux.
+
 dma-cells:
   - dreq
