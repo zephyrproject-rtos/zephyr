@@ -36,4 +36,29 @@ config I3C_CADENCE_TRANSFER_TIMEOUT_MARGIN_US
 	  The base timeout is derived from the number of bits to be
 	  transferred and the SCL frequency.
 
+config I3C_CADENCE_RTIO
+	bool "Cadence I3C native RTIO submit path"
+	depends on I3C_RTIO
+	select I2C
+	select I2C_RTIO
+	default n
+	help
+	  Drive the Cadence I3C controller's CMD/TX/RX FIFOs from the RTIO
+	  submit path. Replaces i3c_iodev_submit_fallback. Handles
+	  RTIO_OP_TX / RX / TINY_TX / I3C_CCC in SDR controller mode, plus
+	  HDR-DDR streaming via TX_THR / RX_THR thresholds. HDR-TS / HDR-BT
+	  fall back to -ENOTSUP. Legacy i3c_xfers() and i3c_do_ccc() become
+	  thin wrappers around i3c_rtio_transfer() / i3c_rtio_ccc(). I2C-on-I3C
+	  transfers also funnel through the RTIO path (i2c_rtio_*).
+
+config I3C_CADENCE_TARGET_RX_BUF_SIZE
+	int "Cadence I3C target RX buffer size"
+	default 256
+	depends on I3C_TARGET_BUFFER_MODE
+	help
+	  Size in bytes of the buffer used by the Cadence I3C target to
+	  accumulate received data before delivering it to the application
+	  via buf_write_received_cb. Must be large enough to hold the
+	  largest expected private write payload.
+
 endif # I3C_CADENCE

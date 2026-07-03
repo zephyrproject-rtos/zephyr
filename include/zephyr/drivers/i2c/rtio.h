@@ -10,10 +10,27 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/rtio/rtio.h>
+#include <zephyr/sys/atomic.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifdef CONFIG_I2C_CALLBACK
+/**
+ * @brief Per-callback closure used by the *_cb async helpers.
+ *
+ * Allocated from the i2c_rtio context's pool when a *_cb call submits work
+ * and freed by the trampoline once the user callback has been invoked.
+ */
+struct i2c_rtio;
+struct i2c_rtio_cb_slot {
+	struct i2c_rtio *ctx;
+	i2c_callback_t cb;
+	void *userdata;
+	const struct device *dev;
+};
+#endif /* CONFIG_I2C_CALLBACK */
 
 /**
  * @brief Driver context for implementing i2c with rtio
@@ -27,6 +44,18 @@ struct i2c_rtio {
 	struct rtio_iodev_sqe *txn_head;
 	struct rtio_iodev_sqe *txn_curr;
 	struct i2c_dt_spec dt_spec;
+
+#ifdef CONFIG_I2C_CALLBACK
+	/*
+	 * Callback closure pool for the *_cb async helpers. Sized to
+	 * CONFIG_I2C_RTIO_SQ_SIZE — you can't have more outstanding async
+	 * transfers than the submission queue can hold. The free bitmap is
+	 * managed lock-free via atomic_test_and_set_bit / atomic_clear_bit
+	 * so allocation and release are safe from any context (including ISR).
+	 */
+	struct i2c_rtio_cb_slot cb_slots[CONFIG_I2C_RTIO_SQ_SIZE];
+	ATOMIC_DEFINE(cb_slot_used, CONFIG_I2C_RTIO_SQ_SIZE);
+#endif
 };
 
 /**
@@ -107,6 +136,25 @@ int i2c_rtio_transfer(struct i2c_rtio *ctx, struct i2c_msg *msgs, uint8_t num_ms
  * See i2c_recover().
  */
 int i2c_rtio_recover(struct i2c_rtio *ctx);
+
+#ifdef CONFIG_I2C_CALLBACK
+/**
+ * @brief Transfer i2c messages asynchronously, invoking @p cb on completion.
+ *
+ * Non-blocking analog of i2c_rtio_transfer(). The user callback is invoked
+ * once the entire transaction completes; @p result is the same int that
+ * i2c_rtio_transfer() would return synchronously.
+ *
+ * The @p msgs array (and the buffers it references) must remain valid until
+ * @p cb fires, matching the i2c_transfer_cb() contract. @p cb must be
+ * non-NULL.
+ *
+ * @retval 0 on successful submission (the transfer is in flight)
+ * @retval -ENOMEM if no submission slots or callback closure slots are free
+ */
+int i2c_rtio_transfer_cb(struct i2c_rtio *ctx, const struct device *dev, struct i2c_msg *msgs,
+			 uint8_t num_msgs, uint16_t addr, i2c_callback_t cb, void *userdata);
+#endif /* CONFIG_I2C_CALLBACK */
 
 #ifdef __cplusplus
 }
