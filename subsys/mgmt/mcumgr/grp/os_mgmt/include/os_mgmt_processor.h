@@ -19,6 +19,8 @@ extern "C" {
 #if defined(CONFIG_ARM)
 #if defined(CONFIG_CPU_ARM926EJ_S)
 #define PROCESSOR_NAME "arm926ej-s"
+#elif defined(CONFIG_CPU_ARM1176JZF_S)
+#define PROCESSOR_NAME "arm1176jzf-s"
 #elif defined(CONFIG_CPU_CORTEX_M0)
 #define PROCESSOR_NAME "cortex-m0"
 #elif defined(CONFIG_CPU_CORTEX_M0PLUS)
