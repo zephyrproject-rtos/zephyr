@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(eth_nxp_enet_qos_mac, CONFIG_ETHERNET_LOG_LEVEL);
 
 #include <zephyr/net/phy.h>
 #include <zephyr/kernel/thread_stack.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #if defined(CONFIG_ETH_NXP_ENET_QOS_MAC_UNIQUE_MAC_ADDRESS)
 #include <zephyr/sys/crc.h>

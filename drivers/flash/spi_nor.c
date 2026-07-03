@@ -17,7 +17,7 @@
 #include <zephyr/init.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 
