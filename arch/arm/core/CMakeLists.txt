@@ -14,6 +14,16 @@ if(CONFIG_THREAD_LOCAL_STORAGE)
   zephyr_compile_options("$<TARGET_PROPERTY:compiler,thread_local_storage>")
 endif()
 
+if(CONFIG_CPU_AARCH32_ARMV6)
+  # ARM1176 / ARMv6KZ does NOT support true unaligned access -- a misaligned
+  # LDR returns the aligned word rotated by (addr & 3) * 8 bits instead of
+  # faulting (SCTLR.A=0, the default). GCC's default -munaligned-access
+  # optimises portable byte-shift load idioms into a single LDR, which then
+  # silently returns rotated data when the pointer is not 4-byte aligned.
+  # Force byte loads, as is usual for pre-ARMv7 cores.
+  zephyr_compile_options(-mno-unaligned-access)
+endif()
+
 zephyr_library_sources(fatal.c)
 zephyr_library_sources_ifdef(CONFIG_CPU_CORTEX_M
   nmi.c
