@@ -10,6 +10,7 @@
 #include <ene/kb106x/kb1062.dtsi>
 #include <ene/kb106x/kb1062-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	model = "KB1062 board";
@@ -21,6 +22,7 @@
 		led1 = &led1;
 		sw0 = &user_button;
 		watchdog0 = &wdt0;
+		i2c-0 = &i2c_bus0;
 	};
 
 	chosen {
@@ -53,6 +55,13 @@
 			label = "LED1";
 		};
 	};
+};
+
+&i2c_bus0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_clk_gpio44 &i2c0_dat_gpio45>;
+	pinctrl-names = "default";
 };
 
 &wdt0 {
