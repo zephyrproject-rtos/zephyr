@@ -7,7 +7,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/irq.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/logging/log.h>
 #include <instances/rzg/r_gtm.h>
 
