@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2023 Bjarki Arge Andreasen
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,8 +41,8 @@ LOG_MODULE_REGISTER(test_flash);
 	DT_MTD_FROM_PARTITION(TEST_FLASH_PART_NODE)
 
 static const struct device *flash_controller = DEVICE_DT_GET(TEST_FLASH_CONTROLLER_NODE);
-static uint8_t test_write_block[512];
-static uint8_t test_read_block[512];
+static uint8_t test_write_block[CONFIG_TEST_FLASH_ERASE_BLOCKS_BUFFER_SIZE];
+static uint8_t test_read_block[CONFIG_TEST_FLASH_ERASE_BLOCKS_BUFFER_SIZE];
 
 static void test_flash_fill_test_write_block(void)
 {
