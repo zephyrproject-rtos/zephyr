@@ -1657,15 +1657,24 @@ int hl78xx_ctzeu_parse_urc(char **argv, uint16_t argc, struct hl78xx_ctzeu_updat
 
 static bool hl78xx_copy_cereg_timer_field(const char *src, char *dst, size_t dst_size)
 {
+	char timer[11];
+
 	if ((src == NULL) || (dst == NULL) || (dst_size == 0U)) {
 		return false;
 	}
 
-	if (strlen(src) >= dst_size) {
+	safe_strncpy(timer, src, sizeof(timer));
+	hl78xx_trim_surrounding_quotes(timer);
+
+	if (strlen(timer) != 8U) {
 		return false;
 	}
 
-	safe_strncpy(dst, src, dst_size);
+	if (binary_str_to_byte(timer) < 0) {
+		return false;
+	}
+
+	safe_strncpy(dst, timer, dst_size);
 	return true;
 }
 
