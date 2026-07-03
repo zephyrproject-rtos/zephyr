@@ -155,3 +155,59 @@
 	prescaler = <8>;
 	status = "okay";
 };
+
+&ptc {
+	interrupts = <30 3>;
+	run-in-standby-en = <0>;
+	def-touch-measurement-period-ms = <20>;
+	def-sensor-type = <0x81>;
+	def-sel-freq-init = "FREQ_SEL_0";
+	def-touch-det-int = <4>;
+	def-anti-tch-det-int = <5>;
+	def-anti-tch-recal-thrshld = "RECAL_100";
+	def-tch-drift-rate = <20>;
+	def-anti-tch-drift-rate = <5>;
+	def-drift-hold-time = <20>;
+	def-reburst-mode = "REBURST_UNRESOLVED";
+	def-max-on-duration = <0>;
+
+	pinctrl-0 = <&ptc_btn1_default>;
+	pinctrl-names = "default";
+
+	/* frequency hop parameters */
+	num-freq-steps = <3>;
+	def-median-filter-frequencies = "FREQ_SEL_0", "FREQ_SEL_1", "FREQ_SEL_2";
+	def-freq-autotune-enable = <1>;
+	freq-autotune-max-variance = <10>;
+	freq-autotune-count-in = <6>;
+
+	/* Data Streamer port */
+	data-streamer-port = <&sercom1>;
+
+	def-num-channels = <1>;
+
+	/* node parameters */
+	node_0_params: touch_node0 {
+		x-mask = <9>;
+		x-names = "DRIVEN_SHIELD";
+		y-mask = <8>;
+		y-names = "BUTTON_0";
+		csd = <0>;
+		rselect = "RSEL_VAL_0";
+		prescaler = "PRSC_DIV_SEL_16";
+		digital-gain = "GAIN_1";
+		analog-gain = "GAIN_1";
+		filter-level = "FILTER_LEVEL_16";
+	};
+
+	/* button module parameters */
+	def-num-sensors = <1>;
+
+	key_0_params: touch_key0 {
+		threshold = <75>;
+		hysteresis = "HYST_25";
+		aks-group = "NO_AKS_GROUP";
+	};
+
+	status = "okay";
+};
