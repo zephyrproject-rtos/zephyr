@@ -120,14 +120,51 @@ static void llmnr_iface_event_handler(struct net_mgmt_event_callback *cb,
 				      uint64_t mgmt_event, struct net_if *iface)
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
+		/* When the interface comes back up (e.g. Ethernet cable was
+		 * reattached) the stack has left the LLMNR multicast groups if
+		 * the interface was fully brought down. Rejoin both the IPv4
+		 * and IPv6 groups so that the responder keeps receiving
+		 * queries.
+		 */
 #if defined(CONFIG_NET_IPV4)
-		int ret = net_ipv4_igmp_join(iface, &local_addr4.sin_addr, NULL);
+		if (net_if_flag_is_set(iface, NET_IF_IPV4)) {
+			int ret;
 
-		if (ret < 0) {
-			NET_DBG("Cannot add IPv4 multicast address to iface %p",
-				iface);
+			/* Rejoin so that a fresh IGMP membership report is always
+			 * emitted, even when the group is still locally marked as
+			 * joined. Fall back to a join if the group was removed
+			 * while the interface was down.
+			 */
+			ret = net_ipv4_igmp_rejoin(iface, &local_addr4.sin_addr);
+			if (ret == -ENOENT) {
+				ret = net_ipv4_igmp_join(iface, &local_addr4.sin_addr, NULL);
+			}
+
+			if (ret < 0) {
+				NET_DBG("Cannot add IPv4 multicast address to iface %p",
+					iface);
+			}
 		}
 #endif /* defined(CONFIG_NET_IPV4) */
+
+#if defined(CONFIG_NET_IPV6)
+		if (net_if_flag_is_set(iface, NET_IF_IPV6)) {
+			struct net_sockaddr_in6 addr6;
+			int ret;
+
+			create_ipv6_addr(&addr6);
+
+			ret = net_ipv6_mld_rejoin(iface, &addr6.sin6_addr);
+			if (ret == -ENOENT) {
+				ret = net_ipv6_mld_join(iface, &addr6.sin6_addr);
+			}
+
+			if (ret < 0) {
+				NET_DBG("Cannot add IPv6 multicast address to iface %p",
+					iface);
+			}
+		}
+#endif /* defined(CONFIG_NET_IPV6) */
 	}
 }
 
@@ -514,7 +551,7 @@ static int recv_data(struct net_socket_service_event *pev)
 		    (struct net_sockaddr_in6), (struct net_sockaddr_in)) addr;
 	struct net_buf *dns_data = NULL;
 	struct dns_addrinfo info = { 0 };
-	size_t addrlen = sizeof(addr);
+	net_socklen_t addrlen = sizeof(addr);
 	int ret, family = NET_AF_UNSPEC, sock_error, len;
 	net_socklen_t optlen;
 
