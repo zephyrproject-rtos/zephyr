@@ -67,7 +67,12 @@ static inline void z_timer_observer_on_expiry(struct k_timer *timer)
 /**
  * @brief Handle expiration of a kernel timer object.
  *
+ * Runs from the system clock interrupt handler; the timer's expiry
+ * function is therefore always invoked in interrupt context.
+ *
  * @param t  Timeout used by the timer.
+ *
+ * @satisfies ZEP-SRS-4-15
  */
 void z_timer_expiration_handler(struct _timeout *t)
 {

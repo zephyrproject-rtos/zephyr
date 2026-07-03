@@ -20,6 +20,8 @@ extern "C" {
  * @ingroup timeutil_apis
  *
  * @brief Various helper APIs for converting between time units.
+ *
+ * @satisfies ZEP-SRS-28-7
  * @{
  */
 

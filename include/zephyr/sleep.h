@@ -200,6 +200,10 @@ static inline int32_t z_sleep_ticks_to_int32_us(k_ticks_t ticks)
  * the case where the remaining time is unrepresentable in an int32_t.
  * If @a timeout is K_FOREVER and the thread is woken early via
  * k_wakeup(), -1 is returned.
+ *
+ * @satisfies ZEP-SRS-28-8
+ * @satisfies ZEP-SRS-28-10
+ * @satisfies ZEP-SRS-28-12
  */
 static inline int32_t k_sleep(k_timeout_t timeout)
 {
@@ -223,6 +227,8 @@ static inline int32_t k_sleep(k_timeout_t timeout)
  * @return Zero if the requested time has elapsed or if the thread was woken up
  * by the \ref k_wakeup call, the time left to sleep rounded up to the nearest
  * millisecond.
+ *
+ * @satisfies ZEP-SRS-28-8
  */
 static inline int32_t k_msleep(int32_t ms)
 {
@@ -244,6 +250,8 @@ static inline int32_t k_msleep(int32_t ms)
  * @return Zero if the requested time has elapsed or if the thread was woken up
  * by the \ref k_wakeup call, the time left to sleep rounded up to the nearest
  * microsecond.
+ *
+ * @satisfies ZEP-SRS-28-9
  */
 static inline int32_t k_usleep(int32_t us)
 {
