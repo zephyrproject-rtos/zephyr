@@ -555,6 +555,17 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 				continue;
 			}
 
+			/*
+			 * Some toolchains (e.g. Clang) merge the symbol string
+			 * table and the section header name table into a single
+			 * ELF section, making STRTAB and SHSTRTAB refer to the
+			 * same file region.  This is valid ELF; skip the check.
+			 */
+			if ((i == LLEXT_MEM_STRTAB && j == LLEXT_MEM_SHSTRTAB) ||
+			    (i == LLEXT_MEM_SHSTRTAB && j == LLEXT_MEM_STRTAB)) {
+				continue;
+			}
+
 			if (REGIONS_OVERLAP_ON(x, y, sh_offset)) {
 				LOG_ERR("Region %d ELF file range (%#zx-%#zx) "
 					"overlaps with %d (%#zx-%#zx)",
