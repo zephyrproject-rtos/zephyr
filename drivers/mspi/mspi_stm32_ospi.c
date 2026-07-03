@@ -79,6 +79,20 @@
 
 LOG_MODULE_REGISTER(ospi_stm32, CONFIG_MSPI_LOG_LEVEL);
 
+static inline void ospi_lock_thread(const struct device *dev)
+{
+	struct mspi_stm32_data *dev_data = dev->data;
+
+	k_sem_take(&dev_data->sem, K_FOREVER);
+}
+
+static inline void ospi_unlock_thread(const struct device *dev)
+{
+	struct mspi_stm32_data *dev_data = dev->data;
+
+	k_sem_give(&dev_data->sem);
+}
+
 static int mspi_stm32_ospi_context_lock(struct mspi_stm32_context *ctx,
 					const struct mspi_dev_id *req, const struct mspi_xfer *xfer,
 					bool lockon)
@@ -275,74 +289,115 @@ static int mspi_stm32_ospi_memmap_on(const struct device *controller)
 		return -EIO;
 	}
 
-	LOG_INF("Memory mapped mode enabled");
+	LOG_INF("Memory mapped mode enabled at 0x%x", dev_data->memmap_base_addr);
 
 	return 0;
 }
 
-static int mspi_stm32_ospi_memmap_read(const struct device *dev,
-				       const struct mspi_xfer_packet *packet)
+static int mspi_stm32_ospi_abort_memmap_if_enabled(const struct device *dev)
 {
-	struct mspi_stm32_data *dev_data = dev->data;
 	int ret = 0;
 
-	if (!mspi_stm32_ospi_is_memorymap(dev)) {
-		ret = mspi_stm32_ospi_memmap_on(dev);
+	if (mspi_stm32_ospi_is_memorymap(dev)) {
+		ret = mspi_stm32_ospi_memmap_off(dev);
 		if (ret != 0) {
-			LOG_ERR("Failed to set memory-mapped before read");
+			LOG_ERR("Failed to abort memory-mapped mode.");
 			return ret;
 		}
-		k_usleep(50);
 	}
-#ifdef CONFIG_DCACHE
-	uint32_t addr = dev_data->memmap_base_addr + packet->address;
-	uint32_t size = packet->num_bytes;
-
-	__ASSERT_NO_MSG(IS_ALIGNED(addr, CONFIG_DCACHE_LINE_SIZE) &&
-			IS_ALIGNED(size, CONFIG_DCACHE_LINE_SIZE));
-
-	sys_cache_data_invd_range((void *)addr, size);
-#endif
-	memcpy(packet->data_buf, (uint8_t *)dev_data->memmap_base_addr + packet->address,
-	       packet->num_bytes);
 
 	return ret;
 }
 
-static int mspi_stm32_ospi_abort_memmap(const struct device *dev)
+/**
+ * @brief Reads/Writes in memory mapped mode.
+ *
+ */
+static int read_write_in_memory_map_mode(const struct device *dev,
+					const struct mspi_xfer_packet *packet)
 {
+	int ret;
 	struct mspi_stm32_data *dev_data = dev->data;
-	int ret = 0;
 
-	if (dev_data->xip_cfg.enable && mspi_stm32_ospi_is_memorymap(dev)) {
-		ret = mspi_stm32_ospi_memmap_off(dev);
-		if (ret != 0) {
-			LOG_ERR("%s: Failed to abort memory-mapped", dev->name);
-		}
+	if (packet->data_buf == NULL) {
+		LOG_ERR("data buf is null : 0x%x", packet->cmd);
+		return -EIO;
 	}
 
-	return ret;
+	ospi_lock_thread(dev);
+	if (!mspi_stm32_ospi_is_memorymap(dev)) {
+		ret = mspi_stm32_ospi_memmap_on(dev);
+		if (ret != 0) {
+			LOG_ERR("Failed to set memory mapped");
+			return ret;
+		}
+	}
+	ospi_unlock_thread(dev);
+
+	uintptr_t mmap_addr = dev_data->memmap_base_addr + packet->address;
+
+#ifdef CONFIG_DCACHE
+	uint32_t size = packet->num_bytes;
+
+	/* Align addr on DCACHE line, not size */
+	__ASSERT_NO_MSG(IS_ALIGNED(mmap_addr, CONFIG_DCACHE_LINE_SIZE));
+
+	sys_cache_data_invd_range((void *)mmap_addr, size);
+#endif
+	if (packet->dir == MSPI_RX) {
+		LOG_INF("Memory-mapped read from 0x%08lx, len %u", mmap_addr, packet->num_bytes);
+		memcpy(packet->data_buf, (void *)mmap_addr, packet->num_bytes);
+		k_sleep(K_MSEC(1));
+		return 0;
+	}
+	/* MSPI_TX */
+	if (!dev_data->xip_cfg.permission) {
+		LOG_INF("Memory-mapped write from 0x%08lx, len %u", mmap_addr, packet->num_bytes);
+		memcpy((void *)mmap_addr, packet->data_buf, packet->num_bytes);
+		k_sleep(K_MSEC(1));
+		return 0;
+	}
+
+	ospi_lock_thread(dev);
+	ret = mspi_stm32_ospi_abort_memmap_if_enabled(dev);
+	if (ret != 0) {
+		return ret;
+	}
+	ospi_unlock_thread(dev);
+
+	return -EPROTONOSUPPORT;
 }
 
 /* Send a Command to the NOR and Receive/Transceive data if relevant in IT or DMA mode */
 static int mspi_stm32_ospi_access(const struct device *dev, const struct mspi_xfer_packet *packet,
 				  uint8_t access_mode)
 {
-
-	struct mspi_stm32_data *dev_data = dev->data;
-
 	HAL_StatusTypeDef hal_ret;
+	struct mspi_stm32_data *dev_data = dev->data;
 	int ret;
 
-	if (dev_data->xip_cfg.enable && packet->dir == MSPI_RX) {
-		return mspi_stm32_ospi_memmap_read(dev, packet);
+	if (dev_data->xip_cfg.enable) {
+		if ((packet->cmd == MSPI_NOR_CMD_WREN) || (packet->cmd == MSPI_NOR_OCMD_WREN) ||
+		    (packet->cmd == MSPI_NOR_CMD_SE_4B) || (packet->cmd == MSPI_NOR_OCMD_SE) ||
+		    (packet->cmd == MSPI_NOR_CMD_SE)) {
+
+			ospi_lock_thread(dev);
+			ret = mspi_stm32_ospi_abort_memmap_if_enabled(dev);
+
+			if (ret != 0) {
+				return ret;
+			}
+			ospi_unlock_thread(dev);
+			goto indirect;
+		}
+
+		if (read_write_in_memory_map_mode(dev, packet) == -EPROTONOSUPPORT) {
+			goto indirect;
+		}
+		return 0;
 	}
 
-	ret = mspi_stm32_ospi_abort_memmap(dev);
-	if (ret != 0) {
-		return ret;
-	}
-
+indirect:
 	(void)pm_device_runtime_get(dev);
 	/* Prevent the clocks to be stopped during the request */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -501,10 +556,12 @@ static int mspi_stm32_ospi_status_reg(const struct device *controller, const str
 	int ret = 0;
 	struct mspi_stm32_data *dev_data = controller->data;
 
-	ret = mspi_stm32_ospi_abort_memmap(controller);
+	ospi_lock_thread(controller);
+	ret = mspi_stm32_ospi_abort_memmap_if_enabled(controller);
 	if (ret != 0) {
 		return ret;
 	}
+	ospi_unlock_thread(controller);
 
 	struct mspi_stm32_context *ctx = &dev_data->ctx;
 
@@ -794,6 +851,7 @@ static int mspi_stm32_ospi_xip_config(const struct device *controller,
 	(void)pm_device_runtime_get(controller);
 	/* Prevent the clocks to be stopped during the request */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	ospi_lock_thread(controller);
 
 	if (!xip_cfg->enable) {
 		/* This is for aborting */
@@ -807,6 +865,7 @@ static int mspi_stm32_ospi_xip_config(const struct device *controller,
 		LOG_INF("XIP configured %d", xip_cfg->enable);
 	}
 
+	ospi_unlock_thread(controller);
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	(void)pm_device_runtime_put(controller);
 
@@ -1209,9 +1268,10 @@ static int mspi_stm32_ospi_config(const struct mspi_dt_spec *spec)
 	}
 
 	/** The stm32 hal_mspi driver does not reduce DEVSIZE before writing the DCR1
-	 * dev_data->hmspi.ospi.Init.MemorySize = find_lsb_set(dev_cfg->reg_size) - 2;
-	 * dev_data->hmspi.ospi.Init.MemorySize is mandatory now (BUSY = 0) for HAL_XSPI Init
-	 * give the value from the child node
+	 * dev_data->hmspi.ospi.Init.DeviceSize = find_lsb_set(dev_cfg->reg_size) - 2;
+	 * dev_data->hmspi.ospi.Init.DeviceSize is mandatory now (BUSY = 0) for HAL_XSPI Init
+	 * give the value from the child node (size property) or a default value set by the init
+	 * The dev_cfg->reg_size corresponds to the memory bank allowed for octospi area.
 	 */
 #if defined(XSPI_DCR2_WRAPSIZE)
 	dev_data->hmspi.ospi.Init.WrapSize = HAL_XSPI_WRAP_NOT_SUPPORTED;
@@ -1221,6 +1281,7 @@ static int mspi_stm32_ospi_config(const struct mspi_dt_spec *spec)
 #else
 	dev_data->hmspi.ospi.Init.DelayBlockBypass = HAL_OSPI_DELAY_BLOCK_USED;
 #endif /* MSPI_STM32_DLYB_BYPASSED */
+	dev_data->hmspi.ospi.Init.MemoryType = HAL_OSPI_MEMTYPE_MACRONIX;
 
 	/* Enable DHQC for high frequencies >= 100MHZ */
 	if (dev_cfg->mspicfg.max_freq > 100000000U) {
@@ -1286,6 +1347,9 @@ static int mspi_stm32_ospi_config(const struct mspi_dt_spec *spec)
 	if (config->re_init) {
 		k_mutex_unlock(&dev_data->lock);
 	}
+
+	k_sem_init(&dev_data->sem, 1, 1);
+
 end:
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	(void)pm_device_runtime_put(spec->bus);
@@ -1485,7 +1549,8 @@ static int mspi_stm32_ospi_pm_action(const struct device *dev, enum pm_device_ac
 				.ClockMode = HAL_OSPI_CLOCK_MODE_0,                                \
 				.ChipSelectBoundary = DT_INST_PROP(index, st_csbound),             \
 				.FreeRunningClock = HAL_OSPI_FREERUNCLK_DISABLE,                   \
-			},                                                                         \
+				.DeviceSize = 0x19,                       \
+			},                        \
 		},                                                                                 \
 		.memmap_base_addr = DT_INST_REG_ADDR_BY_IDX(index, 1),                             \
 		.lock = Z_MUTEX_INITIALIZER(mspi_stm32_dev_data_##index.lock),                     \
