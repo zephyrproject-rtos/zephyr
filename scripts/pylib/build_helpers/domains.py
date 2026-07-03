@@ -12,9 +12,13 @@ import logging
 import os
 from dataclasses import dataclass
 
-import jsonschema
 import yaml
-from jsonschema.exceptions import best_match
+
+try:
+    import jsonschema
+    from jsonschema.exceptions import best_match
+except ImportError:
+    jsonschema = None
 
 DOMAINS_SCHEMA = '''
 # JSON schema for basic validation of the structure of a domains YAML file.
@@ -68,6 +72,11 @@ logger.addHandler(handler)
 class Domains:
 
     def __init__(self, data: dict):
+        if jsonschema is None:
+            logger.critical('jsonschema module not found, please install it to '
+                            'validate and parse domains.yaml files')
+            exit(1)
+
         validator_class = jsonschema.validators.validator_for(schema)
         validator_class.check_schema(schema)
         domains_validator = validator_class(schema)
