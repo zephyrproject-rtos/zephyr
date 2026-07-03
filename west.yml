@@ -229,7 +229,7 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: a00cf493fa200df303f617d609538d33088c2654
+      revision: b106aa7cbbb78cee74c0d8063f19eecc575a80b2
       groups:
         - hal
     - name: hal_renesas
