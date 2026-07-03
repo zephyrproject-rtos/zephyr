@@ -6278,6 +6278,8 @@ struct k_mem_slab {
  * @param slab_block_size Size of each memory block (in bytes).
  * @param slab_num_blocks Number memory blocks.
  * @param slab_align Alignment of the memory slab's buffer (power of 2).
+ *
+ * @satisfies ZEP-SRS-9-12
  */
 #define K_MEM_SLAB_DEFINE(name, slab_block_size, slab_num_blocks, slab_align)                      \
 	K_MEM_SLAB_DEFINE_IN_SECT(name, __noinit_named(k_mem_slab_buf_##name), slab_block_size,    \
@@ -6387,6 +6389,7 @@ struct k_mem_slab {
  * @retval 0 on success
  * @retval -EINVAL invalid data supplied
  *
+ * @satisfies ZEP-SRS-9-13
  */
 int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 			   size_t block_size, uint32_t num_blocks);
@@ -6412,6 +6415,10 @@ int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
  * @retval -ENOMEM Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  * @retval -EINVAL Invalid data supplied
+ *
+ * @satisfies ZEP-SRS-9-2
+ * @satisfies ZEP-SRS-9-14
+ * @satisfies ZEP-SRS-9-15
  */
 int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
 			    k_timeout_t timeout);
@@ -6426,6 +6433,8 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
  *
  * @param slab Address of the memory slab.
  * @param mem Pointer to the memory block (as returned by k_mem_slab_alloc()).
+ *
+ * @satisfies ZEP-SRS-9-16
  */
 void k_mem_slab_free(struct k_mem_slab *slab, void *mem);
 
@@ -6440,6 +6449,8 @@ void k_mem_slab_free(struct k_mem_slab *slab, void *mem);
  * @param slab Address of the memory slab.
  *
  * @return Number of allocated memory blocks.
+ *
+ * @satisfies ZEP-SRS-9-17
  */
 static inline uint32_t k_mem_slab_num_used_get(struct k_mem_slab *slab)
 {
@@ -6479,6 +6490,8 @@ static inline uint32_t k_mem_slab_max_used_get(struct k_mem_slab *slab)
  * @param slab Address of the memory slab.
  *
  * @return Number of unallocated memory blocks.
+ *
+ * @satisfies ZEP-SRS-9-17
  */
 static inline uint32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
 {
@@ -6552,6 +6565,8 @@ struct k_heap {
  * @param h Heap struct to initialize
  * @param mem Pointer to memory.
  * @param bytes Size of memory region, in bytes
+ *
+ * @satisfies ZEP-SRS-9-4
  */
 void k_heap_init(struct k_heap *h, void *mem,
 		size_t bytes) __attribute_nonnull(1);
@@ -6575,6 +6590,9 @@ void k_heap_init(struct k_heap *h, void *mem,
  * @param bytes Number of bytes requested
  * @param timeout How long to wait, or K_NO_WAIT
  * @return Pointer to memory the caller can now use
+ *
+ * @satisfies ZEP-SRS-9-6
+ * @satisfies ZEP-SRS-9-7
  */
 void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
 			k_timeout_t timeout) __attribute_nonnull(1);
@@ -6599,6 +6617,11 @@ void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
  * @param bytes Desired size of block to allocate
  * @param timeout How long to wait, or K_NO_WAIT
  * @return A pointer to valid heap memory, or NULL
+ *
+ * @satisfies ZEP-SRS-9-1
+ * @satisfies ZEP-SRS-9-5
+ * @satisfies ZEP-SRS-9-7
+ * @satisfies ZEP-SRS-9-8
  */
 void *k_heap_alloc(struct k_heap *h, size_t bytes,
 		k_timeout_t timeout) __attribute_nonnull(1);
@@ -6650,6 +6673,8 @@ void *k_heap_calloc(struct k_heap *h, size_t num, size_t size, k_timeout_t timeo
  * @param timeout How long to wait, or K_NO_WAIT
  *
  * @return Pointer to memory the caller can now use, or NULL
+ *
+ * @satisfies ZEP-SRS-9-9
  */
 void *k_heap_realloc(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t timeout)
 	__attribute_nonnull(1);
@@ -6663,6 +6688,8 @@ void *k_heap_realloc(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t time
  *
  * @param h Heap to which to return the memory
  * @param mem A valid memory block, or NULL
+ *
+ * @satisfies ZEP-SRS-9-10
  */
 void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
 
@@ -6756,6 +6783,8 @@ void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
  *
  * @param name Symbol name for the struct k_heap object
  * @param bytes Size of memory region, in bytes
+ *
+ * @satisfies ZEP-SRS-9-3
  */
 #define K_HEAP_DEFINE(name, bytes)				\
 	Z_HEAP_DEFINE_IN_SECT(name, bytes,			\
@@ -6786,6 +6815,8 @@ void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
  *
  * @param heap Pointer to location where heap array address is written
  * @return Number of static heaps
+ *
+ * @satisfies ZEP-SRS-9-18
  */
 int k_heap_array_get(struct k_heap **heap);
 
@@ -6830,6 +6861,8 @@ void *k_aligned_alloc(size_t align, size_t size);
  * @param size Amount of memory requested (in bytes).
  *
  * @return Address of the allocated memory if successful; otherwise NULL.
+ *
+ * @satisfies ZEP-SRS-9-11
  */
 void *k_malloc(size_t size);
 
@@ -6842,6 +6875,8 @@ void *k_malloc(size_t size);
  * If @a ptr is NULL, no operation is performed.
  *
  * @param ptr Pointer to previously allocated memory.
+ *
+ * @satisfies ZEP-SRS-9-11
  */
 void k_free(void *ptr);
 
