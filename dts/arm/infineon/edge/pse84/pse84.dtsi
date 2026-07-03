@@ -319,6 +319,7 @@
 			wakeup-source;
 			interrupts = <57 4>, <58 4>;
 			interrupt-names = "autanalog", "autanalog_fifo";
+			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
@@ -326,6 +327,7 @@
 			ctb0: ctb0@0 {
 				compatible = "infineon,autanalog-ctb";
 				reg = <0x0 0x1000>;
+				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};
@@ -333,6 +335,7 @@
 			ctb1: ctb1@10000 {
 				compatible = "infineon,autanalog-ctb";
 				reg = <0x10000 0x1000>;
+				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};
