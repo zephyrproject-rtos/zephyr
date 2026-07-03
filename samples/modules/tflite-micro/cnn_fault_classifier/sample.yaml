@@ -1,8 +1,10 @@
 sample:
-  description: Hello World TensorFlow sample
-  name: hello world tensorflow
+  description: TensorFlow Lite Micro 1D CNN fault classifier sample
+  name: 1D CNN fault classifier TensorFlow Lite Micro
+
 common:
-  tags: tensorflow
+  tags:
+    - tensorflow
   modules:
     - tflite-micro
   harness: console
@@ -10,25 +12,21 @@ common:
     type: multi_line
     ordered: false
     regex:
-      - "x_value:.*, y_value:.*"
-      - ""
+      - "input_window: .*"
+      - "prediction: .*"
+      - "result: PASS"
+
 tests:
-  sample.tensorflow.helloworld:
+  sample.tensorflow.cnn_fault_classifier:
     platform_allow:
       - qemu_x86
       - qemu_x86_64
     integration_platforms:
       - qemu_x86
-    tags: tensorflow
     filter: CONFIG_FULL_LIBC_SUPPORTED
 
-  sample.tensorflow.helloworld.cmsis_nn:
-    tags: tensorflow
+  sample.tensorflow.cnn_fault_classifier.cmsis_nn:
     platform_allow:
-      - mps3/corstone300/fvp
-      - ek_ra8m1
-    integration_platforms:
-      - mps3/corstone300/fvp
       - ek_ra8m1
     extra_configs:
       - CONFIG_TENSORFLOW_LITE_MICRO_CMSIS_NN_KERNELS=y

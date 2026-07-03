@@ -1,6 +1,6 @@
 sample:
-  description: Hello World TensorFlow sample
-  name: hello world tensorflow
+  description: Time-series TensorFlow Lite Micro classifier sample
+  name: time series tensorflow classifier
 common:
   tags: tensorflow
   modules:
@@ -10,10 +10,10 @@ common:
     type: multi_line
     ordered: false
     regex:
-      - "x_value:.*, y_value:.*"
-      - ""
+      - "prediction:.*, score:.*"
+      - "result: PASS"
 tests:
-  sample.tensorflow.helloworld:
+  sample.tensorflow.time_series_classifier:
     platform_allow:
       - qemu_x86
       - qemu_x86_64
@@ -22,7 +22,7 @@ tests:
     tags: tensorflow
     filter: CONFIG_FULL_LIBC_SUPPORTED
 
-  sample.tensorflow.helloworld.cmsis_nn:
+  sample.tensorflow.time_series_classifier.cmsis_nn:
     tags: tensorflow
     platform_allow:
       - mps3/corstone300/fvp
