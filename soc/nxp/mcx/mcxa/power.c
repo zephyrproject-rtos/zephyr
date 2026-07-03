@@ -16,6 +16,9 @@
 #include <cmsis_core.h>
 #include <zephyr/arch/arm/cortex_m/scb.h>
 #include <zephyr/arch/common/pm_s2ram.h>
+#if defined(CONFIG_SOC_SERIES_MCXAXX7)
+#include <fsl_vbat.h>
+#endif
 #endif
 
 #define MCXA_WAKEUP_DELAY	DT_PROP_OR(DT_INST(0, nxp_spc), wakeup_delay, 0)
@@ -41,9 +44,6 @@ static void enter_low_power(void)
 }
 
 #if defined(CONFIG_PM_S2RAM)
-/* 0xF keeps every RAM array powered by the SPC SRAM retention LDO. */
-#define MCXA_SRAM_RETAIN_ALL	0xFU
-
 /*
  * Deep Power Down (mapped to PM_STATE_SUSPEND_TO_RAM) power gates the whole
  * CORE domain, including the ARM System Control Space (NVIC, SCB). The chip
@@ -83,11 +83,55 @@ static void mcxa_scs_restore(void)
 	}
 }
 
-static void mcxa_s2ram_retain_sram(void)
+#if !defined(CONFIG_SOC_SERIES_MCXAXX7)
+/* 0xF keeps every RAM array powered by the SPC SRAM retention LDO. */
+#define MCXA_SRAM_RETAIN_ALL	0xFU
+
+static int mcxa_s2ram_retain_sram(void)
 {
 	SPC_EnableSRAMLdo(MCXA_SPC_ADDR, true);
 	SPC_RetainSRAMArray(MCXA_SPC_ADDR, MCXA_SRAM_RETAIN_ALL);
+
+	return 0;
 }
+#else
+/* Parts without an SPC SRAM retention LDO (e.g. MCXAxx7) keep the RAMA arrays
+ * alive through the VBAT backup SRAM regulator instead, so the retained working
+ * set must fit in the VBAT-retained RAMA region.
+ */
+#define MCXA_VBAT_ADDR	(VBAT_Type *)DT_REG_ADDR(DT_INST(0, nxp_vbat))
+#define MCXA_RAMA_ALL	(kVBAT_SramArray0 | kVBAT_SramArray1 | \
+			 kVBAT_SramArray2 | kVBAT_SramArray3)
+
+static int mcxa_s2ram_retain_sram(void)
+{
+	if (!VBAT_CheckFRO16kEnabled(MCXA_VBAT_ADDR)) {
+		VBAT_EnableFRO16k(MCXA_VBAT_ADDR, true);
+	}
+
+	VBAT_UngateFRO16k(MCXA_VBAT_ADDR, kVBAT_EnableClockToVddSys);
+
+	if (!VBAT_CheckBandgapEnabled(MCXA_VBAT_ADDR)) {
+		if (VBAT_EnableBandgap(MCXA_VBAT_ADDR, true) != kStatus_Success) {
+			return -EIO;
+		}
+	}
+
+	/* Enable refresh mode to save power. */
+	VBAT_EnableBandgapRefreshMode(MCXA_VBAT_ADDR, true);
+
+	/* The backup SRAM regulator supplies the retained RAMA arrays across
+	 * Deep Power Down; if it cannot be enabled the context would be lost.
+	 */
+	if (VBAT_EnableBackupSRAMRegulator(MCXA_VBAT_ADDR, true) != kStatus_Success) {
+		return -EIO;
+	}
+
+	VBAT_RetainSRAMsInLowPowerModes(MCXA_VBAT_ADDR, MCXA_RAMA_ALL);
+
+	return 0;
+}
+#endif
 
 static int mcxa_enter_deep_power_down(void)
 {
@@ -131,7 +175,14 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 #if defined(CONFIG_PM_S2RAM)
 	case PM_STATE_SUSPEND_TO_RAM:
 		SPC_SetLowPowerWakeUpDelay(MCXA_SPC_ADDR, MCXA_WAKEUP_DELAY);
-		mcxa_s2ram_retain_sram();
+
+		if (mcxa_s2ram_retain_sram() != 0) {
+			/* SRAM retention could not be armed; entering Deep Power
+			 * Down now would lose the retained context, so stay running.
+			 */
+			break;
+		}
+
 		mcxa_scs_save();
 
 		/* A non-zero return means the SoC never entered Deep Power Down
