@@ -573,6 +573,14 @@ def _assignees_set(pr):
     return result
 
 
+def _labels_applied(pr):
+    """Collect all label names passed to pr.add_to_labels across all calls."""
+    result = []
+    for call in pr.add_to_labels.call_args_list:
+        result.extend(call.args)
+    return result
+
+
 class TestDeferredFileGroups:
     """Verify defer-to-other-areas file-group behaviour in process_pr."""
 
@@ -631,3 +639,22 @@ class TestDeferredFileGroups:
         sut.process_pr(gh, args, mf, 99)
 
         assert "net_m" in _assignees_set(pr)
+
+    def test_deferred_area_label_still_applied(self):
+        """The deferred area's label must still be applied to the PR.  The
+        deferred maintainer stays on as a reviewer, so the area label they
+        use to find relevant PRs must not be dropped along with the deferral."""
+        clock_area = _DeferredArea(
+            "Clock Control", maintainers=["clock_m"], labels=["area: Clock control"]
+        )
+        platform_area = _make_area(
+            "Espressif Platforms", maintainers=["platform_m"], labels=["platform: ESP32"]
+        )
+        areas = {"drivers/clock_control/clock_control_esp32.c": [clock_area, platform_area]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        sut.process_pr(gh, args, mf, 99)
+
+        applied = _labels_applied(pr)
+        assert "area: Clock control" in applied
+        assert "platform: ESP32" in applied
