@@ -1060,4 +1060,130 @@ ZTEST(test_mdns_responder, test_iface_policy_excludes_iface2)
 		      "policy-excluded iface2 joined the IPv6 mDNS group on recovery");
 }
 
+/* The runtime control API must be able to take the responder off an interface
+ * that it is currently running on, and put it back. Disabling drops the mDNS
+ * multicast memberships (and closes the listener socket); enabling restores
+ * them so that the responder answers queries again.
+ */
+ZTEST(test_mdns_responder, test_runtime_disable_then_enable_iface)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL);
+
+	zexpect_true(ipv4_group_joined(iface1),
+		     "iface1 not in the IPv4 mDNS group at start");
+	zexpect_true(ipv6_group_joined(iface1),
+		     "iface1 not in the IPv6 mDNS group at start");
+
+	zexpect_ok(mdns_responder_disable_iface(iface1),
+		   "Cannot disable the responder on iface1");
+	k_sleep(K_MSEC(100));
+
+	zexpect_false(ipv4_group_joined(iface1),
+		      "iface1 still in the IPv4 mDNS group after disable");
+	zexpect_false(ipv6_group_joined(iface1),
+		      "iface1 still in the IPv6 mDNS group after disable");
+
+	zexpect_ok(mdns_responder_enable_iface(iface1),
+		   "Cannot re-enable the responder on iface1");
+	k_sleep(K_MSEC(100));
+
+	zexpect_true(ipv4_group_joined(iface1),
+		     "iface1 not rejoined the IPv4 mDNS group after enable");
+	zexpect_true(ipv6_group_joined(iface1),
+		     "iface1 not rejoined the IPv6 mDNS group after enable");
+	zexpect_true(responder_answers_query(),
+		     "Responder did not answer after being re-enabled");
+}
+
+/* Argument validation for the runtime control API. */
+ZTEST(test_mdns_responder, test_runtime_iface_control_bad_args)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL);
+
+	zexpect_equal(mdns_responder_enable_iface(NULL), -EINVAL,
+		      "enable_iface(NULL) should return -EINVAL");
+	zexpect_equal(mdns_responder_disable_iface(NULL), -EINVAL,
+		      "disable_iface(NULL) should return -EINVAL");
+}
+
+/* A runtime enable must override the build-time policy: an interface excluded
+ * by the policy (iface2 == dummy1) can still be turned on at runtime, and
+ * turned back off again.
+ */
+ZTEST(test_mdns_responder, test_runtime_enable_overrides_policy)
+{
+	struct net_if *iface2 = net_if_get_by_index(2);
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL);
+	Z_TEST_SKIP_IFDEF(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL);
+
+	zexpect_not_null(iface2, "Second interface is NULL");
+
+	/* Policy keeps iface2 off. */
+	zexpect_false(ipv4_group_joined(iface2),
+		      "policy-excluded iface2 is in the IPv4 mDNS group");
+	zexpect_false(ipv6_group_joined(iface2),
+		      "policy-excluded iface2 is in the IPv6 mDNS group");
+
+	/* Runtime enable overrides the policy. */
+	zexpect_ok(mdns_responder_enable_iface(iface2),
+		   "Cannot enable the responder on iface2");
+	k_sleep(K_MSEC(100));
+
+	zexpect_true(ipv4_group_joined(iface2),
+		     "iface2 not in the IPv4 mDNS group after runtime enable");
+	zexpect_true(ipv6_group_joined(iface2),
+		     "iface2 not in the IPv6 mDNS group after runtime enable");
+
+	/* Turning it back off must drop the memberships again. Leave iface2 in
+	 * the off state so the rest of the suite sees the policy default.
+	 */
+	zexpect_ok(mdns_responder_disable_iface(iface2),
+		   "Cannot disable the responder on iface2");
+	k_sleep(K_MSEC(100));
+
+	zexpect_false(ipv4_group_joined(iface2),
+		      "iface2 still in the IPv4 mDNS group after runtime disable");
+	zexpect_false(ipv6_group_joined(iface2),
+		      "iface2 still in the IPv6 mDNS group after runtime disable");
+}
+
+/* The test-only hooks are compiled together with runtime interface control
+ * (they call mdns_close_listeners()), which is also the only configuration
+ * where the teardown path this guards against is reachable. That availability
+ * gate stays a compile-time #if; the policy applicability gate below is a
+ * runtime skip.
+ */
+#if defined(CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL)
+extern int mdns_test_get_listener_sock(net_sa_family_t family, unsigned int slot);
+extern int mdns_test_reinit_with_stale_slot(unsigned int slot);
+
+/* A listener slot that the setup skips (here iface2 == dummy1 == slot 1, kept
+ * off by the allowlist policy) must be marked closed (-1), not left at the
+ * zero-initialized fd 0. Otherwise mdns_close_listeners() - run on every
+ * runtime reconfigure - would treat the slot as open, unregister a zeroed
+ * dispatcher and close(0), silently closing an unrelated descriptor.
+ *
+ * Reproduce the boot-time "never opened" condition by injecting fd 0 into the
+ * excluded slot and re-running the setup, then assert the slot was closed.
+ */
+ZTEST(test_mdns_responder, test_excluded_listener_slot_marked_closed)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALLOWLIST);
+
+	zexpect_ok(mdns_test_reinit_with_stale_slot(1),
+		   "Cannot re-run mDNS listener setup");
+
+	if (IS_ENABLED(CONFIG_NET_IPV4)) {
+		zexpect_equal(mdns_test_get_listener_sock(NET_AF_INET, 1), -1,
+			      "Excluded IPv4 listener slot left open (stale fd)");
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		zexpect_equal(mdns_test_get_listener_sock(NET_AF_INET6, 1), -1,
+			      "Excluded IPv6 listener slot left open (stale fd)");
+	}
+}
+#endif /* CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL */
+
 ZTEST_SUITE(test_mdns_responder, NULL, test_setup, before, cleanup, NULL);

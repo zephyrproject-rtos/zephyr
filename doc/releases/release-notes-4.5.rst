@@ -260,6 +260,10 @@ New APIs and options
     :kconfig:option:`CONFIG_MDNS_RESPONDER_IFACE_POLICY_DENYLIST`) together with
     :kconfig:option:`CONFIG_MDNS_RESPONDER_IFACE_LIST` to control on which
     network interfaces the mDNS responder operates.
+  * Add :c:func:`mdns_responder_enable_iface` and
+    :c:func:`mdns_responder_disable_iface`
+    (:kconfig:option:`CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL`) to enable or
+    disable the mDNS responder on a network interface at runtime.
 
 * Ring buffer
 
