@@ -7375,6 +7375,10 @@ __syscall void k_str_out(char *c, size_t n);
  * @retval 0        On success.
  * @retval -ENOTSUP If the floating point disabling is not implemented.
  * @retval -EINVAL  If the floating point disabling could not be performed.
+ *
+ * @satisfies ZEP-SRS-29-3
+ * @satisfies ZEP-SRS-29-5
+ * @satisfies ZEP-SRS-29-6
  */
 __syscall int k_float_disable(struct k_thread *thread);
 
@@ -7415,6 +7419,12 @@ __syscall int k_float_disable(struct k_thread *thread);
  * @retval 0        On success.
  * @retval -ENOTSUP If the floating point enabling is not implemented.
  * @retval -EINVAL  If the floating point enabling could not be performed.
+ *
+ * @satisfies ZEP-SRS-29-1
+ * @satisfies ZEP-SRS-29-2
+ * @satisfies ZEP-SRS-29-4
+ * @satisfies ZEP-SRS-29-5
+ * @satisfies ZEP-SRS-29-6
  */
 __syscall int k_float_enable(struct k_thread *thread, unsigned int options);
 
