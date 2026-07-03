@@ -111,6 +111,7 @@ class SBOMFile:
         path: Absolute file path on disk.
         relative_path: File path relative to the owning component's base directory.
         hashes: File hashes keyed by hash algorithm name.
+        size: File size in bytes.
         concluded_license: Concluded license expression for the file.
         license_info_in_file: License identifiers detected in the file.
         copyright_text: Copyright text detected for the file.
@@ -122,6 +123,7 @@ class SBOMFile:
     path: str
     relative_path: str = ""
     hashes: dict[str, str] = field(default_factory=dict)
+    size: int | None = None
     concluded_license: str = NOASSERTION
     license_info_in_file: list[str] = field(default_factory=list)
     copyright_text: str = NOASSERTION
