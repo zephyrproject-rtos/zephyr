@@ -12,5 +12,6 @@ config POWER_DOMAIN_SILABS_SIWX91X
 config SIWX91X_POWER_DOMAIN_INIT_PRIORITY
 	int "Silabs siwx91x power domain init priority"
 	default 10
+	depends on POWER_DOMAIN_SILABS_SIWX91X
 	help
 	  Silabs siwx91x power domain initialization priority.
