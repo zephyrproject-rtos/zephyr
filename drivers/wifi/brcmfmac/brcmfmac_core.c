@@ -313,6 +313,36 @@ static int brcmfmac_init(const struct device *dev)
 			"missing CLM blob or no valid country?", isup);
 	}
 
+	/* Optional regulatory override. The firmware boots on the CLM's
+	 * default country; boards that need a specific domain set it via
+	 * Kconfig. ISO3166 alpha2 with rev=0, matching Linux's
+	 * brcmf_use_iso3166_ccode_fallback() handling for this chip
+	 * family.
+	 */
+	if (sizeof(CONFIG_WIFI_BRCMFMAC_COUNTRY) > 1) {
+		struct {
+			char country_abbrev[4];
+			int32_t rev;
+			char ccode[4];
+		} __packed cspec;
+
+		memset(&cspec, 0, sizeof(cspec));
+		strncpy(cspec.country_abbrev, CONFIG_WIFI_BRCMFMAC_COUNTRY, 3);
+		strncpy(cspec.ccode, CONFIG_WIFI_BRCMFMAC_COUNTRY, 3);
+		cspec.rev = 0;
+
+		ret = brcmfmac_bcdc_iovar_set(data, "country",
+					      (const uint8_t *)&cspec,
+					      sizeof(cspec));
+		if (ret != 0) {
+			LOG_WRN("country=%s rejected (%d), staying on CLM "
+				"default", CONFIG_WIFI_BRCMFMAC_COUNTRY, ret);
+		} else {
+			LOG_INF("country set to %s",
+				CONFIG_WIFI_BRCMFMAC_COUNTRY);
+		}
+	}
+
 	/* Enable the events we care about in the chip's event mask. Read
 	 * current mask first so we don't clobber chip defaults. Events the
 	 * chip leaves disabled by default but we need:

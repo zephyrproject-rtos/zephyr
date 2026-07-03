@@ -55,6 +55,16 @@ config WIFI_BRCMFMAC_CLM_FILE
 	  43436s image) does not need it. Leave empty to skip CLM upload
 	  entirely -- the driver links a zero-length blob in that case.
 
+config WIFI_BRCMFMAC_COUNTRY
+	string "Regulatory country code (ISO3166 alpha2, empty = CLM default)"
+	default ""
+	help
+	  Country code pushed to the firmware after WLC_UP via the
+	  "country" iovar, sent as alpha2 with rev=0 (the fallback Linux
+	  uses for this chip family). Leave empty to keep the firmware /
+	  CLM default domain. The code must exist in the firmware's CLM
+	  or the set is rejected and the default is kept.
+
 config WIFI_BRCMFMAC_RX_THREAD_STACK_SIZE
 	int "RX thread stack size"
 	default 4096
