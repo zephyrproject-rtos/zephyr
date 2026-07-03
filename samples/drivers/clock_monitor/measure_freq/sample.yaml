@@ -10,6 +10,10 @@ tests:
   sample.drivers.clock_monitor.measure_freq:
     platform_allow:
       - frdm_mcxe31b
+      - mimxrt685_evk/mimxrt685s/cm33
+      - mimxrt595_evk/mimxrt595s/cm33
+      - frdm_rw612
+      - rd_rw612_bga
     tags:
       - drivers
       - clock_monitor

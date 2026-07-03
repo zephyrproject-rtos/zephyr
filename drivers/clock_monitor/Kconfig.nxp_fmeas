@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_MONITOR_NXP_FMEAS
+	bool "NXP BASIC FREQME (fmeas) frequency measurement driver"
+	default y
+	depends on DT_HAS_NXP_FMEAS_ENABLED
+	select NXP_INPUTMUX
+	help
+	  Zephyr clock_monitor back-end for the NXP BASIC Frequency Measurement
+	  (FREQME) block, wrapping the MCUX SDK fsl_fmeas HAL. This is the
+	  single-register FREQMECTRL variant (RT6xx / RT5xx / RW6xx) with no
+	  interrupt line: only MEASURE (one-shot) mode is supported and
+	  completion is polled from a workqueue. Reference and target clocks are
+	  routed through the INPUTMUX peripheral and the reference rate is queried
+	  from clock_control. The measurement window is HW/HAL-fixed at 2^20
+	  reference cycles.

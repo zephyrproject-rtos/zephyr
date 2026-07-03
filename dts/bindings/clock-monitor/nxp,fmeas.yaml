@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP BASIC Frequency Measurement (FREQME / fmeas) module.
+
+  Single-register FREQMECTRL variant (RT6xx / RT5xx / RW6xx) driven through
+  the MCUX SDK fsl_fmeas HAL. Measures a target clock against a reference
+  clock and returns the result in Hz. The reference and target inputs are
+  routed through the INPUTMUX peripheral (see inputmux-connections).
+
+  This hardware has no interrupt line and no MIN/MAX threshold registers, so
+  the Zephyr clock_monitor MEASURE (one-shot) mode is the only mode supported;
+  WINDOW mode is rejected with -ENOTSUP. The measurement window is HW/HAL-fixed
+  at 2^20 reference-clock cycles, so a MEASURE window_ns request is advisory.
+
+compatible: "nxp,fmeas"
+
+include: [base.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    min-len: 2
+    max-len: 2
+    description: |
+      Exactly two entries, in order:
+        - "ipg"       : FREQME peripheral gate clock, enabled by the driver
+                        via clock_control_on().
+        - "reference" : the reference timebase clock, queried by the driver
+                        to convert the raw result into Hz. Must correspond to
+                        the clock routed to the INPUTMUX reference channel.
+
+  resets:
+    required: true
+    description: |
+      FREQME peripheral reset line. The driver toggles it once at init to
+      release the block from reset; without it the FREQMECTRL register is
+      inert (writes dropped, reads return 0) and every measurement reports 0.
+
+  inputmux-connections:
+    type: phandle-array
+    specifier-space: inputmux
+    required: true
+    min-len: 2
+    max-len: 2
+    description: |
+      INPUTMUX routing for the reference and target clock inputs. Provide two
+      entries as <&inputmux channel connection>:
+        - entry 0 : reference route, channel 0 (FMEASURE_CH_SEL[0]).
+        - entry 1 : target route, channel 1 (FMEASURE_CH_SEL[1]).
+      Each connection is an inputmux_connection_t cookie from
+      fsl_inputmux_connections.h. Use the NXP_FMEAS_* macros in
+      <zephyr/dt-bindings/clock-monitor/nxp-fmeas.h>.
