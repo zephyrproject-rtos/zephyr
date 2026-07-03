@@ -61,6 +61,38 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
 
+  drivers.spi.spi_mode0.incorrect_sck_state:
+    extra_configs:
+      - CONFIG_TESTED_SPI_MODE=0
+      - CONFIG_TEST_INCORRECT_SCK_STATE=y
+    extra_args: EXTRA_DTC_OVERLAY_FILE="250khz.overlay"
+    integration_platforms:
+      - nrf52840dk/nrf52840
+
+  drivers.spi.spi_mode1.incorrect_sck_state:
+    extra_configs:
+      - CONFIG_TESTED_SPI_MODE=1
+      - CONFIG_TEST_INCORRECT_SCK_STATE=y
+    extra_args: EXTRA_DTC_OVERLAY_FILE="500khz.overlay"
+    integration_platforms:
+      - nrf52840dk/nrf52840
+
+  drivers.spi.spi_mode2.incorrect_sck_state:
+    extra_configs:
+      - CONFIG_TESTED_SPI_MODE=2
+      - CONFIG_TEST_INCORRECT_SCK_STATE=y
+    extra_args: EXTRA_DTC_OVERLAY_FILE="1mhz.overlay"
+    integration_platforms:
+      - nrf52840dk/nrf52840
+
+  drivers.spi.spi_mode3.incorrect_sck_state:
+    extra_configs:
+      - CONFIG_TESTED_SPI_MODE=3
+      - CONFIG_TEST_INCORRECT_SCK_STATE=y
+    extra_args: EXTRA_DTC_OVERLAY_FILE="2mhz.overlay"
+    integration_platforms:
+      - nrf52840dk/nrf52840
+
   drivers.spi.spi_1M333333Hz:
     extra_configs:
       - CONFIG_TESTED_SPI_MODE=0
