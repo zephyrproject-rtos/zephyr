@@ -764,6 +764,8 @@ static inline uint32_t arch_proc_id(void);
  * however some systems may determine this at runtime instead.
  *
  * @return the number of CPUs
+ *
+ * @satisfies ZEP-SRS-34-4
  */
 static inline unsigned int arch_num_cpus(void);
 
