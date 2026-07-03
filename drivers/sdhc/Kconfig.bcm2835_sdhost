@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BCM2835_SDHOST
+	bool "BCM283x legacy SDHost host controller"
+	default y
+	depends on DT_HAS_BRCM_BCM2835_SDHOST_ENABLED
+	select SDHC_SUPPORTS_NATIVE_MODE
+	help
+	  Enable the Broadcom BCM283x legacy SDHost host controller
+	  driver. Drives the external microSD slot via GPIO 48..53 at
+	  ALT0. Polled implementation of the sdhc.h device API; no IRQ
+	  support yet, no DMA yet.

@@ -1,0 +1,39 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Broadcom BCM283x legacy SDHost host controller.
+
+  Non-Arasan SD controller on the BCM283x SoCs, with a proprietary
+  Broadcom register layout (SDCMD/SDARG/SDHSTS/SDEDM/SDDATA/SDCDIV
+  at offsets 0x00..0x50). Typically drives the external microSD
+  card slot.
+
+compatible: "brcm,bcm2835-sdhost"
+
+include: [sdhc.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Frequency in Hz of the VPU core clock feeding the SDHost
+      reference. The driver scales this down to the bus SD clock
+      via SDCDIV.
+
+  bus-width:
+    type: int
+    default: 4
+    enum:
+      - 1
+      - 4
+    description: |
+      Number of data lines wired between the controller and the
+      card.
