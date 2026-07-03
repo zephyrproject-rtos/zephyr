@@ -563,9 +563,9 @@ static const struct udc_api udc_vrt_api = {
 	}									\
 										\
 	static struct udc_ep_config						\
-		ep_cfg_out[DT_INST_PROP(n, num_bidir_endpoints)];		\
+		ep_cfg_out_##n[DT_INST_PROP(n, num_bidir_endpoints)];		\
 	static struct udc_ep_config						\
-		ep_cfg_in[DT_INST_PROP(n, num_bidir_endpoints)];		\
+		ep_cfg_in_##n[DT_INST_PROP(n, num_bidir_endpoints)];		\
 										\
 	static struct uvb_node udc_vrt_dev_node##n = {				\
 		.name = DT_NODE_FULL_NAME(DT_DRV_INST(n)),			\
@@ -574,8 +574,8 @@ static const struct udc_api udc_vrt_api = {
 										\
 	static const struct udc_vrt_config udc_vrt_config_##n = {		\
 		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),		\
-		.ep_cfg_in = ep_cfg_out,					\
-		.ep_cfg_out = ep_cfg_in,					\
+		.ep_cfg_in = ep_cfg_out_##n,					\
+		.ep_cfg_out = ep_cfg_in_##n,					\
 		.make_thread = udc_vrt_make_thread_##n,				\
 		.dev_node = &udc_vrt_dev_node##n,				\
 		.speed_idx = DT_ENUM_IDX(DT_DRV_INST(n), maximum_speed),	\
