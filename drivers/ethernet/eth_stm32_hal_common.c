@@ -399,6 +399,9 @@ static const struct ethernet_api eth_api = {
 				ETH_STM32_HAL_COMMON_CLOCK_SELECTION(n)                            \
 			},                                                                         \
 		},                                                                                 \
+		.rx_int_sem = Z_SEM_INITIALIZER(eth##n##_data.rx_int_sem, 0, K_SEM_MAX_LIMIT),     \
+		IF_ENABLED(CONFIG_ETH_STM32_HAL_API_V2,                                            \
+			(.tx_int_sem = Z_SEM_INITIALIZER(eth##n##_data.tx_int_sem, 0, 1),))        \
 	}
 
 #define ETH_STM32_HAL_COMMON_DT_INST_DEFN(n)                                                       \

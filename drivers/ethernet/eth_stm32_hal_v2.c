@@ -662,10 +662,6 @@ int eth_stm32_hal_init(const struct device *dev)
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
-	/* Initialize semaphores */
-	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
-	k_sem_init(&dev_data->tx_int_sem, 0, 1);
-
 	for (uint16_t i = 0; i < ETH_TXBUFNB; ++i) {
 		dev_data->tx_buffer_header[i].tx_buff.buffer = cfg->dma_buf->tx_buf[i];
 	}
