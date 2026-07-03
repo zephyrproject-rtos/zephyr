@@ -46,6 +46,12 @@ class Dt(WestCommand):
             help="list devicetree nodes",
             description="List nodes from build/zephyr/zephyr.dts.",
         )
+        list_parser.add_argument(
+            "-l",
+            "--long",
+            action="store_true",
+            help="show node reference and status",
+        )
         list_parser.set_defaults(handler=self._run_list)
 
         return parser
@@ -53,7 +59,7 @@ class Dt(WestCommand):
     def do_run(self, args, _unknown):
         args.handler(args)
 
-    def _run_list(self, _args):
+    def _run_list(self, args):
         dts = Path("build") / "zephyr" / "zephyr.dts"
 
         if not dts.is_file():
@@ -66,8 +72,29 @@ class Dt(WestCommand):
         except OSError as e:
             self.die(f"failed to open {dts}: {e}")
 
-        for node in self._walk(dt.root):
-            self.inf(self._format_path(node.path))
+        nodes = list(self._walk(dt.root))
+
+        if args.long:
+            self._print_long(nodes)
+        else:
+            for node in nodes:
+                self.inf(self._format_path(node.path))
+
+    def _print_long(self, nodes):
+        rows = [
+            (
+                self._node_ref(node),
+                self._node_status(node),
+                self._format_path(node.path),
+            )
+            for node in nodes
+        ]
+
+        ref_width = max(len(ref) for ref, _status, _path in rows)
+        status_width = max(len(status) for _ref, status, _path in rows)
+
+        for ref, status, path in rows:
+            self.inf(f"{ref:<{ref_width}}  {status:<{status_width}}  {path}")
 
     def _walk(self, node):
         yield node
@@ -80,3 +107,24 @@ class Dt(WestCommand):
             return "."
 
         return f".{path}"
+
+    def _node_ref(self, node):
+        if node.labels:
+            return f"&{node.labels[0]}"
+
+        return f"&{{{node.path}}}"
+
+    def _node_status(self, node):
+        prop = node.props.get("status")
+        if prop is None:
+            return "okay"
+
+        try:
+            status = prop.to_string()
+        except dtlib.DTError:
+            return "<invalid>"
+
+        if status == "ok":
+            return "okay"
+
+        return status
