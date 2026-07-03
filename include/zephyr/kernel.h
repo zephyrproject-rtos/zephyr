@@ -7311,6 +7311,8 @@ static inline void k_cpu_atomic_idle(unsigned int key)
  *
  * If this is called from ISR context, the default system fatal error handler
  * will treat it as an unrecoverable system error, just like k_panic().
+ *
+ * @satisfies ZEP-SRS-16-5
  */
 #define k_oops()	z_except_reason(K_ERR_KERNEL_OOPS)
 
@@ -7321,6 +7323,8 @@ static inline void k_cpu_atomic_idle(unsigned int key)
  * unrecoverable runtime condition and needs to terminate. What this ultimately
  * means is determined by the _fatal_error_handler() implementation, which
  * will be called with reason code K_ERR_KERNEL_PANIC.
+ *
+ * @satisfies ZEP-SRS-16-6
  */
 #define k_panic()	z_except_reason(K_ERR_KERNEL_PANIC)
 
