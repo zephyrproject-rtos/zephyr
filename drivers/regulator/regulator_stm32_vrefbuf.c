@@ -13,6 +13,22 @@
 
 LOG_MODULE_REGISTER(regulator_stm32_vrefbuf, CONFIG_REGULATOR_LOG_LEVEL);
 
+/*
+ * Do we need to compile support code for VREFBUF without active scale change?
+ * For now, support only configurations where all instances either have it or not.
+ * This can be changed in the future if necessary by saving the property's value
+ * in the device config and replacing compile-time with runtime checks.
+ *
+ * Note: NASC = Non-Active Scale Change
+ */
+#if DT_ALL_INST_HAS_BOOL_STATUS_OKAY(st_has_active_scale_change)
+#define NEEDS_NASC_SUPPORT 0
+#else /* DT_ALL_INST_HAS_BOOL_STATUS_OKAY(st_has_active_scale_change) */
+BUILD_ASSERT(UTIL_NOT(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(st_has_active_scale_change)),
+	     "All instances must have the same value for property st,has-active-scale-change");
+#define NEEDS_NASC_SUPPORT 1
+#endif /* DT_ALL_INST_HAS_BOOL_STATUS_OKAY(st_has_active_scale_change) */
+
 struct regulator_stm32_vrefbuf_voltage {
 	uint32_t vrs; /* LL_VREFBUF_VOLTAGE_SCALE<X> */
 	int32_t uv;   /* VREFBUF output in uV with this scale */
@@ -76,6 +92,27 @@ static int regulator_stm32_vrefbuf_set_voltage(const struct device *dev, int32_t
 	const struct regulator_stm32_vrefbuf_config *config = dev->config;
 	uint32_t best_vrs = 0;
 	int32_t best_voltage = INT32_MAX;
+	bool regulator_enabled;
+	int res = -EINVAL;
+
+	if (NEEDS_NASC_SUPPORT) {
+		/*
+		 * On some series, the regulator must be disabled to change voltage scale.
+		 *
+		 * Enable Hi-Z to switch the regulator in "Hold mode" if the VREF+ output
+		 * is enabled to maintain VREF+ pin voltage while we temporarily disable
+		 * the regulator. Otherwise, the output isn't used (Hi-Z already enabled)
+		 * so disabling the regulator doesn't really matter...
+		 *
+		 * Note that we perform the operations unconditionally to reduce code size
+		 * because they are idempotent (no effect if already in the desired state).
+		 * Also, there is no LL function to check if the regulator is enabled so
+		 * we have to do it using a raw register access.
+		 */
+		regulator_enabled = (VREFBUF->CSR & VREFBUF_CSR_ENVR) != 0U;
+		LL_VREFBUF_EnableHIZ();
+		LL_VREFBUF_Disable();
+	}
 
 	/* Search among supported voltages for the closest one at least equal
 	 * to minimum requested by caller. Note that all configurations must
@@ -90,13 +127,25 @@ static int regulator_stm32_vrefbuf_set_voltage(const struct device *dev, int32_t
 		}
 	}
 
-	if (best_voltage == INT32_MAX) {
-		return -EINVAL;
+	if (best_voltage != INT32_MAX) {
+		LL_VREFBUF_SetVoltageScaling(best_vrs);
+		res = 0;
 	}
 
-	LL_VREFBUF_SetVoltageScaling(best_vrs);
+	if (NEEDS_NASC_SUPPORT) {
+		/*
+		 * Regardless of whether we changed scale,
+		 * undo changes we have done in the prologue.
+		 */
+		if (config->vrefp_output_enable) {
+			LL_VREFBUF_DisableHIZ();
+		}
+		if (regulator_enabled) {
+			LL_VREFBUF_Enable();
+		}
+	}
 
-	return 0;
+	return res;
 }
 
 static int regulator_stm32_vrefbuf_get_voltage(const struct device *dev, int32_t *volt_uv)
