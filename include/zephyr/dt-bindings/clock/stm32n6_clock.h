@@ -5,6 +5,7 @@
  */
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32N6_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32N6_CLOCK_H_
+/** @cond INTERNAL_HIDDEN */
 
 #include "stm32_common_clocks.h"
 
@@ -223,4 +224,5 @@
 /* ADC prescaler division factor helper */
 #define ADC_PRE_DIV(pres)	((pres - 1) & 0xFFU)
 
+/** @endcond */
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32N6_CLOCK_H_ */
