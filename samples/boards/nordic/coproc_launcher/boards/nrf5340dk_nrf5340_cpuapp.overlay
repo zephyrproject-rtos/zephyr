@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	nrf-gpio-forwarder {
+		compatible = "nordic,nrf-gpio-forwarder";
+		status = "okay";
+
+		all {
+			/* P0.0 and P0.1 allocated to LFXO */
+			gpios = <&gpio0 2 0>,
+				<&gpio0 3 0>,
+				<&gpio0 4 0>,
+				<&gpio0 5 0>,
+				<&gpio0 6 0>,
+				<&gpio0 7 0>,
+				<&gpio0 8 0>,
+				<&gpio0 9 0>,
+				<&gpio0 10 0>,
+				<&gpio0 11 0>,
+				<&gpio0 12 0>,
+				<&gpio0 13 0>,
+				<&gpio0 14 0>,
+				<&gpio0 15 0>,
+				<&gpio0 16 0>,
+				<&gpio0 17 0>,
+				<&gpio0 18 0>,
+				<&gpio0 19 0>,
+				<&gpio0 20 0>,
+				<&gpio0 21 0>,
+				<&gpio0 22 0>,
+				<&gpio0 23 0>,
+				<&gpio0 24 0>,
+				<&gpio0 25 0>,
+				<&gpio0 26 0>,
+				<&gpio0 27 0>,
+				<&gpio0 28 0>,
+				<&gpio0 29 0>,
+				<&gpio0 30 0>,
+				<&gpio0 31 0>,
+				<&gpio1 0 0>,
+				<&gpio1 1 0>,
+				<&gpio1 2 0>,
+				<&gpio1 3 0>,
+				<&gpio1 4 0>,
+				<&gpio1 5 0>,
+				<&gpio1 6 0>,
+				<&gpio1 7 0>,
+				<&gpio1 8 0>,
+				<&gpio1 9 0>,
+				<&gpio1 10 0>,
+				<&gpio1 11 0>,
+				<&gpio1 12 0>,
+				<&gpio1 13 0>,
+				<&gpio1 14 0>,
+				<&gpio1 15 0>;
+		};
+	};
+};

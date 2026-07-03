@@ -18,3 +18,4 @@ supported:
   - spi
   - uart
   - counter
+sysbuild: true

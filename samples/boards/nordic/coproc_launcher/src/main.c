@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&grtc {
-	owned-channels = <5 6>;
-	nonsecure-channels = <5 6>;
-};
+int main(void)
+{
+	return 0;
+}

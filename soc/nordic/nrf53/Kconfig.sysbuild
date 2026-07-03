@@ -1,0 +1,9 @@
+# Copyright 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF5340_CPUNET
+
+config HAS_NORDIC_COPROC_LAUNCHER_IMAGE
+	default y
+
+endif

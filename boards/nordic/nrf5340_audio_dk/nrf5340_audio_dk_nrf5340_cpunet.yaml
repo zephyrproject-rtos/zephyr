@@ -10,3 +10,4 @@ flash: 256
 supported:
   - watchdog
 vendor: nordic
+sysbuild: true
