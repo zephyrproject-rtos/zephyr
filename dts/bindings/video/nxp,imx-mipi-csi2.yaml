@@ -1,0 +1,82 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+title: NXP i.MX MIPI CSI-2 Host Controller
+
+description: |
+  This binding describes the NXP i.MX MIPI CSI-2 receiver controller.
+
+  The CSI-2 controller is used to capture video streams from an upstream
+  CSI-2 compliant source such as a camera sensor or test generator.
+
+  It is integrated into the video pipeline using the devicetree graph
+  bindings (ports and endpoints).
+
+  Users must define input and output ports and connect them to the
+  corresponding video components.
+
+compatible: "nxp,imx-mipi-csi2"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  phys:
+    type: phandle
+    required: true
+    description: PHY device phandle
+
+child-binding:
+  child-binding:
+    child-binding:
+      include: video-interfaces.yaml
+
+examples:
+  - |
+    mipi_dphy: dphy@4ad20000 {
+        compatible = "nxp,imx95-dphy-rx";
+        reg = <0x4ad20000 0x10000>;
+        clocks = <&scmi_clk IMX95_CLK_MIPIPHYCFG>;
+        clock-names = "phy_cfg";
+        power-domains = <&camera_mix>;
+        #phy-cells = <0>;
+        status = "okay";
+    };
+
+    mipi_csi: csi@4ad30000 {
+        compatible = "nxp,imx-mipi-csi2";
+        reg = <0x4ad30000 0x10000>;
+        phys = <&mipi_dphy>;
+        clocks = <&scmi_clk IMX95_CLK_CAMAPB>;
+        clock-names = "pixel";
+        power-domains = <&camera_mix>;
+        status = "okay";
+
+        ports {
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            port@0 {
+                reg = <0>;
+
+                csi_in: endpoint {
+                    remote-endpoint = <&gen_ep_out>;
+                    bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+                    data-lanes = <1 2 3 4>;
+                };
+            };
+        };
+    };
+
+    video_gen: video {
+        compatible = "vnd,video-single-port";
+        status = "okay";
+
+        port {
+            gen_ep_out: endpoint {
+                remote-endpoint = <&csi_in>;
+            };
+        };
+    };
