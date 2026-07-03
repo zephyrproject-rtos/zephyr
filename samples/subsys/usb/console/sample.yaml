@@ -14,4 +14,4 @@ tests:
       - mimxrt1060_evk/mimxrt1062/qspi
     harness: console
     harness_config:
-      fixture: fixture_usb_cdc
+      fixture: usb_host_connected
