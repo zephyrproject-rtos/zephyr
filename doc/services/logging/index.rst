@@ -529,7 +529,7 @@ A log message has the following format:
 +------------------+----------------------------------------------------+
 | Message Header   | 2 bits: MPSC packet buffer header                  |
 |                  +----------------------------------------------------+
-|                  | 1 bit: Trace/Log message flag                      |
+|                  | 1 bit: 0 - Log message type                        |
 |                  +----------------------------------------------------+
 |                  | 3 bits: Domain ID                                  |
 |                  +----------------------------------------------------+
