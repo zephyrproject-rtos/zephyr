@@ -312,6 +312,20 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			break;
 		}
 
+		/*
+		 * TLS sections (e.g. .tbss/.tdata) are not loaded as runtime
+		 * regions in an llext: the extension executes in one of the
+		 * loader's threads and shares that thread's TLS block. Local-exec
+		 * references only need the symbol's thread-pointer-relative offset,
+		 * which is carried in the relocation (st_value + TCB), so the
+		 * section itself is never mapped. Skipping also avoids a TLS
+		 * SHT_NOBITS section colliding with .bss in LLEXT_MEM_BSS.
+		 */
+		if (shdr->sh_flags & SHF_TLS) {
+			LOG_DBG("section %d name %s is TLS, not mapped", i, name);
+			continue;
+		}
+
 		/* Special exception for .exported_sym */
 		if (strcmp(name, ".exported_sym") == 0) {
 			mem_idx = LLEXT_MEM_EXPORT;

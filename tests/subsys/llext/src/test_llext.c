@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
+#include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/fs/fs.h>
@@ -328,6 +329,43 @@ static LLEXT_CONST uint8_t align_ext[] LLEXT_SECT ELF_ALIGN = {
 	#include "align.inc"
 };
 LLEXT_LOAD_UNLOAD(align)
+
+#if defined(CONFIG_ARM64) && defined(CONFIG_THREAD_LOCAL_STORAGE)
+/*
+ * TLS local-exec relocation test (arm64). The extension (tls_ext.c) reads and
+ * writes the thread-local errno through R_AARCH64_TLSLE_ADD_TPREL_* relocations.
+ * An extension shares the loading thread's TLS block, so the errno it touches is
+ * the one set here: setup seeds a sentinel, the extension increments it, and
+ * cleanup checks the result. This exercises both the section handling (.tbss is
+ * not mapped as a region) and the arch relocation arithmetic resolving to the
+ * correct, shared thread-pointer-relative address.
+ */
+#define TLS_ERRNO_SENTINEL 0x1234
+
+static void tls_test_setup(struct llext *ext, struct k_thread *llext_thread)
+{
+	ARG_UNUSED(ext);
+	ARG_UNUSED(llext_thread);
+	errno = TLS_ERRNO_SENTINEL;
+}
+
+static void tls_test_cleanup(struct llext *ext)
+{
+	ARG_UNUSED(ext);
+	zassert_equal(errno, TLS_ERRNO_SENTINEL + 1,
+		      "extension did not read-modify-write the loader's TLS errno "
+		      "(got %d, want %d)", errno, TLS_ERRNO_SENTINEL + 1);
+}
+
+static LLEXT_CONST uint8_t tls_ext[] LLEXT_SECT ELF_ALIGN = {
+	#include "tls.inc"
+};
+LLEXT_LOAD_UNLOAD(tls,
+	.kernel_only = true,
+	.test_setup = tls_test_setup,
+	.test_cleanup = tls_test_cleanup,
+)
+#endif
 
 static LLEXT_CONST uint8_t inspect_ext[] LLEXT_SECT ELF_ALIGN = {
 	#include "inspect.inc"
