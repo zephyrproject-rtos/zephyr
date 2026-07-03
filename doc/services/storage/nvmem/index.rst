@@ -37,6 +37,30 @@ Configuration
 * :kconfig:option:`CONFIG_NVMEM_EEPROM`: Enables NVMEM support for EEPROM devices.
 * :kconfig:option-regex:`CONFIG_NVMEM_FLASH.*`: Configure NVMEM support for flash devices.
 * :kconfig:option-regex:`CONFIG_NVMEM_OTP.*`: Configure NVMEM support for OTP devices.
+* :kconfig:option:`CONFIG_NVMEM_MMIO`: Enables NVMEM support for memory mapped IO regions.
+
+Memory Mapped IO
+****************
+
+A ``fixed-layout`` provider can be marked with the ``mmio`` property to access
+its cells directly through the parent controller's memory mapped IO region
+rather than a device driver API. The controller's ``reg`` property is then
+interpreted as a physical base address. For each read or write, the subsystem
+maps the region on demand as uncached memory, copies the data, and unmaps it
+again. This map-on-demand model fits the infrequent access typical of NVMEM
+cells.
+
+.. warning::
+
+   Reads and writes are plain memory accesses, so the backing memory must
+   behave like RAM: directly memory mapped and byte-writable, such as MRAM,
+   FRAM or battery-backed SRAM.
+
+   Do **not** use ``mmio`` for memory mapped flash. Flash can be read this way,
+   but a write is a plain store that does not perform the erase/program
+   sequence; depending on the hardware it is either ignored or raises a bus
+   fault. For flash, mark the cells ``read-only`` or access them through the
+   flash device API instead.
 
 Devicetree Bindings
 *******************

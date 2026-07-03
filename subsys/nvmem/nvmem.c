@@ -12,12 +12,49 @@
 #include <zephyr/nvmem.h>
 #include <zephyr/sys/__assert.h>
 
+#ifdef CONFIG_NVMEM_MMIO
+
+#include <zephyr/sys/device_mmio.h>
+
+static int nvmem_mmio_read(const struct nvmem_cell *cell, void *buf, off_t off, size_t len)
+{
+	mm_reg_t addr;
+
+	device_map(&addr, cell->phys_addr + cell->offset, cell->size, K_MEM_CACHE_NONE);
+	memcpy(buf, (const void *)(addr + off), len);
+	device_unmap(addr, cell->size);
+
+	return 0;
+}
+
+static int nvmem_mmio_write(const struct nvmem_cell *cell, const void *buf, off_t off, size_t len)
+{
+	mm_reg_t addr;
+
+	device_map(&addr, cell->phys_addr + cell->offset, cell->size, K_MEM_CACHE_NONE);
+	memcpy((void *)(addr + off), buf, len);
+	device_unmap(addr, cell->size);
+
+	return 0;
+}
+
+#else
+
+#define nvmem_mmio_read(...) -ENOTSUP
+#define nvmem_mmio_write(...) -ENOTSUP
+
+#endif
+
 int nvmem_cell_read(const struct nvmem_cell *cell, void *buf, off_t off, size_t len)
 {
 	__ASSERT_NO_MSG(cell != NULL);
 
 	if (off < 0 || cell->size < off + len) {
 		return -EINVAL;
+	}
+
+	if (cell->is_mmio) {
+		return nvmem_mmio_read(cell, buf, off, len);
 	}
 
 	if (!device_is_ready(cell->dev)) {
@@ -53,6 +90,10 @@ int nvmem_cell_write(const struct nvmem_cell *cell, const void *buf, off_t off, 
 
 	if (cell->read_only) {
 		return -EROFS;
+	}
+
+	if (cell->is_mmio) {
+		return nvmem_mmio_write(cell, buf, off, len);
 	}
 
 	if (!device_is_ready(cell->dev)) {
