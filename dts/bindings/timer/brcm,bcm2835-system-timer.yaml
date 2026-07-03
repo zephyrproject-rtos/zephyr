@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Broadcom BCM2835 free-running 1 MHz system timer. Provides a 64-bit
+  free-running counter and four 32-bit compare channels; a compare match
+  raises an interrupt. Channels 0 and 2 are used by the VideoCore firmware.
+
+compatible: "brcm,bcm2835-system-timer"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+  interrupts:
+    required: true

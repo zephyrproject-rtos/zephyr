@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BCM2835_SYSTEM_TIMER
+	bool "BCM2835 system timer"
+	default y
+	depends on DT_HAS_BRCM_BCM2835_SYSTEM_TIMER_ENABLED
+	select TICKLESS_CAPABLE
+	help
+	  Kernel system-clock driver for the Broadcom BCM2835 free-running
+	  1 MHz system timer (Raspberry Pi 1 / Zero / Zero W). A compare-channel
+	  match interrupt drives the kernel tick in either tickless or ticking
+	  mode.

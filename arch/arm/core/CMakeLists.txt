@@ -10,6 +10,16 @@ if(CONFIG_SLOW_FLASH_DATA)
   endif()
 endif()
 
+if(CONFIG_CPU_AARCH32_ARMV6)
+  # ARM1176 / ARMv6KZ does NOT support true unaligned access -- a misaligned
+  # LDR returns the aligned word rotated by (addr & 3) * 8 bits instead of
+  # faulting (SCTLR.A=0, the default). GCC's default -munaligned-access
+  # optimises portable byte-shift load idioms into a single LDR, which then
+  # silently returns rotated data when the pointer is not 4-byte aligned.
+  # Force byte loads, as Linux does for pre-ARMv7 in arch/arm/Makefile.
+  zephyr_compile_options(-mno-unaligned-access)
+endif()
+
 zephyr_library_sources(
   fatal.c
   nmi.c
@@ -36,6 +46,7 @@ add_subdirectory_ifdef(CONFIG_ARM_MPU mpu)
 add_subdirectory_ifdef(CONFIG_ARM_AARCH32_MMU mmu)
 
 add_subdirectory_ifdef(CONFIG_CPU_AARCH32_ARM9 arm9)
+add_subdirectory_ifdef(CONFIG_CPU_AARCH32_ARMV6 armv6)
 add_subdirectory_ifdef(CONFIG_CPU_AARCH32_CORTEX_R cortex_a_r)
 add_subdirectory_ifdef(CONFIG_CPU_AARCH32_CORTEX_A cortex_a_r)
 
