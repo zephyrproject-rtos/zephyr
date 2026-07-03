@@ -1,0 +1,66 @@
+# Davicom DM9000 Ethernet driver configuration options
+
+# Copyright (c) 2026 Fuyu Fei
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_DM9000
+	bool "Davicom DM9000 Ethernet Controller"
+	default y
+	depends on DT_HAS_DAVICOM_DM9000_ENABLED
+	select GPIO
+	select MEMC
+	select MDIO
+	help
+	  Davicom DM9000 Ethernet Controller with parallel host interface.
+	  The integrated MII PHY is described as an "ethernet-phy" node on a
+	  "davicom,dm9000-mdio" child bus and managed by the generic phy_mii
+	  driver.
+
+config ETH_DM9000_RX_THREAD_STACK_SIZE
+	int "Stack size for internal incoming packet handler"
+	depends on ETH_DM9000
+	default 1024
+	help
+	  Size of the stack used for internal incoming packet processing.
+
+config ETH_DM9000_RX_THREAD_PRIORITY
+	int "Priority for internal incoming packet handler"
+	depends on ETH_DM9000
+	default 2
+	help
+	  Priority level for internal incoming packet processing.
+
+config ETH_DM9000_TIMEOUT
+	int "IP buffer timeout"
+	depends on ETH_DM9000
+	default 100
+	help
+	  Maximum time in milliseconds that the driver waits for an RX packet
+	  buffer before dropping an Ethernet frame.
+
+config ETH_DM9000_HW_CHECKSUM
+	bool "Use TX and RX hardware checksum offload"
+	depends on ETH_DM9000
+	default y
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
+	help
+	  Offload the IPv4 header, TCP and UDP checksums to the controller's
+	  TCSCR/RCSCSR checksum engine: generate on transmit, and verify-and-
+	  discard on receive (so the network stack can skip the software
+	  checksum). ICMP and IPv6 are left to software. Disable this if the
+	  DM9000A checksum engine mishandles your traffic (for example IP
+	  fragments or packets with IP options).
+
+config ETH_DM9000_DIRECT_IO
+	bool "Direct memory-mapped bus access"
+	depends on ETH_DM9000
+	help
+	  Access the DM9000 index and data ports with plain volatile pointer
+	  dereferences instead of the sys_read16()/sys_write16() helpers. This
+	  omits the data memory barrier that sys_read16()/sys_write16() emit on
+	  some architectures (for example Arm), which measurably speeds up the
+	  per-frame FIFO copy loops. By default the portable sys_read16()/
+	  sys_write16() accessors are used. Enable this only when the controller
+	  is reached through a strongly ordered, non-speculative device-memory
+	  region (the normal case for an external parallel bus such as the STM32
+	  FMC), where the ordering barrier is redundant.
