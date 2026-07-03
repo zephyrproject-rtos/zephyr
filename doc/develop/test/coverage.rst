@@ -201,14 +201,18 @@ to the host filesystem, avoiding the large amount of serial console traffic that
 per-test dumping would otherwise produce; other platforms fall back to the serial
 console transport.
 
-In addition to the usual aggregated report (whose HTML is rendered with
-``genhtml --show-details`` so per-test attribution is browsable), this produces:
+In addition to the usual aggregated coverage report, this produces:
 
 * one ``<scenario>.<test>.info`` tracefile per test under each build's
   ``coverage/tests/`` directory, and
 * ``twister-out/coverage/test_matrix.json``, a machine-readable matrix with a
   ``by_line`` view (``{file: {line: [tests]}}``) and a ``by_test`` view
   (``{test: {file: [lines]}}``).
+
+Per-test attribution is carried by the matrix (and its dashboard), not by the
+aggregated lcov report: each instance's coverage is collapsed to a single
+tracefile before aggregation, so the end-of-run reporting stays proportional to
+the number of instances rather than the total number of test cases.
 
 .. note::
 

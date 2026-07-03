@@ -14,8 +14,10 @@ from twisterlib.coverage import (
     discover_per_test_semihost,
     gcov_json_to_tracefile,
     materialize_canonical_gcda,
+    merge_test_matrices,
     retrieve_tagged_gcov_data,
     sanitize_coverage_name,
+    write_union_tracefile,
 )
 
 TESTDATA_SANITIZE = [
@@ -131,6 +133,49 @@ def test_build_test_matrix(tmp_path):
     assert all("bar.c" not in os.path.basename(k) for k in by_line)
 
 
+def test_write_union_tracefile(tmp_path):
+    # Two per-test tracefiles over the same file; the union sums counts, keeps
+    # a single empty TN, and carries no function records.
+    a = tmp_path / "a.info"
+    a.write_text("TN:t_a\nSF:/w/foo.c\nDA:10,1\nDA:11,0\n"
+                 "BRDA:10,0,0,1\nend_of_record\n")
+    b = tmp_path / "b.info"
+    b.write_text("TN:t_b\nSF:/w/foo.c\nDA:10,2\nDA:12,4\n"
+                 "BRDA:10,0,0,3\nend_of_record\n")
+    out = tmp_path / "union.info"
+    write_union_tracefile([str(a), str(b)], str(out))
+    lines = out.read_text().splitlines()
+
+    assert lines[0] == "TN:"                       # single, empty test name
+    assert not any(line.startswith("FN") for line in lines)
+    assert "DA:10,3" in lines                       # 1 + 2
+    assert "DA:12,4" in lines
+    assert "DA:11,0" in lines
+    assert "BRDA:10,0,0,4" in lines                 # 1 + 3
+    assert "LF:3" in lines and "LH:2" in lines      # 10 and 12 hit, 11 not
+
+
+def test_merge_test_matrices(tmp_path):
+    m1 = tmp_path / "m1.json"
+    m1.write_text(json.dumps({
+        "by_line": {"foo.c": {"10": ["scnA.t1"]}},
+        "by_test": {"scnA.t1": {"foo.c": [10]}},
+    }))
+    m2 = tmp_path / "m2.json"
+    m2.write_text(json.dumps({
+        "by_line": {"foo.c": {"10": ["scnB.t1"], "20": ["scnB.t2"]}},
+        "by_test": {"scnB.t1": {"foo.c": [10]}, "scnB.t2": {"foo.c": [20]}},
+    }))
+    out = tmp_path / "merged.json"
+    merged = merge_test_matrices([str(m1), str(m2)], str(out))
+
+    # Line 10 covered by tests from both instances; union is sorted+deduped.
+    assert merged["by_line"]["foo.c"]["10"] == ["scnA.t1", "scnB.t1"]
+    assert merged["by_line"]["foo.c"]["20"] == ["scnB.t2"]
+    assert set(merged["by_test"]) == {"scnA.t1", "scnB.t1", "scnB.t2"}
+    assert json.loads(out.read_text()) == merged
+
+
 def test_gcov_json_to_tracefile():
     # Two concatenated gcov --stdout objects, and a line (11) reported twice
     # with different counts (its max must win) and with branch data.
@@ -139,7 +184,6 @@ def test_gcov_json_to_tracefile():
             "current_working_directory": "/w",
             "files": [{
                 "file": "/w/foo.c",
-                "functions": [{"name": "fn_a", "start_line": 10, "execution_count": 3}],
                 "lines": [
                     {"line_number": 10, "count": 3, "branches": []},
                     {"line_number": 11, "count": 0,
@@ -152,25 +196,20 @@ def test_gcov_json_to_tracefile():
         + json.dumps({
             "files": [{
                 "file": "/w/bar.c",
-                "functions": [],
                 "lines": [{"line_number": 1, "count": 0, "branches": []}],
             }],
         })
     )
 
-    tf = gcov_json_to_tracefile(text, "scn.test_a", func_end_line=True)
+    tf = gcov_json_to_tracefile(text, "scn.test_a")
     lines = tf.splitlines()
 
     # Test name is reduced to lcov's accepted character set (no dots).
     assert lines[0] == "TN:scn_test_a"
     assert "SF:/w/foo.c" in lines
     assert "SF:/w/bar.c" in lines
-    # function record carries start,end line for lcov 2.x
-    assert "FN:10,10,fn_a" in lines
-    assert "FNDA:3,fn_a" in lines
-    # lcov 1.x style omits the end line
-    tf_v1 = gcov_json_to_tracefile(text, "scn.test_a")
-    assert "FN:10,fn_a" in tf_v1.splitlines()
+    # function records are intentionally not emitted
+    assert not any(line.startswith("FN") for line in lines)
     # line 11 reported twice -> highest count wins
     assert "DA:11,5" in lines
     assert "DA:10,3" in lines

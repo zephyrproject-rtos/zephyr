@@ -358,7 +358,10 @@ class Lcov(CoverageTool):
         cmd = ["genhtml", "--legend", "--branch-coverage",
                "--prefix", self.base_dir,
                "-output-directory", os.path.join(outdir, "coverage")]
-        if self.coverage_per_instance or self.coverage_per_test:
+        # Note: per-test mode does not use --show-details; per-test attribution
+        # is provided by test_matrix.json/the dashboard, and --show-details over
+        # thousands of tests would dominate the run time.
+        if self.coverage_per_instance:
             cmd.append("--show-details")
         cmd += files
         ret = self.run_command(cmd, coveragelog)
@@ -476,8 +479,7 @@ class Lcov(CoverageTool):
             return False
         try:
             tracefile = gcov_json_to_tracefile(
-                proc.stdout.decode("utf-8", "replace"), name,
-                func_end_line=self.is_lcov_v2)
+                proc.stdout.decode("utf-8", "replace"), name)
         except (ValueError, KeyError):
             logger.exception("Failed to parse gcov output for %s", name)
             return False
@@ -726,32 +728,24 @@ def _iter_gcov_json(text):
         yield obj
 
 
-def gcov_json_to_tracefile(text, test_name, func_end_line=False):
+def gcov_json_to_tracefile(text, test_name):
     """Convert gcov --json-format output into an lcov tracefile string.
 
-    Preserves line, branch and function coverage under a single per-test TN
-    record, so the result is equivalent to what "lcov --capture --test-name"
-    would produce for the same gcda, but without lcov's per-invocation cost.
+    Preserves line and branch coverage under a single per-test TN record, so
+    the result is equivalent to what "lcov --capture --test-name" would produce
+    for the same gcda, but without lcov's per-invocation cost.
 
-    The test name is reduced to lcov's accepted character set, and (when
-    func_end_line is set, i.e. for lcov 2.x) function records carry the end
-    line, avoiding "invalid characters" and "derive_function_end_line"
-    warnings from lcov when the tracefiles are later merged.
+    The test name is reduced to lcov's accepted character set to avoid lcov's
+    "invalid characters" warning when the tracefiles are later merged. Function
+    records are intentionally omitted: gcov's per-function execution counts and
+    end lines are reported inconsistently across per-test dumps and would make
+    the tracefiles fail lcov's consistency checks when merged.
     """
     files = {}
     for obj in _iter_gcov_json(text):
         for entry in obj.get("files", []):
             path = entry["file"]
-            rec = files.setdefault(path, {"lines": {}, "branches": {}, "funcs": {}})
-            for fn in entry.get("functions", []):
-                name = fn.get("name")
-                if name is None:
-                    continue
-                start = fn.get("start_line", 0)
-                end = fn.get("end_line", start)
-                prev = rec["funcs"].get(name)
-                rec["funcs"][name] = (start, end, (prev[2] if prev else 0)
-                                      + fn.get("execution_count", 0))
+            rec = files.setdefault(path, {"lines": {}, "branches": {}})
             for line in entry.get("lines", []):
                 num, count = line["line_number"], line.get("count", 0)
                 rec["lines"][num] = max(rec["lines"].get(num, 0), count)
@@ -769,17 +763,6 @@ def gcov_json_to_tracefile(text, test_name, func_end_line=False):
     for path in sorted(files):
         rec = files[path]
         out.append(f"SF:{path}")
-        funcs = rec["funcs"]
-        for name, (start, end, _count) in sorted(funcs.items()):
-            out.append(f"FN:{start},{end},{name}" if func_end_line
-                       else f"FN:{start},{name}")
-        fnh = 0
-        for name, (_start, _end, count) in sorted(funcs.items()):
-            out.append(f"FNDA:{count},{name}")
-            fnh += count > 0
-        if funcs:
-            out.append(f"FNF:{len(funcs)}")
-            out.append(f"FNH:{fnh}")
         brf = brh = 0
         for num in sorted(rec["branches"]):
             for idx, count in enumerate(rec["branches"][num]):
@@ -862,6 +845,111 @@ def build_test_matrix(info_files, out_json, base_dir=None):
     return matrix
 
 
+def merge_test_matrices(matrix_files, out_json):
+    """Union several per-instance coverage matrices into an aggregate one.
+
+    Merging the (already relative-pathed and filtered) per-instance
+    test_matrix.json files avoids re-parsing every per-test tracefile at the
+    end of a run, keeping the aggregate step proportional to the number of
+    instances rather than the number of tests.
+    """
+    by_line = collections.defaultdict(lambda: collections.defaultdict(set))
+    by_test = collections.defaultdict(lambda: collections.defaultdict(set))
+    for matrix_file in matrix_files:
+        try:
+            with open(matrix_file) as fp:
+                matrix = json.load(fp)
+        except (OSError, ValueError):
+            logger.error("Unable to read matrix: %s", matrix_file)
+            continue
+        for src, lines in matrix.get("by_line", {}).items():
+            for lineno, tests in lines.items():
+                by_line[src][int(lineno)].update(tests)
+        for test, srcs in matrix.get("by_test", {}).items():
+            for src, lns in srcs.items():
+                by_test[test][src].update(lns)
+
+    merged = {
+        "by_line": {
+            src: {str(ln): sorted(tests) for ln, tests in sorted(lines.items())}
+            for src, lines in sorted(by_line.items())
+        },
+        "by_test": {
+            test: {src: sorted(lns) for src, lns in sorted(srcs.items())}
+            for test, srcs in sorted(by_test.items())
+        },
+    }
+    with open(out_json, "w") as fp:
+        json.dump(merged, fp, indent=2, sort_keys=True)
+    return merged
+
+
+def write_union_tracefile(info_files, out_info):
+    """Merge per-test tracefiles into a single, untagged union tracefile.
+
+    Per-test attribution is carried by the coverage matrix, not by lcov, so the
+    per-instance report is collapsed to one TN. This keeps the end-of-run
+    aggregation (and genhtml) proportional to the number of instances rather
+    than the number of individual tests, which is what makes large per-test
+    runs tractable.
+    """
+    files = {}
+    for info in info_files:
+        source = None
+        rec = None
+        try:
+            with open(info) as fp:
+                for raw in fp:
+                    line = raw.rstrip("\n")
+                    if line.startswith("SF:"):
+                        source = line[3:]
+                        rec = files.setdefault(source, {"da": {}, "brda": {}})
+                    elif rec is None:
+                        continue
+                    elif line.startswith("DA:"):
+                        num, _, rest = line[3:].partition(",")
+                        count = int(rest.split(",")[0]) if rest else 0
+                        num = int(num)
+                        rec["da"][num] = rec["da"].get(num, 0) + count
+                    elif line.startswith("BRDA:"):
+                        ln, block, branch, taken = line[5:].split(",")
+                        key = (int(ln), block, branch)
+                        val = 0 if taken == "-" else int(taken)
+                        rec["brda"][key] = rec["brda"].get(key, 0) + val
+                    elif line == "end_of_record":
+                        source = None
+                        rec = None
+        except OSError:
+            logger.error("Unable to read tracefile: %s", info)
+
+    out = []
+    for source in sorted(files):
+        rec = files[source]
+        out.append("TN:")
+        out.append(f"SF:{source}")
+        brf = brh = 0
+        for (ln, block, branch) in sorted(rec["brda"]):
+            count = rec["brda"][(ln, block, branch)]
+            out.append(f"BRDA:{ln},{block},{branch},{count}")
+            brf += 1
+            brh += count > 0
+        if brf:
+            out.append(f"BRF:{brf}")
+            out.append(f"BRH:{brh}")
+        lf = lh = 0
+        for num in sorted(rec["da"]):
+            count = rec["da"][num]
+            out.append(f"DA:{num},{count}")
+            lf += 1
+            lh += count > 0
+        out.append(f"LF:{lf}")
+        out.append(f"LH:{lh}")
+        out.append("end_of_record")
+    with open(out_info, "w") as fp:
+        fp.write("\n".join(out) + "\n")
+    return out_info
+
+
 def run_per_test_coverage(options, instance):
     """Capture per-test coverage for one instance and build its matrix."""
     coverage_tool = CoverageTool.factory(options.coverage_tool, jobs=options.jobs)
@@ -881,13 +969,11 @@ def run_per_test_coverage(options, instance):
         if not infos:
             logger.debug(f"No per-test coverage data for {instance.name}")
             return
-        # Merge the per-test tracefiles into the instance report so the standard
-        # aggregation picks up every per-test TN record.
-        merged = os.path.join(build_dir, "coverage.info")
-        cmd = ["--output-file", merged]
-        for info in infos:
-            cmd += ["--add-tracefile", info]
-        coverage_tool.run_lcov(cmd, coveragelog)
+
+    # Collapse the per-test tracefiles into a single untagged instance report.
+    # Per-test detail lives in the matrix, so the aggregation stays proportional
+    # to the number of instances rather than the number of tests.
+    write_union_tracefile(infos, os.path.join(build_dir, "coverage.info"))
 
     build_test_matrix(
         infos, os.path.join(build_dir, "coverage", "test_matrix.json"),
@@ -1069,17 +1155,16 @@ def run_coverage(options, testplan) -> tuple[bool, dict]:
                                coverage_report=True)
 
     if getattr(options, "coverage_per_test", False):
-        infos = []
-        for instance in testplan.instances.values():
-            infos += glob.glob(
-                os.path.join(instance.build_dir, "coverage", "tests", "*.info"))
-        if infos:
+        matrix_files = [
+            os.path.join(instance.build_dir, "coverage", "test_matrix.json")
+            for instance in testplan.instances.values()
+        ]
+        matrix_files = [m for m in matrix_files if os.path.exists(m)]
+        if matrix_files:
             matrix_dir = os.path.join(options.outdir, "coverage")
             os.makedirs(matrix_dir, exist_ok=True)
             json_path = os.path.join(matrix_dir, "test_matrix.json")
-            build_test_matrix(
-                infos, json_path,
-                base_dir=os.path.abspath(options.coverage_basedir))
+            merge_test_matrices(matrix_files, json_path)
             logger.info(f"Per-test coverage matrix generated: {json_path}")
             logger.info("Render it with "
                         "scripts/gen_test_matrix_dashboard.py -i "
