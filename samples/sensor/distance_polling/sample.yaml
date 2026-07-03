@@ -12,3 +12,4 @@ tests:
     filter: dt_alias_exists("distance0")
     integration_platforms:
       - arduino_nicla_vision/stm32h747xx/m7     # vl53l1x
+      - esp32_devkitc_wroom                      # hc-sr04
