@@ -26,7 +26,7 @@ to boot a remote core.
 
 .. note::
    It is recommended to use sample setups from
-   :zephyr_file:`samples/sysbuild/hello_world/sample.yaml` using the
+   :zephyr_file:`samples/sysbuild/hello_world/tests.yaml` using the
    ``-T`` option. This will ensure any additional settings (remote board, snippets, etc.)
    are automatically applied.
 
@@ -42,7 +42,7 @@ Here's an example to build and flash the sample for the
    :compact:
 
 The same can be achieved by using the
-:zephyr_file:`samples/sysbuild/hello_world/sample.yaml` setup:
+:zephyr_file:`samples/sysbuild/hello_world/tests.yaml` setup:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sysbuild/hello_world
