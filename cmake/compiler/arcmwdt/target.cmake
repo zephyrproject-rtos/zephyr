@@ -2,6 +2,8 @@
 find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}ccac PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 find_program(CMAKE_CXX_COMPILER ${CROSS_COMPILE}ccac PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 find_program(CMAKE_ASM_COMPILER ${CROSS_COMPILE}ccac PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_LLVM_COV ${CROSS_COMPILE}llvm-cov PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+set(CMAKE_GCOV "${CMAKE_LLVM_COV} gcov" CACHE FILEPATH "Path to a program.")
 
 # The CMAKE_REQUIRED_FLAGS variable is used by check_c_compiler_flag()
 # (and other commands which end up calling check_c_source_compiles())
