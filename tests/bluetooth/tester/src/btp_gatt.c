@@ -849,7 +849,7 @@ static uint8_t set_value(const void *cmd, uint16_t cmd_len,
 {
 	const struct btp_gatt_set_value_cmd *cp = cmd;
 	struct set_value cmd_data;
-	uint16_t attr_id;
+	uint16_t attr_handle;
 	uint8_t status;
 
 	if ((cmd_len < sizeof(*cp)) ||
@@ -857,24 +857,33 @@ static uint8_t set_value(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	attr_id = sys_le16_to_cpu(cp->attr_id);
-	if (attr_id > SERVER_MAX_ATTRIBUTES) {
-		return BTP_STATUS_FAILED;
-	}
+	attr_handle = sys_le16_to_cpu(cp->attr_id);
 
 	/* Pre-set btp_status */
 	cmd_data.value = cp->value;
 	cmd_data.len = sys_le16_to_cpu(cp->len);
 
-	if (attr_id == 0) {
+	if (attr_handle == 0) {
 		status = alloc_value(LAST_DB_ATTR, &cmd_data);
 	} else {
-		/* set value of local attr, corrected by pre set attr handles */
-		status = alloc_value(&server_db[attr_id - server_db[0].handle],
-				     &cmd_data);
+		struct bt_gatt_attr *attr = NULL;
+
+		for (uint16_t i = 0; i < attr_count; i++) {
+			if (server_db[i].handle == attr_handle) {
+				attr = &server_db[i];
+				break;
+			}
+		}
+
+		/* Fail if no matching attribute was found in tester db */
+		if (attr == NULL) {
+			return BTP_STATUS_FAILED;
+		}
+
+		status = alloc_value(attr, &cmd_data);
 	}
 
-	return BTP_STATUS_SUCCESS;
+	return status;
 }
 
 static uint8_t start_server(const void *cmd, uint16_t cmd_len,
