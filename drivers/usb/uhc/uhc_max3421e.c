@@ -433,7 +433,8 @@ static int max3421e_schedule_xfer(const struct device *dev)
 		/* Do not restart last transfer */
 		hrsl = 0;
 
-		priv->last_xfer = uhc_xfer_get_next(dev, priv->frame_number);
+		priv->last_xfer =
+			uhc_xfer_get_next(dev, priv->frame_number, UHC_XFER_MASK_ALL, NULL, NULL);
 		if (priv->last_xfer == NULL) {
 			LOG_DBG("Nothing to transfer");
 			return 0;
