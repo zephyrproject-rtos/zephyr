@@ -64,6 +64,11 @@ FUNC_NORETURN void k_fatal_halt(unsigned int reason);
  * @param reason The reason for the fatal error
  * @param esf Exception context, with details and partial or full register
  *            state when the error occurred. May in some cases be NULL.
+ *
+ * @satisfies ZEP-SRS-16-2
+ * @satisfies ZEP-SRS-16-3
+ * @satisfies ZEP-SRS-16-4
+ * @satisfies ZEP-SRS-16-7
  */
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf);
 
@@ -80,6 +85,10 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf);
  * @param reason The reason for the fatal error
  * @param esf Exception context, with details and partial or full register
  *            state when the error occurred. May in some cases be NULL.
+ *
+ * @satisfies ZEP-SRS-16-1
+ * @satisfies ZEP-SRS-16-7
+ * @satisfies ZEP-SRS-16-8
  */
 void z_fatal_error(unsigned int reason, const struct arch_esf *esf);
 
