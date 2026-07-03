@@ -34,6 +34,7 @@ Peripherals
    entropy.rst
    edac/index.rst
    flash.rst
+   flash_simulator.rst
    fuel_gauge.rst
    gnss.rst
    gpio.rst
