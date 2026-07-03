@@ -843,9 +843,17 @@ ZTEST(userspace_domain, test_domain_add_part_drop_to_user)
 {
 	clear_fault();
 
-	zassert_equal(
-		k_mem_domain_add_partition(&k_mem_domain_default, &alt_part),
-		0, "failed to add memory partition");
+	int ret = k_mem_domain_add_partition(&k_mem_domain_default, &alt_part);
+
+	if (ret == -ENOSPC) {
+		/* The default domain is full. On MPU targets with few regions
+		 * (e.g. mps2/an385) an extra static region -- such as the gcov
+		 * coverage accounting area under CONFIG_COVERAGE_GCOV -- leaves
+		 * no free slot for alt_part, so this scenario cannot run.
+		 */
+		ztest_test_skip();
+	}
+	zassert_equal(ret, 0, "failed to add memory partition");
 
 	drop_user(&alt_bool);
 }
@@ -865,9 +873,16 @@ ZTEST(userspace_domain, test_domain_remove_part_drop_to_user)
 	 */
 	set_fault(K_ERR_CPU_EXCEPTION);
 
-	zassert_equal(
-		k_mem_domain_remove_partition(&k_mem_domain_default, &alt_part),
-		0, "failed to remove partition");
+	int ret = k_mem_domain_remove_partition(&k_mem_domain_default, &alt_part);
+
+	if (ret == -ENOENT) {
+		/* The matching add test skipped (default domain full), so
+		 * alt_part was never added and there is nothing to remove.
+		 */
+		clear_fault();
+		ztest_test_skip();
+	}
+	zassert_equal(ret, 0, "failed to remove partition");
 
 	drop_user(&alt_bool);
 }
@@ -898,9 +913,17 @@ ZTEST(userspace_domain_ctx, test_domain_add_part_context_switch)
 {
 	clear_fault();
 
-	zassert_equal(
-		k_mem_domain_add_partition(&k_mem_domain_default, &alt_part),
-		0, "failed to add memory partition");
+	int ret = k_mem_domain_add_partition(&k_mem_domain_default, &alt_part);
+
+	if (ret == -ENOSPC) {
+		/* The default domain is full. On MPU targets with few regions
+		 * (e.g. mps2/an385) an extra static region -- such as the gcov
+		 * coverage accounting area under CONFIG_COVERAGE_GCOV -- leaves
+		 * no free slot for alt_part, so this scenario cannot run.
+		 */
+		ztest_test_skip();
+	}
+	zassert_equal(ret, 0, "failed to add memory partition");
 
 	spawn_user(&alt_bool);
 }
@@ -920,9 +943,16 @@ ZTEST(userspace_domain_ctx, test_domain_remove_part_context_switch)
 	 */
 	set_fault(K_ERR_CPU_EXCEPTION);
 
-	zassert_equal(
-		k_mem_domain_remove_partition(&k_mem_domain_default, &alt_part),
-		0, "failed to remove memory partition");
+	int ret = k_mem_domain_remove_partition(&k_mem_domain_default, &alt_part);
+
+	if (ret == -ENOENT) {
+		/* The matching add test skipped (default domain full), so
+		 * alt_part was never added and there is nothing to remove.
+		 */
+		clear_fault();
+		ztest_test_skip();
+	}
+	zassert_equal(ret, 0, "failed to remove memory partition");
 
 	spawn_user(&alt_bool);
 }
