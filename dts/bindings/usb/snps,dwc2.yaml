@@ -51,3 +51,12 @@ properties:
     description: |
       Value of the GHWCFG4 register. It is used to determine available endpoint
       types during driver pre-initialization.
+
+  dr-mode:
+    type: string
+    enum:
+      - "host"
+      - "peripheral"
+    description: |
+      Role of the dual-role controller. For now, this property is used to
+      force the controller's role. Dual mode is not yet supported.
