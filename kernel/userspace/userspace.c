@@ -836,6 +836,17 @@ void k_thread_perms_inherit(struct k_thread *parent, struct k_thread *child)
 	perms_inherit_index(thread_index_get(parent), thread_index_get(child), parent);
 }
 
+/**
+ * @brief Record that a thread has permission on a kernel object.
+ *
+ * Sets the thread's bit in the object's permission bitfield -- the
+ * kernel's per-object record of which user mode threads may use it.
+ *
+ * @param ko Kernel object metadata.
+ * @param thread Thread to be granted permission.
+ *
+ * @satisfies ZEP-SRS-8-16
+ */
 void k_thread_perms_set(struct k_object *ko, struct k_thread *thread)
 {
 	perms_set_index(ko, thread_index_get(thread));
@@ -1173,6 +1184,15 @@ K_KERNEL_INIT_PRE(app_shmem_bss_zero);
  * Default handlers if otherwise unimplemented
  */
 
+/**
+ * @brief Handle a system call with an invalid ID.
+ *
+ * Invoked by the system call dispatcher when a user thread requests a
+ * system call number outside the system call table. Logs the bad ID and
+ * raises a kernel oops against the offending caller.
+ *
+ * @satisfies ZEP-SRS-8-5
+ */
 static uintptr_t handler_bad_syscall(uintptr_t bad_id, uintptr_t arg2,
 				     uintptr_t arg3, uintptr_t arg4,
 				     uintptr_t arg5, uintptr_t arg6,
@@ -1189,6 +1209,15 @@ static uintptr_t handler_bad_syscall(uintptr_t bad_id, uintptr_t arg2,
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 
+/**
+ * @brief Handle an unimplemented system call.
+ *
+ * Installed in the system call table for every valid system call number
+ * whose implementation is not present in this build. Raises a kernel
+ * oops against the offending caller.
+ *
+ * @satisfies ZEP-SRS-8-4
+ */
 static uintptr_t handler_no_syscall(uintptr_t arg1, uintptr_t arg2,
 				    uintptr_t arg3, uintptr_t arg4,
 				    uintptr_t arg5, uintptr_t arg6, void *ssf)
