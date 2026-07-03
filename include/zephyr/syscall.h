@@ -82,6 +82,7 @@ extern "C" {
  * @return system call return value, or 0 if the system call implementation
  *         return void
  *
+ * @satisfies ZEP-SRS-8-10
  */
 typedef uintptr_t (*_k_syscall_handler_t)(uintptr_t arg1, uintptr_t arg2,
 					  uintptr_t arg3, uintptr_t arg4,
@@ -116,6 +117,8 @@ static ALWAYS_INLINE bool z_syscall_trap(void)
  * a memory barrier before the privileged operation. Both the compiler and the CPU may reorder
  * memory operations around the branch. Without a barrier, memory accesses related to the privileged
  * path may move before the context check or be speculated.
+ *
+ * @satisfies ZEP-SRS-8-3
  */
 static inline bool k_is_user_context(void)
 {

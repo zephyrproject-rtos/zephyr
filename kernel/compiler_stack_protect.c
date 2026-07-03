@@ -29,8 +29,13 @@
  * @brief Stack canary error handler
  *
  * This function is invoked when a stack canary error is detected.
+ * Corruption of a function's stack frame guard value is treated as a
+ * fatal software error (K_ERR_STACK_CHK_FAIL).
  *
  * @note This function does not return.
+ *
+ * @satisfies ZEP-SRS-8-12
+ * @satisfies ZEP-SRS-8-25
  */
 void _StackCheckHandler(void)
 {
@@ -42,12 +47,18 @@ void _StackCheckHandler(void)
 
 /* Global variable */
 
-/*
+/**
+ * @brief Stack canary guard value.
+ *
  * Symbol referenced by GCC compiler generated code for canary value.
- * The canary value gets initialized in z_cstart().
+ * The canary value gets initialized in z_cstart(). When thread-local
+ * stack canaries (CONFIG_STACK_CANARIES_TLS) are enabled the guard is
+ * thread-local storage, giving each thread its own canary value.
  *
  * With LTO, the compiler emits the canary references only after the
  * link-time symbol resolution, so mark the symbol used to keep it global.
+ *
+ * @satisfies ZEP-SRS-8-26
  */
 #ifdef CONFIG_STACK_CANARIES_TLS
 #ifdef CONFIG_STACK_CANARIES_TLS_PREPEND
