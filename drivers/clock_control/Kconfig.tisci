@@ -11,6 +11,6 @@ config CLOCK_CONTROL_TISCI
 config CLOCK_CONTROL_TISCI_PRIORITY
 	int "TISCI Clock Controller Priority"
 	default KERNEL_INIT_PRIORITY_DEFAULT
+	depends on CLOCK_CONTROL_TISCI
 	help
-		TISCI clock controller priority should always be equal or greater
-		than the TISCI priority.
+	  TISCI clock controller priority should always be equal or greater than the TISCI priority
