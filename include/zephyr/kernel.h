@@ -7098,6 +7098,8 @@ struct k_poll_event {
  *             event.
  * @param mode Future. Use K_POLL_MODE_NOTIFY_ONLY.
  * @param obj Kernel object or poll signal.
+ *
+ * @satisfies ZEP-SRS-33-2
  */
 
 void k_poll_event_init(struct k_poll_event *event, uint32_t type,
@@ -7144,6 +7146,10 @@ void k_poll_event_init(struct k_poll_event *event, uint32_t type,
  *         K_POLL_STATE_CANCELLED.
  * @retval -ENOMEM Thread resource pool insufficient memory (user mode only)
  * @retval -EINVAL Bad parameters (user mode only)
+ *
+ * @satisfies ZEP-SRS-33-1
+ * @satisfies ZEP-SRS-33-3
+ * @satisfies ZEP-SRS-33-4
  */
 
 __syscall int k_poll(struct k_poll_event *events, int num_events,
@@ -7155,6 +7161,9 @@ __syscall int k_poll(struct k_poll_event *events, int num_events,
  * Ready a poll signal object to be signaled via k_poll_signal_raise().
  *
  * @param sig A poll signal.
+ *
+ * @satisfies ZEP-SRS-33-5
+ * @satisfies ZEP-SRS-33-6
  */
 
 __syscall void k_poll_signal_init(struct k_poll_signal *sig);
@@ -7163,6 +7172,8 @@ __syscall void k_poll_signal_init(struct k_poll_signal *sig);
  * @brief Reset a poll signal object's state to unsignaled.
  *
  * @param sig A poll signal object
+ *
+ * @satisfies ZEP-SRS-33-9
  */
 __syscall void k_poll_signal_reset(struct k_poll_signal *sig);
 
@@ -7175,6 +7186,8 @@ __syscall void k_poll_signal_reset(struct k_poll_signal *sig);
  * @param result An integer destination buffer which will be written with the
  *		   result value if the object was signaled, or an undefined
  *		   value if it was not.
+ *
+ * @satisfies ZEP-SRS-33-10
  */
 __syscall void k_poll_signal_check(struct k_poll_signal *sig,
 				   unsigned int *signaled, int *result);
@@ -7201,6 +7214,9 @@ __syscall void k_poll_signal_check(struct k_poll_signal *sig,
  *
  * @retval 0 The signal was delivered successfully.
  * @retval -EAGAIN The polling thread's timeout is in the process of expiring.
+ *
+ * @satisfies ZEP-SRS-33-7
+ * @satisfies ZEP-SRS-33-8
  */
 
 __syscall int k_poll_signal_raise(struct k_poll_signal *sig, int result);
