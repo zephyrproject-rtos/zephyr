@@ -6,7 +6,9 @@ common:
 tests:
   drivers.watchdog.build:
     # will cover drivers without in-tree boards
-    platform_allow: qemu_cortex_m3
+    platform_allow:
+      - qemu_cortex_m3
+      - sr100_rdk/sr100
     extra_args: "CONFIG_WATCHDOG=y"
   drivers.watchdog.build.i2c:
     extra_args: DTC_OVERLAY_FILE="i2c_devices.overlay"
