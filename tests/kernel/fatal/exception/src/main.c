@@ -648,6 +648,16 @@ ZTEST(fatal_exception, test_fatal_stack_hw_overflow_fpu)
  */
 ZTEST(fatal_exception, test_fatal_stack_hw_overflow_user)
 {
+#if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_MPU)
+	/* The gcov accounting area consumes a static MPU region; on
+	 * small-MPU targets (e.g. mps2/an385) that leaves too few regions
+	 * to also program the user thread's stack guard, so an overflow
+	 * surfaces as a plain data-access violation rather than a detected
+	 * stack overflow. HW stack protection can't be validated here.
+	 * MMU targets are unaffected, so the case still runs there.
+	 */
+	ztest_test_skip();
+#endif
 	TC_PRINT("test stack HW-based overflow - user 1\n");
 	check_stack_overflow(stack_hw_overflow, K_USER);
 
