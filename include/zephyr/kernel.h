@@ -1491,6 +1491,8 @@ void k_thread_time_slice_set(struct k_thread *th, int32_t slice_ticks,
  *
  * @return false if invoked by a thread.
  * @return true if invoked by an ISR.
+ *
+ * @satisfies ZEP-SRS-7-13
  */
 bool k_is_in_isr(void);
 
