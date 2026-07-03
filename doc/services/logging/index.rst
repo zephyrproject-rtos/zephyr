@@ -556,6 +556,37 @@ A log message has following format:
 .. [#l0] Depending on the platform and the timestamp size fields may be swapped.
 .. [#l1] It may be required for cbprintf package alignment
 
+Compressed log message
+----------------------
+
+Compressed log message format is used for the most common log messages (0-2 32 bit word arguments).
+More than 80% of the log messages in the Zephyr code base fit into this category.
+It is faster to create and takes less memory in the logger buffer. For example, if timestamp has
+32 bits, compressed message with 0 arguments takes 8 bytes while standard takes 20 bytes.
+Compressed message support is enabled by :kconfig:option:`CONFIG_LOG_SIMPLE_MSG_COMPRESS`.
+
+Compressed log message has the following format:
+
++------------------+----------------------------------------------------+
+| Message Header   | 2 bits: MPSC packet buffer header                  |
+|                  +----------------------------------------------------+
+|                  | 1 bit: 1 - Compressed log message type             |
+|                  +----------------------------------------------------+
+|                  | 3 bits: Level                                      |
+|                  +----------------------------------------------------+
+|                  | 2 bits: Number of arguments (0-2)                  |
+|                  +----------------------------------------------------+
+|                  | 12 bits: Source ID                                 |
+|                  +----------------------------------------------------+
+|                  | 12 bits: String ID                                 |
+|                  +----------------------------------------------------+
+|                  | 32 or 64 bits: Timestamp                           |
+|                  +----------------------------------------------------+
+|                  | 32 bit Optional argument 0                         |
+|                  +----------------------------------------------------+
+|                  | 32 bit Optional argument 1                         |
++------------------+----------------------------------------------------+
+
 Log message allocation
 ----------------------
 
