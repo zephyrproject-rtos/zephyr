@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2025-2026 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &storage_partition;
+
+&ext_flash_ctrl {
+	status = "okay";
+};
+
+&ext_flash {
+	status = "okay";
+
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		storage_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "nor";
+			reg = <0x00000000 DT_SIZE_M(1)>;
+		};
+	};
+};

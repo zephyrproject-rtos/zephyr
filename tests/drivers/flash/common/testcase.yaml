@@ -210,13 +210,17 @@ tests:
       fixture: external_flash
     extra_args:
       - CONFIG_TEST_FORCE_STORAGE_PARTITION=y
-  drivers.flash.common.ra_ospi_b_nor:
+  drivers.flash.common.ra8_ospi_b_nor:
     platform_allow:
       - ek_ra8m1
       - ek_ra8d1
+      - ek_ra8p1/r7ka8p1kflcac/cm85
+      - ek_ra8d2/r7ka8d2kflcac/cm85
+      - ek_ra8m2/r7ka8m2jflcac/cm85
+      - ek_ra8t2/r7ka8t2lflcac/cm85
     extra_args:
-      - DTC_OVERLAY_FILE="./boards/${BOARD}_ospi_b_nor.overlay"
-      - CONF_FILE="./prj.conf ./boards/${BOARD}_ospi_b_nor.conf"
+      - DTC_OVERLAY_FILE="./socs/ra8_ospi_b_nor.overlay"
+      - CONF_FILE="./prj.conf ./socs/ra8_ospi_b_nor.conf"
   drivers.flash.common.mspi_single_io:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp

@@ -12,7 +12,17 @@ config FLASH_RENESAS_RA_OSPI_B
 	select FLASH_HAS_EXPLICIT_ERASE
 	select USE_RA_FSP_OSPI_B_NOR_FLASH
 	select FLASH_JESD216
-	select FLASH_HAS_EX_OP
 	select PINCTRL
 	help
 	  Enable Octal-SPI Nor flash driver for RA series
+
+if FLASH_RENESAS_RA_OSPI_B
+
+config RENESAS_RA_OSPI_B_HEAP_SIZE
+	int "OSPI_B runtime heap size"
+	default 700
+	help
+	  Set the size of the runtime heap for OSPI_B driver.
+	  This heap is used for dynamic memory allocation during runtime.
+
+endif
