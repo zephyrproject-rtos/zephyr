@@ -16,7 +16,7 @@ LOG_LEVEL_SET(CONFIG_MSPI_LOG_LEVEL);
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/mspi.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/irq.h>
 #include <../dts/common/mem.h>
 
