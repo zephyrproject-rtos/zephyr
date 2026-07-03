@@ -29,6 +29,8 @@ extern "C" {
  * @def K_MEM_PARTITION_DEFINE
  *
  * @brief Statically declare a memory partition
+ *
+ * @satisfies ZEP-SRS-8-19
  */
 #ifdef _ARCH_MEM_PARTITION_ALIGN_CHECK
 #define K_MEM_PARTITION_DEFINE(name, start, size, attr) \
@@ -132,6 +134,9 @@ struct k_mem_partition;
  * @retval 0 if successful
  * @retval -EINVAL if invalid parameters supplied
  * @retval -ENOMEM if insufficient memory
+ *
+ * @satisfies ZEP-SRS-8-1
+ * @satisfies ZEP-SRS-8-20
  */
 int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 			     struct k_mem_partition *parts[]);
@@ -173,6 +178,9 @@ int k_mem_domain_deinit(struct k_mem_domain *domain);
  * @retval 0 if successful
  * @retval -EINVAL if invalid parameters supplied
  * @retval -ENOSPC if no free partition slots available
+ *
+ * @satisfies ZEP-SRS-8-17
+ * @satisfies ZEP-SRS-8-21
  */
 int k_mem_domain_add_partition(struct k_mem_domain *domain,
 				      struct k_mem_partition *part);
@@ -188,6 +196,8 @@ int k_mem_domain_add_partition(struct k_mem_domain *domain,
  * @retval 0 if successful
  * @retval -EINVAL if invalid parameters supplied
  * @retval -ENOENT if no matching partition found
+ *
+ * @satisfies ZEP-SRS-8-22
  */
 int k_mem_domain_remove_partition(struct k_mem_domain *domain,
 					 struct k_mem_partition *part);
@@ -202,6 +212,9 @@ int k_mem_domain_remove_partition(struct k_mem_domain *domain,
  * @param thread ID of thread going to be added into the memory domain.
  *
  * @return 0 if successful, fails otherwise.
+ *
+ * @satisfies ZEP-SRS-8-23
+ * @satisfies ZEP-SRS-8-24
  */
 int k_mem_domain_add_thread(struct k_mem_domain *domain,
 				   k_tid_t thread);

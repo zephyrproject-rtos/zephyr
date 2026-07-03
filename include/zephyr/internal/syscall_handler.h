@@ -238,6 +238,8 @@ void k_object_recycle(const void *obj);
  *	first maxlen bytes.
  * @note This is an internal API. Do not use unless you are extending
  *       functionality in the Zephyr tree.
+ *
+ * @satisfies ZEP-SRS-8-15
  */
 static inline size_t k_usermode_string_nlen(const char *src, size_t maxlen,
 					int *err)
@@ -313,6 +315,8 @@ int k_usermode_to_copy(void *dst, const void *src, size_t size);
  * @return The duplicated string, or NULL if an error occurred.
  * @note This is an internal API. Do not use unless you are extending
  *       functionality in the Zephyr tree.
+ *
+ * @satisfies ZEP-SRS-8-15
  */
 char *k_usermode_string_alloc_copy(const char *src, size_t maxlen);
 
@@ -519,6 +523,24 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
 #define K_SYSCALL_MEMORY_ARRAY_WRITE(ptr, nmemb, size) \
 	K_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 1)
 
+/**
+ * @brief Validate a kernel object pointer passed in from user mode
+ *
+ * Helper for system call handler functions: checks that the untrusted
+ * pointer refers to a valid kernel object of the expected type, that it
+ * satisfies the initialization requirement, and that the calling thread
+ * has permission on it, before the implementation function is invoked.
+ *
+ * @param ko Kernel object metadata (from k_object_find()), or NULL
+ * @param obj Untrusted object pointer as passed from user mode
+ * @param otype Expected kernel object type
+ * @param init Object initialization state check
+ * @return 0 on success, nonzero on failure
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
+ *
+ * @satisfies ZEP-SRS-8-14
+ */
 static inline int k_object_validation_check(struct k_object *ko,
 					 const void *obj,
 					 enum k_objects otype,

@@ -89,6 +89,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf);
  * @satisfies ZEP-SRS-16-1
  * @satisfies ZEP-SRS-16-7
  * @satisfies ZEP-SRS-16-8
+ * @satisfies ZEP-SRS-8-11
  */
 void z_fatal_error(unsigned int reason, const struct arch_esf *esf);
 

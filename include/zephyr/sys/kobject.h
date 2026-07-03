@@ -89,6 +89,8 @@ enum k_objects {
  *
  * @param object Address of kernel object
  * @param thread Thread to grant access to the object
+ *
+ * @satisfies ZEP-SRS-8-2
  */
 __syscall void k_object_access_grant(const void *object,
 				     struct k_thread *thread);
@@ -102,6 +104,8 @@ __syscall void k_object_access_grant(const void *object,
  *
  * @param object Address of kernel object
  * @param thread Thread to remove access to the object
+ *
+ * @satisfies ZEP-SRS-8-7
  */
 void k_object_access_revoke(const void *object, struct k_thread *thread);
 
@@ -135,6 +139,7 @@ void k_object_access_revoke_others(const void *object);
  *
  * @param object The object to be released
  *
+ * @satisfies ZEP-SRS-8-7
  */
 __syscall void k_object_release(const void *object);
 
