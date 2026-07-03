@@ -818,7 +818,8 @@ TESTDATA_13 = [
         'product',
         None,
         ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
-         '--runner', 'runner', 'param1', 'param2']
+         '--runner', 'runner', '--base-param1', '--base-param2',
+         '--', '--runner-param1', '--runner-param2']
     ),
 
     (
@@ -827,7 +828,8 @@ TESTDATA_13 = [
         'product',
         None,
         ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
-         '--runner', 'pyocd', 'param1', 'param2', '--', '--dev-id', 12345]
+         '--runner', 'pyocd', '--base-param1', '--base-param2',
+         '--', '--dev-id', 12345, '--runner-param1', '--runner-param2']
     ),
     (
         None,
@@ -835,7 +837,8 @@ TESTDATA_13 = [
         'product',
         None,
         ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
-         '--runner', 'nrfjprog', 'param1', 'param2', '--', '--dev-id', 12345]
+         '--runner', 'nrfjprog', '--base-param1', '--base-param2',
+         '--', '--dev-id', 12345, '--runner-param1', '--runner-param2']
     ),
     (
         None,
@@ -843,8 +846,8 @@ TESTDATA_13 = [
         'STM32 STLink',
         None,
         ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
-         '--runner', 'openocd', 'param1', 'param2',
-         '--', '--cmd-pre-init', 'hla_serial 12345']
+         '--runner', 'openocd', '--base-param1', '--base-param2',
+         '--', '--cmd-pre-init', 'hla_serial 12345', '--runner-param1', '--runner-param2']
     ),
     (
         None,
@@ -852,8 +855,8 @@ TESTDATA_13 = [
         'STLINK-V3',
         None,
         ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
-         '--runner', 'openocd', 'param1', 'param2',
-         '--', '--cmd-pre-init', 'hla_serial 12345']
+         '--runner', 'openocd', '--base-param1', '--base-param2',
+         '--', '--cmd-pre-init', 'hla_serial 12345', '--runner-param1', '--runner-param2']
     ),
     (
         None,
@@ -861,8 +864,17 @@ TESTDATA_13 = [
         'EDBG CMSIS-DAP',
         None,
         ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
-         '--runner', 'openocd', 'param1', 'param2',
-         '--', '--cmd-pre-init', 'cmsis_dap_serial 12345']
+         '--runner', 'openocd', '--base-param1', '--base-param2',
+         '--', '--cmd-pre-init', 'cmsis_dap_serial 12345', '--runner-param1', '--runner-param2']
+    ),
+    (
+        None,
+        'openocd',
+        'Raspberry Pi Debug Probe (CMSIS-DAP)',
+        None,
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
+         '--runner', 'openocd', '--base-param1', '--base-param2',
+         '--', '--cmd-pre-init', 'cmsis_dap_serial 12345', '--runner-param1', '--runner-param2']
     ),
     (
         None,
@@ -871,7 +883,8 @@ TESTDATA_13 = [
         None,
         ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'jlink', '--dev-id', 12345,
-         'param1', 'param2']
+         '--base-param1', '--base-param2',
+         '--', '--runner-param1', '--runner-param2']
     ),
     (
         None,
@@ -880,7 +893,8 @@ TESTDATA_13 = [
         None,
         ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'stm32cubeprogrammer', '--dev-id', 12345,
-         'param1', 'param2']
+         '--base-param1', '--base-param2',
+         '--', '--runner-param1', '--runner-param2']
     ),
     (
         None,
@@ -908,8 +922,8 @@ TESTDATA_13_2 = [(True), (False)]
     ids=['default', '--west-flash', 'one west flash value',
          'multiple west flash values', 'generic runner', 'pyocd',
          'nrfjprog', 'openocd, STM32 STLink', 'openocd, STLINK-v3',
-         'openocd, EDBG CMSIS-DAP', 'jlink', 'stm32cubeprogrammer',
-         'flash_command', 'flash_command with args']
+         'openocd, EDBG CMSIS-DAP', 'openocd, Raspberry Pi Debug Probe (CMSIS-DAP)',
+         'jlink', 'stm32cubeprogrammer', 'flash_command', 'flash_command with args']
 )
 @pytest.mark.parametrize('hardware_probe', TESTDATA_13_2, ids=['probe', 'id'])
 def test_devicehandler_create_command(
@@ -934,7 +948,8 @@ def test_devicehandler_create_command(
         product=hardware_product_name,
         probe_id=12345 if hardware_probe else None,
         id=12345 if not hardware_probe else None,
-        runner_params=['param1', 'param2'],
+        base_params=['--base-param1', '--base-param2'],
+        runner_params=['--runner-param1', '--runner-param2'],
         west_flash_cmd=None
     )
 
