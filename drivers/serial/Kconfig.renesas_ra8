@@ -9,10 +9,27 @@ config UART_RA8_SCI_B
 	select SERIAL_SUPPORT_INTERRUPT
 	select SERIAL_SUPPORT_ASYNC
 	select USE_RA_FSP_SCI_B_UART
-	select USE_RA_FSP_DTC if UART_ASYNC_API
 	select PINCTRL
 	help
 	  Enable Renesas RA SCI_B UART Driver.
+
+config UART_RA8_SCI_B_UART_DTC
+	bool "Renesas RA SCI_B UART DTC"
+	default ($(dt_compat_any_has_prop,$(DT_COMPAT_RENESAS_RA8_UART_SCI_B),rx-dtc,True) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_RENESAS_RA8_UART_SCI_B),tx-dtc,True))
+	depends on UART_RA8_SCI_B && UART_ASYNC_API
+	select USE_RA_FSP_DTC
+	help
+	  Enable DTC (Data Transfer Controller) support for the SCI-B UART Driver of RA family.
+
+config UART_RA8_SCI_B_UART_DMAC
+	bool "Renesas RA SCI_B UART DMAC"
+	default $(dt_compat_any_has_prop,$(DT_COMPAT_RENESAS_RA8_UART_SCI_B),dmas)
+	depends on UART_RA8_SCI_B && UART_ASYNC_API
+	select USE_RA_FSP_DMA
+	help
+	  Enable DMAC (Direct Memory Access Controller) support for the
+	  SCI-B UART Driver of RA family.
 
 if UART_RA8_SCI_B && (UART_INTERRUPT_DRIVEN || UART_ASYNC_API)
 
