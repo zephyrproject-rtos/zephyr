@@ -261,6 +261,15 @@ ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_permission)
 	zassert_not_null(stack[0]);
 
 	stack[1] = k_thread_stack_alloc(CONFIG_DYNAMIC_THREAD_STACK_SIZE, K_USER);
+	if (stack[1] == NULL) {
+		/* Not enough memory for a second dynamic user stack on this
+		 * target (e.g. under CONFIG_COVERAGE_GCOV, whose accounting
+		 * area reduces available RAM). Can't exercise the two-thread
+		 * permission scenario here.
+		 */
+		zassert_ok(k_thread_stack_free(stack[0]));
+		ztest_test_skip();
+	}
 	zassert_not_null(stack[1]);
 
 	k_thread_access_grant(k_current_get(), &perm_sem);
