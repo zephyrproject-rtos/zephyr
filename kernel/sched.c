@@ -46,9 +46,21 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state, k_spinlock_k
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
 
 #ifndef CONFIG_SMP
-/* Uniprocessor selection of the next thread, used to refresh the ready
- * queue cache. The SMP scheduler selects its next thread at the context
- * switch instead, in kernel/smp/sched_smp.c.
+/**
+ * @brief Select the thread that should run next on this CPU.
+ *
+ * Uniprocessor selection of the next thread, used to refresh the ready
+ * queue cache; the SMP scheduler selects its next thread at the context
+ * switch instead, in kernel/smp/sched_smp.c. Picks the highest-priority
+ * ready thread (falling back to the idle thread when none is ready).
+ * Within a priority level the run queue is ordered by readiness, so the
+ * thread that became ready earliest is selected; the current thread wins
+ * priority ties unless it yielded.
+ *
+ * @return The thread to make current.
+ *
+ * @satisfies ZEP-SRS-2-12
+ * @satisfies ZEP-SRS-2-13
  */
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
@@ -345,6 +357,23 @@ void z_thread_timeout(struct _timeout *timeout)
 }
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
 
+/**
+ * @brief Block the current thread on a wait queue until an event occurs.
+ *
+ * Removes the current thread from the run queue, pends it on @a wait_q
+ * (optionally with a timeout) and switches to the next ready thread. The
+ * thread is scheduled again when the awaited event is signalled via the
+ * wait queue (see z_sched_wake()) or the timeout expires.
+ *
+ * @param lock Caller's spinlock, released as part of the swap.
+ * @param key Key from the caller's k_spin_lock().
+ * @param wait_q Wait queue on which the current thread pends.
+ * @param timeout Maximum time to remain pended.
+ *
+ * @return The swap return value set by the waker.
+ *
+ * @satisfies ZEP-SRS-2-4
+ */
 int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	       _wait_q_t *wait_q, k_timeout_t timeout)
 {
