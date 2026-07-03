@@ -60,10 +60,10 @@ config I2C_STM32_V2_TIMING
 
 config I2C_STM32_V2_DMA
 	bool "DMA support"
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_I2C_V2),dmas)
 	depends on I2C_STM32_V2
 	select DMA
 	select CACHE_MANAGEMENT if DCACHE
-	select EXPERIMENTAL
 	help
 	  Enable DMA support for the STM32 I2C driver.
 

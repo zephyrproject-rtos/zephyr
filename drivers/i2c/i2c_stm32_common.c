@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/cache.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/dma.h>
@@ -15,6 +16,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/policy.h>
+#include <stm32_cache.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -27,6 +29,41 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_common);
 #endif
 
 #include "i2c_stm32.h"
+
+#ifdef CONFIG_I2C_STM32_V2_DMA
+bool i2c_stm32_xfer_will_use_dma(const struct i2c_stm32_config *cfg, void *buf, size_t len, bool tx)
+{
+	uintptr_t dest_addr = (uintptr_t)buf;
+
+	if (tx) {
+		if (cfg->tx_dma.dev_dma == NULL) {
+			return false;
+		}
+
+		if (stm32_buf_in_nocache(dest_addr, len)) {
+			return true;
+		}
+
+		return sys_cache_data_flush_range(buf, len) == 0;
+	}
+
+	if (cfg->rx_dma.dev_dma == NULL) {
+		return false;
+	}
+
+	if (stm32_buf_in_nocache(dest_addr, len)) {
+		return true;
+	}
+
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
+	if (((dest_addr | len) % CONFIG_DCACHE_LINE_SIZE) == 0) {
+		return true;
+	}
+#endif /* CONFIG_CACHE_MANAGEMENT && CONFIG_DCACHE */
+
+	return false;
+}
+#endif /* CONFIG_I2C_STM32_V2_DMA */
 
 #ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
 void i2c_stm32_combined_isr(void *arg)
@@ -208,10 +245,6 @@ void i2c_stm32_dma_rx_cb(const struct device *dma_dev __unused, void *user_data 
 
 #define I2C_STM32_INIT(index)									\
 	I2C_STM32_IRQ_HANDLER_DECL(index);							\
-												\
-	BUILD_ASSERT(!IS_ENABLED(CONFIG_I2C_STM32_V2_DMA) ||					\
-		     (DT_INST_DMAS_HAS_NAME(index, tx) == DT_INST_DMAS_HAS_NAME(index, rx)),	\
-		     "STM32 I2C requires either none or both of rx and tx DMAs are used");	\
 												\
 	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2), (				\
 	static const uint32_t i2c_timings_##index[] = DT_INST_PROP_OR(index, timings, {});	\

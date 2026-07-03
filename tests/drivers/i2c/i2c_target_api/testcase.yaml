@@ -14,40 +14,53 @@ tests:
       - disco_l475_iot1
       - esp32h2_devkitm
       - esp32s3_devkitc/esp32s3/procpu
-      - nucleo_f746zg
-      - nucleo_g474re
+      - mr_canhubk3
+      - nucleo_c071rb
+      - nucleo_c5a3zg
       - nucleo_f091rc
+      - nucleo_f207zg
+      - nucleo_f401re
+      - nucleo_f429zi
+      - nucleo_f746zg
+      - nucleo_g071rb
+      - nucleo_g474re
+      - nucleo_h503rb
+      - nucleo_h563zi
+      - nucleo_h753zi
+      - nucleo_l073rz
+      - nucleo_l152re
+      - nucleo_l476rg
+      - nucleo_n657x0_q/stm32n657xx/sb
+      - nucleo_u083rc
+      - nucleo_u385rg_q
+      - nucleo_wb55rg
+      - nucleo_wba55cg
+      - nucleo_wl55jc
+      - rpi_pico
+      - sltb010a@0
       - stm32f072b_disco
       - stm32f3_disco
       - stm32h573i_dk
       - stm32l562e_dk
       - stm32n6570_dk/stm32n657xx/sb
       - stm32u083c_dk
-      - nucleo_c071rb
-      - nucleo_c5a3zg
-      - nucleo_g071rb
-      - nucleo_f207zg
-      - nucleo_f401re
-      - nucleo_f429zi
-      - nucleo_h503rb
-      - nucleo_h753zi
-      - nucleo_l073rz
-      - nucleo_l152re
-      - nucleo_u083rc
-      - nucleo_u385rg_q
-      - nucleo_wba55cg
-      - nucleo_wb55rg
-      - nucleo_wl55jc
-      - rpi_pico
-      - sltb010a@0
-      - mr_canhubk3
     integration_platforms:
-      - nucleo_f091rc
+      - nucleo_h753zi
     extra_configs:
       - CONFIG_APP_DUAL_ROLE_I2C=y
   drivers.i2c.target_api.single_role:
     platform_allow:
+      - frdm_ke17z512
+      - frdm_mcxa156
+      - frdm_mcxa266
+      - frdm_mcxa344
+      - frdm_mcxa346
+      - frdm_mcxa366
+      - frdm_mcxa577
+      - frdm_mcxc242
+      - frdm_mcxn236
       - frdm_mcxn947/mcxn947/cpu0
+      - it51xxx_evb/it51526aw
       - mcx_n9xx_evk/mcxn947/cpu0
       - mcxw72_evk
       - mimxrt1170_evk@B/mimxrt1176/cm7
@@ -56,17 +69,8 @@ tests:
       - mimxrt1180_evk/mimxrt1189/cm7
       - mimxrt1040_evk
       - mimxrt1060_evk/mimxrt1062/qspi
-      - frdm_ke17z512
-      - frdm_mcxn236
-      - frdm_mcxa156
-      - frdm_mcxa346
-      - frdm_mcxa266
-      - frdm_mcxa366
-      - frdm_mcxa344
-      - frdm_mcxc242
-      - frdm_mcxa577
-      - max32655evkit/max32655/m4
       - max32662evkit
+      - max32655evkit/max32655/m4
       - max32666evkit/max32666/cpu0
       - max32670evkit
       - max32672evkit
@@ -83,7 +87,176 @@ tests:
       - ophelia4ev/nrf54l15/cpuapp
       - s32k5xxcvb/s32k566/m7
       - s32k5xxcvb/s32k566/r52
-      - it51xxx_evb/it51526aw
     integration_platforms:
       - max32690evkit/max32690/m4
       - nrf54l15dk/nrf54l15/cpuapp
+  drivers.i2c.target_api.dual_role.rtio:
+    integration_platforms:
+      - nucleo_h753zi
+    platform_allow:
+      - b_u585i_iot02a
+      - disco_l475_iot1
+      - nucleo_c071rb
+      - nucleo_c5a3zg
+      - nucleo_f091rc
+      - nucleo_f746zg
+      - nucleo_g071rb
+      - nucleo_g474re
+      - nucleo_h503rb
+      - nucleo_h563zi
+      - nucleo_h753zi
+      - nucleo_l073rz
+      - nucleo_l476rg
+      - nucleo_n657x0_q/stm32n657xx/sb
+      - nucleo_u083rc
+      - nucleo_u385rg_q
+      - nucleo_wb55rg
+      - nucleo_wba55cg
+      - nucleo_wl55jc
+      - stm32f072b_disco
+      - stm32f3_disco
+      - stm32h573i_dk
+      - stm32l562e_dk
+      - stm32n6570_dk/stm32n657xx/sb
+      - stm32u083c_dk
+    extra_configs:
+      - CONFIG_APP_DUAL_ROLE_I2C=y
+      - CONFIG_I2C_RTIO=y
+  drivers.i2c.target_api.stm32.one_dir_dma:
+    filter: CONFIG_DT_HAS_ST_STM32_I2C_V2_ENABLED
+    platform_allow:
+      - b_u585i_iot02a
+      - disco_l475_iot1
+      - nucleo_c071rb
+      - nucleo_c5a3zg
+      - nucleo_f091rc
+      - nucleo_f746zg
+      - nucleo_g071rb
+      - nucleo_g474re
+      - nucleo_h503rb
+      - nucleo_h563zi
+      - nucleo_h753zi
+      - nucleo_l073rz
+      - nucleo_l476rg
+      - nucleo_n657x0_q/stm32n657xx/sb
+      - nucleo_u083rc
+      - nucleo_u385rg_q
+      - nucleo_wb55rg
+      - nucleo_wba55cg
+      - nucleo_wl55jc
+      - stm32f072b_disco
+      - stm32f3_disco
+      - stm32h573i_dk
+      - stm32l562e_dk
+      - stm32n6570_dk/stm32n657xx/sb
+      - stm32u083c_dk
+    integration_platforms:
+      - nucleo_h753zi
+    extra_configs:
+      - CONFIG_APP_DUAL_ROLE_I2C=y
+      - CONFIG_DCACHE=y
+    extra_args: EXTRA_DTC_OVERLAY_FILE="stm32_one_dir_dma.overlay"
+  drivers.i2c.target_api.stm32.no_dma:
+    filter: CONFIG_DT_HAS_ST_STM32_I2C_V2_ENABLED
+    platform_allow:
+      - b_u585i_iot02a
+      - disco_l475_iot1
+      - nucleo_c071rb
+      - nucleo_c5a3zg
+      - nucleo_f091rc
+      - nucleo_f746zg
+      - nucleo_g071rb
+      - nucleo_g474re
+      - nucleo_h503rb
+      - nucleo_h563zi
+      - nucleo_h753zi
+      - nucleo_l073rz
+      - nucleo_l476rg
+      - nucleo_n657x0_q/stm32n657xx/sb
+      - nucleo_u083rc
+      - nucleo_u385rg_q
+      - nucleo_wb55rg
+      - nucleo_wba55cg
+      - nucleo_wl55jc
+      - stm32f072b_disco
+      - stm32f3_disco
+      - stm32h573i_dk
+      - stm32l562e_dk
+      - stm32n6570_dk/stm32n657xx/sb
+      - stm32u083c_dk
+    integration_platforms:
+      - nucleo_f091rc
+    extra_configs:
+      - CONFIG_APP_DUAL_ROLE_I2C=y
+      - CONFIG_DCACHE=y
+    extra_args: EXTRA_DTC_OVERLAY_FILE="stm32_no_dma.overlay"
+  drivers.i2c.target_api.stm32.rtio.one_dir_dma:
+    filter: CONFIG_DT_HAS_ST_STM32_I2C_V2_ENABLED
+    integration_platforms:
+      - nucleo_h753zi
+    platform_allow:
+      - b_u585i_iot02a
+      - disco_l475_iot1
+      - nucleo_c071rb
+      - nucleo_c5a3zg
+      - nucleo_f091rc
+      - nucleo_f746zg
+      - nucleo_g071rb
+      - nucleo_g474re
+      - nucleo_h503rb
+      - nucleo_h563zi
+      - nucleo_h753zi
+      - nucleo_l073rz
+      - nucleo_l476rg
+      - nucleo_n657x0_q/stm32n657xx/sb
+      - nucleo_u083rc
+      - nucleo_u385rg_q
+      - nucleo_wb55rg
+      - nucleo_wba55cg
+      - nucleo_wl55jc
+      - stm32f072b_disco
+      - stm32f3_disco
+      - stm32h573i_dk
+      - stm32l562e_dk
+      - stm32n6570_dk/stm32n657xx/sb
+      - stm32u083c_dk
+    extra_configs:
+      - CONFIG_APP_DUAL_ROLE_I2C=y
+      - CONFIG_DCACHE=y
+      - CONFIG_I2C_RTIO=y
+    extra_args: EXTRA_DTC_OVERLAY_FILE="stm32_one_dir_dma.overlay"
+  drivers.i2c.target_api.stm32.rtio.no_dma:
+    filter: CONFIG_DT_HAS_ST_STM32_I2C_V2_ENABLED
+    integration_platforms:
+      - nucleo_f091rc
+    platform_allow:
+      - b_u585i_iot02a
+      - disco_l475_iot1
+      - nucleo_c071rb
+      - nucleo_c5a3zg
+      - nucleo_f091rc
+      - nucleo_f746zg
+      - nucleo_g071rb
+      - nucleo_g474re
+      - nucleo_h503rb
+      - nucleo_h563zi
+      - nucleo_h753zi
+      - nucleo_l073rz
+      - nucleo_l476rg
+      - nucleo_n657x0_q/stm32n657xx/sb
+      - nucleo_u083rc
+      - nucleo_u385rg_q
+      - nucleo_wb55rg
+      - nucleo_wba55cg
+      - nucleo_wl55jc
+      - stm32f072b_disco
+      - stm32f3_disco
+      - stm32h573i_dk
+      - stm32l562e_dk
+      - stm32n6570_dk/stm32n657xx/sb
+      - stm32u083c_dk
+    extra_configs:
+      - CONFIG_APP_DUAL_ROLE_I2C=y
+      - CONFIG_DCACHE=y
+      - CONFIG_I2C_RTIO=y
+    extra_args: EXTRA_DTC_OVERLAY_FILE="stm32_no_dma.overlay"

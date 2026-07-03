@@ -1,6 +1,12 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-&i2c1 {
+#define IC2_TEST_0_DMA_TX <&dma1 2 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>
+#define IC2_TEST_0_DMA_RX <&dma1 3 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>
+
+i2c_test_0: &i2c1 {
+	dmas = IC2_TEST_0_DMA_TX, IC2_TEST_0_DMA_RX;
+	dma-names = "tx", "rx";
+
 	eeprom0: eeprom@54 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x54>;
@@ -8,10 +14,20 @@
 	};
 };
 
-&i2c2 {
+#define IC2_TEST_1_DMA_TX <&dma1 4 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>
+#define IC2_TEST_1_DMA_RX <&dma1 5 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>
+
+i2c_test_1: &i2c2 {
+	dmas = IC2_TEST_1_DMA_TX, IC2_TEST_1_DMA_RX;
+	dma-names = "tx", "rx";
+
 	eeprom1: eeprom@56 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x56>;
 		size = <256>;
 	};
+};
+
+&dma1 {
+	status = "okay";
 };

@@ -128,6 +128,7 @@ struct i2c_stm32_data {
 	struct dma_config dma_tx_cfg;
 	struct dma_config dma_rx_cfg;
 	struct dma_block_config dma_blk_cfg;
+	bool using_dma;
 #ifdef CONFIG_I2C_RTIO
 	uint8_t *dma_buf;	/* Base address of the Rx buffer fed by DMA */
 	size_t dma_len;		/* Byte size of the Rx buffer fed by DMA */
@@ -147,6 +148,12 @@ struct i2c_stm32_data {
 extern const struct i2c_driver_api i2c_stm32_driver_api;
 
 int i2c_stm32_init(const struct device *dev);
+
+#ifdef CONFIG_I2C_STM32_V2_DMA
+/* Return true if transfer shall use DMA. If so, also flush buffer on I2C write message */
+bool i2c_stm32_xfer_will_use_dma(const struct i2c_stm32_config *cfg, void *buf, size_t len,
+				 bool rx);
+#endif /* CONFIG_I2C_STM32_V2_DMA */
 
 #ifdef CONFIG_I2C_RTIO
 int i2c_stm32_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf, size_t buf_len,
