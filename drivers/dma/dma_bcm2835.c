@@ -102,23 +102,29 @@ LOG_MODULE_REGISTER(dma_bcm2835, CONFIG_DMA_LOG_LEVEL);
 /* The DMA engine is a VideoCore-bus master and does not see ARM-physical
  * addresses directly. Two ranges matter:
  *
- *   - SDRAM appears at the 0xC0000000 alias (VC L2 disabled -- the
- *     correct alias when the ARM manages its own caches). ARM memory is
- *     identity-mapped (VA == PA) on this SoC, so OR-ing the alias onto
- *     an ARM address yields the bus address.
+ *   - SDRAM appears at a VC-bus alias that differs by SoC. Matches the
+ *     Linux `dma-ranges` in each SoC's dtsi:
+ *       BCM2835: 0x40000000  (L2-coherent alias, ARM manages own L1)
+ *       BCM2710: 0xC0000000  (uncached alias, ARM manages own L1+L2)
+ *     ARM memory is identity-mapped (VA == PA) on both, so OR-ing the
+ *     alias onto an ARM address yields the bus address.
  *
- *   - The peripheral block lives at ARM-physical 0x3F000000..0x3FFFFFFF
- *     but is reached by the DMA master at the 0x7E000000 VideoCore
- *     peripheral window. A peripheral DREQ transfer (an I2S / SPI FIFO
- *     <-> memory copy) hands the driver an ARM peripheral address that
- *     must be re-based here -- OR-ing the SDRAM alias onto it would
- *     point the engine at bogus SDRAM.
+ *   - The peripheral block is reached at VC bus 0x7E000000. On BCM2710
+ *     the ARM view is 0x3F000000..0x3FFFFFFF; on BCM2835 it is
+ *     0x20000000..0x20FFFFFF. The DMA node's own reg address sits inside
+ *     the peripheral window, so masking its top byte gives the ARM base
+ *     at build time without a per-SoC #ifdef.
  *
- * Confirmed against soc/brcm/bcm2710/mmu_regions.c and the BCM2835 ARM
- * Peripherals datasheet ch. 1.2.1 (ARM physical / VC bus address map).
+ * Confirmed against soc/brcm/bcm2710/mmu_regions.c, the BCM2835 ARM
+ * Peripherals datasheet ch. 1.2.1, and Linux
+ * arch/arm/boot/dts/broadcom/{bcm2835,bcm2710}.dtsi `dma-ranges`.
  */
+#if defined(CONFIG_SOC_BCM2835)
+#define DMA_BUS_ALIAS   0x40000000U
+#else
 #define DMA_BUS_ALIAS   0xC0000000U
-#define DMA_PERIPH_ARM  0x3F000000U
+#endif
+#define DMA_PERIPH_ARM  ((uint32_t)DT_INST_REG_ADDR(0) & 0xFF000000U)
 #define DMA_PERIPH_BUS  0x7E000000U
 #define DMA_PERIPH_SIZE 0x01000000U
 
