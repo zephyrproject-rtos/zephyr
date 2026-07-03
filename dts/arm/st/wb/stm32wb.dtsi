@@ -595,6 +595,7 @@
 			reg = <0x40010030 0xd0>;
 			ref-voltages = <2048000>, <2500000>;
 			st,has-active-scale-change;
+			nvmem-cells = <&vref_sc0_otp>, <&vref_sc1_otp>;
 			status = "disabled";
 		};
 

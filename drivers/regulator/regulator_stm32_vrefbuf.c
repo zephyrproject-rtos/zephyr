@@ -29,13 +29,38 @@ BUILD_ASSERT(UTIL_NOT(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(st_has_active_scale_chang
 #define NEEDS_NASC_SUPPORT 1
 #endif /* DT_ALL_INST_HAS_BOOL_STATUS_OKAY(st_has_active_scale_change) */
 
+/* If the BUILD_ASSERT() at end of file trips, extend this block. */
+#if defined(LL_VREFBUF_VOLTAGE_SCALE3)
+#define MAX_VOLTAGE_SCALES_NUM 4
+#elif defined(LL_VREFBUF_VOLTAGE_SCALE2)
+#define MAX_VOLTAGE_SCALES_NUM 3
+#elif defined(LL_VREFBUF_VOLTAGE_SCALE1)
+#define MAX_VOLTAGE_SCALES_NUM 2
+#else
+#define MAX_VOLTAGE_SCALES_NUM 1
+#endif
+
 struct regulator_stm32_vrefbuf_voltage {
+#if defined(CONFIG_REGULATOR_STM32_SOFTWARE_TRIM)
+	/* trimming data location for this voltage scale */
+	struct nvmem_cell trim;
+#endif /* CONFIG_REGULATOR_STM32_SOFTWARE_TRIM */
 	uint32_t vrs; /* LL_VREFBUF_VOLTAGE_SCALE<X> */
 	int32_t uv;   /* VREFBUF output in uV with this scale */
 };
 
 struct regulator_stm32_vrefbuf_data {
 	struct regulator_common_data common;
+#if defined(CONFIG_REGULATOR_STM32_SOFTWARE_TRIM)
+	/*
+	 * Trimming data read from OTP at runtime.
+	 *
+	 * Given that VREFBUF is usually single-instance, and the trimming
+	 * data is very small, it is more efficient to have a fixed-size
+	 * array in the instance data rather than out-of-band.
+	 */
+	uint8_t trim_data[MAX_VOLTAGE_SCALES_NUM];
+#endif /* CONFIG_REGULATOR_STM32_SOFTWARE_TRIM */
 };
 
 struct regulator_stm32_vrefbuf_config {
@@ -90,8 +115,9 @@ static int regulator_stm32_vrefbuf_set_voltage(const struct device *dev, int32_t
 					       int32_t max_uv)
 {
 	const struct regulator_stm32_vrefbuf_config *config = dev->config;
-	uint32_t best_vrs = 0;
 	int32_t best_voltage = INT32_MAX;
+	uint32_t best_vrs = 0;
+	uint8_t best_idx = 0;
 	bool regulator_enabled;
 	int res = -EINVAL;
 
@@ -124,10 +150,17 @@ static int regulator_stm32_vrefbuf_set_voltage(const struct device *dev, int32_t
 		    config->ref_voltages[i].uv < best_voltage) {
 			best_voltage = config->ref_voltages[i].uv;
 			best_vrs = config->ref_voltages[i].vrs;
+			best_idx = i;
 		}
 	}
 
 	if (best_voltage != INT32_MAX) {
+#if defined(CONFIG_REGULATOR_STM32_SOFTWARE_TRIM)
+		/* Trim must be applied while the regulator is off */
+		struct regulator_stm32_vrefbuf_data *data = dev->data;
+
+		LL_VREFBUF_SetTrimming(data->trim_data[best_idx]);
+#endif /* CONFIG_REGULATOR_STM32_SOFTWARE_TRIM */
 		LL_VREFBUF_SetVoltageScaling(best_vrs);
 		res = 0;
 	}
@@ -192,6 +225,26 @@ static int regulator_stm32_vrefbuf_init(const struct device *dev)
 		}
 	}
 
+#if defined(CONFIG_REGULATOR_STM32_SOFTWARE_TRIM)
+	/*
+	 * Read all trimming data at once during initialization
+	 * and cache the values for usage later at runtime.
+	 */
+	struct regulator_stm32_vrefbuf_data *data = dev->data;
+
+	for (uint8_t i = 0; i < config->ref_voltage_count; i++) {
+		uint8_t trim_val;
+
+		res = nvmem_cell_read(&config->ref_voltages[i].trim, &trim_val, sizeof(trim_val));
+		if (res != 0) {
+			LOG_ERR("Could not read trimming data for VRS%u: %d", i, res);
+			return res;
+		}
+
+		data->trim_data[i] = trim_val;
+	}
+#endif /* CONFIG_REGULATOR_STM32_SOFTWARE_TRIM */
+
 	if (config->vrefp_output_enable) {
 		LL_VREFBUF_DisableHIZ();
 	} else {
@@ -212,11 +265,20 @@ static DEVICE_API(regulator, api) = {
 
 #define VREFBUF_VOLTAGE_ELEM(node_id, prop, idx)                                                   \
 	{                                                                                          \
+		IF_ENABLED(CONFIG_REGULATOR_STM32_SOFTWARE_TRIM,                                   \
+			(.trim = NVMEM_DT_CELL_BY_IDX(node_id, idx),))                             \
 		.vrs = CONCAT(LL_VREFBUF_VOLTAGE_SCALE, idx),                                      \
 		.uv = DT_PROP_BY_IDX(node_id, prop, idx)                                           \
 	},
 
 #define REGULATOR_STM32_VREFBUF_DEFINE(inst)                                                       \
+	BUILD_ASSERT(DT_INST_PROP_LEN(inst, ref_voltages) <= MAX_VOLTAGE_SCALES_NUM,               \
+		"Too many voltage scales; please increase MAX_VOLTAGE_SCALES_NUM in the driver!"); \
+                                                                                                   \
+	IF_ENABLED(DT_INST_HAS_PROP(inst, nvmem_cells),                                            \
+	(BUILD_ASSERT(DT_INST_PROP_LEN(inst, nvmem_cells) == DT_INST_PROP_LEN(inst, ref_voltages), \
+	 "On node " DT_NODE_FULL_NAME(DT_DRV_INST(inst)) ": the following properties must have "   \
+	 "the same length but do not: `nvmem-cells` and `ref-voltages`");))                        \
                                                                                                    \
 	static struct regulator_stm32_vrefbuf_data data_##inst;                                    \
 	static const struct regulator_stm32_vrefbuf_voltage ref_voltages_##inst[] = {              \
