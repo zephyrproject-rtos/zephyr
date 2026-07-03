@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 NotioNext Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dht0 = &aht30;
+	};
+};
+
+&esp32s3_box_i2c {
+	status = "okay";
+
+	aht30: aht30@38 {
+		compatible = "aosong,aht30";
+		reg = <0x38>;
+		status = "okay";
+	};
+};
