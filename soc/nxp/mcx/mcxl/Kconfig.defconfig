@@ -10,12 +10,15 @@ config MCUX_CORE_SUFFIX
 		SOC_MCXL253_CPU1
 
 config CORTEX_M_SYSTICK
+	default n if MCUX_OS_TIMER
 	default y
 
 config NUM_IRQS
 	default 161
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(dt_nodelabel_path,ostimer0_clk),clock-frequency) if \
+		MCUX_OS_TIMER
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if \
 		SOC_MCXL255_CPU0 || SOC_MCXL254_CPU0 || SOC_MCXL253_CPU0
 	default $(dt_node_int_prop_int,/cpus/cpu@1,clock-frequency) if \
