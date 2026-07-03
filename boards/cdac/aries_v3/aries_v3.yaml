@@ -1,0 +1,15 @@
+identifier: aries_v3
+name: C-DAC ARIES v3.0
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 256
+supported:
+  - gpio
+  - serial
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
