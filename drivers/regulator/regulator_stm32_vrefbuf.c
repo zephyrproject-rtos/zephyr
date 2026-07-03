@@ -118,15 +118,17 @@ static int regulator_stm32_vrefbuf_get_voltage(const struct device *dev, int32_t
 static int regulator_stm32_vrefbuf_init(const struct device *dev)
 {
 	const struct regulator_stm32_vrefbuf_config *config = dev->config;
+	int res;
 
 	regulator_common_data_init(dev);
 
 	if (config->reset.dev != NULL) {
 		const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-		if (clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]) != 0) {
-			LOG_ERR("Could not enable clock");
-			return -EIO;
+		res = clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]);
+		if (res != 0) {
+			LOG_ERR("Could not enable clock: %d", res);
+			return res;
 		}
 
 		if (!device_is_ready(config->reset.dev)) {
@@ -134,9 +136,10 @@ static int regulator_stm32_vrefbuf_init(const struct device *dev)
 			return -ENODEV;
 		}
 
-		if (reset_line_deassert_dt(&config->reset) != 0) {
-			LOG_ERR("Could not deassert reset line");
-			return -EIO;
+		res = reset_line_deassert_dt(&config->reset);
+		if (res != 0) {
+			LOG_ERR("Could not deassert reset line: %d", res);
+			return res;
 		}
 	}
 
