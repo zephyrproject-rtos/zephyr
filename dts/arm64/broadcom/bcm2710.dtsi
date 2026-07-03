@@ -61,6 +61,13 @@
 	};
 
 	soc {
+		/*
+		 * The DMA engine and other VC-bus masters reach ARM SDRAM
+		 * through the 0xc0000000 uncached alias; DRAM sits below
+		 * the 0x3f000000 peripheral base.
+		 */
+		dma-ranges = <0xc0000000 0x0 0x3f000000>;
+
 		local_intc: interrupt-controller@40000000 {
 			compatible = "brcm,bcm2836-l1-intc";
 			reg = <0x40000000 0x100>;
