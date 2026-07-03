@@ -9,6 +9,12 @@ config SAMPLE_LED_UPDATE_DELAY
 	help
 	  Delay between LED updates in ms.
 
+config SAMPLE_LED_TYPE_DELAY
+	int "Delay between LED update type in ms"
+	default 333
+	help
+	  Delay between LED update type in ms.
+
 config SAMPLE_LED_BRIGHTNESS
 	int "LED brightness"
 	default 16
