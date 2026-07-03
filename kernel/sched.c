@@ -61,6 +61,7 @@ static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
  *
  * @satisfies ZEP-SRS-2-12
  * @satisfies ZEP-SRS-2-13
+ * @satisfies ZEP-SRS-34-10
  */
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {

@@ -36,6 +36,9 @@ typedef void (*smp_init_fn)(void *arg);
  * @param fn Function to be called before letting scheduler
  *           run.
  * @param arg Argument to @a fn.
+ *
+ * @satisfies ZEP-SRS-34-7
+ * @satisfies ZEP-SRS-34-8
  */
 void k_smp_cpu_start(int id, smp_init_fn fn, void *arg);
 
@@ -64,6 +67,8 @@ void k_smp_cpu_start(int id, smp_init_fn fn, void *arg);
  * @param reinit_timer True if timer needs to be re-initialized.
  * @param invoke_sched True if scheduler is invoked after the CPU
  *                     has started.
+ *
+ * @satisfies ZEP-SRS-34-9
  */
 void k_smp_cpu_resume(int id, smp_init_fn fn, void *arg,
 		      bool reinit_timer, bool invoke_sched);
