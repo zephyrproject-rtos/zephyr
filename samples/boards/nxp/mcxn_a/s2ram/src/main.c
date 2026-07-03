@@ -123,9 +123,9 @@ static void app_thread(void *p1, void *p2, void *p3)
 		/* Let the UART finish shifting out the line above before DPD cuts its clock. */
 		k_busy_wait(2000);
 
-#if defined(CONFIG_SOC_SERIES_MCXAXX6)
-		/* On MCXAxx6 the Deep Power Down wakeup reset clears the WUU
-		 * wakeup-source configuration, so the source has to be re-armed
+#if defined(CONFIG_SOC_SERIES_MCXAXX6) || defined(CONFIG_SOC_SERIES_MCXAXX7)
+		/* On MCXAxx6 / MCXAxx7 the Deep Power Down wakeup reset clears the
+		 * WUU wakeup-source configuration, so the source has to be re-armed
 		 * before every entry.
 		 */
 		arm_wakeup_source();
