@@ -870,6 +870,18 @@ static const struct arm_mmu_flat_range mmu_zephyr_ranges[] = {
 	  .end   = _nocache_ram_end,
 	  .attrs = MT_NORMAL_NC | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE },
 #endif
+
+#if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
+	/* GCOV code coverage accounting area. Instrumented code updates the
+	 * counters from user mode too, so the region needs User read-write
+	 * permissions. Placed after "zephyr_data" so it overrides the
+	 * kernel-only mapping for this sub-range.
+	 */
+	{ .name  = "gcov_bss",
+	  .start = __gcov_bss_start,
+	  .end   = __gcov_bss_end,
+	  .attrs = MT_NORMAL | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE },
+#endif
 };
 
 static inline void add_arm_mmu_flat_range(struct arm_mmu_ptables *ptables,
