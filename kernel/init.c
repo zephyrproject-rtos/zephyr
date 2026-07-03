@@ -395,6 +395,17 @@ static void init_idle_thread(int i)
 #endif /* CONFIG_SMP */
 }
 
+/**
+ * @brief Initialize a CPU's per-CPU kernel data.
+ *
+ * Sets up the idle thread, interrupt stack and the rest of the per-CPU
+ * kernel structures for @a id. Must run before the CPU participates in
+ * thread scheduling.
+ *
+ * @param id ID of the CPU to initialize.
+ *
+ * @satisfies ZEP-SRS-34-6
+ */
 void z_init_cpu(int id)
 {
 	init_idle_thread(id);

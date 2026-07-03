@@ -218,6 +218,20 @@ void k_smp_cpu_resume(int id, smp_init_fn fn, void *arg,
 	k_spin_unlock(&cpu_start_lock, key);
 }
 
+/**
+ * @brief Bring up all secondary CPUs during kernel initialization.
+ *
+ * Initializes each secondary CPU's per-CPU kernel data and starts it,
+ * then releases all CPUs into the scheduler together so they begin
+ * scheduling threads against the shared kernel state. When deferred
+ * secondary boot (CONFIG_SMP_BOOT_DELAY) is enabled this function is
+ * not called at boot; secondary CPUs are started later at run time
+ * via k_smp_cpu_start().
+ *
+ * @satisfies ZEP-SRS-34-1
+ * @satisfies ZEP-SRS-34-5
+ * @satisfies ZEP-SRS-34-14
+ */
 void z_smp_init(void)
 {
 	/* We are powering up all CPUs and we want to synchronize their

@@ -65,6 +65,7 @@ static inline void clear_halting(struct k_thread *thread)
  *
  * @satisfies ZEP-SRS-2-12
  * @satisfies ZEP-SRS-2-13
+ * @satisfies ZEP-SRS-34-10
  */
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {

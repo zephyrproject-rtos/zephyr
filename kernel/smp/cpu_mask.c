@@ -16,6 +16,21 @@ BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS <= 16, "Too many CPUs for mask word");
 # endif /* CONFIG_SMP */
 
 
+/**
+ * @brief Modify a thread's CPU affinity mask.
+ *
+ * Common worker for the k_thread_cpu_mask_*() and k_thread_cpu_pin()
+ * APIs. The mask may only be changed while the thread is not runnable;
+ * otherwise -EINVAL is returned and the mask is left unchanged.
+ *
+ * @param thread Thread whose mask is modified.
+ * @param enable_mask Bits to set in the thread's CPU mask.
+ * @param disable_mask Bits to clear in the thread's CPU mask.
+ *
+ * @return 0 on success, -EINVAL if the thread is runnable.
+ *
+ * @satisfies ZEP-SRS-34-13
+ */
 static int cpu_mask_mod(k_tid_t thread, uint32_t enable_mask, uint32_t disable_mask)
 {
 	int ret = 0;

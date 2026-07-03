@@ -16,6 +16,16 @@ static struct k_spinlock ipi_lock;
 extern void z_trace_sched_ipi(void);
 #endif
 
+/**
+ * @brief Flag CPUs as needing an inter-processor reschedule interrupt.
+ *
+ * Records the given CPU set in the kernel's pending-IPI mask; the
+ * interrupts are dispatched by signal_pending_ipi().
+ *
+ * @param ipi_mask Bitmask of CPUs to signal.
+ *
+ * @satisfies ZEP-SRS-34-11
+ */
 void flag_ipi(uint32_t ipi_mask)
 {
 #if defined(CONFIG_SCHED_IPI_SUPPORTED)
@@ -25,7 +35,23 @@ void flag_ipi(uint32_t ipi_mask)
 #endif /* CONFIG_SCHED_IPI_SUPPORTED */
 }
 
-/* Create a bitmask of CPUs that need an IPI. Note: sched_spinlock is held. */
+/**
+ * @brief Create a bitmask of CPUs that need an IPI.
+ *
+ * Without CONFIG_IPI_OPTIMIZE all other CPUs are signalled. With it,
+ * only CPUs that actually need to reschedule in response to @a thread
+ * becoming ready are selected -- skipping CPUs the thread cannot run on
+ * (its CPU affinity mask) and CPUs whose current thread outranks it.
+ *
+ * Note: sched_spinlock is held.
+ *
+ * @param thread Thread that became ready.
+ *
+ * @return Bitmask of CPUs to signal.
+ *
+ * @satisfies ZEP-SRS-34-16
+ * @satisfies ZEP-SRS-34-18
+ */
 atomic_val_t ipi_mask_create(struct k_thread *thread)
 {
 	if (!IS_ENABLED(CONFIG_IPI_OPTIMIZE)) {
@@ -69,6 +95,17 @@ atomic_val_t ipi_mask_create(struct k_thread *thread)
 	return (atomic_val_t)ipi_mask;
 }
 
+/**
+ * @brief Dispatch any pending inter-processor reschedule interrupts.
+ *
+ * Sends the reschedule signal to the CPUs recorded by flag_ipi(): a
+ * directed IPI to just those CPUs when the architecture supports it
+ * (CONFIG_ARCH_HAS_DIRECTED_IPIS), otherwise a broadcast to all other
+ * CPUs.
+ *
+ * @satisfies ZEP-SRS-34-11
+ * @satisfies ZEP-SRS-34-17
+ */
 void signal_pending_ipi(void)
 {
 	/* Note: with directed IPIs, arch_sched_directed_ipi() skips the
