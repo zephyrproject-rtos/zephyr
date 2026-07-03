@@ -12,7 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/regulator.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(CP9314, CONFIG_REGULATOR_LOG_LEVEL);
