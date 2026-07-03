@@ -127,6 +127,11 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_GateAonUART);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ostimer0))
+	/* Select 1 MHz clock source for OSTIMER0. */
+	CLOCK_AttachClk(kCLK_1M_to_OSTIMER0);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rtc))
 	if (!CLOCK_IsRoscInitialized()) {
 		rosc_init_config_t rosc_init_config;
