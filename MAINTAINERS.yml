@@ -4807,6 +4807,8 @@ Networking:
   status: maintained
   maintainers:
     - jukkar
+  collaborators:
+    - yangbolu1991
   files:
     - doc/services/connectivity/networking/api/gptp.rst
     - include/zephyr/net/gptp.h
