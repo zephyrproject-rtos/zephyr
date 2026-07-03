@@ -193,6 +193,87 @@ static void join_ipv6_mcast_group(struct net_if *iface, void *user_data)
 	}
 }
 
+#if defined(CONFIG_MDNS_RESOLVER) && !defined(CONFIG_MDNS_RESPONDER)
+/* When the mDNS responder is not enabled, the resolver is the one that joined
+ * the mDNS multicast groups. If an interface goes fully down and comes back up
+ * (for example the connection manager reacting to an Ethernet cable being
+ * reattached), the stack leaves those groups and does not rejoin them (they
+ * are removed, not just marked unjoined). Rejoin them here so that multicast
+ * mDNS responses keep being delivered.
+ */
+static struct net_mgmt_event_callback mdns_mcast_cb;
+
+static void mdns_rejoin_groups(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	/* Rejoin so that a fresh membership report is always emitted, even when
+	 * the group is still locally marked as joined (a plain join would then
+	 * return early without sending a report). Fall back to a join if the
+	 * group was removed while the interface was down.
+	 */
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV4_IGMP)
+	if (net_if_flag_is_set(iface, NET_IF_IPV4)) {
+		struct net_in_addr addr4 = { { { 224, 0, 0, 251 } } };
+		int ret;
+
+		ret = net_ipv4_igmp_rejoin(iface, &addr4);
+		if (ret == -ENOENT) {
+			ret = net_ipv4_igmp_join(iface, &addr4, NULL);
+		}
+
+		if (ret < 0) {
+			NET_DBG("Cannot rejoin %s mDNS group (%d)", "IPv4", ret);
+		}
+	}
+#endif
+
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV6_MLD)
+	if (net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		struct net_in6_addr addr6 = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
+						  0, 0, 0, 0, 0, 0, 0, 0xfb } } };
+		int ret;
+
+		ret = net_ipv6_mld_rejoin(iface, &addr6);
+		if (ret == -ENOENT) {
+			ret = net_ipv6_mld_join(iface, &addr6);
+		}
+
+		if (ret < 0) {
+			NET_DBG("Cannot rejoin %s mDNS group (%d)", "IPv6", ret);
+		}
+	}
+#endif
+}
+
+static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
+				     uint64_t mgmt_event, struct net_if *iface)
+{
+	ARG_UNUSED(cb);
+
+	if (mgmt_event == NET_EVENT_IF_UP) {
+		mdns_rejoin_groups(iface);
+	}
+}
+
+static void mdns_monitor_register(void)
+{
+	static bool registered;
+
+	if (registered) {
+		return;
+	}
+
+	net_mgmt_init_event_callback(&mdns_mcast_cb, mdns_iface_event_handler,
+				     NET_EVENT_IF_UP);
+	net_mgmt_add_event_callback(&mdns_mcast_cb);
+
+	registered = true;
+}
+#else
+#define mdns_monitor_register(...)
+#endif /* CONFIG_MDNS_RESOLVER && !CONFIG_MDNS_RESPONDER */
+
 static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 {
 	struct net_sockaddr *addr = &ctx->servers[idx].dns_server;
@@ -2620,6 +2701,12 @@ struct dns_resolve_context *dns_resolve_get_default(void)
 int dns_resolve_init_default(struct dns_resolve_context *ctx)
 {
 	int ret = 0;
+
+	/* Make sure the mDNS multicast groups are rejoined if an interface
+	 * goes down and comes back up (no-op when the responder is enabled).
+	 */
+	mdns_monitor_register();
+
 #if defined(CONFIG_DNS_SERVER_IP_ADDRESSES)
 	static const char *dns_servers[SERVER_COUNT + 1];
 	int count = DNS_SERVER_COUNT;

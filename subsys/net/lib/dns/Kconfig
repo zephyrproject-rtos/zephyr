@@ -21,9 +21,15 @@ config DNS_RESOLVER_AUTO_INIT
 
 config MDNS_RESOLVER
 	bool "MDNS support"
+	select NET_MGMT
+	select NET_MGMT_EVENT
 	help
 	  This option enables multicast DNS client side support.
 	  See RFC 6762 for details.
+
+	  When the mDNS responder is not enabled, the resolver joins the mDNS
+	  multicast groups itself and needs the network management events to
+	  rejoin them if an interface goes down and comes back up.
 
 config LLMNR_RESOLVER
 	bool "LLMNR support [DEPRECATED]"
