@@ -1,0 +1,18 @@
+sample:
+  name: Analog Switch sample
+common:
+  tags: analog_switch
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Analog switch sample completed"
+tests:
+  sample.drivers.analog_switch:
+    depends_on: analog_switch
+    filter: dt_compat_enabled("adi,adgm3121-gpio") or
+            dt_compat_enabled("adi,adgm3121")
+  sample.drivers.analog_switch.eval_adgm3121:
+    extra_args: SHIELD=eval_adgm3121
+    platform_allow:
+      - nucleo_f413zh
