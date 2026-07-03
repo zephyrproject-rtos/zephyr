@@ -490,6 +490,11 @@ static void rp_cc_state_wait_rx_cis_ind(struct ll_conn *conn, struct proc_ctx *c
 			/* Check if this connection event is where we need to start the CIS */
 			rp_cc_check_instant_rx_cis_ind(conn, ctx, evt, param);
 			break;
+		} else {
+			/* FIXME: Add checks for CIG sync_delay >= CIS sync_delay and gracefully
+			 *        handle invalid values by completing the LLCP as failure to
+			 *        establish connection.
+			 */
 		}
 		/* If we get to here the CIG_ID referred in req/acquire has become void/invalid */
 		/* This cannot happen unless the universe has started to deflate */

@@ -66,10 +66,17 @@
 #endif
 
 /* CIS Create Procedure uses 3 PDU transmissions, and one connection interval to process the LLCP
- * requested, hence minimum relative instant not be less than 4. I.e. the CIS_REQ PDU will be
- * transmitted in the next ACL interval.
- * The +1 also helps with the fact that currently we do not have Central implementation to handle
- * event latencies at the instant. Refer to `ull_conn_iso_start()` implementation.
+ * requested, hence ideally set the minimum relative instant not less than 4. I.e. the CIS_REQ PDU
+ * will be transmitted in the next ACL interval and the instant will be at the 4th ACL interval.
+ * This way both Central and Peripheral do not need to exercise any ACL interval latencies when
+ * establishing the CIG/CIS.
+ *
+ * BLUETOOTH CORE SPECIFICATION Version 6.3 | Vol 6, Part B, Section 2.4.2.29 LL_CIS_REQ
+ * "connEventCount should be set to a value greater than currEvent of the event in which the
+ * LL_CIS_REQ PDU is first transmitted."
+ *
+ * NOTE: The implementation can handle ACL latencies establishing the CIG/CIS with relative instant
+ *       of 0.
  */
 #define CIS_CREATE_INSTANT_DELTA_MIN 4U
 
@@ -81,6 +88,7 @@ static void mfy_cis_offset_get(void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 #endif /* CONFIG_BT_CTLR_CENTRAL_SPACING  == 0 */
 
+static uint32_t cig_cis_offset_get(const struct ll_conn_iso_stream *cis, uint32_t ticks_offset);
 static uint32_t iso_interval_adjusted_bn_max_pdu_get(bool framed, uint32_t iso_interval,
 						     uint32_t iso_interval_cig,
 						     uint32_t sdu_interval,
@@ -925,11 +933,8 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 	} else if (CONFIG_BT_CTLR_CENTRAL_SPACING > 0) {
 		uint32_t cis_offset;
 
-		cis_offset = HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
-			     (EVENT_TICKER_RES_MARGIN_US << 1U);
-
-		cis_offset += cig->sync_delay - cis->sync_delay;
-
+		/* Calculate the offset for the select CIS in the CIG */
+		cis_offset = cig_cis_offset_get(cis, conn->ull.ticks_slot);
 		if (cis_offset < *cis_offset_min) {
 			cis_offset = *cis_offset_min;
 		}
@@ -1023,10 +1028,8 @@ int ull_central_iso_cis_offset_get(uint16_t cis_handle,
 	return -EBUSY;
 #else /* CONFIG_BT_CTLR_CENTRAL_SPACING != 0 */
 
-	*cis_offset_min = HAL_TICKER_TICKS_TO_US(conn->ull.ticks_slot) +
-			  (EVENT_TICKER_RES_MARGIN_US << 1U);
-
-	*cis_offset_min += cig->sync_delay - cis->sync_delay;
+	/* Calculate the offset for the select CIS in the CIG */
+	*cis_offset_min = cig_cis_offset_get(cis, conn->ull.ticks_slot);
 
 	return 0;
 #endif /* CONFIG_BT_CTLR_CENTRAL_SPACING != 0 */
@@ -1092,9 +1095,7 @@ static void mfy_cig_offset_get(void *param)
 	LL_ASSERT_DBG(!err);
 
 	/* Calculate the offset for the select CIS in the CIG */
-	offset_min_us = HAL_TICKER_TICKS_TO_US(ticks_to_expire) +
-			(EVENT_TICKER_RES_MARGIN_US << 2U);
-	offset_min_us += cig->sync_delay - cis->sync_delay;
+	offset_min_us = cig_cis_offset_get(cis, ticks_to_expire);
 
 	conn = ll_conn_get(cis->lll.acl_handle);
 	LL_ASSERT_DBG(conn != NULL);
@@ -1262,6 +1263,24 @@ static void ticker_op_cb(uint32_t status, void *param)
 	*((uint32_t volatile *)param) = status;
 }
 #endif /* CONFIG_BT_CTLR_CENTRAL_SPACING  == 0 */
+
+static uint32_t cig_cis_offset_get(const struct ll_conn_iso_stream *cis, uint32_t ticks_offset)
+{
+	const struct ll_conn_iso_group *cig;
+	uint32_t offset_us;
+
+	/* Get reference to associated CIG context for the CIS */
+	cig = cis->group;
+
+	/* Calculate the CIS offset from the CIG anchor point */
+	offset_us = HAL_TICKER_TICKS_TO_US(ticks_offset);
+	offset_us += cig->sync_delay - cis->sync_delay;
+
+	/* Add the event resolution margin jitter of both ACL and CIG */
+	offset_us += (EVENT_TICKER_RES_MARGIN_US << 2U);
+
+	return offset_us;
+}
 
 static uint32_t iso_interval_adjusted_bn_max_pdu_get(bool framed, uint32_t iso_interval,
 						     uint32_t iso_interval_cig,
