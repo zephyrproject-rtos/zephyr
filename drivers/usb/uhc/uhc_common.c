@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,23 +73,73 @@ void uhc_xfer_add_to_int(const struct device *dev, struct uhc_transfer *const xf
 	sys_dlist_append(int_list, &xfer->node);
 }
 
-struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t microframe_number)
+/* Already locked by caller */
+static struct uhc_transfer *uhc_xfer_get_next_periodic(const struct device *dev,
+						       uint32_t microframe_number,
+						       enum uhc_xfer_mask mask,
+						       uhc_xfer_filter_func_t filter, void *priv)
 {
 	struct uhc_data *data = dev->data;
-	struct uhc_transfer *xfer;
 	sys_dnode_t *node;
 	struct uhc_transfer *xfer;
 
-	/* Draft, WIP */
+	for (node = sys_dlist_peek_tail(&data->int_xfers); node != NULL;
+	     node = sys_dlist_peek_prev(&data->int_xfers, node)) {
+		xfer = SYS_DLIST_CONTAINER(node, xfer, node);
 
-	xfer = SYS_DLIST_CONTAINER(sys_dlist_peek_tail(&data->int_xfers), xfer, node);
-	if (xfer && xfer_seq_cmp(xfer->start_microframe, microframe_number) <= 0) {
-		return xfer;
+		if (xfer_seq_cmp(xfer->start_microframe, microframe_number) > 0) {
+			break;
+		}
+
+		if ((BIT(xfer->type) & mask) == 0) {
+			continue;
+		}
+
+		if (filter == NULL || filter(xfer, priv)) {
+			return xfer;
+		}
 	}
 
-	xfer = SYS_DLIST_PEEK_HEAD_CONTAINER(&data->ctrl_xfers, xfer, node);
-	if (xfer == NULL) {
-		xfer = SYS_DLIST_PEEK_HEAD_CONTAINER(&data->bulk_xfers, xfer, node);
+	return NULL;
+}
+
+static struct uhc_transfer *uhc_xfer_get_next_non_periodic(const struct device *dev,
+						       sys_dlist_t *dlist,
+						       uhc_xfer_filter_func_t filter, void *priv)
+{
+	struct uhc_transfer *xfer = NULL;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(dlist, xfer, node) {
+		if (filter == NULL || filter(xfer, priv)) {
+			return xfer;
+		}
+	}
+
+	return NULL;
+}
+
+struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t microframe_number,
+				       enum uhc_xfer_mask mask, uhc_xfer_filter_func_t filter,
+				       void *priv)
+{
+	struct uhc_data *data = dev->data;
+	struct uhc_transfer *xfer = NULL;
+
+	if (mask & UHC_XFER_MASK_PERIODIC) {
+		xfer = uhc_xfer_get_next_periodic(dev, microframe_number, mask, filter, priv);
+	}
+
+	if (xfer == NULL && mask & UHC_XFER_MASK_CONTROL) {
+		xfer = uhc_xfer_get_next_non_periodic(dev, &data->ctrl_xfers, filter, priv);
+	}
+
+	if (xfer == NULL && mask & UHC_XFER_MASK_BULK) {
+		xfer = uhc_xfer_get_next_non_periodic(dev, &data->bulk_xfers, filter, priv);
+	}
+
+	if (xfer != NULL) {
+		sys_dlist_remove(&xfer->node);
+		sys_dlist_append(&data->active_xfers, &xfer->node);
 	}
 
 	return xfer;
@@ -456,7 +507,8 @@ int uhc_init(const struct device *dev,
 	data->event_ctx = event_ctx;
 	sys_dlist_init(&data->ctrl_xfers);
 	sys_dlist_init(&data->bulk_xfers);
-	sys_dlist_init(&data->int_xfers);
+	sys_dlist_init(&data->periodic_xfers);
+	sys_dlist_init(&data->active_xfers);
 
 	ret = api->init(dev);
 	if (ret == 0) {
