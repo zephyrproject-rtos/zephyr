@@ -766,6 +766,7 @@ def process_pr(gh, args, maintainer_file, number: int):
         if _deferred and _non_deferred:
             for _area in _deferred:
                 deferred_reviewers.update(_area.maintainers)
+                labels.update(_area.labels)
                 logger.debug(
                     "  area '%s' defers to other areas for '%s'; "
                     "maintainers %s added as reviewers only",
