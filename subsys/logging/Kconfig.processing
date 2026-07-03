@@ -14,7 +14,6 @@ config LOG_PRINTK
 
 config LOG_PRINTK_STATIC
 	bool "Static processing of printk messages"
-	default y
 	depends on LOG_PRINTK
 
 if LOG_MODE_DEFERRED && !LOG_FRONTEND_ONLY
