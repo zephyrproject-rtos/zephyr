@@ -58,6 +58,8 @@ BUILD_ASSERT(CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS <
  * @param irq IRQ number in its zephyr format
  *
  * @return 1 if IRQ level 1, 2 if IRQ level 2, 3 if IRQ level 3
+ *
+ * @satisfies ZEP-SRS-7-14
  */
 static inline unsigned int irq_get_level(unsigned int irq)
 {
