@@ -128,12 +128,160 @@ properties:
     description: |
       Enable channel number identifier for data stored in FIFO.
 
+  lp-mode:
+    type: boolean
+    description: |
+      Enable Low Power (LP) mode for the SAR ADC. In LP mode the ADC is clocked
+      from the LPOSC at 4.096 MHz instead of CLK_HF and only MUX channels
+      (channel IDs >= 8) can be used. The maximum throughput in LP mode is
+      200 ksps. LP mode is available in both Active and Deep Sleep power modes.
+
+      When lp-mode is set the parent AutAnalog MFD basic-mode STT automatically
+      enters LP operation for the AC states. LP mode is also activated if any
+      other AutAnalog child peripheral (DAC, CTB, PTCOMP, PRB) sets lp-mode.
+      In advanced mode (ac-states), use the per-state ac-lp-mode property
+      instead.
+
+  lp-diff-en:
+    type: boolean
+    description: |
+      Enable differential mode for the LP channel. When set, the LP sampler
+      operates in differential mode measuring the difference between the
+      positive and negative MUX inputs. Required for accurate die temperature
+      measurement in LP mode.
+
+      Only effective when lp-mode is also set.
+
+  limit-cond-0:
+    type: array
+    description: |
+      Range detection condition 0. Channels that set limit =
+      IFX_AUTANALOG_SAR_LIMIT_STC0 use this condition. The array contains
+      three integers: <condition low high>.
+
+      condition uses IFX_AUTANALOG_SAR_COND_* constants from
+      <dt-bindings/adc/infineon-autanalog-sar.h>:
+        IFX_AUTANALOG_SAR_COND_BELOW   (0) - result < low
+        IFX_AUTANALOG_SAR_COND_INSIDE  (1) - low <= result < high
+        IFX_AUTANALOG_SAR_COND_ABOVE   (2) - result > high
+        IFX_AUTANALOG_SAR_COND_OUTSIDE (3) - result < low OR result >= high
+
+      low and high are signed 32-bit threshold values in ADC counts.
+
+  limit-cond-1:
+    type: array
+    description: |
+      Range detection condition 1. See limit-cond-0 for format.
+
+  limit-cond-2:
+    type: array
+    description: |
+      Range detection condition 2. See limit-cond-0 for format.
+
+  limit-cond-3:
+    type: array
+    description: |
+      Range detection condition 3. See limit-cond-0 for format.
+
+  gain-corr:
+    type: array
+    description: |
+      Array of 8 gain correction coefficients, one per coefficient slot
+      (COEFF0 through COEFF7). Each value is an unsigned 16-bit fixed-point
+      number in the format X.XXXXXXXXXXXXXXX where:
+        - 0x0001 = 1/32768 = 0.000030517578125
+        - 0x8000 = 1.0 (default / unity gain)
+        - 0xFFFF = 2 - 1/32768 = 1.999969482421875
+
+      Channels select which coefficient slot to use via the per-channel
+      pos-coeff and neg-coeff properties.
+
+  offset-corr:
+    type: array
+    description: |
+      Array of 8 signed offset correction coefficients, one per coefficient
+      slot (COEFF0 through COEFF7). Each value is a signed 16-bit integer
+      added to the 12-bit ADC result:
+        - Range: -2048 (0xF800) to +2047 (0x07FF)
+        - Default: 0 (no offset correction)
+
+      Channels select which coefficient slot to use via the per-channel
+      pos-coeff and neg-coeff properties.
+
 child-binding:
   properties:
     mux-buf-bypass:
       type: boolean
       description: |
         Bypass the Hi-Z buffers for MUX channels.
+
+    sign:
+      type: boolean
+      description: |
+        Enable sign extension for this channel's conversion result.
+
+    differential:
+      type: boolean
+      description: |
+        Enable differential mode for this GPIO channel. When set, the negative
+        input pin is taken from the neg-pin property. Only applies to GPIO
+        channels (channel IDs 0-7).
+
+    neg-pin:
+      type: int
+      default: 0
+      description: |
+        Negative GPIO pin for differential mode on GPIO channels. Only used
+        when differential is enabled. Values correspond to GPIO pin indices
+        (0-7).
+
+    pos-coeff:
+      type: int
+      default: 0
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+      description: |
+        Positive channel correction coefficient selection.
+        Use IFX_AUTANALOG_SAR_CH_COEFF_* constants from
+        <dt-bindings/adc/infineon-autanalog-sar.h>.
+          IFX_AUTANALOG_SAR_CH_COEFF_DISABLED (0) - Disabled (default)
+          IFX_AUTANALOG_SAR_CH_COEFF0         (1) - Coefficient config 0
+          IFX_AUTANALOG_SAR_CH_COEFF1         (2) - Coefficient config 1
+          IFX_AUTANALOG_SAR_CH_COEFF2         (3) - Coefficient config 2
+          IFX_AUTANALOG_SAR_CH_COEFF3         (4) - Coefficient config 3
+          IFX_AUTANALOG_SAR_CH_COEFF4         (5) - Coefficient config 4
+          IFX_AUTANALOG_SAR_CH_COEFF5         (6) - Coefficient config 5
+          IFX_AUTANALOG_SAR_CH_COEFF6         (7) - Coefficient config 6
+          IFX_AUTANALOG_SAR_CH_COEFF7         (8) - Coefficient config 7
+
+    neg-coeff:
+      type: int
+      default: 0
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+      description: |
+        Negative channel correction coefficient selection.
+        Use IFX_AUTANALOG_SAR_CH_COEFF_* constants from
+        <dt-bindings/adc/infineon-autanalog-sar.h>.
+        See pos-coeff for valid values.
+
+    acc-shift:
+      type: boolean
+      description: |
+        Enable accumulator shift for this channel. When enabled, the
+        accumulator result is right-shifted after accumulation.
+
+    limit:
+      type: int
+      default: 0
+      enum: [0, 1, 2, 3, 4]
+      description: |
+        Limit status / range detection configuration for this channel.
+        Use IFX_AUTANALOG_SAR_LIMIT_* constants from
+        <dt-bindings/adc/infineon-autanalog-sar.h>.
+          IFX_AUTANALOG_SAR_LIMIT_DISABLED (0) - Disabled (default)
+          IFX_AUTANALOG_SAR_LIMIT_STC0     (1) - Limit status config 0
+          IFX_AUTANALOG_SAR_LIMIT_STC1     (2) - Limit status config 1
+          IFX_AUTANALOG_SAR_LIMIT_STC2     (3) - Limit status config 2
+          IFX_AUTANALOG_SAR_LIMIT_STC3     (4) - Limit status config 3
 
     fifo-sel:
       type: int

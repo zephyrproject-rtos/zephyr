@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon PSOC Edge AutAnalog die temperature sensor.
+
+  Exposes the on-chip die temperature measured through the AutAnalog SAR ADC
+  internal temperature-sensor MUX channel as a standard Zephyr sensor
+  (SENSOR_CHAN_DIE_TEMP).
+
+  The sensor is a thin wrapper around the AutAnalog SAR ADC driver: it samples
+  the configured io-channel and converts the raw accumulated SAR counts to
+  degrees Celsius using the PDL temperature-conversion routine.
+
+  The referenced io-channel must point at a MUX channel configured for the
+  internal temperature sensor (IFX_AUTANALOG_SAR_PIN_MUX_TEMP_SENSOR) in
+  differential mode with the VBGR reference, as required for accurate die
+  temperature conversion.  See samples/boards/infineon/lp_temp_sensor for a
+  reference SAR ADC configuration.
+
+compatible: "infineon,autanalog-die-temp"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    required: true
+    description: |
+      ADC channel for the internal die temperature sensor.  Must reference a
+      MUX channel of an infineon,autanalog-sar-adc controller configured for
+      the internal temperature sensor input.
+
+  sar-index:
+    type: int
+    default: 0
+    description: |
+      Index of the SAR ADC subsystem within the AutAnalog block.  Passed as the
+      sarIdx argument to the PDL temperature-conversion routine.  Defaults to 0.
+
+  sar-sequencer:
+    type: int
+    default: 0
+    description: |
+      SAR sequencer entry index used to produce the temperature result.  Passed
+      as the sarSequencer argument to the PDL temperature-conversion routine.
+      Defaults to 0.

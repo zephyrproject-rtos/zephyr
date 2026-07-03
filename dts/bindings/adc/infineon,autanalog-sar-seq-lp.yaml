@@ -1,0 +1,79 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon AutAnalog SAR ADC LP Sequencer Table Entry
+
+description: |
+  Low-Power (LP) mode sequencer table entry for the Infineon AutAnalog SAR
+  ADC.  Up to 32 entries may be defined as child nodes of the ADC node.  Nodes
+  must be named "seq-lp-<index>" (e.g. seq-lp-0, seq-lp-1, ...).
+
+  LP mode only supports MUX channels; each entry selects a single MUX
+  channel via mux0-sel.
+
+  When only default (single-entry) operation is desired, these nodes may be
+  omitted entirely and the driver will create a single entry with backward-
+  compatible defaults.
+
+  Use IFX_AUTANALOG_SAR_SEQ_* constants from
+  <dt-bindings/adc/infineon-autanalog-sar.h> for property values.
+
+compatible: "infineon,autanalog-sar-seq-lp"
+
+properties:
+  mux0-sel:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    description: |
+      MUX channel selection (0-15) for this LP sequencer entry.
+      Selects which of the 16 internal MUX channels to sample.
+      Each MUX channel's analog input pin and FIFO routing are
+      configured via the corresponding channel@N node.
+
+  sample-time-en:
+    type: boolean
+    description: |
+      Enable the programmable sample-time delay for this sequencer entry.
+      When using multiple sequencer entries that switch between MUX
+      channels, this should be enabled to allow the analog input to
+      settle before conversion.
+
+  sample-time:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3]
+    description: |
+      Which of the 4 sample-time slots to use for this entry.
+
+  acc-en:
+    type: boolean
+    description: |
+      Enable accumulation / averaging for conversions triggered by this
+      sequencer entry.
+
+  acc-count:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Number of samples to accumulate when acc-en is set.
+      Use IFX_AUTANALOG_SAR_SEQ_ACC_CNT* constants.
+
+  cal-req:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3]
+    description: |
+      Real-time calibration request for this sequencer entry.
+      Use IFX_AUTANALOG_SAR_SEQ_CAL_* constants.
+
+  next-action:
+    type: int
+    default: 0
+    enum: [0, 1, 2]
+    description: |
+      Action after this sequencer entry completes.
+      Use IFX_AUTANALOG_SAR_SEQ_NEXT_* constants.

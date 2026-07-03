@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: AutAnalog low-power audio sample
+common:
+  tags:
+    - adc
+    - comparator
+  depends_on:
+    - adc
+  filter: dt_node_has_prop("/zephyr,user","io-channels")
+
+tests:
+  sample.boards.infineon.autanalog.lp_audio:
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+    integration_platforms:
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+    harness: console
+    timeout: 30
+    harness_config:
+      type: multi_line
+      regex:
+        - "AutAnalog LP audio sample"
+        - "Opamp .+ ready"
+        - "Comparators ready"
+        - "ADC ready"
+        - "Frame \\d+: \\d+ samples"

@@ -1,7 +1,10 @@
-# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
 # SPDX-License-Identifier: Apache-2.0
 
 # zephyr-keep-sorted-start
+source "drivers/sensor/infineon/autanalog_temp/Kconfig"
 source "drivers/sensor/infineon/dps310/Kconfig"
 source "drivers/sensor/infineon/tle9104/Kconfig"
 source "drivers/sensor/infineon/xmc4xxx_temp/Kconfig"
