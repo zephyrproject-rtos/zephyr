@@ -323,7 +323,8 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_STACK_SENTINEL
-/* Check that the stack sentinel is still present
+/**
+ * @brief Check that the stack sentinel is still present
  *
  * The stack sentinel feature writes a magic value to the lowest 4 bytes of
  * the thread's stack when the thread is initialized. This value gets checked
@@ -337,6 +338,8 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
  *
  * If the check fails, the thread will be terminated appropriately through
  * the system fatal error handler.
+ *
+ * @satisfies ZEP-SRS-8-12
  */
 void z_check_stack_sentinel(void)
 {
@@ -358,6 +361,19 @@ void z_check_stack_sentinel(void)
 #if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 int z_stack_adjust_initialized;
 
+/**
+ * @brief Compute a random offset for a new thread's initial stack pointer.
+ *
+ * When stack pointer randomization (CONFIG_STACK_POINTER_RANDOM) is
+ * enabled, the offset returned here is subtracted from the top of a new
+ * thread's stack so its initial stack pointer is not predictable.
+ *
+ * @param stack_size Usable size of the thread's stack.
+ *
+ * @return Offset in bytes to subtract from the initial stack pointer.
+ *
+ * @satisfies ZEP-SRS-8-27
+ */
 static size_t random_offset(size_t stack_size)
 {
 	size_t random_val;
@@ -804,6 +820,17 @@ bool z_stack_is_user_capable(k_thread_stack_t *stack)
 	return k_object_find(stack) != NULL;
 }
 
+/**
+ * @brief Verifier for k_thread_create() system calls from user mode.
+ *
+ * Validates every argument passed in from user mode before the thread is
+ * created. In particular, user threads may only create other user threads
+ * (the K_USER option is mandatory, preventing creation of supervisor
+ * threads) and only at the same or lower priority than the caller.
+ *
+ * @satisfies ZEP-SRS-8-6
+ * @satisfies ZEP-SRS-8-8
+ */
 k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 			       k_thread_stack_t *stack,
 			       size_t stack_size, k_thread_entry_t entry,

@@ -512,6 +512,7 @@ __syscall k_tid_t k_thread_create(struct k_thread *new_thread,
  * @param p2 2nd entry point parameter
  * @param p3 3rd entry point parameter
  * @satisfies ZEP-SRS-1-9
+ * @satisfies ZEP-SRS-8-9
  */
 FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 						   void *p1, void *p2,
@@ -529,6 +530,8 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
  *
  * @param thread Thread to grant access to objects
  * @param ... list of kernel object pointers
+ *
+ * @satisfies ZEP-SRS-8-2
  */
 #define k_thread_access_grant(thread, ...) \
 	FOR_EACH_FIXED_ARG(k_object_access_grant, (;), (thread), __VA_ARGS__)
@@ -546,6 +549,8 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
  * @param thread Target thread to assign a memory pool for resource requests.
  * @param heap Heap object to use for resources,
  *             or NULL if the thread should no longer have a memory pool.
+ *
+ * @satisfies ZEP-SRS-8-18
  */
 static inline void k_thread_heap_assign(struct k_thread *thread,
 					struct k_heap *heap)
