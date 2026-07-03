@@ -676,10 +676,12 @@ bool ztest_has_current_param(void);
  * the '.instance_name' designator, producing the invalid '.ints').
  */
 #define ZTEST_INSTANTIATE_TEST_SUITE_P(inst_, suite_, fn_, param_values_name_)               \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_ZTEST_PARAM_INST),                                    \
+		"ZTEST_INSTANTIATE_TEST_SUITE_P is enabled");                                \
 	static const STRUCT_SECTION_ITERABLE(                                                \
 		ztest_param_inst,                                                            \
 		UTIL_CAT(UTIL_CAT(z_ztest_param_inst_, suite_),                              \
-			 UTIL_CAT(_, UTIL_CAT(fn_, UTIL_CAT(_, inst_))))) = {               \
+			 UTIL_CAT(_, UTIL_CAT(fn_, UTIL_CAT(_, inst_))))) = {                \
 		.test_suite_name = STRINGIFY(suite_),                                        \
 		.test_name       = STRINGIFY(fn_),                                           \
 		.instance_name   = STRINGIFY(inst_),                                         \
