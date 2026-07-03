@@ -1,0 +1,133 @@
+/*
+ * Copyright (c) 2026 Anuj Deshpande
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "cdac,thejas32";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(100)>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdac,vega-et1031", "riscv";
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "zicsr", "zifencei";
+
+			cpu0_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	/*
+	 * The SoC has 256 KB of SRAM at 0x00200000, but the on-chip boot ROM
+	 * reserves the top 6 KB (0x0023e800 - 0x0023ffff) for its own use and
+	 * hands over only 250 KB to the loaded image. The boot ROM reports this
+	 * itself on reset:
+	 *
+	 *   IRAM : [0x200000 - 0x23E7FF] [250 KB]
+	 *
+	 * The same 250 KB bound applies to the SPI flash boot path, where the
+	 * boot ROM copies 250 KB from flash into SRAM before jumping to it.
+	 * Only the usable 250 KB is described here so that a link-time overflow
+	 * is caught instead of silently corrupting the boot ROM's memory.
+	 */
+	sram0: memory@200000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x00200000 DT_SIZE_K(250)>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+		interrupt-parent = <&intc>;
+
+		/*
+		 * The RISC-V machine timer. Its mtime/mtimecmp registers are not
+		 * where a SiFive-style CLINT would put them: they live inside the
+		 * interrupt controller block and appear in no public datasheet. The
+		 * addresses come from C-DAC's FreeRTOS port for this SoC
+		 * (configMTIME_BASE_ADDRESS / configMTIMECMP_BASE_ADDRESS) and have
+		 * been verified on silicon: mtime increments at the 100 MHz core
+		 * clock divided by 4000, i.e. 25 kHz.
+		 */
+		mtimer: timer@20010580 {
+			compatible = "riscv,machine-timer";
+			reg = <0x20010580 0x8>, <0x20010480 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts-extended = <&cpu0_intc 7>;
+		};
+
+		intc: interrupt-controller@20010000 {
+			compatible = "cdac,thejas32-intc";
+			reg = <0x20010000 0x14>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&cpu0_intc 11>;
+		};
+
+		gpio0: gpio@10080000 {
+			compatible = "cdac,thejas32-gpio";
+			reg = <0x10080000 0x40004>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		gpio1: gpio@10180000 {
+			compatible = "cdac,thejas32-gpio";
+			reg = <0x10180000 0x40004>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		uart0: serial@10000100 {
+			compatible = "ns16550";
+			reg = <0x10000100 0x100>;
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			interrupts = <0 1>;
+			status = "disabled";
+		};
+
+		uart1: serial@10000200 {
+			compatible = "ns16550";
+			reg = <0x10000200 0x100>;
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			interrupts = <1 1>;
+			status = "disabled";
+		};
+
+		uart2: serial@10000300 {
+			compatible = "ns16550";
+			reg = <0x10000300 0x100>;
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			interrupts = <2 1>;
+			status = "disabled";
+		};
+	};
+};

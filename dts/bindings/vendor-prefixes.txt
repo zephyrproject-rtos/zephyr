@@ -136,6 +136,7 @@ capella	Capella Microsystems, Inc
 cascoda	Cascoda, Ltd.
 catalyst	Catalyst Semiconductor, Inc.
 cavium	Cavium, Inc.
+cdac	Centre for Development of Advanced Computing (C-DAC)
 cdns	Cadence Design Systems Inc.
 cdtech	CDTech(H.K.) Electronics Limited
 cellwise	CellWise Microelectronics Co., Ltd
