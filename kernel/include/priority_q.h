@@ -70,13 +70,24 @@ static ALWAYS_INLINE void z_priq_simple_init(sys_dlist_t *pq)
 	sys_dlist_init(pq);
 }
 
-/*
+/**
+ * @brief Compare the effective scheduling priority of two threads.
+ *
+ * Compares static numeric priorities first. When earliest-deadline-first
+ * scheduling (CONFIG_SCHED_DEADLINE) is enabled and the static priorities
+ * are equal, the thread with the earlier deadline gets precedence.
+ *
  * Return value same as e.g. memcmp
  * > 0 -> thread 1 priority  > thread 2 priority
  * = 0 -> thread 1 priority == thread 2 priority
  * < 0 -> thread 1 priority  < thread 2 priority
  * Do not rely on the actual value returned aside from the above.
  * (Again, like memcmp.)
+ *
+ * @param thread_1 First thread to compare.
+ * @param thread_2 Second thread to compare.
+ *
+ * @satisfies ZEP-SRS-2-5
  */
 static ALWAYS_INLINE int32_t z_sched_prio_cmp(struct k_thread *thread_1, struct k_thread *thread_2)
 {
