@@ -2184,6 +2184,29 @@ class BinaryFiles(ComplianceTest):
                 self.failure(f"Binary file not allowed: {fname}")
 
 
+class TestMetadataFilename(ComplianceTest):
+    """
+    Check that no newly added sample or test metadata file uses the legacy
+    'sample.yaml' or 'testcase.yaml' name instead of 'tests.yaml'.
+    """
+
+    name = "TestMetadataFilename"
+    doc = "Sample and test metadata must be stored in a file named tests.yaml."
+
+    def run(self):
+        LEGACY_NAMES = ("sample.yaml", "testcase.yaml")
+
+        for file in get_files(filter="A"):
+            name = os.path.basename(file)
+            if name in LEGACY_NAMES:
+                self.failure(
+                    f"New file '{file}' uses the legacy metadata filename "
+                    f"'{name}'. Sample and test metadata must be stored in a "
+                    f"file named 'tests.yaml'. Rename it to "
+                    f"'{os.path.join(os.path.dirname(file), 'tests.yaml')}'."
+                )
+
+
 class ImageSize(ComplianceTest):
     """
     Check that any added image is limited in size.
