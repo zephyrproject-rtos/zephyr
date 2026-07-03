@@ -9,6 +9,7 @@
 #include <nxp/imxrt/nxp_rt7xx_cm33_cpu0.dtsi>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/dvp-20pin-connector.h>
 #include "mimxrt700_evk-pinctrl.dtsi"
 
 / {
@@ -96,6 +97,20 @@
 		regulator-name = "en_mipi_display";
 		enable-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
+	};
+
+	/*
+	 * DVP 20-pin camera connector (J53).
+	 * PEN = camera RESET (PIO2_0 / GPIO2[0])
+	 * PDN = camera PWDN (PIO2_4 / GPIO2[4], not connected on board)
+	 */
+	dvp_20pin_connector: dvp-20pin-connector {
+		compatible = "arducam,dvp-20pin-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <DVP_20PIN_PEN 0 &gpio2 0 0>,
+			   <DVP_20PIN_PDN 0 &gpio2 4 0>;
 	};
 
 	memc: memc@8000000 {
@@ -552,3 +567,36 @@ p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
 &crc {
 	status = "okay";
 };
+
+&gpio2 {
+	status = "okay";
+};
+
+&flexio {
+	status = "okay";
+
+	flexio_camera: flexio-camera {
+		compatible = "nxp,flexio-camera";
+		pinctrl-0 = <&pinmux_flexio_camera>;
+		pinctrl-names = "default";
+		data-pin-start = <6>;  /* D0=FLEXIO_IO6 .. D7=FLEXIO_IO13 */
+		pclk-pin = <15>;       /* PCLK = FLEXIO_IO15 */
+		href-pin = <2>;        /* HREF = FLEXIO_IO2  */
+		xclk-pin = <1>;        /* XCLK = FLEXIO_IO1  */
+		xclk-frequency = <DT_FREQ_M(24)>;
+		vsync-gpios = <&gpio2 5 GPIO_ACTIVE_HIGH>;
+		/* Channel 2 FlexIO0 Shifter0 request (slot 37) */
+		dmas = <&edma0 2 37>;
+
+		port {
+			dvp_20pin_ep_in: endpoint {
+				remote-endpoint-label = "ov7670_ep_out";
+			};
+		};
+	};
+};
+
+/* Aliases expected by dvp_20pin_ov7670 shield */
+dvp_20pin_i2c: &flexcomm8_lpi2c8 {};
+
+dvp_20pin_interface: &flexio_camera {};
