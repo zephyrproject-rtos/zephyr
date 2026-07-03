@@ -188,6 +188,9 @@ static ALWAYS_INLINE void z_spinlock_validate_post(struct k_spinlock *l)
  * @param l A pointer to the spinlock to lock
  * @return A key value that must be passed to k_spin_unlock() when the
  *         lock is released.
+ *
+ * @satisfies ZEP-SRS-34-3
+ * @satisfies ZEP-SRS-34-20
  */
 static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 {

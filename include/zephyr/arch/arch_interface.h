@@ -744,6 +744,8 @@ int arch_smp_init(void);
  * however some systems may determine this at runtime instead.
  *
  * @return the number of CPUs
+ *
+ * @satisfies ZEP-SRS-34-4
  */
 static inline unsigned int arch_num_cpus(void);
 
