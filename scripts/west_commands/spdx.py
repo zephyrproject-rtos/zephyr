@@ -14,7 +14,12 @@ from build_helpers import forward_logging_to_west
 script_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, os.path.join(script_dir, "pylib/"))
 from zspdx.sbom import SBOMConfig, make_spdx, setup_cmake_query  # noqa: E402
-from zspdx.version import SPDX_VERSION_2_3, SUPPORTED_SPDX_VERSIONS, parse  # noqa: E402
+from zspdx.version import (  # noqa: E402
+    SPDX_VERSION_2_3,
+    SPDX_VERSION_3_1,
+    SUPPORTED_SPDX_VERSIONS,
+    parse,
+)
 
 SPDX_DESCRIPTION = """\
 This command creates an SPDX bill of materials following the completion
@@ -107,6 +112,8 @@ class ZephyrSpdx(WestCommand):
         except Exception:
             self.die(f"Invalid SPDX version: {args.spdx_version}")
         cfg.spdx_version = version_obj
+        if version_obj == SPDX_VERSION_3_1:
+            self.wrn("SPDX 3.1 support is experimental; the 3.1 spec is still in development.")
         if args.namespace_prefix:
             cfg.namespace_prefix = args.namespace_prefix
         else:

@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
+import importlib
 import logging
 import os
 import re
@@ -27,6 +28,7 @@ from zspdx.serializers.helpers import (
     normalize_spdx_name,
 )
 from zspdx.spdxids import get_unique_file_id
+from zspdx.version import SPDX_VERSION_3_0, SPDX_VERSION_3_1
 
 _logger = logging.getLogger(__name__)
 
@@ -50,9 +52,24 @@ class SPDX3Serializer:
     # does not provide an absolute URI of its own.
     _DEFAULT_BUILD_TYPE = "urn:spdx.dev:zephyr-cmake"
 
-    def __init__(self, sbom_graph: SBOMGraph, spdx_version=None):
+    def __init__(self, sbom_graph: SBOMGraph, spdx_version=SPDX_VERSION_3_0):
         self.sbom_data = sbom_graph
-        self.spdx_version = spdx_version  # Not used for SPDX 3.0, but kept for API consistency
+        self.spdx_version = spdx_version
+
+        # Select the SPDX 3.x Python bindings matching the requested spec version.
+        # v3.1 is a strict superset of v3.0.1 with identical public class names, so
+        # only the binding module (which drives the emitted JSON-LD @context) and the
+        # specVersion string differ; the rest of the serializer stays version-agnostic.
+        if spdx_version == SPDX_VERSION_3_0:
+            self.spec_version = "3.0.1"
+            bindings = "v3_0_1"
+        elif spdx_version == SPDX_VERSION_3_1:
+            self.spec_version = "3.1.0"
+            bindings = "v3_1"
+        else:
+            raise ValueError(f"Unsupported SPDX version: {spdx_version}")
+        global spdx
+        spdx = getattr(importlib.import_module("spdx_python_model"), bindings)
 
         # Track SPDX 3.0 elements
         self.elements = []  # All SPDX3 elements (packages, files, relationships, etc.)
@@ -174,7 +191,7 @@ class SPDX3Serializer:
             self.creation_info.createdBy.append(self.creator_agent._id)
             # createdUsing references the Tool that created this SPDX document (optional)
             self.creation_info.createdUsing.append(self.tool._id)
-            self.creation_info.specVersion = "3.0.1"
+            self.creation_info.specVersion = self.spec_version
             self.elements.append(self.creation_info)
 
             # Now set the tool's and agent's creationInfo
