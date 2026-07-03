@@ -28,6 +28,16 @@ config NATIVE_SIM_SLOWDOWN_TO_REAL_TIME
 	  case the zephyr kernel and application cannot tell the difference unless they
 	  interact with some other driver/device which runs at real time.
 
+config NATIVE_SIM_SET_RTC_AT_BOOT
+	bool "Set RTC at boot"
+	default y
+	depends on RTC
+	help
+	  Initialize the native_sim RTC driver with the host system time at
+	  boot. When enabled, the simulated RTC is seeded from the host's
+	  local time via hwtimer_get_pseudohost_rtc_time(), so timestamps
+	  within the simulation reflect the host's configured timezone.
+
 config NATIVE_SIM_REBOOT
 	bool "Reboot support"
 	depends on REBOOT
