@@ -40,7 +40,16 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/cache.h>
 #include <zephyr/drivers/dma.h>
+#if defined(CONFIG_ARM64)
 #include <zephyr/arch/arm64/arm_mem.h>
+#define BCM2835_SDHCI_MMIO_FLAGS  K_MEM_ARM_DEVICE_nGnRE
+#else
+/* AArch32 MMU driver does not expose the ARM64 device-memory subvariants;
+ * K_MEM_CACHE_NONE maps to Device on ARMv6/v7-A, which is the correct
+ * attribute for the BCM283x peripheral window.
+ */
+#define BCM2835_SDHCI_MMIO_FLAGS  K_MEM_CACHE_NONE
+#endif
 #include <zephyr/sd/sd_spec.h>
 #include <string.h>
 
@@ -854,11 +863,13 @@ static int sdhc_bcm2835_init(const struct device *dev)
 	}
 	drvdata->dma_channel = (uint32_t)ret;
 
-	/* MMIO mapping uses Device-nGnRE (early-write-ack permitted).
-	 * Zephyr's default K_MEM_CACHE_NONE maps as Device-nGnRnE; the
-	 * BCM283x peripheral region is documented as Device-nGnRE.
+	/* MMIO mapping uses Device-nGnRE (early-write-ack permitted) on
+	 * ARM64. Zephyr's default K_MEM_CACHE_NONE maps as Device-nGnRnE
+	 * there; the BCM283x peripheral region is documented as Device-nGnRE.
+	 * The AArch32 MMU driver does not expose the same subvariants, so
+	 * K_MEM_CACHE_NONE (mapped as Device) is used on 32-bit builds.
 	 */
-	DEVICE_MMIO_MAP(dev, K_MEM_ARM_DEVICE_nGnRE);
+	DEVICE_MMIO_MAP(dev, BCM2835_SDHCI_MMIO_FLAGS);
 
 	/* The Arasan controller is routable to two pin groups via ALT3
 	 * (GPIO 34..39 and GPIO 48..53). The VPU firmware boots with the
@@ -868,11 +879,14 @@ static int sdhc_bcm2835_init(const struct device *dev)
 	 * (DATA_CRC on the first transfer). Force GPIO 48..53 to ALT0
 	 * before pinctrl runs so the new group is the only ALT3 set.
 	 *
-	 * 3 bits per pin in GPFSEL4/5, ALT0 = 0b100 = 4.
+	 * 3 bits per pin in GPFSEL4/5, ALT0 = 0b100 = 4. GPFSEL base is
+	 * derived from DT so this works on both BCM2710 (0x3F200000) and
+	 * BCM2835 (0x20200000).
 	 */
 	{
-		volatile uint32_t *gpfsel4 = (volatile uint32_t *)0x3F200010;
-		volatile uint32_t *gpfsel5 = (volatile uint32_t *)0x3F200014;
+		uintptr_t pinctrl_base = DT_REG_ADDR(DT_NODELABEL(pinctrl));
+		volatile uint32_t *gpfsel4 = (volatile uint32_t *)(pinctrl_base + 0x10);
+		volatile uint32_t *gpfsel5 = (volatile uint32_t *)(pinctrl_base + 0x14);
 		uint32_t f4 = *gpfsel4;
 		uint32_t f5 = *gpfsel5;
 		uint32_t mask5 = 0, set5 = 0;
