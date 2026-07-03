@@ -171,7 +171,7 @@ ZTEST(mem_map, test_k_mem_map_phys_bare_exec)
 
 	/* Now map with execution enabled and try to run the copied fn */
 	k_mem_map_phys_bare(&mapped_exec, k_mem_phys_addr(__test_mem_map_start),
-			    (uintptr_t)(__test_mem_map_end - __test_mem_map_start),
+			    (uintptr_t)__test_mem_map_end - (uintptr_t)__test_mem_map_start,
 			    BASE_FLAGS | K_MEM_PERM_EXEC);
 
 	func = (void (*)(bool *executed))mapped_exec;
@@ -180,7 +180,7 @@ ZTEST(mem_map, test_k_mem_map_phys_bare_exec)
 
 	/* Now map without execution and execution should now fail */
 	k_mem_map_phys_bare(&mapped_ro, k_mem_phys_addr(__test_mem_map_start),
-			    (uintptr_t)(__test_mem_map_end - __test_mem_map_start),
+			    (uintptr_t)__test_mem_map_end - (uintptr_t)__test_mem_map_start,
 			    BASE_FLAGS);
 
 	func = (void (*)(bool *executed))mapped_ro;
