@@ -985,6 +985,13 @@ ZTEST(test_mdns_responder, test_group_recovery_after_carrier_off_on)
 		     "Responder did not recover after carrier came back");
 }
 
+/* The next two tests verify which interfaces the configured responder policy enables.
+ * iface1 is dummy0 and iface2 is dummy1 (default names for the two dummy interfaces).
+ * The policy test scenarios use allowlist "dummy0" and denylist "dummy1", so in both cases
+ * iface1 runs mDNS while iface2 does not. Under the default ALL policy both
+ * interfaces run mDNS.
+ */
+
 /* Recovery must also work on interfaces other than the first one. The old
  * NET_EVENT_IF_UP handler never rejoined the IPv6 MLD group (ff02::fb) for
  * any interface, so a second interface lost mDNS after a down/up cycle. (Its
@@ -996,11 +1003,13 @@ ZTEST(test_mdns_responder, test_second_iface_group_recovery_after_down_up)
 {
 	struct net_if *iface2 = net_if_get_by_index(2);
 
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL);
+
 	zassert_not_null(iface2, "Second interface is NULL");
 
-	zassert_true(ipv4_group_joined(iface2),
+	zexpect_true(ipv4_group_joined(iface2),
 		     "iface2 IPv4 mDNS group not joined before the link went down");
-	zassert_true(ipv6_group_joined(iface2),
+	zexpect_true(ipv6_group_joined(iface2),
 		     "iface2 IPv6 mDNS group not joined before the link went down");
 
 	zassert_ok(net_if_down(iface2), "Cannot bring the second interface down");
@@ -1008,10 +1017,47 @@ ZTEST(test_mdns_responder, test_second_iface_group_recovery_after_down_up)
 
 	k_sleep(K_MSEC(100));
 
-	zassert_true(ipv4_group_joined(iface2),
+	zexpect_true(ipv4_group_joined(iface2),
 		     "iface2 IPv4 mDNS group not rejoined after the interface came back up");
-	zassert_true(ipv6_group_joined(iface2),
+	zexpect_true(ipv6_group_joined(iface2),
 		     "iface2 IPv6 mDNS group not rejoined after the interface came back up");
+}
+
+/* With a non-default interface policy in effect, the responder must operate on
+ * the allowed interface (iface1) and stay off the excluded one (iface2). The
+ * excluded interface must never join the mDNS multicast groups, not even after
+ * a link recovery that would otherwise rejoin them.
+ */
+ZTEST(test_mdns_responder, test_iface_policy_excludes_iface2)
+{
+	struct net_if *iface2 = net_if_get_by_index(2);
+
+	Z_TEST_SKIP_IFDEF(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL);
+
+	zassert_not_null(iface2, "Second interface is NULL");
+
+	/* The allowed interface still runs mDNS. */
+	zexpect_true(ipv4_group_joined(iface1),
+		     "policy-allowed iface1 not in the IPv4 mDNS group");
+	zexpect_true(ipv6_group_joined(iface1),
+		     "policy-allowed iface1 not in the IPv6 mDNS group");
+
+	/* The excluded interface must not be a member of either group. */
+	zexpect_false(ipv4_group_joined(iface2),
+		      "policy-excluded iface2 joined the IPv4 mDNS group");
+	zexpect_false(ipv6_group_joined(iface2),
+		      "policy-excluded iface2 joined the IPv6 mDNS group");
+
+	zassert_ok(net_if_down(iface2), "Cannot bring the second interface down");
+	zassert_ok(net_if_up(iface2), "Cannot bring the second interface back up");
+
+	k_sleep(K_MSEC(100));
+
+	/* A recovery cycle must not sneak the excluded interface into the group. */
+	zexpect_false(ipv4_group_joined(iface2),
+		      "policy-excluded iface2 joined the IPv4 mDNS group on recovery");
+	zexpect_false(ipv6_group_joined(iface2),
+		      "policy-excluded iface2 joined the IPv6 mDNS group on recovery");
 }
 
 ZTEST_SUITE(test_mdns_responder, NULL, test_setup, before, cleanup, NULL);

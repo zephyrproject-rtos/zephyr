@@ -255,6 +255,11 @@ New APIs and options
   * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
   * Add :c:func:`net_dhcpv4_set_reboot_hint` to seed the DHCPv4 client with a
     previously leased address for INIT-REBOOT.
+  * Add an mDNS responder interface policy
+    (:kconfig:option:`CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALLOWLIST`,
+    :kconfig:option:`CONFIG_MDNS_RESPONDER_IFACE_POLICY_DENYLIST`) together with
+    :kconfig:option:`CONFIG_MDNS_RESPONDER_IFACE_LIST` to control on which
+    network interfaces the mDNS responder operates.
 
 * Ring buffer
 
