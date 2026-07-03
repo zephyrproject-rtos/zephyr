@@ -7078,9 +7078,9 @@ West:
   status: maintained
   maintainers:
     - d3zd3z
+    - nordicjm
   collaborators:
     - de-nordic
-    - nordicjm
   files:
     - modules/Kconfig.mcuboot
     - tests/boot/
