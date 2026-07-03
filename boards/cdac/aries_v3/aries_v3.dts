@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2026 Anuj Deshpande
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <cdac/thejas32.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "C-DAC ARIES v3.0";
+	compatible = "cdac,aries-v3", "cdac,thejas32";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/* The three dies of the on-board RGB LED, all active low. */
+		led_green: led_0 {
+			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>; /* GPIO22 */
+			label = "Green LED";
+		};
+
+		led_blue: led_1 {
+			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>; /* GPIO23 */
+			label = "Blue LED";
+		};
+
+		led_red: led_2 {
+			gpios = <&gpio1 8 GPIO_ACTIVE_LOW>; /* GPIO24 */
+			label = "Red LED";
+		};
+	};
+
+	aliases {
+		led0 = &led_green;
+		led1 = &led_blue;
+		led2 = &led_red;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
