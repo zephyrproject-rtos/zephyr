@@ -8,6 +8,11 @@ menu "General Kernel Options"
 module = KERNEL
 module-str = kernel
 source "subsys/logging/Kconfig.template.log_config"
+source "lib/os/zassert/Kconfig.template.assert"
+
+# Kernel assertions default to On (no message) in debug builds.
+config ASSERT_MODULE_KERNEL_DEFAULTS_ON
+	default y if ASSERT
 
 config MULTITHREADING
 	bool "Multi-threading" if ARCH_HAS_SINGLE_THREAD_SUPPORT
