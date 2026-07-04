@@ -5,9 +5,12 @@
  */
 
 #include <zephyr/kernel.h>
+#include <kernel_arch_interface.h>
 #include <string.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/util.h>
+
+ZASSERT_MODULE(KERNEL);
 
 typedef void * (sys_heap_allocator_t)(struct sys_heap *heap, size_t align, size_t bytes);
 
@@ -20,7 +23,7 @@ static void *z_alloc_helper(struct k_heap *heap, size_t align, size_t size,
 	k_spinlock_key_t key;
 
 	/* A power of 2 as well as 0 is OK */
-	__ASSERT((align & (align - 1)) == 0,
+	ZASSERT((align & (align - 1)) == 0,
 		"align must be a power of 2");
 
 	/*
@@ -49,7 +52,7 @@ static void *z_alloc_helper(struct k_heap *heap, size_t align, size_t size,
 	heap_ref = mem;
 	*heap_ref = heap;
 	mem = ++heap_ref;
-	__ASSERT(align == 0 || ((uintptr_t)mem & (align - 1)) == 0,
+	ZASSERT(align == 0 || ((uintptr_t)mem & (align - 1)) == 0,
 		 "misaligned memory at %p (align = %zu)", mem, align);
 
 	return mem;
@@ -192,7 +195,7 @@ static void *z_thread_alloc_helper(size_t align, size_t size,
 	void *ret;
 	struct k_heap *heap;
 
-	if (k_is_in_isr()) {
+	if (arch_is_in_isr()) {
 		heap = _SYSTEM_HEAP;
 	} else {
 		heap = _current->resource_pool;
