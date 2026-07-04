@@ -203,7 +203,7 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 #if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
 void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_data,
 				       struct ll_sync_set *sync, struct pdu_adv_sync_info *si,
-				       int16_t conn_evt_offset, uint16_t last_pa_event_counter,
+				       uint16_t conn_evt_latency, uint16_t last_pa_event_counter,
 				       uint16_t sync_conn_event_count, uint8_t sender_sca)
 {
 	struct node_rx_past_received *se_past;
@@ -327,18 +327,46 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 	/* offs_adjust may be 1 only if sync setup by LL_PERIODIC_SYNC_IND */
 	sync_offset_us += (PDU_ADV_SYNC_INFO_OFFS_ADJUST_GET(si) ? OFFS_ADJUST_US : 0U);
 
-	if (conn_evt_offset) {
-		int64_t conn_offset_us = (int64_t)conn_evt_offset * conn_interval_us;
+	/* Adjust sync_offset_us according to the number of connection events between the
+	 * reference connection event (identified by the Connection Event Counter field in
+	 * LL_PERIODIC_SYNC_IND) and the current connection event when the PDU is being
+	 * processed.
+	 *
+	 * `conn_evt_latency` is computed by the caller in the same way as the CIS_IND
+	 * LLCP procedure computes `instant_latency`, i.e. as an unsigned wrap-safe
+	 * difference `(current_event_counter - reference_event_counter) & 0xFFFF`, so
+	 * that:
+	 *   - Values in the range 0..0x7FFF mean the reference connection event has
+	 *     been reached or passed (i.e. the reference is at the current CE or in
+	 *     the past). In this case the elapsed time since the reference CE must be
+	 *     deducted from sync_offset_us. If the resulting anchor would fall into
+	 *     the past, jump forward by an integer number of periodic advertising
+	 *     intervals and advance the periodic advertising event counter
+	 *     accordingly.
+	 *   - Values in the range 0x8000..0xFFFF mean the reference connection event
+	 *     is still in the future. In this case the remaining time up to the
+	 *     reference CE must be added to sync_offset_us.
+	 */
+	if (conn_evt_latency == 0U) {
+		/* Reference connection event is the current one - no adjustment */
+	} else if (conn_evt_latency <= 0x7FFFU) {
+		/* Reference connection event is in the past - deduct elapsed time */
+		uint32_t elapsed_us = (uint32_t)conn_evt_latency * conn_interval_us;
 
-		if ((int64_t)sync_offset_us + conn_offset_us < 0) {
-			uint32_t total_offset_us = llabs((int64_t)sync_offset_us + conn_offset_us);
+		if (sync_offset_us > elapsed_us) {
+			sync_offset_us -= elapsed_us;
+		} else {
+			uint32_t total_offset_us = elapsed_us - sync_offset_us;
 			uint32_t sync_intervals = DIV_ROUND_UP(total_offset_us, interval_us);
 
 			lll->event_counter += sync_intervals;
 			sync_offset_us = (sync_intervals * interval_us) - total_offset_us;
-		} else {
-			sync_offset_us += conn_offset_us;
 		}
+	} else {
+		/* Reference connection event is in the future - add remaining time */
+		uint16_t remaining_evts = (uint16_t)(0U - conn_evt_latency);
+
+		sync_offset_us += (uint32_t)remaining_evts * conn_interval_us;
 	}
 
 	/* Calculate initial window widening - see Core Spec vol 6, part B, 5.1.13.1 */
@@ -1955,8 +1983,13 @@ void ull_sync_transfer_received(struct ll_conn *conn, uint16_t service_data,
 	/* LLCP should have ensured this holds */
 	LL_ASSERT_DBG(sync_conn_event_count != conn_evt_current);
 
+	/* Compute connection event latency the same way as the CIS_IND LLCP procedure
+	 * computes `instant_latency`: an unsigned wrap-safe difference where values
+	 * in 0..0x7FFF indicate the reference CE has been reached/passed, and values
+	 * in 0x8000..0xFFFF indicate the reference CE is still in the future.
+	 */
 	ull_sync_setup_from_sync_transfer(conn, service_data, sync, si,
-					  conn_event_count - conn_evt_current,
+					  (conn_evt_current - conn_event_count) & 0xFFFFU,
 					  last_pa_event_counter, sync_conn_event_count,
 					  sca);
 }
