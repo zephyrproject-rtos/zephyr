@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_CLOCK_H_
 
 /* Note- clock identifiers in this file must be unique,
  * as the driver uses them in a switch case
@@ -241,4 +241,4 @@
 /** PowerQuad DSP coprocessor clock identifier. */
 #define MCUX_POWERQUAD_CLK MCUX_LPC_CLK_ID(0x39, 0x00)
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_CLOCK_H_ */
