@@ -12,6 +12,7 @@ tests:
       type: multi_line
       ordered: true
       regex:
-        - "MYMODULE assert level        = 2"
+        - "MYMODULE assert level = 2"
         - "Passed module ZASSERT\\(1 == 1\\)"
-        - "ASSERTION FAIL \\[x == 3\\]"
+        - "ASSERTION FAIL \\[\\(x == 3\\)\\]"
+        - "Continued after the failing ZASSERT\\(\\)"

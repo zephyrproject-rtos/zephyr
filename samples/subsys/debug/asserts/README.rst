@@ -54,8 +54,9 @@ Expected output:
 .. code-block:: console
 
    Granular assert sample
-   MYMODULE assert level        = 2
+   MYMODULE assert level = 2
    Passed module ZASSERT(1 == 1)
    Triggering a failing module ZASSERT() ...
-   ASSERTION FAIL [x == 3] @ .../src/main.c:...
-   x was 2, expected 3
+   ASSERTION FAIL [(x == 3)] @ WEST_TOPDIR/zephyr/samples/subsys/debug/asserts/src/main.c:42
+   x was 2, expected 3(assertion caught[WEST_TOPDIR/zephyr/samples/subsys/debug/asserts/src/main.c:42]; recovering)
+   Continued after the failing ZASSERT()
