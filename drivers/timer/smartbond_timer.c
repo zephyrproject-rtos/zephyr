@@ -107,7 +107,7 @@ static void schedule_next_interrupt(uint32_t ticks)
 	}
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;

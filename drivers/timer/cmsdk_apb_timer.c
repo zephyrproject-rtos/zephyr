@@ -94,7 +94,7 @@ void sys_clock_unused(void)
 	cfg->timer->value = MAX_CYC;
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
@@ -102,7 +102,6 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 		return;
 	}
 
-	ARG_UNUSED(idle);
 
 	const struct tmr_cmsdk_apb_cfg *const cfg = &cfg_inst0;
 	struct tmr_cmsdk_apb_dev_data *data = &data_inst0;

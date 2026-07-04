@@ -361,9 +361,8 @@ void sys_clock_unused(void)
 	hpet_gconf_set(reg);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks)
 {
-	ARG_UNUSED(idle);
 
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 

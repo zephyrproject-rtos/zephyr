@@ -235,11 +235,10 @@ void sys_clock_unused(void)
 	k_spin_unlock(&lock, key);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks)
 {
 	uint32_t hw_cnt;
 
-	ARG_UNUSED(idle);
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Always return for non-tickless kernel system */

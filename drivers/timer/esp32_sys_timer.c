@@ -95,9 +95,8 @@ static void IRAM_ATTR sys_timer_isr(void *arg)
 	sys_clock_announce_locked(dticks, key);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks)
 {
-	ARG_UNUSED(idle);
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
 #if defined(CONFIG_TICKLESS_KERNEL)
@@ -130,7 +129,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 #if defined(CONFIG_PM)
 void sys_clock_idle_enter(uint32_t ticks)
 {
-	sys_clock_set_timeout(ticks, false);
+	sys_clock_set_timeout(ticks);
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) || systimer_hal.dev == NULL) {
 		return;

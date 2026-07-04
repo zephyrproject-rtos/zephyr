@@ -31,9 +31,8 @@ static uint32_t last_rtc_count;
 
 #define TICK_PERIOD_MICRO_SEC (1000000 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks)
 {
-	ARG_UNUSED(idle);
 
 	/* Get current value as early as possible */
 	uint32_t ticks_now = HWREG(RTC_BASE + RTC_O_TIME8U);

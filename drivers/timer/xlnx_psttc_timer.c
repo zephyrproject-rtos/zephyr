@@ -101,7 +101,7 @@ static void ttc_isr(const void *arg)
 	sys_clock_announce(ticks);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	uint32_t cycles;
