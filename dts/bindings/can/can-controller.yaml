@@ -6,10 +6,10 @@ bus: can
 
 properties:  
   "#address-cells":
-    required: true
+    required: false
     const: 1
   "#size-cells":
-    required: true
+    required: false
     const: 0
   bus-speed:
     type: int
