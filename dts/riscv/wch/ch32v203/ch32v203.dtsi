@@ -7,12 +7,19 @@
 #include <wch/qingke-v4b.dtsi>
 #include <wch/common/ch32v20x_30x_common.dtsi>
 
-&clk_hse {
-	clock-frequency = <DT_FREQ_M(8)>;
+/ {
+	clocks {
+		clk_hsi: clk-hsi {
+			#clock-cells = <0>;
+			compatible = "wch,ch32v20x_30x-hsi-clock";
+			clock-frequency = <DT_FREQ_M(8)>;
+			status = "okay";
+		};
+	};
 };
 
-&pll {
-	mul = <15>;
+&rcc {
+	compatible = "wch,ch32_203-rcc";
 };
 
 &sram0 {

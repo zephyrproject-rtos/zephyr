@@ -37,3 +37,19 @@ properties:
       - 15  # x15
       - 16  # x16
       - 18  # x18
+
+  hse-pre:
+    type: int
+    description: |
+      HSE divider for PLL entry
+    enum:
+      - 1
+      - 2
+
+  hsi-pre:
+    type: int
+    description: |
+      HSI divider for PLL entry
+    enum:
+      - 2
+      - 1

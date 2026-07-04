@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH32F/V20x_V30x_V31x HSI Clock
+
+compatible: "wch,ch32v20x_30x-hsi-clock"
+
+include: [fixed-clock.yaml]
+
+properties:
+  trim:
+    type: int
+    description: |
+      HSI clock Trimming
+
+      Range [0, 31]
+
+      The user can input a trimming value that is added to the HSICAL factory bits.
+      The default value is 16, which allows you to adjust the HSI to 8MHz+-0.25%;
+      the change in HSICAL is adjusted about 20kHz per step.

@@ -38,10 +38,35 @@
 			status = "disabled";
 		};
 
+		clk_lse: clk-lse {
+			#clock-cells = <0>;
+			compatible = "wch,ch32v20x_30x-lse-clock";
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
 		pll: pll {
 			#clock-cells = <0>;
 			compatible = "wch,ch32v20x_30x-pll-clock";
 			mul = <18>;
+			hse-pre = <1>;
+			hsi-pre = <2>;
+			status = "disabled";
+		};
+
+		hclk: hclk {
+			#clock-cells = <0>;
+			compatible = "wch,ch32v20x_30x-hclk-clock";
+			clocks = <&clk_hsi>;
+			prescaler = <1>;
+			pclk1-div = <1>;
+			pclk2-div = <1>;
+		};
+
+
+		mco: mco {
+			compatible = "wch,ch32v20x_30x-clock-mco";
+			clocks = <&rcc CH32V20x_V30X_CLOCK_MCO>;
 			status = "disabled";
 		};
 	};
