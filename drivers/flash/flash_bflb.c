@@ -89,6 +89,13 @@ LOG_MODULE_REGISTER(flash_bflb, CONFIG_FLASH_LOG_LEVEL);
 #define BFLB_SF_CLK_REG_OFF	GLB_SF_CFG0_OFFSET
 #define BFLB_HAS_IF2		1
 #define BFLB_HAS_32B		1
+#elif defined(CONFIG_SOC_SERIES_BL616CL)
+#define BFLB_XIP_BASE_BANK1	BL616CL_FLASH_XIP_BASE
+#define BFLB_XIP_BASE_BANK2	BL616CL_FLASH2_XIP_BASE
+#define BFLB_XIP_SIZE		(BL616CL_FLASH_XIP_BASE - BL616CL_FLASH_XIP_END)
+#define BFLB_SF_CLK_REG_OFF	GLB_SF_CFG0_OFFSET
+#define BFLB_HAS_IF2		1
+#define BFLB_HAS_32B		1
 #endif
 
 /* 'Roughly' x ms */
@@ -377,7 +384,8 @@ static __ramfunc void flash_bflb_l1c_wrap(bool enable)
 }
 
 
-#elif defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
+#elif defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808) \
+	|| defined(CONFIG_SOC_SERIES_BL616CL)
 
 static __ramfunc void flash_bflb_l1c_wrap(bool enable)
 {
@@ -505,7 +513,8 @@ static __ramfunc void flash_bflb_release_sahb(struct flash_bflb_bank_data *data)
 
 #endif
 
-#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808) \
+	|| defined(CONFIG_SOC_SERIES_BL616CL)
 
 static __ramfunc void flash_bflb_select_pads(struct flash_bflb_bank_data *data,
 					      enum flash_bflb_pad bank1, enum flash_bflb_pad bank2)
@@ -2349,7 +2358,8 @@ static __ramfunc void flash_bflb_set_io_delays(struct flash_bflb_bank_data *data
 }
 
 
-#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808) \
+	|| defined(CONFIG_SOC_SERIES_BL616CL)
 
 /* Set buffer mode and alignment ?
  * len in bytes
@@ -2979,6 +2989,14 @@ static __ramfunc int flash_bflb_init(const struct device *dev)
 		flash_bflb_set_cmds(data, 2, 2);
 	} else {
 		flash_bflb_set_cmds(data, 1, 6);
+	}
+/* BL616CL does not enjoy the same values despite SDK using the same */
+#elif defined(CONFIG_SOC_SERIES_BL616CL)
+	if (data->cfg.auto_spi_mode == BUS_QIO) {
+		flash_bflb_set_cmds(data, 3, 9);
+	} else {
+		/* Initial value */
+		flash_bflb_set_cmds(data, 1, 9);
 	}
 #endif
 
