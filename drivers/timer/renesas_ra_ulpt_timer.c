@@ -82,9 +82,8 @@ static void ra_ulpt_timer_isr(void)
 	}
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks)
 {
-	ARG_UNUSED(idle);
 
 	/* Timeout configuration is unsupported in tickful mode. */
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {

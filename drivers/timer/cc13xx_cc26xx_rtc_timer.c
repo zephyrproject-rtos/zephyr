@@ -187,9 +187,8 @@ static void startDevice(void)
 	irq_unlock(key);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks)
 {
-	ARG_UNUSED(idle);
 
 #ifdef CONFIG_TICKLESS_KERNEL
 

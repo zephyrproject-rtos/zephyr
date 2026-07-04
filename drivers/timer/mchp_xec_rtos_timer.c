@@ -188,9 +188,8 @@ void sys_clock_unused(void)
 	cached_icr = TIMER_STOPPED;
 }
 
-void sys_clock_set_timeout(uint32_t n, bool idle)
+void sys_clock_set_timeout(uint32_t n)
 {
-	ARG_UNUSED(idle);
 
 	uint32_t ccr, temp;
 	int full_ticks;          /* number of complete ticks we'll wait */

@@ -80,9 +80,8 @@ void sys_clock_unused(void)
 	k_spin_unlock(&lock, key);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks)
 {
-	ARG_UNUSED(idle);
 
 	k_spinlock_key_t key = {0};
 

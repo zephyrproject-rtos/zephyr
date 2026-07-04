@@ -135,7 +135,7 @@ uint64_t sys_clock_cycle_get_64(void)
 	return (((uint64_t)h0) << 32) | l;
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks)
 {
 	/* Compute desired expiration time */
 	uint64_t now = sys_clock_cycle_get_64();
@@ -205,7 +205,7 @@ static void timer_isr(__maybe_unused void *arg)
 	sys_clock_announce(ticks);
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		sys_clock_set_timeout(1, false);
+		sys_clock_set_timeout(1);
 	}
 }
 

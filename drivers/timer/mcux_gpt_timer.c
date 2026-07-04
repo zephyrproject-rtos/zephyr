@@ -130,7 +130,7 @@ void mcux_imx_gpt_isr(const void *arg)
  * Next needed call to sys_clock_announce will not be until the specified number
  * of ticks from the current time have elapsed.
  */
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Not supported on tickful kernels */

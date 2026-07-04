@@ -127,10 +127,8 @@ static void compare_isr(const void *arg)
 	sys_clock_announce_locked(dticks, key);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks)
 {
-	ARG_UNUSED(idle);
-
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
 #ifdef CONFIG_TICKLESS_KERNEL

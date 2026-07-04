@@ -104,9 +104,8 @@ void sys_clock_unused(void)
 	previous_cnt = RTMR_TIMER_STOPPED;
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks)
 {
-	ARG_UNUSED(idle);
 
 	uint32_t cur_cnt, temp;
 	int full_ticks;

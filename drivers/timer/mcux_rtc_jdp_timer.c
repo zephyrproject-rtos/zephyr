@@ -118,9 +118,8 @@ static void rtc_jdp_set_compare(uint32_t compare)
 	}
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks)
 {
-	ARG_UNUSED(idle);
 
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 

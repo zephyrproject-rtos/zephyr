@@ -281,12 +281,11 @@ void sys_clock_idle_enter(uint32_t ticks)
 		return;
 	}
 #endif
-	sys_clock_set_timeout(ticks, false);
+	sys_clock_set_timeout(ticks);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks)
 {
-	ARG_UNUSED(idle);
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Only for tickless kernel system */
 		return;
