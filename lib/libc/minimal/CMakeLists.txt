@@ -31,6 +31,7 @@ zephyr_library_sources(
   source/stdio/stdout_console.c
   source/stdio/fgetc.c
   source/stdio/fgets.c
+  source/stdio/fseek.c
   source/stdio/sprintf.c
   source/stdio/fprintf.c
   source/math/sqrtf.c
