@@ -182,4 +182,15 @@ config ETH_STM32_MULTICAST_FILTER
 	  other multicast is dropped by the MAC. If disabled then all
 	  multicast is received by the MAC.
 
+config ETH_STM32_HAVE_MACPFR
+	bool "ETH_MACPFR register available"
+	default y
+	depends on SOC_SERIES_STM32H5X \
+		|| SOC_SERIES_STM32H7X \
+		|| SOC_SERIES_STM32H7RSX \
+		|| SOC_SERIES_STM32MP13X \
+		|| SOC_SERIES_STM32N6X
+	help
+	  Set for SoC series with the ETH_MACPFR register available.
+
 endif # ETH_STM32_HAL

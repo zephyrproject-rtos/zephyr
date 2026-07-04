@@ -155,6 +155,13 @@ static int eth_initialize(const struct device *dev)
 		return -EIO;
 	}
 
+#ifdef CONFIG_ETH_STM32_HAVE_MACPFR
+	if (IS_ENABLED(CONFIG_NET_DSA)) {
+		LOG_DBG("Disabling MAC filter");
+		heth->Instance->MACPFR |= ETH_MACPFR_RA;
+	}
+#endif
+
 	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x", dev_data->mac_addr[0], dev_data->mac_addr[1],
 		dev_data->mac_addr[2], dev_data->mac_addr[3], dev_data->mac_addr[4],
 		dev_data->mac_addr[5]);
