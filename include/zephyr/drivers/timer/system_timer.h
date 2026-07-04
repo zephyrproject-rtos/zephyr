@@ -253,6 +253,25 @@ uint32_t sys_clock_elapsed(void);
 void sys_clock_disable(void);
 
 /**
+ * @brief Notify the timer driver that the system clock is currently unused.
+ *
+ * Called by the kernel when no timeout is pending and
+ * @kconfig{CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE} allows the system uptime to drift.
+ * A driver may use this to halt the counter and stop generating interrupts
+ * until the next sys_clock_set_timeout(), which resumes normal operation.
+ *
+ * Unlike sys_clock_disable(), this is a resumable pause, not a teardown. The
+ * default implementation preserves the legacy contract by calling
+ * sys_clock_set_timeout() with K_TICKS_FOREVER (UINT32_MAX once converted to
+ * the unsigned tick argument), the long-standing "no deadline" signal a
+ * driver that has not migrated to this hook either recognises and stops its
+ * clock on, or treats as a maximal wait, which is equally acceptable once
+ * timekeeping accuracy has been given up. That signal is deprecated together
+ * with the default, and a driver overriding this hook must not rely on it.
+ */
+void sys_clock_unused(void);
+
+/**
  * @brief Hardware cycle counter
  *
  * Timer drivers are generally responsible for the system cycle
