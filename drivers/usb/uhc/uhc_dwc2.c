@@ -15,7 +15,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhc_dwc2, CONFIG_UHC_DRIVER_LOG_LEVEL);
 
-#include "uhc_common.h"
 #include "uhc_dwc2.h"
 
 #define DEBOUNCE_DELAY_MS	CONFIG_UHC_DWC2_DEBOUNCE_DELAY_MS
@@ -83,6 +82,7 @@ enum uhc_dwc2_channel_event {
 struct uhc_dwc2_channel_data {
 	uint8_t next_pid;
 };
+
 struct uhc_dwc2_channel {
 	/* Index of the channel */
 	uint8_t index;
@@ -105,6 +105,7 @@ struct uhc_dwc2_channel {
 };
 
 struct uhc_dwc2_data {
+	DEVICE_MMIO_NAMED_RAM(core);
 	struct k_thread thread;
 	/* Event bitmask the driver thread waits for */
 	struct k_event events;
@@ -123,6 +124,11 @@ struct uhc_dwc2_data {
 	/* Root port has an attached device */
 	bool has_device;
 };
+
+struct usb_dwc2_reg *uhc_dwc2_get_base(const struct device *dev)
+{
+	return (struct usb_dwc2_reg *)DEVICE_MMIO_NAMED_GET(dev, core);
+}
 
 static inline uint32_t calc_packet_count(const uint32_t size, const uint16_t mps)
 {
@@ -275,9 +281,8 @@ static void dwc2_config_timings(struct usb_dwc2_reg *const base)
 
 static inline int dwc2_core_init_host_gusbcfg(const struct device *dev)
 {
-	const struct uhc_dwc2_config *const config = dev->config;
 	struct uhc_dwc2_data *const data = uhc_get_private(dev);
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	uint32_t gusbcfg = sys_read32((mem_addr_t)&base->gusbcfg);
 	uint32_t ghwcfg2 = sys_read32((mem_addr_t)&base->ghwcfg2);
 	uint32_t ghwcfg4 = sys_read32((mem_addr_t)&base->ghwcfg4);
@@ -343,8 +348,7 @@ static inline int dwc2_core_init_host_gusbcfg(const struct device *dev)
 
 static inline int dwc2_core_init_gahbcfg(const struct device *dev)
 {
-	const struct uhc_dwc2_config *const config = dev->config;
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	uint32_t ghwcfg2;
 	uint32_t gahbcfg;
 
@@ -373,8 +377,7 @@ static inline int dwc2_core_init_gahbcfg(const struct device *dev)
 
 static int dwc2_core_soft_reset(const struct device *dev)
 {
-	const struct uhc_dwc2_config *const config = dev->config;
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	mem_addr_t grstctl_reg = (mem_addr_t)&base->grstctl;
 	mem_addr_t gsnpsid_reg = (mem_addr_t)&base->gsnpsid;
 	k_timepoint_t timepoint;
@@ -527,8 +530,7 @@ static int dwc2_set_fifo_sizes(struct usb_dwc2_reg *const base)
 
 static void port_debounce_lock(const struct device *dev)
 {
-	const struct uhc_dwc2_config *const config = dev->config;
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 
 	/* Disable connection and disconnection interrupts to prevent spurious events */
@@ -540,8 +542,7 @@ static void port_debounce_lock(const struct device *dev)
 
 static void port_debounce_unlock(const struct device *dev)
 {
-	const struct uhc_dwc2_config *const config = dev->config;
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 
 	/* Clear the flag */
@@ -557,9 +558,8 @@ static void port_debounce_unlock(const struct device *dev)
 
 static int port_reset(const struct device *dev)
 {
-	const struct uhc_dwc2_config *const config = dev->config;
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	int ret;
 
 	/* Reset the port */
@@ -877,8 +877,7 @@ static uint32_t ch_handle_irq_events(struct uhc_dwc2_channel *ch)
 static inline bool port_debounce(const struct device *dev, const enum uhc_dwc2_event event)
 {
 	const bool want_connected = (event == UHC_DWC2_EVENT_PORT_CONNECTION);
-	const struct uhc_dwc2_config *config = dev->config;
-	struct usb_dwc2_reg *base = config->base;
+	struct usb_dwc2_reg *base = uhc_dwc2_get_base(dev);
 	bool connected;
 
 	/* Perform the debounce delay outside of the global lock */
@@ -897,8 +896,7 @@ static inline bool port_debounce(const struct device *dev, const enum uhc_dwc2_e
 
 static inline void port_enable(const struct device *dev)
 {
-	const struct uhc_dwc2_config *const config = dev->config;
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 
 	sys_clear_bits((mem_addr_t)&base->haintmsk, 0xFFFFFFFFUL);
 	sys_set_bits((mem_addr_t)&base->gintmsk, USB_DWC2_GINTSTS_PRTINT |
@@ -908,8 +906,7 @@ static inline void port_enable(const struct device *dev)
 
 static inline void port_disable(const struct device *dev)
 {
-	const struct uhc_dwc2_config *const config = dev->config;
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 
 	sys_clear_bits((mem_addr_t)&base->haintmsk, 0xFFFFFFFFUL);
 	sys_clear_bits((mem_addr_t)&base->gintmsk, USB_DWC2_GINTSTS_PRTINT |
@@ -995,8 +992,7 @@ static int ch_claim(const struct device *const dev,
 
 static int ch_configure(const struct device *const dev, struct uhc_dwc2_channel *const ch)
 {
-	const struct uhc_dwc2_config *const config = dev->config;
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	struct uhc_transfer *const xfer = ch->xfer;
 	struct usb_device *const udev = xfer->udev;
 	uint32_t hcint;
@@ -1093,9 +1089,8 @@ static void ch_complete(const struct device *dev, struct uhc_dwc2_channel *ch)
 
 static void ch_release(const struct device *dev, struct uhc_dwc2_channel *ch)
 {
-	const struct uhc_dwc2_config *const config = dev->config;
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 
 	sys_clear_bits((mem_addr_t)&base->haintmsk, (1 << ch->index));
 
@@ -1256,8 +1251,7 @@ static void ch_reinit(struct uhc_dwc2_channel *ch)
 static inline void submit_new_device(const struct device *dev)
 {
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
-	const struct uhc_dwc2_config *const config = dev->config;
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	uint32_t hprt = sys_read32((mem_addr_t)&base->hprt);
 
 	switch (usb_dwc2_get_hprt_prtspd(hprt)) {
@@ -1524,8 +1518,7 @@ static void submit_pending(const struct device *const dev)
 
 static void port_handle_events(const struct device *dev, uint32_t event_mask)
 {
-	const struct uhc_dwc2_config *const config = dev->config;
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 
 	LOG_DBG("Port events: %08Xh", event_mask);
 
@@ -1631,9 +1624,8 @@ static void ch_handle_events(const struct device *dev, struct uhc_dwc2_channel *
 
 static void uhc_dwc2_isr_handler(const struct device *dev)
 {
-	const struct uhc_dwc2_config *const config = dev->config;
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	uint32_t gintsts;
 	uint32_t hprt = 0;
 	uint32_t ch_events = 0;
@@ -1910,9 +1902,10 @@ static int uhc_dwc2_dequeue(const struct device *const dev, struct uhc_transfer 
 
 static int uhc_dwc2_preinit(const struct device *const dev)
 {
+	DEVICE_MMIO_NAMED_MAP(dev, core, K_MEM_CACHE_NONE);
 	const struct uhc_dwc2_config *const config = dev->config;
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	int ret;
 
 	for (uint32_t idx = 0; idx < MAX_CHANNELS; idx++) {
@@ -1942,9 +1935,8 @@ static int uhc_dwc2_preinit(const struct device *const dev)
 
 static int uhc_dwc2_init(const struct device *const dev)
 {
-	const struct uhc_dwc2_config *const config = dev->config;
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	uint32_t hcfg;
 	uint32_t hfir;
 	uint32_t gsnpsid;
@@ -2100,8 +2092,8 @@ static DEVICE_API(uhc, uhc_dwc2_api) = {
 
 #define UHC_DWC2_DT_INST_REG_ADDR(n)						\
 	COND_CODE_1(DT_NUM_REGS(DT_DRV_INST(n)),				\
-			(DT_INST_REG_ADDR(n)),					\
-			(DT_INST_REG_ADDR_BY_NAME(n, core)))
+		(DEVICE_MMIO_NAMED_ROM_INIT(core, DT_DRV_INST(n))),		\
+		(DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(core, DT_DRV_INST(n))))
 
 #ifndef UHC_DWC2_IRQ_DT_INST_DEFINE
 #define UHC_DWC2_IRQ_DT_INST_DEFINE(n)						\
@@ -2145,7 +2137,7 @@ static DEVICE_API(uhc, uhc_dwc2_api) = {
 	};									\
 										\
 	static const struct uhc_dwc2_config uhc_dwc2_config_##n = {		\
-		.base = (struct usb_dwc2_reg *)UHC_DWC2_DT_INST_REG_ADDR(n),	\
+		UHC_DWC2_DT_INST_REG_ADDR(n),					\
 		.quirks = UHC_DWC2_VENDOR_QUIRK_GET(n),				\
 		.quirk_data = &uhc_dwc2_quirk_data_##n,				\
 		.quirk_config = &uhc_dwc2_quirk_config_##n,			\

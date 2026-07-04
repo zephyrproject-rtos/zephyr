@@ -11,6 +11,13 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/usb/uhc.h>
 #include <usb_dwc2_hw.h>
+#include "uhc_common.h"
+
+/* Required by DEVICE_MMIO_NAMED_* macros */
+#define DEV_CFG(_dev)	((const struct uhc_dwc2_config *)(_dev)->config)
+#define DEV_DATA(_dev)	((struct uhc_dwc2_data *)(uhc_get_private(_dev)))
+
+struct usb_dwc2_reg *uhc_dwc2_get_base(const struct device *dev);
 
 /* Vendor quirks per driver instance */
 struct uhc_dwc2_vendor_quirks {
@@ -35,7 +42,7 @@ struct uhc_dwc2_vendor_quirks {
 /* Driver configuration per instance */
 struct uhc_dwc2_config {
 	/* Pointer to base address of DWC_OTG registers */
-	struct usb_dwc2_reg *const base;
+	DEVICE_MMIO_NAMED_ROM(core);
 	/* Vendor specific quirks */
 	const struct uhc_dwc2_vendor_quirks *const quirks;
 	void *quirk_data;
