@@ -118,16 +118,13 @@ __weak void ztest_post_assert_fail_hook(void)
 	CODE_UNREACHABLE;
 }
 
-#ifdef CONFIG_ASSERT_NO_FILE_INFO
-void assert_post_action(void)
-#else
-void assert_post_action(const char *file, unsigned int line)
+#ifndef CONFIG_ASSERT_TEST
+FUNC_NORETURN
 #endif
+void zassert_post_action(const char *file, unsigned int line)
 {
-#ifndef CONFIG_ASSERT_NO_FILE_INFO
 	ARG_UNUSED(file);
 	ARG_UNUSED(line);
-#endif
 
 	printk("Caught assert failed\n");
 
@@ -164,5 +161,9 @@ void assert_post_action(const char *file, unsigned int line)
 #endif
 		k_panic();
 	}
+
+#ifndef CONFIG_ASSERT_TEST
+	CODE_UNREACHABLE;
+#endif
 }
 #endif

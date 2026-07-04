@@ -51,16 +51,10 @@ static void action_after_assert_fail(void)
 	ztest_test_pass();
 }
 
-#ifdef CONFIG_ASSERT_NO_FILE_INFO
-void assert_post_action(void)
-#else
-void assert_post_action(const char *file, unsigned int line)
-#endif
+void zassert_post_action(const char *file, unsigned int line)
 {
-#ifndef CONFIG_ASSERT_NO_FILE_INFO
 	ARG_UNUSED(file);
 	ARG_UNUSED(line);
-#endif
 
 	printk("Caught an assert.\n");
 
