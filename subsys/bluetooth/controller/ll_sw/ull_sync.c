@@ -218,6 +218,7 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 	uint32_t interval_us;
 	uint32_t slot_us;
 	uint32_t ticks_anchor;
+	uint32_t remainder_us;
 	uint8_t chm_last;
 	uint32_t ret;
 	uint16_t interval;
@@ -433,6 +434,15 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 
 	ticks_anchor = conn->llcp.prep.ticks_at_expire;
 
+	/* Fold the ACL prepare fractional remainder into sync_offset_us so that
+	 * sub-tick precision from the connection anchor is preserved on
+	 * platforms where the ticker resolution is coarser than 1 us (e.g. nRF52
+	 * with a 32.768 kHz LFCLK). Mirrors the CIS pattern in cig_offset_calc().
+	 */
+	remainder_us = conn->llcp.prep.remainder;
+	hal_ticker_remove_jitter(&ticks_anchor, &remainder_us);
+	sync_offset_us += remainder_us;
+
 #if defined(CONFIG_BT_PERIPHERAL)
 	if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL) {
 		/* Compensate for window widening */
@@ -440,10 +450,11 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
 
-	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+	ret = ticker_start_us(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			   (TICKER_ID_SCAN_SYNC_BASE + sync_handle),
 			   ticks_anchor,
 			   HAL_TICKER_US_TO_TICKS(sync_offset_us),
+			   HAL_TICKER_REMAINDER(sync_offset_us),
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   HAL_TICKER_REMAINDER(interval_us),
 			   TICKER_NULL_LAZY,
