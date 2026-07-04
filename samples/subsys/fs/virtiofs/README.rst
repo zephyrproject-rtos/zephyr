@@ -26,18 +26,33 @@ Building
 
 Running
 *******
-Before launching QEMU ``virtiofsd`` has to be running. QEMU's arguments are embedded using :code:`CONFIG_QEMU_EXTRA_FLAGS` and socket path is set to :code:`/tmp/vhostqemu`, so ``virtiofsd`` has to be launched using
+Before launching QEMU ``virtiofsd`` has to be running. The static
+``vhost-user-fs-pci`` device is embedded in the image through
+:code:`CONFIG_QEMU_EXTRA_FLAGS`, but the matching ``-chardev socket`` flag that
+selects the socket path is supplied at run time so it can be chosen freely.
+Launch ``virtiofsd`` on a socket of your choice:
 
 .. code-block::
 
-   virtiofsd --socket-path=/tmp/vhostqemu -o source=shared_dir_path
+   virtiofsd --socket-path=/tmp/vhostqemu --shared-dir shared_dir_path
 
 where :code:`shared_dir_path` is a directory that will be mounted on Zephyr side.
-Then you can launch QEMU using:
+Then point QEMU at the same socket and launch it:
 
 .. code-block::
 
+   export QEMU_EXTRA_FLAGS="-chardev socket,id=char0,path=/tmp/vhostqemu"
    west build -t run
+
+Running with twister
+====================
+The sample can also be executed automatically with the ``virtiofs`` twister
+harness, which starts ``virtiofsd`` on a per-run socket for you (skipping the
+test when ``virtiofsd`` is not installed):
+
+.. code-block::
+
+   scripts/twister -p qemu_x86_64 -T samples/subsys/fs/virtiofs
 
 This sample will list the files and directories in the mounted filesystem and print the contents of the file :code:`file` in the mounted directory.
 This sample will also create some files and directories.

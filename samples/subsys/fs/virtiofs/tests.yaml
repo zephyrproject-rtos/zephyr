@@ -4,7 +4,21 @@ common:
   tags:
     - filesystem
     - virtio
+  harness: console
+  sidecar: virtiofs
+  sidecar_config:
+    virtiofs:
+      shared: shared
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "/virtiofs directory tree:"
+      - "/virtiofs/file content:"
+      - "this is a file on the host"
 tests:
   sample.filesystem.virtiofs:
-    build_only: true
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_64
     filter: CONFIG_DT_HAS_VIRTIO_PCI_ENABLED
