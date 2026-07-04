@@ -223,7 +223,8 @@ static inline
 void k_thread_foreach_filter_by_cpu(unsigned int cpu,
 				    k_thread_user_cb_t user_cb, void *user_data)
 {
-	__ASSERT(cpu == 0, "cpu filter out of bounds");
+	ZASSERT_MODULE(KERNEL);
+	ZASSERT(cpu == 0, "cpu filter out of bounds");
 	ARG_UNUSED(cpu);
 	k_thread_foreach(user_cb, user_data);
 }
@@ -298,7 +299,8 @@ static inline
 void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
 					     k_thread_user_cb_t user_cb, void *user_data)
 {
-	__ASSERT(cpu == 0, "cpu filter out of bounds");
+	ZASSERT_MODULE(KERNEL);
+	ZASSERT(cpu == 0, "cpu filter out of bounds");
 	ARG_UNUSED(cpu);
 	k_thread_foreach_unlocked(user_cb, user_data);
 }
@@ -858,7 +860,8 @@ static inline bool k_is_pre_kernel(void)
 __attribute_const__
 static inline k_tid_t k_current_get(void)
 {
-	__ASSERT(!k_is_pre_kernel(), "k_current_get called pre-kernel");
+	ZASSERT_MODULE(KERNEL);
+	ZASSERT(!k_is_pre_kernel(), "k_current_get called pre-kernel");
 
 #ifdef CONFIG_CURRENT_THREAD_USE_TLS
 
@@ -2305,8 +2308,9 @@ static inline uint32_t k_cycle_get_32(void)
  */
 static inline uint64_t k_cycle_get_64(void)
 {
+	ZASSERT_MODULE(KERNEL);
 	if (!IS_ENABLED(CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER)) {
-		__ASSERT(0, "64-bit cycle counter not enabled on this platform. "
+		ZASSERT(0, "64-bit cycle counter not enabled on this platform. "
 			    "See CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER");
 		return 0;
 	}
@@ -5901,6 +5905,10 @@ struct k_pipe {
  * This routine writes up to @a len bytes of data to @a pipe.
  * If the pipe is full, the routine will block until the data can be written or the timeout expires.
  *
+ * @note @a timeout must be set to K_NO_WAIT if called from ISR.
+ *
+ * @isr_ok
+ *
  * @param pipe Address of the pipe.
  * @param data Address of data to write.
  * @param len Size of data (in bytes).
@@ -5919,6 +5927,10 @@ __syscall int k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len,
  * @brief Read data from a pipe
  * This routine reads up to @a len bytes of data from @a pipe.
  * If the pipe is empty, the routine will block until the data can be read or the timeout expires.
+ *
+ * @note @a timeout must be set to K_NO_WAIT if called from ISR.
+ *
+ * @isr_ok
  *
  * @param pipe Address of the pipe.
  * @param data Address to place the data read from pipe.

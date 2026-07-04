@@ -19,6 +19,8 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
 
+ZASSERT_MODULE(KERNEL);
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 static inline void flag_clear(uint32_t *flagp,
@@ -153,8 +155,7 @@ static void finalize_cancel_locked(struct k_work *work)
 void k_work_init(struct k_work *work,
 		  k_work_handler_t handler)
 {
-	__ASSERT_NO_MSG(work != NULL);
-	__ASSERT_NO_MSG(handler != NULL);
+	ZASSERT(work != NULL && handler != NULL);
 
 	*work = (struct k_work)Z_WORK_INITIALIZER(handler);
 
@@ -265,7 +266,7 @@ static inline int queue_submit_locked(struct k_work_q *queue,
 	}
 
 	int ret;
-	bool chained = (_current == queue->thread_id) && !k_is_in_isr();
+	bool chained = (_current == queue->thread_id) && !arch_is_in_isr();
 	bool draining = flag_test(&queue->flags, K_WORK_QUEUE_DRAIN_BIT);
 	bool plugged = flag_test(&queue->flags, K_WORK_QUEUE_PLUGGED_BIT);
 
@@ -340,7 +341,7 @@ static int submit_to_queue_locked(struct k_work *work,
 		 * re-entrancy.
 		 */
 		if (flag_test(&work->flags, K_WORK_RUNNING_BIT)) {
-			__ASSERT_NO_MSG(work->queue != NULL);
+			ZASSERT(work->queue != NULL);
 			*queuep = work->queue;
 			ret = 2;
 		}
@@ -378,8 +379,7 @@ static int submit_to_queue_locked(struct k_work *work,
 int z_work_submit_to_queue(struct k_work_q *queue,
 		  struct k_work *work)
 {
-	__ASSERT_NO_MSG(work != NULL);
-	__ASSERT_NO_MSG(work->handler != NULL);
+	ZASSERT(work != NULL && work->handler != NULL);
 
 	k_spinlock_key_t key = k_spin_lock(&work_lock);
 
@@ -442,7 +442,7 @@ static bool work_flush_locked(struct k_work *work,
 	if (need_flush) {
 		struct k_work_q *queue = work->queue;
 
-		__ASSERT_NO_MSG(queue != NULL);
+		ZASSERT(queue != NULL);
 
 		queue_flusher_locked(queue, work, flusher);
 		notify_queue_locked(queue);
@@ -454,12 +454,11 @@ static bool work_flush_locked(struct k_work *work,
 bool k_work_flush(struct k_work *work,
 		  struct k_work_sync *sync)
 {
-	__ASSERT_NO_MSG(work != NULL);
-	__ASSERT_NO_MSG(!flag_test(&work->flags, K_WORK_DELAYABLE_BIT));
-	__ASSERT_NO_MSG(!k_is_in_isr());
-	__ASSERT_NO_MSG(sync != NULL);
+	ZASSERT(work != NULL);
+	ZASSERT(!flag_test(&work->flags, K_WORK_DELAYABLE_BIT));
+	ZASSERT(!arch_is_in_isr() && sync != NULL);
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(sync));
+	ZASSERT(sys_cache_is_mem_coherent(sync));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, flush, work);
@@ -548,8 +547,8 @@ static bool cancel_sync_locked(struct k_work *work,
 
 int k_work_cancel(struct k_work *work)
 {
-	__ASSERT_NO_MSG(work != NULL);
-	__ASSERT_NO_MSG(!flag_test(&work->flags, K_WORK_DELAYABLE_BIT));
+	ZASSERT(work != NULL);
+	ZASSERT(!flag_test(&work->flags, K_WORK_DELAYABLE_BIT));
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, cancel, work);
 
@@ -566,12 +565,11 @@ int k_work_cancel(struct k_work *work)
 bool k_work_cancel_sync(struct k_work *work,
 			struct k_work_sync *sync)
 {
-	__ASSERT_NO_MSG(work != NULL);
-	__ASSERT_NO_MSG(sync != NULL);
-	__ASSERT_NO_MSG(!flag_test(&work->flags, K_WORK_DELAYABLE_BIT));
-	__ASSERT_NO_MSG(!k_is_in_isr());
+	ZASSERT(work != NULL && sync != NULL);
+	ZASSERT(!flag_test(&work->flags, K_WORK_DELAYABLE_BIT));
+	ZASSERT(!arch_is_in_isr());
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(sync));
+	ZASSERT(sys_cache_is_mem_coherent(sync));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, cancel_sync, work, sync);
@@ -749,7 +747,7 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 
 		k_spin_unlock(&work_lock, key);
 
-		__ASSERT_NO_MSG(handler != NULL);
+		ZASSERT(handler != NULL);
 		handler(work);
 
 		/* Mark the work item as no longer running and deal
@@ -800,7 +798,7 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 
 void k_work_queue_init(struct k_work_q *queue)
 {
-	__ASSERT_NO_MSG(queue != NULL);
+	ZASSERT(queue != NULL);
 
 	*queue = (struct k_work_q) {
 		.flags = 0,
@@ -811,7 +809,7 @@ void k_work_queue_init(struct k_work_q *queue)
 
 void k_work_queue_run(struct k_work_q *queue, const struct k_work_queue_config *cfg)
 {
-	__ASSERT_NO_MSG(!flag_test(&queue->flags, K_WORK_QUEUE_STARTED_BIT));
+	ZASSERT(!flag_test(&queue->flags, K_WORK_QUEUE_STARTED_BIT));
 
 	uint32_t flags = K_WORK_QUEUE_STARTED;
 
@@ -845,9 +843,8 @@ void k_work_queue_start(struct k_work_q *queue,
 			int prio,
 			const struct k_work_queue_config *cfg)
 {
-	__ASSERT_NO_MSG(queue);
-	__ASSERT_NO_MSG(stack);
-	__ASSERT_NO_MSG(!flag_test(&queue->flags, K_WORK_QUEUE_STARTED_BIT));
+	ZASSERT(queue && stack);
+	ZASSERT(!flag_test(&queue->flags, K_WORK_QUEUE_STARTED_BIT));
 
 	/* In future, this whole function will be deprecated, but for now, we
 	 * have to use the `thread` field to create a new thread in it.
@@ -903,8 +900,7 @@ void k_work_queue_start(struct k_work_q *queue,
 int k_work_queue_drain(struct k_work_q *queue,
 		       bool plug)
 {
-	__ASSERT_NO_MSG(queue);
-	__ASSERT_NO_MSG(!k_is_in_isr());
+	ZASSERT(queue && !arch_is_in_isr());
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work_queue, drain, queue);
 
@@ -934,7 +930,7 @@ int k_work_queue_drain(struct k_work_q *queue,
 
 int k_work_queue_unplug(struct k_work_q *queue)
 {
-	__ASSERT_NO_MSG(queue);
+	ZASSERT(queue);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work_queue, unplug, queue);
 
@@ -954,7 +950,7 @@ int k_work_queue_unplug(struct k_work_q *queue)
 
 int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout)
 {
-	__ASSERT_NO_MSG(queue);
+	ZASSERT(queue && !arch_is_in_isr());
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work_queue, stop, queue, timeout);
 
@@ -1026,8 +1022,7 @@ static void work_timeout(struct _timeout *to)
 void k_work_init_delayable(struct k_work_delayable *dwork,
 			    k_work_handler_t handler)
 {
-	__ASSERT_NO_MSG(dwork != NULL);
-	__ASSERT_NO_MSG(handler != NULL);
+	ZASSERT(dwork != NULL && handler != NULL);
 
 	*dwork = (struct k_work_delayable)Z_WORK_DELAYABLE_INITIALIZER(handler);
 
@@ -1043,7 +1038,7 @@ static inline int work_delayable_busy_get_locked(const struct k_work_delayable *
 
 int k_work_delayable_busy_get(const struct k_work_delayable *dwork)
 {
-	__ASSERT_NO_MSG(dwork != NULL);
+	ZASSERT(dwork != NULL);
 
 	k_spinlock_key_t key = k_spin_lock(&work_lock);
 	int ret = work_delayable_busy_get_locked(dwork);
@@ -1158,8 +1153,7 @@ static int cancel_delayable_async_locked(struct k_work_delayable *dwork,
 int k_work_schedule_for_queue(struct k_work_q *queue, struct k_work_delayable *dwork,
 			      k_timeout_t delay)
 {
-	__ASSERT_NO_MSG(queue != NULL);
-	__ASSERT_NO_MSG(dwork != NULL);
+	ZASSERT(queue != NULL && dwork != NULL);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, schedule_for_queue, queue, dwork, delay);
 
@@ -1193,8 +1187,7 @@ int k_work_schedule(struct k_work_delayable *dwork, k_timeout_t delay)
 int k_work_reschedule_for_queue(struct k_work_q *queue, struct k_work_delayable *dwork,
 				k_timeout_t delay)
 {
-	__ASSERT_NO_MSG(queue != NULL);
-	__ASSERT_NO_MSG(dwork != NULL);
+	ZASSERT(queue != NULL && dwork != NULL);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, reschedule_for_queue, queue, dwork, delay);
 
@@ -1227,7 +1220,7 @@ int k_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay)
 
 int k_work_cancel_delayable(struct k_work_delayable *dwork)
 {
-	__ASSERT_NO_MSG(dwork != NULL);
+	ZASSERT(dwork != NULL);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, cancel_delayable, dwork);
 
@@ -1244,11 +1237,9 @@ int k_work_cancel_delayable(struct k_work_delayable *dwork)
 bool k_work_cancel_delayable_sync(struct k_work_delayable *dwork,
 				  struct k_work_sync *sync)
 {
-	__ASSERT_NO_MSG(dwork != NULL);
-	__ASSERT_NO_MSG(sync != NULL);
-	__ASSERT_NO_MSG(!k_is_in_isr());
+	ZASSERT(dwork != NULL && sync != NULL && !arch_is_in_isr());
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(sync));
+	ZASSERT(sys_cache_is_mem_coherent(sync));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, cancel_delayable_sync, dwork, sync);
@@ -1276,11 +1267,9 @@ bool k_work_cancel_delayable_sync(struct k_work_delayable *dwork,
 bool k_work_flush_delayable(struct k_work_delayable *dwork,
 			    struct k_work_sync *sync)
 {
-	__ASSERT_NO_MSG(dwork != NULL);
-	__ASSERT_NO_MSG(sync != NULL);
-	__ASSERT_NO_MSG(!k_is_in_isr());
+	ZASSERT(dwork != NULL && sync != NULL && !arch_is_in_isr());
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(sync));
+	ZASSERT(sys_cache_is_mem_coherent(sync));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, flush_delayable, dwork, sync);

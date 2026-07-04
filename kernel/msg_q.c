@@ -25,6 +25,8 @@
 #include <kernel_internal.h>
 #include <zephyr/sys/check.h>
 
+ZASSERT_MODULE(KERNEL);
+
 #ifdef CONFIG_OBJ_CORE_MSGQ
 static struct k_obj_type obj_type_msgq;
 #endif /* CONFIG_OBJ_CORE_MSGQ */
@@ -43,9 +45,9 @@ static inline bool msgq_handle_poll_events(struct k_msgq *msgq)
 void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
 		 uint32_t max_msgs)
 {
-	__ASSERT_NO_MSG(!size_mul_overflow(max_msgs, msg_size, &(size_t){0}));
-	__ASSERT_NO_MSG(!size_add_overflow((size_t)(uintptr_t)buffer, max_msgs * msg_size,
-					&(size_t){0}));
+	ZASSERT(!size_mul_overflow(max_msgs, msg_size, &(size_t){ 0, }));
+	ZASSERT(!size_add_overflow((size_t)(uintptr_t)buffer, max_msgs * msg_size,
+		&(size_t){ 0, }));
 
 	msgq->msg_size = msg_size;
 	msgq->max_msgs = max_msgs;
@@ -143,7 +145,7 @@ int k_msgq_cleanup(struct k_msgq *msgq)
 static inline int put_msg_in_queue(struct k_msgq *msgq, const void *data,
 			k_timeout_t timeout, bool put_at_back)
 {
-	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
+	ZASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT));
 
 	struct k_thread *pending_thread = NULL;
 	k_spinlock_key_t key;
@@ -180,7 +182,7 @@ static inline int put_msg_in_queue(struct k_msgq *msgq, const void *data,
 			size_t msg_size = msgq->msg_size;
 			char *slot;
 
-			__ASSERT_NO_MSG((msgq->write_ptr >= msgq->buffer_start) &&
+			ZASSERT((msgq->write_ptr >= msgq->buffer_start) &&
 					(msgq->write_ptr <= (msgq->buffer_end - 1)) &&
 					((size_t)(uintptr_t)(msgq->buffer_end - msgq->write_ptr) >=
 						msgq->msg_size));
@@ -314,7 +316,7 @@ static inline void z_vrfy_k_msgq_get_attrs(struct k_msgq *msgq,
 
 int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 {
-	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
+	ZASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT));
 
 	k_spinlock_key_t key;
 	struct k_thread *pending_thread;
@@ -340,7 +342,7 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 		(void)memcpy(data, slot, msg_size);
 
 		/* sanity-check write_ptr in case we hand the slot to a sender */
-		__ASSERT_NO_MSG((msgq->write_ptr >= msgq->buffer_start) &&
+		ZASSERT((msgq->write_ptr >= msgq->buffer_start) &&
 				(msgq->write_ptr <= (msgq->buffer_end - 1)) &&
 				((size_t)(uintptr_t)(msgq->buffer_end - msgq->write_ptr) >=
 					msgq->msg_size));

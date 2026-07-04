@@ -9,6 +9,8 @@
 #include <ksched.h>
 #include <ipi.h>
 
+ZASSERT_MODULE(KERNEL);
+
 #if defined(CONFIG_IPI_OPTIMIZE_IDLE) && defined(CONFIG_PM)
 #include <zephyr/pm/pm.h>
 #endif
@@ -52,8 +54,8 @@ static void sched_ipi_idle_reserve(uint32_t cpu, struct k_thread *thread)
 {
 	uint32_t bit = BIT(cpu);
 
-	__ASSERT_NO_MSG((_kernel.sched_ipi_reserved & bit) == 0U);
-	__ASSERT_NO_MSG(_kernel.sched_ipi_target[cpu] == NULL);
+	ZASSERT(((_kernel.sched_ipi_reserved & bit) == 0U) &&
+		(_kernel.sched_ipi_target[cpu] == NULL));
 
 	_kernel.sched_ipi_target[cpu] = thread;
 	_kernel.sched_ipi_reserved |= bit;
@@ -84,7 +86,7 @@ bool ipi_idle_thread_rebind(struct k_thread *old_thread,
 {
 	int old_cpu;
 
-	__ASSERT_NO_MSG(old_thread != new_thread);
+	ZASSERT(old_thread != new_thread);
 
 	old_cpu = sched_ipi_thread_reservation(old_thread);
 	if (old_cpu < 0) {
@@ -113,8 +115,7 @@ struct k_thread *ipi_idle_reserved_take(void)
 	uint32_t cpu = _current_cpu->id;
 	struct k_thread *thread = _kernel.sched_ipi_target[cpu];
 
-	__ASSERT_NO_MSG((thread != NULL) ==
-			((_kernel.sched_ipi_reserved & BIT(cpu)) != 0U));
+	ZASSERT((thread != NULL) == ((_kernel.sched_ipi_reserved & BIT(cpu)) != 0U));
 
 	if (thread != NULL) {
 		sched_ipi_idle_unreserve(cpu);
@@ -266,8 +267,7 @@ static struct k_ipi_work *first_ipi_work(sys_dlist_t *list, unsigned int cpu_id)
 int k_ipi_work_add(struct k_ipi_work *work, uint32_t cpu_bitmask,
 		   k_ipi_func_t func)
 {
-	__ASSERT(work != NULL, "");
-	__ASSERT(func != NULL, "");
+	ZASSERT(work != NULL && func != NULL);
 
 	k_spinlock_key_t key = k_spin_lock(&ipi_lock);
 
