@@ -31,7 +31,12 @@ LOG_MODULE_REGISTER(virtio, CONFIG_VIRTIO_LOG_LEVEL);
 
 int virtq_create(struct virtq *v, size_t size)
 {
-	__ASSERT(IS_POWER_OF_TWO(size), "size of virtqueue must be a power of 2");
+	/*
+	 * A size of 0 denotes a queue the driver enumerates but does not use
+	 * (e.g. the virtiofs high priority queue). Such a queue is set up empty
+	 * and is never operated on, so only a non-zero size must be a power of 2.
+	 */
+	__ASSERT(size == 0 || IS_POWER_OF_TWO(size), "size of virtqueue must be a power of 2");
 	__ASSERT(size <= KB(32), "size of virtqueue must be at most 32KB");
 	/*
 	 * For sizes and alignments see table in spec 2.7. We are supporting only modern virtio, so
