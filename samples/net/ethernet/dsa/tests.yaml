@@ -16,4 +16,5 @@ tests:
       - frdm_imxrt1186/mimxrt1186/cm7/extmem
       - imx943_evk/mimx94398/m33/ddr
       - imx943_evk/mimx94398/a55
+      - nucleo_h755zi_q/stm32h755xx/m7
     depends_on: eth

@@ -1,0 +1,268 @@
+/*
+ * Copyright (c) 2026 Vilhelm Engström
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Example of how to configure the Microchip KSZ8463 switch for use with
+ * STMicroelectronics's Nucleo H755ZI-Q board. This particular file assumes the
+ * switch is connected to spi1 and is written for the KSz8463ML evaluation kit,
+ * the host port of which uses MII. To use RMII, change the phy-connection-type
+ * property of the CPU port node to "rmii" and mux the appropriate pins.
+ *
+ * Note that the Nucleo board comes with a LAN8742A PHY that needs to be removed
+ * in order to connect said board to the KSZ8463ML evaluation kit via the MII
+ * lines. See the README for this sample for more information.
+ */
+
+#include <st/h7/stm32h755zitx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/pinctrl/stm32-pinctrl.h>
+#include <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
+
+&mac {
+	pinctrl-0 = <&eth_mii_col_pa3
+		     &eth_mii_crs_pa0
+		     &eth_mii_rx_clk_pa1
+		     &eth_mii_rx_dv_pa7
+		     &eth_mii_rx_er_pb10
+		     &eth_mii_rxd0_pc4
+		     &eth_mii_rxd1_pc5
+		     &eth_mii_rxd2_pb0
+		     &eth_mii_rxd3_pb1
+		     &eth_mii_tx_clk_pc3
+		     &eth_mii_tx_en_pb11
+		     &eth_mii_txd0_pb12
+		     &eth_mii_txd1_pb13
+		     &eth_mii_txd2_pc2
+		     &eth_mii_txd3_pb8
+		     &eth_mii_tx_er_pb2>;
+	pinctrl-names = "default";
+
+	phy-handle = <&phy0>;
+
+	/* KSZ8463ML uses MII */
+	phy-connection-type = "mii";
+
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&eth_mdc_pc1
+		     &eth_mdio_pa2>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	/* PHY for CPU port */
+	phy0: ethernet-phy@0 {
+		/* Know the capabilities of both the MAC transceiver and
+		 * the switch, no sense attempting to negotiate speeds
+		 */
+		compatible = "ethernet-phy-fixed-link";
+
+		/* KSZ8463 capped at 100Mbps, Full-Duplex */
+		default-speeds = "100BASE Full-Duplex";
+
+		reg = <0>;
+		status = "okay";
+	};
+};
+
+&pinctrl {
+	eth_mdc_pc1: eth_mdc_pc1 {
+		pinmux = <STM32_PINMUX('C', 1, AF11)>; /* ETH_MDC */
+	};
+
+	eth_mdio_pa2: eth_mdio_pa2 {
+		pinmux = <STM32_PINMUX('A', 2, AF11)>; /* ETH_MDIO */
+	};
+
+	eth_mii_col_pa3: eth_mii_col_pa3 {
+		pinmux = <STM32_PINMUX('A', 3, AF11)>; /* ETH_MII_COL */
+	};
+
+	eth_mii_crs_pa0: eth_mii_crs_pa0 {
+		pinmux = <STM32_PINMUX('A', 0, AF11)>; /* ETH_MII_CRS */
+	};
+
+	eth_mii_rx_clk_pa1: eth_mii_rx_clk_pa1 {
+		pinmux = <STM32_PINMUX('A', 1, AF11)>; /* ETH_MII_RX_CLK */
+	};
+
+	eth_mii_rx_dv_pa7: eth_mii_rx_dv_pa7 {
+		pinmux = <STM32_PINMUX('A', 7, AF11)>; /* ETH_MII_RX_DV */
+	};
+
+	eth_mii_rx_er_pb10: eth_mii_rx_er_pb10 {
+		pinmux = <STM32_PINMUX('B', 10, AF11)>; /* ETH_MII_RX_ER */
+	};
+
+	eth_mii_rxd0_pc4: eth_mii_rxd0_pc4 {
+		pinmux = <STM32_PINMUX('C', 4, AF11)>; /* ETH_MII_RXD0 */
+	};
+
+	eth_mii_rxd1_pc5: eth_mii_rxd1_pc5 {
+		pinmux = <STM32_PINMUX('C', 5, AF11)>; /* ETH_MII_RXD1 */
+	};
+
+	eth_mii_rxd2_pb0: eth_mii_rxd2_pb0 {
+		pinmux = <STM32_PINMUX('B', 0, AF11)>; /* ETH_MII_RXD2 */
+	};
+
+	eth_mii_rxd3_pb1: eth_mii_rxd3_pb1 {
+		pinmux = <STM32_PINMUX('B', 1, AF11)>; /* ETH_MII_RXD3 */
+	};
+
+	eth_mii_tx_clk_pc3: eth_mii_tx_clk_pc3 {
+		pinmux = <STM32_PINMUX('C', 3, AF11)>; /* ETH_MII_TX_CLK */
+	};
+
+	eth_mii_tx_en_pb11: eth_mii_tx_en_pb11 {
+		pinmux = <STM32_PINMUX('B', 11, AF11)>; /* ETH_MII_TX_EN */
+	};
+
+	eth_mii_tx_er_pb2: eth_mii_tx_er_pb2 {
+		pinmux = <STM32_PINMUX('B', 2, AF11)>; /* ETH_TX_ER */
+	};
+
+	eth_mii_txd0_pb12: eth_mii_txd0_pb12 {
+		pinmux = <STM32_PINMUX('B', 12, AF11)>; /* ETH_MII_TXD0 */
+	};
+
+	eth_mii_txd1_pb13: eth_mii_txd1_pb13 {
+		pinmux = <STM32_PINMUX('B', 13, AF11)>; /* ETH_MII_TXD1 */
+	};
+
+	eth_mii_txd2_pc2: eth_mii_txd2_pc2 {
+		pinmux = <STM32_PINMUX('C', 2, AF11)>; /* ETH_MII_TXD2 */
+	};
+
+	eth_mii_txd3_pb8: eth_mii_txd3_pb8 {
+		pinmux = <STM32_PINMUX('B', 8, AF11)>; /* ETH_MII_TXD3 */
+	};
+
+	spi1_nss_pa4: spi1_nss_pa4 {
+		pinmux = <STM32_PINMUX('A', 4, AF5)>; /* SPI1_NSS */
+	};
+
+	spi1_sck_pa5: spi1_sck_pa5 {
+		pinmux = <STM32_PINMUX('A', 5, AF5)>; /* SPI1_SCK */
+	};
+
+	spi1_miso_pa6: spi1_miso_pa6 {
+		pinmux = <STM32_PINMUX('A', 6, AF5)>; /* SPI1_MISO */
+	};
+
+	spi1_mosi_pa7: spi1_mosi_pa7 {
+		pinmux = <STM32_PINMUX('A', 7, AF5)>; /* SPI1_MOSI */
+	};
+
+	sw1_rst_pb3: sw1_rst_pb3 {
+		pinmux = <STM32_PINMUX('B', 3, GPIO)>; /* GPIO */
+	};
+
+	sw1_irq_pb5: sw1_irq_pb5 {
+		pinmux = <STM32_PINMUX('B', 5, GPIO)>; /* GPIO */
+	};
+};
+
+/* For sys_rand_get */
+&rng {
+	status = "okay";
+};
+
+/* Switch connected to SPI bus 1 */
+&spi1 {
+	cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&spi1_nss_pa4
+		     &spi1_sck_pa5
+		     &spi1_miso_pa6
+		     &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	sw1: ethernet-switch@0 {
+		compatible = "microchip,ksz8463";
+
+		/* Chip-select 0 */
+		reg = <0>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		spi-max-frequency = <DT_FREQ_K(12500)>;
+
+		/* Hardware reset is active low */
+		reset-gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
+
+		/* Interrupt output is active low */
+		int-gpios = <&gpiob 5 GPIO_ACTIVE_LOW>;
+
+		/* Enable IGMP snooping */
+		microchip,igmp-snoop-en;
+
+		/* Enable MLD snooping */
+		microchip,mld-snoop-en;
+
+		status = "okay";
+
+		/* User port 1 */
+		sw1_port1: port@0 {
+			compatible = "zephyr,dsa-port";
+			reg = <0>;
+
+			/* Use random MAC */
+			zephyr,random-mac-address;
+
+			status = "okay";
+
+			/* Internal PHY */
+			phy {
+				compatible = "microchip,ksz8463-phy";
+
+				/* Fall back on 10BASE Half-Duplex on auto-negotiation failure */
+				microchip,fixed-link-speed = "10BASE Half-Duplex";
+
+				status = "okay";
+			};
+		};
+
+		/* User port 2 */
+		sw1_port2: port@1 {
+			compatible = "zephyr,dsa-port";
+			reg = <1>;
+
+			zephyr,random-mac-address;
+
+			status = "okay";
+
+			/* Internal PHY */
+			phy {
+				compatible = "microchip,ksz8463-phy";
+
+				/* Fall back on 100BASE Full-Duplex on auto-negotiation failure */
+				microchip,fixed-link-speed = "100BASE Full-Duplex";
+
+				status = "okay";
+			};
+		};
+
+		/* CPU port */
+		sw1_port3: port@2 {
+			compatible = "zephyr,dsa-port";
+			reg = <2>;
+
+			/* Port is connected to the STM MAC */
+			ethernet = <&mac>;
+
+			/* KSZ8463ML uses MII */
+			phy-connection-type = "mii";
+
+			/* Enable tail tagging */
+			dsa-tag-protocol = <DSA_TAG_PROTO_KSZ8463>;
+
+			status = "okay";
+		};
+	};
+};
