@@ -11,7 +11,9 @@
  *
  * Called from the SoC's z_soc_irq_* hooks via the bcm2836_l1_intc_*
  * entry points in <zephyr/drivers/interrupt_controller/intc_bcm283x.h>.
- * Single-core only (CORE_ID 0) until SMP arrives.
+ * Register banks are per-core; each CPU addresses its own bank through
+ * MPIDR (this_core() below). In SMP builds mailbox 0 carries the
+ * inter-processor interrupts.
  */
 
 #define DT_DRV_COMPAT brcm_bcm2836_l1_intc
@@ -36,8 +38,18 @@
 #define L1_SRC_TIMER_MASK 0x000fU /* bits 0..3 */
 #define L1_SRC_MBOX_MASK  0x00f0U /* bits 4..7 */
 
-/* TODO: revisit when SMP arrives. */
-#define CORE_ID 0
+/* Mailbox-0 offsets: write-set and read / write-1-to-clear, per core. */
+#define L1_MBOX0_SET_OFF(c)   (0x80 + (c) * 0x10)
+#define L1_MBOX0_RDCLR_OFF(c) (0xc0 + (c) * 0x10)
+
+/* Current physical core id from MPIDR (flat single-cluster A53). */
+static inline unsigned int this_core(void)
+{
+	uint64_t mpidr;
+
+	__asm__ volatile("mrs %0, mpidr_el1" : "=r"(mpidr));
+	return (unsigned int)(mpidr & 0xffU);
+}
 
 static mm_reg_t l1_base;
 
@@ -56,56 +68,56 @@ void bcm2836_l1_intc_init(void)
 		   K_MEM_CACHE_NONE);
 
 	/*
-	 * Mask all locally-routed sources for core 0. The GPU routing
-	 * register defaults to core 0 after reset; force it so the
-	 * value is deterministic across firmware variants.
+	 * Mask all locally-routed sources for the boot core. The GPU
+	 * routing register defaults to core 0 after reset; force it so
+	 * the value is deterministic across firmware variants.
 	 */
-	sys_write32(0, l1_base + L1_TIMER_INT_CTRL_OFF(CORE_ID));
-	sys_write32(0, l1_base + L1_MBOX_INT_CTRL_OFF(CORE_ID));
+	sys_write32(0, l1_base + L1_TIMER_INT_CTRL_OFF(this_core()));
+	sys_write32(0, l1_base + L1_MBOX_INT_CTRL_OFF(this_core()));
 	sys_write32(0, l1_base + L1_GPU_INT_ROUTING_OFF);
 }
 
 void bcm2836_l1_intc_irq_enable(unsigned int irq)
 {
 	if (irq <= 3) {
-		mm_reg_t reg = l1_base + L1_TIMER_INT_CTRL_OFF(CORE_ID);
+		mm_reg_t reg = l1_base + L1_TIMER_INT_CTRL_OFF(this_core());
 
 		sys_write32(sys_read32(reg) | BIT(irq), reg);
 	} else if (irq <= 7) {
-		mm_reg_t reg = l1_base + L1_MBOX_INT_CTRL_OFF(CORE_ID);
+		mm_reg_t reg = l1_base + L1_MBOX_INT_CTRL_OFF(this_core());
 
 		sys_write32(sys_read32(reg) | BIT(irq - 4), reg);
 	} else if (irq == BCM2836_L1_IRQ_PMU_BIT) {
-		sys_write32(BIT(CORE_ID), l1_base + L1_PMU_ROUTING_SET_OFF);
+		sys_write32(BIT(this_core()), l1_base + L1_PMU_ROUTING_SET_OFF);
 	}
 	/*
 	 * IRQ 8 (GPU cascade) is implicit: the L1 routing register
-	 * already steers it to CORE_ID and no per-IRQ enable bit exists.
+	 * already steers it to a core and no per-IRQ enable bit exists.
 	 */
 }
 
 void bcm2836_l1_intc_irq_disable(unsigned int irq)
 {
 	if (irq <= 3) {
-		mm_reg_t reg = l1_base + L1_TIMER_INT_CTRL_OFF(CORE_ID);
+		mm_reg_t reg = l1_base + L1_TIMER_INT_CTRL_OFF(this_core());
 
 		sys_write32(sys_read32(reg) & ~BIT(irq), reg);
 	} else if (irq <= 7) {
-		mm_reg_t reg = l1_base + L1_MBOX_INT_CTRL_OFF(CORE_ID);
+		mm_reg_t reg = l1_base + L1_MBOX_INT_CTRL_OFF(this_core());
 
 		sys_write32(sys_read32(reg) & ~BIT(irq - 4), reg);
 	} else if (irq == BCM2836_L1_IRQ_PMU_BIT) {
-		sys_write32(BIT(CORE_ID), l1_base + L1_PMU_ROUTING_CLR_OFF);
+		sys_write32(BIT(this_core()), l1_base + L1_PMU_ROUTING_CLR_OFF);
 	}
 }
 
 int bcm2836_l1_intc_irq_is_enabled(unsigned int irq)
 {
 	if (irq <= 3) {
-		return !!(sys_read32(l1_base + L1_TIMER_INT_CTRL_OFF(CORE_ID)) & BIT(irq));
+		return !!(sys_read32(l1_base + L1_TIMER_INT_CTRL_OFF(this_core())) & BIT(irq));
 	}
 	if (irq <= 7) {
-		return !!(sys_read32(l1_base + L1_MBOX_INT_CTRL_OFF(CORE_ID)) & BIT(irq - 4));
+		return !!(sys_read32(l1_base + L1_MBOX_INT_CTRL_OFF(this_core())) & BIT(irq - 4));
 	}
 	if (irq == BCM2836_L1_IRQ_GPU_BIT) {
 		/* No mask for the cascade -- always live. */
@@ -117,7 +129,7 @@ int bcm2836_l1_intc_irq_is_enabled(unsigned int irq)
 
 unsigned int bcm2836_l1_intc_irq_get_active(void)
 {
-	uint32_t src = sys_read32(l1_base + L1_IRQ_SOURCE_OFF(CORE_ID));
+	uint32_t src = sys_read32(l1_base + L1_IRQ_SOURCE_OFF(this_core()));
 
 	if (src == 0) {
 		return CONFIG_NUM_IRQS;
@@ -136,3 +148,32 @@ unsigned int bcm2836_l1_intc_irq_get_active(void)
 	}
 	return CONFIG_NUM_IRQS;
 }
+
+#ifdef CONFIG_SMP
+void bcm2836_l1_intc_mbox0_raise(unsigned int core, uint32_t bits)
+{
+	sys_write32(bits, l1_base + L1_MBOX0_SET_OFF(core));
+}
+
+uint32_t bcm2836_l1_intc_mbox0_read_ack(void)
+{
+	/*
+	 * Read the pending mailbox-0 bits for this core, then write the
+	 * same value back to ack ONLY those bits. A concurrent raise
+	 * landing between the read and the write is preserved: its bit
+	 * stays set, the mailbox source stays asserted, and the
+	 * level-triggered IRQ refires once the SoC's eoi hook re-enables
+	 * the source. Blanket-clearing 0xffffffff would drop such a
+	 * raise on the floor. Same convention as Linux's
+	 * drivers/irqchip/irq-bcm2836.c (handle_ipi reads MAILBOX0_CLR,
+	 * ipi_ack writes the seen bits back).
+	 */
+	mm_reg_t reg = l1_base + L1_MBOX0_RDCLR_OFF(this_core());
+	uint32_t bits = sys_read32(reg);
+
+	if (bits != 0U) {
+		sys_write32(bits, reg);
+	}
+	return bits;
+}
+#endif /* CONFIG_SMP */

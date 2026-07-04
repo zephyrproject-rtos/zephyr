@@ -29,6 +29,28 @@
 			compatible = "arm,cortex-a53";
 			reg = <0>;
 		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <1>;
+			/* Released by the spin-table pm_cpu_ops backend at
+			 * 0xd8 + reg*8 (= 0xe0). The arm,cortex-a53 binding
+			 * does not (yet) declare enable-method/cpu-release-addr.
+			 */
+		};
+
+		cpu@2 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <2>;
+		};
+
+		cpu@3 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <3>;
+		};
 	};
 
 	interrupt-parent = <&armctrl_intc>;

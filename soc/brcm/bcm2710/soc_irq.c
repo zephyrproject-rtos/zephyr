@@ -19,8 +19,10 @@
  * GPU bit on the L1 controller and then walks the ARMC pending
  * registers to return the actual 32..127 peripheral IRQ.
  *
- * Single-core only (CORE_ID 0). SMP would extend this to per-core
- * mailbox IPIs and dynamic GPU-IRQ routing.
+ * In SMP builds the scheduler IPI rides each core's mailbox 0 (see
+ * the CONFIG_SMP block below); the intc drivers address per-core
+ * register banks through MPIDR. Peripheral and GPU interrupts stay
+ * routed to core 0.
  *
  * The intc drivers map their own MMIO via device_map() inside the
  * init helpers called below. Both run before any SYS_INIT priority
@@ -32,12 +34,62 @@
 
 #include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/interrupt_controller/intc_bcm283x.h>
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
+
+#ifdef CONFIG_SMP
+/* ----- Scheduler IPI over the BCM2836 per-core mailbox 0 ----- */
+
+/* IPI types are bits within mailbox 0 (Linux keeps its IPIs there too). */
+#define MBOX0_IPI_SCHED BIT(0)
+
+extern void sched_ipi_handler(const void *unused);
+
+static void mbox0_ipi_isr(const void *arg)
+{
+	ARG_UNUSED(arg);
+
+	(void)bcm2836_l1_intc_mbox0_read_ack();
+	sched_ipi_handler(NULL);
+}
+
+/* Strong override of the __weak hook in arch/arm64/core/smp.c. */
+void soc_sched_ipi(uint64_t target_mpidr)
+{
+	bcm2836_l1_intc_mbox0_raise((unsigned int)(target_mpidr & 0xffU),
+				    MBOX0_IPI_SCHED);
+}
+
+/* Per-core: enable this core's mailbox-0 IRQ (ISR wired in z_soc_irq_init). */
+void soc_per_core_init_hook(void)
+{
+	irq_enable(BCM2836_L1_IRQ_MBOX0_BIT);
+}
+
+/*
+ * Strong override of the __weak arch_spin_relax() in kernel/idle.c.
+ * The default asserts !arch_cpu_irqs_are_enabled(), the right
+ * invariant for the in-tree callers, but the non-asserting variant
+ * the arm64 GIC build supplies under CONFIG_FPU_SHARING
+ * (arch/arm64/core/smp.c) is compiled out with a custom interrupt
+ * controller, and the assertion fires on bring-up paths that relax
+ * with IRQs unmasked.
+ */
+void arch_spin_relax(void)
+{
+	arch_nop();
+}
+#endif /* CONFIG_SMP */
 
 void z_soc_irq_init(void)
 {
 	bcm2836_l1_intc_init();
 	bcm2835_armctrl_ic_init();
+
+#ifdef CONFIG_SMP
+	/* Register the IPI handler (each core's mailbox 0). */
+	IRQ_CONNECT(BCM2836_L1_IRQ_MBOX0_BIT, 0, mbox0_ipi_isr, NULL, 0);
+#endif
 }
 
 void z_soc_irq_enable(unsigned int irq)
