@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "arduino_r3_connector.dtsi"
 #include "st_morpho_connector.dtsi"
+#include "m2_memory_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32C5A3ZG-NUCLEO board";
@@ -182,10 +183,10 @@
 };
 
 &i2c2 {
-	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb4>;
+	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
 	pinctrl-names = "default";
-	scl-gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
-	sda-gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
+	scl-gpios = <&gpiof 1 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiof 0 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
 
@@ -269,6 +270,14 @@
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpiob 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+};
+
+&xspi1 {
+	pinctrl-0 = <&xspi1_clk_pf10 &xspi1_nclk_pf11 &xspi1_dqs_pb2 &xspi1_ncs1_pe11
+		     &xspi1_io0_pf9 &xspi1_io1_pf8 &xspi1_io2_pf7 &xspi1_io3_pf6
+		     &xspi1_io4_pe7 &xspi1_io5_pe8 &xspi1_io6_pe9 &xspi1_io7_pe10>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
