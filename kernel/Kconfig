@@ -7,6 +7,7 @@ menu "General Kernel Options"
 
 module = KERNEL
 module-str = kernel
+source "lib/os/zassert/Kconfig.template.assert"
 source "subsys/logging/Kconfig.template.log_config"
 
 config MULTITHREADING
