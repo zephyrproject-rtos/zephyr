@@ -5,17 +5,17 @@
  */
 
 /**
- * @brief Test memory slab APIs
+ * @brief Test reference-counted memory slab APIs
  *
- * @defgroup kernel_memory_slab_tests Memory Slab Tests
+ * @defgroup kernel_reference_counted_memory_slab_tests Memory Slab Tests
  *
  * @ingroup all_tests
  *
  * This module tests the following memory slab routines:
  *
- *     k_mem_slab_alloc
- *     k_mem_slab_free
- *     k_mem_slab_num_used_get
+ *     k_mem_slab_ref_alloc
+ *     k_mem_slab_ref_free
+ *     k_mem_slab_ref_num_used_get
  *
  * @note
  * One should ensure that the block is released to the same memory slab from

@@ -6219,9 +6219,16 @@ struct k_mem_slab_ref_header {
  *  Initializes a memory slab and its corresponding reference count
  *   
  *  This function is a wrapper over k_mem_slab_init function with
- *  additional 
+ *  additional support for reference counting.
  *  
- *  
+ *  @param slab_header Address of the slab header.
+ *	@param buffer Pointer to buffer used for the memory blocks.
+ *	@param block_size Size of each memory block (in bytes).
+ *	@param num_blocks Number of memory blocks.
+ *
+ *	@retval 0 on success
+ *	@retval -EINVAL invalid data supplied
+ *
  */
 int k_mem_slab_ref_init(struct k_mem_slab_ref_header *slab_ref_header,
                        void *buffer, size_t block_size, uint32_t num_blocks);

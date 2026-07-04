@@ -1,4 +1,4 @@
-Title: Memory Slab APIs
+Title: Reference-counted Memory Slab APIs
 
 Description:
 
