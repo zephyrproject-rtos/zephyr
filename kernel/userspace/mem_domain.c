@@ -6,12 +6,14 @@
 
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
-#include <zephyr/sys/__assert.h>
 #include <stdbool.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/libc-hooks.h>
 #include <zephyr/logging/log.h>
+
+ZASSERT_MODULE(KERNEL);
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 struct k_spinlock z_mem_domain_lock;
@@ -308,8 +310,8 @@ static int add_thread_locked(struct k_mem_domain *domain,
 {
 	int ret = 0;
 
-	__ASSERT_NO_MSG(domain != NULL);
-	__ASSERT_NO_MSG(thread != NULL);
+	ZASSERT(domain != NULL);
+	ZASSERT(thread != NULL);
 
 	LOG_DBG("add thread %p to domain %p", thread, domain);
 
@@ -331,7 +333,7 @@ static int remove_thread_locked(struct k_thread *thread)
 {
 	int ret = 0;
 
-	__ASSERT_NO_MSG(thread != NULL);
+	ZASSERT(thread != NULL);
 	LOG_DBG("remove thread %p from memory domain %p",
 		thread, thread->mem_domain_info.mem_domain);
 
@@ -354,7 +356,7 @@ void z_mem_domain_init_thread(struct k_thread *thread)
 
 	/* New threads inherit memory domain configuration from parent */
 	ret = add_thread_locked(_current->mem_domain_info.mem_domain, thread);
-	__ASSERT_NO_MSG(ret == 0);
+	ZASSERT(ret == 0);
 	ARG_UNUSED(ret);
 
 	k_spin_unlock(&z_mem_domain_lock, key);
@@ -368,7 +370,7 @@ void z_mem_domain_exit_thread(struct k_thread *thread)
 	k_spinlock_key_t key = k_spin_lock(&z_mem_domain_lock);
 
 	ret = remove_thread_locked(thread);
-	__ASSERT_NO_MSG(ret == 0);
+	ZASSERT(ret == 0);
 	ARG_UNUSED(ret);
 
 	k_spin_unlock(&z_mem_domain_lock, key);
@@ -404,15 +406,15 @@ static void init_mem_domain_module(void)
 	 * CONFIG_MAX_DOMAIN_PARTITIONS, or would encounter array index
 	 * out of bounds error.
 	 */
-	__ASSERT(max_partitions <= CONFIG_MAX_DOMAIN_PARTITIONS, "");
+	ZASSERT(max_partitions <= CONFIG_MAX_DOMAIN_PARTITIONS, "");
 
 	ret = k_mem_domain_init(&k_mem_domain_default, 0, NULL);
-	__ASSERT(ret == 0, "failed to init default mem domain");
+	ZASSERT(ret == 0, "failed to init default mem domain");
 
 #ifdef Z_LIBC_PARTITION_EXISTS
 	ret = k_mem_domain_add_partition(&k_mem_domain_default,
 					 &z_libc_partition);
-	__ASSERT(ret == 0, "failed to add default libc mem partition");
+	ZASSERT(ret == 0, "failed to add default libc mem partition");
 #endif /* Z_LIBC_PARTITION_EXISTS */
 }
 

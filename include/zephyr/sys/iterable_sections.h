@@ -13,7 +13,7 @@
 #ifndef ZEPHYR_INCLUDE_SYS_ITERABLE_SECTIONS_H_
 #define ZEPHYR_INCLUDE_SYS_ITERABLE_SECTIONS_H_
 
-#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/zassert.h>
 #include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
@@ -114,7 +114,7 @@ extern "C" {
 	TYPE_SECTION_START_EXTERN(type, secname);		\
 	TYPE_SECTION_END_EXTERN(type, secname);		\
 	for (type * iterator = TYPE_SECTION_START(secname); ({	\
-		__ASSERT(iterator <= TYPE_SECTION_END(secname),\
+		ZASSERT_M(KERNEL, iterator <= TYPE_SECTION_END(secname),\
 			      "unexpected list end location");	\
 		     iterator < TYPE_SECTION_END(secname);	\
 	     });						\

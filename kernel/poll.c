@@ -22,8 +22,9 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys/__assert.h>
 #include <stdbool.h>
+
+ZASSERT_MODULE(KERNEL);
 
 /* Single subsystem lock.  Locking per-event would be better on highly
  * contended SMP systems, but the original locking scheme here is
@@ -42,10 +43,10 @@ static int signal_triggered_work(struct k_poll_event *event, uint32_t status);
 void k_poll_event_init(struct k_poll_event *event, uint32_t type,
 		       int mode, void *obj)
 {
-	__ASSERT(mode == K_POLL_MODE_NOTIFY_ONLY,
+	ZASSERT(mode == K_POLL_MODE_NOTIFY_ONLY,
 		 "only NOTIFY_ONLY mode is supported\n");
-	__ASSERT(type < (BIT(_POLL_NUM_TYPES)), "invalid type\n");
-	__ASSERT(obj != NULL, "must provide an object\n");
+	ZASSERT(type < (BIT(_POLL_NUM_TYPES)), "invalid type\n");
+	ZASSERT(obj != NULL, "must provide an object\n");
 
 	event->poller = NULL;
 	/* event->tag is left uninitialized: the user will set it if needed */
@@ -95,7 +96,7 @@ static inline bool is_condition_met(struct k_poll_event *event, uint32_t *state)
 	case K_POLL_TYPE_IGNORE:
 		break;
 	default:
-		__ASSERT(false, "invalid event type (0x%x)\n", event->type);
+		ZASSERT(false, "invalid event type (0x%x)\n", event->type);
 		break;
 	}
 
@@ -137,30 +138,30 @@ static inline void register_event(struct k_poll_event *event,
 {
 	switch (event->type) {
 	case K_POLL_TYPE_SEM_AVAILABLE:
-		__ASSERT(event->sem != NULL, "invalid semaphore\n");
+		ZASSERT(event->sem != NULL, "invalid semaphore\n");
 		add_event(&event->sem->poll_events, event, poller);
 		break;
 	case K_POLL_TYPE_DATA_AVAILABLE:
-		__ASSERT(event->queue != NULL, "invalid queue\n");
+		ZASSERT(event->queue != NULL, "invalid queue\n");
 		add_event(&event->queue->poll_events, event, poller);
 		break;
 	case K_POLL_TYPE_SIGNAL:
-		__ASSERT(event->signal != NULL, "invalid poll signal\n");
+		ZASSERT(event->signal != NULL, "invalid poll signal\n");
 		add_event(&event->signal->poll_events, event, poller);
 		break;
 	case K_POLL_TYPE_MSGQ_DATA_AVAILABLE:
-		__ASSERT(event->msgq != NULL, "invalid message queue\n");
+		ZASSERT(event->msgq != NULL, "invalid message queue\n");
 		add_event(&event->msgq->poll_events, event, poller);
 		break;
 	case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
-		__ASSERT(event->pipe != NULL, "invalid pipe\n");
+		ZASSERT(event->pipe != NULL, "invalid pipe\n");
 		add_event(&event->pipe->poll_events, event, poller);
 		break;
 	case K_POLL_TYPE_IGNORE:
 		/* nothing to do */
 		break;
 	default:
-		__ASSERT(false, "invalid event type\n");
+		ZASSERT(false, "invalid event type\n");
 		break;
 	}
 
@@ -176,30 +177,30 @@ static inline void clear_event_registration(struct k_poll_event *event)
 
 	switch (event->type) {
 	case K_POLL_TYPE_SEM_AVAILABLE:
-		__ASSERT(event->sem != NULL, "invalid semaphore\n");
+		ZASSERT(event->sem != NULL, "invalid semaphore\n");
 		remove_event = true;
 		break;
 	case K_POLL_TYPE_DATA_AVAILABLE:
-		__ASSERT(event->queue != NULL, "invalid queue\n");
+		ZASSERT(event->queue != NULL, "invalid queue\n");
 		remove_event = true;
 		break;
 	case K_POLL_TYPE_SIGNAL:
-		__ASSERT(event->signal != NULL, "invalid poll signal\n");
+		ZASSERT(event->signal != NULL, "invalid poll signal\n");
 		remove_event = true;
 		break;
 	case K_POLL_TYPE_MSGQ_DATA_AVAILABLE:
-		__ASSERT(event->msgq != NULL, "invalid message queue\n");
+		ZASSERT(event->msgq != NULL, "invalid message queue\n");
 		remove_event = true;
 		break;
 	case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
-		__ASSERT(event->pipe != NULL, "invalid pipe\n");
+		ZASSERT(event->pipe != NULL, "invalid pipe\n");
 		remove_event = true;
 		break;
 	case K_POLL_TYPE_IGNORE:
 		/* nothing to do */
 		break;
 	default:
-		__ASSERT(false, "invalid event type\n");
+		ZASSERT(false, "invalid event type\n");
 		break;
 	}
 	if (remove_event && sys_dnode_is_linked(&event->_node)) {
@@ -260,7 +261,7 @@ static int signal_poller(struct k_poll_event *event, uint32_t state)
 {
 	struct k_thread *thread = poller_thread(event->poller);
 
-	__ASSERT(thread != NULL, "poller should have a thread\n");
+	ZASSERT(thread != NULL, "poller should have a thread\n");
 
 	if (!z_is_thread_pending(thread)) {
 		return 0;
@@ -289,9 +290,9 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events,
 	poller->is_polling = true;
 	poller->mode = MODE_POLL;
 
-	__ASSERT(!arch_is_in_isr(), "");
-	__ASSERT(events != NULL, "NULL events\n");
-	__ASSERT(num_events >= 0, "<0 events\n");
+	ZASSERT(!k_is_in_isr(), "k_poll may not be called from an ISR");
+	ZASSERT(events != NULL, "NULL events");
+	ZASSERT(num_events >= 0, "<0 events");
 
 	SYS_PORT_TRACING_FUNC_ENTER(k_poll_api, poll, events);
 
@@ -706,10 +707,10 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 	int events_registered;
 	k_spinlock_key_t key;
 
-	__ASSERT(work_q != NULL, "NULL work_q\n");
-	__ASSERT(work != NULL, "NULL work\n");
-	__ASSERT(events != NULL, "NULL events\n");
-	__ASSERT(num_events >= 0, "<0 events\n");
+	ZASSERT(work_q != NULL, "NULL work_q");
+	ZASSERT(work != NULL, "NULL work");
+	ZASSERT(events != NULL, "NULL events");
+	ZASSERT(num_events >= 0, "<0 events");
 
 	SYS_PORT_TRACING_FUNC_ENTER(k_work_poll, submit_to_queue, work_q, work, timeout);
 
@@ -761,7 +762,7 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 		 * Poller is still polling.
 		 * No event is ready and all are watched.
 		 */
-		__ASSERT(num_events == events_registered,
+		ZASSERT(num_events == events_registered,
 			 "Some events were not registered!\n");
 
 		/* Setup timeout if such action is requested */

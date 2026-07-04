@@ -14,6 +14,8 @@
 #include <zephyr/sys/kobject.h>
 #include <zephyr/internal/syscall_handler.h>
 
+ZASSERT_MODULE(KERNEL);
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #if CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0
@@ -49,7 +51,7 @@ static k_thread_stack_t *z_thread_stack_alloc_pool(size_t size, int flags)
 		return NULL;
 	}
 
-	__ASSERT_NO_MSG(offset < CONFIG_DYNAMIC_THREAD_POOL_SIZE);
+	ZASSERT(offset < CONFIG_DYNAMIC_THREAD_POOL_SIZE);
 
 	stack = (k_thread_stack_t *)&dynamic_stack[offset];
 
@@ -107,7 +109,7 @@ static void dyn_cb(const struct k_thread *thread, void *user_data)
 	struct dyn_cb_data *const data = (struct dyn_cb_data *)user_data;
 
 	if (data->stack == (k_thread_stack_t *)thread->stack_info.start) {
-		__ASSERT(data->tid == NULL, "stack %p is associated with more than one thread!",
+		ZASSERT(data->tid == NULL, "stack %p is associated with more than one thread!",
 			 (void *)thread->stack_info.start);
 		data->tid = (k_tid_t)thread;
 	}

@@ -7,6 +7,8 @@
 #include <ksched.h>
 #include <zephyr/spinlock.h>
 
+ZASSERT_MODULE(KERNEL);
+
 extern struct k_spinlock _sched_spinlock;
 
 
@@ -21,7 +23,7 @@ static int cpu_mask_mod(k_tid_t thread, uint32_t enable_mask, uint32_t disable_m
 	int ret = 0;
 
 #ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
-	__ASSERT(z_is_thread_prevented_from_running(thread),
+	ZASSERT(z_is_thread_prevented_from_running(thread),
 		 "Running threads cannot change CPU pin");
 #endif /* CONFIG_SCHED_CPU_MASK_PIN_ONLY */
 
@@ -33,7 +35,7 @@ static int cpu_mask_mod(k_tid_t thread, uint32_t enable_mask, uint32_t disable_m
 #if defined(CONFIG_ASSERT) && defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
 			uint32_t m = thread->base.cpu_mask;
 
-			__ASSERT(m != 0 && (m & (m - 1)) == 0,
+			ZASSERT(m != 0 && (m & (m - 1)) == 0,
 				 "PIN_ONLY requires exactly one CPU in mask");
 #endif /* defined(CONFIG_ASSERT) && defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY) */
 

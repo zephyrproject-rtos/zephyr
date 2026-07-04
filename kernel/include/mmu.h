@@ -10,8 +10,8 @@
 
 #include <stdint.h>
 #include <zephyr/sys/sflist.h>
-#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/zassert.h>
 #include <zephyr/kernel/mm.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/devicetree.h>
@@ -254,7 +254,7 @@ static inline void k_mem_page_frame_clear(struct k_mem_page_frame *pf, uint8_t f
 
 static inline void k_mem_assert_phys_aligned(uintptr_t phys)
 {
-	__ASSERT(phys % CONFIG_MMU_PAGE_SIZE == 0U,
+	ZASSERT_M(KERNEL, phys % CONFIG_MMU_PAGE_SIZE == 0U,
 		 "physical address 0x%lx is not page-aligned", phys);
 	(void)phys;
 }
@@ -284,7 +284,7 @@ static inline bool k_mem_is_page_frame(uintptr_t phys)
 
 static inline struct k_mem_page_frame *k_mem_phys_to_page_frame(uintptr_t phys)
 {
-	__ASSERT(k_mem_is_page_frame(phys),
+	ZASSERT_M(KERNEL, k_mem_is_page_frame(phys),
 		 "0x%lx not an SRAM physical address", phys);
 
 	return &k_mem_page_frames[(phys - K_MEM_PHYS_RAM_START) /
@@ -293,13 +293,13 @@ static inline struct k_mem_page_frame *k_mem_phys_to_page_frame(uintptr_t phys)
 
 static inline void k_mem_assert_virtual_region(uint8_t *addr, size_t size)
 {
-	__ASSERT((uintptr_t)addr % CONFIG_MMU_PAGE_SIZE == 0U,
+	ZASSERT_M(KERNEL, (uintptr_t)addr % CONFIG_MMU_PAGE_SIZE == 0U,
 		 "unaligned addr %p", addr);
-	__ASSERT(size % CONFIG_MMU_PAGE_SIZE == 0U,
+	ZASSERT_M(KERNEL, size % CONFIG_MMU_PAGE_SIZE == 0U,
 		 "unaligned size %zu", size);
-	__ASSERT(!Z_DETECT_POINTER_OVERFLOW(addr, size),
+	ZASSERT_M(KERNEL, !Z_DETECT_POINTER_OVERFLOW(addr, size),
 		 "region %p size %zu zero or wraps around", addr, size);
-	__ASSERT(IN_RANGE((uintptr_t)addr,
+	ZASSERT_M(KERNEL, IN_RANGE((uintptr_t)addr,
 			  (uintptr_t)K_MEM_VIRT_RAM_START,
 			  ((uintptr_t)K_MEM_VIRT_RAM_END - 1)) &&
 		 IN_RANGE(((uintptr_t)addr + size - 1),

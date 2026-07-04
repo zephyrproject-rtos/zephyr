@@ -26,6 +26,8 @@
 #include <zephyr/sys/minmax.h>
 #include <zephyr/sys/util.h>
 
+ZASSERT_MODULE(KERNEL);
+
 /* pending_current is owned by timeslicing.c; we reference it here to avoid
  * a spurious timeslice when the thread that is going to sleep gets picked as
  * the next thread to run while z_swap() is in progress.
@@ -49,7 +51,7 @@ static int32_t z_tick_sleep(k_timeout_t timeout)
 {
 	uint32_t expected_wakeup_ticks;
 
-	__ASSERT(!arch_is_in_isr(), "");
+	ZASSERT(!arch_is_in_isr(), "");
 
 	/* K_NO_WAIT is treated as a 'yield' */
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
@@ -92,7 +94,7 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 {
 	k_ticks_t ticks;
 
-	__ASSERT(!arch_is_in_isr(), "");
+	ZASSERT(!arch_is_in_isr(), "");
 
 	SYS_PORT_TRACING_FUNC_ENTER(k_thread, sleep, timeout);
 

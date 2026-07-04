@@ -231,7 +231,7 @@ static ALWAYS_INLINE bool should_preempt(const struct k_thread *thread,
 		return true;
 	}
 
-	__ASSERT(_current != NULL, "");
+	ZASSERT_M(KERNEL, _current != NULL, "");
 
 	/* Or if we're pended/suspended/dummy (duh) */
 	if (z_is_thread_prevented_from_running(_current)) {

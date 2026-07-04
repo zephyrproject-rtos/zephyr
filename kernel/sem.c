@@ -38,6 +38,8 @@
  */
 static struct k_spinlock sem_lock;
 
+ZASSERT_MODULE(KERNEL);
+
 #ifdef CONFIG_OBJ_CORE_SEM
 static struct k_obj_type obj_type_sem;
 #endif /* CONFIG_OBJ_CORE_SEM */
@@ -128,8 +130,8 @@ int z_impl_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 {
 	int ret;
 
-	__ASSERT(((arch_is_in_isr() == false) ||
-		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
+	ZASSERT(!k_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT),
+		"Calling a blocking API from an ISR context with a non-K_NO_WAIT timeout is not allowed.");
 
 	k_spinlock_key_t key = k_spin_lock(&sem_lock);
 

@@ -27,7 +27,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <inttypes.h>
-#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/zassert.h>
 
 struct k_mem_page_frame;
 

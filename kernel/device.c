@@ -14,6 +14,9 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/zassert.h>
+
+ZASSERT_MODULE(KERNEL);
 
 int do_device_init(const struct device *dev)
 {
@@ -30,7 +33,7 @@ int do_device_init(const struct device *dev)
 			 *   a negative value on failure (-errno)
 			 * errno value maps to an uint8_t range as of now.
 			 */
-			__ASSERT(rc >= -UINT8_MAX && rc < 0, "device %s init: invalid error (%d)",
+			ZASSERT(rc >= -UINT8_MAX && rc < 0, "device %s init: invalid error (%d)",
 				 dev->name, rc);
 
 			if (rc < 0) {

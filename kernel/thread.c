@@ -36,6 +36,8 @@
 
 #include <usage.h>
 
+ZASSERT_MODULE(KERNEL);
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_OBJ_CORE_THREAD
@@ -459,7 +461,7 @@ static char *map_thread_stack(struct k_thread *new_thread,
 				K_MEM_PERM_RW | K_MEM_CACHE_WB | K_MEM_MAP_UNINIT,
 				false);
 
-	__ASSERT_NO_MSG((uintptr_t)stack_mapped != 0);
+	ZASSERT((uintptr_t)stack_mapped != 0);
 
 #ifdef CONFIG_USERSPACE
 	if (z_stack_is_user_capable(stack)) {
@@ -709,7 +711,7 @@ static inline void init_thread_userspace(struct k_thread *thread,
 					 uint32_t options)
 {
 #ifdef CONFIG_USERSPACE
-	__ASSERT((options & K_USER) == 0U || z_stack_is_user_capable(stack),
+	ZASSERT((options & K_USER) == 0U || z_stack_is_user_capable(stack),
 		 "user thread %p with kernel-only stack %p", thread, stack);
 	k_object_init(thread);
 	k_object_init(stack);
@@ -733,13 +735,13 @@ static inline void assert_thread_coherence(struct k_thread *thread,
 	/* Check that the thread object is safe, but that the stack is
 	 * still cached!
 	 */
-	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(thread));
+	ZASSERT(sys_cache_is_mem_coherent(thread));
 
 	/* When dynamic thread stack is available, the stack may come from
 	 * uncached area.
 	 */
 #ifndef CONFIG_DYNAMIC_THREAD
-	__ASSERT_NO_MSG(!sys_cache_is_mem_coherent(stack));
+	ZASSERT(!sys_cache_is_mem_coherent(stack));
 #endif /* CONFIG_DYNAMIC_THREAD */
 #endif /* CONFIG_KERNEL_COHERENCE */
 	ARG_UNUSED(thread);
@@ -754,7 +756,7 @@ static inline void assert_switch_handle(struct k_thread *thread)
 	 * for synchronization reasons.  Historically some notional
 	 * USE_SWITCH architectures have actually ignored the field
 	 */
-	__ASSERT(thread->switch_handle != NULL,
+	ZASSERT(thread->switch_handle != NULL,
 		 "arch layer failed to initialize switch_handle");
 #endif /* CONFIG_USE_SWITCH */
 	ARG_UNUSED(thread);
@@ -999,7 +1001,7 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 			      void *p1, void *p2, void *p3,
 			      int prio, uint32_t options, k_timeout_t delay)
 {
-	__ASSERT(!arch_is_in_isr(), "Threads may not be created in ISRs");
+	ZASSERT(!arch_is_in_isr(), "Threads may not be created in ISRs");
 
 	z_setup_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 			  prio, options, NULL);
@@ -1133,7 +1135,7 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 	_current->entry.parameter3 = p3;
 #endif /* CONFIG_THREAD_MONITOR */
 #ifdef CONFIG_USERSPACE
-	__ASSERT(z_stack_is_user_capable(_current->stack_obj),
+	ZASSERT(z_stack_is_user_capable(_current->stack_obj),
 		 "dropping to user mode with kernel-only stack object");
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 	memset(_current->userspace_local_data, 0,
@@ -1216,7 +1218,7 @@ int k_thread_runtime_stack_safety_full_check(const struct k_thread *thread,
 	int    rv;
 	size_t unused_space;
 
-	__ASSERT_NO_MSG(thread != NULL);
+	ZASSERT(thread != NULL);
 
 	rv = z_stack_space_get((const uint8_t *)thread->stack_info.start,
 			       thread->stack_info.size, &unused_space);
@@ -1247,7 +1249,7 @@ int k_thread_runtime_stack_safety_threshold_check(const struct k_thread *thread,
 	size_t threshold;
 	size_t scan_size;
 
-	__ASSERT_NO_MSG(thread != NULL);
+	ZASSERT(thread != NULL);
 
 	threshold = thread->stack_info.usage.unused_threshold;
 	scan_size = threshold;
@@ -1434,7 +1436,7 @@ int k_thread_runtime_stats_cpu_get(int cpu, k_thread_runtime_stats_t *stats)
 #ifdef CONFIG_SMP
 	z_sched_cpu_usage(cpu, stats);
 #else
-	__ASSERT(cpu == 0, "cpu filter out of bounds");
+	ZASSERT(cpu == 0, "cpu filter out of bounds");
 	ARG_UNUSED(cpu);
 	z_sched_cpu_usage(0, stats);
 #endif
@@ -1727,7 +1729,7 @@ void z_thread_abort(struct k_thread *thread)
 	z_thread_halt(thread, key, true);
 
 	if (essential) {
-		__ASSERT(!essential, "aborted essential thread %p", thread);
+		ZASSERT(!essential, "aborted essential thread %p", thread);
 		k_panic();
 	}
 }
@@ -1739,7 +1741,7 @@ void z_impl_k_thread_abort(k_tid_t thread)
 
 	z_thread_abort(thread);
 
-	__ASSERT_NO_MSG(z_is_thread_dead(thread));
+	ZASSERT(z_is_thread_dead(thread));
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_thread, abort, thread);
 }
@@ -1747,6 +1749,9 @@ void z_impl_k_thread_abort(k_tid_t thread)
 
 int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 {
+	ZASSERT(!k_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT),
+		"Calling a blocking API from an ISR context with a non-K_NO_WAIT timeout is not allowed.");
+
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 	int ret;
 
@@ -1761,7 +1766,6 @@ int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 		   (thread->base.pended_on == &_current->join_queue)) {
 		ret = -EDEADLK;
 	} else {
-		__ASSERT(!arch_is_in_isr(), "cannot join in ISR");
 		z_sched_add_to_waitq_locked(_current, &thread->join_queue);
 		z_add_thread_timeout(_current, timeout);
 
@@ -1845,7 +1849,7 @@ bool k_can_yield(void)
 
 void z_impl_k_yield(void)
 {
-	__ASSERT(!arch_is_in_isr(), "");
+	ZASSERT(!arch_is_in_isr(), "");
 
 	SYS_PORT_TRACING_FUNC(k_thread, yield);
 

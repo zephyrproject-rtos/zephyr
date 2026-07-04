@@ -35,6 +35,8 @@
 #include <ksched.h>
 #include <scheduler.h>
 
+ZASSERT_MODULE(KERNEL);
+
 #define K_EVENT_WAIT_ANY      0x00   /* Wait for any events */
 #define K_EVENT_WAIT_ALL      0x01   /* Wait for all events */
 #define K_EVENT_WAIT_MASK     0x01
@@ -56,7 +58,7 @@ static struct k_obj_type obj_type_event;
 
 void z_impl_k_event_init(struct k_event *event)
 {
-	__ASSERT_NO_MSG(!arch_is_in_isr());
+	ZASSERT(!arch_is_in_isr());
 
 	event->events = 0;
 	event->lock = (struct k_spinlock) {};
@@ -286,8 +288,8 @@ static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 	unsigned int  wait_condition;
 	struct k_thread  *thread;
 
-	__ASSERT(((arch_is_in_isr() == false) ||
-		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
+	ZASSERT(!k_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT),
+		"Calling a blocking API from an ISR context with a non-K_NO_WAIT timeout is not allowed.");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_event, wait, event, events,
 					options, timeout);

@@ -8,6 +8,8 @@
 #include <ksched.h>
 #include <ipi.h>
 
+ZASSERT_MODULE(KERNEL);
+
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
 static struct k_spinlock ipi_lock;
 #endif
@@ -116,8 +118,8 @@ static struct k_ipi_work *first_ipi_work(sys_dlist_t *list, unsigned int cpu_id)
 int k_ipi_work_add(struct k_ipi_work *work, uint32_t cpu_bitmask,
 		   k_ipi_func_t func)
 {
-	__ASSERT(work != NULL, "");
-	__ASSERT(func != NULL, "");
+	ZASSERT(work != NULL, "");
+	ZASSERT(func != NULL, "");
 
 	k_spinlock_key_t key = k_spin_lock(&ipi_lock);
 

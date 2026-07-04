@@ -6,6 +6,8 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 
+ZASSERT_MODULE(KERNEL);
+
 /* We are not building thread.c when MULTITHREADING=n, so we
  * need to provide a few stubs here.
  */
@@ -23,7 +25,7 @@ static K_TIMER_DEFINE(sleep_timer, NULL, NULL);
  */
 int32_t z_impl_k_sleep(k_timeout_t timeout)
 {
-	__ASSERT(!arch_is_in_isr(), "");
+	ZASSERT(!arch_is_in_isr(), "");
 
 	SYS_PORT_TRACING_FUNC_ENTER(k_thread, sleep, timeout);
 
