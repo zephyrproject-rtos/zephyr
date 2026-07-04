@@ -899,11 +899,17 @@ Bouffalolab Platforms:
     - "platform: Bouffalo Lab"
 
 Broadcom Platforms:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - walidbadar
   files:
     - dts/*/broadcom/
     - soc/brcm/
     - boards/brcm/
+    - boards/raspberrypi/rpi_4b/
+    - boards/raspberrypi/rpi_5/
+  labels:
+    - "platform: Broadcom"
 
 Build Dashboard:
   status: maintained
