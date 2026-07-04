@@ -145,6 +145,23 @@ void bcm2836_l1_intc_mbox0_raise(unsigned int core, uint32_t bits);
 uint32_t bcm2836_l1_intc_mbox0_read_ack(void);
 
 /**
+ * @brief Peek this core's pending mailbox-0 bits without acking.
+ *
+ * The register clears by write-1, not by read, so the peek is
+ * side-effect free.
+ *
+ * @return The currently pending mailbox-0 bits.
+ */
+uint32_t bcm2836_l1_intc_mbox0_peek(void);
+
+/**
+ * @brief Acknowledge specific mailbox-0 bits on this core.
+ *
+ * @param bits Mailbox bits to clear; other pending bits stay set.
+ */
+void bcm2836_l1_intc_mbox0_clear(uint32_t bits);
+
+/**
  * @brief Initialise the BCM2835 ARMC peripheral interrupt controller.
  *
  * Maps the MMIO bank via @c device_map() and disables every bank-0,

@@ -203,6 +203,19 @@ __weak void soc_sched_ipi(uint64_t target_mpidr)
 {
 	ARG_UNUSED(target_mpidr);
 }
+
+#ifdef CONFIG_FPU_SHARING
+/*
+ * Raise the FPU-flush IPI on the target core. Same contract as
+ * soc_sched_ipi: the SoC supplies the transport and connects
+ * flush_fpu_ipi_handler to it. A SoC that provides neither cannot
+ * safely migrate FPU state and must keep FPU_SHARING disabled.
+ */
+__weak void soc_flush_fpu_ipi(uint64_t target_mpidr)
+{
+	ARG_UNUSED(target_mpidr);
+}
+#endif
 #endif
 
 static void send_ipi(unsigned int ipi, uint32_t cpu_bitmap)
@@ -300,15 +313,24 @@ void arch_flush_fpu_ipi(unsigned int cpu)
 	}
 
 	aff0 = MPIDR_AFFLVL(mpidr, 0);
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	gic_raise_sgi(SGI_FPU_IPI, mpidr, 1 << aff0);
+#else
+	ARG_UNUSED(aff0);
+	soc_flush_fpu_ipi(mpidr);
+#endif
 }
 
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 /*
  * Make sure there is no pending FPU flush request for this CPU while
  * waiting for a contended spinlock to become available. This prevents
  * a deadlock when the lock we need is already taken by another CPU
  * that also wants its FPU content to be reinstated while such content
  * is still live in this CPU's FPU.
+ *
+ * With a custom interrupt controller the SoC owns arch_spin_relax and
+ * must drain its FPU-flush IPI transport the same way.
  */
 void arch_spin_relax(void)
 {
@@ -321,6 +343,7 @@ void arch_spin_relax(void)
 		arch_float_disable(_current_cpu->arch.fpu_owner);
 	}
 }
+#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 #endif
 
 int arch_smp_init(void)

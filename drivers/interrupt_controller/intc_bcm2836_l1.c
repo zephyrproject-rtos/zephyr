@@ -176,4 +176,15 @@ uint32_t bcm2836_l1_intc_mbox0_read_ack(void)
 	}
 	return bits;
 }
+
+uint32_t bcm2836_l1_intc_mbox0_peek(void)
+{
+	/* Read-only peek: the register clears by write-1, not by read. */
+	return sys_read32(l1_base + L1_MBOX0_RDCLR_OFF(this_core()));
+}
+
+void bcm2836_l1_intc_mbox0_clear(uint32_t bits)
+{
+	sys_write32(bits, l1_base + L1_MBOX0_RDCLR_OFF(this_core()));
+}
 #endif /* CONFIG_SMP */
