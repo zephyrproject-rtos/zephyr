@@ -252,7 +252,6 @@ ZTEST(net_buf_tests, test_net_buf_4)
 
 		if ((i % 2) && next) {
 			net_buf_frag_del(frag, next);
-			net_buf_unref(next);
 			removed++;
 		} else {
 			frag = next;
@@ -276,7 +275,6 @@ ZTEST(net_buf_tests, test_net_buf_4)
 		struct net_buf *frag2 = buf->frags;
 
 		net_buf_frag_del(buf, frag2);
-		net_buf_unref(frag2);
 		removed++;
 	}
 
