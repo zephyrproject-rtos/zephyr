@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <errno.h>
+#include <string.h>
 #include "virtiofs.h"
 #include <zephyr/drivers/virtio.h>
 
@@ -88,24 +90,75 @@ void virtiofs_recv_cb(void *opaque, uint32_t used_len)
 	k_sem_give(&arg->sem);
 }
 
+/* Largest buffer chain built by any of the FUSE requests below. */
+#define VIRTIOFS_MAX_CHAIN_BUFS 4
+
 static uint32_t virtiofs_send_receive(
 	const struct device *dev, uint16_t virtq, struct virtq_buf *bufs,
 	uint16_t bufs_size, uint16_t device_readable)
 {
 	struct virtq *virtqueue = virtio_get_virtqueue(dev, virtq);
 	struct recv_cb_param cb_arg;
+	struct virtq_buf bounce_bufs[VIRTIOFS_MAX_CHAIN_BUFS];
+	size_t total_len = 0;
+	uint32_t used_len;
+
+	__ASSERT(bufs_size <= ARRAY_SIZE(bounce_bufs),
+		 "buffer chain longer than VIRTIOFS_MAX_CHAIN_BUFS");
+
+	for (uint16_t i = 0; i < bufs_size; i++) {
+		total_len += bufs[i].len;
+	}
+
+	/*
+	 * The buffers supplied by callers frequently live on a thread stack,
+	 * which the device cannot reach: the virtqueue programs descriptors with
+	 * k_mem_phys_addr(), which is only valid for the kernel's permanent RAM
+	 * mapping. Bounce every buffer through a heap allocation (part of that
+	 * mapping, and what the virtqueue itself uses) so requests issued from
+	 * any thread work.
+	 */
+	uint8_t *bounce = k_malloc(total_len);
+
+	if (bounce == NULL) {
+		LOG_ERR("failed to allocate %zu byte bounce buffer", total_len);
+		return 0;
+	}
+
+	size_t offset = 0;
+
+	for (uint16_t i = 0; i < bufs_size; i++) {
+		bounce_bufs[i].addr = bounce + offset;
+		bounce_bufs[i].len = bufs[i].len;
+		if (i < device_readable) {
+			memcpy(bounce + offset, bufs[i].addr, bufs[i].len);
+		}
+		offset += bufs[i].len;
+	}
 
 	k_sem_init(&cb_arg.sem, 0, 1);
 
 	virtq_add_buffer_chain(
-		virtqueue, bufs, bufs_size, device_readable, virtiofs_recv_cb, &cb_arg,
+		virtqueue, bounce_bufs, bufs_size, device_readable, virtiofs_recv_cb, &cb_arg,
 		K_FOREVER
 	);
 	virtio_notify_virtqueue(dev, virtq);
 
 	k_sem_take(&cb_arg.sem, K_FOREVER);
+	used_len = cb_arg.used_len;
 
-	return cb_arg.used_len;
+	/* Propagate whatever the device wrote back to the caller's buffers. */
+	offset = 0;
+	for (uint16_t i = 0; i < bufs_size; i++) {
+		if (i >= device_readable) {
+			memcpy(bufs[i].addr, bounce + offset, bufs[i].len);
+		}
+		offset += bufs[i].len;
+	}
+
+	k_free(bounce);
+
+	return used_len;
 }
 
 static uint16_t virtiofs_queue_enum_cb(uint16_t queue_idx, uint16_t max_size, void *unused)
@@ -422,7 +475,16 @@ int virtiofs_destroy(const struct device *dev)
 	LOG_INF("sending FUSE_DESTROY, unique=%" PRIu64, req.in_header.unique);
 	uint32_t used_len = virtiofs_send_receive(dev, REQUEST_QUEUE, buf, 2, 1);
 
-	LOG_INF("received FUSE_DESTROY response, unique=%" PRIu64, req.in_header.unique);
+	LOG_INF("received FUSE_DESTROY response, unique=%" PRIu64, req.out_header.unique);
+
+	/*
+	 * FUSE_DESTROY tears down the FUSE session; the server acknowledges it
+	 * with an empty reply and is not required to write a fuse_out_header, so
+	 * a short (or absent) reply here is not an error.
+	 */
+	if (used_len < sizeof(struct fuse_out_header)) {
+		return 0;
+	}
 
 	return virtiofs_validate_response(&req.out_header, FUSE_DESTROY, used_len, -1);
 }
