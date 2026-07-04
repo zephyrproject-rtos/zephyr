@@ -144,6 +144,7 @@ target_sources(testbinary PRIVATE
   ${ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest_mock.c
   ${ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest_rules.c
   ${ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest_defaults.c
+  ${ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest_unittest_assert.c
 )
 
 target_compile_definitions(test_interface INTERFACE ZTEST_UNITTEST)

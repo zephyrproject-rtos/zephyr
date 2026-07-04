@@ -23,7 +23,7 @@
 #include "testlib/security.h"
 
 /* This test uses system asserts to fail tests. */
-BUILD_ASSERT(IS_ENABLED(CONFIG_ASSERT));
+BUILD_ASSERT(CONFIG_ASSERT_MODULE_DEFAULT_LEVEL >= ZASSERT_ON);
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 

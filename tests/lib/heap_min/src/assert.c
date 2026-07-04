@@ -10,16 +10,7 @@
 
 DEFINE_FAKE_VALUE_FUNC(bool, mock_check_if_assert_expected);
 
-void assert_print(const char *fmt, ...)
-{
-	va_list ap;
-
-	va_start(ap, fmt);
-	vprintk(fmt, ap);
-	va_end(ap);
-}
-
-void assert_post_action(const char *file, unsigned int line)
+void zassert_post_action(const char *file, unsigned int line)
 {
 	/* ztest_test_pass()/ztest_test_fail() are used to stop the execution
 	 * If this is an unexpected assert (i.e. not following expect_assert())
@@ -37,4 +28,6 @@ void assert_post_action(const char *file, unsigned int line)
 		/* Mark the test as failed and stop execution */
 		ztest_test_fail();
 	}
+
+	CODE_UNREACHABLE;
 }
