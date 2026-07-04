@@ -1,0 +1,19 @@
+sample:
+  name: DMIC to I2S pipeline sample
+
+tests:
+  sample.mp.dmic_i2s:
+    tags:
+      - audio
+      - samples
+    platform_allow:
+      - mimxrt685_evk/mimxrt685s/cm33
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mcx_n5xx_evk/mcxn547/cpu0
+      - native_sim/native/64
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Capture started"
