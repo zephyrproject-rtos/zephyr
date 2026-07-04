@@ -1,0 +1,36 @@
+common:
+  tags:
+    - assert
+  integration_platforms:
+    - native_sim
+  platform_allow:
+    - native_sim
+
+tests:
+  # Both groups explicitly disabled.
+  os.zassert.all_off:
+    extra_configs:
+      - CONFIG_ASSERT_MODULE_MYMODULE_LEVEL_OFF=y
+      - CONFIG_ASSERT_MODULE_DEFAULT_LEVEL_OFF=y
+  # MYMODULE raised to Verbose; DEFAULT stays at its On default.
+  os.zassert.mymodule_verbose:
+    extra_configs:
+      - CONFIG_ASSERT_MODULE_MYMODULE_LEVEL_VERBOSE=y
+  # DEFAULT raised to Verbose; MYMODULE stays at its On default.
+  os.zassert.default_verbose:
+    extra_configs:
+      - CONFIG_ASSERT_MODULE_DEFAULT_LEVEL_VERBOSE=y
+  # Both groups On (checked, no message).
+  os.zassert.both_on:
+    extra_configs:
+      - CONFIG_ASSERT_MODULE_MYMODULE_LEVEL_ON=y
+      - CONFIG_ASSERT_MODULE_DEFAULT_LEVEL_ON=y
+  # Different level per group.
+  os.zassert.mixed:
+    extra_configs:
+      - CONFIG_ASSERT_MODULE_MYMODULE_LEVEL_ON=y
+      - CONFIG_ASSERT_MODULE_DEFAULT_LEVEL_VERBOSE=y
+  # Master switch off: every group forced OFF regardless of its config.
+  os.zassert.disabled:
+    extra_configs:
+      - CONFIG_ASSERT=n
