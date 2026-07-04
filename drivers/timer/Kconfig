@@ -44,8 +44,9 @@ config SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE
 config SYSTEM_CLOCK_SLOPPY_IDLE
 	bool "Timer allowed to skew uptime clock during idle"
 	help
-	  When true, the timer driver is not required to maintain a
-	  correct system uptime count when the system enters idle.
+	  When true, the kernel may let the system uptime count drift while
+	  there are no pending timeouts, rather than keep waking the CPU to
+	  maintain it.
 	  Some platforms may take advantage of this to reduce the
 	  overhead from regular interrupts required to handle counter
 	  wraparound conditions.
