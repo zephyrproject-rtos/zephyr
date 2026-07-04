@@ -21,7 +21,7 @@
 #include "testlib/security.h"
 
 /* This test uses system asserts to fail tests. */
-BUILD_ASSERT(IS_ENABLED(CONFIG_ASSERT));
+BUILD_ASSERT(CONFIG_ASSERT_MODULE_DEFAULT_LEVEL >= ZASSERT_ON);
 
 #define CENTRAL_DEVICE_NBR    0
 #define PERIPHERAL_DEVICE_NBR 1

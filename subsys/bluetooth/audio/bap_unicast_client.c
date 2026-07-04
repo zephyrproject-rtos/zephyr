@@ -2704,7 +2704,7 @@ static void unicast_group_free(struct bt_bap_unicast_group *group)
 			} else if (bap_iso->tx.stream == stream) {
 				bt_bap_iso_unbind_stream(stream, BT_AUDIO_DIR_SINK);
 			} else {
-				__ASSERT_PRINT("stream %p has invalid bap_iso %p", stream, bap_iso);
+				LOG_ERR("stream %p has invalid bap_iso %p", stream, bap_iso);
 			}
 		}
 

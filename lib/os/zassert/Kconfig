@@ -1,0 +1,141 @@
+# Copyright (c) 2026 Måns Ansgariusson <mansgariusson@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ASSERT
+	bool "Runtime assertion checking (ZASSERT)"
+	default y if TEST
+	depends on !FORCE_NO_ASSERT
+	help
+	  This enables the ZASSERT macros.
+
+	  Disabling this option will cause all assertions to compile to nothing,
+	  improving performance and system footprint.
+
+config ASSERT_LEVEL
+	int "__ASSERT() level [DEPRECATED]"
+	default 2
+	range 0 2
+	help
+	  This option specifies the assertion level used by the __ASSERT()
+	  macro. It can be set to one of three possible values:
+
+	  Level 0: off
+	  Level 1: on + warning in every file that includes __assert.h
+	  Level 2: on + no warning
+
+	  Deprecated: configure the DEFAULT ZASSERT module instead
+	  (CONFIG_ASSERT_MODULE_DEFAULT_LEVEL_OFF/ON/VERBOSE).
+
+
+config FORCE_NO_ASSERT
+	bool "Force-disable no assertions [DEPRECATED]"
+	select DEPRECATED
+	help
+	  This boolean option disables Zephyr assertion testing even
+	  in circumstances (twister) where it is enabled via
+	  CFLAGS and not Kconfig.  Added solely to be able to work
+	  around compiler bugs for specific tests.
+
+	  Deprecated: use CONFIG_ASSERT=n to disable all ZASSERT modules.
+
+config ASSERT_VERBOSE
+	bool "Verbose assertions [DEPRECATED]"
+	select DEPRECATED
+	help
+	  This option enables printing an assert message with information about
+	  the assertion that occurred. This includes printing the location,
+	  the conditional expression and additional message specific to the
+	  assert.
+
+	  Deprecated: sets the DEFAULT ZASSERT module to Verbose. Configure it
+	  directly with CONFIG_ASSERT_MODULE_DEFAULT_LEVEL_VERBOSE instead.
+
+config ASSERT_NO_FILE_INFO
+	bool "Disable file info for asserts [DEPRECATED]"
+	select DEPRECATED
+	help
+	  This option removes the name and the path of the source file
+	  in which the assertion occurred. Enabling this will save
+	  target code space, and thus may be necessary for tiny targets.
+
+	  Deprecated: the ZASSERT path always reports the location. This option
+	  has no effect.
+
+config ASSERT_NO_COND_INFO
+	bool "Disable condition info for asserts [DEPRECATED]"
+	select DEPRECATED
+	help
+	  This option removes the assert condition from the printed assert
+	  message. Enabling this will save target code space, and thus may be
+	  necessary for tiny targets. It is recommended to disable condition
+	  info before disabling file info since the condition can be found in
+	  the source using file info.
+
+	  Deprecated: sets the DEFAULT ZASSERT module to On (no message).
+	  Configure it directly with CONFIG_ASSERT_MODULE_DEFAULT_LEVEL_ON instead.
+
+config ASSERT_NO_MSG_INFO
+	bool "Disable message for asserts [DEPRECATED]"
+	select DEPRECATED
+	help
+	  This option removes the additional message from the printed assert.
+	  Enabling this will save target code space, and thus may be
+	  necessary for tiny targets. It is recommended to disable message
+	  before disabling file info since the message can be found in the
+	  source using file info.
+
+	  Deprecated: sets the DEFAULT ZASSERT module to On (no message).
+	  Configure it directly with CONFIG_ASSERT_MODULE_DEFAULT_LEVEL_ON instead.
+
+
+# when the deprecation period is over this file will source the Kconfig template
+# and define the default module instead. For now this is needed to keep the backward compatibility
+# with the __ASSERT() macros and their legacy Kconfig symbols.
+
+# The DEFAULT ZASSERT module (used by ZASSERT_MODULE(DEFAULT) and the __ASSERT()
+# compatibility shim). Its default level is derived from the deprecated legacy
+# CONFIG_ASSERT* symbols above: ASSERT_VERBOSE maps to Verbose; ASSERT_NO_COND_INFO
+# and ASSERT_NO_MSG_INFO map to On; a disabled or level-0 ASSERT leaves it Off.
+# The level stays overridable from prj.conf via the choice below.
+choice
+	prompt "Assertion level for the DEFAULT assert module"
+	depends on ASSERT
+	default ASSERT_MODULE_DEFAULT_LEVEL_VERBOSE if ASSERT && ASSERT_LEVEL != 0 && \
+		ASSERT_VERBOSE && !ASSERT_NO_COND_INFO && !ASSERT_NO_MSG_INFO
+	default ASSERT_MODULE_DEFAULT_LEVEL_ON if ASSERT && ASSERT_LEVEL != 0
+	default ASSERT_MODULE_DEFAULT_LEVEL_OFF
+
+config ASSERT_MODULE_DEFAULT_LEVEL_OFF
+	bool "Off"
+	help
+	  ZASSERT_OFF: assertions for the DEFAULT module are compiled out.
+
+config ASSERT_MODULE_DEFAULT_LEVEL_ON
+	bool "On (no message)"
+	help
+	  ZASSERT_ON: assertions are checked, but the message and its arguments
+	  are not compiled in.
+
+config ASSERT_MODULE_DEFAULT_LEVEL_VERBOSE
+	bool "Verbose (with message)"
+	help
+	  ZASSERT_VERBOSE: assertions are checked and the message and its
+	  arguments are compiled in.
+
+endchoice
+
+config ASSERT_MODULE_DEFAULT_LEVEL
+	int
+	default 0 if !ASSERT
+	default 0 if ASSERT_MODULE_DEFAULT_LEVEL_OFF
+	default 1 if ASSERT_MODULE_DEFAULT_LEVEL_ON
+	default 2 if ASSERT_MODULE_DEFAULT_LEVEL_VERBOSE
+
+config ASSERT_TEST
+	bool "Assert test mode"
+	help
+	  This option enables the assert test mode, which allows the assert
+	  post action handler to return (i.e. not abort) when the asserted
+	  condition is false. The tests that validate the assert feature may
+	  select this option to allow the test to proceed by implementing a
+	  custom assert post action hook.
