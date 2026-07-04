@@ -20,3 +20,16 @@ tests:
       - CONFIG_MP_CAPSFILTER=y
       - CONFIG_MP_QUEUE=y
       - CONFIG_MP_TEE=y
+
+  mp.audio.build:
+    tags:
+      - subsys
+      - mp
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+    extra_args:
+      - CONFIG_I2S=y
+      - CONFIG_AUDIO_DMIC=y
+      - CONFIG_AUDIO_CODEC=y
+      - CONFIG_MP_PLUGIN_ZAUD=y
