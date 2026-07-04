@@ -16,6 +16,12 @@ APP_LOG_LEVEL_DBG
 # Zephyr toolchain variant and therefore not
 # visible to compliance.
 ARMCLANG_STD_LIBC
+# ZASSERT module levels used for samples, tests, and documentation.
+ASSERT_MODULE_
+ASSERT_MODULE_MYMODULE_LEVEL
+ASSERT_MODULE_MYMODULE_LEVEL_OFF
+ASSERT_MODULE_MYMODULE_LEVEL_ON
+ASSERT_MODULE_MYMODULE_LEVEL_VERBOSE
 BINDESC_  # Used in documentation as a prefix
 BOARD_  # Used as regex in scripts/utils/board_v1_to_v2.py
 BOARD_MPS2_AN521_CPUTEST  # Used for board and SoC extension feature tests
