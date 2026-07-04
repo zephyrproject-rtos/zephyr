@@ -78,6 +78,8 @@
 	};
 
 	soc {
+		dma-ranges = <0xc0000000 0x0 0x40000000>;
+
 		sram0: memory@200000 {
 			device_type = "memory";
 			compatible = "mmio-sram";
