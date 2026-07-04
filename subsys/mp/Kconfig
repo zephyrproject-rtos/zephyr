@@ -1,0 +1,25 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig MP
+	bool "MultimediaPipe subsystem"
+	select NET_BUF
+	help
+	  Enable MultimediaPipe subsystem.
+
+if MP
+
+module = MP
+module-str = mp
+source "subsys/logging/Kconfig.template.log_config"
+
+# Load core configurations
+source "subsys/mp/core/Kconfig"
+
+# Load plugin configurations
+source "subsys/mp/plugins/Kconfig"
+
+endif # MP
