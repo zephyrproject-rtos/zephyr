@@ -91,11 +91,6 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 		return;
 	}
 
-	/* No timeout change when the kernel has no near deadline to schedule. */
-	if (ticks == SYS_CLOCK_MAX_WAIT) {
-		return;
-	}
-
 	/* Preserve the original behavior even though it looks wrong; to be
 	 * revisited.
 	 */

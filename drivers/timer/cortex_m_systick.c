@@ -315,21 +315,23 @@ __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 }
 ARCH_ISR_DIAG_ON
 
+void sys_clock_unused(void)
+{
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
+	}
+
+	/* Fast CPUs and a 24 bit counter mean that even idle systems need to
+	 * wake up multiple times per second. With no timeout pending and sloppy
+	 * idle allowing the uptime to drift, shut off the counter entirely.
+	 */
+	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
+	last_load = TIMER_STOPPED;
+}
+
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
-
-	/* Fast CPUs and a 24 bit counter mean that even idle systems
-	 * need to wake up multiple times per second.  If the kernel
-	 * allows us to miss tick announcements while nothing is pending
-	 * (sloppy idle), then shut off the counter.
-	 */
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) &&
-	    ticks == SYS_CLOCK_MAX_WAIT) {
-		SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
-		last_load = TIMER_STOPPED;
-		return;
-	}
 
 #if !defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE)
 	if (idle) {
