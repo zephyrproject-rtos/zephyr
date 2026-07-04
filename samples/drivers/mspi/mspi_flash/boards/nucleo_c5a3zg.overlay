@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 Filip Stojanovic <filipembedded@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		/*
+		 * The B-M2MEM-PACK1 shield exposes its memory device under the
+		 * stable "m2mem_flash" label, regardless of which variant is
+		 * selected. This keeps the sample overlay variant-independent.
+		 */
+		flash0 = &m2mem_flash;
+	};
+};
