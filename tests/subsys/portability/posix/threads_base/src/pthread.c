@@ -463,6 +463,9 @@ ZTEST(pthread, test_pthread_equal)
 	zassert_false(pthread_equal(pthread_self(), (pthread_t)4242));
 }
 
+static atomic_t test_cleanup_flags = ATOMIC_INIT(0);
+#define TEST_CLEANUP_DONE_BIT 0
+
 static void cleanup_handler(void *arg)
 {
 	bool *boolp = (bool *)arg;
@@ -470,27 +473,123 @@ static void cleanup_handler(void *arg)
 	*boolp = true;
 }
 
-static void *test_pthread_cleanup_entry(void *arg)
+static void *test_pthread_cleanup_entry_explicit(void *arg)
 {
-	bool executed[2] = {0};
+	bool executed[2] = {false, false};
 
+	ARG_UNUSED(arg);
 	pthread_cleanup_push(cleanup_handler, &executed[0]);
 	pthread_cleanup_push(cleanup_handler, &executed[1]);
 	pthread_cleanup_pop(false);
 	pthread_cleanup_pop(true);
 
-	zassert_true(executed[0]);
-	zassert_false(executed[1]);
+	zassert_equal(true, executed[0]);
+	zassert_equal(false, executed[1]);
 
 	return NULL;
 }
 
-ZTEST(pthread, test_pthread_cleanup)
+static void *test_pthread_cleanup_entry_pexit(void *arg)
+{
+	bool *executedp = (bool *)arg;
+
+	pthread_cleanup_push(cleanup_handler, executedp + 0); /* NOSONAR */
+	pthread_cleanup_push(cleanup_handler, executedp + 1); /* NOSONAR */
+
+	if (atomic_test_bit(&test_cleanup_flags, TEST_CLEANUP_DONE_BIT)) {
+		/* will exit this user thread-func and execute cleanup-handler */
+		pthread_exit(executedp);
+	}
+
+	pthread_cleanup_pop(false);
+	pthread_cleanup_pop(false);
+	zassert_unreachable();
+	return NULL;
+}
+
+static void *test_pthread_cleanup_entry_cancelsync(void *arg)
+{
+	bool *executedp = (bool *)arg;
+
+	pthread_cleanup_push(cleanup_handler, executedp + 0); /* NOSONAR */
+	pthread_cleanup_push(cleanup_handler, executedp + 1); /* NOSONAR */
+
+	while (true) {
+		/* Will exit this user thread-func and execute cleanup-handler. */
+		pthread_testcancel();
+		k_yield(); /* be more cooperative */
+	}
+
+	pthread_cleanup_pop(false);
+	pthread_cleanup_pop(false);
+	zassert_unreachable();
+	return NULL;
+}
+
+static void *test_pthread_cleanup_entry_return(void *arg)
+{
+	bool *executedp = (bool *)arg;
+
+	pthread_cleanup_push(cleanup_handler, executedp + 0); /* NOSONAR */
+	pthread_cleanup_push(cleanup_handler, executedp + 1); /* NOSONAR */
+	if (atomic_test_bit(&test_cleanup_flags, TEST_CLEANUP_DONE_BIT)) {
+		/* will exit this user thread-func without executing cleanup-handler */
+		return executedp;
+	}
+	pthread_cleanup_pop(true);
+	pthread_cleanup_pop(true);
+	zassert_unreachable();
+	return NULL;
+}
+
+ZTEST(pthread, test_pthread_cleanup0_explicit)
 {
 	pthread_t th;
 
-	zassert_ok(pthread_create(&th, NULL, test_pthread_cleanup_entry, NULL));
+	zassert_ok(pthread_create(&th, NULL, test_pthread_cleanup_entry_explicit, NULL));
 	zassert_ok(pthread_join(th, NULL));
+}
+
+ZTEST(pthread, test_pthread_cleanup1_pexit)
+{
+	pthread_t th;
+	bool executed[2] = {false, false};
+	void *retval = NULL;
+
+	atomic_set_bit(&test_cleanup_flags, TEST_CLEANUP_DONE_BIT);
+	zassert_ok(pthread_create(&th, NULL, test_pthread_cleanup_entry_pexit, executed));
+	zassert_ok(pthread_join(th, &retval));
+	zassert_equal_ptr(retval, executed);
+	zassert_equal(true, executed[0]);
+	zassert_equal(true, executed[1]);
+}
+
+ZTEST(pthread, test_pthread_cleanup2_cancel_sync)
+{
+	pthread_t th;
+	bool executed[2] = {false, false};
+	void *retval = NULL;
+
+	zassert_ok(pthread_create(&th, NULL, test_pthread_cleanup_entry_cancelsync, executed));
+	zassert_ok(pthread_cancel(th));
+	zassert_ok(pthread_join(th, &retval));
+	zassert_equal_ptr(retval, PTHREAD_CANCELED);
+	zassert_equal(true, executed[0]);
+	zassert_equal(true, executed[1]);
+}
+
+ZTEST(pthread, test_pthread_cleanup3_return)
+{
+	pthread_t th;
+	bool executed[2] = {false, false};
+	void *retval = NULL;
+
+	atomic_set_bit(&test_cleanup_flags, TEST_CLEANUP_DONE_BIT);
+	zassert_ok(pthread_create(&th, NULL, test_pthread_cleanup_entry_return, executed));
+	zassert_ok(pthread_join(th, &retval));
+	zassert_equal_ptr(retval, executed);
+	zassert_equal(false, executed[0]);
+	zassert_equal(false, executed[1]);
 }
 
 static bool testcancel_ignored;

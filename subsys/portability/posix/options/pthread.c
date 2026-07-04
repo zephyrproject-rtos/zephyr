@@ -505,20 +505,28 @@ void __z_pthread_cleanup_push(void *cleanup[3], void (*routine)(void *arg), void
 	}
 }
 
+static struct __pthread_cleanup *posix_thread_cleanup_pop(sys_slist_t *cleanup_listp)
+{
+	sys_snode_t *node = sys_slist_get(cleanup_listp);
+
+	__ASSERT_NO_MSG(node != NULL);
+	struct __pthread_cleanup *c =
+		CONTAINER_OF(node, struct __pthread_cleanup, node); /* NOSONAR */
+
+	__ASSERT_NO_MSG(c != NULL);
+	__ASSERT_NO_MSG(c->routine != NULL);
+	return c;
+}
+
 void __z_pthread_cleanup_pop(int execute)
 {
-	sys_snode_t *node;
 	struct __pthread_cleanup *c = NULL;
 	struct posix_thread *t = NULL;
 
 	K_SPINLOCK(&pthread_pool_lock) {
 		t = to_posix_thread(posix_thread_self(false));
 		__ASSERT_NO_MSG(t != NULL);
-		node = sys_slist_get(&t->cleanup_list);
-		__ASSERT_NO_MSG(node != NULL);
-		c = CONTAINER_OF(node, struct __pthread_cleanup, node);
-		__ASSERT_NO_MSG(c != NULL);
-		__ASSERT_NO_MSG(c->routine != NULL);
+		c = posix_thread_cleanup_pop(&t->cleanup_list);
 	}
 	if (execute) {
 		c->routine(c->arg);
@@ -716,14 +724,39 @@ static K_WORK_DELAYABLE_DEFINE(posix_thread_recycle_work, posix_thread_recycle_w
 
 extern struct sys_sem pthread_key_lock;
 
-static void posix_thread_finalize(struct posix_thread *t, void *retval)
+static void posix_thread_finalize_cleanuplist(struct posix_thread *t, bool exec_cleanup)
+{
+	if (exec_cleanup) {
+		sys_slist_t cleanup_list = SYS_SLIST_STATIC_INIT(&cleanup_list);
+
+		K_SPINLOCK(&pthread_pool_lock) {
+			while (!sys_slist_is_empty(&t->cleanup_list)) {
+				sys_slist_append(&cleanup_list, sys_slist_get(&t->cleanup_list));
+			}
+		}
+		struct __pthread_cleanup *c;
+
+		while (!sys_slist_is_empty(&cleanup_list)) {
+			c = posix_thread_cleanup_pop(&cleanup_list);
+			c->routine(c->arg);
+		}
+	} else {
+		/* Avoid access to potentially unwound `__pthread_cleanup` stack entries,
+		 * possible via `return`, `goto`, `longjmp`, etc.
+		 */
+		K_SPINLOCK(&pthread_pool_lock) {
+			sys_slist_init(&t->cleanup_list);
+		}
+	}
+}
+
+static void posix_thread_finalize_keyvaluepairs(struct posix_thread *t)
 {
 	sys_snode_t *node_l, *node_s;
 	pthread_key_obj *key_obj;
 	pthread_thread_data *thread_spec_data;
 	sys_snode_t *node_key_data, *node_key_data_s, *node_key_data_prev = NULL;
 	struct pthread_key_data *key_data;
-	k_tid_t z_thread = NULL;
 
 	SYS_SLIST_FOR_EACH_NODE_SAFE(&t->key_list, node_l, node_s) {
 		thread_spec_data = (pthread_thread_data *)node_l;
@@ -753,6 +786,14 @@ static void posix_thread_finalize(struct posix_thread *t, void *retval)
 			}
 		}
 	}
+}
+
+static void posix_thread_finalize(struct posix_thread *t, bool exec_cleanup, void *retval)
+{
+	k_tid_t z_thread = NULL;
+
+	posix_thread_finalize_cleanuplist(t, exec_cleanup);
+	posix_thread_finalize_keyvaluepairs(t);
 
 	/* move thread from run_q to done_q */
 	K_SPINLOCK(&pthread_pool_lock) {
@@ -787,7 +828,8 @@ static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 		__ASSERT_NO_MSG(err == 0 || err == PTHREAD_BARRIER_SERIAL_THREAD);
 	}
 
-	posix_thread_finalize(t, fun_ptr(arg1));
+	/* No execution of cleanup-handler on normal return from user-function. */
+	posix_thread_finalize(t, false, fun_ptr(arg1));
 
 	CODE_UNREACHABLE;
 }
@@ -1021,7 +1063,8 @@ int pthread_setcancelstate(int state, int *oldstate)
 
 	if (ret == 0 && state == PTHREAD_CANCEL_ENABLE &&
 	    cancel_type == PTHREAD_CANCEL_ASYNCHRONOUS && cancel_pending) {
-		posix_thread_finalize(t, PTHREAD_CANCELED);
+		/* TODO: execution of cleanup-handler on target-thread for async-cancel */
+		posix_thread_finalize(t, false, PTHREAD_CANCELED);
 	}
 
 	return ret;
@@ -1085,7 +1128,7 @@ void pthread_testcancel(void)
 	}
 
 	if (cancel_pended) {
-		posix_thread_finalize(t, PTHREAD_CANCELED);
+		posix_thread_finalize(t, true, PTHREAD_CANCELED);
 	}
 }
 
@@ -1122,7 +1165,8 @@ int pthread_cancel(pthread_t pthread)
 
 	if (ret == 0 && cancel_state == PTHREAD_CANCEL_ENABLE &&
 	    cancel_type == PTHREAD_CANCEL_ASYNCHRONOUS) {
-		posix_thread_finalize(t, PTHREAD_CANCELED);
+		/* TODO: execution of cleanup-handler on target-thread for async-cancel */
+		posix_thread_finalize(t, false, PTHREAD_CANCELED);
 	}
 
 	return ret;
@@ -1305,7 +1349,7 @@ void pthread_exit(void *retval)
 		CODE_UNREACHABLE;
 	}
 
-	posix_thread_finalize(self, retval);
+	posix_thread_finalize(self, true, retval);
 	CODE_UNREACHABLE;
 }
 
