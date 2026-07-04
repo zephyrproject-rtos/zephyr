@@ -9,8 +9,8 @@
  * @brief List clock subsystem IDs for Synaptics SR100 family.
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_SYNA_CLOCK_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_SYNA_CLOCK_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_SYNA_SR100_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_SYNA_SR100_CLOCK_H_
 
 /** Clock gating helpers */
 /** @brief clock gating helper for XSPI */
@@ -118,4 +118,4 @@
 /** @brief I2S SWIRE clock */
 #define SYNA_I2S_SWIRE_CFG_CLK 55
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_SYNA_CLOCK_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_SYNA_SR100_CLOCK_H_ */
