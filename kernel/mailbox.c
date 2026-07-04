@@ -19,6 +19,9 @@
 #include <kthread.h>
 #include <kernel_internal.h>
 #include <wait_q.h>
+#include <zephyr/sys/zassert.h>
+
+ZASSERT_GROUP(KERNEL);
 
 #ifdef CONFIG_OBJ_CORE_MAILBOX
 static struct k_obj_type  obj_type_mailbox;
@@ -297,6 +300,9 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	       k_timeout_t timeout)
 {
+	ZASSERT(!k_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT),
+		"Calling a blocking API from an ISR context with a non-K_NO_WAIT timeout is not allowed.");
+
 	/* configure things for a synchronous send, then send the message */
 	tx_msg->_syncing_thread = _current;
 
@@ -388,6 +394,9 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	struct k_mbox_msg *tx_msg;
 	k_spinlock_key_t key;
 	int result;
+
+	ZASSERT(!k_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT),
+		"Calling a blocking API from an ISR context with a non-K_NO_WAIT timeout is not allowed.");
 
 	/* save receiver id so it can be used during message matching */
 	rx_msg->tx_target_thread = _current;

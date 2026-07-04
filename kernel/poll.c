@@ -23,7 +23,10 @@
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/zassert.h>
 #include <stdbool.h>
+
+ZASSERT_GROUP(KERNEL);
 
 /* Single subsystem lock.  Locking per-event would be better on highly
  * contended SMP systems, but the original locking scheme here is
@@ -289,9 +292,9 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events,
 	poller->is_polling = true;
 	poller->mode = MODE_POLL;
 
-	__ASSERT(!arch_is_in_isr(), "");
-	__ASSERT(events != NULL, "NULL events\n");
-	__ASSERT(num_events >= 0, "<0 events\n");
+	ZASSERT(!k_is_in_isr(), "k_poll may not be called from an ISR");
+	ZASSERT(events != NULL, "NULL events");
+	ZASSERT(num_events >= 0, "<0 events");
 
 	SYS_PORT_TRACING_FUNC_ENTER(k_poll_api, poll, events);
 
@@ -706,10 +709,10 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 	int events_registered;
 	k_spinlock_key_t key;
 
-	__ASSERT(work_q != NULL, "NULL work_q\n");
-	__ASSERT(work != NULL, "NULL work\n");
-	__ASSERT(events != NULL, "NULL events\n");
-	__ASSERT(num_events >= 0, "<0 events\n");
+	ZASSERT(work_q != NULL, "NULL work_q");
+	ZASSERT(work != NULL, "NULL work");
+	ZASSERT(events != NULL, "NULL events");
+	ZASSERT(num_events >= 0, "<0 events");
 
 	SYS_PORT_TRACING_FUNC_ENTER(k_work_poll, submit_to_queue, work_q, work, timeout);
 

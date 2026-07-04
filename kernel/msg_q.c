@@ -24,6 +24,9 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <kernel_internal.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/zassert.h>
+
+ZASSERT_GROUP(KERNEL);
 
 #ifdef CONFIG_OBJ_CORE_MSGQ
 static struct k_obj_type obj_type_msgq;
@@ -130,7 +133,8 @@ exit:
 static inline int put_msg_in_queue(struct k_msgq *msgq, const void *data,
 			k_timeout_t timeout, bool put_at_back)
 {
-	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
+	ZASSERT(!k_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT),
+		"Calling a blocking API from an ISR context with a non-K_NO_WAIT timeout is not allowed.");
 
 	struct k_thread *pending_thread = NULL;
 	k_spinlock_key_t key;
@@ -286,7 +290,8 @@ static inline void z_vrfy_k_msgq_get_attrs(struct k_msgq *msgq,
 
 int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 {
-	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
+	ZASSERT(!k_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT),
+		"Calling a blocking API from an ISR context with a non-K_NO_WAIT timeout is not allowed.");
 
 	k_spinlock_key_t key;
 	struct k_thread *pending_thread;

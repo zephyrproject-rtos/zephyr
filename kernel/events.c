@@ -34,6 +34,9 @@
 #include <wait_q.h>
 #include <ksched.h>
 #include <scheduler.h>
+#include <zephyr/sys/zassert.h>
+
+ZASSERT_GROUP(KERNEL);
 
 #define K_EVENT_WAIT_ANY      0x00   /* Wait for any events */
 #define K_EVENT_WAIT_ALL      0x01   /* Wait for all events */
@@ -286,8 +289,8 @@ static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 	unsigned int  wait_condition;
 	struct k_thread  *thread;
 
-	__ASSERT(((arch_is_in_isr() == false) ||
-		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
+	ZASSERT(!k_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT),
+		"Calling a blocking API from an ISR context with a non-K_NO_WAIT timeout is not allowed.");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_event, wait, event, events,
 					options, timeout);
