@@ -70,6 +70,30 @@ static uint32_t elapsed(uint32_t *val_out)
 	return data->load - value;
 }
 
+void sys_clock_unused(void)
+{
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
+	}
+
+	const struct tmr_cmsdk_apb_cfg *const cfg = &cfg_inst0;
+
+	/* No pending timeout: reload the counter with the maximum interval so
+	 * the hardware waits as long as it can before the next interrupt.
+	 *
+	 * This is an auto-reload down-counter, not a free-running compare, so
+	 * it cannot simply stop reprogramming the way the compare timers do:
+	 * that would keep firing at the previous, possibly short, interval.
+	 * Programming the maximum reload matches what non-sloppy idle already
+	 * does via next_timeout(). Stopping the counter here (clearing
+	 * TIMER_CTRL_EN and re-enabling it in sys_clock_set_timeout()) would
+	 * avoid the wakeup entirely; that is left out for now to avoid a
+	 * riskier change to the cycle accounting.
+	 */
+	cfg->timer->reload = MAX_CYC;
+	cfg->timer->value = MAX_CYC;
+}
+
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
@@ -94,13 +118,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	data->cycle_count += pending_cycles;
 	unannounced_cycles = data->cycle_count - data->announced_cycles;
 
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
-		/*
-		 * No pending timeout and no future timer interrupt required:
-		 * wait as long as the hardware allows.
-		 */
-		load_to_be_set = MAX_CYC;
-	} else if ((int32_t)unannounced_cycles < 0) {
+	if ((int32_t)unannounced_cycles < 0) {
 		load_to_be_set = MIN_DELAY_CYCLES;
 	} else {
 		int64_t want = ((uint64_t)data->last_elapsed + ticks) * CYC_PER_TICK;
