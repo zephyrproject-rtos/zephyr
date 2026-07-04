@@ -1,0 +1,21 @@
+&pcie0 {
+	virtio_pci: virtio_pci {
+		compatible = "virtio,pci";
+
+		vendor-id = <0x1af4>;
+		device-id = <0x105a>;
+
+		interrupts = <0xb 0x0 0x0>;
+		interrupt-parent = <&intc>;
+
+		status = "okay";
+	};
+};
+
+/* The board defines a virtio-input PCI device, but this test only wires up a
+ * vhost-user-fs device in QEMU. Disable the input node so the virtio-pci
+ * driver does not try (and fail) to initialise a device that is not present.
+ */
+&virtio_input_pci {
+	status = "disabled";
+};
