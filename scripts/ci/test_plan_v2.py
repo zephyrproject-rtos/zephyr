@@ -34,7 +34,7 @@ Current strategies (execution order)
    downstream strategies never see them.
 2. :class:`DirectTestStrategy` - for changed files that live directly
    inside a ``tests/`` or ``samples/`` tree, walks up to find the
-   ``testcase.yaml`` / ``tests.yaml`` root and runs
+   ``tests.yaml`` root and runs
    so the exact test suite is exercised end-to-end.
    Consumes matched files so downstream strategies do not inflate the plan.
 3. :class:`SnippetStrategy` - for changed files under ``snippets/``, reads
@@ -767,13 +767,13 @@ class SnippetStrategy(SelectionStrategy):
        snippet identifier (e.g. ``nordic-log-stm``).  Snippets without a
        ``snippet.yml`` ancestor (vendor group directories) are skipped.
 
-    3. Grep ``tests/`` and ``samples/`` for ``testcase.yaml`` and
-       ``tests.yaml`` files that contain the snippet name string, then
-       parse each found manifest to confirm the snippet name actually appears
-       in a ``required_snippets:`` list of at least one test entry.
+    3. Grep ``tests/`` and ``samples/`` for ``tests.yaml`` files that contain
+       the snippet name string, then parse each found manifest to confirm the
+       snippet name actually appears in a ``required_snippets:`` list of at
+       least one test entry.
 
     4. Walk up from the confirmed YAML file to the test root (the directory
-       that contains the ``testcase.yaml`` / ``tests.yaml``) and emit a
+       that contains the ``tests.yaml``) and emit a
        ``-T`` root call so twister exercises those tests.
 
     This strategy **consumes** all matched snippet files so downstream
@@ -876,8 +876,8 @@ class SnippetStrategy(SelectionStrategy):
     def _find_test_roots_for_snippet(self, snippet_name):
         """Return the set of test-root directories that require *snippet_name*.
 
-        Grepping for the snippet name string in ``testcase.yaml`` /
-        ``tests.yaml`` files is fast.  Each hit is then parsed to confirm
+        Grepping for the snippet name string in ``tests.yaml`` files is fast.
+        Each hit is then parsed to confirm
         the name actually appears in a ``required_snippets:`` list.
         The confirmed YAML's directory is the ``-T`` root.
         """
@@ -889,8 +889,6 @@ class SnippetStrategy(SelectionStrategy):
         for root in search_roots:
             if not root.is_dir():
                 continue
-            for manifest in root.rglob("testcase.yaml"):
-                self._check_manifest(manifest, snippet_name, test_roots)
             for manifest in root.rglob("tests.yaml"):
                 self._check_manifest(manifest, snippet_name, test_roots)
         return test_roots
@@ -1448,8 +1446,7 @@ class DriverCompatStrategy(SelectionStrategy):
        artifacts (any path containing ``twister-out``) are skipped.
 
     4. From each found overlay/DTS, walk up the directory tree until a
-       ``testcase.yaml`` or ``tests.yaml`` is found.  That directory
-       becomes a ``-T`` root.
+       ``tests.yaml`` is found.  That directory becomes a ``-T`` root.
 
     5. Emit one :class:`TwisterCall` per discovered test directory (no
        ``--test-pattern`` filter — all tests in that directory are relevant
@@ -1838,8 +1835,7 @@ class DriverCompatStrategy(SelectionStrategy):
 
         Scans ``tests/`` and ``samples/`` for overlay and DTS files that
         reference the compat.  Skips generated build artifacts.  For each
-        hit, walks up to find the enclosing ``testcase.yaml`` or
-        ``tests.yaml``.
+        hit, walks up to find the enclosing ``tests.yaml``.
         """
         search_roots = [
             self._zephyr_base / "tests",
@@ -1874,13 +1870,13 @@ class DriverCompatStrategy(SelectionStrategy):
 
     @staticmethod
     def _find_yaml_dir(start_dir):
-        """Walk up *start_dir* until a ``testcase.yaml`` or ``tests.yaml`` is found.
+        """Walk up *start_dir* until a ``tests.yaml`` is found.
 
         Returns the directory containing the yaml file, or ``None`` if not found.
         """
         current = Path(start_dir)
         for _ in range(6):  # cap at 6 levels to avoid runaway traversal
-            if (current / "testcase.yaml").exists() or (current / "tests.yaml").exists():
+            if (current / "tests.yaml").exists():
                 return str(current)
             parent = current.parent
             if parent == current:
@@ -2260,8 +2256,7 @@ class KconfigImpactStrategy(SelectionStrategy):
        extracted symbols.
 
     4. For each matched file, determine which symbols it mentions and walk
-       up to the nearest ``testcase.yaml`` / ``tests.yaml``
-       to find the test root.
+       up to the nearest ``tests.yaml`` to find the test root.
 
     5. Apply a per-symbol threshold (``_MAX_SYMBOL_ROOTS``): if a symbol
        appears in more test roots than the threshold it is considered
@@ -3564,8 +3559,8 @@ class DirectTestStrategy(SelectionStrategy):
     1. Accept any changed file that lives under ``tests/`` or ``samples/``.
 
     2. For each such file, walk up the directory tree looking for
-       ``testcase.yaml``, ``tests.yaml``.  The first
-       directory that contains one of those files becomes the test root.
+       ``tests.yaml``.  The first directory that contains one of those files
+       becomes the test root.
 
     3. Deduplicate: multiple changed files that resolve to the same root
        are merged into a single :class:`TwisterCall`.
