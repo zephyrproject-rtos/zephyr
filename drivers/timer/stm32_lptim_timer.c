@@ -327,14 +327,8 @@ void sys_clock_unused(void)
 	clock_control_off(clk_ctrl, (clock_control_subsys_t)&lptim_clk[0]);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_idle_enter(uint32_t ticks)
 {
-	/* new LPTIM AutoReload value to set (aligned on Kernel ticks) */
-	uint32_t next_arr = 0;
-	int err;
-
-	ARG_UNUSED(idle);
-
 #ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
 	const struct pm_state_info *next;
 
@@ -342,7 +336,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 
 	/* Check if STANBY or STOP3 is requested */
 	timeout_stdby = false;
-	if ((next != NULL) && idle) {
+	if (next != NULL) {
 #ifdef CONFIG_PM_S2RAM
 		if (next->state == PM_STATE_SUSPEND_TO_RAM) {
 			timeout_stdby = true;
@@ -388,6 +382,20 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 		return;
 	}
 #endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
+
+	sys_clock_set_timeout(ticks, false);
+}
+
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
+{
+	ARG_UNUSED(idle);
+	/* new LPTIM AutoReload value to set (aligned on Kernel ticks) */
+	uint32_t next_arr = 0;
+	int err;
+
+#ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
+	timeout_stdby = false;
+#endif
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
