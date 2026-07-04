@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Måns Ansgariusson <mansgariusson@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ZASSERT
+	bool "Granular per-file assertions (ZASSERT)"
+	default y
+	help
+	  Self-contained per-source-file assertion groups (see
+	  <zephyr/sys/zassert.h>), independent of CONFIG_ASSERT and the legacy
+	  __ASSERT() macro. When disabled, every group is forced to ZASSERT_OFF
+	  and all ZASSERT()/ZASSERT_GROUP() usage compiles out.
+
+# Generate the DEFAULT zassert-level (a user-facing Off/On/Verbose choice plus
+# the derived, non-assignable level) consumed by ZASSERT_GROUP(DEFAULT).
+zassert-group = DEFAULT
+zassert-group-str = the DEFAULT assert group
+rsource "Kconfig.template.zassert"
