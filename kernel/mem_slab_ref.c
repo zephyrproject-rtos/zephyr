@@ -19,7 +19,7 @@
 
 #define ATOMIC_INIT(i) { (i) }
 #define REFCOUNT_INIT(n) { .refs = ATOMIC_INIT(n), }
-#define SLAB_RC_HEADER_SIZE WB_UP(sizeof(struct k_mem_slab_rc_header))
+#define SLAB_RC_HEADER_SIZE WB_UP(sizeof(struct k_mem_slab_ref_header))
 
 typedef struct {
     atomic_t counter;
@@ -82,53 +82,95 @@ int k_mem_slab_ref_alloc(struct k_mem_slab_ref *slab_ref, void **mem,
     int ret  = k_mem_slab_alloc(&slab_ref->slab, &blk, timeout);
 
     if(ret == 0) {
-        struct k_mem_slab_rc_header *header = (struct k_mem_slab_rc_header*)blk;
-
+        struct k_mem_slab_ref_header *header = (struct k_mem_slab_ref_header*)blk;
         kref_init(&header->kref);
         header->owner = slab_ref;
-
         *mem = (uint8_t*)blk + SLAB_RC_HEADER_SIZE;
 
     }
+    k_free(blk);
     return ret;
 }
 
 /**
  *  @brief
  */
-void k_mem_slab_ref_free(struct k_mem_slab_ref *slab_ref, void *mem);
+int k_mem_slab_ref_read_alloc(struct k_mem_slab_ref_header *slab_ref_header, void **mem, 
+						k_timeout_t timeout) {
+    if(!slab_ref_header || !slab_ref_header->owner) {
+        return -EINVAL;
+    }
+
+    void *blk = NULL;
+    int   ret = k_mem_slab_alloc(slab_ref_header->owner->slab, &blk, timeout);
+
+    if(ret == 0) {
+        kref_get(&slab_ref_header->kref);
+        *mem = (uint8_t*)blk + SLAB_RC_HEADER_SIZE;
+    }
+    k_free(blk);
+    return ret;
+}
+
+void block_release_callback(struct kref *ref) {
+    struct k_mem_slab_ref_header *header = CONTAINER_OF(ref, struct k_mem_slab_ref_header,
+                                            kref);
+    k_mem_slab_free(&header->owner->slab);
+    k_free(ref);
+}
 
 /**
  *  @brief
  */
-static inline uint32_t k_mem_slab_ref_num_used_get(struct k_mem_slab_ref *slab_ref);
+void k_mem_slab_ref_free(struct k_mem_slab_ref *slab_ref, void *mem) {
+    if(mem == NULL) {
+        return -EINVAL;
+    }
+
+    struct k_mem_slab_ref_header* header = (struct k_mem_slab_ref_header *)
+                                            ((uint8_t*)mem - SLAB_RC_HEADER_SIZE);
+
+    kref_put(&header->kref, block_release_callback);
+    k_free(mem);
+}
 
 /**
  *  @brief
  */
-static inline uint32_t k_mem_slab_ref_max_used_get(struct k_mem_slab_ref *slab_ref);
+static inline uint32_t k_mem_slab_ref_max_used_get(struct k_mem_slab_ref_header 
+                                                                *slab_ref_header) {
+    return k_mem_slab_max_used_get(&slab_ref_header->owner->slab);
+}
 
 /**
  *  @brief
  */
-static inline uint32_t k_mem_slab_ref_num_free_get(struct k_mem_slab_ref *slab_ref);
+static inline uint32_t k_mem_slab_ref_num_free_get(struct k_mem_slab_ref_header 
+                                                                *slab_ref_header) {
+    return k_mem_slab_num_free_get(&slab_ref_header->owner->slab);
+}
 
 /**
  *  @brief
  */
-int k_mem_slab_ref_runtime_stats_get(struct k_mem_slab_ref *slab_ref, 
-						struct sys_memory_stats *stats);
+int k_mem_slab_ref_runtime_stats_get(struct k_mem_slab_ref_header *slab_ref_header, 
+						struct sys_memory_stats *stats){
+    return k_mem_slab_runtime_stats_get(&slab_ref_header->owner->slab, stats);
+}
 
 /**
  *  @brief
  */
-int k_mem_slab_ref_runtime_stats_reset_max(struct k_mem_slab_ref *slab_ref);
+int k_mem_slab_ref_runtime_stats_reset_max(struct k_mem_slab_ref_header 
+                                                *slab_ref_header) {
+    return k_mem_slab_runtime_stats_reset_max(&slab_ref_header->owner->slab);
+}
 
 /**
  *  @brief 
  */
-static inline uint32_t k_mem_slab_ref_refcount_get(struct 
-										k_mem_slab_rc_header *slab_rc_header) {
+static inline uint32_t k_mem_slab_ref_refcount_get(struct k_mem_slab_ref_header 
+                                                *slab_ref_header) {
     return (uint32_t)(slab_rc_header->kref.refcount.refs.counter);
 }
 
