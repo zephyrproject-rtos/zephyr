@@ -66,6 +66,58 @@ tests:
         - "(.*)IPI Count:[ ]*[0-9]+(.*)"
         - "(.*)Total Work:[ ]*[0-9]+(.*)"
 
+  benchmark.ipi_metric.idle.optimize:
+    extra_configs:
+      - CONFIG_IPI_METRIC_IDLE=y
+      - CONFIG_IPI_OPTIMIZE=y
+      - CONFIG_IPI_OPTIMIZE_IDLE=n
+    filter: CONFIG_ARCH_HAS_DIRECTED_IPIS
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "(.*) IPI-Metric Idle Wake Test(.*) Elapsed Time:[ ]*[0-9]+(.*)"
+        - "(.*)Wake Round Trips:[ ]*[0-9]+(.*)"
+        - "(.*)IPI Count:[ ]*[0-9]+(.*)"
+        - "(.*)Average Wake Latency Cycles:[ ]*[0-9]+(.*)"
+        - "(.*)Maximum Wake Latency Cycles:[ ]*[0-9]+(.*)"
+        - "(.*) IPI-Metric Idle Wake Test(.*) Elapsed Time:[ ]*[0-9]+(.*)"
+        - "(.*)Wake Round Trips:[ ]*[0-9]+(.*)"
+        - "(.*)IPI Count:[ ]*[0-9]+(.*)"
+        - "(.*)Average Wake Latency Cycles:[ ]*[0-9]+(.*)"
+        - "(.*)Maximum Wake Latency Cycles:[ ]*[0-9]+(.*)"
+        - "(.*) IPI-Metric Idle Wake Test(.*) Elapsed Time:[ ]*[0-9]+(.*)"
+        - "(.*)Wake Round Trips:[ ]*[0-9]+(.*)"
+        - "(.*)IPI Count:[ ]*[0-9]+(.*)"
+        - "(.*)Average Wake Latency Cycles:[ ]*[0-9]+(.*)"
+        - "(.*)Maximum Wake Latency Cycles:[ ]*[0-9]+(.*)"
+
+  benchmark.ipi_metric.idle.ipi_optimize_idle:
+    extra_configs:
+      - CONFIG_IPI_METRIC_IDLE=y
+      - CONFIG_IPI_OPTIMIZE=y
+      - CONFIG_IPI_OPTIMIZE_IDLE=y
+    filter: CONFIG_ARCH_HAS_DIRECTED_IPIS
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "(.*) IPI-Metric Idle Wake Test(.*) Elapsed Time:[ ]*[0-9]+(.*)"
+        - "(.*)Wake Round Trips:[ ]*[0-9]+(.*)"
+        - "(.*)IPI Count:[ ]*[0-9]+(.*)"
+        - "(.*)Average Wake Latency Cycles:[ ]*[0-9]+(.*)"
+        - "(.*)Maximum Wake Latency Cycles:[ ]*[0-9]+(.*)"
+        - "(.*) IPI-Metric Idle Wake Test(.*) Elapsed Time:[ ]*[0-9]+(.*)"
+        - "(.*)Wake Round Trips:[ ]*[0-9]+(.*)"
+        - "(.*)IPI Count:[ ]*[0-9]+(.*)"
+        - "(.*)Average Wake Latency Cycles:[ ]*[0-9]+(.*)"
+        - "(.*)Maximum Wake Latency Cycles:[ ]*[0-9]+(.*)"
+        - "(.*) IPI-Metric Idle Wake Test(.*) Elapsed Time:[ ]*[0-9]+(.*)"
+        - "(.*)Wake Round Trips:[ ]*[0-9]+(.*)"
+        - "(.*)IPI Count:[ ]*[0-9]+(.*)"
+        - "(.*)Average Wake Latency Cycles:[ ]*[0-9]+(.*)"
+        - "(.*)Maximum Wake Latency Cycles:[ ]*[0-9]+(.*)"
+
   benchmark.ipi_metric.primitive.broadcast:
     extra_configs:
       - CONFIG_IPI_METRIC_PRIMITIVE_BROADCAST=y

@@ -15,8 +15,11 @@
 #define NUM_THREADS (CONFIG_MP_MAX_NUM_CPUS - 1)
 
 #define DELAY_FOR_IPIS 200
+#define SETUP_IPI_DRAIN_US 20000
 #define WAIT_FOR_IPIS_US 100000
 #define WAIT_FOR_THREAD_PENDING_US 100000
+
+#define CPU_UNSET (-1)
 
 static struct k_thread thread[NUM_THREADS];
 static struct k_thread alt_thread;
@@ -30,8 +33,15 @@ static uint32_t ipi_count[CONFIG_MP_MAX_NUM_CPUS];
 static struct k_spinlock ipilock;
 static atomic_t busy_started;
 static volatile bool alt_thread_done;
+static atomic_t alt_started;
+
+static atomic_t metairq_trigger;
+static atomic_t metairq_initial_cpu;
+static atomic_t metairq_cpu;
+static atomic_t metairq_resumed_cpu;
 
 static K_SEM_DEFINE(sem, 0, 1);
+static K_SEM_DEFINE(metairq_sem, 0, 1);
 
 void z_trace_sched_ipi(void)
 {
@@ -120,12 +130,64 @@ static void pending_thread_entry(void *p1, void *p2, void *p3)
 	int  key;
 
 	k_sem_take(&sem, K_FOREVER);
+	atomic_set(&alt_started, 1);
 
 	while (!alt_thread_done) {
 		key = arch_irq_lock();
 		arch_spin_relax();
 		arch_irq_unlock(key);
 	}
+}
+
+static void metairq_thread_entry(void *p1, void *p2, void *p3)
+{
+	uint32_t id;
+	int key;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	k_sem_take(&metairq_sem, K_FOREVER);
+
+	key = arch_irq_lock();
+	id = _current_cpu->id;
+	arch_irq_unlock(key);
+	atomic_set(&metairq_cpu, (atomic_val_t)id);
+
+	while (atomic_get(&metairq_resumed_cpu) == CPU_UNSET) {
+		key = arch_irq_lock();
+		arch_spin_relax();
+		arch_irq_unlock(key);
+	}
+}
+
+static void metairq_waker_entry(void *p1, void *p2, void *p3)
+{
+	uint32_t id;
+	int key;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	key = arch_irq_lock();
+	id = _current_cpu->id;
+	arch_irq_unlock(key);
+	atomic_set(&metairq_initial_cpu, (atomic_val_t)id);
+
+	while (atomic_get(&metairq_trigger) == 0) {
+		key = arch_irq_lock();
+		arch_spin_relax();
+		arch_irq_unlock(key);
+	}
+
+	k_sem_give(&metairq_sem);
+
+	key = arch_irq_lock();
+	id = _current_cpu->id;
+	arch_irq_unlock(key);
+	atomic_set(&metairq_resumed_cpu, (atomic_val_t)id);
 }
 
 static void alt_thread_create(int priority, const char *desc)
@@ -138,7 +200,7 @@ static void alt_thread_create(int priority, const char *desc)
 	/* Verify alt_thread is pending */
 
 	zassert_true(WAIT_FOR(z_is_thread_pending(&alt_thread),
-				WAIT_FOR_THREAD_PENDING_US, k_msleep(1)),
+			      WAIT_FOR_THREAD_PENDING_US, k_msleep(1)),
 		     "%s priority thread has not pended.\n", desc);
 }
 
@@ -264,6 +326,162 @@ ZTEST(ipi, test_arch_sched_directed_ipi)
 	}
 }
 #endif
+
+/**
+ * Verify that a single wakeup targeting idle CPUs sends exactly one IPI.
+ */
+ZTEST(ipi, test_idle_thread_wakes_one_cpu)
+{
+	uint32_t set[CONFIG_MP_MAX_NUM_CPUS];
+	uint32_t id;
+	uint32_t total = 0U;
+	int key;
+	int priority = k_thread_priority_get(k_current_get());
+
+	if (!IS_ENABLED(CONFIG_IPI_OPTIMIZE_IDLE)) {
+		ztest_test_skip();
+	}
+
+	atomic_clear(&alt_started);
+	alt_thread_create(priority + 1, "Idle");
+
+	key = arch_irq_lock();
+	id = _current_cpu->id;
+	arch_irq_unlock(key);
+
+	/* Wait for any in-flight scheduling IPIs from setup to be consumed. */
+	k_busy_wait(SETUP_IPI_DRAIN_US);
+	clear_ipi_counts();
+	k_sem_give(&sem);
+	bool started = WAIT_FOR(atomic_get(&alt_started) != 0,
+				WAIT_FOR_IPIS_US, k_busy_wait(10));
+
+	zassert_true(started, "Timed out waiting for idle target thread.\n");
+	get_ipi_counts(set, CONFIG_MP_MAX_NUM_CPUS);
+	alt_thread_done = true;
+
+	for (unsigned int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
+		if (i != id) {
+			total += set[i];
+		}
+	}
+
+	zassert_equal(total, 1U, "Expected one idle wake IPI, got %u", total);
+	zassert_equal(set[id], 0U, "Current CPU got %u IPI(s)", set[id]);
+}
+
+/**
+ * Verify that idle CPU reservations remain unique and can be rebound without
+ * requesting another IPI.
+ */
+ZTEST(ipi, test_ipi_reservation_tracking)
+{
+	atomic_val_t first_mask;
+	atomic_val_t second_mask;
+	atomic_val_t duplicate_mask;
+	atomic_val_t rebound_mask;
+	bool rebound;
+	int priority = k_thread_priority_get(k_current_get());
+
+	if (!IS_ENABLED(CONFIG_IPI_OPTIMIZE_IDLE) ||
+	    CONFIG_MP_MAX_NUM_CPUS < 4 ||
+	    !IS_ENABLED(CONFIG_ARCH_HAS_DIRECTED_IPIS)) {
+		ztest_test_skip();
+	}
+
+	for (unsigned int i = 0; i < 2; i++) {
+		k_thread_create(&thread[i], stack[i], STACK_SIZE,
+				pending_thread_entry, NULL, NULL, NULL,
+				priority + 1, 0, K_FOREVER);
+	}
+
+	k_spinlock_key_t sched_key = k_spin_lock(&_sched_spinlock);
+
+	first_mask = ipi_mask_create(&thread[0]);
+	second_mask = ipi_mask_create(&thread[1]);
+	duplicate_mask = ipi_mask_create(&thread[1]);
+	ipi_idle_thread_unreserve(&thread[0]);
+	rebound = ipi_idle_thread_rebind(&thread[1], &thread[0]);
+	rebound_mask = ipi_mask_create(&thread[0]);
+	ipi_idle_thread_unreserve(&thread[0]);
+	k_spin_unlock(&_sched_spinlock, sched_key);
+
+	zassert_not_equal(first_mask, 0, "First thread was not reserved");
+	zassert_not_equal(second_mask, 0, "Second thread was not reserved");
+	zassert_equal(first_mask & second_mask, 0,
+		      "Threads shared reservation mask 0x%lx",
+		      (long)(first_mask & second_mask));
+	zassert_equal(duplicate_mask, 0,
+		      "Reserved thread was duplicated on CPU mask 0x%lx",
+		      (long)duplicate_mask);
+	zassert_true(rebound, "Reservation was not rebound");
+	zassert_equal(rebound_mask, 0,
+		      "Rebound thread requested IPI mask 0x%lx", (long)rebound_mask);
+}
+
+/**
+ * Verify that a MetaIRQ preempts its local waker and sends one IPI so the
+ * displaced waker can resume on an idle CPU.
+ */
+ZTEST(ipi, test_metairq_wakes_displaced_thread_on_idle_cpu)
+{
+	uint32_t set[CONFIG_MP_MAX_NUM_CPUS];
+	uint32_t initial_cpu;
+	uint32_t ipi_total = 0U;
+	int priority = k_thread_priority_get(k_current_get());
+
+	if (!IS_ENABLED(CONFIG_IPI_OPTIMIZE_IDLE) ||
+	    CONFIG_NUM_METAIRQ_PRIORITIES == 0 ||
+	    CONFIG_MP_MAX_NUM_CPUS < 3 ||
+	    !IS_ENABLED(CONFIG_ARCH_HAS_DIRECTED_IPIS)) {
+		ztest_test_skip();
+	}
+
+	atomic_clear(&metairq_trigger);
+	atomic_set(&metairq_initial_cpu, CPU_UNSET);
+	atomic_set(&metairq_cpu, CPU_UNSET);
+	atomic_set(&metairq_resumed_cpu, CPU_UNSET);
+	k_sem_reset(&metairq_sem);
+
+	k_thread_create(&alt_thread, alt_stack, STACK_SIZE,
+			metairq_thread_entry, NULL, NULL, NULL,
+			K_HIGHEST_THREAD_PRIO, 0, K_FOREVER);
+	alt_thread_created = true;
+	k_thread_start(&alt_thread);
+	zassert_true(WAIT_FOR(z_is_thread_pending(&alt_thread),
+			      WAIT_FOR_THREAD_PENDING_US, k_busy_wait(10)),
+		     "MetaIRQ thread did not pend");
+
+	k_thread_create(&thread[0], stack[0], STACK_SIZE,
+			metairq_waker_entry, NULL, NULL, NULL,
+			priority + 1, 0, K_NO_WAIT);
+	zassert_true(WAIT_FOR(atomic_get(&metairq_initial_cpu) != CPU_UNSET,
+			      WAIT_FOR_THREAD_PENDING_US, k_busy_wait(10)),
+		     "MetaIRQ waker did not start");
+
+	k_busy_wait(SETUP_IPI_DRAIN_US);
+	clear_ipi_counts();
+	atomic_set(&metairq_trigger, 1);
+
+	zassert_true(WAIT_FOR(atomic_get(&metairq_cpu) != CPU_UNSET,
+			      WAIT_FOR_IPIS_US, k_busy_wait(10)),
+		     "MetaIRQ thread did not run");
+	zassert_true(WAIT_FOR(atomic_get(&metairq_resumed_cpu) != CPU_UNSET,
+			      WAIT_FOR_IPIS_US, k_busy_wait(10)),
+		     "Displaced waker did not resume");
+
+	initial_cpu = (uint32_t)atomic_get(&metairq_initial_cpu);
+	zassert_equal((uint32_t)atomic_get(&metairq_cpu), initial_cpu,
+		      "MetaIRQ did not stay on CPU%u", initial_cpu);
+	zassert_not_equal((uint32_t)atomic_get(&metairq_resumed_cpu), initial_cpu,
+			  "Displaced waker stayed on CPU%u", initial_cpu);
+
+	get_ipi_counts(set, CONFIG_MP_MAX_NUM_CPUS);
+	for (unsigned int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
+		ipi_total += set[i];
+	}
+	zassert_equal(ipi_total, 1U, "Expected one idle IPI, got %u", ipi_total);
+}
 
 /**
  * Verify that waking a thread whose priority is lower than any other
@@ -497,7 +715,12 @@ static void cleanup_threads(void *fixture)
 	}
 	alt_thread_created = false;
 
+	atomic_clear(&metairq_trigger);
+	atomic_set(&metairq_initial_cpu, CPU_UNSET);
+	atomic_set(&metairq_cpu, CPU_UNSET);
+	atomic_set(&metairq_resumed_cpu, CPU_UNSET);
 	alt_thread_done = false;
+	atomic_clear(&alt_started);
 }
 
 ZTEST_SUITE(ipi, NULL, ipi_tests_setup, NULL, cleanup_threads, NULL);
