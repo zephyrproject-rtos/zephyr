@@ -220,6 +220,24 @@ the number of instances rather than the total number of test cases.
    matrix relies on lcov's per-test ``TN`` tracefile records; ``gcovr`` has no
    equivalent. It also implies ``--coverage``.
 
+Visualizing the matrix
+----------------------
+
+``test_matrix.json`` can be turned into a self-contained, interactive HTML
+dashboard with the standalone :zephyr_file:`scripts/gen_test_matrix_dashboard.py`
+script (it has no dependency on Twister and can be run on any previously
+generated matrix):
+
+.. code-block:: console
+
+   $ scripts/gen_test_matrix_dashboard.py -i twister-out/coverage/test_matrix.json
+
+This writes ``twister-out/coverage/test_matrix.html``, which lists -- per test
+-- how many files and lines it covers and how many lines it covers *uniquely*
+(that no other test reaches, useful for spotting redundant or load-bearing
+tests), and lets you drill into the files a test covers or look up which tests
+cover a given file and line.
+
 .. _gcovr_symlinks:
    https://github.com/gcovr/gcovr/blob/main/doc/source/guide/filters.rst#filters-for-symlinks
 
