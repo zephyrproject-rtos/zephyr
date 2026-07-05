@@ -892,6 +892,39 @@ config BT_CTLR_PERIPHERAL_ISO_RESERVE_MAX
 	  only time required to transmit or receive the burst number of CIS PDUs
 	  is reserved.
 
+config BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	bool "Wrap Peripheral CIG event around overlapping roles"
+	depends on BT_TICKER_EXT && \
+		   BT_CTLR_PERIPHERAL_ISO && \
+		   !BT_CTLR_PERIPHERAL_ISO_RESERVE_MAX
+	help
+	  Wrap Peripheral CIG event around overlapping roles using ticker
+	  ticks_slot_window feature with jitter in window.
+	  LLL implementation can use the ticks_drift value to determine the
+	  correct CIS subevents to setup for reception/transmission.
+
+config BT_CTLR_CENTRAL_ISO_RESERVE_MAX
+	bool "Use maximum data PDU size time reservation for Central"
+	depends on BT_CTLR_CENTRAL_ISO
+	default y
+	help
+	  Use the maximum Central CIG event time reservation.
+
+	  If maximum Central CIG event time reservation is not enabled, then
+	  only time required to transmit or receive the burst number of CIS PDUs
+	  is reserved.
+
+config BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER
+	bool "Wrap Central CIG event around overlapping roles"
+	depends on BT_TICKER_EXT && \
+		   BT_CTLR_CENTRAL_ISO && \
+		   !BT_CTLR_CENTRAL_ISO_RESERVE_MAX
+	help
+	  Wrap Central CIG event around overlapping roles using ticker
+	  ticks_slot_window feature with jitter in window.
+	  LLL implementation can use the ticks_drift value to determine the
+	  correct CIS subevents to setup for transmission/reception.
+
 config BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX
 	bool "Reserve maximum event overhead in time reservations"
 	default y
