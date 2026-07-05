@@ -203,6 +203,27 @@ config RISCV_SOC_HAS_CUSTOM_SYS_IO
 	  the RISC-V SoC needs to do something different and more than reading and
 	  writing the registers.
 
+config RISCV_SOC_HAS_SYSCALL_INTMASK
+	bool
+	depends on USERSPACE && PMP_KERNEL_MODE_DYNAMIC
+	depends on RISCV_SOC_CONTEXT_SAVE
+	help
+	  Hidden option for SoCs where an interrupt taken in the syscall body must
+	  be held off without clearing mstatus.MIE. On such SoCs an interrupt (or
+	  other trap) taken while the ECALL exception is still being handled cannot
+	  be delivered safely, yet the kernel requires syscalls to run with
+	  interrupts unlocked (arch_irq_unlocked() true, i.e. mstatus.MIE set) so
+	  the thread stays scheduler-preemptible.
+
+	  Enable this hidden option and provide a soc_syscall.h header defining the
+	  SOC_SYSCALL_INTMASK macro (guarded by _ASMLANGUAGE). The IRQ wrapper
+	  invokes it on syscall entry to mask the body the SoC's own way (for
+	  example by raising a hardware interrupt-level threshold) while leaving
+	  mstatus.MIE set. The macro runs where the caller-saved temporaries are
+	  free, so it may clobber them. Any per-context state it changes must be
+	  restored on syscall exit by the SoC context save/restore hooks
+	  (RISCV_SOC_CONTEXT_SAVE).
+
 config RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
 	bool
 	help
