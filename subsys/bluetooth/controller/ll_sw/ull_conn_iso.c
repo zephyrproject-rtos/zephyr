@@ -752,6 +752,7 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		 */
 		if (cis->lll.handle != 0xFFFF && cis->lll.active) {
 			cis->lll.event_count_prepare += (lazy + 1U);
+			cis->lll.active_prepare = 1U;
 
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 			cis->lll.event_count_prepare -= cis->lll.lazy_active;
@@ -1068,6 +1069,7 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 		cis_lazy_fill(cis);
 #else /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 		/* Set CIS active in already active CIG */
+		cis->lll.active_prepare = 0U;
 		cis->lll.active = 1U;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 
@@ -1332,6 +1334,7 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 
 	/* Set CIG and the first CIS state as active */
 	cig->state = CIG_STATE_ACTIVE;
+	cis->lll.active_prepare = 0U;
 	cis->lll.active = 1U;
 }
 
@@ -1546,6 +1549,7 @@ static void mfy_cis_lazy_fill(void *param)
 	 * to adjust event_count_prepare.
 	 */
 	cis->lll.lazy_active = lazy;
+	cis->lll.active_prepare = 0U;
 	cis->lll.active = 1U;
 }
 

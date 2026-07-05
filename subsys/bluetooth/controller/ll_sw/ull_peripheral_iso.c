@@ -201,6 +201,12 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 		cig->lll.handle = LLL_HANDLE_INVALID;
 		cig->lll.role = acl->lll.role;
 		cig->lll.resume_cis = LLL_HANDLE_INVALID;
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+		cig->lll.cis_handle_resume = LLL_HANDLE_INVALID;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
 
 		/* Calculate CIG default maximum window widening. NOTE: This calculation
 		 * does not take into account that leading CIS with NSE>=3 must reduce
