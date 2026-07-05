@@ -184,9 +184,8 @@ static inline __printf_like(6, 7) bool z_zexpect(bool cond, const char *default_
 				  __LINE__, __func__, _msg ? msg : "", ##__VA_ARGS__);             \
 		(void)_msg;                                                                        \
 		if (!_ret) {                                                                       \
-			/* If kernel but without multithreading return. */                         \
-			COND_CODE_1(KERNEL, (COND_CODE_1(CONFIG_MULTITHREADING, (), (return;))),   \
-				    ())                                                            \
+			/* If not multithreading, return from the test function. */                \
+			COND_CODE_1(CONFIG_MULTITHREADING, (), (return;))                          \
 		}                                                                                  \
 	} while (0)
 
@@ -222,9 +221,8 @@ static inline __printf_like(6, 7) bool z_zexpect(bool cond, const char *default_
 				  __LINE__, __func__, _msg ? msg : "", ##__VA_ARGS__);             \
 		(void)_msg;                                                                        \
 		if (!_ret) {                                                                       \
-			/* If kernel but without multithreading return. */                         \
-			COND_CODE_1(KERNEL, (COND_CODE_1(CONFIG_MULTITHREADING, (), (return;))),   \
-				    ())                                                            \
+			/* If not multithreading, return from the test function. */                \
+			COND_CODE_1(CONFIG_MULTITHREADING, (), (return;))                          \
 		}                                                                                  \
 	} while (0)
 
@@ -252,9 +250,8 @@ static inline __printf_like(6, 7) bool z_zexpect(bool cond, const char *default_
 				  __LINE__, __func__, _msg ? msg : "", ##__VA_ARGS__);             \
 		(void)_msg;                                                                        \
 		if (!_ret) {                                                                       \
-			/* If kernel but without multithreading return. */                         \
-			COND_CODE_1(KERNEL, (COND_CODE_1(CONFIG_MULTITHREADING, (), (return;))),   \
-				    ())                                                            \
+			/* If not multithreading, return from the test function. */                \
+			COND_CODE_1(CONFIG_MULTITHREADING, (), (return;))                          \
 		}                                                                                  \
 	} while (0)
 
