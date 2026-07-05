@@ -46,9 +46,12 @@
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
+static int prepare_cb_common(struct lll_prepare_param *p);
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
 static int drift_prepare_cb(struct lll_prepare_param *p);
 static int resume_prepare_cb(struct lll_prepare_param *p);
+static void cis_resume_close(struct lll_conn_iso_group *cig_lll);
+static uint32_t cig_ticks_anchor_get(const struct lll_prepare_param *p);
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
@@ -92,6 +95,46 @@ static struct lll_conn_iso_stream *cis_lll_next;
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 static uint8_t mic_state;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+/* Advance ISO subevent PRN state by count steps, returning the channel index
+ * at the resulting position. Does not touch the radio.
+ */
+static uint8_t chan_iso_subevent_advance(uint16_t chan_id, const uint8_t *chan_map,
+					 uint8_t chan_count, uint16_t *prn_s,
+					 uint16_t *remap_idx, uint8_t count)
+{
+	uint8_t chan_use = 0U;
+
+	while (count--) {
+		chan_use = lll_chan_iso_subevent(chan_id, chan_map, chan_count,
+						 prn_s, remap_idx);
+	}
+
+	return chan_use;
+}
+
+/* Get the number of subevents of a CIS that start within the drift window,
+ * limited to the number of subevents of the CIS. A CIS with a single
+ * subevent has a sub_interval of zero.
+ */
+static uint8_t cis_se_skip_get(const struct lll_conn_iso_stream *cis_lll, uint32_t drift_us)
+{
+	uint32_t skip;
+
+	if (drift_us <= cis_lll->offset) {
+		return 0U;
+	}
+
+	if (cis_lll->sub_interval == 0U) {
+		return cis_lll->nse;
+	}
+
+	skip = DIV_ROUND_UP(drift_us - cis_lll->offset, cis_lll->sub_interval);
+
+	return MIN(skip, cis_lll->nse);
+}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 
 int lll_central_iso_init(void)
 {
@@ -137,6 +180,23 @@ static int init_reset(void)
 
 static int prepare_cb(struct lll_prepare_param *p)
 {
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+	struct lll_conn_iso_group *cig_lll = p->param;
+
+	/* A pending resume of a preempted previous CIG event is superseded by
+	 * this CIG event; close the CISes that were not closed before
+	 * preemption. A deferred prepare of the preempted CIG event resumes it.
+	 */
+	if (cig_ticks_anchor_get(p) != cig_lll->ticks_anchor) {
+		cis_resume_close(cig_lll);
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
+
+	return prepare_cb_common(p);
+}
+
+static int prepare_cb_common(struct lll_prepare_param *p)
+{
 	struct lll_conn_iso_group *cig_lll = p->param;
 	struct lll_conn_iso_stream *cis_lll;
 	const struct lll_conn *conn_lll;
@@ -158,25 +218,31 @@ static int prepare_cb(struct lll_prepare_param *p)
 	DEBUG_RADIO_START_M(1);
 
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
-	/* When the CIG event was wrapped around an overlapping role by the
-	 * ticker jitter-in-window feature, ticks_drift indicates how much the
-	 * event start was delayed. Currently the LLL does not skip subevents
-	 * inside a CIG event to catch up with the drift; instead we early
-	 * abort so that subsequent CIG events resume normally.
+	/* Compute drift_us and skip subevents that fall within the drift
+	 * window.
 	 *
-	 * FIXME: Add implementation to skip forward the appropriate number of
-	 *        CIS subevents (sequential and interleaved packing) based on
-	 *        ticks_drift, advance PRN state accordingly, and setup the
-	 *        remaining subevents for transmission/reception within the
-	 *        drift-adjusted CIG event window.
+	 * When the CIG event start was delayed by the ticker jitter-in-window
+	 * feature, ticks_drift indicates how much the event start was delayed.
+	 * Instead of aborting the event, skip forward the CIS subevents that
+	 * have already elapsed within the drift window, advance the PRN state
+	 * accordingly, and setup the remaining subevents for transmission
+	 * within the drift-adjusted CIG event window.
 	 */
-	if (p->ticks_drift != 0U) {
-		radio_isr_set(lll_isr_early_abort, cig_lll);
-		radio_disable();
+	uint16_t cis_handle_resume;
+	uint8_t first_se_skip = 0U;
+	uint8_t cis_idx_first = 0U;
+	uint32_t drift_us = 0U;
 
-		DEBUG_RADIO_START_M(1);
-		return 0;
+	if (p->ticks_drift != 0U) {
+		drift_us = HAL_TICKER_TICKS_TO_US(p->ticks_drift);
 	}
+
+	/* CISes before the CIS that was being executed when this CIG event was
+	 * preempted have already been closed; get and reset the resume CIS.
+	 */
+	cis_handle_resume = cig_lll->cis_handle_resume;
+	cig_lll->cis_handle_resume = LLL_HANDLE_INVALID;
+	cig_lll->ticks_anchor = cig_ticks_anchor_get(p);
 
 	/* Reset resume flag for this preparation attempt */
 	cig_lll->is_lll_resume = 0U;
@@ -197,9 +263,108 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* Get the first CIS */
 	cis_handle_curr = UINT16_MAX;
-	do {
-		cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle_curr);
-	} while (cis_lll && !cis_lll->active);
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) && \
+	defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+	if ((cig_lll->packing != 0U) && (drift_us != 0U)) {
+		/* Interleaved packing: the first CIS to transmit is the one
+		 * whose earliest subevent at or after the drift window has the
+		 * smallest start offset from the CIG anchor point.
+		 */
+		struct lll_conn_iso_stream *iter_cis;
+		uint32_t first_metric = UINT32_MAX;
+		uint16_t first_handle = UINT16_MAX;
+		uint16_t iter_handle = UINT16_MAX;
+		uint8_t iter_idx = 0U;
+
+		cis_lll = NULL;
+
+		do {
+			iter_cis = ull_conn_iso_lll_stream_get_by_group(cig_lll, &iter_handle);
+			if (iter_cis && iter_cis->active && iter_cis->active_prepare) {
+				uint8_t skip;
+
+				skip = cis_se_skip_get(iter_cis, drift_us);
+				if (skip < iter_cis->nse) {
+					uint32_t metric;
+
+					metric = iter_cis->offset + (skip * iter_cis->sub_interval);
+					if (metric < first_metric) {
+						first_metric = metric;
+						first_handle = iter_handle;
+						first_se_skip = skip;
+						cis_idx_first = iter_idx;
+						cis_lll = iter_cis;
+					}
+				}
+
+				/* Index of the CIS in the round, in CIS handle order */
+				iter_idx++;
+			}
+		} while (iter_cis);
+
+		cis_handle_curr = first_handle;
+	} else {
+#else /* !CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER || !CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+	{
+#endif /* !CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER || !CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+		do {
+			do {
+				cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll,
+									       &cis_handle_curr);
+			} while (cis_lll && (!cis_lll->active || !cis_lll->active_prepare));
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+			if (cis_lll && (cis_handle_resume != LLL_HANDLE_INVALID)) {
+				if (cis_lll->handle != cis_handle_resume) {
+					/* CIS already closed before the CIG
+					 * event was preempted.
+					 */
+					continue;
+				}
+
+				cis_handle_resume = LLL_HANDLE_INVALID;
+			}
+
+			if (cis_lll && (drift_us != 0U) &&
+			    (drift_us > (cis_lll->offset +
+					 ((cis_lll->nse - 1U) * cis_lll->sub_interval)))) {
+				/* CIS fully elapsed within the drift window;
+				 * leave its state untouched, the SN, NESN and
+				 * payload count are caught up in its next CIS
+				 * event as for a missed event. The event count
+				 * prepared by ULL is not final before the CIS
+				 * event is executed.
+				 */
+				continue;
+			}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
+
+			break;
+		} while (true);
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+		if (cis_lll && (drift_us > cis_lll->offset)) {
+			first_se_skip = DIV_ROUND_UP(drift_us - cis_lll->offset,
+						     cis_lll->sub_interval);
+		}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
+	}
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+	if (!cis_lll) {
+		/* All active CISes fully elapsed within the drift window; abort
+		 * so that subsequent CIG events resume normally.
+		 */
+		cig_lll->latency_prepare += cig_lll->latency_event + 1U;
+
+		radio_isr_set(lll_isr_early_abort, cig_lll);
+		radio_disable();
+
+		DEBUG_RADIO_START_M(1);
+		return 0;
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 
 	LL_ASSERT_DBG(cis_lll);
 
@@ -215,6 +380,16 @@ static int prepare_cb(struct lll_prepare_param *p)
 	 * sub_interval * se_curr).
 	 */
 	cis_offset_first = cis_lll->offset;
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+	/* Shift the baseline reference to the first executed subevent and
+	 * un-drift the anchor so that the radio starts at the correct absolute
+	 * (un-drifted) time of the first executed subevent.
+	 */
+	if (first_se_skip > 0U) {
+		cis_offset_first += first_se_skip * cis_lll->sub_interval;
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 
 	/* Get reference to ACL context */
 	conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
@@ -234,25 +409,55 @@ static int prepare_cb(struct lll_prepare_param *p)
 					   &data_chan_prn_s,
 					   &data_chan_remap_idx);
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+	/* Advance the channel calculation past the subevents of the first
+	 * executed CIS that were skipped within the drift window.
+	 */
+	if (first_se_skip > 0U) {
+		data_chan_use = chan_iso_subevent_advance(data_chan_id,
+							  conn_lll->data_chan_map,
+							  conn_lll->data_chan_count,
+							  &data_chan_prn_s,
+							  &data_chan_remap_idx,
+							  first_se_skip);
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+	/* Subevents of the first CIS skipped within the drift window */
+	se_curr = first_se_skip + 1U;
+#else /* !CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 	se_curr = 1U;
+#endif /* !CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED) && (cig_lll->packing != 0U)) {
+		uint8_t idx;
+
+		/* Index of the first CIS in the round, the per-CIS state is
+		 * indexed in CIS handle order of the active CISes.
+		 */
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+		idx = cis_idx_first;
+#else /* !CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
+		idx = 0U;
+#endif /* !CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
+
 		/* Initialize interleaved packing state */
-		cis_idx_in_round = 0U;
+		cis_idx_in_round = idx;
 		cis_handle_first = cis_handle_curr;
 		cis_closed_bitmask = 0U;
 		cis_lll_next = NULL;
 
 		/* Initialize per-CIS channel PRN state for the first CIS */
-		cis_interleaved[0].prn_s = data_chan_prn_s;
-		cis_interleaved[0].remap_idx = data_chan_remap_idx;
-		cis_interleaved[0].id = lll_chan_id(cis_lll->access_addr);
-		cis_interleaved[0].chan_use = data_chan_use;
-		cis_se[0] = 1U;
+		cis_interleaved[idx].prn_s = data_chan_prn_s;
+		cis_interleaved[idx].remap_idx = data_chan_remap_idx;
+		cis_interleaved[idx].id = lll_chan_id(cis_lll->access_addr);
+		cis_interleaved[idx].chan_use = data_chan_use;
+		cis_se[idx] = se_curr;
 	}
 
-	/* First CIS interleaved context has already been populated above */
-	uint8_t cis_chan_idx = 1U;
+	/* Index of the next CIS interleaved context to be populated */
+	uint8_t cis_chan_idx = 0U;
 
 	/* Adjust the SN and NESN for skipped CIG events */
 	payload_count_lazy_update(cis_lll, cig_lll->latency_event);
@@ -391,8 +596,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 	ticks_at_event += lll_event_offset_get(ull);
 
 	ticks_at_start = ticks_at_event;
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
+						 cis_offset_first - drift_us);
+#else /* !CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
 						 cis_offset_first);
+#endif /* !CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 
 	remainder = p->remainder;
 	start_us = radio_tmr_start(1U, ticks_at_start, remainder);
@@ -436,11 +647,28 @@ static int prepare_cb(struct lll_prepare_param *p)
 	}
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
-	/* Adjust the SN and NESN for skipped CIG events */
-	cis_handle = cis_handle_curr;
+	/* Adjust the SN and NESN for skipped CIG events. For interleaved
+	 * packing, iterate all CISes in handle order to populate the per-CIS
+	 * contexts, including the CISes before the first CIS in the round.
+	 */
+	if (IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED) && (cig_lll->packing != 0U)) {
+		cis_handle = UINT16_MAX;
+	} else {
+		cis_handle = cis_handle_curr;
+	}
+
 	do {
 		cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
-		if (cis_lll && cis_lll->active) {
+		if (cis_lll && cis_lll->active && cis_lll->active_prepare) {
+			if (cis_handle == cis_handle_curr) {
+				/* First CIS in the round has already been
+				 * prepared above.
+				 */
+				cis_chan_idx++;
+
+				continue;
+			}
+
 			/* Unconditionally set the prepared flag.
 			 * This flag ensures current CIG event does not pick up a new CIS becoming
 			 * active when the ACL overlaps at the instant with this already started
@@ -464,9 +692,43 @@ static int prepare_cb(struct lll_prepare_param *p)
 				const struct lll_conn *iter_conn_lll;
 				uint16_t iter_event_counter;
 				uint16_t iter_data_chan_id;
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+				uint8_t iter_skip;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 
 				LL_ASSERT_DBG(cis_chan_idx <
 					      CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP);
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+				iter_skip = cis_se_skip_get(cis_lll, drift_us);
+
+				/* CISes before the first CIS in the round start
+				 * in the next round, CISes after it start in the
+				 * current round.
+				 */
+				if (cis_chan_idx < cis_idx_first) {
+					iter_skip = MAX(iter_skip, first_se_skip + 1U);
+				} else {
+					iter_skip = MAX(iter_skip, first_se_skip);
+				}
+				iter_skip = MIN(iter_skip, cis_lll->nse);
+
+				if (iter_skip == cis_lll->nse) {
+					/* CIS fully elapsed within the drift
+					 * window; mark closed and account for the
+					 * skipped subevents. The payload count is
+					 * finalized at event close (isr_done) for
+					 * all prepared CISes in interleaved
+					 * packing.
+					 */
+					cis_closed_bitmask |=
+						(1U << LL_CIS_IDX_FROM_HANDLE(cis_lll->handle));
+					cis_se[cis_chan_idx] = cis_lll->nse;
+					cis_chan_idx++;
+
+					continue;
+				}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 
 				iter_conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 				iter_event_counter = cis_lll->event_count;
@@ -475,12 +737,30 @@ static int prepare_cb(struct lll_prepare_param *p)
 				/* Calculate initial channel for this CIS's first subevent */
 				cis_interleaved[cis_chan_idx].id = iter_data_chan_id;
 				cis_interleaved[cis_chan_idx].chan_use = lll_chan_iso_event(
-						iter_event_counter, iter_data_chan_id,
-						iter_conn_lll->data_chan_map,
-						iter_conn_lll->data_chan_count,
-						&cis_interleaved[cis_chan_idx].prn_s,
-						&cis_interleaved[cis_chan_idx].remap_idx);
+					iter_event_counter, iter_data_chan_id,
+					iter_conn_lll->data_chan_map,
+					iter_conn_lll->data_chan_count,
+					&cis_interleaved[cis_chan_idx].prn_s,
+					&cis_interleaved[cis_chan_idx].remap_idx);
 				cis_se[cis_chan_idx] = 0U;
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+				/* Advance the PRN state to the position preceding
+				 * this CIS's first non-skipped subevent so that
+				 * the first serve advances to its channel.
+				 */
+				if (iter_skip > 0U) {
+					cis_interleaved[cis_chan_idx].chan_use =
+						chan_iso_subevent_advance(iter_data_chan_id,
+							iter_conn_lll->data_chan_map,
+							iter_conn_lll->data_chan_count,
+							&cis_interleaved[cis_chan_idx].prn_s,
+							&cis_interleaved[cis_chan_idx].remap_idx,
+							iter_skip - 1U);
+					cis_se[cis_chan_idx] = iter_skip;
+				}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
+
 				cis_chan_idx++;
 			}
 		}
@@ -548,6 +828,22 @@ static int resume_prepare_cb(struct lll_prepare_param *p)
 
 	cig_lll = p->param;
 
+	if ((cig_lll->cis_handle_resume == LLL_HANDLE_INVALID) ||
+	    (cig_ticks_anchor_get(p) != cig_lll->ticks_anchor)) {
+		/* Superseded by a later CIG event that has closed the CISes
+		 * of the preempted CIG event; abort without changing the CIS
+		 * states.
+		 */
+		if (cig_lll->cis_handle_resume == LLL_HANDLE_INVALID) {
+			cig_lll->is_lll_resume = 0U;
+		}
+
+		radio_isr_set(lll_isr_early_abort, cig_lll);
+		radio_disable();
+
+		return 0;
+	}
+
 	ull = HDR_LLL2ULL(cig_lll);
 	ticks_offset = lll_event_offset_get(ull);
 	ticks_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US - EVENT_OVERHEAD_RESUME_US);
@@ -574,7 +870,64 @@ static int resume_prepare_cb(struct lll_prepare_param *p)
 	 *       re-run prepare_cb which restarts the CIG event from the first
 	 *       non-elapsed subevent within the drift window.
 	 */
-	return prepare_cb(p);
+	return prepare_cb_common(p);
+}
+
+static void cis_resume_close(struct lll_conn_iso_group *cig_lll)
+{
+	struct lll_conn_iso_stream *cis_lll;
+	uint16_t cis_handle;
+
+	cis_handle = cig_lll->cis_handle_resume;
+	if (cis_handle == LLL_HANDLE_INVALID) {
+		return;
+	}
+
+	cig_lll->cis_handle_resume = LLL_HANDLE_INVALID;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED) && (cig_lll->packing != 0U)) {
+		return;
+	}
+
+	/* Close the CIS that was being executed when the CIG event was
+	 * preempted and the CISes following it.
+	 */
+	cis_lll = ull_conn_iso_lll_stream_get(cis_handle);
+	while (cis_lll != NULL) {
+		if (cis_lll->prepared != 0U) {
+			payload_count_flush_or_inc_on_close(cis_lll);
+		}
+
+		cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle);
+	}
+}
+
+static uint32_t cig_ticks_anchor_get(const struct lll_prepare_param *p)
+{
+	return ticker_ticks_diff_get(p->ticks_at_expire, p->ticks_drift);
+}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+/* Check if a prepare of the CIG is pending in the prepare pipeline */
+static bool is_prepare_pending(void *param)
+{
+	struct lll_event *e;
+	void *idx;
+
+	idx = NULL;
+	while ((e = ull_prepare_dequeue_iter(&idx)) != NULL) {
+		if ((e->is_aborted == 0U) && (e->is_resume == 0U) &&
+		    (e->prepare_param.param == param)) {
+			return true;
+		}
+
+		if (idx == NULL) {
+			break;
+		}
+	}
+
+	return false;
 }
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 
@@ -599,6 +952,15 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 	}
 
 	if (next != curr) {
+		/* The next CIG event is already prepared, the remaining
+		 * subevents of the current CIG event cannot be resumed before
+		 * it; cancel the current event so that the next CIG event is
+		 * not aborted as a duplicate of the resumed event.
+		 */
+		if (is_prepare_pending(curr)) {
+			return -ECANCELED;
+		}
+
 		/* A different role preempted this CIG event; request the
 		 * pipeline to re-enqueue this event to be resumed after the
 		 * preempting role.
@@ -633,6 +995,12 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
 		if (cig_lll->is_lll_resume != 0U) {
+			/* Remember the CIS being executed, CISes before it
+			 * have been closed and shall not be closed again on
+			 * resume.
+			 */
+			cig_lll->cis_handle_resume = cis_handle_curr;
+
 			/* Save the radio timer anchors so the resume prepare
 			 * can compute the remaining subevents relative to the
 			 * original event start.
@@ -693,6 +1061,11 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 */
 	if (param && (cig_lll->is_lll_resume != 0U)) {
 		return;
+	}
+
+	/* Event will not be resumed, close the CISes of the preempted CIG event */
+	if (cig_ticks_anchor_get(prepare_param) == cig_lll->ticks_anchor) {
+		cis_resume_close(cig_lll);
 	}
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 
