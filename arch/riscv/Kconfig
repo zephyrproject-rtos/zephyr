@@ -203,6 +203,45 @@ config RISCV_SOC_HAS_CUSTOM_SYS_IO
 	  the RISC-V SoC needs to do something different and more than reading and
 	  writing the registers.
 
+config RISCV_SOC_HAS_SYSCALL_INTMASK
+	bool
+	depends on USERSPACE
+	depends on RISCV_SOC_CONTEXT_SAVE
+	depends on RISCV_ALWAYS_SWITCH_THROUGH_ECALL
+	help
+	  Hidden option for SoCs where an interrupt, or another asynchronously
+	  reported event such as an imprecise access fault, taken while the ECALL
+	  exception of a user-mode syscall is still being handled cannot be
+	  delivered safely. Precise synchronous traps, such as the ECALL used to
+	  switch out of the syscall body, nest normally. The syscall path sets
+	  mstatus.MIE before running the syscall body, so such a SoC must hold
+	  interrupts off another way.
+
+	  Enable this hidden option and provide a soc_syscall.h header defining
+	  the SOC_SYSCALL_INTMASK macro (guarded by _ASMLANGUAGE). The IRQ
+	  wrapper invokes it on syscall entry, after the SoC context has been
+	  saved and at a point where the caller-saved temporaries are free, so
+	  the macro may clobber them. Typically it raises a hardware interrupt
+	  level threshold. This is a SoC hook rather than part of the generic
+	  CLIC interrupt level support because the SoCs that need it drive
+	  their interrupt controller from SoC code and do not select
+	  RISCV_HAS_CLIC, so the generic code has no view of their threshold.
+
+	  The mask is per exception frame: the SoC context save/restore hooks
+	  (RISCV_SOC_CONTEXT_SAVE) save the state on trap entry and restore it
+	  on the exception exit path. Because every context switch goes through
+	  that path (RISCV_ALWAYS_SWITCH_THROUGH_ECALL), a thread that blocks in
+	  the syscall body hands the CPU to a thread that restores its own saved
+	  state, and a new thread starts from SOC_ESF_INIT. The mask therefore
+	  ends when the syscall returns or the thread switches out, never later.
+
+	  The cost is that the syscall body is not preemptible: nothing is
+	  delivered while the mask is raised, so interrupts, including the
+	  system tick, stay pending until the syscall returns or blocks.
+	  arch_irq_unlocked() is true only formally during that time, and a
+	  body that bounds a busy wait with tick-derived uptime never times
+	  out when the kernel is not tickless.
+
 config RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
 	bool
 	help
