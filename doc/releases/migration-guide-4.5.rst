@@ -676,6 +676,17 @@ Timer
   range or special-case ``K_TICKS_FOREVER``; only their own hardware cycle-count limits
   still need enforcing (:github:`111022`).
 
+* Under ``CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE``, the kernel now calls the new weak
+  :c:func:`sys_clock_unused` hook when no timeout is pending, rather than passing
+  ``SYS_CLOCK_MAX_WAIT`` to :c:func:`sys_clock_set_timeout`. An out-of-tree timer driver that
+  stopped its counter on ``ticks == SYS_CLOCK_MAX_WAIT`` must do so in a
+  :c:func:`sys_clock_unused` implementation instead (:github:`112750`).
+
+* :c:func:`sys_clock_set_timeout` no longer takes a ``bool idle`` argument; the low-power
+  idle hint moved to the new weak :c:func:`sys_clock_idle_enter` hook. Out-of-tree timer
+  drivers must drop the parameter from their :c:func:`sys_clock_set_timeout` definition and
+  move any ``idle``-specific handling to :c:func:`sys_clock_idle_enter` (:github:`112750`).
+
 USB
 ===
 
