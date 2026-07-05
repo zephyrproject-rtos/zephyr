@@ -511,6 +511,25 @@ config NULL_POINTER_EXCEPTION_REGION_SIZE
 
 endif # NULL_POINTER_EXCEPTION_DETECTION_PMP
 
+config RISCV_USER_STRING_NLEN_VALIDATE
+	bool "Pre-validate the pointer in arch_user_string_nlen()"
+	depends on USERSPACE
+	depends on RISCV_PMP
+	help
+	  arch_user_string_nlen() dereferences a user pointer and recovers from a
+	  bad address through a fault fixup that matches the faulting mepc against
+	  the load instruction's address range. On some RISC-V SoCs the load access
+	  fault is imprecise: the reported mepc lands a variable distance past the
+	  faulting load (sometimes in a different function), so the fixup does not
+	  recognize the fault and it escalates to a fatal reset instead of the
+	  intended recoverable error.
+
+	  Enable this to validate the string with arch_buffer_validate() before
+	  reading it: the whole range first, then chunk by chunk at PMP
+	  granularity when the range is only partly accessible, so no load that
+	  could fault is ever issued. Leave disabled on SoCs with precise load
+	  faults, where the fixup works unaided.
+
 config RISCV_IMPRECISE_FPU_STATE_TRACKING
 	bool "Imprecise implementation of FPU state tracking"
 	depends on FPU
