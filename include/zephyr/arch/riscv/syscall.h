@@ -148,12 +148,19 @@ static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 }
 
 #ifdef CONFIG_USERSPACE
-register unsigned long riscv_tp_reg __asm__ ("tp");
-
 static inline bool arch_is_user_context(void)
 {
-	/* don't try accessing TLS variables if tp is not initialized */
-	if (riscv_tp_reg == 0) {
+	/*
+	 * Don't try accessing TLS variables if tp is not initialized.
+	 *
+	 * Note: this deliberately reads the thread pointer via
+	 * __builtin_thread_pointer() rather than declaring a global register
+	 * variable bound to "tp": clang miscompiles unrelated globals that
+	 * happen to share the register's name (e.g. a global variable named
+	 * "tp") when such a declaration is in scope, silently dropping their
+	 * linkage, section attributes and initializers.
+	 */
+	if (__builtin_thread_pointer() == NULL) {
 		return false;
 	}
 
