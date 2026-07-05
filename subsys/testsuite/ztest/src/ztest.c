@@ -18,7 +18,7 @@
 
 #include <zephyr/sys/barrier.h>
 
-#ifdef KERNEL
+#ifndef ZTEST_UNITTEST
 static struct k_thread ztest_thread;
 #endif
 static bool failed_expectation;
@@ -111,7 +111,7 @@ static int cleanup_test(struct ztest_unit_test *test)
 
 	mock_status = z_cleanup_mock();
 
-#ifdef KERNEL
+#ifndef ZTEST_UNITTEST
 	/* we need to remove the ztest_thread information from the timeout_q.
 	 * Because we reuse the same k_thread structure this would
 	 * causes some problems.
@@ -134,7 +134,7 @@ static int cleanup_test(struct ztest_unit_test *test)
 	return ret;
 }
 
-#ifdef KERNEL
+#ifndef ZTEST_UNITTEST
 
 #if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 #define MAX_NUM_CPUHOLD  (CONFIG_MP_MAX_NUM_CPUS - 1)
@@ -353,7 +353,7 @@ static void run_test_functions(struct ztest_suite_node *suite, struct ztest_unit
 	test->test(data);
 }
 
-COND_CODE_1(KERNEL, (ZTEST_BMEM), ()) static enum ztest_result test_result;
+COND_CODE_1(ZTEST_UNITTEST, (), (ZTEST_BMEM)) static enum ztest_result test_result;
 
 static int get_final_test_result(const struct ztest_unit_test *test, int ret)
 {
@@ -424,7 +424,7 @@ void ztest_skip_failed_assumption(void)
 	}
 }
 
-#ifndef KERNEL
+#ifdef ZTEST_UNITTEST
 
 /* Static code analysis tool can raise a violation that the standard header
  * <setjmp.h> shall not be used.
@@ -572,7 +572,7 @@ out:
 	return ret;
 }
 
-#else /* KERNEL */
+#else /* !ZTEST_UNITTEST */
 
 /* Zephyr's probably going to cause all tests to fail if one test fails, so
  * skip the rest of tests if one of them fails
@@ -788,7 +788,7 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 	return ret;
 }
 
-#endif /* !KERNEL */
+#endif /* ZTEST_UNITTEST */
 
 static struct ztest_suite_node *ztest_find_test_suite(const char *name)
 {
@@ -973,7 +973,7 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite, bool shuff
 		return -1;
 	}
 
-#ifndef KERNEL
+#ifdef ZTEST_UNITTEST
 	if (setjmp(stack_fail)) {
 		PRINT_DATA("TESTSUITE crashed.\n");
 		test_status = ZTEST_STATUS_CRITICAL_ERROR;
@@ -988,7 +988,7 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite, bool shuff
 	current_test_failed_assumption = false;
 	__ztest_set_test_result(ZTEST_RESULT_PENDING);
 	__ztest_set_test_phase(TEST_PHASE_SETUP);
-#ifndef KERNEL
+#ifdef ZTEST_UNITTEST
 	if (setjmp(test_suite_fail)) {
 		__ztest_set_test_result(ZTEST_RESULT_SUITE_FAIL);
 	}
@@ -1347,7 +1347,7 @@ void __weak test_main(void)
 	ztest_verify_all_test_suites_ran();
 }
 
-#ifndef KERNEL
+#ifdef ZTEST_UNITTEST
 int main(void)
 {
 	z_init_mock();
