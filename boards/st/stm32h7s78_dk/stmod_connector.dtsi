@@ -1,0 +1,37 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/stmod-plus-connector.h>
+
+/ {
+	stmod_plus_connector: stmod-plus-connector {
+		compatible = "st,stmod-plus-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <STMOD_PLUS_NSS_CTS 0 &gpioe 10 0>,	/* NSS */
+			   <STMOD_PLUS_MOSI_TX 0 &gpioe 14 0>,	/* MOSI */
+			   <STMOD_PLUS_MISO_RX 0 &gpioe 13 0>,	/* MISO */
+			   <STMOD_PLUS_SCK_RTS 0 &gpioe 12 0>,	/* SCK */
+			   <STMOD_PLUS_SCL 0 &gpiob 6 0>,	/* SCL */
+			   <STMOD_PLUS_MOSIS 0 &gpioe 6 0>,	/* MOSIs */
+			   <STMOD_PLUS_MISOS 0 &gpioe 5 0>,	/* MISOs */
+			   <STMOD_PLUS_SDA 0 &gpiob 9 0>,	/* SDA */
+			   <STMOD_PLUS_INT 0 &gpiod 12 0>,	/* INT */
+			   <STMOD_PLUS_RESET 0 &gpiod 13 0>,	/* RESET */
+			   <STMOD_PLUS_ADC 0 &gpiof 13 0>,	/* ADC */
+			   <STMOD_PLUS_PWM 0 &gpiof 6 0>,	/* PWM */
+			   <STMOD_PLUS_GPIO17 0 &gpiof 1 0>,	/* GPIO */
+			   <STMOD_PLUS_GPIO18 0 &gpiof 2 0>,	/* GPIO */
+			   <STMOD_PLUS_GPIO19 0 &gpiof 3 0>,	/* GPIO */
+			   <STMOD_PLUS_GPIO20 0 &gpiof 4 0>;	/* GPIO */
+	};
+};
+
+stmod_i2c: &i2c1 {};
+
+stmod_spi: &spi4 {};
