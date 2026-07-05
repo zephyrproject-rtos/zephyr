@@ -144,6 +144,26 @@ config ZTEST_COVERAGE_RESET_BEFORE_TESTS
 	  and all the board initialization code and pre-test bootstrap is not counted.
 	  This is useful when, for example, you are testing code that is also executed during bootup.
 
+config ZTEST_COVERAGE_PER_TEST
+	bool "Dump code coverage data per individual test"
+	depends on COVERAGE_GCOV
+	help
+	  Reset the gcov counters before each test and dump a separate,
+	  test-tagged coverage artifact after each test. This enables building a
+	  per-test to source-code coverage matrix. The dump uses whichever
+	  coverage transport is configured (console or semihosting); with
+	  semihosting each artifact is written to "<gcda-path>@@<suite>.<test>"
+	  on the host so the per-test dumps do not overwrite each other.
+
+config ZTEST_COVERAGE_PER_TEST_TAG_SIZE
+	int "Maximum length of a per-test coverage tag"
+	depends on ZTEST_COVERAGE_PER_TEST
+	default 128
+	help
+	  Size of the stack buffer used to compose the "<suite>.<test>" tag
+	  passed to the coverage dump. Test and suite name combinations longer
+	  than this (including the terminating NUL) are truncated.
+
 config ZTEST_SHUFFLE
 	bool "Shuffle the order of tests and suites"
 	select TEST_RANDOM_GENERATOR if !ENTROPY_HAS_DRIVER
