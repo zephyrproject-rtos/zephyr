@@ -56,6 +56,9 @@ static inline void clear_halting(struct k_thread *thread)
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
 #ifdef CONFIG_SMP
+	bool ipi_idle_target_rebound = false;
+	struct k_thread *ipi_idle_target = ipi_idle_reserved_take();
+
 	if (z_is_thread_halting(_current)) {
 		/* NULL key: scheduler context, no retry possible. _current
 		 * cannot have an in-flight timeout (a running thread's
@@ -128,10 +131,27 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 
 	/* Take the new _current out of the queue */
 	if (z_is_thread_queued(thread)) {
+		/* Remove or transfer the selected thread's idle CPU coverage. */
+		if (ipi_idle_target != NULL &&
+		    thread != ipi_idle_target &&
+		    z_is_thread_queued(ipi_idle_target)) {
+			ipi_idle_target_rebound =
+				ipi_idle_thread_rebind(thread, ipi_idle_target);
+		} else {
+			ipi_idle_thread_unreserve(thread);
+		}
 		dequeue_thread(thread);
 	}
 
 	_current_cpu->swap_ok = false;
+
+	/* If this CPU consumed a different thread, preserve coverage for the
+	 * runnable thread covered by this CPU's reservation.
+	 */
+	if (!ipi_idle_target_rebound &&
+	    ipi_idle_target != NULL && z_is_thread_queued(ipi_idle_target)) {
+		flag_ipi(ipi_mask_create(ipi_idle_target));
+	}
 	return thread;
 #endif /* CONFIG_SMP */
 }
@@ -230,6 +250,8 @@ void z_sched_ready_locked(struct k_thread *thread)
 static void unready_thread(struct k_thread *thread)
 {
 	if (z_is_thread_queued(thread)) {
+		/* Clear idle CPU coverage before removing the thread from the run queue. */
+		ipi_idle_thread_unreserve(thread);
 		dequeue_thread(thread);
 	}
 	update_cache(thread == _current);
@@ -826,6 +848,8 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 	if ((thread->base.thread_state & new_state) == 0U) {
 		thread->base.thread_state |= new_state;
 		if (z_is_thread_queued(thread)) {
+			/* Clear idle CPU coverage before removing the thread from the run queue. */
+			ipi_idle_thread_unreserve(thread);
 			dequeue_thread(thread);
 		}
 
