@@ -22,6 +22,10 @@
 #include <soc_isr_stacking.h>
 #endif
 
+#ifdef CONFIG_RISCV_SOC_HAS_SYSCALL_INTMASK
+#include <soc_syscall.h>
+#endif
+
 /*
 * Privilege-level abstractions. When CONFIG_RISCV_S_MODE is set the
 * kernel runs in Supervisor mode and must use S-mode CSRs. Otherwise
@@ -621,7 +625,22 @@ is_user_syscall:
 	call z_riscv_pmp_kernelmode_enable
 #endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
 
-	/* It is safe to re-enable IRQs now */
+#ifdef CONFIG_RISCV_SOC_HAS_SYSCALL_INTMASK
+	/* On some SoCs an interrupt taken in the syscall body must be held off
+	 * without clearing mstatus.MIE. The SoC provides SOC_SYSCALL_INTMASK to
+	 * mask the body its own way, for example by raising a hardware
+	 * interrupt level threshold. The state it changes is part of the SoC
+	 * context saved on entry, so the exception exit path restores it on
+	 * syscall return, and a context switch out of the body lands in the
+	 * incoming thread's own exit path with its own saved state.
+	 *
+	 * The caller-saved temporaries are free here: the dispatch above is
+	 * done with them and the syscall arguments are reloaded from the ESF
+	 * below, so the macro may clobber them.
+	 */
+	SOC_SYSCALL_INTMASK
+#endif
+	/* It is safe to re-enable IRQs now. */
 	csrs RV_STATUS, STATUS_IE
 
 	/*
