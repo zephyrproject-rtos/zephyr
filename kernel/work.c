@@ -688,6 +688,8 @@ static void work_timeout_stop_locked(struct k_work_q *queue)
  * other threads.
  *
  * @param workq_ptr pointer to the work queue structure
+ * @param p2 unused
+ * @param p3 unused
  *
  * @satisfies ZEP-SRS-26-3
  * @satisfies ZEP-SRS-26-4
