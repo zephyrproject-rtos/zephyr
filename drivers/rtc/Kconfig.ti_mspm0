@@ -4,6 +4,7 @@
 config RTC_TI_MSPM0
 	bool "Texas Instruments MSPM0 RTC driver"
 	default y
-	depends on DT_HAS_TI_MSPM0_RTC_ENABLED
+	depends on DT_HAS_TI_MSPM0_RTC_ENABLED || DT_HAS_TI_MSPM0_RTC_A_ENABLED || \
+		DT_HAS_TI_MSPM0_RTC_B_ENABLED
 	help
 	  Texas Instruments Real-Time Clock (RTC) driver used on MSPM0 SoC series.
