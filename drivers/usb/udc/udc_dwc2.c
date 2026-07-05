@@ -3303,15 +3303,15 @@ static const struct udc_api udc_dwc2_api = {
 										\
 	UDC_DWC2_IRQ_DT_INST_DEFINE(n)						\
 										\
-	static struct udc_ep_config ep_cfg_out[DT_INST_PROP(n, num_out_eps)];	\
-	static struct udc_ep_config ep_cfg_in[DT_INST_PROP(n, num_in_eps)];	\
+	static struct udc_ep_config ep_cfg_out_##n[DT_INST_PROP(n, num_out_eps)]; \
+	static struct udc_ep_config ep_cfg_in_##n[DT_INST_PROP(n, num_in_eps)]; \
 										\
 	static const struct udc_dwc2_config udc_dwc2_config_##n = {		\
 		UDC_DWC2_DT_INST_REG_ADDR(n),					\
 		.num_out_eps = DT_INST_PROP(n, num_out_eps),			\
 		.num_in_eps = DT_INST_PROP(n, num_in_eps),			\
-		.ep_cfg_in = ep_cfg_in,						\
-		.ep_cfg_out = ep_cfg_out,					\
+		.ep_cfg_in = ep_cfg_in_##n,					\
+		.ep_cfg_out = ep_cfg_out_##n,					\
 		.make_thread = udc_dwc2_make_thread_##n,			\
 		.pcfg = UDC_DWC2_PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		.irq_enable_func = udc_dwc2_irq_enable_func_##n,		\
