@@ -13,6 +13,12 @@ target_sources_ifdef(
   src/ipi_metric_preemptive.c
   )
 target_sources_ifdef(
+  CONFIG_IPI_METRIC_IDLE
+  app
+  PRIVATE
+  src/ipi_metric_idle.c
+  )
+target_sources_ifdef(
   CONFIG_IPI_METRIC_PRIMITIVE_BROADCAST
   app
   PRIVATE
