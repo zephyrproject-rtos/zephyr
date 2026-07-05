@@ -95,6 +95,25 @@ static struct lll_conn_iso_stream *cis_lll_next;
 static uint8_t mic_state;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+/* Advance ISO subevent PRN state by count steps, returning the channel index
+ * at the resulting position. Does not touch the radio.
+ */
+static uint8_t chan_iso_subevent_advance(uint16_t chan_id, const uint8_t *chan_map,
+					 uint8_t chan_count, uint16_t *prn_s,
+					 uint16_t *remap_idx, uint8_t count)
+{
+	uint8_t chan_use = 0U;
+
+	while (count--) {
+		chan_use = lll_chan_iso_subevent(chan_id, chan_map, chan_count,
+						 prn_s, remap_idx);
+	}
+
+	return chan_use;
+}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
+
 int lll_central_iso_init(void)
 {
 	int err;
@@ -160,24 +179,21 @@ static int prepare_cb(struct lll_prepare_param *p)
 	DEBUG_RADIO_START_M(1);
 
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
-	/* When the CIG event was wrapped around an overlapping role by the
-	 * ticker jitter-in-window feature, ticks_drift indicates how much the
-	 * event start was delayed. Currently the LLL does not skip subevents
-	 * inside a CIG event to catch up with the drift; instead we early
-	 * abort so that subsequent CIG events resume normally.
+	/* Compute drift_us and skip subevents that fall within the drift
+	 * window.
 	 *
-	 * FIXME: Add implementation to skip forward the appropriate number of
-	 *        CIS subevents (sequential and interleaved packing) based on
-	 *        ticks_drift, advance PRN state accordingly, and setup the
-	 *        remaining subevents for transmission/reception within the
-	 *        drift-adjusted CIG event window.
+	 * When the CIG event start was delayed by the ticker jitter-in-window
+	 * feature, ticks_drift indicates how much the event start was delayed.
+	 * Instead of aborting the event, skip forward the CIS subevents that
+	 * have already elapsed within the drift window, advance the PRN state
+	 * accordingly, and setup the remaining subevents for transmission
+	 * within the drift-adjusted CIG event window.
 	 */
-	if (p->ticks_drift != 0U) {
-		radio_isr_set(lll_isr_early_abort, cig_lll);
-		radio_disable();
+	uint32_t drift_us = 0U;
+	uint8_t first_se_skip = 0U;
 
-		DEBUG_RADIO_START_M(1);
-		return 0;
+	if (p->ticks_drift != 0U) {
+		drift_us = HAL_TICKER_TICKS_TO_US(p->ticks_drift);
 	}
 
 	/* Reset resume flag for this preparation attempt */
@@ -199,9 +215,100 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* Get the first CIS */
 	cis_handle_curr = UINT16_MAX;
-	do {
-		cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle_curr);
-	} while (cis_lll && !cis_lll->active);
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) && \
+	defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+	if (cig_lll->packing && (drift_us != 0U)) {
+		/* Interleaved packing: the first CIS to transmit is the one
+		 * whose earliest subevent at or after the drift window has the
+		 * smallest start offset from the CIG anchor point.
+		 */
+		uint32_t first_metric = UINT32_MAX;
+		uint16_t first_handle = UINT16_MAX;
+		uint16_t iter_handle = UINT16_MAX;
+		struct lll_conn_iso_stream *iter_cis;
+
+		cis_lll = NULL;
+
+		do {
+			iter_cis = ull_conn_iso_lll_stream_get_by_group(cig_lll, &iter_handle);
+			if (iter_cis && iter_cis->active) {
+				uint32_t metric;
+				uint8_t skip;
+
+				if (drift_us > iter_cis->offset) {
+					skip = DIV_ROUND_UP(drift_us - iter_cis->offset,
+							    iter_cis->sub_interval);
+				} else {
+					skip = 0U;
+				}
+
+				if (skip >= iter_cis->nse) {
+					continue;
+				}
+
+				metric = iter_cis->offset + (skip * iter_cis->sub_interval);
+				if (metric < first_metric) {
+					first_metric = metric;
+					first_handle = iter_handle;
+					first_se_skip = skip;
+					cis_lll = iter_cis;
+				}
+			}
+		} while (iter_cis);
+
+		cis_handle_curr = first_handle;
+	} else
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER &&
+	* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED
+	*/
+	{
+		do {
+			do {
+				cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll,
+									       &cis_handle_curr);
+			} while (cis_lll && !cis_lll->active);
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+			if (cis_lll && (drift_us != 0U) &&
+			    ((cis_lll->offset + (cis_lll->nse * cis_lll->sub_interval)) <=
+			     drift_us)) {
+				/* CIS fully elapsed within the drift window;
+				 * account for the skipped subevents and continue
+				 * to the next CIS.
+				 */
+				cis_lll->prepared = 1U;
+				cis_lll->event_count = cis_lll->event_count_prepare;
+				payload_count_lazy_update(cis_lll, cig_lll->latency_event);
+				payload_count_flush_or_inc_on_close(cis_lll);
+
+				continue;
+			}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
+
+			break;
+		} while (true);
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+		if (cis_lll && (drift_us > cis_lll->offset)) {
+			first_se_skip = DIV_ROUND_UP(drift_us - cis_lll->offset,
+						     cis_lll->sub_interval);
+		}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
+	}
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+	if (!cis_lll) {
+		/* All active CISes fully elapsed within the drift window; abort
+		 * so that subsequent CIG events resume normally.
+		 */
+		radio_isr_set(lll_isr_early_abort, cig_lll);
+		radio_disable();
+
+		DEBUG_RADIO_START_M(1);
+		return 0;
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 
 	LL_ASSERT_DBG(cis_lll);
 
@@ -217,6 +324,16 @@ static int prepare_cb(struct lll_prepare_param *p)
 	 * sub_interval * se_curr).
 	 */
 	cis_offset_first = cis_lll->offset;
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+	/* Shift the baseline reference to the first executed subevent and
+	 * un-drift the anchor so that the radio starts at the correct absolute
+	 * (un-drifted) time of the first executed subevent.
+	 */
+	if (first_se_skip > 0U) {
+		cis_offset_first += first_se_skip * cis_lll->sub_interval;
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 
 	/* Get reference to ACL context */
 	conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
@@ -236,6 +353,20 @@ static int prepare_cb(struct lll_prepare_param *p)
 					   &data_chan_prn_s,
 					   &data_chan_remap_idx);
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+	/* Advance the channel calculation past the subevents of the first
+	 * executed CIS that were skipped within the drift window.
+	 */
+	if (first_se_skip > 0U) {
+		data_chan_use = chan_iso_subevent_advance(data_chan_id,
+							  conn_lll->data_chan_map,
+							  conn_lll->data_chan_count,
+							  &data_chan_prn_s,
+							  &data_chan_remap_idx,
+							  first_se_skip);
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
+
 	se_curr = 1U;
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
@@ -250,7 +381,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 		cis_interleaved[0].remap_idx = data_chan_remap_idx;
 		cis_interleaved[0].id = lll_chan_id(cis_lll->access_addr);
 		cis_interleaved[0].chan_use = data_chan_use;
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+		cis_se[0] = first_se_skip + 1U;
+#else /* !CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 		cis_se[0] = 1U;
+#endif /* !CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 	}
 
 	uint8_t cis_idx = 1U; /* First CIS (idx 0) already initialized */
@@ -393,8 +528,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 	ticks_at_event += lll_event_offset_get(ull);
 
 	ticks_at_start = ticks_at_event;
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
+						 cis_offset_first - drift_us);
+#else /* !CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
 						 cis_offset_first);
+#endif /* !CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 
 	remainder = p->remainder;
 	start_us = radio_tmr_start(1U, ticks_at_start, remainder);
@@ -466,9 +607,38 @@ static int prepare_cb(struct lll_prepare_param *p)
 				const struct lll_conn *iter_conn_lll;
 				uint16_t iter_event_counter;
 				uint16_t iter_data_chan_id;
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+				uint8_t iter_skip = 0U;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 
 				LL_ASSERT_DBG(cis_idx <
 					      CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP);
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+				if (drift_us > cis_lll->offset) {
+					iter_skip = DIV_ROUND_UP(drift_us - cis_lll->offset,
+								 cis_lll->sub_interval);
+				}
+				if (iter_skip > cis_lll->nse) {
+					iter_skip = cis_lll->nse;
+				}
+
+				if (iter_skip == cis_lll->nse) {
+					/* CIS fully elapsed within the drift
+					 * window; mark closed and account for the
+					 * skipped subevents. The payload count is
+					 * finalized at event close (isr_done) for
+					 * all prepared CISes in interleaved
+					 * packing.
+					 */
+					cis_closed_bitmask |=
+						(1U << LL_CIS_IDX_FROM_HANDLE(cis_lll->handle));
+					cis_se[cis_idx] = cis_lll->nse;
+					cis_idx++;
+
+					continue;
+				}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 
 				iter_conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 				iter_event_counter = cis_lll->event_count;
@@ -483,6 +653,24 @@ static int prepare_cb(struct lll_prepare_param *p)
 							   &cis_interleaved[cis_idx].prn_s,
 							   &cis_interleaved[cis_idx].remap_idx);
 				cis_se[cis_idx] = 0U;
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+				/* Advance the PRN state to the position preceding
+				 * this CIS's first non-skipped subevent so that
+				 * the first serve advances to its channel.
+				 */
+				if (iter_skip > 0U) {
+					cis_interleaved[cis_idx].chan_use =
+						chan_iso_subevent_advance(iter_data_chan_id,
+							iter_conn_lll->data_chan_map,
+							iter_conn_lll->data_chan_count,
+							&cis_interleaved[cis_idx].prn_s,
+							&cis_interleaved[cis_idx].remap_idx,
+							iter_skip - 1U);
+					cis_se[cis_idx] = iter_skip;
+				}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
+
 				cis_idx++;
 			}
 #endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */

@@ -92,6 +92,25 @@ static uint32_t cis_closed_bitmask;
 static uint8_t mic_state;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+/* Advance ISO subevent PRN state by count steps, returning the channel index
+ * at the resulting position. Does not touch the radio.
+ */
+static uint8_t chan_iso_subevent_advance(uint16_t chan_id, const uint8_t *chan_map,
+					 uint8_t chan_count, uint16_t *prn_s,
+					 uint16_t *remap_idx, uint8_t count)
+{
+	uint8_t chan_use = 0U;
+
+	while (count--) {
+		chan_use = lll_chan_iso_subevent(chan_id, chan_map, chan_count,
+						 prn_s, remap_idx);
+	}
+
+	return chan_use;
+}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER */
+
 int lll_peripheral_iso_init(void)
 {
 	int err;
@@ -170,24 +189,35 @@ static int prepare_cb(struct lll_prepare_param *p)
 	DEBUG_RADIO_START_S(1);
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
-	/* When the CIG event was wrapped around an overlapping role by the
-	 * ticker jitter-in-window feature, ticks_drift indicates how much the
-	 * event start was delayed. Currently the LLL does not skip subevents
-	 * inside a CIG event to catch up with the drift; instead we early
-	 * abort so that subsequent CIG events resume normally.
+	/* Compute drift_us and skip subevents that fall within the drift
+	 * window.
 	 *
-	 * FIXME: Add implementation to skip forward the appropriate number of
-	 *        CIS subevents (sequential and interleaved packing) based on
-	 *        ticks_drift, advance PRN state accordingly, and setup the
-	 *        remaining subevents for transmission/reception within the
-	 *        drift-adjusted CIG event window.
+	 * When the CIG event start was delayed by the ticker jitter-in-window
+	 * feature, ticks_drift indicates how much the event start was delayed.
+	 * Instead of aborting the event, skip forward the CIS subevents that
+	 * have already elapsed within the drift window, advance the PRN state
+	 * accordingly, and setup the remaining subevents for reception within
+	 * the drift-adjusted CIG event window.
 	 */
-	if (p->ticks_drift != 0U) {
-		radio_isr_set(lll_isr_early_abort, cig_lll);
-		radio_disable();
+	uint32_t drift_us = 0U;
+	uint8_t first_se_skip = 0U;
 
-		DEBUG_RADIO_START_S(1);
-		return 0;
+	if (p->ticks_drift != 0U) {
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+		if (cig_lll->packing) {
+			/* FIXME: interleaved drift skipping in peripheral not
+			 *        implemented; abort so that subsequent CIG
+			 *        events resume normally.
+			 */
+			radio_isr_set(lll_isr_early_abort, cig_lll);
+			radio_disable();
+
+			DEBUG_RADIO_START_S(1);
+			return 0;
+		}
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+
+		drift_us = HAL_TICKER_TICKS_TO_US(p->ticks_drift);
 	}
 
 	/* Reset resume flag for this preparation attempt */
@@ -210,8 +240,48 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* Get the first CIS */
 	cis_handle_curr = UINT16_MAX;
 	do {
-		cis_lll = ull_conn_iso_lll_stream_sorted_get_by_group(cig_lll, &cis_handle_curr);
-	} while (cis_lll && !cis_lll->active);
+		do {
+			cis_lll = ull_conn_iso_lll_stream_sorted_get_by_group(cig_lll,
+									      &cis_handle_curr);
+		} while (cis_lll && !cis_lll->active);
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+		if (cis_lll && (drift_us != 0U) &&
+		    ((cis_lll->offset + (cis_lll->nse * cis_lll->sub_interval)) <=
+		     drift_us)) {
+			/* CIS fully elapsed within the drift window; account
+			 * for the skipped subevents and continue to the next
+			 * CIS.
+			 */
+			cis_lll->prepared = 1U;
+			cis_lll->event_count = cis_lll->event_count_prepare;
+			payload_count_lazy(cis_lll, cig_lll->latency_event);
+			payload_count_rx_flush_or_txrx_inc(cis_lll);
+
+			continue;
+		}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER */
+
+		break;
+	} while (true);
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+	if (!cis_lll) {
+		/* All active CISes fully elapsed within the drift window; abort
+		 * so that subsequent CIG events resume normally.
+		 */
+		radio_isr_set(lll_isr_early_abort, cig_lll);
+		radio_disable();
+
+		DEBUG_RADIO_START_S(1);
+		return 0;
+	}
+
+	if (drift_us > cis_lll->offset) {
+		first_se_skip = DIV_ROUND_UP(drift_us - cis_lll->offset,
+					     cis_lll->sub_interval);
+	}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER */
 
 	LL_ASSERT_DBG(cis_lll);
 
@@ -227,6 +297,16 @@ static int prepare_cb(struct lll_prepare_param *p)
 	 * sub_interval * se_curr).
 	 */
 	cis_offset_first = cis_lll->offset;
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+	/* Shift the baseline reference to the first executed subevent and
+	 * un-drift the anchor so that the radio starts at the correct absolute
+	 * (un-drifted) time of the first executed subevent.
+	 */
+	if (first_se_skip > 0U) {
+		cis_offset_first += first_se_skip * cis_lll->sub_interval;
+	}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER */
 
 	/* Get reference to ACL context */
 	conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
@@ -245,6 +325,20 @@ static int prepare_cb(struct lll_prepare_param *p)
 					   conn_lll->data_chan_count,
 					   &data_chan_prn_s,
 					   &data_chan_remap_idx);
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+	/* Advance the channel calculation past the subevents of the first
+	 * executed CIS that were skipped within the drift window.
+	 */
+	if (first_se_skip > 0U) {
+		data_chan_use = chan_iso_subevent_advance(data_chan_id,
+							  conn_lll->data_chan_map,
+							  conn_lll->data_chan_count,
+							  &data_chan_prn_s,
+							  &data_chan_remap_idx,
+							  first_se_skip);
+	}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER */
 
 	/* Accumulate window widening */
 	cig_lll->window_widening_prepare_us_frac +=
@@ -357,8 +451,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 	ticks_at_event += lll_event_offset_get(ull);
 
 	ticks_at_start = ticks_at_event;
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
+						 cis_offset_first - drift_us);
+#else /* !CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
 						 cis_offset_first);
+#endif /* !CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 
 	remainder = p->remainder;
 	start_us = radio_tmr_start(0U, ticks_at_start, remainder);
