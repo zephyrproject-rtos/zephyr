@@ -7,6 +7,7 @@ import collections
 import contextlib
 import filecmp
 import glob
+import json
 import logging
 import os
 import pathlib
@@ -36,6 +37,7 @@ class CoverageTool:
         self.coverage_capture = True
         self.coverage_report = True
         self.coverage_per_instance = False
+        self.coverage_per_test = False
         self.instances = {}
 
     @staticmethod
@@ -173,7 +175,12 @@ class CoverageTool:
         if not coverage_completed or not self.coverage_report:
             return coverage_completed, {}
         build_dirs = None
-        if not self.coverage_capture and self.coverage_report and self.coverage_per_instance:
+        if (not self.coverage_capture and self.coverage_report
+                and (self.coverage_per_instance or self.coverage_per_test)):
+            # Aggregate by merging the per-instance tracefiles. In per-test mode
+            # those already carry every per-test TN record, and no canonical
+            # .gcda exist at the top level to capture from (semihosting writes
+            # tagged files only).
             build_dirs = [instance.build_dir for instance in self.instances.values()]
         reports = {}
         with open(os.path.join(outdir, "coverage.log"), "a") as coveragelog:
@@ -272,7 +279,9 @@ class Lcov(CoverageTool):
 
         cmd_str = " ".join(cmd)
         logger.debug(f"Running {cmd_str}...")
-        return subprocess.call(cmd, stdout=coveragelog)
+        # Send lcov/genhtml diagnostics to the coverage log rather than the
+        # console, where they would otherwise flood a per-test run.
+        return subprocess.call(cmd, stdout=coveragelog, stderr=coveragelog)
 
     def run_lcov(self, args, coveragelog):
         if self.is_lcov_v2:
@@ -363,6 +372,9 @@ class Lcov(CoverageTool):
         cmd = ["genhtml", "--legend", "--branch-coverage",
                "--prefix", self.base_dir,
                "-output-directory", os.path.join(outdir, "coverage")]
+        # Note: per-test mode does not use --show-details; per-test attribution
+        # is provided by test_matrix.json/the dashboard, and --show-details over
+        # thousands of tests would dominate the run time.
         if self.coverage_per_instance:
             cmd.append("--show-details")
         cmd += files
@@ -372,6 +384,124 @@ class Lcov(CoverageTool):
 
         # TODO: Add LCOV summary coverage report.
         return ret, { 'report': coveragefile, 'ztest': ztestfile, 'summary': None }
+
+    def discover_per_test_serial(self, build_dir):
+        """Group tagged per-test gcov dumps from serial handler.log files.
+
+        Returns {tag: {canonical_gcda_path: ("bytes", data)}} for every
+        'GCOV_COVERAGE_DUMP_START <tag>' block, the console transport used on
+        platforms without semihosting.
+        """
+        tags = collections.defaultdict(dict)
+        for log in glob.glob(f"{build_dir}/**/handler.log", recursive=True):
+            for tag, files in retrieve_tagged_gcov_data(log).items():
+                for filename, hexdumps in files.items():
+                    if "kobject_hash" in filename:
+                        continue
+                    tags[tag][filename] = ("bytes", self.merge_hexdumps(hexdumps))
+        return tags
+
+    def capture_per_test(self, build_dir, scenario, coveragelog):
+        """Generate one TN-tagged .info file per Ztest test.
+
+        CONFIG_ZTEST_COVERAGE_PER_TEST makes the target write an isolated set
+        of tagged gcda dumps per test. With the semihosting transport these
+        land on the host as "<canonical>.gcda@@<suite>.<test>"; otherwise they
+        are emitted as tagged blocks on the serial console.
+
+        Each test is captured from its own temporary object tree, containing
+        only that test's gcda files plus symlinks to the shared gcno files.
+        Coverage is extracted by invoking gcov directly (one process per test,
+        far cheaper than a full lcov capture); if that fails, it falls back to
+        lcov over the same tree.
+
+        Returns the list of generated per-test tracefiles.
+        """
+        tags = discover_per_test_semihost(build_dir)
+        if not tags:
+            tags = self.discover_per_test_serial(build_dir)
+        if not tags:
+            return []
+
+        per_test_dir = os.path.join(build_dir, "coverage", "tests")
+        os.makedirs(per_test_dir, exist_ok=True)
+
+        infos = []
+        used_names = set()
+        for tag in sorted(tags):
+            _suite, _, test = tag.rpartition(".")
+            name = f"{scenario}.{test}" if test else f"{scenario}.{tag}"
+            # Fall back to the fully-qualified tag if two suites share a test
+            # name within the same scenario.
+            if name in used_names:
+                name = f"{scenario}.{tag}"
+            used_names.add(name)
+
+            info = os.path.join(per_test_dir, sanitize_coverage_name(name) + ".info")
+            with tempfile.TemporaryDirectory() as objdir:
+                gcda_paths = self._materialize_test_tree(objdir, build_dir, tags[tag])
+                if not self._gcov_capture(objdir, gcda_paths, name, info):
+                    cmd = ["--capture", "--directory", objdir, "--test-name",
+                           re.sub(r"[^A-Za-z0-9_]", "_", name),
+                           "--output-file", info]
+                    self.run_lcov(cmd, coveragelog)
+
+            if os.path.exists(info) and os.path.getsize(info) > 0:
+                infos.append(info)
+            else:
+                logger.error("Per-test coverage capture failed for %s", name)
+
+        return infos
+
+    @staticmethod
+    def _materialize_test_tree(objdir, build_dir, entries):
+        """Populate objdir with a test's gcda plus symlinks to shared gcno.
+
+        Returns the list of materialized gcda paths.
+        """
+        gcda_paths = []
+        for canonical, spec in entries.items():
+            rel = os.path.relpath(canonical, build_dir)
+            if rel.startswith(".."):
+                rel = canonical.lstrip(os.sep)
+            dst_gcda = os.path.join(objdir, rel)
+            materialize_canonical_gcda(dst_gcda, spec)
+            gcda_paths.append(dst_gcda)
+            gcno = canonical[:-len(".gcda")] + ".gcno"
+            if os.path.exists(gcno):
+                with contextlib.suppress(OSError):
+                    os.symlink(gcno, dst_gcda[:-len(".gcda")] + ".gcno")
+        return gcda_paths
+
+    def _gcov_capture(self, objdir, gcda_paths, name, info):
+        """Capture one test's coverage by invoking gcov directly.
+
+        Writes a TN-tagged tracefile to info. Returns True on success, False if
+        gcov is unavailable or produced no usable data (so the caller can fall
+        back to lcov).
+        """
+        if not gcda_paths:
+            return False
+        cmd = [self.gcov_tool, "--stdout", "--json-format",
+               "--branch-probabilities", *gcda_paths]
+        try:
+            proc = subprocess.run(cmd, cwd=objdir, stdout=subprocess.PIPE,
+                                  stderr=subprocess.DEVNULL, check=False)
+        except OSError:
+            return False
+        if proc.returncode != 0 or not proc.stdout:
+            return False
+        try:
+            tracefile = gcov_json_to_tracefile(
+                proc.stdout.decode("utf-8", "replace"), name)
+        except (ValueError, KeyError):
+            logger.exception("Failed to parse gcov output for %s", name)
+            return False
+        if "SF:" not in tracefile:
+            return False
+        with open(info, "w") as fp:
+            fp.write(tracefile)
+        return True
 
 
 class Gcovr(CoverageTool):
@@ -531,6 +661,340 @@ class Gcovr(CoverageTool):
 
         return ret, { 'report': coverage_file, 'ztest': ztest_file, 'summary': coverage_summary }
 
+def sanitize_coverage_name(name):
+    """Make a coverage test name safe to use as a filename component."""
+    return re.sub(r"[^A-Za-z0-9_.]", "_", name)
+
+
+def discover_per_test_semihost(build_dir):
+    """Group tagged per-test gcda dumps written by the semihosting transport.
+
+    Returns {tag: {canonical_gcda_path: ("file", tagged_path)}} for every
+    "<canonical>.gcda@@<tag>" file found under build_dir.
+    """
+    tags = collections.defaultdict(dict)
+    for tagged in glob.glob(f"{build_dir}/**/*@@*", recursive=True):
+        canonical, sep, tag = tagged.rpartition("@@")
+        if not sep or not canonical.endswith(".gcda") or not tag:
+            continue
+        tags[tag][canonical] = ("file", tagged)
+    return tags
+
+
+def retrieve_tagged_gcov_data(input_file):
+    """Parse tagged per-test gcov dumps from a serial handler.log.
+
+    Returns {tag: {filename: [hex_bytes, ...]}} for every
+    'GCOV_COVERAGE_DUMP_START <tag>' block. Untagged blocks (produced by a
+    plain end-of-run dump) are ignored, as they carry no per-test attribution.
+    """
+    tagged = collections.defaultdict(lambda: collections.defaultdict(list))
+    current = None
+    capture = False
+    start_re = re.compile(r"GCOV_COVERAGE_DUMP_START\s*(\S+)?")
+    with open(input_file) as fp:
+        for line in fp:
+            match = start_re.search(line)
+            if match:
+                current = match.group(1)
+                capture = current is not None
+                continue
+            if re.search("GCOV_COVERAGE_DUMP_END", line):
+                capture = False
+                current = None
+                continue
+            if not capture:
+                continue
+            if line.startswith("*"):
+                sp = line.split("<")
+                if len(sp) > 1:
+                    file_name = sp[0][1:]
+                    hex_dump = sp[1].rstrip("\n")
+                    try:
+                        tagged[current][file_name].append(bytes.fromhex(hex_dump))
+                    except ValueError:
+                        logger.exception(
+                            f"Unable to convert hex data for file: {file_name}")
+    return tagged
+
+
+def materialize_canonical_gcda(canonical, spec):
+    """Write a per-test gcda to its canonical path, from a file or raw bytes."""
+    kind, value = spec
+    os.makedirs(os.path.dirname(canonical), exist_ok=True)
+    if kind == "file":
+        shutil.copyfile(value, canonical)
+    else:
+        with open(canonical, "wb") as fp:
+            fp.write(value)
+
+
+def _iter_gcov_json(text):
+    """Yield each JSON object from a possibly concatenated gcov --stdout stream."""
+    decoder = json.JSONDecoder()
+    idx, length = 0, len(text)
+    while idx < length:
+        while idx < length and text[idx].isspace():
+            idx += 1
+        if idx >= length:
+            break
+        obj, idx = decoder.raw_decode(text, idx)
+        yield obj
+
+
+def gcov_json_to_tracefile(text, test_name):
+    """Convert gcov --json-format output into an lcov tracefile string.
+
+    Preserves line and branch coverage under a single per-test TN record, so
+    the result is equivalent to what "lcov --capture --test-name" would produce
+    for the same gcda, but without lcov's per-invocation cost.
+
+    The test name is reduced to lcov's accepted character set to avoid lcov's
+    "invalid characters" warning when the tracefiles are later merged. Function
+    records are intentionally omitted: gcov's per-function execution counts and
+    end lines are reported inconsistently across per-test dumps and would make
+    the tracefiles fail lcov's consistency checks when merged.
+    """
+    files = {}
+    for obj in _iter_gcov_json(text):
+        for entry in obj.get("files", []):
+            path = entry["file"]
+            rec = files.setdefault(path, {"lines": {}, "branches": {}})
+            for line in entry.get("lines", []):
+                num, count = line["line_number"], line.get("count", 0)
+                rec["lines"][num] = max(rec["lines"].get(num, 0), count)
+                branches = line.get("branches", [])
+                if branches:
+                    counts = rec["branches"].setdefault(num, [])
+                    for idx, br in enumerate(branches):
+                        val = br.get("count", 0)
+                        if idx < len(counts):
+                            counts[idx] += val
+                        else:
+                            counts.append(val)
+
+    out = [f"TN:{re.sub(r'[^A-Za-z0-9_]', '_', test_name)}"]
+    for path in sorted(files):
+        rec = files[path]
+        out.append(f"SF:{path}")
+        brf = brh = 0
+        for num in sorted(rec["branches"]):
+            for idx, count in enumerate(rec["branches"][num]):
+                out.append(f"BRDA:{num},0,{idx},{count}")
+                brf += 1
+                brh += count > 0
+        if brf:
+            out.append(f"BRF:{brf}")
+            out.append(f"BRH:{brh}")
+        lf = lh = 0
+        for num in sorted(rec["lines"]):
+            count = rec["lines"][num]
+            out.append(f"DA:{num},{count}")
+            lf += 1
+            lh += count > 0
+        out.append(f"LF:{lf}")
+        out.append(f"LH:{lh}")
+        out.append("end_of_record")
+    return "\n".join(out) + "\n"
+
+
+# Source paths matching these substrings are omitted from the per-test matrix,
+# mirroring the directories excluded from the regular coverage reports.
+_MATRIX_IGNORE_SUBSTRINGS = ("/generated/", "/tests/", "/samples/")
+
+
+
+def build_test_matrix(info_files, out_json, base_dir=None):
+    """Build a test-to-code coverage matrix from TN-tagged lcov tracefiles.
+
+    Produces a JSON document with two views:
+      - "by_line": {source: {line: [tests that covered it]}}
+      - "by_test": {test: {source: [lines it covered]}}
+    """
+    by_line = collections.defaultdict(lambda: collections.defaultdict(set))
+    by_test = collections.defaultdict(lambda: collections.defaultdict(set))
+    for info in info_files:
+        test_name = None
+        source = None
+        ignored = False
+        try:
+            with open(info) as fp:
+                for raw in fp:
+                    line = raw.strip()
+                    if line.startswith("TN:"):
+                        test_name = line[3:] or \
+                            os.path.splitext(os.path.basename(info))[0]
+                    elif line.startswith("SF:"):
+                        source = line[3:]
+                        ignored = any(s in source
+                                      for s in _MATRIX_IGNORE_SUBSTRINGS)
+                        if base_dir:
+                            with contextlib.suppress(ValueError):
+                                source = os.path.relpath(source, base_dir)
+                    elif line.startswith("DA:") and source is not None and not ignored:
+                        fields = line[3:].split(",")
+                        lineno = int(fields[0])
+                        hits = int(fields[1]) if len(fields) > 1 else 0
+                        if hits > 0 and test_name:
+                            by_line[source][lineno].add(test_name)
+                            by_test[test_name][source].add(lineno)
+                    elif line == "end_of_record":
+                        source = None
+                        ignored = False
+        except OSError:
+            logger.error("Unable to read per-test tracefile: %s", info)
+
+    matrix = {
+        "by_line": {
+            src: {str(ln): sorted(tests) for ln, tests in sorted(lines.items())}
+            for src, lines in sorted(by_line.items())
+        },
+        "by_test": {
+            test: {src: sorted(lns) for src, lns in sorted(srcs.items())}
+            for test, srcs in sorted(by_test.items())
+        },
+    }
+    with open(out_json, "w") as fp:
+        json.dump(matrix, fp, indent=2, sort_keys=True)
+    return matrix
+
+
+def merge_test_matrices(matrix_files, out_json):
+    """Union several per-instance coverage matrices into an aggregate one.
+
+    Merging the (already relative-pathed and filtered) per-instance
+    test_matrix.json files avoids re-parsing every per-test tracefile at the
+    end of a run, keeping the aggregate step proportional to the number of
+    instances rather than the number of tests.
+    """
+    by_line = collections.defaultdict(lambda: collections.defaultdict(set))
+    by_test = collections.defaultdict(lambda: collections.defaultdict(set))
+    for matrix_file in matrix_files:
+        try:
+            with open(matrix_file) as fp:
+                matrix = json.load(fp)
+        except (OSError, ValueError):
+            logger.error("Unable to read matrix: %s", matrix_file)
+            continue
+        for src, lines in matrix.get("by_line", {}).items():
+            for lineno, tests in lines.items():
+                by_line[src][int(lineno)].update(tests)
+        for test, srcs in matrix.get("by_test", {}).items():
+            for src, lns in srcs.items():
+                by_test[test][src].update(lns)
+
+    merged = {
+        "by_line": {
+            src: {str(ln): sorted(tests) for ln, tests in sorted(lines.items())}
+            for src, lines in sorted(by_line.items())
+        },
+        "by_test": {
+            test: {src: sorted(lns) for src, lns in sorted(srcs.items())}
+            for test, srcs in sorted(by_test.items())
+        },
+    }
+    with open(out_json, "w") as fp:
+        json.dump(merged, fp, indent=2, sort_keys=True)
+    return merged
+
+
+def write_union_tracefile(info_files, out_info):
+    """Merge per-test tracefiles into a single, untagged union tracefile.
+
+    Per-test attribution is carried by the coverage matrix, not by lcov, so the
+    per-instance report is collapsed to one TN. This keeps the end-of-run
+    aggregation (and genhtml) proportional to the number of instances rather
+    than the number of individual tests, which is what makes large per-test
+    runs tractable.
+    """
+    files = {}
+    for info in info_files:
+        source = None
+        rec = None
+        try:
+            with open(info) as fp:
+                for raw in fp:
+                    line = raw.rstrip("\n")
+                    if line.startswith("SF:"):
+                        source = line[3:]
+                        rec = files.setdefault(source, {"da": {}, "brda": {}})
+                    elif rec is None:
+                        continue
+                    elif line.startswith("DA:"):
+                        num, _, rest = line[3:].partition(",")
+                        count = int(rest.split(",")[0]) if rest else 0
+                        num = int(num)
+                        rec["da"][num] = rec["da"].get(num, 0) + count
+                    elif line.startswith("BRDA:"):
+                        ln, block, branch, taken = line[5:].split(",")
+                        key = (int(ln), block, branch)
+                        val = 0 if taken == "-" else int(taken)
+                        rec["brda"][key] = rec["brda"].get(key, 0) + val
+                    elif line == "end_of_record":
+                        source = None
+                        rec = None
+        except OSError:
+            logger.error("Unable to read tracefile: %s", info)
+
+    out = []
+    for source in sorted(files):
+        rec = files[source]
+        out.append("TN:")
+        out.append(f"SF:{source}")
+        brf = brh = 0
+        for (ln, block, branch) in sorted(rec["brda"]):
+            count = rec["brda"][(ln, block, branch)]
+            out.append(f"BRDA:{ln},{block},{branch},{count}")
+            brf += 1
+            brh += count > 0
+        if brf:
+            out.append(f"BRF:{brf}")
+            out.append(f"BRH:{brh}")
+        lf = lh = 0
+        for num in sorted(rec["da"]):
+            count = rec["da"][num]
+            out.append(f"DA:{num},{count}")
+            lf += 1
+            lh += count > 0
+        out.append(f"LF:{lf}")
+        out.append(f"LH:{lh}")
+        out.append("end_of_record")
+    with open(out_info, "w") as fp:
+        fp.write("\n".join(out) + "\n")
+    return out_info
+
+
+def run_per_test_coverage(options, instance):
+    """Capture per-test coverage for one instance and build its matrix."""
+    coverage_tool = CoverageTool.factory(options.coverage_tool, jobs=options.jobs)
+    if not isinstance(coverage_tool, Lcov):
+        logger.error("Per-test coverage requires the 'lcov' coverage tool.")
+        return
+
+    coverage_tool.gcov_tool = str(choose_gcov_tool(
+        options, has_system_gcov(instance.platform),
+        instances={instance.name: instance}))
+    coverage_tool.base_dir = os.path.abspath(options.coverage_basedir)
+
+    scenario = sanitize_coverage_name(instance.testsuite.name)
+    build_dir = instance.build_dir
+    with open(os.path.join(build_dir, "coverage.log"), "a") as coveragelog:
+        infos = coverage_tool.capture_per_test(build_dir, scenario, coveragelog)
+        if not infos:
+            logger.debug(f"No per-test coverage data for {instance.name}")
+            return
+
+    # Collapse the per-test tracefiles into a single untagged instance report.
+    # Per-test detail lives in the matrix, so the aggregation stays proportional
+    # to the number of instances rather than the number of tests.
+    write_union_tracefile(infos, os.path.join(build_dir, "coverage.info"))
+
+    build_test_matrix(
+        infos, os.path.join(build_dir, "coverage", "test_matrix.json"),
+        base_dir=coverage_tool.base_dir)
+    logger.debug(f"Per-test coverage: {len(infos)} tests for {instance.name}")
+
+
 def try_making_symlink(source: str, link: str):
     """
     Attempts to create a symbolic link from source to link.
@@ -666,6 +1130,7 @@ def run_coverage_tool(options, outdir, is_system_gcov, instances,
 
     coverage_tool.instances = instances
     coverage_tool.coverage_per_instance = options.coverage_per_instance
+    coverage_tool.coverage_per_test = getattr(options, "coverage_per_test", False)
     coverage_tool.coverage_capture = coverage_capture
     coverage_tool.coverage_report = coverage_report
     coverage_tool.base_dir = os.path.abspath(options.coverage_basedir)
@@ -698,17 +1163,40 @@ def run_coverage(options, testplan) -> tuple[bool, dict]:
             is_system_gcov = True
             break
 
-    return run_coverage_tool(options, options.outdir, is_system_gcov,
-                             instances=testplan.instances,
-                             coverage_capture=False,
-                             coverage_report=True)
+    result = run_coverage_tool(options, options.outdir, is_system_gcov,
+                               instances=testplan.instances,
+                               coverage_capture=False,
+                               coverage_report=True)
+
+    if getattr(options, "coverage_per_test", False):
+        matrix_files = [
+            os.path.join(instance.build_dir, "coverage", "test_matrix.json")
+            for instance in testplan.instances.values()
+        ]
+        matrix_files = [m for m in matrix_files if os.path.exists(m)]
+        if matrix_files:
+            matrix_dir = os.path.join(options.outdir, "coverage")
+            os.makedirs(matrix_dir, exist_ok=True)
+            json_path = os.path.join(matrix_dir, "test_matrix.json")
+            merge_test_matrices(matrix_files, json_path)
+            logger.info(f"Per-test coverage matrix generated: {json_path}")
+            logger.info("Render it with "
+                        "scripts/gen_test_matrix_dashboard.py -i "
+                        f"{json_path}")
+
+    return result
 
 
 def run_coverage_instance(options, instance):
     """ Per-instance code coverage called by ProjectBuilder ('coverage' operation).
     """
     is_system_gcov = has_system_gcov(instance.platform)
-    return run_coverage_tool(options, instance.build_dir, is_system_gcov,
-                             instances={instance.name: instance},
-                             coverage_capture=True,
-                             coverage_report=options.coverage_per_instance)
+    result = run_coverage_tool(options, instance.build_dir, is_system_gcov,
+                               instances={instance.name: instance},
+                               coverage_capture=True,
+                               coverage_report=options.coverage_per_instance)
+
+    if getattr(options, "coverage_per_test", False):
+        run_per_test_coverage(options, instance)
+
+    return result
