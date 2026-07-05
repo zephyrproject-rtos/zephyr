@@ -16,15 +16,24 @@
 #include "asm_macros.inc"
 
 /* exports */
+GTEXT(z_riscv_user_string_nlen)
+#ifndef CONFIG_RISCV_USER_STRING_NLEN_VALIDATE
 GTEXT(arch_user_string_nlen)
+.set arch_user_string_nlen, z_riscv_user_string_nlen
+#endif
 GTEXT(z_riscv_user_string_nlen_fault_start)
 GTEXT(z_riscv_user_string_nlen_fault_end)
 GTEXT(z_riscv_user_string_nlen_fixup)
 
 /*
- * size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
+ * size_t z_riscv_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
+ *
+ * Aliased to arch_user_string_nlen() unless the C walker in userspace.c is
+ * enabled. It dereferences the user string with a fault fixup bracketing the
+ * load, so a bad pointer lands in z_riscv_user_string_nlen_fixup instead of a
+ * fatal error.
  */
-SECTION_FUNC(TEXT, arch_user_string_nlen)
+SECTION_FUNC(TEXT, z_riscv_user_string_nlen)
 	li	a5, 0		# Counter
 	sw	a5, 0(a2)	# Init error value to 0
 
