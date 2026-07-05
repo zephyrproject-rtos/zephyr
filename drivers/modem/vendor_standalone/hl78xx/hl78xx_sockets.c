@@ -441,10 +441,14 @@ static bool hl78xx_apply_pending_tcp_socket_error_if_drained(struct hl78xx_socke
 	if (modem_socket_next_packet_size(&socket_data->control.socket_config, sock) > 0U) {
 		return false;
 	}
+	/*
+	 * Wake the waiter while the modem_socket is still considered connected.
+	 * Some modem_socket_data_ready() implementations do not signal disconnected sockets.
+	 */
+	modem_socket_data_ready(&socket_data->control.socket_config, sock);
 
 	hl78xx_mark_tcp_socket_error(socket_data, socket_id, err_code);
 	socket_data->conn.tcp_pending_err_code[slot] = 0;
-	modem_socket_data_ready(&socket_data->control.socket_config, sock);
 
 	return true;
 }
