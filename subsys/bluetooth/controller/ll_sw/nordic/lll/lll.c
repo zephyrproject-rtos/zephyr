@@ -48,9 +48,14 @@ static struct {
 		lll_is_abort_cb_t is_abort_cb;
 		lll_abort_cb_t    abort_cb;
 		uint32_t          ticks_at_expire;
-#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
 		uint32_t          ticks_drift;
-#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
 		uint32_t          remainder;
 		uint16_t          lazy;
 		uint8_t           has_margin:1;
@@ -1036,9 +1041,14 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 
 	event.curr.param = prepare_param->param;
 	event.curr.ticks_at_expire = prepare_param->ticks_at_expire;
-#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
 	event.curr.ticks_drift = prepare_param->ticks_drift;
-#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
 	event.curr.remainder = prepare_param->remainder;
 	event.curr.lazy = prepare_param->lazy;
 	event.curr.is_abort_cb = is_abort_cb;
@@ -1536,12 +1546,17 @@ preempt_cancel_curr:
 		 * deferred event.
 		 */
 		prepare_param.ticks_at_expire = ready->prepare_param.ticks_at_expire;
-#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
 		prepare_param.ticks_drift = event.curr.ticks_drift;
 		prepare_param.ticks_drift +=
 			ticker_ticks_diff_get(ready->prepare_param.ticks_at_expire,
 					      event.curr.ticks_at_expire);
-#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
 		prepare_param.remainder = event.curr.remainder;
 		prepare_param.lazy = event.curr.lazy;
 		prepare_param.force = 0U;
