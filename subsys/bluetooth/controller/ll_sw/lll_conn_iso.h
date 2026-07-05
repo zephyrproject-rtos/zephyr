@@ -129,6 +129,19 @@ struct lll_conn_iso_group {
 	uint16_t lazy_prepare;
 	uint16_t latency_event;
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+	/* Resume subevent state to allow LLL to resume from a mid-event
+	 * position when the CIG event was wrapped around an overlapping role.
+	 */
+	uint8_t  is_lll_resume:1;
+	uint32_t ticks_start;
+	uint32_t ready_us;
+	uint32_t aa_us;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
+
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	/* Window widening. Relies on vendor specific conversion macros, e.g.
 	 * EVENT_US_FRAC_TO_TICKS().

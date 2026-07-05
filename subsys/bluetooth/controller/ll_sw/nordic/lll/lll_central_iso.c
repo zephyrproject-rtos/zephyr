@@ -152,6 +152,28 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	DEBUG_RADIO_START_M(1);
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+	/* When the CIG event was wrapped around an overlapping role by the
+	 * ticker jitter-in-window feature, ticks_drift indicates how much the
+	 * event start was delayed. Currently the LLL does not skip subevents
+	 * inside a CIG event to catch up with the drift; instead we early
+	 * abort so that subsequent CIG events resume normally.
+	 *
+	 * FIXME: Add implementation to skip forward the appropriate number of
+	 *        CIS subevents (sequential and interleaved packing) based on
+	 *        ticks_drift, advance PRN state accordingly, and setup the
+	 *        remaining subevents for transmission/reception within the
+	 *        drift-adjusted CIG event window.
+	 */
+	if (p->ticks_drift != 0U) {
+		radio_isr_set(lll_isr_early_abort, cig_lll);
+		radio_disable();
+
+		DEBUG_RADIO_START_M(1);
+		return 0;
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
+
 	/* Reset global static variables */
 	trx_performed_bitmask = 0U;
 #if defined(CONFIG_BT_CTLR_LE_ENC)
