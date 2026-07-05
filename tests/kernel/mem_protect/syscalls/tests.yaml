@@ -31,3 +31,12 @@ tests:
       - qemu_x86
       - mps2/an385
       - qemu_riscv32e/qemu_virt_riscv32e
+  kernel.memory_protection.syscalls.riscv_nlen_validate:
+    arch_allow:
+      - riscv
+    filter: CONFIG_RISCV_PMP
+    extra_configs:
+      - CONFIG_RISCV_USER_STRING_NLEN_VALIDATE=y
+    integration_platforms:
+      - qemu_riscv32
+      - qemu_riscv64
