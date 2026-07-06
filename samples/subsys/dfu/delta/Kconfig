@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Clovis Corde
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Delta Firmware Update Sample"
+
+source "Kconfig.zephyr"
+
+config DELTA_SAMPLE_TARGET_MODE
+	bool "Build as the target firmware for delta patch generation"
+	help
+	  When enabled, the application simply prints a message and
+	  exits without applying any delta patch. This is used to
+	  produce the target firmware binary needed by
+	  generate_patch.py to compute the delta between the source
+	  and target images.

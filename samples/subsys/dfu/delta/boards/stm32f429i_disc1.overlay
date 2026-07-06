@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2026 Clovis Corde
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(128)>;
+			read-only;
+		};
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x20000 DT_SIZE_K(384)>;
+		};
+
+		slot1_partition: partition@80000 {
+			label = "image-1";
+			reg = <0x80000 DT_SIZE_K(384)>;
+		};
+
+		patch_partition: partition@120000 {
+			label = "delta-patch";
+			reg = <0x120000 DT_SIZE_K(128)>;
+		};
+	};
+};
