@@ -5108,11 +5108,15 @@ RISCV arch:
     - boards/starfive/
     - cmake/compiler/*/target_riscv.cmake
     - doc/hardware/arch/risc-v.rst
+    - drivers/interrupt_controller/Kconfig.riscv_*
     - drivers/interrupt_controller/intc_plic.c
-    - drivers/interrupt_controller/intc_riscv_imsic.c
+    - drivers/interrupt_controller/intc_riscv_*
+    - dts/bindings/interrupt-controller/riscv,*
     - dts/bindings/riscv/
     - dts/riscv/
     - include/zephyr/arch/riscv/
+    - include/zephyr/drivers/interrupt_controller/riscv_*
+    - samples/drivers/interrupt_controller/intc_riscv_aia*/
     - soc/common/riscv-privileged/
     - soc/qemu/virt_riscv/
     - soc/sifive/
