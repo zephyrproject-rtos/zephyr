@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zephyr Architectural Layering</title>
+<style>
+  :root {
+    --bg:#f5f6f8; --panel:#fff; --ink:#1c2530; --muted:#667085; --line:#e2e6ec;
+    --blue:#cfe2f3; --blueB:#6a9ec9; --gold:#fdf3b0; --goldB:#c9a227;
+    --pink:#f8d3d7; --pinkB:#c96a76; --ok:#2e7d32; --bad:#c62828; --accent:#2563eb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#12161c; --panel:#1a2029; --ink:#e6ebf1; --muted:#93a1b0;
+      --line:#2a323d; --blue:#24435c; --blueB:#3d6f97; --gold:#5c4d13;
+      --goldB:#c9a227; --pink:#5a2a2f; --pinkB:#c96a76; --ok:#66bb6a; --bad:#ef5350; }
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; font:14px/1.45 -apple-system,Segoe UI,
+    Roboto,Helvetica,Arial,sans-serif; color:var(--ink); background:var(--bg); }
+  #app { display:grid; grid-template-columns:250px 1fr 330px;
+    grid-template-rows:auto 1fr; height:100vh; }
+  header { grid-column:1/4; display:flex; align-items:center; gap:14px;
+    padding:9px 15px; background:var(--panel); border-bottom:1px solid var(--line);
+    flex-wrap:wrap; }
+  header h1 { font-size:15px; margin:0; font-weight:650; white-space:nowrap; }
+  .stats { display:flex; gap:13px; color:var(--muted); font-size:12.5px; }
+  .stats b { color:var(--ink); } .stats .bad b { color:var(--bad); }
+  .spacer { margin-left:auto; }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:7px;
+    overflow:hidden; }
+  .seg button { border:0; background:var(--panel); color:var(--muted);
+    padding:5px 11px; cursor:pointer; font-size:12.5px; }
+  .seg button.on { background:var(--accent); color:#fff; }
+  header label { font-size:12.5px; color:var(--muted); cursor:pointer; }
+  input[type=search] { border:1px solid var(--line); background:var(--bg);
+    color:var(--ink); border-radius:7px; padding:5px 9px; font-size:12.5px; width:150px; }
+  button.act { border:1px solid var(--line); background:var(--panel); color:var(--ink);
+    border-radius:7px; padding:5px 11px; cursor:pointer; font-size:12.5px; }
+  button.act:hover { border-color:var(--accent); }
+
+  /* left scope rail */
+  nav { background:var(--panel); border-right:1px solid var(--line); overflow-y:auto;
+    padding:12px; }
+  nav h3 { font-size:11px; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--muted); margin:2px 0 4px; }
+  nav .sub { font-size:11.5px; color:var(--muted); margin:0 0 10px; }
+  .scopeItem { display:flex; align-items:center; gap:8px; padding:6px 7px;
+    border:1px solid var(--line); border-radius:8px; margin-bottom:6px; cursor:pointer;
+    background:var(--bg); }
+  .scopeItem:hover { border-color:var(--accent); }
+  .dot { width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
+  .dot.in { background:var(--goldB); } .dot.out { background:var(--blueB); }
+  .scopeItem .nm { font-weight:600; font-size:12.5px; flex:1; }
+  .scopeItem .delta { font-size:11px; font-variant-numeric:tabular-nums; }
+  .scopeItem .delta.good { color:var(--ok); } .scopeItem .delta.bad { color:var(--bad); }
+  .navbtns { display:flex; gap:6px; margin:8px 0 4px; }
+  .navbtns button { flex:1; }
+
+  main { position:relative; overflow:hidden; }
+  main svg { width:100%; height:100%; display:block; }
+  .view { position:absolute; inset:0; }
+  .view[hidden] { display:none; }
+  .node text { font-weight:600; font-size:12px; pointer-events:none; fill:var(--ink); }
+  .node .sub { font-weight:500; font-size:9.5px; fill:var(--muted); }
+  .node { cursor:pointer; } .edge path { fill:none; } .edge text { font-size:10px; }
+  .dim { opacity:.08; }
+  .legend { position:absolute; left:12px; bottom:12px; background:var(--panel);
+    border:1px solid var(--line); border-radius:8px; padding:7px 10px;
+    font-size:11.5px; color:var(--muted); }
+  .legend .r { display:flex; align-items:center; gap:7px; margin:2px 0; }
+  .sw { width:20px; height:0; border-top:3px solid; }
+
+  /* matrix */
+  #viewMatrix { overflow:auto; padding:14px; }
+  table.mx { border-collapse:collapse; font-size:11.5px; }
+  table.mx th { color:var(--muted); font-weight:600; padding:4px 6px; text-align:left;
+    white-space:nowrap; position:sticky; }
+  table.mx th.col { writing-mode:vertical-rl; transform:rotate(180deg);
+    vertical-align:bottom; height:96px; }
+  table.mx td { width:34px; height:30px; text-align:center; border:1px solid var(--line);
+    cursor:pointer; font-variant-numeric:tabular-nums; }
+  table.mx td.diag { background:var(--line); cursor:default; }
+  .mxlabel { font-weight:600; }
+
+  aside { background:var(--panel); border-left:1px solid var(--line); overflow-y:auto;
+    padding:14px 15px; }
+  aside h2 { font-size:14px; margin:0 0 4px; } .hint { color:var(--muted); font-size:12.5px; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px;
+    font-weight:600; }
+  .badge.ok { background:rgba(46,125,50,.15); color:var(--ok); }
+  .badge.bad { background:rgba(198,40,40,.15); color:var(--bad); }
+  .kv { display:flex; justify-content:space-between; padding:5px 0;
+    border-bottom:1px solid var(--line); font-size:13px; }
+  .kv span:first-child { color:var(--muted); } .err { color:var(--bad); }
+  .sec { margin-top:14px; } .sec h3 { font-size:12px; text-transform:uppercase;
+    letter-spacing:.04em; color:var(--muted); margin:0 0 6px; }
+  .list { max-height:210px; overflow-y:auto; border:1px solid var(--line); border-radius:7px; }
+  .list div { padding:4px 9px; border-bottom:1px solid var(--line);
+    font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11.5px; word-break:break-all; }
+  .list div:last-child { border-bottom:0; }
+  .edgeItem { cursor:pointer; padding:5px 9px; border-bottom:1px solid var(--line);
+    display:flex; justify-content:space-between; gap:8px; font-size:12.5px; }
+  .edgeItem:hover { background:var(--bg); }
+  .edgeItem .n { color:var(--muted); font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>Zephyr&nbsp;·&nbsp;Layering</h1>
+    <div class="stats" id="stats"></div>
+    <div class="spacer"></div>
+    <div class="seg" id="viewSel">
+      <button data-v="graph" class="on">Graph</button>
+      <button data-v="matrix">Matrix</button>
+      <button data-v="layers">Scope</button>
+    </div>
+    <label><input type="checkbox" id="fCall" checked> call</label>
+    <label><input type="checkbox" id="fRef" checked> ref</label>
+    <input type="search" id="search" placeholder="find symbol…">
+    <button class="act" id="reload">Reload build</button>
+  </header>
+
+  <nav>
+    <h3>Scope</h3>
+    <p class="sub">Toggle a component in / out of the qualification scope. A
+      dependency is a <b style="color:var(--bad)">violation</b> when in-scope code
+      calls or reads out-of-scope code. Δ = change in violation refs if you flip it.</p>
+    <div id="scopeList"></div>
+    <div class="navbtns">
+      <button class="act" id="allIn">All in</button>
+      <button class="act" id="allOut">All out</button>
+      <button class="act" id="reset">Reset</button>
+    </div>
+    <button class="act" id="exportScope" style="width:100%;margin-top:6px">Copy scope as YAML</button>
+  </nav>
+
+  <main>
+    <div class="view" id="viewGraph"><svg id="svgGraph"></svg>
+      <div class="legend">
+        <div class="r"><span class="sw" style="border-color:var(--ok)"></span>allowed</div>
+        <div class="r"><span class="sw" style="border-color:var(--bad)"></span>violation</div>
+        <div class="r" style="color:var(--muted)">drag nodes · click to inspect</div>
+      </div>
+    </div>
+    <div class="view" id="viewMatrix" hidden></div>
+    <div class="view" id="viewLayers" hidden><svg id="svgLayers"></svg></div>
+  </main>
+
+  <aside id="panel"><div id="detail"></div></aside>
+</div>
+
+<script>
+const NS="http://www.w3.org/2000/svg";
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let RAW=null, NODEMAP={}, SCOPE={}, EDGEIDX={}, view="graph", query="", sel=null;
+
+/* ---------- data ---------- */
+async function load(){
+  det('<p class="hint">Analyzing build…</p>');
+  try{
+    const r=await fetch("/api/data"); const d=await r.json();
+    if(d.error) throw new Error(d.error);
+    RAW=d; NODEMAP={}; EDGEIDX={};
+    d.nodes.forEach(n=>NODEMAP[n.id]=n);
+    d.edges.forEach(e=>{ (EDGEIDX[e.from+"::"+e.to]=EDGEIDX[e.from+"::"+e.to]||[]).push(e); });
+    SCOPE={}; d.nodes.forEach(n=>SCOPE[n.id]=d.initial_in_scope.includes(n.id));
+    layoutGraph();
+    refresh(); showOverview();
+  }catch(e){ det('<p class="err">Analysis failed:<br>'+e.message+'</p>'); }
+}
+const inScope=id=>!!SCOPE[id];
+const isViol=e=>inScope(e.from)&&!inScope(e.to);
+function visE(){
+  return RAW.edges.filter(e=>{
+    if(e.action==="call"&&!chk("fCall"))return false;
+    if(e.action==="ref"&&!chk("fRef"))return false;
+    return true;
+  });
+}
+const chk=id=>document.getElementById(id).checked;
+
+/* scope-flip impact on total violation refs */
+function scopeDelta(id){
+  let removed=0, added=0;
+  if(inScope(id)){                     // moving OUT
+    RAW.edges.forEach(e=>{
+      if(e.from===id&&!inScope(e.to)) removed+=e.count;              // was viol, gone
+      if(e.to===id&&inScope(e.from)&&e.from!==id) added+=e.count;    // becomes viol
+    });
+  }else{                               // moving IN
+    RAW.edges.forEach(e=>{
+      if(e.to===id&&inScope(e.from)) removed+=e.count;               // was viol, gone
+      if(e.from===id&&!inScope(e.to)&&e.to!==id) added+=e.count;     // becomes viol
+    });
+  }
+  return {removed, added, net:added-removed};
+}
+
+/* ---------- master refresh ---------- */
+function refresh(){
+  renderStats(); renderScopeRail();
+  if(view==="graph") renderGraph();
+  else if(view==="matrix") renderMatrix();
+  else renderLayers();
+}
+function renderStats(){
+  const v=RAW.edges.filter(isViol);
+  const refs=v.reduce((s,e)=>s+e.count,0);
+  const inN=Object.values(SCOPE).filter(Boolean).length;
+  document.getElementById("stats").innerHTML=
+    `<span><b>${RAW.meta.objects}</b> objects</span>`+
+    `<span><b>${inN}</b>/${RAW.nodes.length} in-scope</span>`+
+    `<span><b>${RAW.edges.length}</b> edges</span>`+
+    `<span class="bad"><b>${v.length}</b> violations · ${refs} refs</span>`;
+}
+function renderScopeRail(){
+  const el=document.getElementById("scopeList");
+  const order=[...RAW.nodes].sort((a,b)=>(inScope(b.id)-inScope(a.id))||a.id.localeCompare(b.id));
+  el.innerHTML="";
+  order.forEach(n=>{
+    const d=scopeDelta(n.id);
+    const div=document.createElement("div"); div.className="scopeItem";
+    const cls=d.net<0?"good":d.net>0?"bad":"";
+    const sign=d.net<0?"−"+(-d.net):d.net>0?"+"+d.net:"0";
+    div.innerHTML=`<span class="dot ${inScope(n.id)?'in':'out'}"></span>`+
+      `<span class="nm">${n.id}</span>`+
+      `<span class="delta ${cls}" title="if flipped: -${d.removed} / +${d.added} refs">Δ${sign}</span>`;
+    div.onclick=()=>{ SCOPE[n.id]=!SCOPE[n.id]; refresh(); if(sel&&sel.type==="node"&&sel.id===n.id) showNode(NODEMAP[n.id]); };
+    el.appendChild(div);
+  });
+}
+
+/* ---------- GRAPH view ---------- */
+function layoutGraph(){
+  const N=RAW.nodes, E=RAW.edges, W=900,H=620, k=Math.sqrt(W*H/N.length)*0.9;
+  N.forEach((n,i)=>{ const a=i/N.length*2*Math.PI;
+    n.x=W/2+Math.cos(a)*W/3; n.y=H/2+Math.sin(a)*H/3; });
+  const idx={}; N.forEach((n,i)=>idx[n.id]=i);
+  for(let it=0; it<400; it++){
+    const dp=N.map(()=>[0,0]);
+    for(let i=0;i<N.length;i++)for(let j=i+1;j<N.length;j++){
+      let dx=N[i].x-N[j].x,dy=N[i].y-N[j].y,d=Math.hypot(dx,dy)||.01,f=k*k/d;
+      dp[i][0]+=dx/d*f; dp[i][1]+=dy/d*f; dp[j][0]-=dx/d*f; dp[j][1]-=dy/d*f;
+    }
+    E.forEach(e=>{ const a=idx[e.from],b=idx[e.to];
+      let dx=N[a].x-N[b].x,dy=N[a].y-N[b].y,d=Math.hypot(dx,dy)||.01,f=d*d/k;
+      dp[a][0]-=dx/d*f; dp[a][1]-=dy/d*f; dp[b][0]+=dx/d*f; dp[b][1]+=dy/d*f; });
+    const t=12*(1-it/400)+.5;
+    N.forEach((n,i)=>{ let dx=dp[i][0],dy=dp[i][1],dl=Math.hypot(dx,dy)||.01;
+      n.x+=dx/dl*Math.min(dl,t); n.y+=dy/dl*Math.min(dl,t);
+      n.x+=(W/2-n.x)*.01; n.y+=(H/2-n.y)*.01; });
+  }
+}
+function marker(id,c){ return `<marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5"
+  markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+  <path d="M0,0 L10,5 L0,10 z" fill="${c}"/></marker>`; }
+function renderGraph(){
+  const svg=document.getElementById("svgGraph"); svg.innerHTML="";
+  const defs=document.createElementNS(NS,"defs");
+  defs.innerHTML=marker("ok",css("--ok"))+marker("bad",css("--bad")); svg.appendChild(defs);
+  const es=visE();
+  const groups={}; es.forEach(e=>{ const k=[e.from,e.to].sort().join("::");
+    (groups[k]=groups[k]||[]).push(e); });
+  const gE=document.createElementNS(NS,"g");
+  Object.values(groups).forEach(l=>l.forEach((e,i)=>drawEdge(gE,e,NODEMAP[e.from],NODEMAP[e.to],(i-(l.length-1)/2)*26)));
+  svg.appendChild(gE);
+  const active=new Set(); es.forEach(e=>{active.add(e.from);active.add(e.to);});
+  const gN=document.createElementNS(NS,"g");
+  RAW.nodes.forEach(n=>drawNode(gN,n)); svg.appendChild(gN);
+  fit(svg,RAW.nodes); applyHi(); drag(svg);
+}
+function drawEdge(g,e,a,b,off){
+  const mx=(a.x+b.x)/2,my=(a.y+b.y)/2; let nx=-(b.y-a.y),ny=(b.x-a.x);
+  const nl=Math.hypot(nx,ny)||1; nx/=nl; ny/=nl; const cx=mx+nx*off,cy=my+ny*off;
+  const viol=isViol(e), c=viol?css("--bad"):css("--ok");
+  const grp=document.createElementNS(NS,"g"); grp.setAttribute("class","edge"); grp._e=e;
+  const p=document.createElementNS(NS,"path");
+  p.setAttribute("d",`M${a.x},${a.y} Q${cx},${cy} ${b.x},${b.y}`);
+  p.setAttribute("stroke",c); p.setAttribute("stroke-width",viol?2.4:1.5);
+  p.setAttribute("marker-end",viol?"url(#bad)":"url(#ok)"); grp.appendChild(p);
+  const t=document.createElementNS(NS,"text"); t.setAttribute("x",cx); t.setAttribute("y",cy-2);
+  t.setAttribute("text-anchor","middle"); t.setAttribute("fill",c);
+  t.textContent=`${e.action} (${e.count})`; grp.appendChild(t);
+  grp.style.cursor="pointer"; grp.onclick=ev=>{ev.stopPropagation();selectEdge(e);};
+  g.appendChild(grp);
+}
+function drawNode(g,n){
+  const w=Math.max(96,n.id.length*8.4+24),h=40;
+  const grp=document.createElementNS(NS,"g"); grp.setAttribute("class","node"); grp._n=n;
+  grp.setAttribute("transform",`translate(${n.x-w/2},${n.y-h/2})`);
+  const r=document.createElementNS(NS,"rect"); r.setAttribute("width",w); r.setAttribute("height",h);
+  r.setAttribute("rx",9);
+  const inn=inScope(n.id);
+  r.setAttribute("fill",inn?css("--gold"):n.external?css("--pink"):css("--blue"));
+  r.setAttribute("stroke",inn?css("--goldB"):n.external?css("--pinkB"):css("--blueB"));
+  r.setAttribute("stroke-width",inn?2.4:1.4); grp.appendChild(r);
+  const t=document.createElementNS(NS,"text"); t.setAttribute("x",w/2); t.setAttribute("y",n.file_count?17:24);
+  t.setAttribute("text-anchor","middle"); t.textContent=n.id; grp.appendChild(t);
+  if(n.file_count){ const s=document.createElementNS(NS,"text"); s.setAttribute("x",w/2);
+    s.setAttribute("y",30); s.setAttribute("text-anchor","middle"); s.setAttribute("class","sub");
+    s.textContent=`${n.file_count} files · ${inn?'in':'out'}`; grp.appendChild(s); }
+  grp._w=w; grp._h=h; grp.onclick=ev=>{ev.stopPropagation();selectNode(n);};
+  g.appendChild(grp);
+}
+function fit(svg,nodes){ const xs=nodes.map(n=>n.x),ys=nodes.map(n=>n.y),pad=90;
+  const x=Math.min(...xs)-pad,y=Math.min(...ys)-pad;
+  svg.setAttribute("viewBox",`${x} ${y} ${Math.max(...xs)-x+pad} ${Math.max(...ys)-y+pad}`); }
+function applyHi(){
+  const svg=document.getElementById("svgGraph");
+  svg.querySelectorAll(".edge").forEach(g=>{ const e=g._e; let on=true;
+    if(sel&&sel.type==="node") on=(e.from===sel.id||e.to===sel.id);
+    if(query) on=on&&edgeQ(e); g.classList.toggle("dim",!on); });
+  svg.querySelectorAll(".node").forEach(g=>{ const n=g._n; let on=true;
+    if(sel&&sel.type==="node") on=(n.id===sel.id||RAW.edges.some(e=>(e.from===sel.id&&e.to===n.id)||(e.to===sel.id&&e.from===n.id)));
+    g.classList.toggle("dim",!on); });
+}
+const edgeQ=e=>(e.examples||[]).some(s=>s.toLowerCase().includes(query))||e.from.toLowerCase().includes(query)||e.to.toLowerCase().includes(query);
+function drag(svg){ let cur=null,st=null;
+  svg.querySelectorAll(".node").forEach(g=>g.addEventListener("pointerdown",ev=>{
+    cur=g; st=pt(svg,ev); g.setPointerCapture(ev.pointerId); ev.stopPropagation(); }));
+  svg.addEventListener("pointermove",ev=>{ if(!cur)return; const p=pt(svg,ev);
+    cur._n.x+=p.x-st.x; cur._n.y+=p.y-st.y; st=p;
+    cur.setAttribute("transform",`translate(${cur._n.x-cur._w/2},${cur._n.y-cur._h/2})`); redrawE(svg); });
+  svg.addEventListener("pointerup",()=>cur=null);
+}
+function pt(svg,ev){ const p=svg.createSVGPoint(); p.x=ev.clientX; p.y=ev.clientY;
+  return p.matrixTransform(svg.getScreenCTM().inverse()); }
+function redrawE(svg){ const groups={};
+  svg.querySelectorAll(".edge").forEach(g=>{ const e=g._e,k=[e.from,e.to].sort().join("::");
+    (groups[k]=groups[k]||[]).push(g); });
+  Object.values(groups).forEach(gl=>gl.forEach((g,i)=>{ const e=g._e,a=NODEMAP[e.from],b=NODEMAP[e.to];
+    const off=(i-(gl.length-1)/2)*26,mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+    let nx=-(b.y-a.y),ny=(b.x-a.x),nl=Math.hypot(nx,ny)||1; nx/=nl; ny/=nl;
+    const cx=mx+nx*off,cy=my+ny*off;
+    g.querySelector("path").setAttribute("d",`M${a.x},${a.y} Q${cx},${cy} ${b.x},${b.y}`);
+    const t=g.querySelector("text"); t.setAttribute("x",cx); t.setAttribute("y",cy-2); }));
+}
+
+/* ---------- MATRIX view ---------- */
+function renderMatrix(){
+  const el=document.getElementById("viewMatrix");
+  const comps=[...RAW.nodes].map(n=>n.id)
+    .sort((a,b)=>(inScope(b)-inScope(a))||a.localeCompare(b));
+  const pair=(f,t)=>{ const es=(EDGEIDX[f+"::"+t]||[]).filter(e=>
+    (e.action==="call"&&chk("fCall"))||(e.action==="ref"&&chk("fRef")));
+    return {count:es.reduce((s,e)=>s+e.count,0), viol:es.length&&isViol(es[0])}; };
+  let h='<table class="mx"><tr><th>from \\ to</th>';
+  comps.forEach(c=>h+=`<th class="col">${c}${inScope(c)?" ●":""}</th>`);
+  h+="</tr>";
+  comps.forEach(f=>{ h+=`<tr><th class="mxlabel">${f}${inScope(f)?" ●":""}</th>`;
+    comps.forEach(t=>{ if(f===t){ h+='<td class="diag"></td>'; return; }
+      const p=pair(f,t);
+      if(!p.count){ h+='<td></td>'; return; }
+      const bg=p.viol?`rgba(198,40,40,${Math.min(.15+p.count/300,.85)})`
+                     :`rgba(46,125,50,${Math.min(.12+p.count/300,.6)})`;
+      const fg=p.viol&&p.count>80?"#fff":"var(--ink)";
+      h+=`<td style="background:${bg};color:${fg}" onclick="pickPair('${f}','${t}')">${p.count}</td>`; });
+    h+="</tr>"; });
+  h+="</table><p class='hint' style='margin-top:10px'>● = in-scope. Red cells are"+
+     " violations (in-scope → out-of-scope). Click a cell to inspect. Rows/cols are"+
+     " sorted with in-scope components first, so the top-left block should stay green.</p>";
+  el.innerHTML=h;
+}
+window.pickPair=(f,t)=>{ const es=EDGEIDX[f+"::"+t]||[]; if(es.length) selectEdge(es[0]); };
+
+/* ---------- SCOPE BOUNDARY view ---------- */
+function renderLayers(){
+  const svg=document.getElementById("svgLayers"); svg.innerHTML="";
+  const defs=document.createElementNS(NS,"defs");
+  defs.innerHTML=marker("ok",css("--ok"))+marker("bad",css("--bad")); svg.appendChild(defs);
+  const W=900,H=640, colIn=260, colOut=640;
+  const ins=RAW.nodes.filter(n=>inScope(n.id));
+  const outs=RAW.nodes.filter(n=>!inScope(n.id));
+  const place=(arr,x)=>{ const gap=H/(arr.length+1);
+    arr.forEach((n,i)=>{ n.lx=x; n.ly=gap*(i+1); }); };
+  place(ins,colIn); place(outs,colOut);
+  // boundary line + labels
+  const mid=(colIn+colOut)/2;
+  svg.appendChild(line(mid,30,mid,H-30,css("--line"),1,"6 5"));
+  svg.appendChild(txt(colIn,20,"IN_SCOPE",css("--goldB"),13,"middle"));
+  svg.appendChild(txt(colOut,20,"OUT_OF_SCOPE",css("--blueB"),13,"middle"));
+  // edges crossing / within, filtered
+  const es=visE();
+  const gE=document.createElementNS(NS,"g");
+  es.forEach(e=>{ const a=NODEMAP[e.from],b=NODEMAP[e.to];
+    if(a.lx===undefined||b.lx===undefined) return;
+    const viol=isViol(e);
+    const p=document.createElementNS(NS,"path");
+    const cx=(a.lx+b.lx)/2, cy=(a.ly+b.ly)/2 + (a.lx===b.lx?60:0);
+    p.setAttribute("d",`M${a.lx},${a.ly} Q${cx},${cy} ${b.lx},${b.ly}`);
+    p.setAttribute("fill","none"); p.setAttribute("stroke",viol?css("--bad"):css("--ok"));
+    p.setAttribute("stroke-width",viol?2.2:1); p.setAttribute("opacity",viol?0.95:0.35);
+    p.setAttribute("marker-end",viol?"url(#bad)":"url(#ok)");
+    if(query&&!edgeQ(e)) p.setAttribute("opacity",0.05);
+    p.style.cursor="pointer"; p._e=e; p.onclick=ev=>{ev.stopPropagation();selectEdge(e);};
+    gE.appendChild(p); });
+  svg.appendChild(gE);
+  // nodes
+  const gN=document.createElementNS(NS,"g");
+  [...ins,...outs].forEach(n=>{ const w=Math.max(120,n.id.length*8.4+30),h=34;
+    const g=document.createElementNS(NS,"g"); g.style.cursor="pointer";
+    g.setAttribute("transform",`translate(${n.lx-w/2},${n.ly-h/2})`);
+    const r=document.createElementNS(NS,"rect"); r.setAttribute("width",w); r.setAttribute("height",h);
+    r.setAttribute("rx",8); const inn=inScope(n.id);
+    r.setAttribute("fill",inn?css("--gold"):n.external?css("--pink"):css("--blue"));
+    r.setAttribute("stroke",inn?css("--goldB"):n.external?css("--pinkB"):css("--blueB"));
+    r.setAttribute("stroke-width",1.6); g.appendChild(r);
+    g.appendChild(txt(w/2,15,n.id,css("--ink"),12,"middle"));
+    g.appendChild(txt(w/2,27,`${n.file_count} files`,css("--muted"),9.5,"middle","sub"));
+    g.onclick=ev=>{ev.stopPropagation();selectNode(n);};
+    gN.appendChild(g); });
+  svg.appendChild(gN);
+  // headline
+  const refs=es.filter(isViol).reduce((s,e)=>s+e.count,0);
+  svg.appendChild(txt(mid,H-10,`${refs} references cross the boundary in the forbidden direction`,
+    refs?css("--bad"):css("--ok"),12,"middle"));
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+}
+function line(x1,y1,x2,y2,c,w,dash){ const l=document.createElementNS(NS,"line");
+  l.setAttribute("x1",x1); l.setAttribute("y1",y1); l.setAttribute("x2",x2); l.setAttribute("y2",y2);
+  l.setAttribute("stroke",c); l.setAttribute("stroke-width",w); if(dash)l.setAttribute("stroke-dasharray",dash);
+  return l; }
+function txt(x,y,s,c,fs,anchor,cls){ const t=document.createElementNS(NS,"text");
+  t.setAttribute("x",x); t.setAttribute("y",y); t.setAttribute("fill",c);
+  t.setAttribute("font-size",fs); if(anchor)t.setAttribute("text-anchor",anchor);
+  t.setAttribute("font-weight",cls==="sub"?"500":"600"); t.textContent=s; return t; }
+
+/* ---------- selection / detail ---------- */
+const det=h=>document.getElementById("detail").innerHTML=h;
+function selectNode(n){ sel={type:"node",id:n.id}; if(view==="graph")applyHi(); showNode(n); }
+function selectEdge(e){ sel={type:"edge"}; showEdge(e); }
+function showOverview(){
+  sel=null; if(view==="graph")applyHi();
+  const viol=RAW.edges.filter(isViol).sort((a,b)=>b.count-a.count);
+  let h=`<h2>Overview</h2><p class="hint">Independence rule: in-scope code must not
+    call or read out-of-scope code. Flip components in the left rail to explore what
+    a self-contained kernel scope would require.</p>`;
+  h+=`<div class="sec"><h3>Top violations</h3><div class="list">`;
+  viol.slice(0,50).forEach(e=>h+=eItem(e,e.from+" → "+e.to));
+  h+=`</div></div>`; det(h);
+}
+function showNode(n){
+  const out=RAW.edges.filter(e=>e.from===n.id).sort((a,b)=>b.count-a.count);
+  const inc=RAW.edges.filter(e=>e.to===n.id).sort((a,b)=>b.count-a.count);
+  const d=scopeDelta(n.id);
+  let h=`<h2>${n.id}</h2><p><span class="badge ${inScope(n.id)?'ok':'bad'}">`+
+    `${inScope(n.id)?'IN-SCOPE':'OUT-OF-SCOPE'}</span> `+
+    `<button class="act" onclick="SCOPE['${n.id}']=!SCOPE['${n.id}'];refresh();showNode(NODEMAP['${n.id}'])">flip</button></p>`;
+  h+=`<div class="kv"><span>files</span><span>${n.file_count}</span></div>`;
+  h+=`<div class="kv"><span>top dirs</span><span>${(n.roots||[]).slice(0,3).join(", ")}</span></div>`;
+  h+=`<div class="kv"><span>flip impact</span><span class="${d.net<0?'':'err'}">−${d.removed} / +${d.added} refs</span></div>`;
+  h+=sec("Outgoing",out,"→",n.id); h+=sec("Incoming",inc,"←",n.id);
+  if(n.files.length){ h+=`<div class="sec"><h3>Source files</h3><div class="list">`;
+    n.files.forEach(f=>h+=`<div>${f}</div>`); h+=`</div></div>`; }
+  det(h);
+}
+function sec(title,list,ar,self){ if(!list.length)return"";
+  let h=`<div class="sec"><h3>${title} (${list.length})</h3><div class="list">`;
+  list.forEach(e=>{ const other=title==="Outgoing"?e.to:e.from;
+    h+=eItem(e,`${ar} ${other}`); });
+  return h+`</div></div>`;
+}
+function eItem(e,label){ const v=isViol(e);
+  return `<div class="edgeItem" onclick='pickEdge(${JSON.stringify(JSON.stringify(e))})'>
+    <span>${label} <span class="badge ${v?'bad':'ok'}">${v?'✗':'ok'}</span></span>
+    <span class="n">${e.action} ${e.count}</span></div>`;
+}
+window.pickEdge=s=>selectEdge(JSON.parse(s));
+function showEdge(e){ const v=isViol(e);
+  let h=`<h2>${e.from} → ${e.to}</h2><p><span class="badge ${v?'bad':'ok'}">`+
+    `${v?'VIOLATION':'ALLOWED'}</span></p>`;
+  h+=`<div class="kv"><span>action</span><span>${e.action}</span></div>`;
+  h+=`<div class="kv"><span>references</span><span>${e.count}</span></div>`;
+  h+=`<div class="kv"><span>from scope</span><span>${inScope(e.from)?'in':'out'}</span></div>`;
+  h+=`<div class="kv"><span>to scope</span><span>${inScope(e.to)?'in':'out'}</span></div>`;
+  if(e.examples&&e.examples.length){ h+=`<div class="sec"><h3>Example target symbols</h3><div class="list">`;
+    e.examples.forEach(s=>h+=`<div>${s}</div>`); h+=`</div></div>`; }
+  det(h);
+}
+
+/* ---------- controls ---------- */
+document.getElementById("viewSel").onclick=ev=>{ if(ev.target.tagName!=="BUTTON")return;
+  [...ev.currentTarget.children].forEach(b=>b.classList.remove("on")); ev.target.classList.add("on");
+  view=ev.target.dataset.v;
+  viewGraph.hidden=view!=="graph"; viewMatrix.hidden=view!=="matrix"; viewLayers.hidden=view!=="layers";
+  refresh(); };
+["fCall","fRef"].forEach(id=>document.getElementById(id).onchange=refresh);
+document.getElementById("search").oninput=ev=>{ query=ev.target.value.trim().toLowerCase();
+  if(view==="graph")applyHi(); else refresh(); };
+document.getElementById("reload").onclick=load;
+document.getElementById("allIn").onclick=()=>{ RAW.nodes.forEach(n=>SCOPE[n.id]=true); refresh(); };
+document.getElementById("allOut").onclick=()=>{ RAW.nodes.forEach(n=>SCOPE[n.id]=false); refresh(); };
+document.getElementById("reset").onclick=()=>{ RAW.nodes.forEach(n=>SCOPE[n.id]=RAW.initial_in_scope.includes(n.id)); refresh(); };
+document.getElementById("exportScope").onclick=()=>{
+  const inl=RAW.nodes.filter(n=>inScope(n.id)).map(n=>n.id);
+  const y="groups:\n  QUALIFIED: ["+inl.join(", ")+"]"; navigator.clipboard?.writeText(y);
+  det(`<h2>Scope as YAML</h2><p class="hint">Copied to clipboard. Paste into
+    zephyr_components.yaml → <code>groups.QUALIFIED</code>.</p>
+    <div class="list"><div>${y.replace(/\n/g,"<br>")}</div></div>`);
+};
+document.getElementById("svgGraph").addEventListener("click",()=>{ sel=null; applyHi(); showOverview(); });
+window.addEventListener("resize",()=>{ if(RAW&&view==="graph") fit(document.getElementById("svgGraph"),RAW.nodes); });
+load();
+</script>
+</body>
+</html>
