@@ -161,3 +161,51 @@ config BT_NXP_IW610
 endchoice # BT_NXP_MODULE
 
 endif # BT_H4_NXP_CTLR
+
+if (BT_NXP_NW612 && NXP_IW61X) || (BT_NXP_IW416 && NXP_IW416) || (BT_NXP_IW610 && NXP_IW610)
+
+config BT_NXP_CTRL_BSP_TRIGGER
+	bool "Trigger to wakeup BSP enabled NXP BT CPU"
+	default y
+	select UART_LINE_CTRL
+	help
+	  Enable Boot-Sleep-Patch (BSP) wakeup trigger for NXP BT
+	  IW416/NW612/IW610 firmware. In Wi-Fi + BT parallel FW download,
+	  if FW is BSP enabled, once Wi-Fi CPU has valid FW loaded (on CPU1),
+	  it puts BT CPU (CPU2) in sleep due to which BT bootloader stops
+	  sending out signature bytes for FW load. To wakeup BT CPU from
+	  sleep, BT HCI UART RTS line needs to be de-asserted (high to low)
+	  before host HCI driver begins FW load procedure on BT CPU.
+
+config BT_NXP_CTRL_BSP_RTS_PULSE_MS
+	int "RTS pulse duration in ms for BSP wakeup trigger"
+	range 1 50
+	default 10
+	depends on BT_NXP_CTRL_BSP_TRIGGER
+	help
+	  Duration in milliseconds for the RTS low pulse used to wake the
+	  BT CPU from boot-sleep state. This value is determined by the
+	  BT CPU bootloader's wakeup detection window.
+
+config BT_NXP_CTRL_HDR_SIG_INTERVAL
+	int "Interval for polling HDR signature on BSP enabled NXP BT CPU"
+	range 501 510
+	default 505
+	depends on BT_NXP_CTRL_BSP_TRIGGER
+	help
+	  Interval in milliseconds for polling HDR signature bytes from
+	  BSP enabled NXP BT CPU. The BT bootloader sends signature
+	  bytes at ~500ms intervals when awake. This value should be slightly
+	  larger than the signature period so that a timeout reliably indicates
+	  the BT CPU has entered BSP sleep.
+
+config BT_NXP_CTRL_BSP_WAIT_TIMEOUT
+	int "Timeout for waiting BT CPU to enter BSP sleep (ms)"
+	range 1000 20000
+	default 10000
+	depends on BT_NXP_CTRL_BSP_TRIGGER
+	help
+	  Maximum time in milliseconds to wait for BT CPU to enter
+	  boot-sleep-patch state before sending the wakeup trigger.
+
+endif # BT_NXP_NW612 || BT_NXP_IW416 || BT_NXP_IW610
