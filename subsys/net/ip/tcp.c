@@ -1476,10 +1476,8 @@ static int net_tcp_set_mss_opt(struct tcp *conn, struct net_pkt *pkt)
 static bool is_destination_local(struct net_pkt *pkt)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == NET_AF_INET) {
-		if (net_ipv4_is_addr_loopback(
-				(struct net_in_addr *)NET_IPV4_HDR(pkt)->dst) ||
-		    net_ipv4_is_my_addr(
-				(struct net_in_addr *)NET_IPV4_HDR(pkt)->dst)) {
+		if (net_ipv4_is_addr_loopback_raw(NET_IPV4_HDR(pkt)->dst) ||
+		    net_ipv4_is_my_addr_raw(NET_IPV4_HDR(pkt)->dst)) {
 			return true;
 		}
 	}
