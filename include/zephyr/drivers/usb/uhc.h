@@ -264,8 +264,8 @@ struct uhc_data {
 	sys_dlist_t ctrl_xfers;
 	/** dlist for bulk transfers */
 	sys_dlist_t bulk_xfers;
-	/** dlist for interrupt transfers, sorted in descending order by start_frame */
-	sys_dlist_t int_xfers;
+	/** dlist for periodic transfers, sorted in descending order by start_frame */
+	sys_dlist_t periodic_xfers;
 	/** Callback to submit an UHC event to upper layer */
 	uhc_event_cb_t event_cb;
 	/** Opaque pointer to store higher layer context */

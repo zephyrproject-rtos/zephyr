@@ -71,13 +71,13 @@ static inline int32_t xfer_seq_cmp(uint32_t a, uint32_t b)
 	return (int32_t)(a - b);
 }
 
-void uhc_xfer_add_to_int(const struct device *dev, struct uhc_transfer *const xfer)
+void uhc_xfer_add_periodic(const struct device *dev, struct uhc_transfer *const xfer)
 {
 	struct uhc_data *data = dev->data;
 	sys_dlist_t *periodic_list = &data->periodic_xfers;
 	struct uhc_transfer *curr;
 
-	SYS_DLIST_FOR_EACH_CONTAINER(int_list, curr, node) {
+	SYS_DLIST_FOR_EACH_CONTAINER(periodic_list, curr, node) {
 		if (xfer_seq_cmp(xfer->start_frame, curr->start_frame) < 0) {
 			continue;
 		}
@@ -85,7 +85,7 @@ void uhc_xfer_add_to_int(const struct device *dev, struct uhc_transfer *const xf
 		return;
 	}
 
-	sys_dlist_append(int_list, &xfer->node);
+	sys_dlist_append(periodic_list, &xfer->node);
 }
 
 void uhc_xfer_reschedule_periodic(const struct device *dev, struct uhc_transfer *const xfer,
@@ -103,9 +103,9 @@ void uhc_xfer_reschedule_periodic(const struct device *dev, struct uhc_transfer 
 	} while (xfer_seq_cmp(xfer->start_frame, frame_number) <= 0);
 
 	sys_dlist_remove(&xfer->node);
-	uhc_xfer_add_to_int(dev, xfer);
+	uhc_xfer_add_periodic(dev, xfer);
 
-	LOG_DBG("Interrupt transfer advance frame old s.f. %u new s.f %u f.n. %u interval %u",
+	LOG_DBG("Periodic transfer advance frame old s.f. %u new s.f %u f.n. %u interval %u",
 		old_start_frame, xfer->start_frame, frame_number, xfer->interval);
 }
 
@@ -124,8 +124,8 @@ static struct uhc_transfer *uhc_xfer_get_next_periodic(const struct device *dev,
 	struct uhc_transfer *xfer = NULL;
 	sys_dnode_t *node;
 
-	for (node = sys_dlist_peek_tail(&data->int_xfers); node != NULL;
-	     node = sys_dlist_peek_prev(&data->int_xfers, node)) {
+	for (node = sys_dlist_peek_tail(&data->periodic_xfers); node != NULL;
+	     node = sys_dlist_peek_prev(&data->periodic_xfers, node)) {
 		xfer = SYS_DLIST_CONTAINER(node, xfer, node);
 
 		if (xfer_seq_cmp(xfer->start_frame, frame_number) > 0) {
@@ -194,9 +194,8 @@ int uhc_xfer_append(const struct device *dev,
 		sys_dlist_append(&data->bulk_xfers, &xfer->node);
 		break;
 	case USB_EP_TYPE_ISO:
-		LOG_WRN("Iso xfers not implemeted yet, treating as interrupt xfer");
 	case USB_EP_TYPE_INTERRUPT:
-		uhc_xfer_add_to_int(dev, xfer);
+		uhc_xfer_add_periodic(dev, xfer);
 		break;
 	default:
 		LOG_ERR("Invalid xfer type: %d", xfer->type);
@@ -510,7 +509,7 @@ int uhc_init(const struct device *dev,
 	data->event_ctx = event_ctx;
 	sys_dlist_init(&data->ctrl_xfers);
 	sys_dlist_init(&data->bulk_xfers);
-	sys_dlist_init(&data->int_xfers);
+	sys_dlist_init(&data->periodic_xfers);
 
 	ret = api->init(dev);
 	if (ret == 0) {
