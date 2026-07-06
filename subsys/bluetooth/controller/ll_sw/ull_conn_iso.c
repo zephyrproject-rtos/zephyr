@@ -79,6 +79,16 @@ static void ticker_next_slot_get_op_cb(uint32_t status, void *param);
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 static void ticker_start_op_cb(uint32_t status, void *param);
 static void ticker_update_cig_op_cb(uint32_t status, void *param);
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			     uint32_t remainder, uint16_t lazy, uint8_t force,
+			     void *param);
+static void ticker_op_start_cb(uint32_t status, void *param);
+static void cig_resume_ticker_start(struct ll_conn_iso_group *cig);
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
 static void cis_disabled_cb(void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void cig_disable(void *param);
@@ -95,6 +105,7 @@ static void *cig_free;
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
 	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
 static struct ticker_ext cig_ticker_ext[CONFIG_BT_CTLR_CONN_ISO_GROUPS];
+static struct ticker_ext cig_resume_ticker_ext[CONFIG_BT_CTLR_CONN_ISO_GROUPS];
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
 	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
 	*/
@@ -823,9 +834,134 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	err = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0, &mfy);
 	LL_ASSERT_ERR(!err);
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+	if ((IS_PERIPHERAL(cig) &&
+	     IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER) &&
+	     !IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO_RESERVE_MAX)) ||
+	    (IS_CENTRAL(cig) &&
+	     IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) &&
+	     !IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO_RESERVE_MAX))) {
+		/* The CIG ticker reserves the leading burst subevents of the
+		 * CIS the CIG event has drifted into; reserve the subevents of
+		 * the successive CISes, so that a preempted CIG event can be
+		 * resumed for reception.
+		 */
+		cig->ticks_resume_anchor = ticker_ticks_diff_get(ticks_at_expire, ticks_drift);
+		cig->resume_offset_us = HAL_TICKER_TICKS_TO_US(ticks_drift);
+
+		cig_resume_ticker_start(cig);
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
+
 	/* Handle ISO Transmit Test for this CIG */
 	ull_conn_iso_transmit_test_cig_interval(cig->lll.handle, ticks_at_expire);
 }
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			     uint32_t remainder, uint16_t lazy, uint8_t force,
+			     void *param)
+{
+	ARG_UNUSED(ticks_at_expire);
+	ARG_UNUSED(ticks_drift);
+	ARG_UNUSED(remainder);
+	ARG_UNUSED(lazy);
+	ARG_UNUSED(force);
+
+	/* Reserve the subevents of the CIS following the one just reserved */
+	cig_resume_ticker_start(param);
+}
+
+static void cig_resume_ticker_start(struct ll_conn_iso_group *cig)
+{
+	struct ll_conn_iso_stream *cis_next;
+	struct ll_conn_iso_stream *cis;
+	uint32_t ticks_slot_window;
+	uint16_t handle_iter;
+	uint32_t ticks_slot;
+	uint32_t ret_status;
+	uint32_t jitter_us;
+	uint32_t slot_us;
+	uint8_t burst;
+	uint8_t index;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED) && (cig->lll.packing != 0U)) {
+		return;
+	}
+
+	/* Find the active CIS with the earliest offset after the CIS reserved
+	 * last, or after the CIS the CIG event has drifted into.
+	 */
+	cis_next = NULL;
+	handle_iter = UINT16_MAX;
+	for (uint8_t i = 0U; i < cig->lll.num_cis; i++) {
+		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
+		if ((cis == NULL) || (cis->lll.handle == LLL_HANDLE_INVALID) ||
+		    (cis->lll.active == 0U) || (cis->lll.offset <= cig->resume_offset_us)) {
+			continue;
+		}
+
+		if ((cis_next == NULL) || (cis->lll.offset < cis_next->lll.offset)) {
+			cis_next = cis;
+		}
+	}
+
+	if (cis_next == NULL) {
+		return;
+	}
+
+	cig->resume_offset_us = cis_next->lll.offset;
+
+	/* Reserve the burst subevents of the CIS, the remaining subevents of
+	 * the CIS are in the jitter window, same as the CIG ticker.
+	 */
+	burst = MAX(cis_next->lll.tx.bn, cis_next->lll.rx.bn);
+	slot_us = cis_next->lll.sub_interval * burst;
+	jitter_us = cis_next->lll.sub_interval * (cis_next->lll.nse - burst);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
+		slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+	}
+
+	ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
+	ticks_slot_window = HAL_TICKER_US_TO_TICKS(jitter_us) + ticks_slot;
+
+	index = ll_conn_iso_group_handle_get(cig);
+	cig_resume_ticker_ext[index].ticks_slot_window = ticks_slot_window;
+	cig_resume_ticker_ext[index].is_jitter_in_window = 1U;
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	cig_resume_ticker_ext[index].expire_info_id = TICKER_NULL;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
+	ret_status = ticker_start_ext(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+				      (TICKER_ID_CONN_ISO_RESUME_BASE + index),
+				      cig->ticks_resume_anchor,
+				      HAL_TICKER_US_TO_TICKS(cis_next->lll.offset),
+				      TICKER_NULL_PERIOD, TICKER_NULL_REMAINDER,
+				      TICKER_NULL_LAZY, ticks_slot,
+				      ticker_resume_cb, cig, ticker_op_start_cb,
+				      (void *)__LINE__, &cig_resume_ticker_ext[index]);
+	LL_ASSERT_ERR((ret_status == TICKER_STATUS_SUCCESS) ||
+		      (ret_status == TICKER_STATUS_BUSY));
+}
+
+static void ticker_op_start_cb(uint32_t status, void *param)
+{
+	ARG_UNUSED(status);
+	ARG_UNUSED(param);
+
+	/* NOTE: The reservation is not placed when it collides with other
+	 *       reservations, the CIG event may then be preempted and resumed
+	 *       without reserved time.
+	 */
+}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
 
 void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 			uint32_t ticks_at_expire, uint32_t remainder,
@@ -1119,10 +1255,13 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 
 		/* Reserve only the minimum time for the leading CIS burst
 		 * subevents, and use the jitter window to wrap the CIG event
-		 * around overlapping roles.
+		 * around overlapping roles. The jitter window is bounded so
+		 * that the CIS retains at least its burst number of subevents,
+		 * a larger drift would skip all subevents of the CIS event.
 		 */
 		slot_us = cis->lll.sub_interval * MAX(cis->lll.tx.bn, cis->lll.rx.bn);
-		jitter_us = cig->sync_delay - slot_us;
+		jitter_us = cis->lll.sub_interval *
+			    (cis->lll.nse - MAX(cis->lll.tx.bn, cis->lll.rx.bn));
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
 			slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
