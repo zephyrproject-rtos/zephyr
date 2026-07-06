@@ -1228,12 +1228,11 @@ config CACHE_MANAGEMENT
 	  This option enables the cache management functions backed by arch or
 	  driver code.
 
-if CACHE_MANAGEMENT
-
 if DCACHE
 
 config DCACHE_LINE_SIZE_DETECT
 	bool "Detect d-cache line size at runtime"
+	depends on CACHE_MANAGEMENT
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the d-cache line size at the expense of taking more memory and
@@ -1260,6 +1259,7 @@ if ICACHE
 
 config ICACHE_LINE_SIZE_DETECT
 	bool "Detect i-cache line size at runtime"
+	depends on CACHE_MANAGEMENT
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the i-cache line size at the expense of taking more memory and
@@ -1281,6 +1281,8 @@ config ICACHE_LINE_SIZE
 	  Detect automatically at runtime by selecting ICACHE_LINE_SIZE_DETECT.
 
 endif # ICACHE
+
+if CACHE_MANAGEMENT
 
 choice CACHE_TYPE
 	prompt "Cache type"
