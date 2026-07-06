@@ -182,6 +182,12 @@
 	};
 };
 
+stm32_lp_tick_source: &lptim1 {
+	clocks = <&rcc STM32_CLOCK(APB3, 11)>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
+};
+
 &iwdg {
 	status = "okay";
 };

@@ -28,7 +28,7 @@
 
 		green_led_2: led_2 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
-			label = "User LD4";
+			label = "User LD2";
 		};
 	};
 
@@ -234,6 +234,12 @@ zephyr_udc0: &usb {
 		pinctrl-0 = <&tim2_ch1_pa5>;
 		pinctrl-names = "default";
 	};
+};
+
+stm32_lp_tick_source: &lptim1 {
+	clocks = <&rcc STM32_CLOCK(APB3, 11)>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
 };
 
 &crc {
