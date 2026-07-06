@@ -8,11 +8,13 @@
 
 /*
  * Default SRAM planning when building for nRF7120 with ARM TrustZone-M support
- * - Lowest 128 kB in RAM00 allocated to Secure RAM (sram0_s).
- * - Upper 384 kB in RAM00 allocated to Non-Secure RAM (sram00_ns).
- * - 256 kB SRAM in RAM01 allocated to Non-Secure RAM (sram01_ns).
- * - 128 kB SRAM in RAM02 allocated to Non-Secure RAM (sram02_ns).
- * - 120 kB SRAM in RAM03 allocated to Non-Secure RAM (sram03_ns).
+ * Lowest 96 kB allocated to Secure RAM (sram0_s).
+ *   - 96 kB SRAM in RAM00 allocated to Secure RAM      (sram00_s).
+ * Upper 920 kB allocated to Non-Secure RAM (sram0_ns).
+ *   - 416 kB SRAM in RAM00 allocated to Non-Secure RAM (sram00_ns).
+ *   - 256 kB SRAM in RAM01 allocated to Non-Secure RAM (sram01_ns).
+ *   - 128 kB SRAM in RAM02 allocated to Non-Secure RAM (sram02_ns).
+ *   - 120 kB SRAM in RAM03 allocated to Non-Secure RAM (sram03_ns).
  *
  * cpuapp_sram has 1016 kB of volatile memory (SRAM).
  * This static layout needs to be the same with the upstream TF-M layout in the
@@ -24,23 +26,23 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		/* Secure RAM */
-		reg = <0x0 DT_SIZE_K(128)>; /* 0x2000_0000 */
-		ranges = <0x0 0x0 DT_SIZE_K(128)>;
+		reg = <0x0 DT_SIZE_K(96)>; /* 0x2000_0000 */
+		ranges = <0x0 0x0 DT_SIZE_K(96)>;
 	};
 
-	sram0_ns: sram@20000 {
+	sram0_ns: sram@18000 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		/* Non-Secure RAM */
-		reg = <0x20000 DT_SIZE_K(888)>; /* 0x2002_0000 */
-		ranges = <0x0 0x20000 DT_SIZE_K(888)>;
+		reg = <0x18000 DT_SIZE_K(920)>; /* 0x2001_8000 */
+		ranges = <0x0 0x18000 DT_SIZE_K(920)>;
 
 		sram00_ns: sram0_ns@0 {
 			#address-cells = <1>;
 			#size-cells = <1>;
 			/* Non-Secure RAM */
-			reg = <0x0 DT_SIZE_K(384)>; /* 0x2002_0000 */
-			ranges = <0x0 0x0 DT_SIZE_K(384)>;
+			reg = <0x0 DT_SIZE_K(416)>; /* 0x2001_8000 */
+			ranges = <0x0 0x0 DT_SIZE_K(416)>;
 		};
 
 		sram01_ns: sram0_ns@60000 {
