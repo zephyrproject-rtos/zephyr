@@ -81,7 +81,7 @@ config HCI_NXP_RX_THREAD
 
 endif # BT
 
-if IEEE802154
+if IEEE802154 || NXP_IEEE802154_MAC
 
 # Include intercore messaging component
 config NXP_RF_IMU
