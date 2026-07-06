@@ -7,42 +7,6 @@
 static int quic_send_max_stream_data(struct quic_endpoint *ep,
 				     struct quic_stream *stream);
 static int quic_send_frame_close(struct quic_endpoint *ep, uint8_t frame_type,
-				 uint64_t error_code, const char *reason);
-
-ZTESTABLE_STATIC int quic_track_early_data_bytes(struct quic_endpoint *ep, uint8_t frame_type,
-						 uint64_t data_len)
-{
-	struct quic_tls_context *tls = &ep->crypto.tls;
-
-	if (!IS_ENABLED(CONFIG_QUIC_0RTT)) {
-		return quic_send_frame_close(ep, frame_type,
-					     QUIC_ERROR_PROTOCOL_VIOLATION,
-					     "0-RTT disabled");
-	}
-
-	if (!ep->is_server || data_len == 0U) {
-		return 0;
-	}
-
-	if (!tls->early_data_accepted) {
-		return quic_send_frame_close(ep, frame_type,
-					     QUIC_ERROR_PROTOCOL_VIOLATION,
-					     "0-RTT not accepted");
-	}
-
-	if ((uint64_t)tls->early_data_bytes_received + data_len >
-	    (uint64_t)tls->max_early_data_size) {
-		return quic_send_frame_close(ep, frame_type,
-					     QUIC_ERROR_PROTOCOL_VIOLATION,
-					     "0-RTT exceeds early-data limit");
-	}
-
-	tls->early_data_bytes_received += (uint32_t)data_len;
-
-	return 0;
-}
-
-static int quic_send_frame_close(struct quic_endpoint *ep, uint8_t frame_type,
 				 uint64_t error_code, const char *reason)
 {
 	int ret;
@@ -303,34 +267,28 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 		k_yield();
 	}
 
-	if (level == QUIC_SECRET_LEVEL_EARLY) {
-		int early_ret;
-
-		stream->received_early_data = true;
-
-		/* Enforce the early-data limit before delivering the bytes to
-		 * the stream, so data beyond max_early_data_size never reaches
-		 * the application even transiently (RFC 9001 4.6.1). Count the
-		 * received STREAM frame length as the RFC specifies.
-		 */
-		early_ret = quic_track_early_data_bytes(ep, frame_type, data_len);
-		if (early_ret < 0) {
-			return early_ret;
-		}
-	}
-
 	/* Deliver data to the stream */
 	ret = quic_stream_receive_data(stream, offset, &buf[pos], data_len, is_fin);
-	if (ret < 0) {
-		if (ret == -EAGAIN) {
-			/* Out-of-order data. This is not fatal, consume the frame bytes */
-			*consumed = pos + data_len;
-			return pos + data_len;
-		}
-
+	if (ret < 0 && ret != -EAGAIN) {
+		/* A fatal receive error. -EAGAIN is not fatal: it only means the
+		 * data was out of order and has been stashed for later reassembly.
+		 */
 		NET_DBG("[CO:%p/%d] Failed to deliver stream data: %d",
 			conn, quic_get_by_conn(conn), ret);
 		return ret;
+	}
+
+	if (level == QUIC_SECRET_LEVEL_EARLY) {
+		/* RFC 9001 4.6.1: the amount of 0-RTT data a client may send is
+		 * bounded by the connection's flow-control limits (transport
+		 * parameters), which quic_stream_receive_data() enforces above.
+		 * Mark that this stream carried accepted early data only after the
+		 * data has actually been accepted (delivered in order, or stashed
+		 * on -EAGAIN), so a fatal receive error does not leave the stream
+		 * wrongly flagged and trigger replay protection (e.g. HTTP/3 425)
+		 * for early data that was never accepted.
+		 */
+		stream->received_early_data = true;
 	}
 
 	*consumed = pos + data_len;

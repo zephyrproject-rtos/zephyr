@@ -31,6 +31,14 @@ static int tls_emit_client_early_traffic_secret(struct quic_tls_context *ctx);
  * resumption is considered fresh enough to accept early data.
  */
 #define QUIC_SESSION_TICKET_AGE_WINDOW_MS 10000U
+/* RFC 9001 4.6.1: in QUIC the NewSessionTicket early_data extension
+ * max_early_data_size MUST be 0xffffffff. The real amount of early data a
+ * client may send is bounded by the connection's flow-control limits
+ * (transport parameters), not by this field. A client MUST treat any other
+ * value as a connection error. The server's configured value is only an
+ * enable signal used to decide whether to offer 0-RTT on issued tickets.
+ */
+#define QUIC_TLS_EARLY_DATA_SENTINEL 0xFFFFFFFFU
 
 struct quic_server_ticket_entry {
 	uint8_t ticket[QUIC_SESSION_TICKET_ID_LEN];
@@ -1298,7 +1306,6 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 	ctx->early_data_offered = false;
 	ctx->early_data_accepted = false;
 	ctx->early_data_rejected = false;
-	ctx->early_data_bytes_received = 0U;
 
 	while (pos + 4 <= ext_end) {
 		uint16_t ext_type = (data[pos] << 8) | data[pos + 1];
@@ -3045,8 +3052,8 @@ static int send_client_finished(struct quic_tls_context *ctx)
 	return 0;
 }
 
-static int parse_new_session_ticket(struct quic_tls_context *ctx,
-				    const uint8_t *msg, size_t msg_len)
+ZTESTABLE_STATIC int parse_new_session_ticket(struct quic_tls_context *ctx,
+					      const uint8_t *msg, size_t msg_len)
 {
 	size_t pos = 0;
 	size_t ticket_nonce_pos;
@@ -3132,6 +3139,15 @@ static int parse_new_session_ticket(struct quic_tls_context *ctx,
 					      ((uint32_t)msg[pos + 1] << 16) |
 					      ((uint32_t)msg[pos + 2] << 8) |
 					      (uint32_t)msg[pos + 3];
+
+			/* RFC 9001 4.6.1: in QUIC this MUST be the fixed sentinel;
+			 * any other value is a PROTOCOL_VIOLATION.
+			 */
+			if (max_early_data_size != QUIC_TLS_EARLY_DATA_SENTINEL) {
+				NET_DBG("Invalid NewSessionTicket max_early_data_size %u",
+					max_early_data_size);
+				return -EPROTO;
+			}
 		}
 
 		pos += ext_len;
@@ -3233,16 +3249,20 @@ static int quic_tls_send_new_session_ticket(struct quic_tls_context *ctx)
 	pos += sizeof(ticket);
 
 	if (quic_0rtt_enabled() && ctx->max_early_data_size > 0U) {
+		/* RFC 9001 4.6.1: QUIC always advertises the fixed sentinel; the
+		 * server's configured byte cap is kept locally in the ticket
+		 * cache and enforced per received early-data STREAM frame.
+		 */
 		msg[pos++] = 0x00;
 		msg[pos++] = 0x08;
 		msg[pos++] = 0x00;
 		msg[pos++] = TLS_EXT_EARLY_DATA;
 		msg[pos++] = 0x00;
 		msg[pos++] = 0x04;
-		msg[pos++] = (ctx->max_early_data_size >> 24) & 0xFF;
-		msg[pos++] = (ctx->max_early_data_size >> 16) & 0xFF;
-		msg[pos++] = (ctx->max_early_data_size >> 8) & 0xFF;
-		msg[pos++] = ctx->max_early_data_size & 0xFF;
+		msg[pos++] = (QUIC_TLS_EARLY_DATA_SENTINEL >> 24) & 0xFF;
+		msg[pos++] = (QUIC_TLS_EARLY_DATA_SENTINEL >> 16) & 0xFF;
+		msg[pos++] = (QUIC_TLS_EARLY_DATA_SENTINEL >> 8) & 0xFF;
+		msg[pos++] = QUIC_TLS_EARLY_DATA_SENTINEL & 0xFF;
 	} else {
 		msg[pos++] = 0x00;
 		msg[pos++] = 0x00;

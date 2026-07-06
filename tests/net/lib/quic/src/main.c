@@ -1207,69 +1207,48 @@ ZTEST(net_socket_quic, test_085_rejected_early_data_disarms_send_path)
 		      "Rejected early data must fall back to application keys");
 }
 
-/* The server must enforce the negotiated 0-RTT early-data limit on the
- * received STREAM frame length before the bytes are delivered to the stream,
- * so data beyond max_early_data_size never reaches the application, even
- * transiently (RFC 9001 4.6.1). handle_stream_frame() calls
- * quic_track_early_data_bytes() on the received frame length ahead of
- * quic_stream_receive_data(); this exercises that accounting decision.
+/* RFC 9001 4.6.1: a QUIC NewSessionTicket early_data extension MUST carry the
+ * fixed 0xffffffff sentinel; the client MUST reject any other value as a
+ * PROTOCOL_VIOLATION instead of interpreting it as a byte limit.
  */
-ZTEST(net_socket_quic, test_088_server_early_data_limit_enforced)
+ZTEST(net_socket_quic, test_089_new_session_ticket_early_data_must_be_sentinel)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_tls_context *tls = &ep->crypto.tls;
+	uint8_t ticket_msg[] = {
+		0x00, 0x00, 0x00, 0x00,   /* ticket_lifetime */
+		0x00, 0x00, 0x00, 0x00,   /* ticket_age_add */
+		0x00,                     /* ticket_nonce_len = 0 */
+		0x00, 0x01,               /* ticket_len = 1 */
+		0xaa,                     /* ticket identity */
+		0x00, 0x08,               /* extensions_len = 8 */
+		0x00, TLS_EXT_EARLY_DATA, /* early_data extension */
+		0x00, 0x04,               /* ext_len = 4 */
+		0x00, 0x00, 0x10, 0x00,   /* max_early_data_size = 4096 (not the sentinel) */
+	};
 	int ret;
 
-	ep->is_server = true;
-	ep->crypto.tls.early_data_accepted = true;
-	ep->crypto.tls.max_early_data_size = 16U;
-	ep->crypto.tls.early_data_bytes_received = 0U;
-
-	if (!IS_ENABLED(CONFIG_QUIC_0RTT)) {
-		/* With 0-RTT compiled out, any early-data STREAM byte is a
-		 * protocol violation regardless of the accounting fields.
-		 */
-		ret = quic_track_early_data_bytes(ep, QUIC_FRAME_TYPE_STREAM_BASE, 1U);
-		zassert_equal(ret, -EPROTO,
-			      "0-RTT disabled must reject early data (%d)", ret);
-		return;
-	}
-
-	/* Data within the limit is accepted and accumulated. */
-	ret = quic_track_early_data_bytes(ep, QUIC_FRAME_TYPE_STREAM_BASE, 10U);
-	zassert_ok(ret, "Early data within the limit must be accepted (%d)", ret);
-	zassert_equal(ep->crypto.tls.early_data_bytes_received, 10U,
-		      "Accepted early data must be counted");
-
-	/* Reaching the limit exactly is still allowed. */
-	ret = quic_track_early_data_bytes(ep, QUIC_FRAME_TYPE_STREAM_BASE, 6U);
-	zassert_ok(ret, "Early data up to the limit must be accepted (%d)", ret);
-	zassert_equal(ep->crypto.tls.early_data_bytes_received, 16U,
-		      "Early data at the limit must be counted");
-
-	/* One byte past the negotiated limit is a protocol violation and must
-	 * not be counted (the connection is torn down instead of delivering).
+	ep->is_server = false;
+	tls->ep = ep;
+	/* Short-circuit the resumption-master-secret derivation so the parser
+	 * reaches the early_data extension without a full key schedule.
 	 */
-	ret = quic_track_early_data_bytes(ep, QUIC_FRAME_TYPE_STREAM_BASE, 1U);
-	zassert_equal(ret, -EPROTO,
-		      "Early data over the limit must be rejected (%d)", ret);
-	zassert_equal(ep->crypto.tls.early_data_bytes_received, 16U,
-		      "Over-limit early data must not be counted");
+	tls->ks.hash_alg = PSA_ALG_SHA_256;
+	tls->ks.hash_len = 32U;
+	tls->resumption_master_secret_len = 32U;
 
-	/* A single frame larger than the whole limit must also be rejected
-	 * before any byte is counted.
-	 */
-	ep->crypto.tls.early_data_bytes_received = 0U;
-	ret = quic_track_early_data_bytes(ep, QUIC_FRAME_TYPE_STREAM_BASE, 17U);
+	ret = parse_new_session_ticket(tls, ticket_msg, sizeof(ticket_msg));
 	zassert_equal(ret, -EPROTO,
-		      "Oversized early-data frame must be rejected (%d)", ret);
-	zassert_equal(ep->crypto.tls.early_data_bytes_received, 0U,
-		      "Rejected oversized frame must not be counted");
+		      "Non-sentinel early_data size must be rejected (%d)", ret);
 
-	/* Early data before the server accepted 0-RTT is a protocol violation. */
-	ep->crypto.tls.early_data_accepted = false;
-	ret = quic_track_early_data_bytes(ep, QUIC_FRAME_TYPE_STREAM_BASE, 1U);
-	zassert_equal(ret, -EPROTO,
-		      "Early data without acceptance must be rejected (%d)", ret);
+	/* The RFC-mandated 0xffffffff sentinel must instead be accepted. */
+	ticket_msg[18] = 0xFF;
+	ticket_msg[19] = 0xFF;
+	ticket_msg[20] = 0xFF;
+	ticket_msg[21] = 0xFF;
+
+	ret = parse_new_session_ticket(tls, ticket_msg, sizeof(ticket_msg));
+	zassert_ok(ret, "Sentinel early_data size must be accepted (%d)", ret);
 }
 
 ZTEST(net_socket_quic, test_090_recovery_shutdown_stops_tracking)
@@ -4811,8 +4790,12 @@ static void quic_server_and_client_with_session_resumption(const char *server, c
 		      "Unexpected session state version %u", session_state.version);
 	zassert_true(session_state.ticket_len > 0U, "Expected a non-empty session ticket");
 	zassert_true(session_state.psk_len > 0U, "Expected a non-empty resumption PSK");
-	expected_early_data_size = IS_ENABLED(CONFIG_QUIC_0RTT) ?
-		ticket_early_data_size : 0U;
+	/* RFC 9001 4.6.1: QUIC advertises the fixed 0xffffffff sentinel in the
+	 * ticket, so a resumable 0-RTT state remembers that value (not the
+	 * server's byte cap); the real limit comes from transport parameters.
+	 */
+	expected_early_data_size = (IS_ENABLED(CONFIG_QUIC_0RTT) && ticket_early_data_size > 0U) ?
+		UINT32_MAX : 0U;
 	zassert_equal(session_state.max_early_data_size, expected_early_data_size,
 		      "Unexpected remembered early-data size %" PRIu32,
 		      session_state.max_early_data_size);
