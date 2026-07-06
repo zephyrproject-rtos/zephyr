@@ -431,8 +431,7 @@ static void wait_for_tx_work(struct bt_conn *conn)
 #if defined(CONFIG_BT_CONN_TX)
 	LOG_DBG("conn %p", conn);
 
-	if (IS_ENABLED(CONFIG_BT_RECV_WORKQ_SYS) ||
-	    k_current_get() == k_work_queue_thread_get(&k_sys_work_q)) {
+	if (k_current_get() == k_work_queue_thread_get(&k_sys_work_q)) {
 		tx_notify(conn);
 	} else {
 		struct k_work_sync sync;
