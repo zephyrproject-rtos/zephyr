@@ -53,4 +53,19 @@
 		clock-names = "fck";
 		status = "disabled";
 	};
+
+	wkup_rtc0: rtc@2b1f0000 {
+		compatible = "ti,k3-rtc-counter";
+		reg = <0x2b1f0000 0x64>;
+		clock-frequency = <DT_FREQ_K(32)>;
+		clocks = <&scmi_clk 272>;
+		power-domains = <&wkup_rtc0_pd>;
+		status = "disabled";
+
+		counter_rtc0: counter_rtc {
+			compatible = "zephyr,rtc-counter";
+			alarms-count = <2>;
+			status = "disabled";
+		};
+	};
 };
