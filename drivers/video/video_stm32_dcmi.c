@@ -65,7 +65,7 @@ static void stm32_dcmi_process_dma_error(DCMI_HandleTypeDef *hdcmi)
 
 	/* Lets try to recover by stopping and restart */
 	if (HAL_DCMI_Stop(&dev_data->hdcmi) != HAL_OK) {
-		LOG_WRN("HAL_DCMI_Stop FAILED!");
+		LOG_DBG("HAL_DCMI_Stop FAILED!");
 		return;
 	}
 
@@ -261,8 +261,7 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 
 		hal_ret = HAL_DCMI_Stop(&data->hdcmi);
 		if (hal_ret != HAL_OK) {
-			LOG_ERR("Failed to stop DCMI");
-			return -EIO;
+			LOG_DBG("Failed to stop DCMI");
 		}
 
 		/* Release the video buffer allocated when start streaming */
