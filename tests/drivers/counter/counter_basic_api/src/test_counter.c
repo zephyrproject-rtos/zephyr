@@ -889,15 +889,14 @@ static void test_valid_function_without_alarm(const struct device *dev)
 
 	/* counter might not start from 0, use current value as offset */
 	counter_get_value(dev, &tick_current);
+	k_busy_wait(wait_for_us);
+	err = counter_get_value(dev, &ticks);
+
 	if (counter_is_counting_up(dev)) {
 		ticks_expected += tick_current;
 	} else {
 		ticks_expected = tick_current - ticks_expected;
 	}
-
-	k_busy_wait(wait_for_us);
-
-	err = counter_get_value(dev, &ticks);
 
 	zassert_equal(0, err, "%s: could not get counter value", dev->name);
 	zassert_between_inclusive(
