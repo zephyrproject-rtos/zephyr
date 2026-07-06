@@ -58,6 +58,7 @@ except ImportError:
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import list_boards
 import list_hardware
+import zephyr_header_guards
 from get_maintainer import Maintainers, MaintainersError
 
 sys.path.insert(
@@ -548,6 +549,52 @@ class KconfigFormatCheck(ComplianceTest):
                     col=col,
                     desc=message,
                 )
+
+
+class HeaderGuardCheck(ComplianceTest):
+    """
+    Checks that public headers under include/zephyr/ use a canonical include
+    guard named ZEPHYR_INCLUDE_<path> derived from the header path.
+    """
+
+    name = "HeaderGuard"
+    doc = zephyr_doc_detail_builder("/contribute/coding_guidelines/index.html")
+
+    def run(self):
+        # Only check headers that are newly added by this change.
+        # (git diff-filter "A"); existing headers are left untouched so the
+        # convention is enforced incrementally on new files only.
+        for file in get_files(filter="A"):
+            if not file.endswith(".h"):
+                continue
+            # Only public headers under include/zephyr/ are subject to the
+            # ZEPHYR_INCLUDE_<path> include guard naming convention.
+            posix = PurePath(file).as_posix()
+            if not posix.startswith("include/zephyr/"):
+                continue
+
+            abs_path = GIT_TOP / file
+            try:
+                original = abs_path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+
+            include_root = zephyr_header_guards.find_include_root(abs_path)
+            guard = zephyr_header_guards.expected_guard(abs_path, include_root)
+            _, action = zephyr_header_guards.process(original, guard)
+
+            if action == "ok":
+                continue
+
+            if action == "added":
+                desc = f"missing include guard; expected '{guard}'"
+            elif action == "pragma":
+                desc = f"replace '#pragma once' with include guard '{guard}'"
+            else:
+                desc = f"include guard should be named '{guard}'"
+            desc += " (run scripts/zephyr_header_guards.py to fix)"
+
+            self.fmtd_failure("error", "HeaderGuard", file, desc=desc)
 
 
 class DevicetreeBindingsCheck(ComplianceTest):
