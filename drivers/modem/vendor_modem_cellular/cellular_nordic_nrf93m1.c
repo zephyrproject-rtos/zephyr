@@ -6,13 +6,19 @@
 
 #include <zephyr/drivers/modem/modem_cellular.h>
 
+#include <stdlib.h>
+
 #define DT_DRV_COMPAT nordic_nrf93m1
+
+static void nrf93m1_on_bcinfosc(struct modem_chat *chat, char **argv, uint16_t argc,
+				void *user_data);
 
 MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 MODEM_CHAT_MATCH_DEFINE(pwd_match, "POWERED DOWN", "", NULL);
 
 MODEM_CHAT_MATCHES_DEFINE(nordic_nrf93m1_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES,
-			  MODEM_CHAT_MATCH("RDY", "", modem_cellular_chat_on_modem_ready));
+			  MODEM_CHAT_MATCH("RDY", "", modem_cellular_chat_on_modem_ready),
+			  MODEM_CHAT_MATCH("%BCINFOSC:", ",", nrf93m1_on_bcinfosc));
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	nordic_nrf93m1_init_chat_script_cmds,
@@ -56,12 +62,50 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf93m1_shutdown_chat_script,
 			 nordic_nrf93m1_shutdown_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 10);
 
+/* Basic cell information for only the serving cell */
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf93m1_periodic_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT%BCINFO=0,4,0,1", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf93m1_periodic_chat_script,
+			 nordic_nrf93m1_periodic_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 4);
+
+static void nrf93m1_on_bcinfosc(struct modem_chat *chat, char **argv, uint16_t argc,
+				void *user_data)
+{
+	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+	struct cellular_evt_network_status evt = {
+		.status = data->registration_status_lte,
+		.access_tech = data->access_tech,
+	};
+
+	if (argc >= 9) {
+		/* MCC, MNC, GCI and TAC are quoted with " characters */
+		evt.cell.lte.earfcn = strtol(argv[1], NULL, 10);
+		evt.cell.lte.phys_cell_id = strtol(argv[2], NULL, 10);
+		evt.cell.lte.rsrp = strtol(argv[3], NULL, 10);
+		evt.cell.lte.rsrq = strtol(argv[4], NULL, 10);
+		evt.cell.lte.mcc = strtol(argv[5] + 1, NULL, 10);
+		evt.cell.lte.mnc = strtol(argv[6] + 1, NULL, 10);
+		evt.cell.lte.gci = strtol(argv[7] + 1, NULL, 16);
+		evt.cell.lte.tac = strtol(argv[8] + 1, NULL, 16);
+		/* LTE band not explicitly provided (by any command)
+		 * but can be derived from EARFCN offline. Set to 0 as
+		 * an invalid marker.
+		 */
+		evt.cell.lte.band = 0;
+	}
+
+	modem_cellular_emit_event(data, CELLULAR_EVENT_NETWORK_STATUS_CHANGED, &evt);
+}
+
 static const struct modem_cellular_vendor_config nrf93m1_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &nordic_nrf93m1_init_chat_script,
 		.network = &nordic_nrf93m1_network_chat_script,
 		.dial = &nordic_nrf93m1_dial_chat_script,
+		.periodic = &nordic_nrf93m1_periodic_chat_script,
 		.shutdown = &nordic_nrf93m1_shutdown_chat_script,
 	},
 	.unsol_matches = {
