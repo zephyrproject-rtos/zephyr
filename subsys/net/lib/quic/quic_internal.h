@@ -36,6 +36,9 @@
 #define ALPN_MAX_PROTOCOLS 0
 #endif /* CONFIG_QUIC_TLS_MAX_APP_PROTOCOLS */
 
+/* Maximum client SNI hostname (RFC 6066 server_name), including NUL. */
+#define QUIC_TLS_MAX_HOSTNAME_LEN 128
+
 #define MAX_CONN_ID_LEN 20
 #define MAX_MY_CONN_ID_LEN 8
 
@@ -343,6 +346,9 @@ struct quic_tls_context {
 		 * protocols.
 		 */
 		const char *alpn_list[ALPN_MAX_PROTOCOLS + 1];
+
+		/** Client SNI hostname (RFC 6066 server_name); empty = not sent. */
+		char hostname[QUIC_TLS_MAX_HOSTNAME_LEN];
 
 #if defined(CONFIG_QUIC_TLS_CERT_VERIFY_CALLBACK)
 		struct tls_cert_verify_cb cert_verify;
