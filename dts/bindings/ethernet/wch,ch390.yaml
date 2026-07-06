@@ -1,0 +1,22 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH390 10/100BASE-T Ethernet controller with SPI interface
+
+compatible: "wch,ch390"
+
+include: [spi-device.yaml, ethernet-controller.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Interrupt pin of CH390. The interrupt pin polarity is configured from
+      the GPIO active flag.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Optional hardware reset pin. If absent, the driver uses the CH390
+      software reset sequence.
