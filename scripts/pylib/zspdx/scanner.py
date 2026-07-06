@@ -14,6 +14,10 @@ from .util import get_hashes
 
 _logger = logging.getLogger(__name__)
 
+# Quiet the reuse library's own logger as it may warn about REUSE-compliance
+# issues (e.g. malformed LICENSES/ file names).
+logging.getLogger("reuse").setLevel(logging.ERROR)
+
 
 # ScannerConfig contains settings used to configure how the SBOM
 # scanning should occur.
@@ -27,57 +31,12 @@ class ScannerConfig:
     # each File's license, based on its detected license(s)?
     should_conclude_file_licenses: bool = True
 
-    # number of lines to scan for SPDX-License-Identifier (0 = all)
-    # defaults to 20
-    num_lines_scanned: int = 20
-
     # should we calculate SHA256 hashes for each Component's Files?
     # note that SHA1 hashes are mandatory, per SPDX 2.3
     do_sha256: bool = True
 
     # should we calculate MD5 hashes for each Component's Files?
     do_md5: bool = False
-
-
-def parse_line_for_expression(line):
-    """Return parsed SPDX expression if tag found in line, or None otherwise."""
-    p = line.partition("SPDX-License-Identifier:")
-    if p[2] == "":
-        return None
-    # strip away trailing comment marks and whitespace, if any
-    expression = p[2].strip()
-    expression = expression.rstrip("/*")
-    expression = expression.strip()
-    return expression
-
-
-def get_expression_data(file_path, num_lines):
-    """
-    Scans the specified file for the first SPDX-License-Identifier:
-    tag in the file.
-
-    Arguments:
-        - file_path: path to file to scan.
-        - num_lines: number of lines to scan for an expression before
-                    giving up. If 0, will scan the entire file.
-    Returns: parsed expression if found; None if not found.
-    """
-    _logger.debug("  - getting licenses for %s", file_path)
-
-    with open(file_path) as f:
-        try:
-            for lineno, line in enumerate(f, start=1):
-                if lineno > num_lines > 0:
-                    break
-                expression = parse_line_for_expression(line)
-                if expression is not None:
-                    return expression
-        except UnicodeDecodeError:
-            # invalid UTF-8 content
-            return None
-
-    # if we get here, we didn't find an expression
-    return None
 
 
 def split_expression(expression):
@@ -159,30 +118,38 @@ def normalize_expression(lics_concluded):
     return " AND ".join(revised)
 
 
-def get_copyright_info(file_path):
+def get_reuse_info(project, file_path):
     """
-    Scans the specified file for copyright information using REUSE tools.
+    Retrieve SPDX license expressions and copyright notices for a file using
+    the REUSE library.
 
     Arguments:
+        - project: reuse.project.Project for the file's component, rooted at
+          the component's base_dir so that REUSE.toml are found; may be None
         - file_path: path to file to scan
 
-    Returns: list of copyright statements if found; empty list if not found
+    Returns: (list of license expression strings, list of copyright strings)
     """
-    _logger.debug("  - getting copyright info for %s", file_path)
+    if project is None:
+        return [], []
+
+    _logger.debug("  - getting REUSE info for %s", file_path)
 
     try:
-        project = Project(os.path.dirname(file_path))
         infos = project.reuse_info_of(file_path)
+        licenses = []
         copyrights = []
 
         for info in infos:
+            for expr in info.spdx_expressions:
+                licenses.append(str(expr))
             for notice in info.copyright_notices:
-                copyrights.extend([notice.original])
+                copyrights.append(str(notice))
 
-        return copyrights
+        return licenses, copyrights
     except Exception:
-        _logger.warning("Error getting copyright info for %s", file_path, exc_info=True)
-        return []
+        _logger.warning("Error getting REUSE info for %s", file_path, exc_info=True)
+        return [], []
 
 
 def scan_sbom_graph(cfg, sbom_graph):
@@ -196,6 +163,16 @@ def scan_sbom_graph(cfg, sbom_graph):
     """
     for component in sbom_graph.components.values():
         _logger.info("scanning files in component %s", component.name)
+
+        # build the REUSE project once per component, rooted at the
+        # component's own base_dir, and reuse it for all of its files
+        try:
+            reuse_project = Project.from_directory(str(component.base_dir))
+        except Exception:
+            _logger.warning(
+                "Error building REUSE project for %s", component.base_dir, exc_info=True
+            )
+            reuse_project = None
 
         # first, gather File data for this component
         for f in component.files.values():
@@ -215,13 +192,18 @@ def scan_sbom_graph(cfg, sbom_graph):
                 f.hashes["MD5"] = h_md5
 
             # get licenses for file
-            expression = get_expression_data(f.path, cfg.num_lines_scanned)
-            if expression:
-                if cfg.should_conclude_file_licenses:
-                    f.concluded_license = expression
-                f.license_info_in_file = split_expression(expression)
+            reuse_licenses, copyrights = get_reuse_info(reuse_project, f.path)
 
-            if copyrights := get_copyright_info(f.path):
+            if reuse_licenses:
+                if cfg.should_conclude_file_licenses:
+                    f.concluded_license = " AND ".join(
+                        f"({e})" if " " in e else e for e in reuse_licenses
+                    )
+                f.license_info_in_file = sorted(
+                    {lic for expr in reuse_licenses for lic in split_expression(expr)}
+                )
+
+            if copyrights:
                 f.copyright_text = "<text>\n" + "\n".join(copyrights) + "\n</text>"
 
             # check if any custom license IDs should be flagged for SBOM
