@@ -37,6 +37,8 @@ struct uhc_dwc2_vendor_quirks {
 	int (*irq_clear)(const struct device *dev);
 	/* Called while waiting for bits that require PHY to be clocked */
 	int (*is_phy_clk_off)(const struct device *dev);
+	/* Called to translate a physical address into the bus/DMA address expected by HCDMA */
+	void (*dma_addr_xlate)(const struct device *dev, mem_addr_t *const dma_addr);
 };
 
 /* Driver configuration per instance */
@@ -85,6 +87,17 @@ static inline int uhc_dwc2_quirk_##fname(const struct device *const dev)	\
 		return config->quirks->fname(dev);				\
 	}									\
 	return 0;								\
+}
+
+static inline void uhc_dwc2_quirk_dma_addr_xlate(const struct device *dev,
+						 mem_addr_t *const dma_addr)
+{
+	const struct uhc_dwc2_config *const config = dev->config;
+	const struct uhc_dwc2_vendor_quirks *const quirks = config->quirks;
+
+	if (quirks != NULL && quirks->dma_addr_xlate != NULL) {
+		quirks->dma_addr_xlate(dev, dma_addr);
+	}
 }
 
 DWC2_QUIRK_FUNC_DEFINE(post_preinit)
