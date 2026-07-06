@@ -47,9 +47,6 @@ struct phy_mii_dev_data {
 	k_timepoint_t autoneg_timeout;
 };
 
-/* Offset to align capabilities bits of 1000BASE-T Control and Status regs */
-#define MII_1KSTSR_OFFSET 2
-
 #define MII_INVALID_PHY_ID UINT32_MAX
 
 /* How often to poll auto-negotiation status while waiting for it to complete */
@@ -243,82 +240,28 @@ static int check_autonegotiation_completion(const struct device *dev)
 {
 	const struct phy_mii_dev_config *const cfg = dev->config;
 	struct phy_mii_dev_data *const data = dev->data;
+	int ret;
 
-	uint16_t anar_reg = 0;
-	uint16_t bmsr_reg = 0;
-	uint16_t anlpar_reg = 0;
-	uint16_t c1kt_reg = 0;
-	uint16_t s1kt_reg = 0;
-
-	if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
-		return -EIO;
+	ret = phy_mii_check_autoneg(dev);
+	if ((ret == -EINPROGRESS) && sys_timepoint_expired(data->autoneg_timeout)) {
+		LOG_DBG("PHY (%d) auto-negotiate timeout", cfg->phy_addr);
+		return -ETIMEDOUT;
+	}
+	if (ret < 0) {
+		return ret;
 	}
 
-	if (!IS_BIT_SET(bmsr_reg, MII_BMSR_AUTONEG_COMPLETE_BIT)) {
-		if (sys_timepoint_expired(data->autoneg_timeout)) {
-			LOG_DBG("PHY (%d) auto-negotiate timeout", cfg->phy_addr);
-			return -ETIMEDOUT;
-		}
-		return -EINPROGRESS;
+	LOG_DBG("PHY (%d) auto-negotiate sequence completed", cfg->phy_addr);
+
+	ret = phy_mii_get_autoneg_speed(dev, &data->state, data->gigabit_supported);
+	if (ret < 0) {
+		return ret;
 	}
 
-	/* Link status bit is latched low, so read it again to get current status */
-	if (unlikely(!IS_BIT_SET(bmsr_reg, MII_BMSR_LINK_STATUS_BIT))) {
-		/* Second read, clears the latched bits and gives the correct status */
-		if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
-			return -EIO;
-		}
-
-		if (!IS_BIT_SET(bmsr_reg, MII_BMSR_LINK_STATUS_BIT)) {
-			return -EAGAIN;
-		}
-	}
-
-	LOG_DBG("PHY (%d) auto-negotiate sequence completed",
-		cfg->phy_addr);
-
-	/* Read PHY default advertising parameters */
-	if (phy_mii_reg_read(dev, MII_ANAR, &anar_reg) < 0) {
-		return -EIO;
-	}
-
-	/** Read peer device capability */
-	if (phy_mii_reg_read(dev, MII_ANLPAR, &anlpar_reg) < 0) {
-		return -EIO;
-	}
-
-	if (data->gigabit_supported) {
-		if (phy_mii_reg_read(dev, MII_1KTCR, &c1kt_reg) < 0) {
-			return -EIO;
-		}
-		if (phy_mii_reg_read(dev, MII_1KSTSR, &s1kt_reg) < 0) {
-			return -EIO;
-		}
-		s1kt_reg = (uint16_t)(s1kt_reg >> MII_1KSTSR_OFFSET);
-	}
-
-	if (data->gigabit_supported &&
-			((c1kt_reg & s1kt_reg & MII_ADVERTISE_1000_FULL) != 0U)) {
-		data->state.speed = LINK_FULL_1000BASE;
-	} else if (data->gigabit_supported &&
-			((c1kt_reg & s1kt_reg & MII_ADVERTISE_1000_HALF) != 0U)) {
-		data->state.speed = LINK_HALF_1000BASE;
-	} else if ((anar_reg & anlpar_reg & MII_ADVERTISE_100_FULL) != 0U) {
-		data->state.speed = LINK_FULL_100BASE;
-	} else if ((anar_reg & anlpar_reg & MII_ADVERTISE_100_HALF) != 0U) {
-		data->state.speed = LINK_HALF_100BASE;
-	} else if ((anar_reg & anlpar_reg & MII_ADVERTISE_10_FULL) != 0U) {
-		data->state.speed = LINK_FULL_10BASE;
-	} else {
-		data->state.speed = LINK_HALF_10BASE;
-	}
-
-	data->state.is_up = true;
-
-	LOG_INF("PHY (%d) Link speed %s Mb, %s duplex",
+	LOG_INF("PHY (%d) Link speed 10%s Mb, %s duplex",
 		cfg->phy_addr,
-		PHY_LINK_IS_SPEED_1000M(data->state.speed) ? "1000" :
-		(PHY_LINK_IS_SPEED_100M(data->state.speed) ? "100" : "10"),
+		PHY_LINK_IS_SPEED_1000M(data->state.speed) ? "00" :
+		(PHY_LINK_IS_SPEED_100M(data->state.speed) ? "0" : ""),
 		PHY_LINK_IS_FULL_DUPLEX(data->state.speed) ? "full" : "half");
 
 	return 0;
