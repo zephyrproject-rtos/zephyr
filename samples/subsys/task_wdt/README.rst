@@ -32,8 +32,7 @@ For other boards just replace the board name.
 Sample output
 =============
 
-The following output is printed and continuously repeated (after each
-reset):
+The following output is printed:
 
 .. code-block:: console
 
@@ -47,3 +46,10 @@ reset):
    Main thread still alive...
    Task watchdog channel 1 callback, thread: control
    Resetting device...
+
+The intentional watchdog reset is demonstrated only once per power-on:
+after the device has been reset by the task watchdog, the control thread
+keeps feeding its watchdog channel so that the board stays alive. This
+avoids an endless reset loop, which could otherwise interfere with
+flashing the next application (e.g. in automated device testing). Power
+cycle the board to run the demonstration again.

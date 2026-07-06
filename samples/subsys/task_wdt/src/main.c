@@ -41,6 +41,16 @@
 #define WDT_NODE DT_INVALID_NODE
 #endif
 
+/*
+ * Reboot-persistent marker so that the intentional watchdog reset is only
+ * demonstrated once per power-on. Without it the sample reboots in an
+ * endless loop, which leaves the board continuously resetting after the
+ * sample has run. That state can make flashing the next application fail
+ * (e.g. during automated device testing).
+ */
+#define DEMO_DONE_MAGIC 0xFEED5AFE
+static __noinit uint32_t demo_done_marker;
+
 static void task_wdt_callback(int channel_id, void *user_data)
 {
 	printk("Task watchdog channel %d callback, thread: %s\n",
@@ -96,8 +106,15 @@ void control_thread(void)
 {
 	int task_wdt_id;
 	int count = 0;
+	bool demo_done = (demo_done_marker == DEMO_DONE_MAGIC);
 
 	printk("Control thread started.\n");
+
+	if (demo_done) {
+		printk("Task watchdog reset already demonstrated, "
+		       "control thread keeps running.\n");
+	}
+	demo_done_marker = DEMO_DONE_MAGIC;
 
 	/*
 	 * Add a new task watchdog channel with custom callback function and
@@ -107,7 +124,7 @@ void control_thread(void)
 		(void *)k_current_get());
 
 	while (true) {
-		if (count == 50) {
+		if (!demo_done && count == 50) {
 			printk("Control thread getting stuck...\n");
 			k_sleep(K_FOREVER);
 		}
