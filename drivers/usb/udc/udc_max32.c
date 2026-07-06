@@ -90,6 +90,11 @@ static void udc_event_xfer_in_callback(void *cbdata)
 	struct net_buf *buf;
 
 	buf = udc_buf_get(udc_get_ep_cfg(req_cb_data->dev, req_cb_data->ep));
+	if (buf == NULL) {
+		LOG_ERR("No buffer for ep 0x%02x", req_cb_data->ep);
+		udc_submit_event(req_cb_data->dev, UDC_EVT_ERROR, -ENOBUFS);
+		return;
+	}
 
 	udc_ep_set_busy(udc_get_ep_cfg(req_cb_data->dev, req_cb_data->ep), false);
 
@@ -118,6 +123,12 @@ static void udc_event_xfer_out_callback(void *cbdata)
 	struct net_buf *buf;
 
 	buf = udc_buf_get(udc_get_ep_cfg(req_cb_data->dev, req_cb_data->ep));
+	if (unlikely(buf == NULL)) {
+		LOG_ERR("No buffer for ep 0x%02x", req_cb_data->ep);
+		udc_submit_event(req_cb_data->dev, UDC_EVT_ERROR, -ENOBUFS);
+		return;
+	}
+
 	net_buf_add(buf, ep_request->actlen);
 
 	udc_ep_set_busy(udc_get_ep_cfg(req_cb_data->dev, req_cb_data->ep), false);
@@ -153,8 +164,7 @@ static void udc_event_xfer_in(const struct device *dev, struct udc_ep_config *ep
 	memset(ep_request, 0, sizeof(MXC_USB_Req_t));
 
 	buf = udc_buf_peek(ep_cfg);
-	if (buf == NULL) {
-		LOG_ERR("Failed to peek net_buf for ep 0x%02x", ep_cfg->addr);
+	if (unlikely(buf == NULL)) {
 		return;
 	}
 
@@ -182,7 +192,7 @@ static void udc_event_xfer_in(const struct device *dev, struct udc_ep_config *ep
 	ret = MXC_USB_WriteEndpoint(ep_request);
 	if (ret != 0) {
 		udc_ep_set_busy(ep_cfg, false);
-		LOG_ERR("ep 0x%02x error: %x", ep_cfg->addr, ret);
+		LOG_ERR("Failed to start IN transfer: ep 0x%02x error: %x", ep_cfg->addr, ret);
 		udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 	}
 }
@@ -200,7 +210,7 @@ static void udc_event_xfer_out(const struct device *dev, struct udc_ep_config *e
 	}
 
 	buf = udc_buf_peek(ep_cfg);
-	if (buf == NULL) {
+	if (unlikely(buf == NULL)) {
 		LOG_ERR("Failed to peek net_buf for ep 0x%02x", ep_cfg->addr);
 		return;
 	}
@@ -221,7 +231,7 @@ static void udc_event_xfer_out(const struct device *dev, struct udc_ep_config *e
 	ret = MXC_USB_ReadEndpoint(ep_request);
 	if (ret != 0) {
 		udc_ep_set_busy(ep_cfg, false);
-		LOG_ERR("ep 0x%02x error: %x", ep_cfg->addr, ret);
+		LOG_ERR("Failed to start OUT transfer: ep 0x%02x error: %x", ep_cfg->addr, ret);
 		udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 	}
 }
@@ -358,6 +368,15 @@ static int udc_max32_ep_enqueue(const struct device *dev, struct udc_ep_config *
 	LOG_DBG("%p enqueue %p", dev, buf);
 	udc_buf_put(cfg, buf);
 
+	if (cfg->addr == USB_CONTROL_EP_OUT) {
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		if (bi->setup) {
+			/* SETUP can be received without any action */
+			return 0;
+		}
+	}
+
 	if (cfg->stat.halted) {
 		LOG_DBG("ep 0x%02x halted", cfg->addr);
 		return 0;
@@ -430,6 +449,7 @@ static int udc_max32_ep_disable(const struct device *dev, struct udc_ep_config *
 static int udc_max32_ep_set_halt(const struct device *dev, struct udc_ep_config *const cfg)
 {
 	int ret;
+	uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
 
 	if (cfg->stat.halted == true) {
 		LOG_WRN("ep 0x%02x is already as halt", cfg->addr);
@@ -438,13 +458,15 @@ static int udc_max32_ep_set_halt(const struct device *dev, struct udc_ep_config 
 
 	LOG_DBG("Set halt ep 0x%02x", cfg->addr);
 
-	ret = MXC_USB_Stall(USB_EP_GET_IDX(cfg->addr));
+	ret = MXC_USB_Stall(ep_idx);
 	if (ret != 0) {
 		LOG_ERR("Failed to set halt ep 0x%02x", cfg->addr);
 		return ret;
 	}
 
-	cfg->stat.halted = true;
+	if (ep_idx != 0) {
+		cfg->stat.halted = true;
+	}
 
 	return 0;
 }
@@ -523,7 +545,9 @@ static int udc_max32_event_callback(maxusb_event_t event, void *cbdata)
 		break;
 	case MAXUSB_EVENT_VBUS:
 		LOG_DBG("VBUS event occurred");
-		udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
+		if ((MXC_USB_GetStatus() & MAXUSB_STATUS_VBUS_ON) != 0) {
+			udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
+		}
 		break;
 	case MAXUSB_EVENT_SUSP:
 		LOG_DBG("SUSP event occurred");
