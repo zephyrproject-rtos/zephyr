@@ -277,6 +277,15 @@ static int pa_sync_term(struct scan_delegator_sync_state *state)
 
 	(void)k_work_cancel_delayable(&state->pa_timer);
 
+	/* If we are waiting for PAST, we just clear the data, as we won't have a PA sync object to
+	 * remove
+	 */
+	if (state->recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
+		state->pa_syncing = false;
+
+		return 0;
+	}
+
 	if (state->pa_sync == NULL) {
 		bt_shell_warn("PA state %p not synced", state);
 		return -1;
