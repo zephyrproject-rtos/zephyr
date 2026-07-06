@@ -158,7 +158,6 @@ static void sy1xx_mac_set_mac_addr(const struct device *dev)
 {
 	struct sy1xx_mac_dev_config *cfg = (struct sy1xx_mac_dev_config *)dev->config;
 	struct sy1xx_mac_dev_data *data = (struct sy1xx_mac_dev_data *)dev->data;
-	int ret;
 	uint32_t v_low, v_high;
 
 	LOG_INF("%s set link address %02x:%02x:%02x:%02x:%02x:%02x", dev->name, data->mac_addr[0],
