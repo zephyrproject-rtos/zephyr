@@ -1531,6 +1531,10 @@ void z_impl_k_thread_abort(k_tid_t thread)
 
 int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 {
+	CHECKIF(k_is_in_isr() && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		k_panic();
+	}
+
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 	int ret;
 
@@ -1545,7 +1549,6 @@ int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 		   (thread->base.pended_on == &_current->join_queue)) {
 		ret = -EDEADLK;
 	} else {
-		__ASSERT(!arch_is_in_isr(), "cannot join in ISR");
 		z_sched_add_to_waitq_locked(_current, &thread->join_queue);
 		z_add_thread_timeout(_current, timeout);
 

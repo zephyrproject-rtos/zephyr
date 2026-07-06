@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/sys/minmax.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/internal/syscall_handler.h>
@@ -153,9 +154,16 @@ int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_
 {
 	int rc;
 	size_t written = 0;
-	k_timepoint_t end = sys_timepoint_calc(timeout);
-	k_spinlock_key_t key = k_spin_lock(&pipe->lock);
+	k_timepoint_t end;
+	k_spinlock_key_t key;
 	bool need_resched = false;
+
+	CHECKIF(k_is_in_isr() && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		k_panic();
+	}
+
+	end = sys_timepoint_calc(timeout);
+	key = k_spin_lock(&pipe->lock);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, write, pipe, data, len, timeout);
 
@@ -226,9 +234,16 @@ int z_impl_k_pipe_read(struct k_pipe *pipe, uint8_t *data, size_t len, k_timeout
 {
 	struct pipe_buf_spec buf = { data, len, 0 };
 	int rc;
-	k_timepoint_t end = sys_timepoint_calc(timeout);
-	k_spinlock_key_t key = k_spin_lock(&pipe->lock);
+	k_timepoint_t end;
+	k_spinlock_key_t key;
 	bool need_resched = false;
+
+	CHECKIF(k_is_in_isr() && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		k_panic();
+	}
+
+	end = sys_timepoint_calc(timeout);
+	key = k_spin_lock(&pipe->lock);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, read, pipe, data, len, timeout);
 

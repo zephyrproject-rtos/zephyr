@@ -486,7 +486,6 @@ config COMPILER_FREESTANDING
 choice COMPILER_OPTIMIZATIONS
 	prompt "Optimization level"
 	default NO_OPTIMIZATIONS    if COVERAGE
-	default DEBUG_OPTIMIZATIONS if DEBUG
 	default SIZE_OPTIMIZATIONS_AGGRESSIVE if "$(TOOLCHAIN_VARIANT_COMPILER)" = "llvm"
 	default SIZE_OPTIMIZATIONS
 	help
@@ -683,9 +682,11 @@ endmenu
 
 choice
 	prompt "Error checking behavior for CHECK macro"
-	default RUNTIME_ERROR_CHECKS
+	default RUNTIME_ERROR_CHECKS if DEBUG
+	default NO_RUNTIME_CHECKS
 
 config ASSERT_ON_ERRORS
+	select ASSERT
 	bool "Assert on all errors"
 	help
 	  Assert on errors covered with the CHECKIF() macro.

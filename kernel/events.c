@@ -286,8 +286,9 @@ static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 	unsigned int  wait_condition;
 	struct k_thread  *thread;
 
-	__ASSERT(((arch_is_in_isr() == false) ||
-		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
+	CHECKIF(k_is_in_isr() && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		k_panic();
+	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_event, wait, event, events,
 					options, timeout);

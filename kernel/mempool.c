@@ -8,6 +8,7 @@
 #include <string.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/check.h>
 #include <wait_q.h>
 
 typedef void * (sys_heap_allocator_t)(struct sys_heap *heap, size_t align, size_t bytes);
@@ -21,8 +22,9 @@ static void *z_alloc_helper(struct k_heap *heap, size_t align, size_t size,
 	k_spinlock_key_t key;
 
 	/* A power of 2 as well as 0 is OK */
-	__ASSERT((align & (align - 1)) == 0,
-		"align must be a power of 2");
+	CHECKIF((align & (align - 1)) != 0) {
+		return NULL;
+	}
 
 	/*
 	 * Adjust the size to make room for our heap reference.

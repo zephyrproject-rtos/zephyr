@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/sys/check.h>
 #include <ksched.h>
 #include <scheduler.h>
 #include <wait_q.h>
@@ -107,6 +108,10 @@ int z_impl_k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
 {
 	k_spinlock_key_t key;
 	int ret = -EAGAIN;
+
+	CHECKIF(k_is_in_isr() && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		k_panic();
+	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_condvar, wait, condvar, timeout);
 
