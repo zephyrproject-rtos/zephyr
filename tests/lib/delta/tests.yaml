@@ -1,0 +1,20 @@
+common:
+  tags:
+    - delta
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+  harness: ztest
+
+tests:
+  # Decoder sized at build time from CONFIG_HEATSHRINK_STATIC_*.
+  libraries.delta.static:
+    extra_configs:
+      - CONFIG_HEATSHRINK_STATIC_WINDOW_BITS=8
+      - CONFIG_HEATSHRINK_STATIC_LOOKAHEAD_BITS=4
+      - CONFIG_HEATSHRINK_STATIC_INPUT_BUFFER_SIZE=32
+  # Decoder heap-allocated to the parameters each patch declares.
+  libraries.delta.dynamic:
+    extra_configs:
+      - CONFIG_HEATSHRINK_DYNAMIC_ALLOC=y
