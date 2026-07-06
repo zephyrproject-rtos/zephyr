@@ -162,6 +162,11 @@ static void bap_broadcast_assistant_recv_state_cb(
 		return;
 	}
 
+	if (state == NULL) {
+		bt_shell_print("Empty BASS recv state");
+		return;
+	}
+
 	bin2hex(state->bad_code, BT_ISO_BROADCAST_CODE_SIZE, bad_code, sizeof(bad_code));
 
 	is_bad_code = state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE;
