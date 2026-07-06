@@ -47,7 +47,7 @@ tests:
     extra_configs:
       - CONFIG_IPI_METRIC_PREEMPTIVE=y
       - CONFIG_IPI_OPTIMIZE=y
-    filter: ARCH_HAS_DIRECTED_IPIS
+    filter: CONFIG_ARCH_HAS_DIRECTED_IPIS
     harness_config:
       type: multi_line
       ordered: true
@@ -140,7 +140,7 @@ tests:
   benchmark.ipi_metric.primitive.directed:
     extra_configs:
       - CONFIG_IPI_METRIC_PRIMITIVE_DIRECTED=y
-    filter: ARCH_HAS_DIRECTED_IPIS
+    filter: CONFIG_ARCH_HAS_DIRECTED_IPIS
     harness_config:
       type: multi_line
       ordered: true
