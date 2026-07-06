@@ -17,6 +17,7 @@
 #define TLS_HS_CERTIFICATE_VERIFY    15
 #define TLS_HS_NEW_SESSION_TICKET    4
 #define TLS_HS_FINISHED              20
+#define TLS_HS_KEY_UPDATE            24
 
 /* Key schedule labels */
 #define TLS13_LABEL_DERIVED        "derived"

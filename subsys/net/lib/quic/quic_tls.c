@@ -4752,6 +4752,15 @@ ZTESTABLE_STATIC int process_handshake_message(struct quic_tls_context *ctx,
 		}
 		break;
 
+	case TLS_HS_KEY_UPDATE:
+		/* RFC 9001 Section 6: the TLS KeyUpdate message MUST NOT be used
+		 * in QUIC; treat it as a protocol violation rather than silently
+		 * ignoring it (QUIC does its own key update via the key phase
+		 * bit).
+		 */
+		NET_DBG("[%p] Rejecting TLS KeyUpdate (prohibited in QUIC)", ctx);
+		return -EPROTO;
+
 	default:
 		NET_DBG("Unknown handshake message type (%d)", msg_type);
 		break;
