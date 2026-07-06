@@ -38,6 +38,7 @@ add_subdirectory(intel)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_ETH_ADIN2111 eth_adin2111.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_CH390 eth_ch390.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_CYCLONEV eth_cyclonev.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_DM9051 eth_dm9051.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_DRIVER_RAW_MODE eth_raw.c)
