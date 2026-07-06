@@ -1,0 +1,15 @@
+common:
+  tags:
+    - filesystem
+    - shell
+  modules:
+    - littlefs
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  filesystem.shell_mount_partition.default:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="flash_partitions.overlay"
