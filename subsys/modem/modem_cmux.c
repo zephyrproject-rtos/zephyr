@@ -2159,7 +2159,7 @@ struct modem_pipe *modem_cmux_dlci_init(struct modem_cmux *cmux, struct modem_cm
 	__ASSERT_NO_MSG(config != NULL);
 	__ASSERT_NO_MSG(config->dlci_address < 64);
 	__ASSERT_NO_MSG(config->receive_buf != NULL);
-	__ASSERT_NO_MSG(config->receive_buf_size >= 126);
+	__ASSERT_NO_MSG(config->receive_buf_size >= MODEM_CMUX_RX_BUFFER_SIZE_MIN);
 
 	memset(dlci, 0x00, sizeof(*dlci));
 	dlci->cmux = cmux;
