@@ -24,8 +24,10 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_DHCPV4_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/dhcpv4.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/dummy.h>
+#include <zephyr/sys/util.h>
 
 #include "ipv4.h"
 #include "udp_internal.h"
@@ -214,6 +216,93 @@ static const unsigned char ack[] = {
 0xff
 };
 
+/* Same as ack[] but without option 6 (DNS server). */
+static const unsigned char ack_no_dns[] = {
+0x02, 0x01, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x0a, 0xed, 0x48, 0x9e, 0x00, 0x00, 0x00, 0x00,
+0x0a, 0xed, 0x48, 0x03, 0x00, 0x00, 0x5E, 0x00,
+0x53, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00,
+/* Magic cookie: DHCP */
+0x63, 0x82, 0x53, 0x63,
+/* [0] Pad option */
+0x00,
+/* [53] DHCP Message Type: ACK */
+0x35, 0x01, 0x05,
+/* [58] Renewal Time Value: (21600s) 6 hours */
+0x3a, 0x04, 0x00, 0x00, 0x54, 0x60,
+/* [59] Rebinding Time Value: (37800s) 1 hour 30 min */
+0x3b, 0x04, 0x00, 0x00, 0x93, 0xa8,
+/* [51] IP Address Lease Time: (43200s) 12 hours */
+0x33, 0x04, 0x00, 0x00, 0xa8, 0xc0,
+/* [54] DHCP Server Identifier: 10.184.9.1 */
+0x36, 0x04, 0x0a, 0xb8, 0x09, 0x01,
+/* [1] Subnet Mask: 255.255.255.0 */
+0x01, 0x04, 0xff, 0xff, 0xff, 0x00,
+/* [3] Router: 10.237.72.1 */
+0x03, 0x04, 0x0a, 0xed, 0x48, 0x01,
+/* [15] Domain Name: fi.intel.com */
+0x0f, 0x0d, 0x66, 0x69, 0x2e, 0x69, 0x6e, 0x74, 0x65, 0x6c, 0x2e, 0x63, 0x6f, 0x6d, 0x00,
+/* [119] Domain Search Option: fi.intel.com ger.corp.intel.com corp.intel.com intel.com */
+0x77, 0x3d, 0x02, 0x66, 0x69, 0x05, 0x69, 0x6e,
+0x74, 0x65, 0x6c, 0x03, 0x63, 0x6f, 0x6d, 0x00,
+0x03, 0x67, 0x65, 0x72, 0x04, 0x63, 0x6f, 0x72,
+0x70, 0x05, 0x69, 0x6e, 0x74, 0x65, 0x6c, 0x03,
+0x63, 0x6f, 0x6d, 0x00, 0x04, 0x63, 0x6f, 0x72,
+0x70, 0x05, 0x69, 0x6e, 0x74, 0x65, 0x6c, 0x03,
+0x63, 0x6f, 0x6d, 0x00, 0x05, 0x69, 0x6e, 0x74,
+0x65, 0x6c, 0x03, 0x63, 0x6f, 0x6d, 0x00,
+/* [44] NetBIOS Name Servers: 163.33.7.86, 143.182.250.105 */
+0x2c, 0x08, 0xa3, 0x21, 0x07, 0x56, 0x8f, 0xb6, 0xfa, 0x69,
+/* [43] Encapsulated vendor specific information */
+0x2b, 0x0a,
+	    /* [1]: "string" */
+	    0x01, 0x07, 0x73, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x00,
+	    /* End marker */
+	    0xff,
+/* [43] Encapsulated vendor specific information */
+0x2b, 0x0f,
+	    /* [2]: single byte of value 1 */
+	    0x02, 0x01, 0x01,
+	    /* [3]: zero-length option */
+	    0x03, 0x00,
+	    /* [254]: invalid option (size longer than remainder of opt 43 size) */
+	    0xfe, 0x10, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe,
+/* [43] Too short encapsulated vendor option (only single byte) */
+0x2b, 0x01,
+	    /* [254]: invalid option (no length in opt 43) */
+	    0xfe,
+/* [70] POP3 Server: 198.51.100.16 */
+0x46, 0x04, 0xc6, 0x33, 0x64, 0x10,
+/* End marker */
+0xff
+};
+
 static const struct net_in_addr server_addr = { { { 192, 0, 2, 1 } } };
 static const struct net_in_addr client_addr = { { { 255, 255, 255, 255 } } };
 
@@ -222,6 +311,10 @@ static const struct net_in_addr client_addr = { { { 255, 255, 255, 255 } } };
 #define MSG_TYPE		53
 #define DISCOVER		1
 #define REQUEST			3
+#define OPTION_DNS_SERVER	6
+#define OPTION_REQ_IPADDR	50
+#define OPTION_SERVER_ID	54
+#define OPTION_REQ_LIST		55
 #define OPTION_DOMAIN		15
 #define OPTION_POP3		70
 #define OPTION_VENDOR_STRING	1
@@ -229,13 +322,22 @@ static const struct net_in_addr client_addr = { { { 255, 255, 255, 255 } } };
 #define OPTION_VENDOR_EMPTY	3
 #define OPTION_INVALID		254
 
-struct dhcp_msg {
+#define MAX_REQ_OPTIONS 16
+
+struct dhcp_client_msg {
 	uint32_t xid;
 	uint8_t type;
+	bool has_requested_ip;
+	bool has_server_id;
+	uint8_t req_options[MAX_REQ_OPTIONS];
+	uint8_t req_options_cnt;
 };
 
 static uint32_t offer_xid;
 static uint32_t request_xid;
+static bool strict_dhcp_server;
+static bool discover_req_included_dns;
+static bool init_reboot_req_included_dns;
 
 #define EVT_ADDR_ADD        BIT(0)
 #define EVT_ADDR_DEL        BIT(1)
@@ -257,6 +359,30 @@ static uint32_t request_xid;
 #define EVT_DNS_SERVER3_DEL BIT(17)
 
 static K_EVENT_DEFINE(events);
+
+static void dhcp_test_reset_iface(struct net_if *iface)
+{
+	net_dhcpv4_stop(iface);
+	iface->config.dhcpv4.requested_ip.s_addr = 0;
+	k_event_set(&events, 0U);
+	offer_xid = 0U;
+	request_xid = 0U;
+	strict_dhcp_server = false;
+	discover_req_included_dns = false;
+	init_reboot_req_included_dns = false;
+}
+
+static void dhcpv4_tests_before(void *fixture)
+{
+	struct net_if *iface;
+
+	ARG_UNUSED(fixture);
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	dhcp_test_reset_iface(iface);
+}
 
 #define WAIT_TIME K_SECONDS(CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX + 1)
 
@@ -339,11 +465,13 @@ fail:
 	return NULL;
 }
 
-struct net_pkt *prepare_dhcp_ack(struct net_if *iface, uint32_t xid)
+struct net_pkt *prepare_dhcp_ack(struct net_if *iface, uint32_t xid, bool include_dns)
 {
+	const unsigned char *reply = include_dns ? ack : ack_no_dns;
+	size_t reply_len = include_dns ? sizeof(ack) : sizeof(ack_no_dns);
 	struct net_pkt *pkt;
 
-	pkt = net_pkt_alloc_with_buffer(iface, sizeof(offer), NET_AF_INET,
+	pkt = net_pkt_alloc_with_buffer(iface, reply_len, NET_AF_INET,
 					NET_IPPROTO_UDP, K_FOREVER);
 	if (!pkt) {
 		return NULL;
@@ -356,7 +484,7 @@ struct net_pkt *prepare_dhcp_ack(struct net_if *iface, uint32_t xid)
 		goto fail;
 	}
 
-	if (net_pkt_write(pkt, ack, 4)) {
+	if (net_pkt_write(pkt, reply, 4)) {
 		goto fail;
 	}
 
@@ -365,7 +493,7 @@ struct net_pkt *prepare_dhcp_ack(struct net_if *iface, uint32_t xid)
 		goto fail;
 	}
 
-	if (net_pkt_write(pkt, ack + 8, sizeof(ack) - 8)) {
+	if (net_pkt_write(pkt, reply + 8, reply_len - 8)) {
 		goto fail;
 	}
 
@@ -380,67 +508,108 @@ fail:
 	return NULL;
 }
 
-static int parse_dhcp_message(struct net_pkt *pkt, struct dhcp_msg *msg)
+static bool dhcp_msg_req_list_contains(const struct dhcp_client_msg *msg, uint8_t option)
 {
-	/* Skip IPv4 and UDP headers */
-	if (net_pkt_skip(pkt, NET_IPV4UDPH_LEN)) {
-		return 0;
+	for (uint8_t i = 0; i < msg->req_options_cnt; i++) {
+		if (msg->req_options[i] == option) {
+			return true;
+		}
 	}
 
-	/* Skip DHCPv4 headers (size of op, htype, hlen, hops) */
-	if (net_pkt_skip(pkt, 4)) {
-		return 0;
+	return false;
+}
+
+static int parse_dhcp_client_message(struct net_pkt *pkt, struct dhcp_client_msg *msg)
+{
+	memset(msg, 0, sizeof(*msg));
+
+	if (net_pkt_skip(pkt, NET_IPV4UDPH_LEN + 4)) {
+		return -EINVAL;
 	}
 
 	if (net_pkt_read_be32(pkt, &msg->xid)) {
-		return 0;
+		return -EINVAL;
 	}
 
-	/* Skip DHCPv4 Options (size of op, htype, ... cookie) */
 	if (net_pkt_skip(pkt, 36 + 64 + 128 + 4)) {
-		return 0;
+		return -EINVAL;
 	}
 
-	while (1) {
-		uint8_t length = 0U;
-		uint8_t type;
+	while (true) {
+		uint8_t opt;
+		uint8_t len;
 
-		if (net_pkt_read_u8(pkt, &type)) {
-			return 0;
+		if (net_pkt_read_u8(pkt, &opt)) {
+			return -EINVAL;
 		}
 
-		if (type == MSG_TYPE) {
-			if (net_pkt_skip(pkt, 1)) {
-				return 0;
+		if (opt == 0) {
+			continue;
+		}
+
+		if (opt == 255) {
+			break;
+		}
+
+		if (net_pkt_read_u8(pkt, &len)) {
+			return -EINVAL;
+		}
+
+		if (opt == MSG_TYPE) {
+			if (len != 1U) {
+				return -EINVAL;
 			}
 
 			if (net_pkt_read_u8(pkt, &msg->type)) {
-				return 0;
+				return -EINVAL;
 			}
 
 			if (msg->type == NET_DHCPV4_MSG_TYPE_REQUEST) {
 				request_xid = msg->xid;
 			}
 
-			return 1;
+			continue;
 		}
 
-		if (net_pkt_read_u8(pkt, &length)) {
-			return 0;
+		if (opt == OPTION_REQ_LIST) {
+			uint8_t to_read = MIN(len, MAX_REQ_OPTIONS - msg->req_options_cnt);
+
+			for (uint8_t i = 0; i < to_read; i++) {
+				if (net_pkt_read_u8(pkt,
+						    &msg->req_options[msg->req_options_cnt++])) {
+					return -EINVAL;
+				}
+			}
+
+			if (len > to_read && net_pkt_skip(pkt, len - to_read)) {
+				return -EINVAL;
+			}
+
+			continue;
 		}
 
-		if (length && net_pkt_skip(pkt, length)) {
-			return 0;
+		if (opt == OPTION_REQ_IPADDR && len == 4U) {
+			msg->has_requested_ip = true;
+		} else if (opt == OPTION_SERVER_ID && len == 4U) {
+			msg->has_server_id = true;
+		}
+
+		if (len > 0U && net_pkt_skip(pkt, len)) {
+			return -EINVAL;
 		}
 	}
 
-	return 0;
+	return msg->type != 0U ? 0 : -EINVAL;
 }
 
 static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct net_pkt *rpkt;
-	struct dhcp_msg msg;
+	struct dhcp_client_msg msg;
+	bool dns_requested;
+	bool is_init_reboot;
+
+	ARG_UNUSED(dev);
 
 	(void)memset(&msg, 0, sizeof(msg));
 
@@ -450,9 +619,16 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		return -ENODATA;
 	}
 
-	parse_dhcp_message(pkt, &msg);
+	if (parse_dhcp_client_message(pkt, &msg) < 0) {
+		return -EINVAL;
+	}
 
 	if (msg.type == DISCOVER) {
+		if (strict_dhcp_server) {
+			discover_req_included_dns =
+				dhcp_msg_req_list_contains(&msg, OPTION_DNS_SERVER);
+		}
+
 		/* Reply with DHCPv4 offer message */
 		rpkt = prepare_dhcp_offer(net_pkt_iface(pkt), msg.xid);
 		if (!rpkt) {
@@ -460,8 +636,20 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		}
 		k_event_post(&events, EVT_DHCP_OFFER);
 	} else if (msg.type == REQUEST) {
-		/* Reply with DHCPv4 ACK message */
-		rpkt = prepare_dhcp_ack(net_pkt_iface(pkt), msg.xid);
+		bool include_dns;
+
+		dns_requested = dhcp_msg_req_list_contains(&msg, OPTION_DNS_SERVER);
+		is_init_reboot = msg.has_requested_ip && !msg.has_server_id;
+
+		if (strict_dhcp_server && is_init_reboot) {
+			init_reboot_req_included_dns = dns_requested;
+			include_dns = dns_requested;
+		} else {
+			include_dns = true;
+		}
+
+		/* Reply with DHCPv4 ACK */
+		rpkt = prepare_dhcp_ack(net_pkt_iface(pkt), msg.xid, include_dns);
 		if (!rpkt) {
 			return -EINVAL;
 		}
@@ -809,5 +997,98 @@ ZTEST(dhcpv4_tests, test_dhcp)
 	}
 }
 
+#if IS_ENABLED(CONFIG_NET_DHCPV4_INIT_REBOOT) && \
+	IS_ENABLED(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP) && \
+	IS_ENABLED(CONFIG_NET_DHCPV4_DNS_SERVER_VIA_INTERFACE)
+
+ZTEST(dhcpv4_tests, test_init_reboot_dns_after_iface_down)
+{
+	struct net_if *iface;
+	uint32_t evt;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	strict_dhcp_server = true;
+
+	net_dhcpv4_start(iface);
+
+	evt = k_event_wait(&events, EVT_DHCP_START, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_START, "Missing DHCP start");
+
+	evt = k_event_wait_all(&events,
+			       EVT_DNS_SERVER1_ADD | EVT_DNS_SERVER2_ADD |
+			       EVT_DNS_SERVER3_ADD,
+			       false, WAIT_TIME);
+	zassert_equal(evt,
+		      EVT_DNS_SERVER1_ADD | EVT_DNS_SERVER2_ADD |
+		      EVT_DNS_SERVER3_ADD,
+		      "Missing DNS server(s) on bind %08x", evt);
+
+	evt = k_event_wait(&events, EVT_DHCP_BOUND, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_BOUND, "Missing DHCP bound");
+
+	evt = k_event_wait_all(&events, EVT_DHCP_OFFER | EVT_DHCP_ACK, false,
+			       WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_OFFER | EVT_DHCP_ACK,
+		      "Missing offer or ack on bind %08x", evt);
+
+	zassert_true(discover_req_included_dns,
+		     "DISCOVER did not ask for DNS");
+
+	k_event_set(&events, 0U);
+
+	zassert_ok(net_if_down(iface), "Failed to bring interface down");
+
+	evt = k_event_wait_all(&events,
+			       EVT_ADDR_DEL | EVT_DNS_SERVER1_DEL |
+			       EVT_DNS_SERVER2_DEL | EVT_DNS_SERVER3_DEL,
+			       false, WAIT_TIME);
+	zassert_equal(evt,
+		      EVT_ADDR_DEL | EVT_DNS_SERVER1_DEL |
+		      EVT_DNS_SERVER2_DEL | EVT_DNS_SERVER3_DEL,
+		      "Missing events on interface down %08x", evt);
+
+	k_event_set(&events, 0U);
+	init_reboot_req_included_dns = false;
+
+	zassert_ok(net_if_up(iface), "Failed to bring interface up");
+
+	evt = k_event_wait(&events, EVT_DHCP_BOUND, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_BOUND, "Missing DHCP bound after if up");
+
+	evt = k_event_wait_all(&events,
+			       EVT_DNS_SERVER1_ADD | EVT_DNS_SERVER2_ADD |
+			       EVT_DNS_SERVER3_ADD,
+			       false, WAIT_TIME);
+	zassert_equal(evt,
+		      EVT_DNS_SERVER1_ADD | EVT_DNS_SERVER2_ADD |
+		      EVT_DNS_SERVER3_ADD,
+		      "DNS not restored after interface up %08x", evt);
+
+	evt = k_event_wait(&events, EVT_DHCP_ACK, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_ACK, "Missing ACK after interface up %08x", evt);
+
+	zassert_true(init_reboot_req_included_dns,
+		     "INIT-REBOOT REQUEST did not ask for DNS");
+
+	k_event_set(&events, 0U);
+
+	net_dhcpv4_stop(iface);
+
+	evt = k_event_wait_all(&events,
+			       EVT_DHCP_STOP | EVT_ADDR_DEL |
+			       EVT_DNS_SERVER1_DEL | EVT_DNS_SERVER2_DEL |
+			       EVT_DNS_SERVER3_DEL,
+			       false, WAIT_TIME);
+	zassert_equal(evt,
+		      EVT_DHCP_STOP | EVT_ADDR_DEL |
+		      EVT_DNS_SERVER1_DEL | EVT_DNS_SERVER2_DEL |
+		      EVT_DNS_SERVER3_DEL,
+		      "Missing DHCP stop cleanup %08x", evt);
+}
+
+#endif
+
 /**test case main entry */
-ZTEST_SUITE(dhcpv4_tests, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(dhcpv4_tests, NULL, NULL, dhcpv4_tests_before, NULL, NULL);
