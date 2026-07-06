@@ -56,23 +56,6 @@ void uhc_xfer_return(const struct device *dev,
 	(void)uhc_xfer_unref(xfer);
 }
 
-void uhc_xfer_add_to_int(const struct device *dev, struct uhc_transfer *const xfer)
-{
-	struct uhc_data *data = dev->data;
-	sys_dlist_t *int_list = &data->int_xfers;
-	struct uhc_transfer *curr;
-
-	SYS_DLIST_FOR_EACH_CONTAINER(int_list, curr, node) {
-		if (xfer_seq_cmp(xfer->start_microframe, curr->start_microframe) < 0) {
-			continue;
-		}
-		sys_dlist_insert(&curr->node, &xfer->node);
-		return;
-	}
-
-	sys_dlist_append(int_list, &xfer->node);
-}
-
 /* Already locked by caller */
 static struct uhc_transfer *uhc_xfer_get_next_periodic(const struct device *dev,
 						       uint32_t microframe_number,
@@ -83,8 +66,8 @@ static struct uhc_transfer *uhc_xfer_get_next_periodic(const struct device *dev,
 	sys_dnode_t *node;
 	struct uhc_transfer *xfer;
 
-	for (node = sys_dlist_peek_tail(&data->int_xfers); node != NULL;
-	     node = sys_dlist_peek_prev(&data->int_xfers, node)) {
+	for (node = sys_dlist_peek_tail(&data->periodic_xfers); node != NULL;
+	     node = sys_dlist_peek_prev(&data->periodic_xfers, node)) {
 		xfer = SYS_DLIST_CONTAINER(node, xfer, node);
 
 		if (xfer_seq_cmp(xfer->start_microframe, microframe_number) > 0) {
@@ -116,6 +99,40 @@ static struct uhc_transfer *uhc_xfer_get_next_non_periodic(const struct device *
 	}
 
 	return NULL;
+}
+
+static void xfer_schedule_periodic(const struct device *dev,
+				  struct uhc_transfer *const xfer,
+				  const uint32_t current_microframe)
+{
+	struct uhc_data *data = dev->data;
+	struct uhc_transfer *item;
+
+	xfer->start_microframe = current_microframe;
+
+	/* Find the last position in the schedule for this address and endpoint */
+	SYS_DLIST_FOR_EACH_CONTAINER(&data->periodic_xfers, item, node) {
+		if (xfer->udev->addr == item->udev->addr &&
+		    xfer->ep == item->ep &&
+		    xfer_seq_cmp(xfer->start_microframe, item->start_microframe) < 0) {
+			xfer->start_microframe = item->start_microframe;
+		}
+	}
+
+	/* Schedule it on the next interval after it */
+	xfer->start_microframe++;
+	xfer->start_microframe = ROUND_UP(xfer->start_microframe, xfer->microframe_interval);
+
+	/* Insert it at correct offset in the list */
+	SYS_DLIST_FOR_EACH_CONTAINER(&data->periodic_xfers, item, node) {
+		if (xfer_seq_cmp(item->start_microframe, xfer->start_microframe) < 0) {
+			continue;
+		}
+		sys_dlist_insert(&item->node, &xfer->node);
+		return;
+	}
+
+	sys_dlist_append(&data->periodic_xfers, &xfer->node);
 }
 
 struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t microframe_number,
@@ -158,9 +175,8 @@ int uhc_xfer_append(const struct device *dev,
 		sys_dlist_append(&data->bulk_xfers, &xfer->node);
 		break;
 	case USB_EP_TYPE_ISO:
-		LOG_WRN("Iso xfers not implemeted yet, treating as interrupt xfer");
 	case USB_EP_TYPE_INTERRUPT:
-		uhc_xfer_add_to_int(dev, xfer);
+		xfer_schedule_periodic(dev, xfer, 0);
 		break;
 	default:
 		LOG_ERR("Invalid xfer type: %d", xfer->type);

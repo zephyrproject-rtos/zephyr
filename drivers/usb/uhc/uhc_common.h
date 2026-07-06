@@ -157,7 +157,7 @@ void uhc_xfer_return(const struct device *dev,
  *         transfers, no matching periodic transfer is due, or all otherwise eligible transfers
  *         are rejected by @p filter.
  */
-struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t microframe_number,
+struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t microframe,
 				       enum uhc_xfer_mask mask, uhc_xfer_filter_func_t filter,
 				       void *priv);
 
