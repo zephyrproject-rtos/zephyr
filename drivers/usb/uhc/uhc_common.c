@@ -56,16 +56,40 @@ void uhc_xfer_return(const struct device *dev,
 	(void)uhc_xfer_unref(xfer);
 }
 
-static void xfer_schedule_periodic(const struct device *dev, struct uhc_transfer *const xfer)
+static void xfer_schedule_periodic(const struct device *dev,
+				  struct uhc_transfer *const xfer,
+				  const uint32_t current_microframe)
 {
 	struct uhc_data *data = dev->data;
-	struct uhc_transfer *curr;
+	struct uhc_transfer *item;
 
-	SYS_DLIST_FOR_EACH_CONTAINER(&data->periodic_xfers, curr, node) {
-		if (xfer_seq_cmp(xfer->start_microframe, curr->start_microframe) < 0) {
+	if (xfer->microframe_interval == 0) {
+		LOG_ERR("Invalid mocrofrme interval, dropping transfer ");
+		uhc_xfer_return(dev, xfer, -EINVAL);
+		return;
+	}
+
+	xfer->start_microframe = current_microframe;
+
+	/* Find the last position in the schedule for this address and endpoint */
+	SYS_DLIST_FOR_EACH_CONTAINER(&data->periodic_xfers, item, node) {
+		if (xfer->udev->addr == item->udev->addr &&
+		    xfer->ep == item->ep &&
+		    xfer_seq_cmp(xfer->start_microframe, item->start_microframe) < 0) {
+			xfer->start_microframe = item->start_microframe;
+		}
+	}
+
+	/* Schedule it on the next interval after it */
+	xfer->start_microframe++;
+	xfer->start_microframe = ROUND_UP(xfer->start_microframe, xfer->microframe_interval);
+
+	/* Insert it at correct offset in the list */
+	SYS_DLIST_FOR_EACH_CONTAINER(&data->periodic_xfers, item, node) {
+		if (xfer_seq_cmp(item->start_microframe, xfer->start_microframe) < 0) {
 			continue;
 		}
-		sys_dlist_insert(&curr->node, &xfer->node);
+		sys_dlist_insert(&item->node, &xfer->node);
 		return;
 	}
 
@@ -155,13 +179,31 @@ int uhc_xfer_append(const struct device *dev,
 		break;
 	case USB_EP_TYPE_ISO:
 	case USB_EP_TYPE_INTERRUPT:
-		xfer_schedule_periodic(dev, xfer);
+		xfer_schedule_periodic(dev, xfer, 0);
 		break;
 	default:
 		LOG_ERR("Invalid xfer type: %d", xfer->type);
 	}
 
 	return 0;
+}
+
+void uhc_xfer_reschedule(const struct device *dev,
+			 struct uhc_transfer *const xfer,
+			 const uint32_t current_microframe)
+{
+	if (xfer->type != USB_EP_TYPE_INTERRUPT) {
+		LOG_ERR("Only interrupt transfers (%u) can be rescheduled, not type %u",
+			USB_EP_TYPE_INTERRUPT, xfer->type);
+		return;
+	}
+
+	/* Remove from, supposedly, data->active_xfers */
+	sys_dlist_remove(&xfer->node);
+
+	/* Schedule for next interval */
+	xfer_schedule_periodic(dev, xfer, current_microframe);
+
 }
 
 struct net_buf *uhc_xfer_buf_alloc(const struct device *dev,

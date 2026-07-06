@@ -170,6 +170,20 @@ int uhc_xfer_append(const struct device *dev,
 		    struct uhc_transfer *const xfer);
 
 /**
+ * @brief Helper to re-submit a NAK'ed interrupt transfer again.
+ *
+ * @param[in] dev          Pointer to device struct of the driver instance
+ * @param[in] xfer         Pointer to UHC transfer
+ * @param[in] microframe   Microframe number used to determine transfer eligibility.
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -ENOMEM if there is no buffer in the queue
+ */
+void uhc_xfer_reschedule(const struct device *dev,
+			 struct uhc_transfer *const xfer,
+			 const uint32_t microframe);
+
+/**
  * @brief Helper function to send UHC event to a higher level.
  *
  * The callback would typically sends UHC even to a message queue (k_msgq).
