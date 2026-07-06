@@ -6,6 +6,6 @@
 
 / {
 	aliases {
-		pwm-0 = &pwm4;
+		pwm-test = &pwm4;
 	};
 };
