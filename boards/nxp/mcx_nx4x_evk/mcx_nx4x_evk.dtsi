@@ -310,3 +310,14 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 &crc {
 	status = "okay";
 };
+
+&tsi0 {
+	pinctrl-0 = <&pinmux_tsi>;
+	pinctrl-names = "default";
+
+	channel-mask = <0x80000>;
+	input-codes = <INPUT_BTN_3>;
+	touch-threshold = <5>;
+	release-threshold = <2>;
+	scan-period-ms = <50>;
+};
