@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/byteorder.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
@@ -543,6 +544,157 @@ static void source_stopped_cb(struct bt_bap_broadcast_source *source, uint8_t re
 	k_sem_give(&sem_stopped);
 }
 
+/* Two additional advertising sets run in parallel with the LE Audio
+ * broadcast so that a remote central can connect/disconnect repeatedly
+ * without interrupting the broadcast stream:
+ *   - conn_ext_adv:    connectable extended advertising
+ *   - conn_legacy_adv: connectable legacy advertising
+ * Each advertising set uses a distinct device name in its advertising
+ * data so the peer can distinguish between them.
+ */
+static struct bt_le_ext_adv *conn_ext_adv;
+static struct bt_le_ext_adv *conn_legacy_adv;
+
+#define CONN_EXT_ADV_NAME    "BAP Ext Connectable"
+#define CONN_LEGACY_ADV_NAME "BAP Legacy Connectable"
+
+static const struct bt_data conn_ext_ad[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONN_EXT_ADV_NAME, sizeof(CONN_EXT_ADV_NAME) - 1),
+};
+
+static const struct bt_data conn_legacy_ad[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONN_LEGACY_ADV_NAME,
+		sizeof(CONN_LEGACY_ADV_NAME) - 1),
+};
+
+/* Extended connectable advertising parameters (undirected, extended PDUs). */
+#define BT_LE_ADV_CONN_EXT                                                                         \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_EXT_ADV,                                \
+			BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL)
+
+static void conn_adv_start_work_handler(struct k_work *work)
+{
+	int err;
+
+	if (conn_ext_adv != NULL) {
+		err = bt_le_ext_adv_start(conn_ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+		if (err != 0 && err != -EALREADY) {
+			printk("Failed to restart connectable extended advertising (err %d)\n",
+			       err);
+		} else if (err == 0) {
+			printk("Connectable extended advertising restarted\n");
+		}
+	}
+
+	if (conn_legacy_adv != NULL) {
+		err = bt_le_ext_adv_start(conn_legacy_adv, BT_LE_EXT_ADV_START_DEFAULT);
+		if (err != 0 && err != -EALREADY) {
+			printk("Failed to restart connectable legacy advertising (err %d)\n",
+			       err);
+		} else if (err == 0) {
+			printk("Connectable legacy advertising restarted\n");
+		}
+	}
+}
+
+static K_WORK_DEFINE(conn_adv_start_work, conn_adv_start_work_handler);
+
+static void connected_cb(struct bt_conn *conn, uint8_t err)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	if (err != 0) {
+		printk("Failed to connect to %s (err 0x%02X)\n", addr, err);
+		/* Advertising sets that failed to establish a connection stop;
+		 * re-start them so the central can retry.
+		 */
+		k_work_submit(&conn_adv_start_work);
+		return;
+	}
+
+	printk("Connected to %s (broadcast continues)\n", addr);
+
+	/* When one advertising set produces a connection, the other stays
+	 * advertising. Re-start any advertising set the stack stopped so a
+	 * second central (up to CONFIG_BT_MAX_CONN) can also connect.
+	 */
+	k_work_submit(&conn_adv_start_work);
+}
+
+static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	printk("Disconnected from %s (reason 0x%02X)\n", addr, reason);
+
+	/* Restart the connectable advertising sets so the central can
+	 * reconnect. Both sets are restarted; -EALREADY is treated as OK for
+	 * the set that was never stopped.
+	 */
+	k_work_submit(&conn_adv_start_work);
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.connected = connected_cb,
+	.disconnected = disconnected_cb,
+};
+
+static int conn_adv_setup_and_start(void)
+{
+	int err;
+
+	/* Connectable extended advertising set. */
+	err = bt_le_ext_adv_create(BT_LE_ADV_CONN_EXT, NULL, &conn_ext_adv);
+	if (err != 0) {
+		printk("Failed to create connectable extended adv set (err %d)\n", err);
+		return err;
+	}
+
+	err = bt_le_ext_adv_set_data(conn_ext_adv, conn_ext_ad, ARRAY_SIZE(conn_ext_ad),
+				     NULL, 0);
+	if (err != 0) {
+		printk("Failed to set connectable extended adv data (err %d)\n", err);
+		return err;
+	}
+
+	err = bt_le_ext_adv_start(conn_ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0) {
+		printk("Failed to start connectable extended advertising (err %d)\n", err);
+		return err;
+	}
+
+	printk("Connectable extended advertising started as \"%s\"\n", CONN_EXT_ADV_NAME);
+
+	/* Connectable legacy advertising set. */
+	err = bt_le_ext_adv_create(BT_LE_ADV_CONN_FAST_1, NULL, &conn_legacy_adv);
+	if (err != 0) {
+		printk("Failed to create connectable legacy adv set (err %d)\n", err);
+		return err;
+	}
+
+	err = bt_le_ext_adv_set_data(conn_legacy_adv, conn_legacy_ad,
+				     ARRAY_SIZE(conn_legacy_ad), NULL, 0);
+	if (err != 0) {
+		printk("Failed to set connectable legacy adv data (err %d)\n", err);
+		return err;
+	}
+
+	err = bt_le_ext_adv_start(conn_legacy_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0) {
+		printk("Failed to start connectable legacy advertising (err %d)\n", err);
+		return err;
+	}
+
+	printk("Connectable legacy advertising started as \"%s\"\n", CONN_LEGACY_ADV_NAME);
+
+	return 0;
+}
+
 int main(void)
 {
 	static struct bt_bap_broadcast_source_cb broadcast_source_cb = {
@@ -571,6 +723,16 @@ int main(void)
 	err = bt_bap_broadcast_source_register_cb(&broadcast_source_cb);
 	if (err != 0) {
 		printk("Failed to register broadcast source callbacks (err %d)\n", err);
+		return 0;
+	}
+
+	/* Bring up a connectable extended advertising set that runs alongside
+	 * the LE Audio broadcast, so a remote central can connect and
+	 * disconnect repeatedly while the broadcast continues.
+	 */
+	err = conn_adv_setup_and_start();
+	if (err != 0) {
+		printk("Unable to start connectable advertiser: %d\n", err);
 		return 0;
 	}
 
