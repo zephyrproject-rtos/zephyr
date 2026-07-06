@@ -1676,7 +1676,7 @@ uint16_t bt_gatt_get_uatt_mtu(struct bt_conn *conn);
  *
  *  Used with @ref bt_gatt_exchange_mtu function to initiate an MTU exchange. The
  *  response is handled in the callback @p func, which is called upon
- *  completion from the 'config BT_RECV_CONTEXT' context.
+ *  completion from the Bluetooth RX thread.
  *
  *  @p params must remain valid until the callback executes.
  */
@@ -1694,7 +1694,7 @@ struct bt_gatt_exchange_params {
  *  As the response comes in callback @p params->func, for example
  *  @ref bt_gatt_get_mtu can be invoked in the mtu_exchange-callback to read
  *  out the new negotiated ATT connection MTU. The callback is run from the
- *  context specified by 'config BT_RECV_CONTEXT' and @p params must remain
+ *  context of the Bluetooth RX thread and @p params must remain
  *  valid until start of callback.
  *
  *  @param conn Connection object.
@@ -2006,7 +2006,7 @@ struct bt_gatt_read_params {
  *  callback varies depending on the type of read operation.
  *
  *  The Response comes in callback @p params->func. The callback is run from
- *  the context specified by 'config BT_RECV_CONTEXT'.
+ *  the context of the Bluetooth RX thread.
  *  @p params must remain valid until start of callback.
  *  If the received data length is invalid, the callback @p params->func will
  *  called with the error @ref BT_ATT_ERR_INVALID_PDU.
@@ -2057,7 +2057,7 @@ struct bt_gatt_write_params {
 /** @brief Write Attribute Value by handle
  *
  *  The Response comes in callback @p params->func. The callback is run from
- *  the context specified by 'config BT_RECV_CONTEXT'.
+ *  the context of the Bluetooth RX thread.
  *  @p params must remain valid until start of callback.
  *
  *  @param conn Connection object.
@@ -2264,7 +2264,7 @@ struct bt_gatt_subscribe_params {
  *  subscription was removed by this method.
  *
  *  The Response comes in callback @p params->subscribe. The callback is run from
- *  the context specified by 'config BT_RECV_CONTEXT'.
+ *  the context of the Bluetooth RX thread.
  *  The Notification callback @p params->notify is also called from the BT RX
  *  thread.
  *
