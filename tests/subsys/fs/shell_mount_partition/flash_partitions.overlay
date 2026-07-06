@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 Hongquan Li
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	partitions {
+		test_partition: partition@100000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00100000 0x00040000>;
+			label = "test-partition";
+		};
+	};
+};
