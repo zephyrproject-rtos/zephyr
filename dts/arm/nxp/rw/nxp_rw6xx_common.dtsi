@@ -781,6 +781,7 @@
 
 &flexspi {
 	compatible = "nxp,imx-flexspi";
+	ipeds;
 	interrupts = <42 0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
