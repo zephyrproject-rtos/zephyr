@@ -23,7 +23,7 @@ uint8_t sensirion_i2c_packet_get_crc(const i2c_packet_t *const i2c_packet, uint1
 bool sensirion_i2c_packet_check_crc(const i2c_packet_t *const i2c_packet, uint16_t index)
 {
 	return sensirion_i2c_packet_get_crc(i2c_packet, index) ==
-	    i2c_packet->data[index + SENSIRION_WORD_SIZE];
+	       i2c_packet->data[index + SENSIRION_WORD_SIZE];
 }
 
 uint16_t sensirion_i2c_packet_add_command16(i2c_packet_t *const i2c_packet, uint16_t offset,
