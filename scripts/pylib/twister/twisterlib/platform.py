@@ -150,6 +150,7 @@ class Platform:
         if default_sim:
             self.simulation = default_sim.name
 
+        toolchain_explicit = "toolchain" in variant_data or "toolchain" in data
         self.supported_toolchains = variant_data.get("toolchain", data.get("toolchain", []))
         if self.supported_toolchains is None:
             self.supported_toolchains = []
@@ -176,7 +177,9 @@ class Platform:
           # that is supported on all board targets for xtensa.
         }
 
-        if self.arch in support_toolchain_variants:
+        # Only auto-append arch-based default toolchains when the board YAML
+        # does not explicitly declare a toolchain list.
+        if not toolchain_explicit and self.arch in support_toolchain_variants:
             for toolchain in support_toolchain_variants[self.arch]:
                 if toolchain not in self.supported_toolchains:
                     self.supported_toolchains.append(toolchain)
