@@ -171,8 +171,26 @@ struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t frame_
 	return xfer;
 }
 
-int uhc_xfer_append(const struct device *dev,
-		    struct uhc_transfer *const xfer)
+static int uhc_xfer_add_new_periodic(const struct device *dev, struct uhc_transfer *const xfer,
+				     uint32_t frame_number)
+{
+	if (xfer->interval == 0) {
+		LOG_ERR("Tried to schedule a periodic xfer that has interval equal to 0");
+		return -EINVAL;
+	}
+
+	xfer->start_frame = frame_number + xfer->interval;
+
+	LOG_DBG("New periodic transfer s.f. %u f.n. %u interval %u", xfer->start_frame,
+		frame_number, xfer->interval);
+
+	uhc_xfer_add_periodic(dev, xfer);
+
+	return 0;
+}
+
+int uhc_xfer_append(const struct device *dev, struct uhc_transfer *const xfer,
+		    uint32_t frame_number)
 {
 	struct uhc_data *data = dev->data;
 
@@ -185,8 +203,7 @@ int uhc_xfer_append(const struct device *dev,
 		break;
 	case USB_EP_TYPE_ISO:
 	case USB_EP_TYPE_INTERRUPT:
-		uhc_xfer_add_periodic(dev, xfer);
-		break;
+		return uhc_xfer_add_new_periodic(dev, xfer, frame_number);
 	default:
 		LOG_ERR("Invalid xfer type: %d", xfer->type);
 	}
