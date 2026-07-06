@@ -46,11 +46,15 @@ size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr)
 	stack_ptr -= toolchain_tls_size;
 #endif
 
+#if defined(CONFIG_MULTITHREADING)
 	/*
 	 * Set thread TLS pointer which is used in
 	 * context switch to point to TLS area.
 	 */
 	new_thread->tls = POINTER_TO_UINT(stack_ptr);
+#else
+	ARG_UNUSED(new_thread);
+#endif /* CONFIG_MULTITHREADING */
 
 	return (z_tls_data_size() + toolchain_tls_size);
 }

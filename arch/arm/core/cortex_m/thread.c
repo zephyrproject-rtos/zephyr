@@ -708,9 +708,9 @@ FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(k_thread_entry_t main_
 	extern uintptr_t z_arm_tls_ptr;
 	size_t tls_size;
 
-	tls_size = arch_tls_stack_setup(&z_main_thread, psp);
-	z_arm_tls_ptr = z_main_thread.tls;
+	tls_size = arch_tls_stack_setup(NULL, psp);
 	psp -= tls_size;
+	z_arm_tls_ptr = POINTER_TO_UINT(psp);
 #endif
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
