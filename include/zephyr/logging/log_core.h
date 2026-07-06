@@ -175,15 +175,15 @@ extern "C" {
  *
  * It uses the level from the dynamic structure.
  *
- * @param _level Log level.
- * @param _source Data associated with the source.
+ * @param _lvl Log level.
+ * @param _src Data associated with the source.
  *
  * @retval true Continue with log message creation.
  * @retval false Drop that message.
  */
-#define Z_LOG_DYNAMIC_LEVEL_CHECK(_level, _source)                                                 \
+#define Z_LOG_DYNAMIC_LEVEL_CHECK(_lvl, _src)                                                      \
 	(!IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ||                                              \
-	 ((_level) <= Z_LOG_RUNTIME_FILTER(((struct log_source_dynamic_data *)_source)->filters)))
+	 ((_lvl) <= Z_LOG_RUNTIME_FILTER(((const struct log_source_dynamic_data *)_src)->filters)))
 
 /** @brief Check if message shall be created.
  *
@@ -513,9 +513,9 @@ TYPE_SECTION_END_EXTERN(struct log_source_dynamic_data, log_dynamic);
  *
  * @return Source ID.
  */
-static inline uint32_t log_dynamic_source_id(struct log_source_dynamic_data *data)
+static inline uint32_t log_dynamic_source_id(const struct log_source_dynamic_data *data)
 {
-	return ((uint8_t *)data - (uint8_t *)TYPE_SECTION_START(log_dynamic))/
+	return ((const uint8_t *)data - (const uint8_t *)TYPE_SECTION_START(log_dynamic))/
 			sizeof(struct log_source_dynamic_data);
 }
 
@@ -529,7 +529,7 @@ static inline uint32_t log_dynamic_source_id(struct log_source_dynamic_data *dat
 static inline uint32_t log_source_id(const void *source)
 {
 	return IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
-		log_dynamic_source_id((struct log_source_dynamic_data *)source) :
+		log_dynamic_source_id((const struct log_source_dynamic_data *)source) :
 		log_const_source_id((const struct log_source_const_data *)source);
 }
 
