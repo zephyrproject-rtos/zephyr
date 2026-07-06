@@ -15,6 +15,7 @@
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/irq.h>
+#include <zephyr/devicetree.h>
 
 #include "app_conf.h"
 #include "stm32_wpan_common.h"
@@ -148,6 +149,30 @@ static void stm32wb_set_stack_options(SHCI_C2_Ble_Init_Cmd_Packet_t *ble_init_cm
 #endif
 }
 
+/* LsSource
+* Some information for Low speed clock mapped in bits field
+* - bit 0:   1: Calibration for the RF system wakeup clock source   0: No calibration for the RF system wakeup clock source
+* - bit 1:   1: STM32WB5M Module device                             0: Other devices as STM32WBxx SOC, STM32WB1M module
+* - bit 2:   1: HSE/1024 Clock config                               0: LSE Clock config
+*/
+#if defined(STM32WB5Mxx)
+ #if DT_ENUM_IDX(DT_NODELABEL(rcc), st_rf_wakeup_clk) == 1  /* "LSE" */
+   #define CFG_BLE_LS_SOURCE  (SHCI_C2_BLE_INIT_CFG_BLE_LS_NOCALIB |\
+	 SHCI_C2_BLE_INIT_CFG_BLE_LS_MOD5MM_DEV | SHCI_C2_BLE_INIT_CFG_BLE_LS_CLK_LSE)
+ #else
+   #define CFG_BLE_LS_SOURCE  (SHCI_C2_BLE_INIT_CFG_BLE_LS_NOCALIB |\
+	 SHCI_C2_BLE_INIT_CFG_BLE_LS_MOD5MM_DEV | SHCI_C2_BLE_INIT_CFG_BLE_LS_CLK_HSE_1024)
+ #endif
+#else
+ #if DT_ENUM_IDX(DT_NODELABEL(rcc), st_rf_wakeup_clk) == 1  /* "LSE" */
+   #define CFG_BLE_LS_SOURCE  (SHCI_C2_BLE_INIT_CFG_BLE_LS_NOCALIB |\
+	 SHCI_C2_BLE_INIT_CFG_BLE_LS_OTHER_DEV | SHCI_C2_BLE_INIT_CFG_BLE_LS_CLK_LSE)
+ #else
+   #define CFG_BLE_LS_SOURCE  (SHCI_C2_BLE_INIT_CFG_BLE_LS_NOCALIB |\
+	 SHCI_C2_BLE_INIT_CFG_BLE_LS_OTHER_DEV | SHCI_C2_BLE_INIT_CFG_BLE_LS_CLK_HSE_1024)
+ #endif
+#endif
+
 static void stm32wb_start_ble(uint32_t rf_clock)
 {
 	SHCI_C2_Ble_Init_Cmd_Packet_t ble_init_cmd_packet = {
@@ -164,7 +189,7 @@ static void stm32wb_start_ble(uint32_t rf_clock)
 	    CFG_BLE_MAX_ATT_MTU,
 	    CFG_BLE_PERIPHERAL_SCA,
 	    CFG_BLE_CENTRAL_SCA,
-	    (rf_clock == STM32_SRC_LSE) ? CFG_BLE_LS_SOURCE : 0,
+	    CFG_BLE_LS_SOURCE,
 	    CFG_BLE_MAX_CONN_EVENT_LENGTH,
 	    CFG_BLE_HSE_STARTUP_TIME,
 	    CFG_BLE_VITERBI_MODE,
@@ -572,8 +597,7 @@ static int c2_reset(void)
 	err = clock_control_configure(clk, (clock_control_subsys_t) &clk_cfg[1],
 					NULL);
 	if (err < 0) {
-		LOG_ERR("Could not configure RF Wake up clock");
-		return err;
+		LOG_INF("RF Wake up clock configuration returned error %d, continuing (HSE/1024 in use)", err);
 	}
 
 	/* HSI48 clock and CLK48 clock source are enabled using the device tree */
