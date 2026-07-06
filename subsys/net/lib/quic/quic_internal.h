@@ -378,7 +378,6 @@ struct quic_tls_context {
 	bool session_state_valid;
 	bool issue_session_tickets;
 	uint32_t max_early_data_size;
-	uint32_t early_data_bytes_received;
 	uint8_t resumption_master_secret[QUIC_HASH_MAX_LEN];
 	size_t resumption_master_secret_len;
 	struct quic_session_state session_state;
@@ -1268,9 +1267,9 @@ bool quic_early_data_is_armed(const struct quic_endpoint *ep);
 enum quic_secret_level quic_stream_send_level(const struct quic_endpoint *ep);
 int parse_encrypted_extensions(struct quic_tls_context *ctx,
 			       const uint8_t *msg, size_t msg_len);
+int parse_new_session_ticket(struct quic_tls_context *ctx,
+			     const uint8_t *msg, size_t msg_len);
 int quic_mark_rejected_early_data(struct quic_endpoint *ep);
-int quic_track_early_data_bytes(struct quic_endpoint *ep, uint8_t frame_type,
-				uint64_t data_len);
 
 bool quic_setup_initial_secrets(struct quic_endpoint *ep,
 				const uint8_t *cid, size_t cid_len,

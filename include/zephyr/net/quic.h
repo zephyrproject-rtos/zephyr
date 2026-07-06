@@ -159,15 +159,18 @@ enum {
 	ZSOCK_QUIC_SO_SESSION_TICKET_ENABLE = 6,
 
 	/**
-	 * Configure the server's advertised 0-RTT limit for newly issued tickets.
+	 * Enable 0-RTT early data on tickets this server issues.
 	 *
 	 * The option value is a pointer to a uint32_t. Set it on a listening or
-	 * server-side connection socket before the handshake. A value of 0 disables
-	 * 0-RTT for new tickets; a non-zero value both enables 0-RTT and sets the
-	 * maximum number of early-data bytes a resuming client may send. This only
-	 * affects newly issued tickets; applications must still treat accepted
-	 * early data as replayable at the protocol level. Non-zero values require
-	 * CONFIG_QUIC_0RTT; otherwise setsockopt() fails with ENOTSUP.
+	 * server-side connection socket before the handshake. A value of 0 keeps
+	 * 0-RTT disabled for newly issued tickets; any non-zero value enables it.
+	 * Per RFC 9001 4.6.1 the ticket always advertises the fixed 0xffffffff
+	 * sentinel and the amount of early data a resuming client may send is
+	 * bounded by the connection's flow-control (transport-parameter) limits,
+	 * not by this value; the option is therefore only an enable switch, not a
+	 * byte cap. This only affects newly issued tickets; applications must still
+	 * treat accepted early data as replayable at the protocol level. Non-zero
+	 * values require CONFIG_QUIC_0RTT; otherwise setsockopt() fails with ENOTSUP.
 	 */
 	ZSOCK_QUIC_SO_MAX_EARLY_DATA_SIZE = 7,
 
@@ -233,7 +236,11 @@ struct quic_session_state {
 	uint32_t ticket_lifetime;
 	/** Random ticket_age_add value from NewSessionTicket. */
 	uint32_t ticket_age_add;
-	/** Max early data size from NewSessionTicket, or 0 when 0-RTT is not permitted. */
+	/**
+	 * Early-data allowance from NewSessionTicket: 0 when 0-RTT is not
+	 * permitted, otherwise the RFC 9001 4.6.1 sentinel 0xffffffff (in QUIC
+	 * the actual early-data limit is governed by transport parameters).
+	 */
 	uint32_t max_early_data_size;
 	/** Local monotonic timestamp in milliseconds when the ticket was received. */
 	uint64_t issue_time_ms;
