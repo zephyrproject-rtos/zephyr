@@ -51,6 +51,18 @@ static inline void *uhc_get_private(const struct device *dev)
 }
 
 /**
+ * @brief Initialize UHC common data
+ *
+ * UHC drivers using the common helpers must call this function during
+ * driver initialization.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ *
+ * @return 0 on success, all other values should be treated as error.
+ */
+int uhc_common_init(const struct device *dev);
+
+/**
  * @brief Locking function for the drivers.
  *
  * @param[in] dev     Pointer to device struct of the driver instance
@@ -161,6 +173,29 @@ struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t frame_
  */
 int uhc_xfer_append(const struct device *dev,
 		    struct uhc_transfer *const xfer);
+
+/**
+ * @brief Cleans up canceled transfer in the internal queues.
+ *
+ * A canceled transfer is marked by having the err field set to `-ECONNRESET`
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ */
+void uhc_xfer_cleanup_cancelled(const struct device *dev);
+
+/**
+ * @brief Marks a queued transfer as canceled
+ *
+ * This function does not fully remove the transfer.
+ * To fully delete the transfer, call `uhc_xfer_cleanup_cancelled()`
+ * after marking a transfer as canceled.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] xfer   Pointer to UHC transfer that should be canceled
+ *
+ * @return 0 on success, all other values should be treated as error.
+ */
+int uhc_xfer_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
 
 /**
  * @brief Helper function to send UHC event to a higher level.
