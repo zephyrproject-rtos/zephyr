@@ -953,7 +953,11 @@ static void cap_commander_ba_recv_state_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	__ASSERT_NO_MSG(state != NULL);
+	if (state == NULL) {
+		/* Ignore, we use cap_commander_ba_recv_state_removed_cb for removed receive states
+		 */
+		return;
+	}
 
 	cap_commander_handle_recv_state(conn, state->src_id, state);
 }
