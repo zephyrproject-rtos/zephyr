@@ -173,7 +173,7 @@ static int uhc_mcux_enqueue(const struct device *dev, struct uhc_transfer *const
 	usb_status_t status;
 	usb_host_transfer_t *mcux_xfer;
 
-	uhc_xfer_append(dev, xfer);
+	uhc_xfer_append(dev, xfer, 0);
 
 	/* firstly check and init the mcux endpoint handle */
 	mcux_ep = uhc_mcux_init_hal_ep(dev, xfer);
