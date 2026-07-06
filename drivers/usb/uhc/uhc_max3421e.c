@@ -907,12 +907,7 @@ static int max3421e_enqueue(const struct device *dev,
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
 
-	if (xfer->interval) {
-		xfer->start_frame = priv->frame_number + xfer->interval;
-		LOG_DBG("New periodic transfer s.f. %u f.n. %u interval %u", xfer->start_frame,
-			priv->frame_number, xfer->interval);
-	}
-	return uhc_xfer_append(dev, xfer);
+	return uhc_xfer_append(dev, xfer, priv->frame_number);
 }
 
 static int max3421e_dequeue(const struct device *dev,

@@ -155,14 +155,16 @@ struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t frame_
 /**
  * @brief Helper to append a transfer to internal list.
  *
- * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] xfer   Pointer to UHC transfer
+ * @param[in] dev      Pointer to device struct of the driver instance
+ * @param[in] xfer     Pointer to UHC transfer
+ * @param[in] frame_number The current USB frame number, used to schedule periodic transfers
  *
  * @return 0 on success, all other values should be treated as error.
+ * @retval -EINVAL if the provided xfers is periodic and has interval equal to 0
  * @retval -ENOMEM if there is no buffer in the queue
  */
-int uhc_xfer_append(const struct device *dev,
-		    struct uhc_transfer *const xfer);
+int uhc_xfer_append(const struct device *dev, struct uhc_transfer *const xfer,
+		    uint32_t frame_number);
 
 /**
  * @brief Cleans up canceled transfer in the internal queues.
