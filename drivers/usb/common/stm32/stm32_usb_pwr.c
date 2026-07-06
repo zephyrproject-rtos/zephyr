@@ -39,7 +39,18 @@ int stm32_usb_pwr_enable(void)
 		goto fini;
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	LL_PWR_EnableVddUSB();
+
+#	if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
+	/*
+	 * Enable HS PHY power regulator if OTG_HS is used.
+	 * Note: ifdef is required because the function
+	 * does not exist on all STM32H5 devices.
+	 */
+	LL_PWR_EnableUSBOTGHSPhy();
+#	endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) */
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_PWR_EnableUSBVoltageDetector();
 
 	/* Per AN2606: USBREGEN not supported when running in FS mode. */
@@ -170,7 +181,13 @@ int stm32_usb_pwr_disable(void)
 		goto fini;
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#	if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
+	LL_PWR_DisableUSBOTGHSPhy();
+#	endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) */
+
+	LL_PWR_DisableVddUSB();
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_PWR_DisableUSBVoltageDetector();
 #elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	/* Disable HS PHY power regulator (if enabled) */
