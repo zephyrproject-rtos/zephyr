@@ -19,3 +19,4 @@ supported:
   - pinctrl
   - uart
   - watchdog
+  - counter
