@@ -61,6 +61,9 @@ struct mcux_flexcomm_config {
 	struct pm_state_constraints lp_states;
 	void (*wakeup_cfg)(void);
 	clock_control_subsys_t lp_clock_subsys;
+#ifdef CONFIG_UART_MCUX_FLEXCOMM_MODE32K_WAKE
+	uint32_t low_power_speed;
+#endif
 #endif
 };
 
@@ -1171,18 +1174,22 @@ static void mcux_flexcomm_pm_prepare_wake(const struct device *dev,
 					  enum pm_state state, uint8_t substate)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
+#ifndef CONFIG_UART_MCUX_FLEXCOMM_MODE32K_WAKE
 	struct mcux_flexcomm_data *data = dev->data;
+#endif
 	USART_Type *base = config->base;
 	struct pm_state_constraint match = {
 		.state = state,
 		.substate_id = substate,
 	};
 
-	/* Switch to the lowest possible baud rate, in order to
-	 * both minimize power consumption and also be able to
-	 * potentially wake up the chip from this mode.
+	/* Reclock the USART so it keeps detecting a start bit while the
+	 * system is in this low-power state, and can wake the SoC from it.
 	 */
 	if (pm_state_in_constraints(&config->lp_states, match)) {
+#ifdef CONFIG_UART_MCUX_FLEXCOMM_MODE32K_WAKE
+		USART_Enable32kMode(base, config->low_power_speed, true, 32768U);
+#else
 		if (config->lp_clock_subsys != NULL) {
 			clock_control_configure(config->clock_dev, config->lp_clock_subsys, NULL);
 		}
@@ -1190,6 +1197,7 @@ static void mcux_flexcomm_pm_prepare_wake(const struct device *dev,
 		data->old_osr = base->OSR;
 		base->OSR = 8;
 		base->BRG = 0;
+#endif
 	}
 }
 
@@ -1197,7 +1205,9 @@ static void mcux_flexcomm_pm_restore_wake(const struct device *dev,
 					  enum pm_state state, uint8_t substate)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
+#ifndef CONFIG_UART_MCUX_FLEXCOMM_MODE32K_WAKE
 	struct mcux_flexcomm_data *data = dev->data;
+#endif
 	USART_Type *base = config->base;
 	struct pm_state_constraint match = {
 		.state = state,
@@ -1205,9 +1215,16 @@ static void mcux_flexcomm_pm_restore_wake(const struct device *dev,
 	};
 
 	if (pm_state_in_constraints(&config->lp_states, match)) {
+#ifdef CONFIG_UART_MCUX_FLEXCOMM_MODE32K_WAKE
+		uint32_t clock_freq;
+
+		(void)clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq);
+		USART_Enable32kMode(base, config->baud_rate, false, clock_freq);
+#else
 		clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
 		base->OSR = data->old_osr;
 		base->BRG = data->old_brg;
+#endif
 	}
 }
 #endif /* FC_UART_IS_WAKEUP */
@@ -1441,6 +1458,17 @@ static void serial_mcux_flexcomm_##n##_pm_exit(enum pm_state state, uint8_t subs
 	IF_ENABLED(DT_INST_CLOCKS_HAS_NAME(n, sleep),				\
 		(.lp_clock_subsys = (clock_control_subsys_t)			\
 				DT_INST_CLOCKS_CELL_BY_NAME(n, sleep, name),))
+#ifdef CONFIG_UART_MCUX_FLEXCOMM_MODE32K_WAKE
+#define UART_MCUX_FLEXCOMM_LP_SPEED_BIND(n)					\
+	.low_power_speed = DT_INST_PROP(n, nxp_low_power_speed),
+#define UART_MCUX_FLEXCOMM_MODE32K_ASSERT(n)					\
+	BUILD_ASSERT(!DT_INST_PROP(n, wakeup_source) ||				\
+		     (9600 % DT_INST_PROP(n, nxp_low_power_speed)) == 0,	\
+		     "nxp,low-power-speed must be a divisor of 9600 (MODE32K)");
+#else
+#define UART_MCUX_FLEXCOMM_LP_SPEED_BIND(n)
+#define UART_MCUX_FLEXCOMM_MODE32K_ASSERT(n)
+#endif
 #else
 #define UART_MCUX_FLEXCOMM_WAKEUP_CFG_DEFINE(n)
 #define UART_MCUX_FLEXCOMM_WAKEUP_CFG_BIND(n)
@@ -1449,6 +1477,8 @@ static void serial_mcux_flexcomm_##n##_pm_exit(enum pm_state state, uint8_t subs
 #define UART_MCUX_FLEXCOMM_LP_STATES_DEFINE(n)
 #define UART_MCUX_FLEXCOMM_LP_STATES_BIND(n)
 #define UART_MCUX_FLEXCOMM_LP_CLK_SUBSYS(n)
+#define UART_MCUX_FLEXCOMM_LP_SPEED_BIND(n)
+#define UART_MCUX_FLEXCOMM_MODE32K_ASSERT(n)
 #endif /* FC_UART_IS_WAKEUP */
 
 #define UART_MCUX_FLEXCOMM_INIT_CFG(n)						\
@@ -1467,6 +1497,7 @@ static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {		\
 	UART_MCUX_FLEXCOMM_PM_UNLOCK_FUNC_BIND(n)				\
 	UART_MCUX_FLEXCOMM_WAKEUP_CFG_BIND(n)					\
 	UART_MCUX_FLEXCOMM_LP_CLK_SUBSYS(n)					\
+	UART_MCUX_FLEXCOMM_LP_SPEED_BIND(n)					\
 };
 
 #define UART_MCUX_FLEXCOMM_INIT_DATA(n)						\
@@ -1488,6 +1519,7 @@ static struct mcux_flexcomm_data mcux_flexcomm_##n##_data = {			\
 	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)					\
 										\
 	UART_MCUX_FLEXCOMM_LP_STATES_DEFINE(n)					\
+	UART_MCUX_FLEXCOMM_MODE32K_ASSERT(n)					\
 										\
 	UART_MCUX_FLEXCOMM_INIT_CFG(n)						\
 										\

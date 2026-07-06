@@ -6,3 +6,13 @@ description: LPC USART
 compatible: "nxp,lpc-usart"
 
 include: [uart-controller.yaml, "nxp,lpc-flexcomm.yaml"]
+
+properties:
+  nxp,low-power-speed:
+    type: int
+    default: 9600
+    description: |
+      Baud rate used while in a low-power state listed in low-power-states,
+      on SoCs that reclock the USART from the 32 kHz oscillator to stay
+      wake-capable. Restored to current-speed on wake. Limited by the
+      32 kHz clocking to divisors of 9600 (9600, 4800, 2400, 1200).
