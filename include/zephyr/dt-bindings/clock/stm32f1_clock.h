@@ -10,12 +10,17 @@
 
 /** Domain clocks */
 
-/** Bus clocks */
+/* Bus clocks */
+/** @brief AHB1 bus clock enable register offset */
 #define STM32_CLOCK_BUS_AHB1    0x014
+/** @brief APB2 bus clock enable register offset */
 #define STM32_CLOCK_BUS_APB2    0x018
+/** @brief APB1 bus clock enable register offset */
 #define STM32_CLOCK_BUS_APB1    0x01c
 
+/** @brief First peripheral bus clock enable register offset */
 #define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_AHB1
+/** @brief Last peripheral bus clock enable register offset */
 #define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB1
 
 /** System clock */
@@ -23,37 +28,53 @@
 
 /** Fixed clocks  */
 /* Low speed clocks defined in stm32_common_clocks.h */
+/** @brief Clock source identifier for HSI */
 #define STM32_SRC_HSI           (STM32_SRC_LSI + 1)
+/** @brief Clock source identifier for HSE */
 #define STM32_SRC_HSE           (STM32_SRC_HSI + 1)
+/** @brief Clock source identifier for EXT_HSE */
 #define STM32_SRC_EXT_HSE       (STM32_SRC_HSE + 1)
+/** @brief Clock source identifier for PLLCLK */
 #define STM32_SRC_PLLCLK        (STM32_SRC_EXT_HSE + 1)
+/** @brief Clock source identifier for TIMPCLK1 */
 #define STM32_SRC_TIMPCLK1	(STM32_SRC_PLLCLK + 1)
+/** @brief Clock source identifier for TIMPCLK2 */
 #define STM32_SRC_TIMPCLK2	(STM32_SRC_TIMPCLK1 + 1)
 
 /** @brief RCC_CFGRx register offset */
 #define CFGR1_REG               0x04
+/** @brief RCC CFGR2 register offset */
 #define CFGR2_REG		0x2C
 
 /** @brief RCC_BDCR register offset */
 #define BDCR_REG		0x20
 
 /** @brief Device domain clocks selection helpers */
-/** CFGR1 devices */
+/* CFGR1 devices */
+/** @brief Clock prescaler selection for ADC */
 #define ADC_PRE(val)		STM32_DT_CLOCK_SELECT((val), 15, 14, CFGR1_REG)
-/** CFGR2 devices */
+/* CFGR2 devices */
+/** @brief Kernel clock source selection for I2S2 */
 #define I2S2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 17, 17, CFGR2_REG)
+/** @brief Kernel clock source selection for I2S3 */
 #define I2S3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 18, 18, CFGR2_REG)
-/** BDCR devices */
+/* BDCR devices */
+/** @brief Kernel clock source selection for RTC */
 #define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 9, 8, BDCR_REG)
 
-/** CFGR1 devices */
+/* CFGR1 devices */
+/** @brief MCO1 clock source selection */
 #define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 26, 24, CFGR1_REG)
 /* No MCO prescaler support on STM32F1 series. */
 
 /* ADC prescaler division factor */
+/** @brief ADC prescaler division factor: 2 */
 #define ADC_PRE_DIV_2		0
+/** @brief ADC prescaler division factor: 4 */
 #define ADC_PRE_DIV_4		1
+/** @brief ADC prescaler division factor: 6 */
 #define ADC_PRE_DIV_6		2
+/** @brief ADC prescaler division factor: 8 */
 #define ADC_PRE_DIV_8		3
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F1_CLOCK_H_ */

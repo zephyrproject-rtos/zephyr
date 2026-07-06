@@ -14,11 +14,14 @@
 /** Fixed clocks  */
 /* Low speed clocks defined in stm32_common_clocks.h */
 /* Common clocks with stm32f1x defined in stm32f1_clock.h */
+/** @brief Clock source identifier for PLL2CLK */
 #define STM32_SRC_PLL2CLK           (STM32_SRC_TIMPCLK2 + 1)
+/** @brief Clock source identifier for PLL3CLK */
 #define STM32_SRC_PLL3CLK           (STM32_SRC_PLL2CLK + 1)
 
 /** CFGR1 devices */
 #undef MCO1_SEL /* Need to redefine generic F1 MCO_SEL for connectivity line devices. */
+/** @brief MCO1 clock source selection */
 #define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 27, 24, CFGR1_REG)
 /* No MCO prescaler support on STM32F1 series. */
 

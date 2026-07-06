@@ -8,13 +8,19 @@
 
 #include "stm32_common_clocks.h"
 
-/** Bus gatting clocks */
+/* Bus gatting clocks */
+/** @brief AHB1 bus clock enable register offset */
 #define STM32_CLOCK_BUS_AHB1    0x48
+/** @brief IOP bus clock enable register offset */
 #define STM32_CLOCK_BUS_IOP     0x4C
+/** @brief APB1 bus clock enable register offset */
 #define STM32_CLOCK_BUS_APB1    0x58
+/** @brief APB1_2 bus clock enable register offset */
 #define STM32_CLOCK_BUS_APB1_2  0x60
 
+/** @brief First peripheral bus clock enable register offset */
 #define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_AHB1
+/** @brief Last peripheral bus clock enable register offset */
 #define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB1_2
 
 /** Domain clocks */
@@ -25,16 +31,25 @@
 
 /** Fixed clocks  */
 /* Low speed clocks defined in stm32_common_clocks.h */
+/** @brief Clock source identifier for HSI */
 #define STM32_SRC_HSI		(STM32_SRC_LSI + 1)
+/** @brief Clock source identifier for HSI48 */
 #define STM32_SRC_HSI48		(STM32_SRC_HSI + 1)
+/** @brief Clock source identifier for MSI */
 #define STM32_SRC_MSI		(STM32_SRC_HSI48 + 1)
+/** @brief Clock source identifier for HSE */
 #define STM32_SRC_HSE		(STM32_SRC_MSI + 1)
-/** Peripheral bus clock */
+/* Peripheral bus clock */
+/** @brief Clock source identifier for PCLK */
 #define STM32_SRC_PCLK		(STM32_SRC_HSE + 1)
-/** PLL clock outputs */
+/* PLL clock outputs */
+/** @brief Clock source identifier for PLL_P */
 #define STM32_SRC_PLL_P		(STM32_SRC_PCLK + 1)
+/** @brief Clock source identifier for PLL_Q */
 #define STM32_SRC_PLL_Q		(STM32_SRC_PLL_P + 1)
+/** @brief Clock source identifier for PLL_R */
 #define STM32_SRC_PLL_R		(STM32_SRC_PLL_Q + 1)
+/** @brief Clock source identifier for CK48 */
 #define STM32_SRC_CK48		(STM32_SRC_PLL_R + 1)
 
 /** @brief RCC_CCIPR register offset */
@@ -44,22 +59,37 @@
 #define BDCR_REG		0x90
 
 /** @brief Device domain clocks selection helpers */
-/** CCIPR devices */
+/* CCIPR devices */
+/** @brief Kernel clock source selection for USART1 */
 #define USART1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, CCIPR_REG)
+/** @brief Kernel clock source selection for USART2 */
 #define USART2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 2, CCIPR_REG)
+/** @brief Kernel clock source selection for LPUART3 */
 #define LPUART3_SEL(val)	STM32_DT_CLOCK_SELECT((val), 7, 6, CCIPR_REG)
+/** @brief Kernel clock source selection for LPUART2 */
 #define LPUART2_SEL(val)	STM32_DT_CLOCK_SELECT((val), 9, 8, CCIPR_REG)
+/** @brief Kernel clock source selection for LPUART1 */
 #define LPUART1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 11, 10, CCIPR_REG)
+/** @brief Kernel clock source selection for I2C1 */
 #define I2C1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 13, 12, CCIPR_REG)
+/** @brief Kernel clock source selection for I2C3 */
 #define I2C3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 17, 16, CCIPR_REG)
+/** @brief Kernel clock source selection for LPTIM1 */
 #define LPTIM1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 19, 18, CCIPR_REG)
+/** @brief Kernel clock source selection for LPTIM2 */
 #define LPTIM2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 21, 20, CCIPR_REG)
+/** @brief Kernel clock source selection for LPTIM3 */
 #define LPTIM3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 23, 22, CCIPR_REG)
+/** @brief Kernel clock source selection for TIM1 */
 #define TIM1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 24, 24, CCIPR_REG)
+/** @brief Kernel clock source selection for TIM15 */
 #define TIM15_SEL(val)		STM32_DT_CLOCK_SELECT((val), 25, 25, CCIPR_REG)
+/** @brief Kernel clock source selection for CLK48 */
 #define CLK48_SEL(val)		STM32_DT_CLOCK_SELECT((val), 27, 26, CCIPR_REG)
+/** @brief Kernel clock source selection for ADC */
 #define ADC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 29, 28, CCIPR_REG)
-/** BDCR devices */
+/* BDCR devices */
+/** @brief Kernel clock source selection for RTC */
 #define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 9, 8, BDCR_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32U0_CLOCK_H_ */
