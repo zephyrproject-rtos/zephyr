@@ -3091,6 +3091,15 @@ static int quic_endpoint_unref(struct quic_endpoint *ep)
 
 	ep->slab_index = -1;
 
+	/* quic_recovery_begin_shutdown() (called above via the unref path) must
+	 * have cancelled pto_work before we get here: endpoint_alloc() memsets
+	 * the reused slab slot, and zeroing a still-linked _timeout node would
+	 * corrupt the global kernel timeout list and surface as a baffling
+	 * assert in unrelated code. Catch any future teardown regression here.
+	 */
+	__ASSERT(!sys_dnode_is_linked(&ep->recovery.pto_work.timeout.node),
+		 "pto_work still linked at endpoint free");
+
 	k_mem_slab_free(ep->slab, (void *)ep);
 
 	k_mutex_unlock(&endpoints_lock);
