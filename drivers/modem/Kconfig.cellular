@@ -61,6 +61,7 @@ config MODEM_CELLULAR_APN
 
 config MODEM_CELLULAR_PERIODIC_SCRIPT_MS
 	int "Periodic script interval in milliseconds"
+	default 30000 if DT_HAS_NORDIC_NRF93M1_ENABLED
 	default 2000
 
 config MODEM_CELLULAR_UART_BUFFER_SIZES
