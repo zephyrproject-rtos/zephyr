@@ -688,12 +688,12 @@ Bluetooth Host:
   collaborators:
     - alwa-nordic
     - hermabe
-    - rugeGerritsen
     - sjanc
     - Thalley
     - cvinayak
     - HaavardRei
     - alxelax
+    - lylezhu2012
   files:
     - doc/services/connectivity/bluetooth/
     - include/zephyr/bluetooth/
