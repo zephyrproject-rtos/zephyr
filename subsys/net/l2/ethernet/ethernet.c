@@ -505,11 +505,14 @@ static int ethernet_ll_prepare_on_ipv4(struct net_if *iface,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_ARP)) {
-		return net_arp_prepare(pkt,
-				       request_ip != NULL ?
-				       (struct net_in_addr *)request_ip :
-				       (struct net_in_addr *)NET_IPV4_HDR(pkt)->dst,
-				       NULL, out);
+		struct net_in_addr addr;
+
+		if (request_ip == NULL) {
+			net_ipv4_addr_copy_raw((uint8_t *)&addr, NET_IPV4_HDR(pkt)->dst);
+			request_ip = &addr;
+		}
+
+		return net_arp_prepare(pkt, (struct net_in_addr *)request_ip, NULL, out);
 	}
 
 	return NET_ARP_COMPLETE;
