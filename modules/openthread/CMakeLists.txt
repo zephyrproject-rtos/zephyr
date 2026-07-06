@@ -293,11 +293,16 @@ if(CONFIG_HDLC_RCP_IF)
   )
 endif()
 
-if(CONFIG_OPENTHREAD_SETTINGS_RAM)
+if(CONFIG_OPENTHREAD_SETTINGS_RAM OR CONFIG_OPENTHREAD_RADIO_VENDOR_IMPLEMENTATION)
   target_compile_options(openthread-platform-utils PRIVATE
     $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>
     $<TARGET_PROPERTY:compiler,no_builtin>)
   add_dependencies(openthread-platform-utils syscall_list_h_target)
+
+  if(CONFIG_PICOLIBC OR CONFIG_MINIMAL_LIBCPP)
+    target_compile_options(openthread-platform-utils PRIVATE
+      $<$<COMPILE_LANGUAGE:CXX>:-fno-threadsafe-statics>)
+  endif()
 
   list(APPEND ot_libs openthread-platform-utils-static)
 endif()
