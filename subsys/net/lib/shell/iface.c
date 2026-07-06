@@ -53,9 +53,6 @@ static struct ethernet_capabilities eth_hw_caps[] = {
 	EC(ETHERNET_LINK_1000BASE,        "1 Gbits"),
 	EC(ETHERNET_LINK_2500BASE,        "2.5 Gbits"),
 	EC(ETHERNET_LINK_5000BASE,        "5 Gbits"),
-#ifdef CONFIG_PTP_CLOCK
-	EC(ETHERNET_PTP,                  "IEEE 802.1AS gPTP clock"),
-#endif
 	EC(ETHERNET_QAV,                  "IEEE 802.1Qav (credit shaping)"),
 	EC(ETHERNET_QBV,                  "IEEE 802.1Qbv (scheduled traffic)"),
 	EC(ETHERNET_QBU,                  "IEEE 802.1Qbu (frame preemption)"),
@@ -82,6 +79,12 @@ static void print_supported_ethernet_capabilities(
 			PR("\t%s\n", eth_hw_caps[i].description);
 		}
 	}
+
+#ifdef CONFIG_PTP_CLOCK
+	if (net_eth_get_ptp_clock(iface) != NULL) {
+		PR("\t%s\n", "IEEE 802.1AS gPTP clock");
+	}
+#endif
 }
 #endif /* CONFIG_NET_L2_ETHERNET */
 
