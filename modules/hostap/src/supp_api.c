@@ -803,8 +803,11 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			goto out;
 		}
 
-		/* SAP - only open and WPA2-PSK are supported for now */
-		if (mode_ap && params->security != WIFI_SECURITY_TYPE_PSK) {
+		/* SAP - only open, WPA2-PSK and WPA3-SAE are supported for now */
+		if (mode_ap && params->security != WIFI_SECURITY_TYPE_PSK &&
+		    params->security != WIFI_SECURITY_TYPE_SAE &&
+		    params->security != WIFI_SECURITY_TYPE_SAE_H2E &&
+		    params->security != WIFI_SECURITY_TYPE_SAE_AUTO) {
 			ret = -1;
 			wpa_printf(MSG_ERROR, "Unsupported security type: %d",
 				params->security);
@@ -881,6 +884,16 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			}
 
 			if (!wpa_cli_cmd_v("set_network %d pairwise CCMP", resp.network_id)) {
+				goto out;
+			}
+
+			/*
+			 * WPA3-SAE mandates management-frame protection; honor
+			 * the requested MFP level (callers must request at least
+			 * WIFI_MFP_OPTIONAL for SAE).
+			 */
+			if (!wpa_cli_cmd_v("set_network %d ieee80211w %d",
+					   resp.network_id, params->mfp)) {
 				goto out;
 			}
 		}
