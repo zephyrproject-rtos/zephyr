@@ -68,8 +68,11 @@ zephyr_get(DTC_OVERLAY_FILE SYSBUILD LOCAL)
 # If DTC_OVERLAY_FILE is not set by the user, look for SoC and board-specific overlays
 # in the 'boards' and `soc` configuration subdirectories.
 if(NOT DEFINED DTC_OVERLAY_FILE)
-  zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/socs DTS DTC_OVERLAY_FILE QUALIFIERS SUFFIX ${FILE_SUFFIX})
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards DTS DTC_OVERLAY_FILE SUFFIX ${FILE_SUFFIX})
+
+  if(NOT DEFINED DTC_OVERLAY_FILE)
+    zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/socs DTS DTC_OVERLAY_FILE QUALIFIERS SUFFIX ${FILE_SUFFIX})
+  endif()
 endif()
 
 # If still not found, search for other overlays in the configuration directory.
