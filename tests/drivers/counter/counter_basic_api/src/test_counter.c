@@ -202,6 +202,7 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MSPM0_TIMER
 	DEVS_FOR_DT_COMPAT(ti_mspm0_timer_counter)
 #endif
+	DEVS_FOR_DT_COMPAT(ti_cc35xx_lgpt)
 };
 
 static const struct device *const period_devs[] = {
