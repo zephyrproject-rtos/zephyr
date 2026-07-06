@@ -31,7 +31,7 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf93m1_init_chat_script, nordic_nrf93m1_init_ch
 MODEM_CHAT_MATCH_DEFINE(nrf93m1_iccid_match, "%ICCID: ", "", modem_cellular_chat_on_iccid);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf93m1_network_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=2", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("", 500),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", cimi_match),
