@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Qualification-scope model for Zephyr architectural layering analysis.
+#
+# Components are NOT defined here. They are the areas from the top-level
+# MAINTAINERS.yml, parsed via scripts/get_maintainer.py: each source file is
+# assigned to its most specific MAINTAINERS area. This keeps the component
+# partition authoritative and maintained by the project, instead of a
+# hand-written list that would drift.
+#
+# This file only declares the qualification scope: which of those areas are
+# in-scope. Independence rule enforced by the analyzer and the web app:
+#
+#     in-scope code must not call or read out-of-scope code.
+#
+# Everything not listed below (including EXTERNAL toolchain symbols, out-of-tree
+# module/HAL code, and UNMAINTAINED files) is treated as out-of-scope. Use the
+# web app (serve.py) to toggle areas in/out interactively and see the effect.
+
+# Optional: override the maintainers file (default: <zephyr>/MAINTAINERS.yml).
+# Path is relative to the Zephyr base unless absolute.
+# maintainers: MAINTAINERS.yml
+
+# MAINTAINERS areas that make up the qualification scope.
+in_scope:
+  - Kernel
