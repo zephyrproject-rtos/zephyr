@@ -20,4 +20,5 @@ supported:
   - spi
   - uart
   - watchdog
+  - netif:openthread
 vendor: silabs
