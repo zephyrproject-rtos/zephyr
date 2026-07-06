@@ -1,0 +1,11 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: uhc-dwc2-usbotghs-stm32f7-usbphyc
+append:
+  EXTRA_DTC_OVERLAY_FILE: uhc-dwc2-usbotghs-stm32f7-usbphyc.overlay
+boards:
+  stm32f723e_disco/stm32f723xx:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/stm32f723e_disco.overlay
+      EXTRA_CONF_FILE: boards/stm32f723e_disco.conf
