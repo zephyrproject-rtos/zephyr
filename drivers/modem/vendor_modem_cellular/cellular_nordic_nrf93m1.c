@@ -101,6 +101,13 @@ static void nrf93m1_on_bcinfosc(struct modem_chat *chat, char **argv, uint16_t a
 	modem_cellular_emit_network_status(data, &evt);
 }
 
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf93m1_dlci_setup_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf93m1_dlci_setup_chat_script,
+			 nordic_nrf93m1_dlci_setup_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 1);
+
 static const struct modem_cellular_vendor_config nrf93m1_vendor = {
 	/* clang-format off */
 	.scripts = {
@@ -109,6 +116,7 @@ static const struct modem_cellular_vendor_config nrf93m1_vendor = {
 		.dial = &nordic_nrf93m1_dial_chat_script,
 		.periodic = &nordic_nrf93m1_periodic_chat_script,
 		.shutdown = &nordic_nrf93m1_shutdown_chat_script,
+		.dlci_setup = &nordic_nrf93m1_dlci_setup_chat_script,
 	},
 	.unsol_matches = {
 		.matches = nordic_nrf93m1_unsol,
