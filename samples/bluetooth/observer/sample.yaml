@@ -29,6 +29,10 @@ tests:
     extra_args:
       - CONF_FILE="prj_extended.conf"
       - EXTRA_CONF_FILE="debug.conf;overlay_bbc_microbit-bt_ll_sw_split.conf"
+    extra_configs:
+      # debug.conf enables the thread analyzer; shrink the analyzer thread's
+      # stack so that it fits alongside the dedicated Bluetooth RX thread.
+      - CONFIG_THREAD_ANALYZER_AUTO_STACK_SIZE=640
     platform_allow:
       - bbc_microbit
     integration_platforms:
