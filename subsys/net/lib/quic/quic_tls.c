@@ -45,6 +45,13 @@ static int tls_emit_client_early_traffic_secret(struct quic_tls_context *ctx);
  * ticket rather than being truncated.
  */
 #define QUIC_SESSION_TICKET_ALPN_MAX_LEN 32U
+/* Wire bytes the ClientHello writes between the pre_shared_key identities field
+ * and the first PskBinderEntry value: a 2-byte binders vector length plus a
+ * 1-byte binder length prefix. RFC 8446 4.2.11.2 computes the binder over the
+ * ClientHello truncated at the end of the identities field, i.e. before these
+ * bytes, so the transcript ends this many bytes before the binder value.
+ */
+#define QUIC_TLS_PSK_BINDERS_HEADER_LEN 3U
 
 struct quic_server_ticket_entry {
 	uint8_t ticket[QUIC_SESSION_TICKET_ID_LEN];
@@ -1194,9 +1201,13 @@ static int parse_pre_shared_key_ext(struct quic_tls_context *ctx,
 	matched_psk = offer->matched_session_ticket ? matched_ticket_psk : ctx->psk;
 	matched_psk_len = offer->matched_session_ticket ? matched_ticket_psk_len : ctx->psk_len;
 
+	/* RFC 8446 4.2.11.2: the binder covers the ClientHello truncated at the
+	 * end of the identities field (before the binders vector), regardless of
+	 * which identity matched.
+	 */
 	if (tls_compute_external_psk_binder(matched_psk, matched_psk_len,
 					    psk_hash_alg, psk_hash_len,
-					    full_msg, 4U + matched_binder_offset,
+					    full_msg, 4U + identities_end,
 					    expected_binder, sizeof(expected_binder)) != 0) {
 		ret = -EIO;
 		goto out;
@@ -6000,9 +6011,15 @@ static int quic_tls_send_client_hello(struct quic_tls_context *ctx,
 	if (binder_offset != SIZE_MAX) {
 		uint8_t binder[QUIC_HASH_MAX_LEN];
 
+		/* RFC 8446 4.2.11.2: truncate the transcript at the end of the
+		 * identities field, i.e. before the binders vector length and
+		 * binder length prefix that precede the binder value.
+		 */
 		ret = tls_compute_external_psk_binder(ctx->psk, ctx->psk_len,
 						      ctx->ks.hash_alg, ctx->ks.hash_len,
-						      wrapped, 4U + binder_offset,
+						      wrapped,
+						      4U + binder_offset -
+							      QUIC_TLS_PSK_BINDERS_HEADER_LEN,
 						      binder, sizeof(binder));
 		if (ret != 0) {
 			NET_DBG("Failed to compute PSK binder: %d", ret);
