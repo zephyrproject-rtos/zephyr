@@ -57,3 +57,17 @@ int xen_sysctl_getdomaininfo(struct xen_domctl_getdomaininfo *domaininfo,
 
 	return sysctl.u.getdomaininfolist.num_domains;
 }
+
+int xen_sysctl_cpu_hotplug(uint32_t cpu, bool enable)
+{
+	int ret;
+	xen_sysctl_t sysctl = {
+		.cmd = XEN_SYSCTL_cpu_hotplug,
+		.u.cpu_hotplug.cpu = cpu,
+		.u.cpu_hotplug.op = enable ? XEN_SYSCTL_CPU_HOTPLUG_ONLINE
+					   : XEN_SYSCTL_CPU_HOTPLUG_OFFLINE,
+	};
+
+	ret = do_sysctl(&sysctl);
+	return ret;
+}
