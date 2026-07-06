@@ -924,10 +924,6 @@ const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 		return NULL;
 	}
 
-	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_PTP)) {
-		return NULL;
-	}
-
 	if (!api->get_ptp_clock) {
 		return NULL;
 	}
