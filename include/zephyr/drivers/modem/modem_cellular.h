@@ -265,6 +265,8 @@ struct modem_cellular_config_scripts {
 	const struct modem_chat_script *periodic;
 	/** Optional script that prepares the modem for power-off. */
 	const struct modem_chat_script *shutdown;
+	/** Optional script for configuring DLCI channels after opening */
+	const struct modem_chat_script *dlci_setup;
 };
 
 /**
