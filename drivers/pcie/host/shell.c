@@ -391,12 +391,75 @@ static int cmd_pcie_ls(const struct shell *sh, size_t argc, char **argv)
 
 	return 0;
 }
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_pcie_cmds,
+
+/* Interactive PCIe Configuration Space Write Utility */
+static int cmd_pcie_write(const struct shell *sh, size_t argc, char **argv)
+{
+	if (argc < 4) {
+		shell_error(sh, "Usage: pcie write <bus:dev.func> "
+				"<register_word_offset> <32bit_hex_data>");
+		return -EINVAL;
+	}
+
+	pcie_bdf_t bdf = get_bdf(argv[1]);
+
+	if (bdf == PCIE_BDF_NONE) {
+		shell_error(sh, "Invalid BDF layout format.");
+		return -EINVAL;
+	}
+
+	int err = 0;
+	unsigned int reg = (unsigned int)shell_strtoul(argv[2], 0, &err);
+
+	if (err != 0) {
+		shell_error(sh, "Invalid argument: %s", argv[2]);
+		return err;
+	}
+
+	if (reg >= (4096U / sizeof(uint32_t))) {
+		shell_error(sh, "Register word offset out of range: %u", reg);
+		return -EINVAL;
+	}
+
+	uint32_t data = (uint32_t)shell_strtoul(argv[3], 0, &err);
+
+	if (err != 0) {
+		shell_error(sh, "Invalid argument: %s", argv[3]);
+		return err;
+	}
+
+	uint32_t id = pcie_conf_read(bdf, PCIE_CONF_ID);
+
+	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
+		shell_error(sh, "No responsive endpoint found at target BDF.");
+		return -ENODEV;
+	}
+
+	uint32_t current_val = pcie_conf_read(bdf, reg);
+
+	shell_print(sh, "Writing 0x%08x to %u:%x.%u reg %u (prev: 0x%08x)...", data,
+		    PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf), reg,
+		    current_val);
+
+	pcie_conf_write(bdf, reg, data);
+
+	uint32_t read_back = pcie_conf_read(bdf, reg);
+
+	shell_print(sh, "Read-back Verification Value: 0x%08X", read_back);
+
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_pcie_cmds,
 	SHELL_CMD_ARG(ls, NULL,
 		      "List PCIE devices\n"
 		      "Usage: ls [bus:device:function] [dump]",
 		      cmd_pcie_ls, 1, 2),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
-);
+	SHELL_CMD_ARG(write, NULL,
+		      "Write a 32-bit word directly to a device register.\n"
+		      "Usage: write <bus:device.function> <reg_offset> <32bit_hex>",
+		      cmd_pcie_write, 4, 0),
+	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(pcie, &sub_pcie_cmds, "PCI(e) device information", cmd_pcie_ls);
