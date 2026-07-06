@@ -393,6 +393,13 @@ struct quic_tls_context {
 	size_t ecdh_public_key_len;
 	uint8_t peer_public_key[65];
 	size_t peer_public_key_len;
+	/* Second client key_share offer (secp256r1), held alongside the primary
+	 * x25519 offer in ecdh_key_id until the ServerHello selects a group; the
+	 * unselected key is then destroyed. Server side leaves this unused.
+	 */
+	psa_key_id_t ecdh_key_id2;
+	uint8_t ecdh_public_key2[65];
+	size_t ecdh_public_key2_len;
 	uint8_t shared_secret[32];
 
 	/* Certificates (for server or client auth) */

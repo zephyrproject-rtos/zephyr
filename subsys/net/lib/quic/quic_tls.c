@@ -849,56 +849,72 @@ static int tls_emit_client_early_traffic_secret(struct quic_tls_context *ctx)
 }
 
 /*
- * Generate ECDH key pair
+ * Generate an ephemeral ECDH key pair for a specific named group into the
+ * provided key id / public-key buffer.
  */
-static int generate_ecdh_keypair(struct quic_tls_context *ctx)
+static int generate_ecdh_keypair_group(uint16_t group, psa_key_id_t *key_id,
+				       uint8_t *pub, size_t pub_size, size_t *pub_len)
 {
 	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
 	psa_status_t status;
-	size_t pubkey_len;
-	uint16_t group = ctx->ks.key_exchange_group;
 
 	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_DERIVE);
 	psa_set_key_algorithm(&attr, PSA_ALG_ECDH);
 
 	if (group == MBEDTLS_SSL_IANA_TLS_GROUP_X25519) {
-		NET_DBG("Setting up x25519 key (Montgomery, 255 bits)");
 		psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_MONTGOMERY));
 		psa_set_key_bits(&attr, 255);
 	} else if (group == MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1) {
-		NET_DBG("Setting up secp256r1 key (SECP_R1, 256 bits)");
 		psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
 		psa_set_key_bits(&attr, 256);
 	} else {
-		NET_DBG("Unknown group 0x%04x, defaulting to secp256r1", group);
-		/* Default to secp256r1 for client-initiated connections */
-		psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
-		psa_set_key_bits(&attr, 256);
-		ctx->ks.key_exchange_group = MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1;
+		return -ENOTSUP;
 	}
 
-	status = psa_generate_key(&attr, &ctx->ecdh_key_id);
+	status = psa_generate_key(&attr, key_id);
 	if (status != PSA_SUCCESS) {
-		NET_DBG("Failed to generate ECDH key (%d)", status);
+		NET_DBG("Failed to generate ECDH key for group 0x%04x (%d)", group, status);
 		return -EIO;
 	}
 
-	NET_DBG("Generated key with id=%u", (unsigned int)ctx->ecdh_key_id);
-
-	/* Export public key */
-	status = psa_export_public_key(ctx->ecdh_key_id,
-				       ctx->ecdh_public_key,
-				       sizeof(ctx->ecdh_public_key),
-				       &pubkey_len);
+	status = psa_export_public_key(*key_id, pub, pub_size, pub_len);
 	if (status != PSA_SUCCESS) {
 		NET_DBG("Failed to export public key (%d)", status);
-		psa_destroy_key(ctx->ecdh_key_id);
+		psa_destroy_key(*key_id);
+		*key_id = 0;
 		return -EIO;
 	}
 
-	ctx->ecdh_public_key_len = pubkey_len;
+	return 0;
+}
+
+/*
+ * Generate ECDH key pair for the context's selected group into ctx->ecdh_*.
+ * Used by the server (for the client-selected group) and as the client's
+ * primary offer.
+ */
+static int generate_ecdh_keypair(struct quic_tls_context *ctx)
+{
+	uint16_t group = ctx->ks.key_exchange_group;
+	int ret;
+
+	if (group != MBEDTLS_SSL_IANA_TLS_GROUP_X25519 &&
+	    group != MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1) {
+		/* Default to secp256r1 for client-initiated connections */
+		group = MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1;
+		ctx->ks.key_exchange_group = group;
+	}
+
+	ret = generate_ecdh_keypair_group(group, &ctx->ecdh_key_id,
+					  ctx->ecdh_public_key,
+					  sizeof(ctx->ecdh_public_key),
+					  &ctx->ecdh_public_key_len);
+	if (ret != 0) {
+		return ret;
+	}
+
 	NET_DBG("Generated ECDH keypair for group 0x%04x, pubkey len %zu",
-		ctx->ks.key_exchange_group, pubkey_len);
+		group, ctx->ecdh_public_key_len);
 
 	return 0;
 }
@@ -1562,6 +1578,7 @@ static int build_client_hello(struct quic_tls_context *ctx,
 	size_t ext_len;
 	size_t ks_ext_len;
 	size_t cipher_suites_len;
+	bool have_x25519;
 	int ret;
 
 	if (buf_size < 256) {
@@ -1626,40 +1643,83 @@ static int build_client_hello(struct quic_tls_context *ctx,
 	buf[pos++] = 0x04;
 	buf[pos++] = 0x03;  /* ecdsa_secp256r1_sha256 */
 
-	/* supported_groups extension */
-	buf[pos++] = 0x00;
-	buf[pos++] = 0x0a;  /* Extension type: supported_groups */
-	buf[pos++] = 0x00;
-	buf[pos++] = 0x04;  /* Extension length */
-	buf[pos++] = 0x00;
-	buf[pos++] = 0x02;  /* Groups length */
-	buf[pos++] = 0x00;
-	buf[pos++] = 0x17;  /* secp256r1 */
-
-	/* Generate ECDH key pair for key_share */
+	/* Generate the ECDH offers for key_share. secp256r1 (P-256) is
+	 * universally available and is the mandatory offer, kept in
+	 * ecdh_key_id2. x25519 is best-effort (some PSA backends lack it) and,
+	 * when available, is the primary offer in ecdh_key_id. The peer selects
+	 * one in its ServerHello; the other is destroyed there.
+	 */
 	if (!ctx->client_hello_prepared) {
-		ret = generate_ecdh_keypair(ctx);
+		ret = generate_ecdh_keypair_group(MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1,
+						  &ctx->ecdh_key_id2,
+						  ctx->ecdh_public_key2,
+						  sizeof(ctx->ecdh_public_key2),
+						  &ctx->ecdh_public_key2_len);
 		if (ret != 0) {
 			return ret;
 		}
+
+		ctx->ks.key_exchange_group = MBEDTLS_SSL_IANA_TLS_GROUP_X25519;
+		if (generate_ecdh_keypair(ctx) != 0) {
+			/* No x25519 support: fall back to a secp256r1-only offer. */
+			ctx->ecdh_key_id = 0;
+			ctx->ecdh_public_key_len = 0;
+			ctx->ks.key_exchange_group = MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1;
+		}
 	}
 
-	/* key_share extension */
-	buf[pos++] = 0x00;
-	buf[pos++] = 0x33;  /* Extension type: key_share */
-	ks_ext_len = 2 + 2 + 2 + ctx->ecdh_public_key_len;  /* list len + group + key len + key */
-	buf[pos++] = (ks_ext_len >> 8) & 0xFF;
-	buf[pos++] = ks_ext_len & 0xFF;
-	/* Client key share list length */
-	buf[pos++] = ((2 + 2 + ctx->ecdh_public_key_len) >> 8) & 0xFF;
-	buf[pos++] = (2 + 2 + ctx->ecdh_public_key_len) & 0xFF;
-	/* Key share entry */
-	buf[pos++] = 0x00;
-	buf[pos++] = 0x17;  /* secp256r1 */
-	buf[pos++] = (ctx->ecdh_public_key_len >> 8) & 0xFF;
-	buf[pos++] = ctx->ecdh_public_key_len & 0xFF;
-	memcpy(&buf[pos], ctx->ecdh_public_key, ctx->ecdh_public_key_len);
-	pos += ctx->ecdh_public_key_len;
+	have_x25519 = (ctx->ecdh_public_key_len > 0);
+
+	/* supported_groups extension: secp256r1 always, x25519 when available. */
+	{
+		size_t groups_len = (have_x25519 ? 2U : 0U) + 2U;
+
+		buf[pos++] = 0x00;
+		buf[pos++] = 0x0a;  /* Extension type: supported_groups */
+		buf[pos++] = ((2 + groups_len) >> 8) & 0xFF;
+		buf[pos++] = (2 + groups_len) & 0xFF;
+		buf[pos++] = (groups_len >> 8) & 0xFF;
+		buf[pos++] = groups_len & 0xFF;
+		if (have_x25519) {
+			buf[pos++] = 0x00;
+			buf[pos++] = 0x1d;  /* x25519 (preferred) */
+		}
+		buf[pos++] = 0x00;
+		buf[pos++] = 0x17;  /* secp256r1 */
+	}
+
+	/* key_share extension: secp256r1 always, x25519 when available. */
+	{
+		size_t entry_x25519 = have_x25519 ? (2 + 2 + ctx->ecdh_public_key_len) : 0;
+		size_t entry_secp = 2 + 2 + ctx->ecdh_public_key2_len;
+		size_t ks_list_len = entry_x25519 + entry_secp;
+
+		buf[pos++] = 0x00;
+		buf[pos++] = 0x33;  /* Extension type: key_share */
+		ks_ext_len = 2 + ks_list_len;  /* list len field + entries */
+		buf[pos++] = (ks_ext_len >> 8) & 0xFF;
+		buf[pos++] = ks_ext_len & 0xFF;
+		buf[pos++] = (ks_list_len >> 8) & 0xFF;
+		buf[pos++] = ks_list_len & 0xFF;
+
+		/* x25519 entry */
+		if (have_x25519) {
+			buf[pos++] = 0x00;
+			buf[pos++] = 0x1d;
+			buf[pos++] = (ctx->ecdh_public_key_len >> 8) & 0xFF;
+			buf[pos++] = ctx->ecdh_public_key_len & 0xFF;
+			memcpy(&buf[pos], ctx->ecdh_public_key, ctx->ecdh_public_key_len);
+			pos += ctx->ecdh_public_key_len;
+		}
+
+		/* secp256r1 entry */
+		buf[pos++] = 0x00;
+		buf[pos++] = 0x17;
+		buf[pos++] = (ctx->ecdh_public_key2_len >> 8) & 0xFF;
+		buf[pos++] = ctx->ecdh_public_key2_len & 0xFF;
+		memcpy(&buf[pos], ctx->ecdh_public_key2, ctx->ecdh_public_key2_len);
+		pos += ctx->ecdh_public_key2_len;
+	}
 
 	/* ALPN extension (if configured) */
 	if (ctx->options.alpn_list[0] != NULL) {
@@ -3624,25 +3684,45 @@ static int parse_server_hello(struct quic_tls_context *ctx,
 				uint16_t group = (msg[pos] << 8) | msg[pos + 1];
 				uint16_t key_len = (msg[pos + 2] << 8) | msg[pos + 3];
 
-				if (group != 0x0017) {  /* secp256r1 */
-					NET_DBG("Unsupported key share group 0x%04x", group);
-					return -ENOTSUP;
-				}
-
 				if (pos + 4 + key_len > extensions_end) {
 					return -EINVAL;
 				}
 
-				/* Store server's public key */
 				if (key_len > sizeof(ctx->peer_public_key)) {
 					return -ENOBUFS;
 				}
 
+				/* Select the offered ephemeral matching the server's
+				 * chosen group and destroy the unused one.
+				 */
+				if (group == MBEDTLS_SSL_IANA_TLS_GROUP_X25519) {
+					if (ctx->ecdh_key_id2 != 0) {
+						psa_destroy_key(ctx->ecdh_key_id2);
+						ctx->ecdh_key_id2 = 0;
+					}
+				} else if (group == MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1 &&
+					   ctx->ecdh_key_id2 != 0) {
+					if (ctx->ecdh_key_id != 0) {
+						psa_destroy_key(ctx->ecdh_key_id);
+					}
+					ctx->ecdh_key_id = ctx->ecdh_key_id2;
+					ctx->ecdh_key_id2 = 0;
+					memcpy(ctx->ecdh_public_key, ctx->ecdh_public_key2,
+					       ctx->ecdh_public_key2_len);
+					ctx->ecdh_public_key_len = ctx->ecdh_public_key2_len;
+				} else {
+					NET_DBG("Unsupported key share group 0x%04x", group);
+					return -ENOTSUP;
+				}
+				ctx->ks.key_exchange_group = group;
+
+				/* Store server's public key */
 				memcpy(ctx->peer_public_key, &msg[pos + 4], key_len);
 				ctx->peer_public_key_len = key_len;
 				got_key_share = true;
 
-				NET_DBG("Got server key share, len: %u", key_len);
+				NET_DBG("Got server key share group 0x%04x, len: %u",
+					group, key_len);
 			}
 			break;
 
@@ -4661,6 +4741,15 @@ static void quic_tls_free(struct quic_tls_context *ctx)
 {
 	if (ctx->ecdh_key_id != 0) {
 		psa_destroy_key(ctx->ecdh_key_id);
+		ctx->ecdh_key_id = 0;
+	}
+
+	if (ctx->ecdh_key_id2 != 0) {
+		/* Unselected client key_share offer (handshake aborted before
+		 * ServerHello selected a group).
+		 */
+		psa_destroy_key(ctx->ecdh_key_id2);
+		ctx->ecdh_key_id2 = 0;
 	}
 
 	if (ctx->signing_key_id != 0) {
