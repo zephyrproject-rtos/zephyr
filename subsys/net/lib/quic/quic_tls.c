@@ -1624,6 +1624,29 @@ static int build_client_hello(struct quic_tls_context *ctx,
 	ext_start = pos;
 	pos += 2;  /* Reserve for extensions length */
 
+	/* server_name (SNI, RFC 6066) when a hostname has been configured. */
+	if (ctx->options.hostname[0] != '\0') {
+		size_t host_len = strlen(ctx->options.hostname);
+		size_t name_list_len = 1 + 2 + host_len; /* type + host_len + host */
+		size_t sni_needed = 9 + host_len; /* ext hdr + list len + name hdr + host */
+
+		if (pos + sni_needed > buf_size) {
+			return -ENOBUFS;
+		}
+
+		buf[pos++] = 0x00;
+		buf[pos++] = TLS_EXT_SERVER_NAME;
+		buf[pos++] = ((2 + name_list_len) >> 8) & 0xFF;
+		buf[pos++] = (2 + name_list_len) & 0xFF;
+		buf[pos++] = (name_list_len >> 8) & 0xFF;
+		buf[pos++] = name_list_len & 0xFF;
+		buf[pos++] = 0x00; /* NameType: host_name */
+		buf[pos++] = (host_len >> 8) & 0xFF;
+		buf[pos++] = host_len & 0xFF;
+		memcpy(&buf[pos], ctx->options.hostname, host_len);
+		pos += host_len;
+	}
+
 	/* supported_versions extension (mandatory for TLS 1.3) */
 	buf[pos++] = 0x00;
 	buf[pos++] = 0x2b;  /* Extension type: supported_versions */
@@ -6706,11 +6729,25 @@ static int tls_opt_sec_tag_list_set(struct quic_tls_context *context,
 static int tls_opt_hostname_set(struct quic_tls_context *context,
 				const void *optval, net_socklen_t optlen)
 {
-	ARG_UNUSED(optlen);
-	ARG_UNUSED(optval);
-	ARG_UNUSED(context);
+	if (context == NULL) {
+		return -EINVAL;
+	}
 
-	return -ENOPROTOOPT;
+	/* Clearing the hostname (NULL / zero length) disables SNI. */
+	if (optval == NULL || optlen == 0) {
+		context->options.hostname[0] = '\0';
+		return 0;
+	}
+
+	/* optlen counts the hostname bytes (not NUL-terminated by the caller). */
+	if (optlen >= sizeof(context->options.hostname)) {
+		return -EINVAL;
+	}
+
+	memcpy(context->options.hostname, optval, optlen);
+	context->options.hostname[optlen] = '\0';
+
+	return 0;
 }
 
 static int tls_opt_ciphersuite_list_set(struct quic_tls_context *context,

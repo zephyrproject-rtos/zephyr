@@ -36,6 +36,7 @@
 #define TLS_CHACHA20_POLY1305_SHA256 0x1303
 
 /* TLS extension types */
+#define TLS_EXT_SERVER_NAME           0x00
 #define TLS_EXT_ALPN                  0x10
 #define TLS_EXT_PRE_SHARED_KEY        0x29
 #define TLS_EXT_EARLY_DATA            0x2a
