@@ -154,7 +154,8 @@ static int entropy_stm32_suspend(void)
  * LL_PKA_IsEnabled(). Since RNG clock is not required by PKA, we can
  * ignore the check on this series.
  */
-#if defined(PKA) && !defined(CONFIG_SOC_SERIES_STM32WB0X)
+#if (defined(CONFIG_ENTROPY_STM32_ALWAYS_CLOCKON) || defined(PKA)) && \
+	!defined(CONFIG_SOC_SERIES_STM32WB0X)
 #if defined(CONFIG_STM32_HAL2)
 	uint32_t pka_clock_enabled = HAL_RCC_PKA_IsEnabledClock();
 #else /* CONFIG_STM32_HAL2 */
@@ -169,7 +170,7 @@ static int entropy_stm32_suspend(void)
 		/* PKA needs RNG clock, so exit here if in use */
 		return 0;
 	}
-#endif /* PKA && !CONFIG_SOC_SERIES_STM32WB0X */
+#endif /* (CONFIG_ENTROPY_STM32_ALWAYS_CLOCKON || PKA) && !CONFIG_SOC_SERIES_STM32WB0X */
 
 #ifdef CONFIG_SOC_SERIES_STM32WBAX
 	uint32_t wait_cycles, rng_rate;

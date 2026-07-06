@@ -64,4 +64,21 @@ config ENTROPY_STM32_CLK_CHECK
 	  available, CED is enabled by default). Disable this check if CED is
 	  disabled.
 
+config ENTROPY_STM32_RNG_FORCE_CLOCKON
+	bool
+	depends on SOC_SERIES_STM32U5X
+	default y if DT_HAS_ST_STM32_SAES_ENABLED
+	select ENTROPY_STM32_ALWAYS_CLOCKON
+
+config ENTROPY_STM32_ALWAYS_CLOCKON
+	bool "Disable RNG self-suspend/resume management"
+	help
+	  Disable the STM32 RNG self-suspend/resume management.
+	  When enabled, the RNG peripheral will remain powered and clocked at
+	  all times, regardless of whether it is actively being used or not.
+	  This can be useful for other drivers that rely on the RNG
+	  peripheral for their own operations, such as PKA (Public Key
+	  Accelerator) or SAES (Secure AES), ensuring that the RNG peripheral
+	  is active and ready to provide random numbers when required.
+
 endif # ENTROPY_STM32_RNG
