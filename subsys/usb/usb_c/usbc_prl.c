@@ -517,7 +517,7 @@ static void prl_hr_send_msg_to_phy(const struct device *dev)
 	 * Policy Engine is informed of the previous transmission. Clear the
 	 * flags so that this message can be sent.
 	 */
-	data->prl_tx->flags = ATOMIC_INIT(0);
+	atomic_clear(&data->prl_tx->flags);
 
 	/* Pass message to PHY Layer */
 	tcpc_transmit_data(tcpc, &prl_tx->emsg);
@@ -546,12 +546,12 @@ static void prl_init(const struct device *dev)
 	tcpc_set_alert_handler_cb(data->tcpc, alert_handler, (void *)dev);
 
 	/* Initialize the PRL_HR state machine */
-	prl_hr->flags = ATOMIC_INIT(0);
+	atomic_clear(&prl_hr->flags);
 	usbc_timer_init(&prl_hr->pd_t_hard_reset_complete, PD_T_HARD_RESET_COMPLETE_MAX_MS);
 	prl_hr_set_state(dev, PRL_HR_WAIT_FOR_REQUEST);
 
 	/* Initialize the PRL_TX state machine */
-	prl_tx->flags = ATOMIC_INIT(0);
+	atomic_clear(&prl_tx->flags);
 	prl_tx->last_xmit_type = PD_PACKET_SOP;
 	for (i = 0; i < NUM_SOP_STAR_TYPES; i++) {
 		prl_tx->msg_id_counter[i] = 0;
@@ -561,7 +561,7 @@ static void prl_init(const struct device *dev)
 	prl_tx_set_state(dev, PRL_TX_PHY_LAYER_RESET);
 
 	/* Initialize the PRL_RX state machine */
-	prl_rx->flags = ATOMIC_INIT(0);
+	atomic_clear(&prl_rx->flags);
 	for (i = 0; i < NUM_SOP_STAR_TYPES; i++) {
 		prl_rx->msg_id[i] = -1;
 	}
@@ -596,7 +596,7 @@ static void prl_tx_wait_for_message_request_entry(void *obj)
 	LOG_INF("PRL_Tx_Wait_for_Message_Request");
 
 	/* Clear outstanding messages */
-	prl_tx->flags = ATOMIC_INIT(0);
+	atomic_clear(&prl_tx->flags);
 }
 
 /**
@@ -979,7 +979,7 @@ static void prl_hr_wait_for_request_entry(void *obj)
 	LOG_INF("PRL_HR_Wait_for_Request");
 
 	/* Reset all Protocol Layer Hard Reset flags */
-	prl_hr->flags = ATOMIC_INIT(0);
+	atomic_clear(&prl_hr->flags);
 }
 
 /**
@@ -1021,9 +1021,9 @@ static void prl_hr_reset_layer_entry(void *obj)
 	LOG_INF("PRL_HR_Reset_Layer");
 
 	/* Reset all Protocol Layer message reception flags */
-	prl_rx->flags = ATOMIC_INIT(0);
+	atomic_clear(&prl_rx->flags);
 	/* Reset all Protocol Layer message transmission flags */
-	prl_tx->flags = ATOMIC_INIT(0);
+	atomic_clear(&prl_tx->flags);
 
 	/* Hard reset resets messageIDCounters for all TX types */
 	for (i = 0; i < NUM_SOP_STAR_TYPES; i++) {
