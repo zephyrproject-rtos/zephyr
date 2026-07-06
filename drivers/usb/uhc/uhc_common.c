@@ -87,6 +87,29 @@ int uhc_xfer_append(const struct device *dev,
 	return 0;
 }
 
+static void uhc_xfer_dlist_cleanup_cancelled(const struct device *dev, sys_dlist_t *dlist,
+					   uhc_xfer_cancel_cb_t cb, void *priv)
+{
+	struct uhc_transfer *current, *next;
+
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(dlist, current, next, node) {
+		if (current->err == -ECONNRESET) {
+			if (cb == NULL) {
+				uhc_xfer_return(dev, current, -ECONNRESET);
+			} else {
+				cb(dev, current, priv);
+			}
+		}
+	}
+}
+
+void uhc_xfer_cleanup_cancelled(const struct device *dev, uhc_xfer_cancel_cb_t cb, void *priv)
+{
+	struct uhc_data *data = dev->data;
+
+	uhc_xfer_dlist_cleanup_cancelled(dev, &data->ctrl_xfers, cb, priv);
+}
+
 struct net_buf *uhc_xfer_buf_alloc(const struct device *dev,
 				   const size_t size)
 {

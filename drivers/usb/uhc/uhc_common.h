@@ -107,6 +107,42 @@ int uhc_xfer_append(const struct device *dev,
 		    struct uhc_transfer *const xfer);
 
 /**
+ * @brief Handle a canceled transfer during cleanup.
+ *
+ * Will be called for each canceled transfer.
+ *
+ * The callback may return the transfer with uhc_xfer_return() or leave it tracked
+ * for later completion. It must not add other transfers to, or remove them from,
+ * the internal dlists.
+ *
+ * @param[in] dev  Pointer to device struct of the driver instance
+ * @param[in] xfer Canceled transfer
+ * @param[in] priv Private data passed to uhc_xfer_cleanup_cancelled()
+ */
+typedef void (*uhc_xfer_cancel_cb_t)(const struct device *dev, struct uhc_transfer *xfer,
+				     void *priv);
+
+/**
+ * @brief Process canceled transfers in the internal queues.
+ *
+ * A canceled transfer has its err field set to -ECONNRESET. If callback is
+ * NULL, return each canceled transfer with that error. Otherwise, invoke the
+ * callback for each canceled transfer without returning it automatically.
+ *
+ * If provided, the callback is called once for each canceled transfer.
+ * If the callback does not return the transfer using uhc_xfer_return(),
+ * it will be revisited on the next cleanup.
+ *
+ * The caller must hold the driver’s lock while calling this function.
+ *
+ * @param[in] dev      Pointer to device struct of the driver instance
+ * @param[in] callback Optional callback responsible for handling each canceled transfer
+ * @param[in] priv     Private data passed unchanged to callback. May be NULL
+ */
+void uhc_xfer_cleanup_cancelled(const struct device *dev, uhc_xfer_cancel_cb_t callback,
+				void *priv);
+
+/**
  * @brief Helper function to send UHC event to a higher level.
  *
  * The callback would typically sends UHC even to a message queue (k_msgq).
