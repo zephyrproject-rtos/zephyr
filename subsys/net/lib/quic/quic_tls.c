@@ -39,6 +39,12 @@ static int tls_emit_client_early_traffic_secret(struct quic_tls_context *ctx);
  * enable signal used to decide whether to offer 0-RTT on issued tickets.
  */
 #define QUIC_TLS_EARLY_DATA_SENTINEL 0xFFFFFFFFU
+/* Maximum negotiated ALPN protocol name remembered per server ticket so that
+ * 0-RTT can be refused if a resuming ClientHello negotiates a different ALPN
+ * (RFC 8446 4.2.11 / RFC 9001 4.6.1). Longer names disable 0-RTT for the
+ * ticket rather than being truncated.
+ */
+#define QUIC_SESSION_TICKET_ALPN_MAX_LEN 32U
 
 struct quic_server_ticket_entry {
 	uint8_t ticket[QUIC_SESSION_TICKET_ID_LEN];
@@ -51,6 +57,10 @@ struct quic_server_ticket_entry {
 	uint16_t ticket_len;
 	uint16_t psk_len;
 	bool valid;
+	/* Negotiated ALPN when the ticket was issued (empty if none). A resuming
+	 * ClientHello that negotiates a different ALPN must not get 0-RTT.
+	 */
+	char negotiated_alpn[QUIC_SESSION_TICKET_ALPN_MAX_LEN];
 };
 
 static struct quic_server_ticket_entry quic_server_ticket_cache[QUIC_SESSION_TICKET_CACHE_SIZE];
@@ -552,7 +562,8 @@ ZTESTABLE_STATIC int tls_server_ticket_cache_store(const uint8_t *ticket, size_t
 					 uint16_t cipher_suite,
 					 uint32_t ticket_lifetime,
 					 uint32_t ticket_age_add,
-					 uint32_t max_early_data_size)
+					 uint32_t max_early_data_size,
+					 const char *alpn)
 {
 	struct quic_server_ticket_entry *entry;
 
@@ -577,6 +588,15 @@ ZTESTABLE_STATIC int tls_server_ticket_cache_store(const uint8_t *ticket, size_t
 	entry->ticket_len = ticket_len;
 	entry->psk_len = psk_len;
 	entry->valid = true;
+
+	/* Remember the negotiated ALPN so 0-RTT can be refused on a resuming
+	 * ClientHello that negotiates a different one. A name that does not fit
+	 * is left empty, which disables 0-RTT for this ticket rather than
+	 * risking a truncated match.
+	 */
+	if (alpn != NULL && strlen(alpn) < sizeof(entry->negotiated_alpn)) {
+		strcpy(entry->negotiated_alpn, alpn);
+	}
 
 	k_mutex_unlock(&quic_server_ticket_cache_lock);
 
@@ -1456,6 +1476,9 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 			ctx->max_early_data_size >= psk_offer.matched_max_early_data_size;
 
 		if (psk_offer.matched_session_ticket) {
+			const char *cur_alpn =
+				ctx->negotiated_alpn != NULL ? ctx->negotiated_alpn : "";
+
 			/* Single-use: now that the binder is verified, drop the
 			 * ticket so a replayed ClientHello cannot resume or
 			 * replay 0-RTT (RFC 8446 8.1).
@@ -1471,6 +1494,16 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 						       psk_offer.matched_entry.ticket_age_add,
 						       psk_offer.obfuscated_ticket_age,
 						       k_uptime_get())) {
+				ctx->early_data_accepted = false;
+			}
+
+			/* RFC 8446 4.2.11 / RFC 9001 4.6.1: 0-RTT is only valid if
+			 * the resuming handshake negotiates the same ALPN as the
+			 * connection that issued the ticket.
+			 */
+			if (ctx->early_data_accepted &&
+			    strcmp(cur_alpn, psk_offer.matched_entry.negotiated_alpn) != 0) {
+				NET_DBG("Refusing 0-RTT: ALPN changed on resumption");
 				ctx->early_data_accepted = false;
 			}
 		}
@@ -3223,7 +3256,8 @@ static int quic_tls_send_new_session_ticket(struct quic_tls_context *ctx)
 					    QUIC_SESSION_TICKET_LIFETIME_SEC,
 					    ticket_age_add,
 					    quic_0rtt_enabled() ?
-					    ctx->max_early_data_size : 0U);
+					    ctx->max_early_data_size : 0U,
+					    ctx->negotiated_alpn);
 
 	/* The resumption PSK now lives in the ticket cache; drop the stack copy. */
 	crypto_zero(ticket_psk, sizeof(ticket_psk));

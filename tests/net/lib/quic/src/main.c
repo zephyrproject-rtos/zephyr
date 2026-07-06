@@ -1129,7 +1129,7 @@ ZTEST(net_socket_quic, test_086_server_ticket_single_use)
 
 	ret = tls_server_ticket_cache_store(ticket, sizeof(ticket), psk, sizeof(psk),
 					    0x1301, QUIC_SESSION_TICKET_LIFETIME_SEC_TEST,
-					    0x12345678U, 4096U);
+					    0x12345678U, 4096U, "h3");
 	zassert_ok(ret, "Failed to store server session ticket (%d)", ret);
 
 	zassert_true(tls_server_ticket_cache_lookup(ticket, sizeof(ticket), NULL),
