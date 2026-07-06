@@ -337,6 +337,28 @@ static inline void z_vrfy_z_log_msg_static_create(const void *source,
 			      const struct log_msg_desc desc,
 			      uint8_t *package, const void *data)
 {
+	K_OOPS(K_SYSCALL_VERIFY(desc.package_len <= Z_LOG_MSG_MAX_PACKAGE));
+
+	K_OOPS(K_SYSCALL_VERIFY((desc.package_len == 0) || (package != NULL)));
+	K_OOPS(K_SYSCALL_VERIFY((desc.data_len == 0) || (data != NULL)));
+
+	if (desc.package_len > 0) {
+		K_OOPS(K_SYSCALL_MEMORY_READ(package, desc.package_len));
+	}
+
+	if (desc.data_len > 0) {
+		K_OOPS(K_SYSCALL_MEMORY_READ(data, desc.data_len));
+	}
+
+	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) &&
+	    IS_ENABLED(CONFIG_LOG_FRONTEND) &&
+	    (desc.level != LOG_LEVEL_NONE)) {
+		size_t source_size = sizeof(struct log_source_dynamic_data);
+
+		K_OOPS(K_SYSCALL_VERIFY(source != NULL));
+		K_OOPS(K_SYSCALL_MEMORY_READ(source, source_size));
+	}
+
 	z_impl_z_log_msg_static_create(source, desc, package, data);
 }
 #include <zephyr/syscalls/z_log_msg_static_create_mrsh.c>
