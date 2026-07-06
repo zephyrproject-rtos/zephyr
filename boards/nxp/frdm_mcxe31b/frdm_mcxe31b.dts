@@ -179,6 +179,12 @@
 	status = "okay";
 };
 
+&lpspi_0 {
+	pinctrl-0 = <&pinmux_lpspi_0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &gpioc_l {
 	status = "okay";
 };
