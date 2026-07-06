@@ -67,13 +67,14 @@ static void i2c_stm32_generate_start_condition(I2C_TypeDef *i2c)
 static void i2c_stm32_controller_mode_end(const struct device *dev, int status)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 	bool disable_i2c = true;
 
 	i2c_stm32_disable_transfer_interrupts(dev);
 
 #if defined(CONFIG_I2C_TARGET)
+	struct i2c_stm32_data *data = dev->data;
+
 	data->controller_active = false;
 	if (data->target_attached) {
 		i2c_stm32_enable_transfer_interrupts(dev);
