@@ -18,6 +18,58 @@
 		zephyr,console = &hscif1;
 		zephyr,shell-uart = &hscif1;
 	};
+
+	sparrowhawkgpio: sparrowhawkgpio {
+		compatible = "retronix,sparrowhawk-gpio";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0x0 0x3f>;
+		gpio-map = <6 0 &gpio0 7 0>,
+			   <16 0 &gpio0 11 0>,
+			   <24 0 &gpio1 25 0>,
+			   <25 0 &gpio1 26 0>,
+			   <23 0 &gpio2 4 0>,
+			   <27 0 &gpio2 5 0>,
+			   <22 0 &gpio2 6 0>,
+			   <17 0 &gpio2 12 0>;
+	};
+
+	sparrowhawkpinout: sparrowhawkpinout {
+		compatible = "retronix,sparrowhawk-pinout";
+
+		gp6: gp6 {
+			gpios = <&sparrowhawkgpio 6 GPIO_ACTIVE_LOW>;
+		};
+
+		gp16: gp16 {
+			gpios = <&sparrowhawkgpio 16 GPIO_ACTIVE_LOW>;
+		};
+
+		gp17: gp17 {
+			gpios = <&sparrowhawkgpio 17 GPIO_ACTIVE_LOW>;
+		};
+
+		gp22: gp22 {
+			gpios = <&sparrowhawkgpio 22 GPIO_ACTIVE_LOW>;
+		};
+
+		gp23: gp23 {
+			gpios = <&sparrowhawkgpio 23 GPIO_ACTIVE_LOW>;
+		};
+
+		gp24: gp24 {
+			gpios = <&sparrowhawkgpio 24 GPIO_ACTIVE_LOW>;
+		};
+
+		gp25: gp25 {
+			gpios = <&sparrowhawkgpio 25 GPIO_ACTIVE_LOW>;
+		};
+
+		gp27: gp27 {
+			gpios = <&sparrowhawkgpio 27 GPIO_ACTIVE_LOW>;
+		};
+	};
+
 };
 
 /* USB serial */
