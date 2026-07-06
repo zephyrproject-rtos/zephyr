@@ -40,6 +40,9 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 
 endif # CORTEX_M_SYSTICK
 
+config UART_MCUX_FLEXCOMM_MODE32K_WAKE
+	default y
+
 if PM_DEVICE
 # Enable the MEMC FlexSPI driver when using device power
 # management so we can reconfigure the FlexSPI pins to

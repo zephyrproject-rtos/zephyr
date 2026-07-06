@@ -21,6 +21,10 @@
 #include "fsl_clock.h"
 #include <fsl_cache.h>
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xtal32))
+#include "fsl_rtc.h"
+#endif
+
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
@@ -551,6 +555,13 @@ void soc_early_init_hook(void)
 	IOPCTL->PIO[1][15] = 0;
 	IOPCTL->PIO[3][28] = 0;
 	IOPCTL->PIO[3][29] = 0;
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xtal32))
+	CLOCK_EnableOsc32K(true);
+	RTC_Init(RTC);
+	CLOCK_AttachClk(kOSC32K_to_32KHZWAKE_CLK);
+#endif
+
 #ifdef CONFIG_PM
 	rt5xx_power_init();
 #endif

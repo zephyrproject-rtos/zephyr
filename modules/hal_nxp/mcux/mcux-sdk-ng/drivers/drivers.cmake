@@ -341,6 +341,13 @@ if(CONFIG_SOC_SERIES_IMXRT5XX OR CONFIG_SOC_SERIES_IMXRT6XX)
   set(CONFIG_MCUX_COMPONENT_driver.lpc_iopctl ON)
 endif()
 
+if(CONFIG_SOC_SERIES_IMXRT5XX)
+  dt_node_has_status(xtal32_okay PATH "/xtal32" STATUS okay)
+  if(${xtal32_okay})
+    set(CONFIG_MCUX_COMPONENT_driver.lpc_rtc ON)
+  endif()
+endif()
+
 if(CONFIG_SOC_SERIES_IMXRT7XX)
   if(CONFIG_DT_HAS_NXP_PMC_TMPSNS_ENABLED)
     set(CONFIG_MCUX_COMPONENT_driver.romapi ON)
