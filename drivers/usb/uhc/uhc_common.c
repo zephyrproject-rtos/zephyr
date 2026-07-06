@@ -162,8 +162,8 @@ struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t microf
 	return xfer;
 }
 
-int uhc_xfer_append(const struct device *dev,
-		    struct uhc_transfer *const xfer)
+int uhc_xfer_append(const struct device *dev, struct uhc_transfer *const xfer,
+		    uint32_t current_microframe_number)
 {
 	struct uhc_data *data = dev->data;
 
