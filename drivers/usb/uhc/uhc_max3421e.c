@@ -43,6 +43,7 @@ struct max3421e_data {
 	uint8_t mode;
 	uint8_t hxfr;
 	uint8_t hrsl;
+	uint32_t microframe_number;
 };
 
 struct max3421e_config {
@@ -694,6 +695,7 @@ static void uhc_max3421e_thread(void *p1, void *p2, void *p3)
 
 		/* Frame Generator Interrupt */
 		if (priv->hirq & MAX3421E_FRAME) {
+			priv->microframe_number += 8;
 			schedule = max3421e_can_schedule(dev);
 		}
 
@@ -800,7 +802,9 @@ static int max3421e_bus_resume(const struct device *dev)
 static int max3421e_enqueue(const struct device *dev,
 			    struct uhc_transfer *const xfer)
 {
-	return uhc_xfer_append(dev, xfer);
+	struct max3421e_data *priv = uhc_get_private(dev);
+
+	return uhc_xfer_append(dev, xfer, priv->microframe_number);
 }
 
 static int max3421e_dequeue(const struct device *dev,

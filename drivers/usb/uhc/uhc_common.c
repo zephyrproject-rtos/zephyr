@@ -166,7 +166,8 @@ struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t microf
 }
 
 int uhc_xfer_append(const struct device *dev,
-		    struct uhc_transfer *const xfer)
+		    struct uhc_transfer *const xfer,
+		    uint32_t current_microframe_number)
 {
 	struct uhc_data *data = dev->data;
 
@@ -179,7 +180,7 @@ int uhc_xfer_append(const struct device *dev,
 		break;
 	case USB_EP_TYPE_ISO:
 	case USB_EP_TYPE_INTERRUPT:
-		xfer_schedule_periodic(dev, xfer, 0);
+		xfer_schedule_periodic(dev, xfer, current_microframe_number);
 		break;
 	default:
 		LOG_ERR("Invalid xfer type: %d", xfer->type);
