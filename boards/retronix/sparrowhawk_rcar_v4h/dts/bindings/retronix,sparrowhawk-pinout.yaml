@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2026 Renesas Electronics Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Consumer for IO pins on Sparrow Hawk board
+
+description: |
+  Describe the pinout node label and the default hardware channels
+  for each supported pin.
+
+compatible: "retronix,sparrowhawk-pinout"
+
+include: base.yaml
+
+child-binding:
+  properties:
+    gpios:
+      type: phandle-array
+      description: >
+        List of pin specifiers: <&gpio-controller pin flag>
