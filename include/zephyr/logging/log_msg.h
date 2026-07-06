@@ -373,7 +373,7 @@ do { \
 					   (uint32_t)_plen, _dlen); \
 	LOG_MSG_DBG("creating message on stack: package len: %d, data len: %d\n", \
 			_plen, (int)(_dlen)); \
-	z_log_msg_static_create((void *)(_source), _desc, _msg->data, (_data)); \
+	z_log_msg_static_create((const void *)(_source), _desc, _msg->data, (_data)); \
 } while (false)
 
 #ifdef CONFIG_LOG_SPEED
@@ -394,7 +394,7 @@ do { \
 					Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt), \
 					__VA_ARGS__); \
 	} \
-	z_log_msg_finalize(_msg, (void *)_source, _desc, NULL); \
+	z_log_msg_finalize(_msg, (const void *)_source, _desc, NULL); \
 } while (false)
 #else
 /* Alternative empty macro created to speed up compilation when LOG_SPEED is
@@ -527,8 +527,8 @@ do { \
 			  _level, _data, _dlen, ...) \
 do {\
 	Z_LOG_MSG_STR_VAR(_fmt, ##__VA_ARGS__) \
-	z_log_msg_runtime_create((_domain_id), (void *)(_source), \
-				  (_level), (uint8_t *)(_data), (_dlen),\
+	z_log_msg_runtime_create((_domain_id), (const void *)(_source), \
+				  (_level), (const void *)(_data), (_dlen),\
 				  Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt) | \
 				  (IS_ENABLED(CONFIG_LOG_USE_TAGGED_ARGUMENTS) ? \
 				   CBPRINTF_PACKAGE_ARGS_ARE_TAGGED : 0), \
