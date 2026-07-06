@@ -496,7 +496,7 @@ static void max3421e_xfer_cleanup_cancelled(const struct device *dev)
 
 	max3421e_dlist_xfer_cleanup_cancelled(dev, &data->ctrl_xfers);
 	max3421e_dlist_xfer_cleanup_cancelled(dev, &data->bulk_xfers);
-	max3421e_dlist_xfer_cleanup_cancelled(dev, &data->int_xfers);
+	max3421e_dlist_xfer_cleanup_cancelled(dev, &data->periodic_xfers);
 }
 
 static int max3421e_hrslt_success(const struct device *dev)
@@ -947,7 +947,7 @@ static int max3421e_dequeue(const struct device *dev,
 	case USB_EP_TYPE_ISO:
 		LOG_WRN("Iso xfers not implemeted yet, treating as interrupt xfer");
 	case USB_EP_TYPE_INTERRUPT:
-		dlist = &data->int_xfers;
+		dlist = &data->periodic_xfers;
 		break;
 	default:
 		LOG_ERR("Invalid xfer type: %d", xfer->type);
