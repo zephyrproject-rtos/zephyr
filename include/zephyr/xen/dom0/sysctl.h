@@ -58,6 +58,17 @@ int xen_sysctl_physinfo(struct xen_sysctl_physinfo *info);
 int xen_sysctl_getdomaininfo(struct xen_domctl_getdomaininfo *domaininfo,
 			     uint16_t first, uint16_t num);
 
+/**
+ * @brief Enable/disable physical CPUs.
+ *
+ * @kconfig_dep{CONFIG_XEN_DOM0}
+ * @param cpu ID of the CPU being turned on or off.
+ * @param enable Flag indicating whether the CPU should be turned on or off.
+ *
+ * @return 0 on success, negative errno value on failure.
+ */
+int xen_sysctl_cpu_hotplug(uint32_t cpu, bool enable);
+
 /** @} */
 
 #endif /* __XEN_DOM0_SYSCTL_H__ */
