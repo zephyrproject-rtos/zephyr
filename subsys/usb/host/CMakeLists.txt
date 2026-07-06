@@ -29,4 +29,10 @@ zephyr_library_sources_ifdef(
   usbip.c
 )
 
+zephyr_library_sources_ifdef(
+  CONFIG_USBH_MSC_CLASS
+  class/usbh_msc.c
+  class/usbh_msc_ufi.c
+)
+
 zephyr_linker_sources(DATA_SECTIONS usbh_data.ld)
