@@ -19,6 +19,13 @@ USB_BUF_POOL_VAR_DEFINE(uhc_ep_pool,
 			CONFIG_UHC_BUF_COUNT, CONFIG_UHC_BUF_POOL_SIZE,
 			0, NULL);
 
+int uhc_common_init(const struct device *dev)
+{
+	struct uhc_data *data = dev->data;
+
+	return k_mutex_init(&data->mutex);
+}
+
 int uhc_submit_event(const struct device *dev,
 		     const enum uhc_event_type type,
 		     const int status)
@@ -182,6 +189,58 @@ int uhc_xfer_append(const struct device *dev,
 		break;
 	default:
 		LOG_ERR("Invalid xfer type: %d", xfer->type);
+	}
+
+	return 0;
+}
+
+static void uhc_xfer_dlist_cleanup_cancelled(const struct device *dev, sys_dlist_t *dlist)
+{
+	struct uhc_transfer *tmp;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(dlist, tmp, node) {
+		if (tmp->err == -ECONNRESET) {
+			uhc_xfer_return(dev, tmp, -ECONNRESET);
+		}
+	}
+}
+
+void uhc_xfer_cleanup_cancelled(const struct device *dev)
+{
+	struct uhc_data *data = dev->data;
+
+	uhc_xfer_dlist_cleanup_cancelled(dev, &data->ctrl_xfers);
+	uhc_xfer_dlist_cleanup_cancelled(dev, &data->bulk_xfers);
+	uhc_xfer_dlist_cleanup_cancelled(dev, &data->periodic_xfers);
+}
+
+int uhc_xfer_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
+{
+	struct uhc_data *data = dev->data;
+	struct uhc_transfer *tmp;
+	sys_dlist_t *dlist;
+
+	switch (xfer->type) {
+	case USB_EP_TYPE_CONTROL:
+		dlist = &data->ctrl_xfers;
+		break;
+	case USB_EP_TYPE_BULK:
+		dlist = &data->bulk_xfers;
+		break;
+	case USB_EP_TYPE_ISO:
+	case USB_EP_TYPE_INTERRUPT:
+		dlist = &data->periodic_xfers;
+		break;
+	default:
+		LOG_ERR("Invalid xfer type: %d", xfer->type);
+		return -EINVAL;
+	}
+
+	SYS_DLIST_FOR_EACH_CONTAINER(dlist, tmp, node) {
+		if (xfer == tmp) {
+			tmp->err = -ECONNRESET;
+			break;
+		}
 	}
 
 	return 0;
