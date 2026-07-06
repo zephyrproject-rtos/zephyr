@@ -241,3 +241,8 @@
 	interrupts = <GIC_SPI 156 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&gic>;
 };
+
+&wkup_rtc0 {
+	interrupts = <GIC_SPI 28 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
