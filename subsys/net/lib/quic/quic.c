@@ -6539,6 +6539,16 @@ static int quic_handshake_complete(struct quic_endpoint *ep)
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_QUIC_0RTT) && ep->crypto.early.initialized) {
+		/* RFC 9001 4.9.3: discard 0-RTT keys once the handshake is
+		 * complete. The client no longer needs them now that 1-RTT keys
+		 * are installed, and the server must not retain them beyond a
+		 * short time; any later-reordered 0-RTT packet is dropped and its
+		 * data retransmitted under 1-RTT.
+		 */
+		quic_crypto_context_destroy(&ep->crypto.early);
+	}
+
 	(void)quic_dplpmtud_maybe_probe(ep);
 
 	NET_DBG("[EP:%p/%d] QUIC handshake complete", ep, quic_get_by_ep(ep));
@@ -7389,6 +7399,18 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 
 		crypto_ctx = quic_get_crypto_context_by_level(ep, QUIC_SECRET_LEVEL_EARLY);
 		if (crypto_ctx == NULL || !crypto_ctx->initialized) {
+			/* Before the handshake completes, hold the packet until the
+			 * early keys are installed. Afterwards the 0-RTT keys have
+			 * been discarded (RFC 9001 4.9.3), so drop any late or
+			 * reordered 0-RTT packet; its data is retransmitted at 1-RTT.
+			 */
+			if (ep->handshake.completed) {
+				NET_DBG("[EP:%p/%d] Dropping 0-RTT packet after handshake",
+					ep, quic_get_by_ep(ep));
+				QUIC_EP_STAT_INC(ep, drop_rx);
+				goto fail;
+			}
+
 			ret = quic_buffer_deferred_0rtt_packet(pkt);
 			if (ret < 0) {
 				NET_DBG("[EP:%p/%d] Failed to defer 0-RTT packet (%d)",
