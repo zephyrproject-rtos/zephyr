@@ -22,6 +22,7 @@
 	aliases {
 		adc0 = &main_adc0;
 		led0 = &ld9;
+		rtc = &counter_rtc0;
 		watchdog0 = &main_rti0;
 		sdhc0 = &main_sdhci0;
 		sdhc1 = &main_sdhci1;
@@ -207,6 +208,13 @@
 &main_epwm0 {
 	pinctrl-0 = <&main_epwm0_a &main_epwm0_b>;
 	pinctrl-names = "default";
+};
+
+&wkup_rtc0 {
+	status = "okay";
+};
+
+&counter_rtc0 {
 	status = "okay";
 };
 
