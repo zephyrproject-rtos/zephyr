@@ -38,3 +38,5 @@ tests:
       - mimxrt1064_evk
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
+  drivers.counter.build:
+    platform_allow: sr100_rdk/sr100
