@@ -2,9 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: Bouffalo Lab BL61x WiFi MAC
+title: Bouffalo Lab 'WiFi6' WiFi MAC
 
-compatible: "bflb,bl61x-wifi"
+description: |
+  Bouffalo Lab 'WiFi6' WiFi MAC. This is a CEVA-Waves IP blob-HW pair featuring Wifi, BLE, 802.15.4,
+  and optionally BT/EDR that is present on later BFLB chips, namely BL61x, BL616CL, and BL618DG.
+
+compatible: "bflb,wifi6"
 
 include: base.yaml
 
