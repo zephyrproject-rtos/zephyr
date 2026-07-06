@@ -1299,6 +1299,16 @@ Architectures
 * SoCs using :kconfig:option:`CONFIG_XTENSA_BACKTRACE` are now expected to implement
   :c:func:`xtensa_soc_stack_ptr_is_sane` and :c:func:`xtensa_soc_ptr_executable`.
 
+* The ARMv7-M MPU device-type region attributes ``REGION_PPB_ATTR``, ``REGION_IO_ATTR``
+  and ``REGION_EXTMEM_ATTR`` now set Execute-Never (``XN=1``) on all ARMv7-M cores.
+  Executing from Device/Strongly-ordered memory is architecturally UNPREDICTABLE on
+  ARMv7-M, so no valid use case is affected. On Cortex-M7 the XN attribute additionally
+  prevents speculative instruction fetches into these regions, which can cause bus hangs
+  or read side effects in peripheral space (Arm Cortex-M7 TRM, "Speculative accesses -
+  Considerations for system design"); the memory type alone does not prevent them.
+  Out-of-tree boards that nevertheless execute from a region mapped with these
+  attributes must define a custom attribute instead.
+
 Video
 =====
 
