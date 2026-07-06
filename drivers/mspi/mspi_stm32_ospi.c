@@ -1281,7 +1281,6 @@ static int mspi_stm32_ospi_config(const struct mspi_dt_spec *spec)
 #else
 	dev_data->hmspi.ospi.Init.DelayBlockBypass = HAL_OSPI_DELAY_BLOCK_USED;
 #endif /* MSPI_STM32_DLYB_BYPASSED */
-	dev_data->hmspi.ospi.Init.MemoryType = HAL_OSPI_MEMTYPE_MACRONIX;
 
 	/* Enable DHQC for high frequencies >= 100MHZ */
 	if (dev_cfg->mspicfg.max_freq > 100000000U) {
@@ -1488,6 +1487,7 @@ static int mspi_stm32_ospi_pm_action(const struct device *dev, enum pm_device_ac
 #else
 #define OSPI_DMA_CHANNEL(node, dir)
 #endif
+
 /* MSPI control config */
 #define MSPI_CONFIG(index)                                                                         \
 	{                                                                                          \
@@ -1507,6 +1507,10 @@ static int mspi_stm32_ospi_pm_action(const struct device *dev, enum pm_device_ac
 			    mspi_stm32_ospi_isr, DEVICE_DT_INST_GET(index), 0);                    \
 		irq_enable(DT_INST_IRQN(index));                                                   \
 	}
+
+
+#define MSPI_STM32_MEMTYPE(idx) \
+	CONCAT(HAL_OSPI_MEMTYPE_, DT_INST_STRING_UPPER_TOKEN(idx, st_mem_type))
 
 #define MSPI_STM32_INIT(index)                                                                     \
 	BUILD_ASSERT(OSPI_INST_NUM(index) != 0,                                                    \
@@ -1549,6 +1553,7 @@ static int mspi_stm32_ospi_pm_action(const struct device *dev, enum pm_device_ac
 				.ClockMode = HAL_OSPI_CLOCK_MODE_0,                                \
 				.ChipSelectBoundary = DT_INST_PROP(index, st_csbound),             \
 				.FreeRunningClock = HAL_OSPI_FREERUNCLK_DISABLE,                   \
+				.MemoryType = MSPI_STM32_MEMTYPE(index),  \
 				.DeviceSize = 0x19,                       \
 			},                        \
 		},                                                                                 \
