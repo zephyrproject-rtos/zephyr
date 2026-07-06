@@ -1218,6 +1218,7 @@ static void clock_control_bl616cl_peripheral_clock_init(void)
 	regval |= (1U << 18);
 	/* enable SDH clock routing */
 	regval |= (1U << 22);
+
 	sys_write32(regval, GLB_BASE + GLB_CGEN_CFG2_OFFSET);
 
 	clock_control_bl616cl_uart_set_clock(true, 0, 2);

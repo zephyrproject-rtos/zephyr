@@ -11,6 +11,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/reboot.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <zephyr/drivers/otp.h>
 #include <stdint.h>
 #include <string.h>
@@ -28,6 +29,8 @@
 /* DM IRQ number: IRQ_NUM_BASE(16) + 45 = 61 */
 #define DM_IRQN 61
 
+#if defined(CONFIG_SOC_SERIES_BL61X)
+
 /* GLB AHB MCU software reset bit positions */
 #define GLB_AHB_MCU_SW_BTDM 8
 #define GLB_AHB_MCU_SW_PDS  46
@@ -39,6 +42,8 @@
 #define EFUSE_DEV_INFO_OFFSET 0x1CU
 #define EFUSE_DEV_VERSION_POS 24U
 #define EFUSE_DEV_VERSION_MSK 0x0FU
+
+#endif
 
 /*
  * btblecontroller_ble_irq_init — Register and enable the BLE interrupt
@@ -88,6 +93,44 @@ void btblecontroller_dm_irq_enable(uint8_t enable)
 	}
 }
 
+void btblecontroller_sys_reset(void)
+{
+	sys_reboot(0);
+}
+
+uint64_t bflb_mtimer_get_time_us(void)
+{
+	return k_cyc_to_us_floor64(k_cycle_get_64());
+}
+
+uint64_t btblecontroller_mtimer_get_time_us(void)
+{
+	return k_cyc_to_us_floor64(k_cycle_get_64());
+}
+
+void btblecontroller_puts(const char *str)
+{
+	ARG_UNUSED(str);
+}
+
+int btblecontroller_printf(const char *fmt, ...)
+{
+	ARG_UNUSED(fmt);
+	return 0;
+}
+
+void btblecontroller_pds_trim_rc32m(void)
+{
+	/* Stub */
+}
+
+void btblecontroller_rf_restore(void)
+{
+	/* No PDS support initially — no RF restore needed */
+}
+
+#if defined(CONFIG_SOC_SERIES_BL61X)
+
 /*
  * btblecontroller_enable_ble_clk — Enable/disable BLE peripheral clock
  *
@@ -105,11 +148,6 @@ void btblecontroller_enable_ble_clk(uint8_t enable)
 	}
 	sys_write32(tmp, GLB_BASE + GLB_CGEN_CFG2_OFFSET);
 	irq_unlock(key);
-}
-
-void btblecontroller_rf_restore(void)
-{
-	/* No PDS support initially — no RF restore needed */
 }
 
 /*
@@ -159,11 +197,6 @@ void btblecontroller_software_pds_reset(void)
 	glb_ahb_mcu_software_reset(GLB_AHB_MCU_SW_PDS);
 }
 
-void btblecontroller_pds_trim_rc32m(void)
-{
-	/* Stub */
-}
-
 uint8_t btblecontrolller_get_chip_version(void)
 {
 	const struct device *efuse = DEVICE_DT_GET_ONE(bflb_efuse);
@@ -176,23 +209,4 @@ uint8_t btblecontrolller_get_chip_version(void)
 	return (dev_info >> EFUSE_DEV_VERSION_POS) & EFUSE_DEV_VERSION_MSK;
 }
 
-void btblecontroller_sys_reset(void)
-{
-	sys_reboot(0);
-}
-
-uint64_t bflb_mtimer_get_time_us(void)
-{
-	return k_cyc_to_us_floor64(k_cycle_get_64());
-}
-
-void btblecontroller_puts(const char *str)
-{
-	ARG_UNUSED(str);
-}
-
-int btblecontroller_printf(const char *fmt, ...)
-{
-	ARG_UNUSED(fmt);
-	return 0;
-}
+#endif

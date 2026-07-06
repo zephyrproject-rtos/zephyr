@@ -33,11 +33,11 @@
 LOG_MODULE_REGISTER(wl80211_plat, CONFIG_WIFI_LOG_LEVEL);
 
 #ifndef CFG_REORD_BUF
-#define CFG_REORD_BUF CONFIG_BFLB_WIFI_BL61X_BA_REORDER_BUF
+#define CFG_REORD_BUF CONFIG_WIFI_BFLB_WIFI6_BA_REORDER_BUF
 #endif
 
 #ifndef MACSW_MAX_BA_RX
-#define MACSW_MAX_BA_RX CONFIG_BFLB_WIFI_BL61X_BA_RX
+#define MACSW_MAX_BA_RX CONFIG_WIFI_BFLB_WIFI6_BA_RX
 #endif
 
 #define MACSW_AMPDU_RX_BUF_SIZE CFG_REORD_BUF
@@ -63,11 +63,11 @@ uint32_t wl80211_rx_buf_mem[CO_ALIGN4_HI(WL80211_RX_BUF_MEM_LEN) /
 			    sizeof(uint32_t)] Z_GENERIC_SECTION(".wifi_sharedram");
 
 static const struct ieee80211_dot_d country_list[] = WL80211_COUNTRY_LIST;
-static char wl80211_wram_heap_buf[CONFIG_BFLB_WIFI_BL61X_WRAM_HEAP_SIZE] Z_GENERIC_SECTION(
+static char wl80211_wram_heap_buf[CONFIG_WIFI_BFLB_WIFI6_WRAM_HEAP_SIZE] Z_GENERIC_SECTION(
 	".wifi_sharedram") __aligned(4);
 static struct k_heap wl80211_wram_heap;
 
-const char *wl80211_default_country = CONFIG_BFLB_WIFI_BL61X_DEFAULT_COUNTRY;
+const char *wl80211_default_country = CONFIG_WIFI_BFLB_WIFI6_DEFAULT_COUNTRY;
 
 /* BSD/net80211 globals -- blob reads these directly by symbol name. */
 const int hz = CONFIG_SYS_CLOCK_TICKS_PER_SEC;

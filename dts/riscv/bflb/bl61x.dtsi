@@ -470,7 +470,7 @@
 		};
 
 		wifi0: wifi@24b08000 {
-			compatible = "bflb,bl61x-wifi";
+			compatible = "bflb,wifi6";
 			reg = <0x24b08000 0x1000>;
 			interrupts = <70 1>, <79 1>;
 			interrupt-names = "wifi", "wifi-ipc";
