@@ -83,6 +83,17 @@ struct ll_conn_iso_group {
 				 */
 	uint32_t sync_delay;
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+	/* Ticker expiry of the CIG event without drift, and the offset of the
+	 * CIS reserved by the resume ticker in the CIG event.
+	 */
+	uint32_t ticks_resume_anchor;
+	uint32_t resume_offset_us;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
+
 	uint16_t iso_interval;
 	uint8_t  cig_id;
 
