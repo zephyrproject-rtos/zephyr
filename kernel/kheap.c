@@ -5,11 +5,11 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/init.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/iterable_sections.h>
 /* private kernel APIs */
 #include <ksched.h>
-#include <kernel_internal.h>
 #include <wait_q.h>
 
 int k_heap_array_get(struct k_heap **heap)
@@ -32,14 +32,21 @@ void k_heap_init(struct k_heap *heap, void *mem, size_t bytes)
 	SYS_PORT_TRACING_OBJ_INIT(k_heap, heap);
 }
 
-static void statics_init(void)
+static int statics_init(void)
 {
 	STRUCT_SECTION_FOREACH(k_heap, heap) {
 		k_heap_init(heap, heap->heap.init_mem, heap->heap.init_bytes);
 	}
+	return 0;
 }
 
-K_KERNEL_INIT_PRE(statics_init);
+/*
+ * Static heap init must stay a PRE_KERNEL_1 SYS_INIT: the heap KASAN shadow is
+ * registered at (PRE_KERNEL_1, 0) via K_HEAP_KASAN_ENABLE() and must run before
+ * sys_heap_init(). A K_KERNEL_INIT_PRE() hook would run ahead of that, leaving
+ * the shadow unregistered and KASAN tracking disabled.
+ */
+SYS_INIT_NAMED(statics_init_pre, statics_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 typedef void * (sys_heap_allocator_t)(struct sys_heap *heap, size_t align, size_t bytes);
 
