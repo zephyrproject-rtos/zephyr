@@ -3,10 +3,10 @@
 
 # keep first
 if(CONFIG_FLASH_STM32_NOR_MEMMAP)
-board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
-board_runner_args(stm32cubeprogrammer "--extload=MT25TL01G_STM32H747I-DISCO.stldr")
+  board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
+  board_runner_args(stm32cubeprogrammer "--extload=MT25TL01G_STM32H747I-DISCO.stldr")
 else()
-board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
+  board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
 endif()
 
 if(CONFIG_BOARD_STM32H747I_DISCO_STM32H747XX_M7)

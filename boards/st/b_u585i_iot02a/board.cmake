@@ -14,10 +14,10 @@ endif()
 
 # keep first
 if(CONFIG_FLASH_STM32_NOR_MEMMAP)
-board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
-board_runner_args(stm32cubeprogrammer "--extload=MX25LM51245G_STM32U585I-IOT02A.stldr")
+  board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
+  board_runner_args(stm32cubeprogrammer "--extload=MX25LM51245G_STM32U585I-IOT02A.stldr")
 else()
-board_runner_args(stm32cubeprogrammer "--erase" "--port=swd" "--reset-mode=hw")
+  board_runner_args(stm32cubeprogrammer "--erase" "--port=swd" "--reset-mode=hw")
 endif()
 
 board_runner_args(openocd "--tcl-port=6666")
