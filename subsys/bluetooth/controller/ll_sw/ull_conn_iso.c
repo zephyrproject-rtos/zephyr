@@ -79,6 +79,15 @@ static void ticker_next_slot_get_op_cb(uint32_t status, void *param);
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 static void ticker_start_op_cb(uint32_t status, void *param);
 static void ticker_update_cig_op_cb(uint32_t status, void *param);
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			     uint32_t remainder, uint16_t lazy, uint8_t force,
+			     void *param);
+static void ticker_op_start_cb(uint32_t status, void *param);
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
 static void cis_disabled_cb(void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void cig_disable(void *param);
@@ -95,6 +104,7 @@ static void *cig_free;
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
 	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
 static struct ticker_ext cig_ticker_ext[CONFIG_BT_CTLR_CONN_ISO_GROUPS];
+static struct ticker_ext cig_resume_ticker_ext[CONFIG_BT_CTLR_CONN_ISO_GROUPS];
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
 	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
 	*/
@@ -823,9 +833,78 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	err = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0, &mfy);
 	LL_ASSERT_ERR(!err);
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+	if ((IS_PERIPHERAL(cig) &&
+	     IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER) &&
+	     !IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO_RESERVE_MAX)) ||
+	    (IS_CENTRAL(cig) &&
+	     IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) &&
+	     !IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO_RESERVE_MAX))) {
+		uint8_t index = ll_conn_iso_group_handle_get(cig);
+		uint32_t ret_status;
+
+		/* Setup the resume ticker mirroring the CIG ticker window so
+		 * that a deferred (drift) or preempted (resume) CIG event can
+		 * be re-scheduled inside the jitter-in-window slot.
+		 */
+		cig_resume_ticker_ext[index].ticks_slot_window =
+			cig_ticker_ext[index].ticks_slot_window;
+		cig_resume_ticker_ext[index].is_jitter_in_window = 1U;
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+		cig_resume_ticker_ext[index].expire_info_id = TICKER_NULL;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
+		ret_status = ticker_start_ext(
+				TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+				(TICKER_ID_CONN_ISO_RESUME_BASE + index),
+				ticks_at_expire, 0U,
+				TICKER_NULL_PERIOD, TICKER_NULL_REMAINDER,
+				TICKER_NULL_LAZY, cig->ull.ticks_slot,
+				ticker_resume_cb, &cig->lll, ticker_op_start_cb,
+				(void *)__LINE__, &cig_resume_ticker_ext[index]);
+		LL_ASSERT_ERR((ret_status == TICKER_STATUS_SUCCESS) ||
+			      (ret_status == TICKER_STATUS_BUSY));
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
+
 	/* Handle ISO Transmit Test for this CIG */
 	ull_conn_iso_transmit_test_cig_interval(cig->lll.handle, ticks_at_expire);
 }
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			     uint32_t remainder, uint16_t lazy, uint8_t force,
+			     void *param)
+{
+	ARG_UNUSED(ticks_at_expire);
+	ARG_UNUSED(ticks_drift);
+	ARG_UNUSED(remainder);
+	ARG_UNUSED(lazy);
+	ARG_UNUSED(force);
+	ARG_UNUSED(param);
+
+	/* TODO: Place a subsequent ULL time reservation for the CIG event so
+	 *       the LLL can wrap remaining CIS subevents around an overlapping
+	 *       role.
+	 */
+}
+
+static void ticker_op_start_cb(uint32_t status, void *param)
+{
+	ARG_UNUSED(status);
+	ARG_UNUSED(param);
+
+	/* FIXME: Handle skipped ULL scheduling of the subevent used to
+	 *        reserve time for the resume window.
+	 */
+}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
 
 void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 			uint32_t ticks_at_expire, uint32_t remainder,
