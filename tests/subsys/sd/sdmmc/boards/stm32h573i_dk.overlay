@@ -11,7 +11,6 @@
 };
 
 sdhc: &sdmmc1 {
-	interrupt-names = "event";
 	hw-flow-control;
 	min-bus-freq = <DT_FREQ_K(400)>;
 	max-bus-freq = <DT_FREQ_M(208)>;

@@ -565,6 +565,7 @@
 			clocks = <&rcc STM32_CLOCK(AHB4, 11)>,
 				 <&rcc STM32_SRC_PLL1_Q SDMMC1_SEL(0)>;
 			resets = <&rctl STM32_RESET(AHB4, 11)>;
+			interrupt-names = "event";
 			interrupts = <79 0>;
 			status = "disabled";
 		};
