@@ -14,6 +14,7 @@ config SOC_SERIES_STM32U3X
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_FPU
+	select CPU_HAS_ICACHE
 	# Software options
 	select SOC_EARLY_INIT_HOOK
 	# STM32-specific options
