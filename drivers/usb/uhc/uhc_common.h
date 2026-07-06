@@ -164,14 +164,15 @@ struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t microf
 /**
  * @brief Helper to append a transfer to internal list.
  *
- * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] xfer   Pointer to UHC transfer
+ * @param[in] dev          Pointer to device struct of the driver instance
+ * @param[in] xfer         Pointer to UHC transfer
+ * @param[in] microframe   Microframe number used to determine transfer eligibility.
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -ENOMEM if there is no buffer in the queue
  */
-int uhc_xfer_append(const struct device *dev,
-		    struct uhc_transfer *const xfer);
+int uhc_xfer_append(const struct device *dev, struct uhc_transfer *const xfer,
+		    uint32_t microframe);
 
 /**
  * @brief Helper function to send UHC event to a higher level.

@@ -2394,7 +2394,9 @@ static int uhc_dwc2_bus_resume(const struct device *const dev)
 
 static int uhc_dwc2_enqueue(const struct device *const dev, struct uhc_transfer *const xfer)
 {
-	(void)uhc_xfer_append(dev, xfer);
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+
+	(void)uhc_xfer_append(dev, xfer, priv->microframe_number);
 
 	/*
 	 * Try to start a new transfer. If no channel/endpoint is free it stays

@@ -49,7 +49,8 @@ struct uhc_vrt_data {
 	struct uhc_transfer *last_xfer;
 	struct uhc_vrt_frame frame;
 	struct k_timer sof_timer;
-	uint16_t microframe_number;
+	uint32_t microframe_number;
+	uint8_t microframe_increment;
 	uint8_t req;
 };
 
@@ -425,7 +426,7 @@ static void xfer_work_handler(struct k_work *work)
 
 		switch (ev->type) {
 		case UHC_VRT_EVT_SOF:
-			priv->microframe_number++;
+			priv->microframe_number += priv->microframe_increment;
 			vrt_xfer_cleanup_cancelled(dev);
 			vrt_assemble_frame(dev);
 			schedule = true;
@@ -473,10 +474,12 @@ static void vrt_device_act(const struct device *dev,
 		break;
 	case UVB_DEVICE_ACT_FS:
 		type = UHC_EVT_DEV_CONNECTED_FS;
+		priv->microframe_increment = 8;
 		k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
 		break;
 	case UVB_DEVICE_ACT_HS:
 		type = UHC_EVT_DEV_CONNECTED_HS;
+		priv->microframe_increment = 1;
 		k_timer_start(&priv->sof_timer, K_MSEC(1), K_USEC(125));
 		break;
 	case UVB_DEVICE_ACT_REMOVED:
@@ -507,8 +510,9 @@ static void uhc_vrt_uvb_cb(const void *const vrt_priv,
 static int uhc_vrt_sof_enable(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	k_timeout_t period = priv->microframe_increment == 8 ? K_MSEC(1) : K_USEC(125);
 
-	k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
+	k_timer_start(&priv->sof_timer, K_MSEC(1), period);
 
 	return 0;
 }
@@ -526,13 +530,14 @@ static int uhc_vrt_bus_suspend(const struct device *dev)
 static int uhc_vrt_bus_reset(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	k_timeout_t period = priv->microframe_increment == 8 ? K_MSEC(1) : K_USEC(125);
 	int ret;
 
 	k_timer_stop(&priv->sof_timer);
 	ret = uvb_advert(priv->host_node, UVB_EVT_RESET, NULL);
 	/* TDRSTR */
 	k_msleep(50);
-	k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
+	k_timer_start(&priv->sof_timer, K_MSEC(1), period);
 
 	return ret;
 }
@@ -540,8 +545,9 @@ static int uhc_vrt_bus_reset(const struct device *dev)
 static int uhc_vrt_bus_resume(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	k_timeout_t period = priv->microframe_increment == 8 ? K_MSEC(1) : K_USEC(125);
 
-	k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
+	k_timer_start(&priv->sof_timer, K_MSEC(1), period);
 
 	return uvb_advert(priv->host_node, UVB_EVT_RESUME, NULL);
 }
@@ -557,7 +563,7 @@ static int uhc_vrt_enqueue(const struct device *dev,
 			xfer->start_microframe, priv->microframe_number, xfer->microframe_interval);
 	}
 
-	uhc_xfer_append(dev, xfer);
+	uhc_xfer_append(dev, xfer, priv->microframe_number);
 
 	return 0;
 }
@@ -626,6 +632,8 @@ static int uhc_vrt_driver_preinit(const struct device *dev)
 	k_mutex_init(&data->mutex);
 
 	priv->host_node->priv = dev;
+	/* Default to SOF every 1 millisecond */
+	priv->microframe_increment = 8;
 	k_fifo_init(&priv->fifo);
 	k_work_init(&priv->work, xfer_work_handler);
 	k_timer_init(&priv->sof_timer, sof_timer_handler, NULL);
