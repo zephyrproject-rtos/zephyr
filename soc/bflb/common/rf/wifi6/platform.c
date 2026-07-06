@@ -19,19 +19,19 @@
 
 LOG_MODULE_REGISTER(bflb_wifi_plat, CONFIG_WIFI_LOG_LEVEL);
 
-#define WIFI_DT_NODE      DT_NODELABEL(wifi0)
-#define WIFI_IRQ_NUM      DT_IRQ_BY_NAME(WIFI_DT_NODE, wifi, irq)
-#define WIFI_IRQ_PRI      DT_IRQ_BY_NAME(WIFI_DT_NODE, wifi, priority)
-#define WIFI_IPC_IRQ_NUM  DT_IRQ_BY_NAME(WIFI_DT_NODE, wifi_ipc, irq)
-#define WIFI_IPC_IRQ_PRI  DT_IRQ_BY_NAME(WIFI_DT_NODE, wifi_ipc, priority)
-#define BFLB_RSSI_INVALID (-100)
+#define WIFI_DT_NODE		DT_NODELABEL(wifi0)
+#define WIFI_IRQ_NUM		DT_IRQ_BY_NAME(WIFI_DT_NODE, wifi, irq)
+#define WIFI_IRQ_PRI		DT_IRQ_BY_NAME(WIFI_DT_NODE, wifi, priority)
+#define WIFI_IPC_IRQ_NUM	DT_IRQ_BY_NAME(WIFI_DT_NODE, wifi_ipc, irq)
+#define WIFI_IPC_IRQ_PRI	DT_IRQ_BY_NAME(WIFI_DT_NODE, wifi_ipc, priority)
+#define BFLB_RSSI_INVALID	(-100)
 
 extern void wifi_main(void *param);
 extern void interrupt0_handler(void);
 
 static K_SEM_DEFINE(wifi_task_sem, 0, 1);
 static K_SEM_DEFINE(wifi_task_ready_sem, 0, 1);
-static K_THREAD_STACK_DEFINE(wifi_task_stack, CONFIG_BFLB_WIFI_BL61X_TASK_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(wifi_task_stack, CONFIG_WIFI_BFLB_WIFI6_TASK_STACK_SIZE);
 static struct k_thread wifi_task_thread;
 static atomic_t wifi_task_ready;
 static void wifi_mac_isr(const void *arg)
@@ -66,7 +66,7 @@ void wifi_task_create(void)
 	irq_enable(WIFI_IPC_IRQ_NUM);
 
 	k_thread_create(&wifi_task_thread, wifi_task_stack, K_THREAD_STACK_SIZEOF(wifi_task_stack),
-			wifi_task_entry, NULL, NULL, NULL, CONFIG_BFLB_WIFI_BL61X_TASK_PRIORITY, 0,
+			wifi_task_entry, NULL, NULL, NULL, CONFIG_WIFI_BFLB_WIFI6_TASK_PRIORITY, 0,
 			K_NO_WAIT);
 	k_thread_name_set(&wifi_task_thread, "wifi_macsw");
 }

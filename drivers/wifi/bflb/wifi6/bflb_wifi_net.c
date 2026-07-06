@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT bflb_bl61x_wifi
+#define DT_DRV_COMPAT bflb_wifi6
 
 #include <string.h>
 #include <stdint.h>
@@ -81,15 +81,15 @@ struct tx_ctx {
 };
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
-	     "Only one bflb,bl61x-wifi instance supported");
+	     "Only one bflb,wifi6 instance supported");
 
 struct bflb_wifi_dev wl80211_dev;
 static struct k_work event_work;
 static struct k_work_delayable keepalive_work;
 K_MSGQ_DEFINE(wifi_event_msgq, sizeof(struct bflb_wifi_event), 16, 4);
 static K_SEM_DEFINE(eapol_msg4_sem, 0, 1);
-static K_SEM_DEFINE(tx_pending_sem, CONFIG_BFLB_WIFI_BL61X_TX_MAX_PENDING,
-		    CONFIG_BFLB_WIFI_BL61X_TX_MAX_PENDING);
+static K_SEM_DEFINE(tx_pending_sem, CONFIG_WIFI_BFLB_WIFI6_TX_MAX_PENDING,
+		    CONFIG_WIFI_BFLB_WIFI6_TX_MAX_PENDING);
 
 /* picolibc memcpy uses byte loads on WRAM -- 23 cyc/byte; word-aligned copy: 6 cyc/byte */
 static void __noinline wram_copy(void *dst, const void *src, size_t len)
@@ -546,10 +546,10 @@ static int bflb_wifi_init(const struct device *dev)
 
 	wl80211_init();
 
-	ret = wl80211_set_country_code(CONFIG_BFLB_WIFI_BL61X_DEFAULT_COUNTRY);
+	ret = wl80211_set_country_code(CONFIG_WIFI_BFLB_WIFI6_DEFAULT_COUNTRY);
 	if (ret != 0) {
 		LOG_WRN("Country code '%s' not found, using blob default",
-			CONFIG_BFLB_WIFI_BL61X_DEFAULT_COUNTRY);
+			CONFIG_WIFI_BFLB_WIFI6_DEFAULT_COUNTRY);
 	}
 
 	bflb_wpa_supp_register_wpa_cbs();

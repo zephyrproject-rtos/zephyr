@@ -9,10 +9,6 @@ arch: riscv
 ram: 384
 toolchain:
   - zephyr
-testing:
-  ignore_tags:
-    - net
-    - bluetooth
 supported:
   - gpio
   - pinctrl
@@ -25,4 +21,6 @@ supported:
   - entropy
   - crypto
   - counter
+  - netif:wifi
+  - bluetooth
 vendor: bflb
