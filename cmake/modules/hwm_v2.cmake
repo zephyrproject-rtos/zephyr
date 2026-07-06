@@ -47,13 +47,14 @@ if(BOARD_QUALIFIERS)
   string(REPLACE "/" ";" split_board_qualifiers ";${BOARD_QUALIFIERS}")
   list(GET split_board_qualifiers 1 target_soc)
   set(soc_filter --soc ${target_soc})
+  set(soc_extra_params "\;{FAMILY}\;{SERIES}")
 else()
   set(soc_filter --socs)
 endif()
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/list_hardware.py
                 ${arch_root_args} ${soc_root_args}
-                --archs ${soc_filter} --cmakeformat={TYPE}\;{NAME}\;{DIR}
+                --archs ${soc_filter} --cmakeformat={TYPE}\;{NAME}\;{DIR}${soc_extra_params}
                 OUTPUT_VARIABLE ret_hw
                 ERROR_VARIABLE err_hw
                 RESULT_VARIABLE ret_val
@@ -81,7 +82,7 @@ foreach(line IN LISTS hw_lines)
     string(TOUPPER "${ARCH_V2_NAME}" ARCH_V2_NAME_UPPER)
     set(ARCH_V2_${ARCH_V2_NAME_UPPER}_DIR ${ARCH_V2_DIR})
   elseif(HWM_TYPE MATCHES "^soc|^series|^family")
-    cmake_parse_arguments(SOC_V2 "" "NAME" "DIR" ${line})
+    cmake_parse_arguments(SOC_V2 "" "NAME;FAMILY;SERIES" "DIR" ${line})
 
     list(APPEND kconfig_soc_source_dir "${SOC_V2_DIR}")
     string(TOUPPER "${SOC_V2_NAME}" SOC_V2_NAME_UPPER)
@@ -93,6 +94,11 @@ foreach(line IN LISTS hw_lines)
       set(SOC_${SOC_V2_NAME_UPPER}_DIRECTORIES ${SOC_V2_DIR})
       list(GET SOC_V2_DIR 0 SOC_${SOC_V2_NAME}_DIR)
       list(GET SOC_V2_DIR 0 SOC_${SOC_V2_NAME_UPPER}_DIR)
+
+      if(soc_extra_params)
+        set(SOC_FAMILY ${SOC_V2_FAMILY})
+        set(SOC_SERIES ${SOC_V2_SERIES})
+      endif()
     else()
       # We support both SOC_series_foo_DIR and SOC_SERIES_FOO_DIR (and family /  FAMILY).
       set(SOC_${HWM_TYPE}_${SOC_V2_NAME}_DIR ${SOC_V2_DIR})
