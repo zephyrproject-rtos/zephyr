@@ -12,6 +12,17 @@ Will start advertising extended advertising with audio flags, periodic advertisi
 Broadcast Audio Source Endpoint (BASE) and finally the BIGinfo together with
 (mock) Audio (ISO) data.
 
+In addition to the broadcast advertising sets, the sample starts two more
+advertising sets that run in parallel with the LE Audio broadcast:
+
+* a connectable **extended** advertising set (device name ``BAP Ext Connectable``)
+* a connectable **legacy** advertising set (device name ``BAP Legacy Connectable``)
+
+Remote centrals can connect to either set and reconnect after
+disconnecting, while the LE Audio broadcast continues uninterrupted.
+The broadcast audio set itself uses ``CONFIG_BT_DEVICE_NAME`` (default
+``Broadcast Audio Source``) as its device name in the advertising data.
+
 The BAP Broadcast Source will reset every 30 seconds to show the full API.
 
 Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
