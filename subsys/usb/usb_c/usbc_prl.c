@@ -52,6 +52,8 @@ enum prl_flags {
 	PRL_FLAGS_FIRST_MSG_PENDING = 8,
 	/* Flag to note that PRL requested to set SINK_NG CC state */
 	PRL_FLAGS_SINK_NG = 9,
+	/** Flag to note a message has been received */
+	PRL_FLAGS_RX_COMPLETE = 10,
 };
 
 /**
@@ -326,7 +328,10 @@ void prl_run(const struct device *dev)
 		 */
 		if (prl_hr_get_state(dev) == PRL_HR_WAIT_FOR_REQUEST) {
 			/* Run Protocol Layer Message Reception */
-			prl_rx_wait_for_phy_message(dev);
+			if (atomic_test_and_clear_bit(&data->prl_rx->flags,
+						      PRL_FLAGS_RX_COMPLETE)) {
+				prl_rx_wait_for_phy_message(dev);
+			}
 
 			/* Run Protocol Layer Message Tx state machine */
 			smf_run_state(SMF_CTX(prl_tx));
@@ -367,10 +372,14 @@ static void alert_handler(const struct device *tcpc, void *port_dev, enum tcpc_a
 {
 	const struct device *dev = (const struct device *)port_dev;
 	struct usbc_port_data *data = dev->data;
+	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
 	struct protocol_layer_tx_t *prl_tx = data->prl_tx;
 	struct protocol_hard_reset_t *prl_hr = data->prl_hr;
 
 	switch (alert) {
+	case TCPC_ALERT_MSG_STATUS:
+		atomic_set_bit(&prl_rx->flags, PRL_FLAGS_RX_COMPLETE);
+		break;
 	case TCPC_ALERT_HARD_RESET_RECEIVED:
 		atomic_set_bit(&prl_hr->flags, PRL_FLAGS_PORT_PARTNER_HARD_RESET);
 		break;
