@@ -278,13 +278,15 @@ static inline int dwc2_core_init_host_gusbcfg(const struct device *dev)
 	const struct uhc_dwc2_config *const config = dev->config;
 	struct uhc_dwc2_data *const data = uhc_get_private(dev);
 	struct usb_dwc2_reg *const base = config->base;
-	uint32_t gusbcfg = sys_read32((mem_addr_t)&base->gusbcfg);
 	uint32_t ghwcfg2 = sys_read32((mem_addr_t)&base->ghwcfg2);
 	uint32_t ghwcfg4 = sys_read32((mem_addr_t)&base->ghwcfg4);
 	const k_timepoint_t timepoint = sys_timepoint_calc(K_MSEC(100));
+	uint32_t gusbcfg;
 
-	/* Enable Host mode */
+	/* Force host mode as we do not support mode changes yet */
 	sys_set_bits((mem_addr_t)&base->gusbcfg, USB_DWC2_GUSBCFG_FORCEHSTMODE);
+	/* Read GUSBCFG with FORCEHSTMODE updated */
+	gusbcfg = sys_read32((mem_addr_t)&base->gusbcfg);
 
 	/* Wait until core is in host mode */
 	while ((sys_read32((mem_addr_t)&base->gintsts) & USB_DWC2_GINTSTS_CURMOD) == 0) {
@@ -335,6 +337,7 @@ static inline int dwc2_core_init_host_gusbcfg(const struct device *dev)
 				gusbcfg &= ~USB_DWC2_GUSBCFG_PHYIF_16_BIT;
 			}
 		}
+
 		sys_write32(gusbcfg, (mem_addr_t)&base->gusbcfg);
 	}
 
