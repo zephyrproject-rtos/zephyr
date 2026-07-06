@@ -281,7 +281,7 @@ extern "C" {
 #define CONTAINER_OF(ptr, type, field)                                                             \
 	({                                                                                         \
 		CONTAINER_OF_VALIDATE(ptr, type, field)                                            \
-		((type *)(((char *)(ptr)) - offsetof(type, field)));                               \
+		((type *)(void *)(((char *)(ptr)) - offsetof(type, field)));                       \
 	})
 
 /**
