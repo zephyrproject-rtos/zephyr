@@ -116,11 +116,8 @@ void bt_tx_irq_raise(void);
 /* Stacks for the threads */
 static void rx_work_handler(struct k_work *work);
 static K_WORK_DEFINE(rx_work, rx_work_handler);
-#if defined(CONFIG_BT_RECV_WORKQ_BT)
 static struct k_work_q bt_workq;
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
-#endif /* CONFIG_BT_RECV_WORKQ_BT */
-
 static void init_work(struct k_work *work);
 
 struct bt_dev bt_dev = {
@@ -4502,11 +4499,8 @@ static void rx_queue_put(struct net_buf *buf)
 {
 	net_buf_slist_put(&bt_dev.rx_queue, buf);
 
-#if defined(CONFIG_BT_RECV_WORKQ_SYS)
-	const int err = k_work_submit(&rx_work);
-#elif defined(CONFIG_BT_RECV_WORKQ_BT)
 	const int err = k_work_submit_to_queue(&bt_workq, &rx_work);
-#endif /* CONFIG_BT_RECV_WORKQ_SYS */
+
 	if (err < 0) {
 		LOG_ERR("Could not submit rx_work: %d", err);
 	}
@@ -4689,12 +4683,7 @@ static void rx_work_handler(struct k_work *work)
 	 * we used a while() loop with a k_yield() statement.
 	 */
 	if (!sys_slist_is_empty(&bt_dev.rx_queue)) {
-
-#if defined(CONFIG_BT_RECV_WORKQ_SYS)
-		err = k_work_submit(&rx_work);
-#elif defined(CONFIG_BT_RECV_WORKQ_BT)
 		err = k_work_submit_to_queue(&bt_workq, &rx_work);
-#endif
 		if (err < 0) {
 			LOG_ERR("Could not submit rx_work: %d", err);
 		}
@@ -4763,14 +4752,12 @@ int bt_enable(bt_ready_cb_t cb)
 	}
 	k_fifo_init(&bt_dev.cmd_tx_queue);
 
-#if defined(CONFIG_BT_RECV_WORKQ_BT)
 	/* RX thread */
 	k_work_queue_init(&bt_workq);
 	k_work_queue_start(&bt_workq, rx_thread_stack,
 			   CONFIG_BT_RX_STACK_SIZE,
 			   K_PRIO_COOP(CONFIG_BT_RX_PRIO), NULL);
 	k_thread_name_set(bt_workq.thread_id, "BT RX WQ");
-#endif
 
 	err = bt_hci_open(bt_dev.hci, bt_recv);
 	if (err) {
@@ -4851,10 +4838,8 @@ int bt_disable(void)
 		return err;
 	}
 
-#if defined(CONFIG_BT_RECV_WORKQ_BT)
 	/* Abort RX thread */
 	k_thread_abort(bt_workq.thread_id);
-#endif
 
 	/* Some functions rely on checking this bitfield */
 	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));

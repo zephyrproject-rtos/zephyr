@@ -68,6 +68,15 @@ Removed APIs and options
 
       * ``CONFIG_XTENSA_BACKTRACE_EXCEPTION_DUMP_HOOK``
 
+* Bluetooth
+
+  * Host
+
+    * The ``CONFIG_BT_RECV_CONTEXT`` choice and its options ``CONFIG_BT_RECV_WORKQ_SYS``
+      and ``CONFIG_BT_RECV_WORKQ_BT`` have been removed. The host now always
+      processes low-priority HCI packets on the dedicated Bluetooth RX workqueue
+      (the former ``CONFIG_BT_RECV_WORKQ_BT`` behavior). See the migration guide.
+
 * Counter
 
     * ``CONFIG_COUNTER_MAXIM_DS3231``

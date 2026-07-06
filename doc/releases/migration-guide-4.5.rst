@@ -855,6 +855,16 @@ Bluetooth Host
   parameter updates should enable :kconfig:option:`CONFIG_BT_USER_CONN_PARAM_REJECTED` and
   implement the new ``le_param_update_rejected`` callback.
 
+* The ``CONFIG_BT_RECV_CONTEXT`` Kconfig choice and its options ``CONFIG_BT_RECV_WORKQ_SYS``
+  and ``CONFIG_BT_RECV_WORKQ_BT`` have been removed. The host now unconditionally
+  processes low-priority HCI packets on the dedicated Bluetooth RX workqueue (the
+  previous ``CONFIG_BT_RECV_WORKQ_BT`` behavior).
+  Applications that selected ``CONFIG_BT_RECV_WORKQ_SYS`` to save RAM (e.g. on
+  nRF51) must drop that option; the dedicated RX thread is now always created.
+  Tune :kconfig:option:`CONFIG_BT_RX_STACK_SIZE` (the RX thread stack) and, since
+  low-priority RX no longer runs on the system workqueue, you can reduce
+  :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` accordingly.
+
 Bluetooth Services
 ==================
 
