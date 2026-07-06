@@ -1519,6 +1519,9 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 		break;
 
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
+		if (config->vendor->scripts.periodic == NULL) {
+			break;
+		}
 		if (atomic_get(&data->periodic_paused)) {
 			data->periodic_timeout_skipped = true;
 			break;
@@ -1605,6 +1608,9 @@ static void modem_cellular_registered_event_handler(struct modem_cellular_data *
 		break;
 
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
+		if (config->vendor->scripts.periodic == NULL) {
+			break;
+		}
 		if (atomic_get(&data->periodic_paused)) {
 			data->periodic_timeout_skipped = true;
 			break;
