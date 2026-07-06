@@ -159,6 +159,9 @@ class Platform:
         if self.supported_toolchains is None:
             self.supported_toolchains = []
 
+        toolchain_exclusive = variant_data.get("toolchain_exclusive",
+                                               data.get("toolchain_exclusive", False))
+
         self.preferred_toolchain = variant_data.get("preferred_toolchain",
                                                     data.get("preferred_toolchain",
                                                              None))
@@ -185,7 +188,7 @@ class Platform:
           # that is supported on all board targets for xtensa.
         }
 
-        if self.arch in support_toolchain_variants:
+        if not toolchain_exclusive and self.arch in support_toolchain_variants:
             for toolchain in support_toolchain_variants[self.arch]:
                 if toolchain not in self.supported_toolchains:
                     self.supported_toolchains.append(toolchain)
