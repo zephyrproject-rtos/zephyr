@@ -1113,10 +1113,6 @@ static enum ethernet_hw_caps eth_xmc4xxx_capabilities(const struct device *dev _
 	enum ethernet_hw_caps caps = ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE |
 				     ETHERNET_HW_TX_CHKSUM_OFFLOAD | ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 
-#if defined(CONFIG_PTP_CLOCK_XMC4XXX)
-	caps |= ETHERNET_PTP;
-#endif
-
 #if defined(CONFIG_NET_VLAN)
 	caps |= ETHERNET_HW_VLAN;
 #endif

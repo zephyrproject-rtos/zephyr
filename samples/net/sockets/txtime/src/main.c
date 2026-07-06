@@ -582,11 +582,6 @@ int main(void)
 	if_index = net_if_get_by_iface(iface);
 
 	caps = net_eth_get_hw_capabilities(iface);
-	if (!(caps & ETHERNET_PTP)) {
-		LOG_ERR("Interface %p does not support %s", iface, "PTP");
-		return 0;
-	}
-
 	if (!(caps & ETHERNET_TXTIME)) {
 		LOG_ERR("Interface %p does not support %s", iface, "TXTIME");
 		return 0;

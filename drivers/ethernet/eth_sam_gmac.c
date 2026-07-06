@@ -1812,9 +1812,6 @@ static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(const struct device *
 #if defined(CONFIG_NET_VLAN)
 		ETHERNET_HW_VLAN |
 #endif
-#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-		ETHERNET_PTP |
-#endif
 		ETHERNET_PRIORITY_QUEUES |
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 		ETHERNET_QAV |

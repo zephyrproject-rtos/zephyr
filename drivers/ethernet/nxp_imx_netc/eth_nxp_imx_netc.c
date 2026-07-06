@@ -576,11 +576,6 @@ enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev __maybe
 #endif
 	);
 
-#if defined(CONFIG_PTP_CLOCK_NXP_NETC)
-	if (netc_eth_get_ptp_clock(dev, iface) != NULL) {
-		caps |= ETHERNET_PTP;
-	}
-#endif
 	return caps;
 }
 

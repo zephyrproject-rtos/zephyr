@@ -150,23 +150,16 @@ const struct device *dsa_port_get_ptp_clock(const struct device *dev,
 }
 #endif
 
-enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev,
-						struct net_if *iface __maybe_unused)
+static enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev,
+						       struct net_if *iface __unused)
 {
 	struct dsa_switch_context *dsa_switch_ctx = dev->data;
-	uint32_t caps = 0;
 
-#ifdef CONFIG_NET_L2_PTP_TIMESTAMPING
-	if (dsa_port_get_ptp_clock(dev, iface) != NULL) {
-		caps |= ETHERNET_PTP;
-	}
-#endif
-
-	if (dsa_switch_ctx->dapi->get_capabilities) {
-		caps |= dsa_switch_ctx->dapi->get_capabilities(dev);
+	if (dsa_switch_ctx->dapi->get_capabilities == NULL) {
+		return (enum ethernet_hw_caps)0;
 	}
 
-	return caps;
+	return dsa_switch_ctx->dapi->get_capabilities(dev);
 }
 
 static int dsa_set_config(const struct device *dev,

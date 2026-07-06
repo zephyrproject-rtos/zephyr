@@ -456,9 +456,6 @@ static enum ethernet_hw_caps eth_native_tap_get_capabilities(const struct device
 #if defined(CONFIG_ETH_NATIVE_TAP_VLAN_TAG_STRIP)
 		| ETHERNET_HW_VLAN_TAG_STRIP
 #endif
-#if defined(CONFIG_PTP_CLOCK_NATIVE)
-		| ETHERNET_PTP
-#endif
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		| ETHERNET_PROMISC_MODE
 #endif

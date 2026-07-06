@@ -270,9 +270,6 @@ static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct devi
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	caps |= ETHERNET_PROMISC_MODE;
 #endif
-#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
-	caps |= ETHERNET_PTP;
-#endif
 	return caps;
 }
 
