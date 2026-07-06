@@ -336,6 +336,11 @@ Ethernet
   extra headroom for transmit packets must now select
   :kconfig:option:`CONFIG_NET_L2_ETHERNET_EXTRA_TX_PKT_HEADROOM`. (:github:`112924`)
 
+* ``ETHERNET_PTP`` flag has been removed from :c:enum:`ethernet_hw_caps`.
+  Use :c:func:`net_eth_get_ptp_clock` to check if the ethernet interface has a PTP clock.
+  Out-of-tree drivers must remove any references to these flags from their
+  :c:struct:`ethernet_api` ``get_capabilities`` implementation. (:github:`112788`)
+
 Flash
 =====
 * :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
