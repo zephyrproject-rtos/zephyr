@@ -947,27 +947,23 @@ static int cmd_mount_rpmsgfs(const struct shell *sh, size_t argc, char **argv)
 }
 #endif
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs_mount,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_fs_mount,
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)
-	SHELL_CMD_ARG(fat, NULL,
-		      SHELL_HELP("Mount fatfs", "<mount-point>"),
-		      cmd_mount_fat, 2, 0),
+	SHELL_CMD_ARG(fat, NULL, SHELL_HELP("Mount fatfs", "<mount-point>"), cmd_mount_fat, 2, 0),
 #endif
 
 #if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
-	SHELL_CMD_ARG(littlefs, NULL,
-		      SHELL_HELP("Mount littlefs", "<mount-point>"),
+	SHELL_CMD_ARG(littlefs, NULL, SHELL_HELP("Mount littlefs", "<mount-point>"),
 		      cmd_mount_littlefs, 2, 0),
 #endif
 
 #if defined(CONFIG_FILE_SYSTEM_RPMSGFS)
-	SHELL_CMD_ARG(rpmsgfs, NULL,
-		      SHELL_HELP("Mount rpmsgfs", "<mount-point> [<remote-path>]"),
+	SHELL_CMD_ARG(rpmsgfs, NULL, SHELL_HELP("Mount rpmsgfs", "<mount-point> [<remote-path>]"),
 		      cmd_mount_rpmsgfs, 2, 1),
 #endif
 
-	SHELL_SUBCMD_SET_END
-);
+	SHELL_SUBCMD_SET_END);
 #endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
