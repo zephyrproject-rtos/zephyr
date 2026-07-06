@@ -5,7 +5,7 @@ description: NXP MCUX Enhanced Quadrature Decoder (EQDC)
 
 compatible: "nxp,mcux-eqdc"
 
-include: [sensor-device.yaml, pinctrl-device.yaml]
+include: [sensor-device.yaml, pinctrl-device.yaml, mux-consumer.yaml]
 
 properties:
   reg:
@@ -94,18 +94,17 @@ properties:
       1: Use modulus counting roll-over or roll-under events instead of the
       INDEX pulse.
 
-  inputmux-connections:
+  mux-states:
     type: phandle-array
-    specifier-space: inputmux
     description: |
-      INPUTMUX routing for the EQDC PHASEA/PHASEB inputs. Each phandle-array
-      entry is <&inputmuxN channel connection> where:
-        - &inputmuxN is the INPUTMUX node providing the route
-        - channel is the INPUTMUX destination index
+      INPUTMUX routing for the EQDC PHASEA/PHASEB inputs. Each entry is
+      <&inputmuxN index connection> where:
+        - &inputmuxN is the INPUTMUX mux controller providing the route
+        - index is the INPUTMUX destination index
         - connection is an inputmux_connection_t value from the NXP HAL
           header fsl_inputmux_connections.h
 
       Example (MCXA153: route TRIG_IN10 to EQDC PHASEA and TRIG_IN5 to
       EQDC PHASEB via INPUTMUX0):
-        inputmux-connections = <&inputmux0 0 0x37000022>, /* TrigIn10ToQdc0Phasea */
-                               <&inputmux0 0 0x36c0001d>; /* TrigIn5ToQdc0Phaseb */
+        mux-states = <&inputmux0 0 0x37000022>, /* TrigIn10ToQdc0Phasea */
+                     <&inputmux0 0 0x36c0001d>; /* TrigIn5ToQdc0Phaseb */
