@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(pcie_ecam, LOG_LEVEL_ERR);
 #include <zephyr/device.h>
 #include <zephyr/drivers/pcie/pcie.h>
 #include <zephyr/drivers/pcie/controller.h>
+#include <zephyr/sys/__assert.h>
 #ifdef CONFIG_GIC_V3_ITS
 #include <zephyr/drivers/interrupt_controller/gicv3_its.h>
 #endif
@@ -180,6 +181,15 @@ static uint32_t pcie_ecam_ctrl_conf_read(const struct device *dev, pcie_bdf_t bd
 {
 	struct pcie_ecam_data *data = dev->data;
 
+	/* Trap bit-field overflows before macro masks truncate them */
+	const uint32_t __maybe_unused bdf_mask = (PCIE_BDF_BUS_MASK << PCIE_BDF_BUS_SHIFT) |
+						  (PCIE_BDF_DEV_MASK << PCIE_BDF_DEV_SHIFT) |
+						  (PCIE_BDF_FUNC_MASK << PCIE_BDF_FUNC_SHIFT);
+	const uint32_t __maybe_unused max_bus = (uint32_t)(data->cfg_size / 0x100000U);
+
+	__ASSERT((bdf & ~bdf_mask) == 0U, "%s: invalid BDF 0x%x", __func__, bdf);
+	__ASSERT(PCIE_BDF_TO_BUS(bdf) < max_bus, "%s: BDF bus out of ECAM range", __func__);
+
 	return pcie_generic_ctrl_conf_read(data->cfg_addr, bdf, reg);
 }
 
@@ -187,6 +197,15 @@ static void pcie_ecam_ctrl_conf_write(const struct device *dev, pcie_bdf_t bdf, 
 				      uint32_t reg_data)
 {
 	struct pcie_ecam_data *data = dev->data;
+
+	/* Trap bit-field overflows before macro masks truncate them */
+	const uint32_t __maybe_unused bdf_mask = (PCIE_BDF_BUS_MASK << PCIE_BDF_BUS_SHIFT) |
+						  (PCIE_BDF_DEV_MASK << PCIE_BDF_DEV_SHIFT) |
+						  (PCIE_BDF_FUNC_MASK << PCIE_BDF_FUNC_SHIFT);
+	const uint32_t __maybe_unused max_bus = (uint32_t)(data->cfg_size / 0x100000U);
+
+	__ASSERT((bdf & ~bdf_mask) == 0U, "%s: invalid BDF 0x%x", __func__, bdf);
+	__ASSERT(PCIE_BDF_TO_BUS(bdf) < max_bus, "%s: BDF bus out of ECAM range", __func__);
 
 	pcie_generic_ctrl_conf_write(data->cfg_addr, bdf, reg, reg_data);
 }
