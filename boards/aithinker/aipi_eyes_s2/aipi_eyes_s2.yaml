@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 identifier: aipi_eyes_s2
-full_name: AiPi-Eyes-S2 Multi-Functional Development Board
+name: AiPi-Eyes-S2 Multi-Functional Development Board
 type: mcu
 arch: riscv
 ram: 480
