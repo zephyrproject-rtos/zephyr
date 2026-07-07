@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config SAMPLE_RT700_SYSTEM_OFF_WAKEUP_SECONDS
+	int "Deep power down measurement window in seconds"
+	default 3
+	range 1 3600
+	help
+	  Number of seconds the chip stays powered off before the iRTC wake
+	  timer restarts it, so consecutive cycles show up as separate plateaus
+	  on a current trace.
+
+config SAMPLE_RT700_SYSTEM_OFF_WAIT_FOR_ENTER
+	bool "Wait for ENTER before the first power off"
+	default y
+	help
+	  Hold the cold boot at a prompt until the operator presses ENTER, so a
+	  current measurement can be armed before the first power off. Disable
+	  this for an unattended run.
