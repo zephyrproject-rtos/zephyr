@@ -17,21 +17,20 @@
 
 #define DT_DRV_COMPAT realtek_bee_nor_flash_controller
 
-#define BEE_NOR_FLASH_COMPAT(node_id)                                                              \
-	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, soc_nv_flash), (node_id), ())
+#include "flash_priv.h"
 
-#define BEE_NOR_FLASH_NODE(node_id) DT_INST_FOREACH_CHILD_STATUS_OKAY(node_id, BEE_NOR_FLASH_COMPAT)
+#define SOC_NV_FLASH_NODE SOC_NV_FLASH_CHILD_NODE(0)
 
-#define FLASH_ERASE_BLK_SZ DT_PROP(BEE_NOR_FLASH_NODE(0), erase_block_size)
-#define FLASH_WRITE_BLK_SZ DT_PROP(BEE_NOR_FLASH_NODE(0), write_block_size)
+#define FLASH_ERASE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
+#define FLASH_WRITE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
 
 /* Erase block must be 4KB (4096) - 64KB support TBD */
 BUILD_ASSERT(FLASH_ERASE_BLK_SZ == 4096, "FLASH_ERASE_BLK_SZ must be 4KB (64KB TBD)");
 /* Write has no alignment restriction, set to 1 byte */
 BUILD_ASSERT(FLASH_WRITE_BLK_SZ == 1, "FLASH_WRITE_BLK_SZ must be 1");
 
-#define FLASH_SIZE DT_REG_SIZE(BEE_NOR_FLASH_NODE(0))
-#define FLASH_ADDR DT_REG_ADDR(BEE_NOR_FLASH_NODE(0))
+#define FLASH_SIZE DT_REG_SIZE(SOC_NV_FLASH_NODE)
+#define FLASH_ADDR DT_REG_ADDR(SOC_NV_FLASH_NODE)
 
 #ifdef CONFIG_SOC_SERIES_RTL8752H
 #define GET_FLASH_BIT_MODE_STR(mode)                                                               \
