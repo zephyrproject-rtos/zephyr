@@ -1,0 +1,11 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_BEE
+	bool "Realtek Bee series ADC driver"
+	default y
+	depends on DT_HAS_REALTEK_BEE_ADC_ENABLED
+	select HAL_REALTEK_BEE_ADC
+	select PINCTRL
+	help
+	  This option enables the ADC driver for Realtek Bee SoCs.
