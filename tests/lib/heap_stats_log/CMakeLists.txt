@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(heap_stats_log)
 
-FILE(GLOB app_sources src/*.c)
+file(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
 
 # White-box access to the internal heap header (heap.h).
