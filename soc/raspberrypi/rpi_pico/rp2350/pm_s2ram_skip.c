@@ -12,24 +12,27 @@
 
 #include <pico/bootrom.h>
 #include <boot/bootrom_constants.h>
+#include <pico/runtime_init.h>
 
 #include <cmsis_core.h>
+#include <cortex_m/exception.h>
 
-/* Raw POWMAN register addresses */
-#define POWMAN_BASE_ADDR    0x40100000u
-#define POWMAN_SCRATCH0     (*(volatile uint32_t *)(POWMAN_BASE_ADDR + 0xb0u))
-#define POWMAN_BOOT0        (*(volatile uint32_t *)(POWMAN_BASE_ADDR + 0xd0u))
-#define POWMAN_BOOT1        (*(volatile uint32_t *)(POWMAN_BASE_ADDR + 0xd4u))
-#define POWMAN_BOOT2        (*(volatile uint32_t *)(POWMAN_BASE_ADDR + 0xd8u))
-#define POWMAN_BOOT3        (*(volatile uint32_t *)(POWMAN_BASE_ADDR + 0xdcu))
-#define POWMAN_BOOT2_ADDR   (POWMAN_BASE_ADDR + 0xd8u)
+
+extern void z_arm_interrupt_init(void);
+
+#define POWMAN_BASE_ADDR  0x40100000u
+#define POWMAN_SCRATCH0   (*(volatile uint32_t *)(POWMAN_BASE_ADDR + 0xb0u))
+#define POWMAN_BOOT0      (*(volatile uint32_t *)(POWMAN_BASE_ADDR + 0xd0u))
+#define POWMAN_BOOT1      (*(volatile uint32_t *)(POWMAN_BASE_ADDR + 0xd4u))
+#define POWMAN_BOOT2      (*(volatile uint32_t *)(POWMAN_BASE_ADDR + 0xd8u))
+#define POWMAN_BOOT3      (*(volatile uint32_t *)(POWMAN_BASE_ADDR + 0xdcu))
+#define POWMAN_BOOT2_ADDR (POWMAN_BASE_ADDR + 0xd8u)
 
 /* Boot vector format expected by the bootrom in POWMAN BOOT0..3 (RP2350 datasheet §5.2.3). */
 #define S2RAM_BOOT_MAGIC     0xb007c0d3u
 #define S2RAM_BOOT_MAGIC_NEG 0x4ff83f2du
 #define S2RAM_MARKER         0x5be25a4du
 
-/* Defined in arch/arm/core/cortex_m/pm_s2ram.S; not exported via a header. */
 extern void arch_pm_s2ram_resume(void);
 
 void rp2350_s2ram_resume_trampoline(void);
@@ -56,21 +59,17 @@ bool pm_s2ram_mark_check_and_clear(void)
 	POWMAN_BOOT3 = 0u;
 
 	if (resuming) {
-		/*
-		 * This runs (from arch_pm_s2ram_resume) BEFORE z_arm_init_arch_hw_at_boot,
-		 * so VTOR and the FPU are still at their post-cold-boot state.  The saved
-		 * context is FP-active (CONTROL.SFPA=1); restoring it with the FPU
-		 * disabled faults, and with VTOR unset that fault locks up.  Re-establish
-		 * both before the context restore.
+		/* SWCORE power-down resets VTOR/CPACR/IRQ priorities; restore them
+		 * before the (FP-active) context restore or the kernel faults.
 		 */
 		extern char _vector_table[];
 
 		SCB->VTOR = (uint32_t)_vector_table;
-#if defined(CONFIG_FPU)
-		SCB->CPACR |= (3UL << 20) | (3UL << 22);
+		runtime_init_per_core_enable_coprocessors();
 		__DSB();
 		__ISB();
-#endif
+		z_arm_exc_setup();
+		z_arm_interrupt_init();
 	}
 
 	return resuming;
@@ -85,8 +84,7 @@ __ramfunc static void xip_reinit(void)
 	rom_flash_exit_xip_fn exit_xip =
 		(rom_flash_exit_xip_fn)rom_func_lookup_inline(ROM_FUNC_FLASH_EXIT_XIP);
 	rom_flash_enter_cmd_xip_fn enter_xip =
-		(rom_flash_enter_cmd_xip_fn)rom_func_lookup_inline(
-			ROM_FUNC_FLASH_ENTER_CMD_XIP);
+		(rom_flash_enter_cmd_xip_fn)rom_func_lookup_inline(ROM_FUNC_FLASH_ENTER_CMD_XIP);
 
 	connect();
 	exit_xip();
@@ -112,7 +110,7 @@ __ramfunc __attribute__((naked)) void rp2350_s2ram_resume_trampoline(void)
 		"mov  sp, r0\n\t"
 		"b    z_rp2350_s2ram_resume_body\n\t"
 		:
-		: [boot2_lo] "i" (POWMAN_BOOT2_ADDR & 0xffffu),
-		  [boot2_hi] "i" ((POWMAN_BOOT2_ADDR >> 16) & 0xffffu)
-	);
+		: [boot2_lo] "i"(POWMAN_BOOT2_ADDR & 0xffffu), [boot2_hi] "i"(
+								       (POWMAN_BOOT2_ADDR >> 16) &
+								       0xffffu));
 }
