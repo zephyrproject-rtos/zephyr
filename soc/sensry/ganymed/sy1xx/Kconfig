@@ -4,3 +4,4 @@
 config SOC_SERIES_SY1XX
 	select RISCV
 	select RISCV_PRIVILEGED
+	select SOC_EARLY_INIT_HOOK
