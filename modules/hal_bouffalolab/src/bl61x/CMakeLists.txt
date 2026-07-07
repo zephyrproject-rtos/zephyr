@@ -59,3 +59,24 @@ if((CONFIG_BT_BFLB_BL61X OR CONFIG_WIFI_BFLB) AND NOT CONFIG_BUILD_ONLY_NO_BLOBS
   endif()
 
 endif()
+
+if(CONFIG_IEEE802154_BFLB)
+  zephyr_include_directories(
+    ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${SOC_SERIES}/lmac154)
+
+  set(LMAC154_BLOBS_DIR ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/zephyr/blobs/lib/${SOC_SERIES})
+
+  if(NOT CONFIG_BUILD_ONLY_NO_BLOBS)
+    zephyr_link_libraries(-fno-lto)
+
+    zephyr_link_libraries(
+      ${LMAC154_BLOBS_DIR}/liblmac154_bl616.a
+    )
+
+    if(NOT CONFIG_BT_BFLB_BL61X AND NOT CONFIG_WIFI_BFLB)
+      zephyr_link_libraries(
+        ${LMAC154_BLOBS_DIR}/libbl616_phyrf.a
+      )
+    endif()
+  endif()
+endif()

@@ -1,0 +1,22 @@
+# Bouffalo Lab IEEE 802.15.4 configuration options
+
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_BFLB
+	bool "Bouffalo Lab IEEE 802.15.4 Driver"
+	default y
+	depends on DT_HAS_BFLB_IEEE802154_ENABLED
+	# the BL70x/BL70xL platform shims attach blob ISRs at runtime
+	select DYNAMIC_INTERRUPTS if SOC_SERIES_BL70X || SOC_SERIES_BL70XL
+
+if IEEE802154_BFLB
+
+config IEEE802154_BFLB_INIT_PRIO
+	int "Bouffalo Lab IEEE 802.15.4 initialization priority"
+	default 80
+	help
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing.
+
+endif # IEEE802154_BFLB
