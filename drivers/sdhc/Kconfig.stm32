@@ -10,7 +10,8 @@ config SDHC_STM32_SDMMC
 	select USE_STM32_LL_SDMMC
 	select SDHC_SUPPORTS_NATIVE_MODE
 	select PINCTRL
-	select GPIO
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_SDMMC),cd-gpios) \
+		|| $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_SDMMC),pwr-gpios)
 	default y
 	help
 	  Enables support for SD/SDIO devices using SDMMC peripheral on STM32.
