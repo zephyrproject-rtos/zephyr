@@ -122,11 +122,11 @@ static int pwm_siwx91x_set_cycles(const struct device *dev, uint32_t channel,
 		return -ENOTSUP;
 	}
 
-	if (pulse_cycles > 0 && data->pwm_channel_cfg[channel].is_chan_active == false) {
+	if (pulse_cycles > 0 && !data->pwm_channel_cfg[channel].is_chan_active) {
 		pm_device_runtime_get(dev);
 	}
 
-	if (data->pwm_channel_cfg[channel].is_chan_active == false) {
+	if (!data->pwm_channel_cfg[channel].is_chan_active) {
 		/* Configure the channel with default parameters */
 		ret = siwx91x_default_channel_config(dev, channel);
 		if (ret) {
@@ -159,7 +159,7 @@ static int pwm_siwx91x_set_cycles(const struct device *dev, uint32_t channel,
 		data->pwm_channel_cfg[channel].duty_cycle = duty_cycle;
 	}
 
-	if (data->pwm_channel_cfg[channel].is_chan_active == false) {
+	if (!data->pwm_channel_cfg[channel].is_chan_active) {
 		/* Start PWM after configuring the channel for first time */
 		ret = sl_si91x_pwm_start(channel);
 		if (ret) {
@@ -168,7 +168,7 @@ static int pwm_siwx91x_set_cycles(const struct device *dev, uint32_t channel,
 		data->pwm_channel_cfg[channel].is_chan_active = true;
 	}
 
-	if (pulse_cycles == 0 && data->pwm_channel_cfg[channel].is_chan_active == true) {
+	if (pulse_cycles == 0 && data->pwm_channel_cfg[channel].is_chan_active) {
 		pm_device_runtime_put(dev);
 		data->pwm_channel_cfg[channel].is_chan_active = false;
 	}
