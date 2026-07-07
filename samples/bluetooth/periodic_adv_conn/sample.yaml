@@ -6,7 +6,6 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
-      - lp_em_cc2340r5
       - lp_em_cc2340r5moda
       - lp_em_cc2340r53
       - lp_em_cc2340r53_wcsp

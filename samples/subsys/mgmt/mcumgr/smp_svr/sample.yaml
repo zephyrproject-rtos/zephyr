@@ -221,7 +221,6 @@ tests:
       - CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION="1.0.0+0"
       - CONFIG_BT_DEVICE_NAME="TI Zephyr SMP DFU Onchip V1"
     platform_allow:
-      - lp_em_cc2340r5
       - lp_em_cc2340r5moda
       - lp_em_cc2340r53
       - lp_em_cc2340r53_wcsp
@@ -238,7 +237,6 @@ tests:
       - CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION="2.0.0+0"
       - CONFIG_BT_DEVICE_NAME="TI Zephyr SMP DFU Onchip V2"
     platform_allow:
-      - lp_em_cc2340r5
       - lp_em_cc2340r5moda
       - lp_em_cc2340r53
       - lp_em_cc2340r53_wcsp
@@ -256,7 +254,6 @@ tests:
       - CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION="1.0.0+0"
       - CONFIG_BT_DEVICE_NAME="TI Zephyr SMP DFU Offchip V1"
     platform_allow:
-      - lp_em_cc2340r5
       - lp_em_cc2340r5moda
       - lp_em_cc2340r53
       - lp_em_cc2340r53_wcsp
@@ -274,7 +271,6 @@ tests:
       - CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION="2.0.0+0"
       - CONFIG_BT_DEVICE_NAME="TI Zephyr SMP DFU Offchip V2"
     platform_allow:
-      - lp_em_cc2340r5
       - lp_em_cc2340r5moda
       - lp_em_cc2340r53
       - lp_em_cc2340r53_wcsp
