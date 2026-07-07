@@ -17,12 +17,14 @@ import hashlib
 import os
 
 import pytest
+from spdx_tools.spdx.model import ExternalPackageRefCategory
 from spdx_tools.spdx.model.checksum import ChecksumAlgorithm
 from spdx_tools.spdx.model.package import PackagePurpose
 from spdx_tools.spdx.model.relationship import RelationshipType
 
 ZEPHYR_ORGANIZATION = "The Zephyr Project"
 SPDX_TOOL_PREFIX = "Zephyr SPDX builder"
+PURL_ZEPHYR_PREFIX = "pkg:github/zephyrproject-rtos/zephyr@"
 
 # File name constants (as they appear in SPDX documents)
 FILE_MAIN_C = "./src/main.c"
@@ -68,6 +70,35 @@ def file_sha1(path):
     """Calculate the SHA1 hash of a file."""
     with open(path, "rb") as f:
         return hashlib.sha1(f.read(), usedforsecurity=False).hexdigest()
+
+
+def get_purl_refs(package):
+    """Collect purl external references from a package."""
+    return [
+        ref.locator
+        for ref in package.external_references
+        if ref.category == ExternalPackageRefCategory.PACKAGE_MANAGER
+        and ref.reference_type == "purl"
+    ]
+
+
+def get_supplier_name(package):
+    """Return the package supplier as a string, or None if unset."""
+    if package.supplier is None:
+        return None
+    return str(package.supplier)
+
+
+def first_module_deps_package(modules_doc):
+    """Return the first module *-deps package, excluding zephyr-deps."""
+    return next(
+        (
+            pkg
+            for pkg in modules_doc.packages
+            if pkg.name.endswith("-deps") and pkg.name != "zephyr-deps"
+        ),
+        None,
+    )
 
 
 class TestCommonValidation:
@@ -388,6 +419,55 @@ class TestModulesDocument:
             assert pkg.spdx_id.startswith("SPDXRef-"), (
                 f"modules-deps.spdx: package '{pkg.name}' has invalid spdx_id '{pkg.spdx_id}'"
             )
+
+
+class TestPackageProvenance:
+    """Tests for package supplier and purl metadata."""
+
+    def test_zephyr_sources_supplier_and_purl(self, zephyr_doc, zephyr_meta_remote):
+        """Test zephyr-sources supplier and purl reference."""
+        pkg = find_package_by_name(zephyr_doc, "zephyr-sources")
+        assert pkg is not None, "zephyr.spdx: zephyr-sources package not found"
+        assert get_supplier_name(pkg) == f"Organization: {ZEPHYR_ORGANIZATION}", (
+            f"zephyr.spdx: zephyr-sources supplier is '{get_supplier_name(pkg)}'"
+        )
+        if not zephyr_meta_remote:
+            pytest.skip("zephyr.meta has no remote URL for zephyr")
+        purls = get_purl_refs(pkg)
+        assert any(p.startswith(PURL_ZEPHYR_PREFIX) for p in purls), (
+            f"zephyr.spdx: zephyr-sources missing purl prefix '{PURL_ZEPHYR_PREFIX}', got {purls}"
+        )
+
+    def test_zephyr_deps_supplier_and_purl(self, modules_doc, zephyr_meta_remote):
+        """Test zephyr-deps supplier and purl reference."""
+        if len(modules_doc.packages) == 0:
+            pytest.skip("No packages in modules-deps.spdx")
+        pkg = find_package_by_name(modules_doc, "zephyr-deps")
+        assert pkg is not None, "modules-deps.spdx: zephyr-deps package not found"
+        assert get_supplier_name(pkg) == f"Organization: {ZEPHYR_ORGANIZATION}", (
+            f"modules-deps.spdx: zephyr-deps supplier is '{get_supplier_name(pkg)}'"
+        )
+        if not zephyr_meta_remote:
+            pytest.skip("zephyr.meta has no remote URL for zephyr")
+        purls = get_purl_refs(pkg)
+        assert any(p.startswith(PURL_ZEPHYR_PREFIX) for p in purls), (
+            f"modules-deps.spdx: zephyr-deps missing purl prefix '{PURL_ZEPHYR_PREFIX}', "
+            f"got {purls}"
+        )
+
+    def test_module_deps_supplier_and_purl(self, modules_doc):
+        """Test first module-deps supplier and purl reference."""
+        pkg = first_module_deps_package(modules_doc)
+        if pkg is None:
+            pytest.skip("No module-deps packages in modules-deps.spdx")
+        assert get_supplier_name(pkg) == f"Organization: {ZEPHYR_ORGANIZATION}", (
+            f"modules-deps.spdx: {pkg.name} supplier is '{get_supplier_name(pkg)}'"
+        )
+        purls = get_purl_refs(pkg)
+        assert purls, f"modules-deps.spdx: {pkg.name} has no purl references"
+        assert any("@" in p for p in purls), (
+            f"modules-deps.spdx: {pkg.name} purl should include revision suffix, got {purls}"
+        )
 
 
 class TestCrossReferences:
