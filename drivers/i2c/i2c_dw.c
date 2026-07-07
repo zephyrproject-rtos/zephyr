@@ -1375,11 +1375,6 @@ static int i2c_dw_initialize(const struct device *dev)
 	struct i2c_dw_dev_config *const dw = dev->data;
 	int ret;
 
-	ret = i2c_dw_prepare(dev);
-	if (ret < 0) {
-		return ret;
-	}
-
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	if (rom->pcie) {
 		struct pcie_bar mbar;
@@ -1420,6 +1415,12 @@ static int i2c_dw_initialize(const struct device *dev)
 
 	k_sem_init(&dw->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 	k_sem_init(&dw->bus_sem, 1, 1);
+
+	/* Configure clock, optional reset, and pinctrl */
+	ret = i2c_dw_prepare(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Check if the hardware is supported and set the support_hs_mode flag */
 	ret = i2c_dw_probe_hw(dev);
