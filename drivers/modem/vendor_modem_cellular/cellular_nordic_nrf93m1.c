@@ -58,6 +58,8 @@ static const struct modem_cellular_vendor_config nrf93m1_vendor = {
 	/* clang-format on */
 	.power_pulse_duration_ms = 100,
 	.reset_pulse_duration_ms = 500,
+	/* In practice RDY event short circuits this timeout */
+	.cmux_disconnect_timeout_ms = 3000,
 	.startup_time_ms = 5000,
 	.shutdown_time_ms = 1000,
 };
