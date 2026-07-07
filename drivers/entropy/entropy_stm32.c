@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stddef.h>
+#include <stdbool.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/entropy.h>
@@ -121,7 +122,7 @@ static struct entropy_stm32_rng_dev_data entropy_stm32_rng_data = {
 	.rng = (RNG_TypeDef *)DT_INST_REG_ADDR(0),
 };
 
-static int entropy_stm32_suspend(void)
+static int entropy_stm32_suspend(bool pm_caller)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
@@ -143,30 +144,34 @@ static int entropy_stm32_suspend(void)
 	LL_RNG_SetAesReset(rng, 1);
 #endif /* CONFIG_SOC_STM32WB09XX */
 
-#if defined(CONFIG_ENTROPY_STM32_ALWAYS_CLOCKON)
-	do {
-		/* While the entropy driver is the primary user of the RNG
-		 * peripheral, it is possible that other drivers may also use
-		 * it as a pre-requisite for their own operations, such as the
-		 * PKA or SAES on some STM32 series.
-		 *
-		 * Such drivers, either in Zephyr or in external code, may
-		 * request the activation of the RNG peripheral to ensure it
-		 * is up-and-clocked when they need it, and release it when
-		 * they are done. The STM32 entropy driver is somehow
-		 * self-managing its suspend/resume operations, which may be
-		 * incompatible with other drivers. In such cases, the other
-		 * RNG suspend operation will be partially executed, in order
-		 * to keep the RNG peripheral clocked on.
+	/* While the entropy driver is the primary user of the RNG
+	 * peripheral, it is possible that other drivers may also use
+	 * it as a pre-requisite for their own operations, such as the
+	 * PKA or SAES on some STM32 series.
+	 *
+	 * Such drivers, either in Zephyr or in external code, may
+	 * request the activation of the RNG peripheral to ensure it
+	 * is up-and-clocked when they need it, and release it when
+	 * they are done.
+	 */
+
+	if (!pm_caller) {
+		/* entropy_stm32_suspend() is not called from the PM callback,
+		 * so we should not release the RNG peripheral if it is still
+		 * needed by other drivers.
 		 */
+
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 		z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 
 		/* Some other HW IPs need RNG to be clocked, so exit here. */
 		return 0;
-	} while (0);
-#endif /* CONFIG_ENTROPY_STM32_ALWAYS_CLOCKON */
+	}
+
+	/* Called from the PM callback, so we can safely release the RNG
+	 * peripheral.
+	 */
 
 #ifdef CONFIG_SOC_SERIES_STM32WBAX
 	uint32_t wait_cycles, rng_rate;
@@ -193,16 +198,23 @@ static int entropy_stm32_suspend(void)
 	return res;
 }
 
-static int entropy_stm32_resume(void)
+static int entropy_stm32_resume(bool pm_caller)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
 	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
 	RNG_TypeDef *rng = dev_data->rng;
-	int res;
+	int res = 0;
 
-	res = clock_control_on(dev_data->clock,
-			(clock_control_subsys_t)&dev_cfg->pclken[0]);
+	if (pm_caller) {
+		/* entropy_stm32_resume() is called from the PM callback,
+		 * so we should enable the RNG peripheral as it may still be
+		 * needed by other drivers.
+		 */
+		res = clock_control_on(dev_data->clock,
+				(clock_control_subsys_t)&dev_cfg->pclken[0]);
+	}
+
 #if defined(CONFIG_SOC_STM32WB09XX)
 	/**
 	 * STM32WB09 RNG clock domain runs at (16 MHz / CLKDIV).
@@ -290,7 +302,7 @@ static void acquire_rng(void)
 	z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 
-	entropy_stm32_resume();
+	entropy_stm32_resume(false);
 
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 	/* RNG configuration could have been changed by the other core */
@@ -298,9 +310,9 @@ static void acquire_rng(void)
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 }
 
-static void release_rng(void)
+static void release_rng(bool pm_caller)
 {
-	entropy_stm32_suspend();
+	entropy_stm32_suspend(pm_caller);
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 	z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
@@ -691,7 +703,7 @@ static int perform_pool_refill(void)
 #if !IRQLESS_TRNG
 				irq_disable(IRQN);
 #endif /* !IRQLESS_TRNG */
-				release_rng();
+				release_rng(false);
 				pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE,
 					PM_ALL_SUBSTATES);
 				if (IS_ENABLED(CONFIG_PM_S2RAM)) {
@@ -835,7 +847,7 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 
 		/* Restore the state of the RNG lock and IRQ */
 		if (!rng_already_acquired) {
-			release_rng();
+			release_rng(false);
 		}
 
 #if IRQLESS_TRNG
@@ -956,12 +968,12 @@ static int entropy_stm32_rng_pm_action(const struct device *dev,
 		z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
 	/* Call release_rng instead of entropy_stm32_suspend to avoid double hsem_unlock */
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
-		release_rng();
+		release_rng(true);
 		break;
 	case PM_DEVICE_ACTION_RESUME:
 		if (IS_ENABLED(CONFIG_PM_S2RAM)) {
 #if DT_INST_NODE_HAS_PROP(0, health_test_config)
-			entropy_stm32_resume();
+			entropy_stm32_resume(true);
 #if DT_INST_NODE_HAS_PROP(0, health_test_magic)
 			LL_RNG_SetHealthConfig(dev_data->rng, DT_INST_PROP(0, health_test_magic));
 #endif /* health_test_magic */
@@ -978,13 +990,13 @@ static int entropy_stm32_rng_pm_action(const struct device *dev,
 				 * to avoid double hsem_unlock
 				 */
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
-				release_rng();
+				release_rng(true);
 			}
 #endif /* health_test_config */
 		} else {
 			/* Resume RNG only if it was suspended during filling pool */
 			if (entropy_stm32_rng_data.filling_pools) {
-				res = entropy_stm32_resume();
+				res = entropy_stm32_resume(true);
 			}
 		}
 		break;
