@@ -754,6 +754,8 @@ static int cmd_bap_scan_delegator_add_src(const struct shell *sh, size_t argc, c
 
 			return -EINVAL;
 		}
+
+		subgroup_param->bis_sync = bis_sync;
 	} else {
 		subgroup_param->bis_sync = 0U;
 	}
@@ -859,6 +861,8 @@ static int cmd_bap_scan_delegator_add_src_by_pa_sync(const struct shell *sh, siz
 
 			return -EINVAL;
 		}
+
+		subgroup_param->bis_sync = bis_sync;
 	} else {
 		subgroup_param->bis_sync = 0U;
 	}
@@ -968,6 +972,8 @@ static int cmd_bap_scan_delegator_mod_src(const struct shell *sh, size_t argc,
 
 			return -EINVAL;
 		}
+
+		subgroup_param->bis_sync = bis_sync;
 	} else {
 		subgroup_param->bis_sync = 0U;
 	}
