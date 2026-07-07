@@ -203,6 +203,11 @@ New APIs and options
   * :c:func:`cipher_cfb_op`
   * :c:func:`cipher_ofb_op`
 
+* Device
+
+  * :c:macro:`DEVICE_DT_DEFINE_AUTO`
+  * :c:macro:`DEVICE_DT_INST_DEFINE_AUTO`
+
 * Devicetree
 
   * :c:macro:`DT_IRQN_BY_NAME`
