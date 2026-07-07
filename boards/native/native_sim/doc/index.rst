@@ -410,6 +410,70 @@ Here are more details on the peripherals that are currently provided with this b
 
 .. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools
 
+.. _nsim_per_wifi:
+
+**Wi-Fi driver**
+  A native_sim Wi-Fi driver is provided which presents a Wi-Fi station
+  interface in Zephyr backed by a Linux host radio. It runs the Zephyr
+  wpa_supplicant and drives a simulated Linux ``mac80211_hwsim`` radio through
+  the host ``nl80211`` interface. The radio is simulated by the Linux kernel,
+  but the ``nl80211``/``mac80211`` stack driving it is the normal Linux one, so
+  the scan / connect (open and WPA2-PSK) / disconnect flow can be exercised
+  entirely on the host.
+
+  .. figure:: native_sim_wifi.svg
+     :align: center
+
+     native_sim Wi-Fi driver: components, control/data paths and threads.
+
+  The driver is built when a node with the ``zephyr,native-sim-wifi`` compatible
+  is present in the devicetree (add one through a devicetree overlay). The
+  ``host-interface`` property selects the Linux interface the driver binds to,
+  and the MAC address is taken from the standard ``local-mac-address`` /
+  ``zephyr,random-mac-address`` properties:
+
+  .. code-block:: devicetree
+
+     / {
+             wifi0: wifi {
+                     compatible = "zephyr,native-sim-wifi";
+                     host-interface = "zwifi";
+                     zephyr,random-mac-address;
+             };
+     };
+
+  Both can also be overridden from the command line with the ``--wifi-if=<name>``
+  and ``--wifi-mac-addr=<mac>`` options.
+
+  64-bit ``native_sim`` (``native_sim/native/64``) is not supported yet, as the
+  hostap sources the driver pulls in do not build cleanly for 64-bit, so the
+  driver can only be built for a 32-bit ``native_sim`` image on a Linux host.
+  The build links the host ``libnl``, which has to match the word size of the
+  image, so it requires the 32-bit ``libnl`` development libraries; on a
+  Debian/Ubuntu host:
+
+  .. code-block:: console
+
+     $ sudo dpkg --add-architecture i386
+     $ sudo apt update
+     $ sudo apt install gcc-multilib pkg-config libnl-3-dev:i386 libnl-genl-3-dev:i386
+     $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
+
+  The simulated radio and the access points it connects to are created on the
+  host with the ``net-setup.sh`` script and the ``zwifi`` configuration from the
+  `net-tools`_ repository. That setup loads the ``mac80211_hwsim`` kernel
+  module, creates the ``zwifi`` station interface, and starts ``hostapd`` and
+  ``dnsmasq`` access points, so ``iw``, ``hostapd`` and ``dnsmasq`` must also be
+  installed. As the binary opens ``AF_PACKET`` and ``nl80211`` sockets,
+  ``zephyr.exe`` must be granted the ``cap_net_raw`` and ``cap_net_admin``
+  capabilities (e.g. ``sudo setcap cap_net_raw,cap_net_admin+ep zephyr.exe``) or
+  be run as root.
+
+  A complete, runnable example including the host setup (and an optional Docker
+  wrapper) is provided by the :zephyr_file:`tests/net/wifi/interop` test.
+
+  Note that this driver can only be used with Linux hosts.
+
 .. _nsim_per_offloaded_sockets:
 
 **Offloaded sockets driver**
