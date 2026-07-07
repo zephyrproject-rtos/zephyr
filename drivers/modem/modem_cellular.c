@@ -1727,13 +1727,24 @@ static void modem_cellular_init_power_off_event_handler(struct modem_cellular_da
 		data->cmd_pipe = data->uart_pipe;
 		/* CMUX disconnected, notify users */
 		modem_cellular_cmux_cleanup(data);
+		/* Switch the chat instance back to the UART pipe to handle unsolicited events */
+		modem_chat_attach(&data->chat, data->cmd_pipe);
 		/* Assume the same time as reset pulse is enough to return from CMUX to AT mode */
 		modem_cellular_start_timer(data, K_MSEC(config->vendor->reset_pulse_duration_ms));
 		break;
+	case MODEM_CELLULAR_EVENT_MODEM_READY:
+		/* Modem driver indicated it is ready to handle commands after disconnecting CMUX.
+		 * Cancel the timer and proceed as if it has expired.
+		 */
+		modem_cellular_stop_timer(data);
+		__fallthrough;
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		if (data->cmd_pipe != data->uart_pipe) {
 			/* No CMUX_DISCONNECTED event occurred, notify users here */
 			modem_cellular_cmux_cleanup(data);
+		} else {
+			/* Release the chat instance attached in CMUX_DISCONNECTED */
+			modem_chat_release(&data->chat);
 		}
 		/* Shutdown script can only be used if cmd_pipe is available, i.e. we are not in
 		 * some intermediary state without a pipe for commands available
