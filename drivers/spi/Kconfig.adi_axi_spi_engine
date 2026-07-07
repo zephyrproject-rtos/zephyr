@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_ADI_AXI_SPI_ENGINE
+	bool "Analog Devices AXI SPI Engine controller"
+	default y
+	depends on DT_HAS_ADI_AXI_SPI_ENGINE_ENABLED
+	help
+	  SPI controller driver for the Analog Devices AXI SPI Engine core.
+	  Register-mode transfers use the standard Zephyr SPI API; the
+	  autonomous offload path (DMA-driven MS/s streaming) is exposed as a
+	  vendor extension in <zephyr/drivers/spi/spi_adi_axi_spi_engine.h>.
