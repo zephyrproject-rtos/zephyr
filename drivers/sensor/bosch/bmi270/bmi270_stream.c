@@ -230,15 +230,16 @@ static void poll_work_fn(struct k_work *work)
 	if (dev == NULL) {
 		return;
 	}
+
 	data = dev->data;
-	if (data->streaming_sqe == NULL) {
-		return;
+	if (data->streaming_sqe != NULL) {
+		bmi270_reg_read(dev, BMI270_REG_FIFO_LENGTH_0, (uint8_t *)&fifo_len, 2);
+		fifo_len = sys_get_le16((uint8_t *)&fifo_len) & 0x3FFF;
+		if (fifo_len >= data->fifo_watermark_bytes) {
+			bmi270_stream_submit_fifo_job(dev);
+		}
 	}
-	bmi270_reg_read(dev, BMI270_REG_FIFO_LENGTH_0, (uint8_t *)&fifo_len, 2);
-	fifo_len = sys_get_le16((uint8_t *)&fifo_len) & 0x3FFF;
-	if (fifo_len >= data->fifo_watermark_bytes) {
-		bmi270_stream_submit_fifo_job(dev);
-	}
+
 	k_work_schedule(&poll_work, K_MSEC(FIFO_POLL_MS));
 }
 #endif /* CONFIG_BMI270_FIFO_POLL_FALLBACK */
@@ -378,6 +379,9 @@ static void bmi270_fifo_job_abort(const struct device *dev)
 	data->fifo_job_queued = false;
 	data->fifo_job_processing = false;
 	k_spin_unlock(&data->fifo_job_lock, key);
+
+	/* Force a full re-arm on the next submit_stream(), state may be stale after an abort. */
+	data->fifo_configured = false;
 }
 
 static int bmi270_prep_fifo_drain_async(const struct device *dev, size_t max_reads,
@@ -795,42 +799,55 @@ void bmi270_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev
 		return;
 	}
 
-	data->fifo_watermark_bytes = fifo_watermark_bytes();
-
-	ret = configure_fifo(dev, true, data->fifo_watermark_bytes);
-	if (ret < 0) {
-		LOG_ERR("FIFO config failed: %d", ret);
-		rtio_iodev_sqe_err(iodev_sqe, ret);
-		return;
-	}
-
-	ret = map_fifo_int(dev, use_wm, use_full);
-	if (ret < 0) {
-		rtio_iodev_sqe_err(iodev_sqe, ret);
-		return;
-	}
-
-	/* Flush FIFO so first interrupt starts from a clean state */
-	flush_cmd = BMI270_CMD_FIFO_FLUSH;
-	ret = bmi270_reg_write(dev, BMI270_REG_CMD, &flush_cmd, 1);
-	if (ret < 0) {
-		rtio_iodev_sqe_err(iodev_sqe, ret);
-		return;
-	}
-
 	/*
-	 * FIFO was just flushed so fill level is 0 (below watermark).
-	 * Reading INT_STATUS_1 clears the FWM/FFULL latch, which deasserts
-	 * the INT pin so the GPIO sees a clean LOW before arming.
+	 * RTIO_SQE_MULTISHOT re-invokes this submit() on every FIFO cycle, not just at
+	 * stream start, so only run the one-time FIFO/INT-map/flush setup once.
 	 */
-	bmi270_reg_read(dev, BMI270_REG_INT_STATUS_1, &stat1, 1);
+	if (!data->fifo_configured) {
+		data->fifo_watermark_bytes = fifo_watermark_bytes();
 
-	ret = gpio_pin_interrupt_configure_dt(fifo_pin_submit, GPIO_INT_DISABLE);
-	if (ret != 0) {
-		rtio_iodev_sqe_err(iodev_sqe, ret);
-		return;
+		ret = configure_fifo(dev, true, data->fifo_watermark_bytes);
+		if (ret < 0) {
+			LOG_ERR("FIFO config failed: %d", ret);
+			rtio_iodev_sqe_err(iodev_sqe, ret);
+			return;
+		}
+
+		ret = map_fifo_int(dev, use_wm, use_full);
+		if (ret < 0) {
+			rtio_iodev_sqe_err(iodev_sqe, ret);
+			return;
+		}
+
+		/* Flush FIFO so first interrupt starts from a clean state */
+		flush_cmd = BMI270_CMD_FIFO_FLUSH;
+		ret = bmi270_reg_write(dev, BMI270_REG_CMD, &flush_cmd, 1);
+		if (ret < 0) {
+			rtio_iodev_sqe_err(iodev_sqe, ret);
+			return;
+		}
+
+		/*
+		 * FIFO was just flushed so fill level is 0 (below watermark).
+		 * Reading INT_STATUS_1 clears the FWM/FFULL latch, which
+		 * deasserts the INT pin so the GPIO sees a clean LOW before
+		 * arming.
+		 */
+		bmi270_reg_read(dev, BMI270_REG_INT_STATUS_1, &stat1, 1);
+
+		ret = gpio_pin_interrupt_configure_dt(fifo_pin_submit, GPIO_INT_DISABLE);
+		if (ret != 0) {
+			rtio_iodev_sqe_err(iodev_sqe, ret);
+			return;
+		}
+
+		data->fifo_configured = true;
+
+		LOG_DBG("Stream submitted (wm %u bytes, pin=%d)", data->fifo_watermark_bytes,
+			gpio_pin_get_dt(fifo_pin_submit));
 	}
 
+	/* Re-arm on every call: bmi270_try_submit_fifo_irq() disables this on every IRQ. */
 	data->streaming_sqe = iodev_sqe;
 	ret = gpio_pin_interrupt_configure_dt(fifo_pin_submit, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret != 0) {
@@ -838,9 +855,6 @@ void bmi270_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev
 		rtio_iodev_sqe_err(iodev_sqe, ret);
 		return;
 	}
-
-	LOG_DBG("Stream submitted (wm %u bytes, pin=%d)", data->fifo_watermark_bytes,
-		gpio_pin_get_dt(fifo_pin_submit));
 
 #if defined(CONFIG_BMI270_FIFO_POLL_FALLBACK)
 	if (!poll_work_inited) {
