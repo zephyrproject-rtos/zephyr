@@ -556,4 +556,6 @@ SECTIONS
 
   #include <snippets-sections.ld>
   /DISCARD/ : { *(.note.GNU-stack) }
+
+#include <zephyr/linker/debug-sections.ld>
 }

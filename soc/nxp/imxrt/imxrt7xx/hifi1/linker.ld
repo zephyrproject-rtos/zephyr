@@ -495,4 +495,6 @@ SECTIONS
 #include <zephyr/linker/intlist.ld>
 #endif
 
+
+#include <zephyr/linker/debug-sections.ld>
 }

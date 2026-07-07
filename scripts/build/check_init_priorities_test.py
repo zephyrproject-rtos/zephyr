@@ -33,8 +33,8 @@ class TestPriority(unittest.TestCase):
         prios = [
             check_init_priorities.Priority("EARLY", 0),
             check_init_priorities.Priority("EARLY", 1),
-            check_init_priorities.Priority("PRE_KERNEL_1", 0),
-            check_init_priorities.Priority("PRE_KERNEL_1", 1),
+            check_init_priorities.Priority("PRE_KERNEL", 0),
+            check_init_priorities.Priority("PRE_KERNEL", 1),
             check_init_priorities.Priority("PRE_KERNEL_2", 0),
             check_init_priorities.Priority("PRE_KERNEL_2", 1),
             check_init_priorities.Priority("POST_KERNEL", 0),
@@ -102,7 +102,7 @@ class testZephyrInitLevels(unittest.TestCase):
         s0.entry.st_value = 0x00
 
         s1 = mock.Mock()
-        s1.name = "__init_PRE_KERNEL_1_start"
+        s1.name = "__init_PRE_KERNEL_start"
         s1.entry.st_value = 0x11
 
         s2 = mock.Mock()
@@ -135,7 +135,7 @@ class testZephyrInitLevels(unittest.TestCase):
             obj._init_level_addr,
             {
                 "EARLY": 0x00,
-                "PRE_KERNEL_1": 0x11,
+                "PRE_KERNEL": 0x11,
                 "PRE_KERNEL_2": 0x22,
                 "POST_KERNEL": 0x33,
                 "APPLICATION": 0x44,
@@ -202,7 +202,7 @@ class testZephyrInitLevels(unittest.TestCase):
         obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._init_level_addr = {
             "EARLY": 0x00,
-            "PRE_KERNEL_1": 0x00,
+            "PRE_KERNEL": 0x00,
             "PRE_KERNEL_2": 0x00,
             "POST_KERNEL": 0x08,
             "APPLICATION": 0x0C,
@@ -240,7 +240,7 @@ class testZephyrInitLevels(unittest.TestCase):
             obj.initlevels,
             {
                 "EARLY": [],
-                "PRE_KERNEL_1": [],
+                "PRE_KERNEL": [],
                 "PRE_KERNEL_2": ["a: i0(__device_dts_ord_11)", "b: i1(__device_dts_ord_22)"],
                 "POST_KERNEL": ["c: name_8_0(name_8_1)"],
                 "APPLICATION": [],
