@@ -26,7 +26,7 @@
 #include <zephyr/drivers/mm/mm_drv_bank.h>
 #include <zephyr/debug/sparse.h>
 #include <zephyr/cache.h>
-#include <kernel_arch_interface.h>
+#include <zephyr/mem_mgmt/system_vm/backend.h>
 
 #define SRAM_BANK_PAGE_NUM   (SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE)
 
@@ -277,7 +277,7 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	tlb_entries[entry_idx] = entry;
 
 #ifdef CONFIG_MMU
-	arch_mem_map(virt, va, CONFIG_MM_DRV_PAGE_SIZE, flags);
+	sys_mm_vm_backend_mem_map(virt, va, CONFIG_MM_DRV_PAGE_SIZE, flags);
 #endif
 	/*
 	 * Invalid the cache of the newly mapped virtual page to
@@ -386,7 +386,7 @@ static int sys_mm_drv_unmap_page_wflush(void *virt, bool flush_data)
 	if (flush_data) {
 		sys_cache_data_flush_range(virt, CONFIG_MM_DRV_PAGE_SIZE);
 #ifdef CONFIG_MMU
-		arch_mem_unmap(virt, CONFIG_MM_DRV_PAGE_SIZE);
+		sys_mm_vm_backend_mem_unmap(virt, CONFIG_MM_DRV_PAGE_SIZE);
 #endif
 	}
 
@@ -471,7 +471,7 @@ int sys_mm_drv_update_page_flags(void *virt, uint32_t flags)
 	tlb_entries[entry_idx] = entry;
 
 #ifdef CONFIG_MMU
-	arch_mem_map(virt, va, CONFIG_MM_DRV_PAGE_SIZE, flags);
+	sys_mm_vm_backend_mem_map(virt, va, CONFIG_MM_DRV_PAGE_SIZE, flags);
 #endif
 
 out:
@@ -854,8 +854,9 @@ static void adsp_mm_save_context(void *storage_buffer)
 			tlb_entries[entry_idx] = entry;
 
 #ifdef CONFIG_MMU
-			arch_mem_map(UINT_TO_POINTER(phys_addr), phys_addr, CONFIG_MM_DRV_PAGE_SIZE,
-				     K_MEM_CACHE_WB | K_MEM_PERM_RW);
+			sys_mm_vm_backend_mem_map(UINT_TO_POINTER(phys_addr), phys_addr,
+						  CONFIG_MM_DRV_PAGE_SIZE,
+						  K_MEM_CACHE_WB | K_MEM_PERM_RW);
 #endif
 
 			/* Invalidate cache to avoid stalled data

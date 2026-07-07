@@ -3,6 +3,35 @@
 
 rsource "demand_paging/Kconfig"
 
+choice MEM_MGMT_VM_BACKEND
+	prompt "Low-level virtual memory operations backend"
+	default MEM_MGMT_VM_BACKEND_ARCH if MMU
+	default MEM_MGMT_VM_BACKEND_NONE
+	depends on KERNEL_VM_SUPPORT
+	help
+	  Select the backend implementing the low-level virtual memory operations
+	  (the sys_mm_vm_backend_*() API used for page mapping/unmapping and,
+	  when demand paging is enabled, page-in/out).
+
+config MEM_MGMT_VM_BACKEND_ARCH
+	bool "Architecture-specific"
+	help
+	  Forward the virtual memory operations to the architecture
+	  provided arch_mem_*() implementation.
+
+config MEM_MGMT_VM_BACKEND_CUSTOM
+	bool "Custom implementation"
+	help
+	  Virtual memory operations are provided by a custom implementation
+	  that implements the sys_mm_vm_backend_*() API instead.
+
+config MEM_MGMT_VM_BACKEND_NONE
+	bool "None"
+	help
+	  No virtual memory backend. All sys_mm_vm_backend_*() are unavailable.
+
+endchoice
+
 config MEM_ATTR
 	bool "Memory Attributes management library"
 	default y if ARM_MPU
