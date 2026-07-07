@@ -54,12 +54,8 @@ cy_en_sysint_status_t Cy_SysInt_Init(const cy_stc_sysint_t *config, cy_israddres
 	return status;
 }
 
-static int init_cycfg_platform_wraper(void)
+void soc_early_init_hook(void)
 {
-
 	/* Initializes the system */
 	SystemInit();
-	return 0;
 }
-
-SYS_INIT(init_cycfg_platform_wraper, PRE_KERNEL_1, 0);
