@@ -346,3 +346,36 @@ config BFLB_BL61X_BLE_EM_64K
 	  must include bl61x_em_64kb.dtsi instead of bl61x_em_32kb.dtsi.
 
 endif # BT_BFLB_BL61X
+
+config BT_BFLB_BL808
+	bool
+	default y
+	depends on DT_HAS_BFLB_BT_HCI_ENABLED && SOC_SERIES_BL808
+	select BT_BFLB
+	select HAS_BT_CTLR
+	select DYNAMIC_INTERRUPTS
+	select FPU_SHARING
+	select BFLB_AOS_SHIM
+	help
+	  Bouffalo Lab BL808 on-chip BLE controller HCI driver.
+	  Uses precompiled binary blobs from the hal_bouffalolab module.
+
+if BT_BFLB_BL808
+
+config BFLB_BL808_WL_RMEM_SIZE
+	int "PHY/RF retention memory size (bytes)"
+	default 8192
+	help
+	  Size in bytes of the static buffer passed to wl_cfg_get() for
+	  PHY/RF calibration data. The buffer persists for the lifetime
+	  of the application. 8192 matches the Bouffalo SDK default.
+
+# ACL packet count the controller reports in LE Read Buffer Size
+configdefault BT_BUF_ACL_TX_COUNT
+	default 7
+
+# Set to 1 more than BT_BUF_ACL_TX_COUNT
+configdefault BT_BUF_EVT_RX_COUNT
+	default 8
+
+endif # BT_BFLB_BL808
