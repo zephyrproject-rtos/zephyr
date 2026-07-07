@@ -7,6 +7,8 @@ zephyr_library_sources(soc.c)
 zephyr_library_sources_ifdef(CONFIG_RISCV vector.S)
 zephyr_library_sources_ifdef(CONFIG_MPU mpu_regions.c)
 
+zephyr_library_sources_ifdef(CONFIG_PM power.c)
+
 zephyr_include_directories(.)
 
 # Add the image definition block if required
