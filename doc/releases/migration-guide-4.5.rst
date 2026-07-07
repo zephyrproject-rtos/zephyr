@@ -45,6 +45,13 @@ Kernel
   entry after its dependencies. The linker symbol ``__init_PRE_KERNEL_1_start`` has been renamed
   to ``__init_PRE_KERNEL_start``; tooling that inspects init sections by name must be updated.
 
+* Registering a :c:macro:`SYS_INIT` at the ``SMP`` initialization level has been deprecated in
+  favor of the new :c:macro:`SMP_INIT_HOOK` macro, and the ``SMP`` init level is scheduled for
+  removal. Replace ``SYS_INIT(my_fn, SMP, 0)`` with ``SMP_INIT_HOOK(my_fn)``. The hook function
+  runs at the same point (on the primary CPU, once all secondary CPUs are up, before ``main()``)
+  but takes no argument and returns nothing, so drop the ``int`` return value from the callback.
+  Unlike an init level, hooks carry no priority ordering.
+
 * When :kconfig:option:`CONFIG_SCHED_CPU_MASK_PIN_ONLY` is enabled, calling
   :c:func:`k_thread_cpu_mask_clear`, :c:func:`k_thread_cpu_mask_enable_all`,
   or :c:func:`k_thread_cpu_mask_disable` now triggers an assertion instead of

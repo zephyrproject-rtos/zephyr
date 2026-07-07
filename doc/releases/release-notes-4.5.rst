@@ -122,6 +122,10 @@ Deprecated APIs and options
     ``PRE_KERNEL_2`` keeps running after all ``PRE_KERNEL`` entries while it is phased out. See
     the :ref:`migration guide <migration_4.5>` for details.
 
+  * Registering a :c:macro:`SYS_INIT` at the ``SMP`` initialization level has
+    been deprecated. Use the new :c:macro:`SMP_INIT_HOOK` macro instead. The
+    ``SMP`` init level is scheduled for removal.
+
 * LoRa
 
   * Renamed :c:func:`lora_recv_duty_cycle` to :c:func:`lora_recv_duty_cycle_async`

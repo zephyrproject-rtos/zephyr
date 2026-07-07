@@ -11,6 +11,7 @@
 #include <stddef.h>
 
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
@@ -45,7 +46,8 @@ extern "C" {
  *   primitives can be used.
  * - `APPLICATION`: Executed just before application code (`main`).
  * - `SMP`: Only available if @kconfig{CONFIG_SMP} is enabled, specific for
- *   SMP.
+ *   SMP. @deprecated Registering a SYS_INIT() at the `SMP` level is deprecated;
+ *   use SMP_INIT_HOOK() instead. The `SMP` level is scheduled for removal.
  *
  * Initialization priority can take a value in the range of 0 to 999.
  *
@@ -170,7 +172,8 @@ struct init_entry {
  * @param level Initialization level. Allowed tokens: `EARLY`, `PRE_KERNEL`,
  * `POST_KERNEL`, `APPLICATION` and `SMP` if @kconfig{CONFIG_SMP} is enabled.
  * The tokens `PRE_KERNEL_1` (alias of `PRE_KERNEL`) and `PRE_KERNEL_2` are
- * deprecated but still accepted for compatibility.
+ * deprecated but still accepted for compatibility. @deprecated The `SMP`
+ * level is also deprecated; use SMP_INIT_HOOK() instead.
  * @param prio Initialization priority within @p _level. Note that it must be a
  * decimal integer literal without leading zeroes or sign (e.g. `32`), or an
  * equivalent symbolic name (e.g. `#define MY_INIT_PRIO 32`); symbolic
@@ -199,6 +202,44 @@ struct init_entry {
 	static const Z_DECL_ALIGN(struct init_entry)                                      \
 		Z_INIT_ENTRY_SECTION(level, prio, 0) __used __noasan                      \
 		Z_INIT_ENTRY_NAME(name) = {.init_fn = (init_fn_), .dev = NULL}            \
+
+#ifdef CONFIG_SMP
+
+/**
+ * @brief Structure to store an SMP initialization hook.
+ *
+ * @internal
+ * Hooks are collected into an iterable section and walked by the kernel from
+ * the boot thread once SMP has been brought up. See SMP_INIT_HOOK().
+ * @endinternal
+ */
+struct smp_init_hook {
+	/** Hook function invoked after all secondary CPUs have started. */
+	void (*init_fn)(void);
+};
+
+/**
+ * @brief Register a function to run once SMP has been brought up.
+ *
+ * The registered function is invoked once, on the primary CPU, from the boot
+ * thread right after all secondary CPUs have been started (see z_smp_init())
+ * and before the application `main()` runs. It takes no argument and its return
+ * value, if any, is ignored.
+ *
+ * This is the replacement for registering a SYS_INIT() at the (deprecated)
+ * `SMP` initialization level. Unlike an init level, hooks carry no priority
+ * ordering; if a specific order is required between multiple hooks, encode it
+ * within a single hook. Only available when @kconfig{CONFIG_SMP} is enabled.
+ *
+ * @param _fn Function to run after SMP bring-up.
+ */
+#define SMP_INIT_HOOK(_fn)                                                     \
+	static const STRUCT_SECTION_ITERABLE(smp_init_hook,                   \
+					     _smp_init_hook_##_fn) = {        \
+		.init_fn = (_fn),                                             \
+	}
+
+#endif /* CONFIG_SMP */
 
 /** @} */
 

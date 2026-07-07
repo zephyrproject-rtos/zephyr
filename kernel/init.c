@@ -331,6 +331,18 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	if (!IS_ENABLED(CONFIG_SMP_BOOT_DELAY)) {
 		z_smp_init();
 	}
+
+	/* Run post-SMP init hooks now that all CPUs are up. Entries are present
+	 * only for subsystems that are linked in (pay-per-use); the walk
+	 * references only the section bounds.
+	 */
+	STRUCT_SECTION_FOREACH(smp_init_hook, hook) {
+		hook->init_fn();
+	}
+
+	/* Deprecated: SYS_INIT() at the SMP level. Use SMP_INIT_HOOK() instead.
+	 * Kept functional while the SMP init level is phased out.
+	 */
 	z_sys_init_run_level(INIT_LEVEL_SMP);
 #endif /* CONFIG_SMP */
 
