@@ -3065,7 +3065,7 @@ static int cmd_per_adv_sync_select(const struct shell *sh, size_t argc, char *ar
 			return -ENOEXEC;
 		}
 
-		if (id > ARRAY_SIZE(adv_sets)) {
+		if (id >= ARRAY_SIZE(per_adv_syncs)) {
 			shell_error(sh, "Invalid id: %lu", id);
 			return -EINVAL;
 		}
@@ -3074,9 +3074,9 @@ static int cmd_per_adv_sync_select(const struct shell *sh, size_t argc, char *ar
 		return 0;
 	}
 
-	for (size_t i = 0U; i < ARRAY_SIZE(adv_sets); i++) {
-		if (adv_sets[i]) {
-			shell_print(sh, "PER_ADV_SYNC[%zu] %p", i, adv_sets[i]);
+	for (size_t i = 0U; i < ARRAY_SIZE(per_adv_syncs); i++) {
+		if (per_adv_syncs[i]) {
+			shell_print(sh, "PER_ADV_SYNC[%zu] %p", i, per_adv_syncs[i]);
 		}
 	}
 
