@@ -576,8 +576,8 @@ static enum net_verdict vlan_interface_recv(struct net_if *iface,
 	return NET_OK;
 }
 
-int vlan_alloc_buffer(struct net_if *iface, struct net_pkt *pkt,
-		      size_t size, uint16_t proto, k_timeout_t timeout)
+int vlan_alloc_buffer(struct net_if *iface, struct net_pkt *pkt, size_t size,
+		      enum net_ip_protocol proto, k_timeout_t timeout)
 {
 	enum virtual_interface_caps caps;
 	int ret = 0;
