@@ -1,5 +1,5 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
-# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2025-2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig PINCTRL
@@ -47,6 +47,7 @@ source "drivers/pinctrl/Kconfig.arm_mps2"
 source "drivers/pinctrl/Kconfig.arm_mps3"
 source "drivers/pinctrl/Kconfig.arm_mps4"
 source "drivers/pinctrl/Kconfig.arm_v2m_beetle"
+source "drivers/pinctrl/Kconfig.arm_v2m_musca_b1"
 source "drivers/pinctrl/Kconfig.b91"
 source "drivers/pinctrl/Kconfig.bcm2711"
 source "drivers/pinctrl/Kconfig.bee"
