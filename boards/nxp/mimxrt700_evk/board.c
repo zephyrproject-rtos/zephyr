@@ -351,6 +351,24 @@ void board_early_init_hook(void)
 	CLOCK_SetClkDiv(kCLOCK_DivOstimerClk, 1U);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(irtc_wake))
+	/*
+	 * The current irtc_wake counter driver does not yet integrate
+	 * clock control functionality, so it is temporarily integrated
+	 * in board.c for now; it should be moved into the driver in the
+	 * future.
+	 */
+	clock_osc32k_config_t osc32k_cfg = {
+		.bypass = false,
+		.monitorEnable = false,
+		.lowPowerMode = true,
+		.cap = kCLOCK_Osc32kCapPf16,
+	};
+
+	CLOCK_EnableOsc32K(&osc32k_cfg);
+	CLOCK_EnableClock(kCLOCK_Rtc);
+#endif
+
 #if ((DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb0)) && CONFIG_UDC_NXP_EHCI) || \
 	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usbh0)) && (CONFIG_UHC_NXP_EHCI)))
 	/* Power on COM VDDN domain for USB */
