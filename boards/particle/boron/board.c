@@ -26,11 +26,10 @@ static inline void external_antenna(bool on)
 	gpio_pin_configure_dt(&ufl_gpio, (on ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE));
 }
 
-static int board_particle_boron_init(void)
+/* Runs as the board late init hook, after all POST_KERNEL device init,
+ * so the GPIO driver is available.
+ */
+void board_late_init_hook(void)
 {
 	external_antenna(false);
-
-	return 0;
 }
-
-SYS_INIT(board_particle_boron_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
