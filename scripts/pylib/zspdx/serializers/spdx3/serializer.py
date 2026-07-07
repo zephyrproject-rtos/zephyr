@@ -568,6 +568,10 @@ class SPDX3Serializer:
         elif component.revision:
             package.software_packageVersion = component.revision
 
+        supplier_agent = self._get_organization(component.supplier)
+        if supplier_agent:
+            package.suppliedBy = supplier_agent._id
+
         # Download location
         if component.url:
             package.software_downloadLocation = generate_download_url(
@@ -877,6 +881,10 @@ class SPDX3Serializer:
             element_ids.add(self.creator_agent._id)
         if self.author_agent:
             element_ids.add(self.author_agent._id)
+        for component in components:
+            supplier_agent = self.organizations.get(component.supplier)
+            if supplier_agent:
+                element_ids.add(supplier_agent._id)
         data_license = self._create_license_expression("CC0-1.0")
         if data_license:
             element_ids.add(data_license._id)
