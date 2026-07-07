@@ -17,23 +17,46 @@
 #include "nsi_timer_model.h"
 #include "soc.h"
 
-static uint64_t tick_period; /* System tick period in microseconds */
-/* Time (microseconds since boot) of the last timer tick interrupt */
-static uint64_t last_tick_time;
+/* The cycle counter is nsi_hws_get_time(), which counts microseconds. */
+#define TIMER_CORE_CYCLES_PER_SEC 1000000
+#define TICK_PERIOD_US (TIMER_CORE_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
-/**
- * Return the current HW cycle counter
- * (number of microseconds since boot in 32bits)
+/*
+ * The native simulator has no compare register. Time is the microsecond
+ * counter nsi_hws_get_time(), and the only lever is hwtimer_set_silent_ticks(),
+ * which skips that many periodic tick interrupts before raising the next one.
+ * It still fits the COMPARE model: timer_driver_cycle_get() reads the (64-bit,
+ * non-wrapping) microsecond counter and timer_driver_set_compare() turns an absolute
+ * deadline into the number of ticks to skip. The deadline is a full 64-bit
+ * value (a 32-bit RELOAD reload would cap the fast-forward idle periods the
+ * simulator relies on).
  */
-uint32_t sys_clock_cycle_get_32(void)
+#define TIMER_CORE_CYCLES_WIDTH 64
+#define TIMER_CORE_BACKEND_COMPARE
+#define TIMER_CORE_64BIT_CYCLES
+
+static inline uint64_t timer_driver_cycle_get(void)
 {
 	return nsi_hws_get_time();
 }
 
-uint64_t sys_clock_cycle_get_64(void)
+static void timer_driver_set_compare(uint64_t cycles)
 {
-	return nsi_hws_get_time();
+	uint64_t now = nsi_hws_get_time();
+	uint64_t rel = (cycles > now) ? (cycles - now) : 0U;
+
+	/* The deadline is tick-aligned and the simulator only raises interrupts
+	 * on tick boundaries, so round up to the boundary at or after it (now may
+	 * be mid-tick, e.g. after a busy-wait). set_silent_ticks(n) skips n
+	 * interrupts and raises the (n+1)th, so a deadline n boundaries out skips
+	 * n - 1.
+	 */
+	int64_t ticks = (int64_t)((rel + TICK_PERIOD_US - 1U) / TICK_PERIOD_US);
+
+	hwtimer_set_silent_ticks(ticks > 0 ? ticks - 1 : 0);
 }
+
+#include "system_timer_generic.h"
 
 /**
  * Interrupt handler for the timer interrupt
@@ -43,11 +66,7 @@ static void np_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	uint64_t now = nsi_hws_get_time();
-	int32_t elapsed_ticks = (now - last_tick_time)/tick_period;
-
-	last_tick_time += elapsed_ticks*tick_period;
-	sys_clock_announce(elapsed_ticks);
+	timer_core_announce();
 }
 
 /**
@@ -56,43 +75,6 @@ static void np_timer_isr(const void *arg)
 void np_timer_isr_test_hook(const void *arg)
 {
 	np_timer_isr(NULL);
-}
-
-/**
- * @brief Set system clock timeout
- *
- * Informs the system clock driver that the next needed call to
- * sys_clock_announce() will not be until the specified number of ticks
- * from the current time have elapsed.
- *
- * See system_timer.h for more information
- *
- * @param ticks Timeout in tick units
- * @param idle Hint to the driver that the system is about to enter
- *        the idle state immediately after setting the timeout
- */
-void sys_clock_set_timeout(uint32_t ticks)
-{
-
-#if defined(CONFIG_TICKLESS_KERNEL)
-	uint64_t silent_ticks;
-
-	silent_ticks = (ticks > 0) ? ticks - 1 : 0;
-	hwtimer_set_silent_ticks(silent_ticks);
-#endif
-}
-
-/**
- * @brief Ticks elapsed since last sys_clock_announce() call
- *
- * Queries the clock driver for the current time elapsed since the
- * last call to sys_clock_announce() was made.  The kernel will call
- * this with appropriate locking, the driver needs only provide an
- * instantaneous answer.
- */
-uint32_t sys_clock_elapsed(void)
-{
-	return (nsi_hws_get_time() - last_tick_time)/tick_period;
 }
 
 /**
@@ -113,14 +95,15 @@ void sys_clock_disable(void)
  */
 static int sys_clock_driver_init(void)
 {
-
-	tick_period = 1000000UL / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-
-	last_tick_time = nsi_hws_get_time();
-	hwtimer_enable(tick_period);
+	hwtimer_enable(TICK_PERIOD_US);
 
 	IRQ_CONNECT(TIMER_TICK_IRQ, 1, np_timer_isr, 0, 0);
 	irq_enable(TIMER_TICK_IRQ);
+
+	/* Seed the announce baseline from the microsecond counter and arm the
+	 * first tick.
+	 */
+	timer_core_init();
 
 	return 0;
 }
