@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT snps_dwc2
 
 #include <zephyr/kernel.h>
+#include <zephyr/cache.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/usb/uhc.h>
@@ -727,6 +728,7 @@ static inline int ch_process_control(const struct device *dev, struct uhc_dwc2_c
 				LOG_DBG("Control DATA IN prog=%u, tailroom=%zu",
 					size, net_buf_tailroom(xfer->buf));
 
+				sys_cache_data_invd_range(net_buf_tail(xfer->buf), size);
 				dma_addr = (mem_addr_t)(net_buf_tail(xfer->buf));
 			} else {
 				size = xfer->buf->len;
@@ -737,6 +739,7 @@ static inline int ch_process_control(const struct device *dev, struct uhc_dwc2_c
 				LOG_HEXDUMP_DBG(xfer->buf->data, xfer->buf->len,
 						"Control DATA OUT:");
 
+				sys_cache_data_flush_range(xfer->buf->data, size);
 				dma_addr = (mem_addr_t)(xfer->buf->data);
 			}
 		}
@@ -747,6 +750,7 @@ static inline int ch_process_control(const struct device *dev, struct uhc_dwc2_c
 		actual_len = ch->length - remaining;
 
 		if (usb_reqtype_is_to_host(setup)) {
+			sys_cache_data_invd_range(net_buf_tail(xfer->buf), actual_len);
 			net_buf_add(xfer->buf, actual_len);
 
 			LOG_DBG("Control DATA IN completed, prog=%u, rem=%u, act=%u, tailroom=%zu",
@@ -1267,6 +1271,8 @@ static int ch_start_control(const struct device *dev, struct uhc_dwc2_channel *c
 		usb_dwc2_set_hctsiz_xfersize(sizeof(struct usb_setup_packet));
 
 	LOG_HEXDUMP_DBG(setup, 8, "SETUP");
+
+	sys_cache_data_flush_range(xfer->setup_pkt, sizeof(struct usb_setup_packet));
 
 	dma_addr = (mem_addr_t)(xfer->setup_pkt);
 	ret = uhc_dwc2_quirk_dma_addr_translation(dev, &dma_addr);
