@@ -579,17 +579,29 @@ static enum net_verdict vlan_interface_recv(struct net_if *iface,
 int vlan_alloc_buffer(struct net_if *iface, struct net_pkt *pkt, size_t size,
 		      enum net_ip_protocol proto, k_timeout_t timeout)
 {
+	size_t reserve = sizeof(struct net_eth_vlan_hdr);
 	enum virtual_interface_caps caps;
-	int ret = 0;
 
 	caps = net_virtual_get_iface_capabilities(iface);
-	if (caps & VIRTUAL_INTERFACE_VLAN) {
-		ret = net_pkt_alloc_buffer_with_reserve(pkt, size,
-							sizeof(struct net_eth_vlan_hdr),
-							proto, timeout);
+	if (!(caps & VIRTUAL_INTERFACE_VLAN)) {
+		return -ENOTSUP;
 	}
 
-	return ret;
+	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET_EXTRA_TX_PKT_HEADROOM)) {
+		struct ethernet_config config;
+
+		iface = net_eth_get_vlan_main(iface);
+		if (iface == NULL) {
+			return -ENOENT;
+		}
+
+		if (net_eth_get_hw_config(iface, ETHERNET_CONFIG_TYPE_EXTRA_TX_PKT_HEADROOM,
+					  &config) == 0) {
+			reserve += config.extra_tx_pkt_headroom;
+		}
+	}
+
+	return net_pkt_alloc_buffer_with_reserve(pkt, size, reserve, proto, timeout);
 }
 
 static int vlan_interface_attach(struct net_if *vlan_iface,
