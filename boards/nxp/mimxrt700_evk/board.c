@@ -6,6 +6,9 @@
 #include <zephyr/device.h>
 #include <fsl_power.h>
 #include <fsl_clock.h>
+#if defined(CONFIG_SECOND_CORE_MCUX)
+#include <fsl_mu.h>
+#endif
 #include <soc.h>
 #include <fsl_glikey.h>
 
@@ -13,6 +16,10 @@
 #define SYSOSC_SETTLING_US 220U
 /*!< xtal frequency in Hz */
 #define XTAL_SYS_CLK_HZ    24000000U
+
+#if defined(CONFIG_SECOND_CORE_MCUX)
+#define IMXRT7XX_CPU1_BOOT_FLAG 0x1U
+#endif
 
 #if CONFIG_SOC_MIMXRT798S_CM33_CPU0
 #define SYSCON_BASE DT_REG_ADDR(DT_NODELABEL(syscon0))
@@ -672,10 +679,30 @@ static void second_core_boot(void)
 
 	/* Release cpu wait*/
 	SYSCON3->CPU_STATUS &= ~SYSCON3_CPU_STATUS_CPU_WAIT_MASK;
+
+	/* Wait CPU1 booted */
+	RESET_ClearPeripheralReset(kMU1_RST_SHIFT_RSTn);
+	MU_Init(MU1_MUA);
+
+	while (MU_GetFlags(MU1_MUA) != IMXRT7XX_CPU1_BOOT_FLAG) {
+	}
 }
 
 void board_late_init_hook(void)
 {
 	second_core_boot();
 }
+#endif
+
+#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_SOC_MIMXRT798S_CM33_CPU1)
+static int second_core_notify_boot(void)
+{
+	RESET_ClearPeripheralReset(kMU1_RST_SHIFT_RSTn);
+	MU_Init(MU1_MUB);
+	MU_SetFlags(MU1_MUB, IMXRT7XX_CPU1_BOOT_FLAG);
+
+	return 0;
+}
+
+SYS_INIT(second_core_notify_boot, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif
