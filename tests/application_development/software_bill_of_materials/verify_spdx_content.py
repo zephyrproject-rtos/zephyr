@@ -99,6 +99,18 @@ def get_supplier_name(package):
     return str(package.supplier)
 
 
+def has_relationship(doc, spdx_element_id, rel_type, related_id):
+    """Return True if doc has a relationship of rel_type to related_id."""
+    for rel in doc.relationships:
+        if rel.spdx_element_id != spdx_element_id:
+            continue
+        if rel_type not in str(rel.relationship_type):
+            continue
+        if str(rel.related_spdx_element_id) == related_id:
+            return True
+    return False
+
+
 def first_module_deps_package(modules_doc):
     """Return the first module *-deps package, excluding zephyr-deps."""
     return next(
@@ -551,6 +563,52 @@ class TestPackageComments:
             for pkg in doc.packages:
                 if pkg.comment and str(pkg.comment) == "Utility target; no files":
                     pytest.fail(f"{doc_name}: package '{pkg.name}' has UTILITY target comment")
+
+
+class TestModuleRelationships:
+    """Tests for VARIANT_OF and DEPENDENCY_OF module relationships."""
+
+    def test_zephyr_sources_variant_of_zephyr_deps(self, zephyr_doc, modules_doc):
+        """Test zephyr-sources VARIANT_OF zephyr-deps across documents."""
+        if len(modules_doc.packages) == 0:
+            pytest.skip("No packages in modules-deps.spdx")
+        zephyr_sources = find_package_by_name(zephyr_doc, "zephyr-sources")
+        assert zephyr_sources is not None, "zephyr.spdx: zephyr-sources package not found"
+
+        modules_ref = find_doc_ref_id(zephyr_doc, modules_doc.creation_info.document_namespace)
+        assert modules_ref is not None, "zephyr.spdx: no external reference to modules-deps.spdx"
+        target = f"{modules_ref}:SPDXRef-zephyr-deps"
+        assert has_relationship(zephyr_doc, zephyr_sources.spdx_id, "VARIANT_OF", target), (
+            f"zephyr.spdx: expected {zephyr_sources.spdx_id} VARIANT_OF {target}"
+        )
+
+    def test_module_sources_variant_of_module_deps(self, zephyr_doc, modules_doc):
+        """Test module-sources VARIANT_OF module-deps across documents."""
+        module_deps = first_module_deps_package(modules_doc)
+        if module_deps is None:
+            pytest.skip("No module-deps packages in modules-deps.spdx")
+        module_name = module_deps.name.removesuffix("-deps")
+        module_sources = find_package_by_name(zephyr_doc, f"{module_name}-sources")
+        if module_sources is None:
+            pytest.skip(f"No {module_name}-sources package in zephyr.spdx")
+
+        modules_ref = find_doc_ref_id(zephyr_doc, modules_doc.creation_info.document_namespace)
+        assert modules_ref is not None, "zephyr.spdx: no external reference to modules-deps.spdx"
+        target = f"{modules_ref}:{module_deps.spdx_id}"
+        assert has_relationship(zephyr_doc, module_sources.spdx_id, "VARIANT_OF", target), (
+            f"zephyr.spdx: expected {module_sources.spdx_id} VARIANT_OF {target}"
+        )
+
+    def test_module_deps_dependency_of_zephyr_deps(self, modules_doc):
+        """Test module-deps DEPENDENCY_OF zephyr-deps in modules-deps.spdx."""
+        module_deps = first_module_deps_package(modules_doc)
+        if module_deps is None:
+            pytest.skip("No module-deps packages in modules-deps.spdx")
+        zephyr_deps = find_package_by_name(modules_doc, "zephyr-deps")
+        assert zephyr_deps is not None, "modules-deps.spdx: zephyr-deps package not found"
+        assert has_relationship(
+            modules_doc, module_deps.spdx_id, "DEPENDENCY_OF", zephyr_deps.spdx_id
+        ), f"modules-deps.spdx: expected {module_deps.spdx_id} DEPENDENCY_OF {zephyr_deps.spdx_id}"
 
 
 class TestCrossReferences:
