@@ -14,8 +14,10 @@
 /* The "user_sram_end" represents the 2nd stage bootloader
  * reserved region start (dram_loader_seg); the app must not overlap it.
  * If no bootloader is used, we can extend it to gain more user ram.
+ * On pre-v3 silicon the bootloader lives in low SRAM, so the app
+ * may use the full sram_high region up to DRAM_USER_END.
  */
-#ifdef CONFIG_ESP_SIMPLE_BOOT
+#if defined(CONFIG_ESP_SIMPLE_BOOT) || defined(CONFIG_SOC_ESP32P4_REV_1_3)
 user_sram_end = DRAM_USER_END;
 #else
 user_sram_end = BOOTLOADER_DRAM_LOADER_SEG_START;

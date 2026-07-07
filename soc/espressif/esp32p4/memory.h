@@ -89,18 +89,24 @@
 #define BOOTLOADER_DRAM_LOADER_SEG_LEN 0x0C00
 
 /* Upper limit of SRAM available for MCUboot bootloader segments */
+#if defined(CONFIG_SOC_ESP32P4_REV_1_3)
+#define BOOTLOADER_USER_DRAM_END (0x4ff3abd0 - BOOTLOADER_STACK_OVERHEAD)
+#define BOOTLOADER_SEG_FLOOR     HPSRAM_BASE
+#else
 #define BOOTLOADER_USER_DRAM_END (DRAM_USER_END - BOOTLOADER_STACK_OVERHEAD)
+#define BOOTLOADER_SEG_FLOOR     (HPSRAM_START + ICACHE_SIZE)
+#endif
 
-/* MCUboot iram/dram segments: placed in upper half of SRAM, below dram_loader_seg.
- * On unified-address SoCs (P4, C5, C6, H2) these are the same physical memory.
- * The lower half is reserved for the application image.
+/* MCUboot iram/dram segments: placed below dram_loader_seg, down to
+ * BOOTLOADER_SEG_FLOOR. On unified-address SoCs (P4, C5, C6, H2) these are the
+ * same physical memory. The remaining SRAM is reserved for the application.
  */
 #define BOOTLOADER_IRAM_LOADER_SEG_START \
 	(BOOTLOADER_USER_DRAM_END - BOOTLOADER_IRAM_LOADER_SEG_LEN)
 #define BOOTLOADER_DRAM_LOADER_SEG_START \
 	(BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_DRAM_LOADER_SEG_LEN)
 #define BOOTLOADER_IRAM_SEG_TARGET_LEN \
-	((BOOTLOADER_DRAM_LOADER_SEG_START - (HPSRAM_START + ICACHE_SIZE)) / 4)
+	((BOOTLOADER_DRAM_LOADER_SEG_START - BOOTLOADER_SEG_FLOOR) / 4)
 #define BOOTLOADER_IRAM_SEG_START \
 	ALIGN_UP(BOOTLOADER_DRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_TARGET_LEN, 0x100)
 #define BOOTLOADER_IRAM_SEG_LEN \
