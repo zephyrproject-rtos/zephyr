@@ -228,6 +228,12 @@ static int bmi270_anymo_config(const struct device *dev, bool enable)
 	uint16_t anymo_2;
 	int ret;
 
+	if (cfg->feature->anymo_1 == NULL || cfg->feature->anymo_2 == NULL) {
+		LOG_ERR("any-motion not supported by the %s feature set",
+			cfg->feature->name);
+		return -ENOTSUP;
+	}
+
 	if (enable) {
 		ret = bmi270_feature_reg_write(dev, cfg->feature->anymo_1,
 					       data->anymo_1);
