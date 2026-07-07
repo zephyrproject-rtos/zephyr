@@ -186,6 +186,7 @@ static void gspi_siwx91x_dma_callback(const struct device *dev, void *user_data,
 				      int status)
 {
 	const struct device *spi_dev = (const struct device *)user_data;
+	const struct gspi_siwx91x_config *cfg = spi_dev->config;
 	struct gspi_siwx91x_data *data = spi_dev->data;
 	struct spi_context *instance_ctx = &data->ctx;
 
@@ -200,6 +201,9 @@ static void gspi_siwx91x_dma_callback(const struct device *dev, void *user_data,
 		dma_stop(data->dma_rx.dma_dev, data->dma_rx.chan_nb);
 	}
 
+	while (cfg->reg->GSPI_STATUS_b.GSPI_BUSY) {
+		/* empty */
+	}
 	spi_context_cs_control(instance_ctx, false);
 	spi_context_complete(instance_ctx, spi_dev, status);
 	pm_device_runtime_put_async(spi_dev, K_NO_WAIT);
