@@ -14,6 +14,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/types.h>
 #include "sl_si91x_pwm.h"
 
@@ -121,24 +122,28 @@ static int pwm_siwx91x_set_cycles(const struct device *dev, uint32_t channel,
 		return -ENOTSUP;
 	}
 
+	if (pulse_cycles > 0 && data->pwm_channel_cfg[channel].is_chan_active == false) {
+		pm_device_runtime_get(dev);
+	}
+
 	if (data->pwm_channel_cfg[channel].is_chan_active == false) {
 		/* Configure the channel with default parameters */
 		ret = siwx91x_default_channel_config(dev, channel);
 		if (ret) {
-			return -EINVAL;
+			goto out;
 		}
 	}
 
 	ret = sl_si91x_pwm_get_time_period(channel, (uint16_t *)&prev_period);
 	if (ret) {
-		return -EINVAL;
+		goto out;
 	}
 
 	if (period_cycles != prev_period) {
 		ret = sl_si91x_pwm_set_time_period(channel, period_cycles, 0);
 		if (ret) {
 			/* Programmed value must be out of range (>65535) */
-			return -EINVAL;
+			goto out;
 		}
 	}
 
@@ -149,7 +154,7 @@ static int pwm_siwx91x_set_cycles(const struct device *dev, uint32_t channel,
 	if (duty_cycle != data->pwm_channel_cfg[channel].duty_cycle) {
 		ret = sl_si91x_pwm_set_duty_cycle(pulse_cycles, channel);
 		if (ret) {
-			return -EINVAL;
+			goto out;
 		}
 		data->pwm_channel_cfg[channel].duty_cycle = duty_cycle;
 	}
@@ -158,12 +163,22 @@ static int pwm_siwx91x_set_cycles(const struct device *dev, uint32_t channel,
 		/* Start PWM after configuring the channel for first time */
 		ret = sl_si91x_pwm_start(channel);
 		if (ret) {
-			return -EINVAL;
+			goto out;
 		}
 		data->pwm_channel_cfg[channel].is_chan_active = true;
 	}
 
+	if (pulse_cycles == 0 && data->pwm_channel_cfg[channel].is_chan_active == true) {
+		pm_device_runtime_put(dev);
+		data->pwm_channel_cfg[channel].is_chan_active = false;
+	}
+
 	return 0;
+
+out:
+	pm_device_runtime_put(dev);
+	data->pwm_channel_cfg[channel].is_chan_active = false;
+	return -EINVAL;
 }
 
 static int pwm_siwx91x_get_cycles_per_sec(const struct device *dev, uint32_t channel,
