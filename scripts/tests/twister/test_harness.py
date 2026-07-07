@@ -917,6 +917,62 @@ def test_test_handle(
         assert test_obj.instance.testcases[1].status == exp_status
 
 
+def test_test_handle_boot_banner_resets_stale_state(tmp_path):
+    """A boot banner seen while Ztest state is still pending must discard that
+    stale state (e.g. console output captured from a previously-programmed
+    image while flashing), including any phantom 'started' testcase recorded on
+    the instance, unless the suite expects reboots."""
+    mock_platform = mock.Mock()
+    mock_platform.name = "mock_platform"
+    mock_platform.normalized_name = "mock_platform"
+
+    mock_testsuite = mock.Mock(id="dummy.test_id", testcases=[])
+    mock_testsuite.name = "dummy_suite/dummy.test_id"
+    mock_testsuite.harness_config = {}
+    mock_testsuite.ztest_suite_names = []
+    mock_testsuite.detailed_test_id = True
+    mock_testsuite.source_dir_rel = "dummy_suite"
+    mock_testsuite.compose_case_name.return_value = "dummy.test_id.testcase"
+
+    outdir = tmp_path / "ztest_out"
+    with mock.patch('twisterlib.testsuite.TestSuite.get_unique', return_value="dummy_suite"):
+        instance = TestInstance(
+            testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
+        )
+    instance.handler = mock.Mock(options=mock.Mock(verbose=0), type_str="handler_type")
+
+    test_obj = Test()
+    test_obj.configure(instance)
+    test_obj.id = "dummy.test_id"
+    test_obj.expect_reboot = False
+
+    # Simulate stale pre-flash Ztest state from a previously-programmed image.
+    phantom = instance.get_case_or_create("dummy.test_id.testcase")
+    phantom.status = TwisterStatus.STARTED
+    test_obj.ztest = True
+    test_obj.started_suites = {'suite_name': {'count': 1, 'repeat': 0}}
+    test_obj.started_cases = {'dummy.test_id.testcase': {'count': 1}}
+    test_obj.detected_suite_names = ['suite_name']
+
+    # Act: a fresh boot banner arrives.
+    test_obj.handle("*** Booting Zephyr OS build v4.2.0 ***")
+
+    # Assert: stale state discarded and the phantom case reset to no-result.
+    assert test_obj.started_suites == {}
+    assert test_obj.started_cases == {}
+    assert test_obj.detected_suite_names == []
+    assert test_obj.ztest is False
+    assert phantom.status == TwisterStatus.NONE
+
+    # With expect_reboot set, the banner must NOT clear pending state.
+    test_obj.expect_reboot = True
+    phantom.status = TwisterStatus.STARTED
+    test_obj.started_cases = {'dummy.test_id.testcase': {'count': 1}}
+    test_obj.handle("*** Booting Zephyr OS build v4.2.0 ***")
+    assert test_obj.started_cases == {'dummy.test_id.testcase': {'count': 1}}
+    assert phantom.status == TwisterStatus.STARTED
+
+
 @pytest.fixture
 def gtest(tmp_path):
     mock_platform = mock.Mock()

@@ -962,6 +962,13 @@ class Test(Harness):
     test_case_summary_pattern = re.compile(
         r".*- (PASS|FAIL|SKIP) - \[([^\.]*).(test_)?(\S*)\] duration = (\d*[.,]?\d*) seconds"
     )
+    # The Zephyr boot banner marks the image under test (re)starting. Ztest
+    # markers seen before it belong to a previously-programmed image -- for
+    # example console output captured while the board was still being flashed
+    # (the default flash_before=False opens the serial port before flashing) --
+    # and must not be attributed to this run, or they linger as phantom
+    # 'started' cases that never reach a terminal status.
+    test_boot_banner_pattern = re.compile(r"Booting Zephyr OS")
 
 
     def get_testcase(self, tc_name, phase, ts_name=None):
@@ -1062,6 +1069,28 @@ class Test(Harness):
         testcase_match = None
         if self._match:
             self.testcase_output += line + "\n"
+        if (
+            not getattr(self, "expect_reboot", False)
+            and (self.started_suites or self.started_cases)
+            and re.search(self.test_boot_banner_pattern, line)
+        ):
+            # A fresh boot banner arrived while Ztest state is still pending:
+            # that state is stale output from a previously-programmed image
+            # (e.g. captured while flashing), not this test run. Discard it so
+            # it is not reported as a phantom 'started' case that never ends.
+            logger.debug(
+                f"{self.id}: boot banner with pending Ztest state; discarding "
+                f"stale suites={self.started_suites} cases={self.started_cases}"
+            )
+            for tc in self.instance.testcases:
+                if tc.status == TwisterStatus.STARTED:
+                    tc.status = TwisterStatus.NONE
+            self.started_suites = {}
+            self.started_cases = {}
+            self.detected_suite_names = []
+            self.testcase_output = ""
+            self._match = False
+            self.ztest = False
         if test_suite_start_match := re.search(self.test_suite_start_pattern, line):
             self.start_suite(test_suite_start_match.group("suite_name"))
         elif test_suite_end_match := re.search(self.test_suite_end_pattern, line):
