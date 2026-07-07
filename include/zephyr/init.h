@@ -45,9 +45,18 @@ extern "C" {
  *   dependencies.
  * - `POST_KERNEL`: Executed after Kernel is alive. From this point on, Kernel
  *   primitives can be used.
- * - `APPLICATION`: Executed just before application code (`main`).
- * - `SMP`: Only available if @kconfig{CONFIG_SMP} is enabled, specific for
- *   SMP.
+ * - `APPLICATION`: Executed after the Kernel is alive, before the static
+ *   threads are started and, on SMP systems, before the secondary CPUs are
+ *   brought up.
+ * - `PRE_MAIN`: Executed on the boot thread as the last step before the
+ *   application `main()` is entered. At this point the system is fully up:
+ *   the static threads have been created and, if @kconfig{CONFIG_SMP} is
+ *   enabled, every secondary CPU started at boot is online (bringing up a
+ *   secondary CPU can be deferred to run time, in which case it is not).
+ * - `SMP`: @deprecated Alias of `PRE_MAIN`. Entries registered at this level
+ *   share the `PRE_MAIN` level and are ordered together with its entries, by
+ *   priority. Unlike the old `SMP` level, `PRE_MAIN` is not conditioned on
+ *   @kconfig{CONFIG_SMP}. Use `PRE_MAIN` instead.
  *
  * Initialization priority can take a value in the range of 0 to 999.
  *
@@ -93,10 +102,11 @@ struct init_entry {
 #define Z_INIT_PRE_KERNEL_2_PRE_KERNEL_2 1
 #define Z_INIT_POST_KERNEL_POST_KERNEL	 1
 #define Z_INIT_APPLICATION_APPLICATION	 1
+#define Z_INIT_PRE_MAIN_PRE_MAIN	 1
 #define Z_INIT_SMP_SMP			 1
 
-/* Init level ordinals. PRE_KERNEL_1 is a deprecated alias of PRE_KERNEL, so
- * both map to the same ordinal.
+/* Init level ordinals. A deprecated alias shares the ordinal of the level it
+ * aliases: PRE_KERNEL_1 with PRE_KERNEL, and SMP with PRE_MAIN.
  */
 #define Z_INIT_ORD_EARLY	0
 #define Z_INIT_ORD_PRE_KERNEL	1
@@ -104,6 +114,7 @@ struct init_entry {
 #define Z_INIT_ORD_PRE_KERNEL_2 2
 #define Z_INIT_ORD_POST_KERNEL	3
 #define Z_INIT_ORD_APPLICATION	4
+#define Z_INIT_ORD_PRE_MAIN	5
 #define Z_INIT_ORD_SMP		5
 
 /* Map an init level token to the linker section band its entries are placed
@@ -112,6 +123,7 @@ struct init_entry {
  * keeps its own band, which the linker places right after the PRE_KERNEL
  * band, preserving the legacy "all PRE_KERNEL_1 entries run before any
  * PRE_KERNEL_2 entry" guarantee while PRE_KERNEL_2 is being phased out.
+ * SMP is a deprecated alias of PRE_MAIN and shares its band.
  */
 #define Z_INIT_SECTION_LEVEL_EARLY	  EARLY
 #define Z_INIT_SECTION_LEVEL_PRE_KERNEL	  PRE_KERNEL
@@ -119,7 +131,8 @@ struct init_entry {
 #define Z_INIT_SECTION_LEVEL_PRE_KERNEL_2 PRE_KERNEL_2
 #define Z_INIT_SECTION_LEVEL_POST_KERNEL  POST_KERNEL
 #define Z_INIT_SECTION_LEVEL_APPLICATION  APPLICATION
-#define Z_INIT_SECTION_LEVEL_SMP	  SMP
+#define Z_INIT_SECTION_LEVEL_PRE_MAIN	  PRE_MAIN
+#define Z_INIT_SECTION_LEVEL_SMP	  PRE_MAIN
 
 /**
  * @brief Obtain init entry name.
@@ -145,8 +158,8 @@ struct init_entry {
 /**
  * @brief Obtain the ordinal for an init level.
  *
- * @param level Init level (EARLY, PRE_KERNEL, POST_KERNEL, APPLICATION, SMP,
- * and the deprecated PRE_KERNEL_1 and PRE_KERNEL_2).
+ * @param level Init level (EARLY, PRE_KERNEL, POST_KERNEL, APPLICATION,
+ * PRE_MAIN, and the deprecated PRE_KERNEL_1, PRE_KERNEL_2 and SMP).
  *
  * @return Init level ordinal.
  */
@@ -157,6 +170,7 @@ struct init_entry {
 		    Z_INIT_PRE_KERNEL_2_##level, (Z_INIT_ORD_PRE_KERNEL_2),    \
 		    Z_INIT_POST_KERNEL_##level, (Z_INIT_ORD_POST_KERNEL),      \
 		    Z_INIT_APPLICATION_##level, (Z_INIT_ORD_APPLICATION),      \
+		    Z_INIT_PRE_MAIN_##level, (Z_INIT_ORD_PRE_MAIN),            \
 		    Z_INIT_SMP_##level, (Z_INIT_ORD_SMP),                      \
 		    (ZERO_OR_COMPILE_ERROR(0)))
 
@@ -170,9 +184,9 @@ struct init_entry {
  *
  * @param init_fn Initialization function.
  * @param level Initialization level. Allowed tokens: `EARLY`, `PRE_KERNEL`,
- * `POST_KERNEL`, `APPLICATION` and `SMP` if @kconfig{CONFIG_SMP} is enabled.
- * The tokens `PRE_KERNEL_1` (alias of `PRE_KERNEL`) and `PRE_KERNEL_2` are
- * deprecated but still accepted for compatibility.
+ * `POST_KERNEL`, `APPLICATION` and `PRE_MAIN`. The tokens `PRE_KERNEL_1`
+ * (alias of `PRE_KERNEL`), `PRE_KERNEL_2` and `SMP` (alias of `PRE_MAIN`)
+ * are deprecated but still accepted for compatibility.
  * @param prio Initialization priority within @p _level. Note that it must be a
  * decimal integer literal without leading zeroes or sign (e.g. `32`), or an
  * equivalent symbolic name (e.g. `#define MY_INIT_PRIO 32`); symbolic

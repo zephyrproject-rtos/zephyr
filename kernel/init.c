@@ -120,6 +120,7 @@ extern const struct init_entry __init_PRE_KERNEL_start[];
 extern const struct init_entry __init_PRE_KERNEL_2_start[];
 extern const struct init_entry __init_POST_KERNEL_start[];
 extern const struct init_entry __init_APPLICATION_start[];
+extern const struct init_entry __init_PRE_MAIN_start[];
 extern const struct init_entry __init_end[];
 
 enum init_level {
@@ -132,14 +133,11 @@ enum init_level {
 	INIT_LEVEL_PRE_KERNEL_2,
 	INIT_LEVEL_POST_KERNEL,
 	INIT_LEVEL_APPLICATION,
-#ifdef CONFIG_SMP
-	INIT_LEVEL_SMP,
-#endif /* CONFIG_SMP */
+	/* Last level, run on the boot thread just before main(): the static
+	 * threads exist and, under CONFIG_SMP, the CPUs started at boot are up.
+	 */
+	INIT_LEVEL_PRE_MAIN,
 };
-
-#ifdef CONFIG_SMP
-extern const struct init_entry __init_SMP_start[];
-#endif /* CONFIG_SMP */
 
 /*
  * storage space for the interrupt stack
@@ -224,9 +222,7 @@ static void z_sys_init_run_level(enum init_level level)
 		__init_PRE_KERNEL_2_start,
 		__init_POST_KERNEL_start,
 		__init_APPLICATION_start,
-#ifdef CONFIG_SMP
-		__init_SMP_start,
-#endif /* CONFIG_SMP */
+		__init_PRE_MAIN_start,
 		/* End marker */
 		__init_end,
 	};
@@ -333,8 +329,13 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	 * k_smp_cpu_start()/k_smp_cpu_resume().
 	 */
 	z_smp_init();
-	z_sys_init_run_level(INIT_LEVEL_SMP);
 #endif /* CONFIG_SMP */
+
+	/* Last init level before the application starts: everything is up,
+	 * including the static threads and, under CONFIG_SMP, the secondary
+	 * CPUs.
+	 */
+	z_sys_init_run_level(INIT_LEVEL_PRE_MAIN);
 
 #ifdef CONFIG_MMU
 	z_mem_manage_boot_finish();
