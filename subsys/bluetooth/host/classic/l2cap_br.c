@@ -6272,10 +6272,6 @@ void bt_l2cap_br_init(void)
 		bt_rfcomm_init();
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AVDTP)) {
-		bt_avdtp_init();
-	}
-
 	if (IS_ENABLED(CONFIG_BT_AVCTP)) {
 		bt_avctp_init();
 	}
