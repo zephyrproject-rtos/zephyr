@@ -111,6 +111,18 @@ def first_module_deps_package(modules_doc):
     )
 
 
+def first_module_sources_package(zephyr_doc):
+    """Return the first module *-sources package, excluding zephyr-sources."""
+    return next(
+        (
+            pkg
+            for pkg in zephyr_doc.packages
+            if pkg.name.endswith("-sources") and pkg.name != "zephyr-sources"
+        ),
+        None,
+    )
+
+
 class TestCommonValidation:
     """Tests for common SPDX document validation."""
 
@@ -484,6 +496,61 @@ class TestPackageProvenance:
         assert any("@" in p for p in purls), (
             f"modules-deps.spdx: {pkg.name} purl should include revision suffix, got {purls}"
         )
+
+
+class TestPackageComments:
+    """Tests for package role comments."""
+
+    def test_zephyr_sources_comment(self, zephyr_doc):
+        """Test zephyr-sources comment describes a source package."""
+        pkg = find_package_by_name(zephyr_doc, "zephyr-sources")
+        assert pkg is not None, "zephyr.spdx: zephyr-sources package not found"
+        assert pkg.comment and "Source package" in str(pkg.comment), (
+            f"zephyr.spdx: zephyr-sources comment should mention 'Source package', "
+            f"got '{pkg.comment}'"
+        )
+
+    def test_zephyr_deps_comment(self, modules_doc):
+        """Test zephyr-deps comment describes a reference-only package."""
+        if len(modules_doc.packages) == 0:
+            pytest.skip("No packages in modules-deps.spdx")
+        pkg = find_package_by_name(modules_doc, "zephyr-deps")
+        assert pkg is not None, "modules-deps.spdx: zephyr-deps package not found"
+        assert pkg.comment and "Reference-only" in str(pkg.comment), (
+            f"modules-deps.spdx: zephyr-deps comment should mention 'Reference-only', "
+            f"got '{pkg.comment}'"
+        )
+
+    def test_module_sources_comment(self, zephyr_doc):
+        """Test first module-sources comment describes a source package."""
+        pkg = first_module_sources_package(zephyr_doc)
+        if pkg is None:
+            pytest.skip("No module-sources packages in zephyr.spdx")
+        assert pkg.comment and "Source package" in str(pkg.comment), (
+            f"zephyr.spdx: {pkg.name} comment should mention 'Source package', got '{pkg.comment}'"
+        )
+
+    def test_module_deps_comment(self, modules_doc):
+        """Test first module-deps comment describes a reference-only package."""
+        pkg = first_module_deps_package(modules_doc)
+        if pkg is None:
+            pytest.skip("No module-deps packages in modules-deps.spdx")
+        assert pkg.comment and "Reference-only" in str(pkg.comment), (
+            f"modules-deps.spdx: {pkg.name} comment should mention 'Reference-only', "
+            f"got '{pkg.comment}'"
+        )
+
+    def test_no_utility_target_comments(self, app_doc, zephyr_doc, build_doc, modules_doc):
+        """Test that no package carries the old UTILITY target comment."""
+        for doc_name, doc in [
+            ("app.spdx", app_doc),
+            ("zephyr.spdx", zephyr_doc),
+            ("build.spdx", build_doc),
+            ("modules-deps.spdx", modules_doc),
+        ]:
+            for pkg in doc.packages:
+                if pkg.comment and str(pkg.comment) == "Utility target; no files":
+                    pytest.fail(f"{doc_name}: package '{pkg.name}' has UTILITY target comment")
 
 
 class TestCrossReferences:
