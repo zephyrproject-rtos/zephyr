@@ -57,6 +57,15 @@
 #define bflb_controller_init(prio)     btble_controller_init(prio)
 #define bflb_controller_deinit()       btble_controller_deinit()
 
+#elif defined(CONFIG_BT_BFLB_BL808)
+
+#include <btble_lib_api.h>
+
+extern void ble_controller_deinit(void);
+
+#define bflb_controller_init(prio) btble_controller_init(prio)
+#define bflb_controller_deinit()   ble_controller_deinit()
+
 #endif
 
 extern int bflb_rf_init(void);
