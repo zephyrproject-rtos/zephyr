@@ -1709,6 +1709,13 @@ static int modem_cellular_on_init_power_off_state_enter(struct modem_cellular_da
 	return 0;
 }
 
+static void modem_cellular_cmux_cleanup(struct modem_cellular_data *data)
+{
+	modem_cellular_notify_user_pipes_disconnected(data);
+	modem_chat_release(&data->chat);
+	modem_ppp_release(data->ppp);
+}
+
 static void modem_cellular_init_power_off_event_handler(struct modem_cellular_data *data,
 							enum modem_cellular_event evt)
 {
@@ -1718,10 +1725,16 @@ static void modem_cellular_init_power_off_event_handler(struct modem_cellular_da
 	case MODEM_CELLULAR_EVENT_CMUX_DISCONNECTED:
 		modem_cellular_stop_timer(data);
 		data->cmd_pipe = data->uart_pipe;
+		/* CMUX disconnected, notify users */
+		modem_cellular_cmux_cleanup(data);
 		/* Assume the same time as reset pulse is enough to return from CMUX to AT mode */
 		modem_cellular_start_timer(data, K_MSEC(config->vendor->reset_pulse_duration_ms));
 		break;
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
+		if (data->cmd_pipe != data->uart_pipe) {
+			/* No CMUX_DISCONNECTED event occurred, notify users here */
+			modem_cellular_cmux_cleanup(data);
+		}
 		/* Shutdown script can only be used if cmd_pipe is available, i.e. we are not in
 		 * some intermediary state without a pipe for commands available
 		 */
@@ -1736,14 +1749,6 @@ static void modem_cellular_init_power_off_event_handler(struct modem_cellular_da
 	default:
 		break;
 	}
-}
-
-static int modem_cellular_on_init_power_off_state_leave(struct modem_cellular_data *data)
-{
-	modem_cellular_notify_user_pipes_disconnected(data);
-	modem_chat_release(&data->chat);
-	modem_ppp_release(data->ppp);
-	return 0;
 }
 
 static int modem_cellular_on_run_shutdown_script_state_enter(struct modem_cellular_data *data)
@@ -1976,10 +1981,6 @@ static int modem_cellular_on_state_leave(struct modem_cellular_data *data)
 
 	case MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD:
 		ret = modem_cellular_on_await_ppp_dead_state_leave(data);
-		break;
-
-	case MODEM_CELLULAR_STATE_INIT_POWER_OFF:
-		ret = modem_cellular_on_init_power_off_state_leave(data);
 		break;
 
 	case MODEM_CELLULAR_STATE_RUN_SHUTDOWN_SCRIPT:
