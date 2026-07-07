@@ -5,7 +5,9 @@
 
 zephyr_linker_section(NAME init KVMA RAM_REGION GROUP RODATA_REGION)
 zephyr_linker_section_obj_level(SECTION init LEVEL EARLY)
-zephyr_linker_section_obj_level(SECTION init LEVEL PRE_KERNEL_1)
+zephyr_linker_section_obj_level(SECTION init LEVEL PRE_KERNEL)
+# Deprecated compatibility band: runs right after all PRE_KERNEL entries
+# (PRE_KERNEL_1 aliases into the PRE_KERNEL band).
 zephyr_linker_section_obj_level(SECTION init LEVEL PRE_KERNEL_2)
 zephyr_linker_section_obj_level(SECTION init LEVEL POST_KERNEL)
 zephyr_linker_section_obj_level(SECTION init LEVEL APPLICATION)

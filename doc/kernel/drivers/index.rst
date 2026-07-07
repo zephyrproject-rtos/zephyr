@@ -393,26 +393,32 @@ Initialization Levels
 Drivers may depend on other drivers being initialized first, or require
 the use of kernel services. :c:func:`DEVICE_DEFINE()` and related APIs
 allow the user to specify at what time during the boot sequence the init
-function will be executed. Any driver will specify one of three
+function will be executed. Any driver will specify one of two
 initialization levels:
 
-``PRE_KERNEL_1``
-        Used for devices that have no dependencies, such as those that rely
-        solely on hardware present in the processor/SOC. These devices cannot
-        use any kernel services during configuration, since the kernel services are
-        not yet available. The interrupt subsystem will be configured however
-        so it's OK to set up interrupts. Init functions at this level run on the
-        interrupt stack.
-
-``PRE_KERNEL_2``
-        Used for devices that rely on the initialization of devices initialized
-        as part of the ``PRE_KERNEL_1`` level. These devices cannot use any kernel
-        services during configuration, since the kernel services are not yet
-        available. Init functions at this level run on the interrupt stack.
+``PRE_KERNEL``
+        Used for devices that are initialized before the kernel is up, such
+        as those that rely solely on hardware present in the processor/SOC
+        or on other ``PRE_KERNEL`` devices initialized with a lower priority
+        value. These devices cannot use any kernel services during
+        configuration, since the kernel services are not yet available. The
+        interrupt subsystem will be configured however so it's OK to set up
+        interrupts. Init functions at this level run on the interrupt stack.
 
 ``POST_KERNEL``
         Used for devices that require kernel services during configuration.
         Init functions at this level run in context of the kernel main task.
+
+Two additional levels exist for compatibility and are deprecated:
+
+``PRE_KERNEL_1``
+        Deprecated alias of ``PRE_KERNEL``: entries share the ``PRE_KERNEL``
+        level and are ordered together with its entries, by priority.
+
+``PRE_KERNEL_2``
+        Deprecated. Runs in the same execution context as ``PRE_KERNEL``,
+        after every ``PRE_KERNEL`` entry. Migrate to ``PRE_KERNEL`` with a
+        priority that orders the entry after its dependencies.
 
 Within each initialization level you may specify a priority level, relative to
 other devices in the same initialization level. The priority level is specified
