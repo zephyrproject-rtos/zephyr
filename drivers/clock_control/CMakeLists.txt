@@ -78,6 +78,7 @@ if(CONFIG_CLOCK_CONTROL_ESP32)
 endif()
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_ADI_AXI_CLKGEN clock_control_adi_axi_clkgen.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_ADSP clock_control_adsp.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AGILEX5 clock_control_agilex5.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AGILEX5 clock_control_agilex5_ll.c)
