@@ -23,17 +23,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ethernet/eth.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
-#include <zephyr/drivers/hwinfo.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/sys/crc.h>
 #include <zephyr/irq.h>
 #include <stm32_ll_system.h>
 
 #include "eth_dwmac_priv.h"
-
-#define ST_OUI_B0 0x00
-#define ST_OUI_B1 0x80
-#define ST_OUI_B2 0xE1
+#include "eth_stm32_dwc.h"
 
 /* The DMA bus master interface is 32-bit on this IP */
 #define DATA_BUS_WIDTH 32
@@ -89,7 +84,6 @@ static const struct pinctrl_dev_config *eth0_pcfg =
 	PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
 static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
-static struct net_eth_mac_config mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0);
 
 int dwmac_bus_init(const struct device *dev)
 {
@@ -135,8 +129,8 @@ static struct dwmac_dma_desc dwmac_rx_descs[NB_RX_DESCS] __desc_mem;
 
 int dwmac_platform_init(const struct device *dev)
 {
+	const struct net_eth_mac_config mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0);
 	struct dwmac_priv *p = dev->data;
-	int ret;
 
 	p->tx_descs = dwmac_tx_descs;
 	p->rx_descs = dwmac_rx_descs;
@@ -155,34 +149,7 @@ int dwmac_platform_init(const struct device *dev)
 		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 
-	/* retrieve MAC address */
-	ret = net_eth_mac_load(&mac_cfg, p->mac_addr);
-	if (ret == -ENODATA) {
-		uint8_t unique_device_ID_12_bytes[12];
-		uint32_t result_mac_32_bits;
-
-		/**
-		 * Set MAC address locally administered bit (LAA) as this is not assigned by the
-		 * manufacturer
-		 */
-		p->mac_addr[0] = ST_OUI_B0 | 0x02;
-		p->mac_addr[1] = ST_OUI_B1;
-		p->mac_addr[2] = ST_OUI_B2;
-
-		/* Nothing defined by the user, use device id */
-		hwinfo_get_device_id(unique_device_ID_12_bytes, 12);
-		result_mac_32_bits = crc32_ieee((uint8_t *)unique_device_ID_12_bytes, 12);
-		memcpy(&p->mac_addr[3], &result_mac_32_bits, 3);
-
-		ret = 0;
-	}
-
-	if (ret < 0) {
-		LOG_ERR("Failed to load MAC address (%d)", ret);
-		return ret;
-	}
-
-	return 0;
+	return eth_stm32_net_eth_mac_load(&mac_cfg, p->mac_addr);
 }
 
 /* Our private device instance */
