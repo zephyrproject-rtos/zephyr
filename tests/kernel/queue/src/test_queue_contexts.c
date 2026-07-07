@@ -657,3 +657,45 @@ ZTEST(queue_api, test_queue_unique_append)
 	ret = k_queue_unique_append(&queue, (void *)&data[1]);
 	zassert_true(ret, "queue unique append failed");
 }
+
+/**
+ * @brief Test peeking at the front, back and next items of a queue
+ *
+ * @details Enqueue two data items, then use k_queue_peek_head(), k_queue_peek_tail() and
+ * k_queue_peek_next() to inspect the items inside of the queue and verify the returned
+ * pointers match he expected items without removing them (a subsequent get still
+ * returns both items in order). Peeking an empty queue returns NULL.
+ *
+ * @see k_queue_peek_head(), k_queue_peek_tail(), k_queue_peek_next()
+ */
+ZTEST(queue_api, test_queue_peek)
+{
+	k_queue_init(&queue);
+
+	k_queue_append(&queue, (void *)&data[0]);
+	k_queue_append(&queue, (void *)&data[1]);
+
+	/**TESTPOINT: peek front and back without removing*/
+	zassert_equal(k_queue_peek_head(&queue), (void *)&data[0]);
+	zassert_equal(k_queue_peek_tail(&queue), (void *)&data[1]);
+
+	/**TESTPOINT: peek next of the first element is the second*/
+	zassert_equal(k_queue_peek_next(&queue, (void *)&data[0]), (void *)&data[1]);
+
+	/**TESTPOINT: peek next of the last element is NULL*/
+	zassert_is_null(k_queue_peek_next(&queue, (void *)&data[1]));
+
+	/**TESTPOINT: peek next of a NULL element is NULL*/
+	zassert_is_null(k_queue_peek_next(&queue, NULL));
+
+	/* Peeking does not dequeue: both items are still retrievable in order. */
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data[0]);
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data[1]);
+
+	/**TESTPOINT: peek of an empty queue returns NULL*/
+	zassert_is_null(k_queue_peek_head(&queue));
+	zassert_is_null(k_queue_peek_tail(&queue));
+
+	/**TESTPOINT: peek next of an empty queue returns NULL*/
+	zassert_is_null(k_queue_peek_next(&queue, (void *)&data[0]));
+}

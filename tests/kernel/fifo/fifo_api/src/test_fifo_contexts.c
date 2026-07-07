@@ -276,15 +276,14 @@ ZTEST(fifo_api, test_fifo_is_empty_isr)
 }
 
 /**
- * @brief Test peeking at the front and back items of a FIFO
+ * @brief Test peeking at the front, back and next items of a FIFO
  *
- * @details Enqueue two data items, then use k_fifo_peek_head() and
- * k_fifo_peek_tail() to inspect the items at the front and back of the FIFO and
- * verify the returned pointers match the first and last enqueued items without
- * removing them (a subsequent get still returns both items in order). Peeking an
- * empty FIFO returns NULL.
+ * @details Enqueue two data items, then use k_fifo_peek_head(), k_fifo_peek_tail() and
+ * k_fifo_peek_next() to inspect the items inside of the FIFO and verify the returned
+ * pointers match he expected items without removing them (a subsequent get still
+ * returns both items in order). Peeking an empty FIFO returns NULL.
  *
- * @see k_fifo_peek_head(), k_fifo_peek_tail()
+ * @see k_fifo_peek_head(), k_fifo_peek_tail(), k_fifo_peek_next()
  */
 ZTEST(fifo_api, test_fifo_peek)
 {
@@ -297,6 +296,15 @@ ZTEST(fifo_api, test_fifo_peek)
 	zassert_equal(k_fifo_peek_head(&fifo), (void *)&data[0]);
 	zassert_equal(k_fifo_peek_tail(&fifo), (void *)&data[1]);
 
+	/**TESTPOINT: peek next of the first element is the second*/
+	zassert_equal(k_fifo_peek_next(&fifo, (void *)&data[0]), (void *)&data[1]);
+
+	/**TESTPOINT: peek next of the last element is NULL*/
+	zassert_is_null(k_fifo_peek_next(&fifo, (void *)&data[1]));
+
+	/**TESTPOINT: peek next of a NULL element is NULL*/
+	zassert_is_null(k_fifo_peek_next(&fifo, NULL));
+
 	/* Peeking does not dequeue: both items are still retrievable in order. */
 	zassert_equal(k_fifo_get(&fifo, K_NO_WAIT), (void *)&data[0]);
 	zassert_equal(k_fifo_get(&fifo, K_NO_WAIT), (void *)&data[1]);
@@ -304,6 +312,9 @@ ZTEST(fifo_api, test_fifo_peek)
 	/**TESTPOINT: peek of an empty fifo returns NULL*/
 	zassert_is_null(k_fifo_peek_head(&fifo));
 	zassert_is_null(k_fifo_peek_tail(&fifo));
+
+	/**TESTPOINT: peek next of an empty fifo returns NULL*/
+	zassert_is_null(k_fifo_peek_next(&fifo, (void *)&data[0]));
 }
 
 K_HEAP_DEFINE(fifo_alloc_pool, 256);
