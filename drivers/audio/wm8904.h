@@ -1,5 +1,6 @@
 /*
  * Copyright 2024 NXP
+ * Copyright (c) 2026 Mario Paja
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +13,8 @@
  ******************************************************************************/
 
 #define WM8904_REG_RESET                    (0x00)
+#define WM8904_REG_MIC_BIAS_CONTROL_0       (0X06)
+#define WM8904_REG_MIC_BIAS_CONTROL_1       (0X07)
 #define WM8904_REG_ANALOG_ADC_0             (0x0A)
 #define WM8904_REG_POWER_MGMT_0             (0x0C)
 #define WM8904_REG_POWER_MGMT_2             (0x0E)
@@ -65,9 +68,6 @@
 #define WM8904_OUTPUT_VOLUME_MIN (0b000000)
 #define WM8904_OUTPUT_VOLUME_MAX (0b111111)
 #define WM8904_OUTPUT_VOLUME_DEFAULT (0b101101)
-#define WM8904_INPUT_VOLUME_MIN (0b00000)
-#define WM8904_INPUT_VOLUME_MAX (0b11111)
-#define WM8904_INPUT_VOLUME_DEFAULT (0b00101)
 
 /**
  * WM8904_ANALOG_OUT1_LEFT, WM8904_ANALOG_OUT1_RIGHT (headphone outs),
@@ -89,10 +89,18 @@
  * [7]   - MUTE: Input mute
  * [4:0] - VOL: 5 bit volume value
  */
-#define WM8904_REGVAL_IN_VOL(mute, vol) \
-	((mute & 0b1) << 7 | (vol & 0b00011111))
-#define WM8904_REGMASK_IN_MUTE		0b10000000
-#define WM8904_REGMASK_IN_VOLUME	0b00011111
+#define WM8904_REGVAL_IN_PGA_VOL(mute, vol) ((mute & 0b1) << 7 | (vol & 0b00011111))
+#define WM8904_REGMASK_IN_PGA_MUTE          0b10000000
+#define WM8904_REGMASK_IN_PGA_VOLUME        0b00011111
+
+/**
+ * WM8904_ADC_DIGITAL_VOLUME_LEFT, WM8904_ADC_DIGITAL_VOLUME_RIGHT
+ * [8]   - VU: Volume update, works for entire channel pair
+ * [7:0] - VOL: 8-bit volume value
+ */
+#define WM8904_REGVAL_IN_VOL(vu, vol) (((vu & 0b1) << 8) | (vol & 0b011111111))
+#define WM8904_REGMASK_IN_VU          0b100000000
+#define WM8904_REGMASK_IN_VOL         0b011111111
 
 /**
  * WM8904_ANALOG_LEFT_IN_1, WM8904_ANALOG_RIGHT_IN_1:
