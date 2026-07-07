@@ -604,6 +604,10 @@ USB
   :c:struct:`usbd_vreq_node` are now called with NULL ``buf`` before data stage is received.
   This allows the stack to return STALL during data stage. Out-of-tree class and vendor handlers
   need to be updated. (:github:`108840`)
+* Allowed values for the ``clock-reference`` property of :dtcompatible:`st,stm32u5-otghs-phy`
+  have been renamed from :samp:`SYSCFG_OTG_HS_PHY_CLK_{N}MHz` to :samp:`{N}M`. Out-of-tree
+  boards using PHYs with this property (i.e., STM32U5-/STM32WBA6-based boards) must update
+  their Devicetree to use the new values. (:github:``)
 
 Video
 =====

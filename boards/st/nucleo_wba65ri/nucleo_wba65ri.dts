@@ -242,6 +242,6 @@ zephyr_udc0: &usbotg_hs {
 	/* Select 32 MHz HSE as OTG HS PHY clock source */
 	clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
 		 <&rcc STM32_SRC_HSE OTGHS_SEL(0)>;
-	clock-reference = "SYSCFG_OTG_HS_PHY_CLK_32MHz";
+	clock-reference = "32M";
 	status = "okay";
 };

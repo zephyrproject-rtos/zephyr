@@ -1,12 +1,16 @@
 # Copyright (c) 2024 Marcin Niestroj
 # Copyright (c) 2024 Meta
+# Copyright (c) 2026 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-description: |
-    STM32U5 OTG HS PHY.
+title: STM32 USB HS PHY
 
-    This binding is to be used by the STM32U5xx transceivers which are built-in
-    with USB HS PHY IP and a configurable HSE clock source.
+description: |
+    USB High-Speed PHY as first found in STM32U5 series.
+
+    PHYs described by this binding are configured using registers located
+    in a shared IP such as RCC or SYSCFG, unlike `st,stm32-usbphyc` PHYs
+    which have dedicated MMIO interfaces.
 
 compatible: "st,stm32u5-otghs-phy"
 
@@ -18,38 +22,39 @@ properties:
 
   clocks:
     required: true
-    description: |
-      Supported configurations:
-
-        /* HSE */
-        clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
-                 <&rcc STM32_SRC_HSE OTGHS_SEL(0)>;
-
-        /* HSE/2 */
-        clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
-                 <&rcc (STM32_SRC_HSE | STM32_CLOCK_DIV(2)) OTGHS_SEL(2)>;
-
-        /* PLL1_P_CK */
-        clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
-                 <&rcc STM32_SRC_PLL1_P OTGHS_SEL(1)>;
-
-        /* PLL1_P_CK/2 */
-        clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
-                 <&rcc (STM32_SRC_PLL1_P | STM32_CLOCK_DIV(2)) OTGHS_SEL(3)>;
 
   clock-reference:
     type: string
     required: true
     enum:
-      - "SYSCFG_OTG_HS_PHY_CLK_16MHz"
-      - "SYSCFG_OTG_HS_PHY_CLK_19.2MHz"
-      - "SYSCFG_OTG_HS_PHY_CLK_20MHz"
-      - "SYSCFG_OTG_HS_PHY_CLK_24MHz"
-      - "SYSCFG_OTG_HS_PHY_CLK_26MHz"
-      - "SYSCFG_OTG_HS_PHY_CLK_32MHz"
+      - "16M"
+      - "19.2M"
+      - "20M"
+      - "24M"
+      - "26M"
+      - "32M"
     description: |
-      OTG_HS PHY reference clock frequency selection.
+      Input frequency of the HS PHY (in MHz: "1M" = 1 MHz)
 
-      This value selects the reference clock frequency to be used in the OTG_HS PHY PLL
-      in the SYSCFG OTG_HS PHY register (SYSCFG_OTGHSPHYCR). The selection of this value
-      should take in consideration the OTGHSSEL dependency to avoid miss configurations.
+      The correct value depends on the system's clock configuration,
+      including the `clocks` property of this node.
+
+examples:
+  - |
+    /* Supported clock configurations on STM32U5 */
+
+    /* HSE */
+    clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
+              <&rcc STM32_SRC_HSE OTGHS_SEL(0)>;
+
+    /* HSE/2 */
+    clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
+              <&rcc (STM32_SRC_HSE | STM32_CLOCK_DIV(2)) OTGHS_SEL(2)>;
+
+    /* PLL1_P_CK */
+    clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
+              <&rcc STM32_SRC_PLL1_P OTGHS_SEL(1)>;
+
+    /* PLL1_P_CK/2 */
+    clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
+              <&rcc (STM32_SRC_PLL1_P | STM32_CLOCK_DIV(2)) OTGHS_SEL(3)>;

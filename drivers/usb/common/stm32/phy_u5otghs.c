@@ -5,16 +5,13 @@
  */
 
 /*
- * STM32 U5OTGHS embedded HS PHY driver
+ * STM32 "U5OTGHS" embedded HS PHY driver
  *
  * Covers the unnamed PHY first found in STM32U5 series,
  * and later used in other series such as STM32WBA, ...
- *
- * Note: the HAL SYSCFG used is provided by stm32XXX_hal.c
- * which is always included in the build, and the __HAL_RCC
- * function is actually an in-header/LL-like macro.
  */
 #include <soc.h>
+#include <stm32_ll_rcc.h>
 #include <stm32_ll_system.h>
 
 #include <stm32_bitops.h>
@@ -27,8 +24,27 @@
 
 #include "stm32_usb_common.h"
 
-/* Even though we won't use this macro, define it for grep-ability */
 #define DT_DRV_COMPAT st_stm32u5_otghs_phy
+
+#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
+/*
+ * SYSCFG_OTG_HS_PHY_CLK_SELECT_<> values go from 1 to N,
+ * but DT_ENUM_IDX() is zero-based, hence the UTIL_INC().
+ */
+#define PHY_CLK_REF(n)	\
+	CONCAT(SYSCFG_OTG_HS_PHY_CLK_SELECT_, UTIL_INC(DT_ENUM_IDX(n, clock_reference)))
+#define PHY_VARIANT_U5_WBA6 1
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
+/*
+ * STM32H7R/S LL provides LL_RCC_USBREF_CLKSOURCE_<n>M values whose
+ * names correspond to the values of the `clock-reference` property.
+ */
+#define PHY_CLK_REF(n)	\
+	CONCAT(LL_RCC_USBREF_CLKSOURCE_, DT_STRING_TOKEN(n, clock_reference))
+#define PHY_VARIANT_H7RS 1
+#else /* CONFIG_SOC_SERIES_... */
+#error "Unsupported SoC series for U5-OTGHS PHY"
+#endif /* CONFIG_SOC_SERIES_... */
 
 struct stm32_u5otghs_phy_config {
 	uint32_t reference;
@@ -43,6 +59,17 @@ static int stm32_u5otghs_phy_enable(const struct stm32_usb_phy *phy)
 	const struct stm32_u5otghs_phy_config *cfg = phy->pcfg;
 	int res;
 
+#if defined(PHY_VARIANT_U5_WBA6)
+	/*
+	 * Note: the HAL SYSCFG used is provided by stm32XXX_hal.c
+	 * which is always included in the build, and the __HAL_RCC
+	 * function is actually an in-header/LL-like macro.
+	 *
+	 * While STM32CubeU5 provides functions in LL System to do
+	 * this configuration, they do not exist in STM32CubeWBA
+	 * so we have to use the HAL for portability.
+	 */
+
 	/* Enable SYSCFG where PHY configuration registers reside */
 	__HAL_RCC_SYSCFG_CLK_ENABLE();
 
@@ -51,6 +78,10 @@ static int stm32_u5otghs_phy_enable(const struct stm32_usb_phy *phy)
 
 	/* Deassert PHY reset */
 	HAL_SYSCFG_EnableOTGPHY(SYSCFG_OTG_HS_PHY_ENABLE);
+#elif defined(PHY_VARIANT_H7RS)
+	/* Configure PHY input frequency selection */
+	LL_RCC_SetUSBREFClockSource(cfg->reference);
+#endif /* PHY_VARIANT_... */
 
 	/* Configure PHY input mux (if provided) */
 	if (cfg->num_clocks > 1) {
@@ -71,17 +102,6 @@ static int stm32_u5otghs_phy_disable(const struct stm32_usb_phy *phy)
 	return clock_control_off(rcc, (clock_control_subsys_t)&cfg->clocks[0]);
 }
 
-/*
- * SYSCFG_OTG_HS_PHY_CLK_SELECT_<> values go from 1 to N,
- * but DT_ENUM_IDX() is zero-based, hence the UTIL_INC().
- */
-#define PHY_CLK_REF(n)	\
-	CONCAT(SYSCFG_OTG_HS_PHY_CLK_SELECT_, UTIL_INC(DT_ENUM_IDX(n, clock_reference)))
-
-/*
- * Note that SYSCFG_OTG_HS_PHY_CLK_SELECT goes from 1 to N whereas
- * DT_ENUM_IDX() goes from 0 to (N-1), hence the UTIL_INC()
- */
 #define DEFINE_U5OTGHS_PHY(usb_node, phy_node)							\
 	static const struct stm32_u5otghs_phy_config CONCAT(phy, DT_DEP_ORD(phy_node), _cfg) = {\
 		.reference = PHY_CLK_REF(phy_node),						\

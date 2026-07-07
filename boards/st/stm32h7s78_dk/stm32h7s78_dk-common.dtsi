@@ -397,13 +397,30 @@ st_cam_i2c: &i2c1 {
 	};
 };
 
+/* USB1 port of board = OTG_HS */
+usb1: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_dm_pm5 &usb_otg_hs_dp_pm6>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+zephyr_udc0: &usb1 {};
+
+&otghs_phy {
+	/*
+	 * Use the default mux configuration:
+	 *   PHY clock source = HSE (@ 24 MHz)
+	 */
+	clock-reference = "24M";
+	status = "okay";
+};
+
+/* USB2 port of board = OTG_FS */
 usb2: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pm12 &usb_otg_fs_dp_pm11>;
 	pinctrl-names = "default";
 	status = "okay";
 };
-
-zephyr_udc0: &usb2 {};
 
 &ltdc {
 	pinctrl-0 = <&ltdc_r0_pf9 &ltdc_r1_pf10 &ltdc_r2_pf0 &ltdc_r3_pb4
