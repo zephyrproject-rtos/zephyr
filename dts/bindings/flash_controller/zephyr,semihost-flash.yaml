@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Analog Devices, Inc.
+
+description: Semihost file-backed flash memory
+
+compatible: "zephyr,semihost-flash"
+
+include: base.yaml
+
+properties:
+  filename:
+    type: string
+    default: "flash.bin"
+    description: |
+      Host-side file path for flash backing store. Defaults to "flash.bin"
+      in the working directory of the application providing
+      semihosting services (typically the build folder) The file will be
+      created upon first flash write if it does not already exist.
