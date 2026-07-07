@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "share/sysbuild/Kconfig"
+
+config SAMPLE_RT700_DUAL_CORE_PM_REMOTE_BOARD
+	string "RT700 dual-core PM remote board"
+	default "mimxrt700_evk/mimxrt798s/cm33_cpu1" if $(BOARD) = "mimxrt700_evk"
+	help
+	  Board target used for the CM33 CPU1 remote image.
+
+config SAMPLE_RT700_DUAL_CORE_PM_SLEEP_SECONDS
+	int "Power-mode measurement window in seconds"
+	default 5
+	range 1 3600
+	help
+	  Number of seconds both cores spend in each active, sleep, or
+	  deep-sleep measurement window.
