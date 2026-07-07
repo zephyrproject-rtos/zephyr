@@ -3011,7 +3011,11 @@ static inline void extract_value(const char *src, char *dest, size_t dest_size)
 {
 	size_t i = 0;
 
-	while (src[i] != '\0' && src[i] != '\n' && i < dest_size - 1) {
+	if (dest_size == 0) {
+		return;
+	}
+
+	while (i < dest_size - 1 && src[i] != '\0' && src[i] != '\n') {
 		dest[i] = src[i];
 		i++;
 	}
