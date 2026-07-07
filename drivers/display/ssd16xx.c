@@ -60,6 +60,8 @@ struct ssd16xx_quirks {
 	 * SSD16XX_CMD_UPDATE_CTRL2 for a partial refresh.
 	 */
 	uint8_t ctrl2_partial;
+	/* Controller requires explicit old RAM sync after partial refresh. */
+	bool sync_old_ram_after_partial;
 };
 
 struct ssd16xx_data {
@@ -475,14 +477,15 @@ static int ssd16xx_write(const struct device *dev, const uint16_t x,
 		}
 	} else if (partial_refresh) {
 		/*
-		 * We just performed a partial refresh. After the
-		 * refresh, the controller swaps the black/red buffers
-		 * containing the current and new image. We need to
-		 * perform a second write here to ensure that future
-		 * updates work on an up-to-date framebuffer.
+		 * Keep the controller previous-frame RAM aligned with the visible
+		 * image after partial refresh. Some controllers swap buffers;
+		 * SSD1680 needs an explicit write to red/old RAM.
 		 */
-		err = ssd16xx_write_cmd(dev, SSD16XX_CMD_WRITE_RAM,
-					(uint8_t *)buf, buf_len);
+		const uint8_t ram_cmd = config->quirks->sync_old_ram_after_partial
+					? SSD16XX_CMD_WRITE_RED_RAM
+					: SSD16XX_CMD_WRITE_RAM;
+
+		err = ssd16xx_write_cmd(dev, ram_cmd, buf, buf_len);
 		if (err < 0) {
 			return err;
 		}
@@ -997,6 +1000,7 @@ static const struct ssd16xx_quirks quirks_solomon_ssd1680 = {
 	.pp_height_bits = 16,
 	.ctrl2_full = SSD16XX_GEN2_CTRL2_DISPLAY,
 	.ctrl2_partial = SSD16XX_GEN2_CTRL2_DISPLAY | SSD16XX_GEN2_CTRL2_MODE2,
+	.sync_old_ram_after_partial = true,
 };
 #endif
 
