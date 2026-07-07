@@ -74,7 +74,8 @@
 		manual_flash_1k: manual-flash-1k@f010a6 {
 			compatible = "ite,it51xxx-manual-flash-1k";
 			reg = <0x00f010a6 0x5a
-			       0x00f01000 0xa6>;
+			       0x00f01000 0xa6
+			       0x00f04800 0xff>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "disabled";
