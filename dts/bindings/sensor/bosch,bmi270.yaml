@@ -6,6 +6,13 @@ description: |
     The BMI270 is an inertial measurement unit. See more info at:
     https://www.bosch-sensortec.com/products/motion-sensors/imus/bmi270.html
 
+    By default the driver loads the "max_fifo" feature-set configuration
+    file, which does not support the any-motion feature. To use the
+    any-motion trigger (SENSOR_TRIG_MOTION), select the "base" feature
+    set by listing bosch,bmi270-base before this compatible:
+
+        compatible = "bosch,bmi270-base", "bosch,bmi270";
+
 include: sensor-device.yaml
 
 compatible: "bosch,bmi270"
