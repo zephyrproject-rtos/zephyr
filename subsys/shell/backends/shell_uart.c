@@ -586,8 +586,10 @@ static int enable_shell_uart(void)
 	return 0;
 }
 
-SYS_INIT(enable_shell_uart, POST_KERNEL,
-	 CONFIG_SHELL_BACKEND_SERIAL_INIT_PRIORITY);
+SYS_INIT(enable_shell_uart, POST_KERNEL, CONFIG_SHELL_BACKEND_SERIAL_INIT_PRIORITY);
+
+BUILD_ASSERT(DT_PROP_OR(DT_CHOSEN(zephyr_shell_uart), zephyr_zli, 0) == 0,
+	     "Zero latency interrupt must not be enabled on the uart used as shell backend!");
 
 const struct shell *shell_backend_uart_get_ptr(void)
 {
