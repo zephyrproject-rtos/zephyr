@@ -1,0 +1,14 @@
+# Copyright (c) 2025-2026 Conclusive Engineering sp. z o. o.
+# SPDX-License-Identifier: Apache-2.0
+
+include: bt-hci.yaml
+
+description: Bluetooth HCI for Texas Instruments CC35xx SoC
+
+compatible: "ti,cc35xx-bt-hci"
+
+properties:
+  bt-hci-name:
+    default: "TI CC35XX BT HCI"
+  bt-hci-bus:
+    default: "virtual"

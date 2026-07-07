@@ -7,6 +7,7 @@ tests:
     platform_allow:
       - qemu_x86
       - nucleo_wb55rg
+      - lp_em_cc35x1
     integration_platforms:
       - qemu_x86
     tags: bluetooth
