@@ -434,7 +434,7 @@ device.
      - Used for :ref:`boot_mode_api` selection, part of :ref:`retention_api`, which specifies
        what image on a device should be booted.
    * - zephyr,bootloader-info
-     - Selects the retention area used to share information with the bootloader.
+     - Selects the :ref:`retention_api` area used to share information with the bootloader.
    * - zephyr,bt-c2h-uart
      - Selects the UART used for host communication in the
        :zephyr:code-sample:`bluetooth_hci_uart`
