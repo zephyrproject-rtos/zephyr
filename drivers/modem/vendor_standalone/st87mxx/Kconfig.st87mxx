@@ -5,10 +5,10 @@
 
 config MODEM_ST87MXX
 	bool "ST87MXX modem driver"
-	select MODEM_RECEIVER
-	select MODEM_CONTEXT
 	select MODEM_CMD_HANDLER
+	select MODEM_CONTEXT
 	select MODEM_IFACE_UART
+	select MODEM_RECEIVER
 	select MODEM_SOCKET
 	select NET_OFFLOAD
 	select NET_SOCKETS_OFFLOAD
