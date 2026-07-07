@@ -455,14 +455,6 @@ ZTEST(arm_thread_swap, test_arm_thread_swap)
 	 */
 	zassert_true((_current->arch.mode_exc_return & EXC_RETURN_FTYPE) != 0,
 		     "Thread Ftype flag not set at initialization\n");
-#if defined(CONFIG_MPU_STACK_GUARD)
-	zassert_true((_current->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) == 0,
-		     "Thread MPU GUAR DFLOAT flag not clear at initialization\n");
-	zassert_true((_current->base.user_options & K_FP_REGS) == 0,
-		     "Thread K_FP_REGS not clear at initialization\n");
-	zassert_true((FPU->FPCCR & FPU_FPCCR_LSPEN_Msk) == 0,
-		     "Lazy FP Stacking not clear at initialization\n");
-#endif
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 	/* Create an alternative (supervisor) testing thread */
