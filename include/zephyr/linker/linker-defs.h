@@ -63,7 +63,12 @@
  * generate a symbol to mark the start of the objects array for
  * the specified object and level, then link all of those objects
  * (sorted by priority). Ensure the objects aren't discarded if there is
- * no direct reference to them
+ * no direct reference to them.
+ *
+ * The final AUTO bucket collects entries registered with no manual
+ * priority (e.g. DEVICE_DT_DEFINE_AUTO()): it is placed after the whole
+ * manual 0-999 priority range and is ordered purely by the devicetree
+ * dependency ordinal carried in the section name's SUB_ component.
  */
 
 /* clang-format off */
@@ -71,7 +76,8 @@
 		PLACE_SYMBOL_HERE(__##object##_##level##_start);\
 		KEEP(*(SORT(.z_##object##_##level##_P_?_*)));	\
 		KEEP(*(SORT(.z_##object##_##level##_P_??_*)));	\
-		KEEP(*(SORT(.z_##object##_##level##_P_???_*)));
+		KEEP(*(SORT(.z_##object##_##level##_P_???_*)));	\
+		KEEP(*(SORT(.z_##object##_##level##_P_AUTO_*)));
 /* clang-format on */
 
 /*
