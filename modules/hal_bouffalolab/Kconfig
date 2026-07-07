@@ -34,10 +34,16 @@ config BFLB_WL80211_SHIM
 	  Provides the wl80211_supplicant_* entry points and OS abstractions
 	  that the MACSW blob requires. Selected by the BL61x WiFi driver.
 
+config BFLB_AOS_SHIM
+	bool
+	help
+	  OS shim for the BL808 on-chip BLE controller blob.
+	  Implements aos_*, bl_irq_*, and platform functions.
+
 config BFLB_SHIM_HEAP_SIZE
 	int "BLE shim heap size"
 	default 8192
-	depends on BFLB_FREERTOS_SHIM || BFLB_BTBLE_PORT_OS_SHIM
+	depends on BFLB_FREERTOS_SHIM || BFLB_BTBLE_PORT_OS_SHIM || BFLB_AOS_SHIM
 	help
 	  Size in bytes of the dedicated memory pool used by the BLE
 	  controller shim layer for threads, stacks, and queues.
