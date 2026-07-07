@@ -37,7 +37,14 @@ from devicetree import edtlib  # noqa: F401
 _DEVICE_ORD_PREFIX = "__device_dts_ord_"
 
 # Defined init level in order of priority.
-_DEVICE_INIT_LEVELS = ["EARLY", "PRE_KERNEL", "PRE_KERNEL_2", "POST_KERNEL", "APPLICATION", "SMP"]
+_DEVICE_INIT_LEVELS = [
+    "EARLY",
+    "PRE_KERNEL",
+    "PRE_KERNEL_2",
+    "POST_KERNEL",
+    "APPLICATION",
+    "PRE_MAIN",
+]
 
 # List of compatibles for nodes where we don't check the priority.
 _IGNORE_COMPATIBLES = frozenset(
