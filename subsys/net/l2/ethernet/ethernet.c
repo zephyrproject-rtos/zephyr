@@ -841,8 +841,9 @@ static int ethernet_l2_alloc(struct net_if *iface, struct net_pkt *pkt,
 	size_t reserve = get_reserve_ll_header_size(false);
 	struct ethernet_config config;
 
-	if (net_eth_get_hw_config(iface, ETHERNET_CONFIG_TYPE_EXTRA_TX_PKT_HEADROOM,
-				  &config) == 0) {
+	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET_EXTRA_TX_PKT_HEADROOM) &&
+	    net_eth_get_hw_config(iface,
+				  ETHERNET_CONFIG_TYPE_EXTRA_TX_PKT_HEADROOM, &config) == 0) {
 		reserve += config.extra_tx_pkt_headroom;
 	}
 
