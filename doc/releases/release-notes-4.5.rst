@@ -208,6 +208,7 @@ New APIs and options
 
   * :c:macro:`DEVICE_DT_DEFINE_AUTO`
   * :c:macro:`DEVICE_DT_INST_DEFINE_AUTO`
+  * :c:macro:`SYS_INIT_DEPENDS`
 
 * Devicetree
 
