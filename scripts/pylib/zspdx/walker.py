@@ -12,6 +12,7 @@ import yaml
 from west.util import WestNotFound, west_topdir
 
 from zspdx.cmakecache import parse_cmake_cache_file
+from zspdx.cmakefileapi import TargetType
 from zspdx.cmakefileapijson import parse_reply, parse_toolchains_and_info
 from zspdx.getincludes import get_c_includes
 from zspdx.model import (
@@ -706,6 +707,16 @@ class Walker:
         # assuming just one configuration; consider whether this is incorrect
         cfg_targets = self.cm.configurations[0].config_targets
         for cfg_target in cfg_targets:
+            # Skip CMake UTILITY targets (menuconfig, ram_report, run/flash/debug,
+            # code-generation helpers, ...). These are phony build-system convenience
+            # targets, not software components: they produce no build artifacts and
+            # only add noise to the SBOM. Generated sources that end up in the
+            # firmware are still captured via the artifact-producing targets that
+            # compile them, so nothing of value is lost by dropping them.
+            if cfg_target.target.type == TargetType.UTILITY:
+                _logger.debug(f"  - skipping UTILITY target {cfg_target.name}")
+                continue
+
             # build the Component for this target
             component = self.init_config_target_component(cfg_target)
 
