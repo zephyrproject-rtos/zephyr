@@ -12,6 +12,9 @@ config UDC_STM32
 	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
 	select STM32_USB_COMMON
 	select PINCTRL
+	imply GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_USB_ULPI_PHY),reset-gpios)
+	# `disconnect-gpios` is supported only on st,stm32-usb
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_USB),disconnect-gpios)
 	default y
 	help
 	  STM32 USB device controller driver.
