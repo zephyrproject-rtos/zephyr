@@ -1032,6 +1032,19 @@
 			status = "disabled";
 		};
 
+		usbotg_hs: usb@40040000 {
+			compatible = "st,stm32-otghs";
+			reg = <0x40040000 0x40000>;
+			interrupts = <91 0>;
+			interrupt-names = "otghs";
+			num-bidir-endpoints = <9>;
+			ram-size = <4096>;
+			maximum-speed = "high-speed";
+			phys = <&usbphyc>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 25)>;
+			status = "disabled";
+		};
+
 		gpdma1: dma@40021000 {
 			compatible = "st,stm32u5-dma";
 			#dma-cells = <3>;
@@ -1155,6 +1168,16 @@
 	otgfs_phy: otgfs_phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
+	};
+
+	usbphyc: usbphyc {
+		compatible = "st,stm32-usbphyc";
+		#phy-cells = <0>;
+		clocks = <&rcc STM32_CLOCK(AHB1, 26)>,
+			 <&rcc STM32_SRC_HSE USBPHYC_SEL(0)>,
+			 <&rcc STM32_SRC_HSE USBREFCK_SEL(10)>;
+		clock-names = "gate", "mux", "fsel";
+		status = "disabled";
 	};
 
 	die_temp: dietemp {

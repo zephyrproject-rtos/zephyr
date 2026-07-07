@@ -133,6 +133,60 @@
 			resets = <&rctl STM32_RESET(AHB1, 23)>;
 			status = "disabled";
 		};
+
+		/delete-node/ usb@40016000;
+
+		usbotg_hs: otghs@42040000 {
+			compatible = "st,stm32n6-otghs", "st,stm32-otghs";
+			reg = <0x42040000 0x40000>;
+			interrupts = <161 0>;
+			interrupt-names = "otghs";
+			num-bidir-endpoints = <9>;
+			ram-size = <4096>;
+			maximum-speed = "high-speed";
+			clocks = <&rcc STM32_CLOCK(AHB2, 14)>;
+			phys = <&otghs_phy>;
+			status = "disabled";
+		};
+
+		usbotg_fs: otgfs@42080000 {
+			compatible = "st,stm32-otgfs";
+			reg = <0x42080000 0x40000>;
+			interrupts = <74 0>;
+			interrupt-names = "otgfs";
+			num-bidir-endpoints = <6>;
+			ram-size = <1280>;
+			maximum-speed = "full-speed";
+			clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
+				 <&rcc STM32_SRC_HSI48 OTGFS_SEL(0)>;
+			phys = <&otgfs_phy>;
+			status = "disabled";
+		};
+	};
+
+	/delete-node/ usbphy;
+
+	otgfs_phy: otgfs-phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+	};
+
+	otghs_phy: otghs-phy {
+		/*
+		 * This PHY is called "OTG_HS PHY" like on STM32U5 and STM32WBA series.
+		 * However, the configuration is done through RCC registers just like
+		 * the "USBPHYC" found on STM32H7R/S series: use the same compatible
+		 * to reuse the code even though this doesn't match the terminology
+		 * found in the STM32H5E/F Reference Manual. The node name will
+		 * however follow the RM terminology since there is no constraint.
+		 */
+		compatible = "st,stm32-usbphyc";
+		#phy-cells = <0>;
+		clocks = <&rcc STM32_CLOCK(AHB2, 13)>,
+			 <&rcc STM32_SRC_HSE OTGHS_SEL(0)>,
+			 <&rcc STM32_SRC_HSE OTGPHYREFCK_SEL(10)>;
+		clock-names = "gate", "mux", "fsel";
+		status = "disabled";
 	};
 };
 

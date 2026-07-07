@@ -356,6 +356,21 @@
 	};
 };
 
+zephyr_udc0: &usbotg_hs {
+	status = "okay";
+};
+
+&otghs_phy {
+	/*
+	 * HSE runs at 48 MHz on this board.
+	 * Use hse_ck/2 as 24 MHz source.
+	 */
+	clocks = <&rcc STM32_CLOCK(AHB2, 13)>,
+		 <&rcc STM32_SRC_HSE OTGHS_SEL(2)>,
+		 <&rcc STM32_SRC_HSE OTGPHYREFCK_SEL(10)>;
+	status = "okay";
+};
+
 zephyr_jpegenc: &jpeg {
 	status = "okay";
 };

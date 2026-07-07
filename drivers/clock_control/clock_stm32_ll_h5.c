@@ -11,6 +11,7 @@
 #include <soc.h>
 #include <stm32_bitops.h>
 #include <stm32_ll_bus.h>
+#include <stm32_ll_crs.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_utils.h>
@@ -805,6 +806,23 @@ static void set_up_fixed_clock_sources(void)
 	if (IS_ENABLED(STM32_HSI48_ENABLED)) {
 		LL_RCC_HSI48_Enable();
 		while (LL_RCC_HSI48_IsReady() != 1) {
+		}
+
+		if (IS_ENABLED(STM32_HSI48_CRS_USB_SOF)) {
+			/*
+			 * Use SOF from full-speed USB as CRS synchronization source
+			 * as this is the most plausible usecase: XTAL-less USB.
+			 *
+			 * TODO: support arbitrary CRS sync source selection (OTG_HS)
+			 */
+			LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_CRS);
+#if defined(USB_DRD_FS)
+			LL_CRS_SetSyncSignalSource(LL_CRS_SYNC_SOURCE_USB);
+#elif defined(USB_OTG_FS)
+			LL_CRS_SetSyncSignalSource(LL_CRS_SYNC_SOURCE_OTG_FS);
+#endif
+			LL_CRS_EnableFreqErrorCounter();
+			LL_CRS_EnableAutoTrimming();
 		}
 	}
 
