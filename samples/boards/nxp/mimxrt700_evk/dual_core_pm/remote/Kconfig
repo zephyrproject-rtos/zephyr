@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config SAMPLE_RT700_DUAL_CORE_PM_SLEEP_SECONDS
+	int "Power-mode measurement window in seconds"
+	default 5
+	range 1 3600
+	help
+	  Number of seconds each active, sleep, or deep-sleep test case runs.

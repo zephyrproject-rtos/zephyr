@@ -1,0 +1,21 @@
+#
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+sample:
+  name: RT700 EVK dual-core power management
+common:
+  sysbuild: true
+  tags:
+    - boards
+    - nxp
+    - pm
+  build_only: true
+
+tests:
+  sample.boards.nxp.rt700_dual_core_pm:
+    platform_allow:
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+    integration_platforms:
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
