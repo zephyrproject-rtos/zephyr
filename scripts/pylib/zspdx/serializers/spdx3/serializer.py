@@ -662,6 +662,7 @@ class SPDX3Serializer:
             "CONTAINS": (spdx.RelationshipType.contains, False),
             "DESCRIBES": (spdx.RelationshipType.describes, False),
             "DEPENDS_ON": (spdx.RelationshipType.dependsOn, False),
+            "DEPENDENCY_OF": (spdx.RelationshipType.dependsOn, True),
             "DYNAMIC_LINK": (spdx.RelationshipType.hasDynamicLink, False),
             "BUILD_TOOL_OF": (spdx.RelationshipType.usesTool, True),
             "DEV_TOOL_OF": (spdx.RelationshipType.usesTool, True),
