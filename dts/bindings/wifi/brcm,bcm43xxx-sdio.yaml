@@ -1,0 +1,36 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Broadcom BCM43xxx SDIO Wi-Fi (brcmfmac protocol).
+
+  Covers SDIO-attached Broadcom/Cypress combo chips speaking the
+  brcmfmac SDPCM+BCDC protocol (BCM43430A1 / CYW43439 / BCM4334x).
+  Chip identity is read at runtime from chipcommon[0] on the AXI/SB
+  backplane.
+
+  The node is a child of an SDHC controller. The driver reaches the
+  SDHC parent via DT_INST_PARENT(0). Firmware and per-board NVRAM
+  files are selected by Kconfig (CONFIG_WIFI_BRCMFMAC_FIRMWARE_FILE
+  / CONFIG_WIFI_BRCMFMAC_NVRAM_FILE) and resolved against the
+  hal_broadcom blob directory at build time.
+
+compatible: "brcm,bcm43xxx-sdio"
+
+include: base.yaml
+
+properties:
+  wifi-reg-on-gpios:
+    description: |
+      Power / regulator-enable GPIO ("WL_REG_ON" on Cypress modules).
+      Optional: on boards where the SoC firmware asserts this before
+      Zephyr starts, the driver leaves it alone.
+    type: phandle-array
+
+  wifi-host-wake-gpios:
+    description: |
+      Optional host-wake GPIO. When the chip wants attention it
+      drives this line; the driver wakes its RX thread from the IRQ.
+      Not used on platforms where the SDHC driver delivers in-band
+      SDIO interrupts on DAT1.
+    type: phandle-array

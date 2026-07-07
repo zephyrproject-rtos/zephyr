@@ -2967,6 +2967,18 @@ Documentation Infrastructure:
   tests:
     - drivers.net.wifi
 
+"Drivers: Wi-Fi as Broadcom brcmfmac":
+  status: maintained
+  maintainers:
+    - jetpax
+  collaborators:
+    - jukkar
+  files:
+    - drivers/wifi/brcmfmac/
+    - dts/bindings/wifi/brcm,bcm43xxx-sdio.yaml
+  labels:
+    - "area: Wi-Fi"
+
 "Drivers: Wi-Fi as nRF Wi-Fi":
   status: maintained
   maintainers:

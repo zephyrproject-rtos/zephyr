@@ -1,0 +1,79 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIFI_BRCMFMAC
+	bool "Broadcom BCM43xxx SDIO Wi-Fi (brcmfmac)"
+	depends on DT_HAS_BRCM_BCM43XXX_SDIO_ENABLED
+	default y
+	select WIFI_USE_NATIVE_NETWORKING
+	select NET_L2_ETHERNET
+	select NET_L2_WIFI_MGMT
+	select SDHC
+	select SDIO_STACK
+	select GPIO
+	help
+	  Native-L2 driver for SDIO-attached Broadcom/Cypress combo chips
+	  speaking the brcmfmac SDPCM+BCDC protocol. The chip handles
+	  802.11; Zephyr's ethernet/IP stack runs on top. Firmware and
+	  per-board NVRAM are supplied by the hal_broadcom module via
+	  `west blobs fetch hal_broadcom`.
+
+	  When using samples/net/wifi/shell, raise
+	  CONFIG_NET_MGMT_EVENT_STACK_SIZE to 4096 -- the 768-byte default
+	  overflows on scan-result formatting (each AP raises a net_mgmt
+	  event whose handler prints a row).
+
+if WIFI_BRCMFMAC
+
+config WIFI_BRCMFMAC_FIRMWARE_FILE
+	string "Firmware file name (under hal_broadcom blobs)"
+	default "brcmfmac43436s-sdio.bin"
+	help
+	  Name of the brcmfmac firmware blob under
+	  ${ZEPHYR_HAL_BROADCOM_MODULE_DIR}/zephyr/blobs/img/brcmfmac/.
+	  Set by the board defconfig to match the on-board chip.
+
+config WIFI_BRCMFMAC_NVRAM_FILE
+	string "NVRAM file name (under hal_broadcom blobs)"
+	default "brcmfmac43436s-sdio.txt"
+	help
+	  Name of the brcmfmac per-board NVRAM blob under
+	  ${ZEPHYR_HAL_BROADCOM_MODULE_DIR}/zephyr/blobs/img/brcmfmac/.
+	  Encodes board-specific antenna, calibration and PA settings.
+
+config WIFI_BRCMFMAC_CLM_FILE
+	string "CLM blob file name (under hal_broadcom blobs)"
+	default ""
+	help
+	  Optional Country Locale Matrix blob under
+	  ${ZEPHYR_HAL_BROADCOM_MODULE_DIR}/zephyr/blobs/img/brcmfmac/.
+	  Required for trim-on-build (TOB) firmware images that ship with
+	  the CLM regulatory database stripped out (e.g. BCM43458F, or the
+	  RPi-Distro 43430A1 image): without it the radio stays
+	  country-disabled -- country reads back as the null code "#n" and
+	  radio ops fail BCME_NOTUP. Firmware with a built-in CLM (e.g. the
+	  43436s image) does not need it. Leave empty to skip CLM upload
+	  entirely -- the driver links a zero-length blob in that case.
+
+config WIFI_BRCMFMAC_COUNTRY
+	string "Regulatory country code (ISO3166 alpha2, empty = CLM default)"
+	default ""
+	help
+	  Country code pushed to the firmware after WLC_UP via the
+	  "country" iovar, sent as alpha2 with rev=0 (the fallback Linux
+	  uses for this chip family). Leave empty to keep the firmware /
+	  CLM default domain. The code must exist in the firmware's CLM
+	  or the set is rejected and the default is kept.
+
+config WIFI_BRCMFMAC_RX_THREAD_STACK_SIZE
+	int "RX thread stack size"
+	default 4096
+	help
+	  Stack for the dedicated RX polling thread that drains F2 and
+	  dispatches frames by SDPCM channel.
+
+config WIFI_BRCMFMAC_RX_THREAD_PRIO
+	int "RX thread priority"
+	default 4
+
+endif # WIFI_BRCMFMAC
