@@ -267,7 +267,7 @@ DocumentNamespace: {namespace}
     def _write_files_analyzed(self, f, component):
         """Write the FilesAnalyzed section and verification code for a component."""
         if not component.files:
-            f.write("FilesAnalyzed: false\nPackageComment: Utility target; no files\n\n")
+            f.write("FilesAnalyzed: false\n\n")
             return
 
         if component.license_info_from_files:
@@ -326,6 +326,10 @@ PackageCopyrightText: {component.copyright_text}
                 f.write(f"ExternalRef: PACKAGE-MANAGER purl {ref.locator}\n")
             else:
                 _logger.warning(f"Unknown external reference ({ref.locator})")
+
+        # Comment describing the package's role
+        if component.comment:
+            f.write(f"PackageComment: <text>{component.comment}</text>\n")
 
         # Files analyzed and verification code
         self._write_files_analyzed(f, component)

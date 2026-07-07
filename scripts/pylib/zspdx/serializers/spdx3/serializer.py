@@ -561,6 +561,8 @@ class SPDX3Serializer:
         package.name = component.name
         package.creationInfo = self.creation_info._id
         package.software_primaryPurpose = self._purpose_to_spdx3(component.purpose)
+        if component.comment:
+            package.comment = component.comment
 
         # Version
         if component.version:

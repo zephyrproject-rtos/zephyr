@@ -152,6 +152,7 @@ class SBOMComponent:
         copyright_text: Copyright text for the component.
         external_references: Structured external references such as CPEs and package URLs.
         supplier: Supplier or vendor name.
+        comment: Free-form note describing the component's role in the SBOM.
         target_build_file: Main build artifact when the component represents a build target.
         metadata: Additional data not represented by the common model fields.
     """
@@ -170,6 +171,7 @@ class SBOMComponent:
     copyright_text: str = NOASSERTION
     external_references: list[ExternalReference] = field(default_factory=list)
     supplier: str = ""
+    comment: str = ""
     target_build_file: SBOMFile | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
