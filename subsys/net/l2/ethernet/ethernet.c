@@ -808,6 +808,8 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 {
 	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *eth = dev->api;
+	struct net_linkaddr *mac_addr;
+	int ret;
 
 	NET_ASSERT(eth != NULL);
 
@@ -817,10 +819,31 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 		if (eth->stop) {
 			return eth->stop(dev, iface);
 		}
-	} else {
-		if (eth->start) {
-			return eth->start(dev, iface);
+
+		return 0;
+	}
+
+	if (eth->start) {
+		ret = eth->start(dev, iface);
+		if (ret < 0) {
+			return ret;
 		}
+	}
+
+	/* Validate the MAC address after the driver has started so that
+	 * companion chipsets which fetch their address from firmware/OTP
+	 * during bring-up have a valid link address by this point. A failure
+	 * here is terminal: net_if_up() fails and the interface is left
+	 * unusable, the same as if eth->start() itself had failed, so there
+	 * is no need to roll back with eth->stop() (which not every driver
+	 * implements).
+	 */
+	mac_addr = net_if_get_link_addr(iface);
+
+	if ((mac_addr->len != NET_ETH_ADDR_LEN) ||
+	    !net_eth_is_addr_valid((struct net_eth_addr *)mac_addr->addr)) {
+		NET_ERR("Invalid MAC address for iface %d (%p)", net_if_get_by_iface(iface), iface);
+		return -EINVAL;
 	}
 
 	return 0;
