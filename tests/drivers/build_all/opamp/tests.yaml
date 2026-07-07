@@ -17,6 +17,7 @@ tests:
     platform_allow:
       - frdm_mcxa366
       - frdm_mcxa346
+      - frdm_mcxa344
   drivers.opamp.build.stm32_opamp:
     platform_allow:
       - nucleo_g474re
