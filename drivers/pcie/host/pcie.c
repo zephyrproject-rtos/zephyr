@@ -376,6 +376,15 @@ static bool scan_flag(const struct pcie_scan_opt *opt, uint32_t flag)
 /* Forward declaration needed since scanning a device may reveal a bridge */
 static bool scan_bus(uint8_t bus, const struct pcie_scan_opt *opt);
 
+/* Global override hook pointer definition accessed by the shell masking subsystem */
+bool (*pcie_scan_override_hook)(pcie_bdf_t bdf) = NULL;
+
+static inline bool should_skip_masked_bdf(pcie_bdf_t bdf, uint8_t func)
+{
+	ARG_UNUSED(func);
+	return (pcie_scan_override_hook != NULL) && pcie_scan_override_hook(bdf);
+}
+
 static bool scan_dev(uint8_t bus, uint8_t dev, const struct pcie_scan_opt *opt)
 {
 	for (uint8_t func = 0; func <= PCIE_MAX_FUNC; func++) {
@@ -383,6 +392,14 @@ static bool scan_dev(uint8_t bus, uint8_t dev, const struct pcie_scan_opt *opt)
 		uint32_t secondary = 0;
 		uint32_t id, type;
 		bool do_cb;
+
+		/* Skip the scan loops if this BDF is registered in the mask */
+		if (should_skip_masked_bdf(bdf, func)) {
+			if (func == 0) {
+				break;
+			}
+			continue;
+		}
 
 		id = pcie_conf_read(bdf, PCIE_CONF_ID);
 		if (!PCIE_ID_IS_VALID(id)) {

@@ -391,12 +391,171 @@ static int cmd_pcie_ls(const struct shell *sh, size_t argc, char **argv)
 
 	return 0;
 }
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_pcie_cmds,
+
+/* Interactive PCIe Configuration Space Write Utility */
+static int cmd_pcie_write(const struct shell *sh, size_t argc, char **argv)
+{
+	if (argc < 4) {
+		shell_error(sh, "Usage: pcie write <bus:dev.func> "
+				"<register_word_offset> <32bit_hex_data>");
+		return -EINVAL;
+	}
+
+	pcie_bdf_t bdf = get_bdf(argv[1]);
+
+	if (bdf == PCIE_BDF_NONE) {
+		shell_error(sh, "Invalid BDF layout format.");
+		return -EINVAL;
+	}
+
+	int err = 0;
+	unsigned int reg = (unsigned int)shell_strtoul(argv[2], 0, &err);
+
+	if (err != 0) {
+		shell_error(sh, "Invalid argument: %s", argv[2]);
+		return err;
+	}
+	uint32_t data = (uint32_t)shell_strtoul(argv[3], 0, &err);
+
+	if (err != 0) {
+		shell_error(sh, "Invalid argument: %s", argv[3]);
+		return err;
+	}
+
+	/* Check link responsiveness before modifying the target register block */
+	uint32_t id = pcie_conf_read(bdf, PCIE_CONF_ID);
+
+	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
+		shell_error(sh, "No responsive endpoint found at target BDF.");
+		return -ENODEV;
+	}
+
+	uint32_t current_val = pcie_conf_read(bdf, reg);
+
+	shell_print(sh, "Writing 0x%08x to %u:%x.%u reg %u (prev: 0x%08x)...", data,
+		    PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf), reg,
+		    current_val);
+
+	/* Execute the low-level configuration register write operation */
+	pcie_conf_write(bdf, reg, data);
+
+	/* Instantly execute a read-back check to verify latch stability */
+	uint32_t read_back = pcie_conf_read(bdf, reg);
+
+	shell_print(sh, "Read-back Verification Value: 0x%08X", read_back);
+
+	return 0;
+}
+
+#define MAX_MASKED_DEVICES 8
+static pcie_bdf_t masked_bdfs[MAX_MASKED_DEVICES];
+static uint32_t masked_count;
+
+/* Verification callback hook to check if a BDF coordinate is masked out */
+static bool is_bdf_masked(pcie_bdf_t bdf)
+{
+	for (uint32_t i = 0; i < masked_count; i++) {
+		if (masked_bdfs[i] == bdf) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/* Subcommand: pcie mask ignore <bus:dev.func> */
+static int cmd_pcie_mask_ignore(const struct shell *sh, size_t argc, char **argv)
+{
+	if (argc < 2) {
+		shell_error(sh, "Usage: pcie mask ignore <bus:dev.func>");
+		return -EINVAL;
+	}
+
+	if (masked_count >= MAX_MASKED_DEVICES) {
+		shell_error(sh, "Mask table allocation full (Max %u).", MAX_MASKED_DEVICES);
+		return -ENOMEM;
+	}
+
+	pcie_bdf_t bdf = get_bdf(argv[1]);
+
+	if (bdf == PCIE_BDF_NONE) {
+		shell_error(sh, "Invalid BDF layout format specification.");
+		return -EINVAL;
+	}
+
+	/* Mask the entire device; normalize to function 0 */
+	bdf = PCIE_BDF(PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), 0);
+
+	if (is_bdf_masked(bdf)) {
+		shell_warn(sh, "Target BDF is already registered in the mask array.");
+		return 0;
+	}
+
+	masked_bdfs[masked_count++] = bdf;
+	pcie_scan_override_hook = is_bdf_masked;
+
+	shell_print(sh, "Successfully masked BDF %u:%x.%u. Bus scans will ignore this slot.",
+		    PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf));
+
+	return 0;
+}
+
+/* Subcommand: pcie mask clear */
+static int cmd_pcie_mask_clear(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	masked_count = 0;
+	pcie_scan_override_hook = NULL;
+	shell_print(sh, "Software PCIe mask tracking array successfully cleared.");
+	return 0;
+}
+
+/* Subcommand: pcie mask show */
+static int cmd_pcie_mask_show(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	shell_print(sh, "--- Active PCIe Software Mask Registry Matrix ---");
+	if (masked_count == 0) {
+		shell_print(sh, " No devices currently masked.");
+		return 0;
+	}
+
+	for (uint32_t i = 0; i < masked_count; i++) {
+		pcie_bdf_t bdf = masked_bdfs[i];
+
+		shell_print(sh, " [%u] Ignored BDF Slot -> %u:%x.%u", i, PCIE_BDF_TO_BUS(bdf),
+			    PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf));
+	}
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_pcie_mask_cmds,
+	SHELL_CMD_ARG(ignore, NULL,
+		      "Register a coordinate slot to be ignored by bus scans",
+		      cmd_pcie_mask_ignore, 2, 0),
+	SHELL_CMD_ARG(show, NULL,
+		      "Display all blacklisted BDF slots currently active",
+		      cmd_pcie_mask_show, 1, 0),
+	SHELL_CMD_ARG(clear, NULL,
+		      "Flush the mask configuration tracking registers",
+		      cmd_pcie_mask_clear, 1, 0),
+	SHELL_SUBCMD_SET_END);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_pcie_cmds,
 	SHELL_CMD_ARG(ls, NULL,
 		      "List PCIE devices\n"
 		      "Usage: ls [bus:device:function] [dump]",
 		      cmd_pcie_ls, 1, 2),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
-);
+	SHELL_CMD(mask, &sub_pcie_mask_cmds, "Manage PCIe device scanning parameters", NULL),
+	SHELL_CMD_ARG(write, NULL,
+		      "Write a 32-bit word directly to a device register.\n"
+		      "Usage: write <bus:device.function> <reg_offset> <32bit_hex>",
+		      cmd_pcie_write, 4, 0),
+	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(pcie, &sub_pcie_cmds, "PCI(e) device information", cmd_pcie_ls);
