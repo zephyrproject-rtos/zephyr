@@ -17,6 +17,14 @@
 #ifndef POWER_DEFAULT_PMICMODE_DS
 #define POWER_DEFAULT_PMICMODE_DS 1U
 #endif
+#if defined(CONFIG_POWEROFF)
+#ifndef POWER_DEFAULT_PMICMODE_DPD
+#define POWER_DEFAULT_PMICMODE_DPD 2U
+#endif
+#ifndef POWER_DEFAULT_PMICMODE_FDPD
+#define POWER_DEFAULT_PMICMODE_FDPD 3U
+#endif
+#endif /* CONFIG_POWEROFF */
 
 #define SLEEPCON1_DEEP_SLEEP					\
 	(SLEEPCON1_SLEEPCFG_SENSEP_MAINCLK_SHUTOFF_MASK |	\
@@ -94,6 +102,65 @@ static void program_pdsleepcfg0_deep(const uint32_t excl[7])
 	PMC1->PDSLEEPCFG0 = pdsleepcfg0 | (deep_sleep_set & ~excl[1]);
 }
 #endif /* CONFIG_PM */
+
+#if defined(CONFIG_POWEROFF)
+/* Build PMC1 PDSLEEPCFG0 for Deep Power Down (DPD) / Full Deep Power Down (FDPD).
+ * Mirrors the compute-domain path: set the [DPD]/[FDPD] override bit on top of the
+ * deep-sleep + DSR domain bits.
+ */
+static void program_pdsleepcfg0_dpd(bool full)
+{
+	/*
+	 * Sense-side deep-sleep set for the VDD2 domains. Unlike the compute view,
+	 * the sense domain also votes V2COMP_DSR / V2COM_DSR down (excl-filtered).
+	 */
+	const uint32_t deep_sleep_set =
+		PMC_PDSLEEPCFG0_V2DSP_PD_MASK | PMC_PDSLEEPCFG0_V2MIPI_PD_MASK |
+		PMC_PDSLEEPCFG0_V2NMED_DSR_MASK | PMC_PDSLEEPCFG0_VNCOM_DSR_MASK |
+		PMC_PDSLEEPCFG0_V2COMP_DSR_MASK | PMC_PDSLEEPCFG0_V2COM_DSR_MASK;
+
+	const uint32_t force_clear =
+		PMC_PDSLEEPCFG0_FDSR_MASK | PMC_PDSLEEPCFG0_DPD_MASK |
+		PMC_PDSLEEPCFG0_FDPD_MASK | PMC_PDSLEEPCFG0_PMICMODE_MASK;
+
+	/*
+	 * Clear the whole deep-sleep set (including V2COMP_DSR / V2COM_DSR) before
+	 * re-applying it, so excluding a bit via excl[1] reliably clears it and no
+	 * stale value leaks through from the live register.
+	 */
+	uint32_t pdsleepcfg0 = PMC1->PDSLEEPCFG0 & ~(deep_sleep_set | force_clear);
+
+	PMC1->PDSLEEPCFG0 = pdsleepcfg0 | (deep_sleep_set & ~excl[1]);
+}
+#endif /* CONFIG_PM */
+
+#if defined(CONFIG_POWEROFF)
+/* Build PMC1 PDSLEEPCFG0 for Deep Power Down (DPD) / Full Deep Power Down (FDPD).
+ * Mirrors the compute-domain path: set the [DPD]/[FDPD] override bit on top of the
+ * deep-sleep + DSR domain bits.
+ */
+static void program_pdsleepcfg0_dpd(bool full)
+{
+	uint32_t pdsleepcfg0 = PMC1->PDSLEEPCFG0 &
+			       ~(PMC_PDSLEEPCFG0_V2DSP_PD_MASK | PMC_PDSLEEPCFG0_V2MIPI_PD_MASK |
+				 PMC_PDSLEEPCFG0_V2NMED_DSR_MASK | PMC_PDSLEEPCFG0_VNCOM_DSR_MASK);
+
+	pdsleepcfg0 &= ~(PMC_PDSLEEPCFG0_PMICMODE_MASK | PMC_PDSLEEPCFG0_FDSR_MASK);
+
+	PMC1->PDSLEEPCFG0 = pdsleepcfg0 |
+			    (PMC_PDSLEEPCFG0_V2DSP_PD_MASK | PMC_PDSLEEPCFG0_V2MIPI_PD_MASK |
+			     PMC_PDSLEEPCFG0_V2NMED_DSR_MASK | PMC_PDSLEEPCFG0_VNCOM_DSR_MASK |
+			     PMC_PDSLEEPCFG0_V2COMP_DSR_MASK | PMC_PDSLEEPCFG0_V2COM_DSR_MASK) |
+			    (full ? PMC_PDSLEEPCFG0_FDPD_MASK : PMC_PDSLEEPCFG0_DPD_MASK);
+
+	if (!full) {
+		/* DPD keeps VDD1V8 alive; make sure the DSR request bits in the run
+		 * config are cleared so they cannot leak into the cold-boot state.
+		 */
+		PMC1->PDRUNCFG0 &= ~(PMC_PDRUNCFG0_V2NMED_DSR_MASK | PMC_PDRUNCFG0_VNCOM_DSR_MASK);
+	}
+}
+#endif /* CONFIG_POWEROFF */
 
 static void program_pdsleepcfg1_to_5(const uint32_t excl[7])
 {
@@ -201,3 +268,63 @@ void power_enter_deep_sleep(const uint32_t exclude_from_pd[7])
 	SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
 }
 #endif /* CONFIG_PM */
+
+#if defined(CONFIG_POWEROFF)
+/*!
+ * @brief Enter Deep Power Down (DPD) or Full Deep Power Down (FDPD) from the
+ * Sense domain (PMC1 / SLEEPCON1).
+ *
+ * @details Mirror of the compute-domain path: shares the deep-sleep PMC/SLEEPCON
+ * programming but sets the [DPD]/[FDPD] override bit, so the whole chip powers off
+ * once the aggregation resolves (i.e. the Compute domain is also reset / powered
+ * off / selecting DPD-FDPD). One-way trip: the WFI never returns and the part cold
+ * boots (POR) on wake. Independent of CONFIG_PM (no arch_pm hooks, nothing to
+ * restore). The Sense domain has no XIP, so no ramfunc relocation is needed.
+ */
+void power_enter_deep_power_down(bool full)
+{
+	/* DPD/FDPD power everything off; the [DPD]/[FDPD] override bit governs the
+	 * whole power-down, so there is nothing to keep alive. Pass an empty exclude
+	 * mask to the programming helpers shared with the deep-sleep path.
+	 */
+	const uint32_t exclude_none[7] = {0};
+
+	SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+
+	program_sleepcon_for_deep_sleep(exclude_none);
+	program_pdsleepcfg0_dpd(full);
+	program_pmic_and_regulators(exclude_none, full ? POWER_DEFAULT_PMICMODE_FDPD
+						       : POWER_DEFAULT_PMICMODE_DPD);
+	program_pdsleepcfg1_to_5(exclude_none);
+
+	/* Latch the PMC programming above: wait for any in-flight update,
+	 * pulse APPLYCFG, then wait for completion before WFI.
+	 */
+	while ((PMC1->STATUS & PMC_STATUS_BUSY_MASK) != 0U) {
+	}
+	PMC1->CTRL |= PMC_CTRL_APPLYCFG_MASK;
+	while ((PMC1->STATUS & PMC_STATUS_BUSY_MASK) != 0U) {
+	}
+
+	pmc_clear_event_flags();
+	(void)lvd_save_disable();
+
+	/* Sense domain unconditionally ignores FRO2/LPOSC PDR. */
+	SLEEPCON1->PWRDOWN_WAIT |=
+		SLEEPCON1_PWRDOWN_WAIT_IGN_FRO2PDR_MASK | SLEEPCON1_PWRDOWN_WAIT_IGN_LPOSCPDR_MASK;
+
+	/* One-way trip: mask interrupts and clear BASEPRI so WFI is not held off.
+	 * There is no state to save because we never resume (unlike the deep-sleep
+	 * path, this deliberately does not use arch_pm_state_set_prepare()/finish()).
+	 */
+	__disable_irq();
+	__set_BASEPRI(0);
+	__DSB();
+	__ISB();
+
+	__WFI();
+
+	/* DPD/FDPD power the domain off; WFI never returns (cold boot on wake). */
+	CODE_UNREACHABLE;
+}
+#endif /* CONFIG_POWEROFF */
