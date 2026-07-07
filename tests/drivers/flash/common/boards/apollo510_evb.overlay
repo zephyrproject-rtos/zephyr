@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 128 KB storage area (64 x 2 KB erase pages) */
+		storage_partition: partition@f0000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0xf0000 DT_SIZE_K(128)>;
+		};
+	};
+};
