@@ -15,6 +15,7 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/mem_mgmt/system_vm/backend.h>
 #include <zephyr/sys/bitarray.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/math_extras.h>
@@ -551,7 +552,7 @@ static int map_anon_page(void *addr, uint32_t flags)
 	}
 
 	phys = k_mem_page_frame_to_phys(pf);
-	arch_mem_map(addr, phys, CONFIG_MMU_PAGE_SIZE, flags);
+	sys_mm_vm_backend_mem_map(addr, phys, CONFIG_MMU_PAGE_SIZE, flags);
 
 	if (lock) {
 		k_mem_page_frame_set(pf, K_MEM_PAGE_FRAME_PINNED);
@@ -616,9 +617,8 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 	/* Unmap both guard pages to make sure accessing them
 	 * will generate fault.
 	 */
-	arch_mem_unmap(dst, CONFIG_MMU_PAGE_SIZE);
-	arch_mem_unmap(dst + CONFIG_MMU_PAGE_SIZE + size,
-		       CONFIG_MMU_PAGE_SIZE);
+	sys_mm_vm_backend_mem_unmap(dst, CONFIG_MMU_PAGE_SIZE);
+	sys_mm_vm_backend_mem_unmap(dst + CONFIG_MMU_PAGE_SIZE + size, CONFIG_MMU_PAGE_SIZE);
 
 	/* Skip over the "before" guard page in returned address. */
 	dst += CONFIG_MMU_PAGE_SIZE;
@@ -630,10 +630,10 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 		if ((flags & K_MEM_MAP_LOCK) == 0) {
 			flags |= K_MEM_MAP_UNPAGED;
 			VIRT_FOREACH(dst, size, pos) {
-				arch_mem_map(pos,
-					     uninit ? ARCH_UNPAGED_ANON_UNINIT
-						    : ARCH_UNPAGED_ANON_ZERO,
-					     CONFIG_MMU_PAGE_SIZE, flags);
+				sys_mm_vm_backend_mem_map(pos,
+							  uninit ? ARCH_UNPAGED_ANON_UNINIT
+								 : ARCH_UNPAGED_ANON_ZERO,
+							  CONFIG_MMU_PAGE_SIZE, flags);
 			}
 			LOG_DBG("memory mapping anon pages %p to %p unpaged", dst, pos-1);
 			/* skip the memset() below */
@@ -654,11 +654,11 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 	} else {
 		/* Mapping known physical memory.
 		 *
-		 * arch_mem_map() is a void function and does not return
+		 * sys_mm_vm_backend_mem_map() is a void function and does not return
 		 * anything. Arch code usually uses ASSERT() to catch
 		 * mapping errors. Assume this works correctly for now.
 		 */
-		arch_mem_map(dst, phys, size, flags);
+		sys_mm_vm_backend_mem_map(dst, phys, size, flags);
 	}
 
 out:
@@ -675,7 +675,7 @@ out:
 
 fail_need_unmap:
 	/* Need to unmap already mappped pages if we encounter any errors. */
-	arch_mem_unmap(failed_unmap_from, failed_unmap_to - failed_unmap_from);
+	sys_mm_vm_backend_mem_unmap(failed_unmap_from, failed_unmap_to - failed_unmap_from);
 
 	return NULL;
 }
@@ -705,7 +705,7 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 	 * using k_mem_map().
 	 */
 	pos = addr;
-	ret = arch_page_phys_get(pos - CONFIG_MMU_PAGE_SIZE, NULL);
+	ret = sys_mm_vm_backend_page_phys_get(pos - CONFIG_MMU_PAGE_SIZE, NULL);
 	if (ret == 0) {
 		__ASSERT(ret == 0,
 			 "%s: cannot find preceding guard page for (%p, %zu)",
@@ -713,7 +713,7 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 		goto out;
 	}
 
-	ret = arch_page_phys_get(pos + size, NULL);
+	ret = sys_mm_vm_backend_page_phys_get(pos + size, NULL);
 	if (ret == 0) {
 		__ASSERT(ret == 0,
 			 "%s: cannot find succeeding guard page for (%p, %zu)",
@@ -728,7 +728,7 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 			enum arch_page_location status;
 			uintptr_t location;
 
-			status = arch_page_location_get(pos, &location);
+			status = sys_mm_vm_backend_page_location_get(pos, &location);
 			switch (status) {
 			case ARCH_PAGE_LOCATION_PAGED_OUT:
 				/*
@@ -736,7 +736,7 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 				 * Simply get rid of the MMU entry and free
 				 * corresponding backing store.
 				 */
-				arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
+				sys_mm_vm_backend_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
 				k_mem_paging_backing_store_location_free(location);
 				continue;
 			case ARCH_PAGE_LOCATION_PAGED_IN:
@@ -744,18 +744,18 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 				 * The page is in memory but it may not be
 				 * accessible in order to manage tracking
 				 * of the ARCH_DATA_PAGE_ACCESSED flag
-				 * meaning arch_page_phys_get() could fail.
+				 * meaning sys_mm_vm_backend_page_phys_get() could fail.
 				 * Still, we know the actual phys address.
 				 */
 				phys = location;
 				ret = 0;
 				break;
 			default:
-				ret = arch_page_phys_get(pos, &phys);
+				ret = sys_mm_vm_backend_page_phys_get(pos, &phys);
 				break;
 			}
 #else
-			ret = arch_page_phys_get(pos, &phys);
+			ret = sys_mm_vm_backend_page_phys_get(pos, &phys);
 #endif
 			__ASSERT(ret == 0,
 				 "%s: cannot unmap an unmapped address %p",
@@ -787,7 +787,7 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 				goto out;
 			}
 
-			arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
+			sys_mm_vm_backend_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
 #ifdef CONFIG_DEMAND_PAGING
 			if (IS_ENABLED(CONFIG_EVICTION_TRACKING) &&
 			    (!k_mem_page_frame_is_pinned(pf))) {
@@ -806,7 +806,7 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 		 * have been unmapped. We just need to unmapped the in-between
 		 * region [addr, (addr + size)).
 		 */
-		arch_mem_unmap(addr, size);
+		sys_mm_vm_backend_mem_unmap(addr, size);
 	}
 
 	/* There are guard pages just before and after the mapped
@@ -835,15 +835,15 @@ int k_mem_update_flags(void *addr, size_t size, uint32_t flags)
 	 * by unmapping and remapping the same physical memory using new flags.
 	 */
 
-	ret = arch_page_phys_get(addr, &phys);
+	ret = sys_mm_vm_backend_page_phys_get(addr, &phys);
 	if (ret < 0) {
 		goto out;
 	}
 
 	/* TODO: detect and handle paged-out memory as well */
 
-	arch_mem_unmap(addr, size);
-	arch_mem_map(addr, phys, size, flags);
+	sys_mm_vm_backend_mem_unmap(addr, size);
+	sys_mm_vm_backend_mem_map(addr, phys, size, flags);
 
 out:
 	k_spin_unlock(&z_mm_lock, key);
@@ -960,17 +960,17 @@ void k_mem_map_phys_bare(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32
 		 "wraparound for virtual address %p (size %zu)",
 		 dest_addr, size);
 
-	LOG_DBG("arch_mem_map(%p, 0x%lx, %zu, %x) offset %lu", (void *)dest_addr,
+	LOG_DBG("sys_mm_vm_backend_mem_map(%p, 0x%lx, %zu, %x) offset %lu", (void *)dest_addr,
 		aligned_phys, aligned_size, flags, addr_offset);
 
-	arch_mem_map(dest_addr, aligned_phys, aligned_size, flags);
+	sys_mm_vm_backend_mem_map(dest_addr, aligned_phys, aligned_size, flags);
 	k_spin_unlock(&z_mm_lock, key);
 
 	*virt_ptr = dest_addr + addr_offset;
 	return;
 fail:
 	/* May re-visit this in the future, but for now running out of
-	 * virtual address space or failing the arch_mem_map() call is
+	 * virtual address space or failing the sys_mm_vm_backend_mem_map() call is
 	 * an unrecoverable situation.
 	 *
 	 * Other problems not related to resource exhaustion we leave as
@@ -997,10 +997,10 @@ void k_mem_unmap_phys_bare(uint8_t *virt, size_t size)
 
 	key = k_spin_lock(&z_mm_lock);
 
-	LOG_DBG("arch_mem_unmap(0x%lx, %zu) offset %lu",
+	LOG_DBG("sys_mm_vm_backend_mem_unmap(0x%lx, %zu) offset %lu",
 		aligned_virt, aligned_size, addr_offset);
 
-	arch_mem_unmap(UINT_TO_POINTER(aligned_virt), aligned_size);
+	sys_mm_vm_backend_mem_unmap(UINT_TO_POINTER(aligned_virt), aligned_size);
 	virt_region_free(UINT_TO_POINTER(aligned_virt), aligned_size);
 	k_spin_unlock(&z_mm_lock, key);
 }
@@ -1069,7 +1069,7 @@ static void z_paging_ondemand_section_map(void)
 	flags = K_MEM_MAP_UNPAGED | K_MEM_PERM_EXEC | K_MEM_CACHE_WB;
 	VIRT_FOREACH(lnkr_ondemand_text_start, size, addr) {
 		k_mem_paging_backing_store_location_query(addr, &location);
-		arch_mem_map(addr, location, CONFIG_MMU_PAGE_SIZE, flags);
+		sys_mm_vm_backend_mem_map(addr, location, CONFIG_MMU_PAGE_SIZE, flags);
 		sys_bitarray_set_region(&virt_region_bitmap, 1,
 					virt_to_bitmap_offset(addr, CONFIG_MMU_PAGE_SIZE));
 	}
@@ -1078,7 +1078,7 @@ static void z_paging_ondemand_section_map(void)
 	flags = K_MEM_MAP_UNPAGED | K_MEM_CACHE_WB;
 	VIRT_FOREACH(lnkr_ondemand_rodata_start, size, addr) {
 		k_mem_paging_backing_store_location_query(addr, &location);
-		arch_mem_map(addr, location, CONFIG_MMU_PAGE_SIZE, flags);
+		sys_mm_vm_backend_mem_map(addr, location, CONFIG_MMU_PAGE_SIZE, flags);
 		sys_bitarray_set_region(&virt_region_bitmap, 1,
 					virt_to_bitmap_offset(addr, CONFIG_MMU_PAGE_SIZE));
 	}
@@ -1100,7 +1100,7 @@ void z_mem_manage_init(void)
 	/* If some page frames are unavailable for use as memory, arch
 	 * code will mark K_MEM_PAGE_FRAME_RESERVED in their flags
 	 */
-	arch_reserved_pages_update();
+	sys_mm_vm_backend_reserved_pages_update();
 #endif /* CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES */
 
 	/* The entire Zephyr image is mapped and pinned at boot. Demand
@@ -1320,7 +1320,7 @@ static int page_frame_prepare_locked(struct k_mem_page_frame *pf, bool *dirty_pt
 	}
 
 	if (dirty || page_fault) {
-		arch_mem_scratch(phys);
+		sys_mm_vm_backend_mem_scratch(phys);
 	}
 
 	if (k_mem_page_frame_is_mapped(pf)) {
@@ -1330,7 +1330,7 @@ static int page_frame_prepare_locked(struct k_mem_page_frame *pf, bool *dirty_pt
 			LOG_ERR("out of backing store memory");
 			return -ENOMEM;
 		}
-		arch_mem_page_out(k_mem_page_frame_to_virt(pf), *location_ptr);
+		sys_mm_vm_backend_mem_page_out(k_mem_page_frame_to_virt(pf), *location_ptr);
 
 		if (IS_ENABLED(CONFIG_EVICTION_TRACKING)) {
 			k_mem_paging_eviction_remove(pf);
@@ -1373,7 +1373,7 @@ static int do_mem_evict(void *addr)
 #endif
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	key = k_spin_lock(&z_mm_lock);
-	flags = arch_page_info_get(addr, &phys, false);
+	flags = sys_mm_vm_backend_mem_page_info_get(addr, &phys, false);
 	__ASSERT((flags & ARCH_DATA_PAGE_NOT_MAPPED) == 0,
 		 "address %p isn't mapped", addr);
 	if ((flags & ARCH_DATA_PAGE_LOADED) == 0) {
@@ -1465,7 +1465,7 @@ int k_mem_page_frame_evict(uintptr_t phys)
 		ret = 0;
 		goto out;
 	}
-	flags = arch_page_info_get(k_mem_page_frame_to_virt(pf), NULL, false);
+	flags = sys_mm_vm_backend_mem_page_info_get(k_mem_page_frame_to_virt(pf), NULL, false);
 	/* Shouldn't ever happen */
 	__ASSERT((flags & ARCH_DATA_PAGE_LOADED) != 0, "data page not loaded");
 	dirty = (flags & ARCH_DATA_PAGE_DIRTY) != 0;
@@ -1655,7 +1655,7 @@ static bool do_page_fault(void *addr, bool pin)
 	key = k_spin_lock(&z_mm_lock);
 	faulting_thread = _current;
 
-	status = arch_page_location_get(addr, &page_in_location);
+	status = sys_mm_vm_backend_page_location_get(addr, &page_in_location);
 	if (status == ARCH_PAGE_LOCATION_BAD) {
 		/* Return false to treat as a fatal error */
 		result = false;
@@ -1725,7 +1725,7 @@ static bool do_page_fault(void *addr, bool pin)
 		k_mem_page_frame_set(pf, K_MEM_PAGE_FRAME_PINNED);
 	}
 
-	arch_mem_page_in(addr, k_mem_page_frame_to_phys(pf));
+	sys_mm_vm_backend_mem_page_in(addr, k_mem_page_frame_to_phys(pf));
 	k_mem_paging_backing_store_page_finalize(pf, page_in_location);
 	if (IS_ENABLED(CONFIG_EVICTION_TRACKING) && (!pin)) {
 		k_mem_paging_eviction_add(pf);
@@ -1789,7 +1789,7 @@ static void do_mem_unpin(void *addr)
 	uintptr_t flags, phys;
 
 	key = k_spin_lock(&z_mm_lock);
-	flags = arch_page_info_get(addr, &phys, false);
+	flags = sys_mm_vm_backend_mem_page_info_get(addr, &phys, false);
 	__ASSERT((flags & ARCH_DATA_PAGE_NOT_MAPPED) == 0,
 		 "invalid data page at %p", addr);
 	if ((flags & ARCH_DATA_PAGE_LOADED) != 0) {
