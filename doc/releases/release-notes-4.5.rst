@@ -389,6 +389,17 @@ Other notable changes
     failure.  Use :c:func:`k_thread_cpu_pin` to reassign a thread to a
     different CPU.
 
+* Timer
+
+  * Tickless system-timer drivers can now be built on a shared implementation
+    header, :file:`drivers/timer/system_timer_generic.h`, which owns the tick
+    accounting each driver previously open-coded (and occasionally got wrong):
+    the cycle-to-tick conversion, the announce baseline, the tick-aligned
+    deadline and the counter wrap and range handling. A driver reduces to a few
+    cycle-domain primitives, a cycle-counter read plus an absolute-compare or
+    relative-reload arm. Many in-tree drivers have been converted, with more to
+    follow; see the :ref:`migration guide <migration_4.5>` for how to use it.
+
 * Wi-Fi
 
   * Removed the ``samples/net/wifi/test_certs/rsa2k`` enterprise test
