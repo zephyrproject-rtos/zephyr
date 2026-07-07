@@ -45,7 +45,6 @@
 #include "host/conn_internal.h"
 #include "host/l2cap_internal.h"
 #include "avdtp_internal.h"
-#include "a2dp_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_A2DP_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -1476,27 +1475,6 @@ static struct bt_avdtp_event_cb avdtp_cb = {
 	.accept = a2dp_accept,
 };
 
-void bt_a2dp_init(void)
-{
-	__maybe_unused int err;
-
-	static bool initialized;
-
-	if (initialized) {
-		return;
-	}
-
-	/* Register event handlers with AVDTP */
-	err = bt_avdtp_register(&avdtp_cb);
-	if ((err < 0) && (err != -EALREADY)) {
-		LOG_ERR("A2DP registration failed (err %d)", err);
-		return;
-	}
-
-	LOG_DBG("A2DP Initialized successfully.");
-	initialized = true;
-}
-
 struct bt_a2dp *bt_a2dp_connect(struct bt_conn *conn)
 {
 	struct bt_a2dp *a2dp;
@@ -1566,6 +1544,27 @@ struct bt_conn *bt_a2dp_get_conn(struct bt_a2dp *a2dp)
 
 int bt_a2dp_register_cb(struct bt_a2dp_cb *cb)
 {
+	int err;
+
+	if (cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (a2dp_cb != NULL) {
+		return -EALREADY;
+	}
+
 	a2dp_cb = cb;
+
+	/* Register event handlers with AVDTP */
+	err = bt_avdtp_register(&avdtp_cb);
+	if ((err < 0) && (err != -EALREADY)) {
+		a2dp_cb = NULL;
+		LOG_ERR("A2DP registration failed (err %d)", err);
+		return err;
+	}
+
+	LOG_DBG("A2DP Initialized successfully.");
+
 	return 0;
 }
