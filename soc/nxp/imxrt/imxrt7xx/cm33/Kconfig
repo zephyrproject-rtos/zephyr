@@ -22,6 +22,7 @@ config SOC_MIMXRT798S_CM33_CPU0
 	select SOC_EARLY_INIT_HOOK
 	select WUC if PM
 	select HAS_PM
+	select HAS_POWEROFF
 	select SOC_IMXRT7XX_POWER_DOMAIN_COMPUTE
 
 config SOC_MIMXRT798S_CM33_CPU1
@@ -37,6 +38,7 @@ config SOC_MIMXRT798S_CM33_CPU1
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select HAS_MCUX
 	select HAS_PM
+	select HAS_POWEROFF
 	select SOC_IMXRT7XX_POWER_DOMAIN_SENSE
 
 config SOC_IMXRT7XX_POWER_DOMAIN_COMPUTE
@@ -51,6 +53,26 @@ config SOC_IMXRT7XX_POWER_DOMAIN_SENSE
 	help
 	  Selected when building for a core residing in the RT7xx Sense
 	  power domain. This domain is controlled by PMC1/SLEEPCON1.
+
+choice
+	prompt "System power-off (sys_poweroff) mode"
+	depends on POWEROFF
+	default SOC_IMXRT7XX_POWEROFF_DPD
+	help
+	  Select which chip power-down mode sys_poweroff() enters.
+
+config SOC_IMXRT7XX_POWEROFF_DPD
+	bool "Deep Power Down (DPD)"
+	help
+	  sys_poweroff() enters Deep Power Down: the whole chip powers off except
+	  the VDD1V8_AON and VDD1V8_PMC domain.
+
+config SOC_IMXRT7XX_POWEROFF_FDPD
+	bool "Full Deep Power Down (FDPD)"
+	help
+	  sys_poweroff() enters Full Deep Power Down: only VDD1V8_AON remains
+
+endchoice
 
 config SOC_MIMXRT7XX_PM_XIP_HANDOVER
 	bool

@@ -20,6 +20,14 @@
 #ifndef POWER_DEFAULT_PMICMODE_DSR
 #define POWER_DEFAULT_PMICMODE_DSR 1U
 #endif
+#if defined(CONFIG_POWEROFF)
+#ifndef POWER_DEFAULT_PMICMODE_DPD
+#define POWER_DEFAULT_PMICMODE_DPD 2U
+#endif
+#ifndef POWER_DEFAULT_PMICMODE_FDPD
+#define POWER_DEFAULT_PMICMODE_FDPD 3U
+#endif
+#endif /* CONFIG_POWEROFF */
 
 #define SLEEPCON0_DEEP_SLEEP					\
 	(SLEEPCON0_SLEEPCFG_COMP_MAINCLK_SHUTOFF_MASK |		\
@@ -147,6 +155,37 @@ static void program_pdsleepcfg0_dsr(const uint32_t excl[7])
 	PMC0->PDSLEEPCFG0 = pdsleepcfg0;
 }
 #endif /* CONFIG_PM */
+
+#if defined(CONFIG_POWEROFF)
+/* Program PMC0 PDSLEEPCFG0 for Deep Power Down (DPD) / Full Deep Power Down
+ * (FDPD). the DPD/FDPD override bit governs the whole power-down, but the
+ * deep-sleep + DSR domain bits are still programmed as the base so the
+ * sequencing is well defined.
+ */
+static void program_pdsleepcfg0_dpd(bool full)
+{
+	uint32_t pdsleepcfg0 = PMC0->PDSLEEPCFG0 &
+			       ~(PMC_PDSLEEPCFG0_V2DSP_PD_MASK | PMC_PDSLEEPCFG0_V2MIPI_PD_MASK |
+				 PMC_PDSLEEPCFG0_V2NMED_DSR_MASK | PMC_PDSLEEPCFG0_VNCOM_DSR_MASK);
+
+	pdsleepcfg0 &= ~(PMC_PDSLEEPCFG0_PMICMODE_MASK | PMC_PDSLEEPCFG0_FDSR_MASK);
+
+	PMC0->PDSLEEPCFG0 = pdsleepcfg0 |
+			    (PMC_PDSLEEPCFG0_V2DSP_PD_MASK | PMC_PDSLEEPCFG0_V2MIPI_PD_MASK |
+			     PMC_PDSLEEPCFG0_V2NMED_DSR_MASK | PMC_PDSLEEPCFG0_VNCOM_DSR_MASK |
+			     PMC_PDSLEEPCFG0_V2COMP_DSR_MASK | PMC_PDSLEEPCFG0_V2COM_DSR_MASK) |
+			    (full ? PMC_PDSLEEPCFG0_FDPD_MASK : PMC_PDSLEEPCFG0_DPD_MASK);
+
+	if (!full) {
+		/*
+		 * DPD keeps VDD1V8 alive, so make sure the DSR request bits in the
+		 * run config are cleared and cannot leak into the state the ROM
+		 * restores on the cold boot.
+		 */
+		PMC0->PDRUNCFG0 &= ~(PMC_PDRUNCFG0_V2NMED_DSR_MASK | PMC_PDRUNCFG0_VNCOM_DSR_MASK);
+	}
+}
+#endif /* CONFIG_POWEROFF */
 
 static void program_pdsleepcfg1_to_5(const uint32_t excl[7])
 {
@@ -400,3 +439,70 @@ AT_QUICKACCESS_SECTION_CODE(void power_enter_dsr(const uint32_t exclude_from_pd[
 	power_enter_common(exclude_from_pd, true);
 }
 #endif /* CONFIG_PM */
+
+#if defined(CONFIG_POWEROFF)
+/*!
+ * @brief Enter Deep Power Down (DPD) or Full Deep Power Down (FDPD).
+ *
+ * @details Shares the deep-sleep PMC/SLEEPCON programming (SLEEPCFG, PDSLEEPCFG0..5,
+ * PMIC/LDO, APPLYCFG latch) but sets the [DPD]/[FDPD] override bit, so the compute
+ * domain (and its SRAM) is powered off entirely. This is a one-way trip: the WFI never
+ * returns and the part cold boots (POR) on wake.
+ *
+ * Unlike the deep-sleep / DSR path this is deliberately independent of the PM idle
+ * policy (CONFIG_PM): it does not use arch_pm_state_set_prepare()/finish()
+ * (there is no state to restore) nor the XIP handover helpers. The entry runs
+ * from SRAM (AT_QUICKACCESS), and everything up to WFI is fetched while the
+ * flash is still alive, so XSPI does not need to be quiesced first.
+ */
+AT_QUICKACCESS_SECTION_CODE(void power_enter_deep_power_down(bool full))
+{
+	/* DPD/FDPD power everything off; the [DPD]/[FDPD] override bit governs the
+	 * whole power-down, so there is nothing to keep alive. Pass an empty exclude
+	 * mask to the programming helpers shared with the deep-sleep path.
+	 */
+	const uint32_t exclude_none[7] = {0};
+
+	SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+
+	program_sleepcon_for_deep_sleep(exclude_none);
+	program_pdsleepcfg0_dpd(full);
+	program_pmic_and_regulators(exclude_none, full ? POWER_DEFAULT_PMICMODE_FDPD
+						       : POWER_DEFAULT_PMICMODE_DPD);
+	program_pdsleepcfg1_to_5(exclude_none);
+	stall_dsp_if_powered_down();
+
+	/* Latch the PMC programming above: wait for any in-flight update,
+	 * pulse APPLYCFG, then wait for completion before WFI.
+	 */
+	while ((PMC0->STATUS & PMC_STATUS_BUSY_MASK) != 0U) {
+	}
+	PMC0->CTRL |= PMC_CTRL_APPLYCFG_MASK;
+	while ((PMC0->STATUS & PMC_STATUS_BUSY_MASK) != 0U) {
+	}
+
+	pmc_clear_event_flags();
+
+	/* Disable LVD-driven resets so the rail collapse during power-down is not
+	 * mistaken for a brown-out. No restore: the domain powers off here.
+	 */
+	(void)lvd_save_disable();
+
+	/* Mask interrupts so nothing runs between the PMC programming and WFI, and
+	 * clear BASEPRI so it cannot hold the low-power instruction off. This
+	 * mirrors arch_pm_state_set_prepare() but without saving state to restore,
+	 * keeping the poweroff path free of the CONFIG_PM-only arch hooks.
+	 */
+	__disable_irq();
+	__set_BASEPRI(0);
+	__DSB();
+	__ISB();
+
+	arm_first_domain_pdr_ignores();
+
+	__WFI();
+
+	/* DPD/FDPD power the domain off; WFI never returns (cold boot on wake). */
+	CODE_UNREACHABLE;
+}
+#endif /* CONFIG_POWEROFF */
