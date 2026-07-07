@@ -397,13 +397,16 @@ static int gspi_siwx91x_burst_size(struct spi_context *ctx)
 
 static void gspi_siwx91x_gspi_fifo_reset_sync(uint32_t frequency)
 {
-	int loops = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / frequency;
+	int loops = DT_PROP(DT_NODELABEL(cpu0), clock_frequency) / frequency;
 
-	/* GSPI FIFO reset requires the RESET bits to be held high
-	 * for at least one GSPI bus clock cycle.
-	 * Since there is no explicit hardware status indicating
-	 * completion of the FIFO reset, insert a short, frequency-
-	 * dependent delay to guarantee the minimum reset pulse width.
+	/* GSPI FIFO reset requires the RESET bits to be held high for at least
+	 * one GSPI bus clock cycle.
+	 * Since there is no explicit hardware status indicating completion of
+	 * the FIFO reset, insert a short, frequency-dependent delay to
+	 * guarantee the minimum reset pulse width.
+	 */
+	/* FIXME: The granularity of k_busy_wait() is only 32µs when
+	 * CONFIG_PM=y.
 	 */
 	while (loops-- > 0) {
 		arch_nop();
