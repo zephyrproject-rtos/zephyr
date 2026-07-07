@@ -9,3 +9,11 @@
 		pwm-test = &pwm4;
 	};
 };
+
+&timer1 {
+	status = "okay";
+};
+
+&pwm4 {
+	status = "okay";
+};

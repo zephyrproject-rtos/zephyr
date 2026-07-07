@@ -9,3 +9,7 @@
 		i2s-node0 = &i2s0;
 	};
 };
+
+&i2s0 {
+	status = "okay";
+};

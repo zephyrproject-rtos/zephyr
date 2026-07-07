@@ -3,6 +3,8 @@
  */
 
 &spi0 {
+	status = "okay";
+
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
