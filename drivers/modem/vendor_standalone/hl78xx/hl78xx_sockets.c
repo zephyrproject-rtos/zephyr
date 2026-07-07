@@ -3100,6 +3100,8 @@ static int send_data_buffer(struct hl78xx_socket_data *socket_data, const char *
 static int validate_and_prepare(struct modem_socket *sock, const struct net_sockaddr **dst_addr,
 				size_t *buf_len, char *cmd_buf, size_t cmd_buf_len)
 {
+	int ret;
+
 	/* Validate args and prepare send command */
 	if (!sock) {
 		errno = EINVAL;
@@ -3120,7 +3122,13 @@ static int validate_and_prepare(struct modem_socket *sock, const struct net_sock
 		*buf_len = MDM_MAX_DATA_LENGTH;
 	}
 	/* Consolidated send command helper handles UDP vs TCP formatting */
-	return prepare_send_cmd(sock, *dst_addr, *buf_len, cmd_buf, cmd_buf_len);
+	ret = prepare_send_cmd(sock, *dst_addr, *buf_len, cmd_buf, cmd_buf_len);
+	if (ret < 0) {
+		hl78xx_set_errno_from_code(ret);
+		return -1;
+	}
+
+	return 0;
 }
 
 static int transmit_regular_data(struct hl78xx_socket_data *socket_data, const char *buf,
