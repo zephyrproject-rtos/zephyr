@@ -544,33 +544,18 @@ static bool ethernet_fill_in_dst_on_ipv6_mcast(struct net_pkt *pkt,
 #define ethernet_fill_in_dst_on_ipv6_mcast(...) false
 #endif /* CONFIG_NET_IPV6 */
 
-static inline size_t get_reserve_ll_header_size(struct net_if *iface)
+static inline size_t get_reserve_ll_header_size(bool is_vlan)
 {
-	bool is_vlan = false;
-
-#if defined(CONFIG_NET_VLAN)
-#if CONFIG_NET_VLAN_COUNT > 0
-	if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
-		iface = net_eth_get_vlan_main(iface);
-		is_vlan = true;
-	}
-#else
-	/* When CONFIG_NET_VLAN_COUNT = 0, priority-tagged
-	 * frames are supported on the main Ethernet interface.
-	 */
-	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-		is_vlan = true;
-	}
-#endif
-#endif
-
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
-		return 0U;
-	}
-
 	if (!IS_ENABLED(CONFIG_NET_L2_ETHERNET_RESERVE_HEADER)) {
 		return 0U;
 	}
+
+#if defined(CONFIG_NET_VLAN) && (CONFIG_NET_VLAN_COUNT == 0)
+	/* When CONFIG_NET_VLAN_COUNT = 0, priority-tagged
+	 * frames are supported on the main Ethernet interface.
+	 */
+	is_vlan = true;
+#endif
 
 	if (is_vlan) {
 		return sizeof(struct net_eth_vlan_hdr);
@@ -584,7 +569,6 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 					    struct net_pkt *pkt,
 					    uint32_t ptype)
 {
-	struct net_if *orig_iface = iface;
 	struct net_buf *hdr_frag;
 	size_t reserve_ll_header;
 	size_t hdr_len;
@@ -593,11 +577,8 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 	is_vlan = IS_ENABLED(CONFIG_NET_VLAN) &&
 		net_eth_is_vlan_enabled(ctx, iface) &&
 		net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_UNSPEC;
-	if (is_vlan) {
-		orig_iface = net_eth_get_vlan_iface(iface, net_pkt_vlan_tag(pkt));
-	}
 
-	reserve_ll_header = get_reserve_ll_header_size(orig_iface);
+	reserve_ll_header = get_reserve_ll_header_size(is_vlan);
 	if (reserve_ll_header > 0) {
 		hdr_len = reserve_ll_header;
 		hdr_frag = pkt->buffer;
@@ -857,7 +838,7 @@ static int ethernet_l2_alloc(struct net_if *iface, struct net_pkt *pkt,
 			     size_t size, enum net_ip_protocol proto,
 			     k_timeout_t timeout)
 {
-	size_t reserve = get_reserve_ll_header_size(iface);
+	size_t reserve = get_reserve_ll_header_size(false);
 	struct ethernet_config config;
 
 	if (net_eth_get_hw_config(iface, ETHERNET_CONFIG_TYPE_EXTRA_TX_PKT_HEADROOM,
