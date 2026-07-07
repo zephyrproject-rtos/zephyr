@@ -21,6 +21,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/irq.h>
 #include <string.h>
@@ -129,15 +130,23 @@ int i2c_dw_recovery_bus(const struct device *dev)
 	int ret = 0;
 	struct i2c_dw_dev_config *const dw = dev->data;
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
 	/* lock bus */
 	ret = k_sem_take(&dw->bus_sem, K_FOREVER);
 	if (ret != 0) {
+		pm_device_runtime_put(dev);
 		return ret;
 	}
 	/* do bus recovery */
 	ret = i2c_recovery_bus(dev);
 	/* unlock bus */
 	k_sem_give(&dw->bus_sem);
+
+	pm_device_runtime_put(dev);
 
 	return ret;
 }
@@ -846,9 +855,15 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 
 	__ASSERT_NO_MSG(msgs);
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
 	/* semaphore to support I2C_CALLBACK */
 	ret = k_sem_take(&dw->bus_sem, K_FOREVER);
 	if (ret != 0) {
+		pm_device_runtime_put(dev);
 		return ret;
 	}
 
@@ -1007,10 +1022,12 @@ error:
 	}
 	k_sem_give(&dw->bus_sem);
 
+	pm_device_runtime_put(dev);
+
 	return ret;
 }
 
-static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
+static int i2c_dw_configure(const struct device *dev, uint32_t config)
 {
 	struct i2c_dw_dev_config *const dw = dev->data;
 	const struct i2c_dw_rom_config *const rom = dev->config;
@@ -1077,6 +1094,22 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 	dw->app_config |= I2C_MODE_CONTROLLER;
 
 	return rc;
+}
+
+static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
+{
+	int ret;
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = i2c_dw_configure(dev, config);
+
+	pm_device_runtime_put(dev);
+
+	return 0;
 }
 
 #ifdef CONFIG_I2C_TARGET
@@ -1160,6 +1193,11 @@ static int i2c_dw_slave_register(const struct device *dev, struct i2c_target_con
 	uint32_t reg_base = get_regs(dev);
 	int ret;
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
 	dw->read_in_progress = false;
 	dw->slave_cfg = cfg;
 	ret = i2c_dw_set_slave_mode(dev, cfg->address);
@@ -1178,6 +1216,8 @@ static int i2c_dw_slave_unregister(const struct device *dev, struct i2c_target_c
 
 	dw->state = I2C_DW_STATE_READY;
 	ret = i2c_dw_set_master_mode(dev);
+
+	pm_device_runtime_put(dev);
 
 	return ret;
 }
@@ -1275,7 +1315,7 @@ static int i2c_dw_init_config(const struct device *dev)
 
 	dw->app_config = I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(rom->bitrate);
 
-	if (i2c_dw_runtime_configure(dev, dw->app_config) != 0) {
+	if (i2c_dw_configure(dev, dw->app_config) != 0) {
 		return -EIO;
 	}
 
@@ -1355,6 +1395,63 @@ static int i2c_dw_probe_hw(const struct device *dev)
 
 	return 0;
 }
+static int i2c_dw_turn_on(const struct device *dev)
+{
+	const struct i2c_dw_rom_config *const rom = dev->config;
+	int ret;
+
+	/* Configure clock, optional reset, and pinctrl */
+	ret = i2c_dw_prepare(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Check if the hardware is supported and set the support_hs_mode flag */
+	ret = i2c_dw_probe_hw(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Initialize the controller registers */
+	ret = i2c_dw_init_config(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Configure IRQ*/
+	rom->config_func(dev);
+
+	return 0;
+}
+
+static int i2c_dw_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	__maybe_unused const struct i2c_dw_rom_config *const rom = dev->config;
+	__maybe_unused int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		return i2c_dw_turn_on(dev);
+	case PM_DEVICE_ACTION_TURN_OFF:
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+		if (rom->clk_dev != NULL) {
+			ret = clock_control_off(rom->clk_dev, rom->clk_id);
+			if (ret < 0 && ret != -EALREADY && ret != -ENOSYS) {
+				return ret;
+			}
+		}
+#endif
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
 
 static DEVICE_API(i2c, funcs) = {
 	.configure = i2c_dw_runtime_configure,
@@ -1371,9 +1468,8 @@ static DEVICE_API(i2c, funcs) = {
 
 static int i2c_dw_initialize(const struct device *dev)
 {
-	const struct i2c_dw_rom_config *const rom = dev->config;
+	__maybe_unused const struct i2c_dw_rom_config *const rom = dev->config;
 	struct i2c_dw_dev_config *const dw = dev->data;
-	int ret;
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	if (rom->pcie) {
@@ -1416,29 +1512,9 @@ static int i2c_dw_initialize(const struct device *dev)
 	k_sem_init(&dw->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 	k_sem_init(&dw->bus_sem, 1, 1);
 
-	/* Configure clock, optional reset, and pinctrl */
-	ret = i2c_dw_prepare(dev);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Check if the hardware is supported and set the support_hs_mode flag */
-	ret = i2c_dw_probe_hw(dev);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Initialize the controller registers */
-	ret = i2c_dw_init_config(dev);
-	if (ret < 0) {
-		return ret;
-	}
-
-	rom->config_func(dev);
-
 	LOG_DBG("initialize done");
 
-	return ret;
+	return pm_device_driver_init(dev, i2c_dw_pm_action);
 }
 
 #if I2C_DW_PINCTRL_ENABLED
@@ -1553,9 +1629,10 @@ static int i2c_dw_initialize(const struct device *dev)
 	BUILD_ASSERT(DT_INST_PROP_OR(n, sda_hold_tx, 0) <= 0xffff, "Invalid SDA_HOLD_TX value");   \
 	BUILD_ASSERT(DT_INST_PROP_OR(n, sda_hold_rx, 0) <= 0xff, "Invalid SDA_HOLD_RX value");     \
 	static struct i2c_dw_dev_config i2c_##n##_runtime;                                         \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_dw_initialize, NULL, &i2c_##n##_runtime,                  \
-				  &i2c_config_dw_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,       \
-				  &funcs);                                                         \
+	PM_DEVICE_DT_INST_DEFINE(n, i2c_dw_pm_action);                                             \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_dw_initialize, PM_DEVICE_DT_INST_GET(n),                  \
+				  &i2c_##n##_runtime, &i2c_config_dw_##n, POST_KERNEL,             \
+				  CONFIG_I2C_INIT_PRIORITY, &funcs);                               \
 	I2C_DW_IRQ_CONFIG(n)
 /* clang-format on */
 
