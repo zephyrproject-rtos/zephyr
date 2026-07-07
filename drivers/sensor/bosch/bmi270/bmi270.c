@@ -223,7 +223,14 @@ static int set_accel_odr_osr(const struct device *dev, const struct sensor_value
 	}
 
 	if (odr || osr) {
-		ret = bmi270_reg_write(dev, BMI270_REG_ACC_CONF, &acc_conf, 1);
+		/*
+		 * With advanced power save enabled the next write must come
+		 * >=450 us later or it is ignored; the PWR_CTRL write below
+		 * would silently fail to enable the accelerometer.
+		 */
+		ret = bmi270_reg_write_with_delay(dev, BMI270_REG_ACC_CONF,
+						  &acc_conf, 1,
+						  BMI270_INTER_WRITE_DELAY_US);
 		if (ret != 0) {
 			return ret;
 		}
