@@ -11,7 +11,7 @@ zephyr_linker_section_obj_level(SECTION init LEVEL PRE_KERNEL)
 zephyr_linker_section_obj_level(SECTION init LEVEL PRE_KERNEL_2)
 zephyr_linker_section_obj_level(SECTION init LEVEL POST_KERNEL)
 zephyr_linker_section_obj_level(SECTION init LEVEL APPLICATION)
-zephyr_linker_section_obj_level(SECTION init LEVEL SMP)
+zephyr_linker_section_obj_level(SECTION init LEVEL PRE_MAIN)
 
 zephyr_iterable_section(NAME device NUMERIC KVMA RAM_REGION GROUP RODATA_REGION)
 

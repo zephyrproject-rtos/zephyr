@@ -41,8 +41,8 @@ class TestPriority(unittest.TestCase):
             check_init_priorities.Priority("POST_KERNEL", 1),
             check_init_priorities.Priority("APPLICATION", 0),
             check_init_priorities.Priority("APPLICATION", 1),
-            check_init_priorities.Priority("SMP", 0),
-            check_init_priorities.Priority("SMP", 1),
+            check_init_priorities.Priority("PRE_MAIN", 0),
+            check_init_priorities.Priority("PRE_MAIN", 1),
         ]
 
         self.assertListEqual(prios, sorted(prios))
@@ -118,7 +118,7 @@ class testZephyrInitLevels(unittest.TestCase):
         s4.entry.st_value = 0x44
 
         s5 = mock.Mock()
-        s5.name = "__init_SMP_start"
+        s5.name = "__init_PRE_MAIN_start"
         s5.entry.st_value = 0x55
 
         s6 = mock.Mock()
@@ -139,7 +139,7 @@ class testZephyrInitLevels(unittest.TestCase):
                 "PRE_KERNEL_2": 0x22,
                 "POST_KERNEL": 0x33,
                 "APPLICATION": 0x44,
-                "SMP": 0x55,
+                "PRE_MAIN": 0x55,
             },
         )
         self.assertEqual(obj._init_level_end, 0x66)
@@ -206,7 +206,7 @@ class testZephyrInitLevels(unittest.TestCase):
             "PRE_KERNEL_2": 0x00,
             "POST_KERNEL": 0x08,
             "APPLICATION": 0x0C,
-            "SMP": 0x0C,
+            "PRE_MAIN": 0x0C,
         }
         obj._init_level_end = 0x0C
         obj._objects = {
@@ -244,7 +244,7 @@ class testZephyrInitLevels(unittest.TestCase):
                 "PRE_KERNEL_2": ["a: i0(__device_dts_ord_11)", "b: i1(__device_dts_ord_22)"],
                 "POST_KERNEL": ["c: name_8_0(name_8_1)"],
                 "APPLICATION": [],
-                "SMP": [],
+                "PRE_MAIN": [],
             },
         )
         self.assertDictEqual(

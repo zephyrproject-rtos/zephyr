@@ -34,7 +34,7 @@ REFERENCE_OUTPUT_INITLEVELS = [
     "POST_KERNEL",
     "APPLICATION",
     "__init_boot_banner: boot_banner(NULL)",
-    "SMP",
+    "PRE_MAIN",
 ]
 
 if len(sys.argv) != 3:

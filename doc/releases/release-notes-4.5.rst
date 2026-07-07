@@ -155,6 +155,11 @@ Deprecated APIs and options
     ``PRE_KERNEL_2`` keeps running after all ``PRE_KERNEL`` entries while it is phased out. See
     the :ref:`migration guide <migration_4.5>` for details.
 
+  * The ``SMP`` initialization level has been renamed to ``PRE_MAIN``, after its position in
+    the boot sequence, and is no longer conditioned on :kconfig:option:`CONFIG_SMP`. ``SMP`` is
+    kept as a deprecated alias of ``PRE_MAIN``. See the :ref:`migration guide <migration_4.5>`
+    for details.
+
 * LoRa
 
   * Renamed :c:func:`lora_recv_duty_cycle` to :c:func:`lora_recv_duty_cycle_async`
