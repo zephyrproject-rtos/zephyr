@@ -477,12 +477,6 @@ static int cmd_pcie_mask_ignore(const struct shell *sh, size_t argc, char **argv
 	}
 
 	pcie_bdf_t bdf = get_bdf(argv[1]);
-
-	if (bdf == PCIE_BDF_NONE) {
-		shell_error(sh, "Invalid BDF layout format specification.");
-		return -EINVAL;
-	}
-
 	bdf = PCIE_BDF(PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), 0);
 
 	if (is_bdf_masked(bdf)) {
@@ -495,6 +489,152 @@ static int cmd_pcie_mask_ignore(const struct shell *sh, size_t argc, char **argv
 
 	shell_print(sh, "Successfully masked BDF %u:%x.%u. Bus scans will ignore this slot.",
 		    PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf));
+
+	return 0;
+}
+
+static uint64_t probe_bar_size_mask(pcie_bdf_t bdf, unsigned int reg, unsigned int bar_idx,
+				    bool is_64bit, uint32_t raw_bar)
+{
+	uint32_t cmd_backup = pcie_conf_read(bdf, PCIE_CONF_CMDSTAT);
+	uint32_t size_mask_lo;
+	uint64_t mask;
+
+	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT,
+			cmd_backup & (~(PCIE_CONF_CMDSTAT_IO | PCIE_CONF_CMDSTAT_MEM)));
+
+	pcie_conf_write(bdf, reg, 0xFFFFFFFFU);
+	size_mask_lo = pcie_conf_read(bdf, reg);
+	pcie_conf_write(bdf, reg, raw_bar);
+
+	if (is_64bit && bar_idx < 5) {
+		uint32_t raw_bar_hi = pcie_conf_read(bdf, reg + 1);
+		uint32_t size_mask_hi;
+
+		pcie_conf_write(bdf, reg + 1, 0xFFFFFFFFU);
+		size_mask_hi = pcie_conf_read(bdf, reg + 1);
+		pcie_conf_write(bdf, reg + 1, raw_bar_hi);
+
+		mask = ((uint64_t)size_mask_hi << 32) | (uint64_t)size_mask_lo;
+	} else {
+		mask = (uint64_t)(uint32_t)size_mask_lo;
+	}
+
+	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT, cmd_backup);
+	return mask;
+}
+
+static void show_mem_bar_info(const struct shell *sh, pcie_bdf_t bdf, unsigned int reg,
+			      unsigned int *bar_idx, uint64_t size_mask64, uint32_t raw_bar,
+			      bool is_64bit)
+{
+	uint64_t mem_size;
+	uint64_t base_addr = (uint64_t)(raw_bar & 0xFFFFFFF0U);
+	bool prefetch = ((raw_bar & 0x8U) != 0);
+
+	if (is_64bit && *bar_idx < 5) {
+		mem_size = ~(size_mask64 & 0xFFFFFFFFFFFFFFF0U) + 1ULL;
+	} else {
+		mem_size = (~(size_mask64 & 0xFFFFFFF0U) + 1ULL) & 0xFFFFFFFFULL;
+	}
+
+	shell_print(sh, "   -> Type       : MEMORY Space (%s)",
+		    is_64bit ? "64-bit Aperture" : "32-bit Aperture");
+	shell_print(sh, "   -> Attributes : Prefetchable: %s", prefetch ? "TRUE" : "FALSE");
+	shell_print(sh, "   -> Sizing     : Requested Size: %llu KB (Mask: 0x%016llX)",
+		    (unsigned long long)(mem_size / 1024U), (unsigned long long)size_mask64);
+
+	if (is_64bit && *bar_idx < 5) {
+		uint32_t raw_bar_hi = pcie_conf_read(bdf, reg + 1);
+		uint64_t base_addr64 = ((uint64_t)raw_bar_hi << 32) | base_addr;
+		uint64_t end_addr64 = base_addr64 + (mem_size - 1ULL);
+
+		shell_print(sh, "   -> Map Window : 0x%016llX - 0x%016llX",
+			    (unsigned long long)base_addr64, (unsigned long long)end_addr64);
+		*bar_idx += 2;
+	} else {
+		uint64_t end_addr32 = (base_addr + (mem_size - 1ULL)) & 0xFFFFFFFFULL;
+
+		shell_print(sh, "   -> Map Window : 0x%016llX - 0x%016llX",
+			    (unsigned long long)base_addr, (unsigned long long)end_addr32);
+		*bar_idx += 1;
+	}
+}
+
+static void show_io_bar_info(const struct shell *sh, uint64_t size_mask64, uint32_t raw_bar,
+			     unsigned int *bar_idx)
+{
+	uint32_t io_size = ~((uint32_t)size_mask64 & 0xFFFFFFFCU) + 1;
+	uint32_t base_io = raw_bar & 0xFFFFFFFCU;
+
+	shell_print(sh, "   -> Type       : I/O Space");
+	shell_print(sh, "   -> Sizing     : Requested Size: %u Bytes (Mask: 0x%016llX)", io_size,
+		    (unsigned long long)size_mask64);
+	shell_print(sh, "   -> Map Window : Port Range: 0x%08X - 0x%08X", base_io,
+		    base_io + (io_size - 1U));
+	*bar_idx += 1;
+}
+
+static int cmd_pcie_resource_show(const struct shell *sh, size_t argc, char **argv)
+{
+	pcie_bdf_t bdf;
+	uint32_t id;
+	unsigned int bar_idx;
+
+	if (argc < 2) {
+		shell_error(sh, "Usage: pcie resource show <bus:dev.func>");
+		return -EINVAL;
+	}
+
+	bdf = get_bdf(argv[1]);
+	if (bdf == PCIE_BDF_NONE) {
+		shell_error(sh, "Invalid BDF layout format specification.");
+		return -EINVAL;
+	}
+	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
+		shell_error(sh, "No responsive endpoint found at target BDF.");
+		return -ENODEV;
+	}
+
+	shell_print(sh, "====================================================================");
+	shell_print(sh, "   PCIe BAR RESOURCE DECODER DIAGNOSTIC GRID: %u:%x.%u",
+		    PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf));
+	shell_print(sh, "====================================================================");
+
+	bar_idx = 0;
+	while (bar_idx < 6) {
+		unsigned int reg = PCIE_CONF_BAR0 + bar_idx;
+		uint32_t raw_bar = pcie_conf_read(bdf, reg);
+		uint64_t size_mask64;
+		bool is_mem;
+		bool is_64bit;
+
+		if (PCIE_CONF_BAR_INVAL_FLAGS(raw_bar)) {
+			bar_idx++;
+			continue;
+		}
+
+		is_mem = ((raw_bar & 0x1U) == 0);
+		is_64bit = (is_mem && ((raw_bar & 0x6U) == 0x4U));
+
+		size_mask64 = probe_bar_size_mask(bdf, reg, bar_idx, is_64bit, raw_bar);
+
+		if (size_mask64 == 0 || size_mask64 == 0xFFFFFFFFFFFFFFFFU ||
+		    (is_64bit && size_mask64 == 0xFFFFFFFF00000000U)) {
+			bar_idx += (is_64bit && bar_idx < 5) ? 2 : 1;
+			continue;
+		}
+
+		shell_print(sh, "BAR %u [Reg Offset: 0x%02X]:", bar_idx, reg * 4);
+
+		if (is_mem) {
+			show_mem_bar_info(sh, bdf, reg, &bar_idx, size_mask64, raw_bar, is_64bit);
+		} else {
+			show_io_bar_info(sh, size_mask64, raw_bar, &bar_idx);
+		}
+		shell_print(sh, "----------------------------------------------------");
+	}
 
 	return 0;
 }
@@ -529,6 +669,7 @@ static int cmd_pcie_mask_show(const struct shell *sh, size_t argc, char **argv)
 		shell_print(sh, " [%u] Ignored BDF Slot -> %u:%x.%u", i, PCIE_BDF_TO_BUS(bdf),
 			    PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf));
 	}
+
 	return 0;
 }
 
@@ -543,6 +684,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_pcie_resource_cmds,
+	SHELL_CMD_ARG(show, NULL, "Decode and map all active Base Address Registers (BARs)",
+		      cmd_pcie_resource_show, 2, 0),
+	SHELL_SUBCMD_SET_END);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_pcie_cmds,
 	SHELL_CMD_ARG(ls, NULL,
 		      "List PCIE devices\n"
@@ -553,6 +700,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Usage: write <bus:device.function> <reg_offset> <32bit_hex>",
 		      cmd_pcie_write, 4, 0),
 	SHELL_CMD(mask, &sub_pcie_mask_cmds, "Manage PCIe device scanning parameters", NULL),
+	SHELL_CMD(resource, &sub_pcie_resource_cmds, "PCI(e) memory mapping and resource metrics",
+		  NULL),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(pcie, &sub_pcie_cmds, "PCI(e) device information", cmd_pcie_ls);
