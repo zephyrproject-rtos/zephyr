@@ -158,15 +158,38 @@ class SPDX2Serializer:
             created = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
             self.document_created_timestamps[doc.name] = created
 
+        creators = "".join(f"Creator: {creator}\n" for creator in self._creators())
+
         f.write(f"""SPDXVersion: SPDX-{self.spdx_version}
 DataLicense: CC0-1.0
 SPDXID: SPDXRef-DOCUMENT
 DocumentName: {normalized_name}
 DocumentNamespace: {namespace}
-Creator: Tool: Zephyr SPDX builder
-Created: {created}
+{creators}Created: {created}
 
 """)
+
+    def _creators(self):
+        """Build the SPDX Creator values: an organization author and the tool.
+
+        An ``Organization`` creator gives the SBOM a declared author, and the
+        ``Tool`` creator carries a version suffix so downstream tooling can
+        identify which generator produced the document.
+        """
+        metadata = self.sbom_graph.metadata
+        creators = []
+
+        organization = metadata.get("creator_organization")
+        if organization:
+            creators.append(f"Organization: {organization}")
+
+        tool_name = metadata.get("tool_name") or "Zephyr SPDX builder"
+        tool_version = metadata.get("tool_version")
+        if tool_version:
+            tool_name = f"{tool_name}-{tool_version}"
+        creators.append(f"Tool: {tool_name}")
+
+        return creators
 
     def _write_external_document_refs(self, f, doc: SBOMDocument):
         """Write external document references."""
