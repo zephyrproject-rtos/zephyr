@@ -206,18 +206,6 @@ struct net_if *net_eth_get_vlan_iface(struct net_if *iface, uint16_t tag)
 	return ctx->iface;
 }
 
-struct net_if *net_eth_get_vlan_main(struct net_if *iface)
-{
-	struct vlan_context *ctx;
-
-	ctx = get_vlan(iface, NET_VLAN_TAG_UNSPEC);
-	if (ctx == NULL) {
-		return NULL;
-	}
-
-	return ctx->attached_to;
-}
-
 static bool enable_vlan_iface(struct vlan_context *ctx,
 			      struct net_if *iface)
 {

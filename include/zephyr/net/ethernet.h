@@ -26,6 +26,7 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet_vlan.h>
 #include <zephyr/net/ptp_time.h>
+#include <zephyr/net/virtual.h>
 #include <zephyr/random/random.h>
 
 #if defined(CONFIG_NVMEM)
@@ -1003,17 +1004,10 @@ struct net_if *net_eth_get_vlan_iface(struct net_if *iface, uint16_t tag)
  * @return Network interface related to this tag or NULL if no such interface
  * exists.
  */
-#if defined(CONFIG_NET_VLAN) && NET_VLAN_MAX_COUNT > 0
-struct net_if *net_eth_get_vlan_main(struct net_if *iface);
-#else
-static inline
-struct net_if *net_eth_get_vlan_main(struct net_if *iface)
+static inline struct net_if *net_eth_get_vlan_main(struct net_if *iface)
 {
-	ARG_UNUSED(iface);
-
-	return NULL;
+	return net_virtual_get_iface(iface);
 }
-#endif
 
 /**
  * @brief Check if there are any VLAN interfaces enabled to this specific
