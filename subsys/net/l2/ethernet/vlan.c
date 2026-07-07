@@ -635,26 +635,4 @@ static void vlan_iface_init(struct net_if *iface)
 	(void)net_virtual_set_flags(ctx->iface, NET_L2_MULTICAST);
 }
 
-#else /* CONFIG_NET_VLAN_COUNT > 0 */
-
-/* Dummy functions if VLAN is not really used. This is only needed
- * if priority tagged frames (tag 0) are supported.
- */
-bool net_eth_is_vlan_enabled(struct ethernet_context *ctx,
-			     struct net_if *iface)
-{
-	ARG_UNUSED(ctx);
-	ARG_UNUSED(iface);
-
-	return true;
-}
-
-struct net_if *net_eth_get_vlan_iface(struct net_if *iface, uint16_t tag)
-{
-	if (tag == NET_VLAN_TAG_PRIORITY) {
-		return iface;
-	}
-
-	return NULL;
-}
 #endif /* CONFIG_NET_VLAN_COUNT > 0 */
