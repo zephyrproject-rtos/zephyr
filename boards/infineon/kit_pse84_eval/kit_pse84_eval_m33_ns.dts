@@ -35,6 +35,26 @@
 	};
 };
 
+/*
+ * Bind the relative MCUboot slot0_partition/slot1_partition labels to
+ * the Non-Secure image slots so the stock cmake/mcuboot.cmake signing
+ * script sizes the Non-Secure image against its own slot (0x1c0000)
+ * rather than the Secure slot.
+ *
+ * The slot0_ns_partition/slot1_ns_partition labels are attached here too
+ * (rather than in the shared memory map) because only the Non-Secure
+ * build consumes them: Zephyr's TF-M integration looks them up by name
+ * (dt_nodelabel ... REQUIRED) to size the Non-Secure image, and the DFU /
+ * mcumgr image-management subsystems reference them at run time.
+ */
+&flash0 {
+	partitions {
+		slot0_ns_partition: slot0_partition: partition@340000 {};
+
+		slot1_ns_partition: slot1_partition: partition@940000 {};
+	};
+};
+
 &clk_iho {
 	status = "disabled";
 };
