@@ -99,6 +99,10 @@
 
 	ITERABLE_SECTION_ROM(k_kernel_init_post_entry, Z_LINK_ITERABLE_SUBALIGN)
 
+#if defined(CONFIG_SMP)
+	ITERABLE_SECTION_ROM(smp_init_hook, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
 	ITERABLE_SECTION_ROM(_static_thread_data, Z_LINK_ITERABLE_SUBALIGN)
 
 #if defined(CONFIG_PCIE)
