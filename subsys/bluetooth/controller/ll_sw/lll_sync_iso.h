@@ -119,6 +119,11 @@ struct lll_sync_iso {
 	uint32_t aa_se;
 	uint8_t se;
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+	/* Subevent whose radio enable is pre-armed back-to-back */
+	uint8_t se_b2b;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
+
 	uint32_t window_widening_periodic_us;
 	uint32_t window_widening_max_us;
 	uint32_t window_widening_prepare_us;

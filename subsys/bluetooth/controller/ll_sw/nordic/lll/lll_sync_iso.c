@@ -69,6 +69,15 @@ static void isr_rx_iso_data_invalid(const struct lll_sync_iso *const lll,
 				    uint16_t handle,
 				    struct node_rx_pdu *node_rx);
 static void isr_rx_ctrl_recv(struct lll_sync_iso *lll, struct pdu_bis *pdu);
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+static uint8_t se_index_get(const struct lll_sync_iso *lll,
+			    bool is_sequential_packing);
+static void se_b2b_rx_arm(struct lll_sync_iso *lll, uint8_t se,
+			  bool is_sequential_packing, bool is_chained);
+static uint32_t se_b2b_rx_start_us(struct lll_sync_iso *lll, uint8_t se,
+				   uint32_t start_us,
+				   bool is_sequential_packing);
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
 
 int lll_sync_iso_init(void)
 {
@@ -570,7 +579,9 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 		radio_pkt_rx_set(node_rx->pdu);
 	}
 
+#if !defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
 	radio_switch_complete_and_disable();
+#endif /* !CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
 
 	ticks_at_event = p->ticks_at_expire;
 	ull = HDR_LLL2ULL(lll);
@@ -581,6 +592,14 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	remainder = p->remainder;
 	remainder_us = radio_tmr_start(0U, ticks_at_start, remainder);
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+	/* Pre-arm the subevent after the first subevent being received, after
+	 * radio_tmr_start() as it restores the END based SW switch timer clear.
+	 */
+	se_b2b_rx_arm(lll, se_index_get(lll, is_sequential_packing),
+		      is_sequential_packing, false);
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
 
 	if (false) {
 
@@ -1008,6 +1027,11 @@ static void isr_rx_estab(void *param)
 
 	/* Get reference to LLL context */
 	lll = param;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+	/* Cancel the subevent pre-armed in prepare */
+	radio_switch_complete_and_b2b_se_rx_disable();
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
@@ -1749,7 +1773,9 @@ isr_rx_next_subevent:
 	radio_aa_set(access_addr);
 	radio_crc_configure(PDU_CRC_POLYNOMIAL, sys_get_le24(crc_init));
 
+#if !defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
 	radio_switch_complete_and_disable();
+#endif /* !CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
 
 	/* Set the channel to use */
 	if (!bis) {
@@ -1852,8 +1878,21 @@ isr_rx_next_subevent:
 		radio_pkt_rx_set(pdu);
 	}
 
+	/* assert if radio packet ptr is not set and radio started tx */
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		lll_prof_cputime_capture();
+		if (radio_is_ready()) {
+			uint32_t end_se_us;
+
+			end_se_us = radio_tmr_end_get();
+
+			LL_ASSERT_MSG(false, "%s: trx_cnt %u crc_ok %u lll->se %u skipped %u"
+				      " aa_se_us %u end_se_us %u Radio ISR latency: %u (%u)",
+				      __func__, lll->trx_cnt, crc_ok, lll->se, skipped,
+				      lll->aa_se, end_se_us, lll_prof_latency_get(),
+				      lll_prof_cputime_get());
+		}
+	} else {
+		LL_ASSERT_ERR(!radio_is_ready());
 	}
 
 	/* PDU Header Complete TimeOut, calculate the absolute timeout in
@@ -1930,12 +1969,17 @@ isr_rx_next_subevent:
 		/* +1 us radio_tmr_start_us compensation */
 		start_us = hcto - 1U;
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+		hcto = se_b2b_rx_start_us(lll, nse, start_us, is_sequential_packing);
+#else /* !CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
 		hcto = radio_tmr_start_us(0U, start_us);
+#endif /* !CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
+
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			lll_prof_cputime_capture();
+
 			if (hcto != (start_us + 1U)) {
 				uint32_t end_se_us;
-
-				lll_prof_cputime_capture();
 
 				end_se_us = radio_tmr_end_get();
 
@@ -1948,6 +1992,14 @@ isr_rx_next_subevent:
 			}
 		} else {
 			LL_ASSERT_ERR(hcto == (start_us + 1U));
+		}
+
+		if (hcto != (start_us + 1U)) {
+			/* Radio started late, listen from the actual start so
+			 * that the header complete timeout lets the next
+			 * subevent be received if this one is missed.
+			 */
+			start_us = hcto - 1U;
 		}
 
 		/* Add 8 us * subevents so far, as radio was setup to listen
@@ -1966,8 +2018,19 @@ isr_rx_next_subevent:
 		/* +1 us radio_tmr_start_us compensation */
 		start_us = hcto - 1U;
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+		hcto = se_b2b_rx_start_us(lll, nse, start_us, is_sequential_packing);
+#else /* !CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
 		hcto = radio_tmr_start_us(0U, start_us);
-		LL_ASSERT_ERR(hcto == (start_us + 1U));
+#endif /* !CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
+
+		if (hcto != (start_us + 1U)) {
+			/* Radio started late, listen from the actual start so
+			 * that the header complete timeout lets the next
+			 * subevent be received if this one is missed.
+			 */
+			start_us = hcto - 1U;
+		}
 
 		hcto += ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US +
 			  lll->window_widening_event_us) << 1) +
@@ -2030,6 +2093,11 @@ static void isr_rx_lll_done(void *param)
 	uint8_t bis_idx;
 
 	lll = param;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+	/* Cancel the subevent pre-armed by the last subevent received */
+	radio_switch_complete_and_b2b_se_rx_disable();
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
 
 	/* Gracefully flush pipelined event on terminate received */
 	if (unlikely(lll->is_lll_stop != 0U)) {
@@ -2466,3 +2534,95 @@ static void isr_rx_ctrl_recv(struct lll_sync_iso *lll, struct pdu_bis *pdu)
 		/* Unknown control PDU, ignore */
 	}
 }
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+/* Index of the current subevent, counted from the first subevent of the first
+ * selected BIS.
+ */
+static uint8_t se_index_get(const struct lll_sync_iso *lll,
+			    bool is_sequential_packing)
+{
+	const struct lll_sync_iso_stream *stream;
+
+	stream = ull_sync_iso_lll_stream_get(lll->stream_handle[0]);
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO_SEQUENTIAL) &&
+	    is_sequential_packing) {
+		return ((lll->bis_curr - stream->bis_index) *
+			((lll->bn * lll->irc) + lll->ptc)) +
+		       ((lll->irc_curr - 1U) * lll->bn) + (lll->bn_curr - 1U) +
+		       lll->ptc_curr + lll->ctrl;
+	}
+
+	return (lll->bis_curr - stream->bis_index) +
+	       ((((lll->irc_curr - 1U) * lll->bn) +
+		 (lll->bn_curr - 1U) + lll->ptc_curr) *
+		lll->num_bis) + lll->ctrl;
+}
+
+/* Pre-arm the radio enable for the subevent after the subevent being setup,
+ * relative to its radio READY.
+ */
+static void se_b2b_rx_arm(struct lll_sync_iso *lll, uint8_t se,
+			  bool is_sequential_packing, bool is_chained)
+{
+	uint32_t se_spacing_us;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO_SEQUENTIAL) &&
+	    is_sequential_packing) {
+		se_spacing_us = lll->sub_interval;
+	} else {
+		se_spacing_us = lll->bis_spacing;
+	}
+
+	/* Listen early considering +/- 2 us active clock jitter */
+	radio_tmr_tifs_set(se_spacing_us -
+			   radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8) -
+			   (EVENT_CLOCK_JITTER_US << 1));
+
+	if (is_chained) {
+		radio_switch_complete_and_b2b_se_rx(lll->phy, PHY_FLAGS_S8,
+						    lll->phy, PHY_FLAGS_S8);
+	} else {
+		radio_switch_complete_and_b2b_se_rx_first(lll->phy, PHY_FLAGS_S8,
+							  lll->phy, PHY_FLAGS_S8);
+	}
+
+	lll->se_b2b = se + 1U;
+}
+
+/* Start the radio for the subevent being setup, using the radio enable
+ * pre-armed at the READY of the previous subevent when this subevent is the
+ * immediate next subevent, otherwise using the event timer. Returns the
+ * actual start in microseconds plus 1, like radio_tmr_start_us().
+ */
+static uint32_t se_b2b_rx_start_us(struct lll_sync_iso *lll, uint8_t se,
+				   uint32_t start_us,
+				   bool is_sequential_packing)
+{
+	uint32_t actual_us;
+
+	if (se == lll->se_b2b) {
+		se_b2b_rx_arm(lll, se, is_sequential_packing, true);
+		if (!radio_switch_b2b_se_rx_is_missed()) {
+			return start_us + 1U;
+		}
+	}
+
+	/* Subevents skipped or pre-armed radio enable missed, cancel the
+	 * pre-armed radio enable before starting using the event timer.
+	 */
+	radio_switch_complete_and_b2b_se_rx_disable();
+
+	se_b2b_rx_arm(lll, se, is_sequential_packing, false);
+
+	actual_us = radio_tmr_start_us(0U, start_us);
+	if (actual_us != (start_us + 1U)) {
+		/* Radio started late, the subevent pre-armed relative to its
+		 * READY would also be late, use event timer for next subevent.
+		 */
+		lll->se_b2b = UINT8_MAX;
+	}
+
+	return actual_us;
+}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
