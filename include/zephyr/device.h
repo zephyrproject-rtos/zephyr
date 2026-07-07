@@ -167,8 +167,8 @@ typedef int16_t device_handle_t;
  * stored in @ref device.data.
  * @param config Pointer to the device's private constant data, which will be
  * stored in @ref device.config.
- * @param level The device's initialization level (PRE_KERNEL_1, PRE_KERNEL_2 or
- * POST_KERNEL).
+ * @param level The device's initialization level (PRE_KERNEL or POST_KERNEL;
+ * the deprecated PRE_KERNEL_1 and PRE_KERNEL_2 levels are still accepted).
  * @param prio The device's priority within its initialization level. See
  * SYS_INIT() for details.
  * @param api Pointer to the device's API structure. Can be `NULL`.
@@ -234,8 +234,8 @@ typedef int16_t device_handle_t;
  * stored in @ref device.data.
  * @param config Pointer to the device's private constant data, which will be
  * stored in @ref device.config field.
- * @param level The device's initialization level (PRE_KERNEL_1, PRE_KERNEL_2 or
- * POST_KERNEL).
+ * @param level The device's initialization level (PRE_KERNEL or POST_KERNEL;
+ * the deprecated PRE_KERNEL_1 and PRE_KERNEL_2 levels are still accepted).
  * @param prio The device's priority within its initialization level. See
  * SYS_INIT() for details.
  * @param api Pointer to the device's API structure. Can be `NULL`.
@@ -1268,7 +1268,8 @@ device_get_dt_nodelabels(const struct device *dev)
  * @param level Init level
  */
 #define Z_DEVICE_CHECK_INIT_LEVEL(level)                                       \
-	COND_CASE_1(Z_INIT_PRE_KERNEL_1_##level, (),                           \
+	COND_CASE_1(Z_INIT_PRE_KERNEL_##level, (),                             \
+		    Z_INIT_PRE_KERNEL_1_##level, (),                           \
 		    Z_INIT_PRE_KERNEL_2_##level, (),                           \
 		    Z_INIT_POST_KERNEL_##level, (),                            \
 		    (ZERO_OR_COMPILE_ERROR(0)))

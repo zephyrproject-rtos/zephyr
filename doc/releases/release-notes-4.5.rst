@@ -115,6 +115,13 @@ Deprecated APIs and options
   * Deprecated various fuel gauge property enums and union fields in favor of
     new versions with explicit unit suffixes.
 
+* Kernel
+
+  * The ``PRE_KERNEL_1`` and ``PRE_KERNEL_2`` initialization levels have been deprecated in favor
+    of a single ``PRE_KERNEL`` level. ``PRE_KERNEL_1`` is an alias of ``PRE_KERNEL``;
+    ``PRE_KERNEL_2`` keeps running after all ``PRE_KERNEL`` entries while it is phased out. See
+    the :ref:`migration guide <migration_4.5>` for details.
+
 * LoRa
 
   * Renamed :c:func:`lora_recv_duty_cycle` to :c:func:`lora_recv_duty_cycle_async`
