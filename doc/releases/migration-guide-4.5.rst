@@ -48,6 +48,18 @@ Kernel
   entry after its dependencies. The linker symbol ``__init_PRE_KERNEL_1_start`` has been renamed
   to ``__init_PRE_KERNEL_start``; tooling that inspects init sections by name must be updated.
 
+* The ``SMP`` initialization level has been renamed to ``PRE_MAIN``. Despite its name the level
+  was never specific to SMP: it is the last level of the boot sequence, run on the boot thread
+  once the static threads have been created and, on SMP systems, every secondary CPU has been
+  started, immediately before ``main()`` is entered. ``PRE_MAIN`` is available unconditionally,
+  whereas the ``SMP`` level only existed when :kconfig:option:`CONFIG_SMP` was enabled. Replace
+  ``SYS_INIT(my_fn, SMP, prio)`` with ``SYS_INIT(my_fn, PRE_MAIN, prio)``. ``SMP`` is kept as a
+  deprecated alias sharing the ``PRE_MAIN`` band, so existing registrations keep working and keep
+  their relative ordering. Note one behavior change: an entry registered at ``SMP`` in a non-SMP
+  build used to be linked but never run, and now runs before ``main()`` like any other
+  ``PRE_MAIN`` entry. The linker symbol ``__init_SMP_start`` has been renamed to
+  ``__init_PRE_MAIN_start``; tooling that inspects init sections by name must be updated.
+
 * When :kconfig:option:`CONFIG_SCHED_CPU_MASK_PIN_ONLY` is enabled, calling
   :c:func:`k_thread_cpu_mask_clear`, :c:func:`k_thread_cpu_mask_enable_all`,
   or :c:func:`k_thread_cpu_mask_disable` now triggers an assertion instead of
