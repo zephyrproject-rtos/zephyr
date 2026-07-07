@@ -5,19 +5,41 @@ description: |
   Infineon IPC Unit as Zephyr MBOX.
 
   This Infineon Mailbox driver implements Multi-Channel Inter-Processor Mailbox (MBOX) API
-  around Infineon Inter-processor communication IP block.
+  around Infineon Inter-processor communication IP block, using the PDL cy_ipc_drv layer
+  directly (one 32-bit word per message).
+
+  Each mbox channel is described by three parallel entries:
+    * an entry in the "ipc-channels" array (global IPC channel index used by the PDL,
+      i.e. instance * CY_IPC_CHANNELS_PER_INSTANCE + channel-within-instance),
+    * an entry in the "ipc-intr-structs" array (global IPC interrupt-structure index the
+      receiver watches on this channel), and
+    * an entry in the "interrupts" array (NVIC vector on THIS core for that interrupt
+      structure; use whatever the CMSIS header defines for the receiving core).
+
+  The mbox channel index passed by consumers (via #mbox-cells = <1>) is the index into
+  these arrays, not an IPC channel number.
 
 compatible: "infineon,cat1-mbox-pdl"
 
 include: [base.yaml, mailbox-controller.yaml]
 
 properties:
-  reg:
-    type: array
-    required: true
-
   interrupts:
     required: true
+
+  ipc-channels:
+    type: array
+    required: true
+    description: |
+      Global IPC channel index for each mbox channel. Length must equal the number
+      of "interrupts" entries and the length of "ipc-intr-structs".
+
+  ipc-intr-structs:
+    type: array
+    required: true
+    description: |
+      Global IPC interrupt-structure index for each mbox channel. Length must equal
+      the number of "interrupts" entries and the length of "ipc-channels".
 
 mbox-cells:
   - channel
