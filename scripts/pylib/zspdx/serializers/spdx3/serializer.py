@@ -68,6 +68,8 @@ class SPDX3Serializer:
         # Shared objects
         self.tool = None  # Tool element for createdUsing
         self.creator_agent = None  # SoftwareAgent for createdBy
+        self.author_agent = None  # Organization for createdBy (the SBOM author)
+        self.organizations = {}  # organization name -> shared Organization element
         self.creation_info = None
         self.documents = {}  # doc_name -> SpdxDocument
 
@@ -148,7 +150,15 @@ class SPDX3Serializer:
             # Create the tool (for createdUsing)
             self.tool = spdx.Tool()
             self.tool._id = self._shorten_id(f"{namespace}/tools/west-spdx")
-            self.tool.name = "West SPDX Tool"
+            self.tool.name = self.sbom_data.metadata.get("tool_name") or "West SPDX Tool"
+            # SPDX 3.0 has no Tool version field; record it as a packageUrl external
+            # identifier, mirroring how the Build profile tools carry their version.
+            tool_version = self.sbom_data.metadata.get("tool_version")
+            if tool_version:
+                ext_id = spdx.ExternalIdentifier()
+                ext_id.externalIdentifierType = spdx.ExternalIdentifierType.packageUrl
+                ext_id.identifier = f"pkg:generic/zephyr-spdx-builder@{tool_version}"
+                self.tool.externalIdentifier.append(ext_id)
             self.elements.append(self.tool)
 
         if self.creation_info is None:
@@ -166,9 +176,38 @@ class SPDX3Serializer:
             self.tool.creationInfo = self.creation_info._id
             self.creator_agent.creationInfo = self.creation_info._id
 
+            # Credit the organization author alongside the automated agent, so the
+            # SBOM declares a real author. Reuses the shared Organization element,
+            # which package suppliers also reference.
+            organization = self.sbom_data.metadata.get("creator_organization")
+            self.author_agent = self._get_organization(organization)
+            if self.author_agent:
+                self.creation_info.createdBy.append(self.author_agent._id)
+
         # Build profile elements; no-ops when no build information was collected.
         self._create_build_tools()
         self._create_build_object()
+
+    def _get_organization(self, name: str):
+        """Return a shared Organization element for ``name``, creating it once.
+
+        Organizations are deduplicated by name so a supplier that is also the SBOM
+        author (or supplies many packages) is emitted as a single Agent that every
+        reference points at. Returns ``None`` when ``name`` is empty.
+        """
+        if not name:
+            return None
+        agent = self.organizations.get(name)
+        if agent is None:
+            namespace = self.sbom_data.namespace_prefix.rstrip("/")
+            slug = normalize_spdx_name(name).lower().replace(" ", "-")
+            agent = spdx.Organization()
+            agent._id = self._shorten_id(f"{namespace}/agents/{slug}")
+            agent.name = name
+            agent.creationInfo = self.creation_info._id
+            self.elements.append(agent)
+            self.organizations[name] = agent
+        return agent
 
     # ---- SPDX 3.0 Build profile -------------------------------------------------
 
@@ -836,6 +875,8 @@ class SPDX3Serializer:
             element_ids.add(self.tool._id)
         if self.creator_agent:
             element_ids.add(self.creator_agent._id)
+        if self.author_agent:
+            element_ids.add(self.author_agent._id)
         data_license = self._create_license_expression("CC0-1.0")
         if data_license:
             element_ids.add(data_license._id)

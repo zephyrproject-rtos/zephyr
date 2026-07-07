@@ -96,3 +96,31 @@ def build_doc(spdx_dir):
 def modules_doc(spdx_dir):
     """Fixture providing the parsed modules-deps.spdx document."""
     return parse_file(os.path.join(spdx_dir, "modules-deps.spdx"))
+
+
+@pytest.fixture(scope="session")
+def zephyr_version():
+    """Fixture providing the Zephyr version from the VERSION file."""
+    zephyr_base = os.environ.get("ZEPHYR_BASE")
+    if not zephyr_base:
+        pytest.skip("ZEPHYR_BASE not set")
+
+    version_file = os.path.join(zephyr_base, "VERSION")
+    values = {}
+    try:
+        with open(version_file) as f:
+            for line in f:
+                key, sep, val = line.partition("=")
+                if sep:
+                    values[key.strip()] = val.strip()
+    except OSError:
+        pytest.skip(f"Cannot read {version_file}")
+
+    try:
+        return (
+            f"{int(values['VERSION_MAJOR'])}"
+            f".{int(values['VERSION_MINOR'])}"
+            f".{int(values['PATCHLEVEL'])}"
+        )
+    except (KeyError, ValueError):
+        pytest.skip(f"Cannot parse version from {version_file}")

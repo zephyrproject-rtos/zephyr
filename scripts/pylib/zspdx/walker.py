@@ -27,6 +27,13 @@ from zspdx.model import (
 
 _logger = logging.getLogger(__name__)
 
+# Organization credited as the SBOM author and as the supplier of Zephyr and its
+# upstream-mirrored modules (all hosted under github.com/zephyrproject-rtos).
+ZEPHYR_ORGANIZATION = "The Zephyr Project"
+
+# Name of the tool recorded in the SPDX Creator field.
+SPDX_TOOL_NAME = "Zephyr SPDX builder"
+
 
 def get_tool_version(tool_path):
     """Get a tool's version by running it with ``--version``.
@@ -160,6 +167,52 @@ class Walker:
             purl += f'@{version}'
 
         return purl
+
+    @staticmethod
+    def _read_zephyr_version(zephyr_path):
+        """Read the Zephyr version (e.g. "4.4.99") from the repo VERSION file.
+
+        Returns "" when the path is missing or the file cannot be parsed.
+        """
+        if not zephyr_path:
+            return ""
+        version_file = os.path.join(zephyr_path, "VERSION")
+        values = {}
+        try:
+            with open(version_file) as f:
+                for line in f:
+                    key, sep, val = line.partition("=")
+                    if sep:
+                        values[key.strip()] = val.strip()
+        except OSError:
+            return ""
+
+        try:
+            version = (
+                f"{int(values['VERSION_MAJOR'])}"
+                f".{int(values['VERSION_MINOR'])}"
+                f".{int(values['PATCHLEVEL'])}"
+            )
+        except (KeyError, ValueError):
+            return ""
+
+        extra = values.get("EXTRAVERSION", "")
+        if extra:
+            version += f"-{extra}"
+        return version
+
+    def _set_creation_metadata(self, zephyr):
+        """Record SBOM creator provenance (author organization and tool version).
+
+        Serializers read these from the graph metadata to emit the SPDX Creator
+        fields, so the SBOM advertises a human/organization author alongside the
+        versioned generation tool.
+        """
+        self.sbom_graph.metadata["creator_organization"] = ZEPHYR_ORGANIZATION
+        self.sbom_graph.metadata["tool_name"] = SPDX_TOOL_NAME
+        self.sbom_graph.metadata["tool_version"] = self._read_zephyr_version(
+            (zephyr or {}).get("path", "")
+        )
 
     # primary entry point
     def collect_sbom_graph(self):
@@ -372,6 +425,7 @@ class Walker:
         try:
             with open(self.meta_file) as file:
                 content = yaml.load(file.read(), yaml.SafeLoader)
+                self._set_creation_metadata(content.get("zephyr"))
                 if not self.setup_zephyr_component(content["zephyr"], content["modules"]):
                     return False
         except (FileNotFoundError, yaml.YAMLError):
