@@ -104,6 +104,7 @@ module-str = spi
 source "subsys/logging/Kconfig.template.log_config"
 
 # zephyr-keep-sorted-start
+source "drivers/spi/Kconfig.adi_axi_spi_engine"
 source "drivers/spi/Kconfig.ambiq"
 source "drivers/spi/Kconfig.ameba"
 source "drivers/spi/Kconfig.andes_atcspi200"
