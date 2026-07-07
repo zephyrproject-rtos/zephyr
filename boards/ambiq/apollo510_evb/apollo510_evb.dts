@@ -17,6 +17,7 @@
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
 		zephyr,sram = &sram0;
+		zephyr,flash-controller = &flash;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
@@ -99,6 +100,10 @@
 			label = "PWM_LED";
 		};
 	};
+};
+
+&flash {
+	status = "okay";
 };
 
 &trng {
