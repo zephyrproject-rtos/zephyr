@@ -643,6 +643,33 @@ static inline void hal_radio_sw_switch_setup(uint8_t ppi_group_index)
 		HAL_SW_DPPI_TASK_EN_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(other_grp)));
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+/* Clear (and start) the SW-switch timer and enable the PPI Group[<index>] on
+ * RADIO EVENTS_READY instead of EVENTS_END/PHYEND. Used for BIS subevent
+ * back-to-back reception where the timer offset is relative to the current
+ * subevent's READY timestamp.
+ *
+ * NOTE: A RADIO event can only publish on one DPPI channel and EVENTS_READY is
+ *       already published for the Radio ready time capture, hence subscribe
+ *       the tasks to the same channel instead of re-publishing EVENTS_READY.
+ */
+static inline void hal_sw_switch_timer_clear_ppi_se_rx_config(uint8_t ppi_group_index)
+{
+	hal_radio_ready_time_capture_ppi_config();
+
+	nrf_timer_subscribe_set(SW_SWITCH_TIMER, NRF_TIMER_TASK_CLEAR,
+				HAL_RADIO_READY_TIME_CAPTURE_PPI);
+	nrf_timer_subscribe_set(SW_SWITCH_TIMER, NRF_TIMER_TASK_START,
+				HAL_RADIO_READY_TIME_CAPTURE_PPI);
+
+	nrf_dppi_subscribe_set(NRF_DPPIC,
+		HAL_SW_DPPI_TASK_EN_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(ppi_group_index)),
+		HAL_RADIO_READY_TIME_CAPTURE_PPI);
+
+	nrf_dppi_channels_enable(NRF_DPPIC, BIT(HAL_RADIO_READY_TIME_CAPTURE_PPI));
+}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
+
 static inline void hal_radio_txen_on_sw_switch(uint8_t compare_reg_index, uint8_t radio_enable_ppi)
 {
 	/* Wire SW Switch timer event <compare_reg> to the
