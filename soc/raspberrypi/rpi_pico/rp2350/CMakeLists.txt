@@ -11,6 +11,10 @@ if(CONFIG_PM)
   zephyr_library_sources(power.c)
 endif()
 
+if(CONFIG_PM_S2RAM)
+  zephyr_library_sources(pm_s2ram_trampoline.c)
+endif()
+
 zephyr_include_directories(.)
 
 # Add the image definition block if required
