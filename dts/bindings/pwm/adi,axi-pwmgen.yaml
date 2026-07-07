@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Analog Devices AXI PWM Generator core
+
+compatible: "adi,axi-pwmgen"
+
+include: [base.yaml, pwm-controller.yaml]
+
+properties:
+  reg:
+    required: true
+  adi,ref-clock-hz:
+    type: int
+    required: true
+    description: Reference clock frequency in Hz
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

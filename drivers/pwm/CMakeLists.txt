@@ -10,6 +10,7 @@ zephyr_library_sources_ifdef(CONFIG_PWM_SHELL pwm_shell.c)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_MCPWM_ESP32 pwm_mc_esp32.c)
+zephyr_library_sources_ifdef(CONFIG_PWM_ADI_AXI_PWMGEN pwm_adi_axi_pwmgen.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_AMBIQ_CTIMER pwm_ambiq_ctimer.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_AMBIQ_TIMER pwm_ambiq_timer.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_AMEBA pwm_ameba.c)
