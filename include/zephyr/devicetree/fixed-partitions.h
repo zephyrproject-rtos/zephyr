@@ -55,33 +55,33 @@ extern "C" {
 /**
  * @brief Test if a fixed partition with a given label property exists
  * @param label lowercase-and-underscores label property value
- * @return 1 if any "fixed-partitions" child node has the given label,
+ * @return 1 if any <tt>fixed-partitions</tt> child node has the given label,
  *         0 otherwise.
  */
 #define DT_HAS_FIXED_PARTITION_LABEL(label) \
 	IS_ENABLED(DT_CAT3(DT_COMPAT_fixed_partitions_LABEL_, label, _EXISTS))
 
 /**
- * @brief Test if fixed-partition compatible node exists
+ * @brief Test if <tt>fixed-partitions</tt> compatible node exists
  *
  * @param node_id DTS node to test
- * @return 1 if node exists and is fixed-partition compatible, 0 otherwise.
+ * @return 1 if node exists and is <tt>fixed-partitions</tt> compatible, 0 otherwise.
  */
 #define DT_FIXED_PARTITION_EXISTS(node_id)		\
 	DT_NODE_HAS_COMPAT(DT_PARENT(node_id), fixed_partitions)
 
 /**
  * @brief Get a numeric identifier for a fixed partition
- * @param node_id node identifier for a fixed-partitions child node
+ * @param node_id node identifier for a <tt>fixed-partitions</tt> child node
  * @return the partition's ID, a unique zero-based index number
  */
 #define DT_FIXED_PARTITION_ID(node_id) DT_CAT(node_id, _PARTITION_ID)
 
 /**
  * @brief Get the node identifier of the flash memory for a partition
- * @param node_id node identifier for a fixed-partitions child node
+ * @param node_id node identifier for a <tt>fixed-partitions</tt> child node
  * @return the node identifier of the internal memory that contains the
- * fixed-partitions node, or @ref DT_INVALID_NODE if it doesn't exist.
+ * <tt>fixed-partitions</tt> node, or @ref DT_INVALID_NODE if it doesn't exist.
  */
 #define DT_MEM_FROM_FIXED_PARTITION(node_id)                                                       \
 	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_GPARENT(node_id), soc_nv_flash), (DT_GPARENT(node_id)),  \
@@ -89,9 +89,9 @@ extern "C" {
 
 /**
  * @brief Get the node identifier of the flash controller for a partition
- * @param node_id node identifier for a fixed-partitions child node
+ * @param node_id node identifier for a <tt>fixed-partitions</tt> child node
  * @return the node identifier of the memory technology device that
- * contains the fixed-partitions node.
+ * contains the <tt>fixed-partitions</tt> node.
  */
 #define DT_MTD_FROM_FIXED_PARTITION(node_id)                                                       \
 	COND_CODE_1(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_PARTITION(node_id)),                          \
@@ -126,7 +126,7 @@ extern "C" {
  * addressable by the CPU. Otherwise, it may produce a compile-time
  * error, such as: `'__REG_IDX_0_VAL_ADDRESS' undeclared`.
  *
- * @param node_id node identifier for a fixed-partitions child node
+ * @param node_id node identifier for a <tt>fixed-partitions</tt> child node
  * @return the partition's offset plus the base address of the flash
  * node containing it.
  */
@@ -134,19 +134,19 @@ extern "C" {
 	(DT_REG_ADDR(node_id) + DT_REG_ADDR(DT_GPARENT(node_id)))
 
 /**
- * @brief Test if fixed-subpartitions compatible node exists
+ * @brief Test if <tt>fixed-subpartitions</tt> compatible node exists
  *
  * @param node_id DTS node to test
- * @return 1 if node exists and is fixed-subpartitions compatible, 0 otherwise.
+ * @return 1 if node exists and is <tt>fixed-subpartitions</tt> compatible, 0 otherwise.
  */
 #define DT_FIXED_SUBPARTITION_EXISTS(node_id)		\
 	DT_NODE_HAS_COMPAT(DT_PARENT(node_id), fixed_subpartitions)
 
 /**
  * @brief Get the node identifier of the flash memory for a subpartition
- * @param node_id node identifier for a fixed-subpartitions child node
+ * @param node_id node identifier for a <tt>fixed-subpartitions</tt> child node
  * @return the node identifier of the internal memory that contains the
- * fixed-subpartitions node, or @ref DT_INVALID_NODE if it doesn't exist.
+ * <tt>fixed-subpartitions</tt> node, or @ref DT_INVALID_NODE if it doesn't exist.
  */
 #define DT_MEM_FROM_FIXED_SUBPARTITION(node_id)                                                    \
 	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_GPARENT(DT_PARENT(node_id)), soc_nv_flash),              \
@@ -154,9 +154,9 @@ extern "C" {
 
 /**
  * @brief Get the node identifier of the flash controller for a subpartition
- * @param node_id node identifier for a fixed-subpartitions child node
+ * @param node_id node identifier for a <tt>fixed-subpartitions</tt> child node
  * @return the node identifier of the memory technology device that
- * contains the fixed-subpartitions node.
+ * contains the <tt>fixed-subpartitions</tt> node.
  */
 #define DT_MTD_FROM_FIXED_SUBPARTITION(node_id)                                                    \
 	COND_CODE_1(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_SUBPARTITION(node_id)),                       \
@@ -202,7 +202,7 @@ extern "C" {
  * addressable by the CPU. Otherwise, it may produce a compile-time
  * error, such as: `'__REG_IDX_0_VAL_ADDRESS' undeclared`.
  *
- * @param node_id node identifier for a fixed-subpartitions child node
+ * @param node_id node identifier for a <tt>fixed-subpartitions</tt> child node
  * @return the subpartition's offset plus the base address of the flash
  * node containing it.
  */

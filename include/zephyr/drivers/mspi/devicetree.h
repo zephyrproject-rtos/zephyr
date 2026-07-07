@@ -33,7 +33,7 @@ extern "C" {
  * mspi_dev_cfg</tt> by reading the relevant data from the devicetree.
  *
  * @param mspi_dev Devicetree node identifier for the MSPI device whose
- *                 struct mspi_dev_cfg to create an initializer for
+ *                 <tt>struct mspi_dev_cfg</tt> to create an initializer for
  */
 #define MSPI_DEVICE_CONFIG_DT(mspi_dev)                                                           \
 	{                                                                                         \
@@ -80,7 +80,7 @@ extern "C" {
  * mspi_xip_cfg</tt> by reading the relevant data from the devicetree.
  *
  * @param mspi_dev Devicetree node identifier for the MSPI device whose
- *                 struct mspi_xip_cfg to create an initializer for
+ *                 <tt>struct mspi_xip_cfg</tt> to create an initializer for
  */
 #define MSPI_XIP_CONFIG_DT_NO_CHECK(mspi_dev)                                                     \
 	{                                                                                         \
@@ -97,7 +97,7 @@ extern "C" {
  * before calling <tt>MSPI_XIP_CONFIG_DT_NO_CHECK</tt>.
  *
  * @param mspi_dev Devicetree node identifier for the MSPI device whose
- *                 struct mspi_xip_cfg to create an initializer for
+ *                 <tt>struct mspi_xip_cfg</tt> to create an initializer for
  */
 #define MSPI_XIP_CONFIG_DT(mspi_dev)                                                              \
 		COND_CODE_1(DT_NODE_HAS_PROP(mspi_dev, xip_config),                               \
@@ -121,7 +121,7 @@ extern "C" {
  * mspi_scramble_cfg</tt> by reading the relevant data from the devicetree.
  *
  * @param mspi_dev Devicetree node identifier for the MSPI device whose
- *                 struct mspi_scramble_cfg to create an initializer for
+ *                 <tt>struct mspi_scramble_cfg</tt> to create an initializer for
  */
 #define MSPI_SCRAMBLE_CONFIG_DT_NO_CHECK(mspi_dev)                                                \
 	{                                                                                         \
@@ -137,7 +137,7 @@ extern "C" {
  * before calling <tt>MSPI_SCRAMBLE_CONFIG_DT_NO_CHECK</tt>.
  *
  * @param mspi_dev Devicetree node identifier for the MSPI device whose
- *                 struct mspi_scramble_cfg to create an initializer for
+ *                 <tt>struct mspi_scramble_cfg</tt> to create an initializer for
  */
 #define MSPI_SCRAMBLE_CONFIG_DT(mspi_dev)                                                         \
 		COND_CODE_1(DT_NODE_HAS_PROP(mspi_dev, scramble_config),                          \
@@ -161,7 +161,7 @@ extern "C" {
  * mspi_dev_id</tt> by reading the relevant data from the devicetree.
  *
  * @param mspi_dev Devicetree node identifier for the MSPI device whose
- *                 struct mspi_dev_id to create an initializer for
+ *                 <tt>struct mspi_dev_id</tt> to create an initializer for
  */
 #define MSPI_DEVICE_ID_DT(mspi_dev)                                                               \
 	{                                                                                         \
@@ -215,7 +215,7 @@ extern "C" {
  * @endcode
  *
  * @param mspi_dev a MSPI device node identifier
- * @return #gpio_dt_spec struct corresponding with mspi_dev's chip enable
+ * @return <tt>gpio_dt_spec</tt> struct corresponding with mspi_dev's chip enable
  */
 #define MSPI_DEV_CE_GPIOS_DT_SPEC_GET(mspi_dev)                                                   \
 		GPIO_DT_SPEC_GET_BY_IDX_OR(DT_BUS(mspi_dev), ce_gpios,                            \
@@ -228,7 +228,7 @@ extern "C" {
  * <tt>MSPI_DEV_CE_GPIOS_DT_SPEC_GET(DT_DRV_INST(inst))</tt>.
  *
  * @param inst Devicetree instance number
- * @return #gpio_dt_spec struct corresponding with mspi_dev's chip enable
+ * @return <tt>gpio_dt_spec</tt> struct corresponding with mspi_dev's chip enable
  */
 #define MSPI_DEV_CE_GPIOS_DT_SPEC_INST_GET(inst)                                                  \
 		MSPI_DEV_CE_GPIOS_DT_SPEC_GET(DT_DRV_INST(inst))
@@ -239,10 +239,10 @@ extern "C" {
  *
  * This helper macro check whether <tt>ce_gpios</tt> binding exist first
  * before calling <tt>GPIO_DT_SPEC_GET_BY_IDX</tt> and expand to an array of
- * gpio_dt_spec.
+ * <tt>gpio_dt_spec</tt>.
  *
  * @param node_id Devicetree node identifier for the MSPI controller
- * @return an array of gpio_dt_spec struct corresponding with mspi_dev's chip enables
+ * @return an array of <tt> struct gpio_dt_spec</tt> corresponding with mspi_dev's chip enables
  */
 #define MSPI_CE_GPIOS_DT_SPEC_GET(node_id)                                                        \
 {                                                                                                 \
@@ -258,17 +258,17 @@ extern "C" {
  * <tt>MSPI_CE_GPIOS_DT_SPEC_GET(DT_DRV_INST(inst))</tt>.
  *
  * @param inst Devicetree instance number
- * @return an array of gpio_dt_spec struct corresponding with mspi_dev's chip enables
+ * @return an array of <tt>struct gpio_dt_spec</tt> corresponding with mspi_dev's chip enables
  */
 #define MSPI_CE_GPIOS_DT_SPEC_INST_GET(inst)                                                      \
 		MSPI_CE_GPIOS_DT_SPEC_GET(DT_DRV_INST(inst))
 
 /**
- * @brief Initialize and get a pointer to a @p mspi_ce_control from a
+ * @brief Initialize and get a pointer to a <tt>mspi_ce_control</tt> structure from a
  *        devicetree node identifier
  *
  * This helper is useful for initializing a device on a MSPI bus. It
- * initializes a struct mspi_ce_control and returns a pointer to it.
+ * initializes a <tt>struct mspi_ce_control</tt> and returns a pointer to it.
  * Here, @p node_id is a node identifier for a MSPI device, not a MSPI
  * controller.
  *
@@ -298,8 +298,8 @@ extern "C" {
  * @endcode
  *
  * @param node_id Devicetree node identifier for a device on a MSPI bus
- * @param delay_ The @p delay field to set in the @p mspi_ce_control
- * @return a pointer to the @p mspi_ce_control structure
+ * @param delay_ The <tt>delay</tt> field to set in the <tt>mspi_ce_control</tt> structure
+ * @return a pointer to the <tt>mspi_ce_control</tt> structure
  */
 #define MSPI_CE_CONTROL_INIT(node_id, delay_)                                                     \
 	{                                                                                         \
@@ -307,17 +307,17 @@ extern "C" {
 	}
 
 /**
- * @brief Get a pointer to a @p mspi_ce_control from a devicetree node
+ * @brief Get a pointer to a <tt>mspi_ce_control</tt> structure from a devicetree node
  *
  * This is equivalent to
  * <tt>MSPI_CE_CONTROL_INIT(DT_DRV_INST(inst), delay)</tt>.
  *
- * Therefore, @p DT_DRV_COMPAT must already be defined before using
+ * Therefore, @c DT_DRV_COMPAT must already be defined before using
  * this macro.
  *
  * @param inst Devicetree node instance number
- * @param delay_ The @p delay field to set in the @p mspi_ce_control
- * @return a pointer to the @p mspi_ce_control structure
+ * @param delay_ The <tt>delay</tt> field to set in the <tt>mspi_ce_control</tt> structure
+ * @return a pointer to the <tt>mspi_ce_control</tt> structure
  */
 #define MSPI_CE_CONTROL_INIT_INST(inst, delay_) MSPI_CE_CONTROL_INIT(DT_DRV_INST(inst), delay_)
 

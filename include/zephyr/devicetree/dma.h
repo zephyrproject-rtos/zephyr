@@ -25,7 +25,7 @@ extern "C" {
 
 /**
  * @brief Get the node identifier for the DMA controller from a
- *        dmas property at an index
+ *        <tt>dmas</tt> property at an index
  *
  * Example devicetree fragment:
  *
@@ -43,17 +43,16 @@ extern "C" {
  *     DT_DMAS_CTLR_BY_IDX(DT_NODELABEL(n), 0) // DT_NODELABEL(dma1)
  *     DT_DMAS_CTLR_BY_IDX(DT_NODELABEL(n), 1) // DT_NODELABEL(dma2)
  *
- * @param node_id node identifier for a node with a dmas property
- * @param idx logical index into dmas property
- * @return the node identifier for the DMA controller referenced at
- *         index "idx"
+ * @param node_id node identifier for a node with a <tt>dmas</tt> property
+ * @param idx logical index into <tt>dmas</tt> property
+ * @return the node identifier for the DMA controller referenced at index @p idx
  * @see DT_PROP_BY_PHANDLE_IDX()
  */
 #define DT_DMAS_CTLR_BY_IDX(node_id, idx) DT_PHANDLE_BY_IDX(node_id, dmas, idx)
 
 /**
  * @brief Get the node identifier for the DMA controller from a
- *        dmas property by name
+ *        <tt>dmas</tt> property by name
  *
  * Example devicetree fragment:
  *
@@ -72,8 +71,8 @@ extern "C" {
  *     DT_DMAS_CTLR_BY_NAME(DT_NODELABEL(n), tx) // DT_NODELABEL(dma1)
  *     DT_DMAS_CTLR_BY_NAME(DT_NODELABEL(n), rx) // DT_NODELABEL(dma2)
  *
- * @param node_id node identifier for a node with a dmas property
- * @param name lowercase-and-underscores name of a dmas element
+ * @param node_id node identifier for a node with a <tt>dmas</tt> property
+ * @param name lowercase-and-underscores name of a <tt>dmas</tt> element
  *             as defined by the node's dma-names property
  * @return the node identifier for the DMA controller in the named element
  * @see DT_PHANDLE_BY_NAME()
@@ -83,21 +82,20 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_DMAS_CTLR_BY_IDX(node_id, 0)
- * @param node_id node identifier for a node with a dmas property
+ * @param node_id node identifier for a node with a <tt>dmas</tt> property
  * @return the node identifier for the DMA controller at index 0
- *         in the node's "dmas" property
+ *         in the node's <tt>dmas</tt> property
  * @see DT_DMAS_CTLR_BY_IDX()
  */
 #define DT_DMAS_CTLR(node_id) DT_DMAS_CTLR_BY_IDX(node_id, 0)
 
 /**
  * @brief Get the node identifier for the DMA controller from a
- *        DT_DRV_COMPAT instance's dmas property at an index
+ *        @c DT_DRV_COMPAT instance's <tt>dmas</tt> property at an index
  *
- * @param inst DT_DRV_COMPAT instance number
- * @param idx logical index into dmas property
- * @return the node identifier for the DMA controller referenced at
- *         index "idx"
+ * @param inst @c DT_DRV_COMPAT instance number
+ * @param idx logical index into <tt>dmas</tt> property
+ * @return the node identifier for the DMA controller referenced at index @p idx
  * @see DT_DMAS_CTLR_BY_IDX()
  */
 #define DT_INST_DMAS_CTLR_BY_IDX(inst, idx) \
@@ -105,9 +103,9 @@ extern "C" {
 
 /**
  * @brief Get the node identifier for the DMA controller from a
- *        DT_DRV_COMPAT instance's dmas property by name
- * @param inst DT_DRV_COMPAT instance number
- * @param name lowercase-and-underscores name of a dmas element
+ *        @c DT_DRV_COMPAT instance's <tt>dmas</tt> property by name
+ * @param inst @c DT_DRV_COMPAT instance number
+ * @param name lowercase-and-underscores name of a <tt>dmas</tt> element
  *             as defined by the node's dma-names property
  * @return the node identifier for the DMA controller in the named element
  * @see DT_DMAS_CTLR_BY_NAME()
@@ -117,9 +115,9 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_DMAS_CTLR_BY_IDX(inst, 0)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return the node identifier for the DMA controller at index 0
- *         in the instance's "dmas" property
+ *         in the instance's <tt>dmas</tt> property
  * @see DT_DMAS_CTLR_BY_IDX()
  */
 #define DT_INST_DMAS_CTLR(inst) DT_INST_DMAS_CTLR_BY_IDX(inst, 0)
@@ -157,21 +155,21 @@ extern "C" {
  *     DT_DMAS_CELL_BY_IDX(DT_NODELABEL(n), 0, config) // 0x400
  *     DT_DMAS_CELL_BY_IDX(DT_NODELABEL(n), 1, config) // 0x404
  *
- * @param node_id node identifier for a node with a dmas property
- * @param idx logical index into dmas property
+ * @param node_id node identifier for a node with a <tt>dmas</tt> property
+ * @param idx logical index into <tt>dmas</tt> property
  * @param cell lowercase-and-underscores cell name
- * @return the cell value at index "idx"
+ * @return the cell value at index @p idx
  * @see DT_PHA_BY_IDX()
  */
 #define DT_DMAS_CELL_BY_IDX(node_id, idx, cell) \
 	DT_PHA_BY_IDX(node_id, dmas, idx, cell)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's DMA specifier's cell value at an index
- * @param inst DT_DRV_COMPAT instance number
- * @param idx logical index into dmas property
+ * @brief Get a @c DT_DRV_COMPAT instance's DMA specifier's cell value at an index
+ * @param inst @c DT_DRV_COMPAT instance number
+ * @param idx logical index into <tt>dmas</tt> property
  * @param cell lowercase-and-underscores cell name
- * @return the cell value at index "idx"
+ * @return the cell value at index @p idx
  * @see DT_DMAS_CELL_BY_IDX()
  */
 #define DT_INST_DMAS_CELL_BY_IDX(inst, idx, cell) \
@@ -211,9 +209,9 @@ extern "C" {
  *     DT_DMAS_CELL_BY_NAME(DT_NODELABEL(n), tx, config) // 0x400
  *     DT_DMAS_CELL_BY_NAME(DT_NODELABEL(n), rx, config) // 0x404
  *
- * @param node_id node identifier for a node with a dmas property
- * @param name lowercase-and-underscores name of a dmas element
- *             as defined by the node's dma-names property
+ * @param node_id node identifier for a node with a <tt>dmas</tt> property
+ * @param name lowercase-and-underscores name of a <tt>dmas</tt> element
+ *             as defined by the node's <tt>dma-names</tt> property
  * @param cell lowercase-and-underscores cell name
  * @return the cell value in the specifier at the named element
  * @see DT_PHA_BY_NAME()
@@ -229,8 +227,8 @@ extern "C" {
  *
  * Otherwise, this expands to @p default_value.
  *
- * @param node_id node identifier for a node with a dmas property
- * @param name lowercase-and-underscores name of a dmas element
+ * @param node_id node identifier for a node with a <tt>dmas</tt> property
+ * @param name lowercase-and-underscores name of a <tt>dmas</tt> element
  *             as defined by the node's dma-names property
  * @param cell lowercase-and-underscores cell name
  * @param default_value a fallback value to expand to
@@ -241,9 +239,9 @@ extern "C" {
 	DT_PHA_BY_NAME_OR(node_id, dmas, name, cell, default_value)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's DMA specifier's cell value by name
- * @param inst DT_DRV_COMPAT instance number
- * @param name lowercase-and-underscores name of a dmas element
+ * @brief Get a @c DT_DRV_COMPAT instance's DMA specifier's cell value by name
+ * @param inst @c DT_DRV_COMPAT instance number
+ * @param name lowercase-and-underscores name of a <tt>dmas</tt> element
  *             as defined by the node's dma-names property
  * @param cell lowercase-and-underscores cell name
  * @return the cell value in the specifier at the named element
@@ -253,39 +251,39 @@ extern "C" {
 	DT_DMAS_CELL_BY_NAME(DT_DRV_INST(inst), name, cell)
 
 /**
- * @brief Is index "idx" valid for a dmas property?
- * @param node_id node identifier for a node with a dmas property
- * @param idx logical index into dmas property
- * @return 1 if the "dmas" property has index "idx", 0 otherwise
+ * @brief Is index @p idx valid for a <tt>dmas</tt> property?
+ * @param node_id node identifier for a node with a <tt>dmas</tt> property
+ * @param idx logical index into <tt>dmas</tt> property
+ * @return 1 if the <tt>dmas</tt> property has index @p idx, 0 otherwise
  */
 #define DT_DMAS_HAS_IDX(node_id, idx) \
 	IS_ENABLED(DT_CAT4(node_id, _P_dmas_IDX_, idx, _EXISTS))
 
 /**
- * @brief Is index "idx" valid for a DT_DRV_COMPAT instance's dmas property?
- * @param inst DT_DRV_COMPAT instance number
- * @param idx logical index into dmas property
- * @return 1 if the "dmas" property has a specifier at index "idx", 0 otherwise
+ * @brief Is index @p idx valid for a @c DT_DRV_COMPAT instance's <tt>dmas</tt> property?
+ * @param inst @c DT_DRV_COMPAT instance number
+ * @param idx logical index into <tt>dmas</tt> property
+ * @return 1 if the <tt>dmas</tt> property has a specifier at index @p idx, 0 otherwise
  */
 #define DT_INST_DMAS_HAS_IDX(inst, idx) \
 	DT_DMAS_HAS_IDX(DT_DRV_INST(inst), idx)
 
 /**
- * @brief Does a dmas property have a named element?
- * @param node_id node identifier for a node with a dmas property
- * @param name lowercase-and-underscores name of a dmas element
+ * @brief Does a <tt>dmas</tt> property have a named element?
+ * @param node_id node identifier for a node with a <tt>dmas</tt> property
+ * @param name lowercase-and-underscores name of a <tt>dmas</tt> element
  *             as defined by the node's dma-names property
- * @return 1 if the dmas property has the named element, 0 otherwise
+ * @return 1 if the <tt>dmas</tt> property has the named element, 0 otherwise
  */
 #define DT_DMAS_HAS_NAME(node_id, name) \
 	DT_PROP_HAS_NAME(node_id, dmas, name)
 
 /**
- * @brief Does a DT_DRV_COMPAT instance's dmas property have a named element?
- * @param inst DT_DRV_COMPAT instance number
- * @param name lowercase-and-underscores name of a dmas element
+ * @brief Does a @c DT_DRV_COMPAT instance's <tt>dmas</tt> property have a named element?
+ * @param inst @c DT_DRV_COMPAT instance number
+ * @param name lowercase-and-underscores name of a <tt>dmas</tt> element
  *             as defined by the node's dma-names property
- * @return 1 if the dmas property has the named element, 0 otherwise
+ * @return 1 if the <tt>dmas</tt> property has the named element, 0 otherwise
  */
 #define DT_INST_DMAS_HAS_NAME(inst, name) \
 	DT_DMAS_HAS_NAME(DT_DRV_INST(inst), name)

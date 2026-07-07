@@ -771,10 +771,10 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 				    __VA_ARGS__)
 
 /**
- * @brief Like I2C_DEVICE_DT_DEINIT_DEFINE() for an instance of a DT_DRV_COMPAT compatible
+ * @brief Like I2C_DEVICE_DT_DEINIT_DEFINE() for an instance of a @c DT_DRV_COMPAT compatible
  *
  * @param inst instance number. This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to I2C_DEVICE_DT_DEINIT_DEFINE().
+ * <tt>DT_DRV_INST(inst)</tt> in the call to I2C_DEVICE_DT_DEINIT_DEFINE().
  *
  * @param ... other parameters as expected by I2C_DEVICE_DT_DEINIT_DEFINE().
  */
@@ -782,10 +782,10 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 	I2C_DEVICE_DT_DEINIT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
- * @brief Like I2C_DEVICE_DT_DEFINE() for an instance of a DT_DRV_COMPAT compatible
+ * @brief Like I2C_DEVICE_DT_DEFINE() for an instance of a @c DT_DRV_COMPAT compatible
  *
  * @param inst instance number. This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to I2C_DEVICE_DT_DEFINE().
+ * <tt>DT_DRV_INST(inst)</tt> in the call to I2C_DEVICE_DT_DEFINE().
  *
  * @param ... other parameters as expected by I2C_DEVICE_DT_DEFINE().
  */

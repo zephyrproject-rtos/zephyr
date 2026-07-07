@@ -134,7 +134,7 @@ struct mbox_dt_spec {
 /**
  * @brief Instance version of MBOX_DT_CHANNEL_GET()
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of the mboxes element
  *
  * @return static initializer for a struct mbox_dt_spec

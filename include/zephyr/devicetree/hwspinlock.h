@@ -23,7 +23,8 @@ extern "C" {
  */
 
 /**
- * @brief Get the node identifier for the hardware spinlock controller from a hwlocks property by id
+ * @brief Get the node identifier for the hardware spinlock controller from a <tt>hwlocks</tt>
+ * property by index
  *
  * Example devicetree fragment:
  *
@@ -41,8 +42,8 @@ extern "C" {
  *     DT_HWSPINLOCK_CTRL_BY_IDX(DT_NODELABEL(n), 0) // DT_NODELABEL(hwlock1)
  *     DT_HWSPINLOCK_CTRL_BY_IDX(DT_NODELABEL(n), 1) // DT_NODELABEL(hwlock2)
  *
- * @param node_id node identifier for a node with a hwlocks property
- * @param idx index of a hwlocks element in the hwlocks
+ * @param node_id node identifier for a node with a <tt>hwlocks</tt> property
+ * @param idx index of an element in the <tt>hwlocks</tt> property
  *
  * @return the node identifier for the hardware spinlock controller in the named element
  *
@@ -52,8 +53,8 @@ extern "C" {
 	DT_PHANDLE_BY_IDX(node_id, hwlocks, idx)
 
 /**
- * @brief Get the node identifier for the hardware spinlock controller from a hwlocks property by
- *        name
+ * @brief Get the node identifier for the hardware spinlock controller from a <tt>hwlocks</tt>
+ *        property by name
  *
  * Example devicetree fragment:
  *
@@ -71,9 +72,9 @@ extern "C" {
  *     DT_HWSPINLOCK_CTRL_BY_NAME(DT_NODELABEL(n), rd) // DT_NODELABEL(hwlock1)
  *     DT_HWSPINLOCK_CTRL_BY_NAME(DT_NODELABEL(n), wr) // DT_NODELABEL(hwlock2)
  *
- * @param node_id node identifier for a node with a hwlocks property
- * @param name lowercase-and-underscores name of a hwlocks element
- *             as defined by the node's hwlocks-names property
+ * @param node_id node identifier for a node with a <tt>hwlocks</tt> property
+ * @param name lowercase-and-underscores name of a <tt>hwlocks</tt> element
+ *             as defined by the node's <tt>hwlocks-names</tt> property
  *
  * @return the node identifier for the hardware spinlock controller in the named element
  *
@@ -83,7 +84,7 @@ extern "C" {
 	DT_PHANDLE_BY_NAME(node_id, hwlocks, name)
 
 /**
- * @brief Get a hardware spinlock id by name
+ * @brief Get a hardware spinlock <tt>id</tt> field by name
  *
  * Example devicetree fragment:
  *
@@ -107,12 +108,12 @@ extern "C" {
  *     DT_HWSPINLOCK_ID_BY_NAME(DT_NODELABEL(n), rd) // 1
  *     DT_HWSPINLOCK_ID_BY_NAME(DT_NODELABEL(n), wr) // 6
  *
- * @param node_id node identifier for a node with a hwlocks property
- * @param name lowercase-and-underscores name of a hwlocks element
- *             as defined by the node's hwlock-names property
+ * @param node_id node identifier for a node with a <tt>hwlocks</tt> property
+ * @param name lowercase-and-underscores name of a <tt>hwlocks</tt> element
+ *             as defined by the node's <tt>hwlock-names</tt> property
  *
  * @return the channel value in the specifier at the named element or 0 if no
- *         channels are supported
+ *         named hardware spinlockis found
  *
  * @see DT_PHA_BY_NAME()
  */
@@ -138,11 +139,11 @@ extern "C" {
  *     DT_HWSPINLOCK_ID_BY_IDX(DT_NODELABEL(n), 0) // 1
  *     DT_HWSPINLOCK_ID_BY_IDX(DT_NODELABEL(n), 1) // 6
  *
- * @param node_id node identifier for a node with a hwlocks property
- * @param idx index of a hwlocks element in the hwlocks
+ * @param node_id node identifier for a node with a <tt>hwlocks</tt> property
+ * @param idx index of a <tt>hwlocks</tt> element in the <tt>hwlocks</tt>
  *
- * @return the channel value in the specifier at the named element or 0 if no
- *         channels are supported
+ * @return the channel value in the specifier at the indexed element or 0 if no
+ *         hardware spinlock is found is @p idx index
  *
  * @see DT_PHA_BY_IDX()
  */

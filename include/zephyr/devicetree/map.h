@@ -15,7 +15,7 @@
  * specifier mapping based on DeviceTree specifications. It enables the extraction
  * and interpretation of mapping data represented as phandle-arrays.
  *
- * In a typical DeviceTree fragment, properties ending with "-map" specify:
+ * In a typical DeviceTree fragment, properties ending with <tt>-map</tt> specifier:
  *  - The child specifier to be mapped.
  *  - The parent node (phandle) to which the mapping applies.
  *  - The parent specifier associated with the mapping.
@@ -74,7 +74,7 @@
  * @brief Returns the existence of map property.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @retval True if the map exists, otherwise 0.
  *
  * @see DT_NODE_HAS_PROP
@@ -85,7 +85,7 @@
  * @brief Returns the number of maps for the given property.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @return The total count of mapping entries.
  *
  * @see DT_PROP_LEN
@@ -93,12 +93,12 @@
 #define DT_MAP_LEN(node_id, prop) DT_PROP_LEN(node_id, prop)
 
 /**
- * @brief Is index @p idx valid for an array type property?
+ * @brief Is index @p entry_idx valid for an array type property?
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx index to check
- * @return An expression which evaluates to 1 if @p idx is a valid index
+ * @return An expression which evaluates to 1 if @p entry_idx is a valid index
  *         into the given property, and 0 otherwise.
  */
 #define DT_MAP_HAS_ENTRY_BY_IDX(node_id, prop, entry_idx)                                          \
@@ -111,8 +111,8 @@
  * zero.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
- * @return An expression which evaluates to 1 if @p idx is a valid index
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
+ * @return An expression which evaluates to 1 if 0 is a valid index
  *         into the given property, and 0 otherwise.
  */
 #define DT_MAP_HAS_ENTRY(node_id, prop) DT_MAP_HAS_ENTRY_BY_IDX(node_id, prop, 0)
@@ -121,7 +121,7 @@
  * @brief Get the number of child addresses.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @return The number of child addresses.
  */
@@ -132,7 +132,7 @@
  * @brief Checks if the child address has the specified index.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @param param_idx The index in the child addresses.
  * @retval True if the child address has the index, otherwise 0.
@@ -148,7 +148,7 @@
  * @p param_idx set to zero.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @retval True if the child address has the index, otherwise 0.
  */
@@ -159,7 +159,7 @@
  * @brief Get the child address element from a mapping entry, by index.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @param param_idx The index in the child addresses.
  * @return The element of the specified position of the child addresses.
@@ -174,7 +174,7 @@
  * @p param_idx set to zero.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @return The element of the specified position of the child addresses.
  */
@@ -185,7 +185,7 @@
  * @brief Get the number of child specifiers.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @return The number of child specifiers.
  */
@@ -196,7 +196,7 @@
  * @brief Checks if the child specifier has the specified index.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @param param_idx The index in the child specifiers.
  * @retval True if the child specifier has the index, otherwise 0.
@@ -212,7 +212,7 @@
  * @p param_idx set to zero.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @retval True if the child specifier has the index, otherwise 0.
  */
@@ -223,7 +223,7 @@
  * @brief Get the child specifier element from a mapping entry, by index.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @param param_idx The index in the child specifiers.
  * @return The element of the specified position of the child specifiers.
@@ -238,7 +238,7 @@
  * @p param_idx set to zero.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @return The element of the specified position of the child specifiers.
  */
@@ -249,7 +249,7 @@
  * @brief Extracts the parent node from a mapping entry.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @return The parent node id.
  */
@@ -263,7 +263,7 @@
  * to zero.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @return The parent node id.
  */
 #define DT_MAP_ENTRY_PARENT(node_id, prop)                                       \
@@ -273,7 +273,7 @@
  * @brief Get the number of parent addresses.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @return The number of parent addresses.
  */
@@ -284,7 +284,7 @@
  * @brief Checks if the parent address has the specified index.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @param param_idx The index in the parent addresses.
  * @retval True if the parent address has the index, otherwise 0.
@@ -300,7 +300,7 @@
  * @p param_idx set to zero.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @retval True if the parent address has the index, otherwise 0.
  */
@@ -311,7 +311,7 @@
  * @brief Get the parent address element from a mapping entry, by index.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @param param_idx The index in the parent addresses.
  * @retval The element of the specified position of the parent addresses.
@@ -326,7 +326,7 @@
  * @p param_idx set to zero.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @retval The element of the specified position of the parent addresses.
  */
@@ -337,7 +337,7 @@
  * @brief Get the number of parent specifiers.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @retval The number of parent specifiers.
  */
@@ -348,7 +348,7 @@
  * @brief Checks if the parent specifier has the specified index.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @param param_idx The index in the parent specifiers.
  * @retval True if the parent specifier has the index, otherwise 0.
@@ -364,7 +364,7 @@
  * @p param_idx set to zero.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @retval True if the parent specifier has the index, otherwise 0.
  */
@@ -375,7 +375,7 @@
  * @brief Get the parent specifier element from a mapping entry, by index.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @param param_idx The index in the parent specifiers.
  * @retval The element of the specified position of the parent specifiers.
@@ -390,7 +390,7 @@
  * @p param_idx set to zero.
  *
  * @param node_id The node identifier.
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param entry_idx The mapping entry index.
  * @retval The element of the specified position of the parent specifiers.
  */
@@ -401,7 +401,7 @@
  * @brief Invokes @p fn for each map entry in the @p map.
  *
  * @param node_id node identifier
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param fn macro to invoke
  *
  * @see DT_FOREACH_PROP_ELEM
@@ -412,7 +412,7 @@
  * @brief Invokes @p fn for each map entry in the @p map with separator.
  *
  * @param node_id node identifier
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g.. <tt>gpio_map</tt>
  * @param fn macro to invoke
  * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
  *            this is required to enable providing a comma as separator.
@@ -426,7 +426,7 @@
  * @brief Invokes @p fn for each map entry in the @p map with separator.
  *
  * @param node_id node identifier
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param fn macro to invoke
  * @param ... variable number of arguments to pass to fn
  *
@@ -439,11 +439,11 @@
  * @brief Invokes @p fn for each map entry in the @p map with separator.
  *
  * @param node_id node identifier
- * @param prop The map property name. i.e. "gpio_map"
+ * @param prop The map property name. E.g. <tt>gpio_map</tt>
  * @param fn macro to invoke
  * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
  *            this is required to enable providing a comma as separator.
- * @param ... variable number of arguments to pass to fn
+ * @param ... variable number of arguments to pass to @p fn
  *
  * @see DT_FOREACH_PROP_ELEM_SEP_VARGS
  */

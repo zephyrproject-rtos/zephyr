@@ -538,11 +538,11 @@ static inline void smbus_xfer_stats(const struct device *dev, uint8_t sent,
 #endif /* CONFIG_SMBUS_STATS */
 
 /**
- * @brief Like SMBUS_DEVICE_DT_DEFINE() for an instance of a DT_DRV_COMPAT
+ * @brief Like SMBUS_DEVICE_DT_DEFINE() for an instance of a @c DT_DRV_COMPAT
  * compatible
  *
  * @param inst instance number. This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to SMBUS_DEVICE_DT_DEFINE().
+ * <tt>DT_DRV_INST(inst)</tt> in the call to SMBUS_DEVICE_DT_DEFINE().
  *
  * @param ... other parameters as expected by SMBUS_DEVICE_DT_DEFINE().
  */

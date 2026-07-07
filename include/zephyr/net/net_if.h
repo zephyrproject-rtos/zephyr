@@ -3586,7 +3586,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
  * @brief Forward declaration of a network interface
  *
  * @param inst instance number.  This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to NET_DEVICE_DT_ADD_IFACE.
+ * <tt>DT_DRV_INST(inst)</tt> in the call to NET_DEVICE_DT_ADD_IFACE.
  * @param ... other parameters as expected by NET_DEVICE_DT_ADD_IFACE.
  */
 #define NET_IF_DT_INST_DECLARE(inst, ...) NET_IF_DT_DECLARE(DT_DRV_INST(inst), __VA_ARGS__)
@@ -3605,7 +3605,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
  * NET_DEVICE_DT_ADD_IFACE.
  *
  * @param inst instance number.  This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to NET_IF_DT_GET.
+ * <tt>DT_DRV_INST(inst)</tt> in the call to NET_IF_DT_GET.
  * @param ... other parameters as expected by NET_DEVICE_DT_ADD_IFACE.
  */
 #define NET_IF_DT_INST_GET(inst, ...) NET_IF_DT_GET(DT_DRV_INST(inst), __VA_ARGS__)
@@ -3652,7 +3652,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
  * @brief Like NET_DEVICE_DT_ADD_IFACE for an instance of a DT_DRV_COMPAT compatible
  *
  * @param inst instance number.  This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to NET_DEVICE_DT_ADD_IFACE.
+ * <tt>DT_DRV_INST(inst)</tt> in the call to NET_DEVICE_DT_ADD_IFACE.
  *
  * @param ... other parameters as expected by NET_DEVICE_DT_ADD_IFACE.
  */
@@ -3687,7 +3687,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
  * @brief Like NET_DEVICE_DT_DEFINE for an instance of a DT_DRV_COMPAT compatible
  *
  * @param inst instance number.  This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to NET_DEVICE_DT_DEFINE.
+ * <tt>DT_DRV_INST(inst)</tt> in the call to NET_DEVICE_DT_DEFINE.
  *
  * @param ... other parameters as expected by NET_DEVICE_DT_DEFINE.
  */
@@ -3760,7 +3760,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
  * compatible
  *
  * @param inst instance number.  This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to NET_DEVICE_DT_DEFINE_INSTANCE.
+ * <tt>DT_DRV_INST(inst)</tt> in the call to NET_DEVICE_DT_DEFINE_INSTANCE.
  *
  * @param ... other parameters as expected by NET_DEVICE_DT_DEFINE_INSTANCE.
  */
@@ -3830,7 +3830,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
  * compatible
  *
  * @param inst instance number.  This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to NET_DEVICE_DT_OFFLOAD_DEFINE.
+ * <tt>DT_DRV_INST(inst)</tt> in the call to NET_DEVICE_DT_OFFLOAD_DEFINE.
  *
  * @param ... other parameters as expected by NET_DEVICE_DT_OFFLOAD_DEFINE.
  */

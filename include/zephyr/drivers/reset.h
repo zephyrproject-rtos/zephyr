@@ -40,9 +40,9 @@ struct reset_dt_spec {
 };
 
 /**
- * @brief Static initializer for a @p reset_dt_spec
+ * @brief Static initializer for a @c reset_dt_spec
  *
- * This returns a static initializer for a @p reset_dt_spec structure given a
+ * This returns a static initializer for a @c reset_dt_spec structure given a
  * devicetree node identifier, a property specifying a Reset Controller and an index.
  *
  * Example devicetree fragment:
@@ -67,7 +67,7 @@ struct reset_dt_spec {
  *
  * @param node_id devicetree node identifier
  * @param idx logical index into "resets"
- * @return static initializer for a struct reset_dt_spec for the property
+ * @return static initializer for a <tt>struct reset_dt_spec</tt> for the property
  */
 #define RESET_DT_SPEC_GET_BY_IDX(node_id, idx)					\
 	{									\
@@ -88,7 +88,7 @@ struct reset_dt_spec {
  * @param node_id devicetree node identifier
  * @param idx logical index into the 'resets' property
  * @param default_value fallback value to expand to
- * @return static initializer for a struct reset_dt_spec for the property,
+ * @return static initializer for a <tt>struct reset_dt_spec</tt> for the property,
  *         or default_value if the node or property do not exist
  */
 #define RESET_DT_SPEC_GET_BY_IDX_OR(node_id, idx, default_value)	\
@@ -100,7 +100,7 @@ struct reset_dt_spec {
  * @brief Equivalent to RESET_DT_SPEC_GET_BY_IDX(node_id, 0).
  *
  * @param node_id devicetree node identifier
- * @return static initializer for a struct reset_dt_spec for the property
+ * @return static initializer for a <tt>struct reset_dt_spec</tt> for the property
  * @see RESET_DT_SPEC_GET_BY_IDX()
  */
 #define RESET_DT_SPEC_GET(node_id) \
@@ -112,32 +112,32 @@ struct reset_dt_spec {
  *
  * @param node_id devicetree node identifier
  * @param default_value fallback value to expand to
- * @return static initializer for a struct reset_dt_spec for the property,
+ * @return static initializer for a <tt>struct reset_dt_spec</tt> for the property,
  *         or default_value if the node or property do not exist
  */
 #define RESET_DT_SPEC_GET_OR(node_id, default_value)			\
 	RESET_DT_SPEC_GET_BY_IDX_OR(node_id, 0, default_value)
 
 /**
- * @brief Static initializer for a @p reset_dt_spec from a DT_DRV_COMPAT
+ * @brief Static initializer for a @c reset_dt_spec from a @c DT_DRV_COMPAT
  * instance's Reset Controller property at an index.
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into "resets"
- * @return static initializer for a struct reset_dt_spec for the property
+ * @return static initializer for a <tt>struct reset_dt_spec</tt> for the property
  * @see RESET_DT_SPEC_GET_BY_IDX()
  */
 #define RESET_DT_SPEC_INST_GET_BY_IDX(inst, idx) \
 	RESET_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
- * @brief Static initializer for a @p reset_dt_spec from a DT_DRV_COMPAT
+ * @brief Static initializer for a @c reset_dt_spec from a @c DT_DRV_COMPAT
  *	  instance's 'resets' property at an index, with fallback
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into the 'resets' property
  * @param default_value fallback value to expand to
- * @return static initializer for a struct reset_dt_spec for the property,
+ * @return static initializer for a <tt>struct reset_dt_spec</tt> for the property,
  *         or default_value if the node or property do not exist
  */
 #define RESET_DT_SPEC_INST_GET_BY_IDX_OR(inst, idx, default_value)	\
@@ -148,8 +148,8 @@ struct reset_dt_spec {
 /**
  * @brief Equivalent to RESET_DT_SPEC_INST_GET_BY_IDX(inst, 0).
  *
- * @param inst DT_DRV_COMPAT instance number
- * @return static initializer for a struct reset_dt_spec for the property
+ * @param inst @c DT_DRV_COMPAT instance number
+ * @return static initializer for a <tt>struct reset_dt_spec</tt> for the property
  * @see RESET_DT_SPEC_INST_GET_BY_IDX()
  */
 #define RESET_DT_SPEC_INST_GET(inst) \
@@ -159,9 +159,9 @@ struct reset_dt_spec {
  * @brief Equivalent to
  *	  RESET_DT_SPEC_INST_GET_BY_IDX_OR(node_id, 0, default_value).
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param default_value fallback value to expand to
- * @return static initializer for a struct reset_dt_spec for the property,
+ * @return static initializer for a <tt>struct reset_dt_spec</tt> for the property,
  *         or default_value if the node or property do not exist
  */
 #define RESET_DT_SPEC_INST_GET_OR(inst, default_value)			\
@@ -243,7 +243,7 @@ static inline int z_impl_reset_status(const struct device *dev, uint32_t id, uin
 }
 
 /**
- * @brief Get the reset status from a @p reset_dt_spec.
+ * @brief Get the reset status from a @c reset_dt_spec.
  *
  * This is equivalent to:
  *
@@ -285,7 +285,7 @@ static inline int z_impl_reset_line_assert(const struct device *dev, uint32_t id
 }
 
 /**
- * @brief Assert the reset state from a @p reset_dt_spec.
+ * @brief Assert the reset state from a @c reset_dt_spec.
  *
  * This is equivalent to:
  *
@@ -326,7 +326,7 @@ static inline int z_impl_reset_line_deassert(const struct device *dev, uint32_t 
 }
 
 /**
- * @brief Deassert the reset state from a @p reset_dt_spec.
+ * @brief Deassert the reset state from a @c reset_dt_spec.
  *
  * This is equivalent to:
  *
@@ -366,7 +366,7 @@ static inline int z_impl_reset_line_toggle(const struct device *dev, uint32_t id
 }
 
 /**
- * @brief Reset the device from a @p reset_dt_spec.
+ * @brief Reset the device from a @c reset_dt_spec.
  *
  * This is equivalent to:
  *
