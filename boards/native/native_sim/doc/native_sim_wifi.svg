@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1010" font-family="'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5b6470"/>
+    </marker>
+  </defs>
+
+  <style>
+    .band       { stroke-width: 1.5; }
+    .box        { fill: #ffffff; stroke-width: 1.4; }
+    .bt         { font-weight: 700; font-size: 14px; }
+    .bx         { font-weight: 600; font-size: 12.5px; fill: #1f2430; }
+    .sub        { font-size: 11px; fill: #3a4150; }
+    .lbl        { font-size: 11px; fill: #4a5160; }
+    .flow       { stroke: #5b6470; stroke-width: 1.6; fill: none; }
+    .bound      { stroke: #9aa2b1; stroke-width: 1.2; stroke-dasharray: 6 5; }
+    .bmt        { font-size: 11px; fill: #6a7180; font-style: italic; }
+  </style>
+
+  <rect x="0" y="0" width="1000" height="1010" fill="#ffffff"/>
+  <text x="500" y="28" text-anchor="middle" font-weight="700" font-size="18" fill="#1f2430">native_sim Wi-Fi driver architecture</text>
+
+  <!-- ===================== Zephyr (embedded) domain ===================== -->
+  <rect class="band" x="20" y="44" width="960" height="282" rx="10" fill="#eef4fb" stroke="#b8d0ea"/>
+  <text class="bt" x="36" y="68" fill="#1c3d5a">Zephyr — simulated CPU (embedded, cross-compiled)</text>
+
+  <rect class="box" x="44"  y="92" width="210" height="64" rx="7" stroke="#7fa8d4"/>
+  <text class="bx" x="149" y="118" text-anchor="middle">Wi-Fi shell /</text>
+  <text class="bx" x="149" y="136" text-anchor="middle">net_mgmt</text>
+
+  <rect class="box" x="300" y="92" width="300" height="64" rx="7" stroke="#7fa8d4"/>
+  <text class="bx"  x="450" y="116" text-anchor="middle">Zephyr wpa_supplicant (SME)</text>
+  <text class="sub" x="450" y="136" text-anchor="middle">+ driver_zephyr.c  [hostap]</text>
+
+  <rect class="box" x="746" y="92" width="210" height="64" rx="7" stroke="#7fa8d4"/>
+  <text class="bx" x="851" y="118" text-anchor="middle">Ethernet L2 /</text>
+  <text class="bx" x="851" y="136" text-anchor="middle">net stack</text>
+
+  <rect class="box" x="44" y="210" width="912" height="104" rx="7" stroke="#7fa8d4"/>
+  <text class="bt"  x="500" y="238" text-anchor="middle" fill="#1c3d5a">native_sim Wi-Fi driver — Zephyr side</text>
+  <text class="sub" x="500" y="262" text-anchor="middle">wifi_drv.c · wifi_drv_api.c · mgmt_api.c · iface_api.c</text>
+  <text class="sub" x="500" y="284" text-anchor="middle">RX + event thread (wifi_rx): reads event_fd → wifi_drv_event_dispatch → supplicant callbacks</text>
+
+  <!-- intra-Zephyr flows -->
+  <line class="flow" x1="254" y1="124" x2="300" y2="124" marker-end="url(#a)"/>
+  <line class="flow" x1="450" y1="156" x2="450" y2="210" marker-end="url(#a)"/>
+  <text class="lbl" x="458" y="186">zep_wpa_supp_dev_ops</text>
+  <line class="flow" x1="851" y1="210" x2="851" y2="156" marker-start="url(#a)" marker-end="url(#a)"/>
+  <text class="lbl" x="843" y="188" text-anchor="end">net_pkt (Rx/Tx)</text>
+
+  <!-- ===================== native_simulator boundary ===================== -->
+  <line class="bound" x1="20" y1="363" x2="980" y2="363"/>
+  <text class="bmt" x="500" y="358" text-anchor="middle">native_simulator boundary — Zephyr CPU  ⇄  host runner (own libc / libnl; symbols localized)</text>
+
+  <!-- cross-boundary: control channel -->
+  <line class="flow" x1="250" y1="314" x2="250" y2="400" marker-start="url(#a)" marker-end="url(#a)"/>
+  <text class="lbl" x="262" y="382">commands: host_wifi_drv_*()  ·  events via event_fd</text>
+  <text class="lbl" x="262" y="395">connect MLME via cmd_fd + run_on_eloop()</text>
+
+  <!-- cross-boundary: data channel -->
+  <line class="flow" x1="800" y1="314" x2="800" y2="400" marker-start="url(#a)" marker-end="url(#a)"/>
+  <text class="lbl" x="788" y="386" text-anchor="end">AF_PACKET frames</text>
+  <text class="lbl" x="788" y="400" text-anchor="end">(EAPOL + traffic)</text>
+
+  <!-- ===================== Host runner domain ===================== -->
+  <rect class="band" x="20" y="400" width="960" height="286" rx="10" fill="#eef7ee" stroke="#bcd9bc"/>
+  <text class="bt" x="36" y="424" fill="#245a2b">Host runner — native_simulator INTERFACE (host toolchain, 32-bit, links libnl)</text>
+
+  <rect class="box" x="44" y="448" width="472" height="120" rx="7" stroke="#84bd8a"/>
+  <text class="bt"  x="280" y="474" text-anchor="middle" fill="#245a2b">wifi_drv_supplicant_adapt.c</text>
+  <text class="sub" x="280" y="496" text-anchor="middle">host_handler(): eloop pthread (eloop_run)</text>
+  <text class="sub" x="280" y="516" text-anchor="middle">wpa_supplicant_event() → serialize to event_fd</text>
+  <text class="sub" x="280" y="536" text-anchor="middle">run_on_eloop() / cmd_handler (connect MLME)</text>
+
+  <rect class="box" x="44" y="596" width="472" height="72" rx="7" stroke="#84bd8a"/>
+  <text class="bx"  x="280" y="626" text-anchor="middle">hostap nl80211 driver — driver_nl80211*.c</text>
+  <text class="sub" x="280" y="646" text-anchor="middle">+ libnl (host)</text>
+
+  <rect class="box" x="560" y="448" width="396" height="220" rx="7" stroke="#84bd8a"/>
+  <text class="bt"  x="758" y="498" text-anchor="middle" fill="#245a2b">wifi_drv_adapt.c</text>
+  <text class="sub" x="758" y="522" text-anchor="middle">AF_PACKET SOCK_RAW bound to host "zwifi"</text>
+  <text class="sub" x="758" y="542" text-anchor="middle">eth_iface_create / read / write</text>
+  <text class="sub" x="758" y="562" text-anchor="middle">carries EAPOL + data frames</text>
+
+  <!-- adapter -> nl80211 -->
+  <line class="flow" x1="280" y1="568" x2="280" y2="596" marker-end="url(#a)"/>
+  <text class="lbl" x="294" y="587">nl80211 ops (scan / auth / assoc / set_key)</text>
+
+  <!-- ===================== Linux kernel boundary ===================== -->
+  <line class="bound" x1="20" y1="705" x2="980" y2="705"/>
+
+  <!-- host -> kernel -->
+  <line class="flow" x1="280" y1="668" x2="280" y2="772" marker-start="url(#a)" marker-end="url(#a)"/>
+  <text class="lbl" x="292" y="726">netlink</text>
+  <line class="flow" x1="758" y1="668" x2="600" y2="772" marker-start="url(#a)" marker-end="url(#a)"/>
+  <text class="lbl" x="702" y="712" text-anchor="end">raw frames</text>
+
+  <!-- ===================== Linux kernel domain ===================== -->
+  <rect class="band" x="20" y="724" width="960" height="158" rx="10" fill="#f3f1f6" stroke="#d3cbe0"/>
+  <text class="bt" x="36" y="748" fill="#3d2f57">Linux host kernel</text>
+
+  <rect class="box" x="44" y="772" width="612" height="94" rx="7" stroke="#a891c6"/>
+  <text class="bt"  x="350" y="812" text-anchor="middle" fill="#3d2f57">mac80211_hwsim</text>
+  <text class="sub" x="350" y="834" text-anchor="middle">STA radio → host interface "zwifi"</text>
+
+  <rect class="box" x="716" y="772" width="240" height="94" rx="7" stroke="#a891c6"/>
+  <text class="bx"  x="836" y="810" text-anchor="middle">hostapd / dnsmasq (netns)</text>
+  <text class="sub" x="836" y="832" text-anchor="middle">zephyr-open · zephyr-wpa2</text>
+
+  <!-- simulated air -->
+  <line class="flow" x1="656" y1="819" x2="716" y2="819" marker-start="url(#a)" marker-end="url(#a)"/>
+  <text class="lbl" x="686" y="806" text-anchor="middle" font-size="10">air (hwsim)</text>
+
+  <!-- ===================== thread badges (which thread runs where) ===================== -->
+  <g>
+    <circle cx="585" cy="107" r="9" fill="#d98a2b"/>
+    <text x="585" y="111" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">1</text>
+  </g>
+  <g>
+    <circle cx="936" cy="230" r="9" fill="#2b9d9d"/>
+    <text x="936" y="234" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">2</text>
+  </g>
+  <g>
+    <circle cx="498" cy="466" r="9" fill="#8a4fb3"/>
+    <text x="498" y="470" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">3</text>
+  </g>
+
+  <!-- ===================== threads legend ===================== -->
+  <rect x="20" y="900" width="960" height="98" rx="10" fill="#fafafb" stroke="#dcdce2" stroke-width="1.5"/>
+  <text x="36" y="924" font-weight="700" font-size="14" fill="#1f2430">Threads</text>
+
+  <circle cx="46" cy="944" r="8" fill="#d98a2b"/>
+  <text x="46" y="948" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">1</text>
+  <text x="64" y="948" font-size="11" fill="#1f2430"><tspan font-weight="700">Zephyr supplicant thread (SME)</tspan> — runs the supplicant; issues the scan / auth / assoc / set_key … driver ops.</text>
+
+  <circle cx="46" cy="966" r="8" fill="#2b9d9d"/>
+  <text x="46" y="970" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">2</text>
+  <text x="64" y="970" font-size="11" fill="#1f2430"><tspan font-weight="700">Zephyr RX + event thread (wifi_rx, cooperative)</tspan> — reads data frames (AF_PACKET) and host events (event_fd); calls supplicant callbacks.</text>
+
+  <circle cx="46" cy="988" r="8" fill="#8a4fb3"/>
+  <text x="46" y="992" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">3</text>
+  <text x="64" y="992" font-size="11" fill="#1f2430"><tspan font-weight="700">Host eloop pthread (host_handler)</tspan> — eloop_run() over the nl80211 sockets; also runs the connect MLME ops handed to it via run_on_eloop().</text>
+</svg>
