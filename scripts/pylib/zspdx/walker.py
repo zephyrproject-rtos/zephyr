@@ -39,6 +39,25 @@ SPDX_TOOL_NAME = "Zephyr SPDX builder"
 # GitHub namespace under which Zephyr mirrors its modules.
 ZEPHYR_GITHUB_NAMESPACE = "zephyrproject-rtos"
 
+# Free-form notes emitted as package comments to clarify each package's role. The
+# "-sources" and "-deps" packages are systematically emitted for every module, so
+# the distinction (and why unused modules still appear) is spelled out here.
+SOURCES_COMMENT = (
+    "Source package: this component's source tree as checked out in the west "
+    "workspace. Files that were compiled into the build are listed here; a "
+    "component contributing no compiled files appears with no files."
+)
+DEPS_COMMENT = (
+    "Reference-only dependency package: identifies an upstream Zephyr module "
+    "(download location, and PURL/CPE where known) for supply-chain and "
+    "vulnerability tracking. One is emitted for every module in the west "
+    "manifest, whether or not its code is built, and it carries no files."
+)
+ZEPHYR_DEPS_COMMENT = (
+    "Reference-only package for the Zephyr RTOS itself, the common dependency "
+    "shared by every module dependency package; it carries no files."
+)
+
 # Matches a git repository URL of the form '<protocol><host>/<namespace>/<package>',
 # capturing the host type (e.g. "github"), the namespace and the package name.
 COMMON_GIT_URL_REGEX = (
@@ -528,6 +547,7 @@ class Walker:
 
         # Zephyr itself is always supplied by the Zephyr Project.
         component.supplier = ZEPHYR_ORGANIZATION
+        component.comment = SOURCES_COMMENT
 
         zephyr_url = zephyr.get("remote") or zephyr.get("url", "")
         if zephyr_url:
@@ -582,6 +602,7 @@ class Walker:
                 name=module_name + "-sources",
                 purpose=ComponentPurpose.SOURCE,
                 base_dir=module_path,
+                comment=SOURCES_COMMENT,
             )
 
             if module_revision:
@@ -619,7 +640,7 @@ class Walker:
             return None
 
         # no PrimaryPackagePurpose: this is a reference-only dependency package with no files
-        component = SBOMComponent(name="zephyr-deps")
+        component = SBOMComponent(name="zephyr-deps", comment=ZEPHYR_DEPS_COMMENT)
         component.supplier = ZEPHYR_ORGANIZATION
         component.url = zephyr.get("remote") or zephyr.get("url", "")
         component.revision = zephyr.get("revision", "")
@@ -675,7 +696,7 @@ class Walker:
                 module_ext_ref = module_security.get("external-references", [])
 
             # set up module deps component (reference-only, no files; no purpose)
-            component = SBOMComponent(name=module_name + "-deps")
+            component = SBOMComponent(name=module_name + "-deps", comment=DEPS_COMMENT)
 
             if module_url:
                 component.url = module_url
