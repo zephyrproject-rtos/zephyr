@@ -46,6 +46,9 @@ LOG_MODULE_REGISTER(bmi270_decoder, CONFIG_SENSOR_LOG_LEVEL);
 #define BMI270_ACC_SHIFT_BASE 5
 #define BMI270_GYR_SHIFT_BASE 6
 
+/* SENSOR_G/SENSOR_PI are in micro units; divide this back out once per scale. */
+#define BMI270_MICRO_UNIT_SCALE 1000000LL
+
 static inline uint8_t bmi270_fifo_control_frame_size(uint8_t parm)
 {
 	switch (parm) {
@@ -152,37 +155,46 @@ static int bmi270_decoder_get_size_info(struct sensor_chan_spec chan_spec, size_
 	}
 }
 
-/* Accel: raw -> m/s^2 in Q31 with shift. range in G (2,4,8,16) */
-static void decode_accel_frame(const uint8_t *payload, uint8_t range_g, int8_t shift,
+/* Precompute the accel raw-to-Q31 scale once per buffer instead of per frame. */
+static int64_t bmi270_accel_scale(uint8_t range_g, int8_t shift)
+{
+	return (int64_t)SENSOR_G * range_g * (1LL << (31 - shift)) / INT16_MAX /
+	       BMI270_MICRO_UNIT_SCALE;
+}
+
+/* Precompute the gyro raw-to-Q31 scale for a given range/shift; see bmi270_accel_scale(). */
+static int64_t bmi270_gyro_scale(uint16_t range_dps, int8_t shift)
+{
+	return (int64_t)range_dps * SENSOR_PI * (1LL << (31 - shift)) /
+	       (180LL * INT16_MAX) / BMI270_MICRO_UNIT_SCALE;
+}
+
+/* Accel: raw -> m/s^2 in Q31, using a scale precomputed once per buffer by bmi270_accel_scale(). */
+static void decode_accel_frame(const uint8_t *payload, int64_t scale,
 			       struct sensor_three_axis_sample_data *out)
 {
 	int16_t x = (int16_t)sys_get_le16(&payload[0]);
 	int16_t y = (int16_t)sys_get_le16(&payload[2]);
 	int16_t z = (int16_t)sys_get_le16(&payload[4]);
 
-	int64_t scale = (int64_t)SENSOR_G * range_g * (1LL << (31 - shift)) / INT16_MAX;
-
 	out->timestamp_delta = 0;
-	out->x = (q31_t)((x * scale) / 1000000LL);
-	out->y = (q31_t)((y * scale) / 1000000LL);
-	out->z = (q31_t)((z * scale) / 1000000LL);
+	out->x = (q31_t)(x * scale);
+	out->y = (q31_t)(y * scale);
+	out->z = (q31_t)(z * scale);
 }
 
-/* Gyro: raw -> rad/s in Q31 with shift. range_dps in degrees/s */
-static void decode_gyro_frame(const uint8_t *payload, uint16_t range_dps, int8_t shift,
+/* Gyro: raw -> rad/s in Q31, using a scale precomputed once per buffer by bmi270_gyro_scale(). */
+static void decode_gyro_frame(const uint8_t *payload, int64_t scale,
 			      struct sensor_three_axis_sample_data *out)
 {
 	int16_t x = (int16_t)sys_get_le16(&payload[0]);
 	int16_t y = (int16_t)sys_get_le16(&payload[2]);
 	int16_t z = (int16_t)sys_get_le16(&payload[4]);
 
-	int64_t scale =
-		(int64_t)range_dps * SENSOR_PI * (1LL << (31 - shift)) / (180LL * INT16_MAX);
-
 	out->timestamp_delta = 0;
-	out->x = (q31_t)((x * scale) / 1000000LL);
-	out->y = (q31_t)((y * scale) / 1000000LL);
-	out->z = (q31_t)((z * scale) / 1000000LL);
+	out->x = (q31_t)(x * scale);
+	out->y = (q31_t)(y * scale);
+	out->z = (q31_t)(z * scale);
 }
 
 /* Accel range register value to G (2,4,8,16) */
@@ -207,10 +219,10 @@ struct bmi270_fifo_decode_ctx {
 	uint32_t fit_base;
 	uint32_t sample_period_ns;
 	uint16_t chan_type;
-	uint8_t acc_g;
-	uint16_t gyr_dps;
 	int8_t acc_shift;
 	int8_t gyr_shift;
+	int64_t acc_scale;
+	int64_t gyr_scale;
 };
 
 /* Headerless: fixed 12-byte frames, payload order GYR then ACC (same as header mode). */
@@ -227,11 +239,9 @@ static uint16_t decode_fifo_headerless(const uint8_t *p, const uint8_t *end, uin
 			continue;
 		}
 		if (ctx->chan_type == SENSOR_CHAN_ACCEL_XYZ) {
-			decode_accel_frame(&p[6], ctx->acc_g, ctx->acc_shift,
-					   &ctx->out->readings[decoded]);
+			decode_accel_frame(&p[6], ctx->acc_scale, &ctx->out->readings[decoded]);
 		} else {
-			decode_gyro_frame(p, ctx->gyr_dps, ctx->gyr_shift,
-					  &ctx->out->readings[decoded]);
+			decode_gyro_frame(p, ctx->gyr_scale, &ctx->out->readings[decoded]);
 		}
 		ctx->out->readings[decoded].timestamp_delta =
 			(uint32_t)(ctx->fit_base + decoded) * ctx->sample_period_ns;
@@ -284,11 +294,9 @@ static const uint8_t *fifo_decode_regular_frame(const uint8_t *p, const uint8_t 
 	if (ctx->chan_type == SENSOR_CHAN_ACCEL_XYZ) {
 		int acc_off = has_gyr ? BMI270_FIFO_SENSOR_BYTES : 0;
 
-		decode_accel_frame(&frame[acc_off], ctx->acc_g, ctx->acc_shift,
-				   &ctx->out->readings[*decoded]);
+		decode_accel_frame(&frame[acc_off], ctx->acc_scale, &ctx->out->readings[*decoded]);
 	} else {
-		decode_gyro_frame(frame, ctx->gyr_dps, ctx->gyr_shift,
-				  &ctx->out->readings[*decoded]);
+		decode_gyro_frame(frame, ctx->gyr_scale, &ctx->out->readings[*decoded]);
 	}
 	ctx->out->readings[*decoded].timestamp_delta =
 		(uint32_t)(ctx->fit_base + *decoded) * ctx->sample_period_ns;
@@ -342,13 +350,16 @@ static int bmi270_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec 
 
 	ctx.out = out;
 	ctx.fit_base = *fit;
-	ctx.sample_period_ns = bmi270_sample_period_ns(&edata->header, chan_spec.chan_type);
 	ctx.chan_type = chan_spec.chan_type;
-	ctx.acc_g = acc_range_reg_to_g(edata->header.acc_range);
-	ctx.gyr_dps = gyr_range_idx_to_dps(edata->header.gyr_range_idx);
 	ctx.acc_shift =
 		BMI270_ACC_SHIFT_BASE + (edata->header.acc_range > 0 ? edata->header.acc_range : 0);
 	ctx.gyr_shift = BMI270_GYR_SHIFT_BASE;
+
+	ctx.sample_period_ns = bmi270_sample_period_ns(&edata->header, chan_spec.chan_type);
+	ctx.acc_scale =
+		bmi270_accel_scale(acc_range_reg_to_g(edata->header.acc_range), ctx.acc_shift);
+	ctx.gyr_scale =
+		bmi270_gyro_scale(gyr_range_idx_to_dps(edata->header.gyr_range_idx), ctx.gyr_shift);
 
 	if (edata->header.is_headerless) {
 		decoded = decode_fifo_headerless(p, end, max_count, &ctx);
