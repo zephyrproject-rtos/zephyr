@@ -409,7 +409,7 @@ Connection and Stream Counts
        Each context carries its own TLS state, flow-control windows,
        and sent-packet history.  Memory scales linearly with this value.
    * - :kconfig:option:`CONFIG_QUIC_MAX_STREAMS_BIDI`
-     - 3–5
+     - 3-5
      - Maximum bidirectional streams **per connection**.  Streams are
        allocated at build time; unused stream slots still consume their
        TX/RX buffer allocation.
@@ -419,7 +419,7 @@ Connection and Stream Counts
        disable unidirectional streams entirely and recover the associated
        buffer RAM.
    * - :kconfig:option:`CONFIG_QUIC_MAX_ENDPOINTS`
-     - 2–3
+     - 2-3
      - Number of UDP endpoint sockets.  A client connecting to a single
        server over one IP version needs 2; dual-stack server roles need 3.
        Consider enabling :kconfig:option:`CONFIG_QUIC_ENDPOINT_USE_IPV4_MAPPING_TO_IPV6`
@@ -451,7 +451,7 @@ a window smaller than the buffer under-utilises available memory.
      - Connection-level receive credit in bytes.  Must be greater than or
        equal to any single stream's ``INITIAL_MAX_STREAM_DATA`` value,
        otherwise the connection window becomes the bottleneck.  A good
-       starting point is ``streams_bidi × INITIAL_MAX_STREAM_DATA_BIDI_LOCAL``.
+       starting point is ``streams_bidi x INITIAL_MAX_STREAM_DATA_BIDI_LOCAL``.
    * - :kconfig:option:`CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL`
      - 16384
      - Initial receive window for locally initiated bidirectional streams.
@@ -498,7 +498,7 @@ breakdown of how these interact.
      - 1500
      - Receive staging buffer per endpoint in bytes.  Should equal the
        network MTU.  Combined with :kconfig:option:`CONFIG_QUIC_PKT_COUNT`,
-       total endpoint RX staging = ``endpoints × pkt_count × this value``.
+       total endpoint RX staging = ``endpoints x pkt_count x this value``.
    * - :kconfig:option:`CONFIG_QUIC_TX_BUFFER_SIZE`
      - 1500
      - Output packet assembly buffer per endpoint.  Must be at least the
@@ -509,26 +509,26 @@ breakdown of how these interact.
      - 4096
      - Shared CRYPTO frame reassembly buffer per endpoint, used during the
        TLS handshake.  Since QUIC progresses sequentially through encryption
-       levels (Initial → Handshake → Application), a single buffer is reused
+       levels (Initial -> Handshake -> Application), a single buffer is reused
        across all levels.  4096 bytes is the minimum for interoperability
        with browsers: Chrome and Firefox may split a ClientHello across 10 or
        more CRYPTO frame fragments totalling up to ~4 KiB.  Reduce to 2048
        for embedded-to-embedded deployments with small certificates.
-       Range: 1024–8192.
+       Range: 1024-8192.
    * - :kconfig:option:`CONFIG_QUIC_CRYPTO_OOO_SLOTS`
      - 8
      - Number of out-of-order CRYPTO frame metadata slots per endpoint.
        Each slot (approximately 8 bytes) records the offset and length of one
        out-of-order fragment until the gap before it is filled.  8 slots
        are needed for browser interoperability; reduce to 4 for
-       embedded-only deployments.  Range: 4–16.
+       embedded-only deployments.  Range: 4-16.
    * - :kconfig:option:`CONFIG_QUIC_STREAM_TX_BUFFER_SIZE`
      - 8192
      - Per-stream buffer holding sent but unacknowledged data.  The QUIC
        sender cannot advance beyond the unacknowledged window, so this
        is the primary throughput-limiting parameter on high-latency links.
        Size to at least the bandwidth-delay product:
-       ``throughput_bytes_per_ms × rtt_ms``.
+       ``throughput_bytes_per_ms x rtt_ms``.
    * - :kconfig:option:`CONFIG_QUIC_STREAM_RX_BUFFER_SIZE`
      - QUIC_STREAM_TX_BUFFER_SIZE
      - Per-stream receive buffer.  Defaults to the TX buffer size, which
@@ -551,15 +551,15 @@ breakdown of how these interact.
      - Ring buffer depth of recently sent packet records.  Each entry
        is approximately 24 bytes.  Must be large enough to cover all
        in-flight packets simultaneously: at least
-       ``ceil(STREAM_TX_BUFFER_SIZE / TX_BUFFER_SIZE) × 2``.
-       Increase to 128–256 on lossy or high-latency WAN links.
+       ``ceil(STREAM_TX_BUFFER_SIZE / TX_BUFFER_SIZE) x 2``.
+       Increase to 128-256 on lossy or high-latency WAN links.
    * - :kconfig:option:`CONFIG_QUIC_TLS_TRANSCRIPT_BUF_LEN`
      - 4096
      - Per-connection buffer accumulating the TLS 1.3 handshake transcript
        used for ``Finished`` MAC computation and HKDF key derivation.
        4096 bytes covers typical TLS 1.3 handshakes with RSA-2048 and
        EC P-256 certificates.
-       Increase to 6144–8192 for longer certificate chains or RSA-4096.
+       Increase to 6144-8192 for longer certificate chains or RSA-4096.
        Total RAM consumed equals this value multiplied by
        :kconfig:option:`CONFIG_QUIC_MAX_CONTEXTS`.
 
@@ -584,13 +584,13 @@ Timeout Options
    * - :kconfig:option:`CONFIG_QUIC_CONNECT_TIMEOUT`
      - 3000
      - Milliseconds to wait for the handshake to complete before the
-       ``connect()`` call fails.  Should be at least 10× the expected
+       ``connect()`` call fails.  Should be at least 10x the expected
        RTT to accommodate packet loss during the handshake.
    * - :kconfig:option:`CONFIG_QUIC_MAX_PTO_TIMEOUT_MS`
      - 10000
      - Upper bound on the exponential PTO backoff in milliseconds.
        The PTO timer doubles on each consecutive probe timeout:
-       ``PTO_n = PTO_base × 2^n``.  This cap prevents excessively long
+       ``PTO_n = PTO_base x 2^n``.  This cap prevents excessively long
        retransmission delays.  Should not exceed
        :kconfig:option:`CONFIG_QUIC_MAX_IDLE_TIMEOUT`.
 
@@ -606,7 +606,7 @@ Service Thread Options
      - Description
    * - :kconfig:option:`CONFIG_QUIC_SERVICE_THREAD_PRIO`
      - NUM_PREEMPT_PRIORITIES
-     - Thread priority of the QUIC service dispatcher.  Values ≥ 0 are
+     - Thread priority of the QUIC service dispatcher.  Values >= 0 are
        preemptive (0 = highest); values < 0 are cooperative.
    * - :kconfig:option:`CONFIG_QUIC_SERVICE_STACK_SIZE`
      - 4096
@@ -618,7 +618,7 @@ Service Thread Options
      - QUIC_MAX_ENDPOINTS
      - Number of simultaneous pending packet receive operations.  Defaults
        to the number of endpoints so that one packet per endpoint can be
-       in flight concurrently.  Increase (e.g. 2× endpoints) for
+       in flight concurrently.  Increase (e.g. 2x endpoints) for
        higher-throughput scenarios.
 
 
@@ -635,48 +635,48 @@ parameters.  All sizes are in bytes unless noted.
    * - Memory Region
      - Formula
    * - Endpoint RX staging
-     - ``QUIC_MAX_ENDPOINTS × QUIC_PKT_COUNT × QUIC_ENDPOINT_PENDING_DATA_LEN``
+     - ``QUIC_MAX_ENDPOINTS x QUIC_PKT_COUNT x QUIC_ENDPOINT_PENDING_DATA_LEN``
    * - Endpoint TX buffers
-     - ``QUIC_MAX_ENDPOINTS × QUIC_TX_BUFFER_SIZE``
+     - ``QUIC_MAX_ENDPOINTS x QUIC_TX_BUFFER_SIZE``
    * - Crypto RX buffers
-     - ``QUIC_MAX_ENDPOINTS × QUIC_CRYPTO_RX_BUFFER_SIZE``
+     - ``QUIC_MAX_ENDPOINTS x QUIC_CRYPTO_RX_BUFFER_SIZE``
    * - Crypto OOO slots
-     - ``QUIC_MAX_ENDPOINTS × QUIC_CRYPTO_OOO_SLOTS × 8``
+     - ``QUIC_MAX_ENDPOINTS x QUIC_CRYPTO_OOO_SLOTS x 8``
    * - Stream TX buffers
-     - ``(QUIC_MAX_CONTEXTS × (QUIC_MAX_STREAMS_BIDI + QUIC_MAX_STREAMS_UNI)) × QUIC_STREAM_TX_BUFFER_SIZE``
+     - ``(QUIC_MAX_CONTEXTS x (QUIC_MAX_STREAMS_BIDI + QUIC_MAX_STREAMS_UNI)) x QUIC_STREAM_TX_BUFFER_SIZE``
    * - Stream RX buffers
-     - ``(QUIC_MAX_CONTEXTS × (QUIC_MAX_STREAMS_BIDI + QUIC_MAX_STREAMS_UNI)) × QUIC_STREAM_RX_BUFFER_SIZE``
+     - ``(QUIC_MAX_CONTEXTS x (QUIC_MAX_STREAMS_BIDI + QUIC_MAX_STREAMS_UNI)) x QUIC_STREAM_RX_BUFFER_SIZE``
    * - Stream OOO buffers
-     - ``total_streams × QUIC_STREAM_OOO_SLOTS × QUIC_STREAM_OOO_SEG_SIZE``
+     - ``total_streams x QUIC_STREAM_OOO_SLOTS x QUIC_STREAM_OOO_SEG_SIZE``
    * - Sent-packet history
-     - ``QUIC_MAX_CONTEXTS × QUIC_SENT_PKT_HISTORY_SIZE × 24``
+     - ``QUIC_MAX_CONTEXTS x QUIC_SENT_PKT_HISTORY_SIZE x 24``
    * - TLS transcript buffers
-     - ``QUIC_MAX_CONTEXTS × QUIC_TLS_TRANSCRIPT_BUF_LEN``
+     - ``QUIC_MAX_CONTEXTS x QUIC_TLS_TRANSCRIPT_BUF_LEN``
    * - TLS context (Mbed TLS)
-     - ~8192 × ``QUIC_MAX_CONTEXTS`` (estimated; depends on ciphersuites)
+     - ~8192 x ``QUIC_MAX_CONTEXTS`` (estimated; depends on ciphersuites)
    * - Connection state
-     - ~512 × ``QUIC_MAX_CONTEXTS``
+     - ~512 x ``QUIC_MAX_CONTEXTS``
    * - Stream state
-     - ~128 × ``total_streams``
+     - ~128 x ``total_streams``
 
 **Total estimated QUIC RAM** (rough minimum for 1 connection, 3 bidi streams,
 1500-byte stream buffers, LAN client defaults):
 
 .. code-block:: none
 
-   Endpoint RX staging :  2 × 1 × 1500 = 3 000 B
-   Endpoint TX         :  2 × 1500      = 3 000 B
-   Crypto RX buffers   :  2 × 2048      = 4 096 B  (embedded client, LAN)
-   Crypto OOO slots    :  2 × 4 × 8     =   256 B
-   Stream TX           :  3 × 1500      = 4 500 B
-   Stream RX           :  3 × 1500      = 4 500 B
-   OOO buffers         :  3 × 2 × 512   = 3 072 B
-   Sent-pkt history    :  1 × 16 × 24   =   384 B
-   TLS transcript      :  1 × 4096      = 4 096 B
-   TLS context         :  1 × 8192      = 8 192 B
-   State overhead      :  512 + 3×128   =   896 B
-   ─────────────────────────────────────────────
-   Approximate total                   ≈ 35 992 B (~35 KiB)
+   Endpoint RX staging :  2 x 1 x 1500 = 3 000 B
+   Endpoint TX         :  2 x 1500      = 3 000 B
+   Crypto RX buffers   :  2 x 2048      = 4 096 B  (embedded client, LAN)
+   Crypto OOO slots    :  2 x 4 x 8     =   256 B
+   Stream TX           :  3 x 1500      = 4 500 B
+   Stream RX           :  3 x 1500      = 4 500 B
+   OOO buffers         :  3 x 2 x 512   = 3 072 B
+   Sent-pkt history    :  1 x 16 x 24   =   384 B
+   TLS transcript      :  1 x 4096      = 4 096 B
+   TLS context         :  1 x 8192      = 8 192 B
+   State overhead      :  512 + 3x128   =   896 B
+   ---------------------------------------------
+   Approximate total                   ~ 35 992 B (~35 KiB)
 
 The dominant cost at low stream counts is the Mbed TLS context per connection.
 At higher stream counts, the stream TX/RX buffers become dominant.
@@ -693,8 +693,8 @@ assist with this, Zephyr provides a Python optimizer script:
 
    scripts/net/quic-kconfig-optimizer.py
 
-The script accepts a description of the deployment scenario — connection
-counts, MTU, network type, expected RTT, and a RAM budget — and outputs a
+The script accepts a description of the deployment scenario -- connection
+counts, MTU, network type, expected RTT, and a RAM budget -- and outputs a
 complete set of recommended ``CONFIG_`` values together with an estimated
 RAM breakdown and a ready-to-paste ``prj.conf`` snippet.
 
@@ -795,7 +795,7 @@ Input Parameters
      - 3
      - Bidirectional streams per connection.  Stream TX/RX buffers are
        allocated for every stream across every connection, so
-       ``contexts × streams_bidi × 2 × stream_buf`` bytes are reserved
+       ``contexts x streams_bidi x 2 x stream_buf`` bytes are reserved
        at boot.
    * - Uni streams
      - ``--streams-uni``
@@ -838,22 +838,22 @@ Input Parameters
    * - Packet loss rate
      - ``--loss-rate``
      - 0.0
-     - Expected packet loss as a percentage (0–100).  Loss ≥ 2 % doubles
-       stream buffer sizes to keep the pipeline full; loss ≥ 5 % forces
+     - Expected packet loss as a percentage (0-100).  Loss >= 2 % doubles
+       stream buffer sizes to keep the pipeline full; loss >= 5 % forces
        the sent-packet history to at least 128 entries for effective
        loss detection.
    * - Message size
      - ``--app-message-size``
      - 1024
      - Typical application payload in bytes.  Stream buffers are sized to
-       hold at least 2× this value so that one complete message can be
+       hold at least 2x this value so that one complete message can be
        in transit while the previous one is being acknowledged.
    * - OOO expected
      - ``--ooo-expected``
      - ``no``
      - Whether out-of-order packet delivery is expected (``yes``/``no``).
        When ``no``, OOO slots are reduced to 2 and segment size to 512 B,
-       saving ``total_streams × (default_slots − 2) × seg_size`` bytes.
+       saving ``total_streams x (default_slots - 2) x seg_size`` bytes.
    * - Network type
      - ``--network-type``
      - ``lan``
@@ -866,19 +866,19 @@ Output Sections
 
 The optimizer prints five sections.
 
-**Input Parameters** — echoes all supplied values for verification.
+**Input Parameters** -- echoes all supplied values for verification.
 
-**Recommended Kconfig Values** — the computed ``CONFIG_*`` values grouped
+**Recommended Kconfig Values** -- the computed ``CONFIG_*`` values grouped
 by category (connection counts, transport parameters, buffer sizes, timeouts).
 
-**Estimated RAM Usage** — a table showing each memory region, its size, and
+**Estimated RAM Usage** -- a table showing each memory region, its size, and
 a proportional ASCII bar chart.  If a RAM budget was given, the utilisation
 percentage is shown.
 
-**prj.conf Snippet** — a copy-pasteable block of Kconfig options
+**prj.conf Snippet** -- a copy-pasteable block of Kconfig options
 ready to drop into a ``prj.conf`` or board-specific ``.conf`` overlay.
 
-**Additional Notes** — deployment-specific warnings and suggestions derived
+**Additional Notes** -- deployment-specific warnings and suggestions derived
 from the input, for example if the service stack is likely to be too small,
 or if the connection-level flow-control window may become a bottleneck.
 
@@ -990,8 +990,8 @@ bidirectional stream to report telemetry, and has 48 KiB available for QUIC:
        --ooo-expected no --network-type wan
 
 The script will size stream buffers to 1500 B (minimum, since
-``2 × 256 = 512 < 1500``), set OOO slots to 2, and keep the sent-packet
-history at 16 entries — all chosen to minimise RAM while still handling
+``2 x 256 = 512 < 1500``), set OOO slots to 2, and keep the sent-packet
+history at 16 entries -- all chosen to minimise RAM while still handling
 the expected 0.5 % loss on the WAN link.
 
 Dual-stack server (IPv4 + IPv6, multiple clients)
@@ -1012,7 +1012,7 @@ both IPv4 and IPv6, with 256 KiB available for QUIC:
 
 The script will recommend three endpoints (two for the listening sockets,
 one for each client family), and size stream buffers to 16 KiB (to hold
-2 × 8192 B messages), which with 4 contexts and 4 streams each will
+2 x 8192 B messages), which with 4 contexts and 4 streams each will
 dominate the RAM budget.
 
 High-throughput WAN link with packet loss
@@ -1031,7 +1031,7 @@ loss, requiring sustained throughput for firmware-update payloads:
        --app-message-size 32768 \
        --ooo-expected yes --network-type wan
 
-Here the script doubles stream buffers (loss ≥ 2 %) and selects a window
+Here the script doubles stream buffers (loss >= 2 %) and selects a window
 update threshold of 15 % (high-latency WAN) to keep the peer's send window
 open, maximising pipeline utilisation.  It also sets OOO slots to 8 with
 1280-byte segments to handle cellular reordering.
@@ -1045,7 +1045,7 @@ to observe actual stream window stalls and OOO events before deciding to
 increase buffer sizes.
 
 **Stream buffers are the biggest RAM cost.**  On multi-connection devices,
-``contexts × streams × 2 × stream_buf`` dominates.  Halving the stream buffer
+``contexts x streams x 2 x stream_buf`` dominates.  Halving the stream buffer
 size saves proportionally.  Only increase beyond the BDP if profiling shows
 persistent sender stalls.
 
@@ -1057,7 +1057,7 @@ throughput even when individual stream windows are open.
 **CRYPTO buffers scale with endpoints, not connections.**
 :kconfig:option:`CONFIG_QUIC_CRYPTO_RX_BUFFER_SIZE` and
 :kconfig:option:`CONFIG_QUIC_CRYPTO_OOO_SLOTS` are allocated once per
-endpoint, so their RAM cost is ``QUIC_MAX_ENDPOINTS × buffer_size``.
+endpoint, so their RAM cost is ``QUIC_MAX_ENDPOINTS x buffer_size``.
 The 4096-byte default is required for browser interoperability (Chrome
 and Firefox fragment ClientHello into many small CRYPTO frames); reduce
 to 2048 for embedded-only deployments where the peer is also a Zephyr
@@ -1075,7 +1075,7 @@ client-initiated streams, set
 accounts for this automatically.
 
 **OOO memory is per-stream.**
-``QUIC_STREAM_OOO_SLOTS × QUIC_STREAM_OOO_SEG_SIZE × total_streams``
+``QUIC_STREAM_OOO_SLOTS x QUIC_STREAM_OOO_SEG_SIZE x total_streams``
 can be significant.  On a reliable LAN, setting
 :kconfig:option:`CONFIG_QUIC_STREAM_OOO_SLOTS` to 2 and
 :kconfig:option:`CONFIG_QUIC_STREAM_OOO_SEG_SIZE` to 512 is safe and
