@@ -77,13 +77,8 @@ void soc_interrupt_init(void)
  * @brief Perform basic hardware initialization
  *
  * Initializes the base clocks and LPFLL using helpers provided by the HAL.
- *
- * @return 0
  */
-static int sy1xx_soc_init(void)
+void soc_early_init_hook(void)
 {
 
-	return 0;
 }
-
-SYS_INIT(sy1xx_soc_init, PRE_KERNEL_1, 0);
