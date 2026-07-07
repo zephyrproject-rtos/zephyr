@@ -323,6 +323,10 @@ Ethernet
   been updated accordingly, as have been the device trees of the Zynq-7000 and ZynqMP /
   UltraScale+ SoC families. (:github:`87313`)
 
+* Ethernet and Wi-Fi drivers that use :c:enumerator:`ETHERNET_CONFIG_TYPE_EXTRA_TX_PKT_HEADROOM` to request
+  extra headroom for transmit packets must now select
+  :kconfig:option:`CONFIG_NET_L2_ETHERNET_EXTRA_TX_PKT_HEADROOM`. (:github:`112924`)
+
 Flash
 =====
 * :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
