@@ -65,7 +65,10 @@ static int actinius_board_set_charger_enable(void)
 }
 #endif /* CHARGER_ENABLE */
 
-static int actinius_board_init(void)
+/* Needs to happen after GPIO driver init; the board late init hook runs
+ * after all POST_KERNEL device init.
+ */
+void board_late_init_hook(void)
 {
 
 	int result = 0;
@@ -86,12 +89,7 @@ static int actinius_board_init(void)
 	}
 #endif
 
-	return result;
+	ARG_UNUSED(result);
 }
-
-/* Needs to happen after GPIO driver init */
-SYS_INIT(actinius_board_init,
-		POST_KERNEL,
-		CONFIG_ACTINIUS_BOARD_CONTROL_INIT_PRIORITY);
 
 #endif /* SIM_SELECT || CHARGER_ENABLE */
