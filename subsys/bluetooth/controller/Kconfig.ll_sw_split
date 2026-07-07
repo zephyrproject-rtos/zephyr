@@ -517,6 +517,17 @@ config BT_CTLR_ADV_ISO_RESERVE_MAX
 	  utilizations by allowing larger BIG events when not overlapping with
 	  extended or periodic advertising.
 
+config BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER
+	bool "Wrap Broadcast ISO event around overlapping roles"
+	depends on BT_TICKER_EXT && \
+		   BT_CTLR_ADV_ISO && \
+		   !BT_CTLR_ADV_ISO_RESERVE_MAX
+	help
+	  Wrap Broadcast ISO event around overlapping roles using
+	  ticker ticks_slot_window feature with jitter in window.
+	  LLL implementation can use the ticks_drifts value to determine the
+	  correct subevents to setup for transmission.
+
 config BT_CTLR_ADV_AUX_SYNC_OFFSET
 	int "Pre-defined offset between AUX_ADV_IND and AUX_SYNC_IND"
 	depends on BT_CTLR_ADV_PERIODIC

@@ -109,6 +109,10 @@ struct lll_adv_iso {
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	uint16_t pa_iss_us;
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+	uint8_t is_lll_resume:1;
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 };
 
 struct lll_adv_sync {
