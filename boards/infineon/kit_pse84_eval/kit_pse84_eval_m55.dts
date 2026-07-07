@@ -24,9 +24,10 @@
 	};
 
 	chosen {
-		/* m55_xip + flash0_sahb is used in the pse84_boot.c file for m55 core startup
+		/* m55_xip + flash0_sahb is used by cm33 or cm33/ns for m55 core startup
 		 * If a different region is assigned here, it also needs to be updated at:
-		 * soc/infineon/edge/pse84/security_config/pse84_boot.c
+		 * soc/infineon/edge/pse84/security_config/pse84_boot.c or
+		 * soc/infineon/edge/pse84/soc_pse84_m33_ns.c
 		 */
 		zephyr,flash = &flash0_sahb;
 		zephyr,code-partition = &m55_xip;
@@ -154,5 +155,18 @@ uart4: &scb4 {
 		compatible = "zephyr,sdmmc-disk";
 		disk-name = "SD";
 		status = "okay";
+	};
+};
+
+/*
+ * Bind the relative MCUboot slot0_partition/slot1_partition labels to
+ * the CM55 image slots (image 2) so the stock cmake/mcuboot.cmake signing
+ * script sizes the CM55 image against its own slot.
+ */
+&flash0_sahb {
+	partitions {
+		slot0_partition: partition@580000 {};
+
+		slot1_partition: partition@b00000 {};
 	};
 };
