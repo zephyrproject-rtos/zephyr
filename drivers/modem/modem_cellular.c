@@ -211,6 +211,27 @@ static bool modem_cellular_gpio_is_enabled(const struct gpio_dt_spec *gpio)
 	return gpio->port != NULL;
 }
 
+static bool modem_cellular_modem_is_powered(const struct modem_cellular_config *config)
+{
+	int ret;
+
+	/* A status GPIO reads asserted while the modem is already powered on, e.g.
+	 * after an MCU-only reset that left the modem running. Without a status GPIO,
+	 * report the modem as off so the normal power-on path runs unchanged.
+	 */
+	if (!modem_cellular_gpio_is_enabled(&config->status_gpio)) {
+		return false;
+	}
+
+	ret = gpio_pin_get_dt(&config->status_gpio);
+	if (ret < 0) {
+		LOG_WRN("Failed to read modem status GPIO (%d)", ret);
+		return false;
+	}
+
+	return ret == 1;
+}
+
 static bool modem_cellular_needs_apn(const struct modem_cellular_data *data)
 {
 	const struct modem_cellular_config *config = data->dev->config;
@@ -768,6 +789,8 @@ static void modem_cellular_idle_event_handler(struct modem_cellular_data *data,
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_RESUME:
+		data->power_on_skipped = false;
+
 		if (config->autostarts || config->vendor->force_autostart) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_POWER_ON);
 			break;
@@ -780,8 +803,17 @@ static void modem_cellular_idle_event_handler(struct modem_cellular_data *data,
 		}
 
 		if (modem_cellular_gpio_is_enabled(&config->power_gpio)) {
-			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_POWER_ON_PULSE);
-			break;
+			if (!modem_cellular_modem_is_powered(config)) {
+				modem_cellular_enter_state(data,
+							   MODEM_CELLULAR_STATE_POWER_ON_PULSE);
+				break;
+			}
+
+			/* Modem is already powered (e.g. MCU-only reset). Pulsing the power
+			 * key now would toggle a running modem off, so skip it and bring up
+			 * the bus directly; the init script confirms the modem responds.
+			 */
+			data->power_on_skipped = true;
 		}
 
 		if (config->vendor->scripts.set_baudrate != NULL) {
@@ -1095,6 +1127,9 @@ static void modem_cellular_run_init_script_event_handler(struct modem_cellular_d
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
+		/* Modem responded, so a skipped power-on pulse was the right call. */
+		data->power_on_skipped = false;
+
 		/* Get link_addr_len least significant bytes from IMEI as a link address */
 		imei_len = MODEM_CELLULAR_DATA_IMEI_LEN - 1; /* Exclude str end */
 		link_addr_len = MIN(NET_LINK_ADDR_MAX_LENGTH, imei_len);
@@ -1120,6 +1155,15 @@ static void modem_cellular_run_init_script_event_handler(struct modem_cellular_d
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
+		if (data->power_on_skipped) {
+			/* Skipped the power-on pulse assuming the modem was already up, but
+			 * it did not respond. Power it on now rather than entering recovery.
+			 */
+			data->power_on_skipped = false;
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_POWER_ON_PULSE);
+			break;
+		}
+
 		modem_cellular_enter_recovery_state(data);
 		break;
 
@@ -2566,6 +2610,15 @@ int modem_cellular_init(const struct device *dev)
 	if (modem_cellular_gpio_is_enabled(&config->dtr_gpio)) {
 		gpio_pin_configure_dt(&config->dtr_gpio, GPIO_OUTPUT_INACTIVE);
 		dtr_gpio = &config->dtr_gpio;
+	}
+
+	if (modem_cellular_gpio_is_enabled(&config->status_gpio)) {
+		int ret = gpio_pin_configure_dt(&config->status_gpio, GPIO_INPUT);
+
+		if (ret < 0) {
+			LOG_ERR("Failed to configure modem status GPIO (%d)", ret);
+			return ret;
+		}
 	}
 
 	{

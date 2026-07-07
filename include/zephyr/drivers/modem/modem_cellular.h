@@ -216,6 +216,10 @@ struct modem_cellular_data {
 	atomic_t periodic_paused;
 	/** Set when a TIMEOUT is swallowed while paused; cleared on KICK. */
 	bool periodic_timeout_skipped;
+	/** Set when the power-on pulse was skipped because the status GPIO reported
+	 * the modem already powered; the init script then confirms it responds.
+	 */
+	bool power_on_skipped;
 
 #if defined(CONFIG_MODEM_CELLULAR_STATS)
 	/** Operational statistics, exposed via cellular_get_stats(). */
@@ -305,6 +309,7 @@ struct modem_cellular_config {
 	struct gpio_dt_spec wake_gpio;
 	struct gpio_dt_spec ring_gpio;
 	struct gpio_dt_spec dtr_gpio;
+	struct gpio_dt_spec status_gpio;
 	bool autostarts;
 	bool hold_reset_on_suspend;
 	bool reset_on_resume;
@@ -529,6 +534,7 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 		.wake_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_wake_gpios, {}),                   \
 		.ring_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_ring_gpios, {}),                   \
 		.dtr_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_dtr_gpios, {}),                     \
+		.status_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_status_gpios, {}),               \
 		.autostarts = DT_INST_PROP(inst, autostarts),                                      \
 		.hold_reset_on_suspend =                                                           \
 			DT_INST_ENUM_HAS_VALUE(inst, zephyr_mdm_reset_behavior, hold_on_suspend),  \
