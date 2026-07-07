@@ -35,6 +35,16 @@ Kernel
 * ``_k_neg_eagain`` has been renamed to ``_errno_neg_egain`` as ``errno`` has been migrated out of
   kernel into ``lib/libc/common``.
 
+* The ``PRE_KERNEL_1`` and ``PRE_KERNEL_2`` initialization levels have been deprecated in favor of
+  a single ``PRE_KERNEL`` level. ``PRE_KERNEL_1`` is now an alias of ``PRE_KERNEL``: its entries
+  share the ``PRE_KERNEL`` level and are ordered together with its entries, by priority.
+  ``PRE_KERNEL_2`` entries keep running after all ``PRE_KERNEL`` (and ``PRE_KERNEL_1``) entries
+  while the level is phased out, so existing initialization ordering is unchanged. Replace
+  ``SYS_INIT(fn, PRE_KERNEL_1, prio)`` and ``DEVICE_DT_DEFINE(..., PRE_KERNEL_1, prio, ...)`` with
+  ``PRE_KERNEL``; migrate ``PRE_KERNEL_2`` users to ``PRE_KERNEL`` with a priority that orders the
+  entry after its dependencies. The linker symbol ``__init_PRE_KERNEL_1_start`` has been renamed
+  to ``__init_PRE_KERNEL_start``; tooling that inspects init sections by name must be updated.
+
 * When :kconfig:option:`CONFIG_SCHED_CPU_MASK_PIN_ONLY` is enabled, calling
   :c:func:`k_thread_cpu_mask_clear`, :c:func:`k_thread_cpu_mask_enable_all`,
   or :c:func:`k_thread_cpu_mask_disable` now triggers an assertion instead of
