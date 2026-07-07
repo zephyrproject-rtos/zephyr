@@ -179,7 +179,7 @@ jobs:
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       TWISTER_COMMON: ' --test-config tests/test_config_ci.yaml --force-color --inline-logs -v -N -M --retry-failed 3 --timeout-multiplier 2 --post-build-checks '
       WEEKLY_OPTIONS: ' -M --build-only --all --show-footprint --report-filtered -j 32'
-      PR_OPTIONS: ' --clobber-output --integration -j 16'
+      PR_OPTIONS: ' --clobber-output --integration -j 16 -e bsim_CI'
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered -j 16'
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
