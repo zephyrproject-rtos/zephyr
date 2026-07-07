@@ -17,6 +17,12 @@ zephyr_sources_ifdef(CONFIG_MIPI_DSI	display_if.c)
 
 zephyr_sources_ifdef(CONFIG_MFD_PCA9422	pmic_int.c)
 
+add_subdirectory_ifdef(CONFIG_PM power)
+
+if(CONFIG_SECOND_CORE_MCUX_REMOTE_DIR)
+  zephyr_include_directories(${CONFIG_SECOND_CORE_MCUX_REMOTE_DIR})
+endif()
+
 if(CONFIG_FLASH_MCUX_XSPI_XIP)
   zephyr_sources(flash_clock_setup.c)
   zephyr_code_relocate(FILES flash_clock_setup.c LOCATION ${CONFIG_FLASH_MCUX_XSPI_XIP_MEM}_TEXT)
