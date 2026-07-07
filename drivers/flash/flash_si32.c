@@ -21,7 +21,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_si32);
 
-#define SOC_NV_FLASH_NODE             DT_INST(0, soc_nv_flash)
+#include "flash_priv.h"
+
+#define SOC_NV_FLASH_NODE SOC_NV_FLASH_CHILD_NODE(0)
+
 #define SOC_NV_FLASH_SIZE             DT_REG_SIZE(SOC_NV_FLASH_NODE)
 #define SOC_NV_FLASH_ADDR             DT_REG_ADDR(SOC_NV_FLASH_NODE)
 #define SOC_NV_FLASH_WRITE_BLOCK_SIZE DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
