@@ -896,6 +896,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"server-cert-domain-exact", sys_getopt_required_argument, 0, 'e'},
 		{"server-cert-domain-suffix", sys_getopt_required_argument, 0, 'x'},
 		{"ssid-protection", sys_getopt_required_argument, 0, 'C'},
+		{"transition-disable", sys_getopt_required_argument, 0, 'd'},
 		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	char *endptr;
@@ -913,6 +914,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	long channel;
 	int key_passwd_cnt = 0;
 	int ret = 0;
+	long val = 0;
 
 	/* Defaults */
 	params->band = WIFI_FREQ_BAND_UNKNOWN;
@@ -924,7 +926,8 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->bandwidth = WIFI_FREQ_BANDWIDTH_20MHZ;
 	params->verify_peer_cert = false;
 
-	while ((opt = sys_getopt_long(argc, argv, "s:p:k:e:x:w:b:c:m:t:a:B:K:S:C:T:A:V:I:P:g:Rh:i:",
+	while ((opt = sys_getopt_long(argc, argv,
+				  "s:p:k:e:x:w:b:c:m:t:a:B:K:S:C:T:A:V:I:P:g:Rh:i:d:",
 				  long_options, &opt_index)) != -1) {
 		state = sys_getopt_state_get();
 		switch (opt) {
@@ -1179,6 +1182,17 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			params->server_cert_domain_suffix = state->optarg;
 			params->server_cert_domain_suffix_len =
 					strlen(params->server_cert_domain_suffix);
+			break;
+		case 'd':
+			if (iface_mode == WIFI_MODE_AP) {
+				val = shell_strtol(state->optarg, 16, &ret);
+				if (ret || val < 0x01 || val > 0x0F) {
+					PR_WARNING("Invalid transition_disable "
+						 "value (0x01-0x0F)\n");
+					return -EINVAL;
+				}
+				params->transition_disable = (uint8_t)val;
+			}
 			break;
 		case 'h':
 			shell_help(sh);
@@ -5212,8 +5226,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "[-P, --eap-pwd1...--eap-pwd8]: Client Password\n"
 				 "Default no password for eap user\n"
 				 "[-C, --ssid-protection]: Whether to use SSID protection in\n"
-				 "4-way handshake: 0:Disable, 1:Enable"),
-		      cmd_wifi_ap_enable, 2, 49),
+				 "4-way handshake: 0:Disable, 1:Enable\n"
+				 "[-d, --transition-disable=<bitmap>]: WPA3 Transition Disable\n"
+				 "Bit0=WPA3-Personal, Bit1=WPA3-Personal SAE-PK,\n"
+				 "Bit2=WPA3-Enterprise, Bit3=OWE"),
+		      cmd_wifi_ap_enable, 2, 51),
 	SHELL_CMD_ARG(stations, NULL,
 		      SHELL_HELP("List stations connected to the AP",
 				 "[-i, --iface=<interface index>]"),
