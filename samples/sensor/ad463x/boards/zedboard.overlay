@@ -1,0 +1,90 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * AD4630-20 FMC card on Zedboard. Describes the AXI peripherals
+ * synthesized in the PL alongside the AD4630 reference HDL design.
+ */
+
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	soc {
+		axi_sysid: axi-sysid@45000000 {
+			compatible = "adi,axi-sysid";
+			reg = <0x45000000 0x10000>;
+			status = "okay";
+		};
+
+		spi_ad463x: axi-spi-engine@44a00000 {
+			compatible = "adi,axi-spi-engine";
+			reg = <0x44a00000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			adi,ref-clock-hz = <160000000>;
+			adi,data-width = <8>;
+			adi,num-cs = <1>;
+			status = "okay";
+
+			ad463x: ad463x@0 {
+				compatible = "adi,ad463x";
+				reg = <0>;
+				spi-max-frequency = <5000000>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				#io-channel-cells = <1>;
+				adi,part = "ad4630-20";
+				dmas = <&axi_ad463x_dma 0>;
+				dma-names = "rx";
+				clocks = <&spi_clkgen>;
+				pwms = <&cnv_generator 0 500 PWM_POLARITY_NORMAL>;
+				adi,vref-microvolts = <5000000>;
+				adi,axi-clkgen-rate-hz = <160000000>;
+				adi,sample-rate-hz = <2000000>;
+				adi,lane-mode = "two";
+				adi,clock-mode = "spi-compat";
+				adi,output-mode = "24-diff-8-com";
+				/* adi,avg-frame-len = <4>; */
+				/* opt-in: 30-AVERAGED_DIFF; set AD463X_REAL_BITS to 30 */
+				adi,data-rate = "sdr";
+				reset-gpios = <&psgpio_bank3 0 GPIO_ACTIVE_LOW>;
+				status = "okay";
+			};
+		};
+
+		axi_ad463x_dma: axi-dmac@44a30000 {
+			compatible = "adi,axi-dmac";
+			reg = <0x44a30000 0x1000>;
+			interrupts = <GIC_SPI 57 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#dma-cells = <1>;
+			status = "okay";
+		};
+
+		spi_clkgen: axi-clkgen@44a70000 {
+			compatible = "adi,axi-clkgen";
+			reg = <0x44a70000 0x10000>;
+			clock-frequency = <100000000>;
+			#clock-cells = <0>;
+			status = "okay";
+		};
+
+		cnv_generator: axi-pwmgen@44b00000 {
+			compatible = "adi,axi-pwmgen";
+			reg = <0x44b00000 0x10000>;
+			adi,ref-clock-hz = <100000000>;
+			#pwm-cells = <3>;
+			status = "okay";
+		};
+
+		sync_generator: axi-pwmgen@44c00000 {
+			compatible = "adi,axi-pwmgen";
+			reg = <0x44c00000 0x10000>;
+			adi,ref-clock-hz = <100000000>;
+			#pwm-cells = <3>;
+			status = "okay";
+		};
+	};
+};
