@@ -266,6 +266,7 @@ static void bt_ready(void)
 	printk("Advertising successfully started\n");
 }
 
+#if defined(CONFIG_BT_SMP)
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -289,6 +290,7 @@ static struct bt_conn_auth_cb auth_cb_display = {
 	.passkey_entry = NULL,
 	.cancel = auth_cancel,
 };
+#endif
 
 static void bas_notify(void)
 {
@@ -415,7 +417,9 @@ int main(void)
 	bt_hrs_cb_register(&hrs_cb);
 
 	bt_gatt_cb_register(&gatt_callbacks);
+#if defined(CONFIG_BT_SMP)
 	bt_conn_auth_cb_register(&auth_cb_display);
+#endif
 
 	vnd_ind_attr = bt_gatt_find_by_uuid(vnd_svc.attrs, vnd_svc.attr_count,
 					    &vnd_enc_uuid.uuid);
