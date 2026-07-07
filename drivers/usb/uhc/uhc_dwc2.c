@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT snps_dwc2
 
 #include <zephyr/kernel.h>
+#include <zephyr/cache.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/usb/uhc.h>
@@ -591,6 +592,7 @@ static inline void ch_process_control(const struct device *dev, struct uhc_dwc2_
 					size, net_buf_tailroom(xfer->buf));
 
 				priv->dma_addr = (uint32_t)((mem_addr_t)net_buf_tail(xfer->buf));
+				sys_cache_data_invd_range(UINT_TO_POINTER(priv->dma_addr), size);
 			} else {
 				size = xfer->buf->len;
 
@@ -601,6 +603,7 @@ static inline void ch_process_control(const struct device *dev, struct uhc_dwc2_
 						"Control DATA OUT:");
 
 				priv->dma_addr = (uint32_t)((mem_addr_t)xfer->buf->data);
+				sys_cache_data_flush_range(UINT_TO_POINTER(priv->dma_addr), size);
 			}
 		}
 	} else {
@@ -1123,6 +1126,8 @@ static void ch_start_control(const struct device *dev, struct uhc_dwc2_channel *
 		usb_dwc2_set_hctsiz_xfersize(sizeof(struct usb_setup_packet));
 
 	LOG_HEXDUMP_DBG(setup, 8, "SETUP");
+
+	sys_cache_data_flush_range(xfer->setup_pkt, sizeof(struct usb_setup_packet));
 
 	priv->dma_addr = (uint32_t)((mem_addr_t)xfer->setup_pkt);
 	(void)uhc_dwc2_quirk_dma_addr_xlate(dev);
