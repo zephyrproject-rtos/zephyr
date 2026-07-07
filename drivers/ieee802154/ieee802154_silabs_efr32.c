@@ -1206,6 +1206,10 @@ static sl_rail_status_t sl_802154_handle_data_request_command(struct sl_802154_d
 
 static void sl_802154_handle_tx_failed(struct sl_802154_data *data)
 {
+	if (data->tx_mhr.fs->fc.ar) {
+		k_sem_give(&data->ack_wait);
+	}
+
 	sl_802154_state_clear_tx_data_and_wait_for_ack(&data->radio_data.state);
 	sl_802154_yield_radio(data->radio_data.rail_handle);
 }
@@ -1214,8 +1218,7 @@ static void sl_802154_handle_ack_timeout(struct sl_802154_data *data)
 {
 	__ASSERT_NO_MSG(sl_802154_state_is_tx_data_ongoing(&data->radio_data.state));
 	__ASSERT_NO_MSG(sl_802154_state_is_waiting_for_ack(&data->radio_data.state));
-	sl_802154_state_set_tx_data_ongoing(&data->radio_data.state, false);
-	sl_802154_state_set_waiting_for_ack(&data->radio_data.state, false);
+	sl_802154_state_clear_tx_data_and_wait_for_ack(&data->radio_data.state);
 	data->ack_errno = -ENOMSG;
 	k_sem_give(&data->ack_wait);
 	sl_802154_yield_radio(data->radio_data.rail_handle);
