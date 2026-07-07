@@ -39,6 +39,7 @@ class RelationshipType(StrEnum):
     GENERATED_FROM = "GENERATED_FROM"
     HAS_PREREQUISITE = "HAS_PREREQUISITE"
     STATIC_LINK = "STATIC_LINK"
+    VARIANT_OF = "VARIANT_OF"
 
     @classmethod
     def from_value(cls, value: RelationshipType | str) -> RelationshipType:

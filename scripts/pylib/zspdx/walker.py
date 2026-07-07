@@ -674,6 +674,12 @@ class Walker:
 
         self.sbom_graph.add_component(component, "modules-deps")
         self.doc_modules_deps.add_described_component(component)
+
+        # link this dependency package to the Zephyr source package (same relation
+        # the module dependency packages have with their -sources counterparts)
+        self.pending_relationships.append(
+            ("component", "zephyr-sources", "component", component.name, "VARIANT_OF")
+        )
         return component
 
     def setup_modules_deps_component(self, modules, zephyr=None):
@@ -712,6 +718,18 @@ class Walker:
 
             self.sbom_graph.add_component(component, "modules-deps")
             self.component_modules_deps[module_name] = component
+
+            # link this dependency package to the module's source package: the
+            # checked-out sources are Zephyr's variant of the upstream dependency
+            self.pending_relationships.append(
+                (
+                    "component",
+                    module_name + "-sources",
+                    "component",
+                    component.name,
+                    "VARIANT_OF",
+                )
+            )
 
             # each module is a dependency of the zephyr dependency component
             if zephyr_deps is not None:

@@ -666,6 +666,7 @@ class SPDX3Serializer:
             "BUILD_TOOL_OF": (spdx.RelationshipType.usesTool, True),
             "DEV_TOOL_OF": (spdx.RelationshipType.usesTool, True),
             "TEST_TOOL_OF": (spdx.RelationshipType.usesTool, True),
+            "VARIANT_OF": (spdx.RelationshipType.hasVariant, True),
             "OTHER": (spdx.RelationshipType.other, False),
         }
         return type_map.get(rel_type, (spdx.RelationshipType.other, False))
