@@ -249,10 +249,11 @@ static int eth_adin2111_reg_write_oa(const struct device *dev, const uint16_t re
 	return 0;
 }
 
-int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
+static int s_oa_recv_port_idx = -1;
+static int eth_adin2111_oa_data_read(const struct device *dev)
 {
 	struct adin2111_data *ctx = dev->data;
-	struct net_if *iface = ((struct adin2111_port_data *)ctx->port[port_idx]->data)->iface;
+	struct net_if *iface;
 	struct net_pkt *pkt;
 	uint32_t hdr, ftr;
 	int i, len, rx_pos, ret, rca, swo;
@@ -301,10 +302,12 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 			swo = (ftr & ADIN2111_OA_DATA_FTR_SWO_MSK) >> ADIN2111_OA_DATA_FTR_SWO;
 			if (swo != 0) {
 				LOG_ERR("OA RX: Misalignbed start of frame !");
+				s_oa_recv_port_idx = -1;
 				return -EIO;
 			}
 			/* Reset store cursor */
 			ctx->scur = 0;
+			s_oa_recv_port_idx = !!(ftr & ADIN2111_OA_DATA_FTR_VS_PORT);
 		}
 
 		len = (ftr & ADIN2111_OA_DATA_FTR_EV) ?
@@ -321,6 +324,12 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 		ctx->scur += len;
 
 		if (ftr & ADIN2111_OA_DATA_FTR_EV) {
+			if (s_oa_recv_port_idx == -1) {
+				LOG_ERR("OA RX: No valid port index set, skipping");
+				goto update_pos;
+			}
+
+			iface = ((struct adin2111_port_data *)ctx->port[s_oa_recv_port_idx]->data)->iface;
 			pkt = net_pkt_rx_alloc_with_buffer(iface, CONFIG_ETH_ADIN2111_BUFFER_SIZE,
 							   NET_AF_UNSPEC, 0,
 							   K_MSEC(CONFIG_ETH_ADIN2111_TIMEOUT));
@@ -339,7 +348,7 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 			if (ret < 0) {
 				net_pkt_unref(pkt);
 				LOG_ERR("Port %u failed to enqueue frame to RX queue, %d",
-					port_idx, ret);
+					s_oa_recv_port_idx, ret);
 				return ret;
 			}
 		}
@@ -719,29 +728,29 @@ static void adin2111_offload_thread(void *p1, void *p2, void *p3)
 
 		/* handle rx interrupt(s) */
 		do {
-			/* handle port 1 rx */
-			if (status1 & ADIN2111_STATUS1_P1_RX_RDY) {
-				if (ctx->oa) {
-					ret = eth_adin2111_oa_data_read(dev, 0);
-				} else {
+			if (ctx->oa) {
+				/* OA mode, only one rx interrupt is generated for both ports */
+				if (status1 & (ADIN2111_STATUS1_P1_RX_RDY | ADIN2111_STATUS1_P2_RX_RDY)) {
+					ret = eth_adin2111_oa_data_read(dev);
+					if (ret < 0) {
+						break;
+					}
+				}
+			} else {
+				/* handle port 1 rx */
+				if (status1 & ADIN2111_STATUS1_P1_RX_RDY) {
 					ret = adin2111_read_fifo(dev, 0U);
+					if (ret < 0) {
+						break;
+					}
 				}
 
-				if (ret < 0) {
-					break;
-				}
-			}
-
-			/* handle port 2 rx */
-			if (is_adin2111 && (status1 & ADIN2111_STATUS1_P2_RX_RDY)) {
-				if (ctx->oa) {
-					ret = eth_adin2111_oa_data_read(dev, 1);
-				} else {
+				/* handle port 2 rx */
+				if (is_adin2111 && (status1 & ADIN2111_STATUS1_P2_RX_RDY)) {
 					ret = adin2111_read_fifo(dev, 1U);
-				}
-
-				if (ret < 0) {
-					break;
+					if (ret < 0) {
+						break;
+					}
 				}
 			}
 
