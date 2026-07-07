@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_DRIVERS_MODEM_HL78XX_HL78XX_GNSS_H_
 #define ZEPHYR_DRIVERS_MODEM_HL78XX_HL78XX_GNSS_H_
 
+#include <stddef.h>
+
 #include <zephyr/types.h>
 
 #include <zephyr/drivers/gnss.h>
@@ -70,8 +72,11 @@ struct hl78xx_gnss_config {
 };
 
 struct hl78xx_gnss_data {
-	const struct device *dev;
+	/* Must stay first: generic gnss_nmea0183_match_* callbacks cast user_data
+	 * directly to struct gnss_nmea0183_match_data.
+	 */
 	struct gnss_nmea0183_match_data match_data;
+	const struct device *dev;
 #if defined(CONFIG_GNSS_SATELLITES) && defined(CONFIG_HL78XX_GNSS_SOURCE_NMEA)
 	struct gnss_satellite satellites[CONFIG_HL78XX_GNSS_SATELLITES_COUNT];
 #endif
@@ -120,6 +125,9 @@ struct hl78xx_gnss_data {
 	struct k_sem lock;
 	k_timepoint_t pm_deadline;
 };
+
+_Static_assert(offsetof(struct hl78xx_gnss_data, match_data) == 0,
+	       "hl78xx_gnss_data.match_data must be the first member");
 
 /**
  * @brief Set the GNSS search state
