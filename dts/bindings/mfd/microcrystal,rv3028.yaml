@@ -1,12 +1,16 @@
 # Copyright (c) 2024 ANITRA system s.r.o.
+# Copyright (c) 2026 Janez Ugovsek <janez@ugovsek.info>
 # SPDX-License-Identifier: Apache-2.0
 
-description: Micro Crystal RV3028 RTC
+description: |
+  Micro Crystal RV3028 RTC multifunction device.
+
+  This binding describes the I2C parent device. Functional blocks are
+  represented as child nodes.
 
 compatible: "microcrystal,rv3028"
 
 include:
-  - name: rtc-device.yaml
   - name: i2c-device.yaml
 
 properties:
@@ -20,7 +24,7 @@ properties:
       - 32
       - 1
     description: |
-      Frequency of the CLKOUT signal in Hertz (Hz). If omitted, the CLKOUT pin is LOW.
+      Frequency of the CLKOUT signal in Hertz. If omitted, the CLKOUT pin is driven low.
 
   backup-switch-mode:
     type: string
@@ -51,4 +55,30 @@ properties:
   int-gpios:
     type: phandle-array
     description: |
-      GPIO connected to the RV3028 INT interrupt output. This signal is open-drain, active low.
+      GPIO connected to the RV3028 INT interrupt output. The signal is
+      open-drain and active low. It is required when any child device uses
+      interrupt-driven alarm, update, timestamp, or counter callbacks.
+
+examples:
+  - |
+    /* Example node for an RV3028 RTC MFD on the i2c0 bus with all child devices. */
+    &i2c0 {
+      status = "okay";
+      clock-frequency = <I2C_BITRATE_STANDARD>;
+
+      rv3028: rv3028@52 {
+        compatible = "microcrystal,rv3028";
+        reg = <0x52>;
+        int-gpios = <&gpiob 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+        backup-switch-mode = "disabled";
+        clkout-frequency = <8192>;
+        trickle-resistor-ohms = <5000>;
+        status = "okay";
+
+        rv3028_rtc: rtc {
+          compatible = "microcrystal,rv3028-rtc";
+          status = "okay";
+        };
+
+      };
+    };
