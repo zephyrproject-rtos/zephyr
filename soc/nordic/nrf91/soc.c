@@ -22,19 +22,15 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
-static int nordicsemi_nrf91_init(void)
+void soc_early_init_hook(void)
 {
 #ifdef CONFIG_NRF_ENABLE_ICACHE
 	/* Enable the instruction cache */
 	NRF_NVMC->ICACHECNF = NVMC_ICACHECNF_CACHEEN_Msk;
 #endif
-
-	return 0;
 }
 
 void arch_busy_wait(uint32_t time_us)
 {
 	nrfx_coredep_delay_us(time_us);
 }
-
-SYS_INIT(nordicsemi_nrf91_init, PRE_KERNEL_1, 0);

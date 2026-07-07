@@ -25,7 +25,7 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
-static int nordicsemi_nrf52_init(void)
+void soc_early_init_hook(void)
 {
 #ifdef CONFIG_NRF_ENABLE_ICACHE
 	/* Enable the instruction cache */
@@ -40,13 +40,9 @@ static int nordicsemi_nrf52_init(void)
 	DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nordic_nrf52x_regulator_hv)))
 	nrf_power_dcdcen_vddh_set(NRF_POWER, true);
 #endif
-
-	return 0;
 }
 
 void arch_busy_wait(uint32_t time_us)
 {
 	nrfx_coredep_delay_us(time_us);
 }
-
-SYS_INIT(nordicsemi_nrf52_init, PRE_KERNEL_1, 0);
