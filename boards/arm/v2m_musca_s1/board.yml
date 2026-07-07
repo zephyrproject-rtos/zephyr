@@ -4,5 +4,3 @@ board:
   vendor: arm
   socs:
   - name: musca_s1
-    variants:
-    - name: 'ns'
