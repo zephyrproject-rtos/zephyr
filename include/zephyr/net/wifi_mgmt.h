@@ -854,6 +854,15 @@ struct wifi_connect_req_params {
 	 * 1: Enable
 	 */
 	uint8_t ssid_protection;
+	/**
+	 * WPA3 Transition Disable bitmap (WPA3 Spec v3.0, Table 5).
+	 * Sent in EAPOL Message 3 as Transition Disable KDE.
+	 *   Bit 0: WPA3-Personal
+	 *   Bit 1: WPA3-Personal SAE-PK
+	 *   Bit 2: WPA3-Enterprise
+	 *   Bit 3: OWE
+	 */
+	uint8_t transition_disable;
 };
 
 /** @brief Wi-Fi disconnect reason codes. To be overlaid on top of \ref wifi_status
