@@ -111,6 +111,12 @@ void radio_switch_complete_and_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
 				      uint8_t phy_next, uint8_t flags_next);
 void radio_switch_complete_and_b2b_tx_disable(void);
 void radio_switch_complete_and_b2b_rx_disable(void);
+void radio_switch_complete_and_b2b_se_rx(uint8_t phy_curr, uint8_t flags_curr,
+					 uint8_t phy_next, uint8_t flags_next);
+void radio_switch_complete_and_b2b_se_rx_first(uint8_t phy_curr, uint8_t flags_curr,
+					       uint8_t phy_next, uint8_t flags_next);
+uint32_t radio_switch_b2b_se_rx_is_missed(void);
+void radio_switch_complete_and_b2b_se_rx_disable(void);
 void radio_switch_complete_and_disable(void);
 void radio_switch_complete_end_capture_and_disable(void);
 

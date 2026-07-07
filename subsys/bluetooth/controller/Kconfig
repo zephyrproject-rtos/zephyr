@@ -944,6 +944,22 @@ config BT_CTLR_SYNC_ISO_INTERLEAVED
 	depends on BT_CTLR_SYNC_ISO
 	default y
 
+config BT_CTLR_SYNC_ISO_SE_B2B_RX
+	bool "Experimental: BIS subevent back-to-back reception [EXPERIMENTAL]"
+	depends on BT_CTLR_SYNC_ISO
+	depends on !BT_CTLR_TIFS_HW
+	depends on !BT_CTLR_SW_SWITCH_SINGLE_TIMER
+	select EXPERIMENTAL
+	help
+	  Enable experimental back-to-back subevent reception for BIS using
+	  radio_switch_complete_and_b2b_se_rx(). This pre-schedules the next
+	  subevent RX by clearing the SW_SWITCH_TIMER at RADIO READY (instead
+	  of END), allowing the radio to be set up in advance for subsequent
+	  BIS subevents without depending on ISR latency for radio start timing.
+	  Subevents that are not the immediate next subevent, or whose
+	  pre-scheduled radio start was missed, are started using the event
+	  timer.
+
 config BT_CTLR_BROADCAST_ISO
 	bool
 	default BT_CTLR_ADV_ISO || BT_CTLR_SYNC_ISO

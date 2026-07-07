@@ -243,8 +243,20 @@ void radio_setup(void)
 	hal_radio_ram_prio_setup();
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+/* PPI group index used by the BIS subevent back-to-back reception, to restore
+ * the SW switch timer clear on Radio READY after radio_tmr_start_us() restores
+ * the clear on Radio END.
+ */
+#define SW_SWITCH_SE_RX_GROUP_INDEX_NONE 0xFFU
+static uint8_t sw_switch_se_rx_group_index = SW_SWITCH_SE_RX_GROUP_INDEX_NONE;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
+
 void radio_reset(void)
 {
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+	sw_switch_se_rx_group_index = SW_SWITCH_SE_RX_GROUP_INDEX_NONE;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
 
 	/* nRF SoC generic radio reset/initializations
 	 * Note: Only registers whose bits are partially modified across
@@ -709,6 +721,10 @@ void radio_disable(void)
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 	hal_radio_sw_switch_cleanup();
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+	sw_switch_se_rx_group_index = SW_SWITCH_SE_RX_GROUP_INDEX_NONE;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
 
 	/* Reset/disable PPI/DPPI */
 	radio_tmr_status_reset();
@@ -1260,6 +1276,96 @@ void radio_switch_complete_and_b2b_rx_disable(void)
 	hal_radio_sw_switch_b2b_rx_disable(sw_tifs_toggle);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+/* Pre-arm the radio enable of the subevent after the one that is being setup,
+ * at an offset from the READY of the subevent being setup. The caller has
+ * set the offset using radio_tmr_tifs_set(), with all delays accounted.
+ */
+static void sw_switch_b2b_se_rx(uint8_t phy_curr, uint8_t flags_curr,
+				uint8_t phy_next, uint8_t flags_next)
+{
+	uint8_t ppi_group_index = sw_tifs_toggle;
+	uint8_t cc = SW_SWITCH_TIMER_EVTS_COMP(sw_tifs_toggle);
+	uint32_t cc_val = SW_SWITCH_TIMER->CC[cc];
+
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
+
+	/* Stale compare event from previous use of the compare register would
+	 * be mistaken as missed radio enable by radio_switch_b2b_se_rx_is_missed().
+	 */
+	nrf_timer_event_clear(SW_SWITCH_TIMER, nrf_timer_compare_event_get(cc));
+
+	sw_switch(SW_SWITCH_RX, SW_SWITCH_RX, phy_curr, flags_curr, phy_next, flags_next,
+		  END_EVT_DELAY_DISABLED);
+
+	/* sw_switch() subtracted the Rx ready and chain delay, which the caller
+	 * has already accounted for.
+	 */
+	nrf_timer_cc_set(SW_SWITCH_TIMER, cc, cc_val);
+
+	hal_sw_switch_timer_clear_ppi_se_rx_config(ppi_group_index);
+
+	sw_switch_se_rx_group_index = ppi_group_index;
+}
+
+/* Continue the back-to-back chain: the radio enable pre-armed at the READY of
+ * the previous subevent is used for the subevent being setup, and the
+ * subevent after is pre-armed.
+ */
+void radio_switch_complete_and_b2b_se_rx(uint8_t phy_curr, uint8_t flags_curr,
+					 uint8_t phy_next, uint8_t flags_next)
+{
+	sw_switch_b2b_se_rx(phy_curr, flags_curr, phy_next, flags_next);
+}
+
+/* Start the back-to-back chain: the subevent being setup is started using the
+ * event timer, and the subevent after is pre-armed. Shall be called after
+ * radio_tmr_start(), or before radio_tmr_start_us() so that a late radio start
+ * is not missed while the radio enable task subscription is changed.
+ */
+void radio_switch_complete_and_b2b_se_rx_first(uint8_t phy_curr, uint8_t flags_curr,
+					       uint8_t phy_next, uint8_t flags_next)
+{
+	sw_switch_b2b_se_rx(phy_curr, flags_curr, phy_next, flags_next);
+
+	/* On DPPI, sw_switch() subscribes the radio enable task to the previous
+	 * sw_switch PPI, restore the subscription for the radio start on the
+	 * event timer compare.
+	 */
+	hal_radio_enable_on_tick_ppi_config_and_enable(0U);
+}
+
+/* Returns true if the radio enable used for the subevent being setup was
+ * pre-armed and triggered before radio_switch_complete_and_b2b_se_rx() was
+ * called, i.e. the radio did not start. Shall be called after
+ * radio_switch_complete_and_b2b_se_rx().
+ */
+uint32_t radio_switch_b2b_se_rx_is_missed(void)
+{
+	uint8_t cc = SW_SWITCH_TIMER_EVTS_COMP(sw_tifs_toggle);
+
+	return nrf_timer_event_check(SW_SWITCH_TIMER, nrf_timer_compare_event_get(cc)) &&
+	       (nrf_radio_state_get(NRF_RADIO) == NRF_RADIO_STATE_DISABLED);
+}
+
+void radio_switch_complete_and_b2b_se_rx_disable(void)
+{
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+
+	/* Disable the PPI groups to cancel any pre-armed radio enable */
+	hal_radio_sw_switch_cleanup();
+
+	sw_switch_se_rx_group_index = SW_SWITCH_SE_RX_GROUP_INDEX_NONE;
+
+	/* Restore timer clear PPI to standard END-based configuration */
+	hal_sw_switch_timer_clear_ppi_config();
+}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
 
 void radio_switch_complete_and_disable(void)
 {
@@ -2044,6 +2150,12 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 	 *        radio event but when the radio event is done.
 	 */
 	hal_sw_switch_timer_clear_ppi_config();
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+	if (sw_switch_se_rx_group_index != SW_SWITCH_SE_RX_GROUP_INDEX_NONE) {
+		hal_sw_switch_timer_clear_ppi_se_rx_config(sw_switch_se_rx_group_index);
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
 #endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX ||
 	* CONFIG_SOC_SERIES_NRF54H
 	*/
