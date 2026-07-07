@@ -415,6 +415,13 @@
 			raspberrypi,brown-out-detection;
 		};
 
+		powman: powman@40100000 {
+			compatible = "raspberrypi,pico-powman";
+			reg = <0x40100000 0x100>;
+			interrupts = <45 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "timer";
+		};
+
 		dma: dma@50000000 {
 			compatible = "raspberrypi,pico-dma";
 			reg = <0x50000000 DT_SIZE_K(64)>;
