@@ -336,6 +336,44 @@ typedef int16_t device_handle_t;
 	DEVICE_DT_DEFINE_AUTO(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
+ * @brief Register an initialization function ordered after a device's
+ * initialization.
+ *
+ * Like SYS_INIT(), but instead of a manual priority the function is anchored
+ * to the device defined for @p node_id : it runs at @p level, immediately
+ * after that device has been initialized. The entry is placed in the same
+ * automatic-ordering slot used by DEVICE_DT_DEFINE_AUTO(), using the
+ * devicetree dependency ordinal of @p node_id as its sort key, so it works
+ * whether the device it depends on is registered with a manual priority or
+ * with automatic ordering.
+ *
+ * This is the tool for initialization functions that consume a device but
+ * have no devicetree node of their own (e.g. a console attached to the
+ * ``zephyr,console`` chosen UART): a plain SYS_INIT() priority cannot be
+ * checked against the device's position, and build-time dependency
+ * validation cannot see the relationship.
+ *
+ * @note The anchor expresses a single devicetree dependency. If the function
+ * depends on several devices, anchor it to the one initialized last, or keep
+ * a manual priority.
+ *
+ * @param init_fn_ Initialization function.
+ * @param level Initialization level, see SYS_INIT().
+ * @param node_id Devicetree node identifier of the device this function
+ * must run after.
+ */
+#define SYS_INIT_DEPENDS(init_fn_, level, node_id)                             \
+	BUILD_ASSERT(DT_NODE_EXISTS(node_id),                                  \
+		     "SYS_INIT_DEPENDS requires a devicetree node");           \
+	static const Z_DECL_ALIGN(struct init_entry)                           \
+		Z_INIT_ENTRY_SECTION(level, AUTO,                              \
+			_CONCAT(DT_DEP_ORD_STR_SORTABLE(node_id), _0))         \
+		__used __noasan Z_INIT_ENTRY_NAME(init_fn_) = {                \
+			.init_fn = (init_fn_),                                 \
+			.dev = NULL,                                           \
+		}
+
+/**
  * @brief The name of the global device object for @p node_id
  *
  * Returns the name of the global device structure as a C identifier. The device
