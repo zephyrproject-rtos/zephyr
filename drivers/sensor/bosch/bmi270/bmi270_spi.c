@@ -143,6 +143,7 @@ int bmi270_spi_prep_reg_write_async(const struct device *dev, uint8_t reg, const
 	struct rtio_sqe *sqes[2];
 	struct rtio_sqe *write_reg_sqe;
 	struct rtio_sqe *write_buf_sqe;
+	uint8_t addr = reg & BMI270_REG_MASK;
 
 	if (rtio_sqe_acquire_array(data->rtio_ctx, ARRAY_SIZE(sqes), sqes) != 0) {
 		return -ENOMEM;
@@ -151,7 +152,7 @@ int bmi270_spi_prep_reg_write_async(const struct device *dev, uint8_t reg, const
 	write_reg_sqe = sqes[0];
 	write_buf_sqe = sqes[1];
 
-	rtio_sqe_prep_tiny_write(write_reg_sqe, data->iodev, RTIO_PRIO_HIGH, &reg, 1, NULL);
+	rtio_sqe_prep_tiny_write(write_reg_sqe, data->iodev, RTIO_PRIO_HIGH, &addr, 1, NULL);
 	write_reg_sqe->flags |= RTIO_SQE_TRANSACTION;
 
 	rtio_sqe_prep_write(write_buf_sqe, data->iodev, RTIO_PRIO_HIGH, buf, len, NULL);

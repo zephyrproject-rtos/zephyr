@@ -68,7 +68,7 @@ int bmi270_reg_write_with_delay(const struct device *dev,
 int bmi270_prep_reg_read_async(const struct device *dev, uint8_t reg, uint8_t *buf, size_t len,
 			       uint8_t flags)
 {
-#if CONFIG_BMI270_BUS_SPI
+#if defined(CONFIG_BMI270_BUS_SPI)
 	const struct bmi270_config *cfg = dev->config;
 
 	if (cfg->bus_io == &bmi270_bus_io_spi) {
@@ -76,7 +76,7 @@ int bmi270_prep_reg_read_async(const struct device *dev, uint8_t reg, uint8_t *b
 	}
 #endif
 
-#if CONFIG_BMI270_BUS_I2C
+#if defined(CONFIG_BMI270_BUS_I2C)
 	return bmi270_i2c_prep_reg_read_async(dev, reg, buf, len, flags);
 #else
 	return -ENOTSUP;
@@ -86,7 +86,7 @@ int bmi270_prep_reg_read_async(const struct device *dev, uint8_t reg, uint8_t *b
 int bmi270_prep_reg_write_async(const struct device *dev, uint8_t reg, const uint8_t *buf,
 				size_t len, uint8_t flags)
 {
-#if CONFIG_BMI270_BUS_SPI
+#if defined(CONFIG_BMI270_BUS_SPI)
 	const struct bmi270_config *cfg = dev->config;
 
 	if (cfg->bus_io == &bmi270_bus_io_spi) {
@@ -94,7 +94,7 @@ int bmi270_prep_reg_write_async(const struct device *dev, uint8_t reg, const uin
 	}
 #endif
 
-#if CONFIG_BMI270_BUS_I2C
+#if defined(CONFIG_BMI270_BUS_I2C)
 	return bmi270_i2c_prep_reg_write_async(dev, reg, buf, len, flags);
 #else
 	return -ENOTSUP;

@@ -56,8 +56,6 @@ void bmi270_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev
 #define BMI270_REG_TEMPERATURE_0   0x22
 #define BMI270_REG_FIFO_LENGTH_0   0x24
 #define BMI270_REG_FIFO_DATA       0x26
-
-#define BMI270_FIFO_DRAIN_CHUNK_SIZE 64
 #define BMI270_REG_FEAT_PAGE       0x2F
 #define BMI270_REG_FEATURES_0      0x30
 #define BMI270_REG_ACC_CONF        0x40
@@ -176,6 +174,9 @@ void bmi270_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev
 #define BMI270_FIFO_HEADER_BYTES                1
 #define BMI270_FIFO_FRAME_ACC_GYR_BYTES                                                            \
 	(BMI270_FIFO_HEADER_BYTES + BMI270_FIFO_FRAME_PAYLOAD_ACC_GYR_BYTES)
+
+/* Chunk size used when draining leftover FIFO bytes that exceed a stream block */
+#define BMI270_FIFO_DRAIN_CHUNK_SIZE 64
 
 /* FIFO_CONFIG_0 (register 0x48) */
 #define BMI270_FIFO_CONFIG_0_STOP_ON_FULL_MSK BIT(0)
@@ -369,6 +370,7 @@ struct bmi270_data {
 	uint8_t fifo_job_phase;
 	bool fifo_job_queued;
 	bool fifo_job_processing;
+	bool fifo_configured;
 #endif /* CONFIG_BMI270_STREAM */
 };
 
@@ -438,13 +440,13 @@ int bmi270_prep_reg_read_async(const struct device *dev, uint8_t reg, uint8_t *b
 			       uint8_t flags);
 int bmi270_prep_reg_write_async(const struct device *dev, uint8_t reg, const uint8_t *buf,
 				size_t len, uint8_t flags);
-#if CONFIG_BMI270_BUS_SPI
+#if defined(CONFIG_BMI270_BUS_SPI)
 int bmi270_spi_prep_reg_read_async(const struct device *dev, uint8_t reg, uint8_t *buf,
 				   size_t len, uint8_t flags);
 int bmi270_spi_prep_reg_write_async(const struct device *dev, uint8_t reg, const uint8_t *buf,
 				    size_t len, uint8_t flags);
 #endif
-#if CONFIG_BMI270_BUS_I2C
+#if defined(CONFIG_BMI270_BUS_I2C)
 int bmi270_i2c_prep_reg_read_async(const struct device *dev, uint8_t reg, uint8_t *buf,
 				   size_t len, uint8_t flags);
 int bmi270_i2c_prep_reg_write_async(const struct device *dev, uint8_t reg, const uint8_t *buf,
