@@ -578,6 +578,16 @@ extern bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
 	ARCH_PCIE_IRQ_CONNECT(bdf_p, irq_p, priority_p,			\
 			      isr_p, isr_param_p, flags_p)
 
+/**
+ * @brief Global function pointer override hook for dynamic device scanning masks.
+ *
+ * This hook allows external layers (such as shell commands) to dynamically register
+ * a filtering evaluation callback routine. The core PCIe bus enumeration loop checks
+ * this variable; if active and a matching BDF is intercepted, the scanner gracefully
+ * bypasses the targeted device slot natively.
+ */
+extern bool (*pcie_scan_override_hook)(pcie_bdf_t bdf);
+
 #ifdef __cplusplus
 }
 #endif
