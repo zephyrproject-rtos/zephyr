@@ -645,10 +645,8 @@ static void edma_enable_all_request(uint8_t instance)
  *
  * Kick the secondary core out of reset and wait for it to indicate boot. The
  * core image was already copied to RAM in soc_early_init_hook()
- *
- * @return 0
  */
-static int second_core_boot(void)
+static void second_core_boot(void)
 {
 	/* Get the boot address for the second core */
 	uint32_t boot_address = (uint32_t)(DT_REG_ADDR(DT_CHOSEN(zephyr_code_cpu1_partition)));
@@ -674,9 +672,10 @@ static int second_core_boot(void)
 
 	/* Release cpu wait*/
 	SYSCON3->CPU_STATUS &= ~SYSCON3_CPU_STATUS_CPU_WAIT_MASK;
-
-	return 0;
 }
 
-SYS_INIT(second_core_boot, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+void board_late_init_hook(void)
+{
+	second_core_boot();
+}
 #endif
