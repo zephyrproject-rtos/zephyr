@@ -41,6 +41,11 @@ struct wdt_nrf_gswdt_config {
 	struct mbox_dt_spec gswdt_mbox;
 };
 
+struct wdt_nrf_gswdt_data {
+	struct k_spinlock lock;
+	bool enabled;
+};
+
 static int wdt_nrf_gswdt_setup(const struct device *dev, uint8_t options)
 {
 	if (options != 0U) {
@@ -49,23 +54,46 @@ static int wdt_nrf_gswdt_setup(const struct device *dev, uint8_t options)
 
 	const struct mbox_dt_spec *gswdt_mbox =
 		&((const struct wdt_nrf_gswdt_config *)dev->config)->gswdt_mbox;
+	struct wdt_nrf_gswdt_data *data = dev->data;
 
-	return mbox_send_dt(gswdt_mbox, NULL);
+	int ret = mbox_send_dt(gswdt_mbox, NULL);
+
+	if (ret == 0) {
+		k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+		data->enabled = true;
+		k_spin_unlock(&data->lock, key);
+	}
+
+	return ret;
 }
 
 static int wdt_nrf_gswdt_disable(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	struct wdt_nrf_gswdt_data *data = dev->data;
 
 #if defined(CONFIG_NRFS_GSWDT_SERVICE_ENABLED)
+	/*
+	 * Clear the flag under the spinlock first so that any concurrent feed
+	 * that has not yet entered its own critical section will see the device
+	 * as disabled.  Any feed already inside its critical section will finish
+	 * before we acquire the lock, giving us a clean boundary.
+	 */
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	data->enabled = false;
+	k_spin_unlock(&data->lock, key);
+
 	nrfs_err_t err = nrfs_gswdt_stop(NULL);
 
 	if (err != NRFS_SUCCESS) {
 		return -EIO;
 	}
 	return 0;
-#endif
+#else
+	ARG_UNUSED(data);
 	return -EPERM;
+#endif
 }
 
 static int wdt_nrf_gswdt_install_timeout(const struct device *dev,
@@ -104,8 +132,26 @@ static int wdt_nrf_gswdt_feed(const struct device *dev, int channel_id)
 
 	const struct mbox_dt_spec *gswdt_mbox =
 		&((const struct wdt_nrf_gswdt_config *)dev->config)->gswdt_mbox;
+	struct wdt_nrf_gswdt_data *data = dev->data;
 
-	return mbox_send_dt(gswdt_mbox, NULL);
+	/*
+	 * Hold the spinlock across both the state check and mbox_send_dt so
+	 * that a concurrent wdt_nrf_gswdt_disable cannot clear the flag in
+	 * between. mbox_send_dt is a non-blocking register write
+	 * and is safe to call under a spinlock.
+	 */
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	if (!data->enabled) {
+		k_spin_unlock(&data->lock, key);
+		return -EINVAL;
+	}
+
+	int ret = mbox_send_dt(gswdt_mbox, NULL);
+
+	k_spin_unlock(&data->lock, key);
+
+	return ret;
 }
 
 static DEVICE_API(wdt, wdt_nrf_gswdt_driver_api) = {
@@ -169,10 +215,11 @@ static int wdt_nrf_gswdt_init(const struct device *dev)
 		.gswdt_mbox = MBOX_DT_SPEC_GET(DT_PHANDLE(DT_INST(inst, nordic_nrf_gswdt),	\
 		mbox), tx)									\
 	};											\
+	static struct wdt_nrf_gswdt_data wdt_nrf_gswdt_data_##inst;				\
 	DEVICE_DT_INST_DEFINE(inst,								\
 	wdt_nrf_gswdt_init,									\
 	NULL,											\
-	NULL,											\
+	&wdt_nrf_gswdt_data_##inst,								\
 	&wdt_nrf_gswdt_config_##inst,								\
 	POST_KERNEL,										\
 	GSWDT_INIT_PRIORITY,									\
