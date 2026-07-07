@@ -284,6 +284,58 @@ typedef int16_t device_handle_t;
 	DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
+ * @brief Like DEVICE_DT_DEFINE(), but with automatic initialization ordering
+ * instead of a manual priority.
+ *
+ * The device's position within its initialization level is derived from the
+ * devicetree dependency ordinal of @p node_id : the device is initialized
+ * after every devicetree dependency it has (parent bus, clocks, pinctrl, any
+ * phandle reference) that is registered in the same way, without a manually
+ * assigned priority. All such devices are placed in a dedicated slot that
+ * runs after the whole manual 0-999 priority range of @p level, so they may
+ * also depend on any manually-prioritized device of the same (or an earlier)
+ * level. The reverse — a manually-prioritized device of the same level
+ * depending on this one — is not supported; this ordering violation is
+ * reported at build time when @kconfig{CONFIG_CHECK_INIT_PRIORITIES} is
+ * enabled.
+ *
+ * Only use this macro when every initialization-order dependency of the
+ * device is visible in the devicetree. Dependencies that the devicetree
+ * cannot express (e.g. an init function relying on the system timer for
+ * busy-waiting) require a manual priority via DEVICE_DT_DEFINE().
+ *
+ * @param node_id The devicetree node identifier. Must exist in the
+ * devicetree; software devices without a node cannot use automatic ordering.
+ * @param init_fn Pointer to the device's initialization function. See
+ * DEVICE_DT_DEFINE().
+ * @param pm Pointer to the device's power management resources. See
+ * DEVICE_DT_DEFINE().
+ * @param data Pointer to the device's private mutable data. See
+ * DEVICE_DT_DEFINE().
+ * @param config Pointer to the device's private constant data. See
+ * DEVICE_DT_DEFINE().
+ * @param level The device's initialization level (PRE_KERNEL or POST_KERNEL).
+ * @param api Pointer to the device's API structure. Can be `NULL`.
+ */
+#define DEVICE_DT_DEFINE_AUTO(node_id, init_fn, pm, data, config, level, api,  \
+			      ...)                                             \
+	BUILD_ASSERT(DT_NODE_EXISTS(node_id),                                  \
+		     "DEVICE_DT_DEFINE_AUTO requires a devicetree node");      \
+	DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, AUTO, api, \
+			 __VA_ARGS__)
+
+/**
+ * @brief Like DEVICE_DT_DEFINE_AUTO(), but uses an instance of a
+ * `DT_DRV_COMPAT` compatible instead of a node identifier.
+ *
+ * @param inst Instance number. The `node_id` argument to
+ * DEVICE_DT_DEFINE_AUTO() is set to `DT_DRV_INST(inst)`.
+ * @param ... Other parameters as expected by DEVICE_DT_DEFINE_AUTO().
+ */
+#define DEVICE_DT_INST_DEFINE_AUTO(inst, ...)                                  \
+	DEVICE_DT_DEFINE_AUTO(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
  * @brief The name of the global device object for @p node_id
  *
  * Returns the name of the global device structure as a C identifier. The device
