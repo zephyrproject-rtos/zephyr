@@ -51,9 +51,6 @@
 };
 
 &flash0 {
-	erase-block-size = <8192>;
-	write-block-size = <4>;
-
 	partitions {
 		ranges;
 		#address-cells = <1>;

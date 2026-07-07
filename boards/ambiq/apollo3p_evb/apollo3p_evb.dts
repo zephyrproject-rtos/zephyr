@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2025 Ambiq Micro Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /dts-v1/;
 #include <ambiq/ambiq_apollo3p_blue.dtsi>
 
@@ -92,16 +98,14 @@
 };
 
 &flash0 {
-	erase-block-size = <8192>;
-	write-block-size = <4>;
-
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		/* Set 16KB of storage at the end of the 2000KB of flash */
 		storage_partition: partition@1f0000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x001f0000 0x4000>;
 		};
