@@ -18,6 +18,13 @@ config ARCH_SW_ISR_TABLE_ALIGN
 config RISCV_MCAUSE_EXCEPTION_MASK
 	default 0x3FF
 
+# The E24 implements the A extension but only supports atomics in its
+# tightly-integrated memories -- an AMO to OCRAM bus-faults.  Build
+# without A so the toolchain links the AMO-free picolibc multilib
+# (the kernel already uses ATOMIC_OPERATIONS_C).
+config RISCV_ISA_EXT_A
+	default n
+
 choice CACHE_TYPE
 	default EXTERNAL_CACHE
 endchoice

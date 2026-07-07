@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if DT_HAS_BFLB_BL60X_WIFI_ENABLED
+
+config BFLB_WIFI_BL60X_TASK_STACK_SIZE
+	int "WiFi firmware task stack size"
+	default 16384
+	help
+	  Stack size for the wifi4 firmware scheduler thread.  The blob's
+	  kernel queues and event handlers all run there.
+
+config BFLB_WIFI_BL60X_TASK_PRIORITY
+	int "WiFi firmware task priority"
+	default 5
+	help
+	  Preemptible thread priority of the firmware scheduler loop.
+
+endif # DT_HAS_BFLB_BL60X_WIFI_ENABLED

@@ -447,5 +447,34 @@
 				status = "disabled";
 			};
 		};
+
+		/* WIFI_RAM overlaps the top 40 KB of sram0 -- the vendor SDK
+		 * places its ram_wifi here at 0x42042000.  The MAC HW DMA
+		 * descriptor pools (SHAREDRAM/SHAREDRAMIPC) need to be at
+		 * this address.  Zephyr's automatic .bss/.data placement stays
+		 * in sram0's lower portion as long as RAM usage < 136 KB.
+		 */
+		wifi_ram: memory@42042000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x42042000 DT_SIZE_K(40)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x42042000 DT_SIZE_K(40)>;
+			zephyr,memory-region = "WIFI_RAM";
+			status = "disabled";
+		};
+
+		wifi0: wifi@44000000 {
+			compatible = "bflb,bl60x-wifi";
+			reg = <0x44000000 0x1000>;
+			interrupts = <70 1>, <79 1>, <21 1>, <22 1>;
+			interrupt-names = "wifi", "wifi-ipc", "rf-top0", "rf-top1";
+			interrupt-parent = <&clic>;
+			status = "disabled";
+
+			pwr-table-11b = <56 56 56 56>;
+			pwr-table-11g = <40 40 40 40 40 40 40 40>;
+			pwr-table-11n = <40 40 40 40 40 40 40 40>;
+		};
 	};
 };

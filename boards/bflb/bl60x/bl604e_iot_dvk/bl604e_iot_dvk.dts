@@ -8,6 +8,7 @@
 
 #include <bflb/bl604.dtsi>
 #include <bflb/bl60x_em_8kb.dtsi>
+#include <bflb/bl60x_wifi.dtsi>
 #include "bl604e_iot_dvk-pinctrl.dtsi"
 
 / {

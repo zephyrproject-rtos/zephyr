@@ -22,11 +22,32 @@
 #include <hbn_reg.h>
 #include <pds_reg.h>
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wifi_ram))
+/* WIFI_RAM is a custom memory-region -- Zephyr's arch_data_copy /
+ * arch_bss_zero do not touch it.  Zero it here so the WiFi blob's
+ * SHAREDRAM / SHAREDRAMIPC objects (which the linker places NOLOAD)
+ * start in a known state.
+ */
+static void bl60x_zero_wifi_ram(void)
+{
+	volatile uint32_t *r = (volatile uint32_t *)DT_REG_ADDR(DT_NODELABEL(wifi_ram));
+	size_t cnt = DT_REG_SIZE(DT_NODELABEL(wifi_ram)) / sizeof(uint32_t);
+
+	while (cnt-- > 0U) {
+		*r++ = 0U;
+	}
+}
+#endif
+
 void soc_early_init_hook(void)
 {
 	uint32_t *p;
 	uint32_t i = 0;
 	uint32_t tmp = 0;
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wifi_ram))
+	bl60x_zero_wifi_ram();
+#endif
 
 	/* disable hardware_pullup_pull_down (reg_en_hw_pu_pd = 0) */
 	tmp = sys_read32(HBN_BASE + HBN_IRQ_MODE_OFFSET);
