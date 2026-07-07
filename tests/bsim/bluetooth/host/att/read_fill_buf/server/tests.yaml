@@ -2,6 +2,7 @@ tests:
   bluetooth.host.att.read_fill_buf.server:
     build_only: true
     tags:
+      - bsim_CI
       - bluetooth
     platform_allow:
       - nrf52_bsim/native

@@ -2,6 +2,7 @@ tests:
   bluetooth.host.gatt.sc_indicate:
     build_only: true
     tags:
+      - bsim_CI
       - bluetooth
     platform_allow:
       - nrf52_bsim/native
@@ -11,6 +12,7 @@ tests:
   bluetooth.host.gatt.sc_indicate_privacy:
     build_only: true
     tags:
+      - bsim_CI
       - bluetooth
     platform_allow:
       - nrf52_bsim/native

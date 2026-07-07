@@ -2,6 +2,7 @@ tests:
   bluetooth.host.att.timeout:
     build_only: true
     tags:
+      - bsim_CI
       - bluetooth
     platform_allow:
       - nrf52_bsim/native

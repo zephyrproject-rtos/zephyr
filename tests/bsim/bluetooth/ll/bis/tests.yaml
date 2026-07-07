@@ -1,8 +1,8 @@
 common:
   build_only: true
   tags:
+    - bsim_CI
     - bluetooth
-    - bsim_multi
   depends_on: bsim
 
 tests:
