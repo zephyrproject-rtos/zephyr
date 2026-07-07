@@ -226,12 +226,33 @@ static int bmi270_anymo_config(const struct device *dev, bool enable)
 	const struct bmi270_config *cfg = dev->config;
 	struct bmi270_data *data = dev->data;
 	uint16_t anymo_2;
+	uint8_t pwr_conf = 0;
 	int ret;
 
 	if (cfg->feature->anymo_1 == NULL || cfg->feature->anymo_2 == NULL) {
 		LOG_ERR("any-motion not supported by the %s feature set",
 			cfg->feature->name);
 		return -ENOTSUP;
+	}
+
+	/*
+	 * Feature registers are not accessible while advanced power save
+	 * is enabled (see datasheet, PWR_CONF.adv_power_save); the init
+	 * routine leaves it enabled, so park it for the duration.
+	 */
+	ret = bmi270_reg_read(dev, BMI270_REG_PWR_CONF, &pwr_conf, 1);
+	if (ret < 0) {
+		return ret;
+	}
+	if (pwr_conf & BMI270_PWR_CONF_ADV_PWR_SAVE_MSK) {
+		uint8_t aps_off = pwr_conf & ~BMI270_PWR_CONF_ADV_PWR_SAVE_MSK;
+
+		ret = bmi270_reg_write_with_delay(dev, BMI270_REG_PWR_CONF,
+						  &aps_off, 1,
+						  BMI270_INTER_WRITE_DELAY_US);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	if (enable) {
@@ -262,6 +283,16 @@ static int bmi270_anymo_config(const struct device *dev, bool enable)
 	if (ret < 0) {
 		LOG_ERR("failed configuring INT1_MAP_FEAT (%d)", ret);
 		return ret;
+	}
+
+	/* Restore advanced power save if it was enabled on entry */
+	if (pwr_conf & BMI270_PWR_CONF_ADV_PWR_SAVE_MSK) {
+		ret = bmi270_reg_write_with_delay(dev, BMI270_REG_PWR_CONF,
+						  &pwr_conf, 1,
+						  BMI270_INTER_WRITE_DELAY_US);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	return 0;
