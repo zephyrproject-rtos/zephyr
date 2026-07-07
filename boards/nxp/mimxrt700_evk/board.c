@@ -180,11 +180,6 @@ void board_early_init_hook(void)
 
 	BOARD_InitAHBSC();
 
-#if defined(CONFIG_SECOND_CORE_MCUX)
-	POWER_DisablePD(kPDRUNCFG_SHUT_SENSEP_MAINCLK);
-	POWER_ApplyPD();
-#endif
-
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(edma0))
 	edma_enable_all_request(0);
 #endif
@@ -651,8 +646,13 @@ static void second_core_boot(void)
 	/* Get the boot address for the second core */
 	uint32_t boot_address = (uint32_t)(DT_REG_ADDR(DT_CHOSEN(zephyr_code_cpu1_partition)));
 
+	/* Power up SRAM */
 	PMC0->PDRUNCFG2 &= ~0x3FFC0000;
 	PMC0->PDRUNCFG3 &= ~0x3FFC0000;
+
+	/* Power up sense_main_clk, the bus clock of CPU1 and its private peripherals */
+	POWER_DisablePD(kPDRUNCFG_SHUT_SENSEP_MAINCLK);
+	POWER_ApplyPD();
 
 	/* RT700 specific CPU1 boot sequence */
 	/* Glikey write enable, GLIKEY4 */
