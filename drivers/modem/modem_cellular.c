@@ -1720,6 +1720,7 @@ static void modem_cellular_init_power_off_event_handler(struct modem_cellular_da
 							enum modem_cellular_event evt)
 {
 	const struct modem_cellular_config *config = data->dev->config;
+	uint16_t disconnect_timeout_ms;
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_CMUX_DISCONNECTED:
@@ -1729,8 +1730,14 @@ static void modem_cellular_init_power_off_event_handler(struct modem_cellular_da
 		modem_cellular_cmux_cleanup(data);
 		/* Switch the chat instance back to the UART pipe to handle unsolicited events */
 		modem_chat_attach(&data->chat, data->cmd_pipe);
-		/* Assume the same time as reset pulse is enough to return from CMUX to AT mode */
-		modem_cellular_start_timer(data, K_MSEC(config->vendor->reset_pulse_duration_ms));
+		/* Fallback to `reset_pulse_duration_ms` if `cmux_disconnect_timeout_ms` not
+		 * specified as this was the behaviour before Zephyr v4.5.
+		 */
+		disconnect_timeout_ms = config->vendor->cmux_disconnect_timeout_ms > 0U
+						? config->vendor->cmux_disconnect_timeout_ms
+						: config->vendor->reset_pulse_duration_ms;
+		/* Unless signalled, wait for the modem to return from CMUX to AT mode */
+		modem_cellular_start_timer(data, K_MSEC(disconnect_timeout_ms));
 		break;
 	case MODEM_CELLULAR_EVENT_MODEM_READY:
 		/* Modem driver indicated it is ready to handle commands after disconnecting CMUX.

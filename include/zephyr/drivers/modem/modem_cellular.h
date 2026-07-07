@@ -287,6 +287,11 @@ struct modem_cellular_vendor_config {
 	uint16_t power_pulse_duration_ms;
 	/** Duration of the modem reset pulse, in milliseconds. */
 	uint16_t reset_pulse_duration_ms;
+	/** Timeout for the modem to revert from CMUX to AT mode after a CMUX disconnect, in
+	 * milliseconds. Defaults to @c reset_pulse_duration_ms if not specified (value == 0U) for
+	 * legacy compatibility.
+	 */
+	uint16_t cmux_disconnect_timeout_ms;
 	/** Maximum modem startup delay, in milliseconds. */
 	uint16_t startup_time_ms;
 	/** Maximum modem shutdown delay, in milliseconds. */
