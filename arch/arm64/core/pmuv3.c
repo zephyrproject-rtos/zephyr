@@ -153,6 +153,52 @@ static void pmu_calibrate_cpu_freq(void)
 	}
 }
 
+/*
+ * Minimal PMU hardware reset for secondary CPUs during SMP sampling startup.
+ * Identical to arch_pmu_init() but skips frequency calibration and LOG output.
+ * Calibration is not needed on secondary CPUs because period_events has
+ * already been computed by the primary CPU, and LOG output from a high-priority
+ * work-queue thread with LOG_MODE_IMMEDIATE can deadlock with the shell
+ * transport mutex.
+ */
+int arch_pmu_init_secondary(void)
+{
+	uint64_t pmcr;
+	struct pmu_cpu_state *st = pmu_curr_state();
+
+	if (atomic_get(&st->initialized)) {
+		return st->num_counters > 0U ? 0 : -ENOTSUP;
+	}
+
+	__asm__ volatile("msr pmintenclr_el1, %0" :: "r"(~0ULL) : "memory");
+	barrier_isync_fence_full();
+
+	write_pmcr_el0(PMCR_P | PMCR_C | PMCR_LC);
+	barrier_isync_fence_full();
+	write_pmovsclr_el0(0xFFFFFFFFUL);
+	write_pmcntenclr_el0(0xFFFFFFFFUL);
+
+#ifdef CONFIG_ARM64_PMUV3_USER_ACCESS
+	write_pmuserenr_el0(PMUSERENR_EN | PMUSERENR_SW | PMUSERENR_CR | PMUSERENR_ER);
+#else
+	write_pmuserenr_el0(0x00UL);
+#endif
+
+	pmcr = read_pmcr_el0();
+	st->num_counters = (pmcr >> PMCR_N_SHIFT) & PMCR_N_MASK;
+	st->implementer = (pmcr >> PMCR_IMP_SHIFT) & PMCR_IMP_MASK;
+	st->idcode = (pmcr >> PMCR_IDCODE_SHIFT) & PMCR_IDCODE_MASK;
+
+	if (st->num_counters == 0U) {
+		atomic_set(&st->initialized, 1);
+		return -ENOTSUP;
+	}
+
+	/* cpu_freq_mhz left at 0 — not needed on secondary CPUs for sampling */
+	atomic_set(&st->initialized, 1);
+	return 0;
+}
+
 int arch_pmu_init(void)
 {
 	uint64_t pmcr;
@@ -193,6 +239,16 @@ int arch_pmu_init(void)
 		atomic_set(&st->initialized, 1);
 		return -ENOTSUP;
 	}
+
+	/*
+	 * Disable all PMU overflow interrupts first.  Firmware (TF-A) or a
+	 * previous Zephyr session may have left PMINTENSET_EL1 non-zero; if
+	 * a counter is then enabled, the PMU will signal the GIC immediately
+	 * even before Zephyr calls irq_enable(), crashing whichever thread
+	 * happens to be interrupted.
+	 */
+	__asm__ volatile("msr pmintenclr_el1, %0" :: "r"(~0ULL) : "memory");
+	barrier_isync_fence_full();
 
 	/*
 	 * Reset all counters and enable the 64-bit cycle counter.
@@ -433,3 +489,55 @@ void arch_pmu_counter_clear_overflow(uint32_t counter)
 	/* Write 1 to clear overflow bit */
 	write_pmovsclr_el0(BIT(counter));
 }
+
+#if defined(CONFIG_PROFILING_PMU_SAMPLING)
+
+static ALWAYS_INLINE void pmu_write_pmintenset_el1(uint64_t v)
+{
+	__asm__ volatile("msr pmintenset_el1, %0" :: "r"(v) : "memory");
+}
+
+static ALWAYS_INLINE void pmu_write_pmintenclr_el1(uint64_t v)
+{
+	__asm__ volatile("msr pmintenclr_el1, %0" :: "r"(v) : "memory");
+}
+
+int arch_pmu_counter_write32(uint32_t counter, uint32_t value)
+{
+	unsigned int key;
+
+	if (!atomic_get(&pmu_curr_state()->initialized)) {
+		return -ENODEV;
+	}
+
+	if (counter >= pmu_curr_state()->num_counters) {
+		return -EINVAL;
+	}
+
+	key = arch_irq_lock();
+	write_pmselr_el0(counter);
+	barrier_isync_fence_full();
+	write_pmxevcntr_el0((uint64_t)value);
+	barrier_isync_fence_full();
+	arch_irq_unlock(key);
+
+	return 0;
+}
+
+void arch_pmu_counter_overflow_interrupt_set(uint32_t counter, bool enable)
+{
+	if (!atomic_get(&pmu_curr_state()->initialized) ||
+	    counter >= pmu_curr_state()->num_counters) {
+		return;
+	}
+
+	if (enable) {
+		pmu_write_pmintenset_el1(BIT(counter));
+	} else {
+		pmu_write_pmintenclr_el1(BIT(counter));
+	}
+
+	barrier_isync_fence_full();
+}
+
+#endif /* CONFIG_PROFILING_PMU_SAMPLING */
