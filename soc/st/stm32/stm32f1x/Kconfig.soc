@@ -19,6 +19,11 @@ config SOC_STM32F100XE
 	bool
 	select SOC_SERIES_STM32F1X
 
+config SOC_STM32F103X6
+	bool
+	select SOC_SERIES_STM32F1X
+	select SOC_STM32F10X_DENSITY_DEVICE
+
 config SOC_STM32F103XE
 	bool
 	select SOC_SERIES_STM32F1X
@@ -70,6 +75,7 @@ config SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
 config SOC
 	default "stm32f100xb" if SOC_STM32F100XB
 	default "stm32f100xe" if SOC_STM32F100XE
+	default "stm32f103x6" if SOC_STM32F103X6
 	default "stm32f103x8" if SOC_STM32F103X8
 	default "stm32f103xb" if SOC_STM32F103XB
 	default "stm32f103xe" if SOC_STM32F103XE
