@@ -59,4 +59,8 @@ config BUILD_OUTPUT_ADJUST_LMA
 config TFM_BL2_NOT_SUPPORTED
 	default y
 
+# PSE84 handles its own signing/merging for TF-M
+config TFM_PLATFORM_HANDLES_MERGE
+	default y
+
 endif # SOC_SERIES_PSE84
