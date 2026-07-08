@@ -553,12 +553,18 @@ static int pcie_init(void)
 
 /*
  * If a pcie controller is employed, pcie_scan() depends on it for working.
- * Thus, pcie must be bumped to the next level
+ * Thus, pcie must run after the controller.
+ *
+ * This still uses the deprecated PRE_KERNEL_2 level as a coarse "after the
+ * controller" barrier: the controller is a generic device (many possible
+ * compatibles) with no single devicetree node this file can name, so it
+ * cannot be anchored with SYS_INIT_DEPENDS() yet. Migrate to PRE_KERNEL once
+ * the controller can be referenced (e.g. a chosen node).
  */
 #ifdef CONFIG_PCIE_CONTROLLER
 #define PCIE_SYS_INIT_LEVEL	PRE_KERNEL_2
 #else
-#define PCIE_SYS_INIT_LEVEL	PRE_KERNEL_1
+#define PCIE_SYS_INIT_LEVEL	PRE_KERNEL
 #endif
 
 SYS_INIT(pcie_init, PCIE_SYS_INIT_LEVEL, CONFIG_PCIE_INIT_PRIORITY);
