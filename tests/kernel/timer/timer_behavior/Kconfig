@@ -34,10 +34,6 @@ config TIMER_TEST_MAX_STDDEV
 	default 33 if ITE_IT8XXX2_TIMER
 	default 10
 
-config TIMER_TEST_MAX_DRIFT
-	int "Maximum drift in microseconds allowed (should be about 1 period allowance)"
-	default 1000
-
 config TIMER_EXTERNAL_TEST
 	bool "Perform test using an external tool"
 	help
