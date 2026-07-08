@@ -1470,7 +1470,11 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 #if ANY_ADC_HAS_CHANNEL_PRESELECTION
 	if (config->has_channel_preselection) {
 		/* Reset channel preselection register */
-		LL_ADC_SetChannelPreselection(adc, 0);
+#ifdef STM32H72X_ADC
+		stm32_reg_write(&adc->PCSEL_RES0, 0U);
+#else /* STM32H72X_ADC */
+		stm32_reg_write(&adc->PCSEL, 0U);
+#endif /* STM32H72X_ADC */
 	}
 #endif /* ANY_ADC_HAS_CHANNEL_PRESELECTION */
 #endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
