@@ -329,4 +329,5 @@ static int uvb_init(void)
 	return 0;
 }
 
-SYS_INIT(uvb_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+/* No dependencies: only initializes internal lists and a fifo. */
+SYS_INIT(uvb_init, PRE_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
