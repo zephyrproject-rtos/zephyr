@@ -176,6 +176,43 @@ long as they point to commits that are descendants of the new
    - in all other projects where no rebase or merge is needed it keeps
      your branches in place.
 
+**Developing a project:**
+
+When developing in a west-managed project, create a local branch before
+committing your work. A plain ``west update`` will leave that branch and its
+commits unchanged, then check out the manifest revision as a detached ``HEAD``.
+Commit or stash local changes before running ``west update``.
+
+#. Run ``west update`` to synchronize the workspace before starting work.
+
+#. Change to the project directory and create a local branch:
+
+   .. code-block:: shell
+
+      cd modules/lib/zcbor
+      git checkout -b my-feature
+
+#. Make your changes and commit them:
+
+   .. code-block:: shell
+
+      git add <files>
+      git commit -s
+
+#. When updating the workspace later, run ``west update`` and check out your
+   branch again:
+
+   .. code-block:: shell
+
+      west update
+      git checkout my-feature
+
+   To keep the branch checked out when it is a descendant of the new
+   ``manifest-rev``, use ``west update --keep-descendants``. To rebase the
+   checked out branch onto ``manifest-rev`` instead, use ``west update
+   --rebase``. The latter can fail with conflicts; see the preceding note for
+   how to resolve or abort a rebase.
+
 **One-time project group manipulation:**
 
 The ``--group-filter`` option can be used to change which project groups
