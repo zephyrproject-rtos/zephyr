@@ -1,0 +1,48 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config PROFILING_PMU_SAMPLING
+	bool "PMU overflow PC sampling profiler (ARM64)"
+	depends on PROFILING
+	depends on ARM64
+	depends on ARM64_PMUV3
+	depends on GEN_SW_ISR_TABLE
+	select SCHED_CPU_MASK if SMP
+	help
+	  Enable periodic program-counter sampling using a programmable PMU counter
+	  overflow interrupt (PMINTENSET_EL1). Requires a GIC interrupt line for
+	  the PMU on your SoC: either an enabled arm,armv8-pmu devicetree node with
+	  interrupts, or CONFIG_ARM64_PMU_OVERFLOW_IRQ set to the correct INTID.
+
+	  On SMP systems, per-CPU work queues are created at init time to program
+	  each CPU's PMU counter independently when sampling starts.
+
+	  Sampling is driven through the public API in
+	  include/zephyr/profiling/pmu_sampling.h.
+
+	  Design, devicetree, and limitations: subsys/profiling/pmu_sampling/README.rst
+
+if PROFILING_PMU_SAMPLING
+
+config PROFILING_PMU_SAMPLE_BUFFER_LEN
+	int "Number of PC samples to retain in RAM"
+	default 512
+	help
+	  Ring buffer capacity. When full, new samples overwrite the oldest entries.
+
+config ARM64_PMU_OVERFLOW_IRQ
+	int "PMU overflow GIC IRQ (INTID) when no devicetree node"
+	default -1
+	help
+	  When negative, the interrupt number is taken from the first enabled
+	  arm,armv8-pmu devicetree node. Otherwise this INTID is used (board-specific).
+
+config PROFILING_PMU_ZPERF_MAX
+	int "Max zperf blob size for pmu_sampling_export_zperf() (bytes)"
+	default 32768
+	help
+	  Static buffer used by pmu_sampling_export_zperf(). Must be at least
+	  pmu_sampling_export_zperf_size() for your workload (header + 24 bytes per
+	  stored sample). Increase if export returns -ENOSPC.
+
+endif # PROFILING_PMU_SAMPLING
