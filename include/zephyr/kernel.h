@@ -4280,6 +4280,7 @@ static inline bool k_work_is_pending(const struct k_work *work);
  * @satisfies ZEP-SRS-26-11
  * @satisfies ZEP-SRS-26-12
  * @satisfies ZEP-SRS-26-14
+ * @satisfies ZEP-SRS-26-32
  */
 int k_work_submit_to_queue(struct k_work_q *queue,
 			   struct k_work *work);
@@ -4416,8 +4417,10 @@ void k_work_queue_init(struct k_work_q *queue);
  * NULL if not required, to use the defaults documented in
  * k_work_queue_config.
  *
- * @satisfies ZEP-SRS-26-1
  * @satisfies ZEP-SRS-26-2
+ * @satisfies ZEP-SRS-26-29
+ * @satisfies ZEP-SRS-26-30
+ * @satisfies ZEP-SRS-26-31
  */
 void k_work_queue_start(struct k_work_q *queue,
 			k_thread_stack_t *stack, size_t stack_size,
