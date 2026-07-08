@@ -37,6 +37,7 @@ struct spi_stm32_config {
 	int mssi_clocks;
 	uint32_t fifo_max_transfer_size;
 	uint8_t fifo_size;
+	bool gpio_control: 1;
 #endif
 	bool ioswp: 1;
 	bool soft_nss: 1;
