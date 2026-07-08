@@ -1306,7 +1306,6 @@ Devicetree:
   maintainers:
     - mbolivar
   collaborators:
-    - decsny
     - rruuaanng
   files-regex:
     - ^dts/bindings/.*zephyr.*
@@ -1364,8 +1363,6 @@ Disk:
     - dts/bindings/disk/
   file-groups:
     - name: eMMC
-      collaborators:
-        - decsny
       files-regex:
         - ^(?!.*sdmmc).*mmc
   labels:
@@ -1935,7 +1932,6 @@ Documentation Infrastructure:
   maintainers:
     - maass-hamburg
   collaborators:
-    - decsny
     - lmajewski
     - pdgendt
     - ClaCodes
@@ -2624,8 +2620,6 @@ Documentation Infrastructure:
 
 "Drivers: Reset":
   status: odd fixes
-  collaborators:
-    - decsny
   files:
     - drivers/reset/
     - include/zephyr/drivers/reset.h
@@ -2714,7 +2708,6 @@ Documentation Infrastructure:
     - tbursztyka
   collaborators:
     - teburd
-    - decsny
   files:
     - drivers/spi/
     - include/zephyr/drivers/spi.h
