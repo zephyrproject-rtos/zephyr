@@ -137,4 +137,6 @@ struct k_mutex *to_posix_mutex(pthread_mutex_t *mu);
 int posix_to_zephyr_priority(int priority, int policy);
 int zephyr_to_posix_priority(int priority, int *policy);
 
+void posix_thread_remove_key_refs(pthread_key_obj *key_obj);
+
 #endif

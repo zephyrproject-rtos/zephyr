@@ -724,6 +724,42 @@ static K_WORK_DELAYABLE_DEFINE(posix_thread_recycle_work, posix_thread_recycle_w
 
 extern struct sys_sem pthread_key_lock;
 
+static void posix_thread_remove_key_ref_2(struct posix_thread *t, pthread_key_obj *key_obj)
+{
+	sys_snode_t *node_spec_data, *node_spec_data_s, *node_spec_data_prev = NULL;
+	pthread_thread_data *thread_spec_data;
+
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&t->key_list, node_spec_data, node_spec_data_s) {
+		thread_spec_data = (pthread_thread_data *)node_spec_data;
+		if (thread_spec_data->key == key_obj) {
+			sys_slist_remove(&t->key_list, node_spec_data_prev, node_spec_data);
+			break;
+		}
+		node_spec_data_prev = node_spec_data;
+	}
+}
+
+/**
+ * Remove all key associated pthread_thread_data references in thread-pool
+ *
+ * pthread_key_lock has been acquired by caller.
+ */
+void posix_thread_remove_key_refs(pthread_key_obj *key_obj)
+{
+	K_SPINLOCK(&pthread_pool_lock) {
+		struct posix_thread *t;
+
+		SYS_DLIST_FOR_EACH_CONTAINER(&posix_thread_q[POSIX_THREAD_RUN_Q], /* NOSONAR */
+					     t, q_node) {
+			posix_thread_remove_key_ref_2(t, key_obj);
+		}
+		SYS_DLIST_FOR_EACH_CONTAINER(&posix_thread_q[POSIX_THREAD_EXTERNAL_Q], /* NOSONAR */
+					     t, q_node) {
+			posix_thread_remove_key_ref_2(t, key_obj);
+		}
+	}
+}
+
 static void posix_thread_finalize_cleanuplist(struct posix_thread *t, bool exec_cleanup)
 {
 	if (exec_cleanup) {
