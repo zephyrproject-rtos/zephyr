@@ -41,6 +41,15 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 
 int z_abort_timeout(struct _timeout *to);
 
+/* Report whether the given timeout's handler is currently in flight, i.e. it
+ * has been popped from the queue by sys_clock_announce() but its handler has
+ * not yet returned. A canceller that must guarantee the handler is no longer
+ * about to touch the timeout's storage (before freeing or reusing it) can
+ * abort the timeout and then spin on this predicate, dropping the lock the
+ * handler needs so it can run to completion.
+ */
+bool z_timeout_is_inflight(const struct _timeout *to);
+
 /* Determine if the timeout handler should continue.
  *
  * The routine sys_clock_announce() both removes the timeout from the timeout
@@ -105,6 +114,7 @@ k_ticks_t z_timeout_remaining(const struct _timeout *timeout);
 #define z_is_aborted_thread_timeout(to) false
 #define z_is_inactive_timeout(to) 1
 #define z_is_aborted_timeout(to) false
+#define z_timeout_is_inflight(to) false
 #define z_get_next_timeout_expiry() ((int32_t) K_TICKS_FOREVER)
 #define z_set_timeout_expiry(ticks, is_idle) do {} while (false)
 
