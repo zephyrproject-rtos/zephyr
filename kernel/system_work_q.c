@@ -19,6 +19,15 @@ static K_KERNEL_STACK_DEFINE(sys_work_q_stack,
 
 struct k_work_q k_sys_work_q;
 
+/**
+ * @brief Start the system work queue during kernel initialization.
+ *
+ * Dedicates the system work queue thread ("sysworkq") so that the
+ * shared system work queue is available to application and kernel
+ * code once the kernel is up.
+ *
+ * @satisfies ZEP-SRS-26-33
+ */
 static void sys_work_q_init(void)
 {
 	static const struct k_work_queue_config cfg = {
