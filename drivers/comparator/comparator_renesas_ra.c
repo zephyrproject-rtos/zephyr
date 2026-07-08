@@ -199,9 +199,9 @@ static const struct acmphs_renesas_ra_global_config acmphs_renesas_ra_global_con
 	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_INST(0, renesas_ra_acmphs_global)),
 };
 
-DEVICE_DT_DEFINE(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_acmphs_global),
-		 acmphs_renesas_ra_global_init, NULL, NULL, &acmphs_renesas_ra_global_config,
-		 PRE_KERNEL_2, CONFIG_COMPARATOR_INIT_PRIORITY, NULL)
+DEVICE_DT_DEFINE_AUTO(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_acmphs_global),
+		      acmphs_renesas_ra_global_init, NULL, NULL, &acmphs_renesas_ra_global_config,
+		      PRE_KERNEL, NULL)
 
 #define EVENT_ACMPHS_INT(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_ACMPHS, channel, _INT))
 
