@@ -450,7 +450,7 @@ ZTEST_P(cobs_tests, test_decode)
 	const struct cobs_test_item *item = ZTEST_GET_PARAM_PTR(struct cobs_test_item);
 	int ret;
 
-	net_buf_add_mem(fixture->test_data, item->decoded, item->decoded_len);
+	net_buf_add_mem(fixture->encoded, item->encoded, item->encoded_len);
 
 	ret = cobs_decode(fixture->encoded, fixture->test_data, item->flags);
 	zassert_ok(ret, "COBS decoding failed for %s", item->name);
