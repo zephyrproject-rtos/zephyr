@@ -32,7 +32,6 @@ LOG_MODULE_REGISTER(modem_cellular, CONFIG_MODEM_LOG_LEVEL);
 	K_MSEC(CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS)
 
 /* Magic constants */
-#define MODEM_CELLULAR_MAX_SCRIPT_FAILURES   (3)
 #define CSQ_RSSI_UNKNOWN		     (99)
 #define CESQ_RSRP_UNKNOWN		     (255)
 #define CESQ_RSRQ_UNKNOWN		     (255)
@@ -1352,7 +1351,7 @@ static void modem_cellular_script_success(struct modem_cellular_data *data)
 
 static bool modem_cellular_is_script_retry_exceeded(struct modem_cellular_data *data)
 {
-	if (data->script_failure_counter >= MODEM_CELLULAR_MAX_SCRIPT_FAILURES) {
+	if (data->script_failure_counter >= CONFIG_MODEM_CELLULAR_MAX_SCRIPT_FAILURES) {
 		data->script_failure_counter = 0;
 		return true;
 	}
