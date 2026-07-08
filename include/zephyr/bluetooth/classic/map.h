@@ -869,9 +869,6 @@ struct bt_map_mce_mas {
 	/** @internal Callbacks */
 	const struct bt_map_mce_mas_cb *_cb;
 
-	/** @internal Transport type */
-	uint8_t _transport_type;
-
 	/** @internal Transport state (atomic) */
 	atomic_t _transport_state;
 
@@ -1386,9 +1383,6 @@ struct bt_map_mce_mns {
 	/** @internal Callbacks */
 	const struct bt_map_mce_mns_cb *_cb;
 
-	/** @internal Transport type */
-	uint8_t _transport_type;
-
 	/** @internal Transport state (atomic) */
 	atomic_t _transport_state;
 
@@ -1845,9 +1839,6 @@ struct bt_map_mse_mas {
 
 	/** @internal Callbacks */
 	const struct bt_map_mse_mas_cb *_cb;
-
-	/** @internal Transport type */
-	uint8_t _transport_type;
 
 	/** @internal Transport state (atomic) */
 	atomic_t _transport_state;
@@ -2317,9 +2308,6 @@ struct bt_map_mse_mns {
 
 	/** @internal Callbacks */
 	const struct bt_map_mse_mns_cb *_cb;
-
-	/** @internal Transport type */
-	uint8_t _transport_type;
 
 	/** @internal Transport state (atomic) */
 	atomic_t _transport_state;
