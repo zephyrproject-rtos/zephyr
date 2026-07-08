@@ -162,7 +162,7 @@ static void esp32_cpu_clock_init(const struct esp32_cpu_clock_config *cpu_cfg)
 	 * at sleep entry to read stale values (0) and write an invalid
 	 * regulator bias which brown-outs the core.
 	 */
-#if !defined(CONFIG_ESP_ENABLE_PVT)
+#if !defined(CONFIG_SOC_ESP32_ENABLE_PVT)
 	uint32_t hp_cali_dbias = get_act_hp_dbias();
 	uint32_t lp_cali_dbias = get_act_lp_dbias();
 
@@ -176,7 +176,7 @@ static void esp32_cpu_clock_init(const struct esp32_cpu_clock_config *cpu_cfg)
 			  hp_cali_dbias, PMU_HP_MODEM_HP_REGULATOR_DBIAS_S);
 	SET_PERI_REG_BITS(PMU_HP_SLEEP_LP_REGULATOR0_REG, PMU_HP_SLEEP_LP_REGULATOR_DBIAS,
 			  lp_cali_dbias, PMU_HP_SLEEP_LP_REGULATOR_DBIAS_S);
-#endif /* !CONFIG_ESP_ENABLE_PVT */
+#endif /* !CONFIG_SOC_ESP32_ENABLE_PVT */
 
 #if !defined(CONFIG_SOC_SERIES_ESP32P4)
 	clk_ll_rc_fast_tick_conf();
