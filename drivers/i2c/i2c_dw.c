@@ -1240,36 +1240,66 @@ static void i2c_dw_slave_read_clear_intr_bits(const struct device *dev,
 }
 #endif /* CONFIG_I2C_TARGET */
 
-static DEVICE_API(i2c, funcs) = {
-	.configure = i2c_dw_runtime_configure,
-	.transfer = i2c_dw_transfer,
-#ifdef CONFIG_I2C_TARGET
-	.target_register = i2c_dw_slave_register,
-	.target_unregister = i2c_dw_slave_unregister,
-#endif /* CONFIG_I2C_TARGET */
-#ifdef CONFIG_I2C_RTIO
-	.iodev_submit = i2c_iodev_submit_fallback,
-#endif
-	.recover_bus = i2c_dw_recovery_bus,
-};
-
-static int i2c_dw_initialize(const struct device *dev)
+static int i2c_dw_init_config(const struct device *dev)
 {
 	const struct i2c_dw_rom_config *const rom = dev->config;
 	struct i2c_dw_dev_config *const dw = dev->data;
 	union ic_sdahold_register sda_hold;
-	union ic_con_register ic_con;
-	uint32_t reg_base;
-	int ret = 0;
+	uint32_t reg_base = get_regs(dev);
 #ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
 	uint32_t sda_timeout = rom->sda_timeout_value * CONFIG_I2C_DW_CLOCK_SPEED * 1000;
 	uint32_t scl_timeout = rom->scl_timeout_value * CONFIG_I2C_DW_CLOCK_SPEED * 1000;
 #endif
 
+	clear_bit_enable_en(reg_base);
+
+	/* Set up SDAHOLD timing register */
+	sda_hold.raw = read_sdahold(reg_base);
+	if (rom->sda_hold_tx != SDA_HOLD_INVALID) {
+		sda_hold.bits.sdahold_tx = rom->sda_hold_tx;
+	}
+	if (rom->sda_hold_rx != SDA_HOLD_INVALID) {
+		sda_hold.bits.sdahold_rx = rom->sda_hold_rx;
+	}
+	write_sdahold(sda_hold.raw, reg_base);
+
+	/*
+	 * depending on the IP configuration, we may have to disable block mode in
+	 * controller mode
+	 */
+	clear_bit_enable_block(reg_base);
+
+	/* Set spike length */
+	write_fs_spklen(rom->fs_spk_len, reg_base);
+	write_hs_spklen(rom->hs_spk_len, reg_base);
+
+	dw->app_config = I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(rom->bitrate);
+
+	if (i2c_dw_runtime_configure(dev, dw->app_config) != 0) {
+		return -EIO;
+	}
+
+	dw->state = I2C_DW_STATE_READY;
+#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
+	dw->need_setup = true;
+#endif
+#ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
+	write_sdatimeout(sda_timeout, reg_base);
+	write_scltimeout(scl_timeout, reg_base);
+#endif
+
+	return 0;
+}
+
+static int i2c_dw_prepare(const struct device *dev)
+{
+	__maybe_unused const struct i2c_dw_rom_config *const rom = dev->config;
+	__maybe_unused int ret;
+
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
 	if (rom->clk_dev != NULL) {
 		ret = clock_control_on(rom->clk_dev, rom->clk_id);
-		if (ret < 0) {
+		if (ret < 0 && ret != -EALREADY && ret != -ENOSYS) {
 			LOG_ERR("Failed to enable the clock");
 			return ret;
 		}
@@ -1293,6 +1323,62 @@ static int i2c_dw_initialize(const struct device *dev)
 		}
 	}
 #endif
+
+	return 0;
+}
+
+static int i2c_dw_probe_hw(const struct device *dev)
+{
+	struct i2c_dw_dev_config *const dw = dev->data;
+	union ic_con_register ic_con;
+	uint32_t reg_base = get_regs(dev);
+
+	if (read_comp_type(reg_base) != I2C_DW_MAGIC_KEY) {
+		LOG_DBG("I2C: DesignWare magic key not found, check base "
+			"address. Stopping initialization");
+		return -EIO;
+	}
+
+	/*
+	 * Grab the default value on initialization. This should be set to the
+	 * IC_MAX_SPEED_MODE in the hardware. If it does support high speed we
+	 * can provide support for it.
+	 */
+	ic_con.raw = read_con(reg_base);
+	if (ic_con.bits.speed == I2C_DW_SPEED_HIGH) {
+		LOG_DBG("I2C: high speed supported");
+		dw->support_hs_mode = true;
+	} else {
+		LOG_DBG("I2C: high speed NOT supported");
+		dw->support_hs_mode = false;
+	}
+
+	return 0;
+}
+
+static DEVICE_API(i2c, funcs) = {
+	.configure = i2c_dw_runtime_configure,
+	.transfer = i2c_dw_transfer,
+#ifdef CONFIG_I2C_TARGET
+	.target_register = i2c_dw_slave_register,
+	.target_unregister = i2c_dw_slave_unregister,
+#endif /* CONFIG_I2C_TARGET */
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
+	.recover_bus = i2c_dw_recovery_bus,
+};
+
+static int i2c_dw_initialize(const struct device *dev)
+{
+	const struct i2c_dw_rom_config *const rom = dev->config;
+	struct i2c_dw_dev_config *const dw = dev->data;
+	int ret;
+
+	ret = i2c_dw_prepare(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	if (rom->pcie) {
@@ -1335,67 +1421,20 @@ static int i2c_dw_initialize(const struct device *dev)
 	k_sem_init(&dw->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 	k_sem_init(&dw->bus_sem, 1, 1);
 
-	reg_base = get_regs(dev);
-	clear_bit_enable_en(reg_base);
-
-	/* Set up SDAHOLD timing register */
-	sda_hold.raw = read_sdahold(reg_base);
-	if (rom->sda_hold_tx != SDA_HOLD_INVALID) {
-		sda_hold.bits.sdahold_tx = rom->sda_hold_tx;
-	}
-	if (rom->sda_hold_rx != SDA_HOLD_INVALID) {
-		sda_hold.bits.sdahold_rx = rom->sda_hold_rx;
-	}
-	write_sdahold(sda_hold.raw, reg_base);
-
-	/*
-	 * depending on the IP configuration, we may have to disable block mode in
-	 * controller mode
-	 */
-	clear_bit_enable_block(reg_base);
-
-	/* verify that we have a valid DesignWare register first */
-	if (read_comp_type(reg_base) != I2C_DW_MAGIC_KEY) {
-		LOG_DBG("I2C: DesignWare magic key not found, check base "
-			"address. Stopping initialization");
-		return -EIO;
+	/* Check if the hardware is supported and set the support_hs_mode flag */
+	ret = i2c_dw_probe_hw(dev);
+	if (ret < 0) {
+		return ret;
 	}
 
-	/*
-	 * grab the default value on initialization.  This should be set to the
-	 * IC_MAX_SPEED_MODE in the hardware.  If it does support high speed we
-	 * can move provide support for it
-	 */
-	ic_con.raw = read_con(reg_base);
-	if (ic_con.bits.speed == I2C_DW_SPEED_HIGH) {
-		LOG_DBG("I2C: high speed supported");
-		dw->support_hs_mode = true;
-	} else {
-		LOG_DBG("I2C: high speed NOT supported");
-		dw->support_hs_mode = false;
+	/* Initialize the controller registers */
+	ret = i2c_dw_init_config(dev);
+	if (ret < 0) {
+		return ret;
 	}
 
 	rom->config_func(dev);
 
-	/* Set spike length */
-	write_fs_spklen(rom->fs_spk_len, reg_base);
-	write_hs_spklen(rom->hs_spk_len, reg_base);
-
-	dw->app_config = I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(rom->bitrate);
-
-	if (i2c_dw_runtime_configure(dev, dw->app_config) != 0) {
-		LOG_DBG("I2C: Cannot set default configuration");
-		return -EIO;
-	}
-
-	dw->state = I2C_DW_STATE_READY;
-#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
-	dw->need_setup = true;
-#endif
-#ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
-	write_sdatimeout(sda_timeout, reg_base);
-	write_scltimeout(scl_timeout, reg_base);
-#endif
 	LOG_DBG("initialize done");
 
 	return ret;
