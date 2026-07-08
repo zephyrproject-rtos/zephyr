@@ -225,6 +225,19 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 		net_pkt_cursor_init(orig);
 	}
 
+	if (net_ipv6_is_addr_unspecified((struct in6_addr *)ip_hdr->src) ||
+	    net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->src)) {
+		err = -EINVAL;
+		goto drop_no_pkt;
+	}
+
+	if (net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->dst) &&
+	    type != NET_ICMPV6_PACKET_TOO_BIG &&
+	    !(type == NET_ICMPV6_PARAM_PROBLEM && code == NET_ICMPV6_PARAM_PROB_OPTION)) {
+		err = -EINVAL;
+		goto drop_no_pkt;
+	}
+
 	if (ip_hdr->nexthdr == IPPROTO_UDP) {
 		copy_len = sizeof(struct net_ipv6_hdr) +
 			sizeof(struct net_udp_hdr);
