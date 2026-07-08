@@ -579,7 +579,8 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 	"bl z_thread_entry\n\t"	/* z_thread_entry(_main, 0, 0, 0); */
 	:
 	: "r" (_main), "r" (stack_ptr)
-	: "r0" /* not to be overwritten by msr PSP, %1 */
+	: "r0", /* not to be overwritten by msr PSP, %1 */
+	  "memory" /* ensure _current is written before enabling IRQs */
 	);
 
 	CODE_UNREACHABLE;
