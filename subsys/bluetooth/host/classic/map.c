@@ -1008,6 +1008,7 @@ static int mce_mas_get_or_put(struct bt_map_mce_mas *mce_mas, bool is_get, const
 
 	if (!is_get && final && !bt_obex_has_header(buf, BT_OBEX_HEADER_ID_END_BODY)) {
 		LOG_ERR("OBEX header (End of Body) is missing");
+		err = -ENODATA;
 		goto failed;
 	}
 
@@ -2818,6 +2819,7 @@ static int mse_mns_get_or_put(struct bt_map_mse_mns *mse_mns, bool is_get, const
 
 	if (!is_get && final && !bt_obex_has_header(buf, BT_OBEX_HEADER_ID_END_BODY)) {
 		LOG_ERR("OBEX header (End of Body) is missing");
+		err = -ENODATA;
 		goto failed;
 	}
 
