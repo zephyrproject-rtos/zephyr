@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Advanced Micro Devices, Inc.
+# Copyright (c) 2025-2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -26,3 +26,21 @@ properties:
   clocks:
     required: true
     description: Reference to clock for window watchdog core.
+
+  interrupts:
+    description: |
+      Window watchdog interrupt lines. The node may expose more than one
+      interrupt (for example the window interrupt and a reset-pending
+      line); the driver uses only the window interrupt (WINT), which must
+      be named "wdt" in interrupt-names. WINT is asserted when the second
+      (open) window is entered, i.e. as soon as the watchdog may be
+      serviced, so the timeout can be handled from the installed callback.
+      This property is optional; when present, interrupt-names must
+      include "wdt".
+
+  interrupt-names:
+    description: |
+      Names for the interrupts specified in the "interrupts" property. The
+      window watchdog interrupt (WINT) used by the driver must be named
+      "wdt". Other interrupt lines exposed by the node may be listed but
+      are not used by the driver.
