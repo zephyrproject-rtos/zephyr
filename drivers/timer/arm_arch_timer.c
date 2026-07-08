@@ -220,5 +220,12 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
+/*
+ * Kept at PRE_KERNEL_2 for now: the ARM generic timer depends on the GIC
+ * being initialized (it enables a PPI through it) but has no devicetree node
+ * of its own to anchor to, and the GIC node label is not uniform across the
+ * arm64/Cortex-R boards that use this driver. Migrate to PRE_KERNEL once the
+ * interrupt-controller anchoring convention is settled.
+ */
 SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
 	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

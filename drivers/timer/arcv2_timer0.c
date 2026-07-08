@@ -448,5 +448,11 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
+/*
+ * Kept at PRE_KERNEL_2 for now: under SMP this timer uses the ARC-Connect
+ * global free-running counter that arch_smp_init() sets up at the
+ * PRE_KERNEL_1/PRE_KERNEL_2 seam, so it must not move ahead of that seam.
+ * Migrate to PRE_KERNEL once arch_smp_init() gets an explicit hook.
+ */
 SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
 	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
