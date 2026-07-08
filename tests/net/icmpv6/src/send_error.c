@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_test_icmpv6_send_error, CONFIG_NET_ICMPV6_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>
+#include <zephyr/net/icmp.h>
 #include <zephyr/ztest.h>
 
 #include "ipv6.h"
@@ -93,6 +94,27 @@ static struct net_pkt *create_orig_pkt(const struct net_in6_addr *src,
 
 	net_pkt_cursor_init(pkt);
 	zassert_ok(net_ipv6_finalize(pkt, TEST_IPPROTO_NONE), "Cannot finalize IPv6 pkt");
+
+	return pkt;
+}
+
+static struct net_pkt *create_orig_icmpv6_pkt(const struct net_in6_addr *src,
+					      const struct net_in6_addr *dst,
+					      uint8_t icmpv6_type)
+{
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_alloc_with_buffer(test_iface,
+					sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr),
+					NET_AF_INET6, NET_IPPROTO_ICMPV6,
+					K_SECONDS(1));
+	zassert_not_null(pkt, "Cannot allocate pkt");
+
+	zassert_ok(net_ipv6_create(pkt, src, dst), "Cannot create IPv6 pkt");
+	zassert_ok(net_icmpv6_create(pkt, icmpv6_type, 0), "Cannot create ICMPv6 hdr");
+
+	net_pkt_cursor_init(pkt);
+	zassert_ok(net_ipv6_finalize(pkt, NET_IPPROTO_ICMPV6), "Cannot finalize IPv6 pkt");
 
 	return pkt;
 }
@@ -202,6 +224,60 @@ ZTEST(icmpv6_send_error_fn, test_send_error_rfc4443_matrix)
 		if (tc->expect_sent) {
 			zassert_equal(ret, 0, "%s: expected send, got %d",
 				      tc->name, ret);
+		} else {
+			zassert_equal(ret, -EINVAL, "%s: expected -EINVAL, got %d",
+				      tc->name, ret);
+		}
+
+		net_pkt_unref(pkt);
+	}
+}
+
+struct send_error_icmpv6_orig_test_case {
+	const char *name;
+	uint8_t orig_icmpv6_type;
+	bool expect_sent;
+};
+
+static const struct send_error_icmpv6_orig_test_case send_error_icmpv6_orig_cases[] = {
+	{
+		.name = "orig is an ICMPv6 error is dropped (e.1)",
+		.orig_icmpv6_type = NET_ICMPV6_DST_UNREACH,
+		.expect_sent = false,
+	},
+	{
+		.name = "orig is an ICMPv6 redirect is dropped (e.2)",
+		.orig_icmpv6_type = NET_ICMPV6_REDIRECT,
+		.expect_sent = false,
+	},
+	{
+		.name = "orig is an ICMPv6 echo request is sent",
+		.orig_icmpv6_type = NET_ICMPV6_ECHO_REQUEST,
+		.expect_sent = true,
+	},
+};
+
+ZTEST(icmpv6_send_error_fn, test_send_error_icmpv6_orig)
+{
+	struct net_in6_addr src;
+	struct net_in6_addr dst;
+
+	zassert_ok(net_addr_pton(NET_AF_INET6, "2001:db8::1", &src), "bad src address");
+	zassert_ok(net_addr_pton(NET_AF_INET6, "2001:db8::2", &dst), "bad dst address");
+
+	for (size_t i = 0; i < ARRAY_SIZE(send_error_icmpv6_orig_cases); i++) {
+		const struct send_error_icmpv6_orig_test_case *tc =
+			&send_error_icmpv6_orig_cases[i];
+		struct net_pkt *pkt;
+		int ret;
+
+		pkt = create_orig_icmpv6_pkt(&src, &dst, tc->orig_icmpv6_type);
+
+		ret = net_icmpv6_send_error(pkt, NET_ICMPV6_DST_UNREACH,
+					    NET_ICMPV6_DST_UNREACH_NO_ROUTE, 0);
+
+		if (tc->expect_sent) {
+			zassert_equal(ret, 0, "%s: expected send, got %d", tc->name, ret);
 		} else {
 			zassert_equal(ret, -EINVAL, "%s: expected -EINVAL, got %d",
 				      tc->name, ret);
