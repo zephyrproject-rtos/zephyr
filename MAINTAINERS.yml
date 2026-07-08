@@ -3103,6 +3103,7 @@ Espressif Platforms:
     - uLipe
     - raffarost
     - wmrsouza
+    - tmedicci
   files:
     - drivers/*/*esp32*.c
     - boards/espressif/
