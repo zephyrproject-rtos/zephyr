@@ -92,8 +92,15 @@ void soc_early_init_hook(void)
 
 void soc_late_init_hook(void)
 {
+/* Skip the SAU init when running the MCUBoot as it
+ * would interfere with the RRAM configuration.
+ * This has no effect on the standalone secure image
+ * because it will handle the SAU initialization itself.
+ */
+#if !defined(CONFIG_MCUBOOT)
 	/* SAU Init */
 	cy_sau_init();
+#endif
 
 #if defined(CONFIG_SOC_PSE84_M55_ENABLE)
 	ifx_pse84_cm55_startup();
