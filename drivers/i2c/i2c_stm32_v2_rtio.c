@@ -299,6 +299,11 @@ static void i2c_stm32_target_event(const struct device *dev)
 
 		LL_I2C_ClearFlag_ADDR(i2c);
 
+		/* Do not let a NACK requested by the previous write transfer leak
+		 * into this new target transfer.
+		 */
+		LL_I2C_AcknowledgeNextData(i2c, LL_I2C_ACK);
+
 		dir = LL_I2C_GetTransferDirection(i2c);
 		if (dir == LL_I2C_DIRECTION_WRITE) {
 			if (target_cb->write_requested(target_cfg) < 0) {
