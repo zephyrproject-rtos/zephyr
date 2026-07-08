@@ -1,0 +1,6 @@
+board:
+  name: stm32_LD_min_dev
+  full_name: STM32 Low Density Minimum Development Board
+  vendor: others
+  socs:
+    - name: stm32f103x6
