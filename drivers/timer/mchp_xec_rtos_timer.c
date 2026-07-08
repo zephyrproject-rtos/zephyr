@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT microchip_xec_rtos_timer
 
 #include <zephyr/init.h>
+#include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <soc.h>
 #include <zephyr/arch/common/sys_io.h>
@@ -433,4 +434,4 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT_DEPENDS(sys_clock_driver_init, PRE_KERNEL, DT_DRV_INST(0));
