@@ -6,6 +6,7 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/init.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/timer/system_timer.h>
@@ -254,4 +255,4 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	k_spin_unlock(&lock, key);
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT_DEPENDS(sys_clock_driver_init, PRE_KERNEL, DT_DRV_INST(0));

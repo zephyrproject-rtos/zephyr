@@ -198,5 +198,5 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-/* Initialize the system timer driver during pre-kernel stage 2. */
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+/* Initialize the system timer driver during the pre-kernel stage. */
+SYS_INIT_DEPENDS(sys_clock_driver_init, PRE_KERNEL, DT_DRV_INST(0));
