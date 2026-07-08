@@ -105,7 +105,7 @@ static DEVICE_API(ipm, ipm_nrf_driver_api) = {
 };
 
 DEVICE_DT_INST_DEFINE(0, ipm_nrf_init, NULL, NULL, NULL,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    PRE_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &ipm_nrf_driver_api);
 
 #else
@@ -216,9 +216,14 @@ static DEVICE_API(ipm, vipm_nrf_##_idx##_driver_api) = {	\
 	.set_enabled = vipm_nrf_##_idx##_set_enabled			\
 };									\
 									\
+/* Virtual IPM: a software device (no devicetree node) that depends on the
+ * real IPM defined above. Give it a priority strictly after the real IPM
+ * (which uses KERNEL_INIT_PRIORITY_DEFAULT) so it still initializes second
+ * within the single PRE_KERNEL level.
+ */
 DEVICE_DEFINE(vipm_nrf_##_idx, "IPM_"#_idx,				\
 		    vipm_nrf_init, NULL, NULL, NULL,			\
-		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+		    PRE_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
 		    &vipm_nrf_##_idx##_driver_api)
 
 #define VIPM_DEVICE(_idx, _)						\
