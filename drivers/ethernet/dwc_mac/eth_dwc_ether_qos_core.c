@@ -68,6 +68,14 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define RXDESC_PHYS_L(idx) phys_lo32(&p->rx_descs[idx])
 #endif
 
+/*
+ * If dribbling error flag (RDES3_DE) is set but CRC error flag (RDES3_CE)
+ * is not set, the packet is still valid and can be passed up to the stack.
+ * Therefore, exclude the dribbling error flag from the error mask to avoid
+ * dropping valid packets.
+ */
+#define RDES3_ERROR_MASK (RDES3_RE | RDES3_OE | RDES3_RWT | RDES3_GP | RDES3_CE)
+
 static inline uint32_t hi32(uintptr_t val)
 {
 	/* trickery to avoid compiler warnings on 32-bit build targets */
@@ -304,7 +312,7 @@ static void dwmac_receive(struct dwmac_priv *p)
 		/* last descriptor: */
 		if (des3_val & RDES3_LD) {
 			/* submit packet if no errors */
-			if (!(des3_val & RDES3_ES)) {
+			if ((des3_val & RDES3_ERROR_MASK) == 0) {
 				LOG_DBG("pkt len/frags=%zd/%d",
 					net_pkt_get_len(p->rx_pkt),
 					net_pkt_get_nbfrags(p->rx_pkt));
