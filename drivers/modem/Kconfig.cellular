@@ -101,6 +101,32 @@ config MODEM_CELLULAR_RESET_POWER_ON_DELAY_MS
 	int "Delay between de-asserting the reset pin and pulsing the power pin"
 	default 500
 
+config MODEM_CELLULAR_MAX_RECOVERIES
+	int "Maximum consecutive recovery attempts before suspending"
+	range 0 255
+	default 10
+	help
+	  After this many consecutive init or CMUX-connect recovery attempts without
+	  restored service, the driver suspends to idle instead of resetting the modem
+	  indefinitely. The counter resets once CMUX reconnects. Set to 0 to retry
+	  without a limit.
+
+config MODEM_CELLULAR_RECOVERY_BACKOFF_MS
+	int "Recovery backoff step in milliseconds"
+	range 0 3600000
+	default 2000
+	help
+	  Delay before each recovery reset, multiplied by the attempt count, so
+	  repeated failures back off instead of resetting the modem back-to-back.
+
+config MODEM_CELLULAR_RECOVERY_BACKOFF_MAX_MS
+	int "Maximum recovery backoff in milliseconds"
+	range 0 3600000
+	default 60000
+	help
+	  Upper bound on the per-attempt recovery backoff, so a large attempt budget
+	  cannot produce an unbounded delay before a reset.
+
 config MODEM_CELLULAR_SHELL
 	bool "Cellular modem driver shell commands"
 	depends on !MODEM_SHELL
