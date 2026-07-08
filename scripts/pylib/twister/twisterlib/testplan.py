@@ -48,6 +48,14 @@ from twisterlib.testsuite import TestSuite, scan_testsuite_path
 
 logger = logging.getLogger('twister')
 
+# Directory holding twister's YAML schemas.
+TWISTER_SCHEMA_DIR = os.path.join(ZEPHYR_BASE, "scripts", "schemas", "twister")
+
+# Filter reason set for a required application that built but cannot run on the
+# selected device. apply_changes_for_required_applications() matches on it, so
+# the producer and consumer must agree on the exact string.
+NOT_RUNNABLE_ON_DEVICE_REASON = "Not runnable on device"
+
 
 class Filters:
     # platform keys
@@ -78,13 +86,7 @@ class TestLevel:
 
 class TestConfiguration:
     __test__ = False
-    tc_schema_path = os.path.join(
-        ZEPHYR_BASE,
-        "scripts",
-        "schemas",
-        "twister",
-        "test-config-schema.yaml"
-    )
+    tc_schema_path = os.path.join(TWISTER_SCHEMA_DIR, "test-config-schema.yaml")
 
     def __init__(self, config_file):
         self.test_config = None
@@ -152,15 +154,13 @@ class TestPlan:
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
     suite_schema = scl.yaml_load(
-        os.path.join(ZEPHYR_BASE,
-                     "scripts", "schemas", "twister", "testsuite-schema.yaml"))
+        os.path.join(TWISTER_SCHEMA_DIR, "testsuite-schema.yaml"))
     # Fill in the per-sidecar `sidecar_config` schema from the registered
     # sidecars, so adding a sidecar needs no change to the schema file. The file
     # keeps a permissive placeholder for consumers that load it directly.
     suite_schema['$defs']['scenario']['properties']['sidecar_config'] = sidecar_config_schema()
     quarantine_schema = scl.yaml_load(
-        os.path.join(ZEPHYR_BASE,
-                     "scripts", "schemas", "twister", "quarantine-schema.yaml"))
+        os.path.join(TWISTER_SCHEMA_DIR, "quarantine-schema.yaml"))
 
     TEST_DEFINITION_FILENAME = [
             'testcase.yaml',
@@ -259,6 +259,21 @@ class TestPlan:
         level = next((lvl for lvl in self.levels if lvl.name == name), None)
         return level
 
+    def _refresh_selected_platforms(self):
+        """Recompute selected_platforms from the platforms of current instances."""
+        self.selected_platforms = set(p.platform.name for p in self.instances.values())
+
+    def _create_overlay(self, instance):
+        """Create the sanitizer/coverage overlay for an instance from options."""
+        instance.create_overlay(
+            instance.platform,
+            self.options.enable_asan,
+            self.options.enable_ubsan,
+            self.options.enable_coverage,
+            self.options.coverage_platform,
+            self.options.coverage_per_test
+        )
+
     def load(self):
 
         if self.options.report_suffix:
@@ -271,10 +286,10 @@ class TestPlan:
 
         if self.options.only_failed or self.options.report_summary is not None:
             self.load_from_file(last_run)
-            self.selected_platforms = set(p.platform.name for p in self.instances.values())
+            self._refresh_selected_platforms()
         elif self.options.load_tests:
             self.load_from_file(self.options.load_tests)
-            self.selected_platforms = set(p.platform.name for p in self.instances.values())
+            self._refresh_selected_platforms()
         elif self.options.test_only:
             # Get list of connected hardware and filter tests to only be run on connected hardware.
             # If the platform does not exist in the hardware map or was not specified by --platform,
@@ -295,7 +310,7 @@ class TestPlan:
                         connected_list.remove(excluded)
 
             self.load_from_file(last_run, filter_platform=connected_list)
-            self.selected_platforms = set(p.platform.name for p in self.instances.values())
+            self._refresh_selected_platforms()
         else:
             self.apply_filters()
 
@@ -818,13 +833,7 @@ class TestPlan:
                             if tc.get('log'):
                                 case.output = tc.get('log')
 
-                    instance.create_overlay(platform,
-                                            self.options.enable_asan,
-                                            self.options.enable_ubsan,
-                                            self.options.enable_coverage,
-                                            self.options.coverage_platform,
-                                            self.options.coverage_per_test
-                                            )
+                    self._create_overlay(instance)
                     instance_list.append(instance)
                 self.add_instances(instance_list)
         except FileNotFoundError as e:
@@ -1033,7 +1042,7 @@ class TestPlan:
                             instance.add_filter("Not part of requested test plan", Filters.TESTPLAN)
 
                 if (runnable or not ts.build) and not instance.run:
-                    instance.add_filter("Not runnable on device", Filters.CMD_LINE)
+                    instance.add_filter(NOT_RUNNABLE_ON_DEVICE_REASON, Filters.CMD_LINE)
 
                 if (
                     self.options.integration
@@ -1308,14 +1317,9 @@ class TestPlan:
                 continue
             # set run_id for each unfiltered instance
             case.setup_run_id()
-            case.create_overlay(case.platform,
-                                self.options.enable_asan,
-                                self.options.enable_ubsan,
-                                self.options.enable_coverage,
-                                self.options.coverage_platform,
-                                self.options.coverage_per_test)
+            self._create_overlay(case)
 
-        self.selected_platforms = set(p.platform.name for p in self.instances.values())
+        self._refresh_selected_platforms()
 
         filtered_and_skipped_instances = list(
             filter(
@@ -1443,7 +1447,7 @@ class TestPlan:
                         self.options.device_testing
                         and not req_instance.run
                         and len(req_instance.filters) == 1
-                        and req_instance.reason == "Not runnable on device"
+                        and req_instance.reason == NOT_RUNNABLE_ON_DEVICE_REASON
                     ):
                         # clear status flag to build required application
                         self.instances[req_instance.name].status = TwisterStatus.NONE
