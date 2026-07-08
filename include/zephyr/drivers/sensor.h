@@ -1519,11 +1519,11 @@ struct sensor_info {
 	SENSOR_INFO_DT_DEFINE(node_id);
 
 /**
- * @brief Like SENSOR_DEVICE_DT_DEFINE() for an instance of a DT_DRV_COMPAT
+ * @brief Like SENSOR_DEVICE_DT_DEFINE() for an instance of a @c DT_DRV_COMPAT
  * compatible
  *
  * @param inst instance number. This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to SENSOR_DEVICE_DT_DEFINE().
+ * <tt>DT_DRV_INST(inst)</tt> in the call to SENSOR_DEVICE_DT_DEFINE().
  *
  * @param ... other parameters as expected by SENSOR_DEVICE_DT_DEFINE().
  */
@@ -1621,7 +1621,7 @@ static inline int sensor_value_from_micro(struct sensor_value *val, int64_t micr
 /**
  * @brief Get the decoder name for the current driver
  *
- * This function depends on `DT_DRV_COMPAT` being defined.
+ * This function depends on @c DT_DRV_COMPAT being defined.
  */
 #define SENSOR_DECODER_NAME() UTIL_CAT(DT_DRV_COMPAT, __decoder_api)
 

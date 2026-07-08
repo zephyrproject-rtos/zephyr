@@ -1183,6 +1183,12 @@
 		status = "disabled";
 		io-channels = <&adc1 17>;
 	};
+
+	vddcore: vddcore {
+		compatible = "st,stm32-vddcore";
+		io-channels = <&adc2 17>;
+		status = "disabled";
+	};
 };
 
 &nvic {

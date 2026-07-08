@@ -18,8 +18,8 @@ static bool raw_in(void)
 	gpio_port_value_t v;
 	int rc = gpio_port_get_raw(dev_in, &v);
 
-#if CONFIG_READ_DELAY
-	k_sleep(K_MSEC(CONFIG_READ_DELAY));
+#if CONFIG_GPIO_TEST_READ_DELAY
+	k_sleep(K_MSEC(CONFIG_GPIO_TEST_READ_DELAY));
 	rc = gpio_port_get_raw(dev_in, &v);
 #endif
 	zassert_equal(rc, 0,
@@ -33,8 +33,8 @@ static bool logic_in(void)
 	gpio_port_value_t v;
 	int rc = gpio_port_get(dev_in, &v);
 
-#if CONFIG_READ_DELAY
-	k_sleep(K_MSEC(CONFIG_READ_DELAY));
+#if CONFIG_GPIO_TEST_READ_DELAY
+	k_sleep(K_MSEC(CONFIG_GPIO_TEST_READ_DELAY));
 	rc = gpio_port_get(dev_in, &v);
 #endif
 	zassert_equal(rc, 0,

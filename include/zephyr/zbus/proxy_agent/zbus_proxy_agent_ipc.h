@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_IPC_H_
-#define ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_IPC_H_
+#ifndef ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_ZBUS_PROXY_AGENT_IPC_H_
+#define ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_ZBUS_PROXY_AGENT_IPC_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -118,4 +118,4 @@ extern const struct zbus_proxy_agent_backend_api zbus_proxy_agent_ipc_backend_ap
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_IPC_H_ */
+#endif /* ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_ZBUS_PROXY_AGENT_IPC_H_ */

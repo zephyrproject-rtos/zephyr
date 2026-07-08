@@ -4,6 +4,54 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/dts-v1/;
+
+#include <qemu/virt-riscv32.dtsi>
+
+/ {
+	cpus {
+		cpu@0 {
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr",
+					       "zifencei", "smcsrind", "smaia", "ssaia";
+		};
+
+		cpu@1 {
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr",
+					       "zifencei", "smcsrind", "smaia", "ssaia";
+		};
+
+		cpu@2 {
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr",
+					       "zifencei", "smcsrind", "smaia", "ssaia";
+		};
+
+		cpu@3 {
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr",
+					       "zifencei", "smcsrind", "smaia", "ssaia";
+		};
+
+		cpu@4 {
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr",
+					       "zifencei", "smcsrind", "smaia", "ssaia";
+		};
+
+		cpu@5 {
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr",
+					       "zifencei", "smcsrind", "smaia", "ssaia";
+		};
+
+		cpu@6 {
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr",
+					       "zifencei", "smcsrind", "smaia", "ssaia";
+		};
+
+		cpu@7 {
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr",
+					       "zifencei", "smcsrind", "smaia", "ssaia";
+		};
+	};
+};
+
 &{/soc} {
 	aplic: interrupt-controller@c000000 {
 		compatible = "riscv,aplic";

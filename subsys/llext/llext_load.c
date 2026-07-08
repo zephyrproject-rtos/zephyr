@@ -157,14 +157,15 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
  */
 static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 {
-	int table_cnt, i;
+	int i;
 	int shstrtab_ndx = ldr->hdr.e_shstrndx;
 	int strtab_ndx = -1;
+	int symtab_ndx = -1;
 
 	memset(ldr->sects, 0, sizeof(ldr->sects));
 
-	/* Find symbol and string tables */
-	for (i = 0, table_cnt = 0; i < ext->sect_cnt && table_cnt < 3; ++i) {
+	/* Find symbol table and section-name string table. */
+	for (i = 0; i < ext->sect_cnt; ++i) {
 		elf_shdr_t *shdr = ext->sect_hdrs + i;
 
 		LOG_DBG("section %d at %#zx: name %d, type %d, flags %#zx, "
@@ -182,26 +183,41 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 
 		if (shdr->sh_type == SHT_SYMTAB && ldr->hdr.e_type == ET_REL) {
 			LOG_DBG("symtab at %d", i);
-			memcpy(&ldr->sects[LLEXT_MEM_SYMTAB], shdr, sizeof(*shdr));
-			ldr->sect_map[i].mem_idx = LLEXT_MEM_SYMTAB;
+			symtab_ndx = i;
 			strtab_ndx = shdr->sh_link;
-			table_cnt++;
 		} else if (shdr->sh_type == SHT_DYNSYM && ldr->hdr.e_type == ET_DYN) {
 			LOG_DBG("dynsym at %d", i);
-			memcpy(&ldr->sects[LLEXT_MEM_SYMTAB], shdr, sizeof(*shdr));
-			ldr->sect_map[i].mem_idx = LLEXT_MEM_SYMTAB;
+			symtab_ndx = i;
 			strtab_ndx = shdr->sh_link;
-			table_cnt++;
 		} else if (shdr->sh_type == SHT_STRTAB && i == shstrtab_ndx) {
 			LOG_DBG("shstrtab at %d", i);
 			memcpy(&ldr->sects[LLEXT_MEM_SHSTRTAB], shdr, sizeof(*shdr));
 			ldr->sect_map[i].mem_idx = LLEXT_MEM_SHSTRTAB;
-			table_cnt++;
-		} else if (shdr->sh_type == SHT_STRTAB && i == strtab_ndx) {
-			LOG_DBG("strtab at %d", i);
-			memcpy(&ldr->sects[LLEXT_MEM_STRTAB], shdr, sizeof(*shdr));
-			ldr->sect_map[i].mem_idx = LLEXT_MEM_STRTAB;
-			table_cnt++;
+		}
+	}
+
+	if (symtab_ndx >= 0) {
+		elf_shdr_t *symtab = ext->sect_hdrs + symtab_ndx;
+
+		memcpy(&ldr->sects[LLEXT_MEM_SYMTAB], symtab, sizeof(*symtab));
+		ldr->sect_map[symtab_ndx].mem_idx = LLEXT_MEM_SYMTAB;
+	} else {
+		LOG_WRN("ELF has no symbol table, it may have been stripped");
+	}
+
+	if (strtab_ndx >= 0) {
+		if (strtab_ndx >= (int)ext->sect_cnt) {
+			LOG_ERR("String table index %d out of bounds, section count %u",
+				strtab_ndx, ext->sect_cnt);
+			return -ENOEXEC;
+		}
+
+		elf_shdr_t *strtab = ext->sect_hdrs + strtab_ndx;
+
+		if (strtab->sh_type == SHT_STRTAB) {
+			LOG_DBG("strtab at %d", strtab_ndx);
+			memcpy(&ldr->sects[LLEXT_MEM_STRTAB], strtab, sizeof(*strtab));
+			ldr->sect_map[strtab_ndx].mem_idx = LLEXT_MEM_STRTAB;
 		}
 	}
 
@@ -296,6 +312,20 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			break;
 		}
 
+		/*
+		 * TLS sections (e.g. .tbss/.tdata) are not loaded as runtime
+		 * regions in an llext: the extension executes in one of the
+		 * loader's threads and shares that thread's TLS block. Local-exec
+		 * references only need the symbol's thread-pointer-relative offset,
+		 * which is carried in the relocation (st_value + TCB), so the
+		 * section itself is never mapped. Skipping also avoids a TLS
+		 * SHT_NOBITS section colliding with .bss in LLEXT_MEM_BSS.
+		 */
+		if (shdr->sh_flags & SHF_TLS) {
+			LOG_DBG("section %d name %s is TLS, not mapped", i, name);
+			continue;
+		}
+
 		/* Special exception for .exported_sym */
 		if (strcmp(name, ".exported_sym") == 0) {
 			mem_idx = LLEXT_MEM_EXPORT;
@@ -312,9 +342,22 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 		case LLEXT_MEM_PREINIT:
 		case LLEXT_MEM_INIT:
 		case LLEXT_MEM_FINI:
-			if (shdr->sh_entsize != sizeof(void *) ||
-			    shdr->sh_size % shdr->sh_entsize != 0) {
-				LOG_ERR("Invalid %s array in section %d", name, i);
+			/*
+			 * Validate that the section is a valid array of pointers.
+			 * Both GCC and Clang may set sh_entsize to 0 (variable) or
+			 * sizeof(void *). Accept both and validate size is divisible
+			 * by pointer size, or allow any size if entsize is 0.
+			 */
+			if (shdr->sh_entsize != 0 && shdr->sh_entsize != sizeof(void *)) {
+				LOG_ERR("Invalid %s array entry size %zu in section %d",
+					name, (size_t)shdr->sh_entsize, i);
+				return -ENOEXEC;
+			}
+			if (shdr->sh_entsize != 0 && (shdr->sh_size % shdr->sh_entsize != 0)) {
+				LOG_ERR("Invalid %s array size %zu not multiple of entry size %zu "
+					"in section %d",
+					name, (size_t)shdr->sh_size,
+					(size_t)shdr->sh_entsize, i);
 				return -ENOEXEC;
 			}
 		default:
@@ -523,6 +566,17 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			 * in checks to avoid false positives.
 			 */
 			if (i == LLEXT_MEM_BSS || j == LLEXT_MEM_BSS) {
+				continue;
+			}
+
+			/*
+			 * Some toolchains (e.g. Clang) merge the symbol string
+			 * table and the section header name table into a single
+			 * ELF section, making STRTAB and SHSTRTAB refer to the
+			 * same file region.  This is valid ELF; skip the check.
+			 */
+			if ((i == LLEXT_MEM_STRTAB && j == LLEXT_MEM_SHSTRTAB) ||
+			    (i == LLEXT_MEM_SHSTRTAB && j == LLEXT_MEM_STRTAB)) {
 				continue;
 			}
 

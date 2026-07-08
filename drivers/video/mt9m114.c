@@ -238,6 +238,7 @@ static int mt9m114_write_reg(const struct device *dev, uint16_t reg_addr, uint8_
 		val = sys_cpu_to_be32(*(const uint32_t *)value);
 		break;
 	case 1:
+		val = *(const uint8_t *)value;
 		break;
 	default:
 		return -ENOTSUP;

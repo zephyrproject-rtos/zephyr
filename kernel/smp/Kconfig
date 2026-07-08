@@ -31,7 +31,7 @@ config USE_SWITCH_SUPPORTED
 config MP_MAX_NUM_CPUS
 	int "Maximum number of CPUs/cores"
 	default 1
-	range 1 12
+	range 1 32
 	help
 	  Maximum number of multiprocessing-capable cores available to the
 	  multicpu API and SMP features.

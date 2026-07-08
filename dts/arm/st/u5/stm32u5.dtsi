@@ -136,6 +136,13 @@
 			status = "disabled";
 		};
 
+		clk_shsi: clk-shsi {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			status = "disabled";
+		};
+
 		pll1: pll: pll {
 			#clock-cells = <0>;
 			compatible = "st,stm32u5-pll-clock";

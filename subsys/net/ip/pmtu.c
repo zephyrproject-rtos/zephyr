@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(net_pmtu, CONFIG_NET_PMTU_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_if.h>
+#include "dplpmtud_internal.h"
 #include "pmtu.h"
 
 #if defined(CONFIG_NET_IPV4_PMTU)
@@ -33,6 +34,58 @@ LOG_MODULE_REGISTER(net_pmtu, CONFIG_NET_PMTU_LOG_LEVEL);
 static struct net_pmtu_entry pmtu_entries[NET_PMTU_MAX_ENTRIES];
 
 static K_MUTEX_DEFINE(lock);
+
+static bool dplpmtud_enabled_for_family(net_sa_family_t family)
+{
+	switch (family) {
+	case NET_AF_INET:
+		return IS_ENABLED(CONFIG_NET_IPV4_PMTU_DPLPMTUD);
+	case NET_AF_INET6:
+		return IS_ENABLED(CONFIG_NET_IPV6_PMTU_DPLPMTUD);
+	default:
+		return false;
+	}
+}
+
+static int pmtu_entry_to_sockaddr(const struct net_pmtu_entry *entry,
+				  struct net_sockaddr_storage *dst)
+{
+	struct net_sockaddr *sa = net_sad(dst);
+
+	memset(dst, 0, sizeof(*dst));
+
+	switch (entry->dst.family) {
+	case NET_AF_INET:
+		sa->sa_family = NET_AF_INET;
+		net_ipaddr_copy(&net_sin(sa)->sin_addr, &entry->dst.in_addr);
+		return 0;
+	case NET_AF_INET6:
+		sa->sa_family = NET_AF_INET6;
+		net_ipaddr_copy(&net_sin6(sa)->sin6_addr, &entry->dst.in6_addr);
+		return 0;
+	default:
+		return -EAFNOSUPPORT;
+	}
+}
+
+static void sync_dplpmtud_entry(const struct net_pmtu_entry *entry)
+{
+	struct net_sockaddr_storage dst;
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_NET_PMTU_DPLPMTUD) ||
+	    !entry->in_use ||
+	    !dplpmtud_enabled_for_family(entry->dst.family)) {
+		return;
+	}
+
+	ret = pmtu_entry_to_sockaddr(entry, &dst);
+	if (ret < 0) {
+		return;
+	}
+
+	net_dplpmtud_sync_from_pmtu(net_sad(&dst), entry->mtu);
+}
 
 static struct net_pmtu_entry *get_pmtu_entry(const struct net_sockaddr *dst)
 {
@@ -103,7 +156,7 @@ out:
 	return entry;
 }
 
-static void update_pmtu_entry(struct net_pmtu_entry *entry, uint16_t mtu)
+static void update_pmtu_entry(struct net_pmtu_entry *entry, uint16_t mtu, bool sync_dplpmtud)
 {
 	bool changed = false;
 
@@ -113,6 +166,10 @@ static void update_pmtu_entry(struct net_pmtu_entry *entry, uint16_t mtu)
 	}
 
 	entry->last_update = k_uptime_get_32();
+
+	if (sync_dplpmtud) {
+		sync_dplpmtud_entry(entry);
+	}
 
 	if (changed) {
 		struct net_if *iface;
@@ -235,7 +292,27 @@ int net_pmtu_update_mtu(const struct net_sockaddr *dst, uint16_t mtu)
 		old_mtu = entry->mtu;
 	}
 
-	update_pmtu_entry(entry, mtu);
+	update_pmtu_entry(entry, mtu, true);
+
+	return (int)old_mtu;
+}
+
+int net_pmtu_update_mtu_from_dplpmtud(const struct net_sockaddr *dst, uint16_t mtu)
+{
+	struct net_pmtu_entry *entry;
+	uint16_t old_mtu = 0U;
+	bool updated = false;
+
+	entry = add_entry(dst, &updated);
+	if (entry == NULL) {
+		return -ENOMEM;
+	}
+
+	if (updated) {
+		old_mtu = entry->mtu;
+	}
+
+	update_pmtu_entry(entry, mtu, false);
 
 	return (int)old_mtu;
 }
@@ -254,7 +331,7 @@ int net_pmtu_update_entry(struct net_pmtu_entry *entry, uint16_t mtu)
 
 	old_mtu = entry->mtu;
 
-	update_pmtu_entry(entry, mtu);
+	update_pmtu_entry(entry, mtu, true);
 
 	return (int)old_mtu;
 }

@@ -12,6 +12,7 @@ set(COMMON_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/common)
 set(DEVICE_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/Device)
 set(RADIO_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/platform/radio)
 set(BLOBS_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/zephyr/blobs/gecko)
+set(SERVICE_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/platform/service)
 
 # Translate the SoC name and part number into the gecko device and cpu name
 # respectively.
@@ -82,6 +83,9 @@ zephyr_include_directories(
   ${DEVICE_DIR}/SiliconLabs/${SILABS_GECKO_DEVICE}/Include
   ${COMMON_DIR}/inc
   ${EMLIB_DIR}/inc
+  ${SERVICE_DIR}/sleeptimer/config
+  ${SERVICE_DIR}/sleeptimer/inc
+  ${SERVICE_DIR}/sleeptimer/src
   ${BOARD_DIR}
 )
 
@@ -90,6 +94,17 @@ zephyr_include_directories(
 zephyr_compile_definitions(
   ${SILABS_GECKO_PART_NUMBER}
 )
+
+# Sleeptimer
+if(CONFIG_SILABS_GECKO_SLEEPTIMER)
+  zephyr_library_sources(
+    ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer_hal_rtcc.c
+    ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer.c
+  )
+  zephyr_compile_definitions(
+    SL_CATALOG_SLEEPTIMER_PRESENT
+  )
+endif()
 
 zephyr_library_sources(                                    ${EMLIB_DIR}/src/em_system.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_ADC       ${EMLIB_DIR}/src/em_adc.c)

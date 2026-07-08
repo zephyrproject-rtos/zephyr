@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_QUIC_LOG_LEVEL);
 #include <zephyr/net/quic.h>
 
 #include "net_private.h"
+#include "pmtu.h"
 #include "quic_internal.h"
 #include "quic_stats.h"
 #include "quic_test.h"
@@ -973,14 +974,29 @@ ZTEST(net_socket_quic, test_090_recovery_shutdown_stops_tracking)
 
 static void init_test_dplpmtud_endpoint(struct quic_endpoint *ep)
 {
+	int ret;
+
 	reset_test_ep(ep);
 	ep->handshake.completed = true;
 	ep->peer_params.max_udp_payload_size = UINT16_MAX;
-	ep->dplpmtud.validated_payload_size = QUIC_DPLPMTUD_BASE_PLPMTU;
-	ep->dplpmtud.local_max_payload_size = 1452U;
-	ep->dplpmtud.search_low = QUIC_DPLPMTUD_BASE_PLPMTU;
-	ep->dplpmtud.search_high = 1452U;
+	memcpy(&ep->remote_addr, &local_addr_ipv4, sizeof(local_addr_ipv4));
 	ep->max_tx_payload_size = QUIC_DPLPMTUD_BASE_PLPMTU;
+
+	ret = net_pmtu_update_mtu(net_sad(&ep->remote_addr), 1500U);
+	zassert_true(ret >= 0, "Failed to seed PMTU for test path (%d)", ret);
+
+	ret = net_dplpmtud_init_path(&ep->dplpmtud.path, net_sad(&ep->remote_addr), 1452U);
+	zassert_ok(ret, "Failed to init test DPLPMTUD path (%d)", ret);
+
+	quic_dplpmtud_refresh_state(ep);
+}
+
+static void note_test_probe_sent(struct quic_endpoint *ep, uint16_t probe_size)
+{
+	int ret;
+
+	ret = net_dplpmtud_on_path_probe_sent(&ep->dplpmtud.path, probe_size);
+	zassert_ok(ret, "Failed to report probe send (%d)", ret);
 }
 
 ZTEST(net_socket_quic, test_095_dplpmtud_keeps_peer_cap_separate)
@@ -996,7 +1012,7 @@ ZTEST(net_socket_quic, test_095_dplpmtud_keeps_peer_cap_separate)
 		      "Peer max UDP payload size must be stored separately");
 	zassert_equal(ep->max_tx_payload_size, QUIC_DPLPMTUD_BASE_PLPMTU,
 		      "TX payload size must stay at the validated base size");
-	zassert_true(ep->dplpmtud.probe_pending,
+	zassert_true(net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path) > 0,
 		     "A larger payload should schedule probing");
 }
 
@@ -1006,17 +1022,15 @@ ZTEST(net_socket_quic, test_096_dplpmtud_probe_ack_raises_payload_limit)
 	uint16_t probe_size = 1326U;
 
 	init_test_dplpmtud_endpoint(ep);
-	ep->dplpmtud.probe_in_flight = true;
-	ep->dplpmtud.probe_size = probe_size;
-	ep->dplpmtud.probe_attempts = 1U;
+	note_test_probe_sent(ep, probe_size);
 
 	quic_dplpmtud_on_probe_acked(ep, probe_size);
 
-	zassert_equal(ep->dplpmtud.validated_payload_size, probe_size,
+	zassert_equal(net_dplpmtud_get_path_mtu(&ep->dplpmtud.path), probe_size,
 		      "ACKed probe must raise the validated payload size");
 	zassert_equal(ep->max_tx_payload_size, probe_size,
 		      "TX payload size must follow the validated probe size");
-	zassert_true(ep->dplpmtud.probe_pending,
+	zassert_true(net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path) > 0,
 		     "A larger ceiling should keep probing enabled");
 }
 
@@ -1026,29 +1040,25 @@ ZTEST(net_socket_quic, test_097_dplpmtud_probe_loss_retries_then_clamps)
 	uint16_t probe_size = 1400U;
 
 	init_test_dplpmtud_endpoint(ep);
-	ep->dplpmtud.probe_in_flight = true;
-	ep->dplpmtud.probe_size = probe_size;
-	ep->dplpmtud.probe_attempts = 1U;
+	note_test_probe_sent(ep, probe_size);
 
 	quic_dplpmtud_on_probe_lost(ep, probe_size);
 
-	zassert_false(ep->dplpmtud.probe_in_flight,
+	zassert_false(net_dplpmtud_path_probe_in_flight(&ep->dplpmtud.path),
 		      "Lost probe must leave the in-flight state");
-	zassert_true(ep->dplpmtud.probe_pending,
+	zassert_true(net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path) > 0,
 		     "Lost probe below retry limit must be retried");
-	zassert_equal(ep->dplpmtud.probe_size, probe_size,
+	zassert_equal(net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path), probe_size,
 		      "Retry must keep the same probe size");
 
-	ep->dplpmtud.probe_in_flight = true;
-	ep->dplpmtud.probe_attempts = QUIC_DPLPMTUD_MAX_PROBE_RETRIES;
-
+	note_test_probe_sent(ep, probe_size);
+	quic_dplpmtud_on_probe_lost(ep, probe_size);
+	note_test_probe_sent(ep, probe_size);
 	quic_dplpmtud_on_probe_lost(ep, probe_size);
 
-	zassert_equal(ep->dplpmtud.search_high, probe_size - 1U,
-		      "Exhausted probe retries must clamp the search upper bound");
-	zassert_equal(ep->dplpmtud.probe_size, 0U,
-		      "A failed probe size must be cleared");
-	zassert_true(ep->dplpmtud.probe_pending,
+	zassert_true(net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path) < probe_size,
+		     "Exhausted probe retries must clamp the next probe size");
+	zassert_true(net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path) > 0,
 		     "A smaller candidate should still be probed");
 }
 

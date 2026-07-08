@@ -12,6 +12,7 @@
 / {
 	chosen {
 		zephyr,flash-controller = &msc;
+		silabs,sleeptimer = &rtcc0;
 	};
 
 	cpus {
@@ -21,6 +22,21 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+
+			cpu-power-states = <&pstate_em1 &pstate_em2>;
+			device_type = "cpu";
+		};
+
+		power-states {
+			pstate_em1: em1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+			};
+
+			pstate_em2: em2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+			};
 		};
 	};
 
@@ -167,10 +183,11 @@
 		};
 
 		rtcc0: rtcc@40042000 {
-			compatible = "silabs,gecko-rtcc";
+			compatible = "silabs,rtcc";
 			reg = <0x40042000 0x184>;
-			interrupts = <31 0>;
 			clock-frequency = <32768>;
+			interrupt-names = "rtcc";
+			interrupts = <31 0>;
 			prescaler = <1>;
 			status = "disabled";
 		};

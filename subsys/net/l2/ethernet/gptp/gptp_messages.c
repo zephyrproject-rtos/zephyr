@@ -102,9 +102,6 @@ static void gptp_sync_timestamp_callback(struct net_pkt *pkt)
 
 		net_if_unregister_timestamp_cb(&sync_timestamp_cb[port - 1]);
 		sync_cb_registered[port - 1] = false;
-
-		/* The pkt was ref'ed in gptp_send_sync() */
-		net_pkt_unref(pkt);
 	}
 }
 
@@ -117,7 +114,7 @@ static void gptp_pdelay_response_timestamp_callback(struct net_pkt *pkt)
 	port = gptp_get_port_number(net_pkt_iface(pkt));
 	if (port == -ENODEV) {
 		NET_DBG("No port found for ptp buffer");
-		goto out;
+		return;
 	}
 
 	hdr = GPTP_HDR(pkt);
@@ -128,7 +125,7 @@ static void gptp_pdelay_response_timestamp_callback(struct net_pkt *pkt)
 		if (!follow_up) {
 			/* Cannot handle the follow up, abort */
 			NET_ERR("Could not get buffer");
-			goto out;
+			return;
 		}
 
 		net_if_unregister_timestamp_cb(&pdelay_response_timestamp_cb[port - 1]);
@@ -136,10 +133,6 @@ static void gptp_pdelay_response_timestamp_callback(struct net_pkt *pkt)
 
 		gptp_send_pdelay_follow_up(port, follow_up,
 					   net_pkt_timestamp(pkt));
-
-out:
-		/* The pkt was ref'ed in gptp_handle_pdelay_req() */
-		net_pkt_unref(pkt);
 	}
 }
 
@@ -647,12 +640,6 @@ void gptp_handle_pdelay_req(int port, struct net_pkt *pkt)
 				     net_pkt_iface(pkt),
 				     gptp_pdelay_response_timestamp_callback);
 
-	/* TS thread will send this back to us so increment ref count so that
-	 * the packet is not removed when sending it. This will be unref'ed by
-	 * timestamp callback in gptp_pdelay_response_timestamp_callback()
-	 */
-	net_pkt_ref(reply);
-
 	ts_cb_registered[port - 1] = true;
 
 	gptp_send_pdelay_resp(port, reply, net_pkt_timestamp(pkt));
@@ -827,13 +814,6 @@ void gptp_send_sync(int port, struct net_pkt *pkt)
 
 	GPTP_STATS_INC(port, tx_sync_count);
 
-	/* TS thread will send this back to us so increment ref count
-	 * so that the packet is not removed when sending it.
-	 * This will be unref'ed by timestamp callback in
-	 * gptp_sync_timestamp_callback()
-	 */
-	net_pkt_ref(pkt);
-
 	NET_GPTP_INFO("SYNC", pkt);
 
 	net_if_queue_tx(net_pkt_iface(pkt), pkt);
@@ -891,12 +871,6 @@ void gptp_send_pdelay_resp(int port, struct net_pkt *pkt,
 			   struct net_ptp_time *treq)
 {
 	struct gptp_pdelay_resp *resp;
-	struct gptp_hdr *hdr;
-
-	hdr = GPTP_HDR(pkt);
-
-	/* No Fractional nsec .*/
-	hdr->correction_field = 0;
 
 	resp = GPTP_PDELAY_RESP(pkt);
 	resp->req_receipt_ts_secs_high = net_htons(treq->_sec.high);
@@ -914,12 +888,6 @@ void gptp_send_pdelay_follow_up(int port, struct net_pkt *pkt,
 				struct net_ptp_time *tresp)
 {
 	struct gptp_pdelay_resp_follow_up *follow_up;
-	struct gptp_hdr *hdr;
-
-	hdr = GPTP_HDR(pkt);
-
-	/* No Fractional nsec .*/
-	hdr->correction_field = 0;
 
 	follow_up = GPTP_PDELAY_RESP_FOLLOWUP(pkt);
 	follow_up->resp_orig_ts_secs_high = net_htons(tresp->_sec.high);

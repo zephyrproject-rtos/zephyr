@@ -14,10 +14,10 @@
 #include <zephyr/linker/sections.h>
 #include <string.h>
 #include <zephyr/sys/dlist.h>
-#include <zephyr/init.h>
 /* private kernel APIs */
 #include <ksched.h>
 #include <kthread.h>
+#include <kernel_internal.h>
 #include <wait_q.h>
 
 #ifdef CONFIG_OBJ_CORE_MAILBOX
@@ -50,7 +50,7 @@ static inline void mbox_async_free(struct k_mbox_async *async)
 /*
  * Do run-time initialization of mailbox object subsystem.
  */
-static int init_mbox_module(void)
+static void init_mbox_module(void)
 {
 	/* array of asynchronous message descriptors */
 	static struct k_mbox_async __noinit async_msg[CONFIG_NUM_MBOX_ASYNC_MSGS];
@@ -75,11 +75,9 @@ static int init_mbox_module(void)
 	}
 
 	/* Complete initialization of statically defined mailboxes. */
-
-	return 0;
 }
 
-SYS_INIT(init_mbox_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+K_KERNEL_INIT_PRE(init_mbox_module);
 
 #endif /* CONFIG_NUM_MBOX_ASYNC_MSGS > 0 */
 

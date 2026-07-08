@@ -509,7 +509,6 @@ int zsock_accept_ctx(struct net_context *parent, struct net_sockaddr *addr,
 		     net_socklen_t *addrlen)
 {
 	struct net_context *ctx;
-	struct net_pkt *last_pkt;
 	int fd, ret;
 
 	if (net_context_get_type(parent) == NET_SOCK_RAW) {
@@ -549,29 +548,6 @@ int zsock_accept_ctx(struct net_context *parent, struct net_sockaddr *addr,
 		net_context_put(ctx);
 		return -1;
 	}
-
-	/* Check if the connection is already disconnected */
-	last_pkt = k_fifo_peek_tail(&ctx->recv_q);
-	if (last_pkt) {
-		if (net_pkt_eof(last_pkt)) {
-			sock_set_eof(ctx);
-			zvfs_free_fd(fd);
-			zsock_flush_queue(ctx);
-			net_context_put(ctx);
-			errno = ECONNABORTED;
-			return -1;
-		}
-	}
-
-	if (net_context_is_closing(ctx)) {
-		errno = ECONNABORTED;
-		zvfs_free_fd(fd);
-		zsock_flush_queue(ctx);
-		net_context_put(ctx);
-		return -1;
-	}
-
-	net_context_set_accepting(ctx, false);
 
 	ret = sock_get_stream_src_addr(ctx, addr, addrlen);
 	if (ret < 0) {

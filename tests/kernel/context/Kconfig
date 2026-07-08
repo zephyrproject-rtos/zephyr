@@ -5,6 +5,7 @@ config MAX_IDLE_WAKES
 	int "Maximum number of spurious wakes during k_cpu_idle() test"
 	default 1 if NRF53_SYNC_RTC
 	default 1 if RENESAS_RX_TIMER_CMT
+	default 1 if INTEL_ADSP_SIM
 	default 0
 	help
 	  The platform may have some component running in the background while the k_cpu_idle test is
@@ -12,6 +13,10 @@ config MAX_IDLE_WAKES
 	  for each 10ms idle test, which by default should be 0. The RX CMT driver uses a 16-bit
 	  counter that cannot span more than one tick, so it has to schedule multi-tick timeouts in
 	  stages and delivers an intermediate tick announcement before the requested deadline.
+	  The Intel ADSP simulator may encounter an edge condition (which does not occur
+	  on hardware) that permits it to harmlessly wake 1 tick early, reset the timer,
+	  and then continue normally.
+
 
 # Include Zephyr's Kconfig
 source "Kconfig"

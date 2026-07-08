@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
@@ -21,7 +22,7 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			cpu-power-states = <&sleep &deepsleep &powerdown>;
+			cpu-power-states = <&sleep &deepsleep &powerdown &deeppowerdown>;
 		};
 	};
 
@@ -52,6 +53,24 @@
 			power-state-name = "standby";
 			min-residency-us = <80000>;
 			exit-latency-us = <20>;
+		};
+
+		/*
+		 * Deep Power Down. The whole CORE domain (ARM core, NVIC, SysTick)
+		 * is power gated and LDO_CORE is turned off; the chip wakes through
+		 * the reset routine. All SRAM is retained by the SPC SRAM LDO, so the
+		 * full working set survives and S2RAM resume is transparent.
+		 */
+		deeppowerdown: deeppowerdown {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-ram";
+			/* Suspend-to-RAM needs the application to place its working set
+			 * in retained RAM and arm a wakeup source, so it is opt-in:
+			 * enable this node from the application to use it.
+			 */
+			status = "disabled";
+			min-residency-us = <500000>;
+			exit-latency-us = <500>;
 		};
 	};
 
@@ -505,6 +524,7 @@
 			prescale-glitch-filter-bypass;
 			clk-source = <1>;
 			resolution = <32>;
+			wakeup-ctrls = <&wuu NXP_WUU_MODULE_6_INT>;
 			status = "disabled";
 		};
 
@@ -545,9 +565,10 @@
 		};
 
 		wuu: system-modules@40092000 {
-			compatible = "nxp,wuu";
+			compatible = "nxp,wuc-wuu", "nxp,wuu";
 			reg = <0x40092000 0x1000>;
 			interrupts = <18 0>;
+			#wakeup-ctrl-cells = <1>;
 		};
 
 		cmc: system-modules@4008b000 {

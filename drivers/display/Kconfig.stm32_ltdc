@@ -11,6 +11,8 @@ menuconfig STM32_LTDC
 	select CACHE_MANAGEMENT if DCACHE
 	select PINCTRL
 	select RESET
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_LTDC),disp-on-gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_LTDC),bl-ctrl-gpios)
 	help
 	  Enable driver for STM32 LCT-TFT display controller periheral.
 

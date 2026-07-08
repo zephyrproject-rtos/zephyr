@@ -3,9 +3,9 @@
 # Copyright (c) 2025 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_STM32MP135FXX
+if SOC_SERIES_STM32MP13X
 
-config NUM_IRQS
+configdefault NUM_IRQS
 	default 181
 
-endif # SOC_STM32MP135FXX
+endif # SOC_SERIES_STM32MP13X

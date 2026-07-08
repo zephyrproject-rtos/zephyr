@@ -1,0 +1,163 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bouffalo Lab BL61x WiFi MAC
+
+compatible: "bflb,bl61x-wifi"
+
+include: base.yaml
+
+properties:
+  interrupts:
+    required: true
+    description: |
+      WiFi MAC and IPC interrupts.
+      Two entries required: "wifi" (MAC) and "wifi-ipc" (IPC).
+
+  interrupt-names:
+    required: true
+
+  pwr-table-11b:
+    type: array
+    description: |
+      TX power targets for 802.11b rates (1, 2, 5.5, 11 Mbps).
+      4 entries, units are quarter-dBm.
+
+  pwr-table-11g:
+    type: array
+    description: |
+      TX power targets for 802.11g rates (6..54 Mbps).
+      8 entries.
+
+  pwr-table-11n-ht20:
+    type: array
+    description: |
+      TX power targets for 802.11n HT20 (MCS 0-7).
+      8 entries.
+
+  pwr-table-11n-ht40:
+    type: array
+    description: |
+      TX power targets for 802.11n HT40 (MCS 0-7).
+      8 entries.
+
+  pwr-table-11ac-vht20:
+    type: array
+    description: |
+      TX power targets for 802.11ac VHT20 (MCS 0-9).
+      10 entries.
+
+  pwr-table-11ac-vht40:
+    type: array
+    description: |
+      TX power targets for 802.11ac VHT40 (MCS 0-9).
+      10 entries.
+
+  pwr-table-11ax-he20:
+    type: array
+    description: |
+      TX power targets for 802.11ax HE20 (MCS 0-11).
+      12 entries.
+
+  pwr-table-11ax-he40:
+    type: array
+    description: |
+      TX power targets for 802.11ax HE40 (MCS 0-11).
+      12 entries.
+
+  pwr-table-11ac-vht80:
+    type: array
+    description: |
+      TX power targets for 802.11ac VHT80 (MCS 0-9).
+      10 entries.
+
+  pwr-table-11ax-he80:
+    type: array
+    description: |
+      TX power targets for 802.11ax HE80 (MCS 0-11).
+      12 entries.
+
+  pwr-table-11ax-he160:
+    type: array
+    description: |
+      TX power targets for 802.11ax HE160 (MCS 0-11).
+      12 entries.
+
+  pwr-offset:
+    type: array
+    description: |
+      Per-channel TX power offset for channels 1-14.
+      Raw TLV encoding: value 16 = 0 dBm offset, each step = 0.25 dBm.
+      14 entries.
+
+  pwr-offset-lp:
+    type: array
+    description: |
+      Per-channel low-power TX power offset for channels 1-14.
+      Same encoding as pwr-offset.
+      14 entries.
+
+  xtal-capcode-in:
+    type: int
+    description: Crystal load capacitor code for input pin (0-63).
+    min: 0
+    max: 63
+
+  xtal-capcode-out:
+    type: int
+    description: Crystal load capacitor code for output pin (0-63).
+    min: 0
+    max: 63
+
+  tcal-enable:
+    type: boolean
+    description: Enable temperature calibration.
+
+  tcal-linear-or-follow:
+    type: int
+    description: Temperature calibration mode (0=linear, 1=follow).
+    min: 0
+    max: 1
+
+  tcal-channels:
+    type: array
+    description: |
+      Temperature calibration channel frequencies in MHz.
+      5 entries.
+
+  tcal-channel-os:
+    type: array
+    description: |
+      Temperature calibration channel offsets.
+      5 entries, signed (encoded as uint16).
+
+  tcal-channel-os-low:
+    type: array
+    description: |
+      Temperature calibration channel offsets for low power.
+      5 entries, signed (encoded as uint16).
+
+  tcal-troom-os:
+    type: int
+    description: |
+      Temperature calibration room offset.
+      Encoded: 256 = 0, 255 = -1, 257 = +1.
+    min: 0
+    max: 512
+
+  tcap-enable:
+    type: boolean
+    description: Enable capcode temperature compensation.
+
+  tcap-tsen:
+    type: array
+    description: |
+      Capcode temperature compensation sensor values.
+      10 entries.
+
+  tcap-capcode:
+    type: array
+    description: |
+      Capcode temperature compensation capcode values.
+      11 entries.

@@ -764,10 +764,14 @@ int i2c_stm32_error(const struct device *dev)
 		goto end;
 	}
 
-	/* Don't end a transaction on bus error in controller mode
-	 * as errata sheet says that spurious false detections
-	 * of BERR can happen which shall be ignored.
-	 * If a real Bus Error occurs, transaction will time out.
+	/* Address "Spurious Bus Error detection in controller mode"
+	 * erratum, that affects STM32 I2C v2 controller, referenced
+	 * in multiple errata sheets document like:
+	 * - ES0392 (STM32H74x/75x), Rev 15, section 2.19.4
+	 *
+	 * Workaround: clear the BERR flag and let the ongoing
+	 * transfer continue. If a real bus error has occurred,
+	 * the transfer will eventually time out.
 	 */
 	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
 		LL_I2C_ClearFlag_BERR(i2c);

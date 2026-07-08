@@ -46,6 +46,7 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include "net_private.h"
 #include "shell/net_shell.h"
 
+#include "dplpmtud_internal.h"
 #include "pmtu.h"
 
 #include "icmpv6.h"
@@ -614,6 +615,7 @@ err:
 static inline void l3_init(void)
 {
 	net_pmtu_init();
+	net_dplpmtud_init();
 	net_icmpv4_init();
 	net_icmpv6_init();
 	net_ipv4_init();

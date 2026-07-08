@@ -10,8 +10,8 @@
  * @ingroup it51xxx_flash_ex_op
  */
 
-#ifndef __ZEPHYR_INCLUDE_DRIVERS_IT51XXX_FLASH_API_EX_H__
-#define __ZEPHYR_INCLUDE_DRIVERS_IT51XXX_FLASH_API_EX_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FLASH_IT51XXX_FLASH_API_EX_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FLASH_IT51XXX_FLASH_API_EX_H_
 
 /**
  * @brief Extended operations for IT51XXX flash controllers.
@@ -75,4 +75,4 @@ enum flash_it51xxx_ex_op {
  * @}
  */
 
-#endif /* __ZEPHYR_INCLUDE_DRIVERS_IT51XXX_FLASH_API_EX_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FLASH_IT51XXX_FLASH_API_EX_H_ */

@@ -1,6 +1,15 @@
 # Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
+config ESP32_ETM
+	bool
+	depends on ESP32_SOC_ETM_SUPPORTED
+	help
+	  Espressif Event Task Matrix (ETM) channel allocator. The ETM
+	  routes a peripheral event to a peripheral task in hardware. This
+	  symbol is selected by drivers that need such routing and is not
+	  meant to be enabled directly.
+
 config ESP32_USE_UNSUPPORTED_REVISION
 	bool "Use unsupported ESP32 revision (Rev 0/1)"
 	help

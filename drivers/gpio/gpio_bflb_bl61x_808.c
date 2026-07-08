@@ -21,6 +21,11 @@
 #include <bouffalolab/bl808/bflb_soc.h>
 #include <bouffalolab/bl808/glb_reg.h>
 #include <bouffalolab/bl808/hbn_reg.h>
+#elif defined(CONFIG_SOC_SERIES_BL616CL)
+#include <zephyr/dt-bindings/pinctrl/bl616cl-pinctrl.h>
+#include <bouffalolab/bl616cl/bflb_soc.h>
+#include <bouffalolab/bl616cl/glb_reg.h>
+#include <bouffalolab/bl616cl/hbn_reg.h>
 #else
 #error Unsupported platform
 #endif

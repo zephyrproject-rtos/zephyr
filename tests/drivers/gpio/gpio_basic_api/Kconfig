@@ -6,9 +6,9 @@ source "Kconfig.zephyr"
 config SKIP_PULL_TEST
 	bool "Skip the pull test even if the driver supports it"
 
-config READ_DELAY
-	int "delay in ms for read"
+config GPIO_TEST_READ_DELAY
+	int "GPIO basic API test read delay in ms"
 	default 0
 	help
-	  The pin selected may connect with a capacitor so we need
-	  add dealy in read.
+	  Delay, in milliseconds, before reading the GPIO input in this
+	  test. This can help boards with slower GPIO signal propagation.

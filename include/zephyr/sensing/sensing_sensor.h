@@ -10,8 +10,8 @@
  * @ingroup sensing_sensor
  */
 
-#ifndef ZEPHYR_INCLUDE_SENSING_SENSOR_H_
-#define ZEPHYR_INCLUDE_SENSING_SENSOR_H_
+#ifndef ZEPHYR_INCLUDE_SENSING_SENSING_SENSOR_H_
+#define ZEPHYR_INCLUDE_SENSING_SENSING_SENSOR_H_
 
 #include <stdbool.h>
 #include <zephyr/device.h>
@@ -385,7 +385,7 @@ extern const struct rtio_iodev_api __sensing_iodev_api;
  * compatible
  *
  * @param inst instance number. This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to SENSING_SENSORS_DT_DEFINE().
+ * <tt>DT_DRV_INST(inst)</tt> in the call to SENSING_SENSORS_DT_DEFINE().
  * @param ... other parameters as expected by SENSING_SENSORS_DT_DEFINE().
  */
 #define SENSING_SENSORS_DT_INST_DEFINE(inst, ...)	\
@@ -436,4 +436,4 @@ int sensing_sensor_get_state(
 }
 #endif
 
-#endif /*ZEPHYR_INCLUDE_SENSING_SENSOR_H_*/
+#endif /* ZEPHYR_INCLUDE_SENSING_SENSING_SENSOR_H_ */

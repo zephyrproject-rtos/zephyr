@@ -13,8 +13,8 @@
  *       with the NVMCTRL G1 flash controller.
  */
 
-#ifndef INCLUDE_ZEPHYR_DRIVERS_FLASH_MCHP_NVMCTRL_G1_H_
-#define INCLUDE_ZEPHYR_DRIVERS_FLASH_MCHP_NVMCTRL_G1_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FLASH_MCHP_NVMCTRL_G1_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FLASH_MCHP_NVMCTRL_G1_H_
 
 /**
  * @brief Extended operations for Microchip NVMCTRL G1 flash controller.
@@ -97,4 +97,4 @@ typedef struct flash_mchp_ex_op_userrow_data {
  * @}
  */
 
-#endif /* INCLUDE_ZEPHYR_DRIVERS_FLASH_MCHP_NVMCTRL_G1_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FLASH_MCHP_NVMCTRL_G1_H_ */

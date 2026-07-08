@@ -71,8 +71,20 @@ static inline int net_pmtu_get_mtu(const struct net_sockaddr *dst)
  */
 #if defined(CONFIG_NET_PMTU)
 int net_pmtu_update_mtu(const struct net_sockaddr *dst, uint16_t mtu);
+
+/** Update PMTU cache from DPLPMTUD without pushing the value into DPLPMTUD max. */
+int net_pmtu_update_mtu_from_dplpmtud(const struct net_sockaddr *dst, uint16_t mtu);
 #else
 static inline int net_pmtu_update_mtu(const struct net_sockaddr *dst, uint16_t mtu)
+{
+	ARG_UNUSED(dst);
+	ARG_UNUSED(mtu);
+
+	return -ENOTSUP;
+}
+
+static inline int net_pmtu_update_mtu_from_dplpmtud(const struct net_sockaddr *dst,
+						    uint16_t mtu)
 {
 	ARG_UNUSED(dst);
 	ARG_UNUSED(mtu);

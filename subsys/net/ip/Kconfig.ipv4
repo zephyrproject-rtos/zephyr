@@ -189,6 +189,20 @@ config NET_IPV4_PMTU_DESTINATION_CACHE_ENTRIES
 	help
 	  How many PMTU entries we can track for each destination address.
 
+config NET_IPV4_PMTU_PTB
+	bool "IPv4 PMTU Discovery using ICMP messages"
+	default y
+	depends on NET_IPV4_PMTU
+	help
+	  Enables IPv4 Path MTU Discovery (see RFC 1191)
+
+config NET_IPV4_PMTU_DPLPMTUD
+	bool "IPv4 PMTU Discovery using datagram messages"
+	depends on NET_UDP
+	depends on NET_IPV4_PMTU
+	help
+	  Enables IPv4 Datagram Packetization Layer Path MTU Discovery (see RFC 8899)
+
 config NET_IPV4_NBR_CACHE
 	bool "Neighbor cache"
 	default y if NET_ARP

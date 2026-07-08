@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_PMTU_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/net/dplpmtud.h>
 
 #include <zephyr/random/random.h>
 
@@ -39,6 +40,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_PMTU_LOG_LEVEL);
 #include "icmpv4.h"
 #include "ipv6.h"
 #include "ipv4.h"
+#include "dplpmtud_internal.h"
 #include "pmtu.h"
 
 #define NET_LOG_ENABLED 1
@@ -196,6 +198,247 @@ __maybe_unused static void setup_mgmt_events(void)
 
 		net_mgmt_add_event_callback(&mgmt_events[i].cb);
 	}
+}
+
+static void init_dest_v4(struct net_sockaddr_in *dst, const struct net_in_addr *addr)
+{
+	memset(dst, 0, sizeof(*dst));
+	dst->sin_family = NET_AF_INET;
+	net_ipaddr_copy(&dst->sin_addr, addr);
+}
+
+static void init_dest_v6(struct net_sockaddr_in6 *dst, const struct net_in6_addr *addr)
+{
+	memset(dst, 0, sizeof(*dst));
+	dst->sin6_family = NET_AF_INET6;
+	net_ipaddr_copy(&dst->sin6_addr, addr);
+}
+
+static void seed_dplpmtud_pmtu(const struct net_sockaddr *dst, uint16_t mtu)
+{
+	int ret;
+
+	ret = net_pmtu_update_mtu(dst, mtu);
+	zassert_true(ret >= 0, "PMTU update failed (%d)", ret);
+}
+
+/* IP + UDP header overhead between the PLPMTU tracked by DPLPMTUD (UDP payload)
+ * and the IP-layer MTU stored in the shared PMTU destination cache.
+ */
+static uint16_t dplpmtud_overhead(const struct net_sockaddr *dst)
+{
+	if (dst->sa_family == NET_AF_INET6) {
+		return sizeof(struct net_ipv6_hdr) + sizeof(struct net_udp_hdr);
+	}
+
+	return sizeof(struct net_ipv4_hdr) + sizeof(struct net_udp_hdr);
+}
+
+static void run_dplpmtud_probe_lifecycle_test(const struct net_sockaddr *dst, uint16_t pmtu)
+{
+	struct net_dplpmtud_path path;
+	int mtu;
+	int probe;
+	int next_probe;
+	int ret;
+
+	seed_dplpmtud_pmtu(dst, pmtu);
+
+	ret = net_dplpmtud_init_path(&path, dst, 0U);
+	zassert_ok(ret, "DPLPMTUD path init failed (%d)", ret);
+
+	mtu = net_dplpmtud_get_path_mtu(&path);
+	zassert_equal(mtu, NET_DPLPMTUD_BASE_PLPMTU,
+		      "Initial DPLPMTUD MTU is wrong (%d)", mtu);
+
+	probe = net_dplpmtud_get_path_probe_size(&path);
+	zassert_true(probe > NET_DPLPMTUD_BASE_PLPMTU,
+		     "Probe size did not grow above base PLPMTU (%d)", probe);
+	zassert_true(probe <= pmtu, "Probe size exceeded PMTU ceiling (%d)", probe);
+
+	ret = net_dplpmtud_on_path_probe_sent(&path, probe);
+	zassert_ok(ret, "Probe send report failed (%d)", ret);
+
+	ret = net_dplpmtud_on_path_probe_acked(&path, probe);
+	zassert_ok(ret, "Probe ACK report failed (%d)", ret);
+
+	mtu = net_dplpmtud_get_path_mtu(&path);
+	zassert_equal(mtu, probe, "ACKed probe did not raise path MTU (%d)", mtu);
+
+	mtu = net_pmtu_get_mtu(dst);
+	zassert_equal(mtu, probe + dplpmtud_overhead(dst),
+		      "PMTU cache must reflect ACKed probe (%d)", mtu);
+
+	next_probe = net_dplpmtud_get_path_probe_size(&path);
+	zassert_true(next_probe > probe,
+		     "Search did not continue above ACKed probe size (%d)", next_probe);
+	zassert_true(next_probe <= pmtu,
+		     "Next probe exceeded PMTU ceiling (%d)", next_probe);
+}
+
+static void run_dplpmtud_transport_cap_test(const struct net_sockaddr *dst,
+					    uint16_t pmtu, uint16_t path_max)
+{
+	struct net_dplpmtud_path path;
+	int probe;
+	int grown_probe;
+	int ret;
+
+	seed_dplpmtud_pmtu(dst, pmtu);
+
+	ret = net_dplpmtud_init_path(&path, dst, path_max);
+	zassert_ok(ret, "DPLPMTUD path init failed (%d)", ret);
+
+	probe = net_dplpmtud_get_path_probe_size(&path);
+	zassert_true(probe > NET_DPLPMTUD_BASE_PLPMTU,
+		     "Transport-capped path did not schedule probing (%d)", probe);
+	zassert_true(probe <= path_max, "Probe size exceeded path max (%d)", probe);
+
+	ret = net_dplpmtud_on_path_probe_sent(&path, path_max + 1U);
+	zassert_equal(ret, -EMSGSIZE, "Oversized probe was not rejected (%d)", ret);
+
+	net_dplpmtud_set_path_max_plpmtu(&path, 0U);
+
+	grown_probe = net_dplpmtud_get_path_probe_size(&path);
+	zassert_true(grown_probe > probe,
+		     "Removing path cap did not grow probe size (%d)", grown_probe);
+	zassert_true(grown_probe <= pmtu,
+		     "Expanded probe exceeded PMTU ceiling (%d)", grown_probe);
+}
+
+static void run_dplpmtud_low_pmtu_test(const struct net_sockaddr *dst, uint16_t pmtu)
+{
+	struct net_dplpmtud_path path;
+	int mtu;
+	int probe;
+	int ret;
+
+	seed_dplpmtud_pmtu(dst, pmtu);
+
+	ret = net_dplpmtud_init_path(&path, dst, 0U);
+	zassert_ok(ret, "DPLPMTUD path init failed (%d)", ret);
+
+	mtu = net_dplpmtud_get_path_mtu(&path);
+	zassert_equal(mtu, pmtu - dplpmtud_overhead(dst),
+		      "Low PMTU ceiling was not preserved (%d)", mtu);
+
+	probe = net_dplpmtud_get_path_probe_size(&path);
+	zassert_equal(probe, 0, "Low PMTU path should not schedule probes (%d)", probe);
+}
+
+static void run_dplpmtud_loss_clamp_test(const struct net_sockaddr *dst, uint16_t pmtu)
+{
+	struct net_dplpmtud_path path;
+	int probe;
+	int next_probe;
+	int ret;
+	int retries;
+
+	seed_dplpmtud_pmtu(dst, pmtu);
+
+	ret = net_dplpmtud_init_path(&path, dst, 0U);
+	zassert_ok(ret, "DPLPMTUD path init failed (%d)", ret);
+
+	probe = net_dplpmtud_get_path_probe_size(&path);
+	zassert_true(probe > NET_DPLPMTUD_BASE_PLPMTU,
+		     "Probe size did not grow above base PLPMTU (%d)", probe);
+
+	next_probe = probe;
+
+	for (retries = 0; retries < 8; retries++) {
+		ret = net_dplpmtud_on_path_probe_sent(&path, probe);
+		zassert_ok(ret, "Probe send report failed (%d)", ret);
+
+		ret = net_dplpmtud_on_path_probe_lost(&path, probe);
+		zassert_ok(ret, "Probe loss report failed (%d)", ret);
+
+		next_probe = net_dplpmtud_get_path_probe_size(&path);
+		if (next_probe != probe) {
+			break;
+		}
+	}
+
+	zassert_true(retries < 8, "Probe size never clamped after repeated loss");
+	zassert_true(next_probe < probe, "Repeated loss did not reduce probe size (%d)",
+		     next_probe);
+}
+
+static void run_dplpmtud_getter_no_side_effect_test(const struct net_sockaddr *dst,
+						   const struct net_sockaddr *other_dst)
+{
+	struct net_dplpmtud_path path;
+	int ret;
+
+	memset(&path, 0, sizeof(path));
+
+	ret = net_dplpmtud_get_path_mtu(&path);
+	zassert_equal(ret, -ENOENT, "Getter on uninitialized path must fail (%d)", ret);
+
+	ret = net_dplpmtud_get_path_probe_size(&path);
+	zassert_equal(ret, -ENOENT, "Getter on uninitialized path must fail (%d)", ret);
+
+	zassert_is_null(net_dplpmtud_get_entry(other_dst),
+			"Unused destination must not have DPLPMTUD state yet");
+
+	seed_dplpmtud_pmtu(dst, 1450U);
+
+	ret = net_dplpmtud_init_path(&path, dst, 0U);
+	zassert_ok(ret, "DPLPMTUD path init failed (%d)", ret);
+
+	ret = net_dplpmtud_get_path_mtu(&path);
+	zassert_true(ret > 0, "Getter must read initialized path (%d)", ret);
+
+	ret = net_dplpmtud_get_path_probe_size(&path);
+	zassert_true(ret >= 0, "Getter must not fail on initialized path (%d)", ret);
+
+	ret = net_dplpmtud_get_path_mtu(&path);
+	zassert_true(ret > 0, "Repeated getter must keep working (%d)", ret);
+
+	zassert_is_null(net_dplpmtud_get_entry(other_dst),
+			"Getter must not create state for other destinations");
+}
+
+static void run_dplpmtud_blackhole_test(const struct net_sockaddr *dst, uint16_t pmtu)
+{
+	struct net_dplpmtud_path path;
+	const uint16_t blackhole_mtu = 1180U;
+	int mtu;
+	int probe;
+	int ret;
+
+	seed_dplpmtud_pmtu(dst, pmtu);
+
+	ret = net_dplpmtud_init_path(&path, dst, 0U);
+	zassert_ok(ret, "DPLPMTUD path init failed (%d)", ret);
+
+	/* PTB-style PMTU below the base PLPMTU must trigger black-hole handling. */
+	ret = net_pmtu_update_mtu(dst, blackhole_mtu);
+	zassert_true(ret >= 0, "PMTU update failed (%d)", ret);
+
+	mtu = net_dplpmtud_get_path_mtu(&path);
+	zassert_equal(mtu, blackhole_mtu - dplpmtud_overhead(dst),
+		      "Black-hole PMTU must cap validated PLPMTU (%d)", mtu);
+
+	mtu = net_pmtu_get_mtu(dst);
+	zassert_equal(mtu, blackhole_mtu, "PMTU cache must follow black-hole sync (%d)", mtu);
+
+	probe = net_dplpmtud_get_path_probe_size(&path);
+	zassert_equal(probe, 0, "Black-holed path must not schedule probes (%d)", probe);
+
+	seed_dplpmtud_pmtu(dst, pmtu);
+
+	ret = net_dplpmtud_init_path(&path, dst, 0U);
+	zassert_ok(ret, "DPLPMTUD path re-init failed (%d)", ret);
+
+	net_dplpmtud_note_path_blackhole(&path);
+
+	mtu = net_dplpmtud_get_path_mtu(&path);
+	zassert_equal(mtu, NET_DPLPMTUD_BASE_PLPMTU,
+		      "Explicit black-hole must fall back to base PLPMTU (%d)", mtu);
+
+	mtu = net_pmtu_get_mtu(dst);
+	zassert_equal(mtu, NET_DPLPMTUD_BASE_PLPMTU + dplpmtud_overhead(dst),
+		      "PMTU cache must follow explicit black-hole (%d)", mtu);
 }
 
 static void *test_setup(void)
@@ -862,6 +1105,136 @@ ZTEST(net_pmtu_test_suite, test_pmtu_08_socket_api_ipv6)
 #else
 	ztest_test_skip();
 #endif /* CONFIG_NET_IPV6_PMTU */
+}
+
+ZTEST(net_pmtu_test_suite, test_pmtu_09_ipv4_dplpmtud_probe_lifecycle)
+{
+	struct net_sockaddr_in dest_ipv4;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_PMTU_DPLPMTUD);
+
+	init_dest_v4(&dest_ipv4, &dest_ipv4_addr_not_found);
+	run_dplpmtud_probe_lifecycle_test((struct net_sockaddr *)&dest_ipv4, 1450U);
+}
+
+ZTEST(net_pmtu_test_suite, test_pmtu_09_ipv6_dplpmtud_probe_lifecycle)
+{
+	struct net_sockaddr_in6 dest_ipv6;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6_PMTU_DPLPMTUD);
+
+	init_dest_v6(&dest_ipv6, &dest_ipv6_addr_not_found);
+	run_dplpmtud_probe_lifecycle_test((struct net_sockaddr *)&dest_ipv6, 1650U);
+}
+
+ZTEST(net_pmtu_test_suite, test_pmtu_10_ipv4_dplpmtud_transport_cap)
+{
+	struct net_sockaddr_in dest_ipv4;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_PMTU_DPLPMTUD);
+
+	init_dest_v4(&dest_ipv4, &dest_ipv4_addr2);
+	run_dplpmtud_transport_cap_test((struct net_sockaddr *)&dest_ipv4, 1450U, 1300U);
+}
+
+ZTEST(net_pmtu_test_suite, test_pmtu_10_ipv6_dplpmtud_transport_cap)
+{
+	struct net_sockaddr_in6 dest_ipv6;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6_PMTU_DPLPMTUD);
+
+	init_dest_v6(&dest_ipv6, &dest_ipv6_addr2);
+	run_dplpmtud_transport_cap_test((struct net_sockaddr *)&dest_ipv6, 1650U, 1300U);
+}
+
+ZTEST(net_pmtu_test_suite, test_pmtu_11_ipv4_dplpmtud_low_pmtu)
+{
+	struct net_sockaddr_in dest_ipv4;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_PMTU_DPLPMTUD);
+
+	init_dest_v4(&dest_ipv4, &dest_ipv4_addr3);
+	run_dplpmtud_low_pmtu_test((struct net_sockaddr *)&dest_ipv4, 1180U);
+}
+
+ZTEST(net_pmtu_test_suite, test_pmtu_11_ipv6_dplpmtud_low_pmtu)
+{
+	struct net_sockaddr_in6 dest_ipv6;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6_PMTU_DPLPMTUD);
+
+	init_dest_v6(&dest_ipv6, &dest_ipv6_addr3);
+	run_dplpmtud_low_pmtu_test((struct net_sockaddr *)&dest_ipv6, 1180U);
+}
+
+ZTEST(net_pmtu_test_suite, test_pmtu_12_ipv4_dplpmtud_loss_clamp)
+{
+	struct net_sockaddr_in dest_ipv4;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_PMTU_DPLPMTUD);
+
+	init_dest_v4(&dest_ipv4, &dest_ipv4_addr4);
+	run_dplpmtud_loss_clamp_test((struct net_sockaddr *)&dest_ipv4, 1450U);
+}
+
+ZTEST(net_pmtu_test_suite, test_pmtu_12_ipv6_dplpmtud_loss_clamp)
+{
+	struct net_sockaddr_in6 dest_ipv6;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6_PMTU_DPLPMTUD);
+
+	init_dest_v6(&dest_ipv6, &dest_ipv6_addr4);
+	run_dplpmtud_loss_clamp_test((struct net_sockaddr *)&dest_ipv6, 1650U);
+}
+
+ZTEST(net_pmtu_test_suite, test_pmtu_14_ipv4_dplpmtud_getter_no_side_effect)
+{
+	static const struct net_in_addr other_ipv4_addr = { { { 198, 51, 100, 99 } } };
+	struct net_sockaddr_in dest_ipv4;
+	struct net_sockaddr_in other_ipv4;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_PMTU_DPLPMTUD);
+
+	init_dest_v4(&dest_ipv4, &dest_ipv4_addr2);
+	init_dest_v4(&other_ipv4, &other_ipv4_addr);
+	run_dplpmtud_getter_no_side_effect_test((struct net_sockaddr *)&dest_ipv4,
+						(struct net_sockaddr *)&other_ipv4);
+}
+
+ZTEST(net_pmtu_test_suite, test_pmtu_14_ipv6_dplpmtud_getter_no_side_effect)
+{
+	static const struct net_in6_addr other_ipv6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0x01, 0,
+								     0, 0, 0, 0, 0, 0, 0, 0, 0,
+								     0x99 } } };
+	struct net_sockaddr_in6 dest_ipv6;
+	struct net_sockaddr_in6 other_ipv6;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6_PMTU_DPLPMTUD);
+
+	init_dest_v6(&dest_ipv6, &dest_ipv6_addr2);
+	init_dest_v6(&other_ipv6, &other_ipv6_addr);
+	run_dplpmtud_getter_no_side_effect_test((struct net_sockaddr *)&dest_ipv6,
+						(struct net_sockaddr *)&other_ipv6);
+}
+
+ZTEST(net_pmtu_test_suite, test_pmtu_13_ipv4_dplpmtud_blackhole)
+{
+	struct net_sockaddr_in dest_ipv4;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_PMTU_DPLPMTUD);
+
+	init_dest_v4(&dest_ipv4, &dest_ipv4_addr1);
+	run_dplpmtud_blackhole_test((struct net_sockaddr *)&dest_ipv4, 1450U);
+}
+
+ZTEST(net_pmtu_test_suite, test_pmtu_13_ipv6_dplpmtud_blackhole)
+{
+	struct net_sockaddr_in6 dest_ipv6;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6_PMTU_DPLPMTUD);
+
+	init_dest_v6(&dest_ipv6, &dest_ipv6_addr1);
+	run_dplpmtud_blackhole_test((struct net_sockaddr *)&dest_ipv6, 1650U);
 }
 
 ZTEST_SUITE(net_pmtu_test_suite, NULL, test_setup, NULL, NULL, NULL);

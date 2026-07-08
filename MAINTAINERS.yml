@@ -659,8 +659,8 @@ Bluetooth HCI:
   status: maintained
   maintainers:
     - jhedberg
-    - alwa-nordic
   collaborators:
+    - alwa-nordic
     - hermabe
     - Thalley
     - sjanc
@@ -685,15 +685,15 @@ Bluetooth Host:
   status: maintained
   maintainers:
     - jhedberg
-    - alwa-nordic
   collaborators:
+    - alwa-nordic
     - hermabe
-    - rugeGerritsen
     - sjanc
     - Thalley
     - cvinayak
     - HaavardRei
     - alxelax
+    - lylezhu2012
   files:
     - doc/services/connectivity/bluetooth/
     - include/zephyr/bluetooth/
@@ -902,6 +902,7 @@ Broadcom Platforms:
   status: maintained
   maintainers:
     - jetpax
+    - walidbadar
   files:
     - dts/*/broadcom/
     - soc/brcm/
@@ -3972,6 +3973,23 @@ Microchip SAM Platforms:
   labels:
     - "platform: Microchip SAM"
 
+Microchip SmartFusion2 platform:
+  status: maintained
+  maintainers:
+    - akBavMat
+    - con-pax
+  collaborators:
+    - AntonVynohradov
+  files:
+    - boards/microchip/m2s010_mkr_kit/
+    - drivers/clock_control/*smartfusion2*
+    - dts/arm/microchip/smartfusion2*/
+    - dts/bindings/*/microchip,smartfusion2*
+    - include/zephyr/dt-bindings/*/*smartfusion2*
+    - soc/microchip/smartfusion2*/
+  labels:
+    - "platform: Microchip SmartFusion2"
+
 Microchip Standalone Devices:
   status: maintained
   maintainers:
@@ -4796,6 +4814,8 @@ Networking:
   status: maintained
   maintainers:
     - jukkar
+  collaborators:
+    - yangbolu1991
   files:
     - doc/services/connectivity/networking/api/gptp.rst
     - include/zephyr/net/gptp.h
@@ -5095,11 +5115,15 @@ RISCV arch:
     - boards/starfive/
     - cmake/compiler/*/target_riscv.cmake
     - doc/hardware/arch/risc-v.rst
+    - drivers/interrupt_controller/Kconfig.riscv_*
     - drivers/interrupt_controller/intc_plic.c
-    - drivers/interrupt_controller/intc_riscv_imsic.c
+    - drivers/interrupt_controller/intc_riscv_*
+    - dts/bindings/interrupt-controller/riscv,*
     - dts/bindings/riscv/
     - dts/riscv/
     - include/zephyr/arch/riscv/
+    - include/zephyr/drivers/interrupt_controller/riscv_*
+    - samples/drivers/interrupt_controller/intc_riscv_aia*/
     - soc/common/riscv-privileged/
     - soc/qemu/virt_riscv/
     - soc/sifive/
@@ -7065,9 +7089,9 @@ West:
   status: maintained
   maintainers:
     - d3zd3z
+    - nordicjm
   collaborators:
     - de-nordic
-    - nordicjm
   files:
     - modules/Kconfig.mcuboot
     - tests/boot/

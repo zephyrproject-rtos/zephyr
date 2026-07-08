@@ -88,23 +88,31 @@ static struct pwm_ledc_esp32_channel_config *get_channel_config(const struct dev
 static void pwm_led_esp32_start(struct pwm_ledc_esp32_data *data,
 				struct pwm_ledc_esp32_channel_config *channel)
 {
+	unsigned int key = irq_lock();
+
 	ledc_hal_set_sig_out_en(&data->hal, channel->speed_mode, channel->channel_num, true);
 	ledc_hal_set_duty_start(&data->hal, channel->speed_mode, channel->channel_num);
 
 	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
 		ledc_hal_ls_channel_update(&data->hal, channel->speed_mode, channel->channel_num);
 	}
+
+	irq_unlock(key);
 }
 
 static void pwm_led_esp32_stop(struct pwm_ledc_esp32_data *data,
 			       struct pwm_ledc_esp32_channel_config *channel, bool idle_level)
 {
+	unsigned int key = irq_lock();
+
 	ledc_hal_set_idle_level(&data->hal, channel->speed_mode, channel->channel_num, idle_level);
 	ledc_hal_set_sig_out_en(&data->hal, channel->speed_mode, channel->channel_num, false);
 
 	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
 		ledc_hal_ls_channel_update(&data->hal, channel->speed_mode, channel->channel_num);
 	}
+
+	irq_unlock(key);
 }
 
 static void pwm_led_esp32_duty_set(const struct device *dev,

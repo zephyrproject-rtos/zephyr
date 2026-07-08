@@ -31,7 +31,11 @@ LOG_MODULE_REGISTER(i2c_bflb, CONFIG_I2C_LOG_LEVEL);
 /* defines */
 
 #define I2C_WAIT_TIMEOUT_MS	200
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+#define I2C_MAX_PACKET_LENGTH	0x3FF
+#else
 #define I2C_MAX_PACKET_LENGTH	0xFF
+#endif
 #define I2C_MAX_FREQ_40M	MHZ(80)
 
 /* Structure declarations */
@@ -68,7 +72,8 @@ static uint32_t i2c_bflb_get_clk(void)
 	return uclk / (i2c_divider + 1);
 }
 
-#elif defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
+#elif defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808) \
+	|| defined(CONFIG_SOC_SERIES_BL616CL)
 
 static uint32_t i2c_bflb_get_clk(void)
 {
@@ -117,7 +122,8 @@ static int i2c_bflb_configure_freqs(const struct device *dev, uint32_t frequency
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808) \
+	|| defined(CONFIG_SOC_SERIES_BL616CL)
 	tmp = sys_read32(GLB_BASE + GLB_I2C_CFG0_OFFSET);
 	tmp &= GLB_I2C_CLK_DIV_UMSK;
 	/* select BCLK */
@@ -285,18 +291,34 @@ static void i2c_bflb_clean(const struct device *dev)
 		I2C_CR_I2C_NAK_EN |
 		I2C_CR_I2C_ARB_EN |
 		I2C_CR_I2C_FER_EN);
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+	tmp &= ~(I2C_CR_I2C_M_TO_INT_EN | I2C_CR_I2C_RES_EN);
+#endif
 	/* mask all interrupts */
 	tmp |= (I2C_CR_I2C_NAK_MASK |
 		I2C_CR_I2C_ARB_MASK |
 		I2C_CR_I2C_FER_MASK |
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+		I2C_CR_I2C_M_TO_INT_MASK |
+		I2C_CR_RES_MASK |
+#endif
 		I2C_CR_I2C_TXF_MASK |
 		I2C_CR_I2C_RXF_MASK |
 		I2C_CR_I2C_END_MASK);
 	/* clear all clearable interrupts */
 	tmp |= (I2C_CR_I2C_END_CLR |
 		I2C_CR_I2C_NAK_CLR |
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+		I2C_CR_I2C_RES_CLR |
+		I2C_CR_I2C_M_TO_CLR |
+#endif
 		I2C_CR_I2C_ARB_CLR);
 	sys_write32(tmp, config->base + I2C_INT_STS_OFFSET);
+
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+	tmp &= ~I2C_CR_I2C_M_TO_CLR;
+	sys_write32(tmp, config->base + I2C_INT_STS_OFFSET);
+#endif
 }
 
 static int i2c_bflb_configure(const struct device *dev, uint32_t dev_config)
@@ -728,6 +750,10 @@ static int i2c_bflb_deinit(const struct device *dev)
 		I2C_CR_I2C_RXF_EN |
 		I2C_CR_I2C_NAK_EN |
 		I2C_CR_I2C_ARB_EN |
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+		I2C_CR_I2C_M_TO_INT_EN |
+		I2C_CR_I2C_RES_EN |
+#endif
 		I2C_CR_I2C_FER_EN);
 	sys_write32(tmp, config->base + I2C_INT_STS_OFFSET);
 

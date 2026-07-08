@@ -10,6 +10,7 @@
 #include "frdm_mcxa344-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
 
 / {
 	model = "NXP FRDM_MCXA344 board";
@@ -21,6 +22,7 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		wakeup-button = &user_button_2;
 		watchdog0 = &wwdt0;
 		die-temp0 = &temp0;
 	};
@@ -34,6 +36,7 @@
 		zephyr,shell-uart = &lpuart2;
 		zephyr,canbus = &flexcan0;
 		zephyr,edac = &erm0;
+		zephyr,system-timer-companion = &lptmr0;
 		zephyr,crc = &crc;
 	};
 
@@ -63,6 +66,8 @@
 			label = "User SW2";
 			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
+			/* SW2 wakes via WUU external pin 9. */
+			wakeup-ctrls = <&wuu NXP_WUU_PIN_9_FALLING_INT>;
 		};
 
 		user_button_3: button_3 {

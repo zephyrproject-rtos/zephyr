@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - interrupt_controller
+    - wkpu
+  harness: ztest
+tests:
+  drivers.interrupt_controller.wkpu_nxp:
+    # Exercises the WKPU driver through the RTC-timeout internal wake-up source
+    # (no external pin stimulus required).
+    platform_allow:
+      - frdm_mcxe31b
+    integration_platforms:
+      - frdm_mcxe31b

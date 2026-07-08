@@ -97,9 +97,9 @@ struct renesas_elc_dt_spec {
 
 /**
  * @brief Get the device pointer from the "renesas-elcs" property by element name for a
- * DT_DRV_COMPAT instance.
+ * @c DT_DRV_COMPAT instance.
  *
- * @param inst DT_DRV_COMPAT instance number.
+ * @param inst @c DT_DRV_COMPAT instance number.
  * @param name Lowercase-and-underscores name as specified in the renesas-elcs-names property.
  *
  * @return Device pointer.
@@ -108,10 +108,10 @@ struct renesas_elc_dt_spec {
 	DEVICE_DT_GET(DT_PHANDLE_BY_NAME(DT_DRV_INST(inst), renesas_elcs, name))
 
 /**
- * @brief Get the device pointer from the "renesas-elcs" property by index for a DT_DRV_COMPAT
+ * @brief Get the device pointer from the "renesas-elcs" property by index for a @c DT_DRV_COMPAT
  * instance.
  *
- * @param inst DT_DRV_COMPAT instance number.
+ * @param inst @c DT_DRV_COMPAT instance number.
  * @param idx Logical index into the renesas-elcs property.
  *
  * @return Device pointer.
@@ -121,9 +121,9 @@ struct renesas_elc_dt_spec {
 
 /**
  * @brief Get the device pointer from the "renesas-elcs" property by element name
- *        for a DT_DRV_COMPAT instance, or return NULL if the property does not exist.
+ *        for a @c DT_DRV_COMPAT instance, or return NULL if the property does not exist.
  *
- * @param inst DT_DRV_COMPAT instance number.
+ * @param inst @c DT_DRV_COMPAT instance number.
  * @param name Lowercase-and-underscores name as specified in the renesas-elcs-names property.
  *
  * @return Device pointer or NULL.
@@ -133,9 +133,9 @@ struct renesas_elc_dt_spec {
 
 /**
  * @brief Get the device pointer from the "renesas-elcs" property by index
- *        for a DT_DRV_COMPAT instance, or return NULL if the property does not exist.
+ *        for a @c DT_DRV_COMPAT instance, or return NULL if the property does not exist.
  *
- * @param inst DT_DRV_COMPAT instance number.
+ * @param inst @c DT_DRV_COMPAT instance number.
  * @param idx Logical index into the renesas-elcs property.
  *
  * @return Device pointer or NULL.
@@ -196,9 +196,9 @@ struct renesas_elc_dt_spec {
 		(default_value))
 
 /**
- * @brief Get the peripheral cell value by element name for a DT_DRV_COMPAT instance.
+ * @brief Get the peripheral cell value by element name for a @c DT_DRV_COMPAT instance.
  *
- * @param inst DT_DRV_COMPAT instance number.
+ * @param inst @c DT_DRV_COMPAT instance number.
  * @param name Lowercase-and-underscores name as specified in the renesas-elcs-names property.
  *
  * @return Peripheral cell value.
@@ -207,9 +207,9 @@ struct renesas_elc_dt_spec {
 	RENESAS_ELC_DT_SPEC_PERIPHERAL_GET_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
- * @brief Get the peripheral cell value by index for a DT_DRV_COMPAT instance.
+ * @brief Get the peripheral cell value by index for a @c DT_DRV_COMPAT instance.
  *
- * @param inst DT_DRV_COMPAT instance number.
+ * @param inst @c DT_DRV_COMPAT instance number.
  * @param idx Logical index into the renesas-elcs property.
  *
  * @return Peripheral cell value.
@@ -218,10 +218,10 @@ struct renesas_elc_dt_spec {
 	RENESAS_ELC_DT_SPEC_PERIPHERAL_GET_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
- * @brief Get the peripheral cell value by element name for a DT_DRV_COMPAT instance,
+ * @brief Get the peripheral cell value by element name for a @c DT_DRV_COMPAT instance,
  *        or return a default value if the property does not exist.
  *
- * @param inst DT_DRV_COMPAT instance number.
+ * @param inst @c DT_DRV_COMPAT instance number.
  * @param name Lowercase-and-underscores name as specified in the renesas-elcs-names property.
  * @param default_value Value to return if the property is not present.
  *
@@ -231,10 +231,10 @@ struct renesas_elc_dt_spec {
 	RENESAS_ELC_DT_SPEC_PERIPHERAL_GET_BY_NAME_OR(DT_DRV_INST(inst), name, default_value)
 
 /**
- * @brief Get the peripheral cell value by index for a DT_DRV_COMPAT instance,
+ * @brief Get the peripheral cell value by index for a @c DT_DRV_COMPAT instance,
  *        or return a default value if the property does not exist.
  *
- * @param inst DT_DRV_COMPAT instance number.
+ * @param inst @c DT_DRV_COMPAT instance number.
  * @param idx Logical index into the renesas-elcs property.
  * @param default_value Value to return if the property is not present.
  *
@@ -296,9 +296,9 @@ struct renesas_elc_dt_spec {
 		(default_value))
 
 /**
- * @brief Get the event cell value by element name for a DT_DRV_COMPAT instance.
+ * @brief Get the event cell value by element name for a @c DT_DRV_COMPAT instance.
  *
- * @param inst DT_DRV_COMPAT instance number.
+ * @param inst @c DT_DRV_COMPAT instance number.
  * @param name Lowercase-and-underscores name as specified in the renesas-elcs-names property.
  *
  * @return Event cell value.
@@ -307,9 +307,9 @@ struct renesas_elc_dt_spec {
 	RENESAS_ELC_DT_SPEC_EVENT_GET_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
- * @brief Get the event cell value by index for a DT_DRV_COMPAT instance.
+ * @brief Get the event cell value by index for a @c DT_DRV_COMPAT instance.
  *
- * @param inst DT_DRV_COMPAT instance number.
+ * @param inst @c DT_DRV_COMPAT instance number.
  * @param idx Logical index into the renesas-elcs property.
  *
  * @return Event cell value.
@@ -318,10 +318,10 @@ struct renesas_elc_dt_spec {
 	RENESAS_ELC_DT_SPEC_EVENT_GET_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
- * @brief Get the event cell value by element name for a DT_DRV_COMPAT instance,
+ * @brief Get the event cell value by element name for a @c DT_DRV_COMPAT instance,
  *        or return a default value if the property does not exist.
  *
- * @param inst DT_DRV_COMPAT instance number.
+ * @param inst @c DT_DRV_COMPAT instance number.
  * @param name Lowercase-and-underscores name as specified in the renesas-elcs-names property.
  * @param default_value Value to return if the property is not present.
  *
@@ -331,10 +331,10 @@ struct renesas_elc_dt_spec {
 	RENESAS_ELC_DT_SPEC_EVENT_GET_BY_NAME_OR(DT_DRV_INST(inst), name, default_value)
 
 /**
- * @brief Get the event cell value by index for a DT_DRV_COMPAT instance,
+ * @brief Get the event cell value by index for a @c DT_DRV_COMPAT instance,
  *        or return a default value if the property does not exist.
  *
- * @param inst DT_DRV_COMPAT instance number.
+ * @param inst @c DT_DRV_COMPAT instance number.
  * @param idx Logical index into the renesas-elcs property.
  * @param default_value Value to return if the property is not present.
  *

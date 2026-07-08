@@ -1475,6 +1475,7 @@ void shell_help(const struct shell *sh);
 #else
 static inline void shell_help(const struct shell *sh)
 {
+	ARG_UNUSED(sh);
 }
 #endif /* CONFIG_SHELL_HELP */
 

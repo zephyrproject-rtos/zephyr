@@ -116,13 +116,18 @@ static int adxl355_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 	struct sensor_three_axis_data *data = (struct sensor_three_axis_data *)data_out;
 
 	memset(data, 0, sizeof(struct sensor_three_axis_sample_data));
-	data->header.base_timestamp_ns = enc_data->timestamp;
-	data->header.reading_count = 1;
 	data->shift = 11;
 
 	buffer += sizeof(struct adxl355_fifo_data);
 	uint8_t sample_set_size = enc_data->sample_set_size * 3;
 	uint64_t period_ns = accel_period_ns[enc_data->accel_odr];
+	uint16_t total_samples = sample_set_size > 0
+				 ? enc_data->fifo_byte_count / sample_set_size : 0;
+
+	data->header.base_timestamp_ns =
+		enc_data->timestamp -
+		(total_samples > 0 ? (total_samples - 1) : 0) * period_ns;
+	data->header.reading_count = 1;
 
 	/* Calculate which sample is decoded. */
 	if ((uint8_t *)*fit >= buffer) {

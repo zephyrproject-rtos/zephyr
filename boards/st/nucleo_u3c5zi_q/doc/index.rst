@@ -207,6 +207,24 @@ The board exposes CAN FD signals through FDCAN1 pins on ``PF7``
 Programming and Debugging
 *************************
 
+Zephyr board options
+====================
+
+Zephyr for Nucleo U3C5ZI-Q board supports building either with TrustZone
+security disabled (main variant) where Zephyr application runs alone) or
+with TrustZone security enabled ('ns' variant) where TF-M is the embedded
+Secure firmware and Zephyr the Non-Secure firmware.
+
+The BOARD options are summarized below:
+
++---------------------------------+------------------------------------------+
+| BOARD                           | Description                              |
++=================================+==========================================+
+| nucleo_u3c5zi_q                 | For building TrustZone Disabled firmware |
++---------------------------------+------------------------------------------+
+| nucleo_u3c5zi_q/stm32u3c5xx/ns  | For building Non-Secure firmware         |
++---------------------------------+------------------------------------------+
+
 .. zephyr:board-supported-runners::
 
 Nucleo U3C5ZI-Q board includes an ST-LINK embedded debug interface.
@@ -234,8 +252,8 @@ by executing the following pyOCD commands:
    $ pyocd pack --update
    $ pyocd pack --install stm32u3
 
-Flashing an application to Nucleo U3C5ZI-Q
-------------------------------------------
+Flashing an application to Nucleo U3C5ZI-Q main variant
+-------------------------------------------------------
 
 Connect the Nucleo U3C5ZI-Q to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
@@ -259,6 +277,46 @@ You should see a hello message on the console.
 .. code-block:: console
 
    Hello World! nucleo_u3c5zi_q
+
+Flashing an application to Nucleo U3C5ZI-Q with 'ns' variant
+------------------------------------------------------------
+
+Building Zephyr embedded images for the 'ns' variant uses standard
+Zephyr build commands, for example:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: nucleo_u3c5zi_q/stm32u3c5xx/ns
+   :goals: build
+
+Once done, before flashing, you need to first run a generated script that
+will set platform Option Bytes config and erase internal flash (among others,
+Option Bit TZEN will be set).
+
+.. code-block:: bash
+
+   $ ./build/tfm/api_ns/regression.sh
+   $ west flash
+
+Please note that, after having programmed the board for a TrustZone enabled system
+(e.g. with ``./build/tfm/api_ns/regression.sh``), the SoC TZEN Option Byte is enabled
+and you will need to operate a specific sequence to disable this TZEN Option Byte
+configuration to get your board back in normal state for booting with a TrustZone
+disabled system (e.g. without TF-M support).
+
+Disabling TrustZone on Nucleo U3C5ZI-Q board
+--------------------------------------------
+
+If you have flashed a sample to the board that enables TrustZone (TZEN=1), you will
+need to disable it (TZEN=0) before you can flash and run non-TrustZone sample
+on the board.
+
+Disabling TZEN needs to perfoms a regression from RDP level 1
+(with TZEN enabled) to RDP level 0 (with TZEN disabled) at the very
+same time. This can be done either with valid embedded images in the target
+User Flash (secure and non-secure firmware images), or using RSS from embedded
+System Flash as described in `AN5347`_ section 9. If using the RSS procedure,
+you must connect BOOT0 boot pin (PH3 connected to CN7[7]) to VDD (CN7[5]).
 
 Debugging
 =========
@@ -286,3 +344,6 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _AN5347:
+   https://www.st.com/resource/en/application_note/dm00625692-stm32l5-series-trustzone-features-stmicroelectronics.pdf

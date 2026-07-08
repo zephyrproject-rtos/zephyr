@@ -395,9 +395,6 @@ ZTESTABLE_STATIC void quic_dplpmtud_on_probe_lost(struct quic_endpoint *ep,
 static uint16_t quic_get_local_max_udp_payload_size(struct quic_endpoint *ep);
 static int quic_dplpmtud_maybe_probe(struct quic_endpoint *ep);
 static void quic_dplpmtud_update_limit_locked(struct quic_endpoint *ep);
-static uint16_t quic_dplpmtud_next_probe_size_locked(struct quic_endpoint *ep);
-static void quic_dplpmtud_begin_probe_locked(struct quic_endpoint *ep,
-					     uint16_t probe_size);
 static void quic_dplpmtud_on_probe_acked_locked(struct quic_endpoint *ep,
 						uint16_t probe_size);
 static void quic_dplpmtud_on_probe_lost_locked(struct quic_endpoint *ep,
@@ -3896,51 +3893,48 @@ static int quic_dplpmtud_maybe_probe(struct quic_endpoint *ep)
 			return 0;
 		}
 
-		ep->dplpmtud.local_max_payload_size = quic_get_local_max_udp_payload_size(ep);
 		quic_dplpmtud_update_limit_locked(ep);
 
-		if (ep->dplpmtud.probe_in_flight || !ep->dplpmtud.probe_pending) {
+		if (net_dplpmtud_path_probe_in_flight(&ep->dplpmtud.path)) {
 			k_mutex_unlock(&ep->recovery.lock);
 			return 0;
 		}
 
-		probe_size = ep->dplpmtud.probe_size;
-		if (probe_size == 0U) {
-			probe_size = quic_dplpmtud_next_probe_size_locked(ep);
-		}
-
-		if (probe_size == 0U) {
-			ep->dplpmtud.probe_pending = false;
+		ret = net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path);
+		if (ret <= 0) {
+			/* 0 means no probe needed; a negative value is an error. */
 			k_mutex_unlock(&ep->recovery.lock);
 			return 0;
 		}
+		probe_size = (uint16_t)ret;
 
-		quic_dplpmtud_begin_probe_locked(ep, probe_size);
+		ret = net_dplpmtud_on_path_probe_sent(&ep->dplpmtud.path, probe_size);
+		if (ret < 0) {
+			k_mutex_unlock(&ep->recovery.lock);
+			return ret;
+		}
+
 		k_mutex_unlock(&ep->recovery.lock);
 
 		ret = quic_send_dplpmtud_probe(ep, probe_size);
+		k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+
 		if (ret == 0) {
+			k_mutex_unlock(&ep->recovery.lock);
 			return 0;
 		}
 
-		k_mutex_lock(&ep->recovery.lock, K_FOREVER);
-
-		if (ep->dplpmtud.probe_attempts > 0U) {
-			ep->dplpmtud.probe_attempts--;
-		}
-
-		ep->dplpmtud.probe_in_flight = false;
+		quic_dplpmtud_on_probe_lost_locked(ep, probe_size);
 
 		if (ret == -EMSGSIZE) {
-			if (probe_size > 0U) {
-				ep->dplpmtud.search_high = probe_size - 1U;
+			if (probe_size > QUIC_DPLPMTUD_BASE_PLPMTU) {
+				net_dplpmtud_set_path_max_plpmtu(&ep->dplpmtud.path,
+								 probe_size - 1U);
 			}
 
-			ep->dplpmtud.probe_size = 0U;
 			quic_dplpmtud_update_limit_locked(ep);
-			retry_immediately = ep->dplpmtud.probe_pending;
-		} else {
-			ep->dplpmtud.probe_pending = true;
+			retry_immediately =
+				net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path) > 0;
 		}
 
 		k_mutex_unlock(&ep->recovery.lock);
@@ -4487,6 +4481,7 @@ static int quic_pto_probe(struct quic_endpoint *ep)
 	struct quic_sent_pkt_info oldest = { 0 };
 	bool found = false;
 	bool probe_pending;
+	int probe_size;
 
 	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
 
@@ -4495,8 +4490,12 @@ static int quic_pto_probe(struct quic_endpoint *ep)
 		return -ESHUTDOWN;
 	}
 
-	if (ep->dplpmtud.probe_in_flight) {
-		quic_dplpmtud_on_probe_lost_locked(ep, ep->dplpmtud.probe_size);
+	if (net_dplpmtud_path_probe_in_flight(&ep->dplpmtud.path)) {
+		probe_size = net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path);
+
+		if (probe_size > 0) {
+			quic_dplpmtud_on_probe_lost_locked(ep, probe_size);
+		}
 	}
 
 	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
@@ -4513,7 +4512,9 @@ static int quic_pto_probe(struct quic_endpoint *ep)
 		}
 	}
 
-	probe_pending = ep->dplpmtud.probe_pending;
+	probe_pending = ep->dplpmtud.path.in_use &&
+			!net_dplpmtud_path_probe_in_flight(&ep->dplpmtud.path) &&
+			net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path) > 0;
 
 	k_mutex_unlock(&ep->recovery.lock);
 
@@ -4632,9 +4633,28 @@ static uint16_t quic_peer_max_udp_payload_size(const struct quic_endpoint *ep)
 	return ep->peer_params.max_udp_payload_size;
 }
 
+static bool quic_has_remote_addr(const struct quic_endpoint *ep)
+{
+	if (ep->remote_addr.ss_family == NET_AF_INET) {
+		const struct net_sockaddr_in *sin4 =
+			(const struct net_sockaddr_in *)&ep->remote_addr;
+
+		return !net_ipv4_is_addr_unspecified(&sin4->sin_addr);
+	}
+
+	if (ep->remote_addr.ss_family == NET_AF_INET6) {
+		const struct net_sockaddr_in6 *sin6 =
+			(const struct net_sockaddr_in6 *)&ep->remote_addr;
+
+		return !net_ipv6_is_addr_unspecified(&sin6->sin6_addr);
+	}
+
+	return false;
+}
+
 static uint16_t quic_dplpmtud_target_payload_size_locked(struct quic_endpoint *ep)
 {
-	uint16_t target = ep->dplpmtud.local_max_payload_size;
+	uint16_t target = quic_get_local_max_udp_payload_size(ep);
 	uint16_t peer_limit = quic_peer_max_udp_payload_size(ep);
 
 	if (target == 0U) {
@@ -4646,104 +4666,58 @@ static uint16_t quic_dplpmtud_target_payload_size_locked(struct quic_endpoint *e
 	return MAX(target, QUIC_DPLPMTUD_BASE_PLPMTU);
 }
 
-static void quic_dplpmtud_update_limit_locked(struct quic_endpoint *ep)
+static int quic_dplpmtud_sync_path_locked(struct quic_endpoint *ep)
 {
 	uint16_t target = quic_dplpmtud_target_payload_size_locked(ep);
 
-	if (ep->dplpmtud.validated_payload_size < QUIC_DPLPMTUD_BASE_PLPMTU) {
-		ep->dplpmtud.validated_payload_size = QUIC_DPLPMTUD_BASE_PLPMTU;
+	if (!quic_has_remote_addr(ep)) {
+		return -EDESTADDRREQ;
 	}
 
-	if (ep->dplpmtud.validated_payload_size > target) {
-		ep->dplpmtud.validated_payload_size = target;
+	if (!ep->dplpmtud.path.in_use) {
+		return net_dplpmtud_init_path(&ep->dplpmtud.path, net_sad(&ep->remote_addr),
+					      target);
 	}
 
-	if (ep->dplpmtud.search_low < ep->dplpmtud.validated_payload_size) {
-		ep->dplpmtud.search_low = ep->dplpmtud.validated_payload_size;
-	}
+	net_dplpmtud_set_path_max_plpmtu(&ep->dplpmtud.path, target);
 
-	if (ep->dplpmtud.search_high == 0U || ep->dplpmtud.search_high > target) {
-		ep->dplpmtud.search_high = target;
-	}
-
-	if (ep->dplpmtud.search_high < ep->dplpmtud.validated_payload_size) {
-		ep->dplpmtud.search_high = ep->dplpmtud.validated_payload_size;
-	}
-
-	if (ep->dplpmtud.probe_in_flight &&
-	    ep->dplpmtud.probe_size > ep->dplpmtud.search_high) {
-		ep->dplpmtud.probe_in_flight = false;
-		ep->dplpmtud.probe_size = 0U;
-		ep->dplpmtud.probe_attempts = 0U;
-	}
-
-	if (!ep->dplpmtud.probe_in_flight) {
-		ep->dplpmtud.probe_pending =
-			ep->handshake.completed &&
-			ep->dplpmtud.search_high > ep->dplpmtud.validated_payload_size;
-	}
-
-	ep->max_tx_payload_size = MIN(ep->dplpmtud.validated_payload_size, target);
+	return 0;
 }
 
-static uint16_t quic_dplpmtud_next_probe_size_locked(struct quic_endpoint *ep)
+static void quic_dplpmtud_update_limit_locked(struct quic_endpoint *ep)
 {
-	uint16_t low = MAX(ep->dplpmtud.search_low, ep->dplpmtud.validated_payload_size);
-	uint16_t high = ep->dplpmtud.search_high;
-	uint16_t delta;
+	int mtu;
+	int ret;
 
-	if (high <= low) {
-		return 0U;
+	ret = quic_dplpmtud_sync_path_locked(ep);
+	if (ret < 0) {
+		ep->max_tx_payload_size = QUIC_DPLPMTUD_BASE_PLPMTU;
+		return;
 	}
 
-	delta = high - low;
+	mtu = net_dplpmtud_get_path_mtu(&ep->dplpmtud.path);
+	if (mtu < 0) {
+		mtu = QUIC_DPLPMTUD_BASE_PLPMTU;
+	}
 
-	return low + DIV_ROUND_UP(delta, 2);
-}
-
-static void quic_dplpmtud_begin_probe_locked(struct quic_endpoint *ep, uint16_t probe_size)
-{
-	ep->dplpmtud.probe_size = probe_size;
-	ep->dplpmtud.probe_attempts++;
-	ep->dplpmtud.probe_in_flight = true;
-	ep->dplpmtud.probe_pending = false;
+	ep->max_tx_payload_size = MAX(mtu, (int)QUIC_DPLPMTUD_BASE_PLPMTU);
 }
 
 static void quic_dplpmtud_on_probe_acked_locked(struct quic_endpoint *ep, uint16_t probe_size)
 {
-	if (!ep->dplpmtud.probe_in_flight || ep->dplpmtud.probe_size != probe_size) {
+	if (net_dplpmtud_on_path_probe_acked(&ep->dplpmtud.path, probe_size) < 0) {
 		return;
 	}
 
-	ep->dplpmtud.validated_payload_size =
-		MAX(ep->dplpmtud.validated_payload_size, probe_size);
-	ep->dplpmtud.search_low = ep->dplpmtud.validated_payload_size;
-	ep->dplpmtud.probe_in_flight = false;
-	ep->dplpmtud.probe_size = 0U;
-	ep->dplpmtud.probe_attempts = 0U;
 	quic_dplpmtud_update_limit_locked(ep);
 }
 
 static void quic_dplpmtud_on_probe_lost_locked(struct quic_endpoint *ep, uint16_t probe_size)
 {
-	if (!ep->dplpmtud.probe_in_flight || ep->dplpmtud.probe_size != probe_size) {
+	if (net_dplpmtud_on_path_probe_lost(&ep->dplpmtud.path, probe_size) < 0) {
 		return;
 	}
 
-	ep->dplpmtud.probe_in_flight = false;
-
-	if (ep->dplpmtud.probe_attempts < QUIC_DPLPMTUD_MAX_PROBE_RETRIES) {
-		ep->dplpmtud.probe_pending = true;
-		quic_dplpmtud_update_limit_locked(ep);
-		return;
-	}
-
-	if (probe_size > 0U) {
-		ep->dplpmtud.search_high = probe_size - 1U;
-	}
-
-	ep->dplpmtud.probe_size = 0U;
-	ep->dplpmtud.probe_attempts = 0U;
 	quic_dplpmtud_update_limit_locked(ep);
 }
 
@@ -4803,14 +4777,7 @@ static void quic_endpoint_init(struct quic_endpoint *ep)
 	ep->peer_params.max_udp_payload_size = UINT16_MAX;
 	ep->peer_params.parsed = false;
 
-	ep->dplpmtud.validated_payload_size = QUIC_DPLPMTUD_BASE_PLPMTU;
-	ep->dplpmtud.local_max_payload_size = QUIC_DPLPMTUD_BASE_PLPMTU;
-	ep->dplpmtud.search_low = QUIC_DPLPMTUD_BASE_PLPMTU;
-	ep->dplpmtud.search_high = 0U;
-	ep->dplpmtud.probe_size = 0U;
-	ep->dplpmtud.probe_attempts = 0U;
-	ep->dplpmtud.probe_in_flight = false;
-	ep->dplpmtud.probe_pending = false;
+	ep->dplpmtud.path.in_use = false;
 
 	quic_endpoint_init_idle_timeout(ep, QUIC_DEFAULT_IDLE_TIMEOUT_MS);
 	quic_endpoint_init_handshake_timeout(ep, QUIC_DEFAULT_HANDSHAKE_TIMEOUT_MS);
@@ -5057,7 +5024,6 @@ static struct quic_endpoint *quic_endpoint_create(struct quic_endpoint *ep,
 		new_ep->peer_params.max_udp_payload_size =
 			ep->peer_params.max_udp_payload_size;
 		new_ep->peer_params.parsed = ep->peer_params.parsed;
-		new_ep->dplpmtud = ep->dplpmtud;
 		new_ep->max_tx_payload_size = ep->max_tx_payload_size;
 		new_ep->rx_sl.max_bidi = ep->rx_sl.max_bidi;
 		new_ep->rx_sl.max_uni = ep->rx_sl.max_uni;
@@ -5203,7 +5169,6 @@ static int endpoint_socket_create(struct quic_endpoint *ep)
 	}
 
 	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
-	ep->dplpmtud.local_max_payload_size = quic_get_local_max_udp_payload_size(ep);
 	quic_dplpmtud_update_limit_locked(ep);
 	k_mutex_unlock(&ep->recovery.lock);
 

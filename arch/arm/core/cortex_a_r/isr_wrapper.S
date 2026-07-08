@@ -182,7 +182,6 @@ _idle_state_cleared:
 	bl z_soc_irq_get_active
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 	push {r0, r1}
-	lsl r0, r0, #3	/* table is 8-byte wide */
 
 	/*
 	 * Enable interrupts to allow nesting.
@@ -196,14 +195,31 @@ _idle_state_cleared:
 	 */
 	cpsie i
 
+#if CONFIG_GIC_VER >= 3
+	/*
+	 * Ignore GIC special INTIDs (1020-1023), which do not represent
+	 * valid interrupt IDs (see the Arm GIC Architecture Specification,
+	 * "Special INTIDs").
+	 */
+	mov r1, #1019
+	cmp r0, r1
+	ble oob
+	mov r1, #1023
+	cmp r0, r1
+	bgt oob
+	b spurious_continue
+
+oob:
+#endif
+
 	/*
 	 * Skip calling the isr if it is a spurious interrupt.
 	 */
 	mov r1, #CONFIG_NUM_IRQS
-	lsl r1, r1, #3
 	cmp r0, r1
 	bge spurious_continue
 
+	lsl r0, r0, #3	/* table is 8-byte wide */
 	ldr r1, =_sw_isr_table
 	add r1, r1, r0	/* table entry: ISRs must have their MSB set to stay
 			 * in thumb mode */
@@ -295,16 +311,31 @@ _idle_state_cleared:
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 	push {r0, r1}
-	lsl r0, r0, #3	/* table is 8-byte wide */
+
+#if CONFIG_GIC_VER >= 3
+	/*
+	 * Ignore Special INTIDs 1020..1023 see 2.2.1 of Arm Generic Interrupt Controller
+	 * Architecture Specification GIC architecture version 3 and version 4
+	 */
+	mov r1, #1019
+	cmp r0, r1
+	ble oob
+	mov r1, #1023
+	cmp r0, r1
+	bgt oob
+	b spurious_continue
+
+oob:
+#endif
 
 	/*
 	 * Skip calling the isr if it is a spurious interrupt.
 	 */
 	mov r1, #CONFIG_NUM_IRQS
-	lsl r1, r1, #3
 	cmp r0, r1
 	bge spurious_continue
 
+	lsl r0, r0, #3	/* table is 8-byte wide */
 	ldr r1, =_sw_isr_table
 	add r1, r1, r0	/* table entry: ISRs must have their MSB set to stay
 			 * in thumb mode */

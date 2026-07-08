@@ -1135,7 +1135,7 @@ static struct shell_transport transport = {
 	.ctx = NULL,
 };
 
-static uint8_t shell_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];
+static uint8_t shell_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE] __aligned(sizeof(uint32_t));
 Z_SHELL_DEFINE(etr_shell, CONFIG_DEBUG_NRF_ETR_SHELL_PROMPT, &transport, shell_out_buffer, NULL,
 	       SHELL_FLAG_OLF_CRLF);
 #endif /* CONFIG_DEBUG_NRF_ETR_SHELL */

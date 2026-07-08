@@ -17,24 +17,14 @@
 /* Execution of the test requires hardware configuration described in
  * devicetree.  See the test,gpio_basic_api binding local to this test
  * for details.
- *
- * If this is not present devices that have gpio-0, gpio-1, or gpio-2
- * aliases are supported for build-only tests.
  */
 #define DEV_OUT DT_GPIO_CTLR(DT_INST(0, test_gpio_basic_api), out_gpios)
 #define DEV_IN DT_GPIO_CTLR(DT_INST(0, test_gpio_basic_api), in_gpios)
-#define DEV DEV_OUT /* DEV_OUT should equal DEV_IN, we test for this */
 #define PIN_OUT DT_GPIO_PIN(DT_INST(0, test_gpio_basic_api), out_gpios)
 #define PIN_OUT_FLAGS DT_GPIO_FLAGS(DT_INST(0, test_gpio_basic_api), out_gpios)
 #define PIN_IN DT_GPIO_PIN(DT_INST(0, test_gpio_basic_api), in_gpios)
 #define PIN_IN_FLAGS DT_GPIO_FLAGS(DT_INST(0, test_gpio_basic_api), in_gpios)
 
-#elif DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(gpio_0))
-#define DEV DT_GPIO_CTLR(DT_ALIAS(gpio_0))
-#elif DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(gpio_1))
-#define DEV DT_GPIO_CTLR(DT_ALIAS(gpio_1))
-#elif DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(gpio_3))
-#define DEV DT_GPIO_CTLR(DT_ALIAS(gpio_3))
 #else
 #error Unsupported board
 #endif

@@ -10,8 +10,8 @@
  * @ingroup ra_flash_ex_op
  */
 
-#ifndef __ZEPHYR_INCLUDE_DRIVERS_FLASH_RA_FLASH_API_EXTENSIONS_H__
-#define __ZEPHYR_INCLUDE_DRIVERS_FLASH_RA_FLASH_API_EXTENSIONS_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FLASH_RA_FLASH_API_EXTENSIONS_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FLASH_RA_FLASH_API_EXTENSIONS_H_
 
 /**
  * @brief Extended operations for Renesas RA flash controllers.
@@ -201,4 +201,4 @@ typedef struct flash_ra_ex_write_protect_out {
  * @}
  */
 
-#endif /* __ZEPHYR_INCLUDE_DRIVERS_FLASH_RA_FLASH_API_EXTENSIONS_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FLASH_RA_FLASH_API_EXTENSIONS_H_ */

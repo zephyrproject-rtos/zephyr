@@ -1,0 +1,68 @@
+/*
+ * SPDX-FileCopyrightText: 2026 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+&pinctrl {
+	pinmux_ctimer0_pwm: pinmux_ctimer0_pwm {
+		group0 {
+			pinmux = <CT0_MAT0_PIO0_10>,
+				 <CT0_MAT3_PIO0_27>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_ctimer1_pwm: pinmux_ctimer1_pwm {
+		group0 {
+			pinmux = <CT1_MAT0_PIO1_2>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+};
+
+ctimer0_pwm: &ctimer0 {
+	compatible = "nxp,ctimer-pwm";
+	status = "okay";
+	pinctrl-0 = <&pinmux_ctimer0_pwm>;
+	pinctrl-names = "default";
+	#pwm-cells = <3>;
+};
+
+ctimer1_pwm: &ctimer1 {
+	compatible = "nxp,ctimer-pwm";
+	status = "okay";
+	pinctrl-0 = <&pinmux_ctimer1_pwm>;
+	pinctrl-names = "default";
+	#pwm-cells = <3>;
+};
+
+/ {
+	aliases {
+		pwm-led0 = &pwm_led0;
+		pwm-led1 = &pwm_led1;
+		pwm-led2 = &pwm_led2;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&ctimer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "RED";
+		};
+
+		pwm_led1: pwm_led_1 {
+			pwms = <&ctimer0_pwm 3 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "GREEN";
+		};
+
+		pwm_led2: pwm_led_2 {
+			pwms = <&ctimer1_pwm 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "BLUE";
+		};
+	};
+};

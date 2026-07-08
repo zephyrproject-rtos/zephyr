@@ -16,6 +16,40 @@ test_hl7800: hl7800 {
 	mdm-uart-cts-gpios = <&test_gpio 0 0>;
 	mdm-gpio6-gpios = <&test_gpio 0 0>;
 	mdm-vgpio-gpios = <&test_gpio 0 0>;
+
+	test_hl7800_socket_offload: socket_offload {
+		compatible = "swir,hl7800-offload", "swir,hl78xx-offload";
+		max-data-length = <512>;
+	};
+
+	test_hl7800_gnss: hl_gnss {
+		compatible = "swir,hl7800-gnss", "swir,hl78xx-gnss";
+		pps-mode = "GNSS_PPS_MODE_DISABLED";
+		fix-rate = <1000>;
+	};
+};
+
+test_hl7812: hl7812 {
+	compatible = "swir,hl7812";
+	mdm-reset-gpios = <&test_gpio 0 0>;
+	mdm-wake-gpios = <&test_gpio 0 0>;
+	mdm-pwr-on-gpios = <&test_gpio 0 0>;
+	mdm-fast-shutd-gpios = <&test_gpio 0 0>;
+	mdm-uart-dsr-gpios = <&test_gpio 0 0>;
+	mdm-uart-cts-gpios = <&test_gpio 0 0>;
+	mdm-gpio6-gpios = <&test_gpio 0 0>;
+	mdm-vgpio-gpios = <&test_gpio 0 0>;
+
+	test_hl7812_socket_offload: socket_offload {
+		compatible = "swir,hl7812-offload";
+		max-data-length = <512>;
+	};
+
+	test_hl7812_gnss: hl_gnss {
+		compatible = "swir,hl7812-gnss";
+		pps-mode = "GNSS_PPS_MODE_DISABLED";
+		fix-rate = <1000>;
+	};
 };
 
 test_wnc_m14a2a: wncm14a2a {

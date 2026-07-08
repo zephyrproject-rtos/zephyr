@@ -1029,7 +1029,7 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
  */
 #define ZSOCK_IP_MTU 14
 
-/** Disable local IPv4 fragmentation for packets sent on this socket.
+/** Disable local IPv4 fragmentation for this socket.
  *
  *  Takes an integer boolean (0 = allow fragmentation, non-zero = disable).
  *  When enabled, datagrams larger than the interface MTU are rejected locally
@@ -1038,6 +1038,9 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
  *
  *  Valid for ``setsockopt()`` and ``getsockopt()`` at the ``NET_IPPROTO_IP``
  *  level.
+ *
+ *  This option may also be passed as ancillary data in sendmsg() to override
+ *  fragmentation handling for a single datagram.
  */
 #define ZSOCK_IP_DONTFRAG 15
 
@@ -1094,7 +1097,7 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
  */
 #define ZSOCK_IPV6_MTU 24
 
-/** Disable local IPv6 fragmentation for packets sent on this socket.
+/** Disable local IPv6 fragmentation for this socket.
  *
  *  Takes an integer boolean (0 = allow fragmentation, non-zero = disable).
  *  When enabled, datagrams larger than the interface MTU are rejected locally
@@ -1102,6 +1105,9 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
  *
  *  Valid for ``setsockopt()`` and ``getsockopt()`` at the ``NET_IPPROTO_IPV6``
  *  level.
+ *
+ *  This option may also be passed as ancillary data in sendmsg() to override
+ *  fragmentation handling for a single datagram.
  */
 #define ZSOCK_IPV6_DONTFRAG 62
 

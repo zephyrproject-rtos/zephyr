@@ -137,6 +137,13 @@ Deprecated APIs and options
     :c:func:`ring_buf_item_get`, :c:func:`ring_buf_item_space_get`) has been deprecated in favor of
     :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`).
 
+* Networking
+
+  * Deprecated LLMNR support (:kconfig:option:`CONFIG_LLMNR_RESOLVER` and
+    :kconfig:option:`CONFIG_LLMNR_RESPONDER`). LLMNR is being phased out; use
+    mDNS (:kconfig:option:`CONFIG_MDNS_RESOLVER` /
+    :kconfig:option:`CONFIG_MDNS_RESPONDER`) instead.
+
 * Networking Link layer
 
   * Deprecated :kconfig:option:`CONFIG_NET_L2_PTP`.
@@ -159,6 +166,7 @@ New APIs and options
 * Audio
 
   * :c:member:`pcm_stream_cfg.gain_db`
+  * :c:struct:`audio_codec_eq_cfg`
 
 * Bluetooth
 
@@ -243,6 +251,10 @@ New Boards
 * Seeed
 
   * :zephyr:board:`Seeed Wio Tracker L1 <wio_tracker_l1>` (``wio_tracker_l1``)
+
+* WCH
+
+  * :zephyr:board:`WCH CH32V103EVT <ch32v103evt>` (``ch32v103evt``)
 
 New Shields
 ***********

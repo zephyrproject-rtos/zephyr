@@ -925,6 +925,13 @@ static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint1
 		goto unlock;
 	}
 
+	if ((mask & RTC_ALARM_TIME_MASK_WEEKDAY) && (mask & RTC_ALARM_TIME_MASK_MONTHDAY)) {
+		/* STM32 RTC can match weekday OR monthday but not both at the same time */
+		LOG_ERR("alarm %d cannot match weekday and monthday simultaneously", id);
+		err = -EINVAL;
+		goto unlock;
+	}
+
 	if (timeptr == NULL) {
 		LOG_ERR("timeptr is invalid");
 		err = -EINVAL;

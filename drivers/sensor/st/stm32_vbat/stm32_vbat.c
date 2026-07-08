@@ -14,6 +14,12 @@
 
 LOG_MODULE_REGISTER(stm32_vbat, CONFIG_SENSOR_LOG_LEVEL);
 
+#ifdef CONFIG_STM32_HAL2
+#define STM32_ADC_COMMON_INSTANCE	ADC_COMMON_INSTANCE
+#else /* CONFIG_STM32_HAL2 */
+#define STM32_ADC_COMMON_INSTANCE	__LL_ADC_COMMON_INSTANCE
+#endif /* CONFIG_STM32_HAL2 */
+
 struct stm32_vbat_data {
 	const struct device *adc;
 	const struct adc_channel_cfg adc_cfg;
@@ -33,17 +39,17 @@ struct stm32_vbat_config {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_vbat)
 static void stm32_vbat_enable_vbatsensor_channel(ADC_TypeDef *adc)
 {
-	const uint32_t path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
+	const uint32_t path = LL_ADC_GetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc));
 
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
+	LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
 					path | LL_ADC_PATH_INTERNAL_VBAT);
 }
 
 static void stm32_vbat_disable_vbatsensor_channel(ADC_TypeDef *adc)
 {
-	const uint32_t path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
+	const uint32_t path = LL_ADC_GetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc));
 
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
+	LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
 					path & ~LL_ADC_PATH_INTERNAL_VBAT);
 }
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_vbat) */
@@ -51,12 +57,20 @@ static void stm32_vbat_disable_vbatsensor_channel(ADC_TypeDef *adc)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_vddcore)
 static void stm32_vbat_enable_vddcore_channel(ADC_TypeDef *adc)
 {
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
 	LL_ADC_EnableChannelVDDcore(adc);
+#else /* CONFIG_SOC_SERIES_STM32H5X */
+	LL_ADC_SetPathInternalChAdd(adc, LL_ADC_PATH_INTERNAL_VDDCORE);
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
 }
 
 static void stm32_vbat_disable_vddcore_channel(ADC_TypeDef *adc)
 {
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
 	LL_ADC_DisableChannelVDDcore(adc);
+#else /* CONFIG_SOC_SERIES_STM32H5X */
+	LL_ADC_SetPathInternalChRem(adc, LL_ADC_PATH_INTERNAL_VDDCORE);
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
 }
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_vddcore) */
 

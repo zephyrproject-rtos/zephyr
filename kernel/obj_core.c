@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/init.h>
 #include <zephyr/kernel/obj_core.h>
+#include <kernel_internal.h>
 
 static struct k_spinlock  obj_core_lock;
 
@@ -48,7 +48,7 @@ void k_obj_core_init_and_link(struct k_obj_core *obj_core,
 	k_obj_core_link(obj_core);
 }
 
-static int z_obj_core_init_all(void)
+static void z_obj_core_init_all(void)
 {
 	STRUCT_SECTION_FOREACH(k_obj_core_desc, desc) {
 		z_obj_type_init(desc->type, desc->type_id,
@@ -79,12 +79,9 @@ static int z_obj_core_init_all(void)
 #endif /* CONFIG_OBJ_CORE_STATS */
 		}
 	}
-
-	return 0;
 }
 
-SYS_INIT(z_obj_core_init_all, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+K_KERNEL_INIT_PRE(z_obj_core_init_all);
 
 void k_obj_core_unlink(struct k_obj_core *obj_core)
 {
@@ -324,3 +321,42 @@ int k_obj_core_stats_enable(struct k_obj_core *obj_core)
 	return rv;
 }
 #endif /* CONFIG_OBJ_CORE_STATS */
+
+#ifdef CONFIG_OBJ_CORE_SYSTEM
+static struct k_obj_type obj_type_kernel;
+
+#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
+static struct k_obj_core_stats_desc kernel_stats_desc = {
+	.raw_size = sizeof(struct k_cycle_stats) * CONFIG_MP_MAX_NUM_CPUS,
+	.query_size = sizeof(struct k_thread_runtime_stats),
+	.raw   = z_kernel_stats_raw,
+	.query = z_kernel_stats_query,
+	.reset = NULL,
+	.disable = NULL,
+	.enable  = NULL,
+};
+#endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
+
+/* The kernel object is a singleton (_kernel), so it is registered and linked
+ * here directly rather than through the object type table.
+ */
+static void init_kernel_obj_core_list(void)
+{
+	/* Initialize kernel object type */
+
+	z_obj_type_init(&obj_type_kernel, K_OBJ_TYPE_KERNEL_ID,
+			offsetof(struct z_kernel, obj_core));
+
+#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
+	k_obj_type_stats_init(&obj_type_kernel, &kernel_stats_desc);
+#endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
+
+	k_obj_core_init_and_link(K_OBJ_CORE(&_kernel), &obj_type_kernel);
+#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
+	k_obj_core_stats_register(K_OBJ_CORE(&_kernel), _kernel.usage,
+				  sizeof(_kernel.usage));
+#endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
+}
+
+K_KERNEL_INIT_PRE(init_kernel_obj_core_list);
+#endif /* CONFIG_OBJ_CORE_SYSTEM */

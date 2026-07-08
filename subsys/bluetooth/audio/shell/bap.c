@@ -603,7 +603,7 @@ static int cmd_select_unicast(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (index > ARRAY_SIZE(unicast_streams)) {
+	if (index >= ARRAY_SIZE(unicast_streams)) {
 		shell_error(sh, "Invalid index: %lu", index);
 
 		return -ENOEXEC;
@@ -1138,7 +1138,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (index > ARRAY_SIZE(unicast_streams)) {
+	if (index >= ARRAY_SIZE(unicast_streams)) {
 		shell_error(sh, "Invalid index: %lu", index);
 
 		return -ENOEXEC;
@@ -3230,7 +3230,7 @@ static int cmd_select_broadcast_source(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	if (index > ARRAY_SIZE(broadcast_source_streams)) {
+	if (index >= ARRAY_SIZE(broadcast_source_streams)) {
 		shell_error(sh, "Invalid index: %lu", index);
 
 		return -ENOEXEC;

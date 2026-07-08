@@ -276,7 +276,7 @@ int z_try_abort_timeout(struct _timeout *to)
 		}
 	}
 
-	if (ret == -EAGAIN) {
+	if (IS_ENABLED(CONFIG_SMP) && ret == -EAGAIN) {
 		arch_spin_relax();
 	}
 

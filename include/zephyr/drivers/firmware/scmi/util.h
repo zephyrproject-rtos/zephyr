@@ -198,7 +198,7 @@
  * @brief Declare SCMI TX/RX channels using node instance number
  *
  * Same as DT_SCMI_TRANSPORT_CHANNELS_DECLARE() but uses the
- * protocol's node instance number and the DT_DRV_COMPAT macro.
+ * protocol's node instance number and the @c DT_DRV_COMPAT macro.
  *
  * @param protocol node instance number
  */
@@ -374,7 +374,7 @@
 
 /**
  * @brief Just like DT_SCMI_PROTOCOL_DEFINE(), but uses an instance
- * of a `DT_DRV_COMPAT` compatible instead of a node identifier
+ * of a @c DT_DRV_COMPAT compatible instead of a node identifier
  *
  * @param inst Instance number
  * @param init_fn Pointer to protocol's initialization function

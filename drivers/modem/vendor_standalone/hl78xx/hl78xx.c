@@ -456,14 +456,17 @@ static bool hl78xx_should_request_kcellmeas_manual(struct hl78xx_data *data)
 #endif
 	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
-	if (data->status.lpm.kcellmeas_bootstrap_done) {
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	if (data->status.kcellmeas.bootstrap_done) {
 		return false;
 	}
-	bool first_attach = !data->status.lpm.registration.is_registered_previously;
+
+	bool first_attach = !data->status.registration.is_registered_previously;
 
 	if (!first_attach) {
 		return false;
 	}
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
 	/* HL7800-like variants need an explicit KCELLMEAS on first attach. */
 	if (config->variant->socket_lpm_recreate_required) {
@@ -572,7 +575,7 @@ static void hl78xx_update_registration_flags_and_delegate(struct hl78xx_data *da
 		data->status.registration.is_registered_currently = true;
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_REGISTERED);
 #ifdef CONFIG_MODEM_HL78XX_STAY_IN_BOOT_MODE_FOR_ROAMING
-		k_sem_give(&data->stay_in_boot_mode_sem);
+		k_sem_give(&data->sems.stay_in_boot_mode_sem);
 #endif /* CONFIG_MODEM_HL78XX_STAY_IN_BOOT_MODE_FOR_ROAMING */
 #if defined(CONFIG_MODEM_HL78XX_POWER_DOWN) &&                                                     \
 	defined(CONFIG_MODEM_HL78XX_USE_ACTIVE_TIME_BASED_POWER_DOWN)
@@ -3646,8 +3649,10 @@ static int hl78xx_driver_pm_action(const struct device *dev, enum pm_device_acti
 static int hl78xx_init(const struct device *dev)
 {
 	int ret;
-	const struct hl78xx_config *config = dev->config;
 	struct hl78xx_data *data = (struct hl78xx_data *)dev->data;
+#if GPIO_CONFIG_LEN > 0
+	const struct hl78xx_config *config = dev->config;
+#endif /* GPIO_CONFIG_LEN > 0 */
 
 	k_mutex_init(&data->api_lock);
 	k_mutex_init(&data->tx_lock);
@@ -3694,9 +3699,10 @@ static int hl78xx_init(const struct device *dev)
 #ifdef CONFIG_MODEM_HL78XX_AUTOBAUD_START_WITH_TARGET_BAUDRATE
 	/* Update baud rate */
 	configure_uart_for_auto_baudrate(data, data->status.uart.target_baudrate);
-#endif /* CONFIG_MODEM_HL78XX_AUTOBAUD_START_WITH_TARGET_BAUDRATE */
-#endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
+#endif  /* CONFIG_MODEM_HL78XX_AUTOBAUD_START_WITH_TARGET_BAUDRATE */
+#endif  /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
 	/* GPIO validation */
+#if GPIO_CONFIG_LEN > 0
 	const struct gpio_dt_spec *gpio_pins[GPIO_CONFIG_LEN] = {
 #if HAS_RESET_GPIO
 		&config->mdm_gpio_reset,
@@ -3823,6 +3829,7 @@ static int hl78xx_init(const struct device *dev)
 		goto error;
 	}
 #endif /* HAS_GPIO6_GPIO */
+#endif /* GPIO_CONFIG_LEN > 0 */
 	/* UART pipe initialization */
 	(void)hl78xx_init_pipe(dev);
 
@@ -3832,7 +3839,7 @@ static int hl78xx_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_MODEM_HL78XX_STAY_IN_BOOT_MODE_FOR_ROAMING
-	k_sem_take(&data->stay_in_boot_mode_sem, K_FOREVER);
+	k_sem_take(&data->sems.stay_in_boot_mode_sem, K_FOREVER);
 #endif
 	LOG_INF("Modem HL78xx initialized");
 	/* Register the power management handler */
@@ -4029,24 +4036,58 @@ static DEVICE_API(cellular, hl78xx_api) = {
 			      &hl78xx_cfg_##inst, POST_KERNEL,                                     \
 			      CONFIG_MODEM_HL78XX_DEV_INIT_PRIORITY, &hl78xx_api);
 
-#define MODEM_DEVICE_SWIR_HL7812(inst)                                                             \
-	MODEM_HL78XX_DEFINE_INSTANCE(inst, CONFIG_MODEM_HL78XX_DEV_POWER_PULSE_DURATION_MS,        \
-				     CONFIG_MODEM_HL78XX_DEV_RESET_PULSE_DURATION_MS,              \
-				     CONFIG_MODEM_HL78XX_DEV_STARTUP_TIME_MS,                      \
-				     CONFIG_MODEM_HL78XX_DEV_SHUTDOWN_TIME_MS, false, NULL, NULL,  \
-				     &hl78xx_variant_ops_hl7812)
+#define HL78XX_CFG_NAME(node_id)  UTIL_CAT(hl78xx_cfg_, DT_NODE_HASH(node_id))
+#define HL78XX_DATA_NAME(node_id) UTIL_CAT(hl78xx_data_, DT_NODE_HASH(node_id))
 
-#define MODEM_DEVICE_SWIR_HL7800(inst)                                                             \
-	MODEM_HL78XX_DEFINE_INSTANCE(inst, CONFIG_MODEM_HL78XX_DEV_POWER_PULSE_DURATION_MS,        \
-				     CONFIG_MODEM_HL78XX_DEV_RESET_PULSE_DURATION_MS,              \
-				     CONFIG_MODEM_HL78XX_DEV_STARTUP_TIME_MS,                      \
-				     CONFIG_MODEM_HL78XX_DEV_SHUTDOWN_TIME_MS, false, NULL, NULL,  \
-				     &hl78xx_variant_ops_hl7800)
+#define MODEM_HL78XX_DEFINE_NODE(node_id, power_ms, reset_ms, startup_ms, shutdown_ms, start,      \
+				 init_script, periodic_script, variant_ops)                        \
+	static const struct hl78xx_config HL78XX_CFG_NAME(node_id) = {                             \
+		.uart = DEVICE_DT_GET(DT_BUS(node_id)),                                            \
+		.variant = (variant_ops),                                                          \
+		.mdm_gpio_reset = GPIO_DT_SPEC_GET_OR(node_id, mdm_reset_gpios, {}),               \
+		.mdm_gpio_wake = GPIO_DT_SPEC_GET_OR(node_id, mdm_wake_gpios, {}),                 \
+		.mdm_gpio_pwr_on = GPIO_DT_SPEC_GET_OR(node_id, mdm_pwr_on_gpios, {}),             \
+		.mdm_gpio_fast_shutdown = GPIO_DT_SPEC_GET_OR(node_id, mdm_fast_shutd_gpios, {}),  \
+		.mdm_gpio_uart_dtr = GPIO_DT_SPEC_GET_OR(node_id, mdm_uart_dtr_gpios, {}),         \
+		.mdm_gpio_uart_dsr = GPIO_DT_SPEC_GET_OR(node_id, mdm_uart_dsr_gpios, {}),         \
+		.mdm_gpio_uart_cts = GPIO_DT_SPEC_GET_OR(node_id, mdm_uart_cts_gpios, {}),         \
+		.mdm_gpio_vgpio = GPIO_DT_SPEC_GET_OR(node_id, mdm_vgpio_gpios, {}),               \
+		.mdm_gpio_gpio6 = GPIO_DT_SPEC_GET_OR(node_id, mdm_gpio6_gpios, {}),               \
+		.mdm_gpio_gpio8 = GPIO_DT_SPEC_GET_OR(node_id, mdm_gpio8_gpios, {}),               \
+		.mdm_gpio_sim_switch = GPIO_DT_SPEC_GET_OR(node_id, mdm_sim_switch_gpios, {}),     \
+		.power_pulse_duration_ms = (power_ms),                                             \
+		.reset_pulse_duration_ms = (reset_ms),                                             \
+		.startup_time_ms = (startup_ms),                                                   \
+		.shutdown_time_ms = (shutdown_ms),                                                 \
+		.autostarts = (start),                                                             \
+		.init_chat_script = (init_script),                                                 \
+		.periodic_chat_script = (periodic_script),                                         \
+	};                                                                                         \
+	static struct hl78xx_data HL78XX_DATA_NAME(node_id) = {                                    \
+		.buffers.delimiter = "\r\n",                                                       \
+		.buffers.eof_pattern = MDM_HL78XX_EOF_PATTERN,                                     \
+		.buffers.termination_pattern = MDM_HL78XX_TERMINATION_PATTERN,                     \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_DEFINE(node_id, hl78xx_driver_pm_action);                                     \
+                                                                                                   \
+	DEVICE_DT_DEFINE(node_id, hl78xx_init, PM_DEVICE_DT_GET(node_id),                          \
+			 &HL78XX_DATA_NAME(node_id), &HL78XX_CFG_NAME(node_id), POST_KERNEL,       \
+			 CONFIG_MODEM_HL78XX_DEV_INIT_PRIORITY, &hl78xx_api);
 
-#define DT_DRV_COMPAT swir_hl7812
-DT_INST_FOREACH_STATUS_OKAY(MODEM_DEVICE_SWIR_HL7812)
-#undef DT_DRV_COMPAT
+#define MODEM_DEVICE_SWIR_HL7812(node_id)                                                          \
+	MODEM_HL78XX_DEFINE_NODE(node_id, CONFIG_MODEM_HL78XX_DEV_POWER_PULSE_DURATION_MS,         \
+				 CONFIG_MODEM_HL78XX_DEV_RESET_PULSE_DURATION_MS,                  \
+				 CONFIG_MODEM_HL78XX_DEV_STARTUP_TIME_MS,                          \
+				 CONFIG_MODEM_HL78XX_DEV_SHUTDOWN_TIME_MS, false, NULL, NULL,      \
+				 &hl78xx_variant_ops_hl7812)
 
-#define DT_DRV_COMPAT swir_hl7800
-DT_INST_FOREACH_STATUS_OKAY(MODEM_DEVICE_SWIR_HL7800)
-#undef DT_DRV_COMPAT
+#define MODEM_DEVICE_SWIR_HL7800(node_id)                                                          \
+	MODEM_HL78XX_DEFINE_NODE(node_id, CONFIG_MODEM_HL78XX_DEV_POWER_PULSE_DURATION_MS,         \
+				 CONFIG_MODEM_HL78XX_DEV_RESET_PULSE_DURATION_MS,                  \
+				 CONFIG_MODEM_HL78XX_DEV_STARTUP_TIME_MS,                          \
+				 CONFIG_MODEM_HL78XX_DEV_SHUTDOWN_TIME_MS, false, NULL, NULL,      \
+				 &hl78xx_variant_ops_hl7800)
+
+DT_FOREACH_STATUS_OKAY(swir_hl7812, MODEM_DEVICE_SWIR_HL7812)
+DT_FOREACH_STATUS_OKAY(swir_hl7800, MODEM_DEVICE_SWIR_HL7800)

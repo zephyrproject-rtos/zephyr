@@ -13,20 +13,23 @@ from runners.core import RunnerCaps, RunnerConfig, ZephyrBinaryRunner
 
 class XSDBBinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg: RunnerConfig, config=None, bitstream=None,
-            fsbl=None, pdi=None, bl31=None, dtb=None):
+            fsbl=None, pdi=None, bl31=None, dtb=None, pmufw=None):
         super().__init__(cfg)
         self.elf_file = cfg.elf_file
         if not config:
             cfgfile_path = os.path.join(cfg.board_dir, 'support')
-            default = os.path.join(cfgfile_path, 'xsdb.cfg')
-            if os.path.exists(default):
-                config = default
+            for name in ('xsdb_cfg.tcl', 'xsdb.cfg'):
+                candidate = os.path.join(cfgfile_path, name)
+                if os.path.exists(candidate):
+                    config = candidate
+                    break
         self.xsdb_cfg_file = config
         self.bitstream = bitstream
         self.fsbl = fsbl
         self.pdi = pdi
         self.bl31 = bl31
         self.dtb = dtb
+        self.pmufw = pmufw
 
     @classmethod
     def name(cls):
@@ -44,6 +47,7 @@ class XSDBBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--pdi', help='path to the base/boot pdi file')
         parser.add_argument('--bl31', help='path to the bl31(ATF) elf file')
         parser.add_argument('--system-dtb', help='path to the system.dtb file')
+        parser.add_argument('--pmufw', help='path to the PMU firmware elf file (ZynqMP)')
 
     @classmethod
     def do_create(
@@ -51,21 +55,13 @@ class XSDBBinaryRunner(ZephyrBinaryRunner):
     ) -> "XSDBBinaryRunner":
         return XSDBBinaryRunner(cfg, config=args.config,
                 bitstream=args.bitstream, fsbl=args.fsbl,
-                pdi=args.pdi, bl31=args.bl31, dtb=args.system_dtb)
+                pdi=args.pdi, bl31=args.bl31, dtb=args.system_dtb,
+                pmufw=args.pmufw)
 
     def do_run(self, command, **kwargs):
-        if self.bitstream and self.fsbl:
-            cmd = ['xsdb', self.xsdb_cfg_file, self.elf_file, self.bitstream, self.fsbl]
-        elif self.bitstream:
-            cmd = ['xsdb', self.xsdb_cfg_file, self.elf_file, self.bitstream]
-        elif self.fsbl:
-            cmd = ['xsdb', self.xsdb_cfg_file, self.elf_file, self.fsbl]
-        elif self.pdi and self.bl31 and self.dtb:
-            cmd = ['xsdb', self.xsdb_cfg_file, self.elf_file, self.pdi, self.bl31, self.dtb]
-        elif self.pdi and self.bl31:
-            cmd = ['xsdb', self.xsdb_cfg_file, self.elf_file, self.pdi, self.bl31]
-        elif self.pdi:
-            cmd = ['xsdb', self.xsdb_cfg_file, self.elf_file, self.pdi]
-        else:
-            cmd = ['xsdb', self.xsdb_cfg_file, self.elf_file]
+        cmd = ['xsdb', self.xsdb_cfg_file, self.elf_file]
+        for param in (self.bitstream, self.fsbl, self.pdi, self.bl31,
+                      self.dtb, self.pmufw):
+            if param is not None:
+                cmd.append(param)
         self.check_call(cmd)

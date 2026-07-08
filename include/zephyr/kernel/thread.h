@@ -111,7 +111,7 @@ struct _thread_base {
 
 #ifdef CONFIG_SCHED_CPU_MASK
 	/* "May run on" bits for each CPU */
-	uint16_t cpu_mask;
+	uint32_t cpu_mask;
 #endif /* CONFIG_SCHED_CPU_MASK */
 
 	/* data returned by APIs */

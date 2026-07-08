@@ -11,6 +11,7 @@
  */
 
 #include <zephyr/smf.h>
+#include <zephyr/net/dplpmtud.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/net_ip.h>
 
@@ -282,8 +283,7 @@ struct quic_token_validation {
 };
 
 /* RFC 8899 DPLPMTUD for QUIC uses 1200-byte UDP payloads as the base size. */
-#define QUIC_DPLPMTUD_BASE_PLPMTU                1200U
-#define QUIC_DPLPMTUD_MAX_PROBE_RETRIES          3U
+#define QUIC_DPLPMTUD_BASE_PLPMTU NET_DPLPMTUD_BASE_PLPMTU
 
 /** A list of secure tags that TLS context should use. */
 struct sec_tag_list {
@@ -836,31 +836,9 @@ struct quic_endpoint {
 	/** Serializes TX packet assembly on crypto.tx_buffer and tx_pn. */
 	struct k_mutex send_lock;
 
-	/** DPLPMTUD path state for this endpoint. */
+	/** DPLPMTUD path handle; probe state lives in the generic path cache. */
 	struct {
-		/** Largest UDP payload size confirmed by ACK. */
-		uint16_t validated_payload_size;
-
-		/** Local receive/transmit ceiling derived from socket/interface MTU. */
-		uint16_t local_max_payload_size;
-
-		/** Binary-search lower bound for the next probe. */
-		uint16_t search_low;
-
-		/** Binary-search upper bound for the next probe. */
-		uint16_t search_high;
-
-		/** Current in-flight or pending probe size. */
-		uint16_t probe_size;
-
-		/** Number of probe transmissions attempted at probe_size. */
-		uint8_t probe_attempts;
-
-		/** A probe of probe_size is currently in flight. */
-		bool probe_in_flight;
-
-		/** The endpoint should send a new or repeated probe. */
-		bool probe_pending;
+		struct net_dplpmtud_path path;
 	} dplpmtud;
 
 	/** Max TX payload size for this endpoint, based on path MTU discovery.

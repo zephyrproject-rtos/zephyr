@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MB1280_STMOD_PLUS
+	def_bool $(shields_list_contains,mb1280_stmod_plus)
+
+config SHIELD_MB1280_STMOD_PLUS_ADC
+	def_bool $(shields_list_contains,mb1280_stmod_plus_adc)
+
+config SHIELD_MB1280_STMOD_PLUS_I2C
+	def_bool $(shields_list_contains,mb1280_stmod_plus_i2c)
+
+config SHIELD_MB1280_STMOD_PLUS_PWM
+	def_bool $(shields_list_contains,mb1280_stmod_plus_pwm)
+
+config SHIELD_MB1280_STMOD_PLUS_SERIAL
+	def_bool $(shields_list_contains,mb1280_stmod_plus_serial)
+
+config SHIELD_MB1280_STMOD_PLUS_SPI
+	def_bool $(shields_list_contains,mb1280_stmod_plus_spi)

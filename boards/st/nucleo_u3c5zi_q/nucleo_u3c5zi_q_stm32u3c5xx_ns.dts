@@ -1,0 +1,79 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 STMicroelectronics
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "nucleo_u3c5zi_q-common.dts"
+
+/ {
+	compatible = "st,stm32u3c5zi-nucleo-q-ns";
+
+	chosen {
+		zephyr,entropy = &psa_rng;
+		zephyr,code-partition = &slot0_ns_partition;
+	};
+
+	psa_rng: psa-rng {
+		compatible = "zephyr,psa-crypto-rng";
+		status = "okay";
+	};
+};
+
+/* Node label sram0 initialy cover SRAM1 (192kB), SRAM2 (64kB),
+ * SRAM3 (320kB) and SRAM4 (64kB). SRAM2 is owned by secure world
+ * (TF-M). SRAM3 and SRAM4 are not supported as non-secure memory region.
+ * So, we need to limit the sram0 node to cover only SRAM1 (192kB).
+ */
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(192)>;
+};
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/*
+		 * Following flash partition is dedicated to the use of nucleo_u3c5zi_q
+		 * with TZEN=1 with TF-M and must be synced on the flash layout defined
+		 * in TF-M.
+		 */
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(24)>;
+		};
+
+		slot0_partition: partition@6000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x00006000 DT_SIZE_K(256)>;
+		};
+
+		slot0_ns_partition: partition@46000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0-nonsecure";
+			reg = <0x00046000 DT_SIZE_K(512)>;
+		};
+
+		slot1_partition: partition@c6000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x000c6000 DT_SIZE_K(256)>;
+		};
+
+		slot1_ns_partition: partition@106000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1-nonsecure";
+			reg = <0x00106000 DT_SIZE_K(512)>;
+		};
+
+		storage_partition: partition@186000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x00186000 DT_SIZE_K(448)>;
+		};
+	};
+};
