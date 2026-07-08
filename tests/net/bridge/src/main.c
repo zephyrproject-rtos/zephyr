@@ -20,11 +20,15 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/ztest.h>
 
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/ethernet_bridge.h>
 #include <zephyr/net/ethernet_bridge_fdb.h>
 #include <zephyr/net/virtual.h>
 #include <zephyr/net/promiscuous.h>
+
+#include "arp.h"
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
@@ -39,6 +43,15 @@ struct eth_fake_context {
 	struct net_pkt *sent_pkt;
 	uint8_t mac_address[6];
 	bool promisc_mode;
+	/* Destination MAC of the last locally originated IPv4 frame seen on
+	 * this interface, used by the local-TX regression test.
+	 */
+	struct net_eth_addr last_ipv4_dst;
+	bool last_ipv4_seen;
+	/* Set when an ARP frame egressed this interface (used by the
+	 * cache-miss variant of the local-TX regression test).
+	 */
+	bool arp_seen;
 };
 
 static void eth_fake_iface_init(struct net_if *iface)
@@ -67,6 +80,23 @@ static int eth_fake_send(const struct device *dev,
 {
 	struct eth_fake_context *ctx = dev->data;
 	struct net_eth_hdr *eth_hdr = NET_ETH_HDR(pkt);
+
+	/*
+	 * Record the destination MAC of locally originated IPv4 frames so the
+	 * local-TX regression test can check it was resolved to a unicast
+	 * address instead of defaulting to broadcast.
+	 */
+	if (eth_hdr->type == net_htons(NET_ETH_PTYPE_IP)) {
+		memcpy(&ctx->last_ipv4_dst, &eth_hdr->dst,
+		       sizeof(ctx->last_ipv4_dst));
+		ctx->last_ipv4_seen = true;
+		return 0;
+	}
+
+	if (eth_hdr->type == net_htons(NET_ETH_PTYPE_ARP)) {
+		ctx->arp_seen = true;
+		return 0;
+	}
 
 	/*
 	 * Ignore packets we don't care about for this test, like
@@ -322,6 +352,167 @@ static void test_setup_bridge(void)
 	zassert_equal(ret, 0, "");
 }
 
+/*
+ * When the bridge interface owns an IPv4 address it can originate traffic of
+ * its own (e.g. a TCP server bound to the bridge). Such locally originated
+ * IPv4 packets used to be flooded to the member ports with an unresolved
+ * destination link address, which the Ethernet layer then defaulted to
+ * broadcast (ff:ff:ff:ff:ff:ff). Verify the destination is resolved to the
+ * neighbor's unicast MAC instead.
+ */
+#if defined(CONFIG_NET_IPV4)
+static const struct net_in_addr bridge_ip = { { { 192, 0, 2, 1 } } };
+
+/* Give the bridge an IPv4 address so a same-subnet peer is considered on-link.
+ * Idempotent: safe to call from more than one test.
+ */
+static void ensure_bridge_ipv4(void)
+{
+	struct net_in_addr netmask = { { { 255, 255, 255, 0 } } };
+
+	zassert_not_null(net_if_ipv4_addr_add(bridge, (struct net_in_addr *)&bridge_ip,
+					      NET_ADDR_MANUAL, 0), "");
+	zassert_true(net_if_ipv4_set_netmask_by_addr(bridge,
+						     (struct net_in_addr *)&bridge_ip,
+						     &netmask), "");
+}
+
+/* Craft a locally originated IPv4 unicast packet for the peer and hand it to
+ * the bridge TX path, mimicking the bridge's own IP stack.
+ */
+static void send_local_ipv4(const struct net_in_addr *peer_ip)
+{
+	struct net_ipv4_hdr ip_hdr = { 0 };
+	static uint8_t payload[] = { 'p', 'i', 'n', 'g' };
+	struct net_pkt *pkt;
+	int i, ret;
+
+	for (i = 0; i < 3; i++) {
+		eth_fake_data[i].last_ipv4_seen = false;
+		eth_fake_data[i].arp_seen = false;
+	}
+
+	pkt = net_pkt_alloc_with_buffer(bridge, sizeof(ip_hdr) + sizeof(payload),
+					NET_AF_INET, NET_IPPROTO_UDP, K_FOREVER);
+	zassert_not_null(pkt, "");
+
+	ip_hdr.vhl = 0x45;
+	ip_hdr.ttl = 64;
+	ip_hdr.proto = NET_IPPROTO_UDP;
+	ip_hdr.len = net_htons(sizeof(ip_hdr) + sizeof(payload));
+	net_ipv4_addr_copy_raw(ip_hdr.src, (uint8_t *)&bridge_ip);
+	net_ipv4_addr_copy_raw(ip_hdr.dst, (uint8_t *)peer_ip);
+
+	ret = net_pkt_write(pkt, &ip_hdr, sizeof(ip_hdr));
+	zassert_equal(ret, 0, "");
+	ret = net_pkt_write(pkt, payload, sizeof(payload));
+	zassert_equal(ret, 0, "");
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_family(pkt, NET_AF_INET);
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
+
+	net_if_queue_tx(bridge, pkt);
+
+	/* give time to the processing threads to run */
+	k_sleep(K_MSEC(100));
+}
+
+/* Every IPv4 frame that egressed a member port must carry the peer's unicast
+ * MAC, never broadcast. At least one copy must have egressed.
+ */
+static void check_ipv4_unicast(const struct net_eth_addr *peer_mac)
+{
+	bool checked = false;
+	int i;
+
+	for (i = 0; i < 3; i++) {
+		if (!eth_fake_data[i].last_ipv4_seen) {
+			continue;
+		}
+
+		checked = true;
+
+		zassert_false(net_eth_is_addr_broadcast(&eth_fake_data[i].last_ipv4_dst),
+			      "iface %d: IPv4 frame sent to broadcast MAC",
+			      net_if_get_by_iface(eth_fake_data[i].iface));
+		zassert_mem_equal(&eth_fake_data[i].last_ipv4_dst, peer_mac,
+				  sizeof(*peer_mac),
+				  "iface %d: IPv4 frame dst MAC not resolved to peer",
+				  net_if_get_by_iface(eth_fake_data[i].iface));
+	}
+
+	zassert_true(checked, "no IPv4 frame egressed any member port");
+}
+
+/* Cache hit: the neighbor is already in the bridge ARP cache, so the packet is
+ * resolved and flooded to the members straight away.
+ */
+static void test_local_ipv4_tx_unicast(void)
+{
+	struct net_in_addr peer_ip = { { { 192, 0, 2, 2 } } };
+	struct net_eth_addr peer_mac = {
+		.addr = { 0x02, 0x11, 0x22, 0x33, 0x44, 0x55 }
+	};
+
+	ensure_bridge_ipv4();
+
+	/* Seed the bridge ARP cache as if the peer had already been resolved
+	 * (this is what an incoming SYN/ARP from the peer would have done).
+	 */
+	net_arp_update(bridge, &peer_ip, &peer_mac, false, true);
+
+	send_local_ipv4(&peer_ip);
+
+	check_ipv4_unicast(&peer_mac);
+
+	check_free_packet_count();
+}
+
+/* Cache miss: the neighbor is unknown, so the bridge must flood an ARP request
+ * (not the data frame) and hold the packet until the reply resolves it. Once
+ * resolved, the held packet is flushed to the members with the unicast MAC.
+ */
+static void test_local_ipv4_tx_unicast_arp_miss(void)
+{
+	struct net_in_addr peer_ip = { { { 192, 0, 2, 3 } } };
+	struct net_eth_addr peer_mac = {
+		.addr = { 0x02, 0x66, 0x77, 0x88, 0x99, 0xaa }
+	};
+	bool arp_requested = false;
+	int i;
+
+	ensure_bridge_ipv4();
+
+	/* Make sure the peer is not resolved yet. */
+	send_local_ipv4(&peer_ip);
+
+	/* The data frame must not have been sent yet: it is queued pending ARP.
+	 * Instead an ARP request must have been flooded to the member ports.
+	 */
+	for (i = 0; i < 3; i++) {
+		zassert_false(eth_fake_data[i].last_ipv4_seen,
+			      "iface %d: IPv4 frame sent before ARP resolved",
+			      net_if_get_by_iface(eth_fake_data[i].iface));
+		arp_requested |= eth_fake_data[i].arp_seen;
+	}
+
+	zassert_true(arp_requested, "no ARP request flooded on cache miss");
+
+	/* Simulate the peer's ARP reply arriving: this resolves the entry and
+	 * flushes the queued packet back through the bridge TX path.
+	 */
+	net_arp_update(bridge, &peer_ip, &peer_mac, false, false);
+
+	/* give time to the processing threads to run */
+	k_sleep(K_MSEC(100));
+
+	check_ipv4_unicast(&peer_mac);
+
+	check_free_packet_count();
+}
+#endif /* CONFIG_NET_IPV4 */
+
 static void test_recv_with_bridge(void)
 {
 	int i, j;
@@ -461,6 +652,10 @@ ZTEST(net_eth_bridge, test_net_eth_bridge)
 	test_recv_before_bridging();
 	DBG("With bridging\n");
 	test_setup_bridge();
+#if defined(CONFIG_NET_IPV4)
+	test_local_ipv4_tx_unicast();
+	test_local_ipv4_tx_unicast_arp_miss();
+#endif
 	test_recv_with_bridge();
 	test_recv_with_bridge_fdb();
 	DBG("After bridging\n");
