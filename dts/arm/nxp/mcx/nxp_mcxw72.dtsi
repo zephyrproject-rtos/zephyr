@@ -110,3 +110,7 @@
 	rfmc-xo-cdac = <0x0a>;
 	rfmc-xo-isel = <0x0b>;
 };
+
+&clk_ctrl {
+	osc32k-coarse-adjustment = <MCXW_CLK_OSC32K_COARSE_RANGE3>;
+};

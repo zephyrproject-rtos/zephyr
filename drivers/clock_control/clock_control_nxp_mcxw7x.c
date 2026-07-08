@@ -53,6 +53,8 @@ struct mcxw_clock_control_config {
 	ccm32k_osc_xtal_cap_t xtal_cap;
 	/* OSC32K EXTAL capacitance configuration */
 	ccm32k_osc_extal_cap_t extal_cap;
+	/* OSC32K amplifier coarse gain adjustment */
+	ccm32k_osc_coarse_adjustment_value_t coarse_adjustment;
 
 	/* FIRC mode configuration */
 	uint8_t firc_mode;
@@ -278,7 +280,7 @@ static int nxp_mcxw_clock_control_init(const struct device *dev)
 	/* Init OSC32K */
 	CLOCK_SetRoscMonitorMode(kSCG_RoscMonitorDisable);
 	ccm32k_osc_config_t ccm32k_osc_config = {
-		.coarseAdjustment = kCCM32K_OscCoarseAdjustmentRange0,
+		.coarseAdjustment = config->coarse_adjustment,
 		.enableInternalCapBank = true,
 		.xtalCap = config->xtal_cap,
 		.extalCap = config->extal_cap,
@@ -412,6 +414,7 @@ static struct mcxw_clock_control_config config = {
 	.osc32k_mode = DT_INST_PROP(0, osc32k_mode),
 	.xtal_cap = DT_INST_PROP(0, osc32k_xtal_cap),
 	.extal_cap = DT_INST_PROP(0, osc32k_extal_cap),
+	.coarse_adjustment = DT_INST_PROP(0, osc32k_coarse_adjustment),
 	.firc_mode = DT_INST_PROP(0, firc_mode),
 	.firc_range = DT_INST_PROP(0, firc_range),
 	.enable_sirc_in_lp_mode = DT_INST_PROP(0, enable_sirc_in_lp_mode),
