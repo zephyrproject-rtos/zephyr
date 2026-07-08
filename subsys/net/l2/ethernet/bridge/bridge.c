@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(net_eth_bridge, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 #include <zephyr/random/random.h>
 
 #include "net_private.h"
+#include "arp.h"
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_TXRX_DEBUG)
 #define DEBUG_TX 1
@@ -343,6 +344,76 @@ static int bridge_iface_stop(const struct device *dev)
 }
 
 /*
+ * Resolve the destination link-layer address of a locally originated packet on
+ * the bridge interface before it is flooded to the member ports.
+ *
+ * A bridge interface can own an IP address and therefore originate traffic of
+ * its own. For IPv6 the neighbor is resolved in net_ipv6_prepare_for_send() on
+ * the interface the packet is sent on, so the destination link address is
+ * already known by the time it reaches this layer. IPv4 is different: its
+ * destination link address is normally resolved later, in the Ethernet L2 send
+ * routine. But the bridge forwards packets to its member ports with the family
+ * reset to AF_UNSPEC (so the already-built header of *forwarded* frames is not
+ * rebuilt), which also disables that ARP step, leaving the destination
+ * unresolved and thus defaulted to broadcast by the Ethernet layer.
+ *
+ * The member ports cannot resolve on the bridge's behalf either: an ARP reply
+ * is addressed to the bridge link address, so a member port would drop it as
+ * "not for me". Resolve here, on the bridge interface, where the ARP cache is
+ * populated and where a request/reply exchange completes correctly.
+ *
+ * Returns the packet to forward to the member ports: the original packet once
+ * the destination is known, an ARP request packet while resolution is pending,
+ * or NULL if nothing should be sent now (packet queued for later or on error).
+ */
+static struct net_pkt *bridge_resolve_local_dst(struct net_if *bridge, struct net_pkt *pkt)
+{
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_ARP)
+	struct net_pkt *arp_pkt = NULL;
+	int ret;
+
+	/* Only locally originated IPv4 packets need resolving here. Forwarded
+	 * (L2 bridged) frames already carry a complete Ethernet header, ARP
+	 * frames drive their own destination, and packets whose destination is
+	 * already known (broadcast/multicast or a cached neighbor) have a
+	 * non-zero link address.
+	 */
+	if (net_pkt_is_l2_bridged(pkt) ||
+	    net_pkt_ll_proto_type(pkt) != NET_ETH_PTYPE_IP ||
+	    net_pkt_lladdr_dst(pkt)->len > 0) {
+		return pkt;
+	}
+
+	ret = net_arp_prepare(pkt, (struct net_in_addr *)NET_IPV4_HDR(pkt)->dst,
+			      NULL, &arp_pkt);
+	switch (ret) {
+	case NET_ARP_COMPLETE:
+		/* Destination link address is now filled in pkt. */
+		return pkt;
+	case NET_ARP_PKT_REPLACED:
+		/* The original packet was queued inside ARP pending its
+		 * resolution; release our reference and flood the ARP request
+		 * instead so the reply comes back to the bridge.
+		 */
+		net_pkt_unref(pkt);
+		return arp_pkt;
+	case NET_ARP_PKT_QUEUED:
+		/* Appended to an already in-flight request for this address. */
+		net_pkt_unref(pkt);
+		return NULL;
+	default:
+		NET_DBG("DROP: IPv4 ARP prepare failed (%d)", ret);
+		net_pkt_unref(pkt);
+		return NULL;
+	}
+#else
+	ARG_UNUSED(bridge);
+
+	return pkt;
+#endif /* CONFIG_NET_IPV4 && CONFIG_NET_ARP */
+}
+
+/*
  * For direct TX, send pkt to all ifaces.
  * For forward TX (pkt from an original iface), send to all other ifaces.
  */
@@ -351,8 +422,19 @@ static enum net_verdict bridge_iface_send_process(struct net_if *iface,
 {
 	struct eth_bridge_iface_context *ctx = net_if_get_device(iface)->data;
 	struct net_if *orig_iface;
-	struct net_pkt *send_pkt = pkt;
+	struct net_pkt *send_pkt;
 	int fwd_iface_num = 0;
+
+	/* Resolve the destination link address of locally originated IPv4
+	 * traffic before flooding, otherwise the Ethernet layer defaults it to
+	 * broadcast (see bridge_resolve_local_dst).
+	 */
+	pkt = bridge_resolve_local_dst(iface, pkt);
+	if (pkt == NULL) {
+		return NET_OK;
+	}
+
+	send_pkt = pkt;
 
 	lock_bridge(ctx);
 
