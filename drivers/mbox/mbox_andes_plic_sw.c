@@ -153,7 +153,7 @@ static DEVICE_API(mbox, mbox_plic_driver_api) = {
 		.channel_max = ARRAY_SIZE(irq_sources##n),                                         \
 		.irq_sources = irq_sources##n,                                                     \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &mbox_plic_init##n, NULL, &mbox_plic_data##n, &mbox_plic_conf##n, \
-			      PRE_KERNEL_2, CONFIG_MBOX_INIT_PRIORITY, &mbox_plic_driver_api);
+	DEVICE_DT_INST_DEFINE_AUTO(n, &mbox_plic_init##n, NULL, &mbox_plic_data##n,                 \
+				   &mbox_plic_conf##n, PRE_KERNEL, &mbox_plic_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MBOX_PLIC_DEVICE_INIT)
