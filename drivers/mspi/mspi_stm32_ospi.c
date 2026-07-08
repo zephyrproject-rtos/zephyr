@@ -42,12 +42,10 @@
  * compile time by BUILD_ASSERT in MSPI_STM32_INIT.
  */
 #define OSPI_INST_NUM(index)                                                           \
-	(COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(octospi1)),                               \
-		(DT_SAME_NODE(DT_DRV_INST(index), DT_NODELABEL(octospi1)) ? 1 :),    \
-		())                                                                   \
-	COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(octospi2)),                               \
-		(DT_SAME_NODE(DT_DRV_INST(index), DT_NODELABEL(octospi2)) ? 2 :),    \
-		())                                                                   \
+	(IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(octospi1)),                            \
+		(DT_SAME_NODE(DT_DRV_INST(index), DT_NODELABEL(octospi1)) ? 1 :))      \
+	IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(octospi2)),                             \
+		(DT_SAME_NODE(DT_DRV_INST(index), DT_NODELABEL(octospi2)) ? 2 :))      \
 	0)
 
 /*
