@@ -958,7 +958,7 @@ static void supported_contexts_cb(struct bt_conn *conn, enum bt_audio_context sn
 {
 	ARG_UNUSED(conn);
 
-	bt_shell_print("Supported snk ctx %u src ctx %u", snk_ctx, src_ctx);
+	print_supported_stream_context(snk_ctx, src_ctx);
 }
 
 static void available_contexts_cb(struct bt_conn *conn,
@@ -967,7 +967,7 @@ static void available_contexts_cb(struct bt_conn *conn,
 {
 	ARG_UNUSED(conn);
 
-	bt_shell_print("Available snk ctx %u src ctx %u", snk_ctx, src_ctx);
+	print_available_stream_context(snk_ctx, src_ctx);
 }
 
 static void config_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,

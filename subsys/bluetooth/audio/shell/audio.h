@@ -355,21 +355,26 @@ static void print_ltv_array(size_t indent, const uint8_t *ltv_data, size_t ltv_d
 	}
 }
 
+static inline void print_context(size_t indent, enum bt_audio_context context)
+{
+	/* There can be up to 16 bits set in the field */
+	for (size_t i = 0U; i < 16U; i++) {
+		const uint16_t bit_val = BIT(i);
+
+		if ((context & bit_val) != 0U) {
+			bt_shell_print("%*s%-18s (0x%04X)", indent, "",
+				       bt_audio_context_bit_to_str(bit_val), bit_val);
+		}
+	}
+}
+
 static inline void print_codec_meta_pref_context(size_t indent, enum bt_audio_context context)
 {
 	bt_shell_print("%*sPreferred audio contexts:", indent, "");
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 
-	/* There can be up to 16 bits set in the field */
-	for (size_t i = 0U; i < 16U; i++) {
-		const uint16_t bit_val = BIT(i);
-
-		if (context & bit_val) {
-			bt_shell_print("%*s%s (0x%04X)", indent, "",
-				       bt_audio_context_bit_to_str(bit_val), bit_val);
-		}
-	}
+	print_context(indent, context);
 }
 
 static inline void print_codec_meta_stream_context(size_t indent, enum bt_audio_context context)
@@ -378,15 +383,39 @@ static inline void print_codec_meta_stream_context(size_t indent, enum bt_audio_
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 
-	/* There can be up to 16 bits set in the field */
-	for (size_t i = 0U; i < 16U; i++) {
-		const uint16_t bit_val = BIT(i);
+	print_context(indent, context);
+}
 
-		if (context & bit_val) {
-			bt_shell_print("%*s%s (0x%04X)", indent, "",
-				       bt_audio_context_bit_to_str(bit_val), bit_val);
-		}
-	}
+static inline void print_supported_stream_context(enum bt_audio_context snk_context,
+						  enum bt_audio_context src_context)
+{
+	const size_t indent = SHELL_PRINT_INDENT_LEVEL_SIZE;
+
+	bt_shell_print("Supported audio contexts:");
+
+	bt_shell_print("%*sSink:", indent, "");
+
+	print_context(indent + SHELL_PRINT_INDENT_LEVEL_SIZE, snk_context);
+
+	bt_shell_print("%*sSource:", indent, "");
+
+	print_context(indent + SHELL_PRINT_INDENT_LEVEL_SIZE, src_context);
+}
+
+static inline void print_available_stream_context(enum bt_audio_context snk_context,
+						  enum bt_audio_context src_context)
+{
+	const size_t indent = SHELL_PRINT_INDENT_LEVEL_SIZE;
+
+	bt_shell_print("Available audio contexts:");
+
+	bt_shell_print("%*sSink:", indent, "");
+
+	print_context(indent + SHELL_PRINT_INDENT_LEVEL_SIZE, snk_context);
+
+	bt_shell_print("%*sSource:", indent, "");
+
+	print_context(indent + SHELL_PRINT_INDENT_LEVEL_SIZE, src_context);
 }
 
 static inline void print_codec_meta_program_info(size_t indent, const uint8_t *program_info,
