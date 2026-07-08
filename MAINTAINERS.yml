@@ -5750,6 +5750,12 @@ Silabs Platforms:
     - drivers/*/*/*siwx91x*
     - tests/boards/silabs/
     - snippets/*silabs*/
+  file-groups:
+    - name: Silabs IEEE 802.15.4
+      collaborators:
+        - db00lean
+      files:
+        - drivers/ieee802154/
   labels:
     - "platform: Silabs"
   tests:
