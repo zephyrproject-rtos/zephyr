@@ -6,7 +6,7 @@ endif()
 
 if((CONFIG_SOC_FAMILY_SILABS_S1 AND CONFIG_SILABS_GECKO_POWER_MANAGER) OR CONFIG_SOC_FAMILY_SILABS_S2)
   zephyr_sources_ifdef(CONFIG_PM soc_power_pmgr.c)
-else()
+elseif(CONFIG_SOC_FAMILY_SILABS_S0 OR CONFIG_SOC_FAMILY_SILABS_S1)
   zephyr_sources_ifdef(CONFIG_PM soc_power.c)
 endif()
 
