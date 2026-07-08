@@ -154,4 +154,10 @@ static int sleeptimer_init(void)
 	return 0;
 }
 
-SYS_INIT(sleeptimer_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+/* Not ordered after the sleeptimer node: a counter driver binds a device to
+ * that same node at POST_KERNEL, and this init drives the hardware directly
+ * through the Silabs HAL rather than through that device. Run at the end of
+ * PRE_KERNEL instead, after every device ordered by priority or by devicetree.
+ */
+#define SYS_ANCHOR_silabs_sleeptimer SYS_ANCHOR(silabs_sleeptimer)
+SYS_INIT_ANCHORED(silabs_sleeptimer, sleeptimer_init, PRE_KERNEL);
