@@ -64,6 +64,9 @@ static enum ethernet_hw_caps dwmac_caps(const struct device *dev __unused,
 #ifdef CONFIG_NET_PROMISCUOUS_MODE
 	       | ETHERNET_PROMISC_MODE
 #endif
+#ifdef CONFIG_NET_VLAN
+	       | ETHERNET_HW_VLAN
+#endif
 #ifdef CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM
 	       | ETHERNET_HW_RX_CHKSUM_OFFLOAD
 #endif
