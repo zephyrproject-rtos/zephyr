@@ -47,6 +47,11 @@ zephyr_sources_ifdef(
   tracing_backend_adsp_memory_window.c
   )
 
+zephyr_sources_ifdef(
+  CONFIG_TRACING_BACKEND_IVSHMEM
+  tracing_backend_ivshmem.c
+  )
+
 endif()
 
 zephyr_sources(
