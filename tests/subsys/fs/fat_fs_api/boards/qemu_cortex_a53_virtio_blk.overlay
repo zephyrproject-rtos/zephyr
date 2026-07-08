@@ -1,0 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&virtio_mmio4 {
+	status = "okay";
+
+	virtio_blk: virtio-blk {
+		compatible = "virtio,blk";
+		disk-name = "VIRTIOBLK0";
+		status = "okay";
+	};
+};

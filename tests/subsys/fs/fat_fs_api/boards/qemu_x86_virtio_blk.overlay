@@ -1,0 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pcie/pcie.h>
+
+/ {
+	pcie0 {
+		virtio-blk-pci {
+			compatible = "virtio,pci";
+			vendor-id = <0x1af4>;
+			device-id = <0x1001>;
+			interrupts = <0xb 0x0 0x0>;
+			interrupt-parent = <&intc>;
+			status = "okay";
+
+			virtio_blk: virtio-blk {
+				compatible = "virtio,blk";
+				disk-name = "VIRTIOBLK0";
+				status = "okay";
+			};
+		};
+	};
+};
+
+&virtio_input_pci {
+	status = "disabled";
+};
