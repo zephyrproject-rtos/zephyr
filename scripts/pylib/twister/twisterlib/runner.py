@@ -75,6 +75,12 @@ from anytree import Node, RenderTree
 
 logger = logging.getLogger('twister')
 
+# Instance reason set when a pipeline stage assigns an illegal TwisterStatus
+# (StatusAttributeError). Shared by every stage handler in ProjectBuilder.process.
+INCORRECT_STATUS_REASON = 'Incorrect status assignment'
+# Instance reason set when CMake dt/kconfig filtering excludes an instance.
+RUNTIME_FILTER_REASON = 'runtime filter'
+
 
 class AtomicCounter:
     '''Data descriptor for a lock-protected multiprocessing counter.
@@ -733,7 +739,7 @@ class ProjectBuilder(FilterBuilder):
                     if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
                         logger.debug(f"filtering {self.instance.name}")
                         self.instance.status = TwisterStatus.FILTER
-                        self.instance.reason = "runtime filter"
+                        self.instance.reason = RUNTIME_FILTER_REASON
                         results.filtered_runtime_increment()
                         self.instance.add_missing_case_status(TwisterStatus.FILTER)
                         next_op = 'report'
@@ -742,7 +748,7 @@ class ProjectBuilder(FilterBuilder):
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
+                reason = INCORRECT_STATUS_REASON
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
@@ -766,7 +772,7 @@ class ProjectBuilder(FilterBuilder):
                     if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
                         logger.debug(f"filtering {self.instance.name}")
                         self.instance.status = TwisterStatus.FILTER
-                        self.instance.reason = "runtime filter"
+                        self.instance.reason = RUNTIME_FILTER_REASON
                         results.filtered_runtime_increment()
                         self.instance.add_missing_case_status(TwisterStatus.FILTER)
                         next_op = 'report'
@@ -775,7 +781,7 @@ class ProjectBuilder(FilterBuilder):
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
+                reason = INCORRECT_STATUS_REASON
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
@@ -824,7 +830,7 @@ class ProjectBuilder(FilterBuilder):
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
+                reason = INCORRECT_STATUS_REASON
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
@@ -848,7 +854,7 @@ class ProjectBuilder(FilterBuilder):
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
+                reason = INCORRECT_STATUS_REASON
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
@@ -879,7 +885,7 @@ class ProjectBuilder(FilterBuilder):
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
+                reason = INCORRECT_STATUS_REASON
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
@@ -908,7 +914,7 @@ class ProjectBuilder(FilterBuilder):
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
+                reason = INCORRECT_STATUS_REASON
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
@@ -947,7 +953,7 @@ class ProjectBuilder(FilterBuilder):
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                reason = f"Incorrect status assignment on {op}"
+                reason = f"{INCORRECT_STATUS_REASON} on {op}"
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
@@ -976,7 +982,7 @@ class ProjectBuilder(FilterBuilder):
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
+                reason = INCORRECT_STATUS_REASON
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = None
@@ -997,7 +1003,7 @@ class ProjectBuilder(FilterBuilder):
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
+                reason = INCORRECT_STATUS_REASON
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
 
@@ -1332,6 +1338,13 @@ class ProjectBuilder(FilterBuilder):
                     results.warnings_increment(1)
 
 
+    @staticmethod
+    def _colored_count(count, status, always=False):
+        # Right-aligned, 4-wide count coloured with the status colour when it is
+        # non-zero (or `always`), otherwise reset to neutral.
+        color = TwisterStatus.get_color(status) if always or count > 0 else Fore.RESET
+        return f"{color}{count:>4}{Fore.RESET}"
+
     def report_out(self, results):
         total_to_do = results.total - results.filtered_static
         total_tests_width = len(str(total_to_do))
@@ -1431,29 +1444,14 @@ class ProjectBuilder(FilterBuilder):
                 f"{unfiltered:>4}/{total_to_do:>4}"
                 f"{Fore.RESET}  {completed_perc:>2}%"
             )
-            notrun_section = (
-                f"{TwisterStatus.get_color(TwisterStatus.NOTRUN)}{results.notrun:>4}{Fore.RESET}"
+            notrun_section = self._colored_count(
+                results.notrun, TwisterStatus.NOTRUN, always=True
             )
-            filtered_section_color = (
-                TwisterStatus.get_color(TwisterStatus.SKIP)
-                if results.filtered_configs > 0
-                else Fore.RESET
+            filtered_section = self._colored_count(
+                results.filtered_configs, TwisterStatus.SKIP
             )
-            filtered_section = (
-                f"{filtered_section_color}{results.filtered_configs:>4}{Fore.RESET}"
-            )
-            failed_section_color = (
-                TwisterStatus.get_color(TwisterStatus.FAIL) if results.failed > 0 else Fore.RESET
-            )
-            failed_section = (
-                f"{failed_section_color}{results.failed:>4}{Fore.RESET}"
-            )
-            error_section_color = (
-                TwisterStatus.get_color(TwisterStatus.ERROR) if results.error > 0 else Fore.RESET
-            )
-            error_section = (
-                f"{error_section_color}{results.error:>4}{Fore.RESET}"
-            )
+            failed_section = self._colored_count(results.failed, TwisterStatus.FAIL)
+            error_section = self._colored_count(results.error, TwisterStatus.ERROR)
             sys.stdout.write(
                 f"INFO    - Total complete: {complete_section}"
                 f"  built (not run): {notrun_section},"
