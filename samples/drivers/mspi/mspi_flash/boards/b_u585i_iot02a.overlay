@@ -35,6 +35,7 @@
 			pinctrl-names = "default";
 			dmas = <&gpdma1 12 41 0x10480>; /* request 41 for OCTOSPI2 */
 			dma-names = "tx_rx";
+			st,dqs-port = <2>;
 			status = "okay";
 
 			mx25lm51245: ospi-nor-flash@0 {
