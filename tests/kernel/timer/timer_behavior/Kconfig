@@ -28,12 +28,6 @@ config TIMER_TEST_PERIOD
 	int "The number of microseconds to for the timer period"
 	default 1000
 
-config TIMER_TEST_MAX_STDDEV
-	int "Maximum standard deviation in microseconds allowed"
-	default 33 if NPCX_ITIM_TIMER
-	default 33 if ITE_IT8XXX2_TIMER
-	default 10
-
 config TIMER_EXTERNAL_TEST
 	bool "Perform test using an external tool"
 	help
