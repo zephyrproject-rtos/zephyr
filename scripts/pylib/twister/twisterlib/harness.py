@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import platform
 import re
 import shlex
 import shutil
@@ -36,7 +35,13 @@ from twisterlib.testsuitedata import HarnessConfig
 
 logger = logging.getLogger('twister')
 
-_WINDOWS = platform.system() == 'Windows'
+# pytest ExitCodes that mean the test tool itself errored rather than a test
+# failing. Shared by every report-based harness (see ReportHarness.run).
+REPORT_ERROR_EXIT_CODES = (
+    ExitCode.INTERRUPTED,
+    ExitCode.USAGE_ERROR,
+    ExitCode.INTERNAL_ERROR,
+)
 
 
 class HarnessException(Exception):
@@ -424,7 +429,6 @@ class Script(Harness):
                 continue
             duration = 0.0
             cmd = self._build_script_command(script)
-            logger.debug(f"Running command: {shlex.join(cmd)}")
             try:
                 start_time = time.time()
                 rc = self.run_command(cmd, timeout, env=self._get_env())
@@ -472,6 +476,7 @@ class Script(Harness):
 
     def run_command(self, cmd: list[str], timeout: float, env: dict[str, str] | None = None) -> int:
         """Run a command, stream its output, and return the exit code."""
+        logger.debug(f"Running command: {shlex.join(cmd)}")
         with subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
@@ -547,7 +552,59 @@ class Script(Harness):
             self.instance.add_missing_case_status(TwisterStatus.BLOCK, self.instance.reason)
 
 
-class Pytest(Script):
+class ReportHarness(Script):
+    """Base for harnesses that run an external tool and parse a JUnit report.
+
+    Subclasses set ``report_tool`` (the label used in status/reason messages)
+    and implement generate_command() and _parse_report_file(). run() and
+    _update_test_status() are shared here; Script's own script-oriented
+    implementations are deliberately overridden.
+    """
+    report_tool = 'Report'
+
+    def _get_run_env(self) -> dict[str, str] | None:
+        """Environment for the tool command; None inherits the current env."""
+        return None
+
+    def run(self, timeout):
+        try:
+            cmd = self.generate_command()
+            rc = self.run_command(cmd, timeout, self._get_run_env())
+            if rc in REPORT_ERROR_EXIT_CODES:
+                self.status = TwisterStatus.ERROR
+                self.instance.reason = f'{self.report_tool} error - return code {rc}'
+            self._flush_output_to_log(cmd, rc)
+        except HarnessException as err:
+            logger.error(str(err))
+            self.status = TwisterStatus.FAIL
+            self.instance.reason = str(err)
+        finally:
+            self.instance.record(self.recording)
+            self._update_test_status()
+        return True
+
+    def _update_test_status(self):
+        if self.status == TwisterStatus.NONE:
+            self.instance.testcases = []
+            try:
+                self._parse_report_file(self.report_file)
+            except Exception as e:
+                logger.error(f'Error when parsing file {self.report_file}: {e}')
+                self.status = TwisterStatus.FAIL
+            finally:
+                if not self.instance.testcases:
+                    self.instance.init_cases()
+
+        self.instance.status = self.status if self.status != TwisterStatus.NONE else \
+                               TwisterStatus.FAIL
+        if self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
+            self.instance.reason = self.instance.reason or f'{self.report_tool} failed'
+            self.instance.add_missing_case_status(TwisterStatus.BLOCK, self.instance.reason)
+
+
+class Pytest(ReportHarness):
+
+    report_tool = 'Pytest'
 
     def configure(self, instance: TestInstance):
         super().configure(instance)
@@ -555,24 +612,6 @@ class Pytest(Script):
         self.report_file = os.path.join(self.running_dir, 'report.xml')
         self.pytest_config_file = os.path.join(self.running_dir, TWISTER_PYTEST_CONFIG_FILE)
         self.pytest_params = HarnessPytestConfig(platform=instance.platform.name)
-
-    def run(self, timeout):
-        try:
-            cmd = self.generate_command()
-            cmd, env = self._update_command_with_env_dependencies(cmd)
-            rc = self.run_command(cmd, timeout, env)
-            if rc in (ExitCode.INTERRUPTED, ExitCode.USAGE_ERROR, ExitCode.INTERNAL_ERROR):
-                self.status = TwisterStatus.ERROR
-                self.instance.reason = f'Pytest error - return code {rc}'
-            self._flush_output_to_log(cmd, rc)
-        except HarnessException as pytest_exception:
-            logger.error(str(pytest_exception))
-            self.status = TwisterStatus.FAIL
-            self.instance.reason = str(pytest_exception)
-        finally:
-            self.instance.record(self.recording)
-            self._update_test_status()
-        return True
 
     def generate_command(self):
         config: HarnessConfig = self.instance.testsuite.harness_config
@@ -626,6 +665,9 @@ class Pytest(Script):
         # Save test parameters to YAML file for pytest-harness
         self.pytest_params.save_to_yaml(self.pytest_config_file)
 
+        if not PYTEST_PLUGIN_INSTALLED:
+            command.extend(['-p', 'twister_harness.plugin'])
+
         return command
 
     def _get_pytest_device_type(self, handler_name: str) -> str:
@@ -658,53 +700,20 @@ class Pytest(Script):
         # Platform flash_before is intended for boards with USB reset issues during flashing
         self.pytest_params.flash_before = self.instance.platform.flash_before
 
-    @staticmethod
-    def _update_command_with_env_dependencies(cmd):
-        '''
-        If python plugin wasn't installed by pip, then try to indicate it to
-        pytest by update PYTHONPATH and append -p argument to pytest command.
-        '''
+    def _get_run_env(self) -> dict[str, str] | None:
+        """Add the plugin source dir to PYTHONPATH."""
+        if PYTEST_PLUGIN_INSTALLED:
+            return None
         env = os.environ.copy()
-        if not PYTEST_PLUGIN_INSTALLED:
-            cmd.extend(['-p', 'twister_harness.plugin'])
-            pytest_plugin_path = os.path.join(
-                ZEPHYR_BASE,
-                'scripts',
-                'pylib',
-                'pytest-twister-harness',
-                'src'
-            )
-            env['PYTHONPATH'] = pytest_plugin_path + os.pathsep + env.get('PYTHONPATH', '')
-            if _WINDOWS:
-                cmd_append_python_path = f'set PYTHONPATH={pytest_plugin_path};%PYTHONPATH% && '
-            else:
-                cmd_append_python_path = (
-                    f'export PYTHONPATH={pytest_plugin_path}:${{PYTHONPATH}} && '
-                )
+        pytest_plugin_path = os.path.join(
+            ZEPHYR_BASE, 'scripts', 'pylib', 'pytest-twister-harness', 'src'
+        )
+        env['PYTHONPATH'] = pytest_plugin_path + os.pathsep + env.get('PYTHONPATH', '')
+        if os.name == 'nt':
+            logger.debug(f'set "PYTHONPATH={env["PYTHONPATH"]}"')
         else:
-            cmd_append_python_path = ''
-        cmd_to_print = cmd_append_python_path + shlex.join(cmd)
-        logger.debug(f'Running pytest command: {cmd_to_print}')
-
-        return cmd, env
-
-    def _update_test_status(self):
-        if self.status == TwisterStatus.NONE:
-            self.instance.testcases = []
-            try:
-                self._parse_report_file(self.report_file)
-            except Exception as e:
-                logger.error(f'Error when parsing file {self.report_file}: {e}')
-                self.status = TwisterStatus.FAIL
-            finally:
-                if not self.instance.testcases:
-                    self.instance.init_cases()
-
-        self.instance.status = self.status if self.status != TwisterStatus.NONE else \
-                               TwisterStatus.FAIL
-        if self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
-            self.instance.reason = self.instance.reason or 'Pytest failed'
-            self.instance.add_missing_case_status(TwisterStatus.BLOCK, self.instance.reason)
+            logger.debug(f"export PYTHONPATH={shlex.quote(env['PYTHONPATH'])}")
+        return env
 
     def _parse_report_file(self, report):
         tree = ET.parse(report)
@@ -1178,28 +1187,13 @@ class Bsim(Script):
         shutil.copy(original_exe_path, new_exe_path)
 
 
-class Ctest(Script):
+class Ctest(ReportHarness):
+
+    report_tool = 'Ctest'
+
     def configure(self, instance: TestInstance):
         super().configure(instance)
         self.report_file = os.path.join(self.running_dir, 'report.xml')
-
-    def run(self, timeout):
-        assert self.instance is not None
-        try:
-            cmd = self.generate_command()
-            rc = self.run_command(cmd, timeout)
-            if rc in (ExitCode.INTERRUPTED, ExitCode.USAGE_ERROR, ExitCode.INTERNAL_ERROR):
-                self.status = TwisterStatus.ERROR
-                self.instance.reason = f'Ctest error - return code {rc}'
-            self._flush_output_to_log(cmd, rc)
-        except Exception as err:
-            logger.error(str(err))
-            self.status = TwisterStatus.FAIL
-            self.instance.reason = str(err)
-        finally:
-            self.instance.record(self.recording)
-            self._update_test_status()
-        return True
 
     def generate_command(self):
         config = self.instance.testsuite.harness_config
@@ -1224,24 +1218,6 @@ class Ctest(Script):
             command.extend(handler.options.ctest_args)
 
         return command
-
-    def _update_test_status(self):
-        if self.status == TwisterStatus.NONE:
-            self.instance.testcases = []
-            try:
-                self._parse_report_file(self.report_file)
-            except Exception as e:
-                logger.error(f'Error when parsing file {self.report_file}: {e}')
-                self.status = TwisterStatus.FAIL
-            finally:
-                if not self.instance.testcases:
-                    self.instance.init_cases()
-
-        self.instance.status = self.status if self.status != TwisterStatus.NONE else \
-                               TwisterStatus.FAIL
-        if self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
-            self.instance.reason = self.instance.reason or 'Ctest failed'
-            self.instance.add_missing_case_status(TwisterStatus.BLOCK, self.instance.reason)
 
     def _parse_report_file(self, report):
         suite = junit.JUnitXml.fromfile(report)
