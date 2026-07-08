@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon XMC4xxx DWC2 compatible controller. This is a full-speed only
+  Synopsys DesignWare OTG core with an integrated transceiver, present on the
+  XMC4500/XMC4700/XMC4800 SoC family.
+
+compatible: "infineon,xmc4xxx-usb"
+
+include: ["snps,dwc2.yaml"]
