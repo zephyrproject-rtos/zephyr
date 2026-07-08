@@ -10,7 +10,7 @@
  * ex: tests/kernel/queue, k_queue_get() return k_queue address
  * 0x0, but treat as NULL fail.
  */
-SECTION_DATA_PROLOGUE(ram_start_nonzero,(NOLOAD),)
+SECTION_DATA_PROLOGUE(ram_start_nonzero,,ALIGN(8))
 {
 	. = ABSOLUTE(.) ? . : . + 0x8;
-} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
