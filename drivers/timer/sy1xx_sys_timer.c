@@ -6,6 +6,7 @@
 #define DT_DRV_COMPAT sy1xx_sys_timer
 
 #include <zephyr/init.h>
+#include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/timer/system_timer.h>
@@ -179,4 +180,4 @@ static int sy1xx_sys_timer_init(void)
 	return 0;
 }
 
-SYS_INIT(sy1xx_sys_timer_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT_DEPENDS(sy1xx_sys_timer_init, PRE_KERNEL, DT_DRV_INST(0));
