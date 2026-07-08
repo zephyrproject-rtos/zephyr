@@ -106,4 +106,4 @@ static int ch32v00x_systick_init(void)
 	return 0;
 }
 
-SYS_INIT(ch32v00x_systick_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT_DEPENDS(ch32v00x_systick_init, PRE_KERNEL, DT_DRV_INST(0));
