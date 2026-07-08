@@ -52,7 +52,7 @@ config MCUBOOT_SIGNATURE_KEY_FILE
 	  The existence of bin and hex files depends on CONFIG_BUILD_OUTPUT_BIN
 	  and CONFIG_BUILD_OUTPUT_HEX.
 
-	  This option should contain a path to the same file as the
+	  This option should contain a path to the same file as the (first)
 	  BOOT_SIGNATURE_KEY_FILE option in your MCUboot .config. The path
 	  may be absolute or relative to the west workspace topdir. (The MCUboot
 	  config option is used for the MCUboot bootloader image; this option is

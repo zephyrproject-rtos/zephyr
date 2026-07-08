@@ -203,13 +203,17 @@ config BOOT_SIGNATURE_TYPE_ED25519
 endchoice
 
 config BOOT_SIGNATURE_KEY_FILE
-	string "Signing PEM key file" if !BOOT_SIGNATURE_TYPE_NONE
+	string "Signing PEM key file(s) (or comma-separated list)" if !BOOT_SIGNATURE_TYPE_NONE
 	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-ec-p256.pem" if BOOT_SIGNATURE_TYPE_ECDSA_P256
 	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-ed25519.pem" if BOOT_SIGNATURE_TYPE_ED25519
 	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-rsa-2048.pem" if BOOT_SIGNATURE_TYPE_RSA
 	default ""
 	help
-	  Absolute path to signing key file to use with MCUBoot.
+	  Path to the signing key file, or a comma-separated list of key files
+	  to embed more than one verification key in the bootloader (an image
+	  signed with any of them is accepted). The first entry also signs the
+	  application; every later entry is verification-only and must be a
+	  public-only PEM of the same signature type.
 
 config SUPPORT_BOOT_ENCRYPTION
 	bool
