@@ -643,8 +643,24 @@ static int triggered_work_cancel(struct k_work_poll *work,
 {
 	/* Check if the work waits for event. */
 	if (work->poller.is_polling && work->poller.mode != MODE_NONE) {
-		/* Remove timeout associated with the work. */
+		/* Remove timeout associated with the work. If the handler is
+		 * already in flight this flags it to bail (dticks ABORTED),
+		 * but does not wait for it.
+		 */
 		z_abort_timeout(&work->timeout);
+
+		/* Then wait for any in-flight handler to actually complete
+		 * before we proceed. The handler still has a pending
+		 * dereference of work->timeout / work->poller, so returning
+		 * (and letting the caller free `work`, or re-arming the same
+		 * `work` for a new poll) while it is about to run would race
+		 * that access. Dropping the lock lets the blocked handler take
+		 * it, observe the abort, and return.
+		 */
+		while (z_timeout_is_inflight(&work->timeout)) {
+			k_spin_unlock(&lock, key);
+			key = k_spin_lock(&lock);
+		}
 
 		/*
 		 * Prevent work execution if event arrives while we will be
