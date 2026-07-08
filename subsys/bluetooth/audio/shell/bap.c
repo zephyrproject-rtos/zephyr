@@ -858,7 +858,7 @@ static void print_remote_codec_cap(const struct bt_conn *conn,
 				   const struct bt_audio_codec_cap *codec_cap,
 				   enum bt_audio_dir dir)
 {
-	bt_shell_print("conn %p: codec_cap %p dir 0x%02x", conn, codec_cap, dir);
+	bt_shell_print("conn %p: dir %s (0x%02x)", conn, bt_audio_dir_to_str(dir), dir);
 
 	print_codec_cap(0, codec_cap);
 }
@@ -1668,9 +1668,11 @@ static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 		struct bt_bap_stream *stream = &unicast_streams[i].stream.bap_stream;
 
 		if (stream != NULL && stream->conn != NULL) {
-			shell_print(sh, "  %s#%u: stream %p dir 0x%02x group %p",
+			const enum bt_audio_dir dir = stream_dir(stream);
+
+			shell_print(sh, "  %s#%u: stream %p dir %s (0x%02x) group %p",
 				    stream == default_stream ? "*" : " ", i, stream,
-				    stream_dir(stream), stream->group);
+				    bt_audio_dir_to_str(dir), dir, stream->group);
 		}
 	}
 
