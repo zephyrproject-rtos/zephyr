@@ -1687,6 +1687,125 @@ static inline int sensor_value_from_micro(struct sensor_value *val, int64_t micr
 }
 
 /**
+ * @brief Helper function for adding two struct sensor_value.
+ *
+ * @param inp1 The first addend.
+ * @param inp2 The second addend.
+ * @param out Resulting sum.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_add(struct sensor_value *inp1, struct sensor_value *inp2,
+				   struct sensor_value *out)
+{
+	int64_t val1 = (int64_t)inp1->val1 + (int64_t)inp2->val1;
+	int32_t val2 = inp1->val2 + inp2->val2;
+
+	if (val2 >= 1000000LL || (val1 < 0 && val2 > 0)) {
+		val1 += 1;
+		val2 -= 1000000LL;
+	} else if (val2 <= -1000000LL || (val1 > 0 && val2 < 0)) {
+		val1 -= 1;
+		val2 += 1000000LL;
+	}
+
+	if (!IN_RANGE(val1, INT32_MIN, INT32_MAX)) {
+		return -ERANGE;
+	}
+
+	out->val1 = val1;
+	out->val2 = val2;
+
+	return 0;
+}
+
+/**
+ * @brief Helper function for subtracting two struct sensor_value.
+ *
+ * @param inp1 The minuend.
+ * @param inp2 The subtrahend.
+ * @param out Resulting difference.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_subtract(struct sensor_value *inp1, struct sensor_value *inp2,
+					struct sensor_value *out)
+{
+	int64_t val1 = (int64_t)inp1->val1 - (int64_t)inp2->val1;
+	int32_t val2 = inp1->val2 - inp2->val2;
+
+	if (val2 >= 1000000LL || (val1 < 0 && val2 > 0)) {
+		val1 += 1;
+		val2 -= 1000000LL;
+	} else if (val2 <= -1000000LL || (val1 > 0 && val2 < 0)) {
+		val1 -= 1;
+		val2 += 1000000LL;
+	}
+
+	if (!IN_RANGE(val1, INT32_MIN, INT32_MAX)) {
+		return -ERANGE;
+	}
+
+	out->val1 = val1;
+	out->val2 = val2;
+
+	return 0;
+}
+
+/**
+ * @brief Helper function for multiplying two struct sensor_value.
+ *
+ * @param inp1 The first factor.
+ * @param inp2 The second factor.
+ * @param out Resulting product.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_multiply(struct sensor_value *inp1, struct sensor_value *inp2,
+					struct sensor_value *out)
+{
+	int64_t val1 = (int64_t)inp1->val1 * inp2->val1;
+	int64_t val2 = (int64_t)inp1->val1 * inp2->val2 + (int64_t)inp1->val2 * inp2->val1 +
+		       ((int64_t)inp1->val2 * inp2->val2) / 1000000LL;
+
+	val1 += val2 / 1000000LL;
+	val2 %= 1000000LL;
+
+	if (!IN_RANGE(val1, INT32_MIN, INT32_MAX)) {
+		return -ERANGE;
+	}
+
+	out->val1 = val1;
+	out->val2 = val2;
+
+	return 0;
+}
+
+/**
+ * @brief Helper function for scaling a struct sensor_value.
+ *
+ * @param inp A pointer to a sensor_value struct.
+ * @param scalar An integer scalar.
+ * @param out Scaled output.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_scale(struct sensor_value *inp, int32_t scalar,
+				     struct sensor_value *out)
+{
+	int64_t val1 = (int64_t)inp->val1 * scalar;
+	int64_t val2 = (int64_t)inp->val2 * scalar;
+
+	val1 += val2 / 1000000LL;
+	val2 %= 1000000LL;
+
+	if (!IN_RANGE(val1, INT32_MIN, INT32_MAX)) {
+		return -ERANGE;
+	}
+
+	out->val1 = val1;
+	out->val2 = val2;
+
+	return 0;
+}
+
+/**
  * @}
  */
 
