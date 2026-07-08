@@ -324,7 +324,7 @@ manifest:
       revision: bbedf2656086a93a8468a1c98168a6b36631ce9a
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: c53cc657cedbd17c009cb676a17bffb28b6650a3
+      revision: 098e120afb51877ed814bdc04443890ae12e0642
       path: modules/crypto/mbedtls
       groups:
         - crypto
@@ -389,7 +389,7 @@ manifest:
         - testing
         - tee
     - name: tf-psa-crypto
-      revision: 2d881593696aec687ca2246c53de207c2b9bf782
+      revision: fa92349590a54959ee2efc21b668e5afdb144726
       path: modules/crypto/tf-psa-crypto
       groups:
         - crypto
