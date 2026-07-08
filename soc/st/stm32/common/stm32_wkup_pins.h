@@ -12,6 +12,9 @@
 #ifndef ZEPHYR_SOC_ST_STM32_COMMON_STM32_WKUP_PINS_H_
 #define ZEPHYR_SOC_ST_STM32_COMMON_STM32_WKUP_PINS_H_
 
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
