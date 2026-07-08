@@ -68,8 +68,8 @@ the board under test and one at the external tool (Zephyr implementation of
 the timer also plays a role, and it's the real target of the test, but it
 depends on the board's clock). Different clocks run at different speeds, so
 they tend to drift. To be able to account for this drift, the external test
-doesn't reuse CONFIG_TIMER_TEST_MAX_DRIFT and
-CONFIG_TIMER_TEST_PERIOD_MAX_DRIFT_PERCENT, instead introducing
+doesn't reuse CONFIG_TIMER_TEST_MAX_DRIFT or the built-in test's computed
+per-period drift bound, instead introducing
 CONFIG_TIMER_EXTERNAL_TEST_MAX_DRIFT_PPM and
 CONFIG_TIMER_EXTERNAL_TEST_PERIOD_MAX_DRIFT_PPM, that can be more finely tuned
 for the hardware in question.
