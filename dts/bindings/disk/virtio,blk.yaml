@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: VIRTIO Block device
+
+compatible: "virtio,blk"
+
+include: base.yaml
+
+properties:
+  disk-name:
+    type: string
+    required: true
+    description: Disk name used by disk_access_* APIs.

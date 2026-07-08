@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config DISK_DRIVER_VIRTIO_BLK
+	bool "VIRTIO block disk driver"
+	default y
+	depends on DT_HAS_VIRTIO_BLK_ENABLED
+	select VIRTIO
+	help
+	  Enable driver for VIRTIO block devices.
+
+if DISK_DRIVER_VIRTIO_BLK
+
+config DISK_VIRTIO_BLK_MAX_SEGMENTS
+	int "VIRTIO block max scatter-gather data segments per request"
+	depends on MMU
+	default 14
+	range 1 254
+	help
+	  Maximum number of scatter-gather data segments a single block request
+	  may carry. This is the data segment budget, not the final virtqueue
+	  size. The driver keeps one request in flight at a time and sizes the
+	  request virtqueue by rounding (MAX_SEGMENTS + 2) up to a power of two;
+	  the two extra descriptors hold the request header and status byte. The
+	  default value of 14 therefore uses a 16-entry virtqueue, and the
+	  maximum value uses a 256-entry virtqueue.
+
+	  This bounds how physically fragmented a single transfer can be before
+	  the driver splits it into several device requests.
+
+config DISK_VIRTIO_BLK_SECTOR_SIZE
+	int "VIRTIO block fallback logical block size"
+	default 512
+	range 512 4096
+	help
+	  Logical block (sector) size reported to the disk access layer when the
+	  device does not advertise VIRTIO_BLK_F_BLK_SIZE. When the device does
+	  advertise it, the device-reported blk_size is used instead and this
+	  value is ignored. Must be a multiple of 512 and, under CONFIG_MMU, must
+	  not exceed the MMU page size.
+
+module = DISK_VIRTIO_BLK
+module-str = disk_virtio_blk
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DISK_DRIVER_VIRTIO_BLK
