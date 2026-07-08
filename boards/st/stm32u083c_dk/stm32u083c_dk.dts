@@ -24,6 +24,16 @@
 		zephyr,code-partition = &slot0_partition;
 	};
 
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button {
+			label = "Joystick Select";
+			gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
 	leds: leds {
 		compatible = "gpio-leds";
 
