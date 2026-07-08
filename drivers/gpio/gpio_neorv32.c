@@ -300,13 +300,12 @@ static DEVICE_API(gpio, neorv32_gpio_driver_api) = {
 		.irq_config_func = neorv32_gpio_config_func_##n,	\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_DT_INST_DEFINE_AUTO(n,					\
 			neorv32_gpio_init,				\
 			NULL,						\
 			&neorv32_gpio_##n##_data,			\
 			&neorv32_gpio_##n##_config,			\
-			PRE_KERNEL_2,					\
-			CONFIG_GPIO_INIT_PRIORITY,			\
+			PRE_KERNEL,					\
 			&neorv32_gpio_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NEORV32_GPIO_INIT)
