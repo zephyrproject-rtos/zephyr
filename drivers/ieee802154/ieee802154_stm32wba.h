@@ -204,6 +204,12 @@ struct stm32wba_802154_data_t {
 	/* Security Enabled bit value in ACK sent for the last received frame. */
 	bool last_frame_ack_seb;
 
+	/* Maximum number of CSMA backoff attempts before declaring channel access failure. */
+	uint8_t max_csma_backoffs;
+
+	/* Maximum number of retries allowed after a transmission failure. */
+	uint8_t max_frame_retries;
+
 	/* CCA complete semaphore. Unlocked when CCA is complete. */
 	struct k_sem cca_wait;
 
