@@ -122,7 +122,7 @@ static const struct modem_cellular_vendor_config nrf93m1_vendor = {
 };
 
 #define MODEM_CELLULAR_DEVICE_NORDIC_NRF93M1(inst)                                                 \
-	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 1500); \
+	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 1500);     \
                                                                                                    \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
 		.chat_delimiter = "\r\n",                                                          \
