@@ -66,7 +66,7 @@ extern "C" {
 #endif /* LL_PWR_GPIO_J */
 
 /* Some STM32U5 SoCs do not have all the LL_PWR_GPIO_PORTX */
-#if defined(CONFIG_SOC_SERIES_STM32U5X)
+#if defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X)
 #ifndef LL_PWR_GPIO_PORTF
 #define LL_PWR_GPIO_PORTF 0
 #endif /* LL_PWR_GPIO_PORTF */
@@ -76,7 +76,7 @@ extern "C" {
 #ifndef LL_PWR_GPIO_PORTJ
 #define LL_PWR_GPIO_PORTJ 0
 #endif /* LL_PWR_GPIO_PORTJ */
-#endif /* CONFIG_SOC_SERIES_STM32U5X */
+#endif /* CONFIG_SOC_SERIES_STM32U3X || CONFIG_SOC_SERIES_STM32U5X */
 
 #ifdef __cplusplus
 }

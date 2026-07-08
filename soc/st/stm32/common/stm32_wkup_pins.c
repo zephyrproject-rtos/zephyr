@@ -108,7 +108,11 @@ static const struct gpio_dt_spec empty_gpio = {.port = NULL, .pin = 0, .dt_flags
 /* wkup_pin idx starts from 1 */
 #define WKUP_PIN_CFG_DT_BY_IDX(idx) WKUP_PIN_CFG_DT(WKUP_PIN_NODE_ID_BY_IDX(idx))
 
+#ifdef CONFIG_SOC_SERIES_STM32U3X
+#define PWR_STM32_WKUP_PIN_LOOKUP_MEMBER(i, _) CONCAT(LL_PWR_WAKEUP_LINE, UTIL_INC(i))
+#else /* CONFIG_SOC_SERIES_STM32U3X */
 #define PWR_STM32_WKUP_PIN_LOOKUP_MEMBER(i, _) CONCAT(LL_PWR_WAKEUP_PIN, UTIL_INC(i))
+#endif /* CONFIG_SOC_SERIES_STM32U3X */
 
 #define WKUP_PIN_CFG_DT_COMMA(wkup_pin_id) WKUP_PIN_CFG_DT(wkup_pin_id),
 
@@ -174,7 +178,7 @@ static const size_t gpio_ports_cnt = ARRAY_SIZE(gpio_ports);
  * @brief LookUp Table to store LL_PWR_GPIO_x of each GPIO port.
  */
 static const uint32_t table_ll_pwr_gpio_ports[] = {
-#ifdef CONFIG_SOC_SERIES_STM32U5X
+#if defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X)
 	(uint32_t)LL_PWR_GPIO_PORTA, (uint32_t)LL_PWR_GPIO_PORTB, (uint32_t)LL_PWR_GPIO_PORTC,
 	(uint32_t)LL_PWR_GPIO_PORTD, (uint32_t)LL_PWR_GPIO_PORTE, (uint32_t)LL_PWR_GPIO_PORTF,
 	(uint32_t)LL_PWR_GPIO_PORTG, (uint32_t)LL_PWR_GPIO_PORTH, (uint32_t)LL_PWR_GPIO_PORTI,
@@ -182,12 +186,80 @@ static const uint32_t table_ll_pwr_gpio_ports[] = {
 #else
 	LL_PWR_GPIO_A, LL_PWR_GPIO_B, LL_PWR_GPIO_C, LL_PWR_GPIO_D, LL_PWR_GPIO_E,
 	LL_PWR_GPIO_F, LL_PWR_GPIO_G, LL_PWR_GPIO_H, LL_PWR_GPIO_I, LL_PWR_GPIO_J
-#endif /* CONFIG_SOC_SERIES_STM32U5X */
+#endif /* CONFIG_SOC_SERIES_STM32U3X || CONFIG_SOC_SERIES_STM32U5X */
 };
 
 static const size_t pwr_ll_gpio_ports_cnt = ARRAY_SIZE(table_ll_pwr_gpio_ports);
 
 #endif /* PWR_STM32_WKUP_PINS_PUPD_CFG */
+
+static inline void ll_set_wakeup_polarity_low(uint32_t wkup_pin)
+{
+#ifdef CONFIG_SOC_SERIES_STM32U3X
+	LL_PWR_SetWakeUpLinePolarityLow(wkup_pin);
+#else
+	LL_PWR_SetWakeUpPinPolarityLow(wkup_pin);
+#endif
+}
+
+static inline void ll_set_wakeup_polarity_high(uint32_t wkup_pin)
+{
+#ifdef CONFIG_SOC_SERIES_STM32U3X
+	LL_PWR_SetWakeUpLinePolarityHigh(wkup_pin);
+#else
+	LL_PWR_SetWakeUpPinPolarityHigh(wkup_pin);
+#endif
+}
+
+#if defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBAX)
+
+static inline void ll_set_wakeup_signal_0_selection(uint32_t wkup_pin)
+{
+#ifdef CONFIG_SOC_SERIES_STM32U3X
+	LL_PWR_SetWakeUpLineSignal0Selection(wkup_pin);
+#else
+	LL_PWR_SetWakeUpPinSignal0Selection(wkup_pin);
+#endif
+}
+
+static inline void ll_set_wakeup_signal_1_selection(uint32_t wkup_pin)
+{
+#ifdef CONFIG_SOC_SERIES_STM32U3X
+	LL_PWR_SetWakeUpLineSignal1Selection(wkup_pin);
+#else
+	LL_PWR_SetWakeUpPinSignal1Selection(wkup_pin);
+#endif
+}
+
+static inline void ll_set_wakeup_signal_2_selection(uint32_t wkup_pin)
+{
+#ifdef CONFIG_SOC_SERIES_STM32U3X
+	LL_PWR_SetWakeUpLineSignal2Selection(wkup_pin);
+#else
+	LL_PWR_SetWakeUpPinSignal2Selection(wkup_pin);
+#endif
+}
+
+static inline void ll_set_wakeup_signal_3_selection(uint32_t wkup_pin)
+{
+#ifdef CONFIG_SOC_SERIES_STM32U3X
+	LL_PWR_SetWakeUpLineSignal3Selection(wkup_pin);
+#else
+	LL_PWR_SetWakeUpPinSignal3Selection(wkup_pin);
+#endif
+}
+
+#endif /* CONFIG_SOC_SERIES_STM32U3X or CONFIG_SOC_SERIES_STM32U5X or CONFIG_SOC_SERIES_STM32WBAX */
+
+static inline void ll_enable_wakeup(uint32_t wkup_pin)
+{
+#ifdef CONFIG_SOC_SERIES_STM32U3X
+	LL_PWR_EnableWakeUpLine(wkup_pin);
+#else
+	LL_PWR_EnableWakeUpPin(wkup_pin);
+#endif
+}
 
 /**
  * @brief Configure & enable a wake-up pin.
@@ -202,9 +274,9 @@ static void wkup_pin_setup(const struct wkup_pin_cfg_t *wakeup_pin_cfg)
 #if PWR_STM32_WKUP_PINS_POLARITY
 	/* Set wake-up pin polarity */
 	if (wakeup_pin_cfg->polarity == STM32_PWR_WKUP_PIN_P_FALLING) {
-		LL_PWR_SetWakeUpPinPolarityLow(table_wakeup_pins[wkup_pin_index]);
+		ll_set_wakeup_polarity_low(table_wakeup_pins[wkup_pin_index]);
 	} else {
-		LL_PWR_SetWakeUpPinPolarityHigh(table_wakeup_pins[wkup_pin_index]);
+		ll_set_wakeup_polarity_high(table_wakeup_pins[wkup_pin_index]);
 	}
 #endif /* PWR_STM32_WKUP_PINS_POLARITY */
 
@@ -227,20 +299,21 @@ static void wkup_pin_setup(const struct wkup_pin_cfg_t *wakeup_pin_cfg)
 	}
 #endif /* PWR_STM32_WKUP_PINS_PUPD_CFG */
 
-#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
+#if defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBAX)
 	/* Select the proper wake-up signal source */
 	if (wakeup_pin_cfg->src_selection & STM32_PWR_WKUP_EVT_SRC_0) {
-		LL_PWR_SetWakeUpPinSignal0Selection(table_wakeup_pins[wkup_pin_index]);
+		ll_set_wakeup_signal_0_selection(table_wakeup_pins[wkup_pin_index]);
 	} else if (wakeup_pin_cfg->src_selection & STM32_PWR_WKUP_EVT_SRC_1) {
-		LL_PWR_SetWakeUpPinSignal1Selection(table_wakeup_pins[wkup_pin_index]);
+		ll_set_wakeup_signal_1_selection(table_wakeup_pins[wkup_pin_index]);
 	} else if (wakeup_pin_cfg->src_selection & STM32_PWR_WKUP_EVT_SRC_2) {
-		LL_PWR_SetWakeUpPinSignal2Selection(table_wakeup_pins[wkup_pin_index]);
+		ll_set_wakeup_signal_2_selection(table_wakeup_pins[wkup_pin_index]);
 	} else {
-		LL_PWR_SetWakeUpPinSignal3Selection(table_wakeup_pins[wkup_pin_index]);
+		ll_set_wakeup_signal_3_selection(table_wakeup_pins[wkup_pin_index]);
 	}
-#endif /* CONFIG_SOC_SERIES_STM32U5X or CONFIG_SOC_SERIES_STM32WBAX */
+#endif /* CONFIG_SOC_SERIES_STM32U3X or CONFIG_SOC_SERIES_STM32U5X or CONFIG_SOC_SERIES_STM32WBAX */
 
-	LL_PWR_EnableWakeUpPin(table_wakeup_pins[wkup_pin_index]);
+	ll_enable_wakeup(table_wakeup_pins[wkup_pin_index]);
 }
 
 /**
@@ -287,14 +360,15 @@ int stm32_pwr_wkup_pin_cfg_gpio(const struct gpio_dt_spec *gpio)
 	wakeup_pin_cfg.wkup_pin_id = wkup_pin_dt_cfg->wkup_pin_id;
 
 /* Each wake-up pin on STM32U5 is associated with 4 wkup srcs, 3 of them correspond to GPIOs. */
-#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
+#if defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBAX)
 	wakeup_pin_cfg.src_selection = wkup_pin_gpio_cfg->dt_flags &
 					(STM32_PWR_WKUP_EVT_SRC_0 |
 					STM32_PWR_WKUP_EVT_SRC_1 |
 					STM32_PWR_WKUP_EVT_SRC_2);
 #else
 	wakeup_pin_cfg.src_selection = 0;
-#endif /* CONFIG_SOC_SERIES_STM32U5X or CONFIG_SOC_SERIES_STM32WBAX */
+#endif /* CONFIG_SOC_SERIES_STM32U3X or CONFIG_SOC_SERIES_STM32U5X or CONFIG_SOC_SERIES_STM32WBAX */
 
 #if PWR_STM32_WKUP_PINS_POLARITY
 	/*
@@ -363,7 +437,7 @@ int stm32_pwr_wkup_pin_cfg_gpio(const struct gpio_dt_spec *gpio)
 void stm32_pwr_wkup_pin_cfg_pupd(void)
 {
 #if PWR_STM32_WKUP_PINS_PUPD_CFG
-#ifdef CONFIG_SOC_SERIES_STM32U5X
+#if defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X)
 	LL_PWR_EnablePUPDConfig();
 #else
 	LL_PWR_EnablePUPDCfg();
