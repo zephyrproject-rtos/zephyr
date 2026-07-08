@@ -53,4 +53,15 @@
 		clock-names = "fck";
 		status = "disabled";
 	};
+
+	wkup_vtm0: vtm@b00000 {
+		compatible = "ti,vtm";
+		reg = <0xb00000 0x1000>,
+		      <0xb01000 0x1000>;
+		reg-names = "cfg1", "cfg2";
+		power-domains = <&wkup_vtm0_pd>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
 };

@@ -1,0 +1,71 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments
+
+description: |
+  TI Voltage and Thermal Management driver
+
+  The VTM module provides thermal management capabilities including:
+  - Multiple temperature sensors (up to 8)
+  - Configurable temperature thresholds with interrupt support
+  - Thermal shutdown capabilities
+
+compatible: "ti,vtm"
+
+include: [base.yaml, power-domain.yaml]
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+    enum:
+      - "cfg1"
+      - "cfg2"
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    enum:
+      - "th0"
+      - "th1"
+      - "th2"
+
+  ti,maxt-outrg-thresh:
+    type: int
+    required: true
+    description: |
+      Maximum outrange alert trigger threshold in millidegree Celsius.
+      When any enabled sensor exceeds this value, outrange alert is
+      asserted causing a warm reset.
+
+  ti,maxt-outrg-thresh0:
+    type: int
+    required: true
+    description: |
+      Maximum outrange alert recovery threshold in millidegree Celsius.
+      Alert deasserts when temperature drops below this value.
+
+child-binding:
+  description: |
+    VTM temperature sensor instances. Each child node represents an individual
+    temperature sensor with its own thresholds and semantic meaning.
+
+  properties:
+    reg:
+      type: int
+      required: true
+      description: |
+        Sensor ID within the VTM controller (0-7).
+        Must be within the range of sensors available on the SoC.
+      enum: [0, 1, 2, 3, 4, 5, 6, 7]
+
+    ti,voltage-domain:
+      type: int
+      required: true
+      description: |
+        Voltage domain index this sensor belongs to (0-7).
+        Used for VD interrupts.
+      enum: [0, 1, 2, 3, 4, 5, 6, 7]

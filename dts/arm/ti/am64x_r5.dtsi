@@ -247,3 +247,11 @@
 	interrupts = <0 166 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
+
+&wkup_vtm0 {
+	interrupts = <0 183 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+		     <0 184 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+		     <0 185 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-names = "th1", "th2", "th0";
+	interrupt-parent = <&vim>;
+};
