@@ -289,8 +289,8 @@ static void i2c_sedi_isr(const struct device *dev)
 		.set_bus_data = &i2c_sedi_set_bus_data_##n,                                        \
 	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(n, i2c_sedi_pm_action);                                           \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_sedi_init, PM_DEVICE_DT_INST_GET(n),                      \
-				  &i2c_sedi_data_##n, &i2c_sedi_config_##n, PRE_KERNEL_2,          \
-				  CONFIG_I2C_INIT_PRIORITY, &i2c_sedi_apis);
+	I2C_DEVICE_DT_INST_DEFINE_AUTO(n, i2c_sedi_init, PM_DEVICE_DT_INST_GET(n),                 \
+				       &i2c_sedi_data_##n, &i2c_sedi_config_##n, PRE_KERNEL,       \
+				       &i2c_sedi_apis);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_DEVICE_INIT_SEDI)

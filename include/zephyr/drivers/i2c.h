@@ -793,6 +793,48 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 	I2C_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
+ * @brief Like I2C_DEVICE_DT_DEFINE() but with automatic initialization
+ * ordering instead of a manual priority.
+ *
+ * The device's position within @p level is derived from the devicetree
+ * dependency ordinal of @p node_id, exactly like DEVICE_DT_DEFINE_AUTO():
+ * the device initializes after every devicetree dependency it has (parent
+ * bus, clocks, pinctrl, any phandle reference), with no manually assigned
+ * priority. See DEVICE_DT_DEFINE_AUTO() for the ordering guarantees and the
+ * opt-in contract (all initialization-order dependencies must be visible in
+ * the devicetree).
+ *
+ * @param node_id The devicetree node identifier. Must exist in the
+ * devicetree.
+ * @param init_fn Name of the init function of the driver. Can be `NULL`.
+ * @param pm PM device resources reference (NULL if device does not use PM).
+ * @param data Pointer to the device's private data.
+ * @param config The address to the structure containing the configuration
+ * information for this instance of the driver.
+ * @param level The initialization level (PRE_KERNEL or POST_KERNEL).
+ * @param api Provides an initial pointer to the API function struct used by
+ * the driver. Can be NULL.
+ */
+#define I2C_DEVICE_DT_DEFINE_AUTO(node_id, init_fn, pm, data, config, level,	\
+				  api, ...)					\
+	BUILD_ASSERT(DT_NODE_EXISTS(node_id),					\
+		     "I2C_DEVICE_DT_DEFINE_AUTO requires a devicetree node");	\
+	I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, AUTO,	\
+			     api, __VA_ARGS__)
+
+/**
+ * @brief Like I2C_DEVICE_DT_DEFINE_AUTO() for an instance of a DT_DRV_COMPAT
+ * compatible.
+ *
+ * @param inst instance number. This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to I2C_DEVICE_DT_DEFINE_AUTO().
+ *
+ * @param ... other parameters as expected by I2C_DEVICE_DT_DEFINE_AUTO().
+ */
+#define I2C_DEVICE_DT_INST_DEFINE_AUTO(inst, ...)		\
+	I2C_DEVICE_DT_DEFINE_AUTO(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
  * @brief Configure operation of a host controller.
  *
  * @param dev Pointer to the device structure for the driver instance.
