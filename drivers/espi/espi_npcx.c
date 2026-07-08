@@ -1453,9 +1453,9 @@ static const struct espi_npcx_config espi_npcx_config = {
 #endif
 };
 
-DEVICE_DT_INST_DEFINE(0, &espi_npcx_init, NULL,
+DEVICE_DT_INST_DEFINE_AUTO(0, &espi_npcx_init, NULL,
 		    &espi_npcx_data, &espi_npcx_config,
-		    PRE_KERNEL_2, CONFIG_ESPI_INIT_PRIORITY,
+		    PRE_KERNEL,
 		    &espi_npcx_driver_api);
 
 static int espi_npcx_init(const struct device *dev)
