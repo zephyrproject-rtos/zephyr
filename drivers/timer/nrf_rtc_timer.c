@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/init.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
@@ -809,5 +810,7 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+/* Anchored to the RTC node this driver drives: runs after everything
+ * that node depends on in the devicetree.
+ */
+SYS_INIT_DEPENDS(sys_clock_driver_init, PRE_KERNEL, DT_NODELABEL(RTC_LABEL));
