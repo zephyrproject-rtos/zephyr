@@ -333,6 +333,25 @@ enum bt_audio_dir {
 };
 
 /**
+ * @brief Returns a string representation of a specific @ref bt_audio_dir direction
+ *
+ * @param dir The direction to convert to a string
+ *
+ * @return String representation of the supplied direction
+ */
+static inline const char *bt_audio_dir_to_str(enum bt_audio_dir dir)
+{
+	switch (dir) {
+	case BT_AUDIO_DIR_SINK:
+		return "Sink";
+	case BT_AUDIO_DIR_SOURCE:
+		return "Source";
+	default:
+		return "Unknown";
+	}
+}
+
+/**
  * @brief Audio codec Config APIs
  * @defgroup bt_audio_codec_cfg Codec config parsing APIs
  *
