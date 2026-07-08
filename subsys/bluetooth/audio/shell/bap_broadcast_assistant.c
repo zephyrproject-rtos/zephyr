@@ -61,16 +61,46 @@ struct bt_scan_recv_info {
 
 struct broadcast_assistant_recv_state broadcast_assistant_recv_states[CONFIG_BT_MAX_CONN];
 
+static bool discovery_done[CONFIG_BT_MAX_CONN];
+static bool registered;
+
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
+	if (!registered) {
+		return;
+	}
+
 	ARG_UNUSED(reason);
 
 	(void)memset(&broadcast_assistant_recv_states[bt_conn_index(conn)], 0,
 		     sizeof(broadcast_assistant_recv_states[0]));
+	discovery_done[bt_conn_index(conn)] = false;
+}
+
+static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
+				enum bt_security_err sec_err)
+{
+	int err;
+
+	if (!registered) {
+		return;
+	}
+
+	if (sec_err != BT_SECURITY_ERR_SUCCESS || level < BT_SECURITY_L2) {
+		return;
+	}
+
+	if (!discovery_done[bt_conn_index(conn)]) {
+		err = bt_bap_broadcast_assistant_discover(conn);
+		if (err != 0) {
+			bt_shell_error("Failed to discover broadcast assistant: err %d", err);
+		}
+	}
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected_cb,
+	.security_changed = security_changed_cb,
 };
 
 static bool pa_decode_base(struct bt_data *data, void *user_data)
@@ -124,6 +154,8 @@ static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 		broadcast_assistant_recv_states[bt_conn_index(conn)].recv_state_count =
 			recv_state_count;
 	}
+
+	discovery_done[bt_conn_index(conn)] = true;
 }
 
 static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *info,
@@ -696,7 +728,6 @@ static struct bt_le_scan_cb scan_callbacks = {
 static int cmd_bap_broadcast_assistant_discover(const struct shell *sh,
 						size_t argc, char **argv)
 {
-	static bool registered;
 	int result;
 
 	ARG_UNUSED(argc);

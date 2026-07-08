@@ -32,6 +32,48 @@
 #include "host/shell/bt.h"
 #include "audio.h"
 
+static bool discovery_done[CONFIG_BT_MAX_CONN];
+static bool registered;
+
+static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
+{
+	if (!registered) {
+		return;
+	}
+
+	ARG_UNUSED(reason);
+
+	(void)memset(&broadcast_assistant_recv_states[bt_conn_index(conn)], 0,
+		     sizeof(broadcast_assistant_recv_states[0]));
+	discovery_done[bt_conn_index(conn)] = false;
+}
+
+static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
+				enum bt_security_err sec_err)
+{
+	int err;
+
+	if (!registered) {
+		return;
+	}
+
+	if (sec_err != BT_SECURITY_ERR_SUCCESS || level < BT_SECURITY_L2) {
+		return;
+	}
+
+	if (!discovery_done[bt_conn_index(conn)]) {
+		err = bt_cap_commander_discover(conn);
+		if (err != 0) {
+			bt_shell_error("Failed to discover CAP acceptor: err %d", err);
+		}
+	}
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.disconnected = disconnected_cb,
+	.security_changed = security_changed_cb,
+};
+
 static void cap_discover_cb(struct bt_conn *conn, int err,
 			    const struct bt_csip_set_coordinator_set_member *member,
 			    const struct bt_csip_set_coordinator_csis_inst *csis_inst)
@@ -45,6 +87,7 @@ static void cap_discover_cb(struct bt_conn *conn, int err,
 	}
 
 	bt_shell_print("discovery completed%s", csis_inst == NULL ? "" : " with CSIS");
+	discovery_done[bt_conn_index(conn)] = true;
 }
 
 #if defined(CONFIG_BT_VCP_VOL_CTLR)
@@ -190,7 +233,6 @@ static int cmd_cap_commander_cancel(const struct shell *sh, size_t argc, char *a
 
 static int cmd_cap_commander_discover(const struct shell *sh, size_t argc, char *argv[])
 {
-	static bool cbs_registered;
 	int err;
 
 	ARG_UNUSED(argc);
@@ -201,14 +243,14 @@ static int cmd_cap_commander_discover(const struct shell *sh, size_t argc, char 
 		return -ENOEXEC;
 	}
 
-	if (!cbs_registered) {
+	if (!registered) {
 		err = bt_cap_commander_register_cb(&cbs);
 		if (err != 0) {
 			shell_error(sh, "Failed to register CAP commander callbacks: %d", err);
 			return -ENOEXEC;
 		}
 
-		cbs_registered = true;
+		registered = true;
 	}
 
 	err = bt_cap_commander_discover(default_conn);
