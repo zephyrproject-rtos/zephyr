@@ -328,6 +328,6 @@ static const struct wdt_atcwdt200_config wdt_atcwdt200_cfg = {
 	.base = DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, wdt_atcwdt200_init, NULL,
-		      &wdt_atcwdt200_data, &wdt_atcwdt200_cfg, PRE_KERNEL_2,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_atcwdt200_api);
+DEVICE_DT_INST_DEFINE_AUTO(0, wdt_atcwdt200_init, NULL,
+			   &wdt_atcwdt200_data, &wdt_atcwdt200_cfg, PRE_KERNEL,
+			   &wdt_atcwdt200_api);
