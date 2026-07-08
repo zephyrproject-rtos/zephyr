@@ -194,9 +194,9 @@ static DEVICE_API(uart, uart_rtt_driver_api) = {
 #define UART_RTT_INIT(idx, config)					      \
 	struct uart_rtt_data uart_rtt##idx##_data;			      \
 									      \
-	DEVICE_DT_DEFINE(UART_RTT(idx), uart_rtt_init, NULL, \
+	DEVICE_DT_DEFINE_AUTO(UART_RTT(idx), uart_rtt_init, NULL, \
 			    &uart_rtt##idx##_data, config,		      \
-			    PRE_KERNEL_2, CONFIG_SERIAL_INIT_PRIORITY,	      \
+			    PRE_KERNEL,	      \
 			    &uart_rtt_driver_api)
 
 #ifdef CONFIG_UART_RTT_0
