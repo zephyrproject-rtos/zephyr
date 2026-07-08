@@ -130,6 +130,16 @@ NVMe disks are also supported
 
     nvme.rst
 
+VirtIO block device support
+***************************
+
+VirtIO block devices are also supported
+
+.. toctree::
+    :maxdepth: 1
+
+    virtio_blk.rst
+
 
 Disk Access API Configuration Options
 *************************************
