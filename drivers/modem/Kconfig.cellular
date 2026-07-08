@@ -101,6 +101,15 @@ config MODEM_CELLULAR_RESET_POWER_ON_DELAY_MS
 	int "Delay between de-asserting the reset pin and pulsing the power pin"
 	default 500
 
+config MODEM_CELLULAR_MAX_SCRIPT_FAILURES
+	int "Maximum consecutive script failures before suspending"
+	range 0 255
+	default 3
+	help
+	  Number of consecutive chat-script failures tolerated before the driver
+	  gives up on the current attempt and suspends to idle. A value of 0 gives
+	  up on the first failure.
+
 config MODEM_CELLULAR_MAX_RECOVERIES
 	int "Maximum consecutive recovery attempts before suspending"
 	range 0 255
