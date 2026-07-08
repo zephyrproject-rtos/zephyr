@@ -201,6 +201,19 @@ int k_timer_cleanup(struct k_timer *timer)
 	 */
 	z_abort_timeout(&timer->timeout);
 
+	/* If the expiration handler is in flight on another CPU it may still
+	 * be dereferencing the timer, including running the user expiry_fn
+	 * (z_timer_expiration_handler drops timer.c::lock around it). The
+	 * caller is about to free the timer's storage, so wait for the
+	 * handler to fully complete first. Dropping timer.c::lock lets a
+	 * handler blocked on it run to completion; on uniprocessor nothing is
+	 * in flight (holding the lock disables interrupts) so this is a no-op.
+	 */
+	while (z_timeout_is_inflight(&timer->timeout)) {
+		k_spin_unlock(&lock, key);
+		key = k_spin_lock(&lock);
+	}
+
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, cleanup, timer, 0);
 
 	k_spin_unlock(&lock, key);
