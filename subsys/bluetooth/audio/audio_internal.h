@@ -69,18 +69,6 @@ ssize_t bt_audio_ccc_cfg_write(struct bt_conn *conn, const struct bt_gatt_attr *
 			_changed, bt_audio_ccc_cfg_write, NULL)}),                                 \
 		(BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT))
 
-static inline const char *bt_audio_dir_str(enum bt_audio_dir dir)
-{
-	switch (dir) {
-	case BT_AUDIO_DIR_SINK:
-		return "sink";
-	case BT_AUDIO_DIR_SOURCE:
-		return "source";
-	default:
-		return "Unknown";
-	}
-}
-
 bool bt_audio_valid_ltv(const uint8_t *data, uint8_t data_len);
 uint16_t bt_audio_get_max_ntf_size(struct bt_conn *conn);
 
