@@ -723,6 +723,23 @@ static inline void print_codec_cfg_frame_dur(size_t indent,
 		       bt_audio_codec_cfg_frame_dur_to_frame_dur_us(frame_dur), (uint8_t)frame_dur);
 }
 
+static inline void print_audio_location(size_t indent, enum bt_audio_location location)
+{
+	if (location == BT_AUDIO_LOCATION_MONO_AUDIO) {
+		bt_shell_print("%*s Mono", indent, "");
+	} else {
+		/* There can be up to 32 bits set in the field */
+		for (size_t i = 0U; i < 32U; i++) {
+			const uint32_t bit_val = BIT(i);
+
+			if ((location & bit_val) != 0) {
+				bt_shell_print("%*s%-24s (0x%08X)", indent, "",
+					       bt_audio_location_bit_to_str(bit_val), bit_val);
+			}
+		}
+	}
+}
+
 static inline void print_codec_cfg_chan_allocation(size_t indent,
 						   enum bt_audio_location chan_allocation)
 {
@@ -730,19 +747,14 @@ static inline void print_codec_cfg_chan_allocation(size_t indent,
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 
-	if (chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO) {
-		bt_shell_print("%*s Mono", indent, "");
-	} else {
-		/* There can be up to 32 bits set in the field */
-		for (size_t i = 0U; i < 32U; i++) {
-			const uint8_t bit_val = BIT(i);
+	print_audio_location(indent, chan_allocation);
+}
 
-			if (chan_allocation & bit_val) {
-				bt_shell_print("%*s%s (0x%08X)", indent, "",
-					       bt_audio_location_bit_to_str(bit_val), bit_val);
-			}
-		}
-	}
+static inline void print_dir_audio_location(enum bt_audio_dir dir, enum bt_audio_location location)
+{
+	bt_shell_print("%s location:", bt_audio_dir_to_str(dir));
+
+	print_audio_location(SHELL_PRINT_INDENT_LEVEL_SIZE, location);
 }
 
 static inline void print_codec_cfg_octets_per_frame(size_t indent, uint16_t octets_per_frame)

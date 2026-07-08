@@ -950,7 +950,7 @@ static void unicast_client_location_cb(struct bt_conn *conn,
 {
 	ARG_UNUSED(conn);
 
-	bt_shell_print("dir %u loc %X", dir, loc);
+	print_dir_audio_location(dir, loc);
 }
 
 static void supported_contexts_cb(struct bt_conn *conn, enum bt_audio_context snk_ctx,
