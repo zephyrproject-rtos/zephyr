@@ -75,6 +75,22 @@ struct json_obj {
 	struct json_lexer lex;
 };
 
+/**
+ * @brief A single top-level "key": value member of a JSON object.
+ *
+ * Returned by @ref json_obj_next_key_value. Both the key and the value are raw
+ * spans into the parsed payload; the value is returned verbatim (its type is
+ * given by @c value.type) and is not decoded.
+ */
+struct json_obj_key_value {
+	/** Member key text (not NUL-terminated), or NULL at the end of the object. */
+	const char *key;
+	/** Length of the key text in bytes. */
+	size_t key_len;
+	/** Member value, returned as a raw token span. */
+	struct json_token value;
+};
+
 struct json_obj_token {
 	char *start;
 	size_t length;
@@ -715,6 +731,52 @@ int json_arr_separate_object_parse_init(struct json_obj *json, char *payload, si
  */
 int json_arr_separate_parse_object(struct json_obj *json, const struct json_obj_descr *descr,
 				   size_t descr_len, void *val);
+
+/**
+ * @brief Initialize incremental parsing of a JSON object's members.
+ *
+ * JSON-encoded object data is going to be walked one top-level member at a time.
+ * Data is provided by @a payload with the size of @a len bytes.
+ *
+ * Validates that a JSON object start is detected and initializes @a json for
+ * member-by-member parsing with @ref json_obj_next_key_value. Unlike
+ * json_obj_parse(), no descriptor is required up front, which suits callers that
+ * dispatch each member to a handler chosen at run time.
+ *
+ * @param json Provide storage for parser state. To be used when walking the object.
+ * @param payload Pointer to JSON-encoded object to be parsed
+ * @param len Length of JSON-encoded object
+ *
+ * @return 0 if object start is detected and initialization is successful, or a
+ * negative error code in case of failure.
+ */
+int json_obj_separate_parse_init(struct json_obj *json, char *payload, size_t len);
+
+/**
+ * @brief Return the next top-level member of a JSON object.
+ *
+ * Walks one "key": value member of the object initialized by
+ * @ref json_obj_separate_parse_init. The value is returned as a raw, undecoded
+ * span in @a kv->value, leaving the caller to route it by key. A scalar spans the
+ * value text; an object or array spans the whole balanced @c {...} / @c [...]
+ * (its @c type is @ref JSON_TOK_OBJECT_START / @ref JSON_TOK_ARRAY_START). The
+ * value span can therefore be handed straight to a decoder such as
+ * json_obj_parse() or json_arr_parse(), per @a kv->value.type.
+ *
+ * @note @a kv->key and @a kv->value point into the @a payload buffer passed to
+ * @ref json_obj_separate_parse_init; they are borrowed and stay valid only as
+ * long as that buffer does. Copy the span out if a stable or mutable copy is
+ * needed (e.g. before parsing it in place).
+ *
+ * @param json Pointer to JSON-object parser state
+ * @param kv Pointer to storage for the returned key and value
+ *
+ * @return 0 on success with @a kv->key pointing at the member key and
+ * @a kv->value holding the raw value span; 0 at the end of the object with
+ * @a kv->key set to NULL; a negative error code on malformed input or on
+ * container nesting deeper than 64 levels.
+ */
+int json_obj_next_key_value(struct json_obj *json, struct json_obj_key_value *kv);
 
 /**
  * @brief Escapes the string so it can be used to encode JSON objects
