@@ -44,7 +44,7 @@
 	) \
 }
 
-#elif DT_PINCTRL_HAS_NAME(DT_NODELABEL(uart21), default)
+#elif DT_PINCTRL_HAS_NAME(DT_NODELABEL(uart21), default) && (NRF_SECURE_UART_INSTANCE == 21)
 
 #define RTE_USART21 1
 
