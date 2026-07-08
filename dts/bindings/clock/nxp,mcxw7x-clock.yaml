@@ -97,6 +97,22 @@ properties:
       - 14
       - 15
 
+  osc32k-coarse-adjustment:
+    type: int
+    default: 0
+    description: |
+      32 kHz crystal oscillator amplifier coarse gain adjustment.
+      Used to match the external crystal ESR range.
+      0: Range0
+      1: Range1
+      2: Range2
+      3: Range3
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
   firc-mode:
     type: int
     required: true
