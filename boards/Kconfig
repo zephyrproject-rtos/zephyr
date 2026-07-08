@@ -134,6 +134,25 @@ config QEMU_EXTRA_FLAGS
 	  to setup devices, for example to allocate interface for Zephyr
 	  GDBstub over serial with `-serial tcp:127.0.0.1:5678,server`
 
+config QEMU_VIRTIO_BLK_LOGICAL_BLOCK_SIZE
+	int "QEMU virtio-blk logical block size"
+	depends on QEMU_TARGET && DISK_DRIVER_VIRTIO_BLK
+	default 512
+	range 512 4096
+	help
+	  The emulated QEMU virtio-blk device is created with
+	  "logical_block_size=<value>", so the guest driver negotiates and sees
+	  this logical block size. Used mainly to exercise non-512 block sizes in
+	  tests.
+
+config QEMU_VIRTIO_BLK_DISK_SIZE
+	string "QEMU virtio-blk disk image size"
+	depends on QEMU_TARGET && DISK_DRIVER_VIRTIO_BLK
+	default "1M"
+	help
+	  Size passed to qemu-img when creating the raw virtio-blk backing image.
+	  The value uses qemu-img size syntax, for example "1M" or "64M".
+
 config BOARD_REQUIRES_SERIAL_BACKEND_CDC_ACM
 	bool
 	help
