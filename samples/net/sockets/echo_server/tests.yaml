@@ -21,11 +21,20 @@ tests:
       - native_sim
     integration_platforms:
       - qemu_x86
-  sample.net.sockets.echo_server.802154:
+  sample.net.sockets.echo_server.802154.qemu:
     extra_args: EXTRA_CONF_FILE="overlay-qemu_802154.conf"
     platform_allow: qemu_x86
     integration_platforms:
       - qemu_x86
+  sample.net.sockets.echo_server.802154.bsim:
+    extra_args: EXTRA_CONF_FILE="overlay-802154.conf"
+    build_only: true
+    depends_on: bsim
+    platform_allow:
+      - nrf52_bsim
+    harness: bsim
+    harness_config:
+      bsim_exe_name: samples_net_sockets_echo_server_prj_conf_overlay-802154_conf
   sample.net.sockets.echo_server.802154.rf2xx.xplained:
     extra_args:
       - SHIELD=atmel_rf2xx_xplained
@@ -96,6 +105,18 @@ tests:
       - nrf52840dk/nrf52840
       - tlsr9518adk80d
     filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
+  sample.net.sockets.echo_server.openthread.bsim:
+    extra_args: EXTRA_CONF_FILE="overlay-ot.conf"
+    tags:
+      - net
+      - openthread
+    depends_on: bsim
+    build_only: true
+    platform_allow:
+      - nrf52_bsim
+    harness: bsim
+    harness_config:
+      bsim_exe_name: samples_net_sockets_echo_server_prj_conf_overlay-ot_conf
   sample.net.sockets.echo_server.rw612_openthread_rcp_host:
     build_only: true
     extra_args:
