@@ -488,6 +488,17 @@ struct i3c_config_controller {
 		uint32_t low_ns;
 	} scl_od_min;
 
+	struct {
+		/**
+		 * Requested minimum SCL Push-Pull HIGH period in nanoseconds.
+		 *
+		 * Some speed-limited targets require a larger Push-Pull SCL
+		 * HIGH period than the bus minimum, as advertised through the
+		 * GETMXDS CCC.
+		 */
+		uint32_t high_ns;
+	} scl_pp_min;
+
 	/**
 	 * Bit mask of supported HDR modes (0 - 7).
 	 *
@@ -509,6 +520,7 @@ struct i3c_config_custom {
 	/** ID of the configuration parameter. */
 	uint32_t id;
 
+	/** Value or pointer to the configuration parameter */
 	union {
 		/** Value of configuration parameter. */
 		uintptr_t val;
