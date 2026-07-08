@@ -28,6 +28,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMI", cgmi_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMR", cgmr_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0,0,5,127", ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf93m1_init_chat_script, nordic_nrf93m1_init_chat_script_cmds,
