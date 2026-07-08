@@ -8,21 +8,6 @@
 
 #define HELPER_STACK_SIZE 500
 
-/**
- * @brief Verify @a va1 and @a val2 are within @a pcnt % of each other
- */
-#define TEST_WITHIN_X_PERCENT(val1, val2, pcnt)                       \
-	((((val1) * 100) < ((val2) * (100 + (pcnt)))) &&              \
-	 (((val1) * 100) > ((val2) * (100 - (pcnt))))) ? true : false
-
-#if defined(CONFIG_RISCV)
-#define IDLE_EVENT_STATS_PRECISION 7
-#elif defined(CONFIG_QEMU_TARGET)
-#define IDLE_EVENT_STATS_PRECISION 3
-#else
-#define IDLE_EVENT_STATS_PRECISION 1
-#endif
-
 static struct k_thread helper_thread;
 static K_THREAD_STACK_DEFINE(helper_stack, HELPER_STACK_SIZE);
 
@@ -87,11 +72,7 @@ ZTEST(usage_api, test_all_stats_usage)
 
 	k_thread_runtime_stats_all_get(&stats2);
 
-#if defined(CONFIG_RISCV)
-	k_sleep(K_TICKS(3));  /* Helper runs for 3 ticks - on slower platforms */
-#else
-	k_sleep(K_TICKS(2));  /* Helper runs for 2 ticks */
-#endif
+	k_sleep(K_TICKS(3));  /* Helper runs for 3 ticks */
 
 	k_thread_runtime_stats_all_get(&stats3);
 
@@ -181,8 +162,13 @@ ZTEST(usage_api, test_all_stats_usage)
 	zassert_true(stats4.current_cycles <= stats1.current_cycles);
 	zassert_true(stats5.current_cycles > stats4.current_cycles);
 
-	zassert_true(TEST_WITHIN_X_PERCENT(stats4.peak_cycles,
-					   stats3.peak_cycles, IDLE_EVENT_STATS_PRECISION), NULL);
+	/* The peak busy stretch is the same one before and after it closed; it
+	 * only grew by the sub-tick measurement tail between the stats3 sample
+	 * and the idle event. Scheduling here is tick aligned, so comparing in
+	 * the tick domain makes that tail vanish, no percentage tolerance needed.
+	 */
+	zassert_equal(k_cyc_to_ticks_near64(stats4.peak_cycles),
+		      k_cyc_to_ticks_near64(stats3.peak_cycles), NULL);
 	zassert_true(stats4.peak_cycles == stats5.peak_cycles);
 
 	zassert_true(stats4.average_cycles > 0);
