@@ -120,7 +120,15 @@ _exc_return:
 
 	/* Save old thread into switch handle which is required by z_sched_switch_spin which
 	 * will be called during old thread abort.
+	 *
+	 * On SMP publish switch_handle only after all prior context stores are
+	 * globally visible. ARC HS is weakly ordered, so a store-store barrier
+	 * is required before the lock-free switch_handle publish that is
+	 * polled by other cores in z_sched_switch_spin().
 	 */
+#ifdef CONFIG_SMP
+	dmb ARC_DMB_STORE
+#endif
 	STR r2, r2, ___thread_t_switch_handle_OFFSET
 
 	MOVR r2, r0
