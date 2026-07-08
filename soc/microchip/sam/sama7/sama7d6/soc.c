@@ -73,7 +73,7 @@ void relocate_vector_table(void)
 #define MCAN_CLK_INIT_DEFN(idx, n)								\
 		IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mcan##n)),			\
 			   (PMC_REGS->PMC_PCR = PMC_PCR_PID(ID_MCAN##n);			\
-			    PMC_REGS->PMC_PCR = PMC_REGS->PMC_PCR | PMC_PCR_CMD_Msk |		\
+			    PMC_REGS->PMC_PCR = PMC_PCR_CMD_Msk |				\
 						PMC_PCR_GCLKEN_Msk | PMC_PCR_EN_Msk |		\
 						PMC_PCR_GCLKDIV(4) | PMC_PCR_GCLKCSS_MCK1 |	\
 						PMC_PCR_PID(ID_MCAN##n);))
