@@ -431,6 +431,42 @@ if(CONFIG_NVME)
 else()
   add_custom_target(qemu_nvme_disk)
 endif()
+if(CONFIG_DISK_DRIVER_VIRTIO_BLK)
+  if(qemu_alternate_path)
+    find_program(
+      QEMU_IMG
+      NAMES qemu-img
+      PATHS ${qemu_alternate_path}
+      NO_DEFAULT_PATH
+    )
+  else()
+    find_program(QEMU_IMG qemu-img)
+  endif()
+
+  list(APPEND QEMU_EXTRA_FLAGS
+    -drive file=${ZEPHYR_BINARY_DIR}/virtio_blk_disk.img,if=none,id=vblk,format=raw
+  )
+
+  if(CONFIG_VIRTIO_PCI)
+    set(virtio_blk_pci_dev "virtio-blk-pci,drive=vblk")
+    set(blk_size ${CONFIG_QEMU_VIRTIO_BLK_LOGICAL_BLOCK_SIZE})
+    # QEMU requires physical_block_size >= logical_block_size.
+    set(virtio_blk_pci_dev
+      "${virtio_blk_pci_dev},logical_block_size=${blk_size},physical_block_size=${blk_size}")
+    list(APPEND QEMU_EXTRA_FLAGS -device ${virtio_blk_pci_dev})
+  endif()
+
+  set(QEMU_VIRTIO_BLK_DISK_FILE ${ZEPHYR_BINARY_DIR}/virtio_blk_disk.img)
+  add_custom_target(qemu_virtio_blk_disk
+    COMMAND
+    ${CMAKE_COMMAND}
+    -DQEMU_IMG=${QEMU_IMG}
+    -DDISK_FILE=${QEMU_VIRTIO_BLK_DISK_FILE}
+    -DDISK_SIZE=${CONFIG_QEMU_VIRTIO_BLK_DISK_SIZE}
+    -P ${ZEPHYR_BASE}/cmake/emu/qemu_virtio_blk_disk.cmake
+  )
+endif()
+
 
 # If we are using a suitable ethernet driver inside qemu, then these options
 # must be set, otherwise a zephyr instance cannot receive any network packets.
@@ -530,5 +566,8 @@ foreach(target ${qemu_targets})
   )
   if(DEFINED QEMU_KERNEL_FILE)
     add_dependencies(${target} qemu_nvme_disk qemu_kernel_target)
+  endif()
+  if(CONFIG_DISK_DRIVER_VIRTIO_BLK)
+    add_dependencies(${target} qemu_virtio_blk_disk)
   endif()
 endforeach()
