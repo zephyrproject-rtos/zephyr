@@ -18,3 +18,16 @@ tests:
              dt_label_compat_enabled("slot1_partition", "zephyr,mapped-partition"))
     integration_platforms:
       - imx95_evk/mimx9596/m7
+      - nrf54l15dk/nrf54l15/cpuapp
+  drivers.flash.interface_test.spi_nand.mikroe_flash_5_click:
+    harness_config:
+      fixture: mikroe_flash_5_click
+    extra_configs:
+      - CONFIG_TEST_SEQUENTIAL_READ_PATTERN_AMOUNT=50000
+      - CONFIG_TEST_SEQUENTIAL_ALTERNATING_READ_PATTERN_AMOUNT=25000
+      - CONFIG_FLASH_EX_OP_ENABLED=y
+    extra_args:
+      - FILE_SUFFIX="mikroe_flash_5_click"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    timeout: 900
