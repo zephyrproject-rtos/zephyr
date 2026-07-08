@@ -154,4 +154,4 @@ static int sleeptimer_init(void)
 	return 0;
 }
 
-SYS_INIT(sleeptimer_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT_DEPENDS(sleeptimer_init, PRE_KERNEL, DT_CHOSEN(silabs_sleeptimer));
