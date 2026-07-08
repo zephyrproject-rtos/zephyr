@@ -158,11 +158,11 @@ static int i2c_sbcon_init(const struct device *dev)
 		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(_num),			\
 	};									\
 										\
-	I2C_DEVICE_DT_INST_DEFINE(_num,						\
+	I2C_DEVICE_DT_INST_DEFINE_AUTO(_num,					\
 		    i2c_sbcon_init,						\
 		    NULL,							\
 		    &i2c_sbcon_dev_data_##_num,					\
 		    &i2c_sbcon_dev_cfg_##_num,					\
-		    PRE_KERNEL_2, CONFIG_I2C_INIT_PRIORITY, &api);
+		    PRE_KERNEL, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_I2C_SBCON)
