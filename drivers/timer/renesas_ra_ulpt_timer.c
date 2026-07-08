@@ -198,5 +198,12 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-/* Initialize the system timer driver during pre-kernel stage 2. */
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+/* Initialize the system timer driver during the pre-kernel stage. */
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+SYS_INIT_DEPENDS(sys_clock_driver_init, PRE_KERNEL, DT_DRV_INST(0));
+#else
+/* Selected by Kconfig without its devicetree node present: there is no
+ * node to take the ordering from, so fall back to a priority.
+ */
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+#endif
