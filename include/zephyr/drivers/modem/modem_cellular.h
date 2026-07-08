@@ -56,6 +56,7 @@ extern "C" {
  */
 enum modem_cellular_state {
 	MODEM_CELLULAR_STATE_IDLE = 0,
+	MODEM_CELLULAR_STATE_RECOVERY,
 	MODEM_CELLULAR_STATE_RESET_PULSE,
 	MODEM_CELLULAR_STATE_AWAIT_RESET,
 	MODEM_CELLULAR_STATE_POWER_ON_PULSE,
@@ -162,6 +163,7 @@ struct modem_cellular_data {
 	/** @cond INTERNAL_HIDDEN */
 	uint8_t *chat_argv[32];
 	uint8_t script_failure_counter;
+	uint8_t recovery_count;
 
 	/* Status */
 	enum cellular_registration_status registration_status_gsm;
