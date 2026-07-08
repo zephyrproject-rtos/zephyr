@@ -24,8 +24,8 @@
 
 #include <zephyr/shell/shell.h>
 
-#include "host/shell/bt.h"
-#include "common/bt_shell_private.h"
+#include <host/shell/bt.h>
+#include <common/bt_shell_private.h>
 
 #define MAP_MOPL                   CONFIG_BT_GOEP_RFCOMM_MTU
 #define MAP_MCE_SUPPORTED_FEATURES 0x0077FFFF

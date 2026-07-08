@@ -25,8 +25,8 @@
 
 #include <zephyr/shell/shell.h>
 
-#include "host/shell/bt.h"
-#include "common/bt_shell_private.h"
+#include <host/shell/bt.h>
+#include <common/bt_shell_private.h>
 
 #define COVER_ART_MOPL CONFIG_BT_GOEP_L2CAP_MTU
 

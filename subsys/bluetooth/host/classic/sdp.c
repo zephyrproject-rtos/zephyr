@@ -17,11 +17,11 @@
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/classic/sdp.h>
 
-#include "common/bt_str.h"
-#include "common/assert.h"
+#include <common/bt_str.h>
+#include <common/assert.h>
 
-#include "host/hci_core.h"
-#include "host/conn_internal.h"
+#include <host/hci_core.h>
+#include <host/conn_internal.h>
 #include "l2cap_br_internal.h"
 #include "sdp_internal.h"
 

@@ -22,8 +22,8 @@
 #include <zephyr/bluetooth/classic/pbap.h>
 #include <zephyr/shell/shell.h>
 
-#include "host/shell/bt.h"
-#include "common/bt_shell_private.h"
+#include <host/shell/bt.h>
+#include <common/bt_shell_private.h>
 
 #ifdef CONFIG_ZTEST
 #define STATIC

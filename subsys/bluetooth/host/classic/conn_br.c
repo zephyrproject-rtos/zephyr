@@ -29,13 +29,13 @@
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/att.h>
 
-#include "common/assert.h"
-#include "common/bt_str.h"
+#include <common/assert.h>
+#include <common/bt_str.h>
 
-#include "host/conn_internal.h"
-#include "host/l2cap_internal.h"
-#include "host/keys.h"
-#include "host/smp.h"
+#include <host/conn_internal.h>
+#include <host/l2cap_internal.h>
+#include <host/keys.h>
+#include <host/smp.h>
 #include "ssp.h"
 #include "sco_internal.h"
 
