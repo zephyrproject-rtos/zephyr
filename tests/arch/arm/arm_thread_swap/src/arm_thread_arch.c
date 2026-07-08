@@ -227,7 +227,7 @@ static void alt_thread_entry(void *p1, void *p2, void *p3)
 	 * expect lazy stacking and long guard to be enabled.
 	 */
 	zassert_true((_current->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0,
-		     "Alt thread MPU GUAR DFLOAT flag not set at initialization\n");
+		     "Alt thread MPU GUARD FLOAT flag not set at initialization\n");
 	zassert_true((_current->base.user_options & K_FP_REGS) != 0,
 		     "Alt thread K_FP_REGS not set at initialization\n");
 	zassert_true((FPU->FPCCR & FPU_FPCCR_LSPEN_Msk) != 0,
@@ -650,7 +650,7 @@ ZTEST(arm_thread_swap, test_arm_thread_swap)
 	zassert_true((_current->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0,
 		     "Thread MPU GUARD FLOAT flag not set\n");
 	zassert_true((_current->base.user_options & K_FP_REGS) != 0,
-		     "Thread K_FPREGS not set after main returned back\n");
+		     "Thread K_FP_REGS not set after main returned back\n");
 	zassert_true((FPU->FPCCR & FPU_FPCCR_LSPEN_Msk) != 0,
 		     "Lazy FP Stacking not set after main returned back\n");
 #endif
