@@ -9,6 +9,7 @@
 #include <limits.h>
 
 #include <zephyr/init.h>
+#include <zephyr/device.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/drivers/timer/nxp_os_timer.h>
 #include <zephyr/irq.h>
@@ -358,4 +359,18 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+/* Not ordered after the timer node: its deep-sleep-counter phandle points at
+ * an RTC device that is only used when suspending, so taking the node's place
+ * in the devicetree order would claim a dependency this init does not have and
+ * cannot satisfy (that device initializes at POST_KERNEL). Run at the end of
+ * PRE_KERNEL instead, after every device ordered by priority or by devicetree.
+ */
+#define SYS_ANCHOR_mcux_os_timer SYS_ANCHOR(mcux_os_timer)
+SYS_INIT_ANCHORED(mcux_os_timer, sys_clock_driver_init, PRE_KERNEL);
+#else
+/* Selected by Kconfig without its devicetree node present: there is no
+ * node to take the ordering from, so fall back to a priority.
+ */
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+#endif
