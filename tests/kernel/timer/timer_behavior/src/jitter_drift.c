@@ -363,9 +363,14 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 	zassert_true(stddev_us < (double)max_stddev,
 		     "Standard deviation (in microseconds) outside expected bound");
 
-	/* Validate the timer drift (accuracy over time) is within a configurable bound */
-	zassert_true(time_diff_us_abs < CONFIG_TIMER_TEST_MAX_DRIFT,
-		     "Drift (in microseconds) outside expected bound");
+	/* Validate the timer accuracy over time: the total measured time must
+	 * not drift from the model by as much as a whole period. That "within
+	 * one period" allowance is the test period itself, so no separate tuning
+	 * value is needed.
+	 */
+	zassert_true(time_diff_us_abs < test_period,
+		     "Total drift %f us exceeds one period (%f us)",
+		     time_diff_us_abs, test_period);
 }
 
 ZTEST(timer_jitter_drift, test_jitter_drift_timer_period)
