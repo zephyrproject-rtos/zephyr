@@ -613,5 +613,5 @@ BUILD_ASSERT(!((DT_INST_ENUM_IDX(0, m1k_sel_access_flash) >= FLASH_IT51XXX_EXTER
 	       !DT_INST_NODE_HAS_PROP(0, pinctrl_0)),
 	     "Access external-fspi-cs0/cs1, pinctrl must be configured.");
 
-DEVICE_DT_INST_DEFINE(0, flash_it51xxx_init, NULL, &flash_it51xxx_data, &flash_it51xxx_cfg,
-		      PRE_KERNEL_2, CONFIG_FLASH_INIT_PRIORITY, &flash_it51xxx_api);
+DEVICE_DT_INST_DEFINE_AUTO(0, flash_it51xxx_init, NULL, &flash_it51xxx_data, &flash_it51xxx_cfg,
+			   PRE_KERNEL, &flash_it51xxx_api);
