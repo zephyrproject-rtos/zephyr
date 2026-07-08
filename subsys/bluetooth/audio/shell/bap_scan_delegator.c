@@ -1038,13 +1038,11 @@ static int cmd_bap_scan_delegator_bis_synced(const struct shell *sh, size_t argc
 					 char **argv)
 {
 	uint32_t bis_syncs[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
-
-	ARG_UNUSED(argc);
-
-	unsigned long pa_sync_state;
 	unsigned long bis_synced;
 	unsigned long src_id;
 	int result = 0;
+
+	ARG_UNUSED(argc);
 
 	src_id = shell_strtoul(argv[1], 0, &result);
 	if (result != 0) {
@@ -1059,20 +1057,7 @@ static int cmd_bap_scan_delegator_bis_synced(const struct shell *sh, size_t argc
 		return -ENOEXEC;
 	}
 
-	pa_sync_state = shell_strtoul(argv[2], 0, &result);
-	if (result != 0) {
-		shell_error(sh, "Could not parse pa_sync_state: %d", result);
-
-		return -ENOEXEC;
-	}
-
-	if (pa_sync_state > BT_BAP_PA_STATE_NO_PAST) {
-		shell_error(sh, "Invalid pa_sync_state %s", bt_bap_pa_state_str(pa_sync_state));
-
-		return -ENOEXEC;
-	}
-
-	bis_synced = shell_strtoul(argv[3], 0, &result);
+	bis_synced = shell_strtoul(argv[2], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Could not parse bis_synced: %d", result);
 
@@ -1173,7 +1158,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_scan_delegator_cmds,
 		      "Remove source <src_id>",
 		      cmd_bap_scan_delegator_rem_src, 2, 0),
 	SHELL_CMD_ARG(synced, NULL,
-		      "Set server scan state <src_id> <bis_syncs>",
+		      "Set server BIS sync state <src_id> <bis_syncs>",
 		      cmd_bap_scan_delegator_bis_synced, 3, 0),
 	SHELL_CMD_ARG(print_recv_states, NULL, "Print all data from receive states",
 		      cmd_bap_scan_delegator_print_recv_states, 1, 0),
