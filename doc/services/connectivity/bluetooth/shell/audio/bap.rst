@@ -336,38 +336,103 @@ characteristics representing remote endpoints.
    Exchange successful
    uart:~$ bap discover [type: sink, source]
    uart:~$ bap discover sink
-   conn 0x2000b168: codec_cap 0x2001f8ec dir 0x02
+   conn 0x8256f80: dir Sink (0x01)
    codec cap id 0x06 cid 0x0000 vid 0x0000
-      Codec specific capabilities:
-         Supported sampling frequencies:
-            8000 Hz (0x0001)
-            11025 Hz (0x0002)
-            16000 Hz (0x0004)
-            22050 Hz (0x0008)
-            24000 Hz (0x0010)
-            32000 Hz (0x0020)
-            44100 Hz (0x0040)
-            48000 Hz (0x0080)
-            88200 Hz (0x0100)
-            96000 Hz (0x0200)
-            176400 Hz (0x0400)
-            192000 Hz (0x0800)
-            384000 Hz (0x1000)
-         Supported frame durations:
-            10 ms (0x02)
-         Supported channel counts:
-            1 channel (0x01)
-         Supported octets per codec frame counts:
-            Min: 40
-            Max: 120
-         Supported max codec frames per SDU: 1
-      Codec capabilities metadata:
-         Preferred audio contexts:
-            Conversational (0x0002)
-            Media (0x0004)
-   ep 0x81754e0
-   ep 0x81755d4
+     Codec specific capabilities:
+       Supported sampling frequencies:
+         8000 Hz (0x0001)
+         11025 Hz (0x0002)
+         16000 Hz (0x0004)
+         22050 Hz (0x0008)
+         24000 Hz (0x0010)
+         32000 Hz (0x0020)
+         44100 Hz (0x0040)
+         48000 Hz (0x0080)
+         88200 Hz (0x0100)
+         96000 Hz (0x0200)
+         176400 Hz (0x0400)
+         192000 Hz (0x0800)
+         384000 Hz (0x1000)
+       Supported frame durations:
+         7.5 ms (0x01)
+         10 ms (0x02)
+       Supported channel counts:
+         1 channel (0x01)
+         2 channels (0x02)
+       Supported octets per codec frame counts:
+         Min: 30
+         Max: 155
+       Supported max codec frames per SDU: 4
+     Codec capabilities metadata:
+       Preferred audio contexts:
+         Unspecified        (0x0001)
+         Conversational     (0x0002)
+         Media              (0x0004)
+   conn 0x8256f80: dir Sink (0x01)
+   codec cap id 0x06 cid 0x0000 vid 0x0000
+     Codec specific capabilities:
+       Supported sampling frequencies:
+         16000 Hz (0x0004)
+         32000 Hz (0x0020)
+         48000 Hz (0x0080)
+       Supported frame durations:
+         7.5 ms (0x01)
+         10 ms (0x02)
+       Supported channel counts:
+         1 channel (0x01)
+         2 channels (0x02)
+       Supported octets per codec frame counts:
+         Min: 30
+         Max: 120
+       Supported max codec frames per SDU: 4
+     Codec capabilities metadata:
+       Preferred audio contexts:
+         Game               (0x0008)
+   Supported audio contexts:
+     Sink:
+       Unspecified        (0x0001)
+       Conversational     (0x0002)
+       Media              (0x0004)
+       Game               (0x0008)
+       Instructional      (0x0010)
+       Voice assistant    (0x0020)
+       Live               (0x0040)
+       Sound effects      (0x0080)
+     Source:
+       Unspecified        (0x0001)
+       Conversational     (0x0002)
+       Media              (0x0004)
+       Game               (0x0008)
+       Instructional      (0x0010)
+       Voice assistant    (0x0020)
+       Live               (0x0040)
+       Sound effects      (0x0080)
+   Sink location:
+     Front left               (0x00000001)
+     Front right              (0x00000002)
+   Available audio contexts:
+     Sink:
+       Unspecified        (0x0001)
+       Conversational     (0x0002)
+       Media              (0x0004)
+       Game               (0x0008)
+       Instructional      (0x0010)
+       Voice assistant    (0x0020)
+       Live               (0x0040)
+       Sound effects      (0x0080)
+     Source:
+       Unspecified        (0x0001)
+       Conversational     (0x0002)
+       Media              (0x0004)
+       Game               (0x0008)
+       Instructional      (0x0010)
+       Voice assistant    (0x0020)
+       Live               (0x0040)
+       Sound effects      (0x0080)
+   Conn: 0x8256f80, Sink #0: ep 0x8288e1c
+   Conn: 0x8256f80, Sink #1: ep 0x8289000
    Discover complete: err 0
+
 
 Select preset
 *************
