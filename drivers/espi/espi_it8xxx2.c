@@ -2750,9 +2750,9 @@ static const struct espi_it8xxx2_config espi_it8xxx2_config_0 = {
 	.wuc = IT8XXX2_DT_WUC_ITEMS_FUNC(0, 0),
 };
 
-DEVICE_DT_INST_DEFINE(0, &espi_it8xxx2_init, NULL,
+DEVICE_DT_INST_DEFINE_AUTO(0, &espi_it8xxx2_init, NULL,
 		    &espi_it8xxx2_data_0, &espi_it8xxx2_config_0,
-		    PRE_KERNEL_2, CONFIG_ESPI_INIT_PRIORITY,
+		    PRE_KERNEL,
 		    &espi_it8xxx2_driver_api);
 
 static int espi_it8xxx2_init(const struct device *dev)

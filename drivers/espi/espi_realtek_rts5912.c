@@ -2472,10 +2472,9 @@ static const struct espi_rts5912_config espi_rts5912_config = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 #ifdef CONFIG_PM
-DEVICE_DT_INST_DEFINE(0, &espi_rts5912_init, PM_DEVICE_DT_INST_GET(0), &espi_rts5912_data_0,
-		      &espi_rts5912_config, PRE_KERNEL_2, CONFIG_ESPI_INIT_PRIORITY,
-		      &espi_rts5912_driver_api);
+DEVICE_DT_INST_DEFINE_AUTO(0, &espi_rts5912_init, PM_DEVICE_DT_INST_GET(0), &espi_rts5912_data_0,
+			   &espi_rts5912_config, PRE_KERNEL, &espi_rts5912_driver_api);
 #else
-DEVICE_DT_INST_DEFINE(0, &espi_rts5912_init, NULL, &espi_rts5912_data_0, &espi_rts5912_config,
-		      PRE_KERNEL_2, CONFIG_ESPI_INIT_PRIORITY, &espi_rts5912_driver_api);
+DEVICE_DT_INST_DEFINE_AUTO(0, &espi_rts5912_init, NULL, &espi_rts5912_data_0, &espi_rts5912_config,
+			   PRE_KERNEL, &espi_rts5912_driver_api);
 #endif
