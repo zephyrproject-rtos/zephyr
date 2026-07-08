@@ -80,9 +80,6 @@ config ETH_DWC_ETHER_1000_CORE_EDFE
 
 if ETH_DWC_ETHER_QOS_CORE || ETH_DWC_ETHER_1000_CORE
 
-configdefault NET_BUF_ALIGNMENT
-	default DCACHE_LINE_SIZE if DCACHE
-
 config DWMAC_NB_TX_DESCS
 	int "Number of entries in the transmit descriptor ring"
 	default 16

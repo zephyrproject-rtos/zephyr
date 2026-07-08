@@ -51,17 +51,19 @@
 			 "cache line size"                                                         \
 	);                                                                                         \
 	BUILD_ASSERT(                                                                              \
-		COND_CODE_0(CONFIG_NET_BUF_ALIGNMENT, (sizeof(void *)), (CONFIG_NET_BUF_ALIGNMENT))\
+		COND_CODE_0(CONFIG_NET_BUF_DATA_ALIGNMENT, (sizeof(void *)),                       \
+			(CONFIG_NET_BUF_DATA_ALIGNMENT))                                           \
 		>= MAX(                                                                            \
 			((bus_width) / 8),                                                         \
 			COND_CODE_1(CONFIG_DCACHE, (CONFIG_DCACHE_LINE_SIZE), (0))                 \
-		), "CONFIG_NET_BUF_ALIGNMENT must be at least the data bus width or cache line"    \
-		   "size"                                                                          \
+		), "CONFIG_NET_BUF_DATA_ALIGNMENT must be at least the data bus width or "         \
+		   "cache line size"                                                               \
 	);                                                                                         \
 	IF_ENABLED(CONFIG_DCACHE, (                                                                \
 		BUILD_ASSERT(                                                                      \
-			(CONFIG_NET_BUF_ALIGNMENT) % (CONFIG_DCACHE_LINE_SIZE) == 0,               \
-			"CONFIG_NET_BUF_ALIGNMENT must be a multiple of the data cache line size"  \
+			(CONFIG_NET_BUF_DATA_ALIGNMENT) % (CONFIG_DCACHE_LINE_SIZE) == 0,          \
+			"CONFIG_NET_BUF_DATA_ALIGNMENT must be a multiple of the data cache line " \
+			"size"                                                                     \
 		)                                                                                  \
 	));
 
