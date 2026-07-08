@@ -6311,6 +6311,7 @@ Utilities:
     - tests/lib/ringbuffer/
     - tests/lib/notify/
     - tests/lib/linear_range/
+    - tests/lib/cobs/
   file-groups:
     - name: COBS
       collaborators:
