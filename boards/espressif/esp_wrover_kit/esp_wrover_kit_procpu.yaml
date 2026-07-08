@@ -4,7 +4,6 @@ type: mcu
 arch: xtensa
 toolchain:
   - zephyr
-ram: 8192
 supported:
   - adc
   - dac
