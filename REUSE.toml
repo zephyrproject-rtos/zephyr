@@ -269,3 +269,19 @@ path = "include/zephyr/posix/sys/stat.h"
 SPDX-License-Identifier = "BSD-3-Clause"
 SPDX-FileComment = "Provides the POSIX file-status definitions; compiled into the firmware wherever it is included."
 Zephyr-Description = "POSIX sys/stat.h Header"
+
+[[annotations]]
+path = [
+    "scripts/dts/gen_defines.py",
+    "scripts/dts/python-devicetree/src/devicetree/_private.py",
+    "scripts/dts/python-devicetree/src/devicetree/dtlib.py",
+    "scripts/dts/python-devicetree/src/devicetree/edtlib.py",
+    "scripts/dts/python-devicetree/tests/test-multidir.dts",
+    "scripts/dts/python-devicetree/tests/test.dts",
+    "scripts/dts/python-devicetree/tests/test_dtlib.py",
+    "scripts/dts/python-devicetree/tests/test_edtlib.py",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Parse devicetree sources at build time and are never linked into the firmware."
+Zephyr-Description = "Python Devicetree Library Files"
+Zephyr-Origin = "https://github.com/zephyrproject-rtos/python-devicetree"
