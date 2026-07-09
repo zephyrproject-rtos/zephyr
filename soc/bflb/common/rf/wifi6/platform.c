@@ -19,7 +19,7 @@
 
 LOG_MODULE_REGISTER(bflb_wifi_plat, CONFIG_WIFI_LOG_LEVEL);
 
-#define WIFI_DT_NODE		DT_NODELABEL(wifi0)
+#define WIFI_DT_NODE		DT_COMPAT_GET_ANY_STATUS_OKAY(bflb_wifi6)
 #define WIFI_IRQ_NUM		DT_IRQ_BY_NAME(WIFI_DT_NODE, wifi, irq)
 #define WIFI_IRQ_PRI		DT_IRQ_BY_NAME(WIFI_DT_NODE, wifi, priority)
 #define WIFI_IPC_IRQ_NUM	DT_IRQ_BY_NAME(WIFI_DT_NODE, wifi_ipc, irq)
