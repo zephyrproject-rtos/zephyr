@@ -64,19 +64,11 @@ struct udc_mcux_data {
 	const struct device *dev;
 	usb_device_struct_t mcux_device;
 	struct k_work work;
-	struct k_fifo fifo;
+	struct k_spinlock lock;
+	struct usb_setup_packet setup_pkt;
+	volatile bool setup_pending;
 	uint8_t controller_id; /* 0xFF is invalid value */
 };
-
-/* Structure for driver's events */
-struct udc_mcux_event {
-	sys_snode_t node;
-	const struct device *dev;
-	usb_device_callback_message_struct_t mcux_msg;
-};
-
-K_MEM_SLAB_DEFINE_TYPE(udc_event_slab, struct udc_mcux_event,
-		       CONFIG_UDC_NXP_EVENT_COUNT);
 
 static void udc_mcux_lock(const struct device *dev)
 {
@@ -100,7 +92,7 @@ static int udc_mcux_control(const struct device *dev, usb_device_control_type_t 
 			command, param);
 
 	if (status != kStatus_USB_Success) {
-		return -ENOMEM;
+		return -EIO;
 	}
 
 	return 0;
@@ -114,10 +106,11 @@ static int udc_mcux_ep_feed(const struct device *dev,
 	const struct udc_mcux_config *config = dev->config;
 	const usb_device_controller_interface_struct_t *mcux_if = config->mcux_if;
 	struct udc_mcux_data *priv = udc_get_private(dev);
+	usb_device_endpoint_status_struct_t ep_status;
 	usb_status_t status = kStatus_USB_Success;
+	k_spinlock_key_t key;
 	uint8_t *data;
 	uint32_t len;
-	usb_device_endpoint_status_struct_t ep_status;
 
 	ep_status.endpointAddress = cfg->addr;
 	udc_mcux_control(dev, kUSB_DeviceControlGetEndpointStatus, &ep_status);
@@ -125,10 +118,10 @@ static int udc_mcux_ep_feed(const struct device *dev,
 		return -EACCES; /* stalled */
 	}
 
-	udc_mcux_lock(dev);
+	key = k_spin_lock(&priv->lock);
 	if (!udc_ep_is_busy(cfg)) {
 		udc_ep_set_busy(cfg, true);
-		udc_mcux_unlock(dev);
+		k_spin_unlock(&priv->lock, key);
 
 		if (USB_EP_DIR_IS_OUT(cfg->addr)) {
 			len = net_buf_tailroom(buf);
@@ -142,13 +135,13 @@ static int udc_mcux_ep_feed(const struct device *dev,
 					cfg->addr, data, len);
 		}
 
-		udc_mcux_lock(dev);
+		key = k_spin_lock(&priv->lock);
 		if (status != kStatus_USB_Success) {
 			udc_ep_set_busy(cfg, false);
 		}
-		udc_mcux_unlock(dev);
+		k_spin_unlock(&priv->lock, key);
 	} else {
-		udc_mcux_unlock(dev);
+		k_spin_unlock(&priv->lock, key);
 		return -EBUSY;
 	}
 
@@ -173,6 +166,9 @@ static int udc_mcux_ep_try_feed(const struct device *dev,
 
 static int udc_mcux_handler_setup(const struct device *dev, struct usb_setup_packet *setup)
 {
+	struct udc_mcux_data *priv = udc_get_private(dev);
+	k_spinlock_key_t key;
+
 	LOG_DBG("setup packet");
 
 	if (setup->RequestType.type == USB_REQTYPE_TYPE_STANDARD &&
@@ -183,7 +179,11 @@ static int udc_mcux_handler_setup(const struct device *dev, struct usb_setup_pac
 			&setup->wValue);
 	}
 
-	udc_setup_received(dev, setup);
+	key = k_spin_lock(&priv->lock);
+	priv->setup_pkt = *setup;
+	priv->setup_pending = true;
+	k_spin_unlock(&priv->lock, key);
+	k_work_submit_to_queue(udc_get_work_q(), &priv->work);
 
 	return 0;
 }
@@ -260,15 +260,16 @@ static int udc_mcux_handler_out(const struct device *dev, uint8_t ep,
 				uint8_t *mcux_buf, uint32_t mcux_len)
 {
 	struct udc_ep_config *const cfg = udc_get_ep_cfg(dev, ep);
-	int err;
+	struct udc_mcux_data *priv = udc_get_private(dev);
+	k_spinlock_key_t key;
 	struct net_buf *buf;
+	int err;
+
+	key = k_spin_lock(&priv->lock);
+	udc_ep_set_busy(cfg, false);
+	k_spin_unlock(&priv->lock, key);
 
 	buf = udc_buf_get(cfg);
-
-	udc_mcux_lock(dev);
-	udc_ep_set_busy(cfg, false);
-	udc_mcux_unlock(dev);
-
 	if (buf == NULL) {
 		return -ENOBUFS;
 	}
@@ -317,8 +318,14 @@ static int udc_mcux_handler_in(const struct device *dev, uint8_t ep,
 				uint8_t *mcux_buf, uint32_t mcux_len)
 {
 	struct udc_ep_config *const cfg = udc_get_ep_cfg(dev, ep);
-	int err;
+	struct udc_mcux_data *priv = udc_get_private(dev);
+	k_spinlock_key_t key;
 	struct net_buf *buf;
+	int err;
+
+	key = k_spin_lock(&priv->lock);
+	udc_ep_set_busy(cfg, false);
+	k_spin_unlock(&priv->lock, key);
 
 	buf = udc_buf_peek(cfg);
 	if (buf == NULL) {
@@ -330,14 +337,10 @@ static int udc_mcux_handler_in(const struct device *dev, uint8_t ep,
 	}
 
 	buf = udc_buf_get(cfg);
-
-	udc_mcux_lock(dev);
-	udc_ep_set_busy(cfg, false);
-	udc_mcux_unlock(dev);
-
 	if (buf == NULL) {
 		return -ENOBUFS;
 	}
+
 	if (ep == USB_CONTROL_EP_IN) {
 		err = udc_mcux_handler_ctrl_in(dev, buf, mcux_buf, mcux_len);
 	} else {
@@ -347,94 +350,88 @@ static int udc_mcux_handler_in(const struct device *dev, uint8_t ep,
 	return err;
 }
 
-static void udc_mcux_event_submit(const struct device *dev,
-				  const usb_device_callback_message_struct_t *mcux_msg)
-{
-	struct udc_mcux_data *priv = udc_get_private(dev);
-	struct udc_mcux_event *ev;
-	int ret;
-
-	ret = k_mem_slab_alloc(&udc_event_slab, (void **)&ev, K_NO_WAIT);
-	if (ret) {
-		udc_submit_event(dev, UDC_EVT_ERROR, ret);
-		LOG_ERR("Failed to allocate slab");
-		return;
-	}
-
-	ev->dev = dev;
-	ev->mcux_msg = *mcux_msg;
-	k_fifo_put(&priv->fifo, ev);
-	k_work_submit_to_queue(udc_get_work_q(), &priv->work);
-}
-
 static void udc_mcux_work_handler(struct k_work *item)
 {
-	struct udc_mcux_event *ev;
+	struct usb_setup_packet setup_pkt;
 	struct udc_mcux_data *priv;
-	usb_device_callback_message_struct_t *mcux_msg;
-	int err;
-	uint8_t ep;
+	bool setup_valid = false;
+	k_spinlock_key_t key;
 
 	priv = CONTAINER_OF(item, struct udc_mcux_data, work);
-	while ((ev = k_fifo_get(&priv->fifo, K_NO_WAIT)) != NULL) {
-		mcux_msg = &ev->mcux_msg;
 
-		if (mcux_msg->code == kUSB_DeviceNotifyBusReset) {
-			struct udc_ep_config *cfg;
-
-			udc_mcux_control(ev->dev, kUSB_DeviceControlSetDefaultStatus, NULL);
-			cfg = udc_get_ep_cfg(ev->dev, USB_CONTROL_EP_OUT);
-			if (cfg->stat.enabled) {
-				udc_ep_disable_internal(ev->dev, USB_CONTROL_EP_OUT);
-			}
-			cfg = udc_get_ep_cfg(ev->dev, USB_CONTROL_EP_IN);
-			if (cfg->stat.enabled) {
-				udc_ep_disable_internal(ev->dev, USB_CONTROL_EP_IN);
-			}
-			if (udc_ep_enable_internal(ev->dev, USB_CONTROL_EP_OUT,
-						USB_EP_TYPE_CONTROL,
-						USB_MCUX_EP0_SIZE, 0)) {
-				LOG_ERR("Failed to enable control endpoint");
-			}
-			if (udc_ep_enable_internal(ev->dev, USB_CONTROL_EP_IN,
-						USB_EP_TYPE_CONTROL,
-						USB_MCUX_EP0_SIZE, 0)) {
-				LOG_ERR("Failed to enable control endpoint");
-			}
-			udc_submit_event(ev->dev, UDC_EVT_RESET, 0);
-		} else {
-			ep  = mcux_msg->code;
-
-			if (mcux_msg->isSetup) {
-				struct usb_setup_packet *setup =
-					(struct usb_setup_packet *)mcux_msg->buffer;
-
-				err = udc_mcux_handler_setup(ev->dev, setup);
-			} else if (USB_EP_DIR_IS_IN(ep)) {
-				err = udc_mcux_handler_in(ev->dev, ep, mcux_msg->buffer,
-							  mcux_msg->length);
-			} else {
-				err = udc_mcux_handler_out(ev->dev, ep, mcux_msg->buffer,
-							   mcux_msg->length);
-			}
-
-			if (unlikely(err)) {
-				udc_submit_event(ev->dev, UDC_EVT_ERROR, err);
-			}
-		}
-
-		k_mem_slab_free(&udc_event_slab, (void *)ev);
+	/* need the spin lock in case the setup is half changed in isr. */
+	key = k_spin_lock(&priv->lock);
+	if (priv->setup_pending) {
+		priv->setup_pending = false;
+		setup_valid = true;
+		setup_pkt = priv->setup_pkt;
 	}
+	k_spin_unlock(&priv->lock, key);
+
+	if (setup_valid) {
+		udc_setup_received(priv->dev, &setup_pkt);
+	}
+}
+
+static void udc_mcux_bus_reset_isr(const struct device *dev)
+{
+	struct udc_mcux_data *priv = udc_get_private(dev);
+	struct udc_ep_config *cfg;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&priv->lock);
+	priv->setup_pending = false;
+	k_spin_unlock(&priv->lock, key);
+
+	udc_mcux_control(dev, kUSB_DeviceControlSetDefaultStatus, NULL);
+	cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
+	if (cfg->stat.enabled) {
+		udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT);
+	}
+	cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
+	if (cfg->stat.enabled) {
+		udc_ep_disable_internal(dev, USB_CONTROL_EP_IN);
+	}
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL,
+				   USB_MCUX_EP0_SIZE, 0)) {
+		LOG_ERR("Failed to enable control endpoint");
+	}
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL,
+				   USB_MCUX_EP0_SIZE, 0)) {
+		LOG_ERR("Failed to enable control endpoint");
+	}
+	udc_submit_event(dev, UDC_EVT_RESET, 0);
+}
+
+static int udc_mcux_ep_event_isr(const struct device *dev,
+				 usb_device_callback_message_struct_t *mcux_msg)
+{
+	uint8_t ep = mcux_msg->code;
+	int err;
+
+	if (mcux_msg->isSetup) {
+		struct usb_setup_packet *setup =
+			(struct usb_setup_packet *)mcux_msg->buffer;
+
+		err = udc_mcux_handler_setup(dev, setup);
+	} else if (USB_EP_DIR_IS_IN(ep)) {
+		err = udc_mcux_handler_in(dev, ep, mcux_msg->buffer, mcux_msg->length);
+	} else {
+		err = udc_mcux_handler_out(dev, ep, mcux_msg->buffer, mcux_msg->length);
+	}
+
+	return err;
 }
 
 /* NXP MCUX controller driver notify transfers/status through this interface */
 usb_status_t USB_DeviceNotificationTrigger(void *handle, void *msg)
 {
 	usb_device_callback_message_struct_t *mcux_msg = msg;
+	usb_status_t mcux_status = kStatus_USB_Success;
 	usb_device_notification_t mcux_notify;
 	struct udc_mcux_data *priv;
 	const struct device *dev;
-	usb_status_t mcux_status = kStatus_USB_Success;
+	int err;
 
 	if ((NULL == msg) || (NULL == handle)) {
 		return kStatus_USB_InvalidHandle;
@@ -446,7 +443,7 @@ usb_status_t USB_DeviceNotificationTrigger(void *handle, void *msg)
 
 	switch (mcux_notify) {
 	case kUSB_DeviceNotifyBusReset:
-		udc_mcux_event_submit(dev, mcux_msg);
+		udc_mcux_bus_reset_isr(dev);
 		break;
 	case kUSB_DeviceNotifyError:
 		udc_submit_event(dev, UDC_EVT_ERROR, -EIO);
@@ -471,7 +468,11 @@ usb_status_t USB_DeviceNotificationTrigger(void *handle, void *msg)
 		udc_submit_sof_event(dev);
 		break;
 	default:
-		udc_mcux_event_submit(dev, mcux_msg);
+		err = udc_mcux_ep_event_isr(dev, mcux_msg);
+		if (unlikely(err)) {
+			udc_submit_event(dev, UDC_EVT_ERROR, err);
+			mcux_status = kStatus_USB_Error;
+		}
 		break;
 	}
 
@@ -540,12 +541,15 @@ static int udc_mcux_ep_enqueue(const struct device *dev,
 static int udc_mcux_ep_dequeue(const struct device *dev,
 			       struct udc_ep_config *const cfg)
 {
+	struct udc_mcux_data *priv = udc_get_private(dev);
+	k_spinlock_key_t key;
+
 	cfg->stat.halted = false;
 	udc_ep_cancel_queued(dev, cfg);
 
-	udc_mcux_lock(dev);
+	key = k_spin_lock(&priv->lock);
 	udc_ep_set_busy(cfg, false);
-	udc_mcux_unlock(dev);
+	k_spin_unlock(&priv->lock, key);
 
 	return 0;
 }
@@ -792,7 +796,6 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 	}
 
 	k_mutex_init(&data->mutex);
-	k_fifo_init(&priv->fifo);
 	k_work_init(&priv->work, udc_mcux_work_handler);
 
 	for (int i = 0; i < config->num_of_eps; i++) {
