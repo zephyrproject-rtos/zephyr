@@ -69,3 +69,19 @@ SPDX-FileComment = "Sensor configuration data compiled into the firmware only wh
 Zephyr-Description = "Bosch BMI08x Sensor Configuration File"
 Zephyr-Origin = "https://github.com/BoschSensortec/BMI08x-Sensor-API"
 Zephyr-Kconfig-Condition = "CONFIG_BMI08X"
+
+[[annotations]]
+path = [
+    "scripts/coccicheck",
+    "scripts/coccinelle/array_size.cocci",
+    "scripts/coccinelle/deref_null.cocci",
+    "scripts/coccinelle/mini_lock.cocci",
+    "scripts/coccinelle/noderef.cocci",
+    "scripts/coccinelle/returnvar.cocci",
+    "scripts/coccinelle/semicolon.cocci",
+    "scripts/coccinelle/unsigned_lesser_than_zero.cocci",
+]
+SPDX-License-Identifier = "GPL-2.0"
+SPDX-FileComment = "Used by Coccinelle, a tool for transforming C code, and never linked into the firmware."
+Zephyr-Description = "Coccinelle Scripts"
+Zephyr-Origin = "https://coccinelle.gitlabpages.inria.fr/website/"
