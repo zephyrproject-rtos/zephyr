@@ -28,3 +28,26 @@ SPDX-FileCopyrightText = "Copyright The Zephyr Project Contributors"
 path = "**/*.rst"
 SPDX-License-Identifier = "CC-BY-4.0"
 SPDX-FileCopyrightText = "Copyright The Zephyr Project Contributors"
+
+# -----------------------------------------------------------------------------
+# Licensing exceptions
+# -----------------------------------------------------------------------------
+#
+# Zephyr as a whole is Apache-2.0 licensed, but it imports or reuses a few
+# components that use other licenses. Each such component is described below as
+# a single REUSE annotation and is rendered on the licensing documentation page
+# (see doc/LICENSING.rst) by the "zephyr.licensing" Sphinx extension.
+#
+# The license metadata is standard REUSE/SPDX and the standard SPDX-FileComment
+# holds the free-text rationale ("Impact"). SPDX has no non-deprecated file-level
+# field for an upstream URL (the ArtifactOf* file tags were deprecated in favour
+# of relationships, which REUSE.toml cannot express, and Package* fields are not
+# valid on files), so three Zephyr-specific keys are used (the `reuse` tool
+# ignores keys it does not know about):
+#
+#   Zephyr-Description       Short human description of the component, used as
+#                            its title on the page. Its presence promotes a
+#                            plain REUSE annotation to a documented exception.
+#   Zephyr-Origin            URL of the upstream project the files come from.
+#   Zephyr-Kconfig-Condition Kconfig option(s) gating whether the files end up in
+#                            a build, rendered as :kconfig:option: references.
