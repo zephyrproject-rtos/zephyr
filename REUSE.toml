@@ -376,3 +376,11 @@ SPDX-FileComment = "Compiled into the firmware only when Xen guest support is en
 Zephyr-Description = "Xen Hypervisor Interface Files"
 Zephyr-Origin = "https://xenproject.org/"
 Zephyr-Kconfig-Condition = "CONFIG_XEN"
+
+[[annotations]]
+path = "subsys/random/random_xoshiro128.c"
+SPDX-License-Identifier = "CC0-1.0"
+SPDX-FileComment = "Compiled into the firmware only when the xoshiro128++ PRNG is selected."
+Zephyr-Description = "xoshiro128++ PRNG"
+Zephyr-Origin = "https://prng.di.unimi.it/"
+Zephyr-Kconfig-Condition = "CONFIG_XOSHIRO_RANDOM_GENERATOR"
