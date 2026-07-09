@@ -1508,10 +1508,13 @@ __syscall void *k_thread_custom_data_get(void);
  *
  * @param thread Thread to set name, or NULL to set the current thread
  * @param str Name string
+ * @note A name longer than CONFIG_THREAD_MAX_NAME_LEN is silently truncated,
+ * this is not reported as an error.
+ *
  * @retval 0 on success
  * @retval -EFAULT Memory access error with supplied string
  * @retval -ENOSYS Thread name configuration option not enabled
- * @retval -EINVAL Thread name too long
+ * @retval -EINVAL Invalid thread object (user mode only)
  */
 __syscall int k_thread_name_set(k_tid_t thread, const char *str);
 
