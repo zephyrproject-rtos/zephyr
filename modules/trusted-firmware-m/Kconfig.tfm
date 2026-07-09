@@ -18,6 +18,7 @@ config TFM_BOARD
 	default "arm/mps2/an521" if BOARD_MPS2_AN521_CPU0_NS
 	default "nxp/frdmmcxn947" if BOARD_FRDM_MCXN947_MCXN947_CPU0_NS
 	default "nxp/frdmmcxa577" if BOARD_FRDM_MCXA577_MCXA577_NS
+	default "nxp/frdmmcxw70" if BOARD_FRDM_MCXW70_MCXW70AC_NS
 	default "arm/mps3/corstone300/fvp" if BOARD_MPS3_CORSTONE300_FVP_NS
 	default "arm/mps3/corstone300/an547" if BOARD_MPS3_CORSTONE300_AN547_NS
 	default "arm/mps3/corstone300/an552" if BOARD_MPS3_CORSTONE300_AN552_NS
