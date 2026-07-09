@@ -264,6 +264,16 @@ The following API can be used to interact with a workqueue:
 * :c:func:`k_work_queue_unplug()` removes any previous block on submission to
   the queue due to a previous drain operation.
 
+A workqueue can alternatively be run on an existing (caller-supplied) thread
+instead of a dedicated one:
+
+* :c:func:`k_work_queue_run()` turns the calling thread into the workqueue's
+  thread; it does not return until the queue is stopped.
+* :c:func:`k_work_queue_prepare()` marks the queue started and records the calling
+  thread as its thread, but without entering the run loop. This allows work to
+  be submitted (and :c:func:`k_work_queue_thread_get` to be used) before the
+  same thread later calls :c:func:`k_work_queue_run()`.
+
 Submitting a Work Item
 ======================
 

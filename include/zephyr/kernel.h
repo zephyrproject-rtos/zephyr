@@ -4161,9 +4161,35 @@ void k_work_queue_start(struct k_work_q *queue,
 			k_thread_stack_t *stack, size_t stack_size,
 			int prio, const struct k_work_queue_config *cfg);
 
+/** @brief prepare a work queue for running on the calling thread.
+ *
+ * Puts the work queue into the started state and records the calling thread as
+ * the queue's thread, but does not enter the run loop. This allows work to be
+ * submitted to the queue, and k_work_queue_thread_get() to be used, before the
+ * calling thread later enters the run loop via k_work_queue_run().
+ *
+ * The thread that prepares the queue must be the same thread that subsequently
+ * calls k_work_queue_run().
+ *
+ * Calling k_work_queue_run() without preparing first is still supported; it prepares
+ * the queue implicitly. Use k_work_queue_prepare() only when work must be queued
+ * before the run loop is entered.
+ *
+ * @param queue the queue to prepare
+ *
+ * @param cfg optional additional configuration parameters.  Pass @c
+ * NULL if not required, to use the defaults documented in
+ * k_work_queue_config.
+ */
+void k_work_queue_prepare(struct k_work_q *queue, const struct k_work_queue_config *cfg);
+
 /** @brief Run work queue using calling thread
  *
  * This will run the work queue forever unless stopped by @ref k_work_queue_stop.
+ *
+ * If the queue was previously prepared with k_work_queue_prepare() (by this same
+ * thread), any work submitted in the meantime is preserved and processed once
+ * the run loop starts. Otherwise the queue is prepared implicitly.
  *
  * @param queue the queue to run
  *
