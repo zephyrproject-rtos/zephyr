@@ -235,6 +235,7 @@ static int nxp_mcxw_clock_control_pm(const struct device *dev, enum pm_device_ac
 	return 0;
 }
 
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 static int nxp_mcxw_clock_validate_sys_clk_src(const struct mcxw_clock_control_config *config)
 {
 	switch (config->sys_clk_src) {
@@ -260,11 +261,33 @@ static int nxp_mcxw_clock_validate_sys_clk_src(const struct mcxw_clock_control_c
 
 	return 0;
 }
+#endif /* !CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
 static int nxp_mcxw_clock_control_init(const struct device *dev)
 {
 	const struct mcxw_clock_control_config *config = dev->config;
 
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	/*
+	 * TF-M non-secure build:
+	 *
+	 * Secure firmware owns global clock, oscillator, voltage,
+	 * flash wait-state, power and security setup.
+	 *
+	 * Do not reconfigure SYSCLK, FIRC, SIRC, SOSC, ROSC, CCM32K,
+	 * SPC or FMU from the non-secure image.
+	 *
+	 * The secure image must configure the clock tree before jumping
+	 * to the non-secure image.
+	 */
+
+	if (config->core_clock_frequency != 0U) {
+		SystemCoreClock = config->core_clock_frequency;
+	} else {
+		SystemCoreClock = CLOCK_GetCoreSysClkFreq();
+	}
+
+#else
 	if (nxp_mcxw_clock_validate_sys_clk_src(config) != 0) {
 		return -EINVAL;
 	}
@@ -398,6 +421,7 @@ static int nxp_mcxw_clock_control_init(const struct device *dev)
 	/* Enable 32kHz clock output to all peripherals.  */
 	CCM32K_EnableCLKOutToPeripherals(CCM32K, 0xFF);
 #endif
+#endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
 	return pm_device_driver_init(dev, nxp_mcxw_clock_control_pm);
 }
