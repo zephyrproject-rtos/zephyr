@@ -680,6 +680,7 @@ Bluetooth HCI:
     - "area: Bluetooth"
   tests:
     - bluetooth
+    - sample.bluetooth
 
 Bluetooth Host:
   status: maintained
