@@ -336,3 +336,10 @@ SPDX-License-Identifier = "MIT"
 SPDX-FileComment = "Renders the tooltips of the documentation's Doxygen tooltip extension and is never linked into a firmware."
 Zephyr-Description = "Tippy.js Library"
 Zephyr-Origin = "https://atomiks.github.io/tippyjs/"
+
+[[annotations]]
+path = "scripts/build/uf2conv.py"
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Converts firmware images to UF2 at build time and is never linked into the firmware."
+Zephyr-Description = "UF2 Conversion Script"
+Zephyr-Origin = "https://github.com/microsoft/uf2"
