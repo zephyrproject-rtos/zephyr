@@ -21,6 +21,17 @@ GTEXT(soc_reset_hook)
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,soc_reset_hook)
 
 .soc_reset_hook:
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) || defined(CONFIG_BUILD_WITH_TFM)
+    /*
+     * Non-secure image under TF-M:
+     * Do not touch secure alias 0x30000000.
+     * Secure RAM/ECC init must be done by ROM or TF-M secure side.
+     */
+    movs.n r0, #0
+    msr msplim, r0
+    msr psplim, r0
+    b SystemInit
+#else
     movs.n r0, #0
     msr msplim, r0
     msr psplim, r0
@@ -42,3 +53,4 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,soc_reset_hook)
     bcc.n .loop01
 .ram_init_done:
     b SystemInit
+#endif
