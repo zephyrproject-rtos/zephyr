@@ -37,14 +37,4 @@ config UART_INTERRUPT_DRIVEN
 
 endif # SERIAL
 
-if ROMSTART_RELOCATION_ROM && (BOARD_MPS3_CORSTONE310_AN555 || BOARD_MPS3_CORSTONE310_FVP)
-
-config ROMSTART_REGION_ADDRESS
-	default $(dt_nodelabel_reg_addr_hex,itcm)
-
-config ROMSTART_REGION_SIZE
-	default $(dt_nodelabel_reg_size_hex,itcm,0,k)
-
-endif
-
 endif
