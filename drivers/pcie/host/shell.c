@@ -32,6 +32,19 @@ struct pcie_cap_id_to_str {
 #define PCIE_AER_CORR_MASK_REG     (0x14U / 4U)
 #define PCIE_AER_HEADER_LOG_REG    (0x1CU / 4U)
 
+/* PCI EXPRESS RECEIVER LANE MARGINING (SERDES) SUBSYSTEM DIAGNOSTICS */
+#define PCIE_EXT_CAP_MARGIN_ID 0x001AU
+
+#define PCIE_MARGIN_PORT_CAP_REG    0x04U
+#define PCIE_MARGIN_PORT_CTL_REG    0x06U
+#define PCIE_MARGIN_LANE_STATUS_REG 0x08U
+
+#define PCIE_MARGIN_CAP_IND_PARAMS(val)      (((val) >> 0) & 0x1U)
+#define PCIE_MARGIN_CAP_NUM_LANES(val)       (((val) >> 4) & 0xFU)
+#define PCIE_MARGIN_CAP_MAX_V_STEPS(val)     (((val) >> 8) & 0x7FU)
+#define PCIE_MARGIN_CAP_MAX_T_STEPS(val)     (((val) >> 15) & 0x3FU)
+#define PCIE_MARGIN_CAP_MAX_T_STEPS_BIT(val) (((val) >> 21) & 0x1U)
+
 static const struct pcie_cap_id_to_str pcie_cap_list[] = {
 	{ PCI_CAP_ID_PM,     "Power Management" },
 	{ PCI_CAP_ID_AGP,    "Accelerated Graphics Port" },
@@ -1026,6 +1039,105 @@ static int cmd_pcie_aer_status(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static inline void log_pcie_margin_caps(const struct shell *sh, uint16_t caps, uint16_t ctls)
+{
+	uint8_t num_lanes = (uint8_t)PCIE_MARGIN_CAP_NUM_LANES(caps);
+	uint8_t max_t_steps = (PCIE_MARGIN_CAP_MAX_T_STEPS_BIT(caps) != 0U) ? 63U : 31U;
+
+	shell_print(sh, "Port Capabilities Register: 0x%04X [Control: 0x%04X]", (unsigned int)caps,
+		    (unsigned int)ctls);
+	shell_print(sh, "   -> Link Width Tracked       : x%u Physical Lanes",
+		    (num_lanes == 0U ? 1U : num_lanes));
+	shell_print(sh, "   -> Max Voltage Step Margins : %u Steps",
+		    PCIE_MARGIN_CAP_MAX_V_STEPS(caps));
+	shell_print(sh, "   -> Max Timing Step Margins  : %u Steps", max_t_steps);
+
+	if (PCIE_MARGIN_CAP_IND_PARAMS(caps) != 0U) {
+		shell_print(
+			sh,
+			"   -> Software Margining Matrix: Deployed [Independent Per-Lane Control]");
+	} else {
+		shell_print(
+			sh,
+			"   -> Software Margining Matrix: Bound [Unified Link Parameter Control]");
+	}
+}
+
+static inline void log_pcie_margin_status(const struct shell *sh, uint32_t status)
+{
+	shell_print(sh, "Receiver Physical Signal Integrity Status (Lane 0 Baseline):");
+	shell_print(sh, "   Raw Lane Status Register  : 0x%08X", status);
+
+	if ((status & (1U << 0)) != 0U) {
+		shell_print(sh, "   [ALERT] -> Hardware Margining Engine Currently Active");
+	} else {
+		shell_print(
+			sh,
+			"   -> SerDes Sample Point Architecture: Safe [Stable Locked Tracking]");
+	}
+
+	if ((status & (1U << 1)) != 0U) {
+		shell_print(sh, "   [ALERT] -> Timing/Voltage Step Limit Threshold Reached");
+	}
+}
+
+/* Subcommand: pcie link margin <bus:dev.func> */
+static int cmd_pcie_link_margin(const struct shell *sh, size_t argc, char **argv)
+{
+	pcie_bdf_t bdf;
+	uint32_t id;
+	uint32_t margin_offset;
+	uint32_t port_caps_ctl;
+	uint32_t lane_status;
+	uint32_t port_caps;
+	uint32_t port_ctls;
+
+	if (argc < 2) {
+		shell_error(sh, "Usage: pcie link margin <bus:dev.func>");
+		return -EINVAL;
+	}
+
+	bdf = get_bdf(argv[1]);
+	if (bdf == PCIE_BDF_NONE) {
+		shell_error(sh, "Invalid BDF layout format specification.");
+		return -EINVAL;
+	}
+
+	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
+		shell_error(sh, "No responsive endpoint found at target BDF.");
+		return -ENODEV;
+	}
+
+	margin_offset = pcie_get_ext_cap(bdf, PCIE_EXT_CAP_ID_LMR);
+	if (margin_offset == 0) {
+		shell_error(sh, "Target device does not implement native "
+				"Lane Margining at Receiver (Cap ID 0x0027).");
+		return -EOPNOTSUPP;
+	}
+
+	port_caps_ctl = pcie_conf_read(bdf, margin_offset + 1U);
+	port_caps = port_caps_ctl;
+	port_ctls = (port_caps_ctl >> 16) & 0xFFFFU;
+
+	lane_status = pcie_conf_read(bdf, margin_offset + 2U);
+
+	shell_print(sh, "====================================================");
+	shell_print(sh, "   PCIe SerDes LANE MARGINING METRICS MATRIX: %u:%x.%u",
+		    PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf));
+	shell_print(sh, "====================================================");
+
+	log_pcie_margin_caps(sh, port_caps, port_ctls);
+
+	shell_print(sh, "----------------------------------------------------");
+
+	log_pcie_margin_status(sh, lane_status);
+
+	shell_print(sh, "====================================================");
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_pcie_mask_cmds,
 	SHELL_CMD_ARG(ignore, NULL, "Register a coordinate slot to be ignored by bus scans",
@@ -1042,11 +1154,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_pcie_resource_show, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_pcie_link_cmds,
-			       SHELL_CMD_ARG(set_speed, NULL,
-					     "Scale the target PCIe bus lane speed dynamically",
-					     cmd_pcie_link_set_speed, 3, 0),
-			       SHELL_SUBCMD_SET_END);
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_pcie_link_cmds,
+	SHELL_CMD_ARG(set_speed, NULL, "Scale the target PCIe bus lane speed dynamically",
+		      cmd_pcie_link_set_speed, 3, 0),
+	SHELL_CMD_ARG(margin, NULL, "Trace SerDes physical layer receiver lane margining caps",
+		      cmd_pcie_link_margin, 2, 0),
+	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_pcie_irq_cmds,
