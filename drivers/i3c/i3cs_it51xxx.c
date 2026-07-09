@@ -793,13 +793,13 @@ static void it51xxx_i3cs_isr(const struct device *dev)
 	if (int_status_1 & INT_DYN_ADDR_CHANGE) {
 		if (it51xxx_i3cs_dynamic_addr_valid(dev)) {
 			if (data->target_config) {
-				data->target_config->address = DYNAMIC_ADDRESS(
+				data->config_target.dynamic_addr = DYNAMIC_ADDRESS(
 					sys_read8(cfg->base + I3CS64_DYNAMIC_ADDRESS));
 			}
 			LOG_INST_DBG(cfg->log, "dynamic address is assigned");
 		} else {
 			if (data->target_config) {
-				data->target_config->address = 0;
+				data->config_target.dynamic_addr = 0;
 			}
 			LOG_INST_DBG(cfg->log, "dynamic address is reset");
 		}
