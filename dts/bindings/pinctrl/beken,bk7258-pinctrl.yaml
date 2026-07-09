@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: Apache-2.0
+
+title: Beken BK7258 Pin Controller
+
+description: |
+    Beken BK7258 pin controller.
+
+    Singleton node responsible for controlling pin function selection and pin
+    properties. Each child node defines a pin configuration state for a
+    particular device (e.g., UART1 TX/RX). Pin functions are selected via
+    the pinmux property, which encodes the GPIO pin number, the selected
+    alternate function, and direction flags.
+
+    The node has the 'pinctrl' node label set in the board DTS, so you can
+    modify it like this:
+
+      &pinctrl {
+              /* your modifications go here */
+      };
+
+compatible: "beken,bk7258-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: |
+    Each child node defines the state of a particular group of one or more
+    pins, such as grouping RX/TX of a common UART.
+  properties:
+    pinmux:
+      required: true
+      type: array
+      description: |
+        An array of pinmux values. Each element encodes the GPIO pin number,
+        the selected alternate function, and direction flags, constructed
+        using the BK7258_PINMUX() macro and OR-ed with BK7258_FLAG_*
+        constants defined in <zephyr/dt-bindings/pinctrl/bk7258-pinctrl.h>.
