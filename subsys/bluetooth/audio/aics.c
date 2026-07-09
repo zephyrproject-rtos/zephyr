@@ -129,8 +129,9 @@ static ssize_t read_aics_state(struct bt_conn *conn,
 {
 	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
-	LOG_DBG("gain %d, mute %u, gain_mode %u, counter %u", inst->srv.state.gain,
-		inst->srv.state.mute, inst->srv.state.gain_mode, inst->srv.state.change_counter);
+	LOG_DBG("gain %d, mute %u, gain_mode %s (0x%02X), counter %u", inst->srv.state.gain,
+		inst->srv.state.mute, bt_aics_mode_to_str(inst->srv.state.gain_mode),
+		inst->srv.state.gain_mode, inst->srv.state.change_counter);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.state,
 				 sizeof(inst->srv.state));
@@ -410,8 +411,9 @@ static ssize_t write_aics_control(struct bt_conn *conn, const struct bt_gatt_att
 	if (state_change) {
 		inst->srv.state.change_counter++; /* May overflow which is OK */
 
-		LOG_DBG("New state: gain %d, mute %u, gain_mode %u, counter %u",
-			inst->srv.state.gain, inst->srv.state.mute, inst->srv.state.gain_mode,
+		LOG_DBG("New state: gain %d, mute %u, gain_mode %s (0x%02X), counter %u",
+			inst->srv.state.gain, inst->srv.state.mute,
+			bt_aics_mode_to_str(inst->srv.state.gain_mode), inst->srv.state.gain_mode,
 			inst->srv.state.change_counter);
 
 		value_changed(inst, AICS_NOTIFY_STATE);
