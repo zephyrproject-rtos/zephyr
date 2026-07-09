@@ -6074,7 +6074,6 @@ int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
  *         is set to the starting address of the memory block.
  * @retval -ENOMEM Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
- * @retval -EINVAL Invalid data supplied
  */
 int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
 			    k_timeout_t timeout);
