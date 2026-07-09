@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf54lv10a_cpuflpr.dtsi>
+#include "nrf54lv10dk_nrf54lv10a_common.dtsi"
+
+/ {
+	model = "Nordic nRF54LV10 DK nRF54LV10A FLPR MCU";
+	compatible = "nordic,nrf54lv10dk_nrf54lv10a-cpuflpr";
+
+	chosen {
+		zephyr,console = &uart20;
+		zephyr,shell-uart = &uart20;
+		zephyr,code-partition = &cpuflpr_code_partition;
+		zephyr,flash = &cpuflpr_rram;
+		zephyr,sram = &cpuflpr_sram;
+	};
+};
+
+&cpuflpr_rram {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		cpuflpr_code_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
+	};
+};
+
+&grtc {
+	owned-channels = <3 4>;
+	status = "okay";
+};
+
+&uart20 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpiote20 {
+	status = "okay";
+};
+
+&gpiote30 {
+	status = "okay";
+};
