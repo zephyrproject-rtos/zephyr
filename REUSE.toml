@@ -246,3 +246,10 @@ SPDX-FileComment = "Linked into the firmware only when the Spinel HDLC RCP host 
 Zephyr-Description = "OpenThread Spinel HDLC RCP Host Interface Files"
 Zephyr-Origin = "https://openthread.io/"
 Zephyr-Kconfig-Condition = "CONFIG_HDLC_RCP_IF"
+
+[[annotations]]
+path = "doc/_extensions/zephyr/doxytooltip/static/tippy/popper.min.js"
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Used by Tippy.js to position the documentation's Doxygen tooltips and is never linked into a firmware."
+Zephyr-Description = "Popper.js Library"
+Zephyr-Origin = "https://popper.js.org/"
