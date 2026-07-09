@@ -22,6 +22,16 @@ struct pcie_cap_id_to_str {
 	char *str;
 };
 
+/* PCI Express Extended Capability Constants */
+#define PCIE_EXT_CAP_AER_ID 0x0001U
+
+/* AER Register Offsets (Relative to the AER Capability Base Offset) */
+#define PCIE_AER_UNCORR_STATUS_REG 0x04U
+#define PCIE_AER_UNCORR_MASK_REG   0x08U
+#define PCIE_AER_CORR_STATUS_REG   0x10U
+#define PCIE_AER_CORR_MASK_REG     0x14U
+#define PCIE_AER_HEADER_LOG_REG    0x1CU
+
 static const struct pcie_cap_id_to_str pcie_cap_list[] = {
 	{ PCI_CAP_ID_PM,     "Power Management" },
 	{ PCI_CAP_ID_AGP,    "Accelerated Graphics Port" },
@@ -391,12 +401,138 @@ static int cmd_pcie_ls(const struct shell *sh, size_t argc, char **argv)
 
 	return 0;
 }
+
+static inline void log_pcie_aer_uncorr(const struct shell *sh, uint32_t status)
+{
+	if (status == 0U) {
+		shell_print(sh, "   -> No uncorrectable fatal hardware fractures logged.");
+		return;
+	}
+
+	if ((status & (1U << 0)) != 0U) {
+		shell_print(sh, "   [CRITICAL] -> Link Training Error (LTSSM Failure)");
+	}
+	if ((status & (1U << 4)) != 0U) {
+		shell_print(sh, "   [CRITICAL] -> Data Link Protocol Error Detected");
+	}
+	if ((status & (1U << 12)) != 0U) {
+		shell_print(sh, "   [CRITICAL] -> Poisoned TLP Execution Blocked");
+	}
+	if ((status & (1U << 13)) != 0U) {
+		shell_print(sh, "   [CRITICAL] -> Flow Control Protocol Error (FCPE)");
+	}
+	if ((status & (1U << 16)) != 0U) {
+		shell_print(sh, "   [CRITICAL] -> Unexpected Completion Trap");
+	}
+	if ((status & (1U << 20)) != 0U) {
+		shell_print(sh, "   [CRITICAL] -> Unsupported Request (UR) Abort");
+	}
+}
+
+static inline void log_pcie_aer_corr(const struct shell *sh, uint32_t status)
+{
+	if (status == 0U) {
+		shell_print(sh, "   -> No physical signal degradation deviations reported.");
+		return;
+	}
+
+	if ((status & (1U << 0)) != 0U) {
+		shell_print(sh, "   [WARNING]  -> Receiver Physical Layer Error");
+	}
+	if ((status & (1U << 6)) != 0U) {
+		shell_print(sh, "   [WARNING]  -> Bad TLP Frame CRC Detected");
+	}
+	if ((status & (1U << 7)) != 0U) {
+		shell_print(sh, "   [WARNING]  -> Bad DLLP Frame Checksum Detected");
+	}
+	if ((status & (1U << 8)) != 0U) {
+		shell_print(sh, "   [WARNING]  -> REPLAY_NUM Rollover/Timer Timeout");
+	}
+}
+
+/* Subcommand: pcie aer status <bus:dev.func> */
+static int cmd_pcie_aer_status(const struct shell *sh, size_t argc, char **argv)
+{
+	pcie_bdf_t bdf;
+	uint32_t id;
+	uint32_t aer_offset;
+	uint32_t uncorr_status;
+	uint32_t uncorr_mask;
+	uint32_t corr_status;
+	uint32_t corr_mask;
+	uint32_t header_log[4];
+
+	if (argc < 2) {
+		shell_error(sh, "Usage: pcie aer status <bus:dev.func>");
+		return -EINVAL;
+	}
+
+	bdf = get_bdf(argv[1]);
+	if (bdf == PCIE_BDF_NONE) {
+		shell_error(sh, "Invalid BDF layout format specification.");
+		return -EINVAL;
+	}
+
+	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
+		shell_error(sh, "No responsive endpoint found at target BDF.");
+		return -ENODEV;
+	}
+
+	aer_offset = pcie_get_ext_cap(bdf, PCIE_EXT_CAP_AER_ID);
+	if (aer_offset == 0) {
+		shell_error(sh, "Target device does not support native "
+				"Advanced Error Reporting (AER).");
+		return -EOPNOTSUPP;
+	}
+
+	uncorr_status = pcie_conf_read(bdf, aer_offset + PCIE_AER_UNCORR_STATUS_REG);
+	uncorr_mask = pcie_conf_read(bdf, aer_offset + PCIE_AER_UNCORR_MASK_REG);
+	corr_status = pcie_conf_read(bdf, aer_offset + PCIE_AER_CORR_STATUS_REG);
+	corr_mask = pcie_conf_read(bdf, aer_offset + PCIE_AER_CORR_MASK_REG);
+
+	shell_print(sh, "====================================================================");
+	shell_print(sh, "   PCIe ADVANCED ERROR REPORTING (AER) STATUS MATRIX: %u:%x.%u",
+		    PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf));
+	shell_print(sh, "====================================================================");
+
+	shell_print(sh, "Uncorrectable Errors Status: 0x%08X [Mask: 0x%08X]", uncorr_status,
+		    uncorr_mask);
+	log_pcie_aer_uncorr(sh, uncorr_status);
+
+	shell_print(sh, "----------------------------------------------------");
+
+	shell_print(sh, "Correctable Errors Status:   0x%08X [Mask: 0x%08X]", corr_status,
+		    corr_mask);
+	log_pcie_aer_corr(sh, corr_status);
+
+	shell_print(sh, "----------------------------------------------------");
+
+	shell_print(sh, "Transaction Layer Packet (TLP) Header Log Matrix:");
+	for (uint32_t i = 0U; i < 4U; i++) {
+		header_log[i] = pcie_conf_read(bdf, aer_offset + PCIE_AER_HEADER_LOG_REG + i);
+	}
+	shell_print(sh, "   [DW0-DW1] : 0x%08X 0x%08X", header_log[0], header_log[1]);
+	shell_print(sh, "   [DW2-DW3] : 0x%08X 0x%08X", header_log[2], header_log[3]);
+	shell_print(sh, "====================================================================");
+
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_pcie_aer_cmds,
+	SHELL_CMD_ARG(status, NULL, "Trace correctable and uncorrectable hardware error states",
+		      cmd_pcie_aer_status, 2, 0),
+	SHELL_SUBCMD_SET_END);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_pcie_cmds,
-	SHELL_CMD_ARG(ls, NULL,
-		      "List PCIE devices\n"
-		      "Usage: ls [bus:device:function] [dump]",
-		      cmd_pcie_ls, 1, 2),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
-);
+			       SHELL_CMD_ARG(ls, NULL,
+					     "List PCIE devices\n"
+					     "Usage: ls [bus:device:function] [dump]",
+					     cmd_pcie_ls, 1, 2),
+			       SHELL_CMD(aer, &sub_pcie_aer_cmds,
+					 "Interact with PCIe Advanced Error Reporting metrics",
+					 NULL),
+			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(pcie, &sub_pcie_cmds, "PCI(e) device information", cmd_pcie_ls);
