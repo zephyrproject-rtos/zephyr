@@ -131,7 +131,6 @@ static int adxl345_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 	data->header.base_timestamp_ns =
 		enc_data->timestamp -
 		(total_samples > 0 ? (total_samples - 1) : 0) * period_ns;
-	data->header.reading_count = 1;
 	uint8_t is_full_res = enc_data->is_full_res;
 
 	/* Calculate which sample is decoded. */
@@ -173,6 +172,7 @@ static int adxl345_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 		*fit = (uintptr_t)sample_end;
 		count++;
 	}
+	data->header.reading_count = count;
 	return count;
 }
 
