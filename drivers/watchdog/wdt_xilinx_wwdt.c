@@ -9,7 +9,6 @@
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
-#include <zephyr/drivers/hwinfo.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
