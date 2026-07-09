@@ -551,9 +551,15 @@ device.
        available to the Zephyr image, used during linking
    * - zephyr,system-timer
      - Selects the hardware timer instance used as the Zephyr system timer,
-       which is a singleton system-wide function. Use this when devicetree
-       selects which timer instance provides the system timer, even if other
-       identical timer instances are used by other APIs.
+       which is a singleton system-wide function. This chosen is needed when the
+       selected system timer driver corresponds to timer hardware for which multiple
+       instances may exist: it selects one instance as the system timer and allows
+       using the other instances with other APIs. This chosen is ignored when the
+       selected system timer driver corresponds to timer hardware for which only one
+       instance may ever exist, such as the Cortex-M SysTick timer; otherwise, it
+       must corresponds to a node that the selected system timer driver can operate.
+       (Note: the Zephyr system timer *driver* is selected using Kconfig options such
+       as :kconfig:option:`CONFIG_CORTEX_M_SYSTICK` - not Devicetree!)
    * - zephyr,system-timer-companion
      - Selects the device used to keep time while the primary system timer is
        inactive in low-power states. It must implement the :ref:`counter_api` API.
