@@ -4,6 +4,18 @@ mainmenu "SPI Loopback Test"
 
 source "Kconfig.zephyr"
 
+# Some SPI drivers only operate (or are only exercised here) in an
+# interrupt- and/or DMA-driven mode. Default the generic transfer-mode
+# requests on for those drivers so their boards do not each have to set it.
+# This is scoped to this test; it does not change the driver defaults.
+config SPI_INTERRUPT_DRIVEN
+	default y if SPI_RENESAS_RA || SPI_RENESAS_RA8 || SPI_RENESAS_RA_SCI || \
+		SPI_RENESAS_RA_SCI_B || SPI_MAX32 || SPI_RENESAS_RZ || \
+		SPI_RENESAS_RZ_RSPI || SPI_NPCX_SPIP
+
+config SPI_DMA
+	default y if SPI_RENESAS_RA || SPI_RENESAS_RA8
+
 config SPI_LOOPBACK_MODE_LOOP
 	bool "Configure the SPI in LOOP mode, so that no extra wiring is needed"
 
