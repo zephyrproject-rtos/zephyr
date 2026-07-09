@@ -1,0 +1,28 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinmux_flexcomm2_lpuart {
+	group0 {
+		/delete-property/ bias-pull-up;
+		/delete-property/ pinmux;
+		pinmux = <FC2_P2_PIO4_2>, <FC2_P3_PIO4_3>,
+			 <FC2_P4_PIO4_4>, <FC2_P5_PIO4_5>;
+	};
+};
+
+&m2_hci_bt_uart {
+	pinctrl-0 = <&pinmux_flexcomm2_lpuart>;
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+
+		m2_bt_module: m2_bt_module {
+			compatible = "nxp,bt-hci-uart";
+			sdio-reset-gpios = <&gpio1 21 GPIO_ACTIVE_HIGH>;
+			w-disable-gpios = <&gpio1 21 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};

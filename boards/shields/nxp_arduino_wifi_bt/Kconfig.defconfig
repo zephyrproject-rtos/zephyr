@@ -1,0 +1,28 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Set default NXP BT module when shield is used with BT
+if SHIELD_NXP_ARDUINO_AW510_WIFI_BT && BT
+
+choice BT_NXP_MODULE
+	default BT_NXP_IW416
+endchoice
+
+endif # SHIELD_NXP_ARDUINO_AW510_WIFI_BT && BT
+
+# Configure stack sizes and FPU for IW416 module when BT is enabled
+if BT && (BT_NXP_IW416 || NXP_IW416)
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
+
+config BT_LONG_WQ_STACK_SIZE
+	default 2560
+
+config MAIN_STACK_SIZE
+	default 2560
+
+config SHELL_STACK_SIZE
+	default 4096 if SHELL
+
+endif # BT && (BT_NXP_IW416 || NXP_IW416)
