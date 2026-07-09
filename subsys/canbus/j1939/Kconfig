@@ -19,6 +19,21 @@ config J1939_MAX_NODES_IN_SYSTEM
 	  Used to store tracking of CAN name of other nodes.
 	  253 is max since the source address is only a byte and 0xFE is NULL and 0xFF is global.
 
+config J1939_TRANSPORT_PROTOCOL
+    bool "Enables J1939 Transport Protocol"
+    default y
+    help
+      Enables sending more than 8 bytes under a single PGN in standard CAN.
+
+config J1939TP_NUM_ALLOWED_RECEIVE_PGN
+    int "Max number of unique TP PGNs that can be registered for receive"
+    range 1 20
+    default 5
+    help
+      Maximum number of unique PGNs that can be registered for receive across all nodes.
+      This is a shared buffer and is not per node. The default is 5 since this is the
+      number of PGNs that are used by the J1939 stack itself.
+
 config J1939_MAX_PGN_REQUEST_MESSAGES
     int "Max number of request messages this node supports"
     range 3 255

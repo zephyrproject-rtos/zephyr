@@ -5,7 +5,7 @@
 #include <zephyr/canbus/j1939.h>
 #include <J1939Ac.h>
 // #include <J1939Ma.h>
-// #include <J1939Tp.h>
+#include <J1939Tp.h>
 #include <J1939_Cfg.h>
 
 #ifdef J1939DM13_ENABLE
@@ -298,7 +298,7 @@ const J1939_RoutingCallback_T J1939_App_RoutingTable[256] = {
     /* PF = 0x0xE8(232)   */ J1939_DefaultRoute,
     /* PF = 0x0xE9(233)   */ J1939_DefaultRoute,
     /* PF = 0x0xEA(234)   */ J1939_RequestPgn,
-#ifdef J1939_TRANSPORT_PROTOCOL
+#ifdef CONFIG_J1939_TRANSPORT_PROTOCOL
     /* PF = 0x0xEB(235)   */ J1939Tp_DataTransfer,
     /* PF = 0x0xEC(236)   */ J1939Tp_ConnectionManagement,
 #else
@@ -347,14 +347,14 @@ void J1939_App_Task(void)
    {
       J1939_Node_T node = &(j1939_nodes[index]);
 
-    //   if (J1939_IsPgnRequested(J1939_ECU_ID_INFO_PGN, &requestedSource, node))
-    //   {
-    //      J1939_App_TransmitEcuId((J1939_DestinationAddress_T)requestedSource, node);
-    //   }
-    //   if (J1939_IsPgnRequested(J1939_SOFTWARE_ID_PGN, &requestedSource, node))
-    //   {
-    //      J1939_App_TransmitSoftwareId((J1939_DestinationAddress_T)requestedSource, node);
-    //   }
+      if (J1939_IsPgnRequested(J1939_ECU_ID_INFO_PGN, &requestedSource, node))
+      {
+         J1939_App_TransmitEcuId((J1939_DestinationAddress_T)requestedSource, node);
+      }
+      if (J1939_IsPgnRequested(J1939_SOFTWARE_ID_PGN, &requestedSource, node))
+      {
+         J1939_App_TransmitSoftwareId((J1939_DestinationAddress_T)requestedSource, node);
+      }
 #ifdef J1939_NAME_MANAGEMENT
       if (J1939_IsPgnRequested(J1939NM_PGN, &requestedSource, node))
       {

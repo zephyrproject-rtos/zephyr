@@ -16,8 +16,6 @@
 #define MAKEDWORD(lo, hi) ((uint32_t)(((uint32_t)(uint16_t)(lo)) | ((uint32_t)(uint16_t)(hi) << 16)))
 #define ELEMENTS(a) (sizeof(a) / sizeof((a)[0]))
 
-typedef struct j1939_dt_node_cfg * J1939_Node_T;
-
 typedef uint8_t J1939_Address_T;
 
 typedef J1939_Address_T J1939_SourceAddress_T;

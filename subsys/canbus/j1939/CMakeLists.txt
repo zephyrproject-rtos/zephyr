@@ -13,6 +13,8 @@ zephyr_library_sources(
 	J1939Ac.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_J1939_TRANSPORT_PROTOCOL J1939Tp.c)
+
 zephyr_library_sources(
 	Application/J1939_App.c
 	Application/J1939Ac_App.c

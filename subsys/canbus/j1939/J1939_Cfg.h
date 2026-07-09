@@ -225,19 +225,13 @@
 /***************************************************************************************************
  * Transport Layer
  **************************************************************************************************/
-// #define J1939_TRANSPORT_PROTOCOL
-
-#ifdef J1939_TRANSPORT_PROTOCOL
+#ifdef CONFIG_J1939_TRANSPORT_PROTOCOL
 // Configure the priority of the transport messages
 #define J1939TP_PRIORITY (J1939_Priority_7)
 
 /// Some projects only need transmit capability, and can reduce the required flash by disabling
 /// transport receive support
 // #define J1939TP_RECEIVE_DISABLED
-
-// Total number of unique TP PGNs that are allowed to be recorded. These are across all nodes since
-// these buffers are shared.
-#define J1939TP_NUM_ALLOWED_RECEIVE_PGN (5)
 
 /// Number of buffers allowed to be used for receiving transport sessions simutanously.
 #define J1939TP_NUMBER_OF_TP_RX_SESSIONS (3)

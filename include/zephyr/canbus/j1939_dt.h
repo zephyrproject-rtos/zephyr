@@ -76,6 +76,19 @@ typedef struct J1939_PgnRequest_S
    bool isUsed;          // True if PGN is used
 } J1939_PgnRequest_T;
 
+typedef struct j1939_dt_node_cfg * J1939_Node_T;
+
+/// Callback function pointer for transport sessions
+typedef bool (*J1939Tp_Callback_T)(uint16_t pgn, uint8_t *data,
+                                           uint32_t length, uint8_t sender,
+                                           J1939_Node_T node);
+
+typedef struct J1939Tp_PgnParams_S
+{
+   uint16_t pgn;
+   J1939Tp_Callback_T callback;
+} J1939Tp_PgnParams_T;
+
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 
@@ -270,6 +283,15 @@ struct j1939_dt_node_cfg {
 
     /** Number of PGNs requested */
     uint8_t J1939_RequestedPgnCount;
+
+    /** BAM transmission status for this node. */
+    bool J1939Tp_TransmitBam;
+
+    /** List of all the PGNs that the module accepts */
+    J1939Tp_PgnParams_T J1939Tp_RegisterPgnList[CONFIG_J1939TP_NUM_ALLOWED_RECEIVE_PGN];
+
+    /** Provides count of # of registered PGNs and indexes where the next registered PGN value should go */
+    uint8_t J1939Tp_RegisterPgnIndex;
 };
 
 /**
@@ -302,6 +324,7 @@ struct j1939_dt_node_cfg {
 		.ac_timestamp            = 0, \
 		.recorded_bus_info_count = 0, \
 		.transmission_enabled    = false, \
+        .J1939Tp_TransmitBam         = false, \
 	},
 
 /**
@@ -337,6 +360,7 @@ struct j1939_dt_node_cfg {
         .ac_timestamp            = 0, \
         .recorded_bus_info_count = 0, \
         .transmission_enabled    = false, \
+        .J1939Tp_TransmitBam         = false, \
 	},
 
 /**
@@ -361,6 +385,7 @@ struct j1939_dt_node_cfg {
         .ac_timestamp            = 0, \
         .recorded_bus_info_count = 0, \
         .transmission_enabled    = false, \
+        .J1939Tp_TransmitBam         = false, \
 	}
 
 /** @} */

@@ -5,6 +5,7 @@
 #include <zephyr/canbus/j1939.h>
 #include <zephyr/drivers/can.h>
 #include "J1939Ac.h"
+#include "J1939Tp.h"
 #include "J1939Timer.h"
 #include <Can_Transmit.h>
 #include <J1939_Cfg.h>
@@ -129,7 +130,7 @@ void J1939_Init(void)
    // Initialize Address claimed. Whether we do or not we must still init!
    J1939Ac_Init();
 
-#ifdef J1939_TRANSPORT_PROTOCOL
+#ifdef CONFIG_J1939_TRANSPORT_PROTOCOL
    // Initialize transport protocol.
    J1939Tp_Init();
 #endif
@@ -257,7 +258,7 @@ void J1939_Task(void)
 
    J1939Ac_Task();
 
-#ifdef J1939_TRANSPORT_PROTOCOL
+#ifdef CONFIG_J1939_TRANSPORT_PROTOCOL
    // The following two functions process the transport protocol.
 #ifndef J1939TP_RECEIVE_DISABLED
    J1939Tp_UpdateReceiveMessageTimes(elapsedCanTime);
@@ -309,8 +310,7 @@ void J1939_Acknowledge(const J1939_Pgn_T pgn, J1939_Response_T control,
                        const J1939_DestinationAddress_T destination, J1939_Node_T node)
 {
    J1939_Arbitration_T id;
-//    J1939_SourceAddress_T source = J1939Ac_GetSourceAddress(node);
-   J1939_SourceAddress_T source = 0x10; // TODO: Replace with actual source address retrieval
+   J1939_SourceAddress_T source = node->source_address;
    uint8_t data[CAN_MAX_DLC];
 
    // Build the response ID
@@ -437,15 +437,13 @@ bool J1939_TransmitPgn(J1939_Priority_T priority, J1939_Pgn_T pgn,
       if (count <= CAN_MAX_DLC)
       {
          // Create the identifier for the message
-         //  id = J1939_BuildMessageId(dataPage, extendedDataPage, priority, pgn,
-         //                            J1939Ac_GetSourceAddress(node));
         id = J1939_BuildMessageId(dataPage, extendedDataPage, priority, pgn,
                                    node->source_address);
 
          // Send the message out to the appropriate node.
          result = J1939_BuildAndQueueMessage(node, id, count, true, data);
 
-#ifdef J1939_TRANSPORT_PROTOCOL
+#ifdef CONFIG_J1939_TRANSPORT_PROTOCOL
          // Attempt to release the buffer in case the caller allocated a transport buffer
          // Release the transport buffer.
          J1939Tp_FreeBuffer(data);
@@ -453,7 +451,7 @@ bool J1939_TransmitPgn(J1939_Priority_T priority, J1939_Pgn_T pgn,
       }
       else
       {
-#ifdef J1939_TRANSPORT_PROTOCOL
+#ifdef CONFIG_J1939_TRANSPORT_PROTOCOL
          // Send out the message via transport protocol.
          if (J1939Tp_Message_Accepted ==
              J1939Tp_TransmitMultiPacket(tempPgn, destination, count, data, node))
@@ -475,7 +473,7 @@ bool J1939_TransmitPgn(J1939_Priority_T priority, J1939_Pgn_T pgn,
    }
    else
    {
-#ifdef J1939_TRANSPORT_PROTOCOL
+#ifdef CONFIG_J1939_TRANSPORT_PROTOCOL
       // Attempt to release the buffer in case the caller allocated a transport buffer
       // Release the transport buffer.
       J1939Tp_FreeBuffer(data);
