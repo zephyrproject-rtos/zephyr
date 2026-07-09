@@ -5,6 +5,7 @@
 
 config SPI_CC23X0
 	bool "TI SimpleLink CC23x0 SPI driver"
+	select SPI_ASYNC_NOT_SUPPORTED
 	default y
 	depends on DT_HAS_TI_CC23X0_SPI_ENABLED
 	select PINCTRL

@@ -47,9 +47,15 @@ config SPI_INTERRUPT_DRIVEN
 	  is left disabled. To force a driver out of interrupts driver transfers, check for
 	  its own SPI_*_INTERRUPT_DRIVEN symbol.
 
+config SPI_ASYNC_NOT_SUPPORTED
+	bool
+	help
+	  Selected by SPI drivers that do not implement an asynchronous
+	  transceive. When set, SPI_ASYNC cannot be enabled.
+
 config SPI_ASYNC
 	bool "Asynchronous call support"
-	depends on MULTITHREADING
+	depends on MULTITHREADING && !SPI_ASYNC_NOT_SUPPORTED
 	select POLL
 	help
 	  This option enables the asynchronous API calls.

@@ -5,6 +5,7 @@
 
 config SPI_NUMAKER
 	bool "Nuvoton NuMaker MCU SPI driver"
+	select SPI_ASYNC_NOT_SUPPORTED
 	default y
 	select HAS_NUMAKER_SPI
 	select PINCTRL
@@ -16,6 +17,7 @@ config SPI_NUMAKER
 
 config SPI_NUMAKER_USCI
 	bool "Nuvoton NuMaker MCU USCI SPI driver"
+	select SPI_ASYNC_NOT_SUPPORTED
 	default y
 	select HAS_NUMAKER_SPI
 	select PINCTRL

@@ -8,6 +8,7 @@
 
 menuconfig SPI_AMBIQ_SPIC
 	bool "AMBIQ SPI Controller driver"
+	select SPI_ASYNC_NOT_SUPPORTED
 	default y
 	depends on DT_HAS_AMBIQ_SPI_ENABLED
 	select GPIO
@@ -29,6 +30,7 @@ endif # SPI_AMBIQ_SPIC
 
 config SPI_AMBIQ_SPID
 	bool "AMBIQ SPI Device driver"
+	select SPI_ASYNC_NOT_SUPPORTED
 	default y
 	depends on DT_HAS_AMBIQ_SPID_ENABLED
 	select GPIO
@@ -39,6 +41,7 @@ config SPI_AMBIQ_SPID
 
 config SPI_AMBIQ_BLEIF
 	bool "AMBIQ SPI-BLEIF driver"
+	select SPI_ASYNC_NOT_SUPPORTED
 	default y
 	depends on DT_HAS_AMBIQ_SPI_BLEIF_ENABLED
 	select AMBIQ_HAL

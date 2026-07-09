@@ -3,6 +3,7 @@
 
 config SPI_RPI_PICO_PIO
 	bool "Raspberry Pi Pico PIO SPI controller driver"
+	select SPI_ASYNC_NOT_SUPPORTED
 	default y
 	depends on DT_HAS_RASPBERRYPI_PICO_SPI_PIO_ENABLED
 	select PICOSDK_USE_PIO

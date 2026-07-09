@@ -3,6 +3,7 @@
 
 config SPI_WCH
 	bool "WCH SPI Controller"
+	select SPI_ASYNC_NOT_SUPPORTED
 	default y
 	depends on DT_HAS_WCH_SPI_ENABLED
 	help
