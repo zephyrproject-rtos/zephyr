@@ -1,0 +1,11 @@
+sample:
+  name: JDI Display Random Color Sample
+  description: |
+    Display random pixel patterns on a JDI Memory LCD.
+    The screen is filled with random black/white pixels every 1 second.
+tests:
+  sample.boards.sifli.display:
+    tags: display
+    filter: dt_chosen_exists("zephyr,display")
+    integration_platforms:
+      - sf32lb52_devkit_lcd
