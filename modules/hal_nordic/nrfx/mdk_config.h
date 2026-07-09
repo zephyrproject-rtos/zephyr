@@ -270,6 +270,24 @@
 #endif
 #endif
 
+#ifdef CONFIG_SOC_NRF54LV10A_CPUAPP
+#ifndef NRF54LV10A_XXAA
+#define NRF54LV10A_XXAA 1
+#endif
+#ifndef NRF_APPLICATION
+#define NRF_APPLICATION 1
+#endif
+#endif
+
+#ifdef CONFIG_SOC_NRF54LV10A_CPUFLPR
+#ifndef NRF54LV10A_XXAA
+#define NRF54LV10A_XXAA 1
+#endif
+#ifndef NRF_FLPR
+#define NRF_FLPR 1
+#endif
+#endif
+
 #ifdef CONFIG_SOC_NRF7120_ENGA_CPUAPP
 #ifndef NRF7120_ENGA_XXAA
 #define NRF7120_ENGA_XXAA 1
