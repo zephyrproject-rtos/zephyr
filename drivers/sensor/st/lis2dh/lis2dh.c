@@ -133,13 +133,12 @@ static int lis2dh_fetch_xyz(const struct device *dev,
 			       enum sensor_channel chan)
 {
 	struct lis2dh_data *lis2dh = dev->data;
-	int status = -ENODATA;
 	size_t i;
 	/*
 	 * since status and all accel data register addresses are consecutive,
 	 * a burst read can be used to read all the samples
 	 */
-	status = lis2dh->hw_tf->read_data(dev, LIS2DH_REG_STATUS,
+	int status = lis2dh->hw_tf->read_data(dev, LIS2DH_REG_STATUS,
 					  lis2dh->sample.raw,
 					  sizeof(lis2dh->sample.raw));
 	if (status < 0) {
@@ -154,11 +153,11 @@ static int lis2dh_fetch_xyz(const struct device *dev,
 		*sample = sys_le16_to_cpu(*sample);
 	}
 
-	if (lis2dh->sample.status & LIS2DH_STATUS_DRDY_MASK) {
-		status = 0;
+	if (!(lis2dh->sample.status & LIS2DH_STATUS_DRDY_MASK)) {
+		return -ENODATA;
 	}
 
-	return status;
+	return 0;
 }
 
 static int lis2dh_sample_fetch(const struct device *dev,
