@@ -42,10 +42,10 @@ config SPI_INTERRUPT_DRIVEN
 	  its own implementation symbol (SPI_*_INTERRUPT) in response; drivers
 	  without one ignore it.
 
-	  As with SPI_DMA this only requests the mode, it cannot turn it off:
-	  leaving it disabled does not override a driver that is interrupt
-	  driven by default. Clear the driver's own SPI_*_INTERRUPT symbol for
-	  that.
+	  This only requests interrupt-driven transfers, but can't disable it: drivers that
+	  use interrupt-driven transfers by default keep doing so even if this symbol
+	  is left disabled. To force a driver out of interrupts driver transfers, check for
+	  its own SPI_*_INTERRUPT_DRIVEN symbol.
 
 config SPI_ASYNC
 	bool "Asynchronous call support"
