@@ -407,13 +407,15 @@ static int usbd_hid_ctd(struct usbd_class_data *const c_data,
 	const struct device *dev = usbd_class_get_private(c_data);
 	int ret = 0;
 
-	if (setup->wLength && (buf == NULL)) {
-		if (setup->bRequest == USB_HID_SET_REPORT) {
-			return verify_set_report(dev, setup);
+	if (setup->bRequest == USB_HID_SET_REPORT) {
+		if (setup->wLength == 0) {
+			errno = -ENOTSUP;
+			return 0;
 		}
 
-		errno = -ENOTSUP;
-		return 0;
+		if (buf == NULL) {
+			return verify_set_report(dev, setup);
+		}
 	}
 
 	switch (setup->bRequest) {

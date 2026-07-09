@@ -439,7 +439,12 @@ static int bt_hci_ctd(struct usbd_class_data *const c_data,
 		return 0;
 	}
 
-	if (setup->wLength && (buf == NULL)) {
+	if (setup->wLength == 0) {
+		errno = -ENOTSUP;
+		return 0;
+	}
+
+	if (buf == NULL) {
 		/* Data OUT can be received */
 		return 0;
 	}
