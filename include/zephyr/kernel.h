@@ -4229,14 +4229,18 @@ int k_work_queue_unplug(struct k_work_q *queue);
  * This call is blocking and guarantees that the work queue thread has terminated
  * cleanly if successful, no work will be processed past this point.
  *
+ * The queue must have been drained and plugged first (for example via
+ * k_work_queue_drain() with the @p plug option enabled); otherwise the call
+ * returns -EBUSY.
+ *
  * @param queue Pointer to the queue structure.
  * @param timeout Maximum time to wait for the work queue to stop.
  *
  * @retval 0 if the work queue was stopped
  * @retval -EALREADY if the work queue was not started (or already stopped)
- * @retval -EBUSY if the work queue is actively processing work items
+ * @retval -EBUSY if the work queue has not been plugged
  * @retval -ETIMEDOUT if the work queue did not stop within the stipulated timeout
- * @retval -ENOSUP if the work queue is essential
+ * @retval -ENOTSUP if the work queue is essential
  */
 int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout);
 
