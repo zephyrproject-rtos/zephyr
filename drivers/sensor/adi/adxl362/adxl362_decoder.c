@@ -93,50 +93,58 @@ static int adxl362_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 		sample_num = (*fit - (uintptr_t)buffer) / sample_set_size;
 	}
 
-	while (count < max_count && buffer < buffer_end) {
-		const uint8_t *sample_end = buffer;
+	if (chan_spec.chan_type == SENSOR_CHAN_DIE_TEMP) {
+		struct sensor_q31_data *data = (struct sensor_q31_data *)data_out;
 
-		sample_end += sample_set_size;
+		memset(data, 0, sizeof(struct sensor_q31_data));
+		data->header.base_timestamp_ns = enc_data->timestamp;
+		data->shift = 8;
 
-		if ((uintptr_t)buffer < *fit) {
-			/* This frame was already decoded, move on to the next frame */
-			buffer = sample_end;
-			continue;
-		}
+		while (count < max_count && buffer < buffer_end) {
+			const uint8_t *sample_end = buffer + sample_set_size;
 
-		if (chan_spec.chan_type == SENSOR_CHAN_DIE_TEMP) {
+			if ((uintptr_t)buffer < *fit) {
+				buffer = sample_end;
+				continue;
+			}
+
 			if (enc_data->has_tmp) {
-				struct sensor_q31_data *data = (struct sensor_q31_data *)data_out;
-
-				memset(data, 0, sizeof(struct sensor_three_axis_data));
-				data->header.base_timestamp_ns = enc_data->timestamp;
-				data->header.reading_count = 1;
-				data->shift = 8;
-
-				data->readings[count].timestamp_delta =
-						period_ns * sample_num;
-
+				data->readings[count].timestamp_delta = period_ns * sample_num;
 				data_in = sys_le16_to_cpu(*((int16_t *)(buffer + 6)));
 
 				/* Check if this sample contains temperature value. */
 				if (ADXL362_FIFO_HDR_CHECK_TEMP(data_in)) {
-					adxl362_temp_convert_q31(&data->readings[count].temperature,
-										data_in);
+					adxl362_temp_convert_q31(
+						&data->readings[count].temperature, data_in);
 				}
 			}
-		} else {
-			struct sensor_three_axis_data *data =
-					(struct sensor_three_axis_data *)data_out;
 
-			memset(data, 0, sizeof(struct sensor_three_axis_data));
-			data->header.base_timestamp_ns = enc_data->timestamp;
-			data->header.reading_count = 1;
-			data->shift = range_to_shift[enc_data->selected_range];
+			buffer = sample_end;
+			*fit = (uintptr_t)sample_end;
+			sample_num++;
+			count++;
+		}
+		data->header.reading_count = count;
+	} else {
+		struct sensor_three_axis_data *data =
+				(struct sensor_three_axis_data *)data_out;
+
+		memset(data, 0, sizeof(struct sensor_three_axis_data));
+		data->header.base_timestamp_ns = enc_data->timestamp;
+		data->shift = range_to_shift[enc_data->selected_range];
+
+		while (count < max_count && buffer < buffer_end) {
+			const uint8_t *sample_end = buffer + sample_set_size;
+
+			if ((uintptr_t)buffer < *fit) {
+				/* This frame was already decoded, move on to the next frame */
+				buffer = sample_end;
+				continue;
+			}
 
 			switch (chan_spec.chan_type) {
 			case SENSOR_CHAN_ACCEL_X:
-				data->readings[count].timestamp_delta = sample_num
-					* period_ns;
+				data->readings[count].timestamp_delta = sample_num * period_ns;
 
 				/* Convert received data into signeg integer. */
 				data_in = sys_le16_to_cpu(*((int16_t *)buffer));
@@ -148,8 +156,7 @@ static int adxl362_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 				}
 				break;
 			case SENSOR_CHAN_ACCEL_Y:
-				data->readings[count].timestamp_delta = sample_num
-					* period_ns;
+				data->readings[count].timestamp_delta = sample_num * period_ns;
 
 				/* Convert received data into signeg integer. */
 				data_in = sys_le16_to_cpu(*((int16_t *)(buffer + 2)));
@@ -161,8 +168,7 @@ static int adxl362_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 				}
 				break;
 			case SENSOR_CHAN_ACCEL_Z:
-				data->readings[count].timestamp_delta = sample_num
-					* period_ns;
+				data->readings[count].timestamp_delta = sample_num * period_ns;
 				/* Convert received data into signeg integer. */
 				data_in = sys_le16_to_cpu(*((int16_t *)(buffer + 4)));
 
@@ -205,12 +211,15 @@ static int adxl362_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 			default:
 				return -ENOTSUP;
 			}
-		}
 
-		buffer = sample_end;
-		*fit = (uintptr_t)sample_end;
-		count++;
+			buffer = sample_end;
+			*fit = (uintptr_t)sample_end;
+			sample_num++;
+			count++;
+		}
+		data->header.reading_count = count;
 	}
+
 	return count;
 }
 
