@@ -162,6 +162,8 @@ mdk_svd_ifdef(CONFIG_SOC_NRF54LM20A_CPUAPP    nrf54l/nrf54lm20a/nrf54lm20a_appli
 mdk_svd_ifdef(CONFIG_SOC_NRF54LM20A_CPUFLPR   nrf54l/nrf54lm20a/nrf54lm20a_flpr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54LM20B_CPUAPP    nrf54l/nrf54lm20b/nrf54lm20b_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54LM20B_CPUFLPR   nrf54l/nrf54lm20b/nrf54lm20b_flpr.svd)
+mdk_svd_ifdef(CONFIG_SOC_NRF54LV10A_CPUAPP    nrf54l/nrf54lv10a/nrf54lv10a_application.svd)
+mdk_svd_ifdef(CONFIG_SOC_NRF54LV10A_CPUFLPR   nrf54l/nrf54lv10a/nrf54lv10a_flpr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF7120_ENGA_CPUAPP  nrf71/nrf7120_enga/nrf7120_enga_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF7120_ENGA_CPUFLPR nrf71/nrf7120_enga/nrf7120_enga_flpr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF7120E_ENGA_CPUAPP nrf71/nrf7120e_enga/nrf7120e_enga_application.svd)
