@@ -2052,7 +2052,8 @@ __syscall uint32_t k_timer_status_sync(struct k_timer *timer);
  *
  * This routine returns the future system uptime reached at the next
  * time of expiration of the timer, in units of system ticks.  If the
- * timer is not running, current system time is returned.
+ * timer is not running, the last announced tick count is returned (which
+ * may lag the true current uptime by the elapsed sub-tick amount).
  *
  * @param timer The timer object
  * @return Uptime of expiration, in ticks
