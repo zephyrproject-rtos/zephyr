@@ -19,6 +19,12 @@
 #include <xtensa_internal.h>
 #include <xtensa_stack.h>
 
+#if defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
+#include <adsp_fatal_breadcrumb.h>
+#else
+#define ADSP_RECORD_FATAL_BREADCRUMB(bsa, cause) do { } while (0)
+#endif
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 extern char xtensa_arch_except_epc[];
@@ -671,6 +677,8 @@ void *xtensa_excint1_c(void *esf)
 
 		ps = bsa->ps;
 		pc = (void *)bsa->pc;
+
+		ADSP_RECORD_FATAL_BREADCRUMB(bsa, cause);
 
 		/* We intentionally use "ill" (illegal instruction) as a trap for custom exceptions.
 		 * So we need to find out if the illegal instruction is legit.
