@@ -3388,7 +3388,8 @@ void k_stack_init(struct k_stack *stack,
  * @param stack Address of the stack.
  * @param num_entries Maximum number of values that can be stacked.
  *
- * @return -ENOMEM if memory couldn't be allocated
+ * @retval 0 on success
+ * @retval -ENOMEM if memory couldn't be allocated
  */
 
 __syscall int32_t k_stack_alloc_init(struct k_stack *stack,
