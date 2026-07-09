@@ -130,3 +130,15 @@ SPDX-FileComment = "Linked into the firmware only when GCOV coverage is enabled;
 Zephyr-Description = "GCOV Coverage Header File"
 Zephyr-Origin = "https://gcc.gnu.org/"
 Zephyr-Kconfig-Condition = "CONFIG_COVERAGE_GCOV"
+
+[[annotations]]
+path = [
+    "lib/utils/getopt/README",
+    "lib/utils/getopt/getopt.c",
+    "lib/utils/getopt/getopt_long.c",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Compiled into the firmware only when getopt() support is enabled."
+Zephyr-Description = "getopt Command-line Parsing Files"
+Zephyr-Origin = "https://www.netbsd.org/"
+Zephyr-Kconfig-Condition = "CONFIG_GETOPT"
