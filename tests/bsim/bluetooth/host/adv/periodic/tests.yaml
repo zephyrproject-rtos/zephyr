@@ -1,6 +1,7 @@
 common:
   tags:
     - bluetooth
+  depends_on: bsim
   platform_allow:
     - nrf52_bsim/native
     - nrf5340bsim/nrf5340/cpunet
@@ -11,22 +12,21 @@ tests:
     # nrf54l15bsim/nrf54l15/cpuapp not allowed as per_adv_conn_privacy.sh returns with
     # "The advertiser disconnects with reason 61 (BT_HCI_ERR_AUTH_FAIL)"
     harness_config:
+      fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_host_adv_periodic_prj_conf
-      fixture:
-        - bsim_multi_test
       tests_scripts:
         - tests_scripts/per_adv.sh
         - tests_scripts/per_adv_conn.sh
         - tests_scripts/per_adv_conn_privacy.sh
         - tests_scripts/per_adv_app_not_scanning.sh
         - tests_scripts/per_adv_unregister_sync_cb.sh
+        - tests_scripts/per_adv_update_did.sh
   bluetooth.host.adv.periodic.coded:
     platform_allow:
       - nrf54l15bsim/nrf54l15/cpuapp
     harness_config:
+      fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_host_adv_periodic_prj_coded_conf
-      fixture:
-        - bsim_multi_test
       tests_scripts:
         - tests_scripts/per_adv_app_not_scanning_coded.sh
     extra_args:
@@ -35,9 +35,8 @@ tests:
     platform_allow:
       - nrf54l15bsim/nrf54l15/cpuapp
     harness_config:
+      fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_host_adv_periodic_prj_long_data_conf
-      fixture:
-        - bsim_multi_test
       tests_scripts:
         - tests_scripts/per_adv_long_data.sh
     extra_args:
