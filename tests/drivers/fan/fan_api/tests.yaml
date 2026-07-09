@@ -1,0 +1,10 @@
+common:
+  tags:
+    - drivers
+    - fan
+tests:
+  drivers.fan.api:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
