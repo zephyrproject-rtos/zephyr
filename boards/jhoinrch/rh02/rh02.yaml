@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: rh02
+name: Jhoinrch RH02
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 16
+flash: 64
+supported:
+  - can
+  - gpio
+  - usb_device
+  - usbd
+vendor: jhoinrch
