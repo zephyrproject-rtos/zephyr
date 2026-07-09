@@ -1,0 +1,40 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 Analog Devices, Inc.
+ */
+
+#include <mem.h>
+
+/ {
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &semihost_flash_controller;
+	};
+
+	soc {
+		semihost_flash_controller: semihost_flash_controller {
+			compatible = "zephyr,semihost-flash";
+			filename = "flash.bin";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x00000000 DT_SIZE_K(256)>;
+				erase-block-size = <4096>;
+				write-block-size = <1>;
+
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					storage_partition: partition@0 {
+						label = "storage";
+						reg = <0x00000000 DT_SIZE_K(64)>;
+					};
+				};
+			};
+		};
+	};
+};
