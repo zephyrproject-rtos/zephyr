@@ -6247,7 +6247,8 @@ void k_heap_init(struct k_heap *h, void *mem,
  * @param align Alignment in bytes, must be a power of two
  * @param bytes Number of bytes requested
  * @param timeout How long to wait, or K_NO_WAIT
- * @return Pointer to memory the caller can now use
+ * @return Pointer to memory the caller can now use, or NULL if the allocation
+ *         could not be satisfied within the timeout
  */
 void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
 			k_timeout_t timeout) __attribute_nonnull(1);
