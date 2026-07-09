@@ -115,3 +115,10 @@ SPDX-License-Identifier = "GPL-2.0-or-later"
 SPDX-FileComment = "Used by OpenOCD when programming and debugging the kb1200_evb board. Never linked into the firmware."
 Zephyr-Description = "ENE KB1200_EVB Board OpenOCD Configuration"
 Zephyr-Origin = "https://openocd.org/"
+
+[[annotations]]
+path = "subsys/fs/fuse_client/fuse_abi.h"
+SPDX-License-Identifier = "((GPL-2.0 WITH Linux-syscall-note) OR BSD-2-Clause)"
+SPDX-FileComment = "Used under the BSD-2-Clause option of its dual license. Only built when the gating option is enabled."
+Zephyr-Description = "FUSE Interface Definition Header File"
+Zephyr-Kconfig-Condition = "CONFIG_FUSE_CLIENT"
