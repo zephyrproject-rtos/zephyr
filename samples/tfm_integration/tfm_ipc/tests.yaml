@@ -27,6 +27,7 @@ tests:
       - nrf54lm20dk/nrf54lm20a/cpuapp/ns
       - nrf54lm20dk/nrf54lm20b/cpuapp/ns
       - nrf7120dk/nrf7120/cpuapp/ns
+      - frdm_mcxw70/mcxw70ac/ns
     extra_configs:
       - CONFIG_TFM_BL2=n
   sample.tfm.tfm_ipc.bl2.rsa2048:

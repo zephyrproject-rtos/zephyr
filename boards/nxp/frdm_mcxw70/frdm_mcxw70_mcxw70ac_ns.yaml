@@ -8,7 +8,7 @@ identifier: frdm_mcxw70/mcxw70ac/ns
 name: NXP FRDM-MCXW70 (Non-Secure)
 type: mcu
 arch: arm
-ram: 115.5
+ram: 116   # NS SRAM is 0x1ce00 (115.5 KB), rounded up to nearest integer
 flash: 128
 toolchain:
   - zephyr
