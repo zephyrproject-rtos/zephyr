@@ -15,7 +15,7 @@
 
 / {
 	soc {
-		fmu_0: memory-controller@50017000 {
+		fmu_0: memory-controller@40017000 {
 			/*
 			 * Map both physical internal flash and Flash
 			 * Logical Window (FLW). FLW is used for address
@@ -23,25 +23,25 @@
 			 * to FLW. Physical flash should be used only
 			 * for storage.
 			 */
-			ranges = <0x0 0x10000000 0x180000>, /* physical flash */
-				 <0x800000 0x800000 0x128000>; /* FLW */
+			ranges = <0x0 0x00000000 0x180000>, /* physical flash */
+				 <0x800000 0x00800000 0x128000>; /* FLW */
 			#address-cells = <1>;
 			#size-cells = <1>;
 			compatible = "nxp,msf1";
-			reg = <0x50017000 0x30>;
+			reg = <0x40017000 0x30>;
 			interrupts = <27 0>;
 			status = "disabled";
 		};
 
-		stcm: sram@30000000 {
+		stcm: sram@20000000 {
 			compatible = "mmio-sram";
-			reg = <0x30000000 DT_SIZE_K(192)>;
+			reg = <0x20000000 DT_SIZE_K(192)>;
 			/*
 			 * Map both secure and non-secure address ranges
 			 * since the shared stcm must be referenced with
 			 * non-secure address range.
 			 */
-			ranges = <0x0 0x30000000 0x28e00>, /* 128 K + 35.5K of the third bank*/
+			ranges = <0x0 0x20000000 0x28e00>, /* 128 K + 35.5K of the third bank*/
 				 <0x2e000 0x2002e000 DT_SIZE_K(8)>; /* Last 8K of the third bank */
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -53,9 +53,9 @@
 			};
 		};
 
-		peripheral: peripheral@50000000 {
-			reg = <0x50000000 0x10000000>;
-			ranges = <0x0 0x50000000 0x10000000>;
+		peripheral: peripheral@40000000 {
+			reg = <0x40000000 0x10000000>;
+			ranges = <0x0 0x40000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
