@@ -5826,6 +5826,7 @@ State machine framework:
     - sambhurst
     - keith-zephyr
     - glenn-andrews
+    - yagoor
   files:
     - doc/services/smf/
     - include/zephyr/smf.h

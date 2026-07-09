@@ -5,12 +5,14 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(smf)
 
 target_sources(app PRIVATE src/main.c)
+target_sources_ifdef(CONFIG_SMF_ESMF app PRIVATE src/test_lib_esmf.c)
 
 if(CONFIG_SMF_INITIAL_TRANSITION)
   target_sources(app PRIVATE src/test_lib_self_transition_smf.c)
 elseif(CONFIG_SMF_ANCESTOR_SUPPORT)
   target_sources(app PRIVATE src/test_lib_hierarchical_smf.c
     src/test_lib_hierarchical_5_ancestor_smf.c)
+  target_sources_ifdef(CONFIG_SMF_ESMF app PRIVATE src/test_lib_hierarchical_esmf.c)
 else()
   target_sources(app PRIVATE src/test_lib_flat_smf.c)
 endif()

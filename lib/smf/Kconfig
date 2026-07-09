@@ -28,4 +28,10 @@ config SMF_INSTRUMENTATION
 	   If y, then the state machine framework includes instrumentation
 	   hooks for observing state transitions
 
+config SMF_ESMF
+	bool "Event-driven State Machine Framework (ESMF)"
+	help
+	  Enable the Event-driven State Machine Framework (ESMF), a transition-table
+	  layer on top of SMF for event-only state machines.
+
 endif # SMF
