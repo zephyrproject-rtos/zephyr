@@ -51,8 +51,8 @@ static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain, uint8_t mu
 	if (err != 0) {
 		printk("AICS state get failed (%d) for inst %p\n", err, inst);
 	} else {
-		printk("AICS inst %p state gain %d, mute %u, mode %u\n",
-		       inst, gain, mute, mode);
+		printk("AICS inst %p state gain %d, mute %u, mode %s (0x%02X)\n", inst, gain, mute,
+		       bt_aics_mode_to_str(mode), mode);
 	}
 }
 
