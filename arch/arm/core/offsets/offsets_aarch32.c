@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,6 +86,15 @@ GEN_ABSOLUTE_SYM(___extra_esf_info_t_SIZEOF, sizeof(struct __extra_esf_info));
 #if defined(CONFIG_THREAD_STACK_INFO)
 GEN_OFFSET_SYM(_thread_stack_info_t, start);
 #endif
+
+#if defined(CONFIG_HAS_ARM_SMCCC)
+#include <zephyr/arch/arm/arm-smccc.h>
+
+GEN_OFFSET_SYM(arm_smccc_res_t, a0);
+GEN_OFFSET_SYM(arm_smccc_res_t, a1);
+GEN_OFFSET_SYM(arm_smccc_res_t, a2);
+GEN_OFFSET_SYM(arm_smccc_res_t, a3);
+#endif /* CONFIG_HAS_ARM_SMCCC */
 
 /*
  * CPU context for S2RAM

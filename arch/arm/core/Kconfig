@@ -72,8 +72,15 @@ config CPU_AARCH32_CORTEX_A
 	select ARCH_HAS_GDBSTUB
 	# GDB on ARM needs the extra registers
 	select EXTRA_EXCEPTION_INFO if GDBSTUB
+	select HAS_ARM_SMCCC
 	help
 	  This option signifies the use of a CPU of the Cortex-A family.
+
+config HAS_ARM_SMCCC
+	bool
+	help
+	  Include support for the Secure Monitor Call (SMC) and Hypervisor
+	  Call (HVC) instructions on Armv7 and above architectures.
 
 config GDBSTUB_BUF_SZ
 	# GDB for ARM expects up to 18 4-byte plus 8 12-byte
