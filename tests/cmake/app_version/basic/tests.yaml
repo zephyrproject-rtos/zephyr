@@ -1,5 +1,5 @@
 tests:
-  buildsystem.app_version:
+  buildsystem.app_version.basic:
     tags: version
     integration_platforms:
       - native_sim

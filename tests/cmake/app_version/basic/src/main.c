@@ -16,7 +16,7 @@ ZTEST(app_version, test_basic_ints)
 	zassert_equal(5, APP_VERSION_MAJOR);
 	zassert_equal(6, APP_VERSION_MINOR);
 	zassert_equal(7, APP_PATCHLEVEL);
-	zassert_equal(89, APP_TWEAK);
+	zassert_equal(0, APP_TWEAK);
 	zassert_equal(0x050607, APP_VERSION_NUMBER);
 }
 
@@ -30,10 +30,10 @@ ZTEST(app_version, test_appversion)
 
 ZTEST(app_version, test_basic_strings)
 {
-	zassert_equal(0, strcmp("development", STRINGIFY(APP_EXTRAVERSION)));
-	zassert_equal(0, strcmp("5.6.7-development", APP_VERSION_STRING));
-	zassert_equal(0, strcmp("5.6.7-development+89", APP_VERSION_EXTENDED_STRING));
-	zassert_equal(0, strcmp("5.6.7+89", APP_VERSION_TWEAK_STRING));
+	zassert_str_equal("", STRINGIFY(APP_EXTRAVERSION));
+	zassert_str_equal("5.6.7", APP_VERSION_STRING);
+	zassert_str_equal("5.6.7", APP_VERSION_EXTENDED_STRING);
+	zassert_str_equal("5.6.7+0", APP_VERSION_TWEAK_STRING);
 }
 
 ZTEST_SUITE(app_version, NULL, NULL, NULL, NULL, NULL);
