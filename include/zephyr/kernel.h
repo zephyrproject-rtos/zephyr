@@ -526,8 +526,9 @@ static inline void k_thread_heap_assign(struct k_thread *thread,
  * @return 0 on success
  * @return -EBADF Bad thread object (user mode only)
  * @return -EPERM No permissions on thread object (user mode only)
- * #return -ENOTSUP Forbidden by hardware policy
- * @return -EINVAL Thread is uninitialized or exited (user mode only)
+ * @return -ENOTSUP Forbidden by hardware policy
+ * @return -EINVAL Thread is uninitialized or exited (user mode only), or the
+ *	stack is not mapped when @kconfig{CONFIG_THREAD_STACK_MEM_MAPPED} is set
  * @return -EFAULT Bad memory address for unused_ptr (user mode only)
  */
 __syscall int k_thread_stack_space_get(const struct k_thread *thread,
