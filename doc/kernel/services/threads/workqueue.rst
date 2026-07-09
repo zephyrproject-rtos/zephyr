@@ -215,6 +215,24 @@ use of it.
     for example, if the new work items perform blocking operations that
     would delay other system workqueue processing to an unacceptable degree.
 
+Running the System Workqueue on the Main Thread
+===============================================
+
+By default the system workqueue runs on its own dedicated thread. When
+:kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_ON_MAIN` is enabled, it instead runs on
+the main thread, saving the dedicated thread's stack. This suits applications
+whose ``main()`` returns after boot-time initialization and do not otherwise
+rely on the system workqueue from ``main()``.
+
+With this option:
+
+* The system workqueue is *prepared* (via :c:func:`k_work_queue_prepare`) on the
+  main thread before ``main()`` is entered, so work may be submitted from
+  ``main()`` and :c:func:`k_work_queue_thread_get` returns the main thread.
+* Once ``main()`` returns, the main thread enters the workqueue run loop and
+  does not return. Any work submitted during ``main()`` is preserved and
+  processed then.
+
 How to Use Workqueues
 *********************
 

@@ -3460,6 +3460,10 @@ struct k_work;
 struct k_work_q;
 struct k_work_queue_config;
 extern struct k_work_q k_sys_work_q;
+/* Kernel boot-path hook for running the system workqueue on the main thread
+ * (CONFIG_SYSTEM_WORKQUEUE_ON_MAIN). Not intended for application use.
+ */
+void z_sys_work_q_run(void);
 /**
  * INTERNAL_HIDDEN @endcond
  */

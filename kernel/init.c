@@ -52,7 +52,12 @@ atomic_t _cpus_active;
 #endif
 
 /* init/main and idle threads */
-K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+#if defined(CONFIG_SYSTEM_WORKQUEUE_ON_MAIN)
+#define MAIN_STACK_SIZE MAX(CONFIG_MAIN_STACK_SIZE, CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE)
+#else
+#define MAIN_STACK_SIZE CONFIG_MAIN_STACK_SIZE
+#endif
+K_THREAD_STACK_DEFINE(z_main_stack, MAIN_STACK_SIZE);
 struct k_thread z_main_thread;
 
 #ifdef CONFIG_MULTITHREADING
@@ -347,8 +352,14 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	(void)main();
 #endif /* CONFIG_BOOTARGS */
 
-	/* Mark non-essential since main() has no more work to do */
-	z_thread_essential_clear(&z_main_thread);
+	if (IS_ENABLED(CONFIG_SYSTEM_WORKQUEUE_ON_MAIN)) {
+		/* main() has returned but the main thread is about to become
+		 * the (essential) system workqueue thread, so keep it essential.
+		 */
+	} else {
+		/* Mark non-essential since main() has no more work to do */
+		z_thread_essential_clear(&z_main_thread);
+	}
 
 #ifdef CONFIG_COVERAGE_DUMP
 	/* Dump coverage data once the main() has exited. */
@@ -356,6 +367,10 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #elif defined(CONFIG_COVERAGE_SEMIHOST)
 	gcov_coverage_semihost();
 #endif /* CONFIG_COVERAGE_DUMP */
+
+	if (IS_ENABLED(CONFIG_SYSTEM_WORKQUEUE_ON_MAIN)) {
+		z_sys_work_q_run();
+	}
 } /* LCOV_EXCL_LINE ... because we just dumped final coverage data */
 
 #if defined(CONFIG_MULTITHREADING)
