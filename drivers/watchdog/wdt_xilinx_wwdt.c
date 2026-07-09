@@ -40,11 +40,12 @@ LOG_MODULE_REGISTER(xilinx_wwdt, CONFIG_WDT_LOG_LEVEL);
 #define XWWDT_MAX_COUNT_WINDOW_COMBINED	GENMASK64(32, 1)
 
 struct xilinx_wwdt_config {
+	DEVICE_MMIO_ROM;
 	uint32_t wdt_clock_freq;
-	mem_addr_t base;
 };
 
 struct xilinx_wwdt_data {
+	DEVICE_MMIO_RAM;
 	struct k_spinlock lock;
 	bool timeout_active;
 	bool wdt_started;
@@ -52,8 +53,8 @@ struct xilinx_wwdt_data {
 
 static int wdt_xilinx_wwdt_setup(const struct device *dev, uint8_t options)
 {
-	const struct xilinx_wwdt_config *config = dev->config;
 	struct xilinx_wwdt_data *data = dev->data;
+	mm_reg_t reg = DEVICE_MMIO_GET(dev);
 	uint32_t reg_value;
 	int ret = 0;
 
@@ -75,10 +76,10 @@ static int wdt_xilinx_wwdt_setup(const struct device *dev, uint8_t options)
 	 */
 
 	/* Read enable status register and update WEN bit */
-	reg_value = sys_read32(config->base + XWWDT_ESR_OFFSET) | XWWDT_ESR_WEN_MASK;
+	reg_value = sys_read32(reg + XWWDT_ESR_OFFSET) | XWWDT_ESR_WEN_MASK;
 
 	/* Write enable status register with updated WEN value */
-	sys_write32(reg_value, config->base + XWWDT_ESR_OFFSET);
+	sys_write32(reg_value, reg + XWWDT_ESR_OFFSET);
 	data->wdt_started = true;
 out:
 	k_spin_unlock(&data->lock, key);
@@ -90,6 +91,7 @@ static int wdt_xilinx_wwdt_install_timeout(const struct device *dev,
 {
 	const struct xilinx_wwdt_config *config = dev->config;
 	struct xilinx_wwdt_data *data = dev->data;
+	mm_reg_t reg = DEVICE_MMIO_GET(dev);
 	uint64_t closed_window_ms_count;
 	uint64_t open_window_ms_count;
 	uint64_t max_hw_timeout_ms;
@@ -135,10 +137,10 @@ static int wdt_xilinx_wwdt_install_timeout(const struct device *dev,
 		goto out;
 	}
 
-	sys_write32(XWWDT_MWR_MASK, config->base + XWWDT_MWR_OFFSET);
-	sys_write32(~(uint32_t)XWWDT_ESR_WEN_MASK, config->base + XWWDT_ESR_OFFSET);
-	sys_write32(closed_window_ms_count, config->base + XWWDT_FWR_OFFSET);
-	sys_write32(open_window_ms_count, config->base + XWWDT_SWR_OFFSET);
+	sys_write32(XWWDT_MWR_MASK, reg + XWWDT_MWR_OFFSET);
+	sys_write32(~(uint32_t)XWWDT_ESR_WEN_MASK, reg + XWWDT_ESR_OFFSET);
+	sys_write32(closed_window_ms_count, reg + XWWDT_FWR_OFFSET);
+	sys_write32(open_window_ms_count, reg + XWWDT_SWR_OFFSET);
 
 	data->timeout_active = true;
 out:
@@ -148,8 +150,8 @@ out:
 
 static int wdt_xilinx_wwdt_feed(const struct device *dev, int channel_id)
 {
-	const struct xilinx_wwdt_config *config = dev->config;
 	struct xilinx_wwdt_data *data = dev->data;
+	mm_reg_t reg = DEVICE_MMIO_GET(dev);
 	uint32_t control_status_reg;
 	uint32_t is_sec_window;
 	int ret = 0;
@@ -162,10 +164,10 @@ static int wdt_xilinx_wwdt_feed(const struct device *dev, int channel_id)
 	}
 
 	/* Enable write access control bit for the WWDT. */
-	sys_write32(XWWDT_MWR_MASK, config->base + XWWDT_MWR_OFFSET);
+	sys_write32(XWWDT_MWR_MASK, reg + XWWDT_MWR_OFFSET);
 
 	/* Trigger restart kick to WWDT. */
-	control_status_reg = sys_read32(config->base + XWWDT_ESR_OFFSET);
+	control_status_reg = sys_read32(reg + XWWDT_ESR_OFFSET);
 
 	/* Check if WWDT is in Second window. */
 	is_sec_window = (control_status_reg & (uint32_t)XWWDT_ESR_WSW_MASK) >> XWWDT_ESR_WSW_SHIFT;
@@ -177,7 +179,7 @@ static int wdt_xilinx_wwdt_feed(const struct device *dev, int channel_id)
 	}
 
 	control_status_reg |= (uint32_t)XWWDT_ESR_WSW_MASK;
-	sys_write32(control_status_reg, config->base + XWWDT_ESR_OFFSET);
+	sys_write32(control_status_reg, reg + XWWDT_ESR_OFFSET);
 out:
 	k_spin_unlock(&data->lock, key);
 	return ret;
@@ -185,8 +187,8 @@ out:
 
 static int wdt_xilinx_wwdt_disable(const struct device *dev)
 {
-	const struct xilinx_wwdt_config *config = dev->config;
 	struct xilinx_wwdt_data *data = dev->data;
+	mm_reg_t reg = DEVICE_MMIO_GET(dev);
 	uint32_t is_wwdt_enable;
 	uint32_t is_sec_window;
 	uint32_t reg_value;
@@ -194,7 +196,7 @@ static int wdt_xilinx_wwdt_disable(const struct device *dev)
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	is_wwdt_enable = sys_read32(config->base + XWWDT_ESR_OFFSET) & XWWDT_ESR_WEN_MASK;
+	is_wwdt_enable = sys_read32(reg + XWWDT_ESR_OFFSET) & XWWDT_ESR_WEN_MASK;
 
 	if (is_wwdt_enable == 0) {
 		ret = -EFAULT;
@@ -202,7 +204,7 @@ static int wdt_xilinx_wwdt_disable(const struct device *dev)
 	}
 
 	/* Read enable status register and check if WWDT is in open window. */
-	is_sec_window = (sys_read32(config->base + XWWDT_ESR_OFFSET) & XWWDT_ESR_WSW_MASK) >>
+	is_sec_window = (sys_read32(reg + XWWDT_ESR_OFFSET) & XWWDT_ESR_WSW_MASK) >>
 				   XWWDT_ESR_WSW_SHIFT;
 
 	if (is_sec_window != 1)	{
@@ -212,10 +214,10 @@ static int wdt_xilinx_wwdt_disable(const struct device *dev)
 	}
 
 	/* Read enable status register and update WEN bit. */
-	reg_value = sys_read32(config->base + XWWDT_ESR_OFFSET) & (~XWWDT_ESR_WEN_MASK);
+	reg_value = sys_read32(reg + XWWDT_ESR_OFFSET) & (~XWWDT_ESR_WEN_MASK);
 
 	/* Write enable status register with updated WEN and WSW value. */
-	sys_write32(reg_value, config->base + XWWDT_ESR_OFFSET);
+	sys_write32(reg_value, reg + XWWDT_ESR_OFFSET);
 
 	data->wdt_started = false;
 out:
@@ -232,6 +234,7 @@ static int wdt_xilinx_wwdt_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 	return ret;
 }
 
@@ -246,7 +249,7 @@ static DEVICE_API(wdt, wdt_xilinx_wwdt_api) = {
 	static struct xilinx_wwdt_data wdt_xilinx_wwdt_##inst##_dev_data;			\
 												\
 	static const struct xilinx_wwdt_config wdt_xilinx_wwdt_##inst##_cfg = {			\
-		.base = DT_INST_REG_ADDR(inst),							\
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),					\
 		.wdt_clock_freq = DT_INST_PROP_BY_PHANDLE(inst, clocks, clock_frequency),	\
 	};											\
 												\
