@@ -1,0 +1,10 @@
+common:
+  tags:
+    - sdio
+  harness: ztest
+tests:
+  subsys.sdio.roles:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
