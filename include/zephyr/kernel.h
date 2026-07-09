@@ -2746,7 +2746,8 @@ __syscall void k_event_init(struct k_event *event);
  * @param event Address of the event object
  * @param events Set of events to post to @a event
  *
- * @return Previous value of the events in @a event
+ * @return Previous value of the events that are being posted, i.e. the bits
+ *         of @a events that were already set in @a event before this call
  */
 __syscall uint32_t k_event_post(struct k_event *event, uint32_t events);
 
