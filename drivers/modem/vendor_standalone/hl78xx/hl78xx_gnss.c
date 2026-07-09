@@ -1679,6 +1679,8 @@ int hl78xx_on_gnss_search_started_state_enter(struct hl78xx_data *data)
 
 int hl78xx_on_gnss_search_started_state_leave(struct hl78xx_data *data)
 {
+	hl78xx_stop_timer(data);
+
 	return 0;
 }
 
@@ -1705,6 +1707,12 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
 		break;
 
 	case MODEM_HL78XX_EVENT_TIMEOUT:
+		if (data_gnss->search_state != HL78XX_GNSS_SEARCH_STATE_SEARCHING) {
+			LOG_DBG("GNSS search: ignoring timeout in state=%s",
+				gnss_search_state_str(data_gnss->search_state));
+			break;
+		}
+
 		LOG_WRN("GNSS search: timeout expired - stopping search");
 
 		/* Notify user about timeout */
@@ -1724,6 +1732,7 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
 		break;
 	case MODEM_HL78XX_EVENT_GNSS_STOP_REQUESTED:
 		LOG_INF("GNSS search: stop requested %d", data_gnss->output_port);
+		hl78xx_stop_timer(data);
 		gnss_set_search_state(data_gnss, HL78XX_GNSS_SEARCH_STATE_STOPPING);
 		hl78xx_gnss_clear_search_queue(data_gnss);
 
@@ -1752,6 +1761,7 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
 
 	case MODEM_HL78XX_EVENT_GNSS_STOPPED:
 		LOG_INF("GNSS search: stopped");
+		hl78xx_stop_timer(data);
 		gnss_set_search_state(data_gnss, HL78XX_GNSS_SEARCH_STATE_IDLE);
 		/* Check if GNSS mode exit was requested */
 		if (data_gnss->exit_to_lte_pending) {
