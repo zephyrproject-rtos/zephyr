@@ -36,4 +36,5 @@ tests:
       - frdm_mcxw71
       - frdm_mcxw72
       - frdm_rw612
+      - tyzs3
     build_only: true
