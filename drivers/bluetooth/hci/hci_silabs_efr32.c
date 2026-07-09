@@ -6,6 +6,7 @@
 
 #include <zephyr/drivers/bluetooth.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <sl_btctrl_linklayer.h>
 #include <sl_hci_common_transport.h>
