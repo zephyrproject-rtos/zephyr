@@ -3066,6 +3066,9 @@ struct k_fifo {
  * @param fifo Address of the FIFO queue.
  * @param head Pointer to first node in singly-linked list.
  * @param tail Pointer to last node in singly-linked list.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL on invalid supplied data
  */
 #define k_fifo_put_list(fifo, head, tail) \
 	({ \
@@ -3086,6 +3089,9 @@ struct k_fifo {
  *
  * @param fifo Address of the FIFO queue.
  * @param list Pointer to sys_slist_t object.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL on invalid supplied data
  */
 #define k_fifo_put_slist(fifo, list) \
 	({ \
