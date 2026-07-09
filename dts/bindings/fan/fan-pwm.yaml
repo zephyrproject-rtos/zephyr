@@ -5,7 +5,8 @@ title: PWM-driven fan
 
 description: |
     A cooling fan whose speed is controlled by a PWM signal. The PWM duty cycle sets the fan
-    speed, from 0% (stopped) to 100% (full speed). Applications drive the fan through the generic
+    speed, from 0% (stopped) to 100% (full speed). An optional tachometer input allows the
+    driver to report the measured rotation rate. Applications drive the fan through the generic
     fan API in <zephyr/drivers/fan.h>.
 
 compatible: "fan-pwm"
@@ -21,3 +22,17 @@ properties:
       the PWM frequency used to drive the fan; the driver adjusts the duty cycle at runtime as
       the application requests speeds. Polarity flags are forwarded to the PWM controller
       verbatim.
+
+  tach-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the fan's tachometer output. When present, the driver counts pulses on
+      this input to compute the rotation rate reported by fan_get_rpm(). Omit this property for
+      fans without a tachometer signal.
+
+  pulses-per-revolution:
+    type: int
+    default: 2
+    description: |
+      Number of tachometer pulses emitted per full fan revolution. Most brushless DC fans emit
+      two pulses per revolution, which is the default. Only meaningful when tach-gpios is set.

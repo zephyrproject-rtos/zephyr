@@ -2,18 +2,20 @@
    :name: Fan Speed
    :relevant-api: fan_interface
 
-   Cycle a fan through a range of speeds.
+   Cycle a fan through a range of speeds and read back its rotation rate.
 
 Overview
 ********
 
 This application steps the fan device referenced by the ``fan0`` :ref:`devicetree <dt-guide>`
-alias through a range of speeds from stopped to full speed, pausing at each step.
+alias through a range of speeds from stopped to full speed, pausing at each step. When the fan
+provides a tachometer signal, the sample also reads and prints the measured rotation rate.
 
-The sample exercises the high-level :ref:`fan API <fan_api>` through :c:func:`fan_set_speed`,
-which drives the backend:
+The sample exercises the high-level :ref:`fan API <fan_api>` through :c:func:`fan_set_speed` and
+:c:func:`fan_get_rpm`, which drive the backend:
 
-* :dtcompatible:`fan-pwm` for fans whose speed is controlled by a PWM channel.
+* :dtcompatible:`fan-pwm` for fans whose speed is controlled by a PWM channel, with an optional
+  tachometer input for rotation-rate feedback.
 
 Requirements
 ************

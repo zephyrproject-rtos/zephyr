@@ -92,4 +92,14 @@ ZTEST(fan_api, test_get_speed_reflects_setting)
 	zassert_equal(percent, 75U, "fan_get_speed() returned %u, expected 75", percent);
 }
 
+ZTEST(fan_api, test_get_rpm_unsupported)
+{
+	uint32_t rpm;
+	int ret;
+
+	/* This fan has no tachometer, so RPM readback is unsupported. */
+	ret = fan_get_rpm(fan_dev, &rpm);
+	zassert_equal(ret, -ENOSYS, "fan_get_rpm() should report -ENOSYS without a tachometer");
+}
+
 ZTEST_SUITE(fan_api, NULL, fan_setup, NULL, NULL, NULL);

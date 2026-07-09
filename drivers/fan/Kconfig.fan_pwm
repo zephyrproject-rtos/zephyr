@@ -18,4 +18,45 @@ config FAN_PWM_INITIAL_DUTY_CYCLE
 	help
 	  Set the initial PWM duty cycle that the fan starts up with
 
+config FAN_PWM_TACHOMETER
+	bool "Tachometer reading"
+	depends on GPIO
+	help
+	  Enable tachometer reading
+
+choice FAN_PWM_TACHOMETER_METHOD
+	prompt "Tachometer measurement method"
+	depends on FAN_PWM_TACHOMETER
+	default FAN_PWM_TACHOMETER_INTERRUPT
+	help
+	  Select how tachometer pulses are counted. Interrupt mode is the most
+	  efficient but requires a GPIO that supports edge interrupts and a free
+	  EXTI line. Polling mode works on any input GPIO and avoids EXTI line
+	  conflicts, at the cost of CPU time spent sampling the pin.
+
+config FAN_PWM_TACHOMETER_INTERRUPT
+	bool "Interrupt driven tachometer"
+	help
+	  Count tachometer pulses using GPIO edge interrupts
+
+config FAN_PWM_TACHOMETER_POLL
+	bool "Poll tachometer"
+	help
+	  Count tachometer pulses by periodically sampling the input GPIO and
+	  detecting rising edges in software. Use this when the tachometer GPIO
+	  cannot use an edge interrupt, for example because its EXTI line is
+	  already in use by another pin.
+
+endchoice # FAN_PWM_TACHOMETER_METHOD
+
+config FAN_PWM_TACHOMETER_MEASURE_MS
+	int "Tachometer measurement window (ms)"
+	depends on FAN_PWM_TACHOMETER
+	default 100
+	range 1 10000
+	help
+	  Duration, in milliseconds, over which tachometer pulses are counted
+	  when computing the rotation rate. Longer windows improve accuracy at
+	  low speeds but make fan_get_rpm() block for longer.
+
 endif # FAN_PWM

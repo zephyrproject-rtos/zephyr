@@ -28,6 +28,7 @@ int main(void)
 	while (1) {
 		for (size_t i = 0; i < ARRAY_SIZE(speed_steps); i++) {
 			uint8_t percent = speed_steps[i];
+			uint32_t rpm;
 			int ret;
 
 			ret = fan_set_speed(fan, percent);
@@ -40,6 +41,15 @@ int main(void)
 
 			/* Give the fan a moment to reach the new speed. */
 			k_sleep(K_SECONDS(2));
+
+			ret = fan_get_rpm(fan, &rpm);
+			if (ret == 0) {
+				printk("Measured speed: %u RPM\n", rpm);
+			} else if (ret == -ENOSYS) {
+				printk("Tachometer read not supported\n");
+			} else {
+				printk("Failed to read fan RPM (%d)\n", ret);
+			}
 		}
 	}
 	return 0;

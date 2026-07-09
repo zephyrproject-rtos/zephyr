@@ -15,6 +15,7 @@
 
 #define FAN_SET_HELP SHELL_HELP("Set fan speed", "<device> <percent>")
 #define FAN_GET_HELP SHELL_HELP("Get configured fan speed", "<device>")
+#define FAN_RPM_HELP SHELL_HELP("Get measured fan speed", "<device>")
 
 #define FAN_ARGS_DEVICE  1
 #define FAN_ARGS_PERCENT 2
@@ -75,6 +76,35 @@ static int cmd_get(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_rpm(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	uint32_t rpm;
+	int ret;
+
+	ARG_UNUSED(argc);
+
+	dev = shell_device_get_binding(argv[FAN_ARGS_DEVICE]);
+	if (dev == NULL) {
+		shell_error(sh, "fan device not found");
+		return -EINVAL;
+	}
+
+	ret = fan_get_rpm(dev, &rpm);
+	if (ret == -ENOSYS) {
+		shell_error(sh, "fan does not support rotation-rate measurement");
+		return ret;
+	}
+	if (ret < 0) {
+		shell_error(sh, "failed to get fan rpm (%d)", ret);
+		return ret;
+	}
+
+	shell_print(sh, "%u RPM", rpm);
+
+	return 0;
+}
+
 static bool device_is_fan(const struct device *dev)
 {
 	return DEVICE_API_IS(fan, dev);
@@ -96,6 +126,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 SHELL_STATIC_SUBCMD_SET_CREATE(fan_cmds,
 	SHELL_CMD_ARG(set, &dsub_device_name, FAN_SET_HELP, cmd_set, 3, 0),
 	SHELL_CMD_ARG(get, &dsub_device_name, FAN_GET_HELP, cmd_get, 2, 0),
+	SHELL_CMD_ARG(rpm, &dsub_device_name, FAN_RPM_HELP, cmd_rpm, 2, 0),
 	SHELL_SUBCMD_SET_END);
 /* clang-format on */
 
