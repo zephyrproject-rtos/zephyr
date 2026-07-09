@@ -24,7 +24,8 @@
  * blowers.
  *
  * Fan speed is expressed as a percentage of the fan's full range, from 0
- * (stopped) to @ref FAN_SPEED_MAX (full speed).
+ * (stopped) to @ref FAN_SPEED_MAX (full speed). Backends able to measure
+ * the rotation rate expose it through fan_get_rpm().
  *
  * @{
  */
@@ -61,6 +62,13 @@ typedef int (*fan_set_speed_t)(const struct device *dev, uint8_t percent);
 typedef int (*fan_get_speed_t)(const struct device *dev, uint8_t *percent);
 
 /**
+ * @brief Read the measured fan rotation rate.
+ *
+ * See fan_get_rpm() for argument descriptions.
+ */
+typedef int (*fan_get_rpm_t)(const struct device *dev, uint32_t *rpm);
+
+/**
  * @driver_ops{Fan}
  */
 __subsystem struct fan_driver_api {
@@ -68,6 +76,8 @@ __subsystem struct fan_driver_api {
 	fan_set_speed_t set_speed;
 	/** @driver_ops_mandatory @copybrief fan_get_speed */
 	fan_get_speed_t get_speed;
+	/** @driver_ops_optional @copybrief fan_get_rpm */
+	fan_get_rpm_t get_rpm;
 };
 
 /** @} */
@@ -96,7 +106,8 @@ static inline int fan_set_speed(const struct device *dev, uint8_t percent)
  *
  * Returns the last speed requested through fan_set_speed(), expressed as
  * a percentage between 0 and @ref FAN_SPEED_MAX. This reflects the
- * commanded value.
+ * commanded value, not a measured rotation rate; use fan_get_rpm() for
+ * the latter.
  *
  * @param dev      Fan device.
  * @param percent  Destination for the configured speed.
@@ -107,6 +118,30 @@ static inline int fan_set_speed(const struct device *dev, uint8_t percent)
 static inline int fan_get_speed(const struct device *dev, uint8_t *percent)
 {
 	return DEVICE_API_GET(fan, dev)->get_speed(dev, percent);
+}
+
+/**
+ * @brief Read the measured fan rotation rate.
+ *
+ * Retrieves the fan's rotation rate in revolutions per minute from a
+ * tachometer or equivalent feedback signal.
+ *
+ * @param dev  Fan device.
+ * @param rpm  Destination for the measured rotation rate in RPM.
+ *
+ * @retval 0        Rotation rate read successfully.
+ * @retval -ENOSYS  The backend cannot measure the rotation rate.
+ * @retval -errno   Negative errno code on failure.
+ */
+static inline int fan_get_rpm(const struct device *dev, uint32_t *rpm)
+{
+	const struct fan_driver_api *api = DEVICE_API_GET(fan, dev);
+
+	if (api->get_rpm == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_rpm(dev, rpm);
 }
 
 #ifdef __cplusplus
