@@ -16,6 +16,7 @@ if SPI_STM32
 
 config SPI_STM32_INTERRUPT
 	bool "STM32 MCU SPI Interrupt Support"
+	default y if SPI_INTERRUPT_DRIVEN
 	default y if SPI_RTIO
 	help
 	  Enable Interrupt support for the SPI Driver of STM32 family.

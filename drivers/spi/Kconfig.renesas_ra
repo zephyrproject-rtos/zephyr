@@ -16,11 +16,13 @@ if SPI_RENESAS_RA
 
 config SPI_INTERRUPT
 	bool "RA MCU SPI Interrupt Support"
+	default y if SPI_INTERRUPT_DRIVEN
 	help
 	  Enable Interrupt support for the SPI Driver of RA family.
 
 config SPI_RA_DTC
 	bool "RA MCU SPI DTC Support"
+	default y if SPI_DMA
 	select USE_RA_FSP_DTC
 	help
 	  Enable the SPI DTC mode for SPI instances
@@ -48,12 +50,14 @@ if SPI_RENESAS_RA_SCI
 
 config SPI_RENESAS_RA_SCI_INTERRUPT
 	bool "RENESAS RA SCI SPI Interrupt Support"
+	default y if SPI_INTERRUPT_DRIVEN
 	depends on SPI_ASYNC
 	help
 	  Enable Interrupt support for the SCI SPI Driver of RA family.
 
 config SPI_RENESAS_RA_SCI_DTC
 	bool "RA MCU SCI SPI DTC Support"
+	default y if SPI_DMA
 	depends on SPI_RENESAS_RA_SCI_INTERRUPT
 	select USE_RA_FSP_DTC
 	help
