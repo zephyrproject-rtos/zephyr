@@ -176,8 +176,7 @@ static inline int z_impl_ivshmem_register_handler(const struct device *dev,
 	return DEVICE_API_GET(ivshmem, dev)->register_handler(dev, signal, vector);
 }
 
-#ifdef CONFIG_IVSHMEM_V2
-
+#if defined(CONFIG_IVSHMEM_V2) || defined(__DOXYGEN__)
 /**
  * @brief Get the ivshmem read/write section (ivshmem-v2 only)
  *

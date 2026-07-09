@@ -358,6 +358,8 @@ int32_t mdm_hl7800_update_apn(char *access_point_name);
 int32_t mdm_hl7800_update_rat(enum mdm_hl7800_radio_mode value);
 
 /**
+ * @brief Test if @value is a valid RAT value
+ * @param value Value to be tested
  * @retval true if RAT value is valid
  */
 bool mdm_hl7800_valid_rat(uint8_t value);
@@ -398,17 +400,17 @@ void mdm_hl7800_generate_status_events(void);
  */
 int32_t mdm_hl7800_get_local_time(struct tm *tm, int32_t *offset);
 
-#ifdef CONFIG_MODEM_HL7800_FW_UPDATE
+#if defined(CONFIG_MODEM_HL7800_FW_UPDATE) || defined(__DOXYGEN__)
 /**
  * @brief Update the HL7800 via XMODEM protocol.  During the firmware update
  * no other modem functions will be available.
  *
  * @param file_path Absolute path of the update file
  *
- * @param 0 if successful
+ * @retval 0 on success, negative on failure
  */
 int32_t mdm_hl7800_update_fw(char *file_path);
-#endif
+#endif /* CONFIG_MODEM_HL7800_FW_UPDATE */
 
 /**
  * @brief Read the operator index from the modem.

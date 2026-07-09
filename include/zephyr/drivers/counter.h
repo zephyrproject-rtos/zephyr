@@ -795,13 +795,13 @@ __subsystem struct counter_driver_api {
 	 * @driver_ops_optional @copybrief counter_get_frequency
 	 */
 	counter_api_get_freq get_freq;
-#ifdef CONFIG_COUNTER_64BITS_FREQ
+#if defined(CONFIG_COUNTER_64BITS_FREQ) || defined(__DOXYGEN__)
 	/**
 	 * @driver_ops_optional @copybrief counter_get_frequency_64
 	 */
 	counter_api_get_freq_64 get_freq_64;
 #endif /* CONFIG_COUNTER_64BITS_FREQ */
-#ifdef CONFIG_COUNTER_64BITS_TICKS
+#if defined(CONFIG_COUNTER_64BITS_TICKS) || defined(__DOXYGEN__)
 	/**
 	 * @driver_ops_optional @copybrief counter_get_value_64
 	 */
@@ -831,12 +831,12 @@ __subsystem struct counter_driver_api {
 	 */
 	counter_api_set_top_value_64 set_top_value_64;
 #endif /* CONFIG_COUNTER_64BITS_TICKS */
-#ifdef CONFIG_COUNTER_CAPTURE
+#if defined(CONFIG_COUNTER_CAPTURE) || defined(__DOXYGEN__)
 	/**
 	 * @driver_ops_mandatory @copybrief counter_capture_configure
 	 */
 	counter_api_capture_configure capture_configure;
-#ifdef CONFIG_COUNTER_64BITS_TICKS
+#if defined(CONFIG_COUNTER_64BITS_TICKS) || defined(__DOXYGEN__)
 	/**
 	 * @driver_ops_mandatory @copybrief counter_capture_configure_64
 	 */

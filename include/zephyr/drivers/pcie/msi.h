@@ -59,10 +59,11 @@ struct msi_vector {
 
 typedef struct msi_vector msi_vector_t;
 
-#ifdef CONFIG_PCIE_MSI_MULTI_VECTOR
-
+#if defined(CONFIG_PCIE_MSI_MULTI_VECTOR) || defined(__DOXYGEN__)
 /**
  * @brief Allocate vector(s) for the endpoint MSI message(s)
+ *
+ * @kconfig_dep{CONFIG_PCIE_MSI_MULTI_VECTOR}
  *
  * @param bdf the target PCI endpoint
  * @param priority the MSI vectors base interrupt priority

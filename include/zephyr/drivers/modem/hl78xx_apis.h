@@ -23,6 +23,7 @@
 #include <zephyr/modem/chat.h>
 #include <zephyr/drivers/cellular.h>
 #include <zephyr/sys/util_macro.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -190,6 +191,7 @@ extern "C" {
 			.direct = false,                                                           \
 			.paused = HL78XX_MONITOR_INITIAL_PAUSED(__VA_ARGS__),                      \
 		}}
+
 /**
  * @brief Define an AT monitor to receive parsed unsolicited AT notifications directly
  * in the HL78xx modem RX workqueue context.
@@ -225,18 +227,18 @@ enum hl78xx_cell_rat_mode {
 	HL78XX_RAT_CAT_M1 = 0,
 	/** NB-IoT radio access technology */
 	HL78XX_RAT_NB1,
-#ifdef CONFIG_MODEM_HL78XX_12
+#if defined(CONFIG_MODEM_HL78XX_12) || defined(__DOXYGEN__)
 	/** GSM radio access technology (HL7812 only) */
 	HL78XX_RAT_GSM,
-#ifdef CONFIG_MODEM_HL78XX_12_FW_R6
+#if defined(CONFIG_MODEM_HL78XX_12_FW_R6) || defined(__DOXYGEN__)
 	/** NB-IoT Non-Terrestrial Network (HL7812 FW R6+) */
 	HL78XX_RAT_NBNTN,
 #endif /* CONFIG_MODEM_HL78XX_12_FW_R6 */
 #endif /* CONFIG_MODEM_HL78XX_12 */
-#ifdef CONFIG_MODEM_HL78XX_AUTORAT
+#if defined(CONFIG_MODEM_HL78XX_AUTORAT) || defined(__DOXYGEN__)
 	/** Automatic RAT selection mode */
 	HL78XX_RAT_MODE_AUTO,
-#endif
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
 	/** No RAT mode */
 	HL78XX_RAT_MODE_NONE,
 	/** Number of valid RAT modes */
@@ -553,8 +555,8 @@ struct hl78xx_agnss_status {
 };
 #endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
 
-#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
-#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+#if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE) || defined(__DOXYGEN__)
+#if defined(CONFIG_MODEM_HL78XX_POWER_DOWN) || defined(__DOXYGEN__)
 /**
  * @brief Power down event types
  *
@@ -583,7 +585,7 @@ enum hl78xx_power_down_response {
 };
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
-#ifdef CONFIG_MODEM_HL78XX_EDRX
+#if defined(CONFIG_MODEM_HL78XX_EDRX) || defined(__DOXYGEN__)
 /**
  * @brief eDRX event types
  *
@@ -598,7 +600,8 @@ enum hl78xx_edrx_event {
 	HL78XX_EDRX_EVENT_IDLE_NONE,
 };
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
-#ifdef CONFIG_MODEM_HL78XX_PSM
+
+#if defined(CONFIG_MODEM_HL78XX_PSM) || defined(__DOXYGEN__)
 /**
  * @brief PSM event types
  *
@@ -686,7 +689,7 @@ enum hl78xx_evt_type {
 	HL78XX_LTE_PHONE_FUNCTIONALITY_UPDATE,
 	/** Extended timezone and universal time update (+CTZEU) */
 	HL78XX_LTE_CTZEU_UPDATE,
-#ifdef CONFIG_HL78XX_GNSS
+#if defined(CONFIG_HL78XX_GNSS) || defined(__DOXYGEN__)
 	/** GNSS engine initialized and ready */
 	HL78XX_GNSS_ENGINE_READY,
 	/** GNSS engine initialization event */
@@ -704,17 +707,17 @@ enum hl78xx_evt_type {
 	/** GNSS mode exited - modem is now in airplane mode, user can decide next step */
 	HL78XX_GNSS_EVENT_MODE_EXITED,
 #endif /* CONFIG_HL78XX_GNSS */
-#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
-#ifdef CONFIG_MODEM_HL78XX_EDRX
 	/** eDRX idle mode entered */
+#if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE) || defined(__DOXYGEN__)
+#if defined(CONFIG_MODEM_HL78XX_EDRX) || defined(__DOXYGEN__)
 	HL78XX_EDRX_IDLE_UPDATE,
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
-#ifdef CONFIG_MODEM_HL78XX_PSM
 	/** Modem PSM event update */
+#if defined(CONFIG_MODEM_HL78XX_PSM) || defined(__DOXYGEN__)
 	HL78XX_LTE_PSMEV_UPDATE,
 #endif /* CONFIG_MODEM_HL78XX_PSM */
-#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
 	/** Modem power-down event update */
+#if defined(CONFIG_MODEM_HL78XX_POWER_DOWN) || defined(__DOXYGEN__)
 	HL78XX_POWER_DOWN_UPDATE,
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 	/** VGPIO pin went LOW */
@@ -731,7 +734,8 @@ enum hl78xx_evt_type {
 	/** Event type count */
 	HL78XX_EVT_TYPE_COUNT
 };
-#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+
+#if defined(CONFIG_MODEM_HL78XX_AIRVANTAGE) || defined(__DOXYGEN__)
 /**
  * @brief Device Services Indications (+WDSI)
  *
@@ -779,7 +783,7 @@ enum wdsi_indication {
 };
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 
-#ifdef CONFIG_HL78XX_GNSS
+#if defined(CONFIG_HL78XX_GNSS) || defined(__DOXYGEN__)
 /**
  * @brief GNSS event type
  *
@@ -841,27 +845,27 @@ struct hl78xx_evt {
 		enum cellular_registration_status reg_status;
 		/** Radio access technology mode (for HL78XX_LTE_RAT_UPDATE) */
 		enum hl78xx_cell_rat_mode rat_mode;
-#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+#if defined(CONFIG_MODEM_HL78XX_AIRVANTAGE) || defined(__DOXYGEN__)
 		/** AirVantage device service indication */
 		enum wdsi_indication wdsi_indication;
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
-#ifdef CONFIG_HL78XX_GNSS
+#if defined(CONFIG_HL78XX_GNSS) || defined(__DOXYGEN__)
 		/** GNSS event status */
 		enum hl78xx_event_status event_status;
 		/** GNSS position event type */
 		enum gnss_position_events position_event;
 #endif /* CONFIG_HL78XX_GNSS */
-#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
-#ifdef CONFIG_MODEM_HL78XX_PSM
-		/* PSM event */
+#if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE) || defined(__DOXYGEN__)
+#if defined(CONFIG_MODEM_HL78XX_PSM) || defined(__DOXYGEN__)
+		/** PSM event */
 		enum hl78xx_psmev_event psm_event;
 #endif /* CONFIG_MODEM_HL78XX_PSM */
-#ifdef CONFIG_MODEM_HL78XX_EDRX
-		/* eDRX event */
+#if defined(CONFIG_MODEM_HL78XX_EDRX) || defined(__DOXYGEN__)
+		/** eDRX event */
 		enum hl78xx_edrx_event edrx_event;
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
-#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
-		/* Power-down event */
+#if defined(CONFIG_MODEM_HL78XX_POWER_DOWN) || defined(__DOXYGEN__)
+		/** Power-down event */
 		enum power_down_event power_down_event;
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
@@ -1017,21 +1021,10 @@ struct hl78xx_gnss_aux_data_callback {
 		.callback = _callback,                                                             \
 	}
 #else
-/**
- * @brief Register a callback structure for GNSS auxiliary data published
- *
- * @param _dev Device pointer
- * @param _callback The callback function
- */
 #define GNSS_AUX_DATA_CALLBACK_DEFINE(_dev, _callback)
-/**
- * @brief Register a callback structure for GNSS auxiliary data published
- *
- * @param _node_id Device tree node identifier
- * @param _callback The callback function
- */
 #define GNSS_DT_AUX_DATA_CALLBACK_DEFINE(_node_id, _callback)
 #endif
+
 /**
  * @brief API function pointer for configuring networks
  *
@@ -1385,7 +1378,7 @@ int hl78xx_api_func_get_sinr_validity(const struct device *dev, bool *is_valid);
 int hl78xx_api_func_set_network_operator_format(const struct device *dev,
 						enum hl78xx_operator_format format);
 
-#ifdef CONFIG_MODEM_HL78XX_AUTORAT
+#if defind(CONFIG_MODEM_HL78XX_AUTORAT) || defined(__DOXYGEN__)
 /**
  * @brief Set a new Preferred RAT List through AT+KSELACQ.
  *
@@ -1557,7 +1550,7 @@ static inline int hl78xx_get_sinr_validity(const struct device *dev, bool *is_va
 	return hl78xx_api_func_get_sinr_validity(dev, is_valid);
 }
 
-#ifdef CONFIG_MODEM_HL78XX_AUTORAT
+#if defined(CONFIG_MODEM_HL78XX_AUTORAT) || defined(__DOXYGEN__)
 /**
  * @brief Set a new raw `AT+KSELACQ` Preferred RAT List.
  *
@@ -1630,6 +1623,7 @@ static inline int hl78xx_get_phone_functionality(const struct device *dev,
 {
 	return hl78xx_api_func_get_phone_functionality(dev, functionality);
 }
+
 /**
  * @brief Send an AT command to the modem and wait for a matched response.
  *
@@ -1683,6 +1677,7 @@ static inline int hl78xx_modem_at_err(int error)
 {
 	return (error & 0xff00ffffU);
 }
+
 /**
  * @brief Convert raw RSSI value from the modem to dBm.
  *
@@ -1710,6 +1705,7 @@ static inline int hl78xx_parse_rssi(uint8_t rssi, int16_t *value)
 	*value = (int16_t)CSQ_RSSI_TO_DB(rssi);
 	return 0;
 }
+
 /**
  * @brief Convert raw RSRP value from the modem to dBm.
  *
@@ -1743,6 +1739,7 @@ static inline int hl78xx_parse_rsrp(uint8_t rsrp, int16_t *value)
 	*value = (int16_t)CESQ_RSRP_TO_DB(rsrp);
 	return 0;
 }
+
 /**
  * @brief Convert raw RSRQ value from the modem to dB.
  *
@@ -1768,6 +1765,7 @@ static inline int hl78xx_parse_rsrq(uint8_t rsrq, int16_t *value)
 	*value = (int16_t)CESQ_RSRQ_TO_DB(rsrq);
 	return 0;
 }
+
 /**
  * @brief Pause monitor.
  *
@@ -1779,6 +1777,7 @@ static inline void hl78xx_evt_monitor_pause(struct hl78xx_evt_monitor_entry *mon
 {
 	mon->flags.paused = true;
 }
+
 /**
  * @brief Resume monitor.
  *
@@ -1930,7 +1929,8 @@ enum cellular_access_technology hl78xx_rat_to_access_tech(enum hl78xx_cell_rat_m
  * @return Corresponding HL78xx RAT mode.
  */
 enum hl78xx_cell_rat_mode hl78xx_access_tech_to_rat(enum cellular_access_technology access_tech);
-#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+
+#if defined(CONFIG_MODEM_HL78XX_AIRVANTAGE) || defined(__DOXYGEN__)
 /**
  * @brief Start an AirVantage Device Management (DM) session
  *
@@ -1999,7 +1999,7 @@ int hl78xx_set_wake_pin_high(const struct device *dev);
  */
 int hl78xx_set_active_sim(const struct device *dev, enum hl78xx_sim_slot sim_slot);
 
-#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+#if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE) || defined(__DOXYGEN__)
 /**
  * @brief Wake the modem from PSM sleep
  *
@@ -2024,7 +2024,7 @@ int hl78xx_set_active_sim(const struct device *dev, enum hl78xx_sim_slot sim_slo
  */
 int hl78xx_wakeup_modem(const struct device *dev);
 
-#ifdef CONFIG_MODEM_HL78XX_EDRX
+#if defined(CONFIG_MODEM_HL78XX_EDRX) || defined(__DOXYGEN__)
 /**
  * @brief Get the remaining time for the modem to go in eDRX idle state
  *
@@ -2035,7 +2035,7 @@ int hl78xx_edrx_get_time_to_sleep(const struct device *dev);
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
-#ifdef CONFIG_HL78XX_GNSS
+#if defined(CONFIG_HL78XX_GNSS) || defined(__DOXYGEN__)
 /**
  * @brief Enter GNSS mode
  *
@@ -2127,7 +2127,7 @@ int hl78xx_gnss_set_search_timeout(const struct device *dev, uint32_t timeout_ms
  */
 int hl78xx_gnss_get_latest_known_fix(const struct device *dev);
 
-#ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
+#if defined(CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE) || defined(__DOXYGEN__)
 /**
  * @brief Get A-GNSS assistance data status
  *
@@ -2168,7 +2168,7 @@ int hl78xx_gnss_assist_data_delete(const struct device *dev);
 
 #endif /* CONFIG_HL78XX_GNSS */
 
-#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+#if defined(CONFIG_MODEM_HL78XX_POWER_DOWN) || defined(__DOXYGEN__)
 /**
  * @brief Trigger the HL78xx shutdown process after a caller-supplied delay.
  *

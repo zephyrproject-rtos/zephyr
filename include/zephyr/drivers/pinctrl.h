@@ -79,7 +79,7 @@ struct pinctrl_dev_config {
 
 /** @cond INTERNAL_HIDDEN */
 
-#if !defined(CONFIG_PINCTRL_KEEP_SLEEP_STATE)
+#if !defined(CONFIG_PINCTRL_KEEP_SLEEP_STATE) || defined(__DOXYGEN__)
 /** Out of power management configurations, ignore "sleep" state. */
 #define PINCTRL_SKIP_SLEEP 1
 #endif
@@ -176,7 +176,7 @@ struct pinctrl_dev_config {
 			     Z_PINCTRL_STATE_INIT, (,), node_id)	       \
 	};
 
-#ifdef CONFIG_PINCTRL_STORE_REG
+#if defined(CONFIG_PINCTRL_STORE_REG) || defined(__DOXYGEN__)
 /**
  * @brief Helper macro to initialize pin control config.
  *

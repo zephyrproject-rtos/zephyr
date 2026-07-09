@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
+#if defined(CONFIG_CLOCK_CONTROL_NRF) || defined(__DOXYGEN__)
 
 #include <hal/nrf_clock.h>
 

@@ -9,7 +9,7 @@
 
 #include <zephyr/device.h>
 
-#ifdef CONFIG_ADC_V2T_NPCX
+#if defined(CONFIG_ADC_V2T_NPCX) || defined(__DOXYGEN__)
 
 /**
  * @brief Set ADC V2T channels
