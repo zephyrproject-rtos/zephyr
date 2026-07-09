@@ -1328,33 +1328,88 @@ int pthread_getschedparam(pthread_t pthread, int *policy, struct sched_param *pa
 }
 
 /**
+ * pthread_once() state machine. A once-control is statically initialized to
+ * PTHREAD_ONCE_INIT, which is {0} and compatible w/ POSIX_THREAD_ONCE_INIT.
+ */
+enum {
+	POSIX_THREAD_ONCE_INIT = 0,
+	POSIX_THREAD_ONCE_PROCESSING,
+	POSIX_THREAD_ONCE_COMPLETE,
+};
+
+static struct k_spinlock pthread_once_lock;
+
+/* atomic CAS on target, old value POSIX_THREAD_ONCE_INIT to POSIX_THREAD_ONCE_PROCESSING. */
+static int posix_once_atomic_init_to_processing(int *const target)
+{
+	k_spinlock_key_t key = k_spin_lock(&pthread_once_lock);
+	int value = *target;
+
+	if (value < 0 || value > POSIX_THREAD_ONCE_COMPLETE) {
+		value = EINVAL; /* POSIX: invalid pthread_once_t */
+	} else if (value == POSIX_THREAD_ONCE_INIT) { /* NOSONAR */
+		*target = POSIX_THREAD_ONCE_PROCESSING;
+	}
+	k_spin_unlock(&pthread_once_lock, key);
+	return value;
+}
+
+static void posix_once_atomic_set(int *const target, int new_value)
+{
+	k_spinlock_key_t key = k_spin_lock(&pthread_once_lock);
+	*target = new_value;
+	k_spin_unlock(&pthread_once_lock, key);
+}
+
+static void once_init_cancel(void *arg)
+{
+	struct pthread_once *const _once = arg;
+
+	/* POSIX: if init_func() is cancelled, once_control must reset as if
+	 * pthread_once() was never called, so the next caller runs init_func().
+	 */
+	posix_once_atomic_set(&_once->state, POSIX_THREAD_ONCE_INIT);
+}
+
+/**
  * @brief Dynamic package initialization
  *
  * See IEEE 1003.1
  */
 int pthread_once(pthread_once_t *once, void (*init_func)(void))
 {
-	int ret = EINVAL;
-	bool run_init_func = false;
 	struct pthread_once *const _once = (struct pthread_once *)once;
 
 	if (init_func == NULL) {
 		return EINVAL;
 	}
 
-	K_SPINLOCK(&pthread_pool_lock) {
-		if (!_once->flag) {
-			run_init_func = true;
-			_once->flag = true;
+	for (;;) {
+		const int state = posix_once_atomic_init_to_processing(&_once->state);
+
+		if (state == POSIX_THREAD_ONCE_INIT) {
+			/* state -> POSIX_THREAD_ONCE_PROCESSING */
+			pthread_cleanup_push(once_init_cancel, _once);
+			init_func();
+			pthread_cleanup_pop(0);
+			posix_once_atomic_set(&_once->state, POSIX_THREAD_ONCE_COMPLETE);
+			return 0;
+		} else if (state == EINVAL) {
+			LOG_DBG("%s invalid pthread_once_t object", __func__); /* NOSONAR */
+			return EINVAL;
+		} else if (state == POSIX_THREAD_ONCE_COMPLETE) {
+			return 0;
 		}
-		ret = 0;
-	}
 
-	if (ret == 0 && run_init_func) {
-		init_func();
+		/* POSIX_THREAD_ONCE_PROCESSING: yield and retry.
+		 * yield is additional to potential SMP and time-slice scheduling.
+		 *
+		 * If that thread was cancelled, state resets to POSIX_THREAD_ONCE_INIT and
+		 * the next CAS attempt above will take over as the new winner.
+		 */
+		k_yield();
 	}
-
-	return ret;
+	CODE_UNREACHABLE;
 }
 
 /**

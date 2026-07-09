@@ -142,7 +142,7 @@ typedef uint32_t pthread_rwlockattr_t;
 typedef uint32_t pthread_rwlock_t;
 
 struct pthread_once {
-	bool flag;
+	int state;
 };
 
 #if !defined(CONFIG_NEWLIB_LIBC)
