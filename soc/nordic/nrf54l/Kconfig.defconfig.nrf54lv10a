@@ -1,0 +1,13 @@
+# Nordic Semiconductor nRF54LV10A MCU
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF54LV10A_CPUAPP
+
+# Maxumum RRAM write buffer size on nRF54LV10A is different from other RRAM devices.
+config NRF_RRAM_WRITE_BUFFER_SIZE
+	default 16
+	range 0 16
+
+endif # SOC_NRF54LV10A_CPUAPP
