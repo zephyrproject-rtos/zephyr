@@ -154,3 +154,17 @@ SPDX-License-Identifier = "CC-BY-3.0"
 SPDX-FileComment = "Customize the Sphinx theme used to render the documentation and are never linked into a firmware."
 Zephyr-Description = "Godot Documentation Theme Files"
 Zephyr-Origin = "https://github.com/godotengine/godot-docs"
+
+[[annotations]]
+path = [
+    "include/zephyr/net/http/parser.h",
+    "include/zephyr/net/http/parser_state.h",
+    "include/zephyr/net/http/parser_url.h",
+    "subsys/net/lib/http/http_parser.c",
+    "subsys/net/lib/http/http_parser_url.c",
+]
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Compiled into the firmware only when the HTTP parser is enabled."
+Zephyr-Description = "HTTP Parser Files"
+Zephyr-Origin = "https://github.com/nodejs/http-parser"
+Zephyr-Kconfig-Condition = "CONFIG_HTTP_PARSER"
