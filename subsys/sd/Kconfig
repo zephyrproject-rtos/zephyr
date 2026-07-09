@@ -18,8 +18,12 @@ config SDMMC_STACK
 
 config SDIO_STACK
 	bool "SDIO protocol support"
+	select SDIO
+	select SDIO_HOST
 	help
 	  Enable SDIO protocol support. Required for SD I/O cards to function.
+	  The legacy SD-card centered SDIO API is implemented as a thin
+	  compatibility layer over the role-neutral SDIO subsystem (SDIO).
 
 config SD_STACK
 	bool
