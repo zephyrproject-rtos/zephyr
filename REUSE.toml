@@ -263,3 +263,9 @@ SPDX-License-Identifier = "BSD-3-Clause"
 SPDX-FileComment = "Compiled into the firmware only when the POSIX C library extensions are enabled."
 Zephyr-Description = "POSIX fnmatch Files"
 Zephyr-Kconfig-Condition = "CONFIG_POSIX_C_LIB_EXT"
+
+[[annotations]]
+path = "include/zephyr/posix/sys/stat.h"
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Provides the POSIX file-status definitions; compiled into the firmware wherever it is included."
+Zephyr-Description = "POSIX sys/stat.h Header"
