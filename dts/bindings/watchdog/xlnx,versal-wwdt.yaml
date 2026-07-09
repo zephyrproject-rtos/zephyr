@@ -1,7 +1,19 @@
 # Copyright (c) 2025 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Xilinx window watchdog
+description: |
+  Xilinx window watchdog
+  The WWDT implements a two-window (closed + open) watchdog. It must be
+  fed only during the open window. A feed in the closed window, or a
+  missed feed by the end of the open window, is treated as a watchdog
+  failure.
+  The action taken on a failure (no reset, CPU/subsystem reset, or SoC
+  reset) is routed through the platform Error Aggregation Module and
+  configured by firmware (PLM) via the boot-time CDO. Zephyr running on
+  the APU/RPU cannot observe or change this routing, so the driver does
+  not honor the WDT_FLAG_RESET_* flags (including WDT_FLAG_RESET_NONE)
+  passed to wdt_install_timeout(); the reset behavior is defined entirely
+  by platform firmware.
 
 compatible: "xlnx,versal-wwdt"
 
