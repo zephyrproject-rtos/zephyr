@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mbv32
+name: MBV32 softcore CPU
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 2097152
+testing:
+  timeout_multiplier: 6
+vendor: amd
+supported:
+  - gpio
