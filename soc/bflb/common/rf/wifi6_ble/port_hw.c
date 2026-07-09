@@ -20,14 +20,13 @@
 #include <glb_reg.h>
 #include <pds_reg.h>
 
-/* BLE IRQ number: IRQ_NUM_BASE(16) + 56 = 72 */
-#define BLE_IRQN 72
-
-/* BT IRQ number: IRQ_NUM_BASE(16) + 46 = 62 */
-#define BT_IRQN 62
-
-/* DM IRQ number: IRQ_NUM_BASE(16) + 45 = 61 */
-#define DM_IRQN 61
+#define BTBLE_DT_NODE		DT_COMPAT_GET_ANY_STATUS_OKAY(bflb_bt_hci)
+#define BTBLE_IRQ_DM_NUM	DT_IRQ_BY_NAME(BTBLE_DT_NODE, dm, irq)
+#define BTBLE_IRQ_DM_PRI	DT_IRQ_BY_NAME(BTBLE_DT_NODE, dm, priority)
+#define BTBLE_IRQ_BT_NUM	DT_IRQ_BY_NAME(BTBLE_DT_NODE, bt, irq)
+#define BTBLE_IRQ_BT_PRI	DT_IRQ_BY_NAME(BTBLE_DT_NODE, bt, priority)
+#define BTBLE_IRQ_BLE_NUM	DT_IRQ_BY_NAME(BTBLE_DT_NODE, ble, irq)
+#define BTBLE_IRQ_BLE_PRI	DT_IRQ_BY_NAME(BTBLE_DT_NODE, ble, priority)
 
 #if defined(CONFIG_SOC_SERIES_BL61X)
 
@@ -45,51 +44,81 @@
 
 #endif
 
+typedef void (*btblecontroller_isr_handler)(void);
+
+static btblecontroller_isr_handler btblecontroller_ble_isr_func;
+static btblecontroller_isr_handler btblecontroller_bt_isr_func;
+static btblecontroller_isr_handler btblecontroller_dm_isr_func;
+
+static void btblecontroller_ble_isr(const void *arg)
+{
+	__ASSERT_NO_MSG(btblecontroller_ble_isr_func != NULL);
+	ARG_UNUSED(arg);
+	btblecontroller_ble_isr_func();
+}
+
+static void btblecontroller_bt_isr(const void *arg)
+{
+	__ASSERT_NO_MSG(btblecontroller_bt_isr_func != NULL);
+	ARG_UNUSED(arg);
+	btblecontroller_bt_isr_func();
+}
+
+static void btblecontroller_dm_isr(const void *arg)
+{
+	__ASSERT_NO_MSG(btblecontroller_dm_isr_func != NULL);
+	ARG_UNUSED(arg);
+	btblecontroller_dm_isr_func();
+}
+
 /*
  * btblecontroller_ble_irq_init — Register and enable the BLE interrupt
  */
 void btblecontroller_ble_irq_init(void *handler)
 {
-	irq_connect_dynamic(BLE_IRQN, 0, (void (*)(const void *))handler, NULL, 0);
-	irq_enable(BLE_IRQN);
+	IRQ_CONNECT(BTBLE_IRQ_BLE_NUM, BTBLE_IRQ_BLE_PRI, btblecontroller_ble_isr, NULL, 0);
+	btblecontroller_ble_isr_func = handler;
+	irq_enable(BTBLE_IRQ_BLE_NUM);
 }
 
 void btblecontroller_bt_irq_init(void *handler)
 {
-	irq_connect_dynamic(BT_IRQN, 0, (void (*)(const void *))handler, NULL, 0);
-	irq_enable(BT_IRQN);
+	IRQ_CONNECT(BTBLE_IRQ_BT_NUM, BTBLE_IRQ_BT_PRI, btblecontroller_bt_isr, NULL, 0);
+	btblecontroller_bt_isr_func = handler;
+	irq_enable(BTBLE_IRQ_BT_NUM);
 }
 
 void btblecontroller_dm_irq_init(void *handler)
 {
-	irq_connect_dynamic(DM_IRQN, 0, (void (*)(const void *))handler, NULL, 0);
-	irq_enable(DM_IRQN);
+	IRQ_CONNECT(BTBLE_IRQ_DM_NUM, BTBLE_IRQ_DM_PRI, btblecontroller_dm_isr, NULL, 0);
+	btblecontroller_dm_isr_func = handler;
+	irq_enable(BTBLE_IRQ_DM_NUM);
 }
 
 void btblecontroller_ble_irq_enable(uint8_t enable)
 {
 	if (enable) {
-		irq_enable(BLE_IRQN);
+		irq_enable(BTBLE_IRQ_BLE_NUM);
 	} else {
-		irq_disable(BLE_IRQN);
+		irq_disable(BTBLE_IRQ_BLE_NUM);
 	}
 }
 
 void btblecontroller_bt_irq_enable(uint8_t enable)
 {
 	if (enable) {
-		irq_enable(BT_IRQN);
+		irq_enable(BTBLE_IRQ_BT_NUM);
 	} else {
-		irq_disable(BT_IRQN);
+		irq_disable(BTBLE_IRQ_BT_NUM);
 	}
 }
 
 void btblecontroller_dm_irq_enable(uint8_t enable)
 {
 	if (enable) {
-		irq_enable(DM_IRQN);
+		irq_enable(BTBLE_IRQ_DM_NUM);
 	} else {
-		irq_disable(DM_IRQN);
+		irq_disable(BTBLE_IRQ_DM_NUM);
 	}
 }
 

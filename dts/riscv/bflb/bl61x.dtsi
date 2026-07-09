@@ -29,6 +29,10 @@
 	bt_hci_bflb: bt-hci {
 		compatible = "bflb,bt-hci";
 		status = "disabled";
+
+		interrupts = <61 0>, <62 0>, <72 0>;
+		interrupt-names = "dm", "bt", "ble";
+		interrupt-parent = <&clic>;
 	};
 
 	clocks {
