@@ -5716,6 +5716,7 @@ __syscall int k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
  * @retval 0 on success
  * @retval -EBUSY Threads are waiting on the message queue
  * @satisfies ZEP-SRS-31-17
+ * @satisfies ZEP-SRS-31-20
  */
 int k_msgq_cleanup(struct k_msgq *msgq);
 
@@ -5768,6 +5769,7 @@ __syscall int k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t time
  * @retval 0 Message sent.
  * @retval -ENOMSG Returned without waiting or queue purged.
  * @satisfies ZEP-SRS-31-5
+ * @satisfies ZEP-SRS-31-18
  */
 __syscall int k_msgq_put_front(struct k_msgq *msgq, const void *data);
 
@@ -5842,6 +5844,7 @@ __syscall int k_msgq_peek_at(struct k_msgq *msgq, void *data, uint32_t idx);
  *
  * @param msgq Address of the message queue.
  * @satisfies ZEP-SRS-31-14
+ * @satisfies ZEP-SRS-31-19
  */
 __syscall void k_msgq_purge(struct k_msgq *msgq);
 
