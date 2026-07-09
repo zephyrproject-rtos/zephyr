@@ -391,12 +391,99 @@ static int cmd_pcie_ls(const struct shell *sh, size_t argc, char **argv)
 
 	return 0;
 }
+
+/* Subcommand: pcie link speed <bus:dev.func> */
+static int cmd_pcie_link_speed(const struct shell *sh, size_t argc, char **argv)
+{
+	pcie_bdf_t bdf;
+	uint32_t id;
+	uint32_t exp_offset;
+	uint32_t lnkcap_val;
+	uint32_t lnksta_val;
+	uint8_t raw_max_width;
+	uint8_t raw_curr_width;
+	uint8_t max_speed, curr_speed;
+	uint8_t max_width, curr_width;
+
+	/* Shell parsing gate checked */
+	if (argc < 2) {
+		shell_error(sh, "Usage: pcie link speed <bus:dev.func>");
+		return -EINVAL;
+	}
+
+	bdf = get_bdf(argv[1]);
+	if (bdf == PCIE_BDF_NONE) {
+		shell_error(sh, "Invalid BDF layout format specification.");
+		return -EINVAL;
+	}
+
+	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
+		shell_error(sh, "No responsive endpoint found at target BDF.");
+		return -ENODEV;
+	}
+
+	exp_offset = pcie_get_cap(bdf, PCI_CAP_ID_EXP);
+	if (exp_offset == 0) {
+		shell_error(sh, "Target device does not support native PCIe Capabilities.");
+		return -EOPNOTSUPP;
+	}
+
+	lnkcap_val = pcie_conf_read(bdf, exp_offset + 3U);
+	max_speed = (uint8_t)(lnkcap_val & 0x0FU);
+
+	raw_max_width = (uint8_t)((lnkcap_val >> 4) & 0x3FU);
+	max_width = (raw_max_width != 0U) ? raw_max_width : 1U;
+
+	lnksta_val = pcie_conf_read(bdf, exp_offset + 4U) >> 16;
+	curr_speed = (uint8_t)(lnksta_val & 0x0FU);
+
+	raw_curr_width = (uint8_t)((lnksta_val >> 4) & 0x3FU);
+	curr_width = (raw_curr_width != 0U) ? raw_curr_width : 1U;
+
+	shell_print(sh, "====================================================================");
+	shell_print(sh, "   PCIe HARDWARE LINK BANDWIDTH CAPABILITY TRACKER: %u:%x.%u",
+		    PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf));
+	shell_print(sh, "====================================================================");
+	shell_print(sh, "   Silicon Design Limits (Maximum Capabilities):");
+	shell_print(sh, "      Max Link Speed : PCIe Gen %u", (unsigned int)max_speed);
+	shell_print(sh, "      Max Link Width : x%u Lanes", (unsigned int)max_width);
+	shell_print(sh, "   ----------------------------------------------------");
+	shell_print(sh, "   Real-Time Operational Link Status:");
+	shell_print(sh, "      Current Speed  : PCIe Gen %u",
+		    curr_speed == 0U ? max_speed : curr_speed);
+	shell_print(sh, "      Current Width  : x%u Lanes",
+		    (unsigned int)(curr_width == 0U ? max_width : curr_width));
+	shell_print(sh, "   ----------------------------------------------------");
+
+	if ((curr_speed < max_speed && curr_speed != 0U) ||
+	    (curr_width < max_width && curr_width != 0U)) {
+		shell_print(sh, "   [CRITICAL] -> Link Bandwidth Degradation Detected!");
+		shell_print(sh, "                 Hardware has autonomously downgraded its lane "
+				"configurations.");
+	} else {
+		shell_print(
+			sh,
+			"   -> Link Negotiation Status: Healthy [Maximum Bus Throughput Achieved]");
+	}
+	shell_print(sh, "====================================================================");
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_pcie_link_cmds,
+	SHELL_CMD_ARG(speed, NULL, "Trace link capabilities and real-time speed negotiation status",
+		      cmd_pcie_link_speed, 2, 0),
+	SHELL_SUBCMD_SET_END);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_pcie_cmds,
-	SHELL_CMD_ARG(ls, NULL,
-		      "List PCIE devices\n"
-		      "Usage: ls [bus:device:function] [dump]",
-		      cmd_pcie_ls, 1, 2),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
-);
+			       SHELL_CMD_ARG(ls, NULL,
+					     "List PCIE devices\n"
+					     "Usage: ls [bus:device:function] [dump]",
+					     cmd_pcie_ls, 1, 2),
+			       SHELL_CMD(link, &sub_pcie_link_cmds,
+					 "Manage PCIe hardware link performance and power metrics",
+					 NULL),
+			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(pcie, &sub_pcie_cmds, "PCI(e) device information", cmd_pcie_ls);
