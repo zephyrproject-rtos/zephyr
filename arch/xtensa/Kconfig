@@ -95,6 +95,34 @@ config XTENSA_ADSP_FATAL_BREADCRUMB
 	  preserved across a crash loop. This is a debug aid and should be
 	  left disabled in production builds.
 
+if XTENSA_ADSP_FATAL_BREADCRUMB
+
+choice XTENSA_ADSP_FATAL_BREADCRUMB_DATA
+	prompt "Fatal breadcrumb data selection"
+	default XTENSA_ADSP_FATAL_BREADCRUMB_DATA_CAUSE
+	help
+	  Select which exception diagnostic data to write into window0[1], which
+	  is printed as the "status/error code" in the host dmesg log.
+
+config XTENSA_ADSP_FATAL_BREADCRUMB_DATA_CAUSE
+	bool "Exception cause"
+	help
+	  Record the exception cause in window0[1].
+
+config XTENSA_ADSP_FATAL_BREADCRUMB_DATA_VADDR
+	bool "Faulting virtual address (excvaddr)"
+	help
+	  Record the faulting virtual address (excvaddr) in window0[1].
+
+config XTENSA_ADSP_FATAL_BREADCRUMB_DATA_A0
+	bool "Caller return address (a0)"
+	help
+	  Record the calling function's return address (a0) in window0[1].
+
+endchoice
+
+endif # XTENSA_ADSP_FATAL_BREADCRUMB
+
 config XTENSA_ADSP_TRIPLE_FAULT_BREADCRUMB
 	bool "Record triple fault breadcrumbs in HP-SRAM window0"
 	depends on SOC_FAMILY_INTEL_ADSP
