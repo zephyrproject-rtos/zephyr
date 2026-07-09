@@ -1,0 +1,21 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FAN_PWM
+	bool "PWM based fan driver"
+	default y
+	depends on DT_HAS_FAN_PWM_ENABLED
+	select PWM
+	help
+	  Enable PWM based fan driver
+
+if FAN_PWM
+
+config FAN_PWM_INITIAL_DUTY_CYCLE
+	int "Initial PWM duty cycle"
+	default 0
+	range 0 100
+	help
+	  Set the initial PWM duty cycle that the fan starts up with
+
+endif # FAN_PWM
