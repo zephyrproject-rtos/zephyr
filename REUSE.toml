@@ -234,3 +234,15 @@ SPDX-FileComment = "Compiled into the firmware only when the OP-TEE driver is en
 Zephyr-Description = "OP-TEE Message Interface Headers"
 Zephyr-Origin = "https://www.op-tee.org/"
 Zephyr-Kconfig-Condition = "CONFIG_OPTEE"
+
+[[annotations]]
+path = [
+    "modules/openthread/platform/hdlc_interface.cpp",
+    "modules/openthread/platform/hdlc_interface.hpp",
+    "modules/openthread/platform/radio_spinel.cpp",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Linked into the firmware only when the Spinel HDLC RCP host interface is enabled."
+Zephyr-Description = "OpenThread Spinel HDLC RCP Host Interface Files"
+Zephyr-Origin = "https://openthread.io/"
+Zephyr-Kconfig-Condition = "CONFIG_HDLC_RCP_IF"
