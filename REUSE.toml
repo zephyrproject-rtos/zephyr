@@ -292,3 +292,10 @@ SPDX-License-Identifier = "BSD-3-Clause"
 SPDX-FileComment = "Used only when testing the python-devicetree library and never linked into the firmware."
 Zephyr-Description = "Python Devicetree Library Test Files"
 Zephyr-Origin = "https://github.com/zephyrproject-rtos/python-devicetree"
+
+[[annotations]]
+path = "include/zephyr/arch/riscv/csr.h"
+SPDX-License-Identifier = "SHL-0.51"
+SPDX-FileComment = "RISC-V control and status register access helpers, also available under Apache-2.0; compiled into the firmware only on RISC-V targets."
+Zephyr-Description = "RISC-V Control and Status Register Header"
+Zephyr-Kconfig-Condition = "CONFIG_RISCV"
