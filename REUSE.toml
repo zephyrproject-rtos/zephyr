@@ -318,3 +318,14 @@ SPDX-License-Identifier = "BSD-3-Clause"
 SPDX-FileComment = "Used only when building the TF-M secure partition integration sample."
 Zephyr-Description = "TF-M Secure Partition Sample Files"
 Zephyr-Origin = "https://www.trustedfirmware.org/projects/tf-m/"
+
+[[annotations]]
+path = [
+    "tests/benchmarks/thread_metric/src/*.c",
+    "tests/benchmarks/thread_metric/src/*.h",
+    "tests/benchmarks/thread_metric/thread_metric_readme.txt",
+]
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Linked only into the Thread-Metric RTOS Test Suite test firmware."
+Zephyr-Description = "Thread-Metric RTOS Test Suite Source Files"
+Zephyr-Origin = "https://github.com/eclipse-threadx/threadx"
