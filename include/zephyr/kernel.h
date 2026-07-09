@@ -6859,15 +6859,14 @@ __syscall void k_poll_signal_check(struct k_poll_signal *sig,
  * passed again to k_poll() or k_poll() will consider it being signaled, and
  * will return immediately.
  *
- * @note The result is stored and the 'signaled' field is set even if
- * this function returns an error indicating that an expiring poll was
- * not notified.  The next k_poll() will detect the missed raise.
+ * @note The result is stored and the 'signaled' field is set even when the
+ * polling thread's timeout is already expiring and the poll is therefore not
+ * notified directly.  The next k_poll() will detect the missed raise.
  *
  * @param sig A poll signal.
  * @param result The value to store in the result field of the signal.
  *
  * @retval 0 The signal was delivered successfully.
- * @retval -EAGAIN The polling thread's timeout is in the process of expiring.
  */
 
 __syscall int k_poll_signal_raise(struct k_poll_signal *sig, int result);
