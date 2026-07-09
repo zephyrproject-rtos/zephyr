@@ -164,7 +164,7 @@ resetwait:
 	/* wait */
 	bne	2b
 	add	x5, x5, #1
-	cmp	x5, #DT_CHILD_NUM_STATUS_OKAY(DT_PATH(cpus))
+	cmp	x5, #DT_CPUS_NUM_OKAY
 	bne	2b
 
 

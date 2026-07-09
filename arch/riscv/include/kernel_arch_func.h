@@ -51,7 +51,7 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 #endif
 #if ((CONFIG_MP_MAX_NUM_CPUS) > 1)
 	unsigned int cpu_node_list[] = {
-		DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (,))
+		DT_CPUS_FOREACH_OKAY_SEP(DT_REG_ADDR, (,))
 	};
 	unsigned int cpu_num, hart_x;
 
