@@ -45,7 +45,10 @@
 	status = "okay";
 };
 
-&spi120 {
+#define SPI_LOOPBACK_SLOW_HZ DT_FREQ_M(4)
+#define SPI_LOOPBACK_FAST_HZ DT_FREQ_M(8)
+
+spi_loopback: &spi120 {
 	status = "okay";
 	pinctrl-0 = <&spi120_default>;
 	pinctrl-1 = <&spi120_sleep>;
@@ -53,20 +56,10 @@
 	overrun-character = <0x00>;
 	memory-regions = <&dma_fast_region>;
 	zephyr,pm-device-runtime-auto;
-
-	slow@1 {
-		compatible = "test-spi-loopback-slow";
-		reg = <1>;
-		spi-max-frequency = <DT_FREQ_M(4)>;
-	};
-
-	dut_fast: fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <DT_FREQ_M(8)>;
-	};
 };
 
 &uart120 {
 	status = "disabled";
 };
+
+#include "../spi-loopback.dtsi"

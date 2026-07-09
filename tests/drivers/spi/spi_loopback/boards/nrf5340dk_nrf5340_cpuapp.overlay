@@ -23,7 +23,7 @@
 	};
 };
 
-&spi1 {
+spi_loopback: &spi1 {
 	status = "okay";
 	overrun-character = <0x00>;
 	rx-delay = <1>;
@@ -31,20 +31,10 @@
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
 	zephyr,pm-device-runtime-auto;
-
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <500000>;
-	};
-
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <16000000>;
-	};
 };
 
 &gpio0 {
 	status = "okay";
 };
+
+#include "../spi-loopback.dtsi"

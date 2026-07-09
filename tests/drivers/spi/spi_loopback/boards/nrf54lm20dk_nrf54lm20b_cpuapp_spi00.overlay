@@ -31,27 +31,20 @@
 	};
 };
 
-&spi00 {
+#define SPI_LOOPBACK_SLOW_HZ DT_FREQ_M(16)
+#define SPI_LOOPBACK_FAST_HZ DT_FREQ_M(32)
+
+spi_loopback: &spi00 {
 	status = "okay";
 	pinctrl-0 = <&spi00_default>;
 	pinctrl-1 = <&spi00_sleep>;
 	pinctrl-names = "default", "sleep";
 	overrun-character = <0x00>;
 	zephyr,pm-device-runtime-auto;
-
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <DT_FREQ_M(16)>;
-	};
-
-	dut_fast: fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <DT_FREQ_M(32)>;
-	};
 };
 
 &gpio2 {
 	status = "okay";
 };
+
+#include "../spi-loopback.dtsi"

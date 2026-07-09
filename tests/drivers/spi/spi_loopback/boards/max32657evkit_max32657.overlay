@@ -8,19 +8,13 @@
 	status = "okay";
 };
 
-&spi0 {
+#define SPI_LOOPBACK_SLOW_HZ 128000
+#define SPI_LOOPBACK_FAST_HZ 500000
+#define SPI_LOOPBACK_REG 1
+
+spi_loopback: &spi0 {
 	dmas = <&dma1 1 MAX32_DMA_SLOT_SPI_TX>, <&dma1 2 MAX32_DMA_SLOT_SPI_RX>;
 	dma-names = "tx", "rx";
-
-	slow@1 {
-		compatible = "test-spi-loopback-slow";
-		reg = <1>;
-		spi-max-frequency = <128000>;
-	};
-
-	fast@1 {
-		compatible = "test-spi-loopback-fast";
-		reg = <1>;
-		spi-max-frequency = <500000>;
-	};
 };
+
+#include "../spi-loopback.dtsi"

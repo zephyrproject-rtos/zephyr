@@ -7,16 +7,6 @@
 /* To test this sample, connect
  * LPSPI1 MOSI(J2-8, LPSPI1_SOUT)     -->        LPSPI1 MISO(J2-10, LPSPI1_SIN)
  */
-&lpspi1 {
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <500000>;
-	};
+spi_loopback: &lpspi1 {};
 
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <16000000>;
-	};
-};
+#include "../spi-loopback.dtsi"

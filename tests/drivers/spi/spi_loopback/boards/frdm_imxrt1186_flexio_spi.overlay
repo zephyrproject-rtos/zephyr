@@ -25,7 +25,7 @@
 &flexio2 {
 	status = "okay";
 
-	flexio2_spi: flexio2_spi {
+	spi_loopback: flexio2_spi: flexio2_spi {
 		compatible = "nxp,flexio-spi";
 		cs-gpios = <&gpio4 16 GPIO_ACTIVE_LOW>;
 		#address-cells = <1>;
@@ -36,17 +36,7 @@
 		pinctrl-0 = <&pinmux_flexio2_spi>;
 		pinctrl-names = "default";
 		status = "okay";
-
-		slow@0 {
-			compatible = "test-spi-loopback-slow";
-			reg = <0>;
-			spi-max-frequency = <500000>;
-		};
-
-		fast@0 {
-			compatible = "test-spi-loopback-fast";
-			reg = <0>;
-			spi-max-frequency = <16000000>;
-		};
 	};
 };
+
+#include "../spi-loopback.dtsi"
