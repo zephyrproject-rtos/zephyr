@@ -27,10 +27,19 @@
  */
 #define TEST_TIMEOUT       K_SECONDS(2)
 
+/* An asynchronous upload runs the whole transfer on a work queue before the
+ * FINISHED callback fires, so allow for the full duration plus a margin.
+ */
+#define UPLOAD_TIMEOUT     K_MSEC(TEST_DURATION_MS + 2000)
+
 static K_SEM_DEFINE(session_finished, 0, 1);
+static K_SEM_DEFINE(upload_finished, 0, 1);
 
 static struct zperf_results server_results;
 static enum zperf_status server_last_status = ZPERF_SESSION_ERROR;
+
+static struct zperf_results client_async_results;
+static enum zperf_status client_last_status = ZPERF_SESSION_ERROR;
 
 static void server_session_cb(enum zperf_status status,
 			      struct zperf_results *result,
@@ -62,6 +71,37 @@ static void server_session_cb(enum zperf_status status,
 	}
 }
 
+static void client_upload_cb(enum zperf_status status,
+			     struct zperf_results *result,
+			     void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+	switch (status) {
+	case ZPERF_SESSION_STARTED:
+		break;
+	case ZPERF_SESSION_FINISHED:
+		if (result == NULL) {
+			/* A FINISHED event must carry results; a missing result
+			 * is treated as an error so the failure is explicit.
+			 */
+			client_last_status = ZPERF_SESSION_ERROR;
+		} else {
+			memcpy(&client_async_results, result,
+			       sizeof(client_async_results));
+			client_last_status = status;
+		}
+		k_sem_give(&upload_finished);
+		break;
+	case ZPERF_SESSION_ERROR:
+		client_last_status = status;
+		k_sem_give(&upload_finished);
+		break;
+	default:
+		break;
+	}
+}
+
 static void fill_upload_params(struct zperf_upload_params *param)
 {
 	struct net_sockaddr_in peer = {
@@ -87,8 +127,11 @@ static void zperf_before(void *fixture)
 	ARG_UNUSED(fixture);
 
 	k_sem_reset(&session_finished);
+	k_sem_reset(&upload_finished);
 	memset(&server_results, 0, sizeof(server_results));
+	memset(&client_async_results, 0, sizeof(client_async_results));
 	server_last_status = ZPERF_SESSION_ERROR;
+	client_last_status = ZPERF_SESSION_ERROR;
 }
 
 static void zperf_after(void *fixture)
@@ -196,6 +239,97 @@ ZTEST(zperf_api, test_tcp_upload_download)
 		      "TCP server received %" PRIu64 " bytes, client sent %"
 		      PRIu64, server_results.total_len,
 		      client_results.total_len);
+}
+
+ZTEST(zperf_api, test_udp_upload_async)
+{
+	struct zperf_download_params download_param = {
+		.port = TEST_PORT,
+	};
+	struct zperf_upload_params upload_param;
+	int ret;
+
+	ret = zperf_udp_download(&download_param, server_session_cb, NULL);
+	zassert_ok(ret, "Failed to start UDP server (%d)", ret);
+
+	fill_upload_params(&upload_param);
+
+	/* Non-blocking upload, results are delivered through the callback. */
+	ret = zperf_udp_upload_async(&upload_param, client_upload_cb, NULL);
+	zassert_ok(ret, "UDP async upload failed to start (%d)", ret);
+
+	/* Client side: wait for the upload to complete via the callback. */
+	ret = k_sem_take(&upload_finished, UPLOAD_TIMEOUT);
+	zassert_ok(ret, "Timed out waiting for UDP async upload to finish");
+	zassert_equal(client_last_status, ZPERF_SESSION_FINISHED,
+		      "UDP async upload did not finish cleanly (status %d)",
+		      client_last_status);
+	zassert_true(client_async_results.nb_packets_sent > 0,
+		     "Client did not send any UDP packets");
+	zassert_true(client_async_results.nb_packets_rcvd > 0,
+		     "Server did not report any received packets to client");
+	zassert_true(client_async_results.nb_packets_rcvd <=
+			     client_async_results.nb_packets_sent,
+		     "Server received more packets (%u) than were sent (%u)",
+		     client_async_results.nb_packets_rcvd,
+		     client_async_results.nb_packets_sent);
+
+	/* Server side: verify the FINISHED callback stats. */
+	ret = k_sem_take(&session_finished, TEST_TIMEOUT);
+	zassert_ok(ret, "Timed out waiting for UDP server session to finish");
+	zassert_equal(server_last_status, ZPERF_SESSION_FINISHED,
+		      "UDP server session did not finish cleanly (status %d)",
+		      server_last_status);
+	zassert_true(server_results.nb_packets_rcvd > 0,
+		     "UDP server did not receive any packets");
+	zassert_true(server_results.total_len > 0,
+		     "UDP server did not report any received data");
+}
+
+ZTEST(zperf_api, test_tcp_upload_async)
+{
+	struct zperf_download_params download_param = {
+		.port = TEST_PORT,
+	};
+	struct zperf_upload_params upload_param;
+	int ret;
+
+	ret = zperf_tcp_download(&download_param, server_session_cb, NULL);
+	zassert_ok(ret, "Failed to start TCP server (%d)", ret);
+
+	fill_upload_params(&upload_param);
+
+	/* Non-blocking upload, results are delivered through the callback. */
+	ret = zperf_tcp_upload_async(&upload_param, client_upload_cb, NULL);
+	zassert_ok(ret, "TCP async upload failed to start (%d)", ret);
+
+	/* Client side: wait for the upload to complete via the callback. */
+	ret = k_sem_take(&upload_finished, UPLOAD_TIMEOUT);
+	zassert_ok(ret, "Timed out waiting for TCP async upload to finish");
+	zassert_equal(client_last_status, ZPERF_SESSION_FINISHED,
+		      "TCP async upload did not finish cleanly (status %d)",
+		      client_last_status);
+	zassert_true(client_async_results.nb_packets_sent > 0,
+		     "Client did not send any TCP packets");
+	zassert_true(client_async_results.total_len > 0,
+		     "Client did not transfer any TCP data");
+
+	/* Server side: the FINISHED callback fires when the client closes. */
+	ret = k_sem_take(&session_finished, TEST_TIMEOUT);
+	zassert_ok(ret, "Timed out waiting for TCP server session to finish");
+	zassert_equal(server_last_status, ZPERF_SESSION_FINISHED,
+		      "TCP server session did not finish cleanly (status %d)",
+		      server_last_status);
+	zassert_true(server_results.total_len > 0,
+		     "TCP server did not report any received data");
+
+	/* TCP is reliable, so the server must have received exactly what the
+	 * client sent.
+	 */
+	zassert_equal(server_results.total_len, client_async_results.total_len,
+		      "TCP server received %" PRIu64 " bytes, client sent %"
+		      PRIu64, server_results.total_len,
+		      client_async_results.total_len);
 }
 
 ZTEST_SUITE(zperf_api, NULL, NULL, zperf_before, zperf_after, NULL);
