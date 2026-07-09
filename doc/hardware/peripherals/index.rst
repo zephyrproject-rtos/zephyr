@@ -61,6 +61,7 @@ Peripherals
    reset.rst
    retained_mem.rst
    sdhc.rst
+   sdio.rst
    sensor/index.rst
    sent.rst
    spi.rst
