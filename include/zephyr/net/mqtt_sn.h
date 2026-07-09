@@ -228,9 +228,10 @@ struct mqtt_sn_transport_udp {
 	/** Socket FD */
 	int sock;
 
-	/** Address of broadcasts */
-	struct net_sockaddr bcaddr;
-	net_socklen_t bcaddrlen;
+	/** Address of sock */
+	struct net_sockaddr addr;
+	net_socklen_t addrlen;
+	bool use_broadcast;
 };
 
 #define UDP_TRANSPORT(transport) CONTAINER_OF(transport, struct mqtt_sn_transport_udp, tp)
