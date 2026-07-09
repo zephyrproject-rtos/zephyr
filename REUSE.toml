@@ -329,3 +329,10 @@ SPDX-License-Identifier = "MIT"
 SPDX-FileComment = "Linked only into the Thread-Metric RTOS Test Suite test firmware."
 Zephyr-Description = "Thread-Metric RTOS Test Suite Source Files"
 Zephyr-Origin = "https://github.com/eclipse-threadx/threadx"
+
+[[annotations]]
+path = "doc/_extensions/zephyr/doxytooltip/static/tippy/tippy-bundle.umd.min.js"
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Renders the tooltips of the documentation's Doxygen tooltip extension and is never linked into a firmware."
+Zephyr-Description = "Tippy.js Library"
+Zephyr-Origin = "https://atomiks.github.io/tippyjs/"
