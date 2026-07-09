@@ -2243,7 +2243,7 @@ static inline uint32_t k_uptime_seconds(void)
  * @param reftime Pointer to a reference time, which is updated to the current
  *                uptime upon return.
  *
- * @return Elapsed time.
+ * @return Elapsed time, in milliseconds.
  */
 static inline int64_t k_uptime_delta(int64_t *reftime)
 {
