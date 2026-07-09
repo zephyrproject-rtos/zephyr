@@ -23,3 +23,9 @@ dmic_dev: &pdm20 {
 	pinctrl-names = "default";
 	clock-source = "PCLK32M";
 };
+
+/ {
+	aliases {
+		dmic0 = &dmic_dev;
+	};
+};
