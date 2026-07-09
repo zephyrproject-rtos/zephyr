@@ -74,6 +74,9 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF7120_ENGA_CPUAPP NRF_A
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LM20B          NRF54LM20B_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LM20B_CPUAPP NRF_APPLICATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LM20B_CPUFLPR NRF_FLPR)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LV10A NRF54LV10A_XXAA)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LV10A_CPUAPP NRF_APPLICATION)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LV10A_CPUFLPR NRF_FLPR)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9120             NRF9120_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9160             NRF9160_XXAA)
 
@@ -297,6 +300,8 @@ mdk_svd_ifdef(CONFIG_SOC_NRF54LM20A_CPUAPP    nrf54l/nrf54lm20a/nrf54lm20a_appli
 mdk_svd_ifdef(CONFIG_SOC_NRF54LM20A_CPUFLPR   nrf54l/nrf54lm20a/nrf54lm20a_flpr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54LM20B_CPUAPP    nrf54l/nrf54lm20b/nrf54lm20b_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54LM20B_CPUFLPR   nrf54l/nrf54lm20b/nrf54lm20b_flpr.svd)
+mdk_svd_ifdef(CONFIG_SOC_NRF54LV10A_CPUAPP    nrf54l/nrf54lv10a/nrf54lv10a_application.svd)
+mdk_svd_ifdef(CONFIG_SOC_NRF54LV10A_CPUFLPR   nrf54l/nrf54lv10a/nrf54lv10a_flpr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF7120_ENGA_CPUAPP  nrf71/nrf7120_enga/nrf7120_enga_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF7120_ENGA_CPUFLPR nrf71/nrf7120_enga/nrf7120_enga_flpr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF9120              nrf91/nrf9120/nrf9120.svd)
