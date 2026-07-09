@@ -61,3 +61,11 @@ SPDX-License-Identifier = "MIT"
 SPDX-FileComment = "Used by the dashboard tool only and never linked into a Zephyr firmware image."
 Zephyr-Description = "Bootstrap JavaScript and CSS Files"
 Zephyr-Origin = "https://getbootstrap.com/"
+
+[[annotations]]
+path = "drivers/sensor/bosch/bmi08x/bmi08x_config_file.h"
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Sensor configuration data compiled into the firmware only when the BMI08x driver is enabled."
+Zephyr-Description = "Bosch BMI08x Sensor Configuration File"
+Zephyr-Origin = "https://github.com/BoschSensortec/BMI08x-Sensor-API"
+Zephyr-Kconfig-Condition = "CONFIG_BMI08X"
