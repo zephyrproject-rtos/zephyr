@@ -343,3 +343,13 @@ SPDX-License-Identifier = "MIT"
 SPDX-FileComment = "Converts firmware images to UF2 at build time and is never linked into the firmware."
 Zephyr-Description = "UF2 Conversion Script"
 Zephyr-Origin = "https://github.com/microsoft/uf2"
+
+[[annotations]]
+path = [
+    "include/zephyr/usb/class/usb_dfu.h",
+    "include/zephyr/usb/usb_device.h",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Part of the legacy USB device stack, compiled into the firmware only when it is enabled."
+Zephyr-Description = "USB Device Stack Headers"
+Zephyr-Kconfig-Condition = "CONFIG_USB_DEVICE_STACK"
