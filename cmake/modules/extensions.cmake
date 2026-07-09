@@ -441,7 +441,6 @@ endfunction()
 
 #]=======================================================================]
 function(zephyr_get_include_directories_for_lang lang i)
-function(zephyr_get_include_directories_for_lang lang i)
   zephyr_get_parse_args(args ${ARGN})
   get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
 
