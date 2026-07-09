@@ -2274,6 +2274,9 @@ static inline uint32_t k_cycle_get_32(void)
  * This routine returns the current time in 64-bits, as measured by the
  * system's hardware clock, if available.
  *
+ * @note Requires @kconfig{CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER}. When that
+ * option is not enabled this routine asserts and returns 0.
+ *
  * @see CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
  *
  * @return Current hardware clock up-counter (in cycles).
