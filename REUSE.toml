@@ -308,3 +308,13 @@ path = [
 SPDX-License-Identifier = "BSD-3-Clause"
 SPDX-FileComment = "Used by OpenOCD when programming and debugging the rv32m1_vega board. Never linked into the firmware."
 Zephyr-Description = "RV32M1 VEGA Board OpenOCD Configuration"
+
+[[annotations]]
+path = [
+    "samples/tfm_integration/tfm_secure_partition/dummy_partition/tfm_dummy_partition.yaml.in",
+    "samples/tfm_integration/tfm_secure_partition/dummy_partition/tfm_manifest_list.yaml.in",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Used only when building the TF-M secure partition integration sample."
+Zephyr-Description = "TF-M Secure Partition Sample Files"
+Zephyr-Origin = "https://www.trustedfirmware.org/projects/tf-m/"
