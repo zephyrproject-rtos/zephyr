@@ -285,3 +285,10 @@ SPDX-License-Identifier = "BSD-3-Clause"
 SPDX-FileComment = "Parse devicetree sources at build time and are never linked into the firmware."
 Zephyr-Description = "Python Devicetree Library Files"
 Zephyr-Origin = "https://github.com/zephyrproject-rtos/python-devicetree"
+
+[[annotations]]
+path = "scripts/dts/python-devicetree/tests/**/*.yaml"
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Used only when testing the python-devicetree library and never linked into the firmware."
+Zephyr-Description = "Python Devicetree Library Test Files"
+Zephyr-Origin = "https://github.com/zephyrproject-rtos/python-devicetree"
