@@ -142,3 +142,15 @@ SPDX-FileComment = "Compiled into the firmware only when getopt() support is ena
 Zephyr-Description = "getopt Command-line Parsing Files"
 Zephyr-Origin = "https://www.netbsd.org/"
 Zephyr-Kconfig-Condition = "CONFIG_GETOPT"
+
+[[annotations]]
+path = [
+    "doc/_static/css/custom.css",
+    "doc/_static/css/dark.css",
+    "doc/_static/css/light.css",
+    "doc/_static/js/custom.js",
+]
+SPDX-License-Identifier = "CC-BY-3.0"
+SPDX-FileComment = "Customize the Sphinx theme used to render the documentation and are never linked into a firmware."
+Zephyr-Description = "Godot Documentation Theme Files"
+Zephyr-Origin = "https://github.com/godotengine/godot-docs"
