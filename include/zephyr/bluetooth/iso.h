@@ -801,6 +801,16 @@ struct bt_iso_server {
 };
 
 /**
+ * @brief Lookup a bt_iso_chan object by its @ref bt_iso_chan.iso reference
+ *
+ * This is useful to get the corresponding bt_iso_chan object when using e.g. bt_conn_foreach.
+ *
+ * @param iso A connection object with type @ref BT_CONN_TYPE_ISO
+ * @return The corresponding bt_iso_chan object or NULL.
+ */
+struct bt_iso_chan *bt_iso_get_chan_by_conn(const struct bt_conn *iso);
+
+/**
  * @brief Register ISO server.
  *
  * Register ISO server, each new connection is authorized using the accept()
