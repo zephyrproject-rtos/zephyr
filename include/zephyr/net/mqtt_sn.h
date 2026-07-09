@@ -239,10 +239,10 @@ struct mqtt_sn_transport_udp {
  * @brief Initialize the UDP transport.
  *
  * @param[in] udp The transport to be initialized
- * @param[in] gwaddr Pre-initialized gateway address
- * @param[in] addrlen Size of the gwaddr structure.
+ * @param[in] gwaddr Broadcast address
+ * @param[in] addrlen Size of the bcaddr structure.
  */
-int mqtt_sn_transport_udp_init(struct mqtt_sn_transport_udp *udp, struct net_sockaddr *gwaddr,
+int mqtt_sn_transport_udp_init(struct mqtt_sn_transport_udp *udp, struct net_sockaddr *bcaddr,
 			       net_socklen_t addrlen);
 #endif
 
