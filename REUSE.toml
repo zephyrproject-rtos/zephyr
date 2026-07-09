@@ -299,3 +299,12 @@ SPDX-License-Identifier = "SHL-0.51"
 SPDX-FileComment = "RISC-V control and status register access helpers, also available under Apache-2.0; compiled into the firmware only on RISC-V targets."
 Zephyr-Description = "RISC-V Control and Status Register Header"
 Zephyr-Kconfig-Condition = "CONFIG_RISCV"
+
+[[annotations]]
+path = [
+    "boards/openisa/rv32m1_vega/support/openocd_rv32m1_vega_ri5cy.cfg",
+    "boards/openisa/rv32m1_vega/support/openocd_rv32m1_vega_zero_riscy.cfg",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Used by OpenOCD when programming and debugging the rv32m1_vega board. Never linked into the firmware."
+Zephyr-Description = "RV32M1 VEGA Board OpenOCD Configuration"
