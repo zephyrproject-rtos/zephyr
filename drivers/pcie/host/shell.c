@@ -45,6 +45,15 @@ struct pcie_cap_id_to_str {
 #define PCIE_MARGIN_CAP_MAX_T_STEPS(val)     (((val) >> 15) & 0x3FU)
 #define PCIE_MARGIN_CAP_MAX_T_STEPS_BIT(val) (((val) >> 21) & 0x1U)
 
+/* Standard PCI Power Management Capability ID */
+#define PCI_CAP_ID_PM 0x01U
+
+/* Power Management Control/Status Register (PMCSR) Relative Offsets & Masks */
+#define PCI_PM_CTRL_STATUS_REG (0x04U / 4U)
+#define PCI_PM_STATE_MASK      0x03U
+#define PCI_PM_STATE_D0        0x00U
+#define PCI_PM_STATE_D3HOT     0x03U
+
 static const struct pcie_cap_id_to_str pcie_cap_list[] = {
 	{ PCI_CAP_ID_PM,     "Power Management" },
 	{ PCI_CAP_ID_AGP,    "Accelerated Graphics Port" },
@@ -1138,6 +1147,68 @@ static int cmd_pcie_link_margin(const struct shell *sh, size_t argc, char **argv
 	return 0;
 }
 
+/* Subcommand: pcie device state <bus:dev.func> up|down */
+static int cmd_pcie_device_state(const struct shell *sh, size_t argc, char **argv)
+{
+	pcie_bdf_t bdf;
+	uint32_t id;
+	uint32_t pm_offset;
+	uint32_t pmcsr;
+	uint32_t target_state;
+
+	if (argc < 3) {
+		shell_error(sh, "Usage: pcie device state <bus:dev.func> up|down");
+		return -EINVAL;
+	}
+
+	bdf = get_bdf(argv[1]);
+	if (bdf == PCIE_BDF_NONE) {
+		shell_error(sh, "Invalid BDF format mapping specification.");
+		return -EINVAL;
+	}
+
+	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
+		shell_error(sh, "No responsive endpoint found at target BDF.");
+		return -ENODEV;
+	}
+
+	pm_offset = pcie_get_cap(bdf, PCI_CAP_ID_PM);
+	if (pm_offset == 0) {
+		shell_error(sh, "Target device does not support PCI Power Management.");
+		return -EOPNOTSUPP;
+	}
+
+	if (strcmp(argv[2], "up") == 0) {
+		target_state = PCI_PM_STATE_D0;
+	} else if (strcmp(argv[2], "down") == 0) {
+		target_state = PCI_PM_STATE_D3HOT;
+	} else {
+		shell_error(sh, "Invalid state token. Use 'up' for D0 or 'down' for D3hot.");
+		return -EINVAL;
+	}
+
+	pmcsr = pcie_conf_read(bdf, pm_offset + PCI_PM_CTRL_STATUS_REG);
+	pmcsr &= ~PCI_PM_STATE_MASK;
+	pmcsr |= target_state;
+	pcie_conf_write(bdf, pm_offset + PCI_PM_CTRL_STATUS_REG, pmcsr);
+
+	pmcsr = pcie_conf_read(bdf, pm_offset + PCI_PM_CTRL_STATUS_REG);
+
+	shell_print(sh, "====================================================================");
+	shell_print(sh, "   PCI HARDWARE TRANSCEIVER ENERGY REGISTRY STATUS: %u:%x.%u",
+		    PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf));
+	shell_print(sh, "====================================================================");
+	shell_print(sh, "   Current PMCSR Value Readout  : 0x%08X", pmcsr);
+	shell_print(sh, "   Physical Silicon Transceiver: [%s]",
+		    (pmcsr & PCI_PM_STATE_MASK) == PCI_PM_STATE_D3HOT
+			    ? "POWER GATED - D3hot LOW ENERGY SUSPEND"
+			    : "FULLY OPERATIONAL - D0 MAX PERFORMANCE");
+	shell_print(sh, "====================================================================");
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_pcie_mask_cmds,
 	SHELL_CMD_ARG(ignore, NULL, "Register a coordinate slot to be ignored by bus scans",
@@ -1175,6 +1246,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_pcie_device_cmds,
+	SHELL_CMD_ARG(state, NULL, "Power gate physical device state (up = D0, down = D3hot)",
+		      cmd_pcie_device_state, 3, 0),
+	SHELL_SUBCMD_SET_END);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_pcie_cmds,
 	SHELL_CMD_ARG(ls, NULL,
 		      "List PCIE devices\n"
@@ -1192,6 +1269,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD(irq, &sub_pcie_irq_cmds, "Trace legacy and vector interrupt message allocations",
 		  NULL),
 	SHELL_CMD(aer, &sub_pcie_aer_cmds, "Interact with PCIe Advanced Error Reporting metrics",
+		  NULL),
+	SHELL_CMD(device, &sub_pcie_device_cmds, "Manage pcie physical hardware device states",
 		  NULL),
 	SHELL_SUBCMD_SET_END);
 
