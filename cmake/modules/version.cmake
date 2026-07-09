@@ -63,8 +63,18 @@ foreach(type file IN ZIP_LISTS VERSION_TYPE VERSION_FILE)
   string(REGEX MATCH "VERSION_TWEAK = ([0-9]*)" _ ${ver})
   set(${type}_VERSION_TWEAK ${CMAKE_MATCH_1})
 
+  string(REGEX MATCH "VERSION_TWEAK = ([a-z0-9.-]*)" _ ${ver})
+  set(${type}_VERSION_TWEAK_STR ${CMAKE_MATCH_1})
+
   string(REGEX MATCH "EXTRAVERSION = ([a-z0-9.-]*)" _ ${ver})
   set(${type}_VERSION_EXTRA ${CMAKE_MATCH_1})
+
+  # Provide a numeric default for VERSION_TWEAK if not set or not numeric
+  if("${${type}_VERSION_TWEAK}" STREQUAL "")
+    set(${type}_VERSION_TWEAK 0)
+  elseif(NOT "${${type}_VERSION_TWEAK}" STREQUAL "${${type}_VERSION_TWEAK_STR}")
+    set(${type}_VERSION_TWEAK 0)
+  endif()
 
   # Validate all version fields fit in a single byte
   if(NOT DEFINED ${type}_VERSION_MAJOR OR ${type}_VERSION_MAJOR GREATER 255)
@@ -101,7 +111,11 @@ foreach(type file IN ZIP_LISTS VERSION_TYPE VERSION_FILE)
     set(${type}_VERSION_STRING     "${${type}_VERSION_WITHOUT_TWEAK}")
   endif()
   set(${type}_VERSION_TWEAK_STRING    "${${type}_VERSION_WITH_TWEAK}")
-  set(${type}_VERSION_EXTENDED_STRING "${${type}_VERSION_STRING}+${${type}_VERSION_TWEAK}")
+  if(${type}_VERSION_TWEAK_STR)
+    set(${type}_VERSION_EXTENDED_STRING "${${type}_VERSION_STRING}+${${type}_VERSION_TWEAK_STR}")
+  else()
+    set(${type}_VERSION_EXTENDED_STRING "${${type}_VERSION_STRING}")
+  endif()
 
   if(type STREQUAL KERNEL)
     set(PROJECT_VERSION_MAJOR      ${${type}_VERSION_MAJOR})
@@ -114,7 +128,7 @@ foreach(type file IN ZIP_LISTS VERSION_TYPE VERSION_FILE)
       set(PROJECT_VERSION_EXTRA_STR "-${PROJECT_VERSION_EXTRA}")
     endif()
 
-    if(${type}_VERSION_TWEAK)
+    if(${type}_VERSION_TWEAK_STR)
       set(PROJECT_VERSION ${${type}_VERSION_WITHOUT_TWEAK}.${${type}_VERSION_TWEAK})
     else()
       set(PROJECT_VERSION ${${type}_VERSION_WITHOUT_TWEAK})
