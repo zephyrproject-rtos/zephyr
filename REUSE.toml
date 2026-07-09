@@ -199,3 +199,16 @@ SPDX-FileComment = "Compiled into the firmware only when the minimal C library i
 Zephyr-Description = "Minimal libc atoi File"
 Zephyr-Origin = "https://musl.libc.org/"
 Zephyr-Kconfig-Condition = "CONFIG_MINIMAL_LIBC"
+
+[[annotations]]
+path = [
+    "lib/libc/minimal/source/stdlib/strtol.c",
+    "lib/libc/minimal/source/stdlib/strtoll.c",
+    "lib/libc/minimal/source/stdlib/strtoul.c",
+    "lib/libc/minimal/source/stdlib/strtoull.c",
+    "lib/libc/minimal/source/string/strstr.c",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Compiled into the firmware only when the minimal C library is selected."
+Zephyr-Description = "Minimal libc BSD String and Conversion Files"
+Zephyr-Kconfig-Condition = "CONFIG_MINIMAL_LIBC"
