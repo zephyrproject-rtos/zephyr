@@ -25,7 +25,7 @@ config SOC_MCXW727C
 
 config SOC_MCXW70AC
 	bool
-	select NXP_MCXW7XX_BOOT_HEADER if !BOOTLOADER_MCUBOOT
+	select NXP_MCXW7XX_BOOT_HEADER if !BOOTLOADER_MCUBOOT && !BUILD_WITH_TFM
 	select NXP_MCXW7X_BLE_CTRL if NXP_NBU
 	select NXP_MULTICORE if NXP_NBU
 	select CPU_HAS_ICACHE
@@ -33,7 +33,7 @@ config SOC_MCXW70AC
 
 config NXP_MCXW7XX_BOOT_HEADER
 	bool "Create boot header"
-	depends on !BOOTLOADER_MCUBOOT
+	depends on !BOOTLOADER_MCUBOOT && !BUILD_WITH_TFM
 	help
 	  Create data structures required by the boot ROM to boot the
 	  application from flash.

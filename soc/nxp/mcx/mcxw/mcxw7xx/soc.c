@@ -93,6 +93,7 @@ static void vbat_init(void)
 
 void soc_early_init_hook(void)
 {
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	unsigned int oldLevel; /* old interrupt lock level */
 
 	/* disable interrupts */
@@ -124,10 +125,12 @@ void soc_early_init_hook(void)
 
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
+#endif /* ! CONFIG_TRUSTED_EXECUTION_NONSECURE */
 }
 
 static int soc_nbu_init(void)
 {
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 #if defined(CONFIG_NXP_NBU)
 	nxp_nbu_init();
 #elif defined(CONFIG_PM)
@@ -158,6 +161,7 @@ static int soc_nbu_init(void)
 	RFMC->RF2P4GHZ_CFG |= RFMC_RF2P4GHZ_CFG_FORCE_DBG_PWRUP_ACK_MASK;
 	CMC_EnableDebugOperation(MCXW7_CMC_ADDR, true);
 #endif
+#endif /* ! CONFIG_TRUSTED_EXECUTION_NONSECURE */
 	return 0;
 }
 
