@@ -3930,6 +3930,26 @@ static const char *get_conn_role_str(uint8_t role)
 	}
 }
 
+#if defined(CONFIG_BT_ISO)
+static const char *iso_chan_type_str(enum bt_iso_chan_type type)
+{
+	switch (type) {
+	case BT_ISO_CHAN_TYPE_NONE:
+		return "None";
+	case BT_ISO_CHAN_TYPE_CENTRAL:
+		return "Central";
+	case BT_ISO_CHAN_TYPE_PERIPHERAL:
+		return "Peripheral";
+	case BT_ISO_CHAN_TYPE_BROADCASTER:
+		return "Broadcaster";
+	case BT_ISO_CHAN_TYPE_SYNC_RECEIVER:
+		return "Sync Receiver";
+	default:
+		return "Unknown";
+	}
+}
+#endif /* CONFIG_BT_ISO */
+
 static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_conn *conn = NULL;
@@ -4424,10 +4444,32 @@ static void connection_info(struct bt_conn *conn, void *user_data)
 			       conn_state_to_str(info.state));
 		break;
 #if defined(CONFIG_BT_ISO)
-	case BT_CONN_TYPE_ISO:
-		bt_shell_print(" #%u [ISO][%s] %s (%s)", info.id, role_str, bt_conn_dst_str(conn),
-			       conn_state_to_str(info.state));
+	case BT_CONN_TYPE_ISO: {
+		const struct bt_iso_chan *chan = bt_iso_get_chan_by_conn(conn);
+
+		if (chan != NULL) {
+			struct bt_iso_info iso_info;
+
+			selected = chan == &iso_chan ? "*" : " ";
+
+			err = bt_iso_chan_get_info(chan, &iso_info);
+			if (err != 0) {
+				bt_shell_error("Unable to get ISO info: chan %p (err %d)", chan,
+					       err);
+				return;
+			}
+
+			bt_shell_print("%s#%u [ISO][%s]: ISO interval %u us%s%s", selected, info.id,
+				       iso_chan_type_str(iso_info.type),
+				       BT_GAP_ISO_INTERVAL_TO_US(iso_info.iso_interval),
+				       iso_info.can_send ? " TX" : "",
+				       iso_info.can_recv ? " RX" : "");
+		} else {
+			return; /* return to avoid incrementing conn_count */
+		}
+
 		break;
+	}
 #endif
 	default:
 		break;
