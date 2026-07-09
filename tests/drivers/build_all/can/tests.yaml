@@ -6,6 +6,9 @@ common:
 tests:
   # One test definition per CAN controller driver, listed in alphanumeric order.
   # Typically only one board needed per test definition, unless driver handles multiple IP variants.
+  drivers.can.build_all.bflb_bl61x:
+    platform_allow:
+      - bl618g0
   drivers.can.build_all.esp32_twai:
     platform_allow:
       - olimex_esp32_evb/esp32/procpu
