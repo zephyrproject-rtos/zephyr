@@ -384,3 +384,13 @@ SPDX-FileComment = "Compiled into the firmware only when the xoshiro128++ PRNG i
 Zephyr-Description = "xoshiro128++ PRNG"
 Zephyr-Origin = "https://prng.di.unimi.it/"
 Zephyr-Kconfig-Condition = "CONFIG_XOSHIRO_RANDOM_GENERATOR"
+
+[[annotations]]
+path = [
+    "arch/xtensa/core/startup/memctl_default.S",
+    "arch/xtensa/core/startup/memerror_vector.S",
+]
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Compiled into the firmware only when the Xtensa reset vector is enabled."
+Zephyr-Description = "Xtensa Startup Assembly Files"
+Zephyr-Kconfig-Condition = "CONFIG_XTENSA_RESET_VECTOR"
