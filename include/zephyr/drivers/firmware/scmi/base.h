@@ -28,6 +28,9 @@
 /** @brief Special parameter to request the calling agent's identity from the platform. */
 #define SCMI_BASE_AGENT_ID_OWN 0xFFFFFFFF
 
+/** @brief Maximum protocol ID. */
+#define SCMI_BASE_PROTOCOL_ID_MAX 255
+
 /**
  * @brief SCMI base protocol revision information
  */
@@ -42,6 +45,8 @@ struct scmi_revision_info {
 	uint8_t num_agents;
 	/** A vendor-specific implementation version. */
 	uint32_t impl_ver;
+	/** A bitfield of supported protocols. */
+	uint32_t list_protocols[(SCMI_BASE_PROTOCOL_ID_MAX + 1) / 32];
 	/** A vendor identifier. */
 	char vendor_id[SCMI_SHORT_NAME_MAX_SIZE];
 	/** A sub-vendor identifier. */
