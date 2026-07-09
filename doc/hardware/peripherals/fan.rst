@@ -1,0 +1,30 @@
+.. _fan_api:
+
+Fan
+###
+
+The fan subsystem exposes an API to control cooling fans and similar variable-speed blowers
+uniformly, regardless of the underlying hardware.
+
+Basic Operation
+***************
+
+Applications obtain a fan device through devicetree and drive it through the functions in
+:zephyr_file:`include/zephyr/drivers/fan.h`:
+
+- :c:func:`fan_set_speed` sets the fan speed as a percentage of full speed, from 0 (stopped) to
+  :c:macro:`FAN_SPEED_MAX` (full speed).
+- :c:func:`fan_get_speed` returns the last speed requested through :c:func:`fan_set_speed`.
+
+Backends
+********
+
+One devicetree-discoverable backend is provided:
+
+- :dtcompatible:`fan-pwm` for fans whose speed is controlled by a PWM channel. The PWM duty cycle
+  sets the speed, from 0% (stopped) to 100% (full speed).
+
+API Reference
+*************
+
+.. doxygengroup:: fan_interface
