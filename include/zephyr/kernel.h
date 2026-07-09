@@ -1534,10 +1534,11 @@ const char *k_thread_name_get(k_tid_t thread);
  * @param thread Thread to obtain name information
  * @param buf Destination buffer
  * @param size Destination buffer size
- * @retval -ENOSPC Destination buffer too small
- * @retval -EFAULT Memory access error
- * @retval -ENOSYS Thread name feature not enabled
  * @retval 0 Success
+ * @retval -ENOSYS Thread name feature not enabled
+ * @retval -EINVAL Invalid thread object (user mode only)
+ * @retval -ENOSPC Destination buffer too small (user mode only)
+ * @retval -EFAULT Memory access error (user mode only)
  */
 __syscall int k_thread_name_copy(k_tid_t thread, char *buf,
 				 size_t size);
