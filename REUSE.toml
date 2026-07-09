@@ -353,3 +353,15 @@ SPDX-License-Identifier = "BSD-3-Clause"
 SPDX-FileComment = "Part of the legacy USB device stack, compiled into the firmware only when it is enabled."
 Zephyr-Description = "USB Device Stack Headers"
 Zephyr-Kconfig-Condition = "CONFIG_USB_DEVICE_STACK"
+
+[[annotations]]
+path = [
+    "subsys/net/lib/wireguard/crypto/**/*.c",
+    "subsys/net/lib/wireguard/crypto/**/*.h",
+    "subsys/net/lib/wireguard/wg_crypto.c",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Compiled into the firmware only when WireGuard is enabled."
+Zephyr-Description = "WireGuard VPN Files"
+Zephyr-Origin = "https://github.com/smartalock/wireguard-lwip"
+Zephyr-Kconfig-Condition = "CONFIG_WIREGUARD"
