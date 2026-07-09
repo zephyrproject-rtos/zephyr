@@ -1,4 +1,5 @@
 common:
+  timeout: 600
   build_only: true
   tags:
     - bluetooth
