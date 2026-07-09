@@ -5347,12 +5347,15 @@ __syscall int k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 /**
  * @brief Release allocated buffer for a queue
  *
- * Releases memory allocated for the ring buffer.
+ * Releases memory allocated for the ring buffer. The buffer is only
+ * freed if it was allocated by k_msgq_alloc_init(); the call succeeds
+ * but frees nothing for a caller-provided buffer. Any messages still
+ * in the queue are discarded with the buffer.
  *
  * @param msgq message queue to cleanup
  *
  * @retval 0 on success
- * @retval -EBUSY Queue not empty
+ * @retval -EBUSY Threads are waiting on the message queue
  */
 int k_msgq_cleanup(struct k_msgq *msgq);
 
