@@ -20,4 +20,13 @@ config SDIO_DEVICE_INIT_PRIORITY
 	help
 	  Device initialization priority for SDIO device controllers.
 
+config SDIO_DC_VIRTUAL
+	bool "Virtual (loopback) SDIO device controller"
+	default y
+	depends on DT_HAS_ZEPHYR_SDIO_DEVICE_VIRTUAL_ENABLED
+	help
+	  Software-only SDIO device controller that also exposes an in-process
+	  loopback transport for a host-role endpoint. Intended for tests and
+	  samples on platforms without SDIO hardware.
+
 endif # SDIO_DC

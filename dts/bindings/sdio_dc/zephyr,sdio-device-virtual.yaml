@@ -1,0 +1,22 @@
+# Copyright 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Virtual (loopback) SDIO device controller. Implements the SDIO device
+  controller class purely in software and exposes an in-process loopback
+  transport for a host-role endpoint. Intended for tests and samples.
+
+compatible: "zephyr,sdio-device-virtual"
+
+include: base.yaml
+
+properties:
+  num-functions:
+    type: int
+    default: 1
+    description: Number of I/O functions the controller can expose (1-7).
+
+  max-block-size:
+    type: int
+    default: 512
+    description: Maximum block size supported for block-mode transfers.
