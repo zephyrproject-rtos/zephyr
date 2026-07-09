@@ -1,0 +1,18 @@
+sample:
+  name: Fan Speed
+  description: |
+    Cycles a fan through a range of speeds and, when the hardware supports it, reads back the
+    measured rotation rate. Suitable for boards that expose a fan via the fan-pwm compatible
+    aliased as `fan0`.
+common:
+  platform_type:
+    - mcu
+  tags:
+    - drivers
+    - fan
+  filter: dt_alias_exists("fan0")
+  integration_platforms:
+    - b_u585i_iot02a
+tests:
+  sample.drivers.fan.speed:
+    harness: fan

@@ -1,0 +1,24 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	fan0: fan {
+		compatible = "fan-pwm";
+		status = "okay";
+		/* TIM4 channel 1 (PB6), 25 kHz drive frequency. */
+		pwms = <&pwm4 1 PWM_KHZ(25) PWM_POLARITY_NORMAL>;
+		/* Tachometer feedback on Arduino D2 (PD15), open-collector. */
+		tach-gpios = <&gpiod 15 GPIO_PULL_UP>;
+		pulses-per-revolution = <2>;
+	};
+
+	aliases {
+		fan0 = &fan0;
+	};
+};
