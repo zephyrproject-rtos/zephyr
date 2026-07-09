@@ -2031,42 +2031,6 @@ bool coap_remove_observer(struct coap_resource *resource,
 	return true;
 }
 
-static bool sockaddr_equal(const struct net_sockaddr *a,
-			   const struct net_sockaddr *b)
-{
-	/* FIXME: Should we consider ipv6-mapped ipv4 addresses as equal to
-	 * ipv4 addresses?
-	 */
-	if (a->sa_family != b->sa_family) {
-		return false;
-	}
-
-	if (a->sa_family == NET_AF_INET) {
-		const struct net_sockaddr_in *a4 = net_sin(a);
-		const struct net_sockaddr_in *b4 = net_sin(b);
-
-		if (a4->sin_port != b4->sin_port) {
-			return false;
-		}
-
-		return net_ipv4_addr_cmp(&a4->sin_addr, &b4->sin_addr);
-	}
-
-	if (b->sa_family == NET_AF_INET6) {
-		const struct net_sockaddr_in6 *a6 = net_sin6(a);
-		const struct net_sockaddr_in6 *b6 = net_sin6(b);
-
-		if (a6->sin6_port != b6->sin6_port) {
-			return false;
-		}
-
-		return net_ipv6_addr_cmp(&a6->sin6_addr, &b6->sin6_addr);
-	}
-
-	/* Invalid address family */
-	return false;
-}
-
 struct coap_observer *coap_find_observer(
 	struct coap_observer *observers, size_t len,
 	const struct net_sockaddr *addr,
