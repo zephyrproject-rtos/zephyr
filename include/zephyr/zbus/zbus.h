@@ -313,9 +313,11 @@ struct zbus_channel_observation {
 		.sem = Z_SEM_INITIALIZER(_CONCAT(_zbus_chan_data_, _name).sem, 1, 1),              \
 		IF_ENABLED(CONFIG_ZBUS_PRIORITY_BOOST,                                             \
 			   (.highest_observer_priority = ZBUS_MIN_THREAD_PRIORITY,))               \
-		 IF_ENABLED(CONFIG_ZBUS_RUNTIME_OBSERVERS,                                         \
+		IF_ENABLED(CONFIG_ZBUS_RUNTIME_OBSERVERS,                                          \
 			   (.observers = SYS_SLIST_STATIC_INIT(                                    \
 				&_CONCAT(_zbus_chan_data_, _name).observers),))                    \
+		IF_ENABLED(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION,                      \
+			   (.msg_subscriber_pool = NULL,))                                         \
 	};                                                                                         \
 	_ZBUS_CPP_EXTERN const STRUCT_SECTION_ITERABLE(zbus_channel, _name) = {                    \
 		ZBUS_CHANNEL_NAME_INIT(_name) /* Maybe removed */                                  \
@@ -325,8 +327,6 @@ struct zbus_channel_observation {
 		.user_data = _user_data,                                                           \
 		.validator = _validator,                                                           \
 		.data = &_CONCAT(_zbus_chan_data_, _name),                                         \
-		IF_ENABLED(ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION,                             \
-			   (.msg_subscriber_pool = &_zbus_msg_subscribers_pool,))                  \
 	}
 /* clang-format on */
 
