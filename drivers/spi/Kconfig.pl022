@@ -11,6 +11,7 @@ if SPI_PL022
 
 config SPI_PL022_INTERRUPT
 	bool "PL022 interrupt mode"
+	default y if SPI_INTERRUPT_DRIVEN
 	help
 	  Enables interrupt support for PL022 SPI driver.
 
