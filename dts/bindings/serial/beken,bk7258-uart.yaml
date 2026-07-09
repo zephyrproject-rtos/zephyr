@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Beken BK7258 UART controller
+
+compatible: "beken,bk7258-uart"
+
+include:
+  - name: uart-controller.yaml
+  - base.yaml
+  - pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  current-speed:
+    required: true
+
+  clocks:
+    required: true
