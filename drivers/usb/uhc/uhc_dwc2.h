@@ -55,8 +55,8 @@ struct uhc_dwc2_config {
 #define UHC_DWC2_QUIRK_DATA(dev)						\
 	(((const struct uhc_dwc2_config *)dev->config)->quirk_data)
 
-#if DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_usb_otg)
-#include "uhc_dwc2_esp32_usb_otg.h"
+#if DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_usb_otg_fs)
+#include "uhc_dwc2_esp32_usb_otg_fs.h"
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_usbhs_nrf54l)
