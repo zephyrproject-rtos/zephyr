@@ -22,6 +22,7 @@ config SPI_STM32_INTERRUPT
 
 config SPI_STM32_DMA
 	bool "STM32 MCU SPI DMA Support"
+	default y if SPI_DMA
 	select DMA
 	select CACHE_MANAGEMENT if DCACHE
 	help

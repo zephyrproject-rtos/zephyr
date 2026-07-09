@@ -18,6 +18,7 @@ config SPI_MAX32_INTERRUPT
 
 config SPI_MAX32_DMA
 	bool "MAX32 MCU SPI DMA Support"
+	default y if SPI_DMA
 	select DMA
 	select CACHE_MANAGEMENT if DCACHE
 	select SPI_MAX32_INTERRUPT if SPI_MAX32_RTIO
