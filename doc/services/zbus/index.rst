@@ -1143,7 +1143,8 @@ Related configuration options:
 * :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE` the available number of message
   buffers to be used simultaneously;
 * :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION` enables the developer to isolate
-  a pool for the message subscriber for a set of channels;
+  a pool for the message subscriber for a set of channels; a channel only switches to a dedicated pool once
+  :c:func:`zbus_chan_set_msg_sub_pool` has been called for it;
 * :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE` the biggest message of zbus
   channels to be transported into a message buffer;
 * :kconfig:option:`CONFIG_HEAP_MEM_POOL_ADD_SIZE_ZBUS` the reserved heap size for ZBus in a whole
