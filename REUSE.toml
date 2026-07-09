@@ -180,3 +180,14 @@ SPDX-License-Identifier = "ISC"
 SPDX-FileComment = "Used to process Kconfig files at build time and never linked into the firmware."
 Zephyr-Description = "Kconfiglib Configuration Library"
 Zephyr-Origin = "https://github.com/ulfalizer/Kconfiglib"
+
+[[annotations]]
+path = [
+    "modules/littlefs/zephyr_lfs_config.h",
+    "modules/littlefs/zephyr_lfs_crc.c",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Compiled into the firmware only when the littlefs file system is enabled."
+Zephyr-Description = "littlefs Configuration Files"
+Zephyr-Origin = "https://github.com/littlefs-project/littlefs"
+Zephyr-Kconfig-Condition = "CONFIG_FILE_SYSTEM_LITTLEFS"
