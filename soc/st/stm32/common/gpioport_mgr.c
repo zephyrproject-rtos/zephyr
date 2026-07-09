@@ -371,14 +371,16 @@ __maybe_unused static int stm32_gpioport_init(const struct device *dev)
 
 #define GPIO_PORT_DEVICE_INIT(__node, __suffix, __base_addr, __port)		\
 	static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {	\
-		.common = GPIO_COMMON_CONFIG_FROM_DT_NODE(__node),		\
+		IF_ENABLED(CONFIG_GPIO_STM32,					\
+			(.common = GPIO_COMMON_CONFIG_FROM_DT_NODE(__node),))	\
 		.base = (void *)__base_addr,					\
 		.port = __port,							\
 		IF_ENABLED(DT_NODE_HAS_PROP(__node, clocks),			\
 			   (.pclken = STM32_CLOCK_INFO(0, __node),))		\
 	};									\
 										\
-	static struct gpio_stm32_data gpio_stm32_data_## __suffix;		\
+	IF_ENABLED(CONFIG_GPIO_STM32,						\
+		(static struct gpio_stm32_data gpio_stm32_data_## __suffix;))	\
 										\
 	PM_DEVICE_DT_DEFINE(__node, stm32_gpioport_pm_action);			\
 										\
@@ -387,7 +389,9 @@ __maybe_unused static int stm32_gpioport_init(const struct device *dev)
 				     (stm32_gpioport_init),			\
 				     (NULL)),					\
 			 PM_DEVICE_DT_GET(__node),				\
-			 &gpio_stm32_data_## __suffix,				\
+			 COND_CODE_1(CONFIG_GPIO_STM32,				\
+				     (&gpio_stm32_data_## __suffix),		\
+				     (NULL)),					\
 			 &gpio_stm32_cfg_## __suffix,				\
 			 PRE_KERNEL_1,						\
 			 GPIO_PORT_INIT_PRIORITY)
