@@ -14,6 +14,7 @@ config SPI_MCUX_FLEXCOMM
 if SPI_MCUX_FLEXCOMM
 config SPI_MCUX_FLEXCOMM_DMA
 	bool "MCUX FLEXCOMM SPI DMA Support"
+	default y if SPI_DMA
 	select DMA
 	help
 	  Enable the SPI DMA mode for SPI instances

@@ -20,6 +20,7 @@ config SPI_GD32_INTERRUPT
 
 config SPI_GD32_DMA
 	bool "GD32 MCU SPI DMA Support"
+	default y if SPI_DMA
 	select DMA
 	select SPI_GD32_INTERRUPT
 	help
