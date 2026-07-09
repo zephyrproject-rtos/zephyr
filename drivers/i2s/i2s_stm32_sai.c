@@ -29,44 +29,6 @@ enum mclk_divider {
 	MCLK_DIV_512
 };
 
-static const uint32_t dma_priority[] = {
-#if defined(CONFIG_DMA_STM32U5)
-	DMA_LOW_PRIORITY_LOW_WEIGHT,
-	DMA_LOW_PRIORITY_MID_WEIGHT,
-	DMA_LOW_PRIORITY_HIGH_WEIGHT,
-	DMA_HIGH_PRIORITY,
-#else
-	DMA_PRIORITY_LOW,
-	DMA_PRIORITY_MEDIUM,
-	DMA_PRIORITY_HIGH,
-	DMA_PRIORITY_VERY_HIGH,
-#endif
-};
-
-#if defined(CONFIG_DMA_STM32U5)
-static const uint32_t dma_src_size[] = {
-	DMA_SRC_DATAWIDTH_BYTE,
-	DMA_SRC_DATAWIDTH_HALFWORD,
-	DMA_SRC_DATAWIDTH_WORD,
-};
-static const uint32_t dma_dest_size[] = {
-	DMA_DEST_DATAWIDTH_BYTE,
-	DMA_DEST_DATAWIDTH_HALFWORD,
-	DMA_DEST_DATAWIDTH_WORD,
-};
-#else
-static const uint32_t dma_p_size[] = {
-	DMA_PDATAALIGN_BYTE,
-	DMA_PDATAALIGN_HALFWORD,
-	DMA_PDATAALIGN_WORD,
-};
-static const uint32_t dma_m_size[] = {
-	DMA_MDATAALIGN_BYTE,
-	DMA_MDATAALIGN_HALFWORD,
-	DMA_MDATAALIGN_WORD,
-};
-#endif
-
 static const uint32_t sai_fifo_threshold[] = {
 	SAI_FIFOTHRESHOLD_EMPTY,
 	SAI_FIFOTHRESHOLD_1QF,
@@ -307,6 +269,7 @@ static int sai_sub_dma_init(const struct device *dev)
 	struct stm32_sai_sub_data *sub_data = dev->data;
 	struct stream *stream = &sub_data->stream;
 	struct dma_config *dma_cfg = &sub_data->stream.dma_cfg;
+	struct dma_block_config dma_block;
 	int ret;
 
 	SAI_HandleTypeDef *hsai = &sub_data->hsai;
@@ -319,6 +282,14 @@ static int sai_sub_dma_init(const struct device *dev)
 
 	/* Proceed to the minimum Zephyr DMA driver init */
 	dma_cfg->user_data = hdma;
+	if (dma_cfg->channel_direction == (enum dma_channel_direction)MEMORY_TO_PERIPHERAL) {
+		dma_block.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		dma_block.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	} else {
+		dma_block.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		dma_block.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+	}
+	dma_cfg->head_block = &dma_block;
 
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_cfg->linked_channel = STM32_DMA_HAL_OVERRIDE;
@@ -329,14 +300,12 @@ static int sai_sub_dma_init(const struct device *dev)
 		return ret;
 	}
 
-	hdma->Instance = STM32_DMA_GET_INSTANCE(stream->reg, stream->dma_channel);
-	hdma->Init.Mode = DMA_NORMAL;
-
-	if (dma_cfg->channel_priority >= ARRAY_SIZE(dma_priority)) {
-		LOG_ERR("Invalid DMA channel priority");
-		return -EINVAL;
+	ret = dma_stm32_zcfg_to_halcfg(dma_cfg, &hdma->Init);
+	if (ret < 0) {
+		return ret;
 	}
-	hdma->Init.Priority = dma_priority[dma_cfg->channel_priority];
+
+	hdma->Instance = STM32_DMA_GET_INSTANCE(stream->reg, stream->dma_channel);
 
 #if defined(DMA_CHANNEL_1)
 	hdma->Init.Channel = dma_cfg->dma_slot * DMA_CHANNEL_1;
@@ -344,59 +313,15 @@ static int sai_sub_dma_init(const struct device *dev)
 	hdma->Init.Request = dma_cfg->dma_slot;
 #endif
 
-	if (dma_cfg->source_data_size != dma_cfg->dest_data_size) {
-		LOG_ERR("Source and destination data sizes are not aligned");
-		return -EINVAL;
-	}
-
-	int idx = find_lsb_set(dma_cfg->source_data_size) - 1;
-
 #if defined(CONFIG_DMA_STM32U5)
-	if (idx >= ARRAY_SIZE(dma_src_size)) {
-		LOG_ERR("Invalid source and destination DMA data size");
-		return -EINVAL;
-	}
-
-	hdma->Init.SrcDataWidth = dma_src_size[idx];
-	hdma->Init.DestDataWidth = dma_dest_size[idx];
-	hdma->Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
 	hdma->Init.SrcBurstLength = 1;
 	hdma->Init.DestBurstLength = 1;
 	hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
-	hdma->Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
-#else
-	if (idx >= ARRAY_SIZE(dma_m_size)) {
-		LOG_ERR("Invalid peripheral and memory DMA data size");
-		return -EINVAL;
-	}
-
-	hdma->Init.PeriphDataAlignment = dma_p_size[idx];
-	hdma->Init.MemDataAlignment = dma_m_size[idx];
-	hdma->Init.PeriphInc = DMA_PINC_DISABLE;
-	hdma->Init.MemInc = DMA_MINC_ENABLE;
-#endif
-
-#if defined(DMA_FIFOMODE_DISABLE)
-	hdma->Init.FIFOMode = DMA_FIFOMODE_DISABLE;
 #endif
 
 	if (dma_cfg->channel_direction == (enum dma_channel_direction)MEMORY_TO_PERIPHERAL) {
-		hdma->Init.Direction = DMA_MEMORY_TO_PERIPH;
-
-#if defined(CONFIG_DMA_STM32U5)
-		hdma->Init.SrcInc = DMA_SINC_INCREMENTED;
-		hdma->Init.DestInc = DMA_DINC_FIXED;
-#endif
-
 		__HAL_LINKDMA(hsai, hdmatx, sub_data->hdma);
 	} else {
-		hdma->Init.Direction = DMA_PERIPH_TO_MEMORY;
-
-#if defined(CONFIG_DMA_STM32U5)
-		hdma->Init.SrcInc = DMA_SINC_FIXED;
-		hdma->Init.DestInc = DMA_DINC_INCREMENTED;
-#endif
-
 		__HAL_LINKDMA(hsai, hdmarx, sub_data->hdma);
 	}
 
