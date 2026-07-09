@@ -75,13 +75,39 @@ LOG_MODULE_REGISTER(stm32_gpioport_mgr);
 		DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpio##port),	\
 					  st_stm32mp2_gpio, okay))
 
-#define GET_GPIOPORT_DEVICE_OR_NULL(port)				\
-	COND_CODE_1(GPIOPORT_DEVICE_IS_ACTIVE(port),			\
-		    (DEVICE_DT_GET(DT_NODELABEL(gpio##port))), (NULL))
+/*
+ * Name used for GPIO port devices when not instantiated as implementers
+ * of the GPIO API. This differs from the name expected by DEVICE_DT_GET()
+ * on purpose to ensure "__device_dts_ord_N not found" errors if a caller
+ * tried to obtain a pointer to any GPIO port device, which are private
+ * to this module and its consumers when CONFIG_GPIO_STM32=n.
+ */
+#define DUMMY_GPIO_NAME(node_id)						\
+	CONCAT(dummy_, DT_DEP_ORD(node_id), _, DT_NODE_FULL_NAME_TOKEN(node_id))
+
+#define GET_GPIOPORT_DEVICE_OR_NULL(port)					\
+	COND_CODE_1(GPIOPORT_DEVICE_IS_ACTIVE(port),				\
+	(COND_CODE_1(CONFIG_GPIO_STM32,						\
+		(DEVICE_DT_GET(DT_NODELABEL(gpio##port))),			\
+		(DEVICE_GET(DUMMY_GPIO_NAME(DT_NODELABEL(gpio##port)))))),	\
+		(NULL))
 
 /* UTIL_INC() is needed because LAST_LIST_ELEM_INDEX() is zero-based */
 #define LAST_ACTIVE_GPIO_PORT_IDX	\
 	UTIL_INC(LAST_LIST_ELEM_INDEX(GPIOPORT_DEVICE_IS_ACTIVE, STM32_GPIO_PORTS_LIST_LWR))
+
+#if !defined(CONFIG_GPIO_STM32)
+/*
+ * Pre-declare dummy devices if they will be used
+ * (i.e., if the STM32 GPIO driver is not enabled).
+ */
+#define DECLARE_DUMMY_DEVICE_IF_ENABLED(port)					\
+	IF_ENABLED(GPIOPORT_DEVICE_IS_ACTIVE(port),				\
+		(DEVICE_DECLARE(DUMMY_GPIO_NAME(DT_NODELABEL(gpio##port)))))
+FOR_EACH(DECLARE_DUMMY_DEVICE_IF_ENABLED, (;),
+	 GET_ARGS_FIRST_N(LAST_ACTIVE_GPIO_PORT_IDX, STM32_GPIO_PORTS_LIST_LWR));
+#endif /* !CONFIG_GPIO_STM32 */
+
 /**
  * @brief Array containing pointers to each GPIO port.
  *
@@ -309,85 +335,6 @@ __maybe_unused static int stm32_gpioport_init(const struct device *dev)
 	return pm_device_driver_init(dev, stm32_gpioport_pm_action);
 }
 
-#if !defined(CONFIG_GPIO_STM32)
-/*
- * The GPIO API is implemented entirely in the header file
- * so it can be *called* even when CONFIG_GPIO=n. A build
- * error would usually occur if one attempted to do that
- * since you also need a reference to the GPIO device to
- * use the API, and those devices are not instantiated when
- * their driver doesn't exist... but in our case, we always
- * instantiate the GPIO port nodes even when CONFIG_GPIO=n.
- * We originally set the `api` pointer to NULL in this case
- * but this is actually quite dangerous, since applications
- * that tried to use the GPIO API without enabling CONFIG_GPIO
- * would build fine but crash at runtime when the GPIO API
- * functions dereference the NULL `api` pointer.
- *
- * Provide a dummy implementation of the GPIO API where all
- * mandatory functions return -ENOSYS after printing a big
- * error message such that applications don't crash anymore.
- * Optional functions are not implemented to lower footprint.
- *
- * A broader rework would be necessary to allow not instancing
- * any of the GPIO port devices when CONFIG_GPIO_STM32=n, which
- * would restore the previous build-time-error behavior; for
- * now, this shall suffice.
- */
-static int illegal_gpio_api_usage(void)
-{
-	LOG_ERR("Attempting to use GPIO API without enabling it!");
-	return -ENOSYS;
-}
-
-static int dummy_gpio_pin_configure(const struct device *port, gpio_pin_t pin,
-				    gpio_flags_t flags)
-{
-	ARG_UNUSED(port); ARG_UNUSED(pin); ARG_UNUSED(flags);
-	return illegal_gpio_api_usage();
-}
-
-static int dummy_gpio_port_get_raw(const struct device *port, gpio_port_value_t *value)
-{
-	ARG_UNUSED(port); ARG_UNUSED(value);
-	return illegal_gpio_api_usage();
-}
-
-static int dummy_gpio_port_set_masked_raw(const struct device *port,
-					  gpio_port_pins_t mask, gpio_port_value_t value)
-{
-	ARG_UNUSED(port); ARG_UNUSED(mask); ARG_UNUSED(value);
-	return illegal_gpio_api_usage();
-}
-
-static int dummy_gpio_port_set_bits_raw(const struct device *port, gpio_port_pins_t pins)
-{
-	ARG_UNUSED(port); ARG_UNUSED(pins);
-	return illegal_gpio_api_usage();
-}
-
-static int dummy_gpio_port_clear_bits_raw(const struct device *port, gpio_port_pins_t pins)
-{
-	ARG_UNUSED(port); ARG_UNUSED(pins);
-	return illegal_gpio_api_usage();
-}
-
-static int dummy_gpio_port_toggle_bits(const struct device *port, gpio_port_pins_t pins)
-{
-	ARG_UNUSED(port); ARG_UNUSED(pins);
-	return illegal_gpio_api_usage();
-}
-
-static DEVICE_API(gpio, dummy_gpio_api) = {
-	.pin_configure = dummy_gpio_pin_configure,
-	.port_get_raw = dummy_gpio_port_get_raw,
-	.port_set_masked_raw = dummy_gpio_port_set_masked_raw,
-	.port_set_bits_raw = dummy_gpio_port_set_bits_raw,
-	.port_clear_bits_raw = dummy_gpio_port_clear_bits_raw,
-	.port_toggle_bits = dummy_gpio_port_toggle_bits,
-};
-#endif /* !CONFIG_GPIO_STM32 */
-
 #if defined(CONFIG_GPIO)
 #define GPIO_PORT_INIT_PRIORITY CONFIG_GPIO_INIT_PRIORITY
 #else /* CONFIG_GPIO */
@@ -397,6 +344,30 @@ static DEVICE_API(gpio, dummy_gpio_api) = {
  */
 #define GPIO_PORT_INIT_PRIORITY CONFIG_KERNEL_INIT_PRIORITY_DEFAULT
 #endif /* CONFIG_GPIO */
+
+#if defined(CONFIG_GPIO_STM32)
+/* Instantiate nodes as proper devices implementing the GPIO API */
+#define DO_DEVICE_DEFINE(__node, __init_fn, __pm, __data, __cfg, __lvl, __prio)	\
+	DEVICE_DT_DEFINE(__node, __init_fn, __pm, __data, __cfg,		\
+			 __lvl, __prio, &gpio_stm32_driver)
+#else /* CONFIG_GPIO_STM32 */
+/*
+ * Perform instantiation using DEVICE_DEFINE() to ensure the resulting
+ * `struct device` does NOT have the name that DEVICE_DT_GET() looks for.
+ * This ensures that naive consumers cause a build failure with the usual
+ * linker error "__device_dts_ord_N not found", as would be the case if we
+ * instantiated the devices from a C source file added to the build only
+ * when CONFIG_GPIO_STM32=y. The downside of this approach is that we lose
+ * all checks associated to devices: dependency tracking, init priority
+ * checking, etc. but given that only enlightened callers will interact with
+ * these devices when CONFIG_GPIO_STM32=n, it should be safe enough...
+ *
+ * Note that in this situation, we instantiate the devices with `api = NULL`.
+ */
+#define DO_DEVICE_DEFINE(__node, __init_fn, __pm, __data, __cfg, __lvl, __prio)	\
+	DEVICE_DEFINE(DUMMY_GPIO_NAME(__node), DEVICE_DT_NAME(__node),		\
+		      __init_fn, __pm, __data, __cfg, __lvl, __prio, NULL)
+#endif /* CONFIG_GPIO_STM32 */
 
 #define GPIO_PORT_DEVICE_INIT(__node, __suffix, __base_addr, __port)		\
 	static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {	\
@@ -411,7 +382,7 @@ static DEVICE_API(gpio, dummy_gpio_api) = {
 										\
 	PM_DEVICE_DT_DEFINE(__node, stm32_gpioport_pm_action);			\
 										\
-	DEVICE_DT_DEFINE(__node,						\
+	DO_DEVICE_DEFINE(__node,						\
 			 COND_CODE_1(DT_NODE_HAS_PROP(__node, clocks),		\
 				     (stm32_gpioport_init),			\
 				     (NULL)),					\
@@ -419,9 +390,7 @@ static DEVICE_API(gpio, dummy_gpio_api) = {
 			 &gpio_stm32_data_## __suffix,				\
 			 &gpio_stm32_cfg_## __suffix,				\
 			 PRE_KERNEL_1,						\
-			 GPIO_PORT_INIT_PRIORITY,				\
-			 COND_CODE_1(IS_ENABLED(CONFIG_GPIO_STM32),		\
-				(&gpio_stm32_driver), (&dummy_gpio_api)))
+			 GPIO_PORT_INIT_PRIORITY)
 
 #define GPIO_PORT_DEVICE_INIT_STM32(__suffix, __SUFFIX)				\
 	GPIO_PORT_DEVICE_INIT(DT_NODELABEL(gpio##__suffix),			\
