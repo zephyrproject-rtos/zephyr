@@ -183,8 +183,8 @@ bool hl78xx_gnss_search_is_queued(struct hl78xx_gnss_data *gnss);
 /**
  * @brief Check if GNSS search is active or pending
  *
- * Returns true if GNSS is in any state other than IDLE, meaning configuration
- * changes should not be allowed.
+ * Returns true if GNSS is in any state other than IDLE, meaning a GNSS
+ * session is active or pending.
  */
 bool hl78xx_gnss_is_active(struct hl78xx_gnss_data *gnss);
 /**
