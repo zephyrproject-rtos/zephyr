@@ -509,10 +509,10 @@ SECTIONS {
   . = ADDR_CACHED(z_mapped_end);
   z_mapped_end = .;
   . = L2_SRAM_BASE + L2_SRAM_SIZE;
-  . = ADDR_UNCACHED(z_mapped_end);
+  . = ADDR_UNCACHED(.);
   _heap_end = .;
   _heap_sentry = .;
-  . = ADDR_CACHED(z_mapped_end);
+  . = ADDR_CACHED(.);
   _image_ram_end = .;
 
   /* dma buffers */

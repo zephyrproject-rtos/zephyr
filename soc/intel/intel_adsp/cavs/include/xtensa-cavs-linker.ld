@@ -289,7 +289,7 @@ SECTIONS {
   . = ADDR_UNCACHED(__bss_end);
   _end = ALIGN(8);
   . = L2_SRAM_BASE + L2_SRAM_SIZE;
-  . = ADDR_UNCACHED(__bss_end);
+  . = ADDR_UNCACHED(.);
   _heap_sentry = .;
 
   /* dma buffers */
