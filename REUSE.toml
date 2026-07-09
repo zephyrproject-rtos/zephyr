@@ -85,3 +85,14 @@ SPDX-License-Identifier = "GPL-2.0"
 SPDX-FileComment = "Used by Coccinelle, a tool for transforming C code, and never linked into the firmware."
 Zephyr-Description = "Coccinelle Scripts"
 Zephyr-Origin = "https://coccinelle.gitlabpages.inria.fr/website/"
+
+[[annotations]]
+path = [
+    "scripts/checkpatch.pl",
+    "scripts/checkstack.pl",
+    "scripts/spelling.txt",
+]
+SPDX-License-Identifier = "GPL-2.0"
+SPDX-FileComment = "Used in Continuous Integration (CI) and never linked into the firmware."
+Zephyr-Description = "Continuous Integration Scripts"
+Zephyr-Origin = "https://www.kernel.org/"
