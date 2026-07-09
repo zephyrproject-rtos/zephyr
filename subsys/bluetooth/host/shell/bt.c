@@ -2722,6 +2722,32 @@ static int cmd_adv_select(const struct shell *sh, size_t argc, char *argv[])
 	return -ENOEXEC;
 }
 
+static const char *ext_adv_state_to_str(enum bt_le_ext_adv_state state)
+{
+	switch (state) {
+	case BT_LE_EXT_ADV_STATE_DISABLED:
+		return "Disabled";
+	case BT_LE_EXT_ADV_STATE_ENABLED:
+		return "Enabled";
+	default:
+		return "Unknown";
+	}
+}
+
+static const char *per_adv_state_to_str(enum bt_le_per_adv_state state)
+{
+	switch (state) {
+	case BT_LE_PER_ADV_STATE_NONE:
+		return "None";
+	case BT_LE_PER_ADV_STATE_DISABLED:
+		return "Disabled";
+	case BT_LE_PER_ADV_STATE_ENABLED:
+		return "Enabled";
+	default:
+		return "Unknown";
+	}
+}
+
 static int cmd_adv_info(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
@@ -2740,11 +2766,13 @@ static int cmd_adv_info(const struct shell *sh, size_t argc, char *argv[])
 
 	shell_print(sh, "Advertiser[%d] %p", selected_adv, adv);
 	shell_print(sh, "Id: %d, SID %u, TX power: %d dBm", info.id, info.sid, info.tx_power);
-	shell_print(sh, "Adv state: %d", info.ext_adv_state);
+	shell_print(sh, "Adv state: %s (%d)", ext_adv_state_to_str(info.ext_adv_state),
+		    info.ext_adv_state);
 	print_le_addr("Address", info.addr);
 
 	if (IS_ENABLED(CONFIG_BT_PER_ADV)) {
-		shell_print(sh, "Per Adv state: %d", info.per_adv_state);
+		shell_print(sh, "Per Adv state: %s (%d)", per_adv_state_to_str(info.per_adv_state),
+			    info.per_adv_state);
 	}
 
 	return 0;
