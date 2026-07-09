@@ -191,3 +191,11 @@ SPDX-FileComment = "Compiled into the firmware only when the littlefs file syste
 Zephyr-Description = "littlefs Configuration Files"
 Zephyr-Origin = "https://github.com/littlefs-project/littlefs"
 Zephyr-Kconfig-Condition = "CONFIG_FILE_SYSTEM_LITTLEFS"
+
+[[annotations]]
+path = "lib/libc/minimal/source/stdlib/atoi.c"
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Compiled into the firmware only when the minimal C library is selected."
+Zephyr-Description = "Minimal libc atoi File"
+Zephyr-Origin = "https://musl.libc.org/"
+Zephyr-Kconfig-Condition = "CONFIG_MINIMAL_LIBC"
