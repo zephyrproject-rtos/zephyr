@@ -11,6 +11,10 @@
 #include <hal/pmu_ll.h>
 #endif
 
+#if defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_PM)
+extern esp_err_t sleep_clock_icg_startup_init(void);
+#endif
+
 void z_sys_poweroff(void)
 {
 	/* Forces RTC domain to be always on */
@@ -28,6 +32,15 @@ void z_sys_poweroff(void)
 
 #if CONFIG_PM
 	esp32_sleep_gpio_prepare();
+#endif
+
+#if defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_PM)
+	/*
+	 * Deep-sleep entry needs the REGDMA clock-ICG context. The PM path
+	 * sets it up during sleep retention init; deep-sleep-only builds have
+	 * no such path, so set it up here before entering deep sleep.
+	 */
+	sleep_clock_icg_startup_init();
 #endif
 	esp_deep_sleep_start();
 }
