@@ -108,3 +108,10 @@ SPDX-License-Identifier = "MIT"
 SPDX-FileComment = "Style the Doxygen API documentation and are never linked into a firmware."
 Zephyr-Description = "Doxygen Awesome CSS Theme Files"
 Zephyr-Origin = "https://github.com/jothepro/doxygen-awesome-css"
+
+[[annotations]]
+path = "boards/ene/kb1200_evb/support/openocd.cfg"
+SPDX-License-Identifier = "GPL-2.0-or-later"
+SPDX-FileComment = "Used by OpenOCD when programming and debugging the kb1200_evb board. Never linked into the firmware."
+Zephyr-Description = "ENE KB1200_EVB Board OpenOCD Configuration"
+Zephyr-Origin = "https://openocd.org/"
