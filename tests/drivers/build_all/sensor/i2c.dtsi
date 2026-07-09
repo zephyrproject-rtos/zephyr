@@ -1652,3 +1652,9 @@ test_i2c_icm40627: icm40627@d6 {
 	accel-fs = <16>;
 	gyro-fs = <2000>;
 };
+
+test_i2c_max30009: max30009@d7 {
+	compatible = "adi,max30009";
+	reg = <0xd7>;
+	int-gpios = <&test_gpio 0 0>;
+};
