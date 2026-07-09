@@ -43,4 +43,12 @@ config SDIO_HOST_DATA_TIMEOUT_MS
 
 endif # SDIO_HOST
 
+config SDIO_DEVICE
+	bool "SDIO device/slave role"
+	depends on SDIO_DC
+	help
+	  Enable the device/slave-role subsystem. An SDIO device endpoint
+	  exposes function I/O space, register windows and FIFOs to a remote
+	  SDIO host through an SDIO device controller (SDIO_DC).
+
 endif # SDIO
