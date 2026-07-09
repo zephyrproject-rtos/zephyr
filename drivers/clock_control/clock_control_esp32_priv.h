@@ -76,6 +76,7 @@
 #include <soc/lp_clkrst_reg.h>
 #include <soc/pmu_reg.h>
 #include <soc/regi2c_dig_reg.h>
+#include <soc/regi2c_bias.h>
 #include <regi2c_ctrl.h>
 #include <esp32p4/rom/rtc.h>
 #include <soc/dport_access.h>
@@ -90,6 +91,7 @@
 #include <esp_cpu.h>
 #include <esp_private/esp_clk.h>
 #include <esp_private/esp_clk_tree_common.h>
+#include <esp_private/esp_sleep_internal.h>
 #include <esp_private/periph_ctrl.h>
 #include <esp_private/rtc_clk.h>
 #include <esp_rom_caps.h>
@@ -113,6 +115,8 @@
  * build, selected from CMakeLists.txt by SoC series.
  */
 int esp32_select_rtc_slow_clk(uint8_t slow_clk);
+
+void esp32_select_rtc_fast_clk(uint8_t fast_clk);
 
 int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg);
 

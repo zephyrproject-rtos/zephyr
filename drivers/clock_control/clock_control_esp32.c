@@ -113,7 +113,7 @@ static int clock_control_esp32_configure(const struct device *dev, clock_control
 
 	switch ((int)sys) {
 	case ESP32_CLOCK_CONTROL_SUBSYS_RTC_FAST:
-		rtc_clk_fast_src_set(new_cfg->rtc.rtc_fast_clock_src);
+		esp32_select_rtc_fast_clk(new_cfg->rtc.rtc_fast_clock_src);
 		break;
 	case ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW:
 		ret = esp32_select_rtc_slow_clk(new_cfg->rtc.rtc_slow_clock_src);
@@ -149,7 +149,7 @@ static int clock_control_esp32_init(const struct device *dev)
 		return ret;
 	}
 
-	rtc_clk_fast_src_set(cfg->rtc.rtc_fast_clock_src);
+	esp32_select_rtc_fast_clk(cfg->rtc.rtc_fast_clock_src);
 
 	ret = esp32_select_rtc_slow_clk(cfg->rtc.rtc_slow_clock_src);
 	if (ret) {

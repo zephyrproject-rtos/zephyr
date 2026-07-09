@@ -120,6 +120,17 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 	return 0;
 }
 
+void esp32_select_rtc_fast_clk(uint8_t fast_clk)
+{
+	rtc_clk_fast_src_set(fast_clk);
+
+#if SOC_CLK_LP_FAST_SUPPORT_XTAL
+	if (fast_clk == SOC_RTC_FAST_CLK_SRC_XTAL) {
+		esp_sleep_sub_mode_config(ESP_SLEEP_RTC_FAST_USE_XTAL_MODE, true);
+	}
+#endif
+}
+
 static bool clock_init_done;
 
 static void esp32_cpu_clock_init(const struct esp32_cpu_clock_config *cpu_cfg)
@@ -142,6 +153,10 @@ static void esp32_cpu_clock_init(const struct esp32_cpu_clock_config *cpu_cfg)
 	REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_FORCE_DIG_DREG, 1);
 	REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_RTC_REG, 0);
 	REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_DIG_REG, 0);
+	REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_OR_FORCE_XPD_CK, 0);
+	REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_OR_FORCE_XPD_REF_OUT_BUF, 0);
+	REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_OR_FORCE_XPD_IPH, 0);
+	REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_OR_FORCE_XPD_VGATE_BUF, 0);
 #elif defined(CONFIG_SOC_SERIES_ESP32H2)
 	REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OC_SCK_DCAP, rtc_clk_cfg.slow_clk_dcap);
 	REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_EN_I2C_RTC_DREG, 0);

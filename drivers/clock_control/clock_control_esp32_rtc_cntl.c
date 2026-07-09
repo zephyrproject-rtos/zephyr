@@ -103,6 +103,11 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 	return 0;
 }
 
+void esp32_select_rtc_fast_clk(uint8_t fast_clk)
+{
+	rtc_clk_fast_src_set(fast_clk);
+}
+
 #undef ESP32_RTC_EXT_SLOW_CLK_SRC
 #undef ESP32_RTC_EXT_CLK_CAL_SRC
 
