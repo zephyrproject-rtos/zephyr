@@ -19,6 +19,12 @@ config FAN_INIT_PRIORITY
 	help
 	  System initialization priority for fan drivers.
 
+config FAN_SHELL
+	bool "Fan shell"
+	depends on SHELL
+	help
+	  Enable the fan shell for testing fan drivers from the console.
+
 rsource "Kconfig.fan_pwm"
 
 endif # FAN
