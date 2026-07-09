@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Caleb Perkinson
+ * Copyright (c) 2026 Deere & Company
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <J1939Timer.h>
