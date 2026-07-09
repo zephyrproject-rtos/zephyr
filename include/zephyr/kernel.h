@@ -1234,6 +1234,8 @@ int k_thread_cpu_mask_enable_all(k_tid_t thread);
  *
  * @note You should enable @kconfig{CONFIG_SCHED_CPU_MASK} in your project
  * configuration.
+ * @note If @kconfig{CONFIG_SCHED_CPU_MASK_PIN_ONLY} is enabled the mask must
+ * contain exactly one CPU, so enabling a second CPU is not supported.
  *
  * @param thread Thread to operate upon
  * @param cpu CPU index
