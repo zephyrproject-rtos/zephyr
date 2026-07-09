@@ -253,3 +253,13 @@ SPDX-License-Identifier = "MIT"
 SPDX-FileComment = "Used by Tippy.js to position the documentation's Doxygen tooltips and is never linked into a firmware."
 Zephyr-Description = "Popper.js Library"
 Zephyr-Origin = "https://popper.js.org/"
+
+[[annotations]]
+path = [
+    "include/zephyr/posix/fnmatch.h",
+    "subsys/portability/posix/c_lib_ext/fnmatch.c",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Compiled into the firmware only when the POSIX C library extensions are enabled."
+Zephyr-Description = "POSIX fnmatch Files"
+Zephyr-Kconfig-Condition = "CONFIG_POSIX_C_LIB_EXT"
