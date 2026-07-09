@@ -212,3 +212,13 @@ SPDX-License-Identifier = "BSD-3-Clause"
 SPDX-FileComment = "Compiled into the firmware only when the minimal C library is selected."
 Zephyr-Description = "Minimal libc BSD String and Conversion Files"
 Zephyr-Kconfig-Condition = "CONFIG_MINIMAL_LIBC"
+
+[[annotations]]
+path = [
+    "doc/_extensions/zephyr/domain/static/css/nouislider.min.css",
+    "doc/_extensions/zephyr/domain/static/js/nouislider.min.js",
+]
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Provides the flash/RAM range sliders in the board catalog and is never linked into a firmware."
+Zephyr-Description = "noUiSlider Library"
+Zephyr-Origin = "https://refreshless.com/nouislider/"
