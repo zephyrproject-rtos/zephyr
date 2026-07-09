@@ -96,3 +96,15 @@ SPDX-License-Identifier = "GPL-2.0"
 SPDX-FileComment = "Used in Continuous Integration (CI) and never linked into the firmware."
 Zephyr-Description = "Continuous Integration Scripts"
 Zephyr-Origin = "https://www.kernel.org/"
+
+[[annotations]]
+path = [
+    "doc/_doxygen/doxygen-awesome-darkmode-toggle.js",
+    "doc/_doxygen/doxygen-awesome-sidebar-only-darkmode-toggle.css",
+    "doc/_doxygen/doxygen-awesome-sidebar-only.css",
+    "doc/_doxygen/doxygen-awesome.css",
+]
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Style the Doxygen API documentation and are never linked into a firmware."
+Zephyr-Description = "Doxygen Awesome CSS Theme Files"
+Zephyr-Origin = "https://github.com/jothepro/doxygen-awesome-css"
