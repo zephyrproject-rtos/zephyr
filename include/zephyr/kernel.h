@@ -686,6 +686,8 @@ __syscall int k_thread_join(struct k_thread *thread, k_timeout_t timeout);
  * sleep rounded up to the nearest millisecond (e.g. if the thread was
  * awoken by the \ref k_wakeup call).  Will be clamped to INT_MAX in
  * the case where the remaining time is unrepresentable in an int32_t.
+ * If @a timeout is K_FOREVER and the thread is woken early via
+ * k_wakeup(), -1 is returned.
  */
 __syscall int32_t k_sleep(k_timeout_t timeout);
 
