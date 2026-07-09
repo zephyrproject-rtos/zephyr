@@ -365,3 +365,14 @@ SPDX-FileComment = "Compiled into the firmware only when WireGuard is enabled."
 Zephyr-Description = "WireGuard VPN Files"
 Zephyr-Origin = "https://github.com/smartalock/wireguard-lwip"
 Zephyr-Kconfig-Condition = "CONFIG_WIREGUARD"
+
+[[annotations]]
+path = [
+    "drivers/xen/gnttab.c",
+    "include/zephyr/xen/public/**/*.h",
+]
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Compiled into the firmware only when Xen guest support is enabled."
+Zephyr-Description = "Xen Hypervisor Interface Files"
+Zephyr-Origin = "https://xenproject.org/"
+Zephyr-Kconfig-Condition = "CONFIG_XEN"
