@@ -2643,7 +2643,7 @@ struct z_futex_data {
  *		   will not wait on it.
  * @param timeout Waiting period on the futex, or one of the special values
  *                K_NO_WAIT or K_FOREVER.
- * @retval -EACCES Caller does not have read access to futex address.
+ * @retval -EACCES Caller does not have write access to futex address.
  * @retval -EAGAIN If the futex value did not match the expected parameter.
  * @retval -EINVAL Futex parameter address not recognized by the kernel.
  * @retval -ETIMEDOUT Thread woke up due to timeout and not a futex wakeup.
