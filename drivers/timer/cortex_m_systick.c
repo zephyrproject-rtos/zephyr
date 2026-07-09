@@ -35,22 +35,67 @@ extern unsigned int z_clock_hw_cycles_per_sec;
 /* Largest delta we can program into the 24-bit LOAD register. */
 #define MAX_CYCLES ((uint32_t)COUNTER_MAX)
 
-/* Minimum cycles in the future to try to program.  Note that this is
- * NOT simply "enough cycles to get the counter read and reprogrammed
- * reliably" -- it becomes the minimum value of the LOAD register, and
- * thus reflects how much time we can reliably see expire between
- * calls to elapsed() to read the COUNTFLAG bit.  So it needs to be
- * set to be larger than the maximum time the interrupt might be
- * masked.  Choosing a fraction of a tick is probably a good enough
- * default, with an absolute minimum of 1k cyc.
+/* Minimum reload the driver will program, i.e. the closest-in timeout it can
+ * schedule. Two floors apply.
  *
- * The MIN_DELAY can be overridden via device tree property "zephyr,min-timeout-cycles"
- * for boards with low-frequency clock sources (e.g., 32kHz).
+ * Hardware: LOAD is programmed as (cycles - 1), and a LOAD of zero stops the
+ * counter (it reloads to zero and never makes another 1->0 transition, so no
+ * further interrupt), so the smallest usable value is two cycles (LOAD 1).
+ *
+ * Masking: it must also exceed the longest time the SysTick interrupt can stay
+ * masked. elapsed() reconstructs the current cycle count assuming at most one
+ * wrap of the counter has happened since it last ran; it cannot tell one wrap
+ * from several. With a tiny LOAD the counter wraps every few cycles, so if
+ * interrupts are then held off longer than that LOAD (a long critical section,
+ * or a higher-priority ISR that runs for a while) the counter wraps two or
+ * more times before the SysTick ISR can account for it. Each unaccounted wrap
+ * silently drops a full LOAD's worth of cycles: the software clock falls
+ * permanently behind real time and every pending timeout fires late by that
+ * much. A floor above the worst-case masking window guarantees at most one
+ * wrap between reads, which elapsed() does handle.
+ *
+ * That is a wall-clock budget, so express it as a fixed time converted to
+ * cycles at the actual frequency (k_us_to_cyc_ceil32() follows the runtime
+ * rate where the timer reports it), computed at init. A fixed cycle count is
+ * meaningless across clock rates: the old 1024-cycle floor is ~10 us at
+ * 100 MHz but ~31 ms (31 ticks!) on a 32 kHz SysTick. The tick rate is
+ * deliberately not involved; if the resulting value exceeds one tick on some
+ * clock, sub-tick timeouts are simply unavailable there.
+ *
+ * Keep it as small as correctness allows, not as large as a tick would
+ * permit: this is a floor for safe rescheduling, not a jitter control.
+ * Inflating it does trim the short-period tail, but it eats sub-tick headroom,
+ * and as it approaches CYC_PER_TICK the driver can no longer place a timeout
+ * inside the current tick, so the small per-ISR surplus is carried over and
+ * two ticks get announced at once (a double expiry). 10 us is under a cycle at
+ * 32 kHz, where the two-cycle hardware floor takes over; either way it stays
+ * far below CYC_PER_TICK.
+ *
+ * A device tree "zephyr,min-timeout-cycles" property still overrides the
+ * budget, subject to the same two-cycle hardware floor.
  */
-#define MIN_DELAY DT_PROP_OR(DT_NODELABEL(systick), zephyr_min_timeout_cycles, \
-			MAX(1024U, ((uint32_t)CYC_PER_TICK/16U)))
+#define SYSTICK_MIN_DELAY_US 10U
+
+static inline uint32_t systick_min_delay(void)
+{
+	uint32_t override_cyc =
+		DT_PROP_OR(DT_NODELABEL(systick), zephyr_min_timeout_cycles, 0U);
+	uint32_t cyc = (override_cyc != 0U) ? override_cyc
+					    : k_us_to_cyc_ceil32(SYSTICK_MIN_DELAY_US);
+
+	/* Floor at two cycles: LOAD is programmed as (cycles - 1) and a LOAD
+	 * of zero stops the counter. This is the binding floor on a slow clock
+	 * (e.g. 32 kHz, where the 10 us budget rounds below it).
+	 */
+	return MAX(2U, cyc);
+}
 
 static uint32_t last_load;
+
+/* Minimum LOAD value; derived from the cycle rate in sys_clock_driver_init()
+ * (and refreshed on a runtime frequency change). See systick_min_delay().
+ */
+static uint32_t min_delay;
 
 #ifdef CONFIG_CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
 typedef uint64_t cycle_t;
@@ -118,6 +163,10 @@ void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz)
 
 	/* Publish the new frequency. */
 	z_clock_hw_cycles_per_sec = new_hz;
+
+	/* The floor is a wall-clock budget, so re-derive it at the new rate. */
+	min_delay = systick_min_delay();
+
 	uint32_t load_old = last_load;
 
 	if (load_old != TIMER_STOPPED) {
@@ -146,7 +195,7 @@ void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz)
 			new_load = CYC_PER_TICK;
 		}
 
-		new_load = MAX(new_load, MIN_DELAY);
+		new_load = MAX(new_load, min_delay);
 		if (new_load > COUNTER_MAX) {
 			new_load = COUNTER_MAX;
 		}
@@ -415,7 +464,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 		 * range and we start losing cycles permanently. In the 64-bit
 		 * cycle_t configuration this branch is statically unreachable.
 		 */
-		cycles = MIN_DELAY;
+		cycles = min_delay;
 	} else {
 		/*
 		 * Compute the number of cycles from 'now' to a tick-aligned
@@ -434,7 +483,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 		 * reliably service the next ISR. A past-deadline request
 		 * (delta_64 <= 0) is pulled up to MIN_DELAY to fire ASAP.
 		 */
-		cycles = CLAMP(delta_64, (int64_t)MIN_DELAY, (int64_t)MAX_CYCLES);
+		cycles = CLAMP(delta_64, (int64_t)min_delay, (int64_t)MAX_CYCLES);
 	}
 
 	/*
@@ -602,6 +651,7 @@ static int sys_clock_driver_init(void)
 {
 
 	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
+	min_delay = systick_min_delay();
 	last_load = CYC_PER_TICK;
 	overflow_cyc = 0U;
 	SysTick->LOAD = last_load - 1;
