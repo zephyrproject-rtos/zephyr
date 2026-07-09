@@ -222,3 +222,15 @@ SPDX-License-Identifier = "MIT"
 SPDX-FileComment = "Provides the flash/RAM range sliders in the board catalog and is never linked into a firmware."
 Zephyr-Description = "noUiSlider Library"
 Zephyr-Origin = "https://refreshless.com/nouislider/"
+
+[[annotations]]
+path = [
+    "drivers/tee/optee/optee_msg.h",
+    "drivers/tee/optee/optee_rpc_cmd.h",
+    "drivers/tee/optee/optee_smc.h",
+]
+SPDX-License-Identifier = "BSD-2-Clause"
+SPDX-FileComment = "Compiled into the firmware only when the OP-TEE driver is enabled."
+Zephyr-Description = "OP-TEE Message Interface Headers"
+Zephyr-Origin = "https://www.op-tee.org/"
+Zephyr-Kconfig-Condition = "CONFIG_OPTEE"
