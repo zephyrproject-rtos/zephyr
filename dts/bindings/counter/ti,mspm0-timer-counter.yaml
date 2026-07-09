@@ -20,4 +20,9 @@ properties:
     type: int
     required: true
     description: |
-      Counter resolution
+      Counter resolution in bits (16 or 32).
+
+  channels:
+    type: int
+    required: true
+    description: Number of alarm channels available on this timer instance.
