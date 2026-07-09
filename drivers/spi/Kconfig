@@ -34,6 +34,19 @@ config SPI_DMA
 	  by default keep doing so when this is left disabled. To force a
 	  driver out of DMA mode, clear its own SPI_*_DMA symbol instead.
 
+config SPI_INTERRUPT_DRIVEN
+	bool "Interrupt-driven SPI transfers (generic request)"
+	help
+	  Generic request for interrupt-driven SPI transfers, independent of
+	  vendor. Each SPI driver that supports an interrupt-driven mode enables
+	  its own implementation symbol (SPI_*_INTERRUPT) in response; drivers
+	  without one ignore it.
+
+	  As with SPI_DMA this only requests the mode, it cannot turn it off:
+	  leaving it disabled does not override a driver that is interrupt
+	  driven by default. Clear the driver's own SPI_*_INTERRUPT symbol for
+	  that.
+
 config SPI_ASYNC
 	bool "Asynchronous call support"
 	depends on MULTITHREADING

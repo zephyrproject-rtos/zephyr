@@ -13,6 +13,7 @@ if SPI_MAX32
 
 config SPI_MAX32_INTERRUPT
 	bool "MAX32 MCU SPI Interrupt Support"
+	default y if SPI_INTERRUPT_DRIVEN
 	help
 	  Enable interrupt support for MAX32 MCU SPI driver.
 

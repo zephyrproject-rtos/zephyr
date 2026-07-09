@@ -14,6 +14,7 @@ if ESP32_SPIM
 
 config SPI_ESP32_INTERRUPT
 	bool "ESP32 SPI interrupt mode"
+	default y if SPI_INTERRUPT_DRIVEN
 	help
 	  Enables interrupt support for ESP32 SPI driver.
 
