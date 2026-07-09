@@ -172,7 +172,7 @@ m_mode_srst_loop:
 
 m_mode_srst_unsupported:
     li a0, SBI_ERR_NOT_SUPPORTED
-    sr a0, 3 * REGBYTES(sp)
+    sr a0, OFF_A0(sp)
     j m_mode_return
 
 m_mode_handle_interrupt:
