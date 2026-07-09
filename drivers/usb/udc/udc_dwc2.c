@@ -1700,6 +1700,9 @@ static int dwc2_core_soft_reset(const struct device *dev)
 	/* Apply Core Soft Reset */
 	sys_write32(USB_DWC2_GRSTCTL_CSFTRST, grstctl_reg);
 
+	/* GlblIntrMsk may survive CSftRst on some cores. Clear it explicitly */
+	sys_clear_bits((mem_addr_t)&base->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
+
 	cnt = 0UL;
 	do {
 		if (++cnt > csr_timeout_us) {
