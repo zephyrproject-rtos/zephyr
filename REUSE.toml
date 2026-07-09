@@ -51,3 +51,13 @@ SPDX-FileCopyrightText = "Copyright The Zephyr Project Contributors"
 #   Zephyr-Origin            URL of the upstream project the files come from.
 #   Zephyr-Kconfig-Condition Kconfig option(s) gating whether the files end up in
 #                            a build, rendered as :kconfig:option: references.
+
+[[annotations]]
+path = [
+    "scripts/dashboard/static/css/bootstrap-chop.css",
+    "scripts/dashboard/static/js/bootstrap-chop.js",
+]
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Used by the dashboard tool only and never linked into a Zephyr firmware image."
+Zephyr-Description = "Bootstrap JavaScript and CSS Files"
+Zephyr-Origin = "https://getbootstrap.com/"
