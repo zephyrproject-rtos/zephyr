@@ -270,7 +270,6 @@ static int udc_mcux_handler_out(const struct device *dev, uint8_t ep,
 	udc_mcux_unlock(dev);
 
 	if (buf == NULL) {
-		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		return -ENOBUFS;
 	}
 
@@ -323,7 +322,6 @@ static int udc_mcux_handler_in(const struct device *dev, uint8_t ep,
 
 	buf = udc_buf_peek(cfg);
 	if (buf == NULL) {
-		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		return -ENOBUFS;
 	}
 
@@ -338,7 +336,6 @@ static int udc_mcux_handler_in(const struct device *dev, uint8_t ep,
 	udc_mcux_unlock(dev);
 
 	if (buf == NULL) {
-		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		return -ENOBUFS;
 	}
 	if (ep == USB_CONTROL_EP_IN) {
