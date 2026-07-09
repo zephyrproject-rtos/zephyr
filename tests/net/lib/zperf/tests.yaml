@@ -1,0 +1,11 @@
+common:
+  depends_on: netif
+  tags:
+    - net
+    - zperf
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  timeout: 60
+tests:
+  net.zperf: {}
