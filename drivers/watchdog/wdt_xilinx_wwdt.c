@@ -105,10 +105,8 @@ static int wdt_xilinx_wwdt_install_timeout(const struct device *dev,
 		goto out;
 	}
 
-	if (cfg->flags != WDT_FLAG_RESET_SOC) {
-		ret = -ENOTSUP;
-		goto out;
-	}
+	/* Reset action is owned by platform firmware (PLM/CDO); cfg->flags is not interpreted. */
+	LOG_WRN("WDT_FLAG_RESET_* not honored; reset action is owned by firmware (PLM/CDO)");
 
 	timeout_ms = cfg->window.max;
 	max_hw_timeout_ms = (XWWDT_MAX_COUNT_WINDOW_COMBINED * 1000) / config->wdt_clock_freq;
