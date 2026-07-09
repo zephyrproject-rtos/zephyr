@@ -1247,6 +1247,41 @@ def write_global_macros(edt: edtlib.EDT):
             out_dt_define(f"{bus_id}_DESCENDANT_NUM_ON_BUS_{bus_ident}", count)
             out_dt_define(f"{bus_id}_DESCENDANT_NUM_ON_BUS_{bus_ident}_STATUS_OKAY", count_ok)
 
+    cpu_nodes = list(
+        filter(
+            lambda n: n.path.startswith("/cpus/cpu@")
+            and n.parent.path == "/cpus"
+            and n.status == "okay",
+            edt.nodes,
+        )
+    )
+    ident = "CPUS"
+
+    out_comment('Macros for status "okay" /cpus/cpu* nodes\n')
+
+    out_dt_define(f"{ident}_NUM_OKAY", len(cpu_nodes))
+
+    out_dt_define(
+        f"{ident}_FOREACH_OKAY(fn)", " ".join(f"fn(DT_{node.z_path_id})" for node in cpu_nodes)
+    )
+
+    out_dt_define(
+        f"{ident}_FOREACH_OKAY_VARGS(fn, ...)",
+        " ".join(f"fn(DT_{node.z_path_id}, __VA_ARGS__)" for node in cpu_nodes),
+    )
+
+    out_dt_define(
+        f"{ident}_FOREACH_OKAY_SEP(fn, sep)",
+        " DT_DEBRACKET_INTERNAL sep ".join(f"fn(DT_{node.z_path_id})" for node in cpu_nodes),
+    )
+
+    out_dt_define(
+        f"{ident}_FOREACH_OKAY_SEP_VARGS(fn, sep, ...)",
+        " DT_DEBRACKET_INTERNAL sep ".join(
+            f"fn(DT_{node.z_path_id}, __VA_ARGS__)" for node in cpu_nodes
+        ),
+    )
+
 
 def str2ident(s: str) -> str:
     # Converts 's' to a form suitable for (part of) an identifier
