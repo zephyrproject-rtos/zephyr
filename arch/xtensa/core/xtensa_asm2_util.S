@@ -11,6 +11,13 @@
 #include <xtensa/simcall.h>
 #endif
 
+#if defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
+#include <adsp_fatal_breadcrumb.h>
+#else
+.macro adsp_triple_fault_breadcrumb
+.endm
+#endif
+
 /*
  * xtensa_spill_reg_windows
  *
@@ -603,6 +610,7 @@ _TripleFault:
 	movi a2, SYS_exit
 	simcall
 #endif
+	adsp_triple_fault_breadcrumb
 1:
 	j	1b
 
