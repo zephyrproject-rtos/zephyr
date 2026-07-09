@@ -1,0 +1,5 @@
+tests:
+  buildsystem.app_version.semver:
+    tags: version
+    integration_platforms:
+      - native_sim
