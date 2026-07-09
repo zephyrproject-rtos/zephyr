@@ -331,12 +331,9 @@ static int udp_recv_data(struct net_socket_service_event *pev)
 	}
 
 	if ((pev->event.revents & ZSOCK_POLLERR) ||
-	    (pev->event.revents & ZSOCK_POLLNVAL) ||
-	    (pev->event.revents & ZSOCK_POLLHUP)) {
+	    (pev->event.revents & ZSOCK_POLLNVAL)) {
 		if (pev->event.revents & ZSOCK_POLLNVAL) {
 			default_error = EBADF;
-		} else if (pev->event.revents & ZSOCK_POLLHUP) {
-			default_error = ENOTCONN;
 		}
 
 		(void)zsock_getsockopt(pev->event.fd, ZSOCK_SOL_SOCKET,
