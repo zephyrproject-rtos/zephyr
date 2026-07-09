@@ -7058,7 +7058,7 @@ __syscall int k_float_disable(struct k_thread *thread);
  *
  * @warning
  * This routine should only be used to enable floating point support for
- * a thread that currently has such support enabled.
+ * a thread that does not currently have such support enabled.
  *
  * @param thread  ID of thread.
  * @param options architecture dependent options
