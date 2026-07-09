@@ -8,6 +8,7 @@
 
 #include <ti/cc35xxe.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include "boosterpack_connector.dtsi"
 #include "lp_em_cc35x1-pinctrl.dtsi"
 
 / {
