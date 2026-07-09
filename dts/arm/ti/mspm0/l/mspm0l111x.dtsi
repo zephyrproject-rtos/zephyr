@@ -17,7 +17,7 @@
 		timg0: timg0@40084000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40084000 0x2000>;
-			clocks = <&ckm MSPM0_CLOCK_LFCLK>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
 			interrupts = <16 0>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
@@ -32,7 +32,7 @@
 		timg8: timg8@40090000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40090000 0x2000>;
-			clocks = <&ckm MSPM0_CLOCK_LFCLK>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
 			interrupts = <2 0>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
@@ -55,7 +55,7 @@
 		timg1: timg1@40486000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40486000 0x2000>;
-			clocks = <&ckm MSPM0_CLOCK_LFCLK>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
 			interrupts = <22 0>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
