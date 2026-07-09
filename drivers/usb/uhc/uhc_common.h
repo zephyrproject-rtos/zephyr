@@ -131,6 +131,33 @@ void uhc_xfer_reschedule_periodic(const struct device *dev, struct uhc_transfer 
 				  uint32_t frame_number);
 
 /**
+ * @brief Defer a UHC transfer for the next frame.
+ *
+ * Puts back the UHC transfer at the top of list.
+ * Periodic transfers get put at their exact place in the queue,
+ * so it is allowed to defer periodic transfer in any order.
+ *
+ * @param[in] dev      Pointer to device struct of the driver instance
+ * @param[in] xfer     Pointer to UHC transfer that should be deferred.
+ *
+ * @return 0 on success, all other values should be treated as error.
+ */
+int uhc_xfer_defer_active(const struct device *dev, struct uhc_transfer *const xfer);
+
+/**
+ * @brief Defer all UHC transfers for a later time.
+ *
+ * Puts back all UHC transfers at the top of list.
+ * Periodic transfers get put at their exact place in the queue,
+ * so it is allowed to defer periodic transfer in any order.
+ *
+ * @param[in] dev      Pointer to device struct of the driver instance
+ *
+ * @return 0 on success, all other values should be treated as error.
+ */
+int uhc_xfer_defer_all_active(const struct device *dev);
+
+/**
  * @brief Helper to get next transfer to process.
  *
  * Return the next transfer that matches the provided mask and is accepted by
