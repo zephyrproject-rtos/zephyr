@@ -4,20 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&ecspi1 {
+spi_loopback: &ecspi1 {
 	status = "okay";
-
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <500000>;
-	};
-
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <16000000>;
-	};
 };
 
 &gpio2 {
@@ -27,3 +15,5 @@
 &gpio5 {
 	status = "okay";
 };
+
+#include "../spi-loopback.dtsi"
