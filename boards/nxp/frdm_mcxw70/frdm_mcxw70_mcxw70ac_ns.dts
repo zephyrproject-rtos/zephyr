@@ -1,0 +1,71 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/mcx/nxp_mcxw70_ns.dtsi>
+#include "frdm_mcxw70_common.dtsi"
+
+/ {
+	model = "NXP FRDM-MCXW70 board non-secure";
+};
+
+&flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@17a000 {
+			label = "storage";
+			reg = <0x17a000 DT_SIZE_K(24)>;
+		};
+	};
+};
+
+&flw {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		tfm_secure_partition: partition@0 {
+			label = "tfm-secure";
+			reg = <0x00000 DT_SIZE_K(160)>;
+		};
+
+		code_partition: partition@28000 {
+			label = "code";
+			reg = <0x28000 DT_SIZE_K(128)>;
+		};
+	};
+};
+
+&stcm {
+	/delete-node/ system_memory@0;
+
+	stcm0: system_memory@c000 {
+		compatible = "mmio-sram";
+		reg = <0x0c000 0x1ce00>;
+	};
+};
+
+&stcm_shared {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	zephyr,memory-region = "STCM_SHARED";
+	ranges = <0x0 0x2002e000 DT_SIZE_K(8)>;
+	reg = <0x2e000 DT_SIZE_K(8)>;
+	#address-cells = <1>;
+	#size-cells = <1>;
+};
+
+&shmem_fwk {
+	reg = <0x200 0x100>;
+};
+
+&shmem_rpmsg {
+	reg = <0x300 0xa00>;
+};

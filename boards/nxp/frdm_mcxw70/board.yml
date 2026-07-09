@@ -4,3 +4,5 @@ board:
   vendor: nxp
   socs:
     - name: mcxw70ac
+      variants:
+      - name: ns
