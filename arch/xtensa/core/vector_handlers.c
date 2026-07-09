@@ -20,6 +20,7 @@
 #include <xtensa_stack.h>
 
 #if defined(CONFIG_XTENSA_ADSP_FATAL_BREADCRUMB)
+#include <adsp_memory.h>
 #include <mem_window.h>
 #include <zephyr/cache.h>
 #endif
@@ -581,9 +582,15 @@ void *xtensa_excint1_c(void *esf)
 	if (cause != EXCCAUSE_LEVEL1_INTERRUPT) {
 		volatile uint32_t *win0 = (volatile uint32_t *)sys_cache_uncached_ptr_get((void *)HP_SRAM_WIN0_BASE);
 
-		if ((win0[1] >> 28) != 0xeU) {
+		if (win0[0] == 0U) {
 			win0[0] = (uint32_t)bsa->pc;
+#if defined(CONFIG_XTENSA_ADSP_FATAL_BREADCRUMB_DATA_VADDR)
+			win0[1] = (uint32_t)bsa->excvaddr;
+#elif defined(CONFIG_XTENSA_ADSP_FATAL_BREADCRUMB_DATA_A0)
+			win0[1] = (uint32_t)bsa->a0;
+#else
 			win0[1] = 0xe0000000U | ((uint32_t)cause & 0xffU);
+#endif
 			win0[2] = (uint32_t)bsa->excvaddr;
 			win0[4] = *(volatile uint32_t *)((uint32_t)bsa->pc & ~3U);
 		}
