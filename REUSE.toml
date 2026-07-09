@@ -122,3 +122,11 @@ SPDX-License-Identifier = "((GPL-2.0 WITH Linux-syscall-note) OR BSD-2-Clause)"
 SPDX-FileComment = "Used under the BSD-2-Clause option of its dual license. Only built when the gating option is enabled."
 Zephyr-Description = "FUSE Interface Definition Header File"
 Zephyr-Kconfig-Condition = "CONFIG_FUSE_CLIENT"
+
+[[annotations]]
+path = "subsys/testsuite/coverage/coverage.h"
+SPDX-License-Identifier = "GPL-3.0-or-later WITH GCC-exception-3.1"
+SPDX-FileComment = "Linked into the firmware only when GCOV coverage is enabled; covered by the GCC Runtime Library Exception."
+Zephyr-Description = "GCOV Coverage Header File"
+Zephyr-Origin = "https://gcc.gnu.org/"
+Zephyr-Kconfig-Condition = "CONFIG_COVERAGE_GCOV"
