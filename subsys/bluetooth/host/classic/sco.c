@@ -42,8 +42,36 @@ static sys_slist_t sco_hci_cbs = SYS_SLIST_STATIC_INIT(&sco_hci_cbs);
 #define sco(buf) ((struct bt_conn_rx *)net_buf_user_data(buf))
 
 #if defined(CONFIG_BT_VOICE_OVER_HCI)
+static atomic_ptr_t buf_rx_freed_cb;
+
+static void sco_in_pool_destroy(struct net_buf *buf)
+{
+	bt_sco_buf_rx_freed_cb_t cb;
+
+	cb = (bt_sco_buf_rx_freed_cb_t)atomic_ptr_get(&buf_rx_freed_cb);
+
+#if defined(CONFIG_BT_HCI_SCO_FLOW_CONTROL)
+	if (bt_dev.br.sco_c2h_fc_enabled) {
+		bt_hci_host_num_completed_packets(buf);
+	} else {
+		net_buf_destroy(buf);
+	}
+#else
+	net_buf_destroy(buf);
+#endif /* CONFIG_BT_HCI_SCO_FLOW_CONTROL */
+
+	if (cb != NULL) {
+		cb();
+	}
+}
+
+void bt_sco_buf_rx_freed_cb_set(bt_sco_buf_rx_freed_cb_t cb)
+{
+	atomic_ptr_set(&buf_rx_freed_cb, (void *)cb);
+}
+
 NET_BUF_POOL_FIXED_DEFINE(sco_rx_pool, BT_BUF_SCO_RX_COUNT, BT_BUF_SCO_RX_SIZE,
-			  sizeof(struct bt_conn_rx), NULL);
+			  sizeof(struct bt_conn_rx), sco_in_pool_destroy);
 
 struct net_buf *bt_sco_get_rx(k_timeout_t timeout)
 {

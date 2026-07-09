@@ -631,6 +631,7 @@ static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 static int send_sco(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 {
 	struct bt_hci_sco_hdr *hdr;
+	int err;
 
 	switch (flags) {
 	case FRAG_SINGLE:
@@ -646,7 +647,18 @@ static int send_sco(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 
 	net_buf_push_u8(buf, BT_HCI_H4_SCO);
 
-	return bt_send(buf);
+	err = bt_send(buf);
+	if (err != 0) {
+		return err;
+	}
+
+	if (bt_dev.br.sco_h2c_fc_enabled) {
+		return 0;
+	}
+
+	/* Make the TX complete for SCO connections if H2C flow control is disabled */
+	bt_conn_tx_complete(conn, 1);
+	return 0;
 }
 
 static inline uint16_t conn_mtu(struct bt_conn *conn)

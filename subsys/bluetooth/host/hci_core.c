@@ -338,7 +338,7 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 	uint16_t handle = acl(buf)->handle;
 	struct bt_hci_handle_count *hc;
 	struct bt_conn *conn;
-	uint8_t index = acl(buf)->index;
+	enum bt_conn_type type = BT_CONN_TYPE_LE;
 
 	if (IS_ENABLED(CONFIG_BT_TESTING)) {
 		bt_testing_trace_event_acl_pool_destroy(buf);
@@ -351,9 +351,17 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 		return;
 	}
 
-	conn = bt_conn_lookup_index(index);
-	if (!conn) {
-		LOG_WRN("Unable to look up conn with index 0x%02x", index);
+	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+		type |= BT_CONN_TYPE_BR;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_VOICE_OVER_HCI)) {
+		type |= BT_CONN_TYPE_SCO;
+	}
+
+	conn = bt_conn_lookup_handle(handle, type);
+	if (conn == NULL) {
+		LOG_WRN("Unable to look up conn with handle 0x%02x", handle);
 		return;
 	}
 
@@ -705,6 +713,39 @@ int bt_get_df_cte_type(uint8_t hci_cte_type)
 }
 
 #if defined(CONFIG_BT_CONN_TX)
+void bt_conn_tx_complete(struct bt_conn *conn, uint16_t count)
+{
+	while (count--) {
+		sys_snode_t *node;
+		unsigned int key;
+
+		/* move the next TX context from the `pending` list to the `complete` list. */
+		node = sys_slist_get(&conn->tx_pending);
+
+		if (!node) {
+			LOG_ERR("packets count mismatch");
+			__ASSERT_NO_MSG(0);
+			break;
+		}
+
+		k_sem_give(bt_conn_get_pkts(conn));
+
+		/* The `complete` list is consumed from another context,
+		 * which uses the same lock.
+		 */
+		key = irq_lock();
+		sys_slist_append(&conn->tx_complete, node);
+		irq_unlock(key);
+
+		/* align the `pending` value */
+		__ASSERT_NO_MSG(atomic_get(&conn->in_ll));
+		atomic_dec(&conn->in_ll);
+
+		/* TX context free + callback happens in there */
+		bt_conn_tx_notify(conn, false);
+	}
+}
+
 static void hci_num_completed_packets(struct net_buf *buf)
 {
 	struct bt_hci_evt_num_completed_packets *evt = (void *)buf->data;
@@ -735,37 +776,7 @@ static void hci_num_completed_packets(struct net_buf *buf)
 			continue;
 		}
 
-		while (count--) {
-			sys_snode_t *node;
-			unsigned int key;
-
-			/* move the next TX context from the `pending` list to
-			 * the `complete` list.
-			 */
-			node = sys_slist_get(&conn->tx_pending);
-
-			if (!node) {
-				LOG_ERR("packets count mismatch");
-				__ASSERT_NO_MSG(0);
-				break;
-			}
-
-			k_sem_give(bt_conn_get_pkts(conn));
-
-			/* The `complete` list is consumed from another context,
-			 * which uses the same lock.
-			 */
-			key = irq_lock();
-			sys_slist_append(&conn->tx_complete, node);
-			irq_unlock(key);
-
-			/* align the `pending` value */
-			__ASSERT_NO_MSG(atomic_get(&conn->in_ll));
-			atomic_dec(&conn->in_ll);
-
-			/* TX context free + callback happens in there */
-			bt_conn_tx_notify(conn, false);
-		}
+		bt_conn_tx_complete(conn, count);
 
 		bt_conn_unref(conn);
 	}
@@ -2245,6 +2256,19 @@ static void le_conn_update_complete(struct net_buf *buf)
 }
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+static int set_controller_to_host_flow_control(uint8_t flow_control)
+{
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	net_buf_add_u8(buf, flow_control);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf, NULL);
+}
+
 static int set_flow_control(void)
 {
 	struct bt_hci_cp_host_buffer_size *hbs;
@@ -2271,23 +2295,32 @@ static int set_flow_control(void)
 	(void)memset(hbs, 0, sizeof(*hbs));
 	hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BT_BUF_ACL_RX_SIZE);
 	hbs->acl_pkts = sys_cpu_to_le16(BT_BUF_HCI_ACL_RX_COUNT);
-	if (IS_ENABLED(CONFIG_BT_VOICE_OVER_HCI)) {
-		hbs->sco_mtu = CONFIG_BT_SCO_RX_BUF_SIZE;
-		hbs->sco_pkts = sys_cpu_to_le16(CONFIG_BT_SCO_RX_BUF_COUNT);
-	}
-
+#if defined(CONFIG_BT_HCI_SCO_FLOW_CONTROL)
+	hbs->sco_mtu = CONFIG_BT_SCO_RX_BUF_SIZE;
+	hbs->sco_pkts = sys_cpu_to_le16(CONFIG_BT_SCO_RX_BUF_COUNT);
+#endif /* CONFIG_BT_HCI_SCO_FLOW_CONTROL */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_HOST_BUFFER_SIZE, buf, NULL);
 	if (err) {
 		return err;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (!buf) {
-		return -ENOBUFS;
+#if defined(CONFIG_BT_HCI_SCO_FLOW_CONTROL)
+	err = set_controller_to_host_flow_control(BT_HCI_CTL_TO_HOST_FLOW_ACL_ON_SCO_ON);
+	if (err == 0) {
+		bt_dev.br.sco_c2h_fc_enabled = true;
+		return 0;
 	}
 
-	net_buf_add_u8(buf, BT_HCI_CTL_TO_HOST_FLOW_ENABLE);
-	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf, NULL);
+	bt_dev.br.sco_c2h_fc_enabled = false;
+	LOG_WRN("Controller to host flow HCI sync data packets control not supported");
+#endif /* CONFIG_BT_HCI_SCO_FLOW_CONTROL */
+
+	err = set_controller_to_host_flow_control(BT_HCI_CTL_TO_HOST_FLOW_ENABLE);
+	if (err != 0) {
+		return err;
+	}
+
+	return 0;
 }
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 

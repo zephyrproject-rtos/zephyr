@@ -35,6 +35,12 @@ void bt_sco_chan_set_state_debug(struct bt_sco_chan *chan,
 void bt_sco_chan_set_state(struct bt_sco_chan *chan, enum bt_sco_state state);
 #endif /* CONFIG_BT_CONN_LOG_LEVEL_DBG */
 
+/** A callback used to notify about freed buffer in the iso rx pool. */
+typedef void (*bt_sco_buf_rx_freed_cb_t)(void);
+
+/** Set rx buffer freed callback */
+void bt_sco_buf_rx_freed_cb_set(bt_sco_buf_rx_freed_cb_t cb);
+
 /* Allocates RX buffer */
 struct net_buf *bt_sco_get_rx(k_timeout_t timeout);
 

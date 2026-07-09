@@ -50,6 +50,18 @@ config BT_VOICE_OVER_HCI
 	help
 	  This option enables Voice over HCI transport.
 
+if BT_VOICE_OVER_HCI
+
+config BT_HCI_SCO_FLOW_CONTROL
+	bool "Controller to Host SCO flow control support"
+	default y
+	depends on BT_HCI_ACL_FLOW_CONTROL
+	help
+	  Enable support for throttling SCO buffers from the controller
+	  to the host.
+
+endif # BT_VOICE_OVER_HCI
+
 config BT_SCO_RX_BUF_COUNT
 	int "Maximum number of incoming SCO buffers"
 	default 4

@@ -657,3 +657,6 @@ void bt_conn_tx_processor(void);
  * - unref the conn when popping the conn from the slist
  */
 void bt_conn_data_ready(struct bt_conn *conn);
+
+/* CONN TX complete process */
+void bt_conn_tx_complete(struct bt_conn *conn, uint16_t count);
