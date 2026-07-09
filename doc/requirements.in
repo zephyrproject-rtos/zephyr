@@ -33,3 +33,6 @@ coverxygen!=1.8.2 # See https://github.com/psycofdj/coverxygen/issues/37
 
 # Used by Kconfig extension
 python-dotenv
+
+reuse @ https://codeberg.org/kartben/reuse-tool/archive/06fa85966215cc7e7ec5a6d98dadaa78e8bd961a.tar.gz \
+       --hash=sha256:b5ac81f230948d42add970d52a08ce643b5994e608237489dc3719dd3332069e
