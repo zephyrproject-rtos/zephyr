@@ -543,6 +543,7 @@ struct max30009_fifo_data {
 	uint16_t fifo_samples;
 	uint16_t fifo_byte_count;
 	uint8_t sample_set_size;
+	uint32_t sample_period_ns;
 };
 
 /**
