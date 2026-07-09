@@ -92,6 +92,20 @@ config XTENSA_EXCEPTION_ENTER_GDB
 	  When an exception like invalid address access or division by zero is
 	  hit, enter the GDB stub.
 
+config XTENSA_ADSP_FATAL_BREADCRUMB
+	bool "Record fatal exception breadcrumbs in HP-SRAM window0"
+	depends on SOC_FAMILY_INTEL_ADSP
+	help
+	  When a fatal exception is taken, record the faulting PC, exception
+	  cause, faulting virtual address and the faulting instruction word
+	  into HP-SRAM window0 via its uncached alias. The host SOF driver
+	  prints window0[0] as "Firmware state" and window0[1] as "status/error
+	  code" on an IPC timeout, so the crash information becomes visible
+	  in the host dmesg even when no console or mtrace output is available.
+	  Only the first fatal exception is latched so the original fault is
+	  preserved across a crash loop. This is a debug aid and should be
+	  left disabled in production builds.
+
 menu "Xtensa HiFi Options"
 
 config XTENSA_CPU_HAS_HIFI

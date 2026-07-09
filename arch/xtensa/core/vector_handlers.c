@@ -19,6 +19,11 @@
 #include <xtensa_internal.h>
 #include <xtensa_stack.h>
 
+#if defined(CONFIG_XTENSA_ADSP_FATAL_BREADCRUMB)
+#include <mem_window.h>
+#include <zephyr/cache.h>
+#endif
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 extern char xtensa_arch_except_epc[];
@@ -563,6 +568,28 @@ void *xtensa_excint1_c(void *esf)
 #endif /* CONFIG_XTENSA_MMU */
 
 	cause = bsa->exccause;
+
+#if defined(CONFIG_XTENSA_ADSP_FATAL_BREADCRUMB)
+	/* DEBUG breadcrumb: when no console/mtrace is available, record the
+	 * faulting PC/cause/vaddr into HP-SRAM window0 via its uncached alias.
+	 * The host SOF driver prints window0[0] as "Firmware state" and
+	 * window0[1] as "status/error code" on IPC timeout, so the crash PC
+	 * becomes visible in dmesg. Latch only the FIRST fatal exception so we
+	 * see the original fault, not the last in a crash loop. Skip level-1
+	 * interrupts which are not faults. win0[3] counts all exceptions.
+	 */
+	if (cause != EXCCAUSE_LEVEL1_INTERRUPT) {
+		volatile uint32_t *win0 = (volatile uint32_t *)sys_cache_uncached_ptr_get((void *)HP_SRAM_WIN0_BASE);
+
+		if ((win0[1] >> 28) != 0xeU) {
+			win0[0] = (uint32_t)bsa->pc;
+			win0[1] = 0xe0000000U | ((uint32_t)cause & 0xffU);
+			win0[2] = (uint32_t)bsa->excvaddr;
+			win0[4] = *(volatile uint32_t *)((uint32_t)bsa->pc & ~3U);
+		}
+		win0[3]++;
+	}
+#endif
 
 	switch (cause) {
 	case EXCCAUSE_LEVEL1_INTERRUPT:
