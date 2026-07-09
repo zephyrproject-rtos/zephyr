@@ -86,9 +86,7 @@ void dw_ace_irq_enable(const struct device *dev, uint32_t irq)
 	ARG_UNUSED(dev);
 
 	if (is_dw_irq(irq)) {
-		unsigned int num_cpus = arch_num_cpus();
-
-		for (int i = 0; i < num_cpus; i++) {
+		for (int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
 			ACE_INTC[i].irq_inten_l |= BIT(ACE_IRQ_FROM_ZEPHYR(irq));
 			ACE_INTC[i].irq_intmask_l &= ~BIT(ACE_IRQ_FROM_ZEPHYR(irq));
 		}
@@ -102,9 +100,7 @@ void dw_ace_irq_disable(const struct device *dev, uint32_t irq)
 	ARG_UNUSED(dev);
 
 	if (is_dw_irq(irq)) {
-		unsigned int num_cpus = arch_num_cpus();
-
-		for (int i = 0; i < num_cpus; i++) {
+		for (int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
 			ACE_INTC[i].irq_inten_l &= ~BIT(ACE_IRQ_FROM_ZEPHYR(irq));
 			ACE_INTC[i].irq_intmask_l |= BIT(ACE_IRQ_FROM_ZEPHYR(irq));
 		}
