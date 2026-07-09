@@ -168,3 +168,15 @@ SPDX-FileComment = "Compiled into the firmware only when the HTTP parser is enab
 Zephyr-Description = "HTTP Parser Files"
 Zephyr-Origin = "https://github.com/nodejs/http-parser"
 Zephyr-Kconfig-Condition = "CONFIG_HTTP_PARSER"
+
+[[annotations]]
+path = [
+    "scripts/kconfig/guiconfig.py",
+    "scripts/kconfig/kconfig.py",
+    "scripts/kconfig/kconfiglib.py",
+    "scripts/kconfig/menuconfig.py",
+]
+SPDX-License-Identifier = "ISC"
+SPDX-FileComment = "Used to process Kconfig files at build time and never linked into the firmware."
+Zephyr-Description = "Kconfiglib Configuration Library"
+Zephyr-Origin = "https://github.com/ulfalizer/Kconfiglib"
