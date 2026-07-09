@@ -6,6 +6,8 @@
 config VIDEO_OV5640
 	bool "OV5640 CMOS digital image sensor"
 	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_OVTI_OV5640),powerdown-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_OVTI_OV5640),reset-gpios)
 	depends on DT_HAS_OVTI_OV5640_ENABLED
 	default y
 	help
