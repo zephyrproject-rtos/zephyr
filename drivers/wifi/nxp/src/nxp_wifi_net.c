@@ -331,7 +331,7 @@ static mlan_status process_mgmt_packet(t_u8 *data)
 		return MLAN_STATUS_RESOURCE;
 	}
 
-	if (wlan_bypass_802dot11_mgmt_pkt(data) == MLAN_STATUS_SUCCESS) {
+	if (wlan_bypass_802dot11_mgmt_pkt((void *)rxpd) == MLAN_STATUS_SUCCESS) {
 		return MLAN_STATUS_RESOURCE;
 	}
 
@@ -350,6 +350,12 @@ static mlan_status process_mgmt_packet(t_u8 *data)
 		net_d("%s: gen_pkt_from_data fail", __func__);
 		return MLAN_STATUS_FAILURE;
 	}
+
+#ifdef CONFIG_NXP_WIFI_TX_RX_ZERO_COPY
+	/* Skip interface header */
+	net_buf_pull(p->frags, INTF_HEADER_LEN);
+	net_pkt_cursor_init(p);
+#endif
 
 	if (wifi_event_completion(WIFI_EVENT_MGMT_FRAME, WIFI_EVENT_REASON_SUCCESS, p) !=
 	    WM_SUCCESS) {
