@@ -28,7 +28,6 @@ endif()
 list(APPEND QEMU_FLAGS_${ARCH}
   -m 8M
   -no-reboot
-  -monitor none
   -global cpu.firq=false
   -global cpu.num-irqlevels=15
   -global cpu.num-irq=25
