@@ -7,3 +7,11 @@ config TACH_RTS5912
 	depends on DT_HAS_REALTEK_RTS5912_TACH_ENABLED
 	help
 	  Enable the Realtek RTS5912 tachometer sensor.
+
+config TACH_RTS5912_DISCARD_SAMPLES
+	bool "Discard the first two samples on fetch"
+	depends on TACH_RTS5912
+	help
+	  Discard the first two sample on fetch(), this is useful when the
+	  tachometer is used while the chip is in a low power state, as the
+	  first two samples can be unreliable.
