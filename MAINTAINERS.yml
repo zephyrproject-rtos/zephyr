@@ -1309,6 +1309,7 @@ Devicetree:
     - mbolivar
     - rruuaanng
     - kylebonnici
+    - maass-hamburg
   files-regex:
     - ^dts/bindings/.*zephyr.*
     - ^dts/bindings/[^,]+$
