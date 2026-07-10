@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/pinctrl/bcm2711-pinctrl.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/device.h>
+#include <zephyr/init.h>
 
 /* BCM2711 PINCTRL Base Address */
 #define BCM2711_PINCTRL_BASE_ADDR DT_REG_ADDR(DT_DRV_INST(0))
@@ -25,6 +26,8 @@
 #define GPIO_PUP_PDN_OFFSET(pin) (0xE4 + ((pin) / 16) * 4)
 #define GPIO_PUP_PDN_SHIFT(pin)  (((pin) % 16) * 2)
 #define GPIO_PUP_PDN_MASK        0x3
+
+static uintptr_t bcm2711_pinctrl_base;
 
 static inline uint32_t bcm2711_pinctrl_read(uintptr_t base, uint32_t offset)
 {
@@ -64,13 +67,9 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 {
 	ARG_UNUSED(reg);
 
-	uintptr_t base;
-
 	if (!pins || pin_cnt == 0) {
 		return -EINVAL;
 	}
-
-	device_map(&base, BCM2711_PINCTRL_BASE_ADDR, 0x100, K_MEM_CACHE_NONE);
 
 	for (uint8_t i = 0; i < pin_cnt; i++) {
 		uint8_t pin = pins[i].pin;
@@ -79,9 +78,31 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			return -EINVAL;
 		}
 
-		bcm2711_pinctrl_set_func(base, pin, pins[i].func);
-		bcm2711_pinctrl_set_pull(base, pin, pins[i].pull);
+		bcm2711_pinctrl_set_func(bcm2711_pinctrl_base, pin, pins[i].func);
+		bcm2711_pinctrl_set_pull(bcm2711_pinctrl_base, pin, pins[i].pull);
 	}
 
 	return 0;
 }
+
+/**
+ * @brief Map the pinctrl MMIO region into the virtual address space.
+ *
+ * device_map() hands out a new virtual mapping on every call and nothing
+ * unmaps the pinctrl window, so mapping it from pinctrl_configure_pins()
+ * leaks virtual address space on every runtime pin reconfiguration.
+ *
+ * @return 0 on success
+ */
+static int bcm2711_pinctrl_map_mmio(void)
+{
+	device_map(&bcm2711_pinctrl_base, BCM2711_PINCTRL_BASE_ADDR,
+		   DT_REG_SIZE(DT_DRV_INST(0)), K_MEM_CACHE_NONE);
+	return 0;
+}
+
+/*
+ * Use the lowest init priority so that the pinctrl region is mapped before
+ * any device that calls pinctrl_configure_pins() in its own PRE_KERNEL_1 init.
+ */
+SYS_INIT(bcm2711_pinctrl_map_mmio, PRE_KERNEL_1, 0);
