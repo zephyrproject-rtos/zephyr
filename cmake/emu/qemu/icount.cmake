@@ -6,12 +6,12 @@
 
 if(CONFIG_QEMU_ICOUNT)
   if(CONFIG_QEMU_ICOUNT_SLEEP)
-    list(APPEND QEMU_FLAGS
+    qemu_append_flags(
       -icount shift=${CONFIG_QEMU_ICOUNT_SHIFT},align=off,sleep=on
       -rtc clock=vm
     )
   else()
-    list(APPEND QEMU_FLAGS
+    qemu_append_flags(
       -icount shift=${CONFIG_QEMU_ICOUNT_SHIFT},align=off,sleep=off
       -rtc clock=vm
     )

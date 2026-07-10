@@ -19,20 +19,20 @@ if(CONFIG_QEMU_TARGET)
     if(CONFIG_ETH_QEMU_EXTRA_ARGS)
       set(NET_QEMU_ETH_EXTRA_ARGS ",${CONFIG_ETH_QEMU_EXTRA_ARGS}")
     endif()
-    list(APPEND QEMU_EXTRA_FLAGS
+    qemu_append_extra_flags(
       -netdev tap,id=n1,script=no,downscript=no,ifname=${CONFIG_ETH_QEMU_IFACE_NAME}${NET_QEMU_ETH_EXTRA_ARGS}
     )
   elseif(CONFIG_NET_QEMU_USER)
-    list(APPEND QEMU_EXTRA_FLAGS
+    qemu_append_extra_flags(
       -netdev user,id=n1,${CONFIG_NET_QEMU_USER_EXTRA_ARGS}
     )
   else()
-    list(APPEND QEMU_EXTRA_FLAGS
+    qemu_append_extra_flags(
       -net none
     )
   endif()
   if(CONFIG_NET_QEMU_ETHERNET OR CONFIG_NET_QEMU_USER)
-    list(APPEND QEMU_EXTRA_FLAGS
+    qemu_append_extra_flags(
       -device ${CONFIG_ETH_NIC_MODEL},netdev=n1,${CONFIG_NET_QEMU_DEVICE_EXTRA_ARGS}
     )
   endif()
