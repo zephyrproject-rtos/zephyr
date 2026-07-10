@@ -34,10 +34,10 @@ static void fdc2x1x_raw_to_freq(const struct device *dev,
 	const struct fdc2x1x_config *cfg = dev->config;
 
 	if (data->fdc221x) {
-		*freq = (cfg->ch_cfg->fin_sel * (cfg->fref / 1000.0) *
+		*freq = (cfg->ch_cfg[ch].fin_sel * (cfg->fref / 1000.0) *
 			 data->channel_buf[ch]) / pow(2, 28);
 	} else {
-		*freq = cfg->ch_cfg->fin_sel * (cfg->fref / 1000.0) *
+		*freq = cfg->ch_cfg[ch].fin_sel * (cfg->fref / 1000.0) *
 			((data->channel_buf[ch] / pow(2, 12 + cfg->output_gain)) +
 			 (cfg->ch_cfg[ch].offset / pow(2, 16)));
 	}
@@ -56,7 +56,7 @@ static void fdc2x1x_raw_to_capacitance(const struct device *dev,
 {
 	const struct fdc2x1x_config *cfg = dev->config;
 
-	*capacitance = 1 / ((cfg->ch_cfg->inductance / 1000000.0) *
+	*capacitance = 1 / ((cfg->ch_cfg[ch].inductance / 1000000.0) *
 			    pow((2 * PI * freq), 2));
 }
 
