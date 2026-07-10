@@ -9,7 +9,7 @@ junitparser>=4.0.1
 lxml>=6.1.0
 pykwalify
 pylint>=3
-python-dotenv
+python-dotenv>=1.2.2
 python-magic-bin; sys_platform == "win32"
 python-magic; sys_platform != "win32"
 reuse
