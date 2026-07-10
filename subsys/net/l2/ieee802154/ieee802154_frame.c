@@ -740,6 +740,9 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_lin
 
 	/* Let's encrypt/auth only in the end, if needed */
 	authtag_len = level_2_authtag_len[level];
+	if (buf->len < ll_hdr_len + authtag_len) {
+		goto out;
+	}
 	payload_len = buf->len - ll_hdr_len - authtag_len;
 	if (!ieee802154_encrypt_auth(&ctx->sec_ctx, buf_start, ll_hdr_len,
 				     payload_len, authtag_len, ctx->ext_addr)) {
@@ -994,7 +997,10 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 
 	authtag_len = level_2_authtag_len[level];
 	ll_hdr_len = (uint8_t *)mpdu->payload - net_pkt_data(pkt);
-	payload_len = net_pkt_get_len(pkt) - ll_hdr_len - authtag_len;
+	if ((uint16_t)net_pkt_get_len(pkt) < (uint16_t)ll_hdr_len + authtag_len) {
+		goto out;
+	}
+	payload_len = (uint8_t)((uint16_t)net_pkt_get_len(pkt) - ll_hdr_len - authtag_len);
 
 	/* TODO: Handle src short address.
 	 * This will require to look up in nbr cache with short addr
@@ -1015,6 +1021,9 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 	}
 
 	/* We remove tag size from buf's length, it is now useless. */
+	if (pkt->buffer->len < authtag_len) {
+		goto out;
+	}
 	pkt->buffer->len -= authtag_len;
 
 	ret = true;
