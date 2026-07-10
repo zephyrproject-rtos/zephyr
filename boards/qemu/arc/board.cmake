@@ -39,5 +39,4 @@ list(APPEND QEMU_FLAGS_${ARCH}
   -global cpu.mpu-numreg=16
   )
 
-set(BOARD_DEBUG_RUNNER qemu)
 include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)
