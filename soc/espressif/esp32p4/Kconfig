@@ -11,6 +11,8 @@ config SOC_SERIES_ESP32P4
 	select CPU_HAS_DCACHE if SOC_ESP32P4_HPCORE
 	select HAS_PM
 	select HAS_POWEROFF
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select NOCACHE_MEMORY
 
 if SOC_SERIES_ESP32P4
 
@@ -71,6 +73,7 @@ rsource "Kconfig.caps"
 config ESP32P4_EMAC
 	bool
 	default y if ETH_ESP32
+	default y if ETH_ESP32_DWC_ETHER_1000
 	default y if MDIO_ESP32
 	help
 	  Hidden option to enable the ESP32-P4 Ethernet

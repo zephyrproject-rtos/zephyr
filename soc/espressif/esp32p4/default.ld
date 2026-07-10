@@ -47,7 +47,13 @@ user_sram_size = (user_sram_end - user_sram_org);
 	#endif
 #else
 	#define MPU_MIN_SIZE_ALIGN
-	#define MPU_ALIGN(region_size) . = ALIGN(4)
+	/* The nocache region is carved out with a dedicated PMA entry and must
+	 * start and end on an L2 cache line boundary so it does not share a line
+	 * with cacheable data. The line size is 64 bytes on the 128KB/256KB
+	 * caches and 128 bytes on the 512KB cache, so align to the configured
+	 * value regardless of the silicon revision.
+	 */
+	#define MPU_ALIGN(region_size) . = ALIGN(CONFIG_ESP32_CACHE_L2_LINE_SIZE)
 #endif
 
 #undef GROUP_DATA_LINK_IN
