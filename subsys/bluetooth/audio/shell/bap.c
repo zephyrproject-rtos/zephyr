@@ -2786,7 +2786,11 @@ static void audio_recv(struct bt_bap_stream *stream,
 	if (sh_stream->rx.lc3_decoder != NULL) {
 		const uint8_t frame_blocks_per_sdu = sh_stream->lc3_frame_blocks_per_sdu;
 		const uint16_t octets_per_frame = sh_stream->lc3_octets_per_frame;
+		const bool valid_sdu = (info->flags & BT_ISO_FLAGS_VALID) != 0U;
 		const uint8_t chan_cnt = sh_stream->lc3_chan_cnt;
+		const uint16_t expected_sdu_size =
+			octets_per_frame * chan_cnt * frame_blocks_per_sdu;
+		const bool valid_sdu_len = expected_sdu_size == buf->len;
 		struct lc3_data *data;
 
 		/* Allocate a context that holds both the buffer and the stream so that we can
@@ -2800,17 +2804,20 @@ static void audio_recv(struct bt_bap_stream *stream,
 		}
 		(void)memset(data, 0, sizeof(*data));
 
-		if ((info->flags & BT_ISO_FLAGS_VALID) == 0) {
+		if (!valid_sdu || !valid_sdu_len) {
 			data->do_plc = true;
-		} else if (buf->len != (octets_per_frame * chan_cnt * frame_blocks_per_sdu)) {
-			if (buf->len != 0U) {
-				bt_shell_error(
-					"Expected %u frame blocks with %u channels of size %u, but "
-					"length is %u",
-					frame_blocks_per_sdu, chan_cnt, octets_per_frame, buf->len);
+
+			if (valid_sdu && !valid_sdu_len &&
+			    sh_stream->rx.last_sdu_invalid_len != buf->len) {
+				bt_shell_error("Expected %u frame blocks with %u channels of size "
+					       "%u (total %u), but length is %u",
+					       frame_blocks_per_sdu, chan_cnt, octets_per_frame,
+					       expected_sdu_size, buf->len);
 			}
 
-			data->do_plc = true;
+			sh_stream->rx.last_sdu_invalid_len = buf->len;
+		} else {
+			sh_stream->rx.last_sdu_invalid_len = 0U; /* clear */
 		}
 
 		data->buf = net_buf_ref(buf);
