@@ -114,8 +114,21 @@ static inline int esp32_usb_otg_enable_phy(struct phy_context_t *phy_ctx, bool e
 
 	if (enable) {
 		usb_wrap_ll_phy_enable_pad(phy_ctx->wrap_hal.dev, true);
+		/* Assert D+ pull-up so the host detects a FS device.
+		 * usb_wrap_ll_phy_enable_pad() enables the pad but does NOT
+		 * assert the 1.5kΩ D+ pull-up.  Without this the host never
+		 * sees a device connected. 
+		 */
+		const usb_wrap_pull_override_vals_t pu = {
+			.dp_pu = 1,
+			.dm_pu = 0,
+			.dp_pd = 0,
+			.dm_pd = 0,
+		};
+		usb_wrap_ll_phy_enable_pull_override(phy_ctx->wrap_hal.dev, &pu);
 		LOG_DBG("PHY enabled");
 	} else {
+		usb_wrap_ll_phy_disable_pull_override(phy_ctx->wrap_hal.dev);
 		usb_wrap_ll_phy_enable_pad(phy_ctx->wrap_hal.dev, false);
 		LOG_DBG("PHY disabled");
 	}
