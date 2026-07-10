@@ -62,7 +62,7 @@ static ALWAYS_INLINE void sys_mm_vm_backend_mem_scratch(uintptr_t phys)
 	arch_mem_scratch(phys);
 }
 
-static ALWAYS_INLINE enum arch_page_location
+static ALWAYS_INLINE enum sys_mm_vm_page_location
 sys_mm_vm_backend_page_location_get(void *addr, uintptr_t *location)
 {
 	return arch_page_location_get(addr, location);

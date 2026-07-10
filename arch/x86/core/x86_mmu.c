@@ -2158,7 +2158,7 @@ uintptr_t arch_page_info_get(void *addr, uintptr_t *phys, bool clear_accessed)
 	 * else in this case.
 	 */
 	if (all_pte == 0) {
-		return ARCH_DATA_PAGE_NOT_MAPPED;
+		return SYS_MM_VM_DATA_PAGE_NOT_MAPPED;
 	}
 
 #if defined(CONFIG_USERSPACE) && !defined(CONFIG_X86_COMMON_PAGE_TABLE)
@@ -2200,17 +2200,17 @@ uintptr_t arch_page_info_get(void *addr, uintptr_t *phys, bool clear_accessed)
 	}
 
 	/* We don't filter out any other bits in the PTE and the kernel
-	 * ignores them. For the case of ARCH_DATA_PAGE_NOT_MAPPED,
+	 * ignores them. For the case of SYS_MM_VM_DATA_PAGE_NOT_MAPPED,
 	 * we use a bit which is never set in a real PTE (the PAT bit) in the
 	 * current system.
 	 *
-	 * The other ARCH_DATA_PAGE_* macros are defined to their corresponding
+	 * The other SYS_MM_VM_DATA_PAGE_* macros are defined to their corresponding
 	 * bits in the PTE.
 	 */
 	return (uintptr_t)all_pte;
 }
 
-enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location)
+enum sys_mm_vm_page_location arch_page_location_get(void *addr, uintptr_t *location)
 {
 	pentry_t pte;
 	int level;
@@ -2222,14 +2222,14 @@ enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location)
 
 	if (pte == 0) {
 		/* Not mapped */
-		return ARCH_PAGE_LOCATION_BAD;
+		return SYS_MM_VM_PAGE_LOCATION_BAD;
 	}
 
 	__ASSERT(level == PTE_LEVEL, "bigpage found at %p", addr);
 	*location = (uintptr_t)get_entry_phys(pte, PTE_LEVEL);
 
 	if ((pte & MMU_P) != 0) {
-		return ARCH_PAGE_LOCATION_PAGED_IN;
+		return SYS_MM_VM_PAGE_LOCATION_PAGED_IN;
 	}
 
 #ifdef CONFIG_EVICTION_LRU
@@ -2239,11 +2239,11 @@ enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location)
 	 * paged-out entries.
 	 */
 	if ((pte & MMU_LRU_TRACK) != 0) {
-		return ARCH_PAGE_LOCATION_PAGED_IN;
+		return SYS_MM_VM_PAGE_LOCATION_PAGED_IN;
 	}
 #endif
 
-	return ARCH_PAGE_LOCATION_PAGED_OUT;
+	return SYS_MM_VM_PAGE_LOCATION_PAGED_OUT;
 }
 
 #ifdef CONFIG_X86_KPTI

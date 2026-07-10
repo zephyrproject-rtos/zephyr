@@ -39,7 +39,6 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/util.h>
 #include <mmu.h>
-#include <kernel_arch_interface.h>
 
 /*
  * Page frames are ordered according to their access pattern. Using a regular
@@ -122,7 +121,7 @@ static void lru_pf_remove(uint32_t pf_idx)
 								      NULL, true);
 
 		/* clearing the accessed flag expected only on loaded pages */
-		__ASSERT((flags & ARCH_DATA_PAGE_LOADED) != 0, "");
+		__ASSERT((flags & SYS_MM_VM_DATA_PAGE_LOADED) != 0, "");
 		ARG_UNUSED(flags);
 	}
 }
@@ -174,7 +173,7 @@ struct k_mem_page_frame *k_mem_paging_eviction_select(bool *dirty_ptr)
 							      false);
 
 	__ASSERT(k_mem_page_frame_is_evictable(pf), "");
-	*dirty_ptr = ((flags & ARCH_DATA_PAGE_DIRTY) != 0);
+	*dirty_ptr = ((flags & SYS_MM_VM_DATA_PAGE_DIRTY) != 0);
 	return pf;
 }
 
