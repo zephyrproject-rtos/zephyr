@@ -15,11 +15,102 @@
 LOG_MODULE_DECLARE(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
 
 #ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
-#define PM_DOMAIN(_pm) \
-	(_pm)->domain
+static bool has_power_domains(const struct pm_device_base *pm)
+{
+	return pm->domains[0] != NULL;
+}
+
+/* Release the domains preceding @p end, used to unwind a partial claim. */
+static void domains_release(struct pm_device_base *pm, const struct device * const *end)
+{
+	for (const struct device * const *d = pm->domains; d < end; d++) {
+		(void)pm_device_runtime_put(*d);
+	}
+}
+
+/* Claim every power domain the device depends on. On failure the domains
+ * already claimed are released again so the operation is all-or-nothing.
+ */
+static int domains_get(const struct device *dev)
+{
+	struct pm_device_base *pm = dev->pm_base;
+
+	PM_DEVICE_FOREACH_DOMAIN(pm, d) {
+		int ret = pm_device_runtime_get(*d);
+
+		/* The domain may have failed to power this device up */
+		if ((ret == 0) &&
+		    atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_TURN_ON_FAILED)) {
+			(void)pm_device_runtime_put(*d);
+			ret = -EAGAIN;
+		}
+
+		if (ret < 0) {
+			domains_release(pm, d);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+/* ISR safe variant: a device that runs from an ISR can only claim domains
+ * that are themselves ISR safe.
+ */
+static int domains_get_isr(const struct device *dev)
+{
+	struct pm_device_base *pm = dev->pm_base;
+
+	PM_DEVICE_FOREACH_DOMAIN(pm, d) {
+		int ret;
+
+		if (((*d)->pm_base->flags & BIT(PM_DEVICE_FLAG_ISR_SAFE)) == 0) {
+			ret = -EWOULDBLOCK;
+		} else {
+			ret = pm_device_runtime_get(*d);
+		}
+
+		if (ret < 0) {
+			domains_release(pm, d);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+static void domains_put(const struct device *dev)
+{
+	struct pm_device_base *pm = dev->pm_base;
+
+	PM_DEVICE_FOREACH_DOMAIN(pm, d) {
+		(void)pm_device_runtime_put(*d);
+	}
+}
 #else
-#define PM_DOMAIN(_pm) NULL
-#endif
+static inline bool has_power_domains(const struct pm_device_base *pm)
+{
+	ARG_UNUSED(pm);
+	return false;
+}
+
+static inline int domains_get(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return 0;
+}
+
+static inline int domains_get_isr(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return 0;
+}
+
+static inline void domains_put(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+#endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
 
 /*
  * Serializes all pm->base.usage updates for devices without the ISR-safe
@@ -191,9 +282,9 @@ static int runtime_suspend(const struct device *dev, bool async,
 
 		pm->base.state = PM_DEVICE_STATE_SUSPENDED;
 
-		/* Now put the domain */
+		/* Now put the domains */
 		if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
-			(void)pm_device_runtime_put(PM_DOMAIN(dev->pm_base));
+			domains_put(dev);
 			atomic_clear_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED);
 		}
 	}
@@ -233,7 +324,7 @@ static void runtime_suspend_work(struct k_work *work)
 	 * running and restored the device usage.
 	 */
 	if (release_domain) {
-		(void)pm_device_runtime_put(PM_DOMAIN(&pm->base));
+		domains_put(pm->dev);
 		atomic_clear_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED);
 	}
 	k_sem_give(&pm->lock);
@@ -249,21 +340,14 @@ static int get_sync_locked(const struct device *dev)
 	uint32_t flags = pm->base.flags;
 
 	if (pm->base.usage == 0) {
-		if ((flags & BIT(PM_DEVICE_FLAG_PD_CLAIMED)) == 0) {
-			const struct device *domain = PM_DOMAIN(&pm->base);
-
-			if (domain != NULL) {
-				if ((domain->pm_base->flags & BIT(PM_DEVICE_FLAG_ISR_SAFE)) != 0) {
-					ret = pm_device_runtime_get(domain);
-					if (ret < 0) {
-						return ret;
-					}
-					/* Power domain successfully claimed */
-					pm->base.flags |= BIT(PM_DEVICE_FLAG_PD_CLAIMED);
-				} else {
-					return -EWOULDBLOCK;
-				}
+		if (((flags & BIT(PM_DEVICE_FLAG_PD_CLAIMED)) == 0) &&
+		    has_power_domains(&pm->base)) {
+			ret = domains_get_isr(dev);
+			if (ret < 0) {
+				return ret;
 			}
+			/* Power domains successfully claimed */
+			pm->base.flags |= BIT(PM_DEVICE_FLAG_PD_CLAIMED);
 		}
 
 		ret = pm->base.action_cb(dev, PM_DEVICE_ACTION_RESUME);
@@ -338,20 +422,13 @@ int pm_device_runtime_get(const struct device *dev)
 	 * If the device is under a power domain, the domain has to be get
 	 * first.
 	 */
-	const struct device *domain = PM_DOMAIN(&pm->base);
-
-	if (domain != NULL && !atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
-		ret = pm_device_runtime_get(domain);
+	if (has_power_domains(&pm->base) &&
+	    !atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
+		ret = domains_get(dev);
 		if (ret != 0) {
 			goto unlock;
 		}
-		/* Check if powering up this device failed */
-		if (atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_TURN_ON_FAILED)) {
-			(void)pm_device_runtime_put(domain);
-			ret = -EAGAIN;
-			goto unlock;
-		}
-		/* Power domain successfully claimed */
+		/* Power domains successfully claimed */
 		atomic_set_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED);
 	}
 
@@ -392,8 +469,8 @@ int pm_device_runtime_get(const struct device *dev)
 	ret = pm->base.action_cb(pm->dev, PM_DEVICE_ACTION_RESUME);
 	if (ret < 0) {
 		runtime_usecount_dec(pm);
-		if (domain != NULL) {
-			(void)pm_device_runtime_put(domain);
+		if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
+			domains_put(dev);
 			atomic_clear_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED);
 		}
 		goto unlock;
@@ -437,14 +514,26 @@ static int put_sync_locked(const struct device *dev)
 		pm->base.state = PM_DEVICE_STATE_SUSPENDED;
 
 		if (flags & BIT(PM_DEVICE_FLAG_PD_CLAIMED)) {
-			const struct device *domain = PM_DOMAIN(&pm->base);
+#ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
+			int pd_ret = 0;
 
-			if (domain->pm_base->flags & BIT(PM_DEVICE_FLAG_ISR_SAFE)) {
-				ret = put_sync_locked(domain);
+			PM_DEVICE_FOREACH_DOMAIN(&pm->base, d) {
+				int r = put_sync_locked(*d);
+
+				if ((r < 0) && (pd_ret == 0)) {
+					pd_ret = r;
+				}
+			}
+
+			/* Keep the domains claimed if any release failed. */
+			if (pd_ret == 0) {
 				pm->base.flags &= ~BIT(PM_DEVICE_FLAG_PD_CLAIMED);
 			} else {
-				ret = -EWOULDBLOCK;
+				ret = pd_ret;
 			}
+#else
+			pm->base.flags &= ~BIT(PM_DEVICE_FLAG_PD_CLAIMED);
+#endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
 		}
 	} else {
 		ret = 0;
