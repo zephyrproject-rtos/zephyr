@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/swdp.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +38,8 @@ struct dap_link_context {
 	/** @cond INTERNAL_HIDDEN */
 	/* Pointer to SWD or JTAG device. Only SWD is supported yet. */
 	const struct device *dev;
+	/* Serializes debug port access, see dap_link_lock() */
+	struct k_mutex lock;
 	atomic_t state;
 	/* Runtime debug port type */
 	uint8_t debug_port;
@@ -73,6 +76,7 @@ struct dap_link_context {
 #define DAP_LINK_CONTEXT_DEFINE(ctx_name, ctx_dev)				\
 	static struct dap_link_context ctx_name = {				\
 		.dev = ctx_dev,							\
+		.lock = Z_MUTEX_INITIALIZER(ctx_name.lock),			\
 	}
 
 /**
@@ -94,6 +98,32 @@ int dap_link_init(struct dap_link_context *const dap_link_ctx);
  */
 void dap_link_set_pkt_size(struct dap_link_context *const dap_link_ctx,
 			   const uint16_t pkt_size);
+
+/**
+ * @brief Lock the debug port used by a DAP Link context.
+ *
+ * dap_link_execute_cmd() holds this lock for the duration of a command.
+ * An application that drives the same debug port from its own threads can
+ * hold it across a transfer sequence to keep DAP commands from
+ * interleaving with its own.
+ *
+ * The lock is recursive for the owning thread.
+ *
+ * @warning The USB backend executes commands in its transfer completion
+ * handler, so a long hold stalls every USB function on the device, not
+ * just DAP. Keep locked sections short and do not block on external
+ * events under the lock.
+ *
+ * @param[in] dap_link_ctx Context whose debug port is to be locked.
+ */
+void dap_link_lock(struct dap_link_context *const dap_link_ctx);
+
+/**
+ * @brief Unlock the debug port used by a DAP Link context.
+ *
+ * @param[in] dap_link_ctx Context whose debug port is to be unlocked.
+ */
+void dap_link_unlock(struct dap_link_context *const dap_link_ctx);
 
 /**
  * @brief Initialize the DAP Link USB backend.

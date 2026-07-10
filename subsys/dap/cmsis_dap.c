@@ -990,6 +990,8 @@ uint32_t dap_link_execute_cmd(struct dap_link_context *const dap_link_ctx,
 	uint16_t n;
 	uint8_t count;
 
+	dap_link_lock(dap_link_ctx);
+
 	if (request[0] == ID_DAP_EXECUTE_COMMANDS) {
 		/* copy command and increment */
 		*response++ = *request++;
@@ -1005,10 +1007,24 @@ uint32_t dap_link_execute_cmd(struct dap_link_context *const dap_link_ctx,
 			request += n;
 			response += n;
 		}
+		dap_link_unlock(dap_link_ctx);
 		return retval;
 	}
 
-	return dap_process_cmd(dap_link_ctx, request, response);
+	retval = dap_process_cmd(dap_link_ctx, request, response);
+	dap_link_unlock(dap_link_ctx);
+
+	return retval;
+}
+
+void dap_link_lock(struct dap_link_context *const dap_link_ctx)
+{
+	k_mutex_lock(&dap_link_ctx->lock, K_FOREVER);
+}
+
+void dap_link_unlock(struct dap_link_context *const dap_link_ctx)
+{
+	k_mutex_unlock(&dap_link_ctx->lock);
 }
 
 void dap_link_set_pkt_size(struct dap_link_context *const dap_link_ctx,
