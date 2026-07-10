@@ -1070,11 +1070,15 @@ struct wifi_twt_params {
 
 /* Flow ID is only 3 bits */
 #define WIFI_MAX_TWT_FLOWS 8
-#define WIFI_MAX_TWT_INTERVAL_US (LONG_MAX - 1)
+/* The TWT interval is encoded per IEEE 802.11 as mantissa * 2^exponent
+ * micro-seconds, with a 16-bit mantissa and a 5-bit exponent. The maximum
+ * representable interval is therefore UINT16_MAX * 2^WIFI_MAX_TWT_EXPONENT us.
+ */
+#define WIFI_MAX_TWT_EXPONENT 31
+#define WIFI_MAX_TWT_INTERVAL_US ((uint64_t)UINT16_MAX << WIFI_MAX_TWT_EXPONENT)
 /* 256 (u8) * 1TU */
 #define WIFI_MAX_TWT_WAKE_INTERVAL_US 262144
 #define WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US (LONG_MAX - 1)
-#define WIFI_MAX_TWT_EXPONENT 31
 
 /** @endcond */
 
