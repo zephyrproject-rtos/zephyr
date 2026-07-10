@@ -213,6 +213,71 @@ static bool parse_number(const struct shell *sh, long *param, char *str,
 	return true;
 }
 
+static bool parse_number_u64(const struct shell *sh, uint64_t *param, char *str,
+			     char *pname, uint64_t min, uint64_t max)
+{
+	char *endptr;
+	char *str_tmp = str;
+	uint64_t num;
+
+	if ((str_tmp[0] == '0') && (str_tmp[1] == 'x')) {
+		/* Hexadecimal numbers take base 0 in strtoull */
+		num = strtoull(str_tmp, &endptr, 0);
+	} else {
+		num = strtoull(str_tmp, &endptr, 10);
+	}
+
+	if (*endptr != '\0') {
+		PR_ERROR("Invalid number: %s\n", str_tmp);
+		return false;
+	}
+
+	if ((num < min) || (num > max)) {
+		if (pname) {
+			PR_WARNING("%s value out of range: %s, (%llu-%llu)\n",
+				   pname, str_tmp, (unsigned long long)min,
+				   (unsigned long long)max);
+		} else {
+			PR_WARNING("Value out of range: %s, (%llu-%llu)\n",
+				   str_tmp, (unsigned long long)min,
+				   (unsigned long long)max);
+		}
+		return false;
+	}
+	*param = num;
+	return true;
+}
+
+/* TWT interval is encoded per IEEE 802.11 as mantissa * 2^exponent us, with a
+ * 16-bit mantissa and a 5-bit exponent (WIFI_MAX_TWT_EXPONENT). Encode directly
+ * in micro-seconds using the full mantissa range so the whole uint64_t interval
+ * range is representable without floating point.
+ */
+static void twt_us_to_mantissa_exp(uint64_t interval_us, uint16_t *mantissa,
+				   uint8_t *exponent)
+{
+	uint64_t m = interval_us;
+	uint8_t e = 0;
+
+	while (m > UINT16_MAX && e < WIFI_MAX_TWT_EXPONENT) {
+		m >>= 1;
+		e++;
+	}
+
+	/* Saturate if the interval exceeds the encodable maximum. */
+	if (m > UINT16_MAX) {
+		m = UINT16_MAX;
+	}
+
+	*mantissa = (uint16_t)m;
+	*exponent = e;
+}
+
+static uint64_t twt_mantissa_exp_to_us(uint16_t mantissa, uint8_t exponent)
+{
+	return (uint64_t)mantissa << exponent;
+}
+
 static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_scan_result *entry =
@@ -1948,10 +2013,7 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 	struct wifi_twt_params params = { 0 };
 	int idx = 1;
 	long value;
-	double twt_mantissa_scale = 0.0;
-	double twt_interval_scale = 0.0;
-	uint16_t scale = 1000;
-	int exponent = 0;
+	uint64_t twt_interval;
 
 	context.sh = sh;
 
@@ -1971,17 +2033,18 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 	}
 	params.setup.twt_wake_interval = (uint32_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 1, WIFI_MAX_TWT_INTERVAL_US)) {
+	if (!parse_number_u64(sh, &twt_interval, argv[idx++], NULL, 1,
+			      WIFI_MAX_TWT_INTERVAL_US)) {
 		return -EINVAL;
 	}
-	params.setup.twt_interval = (uint64_t)value;
+	params.setup.twt_interval = twt_interval;
 
-	/* control the region of mantissa filed */
-	twt_interval_scale = (double)(params.setup.twt_interval / scale);
-	/* derive mantissa and exponent from interval */
-	twt_mantissa_scale = frexp(twt_interval_scale, &exponent);
-	params.setup.twt_mantissa = ceil(twt_mantissa_scale * scale);
-	params.setup.twt_exponent = exponent;
+	/* Derive mantissa and exponent from the interval for drivers that
+	 * consume the encoded form directly.
+	 */
+	twt_us_to_mantissa_exp(params.setup.twt_interval,
+			       &params.setup.twt_mantissa,
+			       &params.setup.twt_exponent);
 
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
 		PR_WARNING("%s with %s failed, reason : %s\n",
@@ -2092,10 +2155,6 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 	int opt_index = 0;
 	struct sys_getopt_state *state;
 	long value;
-	double twt_mantissa_scale = 0.0;
-	double twt_interval_scale = 0.0;
-	uint16_t scale = 1000;
-	int exponent = 0;
 	static const struct sys_getopt_option long_options[] = {
 		{"negotiation-type", sys_getopt_required_argument, 0, 'n'},
 		{"setup-cmd", sys_getopt_required_argument, 0, 'c'},
@@ -2191,11 +2250,11 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 			break;
 
 		case 'p':
-			if (!parse_number(sh, &value, state->optarg, NULL, 1,
-					  WIFI_MAX_TWT_INTERVAL_US)) {
+			if (!parse_number_u64(sh, &params->setup.twt_interval,
+					      state->optarg, NULL, 1,
+					      WIFI_MAX_TWT_INTERVAL_US)) {
 				return -EINVAL;
 			}
-			params->setup.twt_interval = (uint64_t)value;
 			break;
 
 		case 'D':
@@ -2245,16 +2304,17 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 	}
 
 	if (params->setup.twt_interval) {
-		/* control the region of mantissa filed */
-		twt_interval_scale = (double)(params->setup.twt_interval / scale);
-		/* derive mantissa and exponent from interval */
-		twt_mantissa_scale = frexp(twt_interval_scale, &exponent);
-		params->setup.twt_mantissa = ceil(twt_mantissa_scale * scale);
-		params->setup.twt_exponent = exponent;
+		/* Derive mantissa and exponent from the interval for drivers
+		 * that consume the encoded form directly.
+		 */
+		twt_us_to_mantissa_exp(params->setup.twt_interval,
+				       &params->setup.twt_mantissa,
+				       &params->setup.twt_exponent);
 	} else if ((params->setup.twt_exponent != 0) ||
 		   (params->setup.twt_mantissa != 0)) {
-		params->setup.twt_interval = floor(ldexp(params->setup.twt_mantissa,
-							 params->setup.twt_exponent));
+		params->setup.twt_interval =
+			twt_mantissa_exp_to_us(params->setup.twt_mantissa,
+					       params->setup.twt_exponent);
 	} else {
 		PR_ERROR("Either TWT interval or (mantissa, exponent) is needed\n");
 		return -EINVAL;
