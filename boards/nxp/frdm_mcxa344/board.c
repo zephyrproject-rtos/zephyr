@@ -239,6 +239,10 @@ void board_early_init_hook(void)
 	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlOpamp2);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ostimer0))
+	CLOCK_AttachClk(kCLK_1M_to_OSTIMER);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 }
