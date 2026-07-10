@@ -27,6 +27,7 @@
 /**
  * @brief Tracing hooks for thread events
  * @defgroup subsys_tracing_apis_thread Thread
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -377,11 +378,12 @@
 #define sys_port_trace_k_thread_sched_suspend(thread)
 #endif
 
-/** @}c*/ /* end of subsys_tracing_apis_thread */
+/** @} */ /* end of subsys_tracing_apis_thread */
 
 /**
  * @brief Tracing hooks for work item events
  * @defgroup subsys_tracing_apis_work Work item
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -505,6 +507,7 @@
 /**
  * @brief Tracing hooks for work queue events
  * @defgroup subsys_tracing_apis_work_q Work queue
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -599,6 +602,7 @@
 /**
  * @brief Tracing hooks for delayable work item events
  * @defgroup subsys_tracing_apis_work_delayable Delayable work item
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -750,6 +754,7 @@
 /**
  * @brief Tracing hooks for triggered work item events
  * @defgroup subsys_tracing_apis_work_poll Triggered work item
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -841,6 +846,7 @@
 /**
  * @brief Tracing hooks for polling events
  * @defgroup subsys_tracing_apis_poll Polling
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -907,6 +913,7 @@
 /**
  * @brief Tracing hooks for semaphore events
  * @defgroup subsys_tracing_apis_sem Semaphore
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -976,6 +983,7 @@
 /**
  * @brief Tracing hooks for mutex events
  * @defgroup subsys_tracing_apis_mutex Mutex
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -1036,6 +1044,7 @@
 /**
  * @brief Tracing hooks for conditional variable events
  * @defgroup subsys_tracing_apis_condvar Conditional variable
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -1115,6 +1124,7 @@
 /**
  * @brief Tracing hooks for queue events
  * @defgroup subsys_tracing_apis_queue Queue
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -1374,6 +1384,7 @@
 /**
  * @brief Tracing hooks for FIFO events
  * @defgroup subsys_tracing_apis_fifo FIFO
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -1542,6 +1553,7 @@
 /**
  * @brief Tracing hooks for LIFO events
  * @defgroup subsys_tracing_apis_lifo LIFO
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -1622,6 +1634,7 @@
 /**
  * @brief Tracing hooks for stack events
  * @defgroup subsys_tracing_apis_stack Stack
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -1717,6 +1730,7 @@
 /**
  * @brief Tracing hooks for message queue events
  * @defgroup subsys_tracing_apis_msgq Message queue
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -1868,6 +1882,7 @@
 /**
  * @brief Tracing hooks for mailbox events
  * @defgroup subsys_tracing_apis_mbox Mailbox
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -1985,6 +2000,7 @@
 /**
  * @brief Tracing hooks for pipe events
  * @defgroup subsys_tracing_apis_pipe Pipe
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -2093,6 +2109,7 @@
 /**
  * @brief Tracing hooks for heap events
  * @defgroup subsys_tracing_apis_heap Heap
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -2294,6 +2311,7 @@
 /**
  * @brief Tracing hooks for memory slab events
  * @defgroup subsys_tracing_apis_mslab Memory slab
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -2355,6 +2373,7 @@
 /**
  * @brief Tracing hooks for timer events
  * @defgroup subsys_tracing_apis_timer Timer
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -2464,6 +2483,7 @@
 /**
  * @brief Tracing hooks for event events
  * @defgroup subsys_tracing_apis_event Event
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -2532,6 +2552,7 @@
 /**
  * @brief Tracing hooks for system power management events
  * @defgroup subsys_tracing_apis_pm_system System PM
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -2557,6 +2578,7 @@
 /**
  * @brief Tracing hooks for device runtime power management events
  * @defgroup subsys_tracing_apis_pm_device_runtime PM Device Runtime
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -2652,6 +2674,7 @@
 /**
  * @brief Tracing hooks for network events
  * @defgroup subsys_tracing_apis_net Network
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -2714,6 +2737,7 @@
 /**
  * @brief Tracing hooks for network socket events
  * @defgroup subsys_tracing_apis_socket Network socket
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -3093,6 +3117,7 @@
 /**
  * @brief Tracing hooks for GPIO events
  * @defgroup subsys_tracing_apis_gpio GPIO
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -3362,6 +3387,7 @@
 /**
  * @brief RTIO Tracing APIs
  * @defgroup subsys_tracing_apis_rtio RTIO Tracing APIs
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -3507,12 +3533,15 @@
 /** @} */ /* end of subsys_tracing_apis_rtio */
 
 /**
+ * @brief Tracing hooks provided only by specific backends
  * @defgroup subsys_tracing_apis_backend_ext Backend-specific extensions
- * @{
+ * @ingroup subsys_tracing_apis
  *
  * Hooks defined only by specific backends (e.g. SystemView pipe internals).
  * Provided here as no-op fallbacks so every backend resolves the full set.
+ * @{
  */
+
 /**
  * @brief Trace initialization of a dynamically allocated pipe Enter API
  * @param pipe Pipe object
