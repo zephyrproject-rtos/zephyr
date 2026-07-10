@@ -1998,8 +1998,8 @@ int bt_bap_base_get_subgroup_codec_data(const struct bt_bap_base_subgroup *subgr
  * @param[in]  subgroup The subgroup pointer
  * @param[out] meta     Pointer that will point to the resulting codec metadata
  *
+ * @return Length of the metadata on success
  * @retval -EINVAL if arguments are invalid
- * @retval 0 on success
  */
 int bt_bap_base_get_subgroup_codec_meta(const struct bt_bap_base_subgroup *subgroup,
 					uint8_t **meta);
