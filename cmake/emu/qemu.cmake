@@ -64,6 +64,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/qemu/x86_locore.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/qemu/ivshmem.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/qemu/nvme.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/qemu/net_nic.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/qemu/logging.cmake)
 
 if(CONFIG_FLASH_INTEL_PFLASH_CFI01)
   if(CONFIG_X86)
