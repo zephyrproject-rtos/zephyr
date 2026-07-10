@@ -295,6 +295,14 @@ tests:
       - SHIELD=mikroe_flash_5_click
       - DTC_OVERLAY_FILE="./boards/mikroe_flash_5_click.overlay"
       - EXTRA_CONF_FILE="./boards/mikroe_flash_5_click.conf"
+  drivers.flash.common.spi_nand.w25n01gv:
+    harness_config:
+      fixture: w25n01gv
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_args:
+      - FILE_SUFFIX="w25n01gv"
+      - EXTRA_CONF_FILE="./boards/mikroe_flash_5_click.conf"
   drivers.flash.common.versalnet:
     build_only: true
     platform_allow:
