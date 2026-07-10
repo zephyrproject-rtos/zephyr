@@ -1,7 +1,7 @@
 common:
-  build_only: true
   tags:
     - bluetooth
+  depends_on: bsim
   platform_allow:
     - nrf52_bsim/native
   harness: bsim
@@ -9,14 +9,23 @@ common:
 tests:
   bluetooth.host.gatt.ccc_store:
     harness_config:
+      fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_host_gatt_ccc_store_prj_conf
+      tests_scripts:
+        - test_scripts/ccc_store.sh
   bluetooth.host.gatt.ccc_store_no_store_on_write:
     harness_config:
+      fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_host_gatt_ccc_store_overlay-no_store_on_write_conf
+      tests_scripts:
+        - test_scripts/ccc_store_no_store_on_write.sh
     extra_args:
       EXTRA_CONF_FILE=overlay-no_store_on_write.conf
   bluetooth.host.gatt.ccc_store_no_long_wq:
     harness_config:
+      fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_host_gatt_ccc_store_overlay-no_long_wq_conf
+      tests_scripts:
+        - test_scripts/ccc_store_no_long_wq.sh
     extra_args:
       EXTRA_CONF_FILE=overlay-no_long_wq.conf

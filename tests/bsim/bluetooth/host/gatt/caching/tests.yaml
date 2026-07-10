@@ -1,7 +1,8 @@
 common:
-  build_only: true
+  timeout: 600
   tags:
     - bluetooth
+  depends_on: bsim
   platform_allow:
     - nrf52_bsim/native
     - nrf5340bsim/nrf5340/cpunet
@@ -10,9 +11,20 @@ common:
 tests:
   bluetooth.host.gatt.caching:
     harness_config:
+      fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_host_gatt_caching_prj_conf
+      tests_scripts:
+        - test_scripts/gatt_caching_db_hash_read_eatt.sh
+        - test_scripts/gatt_caching_retry_reads_no_eatt.sh
+        - test_scripts/gatt_caching_retry_reads_eatt.sh
+        - test_scripts/gatt_caching_db_hash_read_no_eatt.sh
+        - test_scripts/gatt_caching_out_of_sync_eatt.sh
+        - test_scripts/gatt_caching_out_of_sync_no_eatt.sh
   bluetooth.host.gatt.caching_psa_overlay:
     harness_config:
+      fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_host_gatt_caching_prj_conf_psa_overlay_conf
+      tests_scripts:
+        - test_scripts/gatt_caching_psa_db_hash_read_eatt.sh
     extra_args:
       EXTRA_CONF_FILE=psa_overlay.conf
