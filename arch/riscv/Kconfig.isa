@@ -277,6 +277,7 @@ config RISCV_ISA_EXT_ZBC
 config RISCV_ISA_EXT_ZBKB
 	bool
 	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zbkb)
+	select ARCH_HAS_BIT_REV
 	help
 	  (Zbkb) - Zbkb BitManip Extension (Bit-manipulation for Cryptography)
 
