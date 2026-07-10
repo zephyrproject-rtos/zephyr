@@ -2,7 +2,7 @@
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
 
-set(QEMU_CPU_TYPE_${ARCH} 24Kc)
+set(QEMU_CPU_TYPE 24Kc)
 
 set(QEMU_FLAGS_${ARCH}
   -machine malta

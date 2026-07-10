@@ -17,6 +17,16 @@
 # Within a slot, flags keep the order in which they were contributed, so the
 # include order of the fragments below is significant.
 
+if(DEFINED QEMU_CPU_TYPE_${ARCH})
+  message(FATAL_ERROR "QEMU_CPU_TYPE_\${ARCH} has been renamed to QEMU_CPU_TYPE.")
+endif()
+
+# QEMU_CPU_TYPE names the emulated CPU for the build system's benefit: it is
+# reported in the run target's progress message. It is not passed to QEMU from
+# here. Boards that need a -cpu argument reference it when composing
+# QEMU_FLAGS_${ARCH}, and boards whose -machine already implies a CPU set it
+# without passing -cpu at all.
+
 include(${ZEPHYR_BASE}/cmake/emu/qemu/flags.cmake)
 include(${ZEPHYR_BASE}/cmake/emu/qemu/binary.cmake)
 
@@ -142,7 +152,7 @@ foreach(target ${qemu_targets})
     ${post_commands}
     DEPENDS ${logical_target_for_zephyr_elf}
     WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
-    COMMENT "${QEMU_PIPE_COMMENT}[QEMU] CPU: ${QEMU_CPU_TYPE_${ARCH}}"
+    COMMENT "${QEMU_PIPE_COMMENT}[QEMU] CPU: ${QEMU_CPU_TYPE}"
     USES_TERMINAL
   )
   if(qemu_target_depends)

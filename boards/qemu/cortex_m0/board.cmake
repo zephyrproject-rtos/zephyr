@@ -5,9 +5,9 @@
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
 
-set(QEMU_CPU_TYPE_${ARCH} cortex-m0)
+set(QEMU_CPU_TYPE cortex-m0)
 set(QEMU_FLAGS_${ARCH}
-  -cpu ${QEMU_CPU_TYPE_${ARCH}}
+  -cpu ${QEMU_CPU_TYPE}
   -machine microbit
   )
 include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)
