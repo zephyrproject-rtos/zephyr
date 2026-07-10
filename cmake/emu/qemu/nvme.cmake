@@ -18,7 +18,7 @@ if(CONFIG_NVME)
     )
   endif()
 
-  list(APPEND QEMU_EXTRA_FLAGS
+  qemu_append_extra_flags(
     -drive file=${ZEPHYR_BINARY_DIR}/nvme_disk.img,if=none,id=nvm1
     -device nvme,serial=deadbeef,drive=nvm1
   )
@@ -31,5 +31,5 @@ if(CONFIG_NVME)
     1M
   )
 
-  list(APPEND QEMU_TARGET_DEPENDS qemu_nvme_disk)
+  qemu_add_target_depends(qemu_nvme_disk)
 endif()
