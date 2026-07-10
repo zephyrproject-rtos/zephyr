@@ -155,6 +155,14 @@ static int recv_data(struct net_socket_service_event *pev)
 
 	dns_data = net_buf_alloc(&dns_msg_pool, dispatcher->buf_timeout);
 	if (!dns_data) {
+		uint8_t discard;
+
+		/* Flush the pending datagram to release its net_pkt and avoid RX starvation. */
+		if (zsock_recvfrom(pev->event.fd, &discard, sizeof(discard), 0,
+				   NULL, NULL) < 0) {
+			NET_DBG("DNS discard recv failed (%d)", errno);
+		}
+
 		ret = DNS_EAI_MEMORY;
 		goto unlock;
 	}
