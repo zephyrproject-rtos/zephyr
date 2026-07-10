@@ -105,6 +105,9 @@ class TestInstance(StatusMixin):
         self.required_applications = []
         self.required_build_dirs = []
         self.reserved_duts: list[CompoundHardwareData] = []
+        # Sidecar attached to this instance; defaults to the testsuite `sidecar:`
+        # field but twister may set it itself (e.g. to attach ivshmem coverage).
+        self.sidecar = testsuite.sidecar
 
     def setup_run_id(self):
         self.run_id = self._get_run_id()

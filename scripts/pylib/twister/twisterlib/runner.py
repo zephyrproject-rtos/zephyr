@@ -56,6 +56,7 @@ from twisterlib.environment import TwisterEnv
 from twisterlib.harness import Harness, HarnessImporter
 from twisterlib.log_helper import log_command
 from twisterlib.platform import Platform
+from twisterlib.sidecars import SidecarImporter
 from twisterlib.testinstance import TestInstance
 from twisterlib.testplan import change_skip_to_error_if_integration
 from twisterlib.testsuite import TestSuite
@@ -458,6 +459,24 @@ class CMake:
             cmd += cmake_filter_args
 
         kwargs = dict()
+
+        # A sidecar may need environment or extra CMake arguments for the
+        # configure step (e.g. the virtiofs sidecar injects a -chardev socket
+        # path into QEMU's flags; the net-tools sidecar bakes the host interface
+        # name and addresses). Ask it generically so the runner stays agnostic of
+        # any specific sidecar; an unknown name is reported later by the run stage.
+        try:
+            sidecar = SidecarImporter.get_sidecar(self.instance.sidecar)
+        except ValueError:
+            sidecar = None
+        if sidecar is not None:
+            sidecar.configure(self.instance)
+            sidecar_env = sidecar.cmake_env(self.build_dir)
+            if sidecar_env:
+                env = os.environ.copy()
+                env.update(sidecar_env)
+                kwargs['env'] = env
+            cmd += sidecar.cmake_args(self.build_dir)
 
         log_command(logger, "Calling cmake", cmd)
 
@@ -1639,9 +1658,37 @@ class ProjectBuilder(FilterBuilder):
                 logger.error(instance.reason)
                 return
 
-            # If the harness does not handle execution itself, delegate to the handler.
-            if not harness.run(instance.handler.get_test_timeout()):
-                instance.handler.handle(harness)
+            # A sidecar (selected with the `sidecar:` field, or attached by
+            # twister e.g. for ivshmem coverage) provisions a host-side resource
+            # around the run, e.g. a virtiofsd daemon or an ivshmem backing file.
+            # It is set up before the test executes by whichever path runs it --
+            # a harness that executes the test itself, or the handler -- and torn
+            # down afterwards. Teardown always runs once the sidecar has been
+            # configured, including when setup() failed part way through, so a
+            # sidecar never leaks what it already provisioned.
+            try:
+                sidecar = SidecarImporter.get_sidecar(instance.sidecar)
+            except ValueError as error:
+                instance.status = TwisterStatus.ERROR
+                instance.reason = str(error)
+                logger.error(instance.reason)
+                return
+            if sidecar is not None:
+                sidecar.configure(instance)
+
+            try:
+                # Provision on its own, before anything executes the test: a
+                # sidecar must never be short-circuited away by how the test is
+                # run. setup() reports whether execution should proceed at all.
+                proceed = sidecar.setup() if sidecar is not None else True
+
+                # If the harness does not handle execution itself, delegate to
+                # the handler.
+                if proceed and not harness.run(instance.handler.get_test_timeout()):
+                    instance.handler.handle(harness)
+            finally:
+                if sidecar is not None:
+                    sidecar.teardown()
 
         sys.stdout.flush()
 

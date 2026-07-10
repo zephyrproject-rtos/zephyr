@@ -41,6 +41,7 @@ from twisterlib.hardwaremap import HardwareMap
 from twisterlib.modulevars import expand_zephyr_vars
 from twisterlib.platform import Platform, generate_platforms
 from twisterlib.quarantine import Quarantine
+from twisterlib.sidecars import sidecar_config_schema
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite, scan_testsuite_path
@@ -153,6 +154,10 @@ class TestPlan:
     suite_schema = scl.yaml_load(
         os.path.join(ZEPHYR_BASE,
                      "scripts", "schemas", "twister", "testsuite-schema.yaml"))
+    # Fill in the per-sidecar `sidecar_config` schema from the registered
+    # sidecars, so adding a sidecar needs no change to the schema file. The file
+    # keeps a permissive placeholder for consumers that load it directly.
+    suite_schema['$defs']['scenario']['properties']['sidecar_config'] = sidecar_config_schema()
     quarantine_schema = scl.yaml_load(
         os.path.join(ZEPHYR_BASE,
                      "scripts", "schemas", "twister", "quarantine-schema.yaml"))
