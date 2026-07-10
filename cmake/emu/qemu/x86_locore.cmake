@@ -45,11 +45,11 @@ if(CONFIG_X86_64 AND NOT CONFIG_QEMU_UEFI_BOOT)
     DEPENDS qemu_locore_image_target qemu_main_image_target
   )
 
-  list(APPEND QEMU_TARGET_DEPENDS qemu_kernel_target)
+  qemu_add_target_depends(qemu_kernel_target)
 
   set(QEMU_KERNEL_FILE "${ZEPHYR_BINARY_DIR}/zephyr-qemu-locore.elf")
 
-  list(APPEND QEMU_EXTRA_FLAGS
+  qemu_append_extra_flags(
     "-device;loader,file=${ZEPHYR_BINARY_DIR}/zephyr-qemu-main.elf"
   )
 endif()

@@ -2,28 +2,27 @@
 
 # Assemble the QEMU command line and emit the run/debugserver targets.
 #
-# The command line is built up in several lists, concatenated in this order
-# when the run targets are created at the bottom of this file:
+# Fragments contribute to the command line through the qemu_append_*() API in
+# cmake/emu/qemu/flags.cmake rather than by appending to variables by name. The
+# pieces are concatenated in this order when the run targets are created below:
 #
 #   QEMU_UEFI_OPTION     boot through uefi-run instead of -kernel
 #   QEMU_FLAGS_${ARCH}   machine and CPU selection, set by the board
-#   QEMU_FLAGS           emulated devices and host plumbing, set below
-#   QEMU_EXTRA_FLAGS     board, environment and CONFIG_QEMU_EXTRA_FLAGS additions
-#   MORE_FLAGS_FOR_<t>   flags specific to one run target
+#   FLAGS_DEVICE slot    emulated devices and host plumbing
+#   FLAGS_EXTRA slot     late additions, after every device
+#   TARGET_FLAGS_<t>     flags specific to one run target
 #   QEMU_SMP_FLAGS       -smp
 #   QEMU_KERNEL_OPTION   how to load the image
 #
-# Targets that must run before QEMU can start are collected per run target in
-# PRE_QEMU_COMMANDS_FOR_<target>, and build-time dependencies of the run targets
-# in QEMU_TARGET_DEPENDS. The included fragments below append to these lists;
-# the include order therefore fixes the order of the resulting command line.
+# Within a slot, flags keep the order in which they were contributed, so the
+# include order of the fragments below is significant.
 
+include(${ZEPHYR_BASE}/cmake/emu/qemu/flags.cmake)
 include(${ZEPHYR_BASE}/cmake/emu/qemu/binary.cmake)
 
-set(qemu_targets
-  run_qemu
-  debugserver_qemu
-)
+# Boards contribute to the command line before this file runs, by appending to
+# QEMU_EXTRA_FLAGS. Seed the EXTRA slot with what they left behind.
+qemu_append_extra_flags(${QEMU_EXTRA_FLAGS})
 
 # QEMU_INSTANCE is a command line argument to *make* (not cmake). With the
 # Makefiles generator the reference must survive CMake expansion and reach the
@@ -35,10 +34,10 @@ else()
   set(qemu_instance "${QEMU_INSTANCE}")
 endif()
 
-set(QEMU_FLAGS -pidfile qemu${qemu_instance}.pid)
+qemu_append_flags(-pidfile qemu${qemu_instance}.pid)
 
 if(CONFIG_VIRTIO_MMIO)
-  list(APPEND QEMU_FLAGS -global virtio-mmio.force-legacy=false)
+  qemu_append_flags(-global virtio-mmio.force-legacy=false)
 endif()
 
 include(${ZEPHYR_BASE}/cmake/emu/qemu/console.cmake)
@@ -89,25 +88,25 @@ endif()
 # Use flags passed in from the environment
 set(env_qemu $ENV{QEMU_EXTRA_FLAGS})
 separate_arguments(env_qemu)
-list(APPEND QEMU_EXTRA_FLAGS ${env_qemu})
+qemu_append_extra_flags(${env_qemu})
 
 # Also append QEMU flags from config
 if(NOT CONFIG_QEMU_EXTRA_FLAGS STREQUAL "")
   set(config_qemu_flags ${CONFIG_QEMU_EXTRA_FLAGS})
   separate_arguments(config_qemu_flags)
-  list(APPEND QEMU_EXTRA_FLAGS "${config_qemu_flags}")
+  qemu_append_extra_flags(${config_qemu_flags})
 endif()
 
-list(APPEND MORE_FLAGS_FOR_debugserver_qemu -S)
+qemu_append_target_flags(debugserver_qemu -S)
 
 if(NOT CONFIG_QEMU_GDBSERVER_LISTEN_DEV STREQUAL "")
-  list(APPEND MORE_FLAGS_FOR_debugserver_qemu -gdb "${CONFIG_QEMU_GDBSERVER_LISTEN_DEV}")
+  qemu_append_target_flags(debugserver_qemu -gdb "${CONFIG_QEMU_GDBSERVER_LISTEN_DEV}")
 endif()
 
 # Boards and architectures can define QEMU_KERNEL_FILE to use a specific output
-# file to pass to qemu; whatever target generates that file must be appended to
-# QEMU_TARGET_DEPENDS. Alternatively they can set QEMU_KERNEL_OPTION if they
-# want to replace the "-kernel ..." option entirely.
+# file to pass to qemu; whatever target generates that file must be registered
+# with qemu_add_target_depends(). Alternatively they can set QEMU_KERNEL_OPTION
+# if they want to replace the "-kernel ..." option entirely.
 if(CONFIG_QEMU_UEFI_BOOT)
   set(QEMU_UEFI_OPTION  ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.efi)
   list(APPEND QEMU_UEFI_OPTION --)
@@ -119,25 +118,34 @@ elseif(DEFINED QEMU_KERNEL_OPTION)
   string(CONFIGURE "${QEMU_KERNEL_OPTION}" QEMU_KERNEL_OPTION)
 endif()
 
+qemu_get_property(qemu_device_flags   FLAGS_DEVICE)
+qemu_get_property(qemu_extra_flags    FLAGS_EXTRA)
+qemu_get_property(qemu_target_depends TARGET_DEPENDS)
+qemu_get_run_targets(qemu_targets)
+
 foreach(target ${qemu_targets})
+  qemu_get_property(pre_commands  PRE_COMMANDS_${target})
+  qemu_get_property(post_commands POST_COMMANDS_${target})
+  qemu_get_property(target_flags  TARGET_FLAGS_${target})
+
   add_custom_target(${target}
-    ${PRE_QEMU_COMMANDS_FOR_${target}}
+    ${pre_commands}
     COMMAND
     ${QEMU}
     ${QEMU_UEFI_OPTION}
     ${QEMU_FLAGS_${ARCH}}
-    ${QEMU_FLAGS}
-    ${QEMU_EXTRA_FLAGS}
-    ${MORE_FLAGS_FOR_${target}}
+    ${qemu_device_flags}
+    ${qemu_extra_flags}
+    ${target_flags}
     ${QEMU_SMP_FLAGS}
     ${QEMU_KERNEL_OPTION}
-    ${POST_QEMU_COMMANDS_FOR_${target}}
+    ${post_commands}
     DEPENDS ${logical_target_for_zephyr_elf}
     WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
     COMMENT "${QEMU_PIPE_COMMENT}[QEMU] CPU: ${QEMU_CPU_TYPE_${ARCH}}"
     USES_TERMINAL
   )
-  if(QEMU_TARGET_DEPENDS)
-    add_dependencies(${target} ${QEMU_TARGET_DEPENDS})
+  if(qemu_target_depends)
+    add_dependencies(${target} ${qemu_target_depends})
   endif()
 endforeach()

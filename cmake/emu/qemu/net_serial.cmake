@@ -27,19 +27,17 @@ endif()
 
 # TO create independent pipes for each QEMU application set QEMU_PIPE_STACK
 if(QEMU_PIPE_STACK)
-  list(APPEND qemu_targets
-    node
-  )
+  qemu_add_run_targets(node)
 
   if(NOT QEMU_PIPE_ID)
     set(QEMU_PIPE_ID 1)
   endif()
 
-  list(APPEND QEMU_FLAGS
+  qemu_append_flags(
     -serial none
   )
 
-  list(APPEND MORE_FLAGS_FOR_node
+  qemu_append_target_flags(node
     -serial pipe:/tmp/hub/ip-stack-node${QEMU_PIPE_ID}
     -pidfile qemu-node${QEMU_PIPE_ID}.pid
   )
@@ -62,27 +60,25 @@ if(QEMU_PIPE_STACK)
     COMMAND mkfifo ${PIPE_NODE_OUT}
   )
 
-  set(PRE_QEMU_COMMANDS_FOR_node
+  qemu_add_pre_commands(node
     ${destroy_pipe_commands}
     ${create_pipe_commands}
   )
 
 elseif(QEMU_NET_STACK)
-  list(APPEND qemu_targets
-    client
-    server
-  )
+  qemu_add_run_targets(client server)
 
+  qemu_get_run_targets(qemu_targets)
   foreach(target ${qemu_targets})
     if((${target} STREQUAL client) OR (${target} STREQUAL server))
-      list(APPEND MORE_FLAGS_FOR_${target}
+      qemu_append_target_flags(${target}
         -serial pipe:/tmp/ip-stack-${target}
         -pidfile qemu-${target}.pid
       )
     elseif(CONFIG_NET_QEMU_PPP)
-      list(APPEND MORE_FLAGS_FOR_${target} -serial unix:/tmp/ppp${qemu_instance})
+      qemu_append_target_flags(${target} -serial unix:/tmp/ppp${qemu_instance})
     else()
-      list(APPEND MORE_FLAGS_FOR_${target} -serial unix:/tmp/slip.sock${qemu_instance})
+      qemu_append_target_flags(${target} -serial unix:/tmp/slip.sock${qemu_instance})
     endif()
   endforeach()
 
@@ -121,7 +117,7 @@ elseif(QEMU_NET_STACK)
     )
   endif()
 
-  set(PRE_QEMU_COMMANDS_FOR_server
+  qemu_add_pre_commands(server
     ${destroy_pipe_commands}
     ${create_pipe_commands}
   )
@@ -135,7 +131,7 @@ elseif(QEMU_NET_STACK)
 
     set_ifndef(NET_TOOLS ${ZEPHYR_BASE}/../tools/net-tools) # Default if not set
 
-    list(APPEND PRE_QEMU_COMMANDS_FOR_server
+    qemu_add_pre_commands(server
       #Disable Ctrl-C to ensure that users won't accidentally exit
       #w/o killing the monitor.
       COMMAND stty intr ^d
@@ -151,7 +147,7 @@ elseif(QEMU_NET_STACK)
         > /dev/null &
       }
     )
-    set(POST_QEMU_COMMANDS_FOR_server
+    qemu_add_post_commands(server
       # Re-enable Ctrl-C.
       COMMAND stty intr ^c
 
