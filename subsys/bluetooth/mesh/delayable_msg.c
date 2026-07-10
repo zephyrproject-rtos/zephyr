@@ -208,8 +208,13 @@ static void delayable_msg_handler(struct k_work *w)
 {
 	if (!push_msg_from_delayable_msgs()) {
 		sys_snode_t *node = sys_slist_get(&access_delayable_msg.busy_ctx);
-		struct delayable_msg_ctx *pending_msg =
-			CONTAINER_OF(node, struct delayable_msg_ctx, node);
+		struct delayable_msg_ctx *pending_msg;
+
+		if (!node) {
+			return;
+		}
+
+		pending_msg = CONTAINER_OF(node, struct delayable_msg_ctx, node);
 
 		pending_msg->fired_time += 10;
 		reschedule_delayable_msg(pending_msg);
