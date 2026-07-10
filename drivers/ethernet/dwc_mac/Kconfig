@@ -124,6 +124,19 @@ config ETH_DWMAC_RX_REFILL_THREAD_PRIORITY
 	  Priority level of the internal thread which is used to refill
 	  the receive buffer pool.
 
+config ETH_DWC_ETHER_MULTICAST_FILTER_HASH
+	bool "Multicast hash filter support"
+	select CRC
+	default y
+	help
+	  Enable support for multicast hash filtering in the MAC.
+	  Once enabled the ethernet MAC performs imperfect filtering
+	  based on a computed hash of the destination MAC address of
+	  the multicast address. Only multicast with the computed
+	  hash set in the multicast table will be received and all
+	  other multicast is dropped by the MAC. If disabled then all
+	  multicast is received by the MAC.
+
 # Currently only for the 1000 core
 if ETH_DWC_ETHER_1000_CORE
 

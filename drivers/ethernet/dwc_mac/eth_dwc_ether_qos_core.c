@@ -123,6 +123,9 @@ static enum ethernet_hw_caps dwmac_caps(const struct device *dev, struct net_if 
 #ifdef CONFIG_NET_VLAN
 	caps |= ETHERNET_HW_VLAN;
 #endif
+#ifdef CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER_HASH
+	caps |= ETHERNET_HW_FILTERING;
+#endif
 
 	return caps;
 }
@@ -504,7 +507,11 @@ static int dwmac_set_config(const struct device *dev,
 		}
 		break;
 #endif
-
+#if defined(CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER_HASH)
+	case ETHERNET_CONFIG_TYPE_FILTER:
+		dwmac_setup_multicast_filter(dev, &config->filter);
+		break;
+#endif
 	default:
 		ret = -ENOTSUP;
 		break;
@@ -591,7 +598,11 @@ static void dwmac_iface_init(struct net_if *iface)
 	 *   - pass multicast packets
 	 *   - pass broadcast packets
 	 */
-	DWMAC_REG_WRITE(MAC_PKT_FILTER, MAC_PKT_FILTER_PM);
+	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER_HASH)) {
+		DWMAC_REG_WRITE(MAC_PKT_FILTER, MAC_PKT_FILTER_HMC);
+	} else {
+		DWMAC_REG_WRITE(MAC_PKT_FILTER, MAC_PKT_FILTER_PM);
+	}
 
 	if (cfg->phy_dev != NULL) {
 		/* Do not start the interface until PHY link is up */

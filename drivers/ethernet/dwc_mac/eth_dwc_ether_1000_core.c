@@ -78,6 +78,9 @@ static enum ethernet_hw_caps dwmac_caps(const struct device *dev __unused,
 #ifdef CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN
 	       | ETHERNET_HW_TX_CHKSUM_OFFLOAD
 #endif
+#ifdef CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER_HASH
+	       | ETHERNET_HW_FILTERING
+#endif
 		;
 }
 
@@ -401,6 +404,11 @@ static int dwmac_set_config(const struct device *dev, struct net_if *iface __unu
 		DWMAC_REG_WRITE(DWMAC_MACFFR, reg);
 		break;
 #endif
+#if defined(CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER_HASH)
+	case ETHERNET_CONFIG_TYPE_FILTER:
+		dwmac_setup_multicast_filter(dev, &config->filter);
+		break;
+#endif
 	default:
 		return -ENOTSUP;
 	}
@@ -461,8 +469,12 @@ static void dwmac_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, p->mac_addr, sizeof(p->mac_addr), NET_LINK_ETHERNET);
 	dwmac_set_mac_addr(dev, p->mac_addr);
 
-	/* Pass all multicast frames */
-	DWMAC_REG_WRITE(DWMAC_MACFFR, DWMAC_REG_READ(DWMAC_MACFFR) | DWMAC_MACFFR_PAM);
+	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER_HASH)) {
+		DWMAC_REG_WRITE(DWMAC_MACFFR, DWMAC_REG_READ(DWMAC_MACFFR) | DWMAC_MACFFR_HM);
+	} else {
+		/* Pass all multicast frames */
+		DWMAC_REG_WRITE(DWMAC_MACFFR, DWMAC_REG_READ(DWMAC_MACFFR) | DWMAC_MACFFR_PAM);
+	}
 
 	net_if_carrier_off(iface);
 	if (device_is_ready(cfg->phy_dev)) {
