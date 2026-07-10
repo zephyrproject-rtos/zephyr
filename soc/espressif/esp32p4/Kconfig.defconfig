@@ -3,6 +3,9 @@
 
 if SOC_ESP32P4_HPCORE
 
+config BOOTLOADER_CPU_CLK_FREQ_MHZ
+	default 90 if SOC_ESP32P4_REV_1_0
+
 config FPU
 	default y
 

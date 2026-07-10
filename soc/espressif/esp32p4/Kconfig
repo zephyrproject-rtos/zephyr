@@ -80,6 +80,7 @@ config ESP32P4_EMAC
 
 config SOC_ESP32P4_REV_MIN_FULL
 	int
+	default 100 if SOC_ESP32P4_REV_1_0
 	default 103 if SOC_ESP32P4_REV_1_3
 	default 300 if SOC_ESP32P4_REV_3_0
 	default 301 if SOC_ESP32P4_REV_3_1
