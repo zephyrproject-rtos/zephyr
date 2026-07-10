@@ -18,7 +18,7 @@ if(CONFIG_INPUT_VIRTIO)
   set(QEMU_VIRTIO_INPUT_FLAGS -device virtio-tablet-device,bus=virtio-mmio-bus.3)
 endif()
 
-set(QEMU_FLAGS_${ARCH}
+set(QEMU_BOARD_FLAGS
   -machine virt
   -bios none
   -m 256
