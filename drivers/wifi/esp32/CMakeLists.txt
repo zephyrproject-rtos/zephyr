@@ -7,3 +7,7 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_ESP32
 zephyr_library_sources_ifdef(CONFIG_WIFI_ESP32_MESH
   src/esp_wifi_mesh.c
   )
+
+zephyr_library_sources_ifdef(CONFIG_WIFI_ESP32_MESH_IP
+  src/esp_wifi_mesh_netif.c
+  )

@@ -20,6 +20,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_ip.h>
 
 /**
  * @brief Wi-Fi mesh events delivered to the application callback.
@@ -220,5 +222,16 @@ void esp_wifi_mesh_set_tods_reachable(bool reachable);
  * receive path for that interface. Call once the node becomes the mesh root.
  */
 void esp_wifi_mesh_bind_sta_rx(void);
+
+/**
+ * @brief Get the Ethernet-over-mesh network interface.
+ *
+ * The mesh netif carries Ethernet frames over the Wi-Fi mesh transport so the
+ * Zephyr network stack runs unmodified on top of the mesh. Use the returned
+ * interface to assign IP addresses and drive DHCP, NAT and routing.
+ *
+ * @return the mesh network interface, or NULL before it is initialized.
+ */
+struct net_if *esp_wifi_mesh_netif_get(void);
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_WIFI_ESP_WIFI_MESH_H_ */

@@ -609,6 +609,19 @@ config WIFI_ESP32_MESH_FORCE_CHILD
 
 endchoice # WIFI_ESP32_MESH_ROLE
 
+config WIFI_ESP32_MESH_IP
+	bool "IP over mesh"
+	select NET_L2_ETHERNET
+	help
+	  Build the Ethernet-over-mesh network interface so IP runs on top of
+	  the mesh transport. It carries Ethernet frames as the mesh payload,
+	  letting the Zephyr network stack (addresses, DHCP, NAT, sockets) run
+	  unmodified over the mesh. Without this option the mesh only carries
+	  application data through esp_wifi_mesh_send()/esp_wifi_mesh_recv().
+
+	  The IP-level policy (addresses, DHCP server, NAT, routes) is left to
+	  the application; the driver only provides the transport interface.
+
 endif # WIFI_ESP32_MESH
 
 config ESP32_WIFI_MBEDTLS_CRYPTO
