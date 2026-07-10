@@ -102,6 +102,30 @@ int arch_dcache_flush_and_invd_all(void)
 	return 0;
 }
 
+#ifdef CONFIG_OUTER_CACHE
+/*
+ * Outer-cache pairing hooks, overridden by SoC drivers at link time.
+ * Order: flush = L1 then outer; invd = outer then L1.
+ */
+__weak void z_arm_outer_cache_flush_range(void *addr, size_t size)
+{
+	ARG_UNUSED(addr);
+	ARG_UNUSED(size);
+}
+
+__weak void z_arm_outer_cache_invd_range(void *addr, size_t size)
+{
+	ARG_UNUSED(addr);
+	ARG_UNUSED(size);
+}
+
+__weak void z_arm_outer_cache_flush_and_invd_range(void *addr, size_t size)
+{
+	ARG_UNUSED(addr);
+	ARG_UNUSED(size);
+}
+#endif /* CONFIG_OUTER_CACHE */
+
 int arch_dcache_flush_range(void *start_addr, size_t size)
 {
 	size_t line_size;
@@ -117,6 +141,10 @@ int arch_dcache_flush_range(void *start_addr, size_t size)
 		addr += line_size;
 	}
 
+#ifdef CONFIG_OUTER_CACHE
+	z_arm_outer_cache_flush_range(start_addr, size);
+#endif
+
 	return 0;
 }
 
@@ -127,6 +155,10 @@ int arch_dcache_invd_range(void *start_addr, size_t size)
 	uintptr_t end_addr = addr + size;
 
 	line_size = arch_dcache_line_size_get();
+
+#ifdef CONFIG_OUTER_CACHE
+	z_arm_outer_cache_invd_range(start_addr, size);
+#endif
 
 	/*
 	 * Clean and invalidate the partial cache lines at both ends of the
@@ -172,6 +204,10 @@ int arch_dcache_flush_and_invd_range(void *start_addr, size_t size)
 		L1C_CleanInvalidateDCacheMVA((void *)addr);
 		addr += line_size;
 	}
+
+#ifdef CONFIG_OUTER_CACHE
+	z_arm_outer_cache_flush_and_invd_range(start_addr, size);
+#endif
 
 	return 0;
 }
