@@ -117,11 +117,19 @@ ZTEST(cache_api, test_data_cache_api)
 	ret = sys_cache_data_flush_all();
 	zassert_true((ret == 0) || (ret == -ENOTSUP));
 
+#if !defined(CONFIG_XTENSA)
+	/* Xtensa with Windowed ABI may write to stack due to window
+	 * over-/under-flow. So we cannot invalidate all cache lines here
+	 * or the data written will be lost forever, which will possibly
+	 * result in CPU fault. So skip this test on Xtensa.
+	 */
+
 	/* Flush first so the whole-cache invalidate does not discard dirty
 	 * lines that the test framework still depends on.
 	 */
 	ret = sys_cache_data_invd_all();
 	zassert_true((ret == 0) || (ret == -ENOTSUP));
+#endif /* !CONFIG_XTENSA */
 
 	ret = sys_cache_data_flush_and_invd_all();
 	zassert_true((ret == 0) || (ret == -ENOTSUP));
