@@ -5,6 +5,9 @@
 
 if SOC_FAMILY_XILINX_ZYNQ7000
 
+# The PL310 (L2C-310) outer cache is now a generic driver (CONFIG_CACHE_PL310)
+# probed from the arm,pl310-cache devicetree node; see drivers/cache/cache_pl310.c.
+
 rsource "*/Kconfig"
 
 endif # SOC_FAMILY_XILINX_ZYNQ7000
