@@ -15,7 +15,6 @@
 #define BOARD_XTAL_CLK_HZ     32000U
 /* Core clock frequency: 96MHz */
 #define CLOCK_INIT_CORE_CLOCK 96000000U
-#define BOARD_XTAL_CLK_HZ                         32000U
 
 #if DT_NODE_EXISTS(DT_PATH(cpus, cpu_0))
 #define CPU_NODE DT_PATH(cpus, cpu_0)
@@ -135,6 +134,13 @@ void board_early_init_hook(void)
 	/* Set PERIPH_GROUP1 clock divider to value 1 */
 	CLOCK_SetClockDiv(kCLOCK_DivPeriphGroup1, 1u);
 	CLOCK_EnableClock(kCLOCK_GatePERIPH_GROUP1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_lpi2c0))
+	CLOCK_AttachClk(kFROdiv1_to_AON_COM);
+	CLOCK_SetClockDiv(kCLOCK_DIVAonCMP, 1U);
+	CLOCK_EnableClock(kCLOCK_GateAonI2C);
+	RESET_ReleasePeripheralReset(kAonI2C_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_lpuart0))
