@@ -90,6 +90,17 @@ $defs:
         type: boolean
       harness:
         type: string
+      sidecar:
+        type: string
+      sidecar_config:
+        # Per-sidecar configuration, namespaced by the sidecar name so several
+        # sidecars can define keys without colliding; only the block matching
+        # the scenario's `sidecar:` value is consumed. The concrete per-sidecar
+        # properties are filled in at load time from the registered sidecars
+        # (see twisterlib.sidecars.sidecar_config_schema), so a new sidecar does
+        # not have to edit this file. This placeholder validates the shape for
+        # any consumer that loads the schema directly.
+        type: object
       harness_config:
         type: object
         properties:
