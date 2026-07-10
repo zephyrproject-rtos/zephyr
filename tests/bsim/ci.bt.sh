@@ -13,6 +13,8 @@ set -uex
 
 TWISTER_OPTIONS="-vv --fixture bsim_multi_test --no-clean --force-color --inline-logs"
 
+${ZEPHYR_BASE}/scripts/twister ${TWISTER_OPTIONS} -T tests/bsim/bluetooth/audio/
+
 ${ZEPHYR_BASE}/scripts/twister ${TWISTER_OPTIONS} -T tests/bsim/bluetooth/host/
 
 # nrf52_bsim set:
