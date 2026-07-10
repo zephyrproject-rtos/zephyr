@@ -2454,6 +2454,64 @@ ZTEST(net_ipv6, test_nd_reachability_hint)
 	zassert_equal(net_ipv6_nbr_data(nbr)->state, NET_IPV6_NBR_STATE_REACHABLE);
 }
 
+#define DEFAULT_REACHABLE_MS (MSEC_PER_SEC * 30)
+
+static uint32_t expected_reachable_min(uint32_t base)
+{
+	uint32_t min = base / 2U;
+
+	return (min == 0U) ? 1U : min;
+}
+
+static uint32_t expected_reachable_max(uint32_t base)
+{
+	return (3U * base) / 2U;
+}
+
+ZTEST(net_ipv6, test_calc_reachable_time_base_zero)
+{
+	struct net_if_ipv6 ipv6 = { .base_reachable_time = 0U };
+
+	zassert_equal(net_if_ipv6_calc_reachable_time(&ipv6), DEFAULT_REACHABLE_MS);
+}
+
+ZTEST(net_ipv6, test_calc_reachable_time_small_base)
+{
+	struct net_if_ipv6 ipv6 = { .base_reachable_time = 1U };
+
+	zassert_equal(net_if_ipv6_calc_reachable_time(&ipv6), 1U);
+}
+
+ZTEST(net_ipv6, test_calc_reachable_time_in_range)
+{
+	struct net_if_ipv6 ipv6 = { .base_reachable_time = DEFAULT_REACHABLE_MS };
+	uint32_t min = expected_reachable_min(DEFAULT_REACHABLE_MS);
+	uint32_t max = expected_reachable_max(DEFAULT_REACHABLE_MS);
+
+	for (int i = 0; i < 100; i++) {
+		uint32_t reachable = net_if_ipv6_calc_reachable_time(&ipv6);
+
+		zassert_true(reachable >= min, "below min: %u", reachable);
+		zassert_true(reachable < max, "at/above max: %u", reachable);
+	}
+}
+
+ZTEST(net_ipv6, test_set_reachable_time)
+{
+	struct net_if_ipv6 ipv6 = { .base_reachable_time = DEFAULT_REACHABLE_MS };
+	uint32_t min = expected_reachable_min(DEFAULT_REACHABLE_MS);
+	uint32_t max = expected_reachable_max(DEFAULT_REACHABLE_MS);
+
+	net_if_ipv6_set_reachable_time(&ipv6);
+
+	zassert_true(ipv6.reachable_time >= min,
+		     "reachable_time %u below min %u",
+		     ipv6.reachable_time, min);
+	zassert_true(ipv6.reachable_time < max,
+		     "reachable_time %u at/above max %u",
+		     ipv6.reachable_time, max);
+}
+
 static bool is_pe_address_found(struct net_if *iface, struct net_in6_addr *prefix)
 {
 	struct net_if_ipv6 *ipv6;
