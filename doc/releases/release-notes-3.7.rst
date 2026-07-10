@@ -2,6 +2,36 @@
 
 .. _zephyr_3.7:
 
+.. _zephyr_3.7.3:
+
+Zephyr 3.7.3
+############
+
+This is an LTS maintenance release with fixes.
+
+Security Vulnerability Related
+******************************
+
+The following CVEs are addressed by this release:
+
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+Issues fixed
+************
+
+These GitHub issues were addressed since the previous 3.7.2 tagged release:
+
+
+Mbed TLS
+********
+
+Mbed TLS was updated to version 3.6.7 (from 3.6.6). It addresses a number of CVEs.
+Release notes can be found at: https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.7
+
+Mbed TLS 3.6 is an LTS release that will be supported with security and bug fixes until March 2027.
+
 .. _zephyr_3.7.2:
 
 Zephyr 3.7.2
@@ -55,6 +85,7 @@ Issues fixed
 ************
 
 These GitHub issues were addressed since the previous 3.7.1 tagged release:
+
 * :github:`67637` - Telnet shell asserts if connection is closed
 * :github:`72840` - sensor_shell: strange and unexpected output when getting single axis from 3-axis data
 * :github:`75119` - Doc: Graphviz fontcolor switched between light and dark themes
