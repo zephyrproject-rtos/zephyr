@@ -188,7 +188,12 @@ int main(void)
 
 	total_allocated = 0;
 #if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION)
-	zbus_chan_set_msg_sub_pool(&acc_data_chan, &isolated_pool);
+	if (IS_ENABLED(CONFIG_ZBUS_MSG_SUBSCRIBER_SAMPLE_ISOLATED_BUF_POOL_USE_DEFAULT)) {
+		LOG_INF("Using the default msg buf pool for acc_data_chan");
+	} else {
+		LOG_INF("Using an isolated msg buf pool for channel acc_data_chan");
+		zbus_chan_set_msg_sub_pool(&acc_data_chan, &isolated_pool);
+	}
 #endif
 
 #if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC)
