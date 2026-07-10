@@ -149,13 +149,16 @@ static void update_recv_state_big_synced(const struct bt_bap_broadcast_sink *sin
 		mod_src_param.encrypt_state = recv_state->encrypt_state;
 	}
 
-	/* Since the mod_src_param struct is 0-initialized the metadata won't
-	 * be modified by this
-	 */
-
 	/* Copy existing unchanged data */
 	mod_src_param.src_id = recv_state->src_id;
 	mod_src_param.broadcast_id = recv_state->broadcast_id;
+	for (uint8_t i = 0U; i < recv_state->num_subgroups; i++) {
+		struct bt_bap_bass_subgroup *subgroup_param = &mod_src_param.subgroups[i];
+
+		subgroup_param->metadata_len = recv_state->subgroups[i].metadata_len;
+		(void)memcpy(subgroup_param->metadata, recv_state->subgroups[i].metadata,
+			     subgroup_param->metadata_len);
+	}
 
 	err = bt_bap_scan_delegator_mod_src(&mod_src_param);
 	if (err != 0) {
@@ -211,12 +214,17 @@ static void update_recv_state_big_cleared(const struct bt_bap_broadcast_sink *si
 		}
 	}
 
-	/* Since the metadata_len is 0 then the metadata won't be modified by the operation either*/
-
 	/* Copy existing unchanged data */
 	mod_src_param.num_subgroups = recv_state->num_subgroups;
 	mod_src_param.src_id = recv_state->src_id;
 	mod_src_param.broadcast_id = recv_state->broadcast_id;
+	for (uint8_t i = 0U; i < recv_state->num_subgroups; i++) {
+		struct bt_bap_bass_subgroup *subgroup_param = &mod_src_param.subgroups[i];
+
+		subgroup_param->metadata_len = recv_state->subgroups[i].metadata_len;
+		(void)memcpy(subgroup_param->metadata, recv_state->subgroups[i].metadata,
+			     subgroup_param->metadata_len);
+	}
 
 	err = bt_bap_scan_delegator_mod_src(&mod_src_param);
 	if (err != 0) {
