@@ -118,6 +118,25 @@
 			zephyr,memory-region = "SRAMHP";
 		};
 
+		/* Non-cacheable window carved from HP SRAM. Variables tagged
+		 * with __nocache are linked here at their normal (cached,
+		 * DMA-reachable) address, and a PMA entry marks the region
+		 * non-cacheable at runtime so both the CPU and the DMA engine
+		 * see coherent data through the same address.
+		 *
+		 * Only the size is consumed (via DT_REG_SIZE); it must be a
+		 * power of two so it can be described by a single PMA NAPOT
+		 * entry. The linker computes the real base from the top of
+		 * usable RAM per silicon revision and cache size, so the reg
+		 * address here is only the nominal slot for the default
+		 * configuration and is not itself used.
+		 */
+		sramhp_nocache: memory@4ffb0000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x4ffb0000 DT_SIZE_K(32)>;
+			zephyr,memory-region = "SRAMHP_NOCACHE";
+		};
+
 		sramlp: memory@50108000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
