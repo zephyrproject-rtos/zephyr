@@ -26,6 +26,102 @@
 			reg = <0x4046a000 0x2000>;
 			status = "disabled";
 		};
+
+		timg0: timg0@40084000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40084000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			interrupts = <21 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg0: counterg0 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				status = "disabled";
+			};
+		};
+
+		timg4: timg4@4008c000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x4008c000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			interrupts = <22 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg4: counterg4 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				status = "disabled";
+			};
+		};
+
+		timg5: timg5@4008e000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x4008e000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			interrupts = <23 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg5: counterg5 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				status = "disabled";
+			};
+		};
+
+		timg8: timg8@40090000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40090000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			interrupts = <20 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg8: counterg8 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				status = "disabled";
+			};
+		};
+
+		timg12: timg12@40870000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40870000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			interrupts = <2 0>;
+			ti,clk-prescaler = <0>; /* No prescaler */
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg12: counterg12 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <32>;
+				status = "disabled";
+			};
+		};
+
+		tima0: tima0@40860000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40860000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			interrupts = <18 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			countera0: countera0 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				status = "disabled";
+			};
+		};
 	};
 };
 
