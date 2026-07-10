@@ -7,7 +7,6 @@ set(QEMU_CPU_TYPE_${ARCH} or1k)
 
 set(QEMU_FLAGS_${ARCH}
   -machine virt
-  -nographic
 )
 
 include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)
