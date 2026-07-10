@@ -64,6 +64,7 @@ include(${ZEPHYR_BASE}/cmake/emu/qemu/x86_locore.cmake)
 include(${ZEPHYR_BASE}/cmake/emu/qemu/ivshmem.cmake)
 include(${ZEPHYR_BASE}/cmake/emu/qemu/nvme.cmake)
 include(${ZEPHYR_BASE}/cmake/emu/qemu/net_nic.cmake)
+include(${ZEPHYR_BASE}/cmake/emu/qemu/logging.cmake)
 
 if(CONFIG_FLASH_INTEL_PFLASH_CFI01)
   if(CONFIG_X86)
