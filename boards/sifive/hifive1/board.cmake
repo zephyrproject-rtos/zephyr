@@ -5,7 +5,7 @@ set(SUPPORTED_EMU_PLATFORMS renode qemu)
 set(RENODE_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/support/hifive1.resc)
 set(RENODE_UART sysbus.uart0)
 
-set(QEMU_binary_suffix riscv32)
+set(QEMU_BINARY_SUFFIX riscv32)
 set(QEMU_CPU_TYPE_${ARCH} riscv32)
 
 set(QEMU_FLAGS_${ARCH}
