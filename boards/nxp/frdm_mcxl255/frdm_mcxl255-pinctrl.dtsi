@@ -73,4 +73,16 @@
 			drive-open-drain;
 		};
 	};
+
+	pinmux_aon_lpi2c0: pinmux_aon_lpi2c0 {
+		group0 {
+			pinmux = <AON_LPI2C0_SCL_P0_12>,
+				 <AON_LPI2C0_SDA_P0_13>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
 };
