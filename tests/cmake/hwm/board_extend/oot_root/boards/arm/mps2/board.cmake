@@ -5,7 +5,7 @@
 if(CONFIG_BOARD_MPS2_AN521_CPUTEST)
   set(SUPPORTED_EMU_PLATFORMS qemu)
   set(QEMU_CPU_TYPE cortex-m33)
-  set(QEMU_FLAGS_${ARCH}
+  set(QEMU_BOARD_FLAGS
     -cpu ${QEMU_CPU_TYPE}
     -machine mps2-an521
     -m 16

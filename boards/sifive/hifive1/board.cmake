@@ -8,7 +8,7 @@ set(RENODE_UART sysbus.uart0)
 set(QEMU_BINARY_SUFFIX riscv32)
 set(QEMU_CPU_TYPE riscv32)
 
-set(QEMU_FLAGS_${ARCH}
+set(QEMU_BOARD_FLAGS
   -machine sifive_e
   )
 

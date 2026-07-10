@@ -11,7 +11,7 @@ if(NOT CONFIG_ARMV8_A_NS)
   set(QEMU_MACH ${QEMU_MACH},secure=on)
 endif()
 
-set(QEMU_FLAGS_${ARCH}
+set(QEMU_BOARD_FLAGS
   -cpu host
   -machine ${QEMU_MACH}
   )

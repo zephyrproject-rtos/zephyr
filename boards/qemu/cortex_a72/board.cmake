@@ -6,7 +6,7 @@ set(QEMU_BINARY_SUFFIX aarch64)
 
 set(QEMU_CPU_TYPE cortex-a72)
 
-set(QEMU_FLAGS_${ARCH}
+set(QEMU_BOARD_FLAGS
   -machine raspi4b
 )
 

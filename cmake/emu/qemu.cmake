@@ -7,7 +7,7 @@
 # pieces are concatenated in this order when the run targets are created below:
 #
 #   QEMU_UEFI_OPTION     boot through uefi-run instead of -kernel
-#   QEMU_FLAGS_${ARCH}   machine and CPU selection, set by the board
+#   QEMU_BOARD_FLAGS     machine and CPU selection, set by the board
 #   FLAGS_DEVICE slot    emulated devices and host plumbing
 #   FLAGS_EXTRA slot     late additions, after every device
 #   TARGET_FLAGS_<t>     flags specific to one run target
@@ -21,10 +21,14 @@ if(DEFINED QEMU_CPU_TYPE_${ARCH})
   message(FATAL_ERROR "QEMU_CPU_TYPE_\${ARCH} has been renamed to QEMU_CPU_TYPE.")
 endif()
 
+if(DEFINED QEMU_FLAGS_${ARCH})
+  message(FATAL_ERROR "QEMU_FLAGS_\${ARCH} has been renamed to QEMU_BOARD_FLAGS.")
+endif()
+
 # QEMU_CPU_TYPE names the emulated CPU for the build system's benefit: it is
 # reported in the run target's progress message. It is not passed to QEMU from
 # here. Boards that need a -cpu argument reference it when composing
-# QEMU_FLAGS_${ARCH}, and boards whose -machine already implies a CPU set it
+# QEMU_BOARD_FLAGS, and boards whose -machine already implies a CPU set it
 # without passing -cpu at all.
 
 include(${ZEPHYR_BASE}/cmake/emu/qemu/flags.cmake)
@@ -143,7 +147,7 @@ foreach(target ${qemu_targets})
     COMMAND
     ${QEMU}
     ${QEMU_UEFI_OPTION}
-    ${QEMU_FLAGS_${ARCH}}
+    ${QEMU_BOARD_FLAGS}
     ${qemu_device_flags}
     ${qemu_extra_flags}
     ${target_flags}

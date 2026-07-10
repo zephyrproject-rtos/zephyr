@@ -9,7 +9,7 @@ set(QEMU_CPU_TYPE leon3)
 # kernel timer and scheduler tests, so the derived value is the one this board
 # wants; the flag was dead and is dropped rather than moved to
 # QEMU_ICOUNT_OVERRIDE.
-set(QEMU_FLAGS_${ARCH}
+set(QEMU_BOARD_FLAGS
   -machine leon3_generic
   -m 1G
   )

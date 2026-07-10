@@ -20,7 +20,7 @@ if(CONFIG_INPUT_VIRTIO)
   set(QEMU_VIRTIO_INPUT_FLAGS -device virtio-tablet-device,bus=virtio-mmio-bus.3)
 endif()
 
-set(QEMU_FLAGS_${ARCH}
+set(QEMU_BOARD_FLAGS
   -cpu ${QEMU_CPU_TYPE}
   ${QEMU_VIRTIO_ENTROPY_FLAGS}
   ${QEMU_VIRTIO_INPUT_FLAGS}

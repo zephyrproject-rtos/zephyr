@@ -6,7 +6,7 @@ set(SUPPORTED_EMU_PLATFORMS qemu)
 set(QEMU_BINARY_SUFFIX xilinx-aarch64)
 
 set(QEMU_CPU_TYPE cortex-r5)
-set(QEMU_FLAGS_${ARCH}
+set(QEMU_BOARD_FLAGS
   -machine arm-generic-fdt
   -dtb ${CMAKE_CURRENT_LIST_DIR}/fdt-single_arch-zcu102-arm.dtb
   )

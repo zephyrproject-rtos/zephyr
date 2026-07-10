@@ -72,7 +72,7 @@ if(CONFIG_INPUT_VIRTIO)
   set(QEMU_VIRTIO_INPUT_FLAGS -device virtio-tablet-pci,addr=05.0,id=input0)
 endif()
 
-set(QEMU_FLAGS_${ARCH}
+set(QEMU_BOARD_FLAGS
   -m ${QEMU_MEMORY_SIZE_MB}
   -cpu ${QEMU_CPU_TYPE}${QEMU_CPU_FLAGS}
   -machine q35
@@ -83,7 +83,7 @@ set(QEMU_FLAGS_${ARCH}
   )
 
 if(NOT CONFIG_ACPI)
-  list(APPEND QEMU_FLAGS_${ARCH} -machine acpi=off)
+  list(APPEND QEMU_BOARD_FLAGS -machine acpi=off)
 endif()
 
 include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)
