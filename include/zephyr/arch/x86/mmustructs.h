@@ -25,12 +25,12 @@
 #endif
 
 /* For these we'll just use the same bits in the PTE */
-#define ARCH_DATA_PAGE_DIRTY		((uintptr_t)BIT(6))
-#define ARCH_DATA_PAGE_LOADED		((uintptr_t)BIT(0))
-#define ARCH_DATA_PAGE_ACCESSED		((uintptr_t)BIT(5))
+#define SYS_MM_VM_DATA_PAGE_DIRTY	((uintptr_t)BIT(6))
+#define SYS_MM_VM_DATA_PAGE_LOADED	((uintptr_t)BIT(0))
+#define SYS_MM_VM_DATA_PAGE_ACCESSED	((uintptr_t)BIT(5))
 
 /* Use an PAT bit for this one since it's never set in a mapped PTE */
-#define ARCH_DATA_PAGE_NOT_MAPPED	((uintptr_t)BIT(7))
+#define SYS_MM_VM_DATA_PAGE_NOT_MAPPED	((uintptr_t)BIT(7))
 
 /*
  * Special unpaged "location" tags. These are defined as the highest possible

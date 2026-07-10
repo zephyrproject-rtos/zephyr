@@ -725,12 +725,12 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 		/* Unmapping anonymous memory */
 		VIRT_FOREACH(addr, size, pos) {
 #ifdef CONFIG_DEMAND_PAGING
-			enum arch_page_location status;
+			enum sys_mm_vm_page_location status;
 			uintptr_t location;
 
 			status = sys_mm_vm_backend_page_location_get(pos, &location);
 			switch (status) {
-			case ARCH_PAGE_LOCATION_PAGED_OUT:
+			case SYS_MM_VM_PAGE_LOCATION_PAGED_OUT:
 				/*
 				 * No pf is associated with this mapping.
 				 * Simply get rid of the MMU entry and free
@@ -739,11 +739,11 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 				sys_mm_vm_backend_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
 				k_mem_paging_backing_store_location_free(location);
 				continue;
-			case ARCH_PAGE_LOCATION_PAGED_IN:
+			case SYS_MM_VM_PAGE_LOCATION_PAGED_IN:
 				/*
 				 * The page is in memory but it may not be
 				 * accessible in order to manage tracking
-				 * of the ARCH_DATA_PAGE_ACCESSED flag
+				 * of the SYS_MM_VM_DATA_PAGE_ACCESSED flag
 				 * meaning sys_mm_vm_backend_page_phys_get() could fail.
 				 * Still, we know the actual phys address.
 				 */
@@ -1374,15 +1374,15 @@ static int do_mem_evict(void *addr)
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	key = k_spin_lock(&z_mm_lock);
 	flags = sys_mm_vm_backend_mem_page_info_get(addr, &phys, false);
-	__ASSERT((flags & ARCH_DATA_PAGE_NOT_MAPPED) == 0,
+	__ASSERT((flags & SYS_MM_VM_DATA_PAGE_NOT_MAPPED) == 0,
 		 "address %p isn't mapped", addr);
-	if ((flags & ARCH_DATA_PAGE_LOADED) == 0) {
+	if ((flags & SYS_MM_VM_DATA_PAGE_LOADED) == 0) {
 		/* Un-mapped or already evicted. Nothing to do */
 		ret = 0;
 		goto out;
 	}
 
-	dirty = (flags & ARCH_DATA_PAGE_DIRTY) != 0;
+	dirty = (flags & SYS_MM_VM_DATA_PAGE_DIRTY) != 0;
 	pf = k_mem_phys_to_page_frame(phys);
 	__ASSERT(k_mem_page_frame_to_virt(pf) == addr, "page frame address mismatch");
 	ret = page_frame_prepare_locked(pf, &dirty, false, &location);
@@ -1467,8 +1467,8 @@ int k_mem_page_frame_evict(uintptr_t phys)
 	}
 	flags = sys_mm_vm_backend_mem_page_info_get(k_mem_page_frame_to_virt(pf), NULL, false);
 	/* Shouldn't ever happen */
-	__ASSERT((flags & ARCH_DATA_PAGE_LOADED) != 0, "data page not loaded");
-	dirty = (flags & ARCH_DATA_PAGE_DIRTY) != 0;
+	__ASSERT((flags & SYS_MM_VM_DATA_PAGE_LOADED) != 0, "data page not loaded");
+	dirty = (flags & SYS_MM_VM_DATA_PAGE_DIRTY) != 0;
 	ret = page_frame_prepare_locked(pf, &dirty, false, &location);
 	if (ret != 0) {
 		goto out;
@@ -1594,7 +1594,7 @@ static bool do_page_fault(void *addr, bool pin)
 	struct k_mem_page_frame *pf;
 	k_spinlock_key_t key;
 	uintptr_t page_in_location, page_out_location;
-	enum arch_page_location status;
+	enum sys_mm_vm_page_location status;
 	bool result;
 	bool dirty = false;
 	struct k_thread *faulting_thread;
@@ -1656,14 +1656,14 @@ static bool do_page_fault(void *addr, bool pin)
 	faulting_thread = _current;
 
 	status = sys_mm_vm_backend_page_location_get(addr, &page_in_location);
-	if (status == ARCH_PAGE_LOCATION_BAD) {
+	if (status == SYS_MM_VM_PAGE_LOCATION_BAD) {
 		/* Return false to treat as a fatal error */
 		result = false;
 		goto out;
 	}
 	result = true;
 
-	if (status == ARCH_PAGE_LOCATION_PAGED_IN) {
+	if (status == SYS_MM_VM_PAGE_LOCATION_PAGED_IN) {
 		if (pin) {
 			/* It's a physical memory address */
 			uintptr_t phys = page_in_location;
@@ -1684,7 +1684,7 @@ static bool do_page_fault(void *addr, bool pin)
 		 */
 		goto out;
 	}
-	__ASSERT(status == ARCH_PAGE_LOCATION_PAGED_OUT,
+	__ASSERT(status == SYS_MM_VM_PAGE_LOCATION_PAGED_OUT,
 		 "unexpected status value %d", status);
 
 	paging_stats_faults_inc(faulting_thread, key.key);
@@ -1790,9 +1790,9 @@ static void do_mem_unpin(void *addr)
 
 	key = k_spin_lock(&z_mm_lock);
 	flags = sys_mm_vm_backend_mem_page_info_get(addr, &phys, false);
-	__ASSERT((flags & ARCH_DATA_PAGE_NOT_MAPPED) == 0,
+	__ASSERT((flags & SYS_MM_VM_DATA_PAGE_NOT_MAPPED) == 0,
 		 "invalid data page at %p", addr);
-	if ((flags & ARCH_DATA_PAGE_LOADED) != 0) {
+	if ((flags & SYS_MM_VM_DATA_PAGE_LOADED) != 0) {
 		pf = k_mem_phys_to_page_frame(phys);
 		if (k_mem_page_frame_is_pinned(pf)) {
 			k_mem_page_frame_clear(pf, K_MEM_PAGE_FRAME_PINNED);

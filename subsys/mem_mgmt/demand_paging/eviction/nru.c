@@ -7,7 +7,6 @@
  */
 #include <zephyr/kernel.h>
 #include <mmu.h>
-#include <kernel_arch_interface.h>
 
 #include <zephyr/kernel/mm/demand_paging.h>
 #include <zephyr/mem_mgmt/system_vm/backend.h>
@@ -69,15 +68,15 @@ struct k_mem_page_frame *k_mem_paging_eviction_select(bool *dirty_ptr)
 
 		flags = sys_mm_vm_backend_mem_page_info_get(k_mem_page_frame_to_virt(pf), NULL,
 							    false);
-		accessed = (flags & ARCH_DATA_PAGE_ACCESSED) != 0UL;
-		dirty = (flags & ARCH_DATA_PAGE_DIRTY) != 0UL;
+		accessed = (flags & SYS_MM_VM_DATA_PAGE_ACCESSED) != 0UL;
+		dirty = (flags & SYS_MM_VM_DATA_PAGE_DIRTY) != 0UL;
 
 		/* Implies a mismatch with page frame ontology and page
 		 * tables
 		 */
-		__ASSERT((flags & ARCH_DATA_PAGE_LOADED) != 0U,
+		__ASSERT((flags & SYS_MM_VM_DATA_PAGE_LOADED) != 0U,
 			 "non-present page, %s",
-			 ((flags & ARCH_DATA_PAGE_NOT_MAPPED) != 0U) ?
+			 ((flags & SYS_MM_VM_DATA_PAGE_NOT_MAPPED) != 0U) ?
 			 "un-mapped" : "paged out");
 
 		prec = (dirty ? 1U : 0U) + (accessed ? 2U : 0U);

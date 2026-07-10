@@ -1608,30 +1608,30 @@ void arch_mem_page_in(void *addr, uintptr_t phys)
 	invalidate_tlb_page(virt);
 }
 
-enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location)
+enum sys_mm_vm_page_location arch_page_location_get(void *addr, uintptr_t *location)
 {
 	uintptr_t virt = (uintptr_t)addr;
 	uint64_t *pte = get_pte_location(&kernel_ptables, virt);
 	uint64_t desc;
-	enum arch_page_location status;
+	enum sys_mm_vm_page_location status;
 
 	if (!pte) {
-		return ARCH_PAGE_LOCATION_BAD;
+		return SYS_MM_VM_PAGE_LOCATION_BAD;
 	}
 	desc = *pte;
 	if (is_free_desc(desc)) {
-		return ARCH_PAGE_LOCATION_BAD;
+		return SYS_MM_VM_PAGE_LOCATION_BAD;
 	}
 
 	switch (desc & PTE_DESC_TYPE_MASK) {
 	case PTE_PAGE_DESC:
-		status = ARCH_PAGE_LOCATION_PAGED_IN;
+		status = SYS_MM_VM_PAGE_LOCATION_PAGED_IN;
 		break;
 	case PTE_INVALID_DESC:
-		status = ARCH_PAGE_LOCATION_PAGED_OUT;
+		status = SYS_MM_VM_PAGE_LOCATION_PAGED_OUT;
 		break;
 	default:
-		return ARCH_PAGE_LOCATION_BAD;
+		return SYS_MM_VM_PAGE_LOCATION_BAD;
 	}
 
 	*location = desc & PTE_PHYSADDR_MASK;
@@ -1646,38 +1646,38 @@ uintptr_t arch_page_info_get(void *addr, uintptr_t *phys, bool clear_accessed)
 	uintptr_t status = 0;
 
 	if (!pte) {
-		return ARCH_DATA_PAGE_NOT_MAPPED;
+		return SYS_MM_VM_DATA_PAGE_NOT_MAPPED;
 	}
 	desc = *pte;
 	if (is_free_desc(desc)) {
-		return ARCH_DATA_PAGE_NOT_MAPPED;
+		return SYS_MM_VM_DATA_PAGE_NOT_MAPPED;
 	}
 
 	switch (desc & PTE_DESC_TYPE_MASK) {
 	case PTE_PAGE_DESC:
-		status |= ARCH_DATA_PAGE_LOADED;
+		status |= SYS_MM_VM_DATA_PAGE_LOADED;
 		break;
 	case PTE_INVALID_DESC:
 		/* page not loaded */
 		break;
 	default:
-		return ARCH_DATA_PAGE_NOT_MAPPED;
+		return SYS_MM_VM_DATA_PAGE_NOT_MAPPED;
 	}
 
 	if (phys) {
 		*phys = desc & PTE_PHYSADDR_MASK;
 	}
 
-	if ((status & ARCH_DATA_PAGE_LOADED) == 0) {
+	if ((status & SYS_MM_VM_DATA_PAGE_LOADED) == 0) {
 		return status;
 	}
 
 	if ((desc & PTE_BLOCK_DESC_AF) != 0) {
-		status |= ARCH_DATA_PAGE_ACCESSED;
+		status |= SYS_MM_VM_DATA_PAGE_ACCESSED;
 	}
 
 	if ((desc & PTE_BLOCK_DESC_AP_RO) == 0) {
-		status |= ARCH_DATA_PAGE_DIRTY;
+		status |= SYS_MM_VM_DATA_PAGE_DIRTY;
 	}
 
 	if (clear_accessed) {

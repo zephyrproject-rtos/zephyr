@@ -27,6 +27,8 @@
 extern "C" {
 #endif
 
+#include <zephyr/mem_mgmt/system_vm/priv.h>
+
 #if defined(CONFIG_MEM_MGMT_VM_BACKEND_ARCH)
 
 /* Forward to the architecture-specific implementation. */
@@ -37,6 +39,13 @@ extern "C" {
 /* Custom VM backend implementation.
  *
  * This header needs to be present in search path.
+ *
+ * Needs to define these macros in the header file so they can be used by
+ * kernel and demand paging eviction algorithms:
+ *   SYS_MM_VM_DATA_PAGE_LOADED
+ *   SYS_MM_VM_DATA_PAGE_ACCESSED
+ *   SYS_MM_VM_DATA_PAGE_DIRTY
+ *   SYS_MM_VM_DATA_PAGE_NOT_MAPPED
  */
 #include <mem_mgmt_vm_backend_custom.h>
 
@@ -207,16 +216,16 @@ void sys_mm_vm_backend_mem_scratch(uintptr_t phys);
  * in that.
  *
  * @param addr Virtual data page address that took the page fault
- * @param[out] location In the case of ARCH_PAGE_LOCATION_PAGED_OUT, the backing store
+ * @param[out] location In the case of ::SYS_MM_VM_PAGE_LOCATION_PAGED_OUT, the backing store
  *                      location value used to retrieve the data page. In the case of
- *                      ARCH_PAGE_LOCATION_PAGED_IN, the physical address the page is
+ *                      ::SYS_MM_VM_PAGE_LOCATION_PAGED_IN, the physical address the page is
  *                      mapped to.
  *
- * @retval ARCH_PAGE_LOCATION_PAGED_OUT The page was evicted to the backing store
- * @retval ARCH_PAGE_LOCATION_PAGED_IN The page is resident in memory
- * @retval ARCH_PAGE_LOCATION_BAD The page is un-mapped or otherwise has had invalid access
+ * @retval SYS_MM_VM_PAGE_LOCATION_PAGED_OUT The page was evicted to the backing store
+ * @retval SYS_MM_VM_PAGE_LOCATION_PAGED_IN The page is resident in memory
+ * @retval SYS_MM_VM_PAGE_LOCATION_BAD The page is un-mapped or otherwise has had invalid access
  */
-enum arch_page_location sys_mm_vm_backend_page_location_get(void *addr, uintptr_t *location);
+enum sys_mm_vm_page_location sys_mm_vm_backend_page_location_get(void *addr, uintptr_t *location);
 
 /**
  * Retrieve page characteristics from the page table(s)
@@ -231,8 +240,8 @@ enum arch_page_location sys_mm_vm_backend_page_location_get(void *addr, uintptr_
  * and dirty states for the relevant entries in all active page tables in
  * the system if the page is mapped and not paged out.
  *
- * If @p clear_accessed is true, the ARCH_DATA_PAGE_ACCESSED flag will be reset.
- * This function will report its prior state. If multiple page tables are in
+ * If @p clear_accessed is true, the ::SYS_MM_VM_DATA_PAGE_ACCESSED flag will be
+ * reset. This function will report its prior state. If multiple page tables are in
  * use, this function clears accessed state in all of them.
  *
  * This function is called with interrupts locked, so that the reported
@@ -240,15 +249,15 @@ enum arch_page_location sys_mm_vm_backend_page_location_get(void *addr, uintptr_
  *
  * The return value may have other bits set which the caller must ignore.
  *
- * Clearing accessed state for data pages that are not ARCH_DATA_PAGE_LOADED
+ * Clearing accessed state for data pages that are not ::SYS_MM_VM_DATA_PAGE_LOADED
  * is undefined behavior.
  *
- * ARCH_DATA_PAGE_DIRTY and ARCH_DATA_PAGE_ACCESSED bits in the return value
- * are only significant if ARCH_DATA_PAGE_LOADED is set, otherwise ignore
+ * ::SYS_MM_VM_DATA_PAGE_DIRTY and ::SYS_MM_VM_DATA_PAGE_ACCESSED bits in the return
+ * value are only significant if ::SYS_MM_VM_DATA_PAGE_LOADED is set, otherwise ignore
  * them.
  *
- * ARCH_DATA_PAGE_NOT_MAPPED bit in the return value is only significant
- * if ARCH_DATA_PAGE_LOADED is un-set, otherwise ignore it.
+ * ::SYS_MM_VM_DATA_PAGE_NOT_MAPPED bit in the return value is only significant
+ * if ::SYS_MM_VM_DATA_PAGE_LOADED is un-set, otherwise ignore it.
  *
  * Unless otherwise specified, virtual data pages have the same mappings
  * across all page tables. Calling this function on data pages that are
@@ -257,11 +266,11 @@ enum arch_page_location sys_mm_vm_backend_page_location_get(void *addr, uintptr_
  * @param addr Virtual address to look up in page tables
  * @param[out] location If non-NULL, updated with either physical page frame
  *                      address or backing store location depending on
- *                      ARCH_DATA_PAGE_LOADED state. This is not touched if
- *                      ARCH_DATA_PAGE_NOT_MAPPED.
- * @param clear_accessed Whether to clear ARCH_DATA_PAGE_ACCESSED state
+ *                      ::SYS_MM_VM_DATA_PAGE_LOADED state. This is not touched if
+ *                      ::SYS_MM_VM_DATA_PAGE_NOT_MAPPED.
+ * @param clear_accessed Whether to clear ::SYS_MM_VM_DATA_PAGE_ACCESSED state
  *
- * @retval Value with ARCH_DATA_PAGE_* bits set reflecting the data page
+ * @retval Value with SYS_MM_VM_DATA_PAGE_* bits set reflecting the data page
  *         configuration
  */
 uintptr_t sys_mm_vm_backend_mem_page_info_get(void *addr, uintptr_t *location, bool clear_accessed);
