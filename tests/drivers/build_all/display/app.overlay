@@ -744,6 +744,34 @@
 				initial-refresh-waveform = <0>;
 				refresh-waveform = <2>;
 			};
+
+			test_lt7680: lt7680@0 {
+				compatible = "levetop,lt7680";
+				reg = <0>;
+				spi-max-frequency = <30000000>;
+				width = <320>;
+				height = <240>;
+				reset-gpios = <&test_gpio 0 0>;
+				x-offset = <0>;
+				y-offset = <0>;
+				rotation = <180>;
+				reset-delay-ms = <100>;
+
+				display-timings {
+					compatible = "zephyr,panel-timing";
+					clock-frequency = <10000000>;
+					hsync-active = <0>;
+					vsync-active = <0>;
+					de-active = <1>;
+					pixelclk-active = <0>;
+					hback-porch = <140>;
+					hfront-porch = <160>;
+					hsync-len = <20>;
+					vback-porch = <20>;
+					vfront-porch = <12>;
+					vsync-len = <3>;
+				};
+			};
 		};
 
 		test_led_strip_matrix {
