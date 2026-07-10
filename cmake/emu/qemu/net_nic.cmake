@@ -35,5 +35,17 @@ if(CONFIG_QEMU_TARGET)
     qemu_append_extra_flags(
       -device ${CONFIG_ETH_NIC_MODEL},netdev=n1,${CONFIG_NET_QEMU_DEVICE_EXTRA_ARGS}
     )
+
+    # Capture the traffic on the host side of the NIC. QEMU writes the pcap
+    # itself, so unlike the PCAP support for the serial transports this needs
+    # no FIFOs and no external capture process.
+    #
+    # NET_QEMU_NETWORKING is a Kconfig choice, so at most one of the ethernet
+    # and serial transports is active and PCAP is unambiguous.
+    if(PCAP)
+      qemu_append_extra_flags(
+        -object filter-dump,id=pcap0,netdev=n1,file=${PCAP}
+      )
+    endif()
   endif()
 endif()
