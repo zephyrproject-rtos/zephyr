@@ -1,10 +1,14 @@
 # SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-# Workflow that triggers on changes impacting API documentation and that checks that any newly
-# introduced API is properly documented.
+# Workflow that triggers on changes impacting API documentation. It checks that any newly
+# introduced API is properly documented, and that no new group shows up at the top level of the
+# API documentation index.
+#
+# The paths below track the Doxygen INPUT set declared in doc/zephyr.doxyfile.in, since a
+# top-level group can be introduced from any of those roots.
 
-name: Doxygen Coverage Delta Check
+name: Doxygen Checks
 
 on:
   pull_request:
@@ -12,8 +16,16 @@ on:
       - 'include/**'
       - 'subsys/testsuite/include/**'
       - 'subsys/testsuite/ztest/include/**'
+      - 'subsys/secure_storage/include/**'
+      - 'kernel/include/kernel_arch_interface.h'
+      - 'lib/libc/**'
+      - 'lib/midi2/**'
+      - 'modules/openthread/include/openthread.h'
+      - 'doc/_doxygen/**'
+      - 'doc/zephyr.doxyfile.in'
       - 'scripts/ci/doxygen_coverage_diff.py'
-      - '.github/workflows/doxygen-coverage-delta.yml'
+      - 'scripts/ci/doxygen_toplevel_groups.py'
+      - '.github/workflows/doxygen-checks.yml'
     branches:
       - main
       - v*-branch
@@ -23,8 +35,8 @@ permissions:
   contents: read
 
 jobs:
-  doc-coverage-diff:
-    name: "Doxygen Coverage Delta Check"
+  doxygen-checks:
+    name: "Doxygen Checks"
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
@@ -98,3 +110,10 @@ jobs:
             --warn-paths "include/zephyr/dt-bindings" \
             --warn-paths "include/zephyr/posix" \
             --summary-file "$GITHUB_STEP_SUMMARY"
+
+      # Runs even when the coverage check above failed, so that a contributor sees every problem
+      # in a single run. Reads the Doxygen XML produced for the PR branch further up.
+      - name: Check for new top-level Doxygen groups
+        if: ${{ !cancelled() }}
+        run: |
+          python3 scripts/ci/doxygen_toplevel_groups.py --xml-dir doc/_build/doxygen/xml
