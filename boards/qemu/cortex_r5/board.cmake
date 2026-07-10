@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
-set(QEMU_ARCH xilinx-aarch64)
+set(QEMU_BINARY_SUFFIX xilinx-aarch64)
 
 set(QEMU_CPU_TYPE_${ARCH} cortex-r5)
 set(QEMU_FLAGS_${ARCH}
