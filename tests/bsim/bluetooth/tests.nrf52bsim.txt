@@ -3,7 +3,6 @@
 tests/bsim/bluetooth/audio/
 tests/bsim/bluetooth/audio_samples/
 tests/bsim/bluetooth/hci_uart/
-tests/bsim/bluetooth/host/
 tests/bsim/bluetooth/ll/
 tests/bsim/bluetooth/mesh/
 tests/bsim/bluetooth/samples/
