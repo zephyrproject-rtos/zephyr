@@ -680,7 +680,6 @@ static int rw6xx_sdio_pm_action(const struct device *dev, enum pm_device_action 
 						.sdio_version = SDIO_CFG_UNSET,\
 						.spec_version = SDIO_CFG_UNSET,\
 						.bus_width = SDIO_CFG_UNSET,\
-						.cspi_int = SDIO_CFG_UNSET,\
 						.multi_block = SDIO_CFG_UNSET,\
 						.low_speed = SDIO_CFG_UNSET,\
 						.high_speed = SDIO_CFG_UNSET,\

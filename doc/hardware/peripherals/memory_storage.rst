@@ -11,6 +11,7 @@ Non-volatile memory, flash storage, EEPROM, and memory controllers.
    flash.rst
    eeprom/index.rst
    sdhc.rst
+   sd_dev.rst
    bbram.rst
    retained_mem.rst
    i2c_eeprom_target.rst
