@@ -55,7 +55,6 @@ struct lll_conn_iso_stream {
 	uint8_t npi:1;              /* 1 if CIS LLL has Tx-ed Null PDU Indicator */
 	uint8_t flush:2;            /* See states LLL_CIS_FLUSH_XXX */
 	uint8_t active:1;           /* 1 if CIS LLL is active */
-	uint8_t datapath_ready_rx:1;/* 1 if datapath for RX is ready */
 
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	/* A CIS LLL is active and prepared in a CIG radio event when ACL instant has passed
