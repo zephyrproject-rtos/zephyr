@@ -5087,9 +5087,9 @@ RISCV arch:
   status: maintained
   maintainers:
     - fkokosinski
+  collaborators:
     - kgugala
     - tgorochowik
-  collaborators:
     - edersondisouza
     - katsuster
     - mgielda
