@@ -390,6 +390,7 @@ static inline struct z_heap_chunk_trailer *chunk_trailer(struct z_heap *h,
 #endif
 
 #ifdef CONFIG_SYS_HEAP_THREAD_STATS
+struct sys_heap;
 void z_heap_stats_on_init(struct sys_heap *heap);
 void z_heap_stats_on_alloc(struct sys_heap *heap, chunkid_t c, void *mem);
 void z_heap_stats_on_free(struct sys_heap *heap, chunkid_t c, void *mem);
