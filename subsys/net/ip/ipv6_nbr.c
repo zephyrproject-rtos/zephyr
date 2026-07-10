@@ -2722,7 +2722,7 @@ static enum net_verdict handle_ra_input(struct net_icmp_ctx *ctx,
 	}
 
 	if (reachable_time && reachable_time <= MAX_REACHABLE_TIME &&
-	    (net_if_ipv6_get_reachable_time(net_pkt_iface(pkt)) !=
+	    (net_if_ipv6_get_base_reachable_time(net_pkt_iface(pkt)) !=
 	     reachable_time)) {
 		net_if_ipv6_set_base_reachable_time(net_pkt_iface(pkt),
 						    reachable_time);
