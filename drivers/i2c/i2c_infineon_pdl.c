@@ -117,8 +117,6 @@ static const cy_stc_scb_i2c_config_t _i2c_default_config = {
 
 typedef void (*ifx_cat1_i2c_event_callback_t)(void *callback_arg, uint32_t event);
 
-int32_t ifx_cat1_uart_get_hw_block_num(CySCB_Type *reg_addr);
-
 cy_rslt_t _i2c_abort_async(const struct device *dev)
 {
 	struct ifx_cat1_i2c_data *data = dev->data;
@@ -262,126 +260,45 @@ void ifx_cat1_i2c_register_callback(const struct device *dev,
 	data->irq_cause = 0;
 }
 
-#ifdef USE_I2C_SET_PERI_DIVIDER
-uint32_t _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool is_slave)
-{
-/* Peripheral clock values for different I2C speeds according PDL API Reference Guide */
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-/* Must be between 1.55 MHz and 12.8 MHz for running i2c master at 100KHz   */
-#define _SCB_PERI_CLOCK_SLAVE_STD 6000000
-/* Must be between 7.82 MHz and 15.38 MHz for running i2c master at 400KHz  */
-#define _SCB_PERI_CLOCK_SLAVE_FST 12000000
-#else
-/* Must be between 1.55 MHz and 12.8 MHz for running i2c master at 100KHz   */
-#define _SCB_PERI_CLOCK_SLAVE_STD 8000000
-/* Must be between 7.82 MHz and 15.38 MHz for running i2c master at 400KHz  */
-#define _SCB_PERI_CLOCK_SLAVE_FST 12500000
-#endif /* defined(CONFIG_SOC_FAMILY_INFINEON_EDGE) */
-
-/* Must be between 1.55 MHz and 3.2 MHz for running i2c slave at 100KHz     */
-#define _SCB_PERI_CLOCK_MASTER_STD  2000000
-/* Must be between 7.82 MHz and 10 MHz for running i2c slave at 400KHz      */
-#define _SCB_PERI_CLOCK_MASTER_FST  8500000
-/* Must be between 14.32 MHz and 25.8 MHz for running i2c slave at 1MHz  */
-#define _SCB_PERI_CLOCK_MASTER_FSTP 20000000
-
-/* Must be between 15.84 MHz and 89.0 MHz for running i2c master at 1MHz */
-#if defined(COMPONENT_CAT1A) || defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) ||            \
-	defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-#define _SCB_PERI_CLOCK_SLAVE_FSTP 50000000
-#elif defined(COMPONENT_CAT2)
-#define _SCB_PERI_CLOCK_SLAVE_FSTP 24000000
-#elif defined(COMPONENT_CAT5)
-#define _SCB_PERI_CLOCK_SLAVE_FSTP 48000000
-#endif
-
-	struct ifx_cat1_i2c_data *data = dev->data;
-	const struct ifx_cat1_i2c_config *const config = dev->config;
-	CySCB_Type *base = config->base;
-	uint32_t block_num = ifx_cat1_uart_get_hw_block_num(config->base);
-	uint32_t data_rate = 0;
-	uint32_t peri_freq = 0;
-	cy_rslt_t status;
-
-	/* Return the actual data rate on success, 0 otherwise */
-	if (freq == 0) {
-		return 0;
-	}
-
-	if (freq <= CY_SCB_I2C_STD_DATA_RATE) {
-		peri_freq = is_slave ? _SCB_PERI_CLOCK_SLAVE_STD : _SCB_PERI_CLOCK_MASTER_STD;
-	} else if (freq <= CY_SCB_I2C_FST_DATA_RATE) {
-		peri_freq = is_slave ? _SCB_PERI_CLOCK_SLAVE_FST : _SCB_PERI_CLOCK_MASTER_FST;
-	} else if (freq <= CY_SCB_I2C_FSTP_DATA_RATE) {
-		peri_freq = is_slave ? _SCB_PERI_CLOCK_SLAVE_FSTP : _SCB_PERI_CLOCK_MASTER_FSTP;
-	}
-
-	if (peri_freq <= 0) {
-		return 0;
-	}
-
-	if (_ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst,
-						     &data->clock) == CY_SYSCLK_SUCCESS) {
-		status = ifx_cat1_clock_set_enabled(&data->clock, false, false);
-		if (status == CY_RSLT_SUCCESS) {
-			status = ifx_cat1_clock_set_frequency(&data->clock, peri_freq, NULL);
-		}
-
-		if (status == CY_RSLT_SUCCESS) {
-			status = ifx_cat1_clock_set_enabled(&data->clock, true, false);
-		}
-
-		if (status == CY_RSLT_SUCCESS) {
-			data_rate =
-				(is_slave)
-					? Cy_SCB_I2C_GetDataRate(
-						  base, ifx_cat1_clock_get_frequency(&data->clock))
-					: Cy_SCB_I2C_SetDataRate(
-						  base, freq,
-						  ifx_cat1_clock_get_frequency(&data->clock));
-		}
-	}
-
-	return data_rate;
-}
-#endif
-
-#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 /*
- * Configure the SCB oversampling clock divider for I2C on PSoC4.
+ * Configure the SCB oversampling-clock (peripheral clock) divider for a given
+ * I2C data rate.
  *
- * Assumes freq is a valid, non-zero I2C data rate as validated by the
- * caller (ifx_cat1_i2c_configure).
+ * Assumes freq is a valid, non-zero I2C data rate as validated by the caller
+ * (ifx_cat1_i2c_configure).
  *
- * The SCB requires specific oversampling clock (clk_scb) frequency ranges
- * depending on the I2C speed and whether the device is in controller or
- * target mode. Values below are for analog filter configuration
- * (AF_in=1, AF_out=0, DF_in=0), matching enableDigitalFilter=false.
+ * The SCB derives SCL from an oversampling clock (clk_scb) that must fall inside
+ * a speed- and mode-dependent frequency window (the CY_SCB_I2C_MASTER/SLAVE_*
+ * _CLK_MIN/MAX ranges in cy_scb_i2c.h). This routine selects a clk_scb target
+ * inside that window, programs the peripheral divider to approximate it from the
+ * source clock, then lets Cy_SCB_I2C_SetDataRate() derive the SCL low/high
+ * phases. Values assume analog-filter configuration (enableDigitalFilter=false).
  *
- * Oversampling clock requirements (from device reference manuals):
+ * Selected clk_scb targets:
  *
  * Controller mode:
- *   100 kHz:  [1.55, 3.2] MHz   (selected: 2 MHz)
- *   400 kHz:  [7.82, 10] MHz    (selected: 8 MHz)
- *   1 MHz:    [16.15, 25.29] MHz (selected: 24 MHz)
+ *   100 kHz:  [1.55, 3.2] MHz    (selected: 2 MHz)
+ *   400 kHz:  [7.82, 10] MHz     (selected: 8 MHz)
+ *   1 MHz:    [14.32, 25.8] MHz  (selected: 24 MHz)
  *
  * Target mode:
- *   100 kHz:  [1.55, 12.8] MHz  (selected: 8 MHz)
- *   400 kHz:  [7.82, 15.38] MHz (selected: 12 MHz)
- *   1 MHz:    [15.84, 89.0] MHz (selected: 24 MHz)
+ *   100 kHz:  [1.55, 12.8] MHz   (selected: 8 MHz)
+ *   400 kHz:  [7.82, 15.38] MHz  (selected: 12 MHz)
+ *   1 MHz:    [15.84, 89.0] MHz  (selected: 24 MHz)
+ *
+ * Returns 0 on success, negative errno otherwise.
  */
-static int _i2c_set_peri_divider_psoc4(const struct device *dev, uint32_t freq,
-				       bool is_target_mode)
+static int _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool is_target_mode)
 {
 /* Controller mode oversampling clock frequencies */
-#define _PSOC4_SCB_PERI_CLOCK_CTRL_STD  2000000UL
-#define _PSOC4_SCB_PERI_CLOCK_CTRL_FST  8000000UL
-#define _PSOC4_SCB_PERI_CLOCK_CTRL_FSTP 24000000UL
+#define _SCB_PERI_CLOCK_CTRL_STD  2000000UL
+#define _SCB_PERI_CLOCK_CTRL_FST  8000000UL
+#define _SCB_PERI_CLOCK_CTRL_FSTP 24000000UL
 
 /* Target mode oversampling clock frequencies */
-#define _PSOC4_SCB_PERI_CLOCK_TGT_STD   8000000UL
-#define _PSOC4_SCB_PERI_CLOCK_TGT_FST   12000000UL
-#define _PSOC4_SCB_PERI_CLOCK_TGT_FSTP  24000000UL
+#define _SCB_PERI_CLOCK_TGT_STD  8000000UL
+#define _SCB_PERI_CLOCK_TGT_FST  12000000UL
+#define _SCB_PERI_CLOCK_TGT_FSTP 24000000UL
 
 	struct ifx_cat1_i2c_data *data = dev->data;
 	const struct ifx_cat1_i2c_config *const config = dev->config;
@@ -389,48 +306,119 @@ static int _i2c_set_peri_divider_psoc4(const struct device *dev, uint32_t freq,
 	uint32_t peri_freq = 0;
 	uint32_t source_freq;
 	uint32_t div_value;
+	uint32_t actual_peri_freq;
+	uint32_t data_rate;
 	cy_rslt_t status;
 
 	/* Map I2C data rate to the required SCB oversampling clock frequency */
-	if (freq <= CY_SCB_I2C_STD_DATA_RATE) {
-		peri_freq = is_target_mode ? _PSOC4_SCB_PERI_CLOCK_TGT_STD
-					   : _PSOC4_SCB_PERI_CLOCK_CTRL_STD;
+	if (freq == 0) {
+		return -EINVAL;
+	} else if (freq <= CY_SCB_I2C_STD_DATA_RATE) {
+		peri_freq = is_target_mode ? _SCB_PERI_CLOCK_TGT_STD : _SCB_PERI_CLOCK_CTRL_STD;
 	} else if (freq <= CY_SCB_I2C_FST_DATA_RATE) {
-		peri_freq = is_target_mode ? _PSOC4_SCB_PERI_CLOCK_TGT_FST
-					   : _PSOC4_SCB_PERI_CLOCK_CTRL_FST;
+		peri_freq = is_target_mode ? _SCB_PERI_CLOCK_TGT_FST : _SCB_PERI_CLOCK_CTRL_FST;
 	} else if (freq <= CY_SCB_I2C_FSTP_DATA_RATE) {
-		peri_freq = is_target_mode ? _PSOC4_SCB_PERI_CLOCK_TGT_FSTP
-					   : _PSOC4_SCB_PERI_CLOCK_CTRL_FSTP;
-	}
-
-	/* Get HFCLK frequency (source for peripheral dividers on PSoC4) */
-	source_freq = Cy_SysClk_ClkHfGetFrequency();
-	__ASSERT(source_freq > 0, "HFCLK frequency is invalid.");
-
-	/* Calculate divider: output_freq = source_freq / div_value */
-	div_value = source_freq / peri_freq;
-
-	/* Set divider (following UART driver convention using utility wrappers) */
-	if ((data->clock.block & 0x02) == 0) {
-		status = ifx_cat1_utils_peri_pclk_set_divider(config->clk_dst,
-								&data->clock, div_value - 1);
+		peri_freq = is_target_mode ? _SCB_PERI_CLOCK_TGT_FSTP : _SCB_PERI_CLOCK_CTRL_FSTP;
 	} else {
-		status = ifx_cat1_utils_peri_pclk_set_frac_divider(config->clk_dst,
-								&data->clock, div_value - 1, 0);
+		return -EINVAL;
 	}
 
-	__ASSERT(status == CY_SYSCLK_SUCCESS,
-		 "Failed to set peripheral clock divider (status=0x%x)",
-		 (unsigned int)status);
+	/* Determine the clock feeding the peripheral divider. */
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	/* PSoC4 sources all peripheral dividers directly from HFCLK. */
+	source_freq = Cy_SysClk_ClkHfGetFrequency();
+#else
+	/*
+	 * Reconstruct the pre-divider source frequency from the current divider
+	 * setting: source = current_output * current_ratio. This invariant holds
+	 * regardless of the divider's current value, so it is robust across
+	 * repeated reconfigurations and independent of the SoC-specific
+	 * HFCLK-to-peripheral-group routing.
+	 */
+	if ((data->clock.block & 0x02) == 0) {
+		source_freq =
+			ifx_cat1_utils_peri_pclk_get_frequency(config->clk_dst, &data->clock) *
+			(ifx_cat1_utils_peri_pclk_get_divider(config->clk_dst, &data->clock) + 1);
+	} else {
+		uint32_t div_int = 0;
+		uint32_t div_frac = 0;
 
-	uint32_t actual_peri_freq = ifx_cat1_utils_peri_pclk_get_frequency(
-		config->clk_dst, &data->clock);
+		ifx_cat1_utils_peri_pclk_get_frac_divider(config->clk_dst, &data->clock, &div_int,
+							  &div_frac);
+		/* Fractional dividers step in 1/32; ratio = (div_int + 1) + div_frac/32. */
+		source_freq = (uint32_t)(((uint64_t)ifx_cat1_utils_peri_pclk_get_frequency(
+						  config->clk_dst, &data->clock) *
+					  (((div_int + 1) * 32U) + div_frac)) /
+					 32U);
+	}
+#endif
 
-	Cy_SCB_I2C_SetDataRate(base, freq, actual_peri_freq);
+	if (source_freq == 0) {
+		return -EINVAL;
+	}
+
+	/*
+	 * Truncate (floor) so the resulting clk_scb is >= the selected target,
+	 * keeping it inside the SCB's valid window even after integer rounding.
+	 */
+	div_value = source_freq / peri_freq;
+	if (div_value == 0) {
+		div_value = 1;
+	}
+
+	/*
+	 * The divider is already running (it feeds the SCB), so the DIV_CMD
+	 * register requires the disable -> set -> enable sequence when changing
+	 * its value; writing the new value while it is still enabled is not the
+	 * sanctioned procedure.
+	 */
+	status = ifx_cat1_utils_peri_pclk_disable_divider(config->clk_dst, &data->clock);
+	if (status != CY_SYSCLK_SUCCESS) {
+		LOG_ERR("Failed to disable I2C peripheral clock divider (status=0x%x)",
+			(unsigned int)status);
+		return -EIO;
+	}
+
+	/* Program the divider (integer or fractional depending on divider type). */
+	if ((data->clock.block & 0x02) == 0) {
+		status = ifx_cat1_utils_peri_pclk_set_divider(config->clk_dst, &data->clock,
+						      div_value - 1);
+	} else {
+		/*
+		 * Integer-only ratio: div_value was floored above and the target
+		 * clk_scb sits well inside the SCB oversampling window, so the
+		 * fractional part is intentionally forced to 0.
+		 */
+		status = ifx_cat1_utils_peri_pclk_set_frac_divider(config->clk_dst, &data->clock,
+							   div_value - 1, 0);
+	}
+
+	if (status != CY_SYSCLK_SUCCESS) {
+		LOG_ERR("Failed to set I2C peripheral clock divider (status=0x%x)",
+			(unsigned int)status);
+		return -EIO;
+	}
+
+	/* Re-enable the divider so the SCB oversampling clock resumes running. */
+	status = ifx_cat1_utils_peri_pclk_enable_divider(config->clk_dst, &data->clock);
+	if (status != CY_SYSCLK_SUCCESS) {
+		LOG_ERR("Failed to enable I2C peripheral clock divider (status=0x%x)",
+			(unsigned int)status);
+		return -EIO;
+	}
+
+	actual_peri_freq = ifx_cat1_utils_peri_pclk_get_frequency(config->clk_dst, &data->clock);
+
+	/* SetDataRate returns the achieved SCL rate, or 0 if none is valid. */
+	data_rate = Cy_SCB_I2C_SetDataRate(base, freq, actual_peri_freq);
+	if (data_rate == 0U) {
+		LOG_ERR("Failed to derive a valid I2C data rate from clk_scb %u Hz",
+			(unsigned int)actual_peri_freq);
+		return -EIO;
+	}
 
 	return 0;
 }
-#endif /* CONFIG_SOC_FAMILY_INFINEON_PSOC4 */
 
 static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 {
@@ -506,16 +494,12 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 		return -EIO;
 	}
 
-#ifdef USE_I2C_SET_PERI_DIVIDER
-	_i2c_set_peri_divider(dev, CAT1_I2C_SPEED_STANDARD_HZ,
-			      (data->scb_config.i2cMode == CY_SCB_I2C_SLAVE));
-#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
-	if (_i2c_set_peri_divider_psoc4(dev, data->frequencyhal_hz, is_target_mode) != 0) {
+	/* Program the SCB oversampling clock divider for the requested speed */
+	if (_i2c_set_peri_divider(dev, data->frequencyhal_hz, is_target_mode) != 0) {
 		LOG_ERR("Failed to configure I2C peripheral clock divider");
 		k_sem_give(&data->operation_sem);
 		return -EIO;
 	}
-#endif
 
 #if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 	Cy_SCB_I2C_Enable(config->base, &data->context);
