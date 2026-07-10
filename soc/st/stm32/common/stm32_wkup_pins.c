@@ -352,20 +352,3 @@ int stm32_pwr_wkup_pin_cfg_gpio(const struct gpio_dt_spec *gpio)
 
 	return 0;
 }
-
-/**
- * @brief Exported function to activate pull-ups/pull-downs configuration of GPIO ports
- * associated with wake-up pins.
- */
-void stm32_pwr_wkup_pin_cfg_pupd(void)
-{
-#if PWR_STM32_WKUP_PINS_PUPD_CFG
-#ifdef CONFIG_SOC_SERIES_STM32U5X
-	LL_PWR_EnablePUPDConfig();
-#else
-	LL_PWR_EnablePUPDCfg();
-#endif /* CONFIG_SOC_SERIES_STM32U5X */
-#else
-	return;
-#endif /* PWR_STM32_WKUP_PINS_PUPD_CFG */
-}
