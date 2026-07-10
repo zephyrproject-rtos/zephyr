@@ -488,6 +488,9 @@ struct i3c_config_controller {
 		uint32_t low_ns;
 	} scl_od_min;
 
+	/**
+	 * Requested minimum SCL Push-Pull clock periods.
+	 */
 	struct {
 		/**
 		 * Requested minimum SCL Push-Pull HIGH period in nanoseconds.
@@ -520,6 +523,9 @@ struct i3c_config_custom {
 	/** ID of the configuration parameter. */
 	uint32_t id;
 
+	/**
+	 * Value or pointer to the configuration parameter.
+	 */
 	union {
 		/** Value of configuration parameter. */
 		uintptr_t val;
@@ -1071,6 +1077,9 @@ struct i3c_device_desc {
 	 */
 	uint8_t dcr;
 
+	/**
+	 * Maximum data speed (GETMXDS CCC).
+	 */
 	struct {
 		/** Maximum Read Speed */
 		uint8_t maxrd;
@@ -1082,6 +1091,9 @@ struct i3c_device_desc {
 		uint32_t max_read_turnaround;
 	} data_speed;
 
+	/**
+	 * Maximum data lengths (GETMXDS CCC).
+	 */
 	struct {
 		/** Maximum Read Length */
 		uint16_t mrl;
@@ -1148,7 +1160,7 @@ struct i3c_device_desc {
 		uint8_t getcap4;
 	} getcaps;
 
-	/* Describes Controller Feature Capabilities */
+	/** Describes Controller Feature Capabilities */
 	struct {
 		/**
 		 * CRCAPS1
@@ -1239,6 +1251,9 @@ struct i3c_dev_attached_list {
 	 */
 	struct i3c_addr_slots addr_slots;
 
+	/**
+	 * Linked lists of attached I3C and I2C devices.
+	 */
 	struct {
 		/**
 		 * Linked list of attached I3C devices.
