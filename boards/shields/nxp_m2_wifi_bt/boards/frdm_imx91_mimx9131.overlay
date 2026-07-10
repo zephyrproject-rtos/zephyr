@@ -1,0 +1,109 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Shield board-specific overlay for FRDM-IMX91 + nxp_m2_2ll_wifi_bt (IW612).
+ *
+ * FRDM-IMX91 has an onboard MAYA-W476 (NXP IW612) module.
+ *
+ * GPIO expander: PCAL6524HEAZ (gpio_exp0, I2C addr 0x22 on lpi2c2)
+ *   Pin numbering (0-indexed):
+ *     P0_x = gpio 0..7
+ *     P1_x = gpio 8..15
+ *     P2_x = gpio 16..23
+ *
+ * Relevant GPIO assignments:
+ *   gpio2  = P0_2 = PCIE_nWAKE  -> WL_WAKE_HOST      (IW612->host, INPUT,  ACTIVE_LOW)
+ *   gpio3  = P0_3 = UART_nWAKE  -> BT_154_WAKE_HOST  (IW612->host, INPUT,  ACTIVE_LOW)
+ *   gpio12 = P1_4 = SD3_nRST    -> SDIORESET#        (host->IW612, OUTPUT, ACTIVE_HIGH)
+ *                                   -> IW612 IND_RST_WL
+ *   gpio13 = P1_5 = EXT1_PWREN  -> VPCIe_3V3 DC-DC EN  (host->U901, OUTPUT, ACTIVE_HIGH)
+ *                                   -> M.2 module 3.3V main power
+ *   gpio19 = P2_3 = M2_nDIS2    -> W_DISABLE2#       (host->IW612, OUTPUT, ACTIVE_HIGH)
+ *                                   -> IW612 IND_RST_BT (not used in DTS)
+ *   gpio20 = P2_4 = M2_nDIS1    -> W_DISABLE1#       (host->IW612, OUTPUT, ACTIVE_HIGH)
+ *                                   -> IW612 PD_N
+ *
+ * Schematic references:
+ *   FRDM-IMX91: SPF-94610_A1, pages 17-19
+ *   IW612 M.2 module: 2EL_M2_Module_schematic_rev_PA2
+ */
+
+/ {
+	chosen {
+		zephyr,uart-pipe = &lpuart1;
+	};
+};
+
+/*
+ * Increase DRAM to 8MB for Wi-Fi firmware loading.
+ * IW612 firmware is ~384KB; default 1MB is insufficient with NXP_MONOLITHIC_WIFI.
+ */
+&dram {
+	reg = <0x80000000 DT_SIZE_M(8)>;
+};
+
+/*
+ * BT HCI UART: lpuart5 (gpio_io00-03 pads)
+ *
+ * IW612 UART connections (via 74AVC4T3144 level shifter, page 18):
+ *   gpio_io00 (lpuart5 TX)  -> W2_UART5_TXD  -> M.2 UART_TXD  -> IW612 UART_RX
+ *   gpio_io01 (lpuart5 RX)  -> W2_UART5_RXD  -> M.2 UART_RXD  -> IW612 UART_TX
+ *   gpio_io02 (lpuart5 CTS) -> W2_UART5_RTSO -> M.2 UART_RTS  -> IW612 UART_CTS
+ *   gpio_io03 (lpuart5 RTS) -> W2_UART5_CTSI -> M.2 UART_CTS  -> IW612 UART_RTS
+ */
+&m2_hci_bt_uart {
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-1;
+	/delete-property/ pinctrl-2;
+	/delete-property/ pinctrl-names;
+	pinctrl-0 = <&lpuart5_default>;
+	pinctrl-1 = <&lpuart5_sleep>;
+	pinctrl-names = "default", "sleep";
+	status = "okay";
+
+	bt_hci_uart: bt_hci_uart {
+		m2_bt_module: m2_bt_module {
+			/* PCAL6524 P2_3 (gpio19) = M2_nDIS2 -> IW612 IND_RST_NB_15.4 */
+			sdio-reset-gpios = <&gpio_exp0 19 GPIO_ACTIVE_HIGH>;
+			/* PCAL6524 P2_4 (gpio20) = M2_nDIS1 -> IW612 PD_N */
+			w-disable-gpios = <&gpio_exp0 20 GPIO_ACTIVE_HIGH>;
+			/* PCAL6524 P0_3 (gpio3) = UART_nWAKE -> IW612 BT_154_WAKE_HOST */
+			wakeup-bt-gpios = <&gpio_exp0 3 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+/*
+ * Wi-Fi SDIO: usdhc3 (sd3_clk/cmd/data0-3 pads)
+ *
+ * wakeup-gpios: PCAL6524 P0_2 (gpio2) = PCIE_nWAKE -> IW612 WL_WAKE_HOST
+ * pwr-gpios:    PCAL6524 P2_4 (gpio20) = M2_nDIS1   -> IW612 PD_N
+ * sd-gpios:     PCAL6524 P1_4 (gpio12) = SD3_nRST   -> IW612 IND_RST_WL
+ * ext1-pwren-gpios: PCAL6524 P1_5 (gpio13) = EXT1_PWREN -> VPCIe_3V3 DC-DC EN (M.2 3.3V main power)
+ */
+&m2_wifi_sdio {
+	status = "okay";
+};
+
+/*
+ * usdhc3: Wi-Fi SDIO pinctrl
+ * Pads: sd3_clk/cmd/data0-3 (gpio3.IO20-25)
+ */
+&usdhc3 {
+	pinctrl-0 = <&pinmux_usdhc3>;
+	pinctrl-1 = <&pinmux_usdhc3_100mhz>;
+	pinctrl-2 = <&pinmux_usdhc3_200mhz>;
+	pinctrl-names = "default", "med", "fast";
+	max-bus-freq = <50000000>;
+
+	nxp_wifi {
+		wakeup-gpios = <&gpio_exp0 2 GPIO_ACTIVE_LOW>;
+		pwr-gpios = <&gpio_exp0 20 GPIO_ACTIVE_HIGH>;
+		sd-gpios = <&gpio_exp0 12 GPIO_ACTIVE_HIGH>;
+		ext1-pwren-gpios = <&gpio_exp0 13 GPIO_ACTIVE_HIGH>;
+	};
+};
