@@ -14,6 +14,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/policy.h>
 
 #include "reg/reg_tacho.h"
 
@@ -31,37 +32,100 @@ struct tach_rts5912_config {
 };
 
 struct tach_rts5912_data {
+	const struct device *dev;
 	uint16_t count;
+	struct k_work_delayable sample_timeout;
+	uint8_t discard;
 };
 
-#define COUNT_100KHZ_SEC         100000U
-#define SEC_TO_MINUTE            60U
-/* Reduced PIN_STUCK checks from 100 to 25 to reduce disruption of the cpu sleep */
-#define PIN_STUCK_TIMEOUT        (50U * USEC_PER_MSEC)
-#define PIN_STUCK_CHECK_INTERVAL (2)
+#define COUNT_100KHZ_SEC	100000U
+#define SEC_TO_MINUTE		60U
+#define PIN_STUCK_TIMEOUT_MS	100
 
-int tach_rts5912_sample_fetch(const struct device *dev, enum sensor_channel chan)
+/* First two samples are unreliable when waking up from low power states. */
+#define DISCARD_SAMPLE		2
+
+static void tach_rts5912_isr_off(const struct device *dev)
+{
+	const struct tach_rts5912_config *const cfg = dev->config;
+	volatile struct tacho_regs *const tach = cfg->regs;
+
+	if (tach->int_en & TACHO_INTEN_CNTRDYEN) {
+		tach->int_en = 0;
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+
+static void tach_rts5912_timeout_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct tach_rts5912_data *data = CONTAINER_OF(
+			dwork, struct tach_rts5912_data, sample_timeout);
+	const struct device *dev = data->dev;
+	const struct tach_rts5912_config *const cfg = dev->config;
+	volatile struct tacho_regs *const tach = cfg->regs;
+	unsigned int key;
+
+	key = irq_lock();
+	if (tach->int_en & TACHO_INTEN_CNTRDYEN) {
+		data->count = 0;
+		tach_rts5912_isr_off(dev);
+	}
+	irq_unlock(key);
+}
+
+static void tach_rts5912_isr(const struct device *dev)
 {
 	const struct tach_rts5912_config *const cfg = dev->config;
 	struct tach_rts5912_data *const data = dev->data;
 	volatile struct tacho_regs *const tach = cfg->regs;
 
+	if (!(tach->int_en & TACHO_INTEN_CNTRDYEN)) {
+		/* bail out if the interrupt is not currently enabled,
+		 * potential race with the timeout handler
+		 */
+		tach->status = TACHO_STS_CNTRDY;
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_TACH_RTS5912_DISCARD_SAMPLES) && data->discard) {
+		data->discard--;
+		tach->status = TACHO_STS_CNTRDY;
+		return;
+	}
+
+	k_work_cancel_delayable(&data->sample_timeout);
+
+	data->count = (tach->ctrl & TACHO_CTRL_CNT_Msk) >> TACHO_CTRL_CNT_Pos;
+	tach->status = TACHO_STS_CNTRDY;
+
+	LOG_DBG("count=%d", data->count);
+
+	tach_rts5912_isr_off(dev);
+}
+
+static int tach_rts5912_sample_fetch(const struct device *dev, enum sensor_channel chan)
+{
+	const struct tach_rts5912_config *const cfg = dev->config;
+	struct tach_rts5912_data *const data = dev->data;
+	volatile struct tacho_regs *const tach = cfg->regs;
+	unsigned int key;
+
 	if (chan != SENSOR_CHAN_RPM && chan != SENSOR_CHAN_ALL) {
 		return -ENOTSUP;
 	}
 
-	tach->status = TACHO_STS_CNTRDY;
+	key = irq_lock();
+	if (!(tach->int_en & TACHO_INTEN_CNTRDYEN)) {
+		data->discard = DISCARD_SAMPLE;
+		tach->status = TACHO_STS_CNTRDY;
+		tach->int_en = TACHO_INTEN_CNTRDYEN;
 
-	if (WAIT_FOR(tach->status & TACHO_STS_CNTRDY, PIN_STUCK_TIMEOUT,
-		     k_msleep(PIN_STUCK_CHECK_INTERVAL))) {
-		/* See whether internal counter is already latched */
-		if (tach->status & TACHO_STS_CNTRDY) {
-			tach->status = TACHO_STS_CNTRDY;
-			data->count = (tach->ctrl & TACHO_CTRL_CNT_Msk) >> TACHO_CTRL_CNT_Pos;
-		}
-	} else {
-		data->count = 0;
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
+		k_work_reschedule(&data->sample_timeout, K_MSEC(PIN_STUCK_TIMEOUT_MS));
 	}
+	irq_unlock(key);
 
 	return 0;
 }
@@ -71,15 +135,16 @@ static int tach_rts5912_channel_get(const struct device *dev, enum sensor_channe
 {
 	const struct tach_rts5912_config *const cfg = dev->config;
 	struct tach_rts5912_data *const data = dev->data;
+	uint16_t count = data->count;
 
 	if (chan != SENSOR_CHAN_RPM) {
 		return -ENOTSUP;
 	}
 
 	/* Convert the count per 100khz cycles to rpm */
-	if (data->count != 0U) {
+	if (count != 0U) {
 		val->val1 =
-			(SEC_TO_MINUTE * COUNT_100KHZ_SEC) / (cfg->pulses_per_round * data->count);
+			(SEC_TO_MINUTE * COUNT_100KHZ_SEC) / (cfg->pulses_per_round * count);
 	} else {
 		val->val1 = 0U;
 	}
@@ -92,8 +157,11 @@ static int tach_rts5912_channel_get(const struct device *dev, enum sensor_channe
 static int tach_rts5912_init(const struct device *dev)
 {
 	const struct tach_rts5912_config *const cfg = dev->config;
+	struct tach_rts5912_data *const data = dev->data;
 	volatile struct tacho_regs *const tach = cfg->regs;
 	int ret;
+
+	data->dev = dev;
 
 	struct rts5912_sccon_subsys sccon_subsys = {
 		.clk_grp = cfg->clk_grp,
@@ -119,10 +187,15 @@ static int tach_rts5912_init(const struct device *dev)
 	}
 #endif
 
+	k_work_init_delayable(&data->sample_timeout, tach_rts5912_timeout_handler);
+
 	/* write one clear the status */
 	tach->status = TACHO_STS_LIMIT | TACHO_STS_CHG | TACHO_STS_CNTRDY;
 	tach->ctrl &= ~TACHO_CTRL_SELEDGE_Msk;
 	tach->ctrl = ((0x01ul << TACHO_CTRL_SELEDGE_Pos) | TACHO_CTRL_READMODE | TACHO_CTRL_EN);
+
+	IRQ_CONNECT(DT_INST_IRQN(0), 0, tach_rts5912_isr, DEVICE_DT_INST_GET(0), 0);
+	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }
