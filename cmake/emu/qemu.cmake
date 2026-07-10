@@ -49,12 +49,17 @@ set(qemu_targets
   debugserver_qemu
 )
 
-set(QEMU_FLAGS -pidfile)
-if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
-  list(APPEND QEMU_FLAGS qemu\${QEMU_INSTANCE}.pid)
+# QEMU_INSTANCE is a command line argument to *make* (not cmake). With the
+# Makefiles generator the reference must survive CMake expansion and reach the
+# generated makefile verbatim, so that appending the instance name to the pid
+# file lets several instances of the same sample run side by side.
+if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+  set(qemu_instance "\${QEMU_INSTANCE}")
 else()
-  list(APPEND QEMU_FLAGS qemu${QEMU_INSTANCE}.pid)
+  set(qemu_instance "${QEMU_INSTANCE}")
 endif()
+
+set(QEMU_FLAGS -pidfile qemu${qemu_instance}.pid)
 
 if(CONFIG_VIRTIO_MMIO)
   list(APPEND QEMU_FLAGS -global virtio-mmio.force-legacy=false)
@@ -216,33 +221,10 @@ elseif(QEMU_NET_STACK)
         -serial pipe:/tmp/ip-stack-${target}
         -pidfile qemu-${target}.pid
       )
+    elseif(CONFIG_NET_QEMU_PPP)
+      list(APPEND MORE_FLAGS_FOR_${target} -serial unix:/tmp/ppp${qemu_instance})
     else()
-      # QEMU_INSTANCE is a command line argument to *make* (not cmake). By
-      # appending the instance name to the pid file we can easily run more
-      # instances of the same sample.
-
-      if(CONFIG_NET_QEMU_PPP)
-        if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
-          set(ppp_path unix:/tmp/ppp\${QEMU_INSTANCE})
-        else()
-          set(ppp_path unix:/tmp/ppp${QEMU_INSTANCE})
-        endif()
-
-        list(APPEND MORE_FLAGS_FOR_${target}
-          -serial ${ppp_path}
-        )
-      else()
-        if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
-          set(tmp_file unix:/tmp/slip.sock\${QEMU_INSTANCE})
-        else()
-          set(tmp_file unix:/tmp/slip.sock${QEMU_INSTANCE})
-        endif()
-
-        list(APPEND MORE_FLAGS_FOR_${target}
-          -serial ${tmp_file}
-        )
-      endif()
-
+      list(APPEND MORE_FLAGS_FOR_${target} -serial unix:/tmp/slip.sock${qemu_instance})
     endif()
   endforeach()
 
@@ -319,7 +301,7 @@ elseif(QEMU_NET_STACK)
       COMMAND pkill -P $$$$
     )
   endif()
-endif(QEMU_PIPE_STACK)
+endif()
 
 if(CONFIG_CAN_KVASER_PCI)
   # Add CAN bus 0 only when QEMU-emulated CAN hardware is actually needed
@@ -378,6 +360,8 @@ if(CONFIG_X86_64 AND NOT CONFIG_QEMU_UEFI_BOOT)
     DEPENDS qemu_locore_image_target qemu_main_image_target
   )
 
+  list(APPEND QEMU_TARGET_DEPENDS qemu_kernel_target)
+
   set(QEMU_KERNEL_FILE "${ZEPHYR_BINARY_DIR}/zephyr-qemu-locore.elf")
 
   list(APPEND QEMU_EXTRA_FLAGS
@@ -426,8 +410,8 @@ if(CONFIG_NVME)
     ${ZEPHYR_BINARY_DIR}/nvme_disk.img
     1M
   )
-else()
-  add_custom_target(qemu_nvme_disk)
+
+  list(APPEND QEMU_TARGET_DEPENDS qemu_nvme_disk)
 endif()
 
 # If we are using a suitable ethernet driver inside qemu, then these options
@@ -515,10 +499,10 @@ if(NOT CONFIG_QEMU_GDBSERVER_LISTEN_DEV STREQUAL "")
   list(APPEND MORE_FLAGS_FOR_debugserver_qemu -gdb "${CONFIG_QEMU_GDBSERVER_LISTEN_DEV}")
 endif()
 
-# Architectures can define QEMU_KERNEL_FILE to use a specific output
-# file to pass to qemu (and a "qemu_kernel_target" target to generate
-# it), or set QEMU_KERNEL_OPTION if they want to replace the "-kernel
-# ..." option entirely.
+# Boards and architectures can define QEMU_KERNEL_FILE to use a specific output
+# file to pass to qemu; whatever target generates that file must be appended to
+# QEMU_TARGET_DEPENDS. Alternatively they can set QEMU_KERNEL_OPTION if they
+# want to replace the "-kernel ..." option entirely.
 if(CONFIG_QEMU_UEFI_BOOT)
   set(QEMU_UEFI_OPTION  ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.efi)
   list(APPEND QEMU_UEFI_OPTION --)
@@ -532,7 +516,6 @@ endif()
 
 foreach(target ${qemu_targets})
   add_custom_target(${target}
-    ${PRE_QEMU_COMMANDS}
     ${PRE_QEMU_COMMANDS_FOR_${target}}
     COMMAND
     ${QEMU}
@@ -549,7 +532,7 @@ foreach(target ${qemu_targets})
     COMMENT "${QEMU_PIPE_COMMENT}[QEMU] CPU: ${QEMU_CPU_TYPE_${ARCH}}"
     USES_TERMINAL
   )
-  if(DEFINED QEMU_KERNEL_FILE)
-    add_dependencies(${target} qemu_nvme_disk qemu_kernel_target)
+  if(QEMU_TARGET_DEPENDS)
+    add_dependencies(${target} ${QEMU_TARGET_DEPENDS})
   endif()
 endforeach()
