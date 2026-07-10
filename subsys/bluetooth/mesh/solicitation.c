@@ -250,6 +250,15 @@ void bt_mesh_sol_recv(struct net_buf_simple *buf, uint8_t uuid_list_len)
 		return;
 	}
 
+	/* Trim any trailing AD structures left attached by the scan callback:
+	 * the encrypted Solicitation PDU has a fixed length of 17 octets.
+	 */
+	if (buf->len < 17) {
+		LOG_DBG("Truncated Solicitation PDU (len %u)", buf->len);
+		return;
+	}
+	buf->len = 17;
+
 	sub = bt_mesh_subnet_find(sol_pdu_decrypt, (void *)buf);
 	if (!sub) {
 		LOG_DBG("Unable to find subnetwork for received solicitation PDU");
