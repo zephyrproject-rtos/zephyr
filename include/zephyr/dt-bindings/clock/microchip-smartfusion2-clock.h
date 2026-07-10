@@ -5,16 +5,18 @@
  */
 
 /**
- * @file microchip-smartfusion2-clock.h
- * @brief SmartFusion2 clock binding identifiers.
+ * @file
+ * @brief Clock identifiers for Microchip SmartFusion2
+ * @ingroup microchip_smartfusion2_clocks
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MICROCHIP_SMARTFUSION2_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MICROCHIP_SMARTFUSION2_CLOCK_H_
 
 /**
- * @defgroup smartfusion2_clock SmartFusion2 Clock Bindings
- * @brief SmartFusion2 SoC clock assignments.
+ * @defgroup microchip_smartfusion2_clocks Microchip SmartFusion2 clock identifiers
+ * @brief Clock identifiers for the Microchip SmartFusion2 SoC.
+ * @ingroup devicetree-clocks
  * @{
  */
 
