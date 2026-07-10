@@ -12,4 +12,9 @@ config ZBUS_MSG_SUBSCRIBER_SAMPLE_ISOLATED_BUF_POOL_SIZE
 	default 32
 	depends on ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION
 
+config ZBUS_MSG_SUBSCRIBER_SAMPLE_ISOLATED_BUF_POOL_USE_DEFAULT
+	bool "Use default size for isolated pool"
+	default y
+	depends on ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION
+
 source "Kconfig.zephyr"
