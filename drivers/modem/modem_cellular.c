@@ -934,6 +934,11 @@ static int modem_cellular_on_power_on_pulse_state_enter(struct modem_cellular_da
 {
 	const struct modem_cellular_config *config = data->dev->config;
 
+	/* Revert to original baudrate if we have changed it */
+	if (data->original_baudrate) {
+		modem_cellular_baudrate_update(data, data->original_baudrate);
+	}
+
 	gpio_pin_set_dt(&config->power_gpio, 1);
 	modem_cellular_start_timer(data, K_MSEC(config->vendor->power_pulse_duration_ms));
 	return 0;
