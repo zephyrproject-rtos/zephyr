@@ -319,6 +319,65 @@ config ESP32_WIFI_TASK_STACK_SIZE
 	  and the stack depth requested by the blob at runtime, so a higher
 	  Kconfig value only raises the floor.
 
+config ESP32_WIFI_EVENT_TASK_STACK_SIZE
+	int "Wi-Fi event task stack size"
+	default 2048
+	help
+	  Stack size of the event task that runs the Wi-Fi event
+	  handlers. The Wi-Fi library posts events from its own task; the
+	  handlers run on this dedicated task instead so a handler cannot
+	  overrun the library task stack or stall the library task.
+
+config ESP32_WIFI_EVENT_TASK_PRIORITY
+	int "Wi-Fi event task priority"
+	default 4
+	help
+	  Preemptible priority of the Wi-Fi event task. Keep it above the
+	  application threads so connect and disconnect state changes are
+	  handled promptly. A caller that must observe a state change before
+	  continuing synchronizes on the event rather than relying on this
+	  task preempting it.
+
+config ESP32_WIFI_STA_START_TIMEOUT
+	int "Wi-Fi station-start wait timeout (ms)"
+	default 1000
+	help
+	  Time a connect request waits for the station-started event, which is
+	  handled on the event task, before it gives up. Raise it if a connect
+	  fails with the station not in station mode under a heavy event load.
+
+config ESP32_WIFI_EVENT_QUEUE_SIZE
+	int "Wi-Fi event queue depth"
+	default 16
+	help
+	  Number of posted events buffered between the Wi-Fi library task and
+	  the event task. Each queued entry carries an inline copy of the event
+	  payload, so the RAM cost is this depth times the entry size.
+
+	  Events are delivered asynchronously on the event task rather than
+	  inline on the library task, which keeps handler work off that task.
+	  The mesh needs this: it brings the network stack up (DHCP server, NAT
+	  and routes) from an event handler, which neither fits the library task
+	  stack nor should block it.
+
+	  A post carries the timeout its caller asked for. The libraries post
+	  most events without waiting, so a full queue drops those and logs at
+	  error level; the events able to fill it are the ones that suits, softAP
+	  client churn and mesh routing updates, which the next event or a
+	  re-parent supersedes. The queue is sized to absorb those bursts. A
+	  caller that must not lose its event waits instead, except from the
+	  event task itself, which drains this queue and so never waits on it.
+
+	  Losing a station or softAP state transition this way leaves the driver
+	  state stale until the next one, which is why the depth covers a burst
+	  of them several times over. Reaching it takes the event task being
+	  starved outright, since its handlers only update state and raise a
+	  network management event. The driver state stays readable through
+	  NET_REQUEST_WIFI_IFACE_STATUS in that case, and the notification hop
+	  to the application has its own backpressure in the network management
+	  layer (see NET_MGMT_EVENT_QUEUE_SIZE and NET_MGMT_EVENT_QUEUE_TIMEOUT).
+	  Raise this depth at the cost of more RAM if drops are ever seen.
+
 config ESP32_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME
 	int "Minimum active time"
 	range 8 60
