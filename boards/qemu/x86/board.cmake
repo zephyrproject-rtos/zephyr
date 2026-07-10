@@ -8,7 +8,7 @@ endif()
 
 if(CONFIG_X86_64)
   set(QEMU_BINARY_SUFFIX x86_64)
-  set(QEMU_CPU_TYPE_${ARCH} qemu64,+x2apic)
+  set(QEMU_CPU_TYPE qemu64,+x2apic)
   if("${CONFIG_MP_MAX_NUM_CPUS}" STREQUAL "1")
     # icount works with 1 CPU so we can enable it here.
     # FIXME: once this works across configs, remove this line and set
@@ -16,7 +16,7 @@ if(CONFIG_X86_64)
     list(APPEND QEMU_EXTRA_FLAGS -icount shift=5,align=off,sleep=off -rtc clock=vm)
   endif()
 else()
-  set(QEMU_CPU_TYPE_${ARCH} qemu32,+nx,+pae)
+  set(QEMU_CPU_TYPE qemu32,+nx,+pae)
 endif()
 
 if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
@@ -74,7 +74,7 @@ endif()
 
 set(QEMU_FLAGS_${ARCH}
   -m ${QEMU_MEMORY_SIZE_MB}
-  -cpu ${QEMU_CPU_TYPE_${ARCH}}${QEMU_CPU_FLAGS}
+  -cpu ${QEMU_CPU_TYPE}${QEMU_CPU_FLAGS}
   -machine q35
   -device isa-debug-exit,iobase=0xf4,iosize=0x04
   ${QEMU_VIRTIO_ENTROPY_FLAGS}

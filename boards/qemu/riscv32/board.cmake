@@ -8,7 +8,7 @@ include(${ZEPHYR_BASE}/boards/common/qemu_riscv.board.cmake)
 qemu_riscv_cpu_from_dt(qemu_riscv_cpu)
 qemu_riscv_binary_suffix(QEMU_BINARY_SUFFIX)
 
-set(QEMU_CPU_TYPE_${ARCH} "${qemu_riscv_cpu}")
+set(QEMU_CPU_TYPE "${qemu_riscv_cpu}")
 
 if(CONFIG_RISCV_APLIC_MSI)
   set(QEMU_MACH virt,aia=aplic-imsic)

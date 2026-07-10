@@ -2,7 +2,7 @@
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
 
-set(QEMU_CPU_TYPE_${ARCH} leon3)
+set(QEMU_CPU_TYPE leon3)
 
 # This board used to pass "-icount auto" here, where it was silently overridden
 # by the CONFIG_QEMU_ICOUNT_SHIFT derived value. Honouring it instead fails the
