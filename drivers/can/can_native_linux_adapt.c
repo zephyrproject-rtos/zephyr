@@ -88,31 +88,6 @@ int linux_socketcan_iface_close(int fd)
 	return close(fd);
 }
 
-int linux_socketcan_poll_data(int fd)
-{
-	struct timeval timeout;
-	fd_set rset;
-	int ret;
-
-	FD_ZERO(&rset);
-
-	FD_SET(fd, &rset);
-
-	timeout.tv_sec = 0;
-	timeout.tv_usec = 0;
-
-	ret = select(fd + 1, &rset, NULL, NULL, &timeout);
-	if (ret < 0 && errno != EINTR) {
-		return -errno;
-	} else if (ret > 0) {
-		if (FD_ISSET(fd, &rset)) {
-			return 0;
-		}
-	}
-
-	return -EAGAIN;
-}
-
 int linux_socketcan_read_data(int fd, void *buf, size_t buf_len, bool *msg_confirm)
 {
 	struct canfd_frame *frame = (struct canfd_frame *)buf;
@@ -125,21 +100,23 @@ int linux_socketcan_read_data(int fd, void *buf, size_t buf_len, bool *msg_confi
 	msg.msg_iov = &iov;
 	msg.msg_iovlen = 1;
 
-	int ret = (int)recvmsg(fd, &msg, MSG_WAITALL);
+	int ret = (int)recvmsg(fd, &msg, MSG_DONTWAIT);
 
-	if (msg_confirm != NULL) {
-		*msg_confirm = (msg.msg_flags & MSG_CONFIRM) != 0;
-	}
+	if (ret != -1) {
+		if (msg_confirm != NULL) {
+			*msg_confirm = (msg.msg_flags & MSG_CONFIRM) != 0;
+		}
 
-	/* Make sure to set the flags for all frames received via the Linux API.
-	 *
-	 * Zephyr relies on defined flags field of the SocketCAN data for both FD and classical CAN
-	 * frames. In Linux the flags field is undefined for legacy frames.
-	 */
-	if (ret == CANFD_MTU) {
-		frame->flags |= CANFD_FDF;
-	} else if (ret == CAN_MTU) {
-		frame->flags = 0;
+		/* Make sure to set the flags for all frames received via the Linux API.
+		 *
+		 * Zephyr relies on defined flags field of the SocketCAN data for both FD and
+		 * classical CAN frames. In Linux the flags field is undefined for legacy frames.
+		 */
+		if (ret == CANFD_MTU) {
+			frame->flags |= CANFD_FDF;
+		} else if (ret == CAN_MTU) {
+			frame->flags = 0;
+		}
 	}
 
 	return ret;

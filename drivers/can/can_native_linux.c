@@ -20,6 +20,7 @@
 #include <zephyr/net/socketcan_utils.h>
 #include <zephyr/sys/util.h>
 
+#include "nsi_errno.h"
 #include "can_native_linux_adapt.h"
 #include "nsi_host_trampolines.h"
 
@@ -93,9 +94,9 @@ static void rx_thread(void *arg1, void *arg2, void *arg3)
 	LOG_DBG("Starting Linux SocketCAN RX thread");
 
 	while (true) {
-		while (linux_socketcan_poll_data(data->dev_fd) == 0) {
-			count = linux_socketcan_read_data(data->dev_fd, (void *)(&sframe),
-							   sizeof(sframe), &msg_confirm);
+		count = linux_socketcan_read_data(data->dev_fd, (void *)(&sframe),
+						   sizeof(sframe), &msg_confirm);
+		if (count >= 0) {
 			if (msg_confirm) {
 				data->tx_callback(dev, 0, data->tx_user_data);
 				k_sem_give(&data->tx_idle);
@@ -104,6 +105,7 @@ static void rx_thread(void *arg1, void *arg2, void *arg3)
 					continue;
 				}
 			}
+
 			if ((count <= 0) || !data->common.started) {
 				break;
 			}
@@ -122,6 +124,9 @@ static void rx_thread(void *arg1, void *arg2, void *arg3)
 				(frame.flags & CAN_FRAME_RTR) != 0 ? ", RTR frame" : "");
 
 			dispatch_frame(dev, &frame);
+		} else if (nsi_host_get_errno() != EAGAIN && nsi_host_get_errno() != EWOULDBLOCK) {
+			LOG_WRN("linux_socketcan_read_data reported err: %s",
+				strerror(nsi_host_get_errno()));
 		}
 
 		/* short sleep required to avoid blocking the whole native process */
