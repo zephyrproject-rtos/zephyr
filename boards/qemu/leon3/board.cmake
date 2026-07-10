@@ -2,7 +2,6 @@
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
 
-set(QEMU_binary_suffix sparc)
 set(QEMU_CPU_TYPE_${ARCH} leon3)
 
 # This board used to pass "-icount auto" here, where it was silently overridden
