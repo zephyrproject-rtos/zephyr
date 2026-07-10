@@ -27,7 +27,6 @@ endif()
 # After that we can specify board explicitly with '-M virt' option.
 list(APPEND QEMU_BOARD_FLAGS
   -m 8M
-  -no-reboot
   -global cpu.firq=false
   -global cpu.num-irqlevels=15
   -global cpu.num-irq=25

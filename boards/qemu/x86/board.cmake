@@ -2,9 +2,6 @@
 # Copyright (c) 2019 Intel Corp.
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
-if(NOT CONFIG_REBOOT)
-  set(REBOOT_FLAG -no-reboot)
-endif()
 
 if(CONFIG_X86_64)
   set(QEMU_BINARY_SUFFIX x86_64)
@@ -79,7 +76,6 @@ set(QEMU_BOARD_FLAGS
   -device isa-debug-exit,iobase=0xf4,iosize=0x04
   ${QEMU_VIRTIO_ENTROPY_FLAGS}
   ${QEMU_VIRTIO_INPUT_FLAGS}
-  ${REBOOT_FLAG}
   )
 
 if(NOT CONFIG_ACPI)
