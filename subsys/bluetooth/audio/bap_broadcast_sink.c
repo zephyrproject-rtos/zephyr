@@ -483,14 +483,30 @@ static bool base_subgroup_meta_cb(const struct bt_bap_base_subgroup *subgroup, v
 	uint8_t *meta;
 	int ret;
 
+	if (mod_src_param->num_subgroups == ARRAY_SIZE(mod_src_param->subgroups)) {
+		return false;
+	}
+
+	subgroup_param = &mod_src_param->subgroups[mod_src_param->num_subgroups];
+
 	ret = bt_bap_base_get_subgroup_codec_meta(subgroup, &meta);
 	if (ret < 0) {
 		return false;
 	}
 
-	subgroup_param = &mod_src_param->subgroups[mod_src_param->num_subgroups++];
-	subgroup_param->metadata_len = (uint8_t)ret;
-	memcpy(subgroup_param->metadata, meta, subgroup_param->metadata_len);
+	if (ret <= sizeof(subgroup_param->metadata)) {
+		subgroup_param->metadata_len = (uint8_t)ret;
+		(void)memcpy(subgroup_param->metadata, meta, subgroup_param->metadata_len);
+	} else {
+		/* If we cannot store the metadata, we just omit it.
+		 * BASS section 3.2.1.10 Metadata_Length field states
+		 * "the server may write the length of any Metadata
+		 *  parameters for each subgroup to the Metadata_Length field"
+		 */
+		subgroup_param->metadata_len = 0U;
+	}
+
+	mod_src_param->num_subgroups++;
 
 	return true;
 }
@@ -523,9 +539,11 @@ static void update_recv_state_base(const struct bt_bap_broadcast_sink *sink,
 		return;
 	}
 
+	/* Will set the mod_src_param.num_subgroups and subgroup-related parameters */
 	err = update_recv_state_base_copy_meta(base, &mod_src_param);
 	if (err != 0) {
-		LOG_WRN("Failed to modify Receive State for sink %p: %d", sink, err);
+		LOG_WRN("Failed to parse all subgroups from BASE for sink %p: %d (%u != %d)", sink,
+			err, mod_src_param.num_subgroups, bt_bap_base_get_subgroup_count(base));
 		return;
 	}
 
@@ -533,7 +551,7 @@ static void update_recv_state_base(const struct bt_bap_broadcast_sink *sink,
 	mod_src_param.src_id = recv_state->src_id;
 	mod_src_param.encrypt_state = recv_state->encrypt_state;
 	mod_src_param.broadcast_id = recv_state->broadcast_id;
-	mod_src_param.num_subgroups = sink->subgroup_count;
+
 	for (uint8_t i = 0U; i < sink->subgroup_count; i++) {
 		struct bt_bap_bass_subgroup *subgroup_param = &mod_src_param.subgroups[i];
 		const struct bt_bap_broadcast_sink_subgroup *sink_subgroup = &sink->subgroups[i];
