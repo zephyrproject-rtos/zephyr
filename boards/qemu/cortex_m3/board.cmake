@@ -3,9 +3,9 @@
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
 
-set(QEMU_CPU_TYPE_${ARCH} cortex-m3)
+set(QEMU_CPU_TYPE cortex-m3)
 set(QEMU_FLAGS_${ARCH}
-  -cpu ${QEMU_CPU_TYPE_${ARCH}}
+  -cpu ${QEMU_CPU_TYPE}
   -machine lm3s6965evb
   )
 include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

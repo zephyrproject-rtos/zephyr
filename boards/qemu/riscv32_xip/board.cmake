@@ -2,7 +2,7 @@
 set(SUPPORTED_EMU_PLATFORMS qemu)
 
 set(QEMU_BINARY_SUFFIX riscv32)
-set(QEMU_CPU_TYPE_${ARCH} riscv32)
+set(QEMU_CPU_TYPE riscv32)
 
 set(QEMU_FLAGS_${ARCH}
   -machine sifive_e

@@ -2,7 +2,7 @@
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
 
-set(QEMU_CPU_TYPE_${ARCH} or1k)
+set(QEMU_CPU_TYPE or1k)
 
 set(QEMU_FLAGS_${ARCH}
   -machine virt
