@@ -400,6 +400,7 @@ static int register_dispatcher(struct dns_resolve_context *ctx,
 	server->dispatcher.sock = server->sock;
 	server->dispatcher.svc = svc;
 	server->dispatcher.resolve_ctx = ctx;
+	server->dispatcher.ifindex = server->if_index;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    server->dns_server.sa_family == NET_AF_INET6) {
