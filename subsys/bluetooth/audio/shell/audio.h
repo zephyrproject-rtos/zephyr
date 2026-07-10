@@ -131,6 +131,7 @@ struct shell_stream {
 #if defined(CONFIG_BT_AUDIO_RX)
 		struct {
 			struct bt_iso_recv_info last_info;
+			uint16_t last_sdu_invalid_len;
 			size_t empty_sdu_pkts;
 			size_t valid_sdu_pkts;
 			size_t lost_pkts;
