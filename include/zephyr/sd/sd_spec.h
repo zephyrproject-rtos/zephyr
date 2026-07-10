@@ -847,6 +847,7 @@ enum sdio_io_dir {
 #define SDIO_CCCR_BUS_IF_WIDTH_1_BIT 0x00 /*!< 1 bit SDIO bus setting */
 #define SDIO_CCCR_BUS_IF_WIDTH_4_BIT 0x02 /*!< 4 bit SDIO bus setting */
 #define SDIO_CCCR_BUS_IF_WIDTH_8_BIT 0x03 /*!< 8 bit SDIO bus setting */
+#define SDIO_CCCR_BUS_IF_ECSI		BIT(5)	/*!< Enable Continuous SPI Interrupt */
 
 #define SDIO_CCCR_CAPS 0x08 /*!< SDIO card capabilities */
 #define SDIO_CCCR_CAPS_SDC BIT(0) /*!< support CMD52 while data transfer */
@@ -881,8 +882,16 @@ enum sdio_io_dir {
 #define SDIO_CCCR_DRIVE_STRENGTH_C BIT(1) /*!< drive type C */
 #define SDIO_CCCR_DRIVE_STRENGTH_D BIT(2) /*!< drive type D */
 
+/* Interrupt Extension Register */
+#define SDIO_CCCR_INT_EXT		0x16	/*!< Interrupt Extension register */
+#define SDIO_CCCR_INT_EXT_SAI		BIT(0)	/*!< Support Asynchronous Interrupt */
+#define SDIO_CCCR_INT_EXT_EAI		BIT(1)	/*!< Enable Asynchronous Interrupt */
+
 #define SDIO_FBR_BASE(n) ((n) * 0x100) /*!< Get function base register addr */
 
+#define SDIO_FBR_CODE 0x00 /*!< SDIO function base register: standard function code */
+#define SDIO_FBR_EXT_CODE 0x01 /*!< SDIO function base register: extended function code */
+#define SDIO_FBR_POWER_SELECT 0x02 /*!< SDIO function base register: power selection */
 #define SDIO_FBR_CIS 0x09 /*!< SDIO function base register CIS pointer */
 #define SDIO_FBR_CSA 0x0C /*!< SDIO function base register CSA pointer */
 #define SDIO_FBR_BLK_SIZE 0x10 /*!< SDIO function base register block size */
