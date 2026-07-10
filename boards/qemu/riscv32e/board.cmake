@@ -10,7 +10,7 @@ qemu_riscv_binary_suffix(QEMU_BINARY_SUFFIX)
 
 set(QEMU_CPU_TYPE "${qemu_riscv_cpu}")
 
-set(QEMU_FLAGS_${ARCH}
+set(QEMU_BOARD_FLAGS
   -machine virt
   -bios none
   -m 256

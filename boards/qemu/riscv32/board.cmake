@@ -18,7 +18,7 @@ else()
   set(QEMU_MACH virt)
 endif()
 
-set(QEMU_FLAGS_${ARCH}
+set(QEMU_BOARD_FLAGS
   -machine ${QEMU_MACH}
   -bios none
   -m 256

@@ -6,7 +6,7 @@
 set(SUPPORTED_EMU_PLATFORMS qemu)
 
 set(QEMU_CPU_TYPE cortex-m0)
-set(QEMU_FLAGS_${ARCH}
+set(QEMU_BOARD_FLAGS
   -cpu ${QEMU_CPU_TYPE}
   -machine microbit
   )
