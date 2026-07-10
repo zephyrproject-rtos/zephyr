@@ -635,14 +635,14 @@ static inline void ch_process_control(struct uhc_dwc2_channel *ch)
 			if (next_dir_is_in) {
 				size = sys_le16_to_cpu(setup->wLength);
 
-				LOG_DBG("Control DATA IN prog=%u, tailroom=%u",
+				LOG_DBG("Control DATA IN prog=%u, tailroom=%zu",
 					size, net_buf_tailroom(xfer->buf));
 
 				dma_addr = net_buf_tail(xfer->buf);
 			} else {
 				size = xfer->buf->len;
 
-				LOG_DBG("Control DATA OUT len=%u, tailroom=%u",
+				LOG_DBG("Control DATA OUT len=%u, tailroom=%zu",
 					xfer->buf->len, net_buf_tailroom(xfer->buf));
 
 				LOG_HEXDUMP_DBG(xfer->buf->data, xfer->buf->len,
@@ -660,7 +660,7 @@ static inline void ch_process_control(struct uhc_dwc2_channel *ch)
 		if (usb_reqtype_is_to_host(setup)) {
 			net_buf_add(xfer->buf, actual_len);
 
-			LOG_DBG("Control DATA IN completed, prog=%u, rem=%u, act=%u, tailroom=%u",
+			LOG_DBG("Control DATA IN completed, prog=%u, rem=%u, act=%u, tailroom=%zu",
 				ch->length,
 				remaining,
 				actual_len,
@@ -1329,7 +1329,7 @@ static int validate_control_xfer(const struct uhc_transfer *xfer)
 		/* Transfer has DATA IN step, so the buffer size should be enough */
 		if ((xfer->buf != NULL) &&
 		     wLength > net_buf_tailroom(xfer->buf)) {
-			LOG_ERR("Control IN buffer is too small: wLength=%u tailroom=%u",
+			LOG_ERR("Control IN buffer is too small: wLength=%u tailroom=%zu",
 			wLength, net_buf_tailroom(xfer->buf));
 			return -EINVAL;
 		}
