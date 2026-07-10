@@ -25,9 +25,40 @@ namespace std {
 #endif /* __cplusplus */
 	extern const std::nothrow_t nothrow;
 
+#if __cplusplus < 201103L
+#define _CPP_NOEXCEPT
+#else
+#define _CPP_NOEXCEPT noexcept
+#endif
+
 #if __cplusplus >= 201703L
 	enum class align_val_t : std::size_t {};
 #endif /* CONFIG_STD_CPP17 */
 
-}
+} /* namespace std */
+
+/*
+ * Placement new - constructs in already-allocated storage.
+ * new (&buf) T(args) requires operator new(size_t, void*) to be visible.
+ * The standard mandates this overload does nothing but return ptr.
+ */
+inline void* operator new(std::size_t, void* ptr) _CPP_NOEXCEPT { return ptr; }
+inline void* operator new[](std::size_t, void* ptr) _CPP_NOEXCEPT { return ptr; }
+
+/*
+ * Declarations of the nothrow operator new/delete overloads.
+ * The implementations live in lib/cpp/minimal/cpp_new.cpp.
+ * Without these forward declarations, code that uses
+ *   new (std::nothrow) T[n]
+ * fails to compile because the overload is not visible.
+ */
+void* operator new(std::size_t size, const std::nothrow_t&) _CPP_NOEXCEPT;
+void* operator new[](std::size_t size, const std::nothrow_t&) _CPP_NOEXCEPT;
+void  operator delete(void* ptr) _CPP_NOEXCEPT;
+void  operator delete[](void* ptr) _CPP_NOEXCEPT;
+#if __cplusplus >= 201103L
+void  operator delete(void* ptr, std::size_t size) _CPP_NOEXCEPT;
+void  operator delete[](void* ptr, std::size_t size) _CPP_NOEXCEPT;
+#endif
+
 #endif /* ZEPHYR_SUBSYS_CPP_INCLUDE_NEW_ */

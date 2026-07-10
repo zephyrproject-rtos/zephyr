@@ -9,6 +9,7 @@
  * compile in C++ mode.
  */
 
+#include <new>
 #include <string.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
@@ -135,6 +136,78 @@ ZTEST(cxx_tests, test_new_delete)
 	zassert_equal(test_foo->get_foo(), 10);
 	delete test_foo;
 }
+
+ZTEST(cxx_tests, test_nothrow_new)
+{
+	/*
+	 * new (std::nothrow) must return a valid pointer for a small allocation
+	 * and must not throw on failure (returns nullptr instead).
+	 */
+	foo_class *p = new (std::nothrow) foo_class(42);
+	zassert_not_null(p, "nothrow new returned nullptr unexpectedly");
+	zassert_equal(p->get_foo(), 42);
+	delete p;
+}
+
+ZTEST(cxx_tests, test_nothrow_new_array)
+{
+	/* new (std::nothrow) T[n] - array variant of the nothrow overload. */
+	int *arr = new (std::nothrow) int[8];
+	zassert_not_null(arr, "nothrow new[] returned nullptr unexpectedly");
+	for (int i = 0; i < 8; i++) {
+		arr[i] = i;
+	}
+	zassert_equal(arr[7], 7);
+	delete[] arr;
+}
+
+ZTEST(cxx_tests, test_nothrow_new_oom)
+{
+	/*
+	 * Requesting an impossibly large allocation via new (std::nothrow)
+	 * must return nullptr rather than throwing std::bad_alloc.
+	 */
+	void *p = operator new(SIZE_MAX, std::nothrow);
+
+	zassert_is_null(p, "nothrow new should return nullptr on OOM");
+}
+
+ZTEST(cxx_tests, test_nothrow_new_array_oom)
+{
+	/*
+	 * Array variant: requesting an impossibly large allocation via
+	 * new (std::nothrow) T[n] must return nullptr, not throw.
+	 */
+	int *arr = new (std::nothrow) int[SIZE_MAX / sizeof(int)];
+
+	zassert_is_null(arr, "nothrow new[] should return nullptr on OOM");
+}
+
+ZTEST(cxx_tests, test_placement_new)
+{
+	/*
+	 * placement new must construct the object in the supplied buffer and
+	 * must return exactly the pointer that was passed to it.
+	 */
+	alignas(foo_class) unsigned char buf[sizeof(foo_class)];
+	foo_class *p = new (buf) foo_class(99);
+	zassert_equal_ptr(p, (void *)buf, "placement new returned wrong pointer");
+	zassert_equal(p->get_foo(), 99);
+	p->~foo_class();
+}
+
+ZTEST(cxx_tests, test_placement_new_array)
+{
+	/* placement new[] must return the supplied buffer pointer. */
+	alignas(int) unsigned char buf[sizeof(int) * 4];
+	int *arr = new (buf) int[4];
+	zassert_equal_ptr(arr, (void *)buf, "placement new[] returned wrong pointer");
+	for (int i = 0; i < 4; i++) {
+		arr[i] = i * 2;
+	}
+	zassert_equal(arr[3], 6);
+}
+
 ZTEST_SUITE(cxx_tests, NULL, NULL, NULL, NULL, NULL);
 
 /*

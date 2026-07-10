@@ -7,6 +7,13 @@
 #include <stdlib.h>
 #include <new>
 
+/*
+ * Define the std::nothrow object referenced by new(std::nothrow) expressions.
+ * Without this, the linker reports: undefined reference to `std::nothrow'.
+ * The standard mandates it be defined in the C++ runtime library.
+ */
+namespace std { const nothrow_t nothrow; }
+
 #if __cplusplus < 201103L
 #define NOEXCEPT
 #else /* >= C++11 */
