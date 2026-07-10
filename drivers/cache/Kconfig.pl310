@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CACHE_PL310
+	bool "ARM L2C-310 (PL310) outer-cache driver"
+	default y
+	depends on DT_HAS_ARM_PL310_CACHE_ENABLED
+	depends on DCACHE && CACHE_MANAGEMENT
+	select OUTER_CACHE
+	help
+	  Enable the driver for the ARM L2C-310 (PL310) outer (L2) cache
+	  controller. On a Cortex-A/R core it provides the z_arm_outer_cache_*
+	  hooks so that every L1 data-cache maintenance operation is paired with
+	  the matching outer-cache operation, keeping DMA buffers coherent across
+	  both cache levels.
+
+	  This is the outer cache level only: it selects OUTER_CACHE but
+	  deliberately does not select CACHE_HAS_DRIVER, because the
+	  CPU-integrated L1 cache keeps owning the cache_data_* API.
