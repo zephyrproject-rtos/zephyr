@@ -63,13 +63,21 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 {
 	ARG_UNUSED(reg);
 
-	uintptr_t base;
+	/*
+	 * Map the register window once and cache it: device_map() hands
+	 * out a new virtual mapping on every call and nothing on this
+	 * path unmaps it, so callers that reconfigure pins at runtime
+	 * would leak virtual address space until k_mem_map() fails.
+	 */
+	static uintptr_t base;
 
 	if (!pins || pin_cnt == 0) {
 		return -EINVAL;
 	}
 
-	device_map(&base, BCM2711_PINCTRL_BASE_ADDR, 0x100, K_MEM_CACHE_NONE);
+	if (base == 0) {
+		device_map(&base, BCM2711_PINCTRL_BASE_ADDR, 0x100, K_MEM_CACHE_NONE);
+	}
 
 	for (uint8_t i = 0; i < pin_cnt; i++) {
 		uint8_t pin = pins[i].pin;
