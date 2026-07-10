@@ -34,6 +34,10 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <esp_mac.h>
 #include "wifi/wifi_event.h"
 
+#if defined(CONFIG_WIFI_ESP32_MESH)
+#include "esp_wifi_mesh_priv.h"
+#endif
+
 #if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
 #include <esp_private/adc_share_hw_ctrl.h>
 #endif /* CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3 */
@@ -167,6 +171,20 @@ static int esp32_wifi_send(const struct device *dev __unused, struct net_pkt *pk
 	bool sta_connected = (data->state == ESP32_STA_CONNECTED);
 	esp_interface_t ifx = ap_running ? ESP_IF_WIFI_AP : ESP_IF_WIFI_STA;
 
+#if defined(CONFIG_WIFI_ESP32_MESH)
+	/*
+	 * With mesh active this shared interface is the root uplink to the
+	 * router. Mesh traffic goes through the mesh transport, so send frames
+	 * from here out the station regardless of the softAP state. The mesh
+	 * stack owns the link state, so the driver's own station/softAP
+	 * bookkeeping is not updated and must not gate the transmit.
+	 */
+	if (esp_wifi_mesh_is_active()) {
+		ifx = ESP_IF_WIFI_STA;
+		sta_connected = true;
+	}
+#endif
+
 	if (!sta_connected && !ap_running) {
 		return -EIO;
 	}
@@ -248,6 +266,19 @@ pkt_unref:
 
 	return -EIO;
 }
+
+#if defined(CONFIG_WIFI_ESP32_MESH)
+void esp_wifi_mesh_bind_sta_rx(void)
+{
+	/*
+	 * The mesh stack installs its own station receive callback for mesh
+	 * frames. On the root, the station also carries the uplink to the
+	 * router, so restore the driver callback to deliver those frames to the
+	 * station network interface.
+	 */
+	esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, eth_esp32_rx);
+}
+#endif
 
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 static esp_err_t wifi_esp32_ap_iface_rx(void *buffer, uint16_t len, void *eb)
@@ -399,6 +430,13 @@ static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 	wifi_event_sta_disconnected_t *event = (wifi_event_sta_disconnected_t *)event_data;
 	struct wifi_status result;
 
+#if defined(CONFIG_WIFI_ESP32_MESH)
+	/* The mesh stack owns the station link and reconnects on its own. */
+	if (esp_wifi_mesh_is_active()) {
+		return;
+	}
+#endif
+
 	if (esp32_data.state == ESP32_STA_CONNECTED) {
 		net_if_dormant_on(esp32_wifi_iface);
 #if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
@@ -497,6 +535,11 @@ static void esp_wifi_handle_ap_connect_event(void *event_data)
 
 	wifi_mgmt_raise_ap_sta_connected_event(iface, &sta_info);
 
+#if defined(CONFIG_WIFI_ESP32_MESH)
+	if (esp_wifi_mesh_is_active()) {
+		return;
+	}
+#endif
 	if (esp32_data.ap_connection_cnt++ == 0) {
 		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, esp32_rx);
 	}
@@ -520,6 +563,11 @@ static void esp_wifi_handle_ap_disconnect_event(void *event_data)
 	memcpy(sta_info.mac, event->mac, WIFI_MAC_ADDR_LEN);
 	wifi_mgmt_raise_ap_sta_disconnected_event(iface, &sta_info);
 
+#if defined(CONFIG_WIFI_ESP32_MESH)
+	if (esp_wifi_mesh_is_active()) {
+		return;
+	}
+#endif
 	if (--esp32_data.ap_connection_cnt == 0) {
 		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
 	}
@@ -851,6 +899,11 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 		break;
 	case WIFI_EVENT_STA_STOP:
 		esp32_data.state = ESP32_STA_STOPPED;
+#if defined(CONFIG_WIFI_ESP32_MESH)
+		if (esp_wifi_mesh_is_active()) {
+			break;
+		}
+#endif
 		net_if_dormant_on(esp32_wifi_iface);
 		break;
 	case WIFI_EVENT_STA_CONNECTED:
@@ -864,20 +917,40 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 		break;
 	case WIFI_EVENT_AP_START:
 		ap_data->state = ESP32_AP_STARTED;
+#if defined(CONFIG_WIFI_ESP32_MESH)
+		if (esp_wifi_mesh_is_active()) {
+			break;
+		}
+#endif
 		net_if_dormant_off(iface_ap);
 		wifi_mgmt_raise_ap_enable_result_event(iface_ap, WIFI_STATUS_AP_SUCCESS);
 		break;
 	case WIFI_EVENT_AP_STOP:
 		ap_data->state = ESP32_AP_STOPPED;
+#if defined(CONFIG_WIFI_ESP32_MESH)
+		if (esp_wifi_mesh_is_active()) {
+			break;
+		}
+#endif
 		net_if_dormant_on(iface_ap);
 		wifi_mgmt_raise_ap_disable_result_event(iface_ap, WIFI_STATUS_AP_SUCCESS);
 		break;
 	case WIFI_EVENT_AP_STACONNECTED:
 		ap_data->state = ESP32_AP_CONNECTED;
+#if defined(CONFIG_WIFI_ESP32_MESH)
+		if (esp_wifi_mesh_is_active()) {
+			break;
+		}
+#endif
 		esp_wifi_handle_ap_connect_event(event_data);
 		break;
 	case WIFI_EVENT_AP_STADISCONNECTED:
 		ap_data->state = ESP32_AP_DISCONNECTED;
+#if defined(CONFIG_WIFI_ESP32_MESH)
+		if (esp_wifi_mesh_is_active()) {
+			break;
+		}
+#endif
 		esp_wifi_handle_ap_disconnect_event(event_data);
 		break;
 	default:
@@ -904,6 +977,9 @@ static void esp32_wifi_event_task(void *p1, void *p2, void *p3)
 		esp_wifi_event_handler(evt.base, evt.id, evt.data_size ? evt.data : NULL,
 				       evt.data_size, 0);
 
+#if defined(CONFIG_WIFI_ESP32_MESH)
+		esp_wifi_mesh_dispatch_event(evt.base, evt.id, evt.data_size ? evt.data : NULL);
+#endif
 	}
 }
 
@@ -978,6 +1054,14 @@ esp_err_t esp_event_post(esp_event_base_t event_base, int32_t event_id, const vo
 
 static int esp32_wifi_disconnect(const struct device *dev __unused, struct net_if *iface __unused)
 {
+#if defined(CONFIG_WIFI_ESP32_MESH)
+	/* The mesh stack owns the station link while it runs. */
+	if (esp_wifi_mesh_is_active()) {
+		LOG_WRN("disconnect rejected: mesh owns the Wi-Fi interface");
+		return -EBUSY;
+	}
+#endif
+
 	int ret = esp_wifi_disconnect();
 
 	if (ret != ESP_OK) {
@@ -1018,6 +1102,15 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 	struct esp32_wifi_runtime *data = esp32_wifi_data_get(iface);
 	wifi_mode_t mode;
 	int ret;
+
+#if defined(CONFIG_WIFI_ESP32_MESH)
+	/* The mesh stack owns the station link while it runs. */
+	if (esp_wifi_mesh_is_active()) {
+		LOG_WRN("connect rejected: mesh owns the Wi-Fi interface");
+		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_FAIL);
+		return -EBUSY;
+	}
+#endif
 
 	if (data->state == ESP32_STA_CONNECTING || data->state == ESP32_STA_CONNECTED) {
 		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_FAIL);
@@ -1197,6 +1290,14 @@ static int esp32_wifi_scan(const struct device *dev __unused,
 	struct esp32_wifi_runtime *data = esp32_wifi_data_get(iface);
 	int ret = 0;
 
+#if defined(CONFIG_WIFI_ESP32_MESH)
+	/* The mesh stack scans on its own while it runs. */
+	if (esp_wifi_mesh_is_active()) {
+		LOG_WRN("scan rejected: mesh owns the Wi-Fi interface");
+		return -EBUSY;
+	}
+#endif
+
 	if (data->scan_cb != NULL) {
 		LOG_INF("Scan callback in progress");
 		return -EINPROGRESS;
@@ -1252,6 +1353,14 @@ static int esp32_wifi_ap_enable(const struct device *dev __unused, struct net_if
 {
 	struct esp32_wifi_runtime *data = esp32_wifi_data_get(iface);
 	esp_err_t err = 0;
+
+#if defined(CONFIG_WIFI_ESP32_MESH)
+	/* The mesh stack owns the softAP interface while it runs. */
+	if (esp_wifi_mesh_is_active()) {
+		LOG_WRN("ap_enable rejected: mesh owns the Wi-Fi interface");
+		return -EBUSY;
+	}
+#endif
 
 	/* Build Wi-Fi configuration for AP mode */
 	wifi_config_t wifi_config = {
@@ -1380,6 +1489,14 @@ static int esp32_wifi_ap_disable(const struct device *dev __unused, struct net_i
 {
 	int err = 0;
 	wifi_mode_t mode;
+
+#if defined(CONFIG_WIFI_ESP32_MESH)
+	/* The mesh stack owns the softAP interface while it runs. */
+	if (esp_wifi_mesh_is_active()) {
+		LOG_WRN("ap_disable rejected: mesh owns the Wi-Fi interface");
+		return -EBUSY;
+	}
+#endif
 
 	esp_wifi_get_mode(&mode);
 	if (mode == ESP32_WIFI_MODE_APSTA) {
