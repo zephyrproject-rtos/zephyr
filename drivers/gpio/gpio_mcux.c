@@ -184,6 +184,18 @@ static int gpio_mcux_port_configure(const struct device *dev, gpio_pin_t pin, gp
 		}
 		gpio_base->PDDR |= BIT(pin);
 		break;
+	case GPIO_DISCONNECTED:
+		gpio_base->PDDR &= ~BIT(pin);
+		/* Set the pin MUX to 0 (pin disabled / Alternative 0). This
+		 * disconnects the pin from the GPIO module and disables the
+		 * digital input buffer, so a floating pad draws no current.
+		 */
+		mask = PORT_PCR_MUX_MASK;
+#if defined(FSL_FEATURE_PORT_HAS_INPUT_BUFFER) && FSL_FEATURE_PORT_HAS_INPUT_BUFFER
+		mask |= PORT_PCR_IBE_MASK;
+#endif
+		port_base->PCR[pin] &= ~mask;
+		return 0;
 	default:
 		return -ENOTSUP;
 	}
