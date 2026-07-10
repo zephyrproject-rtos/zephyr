@@ -1307,6 +1307,7 @@ Devicetree:
   collaborators:
     - mbolivar
     - rruuaanng
+    - kylebonnici
   files-regex:
     - ^dts/bindings/.*zephyr.*
     - ^dts/bindings/[^,]+$
