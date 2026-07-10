@@ -1809,11 +1809,6 @@ int bt_bap_scan_delegator_mod_src(const struct bt_bap_scan_delegator_mod_src_par
 			state_changed = true;
 		}
 
-		/* If the metadata len is 0, we shall not overwrite the existing metadata */
-		if (param_subgroup->metadata_len == 0U) {
-			continue;
-		}
-
 		if (subgroup->metadata_len != param_subgroup->metadata_len) {
 			subgroup->metadata_len = param_subgroup->metadata_len;
 			state_changed = true;
