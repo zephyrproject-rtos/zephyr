@@ -602,6 +602,18 @@ kbd, .kbd,
     border: 4px solid var(--content-background-color);
 }
 
+/* Give CMake signatures and their nested parameter terms the code background, so the syntax
+   highlighting stays legible and the terms aren't left with the theme's too-bright default. */
+.rst-content dl.cmake > dt,
+.rst-content dl.cmake dd dl:not(.field-list) > dt {
+    background: var(--highlight-background-color) !important;
+    color: var(--highlight-default-color) !important;
+}
+
+.rst-content dl.cmake > dt .sig-name {
+    color: inherit !important;
+}
+
 /* Buttons */
 
 .btn-neutral {
