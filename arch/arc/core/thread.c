@@ -394,5 +394,9 @@ static int arc_vpx_sem_init(void)
 	return 0;
 }
 
-SYS_INIT(arc_vpx_sem_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+/* The semaphores only guard the VPX unit between running threads, so this
+ * init has no ordering dependency: initialize them with the other kernel
+ * objects.
+ */
+SYS_INIT(arc_vpx_sem_init, PRE_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif
