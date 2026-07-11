@@ -5364,6 +5364,26 @@ bool net_if_ipv4_router_rm(struct net_if_router *router)
 	return iface_router_rm(router);
 }
 
+int net_if_ipv4_route_add(struct net_if *iface, const struct net_in_addr *addr, uint8_t mask_len,
+			  const struct net_in_addr *nexthop, uint32_t lifetime)
+{
+#if defined(CONFIG_NET_IPV4_ROUTE)
+	struct net_route_entry *route;
+
+	route = net_route_ipv4_add(iface, (struct net_in_addr *)addr, mask_len,
+				   (struct net_in_addr *)nexthop, lifetime, 0);
+
+	return route == NULL ? -ENOMEM : 0;
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(mask_len);
+	ARG_UNUSED(nexthop);
+	ARG_UNUSED(lifetime);
+
+	return -ENOTSUP;
+#endif
+}
 
 static void iface_ipv4_init(int if_count)
 {
