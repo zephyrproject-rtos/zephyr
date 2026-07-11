@@ -55,7 +55,7 @@
 #define J1939TP_NUMBER_OF_TP_RX_SESSIONS NUMBER_OF_TP_RX_MSGS
 #endif
 
-extern struct j1939_dt_node_cfg j1939_nodes[];
+extern struct j1939_dt_node_cfg* j1939_nodes[];
 
 // This struct is used to look for buffers that aren't in use and are large
 // enough to hold the incoming/outgoing data.
@@ -297,7 +297,7 @@ void J1939Tp_Init(void)
 #ifndef J1939TP_RECEIVE_DISABLED
    for (uint8_t node_index = 0; node_index < J1939_NUM_NODES; node_index++)
    {
-      J1939_Node_T node = &(j1939_nodes[node_index]);
+      J1939_Node_T node = j1939_nodes[node_index];
       node->J1939Tp_RegisterPgnIndex = 0;
 
       for (uint8_t receivePgn = 0; receivePgn < CONFIG_J1939TP_NUM_ALLOWED_RECEIVE_PGN; receivePgn++)

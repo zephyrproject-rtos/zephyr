@@ -17,7 +17,7 @@
 #endif
 
 
-extern struct j1939_dt_node_cfg j1939_nodes[];
+extern struct j1939_dt_node_cfg* j1939_nodes[];
 
 static const uint8_t J1939_App_RevPrefix[] = "RV0001,,01.00";
 static const uint8_t J1939_App_SwAssemblyPrefix[] = "SW0001";
@@ -331,7 +331,7 @@ void J1939_App_Init(void)
 {
    for (uint16_t index = 0; index < J1939_DT_NUM_NODES; index++)
    {
-      J1939_Node_T node = &(j1939_nodes[index]);
+      J1939_Node_T node = j1939_nodes[index];
       // Register the PGN requests we need to handle
       (void)J1939_RegisterRequestPgn(J1939_SOFTWARE_ID_PGN, node);
       (void)J1939_RegisterRequestPgn(J1939_ECU_ID_INFO_PGN, node);
@@ -345,7 +345,7 @@ void J1939_App_Task(void)
 
    for (uint16_t index = 0; index < J1939_DT_NUM_NODES; index++)
    {
-      J1939_Node_T node = &(j1939_nodes[index]);
+      J1939_Node_T node = j1939_nodes[index];
 
       if (J1939_IsPgnRequested(J1939_ECU_ID_INFO_PGN, &requestedSource, node))
       {

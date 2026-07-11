@@ -13,24 +13,43 @@
 
 #define SLEEP_TIME K_MSEC(1000)
 
-const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+const struct device *const can_dev1 = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 
 #define J1939_DIAG_NODE DT_NODELABEL(diag_node)
 
-static struct j1939_dt_node_cfg diag_node_s = J1939_DT_DRIVER_CONFIG_GET(J1939_DIAG_NODE);
+static struct j1939_dt_node_cfg diag_node_s = 	{                                                              \
+		.can_dev                 = can_dev1,
+		.source_address          = 0x11,
+		.id_number               = 1234,
+		.manufacturer_code       = 1,
+		.ecu_instance            = 1,
+		.function_instance       = 1,
+		.function                = 1,
+		.vehicle_system          = 1,
+		.vehicle_system_instance = 1,
+		.industry_group          = 1,
+		.arbitrary_address_capable = false,
+		.node_state              = J1939Ac_State_WaitingStartupInit,
+		.ac_timestamp            = 0,
+		.recorded_bus_info_count = 0,
+		.transmission_enabled    = false,
+        .J1939Tp_TransmitBam     = false,
+	};
 
 static J1939_Node_T diag_node = &diag_node_s;
+
+struct j1939_dt_node_cfg* j1939_nodes[] = {&diag_node_s};
 
 int main(void)
 {
 	int ret;
 
-	if (!device_is_ready(can_dev)) {
-		printf("CAN: Device %s not ready.\n", can_dev->name);
+	if (!device_is_ready(can_dev1)) {
+		printf("CAN: Device %s not ready.\n", can_dev1->name);
 		return 0;
 	}
 
-	ret = can_start(can_dev);
+	ret = can_start(can_dev1);
 	if (ret != 0) {
 		printf("Error starting CAN controller [%d]", ret);
 		return 0;

@@ -17,7 +17,7 @@
 //    because we have been more processor limited than RAM limited.
 //
 
-extern struct j1939_dt_node_cfg j1939_nodes[];
+extern struct j1939_dt_node_cfg* j1939_nodes[];
 
 #define J1939_AC_WAIT_TIME ((J1939_Timer_T)250) // Milliseconds
 #define J1939_PR_ADDRESS_CLAIMED (J1939_Priority_6)
@@ -66,7 +66,7 @@ void J1939Ac_Init(void)
 {
    for (uint16_t node_index = 0; node_index < J1939_DT_NUM_NODES; node_index++)
    {
-        J1939_Node_T dt_node = &(j1939_nodes[node_index]);
+        J1939_Node_T dt_node = j1939_nodes[node_index];
       // Retrieve the default source address we will claim from the application specific module
       J1939Ac_BusInfo[node_index].source = J1939Ac_App_GetDefaultSourceAddress(dt_node);
 
@@ -122,7 +122,7 @@ void J1939Ac_Task(void)
    // Loop through all the nodes
    for (uint16_t node_index = 0; node_index < J1939_NUM_NODES; node_index++)
    {
-        J1939_Node_T node = &j1939_nodes[node_index];
+        J1939_Node_T node = j1939_nodes[node_index];
       switch (node->node_state)
       {
       case J1939Ac_State_WaitingStartupInit:

@@ -10,14 +10,8 @@
 #include <Can_Transmit.h>
 #include <J1939_Cfg.h>
 
-
-
 // All configured nodes from devicetree
-struct j1939_dt_node_cfg j1939_nodes[] = {
-    J1939_DT_NODE_CFG_ALL_DEFINE
-};
-
-BUILD_ASSERT(ARRAY_SIZE(j1939_nodes) == J1939_DT_NUM_NODES);
+extern struct j1939_dt_node_cfg* j1939_nodes[];
 
 #ifdef J1939_ENABLE_RECEIVED_PGN_SUPPORT
 typedef struct J1939_ReceivePgnHandler_S
@@ -102,7 +96,7 @@ void J1939_Init(void)
    // Set our initial number of PGN request messages to zero
    for (uint8_t node_index = 0; node_index < J1939_DT_NUM_NODES; node_index++)
    {
-      J1939_Node_T node = &(j1939_nodes[node_index]);
+      J1939_Node_T node = j1939_nodes[node_index];
       node->J1939_RequestedPgnCount = 0;
       for (uint8_t index = 0U; index < CONFIG_J1939_MAX_PGN_REQUEST_MESSAGES; index++)
       {
@@ -173,9 +167,9 @@ void J1939_Init(void)
 
 //    TODO - I feel like there should be a compile time way to do this, leaving for now
 //    loop through all j1939 nodes and register the callback for each physical bus
-   for (size_t node_index = 0; node_index < ARRAY_SIZE(j1939_nodes); node_index++)
+   for (size_t node_index = 0; node_index < J1939_NUM_NODES; node_index++)
    {
-      const struct device *can_dev = j1939_nodes[node_index].can_dev;
+      const struct device *can_dev = j1939_nodes[node_index]->can_dev;
 
       if ((can_dev == NULL) || !J1939_IsFirstNodeOnBus(node_index))
       {
@@ -269,7 +263,7 @@ void J1939_Task(void)
    for (uint16_t node_index = 0; node_index < J1939_DT_NUM_NODES; node_index++)
    {
     // TODO - this is a bit of a hack to get the node information into the various processing functions.
-      J1939_Node_T node = &(j1939_nodes[node_index]);
+      J1939_Node_T node = j1939_nodes[node_index];
 #ifdef J1939_MEMORY_ACCESS
       J1939Ma_Task(node);
 
@@ -649,7 +643,7 @@ static bool J1939_IsFirstNodeOnBus(size_t node_index)
 {
    for (size_t index = 0; index < node_index; index++)
    {
-      if (j1939_nodes[index].can_dev == j1939_nodes[node_index].can_dev)
+      if (j1939_nodes[index]->can_dev == j1939_nodes[node_index]->can_dev)
       {
          return false;
       }
@@ -906,11 +900,11 @@ static inline bool J1939_RouteWithLoopback(const struct can_frame *message)
 
 static inline bool J1939_GetNode(uint8_t sourceAddress, J1939_Node_T *node)
 {
-   for (size_t node_index = 0; node_index < ARRAY_SIZE(j1939_nodes); node_index++)
+   for (size_t node_index = 0; node_index < J1939_NUM_NODES; node_index++)
    {
-      if (j1939_nodes[node_index].source_address == sourceAddress)
+      if (j1939_nodes[node_index]->source_address == sourceAddress)
       {
-         *node = &j1939_nodes[node_index];
+         *node = j1939_nodes[node_index];
          return true;
       }
    }

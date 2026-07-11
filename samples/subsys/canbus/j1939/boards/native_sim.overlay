@@ -10,23 +10,6 @@
 };
 
 &can0 {
-    #address-cells = <1>;
-    #size-cells = <0>;
-
-    diag_node: virtual-node@11 {
-            compatible = "zephyr,j1939-node";
-            reg = <0x11>;
-            label = "diag";
-            ecu-instance = <1>;
-            vehicle-system = <3>;
-    };
-
-    test_node: virtual-node@12 {
-            compatible = "zephyr,j1939-node";
-            reg = <0x12>;
-            label = "test";
-    };
-
     status = "okay";
     /* adjust zcan0 to desired host interface or create an alternative
      * name, e.g.: sudo ip link property add dev vcan0 altname zcan0

@@ -2,15 +2,7 @@
 
 include: base.yaml
 
-bus: can
-
-properties:  
-  "#address-cells":
-    required: false
-    const: 1
-  "#size-cells":
-    required: false
-    const: 0
+properties:
   bus-speed:
     type: int
     deprecated: true

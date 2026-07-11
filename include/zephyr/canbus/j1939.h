@@ -6,7 +6,6 @@
 #define _CANJ1939_H_
 
 #include <zephyr/drivers/can.h>
-#include <zephyr/canbus/j1939_dt.h>
 
 #define LOBYTE(w) ((uint8_t)((uint16_t)(w) & 0xFFU))
 #define HIBYTE(w) ((uint8_t)(((uint16_t)(w) >> 8) & 0xFFU))
@@ -15,6 +14,8 @@
 #define MAKEWORD(lo, hi) ((uint16_t)(((uint16_t)(uint8_t)(lo)) | ((uint16_t)(uint8_t)(hi) << 8)))
 #define MAKEDWORD(lo, hi) ((uint32_t)(((uint32_t)(uint16_t)(lo)) | ((uint32_t)(uint16_t)(hi) << 16)))
 #define ELEMENTS(a) (sizeof(a) / sizeof((a)[0]))
+
+#define J1939_DT_NUM_NODES 1
 
 typedef uint8_t J1939_Address_T;
 
@@ -137,8 +138,6 @@ typedef enum J1939_Priority_E
    J1939_Priority_7,
 } J1939_Priority_T;
 
-typedef bool (*J1939_RoutingCallback_T)(const struct can_frame *message, J1939_Node_T node);
-
 typedef enum J1939_Response_E
 {
    J1939_Response_Ack,
@@ -169,6 +168,122 @@ typedef struct J1939_Name_S
    bool isSelfConfig;
    J1939_Reserved_T reservedBit;
 } J1939_Name_T;
+
+
+// TODO - definitely not a great way to do this but not sure where to put this now
+typedef enum J1939Ac_State_E
+{
+   J1939Ac_State_WaitingStartupInit,
+   J1939Ac_State_Start,
+   J1939Ac_State_Waiting,
+   J1939Ac_State_Claimed,
+   J1939Ac_State_LostContention,
+   J1939Ac_State_WaitingCannotClaim,
+   J1939Ac_State_CannotClaim
+} J1939Ac_State_T;
+
+typedef struct J1939Ac_RecordBusInfo_S
+{
+   uint8_t source; // Source address associated with the name pointer below
+#if defined(J1939_RECORD_ADDRESS_CLAIMED_NAMES)
+   J1939_Name_T name;
+#endif
+} J1939Ac_RecordBusInfo_T;
+
+// Structure definition for items which may be requested by another module on the bus.
+typedef struct J1939_PgnRequest_S
+{
+   uint16_t pgn;              // PGN registered and requested
+   uint8_t source; // Source address of registered or requested PGN
+   bool isRequested;     // True if PGN has been requested
+   bool isUsed;          // True if PGN is used
+} J1939_PgnRequest_T;
+
+typedef struct j1939_dt_node_cfg * J1939_Node_T;
+
+typedef bool (*J1939_RoutingCallback_T)(const struct can_frame *message, J1939_Node_T node);
+
+/// Callback function pointer for transport sessions
+typedef bool (*J1939Tp_Callback_T)(uint16_t pgn, uint8_t *data,
+                                           uint32_t length, uint8_t sender,
+                                           J1939_Node_T node);
+
+typedef struct J1939Tp_PgnParams_S
+{
+   uint16_t pgn;
+   J1939Tp_Callback_T callback;
+} J1939Tp_PgnParams_T;
+
+/**
+ * @brief Compile-time configuration for one J1939 virtual node.
+ *
+ * Populated entirely from devicetree; no runtime init required.
+ */
+struct j1939_dt_node_cfg {
+	/** Pointer to the underlying CAN controller device. */
+	const struct device *can_dev;
+
+	/** J1939 source address (0x00–0xFD). */
+	uint8_t source_address;
+
+	/** J1939 NAME: 21-bit identity number. */
+	uint32_t id_number;
+
+	/** J1939 NAME: 11-bit manufacturer code. */
+	uint16_t manufacturer_code;
+
+	/** J1939 NAME: 3-bit ECU instance. */
+	uint8_t ecu_instance;
+
+	/** J1939 NAME: 5-bit function instance. */
+	uint8_t function_instance;
+
+	/** J1939 NAME: 8-bit function code. */
+	uint8_t function;
+
+	/** J1939 NAME: 7-bit vehicle system. */
+	uint8_t vehicle_system;
+
+	/** J1939 NAME: 4-bit vehicle system instance. */
+	uint8_t vehicle_system_instance;
+
+	/** J1939 NAME: 3-bit industry group. */
+	uint8_t industry_group;
+
+	/** J1939 NAME: arbitrary address capable (self-configurable). */
+	bool arbitrary_address_capable;
+
+    /** State of the address claim process for this node. */
+    J1939Ac_State_T node_state;
+
+    /** Timestamp of when we first claimed an address, used for tie-breaking in address contention. */
+    uint32_t ac_timestamp;
+
+    /** Recorded bus information for this node. */
+    J1939Ac_RecordBusInfo_T recorded_bus_info[CONFIG_J1939_MAX_NODES_IN_SYSTEM];
+
+    /** Number of recorded bus information entries for this node. */
+    uint8_t recorded_bus_info_count;
+
+    /** Transmission is enabled */
+    bool transmission_enabled;
+
+    /** PGN Request list */
+    J1939_PgnRequest_T J1939_PgnRequestList[CONFIG_J1939_MAX_PGN_REQUEST_MESSAGES];
+
+    /** Number of PGNs requested */
+    uint8_t J1939_RequestedPgnCount;
+
+    /** BAM transmission status for this node. */
+    bool J1939Tp_TransmitBam;
+
+    /** List of all the PGNs that the module accepts */
+    J1939Tp_PgnParams_T J1939Tp_RegisterPgnList[CONFIG_J1939TP_NUM_ALLOWED_RECEIVE_PGN];
+
+    /** Provides count of # of registered PGNs and indexes where the next registered PGN value should go */
+    uint8_t J1939Tp_RegisterPgnIndex;
+};
+
 
 /**************************************************************************************************/
 // Get the priority from the arbitration register

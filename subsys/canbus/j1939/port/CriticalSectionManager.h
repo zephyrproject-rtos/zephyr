@@ -5,7 +5,7 @@
  * The imported stack expects global critical section hooks.
  * This compatibility layer keeps them as no-ops by default.
  */
-#define CriticalSection_Lock() do { } while (0)
-#define CriticalSection_Unlock() do { } while (0)
+void CriticalSection_Lock(void);
+void CriticalSection_Unlock(void);
 
 #endif /* CRITICAL_SECTION_MANAGER_H_ */
