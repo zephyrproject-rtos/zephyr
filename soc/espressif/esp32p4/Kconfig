@@ -78,4 +78,17 @@ config ESP32P4_EMAC
 	  this driver. This option allows enabling MDIO
 	  independently of Ethernet.
 
+config SOC_ESP32P4_REV_MIN_FULL
+	int
+	default 100 if SOC_ESP32P4_REV_1_0
+	default 103 if SOC_ESP32P4_REV_1_3
+	default 300 if SOC_ESP32P4_REV_3_0
+	default 301 if SOC_ESP32P4_REV_3_1
+	default 301
+	help
+	  Minimum supported ESP32-P4 chip revision in major * 100 + minor
+	  format, matching what efuse_hal_chip_revision() returns at runtime.
+	  Derived from the SOC_ESP32P4_REV_* symbol the board selects; defaults
+	  to v3.1 (301), the floor of the v3.x family, when none is selected.
+
 endif # SOC_SERIES_ESP32P4

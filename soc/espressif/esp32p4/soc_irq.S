@@ -13,7 +13,7 @@
  * ESP32-P4 rev >= v3.0. On pre-v3 silicon accessing it is an illegal
  * instruction, so skip the save/restore there.
  */
-#if !defined(CONFIG_SOC_ESP32P4_REV_1_3)
+#if CONFIG_SOC_ESP32P4_REV_MIN_FULL >= 300
 #define SOC_HAS_MINTTHRESH 1
 #endif
 

@@ -50,7 +50,7 @@
  *  The 2nd stage bootloader can take space up to the ROM stack area.
  */
 
-#if defined(CONFIG_SOC_ESP32P4_REV_1_3)
+#if CONFIG_SOC_ESP32P4_REV_MIN_FULL < 300
 #define DRAM_ROM_RESERVED_START 0x4ff3cfc0
 #define DRAM_ROM_RESERVED_END   0x4ff40000
 #else
@@ -61,7 +61,7 @@
 #define HPSRAM_BASE       DT_REG_ADDR(DT_NODELABEL(sramhp))
 #define HPSRAM_TOTAL_SIZE DT_REG_SIZE(DT_NODELABEL(sramhp))
 #define L2_CACHE_SIZE     CONFIG_ESP32_CACHE_L2_SIZE
-#if defined(CONFIG_SOC_ESP32P4_REV_1_3)
+#if CONFIG_SOC_ESP32P4_REV_MIN_FULL < 300
 #define HPSRAM_START DRAM_ROM_RESERVED_END
 #else
 #define HPSRAM_START (HPSRAM_BASE + L2_CACHE_SIZE)
@@ -74,7 +74,7 @@
  * the top of SRAM, so usable RAM ends where the cache begins. On v3.x the
  * cache is at the bottom, so usable RAM ends at the ROM reserved region.
  */
-#if defined(CONFIG_SOC_ESP32P4_REV_1_3)
+#if CONFIG_SOC_ESP32P4_REV_MIN_FULL < 300
 #define DRAM_USER_END (HPSRAM_BASE + HPSRAM_TOTAL_SIZE - L2_CACHE_SIZE)
 #else
 #define DRAM_USER_END DRAM_ROM_RESERVED_START

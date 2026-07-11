@@ -11,7 +11,7 @@
 #include <soc/soc_caps.h>
 #include <hal/etm_ll.h>
 
-#if defined(CONFIG_SOC_GPIO_SUPPORT_ETM)
+#if defined(SOC_GPIO_SUPPORT_ETM)
 #include <hal/gpio_etm_ll.h>
 #include <hal/gpio_caps.h>
 #define ETM_GPIO_NUM_EVENTS _GPIO_ETM_EVENT_CHANNELS_PER_GROUP
@@ -24,7 +24,7 @@ static struct k_spinlock etm_lock;
 static uint32_t etm_chan_mask[DIV_ROUND_UP(ETM_NUM_CHANS, 32)];
 static bool etm_initialized;
 
-#if defined(CONFIG_SOC_GPIO_SUPPORT_ETM)
+#if defined(SOC_GPIO_SUPPORT_ETM)
 static uint32_t etm_gpio_evt_mask;
 #endif
 
@@ -128,7 +128,7 @@ int esp_etm_channel_free(esp_etm_chan_t chan)
 	return 0;
 }
 
-#if defined(CONFIG_SOC_GPIO_SUPPORT_ETM)
+#if defined(SOC_GPIO_SUPPORT_ETM)
 int esp_etm_gpio_event_alloc(uint32_t gpio_num, enum esp_etm_gpio_edge edge,
 			     esp_etm_chan_t *out_chan, uint32_t *out_event_id)
 {
@@ -195,4 +195,4 @@ int esp_etm_gpio_event_free(esp_etm_chan_t chan)
 
 	return 0;
 }
-#endif /* CONFIG_SOC_GPIO_SUPPORT_ETM */
+#endif /* SOC_GPIO_SUPPORT_ETM */
