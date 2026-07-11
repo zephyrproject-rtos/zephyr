@@ -1,0 +1,13 @@
+common:
+  tags:
+    - fpu
+    - riscv
+    - userspace
+  platform_allow:
+    - qemu_riscv32/qemu_virt_riscv32
+    - qemu_riscv64/qemu_virt_riscv64
+tests:
+  arch.riscv.userspace.fpu_state.unshared: {}
+  arch.riscv.userspace.fpu_state.shared:
+    extra_configs:
+      - CONFIG_FPU_SHARING=y
