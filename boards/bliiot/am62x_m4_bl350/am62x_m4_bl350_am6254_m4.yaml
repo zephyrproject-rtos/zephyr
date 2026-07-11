@@ -1,0 +1,11 @@
+identifier: am62x_m4_bl350/am6254/m4
+name: BLIIoT ARMxy BL350 AM62x M4
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 192
+vendor: bliiot
+supported:
+  - uart
+  - watchdog
