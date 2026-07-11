@@ -12,6 +12,7 @@ OS Services
    console.rst
    cpu_freq/index.rst
    cpu_load/index.rst
+   cpu_load_metric/index.rst
    crc/index.rst
    crypto/index
    debugging/index.rst
