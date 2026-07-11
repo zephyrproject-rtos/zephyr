@@ -111,6 +111,8 @@ extern "C" {
 	{								\
 		.mode = DT_STRING_UPPER_TOKEN(node_id, mipi_mode),	\
 		.config = MIPI_DBI_SPI_CONFIG_DT(node_id, operation_, delay_), \
+		.color_coding = DT_STRING_UPPER_TOKEN_OR(node_id, color_coding, \
+							 MIPI_DBI_MODE_RGB565), \
 	}
 
 /**
