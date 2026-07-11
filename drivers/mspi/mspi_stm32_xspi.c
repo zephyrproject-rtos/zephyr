@@ -785,7 +785,12 @@ static int mspi_stm32_xspi_wait_auto_polling(const struct device *dev, uint8_t m
 
 	if (k_sem_take(&dev_data->sync, K_MSEC(timeout_ms)) < 0) {
 		LOG_ERR("XSPI AutoPoll wait failed");
-		mspi_stm32_xspi_abort(dev);
+		/* Best-effort cleanup: -EIO is returned either way, but a failed
+		 * abort likely leaves the controller stuck, so make it visible.
+		 */
+		if (mspi_stm32_xspi_abort(dev) != 0) {
+			LOG_WRN("XSPI abort after autopoll timeout failed");
+		}
 		k_sem_reset(&dev_data->sync);
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		(void)pm_device_runtime_put(dev);
