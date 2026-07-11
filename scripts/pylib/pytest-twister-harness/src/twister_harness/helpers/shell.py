@@ -72,7 +72,7 @@ class Shell:
             omitted, ``timeout`` (or :attr:`base_timeout`) is used.
         """
         timeout = timeout or self.base_timeout
-        command_ext = f'{command}\n'
+        command_ext = f'{command}\n\n'
         regex_prompt = re.escape(self.prompt)
         regex_command = f'.*{re.escape(command)}'
 
@@ -87,10 +87,6 @@ class Shell:
                 regex=regex_command, timeout=1.0, print_output=print_output
             )
         )
-
-        # Send single enter to get next prompt after command execution, as it signals
-        # that execution finished.
-        self._device.write(b"\n")
 
         # wait for device command execution
         lines.extend(
