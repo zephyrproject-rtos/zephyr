@@ -429,13 +429,6 @@ config LLMNR_RESPONDER_TTL
 	  DNS answers will use the TTL (in seconds). A default value is 30
 	  seconds as recommended by RFC 4795 chapter 2.8
 
-config LLMNR_RESPONDER_INIT_PRIO
-	int "Startup priority for the LLMNR responder init"
-	default 96
-	help
-	  Note that if NET_CONFIG_AUTO_INIT is enabled, then this value
-	  should be bigger than its value.
-
 module = LLMNR_RESPONDER
 module-dep = NET_LOG
 module-str = Log level for LLMNR responder
