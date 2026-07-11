@@ -105,6 +105,13 @@ Deprecated APIs and options
   * The :c:struct:`audio_codec_api` struct has been deprecated. Audio codec drivers are now
     expected to use the :c:macro:`DEVICE_API` macro to declare their driver API.
 
+* CPU Load
+
+  * :kconfig:option:`CONFIG_CPU_LOAD_METRIC` and :c:func:`cpu_load_metric_get` are deprecated. The
+    CPU load metric module has been merged into the unified :ref:`cpu_load` module; use
+    :kconfig:option:`CONFIG_CPU_LOAD` with the
+    :kconfig:option:`CONFIG_CPU_LOAD_BACKEND_RUNTIME_STATS` backend and :c:func:`cpu_load_get_cpu`.
+
 * :abbr:`DMIC (Digital Microphone Interface)`
 
   * The :c:struct:`_dmic_ops` struct has been deprecated. DMIC drivers are now expected to use the
