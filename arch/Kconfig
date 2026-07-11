@@ -40,6 +40,7 @@ config ARM
 	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_AARCH32_CORTEX_R || CPU_CORTEX_M || CPU_AARCH32_CORTEX_A
 	select BARRIER_OPERATIONS_ARCH
 	select ARCH_HAS_SEMIHOST
+	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	help
 	  ARM architecture
 
@@ -61,6 +62,7 @@ config ARM64
 	select MEM_DOMAIN_HAS_THREAD_LIST if ARM_MPU && USERSPACE
 	select ARCH_HAS_IRQ_OFFLOAD_NESTED
 	select ARCH_HAS_SEMIHOST
+	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	help
 	  ARM64 (AArch64) architecture
 
@@ -146,6 +148,7 @@ config RISCV
 	select STACK_CANARIES_TLS_PREPEND if STACK_CANARIES_TLS
 	select ARCH_HAS_IRQ_OFFLOAD_NESTED
 	select ARCH_HAS_SEMIHOST
+	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	depends on DT_HAS_RISCV_ENABLED
 	help
 	  RISCV architecture
@@ -523,7 +526,7 @@ config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
 	# Userspace is currently not supported
 	depends on !USERSPACE
 	# List of currently supported architectures
-	depends on ARM || ARM64 || RISCV
+	depends on ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	# List of currently supported toolchains
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "gnuarmemb" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm" || TOOLCHAIN_SUPPORTS_ISR_TABLES_LOCAL_DECLARATION
 
@@ -833,6 +836,13 @@ config ARCH_HAS_SEMIHOST
 	  This option is selected by architectures that provide a semihosting
 	  implementation (arch/*/core/semihost.c). It is a prerequisite for
 	  CONFIG_SEMIHOST.
+
+config ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
+	bool
+	help
+	  This option is selected by architectures that support local
+	  declaration of interrupt tables placed by the linker. It is a
+	  prerequisite for CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED.
 
 config ARCH_SUPPORTS_COREDUMP
 	bool
