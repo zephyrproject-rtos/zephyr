@@ -6,6 +6,12 @@ common:
 tests:
   drivers.mipi_dbi.api:
     filter: dt_nodelabel_enabled("mipi-dbi")
+  drivers.mipi_dbi.config:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_SPI=y
   drivers.mipi_dbi.rpi_pico.pio0.single_split:
     platform_allow:
       - rpi_pico/rp2040
