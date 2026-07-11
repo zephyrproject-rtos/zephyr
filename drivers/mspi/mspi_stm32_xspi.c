@@ -834,6 +834,10 @@ static int mspi_stm32_xspi_dev_config(const struct device *controller,
 	struct mspi_stm32_data *data = controller->data;
 
 	if (data->dev_id != dev_id) {
+		/* The controller lock is taken here and kept for the whole
+		 * session, until the device releases it through
+		 * mspi_get_channel_status().
+		 */
 		if (k_mutex_lock(&data->lock, K_MSEC(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE))) {
 			LOG_ERR("MSPI config failed to access controller");
 			return -EBUSY;
@@ -843,28 +847,28 @@ static int mspi_stm32_xspi_dev_config(const struct device *controller,
 	}
 
 	if (mspi_stm32_xspi_is_inp(controller)) {
-		if (locked) {
-			k_mutex_unlock(&data->lock);
-		}
-		return -EBUSY;
-	}
-
-	if (param_mask == MSPI_DEVICE_CONFIG_NONE && !cfg->mspicfg.sw_multi_periph) {
-		data->dev_id = dev_id;
-		if (locked) {
-			k_mutex_unlock(&data->lock);
-		}
-		return 0;
+		ret = -EBUSY;
+		goto e_return;
 	}
 
 	data->dev_id = dev_id;
+
+	if (param_mask == MSPI_DEVICE_CONFIG_NONE && !cfg->mspicfg.sw_multi_periph) {
+		return 0;
+	}
+
 	/* Go on with other parameters if supported */
 	if (mspi_stm32_xspi_dev_cfg_save(controller, param_mask, dev_cfg) != 0) {
 		LOG_ERR("failed to change device cfg");
 		ret = -EIO;
+		goto e_return;
 	}
 
+	return 0;
+
+e_return:
 	if (locked) {
+		data->dev_id = NULL;
 		k_mutex_unlock(&data->lock);
 	}
 	return ret;
@@ -924,16 +928,21 @@ static int mspi_stm32_xspi_memmap_config(const struct device *controller,
 static int mspi_stm32_xspi_get_channel_status(const struct device *controller, uint8_t ch)
 {
 	struct mspi_stm32_data *dev_data = controller->data;
-	int ret = 0;
 
 	ARG_UNUSED(ch);
 
 	if (mspi_stm32_xspi_is_inp(controller) ||
 	    (HAL_XSPI_GET_FLAG(&dev_data->hmspi.xspi, HAL_XSPI_FLAG_BUSY) == SET)) {
-		ret = -EBUSY;
+		return -EBUSY;
 	}
 
-	return ret;
+	/* The controller is idle: end the session started by
+	 * mspi_dev_config() and release the controller lock.
+	 */
+	dev_data->dev_id = NULL;
+	k_mutex_unlock(&dev_data->lock);
+
+	return 0;
 }
 
 static int mspi_stm32_xspi_pio_dma_transceive(const struct device *controller,
@@ -1290,6 +1299,8 @@ static int mspi_stm32_xspi_config(const struct mspi_dt_spec *spec)
 		k_sem_give(&dev_data->ctx.lock);
 	}
 	if (config->re_init) {
+		/* Force-release a session that may still hold the lock */
+		dev_data->dev_id = NULL;
 		k_mutex_unlock(&dev_data->lock);
 	}
 
