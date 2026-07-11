@@ -157,9 +157,14 @@ static struct delayable_msg_ctx *allocate_delayable_msg_ctx(void)
 
 static void release_delayable_msg_ctx(struct delayable_msg_ctx *ctx)
 {
-	if (sys_slist_find_and_remove(&access_delayable_msg.busy_ctx, &ctx->node)) {
-		sys_slist_append(&access_delayable_msg.free_ctx, &ctx->node);
-	}
+	/* ctx may or may not be on busy_ctx (e.g. the manage() ENOMEM error
+	 * path releases a ctx that was never inserted). find_and_remove() is
+	 * a no-op in that case; the unconditional append below returns the
+	 * ctx to the free list either way. Fixes a pre-existing leak where
+	 * the ctx would otherwise be lost from both lists.
+	 */
+	(void)sys_slist_find_and_remove(&access_delayable_msg.busy_ctx, &ctx->node);
+	sys_slist_append(&access_delayable_msg.free_ctx, &ctx->node);
 }
 
 static bool push_msg_from_delayable_msgs(void)
