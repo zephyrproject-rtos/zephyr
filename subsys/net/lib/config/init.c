@@ -563,5 +563,8 @@ static int init_app(void)
 	return 0;
 }
 
-SYS_INIT(init_app, APPLICATION, CONFIG_NET_CONFIG_INIT_PRIO);
+/* Leaves the net_config anchor (see <zephyr/net/net_config.h>) that
+ * services needing the network configured order their init after.
+ */
+SYS_INIT_ANCHORED(net_config, init_app, APPLICATION);
 #endif /* CONFIG_NET_CONFIG_AUTO_INIT */
