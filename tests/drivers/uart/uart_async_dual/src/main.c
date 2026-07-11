@@ -12,7 +12,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/busy_sim.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/debug/cpu_load.h>
+#include <zephyr/sys/cpu_load.h>
 LOG_MODULE_REGISTER(test);
 
 #if DT_NODE_EXISTS(DT_NODELABEL(dut))

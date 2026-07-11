@@ -7,7 +7,7 @@
 
 #include <tracing_user.h>
 #include <zephyr/kernel.h>
-#include <zephyr/debug/cpu_load.h>
+#include <zephyr/sys/cpu_load.h>
 #include <zephyr/init.h>
 
 void __weak sys_trace_thread_create_user(struct k_thread *thread) {}

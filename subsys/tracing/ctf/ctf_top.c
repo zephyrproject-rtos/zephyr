@@ -12,7 +12,7 @@
 #include <zephyr/net/socket_poll.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
-#include <zephyr/debug/cpu_load.h>
+#include <zephyr/sys/cpu_load.h>
 
 static void _get_thread_name(struct k_thread *thread, ctf_bounded_string_t *name)
 {

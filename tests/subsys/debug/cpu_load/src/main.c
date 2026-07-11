@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/debug/cpu_load.h>
+#include <zephyr/sys/cpu_load.h>
 #include <zephyr/ztest.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log_backend.h>
