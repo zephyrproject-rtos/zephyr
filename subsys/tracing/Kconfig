@@ -5,12 +5,21 @@
 
 DT_CHOSEN_Z_CONSOLE := zephyr,console
 
+config SYS_IDLE_HOOKS
+	bool
+	help
+	  Hidden symbol selected by subsystems that need the architecture idle
+	  path to call the sys_trace_idle()/sys_trace_idle_exit() notification
+	  hooks (for example TRACING and CPU_LOAD). When no subsystem selects
+	  it, the arch idle path omits the hook calls entirely.
+
 config TRACING
 	bool "Tracing Support"
 	imply THREAD_NAME
 	imply THREAD_STACK_INFO
 	imply THREAD_MONITOR
 	select INSTRUMENT_THREAD_SWITCHING
+	select SYS_IDLE_HOOKS
 	help
 	  Enable system tracing. This requires a backend such as SEGGER
 	  Systemview to be enabled as well.
