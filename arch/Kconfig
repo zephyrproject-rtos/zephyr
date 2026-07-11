@@ -58,6 +58,7 @@ config ARM64
 	select ARCH_SUPPORTS_EVICTION_TRACKING
 	select EVICTION_TRACKING if DEMAND_PAGING
 	select MEM_DOMAIN_HAS_THREAD_LIST if ARM_MPU && USERSPACE
+	select ARCH_HAS_IRQ_OFFLOAD_NESTED
 	help
 	  ARM64 (AArch64) architecture
 
@@ -116,6 +117,7 @@ config X86
 	select ARCH_HAS_STACK_CANARIES_TLS
 	select ARCH_SUPPORTS_MEM_MAPPED_STACKS if X86_MMU && !DEMAND_PAGING
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
+	select ARCH_HAS_IRQ_OFFLOAD_NESTED
 	help
 	  x86 architecture
 
@@ -141,6 +143,7 @@ config RISCV
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
 	select ARCH_HAS_STACK_CANARIES_TLS
 	select STACK_CANARIES_TLS_PREPEND if STACK_CANARIES_TLS
+	select ARCH_HAS_IRQ_OFFLOAD_NESTED
 	depends on DT_HAS_RISCV_ENABLED
 	help
 	  RISCV architecture
@@ -159,6 +162,7 @@ config XTENSA
 	select ARCH_SUPPORTS_COREDUMP_STACK_PTR if !SMP
 	select ARCH_HAS_USERSPACE if XTENSA_MMU || XTENSA_MPU
 	imply ARCH_HAS_RESERVED_PAGE_FRAMES if XTENSA_MMU
+	select ARCH_HAS_IRQ_OFFLOAD_NESTED
 	help
 	  Xtensa architecture
 
@@ -698,7 +702,7 @@ config SRAM_SW_ISR_TABLE
 config IRQ_OFFLOAD_NESTED
 	bool "irq_offload() supports nested IRQs"
 	depends on IRQ_OFFLOAD
-	default y if ARM64 || X86 || RISCV || XTENSA
+	default y if ARCH_HAS_IRQ_OFFLOAD_NESTED
 	help
 	  When set by the platform layers, indicates that
 	  irq_offload() may legally be called in interrupt context to
@@ -811,6 +815,14 @@ config ARCH_HAS_VECTOR_TABLE_RELOCATION
 
 config ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	bool
+
+config ARCH_HAS_IRQ_OFFLOAD_NESTED
+	bool
+	help
+	  This option is selected by architectures whose irq_offload()
+	  implementation may legally be called in interrupt context to cause a
+	  synchronous nested interrupt on the current CPU. It gates the default
+	  value of CONFIG_IRQ_OFFLOAD_NESTED.
 
 config ARCH_SUPPORTS_COREDUMP
 	bool
