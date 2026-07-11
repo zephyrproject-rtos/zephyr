@@ -384,3 +384,254 @@ ZTEST(bt_mesh_delayable_msg, test_chunk_alloc_by_data_len)
 	k_sleep(K_MSEC(500));
 	zassert_equal(id_mask, 0x000F, "Not all messages were sent (id_mask: 0x%04x)", id_mask);
 }
+
+/* ==================== Concurrent-access regression test ==================== */
+
+#define STRESS_ITER    40
+#define STRESS_BUF_LEN 20
+
+/* Cooperative priority used for the main test thread and the helper thread
+ * during test_concurrent_manage. K_PRIO_COOP(6) resolves to a negative
+ * priority strictly higher (more negative) than the sysworkq's default
+ * priority of -1, and mirrors the production scheduling model where the
+ * two mesh-message enqueuing contexts (BT RX WQ) run cooperatively at
+ * a priority higher than the sysworkq that runs delayable_msg_handler().
+ */
+#define STRESS_COOP_PRIO K_PRIO_COOP(6)
+
+K_THREAD_STACK_DEFINE(stress_helper_stack, 4096);
+static struct k_thread stress_helper_thread;
+
+/* Per-msg callback counters. Each scheduled manage() call passes a
+ * pointer to one of these array entries as cb_data; the mocked send
+ * dispatches the callback with that same cb_data pointer. In a correct
+ * implementation every entry is incremented exactly once by
+ * stress_cb_start(). In the pre-fix code two concurrent enqueuers can
+ * peek the same busy_ctx head and both trigger the callback for the
+ * same cb_data while another scheduled msg silently loses its chunks
+ * and never fires; the per-entry check catches both anomalies even
+ * when the aggregate counters happen to balance.
+ */
+static atomic_t stress_main_cb_count[STRESS_ITER];
+static atomic_t stress_helper_cb_count[STRESS_ITER];
+
+/* Aggregate counts kept for a quick sanity check and diagnostic output. */
+static atomic_t stress_scheduled;
+static atomic_t stress_cb_count;
+
+/* cb_data pointers passed to manage(). Kept as an array of per-slot
+ * pointers so a stable address survives across yield points; only the
+ * per-slot entries whose ID actually got scheduled will be exercised.
+ */
+static atomic_t *stress_main_slot[STRESS_ITER];
+static atomic_t *stress_helper_slot[STRESS_ITER];
+
+static void stress_cb_start(uint16_t duration, int err, void *cb_data)
+{
+	ARG_UNUSED(duration);
+	ARG_UNUSED(err);
+
+	atomic_inc(&stress_cb_count);
+	/* cb_data points directly at the per-slot counter for this msg. */
+	atomic_inc((atomic_t *)cb_data);
+	/* Yield from inside the send-completion callback. The callback is
+	 * invoked synchronously by the mocked bt_mesh_access_send(), which
+	 * is itself called from push_msg_from_delayable_msgs() *after* the
+	 * head msg has been observed but before it has been released back
+	 * to the free lists. Yielding here therefore drops control while
+	 * the caller is mid-critical-section, giving the other coop
+	 * enqueuer a deterministic opportunity to enter push_msg on the
+		 * same busy_ctx head: exactly the interleaving that the pre-fix
+	 * code (peek-then-work with no serialisation) mishandled.
+	 */
+	k_yield();
+}
+
+static const struct bt_mesh_send_cb stress_send_cb = {
+	.start = stress_cb_start,
+};
+
+static void stress_helper_fn(void *a, void *b, void *c)
+{
+	uint8_t data[STRESS_BUF_LEN];
+
+	ARG_UNUSED(a);
+	ARG_UNUSED(b);
+	ARG_UNUSED(c);
+
+	memset(data, 0x5A, sizeof(data));
+
+	for (int i = 0; i < STRESS_ITER; i++) {
+		NET_BUF_SIMPLE_DEFINE(buf, STRESS_BUF_LEN);
+		int err;
+
+		net_buf_simple_add_mem(&buf, data, STRESS_BUF_LEN);
+		stress_helper_slot[i] = &stress_helper_cb_count[i];
+		err = bt_mesh_delayable_msg_manage(&gctx, &buf, SRC_ADDR, &stress_send_cb,
+						   stress_helper_slot[i]);
+		if (err == 0) {
+			atomic_inc(&stress_scheduled);
+		} else {
+			/* Not queued: mark this slot as "not expected". */
+			stress_helper_slot[i] = NULL;
+		}
+		/* Cooperative round-robin: hand the CPU to the other same-
+		 * priority coop enqueuer (the ZTEST main thread). Neither
+		 * thread can be preempted, so the interleaving points are
+		 * exactly the yield sites, matching the production model
+		 * where the BT RX WQ can only be interrupted by lower-
+		 * priority contexts at explicit blocking calls.
+		 */
+		k_yield();
+	}
+}
+
+/* Regression test for the unsynchronized cross-thread access defect in
+ * subsys/bluetooth/mesh/delayable_msg.c. Two cooperative threads (the
+ * ZTEST main thread, temporarily raised to cooperative priority, and a
+ * helper spawned at the same cooperative priority) call
+ * bt_mesh_delayable_msg_manage() concurrently, alternating deterministic-
+ * ally via k_yield(). The sysworkq handler (default cooperative priority
+ * -1) drains the busy queue during the final k_sleep() when both
+ * enqueuers are blocked.
+ *
+ * The mocked send-completion callback (stress_cb_start) additionally
+ * yields *inside* the mocked bt_mesh_access_send(), i.e. while the
+ * caller of push_msg_from_delayable_msgs() is mid-critical-section.
+ * This forces a second enqueuer that hits the purge path to enter
+ * push_msg while the first has already peeked the busy_ctx head but
+ * not yet released it, reproducing the exact interleaving that the
+ * pre-fix code mishandled.
+ *
+ * Assertion strategy: track callbacks *per cb_data slot* rather than
+ * only in aggregate. The pre-fix bug causes the same msg to be
+ * peeked-and-sent by both threads (so one slot receives 2 callbacks)
+ * while another concurrently-added msg has its chunks stolen and is
+ * silently dropped (so its slot receives 0 callbacks). The aggregate
+ * counters coincidentally balance, but the per-slot check exposes the
+ * violation of the exactly-once delivery contract.
+ *
+ * Post-fix, the module's k_spinlock serialises every list mutation
+ * and push_msg_from_delayable_msgs() detaches the head atomically
+ * (pop, not peek), so both anomalies are impossible.
+ */
+ZTEST(bt_mesh_delayable_msg, test_concurrent_manage)
+{
+	uint8_t data[STRESS_BUF_LEN];
+	atomic_t final_cb_slot = ATOMIC_INIT(0);
+	int orig_prio;
+	int join_result;
+	int post_manage_result;
+	int scheduled_snapshot;
+	int completed_snapshot;
+	int per_slot_failures = 0;
+	int final_completed;
+
+	memset(data, 0xA5, sizeof(data));
+
+	atomic_set(&stress_scheduled, 0);
+	atomic_set(&stress_cb_count, 0);
+	for (int i = 0; i < STRESS_ITER; i++) {
+		atomic_set(&stress_main_cb_count[i], 0);
+		atomic_set(&stress_helper_cb_count[i], 0);
+		stress_main_slot[i] = NULL;
+		stress_helper_slot[i] = NULL;
+	}
+
+	/* Raise the main test thread to a cooperative priority higher
+	 * than the sysworkq (-1). Both this thread and the helper spawned
+	 * below run at the same cooperative priority: neither can be
+	 * preempted by the other or by the sysworkq. All scheduling
+	 * transitions are author-controlled via k_yield() / k_sleep().
+	 */
+	orig_prio = k_thread_priority_get(k_current_get());
+	k_thread_priority_set(k_current_get(), STRESS_COOP_PRIO);
+
+	k_thread_create(&stress_helper_thread, stress_helper_stack,
+			K_THREAD_STACK_SIZEOF(stress_helper_stack), stress_helper_fn, NULL,
+			NULL, NULL, STRESS_COOP_PRIO, 0, K_NO_WAIT);
+	k_thread_name_set(&stress_helper_thread, "stress_helper");
+
+	for (int i = 0; i < STRESS_ITER; i++) {
+		NET_BUF_SIMPLE_DEFINE(buf, STRESS_BUF_LEN);
+		int err;
+
+		net_buf_simple_add_mem(&buf, data, STRESS_BUF_LEN);
+		stress_main_slot[i] = &stress_main_cb_count[i];
+		err = bt_mesh_delayable_msg_manage(&gctx, &buf, SRC_ADDR, &stress_send_cb,
+						   stress_main_slot[i]);
+		if (err == 0) {
+			atomic_inc(&stress_scheduled);
+		} else {
+			stress_main_slot[i] = NULL;
+		}
+		k_yield();
+	}
+
+	/* Capture join result before touching the priority or asserting
+	 * (zassert may long-jump out of the test).
+	 */
+	join_result = k_thread_join(&stress_helper_thread, K_SECONDS(5));
+
+	/* Drain: main blocks, sysworkq (coop -1) becomes the only runnable
+	 * cooperative thread and fires the handler until busy_ctx is empty.
+	 * Random delay is up to ~500 ms per msg for group addresses; give
+	 * a generous margin.
+	 */
+	k_sleep(K_SECONDS(2));
+
+	scheduled_snapshot = atomic_get(&stress_scheduled);
+	completed_snapshot = atomic_get(&stress_cb_count);
+
+	/* Per-slot check: every scheduled slot must have received exactly
+	 * one callback; every unscheduled slot must have received zero.
+	 */
+	for (int i = 0; i < STRESS_ITER; i++) {
+		int m = atomic_get(&stress_main_cb_count[i]);
+		int h = atomic_get(&stress_helper_cb_count[i]);
+		int m_expected = stress_main_slot[i] ? 1 : 0;
+		int h_expected = stress_helper_slot[i] ? 1 : 0;
+
+		if (m != m_expected || h != h_expected) {
+			per_slot_failures++;
+		}
+	}
+
+	/* Sanity: schedule one more msg after the stress and verify it
+	 * still works: proves the free/busy lists are consistent and
+	 * nothing was leaked out of both lists.
+	 */
+	NET_BUF_SIMPLE_DEFINE(final_buf, STRESS_BUF_LEN);
+
+	net_buf_simple_add_mem(&final_buf, data, STRESS_BUF_LEN);
+	post_manage_result = bt_mesh_delayable_msg_manage(&gctx, &final_buf, SRC_ADDR,
+							  &stress_send_cb, &final_cb_slot);
+
+	k_sleep(K_MSEC(700));
+	final_completed = atomic_get(&stress_cb_count);
+
+	/* Restore the main thread's original priority BEFORE any zassert
+	 * that could long-jump out of the test, so subsequent test cases
+	 * in the suite run with the expected priority.
+	 */
+	k_thread_priority_set(k_current_get(), orig_prio);
+
+	zassert_ok(join_result, "Helper thread did not terminate (join=%d)", join_result);
+	zassert_equal(per_slot_failures, 0,
+		      "Race detected: %d slots received a wrong callback count "
+		      "(exactly-once delivery contract violated). "
+		      "scheduled=%d completed=%d",
+		      per_slot_failures, scheduled_snapshot, completed_snapshot);
+	zassert_equal(scheduled_snapshot, completed_snapshot,
+		      "Race detected (aggregate): scheduled=%d completed=%d",
+		      scheduled_snapshot, completed_snapshot);
+	zassert_ok(post_manage_result,
+		   "Post-stress manage() failed (%d): indicates leak or list corruption",
+		   post_manage_result);
+	zassert_equal(atomic_get(&final_cb_slot), 1,
+		      "Post-stress callback did not fire exactly once (got %d)",
+		      (int)atomic_get(&final_cb_slot));
+	zassert_equal(final_completed, completed_snapshot + 1,
+		      "Post-stress aggregate cb count off: final=%d snapshot=%d",
+		      final_completed, completed_snapshot);
+}
