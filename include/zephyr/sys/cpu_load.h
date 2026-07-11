@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DEBUG_CPU_LOAD_H_
-#define ZEPHYR_INCLUDE_DEBUG_CPU_LOAD_H_
+#ifndef ZEPHYR_INCLUDE_SYS_CPU_LOAD_H_
+#define ZEPHYR_INCLUDE_SYS_CPU_LOAD_H_
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -15,7 +15,7 @@ extern "C" {
 #endif
 
 /** @defgroup cpu_load CPU load monitor
- *  @ingroup debug
+ *  @ingroup os_services
  *  @brief Module for monitoring CPU Load
  *
  *  This module allow monitoring of the CPU load.
@@ -77,4 +77,4 @@ int cpu_load_cb_reg(cpu_load_cb_t cb, uint8_t threshold_percent);
 #endif
 
 
-#endif /* ZEPHYR_INCLUDE_DEBUG_CPU_LOAD_H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_CPU_LOAD_H_ */

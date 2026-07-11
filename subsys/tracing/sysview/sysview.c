@@ -6,7 +6,7 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <zephyr/init.h>
-#include <zephyr/debug/cpu_load.h>
+#include <zephyr/sys/cpu_load.h>
 
 #include <SEGGER_SYSVIEW.h>
 
