@@ -186,6 +186,21 @@ struct init_entry {
 		".z_init_" STRINGIFY(_CONCAT(Z_INIT_SECTION_LEVEL_, level))                        \
 		"_P_AUTO_SUB_" key "_")))
 
+/**
+ * @brief Emit a validation record for an anchored init entry.
+ *
+ * Records the entry's level and full anchor key as a string in a
+ * non-allocated section (like debug info: present in the ELF for build-time
+ * tooling, never loaded, absent from binary outputs). The records are
+ * consumed by scripts/build/check_init_priorities.py, which verifies that
+ * every dependency named in a key is linked in and does not run at a later
+ * level than its dependent.
+ */
+#define Z_SYS_INIT_ANCHOR_RECORD(level, key)                                                       \
+	__asm__(PUSHSECTION_DIRECTIVE " .zinit_anchor_info,\"\"\n\t"                          \
+		".asciz \"" STRINGIFY(_CONCAT(Z_INIT_SECTION_LEVEL_, level)) ":" key "\"\n\t"     \
+		POPSECTION_DIRECTIVE)
+
 /** @endcond */
 
 /**
@@ -322,6 +337,7 @@ struct init_entry {
  * @param level Initialization level, see SYS_INIT().
  */
 #define SYS_INIT_ANCHORED(name, init_fn_, level)                                          \
+	Z_SYS_INIT_ANCHOR_RECORD(level, _CONCAT(SYS_ANCHOR_, name));                      \
 	static const Z_DECL_ALIGN(struct init_entry)                                      \
 		Z_INIT_ENTRY_SECTION_KEYED(level, _CONCAT(SYS_ANCHOR_, name))             \
 		__used __noasan Z_INIT_ENTRY_NAME(name) = {                               \
