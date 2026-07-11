@@ -157,9 +157,9 @@ static struct delayable_msg_ctx *allocate_delayable_msg_ctx(void)
 
 static void release_delayable_msg_ctx(struct delayable_msg_ctx *ctx)
 {
-	if (sys_slist_find_and_remove(&access_delayable_msg.busy_ctx, &ctx->node)) {
-		sys_slist_append(&access_delayable_msg.free_ctx, &ctx->node);
-	}
+	/* Not on busy_ctx when called from the manage() error path. */
+	(void)sys_slist_find_and_remove(&access_delayable_msg.busy_ctx, &ctx->node);
+	sys_slist_append(&access_delayable_msg.free_ctx, &ctx->node);
 }
 
 static bool push_msg_from_delayable_msgs(void)
