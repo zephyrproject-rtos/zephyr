@@ -55,6 +55,8 @@ struct mspi_stm32_conf {
 	const struct stm32_pclken *pclken;
 	const struct pinctrl_dev_config *pcfg;
 	bool dma_specified;
+	uint32_t cs_boundary;
+	bool ssht_enable;
 	uint32_t ospim_clk_port;
 	uint32_t ospim_dqs_port;
 	uint32_t ospim_ncs_port;

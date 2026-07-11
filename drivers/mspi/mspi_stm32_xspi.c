@@ -34,6 +34,23 @@ LOG_MODULE_REGISTER(mspi_stm32_xspi, CONFIG_MSPI_LOG_LEVEL);
 /* Same value the HAL uses for HAL_XSPI_TIMEOUT_DEFAULT_VALUE */
 #define MSPI_STM32_XSPI_TIMEOUT_MS 5000U
 
+static uint32_t mspi_stm32_xspi_compute_prescaler(const struct mspi_stm32_conf *dev_cfg,
+						  struct mspi_stm32_data *dev_data,
+						  uint32_t ahb_clock_freq)
+{
+	uint32_t prescaler = MSPI_STM32_CLOCK_PRESCALER_MIN;
+
+	for (; prescaler <= MSPI_STM32_CLOCK_PRESCALER_MAX; prescaler++) {
+		dev_data->dev_cfg.freq = MSPI_STM32_CLOCK_COMPUTE(ahb_clock_freq, prescaler);
+		if (dev_data->dev_cfg.freq <= dev_cfg->mspicfg.max_freq) {
+			break;
+		}
+	}
+	__ASSERT_NO_MSG(prescaler <= MSPI_STM32_CLOCK_PRESCALER_MAX);
+
+	return prescaler;
+}
+
 /* Zephyr-side DMA channel setup, common to both HAL generations */
 static int mspi_stm32_xspi_dma_stream_setup(void *hdma, struct stm32_stream *dma_stream)
 {
@@ -1155,27 +1172,30 @@ static int mspi_stm32_xspi_activate(const struct device *dev)
 static int mspi_hal_init(const struct mspi_stm32_conf *dev_cfg, struct mspi_stm32_data *dev_data,
 			 uint32_t ahb_clock_freq)
 {
-	uint32_t prescaler = MSPI_STM32_CLOCK_PRESCALER_MIN;
+	XSPI_HandleTypeDef *hxspi = &dev_data->hmspi.xspi;
 
-	for (; prescaler <= MSPI_STM32_CLOCK_PRESCALER_MAX; prescaler++) {
-		dev_data->dev_cfg.freq = MSPI_STM32_CLOCK_COMPUTE(ahb_clock_freq, prescaler);
-		if (dev_data->dev_cfg.freq <= dev_cfg->mspicfg.max_freq) {
-			break;
-		}
-	}
-	__ASSERT_NO_MSG(prescaler <= MSPI_STM32_CLOCK_PRESCALER_MAX);
-
-	dev_data->hmspi.xspi.Init.ClockPrescaler = prescaler;
+	hxspi->Instance = dev_cfg->base;
+	hxspi->Init.FifoThresholdByte = MSPI_STM32_FIFO_THRESHOLD;
+	hxspi->Init.SampleShifting = dev_cfg->ssht_enable ? HAL_XSPI_SAMPLE_SHIFT_HALFCYCLE
+							  : HAL_XSPI_SAMPLE_SHIFT_NONE;
+	hxspi->Init.ChipSelectHighTimeCycle = 1;
+	hxspi->Init.ClockMode = HAL_XSPI_CLOCK_MODE_0;
+	hxspi->Init.ChipSelectBoundary = dev_cfg->cs_boundary;
+	hxspi->Init.MemoryMode = HAL_XSPI_SINGLE_MEM;
+	hxspi->Init.MemorySize = 0x19;
+	hxspi->Init.FreeRunningClock = HAL_XSPI_FREERUNCLK_DISABLE;
+	hxspi->Init.ClockPrescaler =
+		mspi_stm32_xspi_compute_prescaler(dev_cfg, dev_data, ahb_clock_freq);
 
 #if defined(XSPI_DCR2_WRAPSIZE)
-	dev_data->hmspi.xspi.Init.WrapSize = HAL_XSPI_WRAP_NOT_SUPPORTED;
+	hxspi->Init.WrapSize = HAL_XSPI_WRAP_NOT_SUPPORTED;
 #endif
 
 #if defined(XSPI_DCR1_DLYBYP)
-	dev_data->hmspi.xspi.Init.DelayBlockBypass = HAL_XSPI_DELAY_BLOCK_ON;
+	hxspi->Init.DelayBlockBypass = HAL_XSPI_DELAY_BLOCK_ON;
 #endif /* XSPI_DCR1_DLYBYP */
 
-	if (HAL_XSPI_Init(&dev_data->hmspi.xspi) != HAL_OK) {
+	if (HAL_XSPI_Init(hxspi) != HAL_OK) {
 		LOG_ERR("MSPI Init failed");
 		return -EIO;
 	}
@@ -1245,7 +1265,6 @@ static int mspi_stm32_xspi_config(const struct mspi_dt_spec *spec)
 		return ret;
 	}
 
-	dev_data->hmspi.xspi.Instance = dev_cfg->base;
 	(void)pm_device_runtime_get(spec->bus);
 	/* Prevent the clocks to be stopped during the request */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -1468,23 +1487,10 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                    \
 		.mspicfg.num_ce_gpios = ARRAY_SIZE(ce_gpios##index),                              \
 		.dma_specified = DT_INST_NODE_HAS_PROP(index, dmas),                              \
+		.cs_boundary = DT_INST_PROP(index, st_csbound),                                   \
+		.ssht_enable = DT_INST_PROP(index, st_ssht_enable),                               \
 	};                                                                                        \
 	static struct mspi_stm32_data mspi_stm32_dev_data_##index = {                             \
-		.hmspi.xspi = {                                                                   \
-			.Init = {                                                                 \
-				.FifoThresholdByte = MSPI_STM32_FIFO_THRESHOLD,                   \
-				.SampleShifting =                                                 \
-						(DT_INST_PROP(index, st_ssht_enable)              \
-						? HAL_XSPI_SAMPLE_SHIFT_HALFCYCLE                 \
-						: HAL_XSPI_SAMPLE_SHIFT_NONE),                    \
-				.ChipSelectHighTimeCycle = 1,                                     \
-				.ClockMode = HAL_XSPI_CLOCK_MODE_0,                               \
-				.ChipSelectBoundary = DT_INST_PROP(index, st_csbound),            \
-				.MemoryMode = HAL_XSPI_SINGLE_MEM,                                \
-				.MemorySize = 0x19,                                               \
-				.FreeRunningClock = HAL_XSPI_FREERUNCLK_DISABLE,                  \
-			},                                                                        \
-		},                                                                                \
 		.memmap_base_addr = DT_INST_REG_ADDR_BY_IDX(index, 1),                            \
 		.lock = Z_MUTEX_INITIALIZER(mspi_stm32_dev_data_##index.lock),                    \
 		.sync = Z_SEM_INITIALIZER(mspi_stm32_dev_data_##index.sync, 0, 1),                \
