@@ -34,6 +34,33 @@ LOG_MODULE_REGISTER(mspi_stm32_xspi, CONFIG_MSPI_LOG_LEVEL);
 /* Same value the HAL uses for HAL_XSPI_TIMEOUT_DEFAULT_VALUE */
 #define MSPI_STM32_XSPI_TIMEOUT_MS 5000U
 
+/* Zephyr-side DMA channel setup, common to both HAL generations */
+static int mspi_stm32_xspi_dma_stream_setup(void *hdma, struct stm32_stream *dma_stream)
+{
+	int ret;
+
+	if (!device_is_ready(dma_stream->dev)) {
+		LOG_ERR("DMA %s device not ready", dma_stream->dev->name);
+		return -ENODEV;
+	}
+
+	dma_stream->cfg.user_data = hdma;
+	/* This field is used to inform driver that it is overridden */
+	dma_stream->cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
+	ret = dma_config(dma_stream->dev, dma_stream->channel, &dma_stream->cfg);
+	if (ret != 0) {
+		LOG_ERR("Failed to configure DMA channel %d", dma_stream->channel);
+		return ret;
+	}
+
+	if (dma_stream->cfg.source_data_size != dma_stream->cfg.dest_data_size) {
+		LOG_ERR("DMA Source and destination data sizes not aligned");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static uint32_t mspi_stm32_xspi_hal_address_size(uint8_t address_length)
 {
 	if (address_length == 4U) {
@@ -1029,6 +1056,7 @@ static int mspi_stm32_xspi_transceive(const struct device *controller,
 static int mspi_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream *dma_stream)
 {
 	int ret;
+
 	/*
 	 * DMA configuration
 	 * Due to use of XSPI HAL API in current driver,
@@ -1037,27 +1065,12 @@ static int mspi_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream
 	 * the minimum information to inform the DMA slot will be in used and
 	 * how to route callbacks.
 	 */
-
-	if (!device_is_ready(dma_stream->dev)) {
-		LOG_ERR("DMA %s device not ready", dma_stream->dev->name);
-		return -ENODEV;
-	}
-
-	dma_stream->cfg.user_data = hdma;
-	/* This field is used to inform driver that it is overridden */
-	dma_stream->cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
-	ret = dma_config(dma_stream->dev, dma_stream->channel, &dma_stream->cfg);
+	ret = mspi_stm32_xspi_dma_stream_setup(hdma, dma_stream);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure DMA channel %d", dma_stream->channel);
 		return ret;
 	}
 
 	/* Proceed to the HAL DMA driver init */
-	if (dma_stream->cfg.source_data_size != dma_stream->cfg.dest_data_size) {
-		LOG_ERR("DMA Source and destination data sizes not aligned");
-		return -EINVAL;
-	}
-
 	hdma->Init.SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE;
 	hdma->Init.DestDataWidth = DMA_DEST_DATAWIDTH_BYTE;
 	hdma->Init.SrcInc =
