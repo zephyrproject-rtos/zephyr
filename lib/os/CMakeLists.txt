@@ -84,7 +84,7 @@ endif()
 
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
 zephyr_sources_ifdef(CONFIG_CBPRINTF_NANO cbprintf_nano.c)
-add_subdirectory_ifdef(CONFIG_CPU_LOAD_METRIC cpu_load)
+add_subdirectory_ifdef(CONFIG_CPU_LOAD_METRIC cpu_load_metric)
 
 if(NOT CONFIG_PICOLIBC)
   zephyr_sources(cbprintf.c)

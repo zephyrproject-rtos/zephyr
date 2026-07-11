@@ -14,7 +14,7 @@ menuconfig CPU_LOAD_METRIC
 
 if CPU_LOAD_METRIC
 
-module = CPU_LOAD
+module = CPU_LOAD_METRIC
 module-str = CPU Load Metric
 source "subsys/logging/Kconfig.template.log_config"
 

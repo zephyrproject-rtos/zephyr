@@ -5,9 +5,10 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/cpu_load_metric.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(cpu_load_metric, CONFIG_CPU_LOAD_LOG_LEVEL);
+LOG_MODULE_REGISTER(cpu_load_metric, CONFIG_CPU_LOAD_METRIC_LOG_LEVEL);
 
 static uint64_t execution_cycles_prev[CONFIG_MP_MAX_NUM_CPUS];
 static uint64_t total_cycles_prev[CONFIG_MP_MAX_NUM_CPUS];
