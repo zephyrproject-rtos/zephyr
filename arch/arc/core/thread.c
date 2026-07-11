@@ -388,7 +388,7 @@ void arc_vpx_unlock_force(unsigned int id)
 static int arc_vpx_sem_init(void)
 {
 	for (unsigned int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
-		k_sem_init(vpx_sem, 1, 1);
+		k_sem_init(&vpx_sem[i], 1, 1);
 	}
 
 	return 0;
