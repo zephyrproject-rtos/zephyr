@@ -17,7 +17,7 @@ jobs:
   backport:
     name: Backport Issue Check
     concurrency:
-      group: backport-issue-check-${{ github.ref }}
+      group: backport-issue-check-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     runs-on: ubuntu-24.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
