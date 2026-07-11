@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Icy Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# enable I2C
+CONFIG_I2C=y
+
+# enable PWM
+CONFIG_PWM=y
+
+# Support UF2 Bootloader
+CONFIG_USE_DT_CODE_PARTITION=y
+CONFIG_BUILD_OUTPUT_UF2=y
+CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID="0x820D9A5F"

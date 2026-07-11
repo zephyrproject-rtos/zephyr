@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Icy Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+DT_CHOSEN_Z_SRAM_PARTITION := zephyr,sram-secure-partition
+
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
+if BOARD_NRF54L15_DISCOVERY_NRF54L15_CPUAPP
+
+config ROM_START_OFFSET
+	default 0 if PARTITION_MANAGER_ENABLED
+	default 0x800 if BOOTLOADER_MCUBOOT
+
+endif #BOARD_NRF54L15_DISCOVERY_NRF54L15_CPUAPP
+
+if BOARD_NRF54L15_DISCOVERY_NRF54L15_CPUAPP_NS
+
+config HAS_BT_CTLR
+	default BT
+
+config FLASH_LOAD_OFFSET
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+config FLASH_LOAD_SIZE
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+# By default, if we build for a Non-Secure version of the board,
+# enable building with TF-M as the Secure Execution Environment.
+config BUILD_WITH_TFM
+	default y
+
+endif #BOARD_NRF54L15_DISCOVERY_NRF54L15_CPUAPP_NS
+
+if BOARD_NRF54L15_DISCOVERY_NRF52820
+
+choice CLOCK_CONTROL_NRF_SOURCE
+	default CLOCK_CONTROL_NRF_K32SRC_RC
+endchoice
+
+endif # BOARD_NRF54L15_DISCOVERY_NRF52820
