@@ -1,0 +1,25 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# Copyright (c) 2026 Icy Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: nrf54l15_discovery/nrf54l15/cpuapp/ns
+name: nRF54l15-Discovery-nRF54l15-Application-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+ram: 256
+flash: 940
+supported:
+  - adc
+  - counter
+  - gpio
+  - i2c
+  - i2s
+  - pwm
+  - spi
+  - watchdog
+  - adc
+vendor: ie
+sysbuild: true
