@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Chrispine Tinega <dev@chrispinetinega.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# Platform Configuration
+CONFIG_CORTEX_M_SYSTICK=y
+
+# XIP is required to place TEXT and DATA in I-Code SRAM (0x0) and D-Code
+# SRAM (0x30000) respectively. The M4F boots from its internal SRAM.
+CONFIG_XIP=y
+
+# Serial Driver
+CONFIG_SERIAL=y
+
+# Enable Console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# Enable OpenAMP resource table needed for remoteproc booting
+CONFIG_OPENAMP_RSC_TABLE=y

@@ -1,0 +1,102 @@
+/*
+ * Copyright (c) 2026 Chrispine Tinega <dev@chrispinetinega.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/am62x_m4.dtsi>
+#include "am62x_m4_bl350_am6254_m4-pinctrl.dtsi"
+
+/ {
+	model = "BLIIoT ARMxy BL350";
+	compatible = "bliiot,am62x-m4-bl350", "ti,am625";
+
+	chosen {
+		/*
+		 * The AM62x M4F boots and runs from its internal SRAM: TEXT in
+		 * I-Code SRAM (sram_icode @ 0x0) and DATA in D-Code SRAM
+		 * (sram_dcode @ 0x30000). CONFIG_XIP=y keeps TEXT in I-Code and
+		 * copies DATA to D-Code at boot. DDR is used only for the OpenAMP
+		 * shared memory and the resource table read by Linux remoteproc.
+		 */
+		zephyr,flash = &sram_icode;
+		zephyr,sram = &sram_dcode;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,ipc = &ipc0;
+		zephyr,ipc_shm = &ipc_shm;
+		zephyr,sram1 = &ddr_ext;
+	};
+
+	aliases {
+		watchdog0 = &mcu_rti0;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "okay";
+			clock-frequency = <400000000>;
+		};
+	};
+
+	/*
+	 * OpenAMP rpmsg shared memory — the Linux m4f-dma-memory@9cb00000
+	 * carveout (1 MB). Holds the vrings and rpmsg buffers.
+	 */
+	ipc_shm: memory@9cb00000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x9cb00000 DT_SIZE_M(1)>;
+	};
+
+	/*
+	 * OpenAMP resource table — start of the Linux m4f-memory@9cc00000
+	 * carveout. Linux remoteproc reads it to learn the vdev/vring
+	 * configuration and publishes the allocated vring addresses back here.
+	 */
+	rsc_table: memory@9cc00000 {
+		device_type = "memory";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x9cc00000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "RSC_TABLE";
+	};
+
+	/*
+	 * Remainder of the m4f-memory carveout (~14 MB), exposed as extra RAM
+	 * (zephyr,sram1) for buffers that do not fit the 64 KB D-Code SRAM.
+	 */
+	ddr_ext: memory@9cc01000 {
+		device_type = "memory";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x9cc01000 (DT_SIZE_M(14) - DT_SIZE_K(4))>;
+		zephyr,memory-region = "DDR";
+	};
+
+	/*
+	 * IPC notification transport: IPM over the AM62x MCU mailbox. Linux and
+	 * the M4F kick channel 0/1 to signal each other; OpenAMP uses this to
+	 * notify the peer that a vring has work.
+	 */
+	ipc0: ipc {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox0 0>, <&mbox0 1>;
+		mbox-names = "tx", "rx";
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&mcu_uart0_rx_default &mcu_uart0_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mbox0 {
+	status = "okay";
+};
+
+&mcu_rti0 {
+	status = "okay";
+};
