@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2026 Icy Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	/omit-if-no-ref/ uart30_default: uart30_default {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 1)>;
+		};
+		group2 {
+			psels = <NRF_PSEL(UART_RX, 0, 0)>;
+			bias-pull-up;
+		};
+	};
+
+	/omit-if-no-ref/ uart30_sleep: uart30_sleep {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 1)>,
+				<NRF_PSEL(UART_RX, 0, 0)>;
+			low-power-enable;
+		};
+	};
+
+	/omit-if-no-ref/ pwm20_default: pwm20_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 4)>;
+		};
+	};
+
+	/omit-if-no-ref/ pwm20_sleep: pwm20_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 4)>;
+			low-power-enable;
+		};
+	};
+
+	/omit-if-no-ref/ grtc_default: grtc_default {
+		group1 {
+			psels = <NRF_PSEL(GRTC_CLKOUT_FAST, 1, 8)>,
+				<NRF_PSEL(GRTC_CLKOUT_32K, 0, 4)>;
+		};
+	};
+
+	/omit-if-no-ref/ grtc_sleep: grtc_sleep {
+		group1 {
+			psels = <NRF_PSEL(GRTC_CLKOUT_FAST, 1, 8)>,
+				<NRF_PSEL(GRTC_CLKOUT_32K, 0, 4)>;
+			low-power-enable;
+		};
+	};
+
+	/omit-if-no-ref/ i2c20_default: i2c20_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 1, 5)>,
+				<NRF_PSEL(TWIM_SCL, 1, 6)>;
+			bias-pull-up;
+		};
+	};
+
+	/omit-if-no-ref/ i2c20_sleep: i2c20_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 1, 5)>,
+				<NRF_PSEL(TWIM_SCL, 1, 6)>;
+			low-power-enable;
+		};
+	};
+};
