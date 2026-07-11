@@ -39,6 +39,7 @@ config ARM
 	select GEN_PRIV_STACKS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_AARCH32_CORTEX_R || CPU_CORTEX_M || CPU_AARCH32_CORTEX_A
 	select BARRIER_OPERATIONS_ARCH
+	select ARCH_HAS_SEMIHOST
 	help
 	  ARM architecture
 
@@ -59,6 +60,7 @@ config ARM64
 	select EVICTION_TRACKING if DEMAND_PAGING
 	select MEM_DOMAIN_HAS_THREAD_LIST if ARM_MPU && USERSPACE
 	select ARCH_HAS_IRQ_OFFLOAD_NESTED
+	select ARCH_HAS_SEMIHOST
 	help
 	  ARM64 (AArch64) architecture
 
@@ -143,6 +145,7 @@ config RISCV
 	select ARCH_HAS_STACK_CANARIES_TLS
 	select STACK_CANARIES_TLS_PREPEND if STACK_CANARIES_TLS
 	select ARCH_HAS_IRQ_OFFLOAD_NESTED
+	select ARCH_HAS_SEMIHOST
 	depends on DT_HAS_RISCV_ENABLED
 	help
 	  RISCV architecture
@@ -162,6 +165,7 @@ config XTENSA
 	select ARCH_HAS_USERSPACE if XTENSA_MMU || XTENSA_MPU
 	imply ARCH_HAS_RESERVED_PAGE_FRAMES if XTENSA_MMU
 	select ARCH_HAS_IRQ_OFFLOAD_NESTED
+	select ARCH_HAS_SEMIHOST
 	help
 	  Xtensa architecture
 
@@ -822,6 +826,13 @@ config ARCH_HAS_IRQ_OFFLOAD_NESTED
 	  implementation may legally be called in interrupt context to cause a
 	  synchronous nested interrupt on the current CPU. It gates the default
 	  value of CONFIG_IRQ_OFFLOAD_NESTED.
+
+config ARCH_HAS_SEMIHOST
+	bool
+	help
+	  This option is selected by architectures that provide a semihosting
+	  implementation (arch/*/core/semihost.c). It is a prerequisite for
+	  CONFIG_SEMIHOST.
 
 config ARCH_SUPPORTS_COREDUMP
 	bool
