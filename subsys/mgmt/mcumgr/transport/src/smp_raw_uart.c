@@ -141,4 +141,6 @@ static int smp_raw_uart_init(void)
 	return rc;
 }
 
-SYS_INIT(smp_raw_uart_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+/* Run after the SMP work queue this transport feeds exists. */
+#define SYS_ANCHOR_smp_raw_uart SYS_ANCHOR_AFTER(SYS_ANCHOR_smp_transport, smp_raw_uart)
+SYS_INIT_ANCHORED(smp_raw_uart, smp_raw_uart_init, APPLICATION);

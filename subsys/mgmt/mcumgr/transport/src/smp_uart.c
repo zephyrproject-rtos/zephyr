@@ -114,4 +114,8 @@ static int smp_uart_init(void)
 	return rc;
 }
 
-SYS_INIT(smp_uart_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+/* Registering with the UART driver starts feeding received fragments to the
+ * SMP work queue, so run after the queue exists.
+ */
+#define SYS_ANCHOR_smp_uart SYS_ANCHOR_AFTER(SYS_ANCHOR_smp_transport, smp_uart)
+SYS_INIT_ANCHORED(smp_uart, smp_uart_init, APPLICATION);

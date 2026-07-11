@@ -301,4 +301,7 @@ static int smp_init(void)
 	return 0;
 }
 
-SYS_INIT(smp_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+/* Leaves the smp_transport anchor (see <zephyr/mgmt/mcumgr/transport/smp.h>)
+ * that the transports order their initialization after.
+ */
+SYS_INIT_ANCHORED(smp_transport, smp_init, APPLICATION);
