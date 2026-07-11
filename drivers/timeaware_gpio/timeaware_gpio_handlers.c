@@ -54,6 +54,8 @@ static inline int z_vrfy_tgpio_pin_read_ts_ec(const struct device *port, uint32_
 					       uint64_t *timestamp, uint64_t *event_count)
 {
 	K_OOPS(K_SYSCALL_DRIVER_TGPIO(port, read_ts_ec));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(timestamp, sizeof(uint64_t)));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(event_count, sizeof(uint64_t)));
 	return z_impl_tgpio_pin_read_ts_ec((const struct device *)port, pin, (uint64_t *)timestamp,
 					    (uint64_t *)event_count);
 }
