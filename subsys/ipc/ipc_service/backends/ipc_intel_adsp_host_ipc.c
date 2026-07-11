@@ -479,6 +479,10 @@ const static struct ipc_service_backend intel_adsp_ipc_backend_api = {
 	.send_critical = intel_adsp_ipc_send_critical,
 };
 
-DEVICE_DT_DEFINE(INTEL_ADSP_IPC_HOST_DTNODE, intel_adsp_ipc_dt_init,
-		 PM_DEVICE_DT_GET(INTEL_ADSP_IPC_HOST_DTNODE), &ipc_host_data, &ipc_host_config,
-		 PRE_KERNEL_2, 0, &intel_adsp_ipc_backend_api);
+/* Ordered automatically by the devicetree dependencies (the node's
+ * interrupt-parent, i.e. the ACE/cAVS interrupt controller) instead of
+ * deferring to the deprecated PRE_KERNEL_2 level.
+ */
+DEVICE_DT_DEFINE_AUTO(INTEL_ADSP_IPC_HOST_DTNODE, intel_adsp_ipc_dt_init,
+		      PM_DEVICE_DT_GET(INTEL_ADSP_IPC_HOST_DTNODE), &ipc_host_data,
+		      &ipc_host_config, PRE_KERNEL, &intel_adsp_ipc_backend_api);
