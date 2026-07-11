@@ -31,6 +31,9 @@
 
 LOG_MODULE_REGISTER(mspi_stm32_xspi, CONFIG_MSPI_LOG_LEVEL);
 
+/* Same value the HAL uses for HAL_XSPI_TIMEOUT_DEFAULT_VALUE */
+#define MSPI_STM32_XSPI_TIMEOUT_MS 5000U
+
 static uint32_t mspi_stm32_xspi_hal_address_size(uint8_t address_length)
 {
 	if (address_length == 4U) {
@@ -180,7 +183,7 @@ static int mspi_stm32_xspi_memmap_on(const struct device *controller)
 	s_command.SIOOMode = HAL_XSPI_SIOO_INST_EVERY_CMD;
 #endif /* XSPI_CCR_SIOO */
 
-	ret = HAL_XSPI_Command(&dev_data->hmspi.xspi, &s_command, HAL_XSPI_TIMEOUT_DEFAULT_VALUE);
+	ret = HAL_XSPI_Command(&dev_data->hmspi.xspi, &s_command, MSPI_STM32_XSPI_TIMEOUT_MS);
 	if (ret != HAL_OK) {
 		LOG_ERR("Failed to set memory mapped mode");
 		return -EIO;
@@ -190,7 +193,7 @@ static int mspi_stm32_xspi_memmap_on(const struct device *controller)
 	s_command.OperationType = HAL_XSPI_OPTYPE_WRITE_CFG;
 	s_command.Instruction = dev_data->dev_cfg.write_cmd;
 	s_command.DummyCycles = dev_data->dev_cfg.tx_dummy;
-	ret = HAL_XSPI_Command(&dev_data->hmspi.xspi, &s_command, HAL_XSPI_TIMEOUT_DEFAULT_VALUE);
+	ret = HAL_XSPI_Command(&dev_data->hmspi.xspi, &s_command, MSPI_STM32_XSPI_TIMEOUT_MS);
 	if (ret != HAL_OK) {
 		LOG_ERR("Failed to set memory mapped mode");
 		return -EIO;
@@ -319,7 +322,7 @@ static HAL_StatusTypeDef read_write_in_indirect_mode(const struct device *dev,
 		switch (access_mode) {
 		case MSPI_ACCESS_SYNC:
 			hal_ret = HAL_XSPI_Receive(&dev_data->hmspi.xspi, packet->data_buf,
-						   HAL_XSPI_TIMEOUT_DEFAULT_VALUE);
+						   MSPI_STM32_XSPI_TIMEOUT_MS);
 			goto end;
 		case MSPI_ACCESS_ASYNC:
 			hal_ret = HAL_XSPI_Receive_IT(&dev_data->hmspi.xspi, packet->data_buf);
@@ -355,7 +358,7 @@ static HAL_StatusTypeDef read_write_in_indirect_mode(const struct device *dev,
 		switch (access_mode) {
 		case MSPI_ACCESS_SYNC:
 			hal_ret = HAL_XSPI_Transmit(&dev_data->hmspi.xspi, packet->data_buf,
-						    HAL_XSPI_TIMEOUT_DEFAULT_VALUE);
+						    MSPI_STM32_XSPI_TIMEOUT_MS);
 			goto end;
 		case MSPI_ACCESS_ASYNC:
 			hal_ret = HAL_XSPI_Transmit_IT(&dev_data->hmspi.xspi, packet->data_buf);
@@ -449,7 +452,7 @@ indirect:
 
 	LOG_DBG("MSPI access Instruction 0x%x", cmd.Instruction);
 
-	hal_ret = HAL_XSPI_Command(&dev_data->hmspi.xspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE);
+	hal_ret = HAL_XSPI_Command(&dev_data->hmspi.xspi, &cmd, MSPI_STM32_XSPI_TIMEOUT_MS);
 	if ((hal_ret != HAL_OK) || (packet->num_bytes == 0)) {
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		(void)pm_device_runtime_put(dev);
@@ -564,7 +567,7 @@ static int mspi_stm32_xspi_status_reg(const struct device *controller, const str
 		goto status_end;
 	}
 
-	if (HAL_XSPI_Command(&dev_data->hmspi.xspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) !=
+	if (HAL_XSPI_Command(&dev_data->hmspi.xspi, &cmd, MSPI_STM32_XSPI_TIMEOUT_MS) !=
 	    HAL_OK) {
 		LOG_ERR("Failed to send XSPI instruction");
 		ret = -EIO;
@@ -573,7 +576,7 @@ static int mspi_stm32_xspi_status_reg(const struct device *controller, const str
 
 	ret = mspi_stm32_xspi_wait_auto_polling(controller, MSPI_NOR_MEM_RDY_MATCH,
 						MSPI_NOR_MEM_RDY_MASK,
-						HAL_XSPI_TIMEOUT_DEFAULT_VALUE);
+						MSPI_STM32_XSPI_TIMEOUT_MS);
 
 status_end:
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
