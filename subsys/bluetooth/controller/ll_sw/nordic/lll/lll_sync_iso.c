@@ -1044,6 +1044,7 @@ static void isr_rx_estab(void *param)
 static void isr_rx(void *param)
 {
 	struct lll_sync_iso_stream *stream;
+	struct node_rx_pdu *node_rx_prof;
 	struct lll_sync_iso *lll;
 	uint8_t access_addr[4];
 	uint16_t data_chan_id;
@@ -1064,6 +1065,7 @@ static void isr_rx(void *param)
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
+		node_rx_prof = lll_prof_reserve();
 	}
 
 	/* initialize LLL context reference */
@@ -1662,6 +1664,10 @@ isr_rx_ctrl:
 	}
 
 isr_rx_mic_failure:
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_reserve_send(node_rx_prof);
+	}
+
 	isr_rx_lll_done(param);
 
 	return;
@@ -1954,8 +1960,8 @@ isr_rx_next_subevent:
 		LL_ASSERT_DBG(false);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR) && (trx_done != 0U)) {
-		lll_prof_send();
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_reserve_send(node_rx_prof);
 	}
 }
 
