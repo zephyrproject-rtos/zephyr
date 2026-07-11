@@ -1124,7 +1124,7 @@ ZTEST(byteorder, test_sys_uint64_to_array)
 ZTEST(byteorder, test_sys_le_to_cpu)
 {
 	uint8_t val[9] = { 0x87, 0x95, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xab };
-	uint8_t exp[9] = {
+	uint8_t expected[9] = {
 		COND_CODE_1(CONFIG_LITTLE_ENDIAN,
 		(0x87, 0x95, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xab),
 		(0xab, 0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x95, 0x87))
@@ -1132,7 +1132,7 @@ ZTEST(byteorder, test_sys_le_to_cpu)
 
 	sys_le_to_cpu(val, sizeof(val));
 
-	zassert_mem_equal(val, exp, sizeof(exp), "sys_le_to_cpu() failed");
+	zassert_mem_equal(val, expected, sizeof(expected), "sys_le_to_cpu() failed");
 }
 
 /**
@@ -1157,7 +1157,7 @@ ZTEST(byteorder, test_sys_le_to_cpu)
 ZTEST(byteorder, test_sys_cpu_to_le)
 {
 	uint8_t val[9] = { 0x87, 0x96, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xab };
-	uint8_t exp[9] = {
+	uint8_t expected[9] = {
 		COND_CODE_1(CONFIG_LITTLE_ENDIAN,
 		(0x87, 0x96, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xab),
 		(0xab, 0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x96, 0x87))
@@ -1165,7 +1165,7 @@ ZTEST(byteorder, test_sys_cpu_to_le)
 
 	sys_cpu_to_le(val, sizeof(val));
 
-	zassert_mem_equal(val, exp, sizeof(exp), "sys_cpu_to_le() failed");
+	zassert_mem_equal(val, expected, sizeof(expected), "sys_cpu_to_le() failed");
 }
 
 /**
@@ -1191,7 +1191,7 @@ ZTEST(byteorder, test_sys_cpu_to_le)
 ZTEST(byteorder, test_sys_be_to_cpu)
 {
 	uint8_t val[9] = { 0x87, 0x97, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xab };
-	uint8_t exp[9] = {
+	uint8_t expected[9] = {
 		COND_CODE_1(CONFIG_LITTLE_ENDIAN,
 		(0xab, 0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x97, 0x87),
 		(0x87, 0x97, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xab))
@@ -1199,7 +1199,7 @@ ZTEST(byteorder, test_sys_be_to_cpu)
 
 	sys_be_to_cpu(val, sizeof(val));
 
-	zassert_mem_equal(val, exp, sizeof(exp), "sys_be_to_cpu() failed");
+	zassert_mem_equal(val, expected, sizeof(expected), "sys_be_to_cpu() failed");
 }
 
 /**
@@ -1225,7 +1225,7 @@ ZTEST(byteorder, test_sys_be_to_cpu)
 ZTEST(byteorder, test_sys_cpu_to_be)
 {
 	uint8_t val[9] = { 0x87, 0x98, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xab };
-	uint8_t exp[9] = {
+	uint8_t expected[9] = {
 		COND_CODE_1(CONFIG_LITTLE_ENDIAN,
 		(0xab, 0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x98, 0x87),
 		(0x87, 0x98, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xab))
@@ -1233,7 +1233,7 @@ ZTEST(byteorder, test_sys_cpu_to_be)
 
 	sys_cpu_to_be(val, sizeof(val));
 
-	zassert_mem_equal(val, exp, sizeof(exp), "sys_cpu_to_be() failed");
+	zassert_mem_equal(val, expected, sizeof(expected), "sys_cpu_to_be() failed");
 }
 
 /**
@@ -1260,7 +1260,7 @@ ZTEST(byteorder, test_sys_put_le)
 {
 	uint8_t host[9] = { 0x87, 0x12, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xba };
 	uint8_t prot[9] = { 0 };
-	uint8_t exp[9] = {
+	uint8_t expected[9] = {
 		COND_CODE_1(CONFIG_LITTLE_ENDIAN,
 		(0x87, 0x12, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xba),
 		(0xba, 0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x12, 0x87))
@@ -1268,7 +1268,7 @@ ZTEST(byteorder, test_sys_put_le)
 
 	sys_put_le(prot, host, sizeof(prot));
 
-	zassert_mem_equal(prot, exp, sizeof(exp), "sys_put_le() failed");
+	zassert_mem_equal(prot, expected, sizeof(expected), "sys_put_le() failed");
 }
 
 /**
@@ -1295,7 +1295,7 @@ ZTEST(byteorder, test_sys_put_be)
 {
 	uint8_t host[9] = { 0x87, 0x13, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xba };
 	uint8_t prot[9] = { 0 };
-	uint8_t exp[9] = {
+	uint8_t expected[9] = {
 		COND_CODE_1(CONFIG_LITTLE_ENDIAN,
 		(0xba, 0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x13, 0x87),
 		(0x87, 0x13, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xba))
@@ -1303,7 +1303,7 @@ ZTEST(byteorder, test_sys_put_be)
 
 	sys_put_be(prot, host, sizeof(prot));
 
-	zassert_mem_equal(prot, exp, sizeof(exp), "sys_put_be() failed");
+	zassert_mem_equal(prot, expected, sizeof(expected), "sys_put_be() failed");
 }
 
 /**
@@ -1330,7 +1330,7 @@ ZTEST(byteorder, test_sys_get_le)
 {
 	uint8_t prot[9] = { 0x87, 0x14, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xba };
 	uint8_t host[9] = { 0 };
-	uint8_t exp[9] = {
+	uint8_t expected[9] = {
 		COND_CODE_1(CONFIG_LITTLE_ENDIAN,
 		(0x87, 0x14, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xba),
 		(0xba, 0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x14, 0x87))
@@ -1338,7 +1338,7 @@ ZTEST(byteorder, test_sys_get_le)
 
 	sys_get_le(host, prot, sizeof(host));
 
-	zassert_mem_equal(host, exp, sizeof(exp), "sys_get_le() failed");
+	zassert_mem_equal(host, expected, sizeof(expected), "sys_get_le() failed");
 }
 
 /**
@@ -1365,7 +1365,7 @@ ZTEST(byteorder, test_sys_get_be)
 {
 	uint8_t prot[9] = { 0x87, 0x15, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xba };
 	uint8_t host[9] = { 0 };
-	uint8_t exp[9] = {
+	uint8_t expected[9] = {
 		COND_CODE_1(CONFIG_LITTLE_ENDIAN,
 		(0xba, 0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x15, 0x87),
 		(0x87, 0x15, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xba))
@@ -1373,7 +1373,7 @@ ZTEST(byteorder, test_sys_get_be)
 
 	sys_get_be(host, prot, sizeof(host));
 
-	zassert_mem_equal(host, exp, sizeof(exp), "sys_get_be() failed");
+	zassert_mem_equal(host, expected, sizeof(expected), "sys_get_be() failed");
 }
 
 /**
