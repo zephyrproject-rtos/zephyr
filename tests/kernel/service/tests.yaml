@@ -1,0 +1,8 @@
+common:
+  tags:
+    - kernel
+    - service
+tests:
+  kernel.service.ordering:
+    integration_platforms:
+      - native_sim
