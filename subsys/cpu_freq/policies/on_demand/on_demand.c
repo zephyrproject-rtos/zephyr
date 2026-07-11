@@ -8,7 +8,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/cpu_freq/policy.h>
 #include <zephyr/cpu_freq/cpu_freq.h>
-#include <zephyr/sys/cpu_load_metric.h>
+#include <zephyr/sys/cpu_load.h>
 
 LOG_MODULE_REGISTER(cpu_freq_policy_on_demand, CONFIG_CPU_FREQ_LOG_LEVEL);
 
@@ -57,11 +57,14 @@ int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 	cpu_id = arch_curr_cpu()->id;
 #endif
 
-	cpu_load = cpu_load_metric_get(cpu_id);
+	cpu_load = cpu_load_get_cpu((unsigned int)cpu_id, true);
 	if (cpu_load < 0) {
 		LOG_ERR("Unable to retrieve CPU load");
 		return cpu_load;
 	}
+
+	/* cpu_load_get_cpu() returns per mille; policy thresholds are in percent. */
+	cpu_load = CPU_LOAD_PERMILLE_TO_PERCENT(cpu_load);
 
 	LOG_DBG("CPU%d Load: %d%%", cpu_id, cpu_load);
 

@@ -14,14 +14,14 @@ __weak void sys_trace_isr_exit_to_scheduler(void) {}
 
 __weak void sys_trace_idle(void)
 {
-	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+	if (IS_ENABLED(CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK)) {
 		cpu_load_on_enter_idle();
 	}
 }
 
 __weak void sys_trace_idle_exit(void)
 {
-	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+	if (IS_ENABLED(CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK)) {
 		cpu_load_on_exit_idle();
 	}
 }
