@@ -4,22 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
+
+#include <zephyr/arch/riscv/csr.h>
 #include <zephyr/cache.h>
-#include <zephyr/devicetree.h>
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/mm/demand_paging.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/sys/util.h>
+
 #include <kernel_arch_func.h>
 #include <kernel_arch_interface.h>
 #include <kernel_internal.h>
 #include <mmu.h>
-#include <zephyr/logging/log.h>
-#include <zephyr/arch/riscv/csr.h>
-#include <zephyr/linker/linker-defs.h>
-#include <zephyr/spinlock.h>
-#include <zephyr/sys/util.h>
-#include <string.h>
 
 #include "mmu.h"
 
@@ -113,29 +115,30 @@ static uint64_t *new_table(void)
 
 	/* Look for a free table. */
 	for (i = 0U; i < CONFIG_MAX_XLAT_TABLES; i++) {
-		if (xlat_use_count[i] == 0) {
-			table = &xlat_tables[i * RISCV_PGTABLE_ENTRIES];
-			/*
-			 * Leave the initial use count at 0.  The caller is
-			 * responsible for incrementing the reference count via
-			 * inc_table_ref() before the table becomes reachable
-			 * from any parent PTE (done automatically by set_pte()
-			 * for non-root tables, or explicitly for root tables).
-			 * This prevents the double-count bug where new_table()
-			 * set XLAT_REF_COUNT_UNIT and set_pte() added another
-			 * XLAT_REF_COUNT_UNIT, making dec_table_ref() unable
-			 * to reach 0.
-			 */
-			MMU_DEBUG("allocating table [%d]%p\n", i, table);
-
-			/* Clear the new table */
-			memset(table, 0, PAGE_SIZE);
-			return table;
+		if (xlat_use_count[i] != 0) {
+			continue;
 		}
+
+		table = &xlat_tables[i * RISCV_PGTABLE_ENTRIES];
+		/*
+		 * Leave the initial use count at 0.  The caller is
+		 * responsible for incrementing the reference count via
+		 * inc_table_ref() before the table becomes reachable
+		 * from any parent PTE (done automatically by set_pte()
+		 * for non-root tables, or explicitly for root tables).
+		 * This prevents the double-count bug where new_table()
+		 * set XLAT_REF_COUNT_UNIT and set_pte() added another
+		 * XLAT_REF_COUNT_UNIT, making dec_table_ref() unable
+		 * to reach 0.
+		 */
+		LOG_DBG("allocating table [%d]%p", i, table);
+
+		/* Clear the new table */
+		memset(table, 0, PAGE_SIZE);
+		return table;
 	}
 
-	printk("FATAL: CONFIG_MAX_XLAT_TABLES (%d) is too small\n",
-	       CONFIG_MAX_XLAT_TABLES);
+	LOG_ERR("CONFIG_MAX_XLAT_TABLES (%d) is too small", CONFIG_MAX_XLAT_TABLES);
 	k_panic();
 	return NULL;
 }
@@ -160,13 +163,13 @@ static inline unsigned int table_index(uint64_t *pte)
  * A plain ±1 adjustment modifies the PTE count field.
  * Must be called with xlat_lock held.
  */
-static int32_t table_usage(uint64_t *table, int32_t adjustment)
+static int32_t adjust_table_usage(uint64_t *table, int32_t adjustment)
 {
 	unsigned int i = table_index(table);
 	int32_t prev_count = xlat_use_count[i];
 	int32_t new_count = prev_count + adjustment;
 
-	MMU_DEBUG("table [%d]%p: usage %#x -> %#x\n", i, table, prev_count, new_count);
+	LOG_DBG("table [%d]%p: usage %#x -> %#x", i, table, prev_count, new_count);
 
 	__ASSERT(new_count >= 0, "table use count underflow");
 	__ASSERT(new_count == 0 || new_count >= XLAT_REF_COUNT_UNIT,
@@ -181,25 +184,25 @@ static int32_t table_usage(uint64_t *table, int32_t adjustment)
 /* Increment the reference count of a table (one more parent PTE points to it). */
 static inline void inc_table_ref(uint64_t *table)
 {
-	table_usage(table, XLAT_REF_COUNT_UNIT);
+	adjust_table_usage(table, XLAT_REF_COUNT_UNIT);
 }
 
 /* Decrement the reference count of a table (one parent PTE removed). */
 static inline void dec_table_ref(uint64_t *table)
 {
-	table_usage(table, -XLAT_REF_COUNT_UNIT);
+	adjust_table_usage(table, -XLAT_REF_COUNT_UNIT);
 }
 
 /* Increment the count of valid PTEs within a table. */
 static inline void inc_pte_count(uint64_t *table)
 {
-	table_usage(table, 1);
+	adjust_table_usage(table, 1);
 }
 
 /* Decrement the count of valid PTEs within a table. */
 static inline void dec_pte_count(uint64_t *table)
 {
-	table_usage(table, -1);
+	adjust_table_usage(table, -1);
 }
 
 /*
@@ -210,7 +213,6 @@ static inline void dec_pte_count(uint64_t *table)
  */
 static void set_pte(uint64_t *table, unsigned int index, pte_t pte)
 {
-
 	__ASSERT(index < RISCV_PGTABLE_ENTRIES, "PTE index %u out of range", index);
 
 	pte_t old_pte = table[index];
@@ -251,7 +253,7 @@ static void set_pte(uint64_t *table, unsigned int index, pte_t pte)
 		/* Note: Leaf PTE updates don't affect reference counts */
 	}
 
-	MMU_DEBUG("%s: table[%u] = %#llx (was %#llx)\n", __func__, index, pte, old_pte);
+	LOG_DBG("%s: table[%u] = %#llx (was %#llx)", __func__, index, pte, old_pte);
 }
 
 /*
@@ -260,13 +262,11 @@ static void set_pte(uint64_t *table, unsigned int index, pte_t pte)
  */
 static pte_t flags_to_pte(uint32_t flags)
 {
-	pte_t pte_flags = PTE_VALID | PTE_ACCESSED;
+	pte_t pte_flags = PTE_VALID | PTE_ACCESSED | PTE_READ;
 
 	/* Permission flags */
 	if (flags & K_MEM_PERM_RW) {
-		pte_flags |= PTE_READ | PTE_WRITE | PTE_DIRTY;
-	} else {
-		pte_flags |= PTE_READ; /* Default */
+		pte_flags |= PTE_WRITE | PTE_DIRTY;
 	}
 
 	if (flags & K_MEM_PERM_EXEC) {
@@ -283,7 +283,7 @@ static pte_t flags_to_pte(uint32_t flags)
 /*
  * Return a pointer to the kernel root page table.
  */
-static uint64_t *get_root_page_table(void)
+static inline uint64_t *get_root_page_table(void)
 {
 	return kernel_root_table;
 }
@@ -329,7 +329,7 @@ static void cleanup_unused_tables(uintptr_t va)
 
 		if ((xlat_use_count[table_idx] & XLAT_PTE_COUNT_MASK) == 0) {
 			set_pte(tables[level], index, 0);
-			MMU_DEBUG("freed empty table [%d]%p at level %d\n", table_idx,
+			LOG_DBG("freed empty table [%d]%p at level %d", table_idx,
 				  current_table, level + 1);
 		} else {
 			break;
@@ -400,12 +400,12 @@ static void unmap_pages_from(uint64_t *root, uintptr_t va, size_t size)
 			pte_t pte = table[index];
 
 			if (!pte_is_valid(pte)) {
-				MMU_DEBUG("No mapping at level %d for VA:%p\n", level, (void *)va);
+				LOG_DBG("No mapping at level %d for VA:%p", level, (void *)va);
 				goto next_page;
 			}
 
 			if (pte_is_leaf(pte)) {
-				MMU_DEBUG("Hugepage found at level %d - skipping\n", level);
+				LOG_DBG("Hugepage found at level %d - skipping", level);
 				goto next_page;
 			}
 
@@ -418,7 +418,7 @@ static void unmap_pages_from(uint64_t *root, uintptr_t va, size_t size)
 
 			if (pte_is_valid(leaf_pte)) {
 				set_pte(table, leaf_index, 0);
-				MMU_DEBUG("unmapped VA:%p -> PA:%p\n", (void *)va,
+				LOG_DBG("unmapped VA:%p -> PA:%p", (void *)va,
 					  (void *)pte_to_phys(leaf_pte));
 				SFENCE_VMA_ADDR((void *)va);
 				cleanup_unused_tables(va);
@@ -449,7 +449,7 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 
 	key = k_spin_lock(&xlat_lock);
 
-	MMU_DEBUG("mapping VA:%p -> PA:%p size:%zu flags:%#x\n", virt, (void *)phys, size, flags);
+	LOG_DBG("mapping VA:%p -> PA:%p size:%zu flags:%#x", virt, (void *)phys, size, flags);
 
 	map_pages_into(kernel_root_table, (uintptr_t)virt, phys, size, flags_to_pte(flags));
 
@@ -485,7 +485,7 @@ void arch_mem_unmap(void *addr, size_t size)
 
 	key = k_spin_lock(&xlat_lock);
 
-	MMU_DEBUG("unmapping VA:%p size:%zu\n", addr, size);
+	LOG_DBG("unmapping VA:%p size:%zu", addr, size);
 
 	unmap_pages_from(kernel_root_table, (uintptr_t)addr, size);
 
@@ -533,7 +533,7 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 
 	table = get_root_page_table();
 	if (!table) {
-		MMU_DEBUG("No root page table for VA:%p\n", virt);
+		LOG_DBG("No root page table for VA:%p", virt);
 		result = -EFAULT;
 		goto unlock_and_return;
 	}
@@ -545,7 +545,7 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 
 		if (!pte_is_valid(pte)) {
 			/* No mapping exists */
-			MMU_DEBUG("No mapping at level %d for VA:%p\n", level, virt);
+			LOG_DBG("No mapping at level %d for VA:%p", level, virt);
 			result = -EFAULT;
 			goto unlock_and_return;
 		}
@@ -562,7 +562,7 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 				*phys = final_phys;
 			}
 
-			MMU_DEBUG("VA:%p -> PA:%p (level %d page)\n", virt, (void *)final_phys,
+			LOG_DBG("VA:%p -> PA:%p (level %d page)", virt, (void *)final_phys,
 				  level);
 			result = 0; /* SUCCESS */
 			goto unlock_and_return;
@@ -573,7 +573,7 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 	}
 
 	/* Should never reach here if page table levels are correct */
-	MMU_DEBUG("Page table walk completed without finding leaf for VA:%p\n", virt);
+	LOG_DBG("Page table walk completed without finding leaf for VA:%p", virt);
 	result = -EFAULT;
 
 unlock_and_return:
@@ -601,7 +601,7 @@ __weak int create_platform_mappings(void)
 	uintptr_t uart_base = DT_REG_ADDR(DT_CHOSEN(zephyr_console));
 	size_t uart_size = ROUND_UP(DT_REG_SIZE(DT_CHOSEN(zephyr_console)), PAGE_SIZE);
 
-	MMU_DEBUG("Mapping console UART: %p size:%zu\n", (void *)uart_base, uart_size);
+	LOG_DBG("Mapping console UART: %p size:%zu", (void *)uart_base, uart_size);
 	arch_mem_map((void *)uart_base, uart_base, uart_size, K_MEM_PERM_RW);
 #endif
 	return 0;
@@ -628,7 +628,7 @@ static int create_kernel_mappings(void)
 	uintptr_t rom_end = ROUND_UP((uintptr_t)__rom_region_end, PAGE_SIZE);
 	size_t rom_size = rom_end - rom_start;
 
-	MMU_DEBUG("Mapping kernel ROM region: %p-%p (%zu bytes)\n", (void *)rom_start,
+	LOG_DBG("Mapping kernel ROM region: %p-%p (%zu bytes)", (void *)rom_start,
 		  (void *)rom_end, rom_size);
 
 	/*
@@ -655,7 +655,7 @@ static int create_kernel_mappings(void)
 	uintptr_t ram_end = ROUND_UP((uintptr_t)__kernel_ram_end, PAGE_SIZE);
 	size_t ram_size = ram_end - ram_start;
 
-	MMU_DEBUG("Mapping kernel RAM region: %p-%p (%zu bytes)\n", (void *)ram_start,
+	LOG_DBG("Mapping kernel RAM region: %p-%p (%zu bytes)", (void *)ram_start,
 		  (void *)ram_end, ram_size);
 
 	arch_mem_map((void *)ram_start, ram_start, ram_size, K_MEM_PERM_RW | K_MEM_CACHE_WB);
@@ -685,7 +685,7 @@ static int arch_mem_init(void)
 	uint64_t new_satp;
 	int ret;
 
-	MMU_DEBUG("Initializing RISC-V MMU\n");
+	LOG_DBG("Initializing RISC-V MMU");
 
 	/*
 	 * Do NOT reinitialise xlat_tables or xlat_use_count here.
@@ -712,7 +712,7 @@ static int arch_mem_init(void)
 
 	if (mode != SATP_MODE_OFF) {
 		kernel_root_table = (uint64_t *)((satp_val & SATP_PPN_MASK) << PAGE_SIZE_SHIFT);
-		MMU_DEBUG("MMU already enabled (mode=%llu), root table at %p\n", mode,
+		LOG_DBG("MMU already enabled (mode=%llu), root table at %p", mode,
 			  kernel_root_table);
 #ifdef CONFIG_USERSPACE
 		z_riscv_kernel_satp_val = satp_val;
@@ -747,7 +747,7 @@ static int arch_mem_init(void)
 		   ((uint64_t)KERNEL_ASID << SATP_ASID_SHIFT) |
 		   ((uintptr_t)kernel_root_table >> PAGE_SIZE_SHIFT);
 
-	MMU_DEBUG("Enabling MMU: SATP=0x%llx, root_table=%p, ASID=%d\n", new_satp,
+	LOG_DBG("Enabling MMU: SATP=0x%llx, root_table=%p, ASID=%d", new_satp,
 		  kernel_root_table, KERNEL_ASID);
 
 	csr_write(satp, new_satp);
@@ -765,7 +765,7 @@ static int arch_mem_init(void)
 	 */
 	csr_set(sstatus, SSTATUS_SUM);
 
-	MMU_DEBUG("RISC-V MMU initialized successfully\n");
+	LOG_DBG("RISC-V MMU initialized successfully");
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_DATA
 	/*
@@ -914,7 +914,7 @@ static int domain_privatize_kernel_text(uint64_t *domain_root)
 		 */
 		for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
 			if (pte_is_valid(private_l2[i])) {
-				table_usage(private_l2, 1);
+				adjust_table_usage(private_l2, 1);
 			}
 		}
 
@@ -947,7 +947,7 @@ static int domain_privatize_kernel_text(uint64_t *domain_root)
 
 			for (j = 0; j < RISCV_PGTABLE_ENTRIES; j++) {
 				if (pte_is_valid(private_l3[j])) {
-					table_usage(private_l3, 1);
+					adjust_table_usage(private_l3, 1);
 				}
 			}
 
@@ -1192,7 +1192,7 @@ static int ensure_private_tables(uint64_t *domain_root, uintptr_t va, size_t siz
 			memcpy(priv_l1, k_l1, PAGE_SIZE);
 			for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
 				if (pte_is_valid(priv_l1[i])) {
-					table_usage(priv_l1, 1);
+					adjust_table_usage(priv_l1, 1);
 				}
 			}
 			/* Raw write: domain root is not set_pte()-tracked. */
@@ -1229,7 +1229,7 @@ static int ensure_private_tables(uint64_t *domain_root, uintptr_t va, size_t siz
 				memcpy(priv_l2, k_l2, PAGE_SIZE);
 				for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
 					if (pte_is_valid(priv_l2[i])) {
-						table_usage(priv_l2, 1);
+						adjust_table_usage(priv_l2, 1);
 					}
 				}
 				/* Raw write: d_l1 PTE count not tracked for
