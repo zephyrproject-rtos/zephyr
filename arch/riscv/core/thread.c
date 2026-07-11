@@ -7,8 +7,13 @@
 
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
+#include <kernel_arch_interface.h>
 #include <zephyr/arch/riscv/csr.h>
 #include <pmp.h>
+
+#ifdef CONFIG_FPU
+extern void z_riscv_fpu_zero(void);
+#endif
 
 #ifdef CONFIG_USERSPACE
 /*
@@ -196,6 +201,29 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 
 	/* preserve stack pointer for next exception entry */
 	arch_curr_cpu()->arch.user_exc_sp = top_of_priv_stack;
+
+#ifdef CONFIG_FPU
+	{
+		unsigned int key = arch_irq_lock();
+
+#ifdef CONFIG_FPU_SHARING
+		arch_float_disable(_current);
+		memset(&_current->arch.saved_fp_context, 0,
+		       sizeof(_current->arch.saved_fp_context));
+		_current->arch.fpu_recently_used = false;
+#else
+		/*
+		 * Unshared FPU mode: the FPU is not context-switched, so the
+		 * current kernel FPU register contents would otherwise be visible
+		 * to user mode.
+		 */
+		z_riscv_fpu_zero();
+		z_riscv_status_clear(MSTATUS_FS);
+		z_riscv_status_set(MSTATUS_FS_INIT);
+#endif
+		arch_irq_unlock(key);
+	}
+#endif
 
 	is_user_mode = true;
 

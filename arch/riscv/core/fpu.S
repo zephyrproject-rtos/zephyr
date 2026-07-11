@@ -12,9 +12,11 @@
 #ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION
 #define LOAD	fld
 #define STORE	fsd
+#define ZERO	fcvt.d.w
 #else
 #define LOAD	flw
 #define STORE	fsw
+#define ZERO	fcvt.s.w
 #endif
 
 #define DO_FP_REGS(op, ptr) \
@@ -51,6 +53,49 @@
 	op ft10, __z_riscv_fp_context_t_ft10_OFFSET(ptr); \
 	op ft11, __z_riscv_fp_context_t_ft11_OFFSET(ptr)
 
+#define ZERO_FP_REGS(op) \
+	op f0, x0; \
+	op f1, x0; \
+	op f2, x0; \
+	op f3, x0; \
+	op f4, x0; \
+	op f5, x0; \
+	op f6, x0; \
+	op f7, x0; \
+	op f8, x0; \
+	op f9, x0; \
+	op f10, x0; \
+	op f11, x0; \
+	op f12, x0; \
+	op f13, x0; \
+	op f14, x0; \
+	op f15, x0; \
+	op f16, x0; \
+	op f17, x0; \
+	op f18, x0; \
+	op f19, x0; \
+	op f20, x0; \
+	op f21, x0; \
+	op f22, x0; \
+	op f23, x0; \
+	op f24, x0; \
+	op f25, x0; \
+	op f26, x0; \
+	op f27, x0; \
+	op f28, x0; \
+	op f29, x0; \
+	op f30, x0; \
+	op f31, x0
+
+GTEXT(z_riscv_fpu_zero)
+SECTION_FUNC(TEXT, z_riscv_fpu_zero)
+
+	fscsr x0
+	ZERO_FP_REGS(ZERO)
+	ret
+
+#ifdef CONFIG_FPU_SHARING
+
 GTEXT(z_riscv_fpu_save)
 SECTION_FUNC(TEXT, z_riscv_fpu_save)
 
@@ -66,4 +111,6 @@ SECTION_FUNC(TEXT, z_riscv_fpu_restore)
 	lw t0, __z_riscv_fp_context_t_fcsr_OFFSET(a0)
 	fscsr t0
 	ret
+
+#endif /* CONFIG_FPU_SHARING */
 
