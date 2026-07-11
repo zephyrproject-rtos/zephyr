@@ -276,6 +276,11 @@ New Drivers
   Same as above, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
 
+* Ethernet
+
+  * WIZnet W5100S 10/100 Ethernet controller with SPI interface
+    (:dtcompatible:`wiznet,w5100s`).
+
 * GPIO
 
   * Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander

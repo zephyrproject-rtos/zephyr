@@ -66,6 +66,14 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
+			test_spi_w5100s: w5100s@8 {
+				compatible = "wiznet,w5100s";
+				reg = <0x8>;
+				spi-max-frequency = <0>;
+				int-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
 			test_spi_adin1110: adin1110@3 {
 				compatible = "adi,adin1110";
 				reg = <0x3>;
