@@ -260,13 +260,6 @@ config MDNS_RESPONDER_TTL
 	help
 	  DNS answers will use the TTL (in seconds).
 
-config MDNS_RESPONDER_INIT_PRIO
-	int "Startup priority for the mDNS responder init"
-	default 96
-	help
-	  Note that if NET_CONFIG_AUTO_INIT is enabled, then this value
-	  should be bigger than its value.
-
 choice
 	prompt "mDNS responder interface policy"
 	default MDNS_RESPONDER_IFACE_POLICY_ALL
