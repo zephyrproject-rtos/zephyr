@@ -213,7 +213,6 @@ endif # BOOTARGS
 rsource "Kconfig.atomics"
 rsource "Kconfig.cbprintf"
 rsource "zvfs/Kconfig"
-rsource "cpu_load_metric/Kconfig"
 rsource "cpu_load/Kconfig"
 
 endmenu

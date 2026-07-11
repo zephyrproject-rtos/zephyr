@@ -1,23 +1,58 @@
 # Copyright (c) 2024, Nordic Semiconductor ASA
+# Copyright (c) 2025 Analog Devices, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config CPU_LOAD
+menuconfig CPU_LOAD
 	bool "CPU load measurement"
+	help
+	  Enable monitoring of the CPU load, i.e. the fraction of time the CPU
+	  spends outside of the idle state.
+
+if CPU_LOAD
+
+config CPU_LOAD_MULTICPU
+	bool
+	help
+	  Hidden helper selected by features that need per-CPU load on multiple
+	  CPUs (for example CPU_FREQ). It selects the scheduler runtime-statistics
+	  backend by default since the idle-hook backend is single-CPU only.
+
+choice CPU_LOAD_BACKEND
+	prompt "CPU load measurement backend"
+	default CPU_LOAD_BACKEND_RUNTIME_STATS if CPU_LOAD_MULTICPU || SMP
+	default CPU_LOAD_BACKEND_IDLE_HOOK if CPU_CORTEX_M || RISCV || CPU_CORTEX_A || XTENSA
+	default CPU_LOAD_BACKEND_RUNTIME_STATS
+
+config CPU_LOAD_BACKEND_RUNTIME_STATS
+	bool "Scheduler runtime statistics"
+	select THREAD_RUNTIME_STATS
+	select SCHED_THREAD_USAGE
+	select SCHED_THREAD_USAGE_ALL
+	select SCHED_THREAD_USAGE_AUTO_ENABLE
+	help
+	  Derive the CPU load from the scheduler per-CPU runtime statistics. This
+	  backend is portable across architectures and supports multiple CPUs.
+
+config CPU_LOAD_BACKEND_IDLE_HOOK
+	bool "Architecture idle hooks"
 	depends on CPU_CORTEX_M || RISCV || CPU_CORTEX_A || XTENSA
 	depends on !SMP
 	select SYS_IDLE_HOOKS
 	help
-	  Track CPU load by measuring the time spent in the idle loop using the
-	  architecture idle hooks. Does not depend on the tracing subsystem.
+	  Measure the CPU load using the architecture idle hooks. This backend
+	  has lower overhead and can use an optional hardware counter for higher
+	  precision, but is limited to a single CPU. It does not depend on the
+	  tracing subsystem.
 
-if CPU_LOAD
+endchoice
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_CPU_LOAD_COUNTER := zephyr,cpu-load-counter
 
 config CPU_LOAD_USE_COUNTER
 	bool "Use counter"
+	depends on CPU_LOAD_BACKEND_IDLE_HOOK
 	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_CPU_LOAD_COUNTER))
 	default y
 	select COUNTER
@@ -36,3 +71,12 @@ module-str = cpu_load
 source "subsys/logging/Kconfig.template.log_config"
 
 endif # CPU_LOAD
+
+config CPU_LOAD_METRIC
+	bool "Deprecated CPU load metric"
+	select DEPRECATED
+	select CPU_LOAD
+	select CPU_LOAD_MULTICPU
+	help
+	  Deprecated. Use CPU_LOAD together with the
+	  CPU_LOAD_BACKEND_RUNTIME_STATS backend instead.
