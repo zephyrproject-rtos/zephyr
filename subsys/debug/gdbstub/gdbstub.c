@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 
@@ -904,7 +905,18 @@ int gdb_init(void)
  * double exception.
  */
 SYS_INIT(gdb_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#elif defined(CONFIG_GDBSTUB_SERIAL_BACKEND)
+/* The stub must not come up before the UART it talks over: order the init
+ * right after the chosen backend device (the backend asserts
+ * device_is_ready() on it).
+ */
+SYS_INIT_DEPENDS(gdb_init, PRE_KERNEL, DT_CHOSEN(zephyr_gdbstub_uart));
 #else
-SYS_INIT(gdb_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+/* Custom backend: the dependency is not known here, so run at the end of
+ * PRE_KERNEL, after every numeric-priority and devicetree-ordered entry of
+ * the level (a dependency-free anchored entry sorts after both).
+ */
+#define SYS_ANCHOR_gdb_stub SYS_ANCHOR(gdb_stub)
+SYS_INIT_ANCHORED(gdb_stub, gdb_init, PRE_KERNEL);
 #endif
 #endif
