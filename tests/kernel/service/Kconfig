@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_OPTIONAL_SERVICE
+	bool "Pretend an optional service is part of the build"
+	help
+	  Left disabled by the test: it stands in for a Kconfig-gated service
+	  that another service declares a conditional dependency on.
+
+source "Kconfig.zephyr"
