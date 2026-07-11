@@ -75,6 +75,27 @@ static int delta_init(void)
 }
 SYS_INIT_ANCHORED(delta, delta_init, POST_KERNEL);
 
+/* Conditional dependency with the condition enabled: orders after delta. */
+#define SYS_ANCHOR_echo SYS_ANCHOR_AFTER_IF(CONFIG_ZTEST, SYS_ANCHOR_delta, echo)
+static int echo_init(void)
+{
+	record("echo");
+	return 0;
+}
+SYS_INIT_ANCHORED(echo, echo_init, POST_KERNEL);
+
+/* Conditional dependency with the condition disabled: no dependency, the
+ * entry behaves like a dependency-free anchored service.
+ */
+#define SYS_ANCHOR_foxtrot                                                     \
+	SYS_ANCHOR_AFTER_IF(CONFIG_TEST_OPTIONAL_SERVICE, SYS_ANCHOR_delta, foxtrot)
+static int foxtrot_init(void)
+{
+	record("foxtrot");
+	return 0;
+}
+SYS_INIT_ANCHORED(foxtrot, foxtrot_init, POST_KERNEL);
+
 /* Numeric-priority entry at the lowest possible priority of the same level:
  * must still run before every anchored entry of the level.
  */
@@ -88,7 +109,7 @@ SYS_INIT(fixed_init, PRE_KERNEL, 999);
 ZTEST(service, test_anchored_ordering)
 {
 	static const char *const expected[] = {
-		"fixed", "alpha", "bravo", "charlie", "delta",
+		"fixed", "alpha", "bravo", "charlie", "delta", "echo", "foxtrot",
 	};
 
 	zassert_equal(run_count, ARRAY_SIZE(expected),

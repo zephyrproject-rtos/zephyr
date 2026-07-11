@@ -309,6 +309,29 @@ struct init_entry {
 #define SYS_ANCHOR_AFTER(dep_key, name) dep_key "~" STRINGIFY(name)
 
 /**
+ * @brief Build the anchor key of a service with a conditional dependency.
+ *
+ * Like SYS_ANCHOR_AFTER(), but the dependency applies only when @p cond
+ * expands to `1` (a Kconfig option): otherwise the key is that of a service
+ * without dependencies. Use this when the service depended on is itself
+ * conditional, so that the dependent still initializes (just unordered) in
+ * configurations where the dependency does not exist:
+ *
+ * @code{.c}
+ * #define SYS_ANCHOR_llmnr_responder \
+ *	SYS_ANCHOR_AFTER_IF(CONFIG_NET_CONFIG_AUTO_INIT, SYS_ANCHOR_net_config, llmnr_responder)
+ * @endcode
+ *
+ * @param cond Condition, typically a Kconfig option; the dependency applies
+ * when it expands to `1` and is dropped when it is undefined.
+ * @param dep_key Anchor key macro of the service this one runs after.
+ * @param name Service name; must match the @p name later passed to
+ * SYS_INIT_ANCHORED().
+ */
+#define SYS_ANCHOR_AFTER_IF(cond, dep_key, name)                                          \
+	COND_CODE_1(cond, (dep_key "~" STRINGIFY(name)), (STRINGIFY(name)))
+
+/**
  * @brief Register a service initialization function, ordered by its anchor.
  *
  * Registers @p init_fn_ to run at @p level like SYS_INIT(), but instead of a
