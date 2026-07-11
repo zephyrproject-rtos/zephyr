@@ -1163,6 +1163,15 @@ int net_route_packet_if(struct net_pkt *pkt, struct net_if *iface)
 
 	net_pkt_set_forwarding(pkt, forwarding);
 
+	if (forwarding) {
+		if (NET_IPV6_HDR(pkt)->hop_limit <= 1U) {
+			return -ETIMEDOUT;
+		}
+
+		NET_IPV6_HDR(pkt)->hop_limit--;
+		net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_HDR(pkt)->hop_limit);
+	}
+
 	/* Set source LL address if only if relevant */
 	if (is_ll_addr_supported(iface)) {
 		memcpy(net_pkt_lladdr_src(pkt)->addr,
