@@ -297,6 +297,14 @@ typedef int (*lora_api_cad_async)(const struct device *dev, lora_cad_cb cb,
 				  void *user_data);
 
 /**
+ * @brief Callback API for energy-detection carrier sense
+ *
+ * @see lora_energy_detect() for argument descriptions.
+ */
+typedef int (*lora_api_energy_detect)(const struct device *dev, uint32_t bandwidth,
+				      int16_t rssi_threshold, k_timeout_t duration);
+
+/**
  * @typedef lora_api_recv_duty_cycle()
  * @brief Callback API for blocking receive with duty cycling
  *
@@ -348,6 +356,8 @@ __subsystem struct lora_driver_api {
 	lora_api_cad cad;
 	/** @driver_ops_optional @copybrief lora_cad_async */
 	lora_api_cad_async cad_async;
+	/** @driver_ops_optional @copybrief lora_energy_detect */
+	lora_api_energy_detect energy_detect;
 	/** @driver_ops_optional @copybrief lora_recv_duty_cycle_async */
 	lora_api_recv_duty_cycle_async recv_duty_cycle_async;
 	/** @driver_ops_optional @copybrief lora_recv_duty_cycle */
@@ -522,6 +532,43 @@ static inline int lora_cad_async(const struct device *dev, lora_cad_cb cb,
 	}
 
 	return api->cad_async(dev, cb, user_data);
+}
+
+/**
+ * @brief Perform energy-detection carrier sense (Listen Before Talk)
+ *
+ * Puts the radio in RX at @p bandwidth around the frequency previously set by
+ * @ref lora_config and samples the instantaneous RSSI for @p duration. If the
+ * measured energy stays below @p rssi_threshold for the whole window, the
+ * channel is reported clear.
+ *
+ * Unlike @ref lora_cad, this detects any RF energy on the channel, not just
+ * LoRa signals, as required by regulatory Listen Before Talk (e.g. KR920,
+ * AS923 in Japan).
+ *
+ * @note This is a blocking call.
+ *
+ * @param dev            LoRa device
+ * @param bandwidth      Sensing bandwidth in Hz (e.g. 200000)
+ * @param rssi_threshold Threshold in dBm; energy at or above this reads as busy
+ * @param duration       Carrier-sense window
+ * @return 0 if the channel is clear
+ * @return 1 if the channel is busy
+ * @return -EINVAL if the modem has not been configured for transmission
+ * @return -EBUSY if the modem is in use
+ * @return -ENOSYS if the operation is not supported by the driver
+ * @return negative errno on other errors
+ */
+static inline int lora_energy_detect(const struct device *dev, uint32_t bandwidth,
+				     int16_t rssi_threshold, k_timeout_t duration)
+{
+	const struct lora_driver_api *api = DEVICE_API_GET(lora, dev);
+
+	if (api->energy_detect == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->energy_detect(dev, bandwidth, rssi_threshold, duration);
 }
 
 /**

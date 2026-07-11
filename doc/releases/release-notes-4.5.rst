@@ -228,6 +228,8 @@ New APIs and options
 
 * LoRa
 
+  * Added energy-detection carrier sense (Listen Before Talk) to the LoRa API:
+    :c:func:`lora_energy_detect`.
   * :c:func:`lora_recv_duty_cycle`
   * :c:func:`lora_recv_duty_cycle_async`
 
