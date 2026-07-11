@@ -1805,7 +1805,7 @@ static void eth_iface_init(struct net_if *iface)
 static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(const struct device *dev __unused,
 							   struct net_if *iface __unused)
 {
-	return ETHERNET_LINK_10BASE |
+	return
 #if defined(CONFIG_NET_VLAN)
 		ETHERNET_HW_VLAN |
 #endif
@@ -1816,7 +1816,7 @@ static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(const struct device *
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 		ETHERNET_QAV |
 #endif
-		ETHERNET_LINK_100BASE;
+		0;
 }
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1

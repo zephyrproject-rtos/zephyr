@@ -243,14 +243,12 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *dev,
+static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *dev __unused,
 							   struct net_if *iface __unused)
 {
-	const struct nxp_enet_mac_config *config = dev->config;
 	enum ethernet_hw_caps caps;
 
-	caps = ETHERNET_LINK_10BASE |
-		ETHERNET_HW_FILTERING |
+	caps = ETHERNET_HW_FILTERING |
 #if defined(CONFIG_NET_VLAN)
 		ETHERNET_HW_VLAN |
 #endif
@@ -264,11 +262,7 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		ETHERNET_PROMISC_MODE |
 #endif
-		ETHERNET_LINK_100BASE;
-
-	if (config->phy_mode == NXP_ENET_RGMII_MODE) {
-		caps |= ETHERNET_LINK_1000BASE;
-	}
+		0;
 
 	return caps;
 }

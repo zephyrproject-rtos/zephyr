@@ -624,15 +624,8 @@ static void eth_iface_init(struct net_if *iface)
 			0, K_NO_WAIT);
 }
 
-static enum ethernet_hw_caps eth_gecko_get_capabilities(const struct device *dev __unused,
-						      struct net_if *iface __unused)
-{
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
-}
-
 static const struct ethernet_api eth_api = {
 	.iface_api.init = eth_iface_init,
-	.get_capabilities = eth_gecko_get_capabilities,
 	.send = eth_tx,
 };
 

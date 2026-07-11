@@ -236,12 +236,6 @@ static void phy_type_setting(const struct device *dev)
 	}
 }
 
-static enum ethernet_hw_caps eth_renesas_ra_get_capabilities(const struct device *dev __unused,
-							     struct net_if *iface __unused)
-{
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE;
-}
-
 static bool renesas_ra_eth_rx(const struct device *dev)
 {
 	struct eth_renesas_ra_data *data = dev->data;
@@ -527,7 +521,6 @@ static const struct ethernet_api eth_renesas_ra_api = {
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = eth_renesas_ra_get_stats,
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
-	.get_capabilities = eth_renesas_ra_get_capabilities,
 	.get_phy = eth_renesas_ra_get_phy,
 	.send = eth_renesas_ra_tx,
 };

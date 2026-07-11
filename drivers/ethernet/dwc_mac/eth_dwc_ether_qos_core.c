@@ -105,18 +105,10 @@ static inline uint32_t phys_lo32(void *addr)
 	return lo32((uintptr_t)addr);
 }
 
-static enum ethernet_hw_caps dwmac_caps(const struct device *dev, struct net_if *iface __unused)
+static enum ethernet_hw_caps dwmac_caps(const struct device *dev __unused,
+					struct net_if *iface __unused)
 {
-	struct dwmac_priv *p = dev->data;
 	enum ethernet_hw_caps caps = 0;
-
-	if (p->feature0 & MAC_HW_FEATURE0_GMIISEL) {
-		caps |= ETHERNET_LINK_1000BASE;
-	}
-
-	if (p->feature0 & MAC_HW_FEATURE0_MIISEL) {
-		caps |= ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
-	}
 
 	caps |= ETHERNET_PROMISC_MODE;
 

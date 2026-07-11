@@ -569,7 +569,7 @@ static int cdc_ecm_set_config(const struct device *dev,
 static enum ethernet_hw_caps cdc_ecm_get_capabilities(const struct device *dev __unused,
 						      struct net_if *iface __unused)
 {
-	return ETHERNET_LINK_10BASE | ETHERNET_PROMISC_MODE;
+	return ETHERNET_PROMISC_MODE;
 }
 
 static int cdc_ecm_iface_start(const struct device *dev, struct net_if *iface)

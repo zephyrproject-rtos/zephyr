@@ -368,13 +368,6 @@ static enum ethernet_hw_caps eth_cyclonev_caps(const struct device *dev,
 	struct eth_cyclonev_priv *p = dev->data;
 	enum ethernet_hw_caps caps = 0;
 
-	if (p->feature & EMAC_DMA_HW_FEATURE_MIISEL) {
-		caps |= ETHERNET_LINK_10BASE;
-		caps |= ETHERNET_LINK_100BASE;
-	}
-	if (p->feature & EMAC_DMA_HW_FEATURE_GMIISEL) {
-		caps |= ETHERNET_LINK_1000BASE;
-	}
 	if (p->feature & EMAC_DMA_HW_FEATURE_RXTYP2COE) {
 		caps |= ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 	}

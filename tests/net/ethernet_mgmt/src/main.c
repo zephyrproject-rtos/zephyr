@@ -97,9 +97,8 @@ static int eth_fake_send(const struct device *dev,
 static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev __unused,
 						       struct net_if *iface __unused)
 {
-	return  ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_QAV |
-		ETHERNET_PROMISC_MODE | ETHERNET_PRIORITY_QUEUES |
-		ETHERNET_QBV | ETHERNET_QBU | ETHERNET_TXTIME;
+	return ETHERNET_QAV | ETHERNET_PROMISC_MODE | ETHERNET_PRIORITY_QUEUES | ETHERNET_QBV |
+	       ETHERNET_QBU | ETHERNET_TXTIME;
 }
 
 static int eth_fake_get_total_bandwidth(struct eth_fake_context *ctx)

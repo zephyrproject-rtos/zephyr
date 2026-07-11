@@ -360,8 +360,7 @@ void nrf_wifi_if_sniffer_rx_frm(void *os_vif_ctx, void *frm,
 enum ethernet_hw_caps nrf_wifi_if_caps_get(const struct device *dev __unused,
 					   struct net_if *iface __unused)
 {
-	enum ethernet_hw_caps caps = (ETHERNET_LINK_10BASE |
-			ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE);
+	enum ethernet_hw_caps caps = 0;
 
 #ifdef CONFIG_NRF70_TCP_IP_CHECKSUM_OFFLOAD
 	caps |= ETHERNET_HW_TX_CHKSUM_OFFLOAD |

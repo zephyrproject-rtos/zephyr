@@ -361,7 +361,7 @@ static const struct device *eth_stm32_hal_get_phy(const struct device *dev __unu
 static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device *dev __unused,
 							    struct net_if *iface __unused)
 {
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
+	return 0
 #if defined(CONFIG_ETH_STM32_HW_CHECKSUM)
 		| ETHERNET_HW_RX_CHKSUM_OFFLOAD | ETHERNET_HW_TX_CHKSUM_OFFLOAD
 #endif

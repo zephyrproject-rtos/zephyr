@@ -313,8 +313,6 @@ static enum ethernet_hw_caps sy1xx_mac_get_caps(const struct device *dev __unuse
 
 	/* basic implemented features */
 	supported |= ETHERNET_PROMISC_MODE;
-	supported |= ETHERNET_LINK_1000BASE;
-	supported |= ETHERNET_PROMISC_MODE;
 
 	return supported;
 }

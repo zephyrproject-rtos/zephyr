@@ -83,8 +83,6 @@ static enum ethernet_hw_caps e1000_caps(const struct device *dev, struct net_if 
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
 		ETHERNET_PTP |
 #endif
-		ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE |
-		ETHERNET_LINK_1000BASE |
 		/* The driver does not really support TXTIME atm but mark
 		 * it to support it so that we can test the txtime sample.
 		 */

@@ -547,9 +547,9 @@ static enum ethernet_hw_caps numaker_eth_get_cap(const struct device *dev __unus
 						 struct net_if *iface __unused)
 {
 #if defined(NU_USING_HW_CHECKSUM)
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_HW_RX_CHKSUM_OFFLOAD;
+	return ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 #else
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
+	return 0;
 #endif
 }
 

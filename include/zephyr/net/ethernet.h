@@ -151,21 +151,6 @@ enum ethernet_hw_caps {
 	/** VLAN supported */
 	ETHERNET_HW_VLAN		= BIT(2),
 
-	/** 10 Mbits link supported */
-	ETHERNET_LINK_10BASE		= BIT(3),
-
-	/** 100 Mbits link supported */
-	ETHERNET_LINK_100BASE		= BIT(4),
-
-	/** 1 Gbits link supported */
-	ETHERNET_LINK_1000BASE		= BIT(5),
-
-	/** 2.5 Gbits link supported */
-	ETHERNET_LINK_2500BASE		= BIT(6),
-
-	/** 5 Gbits link supported */
-	ETHERNET_LINK_5000BASE		= BIT(7),
-
 	/** IEEE 802.1AS (gPTP) clock supported */
 	ETHERNET_PTP			= BIT(8),
 

@@ -60,7 +60,7 @@ static uint32_t phys_lo32(void *addr)
 static enum ethernet_hw_caps dwmac_caps(const struct device *dev __unused,
 					struct net_if *iface __unused)
 {
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
+	return 0
 #ifdef CONFIG_NET_PROMISCUOUS_MODE
 	       | ETHERNET_PROMISC_MODE
 #endif

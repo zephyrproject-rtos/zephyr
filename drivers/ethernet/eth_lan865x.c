@@ -118,7 +118,7 @@ static void lan865x_iface_init(struct net_if *iface)
 static enum ethernet_hw_caps lan865x_port_get_capabilities(const struct device *dev __unused,
 							   struct net_if *iface __unused)
 {
-	return ETHERNET_LINK_10BASE | ETHERNET_PROMISC_MODE
+	return ETHERNET_PROMISC_MODE
 #if defined(CONFIG_NET_VLAN)
 	       | ETHERNET_HW_VLAN
 #endif

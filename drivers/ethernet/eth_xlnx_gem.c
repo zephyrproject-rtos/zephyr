@@ -594,10 +594,6 @@ static enum ethernet_hw_caps eth_xlnx_gem_get_capabilities(
 	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
 	enum ethernet_hw_caps caps = (enum ethernet_hw_caps)0;
 
-	caps |= ETHERNET_LINK_1000BASE |
-		ETHERNET_LINK_100BASE |
-		ETHERNET_LINK_10BASE;
-
 	if (!dev_conf->disable_rx_chksum_offload) {
 		caps |= ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 	}

@@ -251,7 +251,7 @@ static void eth_iface_init(struct net_if *iface)
 static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device *dev __unused,
 							    struct net_if *iface __unused)
 {
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
+	return 0
 #if defined(CONFIG_NET_VLAN)
 	       | ETHERNET_HW_VLAN
 #endif

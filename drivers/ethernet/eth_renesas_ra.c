@@ -146,13 +146,6 @@ const ether_cfg_t g_ether0_cfg = {
 static struct renesas_ra_eth_config eth_0_config = {
 	.p_cfg = &g_ether0_cfg, .phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle))};
 
-/* Driver functions */
-static enum ethernet_hw_caps renesas_ra_eth_get_capabilities(const struct device *dev __unused,
-							     struct net_if *iface __unused)
-{
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
-}
-
 void renesas_ra_eth_callback(ether_callback_args_t *p_args)
 {
 	struct device *dev = (struct device *)p_args->p_context;
@@ -316,7 +309,6 @@ static const struct device *renesas_ra_eth_get_phy(const struct device *dev,
 
 static const struct ethernet_api api_funcs = {
 	.iface_api.init = renesas_ra_eth_initialize,
-	.get_capabilities = renesas_ra_eth_get_capabilities,
 	.get_phy = renesas_ra_eth_get_phy,
 	.send = renesas_ra_eth_tx,
 };

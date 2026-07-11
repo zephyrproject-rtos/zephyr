@@ -271,7 +271,7 @@ static enum ethernet_hw_caps eth_caps(const struct device *dev __unused,
 #ifdef CONFIG_NET_LLDP
 		ETHERNET_LLDP |
 #endif
-		ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE;
+		0;
 }
 
 static const struct ethernet_api eth_api = {
