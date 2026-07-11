@@ -1,9 +1,28 @@
-.. _cpu_load_metric:
+.. _cpu_load:
 
-CPU Load
+CPU load
 ########
 
-The CPU Load metric returns the CPU load as a percentage for the current CPU, since the last time
-it was called.
+Module can be used to track how much time is spent in idle. It uses the architecture idle hooks
+which are called before and after the CPU goes to idle, and does not depend on the tracing
+subsystem. Compared to :ref:`thread_analyzer` it is more accurate since it takes into account time
+spent in the interrupt context as well.
 
-For an example of the CPU Load metric refer to :zephyr:code-sample:`cpu_freq_on_demand` sample.
+Function :c:func:`cpu_load_get` is used to get the latest value. It is also used to reset
+the measurement. By default, module is using :c:func:`k_cycle_get_32` but in cases when higher
+precision is needed a :ref:`counter_api` device can be used.
+
+Load can also be reported periodically using a logging message. Period is configured using
+:kconfig:option:`CONFIG_CPU_LOAD_LOG_PERIODICALLY`.
+
+Using counter device
+********************
+
+In order to use :ref:`counter_api` device :kconfig:option:`CONFIG_CPU_LOAD_USE_COUNTER` must be
+enabled and chosen in devicetree must be set.
+
+.. code-block:: devicetree
+
+   chosen {
+     zephyr,cpu-load-counter = &counter_device;
+   };
