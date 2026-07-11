@@ -408,11 +408,11 @@ static int read_write_in_memory_map_mode(const struct device *dev,
 	return -EPROTONOSUPPORT;
 }
 
-static HAL_StatusTypeDef read_write_in_indirect_mode(const struct device *dev,
-						     const struct mspi_xfer_packet *packet,
-						     uint8_t access_mode)
+static int read_write_in_indirect_mode(const struct device *dev,
+				       const struct mspi_xfer_packet *packet,
+				       uint8_t access_mode)
 {
-	HAL_StatusTypeDef hal_ret;
+	int hal_ret;
 	struct mspi_stm32_data *dev_data = dev->data;
 
 	if (packet->dir == MSPI_RX) {
@@ -431,7 +431,7 @@ static HAL_StatusTypeDef read_write_in_indirect_mode(const struct device *dev,
 
 			if (dma_buf == NULL) {
 				LOG_ERR("DMA buffer allocation failed");
-				return HAL_ERROR;
+				return -EIO;
 			}
 
 			hal_ret = HAL_XSPI_Receive_DMA(&dev_data->hmspi.xspi, dma_buf);
@@ -439,7 +439,7 @@ static HAL_StatusTypeDef read_write_in_indirect_mode(const struct device *dev,
 				if (k_sem_take(&dev_data->sync, K_FOREVER) < 0) {
 					LOG_ERR("Failed to take sem");
 					k_free(dma_buf);
-					return HAL_BUSY;
+					return -EIO;
 				}
 				memcpy(packet->data_buf, dma_buf, packet->num_bytes);
 			}
@@ -478,15 +478,16 @@ static HAL_StatusTypeDef read_write_in_indirect_mode(const struct device *dev,
 	/* Lock again expecting the IRQ for end of Tx or Rx */
 	if (k_sem_take(&dev_data->sync, K_FOREVER) < 0) {
 		LOG_ERR("Failed to take sem");
-		return HAL_BUSY;
+		return -EIO;
 	}
 
 end:
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("Failed to access data");
+		return -EIO;
 	}
 
-	return hal_ret;
+	return 0;
 }
 /**
  * @brief Sends a Command to the NOR and Receive/Transceive data if relevant in IT or DMA mode.
@@ -495,7 +496,6 @@ end:
 static int mspi_stm32_xspi_access(const struct device *dev, const struct mspi_xfer_packet *packet,
 				  uint8_t access_mode)
 {
-	HAL_StatusTypeDef hal_ret;
 	int ret;
 	struct mspi_stm32_data *dev_data = dev->data;
 
@@ -557,17 +557,17 @@ indirect:
 		return 0;
 	}
 
-	hal_ret = read_write_in_indirect_mode(dev, packet, access_mode);
+	ret = read_write_in_indirect_mode(dev, packet, access_mode);
 
 	/* Async path: handled in ISR callback, so skip PM release here. */
-	if ((hal_ret == HAL_OK) && (access_mode == MSPI_ACCESS_ASYNC)) {
+	if ((ret == 0) && (access_mode == MSPI_ACCESS_ASYNC)) {
 		return 0;
 	}
 
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	(void)pm_device_runtime_put(dev);
 
-	if (hal_ret != HAL_OK) {
+	if (ret != 0) {
 		LOG_ERR("Failed to access data");
 		return -EIO;
 	}
@@ -716,15 +716,13 @@ __weak HAL_StatusTypeDef HAL_DMA_Abort(DMA_HandleTypeDef *hdma)
 static __maybe_unused void mspi_stm32_xspi_dma_callback(const struct device *dev, void *arg,
 							uint32_t channel, int status)
 {
-	DMA_HandleTypeDef *hdma = arg;
-
 	ARG_UNUSED(dev);
 
 	if (status < 0) {
 		LOG_ERR("DMA callback error with channel %d", channel);
 	}
 
-	HAL_DMA_IRQHandler(hdma);
+	HAL_DMA_IRQHandler(arg);
 }
 #endif
 
