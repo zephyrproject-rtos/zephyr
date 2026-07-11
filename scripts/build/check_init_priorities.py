@@ -64,6 +64,13 @@ _DEFERRED_INIT_PROP_NAME = "zephyr,deferred-init"
 # The offset of the init pointer in "struct device", in number of pointers.
 DEVICE_INIT_OFFSET = 5
 
+# Non-allocated section holding one "<level>:<key>" record per anchored init
+# entry (see SYS_INIT_ANCHORED()).
+_ANCHOR_INFO_SECTION = ".zinit_anchor_info"
+
+# Separator between the anchor names of a key's dependency chain.
+_ANCHOR_KEY_SEPARATOR = "~"
+
 
 class Priority:
     """Parses and holds a device initialization priority.
@@ -123,6 +130,7 @@ class ZephyrInitLevels:
         self._load_objects()
         self._load_level_addr()
         self._process_initlevels()
+        self._load_anchor_records()
 
     def _load_objects(self):
         """Initialize the object table."""
@@ -247,6 +255,25 @@ class ZephyrInitLevels:
                 addr += size
                 priority += 1
 
+    def _load_anchor_records(self):
+        """Load the anchored init entry records, if any.
+
+        Anchored entries (SYS_INIT_ANCHORED()) each leave a "<level>:<key>"
+        string record in a non-allocated section, where the key is the
+        entry's full dependency chain of anchor names.
+        """
+        self.anchors = []
+
+        section = self._elf.get_section_by_name(_ANCHOR_INFO_SECTION)
+        if section is None:
+            return
+
+        for record in section.data().split(b"\x00"):
+            if not record:
+                continue
+            level, _, key = record.decode("ascii").partition(":")
+            self.anchors.append((level, key))
+
 
 class Validator:
     """Validates the initialization priorities.
@@ -350,6 +377,57 @@ class Validator:
             for dep in dev.depends_on:
                 self._check_dep(dev_ord, dep.dep_ordinal)
 
+    def _flag_anchor_error(self, msg):
+        """Remember that an anchor validation error occurred and report it."""
+        self.errors += 1
+        self.log.error(msg)
+
+    def check_anchors(self):
+        """Validate the anchored init entries (SYS_INIT_ANCHORED()).
+
+        The linker sort guarantees the run order encoded in the keys, so what
+        is left to validate is the keys themselves: every dependency chain
+        must belong to an entry that is actually linked in and that does not
+        run at a later level than its dependent, and anchor names must be
+        unique.
+        """
+        keys = {}
+        names = {}
+
+        for level, key in self._obj.anchors:
+            name = key.split(_ANCHOR_KEY_SEPARATOR)[-1]
+            if key in keys:
+                self._flag_anchor_error(
+                    f"anchored init entry {name} ({level}:{key}) is defined more than once"
+                )
+                continue
+            if name in names:
+                self._flag_anchor_error(
+                    f"anchor name {name} is used by more than one entry: {names[name]} and {key}"
+                )
+            keys[key] = level
+            names[name] = key
+
+        for level, key in self._obj.anchors:
+            segments = key.split(_ANCHOR_KEY_SEPARATOR)
+            if len(segments) < 2:
+                continue
+
+            name = segments[-1]
+            dep = segments[-2]
+            dep_key = _ANCHOR_KEY_SEPARATOR.join(segments[:-1])
+            dep_level = keys.get(dep_key)
+
+            if dep_level is None:
+                self._flag_anchor_error(
+                    f"anchored init entry {name} ({level}) depends on {dep}, which is not linked in"
+                )
+            elif _DEVICE_INIT_LEVELS.index(dep_level) > _DEVICE_INIT_LEVELS.index(level):
+                self._flag_anchor_error(
+                    f"anchored init entry {name} ({level}) runs before its "
+                    f"dependency {dep} ({dep_level})"
+                )
+
     @property
     def initlevels(self):
         """Get the dictionary of initlevels."""
@@ -440,6 +518,7 @@ def main(argv=None):
             validator.print_initlevels()
         else:
             validator.check_edt()
+            validator.check_anchors()
 
         if args.always_succeed:
             return 0

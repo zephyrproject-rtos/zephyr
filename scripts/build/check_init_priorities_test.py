@@ -255,6 +255,21 @@ class testZephyrInitLevels(unittest.TestCase):
             },
         )
 
+    @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
+    def test_load_anchor_records(self, mock_zilinit):
+        obj = check_init_priorities.ZephyrInitLevels("", None)
+        obj._elf = mock.Mock()
+
+        obj._elf.get_section_by_name.return_value = None
+        obj._load_anchor_records()
+        self.assertListEqual(obj.anchors, [])
+
+        section = mock.Mock()
+        section.data.return_value = b"PRE_KERNEL:alpha\x00POST_KERNEL:alpha~bravo\x00"
+        obj._elf.get_section_by_name.return_value = section
+        obj._load_anchor_records()
+        self.assertListEqual(obj.anchors, [("PRE_KERNEL", "alpha"), ("POST_KERNEL", "alpha~bravo")])
+
 
 class testValidator(unittest.TestCase):
     """Tests for the Validator class."""
@@ -445,6 +460,97 @@ class testValidator(unittest.TestCase):
                 mock.call(3, 3),
             ],
         )
+
+    @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
+    def test_check_anchors_ok(self, mock_vinit):
+        validator = check_init_priorities.Validator("", "", None, None)
+        validator.log = mock.Mock()
+        validator.errors = 0
+        validator._obj = mock.Mock()
+        validator._obj.anchors = [
+            ("PRE_KERNEL", "alpha"),
+            ("PRE_KERNEL", "alpha~bravo"),
+            ("POST_KERNEL", "alpha~bravo~charlie"),
+        ]
+
+        validator.check_anchors()
+
+        self.assertFalse(validator.log.error.called)
+        self.assertEqual(validator.errors, 0)
+
+    @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
+    def test_check_anchors_missing_dep(self, mock_vinit):
+        validator = check_init_priorities.Validator("", "", None, None)
+        validator.log = mock.Mock()
+        validator.errors = 0
+        validator._obj = mock.Mock()
+        validator._obj.anchors = [
+            ("POST_KERNEL", "ghost~echo"),
+        ]
+
+        validator.check_anchors()
+
+        validator.log.error.assert_called_once_with(
+            "anchored init entry echo (POST_KERNEL) depends on ghost, which is not linked in"
+        )
+        self.assertEqual(validator.errors, 1)
+
+    @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
+    def test_check_anchors_later_level_dep(self, mock_vinit):
+        validator = check_init_priorities.Validator("", "", None, None)
+        validator.log = mock.Mock()
+        validator.errors = 0
+        validator._obj = mock.Mock()
+        validator._obj.anchors = [
+            ("POST_KERNEL", "delta"),
+            ("PRE_KERNEL", "delta~foxtrot"),
+        ]
+
+        validator.check_anchors()
+
+        validator.log.error.assert_called_once_with(
+            "anchored init entry foxtrot (PRE_KERNEL) runs before its "
+            "dependency delta (POST_KERNEL)"
+        )
+        self.assertEqual(validator.errors, 1)
+
+    @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
+    def test_check_anchors_duplicate_name(self, mock_vinit):
+        validator = check_init_priorities.Validator("", "", None, None)
+        validator.log = mock.Mock()
+        validator.errors = 0
+        validator._obj = mock.Mock()
+        validator._obj.anchors = [
+            ("PRE_KERNEL", "alpha"),
+            ("PRE_KERNEL", "bravo"),
+            ("PRE_KERNEL", "alpha~golf"),
+            ("PRE_KERNEL", "bravo~golf"),
+        ]
+
+        validator.check_anchors()
+
+        validator.log.error.assert_called_once_with(
+            "anchor name golf is used by more than one entry: alpha~golf and bravo~golf"
+        )
+        self.assertEqual(validator.errors, 1)
+
+    @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
+    def test_check_anchors_duplicate_key(self, mock_vinit):
+        validator = check_init_priorities.Validator("", "", None, None)
+        validator.log = mock.Mock()
+        validator.errors = 0
+        validator._obj = mock.Mock()
+        validator._obj.anchors = [
+            ("PRE_KERNEL", "alpha"),
+            ("PRE_KERNEL", "alpha"),
+        ]
+
+        validator.check_anchors()
+
+        validator.log.error.assert_called_once_with(
+            "anchored init entry alpha (PRE_KERNEL:alpha) is defined more than once"
+        )
+        self.assertEqual(validator.errors, 1)
 
 
 if __name__ == "__main__":
