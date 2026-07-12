@@ -81,7 +81,9 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 					  struct k_spinlock *lock,
 					  bool is_spinlock)
 {
-	struct k_thread *new_thread, *old_thread;
+	struct k_thread *new_thread;
+	struct k_thread *old_thread;
+	__asm__ volatile("" : : "r"(&new_thread), "r"(&old_thread));
 
 #ifdef CONFIG_SPIN_VALIDATE
 	/* Make sure the key acts to unmask interrupts, if it doesn't,
@@ -105,6 +107,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 #endif /* CONFIG_SPIN_VALIDATE */
 
 	old_thread = _current;
+	__asm__ volatile("" : : : "memory");
 
 	z_check_stack_sentinel();
 
@@ -179,7 +182,12 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 			barrier_dmem_fence_full(); /* write barrier */
 		}
 		k_spin_release(&_sched_spinlock);
-		arch_switch(newsh, &old_thread->switch_handle);
+#ifdef CONFIG_XTENSA
+		arch_switch(newsh, (void **)old_thread);
+#else
+		void **switched_from = &old_thread->switch_handle;
+		arch_switch(newsh, switched_from);
+#endif
 	} else {
 		k_spin_release(&_sched_spinlock);
 	}
