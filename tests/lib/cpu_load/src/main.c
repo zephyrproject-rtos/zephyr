@@ -12,8 +12,14 @@
 
 #include <zephyr/drivers/counter.h>
 
-/* Tolerance of the load assertions, in per mille. */
-#define DELTA 30
+/* Tolerance of the load assertions, in per mille.
+ *
+ * Generous enough to absorb the tick granularity of slow targets (k_msleep()
+ * rounds up to a tick, so the busy/idle split is not exactly even) while still
+ * far tighter than any real failure: a backend that fails to account idle time
+ * reports 1000, and one that over-accounts it reports 0.
+ */
+#define DELTA 75
 
 /* CPU whose load is measured. On SMP the worker below is pinned to it so that
  * the busy/idle sequence is attributed to a known CPU.
@@ -127,6 +133,11 @@ ZTEST(cpu_load, test_get_current_cpu)
 }
 
 #if CONFIG_CPU_LOAD_LOG_PERIODICALLY > 0
+/* The periodic report emits one line per CPU per period. */
+#define LOGS_PER_PERIOD CONFIG_MP_MAX_NUM_CPUS
+#define EXPECTED_LOGS   (3 * LOGS_PER_PERIOD)
+#define LOGS_TOLERANCE  LOGS_PER_PERIOD
+
 static int cpu_load_src_id;
 static atomic_t log_cnt;
 
@@ -163,7 +174,7 @@ ZTEST(cpu_load, test_periodic_report)
 	atomic_set(&log_cnt, 0);
 	k_msleep(3 * CONFIG_CPU_LOAD_LOG_PERIODICALLY);
 	log_flush();
-	zassert_within(log_cnt, 3, 1);
+	zassert_within(log_cnt, EXPECTED_LOGS, LOGS_TOLERANCE);
 
 	cpu_load_log_control(false);
 	k_msleep(1);
@@ -175,16 +186,22 @@ ZTEST(cpu_load, test_periodic_report)
 	cpu_load_log_control(true);
 	k_msleep(3 * CONFIG_CPU_LOAD_LOG_PERIODICALLY);
 	log_flush();
-	zassert_within(log_cnt, 3, 1);
+	zassert_within(log_cnt, EXPECTED_LOGS, LOGS_TOLERANCE);
 
 	cpu_load_log_control(false);
 	log_backend_disable(&dummy);
 }
 
+static uint32_t num_low_callbacks;
+static uint8_t last_low_percent;
+
+/* Records rather than asserts: this runs from the periodic timer, i.e. in
+ * interrupt context, where a failing assertion would be reported out of band.
+ */
 void low_load_cb(uint8_t percent)
 {
-	/* Should never be called */
-	zassert_true(false, NULL);
+	last_low_percent = percent;
+	num_low_callbacks++;
 }
 
 static uint32_t num_load_callbacks;
@@ -200,14 +217,22 @@ ZTEST(cpu_load, test_callback_load_low)
 {
 	int ret;
 
+	num_low_callbacks = 0;
+	last_low_percent = 0;
 	cpu_load_log_control(true);
 
 	ret = cpu_load_cb_reg(low_load_cb, 99);
 	zassert_equal(ret, 0);
 
 	k_msleep(CONFIG_CPU_LOAD_LOG_PERIODICALLY * 4);
-	zassert_equal(num_load_callbacks, 0);
+
+	ret = cpu_load_cb_reg(NULL, 99);
+	zassert_equal(ret, 0);
 	cpu_load_log_control(false);
+
+	zassert_equal(num_low_callbacks, 0,
+		      "idle system triggered %u callback(s), highest load %u%%",
+		      num_low_callbacks, last_low_percent);
 }
 
 ZTEST(cpu_load, test_callback_load_high)
@@ -220,8 +245,10 @@ ZTEST(cpu_load, test_callback_load_high)
 	zassert_equal(ret, 0);
 
 	k_busy_wait(CONFIG_CPU_LOAD_LOG_PERIODICALLY * 4 * 1000);
-	zassert_between_inclusive(last_cpu_load_percent, 99, 100);
-	zassert_between_inclusive(num_load_callbacks, 2, 7);
+	zassert_between_inclusive(last_cpu_load_percent, 99, 100, "percent: %u",
+				  last_cpu_load_percent);
+	zassert_between_inclusive(num_load_callbacks, 2, 7, "callbacks: %u",
+				  num_load_callbacks);
 
 	/* Reset the callback */
 	ret = cpu_load_cb_reg(NULL, 99);
@@ -229,10 +256,21 @@ ZTEST(cpu_load, test_callback_load_high)
 
 	num_load_callbacks = 0;
 	k_busy_wait(CONFIG_CPU_LOAD_LOG_PERIODICALLY * 4 * 1000);
-	zassert_equal(num_load_callbacks, 0);
+	zassert_equal(num_load_callbacks, 0, "callbacks: %u", num_load_callbacks);
 	cpu_load_log_control(false);
 }
 
 #endif /* CONFIG_CPU_LOAD_LOG_PERIODICALLY > 0 */
 
-ZTEST_SUITE(cpu_load, NULL, NULL, NULL, NULL, NULL);
+/* Leave no periodic reporting or callback armed behind: a stale callback would
+ * fire during an unrelated test.
+ */
+static void cpu_load_after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	cpu_load_log_control(false);
+	(void)cpu_load_cb_reg(NULL, 0);
+}
+
+ZTEST_SUITE(cpu_load, NULL, NULL, NULL, cpu_load_after, NULL);
