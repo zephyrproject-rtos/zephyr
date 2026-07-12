@@ -95,6 +95,7 @@ config XTENSA_EXCEPTION_ENTER_GDB
 config XTENSA_ADSP_FATAL_BREADCRUMB
 	bool "Record fatal exception breadcrumbs in HP-SRAM window0"
 	depends on SOC_FAMILY_INTEL_ADSP
+	default y if XTENSA_ADSP_TRIPLE_FAULT_BREADCRUMB
 	help
 	  When a fatal exception is taken, record the faulting PC, exception
 	  cause, faulting virtual address and the faulting instruction word
