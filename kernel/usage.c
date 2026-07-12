@@ -123,6 +123,8 @@ void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 {
 	k_spinlock_key_t  key;
 	struct _cpu *cpu;
+	uint32_t pending = 0U;
+	bool pending_is_idle = false;
 
 	key = k_spin_lock(&usage_lock);
 	cpu = &_kernel.cpus[cpu_id];
@@ -145,9 +147,24 @@ void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 		sched_cpu_update_usage(cpu, cycles);
 
 		cpu->usage0 = now;
+	} else if (cpu->usage->track_usage) {
+		/*
+		 * Getting stats for another CPU. Its counters only advance when
+		 * it context switches or reports on itself, so the time it has
+		 * spent in its current thread since then is not in them yet.
+		 * Fold that in for the returned view only: mutating another
+		 * CPU's accounting here would double count it once that CPU
+		 * updates itself.
+		 *
+		 * Without this, a CPU that ran and then went idle reports all of
+		 * the elapsed time as execution time, i.e. a 100% load.
+		 */
+		pending = usage_now() - cpu->usage0;
+		pending_is_idle = (cpu->current == cpu->idle_thread);
 	}
 
-	stats->total_cycles     = cpu->usage->total;
+	stats->total_cycles     = cpu->usage->total +
+				  (pending_is_idle ? 0U : pending);
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
 	stats->current_cycles   = cpu->usage->current;
 	stats->peak_cycles      = cpu->usage->longest;
@@ -161,7 +178,8 @@ void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 #endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 
 	stats->idle_cycles =
-		_kernel.cpus[cpu_id].idle_thread->base.usage.total;
+		_kernel.cpus[cpu_id].idle_thread->base.usage.total +
+		(pending_is_idle ? pending : 0U);
 
 	stats->execution_cycles = stats->total_cycles + stats->idle_cycles;
 
