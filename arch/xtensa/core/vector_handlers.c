@@ -592,7 +592,15 @@ void *xtensa_excint1_c(void *esf)
 			win0[1] = 0xe0000000U | ((uint32_t)cause & 0xffU);
 #endif
 			win0[2] = (uint32_t)bsa->excvaddr;
-			win0[4] = *(volatile uint32_t *)((uint32_t)bsa->pc & ~3U);
+		/* Only read the faulting instruction if the PC is within
+		 * the DSP SRAM range to avoid a double exception when the
+		 * exception was caused by a bad/unmapped function pointer.
+		 */
+		uint32_t fault_pc = (uint32_t)bsa->pc & ~3U;
+
+		if (fault_pc >= 0xa0000000U && fault_pc < 0xa2000000U) {
+			win0[4] = *(volatile uint32_t *)fault_pc;
+		}
 		}
 		win0[3]++;
 	}
