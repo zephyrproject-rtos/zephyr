@@ -85,4 +85,4 @@ References
 .. _NuMaker M3334KI User Manual:
    https://www.nuvoton.com/products/microcontrollers/arm-cortex-m33-mcus/m3331-series/
 .. _M3331 TRM:
-   https://www.nuvoton.com/products/microcontrollers/arm-cortex-m33-mcus/m3331-series/
+   https://www.nuvoton.com/export/resource-files/en-us--TRM_M3331_Series_EN_Rev1.00.pdf
