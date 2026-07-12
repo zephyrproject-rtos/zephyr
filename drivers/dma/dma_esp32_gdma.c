@@ -668,6 +668,8 @@ static int dma_esp32_stop(const struct device *dev, uint32_t channel)
 				     GDMA_LL_TX_EVENT_MASK, false);
 		gdma_hal_stop(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX);
 		gdma_hal_stop(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
+		gdma_hal_reset(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX);
+		gdma_hal_reset(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
 #if CONFIG_PM
 		struct dma_esp32_channel *dma_channel_rx =
 			&config->dma_channel[dma_channel->channel_id * 2];
@@ -679,14 +681,41 @@ static int dma_esp32_stop(const struct device *dev, uint32_t channel)
 #endif
 	}
 
+
+	/*
+	 * Writing the STOP bit only ASKS the channel to stop. The ESP32-S3 TRM makes the
+	 * distinction in the register definitions themselves: GDMA_INLINK_STOP_CHn is
+	 * (R/W/SC), a self-clearing command strobe with no acknowledge, while
+	 * GDMA_INLINK_PARK_CHn is (RO) status. "I asked" and "it happened" are different
+	 * bits, and dma_stop() was only ever writing the first one.
+	 *
+	 * So reset the channel. GDMA_IN_RST_CHn is "used to reset GDMA channel n RX FSM and
+	 * RX FIFO pointer" -- the FIFO is exactly the state the park bit cannot see, and the
+	 * TRM's own programming procedures make this reset step one of every START and
+	 * describe no stop procedure at all. It is the only sanctioned way to put a channel
+	 * into a known state.
+	 *
+	 * Do NOT reach for the park bit instead. It reads idle while the data path is still
+	 * draining, and ESP-IDF never polls it either -- gdma_ll_*_is_desc_fsm_idle() has no
+	 * caller anywhere in that tree.
+	 *
+	 * A reset costs a restarted transfer nothing, and that is documented rather than
+	 * inferred: ESP-IDF's gdma.h says of gdma_reset(), "Resetting a DMA channel won't
+	 * break the connection with the target peripheral." This driver already relies on
+	 * that -- it resets the channel to ARM a transfer, in dma_esp32_config_*() and in
+	 * dma_esp32_reload(), which the I2S driver calls between the chunks of a single
+	 * oversized block while the peripheral is still running.
+	 */
 	if (dma_channel->dir == DMA_RX) {
 		gdma_hal_enable_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
 				     GDMA_LL_RX_EVENT_MASK, false);
 		gdma_hal_stop(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX);
+		gdma_hal_reset(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX);
 	} else if (dma_channel->dir == DMA_TX) {
 		gdma_hal_enable_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
 				     GDMA_LL_TX_EVENT_MASK, false);
 		gdma_hal_stop(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
+		gdma_hal_reset(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
 	}
 
 	return 0;
