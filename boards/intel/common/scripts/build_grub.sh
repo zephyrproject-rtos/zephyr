@@ -24,7 +24,7 @@ prepare() {
   fi
 
   pushd src
-  git checkout grub-2.12-rc1
+  git switch --detach grub-2.12-rc1
   git clean -fdx
   popd
 }
