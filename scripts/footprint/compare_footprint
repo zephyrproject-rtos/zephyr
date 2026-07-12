@@ -100,7 +100,7 @@ def sanity_results_filename(commit=None, cwd=os.environ.get('ZEPHYR_BASE')):
 
     return os.path.join(cwd,'scripts', 'sanity_chk', file_name)
 
-def git_checkout(commit, cwd=os.environ.get('ZEPHYR_BASE')):
+def git_reset(commit, cwd=os.environ.get('ZEPHYR_BASE')):
     proc = subprocess.Popen('git diff --quiet', stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, cwd=cwd, shell=True)
     if proc.wait() != 0:
@@ -150,7 +150,7 @@ def run_footprint_build(commit=None):
                                 stderr=subprocess.STDOUT,
                                 cwd=tempfile.gettempdir(), shell=True)
         if proc.wait() == 0:
-            if git_checkout(commit, tmp_location):
+            if git_reset(commit, tmp_location):
                 run_sanity_footprint(commit, tmp_location)
         else:
             logger.error(proc.stdout.read())
