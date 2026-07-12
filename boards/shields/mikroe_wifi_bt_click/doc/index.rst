@@ -113,7 +113,7 @@ References
 .. target-notes::
 
 .. _ESP32 AT Bin:
-   https://docs.espressif.com/projects/esp-at/en/latest/esp32/AT_Binary_Lists/ESP32_AT_binaries.html
+   https://docs.espressif.com/projects/esp-at/en/latest/esp32/AT_Binary_Lists/index.html
 
 .. _WIFI BT Click Shield website:
    https://www.mikroe.com/
