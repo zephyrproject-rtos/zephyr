@@ -14,6 +14,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 
 #include <zephyr/logging/log.h>
@@ -318,8 +319,15 @@ static int bme280_read_compensation(const struct device *dev)
 
 		data->dig_h2 = (hbuf[1] << 8) | hbuf[0];
 		data->dig_h3 = hbuf[2];
-		data->dig_h4 = (hbuf[3] << 4) | (hbuf[4] & 0x0F);
-		data->dig_h5 = ((hbuf[4] >> 4) & 0x0F) | (hbuf[5] << 4);
+		/*
+		 * dig_h4 and dig_h5 are 12-bit two's complement values (Datasheet
+		 * Table 16, registers 0xE4-0xE6). hbuf[3]/hbuf[5] hold the sign bit
+		 * (bit 11) but are uint8_t, so a plain "<< 4" never sign-extends it
+		 * and negative calibration values silently turn positive. Use
+		 * sign_extend() to reconstruct the signed 12-bit value correctly.
+		 */
+		data->dig_h4 = sign_extend((hbuf[3] << 4) | (hbuf[4] & 0x0F), 11);
+		data->dig_h5 = sign_extend(((hbuf[4] >> 4) & 0x0F) | (hbuf[5] << 4), 11);
 		data->dig_h6 = hbuf[6];
 	}
 
