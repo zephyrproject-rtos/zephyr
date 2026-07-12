@@ -188,7 +188,7 @@ inference, and CPU-only inference for devices without an NPU.
                .. code-block:: console
 
                   cd FVPs-on-Mac
-                  git checkout 1458860
+                  git switch --detach 1458860
 
                **Step 2:** Build the Docker wrapper:
 
