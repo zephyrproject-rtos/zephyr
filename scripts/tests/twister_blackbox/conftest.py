@@ -30,6 +30,22 @@ TEST_FILENAME_MOCK = mock.PropertyMock(return_value=['test_data.yaml'])
 # The 'fast', 'build' and 'run' markers are declared in pytest.ini.
 
 # ---------------------------------------------------------------------------
+# External tool requirements
+# ---------------------------------------------------------------------------
+
+
+def requires_tool(name):
+    """Return a skip marker for tests that need ``name`` on PATH.
+
+    Twister aborts outright when an option's backing executable is missing,
+    so such tests must be skipped rather than fail on hosts without it.
+    """
+    return pytest.mark.skipif(
+        shutil.which(name) is None, reason=f'{name} executable not found in PATH'
+    )
+
+
+# ---------------------------------------------------------------------------
 # Log isolation
 # ---------------------------------------------------------------------------
 
