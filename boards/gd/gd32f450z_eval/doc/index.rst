@@ -113,10 +113,10 @@ allows flash programming and debugging over USB. There is also a JTAG header
    https://www.gigadevice.com/products/microcontrollers/gd32/arm-cortex-m4/stretch-performance-line/
 
 .. _GD32F450xx Datasheet:
-	https://gd32mcu.21ic.com/data/documents/shujushouce/GD32F450xx_Datasheet_Rev1.1.pdf
+	https://www.gd32mcu.com/data/documents/datasheet/GD32F450xx_Datasheet_Rev2.3.pdf
 
 .. _GD32F4xx User Manual:
-	https://www.gigadevice.com/manual/gd32f450xxxx-user-manual/
+	https://www.gd32mcu.com/data/documents/userManual/GD32F4xx_User_Manual_Rev3.0.pdf
 
 .. _GD32F450Z-EVAL User Manual:
   http://www.gd32mcu.com/download/down/document_id/118/path_type/1
