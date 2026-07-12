@@ -1,0 +1,93 @@
+common:
+  tags: cpu_load
+tests:
+  # Idle-hook backend, covering every architecture that provides the idle
+  # hooks (ARCH_HAS_CPU_IDLE_HOOKS): Arm Cortex-M, Arm64 and RISC-V.
+  libraries.cpu_load.idle_hook:
+    filter: CONFIG_CPU_LOAD and CONFIG_ARCH_HAS_CPU_IDLE_HOOKS
+    extra_configs:
+      - CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK=y
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_riscv32
+      - qemu_cortex_a53
+      - mps2/an385
+
+  # Scheduler runtime-statistics backend: portable across all architectures,
+  # including those that cannot provide the idle hooks (x86, POSIX).
+  libraries.cpu_load.runtime_stats:
+    filter: CONFIG_CPU_LOAD
+    extra_configs:
+      - CONFIG_CPU_LOAD_BACKEND_RUNTIME_STATS=y
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_x86
+      - native_sim
+
+  # Idle-hook backend with the optional hardware counter (single CPU only).
+  libraries.cpu_load.idle_hook.counter:
+    filter: CONFIG_CPU_LOAD and CONFIG_ARCH_HAS_CPU_IDLE_HOOKS
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf54h20dk/nrf54h20/cpuapp
+      - qemu_cortex_m3
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - qemu_cortex_m3
+    extra_configs:
+      - CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK=y
+      - CONFIG_CPU_LOAD_USE_COUNTER=y
+
+  # Idle-hook backend on SMP, exercising the per-CPU idle accounting.
+  libraries.cpu_load.idle_hook.smp:
+    filter: CONFIG_CPU_LOAD and CONFIG_ARCH_HAS_CPU_IDLE_HOOKS
+    platform_allow:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    extra_configs:
+      - CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK=y
+      - CONFIG_SCHED_CPU_MASK=y
+
+  # Runtime-statistics backend on SMP.
+  libraries.cpu_load.runtime_stats.smp:
+    filter: CONFIG_CPU_LOAD
+    platform_allow:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    extra_configs:
+      - CONFIG_CPU_LOAD_BACKEND_RUNTIME_STATS=y
+      - CONFIG_SCHED_CPU_MASK=y
+
+  # Shared feature layer (periodic report + threshold callback) on top of the
+  # idle-hook backend.
+  libraries.cpu_load.idle_hook.periodic_report:
+    filter: CONFIG_CPU_LOAD and CONFIG_ARCH_HAS_CPU_IDLE_HOOKS
+    integration_platforms:
+      - qemu_cortex_m3
+      - mps2/an385
+    extra_configs:
+      - CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK=y
+      - CONFIG_CPU_LOAD_LOG_PERIODICALLY=50
+      - CONFIG_LOG=y
+      - CONFIG_TEST_LOGGING_DEFAULTS=n
+      - CONFIG_LOG_PRINTK=n
+      - CONFIG_LOG_BACKEND_UART=n
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+
+  # The same feature layer on top of the runtime-statistics backend, which did
+  # not provide periodic reporting or callbacks before the two modules merged.
+  libraries.cpu_load.runtime_stats.periodic_report:
+    filter: CONFIG_CPU_LOAD
+    integration_platforms:
+      - qemu_cortex_m3
+      - native_sim
+    extra_configs:
+      - CONFIG_CPU_LOAD_BACKEND_RUNTIME_STATS=y
+      - CONFIG_CPU_LOAD_LOG_PERIODICALLY=50
+      - CONFIG_LOG=y
+      - CONFIG_TEST_LOGGING_DEFAULTS=n
+      - CONFIG_LOG_PRINTK=n
+      - CONFIG_LOG_BACKEND_UART=n
+      - CONFIG_LOG_MODE_IMMEDIATE=y
