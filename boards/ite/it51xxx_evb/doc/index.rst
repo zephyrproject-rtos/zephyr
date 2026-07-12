@@ -93,7 +93,7 @@ Building
 ========
 
 #. Build :zephyr:code-sample:`hello_world` application as you would normally do
-   (see :`Zephyr Getting Started Guide`_):.
+   (see :ref:`Zephyr Getting Started Guide <getting_started>`):.
 
    .. zephyr-app-commands::
       :board: it51xxx_evb/it51526aw
@@ -161,5 +161,4 @@ References
 .. target-notes::
 
 .. _ITE's website: https://www.ite.com.tw/en
-.. _Zephyr Getting Started Guide: https://docs.zephyrproject.org/latest/getting_started/index.html
 .. _Flashing steps: https://docs.zephyrproject.org/latest/boards/ite/it82xx2_evb/doc/index.html#flashing
