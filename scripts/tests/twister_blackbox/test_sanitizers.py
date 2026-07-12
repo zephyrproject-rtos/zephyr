@@ -18,7 +18,7 @@ import os
 from unittest import mock
 
 import pytest
-from conftest import TEST_DATA, TEST_FILENAME_MOCK
+from conftest import TEST_DATA, TEST_FILENAME_MOCK, requires_tool
 from twisterlib.testplan import TestPlan
 from twisterlib.twister_main import main as twister_main
 
@@ -97,7 +97,7 @@ class TestValgrind:
         'flags, expected_exit',
         [
             ([], '0'),
-            (['--enable-valgrind'], '1'),
+            pytest.param(['--enable-valgrind'], '1', marks=requires_tool('valgrind')),
         ],
         ids=['no-sanitiser', 'valgrind'],
     )
