@@ -582,7 +582,7 @@ void *xtensa_excint1_c(void *esf)
 	if (cause != EXCCAUSE_LEVEL1_INTERRUPT) {
 		volatile uint32_t *win0 = (volatile uint32_t *)sys_cache_uncached_ptr_get((void *)HP_SRAM_WIN0_BASE);
 
-		if (win0[0] == 0U) {
+		if (win0[0] < 0xa0000000U) {
 			win0[0] = (uint32_t)bsa->pc;
 #if defined(CONFIG_XTENSA_ADSP_FATAL_BREADCRUMB_DATA_VADDR)
 			win0[1] = (uint32_t)bsa->excvaddr;
