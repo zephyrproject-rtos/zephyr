@@ -10,6 +10,7 @@
 #include <kernel_internal.h>
 #include <kswap.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/tracing/tracing.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/offsets.h>
 #include <zephyr/zsr.h>
@@ -276,6 +277,19 @@ static ALWAYS_INLINE void usage_stop(void)
 #endif
 }
 
+static ALWAYS_INLINE void isr_enter_hook(void)
+{
+#if defined(CONFIG_TRACING_ISR) || defined(CONFIG_SYS_IDLE_HOOKS)
+	/* Xtensa waits for the interrupt with interrupts enabled ("waiti 0"),
+	 * so this ISR can have interrupted the idle thread and may reschedule
+	 * away from it before the idle-exit hook gets a chance to run. Notifying
+	 * here is what lets the CPU load module close the idle window at the
+	 * instant idle actually ended.
+	 */
+	sys_trace_isr_enter();
+#endif
+}
+
 static inline void *return_to(void *interrupted)
 {
 #ifdef CONFIG_MULTITHREADING
@@ -499,6 +513,7 @@ __unused static void xtensa_handle_irq_lvl(int irq_lvl)
 #define DEF_INT_C_HANDLER(l)                                                                       \
 	__unused void *xtensa_int##l##_c(void *interrupted_stack)                                  \
 	{                                                                                          \
+		isr_enter_hook();                                                                  \
 		usage_stop();                                                                      \
 		xtensa_handle_irq_lvl(l);                                                          \
 		return return_to(interrupted_stack);                                               \

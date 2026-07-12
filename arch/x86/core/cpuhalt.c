@@ -16,6 +16,14 @@ void arch_cpu_idle(void)
 	__asm__ volatile (
 	    "sti\n\t"
 	    "hlt\n\t");
+
+#if defined(CONFIG_SYS_IDLE_HOOKS)
+	/* Interrupts are enabled across the halt, so the wake-up ISR has already
+	 * closed the idle window (see the ISR entry hook). This is only a
+	 * fallback for a wake-up that ran no ISR, and is a no-op otherwise.
+	 */
+	sys_trace_idle_exit();
+#endif
 }
 #endif
 
