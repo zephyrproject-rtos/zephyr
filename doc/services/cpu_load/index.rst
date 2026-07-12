@@ -12,10 +12,12 @@ Scheduler runtime statistics
 
 Architecture idle hooks
    :kconfig:option:`CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK` measures the load using the architecture
-   idle hooks, which are called before and after the CPU goes to idle. It has lower overhead and
-   can use a :ref:`counter_api` device for higher precision, but is limited to a single CPU.
-   Compared to :ref:`thread_analyzer` it is more accurate since it takes into account time spent
-   in the interrupt context as well. This backend does not depend on the tracing subsystem.
+   idle hooks, which are called before and after the CPU goes to idle. It has lower overhead than
+   the runtime-statistics backend and can use a :ref:`counter_api` device for higher precision
+   (the counter path is single-CPU only). It is available on any architecture that emits the idle
+   hooks (:kconfig:option:`CONFIG_ARCH_HAS_CPU_IDLE_HOOKS`). Compared to :ref:`thread_analyzer` it
+   is more accurate since it takes into account time spent in the interrupt context as well. This
+   backend does not depend on the tracing subsystem.
 
 The load is retrieved with :c:func:`cpu_load_get` for the current CPU or :c:func:`cpu_load_get_cpu`
 for a specific CPU. Both return the load in per mille (0...1000) and can reset the measurement

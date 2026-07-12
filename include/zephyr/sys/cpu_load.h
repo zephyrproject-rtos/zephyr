@@ -27,8 +27,10 @@ extern "C" {
  *    scheduler per-CPU runtime statistics. It is portable across architectures
  *    and supports multiple CPUs.
  *  - @kconfig{CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK} measures the load using the
- *    architecture idle hooks. It has lower overhead and can use an optional
- *    hardware counter for higher precision, but is limited to a single CPU.
+ *    architecture idle hooks. It has lower overhead and can optionally use a
+ *    hardware counter for higher precision (the counter path is single-CPU
+ *    only). Available on any architecture that emits the idle hooks
+ *    (@kconfig{CONFIG_ARCH_HAS_CPU_IDLE_HOOKS}).
  *
  *  Regardless of the backend, the load is reported in per mille (0...1000).
  *  @{
@@ -39,9 +41,7 @@ extern "C" {
 
 /** @brief Get CPU load for a specific CPU.
  *
- * @param cpu_id CPU index for which to get the load. For the idle-hook backend
- *		 only the single supported CPU is measured and this argument is
- *		 ignored.
+ * @param cpu_id CPU index for which to get the load.
  * @param reset  Reset the measurement window after reading.
  *
  * @retval >=0 CPU load in per mille (0...1000).
