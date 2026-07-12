@@ -21,7 +21,7 @@ config CPU_LOAD_MULTICPU
 choice CPU_LOAD_BACKEND
 	prompt "CPU load measurement backend"
 	default CPU_LOAD_BACKEND_RUNTIME_STATS if CPU_LOAD_MULTICPU || SMP
-	default CPU_LOAD_BACKEND_IDLE_HOOK if CPU_CORTEX_M || RISCV || CPU_CORTEX_A || XTENSA
+	default CPU_LOAD_BACKEND_IDLE_HOOK if ARCH_HAS_CPU_IDLE_HOOKS
 	default CPU_LOAD_BACKEND_RUNTIME_STATS
 
 config CPU_LOAD_BACKEND_RUNTIME_STATS
@@ -34,16 +34,18 @@ config CPU_LOAD_BACKEND_RUNTIME_STATS
 	  Derive the CPU load from the scheduler per-CPU runtime statistics. This
 	  backend is portable across architectures and supports multiple CPUs.
 
+	  This option is less accurate. It does not take into account time
+	  spent in interrupts.
+
 config CPU_LOAD_BACKEND_IDLE_HOOK
 	bool "Architecture idle hooks"
-	depends on CPU_CORTEX_M || RISCV || CPU_CORTEX_A || XTENSA
-	depends on !SMP
+	depends on ARCH_HAS_CPU_IDLE_HOOKS
 	select SYS_IDLE_HOOKS
 	help
 	  Measure the CPU load using the architecture idle hooks. This backend
-	  has lower overhead and can use an optional hardware counter for higher
-	  precision, but is limited to a single CPU. It does not depend on the
-	  tracing subsystem.
+	  has lower overhead than the runtime-statistics backend and can use an
+	  optional hardware counter for higher precision. It does not depend on
+	  the tracing subsystem.
 
 endchoice
 
@@ -53,6 +55,9 @@ DT_CHOSEN_Z_CPU_LOAD_COUNTER := zephyr,cpu-load-counter
 config CPU_LOAD_USE_COUNTER
 	bool "Use counter"
 	depends on CPU_LOAD_BACKEND_IDLE_HOOK
+	# The counter is a single shared device; concurrent per-CPU idle tracking
+	# through it is not supported yet.
+	depends on !SMP
 	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_CPU_LOAD_COUNTER))
 	default y
 	select COUNTER
