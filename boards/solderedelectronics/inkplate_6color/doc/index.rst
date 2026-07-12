@@ -113,5 +113,5 @@ References
 
 .. target-notes::
 
-.. _`Inkplate 6Color`: https://soldered.com/product/inkplate-6color/
+.. _`Inkplate 6Color`: https://soldered.com/products/inkplate-6color-e-paper-display
 .. _`Soldered Electronics`: https://soldered.com/
