@@ -11,13 +11,7 @@
 #include <xtensa/simcall.h>
 #endif
 
-#if defined(CONFIG_XTENSA_ADSP_TRIPLE_FAULT_BREADCRUMB)
-#if defined(CONFIG_SOC_SERIES_INTEL_ADSP_ACE)
-#define HP_SRAM_WIN0_BASE_UC 0x40024000
-#else
-#define HP_SRAM_WIN0_BASE_UC 0x5e024000
-#endif
-#endif
+
 
 /*
  * xtensa_spill_reg_windows
@@ -91,11 +85,7 @@ _high_gpr_spill_done:
 	 * time how many registers were spilled, then return, leaving the
 	 * modified SP in A1.
 	 */
-#ifdef __clang__
-	addi a1, a1, -16
-#else
 	addi a1, a1, -4
-#endif
 	s32i a3, a1, 0
 
 	ret
@@ -113,11 +103,7 @@ _high_gpr_spill_done:
 xtensa_restore_high_regs:
 	/* pop our "original" stack pointer into a2, stash in a3 also */
 	l32i a2, a1, 0
-#ifdef __clang__
-	addi a1, a1, 16
-#else
 	addi a1, a1, 4
-#endif
 	mov a3, a2
 
 	beq a1, a2, _high_restore_done
@@ -624,7 +610,7 @@ _TripleFault:
 #if defined(CONFIG_XTENSA_ADSP_TRIPLE_FAULT_BREADCRUMB)
 	/* DEBUG breadcrumb: record double-exception EPC1/EXCCAUSE/DEPC into
 	 * HP-SRAM window0 uncached alias so the host can see we triple-faulted.
-	 * 0xdb1e marks a double exception. Clobbers a2/a3 (we spin forever next).
+	 * 0xdb1e marks a double exception. Clobbers a2/a3/a4.
 	 */
 	/* 1. Construct base address in a3 without causing literals/l32r */
 #if defined(CONFIG_SOC_SERIES_INTEL_ADSP_ACE)
@@ -638,20 +624,25 @@ _TripleFault:
 	slli a4, a4, 8
 	add a3, a3, a4
 
-	/* 2. Write EPC1 to win0[0] = the first exception PC being handled
-	 * when the double exception fired. This is what we want to debug.
-	 */
+	/* 2. Write EPC1 to win0[0] */
 
 	rsr.epc1 a2
-	movi a3, HP_SRAM_WIN0_BASE_UC
 	s32i a2, a3, 0
-	rsr.exccause a2
-	movi a3, 0xdb1e0000
-	or a2, a2, a3
-	movi a3, HP_SRAM_WIN0_BASE_UC
+
+	/* 3. Write EXCCAUSE combined with 0xdb1e0000 to win0[1] */
+	/* Construct 0xdb1e0000 in a2 without literals/l32r */
+	movi a2, 0xdb
+	slli a2, a2, 8
+	movi a4, 0x1e
+	add a2, a2, a4
+	slli a2, a2, 16
+	/* Combine with EXCCAUSE */
+	rsr.exccause a4
+	or a2, a2, a4
 	s32i a2, a3, 4
+
+	/* 4. Write DEPC to win0[2] */
 	rsr.depc a2
-	movi a3, HP_SRAM_WIN0_BASE_UC
 	s32i a2, a3, 8
 	memw
 #endif

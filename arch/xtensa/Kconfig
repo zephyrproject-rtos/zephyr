@@ -106,6 +106,17 @@ config XTENSA_ADSP_FATAL_BREADCRUMB
 	  preserved across a crash loop. This is a debug aid and should be
 	  left disabled in production builds.
 
+config XTENSA_ADSP_TRIPLE_FAULT_BREADCRUMB
+	bool "Record triple fault breadcrumbs in HP-SRAM window0"
+	depends on SOC_FAMILY_INTEL_ADSP
+	default y
+	help
+	  When a double exception escalates to a triple fault (escaping the
+	  CPU), record the EPC1, double-exception EXCCAUSE, and DEPC into
+	  HP-SRAM window0 via its uncached alias. This is a lightweight
+	  tracing aid that can be enabled in production builds to diagnose
+	  fatal CPU locks and double faults.
+
 menu "Xtensa HiFi Options"
 
 config XTENSA_CPU_HAS_HIFI
