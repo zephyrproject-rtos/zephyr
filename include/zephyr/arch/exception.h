@@ -16,7 +16,7 @@
 #include <stdarg.h>
 
 /**
- * @typedef exception_dump_hook_t
+ * @typedef arch_exception_dump_hook_t
  * @brief Exception dump output callback.
  *
  * Called for each exception dump print with printf-style format and
@@ -28,7 +28,7 @@
 typedef void (*arch_exception_dump_hook_t)(const char *format, va_list args);
 
 /**
- * @typedef exception_drain_hook_t
+ * @typedef arch_exception_drain_hook_t
  * @brief Exception dump flush callback.
  *
  * Called when exception dump output should be drained or reset.
