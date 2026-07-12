@@ -1150,94 +1150,72 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 }
 
 /*
- * For each 2MB-aligned L1 slot covering [va, va+size), ensure the domain's
- * L1 and L2 intermediate tables are private copies (not shared with the
- * kernel).  Shared tables would cause partition map/unmap operations to
- * silently modify kernel mappings as a side-effect.
+ * For each leaf-adjacent-level slot (always 2MB, regardless of
+ * PGTABLE_LEVELS) covering [va, va+size), walk every intermediate table
+ * level from the root down to (but not including) the leaf level and
+ * ensure each one is a private copy (not shared with the kernel).  Shared
+ * tables would cause partition map/unmap operations to silently modify
+ * kernel mappings as a side-effect.
  *
  * Must be called with xlat_lock held.
  */
 static int ensure_private_tables(uint64_t *domain_root, uintptr_t va, size_t size)
 {
-	const uintptr_t l1_size = BIT(RISCV_PGLEVEL_SHIFT(1)); /* 2 MB */
-	uintptr_t cur = ROUND_DOWN(va, l1_size);
+	/* The table one level above the leaf always covers 2MB: the shift is
+	 * PAGE_SIZE_SHIFT + RISCV_PGLEVEL_BITS * 1, independent of how many
+	 * levels exist above it.
+	 */
+	const uintptr_t step_size = BIT(RISCV_PGLEVEL_SHIFT(PGTABLE_LEVELS - 2));
+	uintptr_t cur = ROUND_DOWN(va, step_size);
 	uintptr_t end = va + size;
 
-	for (; cur < end; cur += l1_size) {
-		unsigned int l0_idx = VPN(cur, 0);
-		unsigned int l1_idx = VPN(cur, 1);
-		pte_t d_l0_pte = domain_root[l0_idx];
-		uint64_t *d_l1, *k_l1 = NULL;
-		pte_t k_l0_pte;
-		unsigned int i;
+	for (; cur < end; cur += step_size) {
+		uint64_t *d_tbl = domain_root;
+		uint64_t *k_tbl = kernel_root_table;
+		int lv;
 
-		if (!pte_is_valid(d_l0_pte) || !pte_is_table(d_l0_pte)) {
-			continue;
-		}
-		d_l1 = (uint64_t *)pte_to_phys(d_l0_pte);
+		for (lv = 0; lv < PGTABLE_LEVELS - 1; lv++) {
+			unsigned int idx = VPN(cur, lv);
+			pte_t d_pte = d_tbl[idx];
+			uint64_t *d_next, *k_next = NULL;
+			unsigned int i;
 
-		k_l0_pte = kernel_root_table[l0_idx];
-		if (pte_is_valid(k_l0_pte) && pte_is_table(k_l0_pte)) {
-			k_l1 = (uint64_t *)pte_to_phys(k_l0_pte);
-		}
-
-		/* If domain shares the L1 with the kernel, privatize it. */
-		if (k_l1 != NULL && d_l1 == k_l1) {
-			uint64_t *priv_l1 = new_table();
-
-			if (!priv_l1) {
-				return -ENOMEM;
+			if (!pte_is_valid(d_pte) || !pte_is_table(d_pte)) {
+				break;
 			}
-			inc_table_ref(priv_l1);
-			memcpy(priv_l1, k_l1, PAGE_SIZE);
-			for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
-				if (pte_is_valid(priv_l1[i])) {
-					adjust_table_usage(priv_l1, 1);
-				}
-			}
-			/* Raw write: domain root is not set_pte()-tracked. */
-			domain_root[l0_idx] = pte_create((uintptr_t)priv_l1,
-							 PTE_TYPE_TABLE);
-			d_l1 = priv_l1;
-		}
+			d_next = (uint64_t *)pte_to_phys(d_pte);
 
-		/* Check the L2 entry at this l1_idx. */
-		{
-			pte_t d_l1_pte = d_l1[l1_idx];
-			uint64_t *d_l2, *k_l2 = NULL;
+			if (k_tbl != NULL) {
+				pte_t k_pte = k_tbl[idx];
 
-			if (!pte_is_valid(d_l1_pte) || !pte_is_table(d_l1_pte)) {
-				continue;
-			}
-			d_l2 = (uint64_t *)pte_to_phys(d_l1_pte);
-
-			if (k_l1 != NULL) {
-				pte_t k_l1_pte = k_l1[l1_idx];
-
-				if (pte_is_valid(k_l1_pte) && pte_is_table(k_l1_pte)) {
-					k_l2 = (uint64_t *)pte_to_phys(k_l1_pte);
+				if (pte_is_valid(k_pte) && pte_is_table(k_pte)) {
+					k_next = (uint64_t *)pte_to_phys(k_pte);
 				}
 			}
 
-			if (k_l2 != NULL && d_l2 == k_l2) {
-				uint64_t *priv_l2 = new_table();
+			/* If domain shares this table with the kernel, privatize it. */
+			if (k_next != NULL && d_next == k_next) {
+				uint64_t *priv = new_table();
 
-				if (!priv_l2) {
+				if (!priv) {
 					return -ENOMEM;
 				}
-				inc_table_ref(priv_l2);
-				memcpy(priv_l2, k_l2, PAGE_SIZE);
+				inc_table_ref(priv);
+				memcpy(priv, k_next, PAGE_SIZE);
 				for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
-					if (pte_is_valid(priv_l2[i])) {
-						adjust_table_usage(priv_l2, 1);
+					if (pte_is_valid(priv[i])) {
+						adjust_table_usage(priv, 1);
 					}
 				}
-				/* Raw write: d_l1 PTE count not tracked for
-				 * this slot (domain tables use raw writes).
+				/* Raw write: intermediate domain tables are
+				 * not set_pte()-tracked.
 				 */
-				d_l1[l1_idx] = pte_create((uintptr_t)priv_l2,
-							  PTE_TYPE_TABLE);
+				d_tbl[idx] = pte_create((uintptr_t)priv, PTE_TYPE_TABLE);
+				d_next = priv;
 			}
+
+			d_tbl = d_next;
+			k_tbl = k_next;
 		}
 	}
 	return 0;
