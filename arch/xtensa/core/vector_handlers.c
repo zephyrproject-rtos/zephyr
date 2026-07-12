@@ -709,6 +709,19 @@ void *xtensa_excint1_c(void *esf)
 
 skip_checks:
 		if (reason != K_ERR_KERNEL_OOPS) {
+#if XCHAL_HAVE_CP
+			/* Enable all coprocessors before printing. LLVM generates
+			 * HiFi4 ae_* instructions in print_fatal_exception and
+			 * its callees (printk/LOG_ERR). If CPENABLE has the HiFi4
+			 * CP bit cleared (e.g. via lazy HiFi sharing on context
+			 * switch), those instructions trigger EXCCAUSE_CP_DISABLED
+			 * which becomes a double exception -> triple fault because
+			 * PS.EXCM is set inside the exception handler.
+			 */
+			unsigned int cp_all = (1U << XCHAL_CP_NUM) - 1U;
+
+			__asm__ volatile("wsr.cpenable %0\n\trsync" :: "r"(cp_all));
+#endif
 			print_fatal_exception(print_stack, is_dblexc, depc);
 		}
 #ifdef CONFIG_XTENSA_EXCEPTION_ENTER_GDB

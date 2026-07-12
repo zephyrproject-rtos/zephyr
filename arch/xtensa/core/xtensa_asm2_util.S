@@ -626,6 +626,22 @@ _TripleFault:
 	 * HP-SRAM window0 uncached alias so the host can see we triple-faulted.
 	 * 0xdb1e marks a double exception. Clobbers a2/a3 (we spin forever next).
 	 */
+	/* 1. Construct base address in a3 without causing literals/l32r */
+#if defined(CONFIG_SOC_SERIES_INTEL_ADSP_ACE)
+	movi a3, 1
+	slli a3, a3, 30
+#else
+	movi a3, 0x5e
+	slli a3, a3, 24
+#endif
+	movi a4, 0x240
+	slli a4, a4, 8
+	add a3, a3, a4
+
+	/* 2. Write EPC1 to win0[0] = the first exception PC being handled
+	 * when the double exception fired. This is what we want to debug.
+	 */
+
 	rsr.epc1 a2
 	movi a3, HP_SRAM_WIN0_BASE_UC
 	s32i a2, a3, 0
