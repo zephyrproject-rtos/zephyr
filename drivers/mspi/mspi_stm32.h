@@ -83,7 +83,11 @@ DT_INST_FOREACH_CHILD_STATUS_OKAY(index, MSPI_STM32_IS_SUPPORTED_CHILD)
 
 #elif defined(CONFIG_MSPI_STM32_XSPI)
 
+#if defined(CONFIG_STM32_HAL2)
+#define MSPI_STM32_HAL_PREFIX HAL_XSPI_MEMORY_TYPE_
+#else
 #define MSPI_STM32_HAL_PREFIX HAL_XSPI_MEMTYPE_
+#endif
 
 #define APMEM        APMEM
 #endif
@@ -168,7 +172,11 @@ union mspi_stm32_handle {
 	QSPI_HandleTypeDef qspi;
 #endif
 #ifdef CONFIG_MSPI_STM32_XSPI
+#if defined(CONFIG_STM32_HAL2)
+	hal_xspi_handle_t xspi;
+#else
 	XSPI_HandleTypeDef xspi;
+#endif
 #endif
 };
 
@@ -189,8 +197,13 @@ struct mspi_stm32_data {
 	DMA_HandleTypeDef hdma;
 #endif
 #ifdef CONFIG_MSPI_STM32_XSPI
+#if defined(CONFIG_STM32_HAL2)
+	hal_dma_handle_t hdma_tx;
+	hal_dma_handle_t hdma_rx;
+#else
 	DMA_HandleTypeDef hdma_tx;
 	DMA_HandleTypeDef hdma_rx;
+#endif
 #endif
 };
 
