@@ -528,4 +528,31 @@ ZTEST(ptp_foreign_master, test_best_foreign_cleanup_uses_local_uptime)
 	zassert_true(k_fifo_is_empty(&foreign->messages), "foreign message queue should be empty");
 }
 
+ZTEST(ptp_foreign_master, test_best_foreign_cleanup_keeps_scaled_time_window)
+{
+	struct ptp_foreign_tt_clock *foreign;
+
+	/* log_msg_interval = 1 gives a 4 * 2^1 = 8 second time window.
+	 * Records aged 5 seconds must survive the cleanup. With 32-bit
+	 * arithmetic the window wraps to about 3.7 seconds and they are
+	 * dropped prematurely.
+	 */
+	init_announce_msg_ext(&msg1, 0x69, 1, 120, 128, 0, 1);
+	init_announce_msg_ext(&msg2, 0x69, 1, 120, 128, 0, 1);
+
+	zassert_equal(ptp_port_add_foreign_tt(&port, &msg1), 0, "first add failed");
+	zassert_equal(ptp_port_add_foreign_tt(&port, &msg2), 1, "second add failed");
+
+	msg1.local_uptime_ms = k_uptime_get() - (5 * MSEC_PER_SEC);
+	msg2.local_uptime_ms = k_uptime_get() - (5 * MSEC_PER_SEC);
+
+	zassert_not_null(ptp_port_best_foreign(&port),
+			 "records within the time window should produce best");
+
+	foreign = find_foreign_clock(&port, 0x69, 1);
+	zassert_not_null(foreign, "foreign clock missing");
+	zassert_equal(foreign->messages_count, FOREIGN_TIME_TRANSMITTER_THRESHOLD,
+		      "records within the time window should be kept");
+}
+
 ZTEST_SUITE(ptp_foreign_master, NULL, NULL, foreign_master_before, foreign_master_after, NULL);
