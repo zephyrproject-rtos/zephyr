@@ -128,6 +128,9 @@ config X86
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
 	select ARCH_HAS_IRQ_OFFLOAD_NESTED
 	select ARCH_SUPPORTS_ROM_OFFSET
+	# Only the 32-bit (ia32) interrupt stub emits the ISR entry hook that
+	# closes the idle window; intel64 does not have one yet.
+	select ARCH_HAS_CPU_IDLE_HOOKS if !X86_64
 	help
 	  x86 architecture
 
@@ -178,6 +181,7 @@ config XTENSA
 	imply ARCH_HAS_RESERVED_PAGE_FRAMES if XTENSA_MMU
 	select ARCH_HAS_IRQ_OFFLOAD_NESTED
 	select ARCH_HAS_SEMIHOST
+	select ARCH_HAS_CPU_IDLE_HOOKS
 	help
 	  Xtensa architecture
 
@@ -856,16 +860,20 @@ config ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 config ARCH_HAS_CPU_IDLE_HOOKS
 	bool
 	help
-	  This option is selected by architectures whose CPU idle path emits both
-	  the sys_trace_idle() and the sys_trace_idle_exit() notification hooks
-	  (gated by CONFIG_SYS_IDLE_HOOKS), and which run the exit hook before
-	  servicing the interrupt that woke the CPU.
+	  This option is selected by architectures that can tell the CPU load
+	  module when the CPU enters and leaves idle (gated by
+	  CONFIG_SYS_IDLE_HOOKS). It requires the idle path to emit
+	  sys_trace_idle() on entry, and the idle window to be closed again by
+	  either of:
 
-	  Both properties are required to measure idle time. Emitting only the
-	  enter hook never accumulates any idle time, and waking with interrupts
-	  enabled (as x86 does with "sti; hlt") lets the wake-up ISR context
-	  switch away before the exit hook runs, so the idle period is never
-	  closed.
+	  - sys_trace_idle_exit() after the wait, for architectures that wait with
+	    interrupts locked (Arm, RISC-V). The wait returns without servicing the
+	    interrupt, so the exit hook runs before any ISR.
+	  - sys_trace_isr_enter() at ISR entry, for architectures that wait with
+	    interrupts enabled (x86 "sti; hlt", Xtensa "waiti 0"). There the wake-up
+	    ISR runs first and may reschedule away from the idle thread, which would
+	    defer the exit hook long past the end of idle, so the ISR entry closes
+	    the window instead.
 
 	  It is a prerequisite for the idle-hook CPU load backend
 	  (CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK).
