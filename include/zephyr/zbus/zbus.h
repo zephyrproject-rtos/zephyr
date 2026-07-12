@@ -565,7 +565,7 @@ struct zbus_channel_observation {
  */
 #define ZBUS_MSG_SUBSCRIBER_DEFINE(_name) ZBUS_MSG_SUBSCRIBER_DEFINE_WITH_ENABLE(_name, true)
 
-#if defined(CONFIG_ZBUS_ASYNC_LISTENER)
+#if defined(CONFIG_ZBUS_ASYNC_LISTENER) || defined(__DOXYGEN__)
 /** @cond INTERNAL_HIDDEN */
 struct zbus_async_listener_work {
 	struct k_work work;
