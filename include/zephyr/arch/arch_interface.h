@@ -488,13 +488,16 @@ int arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
 #define ARCH_ISR_DIRECT_DECLARE(name)
 #endif
 
-#ifndef CONFIG_PCIE_CONTROLLER
 /**
  * @brief Arch-specific hook for allocating IRQs
  *
  * Note: disable/enable IRQ relevantly inside the implementation of such
  * function to avoid concurrency issues. Also, an allocated IRQ is assumed
  * to be used thus a following @see arch_irq_is_used() should return true.
+ *
+ * This API is only used when no PCIe controller driver is enabled
+ * (@kconfig{CONFIG_PCIE_CONTROLLER}); with a controller driver, IRQ
+ * allocation is handled by the controller instead.
  *
  * @return The newly allocated IRQ or UINT_MAX on error.
  */
@@ -518,8 +521,6 @@ void arch_irq_set_used(unsigned int irq);
  * @return true if being, false otherwise
  */
 bool arch_irq_is_used(unsigned int irq);
-
-#endif /* CONFIG_PCIE_CONTROLLER */
 
 /**
  * @def ARCH_EXCEPT(reason_p)
