@@ -304,6 +304,7 @@ void *memcpy(void *ZRESTRICT d, const void *ZRESTRICT s, size_t n)
 
 		/* do byte-sized copying until word-aligned or finished */
 
+		#pragma clang loop vectorize(disable)
 		while (((uintptr_t)d_byte) & mask) {
 			if (n == 0) {
 				return d;
@@ -317,6 +318,7 @@ void *memcpy(void *ZRESTRICT d, const void *ZRESTRICT s, size_t n)
 		mem_word_t *d_word = (mem_word_t *)d_byte;
 		const mem_word_t *s_word = (const mem_word_t *)s_byte;
 
+		#pragma clang loop vectorize(disable)
 		while (n >= sizeof(mem_word_t)) {
 			*(d_word++) = *(s_word++);
 			n -= sizeof(mem_word_t);
@@ -329,6 +331,7 @@ void *memcpy(void *ZRESTRICT d, const void *ZRESTRICT s, size_t n)
 
 	/* do byte-sized copying until finished */
 
+	#pragma clang loop vectorize(disable)
 	while (n > 0) {
 		*(d_byte++) = *(s_byte++);
 		n--;
@@ -352,6 +355,7 @@ void *memset(void *buf, int c, size_t n)
 	unsigned char c_byte = (unsigned char)c;
 
 #if !defined(CONFIG_MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE)
+	#pragma clang loop vectorize(disable)
 	while (((uintptr_t)d_byte) & (sizeof(mem_word_t) - 1)) {
 		if (n == 0) {
 			return buf;
@@ -371,6 +375,7 @@ void *memset(void *buf, int c, size_t n)
 	c_word |= c_word << 32;
 #endif
 
+	#pragma clang loop vectorize(disable)
 	while (n >= sizeof(mem_word_t)) {
 		*(d_word++) = c_word;
 		n -= sizeof(mem_word_t);
@@ -381,6 +386,7 @@ void *memset(void *buf, int c, size_t n)
 	d_byte = (unsigned char *)d_word;
 #endif
 
+	#pragma clang loop vectorize(disable)
 	while (n > 0) {
 		*(d_byte++) = c_byte;
 		n--;
