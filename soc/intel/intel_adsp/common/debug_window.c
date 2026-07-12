@@ -70,6 +70,15 @@ static int adsp_dw_find_slot_by_type(uint32_t type)
 void *adsp_dw_request_slot(struct adsp_dw_desc *dw_desc, size_t *slot_size)
 {
 	int slot_idx;
+	static bool dw_initialized = false;
+
+	if (!dw_initialized) {
+		if (ADSP_DW->descs[0].type == 0xffffffff) {
+			LOG_WRN("Debug Window uninitialized, initializing now...");
+			memset((void *)ADSP_DW, 0, CONFIG_MEMORY_WIN_2_SIZE);
+		}
+		dw_initialized = true;
+	}
 
 	if (!dw_desc->type) {
 		return NULL;
