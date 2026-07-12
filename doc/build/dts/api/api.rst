@@ -71,7 +71,7 @@ binding indicates it is a PCIe bus node, as defined in the
 `PCI Bus Binding to: IEEE Std 1275-1994 Standard for Boot (Initialization Configuration) Firmware`_
 
 .. _PCI Bus Binding to\: IEEE Std 1275-1994 Standard for Boot (Initialization Configuration) Firmware:
-    https://www.openfirmware.info/data/docs/bus.pci.pdf
+    https://www.devicetree.org/open-firmware/bindings/pci/pci2_1.pdf
 
 .. doxygengroup:: devicetree-ranges-prop
 
