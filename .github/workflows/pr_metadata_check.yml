@@ -11,16 +11,20 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  # Key on the PR number: it is globally unique, while github.head_ref is only a
+  # branch name and collides between forks (two PRs from a branch named 'main'
+  # would cancel each other).
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   do-not-merge:
     name: Prevent Merging
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -49,4 +53,5 @@ jobs:
           python -u scripts/ci/do_not_merge.py \
           -p "${{ github.event.pull_request.number }}" \
           -o "${{ github.event.repository.owner.login }}" \
-          -r "${{ github.event.repository.name }}"
+          -r "${{ github.event.repository.name }}" \
+          -a "${{ github.event.action }}"
