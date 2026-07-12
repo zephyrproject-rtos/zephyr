@@ -374,6 +374,18 @@ _xstack_call0_\@:
 	mov a3, a6
 #endif
 
+#if XCHAL_HAVE_CP
+	/* Enable all coprocessors before entering the C handler. LLVM may emit
+	 * HiFi4 ae_* instructions (CP1) in the C exception handler. If CPENABLE
+	 * doesn't have CP1 set when the handler runs, those instructions cause a
+	 * CP_DISABLED double exception -> triple fault. Set all CP bits here in
+	 * assembly before any compiler-generated code can execute.
+	 */
+	movi a2, 0xFF
+	wsr.cpenable a2
+	rsync
+#endif
+
 	callx4 a7		/* call handler */
 	mov a2, a6		/* copy return value */
 
