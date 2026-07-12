@@ -5,15 +5,29 @@
  */
 
 /*
- * Idle-hook CPU load backend. The idle time is accumulated between the
- * architecture idle enter/exit hooks and compared against the elapsed wall
- * clock time. Optionally a hardware counter can be used for higher precision
- * (single CPU only).
+ * Idle-hook CPU load backend. An idle window is opened by the architecture
+ * idle-enter hook and closed again when the CPU leaves idle; the accumulated
+ * idle time is then compared against the elapsed wall clock time. Optionally a
+ * hardware counter can be used for higher precision (single CPU only).
  *
- * The idle enter/exit hooks run on the idle CPU with interrupts locked, so
- * each CPU only ever mutates its own slot from those hooks. A per-CPU spinlock
- * serializes the idle accumulation against a reader on another CPU calling
- * cpu_load_get_cpu().
+ * Closing the window is idempotent, because architectures leave idle in one of
+ * two ways:
+ *
+ * - Arm and RISC-V wait for the interrupt with interrupts locked. The wait
+ *   returns without servicing the interrupt, so the idle-exit hook runs first
+ *   and closes the window; the ISR only runs afterwards.
+ * - x86 ("sti; hlt") and Xtensa ("waiti 0") wait with interrupts enabled. The
+ *   wake-up ISR therefore runs first and may reschedule away from the idle
+ *   thread, which would defer the idle-exit hook until the idle thread is
+ *   scheduled again - long after idle actually ended. On those architectures
+ *   the ISR entry closes the window instead, which is exactly the instant idle
+ *   ended. The deferred idle-exit hook then finds the window already closed and
+ *   does nothing.
+ *
+ * Each CPU only ever opens and closes its own window, and does so with
+ * interrupts locked or from its own ISR, so the open flag needs no locking. A
+ * per-CPU spinlock serializes the idle accumulation against a reader on another
+ * CPU calling cpu_load_get_cpu().
  */
 
 #include <zephyr/sys/cpu_load.h>
@@ -26,6 +40,7 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_CPU_LOAD_USE_COUNTER) || DT_HAS_CHOSEN(zephyr_cp
 static const struct device *counter = COND_CODE_1(CONFIG_CPU_LOAD_USE_COUNTER,
 				(DEVICE_DT_GET(DT_CHOSEN(zephyr_cpu_load_counter))), (NULL));
 static uint32_t enter_ts[CONFIG_MP_MAX_NUM_CPUS];
+static bool idle_open[CONFIG_MP_MAX_NUM_CPUS];
 static uint64_t cyc_start[CONFIG_MP_MAX_NUM_CPUS];
 static uint64_t ticks_idle[CONFIG_MP_MAX_NUM_CPUS];
 
@@ -40,19 +55,27 @@ static inline unsigned int curr_cpu_id(void)
 #endif
 }
 
+static inline uint32_t idle_timestamp(void)
+{
+	uint32_t now;
+
+	if (IS_ENABLED(CONFIG_CPU_LOAD_USE_COUNTER)) {
+		counter_get_value(counter, &now);
+		return now;
+	}
+
+	return k_cycle_get_32();
+}
+
 void cpu_load_on_enter_idle(void)
 {
 	unsigned int cpu = curr_cpu_id();
 
-	/* Only this CPU touches its enter_ts slot, and the hook runs with
-	 * interrupts locked, so no lock is needed here.
+	/* Only this CPU touches its own slots, and the hook runs with interrupts
+	 * locked, so no lock is needed here.
 	 */
-	if (IS_ENABLED(CONFIG_CPU_LOAD_USE_COUNTER)) {
-		counter_get_value(counter, &enter_ts[cpu]);
-		return;
-	}
-
-	enter_ts[cpu] = k_cycle_get_32();
+	enter_ts[cpu] = idle_timestamp();
+	idle_open[cpu] = true;
 }
 
 void cpu_load_on_exit_idle(void)
@@ -61,14 +84,19 @@ void cpu_load_on_exit_idle(void)
 	k_spinlock_key_t key;
 	uint32_t now;
 
-	if (IS_ENABLED(CONFIG_CPU_LOAD_USE_COUNTER)) {
-		counter_get_value(counter, &now);
-	} else {
-		now = k_cycle_get_32();
+	/* Idempotent: the window may already have been closed by the ISR that
+	 * woke the CPU (see the file comment). This is also the fast path taken
+	 * by every interrupt that did not interrupt idle.
+	 */
+	if (!idle_open[cpu]) {
+		return;
 	}
+
+	now = idle_timestamp();
 
 	key = k_spin_lock(&lock[cpu]);
 	ticks_idle[cpu] += now - enter_ts[cpu];
+	idle_open[cpu] = false;
 	k_spin_unlock(&lock[cpu], key);
 }
 

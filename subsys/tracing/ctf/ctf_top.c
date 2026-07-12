@@ -314,6 +314,10 @@ void sys_trace_k_thread_sched_suspend(struct k_thread *thread)
 
 void sys_trace_isr_enter(void)
 {
+	if (IS_ENABLED(CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK)) {
+		cpu_load_on_exit_idle();
+	}
+
 	ctf_top_isr_enter();
 }
 
