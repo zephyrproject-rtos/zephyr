@@ -21,7 +21,7 @@ some fixes that are not yet on the "master" branch:
 
     git clone https://github.com/siemens/jailhouse-images.git
     cd jailhouse-images
-    git checkout origin/next
+    git switch --detach origin/next
 
 Open the menu, select "QEMU ARM64 virtual target" then "Save & Build"
 (this will take a while):
