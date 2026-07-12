@@ -1,8 +1,10 @@
 common:
   tags: cpu_load
 tests:
-  # Idle-hook backend, covering every architecture that provides the idle
-  # hooks (ARCH_HAS_CPU_IDLE_HOOKS): Arm Cortex-M, Arm64 and RISC-V.
+  # Idle-hook backend, covering every architecture that provides the idle hooks
+  # (ARCH_HAS_CPU_IDLE_HOOKS). This spans both ways of closing the idle window:
+  # Arm Cortex-M, Arm64 and RISC-V close it in the idle-exit hook, while x86 and
+  # Xtensa wait with interrupts enabled and close it at ISR entry.
   libraries.cpu_load.idle_hook:
     filter: CONFIG_CPU_LOAD and CONFIG_ARCH_HAS_CPU_IDLE_HOOKS
     extra_configs:
@@ -11,10 +13,12 @@ tests:
       - qemu_cortex_m3
       - qemu_riscv32
       - qemu_cortex_a53
+      - qemu_x86
+      - qemu_xtensa/dc233c
       - mps2/an385
 
   # Scheduler runtime-statistics backend: portable across all architectures,
-  # including those that cannot provide the idle hooks (x86, POSIX).
+  # including those without the idle hooks (POSIX, x86_64).
   libraries.cpu_load.runtime_stats:
     filter: CONFIG_CPU_LOAD
     extra_configs:
