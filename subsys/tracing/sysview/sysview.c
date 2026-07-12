@@ -52,6 +52,10 @@ void sys_trace_k_thread_switched_out(void)
 
 void sys_trace_isr_enter(void)
 {
+	if (IS_ENABLED(CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK)) {
+		cpu_load_on_exit_idle();
+	}
+
 	SEGGER_SYSVIEW_RecordEnterISR();
 }
 
