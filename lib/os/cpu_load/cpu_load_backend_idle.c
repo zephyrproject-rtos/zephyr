@@ -70,19 +70,22 @@ static inline uint32_t idle_timestamp(void)
 void cpu_load_on_enter_idle(void)
 {
 	unsigned int cpu = curr_cpu_id();
+	k_spinlock_key_t key;
+	uint32_t now = idle_timestamp();
 
-	/* Only this CPU touches its own slots, and the hook runs with interrupts
-	 * locked, so no lock is needed here.
+	/* Locked because a reader on another CPU may sample this CPU while it is
+	 * idle, and it needs a consistent view of the open window.
 	 */
-	enter_ts[cpu] = idle_timestamp();
+	key = k_spin_lock(&lock[cpu]);
+	enter_ts[cpu] = now;
 	idle_open[cpu] = true;
+	k_spin_unlock(&lock[cpu], key);
 }
 
 void cpu_load_on_exit_idle(void)
 {
 	unsigned int cpu = curr_cpu_id();
 	k_spinlock_key_t key;
-	uint32_t now;
 
 	/* Idempotent: the window may already have been closed by the ISR that
 	 * woke the CPU (see the file comment). This is also the fast path taken
@@ -92,10 +95,12 @@ void cpu_load_on_exit_idle(void)
 		return;
 	}
 
-	now = idle_timestamp();
-
+	/* Take the timestamp under the lock: a reader on another CPU may move
+	 * enter_ts forward while sampling this still-open window, and a stamp
+	 * taken before that would make the delta go negative and wrap.
+	 */
 	key = k_spin_lock(&lock[cpu]);
-	ticks_idle[cpu] += now - enter_ts[cpu];
+	ticks_idle[cpu] += idle_timestamp() - enter_ts[cpu];
 	idle_open[cpu] = false;
 	k_spin_unlock(&lock[cpu], key);
 }
@@ -121,6 +126,25 @@ int cpu_load_get_cpu(unsigned int cpu_id, bool reset)
 	key = k_spin_lock(&lock[cpu_id]);
 	total = now - cyc_start[cpu_id];
 	idle_ticks = ticks_idle[cpu_id];
+
+	/* The target CPU may be idle right now, with its window still open. That
+	 * idle time has not been accumulated yet, so without this a CPU that
+	 * stayed idle for the whole measurement window would report a 100% load.
+	 * This only happens for a CPU other than the one doing the reading, as
+	 * the reader's own CPU is by definition not idle.
+	 */
+	if (idle_open[cpu_id]) {
+		uint32_t idle_now = idle_timestamp();
+
+		idle_ticks += idle_now - enter_ts[cpu_id];
+		if (reset) {
+			/* Re-open the window at idle_now so the idle time just
+			 * accounted for is not counted again when it closes.
+			 */
+			enter_ts[cpu_id] = idle_now;
+		}
+	}
+
 	if (reset) {
 		cyc_start[cpu_id] = now;
 		ticks_idle[cpu_id] = 0;
