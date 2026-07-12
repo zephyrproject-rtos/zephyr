@@ -40,6 +40,16 @@
 	.literal_position
 
 _start:
+#if XCHAL_HAVE_CP
+#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
+	movi	a2, 0xFF & ~(1 << XCHAL_CP_ID_AUDIOENGINELX)
+#else
+	movi	a2, 0xFF
+#endif
+	wsr	a2, CPENABLE
+	rsync
+#endif
+
 	/*
 	 *  _start is typically NOT at the beginning of the text segment --
 	 *  it is always called from either the reset vector (__start) or other
