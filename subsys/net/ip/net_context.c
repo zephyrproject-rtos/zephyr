@@ -2543,6 +2543,8 @@ static inline void context_finalize_udp_options(struct net_context *context, str
 #endif /* CONFIG_NET_UDP_OPTIONS */
 
 #if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+static void udp_dplpmtud_echo_work(struct k_work *work);
+
 int net_context_set_udp_dplpmtud(struct net_context *context, bool enable)
 {
 	if (net_context_get_proto(context) != NET_IPPROTO_UDP) {
@@ -2550,6 +2552,15 @@ int net_context_set_udp_dplpmtud(struct net_context *context, bool enable)
 	}
 
 	k_mutex_lock(&context->lock, K_FOREVER);
+
+	if (enable) {
+		k_work_init(&context->options.udp_opt.dplpmtud.echo_work,
+			    udp_dplpmtud_echo_work);
+		context->options.udp_opt.dplpmtud.echo_pending = false;
+	} else {
+		context->options.udp_opt.dplpmtud.echo_pending = false;
+		(void)k_work_cancel(&context->options.udp_opt.dplpmtud.echo_work);
+	}
 
 	context->options.udp_opt.dplpmtud.enabled = enable;
 
@@ -3446,6 +3457,166 @@ static bool context_allow_udp_options(struct net_context *context, struct net_pk
 #endif /* CONFIG_NET_UDP_OPTIONS */
 }
 
+#if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+/* Send a UDP options Response (RES) datagram echoing @token back to the source
+ * of a received Request (REQ), reusing the normal sendmsg path with a synthetic
+ * ZSOCK_UDP_OPT_CMSG_RES control message and no user payload.
+ */
+/* Record the peer and token of a received REQ so the RES can be echoed from a
+ * work item instead of synchronously in the RX path (see udp_dplpmtud_echo_work).
+ * Must be called with context->lock held.
+ */
+static int udp_dplpmtud_stash_echo(struct net_context *context,
+				   union net_ip_header *ip_hdr,
+				   union net_proto_header *proto_hdr,
+				   uint32_t token)
+{
+	struct net_sockaddr_storage *peer =
+		&context->options.udp_opt.dplpmtud.echo_peer;
+
+	if (proto_hdr->udp == NULL) {
+		return -EINVAL;
+	}
+
+	(void)memset(peer, 0, sizeof(*peer));
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) &&
+	    net_context_get_family(context) == NET_AF_INET6) {
+		struct net_sockaddr_in6 *p = (struct net_sockaddr_in6 *)peer;
+
+		p->sin6_family = NET_AF_INET6;
+		p->sin6_port = proto_hdr->udp->src_port;
+		memcpy(&p->sin6_addr, ip_hdr->ipv6->src, sizeof(struct net_in6_addr));
+		context->options.udp_opt.dplpmtud.echo_peerlen =
+			sizeof(struct net_sockaddr_in6);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		   net_context_get_family(context) == NET_AF_INET) {
+		struct net_sockaddr_in *p = (struct net_sockaddr_in *)peer;
+
+		p->sin_family = NET_AF_INET;
+		p->sin_port = proto_hdr->udp->src_port;
+		memcpy(&p->sin_addr, ip_hdr->ipv4->src, sizeof(struct net_in_addr));
+		context->options.udp_opt.dplpmtud.echo_peerlen =
+			sizeof(struct net_sockaddr_in);
+	} else {
+		return -EAFNOSUPPORT;
+	}
+
+	context->options.udp_opt.dplpmtud.echo_token = token;
+	context->options.udp_opt.dplpmtud.echo_pending = true;
+
+	return 0;
+}
+
+/* Rate-limit auto RES echoes so a flood of (possibly spoofed-source) REQs
+ * cannot turn this socket into a traffic reflector (RFC 9869). The RES is never
+ * larger than the REQ, so there is no amplification; this only bounds the
+ * reflection rate. Returns true (and records the time) when an echo is allowed.
+ * Must be called with context->lock held.
+ */
+static bool udp_dplpmtud_echo_allowed(struct net_context *context)
+{
+#if CONFIG_NET_UDP_OPTIONS_DPLPMTUD_ECHO_MIN_INTERVAL_MS > 0
+	uint32_t now = k_uptime_get_32();
+	uint32_t last = context->options.udp_opt.dplpmtud.echo_last_ms;
+
+	if (last != 0U &&
+	    (now - last) < CONFIG_NET_UDP_OPTIONS_DPLPMTUD_ECHO_MIN_INTERVAL_MS) {
+		return false;
+	}
+
+	/* Avoid the 0 "none sent yet" sentinel when uptime is exactly 0. */
+	context->options.udp_opt.dplpmtud.echo_last_ms = (now == 0U) ? 1U : now;
+#else
+	ARG_UNUSED(context);
+#endif
+	return true;
+}
+
+/* Send the RES datagram stashed by udp_dplpmtud_stash_echo(). Runs on the system
+ * workqueue so the transmit never happens in the RX path or under a held lock.
+ */
+static void udp_dplpmtud_echo_work(struct k_work *work)
+{
+	struct net_context *context = CONTAINER_OF(work, struct net_context,
+					options.udp_opt.dplpmtud.echo_work);
+	struct net_sockaddr_storage peer;
+	net_socklen_t peerlen;
+	uint32_t token;
+	struct net_msghdr msg = { 0 };
+	struct net_cmsghdr *cmsg;
+	union {
+		struct net_cmsghdr hdr;
+		unsigned char buf[NET_CMSG_SPACE(sizeof(uint32_t))];
+	} cmsgbuf;
+	int ret;
+
+	k_mutex_lock(&context->lock, K_FOREVER);
+
+	if (!context->options.udp_opt.dplpmtud.enabled ||
+	    !context->options.udp_opt.dplpmtud.echo_pending) {
+		k_mutex_unlock(&context->lock);
+		return;
+	}
+
+	peer = context->options.udp_opt.dplpmtud.echo_peer;
+	peerlen = context->options.udp_opt.dplpmtud.echo_peerlen;
+	token = context->options.udp_opt.dplpmtud.echo_token;
+	context->options.udp_opt.dplpmtud.echo_pending = false;
+
+	k_mutex_unlock(&context->lock);
+
+	(void)memset(&cmsgbuf, 0, sizeof(cmsgbuf));
+	cmsg = (struct net_cmsghdr *)cmsgbuf.buf;
+	cmsg->cmsg_len = NET_CMSG_LEN(sizeof(token));
+	cmsg->cmsg_level = NET_IPPROTO_UDP;
+	cmsg->cmsg_type = ZSOCK_UDP_OPT_CMSG_RES;
+	memcpy(NET_CMSG_DATA(cmsg), &token, sizeof(token));
+
+	msg.msg_name = &peer;
+	msg.msg_namelen = peerlen;
+	msg.msg_control = cmsgbuf.buf;
+	msg.msg_controllen = sizeof(cmsgbuf.buf);
+
+	ret = net_context_sendmsg(context, &msg, 0, NULL, K_NO_WAIT, NULL);
+	if (ret < 0) {
+		NET_DBG("Failed to send UDP options RES (%d)", ret);
+	}
+}
+
+/* Handle DPLPMTUD-relevant UDP options on a received datagram. Currently this
+ * implements the responder role: echo a received REQ token back as RES unless
+ * the application has taken over the echo. The prober side (matching a returned
+ * RES to an outstanding probe) is wired up together with the probe state
+ * machine in a later commit.
+ */
+static void context_udp_dplpmtud_rx(struct net_context *context,
+				    struct net_pkt *pkt,
+				    union net_ip_header *ip_hdr,
+				    union net_proto_header *proto_hdr)
+{
+	struct net_udp_opt_info info;
+
+	if (net_pkt_udp_opt_surplus_len(pkt) == 0U) {
+		return;
+	}
+
+	if (net_udp_opt_parse(pkt, &info) < 0) {
+		return;
+	}
+
+	if ((info.present & NET_UDP_OPT_F_REQ) != 0U &&
+	    !context->options.udp_opt.dplpmtud.app_respond &&
+	    udp_dplpmtud_echo_allowed(context)) {
+		if (udp_dplpmtud_stash_echo(context, ip_hdr, proto_hdr,
+					    info.req_token) == 0) {
+			(void)k_work_submit(
+				&context->options.udp_opt.dplpmtud.echo_work);
+		}
+	}
+}
+#endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
+
 enum net_verdict net_context_packet_received(struct net_conn *conn,
 					     struct net_pkt *pkt,
 					     union net_ip_header *ip_hdr,
@@ -3469,6 +3640,13 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 	if (!context_allow_udp_options(context, pkt)) {
 		goto unlock;
 	}
+
+#if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+	if (net_context_get_proto(context) == NET_IPPROTO_UDP &&
+	    context->options.udp_opt.dplpmtud.enabled) {
+		context_udp_dplpmtud_rx(context, pkt, ip_hdr, proto_hdr);
+	}
+#endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
 
 	if (!context->recv_cb) {
 		goto unlock;
