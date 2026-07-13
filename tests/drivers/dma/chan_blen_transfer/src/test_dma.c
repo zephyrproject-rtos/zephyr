@@ -22,6 +22,28 @@
 
 #include "test_buffers.h"
 
+#define DMA_TEST_NODE      DT_PATH(zephyr_user)
+#define DMA_TEST_DEVS_PROP dma_test_devs
+
+#if DT_NODE_HAS_PROP(DMA_TEST_NODE, DMA_TEST_DEVS_PROP)
+/* Boards list the DMA controllers to test in a zephyr,user dma-test-devs
+ * phandle list.
+ */
+#define DMA_TEST_DEV_COUNT DT_PROP_LEN(DMA_TEST_NODE, DMA_TEST_DEVS_PROP)
+#define DMA_TEST_DEV_GET(idx, _)                                                                   \
+	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(DMA_TEST_NODE, DMA_TEST_DEVS_PROP, idx))
+#else
+/* Legacy boards use tst_dmaN devicetree labels and
+ * CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS.
+ */
+#define DMA_TEST_DEV_COUNT CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
+#define DMA_TEST_DEV_GET(idx, _) DEVICE_DT_GET(DT_NODELABEL(tst_dma##idx))
+#endif
+
+static const struct device *const dma_test_devs[] = {
+	LISTIFY(DMA_TEST_DEV_COUNT, DMA_TEST_DEV_GET, (,))
+};
+
 static K_SEM_DEFINE(transfer_end_sem, 0, 1);
 static int dma_complete_status;
 
@@ -127,58 +149,32 @@ static int test_task(const struct device *dma, uint32_t chan_id, uint32_t blen)
 	return TC_PASS;
 }
 
-#define RUN_DMA_M2M_TEST(dma_label, chan, blen)                                                    \
-	do {                                                                                       \
-		const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma_label));                 \
-		zassert_true((test_task(dma, chan, blen) == TC_PASS));                             \
-	} while (0)
-
-ZTEST(dma_m2m, test_tst_dma0_m2m_chan0_burst8)
+static void run_dma_m2m_test(uint32_t chan, uint32_t blen)
 {
-	RUN_DMA_M2M_TEST(tst_dma0, CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 8);
+	for (size_t i = 0; i < ARRAY_SIZE(dma_test_devs); i++) {
+		zassert_true(test_task(dma_test_devs[i], chan, blen) == TC_PASS,
+			     "%s failed chan %u burst %u", dma_test_devs[i]->name, chan, blen);
+	}
 }
 
-ZTEST(dma_m2m, test_tst_dma0_m2m_chan1_burst8)
+ZTEST(dma_m2m, test_dma_m2m_chan0_burst8)
 {
-	RUN_DMA_M2M_TEST(tst_dma0, CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 8);
+	run_dma_m2m_test(CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 8);
 }
 
-#if CONFIG_DMA_TRANSFER_BURST16
-ZTEST(dma_m2m, test_tst_dma0_m2m_chan0_burst16)
+ZTEST(dma_m2m, test_dma_m2m_chan1_burst8)
 {
-	RUN_DMA_M2M_TEST(tst_dma0, CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 16);
-}
-
-ZTEST(dma_m2m, test_tst_dma0_m2m_chan1_burst16)
-{
-	RUN_DMA_M2M_TEST(tst_dma0, CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 16);
-}
-#endif
-
-#if CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS > 1
-ZTEST(dma_m2m, test_tst_dma1_m2m_chan0_burst8)
-{
-	RUN_DMA_M2M_TEST(tst_dma1, CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 8);
-}
-
-ZTEST(dma_m2m, test_tst_dma1_m2m_chan1_burst8)
-{
-	RUN_DMA_M2M_TEST(tst_dma1, CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 8);
+	run_dma_m2m_test(CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 8);
 }
 
 #if CONFIG_DMA_TRANSFER_BURST16
-ZTEST(dma_m2m, test_tst_dma1_m2m_chan0_burst16)
+ZTEST(dma_m2m, test_dma_m2m_chan0_burst16)
 {
-	RUN_DMA_M2M_TEST(tst_dma1, CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 16);
+	run_dma_m2m_test(CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 16);
 }
 
-ZTEST(dma_m2m, test_tst_dma1_m2m_chan1_burst16)
+ZTEST(dma_m2m, test_dma_m2m_chan1_burst16)
 {
-	RUN_DMA_M2M_TEST(tst_dma1, CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 16);
+	run_dma_m2m_test(CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 16);
 }
-#endif
-#endif /* CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS > 1 */
-
-#if CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS > 2
-#error "Update test_dma.c to add ZTEST cases for tst_dma2 and beyond."
 #endif
