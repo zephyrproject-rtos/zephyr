@@ -1406,6 +1406,188 @@ ZTEST(net_socket_udp, test_udp_options_sendmsg_cmsg_multi)
 	zassert_equal(rv, 0, "close failed");
 }
 
+#if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+ZTEST(net_socket_udp, test_udp_options_dplpmtud_sockopt)
+{
+	struct net_sockaddr_in client_addr;
+	struct net_sockaddr_in server_addr;
+	int client_sock, server_sock;
+	net_socklen_t optlen;
+	int optval;
+	int rv;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_UDP_OPTIONS_DPLPMTUD);
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	rv = zsock_bind(server_sock, (struct net_sockaddr *)&server_addr, sizeof(server_addr));
+	zassert_equal(rv, 0, "server bind failed");
+	rv = zsock_bind(client_sock, (struct net_sockaddr *)&client_addr, sizeof(client_addr));
+	zassert_equal(rv, 0, "client bind failed");
+
+	/* The responder can be enabled on an unconnected (bound) socket. */
+	optval = 1;
+	rv = zsock_setsockopt(server_sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_DPLPMTUD,
+			      &optval, sizeof(optval));
+	zassert_equal(rv, 0, "server enable DPLPMTUD failed (%d)", errno);
+
+	optlen = sizeof(optval);
+	optval = 0;
+	rv = zsock_getsockopt(server_sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_DPLPMTUD,
+			      &optval, &optlen);
+	zassert_equal(rv, 0, "getsockopt DPLPMTUD failed (%d)", errno);
+	zassert_equal(optval, 1, "DPLPMTUD not reported as enabled");
+
+	/* APP_RESPOND get/set round-trips. */
+	optval = 1;
+	rv = zsock_setsockopt(server_sock, NET_IPPROTO_UDP,
+			      ZSOCK_UDP_OPT_DPLPMTUD_APP_RESPOND, &optval, sizeof(optval));
+	zassert_equal(rv, 0, "set APP_RESPOND failed (%d)", errno);
+
+	optlen = sizeof(optval);
+	optval = 0;
+	rv = zsock_getsockopt(server_sock, NET_IPPROTO_UDP,
+			      ZSOCK_UDP_OPT_DPLPMTUD_APP_RESPOND, &optval, &optlen);
+	zassert_equal(rv, 0, "get APP_RESPOND failed (%d)", errno);
+	zassert_equal(optval, 1, "APP_RESPOND not reported as set");
+
+	/* The prober can be enabled on a connected socket. */
+	rv = zsock_connect(client_sock, (struct net_sockaddr *)&server_addr,
+			   sizeof(server_addr));
+	zassert_equal(rv, 0, "client connect failed (%d)", errno);
+
+	optval = 1;
+	rv = zsock_setsockopt(client_sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_DPLPMTUD,
+			      &optval, sizeof(optval));
+	zassert_equal(rv, 0, "client enable DPLPMTUD failed (%d)", errno);
+
+	/* Disabling clears the enabled state. */
+	optval = 0;
+	rv = zsock_setsockopt(client_sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_DPLPMTUD,
+			      &optval, sizeof(optval));
+	zassert_equal(rv, 0, "disable DPLPMTUD failed (%d)", errno);
+
+	optlen = sizeof(optval);
+	optval = 1;
+	rv = zsock_getsockopt(client_sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_DPLPMTUD,
+			      &optval, &optlen);
+	zassert_equal(rv, 0, "getsockopt DPLPMTUD failed (%d)", errno);
+	zassert_equal(optval, 0, "DPLPMTUD not reported as disabled");
+
+	rv = zsock_close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = zsock_close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
+ZTEST(net_socket_udp, test_udp_options_dplpmtud_responder_echo)
+{
+	struct net_sockaddr_in client_addr;
+	struct net_sockaddr_in server_addr;
+	struct net_sockaddr addr;
+	struct net_msghdr msg = { 0 };
+	struct net_msghdr rmsg = { 0 };
+	struct net_iovec io_vector[1];
+	struct net_cmsghdr *cmsg, *prevcmsg;
+	union {
+		struct net_cmsghdr hdr;
+		unsigned char buf[NET_CMSG_SPACE(sizeof(uint32_t))];
+	} cmsgbuf;
+	union {
+		struct net_cmsghdr hdr;
+		unsigned char buf[NET_CMSG_SPACE(sizeof(uint32_t))];
+	} rcmsgbuf;
+	uint32_t req_token = 0xabcd1234U;
+	uint32_t res_token = 0U;
+	net_socklen_t addrlen;
+	int client_sock, server_sock;
+	bool found = false;
+	ssize_t sent, recved;
+	int optval;
+	int rv;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_UDP_OPTIONS_DPLPMTUD);
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	rv = zsock_bind(server_sock, (struct net_sockaddr *)&server_addr, sizeof(server_addr));
+	zassert_equal(rv, 0, "server bind failed");
+	rv = zsock_bind(client_sock, (struct net_sockaddr *)&client_addr, sizeof(client_addr));
+	zassert_equal(rv, 0, "client bind failed");
+
+	/* Enable the DPLPMTUD responder on the server. */
+	optval = 1;
+	rv = zsock_setsockopt(server_sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_DPLPMTUD,
+			      &optval, sizeof(optval));
+	zassert_equal(rv, 0, "server enable DPLPMTUD failed (%d)", errno);
+
+	/* The client sends a datagram carrying an application-supplied REQ. */
+	io_vector[0].iov_base = TEST_STR_SMALL;
+	io_vector[0].iov_len = STRLEN(TEST_STR_SMALL);
+	memset(&cmsgbuf, 0, sizeof(cmsgbuf));
+	msg.msg_name = &server_addr;
+	msg.msg_namelen = sizeof(server_addr);
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_control = &cmsgbuf.buf;
+	msg.msg_controllen = sizeof(cmsgbuf.buf);
+
+	cmsg = NET_CMSG_FIRSTHDR(&msg);
+	cmsg->cmsg_len = NET_CMSG_LEN(sizeof(req_token));
+	cmsg->cmsg_level = NET_IPPROTO_UDP;
+	cmsg->cmsg_type = ZSOCK_UDP_OPT_CMSG_REQ;
+	memcpy(NET_CMSG_DATA(cmsg), &req_token, sizeof(req_token));
+
+	sent = zsock_sendmsg(client_sock, &msg, 0);
+	zassert_equal(sent, STRLEN(TEST_STR_SMALL), "sendmsg failed (%d)", errno);
+
+	/* Drain the datagram on the server; the RES echo was generated during
+	 * its reception, independently of the application.
+	 */
+	clear_buf(rx_buf);
+	recved = zsock_recv(server_sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(recved, STRLEN(TEST_STR_SMALL), "server recv failed (%zd)", recved);
+
+	/* The client receives the auto-generated RES echo. */
+	io_vector[0].iov_base = rx_buf;
+	io_vector[0].iov_len = sizeof(rx_buf);
+	addrlen = sizeof(addr);
+	memset(&rcmsgbuf, 0, sizeof(rcmsgbuf));
+	rmsg.msg_name = &addr;
+	rmsg.msg_namelen = addrlen;
+	rmsg.msg_iov = io_vector;
+	rmsg.msg_iovlen = 1;
+	rmsg.msg_control = &rcmsgbuf.buf;
+	rmsg.msg_controllen = sizeof(rcmsgbuf.buf);
+
+	clear_buf(rx_buf);
+	recved = zsock_recvmsg(client_sock, &rmsg, 0);
+	zassert_true(recved >= 0, "client recvmsg failed (%d)", errno);
+
+	for (prevcmsg = NULL, cmsg = NET_CMSG_FIRSTHDR(&rmsg);
+	     cmsg != NULL && prevcmsg != cmsg;
+	     prevcmsg = cmsg, cmsg = NET_CMSG_NXTHDR(&rmsg, cmsg)) {
+		if (cmsg->cmsg_level == NET_IPPROTO_UDP &&
+		    cmsg->cmsg_type == ZSOCK_UDP_OPT_CMSG_RES) {
+			memcpy(&res_token, NET_CMSG_DATA(cmsg), sizeof(res_token));
+			found = true;
+			break;
+		}
+	}
+
+	zassert_true(found, "no RES echo received from responder");
+	zassert_equal(res_token, req_token, "echoed RES token mismatch (0x%x != 0x%x)",
+		      res_token, req_token);
+
+	rv = zsock_close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = zsock_close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+#endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
+
 static void comm_sendmsg_with_txtime(int client_sock,
 				     struct net_sockaddr *client_addr,
 				     net_socklen_t client_addrlen,
