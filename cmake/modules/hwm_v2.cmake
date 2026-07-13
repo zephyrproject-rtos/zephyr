@@ -43,19 +43,10 @@ list(APPEND ARCH_ROOT ${ZEPHYR_BASE})
 list(TRANSFORM ARCH_ROOT PREPEND "--arch-root=" OUTPUT_VARIABLE arch_root_args)
 list(TRANSFORM SOC_ROOT PREPEND "--soc-root=" OUTPUT_VARIABLE soc_root_args)
 
-# When targeting Babblesim boards we need also the real platform SoC tree to be present, therefore
-# exclude it from the narrow Kconfig tree
-if(BOARD_QUALIFIERS AND NOT "${BOARD}" MATCHES "bsim")
-  string(REPLACE "/" ";" split_board_qualifiers ";${BOARD_QUALIFIERS}")
-  list(GET split_board_qualifiers 1 target_soc)
-  set(soc_filter --soc ${target_soc})
-else()
-  set(soc_filter --socs)
-endif()
-
 execute_process(COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/list_hardware.py
                 ${arch_root_args} ${soc_root_args}
-                --archs ${soc_filter} --cmakeformat={TYPE}\;{NAME}\;{DIR}
+                --archs --socs
+                --cmakeformat={TYPE}\;{NAME}\;{DIR}
                 OUTPUT_VARIABLE ret_hw
                 ERROR_VARIABLE err_hw
                 RESULT_VARIABLE ret_val
