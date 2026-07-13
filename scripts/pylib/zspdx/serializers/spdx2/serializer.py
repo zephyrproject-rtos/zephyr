@@ -14,6 +14,7 @@ from zspdx.model import (
     SBOMDocument,
     SBOMElement,
     SBOMFile,
+    SBOMSnippet,
 )
 from zspdx.serializers.helpers import (
     generate_download_url,
@@ -67,6 +68,10 @@ class SPDX2Serializer:
             if not self._write_document_second_pass(doc, output_path):
                 _logger.error(f"Failed to rewrite document {doc.name} with external references")
                 return False
+
+        # Optional: write snippets add-on document
+        if self.sbom_graph.snippets:
+            self._write_snippets_document(output_dir)
 
         return True
 
@@ -442,3 +447,151 @@ LicenseComment: Corresponds to the license ID `{lic}` detected in an SPDX-Licens
         sha1 = hashlib.sha1(usedforsecurity=False)
         sha1.update(file_list.encode('utf-8'))
         return sha1.hexdigest()
+
+    # ---- Snippet add-on document -------------------------------------------
+
+    def _write_snippets_document(self, output_dir: str) -> None:
+        """Write a standalone ``snippets.spdx`` add-on document.
+
+        Contains one SPDX 2.x ``Snippet`` block per entry in
+        ``sbom_graph.snippets``.  Each snippet references its parent file via a
+        cross-document ``DocumentRef-<name>:SPDXRef-File-<id>`` identifier.
+        """
+        snippets = self.sbom_graph.snippets
+        if not snippets:
+            return
+
+        # Determine which source documents are actually referenced and ensure
+        # their hashes are available (they were computed in the first pass).
+        used_docs: dict[str, SBOMDocument] = {}
+        for snippet in snippets:
+            doc = self.sbom_graph.get_document_for_file(snippet.spdx_file)
+            if doc and doc.name in self.document_hashes:
+                used_docs[doc.name] = doc
+
+        # The image the snippets came from lives in its own (build) document; it
+        # must also be declared as an external reference so the provenance
+        # relationships below can point at it across documents.
+        binary_ref = self._snippet_binary_ref()
+        if binary_ref is not None:
+            binary_doc = self.sbom_graph.get_document_for_file(self.sbom_graph.snippet_binary)
+            if binary_doc and binary_doc.name in self.document_hashes:
+                used_docs[binary_doc.name] = binary_doc
+
+        output_path = os.path.join(output_dir, "snippets.spdx")
+        created = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        namespace = f"{self.sbom_graph.namespace_prefix}/snippets"
+
+        try:
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write(f"""SPDXVersion: SPDX-{self.spdx_version}
+DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: Zephyr-Source-Snippets
+DocumentNamespace: {namespace}
+Creator: Tool: Zephyr SPDX builder
+Created: {created}
+
+""")
+                # ExternalDocumentRef for every referenced source document
+                for doc_name, doc in sorted(used_docs.items()):
+                    doc_hash = self.document_hashes[doc_name]
+                    doc_ns = doc.namespace or (
+                        f"{self.sbom_graph.namespace_prefix}/{doc_name}"
+                    )
+                    doc_ref = self.document_refs.get(doc_name, f"DocumentRef-{doc_name}")
+                    f.write(
+                        f"ExternalDocumentRef: {doc_ref} {doc_ns} SHA1: {doc_hash}\n"
+                    )
+                if used_docs:
+                    f.write("\n")
+
+                count = 0
+                written_indices = []
+                for index, snippet in enumerate(snippets):
+                    if self._write_snippet(f, snippet, index):
+                        written_indices.append(index)
+                        count += 1
+
+                self._write_snippet_provenance(f, binary_ref, written_indices)
+
+        except OSError:
+            _logger.exception("Error: unable to write snippets document to %s", output_path)
+            return
+
+        _logger.info("Written %d snippet(s) to %s", count, output_path)
+
+    def _snippet_binary_ref(self) -> str | None:
+        """Cross-document SPDX id of the image the snippets were extracted from.
+
+        Returns ``DocumentRef-<build>:SPDXRef-File-<elf>`` (or a bare id when the
+        image lives in the current document), or ``None`` when the graph tracks no
+        such binary or it has no assigned id.
+        """
+        binary = self.sbom_graph.snippet_binary
+        if binary is None:
+            return None
+        binary_id = self.file_ids.get(binary.path)
+        if not binary_id:
+            return None
+        doc = self.sbom_graph.get_document_for_file(binary)
+        if doc and doc.name in self.document_hashes:
+            doc_ref = self.document_refs.get(doc.name, f"DocumentRef-{doc.name}")
+            return f"{doc_ref}:{binary_id}"
+        return binary_id
+
+    def _write_snippet_provenance(self, f, binary_ref: str | None, indices: list) -> None:
+        """Emit ``<image> GENERATED_FROM <snippet>`` for each written snippet.
+
+        This is the source-to-binary provenance the base SBOM lacks: the ELF is
+        otherwise only ``STATIC_LINK``-ed to archives, so the exact source ranges
+        that ended up in it are recorded here, mirroring the file-level
+        ``GENERATED_FROM`` edges the ELF already carries for directly linked
+        sources.
+        """
+        if binary_ref is None or not indices:
+            return
+        f.write("\n")
+        for index in indices:
+            f.write(f"Relationship: {binary_ref} GENERATED_FROM SPDXRef-Snippet-{index}\n")
+
+    def _write_snippet(self, f, snippet: SBOMSnippet, index: int) -> bool:
+        """Write a single SPDX 2.x Snippet block.  Returns True on success."""
+        file_obj = snippet.spdx_file
+        file_spdx_id = self.file_ids.get(file_obj.path)
+        if not file_spdx_id:
+            _logger.warning(
+                "Snippet references unresolved file %s; skipping", file_obj.path
+            )
+            return False
+
+        doc = self.sbom_graph.get_document_for_file(file_obj)
+        if doc and doc.name in self.document_hashes:
+            doc_ref = self.document_refs.get(doc.name, f"DocumentRef-{doc.name}")
+            from_file_ref = f"{doc_ref}:{file_spdx_id}"
+        else:
+            from_file_ref = file_spdx_id
+
+        snippet_id = f"SPDXRef-Snippet-{index}"
+        rel_path = file_obj.relative_path or os.path.basename(file_obj.path)
+
+        f.write(f"SnippetSPDXID: {snippet_id}\n")
+        f.write(f"SnippetFromFileSPDXID: {from_file_ref}\n")
+        f.write(
+            f"SnippetByteRange: {snippet.byte_range[0]}:{snippet.byte_range[1]}\n"
+        )
+        if snippet.line_range:
+            f.write(
+                f"SnippetLineRange: {snippet.line_range[0]}:{snippet.line_range[1]}\n"
+            )
+        f.write(f"SnippetLicenseConcluded: {snippet.concluded_license}\n")
+        f.write(f"LicenseInfoInSnippet: {snippet.concluded_license}\n")
+        f.write(f"SnippetCopyrightText: {snippet.copyright_text}\n")
+        if snippet.line_range:
+            f.write(
+                f"SnippetName: {rel_path}:{snippet.line_range[0]}-{snippet.line_range[1]}\n"
+            )
+        else:
+            f.write(f"SnippetName: {rel_path}@{snippet.byte_range[0]}\n")
+        f.write("\n")
+        return True

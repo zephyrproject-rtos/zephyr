@@ -19,6 +19,7 @@ from zspdx.model import (
     SBOMFile,
     SBOMGraph,
     SBOMRelationship,
+    SBOMSnippet,
 )
 from zspdx.serializers.helpers import (
     CPE23TYPE_REGEX,
@@ -1117,6 +1118,9 @@ class SPDX3Serializer:
             self._create_documents()
             self._write_documents(output_dir)
 
+            if self.sbom_data.snippets:
+                self._write_snippets_document(output_dir)
+
             _logger.info(f"SPDX 3.0 documents written to {output_dir}")
             return True
 
@@ -1240,6 +1244,138 @@ class SPDX3Serializer:
         for sbom_doc in self.sbom_data.documents.values():
             if sbom_doc.components:
                 self._create_document(sbom_doc)
+
+    # ---- Snippet add-on document -------------------------------------------
+
+    def _generate_snippet_id(self, index: int) -> str:
+        """Generate URI-based ID for a snippet element."""
+        namespace = self.sbom_data.namespace_prefix.rstrip("/")
+        return self._shorten_id(f"{namespace}/snippets/{index}")
+
+    def _create_software_snippet(
+        self, snippet: SBOMSnippet, index: int
+    ) -> spdx.software_Snippet | None:
+        """Convert an :class:`SBOMSnippet` to a SPDX 3.0 ``software_Snippet`` element."""
+        parent_file = self.file_elements.get(snippet.spdx_file.path)
+        if parent_file is None:
+            _logger.warning(
+                "Snippet references unresolved file %s; skipping", snippet.spdx_file.path
+            )
+            return None
+
+        snip = spdx.software_Snippet()
+        snip._id = self._generate_snippet_id(index)
+        snip.creationInfo = self.creation_info._id
+
+        rel_path = snippet.spdx_file.relative_path or os.path.basename(snippet.spdx_file.path)
+        if snippet.line_range:
+            snip.name = (
+                f"{rel_path}:{snippet.line_range[0]}-{snippet.line_range[1]}"
+            )
+        else:
+            snip.name = f"{rel_path}@{snippet.byte_range[0]}-{snippet.byte_range[1]}"
+
+        snip.software_snippetFromFile = parent_file._id
+        snip.software_copyrightText = snippet.copyright_text or NOASSERTION
+
+        byte_range = spdx.PositiveIntegerRange()
+        byte_range.beginIntegerRange = snippet.byte_range[0]
+        byte_range.endIntegerRange = snippet.byte_range[1]
+        snip.software_byteRange = byte_range
+
+        if snippet.line_range:
+            line_range = spdx.PositiveIntegerRange()
+            line_range.beginIntegerRange = snippet.line_range[0]
+            line_range.endIntegerRange = snippet.line_range[1]
+            snip.software_lineRange = line_range
+
+        return snip
+
+    def _create_snippet_build_input(
+        self, namespace: str, snippet_elements: list
+    ) -> spdx.LifecycleScopedRelationship | None:
+        """Relate the build to the snippets it consumed as inputs.
+
+        Returns a single ``hasInput`` relationship from the overall
+        ``build_Build`` (which already ``hasOutput`` the image) to every snippet,
+        or ``None`` when no Build element was produced. The ``from`` references the
+        build element in the base build document; consumers load both documents.
+        """
+        if self.build is None or not snippet_elements:
+            return None
+
+        rel = spdx.LifecycleScopedRelationship()
+        rel._id = self._shorten_id(f"{namespace}/snippets/relationships/build-input")
+        rel.relationshipType = spdx.RelationshipType.hasInput
+        rel.from_ = self.build._id
+        rel.to = [snip._id for snip in snippet_elements]
+        rel.scope = spdx.LifecycleScopeType.build
+        rel.creationInfo = self.creation_info._id
+        return rel
+
+    def _write_snippets_document(self, output_dir: str) -> None:
+        """Write a standalone ``snippets.jsonld`` add-on document.
+
+        The document contains one ``software_Snippet`` per entry in
+        ``sbom_graph.snippets``.  Each snippet references its parent
+        ``software_File`` element (already serialized in the base documents)
+        via ``software_snippetFromFile``.
+        """
+        namespace = self.sbom_data.namespace_prefix.rstrip("/")
+
+        doc = spdx.SpdxDocument()
+        doc._id = self._shorten_id(f"{namespace}/documents/snippets")
+        for uri, prefix in self.namespace_prefixes.items():
+            ns_map = spdx.NamespaceMap()
+            ns_map.prefix = prefix
+            ns_map.namespace = uri
+            doc.namespaceMap.append(ns_map)
+        doc.name = "Zephyr Source Snippets"
+        doc.creationInfo = self.creation_info
+        data_license = self._create_license_expression("CC0-1.0")
+        if data_license:
+            doc.dataLicense = data_license._id
+
+        doc.profileConformance.append(spdx.ProfileIdentifierType.core)
+        doc.profileConformance.append(spdx.ProfileIdentifierType.software)
+        doc.profileConformance.append(spdx.ProfileIdentifierType.simpleLicensing)
+
+        snippet_elements = []
+        for index, sbom_snippet in enumerate(self.sbom_data.snippets):
+            snip = self._create_software_snippet(sbom_snippet, index)
+            if snip is not None:
+                snippet_elements.append(snip)
+                doc.element.append(snip)
+                doc.rootElement.append(snip)
+
+        if not snippet_elements:
+            _logger.warning("No valid snippets to serialize; skipping snippets.jsonld")
+            return
+
+        # Source-to-binary provenance: the extracted ranges are the exact source
+        # lines that ended up in the image the Build ``hasOutput``. Record them as
+        # a build ``hasInput``, at the same (file) granularity the Build profile
+        # already uses for compiled sources, refining it down to used line ranges.
+        build_input_rel = self._create_snippet_build_input(namespace, snippet_elements)
+
+        object_set = spdx.SHACLObjectSet()
+        object_set.add(doc)
+        if self.creation_info:
+            object_set.add(self.creation_info)
+        if self.tool:
+            object_set.add(self.tool)
+        if self.creator_agent:
+            object_set.add(self.creator_agent)
+        for snip in snippet_elements:
+            object_set.add(snip)
+        if build_input_rel is not None:
+            doc.element.append(build_input_rel)
+            object_set.add(build_input_rel)
+
+        output_path = os.path.join(output_dir, "snippets.jsonld")
+        with open(output_path, "wb") as f:
+            spdx.JSONLDSerializer().write(object_set, f, force_at_graph=True, indent=2)
+        _logger.info("Written %d snippet(s) to %s", len(snippet_elements), output_path)
 
     def _write_documents(self, output_dir: str):
         """Write each created document to its own JSON-LD file."""
