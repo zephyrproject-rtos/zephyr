@@ -2095,6 +2095,16 @@ Documentation Infrastructure:
     - drivers.gpio
     - sample.drivers.gpio
 
+"Drivers: Graphic":
+  status: maintained
+  maintainers:
+    - avolmat-st
+  files:
+    - drivers/graphic/
+    - include/zephyr/drivers/graphic.h
+  labels:
+    - "area: Graphic"
+
 "Drivers: HW Info":
   status: maintained
   maintainers:
@@ -3243,6 +3253,16 @@ Google Platforms:
     - samples/boards/google/
   tests:
     - sample.boards.google_twinkie_v2
+
+Graphic Subsystem:
+  status: maintained
+  maintainers:
+    - avolmat-st
+  files:
+    - subsys/graphic/
+    - include/zephyr/graphic/
+  labels:
+    - "area: Graphic"
 
 Hash Utilities:
   status: maintained

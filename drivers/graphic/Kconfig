@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GRAPHIC_DRIVERS
+	bool "Graphic drivers"
+	help
+	  Enable support for graphic drivers
+
+if GRAPHIC_DRIVERS
+
+module = GRAPHIC_DRIVERS
+module-str = graphic_drivers
+source "subsys/logging/Kconfig.template.log_config"
+
+config GRAPHIC_INIT_PRIORITY
+	int "Graphic initialization priority"
+	default 60
+	help
+	  System initialization priority for graphic drivers.
+
+# zephyr-keep-sorted-start
+# zephyr-keep-sorted-stop
+
+endif # GRAPHIC_DRIVERS

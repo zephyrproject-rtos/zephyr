@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GRAPHIC
+	bool "GRAPHIC subsystem"
+	select GRAPHIC_DRIVERS
+	help
+	  Enable support for the graphic subsystem as well as graphic drivers.
+
+if GRAPHIC
+
+module = GRAPHIC
+module-str = graphic
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # GRAPHIC
