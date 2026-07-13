@@ -52,6 +52,7 @@ void uhc_xfer_return(const struct device *dev,
 	xfer->err = err;
 
 	data->event_cb(dev, &drv_evt);
+	(void)uhc_xfer_unref(xfer);
 }
 
 struct uhc_transfer *uhc_xfer_get_next(const struct device *dev)
@@ -140,6 +141,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	}
 
 	memset(xfer, 0, sizeof(struct uhc_transfer));
+	sys_ref_init(&xfer->ref);
 	xfer->ep = ep;
 	xfer->mps = mps;
 	xfer->interval = interval;
@@ -180,25 +182,30 @@ struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
 	return xfer;
 }
 
-int uhc_xfer_free(const struct device *dev, struct uhc_transfer *const xfer)
+static void uhc_xfer_release(struct sys_ref *const ref)
 {
-	const struct uhc_api *api = dev->api;
-	int ret = 0;
-
-	api->lock(dev);
-
-	if (xfer->queued) {
-		ret = -EBUSY;
-		LOG_ERR("Transfer is still queued");
-		goto xfer_free_error;
-	}
+	struct uhc_transfer *const xfer = CONTAINER_OF(ref, struct uhc_transfer, ref);
 
 	k_mem_slab_free(&uhc_xfer_pool, (void *)xfer);
+}
 
-xfer_free_error:
-	api->unlock(dev);
+void uhc_xfer_ref(struct uhc_transfer *const xfer)
+{
+	sys_ref_get(&xfer->ref);
+}
 
-	return ret;
+bool uhc_xfer_unref(struct uhc_transfer *const xfer)
+{
+	return sys_ref_put(&xfer->ref, uhc_xfer_release);
+}
+
+int uhc_xfer_free(const struct device *dev, struct uhc_transfer *const xfer)
+{
+	ARG_UNUSED(dev);
+
+	uhc_xfer_unref(xfer);
+
+	return 0;
 }
 
 int uhc_xfer_buf_add(const struct device *dev,
@@ -233,9 +240,11 @@ int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
 	}
 
 	xfer->queued = 1;
+	uhc_xfer_ref(xfer);
 	ret = api->ep_enqueue(dev, xfer);
 	if (ret) {
 		xfer->queued = 0;
+		uhc_xfer_unref(xfer);
 	}
 
 

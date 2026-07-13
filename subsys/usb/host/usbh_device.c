@@ -603,3 +603,29 @@ error:
 
 	return err;
 }
+
+int usbh_xfer_enqueue(const struct usb_device *const udev,
+		      struct uhc_transfer *const xfer)
+{
+	struct usbh_context *const ctx = udev->ctx;
+	int ret;
+
+	/*
+	 * Increase the number of queued transfers before enqueue and decrease
+	 * it on enqueue error.
+	 */
+	if (xfer->anchor != NULL) {
+		ret = usbh_class_xfer_acquire(xfer->anchor);
+		if (ret != 0) {
+			/* Removal has started, instance is no longer bound */
+			return ret;
+		}
+	}
+
+	ret = uhc_ep_enqueue(ctx->dev, xfer);
+	if (ret != 0 && xfer->anchor != NULL) {
+		usbh_class_xfer_release(xfer->anchor);
+	}
+
+	return ret;
+}

@@ -202,7 +202,7 @@ usbip_req_cb_error:
 		net_buf_unref(buf);
 	}
 
-	usbh_xfer_free(dev_ctx->udev, xfer);
+	(void)uhc_xfer_unref(xfer);
 
 	return 0;
 }
@@ -253,7 +253,7 @@ static int usbip_submit_req(struct usbip_cmd_node *const cmd_nd, const uint8_t e
 	return 0;
 
 submit_req_err:
-	usbh_xfer_free(dev_ctx->udev, xfer);
+	(void)uhc_xfer_unref(xfer);
 
 	return ret;
 }

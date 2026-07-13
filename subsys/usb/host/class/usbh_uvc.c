@@ -39,6 +39,9 @@ LOG_MODULE_REGISTER(usbh_uvc, CONFIG_USBH_UVC_LOG_LEVEL);
 #define UVC_DEVICE_FLAG_CONNECTED BIT(0)
 #define UVC_DEVICE_FLAG_STREAMING BIT(1)
 
+/* Time to wait for streaming transfers to drain when streaming stops */
+#define UVC_DRAIN_TIMEOUT K_MSEC(1000)
+
 /* USB UVC control parameters structure */
 struct uvc_ctrls {
 	struct video_ctrl auto_gain;
@@ -94,6 +97,7 @@ struct uvc_format_info {
 
 struct uvc_host_data {
 	struct usb_device *udev;
+	struct usbh_class_data *c_data;
 	struct k_mutex lock;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
@@ -104,7 +108,6 @@ struct uvc_host_data {
 	uint8_t expect_frame_id;
 	uint8_t discard_first_frame;
 	bool save_picture;
-	uint8_t video_transfer_count;
 	uint8_t multi_prime_cnt;
 
 	uint32_t vbuf_offset;
@@ -113,7 +116,6 @@ struct uvc_host_data {
 	uint32_t current_frame_timestamp;
 
 	struct video_buffer *current_vbuf;
-	struct uhc_transfer *video_transfer[CONFIG_USBH_VIDEO_CONCURRENT_TRANSFERS];
 
 	const struct usb_if_descriptor *current_ctrl_iface;
 	const struct usb_if_descriptor
@@ -1530,21 +1532,26 @@ static int initiate_transfer(struct uvc_host_data *const host_data,
 	buf = usbh_xfer_buf_alloc(host_data->udev, stream_info->ep_mps_mult);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate buffer");
-		usbh_xfer_free(host_data->udev, xfer);
+		(void)uhc_xfer_unref(xfer);
 		return -ENOMEM;
 	}
+
+	/* Increase the reference so the buffer is reused across resubmissions. */
+	buf = net_buf_ref(buf);
 
 	buf->len = 0;
 	host_data->vbuf_offset = 0;
 	xfer->buf = buf;
 
-	host_data->video_transfer[host_data->video_transfer_count++] = xfer;
+	usbh_class_xfer_anchor(host_data->c_data, xfer);
 
 	ret = usbh_xfer_enqueue(host_data->udev, xfer);
 	if (ret != 0) {
 		LOG_ERR("Enqueue failed: ret=%d", ret);
+		usbh_class_xfer_unanchor(xfer);
 		net_buf_unref(buf);
-		usbh_xfer_free(host_data->udev, xfer);
+		net_buf_unref(buf);
+		(void)uhc_xfer_unref(xfer);
 		return ret;
 	}
 
@@ -1555,22 +1562,19 @@ static int initiate_transfer(struct uvc_host_data *const host_data,
 static int continue_transfer(struct uvc_host_data *const host_data,
 			     struct uhc_transfer *const xfer, struct video_buffer *vbuf)
 {
-	struct uvc_stream_iface_info *const stream_info = &host_data->current_stream_iface_info;
-	struct net_buf *buf;
+	struct net_buf *buf = xfer->buf;
 	int ret;
 
-	buf = usbh_xfer_buf_alloc(host_data->udev, stream_info->ep_mps_mult);
-	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
-		return -ENOMEM;
-	}
+	/* Reset and reuse the buffer. */
+	net_buf_reset(buf);
+	buf = net_buf_ref(buf);
 
-	buf->len = 0;
-	xfer->buf = buf;
+	usbh_class_xfer_anchor(host_data->c_data, xfer);
 
 	ret = usbh_xfer_enqueue(host_data->udev, xfer);
 	if (ret != 0) {
 		LOG_ERR("Enqueue failed: ret=%d", ret);
+		usbh_class_xfer_unanchor(xfer);
 		net_buf_unref(buf);
 		return ret;
 	}
@@ -1721,11 +1725,20 @@ static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *
 	k_mutex_unlock(&host_data->lock);
 
 cleanup:
+	/* Drop the transfer reference but, keep the buffer alive for reuse. */
 	net_buf_unref(buf);
-	if ((atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING)) &&
-	    (vbuf != NULL)) {
-		continue_transfer(host_data, xfer, vbuf);
+
+	/*
+	 * Resubmit the transfer to keep streaming. Unreference the transfer if
+	 * the streaming gets disabled.
+	 */
+	if (atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING) &&
+	    vbuf != NULL && continue_transfer(host_data, xfer, vbuf) == 0) {
+		return 0;
 	}
+
+	net_buf_unref(buf);
+	(void)uhc_xfer_unref(xfer);
 
 	return 0;
 }
@@ -2341,6 +2354,8 @@ static int usbh_uvc_init(struct usbh_class_data *const c_data)
 
 	memset(host_data, 0x00, sizeof(*host_data));
 
+	host_data->c_data = c_data;
+
 	k_fifo_init(&host_data->fifo_in);
 	k_fifo_init(&host_data->fifo_out);
 	k_mutex_init(&host_data->lock);
@@ -2422,31 +2437,16 @@ static int usbh_uvc_removed(struct usbh_class_data *const c_data)
 	const struct device *dev = c_data->priv;
 	struct uvc_host_data *host_data = (void *)dev->data;
 	struct video_buffer *vbuf;
-	int ret = 0;
 
 	atomic_clear_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING);
 	atomic_clear_bit(&host_data->device_flags, UVC_DEVICE_FLAG_CONNECTED);
 
+	/*
+	 * Active transfers have already been cancelled and drained by the host
+	 * core before this handler is called.
+	 */
+
 	k_mutex_lock(&host_data->lock, K_FOREVER);
-
-	/* Dequeue all active video transfers */
-	if (host_data->video_transfer_count > 0) {
-		LOG_DBG("Cancelling %u active video transfers", host_data->video_transfer_count);
-
-		for (uint8_t i = 0; i < host_data->video_transfer_count; i++) {
-			if (host_data->video_transfer[i] != NULL) {
-				ret = usbh_xfer_dequeue(host_data->udev,
-							host_data->video_transfer[i]);
-				if (ret != 0) {
-					LOG_ERR("Failed to dequeue video transfer[%d]: %d", i, ret);
-				}
-				host_data->video_transfer[i] = NULL;
-				LOG_DBG("Video transfer[%d] cancelled", i);
-			}
-		}
-
-		host_data->video_transfer_count = 0;
-	}
 
 	while ((vbuf = k_fifo_get(&host_data->fifo_in, K_NO_WAIT)) != NULL) {
 		vbuf->bytesused = 0;
@@ -3012,30 +3012,12 @@ static int usbh_uvc_set_stream(const struct device *dev, bool enable, enum video
 		interface_num = stream_iface->bInterfaceNumber;
 		atomic_clear_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING);
 
-		k_mutex_lock(&host_data->lock, K_FOREVER);
-
-		/* Cancel all active transfers */
-		if (host_data->video_transfer_count > 0) {
-			LOG_DBG("Stopping streaming, cancelling %u transfers",
-				host_data->video_transfer_count);
-
-			for (uint8_t i = 0; i < host_data->video_transfer_count; i++) {
-				if (host_data->video_transfer[i] == NULL) {
-					continue;
-				}
-
-				ret = usbh_xfer_dequeue(host_data->udev,
-							host_data->video_transfer[i]);
-				if (ret != 0) {
-					LOG_ERR("Failed to dequeue transfer[%d]: %d", i, ret);
-				}
-				host_data->video_transfer[i] = NULL;
-			}
-
-			host_data->video_transfer_count = 0;
-		}
-
-		k_mutex_unlock(&host_data->lock);
+		/*
+		 * Cancel all active transfers and wait for them to drain. Must
+		 * not take lock mutex, as the completion callback takes it.
+		 */
+		usbh_class_xfer_dequeue_all_anchored(host_data->c_data);
+		(void)usbh_class_xfer_drain(host_data->c_data, UVC_DRAIN_TIMEOUT);
 	}
 
 	ret = usbh_device_interface_set(host_data->udev, interface_num, alt, false);
@@ -3075,13 +3057,8 @@ static int usbh_uvc_set_stream(const struct device *dev, bool enable, enum video
 
 err_stream:
 	atomic_clear_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING);
-	for (uint8_t i = 0; i < host_data->video_transfer_count; i++) {
-		if (host_data->video_transfer[i] != NULL) {
-			usbh_xfer_dequeue(host_data->udev, host_data->video_transfer[i]);
-			host_data->video_transfer[i] = NULL;
-		}
-	}
-	host_data->video_transfer_count = 0;
+	usbh_class_xfer_dequeue_all_anchored(host_data->c_data);
+	(void)usbh_class_xfer_drain(host_data->c_data, UVC_DRAIN_TIMEOUT);
 	usbh_device_interface_set(host_data->udev, interface_num, 0, false);
 	return ret;
 }

@@ -32,7 +32,7 @@ static int ch9_req_cb(struct usb_device *const udev, struct uhc_transfer *const 
 	LOG_DBG("Request finished %p, err %d", xfer, xfer->err);
 	if (xfer->err == -ECONNRESET) {
 		LOG_INF("Transfer %p cancelled", (void *)xfer);
-		usbh_xfer_free(udev, xfer);
+		(void)uhc_xfer_unref(xfer);
 
 		return 0;
 	}
@@ -106,7 +106,7 @@ int usbh_req_setup(struct usb_device *const udev,
 	ret = xfer->err;
 
 buf_alloc_err:
-	usbh_xfer_free(udev, xfer);
+	(void)uhc_xfer_unref(xfer);
 
 	return ret;
 }

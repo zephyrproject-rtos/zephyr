@@ -9,6 +9,37 @@ config USBD_LOOPBACK_CLASS
 	  Primarily used for test and development purposes.
 
 if USBD_LOOPBACK_CLASS
+
+config USBD_LOOPBACK_HS_INT_EP_TPL
+	int "High speed interrupt TPL" if USBD_MAX_SPEED_HIGH
+	range 64 1024
+	default 64
+	help
+	  Interrupt endpoints TPL in high speed configuration.
+	  Larger values require UDC buffer pool adjustment. TPL in full speed
+	  configuration is always 64. In the current configuration, this
+	  configures TPL for default interface, and a value greater than 64
+	  bytes violates the USB specification.
+
+config USBD_LOOPBACK_ENABLE_ISO
+	bool "Enable isochronous transfer handling"
+	default y
+	depends on UDC_ENABLE_SOF
+	help
+	  Include isochronous endpoint descriptors in the interface, and enable
+	  isochronous transfer handling.
+
+config USBD_LOOPBACK_HS_ISO_EP_TPL
+	int "High speed isochronous TPL" if USBD_MAX_SPEED_HIGH && USBD_LOOPBACK_ENABLE_ISO
+	range 256 1024
+	default 256
+	help
+	  Isochronous endpoints TPL in high speed configuration.
+	  Larger values require UDC buffer pool adjustment. TPL in full speed
+	  configuration is always 256. In the current configuration, full speed
+	  and high speed default interface TPLs are not zero bytes and violate
+	  the USB specification.
+
 module = USBD_LOOPBACK
 module-str = usbd loopback
 default-count = 1
