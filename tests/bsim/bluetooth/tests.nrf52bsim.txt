@@ -4,4 +4,3 @@ tests/bsim/bluetooth/hci_uart/
 tests/bsim/bluetooth/ll/
 tests/bsim/bluetooth/mesh/
 tests/bsim/bluetooth/samples/
-tests/bsim/bluetooth/tester/
