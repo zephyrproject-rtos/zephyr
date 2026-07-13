@@ -171,6 +171,42 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_rx, SPI_SIO_MODE_0_0_RX_WRAP_TARGET
 			    0x0042, /*  3: jmp    x--, 2          side 0 */
 			    /*     .wrap */
 );
+
+/* ------------------- */
+/* spi_sio_mode_1_1_tx */
+/* ------------------- */
+
+#define SPI_SIO_MODE_1_1_TX_WRAP_TARGET 0
+#define SPI_SIO_MODE_1_1_TX_WRAP        2
+#define SPI_SIO_MODE_1_1_TX_CYCLES      2
+
+RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_1_1_tx, SPI_SIO_MODE_1_1_TX_WRAP_TARGET,
+			    SPI_SIO_MODE_1_1_TX_WRAP,
+			    /*     .wrap_target */
+			    0x90a0, /*  0: pull   block           side 1 */
+			    0x6001, /*  1: out    pins, 1         side 0 */
+			    0x10e1, /*  2: jmp    !osre, 1        side 1 */
+			    /*     .wrap */
+);
+
+/* ------------------- */
+/* spi_sio_mode_1_1_rx */
+/* ------------------- */
+
+#define SPI_SIO_MODE_1_1_RX_WRAP_TARGET 0
+#define SPI_SIO_MODE_1_1_RX_WRAP        3
+#define SPI_SIO_MODE_1_1_RX_CYCLES      2
+
+RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_1_1_rx, SPI_SIO_MODE_1_1_RX_WRAP_TARGET,
+			    SPI_SIO_MODE_1_1_RX_WRAP,
+			    /*     .wrap_target */
+			    0x90a0, /*  0: pull   block           side 1 */
+			    0x6020, /*  1: out    x, 32           side 0 */
+			    0x5001, /*  2: in     pins, 1         side 1 */
+			    0x0042, /*  3: jmp    x--, 2          side 0 */
+			    /*     .wrap */
+);
+
 #endif /* SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED */
 
 static float spi_pico_pio_clock_divisor(const uint32_t clock_freq, int cycles,
@@ -330,8 +366,8 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 		}
 #endif
 
-		if ((cpol != 0) || (cpha != 0)) {
-			LOG_ERR("Only mode (0, 0) supported in 3-wire SIO");
+		if (cpol != cpha) {
+			LOG_ERR("Only mode (0, 0) and (1, 1) supported in 3-wire SIO");
 			return -ENOTSUP;
 		}
 
@@ -398,6 +434,16 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 			rx_wrap_target = RPI_PICO_PIO_GET_WRAP_TARGET(spi_sio_mode_0_0_rx);
 			rx_wrap = RPI_PICO_PIO_GET_WRAP(spi_sio_mode_0_0_rx);
 			rx_cycles = SPI_SIO_MODE_0_0_RX_CYCLES;
+		} else if ((cpol == 1) && (cpha == 1)) {
+			data->pio_tx_program = RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_1_1_tx);
+			tx_wrap_target = RPI_PICO_PIO_GET_WRAP_TARGET(spi_sio_mode_1_1_tx);
+			tx_wrap = RPI_PICO_PIO_GET_WRAP(spi_sio_mode_1_1_tx);
+			tx_cycles = SPI_SIO_MODE_1_1_TX_CYCLES;
+
+			data->pio_rx_program = RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_1_1_rx);
+			rx_wrap_target = RPI_PICO_PIO_GET_WRAP_TARGET(spi_sio_mode_1_1_rx);
+			rx_wrap = RPI_PICO_PIO_GET_WRAP(spi_sio_mode_1_1_rx);
+			rx_cycles = SPI_SIO_MODE_1_1_TX_CYCLES;
 		} else {
 			LOG_ERR("Not supported:  cpol=%d, cpha=%d", cpol, cpha);
 			return -ENOTSUP;
