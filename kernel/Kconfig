@@ -81,6 +81,17 @@ config COOP_ENABLED
 config PREEMPT_ENABLED
 	def_bool (NUM_PREEMPT_PRIORITIES != 0)
 
+config MUTEX_DEADLOCK_DETECT
+	bool "Mutex deadlock detection"
+	default y if ASSERT
+	help
+	  Detect mutex deadlock cycles at lock time for K_FOREVER waits.
+	  When a K_FOREVER lock attempt would form a cycle in the ownership
+	  chain, an assertion is triggered in debug builds; in release builds
+	  the thread blocks indefinitely. Finite-timeout waits are not checked
+	  since they recover naturally via -EAGAIN.
+	  This option has no effect when CONFIG_ASSERT is disabled.
+
 config PRIORITY_CEILING
 	int "Priority inheritance ceiling"
 	default -128

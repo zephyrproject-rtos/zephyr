@@ -898,6 +898,11 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	z_init_thread_base(&new_thread->base, prio, _THREAD_SLEEPING, options);
 	stack_ptr = setup_thread_stack(new_thread, stack, stack_size);
 
+#if (CONFIG_PRIORITY_CEILING < K_LOWEST_THREAD_PRIO)
+	sys_slist_init(&new_thread->held_mutexes);
+	new_thread->mutex_pended_on = NULL;
+#endif /* CONFIG_PRIORITY_CEILING < K_LOWEST_THREAD_PRIO */
+
 	setup_shadow_stack(new_thread, stack);
 	assert_thread_coherence(new_thread, stack);
 
@@ -1557,6 +1562,10 @@ void z_dummy_thread_init(struct k_thread *dummy_thread)
 	dummy_thread->base.cpu_mask = -1;
 #endif /* CONFIG_SCHED_CPU_MASK */
 	dummy_thread->base.user_options = K_ESSENTIAL;
+#if (CONFIG_PRIORITY_CEILING < K_LOWEST_THREAD_PRIO)
+	sys_slist_init(&dummy_thread->held_mutexes);
+	dummy_thread->mutex_pended_on = NULL;
+#endif /* CONFIG_PRIORITY_CEILING < K_LOWEST_THREAD_PRIO */
 #ifdef CONFIG_THREAD_STACK_INFO
 	dummy_thread->stack_info.start = 0U;
 	dummy_thread->stack_info.size = 0U;

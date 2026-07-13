@@ -375,6 +375,22 @@ struct k_thread {
 	_wait_q_t  halt_queue;
 #endif /* CONFIG_SMP */
 
+#if (CONFIG_PRIORITY_CEILING < K_LOWEST_THREAD_PRIO)
+	/**
+	 * List of all mutexes currently held by this thread.
+	 * Used to recalculate the thread's priority when a mutex is released,
+	 * and to propagate priority boosts through the ownership chain.
+	 */
+	sys_slist_t held_mutexes;
+
+	/**
+	 * Mutex this thread is currently blocked on, or NULL if not blocked.
+	 * Used for chained priority inheritance (to boost the owner of the
+	 * mutex this thread is waiting for) and for deadlock cycle detection.
+	 */
+	struct k_mutex *mutex_pended_on;
+#endif /* CONFIG_PRIORITY_CEILING < K_LOWEST_THREAD_PRIO */
+
 	/** arch-specifics: must always be at the end */
 	struct _thread_arch arch;
 };
