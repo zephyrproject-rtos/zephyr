@@ -30,7 +30,7 @@ static void esf_dump(const struct arch_esf *esf)
 	EXCEPTION_DUMP(" xpsr:  0x%08x", esf->basic.xpsr);
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	bool extended_frame;
-#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(EXC_RETURN_STACK_FRAME_TYPE_Msk)
 	extended_frame = ((esf->extra_info.exc_return & EXC_RETURN_STACK_FRAME_TYPE_Msk) ==
 			  EXC_RETURN_STACK_FRAME_TYPE_EXTENDED);
 #else
