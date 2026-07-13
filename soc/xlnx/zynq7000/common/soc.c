@@ -13,8 +13,8 @@
 #include <zephyr/arch/arm/mmu/arm_mmu.h>
 #include "soc.h"
 
-#ifdef CONFIG_CACHE_PL310
-#include <zephyr/drivers/cache/pl310.h>
+#ifdef CONFIG_ARM_PL310
+#include <cortex_a_r/outercache.h>
 #endif
 
 /* System Level Control Registers (SLCR) */
@@ -52,7 +52,7 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 	/* ARM Arch timer, GIC are covered by the MPCore mapping */
 
-#ifdef CONFIG_CACHE_PL310
+#ifdef CONFIG_ARM_PL310
 	/*
 	 * PL310 (L2C-310) register bank. It sits at the very end of the MPCore
 	 * region (0xF8F00000 + 0x2000 = 0xF8F02000), so it is not covered by
@@ -112,7 +112,7 @@ void soc_reset_hook(void)
 	sctlr &= ~SCTLR_A_Msk;
 	__set_SCTLR(sctlr);
 
-#ifdef CONFIG_CACHE_PL310
+#ifdef CONFIG_ARM_PL310
 	/*
 	 * Cortex-A9: enable SMP / coherency participation (ACTLR.SMP, bit 6).
 	 *
@@ -132,7 +132,7 @@ void soc_reset_hook(void)
 		actlr |= BIT(6);
 		__set_ACTLR(actlr);
 	}
-#endif /* CONFIG_CACHE_PL310 */
+#endif /* CONFIG_ARM_PL310 */
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(slcr))
 	mm_reg_t addr = DT_REG_ADDR(DT_NODELABEL(slcr));
@@ -140,7 +140,7 @@ void soc_reset_hook(void)
 	/* Unlock System Level Control Registers (SLCR) */
 	sys_write32(SLCR_UNLOCK_KEY, addr + SLCR_UNLOCK);
 
-#ifdef CONFIG_CACHE_PL310
+#ifdef CONFIG_ARM_PL310
 	/* AR#54190: fix L2C RAM write-latency before enabling PL310. */
 	{
 		uint32_t l2c_ram = sys_read32(addr + SLCR_L2C_RAM);
@@ -149,10 +149,10 @@ void soc_reset_hook(void)
 		l2c_ram |= SLCR_L2C_RAM_VAL;
 		sys_write32(l2c_ram, addr + SLCR_L2C_RAM);
 	}
-#endif /* CONFIG_CACHE_PL310 */
+#endif /* CONFIG_ARM_PL310 */
 #endif /* slcr okay */
 
-#ifdef CONFIG_CACHE_PL310
+#ifdef CONFIG_ARM_PL310
 	/* Enable the PL310 outer cache while the MMU and L1 are still off. */
 	z_pl310_early_enable();
 #endif

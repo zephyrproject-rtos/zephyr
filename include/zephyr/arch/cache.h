@@ -159,46 +159,6 @@ int arch_dcache_flush_and_invd_range(void *addr, size_t size);
 #define cache_data_flush_and_invd_range(addr, size) \
 	arch_dcache_flush_and_invd_range(addr, size)
 
-#if defined(CONFIG_OUTER_CACHE) || defined(__DOXYGEN__)
-
-/**
- * @brief Flush an address range in the outer cache
- *
- * Paired with the L1 flush by the arch d-cache range operations. Provided by
- * the SoC's outer-cache controller; defaults to a no-op when no controller is
- * present.
- *
- * @param addr Starting address to flush.
- * @param size Range size.
- */
-void z_arm_outer_cache_flush_range(void *addr, size_t size);
-
-/**
- * @brief Invalidate an address range in the outer cache
- *
- * Paired with the L1 invalidate by the arch d-cache range operations. Provided
- * by the SoC's outer-cache controller; defaults to a no-op when no controller
- * is present.
- *
- * @param addr Starting address to invalidate.
- * @param size Range size.
- */
-void z_arm_outer_cache_invd_range(void *addr, size_t size);
-
-/**
- * @brief Flush and invalidate an address range in the outer cache
- *
- * Paired with the L1 flush-and-invalidate by the arch d-cache range
- * operations. Provided by the SoC's outer-cache controller; defaults to a
- * no-op when no controller is present.
- *
- * @param addr Starting address to flush and invalidate.
- * @param size Range size.
- */
-void z_arm_outer_cache_flush_and_invd_range(void *addr, size_t size);
-
-#endif /* CONFIG_OUTER_CACHE || __DOXYGEN__ */
-
 #if defined(CONFIG_DCACHE_LINE_SIZE_DETECT) || defined(__DOXYGEN__)
 
 /**

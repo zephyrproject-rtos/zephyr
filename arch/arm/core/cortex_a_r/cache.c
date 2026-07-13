@@ -17,6 +17,10 @@
 #include <cmsis_core.h>
 #include <zephyr/sys/barrier.h>
 
+#ifdef CONFIG_OUTER_CACHE
+#include <cortex_a_r/outercache.h>
+#endif
+
 /* Cache Type Register */
 #define	CTR_DMINLINE_SHIFT	16
 #define	CTR_DMINLINE_MASK	BIT_MASK(4)

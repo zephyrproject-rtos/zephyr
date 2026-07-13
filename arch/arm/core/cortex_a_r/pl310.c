@@ -11,7 +11,10 @@
  *
  * It deliberately does NOT implement the cache_data_* API and does NOT select
  * CACHE_HAS_DRIVER: this is the outer level; the CPU-integrated L1 cache keeps
- * owning cache_data_*. Platform-specific values (base, aux straps, RAM
+ * owning cache_data_*. It exposes no public API either - the maintenance ops
+ * reach callers only through the arch outer-cache hooks, and the sole entry
+ * point (z_pl310_early_enable) is declared in the arch-internal header
+ * <cortex_a_r/outercache.h>. Platform-specific values (base, aux straps, RAM
  * latencies, way count) come from the arm,pl310-cache devicetree node.
  */
 
@@ -19,10 +22,11 @@
 
 #include <zephyr/arch/cpu.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/drivers/cache/pl310.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
+
+#include <cortex_a_r/outercache.h>
 
 #define PL310_LINE_SIZE 32U
 
