@@ -577,7 +577,9 @@ kbd, .kbd,
 
 /* Definition lists */
 .rst-content dl {
-    border-left: 4px solid var(--admonition-note-background-color);
+    /* Neutral gray, distinct from the accent color the headings use for their left border, so a
+       definition list is not mistaken for content nested under the preceding heading. */
+    border-left: 4px solid var(--code-border-color);
 }
 
 .rst-content dl:not(.field-list) > dt {
