@@ -45,7 +45,7 @@ static inline int z_vrfy_i2s_configure(const struct device *dev,
 	}
 
 do_configure:
-	ret = z_impl_i2s_configure((const struct device *)dev, dir, &config);
+	ret = z_impl_i2s_configure(dev, dir, &config);
 out:
 	return ret;
 }
