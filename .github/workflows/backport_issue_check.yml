@@ -1,7 +1,7 @@
 name: Backport Issue Check
 
 on:
-  pull_request_target:
+  pull_request:
     types:
       - edited
       - opened
@@ -17,18 +17,24 @@ jobs:
   backport:
     name: Backport Issue Check
     concurrency:
-      group: backport-issue-check-${{ github.ref }}
+      group: backport-issue-check-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     runs-on: ubuntu-24.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
     permissions:
-      issues: read # to check if associated issue exists for backport and post comments
-      pull-requests: write # to comment on pull requests
+      issues: read # to check if an associated issue exists for the backport
+      # to comment on pull requests. GitHub only grants this for pull requests from a
+      # branch of this repository; for pull requests from a fork the token stays
+      # read-only and the checker falls back to the job summary below.
+      pull-requests: write
 
     steps:
       - name: Check out source code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
+          # Check out the base branch rather than the pull request, so that the checker
+          # script cannot be modified by the pull request under test.
+          ref: ${{ github.event.pull_request.base.sha }}
           fetch-depth: 1
           sparse-checkout: |
             scripts/release/list_backports.py
@@ -46,12 +52,42 @@ jobs:
           pip install -r scripts/requirements-actions.txt --require-hashes
 
       - name: Run backport issue checker
+        id: check
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Only pull requests from a branch of this repository get a token that can
+          # comment; from a fork the token is read-only, so skip commenting there.
+          COMMENT: ${{ github.event.pull_request.head.repo.full_name == github.repository && '--comment' || '' }}
         run: |
           ./scripts/release/list_backports.py \
           -o ${{ github.event.repository.owner.login }} \
           -r ${{ github.event.repository.name }} \
           -b ${{ github.event.pull_request.base.ref }} \
           -p ${{ github.event.pull_request.number }} \
-          --check
+          --check ${COMMENT}
+
+      - name: Explain failure
+        if: failure() && steps.check.outcome == 'failure'
+        run: |
+          echo "::error::This pull request to a release branch does not have an associated GitHub issue. Add a 'Fixes #<issue_number>' line to the pull request description."
+          cat >> "${GITHUB_STEP_SUMMARY}" <<'EOF'
+          ## Missing backport issue
+
+          This pull request to a release branch does not have an associated GitHub issue.
+
+          Please update the pull request description to include a reference to the issue
+          being fixed, for example:
+
+          ```
+          Fixes #<issue_number>
+          ```
+
+          For stable releases, all changes MUST have a reference to an issue or a published
+          advisory documenting:
+
+          - the issue being fixed
+          - its severity/impact
+
+          See the [issue tracking during feature freeze](https://docs.zephyrproject.org/latest/project/release_process.html#issue-tracking-during-feature-freeze)
+          documentation for more details.
+          EOF
