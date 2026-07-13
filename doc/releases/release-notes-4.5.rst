@@ -1610,6 +1610,7 @@ New Drivers
   * :dtcompatible:`microchip,pac194x` (:github:`105902`)
   * :dtcompatible:`nordic,nrf-vbat` (:github:`106102`)
   * :dtcompatible:`nxp,mcux-eqdc` (:github:`111927`)
+  * :dtcompatible:`plantower,pmsa003i` (:github:`113377`)
   * :dtcompatible:`raspberrypi,bcm283x-vc-thermal` (:github:`110192`)
   * :dtcompatible:`realtek,bee-aon-qdec` (:github:`105129`)
   * :dtcompatible:`realtek,bee-basic-qdec` (:github:`105129`)
