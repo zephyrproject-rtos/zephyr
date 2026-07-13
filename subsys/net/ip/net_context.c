@@ -694,6 +694,17 @@ int net_context_unref(struct net_context *context)
 		return old_rc - 1;
 	}
 
+#if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+	/* Stop any DPLPMTUD prober/responder before the context is released.
+	 * The prober arms a k_work_delayable embedded in the context; if it is
+	 * left running the timer keeps sending probes on a freed context and,
+	 * once the slot is reused, re-initializing the same delayable corrupts
+	 * the kernel timeout queue. net_context_set_udp_dplpmtud() is a no-op
+	 * for non-UDP contexts and for UDP contexts without DPLPMTUD enabled.
+	 */
+	(void)net_context_set_udp_dplpmtud(context, false);
+#endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
+
 	k_mutex_lock(&context->lock, K_FOREVER);
 
 	if (context->conn_handler) {
@@ -2543,35 +2554,90 @@ static inline void context_finalize_udp_options(struct net_context *context, str
 #endif /* CONFIG_NET_UDP_OPTIONS */
 
 #if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+static void udp_dplpmtud_kick(struct net_context *context);
+static void udp_dplpmtud_timer_work(struct k_work *work);
 static void udp_dplpmtud_echo_work(struct k_work *work);
+
+/* Largest PLPMTU (UDP payload size) that the local interface can carry, used
+ * to bound the DPLPMTUD search so probes are never larger than the link MTU.
+ */
+static uint16_t udp_dplpmtud_link_cap(struct net_context *context)
+{
+	struct net_if *iface = net_context_get_iface(context);
+	uint16_t overhead = sizeof(struct net_udp_hdr);
+	int mtu;
+
+	if (iface == NULL) {
+		return NET_DPLPMTUD_BASE_PLPMTU;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) &&
+	    net_context_get_family(context) == NET_AF_INET6) {
+		overhead += sizeof(struct net_ipv6_hdr);
+	} else {
+		overhead += sizeof(struct net_ipv4_hdr);
+	}
+
+	mtu = net_if_get_mtu(iface);
+	if (mtu <= (int)overhead) {
+		return NET_DPLPMTUD_BASE_PLPMTU;
+	}
+
+	return (uint16_t)(mtu - overhead);
+}
 
 int net_context_set_udp_dplpmtud(struct net_context *context, bool enable)
 {
+	int ret = 0;
+
 	if (net_context_get_proto(context) != NET_IPPROTO_UDP) {
 		return -ENOPROTOOPT;
 	}
 
 	k_mutex_lock(&context->lock, K_FOREVER);
 
+	if (enable == context->options.udp_opt.dplpmtud.enabled) {
+		goto out;
+	}
+
 	if (enable) {
+		k_work_init_delayable(&context->options.udp_opt.dplpmtud.timer,
+				      udp_dplpmtud_timer_work);
 		k_work_init(&context->options.udp_opt.dplpmtud.echo_work,
 			    udp_dplpmtud_echo_work);
+		context->options.udp_opt.dplpmtud.token = 0U;
 		context->options.udp_opt.dplpmtud.echo_pending = false;
+		context->options.udp_opt.dplpmtud.enabled = true;
+
+		/* The responder role (echoing REQ as RES) works on any enabled
+		 * socket. Active probing additionally needs a fixed destination,
+		 * so it only starts once a remote address has been set (a
+		 * connect()ed UDP socket).
+		 */
+		if ((context->flags & NET_CONTEXT_REMOTE_ADDR_SET) != 0) {
+			ret = net_dplpmtud_init_path(
+				&context->options.udp_opt.dplpmtud.path,
+				&context->remote,
+				udp_dplpmtud_link_cap(context));
+			if (ret < 0) {
+				context->options.udp_opt.dplpmtud.enabled = false;
+				goto out;
+			}
+
+			udp_dplpmtud_kick(context);
+		}
 	} else {
+		context->options.udp_opt.dplpmtud.enabled = false;
+		context->options.udp_opt.dplpmtud.token = 0U;
 		context->options.udp_opt.dplpmtud.echo_pending = false;
+		(void)k_work_cancel_delayable(&context->options.udp_opt.dplpmtud.timer);
 		(void)k_work_cancel(&context->options.udp_opt.dplpmtud.echo_work);
 	}
 
-	context->options.udp_opt.dplpmtud.enabled = enable;
-
-	/* Path setup, probe-timer arming and the probing/echo state machine
-	 * are wired up in a subsequent step; enabling here records the
-	 * request and gates the responder from echoing REQ options.
-	 */
-
+out:
 	k_mutex_unlock(&context->lock);
 
-	return 0;
+	return ret;
 }
 #endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
 
@@ -3458,6 +3524,189 @@ static bool context_allow_udp_options(struct net_context *context, struct net_pk
 }
 
 #if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+/* Build and send a DPLPMTUD probe: a payload-less UDP datagram to the connected
+ * peer carrying a REQ option with @token, padded through the surplus area to
+ * @size bytes, with the Don't Fragment bit set (RFC 9869).
+ */
+static int udp_dplpmtud_send_probe(struct net_context *context, uint16_t size,
+				   uint32_t token)
+{
+	net_sa_family_t family = net_context_get_family(context);
+	struct net_udp_opt_info opts = {
+		.present = NET_UDP_OPT_F_REQ,
+		.req_token = token,
+		.pad_to_surplus = size,
+	};
+	struct net_pkt *pkt;
+	int ret;
+
+	pkt = context_alloc_pkt(context, family, (size_t)size + 1U, K_NO_WAIT);
+	if (pkt == NULL) {
+		return -ENOMEM;
+	}
+
+	net_pkt_set_dont_fragment(pkt, true);
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
+		ret = context_create_ipv6_new(context, pkt, NULL,
+					      &net_sin6(&context->remote)->sin6_addr,
+					      true);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
+		ret = context_create_ipv4_new(context, pkt, NULL,
+					      &net_sin(&context->remote)->sin_addr,
+					      true);
+	} else {
+		ret = -EAFNOSUPPORT;
+	}
+
+	if (ret < 0) {
+		goto fail;
+	}
+
+	ret = bind_default(context);
+	if (ret < 0) {
+		goto fail;
+	}
+
+	ret = net_udp_create(pkt,
+			     net_sin((struct net_sockaddr *)&context->local)->sin_port,
+			     net_sin(&context->remote)->sin_port);
+	if (ret < 0) {
+		goto fail;
+	}
+
+	ret = net_udp_opt_append(pkt, context, &opts);
+	if (ret < 0) {
+		goto fail;
+	}
+
+	context_finalize_packet(context, family, pkt);
+
+	ret = net_send_data(pkt);
+	if (ret < 0) {
+		goto fail;
+	}
+
+	return 0;
+
+fail:
+	net_pkt_unref(pkt);
+	return ret;
+}
+
+/* Decide whether to send the next probe and (re)arm the probe/raise timer.
+ * Must be called with context->lock held.
+ */
+static void udp_dplpmtud_kick(struct net_context *context)
+{
+	struct net_dplpmtud_path *path = &context->options.udp_opt.dplpmtud.path;
+	struct k_work_delayable *timer = &context->options.udp_opt.dplpmtud.timer;
+	uint32_t token;
+	int size;
+	int ret;
+
+	if (!context->options.udp_opt.dplpmtud.enabled) {
+		return;
+	}
+
+	/* A probe of ours is still outstanding; wait for RES or timeout. */
+	if (context->options.udp_opt.dplpmtud.token != 0U) {
+		return;
+	}
+
+	if (net_dplpmtud_path_probe_in_flight(path)) {
+		/* Another transport is probing the shared per-destination entry
+		 * (RFC 9869 coexistence); back off and re-check later.
+		 */
+		(void)k_work_reschedule(timer,
+			K_MSEC(CONFIG_NET_UDP_OPTIONS_DPLPMTUD_PROBE_TIMEOUT_MS));
+		return;
+	}
+
+	size = net_dplpmtud_get_path_probe_size(path);
+	if (size <= 0) {
+		/* Search complete (or nothing to do): schedule a periodic raise
+		 * probe to detect a later PMTU increase.
+		 */
+		(void)k_work_reschedule(timer,
+			K_MSEC(CONFIG_NET_UDP_OPTIONS_DPLPMTUD_RAISE_TIMEOUT_MS));
+		return;
+	}
+
+	ret = net_dplpmtud_on_path_probe_sent(path, (uint16_t)size);
+	if (ret == -EALREADY) {
+		(void)k_work_reschedule(timer,
+			K_MSEC(CONFIG_NET_UDP_OPTIONS_DPLPMTUD_PROBE_TIMEOUT_MS));
+		return;
+	} else if (ret == -EMSGSIZE) {
+		net_dplpmtud_set_path_max_plpmtu(path, (uint16_t)(size - 1));
+		(void)k_work_reschedule(timer, K_NO_WAIT);
+		return;
+	} else if (ret < 0) {
+		return;
+	}
+
+	/* RFC 9869: the probe token must be unpredictable so an off-path
+	 * attacker cannot forge a RES and confirm a bogus PLPMTU. Prefer the
+	 * CSPRNG and fall back to the non-cryptographic RNG only if it is not
+	 * available.
+	 */
+#if defined(CONFIG_CSPRNG_ENABLED)
+	if (sys_csrand_get(&token, sizeof(token)) != 0) {
+		token = sys_rand32_get();
+	}
+#else
+	token = sys_rand32_get();
+#endif
+	if (token == 0U) {
+		token = 1U;
+	}
+
+	ret = udp_dplpmtud_send_probe(context, (uint16_t)size, token);
+	if (ret < 0) {
+		net_dplpmtud_on_path_probe_lost(path, (uint16_t)size);
+		if (ret == -EMSGSIZE) {
+			net_dplpmtud_set_path_max_plpmtu(path, (uint16_t)(size - 1));
+		}
+
+		(void)k_work_reschedule(timer,
+			K_MSEC(CONFIG_NET_UDP_OPTIONS_DPLPMTUD_PROBE_TIMEOUT_MS));
+		return;
+	}
+
+	context->options.udp_opt.dplpmtud.token = token;
+	context->options.udp_opt.dplpmtud.probe_size = (uint16_t)size;
+
+	(void)k_work_reschedule(timer,
+		K_MSEC(CONFIG_NET_UDP_OPTIONS_DPLPMTUD_PROBE_TIMEOUT_MS));
+}
+
+static void udp_dplpmtud_timer_work(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct net_context *context = CONTAINER_OF(dwork, struct net_context,
+					options.udp_opt.dplpmtud.timer);
+
+	k_mutex_lock(&context->lock, K_FOREVER);
+
+	if (!context->options.udp_opt.dplpmtud.enabled) {
+		goto out;
+	}
+
+	if (context->options.udp_opt.dplpmtud.token != 0U) {
+		/* Outstanding probe timed out: declare it lost. */
+		net_dplpmtud_on_path_probe_lost(
+			&context->options.udp_opt.dplpmtud.path,
+			context->options.udp_opt.dplpmtud.probe_size);
+		context->options.udp_opt.dplpmtud.token = 0U;
+	}
+
+	udp_dplpmtud_kick(context);
+
+out:
+	k_mutex_unlock(&context->lock);
+}
+
 /* Send a UDP options Response (RES) datagram echoing @token back to the source
  * of a received Request (REQ), reusing the normal sendmsg path with a synthetic
  * ZSOCK_UDP_OPT_CMSG_RES control message and no user payload.
@@ -3605,6 +3854,28 @@ static void context_udp_dplpmtud_rx(struct net_context *context,
 		return;
 	}
 
+	/* Prober: a returned RES that matches our outstanding probe token
+	 * confirms that probe size; advance the DPLPMTUD state machine and
+	 * launch the next probe.
+	 */
+	if ((info.present & NET_UDP_OPT_F_RES) != 0U &&
+	    context->options.udp_opt.dplpmtud.token != 0U &&
+	    info.res_token == context->options.udp_opt.dplpmtud.token) {
+		net_dplpmtud_on_path_probe_acked(
+			&context->options.udp_opt.dplpmtud.path,
+			context->options.udp_opt.dplpmtud.probe_size);
+		context->options.udp_opt.dplpmtud.token = 0U;
+		/* Launch the next probe from the timer work rather than
+		 * transmitting synchronously in the RX path.
+		 */
+		(void)k_work_reschedule(&context->options.udp_opt.dplpmtud.timer,
+					K_NO_WAIT);
+	}
+
+	/* Responder: echo a received REQ token back as RES, unless the
+	 * application has taken over the echo. The transmit is deferred to a
+	 * work item so it never runs in the RX path or under context->lock.
+	 */
 	if ((info.present & NET_UDP_OPT_F_REQ) != 0U &&
 	    !context->options.udp_opt.dplpmtud.app_respond &&
 	    udp_dplpmtud_echo_allowed(context)) {
