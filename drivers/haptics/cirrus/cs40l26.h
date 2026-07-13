@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2026, Cirrus Logic, Inc.
+ * Copyright (c) 2026 Cirrus Logic, Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_HAPTICS_CS40L26_H_
-#define ZEPHYR_DRIVERS_HAPTICS_CS40L26_H_
+#ifndef ZEPHYR_DRIVERS_HAPTICS_CIRRUS_CS40L26_H_
+#define ZEPHYR_DRIVERS_HAPTICS_CIRRUS_CS40L26_H_
 
 #include "cs40lxx.h"
 #include <sys/types.h>
@@ -98,4 +98,4 @@ int cs40l26_firmware_multi_write(const struct device *const dev,
 }
 #endif /* __cplusplus */
 
-#endif /* ZEPHYR_DRIVERS_HAPTICS_CS40L26_H_ */
+#endif /* ZEPHYR_DRIVERS_HAPTICS_CIRRUS_CS40L26_H_ */
