@@ -511,18 +511,24 @@ def _create_meta_project(project_path):
 
         remote_url = None
 
-        # If more than one remote, do not return any remote
+        # Prefer 'origin' when multiple remotes exist; fall back to the sole
+        # remote when there is only one.
         if len(remotes_name) == 1:
             remote = remotes_name[0]
-            popen = subprocess.Popen(['git', 'remote', 'get-url', remote],
-                                     stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE,
-                                     cwd=path)
-            stdout, stderr = popen.communicate()
-            stdout = stdout.decode('utf-8')
+        elif 'origin' in remotes_name:
+            remote = 'origin'
+        else:
+            return None
 
-            if not (popen.returncode or stderr):
-                remote_url = stdout.rstrip()
+        popen = subprocess.Popen(['git', 'remote', 'get-url', remote],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE,
+                                 cwd=path)
+        stdout, stderr = popen.communicate()
+        stdout = stdout.decode('utf-8')
+
+        if not (popen.returncode or stderr):
+            remote_url = stdout.rstrip()
 
         return remote_url
 
