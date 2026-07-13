@@ -128,11 +128,12 @@ struct dwmac_priv {
 	uintptr_t tx_descs_phys, rx_descs_phys;
 #endif
 
-	struct net_buf *tx_frags[NB_TX_DESCS]; /* index shared with tx_descs */
 	struct net_buf *rx_frags[NB_RX_DESCS]; /* index shared with rx_descs */
 
 	struct net_pkt *rx_pkt;
 	uint16_t rx_bytes;
+
+	struct k_fifo tx_queue;
 
 	K_KERNEL_STACK_MEMBER(rx_refill_thread_stack, RX_REFILL_STACK_SIZE);
 	struct k_thread rx_refill_thread;
