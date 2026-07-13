@@ -842,6 +842,7 @@ uint16_t net_udp_opt_surplus_len_with_opts(struct net_context *ctx, uint16_t dat
 				  NET_UDP_OPT_F_MRDS | NET_UDP_OPT_F_REQ |
 				  NET_UDP_OPT_F_RES | NET_UDP_OPT_F_TIME;
 	uint16_t tlv_len;
+	uint16_t surplus_len;
 	uint32_t enabled;
 	uint16_t mds;
 	uint16_t mrds_size;
@@ -877,7 +878,14 @@ uint16_t net_udp_opt_surplus_len_with_opts(struct net_context *ctx, uint16_t dat
 	tlv_len = udp_opt_tx_tlv_len(enabled, mds, mrds_size);
 
 	/* Reserve two bytes for OCS and one alignment pad for odd data lengths. */
-	return ((data_len & 0x1U) != 0U ? 3U : 2U) + tlv_len;
+	surplus_len = ((data_len & 0x1U) != 0U ? 3U : 2U) + tlv_len;
+
+	/* A DPLPMTUD probe inflates the surplus area to a target size. */
+	if (opts != NULL && opts->pad_to_surplus > surplus_len) {
+		surplus_len = opts->pad_to_surplus;
+	}
+
+	return surplus_len;
 }
 
 uint16_t net_udp_opt_surplus_len(struct net_context *ctx, uint16_t data_len)
@@ -1011,6 +1019,26 @@ int net_udp_opt_append(struct net_pkt *pkt, struct net_context *ctx,
 		if (ret < 0) {
 			return ret;
 		}
+	}
+
+	/* Pad the surplus area to the requested size for a DPLPMTUD probe
+	 * (RFC 9869). The first zero byte acts as the End of Options List (EOL)
+	 * option and the remainder is zero padding; the OCS finalisation covers
+	 * all of it and the receiver ignores post-EOL zeroes.
+	 */
+	if (opts != NULL && opts->pad_to_surplus > surplus_len) {
+		uint16_t pad = opts->pad_to_surplus - surplus_len;
+
+		while (pad > 0U) {
+			ret = net_pkt_write_u8(pkt, 0U);
+			if (ret < 0) {
+				return ret;
+			}
+
+			pad--;
+		}
+
+		surplus_len = opts->pad_to_surplus;
 	}
 
 	net_pkt_set_udp_opt_surplus_len(pkt, surplus_len);
