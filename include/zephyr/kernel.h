@@ -4661,7 +4661,7 @@ int k_work_schedule_for_queue(struct k_work_q *queue,
  *
  * @return as with k_work_schedule_for_queue().
  *
- * @satisfies ZEP-SRS-26-21
+ * @satisfies ZEP-SRS-26-36
  */
 int k_work_schedule(struct k_work_delayable *dwork,
 				   k_timeout_t delay);
@@ -4978,7 +4978,7 @@ struct k_work_delayable {
  * @param work Symbol name for delayable work item object
  * @param work_handler Function to invoke each time work item is processed.
  *
- * @satisfies ZEP-SRS-26-20
+ * @satisfies ZEP-SRS-26-35
  */
 #define K_WORK_DELAYABLE_DEFINE(work, work_handler) \
 	struct k_work_delayable work \
@@ -5227,6 +5227,8 @@ struct k_work_user {
  *
  * @param work Symbol name for work item object
  * @param work_handler Function to invoke each time work item is processed.
+ *
+ * @satisfies ZEP-SRS-26-38
  */
 #define K_WORK_USER_DEFINE(work, work_handler) \
 	struct k_work_user work = Z_WORK_USER_INITIALIZER(work_handler)
@@ -5239,6 +5241,8 @@ struct k_work_user {
  *
  * @param work Address of work item.
  * @param handler Function to invoke each time work item is processed.
+ *
+ * @satisfies ZEP-SRS-26-37
  */
 static inline void k_work_user_init(struct k_work_user *work,
 				    k_work_user_handler_t handler)
@@ -5284,6 +5288,8 @@ static inline bool k_work_user_is_pending(struct k_work_user *work)
  * @retval -EBUSY if the work item was already in some workqueue
  * @retval -ENOMEM if no memory for thread resource pool allocation
  * @retval 0 Success
+ *
+ * @satisfies ZEP-SRS-26-40
  */
 static inline int k_work_user_submit_to_queue(struct k_work_user_q *work_q,
 					      struct k_work_user *work)
@@ -5324,6 +5330,8 @@ static inline int k_work_user_submit_to_queue(struct k_work_user_q *work_q,
  * @param prio Priority of the work queue's thread.
  * @param name optional thread name.  If not null a copy is made into the
  *		thread's name buffer.
+ *
+ * @satisfies ZEP-SRS-26-39
  */
 void k_work_user_queue_start(struct k_work_user_q *work_q,
 				    k_thread_stack_t *stack,
@@ -5380,7 +5388,7 @@ struct k_work_poll {
  * @param work Symbol name for work item object
  * @param work_handler Function to invoke each time work item is processed.
  *
- * @satisfies ZEP-SRS-26-9
+ * @satisfies ZEP-SRS-26-34
  */
 #define K_WORK_DEFINE(work, work_handler) \
 	struct k_work work = Z_WORK_INITIALIZER(work_handler)
