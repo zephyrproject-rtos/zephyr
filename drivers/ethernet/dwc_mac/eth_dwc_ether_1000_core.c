@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(dwmac_core, CONFIG_ETHERNET_LOG_LEVEL);
 #define TDES0_IC  BIT(30)
 #define TDES0_LS  BIT(29)
 #define TDES0_FS  BIT(28)
+#define TDES0_TER BIT(21)
 #define TDES0_TCH BIT(20)
 #define TDES0_ES  BIT(15)
 #define TDES0_CIC GENMASK(23, 22)
@@ -45,6 +46,7 @@ LOG_MODULE_REGISTER(dwmac_core, CONFIG_ETHERNET_LOG_LEVEL);
 #define RDES0_LS  BIT(8)
 
 #define RDES1_RBS1 GENMASK(12, 0)
+#define RDES1_RER  BIT(15)
 #define RDES1_RCH  BIT(14)
 
 #define RX_LEN_FROM_RDES0(rdes0) (FIELD_GET(RDES0_FL, (rdes0)))
@@ -89,7 +91,7 @@ static __maybe_unused unsigned int net_pkt_get_nbfrags(struct net_pkt *pkt)
 	return nbfrags;
 }
 
-#define TDES0_FLAGS_DEFAULT (TDES0_TCH | TDES0_IC | \
+#define TDES0_FLAGS_DEFAULT (TDES0_IC | \
 	(IS_ENABLED(CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM) ? TDES0_CIC : 0U))
 
 static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
@@ -130,6 +132,10 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 
 		if (!frag->frags) {
 			d->des0 |= TDES0_LS;
+		}
+
+		if (d_idx == NB_TX_DESCS - 1) {
+			d->des0 |= TDES0_TER;
 		}
 
 		des0_flags = TDES0_OWN | TDES0_FLAGS_DEFAULT;
@@ -281,7 +287,11 @@ static void dwmac_rx_refill_desc(const struct device *dev, struct net_buf *frag)
 	d = &p->rx_descs[d_idx];
 	__ASSERT(!(d->des0 & RDES0_OWN), "rx desc still owned");
 
-	d->des1 = FIELD_PREP(RDES1_RBS1, frag->size) | RDES1_RCH;
+	d->des1 = FIELD_PREP(RDES1_RBS1, frag->size);
+
+	if (d_idx == NB_RX_DESCS - 1) {
+		d->des1 |= RDES1_RER;
+	}
 	d->des2 = phys_lo32(frag->data);
 
 	barrier_dmem_fence_full();
@@ -471,7 +481,6 @@ int dwmac_probe(const struct device *dev)
 	struct dwmac_priv *p = dev->data;
 	int ret;
 	k_timepoint_t timeout;
-	unsigned int i;
 	uint32_t reg_val;
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
@@ -505,16 +514,6 @@ int dwmac_probe(const struct device *dev)
 
 	memset(p->tx_descs, 0, NB_TX_DESCS * sizeof(struct dwmac_dma_desc));
 	memset(p->rx_descs, 0, NB_RX_DESCS * sizeof(struct dwmac_dma_desc));
-
-	for (i = 0; i < NB_TX_DESCS; i++) {
-		p->tx_descs[i].des1 = TDES0_TCH;
-		p->tx_descs[i].des3 = TXDESC_PHYS_L((i + 1) % NB_TX_DESCS);
-	}
-
-	for (i = 0; i < NB_RX_DESCS; i++) {
-		p->rx_descs[i].des1 = RDES1_RCH;
-		p->rx_descs[i].des3 = RXDESC_PHYS_L((i + 1) % NB_RX_DESCS);
-	}
 
 	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE)) {
 		DWMAC_REG_WRITE(DWMAC_DMABMR, DWMAC_REG_READ(DWMAC_DMABMR) | DWMAC_DMABMR_EDFE);
