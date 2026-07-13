@@ -1212,7 +1212,8 @@ static int flash_max32_spixf_nor_fetch_jesd216_details(const struct device *dev)
 	return ret;
 }
 
-static void flash_max32_spixf_update_read_settings(uint8_t cmd_read, uint8_t read_latency)
+static void flash_max32_spixf_update_read_settings(uint8_t cmd_read, uint8_t read_latency,
+						   bool addr_32bit)
 {
 	MXC_SPIXF_SetMode(MXC_SPIXF_MODE_0);
 	MXC_SPIXF_SetSSPolActiveLow();
@@ -1224,7 +1225,11 @@ static void flash_max32_spixf_update_read_settings(uint8_t cmd_read, uint8_t rea
 	MXC_SPIXF_SetDataWidth(MXC_SPIXF_WIDTH_4);
 	MXC_SPIXF_SetModeClk(read_latency);
 
-	MXC_SPIXF_Set3ByteAddr();
+	if (addr_32bit) {
+		MXC_SPIXF_Set4ByteAddr();
+	} else {
+		MXC_SPIXF_Set3ByteAddr();
+	}
 	MXC_SPIXF_SCKFeedbackEnable();
 	MXC_SPIXF_SetSCKNonInverted();
 }
@@ -1318,7 +1323,8 @@ static int flash_max32_spixf_nor_init(const struct device *dev)
 
 	/* Update our SPIXF main controller settings based on the fetched jesd216 details */
 	flash_max32_spixf_update_read_settings(dev_data->qspi_read_cmd,
-					       dev_data->qspi_read_cmd_latency);
+					       dev_data->qspi_read_cmd_latency,
+					       dev_data->flag_access_32bit);
 
 	return 0;
 }
