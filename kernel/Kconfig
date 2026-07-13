@@ -81,6 +81,22 @@ config COOP_ENABLED
 config PREEMPT_ENABLED
 	def_bool (NUM_PREEMPT_PRIORITIES != 0)
 
+config MUTEX_DEADLOCK_DETECT
+	bool "Mutex deadlock detection"
+	depends on ASSERT
+	default y
+	help
+	  Detect mutex deadlock cycles at lock time for K_FOREVER waits.
+	  When a K_FOREVER lock attempt would form a cycle in the ownership
+	  chain and every cycle member also waits forever, an assertion is
+	  triggered. Cycles where any member has a finite timeout are not
+	  flagged since they recover naturally via -EAGAIN.
+
+	  This detection is part of the priority inheritance chain-walk and
+	  has no effect if CONFIG_PRIORITY_CEILING is set at or below the
+	  idle thread's priority, which disables priority inheritance (and
+	  this detection along with it).
+
 config PRIORITY_CEILING
 	int "Priority inheritance ceiling"
 	default -128
