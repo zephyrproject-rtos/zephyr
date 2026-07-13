@@ -5959,6 +5959,8 @@ TI MSPM0 Platforms:
   status: maintained
   maintainers:
     - ssekar15
+    - glneo
+  collaborators:
     - d-philpot
   files:
     - soc/ti/mspm0/
