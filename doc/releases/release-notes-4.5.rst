@@ -312,6 +312,9 @@ New Samples
   out-of-window frequency checking on the new :ref:`clock_monitor_api`.
 * ``samples/drivers/clock_monitor/measure_freq`` — demonstrates MEASURE-mode
   one-shot frequency measurement on the new :ref:`clock_monitor_api`.
+* :zephyr:code-sample:`power-domain-tree` — demonstrates a device depending on
+  more than one power domain and the reference counting of a nested power
+  domain tree.
 
 Libraries / Subsystems
 **********************
@@ -332,6 +335,13 @@ Libraries / Subsystems
     LoRaWAN 1.0.x Class A directly on top of the LoRa radio driver, without
     the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
   * :c:member:`lora_modem_config.sync_word`
+
+* Power Management
+
+  * A device can now depend on more than one power domain by listing several
+    entries in its ``power-domains`` devicetree property. All listed domains are
+    kept powered while the device is in use and released once it is suspended.
+    Previously only the first entry was acted upon.
 
 Devicetree
 **********

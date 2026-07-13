@@ -179,6 +179,26 @@ They can safely be ignored though.
    It is responsibility of driver or the application to set the domain as
    "wakeup" source if a device depending on it is used as "wakeup" source.
 
+Depending on multiple power domains
+***********************************
+
+A device may depend on more than one power domain by listing several phandles
+in its ``power-domains`` property:
+
+.. code-block:: devicetree
+
+        &sensor {
+                power-domains = <&analog_domain &io_domain>;
+        };
+
+The power management subsystem keeps *every* listed domain powered while the
+device is in use: resuming the device claims all of its domains (rolling back
+if any of them fails to power on), and suspending it releases them all. A power
+domain can itself declare ``power-domains``, so domains can be nested and a
+single domain can even depend on several parent domains. Because every domain is
+reference counted, a parent stays powered as long as any path still needs it and
+only powers off once its last user is released.
+
 Examples
 ********
 
@@ -186,3 +206,4 @@ Some helpful examples showing power domain features:
 
 * :zephyr_file:`tests/subsys/pm/device_power_domains/`
 * :zephyr_file:`tests/subsys/pm/power_domain/`
+* :zephyr_file:`samples/subsys/pm/power_domain_tree/`
