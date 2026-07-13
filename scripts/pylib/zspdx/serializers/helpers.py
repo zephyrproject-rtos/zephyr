@@ -20,7 +20,12 @@ def generate_download_url(url: str, revision: str) -> str:
     """Generate download URL with revision if available."""
     if not revision:
         return url
-    return f'git+{url}@{revision}'
+    # Strip git-describe suffixes (-dirty, -off, …) so the ref is a valid git
+    # object name. packageVersion retains the original string for dirty tracking.
+    import re
+    clean = re.sub(r'[+\-](dirty|off).*$', '', revision).strip()
+    ref = clean if re.match(r'^[a-f0-9]{40}$', clean) else revision
+    return f'git+{url}@{ref}'
 
 
 def get_standard_licenses() -> set:
