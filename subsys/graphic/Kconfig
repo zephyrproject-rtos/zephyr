@@ -13,4 +13,8 @@ module = GRAPHIC
 module-str = graphic
 source "subsys/logging/Kconfig.template.log_config"
 
+config GRAPHIC_SHELL
+	bool "Graphic shell"
+	depends on SHELL
+
 endif # GRAPHIC
