@@ -60,7 +60,7 @@ static inline int z_vrfy_i2s_buf_read(const struct device *dev,
 
 	K_OOPS(K_SYSCALL_DRIVER_I2S(dev, read));
 
-	ret = i2s_read((const struct device *)dev, &mem_block, &data_size);
+	ret = i2s_read(dev, &mem_block, &data_size);
 
 	if (!ret) {
 		const struct i2s_config *rx_cfg;
@@ -69,10 +69,9 @@ static inline int z_vrfy_i2s_buf_read(const struct device *dev,
 		/* Presumed to be configured otherwise the i2s_read() call
 		 * would have failed.
 		 */
-		rx_cfg = i2s_config_get((const struct device *)dev, I2S_DIR_RX);
+		rx_cfg = i2s_config_get(dev, I2S_DIR_RX);
 
-		copy_success = k_usermode_to_copy((void *)buf, mem_block,
-					      data_size);
+		copy_success = k_usermode_to_copy(buf, mem_block, data_size);
 
 		k_mem_slab_free(rx_cfg->mem_slab, mem_block);
 		K_OOPS(copy_success);
@@ -92,7 +91,7 @@ static inline int z_vrfy_i2s_buf_write(const struct device *dev,
 	void *mem_block;
 
 	K_OOPS(K_SYSCALL_DRIVER_I2S(dev, write));
-	tx_cfg = i2s_config_get((const struct device *)dev, I2S_DIR_TX);
+	tx_cfg = i2s_config_get(dev, I2S_DIR_TX);
 	if (!tx_cfg) {
 		return -EIO;
 	}
@@ -106,13 +105,13 @@ static inline int z_vrfy_i2s_buf_write(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	ret = k_usermode_from_copy(mem_block, (void *)buf, size);
+	ret = k_usermode_from_copy(mem_block, buf, size);
 	if (ret) {
 		k_mem_slab_free(tx_cfg->mem_slab, mem_block);
 		K_OOPS(ret);
 	}
 
-	ret = i2s_write((const struct device *)dev, mem_block, size);
+	ret = i2s_write(dev, mem_block, size);
 	if (ret != 0) {
 		k_mem_slab_free(tx_cfg->mem_slab, mem_block);
 	}
@@ -127,6 +126,6 @@ static inline int z_vrfy_i2s_trigger(const struct device *dev,
 {
 	K_OOPS(K_SYSCALL_DRIVER_I2S(dev, trigger));
 
-	return z_impl_i2s_trigger((const struct device *)dev, dir, cmd);
+	return z_impl_i2s_trigger(dev, dir, cmd);
 }
 #include <zephyr/syscalls/i2s_trigger_mrsh.c>
