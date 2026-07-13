@@ -234,6 +234,8 @@ New APIs and options
 * Network
 
   * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
+  * Add :c:func:`net_dhcpv4_set_reboot_hint` to seed the DHCPv4 client with a
+    previously leased address for INIT-REBOOT.
 
 * Ring buffer
 
