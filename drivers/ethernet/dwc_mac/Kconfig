@@ -20,7 +20,6 @@ config ETH_DWC_ETHER_1000_CORE
 	bool
 	depends on NET_BUF_FIXED_DATA_SIZE
 	select CACHE_MANAGEMENT if DCACHE
-	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 	help
 	  This is a driver for the Synopsys DesignWare Ethernet MAC 10/100/1G Universal,
 	  also referred to as "dwc_ether_mac10_100_1000_universal".
@@ -125,21 +124,38 @@ config ETH_DWMAC_RX_REFILL_THREAD_PRIORITY
 	  Priority level of the internal thread which is used to refill
 	  the receive buffer pool.
 
+# Currently only for the 1000 core
+if ETH_DWC_ETHER_1000_CORE
+
 config ETH_DWC_ETHER_TX_HW_CHECKSUM
 	bool "Use TX hardware checksum"
-	depends on NET_CHECKSUM_OFFLOAD
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 	default y
 	help
 	  Enable transmit checksum offload to enhance throughput
 	  performances.
 
+config ETH_DWC_ETHER_TX_HW_CHECKSUM_EN
+	bool
+	depends on ETH_DWC_ETHER_TX_HW_CHECKSUM
+	depends on NET_CHECKSUM_OFFLOAD
+	default y
+
 config ETH_DWC_ETHER_RX_HW_CHECKSUM
 	bool "Use RX hardware checksum"
-	depends on NET_CHECKSUM_OFFLOAD
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 	default y
 	help
 	  Enable receive checksum offload to enhance throughput
 	  performances.
+
+config ETH_DWC_ETHER_RX_HW_CHECKSUM_EN
+	bool
+	depends on ETH_DWC_ETHER_RX_HW_CHECKSUM
+	depends on NET_CHECKSUM_OFFLOAD
+	default y
+
+endif # ETH_DWC_ETHER_1000_CORE
 
 endif # ETH_DWC_ETHER_QOS_CORE || ETH_DWC_ETHER_1000_CORE
 
