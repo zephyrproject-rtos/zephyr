@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 NXP
+ * Copyright (c) 2020, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,30 @@
 #define TEST_DMA_CHANNEL_1 (1)
 #define GUARD_BUFF_SIZE (16)
 #define RX_BUFF_SIZE (48)
-#define DMA_DATA_ALIGNMENT DT_PROP_OR(DT_NODELABEL(tst_dma0), dma_buf_addr_alignment, 32)
+
+#define DMA_TEST_NODE      DT_PATH(zephyr_user)
+#define DMA_TEST_DEVS_PROP dma_test_devs
+
+#if DT_NODE_HAS_PROP(DMA_TEST_NODE, DMA_TEST_DEVS_PROP)
+/* Boards list the DMA controllers to test in a zephyr,user dma-test-devs
+ * phandle list.
+ */
+#define DMA_TEST_DEV_COUNT DT_PROP_LEN(DMA_TEST_NODE, DMA_TEST_DEVS_PROP)
+#define DMA_TEST_DEV_GET(idx, _)                                                                   \
+	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(DMA_TEST_NODE, DMA_TEST_DEVS_PROP, idx))
+#define DMA_TEST_DEV0_NODE DT_PHANDLE_BY_IDX(DMA_TEST_NODE, DMA_TEST_DEVS_PROP, 0)
+#else
+/* Legacy single-controller boards use a tst_dma0 devicetree label. */
+#define DMA_TEST_DEV_COUNT 1
+#define DMA_TEST_DEV_GET(idx, _) DEVICE_DT_GET(DT_NODELABEL(tst_dma0))
+#define DMA_TEST_DEV0_NODE DT_NODELABEL(tst_dma0)
+#endif
+
+#define DMA_DATA_ALIGNMENT DT_PROP_OR(DMA_TEST_DEV0_NODE, dma_buf_addr_alignment, 32)
+
+static const struct device *const dma_test_devs[] = {
+	LISTIFY(DMA_TEST_DEV_COUNT, DMA_TEST_DEV_GET, (,))
+};
 
 #ifdef CONFIG_NOCACHE_MEMORY
 static __aligned(DMA_DATA_ALIGNMENT) char tx_data[RX_BUFF_SIZE] __used
@@ -63,11 +86,10 @@ static void test_done(const struct device *dma_dev, void *arg, uint32_t id,
 	}
 }
 
-static int test_task(int minor, int major)
+static int test_task(const struct device *dma, int minor, int major)
 {
 	struct dma_config dma_cfg = { 0 };
 	struct dma_block_config dma_block_cfg = { 0 };
-	const struct device *const dma = DEVICE_DT_GET(DT_NODELABEL(tst_dma0));
 
 	if (!device_is_ready(dma)) {
 		TC_PRINT("dma controller device is not ready\n");
@@ -92,8 +114,8 @@ static int test_task(int minor, int major)
 	dma_cfg.dma_slot = CONFIG_DMA_MCUX_TEST_SLOT_START;
 #endif
 
-	TC_PRINT("Preparing DMA Controller: Chan_ID=%u, BURST_LEN=%u\n",
-		 TEST_DMA_CHANNEL_1, 8 >> 3);
+	TC_PRINT("Preparing DMA Controller: %s, Chan_ID=%u, BURST_LEN=%u\n",
+		 dma->name, TEST_DMA_CHANNEL_1, 8 >> 3);
 
 	TC_PRINT("Starting the transfer\n");
 	(void)memset(rx_data, 0, RX_BUFF_SIZE);
@@ -176,15 +198,24 @@ static int test_task(int minor, int major)
 /* export test cases */
 ZTEST(dma_m2m_link, test_dma_m2m_chan0_1_major_link)
 {
-	zassert_true((test_task(0, 1) == TC_PASS));
+	for (size_t i = 0; i < ARRAY_SIZE(dma_test_devs); i++) {
+		zassert_true(test_task(dma_test_devs[i], 0, 1) == TC_PASS,
+			     "%s failed major link transfer", dma_test_devs[i]->name);
+	}
 }
 
 ZTEST(dma_m2m_link, test_dma_m2m_chan0_1_minor_link)
 {
-	zassert_true((test_task(1, 0) == TC_PASS));
+	for (size_t i = 0; i < ARRAY_SIZE(dma_test_devs); i++) {
+		zassert_true(test_task(dma_test_devs[i], 1, 0) == TC_PASS,
+			     "%s failed minor link transfer", dma_test_devs[i]->name);
+	}
 }
 
 ZTEST(dma_m2m_link, test_dma_m2m_chan0_1_minor_major_link)
 {
-	zassert_true((test_task(1, 1) == TC_PASS));
+	for (size_t i = 0; i < ARRAY_SIZE(dma_test_devs); i++) {
+		zassert_true(test_task(dma_test_devs[i], 1, 1) == TC_PASS,
+			     "%s failed minor major link transfer", dma_test_devs[i]->name);
+	}
 }
