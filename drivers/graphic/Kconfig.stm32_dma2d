@@ -1,0 +1,21 @@
+# STM32 DMA2D HW
+
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config GRAPHIC_STM32_DMA2D
+	bool "STM32 DMA2D HW graphic accelerator"
+	default y
+	depends on DT_HAS_ST_STM32_DMA2D_ENABLED
+	select RESET
+	select USE_STM32_HAL_DMA2D
+	help
+	  Enable driver for STM32 DMA2D graphic accelerator
+
+config GRAPHIC_STM32_DMA2D_POOL_SIZE
+	int "Operation pool size"
+	default 4
+	depends on GRAPHIC_STM32_DMA2D
+	help
+	  Size of the operation pool correspond to the amount
+	  of operation allocated at the same time by the DMA2D

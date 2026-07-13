@@ -19,6 +19,7 @@ config GRAPHIC_INIT_PRIORITY
 	  System initialization priority for graphic drivers.
 
 # zephyr-keep-sorted-start
+source "drivers/graphic/Kconfig.stm32_dma2d"
 # zephyr-keep-sorted-stop
 
 endif # GRAPHIC_DRIVERS
