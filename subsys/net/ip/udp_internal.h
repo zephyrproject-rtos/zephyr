@@ -114,6 +114,12 @@ struct net_udp_opt_info {
 		uint16_t frag_offset;
 		bool is_terminal;
 	} frag;
+
+	/** Transmit-only: pad the surplus area with an EOL option and trailing
+	 * zeroes so that it reaches at least this many bytes. Used to inflate a
+	 * DPLPMTUD probe datagram to a target size (RFC 9869). 0 = no padding.
+	 */
+	uint16_t pad_to_surplus;
 };
 
 /**
