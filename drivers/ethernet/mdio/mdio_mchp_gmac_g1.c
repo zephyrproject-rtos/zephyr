@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(mdio_mchp_gmac_g1, CONFIG_MDIO_LOG_LEVEL);
 
 #define DT_DRV_COMPAT microchip_gmac_g1_mdio
 
-#define MDIO_MCHP_OP_TIMEOUT 25
+#define MDIO_MCHP_OP_TIMEOUT 50
 
 struct mdio_dev_data {
 	struct k_mutex reg_mutex;
