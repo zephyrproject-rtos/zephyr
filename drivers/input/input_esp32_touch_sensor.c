@@ -139,14 +139,12 @@ static void esp32_touch_handle_active(const struct device *dev)
 static void esp32_touch_sensor_interrupt_cb(void *arg)
 {
 	const struct device *dev = arg;
-	const struct esp32_touch_sensor_config *dev_cfg = dev->config;
-	const struct esp32_touch_sensor_channel_config *channel_cfg;
-	const int num_channels = dev_cfg->num_channels;
 
 #if SOC_TOUCH_SENSOR_VERSION == 1
 	touch_ll_interrupt_clear(TOUCH_LL_INTR_MASK_ALL);
 
 #elif SOC_TOUCH_SENSOR_VERSION >= 2
+	const struct esp32_touch_sensor_config *dev_cfg = dev->config;
 	static uint8_t scan_done_counter;
 
 #if SOC_TOUCH_SENSOR_VERSION == 2
@@ -159,8 +157,9 @@ static void esp32_touch_sensor_interrupt_cb(void *arg)
 
 	if (++scan_done_counter == ESP32_SCAN_DONE_MAX_COUNT) {
 		touch_ll_intr_disable(TOUCH_PAD_INTR_MASK_SCAN_DONE);
-		for (int i = 0; i < num_channels; i++) {
-			channel_cfg = &dev_cfg->channel_cfg[i];
+		for (int i = 0; i < dev_cfg->num_channels; i++) {
+			const struct esp32_touch_sensor_channel_config *channel_cfg =
+				&dev_cfg->channel_cfg[i];
 
 			uint32_t benchmark_value;
 
@@ -183,8 +182,9 @@ static void esp32_touch_sensor_interrupt_cb(void *arg)
 
 	if (++scan_done_counter == ESP32_SCAN_DONE_MAX_COUNT) {
 		touch_ll_interrupt_disable(TOUCH_LL_INTR_MASK_SCAN_DONE);
-		for (int i = 0; i < num_channels; i++) {
-			channel_cfg = &dev_cfg->channel_cfg[i];
+		for (int i = 0; i < dev_cfg->num_channels; i++) {
+			const struct esp32_touch_sensor_channel_config *channel_cfg =
+				&dev_cfg->channel_cfg[i];
 
 			uint32_t benchmark_value;
 
