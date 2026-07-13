@@ -6,7 +6,9 @@
  */
 
 #include <soc.h>
+#if(!IS_ENABLED(CONFIG_CLOCK_CONTROL_NRFX_DISABLE_ONOFF))
 #include <zephyr/sys/onoff.h>
+#endif
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include "nrf_clock_calibration.h"

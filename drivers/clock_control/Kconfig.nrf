@@ -360,6 +360,13 @@ config CLOCK_CONTROL_NRFX_XO24M
 	select CLOCK_CONTROL_NRFX_COMMON
 	select NRFX_CLOCK_XO24M if !CLOCK_CONTROL_NRF_FORCE_ALT
 	default y
+
+config CLOCK_CONTROL_NRFX_DISABLE_ONOFF
+	bool "Disables onoff manager related functionality to save space"
+	depends on !($(dt_node_str_prop_equals,$(dt_nodelabel_path,lfclk),k32src,synth)) && \
+		   !CLOCK_CONTROL_NRF_HFINT_CALIBRATION
+	default n
+
 endif # !CLOCK_CONTROL_NRF
 
 config CLOCK_CONTROL_NRF_COMMON

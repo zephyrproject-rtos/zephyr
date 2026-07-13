@@ -19,12 +19,14 @@
 
 #define DT_DRV_COMPAT nordic_nrf_clock
 
+#if(!IS_ENABLED(CONFIG_CLOCK_CONTROL_NRFX_DISABLE_ONOFF))
 /* Structure used for synchronous clock request. */
 struct sync_req {
 	struct onoff_client cli;
 	struct k_sem sem;
 	int res;
 };
+#endif
 
 static bool irq_connected;
 
@@ -149,7 +151,9 @@ int common_stop(const struct device *dev, uint32_t ctx)
 	return 0;
 }
 
-void common_onoff_started_callback(const struct device *dev, clock_control_subsys_t sys,
+#if(!IS_ENABLED(CONFIG_CLOCK_CONTROL_NRFX_DISABLE_ONOFF))
+
+static void common_onoff_started_callback(const struct device *dev, clock_control_subsys_t sys,
 				   void *user_data)
 {
 	ARG_UNUSED(sys);
@@ -157,23 +161,6 @@ void common_onoff_started_callback(const struct device *dev, clock_control_subsy
 	onoff_notify_fn notify = user_data;
 
 	notify(&((common_clock_data_t *)dev->data)->mgr, 0);
-}
-
-void common_clkstarted_handle(const struct device *dev)
-{
-	clock_control_cb_t callback = ((common_clock_data_t *)dev->data)->cb;
-
-	((common_clock_data_t *)dev->data)->cb = NULL;
-	common_set_on_state(&((common_clock_data_t *)dev->data)->flags);
-
-	if (callback) {
-		callback(dev, NULL, ((common_clock_data_t *)dev->data)->user_data);
-	}
-}
-
-void common_clear_pending_irq(void)
-{
-	NRFX_IRQ_PENDING_CLEAR(DT_INST_IRQN(0));
 }
 
 static void sync_cb(struct onoff_manager *mgr, struct onoff_client *cli, uint32_t state, int res)
@@ -211,6 +198,25 @@ int nrf_clock_control_request_sync(const struct device *dev,
 	}
 
 	return req.res;
+}
+
+#endif
+
+void common_clkstarted_handle(const struct device *dev)
+{
+	clock_control_cb_t callback = ((common_clock_data_t *)dev->data)->cb;
+
+	((common_clock_data_t *)dev->data)->cb = NULL;
+	common_set_on_state(&((common_clock_data_t *)dev->data)->flags);
+
+	if (callback) {
+		callback(dev, NULL, ((common_clock_data_t *)dev->data)->user_data);
+	}
+}
+
+void common_clear_pending_irq(void)
+{
+	NRFX_IRQ_PENDING_CLEAR(DT_INST_IRQN(0));
 }
 
 int common_api_start(const struct device *dev, clock_control_subsys_t subsys, clock_control_cb_t cb,
@@ -255,6 +261,7 @@ enum clock_control_status common_api_get_status(const struct device *dev,
 	return COMMON_GET_STATUS(((common_clock_data_t *)dev->data)->flags);
 }
 
+#if(!IS_ENABLED(CONFIG_CLOCK_CONTROL_NRFX_DISABLE_ONOFF))
 int common_api_request(const struct device *dev, const struct nrf_clock_spec *spec,
 		       struct onoff_client *cli)
 {
@@ -279,7 +286,7 @@ int common_api_cancel_or_release(const struct device *dev, const struct nrf_cloc
 				       cli);
 }
 
-void common_onoff_start(struct onoff_manager *manager, onoff_notify_fn notify)
+static void common_onoff_start(struct onoff_manager *manager, onoff_notify_fn notify)
 {
 	int err;
 	common_clock_data_t *dev_data = CONTAINER_OF(manager, common_clock_data_t, mgr);
@@ -291,7 +298,7 @@ void common_onoff_start(struct onoff_manager *manager, onoff_notify_fn notify)
 	}
 }
 
-void common_onoff_stop(struct onoff_manager *manager, onoff_notify_fn notify)
+static void common_onoff_stop(struct onoff_manager *manager, onoff_notify_fn notify)
 {
 	int res;
 	common_clock_data_t *dev_data = CONTAINER_OF(manager, common_clock_data_t, mgr);
@@ -300,21 +307,25 @@ void common_onoff_stop(struct onoff_manager *manager, onoff_notify_fn notify)
 	notify(manager, res);
 }
 
+#endif /* CONFIG_CLOCK_CONTROL_NRFX_DISABLE_ONOFF */
+
 int common_clk_init(const struct device *dev)
 {
+#if(!IS_ENABLED(CONFIG_CLOCK_CONTROL_NRFX_DISABLE_ONOFF))
 	int err;
 	static const struct onoff_transitions transitions = {.start = common_onoff_start,
 							     .stop = common_onoff_stop};
-
+#endif
 	((common_clock_data_t *)dev->data)->dev = dev;
 
 	common_connect_irq();
-
+#if(!IS_ENABLED(CONFIG_CLOCK_CONTROL_NRFX_DISABLE_ONOFF))
 	err = onoff_manager_init(&((common_clock_data_t *)dev->data)->mgr,
 				 &transitions);
 	if (err < 0) {
 		return err;
 	}
+#endif
 
 	((common_clock_data_t *)dev->data)->flags = CLOCK_CONTROL_STATUS_OFF;
 
@@ -328,9 +339,11 @@ DEVICE_API(nrf_clock_control, common_clock_control_api) = {
 		.async_on = common_api_start,
 		.get_status = common_api_get_status,
 	},
+#if(!IS_ENABLED(CONFIG_CLOCK_CONTROL_NRFX_DISABLE_ONOFF))
 	.request = common_api_request,
 	.release = common_api_release,
 	.cancel_or_release = common_api_cancel_or_release,
+#endif
 };
 
 #endif /* defined(CONFIG_CLOCK_CONTROL_NRFX_COMMON) && !defined(CONFIG_CLOCK_CONTROL_NRF) */

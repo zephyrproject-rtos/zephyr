@@ -14,7 +14,9 @@
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CONTROL_H_
 
 #include <zephyr/device.h>
+#if(!IS_ENABLED(CONFIG_CLOCK_CONTROL_NRFX_DISABLE_ONOFF))
 #include <zephyr/sys/onoff.h>
+#endif
 #include <zephyr/drivers/clock_control.h>
 
 /**
@@ -276,7 +278,7 @@ struct nrf_clock_spec {
 
 __subsystem struct nrf_clock_control_driver_api {
 	struct clock_control_driver_api std_api;
-
+#if(!IS_ENABLED(CONFIG_CLOCK_CONTROL_NRFX_DISABLE_ONOFF))
 	int (*request)(const struct device *dev,
 		       const struct nrf_clock_spec *spec,
 		       struct onoff_client *cli);
@@ -291,6 +293,7 @@ __subsystem struct nrf_clock_control_driver_api {
 	int (*get_startup_time)(const struct device *dev,
 				const struct nrf_clock_spec *spec,
 				uint32_t *startup_time_us);
+#endif
 };
 
 DEVICE_API_EXTENDS(nrf_clock_control, clock_control, std_api);
@@ -299,6 +302,7 @@ DEVICE_API_EXTENDS(nrf_clock_control, clock_control, std_api);
  * @endcond
  */
 
+#if(!IS_ENABLED(CONFIG_CLOCK_CONTROL_NRFX_DISABLE_ONOFF))
 /**
  * @brief Request a reservation to use a given clock with specified attributes.
  *
@@ -453,6 +457,7 @@ static inline int nrf_clock_control_get_startup_time(const struct device *dev,
 
 	return api->get_startup_time(dev, spec, startup_time_us);
 }
+#endif /* CONFIG_CLOCK_CONTROL_NRFX_DISABLE_ONOFF */
 
 /** @brief Request the HFXO from Zero Latency Interrupt context.
  *

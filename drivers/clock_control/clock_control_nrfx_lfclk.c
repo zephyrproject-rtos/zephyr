@@ -6,7 +6,9 @@
  */
 
 #include <soc.h>
+#if(!IS_ENABLED(CONFIG_CLOCK_CONTROL_NRFX_DISABLE_ONOFF))
 #include <zephyr/sys/onoff.h>
+#endif
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include "nrf_clock_calibration.h"
@@ -205,14 +207,20 @@ static void clock_event_handler(nrfx_clock_lfclk_evt_type_t event)
 void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode)
 {
 	static atomic_t on;
+#if(!IS_ENABLED(CONFIG_CLOCK_CONTROL_NRFX_DISABLE_ONOFF))
 	static struct onoff_client cli;
+#endif
 
 	if (atomic_set(&on, 1) == 0) {
 		int err;
+#if(IS_ENABLED(CONFIG_CLOCK_CONTROL_NRFX_DISABLE_ONOFF))
+		err = common_async_start(CLOCK_DEVICE_LFCLK, NULL, NULL, COMMON_CTX_API);
+#else
 		struct onoff_manager *mgr = &((common_clock_data_t *)CLOCK_DEVICE_LFCLK->data)->mgr;
 
 		sys_notify_init_spinwait(&cli.notify);
 		err = onoff_request(mgr, &cli);
+#endif
 		__ASSERT_NO_MSG(err >= 0);
 	}
 
