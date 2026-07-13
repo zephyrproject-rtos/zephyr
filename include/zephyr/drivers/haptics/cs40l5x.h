@@ -32,21 +32,6 @@ extern "C" {
  */
 
 /**
- * @brief Attenuation options for triggered haptic effects
- * @details Provide to @ref cs40l5x_configure_trigger().
- */
-enum cs40l5x_attenuation {
-	CS40L5X_ATTENUATION_7DB = -7, /**< Configure haptic effect with 7 dB attenuation */
-	CS40L5X_ATTENUATION_6DB,      /**< Configure haptic effect with 6 dB attenuation */
-	CS40L5X_ATTENUATION_5DB,      /**< Configure haptic effect with 5 dB attenuation */
-	CS40L5X_ATTENUATION_4DB,      /**< Configure haptic effect with 4 dB attenuation */
-	CS40L5X_ATTENUATION_3DB,      /**< Configure haptic effect with 3 dB attenuation */
-	CS40L5X_ATTENUATION_2DB,      /**< Configure haptic effect with 2 dB attenuation */
-	CS40L5X_ATTENUATION_1DB,      /**< Configure haptic effect with 1 dB attenuation */
-	CS40L5X_ATTENUATION_0DB,      /**< Configure haptic effect with no attenuation */
-};
-
-/**
  * @brief Wavetable sources for haptic effects
  * @details Provide to @ref cs40l5x_configure_trigger() or @ref cs40l5x_select_output().
  */
@@ -154,9 +139,9 @@ int cs40l5x_configure_buzz(const struct device *const dev, const uint32_t freque
  *
  * @param[in] dev Pointer to the device structure for haptic device instance
  * @param[in] gpio Pointer to the device structure for the GPIO used as the trigger source
- * @param[in] bank Wavetable source for desired haptic effect, see @ref cs40l5x_bank
- * @param[in] index Wavetable index for desired haptic effect
- * @param[in] attenuation Attenuation in dB for desired haptic effect, see @ref cs40l5x_attenuation
+ * @param[in] src Playback source (of type @ref haptics_source)
+ * @param[in] cfg Source configuration (of type @ref haptics_config) or NULL
+ * @param[in] attenuation Attenuation in dB for desired haptic effect (range 0 to 7)
  * @param[in] edge Specify edge (rising or falling) to trigger haptic effects
  *
  * @return 0 on success, negative errno value on failure.
@@ -164,9 +149,8 @@ int cs40l5x_configure_buzz(const struct device *const dev, const uint32_t freque
  * @retval -EIO A control port transaction failed.
  */
 int cs40l5x_configure_trigger(const struct device *const dev, const struct gpio_dt_spec *const gpio,
-			      const enum cs40l5x_bank bank, const uint8_t index,
-			      const enum cs40l5x_attenuation attenuation,
-			      const enum cs40l5x_trigger_edge edge);
+			      const enum haptics_source src, const union haptics_config *const cfg,
+			      const int8_t attenuation, const enum cs40l5x_trigger_edge edge);
 
 /**
  * @brief Enable or disable runtime haptics logging
