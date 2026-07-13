@@ -87,6 +87,10 @@ static int adxl362_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 	}
 
 	uint64_t period_ns = accel_period_ns[enc_data->accel_odr];
+	uint16_t total_samples = sample_set_size > 0
+				 ? enc_data->fifo_byte_count / sample_set_size : 0;
+	uint64_t base_ts = enc_data->timestamp -
+			   (total_samples > 0 ? (total_samples - 1) : 0) * period_ns;
 
 	/* Calculate which sample is decoded. */
 	if (*fit >= (uintptr_t)buffer) {
@@ -109,7 +113,7 @@ static int adxl362_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 				struct sensor_q31_data *data = (struct sensor_q31_data *)data_out;
 
 				memset(data, 0, sizeof(struct sensor_three_axis_data));
-				data->header.base_timestamp_ns = enc_data->timestamp;
+				data->header.base_timestamp_ns = base_ts;
 				data->header.reading_count = 1;
 				data->shift = 8;
 
@@ -129,7 +133,7 @@ static int adxl362_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 					(struct sensor_three_axis_data *)data_out;
 
 			memset(data, 0, sizeof(struct sensor_three_axis_data));
-			data->header.base_timestamp_ns = enc_data->timestamp;
+			data->header.base_timestamp_ns = base_ts;
 			data->header.reading_count = 1;
 			data->shift = range_to_shift[enc_data->selected_range];
 
