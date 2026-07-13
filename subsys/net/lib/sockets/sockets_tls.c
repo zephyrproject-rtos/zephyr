@@ -4793,6 +4793,27 @@ mbedtls_ssl_context *ztls_get_mbedtls_ssl_context(int fd)
 	return &ctx->active_session->ssl;
 }
 
+int ztls_get_cached_session(int fd, mbedtls_ssl_session *session)
+{
+	struct net_sockaddr_storage peer_addr = { 0 };
+	struct tls_context *ctx;
+	net_socklen_t peer_addrlen = sizeof(peer_addr);
+	int ret;
+
+	ctx = zvfs_get_fd_obj(fd, (const struct fd_op_vtable *)&tls_sock_fd_op_vtable,
+			      EBADF);
+	if (ctx == NULL) {
+		return -EBADF;
+	}
+
+	ret = zsock_getpeername(ctx->sock, net_sad(&peer_addr), &peer_addrlen);
+	if (ret < 0) {
+		return -errno;
+	}
+
+	return tls_session_get(net_sad(&peer_addr), session);
+}
+
 uint32_t ztls_get_session_count(void)
 {
 	return k_mem_slab_num_used_get(&tls_session_contexts);
