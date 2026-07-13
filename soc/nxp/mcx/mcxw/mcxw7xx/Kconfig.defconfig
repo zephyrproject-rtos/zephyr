@@ -99,6 +99,17 @@ config ROM_START_OFFSET
 
 endif # NXP_MCXW7XX_BOOT_HEADER
 
+if MBEDTLS_PSA_CRYPTO_C
+
+# Only MCXW70AC has the SGI PKC
+config PSA_CRYPTO_DRIVER_SGI_PKC
+	bool
+	default y if SOC_MCXW70AC
+	select SGI_PKC
+	select SGI_PKC_PLATFORM_MCXW if SOC_MCXW70AC
+
+endif # MBEDTLS_PSA_CRYPTO_C
+
 endif
 
 config WUC
