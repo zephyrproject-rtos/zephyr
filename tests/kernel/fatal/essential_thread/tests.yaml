@@ -1,0 +1,9 @@
+tests:
+  kernel.fatal.essential_thread:
+    tags:
+      - kernel
+      - fatal
+    ignore_faults: true
+    integration_platforms:
+      - qemu_x86
+      - native_sim
