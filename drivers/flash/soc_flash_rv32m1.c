@@ -13,9 +13,8 @@
 #include <errno.h>
 #include <zephyr/init.h>
 #include <soc.h>
-#include "flash_priv.h"
 
-#define SOC_NV_FLASH_NODE SOC_NV_FLASH_CHILD_NODE(0)
+#define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 
 #include "fsl_common.h"
 #include "fsl_flash.h"
