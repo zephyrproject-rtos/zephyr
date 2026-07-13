@@ -50,28 +50,22 @@ bool esp_hosted_hal_data_ready(const struct device *dev)
 int esp_hosted_hal_spi_transfer(const struct device *dev, void *tx, void *rx, uint32_t size)
 {
 	int ret = 0;
-	esp_hosted_data_t *data = dev->data;
 	const esp_hosted_config_t *config = dev->config;
 
-	const struct spi_buf tx_buf = {.buf = tx ? tx : rx, .len = size};
+	const struct spi_buf tx_buf = {.buf = tx, .len = size};
 	const struct spi_buf_set tx_set = {.buffers = &tx_buf, .count = 1};
 
-	const struct spi_buf rx_buf = {.buf = rx ? rx : tx, .len = size};
+	const struct spi_buf rx_buf = {.buf = rx, .len = size};
 	const struct spi_buf_set rx_set = {.buffers = &rx_buf, .count = 1};
 
 	/* Wait for handshake pin to go high. */
 	for (uint64_t start = k_uptime_get();; k_msleep(1)) {
-		if (gpio_pin_get_dt(&config->handshake_gpio) &&
-		    (rx == NULL || gpio_pin_get_dt(&config->dataready_gpio))) {
+		if (gpio_pin_get_dt(&config->handshake_gpio)) {
 			break;
 		}
 		if ((k_uptime_get() - start) >= 100) {
 			return -ETIMEDOUT;
 		}
-	}
-
-	if (k_sem_take(&data->bus_sem, K_FOREVER) != 0) {
-		return -1;
 	}
 
 	/* Transfer SPI buffers. */
@@ -80,6 +74,5 @@ int esp_hosted_hal_spi_transfer(const struct device *dev, void *tx, void *rx, ui
 		ret = -EIO;
 	}
 
-	k_sem_give(&data->bus_sem);
 	return ret;
 }
