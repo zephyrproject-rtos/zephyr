@@ -26,21 +26,21 @@ extern "C" {
  * @cond INTERNAL_HIDDEN
  */
 
-#ifndef __mem_word_t_defined
-#define __mem_word_t_defined
+#ifndef __sys_mem_word_t_defined
+#define __sys_mem_word_t_defined
 
 /**
- * @typedef mem_word_t
+ * @typedef sys_mem_word_t
  *
  * @brief Access type for word granular access memory.
  *
  * Should match the optimal memory access word width
  * on the target platform. Here we default it to uintptr_t.
  */
-typedef uintptr_t __attribute__((may_alias)) mem_word_t;
+typedef uintptr_t __attribute__((may_alias)) sys_mem_word_t;
 
 #define Z_MEM_WORD_T_WIDTH __INTPTR_WIDTH__
-#endif /* __mem_word_t_defined */
+#endif /* __sys_mem_word_t_defined */
 
 BUILD_ASSERT(Z_MEM_WORD_T_WIDTH == 32, "Unsupported word width for access to "
 				       "word granular access memory");
@@ -63,7 +63,7 @@ BUILD_ASSERT(Z_MEM_WORD_T_WIDTH == 32, "Unsupported word width for access to "
  * @param n Number of bytes to set
  * @returns the provided buffer pointer, or `NULL` on error
  */
-void *memset_word_granular_access(void *buf, int c, size_t n);
+void *sys_memset_word_granular_access(void *buf, int c, size_t n);
 
 /**
  * @brief Memcpy buffer into word granular access memory
@@ -80,7 +80,7 @@ void *memset_word_granular_access(void *buf, int c, size_t n);
  * @param n Number of bytes to copy
  * @returns the provided destination buffer pointer, or `NULL` on error
  */
-void *memcpy_to_word_granular_access(void *d, const void *s, size_t n);
+void *sys_memcpy_to_word_granular_access(void *d, const void *s, size_t n);
 
 /**
  * @brief Memcpy buffer out of word granular access memory
@@ -97,7 +97,7 @@ void *memcpy_to_word_granular_access(void *d, const void *s, size_t n);
  * @param n Number of bytes to copy
  * @returns the provided destination buffer pointer, or `NULL` on error
  */
-void *memcpy_from_word_granular_access(void *d, const void *s, size_t n);
+void *sys_memcpy_from_word_granular_access(void *d, const void *s, size_t n);
 
 /** @} */
 
