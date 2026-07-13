@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_udc0 {
+	status = "okay";
+	pinctrl-0 = <&udc_dm_gpf4_default &udc_dp_gpf5_default>;
+	pinctrl-names = "default";
+};
+
+&ecpm {
+	pll-frequency = <PLL_96000_KHZ>;
+};
