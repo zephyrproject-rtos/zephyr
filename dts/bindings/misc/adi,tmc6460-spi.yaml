@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Cherrence Sarip <cherrence.sarip@analog.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices / Trinamic TMC6460 motor controller (SPI mode).
+
+  Uses 48-bit (6-byte) SPI datagrams: 2 address bytes + 4 data bytes.
+  SPI Mode 1 (CPOL=0, CPHA=1), MSB first.
+
+compatible: "adi,tmc6460"
+
+include:
+  - name: spi-device.yaml
+
+properties:
+  spi-max-frequency:
+    type: int
+    required: true
+    description: Maximum SPI clock frequency supported by the device.
+
+  pole-pairs:
+    type: int
+    default: 4
+    description: |
+      Number of magnetic pole pairs of the attached BLDC/PMSM motor. This is a
+      physical property of the motor and is required for correct commutation
+      and electrical-angle calculation.
+
+  hall-mapping:
+    type: int
+    default: 3
+    description: |
+      Hall UVW sensor mapping value. For a correctly wired Hall sensor the
+      value is 3; other values compensate for alternative sensor wiring.
+
+  hall-io-inversion:
+    type: boolean
+    description: |
+      Invert the polarity of all three Hall sensor inputs. Set when the Hall
+      sensor outputs are wired with inverted logic levels.
+
+  abn-ppr:
+    type: int
+    default: 1024
+    description: |
+      ABN incremental encoder pulses-per-rotation (PPR). This is a physical
+      property of the attached encoder. The counts-per-rotation used by the
+      controller is four times this value (quadrature decoding).

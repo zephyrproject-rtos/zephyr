@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Cherrence Sarip <cherrence.sarip@analog.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices / Trinamic TMC6460 motor controller (UART mode).
+
+  The TMC6460 UART protocol differs from other Trinamic chips:
+  - Sync byte: 0x42 (not 0x05)
+  - 16-bit register addresses encoded in two bytes
+  - CRC8 polynomial: 0x100011011 (reflected), optional
+  - Supports RTMI (Real-Time Motion Interface) streaming
+
+compatible: "adi,tmc6460"
+
+include: [uart-device.yaml]
+
+properties:
+  uart-crc:
+    type: boolean
+    description: |
+      Enable CRC8 for UART communication.
+      When set, an additional CRC byte is appended to each datagram.
+      Both normal (read/write) and RTMI CRC are enabled.
+
+  pole-pairs:
+    type: int
+    default: 4
+    description: |
+      Number of magnetic pole pairs of the attached BLDC/PMSM motor. This is a
+      physical property of the motor and is required for correct commutation
+      and electrical-angle calculation.
+
+  hall-mapping:
+    type: int
+    default: 3
+    description: |
+      Hall UVW sensor mapping value. For a correctly wired Hall sensor the
+      value is 3; other values compensate for alternative sensor wiring.
+
+  hall-io-inversion:
+    type: boolean
+    description: |
+      Invert the polarity of all three Hall sensor inputs. Set when the Hall
+      sensor outputs are wired with inverted logic levels.
+
+  abn-ppr:
+    type: int
+    default: 1024
+    description: |
+      ABN incremental encoder pulses-per-rotation (PPR). This is a physical
+      property of the attached encoder. The counts-per-rotation used by the
+      controller is four times this value (quadrature decoding).
