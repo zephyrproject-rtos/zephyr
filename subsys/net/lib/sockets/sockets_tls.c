@@ -915,6 +915,22 @@ exit:
 	mbedtls_ssl_session_free(&session);
 }
 
+static void tls_session_store_current(struct tls_context *context)
+{
+	struct net_sockaddr_storage peer_addr = { 0 };
+	net_socklen_t peer_addrlen = sizeof(peer_addr);
+
+	if (!context->options.cache_enabled) {
+		return;
+	}
+
+	if (zsock_getpeername(context->sock, net_sad(&peer_addr), &peer_addrlen) < 0) {
+		return;
+	}
+
+	tls_session_store(context, net_sad(&peer_addr), peer_addrlen);
+}
+
 static void tls_session_restore(struct tls_context *context,
 				const struct net_sockaddr *addr,
 				net_socklen_t addrlen)
@@ -3102,7 +3118,11 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct net_sockaddr *addr,
 			goto error;
 		}
 
-		tls_session_store(ctx, addr, addrlen);
+		/* TLS 1.3 tickets arrive after the handshake. */
+		if (mbedtls_ssl_get_version_number(&ctx->active_session->ssl) !=
+		    MBEDTLS_SSL_VERSION_TLS1_3) {
+			tls_session_store(ctx, addr, addrlen);
+		}
 	}
 
 	return 0;
@@ -3521,6 +3541,10 @@ static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 		ret = mbedtls_ssl_read(&ctx->active_session->ssl, (uint8_t *)buf + recv_len,
 				       read_len);
 		if (ret < 0) {
+			if (ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
+				tls_session_store_current(ctx);
+			}
+
 			if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
 				/* Peer notified that it's closing the
 				 * connection.
@@ -4037,9 +4061,13 @@ static int tls_data_check(struct tls_context *ctx)
 			return -ENOTCONN;
 		}
 
+		if (ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
+			tls_session_store_current(ctx);
+			return 0;
+		}
+
 		if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
-		    ret == MBEDTLS_ERR_SSL_WANT_WRITE ||
-		    ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
+		    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
 			return 0;
 		}
 

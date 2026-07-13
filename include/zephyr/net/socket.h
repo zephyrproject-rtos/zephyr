@@ -190,6 +190,12 @@ extern "C" {
 /** Socket option to control TLS session caching on a socket. Accepted values:
  *  - 0 - Disabled.
  *  - 1 - Enabled.
+ *
+ *  For TLS 1.3, sessions are cached when a NewSessionTicket message is
+ *  received, which happens after the handshake completes. The application
+ *  needs to receive from or poll the socket for the ticket to be processed
+ *  and cached. The latest received ticket replaces the cache entry for the
+ *  peer.
  */
 #define ZSOCK_TLS_SESSION_CACHE 12
 /** Write-only socket option to purge session cache immediately.
