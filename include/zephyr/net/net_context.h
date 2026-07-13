@@ -31,6 +31,7 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_stats.h>
+#include <zephyr/net/dplpmtud.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -433,6 +434,25 @@ __net_socket struct net_context {
 			uint16_t mds;
 			/** MRDS (Maximum Reassembled Datagram Size), 0 = not set */
 			struct net_udp_opt_mrds mrds;
+#if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+			/** DPLPMTUD (RFC 9869) per-socket state. */
+			struct {
+				/** Generic engine path handle (per destination). */
+				struct net_dplpmtud_path path;
+				/** Probe retransmit / raise timer. */
+				struct k_work_delayable timer;
+				/** Token of the outstanding probe, 0 = none. */
+				uint32_t token;
+				/** Size of the outstanding probe. */
+				uint16_t probe_size;
+				/** DPLPMTUD enabled on this socket. */
+				bool enabled;
+				/** Application echoes RES itself (no auto-echo). */
+				bool app_respond;
+				/** BASE_PLPMTU connectivity has been confirmed. */
+				bool base_confirmed;
+			} dplpmtud;
+#endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
 		} udp_opt;
 #endif
 	} options;
@@ -1404,6 +1424,8 @@ enum net_context_option {
 	NET_OPT_UDP_OPT_UCMP      = 38, /**< UDP options: UNSAFE Compression */
 	NET_OPT_UDP_OPT_UENC      = 39, /**< UDP options: UNSAFE Encryption */
 	NET_OPT_UDP_OPT_UEXP      = 40, /**< UDP options: UNSAFE Experimental */
+	NET_OPT_UDP_OPT_DPLPMTUD  = 41, /**< UDP options: DPLPMTUD enable (RFC 9869) */
+	NET_OPT_UDP_OPT_DPLPMTUD_APP_RESPOND = 42, /**< UDP options: app echoes RES itself */
 };
 
 /**
@@ -1433,6 +1455,30 @@ int net_context_set_option(struct net_context *context,
 int net_context_get_option(struct net_context *context,
 			   enum net_context_option option,
 			   void *value, uint32_t *len);
+
+/**
+ * @brief Enable or disable DPLPMTUD (RFC 9869) on a UDP context.
+ *
+ * When enabled, the stack probes the path MTU using UDP options and answers
+ * incoming probes. Must be a UDP context.
+ *
+ * @param context Network context (proto must be UDP)
+ * @param enable  true to enable DPLPMTUD, false to disable
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+#if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD) || defined(__DOXYGEN__)
+int net_context_set_udp_dplpmtud(struct net_context *context, bool enable);
+#else
+static inline int net_context_set_udp_dplpmtud(struct net_context *context,
+					       bool enable)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(enable);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
 
 /**
  * @typedef net_context_cb_t

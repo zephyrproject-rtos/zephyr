@@ -1040,6 +1040,10 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 #define ZSOCK_UDP_OPT_UENC 13
 /** Enable/disable UDP UEXP option (int boolean) */
 #define ZSOCK_UDP_OPT_UEXP 14
+/** Enable/disable DPLPMTUD over UDP options, RFC 9869 (int boolean) */
+#define ZSOCK_UDP_OPT_DPLPMTUD 15
+/** Let the application echo REQ->RES itself instead of the stack (int boolean) */
+#define ZSOCK_UDP_OPT_DPLPMTUD_APP_RESPOND 16
 
 /** cmsg types for IPPROTO_UDP level in ancillary data */
 #define ZSOCK_UDP_OPT_CMSG_APC    1  /**< uint32_t CRC32c */

@@ -1992,6 +1992,12 @@ static enum net_context_option udp_opt_to_net_opt(int optname)
 		return NET_OPT_UDP_OPT_UENC;
 	case ZSOCK_UDP_OPT_UEXP:
 		return NET_OPT_UDP_OPT_UEXP;
+#if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+	case ZSOCK_UDP_OPT_DPLPMTUD:
+		return NET_OPT_UDP_OPT_DPLPMTUD;
+	case ZSOCK_UDP_OPT_DPLPMTUD_APP_RESPOND:
+		return NET_OPT_UDP_OPT_DPLPMTUD_APP_RESPOND;
+#endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
 	default:
 		return NET_OPT_UDP_OPT;
 	}
@@ -2196,6 +2202,10 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 		case ZSOCK_UDP_OPT_UCMP:
 		case ZSOCK_UDP_OPT_UENC:
 		case ZSOCK_UDP_OPT_UEXP:
+#if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+		case ZSOCK_UDP_OPT_DPLPMTUD:
+		case ZSOCK_UDP_OPT_DPLPMTUD_APP_RESPOND:
+#endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
 			ret = net_context_get_option(ctx, udp_opt_to_net_opt(optname),
 						     optval, optlen);
 			if (ret < 0) {
@@ -2909,6 +2919,10 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 		case ZSOCK_UDP_OPT_UCMP:
 		case ZSOCK_UDP_OPT_UENC:
 		case ZSOCK_UDP_OPT_UEXP:
+#if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+		case ZSOCK_UDP_OPT_DPLPMTUD:
+		case ZSOCK_UDP_OPT_DPLPMTUD_APP_RESPOND:
+#endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
 			ret = net_context_set_option(ctx, udp_opt_to_net_opt(optname),
 						     optval, optlen);
 			if (ret < 0) {
