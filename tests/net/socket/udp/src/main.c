@@ -996,6 +996,416 @@ ZTEST(net_socket_udp, test_so_protocol)
 	zassert_equal(rv, 0, "close failed");
 }
 
+ZTEST(net_socket_udp, test_udp_options_sockopt_api)
+{
+	struct net_sockaddr_in bind_addr4;
+	struct net_udp_opt_mrds mrds_set = {
+		.size = 1400,
+		.segs = 7,
+	};
+	struct net_udp_opt_mrds mrds_get = { 0 };
+	uint16_t mds = 1234;
+	int sock, rv;
+	int optval;
+	net_socklen_t optlen;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_UDP_OPTIONS);
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &sock, &bind_addr4);
+
+	rv = zsock_bind(sock, (struct net_sockaddr *)&bind_addr4, sizeof(bind_addr4));
+	zassert_equal(rv, 0, "bind failed");
+
+	optlen = sizeof(optval);
+	rv = zsock_getsockopt(sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_OCS,
+			      &optval, &optlen);
+	zassert_equal(rv, 0, "getsockopt UDP_OPT_OCS failed (%d)", errno);
+	zassert_equal(optval, 0, "default UDP_OPT_OCS state invalid");
+
+	optval = 1;
+	rv = zsock_setsockopt(sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_APC,
+			      &optval, sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt UDP_OPT_APC failed (%d)", errno);
+
+	optlen = sizeof(optval);
+	optval = 0;
+	rv = zsock_getsockopt(sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_APC,
+			      &optval, &optlen);
+	zassert_equal(rv, 0, "getsockopt UDP_OPT_APC failed (%d)", errno);
+	zassert_equal(optval, 1, "UDP_OPT_APC did not enable");
+
+	optval = 0;
+	rv = zsock_setsockopt(sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_APC,
+			      &optval, sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt UDP_OPT_APC clear failed (%d)", errno);
+
+	optlen = sizeof(optval);
+	optval = 1;
+	rv = zsock_getsockopt(sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_APC,
+			      &optval, &optlen);
+	zassert_equal(rv, 0, "getsockopt UDP_OPT_APC failed (%d)", errno);
+	zassert_equal(optval, 0, "UDP_OPT_APC did not clear");
+
+	rv = zsock_setsockopt(sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_MDS,
+			      &mds, sizeof(mds));
+	zassert_equal(rv, 0, "setsockopt UDP_OPT_MDS failed (%d)", errno);
+
+	mds = 0;
+	optlen = sizeof(mds);
+	rv = zsock_getsockopt(sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_MDS,
+			      &mds, &optlen);
+	zassert_equal(rv, 0, "getsockopt UDP_OPT_MDS failed (%d)", errno);
+	zassert_equal(mds, 1234, "UDP_OPT_MDS mismatch");
+
+	rv = zsock_setsockopt(sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_MRDS,
+			      &mrds_set, sizeof(mrds_set));
+	zassert_equal(rv, 0, "setsockopt UDP_OPT_MRDS failed (%d)", errno);
+
+	optlen = sizeof(mrds_get);
+	rv = zsock_getsockopt(sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_MRDS,
+			      &mrds_get, &optlen);
+	zassert_equal(rv, 0, "getsockopt UDP_OPT_MRDS failed (%d)", errno);
+	zassert_equal(mrds_get.size, mrds_set.size, "UDP_OPT_MRDS size mismatch");
+	zassert_equal(mrds_get.segs, mrds_set.segs, "UDP_OPT_MRDS segs mismatch");
+
+	optval = 70000;
+	errno = 0;
+	rv = zsock_setsockopt(sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_MDS,
+			      &optval, sizeof(optval));
+	zassert_equal(rv, -1, "setsockopt UDP_OPT_MDS unexpectedly succeeded");
+	zassert_equal(errno, EINVAL, "unexpected errno for invalid MDS");
+
+	optval = 0;
+	rv = zsock_setsockopt(sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT,
+			      &optval, sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt UDP_OPT clear failed (%d)", errno);
+
+	optlen = sizeof(optval);
+	optval = 1;
+	rv = zsock_getsockopt(sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_OCS,
+			      &optval, &optlen);
+	zassert_equal(rv, 0, "getsockopt UDP_OPT_OCS failed (%d)", errno);
+	zassert_equal(optval, 0, "UDP_OPT clear did not disable OCS");
+
+	optval = 1;
+	rv = zsock_setsockopt(sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT,
+			      &optval, sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt UDP_OPT enable failed (%d)", errno);
+
+	optlen = sizeof(optval);
+	optval = 0;
+	rv = zsock_getsockopt(sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT,
+			      &optval, &optlen);
+	zassert_equal(rv, 0, "getsockopt UDP_OPT failed (%d)", errno);
+	zassert_equal(optval, 1, "UDP_OPT enable state mismatch");
+
+	optval = 1;
+	errno = 0;
+	rv = zsock_setsockopt(sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_AUTH,
+			      &optval, sizeof(optval));
+	zassert_equal(rv, -1, "setsockopt UDP_OPT_AUTH unexpectedly succeeded");
+	zassert_true(errno == ENOTSUP || errno == EOPNOTSUPP,
+		     "unexpected errno for unsupported option (%d)", errno);
+
+	rv = zsock_close(sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
+ZTEST(net_socket_udp, test_udp_options_surplus_not_delivered)
+{
+	static const char payload_even[] = "ABCD";
+	static const char payload_odd[] = "ABCDE";
+	struct net_sockaddr_in client_addr;
+	struct net_sockaddr_in server_addr;
+	struct net_sockaddr addr;
+	int client_sock, server_sock;
+	net_socklen_t addrlen;
+	ssize_t recved;
+	int rv;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_UDP_OPTIONS);
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	rv = zsock_bind(server_sock, (struct net_sockaddr *)&server_addr,
+			sizeof(server_addr));
+	zassert_equal(rv, 0, "bind failed");
+
+	rv = zsock_sendto(client_sock, payload_even, sizeof(payload_even) - 1, 0,
+			  (struct net_sockaddr *)&server_addr, sizeof(server_addr));
+	zassert_equal(rv, sizeof(payload_even) - 1, "sendto even failed (%d)", errno);
+
+	addrlen = sizeof(addr);
+	clear_buf(rx_buf);
+	recved = zsock_recvfrom(server_sock, rx_buf, sizeof(rx_buf),
+				0, &addr, &addrlen);
+	zassert_equal(recved, sizeof(payload_even) - 1, "recv even length mismatch");
+	zassert_mem_equal(rx_buf, payload_even, sizeof(payload_even) - 1,
+			  "recv even data mismatch");
+
+	rv = zsock_sendto(client_sock, payload_odd, sizeof(payload_odd) - 1, 0,
+			  (struct net_sockaddr *)&server_addr, sizeof(server_addr));
+	zassert_equal(rv, sizeof(payload_odd) - 1, "sendto odd failed (%d)", errno);
+
+	addrlen = sizeof(addr);
+	clear_buf(rx_buf);
+	recved = zsock_recvfrom(server_sock, rx_buf, sizeof(rx_buf),
+				0, &addr, &addrlen);
+	zassert_equal(recved, sizeof(payload_odd) - 1, "recv odd length mismatch");
+	zassert_mem_equal(rx_buf, payload_odd, sizeof(payload_odd) - 1,
+			  "recv odd data mismatch");
+
+	rv = zsock_close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = zsock_close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
+ZTEST(net_socket_udp, test_udp_options_sendmsg_cmsg_mds)
+{
+	struct net_sockaddr_in client_addr;
+	struct net_sockaddr_in server_addr;
+	struct net_sockaddr addr;
+	struct net_msghdr msg = { 0 };
+	struct net_msghdr server_msg = { 0 };
+	struct net_iovec io_vector[1];
+	struct net_cmsghdr *cmsg, *prevcmsg;
+	union {
+		struct net_cmsghdr hdr;
+		unsigned char buf[NET_CMSG_SPACE(sizeof(uint16_t))];
+	} cmsgbuf;
+	union {
+		struct net_cmsghdr hdr;
+		unsigned char buf[NET_CMSG_SPACE(sizeof(uint16_t))];
+	} server_cmsgbuf;
+	uint16_t mds_tx = 1200U;
+	uint16_t mds_rx = 0U;
+	net_socklen_t addrlen;
+	int client_sock, server_sock;
+	bool found = false;
+	ssize_t sent;
+	ssize_t recved;
+	int rv;
+	int zero = 0;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_UDP_OPTIONS);
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	rv = zsock_bind(server_sock, (struct net_sockaddr *)&server_addr, sizeof(server_addr));
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = zsock_bind(client_sock, (struct net_sockaddr *)&client_addr, sizeof(client_addr));
+	zassert_equal(rv, 0, "client bind failed");
+
+	/* Keep socket-level UDP options off so this test exercises only cmsg input. */
+	rv = zsock_setsockopt(client_sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT, &zero, sizeof(zero));
+	zassert_equal(rv, 0, "clear UDP options failed (%d)", errno);
+
+	io_vector[0].iov_base = TEST_STR_SMALL;
+	io_vector[0].iov_len = STRLEN(TEST_STR_SMALL);
+
+	memset(&cmsgbuf, 0, sizeof(cmsgbuf));
+	msg.msg_name = &server_addr;
+	msg.msg_namelen = sizeof(server_addr);
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_control = &cmsgbuf.buf;
+	msg.msg_controllen = sizeof(cmsgbuf.buf);
+
+	cmsg = NET_CMSG_FIRSTHDR(&msg);
+	cmsg->cmsg_len = NET_CMSG_LEN(sizeof(mds_tx));
+	cmsg->cmsg_level = NET_IPPROTO_UDP;
+	cmsg->cmsg_type = ZSOCK_UDP_OPT_CMSG_MDS;
+	memcpy(NET_CMSG_DATA(cmsg), &mds_tx, sizeof(mds_tx));
+
+	sent = zsock_sendmsg(client_sock, &msg, 0);
+	zassert_equal(sent, STRLEN(TEST_STR_SMALL), "sendmsg failed (%d)", errno);
+
+	io_vector[0].iov_base = rx_buf;
+	io_vector[0].iov_len = sizeof(rx_buf);
+	addrlen = sizeof(addr);
+	memset(&server_cmsgbuf, 0, sizeof(server_cmsgbuf));
+	server_msg.msg_name = &addr;
+	server_msg.msg_namelen = addrlen;
+	server_msg.msg_iov = io_vector;
+	server_msg.msg_iovlen = 1;
+	server_msg.msg_control = &server_cmsgbuf.buf;
+	server_msg.msg_controllen = sizeof(server_cmsgbuf.buf);
+
+	clear_buf(rx_buf);
+	recved = zsock_recvmsg(server_sock, &server_msg, 0);
+	zassert_equal(recved, STRLEN(TEST_STR_SMALL), "recvmsg failed (%d)", errno);
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, STRLEN(TEST_STR_SMALL), "wrong payload");
+
+	for (prevcmsg = NULL, cmsg = NET_CMSG_FIRSTHDR(&server_msg);
+	     cmsg != NULL && prevcmsg != cmsg;
+	     prevcmsg = cmsg, cmsg = NET_CMSG_NXTHDR(&server_msg, cmsg)) {
+		if (cmsg->cmsg_level == NET_IPPROTO_UDP &&
+		    cmsg->cmsg_type == ZSOCK_UDP_OPT_CMSG_MDS) {
+			memcpy(&mds_rx, NET_CMSG_DATA(cmsg), sizeof(mds_rx));
+			found = true;
+			break;
+		}
+	}
+
+	zassert_true(found, "missing UDP MDS control message");
+	zassert_equal(mds_rx, mds_tx, "UDP MDS value mismatch");
+
+	rv = zsock_close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = zsock_close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
+ZTEST(net_socket_udp, test_udp_options_sendmsg_cmsg_multi)
+{
+	struct net_sockaddr_in client_addr;
+	struct net_sockaddr_in server_addr;
+	struct net_sockaddr addr;
+	struct net_msghdr msg = { 0 };
+	struct net_msghdr server_msg = { 0 };
+	struct net_iovec io_vector[1];
+	struct net_cmsghdr *cmsg, *prevcmsg;
+	struct net_udp_opt_time time_tx = {
+		.tsval = 0x12345678U,
+		.tsecr = 0x87654321U,
+	};
+	struct net_udp_opt_time time_rx = { 0 };
+	union {
+		struct net_cmsghdr hdr;
+		unsigned char buf[NET_CMSG_SPACE(sizeof(uint16_t)) +
+				  NET_CMSG_SPACE(sizeof(uint32_t)) +
+				  NET_CMSG_SPACE(sizeof(time_tx))];
+	} cmsgbuf;
+	union {
+		struct net_cmsghdr hdr;
+		unsigned char buf[NET_CMSG_SPACE(sizeof(uint16_t)) +
+				  NET_CMSG_SPACE(sizeof(uint32_t)) +
+				  NET_CMSG_SPACE(sizeof(time_tx))];
+	} server_cmsgbuf;
+	uint16_t mds_tx = 1100U, mds_rx = 0U, mds_sock = 0U;
+	uint32_t req_tx = 0x11223344U, req_rx = 0U;
+	net_socklen_t addrlen;
+	net_socklen_t optlen;
+	int client_sock, server_sock;
+	bool found_mds = false;
+	bool found_req = false;
+	bool found_time = false;
+	ssize_t sent;
+	ssize_t recved;
+	int rv;
+	int zero = 0;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_UDP_OPTIONS);
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	rv = zsock_bind(server_sock, (struct net_sockaddr *)&server_addr,
+			sizeof(server_addr));
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = zsock_bind(client_sock, (struct net_sockaddr *)&client_addr,
+			sizeof(client_addr));
+	zassert_equal(rv, 0, "client bind failed");
+
+	rv = zsock_setsockopt(client_sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT,
+			      &zero, sizeof(zero));
+	zassert_equal(rv, 0, "clear UDP options failed (%d)", errno);
+
+	io_vector[0].iov_base = TEST_STR_SMALL;
+	io_vector[0].iov_len = STRLEN(TEST_STR_SMALL);
+
+	memset(&cmsgbuf, 0, sizeof(cmsgbuf));
+	msg.msg_name = &server_addr;
+	msg.msg_namelen = sizeof(server_addr);
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_control = &cmsgbuf.buf;
+	msg.msg_controllen = sizeof(cmsgbuf.buf);
+
+	cmsg = NET_CMSG_FIRSTHDR(&msg);
+	cmsg->cmsg_len = NET_CMSG_LEN(sizeof(mds_tx));
+	cmsg->cmsg_level = NET_IPPROTO_UDP;
+	cmsg->cmsg_type = ZSOCK_UDP_OPT_CMSG_MDS;
+	memcpy(NET_CMSG_DATA(cmsg), &mds_tx, sizeof(mds_tx));
+
+	cmsg = NET_CMSG_NXTHDR(&msg, cmsg);
+	zassert_not_null(cmsg, "missing second cmsg slot");
+	cmsg->cmsg_len = NET_CMSG_LEN(sizeof(req_tx));
+	cmsg->cmsg_level = NET_IPPROTO_UDP;
+	cmsg->cmsg_type = ZSOCK_UDP_OPT_CMSG_REQ;
+	memcpy(NET_CMSG_DATA(cmsg), &req_tx, sizeof(req_tx));
+
+	cmsg = NET_CMSG_NXTHDR(&msg, cmsg);
+	zassert_not_null(cmsg, "missing third cmsg slot");
+	cmsg->cmsg_len = NET_CMSG_LEN(sizeof(time_tx));
+	cmsg->cmsg_level = NET_IPPROTO_UDP;
+	cmsg->cmsg_type = ZSOCK_UDP_OPT_CMSG_TIME;
+	memcpy(NET_CMSG_DATA(cmsg), &time_tx, sizeof(time_tx));
+
+	sent = zsock_sendmsg(client_sock, &msg, 0);
+	zassert_equal(sent, STRLEN(TEST_STR_SMALL), "sendmsg failed (%d)", errno);
+
+	io_vector[0].iov_base = rx_buf;
+	io_vector[0].iov_len = sizeof(rx_buf);
+	addrlen = sizeof(addr);
+	memset(&server_cmsgbuf, 0, sizeof(server_cmsgbuf));
+	server_msg.msg_name = &addr;
+	server_msg.msg_namelen = addrlen;
+	server_msg.msg_iov = io_vector;
+	server_msg.msg_iovlen = 1;
+	server_msg.msg_control = &server_cmsgbuf.buf;
+	server_msg.msg_controllen = sizeof(server_cmsgbuf.buf);
+
+	clear_buf(rx_buf);
+	recved = zsock_recvmsg(server_sock, &server_msg, 0);
+	zassert_equal(recved, STRLEN(TEST_STR_SMALL), "recvmsg failed (%d)", errno);
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, STRLEN(TEST_STR_SMALL),
+			  "wrong payload");
+
+	for (prevcmsg = NULL, cmsg = NET_CMSG_FIRSTHDR(&server_msg);
+	     cmsg != NULL && prevcmsg != cmsg;
+	     prevcmsg = cmsg, cmsg = NET_CMSG_NXTHDR(&server_msg, cmsg)) {
+		if (cmsg->cmsg_level != NET_IPPROTO_UDP) {
+			continue;
+		}
+
+		if (cmsg->cmsg_type == ZSOCK_UDP_OPT_CMSG_MDS) {
+			memcpy(&mds_rx, NET_CMSG_DATA(cmsg), sizeof(mds_rx));
+			found_mds = true;
+		} else if (cmsg->cmsg_type == ZSOCK_UDP_OPT_CMSG_REQ) {
+			memcpy(&req_rx, NET_CMSG_DATA(cmsg), sizeof(req_rx));
+			found_req = true;
+		} else if (cmsg->cmsg_type == ZSOCK_UDP_OPT_CMSG_TIME) {
+			memcpy(&time_rx, NET_CMSG_DATA(cmsg), sizeof(time_rx));
+			found_time = true;
+		}
+	}
+
+	zassert_true(found_mds, "missing UDP MDS control message");
+	zassert_true(found_req, "missing UDP REQ control message");
+	zassert_true(found_time, "missing UDP TIME control message");
+	zassert_equal(mds_rx, mds_tx, "UDP MDS mismatch");
+	zassert_equal(req_rx, req_tx, "UDP REQ mismatch");
+	zassert_equal(time_rx.tsval, time_tx.tsval, "UDP TIME tsval mismatch");
+	zassert_equal(time_rx.tsecr, time_tx.tsecr, "UDP TIME tsecr mismatch");
+
+	optlen = sizeof(mds_sock);
+	rv = zsock_getsockopt(client_sock, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_MDS,
+			      &mds_sock, &optlen);
+	zassert_equal(rv, 0, "getsockopt UDP_OPT_MDS failed (%d)", errno);
+	zassert_equal(mds_sock, 0U, "per-packet MDS leaked into socket option");
+
+	rv = zsock_close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = zsock_close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
 static void comm_sendmsg_with_txtime(int client_sock,
 				     struct net_sockaddr *client_addr,
 				     net_socklen_t client_addrlen,
