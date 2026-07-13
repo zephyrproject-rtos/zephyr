@@ -249,6 +249,8 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
             # update comport
             if sys.platform.startswith("win"):
                 lines[0] = f"comport {com_port}\n"
+            elif com_port.startswith("/dev/"):
+                lines[0] = f"comport {com_port}\n"
             else:
                 lines[0] = f"comport /dev/tty{com_port}\n"
 
