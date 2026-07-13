@@ -451,6 +451,20 @@ __net_socket struct net_context {
 				bool app_respond;
 				/** BASE_PLPMTU connectivity has been confirmed. */
 				bool base_confirmed;
+				/** Deferred RES-echo work (runs off the RX path). */
+				struct k_work echo_work;
+				/** Peer to send the pending RES to. */
+				struct net_sockaddr_storage echo_peer;
+				/** Length of @ref echo_peer. */
+				net_socklen_t echo_peerlen;
+				/** Token to echo in the pending RES. */
+				uint32_t echo_token;
+				/** A RES echo is queued in @ref echo_work. */
+				bool echo_pending;
+				/** Uptime (ms) of the last auto RES echo; used to
+				 * rate-limit echoes (0 = none sent yet).
+				 */
+				uint32_t echo_last_ms;
 			} dplpmtud;
 #endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
 		} udp_opt;
