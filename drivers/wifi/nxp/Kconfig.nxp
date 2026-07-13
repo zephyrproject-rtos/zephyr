@@ -1067,6 +1067,7 @@ config NXP_WIFI_MEM_ACCESS
 
 config NXP_WIFI_REG_ACCESS
 	bool
+	default y
 	help
 	  This option enables register access cmd in the Wi-Fi driver.
 
