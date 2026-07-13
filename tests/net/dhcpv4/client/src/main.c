@@ -339,6 +339,7 @@ static uint32_t request_xid;
 static bool strict_dhcp_server;
 static bool discover_req_included_dns;
 static bool init_reboot_req_included_dns;
+static bool init_reboot_request_seen;
 static bool reject_init_reboot;
 
 #define EVT_ADDR_ADD        BIT(0)
@@ -373,6 +374,7 @@ static void dhcp_test_reset_iface(struct net_if *iface)
 	strict_dhcp_server = false;
 	discover_req_included_dns = false;
 	init_reboot_req_included_dns = false;
+	init_reboot_request_seen = false;
 	reject_init_reboot = false;
 }
 
@@ -693,6 +695,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 
 		dns_requested = dhcp_msg_req_list_contains(&msg, OPTION_DNS_SERVER);
 		is_init_reboot = msg.has_requested_ip && !msg.has_server_id;
+		init_reboot_request_seen |= is_init_reboot;
 
 		if (strict_dhcp_server && is_init_reboot) {
 			init_reboot_req_included_dns = dns_requested;
@@ -1053,6 +1056,28 @@ ZTEST(dhcpv4_tests, test_dhcp)
 			      EVT_DNS_SERVER3_DEL,
 			      "Missing DHCP stop or deleted address");
 	}
+}
+
+ZTEST(dhcpv4_tests, test_init_reboot_hint)
+{
+	const struct net_in_addr requested_ip = {{{10, 237, 72, 158}}};
+	struct net_if *iface;
+	uint32_t evt;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_INIT_REBOOT);
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	zassert_ok(net_dhcpv4_set_reboot_hint(iface, &requested_ip));
+
+	net_dhcpv4_start(iface);
+
+	evt = k_event_wait(&events, EVT_DHCP_OFFER | EVT_DHCP_ACK, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_ACK, "Expected INIT-REBOOT ACK only %08x", evt);
+	zassert_true(init_reboot_request_seen, "INIT-REBOOT REQUEST was not sent");
+
+	net_dhcpv4_stop(iface);
 }
 
 ZTEST(dhcpv4_tests, test_init_reboot_nak_restarts_discovery)
