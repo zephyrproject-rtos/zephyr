@@ -212,7 +212,9 @@ void __soc_ram_code ramcode_flash_cmd_read_status(enum flash_status_mask mask,
 	 */
 	while ((flash_regs->SMFI_ECINDDR & mask) != target) {
 		/* read status and check if it is we want. */
-		;
+		for (volatile int delay = 0; delay < 100; delay++) {
+			/* Inline delay to ensure this is RAM resident */
+		}
 	}
 
 	/* transaction done, drive #CS high */
