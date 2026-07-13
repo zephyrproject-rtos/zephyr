@@ -32,7 +32,32 @@
 #define SLEEPTIME 250
 
 #define TRANSFER_LOOPS (4)
-#define DMA_DATA_ALIGNMENT DT_PROP_OR(DT_NODELABEL(tst_dma0), dma_buf_addr_alignment, 32)
+
+#define DMA_TEST_NODE      DT_PATH(zephyr_user)
+#define DMA_TEST_DEVS_PROP dma_test_devs
+
+#if DT_NODE_HAS_PROP(DMA_TEST_NODE, DMA_TEST_DEVS_PROP)
+/* Boards list the DMA controllers to test in a zephyr,user dma-test-devs
+ * phandle list.
+ */
+#define DMA_TEST_DEV_COUNT DT_PROP_LEN(DMA_TEST_NODE, DMA_TEST_DEVS_PROP)
+#define DMA_TEST_DEV_GET(idx, _)                                                                   \
+	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(DMA_TEST_NODE, DMA_TEST_DEVS_PROP, idx))
+#define DMA_TEST_DEV0_NODE DT_PHANDLE_BY_IDX(DMA_TEST_NODE, DMA_TEST_DEVS_PROP, 0)
+#else
+/* Legacy boards use tst_dmaN devicetree labels and
+ * CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS.
+ */
+#define DMA_TEST_DEV_COUNT CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
+#define DMA_TEST_DEV_GET(idx, _) DEVICE_DT_GET(DT_NODELABEL(tst_dma##idx))
+#define DMA_TEST_DEV0_NODE DT_NODELABEL(tst_dma0)
+#endif
+
+#define DMA_DATA_ALIGNMENT DT_PROP_OR(DMA_TEST_DEV0_NODE, dma_buf_addr_alignment, 32)
+
+static const struct device *const dma_test_devs[] = {
+	LISTIFY(DMA_TEST_DEV_COUNT, DMA_TEST_DEV_GET, (,))
+};
 
 static __aligned(DMA_DATA_ALIGNMENT) uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE];
 static __aligned(DMA_DATA_ALIGNMENT) uint8_t
@@ -489,32 +514,26 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 	return TC_PASS;
 }
 
-#define DMA_NAME(i, _)	tst_dma ## i
-#define DMA_LIST	LISTIFY(CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS, DMA_NAME, (,))
-
-#define TEST_LOOP(dma_name)                                                                        \
-	ZTEST(dma_m2m_loop, test_ ## dma_name ## _m2m_loop)                                        \
-	{                                                                                          \
-		const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma_name));                  \
-		zassert_true((test_loop(dma) == TC_PASS));                                         \
+ZTEST(dma_m2m_loop, test_dma_m2m_loop)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(dma_test_devs); i++) {
+		zassert_true(test_loop(dma_test_devs[i]) == TC_PASS,
+			     "%s failed loop transfer", dma_test_devs[i]->name);
 	}
+}
 
-FOR_EACH(TEST_LOOP, (), DMA_LIST);
-
-#define TEST_LOOP_SUSPEND_RESUME(dma_name)                                                         \
-	ZTEST(dma_m2m_loop, test_ ## dma_name ## _m2m_loop_suspend_resume)                         \
-	{                                                                                          \
-		const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma_name));                  \
-		zassert_true((test_loop_suspend_resume(dma) == TC_PASS));                          \
+ZTEST(dma_m2m_loop, test_dma_m2m_loop_suspend_resume)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(dma_test_devs); i++) {
+		zassert_true(test_loop_suspend_resume(dma_test_devs[i]) == TC_PASS,
+			     "%s failed loop suspend resume", dma_test_devs[i]->name);
 	}
+}
 
-FOR_EACH(TEST_LOOP_SUSPEND_RESUME, (), DMA_LIST);
-
-#define TEST_LOOP_REPEATED_START_STOP(dma_name)                                                    \
-	ZTEST(dma_m2m_loop, test_ ## dma_name ## _m2m_loop_repeated_start_stop)                    \
-	{                                                                                          \
-		const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma_name));                  \
-		zassert_true((test_loop_repeated_start_stop(dma) == TC_PASS));                     \
+ZTEST(dma_m2m_loop, test_dma_m2m_loop_repeated_start_stop)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(dma_test_devs); i++) {
+		zassert_true(test_loop_repeated_start_stop(dma_test_devs[i]) == TC_PASS,
+			     "%s failed repeated start stop", dma_test_devs[i]->name);
 	}
-
-FOR_EACH(TEST_LOOP_REPEATED_START_STOP, (), DMA_LIST);
+}
