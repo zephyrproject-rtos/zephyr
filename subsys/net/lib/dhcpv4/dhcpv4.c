@@ -1501,9 +1501,13 @@ static void dhcpv4_handle_msg_ack(struct net_if *iface)
 static void dhcpv4_handle_msg_nak(struct net_if *iface)
 {
 	switch (iface->config.dhcpv4.state) {
+	case NET_DHCPV4_INIT_REBOOT:
+		LOG_DBG("NAK during INIT-REBOOT, restart config");
+		dhcpv4_enter_selecting(iface);
+		dhcpv4_immediate_timeout(&iface->config.dhcpv4);
+		break;
 	case NET_DHCPV4_DISABLED:
 	case NET_DHCPV4_INIT:
-	case NET_DHCPV4_INIT_REBOOT:
 	case NET_DHCPV4_SELECTING:
 	case NET_DHCPV4_REQUESTING:
 		if (memcmp(&iface->config.dhcpv4.request_server_addr,
