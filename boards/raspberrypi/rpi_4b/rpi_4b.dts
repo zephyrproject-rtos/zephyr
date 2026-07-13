@@ -93,6 +93,10 @@
 	clock-frequency = <DT_FREQ_M(1500)>;
 };
 
+&rng {
+	status = "okay";
+};
+
 &mbox0 {
 	status = "okay";
 };
@@ -113,4 +117,19 @@
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
+};
+
+&eth0 {
+	zephyr,random-mac-address;
+	phy-handle = <&phy1>;
+	status = "okay";
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy1: ethernet-phy@1 {
+		compatible = "ethernet-phy";
+		reg = <1>;
+	};
 };
