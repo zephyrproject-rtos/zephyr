@@ -477,19 +477,6 @@ static int eth_enc28j60_tx(const struct device *dev, struct net_pkt *pkt)
 
 	k_sem_take(&context->tx_rx_sem, K_FOREVER);
 
-	/* Latest errata sheet: DS80349C
-	* always reset transmit logic (Errata Issue 12)
-	* the Microchip TCP/IP stack implementation used to first check
-	* whether TXERIF is set and only then reset the transmit logic
-	* but this has been changed in later versions; possibly they
-	* have a reason for this; they don't mention this in the errata
-	* sheet
-	*/
-	eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_ECON1,
-				 ENC28J60_BIT_ECON1_TXRST);
-	eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_ECON1,
-				   ENC28J60_BIT_ECON1_TXRST);
-
 	/* Write the buffer content into the transmission buffer */
 	eth_enc28j60_set_bank(dev, ENC28J60_REG_ETXSTL);
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_EWRPTL, tx_bufaddr & 0xFF);
@@ -510,9 +497,21 @@ static int eth_enc28j60_tx(const struct device *dev, struct net_pkt *pkt)
 			       tx_bufaddr_end & 0xFF);
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_ETXNDH, tx_bufaddr_end >> 8);
 
+	/* Latest errata sheet: DS80349C
+	 * always reset transmit logic (Errata Issue 12)
+	 * the Microchip TCP/IP stack implementation used to first check
+	 * whether TXERIF is set and only then reset the transmit logic
+	 * but this has been changed in later versions; possibly they
+	 * have a reason for this; they don't mention this in the errata
+	 * sheet
+	 */
+	eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_ECON1, ENC28J60_BIT_ECON1_TXRST);
+	eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_ECON1, ENC28J60_BIT_ECON1_TXRST);
+
 	/* Clear a stale TXIF before setting TXRTS (datasheet section
 	 * 7.1), else the wait loop below exits too early and ESTAT
-	 * is read before the end of the transmit.
+	 * is read before the end of the transmit. The TXRST above can set TXERIF,
+	 * so clear the flags after the reset.
 	 */
 	eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_EIR,
 				   ENC28J60_BIT_EIR_TXIF | ENC28J60_BIT_EIR_TXERIF);
