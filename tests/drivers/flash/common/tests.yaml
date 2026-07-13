@@ -68,6 +68,10 @@ tests:
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - kit_pse84_ai/pse846gps2dbzc4a/m33
     integration_platforms:
       - qemu_x86
       - mimxrt1060_evk/mimxrt1062/qspi
@@ -299,6 +303,8 @@ tests:
     filter: CONFIG_FLASH_INFINEON_RRAM
     platform_allow:
       - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+    extra_configs:
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=524288
     integration_platforms:
       - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
   drivers.flash.common.infineon_ext_flash:
