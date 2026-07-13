@@ -280,6 +280,24 @@ int z_kernel_stats_raw(struct k_obj_core *obj_core, void *stats);
 int z_kernel_stats_query(struct k_obj_core *obj_core, void *stats);
 #endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
 
+/**
+ * Raise a fatal error attributed to a specific thread.
+ *
+ * Same as z_fatal_error(), except that the faulting thread is passed in
+ * explicitly instead of being assumed to be the running thread. Callers use
+ * this when the thread responsible for the error is not the one executing,
+ * for example an essential thread aborted from an ISR or from another thread.
+ * The thread is reported in the error log and in the coredump, and it is the
+ * thread aborted if k_sys_fatal_error_handler() returns.
+ *
+ * @param reason The reason for the fatal error, see @ref k_fatal_error_reason.
+ * @param esf Exception context, or NULL if not available.
+ * @param thread Thread the error is attributed to, or NULL for the current
+ *               thread.
+ */
+void z_fatal_error_thread(unsigned int reason, const struct arch_esf *esf,
+			  struct k_thread *thread);
+
 #if defined(CONFIG_THREAD_ABORT_NEED_CLEANUP)
 /**
  * Perform cleanup at the end of k_thread_abort().
