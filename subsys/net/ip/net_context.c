@@ -2542,6 +2542,28 @@ static inline void context_finalize_udp_options(struct net_context *context, str
 }
 #endif /* CONFIG_NET_UDP_OPTIONS */
 
+#if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+int net_context_set_udp_dplpmtud(struct net_context *context, bool enable)
+{
+	if (net_context_get_proto(context) != NET_IPPROTO_UDP) {
+		return -ENOPROTOOPT;
+	}
+
+	k_mutex_lock(&context->lock, K_FOREVER);
+
+	context->options.udp_opt.dplpmtud.enabled = enable;
+
+	/* Path setup, probe-timer arming and the probing/echo state machine
+	 * are wired up in a subsequent step; enabling here records the
+	 * request and gates the responder from echoing REQ options.
+	 */
+
+	k_mutex_unlock(&context->lock);
+
+	return 0;
+}
+#endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
+
 static void context_finalize_packet(struct net_context *context,
 				    net_sa_family_t family,
 				    struct net_pkt *pkt)
@@ -4621,6 +4643,58 @@ static int get_context_udp_opt(struct net_context *context,
 
 	return 0;
 }
+
+#if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+static int set_context_udp_opt_dplpmtud(struct net_context *context,
+					enum net_context_option option,
+					const void *value, uint32_t len)
+{
+	int val;
+	int ret;
+
+	ret = udp_opt_read_int(value, len, &val);
+	if (ret < 0) {
+		return ret;
+	}
+
+	switch (option) {
+	case NET_OPT_UDP_OPT_DPLPMTUD:
+		return net_context_set_udp_dplpmtud(context, val != 0);
+	case NET_OPT_UDP_OPT_DPLPMTUD_APP_RESPOND:
+		context->options.udp_opt.dplpmtud.app_respond = (val != 0);
+		return 0;
+	default:
+		return -ENOPROTOOPT;
+	}
+}
+
+static int get_context_udp_opt_dplpmtud(struct net_context *context,
+					enum net_context_option option,
+					void *value, uint32_t *len)
+{
+	int val;
+
+	if (value == NULL || len == NULL || *len < sizeof(int)) {
+		return -EINVAL;
+	}
+
+	switch (option) {
+	case NET_OPT_UDP_OPT_DPLPMTUD:
+		val = context->options.udp_opt.dplpmtud.enabled;
+		break;
+	case NET_OPT_UDP_OPT_DPLPMTUD_APP_RESPOND:
+		val = context->options.udp_opt.dplpmtud.app_respond;
+		break;
+	default:
+		return -ENOPROTOOPT;
+	}
+
+	memcpy(value, &val, sizeof(val));
+	*len = sizeof(val);
+
+	return 0;
+}
+#endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
 #endif /* CONFIG_NET_UDP_OPTIONS */
 
 int net_context_set_option(struct net_context *context,
@@ -4741,6 +4815,12 @@ int net_context_set_option(struct net_context *context,
 	case NET_OPT_UDP_OPT_UEXP:
 		ret = set_context_udp_opt(context, option, value, len);
 		break;
+#if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+	case NET_OPT_UDP_OPT_DPLPMTUD:
+	case NET_OPT_UDP_OPT_DPLPMTUD_APP_RESPOND:
+		ret = set_context_udp_opt_dplpmtud(context, option, value, len);
+		break;
+#endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
 #endif /* CONFIG_NET_UDP_OPTIONS */
 	default:
 		ret = -ENOPROTOOPT;
@@ -4862,6 +4942,12 @@ int net_context_get_option(struct net_context *context,
 	case NET_OPT_UDP_OPT_UEXP:
 		ret = get_context_udp_opt(context, option, value, len);
 		break;
+#if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+	case NET_OPT_UDP_OPT_DPLPMTUD:
+	case NET_OPT_UDP_OPT_DPLPMTUD_APP_RESPOND:
+		ret = get_context_udp_opt_dplpmtud(context, option, value, len);
+		break;
+#endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
 #endif /* CONFIG_NET_UDP_OPTIONS */
 	default:
 		ret = -ENOPROTOOPT;

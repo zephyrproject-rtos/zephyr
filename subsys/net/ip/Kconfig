@@ -485,6 +485,52 @@ config NET_UDP_OPTIONS
 	  RFC 9868. This allows sending and receiving UDP options
 	  in the surplus area of IP datagrams.
 
+config NET_UDP_OPTIONS_DPLPMTUD
+	bool "DPLPMTUD over UDP options (RFC 9869) [EXPERIMENTAL]"
+	depends on NET_UDP_OPTIONS
+	depends on NET_PMTU_DPLPMTUD
+	select EXPERIMENTAL
+	help
+	  Enable Datagram Packetization Layer Path MTU Discovery
+	  (RFC 8899) for plain UDP sockets using UDP options (RFC 9869).
+	  When enabled on a socket, the stack probes the path for the
+	  largest usable datagram size using the Request (REQ) and
+	  Response (RES) UDP options and reports the result via
+	  getsockopt(IP_MTU/IPV6_MTU). It also answers incoming probes by
+	  echoing the REQ token back in a RES option.
+
+config NET_UDP_OPTIONS_DPLPMTUD_PROBE_TIMEOUT_MS
+	int "UDP options DPLPMTUD probe timeout (ms)"
+	depends on NET_UDP_OPTIONS_DPLPMTUD
+	default 1000
+	help
+	  Time to wait for a probe Response (RES) before a probe is
+	  declared lost and retransmitted (RFC 8899 PROBE_TIMER). UDP has
+	  no round-trip estimate, so a fixed value is used.
+
+config NET_UDP_OPTIONS_DPLPMTUD_RAISE_TIMEOUT_MS
+	int "UDP options DPLPMTUD raise timer (ms)"
+	depends on NET_UDP_OPTIONS_DPLPMTUD
+	default 600000
+	help
+	  Once the search completes, how long to wait before probing again
+	  to detect a possible increase in the path MTU (RFC 8899
+	  PMTU_RAISE_TIMER). Default is 10 minutes.
+
+config NET_UDP_OPTIONS_DPLPMTUD_ECHO_MIN_INTERVAL_MS
+	int "UDP options DPLPMTUD minimum RES echo interval (ms)"
+	depends on NET_UDP_OPTIONS_DPLPMTUD
+	default 50
+	help
+	  Minimum time between consecutive auto-generated Response (RES)
+	  echoes on a socket acting as a DPLPMTUD responder. The stack
+	  answers a Request (REQ) by sending a RES to the datagram source
+	  address, so an off-path attacker flooding spoofed-source REQs
+	  could otherwise use the socket to reflect traffic (the RES is
+	  never larger than the REQ, so there is no amplification). This
+	  rate limit caps that reflection. Set to 0 to disable the limit,
+	  e.g. on a server that must answer many distinct probers at once.
+
 if NET_UDP
 
 module = NET_UDP
