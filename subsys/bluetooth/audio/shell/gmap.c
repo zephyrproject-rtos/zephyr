@@ -46,6 +46,18 @@
 
 static enum bt_gmap_role gmap_role;
 
+static const enum bt_audio_location supported_sink_audio_location = DEFAULT_LOCATION;
+static const enum bt_audio_location supported_source_audio_location = DEFAULT_LOCATION;
+static const enum bt_audio_codec_cap_freq supported_sampling_freq = BT_AUDIO_CODEC_CAP_FREQ_16KHZ |
+								    BT_AUDIO_CODEC_CAP_FREQ_32KHZ |
+								    BT_AUDIO_CODEC_CAP_FREQ_48KHZ;
+static const enum bt_audio_codec_cap_frame_dur supported_frame_dur =
+	BT_AUDIO_CODEC_CAP_DURATION_ANY;
+static const uint16_t supported_min_octets_per_codec_frame = 30U;
+static const uint16_t supported_max_octets_per_codec_frame = 120U;
+static const enum bt_audio_codec_cap_chan_count supported_chan_count =
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1U, 2U);
+
 size_t gmap_ad_data_add(struct bt_data data[], size_t data_size)
 {
 	static uint8_t ad_gmap[3] = {
@@ -66,6 +78,99 @@ size_t gmap_ad_data_add(struct bt_data data[], size_t data_size)
 	data[0].data = &ad_gmap[0];
 
 	return 1U;
+}
+
+bool gmap_supported_lc3_config_data(enum bt_audio_dir dir,
+				    const struct bt_audio_codec_cfg *codec_cfg)
+{
+	enum bt_audio_location supported_audio_location;
+	enum bt_audio_location chan_allocation;
+	size_t chan_bits_cnt;
+	int ret;
+
+	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
+	if (ret < 0) {
+		bt_shell_warn("Could not get sampling frequency: %d", ret);
+		return false; /* mandatory field for LC3 */
+	}
+	/* codec_cfg frequencies starts from 0x01 and correspond to the codec_cap frequency bits -
+	 * 1, so that 0x01 == BIT(0), 0x02 = BIT(1), etc., so we can check with BIT(x - 1)
+	 */
+	if ((BIT(ret - 1U) & supported_sampling_freq) == 0) {
+		bt_shell_warn("Unsupported sampling frequency: 0x%02X (0x%04X)", (uint8_t)ret,
+			      (uint16_t)supported_sampling_freq);
+		return false;
+	}
+
+	ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+	if (ret < 0) {
+		bt_shell_warn("Could not get sampling frame duration: %d", ret);
+		return false; /* mandatory field for LC3 */
+	}
+
+	/* codec_cfg frame durations starts from 0x00 and correspond to the codec_cap duration
+	 * bits, so that 0x00 == BIT(0), 0x01 = BIT(1), etc., so we can check with BIT(x)
+	 */
+	if ((BIT(ret) & supported_frame_dur) == 0) {
+		bt_shell_warn("Unsupported frame duration: 0x%02X (0x%02X)", (uint8_t)ret,
+			      (uint8_t)supported_frame_dur);
+		return false;
+	}
+
+	ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation, true);
+	if (ret < 0) {
+		bt_shell_warn("Could not get sampling channel allocation: %d", ret);
+		return false; /* With fallback to mono, this shall not fail */
+	}
+
+	supported_audio_location = dir == BT_AUDIO_DIR_SINK ? supported_sink_audio_location
+							    : supported_source_audio_location;
+	if (chan_allocation != BT_AUDIO_LOCATION_MONO_AUDIO &&
+	    (chan_allocation & supported_audio_location) != chan_allocation) {
+		bt_shell_warn("Unsupported audio location: 0x%08X (0x%08X)", chan_allocation,
+			      supported_audio_location);
+		return false;
+	}
+
+	/* Compare the number of bits in `chan_allocation` to the number of channels we support.
+	 * BIT(0) is 1, BIT(1) is 2, etc.
+	 */
+	chan_bits_cnt = sys_count_bits(&chan_allocation, sizeof(uint32_t));
+	if (chan_bits_cnt > 0U &&
+	    (BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(chan_bits_cnt) & supported_chan_count) == 0) {
+		bt_shell_warn(
+			"Unsupported audio location count: %u (0x%02X) for chan_alloc 0x%08X ",
+			chan_bits_cnt, supported_chan_count, (uint32_t)chan_allocation);
+		return false;
+	}
+
+	ret = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
+	if (ret < 0) {
+		bt_shell_warn("Could not get octets per codec frame: %d", ret);
+		return false; /* mandatory field for LC3 */
+	}
+
+	if (!IN_RANGE(ret, supported_min_octets_per_codec_frame,
+		      supported_max_octets_per_codec_frame)) {
+		bt_shell_warn("Unsupported octets per codec frame: 0x%04X (0x%04X - 0x%04X)",
+			      (uint16_t)ret, supported_min_octets_per_codec_frame,
+			      supported_max_octets_per_codec_frame);
+		return false;
+	}
+
+	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true);
+	if (ret < 0) {
+		bt_shell_warn("Could not get codec frame blocks per SDU: %d", ret);
+		return false; /* mandatory field for LC3 */
+	}
+
+	if (!IN_RANGE(ret, 1, MAX_CODEC_FRAMES_PER_SDU)) {
+		bt_shell_warn("Unsupported codec frames blocks per SDU: 0x%02X (0x%02X)",
+			      (uint8_t)ret, MAX_CODEC_FRAMES_PER_SDU);
+		return false;
+	}
+
+	return true;
 }
 
 static void gmap_discover_cb(struct bt_conn *conn, int err, enum bt_gmap_role role,
@@ -130,10 +235,9 @@ static void set_gmap_features(struct bt_gmap_feat *features)
 static int cmd_gmap_init(const struct shell *sh, size_t argc, char **argv)
 {
 	static const struct bt_audio_codec_cap gmap_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
-		BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_32KHZ |
-			BT_AUDIO_CODEC_CAP_FREQ_48KHZ,
-		BT_AUDIO_CODEC_CAP_DURATION_ANY, BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1U, 2U), 30U,
-		120U, MAX_CODEC_FRAMES_PER_SDU, BT_AUDIO_CONTEXT_TYPE_GAME);
+		supported_sampling_freq, supported_frame_dur, supported_chan_count,
+		supported_min_octets_per_codec_frame, supported_max_octets_per_codec_frame,
+		MAX_CODEC_FRAMES_PER_SDU, BT_AUDIO_CONTEXT_TYPE_GAME);
 	struct bt_gmap_feat features;
 	static struct bt_pacs_cap gmap_cap_sink = {
 		.codec_cap = &gmap_codec_cap,
