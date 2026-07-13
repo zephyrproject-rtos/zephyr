@@ -412,6 +412,7 @@ __net_socket struct net_context {
 		/** Enable RX, TX or both timestamps of packets send through sockets. */
 		uint8_t timestamping;
 #endif
+
 #if defined(CONFIG_NET_CONTEXT_LINGER)
 		/** Socket SO_LINGER option. When enabled (l_onoff != 0) with a
 		 * zero timeout (l_linger == 0), close() aborts the connection
@@ -419,6 +420,21 @@ __net_socket struct net_context {
 		 */
 		struct net_linger linger;
 #endif /* CONFIG_NET_CONTEXT_LINGER */
+
+#if defined(CONFIG_NET_UDP_OPTIONS)
+		struct {
+			/** Bitmask of enabled UDP option features (NET_UDP_OPT_F_*) */
+			uint32_t enabled;
+			/** Bitmask of required incoming UDP option features (NET_UDP_OPT_F_*) */
+			uint32_t required;
+			/** true = drop all packets with UDP options on this socket */
+			bool drop_all_opts;
+			/** MDS (Maximum Datagram Size) value to advertise, 0 = not set */
+			uint16_t mds;
+			/** MRDS (Maximum Reassembled Datagram Size), 0 = not set */
+			struct net_udp_opt_mrds mrds;
+		} udp_opt;
+#endif
 	} options;
 
 	/** Protocol (UDP, TCP or IEEE 802.3 protocol value) */
@@ -1374,6 +1390,20 @@ enum net_context_option {
 	NET_OPT_RECV_HOPLIMIT     = 24, /**< Receive hop limit information */
 	NET_OPT_DONT_FRAGMENT     = 25, /**< Disable local IP fragmentation */
 	NET_OPT_LINGER            = 26, /**< Socket linger (SO_LINGER) */
+	NET_OPT_UDP_OPT           = 27, /**< UDP options master enable (RFC 9868) */
+	NET_OPT_UDP_OPT_OCS       = 28, /**< UDP options: Option Checksum */
+	NET_OPT_UDP_OPT_APC       = 29, /**< UDP options: Additional Payload Checksum */
+	NET_OPT_UDP_OPT_FRAG      = 30, /**< UDP options: Fragmentation */
+	NET_OPT_UDP_OPT_MDS       = 31, /**< UDP options: Maximum Datagram Size */
+	NET_OPT_UDP_OPT_MRDS      = 32, /**< UDP options: Maximum Reassembled Datagram Size */
+	NET_OPT_UDP_OPT_REQ       = 33, /**< UDP options: Echo Request */
+	NET_OPT_UDP_OPT_RES       = 34, /**< UDP options: Echo Response */
+	NET_OPT_UDP_OPT_TIME      = 35, /**< UDP options: Timestamp */
+	NET_OPT_UDP_OPT_AUTH      = 36, /**< UDP options: Authentication */
+	NET_OPT_UDP_OPT_EXP       = 37, /**< UDP options: Experimental */
+	NET_OPT_UDP_OPT_UCMP      = 38, /**< UDP options: UNSAFE Compression */
+	NET_OPT_UDP_OPT_UENC      = 39, /**< UDP options: UNSAFE Encryption */
+	NET_OPT_UDP_OPT_UEXP      = 40, /**< UDP options: UNSAFE Experimental */
 };
 
 /**

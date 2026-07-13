@@ -700,7 +700,7 @@ uint16_t calc_chksum(uint16_t sum_in, const uint8_t *data, size_t len)
 }
 
 #if defined(CONFIG_NET_NATIVE_IP)
-static inline uint16_t pkt_calc_chksum(struct net_pkt *pkt, uint16_t sum)
+static inline uint16_t pkt_calc_chksum(struct net_pkt *pkt, uint16_t sum, size_t max_len)
 {
 	struct net_pkt_cursor *cur = &pkt->cursor;
 	size_t len;
@@ -711,8 +711,15 @@ static inline uint16_t pkt_calc_chksum(struct net_pkt *pkt, uint16_t sum)
 
 	len = cur->buf->len - (cur->pos - cur->buf->data);
 
-	while (cur->buf) {
-		sum = calc_chksum(sum, cur->pos, len);
+	while (cur->buf && max_len > 0U) {
+		size_t chunk = MIN(len, max_len);
+
+		sum = calc_chksum(sum, cur->pos, chunk);
+		max_len -= chunk;
+
+		if (max_len == 0U) {
+			break;
+		}
 
 		cur->buf = cur->buf->frags;
 		if (!cur->buf || !cur->buf->len) {
@@ -729,6 +736,7 @@ static inline uint16_t pkt_calc_chksum(struct net_pkt *pkt, uint16_t sum)
 
 			cur->pos++;
 			len = cur->buf->len - 1;
+			max_len--;
 		} else {
 			len = cur->buf->len;
 		}
@@ -759,6 +767,7 @@ int net_calc_chksum(struct net_pkt *pkt, uint8_t proto, uint16_t *out_chksum)
 	struct net_pkt_cursor backup;
 	bool ow;
 	int ret;
+	size_t max_len = SIZE_MAX;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) &&
 	    net_pkt_family(pkt) == NET_AF_INET) {
@@ -778,6 +787,23 @@ int net_calc_chksum(struct net_pkt *pkt, uint8_t proto, uint16_t *out_chksum)
 		NET_DBG("Unknown protocol family %d", net_pkt_family(pkt));
 		return -EINVAL;
 	}
+
+#if defined(CONFIG_NET_UDP_OPTIONS)
+	/* The UDP checksum covers only the UDP header and user data (the bytes
+	 * counted by the UDP Length field), never the surplus area carrying UDP
+	 * options (RFC 9868 Section 8). Exclude the surplus from both the
+	 * pseudo-header length and the summed transport bytes. At this point
+	 * @sum holds (transport_payload_len + proto).
+	 */
+	if (proto == NET_IPPROTO_UDP) {
+		uint16_t surplus = net_pkt_udp_opt_surplus_len(pkt);
+
+		if (surplus > 0U) {
+			max_len = (size_t)(uint16_t)(sum - proto) - surplus;
+			sum -= surplus;
+		}
+	}
+#endif /* CONFIG_NET_UDP_OPTIONS */
 
 	net_pkt_cursor_backup(pkt, &backup);
 	net_pkt_cursor_init(pkt);
@@ -802,7 +828,7 @@ int net_calc_chksum(struct net_pkt *pkt, uint8_t proto, uint16_t *out_chksum)
 		return ret;
 	}
 
-	sum = pkt_calc_chksum(pkt, sum);
+	sum = pkt_calc_chksum(pkt, sum, max_len);
 
 	sum = (sum == 0U) ? 0xffff : net_htons(sum);
 
