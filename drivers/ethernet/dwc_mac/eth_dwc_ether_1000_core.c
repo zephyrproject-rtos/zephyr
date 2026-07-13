@@ -72,10 +72,10 @@ static enum ethernet_hw_caps dwmac_caps(const struct device *dev __unused,
 #ifdef CONFIG_NET_VLAN
 	       | ETHERNET_HW_VLAN
 #endif
-#ifdef CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM
+#ifdef CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM_EN
 	       | ETHERNET_HW_RX_CHKSUM_OFFLOAD
 #endif
-#ifdef CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM
+#ifdef CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN
 	       | ETHERNET_HW_TX_CHKSUM_OFFLOAD
 #endif
 		;
@@ -93,7 +93,7 @@ static __maybe_unused unsigned int net_pkt_get_nbfrags(struct net_pkt *pkt)
 }
 
 #define TDES0_FLAGS_DEFAULT (TDES0_IC | \
-	(IS_ENABLED(CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM) ? TDES0_CIC : 0U))
+	(IS_ENABLED(CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN) ? TDES0_CIC : 0U))
 
 static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 {
@@ -540,7 +540,7 @@ int dwmac_probe(const struct device *dev)
 	DWMAC_REG_WRITE(DWMAC_DMARDLAR, RXDESC_PHYS_L(0));
 	DWMAC_REG_WRITE(DWMAC_DMAOMR, DWMAC_DMAOMR_TSF | DWMAC_DMAOMR_RSF);
 
-	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM)) {
+	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM_EN)) {
 		DWMAC_REG_WRITE(DWMAC_MACCR, DWMAC_REG_READ(DWMAC_MACCR) | DWMAC_MACCR_IPCO);
 	}
 
