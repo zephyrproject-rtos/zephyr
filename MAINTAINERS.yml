@@ -3281,6 +3281,15 @@ Heap Management:
     - libraries.multi_heap
     - libraries.shared_multi_heap
 
+Heimann Platforms:
+  status: maintained
+  maintainers:
+    - tswaehn
+  files:
+    - boards/heimann/
+  labels:
+    - "platform: heimann"
+
 IPC:
   status: maintained
   maintainers:
