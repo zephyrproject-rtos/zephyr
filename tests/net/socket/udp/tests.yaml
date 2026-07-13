@@ -51,3 +51,11 @@ tests:
   net.socket.udp.udp_options:
     extra_configs:
       - CONFIG_NET_UDP_OPTIONS=y
+  net.socket.udp.dplpmtud:
+    extra_configs:
+      - CONFIG_NET_UDP_OPTIONS=y
+      - CONFIG_NET_IPV4_PMTU=y
+      - CONFIG_NET_IPV4_PMTU_DPLPMTUD=y
+      - CONFIG_NET_IPV6_PMTU=y
+      - CONFIG_NET_IPV6_PMTU_DPLPMTUD=y
+      - CONFIG_NET_UDP_OPTIONS_DPLPMTUD=y
