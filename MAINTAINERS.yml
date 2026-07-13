@@ -214,6 +214,7 @@ ADI Platforms:
     - drivers/ethernet/eth_adin*
     - drivers/ethernet/phy/phy_adin*
     - drivers/ethernet/mdio/mdio_adin*
+    - drivers/misc/tmc6460/
     - drivers/sensor/adi/
     - drivers/stepper/adi_tmc/
     - drivers/usb/udc/*max*
@@ -222,6 +223,8 @@ ADI Platforms:
     - dts/bindings/*/lltc,*
     - dts/bindings/*/maxim,*
     - dts/vendor/adi/
+    - include/zephyr/drivers/misc/tmc6460/
+    - samples/drivers/misc/tmc6460/
     - soc/adi/
   files-regex:
     - ^drivers/(adc|dac|gpio|mfd|regulator)/.*adp?\d+
