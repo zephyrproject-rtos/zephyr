@@ -34,14 +34,14 @@ static int thread_idx;
 
 static void thread_time_slice(void *p1, void *p2, void *p3)
 {
-	uint32_t tick_delta = ticks_delta(&elapsed_slice);
+	__maybe_unused uint32_t tick_delta = ticks_delta(&elapsed_slice);
 	/*
 	 * Thread 0 picks up CPU when the main test thread voluntarily
 	 * yields halfway through its slice, so its elapsed measurement
 	 * spans the busy-wait of half a slice. The remaining threads see
 	 * the previous thread's full slice between successive wakeups.
 	 */
-	uint32_t expected = (thread_idx == 0) ? HALF_SLICE_TICKS : SLICE_TICKS;
+	__maybe_unused uint32_t expected = (thread_idx == 0) ? HALF_SLICE_TICKS : SLICE_TICKS;
 
 #ifdef CONFIG_DEBUG
 	TC_PRINT("thread[%d] elapsed: %u ticks, expected ~%u\n",
@@ -60,8 +60,6 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 	zassert_between_inclusive(tick_delta, expected, expected + 1,
 				  "elapsed %u ticks, expected ~%u",
 				  tick_delta, expected);
-#else
-	(void)tick_delta;
 #endif /* CONFIG_COVERAGE_GCOV */
 
 	/* Keep this thread busy past one slice so the slicer fires and
