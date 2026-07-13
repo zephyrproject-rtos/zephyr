@@ -175,3 +175,7 @@
 &pioc {
 	status = "okay";
 };
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
