@@ -1,0 +1,40 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Cherrence Sarip <cherrence.sarip@analog.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Overlay for Nucleo F413ZH: TMC6460 on SPI1, CS on PF12, DRV_EN on PB11, SLEEPN on PF14. */
+
+&spi1 {
+	status = "okay";
+
+	cs-gpios = <&gpiof 12 GPIO_ACTIVE_LOW>;
+
+	tmc6460: tmc6460@0 {
+		compatible = "adi,tmc6460";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		pole-pairs = <4>;
+	};
+};
+
+/ {
+	tmc6460_gpios {
+		compatible = "gpio-leds";
+
+		drv_en: drv_en {
+			gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
+			label = "TMC6460 DRV_EN";
+		};
+
+		sleepn: sleepn {
+			gpios = <&gpiof 14 GPIO_ACTIVE_HIGH>;
+			label = "TMC6460 SLEEPN";
+		};
+	};
+
+	aliases {
+		tmc6460-drv-en = &drv_en;
+		tmc6460-sleepn = &sleepn;
+	};
+};
