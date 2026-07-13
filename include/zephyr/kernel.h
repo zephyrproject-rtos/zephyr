@@ -3565,7 +3565,7 @@ __syscall int32_t k_stack_alloc_init(struct k_stack *stack,
  * @param stack Address of the stack.
  * @retval 0 on success
  * @retval -EAGAIN when object is still in use
- * @satisfies ZEP-SRS-30-10
+ * @satisfies ZEP-SRS-30-4
  */
 int k_stack_cleanup(struct k_stack *stack);
 
@@ -3581,8 +3581,8 @@ int k_stack_cleanup(struct k_stack *stack);
  *
  * @retval 0 on success
  * @retval -ENOMEM if stack is full
- * @satisfies ZEP-SRS-30-4
  * @satisfies ZEP-SRS-30-5
+ * @satisfies ZEP-SRS-30-7
  */
 __syscall int k_stack_push(struct k_stack *stack, stack_data_t data);
 
@@ -3606,9 +3606,9 @@ __syscall int k_stack_push(struct k_stack *stack, stack_data_t data);
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  * @satisfies ZEP-SRS-30-6
- * @satisfies ZEP-SRS-30-7
- * @satisfies ZEP-SRS-30-8
+ * @satisfies ZEP-SRS-30-10
  * @satisfies ZEP-SRS-30-9
+ * @satisfies ZEP-SRS-30-11
  */
 __syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data,
 			  k_timeout_t timeout);
