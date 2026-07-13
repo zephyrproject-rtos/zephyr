@@ -510,6 +510,13 @@ static int eth_enc28j60_tx(const struct device *dev, struct net_pkt *pkt)
 			       tx_bufaddr_end & 0xFF);
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_ETXNDH, tx_bufaddr_end >> 8);
 
+	/* Clear a stale TXIF before setting TXRTS (datasheet section
+	 * 7.1), else the wait loop below exits too early and ESTAT
+	 * is read before the end of the transmit.
+	 */
+	eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_EIR,
+				   ENC28J60_BIT_EIR_TXIF | ENC28J60_BIT_EIR_TXERIF);
+
 	/* Signal ENC28J60 to send the buffer */
 	eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_ECON1,
 				 ENC28J60_BIT_ECON1_TXRTS);
@@ -518,9 +525,19 @@ static int eth_enc28j60_tx(const struct device *dev, struct net_pkt *pkt)
 		/* wait 10.24 useconds */
 		k_busy_wait(D10D24S);
 		eth_enc28j60_read_reg(dev, ENC28J60_REG_EIR, &tx_end);
-		tx_end &= ENC28J60_BIT_EIR_TXIF;
+		/* After an abort TXIF may never rise, only TXERIF does
+		 * (errata issue 13, DS80349C). Exit when either bit is set.
+		 */
+		tx_end &= ENC28J60_BIT_EIR_TXIF | ENC28J60_BIT_EIR_TXERIF;
 	} while (!tx_end);
 
+	/* Errata issue 13. After an aborted TX, software must clear
+	 * TXRTS to put the transmit logic back in a correct state.
+	 * We always clear it, like Example 1 of the errata document
+	 * DS80349C. This is safe because after a normal TX the hardware
+	 * has already cleared TXRTS, so clearing it again does nothing.
+	 */
+	eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_ECON1, ENC28J60_BIT_ECON1_TXRTS);
 
 	eth_enc28j60_read_reg(dev, ENC28J60_REG_ESTAT, &tx_end);
 
