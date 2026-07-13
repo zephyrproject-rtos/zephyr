@@ -148,7 +148,7 @@ static inline int esp_hosted_ctrl_response(CtrlMsg *ctrl_msg)
 }
 
 #if defined(CONFIG_WIFI_ESP_HOSTED_DEBUG)
-static void esp_hosted_frame_dump(esp_frame_t *frame)
+static void esp_hosted_frame_dump(esp_hosted_frame_t *frame)
 {
 	static const char *const if_strs[] = {"STA", "AP", "SERIAL", "HCI", "PRIV", "TEST"};
 
@@ -160,15 +160,17 @@ static void esp_hosted_frame_dump(esp_frame_t *frame)
 		frame->flags);
 
 	if (frame->if_type == ESP_HOSTED_SERIAL_IF) {
+		esp_hosted_tlv_t *tlv = (esp_hosted_tlv_t *)frame->payload;
+
 		LOG_DBG("tlv header: ep_type %d ep_length %d ep_value %.8s data_type %d "
 			"data_length %d",
-			frame->ep_type, frame->ep_length, frame->ep_value, frame->data_type,
-			frame->data_length);
+			tlv->ep_type, tlv->ep_length, tlv->ep_value, tlv->data_type,
+			tlv->data_length);
 	}
 }
 #endif
 
-static inline uint16_t esp_hosted_frame_checksum(esp_frame_t *frame)
+static inline uint16_t esp_hosted_frame_checksum(esp_hosted_frame_t *frame)
 {
 	uint16_t checksum = 0;
 	uint8_t *buf = (uint8_t *)frame;
@@ -181,4 +183,38 @@ static inline uint16_t esp_hosted_frame_checksum(esp_frame_t *frame)
 	return checksum;
 }
 
+/* Validate a frame fragment and append it to the reassembly accumulator. */
+static inline bool esp_hosted_frame_append(esp_hosted_frame_t *acc, esp_hosted_frame_t *frag)
+{
+	uint16_t checksum = frag->checksum;
+
+	if (frag->len == 0 || frag->len > ESP_FRAME_MAX_PAYLOAD ||
+	    frag->offset != ESP_FRAME_HEADER_SIZE) {
+		/* Invalid or empty frame: ignore silently. */
+		return false;
+	}
+	if (checksum != esp_hosted_frame_checksum(frag)) {
+		LOG_ERR("invalid checksum");
+		return false;
+	}
+	if (acc->len == 0) {
+		/* First fragment: copy the whole frame. */
+		memcpy(acc, frag, ESP_FRAME_SIZE);
+	} else {
+		/* Subsequent fragment: append payload and update header. */
+		if (frag->seq_num != (uint16_t)(acc->seq_num + 1)) {
+			LOG_ERR("unexpected fragmented frame sequence");
+			return false;
+		}
+		if (acc->len + frag->len > ESP_FRAME_MAX_PAYLOAD * 2) {
+			LOG_ERR("reassembly overflow: %u + %u", acc->len, frag->len);
+			return false;
+		}
+		memcpy(acc->payload + acc->len, frag->payload, frag->len);
+		acc->len += frag->len;
+		acc->seq_num++;
+		acc->flags = frag->flags;
+	}
+	return true;
+}
 #endif /* ZEPHYR_DRIVERS_WIFI_ESP_HOSTED_UTIL_H_ */
