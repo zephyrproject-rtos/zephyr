@@ -292,6 +292,11 @@ New Drivers
   * :dtcompatible:`nxp,cmu-fm` — NXP Clock Monitoring Unit (Frequency Meter)
     back-end for the new :ref:`clock_monitor_api` subsystem.
 
+* Sensors
+
+  * :dtcompatible:`plantower,pmsa003i` - Plantower PMSA003I I2C particulate
+    matter sensor.
+
 * USB
 
   * :dtcompatible:`espressif,esp32-usb-otg-fs` - Espressif USB-OTG full-speed

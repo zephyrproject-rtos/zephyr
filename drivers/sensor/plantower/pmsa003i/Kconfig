@@ -1,0 +1,10 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config PMSA003I
+	bool "PMSA003I particulate matter sensor"
+	default y
+	depends on DT_HAS_PLANTOWER_PMSA003I_ENABLED
+	depends on I2C
+	help
+	  Enable driver for pmsa003i particulate matter sensor.
