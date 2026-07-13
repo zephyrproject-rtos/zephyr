@@ -22,6 +22,8 @@
 		cam-led-g = &cam_led_g;
 		cam-led-b = &cam_led_b;
 		cam-on = &cam_on;
+		/* compatibility to sample applications */
+		led0 = &led_g;
 		sw0 = &sw0_user_button;
 		watchdog0 = &wdt;
 	};
