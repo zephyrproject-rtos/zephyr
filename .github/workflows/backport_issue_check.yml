@@ -40,18 +40,18 @@ jobs:
           fetch-depth: 1
           sparse-checkout: |
             scripts/release/list_backports.py
-            scripts/requirements-actions.txt
+            scripts/requirements-actions-basic.txt
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.12
           cache: pip
-          cache-dependency-path: scripts/requirements-actions.txt
+          cache-dependency-path: scripts/requirements-actions-basic.txt
 
       - name: Install Python packages
         run: |
-          pip install -r scripts/requirements-actions.txt --require-hashes
+          pip install -r scripts/requirements-actions-basic.txt --require-hashes
 
       - name: Run backport issue checker
         id: check
