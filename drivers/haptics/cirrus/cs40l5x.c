@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2025, Cirrus Logic, Inc.
+ * Copyright (c) 2025 Cirrus Logic, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * @file
- * @brief Core Driver for Cirrus Logic CS40L5x Haptic Devices
+ * @brief Core functions for Cirrus Logic CS40L5x haptic drivers
  */
 
 #include "cs40l5x.h"

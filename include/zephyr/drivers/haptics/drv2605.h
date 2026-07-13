@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- /**
-  * @file
-  * @brief Header file providing the API for the DRV2605 haptic driver
-  * @ingroup drv2605_interface
-  */
+/**
+ * @file
+ * @brief Header file providing the API for the DRV2605 haptic driver
+ * @ingroup drv2605_interface
+ */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_HAPTICS_DRV2605_H_
 #define ZEPHYR_INCLUDE_DRIVERS_HAPTICS_DRV2605_H_

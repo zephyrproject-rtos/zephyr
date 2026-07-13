@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2026 Anuj Deshpande
- *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -23,7 +22,7 @@ extern "C" {
 /**
  * @defgroup tm6605_interface TM6605
  * @ingroup haptics_interface_ext
- * @brief TM6605 Linear Resonant Actuator (LRA) Haptic Driver
+ * @brief TM6605 Haptic Driver for LRA
  *
  * The TM6605 from Titan Micro Electronics is an I2C-controlled haptic driver
  * for LRAs. It exposes 44 pre-programmed effects selectable by ID and is
