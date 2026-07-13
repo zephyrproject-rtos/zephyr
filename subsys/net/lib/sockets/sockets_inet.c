@@ -36,6 +36,9 @@ LOG_MODULE_DECLARE(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include "sockets_internal.h"
 #include "../../ip/tcp_internal.h"
 #include "../../ip/net_private.h"
+#if defined(CONFIG_NET_UDP_OPTIONS)
+#include "../../ip/udp_internal.h"
+#endif
 
 #if defined(CONFIG_NET_SOCKETS_INET_RAW)
 BUILD_ASSERT(NET_IPPROTO_IP == 0, "Wildcard IPPROTO_IP must equal 0.");
@@ -1134,6 +1137,84 @@ out:
 	return ret;
 }
 
+#if defined(CONFIG_NET_UDP_OPTIONS)
+static int add_udp_options(struct net_context *ctx,
+			   struct net_pkt *pkt,
+			   struct net_msghdr *msg)
+{
+	struct net_udp_opt_info info;
+	struct net_udp_opt_mrds mrds;
+	struct net_udp_opt_time time_val;
+	int ret;
+
+	if (net_context_get_proto(ctx) != NET_IPPROTO_UDP ||
+	    net_pkt_udp_opt_surplus_len(pkt) == 0U) {
+		return 0;
+	}
+
+	ret = net_udp_opt_parse(pkt, &info);
+	if (ret < 0 || !info.ocs_valid) {
+		return 0;
+	}
+
+	if ((info.present & NET_UDP_OPT_F_APC) != 0U) {
+		ret = insert_pktinfo(msg, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_CMSG_APC,
+				     &info.apc_crc, sizeof(info.apc_crc));
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if ((info.present & NET_UDP_OPT_F_MDS) != 0U) {
+		ret = insert_pktinfo(msg, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_CMSG_MDS,
+				     &info.mds, sizeof(info.mds));
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if ((info.present & NET_UDP_OPT_F_MRDS) != 0U) {
+		mrds.size = info.mrds.size;
+		mrds.segs = info.mrds.segs;
+
+		ret = insert_pktinfo(msg, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_CMSG_MRDS,
+				     &mrds, sizeof(mrds));
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if ((info.present & NET_UDP_OPT_F_REQ) != 0U) {
+		ret = insert_pktinfo(msg, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_CMSG_REQ,
+				     &info.req_token, sizeof(info.req_token));
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if ((info.present & NET_UDP_OPT_F_RES) != 0U) {
+		ret = insert_pktinfo(msg, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_CMSG_RES,
+				     &info.res_token, sizeof(info.res_token));
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if ((info.present & NET_UDP_OPT_F_TIME) != 0U) {
+		time_val.tsval = info.time.tsval;
+		time_val.tsecr = info.time.tsecr;
+
+		ret = insert_pktinfo(msg, NET_IPPROTO_UDP, ZSOCK_UDP_OPT_CMSG_TIME,
+				     &time_val, sizeof(time_val));
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+#endif /* CONFIG_NET_UDP_OPTIONS */
+
 static int update_msg_controllen(struct net_msghdr *msg)
 {
 	struct net_cmsghdr *cmsg;
@@ -1148,6 +1229,24 @@ static int update_msg_controllen(struct net_msghdr *msg)
 	msg->msg_controllen = cmsg_space;
 
 	return 0;
+}
+
+static size_t dgram_pkt_payload_len(struct net_context *ctx, struct net_pkt *pkt)
+{
+	size_t recv_len = net_pkt_remaining_data(pkt);
+
+	if (IS_ENABLED(CONFIG_NET_UDP_OPTIONS) &&
+	    net_context_get_proto(ctx) == NET_IPPROTO_UDP) {
+		uint16_t surplus_len = net_pkt_udp_opt_surplus_len(pkt);
+
+		if (surplus_len >= recv_len) {
+			return 0;
+		}
+
+		recv_len -= surplus_len;
+	}
+
+	return recv_len;
 }
 
 static ssize_t zsock_recv_dgram(struct net_context *ctx,
@@ -1245,7 +1344,7 @@ static ssize_t zsock_recv_dgram(struct net_context *ctx,
 			return -1;
 		}
 
-		recv_len = net_pkt_remaining_data(pkt);
+		recv_len = dgram_pkt_payload_len(ctx, pkt);
 		tmp_read_len = read_len = MIN(recv_len, max_len);
 
 		while (tmp_read_len > 0) {
@@ -1278,7 +1377,7 @@ static ssize_t zsock_recv_dgram(struct net_context *ctx,
 		}
 
 	} else {
-		recv_len = net_pkt_remaining_data(pkt);
+		recv_len = dgram_pkt_payload_len(ctx, pkt);
 		read_len = MIN(recv_len, max_len);
 
 		if (net_pkt_read(pkt, buf, read_len)) {
@@ -1310,6 +1409,12 @@ static ssize_t zsock_recv_dgram(struct net_context *ctx,
 						msg->msg_flags |= ZSOCK_MSG_CTRUNC;
 					}
 				}
+
+#if defined(CONFIG_NET_UDP_OPTIONS)
+				if (add_udp_options(ctx, pkt, msg) < 0) {
+					msg->msg_flags |= ZSOCK_MSG_CTRUNC;
+				}
+#endif /* CONFIG_NET_UDP_OPTIONS */
 
 				/* msg_controllen must be updated to reflect the total length of all
 				 * control messages in the buffer. If there are no control data,
@@ -1855,6 +1960,44 @@ static int ipv4_multicast_if(struct net_context *ctx, const void *optval,
 	return 0;
 }
 
+#if defined(CONFIG_NET_UDP_OPTIONS)
+static enum net_context_option udp_opt_to_net_opt(int optname)
+{
+	switch (optname) {
+	case ZSOCK_UDP_OPT:
+		return NET_OPT_UDP_OPT;
+	case ZSOCK_UDP_OPT_OCS:
+		return NET_OPT_UDP_OPT_OCS;
+	case ZSOCK_UDP_OPT_APC:
+		return NET_OPT_UDP_OPT_APC;
+	case ZSOCK_UDP_OPT_FRAG:
+		return NET_OPT_UDP_OPT_FRAG;
+	case ZSOCK_UDP_OPT_MDS:
+		return NET_OPT_UDP_OPT_MDS;
+	case ZSOCK_UDP_OPT_MRDS:
+		return NET_OPT_UDP_OPT_MRDS;
+	case ZSOCK_UDP_OPT_REQ:
+		return NET_OPT_UDP_OPT_REQ;
+	case ZSOCK_UDP_OPT_RES:
+		return NET_OPT_UDP_OPT_RES;
+	case ZSOCK_UDP_OPT_TIME:
+		return NET_OPT_UDP_OPT_TIME;
+	case ZSOCK_UDP_OPT_AUTH:
+		return NET_OPT_UDP_OPT_AUTH;
+	case ZSOCK_UDP_OPT_EXP:
+		return NET_OPT_UDP_OPT_EXP;
+	case ZSOCK_UDP_OPT_UCMP:
+		return NET_OPT_UDP_OPT_UCMP;
+	case ZSOCK_UDP_OPT_UENC:
+		return NET_OPT_UDP_OPT_UENC;
+	case ZSOCK_UDP_OPT_UEXP:
+		return NET_OPT_UDP_OPT_UEXP;
+	default:
+		return NET_OPT_UDP_OPT;
+	}
+}
+#endif /* CONFIG_NET_UDP_OPTIONS */
+
 int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			 void *optval, net_socklen_t *optlen)
 {
@@ -2031,6 +2174,40 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 		}
 
 		break;
+
+#if defined(CONFIG_NET_UDP_OPTIONS)
+	case NET_IPPROTO_UDP:
+		if (net_context_get_proto(ctx) != NET_IPPROTO_UDP) {
+			break;
+		}
+
+		switch (optname) {
+		case ZSOCK_UDP_OPT:
+		case ZSOCK_UDP_OPT_OCS:
+		case ZSOCK_UDP_OPT_APC:
+		case ZSOCK_UDP_OPT_FRAG:
+		case ZSOCK_UDP_OPT_MDS:
+		case ZSOCK_UDP_OPT_MRDS:
+		case ZSOCK_UDP_OPT_REQ:
+		case ZSOCK_UDP_OPT_RES:
+		case ZSOCK_UDP_OPT_TIME:
+		case ZSOCK_UDP_OPT_AUTH:
+		case ZSOCK_UDP_OPT_EXP:
+		case ZSOCK_UDP_OPT_UCMP:
+		case ZSOCK_UDP_OPT_UENC:
+		case ZSOCK_UDP_OPT_UEXP:
+			ret = net_context_get_option(ctx, udp_opt_to_net_opt(optname),
+						     optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+		}
+
+		break;
+#endif /* CONFIG_NET_UDP_OPTIONS */
 
 	case NET_IPPROTO_TCP:
 		switch (optname) {
@@ -2710,6 +2887,40 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 		}
 
 		break;
+
+#if defined(CONFIG_NET_UDP_OPTIONS)
+	case NET_IPPROTO_UDP:
+		if (net_context_get_proto(ctx) != NET_IPPROTO_UDP) {
+			break;
+		}
+
+		switch (optname) {
+		case ZSOCK_UDP_OPT:
+		case ZSOCK_UDP_OPT_OCS:
+		case ZSOCK_UDP_OPT_APC:
+		case ZSOCK_UDP_OPT_FRAG:
+		case ZSOCK_UDP_OPT_MDS:
+		case ZSOCK_UDP_OPT_MRDS:
+		case ZSOCK_UDP_OPT_REQ:
+		case ZSOCK_UDP_OPT_RES:
+		case ZSOCK_UDP_OPT_TIME:
+		case ZSOCK_UDP_OPT_AUTH:
+		case ZSOCK_UDP_OPT_EXP:
+		case ZSOCK_UDP_OPT_UCMP:
+		case ZSOCK_UDP_OPT_UENC:
+		case ZSOCK_UDP_OPT_UEXP:
+			ret = net_context_set_option(ctx, udp_opt_to_net_opt(optname),
+						     optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+		}
+
+		break;
+#endif /* CONFIG_NET_UDP_OPTIONS */
 
 	case NET_IPPROTO_TCP:
 		switch (optname) {

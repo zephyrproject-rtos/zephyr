@@ -647,6 +647,29 @@ struct net_udp_hdr {
 	uint16_t chksum;
 } __packed;
 
+/** @brief UDP Options Maximum Reassembled Datagram Size (MRDS), RFC 9868.
+ *
+ * Value type for the @c ZSOCK_UDP_OPT_MRDS socket option and the
+ * @c ZSOCK_UDP_OPT_CMSG_MRDS ancillary control message.
+ */
+struct net_udp_opt_mrds {
+	/** Maximum reassembled datagram size in bytes. */
+	uint16_t size;
+	/** Maximum number of fragments, or 0 if unspecified. */
+	uint8_t segs;
+};
+
+/** @brief UDP Options Timestamp (TIME), RFC 9868.
+ *
+ * Value type for the @c ZSOCK_UDP_OPT_CMSG_TIME ancillary control message.
+ */
+struct net_udp_opt_time {
+	/** Timestamp value of the sender. */
+	uint32_t tsval;
+	/** Timestamp echo reply (last @c tsval received from the peer). */
+	uint32_t tsecr;
+};
+
 struct net_tcp_hdr {
 	uint16_t src_port;
 	uint16_t dst_port;

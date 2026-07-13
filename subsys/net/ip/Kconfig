@@ -476,6 +476,15 @@ config NET_UDP_MISSING_CHECKSUM
 	  for IPv4 and on reception only, since Zephyr will always compute the
 	  UDP checksum in transmission path.
 
+config NET_UDP_OPTIONS
+	bool "UDP transport options (RFC 9868) [EXPERIMENTAL]"
+	depends on NET_UDP
+	select EXPERIMENTAL
+	help
+	  Enable support for UDP transport options as defined in
+	  RFC 9868. This allows sending and receiving UDP options
+	  in the surplus area of IP datagrams.
+
 if NET_UDP
 
 module = NET_UDP

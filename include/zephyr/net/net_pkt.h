@@ -143,10 +143,18 @@ struct net_pkt {
 
 	/** @cond ignore */
 
+	/* TCP or UDP are mutually exclusive so they can share the same memory */
+	union {
 #if defined(CONFIG_NET_TCP)
-	/** Allow placing the packet into sys_slist_t */
-	sys_snode_t next;
+		/** Allow placing the packet into sys_slist_t */
+		sys_snode_t next;
 #endif
+#if defined(CONFIG_NET_UDP_OPTIONS)
+		/** Length of the UDP options surplus area (bytes after UDP user data) */
+		uint16_t udp_opt_surplus_len;
+#endif
+	};
+
 #if defined(CONFIG_NET_PKT_ORIG_IFACE)
 	struct net_if *orig_iface; /* Original network interface */
 #endif
@@ -501,6 +509,26 @@ static inline void net_pkt_set_vpn_peer_id(struct net_pkt *pkt,
 	pkt->vpn.peer_id = peer_id;
 }
 #endif /* CONFIG_NET_VPN */
+
+#if defined(CONFIG_NET_UDP_OPTIONS)
+static inline uint16_t net_pkt_udp_opt_surplus_len(struct net_pkt *pkt)
+{
+	return pkt->udp_opt_surplus_len;
+}
+
+static inline void net_pkt_set_udp_opt_surplus_len(struct net_pkt *pkt,
+						   uint16_t len)
+{
+	pkt->udp_opt_surplus_len = len;
+}
+#else
+static inline uint16_t net_pkt_udp_opt_surplus_len(struct net_pkt *pkt)
+{
+	return 0;
+}
+
+#define net_pkt_set_udp_opt_surplus_len(...)
+#endif /* CONFIG_NET_UDP_OPTIONS */
 
 static inline uint8_t net_pkt_family(struct net_pkt *pkt)
 {

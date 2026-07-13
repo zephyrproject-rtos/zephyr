@@ -2257,6 +2257,129 @@ static int context_write_data(struct net_pkt *pkt, const void *buf,
 	return ret;
 }
 
+#if defined(CONFIG_NET_UDP_OPTIONS)
+static int context_parse_udp_option_cmsgs(const struct net_msghdr *msg,
+					  struct net_udp_opt_info *opts)
+{
+	struct net_cmsghdr *cmsg, *prev;
+
+	if (msg == NULL || opts == NULL || msg->msg_control == NULL ||
+	    msg->msg_controllen == 0U) {
+		return 0;
+	}
+
+	for (prev = NULL, cmsg = NET_CMSG_FIRSTHDR((struct net_msghdr *)msg);
+	     cmsg != NULL && prev != cmsg;
+	     prev = cmsg, cmsg = NET_CMSG_NXTHDR((struct net_msghdr *)msg, cmsg)) {
+		if (cmsg->cmsg_len == 0U) {
+			break;
+		}
+
+		if (cmsg->cmsg_level != NET_IPPROTO_UDP) {
+			continue;
+		}
+
+		switch (cmsg->cmsg_type) {
+		case ZSOCK_UDP_OPT_CMSG_APC:
+			if (cmsg->cmsg_len == NET_CMSG_LEN(sizeof(uint32_t))) {
+				(void)memcpy(&opts->apc_crc, NET_CMSG_DATA(cmsg),
+					     sizeof(opts->apc_crc));
+				opts->present |= NET_UDP_OPT_F_APC;
+				break;
+			}
+
+			return -EINVAL;
+
+		case ZSOCK_UDP_OPT_CMSG_MDS:
+			if (cmsg->cmsg_len == NET_CMSG_LEN(sizeof(uint16_t))) {
+				(void)memcpy(&opts->mds, NET_CMSG_DATA(cmsg),
+					     sizeof(opts->mds));
+				opts->present |= NET_UDP_OPT_F_MDS;
+				break;
+			}
+
+			return -EINVAL;
+
+		case ZSOCK_UDP_OPT_CMSG_MRDS:
+			if (cmsg->cmsg_len == NET_CMSG_LEN(sizeof(struct net_udp_opt_mrds))) {
+				struct net_udp_opt_mrds mrds;
+
+				(void)memcpy(&mrds, NET_CMSG_DATA(cmsg), sizeof(mrds));
+				opts->mrds.size = mrds.size;
+				opts->mrds.segs = mrds.segs;
+				opts->present |= NET_UDP_OPT_F_MRDS;
+				break;
+			}
+
+			return -EINVAL;
+
+		case ZSOCK_UDP_OPT_CMSG_REQ:
+			if (cmsg->cmsg_len == NET_CMSG_LEN(sizeof(uint32_t))) {
+				(void)memcpy(&opts->req_token, NET_CMSG_DATA(cmsg),
+					     sizeof(opts->req_token));
+				opts->present |= NET_UDP_OPT_F_REQ;
+				break;
+			}
+
+			return -EINVAL;
+
+		case ZSOCK_UDP_OPT_CMSG_RES:
+			if (cmsg->cmsg_len == NET_CMSG_LEN(sizeof(uint32_t))) {
+				(void)memcpy(&opts->res_token, NET_CMSG_DATA(cmsg),
+					     sizeof(opts->res_token));
+				opts->present |= NET_UDP_OPT_F_RES;
+				break;
+			}
+
+			return -EINVAL;
+
+		case ZSOCK_UDP_OPT_CMSG_TIME:
+			if (cmsg->cmsg_len == NET_CMSG_LEN(sizeof(struct net_udp_opt_time))) {
+				struct net_udp_opt_time time_val;
+
+				(void)memcpy(&time_val, NET_CMSG_DATA(cmsg), sizeof(time_val));
+				opts->time.tsval = time_val.tsval;
+				opts->time.tsecr = time_val.tsecr;
+				opts->present |= NET_UDP_OPT_F_TIME;
+				break;
+			}
+
+			return -EINVAL;
+		default:
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
+static int context_setup_udp_options(struct net_context *context,
+			     struct net_pkt *pkt,
+			     const struct net_msghdr *msg)
+{
+	struct net_udp_opt_info opts = { 0 };
+	int ret;
+
+	ret = context_parse_udp_option_cmsgs(msg, &opts);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return net_udp_opt_append(pkt, context, &opts);
+}
+#else
+static int context_setup_udp_options(struct net_context *context,
+			     struct net_pkt *pkt,
+			     const struct net_msghdr *msg)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(msg);
+
+	return 0;
+}
+#endif /* CONFIG_NET_UDP_OPTIONS */
+
 static int context_setup_udp_packet(struct net_context *context,
 				    net_sa_family_t family,
 				    struct net_pkt *pkt,
@@ -2307,6 +2430,11 @@ static int context_setup_udp_packet(struct net_context *context,
 
 	ret = context_write_data(pkt, buf, len, msg);
 	if (ret) {
+		return ret;
+	}
+
+	ret = context_setup_udp_options(context, pkt, msg);
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -2380,6 +2508,40 @@ static int context_setup_raw_ip_packet(net_sa_family_t family,
 	return 0;
 }
 
+#if defined(CONFIG_NET_UDP_OPTIONS)
+static void context_finalize_udp_options(struct net_context *context, struct net_pkt *pkt)
+{
+	uint16_t surplus_len;
+	uint16_t surplus_offset;
+	int ret;
+
+	if (net_context_get_proto(context) != NET_IPPROTO_UDP) {
+		return;
+	}
+
+	surplus_len = net_pkt_udp_opt_surplus_len(pkt);
+	if (surplus_len == 0U) {
+		return;
+	}
+
+	/* The UDP checksum is computed over the UDP Length bytes only and does
+	 * not cover the surplus area (RFC 9868), so writing the OCS here does
+	 * not require recomputing the UDP checksum.
+	 */
+	surplus_offset = net_pkt_get_len(pkt) - surplus_len;
+	ret = net_udp_opt_finalize_ocs(pkt, surplus_offset, surplus_len);
+	if (ret < 0) {
+		NET_DBG("UDP option OCS finalize failed (%d)", ret);
+	}
+}
+#else
+static inline void context_finalize_udp_options(struct net_context *context, struct net_pkt *pkt)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(pkt);
+}
+#endif /* CONFIG_NET_UDP_OPTIONS */
+
 static void context_finalize_packet(struct net_context *context,
 				    net_sa_family_t family,
 				    struct net_pkt *pkt)
@@ -2395,6 +2557,8 @@ static void context_finalize_packet(struct net_context *context,
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
 		net_ipv4_finalize(pkt, net_context_get_proto(context));
 	}
+
+	context_finalize_udp_options(context, pkt);
 }
 
 static int context_validate_dont_fragment_packet(struct net_pkt *pkt)
@@ -2582,8 +2746,13 @@ static int context_sendto(struct net_context *context,
 					 CONFIG_NET_IPV6, (context->options.dont_fragment),
 					 (false));
 	net_sa_family_t family;
+	size_t alloc_len;
 	size_t tmp_len;
 	int ret;
+#if defined(CONFIG_NET_UDP_OPTIONS)
+	struct net_udp_opt_info udp_opts = { 0 };
+	const struct net_udp_opt_info *udp_opts_ptr = NULL;
+#endif
 
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
@@ -2859,6 +3028,26 @@ static int context_sendto(struct net_context *context,
 		}
 	}
 
+	alloc_len = len;
+
+#if defined(CONFIG_NET_UDP_OPTIONS)
+	if (net_context_get_proto(context) == NET_IPPROTO_UDP &&
+	    net_context_get_type(context) == NET_SOCK_DGRAM) {
+		if (msghdr != NULL) {
+			ret = context_parse_udp_option_cmsgs(msghdr, &udp_opts);
+			if (ret < 0) {
+				return ret;
+			}
+
+			if (udp_opts.present != 0U) {
+				udp_opts_ptr = &udp_opts;
+			}
+		}
+
+		alloc_len += net_udp_opt_surplus_len_with_opts(context, len, udp_opts_ptr);
+	}
+#endif /* CONFIG_NET_UDP_OPTIONS */
+
 	iface = net_context_get_iface(context);
 	if (iface && !net_if_is_up(iface)) {
 		return -ENETDOWN;
@@ -2873,7 +3062,7 @@ static int context_sendto(struct net_context *context,
 		goto skip_alloc;
 	}
 
-	pkt = context_alloc_pkt(context, family, len, PKT_WAIT_TIME);
+	pkt = context_alloc_pkt(context, family, alloc_len, PKT_WAIT_TIME);
 	if (!pkt) {
 		NET_ERR("Failed to allocate net_pkt");
 		return -ENOBUFS;
@@ -2881,11 +3070,11 @@ static int context_sendto(struct net_context *context,
 
 	tmp_len = net_pkt_available_payload_buffer(
 				pkt, net_context_get_proto(context));
-	if (tmp_len < len) {
+	if (tmp_len < alloc_len) {
 		if (net_context_get_type(context) == NET_SOCK_DGRAM ||
 		    net_context_get_type(context) == NET_SOCK_RAW) {
 			NET_ERR("Available payload buffer (%zu) is not enough for requested DGRAM (%zu)",
-				tmp_len, len);
+				tmp_len, alloc_len);
 			ret = -ENOMEM;
 			goto fail;
 		}
@@ -3201,6 +3390,40 @@ int net_context_sendto(struct net_context *context,
 	return ret;
 }
 
+static bool context_allow_udp_options(struct net_context *context, struct net_pkt *pkt)
+{
+#if defined(CONFIG_NET_UDP_OPTIONS)
+	struct net_udp_opt_info opt_info;
+
+	if (net_context_get_proto(context) != NET_IPPROTO_UDP) {
+		return true;
+	}
+
+	if (net_pkt_udp_opt_surplus_len(pkt) == 0U) {
+		return context->options.udp_opt.required == 0U;
+	}
+
+	if (context->options.udp_opt.drop_all_opts) {
+		return false;
+	}
+
+	if (context->options.udp_opt.required == 0U) {
+		return true;
+	}
+
+	if (net_udp_opt_parse(pkt, &opt_info) < 0) {
+		return false;
+	}
+
+	return (context->options.udp_opt.required & ~opt_info.present) == 0U;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(pkt);
+
+	return true;
+#endif /* CONFIG_NET_UDP_OPTIONS */
+}
+
 enum net_verdict net_context_packet_received(struct net_conn *conn,
 					     struct net_pkt *pkt,
 					     union net_ip_header *ip_hdr,
@@ -3221,6 +3444,10 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 	/* If there is no callback registered, then we can only drop
 	 * the packet.
 	 */
+	if (!context_allow_udp_options(context, pkt)) {
+		goto unlock;
+	}
+
 	if (!context->recv_cb) {
 		goto unlock;
 	}
@@ -4172,6 +4399,230 @@ static int set_context_local_port_range(struct net_context *context,
 #endif
 }
 
+#if defined(CONFIG_NET_UDP_OPTIONS)
+static int udp_opt_read_int(const void *value, uint32_t len, int *out)
+{
+	uint16_t val16;
+
+	if (value == NULL || out == NULL) {
+		return -EINVAL;
+	}
+
+	if (len == sizeof(int)) {
+		memcpy(out, value, sizeof(int));
+		return 0;
+	}
+
+	if (len == sizeof(uint16_t)) {
+		memcpy(&val16, value, sizeof(val16));
+		*out = val16;
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
+static uint32_t udp_opt_flag_from_option(enum net_context_option option)
+{
+	switch (option) {
+	case NET_OPT_UDP_OPT_OCS:
+		return NET_UDP_OPT_F_OCS;
+	case NET_OPT_UDP_OPT_APC:
+		return NET_UDP_OPT_F_APC;
+	case NET_OPT_UDP_OPT_FRAG:
+		return NET_UDP_OPT_F_FRAG;
+	case NET_OPT_UDP_OPT_REQ:
+		return NET_UDP_OPT_F_REQ;
+	case NET_OPT_UDP_OPT_RES:
+		return NET_UDP_OPT_F_RES;
+	case NET_OPT_UDP_OPT_TIME:
+		return NET_UDP_OPT_F_TIME;
+	case NET_OPT_UDP_OPT_AUTH:
+		return NET_UDP_OPT_F_AUTH;
+	case NET_OPT_UDP_OPT_EXP:
+		return NET_UDP_OPT_F_EXP;
+	case NET_OPT_UDP_OPT_UCMP:
+		return NET_UDP_OPT_F_UCMP;
+	case NET_OPT_UDP_OPT_UENC:
+		return NET_UDP_OPT_F_UENC;
+	case NET_OPT_UDP_OPT_UEXP:
+		return NET_UDP_OPT_F_UEXP;
+	default:
+		return 0U;
+	}
+}
+
+static int set_context_udp_opt(struct net_context *context,
+			       enum net_context_option option,
+			       const void *value, uint32_t len)
+{
+	int val;
+	int ret;
+	uint32_t flag;
+
+	switch (option) {
+	case NET_OPT_UDP_OPT:
+		ret = udp_opt_read_int(value, len, &val);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (val != 0) {
+			context->options.udp_opt.enabled = NET_UDP_OPT_F_SUPPORTED;
+		} else {
+			context->options.udp_opt.enabled = 0U;
+			context->options.udp_opt.required = 0U;
+		}
+
+		return 0;
+
+	case NET_OPT_UDP_OPT_MDS:
+		ret = udp_opt_read_int(value, len, &val);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (val < 0 || val > 65535) {
+			return -EINVAL;
+		}
+
+		context->options.udp_opt.mds = (uint16_t)val;
+		if (val != 0) {
+			context->options.udp_opt.enabled |= NET_UDP_OPT_F_MDS;
+		} else {
+			context->options.udp_opt.enabled &= ~NET_UDP_OPT_F_MDS;
+		}
+
+		return 0;
+
+	case NET_OPT_UDP_OPT_MRDS: {
+		struct net_udp_opt_mrds mrds = { 0 };
+		uint16_t size;
+
+		if (value == NULL) {
+			return -EINVAL;
+		}
+
+		if (len == sizeof(struct net_udp_opt_mrds)) {
+			memcpy(&mrds, value, sizeof(mrds));
+		} else if (len == sizeof(uint16_t)) {
+			memcpy(&size, value, sizeof(size));
+			mrds.size = size;
+			mrds.segs = 0U;
+		} else {
+			return -EINVAL;
+		}
+
+		context->options.udp_opt.mrds.size = mrds.size;
+		context->options.udp_opt.mrds.segs = mrds.segs;
+
+		if (mrds.size != 0U) {
+			context->options.udp_opt.enabled |= NET_UDP_OPT_F_MRDS;
+		} else {
+			context->options.udp_opt.enabled &= ~NET_UDP_OPT_F_MRDS;
+		}
+
+		return 0;
+	}
+
+	default:
+		break;
+	}
+
+	/* Remaining options are simple on/off feature flags. */
+	flag = udp_opt_flag_from_option(option);
+	if (flag == 0U) {
+		return -ENOPROTOOPT;
+	}
+
+	ret = udp_opt_read_int(value, len, &val);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (val != 0) {
+		if ((flag & NET_UDP_OPT_F_SUPPORTED) == 0U) {
+			return -ENOTSUP;
+		}
+
+		context->options.udp_opt.enabled |= flag;
+	} else {
+		context->options.udp_opt.enabled &= ~flag;
+	}
+
+	return 0;
+}
+
+static int get_context_udp_opt(struct net_context *context,
+			       enum net_context_option option,
+			       void *value, uint32_t *len)
+{
+	uint32_t flag;
+	int val;
+
+	if (value == NULL || len == NULL) {
+		return -EINVAL;
+	}
+
+	switch (option) {
+	case NET_OPT_UDP_OPT:
+		if (*len < sizeof(int)) {
+			return -EINVAL;
+		}
+
+		val = (context->options.udp_opt.enabled & NET_UDP_OPT_F_SUPPORTED) != 0U;
+		memcpy(value, &val, sizeof(val));
+		*len = sizeof(val);
+
+		return 0;
+
+	case NET_OPT_UDP_OPT_MDS:
+		if (*len < sizeof(uint16_t)) {
+			return -EINVAL;
+		}
+
+		memcpy(value, &context->options.udp_opt.mds, sizeof(uint16_t));
+		*len = sizeof(uint16_t);
+
+		return 0;
+
+	case NET_OPT_UDP_OPT_MRDS: {
+		struct net_udp_opt_mrds mrds = {
+			.size = context->options.udp_opt.mrds.size,
+			.segs = context->options.udp_opt.mrds.segs,
+		};
+
+		if (*len < sizeof(mrds)) {
+			return -EINVAL;
+		}
+
+		memcpy(value, &mrds, sizeof(mrds));
+		*len = sizeof(mrds);
+
+		return 0;
+	}
+
+	default:
+		break;
+	}
+
+	flag = udp_opt_flag_from_option(option);
+	if (flag == 0U) {
+		return -ENOPROTOOPT;
+	}
+
+	if (*len < sizeof(int)) {
+		return -EINVAL;
+	}
+
+	val = (context->options.udp_opt.enabled & flag) != 0U;
+	memcpy(value, &val, sizeof(val));
+	*len = sizeof(val);
+
+	return 0;
+}
+#endif /* CONFIG_NET_UDP_OPTIONS */
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, uint32_t len)
@@ -4273,6 +4724,27 @@ int net_context_set_option(struct net_context *context,
 	case NET_OPT_LINGER:
 		ret = set_context_linger(context, value, len);
 		break;
+#if defined(CONFIG_NET_UDP_OPTIONS)
+	case NET_OPT_UDP_OPT:
+	case NET_OPT_UDP_OPT_OCS:
+	case NET_OPT_UDP_OPT_APC:
+	case NET_OPT_UDP_OPT_FRAG:
+	case NET_OPT_UDP_OPT_MDS:
+	case NET_OPT_UDP_OPT_MRDS:
+	case NET_OPT_UDP_OPT_REQ:
+	case NET_OPT_UDP_OPT_RES:
+	case NET_OPT_UDP_OPT_TIME:
+	case NET_OPT_UDP_OPT_AUTH:
+	case NET_OPT_UDP_OPT_EXP:
+	case NET_OPT_UDP_OPT_UCMP:
+	case NET_OPT_UDP_OPT_UENC:
+	case NET_OPT_UDP_OPT_UEXP:
+		ret = set_context_udp_opt(context, option, value, len);
+		break;
+#endif /* CONFIG_NET_UDP_OPTIONS */
+	default:
+		ret = -ENOPROTOOPT;
+		break;
 	}
 
 	k_mutex_unlock(&context->lock);
@@ -4372,6 +4844,27 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_LINGER:
 		ret = get_context_linger(context, value, len);
+		break;
+#if defined(CONFIG_NET_UDP_OPTIONS)
+	case NET_OPT_UDP_OPT:
+	case NET_OPT_UDP_OPT_OCS:
+	case NET_OPT_UDP_OPT_APC:
+	case NET_OPT_UDP_OPT_FRAG:
+	case NET_OPT_UDP_OPT_MDS:
+	case NET_OPT_UDP_OPT_MRDS:
+	case NET_OPT_UDP_OPT_REQ:
+	case NET_OPT_UDP_OPT_RES:
+	case NET_OPT_UDP_OPT_TIME:
+	case NET_OPT_UDP_OPT_AUTH:
+	case NET_OPT_UDP_OPT_EXP:
+	case NET_OPT_UDP_OPT_UCMP:
+	case NET_OPT_UDP_OPT_UENC:
+	case NET_OPT_UDP_OPT_UEXP:
+		ret = get_context_udp_opt(context, option, value, len);
+		break;
+#endif /* CONFIG_NET_UDP_OPTIONS */
+	default:
+		ret = -ENOPROTOOPT;
 		break;
 	}
 
