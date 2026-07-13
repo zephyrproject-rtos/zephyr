@@ -1,0 +1,19 @@
+# Copyright (c) 2026, RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Plantower PMSA003I air pollution sensor.
+  Air pollution sensor capable of measuring mass concentration of dust.
+
+compatible: "plantower,pmsa003i"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: Reset pin.
+
+  set-gpios:
+    type: phandle-array
+    description: Set pin.

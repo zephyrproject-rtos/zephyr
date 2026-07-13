@@ -467,6 +467,8 @@ New Drivers
 * Sensors
 
   * Analog Devices ADXL313 3-axis accelerometer (:dtcompatible:`adi,adxl313`).
+  * :dtcompatible:`plantower,pmsa003i` - Plantower PMSA003I I2C particulate
+    matter sensor.
 
 * Clock Monitor
 
