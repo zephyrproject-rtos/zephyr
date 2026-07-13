@@ -150,11 +150,11 @@ static bool hl78xx_hl7812_cfg_skip_band_for_rat(struct hl78xx_data *data,
 {
 	ARG_UNUSED(data);
 
-#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
+#if defined(CONFIG_MODEM_HL78XX_RAT_GSM) || defined(CONFIG_MODEM_HL78XX_AUTORAT)
 	if (rat_request == HL78XX_RAT_GSM) {
 		return true;
 	}
-#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
+#endif /* CONFIG_MODEM_HL78XX_RAT_GSM || CONFIG_MODEM_HL78XX_AUTORAT */
 
 	return false;
 }
