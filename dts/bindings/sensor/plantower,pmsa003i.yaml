@@ -1,0 +1,26 @@
+# Copyright (c) 2026, RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Plantower PMSA003I air pollution sensor.
+  Air pollution sensor capable of measuring mass concentration of dust.
+
+compatible: "plantower,pmsa003i"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Module reset pin, which the sensor drives low to reset and pulls up
+      on its own, so a board wiring it up states GPIO_ACTIVE_LOW. Leave
+      the property out where the pin is not connected.
+
+  set-gpios:
+    type: phandle-array
+    description: |
+      Sleep pin, which the sensor treats as awake when high or left alone
+      and asleep when low, and pulls up on its own, so a board wiring it
+      up states GPIO_ACTIVE_HIGH. Leave the property out where the pin is
+      not connected.
