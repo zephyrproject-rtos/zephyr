@@ -140,14 +140,9 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 	}
 
 	if (ctrl->flags & VIDEO_CTRL_FLAG_VOLATILE) {
-		if (DEVICE_API_GET(video, ctrl->vdev->dev)->get_volatile_ctrl == NULL) {
-			return -ENOSYS;
-		}
-
 		/* Call driver's get_volatile_ctrl */
-		ret = DEVICE_API_GET(video, ctrl->vdev->dev)
-			      ->get_volatile_ctrl(ctrl->vdev->dev,
-						  ctrl->cluster ? ctrl->cluster->id : ctrl->id);
+		ret = video_driver_get_volatile_ctrl(ctrl->vdev->dev,
+				ctrl->cluster ? ctrl->cluster->id : ctrl->id);
 		if (ret) {
 			return ret;
 		}
@@ -218,27 +213,17 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 	 */
 	if (ctrl == ctrl->cluster && ctrl->is_auto && ctrl->has_volatiles &&
 	    is_cluster_manual(ctrl)) {
-
-		if (DEVICE_API_GET(video, ctrl->vdev->dev)->get_volatile_ctrl == NULL) {
-			ret = -ENOSYS;
-			goto restore;
-		}
-
-		ret = DEVICE_API_GET(video, ctrl->vdev->dev)
-			      ->get_volatile_ctrl(ctrl->vdev->dev, ctrl->id);
+		ret = video_driver_get_volatile_ctrl(ctrl->vdev->dev, ctrl->id);
 		if (ret) {
 			goto restore;
 		}
 	}
 
 	/* Call driver's set_ctrl */
-	if (DEVICE_API_GET(video, ctrl->vdev->dev)->set_ctrl) {
-		ret = DEVICE_API_GET(video, ctrl->vdev->dev)
-				     ->set_ctrl(ctrl->vdev->dev,
-						ctrl->cluster ? ctrl->cluster->id : ctrl->id);
-		if (ret) {
-			goto restore;
-		}
+	ret = video_driver_set_ctrl(ctrl->vdev->dev,
+				    ctrl->cluster ? ctrl->cluster->id : ctrl->id);
+	if (ret && ret != -ENOSYS) {
+		goto restore;
 	}
 
 	/* Update the manual controls' flags of the cluster */
