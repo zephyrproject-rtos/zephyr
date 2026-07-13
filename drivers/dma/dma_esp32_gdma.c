@@ -39,12 +39,12 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 #endif
 
 #if GDMA_SLEEP_RETENTION_ENABLED
-#include <hal/gdma_periph.h>
+#include "gdma_priv.h"
 #include <esp_private/sleep_retention.h>
 
 static esp_err_t gdma_create_sleep_retention_cb(void *arg)
 {
-	const gdma_chx_reg_ctx_link_t *ctx = (const gdma_chx_reg_ctx_link_t *)arg;
+	const gdma_retention_desc_t *ctx = (const gdma_retention_desc_t *)arg;
 
 	return sleep_retention_entries_create(ctx->link_list, ctx->link_num,
 					      REGDMA_LINK_PRI_GDMA, ctx->module_id);
@@ -911,8 +911,8 @@ static int dma_esp32_init(const struct device *dev)
 
 #if GDMA_SLEEP_RETENTION_ENABLED
 	for (uint8_t pair = 0; pair < GDMA_LL_PAIRS_PER_INST; pair++) {
-		const gdma_chx_reg_ctx_link_t *ctx =
-			&gdma_chx_regs_retention[hal_config.group_id][pair];
+		const gdma_retention_desc_t *ctx =
+			&gdma_retention_infos[hal_config.group_id][pair];
 		sleep_retention_module_init_param_t init_param = {
 			.cbs = {.create = {.handle = gdma_create_sleep_retention_cb,
 					   .arg = (void *)ctx}},
