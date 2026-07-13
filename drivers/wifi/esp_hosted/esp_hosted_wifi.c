@@ -4,21 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <pb_encode.h>
-#include <pb_decode.h>
-#include <esp_hosted_proto.pb.h>
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(esp_hosted, CONFIG_WIFI_LOG_LEVEL);
 
 #include <esp_hosted_wifi.h>
 #include <esp_hosted_hal.h>
 #include <esp_hosted_util.h>
 
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(esp_hosted, CONFIG_WIFI_LOG_LEVEL);
-
 static struct k_thread esp_hosted_event_thread;
 K_THREAD_STACK_DEFINE(esp_hosted_event_stack, CONFIG_WIFI_ESP_HOSTED_EVENT_TASK_STACK_SIZE);
-
-K_MSGQ_DEFINE(esp_hosted_msgq, sizeof(CtrlMsg), 8, 4);
 
 static esp_hosted_config_t esp_hosted_config = {
 	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
@@ -39,8 +33,11 @@ static int esp_hosted_request(const struct device *dev, CtrlMsgId msg_id, CtrlMs
 			      uint32_t timeout)
 {
 	size_t payload_size = 0;
-	esp_frame_t frame = {0};
-	esp_hosted_data_t *data = (esp_hosted_data_t *)dev->data;
+	esp_hosted_data_t *data = dev->data;
+
+	uint8_t buf[ESP_FRAME_SIZE] __aligned(4) = {0};
+	esp_hosted_frame_t *frame = (esp_hosted_frame_t *)buf;
+	esp_hosted_tlv_t *tlv = (esp_hosted_tlv_t *)frame->payload;
 
 	/* Init control message */
 	ctrl_msg->msg_type = CtrlMsgType_Req;
@@ -56,18 +53,18 @@ static int esp_hosted_request(const struct device *dev, CtrlMsgId msg_id, CtrlMs
 	}
 
 	/* Create frame. */
-	frame.if_type = ESP_HOSTED_SERIAL_IF;
-	frame.len = payload_size + TLV_HEADER_SIZE;
-	frame.offset = ESP_FRAME_HEADER_SIZE;
-	frame.seq_num = data->seq_num++;
+	frame->if_type = ESP_HOSTED_SERIAL_IF;
+	frame->len = payload_size + TLV_HEADER_SIZE;
+	frame->offset = ESP_FRAME_HEADER_SIZE;
+	frame->seq_num = data->seq_num++;
 
-	frame.ep_type = TLV_HEADER_TYPE_EP;
-	frame.ep_length = 8;
-	memcpy(frame.ep_value, TLV_HEADER_EP_RESP, 8);
-	frame.data_type = TLV_HEADER_TYPE_DATA;
-	frame.data_length = payload_size;
+	tlv->ep_type = TLV_HEADER_TYPE_EP;
+	tlv->ep_length = 8;
+	memcpy(tlv->ep_value, TLV_HEADER_EP_RESP, 8);
+	tlv->data_type = TLV_HEADER_TYPE_DATA;
+	tlv->data_length = payload_size;
 
-	pb_ostream_t stream = pb_ostream_from_buffer(frame.data_value, frame.data_length);
+	pb_ostream_t stream = pb_ostream_from_buffer(tlv->data_value, tlv->data_length);
 
 	if (!pb_encode(&stream, CtrlMsg_fields, ctrl_msg)) {
 		LOG_ERR("failed to encode protobuf");
@@ -75,10 +72,11 @@ static int esp_hosted_request(const struct device *dev, CtrlMsgId msg_id, CtrlMs
 	}
 
 	/* Update frame checksum and send the frame. */
-	frame.checksum = esp_hosted_frame_checksum(&frame);
-	if (esp_hosted_hal_spi_transfer(dev, &frame, NULL, ESP_FRAME_SIZE_ROUND(frame))) {
-		LOG_ERR("request %d failed", msg_id);
-		return -1;
+	frame->checksum = esp_hosted_frame_checksum(frame);
+
+	if (k_msgq_put(&data->tx_msgq, frame, K_MSEC(ESP_HOSTED_QUEUE_TIMEOUT))) {
+		LOG_ERR("Failed to enqueue message");
+		return -ENOBUFS;
 	}
 	return 0;
 }
@@ -86,12 +84,11 @@ static int esp_hosted_request(const struct device *dev, CtrlMsgId msg_id, CtrlMs
 static int esp_hosted_response(const struct device *dev, CtrlMsgId msg_id, CtrlMsg *ctrl_msg,
 			       uint32_t timeout)
 {
-	if (k_msgq_get(&esp_hosted_msgq, ctrl_msg, K_MSEC(timeout))) {
-		if (timeout == 0) {
-			return 0;
-		}
+	esp_hosted_data_t *data = dev->data;
+
+	if (k_msgq_get(&data->rx_msgq, ctrl_msg, K_MSEC(timeout))) {
 		LOG_ERR("failed to receive response for %d", msg_id);
-		return -1;
+		return -EAGAIN;
 	}
 
 	if (ctrl_msg->msg_id != msg_id) {
@@ -137,79 +134,103 @@ static void esp_hosted_event_task(const struct device *dev, void *p2, void *p3)
 {
 	esp_hosted_data_t *data = dev->data;
 
-	for (;; k_msleep(CONFIG_WIFI_ESP_HOSTED_EVENT_TASK_POLL_MS)) {
-		esp_frame_t frame = {0};
+	uint8_t tx_buf[ESP_FRAME_SIZE] __aligned(4) = {0};
+	esp_hosted_frame_t *tx = (esp_hosted_frame_t *)tx_buf;
+
+	uint8_t rx_buf[ESP_FRAME_SIZE] __aligned(4) = {0};
+	esp_hosted_frame_t *rx = (esp_hosted_frame_t *)rx_buf;
+
+	esp_hosted_frame_t *frame = (esp_hosted_frame_t *)data->acc_buf;
+
+	for (;;) {
+		bool rx_valid = false;
+
+		/* Reset the reassembly accumulator */
+		memset(frame, 0, ESP_FRAME_HEADER_SIZE);
 
 		do {
-			esp_frame_t ffrag = {0};
+			/*
+			 * If the ESP doesn't have anything to send, block
+			 * on the TX queue until an enqueued frame wakes us.
+			 */
+			if (tx->len == 0) {
+				k_timeout_t timeout =
+					esp_hosted_hal_data_ready(dev)
+						? K_NO_WAIT
+						: K_MSEC(CONFIG_WIFI_ESP_HOSTED_EVENT_TASK_POLL_MS);
 
-			if (((ESP_FRAME_SIZE * 2) - frame.len) < ESP_FRAME_SIZE) {
-				/* This shouldn't happen, but if it did stop the thread. */
-				LOG_ERR("spi buffer overflow offset: %d", frame.len);
-				return;
+				k_msgq_get(&data->tx_msgq, tx_buf, timeout);
 			}
 
-			if (esp_hosted_hal_spi_transfer(dev, NULL, &ffrag, ESP_FRAME_SIZE)) {
-				goto restart;
+			/* Nothing to send and nothing to receive. */
+			if (tx->len == 0 && !esp_hosted_hal_data_ready(dev)) {
+				rx_valid = false;
+				break;
 			}
 
-			if (!ESP_FRAME_CHECK_VALID(ffrag)) {
-				goto restart;
+			/* Full-duplex SPI transfer. */
+			if (esp_hosted_hal_spi_transfer(dev, tx_buf, rx_buf, ESP_FRAME_SIZE)) {
+				LOG_ERR("SPI transfer failed");
+				rx_valid = false;
+				break;
 			}
 
-			if (ffrag.checksum != esp_hosted_frame_checksum(&ffrag)) {
-				LOG_ERR("invalid checksum");
-				goto restart;
+			/* Reset the TX frame (if any) after it's been clocked out. */
+			if (tx->len != 0) {
+				memset(tx_buf, 0, ESP_FRAME_SIZE);
 			}
 
-			if (frame.len == 0) {
-				/* First frame */
-				memcpy(&frame, &ffrag, sizeof(esp_frame_t));
-			} else {
-				/* Fragmented frame */
-				if ((frame.seq_num + 1) != ffrag.seq_num) {
-					LOG_ERR("unexpected fragmented frame sequence");
-					goto restart;
-				}
+			/* Validate and append the received fragment to accumulator. */
+			rx_valid = esp_hosted_frame_append(frame, rx);
+		} while (rx_valid && (frame->flags & ESP_FRAME_FLAGS_FRAGMENT));
 
-				/* Append the current fragment's payload. */
-				memcpy(frame.payload + frame.len, ffrag.payload, ffrag.len);
+		if (!rx_valid) {
+			continue;
+		}
 
-				/* Update frame */
-				frame.len += ffrag.len;
-				frame.seq_num++;
-				frame.flags = ffrag.flags;
-				LOG_DBG("received fragmented frame, length: %d", frame.len);
-			}
-		} while (frame.flags & ESP_FRAME_FLAGS_FRAGMENT);
-
-		switch (frame.if_type) {
+		switch (frame->if_type) {
 		case ESP_HOSTED_SAP_IF:
 		case ESP_HOSTED_STA_IF: {
-			esp_hosted_recv(data->iface[frame.if_type], frame.payload, frame.len);
+			if (frame->len > NET_ETH_MAX_FRAME_SIZE) {
+				LOG_ERR("oversized ethernet frame: %u", frame->len);
+				continue;
+			}
+			esp_hosted_recv(data->iface[frame->if_type], frame->payload, frame->len);
 			continue;
 		}
 		case ESP_HOSTED_PRIV_IF: {
-			if (frame.priv_pkt_type == ESP_PACKET_TYPE_EVENT &&
-			    frame.event_type == ESP_PRIV_EVENT_INIT) {
-				LOG_INF("chip id %d spi_mhz %d caps 0x%x", frame.event_data[2],
-					frame.event_data[5], frame.event_data[8]);
+			esp_hosted_event_t *ev = (esp_hosted_event_t *)frame->payload;
+
+			if (frame->priv_pkt_type == ESP_PACKET_TYPE_EVENT &&
+			    ev->event_type == ESP_PRIV_EVENT_INIT && ev->event_len > 8) {
+				LOG_INF("chip id %d spi_mhz %d caps 0x%x", ev->event_data[2],
+					ev->event_data[5], ev->event_data[8]);
 			}
 			continue;
 		}
 		case ESP_HOSTED_SERIAL_IF: /* Requires further processing */
 			break;
 		default:
-			LOG_ERR("unexpected interface type %d", frame.if_type);
+			LOG_ERR("unexpected interface type %d", frame->if_type);
 			continue;
 		}
 
 #if defined(CONFIG_WIFI_ESP_HOSTED_DEBUG)
-		esp_hosted_frame_dump(&frame);
+		esp_hosted_frame_dump(frame);
 #endif
 
+		esp_hosted_tlv_t *tlv = (esp_hosted_tlv_t *)frame->payload;
+
+		/* Guard against a malformed TLV payload. */
+		if (frame->len < TLV_HEADER_SIZE ||
+		    tlv->data_length > frame->len - TLV_HEADER_SIZE) {
+			LOG_ERR("invalid TLV length %u (frame len %u)",
+				tlv->data_length, frame->len);
+			continue;
+		}
+
 		CtrlMsg ctrl_msg = CtrlMsg_init_zero;
-		pb_istream_t stream = pb_istream_from_buffer(frame.data_value, frame.data_length);
+		pb_istream_t stream = pb_istream_from_buffer(tlv->data_value, tlv->data_length);
 
 		if (!pb_decode(&stream, CtrlMsg_fields, &ctrl_msg)) {
 			LOG_ERR("failed to decode protobuf");
@@ -249,13 +270,12 @@ static void esp_hosted_event_task(const struct device *dev, void *p2, void *p3)
 		}
 
 		/* Queue control message resp/event for further processing. */
-		if (k_msgq_put(&esp_hosted_msgq, &ctrl_msg, K_FOREVER)) {
-			LOG_ERR("Failed to enqueue message");
-			return;
+		if (k_msgq_put(&data->rx_msgq, &ctrl_msg, K_MSEC(ESP_HOSTED_QUEUE_TIMEOUT))) {
+			LOG_ERR("rx queue full, dropping control message");
+			continue;
 		}
 
 		LOG_DBG("pushed msg_type %u msg_id %u", ctrl_msg.msg_type, ctrl_msg.msg_id);
-restart:;
 	}
 }
 
@@ -383,34 +403,35 @@ static int esp_hosted_ap_disable(const struct device *dev, struct net_if *iface)
 
 static int esp_hosted_send(const struct device *dev, struct net_pkt *pkt)
 {
-	esp_frame_t frame = {0};
 	size_t pkt_len = net_pkt_get_len(pkt);
 	size_t itf = esp_hosted_get_iface(dev);
-#if defined(CONFIG_NET_STATISTICS_WIFI)
 	esp_hosted_data_t *data = dev->data;
-#endif
+
+	uint8_t buf[ESP_FRAME_SIZE] __aligned(4) = {0};
+	esp_hosted_frame_t *frame = (esp_hosted_frame_t *)buf;
 
 	if (pkt_len > ESP_FRAME_MAX_PAYLOAD) {
 		LOG_ERR("packet length > SPI buf length");
-		return -ENOMEM;
+		return -EMSGSIZE;
 	}
 
 	/* Create frame. */
-	frame.if_type = itf;
-	frame.len = pkt_len;
-	frame.offset = ESP_FRAME_HEADER_SIZE;
+	frame->if_type = itf;
+	frame->len = pkt_len;
+	frame->offset = ESP_FRAME_HEADER_SIZE;
 
 	/* Copy frame payload. */
-	if (net_pkt_read(pkt, frame.payload, pkt_len) < 0) {
+	if (net_pkt_read(pkt, frame->payload, pkt_len) < 0) {
 		LOG_ERR("net_pkt_read failed");
 		return -EIO;
 	}
 
 	/* Update frame checksum and send the frame. */
-	frame.checksum = esp_hosted_frame_checksum(&frame);
-	if (esp_hosted_hal_spi_transfer(dev, &frame, NULL, ESP_FRAME_SIZE_ROUND(frame))) {
-		LOG_ERR("spi_transfer failed");
-		return -EIO;
+	frame->checksum = esp_hosted_frame_checksum(frame);
+
+	if (k_msgq_put(&data->tx_msgq, frame, K_MSEC(ESP_HOSTED_QUEUE_TIMEOUT))) {
+		LOG_ERR("Failed to enqueue message");
+		return -ENOBUFS;
 	}
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
@@ -584,15 +605,15 @@ static int esp_hosted_dev_init(const struct device *dev)
 {
 	esp_hosted_data_t *data = dev->data;
 
+	/* Initialize message queues. */
+	k_msgq_init(&data->tx_msgq, data->tx_qbuf, ESP_FRAME_SIZE,
+		    CONFIG_WIFI_ESP_HOSTED_TX_QUEUE_SIZE);
+	k_msgq_init(&data->rx_msgq, data->rx_qbuf, sizeof(CtrlMsg),
+		    CONFIG_WIFI_ESP_HOSTED_RX_QUEUE_SIZE);
+
 	/* Pins config and SPI init. */
 	if (esp_hosted_hal_init(dev)) {
 		return -EAGAIN;
-	}
-
-	/* Initialize semaphores. */
-	if (k_sem_init(&data->bus_sem, 1, 1)) {
-		LOG_ERR("k_sem_init() failed");
-		return -EINVAL;
 	}
 
 	data->tid = k_thread_create(&esp_hosted_event_thread, esp_hosted_event_stack,
@@ -618,7 +639,7 @@ static int esp_hosted_dev_init(const struct device *dev)
 	CtrlMsg_Resp_GetFwVersion *fw = &ctrl_msg.resp_get_fw_version;
 
 	if (esp_hosted_ctrl(dev, CtrlMsgId_Req_GetFwVersion, &ctrl_msg, ESP_HOSTED_SYNC_TIMEOUT)) {
-		LOG_INF("legacy firmware detected\n");
+		LOG_INF("legacy firmware detected");
 	} else {
 		data->fw_version.major1 = fw->major1;
 		data->fw_version.major2 = fw->major2;
