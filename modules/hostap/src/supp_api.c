@@ -431,6 +431,8 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 		}
 	case WPA_KEY_MGMT_PSK_SHA256:
 		return WIFI_SECURITY_TYPE_PSK_SHA256;
+	case WPA_KEY_MGMT_PSK_SHA384:
+		return WIFI_SECURITY_TYPE_PSK_SHA384;
 	case WPA_KEY_MGMT_SAE:
 		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON)) {
 			if (pwe == 1) {
@@ -450,6 +452,8 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 		return WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
 	case WPA_KEY_MGMT_FT_PSK:
 		return WIFI_SECURITY_TYPE_FT_PSK;
+	case WPA_KEY_MGMT_FT_PSK_SHA384:
+		return WIFI_SECURITY_TYPE_FT_PSK_SHA384;
 	case WPA_KEY_MGMT_FT_SAE:
 		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON)) {
 			return WIFI_SECURITY_TYPE_FT_SAE;
@@ -670,6 +674,7 @@ static int psk_validate(struct wifi_connect_req_params *params,
 	if (params->psk_is_pbkdf2) {
 		if ((params->security != WIFI_SECURITY_TYPE_PSK) &&
 		    (params->security != WIFI_SECURITY_TYPE_PSK_SHA256) &&
+		    (params->security != WIFI_SECURITY_TYPE_PSK_SHA384) &&
 		    (params->security != WIFI_SECURITY_TYPE_WPA_PSK) &&
 		    (params->security != WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL)) {
 			wpa_printf(MSG_ERROR,
@@ -914,6 +919,43 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 
 			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-PSK-SHA256",
 					   resp.network_id)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d group CCMP", resp.network_id)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d pairwise CCMP", resp.network_id)) {
+				goto out;
+			}
+		} else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA384) {
+			if (!wpa_cli_cmd_v(psk_format, resp.network_id, psk_null_terminated)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-PSK-SHA384",
+					   resp.network_id)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d group CCMP", resp.network_id)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d pairwise CCMP", resp.network_id)) {
+				goto out;
+			}
+		} else if (params->security == WIFI_SECURITY_TYPE_FT_PSK ||
+			   params->security == WIFI_SECURITY_TYPE_FT_PSK_SHA384) {
+			if (!wpa_cli_cmd_v(psk_format, resp.network_id, psk_null_terminated)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d key_mgmt %s",
+					   resp.network_id,
+					   params->security == WIFI_SECURITY_TYPE_FT_PSK_SHA384 ?
+					   "FT-PSK-SHA384" : "FT-PSK")) {
 				goto out;
 			}
 
