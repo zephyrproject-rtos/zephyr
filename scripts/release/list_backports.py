@@ -376,7 +376,10 @@ def main():
         for (p, lst) in pulls_with_invalid_issues:
             logging.error(
                 f'\nhttps://github.com/{repo.organization.login}/{repo.name}/pull/{p.number}: {lst}')
-        # return os.EX_DATAERR
+        # Only the CI check fails here. The date range mode is used to collect release
+        # notes over a whole branch and must not abort on the first bad PR.
+        if args.check:
+            return os.EX_DATAERR
 
     pulls_without_issues = bp.get_pulls_without_issues()
     if pulls_without_issues:
@@ -389,7 +392,8 @@ def main():
         for p in pulls_without_issues:
             logging.error(
                 f'https://github.com/{repo.organization.login}/{repo.name}/pull/{p.number}')
-        # return os.EX_DATAERR
+        if args.check:
+            return os.EX_DATAERR
 
     if args.check:
         if args.comment:
