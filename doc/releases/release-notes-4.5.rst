@@ -163,6 +163,11 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Architectures
+
+  * :kconfig:option:`CONFIG_ARM_MPU_CM7_UNMAPPED_REGION` (Arm Cortex-M7 catch-all MPU region
+    for unmapped addresses, erratum 1013783 workaround)
+
 * Audio
 
   * :c:member:`pcm_stream_cfg.gain_db`
