@@ -136,6 +136,8 @@ struct dwmac_priv {
 
 	K_KERNEL_STACK_MEMBER(rx_refill_thread_stack, RX_REFILL_STACK_SIZE);
 	struct k_thread rx_refill_thread;
+
+	struct k_spinlock spinlock;
 };
 
 /*

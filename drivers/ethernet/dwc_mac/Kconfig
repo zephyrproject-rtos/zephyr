@@ -110,6 +110,14 @@ config DWMAC_NB_RX_DESCS
 	  memory. A smaller number increases the risk of an overflow and
 	  dropped packets.
 
+config ETH_DWMAC_RX_REFILL_IRQ
+	bool "Receive buffer refill in interrupt"
+	depends on ETH_DWC_ETHER_1000_CORE
+	default y
+	help
+	  Refill the receive buffer pool in the rx interrupt, if
+	  possible, otherwise in the refill thread.
+
 config ETH_DWMAC_RX_REFILL_THREAD_PRIORITY
 	int "Receive buffer refill thread priority"
 	default 0

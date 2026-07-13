@@ -52,6 +52,8 @@ LOG_MODULE_REGISTER(dwmac_core, CONFIG_ETHERNET_LOG_LEVEL);
 #define TXDESC_PHYS_L(idx) phys_lo32(&p->tx_descs[idx])
 #define RXDESC_PHYS_L(idx) phys_lo32(&p->rx_descs[idx])
 
+static void dwmac_rx_refill(const struct device *dev);
+
 static uint32_t phys_lo32(void *addr)
 {
 	return (uint32_t)(uintptr_t)addr;
@@ -184,9 +186,10 @@ static void dwmac_receive(const struct device *dev)
 	unsigned int d_idx;
 	uint32_t des0;
 	uint16_t bytes_so_far;
+	unsigned int num_frags = 0U;
 
 	for (d_idx = p->rx_desc_tail; d_idx != p->rx_desc_head;
-	     INC_WRAP(d_idx, NB_RX_DESCS), k_sem_give(&p->free_rx_descs)) {
+	     INC_WRAP(d_idx, NB_RX_DESCS), num_frags++) {
 		d = &p->rx_descs[d_idx];
 		des0 = d->des0;
 
@@ -206,12 +209,13 @@ static void dwmac_receive(const struct device *dev)
 			}
 		}
 
-		if (p->rx_pkt == NULL) {
-			continue;
-		}
-
 		frag = p->rx_frags[d_idx];
 		p->rx_frags[d_idx] = NULL;
+
+		if (p->rx_pkt == NULL) {
+			net_buf_unref(frag);
+			continue;
+		}
 
 		sys_cache_data_invd_range(frag->data, frag->size);
 
@@ -242,27 +246,27 @@ static void dwmac_receive(const struct device *dev)
 	}
 
 	p->rx_desc_tail = d_idx;
+
+	for (unsigned int i = 0; i < num_frags; i++) {
+		if (IS_ENABLED(CONFIG_ETH_DWMAC_RX_REFILL_IRQ)) {
+			dwmac_rx_refill(dev);
+		} else {
+			k_sem_give(&p->free_rx_descs);
+		}
+	}
 }
 
-static void dwmac_rx_refill(const struct device *dev, unsigned int d_idx)
+static void dwmac_rx_refill_desc(const struct device *dev, struct net_buf *frag)
 {
 	struct dwmac_priv *p = dev->data;
 	struct dwmac_dma_desc *d;
-	struct net_buf *frag;
+	unsigned int d_idx;
+
+	d_idx = p->rx_desc_head;
+	p->rx_frags[d_idx] = frag;
 
 	d = &p->rx_descs[d_idx];
 	__ASSERT(!(d->des0 & RDES0_OWN), "rx desc still owned");
-
-	frag = p->rx_frags[d_idx];
-	if (frag == NULL) {
-		frag = net_pkt_get_reserve_rx_data(RX_FRAG_SIZE, K_FOREVER);
-		if (frag == NULL) {
-			k_sem_give(&p->free_rx_descs);
-			return;
-		}
-		__ASSERT_NO_MSG(frag->size == RX_FRAG_SIZE);
-		p->rx_frags[d_idx] = frag;
-	}
 
 	d->des1 = FIELD_PREP(RDES1_RBS1, frag->size) | RDES1_RCH;
 	d->des2 = phys_lo32(frag->data);
@@ -274,8 +278,24 @@ static void dwmac_rx_refill(const struct device *dev, unsigned int d_idx)
 	p->rx_desc_head = INC_WRAP(d_idx, NB_RX_DESCS);
 	DWMAC_REG_WRITE(DWMAC_DMARPDR, 0);
 
-	LOG_DBG("desc sem/head/tail=%d/%d/%d", k_sem_count_get(&p->free_rx_descs), p->rx_desc_head,
-		p->rx_desc_tail);
+	LOG_DBG("desc sem/head/tail=%d/%d/%d %s", k_sem_count_get(&p->free_rx_descs),
+		p->rx_desc_head, p->rx_desc_tail, k_is_in_isr() ? "ISR" : "thread");
+}
+
+static void dwmac_rx_refill(const struct device *dev)
+{
+	struct dwmac_priv *p = dev->data;
+	struct net_buf *frag;
+
+	frag = net_pkt_get_reserve_rx_data(RX_FRAG_SIZE, K_FOREVER);
+	if (frag == NULL) {
+		k_sem_give(&p->free_rx_descs);
+		return;
+	}
+
+	K_SPINLOCK(&p->spinlock) {
+		dwmac_rx_refill_desc(dev, frag);
+	}
 }
 
 static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
@@ -288,7 +308,7 @@ static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
 
 	while (true) {
 		if (k_sem_take(&p->free_rx_descs, K_FOREVER) == 0) {
-			dwmac_rx_refill(dev, p->rx_desc_head);
+			dwmac_rx_refill(dev);
 		}
 	}
 }
