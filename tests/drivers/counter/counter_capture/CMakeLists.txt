@@ -11,7 +11,9 @@ target_sources(app PRIVATE src/capture_test.c)
 # looped back to the capture pad when the board enables PWM and declares
 # "pwms" on /zephyr,user (no external wire), or a GPIO wired to the capture
 # pin on other real hardware.
-if(CONFIG_COUNTER_NATIVE_SIM)
+if(CONFIG_COUNTER_CAPTURE_MCUX_QTMR_XBAR_LOOPBACK)
+  target_sources(app PRIVATE src/mcux_qtmr_xbar_src.c)
+elseif(CONFIG_COUNTER_NATIVE_SIM)
   target_sources(app PRIVATE src/counter_capture_emul_src.c)
 elseif(CONFIG_PWM)
   target_sources(app PRIVATE src/pwm_src.c)
