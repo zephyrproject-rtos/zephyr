@@ -109,6 +109,17 @@ Generating SPDX documents
 
       west build -d BUILD_DIR [...]
 
+   ``west build`` enables the CMake file-based API (the build "object model" that ``west spdx``
+   relies on) automatically, so no separate initialization step is required.
+
+   If you configure CMake without ``west build`` -- or you disabled the file-based API with
+   ``west config build.cmake-file-api false`` -- create the query manually *before* configuring
+   the build:
+
+   .. code-block:: bash
+
+      west spdx --init -d BUILD_DIR
+
 #. Generate SPDX documents using this build directory:
 
    .. code-block:: bash

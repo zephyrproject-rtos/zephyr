@@ -390,6 +390,11 @@ You can :ref:`configure <west-config-cmd>` ``west build`` using these options.
      - String. If present, the value will be split according to shell rules and
        passed to CMake whenever a new build system is generated. See
        :ref:`west-building-cmake-config`.
+   * - ``build.cmake-file-api``
+     - Boolean, default ``true``. If ``true``, ``west build`` enables CMake's
+       `file-based API`_ before configuring, so the build's object model is
+       available to tooling such as :ref:`west spdx <west-spdx>`. Set to
+       ``false`` to skip it.
    * - ``build.dir-fmt``
      - String, default ``build``. The build folder format string, used by
        west whenever it needs to create or locate a build folder. The currently
@@ -882,5 +887,8 @@ commands do it).
 
 .. _CMake Generator:
    https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html
+
+.. _file-based API:
+   https://cmake.org/cmake/help/latest/manual/cmake-file-api.7.html
 
 .. _MCUboot: https://mcuboot.com/

@@ -1880,6 +1880,12 @@ Other notable changes
     SPDX 2.2/2.3 tag-value formats; pick the version with ``--spdx-version``.
     See :ref:`west-spdx`.
 
+  * ``west build`` now enables CMake's file-based API automatically, so
+    generating an SBOM no longer requires a separate ``west spdx --init`` step
+    before the build: build with :kconfig:option:`CONFIG_BUILD_OUTPUT_META`
+    enabled and then run ``west spdx``. Set
+    ``west config build.cmake-file-api false`` to opt out.
+
   * SPDX 3.0 output includes a :ref:`Build profile <west-spdx-build-profile>`
     that records build provenance: the toolchain (compilers, assembler, linker
     and archiver, with versions), the CMake generator and build type, selected
