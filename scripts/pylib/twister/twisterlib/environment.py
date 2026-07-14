@@ -715,6 +715,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
     parser.add_argument(
         "-O", "--outdir",
         default=os.path.join(os.getcwd(), "twister-out"),
+        type=os.path.normpath,
         help="Output directory for logs and binaries. "
              "Default is 'twister-out' in the current directory. "
              "This directory will be cleaned unless '--no-clean' is set. "
