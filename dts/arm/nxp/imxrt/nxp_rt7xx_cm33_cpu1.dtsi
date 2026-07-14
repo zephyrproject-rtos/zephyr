@@ -59,6 +59,15 @@
 		#clock-cells = <1>;
 	};
 
+	/* SLEEPCON1 (VDD1_SENSE) is the wakeup controller for CPU1. */
+	sleepcon1: wakeup-controller@44000 {
+		compatible = "nxp,sleepcon-wuc";
+		reg = <0x44000 0x1000>;
+		interrupts = <88 0>;
+		#wakeup-ctrl-cells = <1>;
+		status = "disabled";
+	};
+
 	ctimer5: timer@48000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x48000 0x1000>;
