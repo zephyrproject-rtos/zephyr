@@ -628,7 +628,7 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *param);
 
 /**
- * @brief Cancel any current Common Audio Profile procedure
+ * @brief Cancel any current Common Audio Profile Initiator procedure
  *
  * This will stop the current procedure from continuing and making it possible to run a new
  * Common Audio Profile procedure.
@@ -647,8 +647,12 @@ int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_p
  * The respective callbacks of the procedure will be called as part of this with the connection
  * pointer set to 0 and the err value set to -ECANCELED.
  *
+ * Use bt_cap_commander_cancel() to cancel any CAP Commander procedures.
+ * Use bt_cap_handover_cancel() to cancel any CAP Handover procedures.
+ *
  * @retval 0 on success
  * @retval -EALREADY if no procedure is active
+ * @retval -EOPNOTSUPP if a procedure is active, but it is not a Initiator procedure.
  */
 int bt_cap_initiator_unicast_audio_cancel(void);
 
@@ -1065,6 +1069,35 @@ struct bt_cap_handover_broadcast_to_unicast_param {
 int bt_cap_handover_broadcast_to_unicast(
 	const struct bt_cap_handover_broadcast_to_unicast_param *param);
 
+/**
+ * @brief Cancel any current Common Audio Profile Handover procedure
+ *
+ * This will stop the current procedure from continuing and making it possible to run a new
+ * Common Audio Profile procedure.
+ *
+ * It is recommended to do this if any existing procedure takes longer time than expected, which
+ * could indicate a missing response from the Common Audio Profile Acceptor.
+ *
+ * This does not send any requests to any Common Audio Profile Acceptors involved with the current
+ * procedure, and thus notifications from the Common Audio Profile Acceptors may arrive after this
+ * has been called. It is thus recommended to either only use this if a procedure has stalled, or
+ * wait a short while before starting any new Common Audio Profile procedure after this has been
+ * called to avoid getting notifications from the cancelled procedure. The wait time depends on
+ * the connection interval, the number of devices in the previous procedure and the behavior of the
+ * Common Audio Profile Acceptors.
+ *
+ * The respective callbacks of the procedure will be called as part of this with the connection
+ * pointer set to 0 and the err value set to -ECANCELED.
+ *
+ * Use bt_cap_commander_cancel() to cancel any CAP Commander procedures.
+ * Use bt_cap_initiator_cancel() to cancel any CAP Initiator procedures.
+ *
+ * @retval 0 on success
+ * @retval -EALREADY if no procedure is active
+ * @retval -EOPNOTSUPP if a procedure is active, but it is not a Initiator procedure.
+ */
+int bt_cap_handover_cancel(void);
+
 /** Callback structure for CAP procedures */
 struct bt_cap_commander_cb {
 	/**
@@ -1248,8 +1281,12 @@ int bt_cap_commander_discover(struct bt_conn *conn);
  * The respective callbacks of the procedure will be called as part of this with the connection
  * pointer set to NULL and the err value set to -ECANCELED.
  *
+ * Use bt_cap_initiator_cancel() to cancel any CAP Initiator procedures.
+ * Use bt_cap_handover_cancel() to cancel any CAP Handover procedures.
+ *
  * @retval 0 on success
  * @retval -EALREADY if no procedure is active
+ * @retval -EOPNOTSUPP if a procedure is active, but it is not a Commander procedure.
  */
 int bt_cap_commander_cancel(void);
 
