@@ -186,6 +186,7 @@ New APIs and options
       to request a specific TX power level per extended advertising set.
     * :c:member:`bt_conn_cb.le_param_update_rejected`
     * :c:func:`bt_iso_get_chan_by_conn`
+    * :c:func:`bt_iso_chan_state_str`
 
   * Mesh
 
