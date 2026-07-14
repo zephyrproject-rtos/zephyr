@@ -725,12 +725,17 @@ static int uart_ns16550_configure(const struct device *dev,
 	 * generate the interrupt at 8th byte
 	 * Clear TX and RX FIFO
 	 */
+#ifdef CONFIG_UART_NS16550_VARIANT_NS16450
+	/* Disable the FIFOs: interrupt per character. */
+	ns16550_outbyte(dev_cfg, FCR(dev), 0);
+#else
 	ns16550_outbyte(dev_cfg, FCR(dev),
 			FCR_FIFO | FCR_MODE0 | FCR_FIFO_8 | FCR_RCVRCLR | FCR_XMITCLR
 #ifdef CONFIG_UART_NS16550_VARIANT_NS16750
 			| FCR_FIFO_64
 #endif
 			);
+#endif /* CONFIG_UART_NS16550_VARIANT_NS16450 */
 
 	if ((ns16550_inbyte(dev_cfg, IIR(dev)) & IIR_FE) == IIR_FE) {
 #ifdef CONFIG_UART_NS16550_VARIANT_NS16750
