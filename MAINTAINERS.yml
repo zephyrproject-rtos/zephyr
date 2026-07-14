@@ -5216,6 +5216,7 @@ Raspberry Pi Pico Platforms:
   collaborators:
     - threeeights
     - ajf58
+    - dsseng
   files:
     - boards/raspberrypi/rpi_pico*/
     - boards/adafruit/kb2040/
@@ -6870,6 +6871,7 @@ West:
   collaborators:
     - threeeights
     - ajf58
+    - dsseng
   files:
     - modules/hal_rpi_pico/
   labels:
