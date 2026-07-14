@@ -201,3 +201,7 @@
 	/* AON_CLK for the sampling rate, plus the CGU gate via syscon. */
 	clocks = <&root_clock1>, <&syscon MCUX_LPACMP_CLK>;
 };
+
+&aon_gpio0 {
+	interrupts = <132 0>, <133 0>;
+};
