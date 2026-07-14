@@ -143,6 +143,20 @@ static int usbd_hid_request(struct usbd_class_data *const c_data,
 	return usbd_ep_buf_free(uds_ctx, buf);
 }
 
+static struct net_buf *hid_cth_response(struct usbd_class_data *const c_data,
+					const void *data, size_t len)
+{
+	struct net_buf *buf;
+
+	buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), len);
+	if (buf == NULL) {
+		return NULL;
+	}
+
+	net_buf_add_mem(buf, data, len);
+	return buf;
+}
+
 static int handle_set_idle(const struct device *dev,
 			   const struct usb_setup_packet *const setup)
 {
@@ -168,9 +182,9 @@ static int handle_set_idle(const struct device *dev,
 	return ret;
 }
 
-static int handle_get_idle(const struct device *dev,
-			   const struct usb_setup_packet *const setup,
-			   struct net_buf *const buf)
+static struct net_buf *handle_get_idle(const struct device *dev,
+				       struct usbd_class_data *const c_data,
+				       const struct usb_setup_packet *const setup)
 {
 	const uint8_t id = HID_GET_IDLE_ID(setup->wValue);
 	struct hid_device_data *const ddata = dev->data;
@@ -178,7 +192,7 @@ static int handle_get_idle(const struct device *dev,
 	uint32_t duration;
 
 	if (setup->wLength != 1U) {
-		return -ENOTSUP;
+		return NULL;
 	}
 
 	/*
@@ -186,7 +200,7 @@ static int handle_get_idle(const struct device *dev,
 	 * protocol error if no callback is provided but ID is 0.
 	 */
 	if (id != 0U && ops->get_idle == NULL) {
-		return -ENOTSUP;
+		return NULL;
 	}
 
 	if (id == 0U) {
@@ -197,9 +211,7 @@ static int handle_get_idle(const struct device *dev,
 	}
 
 	LOG_DBG("Get Idle, Report ID %u Duration %u", id, duration);
-	net_buf_add_u8(buf, duration);
-
-	return 0;
+	return hid_cth_response(c_data, &duration, 1);
 }
 
 static int verify_set_report(const struct device *dev,
@@ -264,45 +276,58 @@ static int handle_set_report(const struct device *dev,
 	return ret;
 }
 
-static int handle_get_report(const struct device *dev,
-			     const struct usb_setup_packet *const setup,
-			     struct net_buf *const buf)
+static struct net_buf *handle_get_report(const struct device *dev,
+					 struct usbd_class_data *const c_data,
+					 const struct usb_setup_packet *const setup)
 {
 	const uint8_t type = HID_GET_REPORT_TYPE(setup->wValue);
 	const uint8_t id = HID_GET_REPORT_ID(setup->wValue);
 	struct hid_device_data *const ddata = dev->data;
 	const struct hid_device_ops *ops = ddata->ops;
-	const size_t size = setup->wLength;
-	int ret = 0;
+	struct net_buf *buf;
+	size_t len = setup->wLength;
+	int ret;
 
 	switch (type) {
 	case HID_REPORT_TYPE_INPUT:
 		LOG_DBG("Get Report, Input Report ID %u", id);
-		ret = ops->get_report(dev, type, id, size, buf->data);
 		break;
 	case HID_REPORT_TYPE_OUTPUT:
 		LOG_DBG("Get Report, Output Report ID %u", id);
-		ret = ops->get_report(dev, type, id, size, buf->data);
 		break;
 	case HID_REPORT_TYPE_FEATURE:
 		LOG_DBG("Get Report, Feature Report ID %u", id);
-		ret = ops->get_report(dev, type, id, size, buf->data);
 		break;
 	default:
-		ret = -ENOTSUP;
-		break;
+		return NULL;
 	}
+
+	if (ops->get_report_size) {
+		ret = ops->get_report_size(dev, type, id);
+
+		if (ret <= 0) {
+			return NULL;
+		}
+
+		len = MIN(setup->wLength, ret);
+	}
+
+	buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), len);
+	if (buf == NULL) {
+		return NULL;
+	}
+
+	ret = ops->get_report(dev, type, id, len, buf->data);
 
 	if (ret > 0) {
 		__ASSERT(ret <= net_buf_tailroom(buf),
 			 "Buffer overflow in the HID driver");
 		net_buf_add(buf, MIN(net_buf_tailroom(buf), ret));
-		ret = 0;
-	} else if (ret == 0) {
-		ret = -ENOTSUP;
+	} else {
+		net_buf_drop(&buf);
 	}
 
-	return ret;
+	return buf;
 }
 
 static int handle_set_protocol(const struct device *dev,
@@ -340,59 +365,57 @@ static int handle_set_protocol(const struct device *dev,
 	return 0;
 }
 
-static int handle_get_protocol(const struct device *dev,
-			       const struct usb_setup_packet *const setup,
-			       struct net_buf *const buf)
+static struct net_buf *handle_get_protocol(const struct device *dev,
+					   struct usbd_class_data *const c_data,
+					   const struct usb_setup_packet *const setup)
 {
 	const struct hid_device_config *dcfg = dev->config;
 	struct hid_device_data *const ddata = dev->data;
 	struct usbd_hid_descriptor *const desc = dcfg->desc;
 
 	if (setup->wValue != 0 || setup->wLength != 1) {
-		return -ENOTSUP;
+		return NULL;
 	}
 
 	if (desc->if0.bInterfaceSubClass == 0) {
 		/* The device does not support the boot protocol */
-		return -ENOTSUP;
+		return NULL;
 	}
 
 	LOG_DBG("Get Protocol: %s", ddata->protocol ? "Report" : "Boot");
-	net_buf_add_u8(buf, ddata->protocol);
-
-	return 0;
+	return hid_cth_response(c_data, &ddata->protocol, 1);
 }
 
-static int handle_get_descriptor(const struct device *dev,
-				 const struct usb_setup_packet *const setup,
-				 struct net_buf *const buf)
+static struct net_buf *handle_get_descriptor(const struct device *dev,
+					     struct usbd_class_data *const c_data,
+					     const struct usb_setup_packet *const setup)
 {
 	const struct hid_device_config *dcfg = dev->config;
 	struct hid_device_data *const ddata = dev->data;
 	uint8_t desc_type = USB_GET_DESCRIPTOR_TYPE(setup->wValue);
 	uint8_t desc_idx = USB_GET_DESCRIPTOR_INDEX(setup->wValue);
 	struct usbd_hid_descriptor *const desc = dcfg->desc;
-	int ret = 0;
+	struct net_buf *buf;
 
 	switch (desc_type) {
 	case USB_DESC_HID_REPORT:
 		LOG_DBG("Get descriptor report");
-		net_buf_add_mem(buf, ddata->rdesc, MIN(ddata->rsize, setup->wLength));
+		buf = hid_cth_response(c_data, ddata->rdesc, MIN(ddata->rsize, setup->wLength));
 		break;
 	case USB_DESC_HID:
 		LOG_DBG("Get descriptor HID");
-		net_buf_add_mem(buf, &desc->hid, MIN(desc->hid.bLength, setup->wLength));
+		buf = hid_cth_response(c_data, &desc->hid, MIN(desc->hid.bLength, setup->wLength));
 		break;
 	case USB_DESC_HID_PHYSICAL:
 		LOG_DBG("Get descriptor physical %u", desc_idx);
-		ret = -ENOTSUP;
+		buf = NULL;
 		break;
 	default:
-		ret = -ENOTSUP;
+		buf = NULL;
 		break;
 	}
 
-	return ret;
+	return buf;
 }
 
 static int usbd_hid_ctd(struct usbd_class_data *const c_data,
@@ -433,38 +456,23 @@ static struct net_buf *usbd_hid_cth(struct usbd_class_data *const c_data,
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct net_buf *buf;
-	int ret = 0;
-
-	/* Get Report is problematic because ops->get_report() currently does
-	 * not make it possible to determine report size without passing
-	 * sufficiently large buffer first. For the time being, just allocate
-	 * setup->wLength bytes.
-	 */
-	buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), setup->wLength);
-	if (buf == NULL) {
-		return NULL;
-	}
 
 	switch (setup->bRequest) {
 	case USB_HID_GET_IDLE:
-		ret = handle_get_idle(dev, setup, buf);
+		buf = handle_get_idle(dev, c_data, setup);
 		break;
 	case USB_HID_GET_REPORT:
-		ret = handle_get_report(dev, setup, buf);
+		buf = handle_get_report(dev, c_data, setup);
 		break;
 	case USB_HID_GET_PROTOCOL:
-		ret = handle_get_protocol(dev, setup, buf);
+		buf = handle_get_protocol(dev, c_data, setup);
 		break;
 	case USB_SREQ_GET_DESCRIPTOR:
-		ret = handle_get_descriptor(dev, setup, buf);
+		buf = handle_get_descriptor(dev, c_data, setup);
 		break;
 	default:
-		ret = -ENOTSUP;
+		buf = NULL;
 		break;
-	}
-
-	if (ret) {
-		net_buf_drop(&buf);
 	}
 
 	return buf;
