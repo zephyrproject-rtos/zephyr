@@ -110,6 +110,41 @@ dl.section dd, dl.bug dd, dl.deprecated dd {
     text-align: center;
 }
 
+/* Landing page topic cards */
+.topic-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--spacing-medium);
+    margin: var(--spacing-large) 0;
+}
+
+.topic-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: var(--spacing-medium);
+    border: 1px solid var(--separator-color);
+    border-radius: var(--border-radius-medium);
+    background-color: var(--page-background-color);
+    text-decoration: none !important;
+    transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+.topic-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--box-shadow);
+}
+
+.topic-card .topic-card-title {
+    font-weight: 600;
+    color: var(--primary-dark-color) !important;
+}
+
+.topic-card .topic-card-desc {
+    font-size: var(--page-font-size);
+    color: var(--page-secondary-foreground-color) !important;
+}
+
 /* Driver ops "badges" */
 .op-badge {
     font-size: 12px;
