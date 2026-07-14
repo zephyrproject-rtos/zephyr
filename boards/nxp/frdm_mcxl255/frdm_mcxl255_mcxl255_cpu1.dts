@@ -8,6 +8,7 @@
 
 #include <nxp/mcx/nxp_mcxl255_cm0.dtsi>
 #include "frdm_mcxl255-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -18,6 +19,20 @@
 		zephyr,sram = &sram;
 		zephyr,console = &aon_lpuart0;
 		zephyr,shell-uart = &aon_lpuart0;
+	};
+
+	aliases {
+		sw0 = &user_button_sw5;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button_sw5: button_sw5 {
+			label = "User SW5";
+			gpios = <&aon_gpio0 9 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
 	};
 };
 

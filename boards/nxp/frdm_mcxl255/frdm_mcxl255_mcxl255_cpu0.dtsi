@@ -26,6 +26,7 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		sw2 = &user_button_5;
 		rtc = &rtc;
 	};
 
@@ -61,6 +62,12 @@
 			label = "User SW3";
 			gpios = <&gpio3 2 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		user_button_5: button_2 {
+			label = "User SW5";
+			gpios = <&aon_gpio0 9 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_2>;
 		};
 	};
 };
