@@ -38,6 +38,12 @@ DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
 
 PINCTRL_DT_INST_DEFINE(0);
 
+#ifdef CONFIG_SOC_SERIES_ESP32
+#define EMAC_EXT_ADDR (&EMAC_EXT)
+#else
+#define EMAC_EXT_ADDR (NULL)
+#endif
+
 int dwmac_bus_init(const struct device *dev)
 {
 	const struct dwmac_config *cfg = dev->config;
@@ -71,7 +77,7 @@ int dwmac_bus_init(const struct device *dev)
 			REG_SET_FIELD(PIN_CTRL, CLK_OUT1, 6);
 		}
 
-		emac_ll_clock_enable_rmii_output(&EMAC_EXT);
+		emac_ll_clock_enable_rmii_output(EMAC_EXT_ADDR);
 		esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, true);
 		ret = esp32_emac_config_apll_clock();
 		if (ret != 0) {
@@ -79,11 +85,11 @@ int dwmac_bus_init(const struct device *dev)
 		}
 #else
 		esp32_emac_iomux_rmii_clk_input(rmii_clk_gpio);
-		emac_ll_clock_enable_rmii_input(&EMAC_EXT);
+		emac_ll_clock_enable_rmii_input(EMAC_EXT_ADDR);
 #endif
 	} else { /* phy_connection_type: mii */
 		esp32_emac_iomux_init_mii();
-		emac_ll_clock_enable_mii(&EMAC_EXT);
+		emac_ll_clock_enable_mii(EMAC_EXT_ADDR);
 	}
 
 	return 0;
@@ -108,6 +114,12 @@ int dwmac_platform_init(const struct device *dev)
 
 	p->tx_descs = dwmac_tx_descs;
 	p->rx_descs = dwmac_rx_descs;
+
+#ifdef CONFIG_SOC_SERIES_ESP32P4
+	/* Deactivates store and forward mode for rx and tx */
+	/* Enable OSF (Operate on Second Frame) to improve performance */
+	DWMAC_REG_WRITE(DWMAC_DMAOMR, DWMAC_DMAOMR_OSF | FIELD_PREP(DWMAC_DMAOMR_RTC, 0x3));
+#endif
 
 	/* Configure ISR */
 	ret = esp_intr_alloc(DT_INST_IRQ_BY_IDX(0, 0, irq),
