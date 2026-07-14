@@ -63,9 +63,23 @@ struct usb_host_interface {
 	uint8_t alternate;
 };
 
-struct usb_host_ep {
-	/** Pointer to the endpoint descriptor */
-	struct usb_ep_descriptor *desc;
+/**
+ * @brief USB host pipe that represents a device endpoint
+ */
+struct usb_host_pipe {
+	/** Pipe specific info */
+	union {
+		/** Pointer to the endpoint descriptor */
+		struct usb_ep_descriptor *desc;
+		/** Control endpoint maximum packet size */
+		uint16_t control_mps;
+	};
+	/** Pointer to USB device */
+	struct usb_device *udev;
+	/** Opaque controller pipe handle, NULL if not used */
+	void *controller_pipe;
+	/** Pipe is enabled */
+	uint32_t enabled : 1;
 };
 
 /**
@@ -92,10 +106,10 @@ struct usb_device {
 	void *cfg_desc;
 	/** Pointers to device interfaces */
 	struct usb_host_interface ifaces[UHC_INTERFACES_MAX + 1];
-	/** Pointers to device OUT endpoints */
-	struct usb_host_ep ep_out[16];
-	/** Pointers to device IN endpoints */
-	struct usb_host_ep ep_in[16];
+	/** Pointers to device OUT pipes */
+	struct usb_host_pipe pipe_out[16];
+	/** Pointers to device IN pipes */
+	struct usb_host_pipe pipe_in[16];
 };
 
 /**
@@ -126,12 +140,6 @@ struct uhc_transfer {
 	struct net_buf *buf;
 	/** Endpoint to which request is associated */
 	uint8_t ep;
-	/** Endpoint type */
-	uint8_t type;
-	/** Maximum packet size */
-	uint16_t mps;
-	/** Interval, used for periodic transfers only */
-	uint16_t interval;
 	/** Start frame, used for periodic transfers only */
 	uint16_t start_frame;
 	/** Flag marks request buffer is queued */
@@ -195,6 +203,7 @@ struct uhc_event {
 	sys_snode_t node;
 	/** Event type */
 	enum uhc_event_type type;
+	/** Event type specific info */
 	union {
 		/** Event status value, if any */
 		int status;
@@ -307,10 +316,12 @@ struct uhc_api {
 	int (*bus_suspend)(const struct device *dev);
 	int (*bus_resume)(const struct device *dev);
 
-	int (*ep_enqueue)(const struct device *dev,
-			  struct uhc_transfer *const xfer);
-	int (*ep_dequeue)(const struct device *dev,
-			  struct uhc_transfer *const xfer);
+	int (*pipe_enable)(const struct device *dev, struct usb_host_pipe *pipe);
+	int (*pipe_disable)(const struct device *dev, struct usb_host_pipe *pipe);
+	int (*pipe_enqueue)(const struct device *dev,
+			    struct uhc_transfer *const xfer);
+	int (*pipe_dequeue)(const struct device *dev,
+			    struct uhc_transfer *const xfer);
 };
 /**
  * @endcond
@@ -501,6 +512,32 @@ struct net_buf *uhc_xfer_buf_alloc(const struct device *dev,
 void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf);
 
 /**
+ * @brief Enable host pipe at controller level
+ *
+ * Prepare controller resources for an pipe.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] udev   Pointer to USB device
+ * @param[in] ep     Endpoint address
+ *
+ * @return 0 on success, all other values should be treated as error.
+ */
+int uhc_pipe_enable(const struct device *dev, struct usb_device *const udev, uint8_t ep);
+
+/**
+ * @brief Disable host pipe at controller level
+ *
+ * Release controller resources for an pipe.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] udev   Pointer to USB device
+ * @param[in] ep     Endpoint address
+ *
+ * @return 0 on success, all other values should be treated as error.
+ */
+int uhc_pipe_disable(const struct device *dev, struct usb_device *const udev, uint8_t ep);
+
+/**
  * @brief Queue USB host controller transfer
  *
  * Add transfer to the queue. If the queue is empty, the transfer
@@ -512,7 +549,7 @@ void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf);
  * @return 0 on success, all other values should be treated as error.
  * @retval -EPERM controller is not initialized
  */
-int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer);
+int uhc_pipe_enqueue(const struct device *dev, struct uhc_transfer *const xfer);
 
 /**
  * @brief Remove a USB host controller transfers from queue
@@ -525,7 +562,7 @@ int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer);
  * @return 0 on success, all other values should be treated as error.
  * @retval -EPERM controller is not initialized
  */
-int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
+int uhc_pipe_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
 
 /**
  * @brief Initialize USB host controller

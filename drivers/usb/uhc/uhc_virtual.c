@@ -94,6 +94,7 @@ static int vrt_xfer_control(const struct device *dev,
 	struct uvb_packet *uvb_pkt;
 	uint8_t *data = NULL;
 	size_t length = 0;
+	uint16_t mps;
 
 	if (xfer->stage == UHC_CONTROL_STAGE_SETUP) {
 		LOG_DBG("Handle SETUP stage");
@@ -111,11 +112,13 @@ static int vrt_xfer_control(const struct device *dev,
 	}
 
 	if (buf != NULL && xfer->stage == UHC_CONTROL_STAGE_DATA) {
+		mps = uhc_get_udev_ep_mps(xfer->udev, xfer->ep);
+
 		if (USB_EP_DIR_IS_IN(xfer->ep)) {
-			length = MIN(net_buf_tailroom(buf), xfer->mps);
+			length = MIN(net_buf_tailroom(buf), mps);
 			data = net_buf_tail(buf);
 		} else {
-			length = MIN(buf->len, xfer->mps);
+			length = MIN(buf->len, mps);
 			data = buf->data;
 		}
 
@@ -167,12 +170,15 @@ static int vrt_xfer_bulk(const struct device *dev,
 	struct uvb_packet *uvb_pkt;
 	uint8_t *data;
 	size_t length;
+	uint16_t mps;
+
+	mps = uhc_get_udev_ep_mps(xfer->udev, xfer->ep);
 
 	if (USB_EP_DIR_IS_IN(xfer->ep)) {
-		length = MIN(net_buf_tailroom(buf), xfer->mps);
+		length = MIN(net_buf_tailroom(buf), mps);
 		data = net_buf_tail(buf);
 	} else {
-		length = MIN(buf->len, xfer->mps);
+		length = MIN(buf->len, mps);
 		data = buf->data;
 	}
 
@@ -216,6 +222,7 @@ static void vrt_assemble_frame(const struct device *dev)
 	/* TODO: add periodic transfers up to 90% */
 	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
 		uint8_t idx = get_xfer_ep_idx(tmp->ep);
+		uint8_t interval = uhc_get_udev_ep_interval(tmp->udev, tmp->ep);
 
 		/* There could be multiple transfers queued for the same
 		 * endpoint, for now we only allow one to be scheduled per frame.
@@ -224,14 +231,14 @@ static void vrt_assemble_frame(const struct device *dev)
 			continue;
 		}
 
-		if (tmp->interval) {
+		if (interval) {
 			if (tmp->start_frame != priv->frame_number) {
 				continue;
 			}
 
-			tmp->start_frame = priv->frame_number + tmp->interval;
+			tmp->start_frame = priv->frame_number + interval;
 			LOG_DBG("Interrupt transfer s.f. %u f.n. %u interval %u",
-				tmp->start_frame, priv->frame_number, tmp->interval);
+				tmp->start_frame, priv->frame_number, interval);
 		}
 
 		bm |= BIT(idx);
@@ -288,6 +295,7 @@ static void vrt_hrslt_success(const struct device *dev,
 	struct net_buf *buf = xfer->buf;
 	bool finished = false;
 	size_t length;
+	uint16_t mps;
 
 	switch (pkt->request) {
 	case UVB_REQUEST_SETUP:
@@ -309,8 +317,10 @@ static void vrt_hrslt_success(const struct device *dev,
 			break;
 		}
 
+		mps = uhc_get_udev_ep_mps(xfer->udev, xfer->ep);
+
 		if (USB_EP_DIR_IS_OUT(pkt->ep)) {
-			length = MIN(buf->len, xfer->mps);
+			length = MIN(buf->len, mps);
 			net_buf_pull(buf, length);
 			LOG_DBG("OUT chunk %zu out of %u", length, buf->len);
 			if (buf->len == 0) {
@@ -323,13 +333,13 @@ static void vrt_hrslt_success(const struct device *dev,
 		} else {
 			length = MIN(net_buf_tailroom(buf), pkt->length);
 			net_buf_add(buf, length);
-			if (pkt->length > xfer->mps) {
+			if (pkt->length > mps) {
 				LOG_ERR("Ambiguous packet with the length %zu",
 					pkt->length);
 			}
 
 			LOG_DBG("IN chunk %zu out of %zu", length, net_buf_tailroom(buf));
-			if (pkt->length < xfer->mps || !net_buf_tailroom(buf)) {
+			if (pkt->length < mps || !net_buf_tailroom(buf)) {
 				if (pkt->ep == USB_CONTROL_EP_IN && !xfer->no_status) {
 					xfer->stage = UHC_CONTROL_STAGE_STATUS;
 				} else {
@@ -549,11 +559,12 @@ static int uhc_vrt_enqueue(const struct device *dev,
 			   struct uhc_transfer *const xfer)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	uint8_t interval = uhc_get_udev_ep_interval(xfer->udev, xfer->ep);
 
-	if (xfer->interval) {
-		xfer->start_frame = priv->frame_number + xfer->interval;
+	if (interval) {
+		xfer->start_frame = priv->frame_number + interval;
 		LOG_DBG("New interrupt transfer s.f. %u f.n. %u interval %u",
-			xfer->start_frame, priv->frame_number, xfer->interval);
+			xfer->start_frame, priv->frame_number, interval);
 	}
 
 	uhc_xfer_append(dev, xfer);
@@ -577,6 +588,22 @@ static int uhc_vrt_dequeue(const struct device *dev,
 	}
 
 	irq_unlock(key);
+
+	return 0;
+}
+
+static int uhc_vrt_pipe_enable(const struct device *dev, struct usb_host_pipe *pipe)
+{
+	(void)dev;
+	(void)pipe;
+
+	return 0;
+}
+
+static int uhc_vrt_pipe_disable(const struct device *dev, struct usb_host_pipe *pipe)
+{
+	(void)dev;
+	(void)pipe;
 
 	return 0;
 }
@@ -647,8 +674,10 @@ static const struct uhc_api uhc_vrt_api = {
 	.bus_suspend = uhc_vrt_bus_suspend,
 	.bus_resume = uhc_vrt_bus_resume,
 
-	.ep_enqueue = uhc_vrt_enqueue,
-	.ep_dequeue = uhc_vrt_dequeue,
+	.pipe_enable = uhc_vrt_pipe_enable,
+	.pipe_disable = uhc_vrt_pipe_disable,
+	.pipe_enqueue = uhc_vrt_enqueue,
+	.pipe_dequeue = uhc_vrt_dequeue,
 };
 
 #define DT_DRV_COMPAT zephyr_uhc_virtual

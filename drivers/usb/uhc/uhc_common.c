@@ -96,12 +96,9 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    void *const cb,
 				    void *const cb_priv)
 {
-	uint8_t ep_idx = USB_EP_GET_IDX(ep) & 0xF;
 	const struct uhc_api *api = dev->api;
 	struct uhc_transfer *xfer = NULL;
-	uint16_t mps;
-	uint16_t interval;
-	uint8_t type;
+	struct usb_host_pipe *pipe;
 
 	api->lock(dev);
 
@@ -109,30 +106,13 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 		goto xfer_alloc_error;
 	}
 
-	if (ep_idx == 0) {
-		interval = 0;
-		type = USB_EP_TYPE_CONTROL;
-		mps = udev->dev_desc.bMaxPacketSize0;
-	} else {
-		struct usb_ep_descriptor *ep_desc;
-
-		if (USB_EP_DIR_IS_IN(ep)) {
-			ep_desc = udev->ep_in[ep_idx].desc;
-		} else {
-			ep_desc = udev->ep_out[ep_idx].desc;
-		}
-
-		if (ep_desc == NULL) {
-			LOG_ERR("Endpoint 0x%02x is not configured", ep);
-			goto xfer_alloc_error;
-		}
-
-		mps = ep_desc->wMaxPacketSize;
-		interval = ep_desc->bInterval;
-		type = ep_desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK;
+	pipe = uhc_get_udev_pipe(udev, ep);
+	if ((pipe == NULL) || (!pipe->enabled)) {
+		LOG_ERR("Endpoint 0x%02x is not configured", ep);
+		goto xfer_alloc_error;
 	}
 
-	LOG_DBG("Allocate xfer, ep 0x%02x mps %u cb %p", ep, mps, cb);
+	LOG_DBG("Allocate xfer, ep 0x%02x cb %p", ep, cb);
 
 	if (k_mem_slab_alloc(&uhc_xfer_pool, (void **)&xfer, K_NO_WAIT)) {
 		LOG_ERR("Failed to allocate transfer");
@@ -141,9 +121,6 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 
 	memset(xfer, 0, sizeof(struct uhc_transfer));
 	xfer->ep = ep;
-	xfer->mps = mps;
-	xfer->interval = interval;
-	xfer->type = type;
 	xfer->udev = udev;
 	xfer->cb = cb;
 	xfer->priv = cb_priv;
@@ -220,47 +197,131 @@ int uhc_xfer_buf_add(const struct device *dev,
 	return ret;
 }
 
-int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
+int uhc_pipe_enable(const struct device *dev, struct usb_device *const udev, uint8_t ep)
 {
 	const struct uhc_api *api = dev->api;
+	struct usb_host_pipe *pipe;
 	int ret;
 
 	api->lock(dev);
 
 	if (!uhc_is_initialized(dev)) {
 		ret = -EPERM;
-		goto ep_enqueue_error;
+		goto pipe_enable_error;
 	}
 
-	xfer->queued = 1;
-	ret = api->ep_enqueue(dev, xfer);
-	if (ret) {
-		xfer->queued = 0;
+	if (api->pipe_enable == NULL) {
+		ret = -ENOSYS;
+		goto pipe_enable_error;
 	}
 
+	pipe = uhc_get_udev_pipe(udev, ep);
+	if ((pipe == NULL) || (pipe->desc == NULL)) {
+		ret = -EINVAL;
+		goto pipe_enable_error;
+	}
 
-ep_enqueue_error:
+	pipe->udev = udev; /* it is needed in pipe_enable */
+	ret = api->pipe_enable(dev, pipe);
+	pipe->enabled = ret ? false : true;
+	pipe->udev = ret ? NULL : udev;
+
+pipe_enable_error:
 	api->unlock(dev);
 
 	return ret;
 }
 
-int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
+int uhc_pipe_disable(const struct device *dev, struct usb_device *const udev, uint8_t ep)
 {
 	const struct uhc_api *api = dev->api;
+	struct usb_host_pipe *pipe;
 	int ret;
 
 	api->lock(dev);
 
 	if (!uhc_is_initialized(dev)) {
 		ret = -EPERM;
-		goto ep_dequeue_error;
+		goto pipe_disable_error;
 	}
 
-	ret = api->ep_dequeue(dev, xfer);
+	if (api->pipe_disable == NULL) {
+		ret = -ENOSYS;
+		goto pipe_disable_error;
+	}
+
+	pipe = uhc_get_udev_pipe(udev, ep);
+	if (pipe == NULL) {
+		ret = -EINVAL;
+		goto pipe_disable_error;
+	}
+
+	ret = api->pipe_disable(dev, pipe);
+	if (ret == 0) {
+		pipe->enabled = false;
+		pipe->udev = NULL;
+	}
+
+pipe_disable_error:
+	api->unlock(dev);
+
+	return ret;
+}
+
+int uhc_pipe_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
+{
+	const struct uhc_api *api = dev->api;
+	struct usb_host_pipe *pipe;
+	int ret;
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto pipe_enqueue_error;
+	}
+
+	pipe = uhc_get_udev_pipe(xfer->udev, xfer->ep);
+	if ((pipe == NULL) || (!pipe->enabled)) {
+		ret = -ENODEV;
+		goto pipe_enqueue_error;
+	}
+
+	xfer->queued = 1;
+	ret = api->pipe_enqueue(dev, xfer);
+	if (ret) {
+		xfer->queued = 0;
+	}
+
+pipe_enqueue_error:
+	api->unlock(dev);
+
+	return ret;
+}
+
+int uhc_pipe_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
+{
+	const struct uhc_api *api = dev->api;
+	struct usb_host_pipe *pipe;
+	int ret;
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto pipe_dequeue_error;
+	}
+
+	pipe = uhc_get_udev_pipe(xfer->udev, xfer->ep);
+	if (pipe == NULL) {
+		ret = -ENODEV;
+		goto pipe_dequeue_error;
+	}
+
+	ret = api->pipe_dequeue(dev, xfer);
 	xfer->queued = 0;
 
-ep_dequeue_error:
+pipe_dequeue_error:
 	api->unlock(dev);
 
 	return ret;

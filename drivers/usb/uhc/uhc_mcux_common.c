@@ -116,7 +116,7 @@ int uhc_mcux_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
 	usb_host_pipe_t *mcux_ep;
 	usb_host_cancel_param_t cancel_param;
 
-	mcux_ep = uhc_mcux_init_hal_ep(dev, xfer);
+	mcux_ep = uhc_mcux_get_hal_ep(xfer->udev, xfer->ep);
 	if (mcux_ep == NULL) {
 		return -ENOMEM;
 	}
@@ -215,87 +215,53 @@ usb_status_t USB_HostHelperGetPeripheralInformation(usb_device_handle deviceHand
 	return kStatus_USB_Success;
 }
 
-static usb_host_pipe_handle uhc_mcux_check_hal_ep(const struct device *dev,
-						  struct uhc_transfer *const xfer)
+usb_host_pipe_handle uhc_mcux_get_hal_ep(struct usb_device *udev,
+					 uint8_t ep)
 {
-	struct uhc_mcux_data *priv = uhc_get_private(dev);
-	usb_host_pipe_t *mcux_ep = NULL;
-	uint8_t i;
-	usb_status_t status;
+	struct usb_host_pipe *pipe = uhc_get_udev_pipe(udev, ep);
 
-	/* if already initialized */
-	for (i = 0; i < USB_HOST_CONFIG_MAX_PIPES; i++) {
-		uint8_t direction;
-
-		if (USB_EP_GET_IDX(xfer->ep) == 0) {
-			direction = 0;
-		} else {
-			direction = USB_EP_GET_DIR(xfer->ep) ? USB_IN : USB_OUT;
-		}
-
-		if (priv->mcux_eps[i] != NULL &&
-		    priv->mcux_eps[i]->endpointAddress == USB_EP_GET_IDX(xfer->ep) &&
-		    priv->mcux_eps[i]->direction == direction &&
-		    priv->mcux_eps[i]->deviceHandle == xfer->udev) {
-			mcux_ep = priv->mcux_eps[i];
-			break;
-		}
-	}
-
-	if (mcux_ep == NULL) {
+	if (pipe == NULL) {
 		return NULL;
 	}
 
-	/* If the ep's attributes have changed, close the ep and return NULL.
-	 * The ep will be re-initialized with new attributes.
-	 */
-	if (mcux_ep->pipeType != xfer->type ||
-	    mcux_ep->maxPacketSize != USB_MPS_EP_SIZE(xfer->mps) ||
-	    mcux_ep->numberPerUframe != USB_MPS_ADDITIONAL_TRANSACTIONS(xfer->mps) + 1 ||
-	    priv->mcux_eps_interval[i] != xfer->interval) {
-		status = priv->mcux_if->controllerClosePipe(priv->mcux_host.controllerHandle,
-							    mcux_ep);
-		if (status != kStatus_USB_Success) {
-			return NULL;
-		}
-
-		uhc_mcux_lock(dev);
-		priv->mcux_eps[i] = NULL;
-		priv->mcux_eps_interval[i] = 0;
-		uhc_mcux_unlock(dev);
-		mcux_ep = NULL;
-	}
-
-	return mcux_ep;
+	return pipe->controller_pipe;
 }
 
-usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev, struct uhc_transfer *const xfer)
+static usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev, struct usb_host_pipe *pipe)
 {
 	usb_status_t status;
 	usb_host_pipe_t *mcux_ep;
 	struct uhc_mcux_data *priv = uhc_get_private(dev);
 	usb_host_pipe_init_t pipe_init;
-	uint8_t i;
+	uint8_t idx;
+	uint8_t ep;
 
-	/* if already initialized */
-	mcux_ep = uhc_mcux_check_hal_ep(dev, xfer);
-	if (mcux_ep != NULL) {
-		return mcux_ep;
+	ep = uhc_get_udev_ep(pipe->udev, pipe);
+	if (ep < 0) {
+		return NULL;
 	}
+	idx = USB_EP_GET_IDX(ep) & 0xFU;
 
 	/* USB_HostHelperGetPeripheralInformation uses this value as first parameter */
-	pipe_init.devInstance = xfer->udev;
+	pipe_init.devInstance = pipe->udev;
 	pipe_init.nakCount = USB_HOST_CONFIG_MAX_NAK;
-	pipe_init.maxPacketSize = USB_MPS_EP_SIZE(xfer->mps);
-	pipe_init.endpointAddress = USB_EP_GET_IDX(xfer->ep);
-	pipe_init.direction = USB_EP_GET_IDX(xfer->ep) == 0 ? USB_OUT :
-			      USB_EP_GET_DIR(xfer->ep) ? USB_IN : USB_OUT;
-	/* Current Zephyr Host stack is experimental, the endpoint's interval,
-	 * 'number per uframe' and the endpoint type cannot be got yet.
-	 */
-	pipe_init.numberPerUframe = USB_MPS_ADDITIONAL_TRANSACTIONS(xfer->mps);
-	pipe_init.interval = xfer->interval;
-	pipe_init.pipeType = xfer->type;
+	if (idx == 0) {
+		pipe_init.maxPacketSize = pipe->control_mps;
+		pipe_init.endpointAddress = 0;
+		pipe_init.direction = USB_OUT;
+		pipe_init.numberPerUframe = 1;
+		pipe_init.interval = 0;
+		pipe_init.pipeType = USB_EP_TYPE_CONTROL;
+	} else {
+		pipe_init.maxPacketSize = USB_MPS_EP_SIZE(pipe->desc->wMaxPacketSize);
+		pipe_init.endpointAddress = USB_EP_GET_IDX(pipe->desc->bEndpointAddress);
+		pipe_init.direction = USB_EP_GET_IDX(pipe->desc->bEndpointAddress) == 0 ? USB_OUT :
+				USB_EP_GET_DIR(pipe->desc->bEndpointAddress) ? USB_IN : USB_OUT;
+		pipe_init.numberPerUframe =
+				USB_MPS_ADDITIONAL_TRANSACTIONS(pipe->desc->wMaxPacketSize);
+		pipe_init.interval = pipe->desc->bInterval;
+		pipe_init.pipeType = pipe->desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK;
+	}
 
 	status = priv->mcux_if->controllerOpenPipe(priv->mcux_host.controllerHandle,
 						   (usb_host_pipe_handle *)&mcux_ep, &pipe_init);
@@ -304,29 +270,42 @@ usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev, struct uhc_trans
 		return NULL;
 	}
 
-	/* Initialize mcux hal endpoint pipe
-	 * TODO: Need one way to release the pipe.
-	 * Otherwise the priv->mcux_eps will be used up after
-	 * supporting hub and connecting/disconnecting multiple times.
-	 * For example: add endpoint/pipe init and de-init controller
-	 * interface to resolve the issue.
-	 */
-	uhc_mcux_lock(dev);
-	for (i = 0; i < USB_HOST_CONFIG_MAX_PIPES; i++) {
-		if (priv->mcux_eps[i] == NULL) {
-			priv->mcux_eps[i] = mcux_ep;
-			priv->mcux_eps_interval[i] = xfer->interval;
-			break;
-		}
-	}
-	uhc_mcux_unlock(dev);
-
-	if (i >= USB_HOST_CONFIG_MAX_PIPES) {
-		priv->mcux_if->controllerClosePipe(priv->mcux_host.controllerHandle, mcux_ep);
-		mcux_ep = NULL;
-	}
-
+	pipe->controller_pipe = mcux_ep;
 	return mcux_ep;
+}
+
+int uhc_mcux_pipe_enable(const struct device *dev, struct usb_host_pipe *pipe)
+{
+	if ((pipe->desc == NULL) || (pipe->udev == NULL)) {
+		return -EINVAL;
+	}
+
+	return uhc_mcux_init_hal_ep(dev, pipe) == NULL ? -ENOMEM : 0;
+}
+
+int uhc_mcux_pipe_disable(const struct device *dev, struct usb_host_pipe *pipe)
+{
+	struct uhc_mcux_data *priv = uhc_get_private(dev);
+	usb_host_pipe_t *mcux_ep;
+	usb_status_t status;
+
+	if ((pipe->desc == NULL) || (pipe->udev == NULL)) {
+		return -EINVAL;
+	}
+
+	mcux_ep = pipe->controller_pipe;
+	if (mcux_ep == NULL) {
+		return 0;
+	}
+
+	status = priv->mcux_if->controllerClosePipe(priv->mcux_host.controllerHandle,
+						    mcux_ep);
+	if (status != kStatus_USB_Success) {
+		return -EIO;
+	}
+
+	pipe->controller_pipe = NULL;
+	return 0;
 }
 
 int uhc_mcux_hal_init_transfer_common(const struct device *dev, usb_host_transfer_t *mcux_xfer,
