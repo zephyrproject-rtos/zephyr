@@ -435,13 +435,13 @@ int arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
 #define ARCH_IRQ_CONNECT(irq, pri, isr, arg, flags)
 #endif
 
-#ifdef CONFIG_PCIE
+#ifdef CONFIG_PCIE_HOST
 /**
  * @def ARCH_PCIE_IRQ_CONNECT(bdf, irq, pri, isr, arg, flags)
  *
  * @see PCIE_IRQ_CONNECT()
  */
-#endif /* CONFIG_PCIE */
+#endif /* CONFIG_PCIE_HOST */
 
 /**
  * @def ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p)

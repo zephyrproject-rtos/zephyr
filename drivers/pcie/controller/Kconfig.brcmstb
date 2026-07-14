@@ -4,6 +4,7 @@
 config PCIE_BRCMSTB
 	bool "Broadcom Set-top box SoC PCIe Driver"
 	default y
+	select PCIE_HOST_CONTROLLER_HAS_DRIVER
 	depends on DT_HAS_BRCM_BRCMSTB_PCIE_ENABLED
 	help
 	  Enable Driver for Broadcom Set-top box SoC PCIe controllers.

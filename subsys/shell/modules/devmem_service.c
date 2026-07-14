@@ -53,13 +53,13 @@ static int memory_dump(const struct shell *sh, mem_addr_t phys_addr, size_t size
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_MMU) || defined(CONFIG_PCIE)
+#if defined(CONFIG_MMU) || defined(CONFIG_PCIE_HOST)
 	device_map(&addr, phys_addr, size, K_MEM_CACHE_NONE);
 
 	shell_print(sh, "Mapped 0x%lx to 0x%lx\n", phys_addr, addr);
 #else
 	addr = phys_addr;
-#endif /* defined(CONFIG_MMU) || defined(CONFIG_PCIE) */
+#endif /* defined(CONFIG_MMU) || defined(CONFIG_PCIE_HOST) */
 
 	for (; size > 0;
 	     addr += SHELL_HEXDUMP_BYTES_IN_LINE, size -= MIN(size, SHELL_HEXDUMP_BYTES_IN_LINE)) {
@@ -91,7 +91,7 @@ static int memory_dump(const struct shell *sh, mem_addr_t phys_addr, size_t size
 		shell_hexdump_line(sh, addr, hex_data, MIN(size, SHELL_HEXDUMP_BYTES_IN_LINE));
 	}
 
-#if defined(CONFIG_MMU) || defined(CONFIG_PCIE)
+#if defined(CONFIG_MMU) || defined(CONFIG_PCIE_HOST)
 	device_unmap(addr, size);
 #endif
 
@@ -326,13 +326,13 @@ static int cmd_devmem(const struct shell *sh, size_t argc, char **argv)
 
 	phys_addr = strtoul(argv[1], NULL, 16);
 
-#if defined(CONFIG_MMU) || defined(CONFIG_PCIE)
+#if defined(CONFIG_MMU) || defined(CONFIG_PCIE_HOST)
 	device_map((mm_reg_t *)&addr, phys_addr, 0x100, K_MEM_CACHE_NONE);
 
 	shell_print(sh, "Mapped 0x%lx to 0x%lx\n", phys_addr, addr);
 #else
 	addr = phys_addr;
-#endif /* defined(CONFIG_MMU) || defined(CONFIG_PCIE) */
+#endif /* defined(CONFIG_MMU) || defined(CONFIG_PCIE_HOST) */
 
 	if (argc < 3) {
 		width = 32;
