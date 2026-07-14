@@ -32,6 +32,7 @@
 #include "common/assert.h"
 #include "common/bt_str.h"
 
+#include "host/hci_core.h"
 #include "host/conn_internal.h"
 #include "host/l2cap_internal.h"
 #include "host/keys.h"
@@ -55,6 +56,10 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 	struct bt_hci_cp_connect *cp;
 	struct bt_conn *conn;
 	struct net_buf *buf;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return NULL;
+	}
 
 	conn = bt_conn_lookup_addr_br(peer);
 	if (conn) {
