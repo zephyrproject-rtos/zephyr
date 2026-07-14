@@ -260,7 +260,7 @@ static int tla2528_init(const struct device *dev)
 	return 0;
 }
 
-static const DEVICE_API(gpio, gpio_tla2528_api) = {
+static DEVICE_API(gpio, gpio_tla2528_api) = {
 	.pin_configure = tla2528_pin_configure,
 	.port_get_raw = tla2528_port_get_raw,
 	.port_set_masked_raw = tla2528_port_set_masked_raw,
