@@ -20,4 +20,15 @@
 			input-enable;
 		};
 	};
+
+	/omit-if-no-ref/ xspi1_default: xspi1_default {
+		xspi1-pinmux {
+			pinmux = <RZN_PINMUX(PORT_01, 0, 28)>, /* XSPI1_CKP */
+				 <RZN_PINMUX(PORT_01, 1, 28)>, /* XSPI1_CS0 */
+				 <RZN_PINMUX(PORT_01, 4, 28)>, /* XSPI1_IO0 */
+				 <RZN_PINMUX(PORT_01, 5, 28)>, /* XSPI1_IO1 */
+				 <RZN_PINMUX(PORT_01, 6, 28)>, /* XSPI1_IO2 */
+				 <RZN_PINMUX(PORT_01, 7, 28)>; /* XSPI1_IO3 */
+		};
+	};
 };
