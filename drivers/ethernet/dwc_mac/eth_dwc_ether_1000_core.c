@@ -38,6 +38,7 @@ LOG_MODULE_REGISTER(dwmac_core, CONFIG_ETHERNET_LOG_LEVEL);
 #define TDES0_CIC GENMASK(23, 22)
 
 #define TDES1_TBS1 GENMASK(12, 0)
+#define TDES1_TBS2 GENMASK(28, 16)
 
 #define RDES0_OWN BIT(31)
 #define RDES0_FL  GENMASK(29, 16)
@@ -111,8 +112,16 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 					break;
 				}
 				k_sem_give(&p->free_tx_descs);
+				/* we can put 2 fragments in one descriptor */
+				if (frag1->frags != NULL) {
+					frag1 = frag1->frags;
+				}
 			}
 			return -ENOMEM;
+		}
+		/* we can put 2 fragments in one descriptor */
+		if (frag->frags != NULL) {
+			frag = frag->frags;
 		}
 	}
 
@@ -127,20 +136,28 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 
 		d = &p->tx_descs[d_idx];
 		d->des0 = des0_flags;
-		d->des1 = FIELD_PREP(TDES1_TBS1, frag->len);
-		d->des2 = phys_lo32(frag->data);
-
-		if (!frag->frags) {
-			d->des0 |= TDES0_LS;
-		}
 
 		if (d_idx == NB_TX_DESCS - 1) {
 			d->des0 |= TDES0_TER;
 		}
 
+		d->des1 = FIELD_PREP(TDES1_TBS1, frag->len);
+		d->des2 = phys_lo32(frag->data);
+
+		if (frag->frags != NULL) {
+			frag = frag->frags;
+			d->des1 |= FIELD_PREP(TDES1_TBS2, frag->len);
+			d->des3 = phys_lo32(frag->data);
+			sys_cache_data_flush_range(frag->data, frag->len);
+		}
+
 		des0_flags = TDES0_OWN | TDES0_FLAGS_DEFAULT;
 		INC_WRAP(d_idx, NB_TX_DESCS);
-	};
+
+		if (frag->frags == NULL) {
+			d->des0 |= TDES0_LS;
+		}
+	}
 
 	K_SPINLOCK(&p->spinlock) {
 		net_pkt_ref(pkt);
