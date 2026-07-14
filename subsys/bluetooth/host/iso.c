@@ -559,8 +559,7 @@ void bt_iso_disconnected(struct bt_conn *iso)
 	bt_iso_chan_disconnected(chan, iso->err);
 }
 
-#if defined(CONFIG_BT_ISO_LOG_LEVEL_DBG)
-const char *bt_iso_chan_state_str(uint8_t state)
+const char *bt_iso_chan_state_str(enum bt_iso_state state)
 {
 	switch (state) {
 	case BT_ISO_STATE_DISCONNECTED:
@@ -575,6 +574,8 @@ const char *bt_iso_chan_state_str(uint8_t state)
 		return "unknown";
 	}
 }
+
+#if defined(CONFIG_BT_ISO_LOG_LEVEL_DBG)
 
 void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan, enum bt_iso_state state,
 				 const char *func, int line)

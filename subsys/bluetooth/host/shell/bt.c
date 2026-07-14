@@ -4459,11 +4459,12 @@ static void connection_info(struct bt_conn *conn, void *user_data)
 				return;
 			}
 
-			bt_shell_print("%s#%u [ISO][%s]: ISO interval %u us%s%s", selected, info.id,
-				       iso_chan_type_str(iso_info.type),
+			bt_shell_print("%s#%u [ISO][%s]: ISO interval %u us%s%s (%s)", selected,
+				       info.id, iso_chan_type_str(iso_info.type),
 				       BT_GAP_ISO_INTERVAL_TO_US(iso_info.iso_interval),
 				       iso_info.can_send ? " TX" : "",
-				       iso_info.can_recv ? " RX" : "");
+				       iso_info.can_recv ? " RX" : "",
+				       bt_iso_chan_state_str(chan->state));
 		} else {
 			return; /* return to avoid incrementing conn_count */
 		}
