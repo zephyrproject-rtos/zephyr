@@ -1140,6 +1140,10 @@ static uint32_t *dup_l2_table(uint32_t *src_l2_table, enum dup_action action)
 		break;
 	}
 
+	if (IS_ENABLED(PAGE_TABLE_IS_CACHED)) {
+		sys_cache_data_flush_range((void *)l2_table, L2_PAGE_TABLE_SIZE);
+	}
+
 	return l2_table;
 }
 
@@ -1266,7 +1270,10 @@ static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup
 
 	k_spin_unlock(&xtensa_counter_lock, key);
 
-	sys_cache_data_flush_range((void *)l2_table, L2_PAGE_TABLE_SIZE);
+	if (IS_ENABLED(PAGE_TABLE_IS_CACHED)) {
+		/* L2 was flushed in dup_l2_table(); publish the new L1 pointer. */
+		sys_cache_data_flush_range((void *)&l1_table[l1_pos], sizeof(l1_table[0]));
+	}
 }
 
 int arch_mem_domain_init(struct k_mem_domain *domain)
