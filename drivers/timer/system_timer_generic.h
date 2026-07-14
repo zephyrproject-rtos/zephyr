@@ -337,13 +337,16 @@ static inline timer_core_cycles_t timer_core_cycles_since(uint64_t from)
  */
 #if TIMER_CORE_MAX_TICKS > UINT32_MAX
 typedef uint64_t timer_core_ticks_t;
-static inline uint32_t timer_core_ticks_clamp(timer_core_ticks_t ticks)
+static inline sys_clock_ticks_t timer_core_ticks_clamp(timer_core_ticks_t ticks)
 {
-	return (uint32_t)MIN(ticks, (timer_core_ticks_t)UINT32_MAX);
+	if (!IS_ENABLED(CONFIG_SYSTEM_CLOCK_LONG_WAIT)) {
+		ticks = MIN(ticks, (timer_core_ticks_t)UINT32_MAX);
+	}
+	return (sys_clock_ticks_t)ticks;
 }
 #else
 typedef uint32_t timer_core_ticks_t;
-static inline uint32_t timer_core_ticks_clamp(timer_core_ticks_t ticks)
+static inline sys_clock_ticks_t timer_core_ticks_clamp(timer_core_ticks_t ticks)
 {
 	return ticks;
 }
@@ -499,7 +502,7 @@ static inline timer_core_ticks_t timer_core_delta_ticks(void)
 /* Program the timer for a tick-aligned deadline `ticks` out from the last
  * reported elapsed. Called with the system clock lock held.
  */
-static void timer_core_arm(uint32_t ticks)
+static void timer_core_arm(sys_clock_ticks_t ticks)
 {
 #if defined(TIMER_CORE_BACKEND_RELOAD)
 	uint64_t deadline_tick = timer_core_last_tick + timer_core_last_elapsed + ticks;
@@ -616,7 +619,7 @@ static void timer_core_arm(uint32_t ticks)
 #endif
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	/* Deprecated; the idle-entry hint travels via sys_clock_idle_enter(). */
 	ARG_UNUSED(idle);
@@ -629,7 +632,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	timer_core_arm(ticks);
 }
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
@@ -716,9 +719,12 @@ static inline void timer_core_announce_cycles64_from(k_spinlock_key_t key, uint6
 	 * Not timer_core_ticks_clamp(): its argument is timer_core_ticks_t, the
 	 * very width this span is allowed to outrun, so the value would be
 	 * truncated on the way in rather than clamped. Clamp against the
-	 * announce interface itself.
+	 * announce interface itself if necessary (when LONG_WAIT not supported).
 	 */
-	sys_clock_announce_locked((uint32_t)MIN(dticks, (uint64_t)UINT32_MAX), key);
+#ifndef CONFIG_SYSTEM_CLOCK_LONG_WAIT
+	dticks = MIN(dticks, (uint64_t)UINT32_MAX);
+#endif
+	sys_clock_announce_locked((sys_clock_ticks_t)dticks, key);
 }
 
 /* Read the counter, account the whole ticks elapsed since the last announce,

@@ -181,7 +181,7 @@ static void rtc_isr(const void *arg)
 #endif /* CONFIG_TICKLESS_KERNEL */
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -226,7 +226,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 #endif /* CONFIG_TICKLESS_KERNEL */
 }
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	return (rtc_count() - rtc_last) / CYCLES_PER_TICK;

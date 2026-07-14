@@ -102,7 +102,7 @@ void smp_timer_init(void)
 #endif
 
 #ifdef CONFIG_XTENSA_TIMER_LPM_TIMER_HOOK
-void sys_clock_idle_enter(uint32_t ticks)
+void sys_clock_idle_enter(sys_clock_ticks_t ticks)
 {
 	/* Arm the comparator for the wakeup, then hand off to the low-power
 	 * timer that keeps time while CCOUNT is stalled.

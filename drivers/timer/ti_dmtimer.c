@@ -105,7 +105,7 @@ static void ti_dmtimer_isr(void *param)
 	sys_clock_announce(delta_ticks);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -142,7 +142,7 @@ uint32_t sys_clock_cycle_get_32(void)
 	return curr_cycle;
 }
 
-unsigned int sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	struct ti_dm_timer_data *data = systick_timer_dev->data;
 

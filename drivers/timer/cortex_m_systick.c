@@ -407,7 +407,7 @@ void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz)
 }
 #endif /* CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE */
 
-void sys_clock_idle_enter(uint32_t ticks)
+void sys_clock_idle_enter(sys_clock_ticks_t ticks)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 

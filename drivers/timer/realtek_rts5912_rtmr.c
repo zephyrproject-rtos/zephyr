@@ -130,7 +130,7 @@ static void rtmr_isr(const void *arg)
 	timer_core_announce_from(key);
 }
 
-void sys_clock_idle_enter(uint32_t ticks)
+void sys_clock_idle_enter(sys_clock_ticks_t ticks)
 {
 	if (ticks != SYS_CLOCK_IDLE_FOREVER) {
 		sys_clock_set_timeout(ticks, false);

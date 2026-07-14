@@ -74,7 +74,7 @@ uint64_t sys_clock_cycle_get_64(void)
 }
 
 /* tickless kernel is not supported */
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	return 0;
 }
