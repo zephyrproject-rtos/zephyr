@@ -122,3 +122,7 @@
 &aon_lpuart0 {
 	interrupts = <130 0>;
 };
+
+&aon_gpio0 {
+	interrupts = <132 0>, <133 0>;
+};
