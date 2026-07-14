@@ -1941,6 +1941,7 @@ Documentation Infrastructure:
     - lmajewski
     - pdgendt
     - ClaCodes
+    - tpambor
   files:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
