@@ -405,6 +405,34 @@ uint64_t sys_clock_cycle_get_64(void);
 void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz);
 #endif /* defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE) || defined(__DOXYGEN__) */
 
+#if defined(CONFIG_ZTEST) || defined(__DOXYGEN__)
+/**
+ * @brief Rewind the driver's announce baseline by @p n_ticks.
+ *
+ * Moves the driver's internal "ticks accounted for as of the last announce"
+ * baseline backward by @p n_ticks, without touching the hardware counter, so
+ * the next real ISR run or sys_clock_elapsed() call computes a masked delta as
+ * if @p n_ticks had genuinely elapsed. Lets a test exercise a >32-bit
+ * elapsed-tick delta without waiting for it in real time.
+ *
+ * @note This is a test-only hook. Application code must not call it.
+ *
+ * @param n_ticks Number of ticks to rewind the baseline by.
+ */
+void z_sys_clock_rewind_ticks(sys_clock_ticks_t n_ticks);
+
+/**
+ * @brief Re-seed the driver's announce baseline from the real hardware counter.
+ *
+ * Discards any drift left behind by a prior z_sys_clock_rewind_ticks() call
+ * (e.g. after a test intentionally exercises a truncating driver bug), leaving
+ * the driver in a working state for tests that run afterward.
+ *
+ * @note This is a test-only hook. Application code must not call it.
+ */
+void z_sys_clock_resync(void);
+#endif /* defined(CONFIG_ZTEST) || defined(__DOXYGEN__) */
+
 /**
  * @}
  */

@@ -904,4 +904,28 @@ static inline void timer_core_init(void)
 	timer_core_arm(1);
 }
 
+#if defined(CONFIG_ZTEST)
+void z_sys_clock_rewind_ticks(sys_clock_ticks_t n_ticks)
+{
+	k_spinlock_key_t key = sys_clock_lock();
+
+	timer_core_last_cycle -= n_ticks * TIMER_CORE_CYC_PER_TICK;
+	timer_core_last_tick -= n_ticks;
+
+	sys_clock_unlock(key);
+}
+
+void z_sys_clock_resync(void)
+{
+	k_spinlock_key_t key = sys_clock_lock();
+	timer_core_cycles_t seed = timer_driver_cycle_get() / TIMER_CORE_CYC_PER_TICK;
+
+	timer_core_last_tick = seed;
+	timer_core_last_cycle = seed * TIMER_CORE_CYC_PER_TICK;
+	timer_core_last_elapsed = 0;
+
+	sys_clock_unlock(key);
+}
+#endif /* CONFIG_ZTEST */
+
 #endif /* ZEPHYR_DRIVERS_TIMER_SYSTEM_TIMER_GENERIC_H_ */
