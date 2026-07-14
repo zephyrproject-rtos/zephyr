@@ -221,6 +221,8 @@ struct it51xxx_i3cm_config {
 		uint32_t i2c_scl_hddat;
 	} clocks;
 
+	bool pull_up_4k_ohm;
+
 	void (*irq_config_func)(const struct device *dev);
 
 	LOG_INSTANCE_PTR_DECLARE(log);
@@ -1231,8 +1233,11 @@ static int it51xxx_i3cm_init(const struct device *dev)
 	LOG_INST_DBG(cfg->log, "channel %d is selected", cfg->io_channel);
 	reg_val |= FIELD_PREP(I3CM_CHANNEL_SELECT_MASK, cfg->io_channel);
 
-	/* select 4k pull-up resistor and enable i3c engine*/
-	reg_val |= (I3CM_PULL_UP_RESISTOR | I3CM_ENABLE);
+	/* select 4k pull-up resistor and enable i3c engine */
+	if (cfg->pull_up_4k_ohm) {
+		reg_val |= I3CM_PULL_UP_RESISTOR;
+	}
+	reg_val |= I3CM_ENABLE;
 	sys_write8(reg_val, cfg->base + I3CM50_CONTROL_3);
 
 	LOG_INST_DBG(cfg->log, "dlm base address 0x%x", (uint32_t)&data->dlm_data);
@@ -1806,6 +1811,7 @@ static DEVICE_API(i3c, it51xxx_i3cm_api) = {
 		.clocks.i3c_scl_tcasr = DT_INST_PROP_OR(n, i3c_scl_tcasr, 1),                      \
 		.clocks.i3c_scl_tcbsr = DT_INST_PROP_OR(n, i3c_scl_tcbsr, 0),                      \
 		.clocks.i2c_scl_hddat = DT_INST_PROP_OR(n, i2c_scl_hddat, 0),                      \
+		.pull_up_4k_ohm = DT_INST_PROP(n, pull_up_4k_ohm),                                 \
 		LOG_INSTANCE_PTR_INIT(log, DT_NODE_FULL_NAME_TOKEN(DT_DRV_INST(n)), n)};           \
 	static struct it51xxx_i3cm_data i3c_data_##n = {                                           \
 		.common.ctrl_config.scl.i3c = DT_INST_PROP_OR(n, i3c_scl_hz, 0),                   \
