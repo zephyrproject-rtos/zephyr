@@ -28,9 +28,10 @@ config ETH_DWC_ETHER_1000_CORE
 config ETH_ESP32_DWC_ETHER_1000
 	bool "Driver for DWC Ethernet MAC-based ESP32"
 	depends on !ETH_ESP32
-	depends on SOC_SERIES_ESP32
+	depends on SOC_SERIES_ESP32 || SOC_SERIES_ESP32P4
 	depends on DT_HAS_ESPRESSIF_ESP32_ETH_ENABLED
 	select ETH_DWC_ETHER_1000_CORE
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	default y
 	help
 	  This enables the Synopsys DesignWare MAC driver for ESP32 SoCs.
@@ -140,6 +141,7 @@ if ETH_DWC_ETHER_1000_CORE
 config ETH_DWC_ETHER_TX_HW_CHECKSUM
 	bool "Use TX hardware checksum"
 	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
+	depends on !SOC_SERIES_ESP32P4
 	default y
 	help
 	  Enable transmit checksum offload to enhance throughput
