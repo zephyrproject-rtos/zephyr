@@ -574,7 +574,13 @@ drop:
 
 enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt)
 {
-	if (IS_ENABLED(CONFIG_NET_IPV4_PMTU)) {
+	/* ARP packets share the AF_INET family but are not IPv4 datagrams, so
+	 * their L2 protocol type is used to skip them here. Otherwise the code
+	 * below would read the ARP body as an IPv4 header and create bogus PMTU
+	 * cache entries.
+	 */
+	if (IS_ENABLED(CONFIG_NET_IPV4_PMTU) &&
+	    net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_IP) {
 		struct net_pmtu_entry *entry;
 		struct net_sockaddr_in dst = {
 			.sin_family = NET_AF_INET,
