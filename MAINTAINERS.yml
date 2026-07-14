@@ -5461,6 +5461,15 @@ Retention:
   labels:
     - "area: Retention"
 
+Rockchip Platforms:
+  status: odd fixes
+  files:
+    - dts/arm/rockchip/
+    - dts/arm64/rockchip/
+    - soc/rockchip/
+  labels:
+    - "platform: Rockchip"
+
 SPARC arch:
   status: odd fixes
   collaborators:
