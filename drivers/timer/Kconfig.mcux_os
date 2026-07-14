@@ -10,6 +10,7 @@ config MCUX_OS_TIMER
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	select RESET
+	select SYSTEM_TIMER_HAS_LPM_COMPANION_SUPPORT
 	help
 	  This module implements a kernel device driver for the NXP OS
 	  event timer and provides the standard "system clock driver" interfaces.
@@ -17,8 +18,14 @@ config MCUX_OS_TIMER
 if MCUX_OS_TIMER
 
 config MCUX_OS_TIMER_PM_POWERED_OFF
-	bool "Reinitialize the OS Timer"
+	bool "Reinitialize the OS Timer [DEPRECATED]"
+	select DEPRECATED
 	help
+	  Deprecated. The OS Timer now saves and restores its state automatically
+	  when handing timekeeping off for a power state listed in the
+	  "handoff-power-states" devicetree property, so this option is no longer
+	  needed.
+
 	  OS Timer is turned off in certain low power modes. When this option is
 	  picked, OS Timer will take steps to store state and reinitialize on wakeups.
 
