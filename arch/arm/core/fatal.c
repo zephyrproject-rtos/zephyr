@@ -74,6 +74,13 @@ static void esf_dump(const struct arch_esf *esf)
 
 	EXCEPTION_DUMP("EXC_RETURN: 0x%0x", esf->extra_info.exc_return);
 
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	EXCEPTION_DUMP("%s: 0x%08x", "CFSR", esf->extra_info.cfsr);
+	EXCEPTION_DUMP("%s: 0x%08x", "HFSR", esf->extra_info.hfsr);
+	EXCEPTION_DUMP("%s: 0x%08x", "DFSR", esf->extra_info.dfsr);
+	EXCEPTION_DUMP("%s: 0x%08x", "MMFAR", esf->extra_info.mmfar);
+	EXCEPTION_DUMP("%s: 0x%08x", "BFAR", esf->extra_info.bfar);
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 	EXCEPTION_DUMP("Faulting instruction address (r15/pc): 0x%08x",
 		esf->basic.pc);

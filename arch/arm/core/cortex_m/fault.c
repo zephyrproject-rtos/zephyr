@@ -1041,6 +1041,19 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return, _callee_saved_
 	 */
 	struct arch_esf esf_copy;
 
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	/* Snapshot system control registers inspected and/or modified
+	 * during fault handling before fault handling is performed.
+	 */
+	esf_copy.extra_info = (struct __extra_esf_info) {
+		.cfsr = SCB->CFSR,
+		.hfsr = SCB->HFSR,
+		.dfsr = SCB->DFSR,
+		.mmfar = SCB->MMFAR,
+		.bfar = SCB->BFAR,
+	};
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO && CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
 	/* Force unlock interrupts */
 	arch_irq_unlock(0);
 
@@ -1066,8 +1079,9 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return, _callee_saved_
 	 * so we only copy the fields before those.
 	 */
 	memcpy(&esf_copy, esf, offsetof(struct arch_esf, extra_info));
-	esf_copy.extra_info = (struct __extra_esf_info){
-		.callee = callee_regs, .exc_return = exc_return, .msp = msp};
+	esf_copy.extra_info.callee = callee_regs;
+	esf_copy.extra_info.exc_return = exc_return;
+	esf_copy.extra_info.msp = msp;
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 
 	/* Overwrite stacked IPSR to mark a nested exception,
