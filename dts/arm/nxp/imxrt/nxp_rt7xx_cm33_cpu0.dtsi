@@ -109,6 +109,15 @@
 		#clock-cells = <1>;
 	};
 
+	/* SLEEPCON0 (VDD2_COMP) is the wakeup controller for CPU0. */
+	sleepcon0: wakeup-controller@3000 {
+		compatible = "nxp,sleepcon-wuc";
+		reg = <0x3000 0x1000>;
+		interrupts = <136 0>;
+		#wakeup-ctrl-cells = <1>;
+		status = "disabled";
+	};
+
 	ctimer0: timer@28000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x28000 0x1000>;
