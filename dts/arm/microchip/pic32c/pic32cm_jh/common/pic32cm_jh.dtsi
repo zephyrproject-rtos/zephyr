@@ -49,6 +49,14 @@
 			reg = <0x00806020 0x8>;
 		};
 
+		hwinfo: device_id@80a00c {
+			compatible = "microchip,hwinfo-g1";
+			reg = <0x0080a00c 0x4>,
+			      <0x0080a040 0x4>,
+			      <0x0080a044 0x4>,
+			      <0x0080a048 0x4>;
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 		};
