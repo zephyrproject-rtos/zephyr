@@ -578,6 +578,11 @@ extern bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
 	ARCH_PCIE_IRQ_CONNECT(bdf_p, irq_p, priority_p,			\
 			      isr_p, isr_param_p, flags_p)
 
+/* Device Capabilities 2 Register Decoding Masks */
+#define PCI_EXP_DEVCAP2_ARI_MASK     0x00000020U /* Bit 5: Alternative Routing-ID */
+#define PCI_EXP_DEVCAP2_SRIOV_MASK   0x00000010U /* Bit 4: Single Root I/O Virt */
+#define PCI_EXP_DEVCAP2_NVME_OFFLOAD 0x000000C0U /* Memory-mapped offload markers */
+
 #ifdef __cplusplus
 }
 #endif
