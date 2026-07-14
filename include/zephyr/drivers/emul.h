@@ -21,10 +21,6 @@
  * @{
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 struct emul;
 
 /* #includes required after forward-declaration of struct emul later defined in this header. */
@@ -36,6 +32,10 @@ struct emul;
 #include <zephyr/drivers/mspi_emul.h>
 #include <zephyr/drivers/uart_emul.h>
 #include <zephyr/sys/iterable_sections.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
 /**
  * The types of supported buses.
