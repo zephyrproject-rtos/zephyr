@@ -25,7 +25,7 @@ extern "C" {
  * @defgroup usbd_hid_device USBD HID device API
  * @ingroup usb
  * @since 3.7
- * @version 0.3.0
+ * @version 0.4.0
  * @{
  */
 
@@ -102,6 +102,21 @@ struct hid_device_ops {
 	 * longer active. This callback is optional.
 	 */
 	void (*iface_ready)(const struct device *dev, const bool ready);
+
+	/**
+	 * Optional callback invoked before allocating the buffer used to handle
+	 * a HID Get Report request. The callback should validate the request
+	 * parameters, such as the report type and report ID, and return the
+	 * size of the requested report. It should return zero or a negative
+	 * value if the report type is unsupported or the report ID is unknown.
+	 *
+	 * Implementing this callback allows the stack to bound the buffer
+	 * allocation to the size of the requested report instead of allocating
+	 * a buffer as large as the host-supplied wLength. If this callback is
+	 * not implemented, the stack allocates a buffer of size wLength.
+	 */
+	int (*get_report_size)(const struct device *dev,
+			       const uint8_t type, const uint8_t id);
 
 	/**
 	 * This callback is called for the HID Get Report request to get a
