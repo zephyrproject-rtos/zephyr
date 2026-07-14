@@ -88,19 +88,21 @@ void nxp_lp_flexcomm_setirqhandler(const struct device *dev, const struct device
 	child->dev = child_dev;
 }
 
-static int nxp_lp_flexcomm_init(const struct device *dev)
+/* Select the peripheral communications function in the LP_FLEXCOMM wrapper
+ * (writes PSELID[PERSEL]) based on the enabled child nodes.
+ */
+static int nxp_lp_flexcomm_select_periph(const struct device *dev)
 {
-	const struct nxp_lp_flexcomm_config *config = dev->config;
 	struct nxp_lp_flexcomm_data *data = dev->data;
-	LP_FLEXCOMM_Type *base;
-	uint32_t instance;
-	struct nxp_lp_flexcomm_child *child = NULL;
+	LP_FLEXCOMM_Type *base = (LP_FLEXCOMM_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	uint32_t instance = LP_FLEXCOMM_GetInstance(base);
 	bool spi_found = false;
 	bool uart_found = false;
 	bool i2c_found = false;
 
 	for (int i = 1; i < data->num_children; i++) {
-		child = &data->children[i];
+		struct nxp_lp_flexcomm_child *child = &data->children[i];
+
 		if (child->periph == LP_FLEXCOMM_PERIPH_LPSPI) {
 			spi_found = true;
 		}
@@ -117,9 +119,25 @@ static int nxp_lp_flexcomm_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (config->reset.dev != NULL) {
-		int ret;
+	if (uart_found && i2c_found) {
+		LP_FLEXCOMM_Init(instance, LP_FLEXCOMM_PERIPH_LPI2CAndLPUART);
+	} else if (uart_found) {
+		LP_FLEXCOMM_Init(instance, LP_FLEXCOMM_PERIPH_LPUART);
+	} else if (i2c_found) {
+		LP_FLEXCOMM_Init(instance, LP_FLEXCOMM_PERIPH_LPI2C);
+	} else if (spi_found) {
+		LP_FLEXCOMM_Init(instance, LP_FLEXCOMM_PERIPH_LPSPI);
+	}
 
+	return 0;
+}
+
+static int nxp_lp_flexcomm_init(const struct device *dev)
+{
+	const struct nxp_lp_flexcomm_config *config = dev->config;
+	int ret;
+
+	if (config->reset.dev != NULL) {
 		if (!device_is_ready(config->reset.dev)) {
 			return -ENODEV;
 		}
@@ -131,17 +149,10 @@ static int nxp_lp_flexcomm_init(const struct device *dev)
 	}
 
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
-	base = (LP_FLEXCOMM_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	instance = LP_FLEXCOMM_GetInstance(base);
 
-	if (uart_found && i2c_found) {
-		LP_FLEXCOMM_Init(instance, LP_FLEXCOMM_PERIPH_LPI2CAndLPUART);
-	} else if (uart_found) {
-		LP_FLEXCOMM_Init(instance, LP_FLEXCOMM_PERIPH_LPUART);
-	} else if (i2c_found) {
-		LP_FLEXCOMM_Init(instance, LP_FLEXCOMM_PERIPH_LPI2C);
-	} else if (spi_found) {
-		LP_FLEXCOMM_Init(instance, LP_FLEXCOMM_PERIPH_LPSPI);
+	ret = nxp_lp_flexcomm_select_periph(dev);
+	if (ret != 0) {
+		return ret;
 	}
 
 	config->irq_config_func(dev);
