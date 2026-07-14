@@ -1013,7 +1013,7 @@ try_send:
 		entry = net_pmtu_get_entry((struct net_sockaddr *)&dst);
 		if (entry == NULL) {
 			ret = net_pmtu_update_mtu((struct net_sockaddr *)&dst,
-						  net_if_get_mtu(iface));
+						  net_if_get_mtu(net_pkt_iface(pkt)));
 			if (ret < 0) {
 				NET_DBG("Cannot update PMTU for %s (%d)",
 					net_sprint_ipv6_addr(&dst.sin6_addr),
