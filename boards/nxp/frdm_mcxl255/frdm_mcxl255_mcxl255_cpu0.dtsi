@@ -9,6 +9,7 @@
 #include <nxp/mcx/mcxl/nxp_mcxl255_cm33.dtsi>
 #include "frdm_mcxl255-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "frdm_mcxl255-common.dtsi"
 
 / {
 	chosen {
@@ -26,6 +27,8 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		sw2 = &user_button_5;
+		sw3 = &user_button_6;
 		rtc = &rtc;
 		watchdog0 = &wwdt0;
 		spi-0 = &lpspi0;
@@ -67,7 +70,17 @@
 			gpios = <&gpio3 2 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
+		user_button_6: button_3 {
+			label = "User SW6";
+			gpios = <&aon_gpio0 4 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_3>;
+		};
 	};
+};
+
+&user_button_5 {
+	zephyr,code = <INPUT_KEY_2>;
 };
 
 &cpu0 {
