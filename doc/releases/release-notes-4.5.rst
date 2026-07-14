@@ -200,6 +200,16 @@ Deprecated APIs and options
   * New :c:func:`sys_clock_idle_enter` hook for handling of entry in low-power state,
     replacing the call to :c:func:`sys_clock_set_timeout` with ``idle=true``.
 
+  * The :dtcompatible:`nxp,os-timer` ``deep-sleep-counter`` devicetree property has been
+    deprecated. The driver now uses the generic system timer low-power companion framework;
+    select the low-power wakeup counter through the ``/chosen/zephyr,system-timer-companion``
+    property instead.
+
+  * The :dtcompatible:`nxp,os-timer` :kconfig:option:`CONFIG_MCUX_OS_TIMER_PM_POWERED_OFF`
+    option has been deprecated. The OS Timer now saves and restores its state automatically
+    when handing timekeeping off for a power state listed in the ``handoff-power-states``
+    devicetree property, so the option is no longer needed.
+
 * Video
 
   * All functions in the video driver API (``<zephyr/drivers/video.h>``) have moved to the video
@@ -482,9 +492,9 @@ New Drivers
 
 * Clock Monitor
 
-  * :dtcompatible:`nxp,cmu-fc` â€” NXP Clock Monitoring Unit (Frequency Check)
+  * :dtcompatible:`nxp,cmu-fc` â€?NXP Clock Monitoring Unit (Frequency Check)
     back-end for the new :ref:`clock_monitor_api` subsystem.
-  * :dtcompatible:`nxp,cmu-fm` â€” NXP Clock Monitoring Unit (Frequency Meter)
+  * :dtcompatible:`nxp,cmu-fm` â€?NXP Clock Monitoring Unit (Frequency Meter)
     back-end for the new :ref:`clock_monitor_api` subsystem.
 
 * USB
@@ -503,9 +513,9 @@ New Samples
 
 * :zephyr:code-sample:`mctp_i2c_bus_host` (renamed from ``mctp_i2c_bus_owner``)
 * :zephyr:code-sample:`mctp_i3c_bus_host` (renamed from ``mctp_i3c_bus_owner``)
-* ``samples/drivers/clock_monitor/check_freq`` â€” demonstrates WINDOW-mode
+* ``samples/drivers/clock_monitor/check_freq`` â€?demonstrates WINDOW-mode
   out-of-window frequency checking on the new :ref:`clock_monitor_api`.
-* ``samples/drivers/clock_monitor/measure_freq`` â€” demonstrates MEASURE-mode
+* ``samples/drivers/clock_monitor/measure_freq`` â€?demonstrates MEASURE-mode
   one-shot frequency measurement on the new :ref:`clock_monitor_api`.
 
 Libraries / Subsystems

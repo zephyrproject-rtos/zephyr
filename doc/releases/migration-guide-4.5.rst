@@ -367,11 +367,11 @@ ESPI
   * The ``interrupt-names`` of the eSPI controller and its host-device children have been
     renamed for consistency. Update overlays accordingly:
 
-    * Controller: ``rst`` â†’ ``erst``; ``vwct_0_6`` / ``vwct_7_10`` â†’
+    * Controller: ``rst`` â†?``erst``; ``vwct_0_6`` / ``vwct_7_10`` â†?
       ``ht_vw_bank0`` / ``ht_vw_bank1``. Two corresponding interrupts
       (``ht_vw_bank0`` / ``ht_vw_bank1``) must be added to the ``interrupts`` array.
-    * KBC child: ``kbc_obe`` / ``kbc_ibf`` â†’ ``obe`` / ``ibf``.
-    * ACPI EC children: ``acpi_ibf`` / ``acpi_obe`` â†’ ``ibf`` / ``obe``.
+    * KBC child: ``kbc_obe`` / ``kbc_ibf`` â†?``obe`` / ``ibf``.
+    * ACPI EC children: ``acpi_ibf`` / ``acpi_obe`` â†?``ibf`` / ``obe``.
 
   * In the MEC5 SoC DTSI (MEC174x/5x/165xB), every host-device child of the eSPI
     controller (mailbox, KBC, ACPI EC, ACPI PM1, port92, glue, EMI, BIOS debug port, etc.)
@@ -569,9 +569,9 @@ Input
   consistent with the other input drivers. Applications using the following Kconfig options
   must update their configurations accordingly:
 
-  * ``CONFIG_INPUT_FT5336_PERIOD`` â†’ :kconfig:option:`CONFIG_INPUT_FT5336_PERIOD_MS`
-  * ``CONFIG_INPUT_CST8XX_PERIOD`` â†’ :kconfig:option:`CONFIG_INPUT_CST8XX_PERIOD_MS`
-  * ``CONFIG_INPUT_FT6146_PERIOD`` â†’ :kconfig:option:`CONFIG_INPUT_FT6146_PERIOD_MS`
+  * ``CONFIG_INPUT_FT5336_PERIOD`` â†?:kconfig:option:`CONFIG_INPUT_FT5336_PERIOD_MS`
+  * ``CONFIG_INPUT_CST8XX_PERIOD`` â†?:kconfig:option:`CONFIG_INPUT_CST8XX_PERIOD_MS`
+  * ``CONFIG_INPUT_FT6146_PERIOD`` â†?:kconfig:option:`CONFIG_INPUT_FT6146_PERIOD_MS`
 
   * Nunchuk driver wronlgy reported ``INPUT_KEY_Z``, respective ``INPUT_KEY_C`` in button events. This
     has been fixed and ``INPUT_BTN_Z``, respective ``INPUT_BTN_C`` is used now.
@@ -1073,6 +1073,35 @@ Timer
   :c:func:`sys_clock_elapsed` and :c:func:`sys_clock_cycle_get_32` /
   :c:func:`sys_clock_cycle_get_64` (:github:`115844`).
 
+* The :dtcompatible:`nxp,os-timer` driver now delegates low-power timekeeping to the generic
+  system timer low-power companion framework
+  (:kconfig:option:`CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER`) instead of its
+  driver-specific mechanism. The ``deep-sleep-counter`` devicetree property is deprecated
+  (it still works during the deprecation period): boards that selected a low-power wakeup
+  counter through ``deep-sleep-counter`` on the ``os_timer`` node should instead set the
+  ``/chosen/zephyr,system-timer-companion`` property to that counter node, for example::
+
+    / {
+        chosen {
+            zephyr,system-timer-companion = &rtc_highres;
+        };
+    };
+
+    &os_timer {
+        /* deep-sleep-counter = <&rtc_highres>;  <-- remove */
+        handoff-power-states = <&standby>;
+    };
+
+  The driver no longer hardcodes the ``PM_STATE_STANDBY`` power state as the one that
+  disables the OS Timer. Instead, list the power states in which the OS Timer is powered
+  off or reset (and timekeeping must be handed off to the companion) in the new
+  ``handoff-power-states`` property on the ``os_timer`` node. Boards that relied on the
+  previous hardcoded standby behavior must add ``handoff-power-states = <&standby>;``.
+
+  :kconfig:option:`CONFIG_MCUX_OS_TIMER_PM_POWERED_OFF` is deprecated. When
+  ``handoff-power-states`` is set, the OS Timer saves and restores its state automatically,
+  so the option can be dropped.
+
 USB
 ===
 
@@ -1260,9 +1289,9 @@ Bluetooth Audio
   * Optional CSIS characteristics have been made configurable via Kconfig and must be enabled
     explicitly:
 
-    * Coordinated Set Size â†’ :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT`
-    * Set Member Lock â†’ :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT`
-    * Set Member Rank â†’ :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT`
+    * Coordinated Set Size â†?:kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT`
+    * Set Member Lock â†?:kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT`
+    * Set Member Rank â†?:kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT`
 
 * HAP
 
@@ -1299,8 +1328,8 @@ Bluetooth Classic
   :c:struct:`bt_conn_br_cb`, accessible via the ``br`` member. Application code
   using these callbacks must update the designated initializers:
 
-  * ``.role_changed`` â†’ ``.br.role_changed``
-  * ``.br_mode_changed`` â†’ ``.br.mode_changed``
+  * ``.role_changed`` â†?``.br.role_changed``
+  * ``.br_mode_changed`` â†?``.br.mode_changed``
 
   (:github:`108022`)
 
