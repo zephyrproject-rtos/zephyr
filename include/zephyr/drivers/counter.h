@@ -733,6 +733,8 @@ typedef int (*counter_api_capture_configure_64)(const struct device *dev, uint8_
 typedef int (*counter_api_enable_capture)(const struct device *dev, uint8_t chan_id);
 /** @brief Callback API to disable counter capture on a channel. */
 typedef int (*counter_api_disable_capture)(const struct device *dev, uint8_t chan_id);
+/** @brief Callback API to check if the counter is counting up */
+typedef bool (*counter_api_is_counting_up)(const struct device *dev);
 
 /** @brief Callback API to set counter calibration in parts per billion. */
 typedef int (*counter_api_set_calibration)(const struct device *dev, int32_t calibration);
@@ -795,6 +797,10 @@ __subsystem struct counter_driver_api {
 	 * @driver_ops_optional @copybrief counter_get_frequency
 	 */
 	counter_api_get_freq get_freq;
+	/**
+	 * @driver_ops_optional @copybrief counter_is_counting_up
+	 */
+	counter_api_is_counting_up is_counting_up;
 #ifdef CONFIG_COUNTER_64BITS_FREQ
 	/**
 	 * @driver_ops_optional @copybrief counter_get_frequency_64
@@ -879,8 +885,10 @@ __syscall bool counter_is_counting_up(const struct device *dev);
 static inline bool z_impl_counter_is_counting_up(const struct device *dev)
 {
 	const struct counter_config_info *config = (const struct counter_config_info *)dev->config;
+	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
 
-	return config->flags & COUNTER_CONFIG_INFO_COUNT_UP;
+	return api->is_counting_up ? api->is_counting_up(dev)
+				   : config->flags & COUNTER_CONFIG_INFO_COUNT_UP;
 }
 
 /**
