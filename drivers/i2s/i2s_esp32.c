@@ -15,13 +15,14 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <esp_clk_tree.h>
 #include <hal/i2s_hal.h>
 
 #if !SOC_GDMA_SUPPORTED
 #include <soc/lldesc.h>
 #include <esp_memory_utils.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include <esp_cpu.h>
 #endif /* !SOC_GDMA_SUPPORTED */
 
 #if SOC_GDMA_SUPPORTED && !DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_gdma)
@@ -55,9 +56,6 @@ struct i2s_esp32_stream_data {
 	void *mem_block;
 	size_t mem_block_len;
 	struct k_msgq queue;
-#if !SOC_GDMA_SUPPORTED
-	struct intr_handle_data_t *irq_handle;
-#endif
 	bool dma_pending;
 	uint8_t chunks_rem;
 	uint8_t chunk_idx;
@@ -70,8 +68,6 @@ struct i2s_esp32_stream_conf {
 #else
 	lldesc_t *dma_desc;
 	int irq_source;
-	int irq_priority;
-	int irq_flags;
 #endif
 };
 
@@ -88,6 +84,9 @@ struct i2s_esp32_cfg {
 	clock_control_subsys_t clock_subsys;
 	struct i2s_esp32_stream rx;
 	struct i2s_esp32_stream tx;
+	uint8_t irq;
+	uint8_t source;
+	void (*irq_configure)(void);
 };
 
 struct i2s_esp32_data {
@@ -304,32 +303,6 @@ rx_disable:
 	i2s_esp32_rx_stop_transfer(dev);
 }
 
-#if !SOC_GDMA_SUPPORTED
-
-static void IRAM_ATTR i2s_esp32_rx_handler(void *arg)
-{
-	if (arg == NULL) {
-		return;
-	}
-
-	struct device *dev = (struct device *)arg;
-	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
-	const i2s_hal_context_t *hal = &(dev_cfg->hal);
-	uint32_t status =
-		i2s_hal_get_intr_status(hal) & (I2S_LL_RX_EVENT_MASK | I2S_LL_EVENT_RX_DSCR_ERR);
-
-	if (status == 0) {
-		return;
-	}
-
-	i2s_hal_clear_intr_status(hal, status);
-	if (status & I2S_LL_EVENT_RX_EOF) {
-		i2s_esp32_rx_callback((void *)arg, status);
-	}
-}
-
-#endif /* !SOC_GDMA_SUPPORTED */
-
 static int i2s_esp32_rx_start_transfer(const struct device *dev)
 {
 	const struct i2s_esp32_cfg *dev_cfg = dev->config;
@@ -362,7 +335,8 @@ static int i2s_esp32_rx_start_transfer(const struct device *dev)
 	i2s_hal_rx_start(hal);
 
 #if !SOC_GDMA_SUPPORTED
-	esp_intr_enable(stream->data->irq_handle);
+	irq_matrix_enable(dev_cfg->irq, dev_cfg->source);
+
 #endif /* !SOC_GDMA_SUPPORTED */
 
 	stream->data->transferring = true;
@@ -380,7 +354,7 @@ static void IRAM_ATTR i2s_esp32_rx_stop_transfer(const struct device *dev)
 #else
 	const i2s_hal_context_t *hal = &(dev_cfg->hal);
 
-	esp_intr_disable(stream->data->irq_handle);
+	irq_matrix_disable(dev_cfg->irq, dev_cfg->source);
 	i2s_hal_rx_stop_link(hal);
 	i2s_hal_rx_disable_intr(hal);
 	i2s_hal_rx_disable_dma(hal);
@@ -507,32 +481,6 @@ tx_disable:
 	i2s_esp32_tx_stop_transfer(dev);
 }
 
-#if !SOC_GDMA_SUPPORTED
-
-static void IRAM_ATTR i2s_esp32_tx_handler(void *arg)
-{
-	if (arg == NULL) {
-		return;
-	}
-
-	struct device *dev = (struct device *)arg;
-	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
-	const i2s_hal_context_t *hal = &(dev_cfg->hal);
-	uint32_t status =
-		i2s_hal_get_intr_status(hal) & (I2S_LL_TX_EVENT_MASK | I2S_LL_EVENT_TX_DSCR_ERR);
-
-	if (status == 0) {
-		return;
-	}
-
-	i2s_hal_clear_intr_status(hal, status);
-	if (status & I2S_LL_EVENT_TX_EOF) {
-		i2s_esp32_tx_callback((void *)arg, status);
-	}
-}
-
-#endif /* !SOC_GDMA_SUPPORTED */
-
 static int i2s_esp32_tx_start_transfer(const struct device *dev)
 {
 	const struct i2s_esp32_cfg *dev_cfg = dev->config;
@@ -565,7 +513,7 @@ static int i2s_esp32_tx_start_transfer(const struct device *dev)
 	i2s_hal_tx_start(hal);
 
 #if !SOC_GDMA_SUPPORTED
-	esp_intr_enable(stream->data->irq_handle);
+	irq_matrix_enable(dev_cfg->irq, dev_cfg->source);
 #endif /* !SOC_GDMA_SUPPORTED */
 
 	stream->data->transferring = true;
@@ -583,7 +531,7 @@ static void IRAM_ATTR i2s_esp32_tx_stop_transfer(const struct device *dev)
 #else
 	const i2s_hal_context_t *hal = &(dev_cfg->hal);
 
-	esp_intr_disable(stream->data->irq_handle);
+	irq_matrix_disable(dev_cfg->irq, dev_cfg->source);
 	i2s_hal_tx_stop_link(hal);
 	i2s_hal_tx_disable_intr(hal);
 	i2s_hal_tx_disable_dma(hal);
@@ -955,6 +903,28 @@ static int IRAM_ATTR i2s_esp32_restart_dma(const struct device *dev, enum i2s_di
 	return 0;
 }
 
+#if !SOC_GDMA_SUPPORTED
+static void IRAM_ATTR i2s_esp32_isr(void *arg)
+{
+	struct device *dev = (struct device *)arg;
+	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
+	const i2s_hal_context_t *hal = &(dev_cfg->hal);
+	uint32_t status = i2s_hal_get_intr_status(hal);
+
+	i2s_hal_clear_intr_status(hal, status);
+#if I2S_ESP32_IS_DIR_EN(tx)
+	if (status & I2S_LL_EVENT_TX_EOF) {
+		i2s_esp32_tx_callback((void *)arg, status);
+	}
+#endif
+#if I2S_ESP32_IS_DIR_EN(rx)
+	if (status & I2S_LL_EVENT_RX_EOF) {
+		i2s_esp32_rx_callback((void *)arg, status);
+	}
+#endif
+}
+#endif /* !SOC_GDMA_SUPPORTED */
+
 static int i2s_esp32_initialize(const struct device *dev)
 {
 	struct i2s_esp32_data *dev_data = dev->data;
@@ -991,20 +961,6 @@ static int i2s_esp32_initialize(const struct device *dev)
 			LOG_DBG("%s device not ready", stream->conf->dma_dev->name);
 			return -ENODEV;
 		}
-#else
-		int irq_flags = ESP_PRIO_TO_FLAGS(stream->conf->irq_priority) |
-				ESP_INT_FLAGS_CHECK(stream->conf->irq_flags) |
-				ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED |
-				ESP_INTR_FLAG_SHARED;
-
-		err = esp_intr_alloc_intrstatus(stream->conf->irq_source, irq_flags,
-						(uint32_t)i2s_ll_get_intr_status_reg(hal->dev),
-						I2S_LL_RX_EVENT_MASK, i2s_esp32_rx_handler,
-						(void *)dev, &(stream->data->irq_handle));
-		if (err != 0) {
-			LOG_DBG("Could not allocate rx interrupt (err %d)", err);
-			return err;
-		}
 #endif /* SOC_GDMA_SUPPORTED */
 
 		err = k_msgq_alloc_init(&stream->data->queue, sizeof(struct queue_item),
@@ -1026,20 +982,6 @@ static int i2s_esp32_initialize(const struct device *dev)
 			LOG_DBG("%s device not ready", stream->conf->dma_dev->name);
 			return -ENODEV;
 		}
-#else
-		int irq_flags = ESP_PRIO_TO_FLAGS(stream->conf->irq_priority) |
-				ESP_INT_FLAGS_CHECK(stream->conf->irq_flags) |
-				ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED |
-				ESP_INTR_FLAG_SHARED;
-
-		err = esp_intr_alloc_intrstatus(stream->conf->irq_source, irq_flags,
-						(uint32_t)i2s_ll_get_intr_status_reg(hal->dev),
-						I2S_LL_TX_EVENT_MASK, i2s_esp32_tx_handler,
-						(void *)dev, &(stream->data->irq_handle));
-		if (err != 0) {
-			LOG_DBG("Could not allocate tx interrupt (err %d)", err);
-			return err;
-		}
 #endif /* SOC_GDMA_SUPPORTED */
 
 		err = k_msgq_alloc_init(&stream->data->queue, sizeof(struct queue_item),
@@ -1051,6 +993,7 @@ static int i2s_esp32_initialize(const struct device *dev)
 #endif /* I2S_ESP32_IS_DIR_EN(tx) */
 
 #if !SOC_GDMA_SUPPORTED
+	dev_cfg->irq_configure();
 	i2s_ll_clear_intr_status(hal->dev, I2S_INTR_MAX);
 #endif /* !SOC_GDMA_SUPPORTED */
 
@@ -1635,15 +1578,11 @@ static DEVICE_API(i2s, i2s_esp32_driver_api) = {
 #define I2S_ESP32_STREAM_DECL_DESC(index, dir)                                                     \
 	lldesc_t i2s_esp32_stream_##index##_##dir##_dma_desc[CONFIG_I2S_ESP32_DMA_DESC_NUM_MAX]
 
-#define I2S_ESP32_STREAM_DECLARE_DATA(index, dir) .irq_handle = NULL
+#define I2S_ESP32_STREAM_DECLARE_DATA(index, dir)
 
 #define I2S_ESP32_STREAM_DECLARE_CONF(index, dir)                                                  \
 	.irq_source = COND_CODE_1(DT_INST_IRQ_HAS_NAME(index, dir),                                \
 				  (DT_INST_IRQ_BY_NAME(index, dir, irq)), (-1)),                   \
-	.irq_priority = COND_CODE_1(DT_INST_IRQ_HAS_NAME(index, dir),                              \
-				    (DT_INST_IRQ_BY_NAME(index, dir, priority)), (-1)),            \
-	.irq_flags = COND_CODE_1(DT_INST_IRQ_HAS_NAME(index, dir),                                 \
-				 (DT_INST_IRQ_BY_NAME(index, dir, flags)), (-1)),                  \
 	.dma_desc = UTIL_AND(DT_INST_IRQ_HAS_NAME(index, dir),                                     \
 			     i2s_esp32_stream_##index##_##dir##_dma_desc)
 
@@ -1675,10 +1614,25 @@ static DEVICE_API(i2s, i2s_esp32_driver_api) = {
 			     .data = &i2s_esp32_stream_##index##_##dir##_data}),                   \
 		    (.dir = {.conf = NULL, .data = NULL}))
 
+#if !SOC_GDMA_SUPPORTED
+#define IRQ_CONFIG_FUNC(idx)                                                                       \
+	static void i2s_esp32_##idx##_irq_configure(void)                                          \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(idx, 0, irq), DT_INST_IRQ_BY_IDX(idx, 0, priority), \
+			    i2s_esp32_isr, DEVICE_DT_INST_GET(idx),                                \
+			    DT_INST_IRQ_BY_IDX(idx, 0, flags) | ESP_INTR_FLAG_IRAM);                                    \
+	}
+#define IRQ_CONFIG(idx) .irq_configure = i2s_esp32_##idx##_irq_configure
+#else
+#define IRQ_CONFIG_FUNC(idx)
+#define IRQ_CONFIG(idx)
+#endif /* !SOC_GDMA_SUPPORTED */
+
 #define I2S_ESP32_INIT(index)                                                                      \
 	I2S_ESP32_DT_INST_SANITY_CHECK(index);                                                     \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
+	IRQ_CONFIG_FUNC(index)                                                                     \
                                                                                                    \
 	I2S_ESP32_STREAM_COND_DECLARE(index, rx);                                                  \
 	I2S_ESP32_STREAM_COND_DECLARE(index, tx);                                                  \
@@ -1694,10 +1648,12 @@ static DEVICE_API(i2s, i2s_esp32_driver_api) = {
 		.hal = {.dev = (i2s_dev_t *)DT_INST_REG_ADDR(index)},                              \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(index)),                            \
+		.irq = DT_INST_IRQ_BY_IDX(index, 0, irq),                                          \
+		.source = DT_INST_IRQ_BY_IDX(index, 0, source),                                    \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(index, offset),        \
 		I2S_ESP32_STREAM_INIT(index, rx),                                                  \
 		I2S_ESP32_STREAM_INIT(index, tx),                                                  \
-	};                                                                                         \
+		IRQ_CONFIG(index)};                                                                \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(index, &i2s_esp32_initialize, NULL, &i2s_esp32_data_##index,         \
 			      &i2s_esp32_config_##index, POST_KERNEL, CONFIG_I2S_INIT_PRIORITY,    \

@@ -15,6 +15,7 @@
 #include "adc_esp32.h"
 
 #include <zephyr/cache.h>
+#include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_esp32_dma, CONFIG_ADC_LOG_LEVEL);
 
@@ -25,13 +26,10 @@ LOG_MODULE_REGISTER(adc_esp32_dma, CONFIG_ADC_LOG_LEVEL);
 #elif defined(CONFIG_SOC_SERIES_ESP32)
 #include <zephyr/dt-bindings/clock/esp32_clock.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp-xtensa-intmux.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <hal/i2s_ll.h>
 #define ADC_DMA_I2S_HOST 0
 #elif defined(CONFIG_SOC_SERIES_ESP32S2)
 #include <zephyr/dt-bindings/clock/esp32s2_clock.h>
-#include <zephyr/dt-bindings/interrupt-controller/esp32s2-xtensa-intmux.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <hal/spi_ll.h>
 #include <hal/spi_types.h>
 #define ADC_DMA_SPI_HOST SPI3_HOST
@@ -123,7 +121,7 @@ static int adc_esp32_dma_stop(const struct device *dev)
 
 #else
 
-static IRAM_ATTR void adc_esp32_dma_intr_handler(void *arg)
+void IRAM_ATTR adc_esp32_dma_intr_handler(void *arg)
 {
 	const struct device *dev = arg;
 	struct adc_esp32_data *data = dev->data;
@@ -405,10 +403,9 @@ int adc_esp32_dma_read(const struct device *dev, const struct adc_sequence *seq)
 	}
 
 #if !SOC_GDMA_SUPPORTED
-	err = esp_intr_enable(data->irq_handle);
-	if (err) {
-		return err;
-	}
+	const struct adc_esp32_conf *conf = dev->config;
+
+	irq_enable(conf->irq_num);
 #endif /* !SOC_GDMA_SUPPORTED */
 
 	err = adc_esp32_digi_start(dev, &adc_hal_digi_ctrlr_cfg, number_of_adc_samples,
@@ -424,11 +421,13 @@ int adc_esp32_dma_read(const struct device *dev, const struct adc_sequence *seq)
 
 	adc_esp32_digi_stop(dev);
 
-#if SOC_GDMA_SUPPORTED
-	err = adc_esp32_dma_stop(dev);
+#if !SOC_GDMA_SUPPORTED
+	irq_disable(conf->irq_num);
+	err = 0;
 #else
-	err = esp_intr_disable(data->irq_handle);
+	err = adc_esp32_dma_stop(dev);
 #endif /* SOC_GDMA_SUPPORTED */
+
 	if (err) {
 		return err;
 	}
@@ -482,15 +481,6 @@ int adc_esp32_dma_init(const struct device *dev)
 	i2s_dev_t *i2s_dev = I2S_LL_GET_HW(ADC_DMA_I2S_HOST);
 
 	i2s_ll_enable_core_clock(i2s_dev, true);
-
-	int err = esp_intr_alloc(I2S0_INTR_SOURCE, ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED,
-				 adc_esp32_dma_intr_handler, (void *)dev, &(data->irq_handle));
-	if (err != 0) {
-		LOG_ERR("Could not allocate interrupt (err %d)", err);
-		k_free(data->adc_hal_dma_ctx.rx_desc);
-		k_free(data->dma_buffer);
-		return err;
-	}
 #endif /* CONFIG_SOC_SERIES_ESP32 */
 
 #ifdef CONFIG_SOC_SERIES_ESP32S2
@@ -503,16 +493,6 @@ int adc_esp32_dma_init(const struct device *dev)
 	spi_dev_t *spi_dev = SPI_LL_GET_HW(ADC_DMA_SPI_HOST);
 
 	spi_dma_ll_rx_enable_burst_desc(spi_dev, 0, true);
-
-	int err = esp_intr_alloc(SPI3_DMA_INTR_SOURCE,
-				 ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED,
-				 adc_esp32_dma_intr_handler, (void *)dev, &(data->irq_handle));
-	if (err != 0) {
-		LOG_ERR("Could not allocate interrupt (err %d)", err);
-		k_free(data->adc_hal_dma_ctx.rx_desc);
-		k_free(data->dma_buffer);
-		return err;
-	}
 #endif /* CONFIG_SOC_SERIES_ESP32S2 */
 
 #if SOC_GDMA_SUPPORTED

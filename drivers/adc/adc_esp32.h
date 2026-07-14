@@ -21,6 +21,10 @@ struct adc_esp32_conf {
 	adc_unit_t unit;
 	uint8_t channel_count;
 	const struct device *gpio_port;
+#if defined(CONFIG_ADC_ESP32_DMA) && !SOC_GDMA_SUPPORTED
+	void (*irq_configure)(void);
+	uint8_t irq_num;
+#endif /* defined(CONFIG_ADC_ESP32_DMA) && !SOC_GDMA_SUPPORTED */
 #if defined(CONFIG_ADC_ESP32_DMA) && SOC_GDMA_SUPPORTED
 	const struct device *dma_dev;
 	uint8_t dma_channel;
@@ -38,9 +42,6 @@ struct adc_esp32_data {
 	adc_hal_dma_ctx_t adc_hal_dma_ctx;
 	uint8_t *dma_buffer;
 	struct k_sem dma_conv_wait_lock;
-#if !SOC_GDMA_SUPPORTED
-	struct intr_handle_data_t *irq_handle;
-#endif /* !SOC_GDMA_SUPPORTED */
 #endif /* CONFIG_ADC_ESP32_DMA */
 };
 
@@ -49,3 +50,7 @@ int adc_esp32_dma_read(const struct device *dev, const struct adc_sequence *seq)
 int adc_esp32_dma_channel_setup(const struct device *dev, const struct adc_channel_cfg *cfg);
 
 int adc_esp32_dma_init(const struct device *dev);
+
+#if defined(CONFIG_ADC_ESP32_DMA) && !SOC_GDMA_SUPPORTED
+void adc_esp32_dma_intr_handler(void *arg);
+#endif

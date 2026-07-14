@@ -10,7 +10,6 @@
 #include <string.h>
 #include <ethernet/eth_stats.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/phy.h>
@@ -687,15 +686,11 @@ int eth_esp32_initialize(const struct device *dev)
 	emac_hal_init(&dev_data->hal);
 
 	/* Configure ISR */
-	res = esp_intr_alloc(
-		DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, irq),
-		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, priority)) |
-			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, flags)) |
-			ESP_INTR_FLAG_IRAM,
-		eth_esp32_isr, (void *)(uintptr_t)dev, NULL);
-	if (res != 0) {
-		goto err;
-	}
+	IRQ_CONNECT(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, irq),
+		    DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, priority), eth_esp32_isr,
+		    DEVICE_DT_GET(DT_NODELABEL(eth)), DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, flags) | ESP_INTR_FLAG_IRAM);
+	irq_matrix_enable(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, irq),
+			  DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, source));
 
 	/* Configure phy for Media-Independent Interface (MII) or
 	 * Reduced Media-Independent Interface (RMII) mode

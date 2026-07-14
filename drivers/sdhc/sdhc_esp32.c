@@ -16,11 +16,12 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include "sdhc_helpers.h"
+#include <esp_cpu.h>
+#include <esp_rom_sys.h>
 
 #include <esp_clk_tree.h>
 #include <esp_private/esp_clk_tree_common.h>
 #include <hal/sdmmc_ll.h>
-#include <esp_intr_alloc.h>
 #include <esp_timer.h>
 #include <hal/gpio_hal.h>
 #if defined(CONFIG_SOC_SERIES_ESP32P4)
@@ -85,9 +86,10 @@ struct sdhc_esp32_config {
 	const int d2_pin;
 	const int d3_pin;
 
-	int irq_source;
-	int irq_priority;
-	int irq_flags;
+	void (*irq_configure)(void);
+	uint8_t irq;
+	uint8_t source;
+
 	uint8_t bus_width_cfg;
 
 	struct sdhc_host_props props;
@@ -1454,16 +1456,7 @@ static int sdhc_esp32_init(const struct device *dev)
 	sdio_hw->ctrl.int_enable = 0;
 
 	/* Attach interrupt handler */
-	ret = esp_intr_alloc(cfg->irq_source,
-				ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-				ESP_INT_FLAGS_CHECK(cfg->irq_flags) | ESP_INTR_FLAG_IRAM,
-				&sdio_esp32_isr, (void *)dev,
-				&data->s_host_ctx.intr_handle);
-
-	if (ret != 0) {
-		k_msgq_purge(data->s_host_ctx.event_queue);
-		return -EFAULT;
-	}
+	cfg->irq_configure();
 
 	/* Enable interrupts */
 	sdio_hw->intmask.val = SDMMC_INTMASK_CD | SDMMC_INTMASK_CMD_DONE | SDMMC_INTMASK_DATA_OVER |
@@ -1485,8 +1478,7 @@ static int sdhc_esp32_init(const struct device *dev)
 
 	if (ret != 0) {
 		k_msgq_purge(data->s_host_ctx.event_queue);
-		esp_intr_free(data->s_host_ctx.intr_handle);
-		data->s_host_ctx.intr_handle = NULL;
+		irq_matrix_disable(cfg->irq, cfg->source);
 
 		return ret;
 	}
@@ -1509,23 +1501,33 @@ static DEVICE_API(sdhc, sdhc_api) = {
 	.get_host_props = sdhc_esp32_get_host_props,
 };
 
+/* clang-format off */
 #define SDHC_ESP32_INIT(n)                                                                         \
                                                                                                    \
 	COND_CODE_1(DT_NUM_PINCTRL_STATES(DT_DRV_INST(n)),                                         \
 			  (PINCTRL_DT_DEFINE(DT_DRV_INST(n));), (EMPTY))                           \
 	K_MSGQ_DEFINE(sdhc##n##_queue, sizeof(struct sdmmc_event), SDMMC_EVENT_QUEUE_LENGTH, 1);   \
                                                                                                    \
+	static void sdhc_esp32_##n##_irq_configure(void)                                           \
+	{                                                                                          \
+		IRQ_CONNECT(DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, irq),                              \
+			    DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, priority), sdio_esp32_isr,         \
+			    DEVICE_DT_INST_GET(n), DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, flags) | ESP_INTR_FLAG_IRAM);    \
+		irq_matrix_enable(DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, irq),                        \
+				  DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, source));                    \
+	}                                                                                          \
+                                                                                                   \
 	static const struct sdhc_esp32_config sdhc_esp32_##n##_config = {                          \
 		.sdio_hw = (const sdmmc_dev_t *)DT_REG_ADDR(DT_INST_PARENT(n)),                    \
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),                     \
 		.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(DT_INST_PARENT(n), offset), \
-		.irq_source = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, irq),                            \
-		.irq_priority = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, priority),                     \
-		.irq_flags = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, flags),                           \
+		.irq_configure = sdhc_esp32_##n##_irq_configure,                                   \
+		.irq = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, irq),                                   \
+		.source = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, source),                             \
 		.slot = DT_REG_ADDR(DT_DRV_INST(n)),                                               \
 		.bus_width_cfg = DT_INST_PROP(n, bus_width),                                       \
 		.pcfg = COND_CODE_1(DT_NUM_PINCTRL_STATES(DT_DRV_INST(n)),                         \
-			  (PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n))), NULL),                      \
+				    (PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n))), NULL),            \
 		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),                           \
 		.clk_pin = DT_INST_PROP_OR(n, clk_pin, GPIO_NUM_NC),                               \
 		.cmd_pin = DT_INST_PROP_OR(n, cmd_pin, GPIO_NUM_NC),                               \
@@ -1533,39 +1535,48 @@ static DEVICE_API(sdhc, sdhc_api) = {
 		.d1_pin = DT_INST_PROP_OR(n, d1_pin, GPIO_NUM_NC),                                 \
 		.d2_pin = DT_INST_PROP_OR(n, d2_pin, GPIO_NUM_NC),                                 \
 		.d3_pin = DT_INST_PROP_OR(n, d3_pin, GPIO_NUM_NC),                                 \
-		.props = {.is_spi = false,                                                         \
-			  .f_max = DT_INST_PROP(n, max_bus_freq),                                  \
-			  .f_min = DT_INST_PROP(n, min_bus_freq),                                  \
-			  .max_current_330 = DT_INST_PROP(n, max_current_330),                     \
-			  .max_current_180 = DT_INST_PROP(n, max_current_180),                     \
-			  .power_delay = DT_INST_PROP_OR(n, power_delay_ms, 0),                    \
-			  .host_caps = {.vol_180_support = false,                                  \
-					.vol_300_support = false,                                  \
-					.vol_330_support = true,                                   \
-					.suspend_res_support = false,                              \
-					.sdma_support = true,                                      \
-					.high_spd_support =                                        \
-						(DT_INST_PROP(n, bus_width) == 4) ? true : false,  \
-					.adma_2_support = false,                                   \
-					.max_blk_len = 0,                                          \
-					.ddr50_support = false,                                    \
-					.sdr104_support = false,                                   \
-					.sdr50_support = false,                                    \
-					.bus_8_bit_support = false},                               \
-			  .bus_4_bit_support = DT_INST_PROP(n, bus_width) == 4,                    \
-			  .hs200_support = false,                                                  \
-			  .hs400_support = false}};                                                \
+		.props = {                                                                         \
+			.is_spi = false,                                                           \
+			.f_max = DT_INST_PROP(n, max_bus_freq),                                    \
+			.f_min = DT_INST_PROP(n, min_bus_freq),                                    \
+			.max_current_330 = DT_INST_PROP(n, max_current_330),                       \
+			.max_current_180 = DT_INST_PROP(n, max_current_180),                       \
+			.power_delay = DT_INST_PROP_OR(n, power_delay_ms, 0),                      \
+			.host_caps = {                                                             \
+				.vol_180_support = false,				           \
+				.vol_300_support = false,                                          \
+				.vol_330_support = true,                                           \
+				.suspend_res_support = false,                                      \
+				.sdma_support = true,                                              \
+				.high_spd_support =                                                \
+					(DT_INST_PROP(n, bus_width) == 4) ? true : false,          \
+				.adma_2_support = false,                                           \
+				.max_blk_len = 0,                                                  \
+				.ddr50_support = false,                                            \
+				.sdr104_support = false,                                           \
+				.sdr50_support = false,                                            \
+				.bus_8_bit_support = false                                         \
+			},                                                                         \
+			.bus_4_bit_support = DT_INST_PROP(n, bus_width) == 4,                      \
+			.hs200_support = false,                                                    \
+			.hs400_support = false                                                     \
+		}                                                                                  \
+	};                                                                                         \
                                                                                                    \
 	static struct sdhc_esp32_data sdhc_esp32_##n##_data = {                                    \
 		.bus_width = SDMMC_SLOT_WIDTH_DEFAULT,                                             \
 		.bus_clock = (SDMMC_FREQ_PROBING * 1000),                                          \
 		.power_mode = SDHC_POWER_ON,                                                       \
 		.timing = SDHC_TIMING_LEGACY,                                                      \
-		.s_host_ctx = {.event_queue = &sdhc##n##_queue}};                                  \
+		.s_host_ctx = {                                                                    \
+			.event_queue = &sdhc##n##_queue                                            \
+		}                                                                                  \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &sdhc_esp32_init, NULL, &sdhc_esp32_##n##_data,                   \
 			      &sdhc_esp32_##n##_config, POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY,    \
 			      &sdhc_api);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(SDHC_ESP32_INIT)
 

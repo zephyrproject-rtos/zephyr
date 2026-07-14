@@ -20,8 +20,10 @@
 #include <string.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/device.h>
+
+#include <esp_cpu.h>
+#include <esp_rom_sys.h>
 
 #if CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
 #define WDT_SLEEP_RETENTION_ENABLED 1
@@ -51,43 +53,25 @@ struct wdt_esp32_config {
 	wdt_inst_t wdt_inst;
 	const struct device *clock_dev;
 	const clock_control_subsys_t clock_subsys;
-	void (*connect_irq)(void);
-	int irq_source;
-	int irq_priority;
-	int irq_flags;
+	void (*irq_configure)(void);
 };
-
-static inline void wdt_esp32_seal(const struct device *dev)
-{
-	struct wdt_esp32_data *data = dev->data;
-
-	wdt_hal_write_protect_enable(&data->hal);
-}
-
-static inline void wdt_esp32_unseal(const struct device *dev)
-{
-	struct wdt_esp32_data *data = dev->data;
-
-	wdt_hal_write_protect_disable(&data->hal);
-}
 
 static void wdt_esp32_enable(const struct device *dev)
 {
 	struct wdt_esp32_data *data = dev->data;
 
-	wdt_esp32_unseal(dev);
+	wdt_hal_write_protect_disable(&data->hal);
 	wdt_hal_enable(&data->hal);
-	wdt_esp32_seal(dev);
-
+	wdt_hal_write_protect_enable(&data->hal);
 }
 
 static int wdt_esp32_disable(const struct device *dev)
 {
 	struct wdt_esp32_data *data = dev->data;
 
-	wdt_esp32_unseal(dev);
+	wdt_hal_write_protect_disable(&data->hal);
 	wdt_hal_disable(&data->hal);
-	wdt_esp32_seal(dev);
+	wdt_hal_write_protect_enable(&data->hal);
 
 	return 0;
 }
@@ -98,9 +82,9 @@ static int wdt_esp32_feed(const struct device *dev, int channel_id)
 {
 	struct wdt_esp32_data *data = dev->data;
 
-	wdt_esp32_unseal(dev);
+	wdt_hal_write_protect_disable(&data->hal);
 	wdt_hal_feed(&data->hal);
-	wdt_esp32_seal(dev);
+	wdt_hal_write_protect_enable(&data->hal);
 
 	return 0;
 }
@@ -109,11 +93,11 @@ static int wdt_esp32_set_config(const struct device *dev, uint8_t options)
 {
 	struct wdt_esp32_data *data = dev->data;
 
-	wdt_esp32_unseal(dev);
+	wdt_hal_write_protect_disable(&data->hal);
 	wdt_hal_config_stage(&data->hal, WDT_STAGE0, data->timeout, WDT_STAGE_ACTION_INT);
 	wdt_hal_config_stage(&data->hal, WDT_STAGE1, data->timeout, data->mode);
 	wdt_esp32_enable(dev);
-	wdt_esp32_seal(dev);
+	wdt_hal_write_protect_enable(&data->hal);
 	wdt_esp32_feed(dev, 0);
 
 	return 0;
@@ -193,7 +177,6 @@ static int wdt_esp32_init(const struct device *dev)
 {
 	const struct wdt_esp32_config *const config = dev->config;
 	struct wdt_esp32_data *data = dev->data;
-	int ret, flags;
 
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
@@ -204,15 +187,7 @@ static int wdt_esp32_init(const struct device *dev)
 
 	wdt_hal_init(&data->hal, config->wdt_inst, MWDT_TICK_PRESCALER, true);
 
-	flags = ESP_PRIO_TO_FLAGS(config->irq_priority) | ESP_INT_FLAGS_CHECK(config->irq_flags) |
-		ESP_INTR_FLAG_IRAM;
-	ret = esp_intr_alloc(config->irq_source, flags, (intr_handler_t)wdt_esp32_isr, (void *)dev,
-			     NULL);
-
-	if (ret != 0) {
-		LOG_ERR("could not allocate interrupt (err %d)", ret);
-		return ret;
-	}
+	config->irq_configure();
 
 #if WDT_SLEEP_RETENTION_ENABLED
 	wdt_esp32_sleep_retention_init(config->wdt_inst - WDT_MWDT0);
@@ -220,32 +195,6 @@ static int wdt_esp32_init(const struct device *dev)
 
 	return 0;
 }
-
-static DEVICE_API(wdt, wdt_api) = {
-	.setup = wdt_esp32_set_config,
-	.disable = wdt_esp32_disable,
-	.install_timeout = wdt_esp32_install_timeout,
-	.feed = wdt_esp32_feed
-};
-
-#define ESP32_WDT_INIT(idx)							   \
-	static struct wdt_esp32_data wdt##idx##_data;				   \
-	static struct wdt_esp32_config wdt_esp32_config##idx = {		   \
-		.wdt_inst = WDT_MWDT##idx,	\
-		.irq_source = DT_IRQ_BY_IDX(DT_NODELABEL(wdt##idx), 0, irq),	\
-		.irq_priority = DT_IRQ_BY_IDX(DT_NODELABEL(wdt##idx), 0, priority),	\
-		.irq_flags = DT_IRQ_BY_IDX(DT_NODELABEL(wdt##idx), 0, flags),	\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)), \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset), \
-	};									   \
-										   \
-	DEVICE_DT_INST_DEFINE(idx,						   \
-			      wdt_esp32_init,					   \
-			      NULL,						   \
-			      &wdt##idx##_data,					   \
-			      &wdt_esp32_config##idx,				   \
-			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	   \
-			      &wdt_api)
 
 static void IRAM_ATTR wdt_esp32_isr(void *arg)
 {
@@ -259,11 +208,33 @@ static void IRAM_ATTR wdt_esp32_isr(void *arg)
 	wdt_hal_handle_intr(&data->hal);
 }
 
+static DEVICE_API(wdt, wdt_api) = {.setup = wdt_esp32_set_config,
+				   .disable = wdt_esp32_disable,
+				   .install_timeout = wdt_esp32_install_timeout,
+				   .feed = wdt_esp32_feed};
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wdt0))
-ESP32_WDT_INIT(0);
-#endif
+/* clang-format off */
+#define ESP32_WDT_INIT(idx)                                                                        \
+	static void wdt_esp32_##idx##_irq_configure(void)                                          \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(idx, 0, irq),                                       \
+			    DT_INST_IRQ_BY_IDX(idx, 0, priority),                                  \
+			    wdt_esp32_isr,                                                         \
+			    DEVICE_DT_INST_GET(idx),                                               \
+			    DT_INST_IRQ_BY_IDX(idx, 0, flags) | ESP_INTR_FLAG_IRAM);                                    \
+		irq_matrix_enable(DT_INST_IRQ_BY_IDX(idx, 0, irq),                                 \
+				  DT_INST_IRQ_BY_IDX(idx, 0, source));                             \
+	}                                                                                          \
+	static struct wdt_esp32_data wdt##idx##_data;                                              \
+	static struct wdt_esp32_config wdt_esp32_config##idx = {                                   \
+		.wdt_inst = WDT_MWDT##idx,                                                         \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),          \
+		.irq_configure = wdt_esp32_##idx##_irq_configure,                                  \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(idx, wdt_esp32_init, NULL, &wdt##idx##_data, &wdt_esp32_config##idx, \
+			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_api)
+/* clang-format on */
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wdt1))
-ESP32_WDT_INIT(1);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(ESP32_WDT_INIT);

@@ -36,7 +36,7 @@
 	pinctrl-0 = <&i2s0_default>;
 	pinctrl-names = "default";
 
-	interrupts = <I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-		     <I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+	interrupts = <ESP_CPU_IRQ_L1_LVL_9 I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+		     <ESP_CPU_IRQ_L1_LVL_9 I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 	interrupt-names = "tx", "rx";
 };

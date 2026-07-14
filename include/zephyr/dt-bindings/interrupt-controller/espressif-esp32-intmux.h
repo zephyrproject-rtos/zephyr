@@ -1,6 +1,5 @@
-/*
+/**
  * Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
- *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -105,10 +104,73 @@
 #define CACHE_IA_INTR_SOURCE                68  /* Cache Invalid Access, LEVEL */
 #define MAX_INTR_SOURCE                     69  /* total number of interrupt sources */
 
-/* Zero will allocate low/medium levels of priority (ESP_INTR_FLAG_LOWMED) */
-#define IRQ_DEFAULT_PRIORITY	0
+/**
+ * @brief Default interrupt priority.
+ *
+ * Zero will allocate low/medium levels of priority (ESP_INTR_FLAG_LOWMED).
+ */
+#define IRQ_DEFAULT_PRIORITY 0 /**< Irq Default Priority */
 
-#define ESP_INTR_FLAG_SHARED	(1<<8)	/* Interrupt can be shared between ISRs */
+#define ESP_INTR_FLAG_SHARED (1 << 8) /**< Can be shared between ISRs */
+#define ESP_INTR_FLAG_IRAM   (1 << 10) /**< ISR can run with cache disabled */
+
+/**
+ * @brief CPU interrupt lines.
+ */
+/**
+ * Interrupt 0 reserved for WMAC (Wifi)
+ */
+#define ESP_CPU_IRQ_L1_LVL_0  0 /**< CPU interrupt line 0 */
+/**
+ * Interrupt 1 reserved for BT/BLE Host HCI DMA when BTDM_CTRL_HCI_MODE_UART_H4 is enabled
+ */
+#define ESP_CPU_IRQ_L1_LVL_1  1 /**< CPU interrupt line 1 */
+#define ESP_CPU_IRQ_L1_LVL_2  2 /**< CPU interrupt line 2 */
+#define ESP_CPU_IRQ_L1_LVL_3  3 /**< CPU interrupt line 3 */
+/**
+ * Interrupt 4 reserved for WBB
+ */
+#define ESP_CPU_IRQ_L1_LVL_4  4 /**< CPU interrupt line 4 */
+/**
+ * Interrupt 5 reserved for BT/BLE Controller when Bluetooth HLI is enabled
+ */
+#define ESP_CPU_IRQ_L1_LVL_5  5  /**< CPU interrupt line 5 */
+#define ESP_CPU_IRQ_L1_LVL_8  8  /**< CPU interrupt line 8 */
+#define ESP_CPU_IRQ_L1_LVL_9  9  /**< CPU interrupt line 9 */
+#define ESP_CPU_IRQ_L1_EDG_10 10 /**< CPU interrupt line 10 */
+#define ESP_CPU_IRQ_L1_LVL_12 12 /**< CPU interrupt line 12 */
+#define ESP_CPU_IRQ_L1_LVL_13 13 /**< CPU interrupt line 13 */
+/**
+ * Interrupt 14 reserved for NMI (Non-Maskable Interrupts)
+ */
+#define ESP_CPU_IRQ_L1_LVL_17 17 /**< CPU interrupt line 17 */
+#define ESP_CPU_IRQ_L1_LVL_18 18 /**< CPU interrupt line 18 */
+#define ESP_CPU_IRQ_L2_LVL_19 19 /**< CPU interrupt line 19 */
+#define ESP_CPU_IRQ_L2_LVL_20 20 /**< CPU interrupt line 20 */
+#define ESP_CPU_IRQ_L2_LVL_21 21 /**< CPU interrupt line 21 */
+#define ESP_CPU_IRQ_L3_EDG_22 22 /**< CPU interrupt line 22 */
+#define ESP_CPU_IRQ_L3_LVL_23 23 /**< CPU interrupt line 23 */
+/**
+ * Interrupt 24 reserved for T1 WDT
+ */
+#define ESP_CPU_IRQ_L4_LVL_24 24 /**< CPU interrupt line 24 */
+/**
+ * Interrupt 25 reserved for Memory access and cache errors when ESP_SYSTEM_CHECK_INT_LEVEL_4
+ * is enabled Reserved for BT/BLE Controller when ESP_SYSTEM_CHECK_INT_LEVEL_5 is enabled
+ */
+#define ESP_CPU_IRQ_L4_LVL_25 25 /**< CPU interrupt line 25 */
+/**
+ * Interrupt 26 reserved for T1 WDT, Memory access and cache errors when
+ * ESP_SYSTEM_CHECK_INT_LEVEL_5 is enabled
+ */
+#define ESP_CPU_IRQ_L5_LVL_26 26 /**< CPU interrupt line 26 */
+#define ESP_CPU_IRQ_L3_LVL_27 27 /**< CPU interrupt line 27 */
+/**
+ * Interrupt 28 reserved for IPC when ESP_SYSTEM_CHECK_INT_LEVEL_4 is enabled
+ */
+#define ESP_CPU_IRQ_L4_EDG_28 28 /**< CPU interrupt line 28 */
+#define ESP_CPU_IRQ_L4_EDG_30 30 /**< CPU interrupt line 30 */
+#define ESP_CPU_IRQ_L5_LVL_31 31 /**< CPU interrupt line 31 */
 
 /** @endcond */
 

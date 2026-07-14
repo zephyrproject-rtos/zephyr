@@ -43,6 +43,10 @@
 #include <zephyr/arch/xtensa/mpu.h>
 #endif
 
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_ESP32
+#include <esp_soc_irq.h>
+#endif
+
 /**
  * @defgroup xtensa_apis Xtensa APIs
  * @ingroup arch-interface
@@ -131,10 +135,19 @@ __syscall void xtensa_user_fault(unsigned int reason);
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
 void z_irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
 
-#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-	{ \
-		Z_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p); \
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_ESP32
+#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)                           \
+	{                                                                                          \
+		__ASSERT(z_soc_irq_validate(isr_p, flags_p) == 0, "invalid ISR detected");         \
+		Z_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p);                                 \
+		__ASSERT(z_soc_irq_flags_apply(irq_p, flags_p) == 0, "failed to apply IRQ flags"); \
 	}
+#else
+#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)                           \
+	{                                                                                          \
+		Z_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p);                                 \
+	}
+#endif
 
 /** @cond INTERNAL_HIDDEN */
 extern uint32_t sys_clock_cycle_get_32(void);

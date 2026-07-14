@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
+#include <zephyr/sw_isr_table.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,6 +14,7 @@
 #include <string.h>
 #include <soc.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include <esp_soc_irq.h>
 #include <esp_memory_utils.h>
 #include <esp_attr.h>
 #include <esp_cpu.h>
@@ -71,6 +73,140 @@ static uint32_t non_iram_int_mask[CONFIG_MP_MAX_NUM_CPUS];
 /* This bitmask has 1 in it if the int was disabled using esp_intr_noniram_disable. */
 static uint32_t non_iram_int_disabled[CONFIG_MP_MAX_NUM_CPUS];
 static bool non_iram_int_disabled_flag[CONFIG_MP_MAX_NUM_CPUS];
+
+/*
+ * Count connect-path clients per CPU IRQ line. All clients on a line must
+ * share the same IRAM capability; non_iram_int_mask is set while any
+ * non-IRAM client remains registered.
+ */
+static uint8_t irq_line_total_clients[CONFIG_MP_MAX_NUM_CPUS][CONFIG_NUM_IRQS];
+static uint8_t irq_line_non_iram_clients[CONFIG_MP_MAX_NUM_CPUS][CONFIG_NUM_IRQS];
+
+/*
+ * Reduce a (possibly multilevel-encoded) IRQ to its level-1 CPU interrupt line.
+ * The per-line IRAM bookkeeping below is indexed by CPU line, and
+ * non_iram_int_mask is a 32-bit mask of CPU lines, so an encoded IRQ (e.g. a
+ * level-2 leaf connected via IRQ_CONNECT(DT_IRQN(...))) must be decoded first.
+ */
+static inline unsigned int z_soc_irq_cpu_line(unsigned int irq)
+{
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
+	if (irq_get_level(irq) != 1) {
+		return irq & BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS);
+	}
+#endif
+	return irq;
+}
+
+static void z_soc_irq_mask_update(int cpu, unsigned int irq)
+{
+	if (irq_line_non_iram_clients[cpu][irq] > 0) {
+		non_iram_int_mask[cpu] |= BIT(irq);
+	} else {
+		non_iram_int_mask[cpu] &= ~BIT(irq);
+	}
+}
+
+int z_soc_irq_flags_apply(unsigned int irq, uint32_t flags)
+{
+	int cpu = esp_cpu_get_core_id();
+	bool is_iram = (flags & ESP_INTR_FLAG_IRAM) != 0;
+
+	irq = z_soc_irq_cpu_line(irq);
+
+	if (irq >= CONFIG_NUM_IRQS) {
+		return -EINVAL;
+	}
+
+	if (irq_line_total_clients[cpu][irq] == UINT8_MAX) {
+		return -ENOMEM;
+	}
+
+	if (irq_line_total_clients[cpu][irq] > 0) {
+		if (is_iram && irq_line_non_iram_clients[cpu][irq] > 0) {
+			return -EINVAL;
+		}
+		if (!is_iram && irq_line_non_iram_clients[cpu][irq] == 0) {
+			return -EINVAL;
+		}
+	}
+
+	irq_line_total_clients[cpu][irq] ++;
+	if (!is_iram) {
+		irq_line_non_iram_clients[cpu][irq] ++;
+	}
+
+	z_soc_irq_mask_update(cpu, irq);
+	return 0;
+}
+
+int z_soc_irq_flags_clear(unsigned int irq, uint32_t flags)
+{
+	int cpu = esp_cpu_get_core_id();
+	bool is_iram = (flags & ESP_INTR_FLAG_IRAM) != 0;
+
+	irq = z_soc_irq_cpu_line(irq);
+
+	if (irq >= CONFIG_NUM_IRQS || irq_line_total_clients[cpu][irq] == 0) {
+		return -EINVAL;
+	}
+
+	irq_line_total_clients[cpu][irq] --;
+	if (!is_iram) {
+		if (irq_line_non_iram_clients[cpu][irq] == 0) {
+			return -EINVAL;
+		}
+		irq_line_non_iram_clients[cpu][irq] --;
+	}
+
+	z_soc_irq_mask_update(cpu, irq);
+	return 0;
+}
+
+int z_soc_irq_validate(void (*isr)(const void *parameter), uint32_t flags)
+{
+	if ((flags & ESP_INTR_FLAG_IRAM) && isr != NULL && !esp_ptr_in_iram(isr) &&
+		!esp_ptr_in_rtc_iram_fast(isr) && !esp_ptr_in_rom(isr)) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+#if defined(CONFIG_ZTEST)
+uint8_t z_soc_irq_line_total_clients_get(unsigned int irq)
+{
+	int cpu = esp_cpu_get_core_id();
+
+	if (irq >= CONFIG_NUM_IRQS) {
+		return 0;
+	}
+
+	return irq_line_total_clients[cpu][irq];
+}
+
+uint8_t z_soc_irq_line_non_iram_clients_get(unsigned int irq)
+{
+	int cpu = esp_cpu_get_core_id();
+
+	if (irq >= CONFIG_NUM_IRQS) {
+		return 0;
+	}
+
+	return irq_line_non_iram_clients[cpu][irq];
+}
+
+uint32_t z_soc_irq_non_iram_int_mask_get(unsigned int irq)
+{
+	int cpu = esp_cpu_get_core_id();
+
+	if (irq >= CONFIG_NUM_IRQS) {
+		return 0;
+	}
+
+	return (non_iram_int_mask[cpu] >> irq) & 1U;
+}
+#endif
 
 /*
  * Inserts an item into vector_desc list so that the list is sorted
@@ -231,7 +367,7 @@ static bool intr_has_handler(int intr, int cpu)
 
 	return r;
 }
-
+#if 0
 static bool is_vect_desc_usable(struct vector_desc_t *vd, int flags, int cpu, int force)
 {
 	/* Check if interrupt is not reserved by design */
@@ -565,6 +701,7 @@ int esp_intr_alloc_intrstatus(int source,
 
 	unsigned int key = irq_lock();
 	int cpu = esp_cpu_get_core_id();
+	int rc;
 	/* See if we can find an interrupt that matches the flags. */
 	int intr = get_available_int(flags, cpu, force, source);
 
@@ -608,13 +745,26 @@ int esp_intr_alloc_intrstatus(int source,
 		irq_disable(intr);
 
 		/* (Re-)set shared isr handler to new value. */
-		irq_connect_dynamic(intr, 0, (intc_dyn_handler_t)shared_intr_isr, vd, 0);
+		rc = irq_connect_dynamic(intr, 0, (intc_dyn_handler_t)shared_intr_isr, vd, flags);
+		if (rc < 0) {
+			vd->shared_vec_info = sv->next;
+			k_free(sv);
+			irq_unlock(key);
+			k_free(ret);
+			return rc;
+		}
 	} else {
 		/* Mark as unusable for other interrupt sources. This is ours now! */
 		vd->flags = VECDESC_FL_NONSHARED;
 		if (handler) {
 			irq_disable(intr);
-			irq_connect_dynamic(intr, 0, (intc_dyn_handler_t)handler, arg, 0);
+			rc = irq_connect_dynamic(intr, 0, (intc_dyn_handler_t)handler, arg, flags);
+			if (rc < 0) {
+				vd->flags &= ~VECDESC_FL_NONSHARED;
+				irq_unlock(key);
+				k_free(ret);
+				return rc;
+			}
 		}
 		if (flags & ESP_INTR_FLAG_EDGE) {
 			esp_cpu_intr_edge_ack(intr);
@@ -623,10 +773,8 @@ int esp_intr_alloc_intrstatus(int source,
 	}
 	if (flags & ESP_INTR_FLAG_IRAM) {
 		vd->flags |= VECDESC_FL_INIRAM;
-		non_iram_int_mask[cpu] &= ~(1 << intr);
 	} else {
 		vd->flags &= ~VECDESC_FL_INIRAM;
-		non_iram_int_mask[cpu] |= (1 << intr);
 	}
 	if (source >= 0) {
 		esp_rom_route_intr_matrix(cpu, source, intr);
@@ -713,14 +861,28 @@ int IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram)
 		return -EINVAL;
 	}
 	unsigned int key = irq_lock();
-	uint32_t mask = (1 << vd->intno);
+	uint32_t old_flags = (vd->flags & VECDESC_FL_INIRAM) ? ESP_INTR_FLAG_IRAM : 0;
+	uint32_t new_flags = is_in_iram ? ESP_INTR_FLAG_IRAM : 0;
+	int rc;
+
+	if (old_flags != new_flags) {
+		rc = z_soc_irq_flags_clear(vd->intno, old_flags);
+		if (rc < 0) {
+			irq_unlock(key);
+			return rc;
+		}
+		rc = z_soc_irq_flags_apply(vd->intno, new_flags);
+		if (rc < 0) {
+			(void)z_soc_irq_flags_apply(vd->intno, old_flags);
+			irq_unlock(key);
+			return rc;
+		}
+	}
 
 	if (is_in_iram) {
 		vd->flags |= VECDESC_FL_INIRAM;
-		non_iram_int_mask[vd->cpu] &= ~mask;
 	} else {
 		vd->flags &= ~VECDESC_FL_INIRAM;
-		non_iram_int_mask[vd->cpu] |= mask;
 	}
 	irq_unlock(key);
 	return 0;
@@ -735,6 +897,10 @@ int esp_intr_free(intr_handle_t handle)
 	}
 
 	unsigned int key = irq_lock();
+	uint32_t clear_flags = (handle->vector_desc->flags & VECDESC_FL_INIRAM) ?
+				       ESP_INTR_FLAG_IRAM :
+				       0;
+
 	esp_intr_disable(handle);
 	if (handle->vector_desc->flags & VECDESC_FL_SHARED) {
 		/* Find and kill the shared int */
@@ -771,10 +937,17 @@ int esp_intr_free(intr_handle_t handle)
 		/* Disable interrupt to avoid assert at IRQ install */
 		irq_disable(handle->vector_desc->intno);
 
-		/* Reset IRQ handler */
-		irq_connect_dynamic(handle->vector_desc->intno, 0,
-				      (intc_dyn_handler_t)z_irq_spurious,
-				      (void *)((int)handle->vector_desc->intno), 0);
+		/* Reset IRQ handler without updating IRAM mask flags */
+#if defined(CONFIG_RISCV)
+		z_isr_install(handle->vector_desc->intno +
+				      CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET,
+			      (void (*)(const void *))z_irq_spurious,
+			      (void *)((intptr_t)handle->vector_desc->intno));
+#else
+		z_isr_install(handle->vector_desc->intno,
+			      (void (*)(const void *))z_irq_spurious,
+			      (void *)((intptr_t)handle->vector_desc->intno));
+#endif
 		/*
 		 * Theoretically, we could free the vector_desc... not sure if that's worth the
 		 * few bytes of memory we save.(We can also not use the same exit path for empty
@@ -786,9 +959,9 @@ int esp_intr_free(intr_handle_t handle)
 		handle->vector_desc->flags &= ~(VECDESC_FL_LEVEL_MASK << VECDESC_FL_LEVEL_SHIFT);
 #endif
 		handle->vector_desc->source = ETS_INTERNAL_UNUSED_INTR_SOURCE;
-		/* Also kill non_iram mask bit. */
-		non_iram_int_mask[handle->vector_desc->cpu] &= ~(1 << (handle->vector_desc->intno));
 	}
+
+	z_soc_irq_flags_clear(handle->vector_desc->intno, clear_flags);
 	irq_unlock(key);
 	k_free(handle);
 	return 0;
@@ -898,7 +1071,7 @@ int IRAM_ATTR esp_intr_disable(intr_handle_t handle)
 	irq_unlock(key);
 	return 0;
 }
-
+#endif
 void IRAM_ATTR esp_intr_noniram_disable(void)
 {
 	unsigned int key = irq_lock();
