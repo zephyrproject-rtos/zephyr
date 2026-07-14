@@ -1,0 +1,27 @@
+common:
+  tags:
+    - bluetooth
+  depends_on: bsim
+  harness: bsim
+
+tests:
+  tests.bsim.bluetooth.ll.conn.split_hci_uart:
+    platform_allow:
+      - nrf52_bsim
+    build_only: true
+    extra_args: CONF_FILE=prj_split_hci_uart.conf
+    extra_dtc_overlay_files:
+      - hci-uart.overlay
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_ll_conn_prj_split_hci_uart_conf
+  tests.bsim.bluetooth.ll.conn.split_hci_uart.psa:
+    platform_allow:
+      - nrf52_bsim
+    build_only: true
+    extra_args: CONF_FILE=prj_split_hci_uart.conf
+    extra_overlay_confs:
+      - psa_overlay.conf
+    extra_dtc_overlay_files:
+      - hci-uart.overlay
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_ll_conn_prj_split_hci_uart_conf_psa_overlay_conf
