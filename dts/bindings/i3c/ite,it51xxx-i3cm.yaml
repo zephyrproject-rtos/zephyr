@@ -25,6 +25,13 @@ properties:
       that multiple controllers (including the i3cm controller and i3cs
       target engines) are not assigned the same io channel.
 
+  pull-up-4k-ohm:
+    type: boolean
+    description: |
+      Select the 4k-ohm resistor for i3cm. If not set, the 1.3k-ohm pull-up
+      resistor is used. This property can be configured based on the number
+      of devices on the i3c bus. (default: false)
+
   i3c-pp-duty-cycle:
     default: 50
     type: int
