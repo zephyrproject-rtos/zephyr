@@ -25,7 +25,7 @@ API introduction
 
 When introducing any new :term:`public API`, review of the API is enforced and is driven by
 the `Zephyr Architecture meeting`_ Architecture working group consisting of representatives from
-different vendors.
+different parts of the community.
 
 .. _api_lifecycle_experimental:
 
