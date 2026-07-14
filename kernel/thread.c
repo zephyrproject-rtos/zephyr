@@ -873,6 +873,26 @@ static inline void init_thread_usage(struct k_thread *thread)
 #endif /* CONFIG_SCHED_THREAD_USAGE */
 }
 
+static inline void check_if_tid_is_reused(struct k_thread *new_thread)
+{
+#ifdef CONFIG_THREAD_MONITOR
+#ifdef CONFIG_ASSERT
+	k_spinlock_key_t key = k_spin_lock(&z_thread_monitor_lock);
+
+	/* Check if the thread is already in the list */
+	for (struct k_thread *t = _kernel.threads; t; t = t->next_thread) {
+		if (t == new_thread) {
+			k_spin_unlock(&z_thread_monitor_lock, key);
+		}
+
+		__ASSERT(t != new_thread, "thread %p is already in the running list", new_thread);
+	}
+
+	k_spin_unlock(&z_thread_monitor_lock, key);
+#endif
+#endif
+}
+
 /*
  * The provided stack_size value is presumed to be either the result of
  * K_THREAD_STACK_SIZEOF(stack), or the size value passed to the instance
@@ -887,6 +907,8 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	char *stack_ptr;
 
 	Z_ASSERT_VALID_PRIO(prio, entry);
+
+	check_if_tid_is_reused(new_thread);
 
 	thread_abort_cleanup_check_reuse(new_thread);
 	init_thread_obj_core(new_thread);

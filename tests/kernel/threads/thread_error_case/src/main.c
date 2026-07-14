@@ -14,8 +14,11 @@ static ZTEST_DMEM int case_type;
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static K_THREAD_STACK_DEFINE(test_stack, STACK_SIZE);
+static K_THREAD_STACK_DEFINE(reuse_stack1, STACK_SIZE);
+static K_THREAD_STACK_DEFINE(reuse_stack2, STACK_SIZE);
 static struct k_thread tdata;
 static struct k_thread test_tdata;
+static struct k_thread reuse_tdata;
 
 /* identifiers for each negative test scenario */
 enum {
@@ -32,12 +35,19 @@ enum {
 	THREAD_PRIORITY_GET_NULL,
 	THREAD_WAKEUP_NULL,
 	THREAD_CREATE_SUPERVISOR,
-	THREAD_CREATE_ESSENTIAL
+	THREAD_CREATE_ESSENTIAL,
+	THREAD_REUSE_ACTIVE_THREAD_ID
 } neg_case;
 
 static void test_thread(void *p1, void *p2, void *p3)
 {
 	/* intentionally empty target thread */
+}
+
+static void long_running_thread(void *p1, void *p2, void *p3)
+{
+	/* Sleep for a long time to keep thread active */
+	k_sleep(K_FOREVER);
 }
 
 static void tThread_entry_negative(void *p1, void *p2, void *p3)
@@ -148,6 +158,20 @@ static void tThread_entry_negative(void *p1, void *p2, void *p3)
 			test_thread, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY),
 			K_USER | K_ESSENTIAL, K_NO_WAIT);
+	case THREAD_REUSE_ACTIVE_THREAD_ID:
+		ztest_set_fault_valid(true);
+		if (k_is_user_context()) {
+			perm = perm | K_USER;
+		}
+		/* Create first thread that will run for a while */
+		k_thread_create(&reuse_tdata, reuse_stack1, STACK_SIZE, long_running_thread, NULL,
+				NULL, NULL, K_PRIO_PREEMPT(THREAD_TEST_PRIORITY + 1), perm,
+				K_NO_WAIT);
+		/* Give the thread time to start */
+		k_sleep(K_MSEC(10));
+		/* Try to reuse the same thread structure while it's still active */
+		k_thread_create(&reuse_tdata, reuse_stack2, STACK_SIZE, test_thread, NULL, NULL,
+				NULL, K_PRIO_PREEMPT(THREAD_TEST_PRIORITY), perm, K_NO_WAIT);
 		break;
 	default:
 		TC_PRINT("should not be here!\n");
@@ -289,6 +313,22 @@ ZTEST_USER(thread_error_case, test_thread_create_stack_overflow)
 }
 
 /**
+ * @brief Test that k_thread_create() asserts if a thread pointer is
+ *        reused, while the thread pointer is in use
+ *
+ * Verifies that thread pointer that is passed to thread create is
+ * not the only which is already created and in use
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @see k_thread_create()
+ */
+ZTEST_USER(thread_error_case, test_thread_reuse_active_thread_id)
+{
+	create_negative_test_thread(THREAD_REUSE_ACTIVE_THREAD_ID);
+}
+
+/**
  * @brief Test that k_thread_suspend() rejects a NULL thread pointer
  *
  * Verifies that passing a NULL pointer to k_thread_suspend() triggers
@@ -402,7 +442,8 @@ ZTEST_USER(thread_error_case, test_thread_create_essential)
 /* Grant the test thread access to all shared kernel objects. */
 void *thread_grant_setup(void)
 {
-	k_thread_access_grant(k_current_get(), &tdata, &tstack, &test_tdata, &test_stack);
+	k_thread_access_grant(k_current_get(), &tdata, &tstack, &test_tdata, &test_stack,
+			      &reuse_tdata, &reuse_stack1, &reuse_stack2);
 
 	return NULL;
 }
