@@ -9,11 +9,21 @@ sample:
     over a UART.
 
     This implementation is based on the Zephyr Asynchronous UART API.
+
+common:
+  tags:
+    - uart
+    - bluetooth
 tests:
   sample.bluetooth.hci_uart_async.nrf5:
     harness: bluetooth
     platform_allow:
       - nrf52dk/nrf52832
-    tags:
-      - uart
-      - bluetooth
+  sample.bluetooth.hci_uart_async.bsim:
+    depends_on: bsim
+    build_only: true
+    platform_allow:
+      - nrf52_bsim
+    harness: bsim
+    harness_config:
+      bsim_exe_name: samples_bluetooth_hci_uart_async_prj_conf
