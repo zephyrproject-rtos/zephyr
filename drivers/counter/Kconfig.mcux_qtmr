@@ -7,5 +7,6 @@ config COUNTER_MCUX_QTMR
 	bool "MCUX QTMR driver"
 	default y
 	depends on DT_HAS_NXP_IMX_TMR_ENABLED
+	select COUNTER_SUPPORTS_CAPTURE
 	help
 	  Enable support for mcux Quad Timer (QTMR) driver.
