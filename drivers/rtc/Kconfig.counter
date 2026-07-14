@@ -12,6 +12,15 @@ config RTC_COUNTER
 	  Wraps the counter API to provide RTC functionality.
 	  Uses unix timestamp to convert between broken-down time and counter ticks.
 
+config RTC_COUNTER_INIT_PRIORITY
+	int "rtc_counter init priority"
+	default 70
+	depends on RTC_COUNTER
+	help
+	  Initialization priority for the counter-backed RTC driver. Must be
+	  greater than COUNTER_INIT_PRIORITY so the backing counter device is
+	  initialized before this wrapper.
+
 config RTC_COUNTER_NVMEM
 	bool "Epoch offset in NVMEM"
 	default y
