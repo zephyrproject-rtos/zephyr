@@ -113,18 +113,8 @@ char *if_indextoname(unsigned int ifindex, char *ifname)
 
 void if_freenameindex(struct if_nameindex *ptr)
 {
-	size_t n;
-
 	if (ptr == NULL) {
 		return;
-	}
-
-	NET_IFACE_COUNT(&n);
-
-	for (size_t i = 0; i < n; ++i) {
-		if (ptr[i].if_name != NULL) {
-			free(ptr[i].if_name);
-		}
 	}
 
 	free(ptr);
@@ -134,22 +124,23 @@ struct if_nameindex *if_nameindex(void)
 {
 	size_t n;
 	char *name;
+	char *name_buf;
 	struct if_nameindex *ni;
 
-	/* FIXME: would be nice to use this without malloc */
 	NET_IFACE_COUNT(&n);
-	ni = malloc((n + 1) * sizeof(*ni));
+	
+	/* Allocate the array of structs and the name buffers in a single block */
+	ni = malloc((n + 1) * sizeof(*ni) + n * IF_NAMESIZE);
 	if (ni == NULL) {
-		goto return_err;
+		errno = ENOBUFS;
+		return NULL;
 	}
+
+	name_buf = (char *)(ni + n + 1);
 
 	for (size_t i = 0; i < n; ++i) {
 		ni[i].if_index = i + 1;
-
-		ni[i].if_name = malloc(IF_NAMESIZE);
-		if (ni[i].if_name == NULL) {
-			goto return_err;
-		}
+		ni[i].if_name = name_buf + (i * IF_NAMESIZE);
 
 		name = if_indextoname(i + 1, ni[i].if_name);
 		__ASSERT_NO_MSG(name != NULL);
@@ -159,12 +150,6 @@ struct if_nameindex *if_nameindex(void)
 	ni[n].if_name = NULL;
 
 	return ni;
-
-return_err:
-	if_freenameindex(ni);
-	errno = ENOBUFS;
-
-	return NULL;
 }
 
 unsigned int if_nametoindex(const char *ifname)
