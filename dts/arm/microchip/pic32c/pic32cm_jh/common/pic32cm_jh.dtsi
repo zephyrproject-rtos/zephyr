@@ -37,6 +37,14 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		hwinfo: device_id@80a00c {
+			compatible = "microchip,hwinfo-g1";
+			reg = <0x0080a00c 0x4>,
+			      <0x0080a040 0x4>,
+			      <0x0080a044 0x4>,
+			      <0x0080a048 0x4>;
+		};
+
 		flash0: flash@0 {
 			compatible = "soc-nv-flash";
 			write-block-size = <4>;
