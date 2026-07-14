@@ -30,6 +30,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,uart-mcumgr = &flexcomm3;
 		zephyr,crc = &crc;
+		zephyr,system-timer-companion = &rtc_highres;
 	};
 
 	leds {
@@ -332,7 +333,7 @@ mikrobus_serial: &flexcomm0 {};
 &os_timer {
 	status = "okay";
 	wakeup-source;
-	deep-sleep-counter = <&rtc_highres>;
+	handoff-power-states = <&standby>;
 };
 
 &systick {
