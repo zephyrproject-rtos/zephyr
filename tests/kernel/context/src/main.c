@@ -80,6 +80,12 @@ extern const int32_t z_sys_timer_irq_for_test;
 #define HAS_POWERSAVE_INSTRUCTION
 #endif
 
+/* MAX32 CPU idle hook prevents WFI, so no powersave instruction if that
+ * config is set.
+ */
+#if defined(CONFIG_MAX32_ON_ENTER_CPU_IDLE_HOOK)
+#undef HAS_POWERSAVE_INSTRUCTION
+#endif
 
 /* whisper simulator does not currently have working implementation for
  * wfi instruction. It simply treats wfi as no-op such that k_cpu_idle()
