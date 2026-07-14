@@ -12,4 +12,5 @@ toolchain:
   - gnuarmemb
 supported:
   - uart
+  - gpio
 vendor: nxp

@@ -35,3 +35,7 @@
 &systick {
 	status = "okay";
 };
+
+&aon_gpio0 {
+	status = "okay";
+};

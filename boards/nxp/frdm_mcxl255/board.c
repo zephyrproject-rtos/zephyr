@@ -67,6 +67,11 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFIRC_to_MAIN_CLK);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_gpio0))
+	CLOCK_EnableClock(kCLOCK_GateAonPORT);
+	CLOCK_EnableClock(kCLOCK_GateAonGPIO);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	RESET_ReleasePeripheralReset(kGPIO1_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_GateGPIO1);
