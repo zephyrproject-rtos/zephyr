@@ -1389,6 +1389,7 @@ static int espi_rts5912_send_vwire(const struct device *dev, enum espi_vwire_sig
 
 	espi_reg->EVTXDAT = tx_data;
 
+	k_busy_wait(10);
 	WAIT_FOR(!(espi_reg->EVSTS & ESPI_EVSTS_TXFULL), VW_TIMEOUT_US, k_busy_wait(10));
 
 	switch (vw_idx) {
