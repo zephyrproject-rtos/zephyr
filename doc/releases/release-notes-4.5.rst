@@ -149,6 +149,18 @@ Deprecated APIs and options
   * Deprecated :kconfig:option:`CONFIG_NET_L2_PTP`.
     Used :kconfig:option:`CONFIG_NET_L2_PTP_TIMESTAMPING` instead.
 
+* Timer
+
+  * The :dtcompatible:`nxp,os-timer` ``deep-sleep-counter`` devicetree property has been
+    deprecated. The driver now uses the generic system timer low-power companion framework;
+    select the low-power wakeup counter through the ``/chosen/zephyr,system-timer-companion``
+    property instead.
+
+  * The :dtcompatible:`nxp,os-timer` :kconfig:option:`CONFIG_MCUX_OS_TIMER_PM_POWERED_OFF`
+    option has been deprecated. The OS Timer now saves and restores its state automatically
+    when handing timekeeping off for a power state listed in the ``handoff-power-states``
+    devicetree property, so the option is no longer needed.
+
 * Work queue
 
   * :c:member:`k_work_q.thread` has been deprecated. Use :c:member:`k_work_q.thread_id` instead.

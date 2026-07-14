@@ -629,6 +629,35 @@ Timer
   range or special-case ``K_TICKS_FOREVER``; only their own hardware cycle-count limits
   still need enforcing (:github:`111022`).
 
+* The :dtcompatible:`nxp,os-timer` driver now delegates low-power timekeeping to the generic
+  system timer low-power companion framework
+  (:kconfig:option:`CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER`) instead of its
+  driver-specific mechanism. The ``deep-sleep-counter`` devicetree property is deprecated
+  (it still works during the deprecation period): boards that selected a low-power wakeup
+  counter through ``deep-sleep-counter`` on the ``os_timer`` node should instead set the
+  ``/chosen/zephyr,system-timer-companion`` property to that counter node, for example::
+
+    / {
+        chosen {
+            zephyr,system-timer-companion = &rtc_highres;
+        };
+    };
+
+    &os_timer {
+        /* deep-sleep-counter = <&rtc_highres>;  <-- remove */
+        handoff-power-states = <&standby>;
+    };
+
+  The driver no longer hardcodes the ``PM_STATE_STANDBY`` power state as the one that
+  disables the OS Timer. Instead, list the power states in which the OS Timer is powered
+  off or reset (and timekeeping must be handed off to the companion) in the new
+  ``handoff-power-states`` property on the ``os_timer`` node. Boards that relied on the
+  previous hardcoded standby behavior must add ``handoff-power-states = <&standby>;``.
+
+  :kconfig:option:`CONFIG_MCUX_OS_TIMER_PM_POWERED_OFF` is deprecated. When
+  ``handoff-power-states`` is set, the OS Timer saves and restores its state automatically,
+  so the option can be dropped.
+
 USB
 ===
 
