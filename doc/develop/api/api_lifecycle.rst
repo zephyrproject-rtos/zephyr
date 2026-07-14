@@ -20,6 +20,12 @@ no longer optimal or supported by the underlying platforms.
 An up-to-date table of all APIs and their maturity level can be found in the
 :ref:`api_overview` page.
 
+API introduction
+****************
+
+When introducing any new :term:`public API`, review of the API is enforced and is driven by
+the `Zephyr Architecture meeting`_ Architecture working group consisting of representatives from
+different vendors.
 
 .. _api_lifecycle_experimental:
 
@@ -45,10 +51,6 @@ version is up to one (0.1.z). (see :ref:`api_overview`)
 
 Peripheral APIs (Hardware Related)
 ==================================
-
-When introducing an API (public header file with documentation) for a new
-peripheral or driver subsystem, review of the API is enforced and is driven by
-the Architecture working group consisting of representatives from different vendors.
 
 The API shall be promoted to ``unstable`` when it has at least two
 implementations on different hardware platforms.
