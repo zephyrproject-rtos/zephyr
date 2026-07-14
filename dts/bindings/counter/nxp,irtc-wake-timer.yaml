@@ -15,7 +15,7 @@ description: |
 
 compatible: "nxp,irtc-wake-timer"
 
-include: base.yaml
+include: [base.yaml, wuc-device.yaml]
 
 properties:
   osc-div:
