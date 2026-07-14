@@ -12,9 +12,18 @@
 #include <zephyr/drivers/timer/nrf_grtc_timer.h>
 #ifdef RRAMC_PRESENT
 #include <hal/nrf_rramc.h>
+#elif defined(MRAMC_PRESENT)
+#include <hal/nrf_mramc.h>
 #endif
 #endif
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
+
+#if defined(CONFIG_NRF_SYS_EVENT_GRTC_CHAN_CNT) && (CONFIG_NRF_SYS_EVENT_GRTC_CHAN_CNT > 0)
+/** @brief Symbol indicating whether GRTC and GPPI are used for NRF_SYS_EVENT. */
+#define NRF_SYS_EVENT_GPPI_ENABLED 1
+#else
+#define NRF_SYS_EVENT_GPPI_ENABLED 0
+#endif
 
 #if CONFIG_SOC_SERIES_NRF54H
 
@@ -105,8 +114,7 @@ int nrf_sys_event_release_global_constlat(void)
 #endif
 
 #ifdef CONFIG_NRF_SYS_EVENT_IRQ_LATENCY
-BUILD_ASSERT(IS_ENABLED(CONFIG_NRF_SYS_EVENT_IRQ_LATENCY_MANUAL) ||
-	     (CONFIG_NRF_SYS_EVENT_GRTC_CHAN_CNT > 0),
+BUILD_ASSERT(IS_ENABLED(CONFIG_NRF_SYS_EVENT_IRQ_LATENCY_MANUAL) || NRF_SYS_EVENT_GPPI_ENABLED,
 	     "If manual mode is not available then at least 1 GRTC channel need to be used.");
 
 static uint32_t event_ref_cnt;
@@ -129,6 +137,13 @@ static void irq_low_latency_on(bool enable)
 {
 #ifdef RRAMC_POWER_LOWPOWERCONFIG_MODE_Standby
 	nrf_rramc_lp_mode_set(NRF_RRAMC, enable ? NRF_RRAMC_LP_STANDBY : NRF_RRAMC_LP_POWER_OFF);
+#elif defined(MRAMC_POWER_AUTOPOWERDOWN_ENABLE_Enable)
+	nrf_mramc_power_autopowerdown_t cfg;
+
+	nrf_mramc_power_autopowerdown_get(NRF_MRAMC, &cfg);
+	/* Disable auto power down to enable reduced latency */
+	cfg.enable = !enable;
+	nrf_mramc_power_autopowerdown_set(NRF_MRAMC, &cfg);
 #endif
 }
 
@@ -165,7 +180,7 @@ static int event_register(union nrf_sys_evt_us us, bool force, bool abs)
 	int rv;
 
 	LOCKED() {
-		if ((CONFIG_NRF_SYS_EVENT_GRTC_CHAN_CNT > 0) &&
+		if (NRF_SYS_EVENT_GPPI_ENABLED &&
 		    ((abs == true) || ((us.rel >= NVM_WAKEUP_US) || !NVM_MANUAL_SUPPORT)) &&
 		    (chan_mask != 0)) {
 			rv = __builtin_ctz(chan_mask);
@@ -231,7 +246,7 @@ int nrf_sys_event_unregister(int handle, bool cancel)
 	return rv;
 }
 
-#if CONFIG_NRF_SYS_EVENT_GRTC_CHAN_CNT > 0
+#if NRF_SYS_EVENT_GPPI_ENABLED
 int nrf_sys_event_init(void)
 {
 	/* Attempt to allocate requested amount of GRTC channels. */
@@ -278,5 +293,5 @@ int nrf_sys_event_init(void)
 }
 
 SYS_INIT(nrf_sys_event_init, PRE_KERNEL_1, 0);
-#endif /* CONFIG_NRF_SYS_EVENT_GRTC_CHAN_CNT > 0 */
+#endif /* NRF_SYS_EVENT_GPPI_ENABLED */
 #endif /* CONFIG_NRF_SYS_EVENT_IRQ_LATENCY */
