@@ -16,8 +16,5 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/ll/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/mesh/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/samples/compile.sh
-if [ ${BOARD} == "nrf52_bsim/native" ]; then
-	${ZEPHYR_BASE}/tests/bsim/bluetooth/hci_uart/compile.sh
-fi
 
 wait_for_background_jobs
