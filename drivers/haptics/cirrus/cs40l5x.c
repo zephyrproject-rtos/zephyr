@@ -2056,49 +2056,55 @@ static int cs40l5x_init(const struct device *dev)
 {
 	const struct cs40l5x_config *const config = dev->config;
 	struct cs40l5x_data *const data = dev->data;
+	int ret;
 
-	if (k_mutex_init(&data->lock) < 0) {
-		return -ENOMEM;
-	}
-
-	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_CALIBRATION) &&
-	    k_sem_init(&data->calibration_semaphore, 0, 1) < 0) {
-		return -ENOMEM;
-	}
-
-	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL) {
-		k_work_init_delayable(&data->interrupt_worker, cs40l5x_interrupt_worker);
+	ret = k_mutex_init(&data->lock);
+	if (ret < 0) {
+		return ret;
 	}
 
 	if (!cs40lxx_is_bus_ready(&config->io_bus)) {
-		LOG_INST_DBG(config->log, "control port is not ready");
+		LOG_INST_ERR_DEVICE_NOT_READY(config->log,
+					      cs40lxx_get_control_port(&config->io_bus));
 		return -ENODEV;
 	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_RESET) && config->reset_gpio.port != NULL &&
 	    !gpio_is_ready_dt(&config->reset_gpio)) {
-		LOG_INST_DBG(config->log, "reset GPIO is not ready");
+		LOG_INST_ERR_DEVICE_NOT_READY(config->log, config->reset_gpio.port);
 		return -ENODEV;
 	}
 
-	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL &&
-	    !gpio_is_ready_dt(&config->interrupt_gpio)) {
-		LOG_INST_DBG(config->log, "interrupt GPIO is not ready");
-		return -ENODEV;
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&config->interrupt_gpio)) {
+			LOG_INST_ERR_DEVICE_NOT_READY(config->log, config->interrupt_gpio.port);
+			return -ENODEV;
+		}
+
+		k_work_init_delayable(&data->interrupt_worker, cs40l5x_interrupt_worker);
+
+		if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_CALIBRATION)) {
+			ret = k_sem_init(&data->calibration_semaphore, 0, 1);
+			if (ret < 0) {
+				return ret;
+			}
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_TRIGGER)) {
 		for (int i = 0; i < config->trigger_gpios.num_gpio; i++) {
 			if (!gpio_is_ready_dt(&config->trigger_gpios.gpio[i])) {
-				LOG_INST_DBG(config->log, "trigger GPIO is not ready (%s)",
-					     config->trigger_gpios.gpio[i].port->name);
+				LOG_INST_ERR_DEVICE_NOT_READY(config->log,
+							      config->trigger_gpios.gpio[i].port);
+				return -ENODEV;
 			}
 		}
 	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_FLASH) && config->flash != NULL &&
 	    !device_is_ready(config->flash)) {
-		LOG_INST_DBG(config->log, "flash device is not ready (%s)", config->flash->name);
+		LOG_INST_ERR_DEVICE_NOT_READY(config->log, config->flash);
+		return -ENODEV;
 	}
 
 	return pm_device_driver_init(dev, cs40l5x_pm_action);
