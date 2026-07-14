@@ -27,8 +27,6 @@ NET_BUF_POOL_VAR_DEFINE(usbip_pool,
 			CONFIG_USBIP_BUF_COUNT, CONFIG_USBIP_BUF_POOL_SIZE,
 			0, NULL);
 
-#define USBIP_SUBMIT_REQ_RETRY_COUNT	10
-
 K_THREAD_STACK_DEFINE(usbip_thread_stack, CONFIG_USBIP_THREAD_STACK_SIZE);
 K_THREAD_STACK_ARRAY_DEFINE(dev_thread_stacks, CONFIG_USBIP_DEVICES_COUNT,
 			    CONFIG_USBIP_THREAD_STACK_SIZE);
@@ -44,6 +42,8 @@ struct usbip_dev_ctx {
 	struct usb_device *udev;
 	struct k_thread thread;
 	struct k_event event;
+	struct k_mutex send_mutex;
+	struct k_mutex list_mutex;
 	sys_dlist_t dlist;
 	int connfd;
 	uint32_t devid;
@@ -64,6 +64,8 @@ struct usbip_cmd_node {
 	struct usbip_command cmd;
 	struct usbip_dev_ctx *ctx;
 	struct uhc_transfer *xfer;
+	bool unlinked;
+	uint32_t unlink_seqnum;
 };
 
 K_MEM_SLAB_DEFINE_TYPE(usbip_slab, struct usbip_cmd_node,
@@ -132,71 +134,102 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 	struct usbip_command *const cmd = &cmd_nd->cmd;
 	struct net_buf *buf = xfer->buf;
 	struct usbip_return ret;
-	unsigned int key;
+	struct iovec iov[2];
+	struct msghdr msg;
 	int err;
 
 	LOG_INF("SUBMIT seqnum %u finished err %d ep 0x%02x",
 		cmd->hdr.seqnum, xfer->err, xfer->ep);
 
-	ret.hdr.command = net_htonl(USBIP_RET_SUBMIT);
-	ret.hdr.seqnum = net_htonl(cmd->hdr.seqnum);
-	ret.hdr.devid = net_htonl(cmd->hdr.devid);
-	ret.hdr.ep = net_htonl(xfer->ep);
-	ret.hdr.direction = net_htonl(cmd->hdr.direction);
-
-	memset(&ret.submit, 0, sizeof(ret.submit));
-	ret.submit.status = net_htonl(xfer->err);
-	ret.submit.start_frame = net_htonl(cmd->submit.start_frame);
-	ret.submit.numof_iso_pkts = net_htonl(0xFFFFFFFFUL);
-
-	if (xfer->err == -ECONNRESET) {
-		LOG_INF("URB seqnum %u unlinked (ECONNRESET)", cmd->hdr.seqnum);
-		goto usbip_req_cb_error;
-	}
+	k_mutex_lock(&dev_ctx->list_mutex, K_FOREVER);
+	sys_dlist_remove(&cmd_nd->node);
 
 	if (!k_event_wait(&dev_ctx->event, USBIP_EXPORTED, false, K_NO_WAIT)) {
+		k_mutex_unlock(&dev_ctx->list_mutex);
 		LOG_WRN("Connection closed, drop completed seqnum %u", cmd->hdr.seqnum);
 		goto usbip_req_cb_error;
 	}
 
-	if (xfer->err == -EPIPE) {
-		LOG_INF("RET_SUBMIT status is EPIPE");
-	}
+	/*
+	 * Take send_mutex before releasing list_mutex so that a concurrent
+	 * CMD_UNLINK that no longer finds this command on the list cannot send
+	 * RET_UNLINK ahead of this RET_SUBMIT.
+	 */
+	k_mutex_lock(&dev_ctx->send_mutex, K_FOREVER);
+	k_mutex_unlock(&dev_ctx->list_mutex);
 
-	if (xfer->err == 0 && cmd->submit.length != 0) {
-		if (USB_EP_DIR_IS_IN(xfer->ep)) {
-			ret.submit.actual_length = net_htonl(buf->len);
-		} else {
-			ret.submit.actual_length = net_htonl(cmd->submit.length);
+	if (cmd_nd->unlinked) {
+		/*
+		 * The transfer was unlinked. Like the Linux USB/IP
+		 * implementation, send RET_UNLINK with the CMD_UNLINK seqnum
+		 * and the actual transfer status instead of RET_SUBMIT.
+		 */
+		LOG_INF("Send RET_UNLINK seqnum %u status %d",
+			cmd_nd->unlink_seqnum, xfer->err);
+
+		ret.hdr.command = net_htonl(USBIP_RET_UNLINK);
+		ret.hdr.seqnum = net_htonl(cmd_nd->unlink_seqnum);
+		ret.hdr.devid = 0;
+		ret.hdr.direction = 0;
+		ret.hdr.ep = 0;
+
+		memset(&ret.unlink, 0, sizeof(ret.unlink));
+		ret.unlink.status = net_htonl(xfer->err);
+
+		iov[0].iov_base = &ret;
+		iov[0].iov_len = sizeof(ret);
+		memset(&msg, 0, sizeof(msg));
+		msg.msg_iov = iov;
+		msg.msg_iovlen = 1;
+	} else {
+		ret.hdr.command = net_htonl(USBIP_RET_SUBMIT);
+		ret.hdr.seqnum = net_htonl(cmd->hdr.seqnum);
+		ret.hdr.devid = net_htonl(cmd->hdr.devid);
+		ret.hdr.ep = net_htonl(xfer->ep);
+		ret.hdr.direction = net_htonl(cmd->hdr.direction);
+
+		memset(&ret.submit, 0, sizeof(ret.submit));
+		ret.submit.status = net_htonl(xfer->err);
+		ret.submit.start_frame = net_htonl(cmd->submit.start_frame);
+		ret.submit.numof_iso_pkts = net_htonl(0xFFFFFFFFUL);
+
+		if (xfer->err == -EPIPE) {
+			LOG_INF("RET_SUBMIT status is EPIPE");
+		}
+
+		if (xfer->err == 0 && cmd->submit.length != 0) {
+			if (USB_EP_DIR_IS_IN(xfer->ep)) {
+				ret.submit.actual_length = net_htonl(buf->len);
+			} else {
+				ret.submit.actual_length = net_htonl(cmd->submit.length);
+			}
+		}
+
+		if (USB_EP_GET_IDX(xfer->ep) == 0U) {
+			check_ctrl_request(dev_ctx->udev, xfer->ep, xfer->setup_pkt);
+		}
+
+		iov[0].iov_base = &ret;
+		iov[0].iov_len = sizeof(ret);
+		memset(&msg, 0, sizeof(msg));
+		msg.msg_iov = iov;
+		msg.msg_iovlen = 1;
+
+		if (USB_EP_DIR_IS_IN(xfer->ep) && ret.submit.actual_length != 0) {
+			LOG_INF("Send RET_SUBMIT transfer_buffer len %u", buf->len);
+			iov[1].iov_base = buf->data;
+			iov[1].iov_len = buf->len;
+			msg.msg_iovlen += 1;
 		}
 	}
 
-
-	if (USB_EP_GET_IDX(xfer->ep) == 0U) {
-		check_ctrl_request(dev_ctx->udev, xfer->ep, xfer->setup_pkt);
-	}
-
-	err = usbip_send(dev_ctx->connfd, &ret, sizeof(ret));
+	err = zsock_sendmsg_all(dev_ctx->connfd, &msg, 0, K_FOREVER, NULL);
+	k_mutex_unlock(&dev_ctx->send_mutex);
 	if (err != 0) {
-		LOG_ERR("Send RET_SUBMIT failed err %d errno %d", err, errno);
-		goto usbip_req_cb_error;
-	}
-
-	if (USB_EP_DIR_IS_IN(xfer->ep) && ret.submit.actual_length != 0) {
-		LOG_INF("Send RET_SUBMIT transfer_buffer len %u", buf->len);
-		err = usbip_send(dev_ctx->connfd, buf->data, buf->len);
-		if (err != 0) {
-			LOG_ERR("Send transfer_buffer failed err %d errno %d",
-				err, errno);
-			goto usbip_req_cb_error;
-		}
+		LOG_ERR("Send response failed err %d", err);
 	}
 
 usbip_req_cb_error:
-	key = irq_lock();
-	sys_dlist_remove(&cmd_nd->node);
-	irq_unlock(key);
-
 	k_mem_slab_free(&usbip_slab, (void *)cmd_nd);
 	if (xfer->buf) {
 		net_buf_unref(buf);
@@ -214,22 +247,13 @@ static int usbip_submit_req(struct usbip_cmd_node *const cmd_nd, const uint8_t e
 	struct usbip_dev_ctx *const dev_ctx = cmd_nd->ctx;
 	struct usbip_command *const cmd = &cmd_nd->cmd;
 	struct usb_device *const udev = dev_ctx->udev;
-	uint32_t retry = USBIP_SUBMIT_REQ_RETRY_COUNT;
 	struct uhc_transfer *xfer;
 	int ret;
 
-	/*
-	 * Depending on the server, functions, and client application, we may
-	 * get out of transfers very quickly. To throttle here may allow
-	 * submitted transfers to be finished. Perhaps usbh_xfer_alloc() should
-	 * be reworked to take a timeout argument.
-	 */
-	do {
-		xfer = usbh_xfer_alloc(udev, ep, usbip_req_cb, cmd_nd);
-		if (xfer == NULL) {
-			k_msleep(1);
-		}
-	} while (xfer == NULL && retry--);
+	xfer = usbh_xfer_alloc(udev, ep, usbip_req_cb, cmd_nd, K_MSEC(1000));
+	if (xfer == NULL) {
+		return -ENOMEM;
+	}
 
 	if (setup != NULL) {
 		memcpy(xfer->setup_pkt, setup, sizeof(struct usb_setup_packet));
@@ -318,18 +342,33 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 
 	if (k_mem_slab_alloc(&usbip_slab, (void **)&cmd_nd, K_MSEC(1000)) != 0) {
 		LOG_ERR("Failed to allocate slab");
-		net_buf_unref(buf);
+		if (buf != NULL) {
+			net_buf_unref(buf);
+		}
+
 		return -ENOMEM;
 	}
 
 	/* Make a copy of the command and add it to the backlog */
 	memcpy(&cmd_nd->cmd, cmd, sizeof(struct usbip_command));
 	cmd_nd->ctx = dev_ctx;
+	cmd_nd->unlinked = false;
+
+	k_mutex_lock(&dev_ctx->list_mutex, K_FOREVER);
 	sys_dlist_append(&dev_ctx->dlist, &cmd_nd->node);
+	k_mutex_unlock(&dev_ctx->list_mutex);
 
 	ret = usbip_submit_req(cmd_nd, ep, &setup, buf);
 	if (ret != 0) {
 		LOG_ERR("Failed to submit request %d", ret);
+		k_mutex_lock(&dev_ctx->list_mutex, K_FOREVER);
+		sys_dlist_remove(&cmd_nd->node);
+		k_mutex_unlock(&dev_ctx->list_mutex);
+		k_mem_slab_free(&usbip_slab, cmd_nd);
+		if (buf != NULL) {
+			net_buf_unref(buf);
+		}
+
 		return ret;
 	}
 
@@ -341,13 +380,26 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 	return 0;
 }
 
+static struct usbip_cmd_node *find_seqnum(struct usbip_dev_ctx *const dev_ctx,
+					  const uint32_t seqnum)
+{
+	struct usbip_cmd_node *cmd_nd;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&dev_ctx->dlist, cmd_nd, node) {
+		if (cmd_nd->cmd.hdr.seqnum == seqnum) {
+			return cmd_nd;
+		}
+	}
+
+	return NULL;
+}
+
 static int usbip_handle_unlink(struct usbip_dev_ctx *const dev_ctx,
 			       struct usbip_command *const cmd)
 {
 	struct usbip_cmd_unlink *unlink = &cmd->unlink;
 	struct usbip_return rsp;
 	struct usbip_cmd_node *cmd_nd;
-	unsigned int key;
 	int ret;
 
 	ret = zsock_recv(dev_ctx->connfd, unlink, sizeof(*unlink), ZSOCK_MSG_WAITALL);
@@ -365,17 +417,37 @@ static int usbip_handle_unlink(struct usbip_dev_ctx *const dev_ctx,
 
 	memset(&rsp.unlink, 0, sizeof(rsp.unlink));
 
-	key = irq_lock();
-	SYS_DLIST_FOR_EACH_CONTAINER(&dev_ctx->dlist, cmd_nd, node) {
-		if (cmd_nd->cmd.hdr.seqnum == cmd->unlink.seqnum) {
-			rsp.unlink.status = net_htonl(-ECONNRESET);
-			usbh_xfer_dequeue(dev_ctx->udev, cmd_nd->xfer);
-			break;
-		}
+	k_mutex_lock(&dev_ctx->list_mutex, K_FOREVER);
+	cmd_nd = find_seqnum(dev_ctx, cmd->unlink.seqnum);
+	if (cmd_nd != NULL) {
+		/*
+		 * The command is still on the list, so the completion handler
+		 * has not processed the transfer yet. Mark it unlinked and save
+		 * CMD_UNLINK seqnum. The completion handler will send
+		 * RET_UNLINK with the actual transfer status instead of
+		 * RET_SUBMIT, like Linux USB/IP implementation.
+		 */
+		cmd_nd->unlinked = true;
+		cmd_nd->unlink_seqnum = cmd->hdr.seqnum;
+		usbh_xfer_dequeue(dev_ctx->udev, cmd_nd->xfer);
 	}
-	irq_unlock(key);
+	k_mutex_unlock(&dev_ctx->list_mutex);
 
-	return usbip_send(dev_ctx->connfd, &rsp, sizeof(rsp));
+	if (cmd_nd != NULL) {
+		/* RET_UNLINK is sent later by the completion handler */
+		return 0;
+	}
+
+	/*
+	 * The command is no longer on the list. The transfer already completed
+	 * and RET_SUBMIT was, or is being, sent. Respond to the CMD_UNLINK
+	 * with a status of 0.
+	 */
+	k_mutex_lock(&dev_ctx->send_mutex, K_FOREVER);
+	ret = usbip_send(dev_ctx->connfd, &rsp, sizeof(rsp));
+	k_mutex_unlock(&dev_ctx->send_mutex);
+
+	return ret;
 }
 
 static int usbip_handle_cmd(struct usbip_dev_ctx *const dev_ctx)
@@ -742,6 +814,8 @@ static int usbip_init(void)
 
 		/* busnum << 16 | devnum */
 		ctx->devid = (1U << 16) | i;
+		k_mutex_init(&ctx->send_mutex);
+		k_mutex_init(&ctx->list_mutex);
 		sys_dlist_init(&ctx->dlist);
 		k_event_init(&ctx->event);
 		k_thread_create(&ctx->thread, dev_thread_stacks[i],
