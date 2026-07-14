@@ -1,4 +1,4 @@
-identifier: nsim/nsim_hs5x/smp
+identifier: nsim/nsim_hs5x_smp
 name: Multi-core HS5x nSIM simulator
 type: sim
 simulation:
