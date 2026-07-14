@@ -921,11 +921,16 @@ static int dma_esp32_init(const struct device *dev)
 		sleep_retention_module_init_param_t init_param = {
 			.cbs = {.create = {.handle = gdma_create_sleep_retention_cb,
 					   .arg = (void *)ctx}},
+			.attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
+			.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM),
 		};
 		esp_err_t err = sleep_retention_module_init(ctx->module_id, &init_param);
 
 		if (err == ESP_OK) {
 			err = sleep_retention_module_allocate(ctx->module_id);
+		}
+		if (err == ESP_OK) {
+			err = sleep_retention_module_attach(ctx->module_id);
 		}
 		if (err != ESP_OK) {
 			LOG_WRN("Failed to init GDMA sleep retention for pair %d", pair);
