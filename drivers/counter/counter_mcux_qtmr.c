@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 KT-Elektronik, Klaucke und Partner GmbH
+ * Copyright 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -22,6 +23,11 @@
 
 LOG_MODULE_REGISTER(mcux_qtmr, CONFIG_COUNTER_LOG_LEVEL);
 
+#ifdef CONFIG_COUNTER_CAPTURE
+#define QTMR_CAPTURE_VALID_FLAGS \
+	(COUNTER_CAPTURE_BOTH_EDGES | COUNTER_CAPTURE_SINGLE_SHOT)
+#endif /* CONFIG_COUNTER_CAPTURE */
+
 struct mcux_qtmr_config {
 	/* info must be first element */
 	struct counter_config_info info;
@@ -39,9 +45,20 @@ struct mcux_qtmr_data {
 	counter_top_callback_t top_callback;
 	void *alarm_user_data;
 	void *top_user_data;
+#ifdef CONFIG_COUNTER_CAPTURE
+	counter_capture_cb_t capture_callback;
+	void *capture_user_data;
+	qtmr_input_capture_edge_t capture_edge;
+	counter_capture_flags_t capture_flags;
+	bool capture_single_shot;
+#endif /* CONFIG_COUNTER_CAPTURE */
 	qtmr_status_flags_t interrupt_mask;
 	uint32_t freq;
 };
+
+#ifdef CONFIG_COUNTER_CAPTURE
+static int mcux_qtmr_disable_capture(const struct device *dev, uint8_t chan_id);
+#endif /* CONFIG_COUNTER_CAPTURE */
 
 /* Only one interrupt per QTMR module. Each of which has four timers. */
 #define DT_DRV_COMPAT nxp_imx_qtmr
@@ -56,13 +73,42 @@ void mcux_qtmr_timer_handler(const struct device *dev, uint32_t status)
 	const struct mcux_qtmr_config *config = dev->config;
 	struct mcux_qtmr_data *data = dev->data;
 	uint32_t current = QTMR_GetCurrentTimerCount(config->base, config->channel);
+	uint32_t clear_status = status;
 
-	QTMR_ClearStatusFlags(config->base, config->channel, status);
-	barrier_dsync_fence_full();
+#ifdef CONFIG_COUNTER_CAPTURE
+	if ((status & kQTMR_EdgeFlag) && data->capture_callback) {
+		counter_capture_cb_t capture_callback = data->capture_callback;
+		void *capture_user_data = data->capture_user_data;
+		counter_capture_flags_t capture_flags = data->capture_flags;
+		uint32_t capture_ticks =
+			config->base->CHANNEL[config->channel].CAPT;
+
+		clear_status &= ~kQTMR_EdgeFlag;
+
+		if (data->capture_single_shot) {
+			capture_flags |= COUNTER_CAPTURE_SINGLE_SHOT;
+			(void)mcux_qtmr_disable_capture(dev, 0);
+		} else {
+			capture_flags |= COUNTER_CAPTURE_CONTINUOUS;
+			QTMR_ClearStatusFlags(config->base, config->channel,
+					      kQTMR_EdgeFlag);
+		}
+
+		barrier_dsync_fence_full();
+		capture_callback(dev, 0, capture_flags, capture_ticks,
+				 capture_user_data);
+	}
+#endif /* CONFIG_COUNTER_CAPTURE */
+
+	if (clear_status != 0U) {
+		QTMR_ClearStatusFlags(config->base, config->channel,
+				      clear_status);
+		barrier_dsync_fence_full();
+	}
 
 	if ((status & kQTMR_Compare1Flag) && data->alarm_callback) {
 		QTMR_DisableInterrupts(config->base, config->channel,
-			kQTMR_Compare1InterruptEnable);
+				       kQTMR_Compare1InterruptEnable);
 		data->interrupt_mask &= ~kQTMR_Compare1InterruptEnable;
 		counter_alarm_callback_t alarm_cb = data->alarm_callback;
 
@@ -147,6 +193,20 @@ static int mcux_qtmr_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
+static int mcux_qtmr_reset(const struct device *dev)
+{
+	const struct mcux_qtmr_config *config = dev->config;
+
+	if ((config->base->CHANNEL[config->channel].CTRL &
+	     TMR_CTRL_DIR_MASK) != 0U) {
+		config->base->CHANNEL[config->channel].CNTR = UINT16_MAX;
+	} else {
+		config->base->CHANNEL[config->channel].CNTR = 0U;
+	}
+
+	return 0;
+}
+
 static int mcux_qtmr_set_alarm(const struct device *dev, uint8_t chan_id,
 			      const struct counter_alarm_cfg *alarm_cfg)
 {
@@ -163,6 +223,12 @@ static int mcux_qtmr_set_alarm(const struct device *dev, uint8_t chan_id,
 	if (data->alarm_callback) {
 		return -EBUSY;
 	}
+
+#ifdef CONFIG_COUNTER_CAPTURE
+	if (data->capture_callback) {
+		return -EBUSY;
+	}
+#endif /* CONFIG_COUNTER_CAPTURE */
 
 	data->alarm_callback = alarm_cfg->callback;
 	data->alarm_user_data = alarm_cfg->user_data;
@@ -181,7 +247,8 @@ static int mcux_qtmr_set_alarm(const struct device *dev, uint8_t chan_id,
 	QTMR_ClearStatusFlags(config->base, config->channel, kQTMR_Compare1Flag);
 
 	data->interrupt_mask |= kQTMR_Compare1InterruptEnable;
-	QTMR_EnableInterrupts(config->base, config->channel, data->interrupt_mask);
+	QTMR_EnableInterrupts(config->base, config->channel,
+			      kQTMR_Compare1InterruptEnable);
 
 	return 0;
 }
@@ -196,7 +263,8 @@ static int mcux_qtmr_cancel_alarm(const struct device *dev, uint8_t chan_id)
 		return -EINVAL;
 	}
 
-	QTMR_DisableInterrupts(config->base, config->channel, data->interrupt_mask);
+	QTMR_DisableInterrupts(config->base, config->channel,
+			       kQTMR_Compare1InterruptEnable);
 	data->interrupt_mask &= ~kQTMR_Compare1InterruptEnable;
 	data->alarm_callback = NULL;
 
@@ -257,6 +325,140 @@ static uint32_t mcux_qtmr_get_freq(const struct device *dev)
 	return data->freq;
 }
 
+#ifdef CONFIG_COUNTER_CAPTURE
+static bool mcux_qtmr_mode_uses_secondary_source(qtmr_counting_mode_t mode)
+{
+	return mode == kQTMR_PriSrcRiseEdgeSecInpHigh ||
+	       mode == kQTMR_QuadCountMode ||
+	       mode == kQTMR_PriSrcRiseEdgeSecDir ||
+	       mode == kQTMR_SecSrcTrigPriCnt;
+}
+
+static int mcux_qtmr_capture_edge(counter_capture_flags_t flags,
+				  qtmr_input_capture_edge_t *edge)
+{
+	if ((flags & ~QTMR_CAPTURE_VALID_FLAGS) != 0U) {
+		return -EINVAL;
+	}
+
+	if ((flags & COUNTER_CAPTURE_BOTH_EDGES) ==
+	    COUNTER_CAPTURE_BOTH_EDGES) {
+		*edge = kQTMR_RisingAndFallingEdge;
+	} else if ((flags & COUNTER_CAPTURE_FALLING_EDGE) != 0U) {
+		*edge = kQTMR_FallingEdge;
+	} else if ((flags & COUNTER_CAPTURE_RISING_EDGE) != 0U) {
+		*edge = kQTMR_RisingEdge;
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int mcux_qtmr_capture_configure(const struct device *dev,
+				       uint8_t chan_id,
+				       counter_capture_flags_t flags,
+				       counter_capture_cb_t cb,
+				       void *user_data)
+{
+	const struct mcux_qtmr_config *config = dev->config;
+	struct mcux_qtmr_data *data = dev->data;
+	qtmr_input_capture_edge_t edge;
+	int ret;
+
+	if (chan_id != 0) {
+		return -EINVAL;
+	}
+
+	if (cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (data->alarm_callback != NULL) {
+		return -EBUSY;
+	}
+
+	if (mcux_qtmr_mode_uses_secondary_source(config->mode)) {
+		return -ENOTSUP;
+	}
+
+	if ((data->interrupt_mask & kQTMR_EdgeInterruptEnable) != 0U) {
+		return -EBUSY;
+	}
+
+	ret = mcux_qtmr_capture_edge(flags, &edge);
+	if (ret != 0) {
+		return ret;
+	}
+
+	data->capture_callback = cb;
+	data->capture_user_data = user_data;
+	data->capture_edge = edge;
+	data->capture_flags = flags & COUNTER_CAPTURE_BOTH_EDGES;
+	data->capture_single_shot = (flags & COUNTER_CAPTURE_SINGLE_SHOT) != 0U;
+
+	return 0;
+}
+
+static int mcux_qtmr_enable_capture(const struct device *dev, uint8_t chan_id)
+{
+	const struct mcux_qtmr_config *config = dev->config;
+	struct mcux_qtmr_data *data = dev->data;
+
+	if (chan_id != 0) {
+		return -EINVAL;
+	}
+
+	if (data->alarm_callback != NULL) {
+		return -EBUSY;
+	}
+
+	if (data->capture_callback == NULL) {
+		return -EINVAL;
+	}
+
+	if ((data->interrupt_mask & kQTMR_EdgeInterruptEnable) != 0U) {
+		return -EBUSY;
+	}
+
+	QTMR_SetupInputCapture(config->base, config->channel,
+			       config->qtmr_config.secondarySource, false,
+			       false, data->capture_edge);
+	QTMR_ClearStatusFlags(config->base, config->channel, kQTMR_EdgeFlag);
+
+	data->interrupt_mask |= kQTMR_EdgeInterruptEnable;
+	QTMR_EnableInterrupts(config->base, config->channel,
+			      kQTMR_EdgeInterruptEnable);
+
+	return 0;
+}
+
+static int mcux_qtmr_disable_capture(const struct device *dev, uint8_t chan_id)
+{
+	const struct mcux_qtmr_config *config = dev->config;
+	struct mcux_qtmr_data *data = dev->data;
+
+	if (chan_id != 0) {
+		return -EINVAL;
+	}
+
+	QTMR_DisableInterrupts(config->base, config->channel,
+			       kQTMR_EdgeInterruptEnable);
+	data->interrupt_mask &= ~kQTMR_EdgeInterruptEnable;
+	QTMR_SetupInputCapture(config->base, config->channel,
+			       config->qtmr_config.secondarySource, false,
+			       false, kQTMR_NoCapture);
+	QTMR_ClearStatusFlags(config->base, config->channel, kQTMR_EdgeFlag);
+
+	data->capture_callback = NULL;
+	data->capture_user_data = NULL;
+	data->capture_flags = 0U;
+	data->capture_single_shot = false;
+
+	return 0;
+}
+#endif /* CONFIG_COUNTER_CAPTURE */
+
 /**
  * @brief look up table for dividers when using internal clock sources kQTMR_ClockDivide_1 to
  * kQTMR_ClockDivide_128
@@ -295,6 +497,7 @@ static int mcux_qtmr_init(const struct device *dev)
 static DEVICE_API(counter, mcux_qtmr_driver_api) = {
 	.start = mcux_qtmr_start,
 	.stop = mcux_qtmr_stop,
+	.reset = mcux_qtmr_reset,
 	.get_value = mcux_qtmr_get_value,
 	.set_alarm = mcux_qtmr_set_alarm,
 	.cancel_alarm = mcux_qtmr_cancel_alarm,
@@ -302,6 +505,11 @@ static DEVICE_API(counter, mcux_qtmr_driver_api) = {
 	.get_pending_int = mcux_qtmr_get_pending_int,
 	.get_top_value = mcux_qtmr_get_top_value,
 	.get_freq = mcux_qtmr_get_freq,
+#ifdef CONFIG_COUNTER_CAPTURE
+	.capture_configure = mcux_qtmr_capture_configure,
+	.enable_capture = mcux_qtmr_enable_capture,
+	.disable_capture = mcux_qtmr_disable_capture,
+#endif /* CONFIG_COUNTER_CAPTURE */
 };
 
 #define MCUX_QTMR_CLK_SUBSYS(n)                            \
