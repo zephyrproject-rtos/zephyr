@@ -50,6 +50,10 @@
 	pinctrl-names = "default";
 };
 
+&aon_gpio0 {
+	status = "okay";
+};
+
 &mbox_b {
 	status = "okay";
 };
