@@ -321,6 +321,11 @@ class Lcov(CoverageTool):
                     continue
                 files += files_
             logger.debug("Coverage merge %d reports in %s", len(files), outdir)
+            if not files:
+                # lcov requires at least one action option, so an empty merge
+                # would fail with an unhelpful command line error.
+                logger.error("No per-instance coverage tracefiles to merge in: %s", outdir)
+                return 1, {}
             cmd = ["--output-file", coveragefile]
             for filename in files:
                 cmd.append("--add-tracefile")
