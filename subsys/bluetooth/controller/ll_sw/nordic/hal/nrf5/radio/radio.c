@@ -590,12 +590,14 @@ uint32_t radio_is_address(void)
 
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 static uint32_t last_pdu_end_latency_us;
+static uint32_t prev_pdu_end_us;
 static uint32_t last_pdu_end_us;
 
 static void last_pdu_end_us_init(uint32_t latency_us)
 {
 	last_pdu_end_latency_us = latency_us;
 	last_pdu_end_us = 0U;
+	prev_pdu_end_us = 0U;
 }
 
 uint32_t radio_is_done(void)
@@ -605,6 +607,7 @@ uint32_t radio_is_done(void)
 		 * Note: this depends on the function being called exactly once
 		 * in the ISR function.
 		 */
+		prev_pdu_end_us = last_pdu_end_us;
 		last_pdu_end_us += EVENT_TIMER->CC[HAL_EVENT_TIMER_TRX_END_CC_OFFSET];
 		return 1;
 	} else {
@@ -903,7 +906,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 				 (SW_SWITCH_TIMER->CC[cc] -
 				  HAL_EVENT_TIMER_US_TO_TICKS(delay)));
 	} else {
-		nrf_timer_cc_set(SW_SWITCH_TIMER, cc, 1);
+		nrf_timer_cc_set(SW_SWITCH_TIMER, cc, 1U);
 	}
 
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
@@ -1169,8 +1172,18 @@ uint32_t radio_tmr_isr_set(uint32_t start_us, radio_isr_cb_t cb, void *param)
 	isr_radio_tmr_cb_param = param;
 	isr_radio_tmr_cb = cb;
 
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	/* As timer is reset on every radio end, remove the accumulated
+	 * last_pdu_end_us in the given start_us.
+	 */
+	start_us -= last_pdu_end_us;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
 	/* start_us could be the current count in the timer */
 	uint32_t now_us = start_us;
+	uint32_t actual_us;
 
 	/* Setup timer compare while determining the latency in doing so */
 	do {
@@ -1178,9 +1191,12 @@ uint32_t radio_tmr_isr_set(uint32_t start_us, radio_isr_cb_t cb, void *param)
 		start_us = (now_us << 1) - start_us;
 
 		/* Setup compare event with min. 1 us offset */
+		actual_us = start_us + 1U;
+
+		/* Setup compare event with min. 1 us offset */
 		nrf_timer_event_clear(EVENT_TIMER, HAL_EVENT_TIMER_DEFERRED_TX_EVENT);
 		nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET,
-				 HAL_EVENT_TIMER_US_TO_TICKS(start_us + 1U));
+				 HAL_EVENT_TIMER_US_TO_TICKS(actual_us));
 
 		/* Capture the current time */
 		nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
@@ -1195,7 +1211,7 @@ uint32_t radio_tmr_isr_set(uint32_t start_us, radio_isr_cb_t cb, void *param)
 
 	irq_enable(TIMER0_IRQn);
 
-	return start_us + 1U;
+	return actual_us;
 }
 #endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
 
@@ -1378,7 +1394,8 @@ void radio_tmr_tifs_set(uint32_t tifs)
 	NRF_RADIO->TIFS = tifs;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
 	nrf_timer_cc_set(SW_SWITCH_TIMER,
-			 SW_SWITCH_TIMER_EVTS_COMP(sw_tifs_toggle), tifs);
+			 SW_SWITCH_TIMER_EVTS_COMP(sw_tifs_toggle),
+			 HAL_EVENT_TIMER_US_TO_TICKS(tifs));
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
@@ -1821,7 +1838,15 @@ void radio_tmr_aa_capture(void)
 
 uint32_t radio_tmr_aa_get(void)
 {
-	return EVENT_TIMER->CC[HAL_EVENT_TIMER_HCTO_CC_OFFSET];
+	uint32_t aa_us;
+
+	aa_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_HCTO_CC_OFFSET];
+
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	aa_us += prev_pdu_end_us;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+	return aa_us;
 }
 
 static uint32_t radio_tmr_aa;
@@ -2027,10 +2052,13 @@ void radio_gpio_lna_off(void)
 
 void radio_gpio_pa_lna_enable(uint32_t trx_us)
 {
-	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_PA_LNA_CC_OFFSET, trx_us);
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_PA_LNA_CC_OFFSET,
+			 HAL_EVENT_TIMER_US_TO_TICKS(trx_us));
+
 #if defined(HAL_RADIO_FEM_IS_NRF21540) && DT_NODE_HAS_PROP(FEM_NODE, pdn_gpios)
 	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_PA_LNA_PDN_CC_OFFSET,
-			 (trx_us - NRF_GPIO_PDN_OFFSET));
+			 HAL_EVENT_TIMER_US_TO_TICKS(trx_us - NRF_GPIO_PDN_OFFSET));
+
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_ENABLE_PALNA_PPI) |
 					  BIT(HAL_DISABLE_PALNA_PPI) |
 					  BIT(HAL_ENABLE_FEM_PPI) |
