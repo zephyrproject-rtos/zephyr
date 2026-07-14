@@ -556,6 +556,8 @@ int dwmac_probe(const struct device *dev)
 			(p->feature0 & DWMAC_HWFR_ALTDESC) ? "yes" : "no");
 	}
 
+	DWMAC_REG_WRITE(DWMAC_DMAOMR, DWMAC_DMAOMR_TSF | DWMAC_DMAOMR_RSF);
+
 	ret = dwmac_platform_init(dev);
 	if (ret < 0) {
 		return ret;
@@ -570,7 +572,6 @@ int dwmac_probe(const struct device *dev)
 
 	DWMAC_REG_WRITE(DWMAC_DMATDLAR, TXDESC_PHYS_L(0));
 	DWMAC_REG_WRITE(DWMAC_DMARDLAR, RXDESC_PHYS_L(0));
-	DWMAC_REG_WRITE(DWMAC_DMAOMR, DWMAC_DMAOMR_TSF | DWMAC_DMAOMR_RSF);
 
 	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM_EN)) {
 		DWMAC_REG_WRITE(DWMAC_MACCR, DWMAC_REG_READ(DWMAC_MACCR) | DWMAC_MACCR_IPCO);
