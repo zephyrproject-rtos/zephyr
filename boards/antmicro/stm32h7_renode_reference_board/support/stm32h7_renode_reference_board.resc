@@ -13,7 +13,7 @@ showAnalyzer sysbus.usart2
 macro reset
 """
     sysbus LoadELF $elf
-    cpu EnableZephyrMode
+    cpu EnableZephyrMode "CONFIG_TICKLESS_KERNEL"
     cpu VectorTableOffset `sysbus GetSymbolAddress "_vector_table"`
 """
 runMacro $reset
