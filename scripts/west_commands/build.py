@@ -24,7 +24,13 @@ from build_helpers import (
     is_zephyr_build,
     load_domains,
 )
-from zcmake import DEFAULT_CMAKE_GENERATOR, CMakeCache, run_build, run_cmake
+from zcmake import (
+    DEFAULT_CMAKE_GENERATOR,
+    CMakeCache,
+    run_build,
+    run_cmake,
+    setup_cmake_file_api_query,
+)
 from zephyr_ext_common import Forceable
 
 _ARG_SEPARATOR = '--'
@@ -731,6 +737,18 @@ class Build(Forceable):
             final_cmake_args.extend([f'-DWEST_PYTHON_PROPERTIES="{cmake_list}"'])
         if cmake_opts:
             final_cmake_args.extend(cmake_opts)
+
+        # Enable CMake's file-based API before invoking CMake so its object
+        # model (codemodel + toolchains reply) is emitted at generation time.
+        # Tooling such as "west spdx" consumes this, so producing it by default
+        # means no separate "west spdx --init" step is required. The query must
+        # exist before CMake runs and therefore cannot be created from within
+        # the CMake build system itself. Opt out with:
+        #     west config build.cmake-file-api false
+        if self.config.getboolean('build.cmake-file-api', default=True):
+            setup_cmake_file_api_query(self.build_dir,
+                                       dry_run=self.args.dry_run)
+
         run_cmake(final_cmake_args, dry_run=self.args.dry_run, env=cmake_env)
 
     def _run_pristine(self):

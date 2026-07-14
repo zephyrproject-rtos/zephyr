@@ -28,6 +28,42 @@ DEFAULT_CACHE = 'CMakeCache.txt'
 DEFAULT_CMAKE_GENERATOR = 'Ninja'
 '''Name of the default CMake generator.'''
 
+# CMake file-based API objects requested by default. Keep this in sync with
+# zspdx.sbom.setup_cmake_query, which seeds the same query for "west spdx".
+CMAKE_FILE_API_OBJECTS = ('codemodel-v2', 'toolchains-v1')
+
+
+def setup_cmake_file_api_query(build_dir, dry_run=False):
+    '''Enable CMake's file-based API for a build directory.
+
+    Creates the query files that make CMake emit its "object model" (the
+    codemodel and toolchains reply files) at generation time. This must happen
+    before CMake is invoked, because CMake reads the query directory only at
+    start-up; a query written while CMake is configuring only takes effect on
+    the *next* run. Downstream tooling such as ``west spdx`` consumes the reply.
+
+    :param build_dir: build directory that is about to be configured
+    :param dry_run: if True, don't touch the filesystem
+
+    Returns True if the query is in place (or would be, for a dry run).'''
+    if dry_run:
+        return True
+
+    query_dir = os.path.join(build_dir, '.cmake', 'api', 'v1', 'query')
+    try:
+        os.makedirs(query_dir, exist_ok=True)
+        for query_object in CMAKE_FILE_API_OBJECTS:
+            query_file = os.path.join(query_dir, query_object)
+            if not os.path.exists(query_file):
+                # An empty file is a valid "shared, stateless" query.
+                with open(query_file, 'w'):
+                    pass
+    except OSError as e:
+        _logger.warning('could not enable CMake file-based API in %s: %s',
+                        build_dir, e)
+        return False
+    return True
+
 
 def run_cmake(args, cwd=None, capture_output=False, dry_run=False, env=None):
     '''Run cmake to (re)generate a build system, a script, etc.

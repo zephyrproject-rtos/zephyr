@@ -25,9 +25,15 @@ SPDX_DESCRIPTION = """\
 This command creates an SPDX bill of materials following the completion
 of a Zephyr build.
 
-Enable CONFIG_BUILD_OUTPUT_META in the application and build it as usual.
-The build then asks CMake for the file-based API this command reads, so the
-build directory needs no preparation."""
+The SPDX command relies on the CMake file-based API. `west build` enables it
+automatically, so in the common case no preparation is required: just build,
+then run `west spdx`.
+
+If you configure CMake without `west build` -- or you disabled the file-based
+API with `west config build.cmake-file-api false` -- either enable
+CONFIG_BUILD_OUTPUT_META in the application, which makes the build request the
+API itself, or seed the query manually before configuring the build with
+`west spdx --init -d BUILDDIR`."""
 
 
 class ZephyrSpdx(WestCommand):

@@ -174,6 +174,7 @@ def test_cmake_args(monkeypatch, test_case):
 
     monkeypatch.setattr('build.run_cmake', run_cmake_mock)
     monkeypatch.setattr('build.west_topdir', lambda start=None, fall_back=True: '/west/topdir')
+    monkeypatch.setattr('build.setup_cmake_file_api_query', lambda *a, **kw: True)
     monkeypatch.setattr(b, '_banner', lambda _: True)
 
     # --- Trigger CMake run ---
@@ -224,6 +225,7 @@ def test_test_item_updates_source_dir(tmp_path, monkeypatch):
 
     monkeypatch.setattr('build.run_cmake', run_cmake_mock)
     monkeypatch.setattr('build.west_topdir', lambda start=None, fall_back=True: str(tmp_path))
+    monkeypatch.setattr('build.setup_cmake_file_api_query', lambda *a, **kw: True)
     monkeypatch.setattr(b, '_banner', lambda _: True)
     b.run_cmake = True
     b.build_dir = str(tmp_path / 'build')
@@ -373,3 +375,26 @@ def test_cwd_preferred_over_non_existent_dir_fmt(monkeypatch, build_instance, te
 
     b._setup_build_dir()
     assert Path(b.build_dir) == cwd
+
+
+def test_cmake_file_api_query(tmp_path):
+    """Test: setup_cmake_file_api_query seeds the CMake file-based API query."""
+    from zcmake import CMAKE_FILE_API_OBJECTS, setup_cmake_file_api_query
+
+    build_dir = tmp_path / 'build'
+    query_dir = build_dir / '.cmake' / 'api' / 'v1' / 'query'
+
+    # A dry run reports success without touching the filesystem.
+    assert setup_cmake_file_api_query(str(build_dir), dry_run=True) is True
+    assert not query_dir.exists()
+
+    # A real run creates an empty query file for each requested object.
+    assert setup_cmake_file_api_query(str(build_dir)) is True
+    assert CMAKE_FILE_API_OBJECTS  # sanity: at least one object requested
+    for query_object in CMAKE_FILE_API_OBJECTS:
+        query_file = query_dir / query_object
+        assert query_file.is_file()
+        assert query_file.read_bytes() == b''
+
+    # Running it again is idempotent.
+    assert setup_cmake_file_api_query(str(build_dir)) is True
