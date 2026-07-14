@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - sys_util
+
+tests:
+  libraries.bit_rev: {}
+  # sys_bit_rev*() prefers __builtin_bitreverse*() when the toolchain provides
+  # it, and only falls back to the arch_sys_bit_rev*() implementations
+  # otherwise. The builtins are available in LLVM, but not in the GCC versions
+  # currently shipped by the Zephyr SDK, so building the same tests with both
+  # toolchains on arm/arm64 is what covers both code paths today.
+  libraries.bit_rev.llvm:
+    integration_toolchains:
+      - zephyr/llvm
+    arch_allow:
+      - arm
+      - arm64
