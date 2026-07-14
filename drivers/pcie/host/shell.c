@@ -59,6 +59,10 @@ struct pcie_cap_id_to_str {
 #define PCI_EXP_DEVCAP2_SRIOV_MASK   0x00000010U /* Bit 4: Single Root I/O Virt */
 #define PCI_EXP_DEVCAP2_NVME_OFFLOAD 0x000000C0U /* Memory-mapped offload markers */
 
+/* MSI-X Redirection Table Definition Layouts */
+#define PCI_MSIX_TABLE_OFFSET_MASK 0xFFFFFFF8U
+#define PCI_MSIX_TABLE_BIR_MASK    0x00000007U
+
 static const struct pcie_cap_id_to_str pcie_cap_list[] = {
 	{ PCI_CAP_ID_PM,     "Power Management" },
 	{ PCI_CAP_ID_AGP,    "Accelerated Graphics Port" },
@@ -1339,6 +1343,65 @@ static int cmd_pcie_offload_capabilities(const struct shell *sh, size_t argc, ch
 	return 0;
 }
 
+static int cmd_pcie_irq_affinity(const struct shell *sh, size_t argc, char **argv)
+{
+	pcie_bdf_t bdf;
+	uint32_t id, msix_offset, msg_ctrl, table_val, table_offset, table_bir;
+	uint16_t vector_count;
+
+	if (argc < 2) {
+		shell_error(sh, "Usage: pcie irq affinity <bus:dev.func>");
+		return -EINVAL;
+	}
+
+	bdf = get_bdf(argv[1]);
+	if (bdf == PCIE_BDF_NONE) {
+		shell_error(sh, "Invalid BDF format specification.");
+		return -EINVAL;
+	}
+
+	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
+		shell_error(sh, "No responsive endpoint found at target BDF.");
+		return -ENODEV;
+	}
+
+	msix_offset = pcie_get_cap(bdf, PCI_CAP_ID_MSIX);
+	if (msix_offset == 0U) {
+		shell_error(sh, "Target device does not support MSI-X affinity mapping.");
+		return -EOPNOTSUPP;
+	}
+
+	msg_ctrl = pcie_conf_read(bdf, msix_offset) >> 16;
+	vector_count = (uint16_t)((msg_ctrl & 0x07FFU) + 1U);
+
+	table_val = pcie_conf_read(bdf, msix_offset + 1U);
+	table_offset = table_val & PCI_MSIX_TABLE_OFFSET_MASK;
+	table_bir = table_val & PCI_MSIX_TABLE_BIR_MASK;
+
+	shell_print(sh, "====================================================================");
+	shell_print(sh, "   PCIe MULTI-VECTOR REDIRECTION TABLE AFFINITY MATRIX: %u:%x.%u",
+		    PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf));
+	shell_print(sh, "====================================================================");
+	shell_print(sh, "   Hardware Redirection Profile:");
+	shell_print(sh, "      MSI-X Execution Status : [%s]",
+		    (msg_ctrl & (1U << 15)) ? "ENABLED / ROUTING ACTIVE" : "MASKED / SUSPENDED");
+	shell_print(sh, "      MSI-X Table Size       : %u vectors", (unsigned int)vector_count);
+	shell_print(sh, "   ----------------------------------------------------");
+	shell_print(sh,
+		    "   Physical Core Steering Line Memory Map (BAR %u Offset 0x%08X):", table_bir,
+		    table_offset);
+
+	if ((msg_ctrl & (1U << 15)) != 0U) {
+		shell_print(sh, "      -> [STATUS] MSI-X is active.");
+	} else {
+		shell_print(sh, "      -> [STATUS] MSI-X is inactive. All rings routing through "
+				"Legacy IRQ line.");
+	}
+	shell_print(sh, "====================================================================");
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_pcie_mask_cmds,
 	SHELL_CMD_ARG(ignore, NULL, "Register a coordinate slot to be ignored by bus scans",
@@ -1369,6 +1432,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_pcie_irq_cmds,
 	SHELL_CMD_ARG(status, NULL, "Trace legacy and MSI/MSI-X vector configuration statuses",
 		      cmd_pcie_irq_status, 2, 0),
+	SHELL_CMD_ARG(affinity, NULL, "Inspect PCIe interrupt affinity steering parameters",
+		      cmd_pcie_irq_affinity, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
