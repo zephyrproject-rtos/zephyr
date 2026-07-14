@@ -1,0 +1,35 @@
+/*
+ * Copyright (C) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/dts-v1/;
+#include <common/freq.h>
+#include <microchip/sam/sama5/sama5d2/sama5d27som1.dtsi>
+
+/ {
+	model = "SAMA5D27-SOM1-EK board";
+	compatible = "microchip,sama5d27_som1_ek", "microchip,sama5d2", "microchip,sama5";
+
+	aliases {
+		systick-timer = &pit;
+	};
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,sram = &ddram;
+		zephyr,shell-uart = &uart1;
+	};
+};
+
+&pit {
+	clock-frequency = <DT_FREQ_K(5125)>;
+	status = "okay";
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "okay";
+};
