@@ -14,8 +14,8 @@
 #define __XEN_VERSION_H__
 
 #include <zephyr/xen/generic.h>
-#include <zephyr/xen/public/version.h>
-#include <zephyr/xen/public/xen.h>
+#include <xen/public/version.h>
+#include <xen/public/xen.h>
 
 /**
  * @defgroup xen_version_queries Xen version queries

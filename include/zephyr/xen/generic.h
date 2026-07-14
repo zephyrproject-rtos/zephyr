@@ -13,7 +13,7 @@
 #ifndef __XEN_GENERIC_H__
 #define __XEN_GENERIC_H__
 
-#include <zephyr/xen/public/xen.h>
+#include <xen/public/xen.h>
 
 /**
  * @defgroup xen_internal Xen internal support
