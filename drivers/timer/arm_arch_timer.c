@@ -41,7 +41,7 @@ static uint32_t cyc_per_tick;
 
 static uint64_t last_cycle;
 static uint64_t last_tick;
-static uint32_t last_elapsed;
+static sys_clock_ticks_t last_elapsed;
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = ARM_ARCH_TIMER_IRQ;
@@ -73,7 +73,7 @@ static void arm_arch_timer_compare_isr(const void *arg)
 
 	uint64_t curr_cycle = arm_arch_timer_count();
 	uint64_t delta_cycles = curr_cycle - last_cycle;
-	uint32_t delta_ticks = (cycle_diff_t)delta_cycles / CYC_PER_TICK;
+	sys_clock_ticks_t delta_ticks = (cycle_diff_t)delta_cycles / CYC_PER_TICK;
 
 	last_cycle += (cycle_diff_t)delta_ticks * CYC_PER_TICK;
 	last_tick += delta_ticks;
@@ -120,11 +120,23 @@ void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 		return;
 	}
 
-	uint64_t next_cycle = (last_tick + last_elapsed + ticks) * CYC_PER_TICK;
+	/*
+	 * Work relative to the last announced tick edge, whose cycle value is
+	 * cached in last_cycle (the ISR keeps last_cycle == last_tick *
+	 * CYC_PER_TICK). Computing the deadline as last_cycle + delta avoids
+	 * recomputing last_tick * CYC_PER_TICK, whose product grows with uptime
+	 * and could overflow.
+	 *
+	 * Clamp the ahead-of-baseline tick count so the one remaining multiply
+	 * cannot overflow either: with CONFIG_SYSTEM_CLOCK_LONG_WAIT, ticks may
+	 * be up to SYS_CLOCK_MAX_WAIT (UINT64_MAX/2), which would wrap when
+	 * scaled by CYC_PER_TICK. CYCLES_MAX is the furthest ahead the compare
+	 * may be set, so bound the total to CYCLES_MAX / CYC_PER_TICK.
+	 */
+	uint64_t max_ahead_ticks = (uint64_t)CYCLES_MAX / CYC_PER_TICK;
+	uint64_t ahead_ticks = MIN(last_elapsed + (uint64_t)ticks, max_ahead_ticks);
 
-	if ((next_cycle - last_cycle) > CYCLES_MAX) {
-		next_cycle = last_cycle + CYCLES_MAX;
-	}
+	uint64_t next_cycle = last_cycle + ahead_ticks * CYC_PER_TICK;
 
 	arm_arch_timer_set_compare(next_cycle);
 	arm_arch_timer_set_irq_mask(false);
@@ -140,7 +152,7 @@ sys_clock_ticks_t sys_clock_elapsed(void)
 
 	uint64_t curr_cycle = arm_arch_timer_count();
 	uint64_t delta_cycles = curr_cycle - last_cycle;
-	uint32_t delta_ticks = (cycle_diff_t)delta_cycles / CYC_PER_TICK;
+	sys_clock_ticks_t delta_ticks = (cycle_diff_t)delta_cycles / CYC_PER_TICK;
 
 	last_elapsed = delta_ticks;
 	return delta_ticks;

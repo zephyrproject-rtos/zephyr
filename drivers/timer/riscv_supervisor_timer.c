@@ -40,7 +40,7 @@ const int32_t z_sys_timer_irq_for_test = IRQ_S_TIMER;
 static struct k_spinlock lock;
 static uint64_t last_count;
 static uint64_t last_ticks;
-static uint32_t last_elapsed;
+static sys_clock_ticks_t last_elapsed;
 
 static void sbi_set_timer(uint64_t deadline)
 {
@@ -82,7 +82,7 @@ static void timer_isr(const void *arg)
 
 	uint64_t now = stime();
 	uint64_t dcycles = now - last_count;
-	uint32_t dticks = (cycle_diff_t)dcycles / CYC_PER_TICK;
+	sys_clock_ticks_t dticks = (cycle_diff_t)dcycles / CYC_PER_TICK;
 
 	last_count += (cycle_diff_t)dticks * CYC_PER_TICK;
 	last_ticks += dticks;
@@ -107,13 +107,24 @@ void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t cyc;
 
-	cyc = (last_ticks + last_elapsed + ticks) * CYC_PER_TICK;
-	if ((cyc - last_count) > CYCLES_MAX) {
-		cyc = last_count + CYCLES_MAX;
-	}
-	sbi_set_timer(cyc);
+	/*
+	 * Work relative to the last announced tick edge, whose cycle value is
+	 * cached in last_cycle (the ISR keeps last_cycle == last_tick *
+	 * CYC_PER_TICK). Computing the deadline as last_cycle + delta avoids
+	 * recomputing last_tick * CYC_PER_TICK, whose product grows with uptime
+	 * and could overflow.
+	 *
+	 * Clamp the ahead-of-baseline tick count so the one remaining multiply
+	 * cannot overflow either: with CONFIG_SYSTEM_CLOCK_LONG_WAIT, ticks may
+	 * be up to SYS_CLOCK_MAX_WAIT (UINT64_MAX/2), which would wrap when
+	 * scaled by CYC_PER_TICK. CYCLES_MAX is the furthest ahead the compare
+	 * may be set, so bound the total to CYCLES_MAX / CYC_PER_TICK.
+	 */
+	uint64_t max_ahead_ticks = (uint64_t)CYCLES_MAX / CYC_PER_TICK;
+	uint64_t ahead_ticks = MIN(last_elapsed + (uint64_t)ticks, max_ahead_ticks);
+
+	sbi_set_timer(last_count + ahead_ticks * CYC_PER_TICK);
 
 	k_spin_unlock(&lock, key);
 }
@@ -127,7 +138,7 @@ sys_clock_ticks_t sys_clock_elapsed(void)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t now = stime();
 	uint64_t dcycles = now - last_count;
-	uint32_t dticks = (cycle_diff_t)dcycles / CYC_PER_TICK;
+	sys_clock_ticks_t dticks = (cycle_diff_t)dcycles / CYC_PER_TICK;
 
 	last_elapsed = dticks;
 	k_spin_unlock(&lock, key);
