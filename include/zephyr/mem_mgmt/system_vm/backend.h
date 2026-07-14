@@ -84,8 +84,13 @@ extern "C" {
  * @param phys Page-aligned source physical address to map
  * @param size Page-aligned size of the mapped region in bytes
  * @param flags Caching, access and control flags (see K_MEM_* macros)
+ *
+ * @retval 0 Successfully mapped memory
+ * @retval -EINVAL Invalid input arguments
+ * @retval -ENOMEM  Not enough memory to perform memory mapping
+ * @retval -ENOTSUP Memory mapping is not supported
  */
-void sys_mm_vm_backend_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags);
+int sys_mm_vm_backend_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags);
 
 /**
  * Remove mappings for a provided virtual address range
@@ -110,8 +115,12 @@ void sys_mm_vm_backend_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t
  *
  * @param addr Page-aligned base virtual address to un-map
  * @param size Page-aligned region size
+ *
+ * @retval 0 Successfully unmapped memory
+ * @retval -EINVAL Invalid input arguments
+ * @retval -ENOTSUP Memory unmapping is not supported
  */
-void sys_mm_vm_backend_mem_unmap(void *addr, size_t size);
+int sys_mm_vm_backend_mem_unmap(void *addr, size_t size);
 
 /**
  * Get the mapped physical memory address from virtual address.

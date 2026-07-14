@@ -277,7 +277,10 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	tlb_entries[entry_idx] = entry;
 
 #ifdef CONFIG_MMU
-	sys_mm_vm_backend_mem_map(virt, va, CONFIG_MM_DRV_PAGE_SIZE, flags);
+	int ret2 = sys_mm_vm_backend_mem_map(virt, va, CONFIG_MM_DRV_PAGE_SIZE, flags);
+
+	ARG_UNUSED(ret2);
+	__ASSERT_NO_MSG(ret2);
 #endif
 	/*
 	 * Invalid the cache of the newly mapped virtual page to
@@ -386,7 +389,10 @@ static int sys_mm_drv_unmap_page_wflush(void *virt, bool flush_data)
 	if (flush_data) {
 		sys_cache_data_flush_range(virt, CONFIG_MM_DRV_PAGE_SIZE);
 #ifdef CONFIG_MMU
-		sys_mm_vm_backend_mem_unmap(virt, CONFIG_MM_DRV_PAGE_SIZE);
+		int ret2 = sys_mm_vm_backend_mem_unmap(virt, CONFIG_MM_DRV_PAGE_SIZE);
+
+		ARG_UNUSED(ret2);
+		__ASSERT_NO_MSG(ret2 == 0);
 #endif
 	}
 
@@ -471,7 +477,10 @@ int sys_mm_drv_update_page_flags(void *virt, uint32_t flags)
 	tlb_entries[entry_idx] = entry;
 
 #ifdef CONFIG_MMU
-	sys_mm_vm_backend_mem_map(virt, va, CONFIG_MM_DRV_PAGE_SIZE, flags);
+	int ret2 = sys_mm_vm_backend_mem_map(virt, va, CONFIG_MM_DRV_PAGE_SIZE, flags);
+
+	ARG_UNUSED(ret2);
+	__ASSERT_NO_MSG(ret2 == 0);
 #endif
 
 out:
@@ -854,9 +863,12 @@ static void adsp_mm_save_context(void *storage_buffer)
 			tlb_entries[entry_idx] = entry;
 
 #ifdef CONFIG_MMU
-			sys_mm_vm_backend_mem_map(UINT_TO_POINTER(phys_addr), phys_addr,
-						  CONFIG_MM_DRV_PAGE_SIZE,
-						  K_MEM_CACHE_WB | K_MEM_PERM_RW);
+			int ret2 = sys_mm_vm_backend_mem_map(UINT_TO_POINTER(phys_addr), phys_addr,
+							     CONFIG_MM_DRV_PAGE_SIZE,
+							     K_MEM_CACHE_WB | K_MEM_PERM_RW);
+
+			ARG_UNUSED(ret2);
+			__ASSERT_NO_MSG(ret2 == 0);
 #endif
 
 			/* Invalidate cache to avoid stalled data
