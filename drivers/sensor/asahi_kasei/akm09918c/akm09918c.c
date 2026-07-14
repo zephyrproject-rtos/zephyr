@@ -86,15 +86,18 @@ int akm09918c_fetch_measurement_blocking(const struct device *dev, int16_t *x, i
 static int akm09918c_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct akm09918c_data *data = dev->data;
-
+	/* Avoid introducing delay on continuous measurements */
+	bool wait_for_sample = data->mode == AKM09918C_CNTL2_PWR_DOWN;
 	int ret = akm09918c_start_measurement_blocking(dev, chan);
 
 	if (ret) {
 		return ret;
 	}
-	/* Wait for sample */
-	LOG_DBG("Waiting for sample...");
-	k_usleep(AKM09918C_MEASURE_TIME_US);
+
+	if (wait_for_sample) {
+		LOG_DBG("Waiting for sample...");
+		k_usleep(AKM09918C_MEASURE_TIME_US);
+	}
 
 	return akm09918c_fetch_measurement_blocking(dev, &data->x_sample, &data->y_sample,
 						    &data->z_sample);
