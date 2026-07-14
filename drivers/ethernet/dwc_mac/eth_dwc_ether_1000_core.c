@@ -271,7 +271,9 @@ static void dwmac_receive(const struct device *dev)
 
 		if ((des0 & RDES0_LS) != 0U) {
 			if ((des0 & RDES0_ES) == 0U) {
-				net_recv_data(p->iface, p->rx_pkt);
+				if (net_recv_data(p->iface, p->rx_pkt) < 0) {
+					net_pkt_unref(p->rx_pkt);
+				}
 			} else {
 				LOG_ERR("rx error (DES0 = 0x%08x)", des0);
 				eth_stats_update_errors_rx(p->iface);
