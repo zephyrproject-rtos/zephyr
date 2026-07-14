@@ -258,16 +258,13 @@ class TestInstance(StatusMixin):
         simulation = options.sim_name
 
         simulator = self.platform.simulator_by_name(simulation)
-        if os.name == 'nt' and simulator and simulator.name not in ('na', 'qemu'):
+        if os.name == 'nt' and simulator:
             # running on simulators is currently supported only for QEMU on Windows
-            return False
+            if simulator.name not in ('na', 'qemu'):
+                return False
 
-        # QEMU_BIN_PATH is optional and acts as an override.
-        # Validate it only when explicitly provided.
-        if simulator and simulator.name == 'qemu':
-            qemu_bin_path = os.environ.get('QEMU_BIN_PATH')
-
-            if qemu_bin_path is not None and not os.path.exists(qemu_bin_path):
+            # check presence of QEMU on Windows
+            if simulator.name == 'qemu' and 'QEMU_BIN_PATH' not in os.environ:
                 return False
 
         # we asked for build-only on the command line
