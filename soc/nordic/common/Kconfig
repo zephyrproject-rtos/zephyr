@@ -26,7 +26,7 @@ if NRF_SYS_EVENT
 config NRF_SYS_EVENT_IRQ_LATENCY
 	bool "Register events to reduce interrupt handling latency"
 	default y
-	depends on HAS_HW_NRF_RRAMC && !TRUSTED_EXECUTION_NONSECURE
+	depends on (HAS_HW_NRF_RRAMC || HAS_HW_NRF_MRAMC) && !TRUSTED_EXECUTION_NONSECURE
 
 config NRF_SYS_EVENT_IRQ_LATENCY_MANUAL
 	def_bool !RISCV
@@ -37,6 +37,7 @@ config NRF_SYS_EVENT_IRQ_LATENCY_MANUAL
 
 config NRF_SYS_EVENT_GRTC_CHAN_CNT
 	int "GRTC channel for RRAMC wake up"
+	depends on !HAS_HW_NRF_MRAMC
 	default 1
 	range 0 16
 	depends on NRF_SYS_EVENT_IRQ_LATENCY
