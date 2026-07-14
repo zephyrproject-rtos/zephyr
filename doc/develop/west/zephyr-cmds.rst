@@ -231,15 +231,19 @@ Command-line options
   document, :file:`sdk.spdx` (or :file:`sdk.jsonld`), which lists header files
   included from the SDK.
 
-- ``--analyze-elf {snippets}``: inspect the final image's DWARF debug
-  information to refine the bill-of-materials down to what actually ended up in
-  the firmware. Requires a build with debug symbols (the default for most
-  Zephyr configurations).
+- ``--analyze-elf {snippets,prune-sources}``: inspect the final image's DWARF
+  debug information to refine the bill-of-materials down to what actually ended
+  up in the firmware. Requires a build with debug symbols (the default for most
+  Zephyr configurations). May be given more than once to combine analyses:
 
   - ``snippets``: record the specific source line-ranges that contributed code
     to the image as an additional :file:`snippets.spdx` (or
     :file:`snippets.jsonld`) document, using SPDX Snippets. Each snippet points
     back at its source file and carries that file's license and copyright.
+
+  - ``prune-sources``: drop source files (``.c``, ``.S``, ...) that contributed
+    no code to the image, for example because the linker garbage-collected
+    them. Header files, generated data and build artifacts are left untouched.
 
 - ``--elf-file ELF``: the image analyzed by ``--analyze-elf``. Defaults to
   :file:`BUILD_DIR/zephyr/zephyr.elf`.

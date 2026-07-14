@@ -41,6 +41,10 @@ class SBOMConfig:
     # final image's DWARF debug info?
     generate_snippets: bool = False
 
+    # --analyze-elf=prune-sources: drop source files that contributed no code
+    # to the final image, per its DWARF debug info?
+    prune_sources: bool = False
+
     # ELF file to analyze for --analyze-elf; when empty, defaults to
     # <build_dir>/zephyr/zephyr.elf
     elf_file: str = ""
@@ -114,7 +118,7 @@ def make_spdx(cfg):
     scan_sbom_graph(scanner_cfg, sbom_graph)
 
     # optional: analyze the final image's DWARF debug info
-    if cfg.generate_snippets:
+    if cfg.generate_snippets or cfg.prune_sources:
         _analyze_elf(cfg, sbom_graph)
 
     # route to appropriate serializer based on version
@@ -135,8 +139,20 @@ def make_spdx(cfg):
         return False
 
 
+# Source file extensions treated as translation units, i.e. files that are
+# compiled and can therefore be present in (or absent from) the final image's
+# DWARF debug info. Only these are candidates for --analyze-elf=prune-sources;
+# headers, generated blobs, licenses and build artifacts are left untouched.
+_TRANSLATION_UNIT_EXTS = frozenset({".c", ".cpp", ".cxx", ".cc", ".c++", ".s", ".asm"})
+
+
 def _analyze_elf(cfg: SBOMConfig, sbom_graph) -> None:
-    """Record the final image's used source ranges as SPDX snippets."""
+    """Run the requested --analyze-elf analyses over the final image's DWARF info.
+
+    Performs a single DWARF pass and dispatches to the requested analyses:
+    ``prune-sources`` drops sources absent from the image, ``snippets`` records
+    the used source ranges as SPDX Snippets.
+    """
     from zspdx.dwarf import collect_used_lines
 
     elf_path = cfg.elf_file or os.path.join(cfg.build_dir, "zephyr", "zephyr.elf")
@@ -148,8 +164,70 @@ def _analyze_elf(cfg: SBOMConfig, sbom_graph) -> None:
         )
         return
 
+    # Single DWARF pass, shared by both analyses.
     file_lines = collect_used_lines(elf_path)
-    _extract_snippets(sbom_graph, elf_path, file_lines)
+
+    if cfg.prune_sources:
+        _prune_unused_sources(sbom_graph, set(file_lines))
+
+    if cfg.generate_snippets:
+        _extract_snippets(sbom_graph, elf_path, file_lines)
+
+
+def _prune_unused_sources(sbom_graph, used_paths: set[str]) -> None:
+    """Drop source files that contributed no code to the final image.
+
+    ``used_paths`` is the set of source-file realpaths referenced by the image's
+    DWARF debug info. Any tracked translation unit whose realpath is absent from
+    that set is removed from the graph along with its relationships.
+    """
+    # An empty set almost always means the DWARF walk failed (missing debug info
+    # or unreadable ELF); pruning against it would wrongly remove every source.
+    if not used_paths:
+        _logger.error(
+            "no sources found in the ELF's DWARF info; skipping prune-sources "
+            "to avoid removing every source file"
+        )
+        return
+
+    to_remove = [
+        spdx_file
+        for path, spdx_file in sbom_graph.files.items()
+        if os.path.splitext(path)[1].lower() in _TRANSLATION_UNIT_EXTS
+        and os.path.realpath(path) not in used_paths
+    ]
+    for spdx_file in to_remove:
+        _remove_file_from_graph(sbom_graph, spdx_file)
+
+    _logger.info(
+        "prune-sources: removed %d source file(s) absent from the final image",
+        len(to_remove),
+    )
+
+
+def _remove_file_from_graph(sbom_graph, spdx_file) -> None:
+    """Remove a file from the graph, keeping ownership and relationships consistent."""
+    # Detach from the owning component and the global file index.
+    if spdx_file.component is not None:
+        spdx_file.component.files.pop(spdx_file.path, None)
+    sbom_graph.files.pop(spdx_file.path, None)
+
+    # Rebuild the relationship list, dropping any relationship that starts at the
+    # removed file and unlinking it from any relationship that targets it.
+    surviving = []
+    for rel in sbom_graph.relationships:
+        if rel.from_element is spdx_file:
+            continue
+        if any(target is spdx_file for target in rel.to_elements):
+            rel.to_elements = [t for t in rel.to_elements if t is not spdx_file]
+            if not rel.to_elements:
+                # Relationship has no targets left; drop it and detach it from
+                # the element that owned it.
+                owner = rel.from_element
+                owner.relationships = [r for r in owner.relationships if r is not rel]
+                continue
+        surviving.append(rel)
+    sbom_graph.relationships = surviving
 
 
 def _extract_snippets(sbom_graph, elf_path: str, file_lines: dict[str, set[int]]) -> None:
