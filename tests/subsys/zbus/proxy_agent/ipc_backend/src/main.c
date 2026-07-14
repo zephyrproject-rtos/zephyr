@@ -119,7 +119,7 @@ ZTEST(ipc_backend, test_set_recv_cb)
 ZTEST(ipc_backend, test_backend_init)
 {
 	int ret;
-	struct zbus_proxy_agent_ipc_data ipc_data = {0};
+	static struct zbus_proxy_agent_ipc_data ipc_data = {0};
 	struct zbus_proxy_agent_ipc_config ipc_config = {
 		.dev = DEVICE_DT_GET(FAKE_IPC_NODE),
 		.ept_name = "test_ept",
@@ -171,7 +171,7 @@ ZTEST(ipc_backend, test_backend_init)
 ZTEST(ipc_backend, test_backend_send)
 {
 	int ret;
-	struct zbus_proxy_agent_ipc_data ipc_data = {0};
+	static struct zbus_proxy_agent_ipc_data ipc_data = {0};
 	struct zbus_proxy_agent_ipc_config ipc_config = {
 		.dev = DEVICE_DT_GET(FAKE_IPC_NODE),
 		.ept_name = "test_ept",
@@ -237,7 +237,7 @@ ZTEST(ipc_backend, test_backend_send)
 /* Test recv */
 ZTEST(ipc_backend, test_backend_recv)
 {
-	struct zbus_proxy_agent_ipc_data ipc_data = {0};
+	static struct zbus_proxy_agent_ipc_data ipc_data = {0};
 	struct zbus_proxy_agent_ipc_config ipc_config = {
 		.dev = DEVICE_DT_GET(FAKE_IPC_NODE),
 		.ept_name = "test_ept",
@@ -289,7 +289,7 @@ ZTEST(ipc_backend, test_backend_recv)
 
 ZTEST(ipc_backend, test_ipc_error)
 {
-	struct zbus_proxy_agent_ipc_data ipc_data = {0};
+	static struct zbus_proxy_agent_ipc_data ipc_data = {0};
 	struct zbus_proxy_agent_ipc_config ipc_config = {
 		.dev = DEVICE_DT_GET(FAKE_IPC_NODE),
 		.ept_name = "test_ept",

@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
@@ -26,7 +27,7 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			cpu-power-states = <&sleep &deepsleep &powerdown>;
+			cpu-power-states = <&sleep &deepsleep &powerdown &deeppowerdown>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
@@ -82,6 +83,24 @@
 			power-state-name = "standby";
 			min-residency-us = <80000>;
 			exit-latency-us = <20>;
+		};
+
+		/*
+		 * Deep Power Down. The whole CORE domain is power gated and the chip
+		 * wakes through the reset routine. Only SRAMA (the first 32 KB of the
+		 * RAM, retained by the VBAT RAM LDO) survives, so the entire retained
+		 * working set must fit in SRAMA for transparent resume.
+		 */
+		deeppowerdown: deeppowerdown {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-ram";
+			/* Suspend-to-RAM needs the application to place its working set
+			 * in retained RAM and arm a wakeup source, so it is opt-in:
+			 * enable this node from the application to use it.
+			 */
+			status = "disabled";
+			min-residency-us = <500000>;
+			exit-latency-us = <500>;
 		};
 	};
 
@@ -996,6 +1015,7 @@
 		prescale-glitch-filter-bypass;
 		clk-source = <1>;
 		resolution = <32>;
+		wakeup-ctrls = <&wuu NXP_WUU_MODULE_6_INT>;
 	};
 
 	lptmr1: lptmr@4b000 {
@@ -1156,9 +1176,10 @@
 	};
 
 	wuu: system-modules@46000 {
-		compatible = "nxp,wuu";
+		compatible = "nxp,wuc-wuu", "nxp,wuu";
 		reg = <0x46000 0x1000>;
 		interrupts = <147 0>;
+		#wakeup-ctrl-cells = <1>;
 	};
 
 	cmc: system-modules@48000 {

@@ -31,7 +31,15 @@ enum tracing_state {
 
 static atomic_t tracing_state;
 static atomic_t tracing_packet_drop_num;
-static struct tracing_backend *working_backend;
+struct k_spinlock tracing_lock;
+/*
+ * Output is fanned out to every registered backend. The common case is a single
+ * backend, so cache it and a "more than one" flag to keep the hot path a direct
+ * call rather than a section walk (which is measurably slower for high-rate
+ * synchronous backends).
+ */
+static struct tracing_backend *primary_backend;
+static bool multiple_backends;
 
 #ifdef CONFIG_TRACING_ASYNC
 #define TRACING_THREAD_NAME "tracing_thread"
@@ -78,13 +86,32 @@ static void tracing_set_state(enum tracing_state state)
 	atomic_set(&tracing_state, state);
 }
 
+void tracing_set_enabled(bool enable)
+{
+	tracing_set_state(enable ? TRACING_ENABLE : TRACING_DISABLE);
+}
+
 static int tracing_init(void)
 {
-
 	tracing_buffer_init();
 
-	working_backend = tracing_backend_get(CONFIG_TRACING_BACKEND_NAME);
-	tracing_backend_init(working_backend);
+	/*
+	 * Output goes to the configured backend (CONFIG_TRACING_BACKEND_NAME) plus
+	 * any additional backend registered under a different name - e.g. one added
+	 * by an out-of-tree module with TRACING_BACKEND_DEFINE(), which then receives
+	 * the same stream with no edits to the core tree. Backends sharing the
+	 * configured name (used by some tests to substitute a capture backend) are
+	 * treated as an override: only the configured one runs, as before.
+	 */
+	primary_backend = tracing_backend_get(CONFIG_TRACING_BACKEND_NAME);
+	tracing_backend_init(primary_backend);
+
+	STRUCT_SECTION_FOREACH(tracing_backend, backend) {
+		if (strcmp(backend->name, CONFIG_TRACING_BACKEND_NAME) != 0) {
+			tracing_backend_init(backend);
+			multiple_backends = true;
+		}
+	}
 
 	atomic_set(&tracing_packet_drop_num, 0);
 
@@ -113,7 +140,27 @@ static int tracing_init(void)
 	return 0;
 }
 
-SYS_INIT(tracing_init, APPLICATION, 0);
+/* The init level is configurable (TRACING_INIT_LEVEL): a lower level captures
+ * more of the boot sequence. PRE_KERNEL_2 is the earliest supported (sync only,
+ * after the system timer so timestamps are valid); async tracing needs the
+ * kernel for its drainer thread, so it cannot go below POST_KERNEL.
+ */
+#define TRACING_INIT_LEVEL                                                                         \
+	COND_CASE_1(CONFIG_TRACING_INIT_LEVEL_PRE_KERNEL_2, (PRE_KERNEL_2),                        \
+		    CONFIG_TRACING_INIT_LEVEL_POST_KERNEL, (POST_KERNEL), (APPLICATION))
+
+SYS_INIT(tracing_init, TRACING_INIT_LEVEL, CONFIG_TRACING_INIT_PRIORITY);
+
+/* At PRE_KERNEL_2 the system timer initializes at the same level; tracing must
+ * run after it or k_cycle_get_32() is not yet ticking and event timestamps are
+ * invalid. Every in-tree timer registers sys_clock_driver_init() at PRE_KERNEL_2
+ * with SYSTEM_CLOCK_INIT_PRIORITY, so require a strictly higher tracing priority.
+ */
+#if defined(CONFIG_TRACING_INIT_LEVEL_PRE_KERNEL_2) && defined(CONFIG_SYS_CLOCK_EXISTS)
+BUILD_ASSERT(CONFIG_TRACING_INIT_PRIORITY > CONFIG_SYSTEM_CLOCK_INIT_PRIORITY,
+	     "Tracing at PRE_KERNEL_2 must init after the system timer: set "
+	     "TRACING_INIT_PRIORITY > SYSTEM_CLOCK_INIT_PRIORITY for valid timestamps");
+#endif
 
 #ifdef CONFIG_TRACING_ASYNC
 void tracing_trigger_output(bool before_put_is_empty)
@@ -147,10 +194,44 @@ void tracing_cmd_handle(uint8_t *buf, uint32_t length)
 
 void tracing_buffer_handle(uint8_t *data, uint32_t length)
 {
-	tracing_backend_output(working_backend, data, length);
+	tracing_backend_output(primary_backend, data, length);
+
+	if (!multiple_backends) {
+		return;
+	}
+
+	STRUCT_SECTION_FOREACH(tracing_backend, backend) {
+		if (strcmp(backend->name, CONFIG_TRACING_BACKEND_NAME) != 0) {
+			tracing_backend_output(backend, data, length);
+		}
+	}
 }
 
 void tracing_packet_drop_handle(void)
 {
 	atomic_inc(&tracing_packet_drop_num);
+}
+
+uint32_t tracing_packet_drop_count_get(void)
+{
+	return (uint32_t)atomic_get(&tracing_packet_drop_num);
+}
+
+int tracing_backends_flush(void)
+{
+	int ret = tracing_backend_flush(primary_backend);
+
+	if (multiple_backends) {
+		STRUCT_SECTION_FOREACH(tracing_backend, backend) {
+			if (strcmp(backend->name, CONFIG_TRACING_BACKEND_NAME) != 0) {
+				int backend_ret = tracing_backend_flush(backend);
+
+				if ((backend_ret != 0) && (ret == 0)) {
+					ret = backend_ret;
+				}
+			}
+		}
+	}
+
+	return ret;
 }

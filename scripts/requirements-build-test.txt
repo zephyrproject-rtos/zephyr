@@ -14,10 +14,10 @@ gcovr>=6.0
 coverage
 
 # used for west-command testing
-pytest
+pytest>=9.0.3
 mypy
 
 # used for JUnit XML parsing in CTest harness
 junitparser>=3.0.0
 
-python-dotenv
+python-dotenv>=1.2.2

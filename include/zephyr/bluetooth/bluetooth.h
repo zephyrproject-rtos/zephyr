@@ -815,6 +815,19 @@ enum bt_le_adv_opt {
 	 * @kconfig_dep{BT_EXT_ADV_CODING_SELECTION}
 	 */
 	BT_LE_ADV_OPT_REQUIRE_S8_CODING = BIT(21),
+
+	/**
+	 * @brief Request a specific TX power level for the advertising set.
+	 *
+	 * When set, the @ref bt_le_adv_param.tx_power field is passed to the
+	 * controller as the desired TX power. The controller selects the closest
+	 * supported level and reports the actual value via
+	 * @ref bt_le_ext_adv_info.tx_power.
+	 *
+	 * When not set, the controller chooses the TX power freely
+	 * (equivalent to @ref BT_HCI_LE_ADV_TX_POWER_NO_PREF).
+	 */
+	BT_LE_ADV_OPT_TX_POWER = BIT(22),
 };
 
 /** LE Advertising Parameters. */
@@ -850,6 +863,17 @@ struct bt_le_adv_param {
 	 * set as @ref bt_le_adv_param.options.
 	 */
 	uint8_t  secondary_max_skip;
+
+	/**
+	 * @brief Requested TX power in dBm.
+	 *
+	 * Only used when @ref BT_LE_ADV_OPT_TX_POWER is set in @ref options.
+	 * Valid range is @ref BT_HCI_LE_ADV_TX_POWER_MIN to
+	 * @ref BT_HCI_LE_ADV_TX_POWER_MAX.
+	 * The controller selects the closest supported level and reports the
+	 * actual value via @ref bt_le_ext_adv_info.tx_power.
+	 */
+	int8_t tx_power;
 
 	/** @brief Bit-field of advertising options, see the @ref bt_le_adv_opt field. */
 	uint32_t options;
@@ -900,6 +924,23 @@ struct bt_le_adv_param {
 	const bt_addr_le_t *peer;
 };
 
+/**
+ * @brief Set the TX power in an advertising parameter struct.
+ *
+ * Convenience helper that sets @ref bt_le_adv_param.tx_power and enables
+ * @ref BT_LE_ADV_OPT_TX_POWER in @ref bt_le_adv_param.options in a single
+ * call.
+ *
+ * @param param    Advertising parameters to update.
+ * @param tx_power Requested TX power in dBm. Valid range is
+ *                 @ref BT_HCI_LE_ADV_TX_POWER_MIN to
+ *                 @ref BT_HCI_LE_ADV_TX_POWER_MAX.
+ */
+static inline void bt_le_adv_param_set_tx_power(struct bt_le_adv_param *param, int8_t tx_power)
+{
+	param->options |= BT_LE_ADV_OPT_TX_POWER;
+	param->tx_power = tx_power;
+}
 
 /** Periodic Advertising options */
 enum bt_le_per_adv_opt {

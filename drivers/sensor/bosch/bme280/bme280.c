@@ -168,6 +168,7 @@ int bme280_sample_fetch_helper(const struct device *dev,
 	uint8_t buf[8];
 	int32_t adc_press, adc_temp, adc_humidity;
 	uint32_t poll_timeout;
+	uint32_t comp_press;
 	int size = 6;
 	int ret;
 
@@ -202,7 +203,14 @@ int bme280_sample_fetch_helper(const struct device *dev,
 	adc_temp = (buf[3] << 12) | (buf[4] << 4) | (buf[5] >> 4);
 
 	reading->comp_temp = bme280_compensate_temp(dev_data, adc_temp);
-	reading->comp_press = bme280_compensate_press(dev_data, adc_press);
+
+	comp_press = bme280_compensate_press(dev_data, adc_press);
+	if (comp_press == 0) {
+		LOG_ERR("Pressure compensation failed");
+		return -EIO;
+	}
+
+	reading->comp_press = comp_press;
 
 	if (dev_data->chip_id == BME280_CHIP_ID) {
 		adc_humidity = (buf[6] << 8) | buf[7];

@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2S_SHELL
+	bool "I2S shell"
+	depends on SHELL
+	help
+	  Enable the 'i2s' shell: stream a generated test tone over any I2S
+	  controller ('i2s tone' / 'i2s stop' / 'i2s info'). Transport only;
+	  pair it with the 'codec' shell to route the audio through a codec.
+
+if I2S_SHELL
+
+config I2S_SHELL_STACK_SIZE
+	int "I2S shell streaming thread stack size"
+	default 1024
+	help
+	  Stack size for the background thread that feeds PCM blocks to I2S.
+
+config I2S_SHELL_THREAD_PRIO
+	int "I2S shell streaming thread priority"
+	default 5
+	help
+	  Priority of the I2S feeder thread.
+
+config I2S_SHELL_BLOCK_FRAMES
+	int "Frames per I2S TX block (16-bit)"
+	default 64
+	help
+	  Number of stereo frames in each TX block for 16-bit audio. For 24/32-bit
+	  audio, words occupy 4 bytes, so the same block size corresponds to half as
+	  many frames per block.
+
+config I2S_SHELL_BLOCK_COUNT
+	int "Number of I2S TX blocks"
+	default 8
+	help
+	  Number of blocks in the TX slab. More blocks means more buffering
+	  at the cost of RAM.
+
+endif # I2S_SHELL

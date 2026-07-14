@@ -607,6 +607,27 @@ int i2c_stm32_error(const struct device *dev)
 		ret = -EIO;
 	}
 
+	/* Address "Spurious Bus Error detection in controller mode"
+	 * erratum, that affects STM32 I2C v2 controller, referenced
+	 * in multiple errata sheets document like:
+	 * - ES0392 (STM32H74x/75x), Rev 15, section 2.19.4
+	 *
+	 * Workaround: clear the BERR flag and let the ongoing
+	 * transfer continue. If a real bus error has occurred,
+	 * the transfer will eventually time out.
+	 */
+	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
+		LL_I2C_ClearFlag_BERR(i2c);
+#if defined(CONFIG_I2C_TARGET)
+		if (!data->controller_active) {
+			if (error_cb != NULL) {
+				error_cb(data->target_cfg, I2C_ERROR_GENERIC);
+			}
+			ret = -EIO;
+		}
+#endif
+	}
+
 #if defined(CONFIG_I2C_TARGET)
 	if (data->target_attached && !data->controller_active) {
 		return ret;

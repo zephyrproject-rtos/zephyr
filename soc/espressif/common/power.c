@@ -289,7 +289,7 @@ uint64_t esp32_lptim_hook_get_freq(void)
 {
 #if defined(SOC_SYSTIMER_SUPPORTED)
 	return systimer_us_to_ticks(1) * 1000000ULL;
-#elif defined(CONFIG_ESP_TIMER_IMPL_TG0_LAC)
+#elif defined(CONFIG_SOC_SERIES_ESP32)
 	return LACT_TICKS_PER_US * 1000000ULL;
 #endif
 }

@@ -31,8 +31,19 @@ static const struct pinctrl_dev_config *ifx_serial_memory_pcfg =
 	PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 #endif /* CONFIG_FLASH_INFINEON_SMIF_HW_INIT */
 
+/* Force the flash address into the correct alias for the current core.
+ * Secure m33 must access external flash through the secure alias (bit 28 set);
+ * non-secure m33 and m55 must use the non-secure alias (bit 28 cleared).
+ * SECURE_ALIAS_OFFSET (0x10000000) comes from PDL's cy_device.h.
+ */
+#if defined(CONFIG_TRUSTED_EXECUTION_SECURE)
+#define IFX_FLASH_ALIAS_ADDR(addr) ((uint32_t)(addr) | SECURE_ALIAS_OFFSET)
+#else
+#define IFX_FLASH_ALIAS_ADDR(addr) ((uint32_t)(addr) & ~SECURE_ALIAS_OFFSET)
+#endif
+
 /* SMIF core register block for this driver instance. */
-#define IFX_SERIAL_MEMORY_SMIF ((SMIF_Type *)DT_INST_REG_ADDR(0))
+#define IFX_SERIAL_MEMORY_SMIF ((SMIF_Type *)IFX_FLASH_ALIAS_ADDR(DT_INST_REG_ADDR(0)))
 
 LOG_MODULE_REGISTER(flash_infineon, CONFIG_FLASH_LOG_LEVEL);
 
@@ -41,10 +52,8 @@ LOG_MODULE_REGISTER(flash_infineon, CONFIG_FLASH_LOG_LEVEL);
 
 extern cy_stc_smif_block_config_t smif0BlockConfig;
 static mtb_serial_memory_t serial_memory_obj;
-#ifdef CONFIG_FLASH_INFINEON_SMIF_HW_INIT
 static cy_stc_smif_mem_context_t smif_mem_context;
 static cy_stc_smif_mem_info_t smif_mem_info;
-#endif /* CONFIG_FLASH_INFINEON_SMIF_HW_INIT */
 
 #ifdef CONFIG_PM
 #ifdef CONFIG_SOC_SERIES_PSE84
@@ -317,6 +326,7 @@ static int ifx_serial_memory_flash_init(const struct device *dev)
 		LOG_ERR("SMIF HW init failed: %d", ret);
 		return ret;
 	}
+#endif /* CONFIG_FLASH_INFINEON_SMIF_HW_INIT */
 
 	/* Set-up serial memory. */
 	cy_rslt_t result = mtb_serial_memory_setup(
@@ -327,7 +337,6 @@ static int ifx_serial_memory_flash_init(const struct device *dev)
 		LOG_ERR("serial memory setup failed (QSPI) : 0x%x", result);
 		return -EIO;
 	}
-#endif /* CONFIG_FLASH_INFINEON_SMIF_HW_INIT */
 
 #if defined(CONFIG_MCUBOOT)
 	/* Enable XIP/memory-mapped mode so apps can execute from external flash
@@ -358,8 +367,9 @@ static DEVICE_API(flash, ifx_serial_memory_flash_driver_api) = {
 static struct ifx_serial_memory_flash_data flash_data;
 
 static const struct ifx_serial_memory_flash_config flash_config = {
-	.base_addr = DT_REG_ADDR(SOC_NV_FLASH_NODE),
-	.max_addr = DT_REG_ADDR(SOC_NV_FLASH_NODE) + DT_REG_SIZE(SOC_NV_FLASH_NODE),
+	.base_addr = IFX_FLASH_ALIAS_ADDR(DT_REG_ADDR(SOC_NV_FLASH_NODE)),
+	.max_addr = IFX_FLASH_ALIAS_ADDR(DT_REG_ADDR(SOC_NV_FLASH_NODE)) +
+		    DT_REG_SIZE(SOC_NV_FLASH_NODE),
 };
 
 DEVICE_DT_INST_DEFINE(0, ifx_serial_memory_flash_init, NULL, &flash_data, &flash_config,

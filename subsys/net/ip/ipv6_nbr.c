@@ -341,6 +341,34 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct net_in6_addr *addr)
 	return true;
 }
 
+void net_ipv6_nbr_clear_cache(struct net_if *iface)
+{
+	/* The lock is recursive, so it can be held across net_ipv6_nbr_rm(),
+	 * which takes it again. Removing an entry frees its slot, so the
+	 * indexed scan simply skips it on the next pass.
+	 */
+	net_ipv6_nbr_lock();
+
+	for (int i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+		struct net_nbr *nbr = get_nbr(i);
+		struct net_in6_addr addr;
+
+		if (!nbr->ref || nbr->iface != iface ||
+		    net_ipv6_nbr_data(nbr)->state == NET_IPV6_NBR_STATE_STATIC) {
+			continue;
+		}
+
+		/* Copy the address out first: net_ipv6_nbr_rm() frees the entry
+		 * and then reads the address it is passed, so a pointer into the
+		 * freed entry would be a use-after-free.
+		 */
+		net_ipaddr_copy(&addr, &net_ipv6_nbr_data(nbr)->addr);
+		net_ipv6_nbr_rm(iface, &addr);
+	}
+
+	net_ipv6_nbr_unlock();
+}
+
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
 #define NS_REPLY_TIMEOUT CONFIG_NET_IPV6_NS_TIMEOUT
 #else
@@ -3076,6 +3104,66 @@ int net_ipv6_nbr_test_cancel(void)
 }
 #endif /* CONFIG_NET_TEST */
 
+#if defined(CONFIG_NET_IPV6_UNSOLICITED_NA)
+static struct net_mgmt_event_callback unsolicited_na_addr_cb;
+
+static void send_unsolicited_na(struct net_if *iface, const struct net_in6_addr *addr)
+{
+	struct net_in6_addr dst;
+	int ret;
+
+	net_ipv6_addr_create_ll_allnodes_mcast(&dst);
+
+	/* RFC 4861 ch 7.2.6: an unsolicited Neighbor Advertisement to the
+	 * all-nodes multicast address, target set to our own address and the
+	 * Override flag set so neighbors replace a stale link-layer address.
+	 */
+	ret = net_ipv6_send_na(iface, addr, &dst, addr, NET_ICMPV6_NA_FLAG_OVERRIDE);
+	if (ret < 0) {
+		NET_DBG("Cannot send unsolicited NA for %s on iface %d (%d)",
+			net_sprint_ipv6_addr(addr), net_if_get_by_iface(iface), ret);
+	}
+}
+
+static void unsolicited_na_addr_event(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
+				      struct net_if *iface)
+{
+	struct net_if_addr *ifaddr;
+	struct net_in6_addr addr;
+
+	if (mgmt_event != NET_EVENT_IPV6_ADDR_ADD && mgmt_event != NET_EVENT_IPV6_DAD_SUCCEED) {
+		return;
+	}
+
+	/* With DAD disabled an address is preferred as soon as it is added, so
+	 * NET_EVENT_IPV6_ADDR_ADD can fire while the interface is still down.
+	 * Only announce on an up interface (matches gratuitous ARP).
+	 */
+	if (!net_if_is_up(iface)) {
+		return;
+	}
+
+	if (cb->info == NULL || cb->info_length != sizeof(struct net_in6_addr)) {
+		return;
+	}
+
+	net_ipaddr_copy(&addr, (const struct net_in6_addr *)cb->info);
+
+	/* Only announce a usable (preferred) address, and announce each exactly
+	 * once: with DAD enabled the address is still tentative on ADDR_ADD and
+	 * is announced later on DAD_SUCCEED (which also fires when an address is
+	 * re-validated as the interface comes back up, covering reconnects);
+	 * with DAD disabled it is already preferred on ADDR_ADD.
+	 */
+	ifaddr = net_if_ipv6_addr_lookup_by_iface(iface, &addr);
+	if (ifaddr == NULL || ifaddr->addr_state != NET_ADDR_PREFERRED) {
+		return;
+	}
+
+	send_unsolicited_na(iface, &addr);
+}
+#endif /* CONFIG_NET_IPV6_UNSOLICITED_NA */
+
 void net_ipv6_nbr_init(void)
 {
 	int ret;
@@ -3114,6 +3202,15 @@ void net_ipv6_nbr_init(void)
 			ret);
 	}
 #endif
+
+#if defined(CONFIG_NET_IPV6_UNSOLICITED_NA)
+	net_mgmt_init_event_callback(&unsolicited_na_addr_cb,
+				     unsolicited_na_addr_event,
+				     NET_EVENT_IPV6_ADDR_ADD |
+				     NET_EVENT_IPV6_DAD_SUCCEED);
+
+	net_mgmt_add_event_callback(&unsolicited_na_addr_cb);
+#endif /* CONFIG_NET_IPV6_UNSOLICITED_NA */
 
 	ARG_UNUSED(ret);
 }

@@ -1,0 +1,13 @@
+identifier: m5stack_sticks3/esp32s3/procpu
+name: M5Stack StickS3 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - pinmux
+  - uart
+  - watchdog
+vendor: m5stack

@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Header file for the log link interface.
+ * @ingroup log_link
+ */
+
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_LINK_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_LINK_H_
 
@@ -17,55 +24,85 @@ extern "C" {
 #endif
 
 /**
- * @brief Log link API
- * @defgroup log_link Log link API
+ * @defgroup log_link Log links
  * @ingroup logger
+ * @brief Interface for log links bringing in messages from remote domains.
  * @{
  */
 
 struct log_link;
 
+/**
+ * @brief Callback invoked by a link for each received log message.
+ *
+ * @param link Link instance.
+ * @param msg  Message received from the remote domain.
+ */
 typedef void (*log_link_callback_t)(const struct log_link *link,
 				    union log_msg_generic *msg);
 
+/**
+ * @brief Callback invoked by a link to report dropped messages.
+ *
+ * @param link    Link instance.
+ * @param dropped Number of messages dropped since the previous notification.
+ */
 typedef void (*log_link_dropped_cb_t)(const struct log_link *link,
 				      uint32_t dropped);
 
+/** @brief Log link configuration passed to the link at initiation time. */
 struct log_link_config {
-	log_link_callback_t msg_cb;
-	log_link_dropped_cb_t dropped_cb;
+	log_link_callback_t msg_cb;        /**< Callback for received messages. */
+	log_link_dropped_cb_t dropped_cb;  /**< Callback for dropped messages. */
 };
 
+/**
+ * @brief Log link API.
+ *
+ * Set of operations implemented by a log link backend.
+ */
 struct log_link_api {
+	/** @brief Initiate the link (see log_link_initiate()). */
 	int (*initiate)(const struct log_link *link, struct log_link_config *config);
+	/** @brief Complete link activation (see log_link_activate()). */
 	int (*activate)(const struct log_link *link);
+	/** @brief Get a domain name (see log_link_get_domain_name()). */
 	int (*get_domain_name)(const struct log_link *link, uint32_t domain_id,
 				char *buf, size_t *length);
+	/** @brief Get a source name (see log_link_get_source_name()). */
 	int (*get_source_name)(const struct log_link *link, uint32_t domain_id,
 				uint16_t source_id, char *buf, size_t *length);
+	/** @brief Get level settings of a source (see log_link_get_levels()). */
 	int (*get_levels)(const struct log_link *link, uint32_t domain_id,
 				uint16_t source_id, uint8_t *level,
 				uint8_t *runtime_level);
+	/** @brief Set runtime level of a source (see log_link_set_runtime_level()). */
 	int (*set_runtime_level)(const struct log_link *link, uint32_t domain_id,
 				uint16_t source_id, uint8_t level);
 };
 
+/** @brief Run-time control block for a @ref log_link instance. */
 struct log_link_ctrl_blk {
+	/** @cond INTERNAL_HIDDEN */
 	uint32_t domain_cnt;
 	uint16_t source_cnt[1 + COND_CODE_1(CONFIG_LOG_MULTIDOMAIN,
 					    (CONFIG_LOG_REMOTE_DOMAIN_MAX_COUNT),
 					    (0))];
 	uint32_t domain_offset;
 	uint32_t *filters;
+	/** @endcond */
 };
 
+/** @brief Log link instance. */
 struct log_link {
-	const struct log_link_api *api;
-	const char *name;
-	struct log_link_ctrl_blk *ctrl_blk;
-	void *ctx;
+	const struct log_link_api *api; /**< Link operations. */
+	const char *name;               /**< Unique link name. */
+	struct log_link_ctrl_blk *ctrl_blk; /**< Run-time control block. */
+	void *ctx;                      /**< Context associated with the link. */
+	/** @cond INTERNAL_HIDDEN */
 	struct mpsc_pbuf_buffer *mpsc_pbuf;
 	const struct mpsc_pbuf_buffer_config *mpsc_pbuf_config;
+	/** @endcond */
 };
 
 /** @brief Create instance of a log link.

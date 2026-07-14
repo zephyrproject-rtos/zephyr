@@ -390,10 +390,10 @@ struct gpio_dt_spec {
 	GPIO_DT_SPEC_GET_BY_IDX_OR(node_id, prop, 0, default_value)
 
 /**
- * @brief Static initializer for a @p gpio_dt_spec from a DT_DRV_COMPAT
+ * @brief Static initializer for a @p gpio_dt_spec from a @c DT_DRV_COMPAT
  * instance's GPIO property at an index.
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param prop lowercase-and-underscores property name
  * @param idx logical index into "prop"
  * @return static initializer for a struct gpio_dt_spec for the property
@@ -403,10 +403,10 @@ struct gpio_dt_spec {
 	GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), prop, idx)
 
 /**
- * @brief Static initializer for a @p gpio_dt_spec from a DT_DRV_COMPAT
+ * @brief Static initializer for a @p gpio_dt_spec from a @c DT_DRV_COMPAT
  *        instance's GPIO property at an index, with fallback
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param prop lowercase-and-underscores property name
  * @param idx logical index into "prop"
  * @param default_value fallback value to expand to
@@ -421,7 +421,7 @@ struct gpio_dt_spec {
 /**
  * @brief Equivalent to GPIO_DT_SPEC_INST_GET_BY_IDX(inst, prop, 0).
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param prop lowercase-and-underscores property name
  * @return static initializer for a struct gpio_dt_spec for the property
  * @see GPIO_DT_SPEC_INST_GET_BY_IDX()
@@ -433,7 +433,7 @@ struct gpio_dt_spec {
  * @brief Equivalent to
  *        GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, prop, 0, default_value).
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param prop lowercase-and-underscores property name
  * @param default_value fallback value to expand to
  * @return static initializer for a struct gpio_dt_spec for the property
@@ -592,10 +592,10 @@ struct gpio_dt_spec {
 	GPIO_DT_RESERVED_RANGES_NGPIOS(node_id, DT_PROP(node_id, ngpios))
 
 /**
- * @brief Makes a bitmask of reserved GPIOs from a DT_DRV_COMPAT instance's
+ * @brief Makes a bitmask of reserved GPIOs from a @c DT_DRV_COMPAT instance's
  *        @p "gpio-reserved-ranges" property and @p "ngpios" argument
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return the bitmask of reserved gpios
  * @param ngpios  number of GPIOs
  * @see GPIO_DT_RESERVED_RANGES()
@@ -604,10 +604,10 @@ struct gpio_dt_spec {
 		GPIO_DT_RESERVED_RANGES_NGPIOS(DT_DRV_INST(inst), ngpios)
 
 /**
- * @brief Make a bitmask of reserved GPIOs from a DT_DRV_COMPAT instance's GPIO
+ * @brief Make a bitmask of reserved GPIOs from a @c DT_DRV_COMPAT instance's GPIO
  *        @p "gpio-reserved-ranges" and @p "ngpios" properties
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return the bitmask of reserved gpios
  * @see GPIO_DT_RESERVED_RANGES()
  */
@@ -674,10 +674,10 @@ struct gpio_dt_spec {
 	))
 
 /**
- * @brief Makes a bitmask of allowed GPIOs from a DT_DRV_COMPAT instance's
+ * @brief Makes a bitmask of allowed GPIOs from a @c DT_DRV_COMPAT instance's
  *        @p "gpio-reserved-ranges" property and @p "ngpios" argument
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param ngpios number of GPIOs
  * @return the bitmask of allowed gpios
  * @see GPIO_DT_NGPIOS_PORT_PIN_MASK_EXC()

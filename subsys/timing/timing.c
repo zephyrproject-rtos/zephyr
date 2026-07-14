@@ -75,7 +75,7 @@ void timing_stop(void)
 #endif
 }
 
-uint64_t timing_timestamp_get(void)
+uint64_t timing_ns_get(void)
 {
 	static struct k_spinlock lock;
 	static timing_t last;

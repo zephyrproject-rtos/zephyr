@@ -117,6 +117,10 @@ Boards
 * All Kconfigs under modules/hal_silabs/gecko were renamed from ``SOC_GECKO_*``
   to ``SILABS_GECKO_*``. Adapt your board accordingly.
 
+* The clock configuration for all Silabs Series 0 and Series 1 boards needs to be specified in the
+  device tree now. The Kconfigs ``CONFIG_SOC_GECKO_HAS_HFRCO_FREQRANGE`` and ``CONFIG_CMU_*`` have
+  been removed. See :github:`111754` for examples of how to adapt your board.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -323,6 +327,10 @@ Ethernet
   been updated accordingly, as have been the device trees of the Zynq-7000 and ZynqMP /
   UltraScale+ SoC families. (:github:`87313`)
 
+* Ethernet and Wi-Fi drivers that use :c:enumerator:`ETHERNET_CONFIG_TYPE_EXTRA_TX_PKT_HEADROOM` to request
+  extra headroom for transmit packets must now select
+  :kconfig:option:`CONFIG_NET_L2_ETHERNET_EXTRA_TX_PKT_HEADROOM`. (:github:`112924`)
+
 Flash
 =====
 * :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
@@ -419,6 +427,30 @@ Interrupt Controllers
 
 * Deprecate ``GIC_NUM_CPU_IF`` from GIC header file :file:`gic.h`. One shall use
   instead.:kconfig:option:`CONFIG_MP_MAX_NUM_CPUS` instead.
+
+MSPI
+====
+
+* MSPI device binding filenames now use ``(vendor,)device-mspi.yaml`` for
+  MSPI-specific variants, while the devicetree ``compatible`` strings describe
+  the device itself instead of encoding the MSPI bus. Boards, shields, samples,
+  tests, and out-of-tree devicetree overlays are recommended to update MSPI
+  child node compatibles as follows:
+
+  * ``jedec,mspi-nor`` -> ``jedec,nor``
+  * ``mspi-atxp032`` -> ``atxp032``
+  * ``mspi-is25xX0xx`` -> ``is25xX0xx``
+  * ``mspi-aps6404l`` -> ``aps6404l``
+  * ``mspi-aps-z8`` -> ``aps-z8``
+  * ``zephyr,mspi-emul-device`` -> ``zephyr,emul-device-mspi``
+  * ``zephyr,mspi-emul-flash`` -> ``zephyr,emul-flash``
+
+  It is recommended that out-of-tree MSPI device drivers should likewise update
+  ``DT_DRV_COMPAT`` and generated devicetree Kconfig symbol references to the new compatible names.
+  If a driver, sample, or test must ensure that one of these generic
+  compatibles is instantiated on an MSPI bus, add an explicit MSPI bus check,
+  such as ``dt_compat_on_bus`` in Kconfig or ``dt_compat_on_bus`` filters in
+  test metadata.
 
 NXP
 ===
@@ -599,11 +631,23 @@ USB
   from :samp:`usbotg_hs{N}` to :samp:`usbphyc{N}` nodes at SoC DTSI level. Boards which
   use an STM32N6 SoC with custom clock mux configuration must now set the ``clocks``
   property on :samp:`usbphyc{N}` instead of :samp:`usbotg_hs{N}`. (:github:`107813`)
+* Indicating protocol error via ``errno`` in control transfer handlers is deprecated.
+  Handlers should return error code directly. (:github:`108118`)
 * When host issues control transfer with data stage from host to device, the USB control transfer
   callbacks ``control_to_dev`` in :c:struct:`usbd_class_api` and ``to_dev`` in
   :c:struct:`usbd_vreq_node` are now called with NULL ``buf`` before data stage is received.
   This allows the stack to return STALL during data stage. Out-of-tree class and vendor handlers
   need to be updated. (:github:`108840`)
+* USB control transfer callbacks ``control_to_host`` in :c:struct:`usbd_class_api` and
+  ``to_host`` in :c:struct:`usbd_vreq_node` are now expected to allocate the data stage buffer
+  themselves. This allows allocating only as much memory as is actually needed which makes
+  the worst case memory usage dependent on the handlers implementation and not on tainted wLength
+  value coming from host. Out-of-tree class and vendor handlers need to be updated.
+  (:github:`102491`)
+* The Espressif USB-OTG full-speed controller compatible ``espressif,esp32-usb-otg`` has been
+  renamed to :dtcompatible:`espressif,esp32-usb-otg-fs`. The internal PHY D+/D- pad numbers are
+  now provided through the ``phy-dp-pin`` and ``phy-dm-pin`` properties. Out-of-tree devicetrees
+  using the old compatible must update the node compatible and add the two pin properties.
 
 Video
 =====
@@ -758,6 +802,12 @@ Bluetooth Audio
     :zephyr:code-sample:`ble_peripheral_tmap_peripheral` have been moved from
     ``samples/bluetooth/`` to ``samples/bluetooth/audio``.
 
+* VOCS
+
+  * The VOCS client now requires automatic CCC (Client Characteristic Configuration) discovery.
+    :kconfig:option:`BT_VOCS_CLIENT` now depends on :kconfig:option:`BT_GATT_AUTO_DISCOVER_CCC`.
+    Applications using VOCS client must ensure that CCC auto-discovery support is enabled. (:github:`110607`)
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth Classic
@@ -883,6 +933,21 @@ Networking
   from AP selection; SNR is now always factored in, improving connection stability
   for embedded Wi-Fi use cases. Users who need the previous behaviour can restore it by enabling
   :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_NW_SEL_THROUGHPUT`.
+
+* LLMNR support has been deprecated. The Kconfig options
+  :kconfig:option:`CONFIG_LLMNR_RESOLVER` and
+  :kconfig:option:`CONFIG_LLMNR_RESPONDER` will be removed in a future release
+  (4.7 at the earliest). LLMNR (RFC 4795) is being retired by Microsoft and is
+  disabled by default on modern Windows. Applications that rely on local name
+  resolution should migrate to mDNS (:kconfig:option:`CONFIG_MDNS_RESOLVER` /
+  :kconfig:option:`CONFIG_MDNS_RESPONDER`).
+
+* The following MQTT-SN transport functions now take an :c:struct:`mqtt_sn_transport`
+  instead of an :c:struct:`mqtt_sn_client`:
+
+  * :c:member:`mqtt_sn_transport.recvfrom`
+  * :c:member:`mqtt_sn_transport.poll`
+  * :c:member:`mqtt_sn_transport.sendto`
 
 Ethernet
 ========
@@ -1043,6 +1108,13 @@ Mbed TLS
   as an alias to the latter for backward compatibility, but it will be removed in future
   releases.
 
+Trusted Firmware-M
+==================
+
+* :kconfig:option:`TFM_ZEPHYR_4_0_TO_4_2_COMPATIBILITY` has been deprecated in favor of
+  :kconfig:option:`TFM_ZEPHYR_4_2_COMPATIBILITY`, which more accurately describes when the symbol
+  needs to be set.
+
 Snippets
 ********
 
@@ -1067,3 +1139,11 @@ Architectures
 
 * ``CONFIG_XTENSA_BACKTRACE_EXCEPTION_DUMP_HOOK`` is removed, since backtrace is now always
   using :c:macro:`EXCEPTION_DUMP` for output.
+
+Video
+=====
+
+* :c:func:`video_import_buffer` no longer returns the imported buffer index via a
+  ``uint16_t *idx`` output parameter but instead returns a pointer to the imported
+  :c:struct:`video_buffer`, or ``NULL`` on failure. This helps to make the index transparent
+  to the application and also makes the buffer accessible from the application.

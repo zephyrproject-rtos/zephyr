@@ -7,8 +7,8 @@
 /** @file
  *  @brief Bluetooth Mesh SAR Configuration Server Model APIs.
  */
-#ifndef BT_MESH_SAR_CFG_SRV_H__
-#define BT_MESH_SAR_CFG_SRV_H__
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_SAR_CFG_SRV_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_MESH_SAR_CFG_SRV_H_
 
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/mesh/sar_cfg.h>
@@ -41,7 +41,7 @@ extern const struct bt_mesh_model_cb bt_mesh_sar_cfg_srv_cb;
 }
 #endif
 
-#endif /* BT_MESH_SAR_CFG_SRV_H__ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_SAR_CFG_SRV_H_ */
 
 /**
  * @}

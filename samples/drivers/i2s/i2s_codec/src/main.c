@@ -66,7 +66,7 @@ int main(void)
 {
 	const struct device *const i2s_dev_codec = DEVICE_DT_GET(I2S_CODEC_TX);
 #if CONFIG_USE_DMIC
-	const struct device *const dmic_dev = DEVICE_DT_GET(DT_NODELABEL(dmic_dev));
+	const struct device *const dmic_dev = DEVICE_DT_GET(DT_ALIAS(dmic0));
 #endif
 	const struct device *const codec_dev = DEVICE_DT_GET(DT_NODELABEL(audio_codec));
 	struct i2s_config config;

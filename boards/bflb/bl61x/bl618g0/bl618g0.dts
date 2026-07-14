@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <bflb/bl618.dtsi>
-#include <bflb/bl61x_em_32kb.dtsi>
+#include <bflb/bl61x_em_32kb_wifi.dtsi>
 #include "bl618g0-pinctrl.dtsi"
 
 / {
@@ -105,23 +105,11 @@
 				read-only;
 			};
 
-			boot_partition: partition@2000 {
-				compatible = "zephyr,mapped-partition";
-				label = "mcuboot";
-				reg = <0x00002000 (DT_SIZE_K(64) - 0x2000)>;
-				read-only;
-			};
-
-			slot0_partition: partition@10000 {
+			slot0_partition: partition@2000 {
 				compatible = "zephyr,mapped-partition";
 				label = "image-0";
-				reg = <DT_SIZE_K(64) (DT_SIZE_M(4) - DT_SIZE_K(64))>;
-			};
-
-			slot1_partition: partition@400000 {
-				compatible = "zephyr,mapped-partition";
-				label = "image-1";
-				reg = <0x400000 (DT_SIZE_M(4) - DT_SIZE_K(64))>;
+				reg = <0x00002000 (DT_SIZE_M(8) - DT_SIZE_K(64) - 0x2000)>;
+				read-only;
 			};
 
 			storage_partition: partition@7f0000 {
@@ -155,6 +143,14 @@
 };
 
 &bt_hci_bflb {
+	status = "okay";
+
+	pwr-table-ble = <13>;
+	pwr-table-bt = <10 8 8>;
+	pwr-offset-bz = <16 16 16 16 16>;
+};
+
+&wifi0 {
 	status = "okay";
 };
 

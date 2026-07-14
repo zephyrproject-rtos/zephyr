@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_MAP_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_MAP_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_MAP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_MAP_H_
 
 /**
  * @brief Message Access Profile (MAP)
@@ -869,9 +869,6 @@ struct bt_map_mce_mas {
 	/** @internal Callbacks */
 	const struct bt_map_mce_mas_cb *_cb;
 
-	/** @internal Transport type */
-	uint8_t _transport_type;
-
 	/** @internal Transport state (atomic) */
 	atomic_t _transport_state;
 
@@ -1386,9 +1383,6 @@ struct bt_map_mce_mns {
 	/** @internal Callbacks */
 	const struct bt_map_mce_mns_cb *_cb;
 
-	/** @internal Transport type */
-	uint8_t _transport_type;
-
 	/** @internal Transport state (atomic) */
 	atomic_t _transport_state;
 
@@ -1845,9 +1839,6 @@ struct bt_map_mse_mas {
 
 	/** @internal Callbacks */
 	const struct bt_map_mse_mas_cb *_cb;
-
-	/** @internal Transport type */
-	uint8_t _transport_type;
 
 	/** @internal Transport state (atomic) */
 	atomic_t _transport_state;
@@ -2318,9 +2309,6 @@ struct bt_map_mse_mns {
 	/** @internal Callbacks */
 	const struct bt_map_mse_mns_cb *_cb;
 
-	/** @internal Transport type */
-	uint8_t _transport_type;
-
 	/** @internal Transport state (atomic) */
 	atomic_t _transport_state;
 
@@ -2492,4 +2480,4 @@ int bt_map_mse_mns_send_event(struct bt_map_mse_mns *mse_mns, bool final, struct
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_MAP_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_MAP_H_ */

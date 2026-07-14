@@ -29,7 +29,7 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from packaging import version
 from twisterlib.cmakecache import CMakeCache
-from twisterlib.constants import canonical_zephyr_base
+from twisterlib.constants import SIM_PROGRAM_CMAKE_VARS, canonical_zephyr_base
 from twisterlib.error import (
     BuildError,
     ConfigurationError,
@@ -881,6 +881,14 @@ class FilterBuilder(CMake):
 
 class ProjectBuilder(FilterBuilder):
 
+    # Optional post-build checks, run when --post-build-checks is enabled.
+    # Each entry is the name of a bound method returning None on success or a
+    # human-readable reason string on failure. Extend the pipeline by adding a
+    # new method name here rather than modifying run_post_build_checks().
+    POST_BUILD_CHECKS = (
+        "check_no_nested_git_repos",
+    )
+
     def __init__(self, instance: TestInstance, env: TwisterEnv, jobserver, **kwargs):
         super().__init__(
             instance.testsuite,
@@ -1071,16 +1079,14 @@ class ProjectBuilder(FilterBuilder):
                             )
                             try:
                                 self.determine_testcases(results)
-                                next_op = 'post_build' if self.options.post_build_checks \
-                                    else 'gather_metrics'
+                                next_op = 'post_build'
                             except BuildError as e:
                                 logger.error(str(e))
                                 self.instance.status = TwisterStatus.ERROR
                                 self.instance.reason = str(e)
                                 next_op = 'report'
                         else:
-                            next_op = 'post_build' if self.options.post_build_checks \
-                                else 'gather_metrics'
+                            next_op = 'post_build'
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
@@ -1811,21 +1817,45 @@ class ProjectBuilder(FilterBuilder):
         return build_result
 
     def post_build(self):
-        """Run post-build checks against the build directory.
+        """Post-build processing against the freshly built artifacts.
 
-        Each check is a bound method returning ``None`` on success or a
-        human-readable reason string on failure. The first failing check
-        short-circuits and fails the build. New checks can be added to the
-        ``checks`` list below.
+        This stage always runs after a successful build. It first resolves
+        simulator availability (which may mark the instance as not run), then
+        runs the optional post-build checks. The two concerns are handled by
+        dedicated methods.
         """
-        checks = [
-            self.check_no_nested_git_repos,
-        ]
-        for check in checks:
-            reason = check()
+        self.check_simulator_availability()
+        return self.run_post_build_checks()
+
+    def check_simulator_availability(self):
+        """Mark the instance as not run if its simulator binary, resolved at
+        CMake configure time (recorded in CMakeCache), was not found.
+
+        Availability of such simulators (e.g. Arm FVP) cannot be determined
+        during test planning, so it is checked here once the build has run.
+        """
+        if self.instance.run and (sim_reason := self._simulator_unavailable_reason()):
+            logger.debug(f"Instance {self.instance.name} can't run: {sim_reason}")
+            self.instance.run = False
+            self.instance.status = TwisterStatus.NOTRUN
+            self.instance.reason = sim_reason
+            self.instance.add_missing_case_status(TwisterStatus.NOTRUN, sim_reason)
+
+    def run_post_build_checks(self):
+        """Run the optional post-build checks, gated by ``--post-build-checks``.
+
+        Each check named in ``POST_BUILD_CHECKS`` returns ``None`` on success
+        or a human-readable reason string on failure; the first failing check
+        short-circuits and fails the build.
+        """
+        if not self.options.post_build_checks:
+            return {"returncode": 0}
+
+        for check_name in self.POST_BUILD_CHECKS:
+            reason = getattr(self, check_name)()
             if reason:
                 logger.error(
-                    f"Post-build check '{check.__name__}' failed for "
+                    f"Post-build check '{check_name}' failed for "
                     f"{self.instance.name}: {reason}"
                 )
                 return {"returncode": 1, "reason": reason}
@@ -1895,6 +1925,55 @@ class ProjectBuilder(FilterBuilder):
             instance.metrics["available_rom"] = 0
             instance.metrics["available_ram"] = 0
         return build_result
+
+    def _cmake_cache_path(self) -> str:
+        """Path to the CMakeCache.txt holding this instance's build variables.
+
+        For sysbuild builds the application image (and therefore variables
+        such as the simulator executable) lives in the default domain's build
+        directory rather than the top-level build directory.
+        """
+        build_dir = self.build_dir
+        if self.instance.sysbuild:
+            domain_path = os.path.join(build_dir, "domains.yaml")
+            try:
+                domains = Domains.from_file(domain_path)
+            except FileNotFoundError:
+                return os.path.join(build_dir, "CMakeCache.txt")
+            domain_build = domains.get_default_domain().build_dir
+            if not os.path.isabs(domain_build):
+                domain_build = os.path.normpath(os.path.join(build_dir, domain_build))
+            build_dir = domain_build
+        return os.path.join(build_dir, "CMakeCache.txt")
+
+    def _simulator_unavailable_reason(self) -> str | None:
+        """Return a reason string if the instance's simulator binary was not
+        found at CMake configure time, otherwise None.
+
+        Some simulators (e.g. Arm FVP) resolve their executable at configure
+        time via find_program(), and the binary that gets used can vary with
+        the build configuration, so their availability cannot be determined
+        during test planning. The result is recorded in CMakeCache, which is
+        inspected here after the build.
+        """
+        simulator = self.instance.platform.simulator_by_name(self.options.sim_name)
+        if simulator is None:
+            return None
+
+        cmake_var = SIM_PROGRAM_CMAKE_VARS.get(simulator.name)
+        if cmake_var is None:
+            return None
+
+        try:
+            cache = CMakeCache.from_file(self._cmake_cache_path())
+        except FileNotFoundError:
+            return None
+
+        value = cache.get(cmake_var)
+        if value is None or str(value).endswith("-NOTFOUND"):
+            return f"{simulator.name} simulator binary not found"
+
+        return None
 
     @staticmethod
     def calc_size(instance: TestInstance, from_buildlog: bool):

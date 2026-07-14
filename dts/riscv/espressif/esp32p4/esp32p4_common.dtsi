@@ -164,7 +164,7 @@
 			mbox0: mbox@7ff8 {
 				compatible = "espressif,mbox-esp32";
 				reg = <0x7ff8 0x8>;
-				status = "disabled";
+				status = "okay";
 				shared-memory = <&ipc_shm>;
 				shared-memory-size = <0x100>;
 				interrupts = <PMU_0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
@@ -303,6 +303,14 @@
 			ngpios = <23>;
 		};
 
+		touch: touch@50113000 {
+			compatible = "espressif,esp32-touch";
+			reg = <0x50113000 0x1000 0x50128000 0x1000>;
+			interrupts = <LP_TOUCH_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
 		i2c0: i2c@500c4000 {
 			compatible = "espressif,esp32-i2c";
 			#address-cells = <1>;
@@ -343,7 +351,7 @@
 		};
 
 		usb_otg: usb_otg@50000000 {
-			compatible = "espressif,esp32p4-usb-otg-hs", "snps,dwc2";
+			compatible = "espressif,esp32-usb-otg-hs", "snps,dwc2";
 			reg = <0x50000000 DT_SIZE_K(256)>;
 			status = "disabled";
 			interrupts = <USB_OTG_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
@@ -354,6 +362,22 @@
 			ghwcfg1 = <0x00000000>;
 			ghwcfg2 = <0x7e5ffaf0>;
 			ghwcfg4 = <0xdff09041>;
+		};
+
+		usb_otg_fs: usb_otg@50040000 {
+			compatible = "espressif,esp32-usb-otg-fs", "snps,dwc2";
+			reg = <0x50040000 DT_SIZE_K(256)>;
+			status = "disabled";
+			interrupts = <USB_OTG11_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_USB_OTG_MODULE>;
+			num-out-eps = <6>;
+			num-in-eps = <5>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x224dd930>;
+			ghwcfg4 = <0xd3f0a030>;
+			phy-dp-pin = <27>;
+			phy-dm-pin = <26>;
 		};
 
 		ledc0: ledc@500d3000 {
@@ -539,7 +563,7 @@
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_GDMA_MODULE>;
 			dma-channels = <6>;
-			dma-buf-addr-alignment = <4>;
+			dma-buf-addr-alignment = <64>;
 			status = "disabled";
 		};
 
@@ -556,7 +580,7 @@
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_GDMA_MODULE>;
 			dma-channels = <6>;
-			dma-buf-addr-alignment = <4>;
+			dma-buf-addr-alignment = <64>;
 			status = "disabled";
 		};
 

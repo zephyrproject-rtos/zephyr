@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_NPCX_GDMA_H_
-#define ZEPHYR_INCLUDE_DRIVERS_DMA_NPCX_GDMA_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_NPCX_GDMA_H_
+#define ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_NPCX_GDMA_H_
 
 #define NPCX_DMA_ADDR_16B_ALIGN 16U
 
@@ -63,4 +63,4 @@
 #define NPCX_GDMA_CONFIG_SRCADDR_ADJ(config)                                                       \
 	(IS_BIT_SET(config, DMA_NPCX_CONFIG_SAFIX)) ? DMA_ADDR_ADJ_NO_CHANGE                       \
 						    : GET_FIELD(config, DMA_NPCX_CONFIG_SADIR)
-#endif
+#endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_NPCX_GDMA_H_ */

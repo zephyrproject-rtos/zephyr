@@ -3209,6 +3209,10 @@ def _check_prop_by_type(prop_name: str,
              f"'type: {prop_type}' for '{prop_name}' in "
              f"'properties:' in '{binding_path}'")
 
+    if options.get("required"):
+        _LOG.warning(f"Property '{prop_name}' is required in '{binding_path}', "
+                     "it should not have a default value")
+
     def ok_default() -> bool:
         # Returns True if 'default' is an okay default for the property's type.
         # If you change this, be sure to update the type annotation for

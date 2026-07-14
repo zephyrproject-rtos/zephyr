@@ -162,3 +162,7 @@
 	pinctrl-0 = <&rmii_default>;
 	pinctrl-names = "default";
 };
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};

@@ -80,6 +80,9 @@ struct i2c_stm32_data {
 	uint8_t *xfer_buf;
 	size_t xfer_len;
 	uint8_t xfer_flags;
+#ifdef CONFIG_I2C_STM32_BUS_RECOVERY
+	struct k_work recovery_work;
+#endif
 #ifdef CONFIG_I2C_STM32_V1
 	size_t msg_len;
 	uint8_t is_restart;
@@ -175,6 +178,10 @@ int i2c_stm32_suspend(const struct device *dev);
 
 int i2c_stm32_pm_get(const struct device *dev);
 void i2c_stm32_pm_put(const struct device *dev);
+
+#if CONFIG_I2C_STM32_BUS_RECOVERY
+int i2c_stm32_recover_bus(const struct device *dev);
+#endif
 
 int i2c_stm32_error(const struct device *dev);
 void i2c_stm32_event(const struct device *dev);

@@ -19,7 +19,22 @@
 
 LOG_MODULE_REGISTER(nxp_vref, CONFIG_REGULATOR_LOG_LEVEL);
 
+#if defined(FSL_FEATURE_VREF_HAS_TRIM2V1) && (FSL_FEATURE_VREF_HAS_TRIM2V1 == 0)
+/*
+ * VREF variant whose output buffer is a fixed nominal 1.2 V that is only
+ * fine-trimmed through UTRIM[VREFTRIM] (6-bit, ~0.5*(4/3) mV per step, factory
+ * value loaded at reset). Expose that trim as a narrow window centred on the
+ * 1.2 V nominal (mid-code = nominal).
+ */
+#define NXP_VREF_TRIM_MASK  VREF_UTRIM_VREFTRIM_MASK
+#define NXP_VREF_TRIM_SHIFT VREF_UTRIM_VREFTRIM_SHIFT
+static const struct linear_range utrim_range =
+	LINEAR_RANGE_INIT(1200000 - (0x20 * 667), 667U, 0x0U, 0x3FU);
+#else
+#define NXP_VREF_TRIM_MASK  VREF_UTRIM_TRIM2V1_MASK
+#define NXP_VREF_TRIM_SHIFT VREF_UTRIM_TRIM2V1_SHIFT
 static const struct linear_range utrim_range = LINEAR_RANGE_INIT(1000000, 100000U, 0x0U, 0xBU);
+#endif
 
 struct regulator_nxp_vref_data {
 	struct regulator_common_data common;
@@ -44,7 +59,10 @@ static int regulator_nxp_vref_enable(const struct device *dev)
 
 	volatile uint32_t *const csr = &base->CSR;
 
-	*csr |= VREF_CSR_LPBGEN_MASK | VREF_CSR_LPBG_BUF_EN_MASK;
+	*csr |= VREF_CSR_LPBGEN_MASK;
+#if !(defined(FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER) && (FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER == 0))
+	*csr |= VREF_CSR_LPBG_BUF_EN_MASK;
+#endif
 
 	/* Wait for bandgap startup */
 	k_busy_wait(config->bg_start_time);
@@ -66,11 +84,14 @@ static int regulator_nxp_vref_disable(const struct device *dev)
 	VREF_Type *const base = config->base;
 
 	/*
-	 * Disable HC Bandgap, LP Bandgap, Buf21, and Lp Bandgap Buffer
-	 * to achieve "Off" mode of VREF
+	 * Disable HC Bandgap, LP Bandgap, Buf21, and (where present) the LP
+	 * Bandgap Buffer to achieve "Off" mode of VREF.
 	 */
-	base->CSR &= ~(VREF_CSR_BUF21EN_MASK | VREF_CSR_HCBGEN_MASK | VREF_CSR_LPBGEN_MASK |
-		       VREF_CSR_LPBG_BUF_EN_MASK);
+	base->CSR &= ~(VREF_CSR_BUF21EN_MASK | VREF_CSR_HCBGEN_MASK | VREF_CSR_LPBGEN_MASK
+#if !(defined(FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER) && (FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER == 0))
+		       | VREF_CSR_LPBG_BUF_EN_MASK
+#endif
+	);
 
 	return 0;
 }
@@ -140,8 +161,8 @@ static int regulator_nxp_vref_set_voltage(const struct device *dev, int32_t min_
 		return ret;
 	}
 
-	base->UTRIM &= ~VREF_UTRIM_TRIM2V1_MASK;
-	base->UTRIM |= VREF_UTRIM_TRIM2V1_MASK & idx;
+	base->UTRIM = (base->UTRIM & ~NXP_VREF_TRIM_MASK) |
+		      (((uint32_t)idx << NXP_VREF_TRIM_SHIFT) & NXP_VREF_TRIM_MASK);
 
 	return 0;
 }
@@ -154,7 +175,7 @@ static int regulator_nxp_vref_get_voltage(const struct device *dev, int32_t *vol
 	int ret;
 
 	/* Linear range index is the register value */
-	idx = (base->UTRIM & VREF_UTRIM_TRIM2V1_MASK) >> VREF_UTRIM_TRIM2V1_SHIFT;
+	idx = (base->UTRIM & NXP_VREF_TRIM_MASK) >> NXP_VREF_TRIM_SHIFT;
 
 	ret = linear_range_get_value(&utrim_range, idx, volt_uv);
 
@@ -217,8 +238,13 @@ static int regulator_nxp_vref_init(const struct device *dev)
 		base->CSR |= VREF_CSR_REGEN_MASK;
 	}
 
-	/* Clear VREF UTRIM[TRIM2V1] first. */
+#if !(defined(FSL_FEATURE_VREF_HAS_TRIM2V1) && (FSL_FEATURE_VREF_HAS_TRIM2V1 == 0))
+	/*
+	 * Clear VREF UTRIM[TRIM2V1] first. On the VREFTRIM-only variant the trim
+	 * register holds a factory value loaded at reset, so it is left intact.
+	 */
 	base->UTRIM &= ~VREF_UTRIM_TRIM2V1_MASK;
+#endif
 
 	return regulator_common_init(dev, false);
 }

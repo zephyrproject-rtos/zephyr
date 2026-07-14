@@ -15,10 +15,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_ameba, CONFIG_FLASH_LOG_LEVEL);
 
-#define SOC_NV_FLASH_COMPAT(node_id) \
-	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, soc_nv_flash), (node_id), ())
-#define SOC_NV_FLASH_NODE \
-	DT_INST_FOREACH_CHILD_STATUS_OKAY(0, SOC_NV_FLASH_COMPAT)
+#include "flash_priv.h"
+
+#define SOC_NV_FLASH_NODE SOC_NV_FLASH_CHILD_NODE(0)
 
 #define FLASH_WRITE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
 #define FLASH_ERASE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)

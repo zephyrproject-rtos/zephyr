@@ -33,8 +33,8 @@
  *    @(#)fnmatch.h    8.1 (Berkeley) 6/2/93
  */
 
-#ifndef _FNMATCH_H_
-#define _FNMATCH_H_
+#ifndef ZEPHYR_INCLUDE_POSIX_FNMATCH_H_
+#define ZEPHYR_INCLUDE_POSIX_FNMATCH_H_
 
 #define FNM_NOMATCH 1 /* Match failed. */
 #define FNM_NOSYS   2 /* Function not implemented. */
@@ -56,4 +56,4 @@ int fnmatch(const char *, const char *, int);
 }
 #endif
 
-#endif /* !_FNMATCH_H_ */
+#endif /* ZEPHYR_INCLUDE_POSIX_FNMATCH_H_ */

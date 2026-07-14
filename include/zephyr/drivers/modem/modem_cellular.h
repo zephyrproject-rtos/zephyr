@@ -56,6 +56,7 @@ extern "C" {
  */
 enum modem_cellular_state {
 	MODEM_CELLULAR_STATE_IDLE = 0,
+	MODEM_CELLULAR_STATE_RECOVERY,
 	MODEM_CELLULAR_STATE_RESET_PULSE,
 	MODEM_CELLULAR_STATE_AWAIT_RESET,
 	MODEM_CELLULAR_STATE_POWER_ON_PULSE,
@@ -162,6 +163,7 @@ struct modem_cellular_data {
 	/** @cond INTERNAL_HIDDEN */
 	uint8_t *chat_argv[32];
 	uint8_t script_failure_counter;
+	uint8_t recovery_count;
 
 	/* Status */
 	enum cellular_registration_status registration_status_gsm;
@@ -287,6 +289,11 @@ struct modem_cellular_vendor_config {
 	uint16_t power_pulse_duration_ms;
 	/** Duration of the modem reset pulse, in milliseconds. */
 	uint16_t reset_pulse_duration_ms;
+	/** Timeout for the modem to revert from CMUX to AT mode after a CMUX disconnect, in
+	 * milliseconds. Defaults to @c reset_pulse_duration_ms if not specified (value == 0U) for
+	 * legacy compatibility.
+	 */
+	uint16_t cmux_disconnect_timeout_ms;
 	/** Maximum modem startup delay, in milliseconds. */
 	uint16_t startup_time_ms;
 	/** Maximum modem shutdown delay, in milliseconds. */

@@ -158,6 +158,25 @@
 			dma-channels = <7>;
 		};
 
+		tim1: counter@40012c00 {
+			compatible = "wch,adtm";
+			reg = <0x40012c00 16>;
+			prescaler = <1>;
+			channels = <4>;
+			clocks = <&rcc CH32V00X_CLOCK_TIM1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <34>, <35>, <36>, <37>;
+			interrupt-names = "brk", "up", "trg", "cc";
+			status = "disabled";
+
+			pwm1: pwm {
+				compatible = "wch,adtm-pwm";
+				pwm-controller;
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
 		tim2: counter@40000000 {
 			compatible = "wch,gptm";
 			reg = <0x40000000 16>;

@@ -11,7 +11,6 @@ properties:
   constant-charge-current-max-microamp:
     type: int
     required: true
-    default: 100000
     description: |
       Fast Charge current set at init time in uA, available range is 2.5mA to 640mA.
       The value specified will be rounded down to the closest implemented
@@ -21,7 +20,6 @@ properties:
   constant-charge-voltage-max-microvolt:
     type: int
     required: true
-    default: 4200000
     description: |
       The maximum voltage that the battery will be charged at, defaults to
       4.2V, matching the device default reset configuration.

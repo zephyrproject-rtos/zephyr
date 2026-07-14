@@ -56,7 +56,7 @@ Building and running
      :compact:
 
   .. important::
-     Take a look at :zephyr_file:`samples/subsys/llext/modules/sample.yaml` for
+     Take a look at :zephyr_file:`samples/subsys/llext/modules/tests.yaml` for
      the additional architecture-specific configurations required in this case.
 
 To build for a different board, replace ``qemu_xtensa`` in the commands above

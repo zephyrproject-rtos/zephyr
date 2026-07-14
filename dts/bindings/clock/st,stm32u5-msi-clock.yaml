@@ -13,7 +13,6 @@ include:
 properties:
 
   msi-range:
-    default: 4
     required: true
     type: int
     description: |

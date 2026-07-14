@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ZBUS_H_
-#define ZEPHYR_INCLUDE_ZBUS_H_
+#ifndef ZEPHYR_INCLUDE_ZBUS_ZBUS_H_
+#define ZEPHYR_INCLUDE_ZBUS_ZBUS_H_
 
 #include <string.h>
 
@@ -1345,4 +1345,4 @@ bool zbus_iterate_over_observers_with_user_data(
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ZBUS_H_ */
+#endif /* ZEPHYR_INCLUDE_ZBUS_ZBUS_H_ */

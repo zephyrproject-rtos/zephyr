@@ -18,12 +18,14 @@ GTEXT(__initialize)
 
 SECTION_FUNC(vectors, ivt)
 	.option norvc
-	j       __start
+	lui     a0, %hi(__start)
+	jr      %lo(__start)(a0)
 	.rept   CONFIG_VECTOR_TABLE_SIZE
 	.word	_isr_wrapper
 	.endr
 
 SECTION_FUNC(vectors, __start)
-	li 	a0, 3
+	la      a0, ivt
+	ori     a0, a0, 3
 	csrw	mtvec, a0
-	j	__initialize
+	tail	__initialize

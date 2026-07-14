@@ -273,6 +273,9 @@ static void IRAM_ATTR i2c_hw_fsm_reset(const struct device *dev)
 #else
 	i2c_ll_master_fsm_rst(data->hal.dev);
 	i2c_master_clear_bus(dev);
+	i2c_hal_master_init(&data->hal);
+	i2c_ll_disable_intr_mask(data->hal.dev, I2C_LL_INTR_MASK);
+	i2c_ll_clear_intr_mask(data->hal.dev, I2C_LL_INTR_MASK);
 #endif
 	i2c_ll_update(data->hal.dev);
 }
@@ -418,7 +421,7 @@ static int IRAM_ATTR i2c_esp32_transmit(const struct device *dev)
 		i2c_hw_fsm_reset(dev);
 		ret = -ETIMEDOUT;
 	} else if (data->status == I2C_STATUS_ACK_ERROR) {
-		ret = -EFAULT;
+		ret = -EIO;
 	}
 
 	return ret;

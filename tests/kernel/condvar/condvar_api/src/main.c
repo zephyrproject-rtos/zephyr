@@ -923,8 +923,15 @@ static void *condvar_tests_setup(void)
  */
 ZTEST(condvar_tests, test_condvar_wait_timeout_relocks_mutex)
 {
-	struct k_condvar local_cv;
-	struct k_mutex local_mtx;
+	/*
+	 * Keep these off the thread stack: on CONFIG_KERNEL_COHERENCE
+	 * platforms (e.g. intel_adsp) stacks are cached/non-coherent, but a
+	 * pended-on wait_q must be memory-coherent (see the assert in
+	 * pend_locked() at kernel/sched.c). static places them in coherent
+	 * .bss, matching every other kernel object in this file.
+	 */
+	static struct k_condvar local_cv;
+	static struct k_mutex local_mtx;
 	int ret;
 
 	zassert_ok(k_condvar_init(&local_cv));

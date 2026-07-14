@@ -267,7 +267,8 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 		size +=  DHCPV4_OLV_MSG_REQ_IPADDR;
 	}
 
-	if (type == NET_DHCPV4_MSG_TYPE_DISCOVER) {
+	if (type == NET_DHCPV4_MSG_TYPE_DISCOVER ||
+	    type == NET_DHCPV4_MSG_TYPE_REQUEST) {
 		size +=  DHCPV4_OLV_MSG_REQ_LIST + ARRAY_SIZE(min_req_options);
 #if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
 		size += unique_types_in_callbacks;
@@ -340,7 +341,9 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 		goto fail;
 	}
 
-	if (type == NET_DHCPV4_MSG_TYPE_DISCOVER && !dhcpv4_add_req_options(pkt)) {
+	if ((type == NET_DHCPV4_MSG_TYPE_DISCOVER ||
+	     type == NET_DHCPV4_MSG_TYPE_REQUEST) &&
+	    !dhcpv4_add_req_options(pkt)) {
 		goto fail;
 	}
 

@@ -14,7 +14,6 @@ properties:
   micro-step-res:
     type: int
     required: true
-    default: 16
     description: |
       Default microstep resolution. Valid values are:
       1, 2, 4, 8, 16, 32, 64, 128, 256

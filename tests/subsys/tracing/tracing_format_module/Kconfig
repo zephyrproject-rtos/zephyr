@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Emulate what an out-of-tree module's Kconfig does to register a tracing format:
+# point CONFIG_TRACING_FORMAT_HEADER (a promptless string set only via defaults)
+# at the format's header. No edits to the Zephyr core tree are required.
+config TRACING_FORMAT_HEADER
+	default "custom_trace_format.h" if TRACING
+
+source "Kconfig.zephyr"

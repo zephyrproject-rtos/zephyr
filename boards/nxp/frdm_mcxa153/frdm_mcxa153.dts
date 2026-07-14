@@ -9,6 +9,7 @@
 #include <nxp/mcx/nxp_mcxa153.dtsi>
 #include "frdm_mcxa153-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <freq.h>
 
@@ -22,6 +23,7 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		wakeup-button = &user_button_3;
 		pwm-0 = &flexpwm0_pwm0;
 		watchdog0 = &wwdt0;
 		ambient-temp0 = &p3t1755;
@@ -72,6 +74,8 @@
 			label = "User SW3";
 			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
+			/* SW3 wakes via WUU external pin 9. */
+			wakeup-ctrls = <&wuu NXP_WUU_PIN_9_FALLING_INT>;
 		};
 	};
 

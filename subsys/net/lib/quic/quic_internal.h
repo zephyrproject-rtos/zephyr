@@ -126,6 +126,9 @@ struct quic_sent_pkt_info {
 	/** Time packet was sent (k_uptime_get() value in ms) */
 	int64_t sent_time;
 
+	/** Secret level that protected this packet when it was sent. */
+	uint8_t level;
+
 	/** Size of packet in bytes (for bytes_in_flight tracking) */
 	uint16_t sent_bytes;
 
@@ -361,6 +364,24 @@ struct quic_tls_context {
 	uint8_t server_random[32];
 	bool client_hello_prepared;
 
+	/* External PSK configuration and negotiated use */
+	const uint8_t *psk;
+	size_t psk_len;
+	const uint8_t *psk_identity;
+	size_t psk_identity_len;
+	bool psk_configured;
+	bool psk_offered;
+	bool use_psk_key_schedule;
+	bool early_data_offered;
+	bool early_data_accepted;
+	bool early_data_rejected;
+	bool session_state_valid;
+	bool issue_session_tickets;
+	uint32_t max_early_data_size;
+	uint8_t resumption_master_secret[QUIC_HASH_MAX_LEN];
+	size_t resumption_master_secret_len;
+	struct quic_session_state session_state;
+
 	/* Certificate request context */
 #define QUIC_CERT_REQ_CONTEXT_LEN 8
 	uint8_t cert_request_context[QUIC_CERT_REQ_CONTEXT_LEN];
@@ -506,6 +527,17 @@ struct quic_deferred_crypto_payload {
 };
 #endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
 
+#if defined(CONFIG_QUIC_0RTT)
+#define QUIC_MAX_DEFERRED_0RTT_PACKETS 4
+
+struct quic_deferred_0rtt_packet {
+	size_t len;
+	size_t total_len;
+	size_t pn_offset;
+	uint8_t data[CONFIG_QUIC_ENDPOINT_PENDING_DATA_LEN];
+};
+#endif /* CONFIG_QUIC_0RTT */
+
 /**
  * Long header information parsed from an incoming packet, used for initial
  * processing before we know which endpoint it belongs to.
@@ -565,6 +597,7 @@ struct quic_endpoint {
 		struct quic_crypto_context initial;
 		struct quic_crypto_context handshake;
 		struct quic_crypto_context application;
+		struct quic_crypto_context early;
 
 		/** Crypto stream state per level (Initial, Handshake, 1-RTT) */
 		struct quic_crypto_stream stream[3];
@@ -684,6 +717,13 @@ struct quic_endpoint {
 		 */
 		uint8_t data[CONFIG_QUIC_ENDPOINT_PENDING_DATA_LEN];
 	} pending;
+
+#if defined(CONFIG_QUIC_0RTT)
+	struct {
+		struct quic_deferred_0rtt_packet packets[QUIC_MAX_DEFERRED_0RTT_PACKETS];
+		uint8_t count;
+	} deferred_0rtt;
+#endif /* CONFIG_QUIC_0RTT */
 
 	/** Peer connection id pool */
 	struct {
@@ -1019,6 +1059,12 @@ __net_socket struct quic_stream {
 
 	/** TX side reset because peer sent STOP_SENDING */
 	bool tx_reset : 1;
+
+	/** A rejected 0-RTT FIN must be replayed after queued data is resent. */
+	bool replay_fin_pending : 1;
+
+	/** RX side of this stream has carried accepted 0-RTT data. */
+	bool received_early_data : 1;
 };
 
 /**
@@ -1207,6 +1253,8 @@ void quic_context_stream_foreach(struct quic_context *ctx,
  * @param user_data Caller specific data.
  */
 void quic_stream_foreach(quic_stream_cb_t cb, void *user_data);
+int quic_prepare_rejected_early_data_replay(struct quic_endpoint *ep);
+int quic_replay_rejected_early_data(struct quic_endpoint *ep);
 
 #if defined(CONFIG_NET_TEST)
 /* Test-only function declarations */
@@ -1215,6 +1263,13 @@ int quic_get_len(const uint8_t *buf, size_t buf_len, uint64_t *len);
 int quic_put_len(uint8_t *buf, size_t buf_len, uint64_t len);
 int quic_put_varint(uint8_t *buf, size_t buf_len, uint64_t val);
 int quic_validate_frame_type(uint8_t frame_type, enum quic_secret_level level);
+bool quic_early_data_is_armed(const struct quic_endpoint *ep);
+enum quic_secret_level quic_stream_send_level(const struct quic_endpoint *ep);
+int parse_encrypted_extensions(struct quic_tls_context *ctx,
+			       const uint8_t *msg, size_t msg_len);
+int parse_new_session_ticket(struct quic_tls_context *ctx,
+			     const uint8_t *msg, size_t msg_len);
+int quic_mark_rejected_early_data(struct quic_endpoint *ep);
 
 bool quic_setup_initial_secrets(struct quic_endpoint *ep,
 				const uint8_t *cid, size_t cid_len,
@@ -1332,5 +1387,18 @@ int process_long_header(struct quic_endpoint *ep,
 			net_socklen_t addrlen,
 			struct quic_long_header_info *info,
 			size_t datagram_len);
+
+/* Server session-ticket cache helpers (single-use / freshness). */
+struct quic_server_ticket_entry;
+int tls_server_ticket_cache_store(const uint8_t *ticket, size_t ticket_len,
+				  const uint8_t *psk, size_t psk_len,
+				  uint16_t cipher_suite, uint32_t ticket_lifetime,
+				  uint32_t ticket_age_add, uint32_t max_early_data_size,
+				  const char *alpn);
+bool tls_server_ticket_cache_lookup(const uint8_t *ticket, size_t ticket_len,
+				    struct quic_server_ticket_entry *match);
+void tls_server_ticket_cache_consume(const uint8_t *ticket, size_t ticket_len);
+bool tls_ticket_age_acceptable(uint64_t issued_at_ms, uint32_t ticket_age_add,
+			       uint32_t obfuscated_ticket_age, uint64_t now_ms);
 
 #endif /* CONFIG_NET_TEST */

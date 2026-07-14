@@ -10,6 +10,9 @@ pyelftools>=0.29
 # twister to parse YAMLs, by west, zephyr_module,...
 PyYAML>=6.0
 
+# used by twister
+colorlog
+
 # YAML validation. Used by zephyr_module.
 pykwalify
 jsonschema
@@ -21,7 +24,7 @@ patool>=2.0.0
 psutil>=5.6.6
 pylink-square
 pyserial
-requests>=2.32.4
+requests>=2.33.0
 semver
 tqdm>=4.67.1
 reuse>=6.0.0

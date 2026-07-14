@@ -55,7 +55,6 @@ int hardware_init(void)
 	soc_hw_init();
 	ana_reset_config();
 	super_wdt_auto_feed();
-	esp_clk_tree_initialize();
 	bootloader_clock_configure();
 
 	/* The ROM bootloader leaves PSRAM module clocks gated. Enable them

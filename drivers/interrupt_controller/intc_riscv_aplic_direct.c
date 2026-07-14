@@ -42,6 +42,11 @@ static inline uint32_t local_irq_to_reg_bitpos(uint32_t local_irq)
 	return 1U << (local_irq & APLIC_REG_MASK);
 }
 
+static inline uint32_t hart_and_prio_to_target(uint32_t hart_id, uint32_t prio)
+{
+	return (hart_id << APLIC_TARGET_HART_SHIFT) | (prio & APLIC_IPRIO_MASK);
+}
+
 int riscv_aplic_direct_mode_enable(const struct device *dev, bool enable)
 {
 	const struct aplic_cfg *cfg = dev->config;
@@ -77,9 +82,8 @@ int riscv_aplic_is_enabled(uint32_t local_irq)
 	return !!(setie_value & local_irq_to_reg_bitpos(local_irq));
 }
 
-int riscv_aplic_set_priority(uint32_t local_irq, uint32_t prio)
+int riscv_aplic_set_priority(const struct device *dev, uint32_t local_irq, uint32_t prio)
 {
-	const struct device *dev = riscv_aplic_get_dev();
 	const struct aplic_cfg *cfg = dev->config;
 	struct aplic_data *data = dev->data;
 
@@ -88,8 +92,6 @@ int riscv_aplic_set_priority(uint32_t local_irq, uint32_t prio)
 	}
 
 	uint32_t target_offset = aplic_target_off(local_irq);
-	/* Maintain configured Hart ID in target register until IRQ affinity support is added */
-	uint32_t hart_id = rd32(cfg->base, target_offset) >> APLIC_TARGET_HART_SHIFT;
 
 	if (prio > cfg->max_prio) {
 		LOG_WRN("AIA-APLIC-Direct: Invalid priority specified (irq %u, prio %u, max_prio "
@@ -100,11 +102,49 @@ int riscv_aplic_set_priority(uint32_t local_irq, uint32_t prio)
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	wr32(cfg->base, target_offset, (hart_id << APLIC_TARGET_HART_SHIFT) | prio);
+	uint32_t hart_id = rd32(cfg->base, target_offset) >> APLIC_TARGET_HART_SHIFT;
+
+	if ((hart_id >= arch_num_cpus()) || !IS_ENABLED(CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY)) {
+		/* Use Hart 0 if affinity configuration is not supported or improperly configured.
+		 * Otherwise, respect affinity currently configured in target register
+		 */
+		hart_id = 0U;
+	}
+
+	wr32(cfg->base, target_offset, hart_and_prio_to_target(hart_id, prio));
+
 	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
+
+#if defined(CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY)
+int riscv_aplic_irq_set_affinity(const struct device *dev, uint32_t local_irq, uint32_t hart_id)
+{
+	const struct aplic_cfg *cfg = dev->config;
+	struct aplic_data *data = dev->data;
+
+	if ((local_irq == 0) || (local_irq > cfg->num_sources)) {
+		return -EINVAL;
+	}
+
+	if (hart_id >= arch_num_cpus()) {
+		return -EINVAL;
+	}
+
+	uint32_t target_offset = aplic_target_off(local_irq);
+
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	const uint32_t prio = rd32(cfg->base, target_offset) & APLIC_IPRIO_MASK;
+
+	wr32(cfg->base, target_offset, hart_and_prio_to_target(hart_id, prio));
+
+	k_spin_unlock(&data->lock, key);
+
+	return 0;
+}
+#endif
 
 unsigned int riscv_aplic_get_saved_irq(void)
 {
@@ -139,8 +179,8 @@ void aplic_irq_handler(const struct device *dev)
 	 * A call to z_irq_spurious will not return.
 	 */
 	if (local_irq == 0U || local_irq > cfg->num_sources) {
+		/* A call to z_irq_spurious will not return. */
 		z_irq_spurious(NULL);
-		return;
 	}
 
 	/* Call the corresponding IRQ handler in _sw_isr_table */

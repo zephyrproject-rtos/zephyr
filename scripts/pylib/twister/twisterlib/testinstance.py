@@ -335,13 +335,28 @@ class TestInstance:
 
         return testsuite_runnable and target_ready
 
+    @staticmethod
+    def platform_supports_semihost(platform):
+        """Whether the platform can write coverage data over semihosting.
+
+        Semihosting is implemented for ARM, RISC-V and Xtensa targets and is
+        exercised through QEMU's automatic -semihosting-config switch, so limit
+        the per-test semihost transport to QEMU-simulated targets on those
+        architectures.
+        """
+        return (
+            platform.arch in ("arm", "arm64", "riscv", "riscv32", "riscv64", "xtensa")
+            and platform.simulation == "qemu"
+        )
+
     def create_overlay(
         self,
         platform,
         enable_asan=False,
         enable_ubsan=False,
         enable_coverage=False,
-        coverage_platform=None
+        coverage_platform=None,
+        coverage_per_test=False
     ):
         if coverage_platform is None:
             coverage_platform = []
@@ -392,6 +407,13 @@ class TestInstance:
             for cp in coverage_platform:
                 if cp in platform.aliases:
                     content = content + "\nCONFIG_COVERAGE=y"
+                    if coverage_per_test:
+                        content = content + "\nCONFIG_ZTEST_COVERAGE_PER_TEST=y"
+                        if self.platform_supports_semihost(platform):
+                            # Route the per-test dumps to the host filesystem via
+                            # semihosting instead of the serial console.
+                            content = content + "\nCONFIG_SEMIHOST=y"
+                            content = content + "\nCONFIG_COVERAGE_SEMIHOST=y"
 
         if platform.type == "native":
             if enable_asan:

@@ -63,7 +63,7 @@ static bool http1_should_send_alt_svc(const struct http_client_ctx *client)
 	}
 
 	policy = svc->config == NULL ? HTTP_H3_ALT_SVC_DEFAULT :
-				       svc->config->h3_alt_svc_policy;
+				       svc->config->h3.alt_svc_policy;
 
 	switch (policy) {
 	case HTTP_H3_ALT_SVC_ENABLE:

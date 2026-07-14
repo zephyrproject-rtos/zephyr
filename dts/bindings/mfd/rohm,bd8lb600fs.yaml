@@ -21,7 +21,6 @@ properties:
   instance-count:
     type: int
     required: true
-    default: 1
     enum:
       - 1
       - 2

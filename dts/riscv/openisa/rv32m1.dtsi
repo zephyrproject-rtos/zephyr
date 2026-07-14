@@ -62,13 +62,13 @@
 
 		pcc0: clock-controller@4002b000 {
 			compatible = "openisa,rv32m1-pcc";
-			reg = <0x4002b000 0x200>;
+			reg = <0x4002b000 0x1000>;
 			#clock-cells = <1>;
 		};
 
 		pcc1: clock-controller@41027000 {
 			compatible = "openisa,rv32m1-pcc";
-			reg = <0x41027000 0x200>;
+			reg = <0x41027000 0x1000>;
 			#clock-cells = <1>;
 		};
 
@@ -181,7 +181,7 @@
 
 		intmux1: intmux@41022000 {
 			compatible = "openisa,rv32m1-intmux";
-			reg = <0x41022000 0x20>;
+			reg = <0x41022000 0x200>;
 			clocks = <&pcc1 0x88>;
 			status = "disabled";
 			#address-cells = <1>;
@@ -317,7 +317,7 @@
 
 		gpioa: gpio@48020000 {
 			compatible = "openisa,rv32m1-gpio";
-			reg = <0x48020000 0x14>;
+			reg = <0x48020000 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			openisa,rv32m1-port = <&porta>;
@@ -325,7 +325,7 @@
 
 		gpiob: gpio@48020040 {
 			compatible = "openisa,rv32m1-gpio";
-			reg = <0x48020040 0x14>;
+			reg = <0x48020040 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			openisa,rv32m1-port = <&portb>;
@@ -333,7 +333,7 @@
 
 		gpioc: gpio@48020080 {
 			compatible = "openisa,rv32m1-gpio";
-			reg = <0x48020080 0x14>;
+			reg = <0x48020080 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			openisa,rv32m1-port = <&portc>;
@@ -341,7 +341,7 @@
 
 		gpiod: gpio@480200c0 {
 			compatible = "openisa,rv32m1-gpio";
-			reg = <0x480200c0 0x14>;
+			reg = <0x480200c0 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			openisa,rv32m1-port = <&portd>;
@@ -349,7 +349,7 @@
 
 		gpioe: gpio@4100f000 {
 			compatible = "openisa,rv32m1-gpio";
-			reg = <0x4100f000 0x14>;
+			reg = <0x4100f000 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			clocks = <&pcc1 0x3c>;
@@ -358,35 +358,35 @@
 
 		lpuart0: lpuart@40042000 {
 			compatible = "openisa,rv32m1-lpuart";
-			reg = <0x40042000 0x2c>;
+			reg = <0x40042000 0x1000>;
 			clocks = <&pcc0 0x108>;
 			status = "disabled";
 		};
 
 		lpuart1: lpuart@40043000 {
 			compatible = "openisa,rv32m1-lpuart";
-			reg = <0x40043000 0x2c>;
+			reg = <0x40043000 0x1000>;
 			clocks = <&pcc0 0x10c>;
 			status = "disabled";
 		};
 
 		lpuart2: lpuart@40044000 {
 			compatible = "openisa,rv32m1-lpuart";
-			reg = <0x40044000 0x2c>;
+			reg = <0x40044000 0x1000>;
 			clocks = <&pcc0 0x110>;
 			status = "disabled";
 		};
 
 		lpuart3: lpuart@41036000 {
 			compatible = "openisa,rv32m1-lpuart";
-			reg = <0x41036000 0x2c>;
+			reg = <0x41036000 0x1000>;
 			clocks = <&pcc0 0xd8>;
 			status = "disabled";
 		};
 
 		lpi2c0: lpi2c@4003a000 {
 			compatible = "openisa,rv32m1-lpi2c";
-			reg = <0x4003a000 0x170>;
+			reg = <0x4003a000 0x1000>;
 			clocks = <&pcc0 0xe8>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
@@ -396,7 +396,7 @@
 
 		lpi2c1: lpi2c@4003b000 {
 			compatible = "openisa,rv32m1-lpi2c";
-			reg = <0x4003b000 0x170>;
+			reg = <0x4003b000 0x1000>;
 			clocks = <&pcc0 0xec>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
@@ -406,7 +406,7 @@
 
 		lpi2c2: lpi2c@4003c000 {
 			compatible = "openisa,rv32m1-lpi2c";
-			reg = <0x4003c000 0x170>;
+			reg = <0x4003c000 0x1000>;
 			clocks = <&pcc0 0xf0>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
@@ -416,7 +416,7 @@
 
 		lpi2c3: lpi2c@4102e000 {
 			compatible = "openisa,rv32m1-lpi2c";
-			reg = <0x4102e000 0x170>;
+			reg = <0x4102e000 0x1000>;
 			clocks = <&pcc1 0xb8>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;

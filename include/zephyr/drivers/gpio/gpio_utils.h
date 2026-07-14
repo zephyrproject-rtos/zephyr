@@ -53,10 +53,10 @@ extern "C" {
 	GPIO_DT_PORT_PIN_MASK_NGPIOS_EXC(node_id, DT_PROP(node_id, ngpios))
 
 /**
- * @brief Make a bitmask of allowed GPIOs from a DT_DRV_COMPAT instance's GPIO
+ * @brief Make a bitmask of allowed GPIOs from a @c DT_DRV_COMPAT instance's GPIO
  *        @p "gpio-reserved-ranges" and @p "ngpios" DT properties values
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return the bitmask of allowed gpios
  * @see GPIO_DT_PORT_PIN_MASK_NGPIOS_EXC()
  */
@@ -76,9 +76,9 @@ extern "C" {
 	}
 
 /**
- * @brief Make a struct gpio_driver_config initializer from a DT_DRV_COMPAT instance number
+ * @brief Make a struct gpio_driver_config initializer from a @c DT_DRV_COMPAT instance number
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return a struct gpio_driver_config initializer
  */
 #define GPIO_COMMON_CONFIG_FROM_DT_INST(inst)                   \

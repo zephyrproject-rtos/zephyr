@@ -16,8 +16,8 @@ supported:
   - can
   - counter
   - i2c
-  - uart
   - net
+  - uart
   - watchdog
 testing:
   binaries:

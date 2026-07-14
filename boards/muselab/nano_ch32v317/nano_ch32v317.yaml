@@ -13,4 +13,5 @@ supported:
   - netif:eth
   - uart
   - spi
+  - pwm
 vendor: muselab

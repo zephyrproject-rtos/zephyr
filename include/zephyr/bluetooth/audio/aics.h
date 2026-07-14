@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_AICS_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_AICS_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_AICS_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_AICS_H_
 
 /**
  * @brief Audio Input Control Service (AICS)
@@ -554,4 +554,4 @@ void bt_aics_client_cb_register(struct bt_aics *inst, struct bt_aics_cb *cb);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_AICS_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_AICS_H_ */

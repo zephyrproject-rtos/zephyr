@@ -690,6 +690,11 @@ FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(k_thread_entry_t main_
 {
 	z_arm_prepare_switch_to_main();
 
+#ifdef CONFIG_INIT_STACKS
+	(void)memset(K_THREAD_STACK_BUFFER(z_main_stack), 0xaa,
+		     K_THREAD_STACK_SIZEOF(z_main_stack));
+#endif /* CONFIG_INIT_STACKS */
+
 	/* Set PSP to the highest address of the main stack. */
 	char *psp = K_THREAD_STACK_BUFFER(z_main_stack) + K_THREAD_STACK_SIZEOF(z_main_stack);
 

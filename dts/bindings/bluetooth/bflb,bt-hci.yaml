@@ -14,3 +14,20 @@ properties:
     default: "virtual"
   bt-hci-quirks:
     default: ["no-auto-dle"]
+
+  pwr-table-ble:
+    type: int
+    description: BLE TX power target in quarter-dBm (0-15 dBm range).
+
+  pwr-table-bt:
+    type: array
+    description: |
+      Bluetooth classic TX power targets (BR 1M, EDR 2M, EDR 3M).
+      3 entries, quarter-dBm.
+
+  pwr-offset-bz:
+    type: array
+    description: |
+      Per-channel BLE/BT TX power offset.
+      Encoding: 16 = 0 dBm, step 0.25 dBm.
+      5 entries.

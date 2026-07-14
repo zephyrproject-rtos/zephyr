@@ -37,6 +37,12 @@ config SERIAL_INIT_PRIORITY
 	help
 	  Serial driver device initialization priority.
 
+config SERIAL_HAS_POST_KERNEL_INIT
+	bool
+	help
+	  This is selected by serial drivers, that init POST_KERNEL and
+	  not PRE_KERNEL
+
 module = UART
 module-str = uart
 source "subsys/logging/Kconfig.template.log_config"

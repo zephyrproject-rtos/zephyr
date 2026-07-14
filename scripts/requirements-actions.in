@@ -3,11 +3,12 @@ anytree
 awscli
 canopen
 clang-format>=15.0.0
+colorlog
 elasticsearch<9
 exceptiongroup>=1.0.0rc8
 gcovr==6.0
 gitlint-core>=0.19.1
-gitpython>=3.1.41
+gitpython>=3.1.50
 ijson
 intelhex
 jsonschema
@@ -36,6 +37,8 @@ sphinx-lint
 tabulate
 tox
 tqdm>=4.67.1
+tree-sitter-cmake
+tree-sitter>=0.23
 unidiff
 vermin
 west>=0.14.0

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ZEPHYR_MATH_INTERPOLATION_H_
-#define ZEPHYR_INCLUDE_ZEPHYR_MATH_INTERPOLATION_H_
+#ifndef ZEPHYR_INCLUDE_MATH_INTERPOLATION_H_
+#define ZEPHYR_INCLUDE_MATH_INTERPOLATION_H_
 
 #include <stdint.h>
 #include <math.h>
@@ -83,4 +83,4 @@ static inline int32_t linear_interpolate(const int32_t *x_axis, const int32_t *y
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ZEPHYR_MATH_INTERPOLATION_H_ */
+#endif /* ZEPHYR_INCLUDE_MATH_INTERPOLATION_H_ */

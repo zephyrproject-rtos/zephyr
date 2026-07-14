@@ -3736,6 +3736,11 @@ static void iface_ipv6_stop(struct net_if *iface)
 	}
 
 	net_if_unlock(iface);
+
+	/* Drop cached neighbor entries: their reachability is no longer valid
+	 * once the link is down, so they are re-resolved when it comes back.
+	 */
+	net_ipv6_nbr_clear_cache(iface);
 }
 
 static void iface_ipv6_init(int if_count)

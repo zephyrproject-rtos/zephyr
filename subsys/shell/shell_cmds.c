@@ -200,7 +200,7 @@ static int terminal_size_get(const struct shell *sh)
 	/* Move to last row. */
 	z_shell_op_cursor_horiz_move(sh, SHELL_MAX_TERMINAL_SIZE);
 
-	if (cursor_position_get(sh, &x, &y) == 0) {
+	if ((cursor_position_get(sh, &x, &y) == 0) && (x != 0U) && (y != 0U)) {
 		sh->ctx->vt100_ctx.cons.terminal_wid = x;
 		sh->ctx->vt100_ctx.cons.terminal_hei = y;
 	} else {

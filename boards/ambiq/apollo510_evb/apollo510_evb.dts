@@ -17,6 +17,7 @@
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
 		zephyr,sram = &sram0;
+		zephyr,flash-controller = &flash;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
@@ -101,6 +102,10 @@
 	};
 };
 
+&flash {
+	status = "okay";
+};
+
 &trng {
 	status = "okay";
 };
@@ -173,7 +178,7 @@
 	dqs-support;
 
 	aps51216ba: aps_z8@0 {
-		compatible = "ambiq,mspi-device", "mspi-aps-z8";
+		compatible = "ambiq,mspi-device", "aps-z8";
 		size = <DT_SIZE_M(512)>;
 		reg = <0>;
 		status = "disabled";
@@ -212,7 +217,7 @@
 	dqs-support;
 
 	is25wx064: is25wx064@0 {
-		compatible = "ambiq,mspi-device", "mspi-is25xX0xx";
+		compatible = "ambiq,mspi-device", "is25xX0xx";
 		size = <DT_SIZE_M(64)>;
 		reg = <0>;
 		status = "disabled";

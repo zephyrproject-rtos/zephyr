@@ -4,7 +4,7 @@
 config ENTROPY_VIRTIO
 	bool "Driver for VIRTIO Entropy device"
 	depends on DT_HAS_VIRTIO_DEVICE4_ENABLED
-	depends on VIRTIO
+	select VIRTIO
 	select ENTROPY_HAS_DRIVER
 	default y
 	help

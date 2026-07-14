@@ -22,6 +22,40 @@
 #define MCXW_CLK_OSC32K_BYPASS  3 /**< Bypass 32K oscillator (external clock). */
 /*@}*/
 
+/** @name OSC32K XTAL/EXTAL internal load capacitance
+ * Selects the internal capacitance applied from the OSC32K cap bank.
+ * Value N maps to 2*N pF (0 pF .. 30 pF).
+ */
+/*@{*/
+#define MCXW_CLK_OSC32K_CAP_0PF  0  /**< 0 pF internal capacitance. */
+#define MCXW_CLK_OSC32K_CAP_2PF  1  /**< 2 pF internal capacitance. */
+#define MCXW_CLK_OSC32K_CAP_4PF  2  /**< 4 pF internal capacitance. */
+#define MCXW_CLK_OSC32K_CAP_6PF  3  /**< 6 pF internal capacitance. */
+#define MCXW_CLK_OSC32K_CAP_8PF  4  /**< 8 pF internal capacitance. */
+#define MCXW_CLK_OSC32K_CAP_10PF 5  /**< 10 pF internal capacitance. */
+#define MCXW_CLK_OSC32K_CAP_12PF 6  /**< 12 pF internal capacitance. */
+#define MCXW_CLK_OSC32K_CAP_14PF 7  /**< 14 pF internal capacitance. */
+#define MCXW_CLK_OSC32K_CAP_16PF 8  /**< 16 pF internal capacitance. */
+#define MCXW_CLK_OSC32K_CAP_18PF 9  /**< 18 pF internal capacitance. */
+#define MCXW_CLK_OSC32K_CAP_20PF 10 /**< 20 pF internal capacitance. */
+#define MCXW_CLK_OSC32K_CAP_22PF 11 /**< 22 pF internal capacitance. */
+#define MCXW_CLK_OSC32K_CAP_24PF 12 /**< 24 pF internal capacitance. */
+#define MCXW_CLK_OSC32K_CAP_26PF 13 /**< 26 pF internal capacitance. */
+#define MCXW_CLK_OSC32K_CAP_28PF 14 /**< 28 pF internal capacitance. */
+#define MCXW_CLK_OSC32K_CAP_30PF 15 /**< 30 pF internal capacitance. */
+/*@}*/
+
+/** @name OSC32K coarse amplifier gain adjustment
+ * Selects the 32 kHz crystal oscillator amplifier coarse gain, used to
+ * match the external crystal ESR range.
+ */
+/*@{*/
+#define MCXW_CLK_OSC32K_COARSE_RANGE0 0 /**< Coarse amplifier gain Range0. */
+#define MCXW_CLK_OSC32K_COARSE_RANGE1 1 /**< Coarse amplifier gain Range1. */
+#define MCXW_CLK_OSC32K_COARSE_RANGE2 2 /**< Coarse amplifier gain Range2. */
+#define MCXW_CLK_OSC32K_COARSE_RANGE3 3 /**< Coarse amplifier gain Range3. */
+/*@}*/
+
 /** @name FIRC Mode */
 /*@{*/
 #define MCXW_CLK_FIRC_DISABLE      0 /**< Disable FIRC. */

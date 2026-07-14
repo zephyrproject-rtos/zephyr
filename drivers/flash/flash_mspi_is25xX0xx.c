@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT mspi_is25xx0xx
+#define DT_DRV_COMPAT is25xx0xx
 /*
  * This driver supports the non-standard 1s-1/8s-8s operation
  * as well as basic 1s-1s-1s operation.

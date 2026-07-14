@@ -15,8 +15,8 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/logging/log.h>
 
-#include "sl_wifi.h"
-#include "firmware_upgradation.h"
+#include <sl_wifi.h>
+#include <firmware_upgradation.h>
 
 LOG_MODULE_REGISTER(siwx91x_ota, LOG_LEVEL_INF);
 

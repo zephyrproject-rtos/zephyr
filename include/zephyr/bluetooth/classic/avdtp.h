@@ -8,8 +8,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AVDTP_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AVDTP_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_AVDTP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_AVDTP_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -192,4 +192,4 @@ struct bt_avdtp_sep {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AVDTP_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_AVDTP_H_ */

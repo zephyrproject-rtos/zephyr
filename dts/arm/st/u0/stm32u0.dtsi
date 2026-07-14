@@ -636,7 +636,7 @@
 		};
 
 		lptim1: timers@40007c00 {
-			compatible = "st,stm32-lptim";
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB1, 31)>;
 			resets = <&rctl STM32_RESET(APB1L, 31)>;
 			#address-cells = <1>;
@@ -648,7 +648,7 @@
 		};
 
 		lptim2: timers@40009400 {
-			compatible = "st,stm32-lptim";
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB1, 30)>;
 			resets = <&rctl STM32_RESET(APB1L, 30)>;
 			#address-cells = <1>;

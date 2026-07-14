@@ -361,6 +361,22 @@ config NET_IPV6_NS_TIMEOUT
 	  The timeout in milliseconds between attempts to send a Neighbor
 	  Solicitation message.
 
+config NET_IPV6_UNSOLICITED_NA
+	bool "Send unsolicited Neighbor Advertisements"
+	depends on NET_IPV6_NBR_CACHE
+	depends on NET_MGMT_EVENT
+	depends on NET_MGMT_EVENT_INFO
+	help
+	  When enabled, the node multicasts an unsolicited Neighbor Advertisement
+	  (to the all-nodes address, with the Override flag set) for each of its
+	  unicast addresses when the address is added or passes Duplicate Address
+	  Detection, as described in RFC 4861 chapter 7.2.6. This lets neighbors
+	  that still hold an entry for this node correct a stale link-layer
+	  address without waiting for Neighbor Unreachability Detection; it is the
+	  IPv6 counterpart of gratuitous ARP (NET_ARP_GRATUITOUS). Note that a
+	  neighbor which has already dropped its entry ignores the advertisement
+	  (RFC 4861 chapter 7.2.5).
+
 config NET_IPV6_RS_TIMEOUT
 	int "Timeout of Router Solicitation messaging"
 	depends on NET_IPV6_ND

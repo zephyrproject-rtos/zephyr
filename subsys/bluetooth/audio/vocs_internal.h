@@ -67,6 +67,11 @@ struct bt_vocs_client {
 	struct bt_gatt_subscribe_params location_sub_params;
 	struct bt_gatt_subscribe_params desc_sub_params;
 
+	/* Dedicated discovery params for concurrent CCC auto-discovery */
+	struct bt_gatt_discover_params state_ccc_disc_params;
+	struct bt_gatt_discover_params location_ccc_disc_params;
+	struct bt_gatt_discover_params desc_ccc_disc_params;
+
 	struct bt_vocs_control cp;
 	struct bt_gatt_write_params write_params;
 	struct bt_gatt_read_params read_params;

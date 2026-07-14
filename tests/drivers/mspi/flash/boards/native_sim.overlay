@@ -18,7 +18,7 @@
 
 	flash_dummy0: flash_dummy0@0 {
 		status = "okay";
-		compatible = "zephyr,mspi-emul-flash";
+		compatible = "zephyr,emul-flash";
 		reg = <0x0>;
 		size = <DT_SIZE_K(8*8)>;
 		mspi-max-frequency = <48000000>;
@@ -35,7 +35,7 @@
 
 	flash_dummy1: flash_dummy1@1 {
 		status = "okay";
-		compatible = "zephyr,mspi-emul-flash";
+		compatible = "zephyr,emul-flash";
 		reg = <0x1>;
 		size = <DT_SIZE_K(8*8)>;
 		mspi-max-frequency = <96000000>;

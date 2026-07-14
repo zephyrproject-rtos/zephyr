@@ -13,7 +13,7 @@ if NXP_S32_WKPU
 config NXP_S32_WKPU_SOURCES_MAX
 	int
 	range 32 64
-	default 64 if SOC_SERIES_S32K3
+	default 64
 	help
 	  Number of WKPU external and internal sources per controller. This is
 	  a SoC integration option.

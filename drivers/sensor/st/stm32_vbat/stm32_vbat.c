@@ -201,16 +201,15 @@ static int stm32_vbat_init(const struct device *dev)
 												\
 	static const struct stm32_vbat_config CONCAT(stm32_vbat_dev_config_, ord) = {		\
 		.ratio = DT_PROP_OR(node_id, ratio, 1),						\
-		COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, st_stm32_vbat), (			\
-			.enable_channel = stm32_vbat_enable_vbatsensor_channel,			\
-			.disable_channel = stm32_vbat_disable_vbatsensor_channel,		\
-		), (COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, st_stm32_vddcore), (		\
-			.enable_channel = stm32_vbat_enable_vddcore_channel,			\
-			.disable_channel = stm32_vbat_disable_vddcore_channel,			\
-		), (										\
-			.enable_channel = NULL,							\
-			.disable_channel = NULL,						\
-		))))										\
+		COND_CASE_1(									\
+			DT_NODE_HAS_COMPAT(node_id, st_stm32_vbat),				\
+				(.enable_channel = stm32_vbat_enable_vbatsensor_channel,	\
+				.disable_channel = stm32_vbat_disable_vbatsensor_channel,),	\
+			DT_NODE_HAS_COMPAT(node_id, st_stm32_vddcore),				\
+				(.enable_channel = stm32_vbat_enable_vddcore_channel,		\
+				.disable_channel = stm32_vbat_disable_vddcore_channel,),	\
+			(.enable_channel = NULL,						\
+			.disable_channel = NULL,))						\
 	};											\
 												\
 	SENSOR_DEVICE_DT_DEFINE(node_id, stm32_vbat_init, NULL,					\

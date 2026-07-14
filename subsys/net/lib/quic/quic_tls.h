@@ -15,16 +15,20 @@
 #define TLS_HS_CERTIFICATE           11
 #define TLS_HS_CERTIFICATE_REQUEST   13
 #define TLS_HS_CERTIFICATE_VERIFY    15
+#define TLS_HS_NEW_SESSION_TICKET    4
 #define TLS_HS_FINISHED              20
 
 /* Key schedule labels */
 #define TLS13_LABEL_DERIVED        "derived"
+#define TLS13_LABEL_C_E_TRAFFIC    "c e traffic"
 #define TLS13_LABEL_C_HS_TRAFFIC   "c hs traffic"
 #define TLS13_LABEL_S_HS_TRAFFIC   "s hs traffic"
 #define TLS13_LABEL_C_AP_TRAFFIC   "c ap traffic"
 #define TLS13_LABEL_S_AP_TRAFFIC   "s ap traffic"
+#define TLS13_LABEL_EXT_BINDER     "ext binder"
 #define TLS13_LABEL_FINISHED       "finished"
 #define TLS13_LABEL_RES_MASTER     "res master"
+#define TLS13_LABEL_RESUMPTION     "resumption"
 
 /* Supported cipher suites for QUIC */
 #define TLS_AES_128_GCM_SHA256       0x1301
@@ -33,9 +37,14 @@
 
 /* TLS extension types */
 #define TLS_EXT_ALPN                  0x10
+#define TLS_EXT_PRE_SHARED_KEY        0x29
+#define TLS_EXT_EARLY_DATA            0x2a
 #define TLS_EXT_SUPPORTED_VERSIONS    0x2b
+#define TLS_EXT_PSK_KEY_EXCHANGE_MODES 0x2d
 #define TLS_EXT_KEY_SHARE             0x33
 #define TLS_EXT_QUIC_TRANSPORT_PARAMS 0x39
+
+#define TLS_PSK_KE_MODE_PSK_DHE_KE    0x01
 
 /* TLS 1.3 CertificateVerify constants (RFC 8446 Section 4.4.3) */
 #define TLS13_CERT_VERIFY_PADDING_LEN   64
@@ -63,6 +72,7 @@ enum quic_secret_level {
 	QUIC_SECRET_LEVEL_INITIAL = 0,
 	QUIC_SECRET_LEVEL_HANDSHAKE = 1,
 	QUIC_SECRET_LEVEL_APPLICATION = 2,
+	QUIC_SECRET_LEVEL_EARLY = 3,
 };
 
 /*

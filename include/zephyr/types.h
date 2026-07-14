@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ZEPHYR_TYPES_H_
-#define ZEPHYR_INCLUDE_ZEPHYR_TYPES_H_
+#ifndef ZEPHYR_INCLUDE_TYPES_H_
+#define ZEPHYR_INCLUDE_TYPES_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -71,4 +71,4 @@ extern int main(void);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ZEPHYR_TYPES_H_ */
+#endif /* ZEPHYR_INCLUDE_TYPES_H_ */

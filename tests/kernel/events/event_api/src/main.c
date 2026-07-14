@@ -48,6 +48,7 @@ static K_THREAD_STACK_DEFINE(sextra2, STACK_SIZE);
 static K_EVENT_DEFINE(test_event);
 static K_EVENT_DEFINE(sync_event);
 static struct k_event deliver_event;
+static K_EVENT_DEFINE(clear_event);
 
 static K_SEM_DEFINE(receiver_sem, 0, 1);
 static K_SEM_DEFINE(sync_sem, 0, 1);
@@ -462,6 +463,65 @@ ZTEST_USER(events_api, test_event_deliver)
 }
 
 /**
+ * @brief Verify k_event_clear() clears specified events.
+ *
+ * @details
+ * k_event_clear() must reset exactly the requested events tracked by the
+ * event object, leave all other events untouched, report the prior state of
+ * the requested events, and be a no-op for events that are not currently
+ * set. Runs as a user-mode test so the clear system call is also exercised
+ * through its user-mode verifier.
+ *
+ * Test steps:
+ * - Verify the statically defined event object starts empty, then set a
+ *   known pattern (0x33).
+ * - Clear a subset (0x11); verify the prior state of those events is
+ *   returned and only the requested events are cleared (0x22 remains).
+ * - Clear the same subset again; verify it returns 0 (the events were no
+ *   longer set) and nothing changes.
+ * - Clear all events; verify the event object ends up empty.
+ *
+ * Expected result:
+ * - Only the requested events are cleared, each call reports the prior
+ *   state of the requested events, and clearing unset events changes
+ *   nothing.
+ *
+ * @see k_event_clear()
+ * @see k_event_test()
+ *
+ */
+ZTEST_USER(events_api, test_k_event_clear)
+{
+	struct k_event *event = &clear_event;
+	uint32_t previous;
+
+	/* statically defined: initialized (empty) at boot */
+	zassert_equal(k_event_test(event, ~0), 0);
+
+	(void)k_event_set(event, 0x33);
+	zassert_equal(k_event_test(event, ~0), 0x33);
+
+	/* clear a subset: only the requested events go away; the return
+	 * value reports the prior state of the requested events
+	 */
+	previous = k_event_clear(event, 0x11);
+	zassert_equal(previous, 0x11);
+	zassert_equal(k_event_test(event, ~0), 0x22);
+
+	/* clearing events that are not set is a no-op and reports them
+	 * as not having been set
+	 */
+	previous = k_event_clear(event, 0x11);
+	zassert_equal(previous, 0x00);
+	zassert_equal(k_event_test(event, ~0), 0x22);
+
+	/* clear everything */
+	previous = k_event_clear(event, ~0);
+	zassert_equal(previous, 0x22);
+	zassert_equal(k_event_test(event, ~0), 0);
+}
+
+/**
  * @brief Verify multi-threaded waiting, reset-on-wait and waking of waiters.
  *
  * @details
@@ -609,7 +669,8 @@ ZTEST_USER(events_api, test_k_event_wait_all_safe)
  */
 static void *events_api_setup(void)
 {
-	k_thread_access_grant(k_current_get(), &test_event, &deliver_event);
+	k_thread_access_grant(k_current_get(), &test_event, &deliver_event,
+			       &clear_event);
 
 	return NULL;
 }

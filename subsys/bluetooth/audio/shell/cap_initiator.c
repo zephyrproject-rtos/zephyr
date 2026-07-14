@@ -100,17 +100,6 @@ static void unicast_stop_complete_cb(int err, struct bt_conn *conn)
 		bt_shell_error("Unicast stop failed for conn %p (%d)", conn, err);
 	} else {
 		bt_shell_print("Unicast stop completed");
-
-		if (default_unicast_group.is_cap && default_unicast_group.cap_group != NULL) {
-			err = bt_cap_unicast_group_delete(default_unicast_group.cap_group);
-			if (err != 0) {
-				bt_shell_error("Failed to delete unicast group %p: %d",
-					       default_unicast_group.cap_group, err);
-			} else {
-				default_unicast_group.cap_group = NULL;
-				default_unicast_group.is_cap = false;
-			}
-		}
 	}
 }
 

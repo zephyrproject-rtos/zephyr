@@ -1358,6 +1358,33 @@ void sys_trace_named_event(const char *name, uint32_t arg0, uint32_t arg1)
 	ctf_named_event(ctf_name, arg0, arg1);
 }
 
+static void _get_init_name(const struct init_entry *entry, ctf_bounded_string_t *name)
+{
+	const struct device *dev = entry->dev;
+
+	if (dev != NULL && dev->name != NULL && dev->name[0] != '\0') {
+		strncpy(name->buf, dev->name, sizeof(name->buf));
+		name->buf[sizeof(name->buf) - 1] = '\0';
+	}
+}
+
+void sys_trace_sys_init_enter(const struct init_entry *entry, int level)
+{
+	ctf_bounded_string_t name = {""};
+
+	_get_init_name(entry, &name);
+	ctf_sys_init_enter(name, (uint32_t)(uintptr_t)entry->init_fn, (uint8_t)level);
+}
+
+void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int result)
+{
+	ctf_bounded_string_t name = {""};
+
+	_get_init_name(entry, &name);
+	ctf_sys_init_exit(name, (uint32_t)(uintptr_t)entry->init_fn, (uint8_t)level,
+			  (int32_t)result);
+}
+
 /* GPIO */
 void sys_port_trace_gpio_pin_interrupt_configure_enter(const struct device *port, gpio_pin_t pin,
 						       gpio_flags_t flags)

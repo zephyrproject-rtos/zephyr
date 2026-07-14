@@ -19,4 +19,20 @@
 			bias-pull-up;
 		};
 	};
+
+	green_pwm_led_pinctrl: green_pwm_led_pinctrl {
+		group1 {
+			pinmux = <TIM3_CH2_PC7_3>;
+			output-high;
+			drive-push-pull;
+		};
+	};
+
+	blue_pwm_led_pinctrl: blue_pwm_led_pinctrl {
+		group1 {
+			pinmux = <TIM3_CH4_PC9_3>;
+			output-high;
+			drive-push-pull;
+		};
+	};
 };

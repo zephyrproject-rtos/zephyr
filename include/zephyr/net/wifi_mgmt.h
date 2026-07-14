@@ -854,6 +854,15 @@ struct wifi_connect_req_params {
 	 * 1: Enable
 	 */
 	uint8_t ssid_protection;
+	/**
+	 * WPA3 Transition Disable bitmap (WPA3 Spec v3.0, Table 5).
+	 * Sent in EAPOL Message 3 as Transition Disable KDE.
+	 *   Bit 0: WPA3-Personal
+	 *   Bit 1: WPA3-Personal SAE-PK
+	 *   Bit 2: WPA3-Enterprise
+	 *   Bit 3: OWE
+	 */
+	uint8_t transition_disable;
 };
 
 /** @brief Wi-Fi disconnect reason codes. To be overlaid on top of \ref wifi_status
@@ -1731,6 +1740,10 @@ enum wifi_p2p_op {
 	WIFI_P2P_INVITE,
 	/** P2P power save */
 	WIFI_P2P_POWER_SAVE,
+	/** P2P list stored persistent networks */
+	WIFI_P2P_LIST_NETWORKS,
+	/** P2P remove persistent network(s) */
+	WIFI_P2P_PERSISTENT_REMOVE,
 };
 
 /** Wi-Fi P2P discovery type */
@@ -1755,6 +1768,7 @@ enum wifi_p2p_connection_method {
 
 /** Maximum number of P2P peers that can be returned in a single query */
 #define WIFI_P2P_MAX_PEERS CONFIG_WIFI_P2P_MAX_PEERS
+#define WIFI_P2P_LIST_NETWORKS_BUF_SIZE 2048
 
 /** Wi-Fi P2P parameters */
 struct wifi_p2p_params {
@@ -1789,6 +1803,8 @@ struct wifi_p2p_params {
 		unsigned int freq;
 		/** Join an existing group (as a client) instead of starting GO negotiation */
 		bool join;
+		/** Add persistent group */
+		bool persistent_set;
 	} connect;
 	/** Group add specific parameters */
 	struct {
@@ -1796,6 +1812,8 @@ struct wifi_p2p_params {
 		int freq;
 		/** Persistent group ID (-1 = not persistent) */
 		int persistent;
+		/** Add persistent group */
+		bool persistent_set;
 		/** Enable HT40 */
 		bool ht40;
 		/** Enable VHT */
@@ -1834,6 +1852,21 @@ struct wifi_p2p_params {
 		/** GO device address length */
 		uint8_t go_dev_addr_length;
 	} invite;
+	/** List networks specific parameters */
+	struct {
+		/** Buffer to hold the LIST_NETWORKS response. */
+		char *buf;
+		/** Size of the allocated buffer in bytes */
+		size_t buf_size;
+	} list_networks;
+	/** Persistent network remove specific parameters */
+	struct {
+		/** Network ID to remove.
+		 *  >= 0 : remove the specific network with this ID.
+		 *  -1   : remove ALL saved networks.
+		 */
+		int id;
+	} persistent_remove;
 };
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 

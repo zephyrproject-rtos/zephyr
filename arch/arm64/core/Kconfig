@@ -156,9 +156,6 @@ config AARCH64_IMAGE_HEADER
 	  This option enables standard ARM64 boot image header used by Linux
 	  and understood by loaders such as u-boot on Xen xl tool.
 
-config PRIVILEGED_STACK_SIZE
-	default 4096
-
 config KOBJECT_TEXT_AREA
 	default 1024 if UBSAN
 	default 512 if TEST

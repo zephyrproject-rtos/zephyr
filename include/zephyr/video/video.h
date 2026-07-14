@@ -18,7 +18,7 @@
  * @brief Video public APIs.
  * @defgroup video_api Video APIs
  * @since 4.4
- * @version 0.1.0
+ * @version 0.2.0
  * @ingroup video_interface
  * @{
  */
@@ -37,11 +37,11 @@
  *
  * @param mem Pointer to the external memory
  * @param sz Size of the external memory
- * @param idx Returned index of the imported video buffer in the video buffer pool
  *
- * @retval 0 on success or a negative errno code on failure.
+ * @return Pointer to the imported @ref video_buffer holding the external memory on success,
+ * NULL on failure
  */
-int video_import_buffer(uint8_t *mem, size_t sz, uint16_t *idx);
+struct video_buffer *video_import_buffer(uint8_t *mem, size_t sz);
 
 /**
  * @}

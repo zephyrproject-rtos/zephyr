@@ -896,6 +896,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"server-cert-domain-exact", sys_getopt_required_argument, 0, 'e'},
 		{"server-cert-domain-suffix", sys_getopt_required_argument, 0, 'x'},
 		{"ssid-protection", sys_getopt_required_argument, 0, 'C'},
+		{"transition-disable", sys_getopt_required_argument, 0, 'd'},
 		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	char *endptr;
@@ -913,6 +914,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	long channel;
 	int key_passwd_cnt = 0;
 	int ret = 0;
+	long val = 0;
 
 	/* Defaults */
 	params->band = WIFI_FREQ_BAND_UNKNOWN;
@@ -924,7 +926,8 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->bandwidth = WIFI_FREQ_BANDWIDTH_20MHZ;
 	params->verify_peer_cert = false;
 
-	while ((opt = sys_getopt_long(argc, argv, "s:p:k:e:x:w:b:c:m:t:a:B:K:S:C:T:A:V:I:P:g:Rh:i:",
+	while ((opt = sys_getopt_long(argc, argv,
+				  "s:p:k:e:x:w:b:c:m:t:a:B:K:S:C:T:A:V:I:P:g:Rh:i:d:",
 				  long_options, &opt_index)) != -1) {
 		state = sys_getopt_state_get();
 		switch (opt) {
@@ -1179,6 +1182,17 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			params->server_cert_domain_suffix = state->optarg;
 			params->server_cert_domain_suffix_len =
 					strlen(params->server_cert_domain_suffix);
+			break;
+		case 'd':
+			if (iface_mode == WIFI_MODE_AP) {
+				val = shell_strtol(state->optarg, 16, &ret);
+				if (ret || val < 0x01 || val > 0x0F) {
+					PR_WARNING("Invalid transition_disable "
+						 "value (0x01-0x0F)\n");
+					return -EINVAL;
+				}
+				params->transition_disable = (uint8_t)val;
+			}
 			break;
 		case 'h':
 			shell_help(sh);
@@ -4093,6 +4107,7 @@ static int cmd_wifi_p2p_connect(const struct shell *sh, size_t argc, char *argv[
 		{"go-intent", sys_getopt_required_argument, 0, 'g'},
 		{"freq", sys_getopt_required_argument, 0, 'f'},
 		{"join", sys_getopt_no_argument, 0, 'j'},
+		{"persistent_set", sys_getopt_no_argument, 0, 'a'},
 		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}
@@ -4103,7 +4118,8 @@ static int cmd_wifi_p2p_connect(const struct shell *sh, size_t argc, char *argv[
 
 	if (argc < 3) {
 		PR_ERROR("Usage: wifi p2p connect <MAC address> <pbc|pin> [PIN] "
-			 "[--go-intent=<0-15>] [--freq=<frequency>] [--join]\n");
+			 "[--go-intent=<0-15>] [--freq=<frequency>] [--join] "
+			 "[--persistent_set]\n");
 		return -EINVAL;
 	}
 
@@ -4139,8 +4155,10 @@ static int cmd_wifi_p2p_connect(const struct shell *sh, size_t argc, char *argv[
 	params.connect.freq = 0;
 	/* Set default join to false */
 	params.connect.join = false;
+	/* Set default persistent_set to false */
+	params.connect.persistent_set = false;
 
-	while ((opt = sys_getopt_long(argc, argv, "g:f:ji:h", long_options, &opt_index)) != -1) {
+	while ((opt = sys_getopt_long(argc, argv, "g:f:jai:h", long_options, &opt_index)) != -1) {
 		state = sys_getopt_state_get();
 		switch (opt) {
 		case 'g':
@@ -4157,6 +4175,9 @@ static int cmd_wifi_p2p_connect(const struct shell *sh, size_t argc, char *argv[
 			break;
 		case 'j':
 			params.connect.join = true;
+			break;
+		case 'a':
+			params.connect.persistent_set = true;
 			break;
 		case 'i':
 			/* Unused, but parsing to avoid unknown option error */
@@ -4196,6 +4217,7 @@ static int cmd_wifi_p2p_group_add(const struct shell *sh, size_t argc, char *arg
 	static const struct sys_getopt_option long_options[] = {
 		{"freq", sys_getopt_required_argument, 0, 'f'},
 		{"persistent", sys_getopt_required_argument, 0, 'p'},
+		{"persistent_set", sys_getopt_no_argument, 0, 'a'},
 		{"ht40", sys_getopt_no_argument, 0, 'h'},
 		{"vht", sys_getopt_no_argument, 0, 'v'},
 		{"he", sys_getopt_no_argument, 0, 'H'},
@@ -4212,6 +4234,7 @@ static int cmd_wifi_p2p_group_add(const struct shell *sh, size_t argc, char *arg
 
 	params.oper = WIFI_P2P_GROUP_ADD;
 	params.group_add.freq = 0;
+	params.group_add.persistent_set = false;
 	params.group_add.persistent = -1;
 	params.group_add.ht40 = false;
 	params.group_add.vht = false;
@@ -4219,7 +4242,7 @@ static int cmd_wifi_p2p_group_add(const struct shell *sh, size_t argc, char *arg
 	params.group_add.edmg = false;
 	params.group_add.go_bssid_length = 0;
 
-	while ((opt = sys_getopt_long(argc, argv, "f:p:hvHeb:i:?", long_options,
+	while ((opt = sys_getopt_long(argc, argv, "f:ap:hvHeb:i:?", long_options,
 				      &opt_index)) != -1) {
 		state = sys_getopt_state_get();
 		switch (opt) {
@@ -4228,6 +4251,9 @@ static int cmd_wifi_p2p_group_add(const struct shell *sh, size_t argc, char *arg
 				return -EINVAL;
 			}
 			params.group_add.freq = (int)val;
+			break;
+		case 'a':
+			params.group_add.persistent_set = true;
 			break;
 		case 'p':
 			if (!parse_number(sh, &val, state->optarg, "persistent", -1, 255)) {
@@ -4268,6 +4294,11 @@ static int cmd_wifi_p2p_group_add(const struct shell *sh, size_t argc, char *arg
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
 		}
+	}
+
+	if (params.group_add.persistent_set == true) {
+		PR_WARNING("The persistent_set is indicated and parameter -p will be ignored\n");
+		params.group_add.persistent = -1;
 	}
 
 	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params))) {
@@ -4467,6 +4498,97 @@ static int cmd_wifi_p2p_power_save(const struct shell *sh, size_t argc, char *ar
 	}
 
 	PR("P2P power save %s\n", power_save_enable ? "enabled" : "disabled");
+	return 0;
+}
+
+static int cmd_wifi_p2p_list_networks(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+	char *buf;
+	int ret;
+
+	context.sh = sh;
+
+	/* Dynamically allocate response buffer to avoid large stack usage */
+	buf = k_malloc(WIFI_P2P_LIST_NETWORKS_BUF_SIZE);
+	if (buf == NULL) {
+		PR_ERROR("Failed to allocate buffer for list_networks\n");
+		return -ENOMEM;
+	}
+	memset(buf, 0, WIFI_P2P_LIST_NETWORKS_BUF_SIZE);
+
+	params.oper = WIFI_P2P_LIST_NETWORKS;
+	params.list_networks.buf = buf;
+	params.list_networks.buf_size = WIFI_P2P_LIST_NETWORKS_BUF_SIZE;
+
+	ret = net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params));
+	if (ret) {
+		PR_WARNING("P2P list_networks request failed\n");
+		k_free(buf);
+		return -ENOEXEC;
+	}
+
+	if (buf[0] == '\0') {
+		PR("No persistent P2P networks stored\n");
+	} else {
+		PR("Stored P2P networks:\n");
+		PR("%s\n", buf);
+	}
+
+	k_free(buf);
+	return 0;
+}
+
+static int cmd_wifi_p2p_persistent_remove(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+	int idx = 1;
+	long val;
+	char *endptr;
+
+	context.sh = sh;
+
+	if (argc < 2) {
+		PR_ERROR("Usage: wifi p2p persistent_remove <network_id|-1>\n"
+			 "  <network_id> : remove a single persistent network by ID (>= 0)\n"
+			 "  all          : remove all saved persistent networks\n");
+		return -EINVAL;
+	}
+
+	params.oper = WIFI_P2P_PERSISTENT_REMOVE;
+
+	/* Accept all (remove all) or >= 0 (remove by ID) */
+	if (strcmp(argv[idx], "all") == 0) {
+		val = -1;
+	} else {
+		val = strtol(argv[idx], &endptr, 10);
+		if (*endptr != '\0' || val < 0) {
+			PR_ERROR("Invalid network_id '%s': must be >= 0\n",
+				 argv[idx]);
+			return -EINVAL;
+		}
+	}
+
+	params.persistent_remove.id = (int)val;
+
+	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params))) {
+		if (params.persistent_remove.id == -1) {
+			PR_WARNING("P2P remove all networks request failed\n");
+		} else {
+			PR_WARNING("P2P persistent_remove network %d failed "
+				   "(network may not exist)\n",
+				   params.persistent_remove.id);
+		}
+		return -ENOEXEC;
+	}
+
+	if (params.persistent_remove.id == -1) {
+		PR("All P2P persistent networks removed\n");
+	} else {
+		PR("P2P persistent network %d removed\n", params.persistent_remove.id);
+	}
 	return 0;
 }
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
@@ -5212,8 +5334,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "[-P, --eap-pwd1...--eap-pwd8]: Client Password\n"
 				 "Default no password for eap user\n"
 				 "[-C, --ssid-protection]: Whether to use SSID protection in\n"
-				 "4-way handshake: 0:Disable, 1:Enable"),
-		      cmd_wifi_ap_enable, 2, 49),
+				 "4-way handshake: 0:Disable, 1:Enable\n"
+				 "[-d, --transition-disable=<bitmap>]: WPA3 Transition Disable\n"
+				 "Bit0=WPA3-Personal, Bit1=WPA3-Personal SAE-PK,\n"
+				 "Bit2=WPA3-Enterprise, Bit3=OWE"),
+		      cmd_wifi_ap_enable, 2, 51),
 	SHELL_CMD_ARG(stations, NULL,
 		      SHELL_HELP("List stations connected to the AP",
 				 "[-i, --iface=<interface index>]"),
@@ -5574,6 +5699,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "[PIN]: 8-digit PIN (optional, generates if omitted)\n"
 				 "[-g, --go-intent=<0-15>]: GO intent "
 				 "(0=client, 15=GO, default: 0)\n"
+				 "[-a, --persistent_set]: Add persistent group\n"
 				 "[-f, --freq=<frequency>]: Frequency in MHz (default: 2462)\n"
 				 "[-j, --join]: Join an existing group (as a client) "
 				 "instead of starting GO negotiation\n"
@@ -5583,13 +5709,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "(uses PIN)\n"
 				 "wifi p2p connect f4:ce:36:01:00:38 pbc --join  "
 				 "(join existing group)"),
-		      cmd_wifi_p2p_connect, 3, 6),
+		      cmd_wifi_p2p_connect, 3, 7),
 	SHELL_CMD_ARG(group_add, NULL,
 		      SHELL_HELP("Add a P2P group (start as GO)",
 				 "[-i, --iface=<interface index>]\n"
 				 "[-f, --freq=<MHz>]: Frequency in MHz (0 = auto)\n"
 				 "[-p, --persistent=<id>]: Persistent group ID "
 				 "(-1 = not persistent)\n"
+				 "[-a, --persistent_set]: Add persistent group\n"
 				 "[-h, --ht40]: Enable HT40\n"
 				 "[-v, --vht]: Enable VHT (also enables HT40)\n"
 				 "[-H, --he]: Enable HE\n"
@@ -5621,6 +5748,20 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "<on>: Enable P2P power save\n"
 				 "<off>: Disable P2P power save"),
 		      cmd_wifi_p2p_power_save, 2, 3),
+	SHELL_CMD_ARG(list_networks, NULL,
+		      SHELL_HELP("List stored persistent P2P networks",
+				 "[-i, --iface=<interface index>]"),
+		      cmd_wifi_p2p_list_networks, 1, 2),
+	SHELL_CMD_ARG(persistent_remove, NULL,
+		      SHELL_HELP("Remove P2P persistent network(s)",
+				 "[-i, --iface=<interface index>]\n"
+				 "<network_id|all>\n"
+				 "  <network_id> : Remove a single persistent network by ID (>= 0).\n"
+				 "  all           : Remove all saved persistent networks.\n"
+				 "Examples:\n"
+				 "  wifi p2p persistent_remove 0\n"
+				 "  wifi p2p persistent_remove all"),
+		      cmd_wifi_p2p_persistent_remove, 2, 3),
 	SHELL_SUBCMD_SET_END
 );
 

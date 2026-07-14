@@ -98,6 +98,12 @@
 	power-supply = "smps-direct";
 };
 
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiod 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+};
+
 &lpuart1 {
 	pinctrl-0 = <&lpuart1_tx_pb6 &lpuart1_rx_pb7>;
 	pinctrl-names = "default";
