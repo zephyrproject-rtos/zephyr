@@ -54,6 +54,11 @@ struct pcie_cap_id_to_str {
 #define PCI_PM_STATE_D0        0x00U
 #define PCI_PM_STATE_D3HOT     0x03U
 
+/* Device Capabilities 2 Register Decoding Masks */
+#define PCI_EXP_DEVCAP2_ARI_MASK     0x00000020U /* Bit 5: Alternative Routing-ID */
+#define PCI_EXP_DEVCAP2_SRIOV_MASK   0x00000010U /* Bit 4: Single Root I/O Virt */
+#define PCI_EXP_DEVCAP2_NVME_OFFLOAD 0x000000C0U /* Memory-mapped offload markers */
+
 static const struct pcie_cap_id_to_str pcie_cap_list[] = {
 	{ PCI_CAP_ID_PM,     "Power Management" },
 	{ PCI_CAP_ID_AGP,    "Accelerated Graphics Port" },
@@ -1287,6 +1292,53 @@ static int cmd_pcie_link_speed(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_pcie_offload_capabilities(const struct shell *sh, size_t argc, char **argv)
+{
+	pcie_bdf_t bdf;
+	uint32_t id, exp_offset, devcap2;
+
+	if (argc < 2) {
+		shell_error(sh, "Usage: pcie offload <bus:dev.func>");
+		return -EINVAL;
+	}
+
+	bdf = get_bdf(argv[1]);
+	if (bdf == PCIE_BDF_NONE) {
+		shell_error(sh, "Invalid BDF format specification.");
+		return -EINVAL;
+	}
+
+	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
+		shell_error(sh, "No responsive endpoint found at target BDF.");
+		return -ENODEV;
+	}
+
+	exp_offset = pcie_get_cap(bdf, PCI_CAP_ID_EXP);
+	if (exp_offset == 0U) {
+		shell_error(sh, "Target device does not support native PCIe Capabilities.");
+		return -EOPNOTSUPP;
+	}
+
+	devcap2 = pcie_conf_read(bdf, exp_offset + 9U);
+
+	shell_print(sh, "====================================================================");
+	shell_print(sh, "   SILICON HARDWARE TRANSPORT OVERLAY DECODER MATRIX: %u:%x.%u",
+		    PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf));
+	shell_print(sh, "====================================================================");
+	shell_print(sh, "   Raw DEVCAP2 Value: 0x%08X", devcap2);
+	shell_print(sh, "   ----------------------------------------------------");
+	shell_print(sh, "   Supported Physical Transaction Offloads:");
+	shell_print(sh, "      Alternative Routing-ID (ARI) : [%s]",
+		    (devcap2 & PCI_EXP_DEVCAP2_ARI_MASK) ? "SUPPORTED" : "UNAVAILABLE");
+	shell_print(sh, "      Single-Root I/O Virt (SR-IOV): [%s]",
+		    (devcap2 & PCI_EXP_DEVCAP2_SRIOV_MASK) ? "SUPPORTED" : "UNAVAILABLE");
+	shell_print(sh, "      NVMe MMIO Transport Offloads : [%s]",
+		    (devcap2 & PCI_EXP_DEVCAP2_NVME_OFFLOAD) ? "DEPLOYED" : "UNAVAILABLE");
+	shell_print(sh, "====================================================================");
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_pcie_mask_cmds,
 	SHELL_CMD_ARG(ignore, NULL, "Register a coordinate slot to be ignored by bus scans",
@@ -1352,6 +1404,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		  NULL),
 	SHELL_CMD(device, &sub_pcie_device_cmds, "Manage pcie physical hardware device states",
 		  NULL),
+	SHELL_CMD_ARG(offload, NULL,
+		      "Probe dynamic vector routing capabilities\n"
+		      "Usage: offload <bus:device.function>",
+		      cmd_pcie_offload_capabilities, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(pcie, &sub_pcie_cmds, "PCI(e) device information", cmd_pcie_ls);
