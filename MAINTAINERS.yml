@@ -261,12 +261,18 @@ ARM Platforms:
     - boards/arm/mps*/
     - boards/arm/v2m_*/
     - boards/arm/fvp_base*/
+    - boards/qemu/cortex_a53/
+    - boards/qemu/kvm_arm64/
     - soc/arm/mps*/
     - soc/arm/musca/
     - soc/arm/beetle/
     - soc/arm/designstart/
     - soc/arm/fvp_aemv8*/
+    - soc/arm/qemu_cortex_a53/
+    - soc/arm/qemu_virt_arm64/
     - dts/arm/armv*.dtsi
+    - dts/arm64/fvp/
+    - dts/arm64/qemu/
     - dts/bindings/arm/arm*.yaml
     - drivers/interrupt_controller/intc_gic*
   labels:
@@ -322,9 +328,7 @@ ARM64 arch:
     - arch/arm64/
     - include/zephyr/arch/arm64/
     - tests/arch/arm64/
-    - dts/arm64/
-    - boards/qemu/kvm_arm64/
-    - boards/qemu/cortex_a53/
+    - dts/arm64/armv*.dtsi
   labels:
     - "area: ARM64"
   tests:
@@ -5966,6 +5970,7 @@ TI K3 Platforms:
     - dts/arm/ti/j7*
     - dts/bindings/*/ti,k3*
     - dts/vendor/ti/
+    - dts/arm64/ti/
     - soc/ti/k3/
   labels:
     - "platform: TI K3"
