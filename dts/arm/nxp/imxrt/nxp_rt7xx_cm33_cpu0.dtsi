@@ -99,6 +99,8 @@
 			compatible = "nxp,irtc-wake-timer";
 			interrupts = <27 0>;
 			osc-div;
+			wakeup-source;
+			wakeup-ctrls = <&sleepcon0 27>;
 			status = "disabled";
 		};
 	};
@@ -109,13 +111,17 @@
 		#clock-cells = <1>;
 	};
 
-	/* SLEEPCON0 (VDD2_COMP) is the wakeup controller for CPU0. */
+	/*
+	 * SLEEPCON0 (VDD2_COMP) is the wakeup controller for CPU0. It is an
+	 * always-present on-chip controller, so it is enabled by default;
+	 * CONFIG_WUC gates whether the driver is actually built.
+	 */
 	sleepcon0: wakeup-controller@3000 {
 		compatible = "nxp,sleepcon-wuc";
 		reg = <0x3000 0x1000>;
 		interrupts = <136 0>;
 		#wakeup-ctrl-cells = <1>;
-		status = "disabled";
+		status = "okay";
 	};
 
 	ctimer0: timer@28000 {
