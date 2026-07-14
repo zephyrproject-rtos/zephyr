@@ -1,0 +1,73 @@
+/*
+ * Copyright (C) 2026 DH electronics GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/mp2/stm32mp255_m33.dtsi>
+#include <st/mp2/stm32mp255cakx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "raspberrypi_40pins_connector.dtsi"
+
+/ {
+	model = "DH electronics STM32MP255C DHCOS DHSBC";
+	compatible = "dh,stm32mp255c-dhcos-dhsbc", "st,stm32mp25";
+
+	chosen {
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+		zephyr,flash = &ddr_code;
+		zephyr,sram = &ddr_sys;
+	};
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(40)>;
+	status = "okay";
+};
+
+&rcc {
+	clock-frequency = <DT_FREQ_M(400)>;
+};
+
+&mailbox {
+	status = "okay";
+};
+
+/* CAN RX/TX Raspberry Pi connector */
+&fdcan1 {
+	pinctrl-0 = <&fdcan1_rx_pb11 &fdcan1_tx_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/* UART Raspberry Pi connector */
+&uart4 {
+	pinctrl-0 = <&uart4_tx_pb7 &uart4_rx_pb6>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+/* I2C Raspberry Pi connector */
+&i2c2 {
+	/* NOTE: Is enabled by default on the Linux side.
+	 * It must be disabled there before enabling it here.
+	 */
+	pinctrl-0 = <&i2c2_scl_pb5 &i2c2_sda_pb4>;
+	pinctrl-names = "default";
+	scl-gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
+	status = "disabled";
+};
+
+/* SPI Raspberry Pi connector */
+&spi8 {
+	pinctrl-0 = <&spi8_nss_pz6 &spi8_sck_pz5 &spi8_miso_pz8 &spi8_mosi_pz7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
