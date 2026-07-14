@@ -679,7 +679,6 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
     )
     test_xor_generator.add_argument(
         "-N", "--ninja", action="store_true",
-        default=not any(a in sys.argv for a in ("-k", "--make")),
         help="Use the Ninja generator with CMake. (This is the default)")
 
     test_xor_generator.add_argument(
@@ -905,6 +904,11 @@ def parse_arguments(
 ) -> argparse.Namespace:
     if options is None:
         options = parser.parse_args(args)
+
+    # Ninja is the default generator; --make is the only way to opt out. Derive
+    # this from the parsed arguments rather than from sys.argv, which is not the
+    # caller's argument list when twister_main() is invoked in-process.
+    options.ninja = not options.make
 
     # Very early error handling
     if options.short_build_path and not options.ninja:
