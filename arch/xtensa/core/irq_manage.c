@@ -12,6 +12,12 @@
 
 #include <xtensa_internal.h>
 
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_ESP32
+#include <esp_soc_irq.h>
+#include <esp_memory_utils.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -47,10 +53,11 @@ int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			       void (*routine)(const void *parameter),
 			       const void *parameter, uint32_t flags)
 {
-	ARG_UNUSED(flags);
 	ARG_UNUSED(priority);
+	ARG_UNUSED(flags);
 
 	z_isr_install(irq, routine, parameter);
+
 	return irq;
 }
 #else /* !CONFIG_MULTI_LEVEL_INTERRUPTS */
@@ -58,6 +65,20 @@ int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			       void (*routine)(const void *parameter),
 			       const void *parameter, uint32_t flags)
 {
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_ESP32
+	int rc;
+
+	rc = z_soc_irq_validate(routine, flags);
+	if (rc < 0) {
+		return rc;
+	}
+
+	rc = z_soc_irq_flags_apply(irq, flags);
+	if (rc < 0) {
+		//(void)z_isr_uninstall(irq, routine, parameter);
+		return rc;
+	}
+#endif
 	return z_soc_irq_connect_dynamic(irq, priority, routine, parameter,
 					 flags);
 }
