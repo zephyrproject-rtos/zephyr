@@ -1,0 +1,5 @@
+# Copyright (C) 2026 DH electronics GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32MP255C_DHSBC
+	select SOC_STM32MP255CXX_M33
