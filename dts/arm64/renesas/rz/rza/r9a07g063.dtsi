@@ -1251,7 +1251,7 @@
 			compatible = "renesas,rz-spibsc";
 			reg = <0x10060000 0x1000>;
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 	};
