@@ -301,6 +301,9 @@ BUILD_ASSERT(CONFIG_NET_SOCKETS_TLS_MAX_SESSION_CONTEXTS >= CONFIG_NET_SOCKETS_T
 
 static struct tls_session_cache client_cache[CONFIG_NET_SOCKETS_TLS_MAX_CLIENT_SESSION_COUNT];
 
+/* A mutex for protecting access to the client session cache. */
+static K_MUTEX_DEFINE(session_cache_lock);
+
 #if defined(MBEDTLS_SSL_CACHE_C)
 static mbedtls_ssl_cache_context server_cache;
 #endif
@@ -317,6 +320,8 @@ static int tls_mbedtls_reset_session(struct tls_context *context);
 
 static void tls_session_cache_reset(void)
 {
+	k_mutex_lock(&session_cache_lock, K_FOREVER);
+
 	for (int i = 0; i < ARRAY_SIZE(client_cache); i++) {
 		if (client_cache[i].session != NULL) {
 			mbedtls_free(client_cache[i].session);
@@ -324,6 +329,8 @@ static void tls_session_cache_reset(void)
 	}
 
 	(void)memset(client_cache, 0, sizeof(client_cache));
+
+	k_mutex_unlock(&session_cache_lock);
 }
 
 bool net_socket_is_tls(void *obj)
@@ -667,7 +674,9 @@ static int tls_session_save(const struct net_sockaddr *peer_addr,
 {
 	struct tls_session_cache *entry = NULL;
 	size_t session_len;
-	int ret;
+	int ret = 0;
+
+	k_mutex_lock(&session_cache_lock, K_FOREVER);
 
 	for (int i = 0; i < ARRAY_SIZE(client_cache); i++) {
 		if (client_cache[i].session == NULL) {
@@ -703,7 +712,8 @@ static int tls_session_save(const struct net_sockaddr *peer_addr,
 	entry->session = mbedtls_calloc(1, session_len);
 	if (entry->session == NULL) {
 		NET_ERR("Failed to allocate session buffer.");
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto out;
 	}
 
 	ret = mbedtls_ssl_session_save(session, entry->session, session_len,
@@ -712,21 +722,29 @@ static int tls_session_save(const struct net_sockaddr *peer_addr,
 		NET_ERR("Failed to serialize session, err: -0x%x.", -ret);
 		mbedtls_free(entry->session);
 		entry->session = NULL;
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto out;
 	}
 
 	entry->session_len = session_len;
 	entry->timestamp = k_uptime_get();
 	memcpy(&entry->peer_addr, peer_addr, sizeof(*peer_addr));
 
-	return 0;
+	ret = 0;
+
+out:
+	k_mutex_unlock(&session_cache_lock);
+
+	return ret;
 }
 
 static int tls_session_get(const struct net_sockaddr *peer_addr,
 			   mbedtls_ssl_session *session)
 {
 	struct tls_session_cache *entry = NULL;
-	int ret;
+	int ret = 0;
+
+	k_mutex_lock(&session_cache_lock, K_FOREVER);
 
 	for (int i = 0; i < ARRAY_SIZE(client_cache); i++) {
 		if (client_cache[i].session != NULL &&
@@ -737,7 +755,8 @@ static int tls_session_get(const struct net_sockaddr *peer_addr,
 	}
 
 	if (entry == NULL) {
-		return -ENOENT;
+		ret = -ENOENT;
+		goto out;
 	}
 
 	ret = mbedtls_ssl_session_load(session, entry->session,
@@ -747,10 +766,16 @@ static int tls_session_get(const struct net_sockaddr *peer_addr,
 		mbedtls_free(entry->session);
 		entry->session = NULL;
 		NET_ERR("Failed to load TLS session %d", ret);
-		return -EIO;
+		ret = -EIO;
+		goto out;
 	}
 
-	return 0;
+	ret = 0;
+
+out:
+	k_mutex_unlock(&session_cache_lock);
+
+	return ret;
 }
 
 static void tls_session_store(struct tls_context *context,
