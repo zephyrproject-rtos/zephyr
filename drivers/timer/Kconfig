@@ -83,6 +83,28 @@ config SYSTEM_CLOCK_LOCK_FREE_COUNT
 	  cycle count accessor. This is needed for instrumenting spin lock
 	  hold times.
 
+config SYSTEM_CLOCK_LONG_WAIT_CAPABLE
+	bool
+	help
+	  Selected by a timer driver whose hardware counter is wider than
+	  32 bits, so it can honor a wait longer than the 32-bit tick range
+	  in a single programming rather than having long timeouts (or idle
+	  with nothing pending) split into periodic intermediate
+	  announcements. Select it only on drivers whose deadline math has
+	  been verified overflow-safe across the full SYS_CLOCK_MAX_WAIT
+	  range.
+
+config SYSTEM_CLOCK_LONG_WAIT
+	bool "Use 64-bit ticks on the system clock interface"
+	depends on TIMEOUT_64BIT
+	default y if SYSTEM_CLOCK_LONG_WAIT_CAPABLE && 64BIT
+	help
+	  Widen sys_clock_ticks_t (and SYS_CLOCK_MAX_WAIT) to 64 bits so a
+	  capable driver can program long waits without forced intermediate
+	  wake-ups. Costs 64-bit arithmetic on the timer hot path; leave it
+	  off for 32-bit-counter timers or where the periodic wake-up is
+	  acceptable.
+
 # zephyr-keep-sorted-start
 source "drivers/timer/Kconfig.ambiq"
 source "drivers/timer/Kconfig.arcv2"

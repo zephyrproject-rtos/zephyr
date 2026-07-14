@@ -157,7 +157,7 @@ static void timer_isr(const void *unused)
 	sys_clock_announce(dticks);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 	volatile struct gptimer_regs *regs = get_regs();
@@ -191,7 +191,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	program_subtimer0(regs, delay);
 }
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	volatile struct gptimer_regs *regs = get_regs();
 

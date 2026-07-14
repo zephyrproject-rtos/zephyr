@@ -72,7 +72,7 @@ static uint32_t elapsed(uint32_t *val_out)
 	return data->load - value;
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
@@ -126,7 +126,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	}
 }
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 

@@ -118,7 +118,7 @@ static void rtc_jdp_set_compare(uint32_t compare)
 	}
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -146,7 +146,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	rtc_jdp_set_compare(last_count + cycles);
 }
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 

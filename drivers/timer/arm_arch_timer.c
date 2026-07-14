@@ -112,7 +112,7 @@ static void arm_arch_timer_compare_isr(const void *arg)
 	sys_clock_announce_locked(delta_ticks, key);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
@@ -130,7 +130,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	arm_arch_timer_set_irq_mask(false);
 }
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 

@@ -71,7 +71,7 @@ void np_timer_isr_test_hook(const void *arg)
  * @param idle Hint to the driver that the system is about to enter
  *        the idle state immediately after setting the timeout
  */
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -91,7 +91,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
  * this with appropriate locking, the driver needs only provide an
  * instantaneous answer.
  */
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	return (nsi_hws_get_time() - last_tick_time)/tick_period;
 }

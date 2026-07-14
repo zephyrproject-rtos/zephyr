@@ -97,7 +97,7 @@ static void IRAM_ATTR sys_timer_isr(void *arg)
 	sys_clock_announce(dticks);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 #if defined(CONFIG_TICKLESS_KERNEL)
 	if (systimer_hal.dev == NULL) {
@@ -142,7 +142,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 #endif
 }
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
