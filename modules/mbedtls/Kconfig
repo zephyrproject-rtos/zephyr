@@ -74,6 +74,22 @@ config TF_PSA_CRYPTO_CUSTOM
 
 endchoice # TF_PSA_CRYPTO_IMPLEMENTATION
 
+choice TF_PSA_CRYPTO_DISPATCH_IMPLEMENTATION
+	prompt "TF-PSA-Crypto driver dispatch implementation"
+	default TF_PSA_CRYPTO_DISPATCH_BUILTIN
+
+config TF_PSA_CRYPTO_DISPATCH_BUILTIN
+	bool "Standard driver dispatch implementation from TF-PSA-Crypto module"
+	help
+	  Use the default driver dispatch implementation from the selected TF-PSA-Crypto
+	  implementation.
+
+endchoice # TF_PSA_CRYPTO_DISPATCH_IMPLEMENTATION
+
+config TF_PSA_CRYPTO_DISPATCH_DIR
+	string
+	default "${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/dispatch" if TF_PSA_CRYPTO_DISPATCH_BUILTIN
+
 rsource "Kconfig.mbedtls"
 rsource "Kconfig.tf-psa-crypto"
 rsource "Kconfig.ciphersuites"
