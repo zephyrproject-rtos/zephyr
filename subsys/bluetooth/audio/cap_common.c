@@ -107,7 +107,7 @@ void bt_cap_common_set_handover_active(void)
 	atomic_set_bit(active_proc.proc_state_flags, BT_CAP_COMMON_PROC_STATE_HANDOVER);
 }
 
-bool bt_cap_common_handover_is_active(void)
+bool bt_cap_common_active_proc_is_handover(void)
 {
 	return atomic_test_bit(active_proc.proc_state_flags, BT_CAP_COMMON_PROC_STATE_HANDOVER);
 }
@@ -187,7 +187,7 @@ void bt_cap_common_abort_proc(struct bt_conn *conn, int err)
 }
 
 #if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
-static bool active_proc_is_initiator(void)
+bool bt_cap_common_active_proc_is_initiator(void)
 {
 	switch (active_proc.proc_type) {
 	case BT_CAP_COMMON_PROC_TYPE_START:
@@ -201,7 +201,7 @@ static bool active_proc_is_initiator(void)
 #endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
 
 #if defined(CONFIG_BT_CAP_COMMANDER)
-static bool active_proc_is_commander(void)
+bool bt_cap_common_active_proc_is_commander(void)
 {
 	switch (active_proc.proc_type) {
 	case BT_CAP_COMMON_PROC_TYPE_VOLUME_CHANGE:
@@ -227,14 +227,14 @@ bool bt_cap_common_conn_in_active_proc(const struct bt_conn *conn)
 
 	for (size_t i = 0U; i < active_proc.proc_initiated_cnt; i++) {
 #if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
-		if (active_proc_is_initiator()) {
+		if (bt_cap_common_active_proc_is_initiator()) {
 			if (active_proc.proc_param.initiator[i].stream->bap_stream.conn == conn) {
 				return true;
 			}
 		}
 #endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
 #if defined(CONFIG_BT_CAP_COMMANDER)
-		if (active_proc_is_commander()) {
+		if (bt_cap_common_active_proc_is_commander()) {
 			if (active_proc.proc_param.commander[i].conn == conn) {
 				return true;
 			}
@@ -252,7 +252,7 @@ bool bt_cap_common_stream_in_active_proc(const struct bt_cap_stream *cap_stream)
 	}
 
 #if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
-	if (active_proc_is_initiator()) {
+	if (bt_cap_common_active_proc_is_initiator()) {
 		for (size_t i = 0U; i < active_proc.proc_cnt; i++) {
 			if (active_proc.proc_param.initiator[i].stream == cap_stream) {
 				return true;
