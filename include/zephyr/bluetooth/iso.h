@@ -1327,6 +1327,14 @@ int bt_iso_big_terminate(struct bt_iso_big *big);
 int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_param *param,
 		    struct bt_iso_big **out_big);
 
+/**
+ * @brief Returns a string representation of an ISO channel state
+ *
+ * @param state The state of the channel
+ * @return A string representation, or "unknown" if unknown state.
+ */
+const char *bt_iso_chan_state_str(enum bt_iso_state state);
+
 #ifdef __cplusplus
 }
 #endif
