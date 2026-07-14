@@ -25,6 +25,4 @@ app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-sequential.conf compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-interleaved.conf  compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-ticker_expire_info.conf compile
 
-run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/samples/compile.sh
-
 wait_for_background_jobs
