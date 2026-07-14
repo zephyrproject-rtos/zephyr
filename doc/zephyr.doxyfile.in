@@ -285,7 +285,24 @@ TAB_SIZE               = 8
 # with the commands \{ and \} for these it is advised to use the version @{ and
 # @} or use a double escape (\\{ and \\})
 
-ALIASES                = "kconfig{1}=\c \1" \
+# The kconfig, dtcompatible and rstref aliases expand to HTML placeholders
+# that are resolved into links pointing back to the Sphinx-based documentation
+# (e.g. docs.zephyrproject.org) by the 'zephyr.doxyxref' Sphinx extension (see
+# doc/_extensions/zephyr/doxyxref.py, which can also be used as a standalone
+# tool to post-process the output of a Doxygen-only build). When left
+# unresolved, the placeholders gracefully degrade to plain text.
+#
+# - kconfig{1}:      reference a Kconfig option, e.g. @kconfig{CONFIG_GPIO}
+# - dtcompatible{1}: reference a Devicetree binding by compatible string,
+#                    e.g. @dtcompatible{zephyr\,input-longpress} (note the
+#                    escaped comma)
+# - rstref{1}:       reference any Sphinx ':ref:' target, with optional custom
+#                    text, e.g. @rstref{coding_guidelines} or
+#                    @rstref{the coding guidelines <coding_guidelines>}
+
+ALIASES                = "kconfig{1}=\htmlonly<code class='doxyxref' data-stype='kconfig:option' data-starget='\1'>\1</code>\endhtmlonly" \
+                         "dtcompatible{1}=\htmlonly<code class='doxyxref' data-stype='std:dtcompatible' data-starget='\1'>\1</code>\endhtmlonly" \
+                         "rstref{1}=\htmlonly<span class='doxyxref' data-stype='std:ref' data-starget='\1'>\1</span>\endhtmlonly" \
                          "req{1}=\ref ZEPH_\1 \"ZEPH-\1\"" \
                          "satisfy{1}=\xrefitem satisfy \"Satisfies requirement\" \"Requirement Implementation\" \1" \
                          "verify{1}=\xrefitem verify \"Verifies requirement\" \"Requirement Verification\" \1" \

@@ -88,6 +88,7 @@ extensions = [
     "zephyr.doxyrunner",
     "zephyr.doxybridge",
     "zephyr.doxytooltip",
+    "zephyr.doxyxref",
     "zephyr.gh_utils",
     "zephyr.manifest_projects_table",
     "notfound.extension",
@@ -292,6 +293,10 @@ os.environ["DOXYGEN_SITEMAP_URL"] = f"{html_baseurl}doxygen/html"
 # -- Options for zephyr.doxybridge plugin ---------------------------------
 
 doxybridge_projects = {"zephyr": doxyrunner_projects["zephyr"]["outdir"]}
+
+# -- Options for zephyr.doxyxref plugin ------------------------------------
+
+doxyxref_projects = doxybridge_projects
 
 # -- Options for html_redirect plugin -------------------------------------
 

@@ -129,3 +129,10 @@ dl.section dd, dl.bug dd, dl.deprecated dd {
     background-color: #3498db;
     color: white;
 }
+
+/* Cross-references to the main (Sphinx-based) documentation, as resolved by
+   the zephyr.doxyxref extension */
+a.doxyxref,
+a.doxyxref code {
+    color: var(--link-color);
+}
