@@ -6,6 +6,14 @@ if SOC_THEJAS32
 config NUM_IRQS
 	default 44
 
+choice UART_NS16550_VARIANT
+	# The UART's FIFO-mode receive interrupts do not work on this SoC: with
+	# FIFOs enabled, neither the trigger level nor the character timeout
+	# raises an interrupt, so received data sits in the FIFO unnoticed. In
+	# 16450 mode the received data available interrupt fires per character.
+	default UART_NS16550_VARIANT_NS16450
+endchoice
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	# The machine timer's mtime register increments at the core clock divided
 	# by 4000, i.e. 100 MHz / 4000 = 25 kHz. This is not documented anywhere;
