@@ -21,6 +21,8 @@ ${ZEPHYR_BASE}/scripts/twister ${TWISTER_OPTIONS} -T tests/bsim/bluetooth/hci_ua
 
 ${ZEPHYR_BASE}/scripts/twister ${TWISTER_OPTIONS} -T tests/bsim/bluetooth/host/
 
+${ZEPHYR_BASE}/scripts/twister ${TWISTER_OPTIONS} -T tests/bsim/bluetooth/samples/
+
 ${ZEPHYR_BASE}/scripts/twister ${TWISTER_OPTIONS} -T tests/bsim/bluetooth/tester/
 
 # nrf52_bsim set:
