@@ -27,13 +27,6 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_rtio);
 #include "i2c_stm32.h"
 #include "i2c-priv.h"
 
-/* This symbol takes the value 1 if one of the device instances */
-/* is configured in dts with a domain clock */
-#if STM32_DT_INST_DEV_DOMAIN_CLOCK_SUPPORT
-#define I2C_STM32_DOMAIN_CLOCK_SUPPORT 1
-#else
-#define I2C_STM32_DOMAIN_CLOCK_SUPPORT 0
-#endif
 
 int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 {
@@ -44,7 +37,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	uint32_t i2c_clock = 0U;
 	int ret;
 
-	if (IS_ENABLED(I2C_STM32_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
+	if (cfg->pclk_len > 1) {
 		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1],
 					   &i2c_clock) < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
@@ -306,7 +299,7 @@ int i2c_stm32_init(const struct device *dev)
 
 	i2c_stm32_activate(dev);
 
-	if (IS_ENABLED(I2C_STM32_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
+	if (cfg->pclk_len > 1) {
 		/* Enable I2C clock source */
 		ret = clock_control_configure(clk,
 					(clock_control_subsys_t) &cfg->pclken[1],
