@@ -1,0 +1,16 @@
+/*
+ * Copyright (C) 2026 DH electronics GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,canbus = &dh_raspberrypi_can;
+	};
+};
+
+&dh_raspberrypi_can {
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};

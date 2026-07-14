@@ -1,0 +1,5 @@
+# Copyright (C) 2026 DH electronics GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_DHSBC_RS485_CAN_SHIELD
+	def_bool $(shields_list_contains,dhsbc_rs485_can_shield)
