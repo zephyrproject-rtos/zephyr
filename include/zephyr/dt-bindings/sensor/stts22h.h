@@ -37,4 +37,8 @@
 
 /** @} */
 
+/* GPIO interrupt configuration */
+#define STTS22H_DT_GPIO_INT_EDGE_TO_ACTIVE 0 /*!< Edge-triggered interrupt */
+#define STTS22H_DT_GPIO_INT_LEVEL_ACTIVE   1 /*!< Level-triggered interrupt */
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ST_STTS22H_H_ */
