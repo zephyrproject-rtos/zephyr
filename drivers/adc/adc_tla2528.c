@@ -224,7 +224,7 @@ static int tla2528_init(const struct device *dev)
 	return 0;
 }
 
-static const DEVICE_API(adc, adc_tla2528_api) = {
+static DEVICE_API(adc, adc_tla2528_api) = {
 	.channel_setup = tla2528_channel_setup,
 	.read = tla2528_read,
 	.ref_internal = TLA2528_REF_INTERNAL,
