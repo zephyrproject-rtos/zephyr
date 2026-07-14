@@ -200,6 +200,11 @@ BT_CONN_CB_DEFINE(conn_cb) = {
 	.disconnected = disconnected,
 };
 
+/* This line is TI add-on to the source code:
+ * Renamed from 'sd' to 'ad' and moved from scan_rsp to adv_data in bt_le_adv_start.
+ * The device name was incorrectly placed in scan response data, preventing
+ * periodic_adv_rsp from discovering and connecting to this device.
+ */
 static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
@@ -231,7 +236,15 @@ int main(void)
 	}
 
 	do {
-		err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
+		/* This line is TI add-on to the source code:
+		 * Swapped adv_data and scan_rsp arguments - ad is now passed as
+		 * adv_data so the device name is included in advertising packets
+		 * and can be discovered by periodic_adv_rsp.
+		 */
+		err = bt_le_adv_start(
+			BT_LE_ADV_PARAM(BT_LE_ADV_OPT_ONE_TIME | BT_LE_ADV_OPT_CONNECTABLE,
+					BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL),
+			ad, ARRAY_SIZE(ad), NULL, 0);
 		if (err && err != -EALREADY) {
 			printk("Advertising failed to start (err %d)\n", err);
 
