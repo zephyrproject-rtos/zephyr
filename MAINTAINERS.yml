@@ -291,11 +291,11 @@ ARM SiP SVC:
 ARM arch:
   status: maintained
   maintainers:
-    - wearyzen
     - ithinuel
   collaborators:
     - MaureenHelm
     - stephanosio
+    - wearyzen
   files:
     - arch/arm/
     - arch/arm/core/offsets/
