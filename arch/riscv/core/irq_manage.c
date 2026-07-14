@@ -12,6 +12,12 @@
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/pm/pm.h>
 
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
+#include <esp_soc_irq.h>
+#include <esp_memory_utils.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#endif
+
 #ifdef CONFIG_RISCV_HAS_PLIC
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
 #endif
@@ -67,7 +73,26 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     void (*routine)(const void *parameter),
 			     const void *parameter, uint32_t flags)
 {
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
+	int rc;
+
+	rc = z_soc_irq_validate(routine, flags);
+	if (rc < 0) {
+		return rc;
+	}
+#endif
+
 	z_isr_install(irq + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, routine, parameter);
+
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
+	z_riscv_irq_priority_set(irq, priority, flags);
+	rc = z_soc_irq_flags_apply(irq, flags);
+	if (rc < 0) {
+		(void)z_isr_uninstall(irq + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET,
+				      routine, parameter);
+		return rc;
+	}
+#endif
 
 #if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_CLIC) ||                            \
 	defined(CONFIG_RISCV_HAS_AIA)
@@ -84,8 +109,14 @@ int arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
 				void (*routine)(const void *parameter), const void *parameter,
 				uint32_t flags)
 {
+	int rc;
+
 	ARG_UNUSED(priority);
-	ARG_UNUSED(flags);
+
+	rc = z_soc_irq_flags_clear(irq, flags);
+	if (rc < 0) {
+		return rc;
+	}
 
 	return z_isr_uninstall(irq + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, routine,
 			       parameter);
