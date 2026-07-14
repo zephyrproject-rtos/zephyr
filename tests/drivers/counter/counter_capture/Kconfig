@@ -19,3 +19,12 @@ config COUNTER_CAPTURE_TOLERANCE_US
 	  Maximum allowed difference in microseconds between the counter value
 	  sampled just before toggling the GPIO and the timestamp recorded by
 	  the capture callback.
+
+config COUNTER_CAPTURE_MCUX_QTMR_XBAR_LOOPBACK
+	bool "Use RT1064 internal XBAR loopback for MCUX QTMR capture"
+	depends on SOC_MIMXRT1064
+	help
+	  Enable the RT1064-specific trigger-source backend for the counter
+	  capture test. The backend configures XBARA1 and IOMUXC_GPR so QTMR3
+	  timer 0 output drives QTMR1 timer 0 input internally, avoiding an
+	  external loopback wire while exercising the MCUX QTMR capture path.
