@@ -321,7 +321,9 @@ static void dwmac_receive(struct dwmac_priv *p)
 				LOG_DBG("pkt len/frags=%zd/%d",
 					net_pkt_get_len(p->rx_pkt),
 					net_pkt_get_nbfrags(p->rx_pkt));
-				net_recv_data(p->iface, p->rx_pkt);
+				if (net_recv_data(p->iface, p->rx_pkt) < 0) {
+					net_pkt_unref(p->rx_pkt);
+				}
 			} else {
 				LOG_ERR("rx error (DES3 = 0x%08x)", des3_val);
 				eth_stats_update_errors_rx(p->iface);
