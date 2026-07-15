@@ -2032,7 +2032,7 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
  */
 #define MMU_LRU_TRACK	MMU_G
 
-void arch_mem_page_out(void *addr, uintptr_t location)
+int arch_mem_page_out(void *addr, uintptr_t location)
 {
 	int ret;
 	pentry_t mask = PTE_MASK | MMU_P | MMU_A | MMU_LRU_TRACK;
@@ -2046,10 +2046,10 @@ void arch_mem_page_out(void *addr, uintptr_t location)
 	ret = range_map(addr, location, CONFIG_MMU_PAGE_SIZE, MMU_A, mask,
 			OPTION_FLUSH);
 	__ASSERT_NO_MSG(ret == 0);
-	ARG_UNUSED(ret);
+	return ret;
 }
 
-void arch_mem_page_in(void *addr, uintptr_t phys)
+int arch_mem_page_in(void *addr, uintptr_t phys)
 {
 	int ret;
 	pentry_t mask = PTE_MASK | MMU_P | MMU_D | MMU_A | MMU_LRU_TRACK;
@@ -2057,7 +2057,7 @@ void arch_mem_page_in(void *addr, uintptr_t phys)
 	ret = range_map(addr, phys, CONFIG_MMU_PAGE_SIZE, MMU_P, mask,
 			OPTION_FLUSH);
 	__ASSERT_NO_MSG(ret == 0);
-	ARG_UNUSED(ret);
+	return ret;
 }
 
 #ifdef CONFIG_EVICTION_LRU

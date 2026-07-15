@@ -1542,7 +1542,7 @@ static uint64_t *get_pte_location(struct arm_mmu_ptables *ptables,
 	}
 }
 
-void arch_mem_page_out(void *addr, uintptr_t location)
+int arch_mem_page_out(void *addr, uintptr_t location)
 {
 	uintptr_t virt = (uintptr_t)addr;
 	uint64_t *pte = get_pte_location(&kernel_ptables, virt);
@@ -1572,9 +1572,11 @@ void arch_mem_page_out(void *addr, uintptr_t location)
 
 	sync_domains(virt, CONFIG_MMU_PAGE_SIZE, "page_out");
 	invalidate_tlb_page(virt);
+
+	return 0;
 }
 
-void arch_mem_page_in(void *addr, uintptr_t phys)
+int arch_mem_page_in(void *addr, uintptr_t phys)
 {
 	uintptr_t virt = (uintptr_t)addr;
 	uint64_t *pte = get_pte_location(&kernel_ptables, virt);
@@ -1610,6 +1612,8 @@ void arch_mem_page_in(void *addr, uintptr_t phys)
 
 	sync_domains(virt, CONFIG_MMU_PAGE_SIZE, "page_in");
 	invalidate_tlb_page(virt);
+
+	return 0;
 }
 
 enum sys_mm_vm_page_location arch_page_location_get(void *addr, uintptr_t *location)
