@@ -6801,8 +6801,8 @@ West:
 "West project: hal_nxp":
   status: maintained
   maintainers:
-    - ZhaoxiangJin
     - mmahadevan108
+    - zejiang0jason
   collaborators:
     - manuargue
     - PetervdPerk-NXP
@@ -6810,7 +6810,6 @@ West:
     - JiafeiPan
     - MaochenWang1
     - axelnxp
-    - zejiang0jason
     - Holt-Sun
     - lucien-nxp
   files:
