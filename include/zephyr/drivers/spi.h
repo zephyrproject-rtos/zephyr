@@ -1217,7 +1217,7 @@ void z_spi_transfer_signal_cb(const struct device *dev, int result, void *userda
  * @note The chip select behavior as described by @ref spi_transceive and
  *       the function of controller/peripheral modes is the same.
  *
- * @kconfig_dep{CONFIG_SPI_ASYNC, CONFIG_POLL}
+ * @kconfig_dep{CONFIG_SPI_ASYNC,CONFIG_POLL}
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
@@ -1256,7 +1256,7 @@ static inline int spi_transceive_signal(const struct device *dev,
  *
  * @note This function is a helper function calling spi_transceive_signal.
  *
- * @kconfig_dep{CONFIG_SPI_ASYNC, CONFIG_POLL}
+ * @kconfig_dep{CONFIG_SPI_ASYNC,CONFIG_POLL}
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
@@ -1289,7 +1289,7 @@ static inline int spi_read_signal(const struct device *dev,
  *
  * @note This function is a helper function calling spi_transceive_signal.
  *
- * @kconfig_dep{CONFIG_SPI_ASYNC, CONFIG_POLL}
+ * @kconfig_dep{CONFIG_SPI_ASYNC,CONFIG_POLL}
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
