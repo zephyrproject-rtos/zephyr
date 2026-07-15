@@ -292,6 +292,25 @@ sl_rail_status_t sl_rail_config_multi_timer(sl_rail_handle_t rail_handle, bool e
 	return SL_RAIL_STATUS_NO_ERROR;
 }
 
+sl_rail_status_t sl_rail_start_scheduled_tx(sl_rail_handle_t rail_handle,
+	uint16_t channel,
+	sl_rail_tx_options_t tx_options,
+	const sl_rail_scheduled_tx_config_t *p_scheduled_tx_config,
+	const sl_rail_scheduler_info_t *p_scheduler_info)
+{
+	return SL_RAIL_STATUS_NO_ERROR;
+}
+
+sl_rail_status_t sl_rail_start_scheduled_cca_csma_tx(sl_rail_handle_t rail_handle,
+	uint16_t channel,
+	sl_rail_tx_options_t tx_options,
+	const sl_rail_scheduled_tx_config_t *p_scheduled_tx_config,
+	const sl_rail_csma_config_t *p_csma_config,
+	const sl_rail_scheduler_info_t *p_scheduler_info)
+{
+	return SL_RAIL_STATUS_NO_ERROR;
+}
+
 #if defined(CONFIG_IEEE802154_SILABS_EFR32)
 void sl_openthread_init(void)
 {
