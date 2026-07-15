@@ -1,0 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/misc/nxp-evtg.h>
+
+&evtg0 {
+	status = "okay";
+
+	instance@0 {
+		reg = <0>;
+		/* D-FF mode: driver must keep inputs synced with no override. */
+		flip-flop-mode = "d-ff";
+		flip-flop-init-output = <1>;
+
+		/* AOI0 output = A AND (NOT B). */
+		aoi0-term0 = <EVTG_PASS EVTG_INVERT EVTG_IGNORE EVTG_IGNORE>;
+	};
+};
