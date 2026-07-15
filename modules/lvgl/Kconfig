@@ -7,12 +7,17 @@ config ZEPHYR_LVGL_MODULE
 
 config LVGL
 	bool "LVGL support"
+	# Without CPU_LOAD the system monitor always reads 0% idle (100% CPU).
+	imply CPU_LOAD if LV_USE_SYSMON
 	help
 	  This option enables the LVGL graphics library.
 
 if LVGL
 
 config LV_USE_MONKEY
+	bool
+
+config LV_USE_SYSMON
 	bool
 
 config LV_DPI_DEF
