@@ -18,6 +18,8 @@
  * @brief CAN ISO-TP Protocol
  * @defgroup can_isotp CAN ISO-TP Protocol
  * @ingroup connectivity
+ * @since 2.2
+ * @version 1.0.0
  * @{
  */
 
