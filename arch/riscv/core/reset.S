@@ -29,7 +29,7 @@ GTEXT(z_prep_c)
 GDATA(riscv_cpu_wake_flag)
 GDATA(riscv_cpu_sp)
 GTEXT(arch_secondary_cpu_init)
-#ifdef CONFIG_RISCV_S_MODE
+#if defined(CONFIG_RISCV_S_MODE) && !defined(CONFIG_RISCV_S_MODE_EXTERNAL_SBI)
 GTEXT(__m_mode_sbi_handler)
 #endif
 
@@ -80,7 +80,14 @@ tls_skip\@:
  * the C domain
  */
 SECTION_FUNC(TEXT, __initialize)
+#ifndef CONFIG_RISCV_S_MODE_EXTERNAL_SBI
+	/*
+	 * If Entered directly in S-mode by an external bootloader/SBI. a0
+	 * already holds the hart id per the RISC-V S-mode boot protocol
+	 * (a0=hartid, a1=dtb). mhartid is M-mode-only and would trap here.
+	 */
 	csrr a0, mhartid
+#endif
 	li t0, CONFIG_RV_BOOT_HART
 	beq a0, t0, boot_first_core
 	j boot_secondary_core
@@ -92,7 +99,11 @@ boot_first_core:
 	 * Enable floating-point.
 	 */
 	li t0, MSTATUS_FS_INIT
+#ifdef CONFIG_RISCV_S_MODE_EXTERNAL_SBI
+	csrs sstatus, t0
+#else
 	csrs mstatus, t0
+#endif /* CONFIG_RISCV_S_MODE_EXTERNAL_SBI */
 
 	/*
 	 * Floating-point rounding mode set to IEEE-754 default, and clear
@@ -135,7 +146,7 @@ aa_loop:
 	riscv_tls_init_early
 #endif
 
-#ifdef CONFIG_RISCV_SMRNMI_ENABLE_NMI_DELIVERY
+#if defined(CONFIG_RISCV_SMRNMI_ENABLE_NMI_DELIVERY) && !defined(CONFIG_RISCV_S_MODE_EXTERNAL_SBI)
 	csrs CSR_MNSTATUS, MNSTATUS_NMIE
 #endif
 
@@ -144,6 +155,7 @@ aa_loop:
 #endif
 
 #ifdef CONFIG_RISCV_S_MODE
+#ifndef CONFIG_RISCV_S_MODE_EXTERNAL_SBI
 	/* Set M-mode trap vector to our SBI handler */
 	la t0, __m_mode_sbi_handler
 	csrw mtvec, t0
@@ -188,6 +200,7 @@ aa_loop:
 	la t0, s_mode_entry
 	csrw mepc, t0
 	mret
+#endif /* CONFIG_RISCV_S_MODE_EXTERNAL_SBI */
 
 s_mode_entry:
 #endif /* CONFIG_RISCV_S_MODE */

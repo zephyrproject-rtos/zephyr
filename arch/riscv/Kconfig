@@ -692,6 +692,17 @@ config RISCV_M_MODE_STACK_SIZE
 	  runtime handler. Increase this if the handler is extended with
 	  functionality that requires more stack space.
 
+config RISCV_S_MODE_EXTERNAL_SBI
+	bool "Enter S-mode directly, relying on an external SBI (e.g. OpenSBI)"
+	depends on RISCV_S_MODE
+	help
+	  Skip the in-tree M-mode boot sequence (PMP/medeleg/mideleg/
+	  mcounteren/mtvec setup and the mret drop to S-mode). Use this when
+	  Zephyr is launched as a payload by a bootloader (e.g. U-Boot) that
+	  is already running in S-mode under an external M-mode SBI
+	  implementation such as OpenSBI, which has already performed the
+	  M-mode setup and delegation.
+
 rsource "Kconfig.isa"
 
 rsource "custom/Kconfig"
