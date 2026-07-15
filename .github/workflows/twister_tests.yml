@@ -33,6 +33,7 @@ jobs:
   twister-tests:
     name: Twister Unit Tests
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
     strategy:
       matrix:
         python-version: ['3.12', '3.13']

@@ -12,6 +12,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     permissions:
       contents: write # to create GitHub release entry
     steps:

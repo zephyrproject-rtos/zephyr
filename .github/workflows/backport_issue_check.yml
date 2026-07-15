@@ -20,6 +20,7 @@ jobs:
       group: backport-issue-check-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     if: github.repository == 'zephyrproject-rtos/zephyr'
     permissions:
       issues: read # to check if associated issue exists for backport and post comments

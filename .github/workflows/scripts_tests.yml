@@ -26,6 +26,7 @@ jobs:
   scripts-tests:
     name: Scripts tests
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
     strategy:
       matrix:
         python-version: ['3.12', '3.13']
