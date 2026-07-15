@@ -159,7 +159,7 @@ static int wdt_esp32_install_timeout(const struct device *dev,
 #if WDT_SLEEP_RETENTION_ENABLED
 static esp_err_t wdt_create_sleep_retention_cb(void *arg)
 {
-	uint32_t group_id = (uint32_t)arg;
+	uint32_t group_id = (uint32_t)(uintptr_t)arg;
 	sleep_retention_module_t module =
 		(group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_WDT : SLEEP_RETENTION_MODULE_TG1_WDT;
 
@@ -175,13 +175,17 @@ static void wdt_esp32_sleep_retention_init(uint32_t group_id)
 
 	sleep_retention_module_init_param_t init_param = {
 		.cbs = {.create = {.handle = wdt_create_sleep_retention_cb,
-				   .arg = (void *)group_id}},
+				   .arg = (void *)(uintptr_t)group_id}},
+		.attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
 		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)};
 
 	esp_err_t err = sleep_retention_module_init(module, &init_param);
 
 	if (err == ESP_OK) {
 		err = sleep_retention_module_allocate(module);
+	}
+	if (err == ESP_OK) {
+		err = sleep_retention_module_attach(module);
 	}
 	if (err != ESP_OK) {
 		LOG_WRN("WDT%d sleep retention init failed (%d)", group_id, err);
