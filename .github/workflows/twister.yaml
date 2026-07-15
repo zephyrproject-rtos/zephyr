@@ -34,6 +34,7 @@ jobs:
       subset: ${{ steps.output-services.outputs.subset }}
       size: ${{ steps.output-services.outputs.size }}
       fullrun: ${{ steps.output-services.outputs.fullrun }}
+      testplan: ${{ steps.test-plan.outputs.has_testplan }}
     env:
       MATRIX_SIZE: 10
       PUSH_MATRIX_SIZE: 25
@@ -130,7 +131,20 @@ jobs:
           else
             echo "TWISTER_NODES=${MATRIX_SIZE}" >> $GITHUB_ENV
           fi
-          rm -f testplan.json .testplan
+          if [ -f testplan.json ]; then
+            echo "has_testplan=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_testplan=false" >> $GITHUB_OUTPUT
+          fi
+          rm -f .testplan
+
+      - name: Upload Test Plan
+        if: github.event_name == 'pull_request' && steps.test-plan.outputs.has_testplan == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: testplan
+          if-no-files-found: error
+          path: testplan.json
 
       - name: Determine matrix size
         id: output-services
@@ -267,6 +281,13 @@ jobs:
           west update
           make everything -s -j 8
 
+      - name: Download Test Plan
+        if: github.event_name == 'pull_request' && needs.twister-build-prep.outputs.testplan == 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: testplan
+          path: .
+
       - if: github.event_name == 'push'
         name: Run Tests with Twister (Push)
         id: run_twister
@@ -285,12 +306,8 @@ jobs:
         name: Run Tests with Twister (Pull Request)
         id: run_twister_pr
         run: |
-          rm -f testplan.json
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-          python3 ./scripts/ci/test_plan_v2.py -c origin/${BASE_REF}.. \
-            --disable-strategy  BoilerplateFilter
-
           if [ -f testplan.json ]; then
             ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} --load-tests testplan.json ${TWISTER_COMMON} ${PR_OPTIONS}
             if [ "${{matrix.subset}}" = "1" -a ${{needs.twister-build-prep.outputs.fullrun}} = 'True' ]; then
