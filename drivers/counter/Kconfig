@@ -28,7 +28,7 @@ config COUNTER_SUPPORTS_CAPTURE
 
 config COUNTER_INIT_PRIORITY
 	int "Counter init priority"
-	default 60
+	default KERNEL_INIT_PRIORITY_DEVICE
 	help
 	  Counter driver device initialization priority.
 
