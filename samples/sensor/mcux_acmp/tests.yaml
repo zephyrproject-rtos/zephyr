@@ -4,6 +4,7 @@ sample:
 common:
   platform_allow:
     - twr_ke18f
+    - frdm_ke15z
     - frdm_ke17z
     - frdm_ke17z512
     - mimxrt1170_evk/mimxrt1176/cm7
