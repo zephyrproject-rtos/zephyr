@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_EVTG
+	bool "NXP EVTG (Event Generator) driver"
+	default y
+	depends on DT_HAS_NXP_EVTG_ENABLED
+	select CLOCK_CONTROL
+	help
+	  Enable the NXP EVTG (Event Generator) driver. The EVTG combines up to
+	  four inputs through two AND/OR/INVERT blocks and an optional flip-flop
+	  to produce an event-generator output on select NXP microcontrollers.
+	  Each used EVTG instance is described by a devicetree child node and is
+	  programmed statically at init time; the driver wraps the fsl_evtg HAL
+	  and exposes no runtime API.
