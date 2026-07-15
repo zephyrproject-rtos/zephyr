@@ -13,6 +13,7 @@ if CORTEX_M_SYSTICK
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 996000000 if SOC_MIMXRT1176_CM7
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if SOC_IMXRT11XX_SINGLE_CORE
 	default 600000000 if SOC_MIMXRT1166_CM7
 	default 400000000 if SOC_MIMXRT1176_CM4
 	default 240000000 if SOC_MIMXRT1166_CM4
