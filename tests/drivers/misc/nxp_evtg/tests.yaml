@@ -1,0 +1,12 @@
+common:
+  tags:
+    - drivers
+    - evtg
+  harness: ztest
+tests:
+  drivers.misc.nxp_evtg:
+    platform_allow:
+      - frdm_mcxn947/mcxn947/cpu0
+      - frdm_mcxn236
+    integration_platforms:
+      - frdm_mcxn947/mcxn947/cpu0
