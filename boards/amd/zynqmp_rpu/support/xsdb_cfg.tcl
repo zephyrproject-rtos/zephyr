@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+source [file join [file dirname [info script]] .. .. common xsdb_parse_args.tcl]
+
 proc boot_jtag { } {
 	targets -set -filter {name =~ "PSU*"}
 	stop
@@ -10,10 +12,9 @@ proc boot_jtag { } {
 	rst -system
 }
 
-proc load_image args  {
-	set elf_file [lindex $args 0]
-	set bitfile [lindex $args 1]
-	set fsblelf_file [lindex $args 2]
+proc load_image {} {
+	global args_arr
+	parse_args {elf} {bitstream fsbl}
 
 	if { [info exists ::env(HW_SERVER_URL)] } {
 		connect -url $::env(HW_SERVER_URL)
@@ -26,15 +27,15 @@ proc load_image args  {
 	after 2000
 
 	# load bitstream while PSU is the active target
-	if { [string length $bitfile] != 0 } {
-		fpga -f $bitfile -no-revision-check
+	if { [info exists args_arr(bitstream)] } {
+		fpga -f $args_arr(bitstream) -no-revision-check
 	}
 
 	# FSBL must run on APU (A53 #0) to initialize DDR and clocks
-	if { [string length $fsblelf_file] != 0 } {
+	if { [info exists args_arr(fsbl)] } {
 		targets -set -nocase -filter {name =~ "*A53*#0"}
 		rst -proc
-		dow $fsblelf_file
+		dow $args_arr(fsbl)
 		after 1000
 		con
 		after 3000
@@ -52,38 +53,9 @@ proc load_image args  {
 	mwr -size w 0x0 0x0 64
 	after 100
 
-	dow $elf_file
+	dow $args_arr(elf)
 	con
 	exit
 }
 
-switch $argc {
-	"1" {
-		set zephyr_elf [lindex $argv 0]
-		set bitstream ""
-		set fsbl_elf ""
-	}
-	"2" {
-		set par [lindex $argv 1]
-		set substring "*.bit"
-		if { [string match -nocase $substring $par] == 0 } {
-			set bitstream ""
-			set fsbl_elf $par
-		} else {
-			set bitstream $par
-			set fsbl_elf ""
-		}
-		set zephyr_elf [lindex $argv 0]
-	}
-	"3" {
-		set zephyr_elf [lindex $argv 0]
-		set bitstream [lindex $argv 1]
-		set fsbl_elf [lindex $argv 2]
-	}
-	default {
-		puts "Insufficient number of args"
-		exit -1
-	}
-}
-
-load_image "$zephyr_elf" "$bitstream" "$fsbl_elf"
+load_image
