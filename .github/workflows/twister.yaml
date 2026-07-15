@@ -139,6 +139,7 @@ jobs:
             subset="[$(seq -s',' 1 ${WEEKLY_MATRIX_SIZE})]"
             size=${WEEKLY_MATRIX_SIZE}
           else
+            subset='[]'
             size=0
           fi
 
