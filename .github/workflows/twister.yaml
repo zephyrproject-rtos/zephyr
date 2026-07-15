@@ -71,6 +71,18 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # Only needed on pull requests, where the test plan is generated below.
+      # On push/schedule the matrix size is fixed and needs no west workspace.
+      # Runs before the Python setup so requirements are installed from the
+      # rebased tree.
+      - name: Set up Zephyr environment
+        if: github.event_name == 'pull_request'
+        uses: ./.github/actions/zephyr-ci-env
+        with:
+          group-filter: '+ci,'
+          base-ref: ${{ github.base_ref }}
+          run-checks: 'true'
+
       - name: Set up Python
         if: github.event_name == 'pull_request'
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
@@ -83,16 +95,6 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           pip install -r scripts/requirements-actions.txt --require-hashes
-
-      # Only needed on pull requests, where the test plan is generated below.
-      # On push/schedule the matrix size is fixed and needs no west workspace.
-      - name: Set up Zephyr environment
-        if: github.event_name == 'pull_request'
-        uses: ./.github/actions/zephyr-ci-env
-        with:
-          group-filter: '+ci,'
-          base-ref: ${{ github.base_ref }}
-          run-checks: 'true'
 
       - name: Generate Test Plan with Twister
         if: github.event_name == 'pull_request'
