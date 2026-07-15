@@ -171,6 +171,291 @@ ZTEST(queue_api_1cpu, test_queue_thread2thread)
 }
 
 /**
+ * @brief Verify a queue defined at compile time is ready for use.
+ *
+ * @details
+ * A queue created with K_QUEUE_DEFINE() must be fully initialized at boot:
+ * empty and immediately usable for data passing without any run-time
+ * initialization call.
+ *
+ * Test steps:
+ * - Check the statically defined queue is empty.
+ * - Append an item and get it back, verifying the same item is returned.
+ *
+ * Expected result:
+ * - The statically defined queue accepts and delivers items as-is.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see K_QUEUE_DEFINE
+ */
+ZTEST(queue_api, test_queue_define)
+{
+	/* usable at boot without any run-time initialization */
+	zassert_true(k_queue_is_empty(&kqueue));
+
+	k_queue_append(&kqueue, (void *)&data[0]);
+	zassert_equal(k_queue_get(&kqueue, K_NO_WAIT), (void *)&data[0]);
+
+	/* the queue is drained: a non-blocking get returns NULL */
+	zassert_is_null(k_queue_get(&kqueue, K_NO_WAIT));
+}
+
+/**
+ * @brief Verify run-time initialization of a queue.
+ *
+ * @details
+ * k_queue_init() must yield an empty queue that is immediately usable for
+ * data passing.
+ *
+ * Test steps:
+ * - Initialize a queue at run time and check it is empty.
+ * - Append an item and get it back, verifying the same item is returned.
+ *
+ * Expected result:
+ * - The initialized queue is empty and accepts and delivers items.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_init()
+ */
+ZTEST(queue_api, test_queue_init)
+{
+	k_queue_init(&queue);
+
+	zassert_true(k_queue_is_empty(&queue));
+	k_queue_append(&queue, (void *)&data[0]);
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data[0]);
+
+	/* the queue is drained: a non-blocking get returns NULL */
+	zassert_is_null(k_queue_get(&queue, K_NO_WAIT));
+}
+
+/**
+ * @brief Verify prepended items are dequeued before appended ones.
+ *
+ * @details
+ * k_queue_prepend() adds an item to the front of the queue, so items
+ * prepended after an append must be dequeued first, with the most recently
+ * prepended item coming out first.
+ *
+ * Test steps:
+ * - Add one item, then prepend two items.
+ * - Get all three items and verify the order: most recently prepended
+ *   first, appended item last.
+ *
+ * Expected result:
+ * - Items are dequeued in prepend-reverse order followed by the appended
+ *   item.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_prepend()
+ * @see k_queue_get()
+ */
+ZTEST(queue_api, test_queue_prepend_order)
+{
+	k_queue_init(&queue);
+
+	k_queue_append(&queue, (void *)&data[0]);
+	k_queue_prepend(&queue, (void *)&data_p[1]);
+	k_queue_prepend(&queue, (void *)&data_p[0]);
+
+	/* prepended items precede the appended one, most recent first */
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data_p[0]);
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data_p[1]);
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data[0]);
+}
+
+/**
+ * @brief Verify k_queue_insert() places an item after a given node.
+ *
+ * @details
+ * k_queue_insert() adds an item immediately after a caller-specified node
+ * already in the queue, so dequeuing must return the inserted item between
+ * its predecessor and the items that followed it.
+ *
+ * Test steps:
+ * - Append two items.
+ * - Insert a third item after the first one.
+ * - Get all items and verify the inserted item comes out second.
+ *
+ * Expected result:
+ * - The inserted item is dequeued directly after the node it was inserted
+ *   behind.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_insert()
+ * @see k_queue_get()
+ */
+ZTEST(queue_api, test_queue_insert_after)
+{
+	k_queue_init(&queue);
+
+	k_queue_append(&queue, (void *)&data[0]);
+	k_queue_append(&queue, (void *)&data[1]);
+
+	/* insert between the two appended items */
+	k_queue_insert(&queue, (void *)&data[0], (void *)&data_p[0]);
+
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data[0]);
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data_p[0]);
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data[1]);
+}
+
+/**
+ * @brief Verify appending a singly-linked item list to the back of a queue.
+ *
+ * @details
+ * k_queue_append_list() must transfer a caller-built singly-linked list to
+ * the back of the queue with its order preserved.
+ *
+ * Test steps:
+ * - Append one item so the queue is non-empty.
+ * - Link the items of an array into a list.
+ * - Append the list and confirm it lands behind the pre-existing item.
+ * - Get all items and verify list order is preserved.
+ *
+ * Expected result:
+ * - The pre-existing item is delivered first, then every list item in its
+ *   original order.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_append_list()
+ * @see k_queue_get()
+ */
+ZTEST(queue_api, test_queue_append_list_order)
+{
+	static qdata_t *head = &data_l[0], *tail = &data_l[LIST_LEN - 1];
+
+	k_queue_init(&queue);
+
+	/* a pre-existing item so the list is demonstrably appended behind it */
+	k_queue_append(&queue, (void *)&data[0]);
+
+	head->snode.next = (sys_snode_t *)tail;
+	tail->snode.next = NULL;
+	k_queue_append_list(&queue, (uint32_t *)head, (uint32_t *)tail);
+
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data[0]);
+	for (int i = 0; i < LIST_LEN; i++) {
+		zassert_equal(k_queue_get(&queue, K_NO_WAIT),
+			      (void *)&data_l[i]);
+	}
+	zassert_is_null(k_queue_get(&queue, K_NO_WAIT));
+}
+
+/**
+ * @brief Verify merging a sys_slist empties the list into the queue.
+ *
+ * @details
+ * k_queue_merge_slist() must move every node of a sys_slist to the back of
+ * the queue in list order and leave the source list empty.
+ *
+ * Test steps:
+ * - Append one item so the queue is non-empty.
+ * - Build a sys_slist with two nodes and merge it into the queue.
+ * - Verify the source list is empty after the merge.
+ * - Get all items and confirm the merged nodes land behind the pre-existing
+ *   item, in list order.
+ *
+ * Expected result:
+ * - The pre-existing item is delivered first, then every merged node in
+ *   order, and the source list is emptied.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_merge_slist()
+ * @see k_queue_get()
+ */
+ZTEST(queue_api, test_queue_merge_slist_order)
+{
+	sys_slist_t slist;
+
+	k_queue_init(&queue);
+
+	/* a pre-existing item so the merged nodes land behind it */
+	k_queue_append(&queue, (void *)&data[0]);
+
+	sys_slist_init(&slist);
+	sys_slist_append(&slist, (sys_snode_t *)&(data_sl[0].snode));
+	sys_slist_append(&slist, (sys_snode_t *)&(data_sl[1].snode));
+	k_queue_merge_slist(&queue, &slist);
+
+	/* the source list is emptied by the merge */
+	zassert_true(sys_slist_is_empty(&slist));
+
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data[0]);
+	for (int i = 0; i < LIST_LEN; i++) {
+		zassert_equal(k_queue_get(&queue, K_NO_WAIT),
+			      (void *)&data_sl[i]);
+	}
+	zassert_is_null(k_queue_get(&queue, K_NO_WAIT));
+}
+
+static void tqueue_merge_slist_wake_entry(void *p1, void *p2, void *p3)
+{
+	/* blocks until the main thread's k_queue_merge_slist() wakes us */
+	void *rx_data = k_queue_get(&queue, K_FOREVER);
+
+	zassert_equal(rx_data, (void *)&data_sl[0]);
+	k_sem_give(&end_sema);
+}
+
+/**
+ * @brief Verify k_queue_merge_slist() wakes a thread pending on the queue.
+ *
+ * @details
+ * A thread blocked in k_queue_get() on an empty queue must be woken when
+ * another context makes items available with k_queue_merge_slist(), and it
+ * must receive the first node of the merged list.
+ *
+ * Test steps:
+ * - Start a thread that blocks on an empty queue with k_queue_get(K_FOREVER).
+ * - Merge a two-node sys_slist into the queue.
+ * - Verify the woken thread received the first merged node and the second
+ *   node stays queued behind it.
+ *
+ * Expected result:
+ * - The pending thread is woken and dequeues the first merged node; the
+ *   remaining node stays in the queue.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_merge_slist()
+ * @see k_queue_get()
+ */
+ZTEST(queue_api_1cpu, test_queue_merge_slist_wake)
+{
+	sys_slist_t slist;
+
+	k_queue_init(&queue);
+	k_sem_init(&end_sema, 0, 1);
+
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      tqueue_merge_slist_wake_entry, NULL, NULL,
+				      NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+
+	/* let the thread reach k_queue_get() and pend on the empty queue */
+	k_sleep(K_MSEC(10));
+
+	sys_slist_init(&slist);
+	sys_slist_append(&slist, (sys_snode_t *)&(data_sl[0].snode));
+	sys_slist_append(&slist, (sys_snode_t *)&(data_sl[1].snode));
+	k_queue_merge_slist(&queue, &slist);
+
+	/* the merge woke the pending thread, which took the first node */
+	k_sem_take(&end_sema, K_FOREVER);
+	k_thread_abort(tid);
+
+	/* the second node remains queued behind the consumed one */
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data_sl[1]);
+	zassert_is_null(k_queue_get(&queue, K_NO_WAIT));
+}
+
+/**
  * @brief Verify data passes from an ISR to a thread through a queue.
  *
  * @details
