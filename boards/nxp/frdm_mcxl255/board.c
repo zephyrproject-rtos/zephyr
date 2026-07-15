@@ -140,6 +140,21 @@ void board_early_init_hook(void)
 	}
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER0, 1u);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_CTIMERg0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer1))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER1, 1u);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_CTIMERg1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer2))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER1, 1u);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_CTIMERg1);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CPU_CLOCK_FREQ;
 }
