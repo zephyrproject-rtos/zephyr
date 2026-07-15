@@ -49,28 +49,10 @@ jobs:
           persist-credentials: false
 
       - name: Environment Setup
-        run: |
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
-          west init -l . || true
-          west config manifest.group-filter -- +ci,+optional
-          west config --global update.narrow true
-          west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /repo-cache/zephyrproject)
-          west forall -c 'git reset --hard HEAD'
-
-          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
-
-      - name: Check Environment
-        run: |
-          cmake --version
-          gcc --version
-          cargo --version
-          rustup target list --installed
-          ls -la
-          echo "github.ref: ${{ github.ref }}"
-          echo "github.base_ref: ${{ github.base_ref }}"
-          echo "github.ref_name: ${{ github.ref_name }}"
+        uses: ./.github/actions/zephyr-ci-env
+        with:
+          group-filter: '+ci,+optional'
+          run-checks: 'true'
 
       - name: SCA Setup
         uses: zephyrproject-rtos/action-sca-setup@681d9f46f28d391eb57e6f15fdb76af25d6c46bc
