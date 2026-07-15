@@ -242,5 +242,18 @@
 			clocks = <&clk_vpu>;
 			status = "disabled";
 		};
+
+		usb0: usb@fe980000 {
+			compatible = "brcm,bcm2835-usb", "snps,dwc2";
+			reg = <0xfe980000 0x10000>;
+			interrupts = <GIC_SPI 73 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			num-in-eps = <8>;
+			num-out-eps = <8>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x228ddd50>;
+			ghwcfg4 = <0x1ff00020>;
+			status = "disabled";
+		};
 	};
 };

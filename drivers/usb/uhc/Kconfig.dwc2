@@ -14,6 +14,7 @@ if UHC_DWC2
 
 config UHC_DWC2_STACK_SIZE
 	int "UHC DWC2 driver thread stack size"
+	default 3072 if SOC_BCM2711
 	default 512
 	help
 	  DWC2 driver thread stack size.

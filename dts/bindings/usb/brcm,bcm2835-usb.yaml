@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+#
+description: Broadcom BCM2835 USB-OTG (DWC2 compatible controller)
+
+compatible: "brcm,bcm2835-usb"
+
+include: ["snps,dwc2.yaml"]
