@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/drivers/interrupt_controller/intc_rz_tint.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
@@ -75,6 +76,7 @@ struct intc_rz_tint_data {
 };
 
 static const uint8_t gpioint_table[] = DT_PROP(DT_NODELABEL(intc), gpioint_table);
+static ATOMIC_DEFINE(used_gpioint, DT_PROP(DT_NODELABEL(intc), max_gpioint) + 1);
 static struct k_spinlock lock;
 
 /* Helper function to read TINT status
@@ -268,6 +270,23 @@ int intc_rz_tint_connect(const struct device *dev, uint8_t port, uint8_t pin)
 		return -EINVAL;
 	}
 
+	/* Already mapped, no need to remap and return successfully */
+	if (data->gpioint == gpioint) {
+		return 0;
+	}
+
+	/* Check if the tint itself already assigned to a gpioint */
+	if (data->gpioint != 0xFF) {
+		LOG_ERR("tint %d already assigned to port %d pin %d", tint, data->port, data->pin);
+		return -EINVAL;
+	}
+
+	/* Check if the gpioint (port, pin) aleady assigned to a tint */
+	if (atomic_test_and_set_bit(used_gpioint, gpioint)) {
+		LOG_ERR("port %d pin %d (gpioint %d) already assigned", port, pin, gpioint);
+		return -EINVAL;
+	}
+
 	K_SPINLOCK(&lock) {
 		uint32_t reg_val = REG_TSSR_READ(base, tint);
 
@@ -308,6 +327,7 @@ int intc_rz_tint_set_callback(const struct device *dev, intc_rz_tint_callback_t 
 		.max_gpioint = DT_PROP(DT_INST_PARENT(index), max_gpioint),                        \
 	};                                                                                         \
 	struct intc_rz_tint_data intc_rz_tint_data##index = {                                      \
+		.gpioint = 0xFF,                                                                   \
 		.trigger_type = DT_INST_ENUM_IDX_OR(index, trigger_type, 0),                       \
 	};                                                                                         \
 	static int intc_rz_tint_init##index(const struct device *dev)                              \
