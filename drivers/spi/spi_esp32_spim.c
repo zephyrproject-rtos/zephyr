@@ -623,16 +623,20 @@ static void spi_esp32_sleep_retention_init(const struct device *dev)
 	const struct spi_esp32_config *cfg = dev->config;
 	unsigned int idx = cfg->dma_host;
 
+	sleep_retention_module_t module = spi_reg_retention_info[idx].module_id;
 	sleep_retention_module_init_param_t init_param = {
 		.cbs = {.create = {.handle = spi_esp32_create_sleep_retention_cb,
 				   .arg = (void *)dev}},
+		.attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
 		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)};
 
-	esp_err_t err =
-		sleep_retention_module_init(spi_reg_retention_info[idx].module_id, &init_param);
+	esp_err_t err = sleep_retention_module_init(module, &init_param);
 
 	if (err == ESP_OK) {
-		err = sleep_retention_module_allocate(spi_reg_retention_info[idx].module_id);
+		err = sleep_retention_module_allocate(module);
+	}
+	if (err == ESP_OK) {
+		err = sleep_retention_module_attach(module);
 	}
 	if (err != ESP_OK) {
 		LOG_WRN("SPI sleep retention init failed (%d)", err);
