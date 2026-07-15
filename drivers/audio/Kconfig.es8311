@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Hsiu-Chi Tsai
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_ES8311
+	bool "Everest Semiconductor ES8311 audio codec"
+	default y
+	depends on DT_HAS_EVEREST_ES8311_ENABLED
+	select I2C
+	help
+	  Enable support for the Everest Semiconductor ES8311 mono audio codec
+	  (I2C control, I2S/PCM data).
+
+config EMUL_ES8311
+	bool "Everest ES8311 audio codec emulator"
+	default y
+	depends on EMUL
+	# Depend on the driver, not just on the devicetree node: the emulator logs
+	# through CONFIG_AUDIO_CODEC_LOG_LEVEL, which only exists once the audio
+	# codec subsystem is on. Keying off DT_HAS_EVEREST_ES8311_ENABLED alone let
+	# EMUL_ES8311 be selected without AUDIO_CODEC, which fails to build.
+	depends on AUDIO_CODEC_ES8311
+	help
+	  I2C emulator for the Everest ES8311 audio codec, for native_sim driver
+	  unit tests.
