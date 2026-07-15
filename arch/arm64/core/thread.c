@@ -155,7 +155,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 #ifdef CONFIG_ARM_PAC_PER_THREAD
 	/* Generate unique PAC keys for this thread */
-	z_arm64_pac_keys_generate(&thread->arch.pac_keys);
+	if (z_arm64_pac_keys_generate(&thread->arch.pac_keys) != 0) {
+		k_panic();
+	}
 #endif
 }
 

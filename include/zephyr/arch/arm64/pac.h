@@ -38,7 +38,7 @@ struct pac_key {
  * These keys provide isolation between threads/processes.
  *
  * The union allows efficient initialization of all keys with a single
- * sys_rand_get() call while maintaining individual key access.
+ * sys_csrand_get() call while maintaining individual key access.
  */
 struct pac_keys {
 	union {
@@ -57,8 +57,9 @@ struct pac_keys {
  * @brief Generate random PAC keys
  *
  * @param keys Pointer to pac_keys structure to populate
+ * @retval 0 on success -EIO if entropy reseed error
  */
-void z_arm64_pac_keys_generate(struct pac_keys *keys);
+int z_arm64_pac_keys_generate(struct pac_keys *keys);
 
 /**
  * @brief Save current PAC keys from hardware registers

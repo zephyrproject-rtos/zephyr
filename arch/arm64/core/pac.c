@@ -11,12 +11,15 @@
 /**
  * @brief Generate random PAC keys
  *
- * Uses a single sys_rand_get() call for efficiency.
+ * Uses a single sys_csrand_get() call for efficiency.
+ *
+ * @retval 0 on success
+ * @retval -EIO if CSPRNG fails
  */
-void z_arm64_pac_keys_generate(struct pac_keys *keys)
+int z_arm64_pac_keys_generate(struct pac_keys *keys)
 {
 	/* Generate all keys with a single random call using the union */
-	sys_rand_get(keys->raw_bytes, sizeof(keys->raw_bytes));
+	return sys_csrand_get(keys->raw_bytes, sizeof(keys->raw_bytes));
 }
 
 /**
