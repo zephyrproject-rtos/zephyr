@@ -29,6 +29,10 @@ if IPC_SERVICE_ICMSG
 	rsource "Kconfig.icmsg"
 endif
 
+if IPC_SERVICE_RPMSG
+	rsource "Kconfig.rpmsg"
+endif
+
 config IPC_SERVICE_ICMSG_ME
 	bool "icmsg IPC library with multi-endpoint functionality"
 	select IPC_SERVICE_ICMSG
