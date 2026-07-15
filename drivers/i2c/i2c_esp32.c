@@ -1200,7 +1200,9 @@ static void i2c_esp32_sleep_retention_init(uint32_t port)
 	if (err == ESP_OK) {
 		err = sleep_retention_module_allocate(i2c_regs_retention[port].module_id);
 	}
-
+	if (err == ESP_OK) {
+		err = sleep_retention_module_attach(i2c_regs_retention[port].module_id);
+	}
 	if (err != ESP_OK) {
 		LOG_WRN("I2C%lu sleep retention init failed (%d)", (unsigned long)port, err);
 	}
