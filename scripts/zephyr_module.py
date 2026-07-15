@@ -155,6 +155,13 @@ properties:
             type: array
             items:
               type: string
+      uv:
+        type: object
+        properties:
+          override-files:
+            type: array
+            items:
+              type: string
   runners:
     type: array
     items:
