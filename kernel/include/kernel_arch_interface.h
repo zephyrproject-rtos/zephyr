@@ -418,8 +418,10 @@ void arch_reserved_pages_update(void);
  * undefined behavior.
  *
  * This API is part of infrastructure still under development and may change.
+ *
+ * @return 0 on success, negative errno code on fail
  */
-void arch_mem_page_out(void *addr, uintptr_t location);
+int arch_mem_page_out(void *addr, uintptr_t location);
 
 /**
  * Update all page tables for a paged-in data page
@@ -437,8 +439,10 @@ void arch_mem_page_out(void *addr, uintptr_t location);
  * undefined behavior.
  *
  * This API is part of infrastructure still under development and may change.
+ *
+ * @return 0 on success, negative errno code on fail
  */
-void arch_mem_page_in(void *addr, uintptr_t phys);
+int arch_mem_page_in(void *addr, uintptr_t phys);
 
 /**
  * Update current page tables for a temporary mapping
