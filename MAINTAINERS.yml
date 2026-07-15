@@ -417,8 +417,6 @@ AndesTech Platforms:
   status: maintained
   maintainers:
     - jimmyzhe
-  collaborators:
-    - kevinwang821020
   files:
     - boards/andestech/
     - drivers/*/*andes*
