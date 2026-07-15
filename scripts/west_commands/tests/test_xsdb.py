@@ -208,9 +208,10 @@ TEST_CASES = [
 
 
 @pytest.mark.parametrize("tc", TEST_CASES)
+@patch("runners.core.ZephyrBinaryRunner.require", side_effect=require_patch)
 @patch("runners.xsdb.os.path.exists", return_value=True)
 @patch("runners.xsdb.XSDBBinaryRunner.check_call")
-def test_xsdbbinaryrunner_init(check_call, path_exists, tc, runner_config):
+def test_xsdbbinaryrunner_init(check_call, path_exists, require, tc, runner_config):
     '''Test actions using a runner created by constructor.'''
     # Mock the default config path
     with patch("runners.xsdb.os.path.join", return_value="default_cfg_path"):
@@ -228,13 +229,15 @@ def test_xsdbbinaryrunner_init(check_call, path_exists, tc, runner_config):
 
     runner.do_run("flash")
 
+    assert require.called
     assert check_call.call_args_list == [call(tc["expected_cmd"])]
 
 
 @pytest.mark.parametrize("tc", TEST_CASES)
+@patch("runners.core.ZephyrBinaryRunner.require", side_effect=require_patch)
 @patch("runners.xsdb.os.path.exists", return_value=True)
 @patch("runners.xsdb.XSDBBinaryRunner.check_call")
-def test_xsdbbinaryrunner_create(check_call, path_exists, tc, runner_config):
+def test_xsdbbinaryrunner_create(check_call, path_exists, require, tc, runner_config):
     '''Test actions using a runner created from action line parameters.'''
     args = []
     if tc.get("config"):
@@ -264,6 +267,7 @@ def test_xsdbbinaryrunner_create(check_call, path_exists, tc, runner_config):
 
     runner.do_run("flash")
 
+    assert require.called
     assert check_call.call_args_list == [call(tc["expected_cmd"])]
 
 
