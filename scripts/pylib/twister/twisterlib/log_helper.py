@@ -10,8 +10,6 @@ import os
 import platform
 import shlex
 
-from colorlog import ColoredFormatter
-
 _WINDOWS = platform.system() == 'Windows'
 
 
@@ -34,7 +32,6 @@ def log_command(logger, msg, args):
     else:
         logger.debug(msg, shlex.join(args))
 
-
 def setup_logging(outdir, log_file, log_level, timestamps):
     logger = logging.getLogger("twister")
     logger.setLevel(logging.DEBUG)
@@ -53,11 +50,9 @@ def setup_logging(outdir, log_file, log_level, timestamps):
 
     # create formatter and add it to the handlers
     if timestamps:
-        formatter = ColoredFormatter(
-            "%(asctime)s - %(log_color)s%(levelname)s%(reset)s - %(message)s"
-        )
+        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
     else:
-        formatter = ColoredFormatter("%(log_color)s%(levelname)-7s%(reset)s - %(message)s")
+        formatter = logging.Formatter("%(levelname)-7s - %(message)s")
 
     formatter_file = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
