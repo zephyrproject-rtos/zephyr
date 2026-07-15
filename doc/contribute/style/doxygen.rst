@@ -325,6 +325,14 @@ as hyperlinks pointing back to the corresponding page of the main documentation.
 
   Example: ``@kconfig{CONFIG_GPIO}``
 
+``@kconfig_regex{<regex>}`` or ``@kconfig_regex{<text> <regex>}``
+  Reference all the Kconfig options matching a regular expression, as a link to the Kconfig search
+  page with the pattern pre-filled. This is the Doxygen counterpart of the
+  :rst:role:`kconfig:option-regex` role. As commas have a special meaning in Doxygen commands, they
+  must be escaped with a backslash.
+
+  Example: ``@kconfig_regex{CONFIG_SECURE_STORAGE_ITS_.*_CUSTOM}``
+
 ``@dtcompatible{<compatible>}``
   Reference a Devicetree binding by its compatible string. This is the Doxygen counterpart of the
   :rst:role:`dtcompatible` role. As commas have a special meaning in Doxygen commands, they must be

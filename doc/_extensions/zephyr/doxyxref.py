@@ -52,7 +52,7 @@ import re
 import sys
 import zlib
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 __version__ = "0.1.0"
 
@@ -167,6 +167,37 @@ def lookup(
     return inventory.get(stype, {}).get(target)
 
 
+def lookup_kconfig_regex(
+    inventory: dict[str, dict[str, tuple[str, str]]], target: str
+) -> tuple[str, str] | None:
+    """Resolve a Kconfig regex reference to the Kconfig search page.
+
+    The link points to the Kconfig search page pre-filled with the given
+    pattern, mirroring the Sphinx ``:kconfig:option-regex:`` role. The
+    reference only resolves if at least one Kconfig option matches, using the
+    same semantics as the search page: whitespace-separated, case-insensitive
+    regular expressions searched within option names.
+    """
+    options = inventory.get("kconfig:option", {})
+    if not options:
+        return None
+
+    try:
+        patterns = [re.compile(term.lower()) for term in target.split()]
+    except re.error:
+        return None
+
+    if not patterns:
+        return None
+
+    if not any(all(pattern.search(name.lower()) for pattern in patterns) for name in options):
+        return None
+
+    # all options live on the search page: derive its URI from any entry
+    page_uri = next(iter(options.values()))[0].partition("#")[0]
+    return f"{page_uri}#!{quote(target)}", "-"
+
+
 def process_html_content(
     content: str,
     inventory: dict[str, dict[str, tuple[str, str]]],
@@ -191,12 +222,15 @@ def process_html_content(
         stype = m.group("stype")
         raw_target = m.group("starget")
 
-        if stype == "std:ref":
+        if stype in ("std:ref", "kconfig:option-regex"):
             title, target = split_titled_ref(raw_target)
         else:
             title, target = None, raw_target
 
-        entry = lookup(inventory, stype, target)
+        if stype == "kconfig:option-regex":
+            entry = lookup_kconfig_regex(inventory, target)
+        else:
+            entry = lookup(inventory, stype, target)
         if entry is None:
             unresolved.append((stype, target))
             return m.group(0)

@@ -293,6 +293,9 @@ TAB_SIZE               = 8
 # unresolved, the placeholders gracefully degrade to plain text.
 #
 # - kconfig{1}:      reference a Kconfig option, e.g. @kconfig{CONFIG_GPIO}
+# - kconfig_regex{1}: reference all Kconfig options matching a regular
+#                    expression, linking to the Kconfig search page, e.g.
+#                    @kconfig_regex{CONFIG_SECURE_STORAGE_ITS_.*_CUSTOM}
 # - dtcompatible{1}: reference a Devicetree binding by compatible string,
 #                    e.g. @dtcompatible{zephyr\,input-longpress} (note the
 #                    escaped comma)
@@ -301,6 +304,7 @@ TAB_SIZE               = 8
 #                    @rstref{the coding guidelines <coding_guidelines>}
 
 ALIASES                = "kconfig{1}=\htmlonly<code class='doxyxref' data-stype='kconfig:option' data-starget='\1'>\1</code>\endhtmlonly" \
+                         "kconfig_regex{1}=\htmlonly<code class='doxyxref' data-stype='kconfig:option-regex' data-starget='\1'>\1</code>\endhtmlonly" \
                          "dtcompatible{1}=\htmlonly<code class='doxyxref' data-stype='std:dtcompatible' data-starget='\1'>\1</code>\endhtmlonly" \
                          "rstref{1}=\htmlonly<span class='doxyxref' data-stype='std:ref' data-starget='\1'>\1</span>\endhtmlonly" \
                          "req{1}=\ref ZEPH_\1 \"ZEPH-\1\"" \
