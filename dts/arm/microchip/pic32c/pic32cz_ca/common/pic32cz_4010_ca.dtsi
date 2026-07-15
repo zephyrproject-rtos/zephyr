@@ -6,12 +6,20 @@
 
 / {
 	soc {
-		flash0: flash@8000000 {
-			reg = <0x08000000 DT_SIZE_M(4)>;
+		nvmctrl: flash-controller@44002000 {
+			flash0: flash@8000000 {
+				/* Reg size computation:
+				 * BFM: 128kB, Unused Region: 65408kB, PFM: 4MB
+				 */
+				reg = <0x08000000
+				       (DT_SIZE_K(128) + DT_SIZE_K(65408) + DT_SIZE_M(4))>;
+				ranges = <0x0 0x08000000
+					  (DT_SIZE_K(128) + DT_SIZE_K(65408) + DT_SIZE_M(4))>;
+			};
 		};
 
-		sram0: memory@20000000 {
-			reg = <0x20000000 DT_SIZE_M(1)>;
+		sram0: memory@20020000 {
+			reg = <0x20020000 DT_SIZE_M(1)>;
 		};
 	};
 };

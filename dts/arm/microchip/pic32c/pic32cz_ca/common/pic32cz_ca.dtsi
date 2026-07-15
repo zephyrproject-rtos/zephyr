@@ -28,12 +28,36 @@
 	};
 
 	soc {
-		flash0: flash@8000000 {
-			compatible = "soc-nv-flash";
-			write-block-size = <8>;
+		nvmctrl: flash-controller@44002000 {
+			compatible = "microchip,nvmctrl-g3";
+			reg = <0x44002000 0x7c>, <0x44004000 0x60>;
+			reg-names = "fcw", "fcr";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_FCW_AHB>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_FCW_APB>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_FCR_AHB>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_FCR_APB>;
+			clock-names = "mclk-fcw-ahb", "mclk-fcw-apb",
+				      "mclk-fcr-ahb", "mclk-fcr-apb";
+			clock-parent = <&clock>;
+			interrupts = <0 0>, <1 0>, <2 0>;
+			interrupt-names = "fcw", "eccerr", "crcerr";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			flash0: flash@8000000 {
+				compatible = "microchip,flash-g3", "soc-nv-flash";
+				write-block-size = <8>;
+				write-block-size-quad-dw = <32>;
+				write-block-size-row = <DT_SIZE_K(1)>;
+				erase-block-size = <DT_SIZE_K(4)>;
+				unimplemented-region = <0x08020000 0x0bffffff>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
 		};
 
-		sram0: memory@20000000 {
+		sram0: memory@20020000 {
 			compatible = "mmio-sram";
 		};
 
