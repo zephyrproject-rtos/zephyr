@@ -64,11 +64,52 @@ PLACEHOLDER_RE = re.compile(
 )
 """Placeholder markup, as emitted by the ALIASES defined in zephyr.doxyfile.in."""
 
-TITLED_REF_RE = re.compile(r"^(?P<title>.+?)\s*<(?P<target>[^<>]+)>$", re.DOTALL)
-"""Explicit title notation, i.e. ``custom text <target>`` (as in Sphinx roles)."""
 
-INVENTORY_ENTRY_RE = re.compile(r"(?x)(.+?)\s+(\S+)\s+(-?\d+)\s+?(\S*)\s+(.*)")
-"""Entry line of a version 2 Sphinx object inventory."""
+def split_titled_ref(raw: str) -> tuple[str | None, str]:
+    """Split an explicit-title reference into its title and target parts.
+
+    Explicit titles use the same ``custom text <target>`` notation as Sphinx
+    roles. When no explicit title is present, the returned title is ``None``
+    and the whole input is the target.
+    """
+    if raw.endswith(">"):
+        open_pos = raw.rfind("<")
+        title = raw[:open_pos].rstrip() if open_pos > 0 else ""
+        target = raw[open_pos + 1 : -1]
+        if title and target and ">" not in target:
+            return title, target
+
+    return None, raw
+
+
+def parse_inventory_entry(line: str) -> tuple[str, str, str, str] | None:
+    """Parse an entry line of a version 2 Sphinx object inventory.
+
+    Entries have the form ``name type priority location dispname``, where both
+    the name and the display name may contain spaces.
+
+    Returns:
+        The ``(name, type, location, dispname)`` tuple, or ``None`` if the
+        line is not a valid inventory entry.
+    """
+    words = line.split(" ")
+
+    # the name is the shortest sequence of words followed by a type (which
+    # always contains a colon), a priority (an integer), and a location
+    for i in range(1, len(words) - 2):
+        if ":" not in words[i]:
+            continue
+        try:
+            int(words[i + 1])
+        except ValueError:
+            continue
+
+        name = " ".join(words[:i])
+        location = words[i + 2]
+        dispname = " ".join(words[i + 3 :]) or "-"
+        return name, words[i], location, dispname
+
+    return None
 
 
 def parse_inventory(data: bytes) -> dict[str, dict[str, tuple[str, str]]]:
@@ -96,10 +137,10 @@ def parse_inventory(data: bytes) -> dict[str, dict[str, tuple[str, str]]]:
 
     inventory: dict[str, dict[str, tuple[str, str]]] = {}
     for line in zlib.decompress(compressed).decode("utf-8").splitlines():
-        m = INVENTORY_ENTRY_RE.match(line.rstrip())
-        if not m:
+        entry = parse_inventory_entry(line.rstrip())
+        if entry is None:
             continue
-        name, stype, _prio, location, dispname = m.groups()
+        name, stype, location, dispname = entry
         if location.endswith("$"):
             location = location[:-1] + name
         inventory.setdefault(stype, {})[name] = (location, dispname)
@@ -149,12 +190,10 @@ def process_html_content(
         stype = m.group("stype")
         raw_target = m.group("starget")
 
-        title = None
-        target = raw_target
         if stype == "std:ref":
-            tm = TITLED_REF_RE.match(raw_target)
-            if tm:
-                title, target = tm.group("title"), tm.group("target")
+            title, target = split_titled_ref(raw_target)
+        else:
+            title, target = None, raw_target
 
         entry = lookup(inventory, stype, target)
         if entry is None:
