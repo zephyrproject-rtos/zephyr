@@ -96,7 +96,7 @@ static inline unsigned int irq_from_level_2(unsigned int irq)
  *
  * @return 2nd level IRQ number
  */
-#define IRQ_TO_L2(irq) ((irq + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS)
+#define IRQ_TO_L2(irq) FIELD_PREP(Z_IRQ_L2_MASK, (irq) + 1U)
 
 /**
  * @brief Converts irq from level 1 to level 2 format
@@ -154,8 +154,7 @@ static inline unsigned int irq_from_level_3(unsigned int irq)
  *
  * @return 3rd level IRQ number
  */
-#define IRQ_TO_L3(irq)                                                                             \
-	((irq + 1) << (CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS))
+#define IRQ_TO_L3(irq) FIELD_PREP(Z_IRQ_L3_MASK, (irq) + 1U)
 
 /**
  * @brief Converts irq from level 1 to level 3 format
