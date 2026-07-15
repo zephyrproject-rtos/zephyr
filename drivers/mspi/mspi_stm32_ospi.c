@@ -728,6 +728,10 @@ static int mspi_stm32_ospi_dev_config(const struct device *controller,
 	bool locked = false;
 
 	if (data->dev_id != dev_id) {
+		/* The controller lock is taken here and kept for the whole
+		 * session, until the device releases it through
+		 * mspi_get_channel_status().
+		 */
 		if (k_mutex_lock(&data->lock, K_MSEC(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE))) {
 			LOG_ERR("MSPI config failed to access controller.");
 			return -EBUSY;
@@ -741,26 +745,29 @@ static int mspi_stm32_ospi_dev_config(const struct device *controller,
 		goto e_return;
 	}
 
-	if (param_mask == MSPI_DEVICE_CONFIG_NONE && !cfg->mspicfg.sw_multi_periph) {
-		/* Nothing to do but saving the device ID */
-		data->dev_id = dev_id;
-		goto e_return;
-	}
-
 	/*
 	 * The SFDP is able to change the addr_length 4bytes or 3bytes
 	 * this is reflected by the serial_cfg
 	 */
 	data->dev_id = dev_id;
+
+	if (param_mask == MSPI_DEVICE_CONFIG_NONE && !cfg->mspicfg.sw_multi_periph) {
+		return 0;
+	}
+
 	/* Go on with other parameters if supported */
 	if (mspi_stm32_ospi_dev_cfg_save(controller, param_mask, dev_cfg) != 0) {
 		LOG_ERR("failed to set device config");
 		ret = -EIO;
+		goto e_return;
 	}
+
+	return 0;
 
 e_return:
 
 	if (locked) {
+		data->dev_id = NULL;
 		k_mutex_unlock(&data->lock);
 	}
 
@@ -823,18 +830,21 @@ static int mspi_stm32_ospi_memmap_config(const struct device *controller,
 static int mspi_stm32_ospi_get_channel_status(const struct device *controller, uint8_t ch)
 {
 	struct mspi_stm32_data *dev_data = controller->data;
-	int ret = 0;
 
 	ARG_UNUSED(ch);
 
 	if (mspi_stm32_ospi_is_inp(controller) ||
 	    __HAL_OSPI_GET_FLAG(&dev_data->hmspi.ospi, HAL_OSPI_FLAG_BUSY) == SET) {
-		ret = -EBUSY;
+		return -EBUSY;
 	}
 
+	/* The controller is idle: end the session started by
+	 * mspi_dev_config() and release the controller lock.
+	 */
 	dev_data->dev_id = NULL;
+	k_mutex_unlock(&dev_data->lock);
 
-	return ret;
+	return 0;
 }
 
 static int mspi_stm32_ospi_pio_transceive(const struct device *controller,
@@ -1282,6 +1292,8 @@ static int mspi_stm32_ospi_config(const struct mspi_dt_spec *spec)
 	}
 
 	if (config->re_init) {
+		/* Force-release a session that may still hold the lock */
+		dev_data->dev_id = NULL;
 		k_mutex_unlock(&dev_data->lock);
 	}
 end:
