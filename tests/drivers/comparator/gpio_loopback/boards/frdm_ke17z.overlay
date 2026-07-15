@@ -1,15 +1,10 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor
- * Copyright 2026 NXP
- *
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/kinetis/MKE15Z256VLL7-pinctrl.h>
-#include <zephyr/dt-bindings/gpio/gpio.h>
-
 /*
- * PTA1 looped back to PTA0 (Arduino J4-4 to J4-2 on FRDM-KE15Z).
+ * PTA1 looped back to PTA0 (Arduino J4-10 to J4-12 on FRDM-KE17Z).
  */
 
 / {
