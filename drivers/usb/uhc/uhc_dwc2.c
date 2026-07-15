@@ -37,7 +37,11 @@ enum uhc_dwc2_event {
 	/* A queued transfer has been marked for cancellation */
 	UHC_DWC2_EVENT_DEQUEUE,
 	/* Port has pending channel event */
-	UHC_DWC2_EVENT_PORT_PEND_CHANNEL
+	UHC_DWC2_EVENT_PORT_PEND_CHANNEL,
+	/* USB host stack requested suspend */
+	UHC_DWC2_EVENT_SUSPEND,
+	/* USB host stack requested resume or device initiated Remote Wakeup */
+	UHC_DWC2_EVENT_RESUME,
 };
 
 enum uhc_dwc2_channel_event {
@@ -603,6 +607,90 @@ static int port_reset(const struct device *dev)
 	return 0;
 }
 
+static int port_suspend(const struct device *const dev)
+{
+	const struct uhc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const base = config->base;
+	uint32_t hprt;
+
+	hprt = sys_read32((mem_addr_t)&base->hprt);
+	if (hprt & USB_DWC2_HPRT_PRTSUSP) {
+		return -EALREADY;
+	}
+
+	hprt |= USB_DWC2_HPRT_PRTSUSP;
+	hprt &= ~(USB_DWC2_HPRT_W1C_MSK | USB_DWC2_HPRT_PRTRES);
+	sys_write32(hprt, (mem_addr_t)&base->hprt);
+
+	/* Host stops transmitting packets and device operating at High-Speed
+	 * has 3.125 ms (TWTREV) to revert to Full-Speed. Controller seems to
+	 * set PrtSusp to 1 around 1 ms later. There is no interrupt we can
+	 * wait on here, so just do initial 5 ms wait followed by 1 ms polls.
+	 */
+	k_msleep(5);
+
+	for (int i = 0; i < 10; i++) {
+		hprt = sys_read32((mem_addr_t)&base->hprt);
+		if (hprt & USB_DWC2_HPRT_PRTSUSP) {
+			uhc_submit_event(dev, UHC_EVT_SUSPENDED, 0);
+			return 0;
+		}
+
+		k_msleep(1);
+	}
+
+	return -ETIMEDOUT;
+}
+
+static int port_resume(const struct device *const dev)
+{
+	const struct uhc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const base = config->base;
+	enum uhc_event_type type;
+	uint32_t hprt;
+	int ret;
+
+	hprt = sys_read32((mem_addr_t)&base->hprt);
+
+	if (!(hprt & USB_DWC2_HPRT_PRTSUSP)) {
+		if (!(hprt & USB_DWC2_HPRT_PRTRES)) {
+			/* Port is not suspended, nothing to do here. */
+			return 0;
+		}
+
+		/* Remote Wakeup - Resume signaling started by core */
+		type = UHC_EVT_RWUP;
+	} else {
+		/* Start driving Resume signaling */
+		hprt &= ~(USB_DWC2_HPRT_PRTSUSP | USB_DWC2_HPRT_W1C_MSK);
+		hprt |= USB_DWC2_HPRT_PRTRES;
+		sys_write32(hprt, (mem_addr_t)&base->hprt);
+
+		type = UHC_EVT_RESUMED;
+	}
+
+	k_msleep(CONFIG_UHC_DWC2_RESUME_DURATION_MS);
+
+	hprt = sys_read32((mem_addr_t)&base->hprt);
+	if (hprt & USB_DWC2_HPRT_PRTSUSP) {
+		ret = -EIO;
+
+		/* PRTSUSP is W1S, do not set Suspend */
+		hprt &= ~USB_DWC2_HPRT_PRTSUSP;
+	} else {
+		/* Resume suceeded */
+		ret = 0;
+	}
+
+	uhc_submit_event(dev, type, 0);
+
+	/* Stop driving resume */
+	hprt &= ~(USB_DWC2_HPRT_PRTRES | USB_DWC2_HPRT_W1C_MSK);
+	sys_write32(hprt, (mem_addr_t)&base->hprt);
+
+	return ret;
+}
+
 static inline void ch_process_control(struct uhc_dwc2_channel *ch)
 {
 	struct uhc_transfer *const xfer = ch->xfer;
@@ -900,7 +988,7 @@ static inline void port_enable(const struct device *dev)
 
 	sys_clear_bits((mem_addr_t)&base->haintmsk, 0xFFFFFFFFUL);
 	sys_set_bits((mem_addr_t)&base->gintmsk, USB_DWC2_GINTSTS_PRTINT |
-							USB_DWC2_GINTSTS_HCHINT);
+		     USB_DWC2_GINTSTS_HCHINT | USB_DWC2_GINTSTS_WKUPINT);
 	dwc2_set_power(base, true);
 }
 
@@ -910,7 +998,7 @@ static inline void port_disable(const struct device *dev)
 
 	sys_clear_bits((mem_addr_t)&base->haintmsk, 0xFFFFFFFFUL);
 	sys_clear_bits((mem_addr_t)&base->gintmsk, USB_DWC2_GINTSTS_PRTINT |
-							USB_DWC2_GINTSTS_HCHINT);
+		     USB_DWC2_GINTSTS_HCHINT | USB_DWC2_GINTSTS_WKUPINT);
 	dwc2_set_power(base, false);
 }
 
@@ -1573,6 +1661,14 @@ static void port_handle_events(const struct device *dev, uint32_t event_mask)
 		/* Just power off the port via registers */
 		dwc2_set_power(base, false);
 	}
+
+	if (event_mask & BIT(UHC_DWC2_EVENT_SUSPEND)) {
+		port_suspend(dev);
+	}
+
+	if (event_mask & BIT(UHC_DWC2_EVENT_RESUME)) {
+		port_resume(dev);
+	}
 }
 
 static void ch_handle_events(const struct device *dev, struct uhc_dwc2_channel *ch)
@@ -1707,6 +1803,10 @@ static void uhc_dwc2_isr_handler(const struct device *dev)
 		}
 	}
 
+	if (gintsts & USB_DWC2_GINTSTS_WKUPINT) {
+		k_event_post(&priv->events, BIT(UHC_DWC2_EVENT_RESUME));
+	}
+
 	(void)uhc_dwc2_quirk_irq_clear(dev);
 }
 
@@ -1824,16 +1924,24 @@ static int uhc_dwc2_unlock(const struct device *const dev)
 
 static int uhc_dwc2_sof_enable(const struct device *const dev)
 {
-	LOG_WRN("%s has not been implemented", __func__);
-
-	return -ENOSYS;
+	/* Controller automatically enables SOFs */
+	return 0;
 }
 
 static int uhc_dwc2_bus_suspend(const struct device *const dev)
 {
-	LOG_WRN("%s has not been implemented", __func__);
+	const struct uhc_dwc2_config *const config = dev->config;
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+	struct usb_dwc2_reg *const base = config->base;
+	uint32_t hprt;
 
-	return -ENOSYS;
+	hprt = sys_read32((mem_addr_t)&base->hprt);
+	if (hprt & USB_DWC2_HPRT_PRTSUSP) {
+		return -EALREADY;
+	}
+
+	k_event_post(&priv->events, BIT(UHC_DWC2_EVENT_SUSPEND));
+	return 0;
 }
 
 static int uhc_dwc2_bus_reset(const struct device *const dev)
@@ -1853,9 +1961,11 @@ static int uhc_dwc2_bus_reset(const struct device *const dev)
 
 static int uhc_dwc2_bus_resume(const struct device *const dev)
 {
-	LOG_WRN("%s has not been implemented", __func__);
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 
-	return -ENOSYS;
+	k_event_post(&priv->events, BIT(UHC_DWC2_EVENT_RESUME));
+
+	return 0;
 }
 
 static int uhc_dwc2_enqueue(const struct device *const dev, struct uhc_transfer *const xfer)
