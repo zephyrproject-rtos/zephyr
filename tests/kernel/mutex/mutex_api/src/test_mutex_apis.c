@@ -18,6 +18,8 @@ static ZTEST_DMEM int thread_ret = TC_FAIL;
 
 /* TESTPOINT: init via K_MUTEX_DEFINE */
 K_MUTEX_DEFINE(kmutex);
+/* only used by test_mutex_define, never re-initialized at run time */
+K_MUTEX_DEFINE(kmutex_define);
 static struct k_mutex tmutex;
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
@@ -210,6 +212,56 @@ static void tThread_waiter(void *p1, void *p2, void *p3)
 }
 
 /*test cases*/
+/**
+ * @brief Verify a mutex defined at compile time is ready for use.
+ *
+ * @details
+ * A mutex created with K_MUTEX_DEFINE() must be fully initialized at boot:
+ * unowned and immediately lockable without any run-time initialization
+ * call. The mutex used here is touched by no other test, so it is
+ * exercised exactly as the macro left it.
+ *
+ * Test steps:
+ * - Lock the statically defined mutex with K_NO_WAIT.
+ * - Unlock it.
+ *
+ * Expected result:
+ * - Both operations succeed without any prior k_mutex_init() call.
+ *
+ * @ingroup kernel_mutex_tests
+ * @see K_MUTEX_DEFINE
+ */
+ZTEST(mutex_api, test_mutex_define)
+{
+	/* usable at boot without any run-time initialization */
+	zassert_equal(k_mutex_lock(&kmutex_define, K_NO_WAIT), 0);
+	zassert_equal(k_mutex_unlock(&kmutex_define), 0);
+}
+
+/**
+ * @brief Verify run-time initialization of a mutex.
+ *
+ * @details
+ * k_mutex_init() must succeed and yield an unowned mutex that is
+ * immediately lockable.
+ *
+ * Test steps:
+ * - Initialize a mutex at run time and check the call succeeds.
+ * - Lock it with K_NO_WAIT and unlock it.
+ *
+ * Expected result:
+ * - Initialization returns 0 and the mutex is immediately usable.
+ *
+ * @ingroup kernel_mutex_tests
+ * @see k_mutex_init()
+ */
+ZTEST(mutex_api, test_mutex_init)
+{
+	zassert_equal(k_mutex_init(&tmutex), 0);
+	zassert_equal(k_mutex_lock(&tmutex, K_NO_WAIT), 0);
+	zassert_equal(k_mutex_unlock(&tmutex), 0);
+}
+
 ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_forever)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
