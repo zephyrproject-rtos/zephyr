@@ -448,6 +448,7 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 	case WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK_SHA256:
 	case WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK_SHA256 | WPA_KEY_MGMT_PSK:
 		return WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
+	case WPA_KEY_MGMT_PSK | WPA_KEY_MGMT_FT_PSK:
 	case WPA_KEY_MGMT_FT_PSK:
 		return WIFI_SECURITY_TYPE_FT_PSK;
 	case WPA_KEY_MGMT_FT_SAE:
