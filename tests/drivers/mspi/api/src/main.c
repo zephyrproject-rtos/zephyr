@@ -56,9 +56,9 @@ static struct mspi_dev_cfg device_cfg[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(MSPI_BUS_NODE, MSPI_DEVICE_CONFIG_DT, (,))
 };
 
-#if CONFIG_MSPI_XIP
-static struct mspi_xip_cfg xip_cfg[] = {
-	DT_FOREACH_CHILD_STATUS_OKAY_SEP(MSPI_BUS_NODE, MSPI_XIP_CONFIG_DT, (,))
+#if CONFIG_MSPI_MEMMAP
+static struct mspi_memmap_cfg memmap_cfg[] = {
+	DT_FOREACH_CHILD_STATUS_OKAY_SEP(MSPI_BUS_NODE, MSPI_MEMMAP_CONFIG_DT, (,))
 };
 #endif
 
@@ -93,9 +93,9 @@ ZTEST(mspi_api, test_mspi_api)
 				      MSPI_DEVICE_CONFIG_ALL, &device_cfg[dev_idx]);
 		zassert_equal(ret, 0, "mspi_dev_config failed.");
 
-#if CONFIG_MSPI_XIP
-		ret = mspi_xip_config(mspi_bus, &dev_id[dev_idx], &xip_cfg[dev_idx]);
-		zassert_equal(ret, 0, "mspi_xip_config failed.");
+#if CONFIG_MSPI_MEMMAP
+		ret = mspi_memmap_config(mspi_bus, &dev_id[dev_idx], &memmap_cfg[dev_idx]);
+		zassert_equal(ret, 0, "mspi_memmap_config failed.");
 #endif
 
 #if CONFIG_MSPI_SCRAMBLE

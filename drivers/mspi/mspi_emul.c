@@ -52,7 +52,7 @@ struct mspi_emul_data {
 	/* device specific hardware settings */
 	struct mspi_dev_cfg           dev_cfg;
 	/* XIP configurations */
-	struct mspi_xip_cfg           xip_cfg;
+	struct mspi_memmap_cfg        memmap_cfg;
 	/* scrambling configurations */
 	struct mspi_scramble_cfg      scramble_cfg;
 	/* Timing configurations */
@@ -565,18 +565,18 @@ e_return:
 }
 
 /**
- * API implementation of mspi_xip_config.
+ * API implementation of mspi_memmap_config.
  *
  * @param controller Pointer to the device structure for the driver instance.
  * @param dev_id Pointer to the device ID structure from a device.
- * @param xip_cfg The controller XIP configuration for MSPI.
+ * @param memmap_cfg The controller XIP configuration for MSPI.
  *
  * @retval 0 if successful.
  * @retval -ESTALE device ID don't match, need to call mspi_dev_config first.
  */
-static int mspi_emul_xip_config(const struct device *controller,
-				const struct mspi_dev_id *dev_id,
-				const struct mspi_xip_cfg *xip_cfg)
+static int mspi_emul_memmap_config(const struct device *controller,
+				   const struct mspi_dev_id *dev_id,
+				   const struct mspi_memmap_cfg *memmap_cfg)
 {
 	struct mspi_emul_data *data = controller->data;
 	int ret = 0;
@@ -586,7 +586,7 @@ static int mspi_emul_xip_config(const struct device *controller,
 		return -ESTALE;
 	}
 
-	data->xip_cfg = *xip_cfg;
+	data->memmap_cfg = *memmap_cfg;
 	return ret;
 }
 
@@ -846,7 +846,7 @@ static DEVICE_API(emul_mspi, emul_driver_api) = {
 	.mspi_api = {
 			.config                = mspi_emul_config,
 			.dev_config            = mspi_emul_dev_config,
-			.xip_config            = mspi_emul_xip_config,
+			.memmap_config         = mspi_emul_memmap_config,
 			.scramble_config       = mspi_emul_scramble_config,
 			.timing_config         = mspi_emul_timing_config,
 			.get_channel_status    = mspi_emul_get_channel_status,
@@ -889,7 +889,7 @@ static DEVICE_API(emul_mspi, emul_driver_api) = {
 		.dev_id                = 0,                                                       \
 		.lock                  = Z_MUTEX_INITIALIZER(mspi_emul_data_##n.lock),            \
 		.dev_cfg               = {0},                                                     \
-		.xip_cfg               = {0},                                                     \
+		.memmap_cfg            = {0},                                                     \
 		.scramble_cfg          = {0},                                                     \
 		.cbs                   = {0},                                                     \
 		.cb_ctxs               = {0},                                                     \

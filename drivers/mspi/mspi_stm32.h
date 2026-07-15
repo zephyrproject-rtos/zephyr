@@ -94,7 +94,7 @@ struct mspi_stm32_data {
 	struct k_mutex lock;
 	struct k_sem sync;
 	struct mspi_dev_cfg dev_cfg;
-	struct mspi_xip_cfg xip_cfg;
+	struct mspi_memmap_cfg memmap_cfg;
 	struct stm32_stream dma_tx;
 	struct stm32_stream dma_rx;
 	struct stm32_stream dma;

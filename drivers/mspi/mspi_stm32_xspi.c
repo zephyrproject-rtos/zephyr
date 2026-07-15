@@ -292,7 +292,7 @@ static int read_write_in_memory_map_mode(const struct device *dev,
 		return 0;
 	}
 
-	if (!dev_data->xip_cfg.permission) {
+	if (!dev_data->memmap_cfg.permission) {
 		LOG_INF("Memory-mapped write from 0x%08lx, len %u", mmap_addr, packet->num_bytes);
 		memcpy((void *)mmap_addr, packet->data_buf, packet->num_bytes);
 		k_sleep(K_MSEC(1));
@@ -397,7 +397,7 @@ static int mspi_stm32_xspi_access(const struct device *dev, const struct mspi_xf
 	HAL_StatusTypeDef hal_ret;
 	struct mspi_stm32_data *dev_data = dev->data;
 
-	if (dev_data->xip_cfg.enable) {
+	if (dev_data->memmap_cfg.enable) {
 		if ((packet->cmd == MSPI_NOR_CMD_WREN) || (packet->cmd == MSPI_NOR_OCMD_WREN) ||
 		    (packet->cmd == MSPI_NOR_CMD_SE_4B) || (packet->cmd == MSPI_NOR_OCMD_SE) ||
 		    (packet->cmd == MSPI_NOR_CMD_SE) ||
@@ -871,18 +871,18 @@ static int mspi_stm32_xspi_dev_config(const struct device *controller,
 }
 
 /**
- * API implementation of mspi_xip_config : XIP configuration
+ * API implementation of mspi_memmap_config : XIP configuration
  *
  * @param controller Pointer to the device structure for the driver instance.
  * @param dev_id Pointer to the device ID structure from a device.
- * @param xip_cfg The controller XIP configuration for MSPI.
+ * @param memmap_cfg The controller XIP configuration for MSPI.
  *
  * @retval 0 if successful.
  * @retval A negative errno value upon failure.
  */
-static int mspi_stm32_xspi_xip_config(const struct device *controller,
-				      const struct mspi_dev_id *dev_id,
-				      const struct mspi_xip_cfg *xip_cfg)
+static int mspi_stm32_xspi_memmap_config(const struct device *controller,
+					 const struct mspi_dev_id *dev_id,
+					 const struct mspi_memmap_cfg *memmap_cfg)
 {
 	int ret = 0;
 	struct mspi_stm32_data *dev_data = controller->data;
@@ -895,7 +895,7 @@ static int mspi_stm32_xspi_xip_config(const struct device *controller,
 	/* Prevent the clocks to be stopped during the request */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
-	if (!xip_cfg->enable) {
+	if (!memmap_cfg->enable) {
 		/* This is for aborting */
 		ret = mspi_stm32_xspi_memmap_off(controller);
 	} else {
@@ -903,8 +903,8 @@ static int mspi_stm32_xspi_xip_config(const struct device *controller,
 	}
 
 	if (ret == 0) {
-		dev_data->xip_cfg = *xip_cfg;
-		LOG_INF("XIP configured %d", xip_cfg->enable);
+		dev_data->memmap_cfg = *memmap_cfg;
+		LOG_INF("XIP configured %d", memmap_cfg->enable);
 	}
 
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -1344,7 +1344,7 @@ static int mspi_stm32_timing_config(const struct device *dev,
 static DEVICE_API(mspi, mspi_stm32_driver_api) = {
 	.config = mspi_stm32_xspi_config,
 	.dev_config = mspi_stm32_xspi_dev_config,
-	.xip_config = mspi_stm32_xspi_xip_config,
+	.memmap_config = mspi_stm32_xspi_memmap_config,
 	.get_channel_status = mspi_stm32_xspi_get_channel_status,
 	.transceive = mspi_stm32_xspi_transceive,
 #if defined(CONFIG_MSPI_TIMING)
@@ -1473,7 +1473,7 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 		.lock = Z_MUTEX_INITIALIZER(mspi_stm32_dev_data_##index.lock),                    \
 		.sync = Z_SEM_INITIALIZER(mspi_stm32_dev_data_##index.sync, 0, 1),                \
 		.dev_cfg = {0},                                                                   \
-		.xip_cfg = {0},                                                                   \
+		.memmap_cfg = {0},                                                                \
 		.ctx.lock = Z_SEM_INITIALIZER(mspi_stm32_dev_data_##index.ctx.lock, 0, 1),        \
 		XSPI_DMA_CHANNEL(DT_DRV_INST(index), tx, TX, MEMORY, PERIPHERAL)                  \
 		XSPI_DMA_CHANNEL(DT_DRV_INST(index), rx, RX, PERIPHERAL, MEMORY)                  \

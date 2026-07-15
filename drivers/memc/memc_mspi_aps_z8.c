@@ -48,11 +48,11 @@ struct memc_mspi_aps_z8_config {
 	struct mspi_dev_cfg            octal_cfg;
 	struct mspi_dev_cfg            tar_dev_cfg;
 
-	MSPI_XIP_CFG_STRUCT_DECLARE(tar_xip_cfg)
+	MSPI_MEMMAP_CFG_STRUCT_DECLARE(tar_memmap_cfg)
 	MSPI_SCRAMBLE_CFG_STRUCT_DECLARE(tar_scramble_cfg)
 	MSPI_TIMING_CFG_STRUCT_DECLARE(tar_timing_cfg)
 	MSPI_TIMING_PARAM_DECLARE(timing_cfg_mask)
-	MSPI_XIP_BASE_ADDR_DECLARE(xip_base_addr)
+	MSPI_MEMMAP_BASE_ADDR_DECLARE(memmap_base_addr)
 
 	bool                           sw_multi_periph;
 	bool                           pm_dev_rt_auto;
@@ -63,7 +63,7 @@ struct memc_mspi_aps_z8_config {
 struct memc_mspi_aps_z8_data {
 	struct memc_mspi_aps_z8_reg    regs;
 	struct mspi_dev_cfg            dev_cfg;
-	struct mspi_xip_cfg            xip_cfg;
+	struct mspi_memmap_cfg         memmap_cfg;
 	struct mspi_scramble_cfg       scramble_cfg;
 #if defined(CONFIG_MSPI_TIMING)
 	mspi_timing_cfg timing_cfg;
@@ -388,20 +388,20 @@ static int memc_mspi_aps_z8_half_sleep_enter(const struct device *psram)
 {
 	const struct memc_mspi_aps_z8_config *cfg = psram->config;
 	struct memc_mspi_aps_z8_data *data = psram->data;
-	struct mspi_xip_cfg xip_cfg = data->xip_cfg;
+	struct mspi_memmap_cfg memmap_cfg = data->memmap_cfg;
 	int ret;
 
-	if (xip_cfg.enable) {
+	if (memmap_cfg.enable) {
 		sys_cache_data_flush_and_invd_all();
 	}
 
-#if CONFIG_MSPI_XIP
-	xip_cfg.enable = false;
-	if (mspi_xip_config(cfg->bus, &cfg->dev_id, &xip_cfg)) {
+#if CONFIG_MSPI_MEMMAP
+	memmap_cfg.enable = false;
+	if (mspi_memmap_config(cfg->bus, &cfg->dev_id, &memmap_cfg)) {
 		LOG_ERR("Failed to disable XIP/%u", __LINE__);
 		return -EIO;
 	}
-#endif /* CONFIG_MSPI_XIP */
+#endif /* CONFIG_MSPI_MEMMAP */
 
 	LOG_DBG("Putting APS Z8 to half sleep/%u", __LINE__);
 	ret = memc_mspi_aps_z8_enter_command_mode(psram);
@@ -441,12 +441,12 @@ static int memc_mspi_aps_z8_half_sleep_exit(const struct device *psram)
 		return ret;
 	}
 
-#if CONFIG_MSPI_XIP
-	if (mspi_xip_config(cfg->bus, &cfg->dev_id, &data->xip_cfg)) {
+#if CONFIG_MSPI_MEMMAP
+	if (mspi_memmap_config(cfg->bus, &cfg->dev_id, &data->memmap_cfg)) {
 		LOG_ERR("Failed to enable XIP/%u", __LINE__);
 		return -EIO;
 	}
-#endif /* CONFIG_MSPI_XIP */
+#endif /* CONFIG_MSPI_MEMMAP */
 
 	return ret;
 }
@@ -604,15 +604,15 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 	data->timing_cfg = cfg->tar_timing_cfg;
 #endif /* CONFIG_MSPI_TIMING */
 
-#if CONFIG_MSPI_XIP
-	if (cfg->tar_xip_cfg.enable) {
-		if (mspi_xip_config(cfg->bus, &cfg->dev_id, &cfg->tar_xip_cfg)) {
+#if CONFIG_MSPI_MEMMAP
+	if (cfg->tar_memmap_cfg.enable) {
+		if (mspi_memmap_config(cfg->bus, &cfg->dev_id, &cfg->tar_memmap_cfg)) {
 			LOG_ERR("Failed to enable XIP/%u", __LINE__);
 			return -EIO;
 		}
-		data->xip_cfg = cfg->tar_xip_cfg;
+		data->memmap_cfg = cfg->tar_memmap_cfg;
 	}
-#endif /* CONFIG_MSPI_XIP */
+#endif /* CONFIG_MSPI_MEMMAP */
 
 #if CONFIG_MSPI_SCRAMBLE
 	if (cfg->tar_scramble_cfg.enable) {
@@ -675,15 +675,15 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 		.dev_id             = MSPI_DEVICE_ID_DT_INST(n),                                  \
 		.octal_cfg          = MSPI_DEVICE_CONFIG_OCTAL(n),                                \
 		.tar_dev_cfg        = MSPI_DEVICE_CONFIG_DT_INST(n),                              \
-		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_XIP,                                    \
-					      tar_xip_cfg, MSPI_XIP_CONFIG_DT_INST(n))            \
+		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_MEMMAP,                                 \
+					      tar_memmap_cfg, MSPI_MEMMAP_CONFIG_DT_INST(n))      \
 		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_SCRAMBLE,                               \
 					      tar_scramble_cfg, MSPI_SCRAMBLE_CONFIG_DT_INST(n))  \
 		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_TIMING,                                 \
 					      tar_timing_cfg, MSPI_TIMING_CONFIG(n))              \
 		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_TIMING,                                 \
 					      timing_cfg_mask, MSPI_TIMING_CONFIG_MASK(n))        \
-		MSPI_XIP_BASE_ADDR_INIT(xip_base_addr, DT_INST_BUS(n))                            \
+		MSPI_MEMMAP_BASE_ADDR_INIT(memmap_base_addr, DT_INST_BUS(n))                      \
 		.sw_multi_periph    = DT_PROP(DT_INST_BUS(n), software_multiperipheral),          \
 		.pm_dev_rt_auto     = DT_INST_PROP(n, zephyr_pm_device_runtime_auto),             \
 		.drive_strength = DT_INST_PROP_OR(n, drive_strength, 0),                          \

@@ -53,7 +53,7 @@ struct flash_mspi_atxp032_config {
 	struct mspi_dev_id                  dev_id;
 	struct mspi_dev_cfg                 serial_cfg;
 	struct mspi_dev_cfg                 tar_dev_cfg;
-	struct mspi_xip_cfg                 tar_xip_cfg;
+	struct mspi_memmap_cfg              tar_memmap_cfg;
 	struct mspi_scramble_cfg            tar_scramble_cfg;
 
 	mspi_timing_cfg                     tar_timing_cfg;
@@ -64,7 +64,7 @@ struct flash_mspi_atxp032_config {
 
 struct flash_mspi_atxp032_data {
 	struct mspi_dev_cfg                 dev_cfg;
-	struct mspi_xip_cfg                 xip_cfg;
+	struct mspi_memmap_cfg              memmap_cfg;
 	struct mspi_scramble_cfg            scramble_cfg;
 	mspi_timing_cfg                     timing_cfg;
 	struct mspi_xfer                    trans;
@@ -686,15 +686,15 @@ static int flash_mspi_atxp032_init(const struct device *flash)
 	}
 	data->timing_cfg = cfg->tar_timing_cfg;
 
-#if CONFIG_MSPI_XIP
-	if (cfg->tar_xip_cfg.enable) {
-		if (mspi_xip_config(cfg->bus, &cfg->dev_id, &cfg->tar_xip_cfg)) {
+#if CONFIG_MSPI_MEMMAP
+	if (cfg->tar_memmap_cfg.enable) {
+		if (mspi_memmap_config(cfg->bus, &cfg->dev_id, &cfg->tar_memmap_cfg)) {
 			LOG_ERR("Failed to enable XIP/%u", __LINE__);
 			return -EIO;
 		}
-		data->xip_cfg = cfg->tar_xip_cfg;
+		data->memmap_cfg = cfg->tar_memmap_cfg;
 	}
-#endif /* CONFIG_MSPI_XIP */
+#endif /* CONFIG_MSPI_MEMMAP */
 
 #if CONFIG_MSPI_SCRAMBLE
 	if (cfg->tar_scramble_cfg.enable) {
@@ -848,7 +848,7 @@ static DEVICE_API(flash, flash_mspi_atxp032_api) = {
 		.dev_id             = MSPI_DEVICE_ID_DT_INST(n),                                  \
 		.serial_cfg         = MSPI_DEVICE_CONFIG_SERIAL(n),                               \
 		.tar_dev_cfg        = MSPI_DEVICE_CONFIG_DT_INST(n),                              \
-		.tar_xip_cfg        = MSPI_XIP_CONFIG_DT_INST(n),                                 \
+		.tar_memmap_cfg     = MSPI_MEMMAP_CONFIG_DT_INST(n),                              \
 		.tar_scramble_cfg   = MSPI_SCRAMBLE_CONFIG_DT_INST(n),                            \
 		.tar_timing_cfg     = MSPI_TIMING_CONFIG(n),                                      \
 		.timing_cfg_mask    = MSPI_TIMING_CONFIG_MASK(n),                                 \

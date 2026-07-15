@@ -1313,9 +1313,9 @@ static int flash_chip_init(const struct device *dev)
 		}
 	}
 
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 	/* Enable XIP access for this chip if specified so in DT. */
-	if (dev_config->xip_cfg.enable) {
+	if (dev_config->memmap_cfg.enable) {
 		struct mspi_dev_cfg mspi_cfg = {
 			.io_mode = dev_config->read_io_mode,
 			.addr_length = dev_data->cmd_info.uses_4byte_addr
@@ -1343,8 +1343,8 @@ static int flash_chip_init(const struct device *dev)
 			return rc;
 		}
 
-		rc = mspi_xip_config(dev_config->bus, &dev_config->mspi_id,
-				     &dev_config->xip_cfg);
+		rc = mspi_memmap_config(dev_config->bus, &dev_config->mspi_id,
+					&dev_config->memmap_cfg);
 		if (rc < 0) {
 			LOG_ERR("Failed to enable XIP: %d", rc);
 			return rc;
@@ -1540,8 +1540,8 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 		.mspi_id = MSPI_DEVICE_ID_DT_INST(inst),			\
 		.mspi_nor_cfg = MSPI_DEVICE_CONFIG_DT_INST(inst),		\
 		.mspi_control_cfg = FLASH_CONTROL_CMD_CONFIG(inst),		\
-	IF_ENABLED(CONFIG_MSPI_XIP,						\
-		(.xip_cfg = MSPI_XIP_CONFIG_DT_INST(inst),))			\
+	IF_ENABLED(CONFIG_MSPI_MEMMAP,						\
+		(.memmap_cfg = MSPI_MEMMAP_CONFIG_DT_INST(inst),))		\
 	IF_ENABLED(WITH_SUPPLY_GPIO,						\
 		(.supply = GPIO_DT_SPEC_INST_GET_OR(inst, supply_gpios, {0}),))	\
 	IF_ENABLED(WITH_RESET_GPIO,						\

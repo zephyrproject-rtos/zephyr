@@ -49,7 +49,7 @@
 		address-length = "ADDR_3_BYTE";
 		rx-dummy = <6>;
 		tx-dummy = <5>;
-		xip-config = <1 0 0 0>;
+		memmap-config = <1 0 0 0>;
 		ce-break-config = <1024 4>;
 	};
 };
