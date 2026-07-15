@@ -35,3 +35,7 @@
 &systick {
 	status = "okay";
 };
+
+&aon_lpcmp0 {
+	status = "okay";
+};

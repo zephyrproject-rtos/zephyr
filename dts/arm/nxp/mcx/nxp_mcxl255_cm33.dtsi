@@ -42,3 +42,7 @@
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
+
+&aon_lpcmp0 {
+	interrupts = <157 0>;
+};

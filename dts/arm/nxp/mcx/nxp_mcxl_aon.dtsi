@@ -73,4 +73,16 @@
 		alarms-count = <3>;
 		status = "disabled";
 	};
+
+	aon_lpcmp0: comparator@86000 {
+		compatible = "nxp,lpcmp";
+		reg = <0x86000 0x1000>;
+		interrupts = <30 0>;
+		positive-mux-input = "IN2";
+		negative-mux-input = "DAC";
+		dac-vref-source = "VREFH0";
+		dac-value = <127>;
+		#io-channel-cells = <2>;
+		status = "disabled";
+	};
 };
