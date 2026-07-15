@@ -7,7 +7,7 @@
 #include <zephyr/ztest_test.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/random/random.h>
-#include <zephyr/debug/cpu_load.h>
+#include <zephyr/sys/cpu_load.h>
 #include <string.h>
 
 /* Flag set at startup which determines if stress test can run on this platform.
