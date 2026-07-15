@@ -154,7 +154,11 @@ endif()
 
 set(build_flags_dir ${PROJECT_BINARY_DIR}/misc/llext_edk)
 set(build_info_file ${PROJECT_BINARY_DIR}/../build_info.yml)
+set(sysbuild_info_file ${PROJECT_BINARY_DIR}/../../build_info.yml)
 yaml_load(FILE ${build_info_file} NAME build_info)
+if(SYSBUILD)
+  yaml_load(FILE ${sysbuild_info_file} NAME sysbuild_info)
+endif()
 
 # process C flags
 file(READ ${build_flags_dir}/c_flags.txt llext_edk_c_flags_raw)
@@ -181,7 +185,11 @@ list(TRANSFORM llext_edk_c_incs REPLACE "^-I" "")
 
 yaml_get(llext_edk_file NAME build_info KEY cmake llext-edk file)
 yaml_get(APPLICATION_SOURCE_DIR NAME build_info KEY cmake application source-dir)
-yaml_get(WEST_TOPDIR NAME build_info KEY west topdir)
+if(SYSBUILD)
+  yaml_get(WEST_TOPDIR NAME sysbuild_info KEY west topdir)
+else()
+  yaml_get(WEST_TOPDIR NAME build_info KEY west topdir)
+endif()
 
 yaml_get(board_name NAME build_info KEY cmake board name)
 yaml_get(board_qualifiers NAME build_info KEY cmake board qualifiers)
