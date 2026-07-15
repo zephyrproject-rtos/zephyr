@@ -169,15 +169,15 @@ struct zbus_observer {
 		void (*callback)(const struct zbus_channel *chan);
 
 #if defined(CONFIG_ZBUS_MSG_SUBSCRIBER) || defined(__DOXYGEN__)
-		/** Observer message FIFO. It turns the observer into a message subscriber. It only
-		 * exists if the @kconfig{CONFIG_ZBUS_MSG_SUBSCRIBER} is enabled.
+		/** Observer message FIFO. It turns the observer into a message subscriber.
+		 * @kconfig_dep{CONFIG_ZBUS_MSG_SUBSCRIBER}.
 		 */
 		struct k_fifo *message_fifo;
 #endif /* CONFIG_ZBUS_MSG_SUBSCRIBER */
 
 #if defined(CONFIG_ZBUS_ASYNC_LISTENER) || defined(__DOXYGEN__)
-		/** Observer work. It turns the observer into an async listener. It only
-		 * exists if the @kconfig{CONFIG_ZBUS_ASYNC_LISTENER} is enabled.
+		/** Observer work. It turns the observer into an async listener.
+		 * @kconfig_dep{CONFIG_ZBUS_ASYNC_LISTENER}.
 		 */
 		struct k_work *work;
 #endif /* CONFIG_ZBUS_ASYNC_LISTENER */
@@ -1029,8 +1029,9 @@ struct zbus_observer_node {
 /**
  * @brief Add an observer to a channel.
  *
- * This routine adds an observer to the channel by providing an allocated node. This function is
- * only supported if the CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE is enabled.
+ * This routine adds an observer to the channel by providing an allocated node.
+ *
+ * @kconfig_dep{CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE}
  *
  * @param chan The channel's reference.
  * @param obs The observer's reference to be added.
@@ -1065,9 +1066,10 @@ static inline int zbus_chan_add_obs_with_node(const struct zbus_channel *chan,
 /**
  * @brief Add an observer to a channel.
  *
- * This routine adds an observer to the channel in runtime. This function is only supported if the
- * CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC or
- * CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_STATIC is enabled.
+ * This routine adds an observer to the channel in runtime.
+ *
+ * @kconfig_dep{CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC,
+ *              CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_STATIC}
  *
  *
  * @param chan The channel's reference.
