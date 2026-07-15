@@ -2426,6 +2426,7 @@ if(CONFIG_LLEXT_EDK)
       ${SYSCALL_LONG_REGISTERS_ARG}
       ${SYSCALL_SPLIT_TIMEOUT_ARG}
     COMMAND ${CMAKE_COMMAND}
+        -DSYSBUILD=${SYSBUILD}
         -P ${ZEPHYR_BASE}/cmake/llext-edk.cmake
     DEPENDS ${logical_target_for_zephyr_elf} ${syscalls_json} build_info_yaml_saved llext_edk_build_props
     COMMAND_EXPAND_LISTS
