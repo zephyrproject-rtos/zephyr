@@ -1336,6 +1336,12 @@ int arch_mem_domain_deinit(struct k_mem_domain *domain)
 
 	key = k_spin_lock(&xlat_lock);
 
+	/*
+	 * Invalidate all TLB entries to flush residual translations
+	 * tagged with this domain's ASID. Without this, stale entries
+	 * could match a new domain reusing the same ASID.
+	 */
+	invalidate_tlb_all();
 	sys_slist_find_and_remove(&domain_list, &domain->arch.node);
 
 	discard_table(domain_ptables->base_xlat_table, BASE_XLAT_LEVEL);
