@@ -14,7 +14,7 @@ proc boot_jtag { } {
 
 proc load_image {} {
 	global args_arr
-	parse_args {elf} {bitstream fsbl bl31 pmufw}
+	parse_args {elf fsbl bl31 pmufw} {bitstream}
 
 	if { [info exists ::env(HW_SERVER_URL)] } {
 		connect -url $::env(HW_SERVER_URL)
@@ -42,16 +42,14 @@ proc load_image {} {
 	# without PMUFW running the IPI notify loop hangs indefinitely.
 	# PMU MicroBlaze is hidden from JTAG by default after reset; writing
 	# 0x1C0 to PMU_GLOBAL_GEN_STORAGE4 (0xFFCA0038) makes it visible.
-	if { [info exists args_arr(pmufw)] } {
-		targets -set -nocase -filter {name =~ "*PSU*"}
-		mask_write 0xFFCA0038 0x1C0 0x1C0
-		if { [catch {targets -set -nocase -filter {name =~ "MicroBlaze PMU"}} err] == 0 } {
-			dow $args_arr(pmufw)
-			con
-			after 2000
-		} else {
-			puts "WARNING: PMU target not visible even after enabling JTAG visibility, skipping PMUFW load"
-		}
+	targets -set -nocase -filter {name =~ "*PSU*"}
+	mask_write 0xFFCA0038 0x1C0 0x1C0
+	if { [catch {targets -set -nocase -filter {name =~ "MicroBlaze PMU"}} err] == 0 } {
+		dow $args_arr(pmufw)
+		con
+		after 2000
+	} else {
+		puts "WARNING: PMU target not visible even after enabling JTAG visibility, skipping PMUFW load"
 	}
 
 	# Set APU exception vector base and release from reset before FSBL
@@ -62,22 +60,18 @@ proc load_image {} {
 	targets -set -nocase -filter {name =~ "*A53*#0"}
 	rst -proc
 
-	if { [info exists args_arr(fsbl)] } {
-		dow $args_arr(fsbl)
-		after 2000
-		con
-		after 4000
-		catch {stop}
-	}
+	dow $args_arr(fsbl)
+	after 2000
+	con
+	after 4000
+	catch {stop}
 
 	# load Zephyr and BL31 (TF-A) on APU (A53 #0)
 	targets -set -nocase -filter {name =~ "*A53*#0"}
 	rst -proc
 	after 2000
 	dow $args_arr(elf)
-	if { [info exists args_arr(bl31)] } {
-		dow $args_arr(bl31)
-	}
+	dow $args_arr(bl31)
 	con
 	exit
 }

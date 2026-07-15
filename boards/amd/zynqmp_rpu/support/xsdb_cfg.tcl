@@ -14,7 +14,7 @@ proc boot_jtag { } {
 
 proc load_image {} {
 	global args_arr
-	parse_args {elf} {bitstream fsbl}
+	parse_args {elf fsbl} {bitstream}
 
 	if { [info exists ::env(HW_SERVER_URL)] } {
 		connect -url $::env(HW_SERVER_URL)
@@ -32,15 +32,13 @@ proc load_image {} {
 	}
 
 	# FSBL must run on APU (A53 #0) to initialize DDR and clocks
-	if { [info exists args_arr(fsbl)] } {
-		targets -set -nocase -filter {name =~ "*A53*#0"}
-		rst -proc
-		dow $args_arr(fsbl)
-		after 1000
-		con
-		after 3000
-		stop
-	}
+	targets -set -nocase -filter {name =~ "*A53*#0"}
+	rst -proc
+	dow $args_arr(fsbl)
+	after 1000
+	con
+	after 3000
+	stop
 
 	# load Zephyr on RPU (R5 #0)
 	targets -set -nocase -filter {name =~ "*R5*#0"}
