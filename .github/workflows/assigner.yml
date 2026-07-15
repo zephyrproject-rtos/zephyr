@@ -23,6 +23,7 @@ jobs:
     name: Pull Request/Issue Assignment
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       issues: write        # to add assignees to issues
       pull-requests: write # posting comments when new users being added.

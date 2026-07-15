@@ -23,6 +23,7 @@ jobs:
   doc-file-check:
     name: Check for doc changes
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     outputs:
       sphinx_check: ${{ steps.check-sphinx-files.outputs.any_modified }}
       doxygen_check: ${{ steps.check-doxygen-files.outputs.any_modified }}

@@ -14,6 +14,7 @@ permissions:
 jobs:
   check_compliance:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     name: Run compliance checks on patch series (PR)
     steps:
     - name: Update PATH for west

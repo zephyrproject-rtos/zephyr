@@ -16,6 +16,7 @@ permissions:
 jobs:
   get_version:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     if: github.repository == 'zephyrproject-rtos/zephyr'
 
     steps:

@@ -8,6 +8,7 @@ permissions:
 jobs:
   scancode_job:
     runs-on: ubuntu-24.04
+    timeout-minutes: 60
     name: Scan code for licenses
     steps:
     - name: Checkout the code

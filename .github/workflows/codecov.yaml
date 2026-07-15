@@ -19,6 +19,7 @@ jobs:
     if: github.repository_owner == 'zephyrproject-rtos'
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
+    timeout-minutes: 360
     container:
       image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.2.20260422
       options: '--entrypoint /bin/bash'
@@ -156,6 +157,7 @@ jobs:
     name: "Publish Coverage Results"
     needs: codecov
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     # the codecov job might be skipped, we don't need to run this job then
     if: success() || failure()
 

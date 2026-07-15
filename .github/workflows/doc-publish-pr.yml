@@ -17,6 +17,7 @@ jobs:
   doc-publish:
     name: Publish Documentation
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     if: |
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'success' &&

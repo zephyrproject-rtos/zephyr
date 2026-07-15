@@ -136,6 +136,7 @@ jobs:
     name: "Publish Unit Tests Results"
     needs: clang-build
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     permissions:
       checks: write # to create GitHub annotations
     if: (success() || failure())
