@@ -617,11 +617,15 @@ class SPDX3Serializer:
         # GENERATED_FROM is intentionally absent: it is handled by the Build profile
         # (see _create_relationships and _artifact_input_ids).
         type_map = {
-            "HAS_PREREQUISITE": (spdx.RelationshipType.dependsOn, False),
+            "HAS_PREREQUISITE": (spdx.RelationshipType.hasPrerequisite, False),
+            "PREREQUISITE_FOR": (spdx.RelationshipType.hasPrerequisite, True),
             "STATIC_LINK": (spdx.RelationshipType.hasStaticLink, False),
             "CONTAINS": (spdx.RelationshipType.contains, False),
+            "CONTAINED_BY": (spdx.RelationshipType.contains, True),
             "DESCRIBES": (spdx.RelationshipType.describes, False),
+            "DESCRIBED_BY": (spdx.RelationshipType.describes, True),
             "DEPENDS_ON": (spdx.RelationshipType.dependsOn, False),
+            "DEPENDENCY_OF": (spdx.RelationshipType.dependsOn, True),
             "DYNAMIC_LINK": (spdx.RelationshipType.hasDynamicLink, False),
             "BUILD_TOOL_OF": (spdx.RelationshipType.usesTool, True),
             "DEV_TOOL_OF": (spdx.RelationshipType.usesTool, True),
