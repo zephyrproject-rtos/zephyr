@@ -52,6 +52,7 @@ import re
 import sys
 import zlib
 from pathlib import Path
+from urllib.parse import urlparse
 
 __version__ = "0.1.0"
 
@@ -317,7 +318,7 @@ def main() -> int:
     parser.add_argument(
         "--inventory",
         required=True,
-        help="Sphinx object inventory (objects.inv): local file path or http(s) URL",
+        help="Sphinx object inventory (objects.inv): local file path or https:// URL",
     )
     parser.add_argument(
         "--base-url",
@@ -330,13 +331,19 @@ def main() -> int:
     if not args.html_dir.is_dir():
         sys.exit(f"error: not a directory: {args.html_dir}")
 
-    if args.inventory.startswith(("http://", "https://")):
+    scheme = urlparse(args.inventory).scheme
+    if scheme == "https":
         from urllib.request import urlopen
 
         with urlopen(args.inventory) as f:
             data = f.read()
+    elif scheme in ("http", "ftp", "file"):
+        sys.exit(f"error: only https:// URLs are supported for --inventory: {args.inventory}")
     else:
-        data = Path(args.inventory).read_bytes()
+        inventory_file = Path(args.inventory).resolve()
+        if not inventory_file.is_file():
+            sys.exit(f"error: not a file: {args.inventory}")
+        data = inventory_file.read_bytes()
 
     inventory = parse_inventory(data)
 
