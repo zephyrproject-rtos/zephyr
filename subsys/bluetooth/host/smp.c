@@ -1043,8 +1043,8 @@ static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 	LOG_DBG("chan %p cid 0x%04x", chan,
 		CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan)->tx.cid);
 
-	/* Channel disconnected callback is always called from a work handler
-	 * so canceling of the timeout work should always succeed.
+	/* The channel disconnected callback and timeout work both run on the
+	 * system workqueue, so canceling the timeout work should always succeed.
 	 */
 	(void)k_work_cancel_delayable(&smp->work);
 
@@ -4978,8 +4978,8 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 	LOG_DBG("chan %p cid 0x%04x", chan,
 		CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan)->tx.cid);
 
-	/* Channel disconnected callback is always called from a work handler
-	 * so canceling of the timeout work should always succeed.
+	/* The channel disconnected callback and timeout work both run on the
+	 * system workqueue, so canceling the timeout work should always succeed.
 	 */
 	(void)k_work_cancel_delayable(&smp->work);
 

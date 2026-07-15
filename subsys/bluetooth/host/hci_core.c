@@ -116,10 +116,44 @@ void bt_tx_irq_raise(void);
 /* Stacks for the threads */
 static void rx_work_handler(struct k_work *work);
 static K_WORK_DEFINE(rx_work, rx_work_handler);
-#if defined(CONFIG_BT_RECV_WORKQ_BT)
+/* General purpose Bluetooth workqueue. It processes incoming low priority HCI
+ * packets (high priority events are handled synchronously in the context of the
+ * bt_recv() caller) as well as the host's internal delayed and immediate work
+ * items, keeping them off the shared system workqueue.
+ */
 static struct k_work_q bt_workq;
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
-#endif /* CONFIG_BT_RECV_WORKQ_BT */
+
+int bt_work_submit(struct k_work *work)
+{
+	return k_work_submit_to_queue(&bt_workq, work);
+}
+
+int bt_work_schedule(struct k_work_delayable *work, k_timeout_t delay)
+{
+	return k_work_schedule_for_queue(&bt_workq, work, delay);
+}
+
+int bt_work_reschedule(struct k_work_delayable *work, k_timeout_t delay)
+{
+	return k_work_reschedule_for_queue(&bt_workq, work, delay);
+}
+
+static void bt_workq_start(void)
+{
+	static bool bt_workq_started;
+
+	if (bt_workq_started) {
+		return;
+	}
+
+	k_work_queue_init(&bt_workq);
+	k_work_queue_start(&bt_workq, rx_thread_stack, CONFIG_BT_RX_STACK_SIZE,
+			   K_PRIO_COOP(CONFIG_BT_RX_PRIO), NULL);
+	k_thread_name_set(bt_workq.thread_id, "BT RX WQ");
+
+	bt_workq_started = true;
+}
 
 static void init_work(struct k_work *work);
 
@@ -4502,11 +4536,8 @@ static void rx_queue_put(struct net_buf *buf)
 {
 	net_buf_slist_put(&bt_dev.rx_queue, buf);
 
-#if defined(CONFIG_BT_RECV_WORKQ_SYS)
-	const int err = k_work_submit(&rx_work);
-#elif defined(CONFIG_BT_RECV_WORKQ_BT)
-	const int err = k_work_submit_to_queue(&bt_workq, &rx_work);
-#endif /* CONFIG_BT_RECV_WORKQ_SYS */
+	const int err = bt_work_submit(&rx_work);
+
 	if (err < 0) {
 		LOG_ERR("Could not submit rx_work: %d", err);
 	}
@@ -4689,12 +4720,7 @@ static void rx_work_handler(struct k_work *work)
 	 * we used a while() loop with a k_yield() statement.
 	 */
 	if (!sys_slist_is_empty(&bt_dev.rx_queue)) {
-
-#if defined(CONFIG_BT_RECV_WORKQ_SYS)
-		err = k_work_submit(&rx_work);
-#elif defined(CONFIG_BT_RECV_WORKQ_BT)
-		err = k_work_submit_to_queue(&bt_workq, &rx_work);
-#endif
+		err = bt_work_submit(&rx_work);
 		if (err < 0) {
 			LOG_ERR("Could not submit rx_work: %d", err);
 		}
@@ -4738,6 +4764,11 @@ int bt_enable(bt_ready_cb_t cb)
 		return -EALREADY;
 	}
 
+	/* Keep the queue alive across enable/disable cycles because delayable
+	 * host work may outlive an individual cycle.
+	 */
+	bt_workq_start();
+
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		err = bt_settings_init();
 		if (err) {
@@ -4762,15 +4793,6 @@ int bt_enable(bt_ready_cb_t cb)
 		k_sem_init(&bt_dev.ncmd_sem, 0, 1);
 	}
 	k_fifo_init(&bt_dev.cmd_tx_queue);
-
-#if defined(CONFIG_BT_RECV_WORKQ_BT)
-	/* RX thread */
-	k_work_queue_init(&bt_workq);
-	k_work_queue_start(&bt_workq, rx_thread_stack,
-			   CONFIG_BT_RX_STACK_SIZE,
-			   K_PRIO_COOP(CONFIG_BT_RX_PRIO), NULL);
-	k_thread_name_set(bt_workq.thread_id, "BT RX WQ");
-#endif
 
 	err = bt_hci_open(bt_dev.hci, bt_recv);
 	if (err) {
@@ -4850,11 +4872,6 @@ int bt_disable(void)
 
 		return err;
 	}
-
-#if defined(CONFIG_BT_RECV_WORKQ_BT)
-	/* Abort RX thread */
-	k_thread_abort(bt_workq.thread_id);
-#endif
 
 	/* Some functions rely on checking this bitfield */
 	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));
