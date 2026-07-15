@@ -70,7 +70,6 @@ int hardware_init(void)
 	esp_cpu_configure_invalid_regions();
 
 	bootloader_clock_configure();
-	esp_clk_tree_initialize();
 
 #ifdef CONFIG_ESP_CONSOLE
 	esp_console_init();

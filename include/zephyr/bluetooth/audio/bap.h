@@ -1090,6 +1090,10 @@ int bt_bap_stream_stop(struct bt_bap_stream *stream);
  * Broadcast source streams cannot be released, but can be deleted by
  * bt_bap_broadcast_source_delete().
  *
+ * If the stream's endpoint is non-NULL and its state is @ref BT_BAP_EP_STATE_IDLE,
+ * the function will reset the stream and endpoint locally if the return value is 0,
+ * but will not send the release command.
+ *
  * @param stream Stream object
  *
  * @return 0 in case of success or negative value in case of error.

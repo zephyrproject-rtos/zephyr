@@ -64,7 +64,7 @@ static void test_decreasing_timeouts(unsigned int num_timeouts)
 
 	for (i = 0; i < num_timeouts; i++) {
 		start = timing_counter_get();
-		z_abort_timeout(&timeout[i]);
+		(void)z_try_abort_timeout(&timeout[i]);
 		finish = timing_counter_get();
 		abort_cycles[i] += timing_cycles_get(&start, &finish);
 	}
@@ -95,7 +95,7 @@ static void test_increasing_timeouts(unsigned int num_timeouts)
 
 	for (i = 0; i < num_timeouts; i++) {
 		start = timing_counter_get();
-		z_abort_timeout(&timeout[i]);
+		(void)z_try_abort_timeout(&timeout[i]);
 		finish = timing_counter_get();
 		abort_cycles[i] += timing_cycles_get(&start, &finish);
 	}
@@ -126,7 +126,7 @@ static void test_interleaved_timeouts(unsigned int num_timeouts)
 
 	for (i = 0; i < num_timeouts; i++) {
 		start = timing_counter_get();
-		z_abort_timeout(&timeout[num_timeouts - i - 1]);
+		(void)z_try_abort_timeout(&timeout[num_timeouts - i - 1]);
 		finish = timing_counter_get();
 		abort_cycles[i] += timing_cycles_get(&start, &finish);
 	}

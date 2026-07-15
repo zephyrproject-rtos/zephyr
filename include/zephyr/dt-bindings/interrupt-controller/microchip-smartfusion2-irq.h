@@ -4,18 +4,50 @@
  */
 
 /**
- * @file microchip-smartfusion2-irq.h
- * @brief SmartFusion2 interrupt binding identifiers.
+ * @file
+ * @brief Microchip SmartFusion2 interrupt controller devicetree macros
+ * @ingroup dt_microchip_smartfusion2_irq
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_MICROCHIP_SMARTFUSION2_IRQ_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_MICROCHIP_SMARTFUSION2_IRQ_H_
 
 /**
- * @defgroup smartfusion2_irq SmartFusion2 Interrupt Bindings
- * @brief SmartFusion2 SoC interrupt assignments.
+ * @defgroup dt_microchip_smartfusion2_irq Microchip SmartFusion2 interrupt controller
+ * @brief Devicetree macros for the Microchip SmartFusion2 interrupt controller.
+ * @ingroup devicetree-interrupt_controller
+ *
+ * This header provides the MSS interrupt numbers for the SmartFusion2 SoC. Interrupts are
+ * routed to the Cortex-M3 NVIC, so an @c interrupts entry takes two cells: the interrupt
+ * number, followed by the NVIC priority.
+ *
+ * @code{.dts}
+ * #include <zephyr/dt-bindings/interrupt-controller/microchip-smartfusion2-irq.h>
+ *
+ * uart0: serial@40000000 {
+ *         compatible = "ns16550";
+ *         reg = <0x40000000 0x1000>;
+ *         interrupts = <SMARTFUSION2_IRQ_UART0 4>;
+ * };
+ * @endcode
+ *
+ * Interrupt numbers follow two naming conventions:
+ *
+ * - <tt>SMARTFUSION2_IRQ_\<peripheral\></tt> is the interrupt number for an MSS peripheral,
+ *   for example @c SMARTFUSION2_IRQ_UART0, @c SMARTFUSION2_IRQ_ETHERNET_MAC, or
+ *   @c SMARTFUSION2_IRQ_TIMER1. Use these in new devicetree sources.
+ * - <tt>M2S_IRQ_\<peripheral\></tt> are legacy aliases retained for the existing in-tree
+ *   sources. Each expands to its @c SMARTFUSION2_IRQ_* counterpart, and several alias the
+ *   same underlying interrupt: @c M2S_IRQ_I2C0_MAIN, @c M2S_IRQ_I2C0_ALERT and
+ *   @c M2S_IRQ_I2C0_SUS all resolve to @c SMARTFUSION2_IRQ_I2C0.
+ *
+ * @c SMARTFUSION2_IRQ_WDOG_WAKEUP and @c SMARTFUSION2_IRQ_RTC_WAKEUP name wakeup sources that
+ * are not connected to the NVIC.
+ *
  * @{
  */
+
+/** @cond INTERNAL_HIDDEN */
 
 /** @brief Default, unspecified interrupt type. */
 #define IRQ_TYPE_NONE                      0
@@ -133,6 +165,8 @@
 #define M2S_IRQ_USB_DMA                   SMARTFUSION2_IRQ_USB_DMA
 /** @brief Legacy alias for GPIO0 interrupt. */
 #define M2S_IRQ_GPIO0                     SMARTFUSION2_IRQ_GPIO0
+
+/** @endcond */
 
 /** @} */
 

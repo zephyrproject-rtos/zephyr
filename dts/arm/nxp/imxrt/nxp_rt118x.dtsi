@@ -472,6 +472,19 @@
 		#io-channel-cells = <1>;
 	};
 
+	vref: vref@42e30000 {
+		compatible = "nxp,vref";
+		regulator-name = "mimxrt118x-vref";
+		reg = <0x42e30000 0x30>;
+		status = "disabled";
+		#nxp,reference-cells = <1>;
+		nxp,buffer-startup-delay-us = <400>;
+		nxp,bandgap-startup-time-us = <400>;
+		nxp,current-compensation-en;
+		nxp,internal-voltage-regulator-en;
+		nxp,chop-oscillator-en;
+	};
+
 	qtmr1: timer@2690000 {
 		compatible = "nxp,imx-qtmr";
 		reg = <0x2690000 0x4000>;

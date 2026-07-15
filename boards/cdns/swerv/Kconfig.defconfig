@@ -23,7 +23,7 @@ config NUM_IRQS
 	default 288
 
 config SWERV_PIC_MAX_GENERIC_IRQ
-	default 31
+	default 32
 
 config WHISPER_TARGET
 	default y
@@ -38,7 +38,7 @@ config NUM_IRQS
 	default 288
 
 config SWERV_PIC_MAX_GENERIC_IRQ
-	default 31
+	default 32
 
 config WHISPER_TARGET
 	default y
@@ -59,7 +59,7 @@ config NUM_IRQS
 	default 288
 
 config SWERV_PIC_MAX_GENERIC_IRQ
-	default 31
+	default 32
 
 config WHISPER_TARGET
 	default y

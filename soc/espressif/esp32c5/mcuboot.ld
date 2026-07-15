@@ -337,6 +337,16 @@ SECTIONS
     _bss_end = ABSOLUTE(.);
   } > dram_seg
 
+  /* Sleep support code links into the bootloader and keeps its state in
+   * RTC-retained sections. The bootloader has no RTC-slow region, so collect
+   * them into the data segment to keep the symbols defined.
+   */
+  .rtc.data (NOLOAD) :
+  {
+    *(.rtc.force_slow .rtc.force_slow.*)
+    *(.rtc.force_fast .rtc.force_fast.*)
+  } > dram_seg
+
   /* linker rel sections*/
   #include <zephyr/linker/rel-sections.ld>
 

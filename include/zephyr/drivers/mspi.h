@@ -30,7 +30,7 @@ extern "C" {
  *        controllers.
  * @defgroup mspi_interface MSPI
  * @since 3.7
- * @version 0.8.0
+ * @version 0.9.0
  * @ingroup io_interfaces
  * @{
  */
@@ -662,6 +662,58 @@ static inline int z_impl_mspi_transceive(const struct device *controller,
 	}
 
 	return api->transceive(controller, dev_id, req);
+}
+
+/**
+ * @brief Transfer data over MSPI without command or address phases.
+ *
+ * Convenience wrapper over mspi_transceive() for transfers that consist
+ * of a data phase only. It builds the @ref mspi_xfer from caller-owned
+ * packets and enforces the data-only contract
+ * (@ref mspi_xfer.cmd_length and @ref mspi_xfer.addr_length
+ * are 0). @ref mspi_xfer_packet.cmd and @ref mspi_xfer_packet.address
+ * are ignored by the driver.
+ *
+ * This is the intended transfer call where the hardware cannot distinguish
+ * a command byte from a data byte and only @ref mspi_xfer_packet.dir,
+ * @ref mspi_xfer_packet.num_bytes and @ref mspi_xfer_packet.data_buf
+ * are significant. It may equally be used by a controller for
+ * data-only transactions.
+ *
+ * The packets remain caller owned and must stay valid until the
+ * transfer completes when @p async is true.
+ *
+ * @param controller Pointer to the device structure for the driver instance.
+ * @param dev_id Pointer to the device ID structure from a device.
+ * @param packets Transfer packets.
+ * @param num_packet Number of transfer packets.
+ * @param xfer_mode Transfer mode (PIO/DMA).
+ * @param async Async or sync transfer.
+ * @param timeout Transfer timeout value(ms).
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP
+ * @retval -EIO General input / output error, failed to send over the bus.
+ */
+static inline int mspi_transceive_data_only(const struct device *controller,
+					    const struct mspi_dev_id *dev_id,
+					    const struct mspi_xfer_packet *packets,
+					    uint32_t num_packet,
+					    enum mspi_xfer_mode xfer_mode,
+					    bool async,
+					    uint32_t timeout)
+{
+	struct mspi_xfer xfer = {
+		.async       = async,
+		.xfer_mode   = xfer_mode,
+		.cmd_length  = 0,
+		.addr_length = 0,
+		.packets     = packets,
+		.num_packet  = num_packet,
+		.timeout     = timeout,
+	};
+
+	return mspi_transceive(controller, dev_id, &xfer);
 }
 
 /** @} */

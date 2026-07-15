@@ -16,7 +16,7 @@
 #include <stdarg.h>
 
 /**
- * @typedef exception_dump_hook_t
+ * @typedef arch_exception_dump_hook_t
  * @brief Exception dump output callback.
  *
  * Called for each exception dump print with printf-style format and
@@ -28,7 +28,7 @@
 typedef void (*arch_exception_dump_hook_t)(const char *format, va_list args);
 
 /**
- * @typedef exception_drain_hook_t
+ * @typedef arch_exception_drain_hook_t
  * @brief Exception dump flush callback.
  *
  * Called when exception dump output should be drained or reset.
@@ -126,12 +126,16 @@ static inline void arch_exception_call_dump_hook(const char *format, ...)
 #include <zephyr/arch/xtensa/exception.h>
 #elif defined(CONFIG_MIPS)
 #include <zephyr/arch/mips/exception.h>
+#elif defined(CONFIG_OPENRISC)
+#include <zephyr/arch/openrisc/exception.h>
 #elif defined(CONFIG_ARCH_POSIX)
 #include <zephyr/arch/posix/exception.h>
 #elif defined(CONFIG_SPARC)
 #include <zephyr/arch/sparc/exception.h>
 #elif defined(CONFIG_RX)
 #include <zephyr/arch/rx/exception.h>
+#elif defined(CONFIG_ARCH_IS_SET)
+#error "The selected architecture is missing from this dispatch header"
 #endif
 
 #endif /* ZEPHYR_INCLUDE_ARCH_EXCEPTION_H_ */

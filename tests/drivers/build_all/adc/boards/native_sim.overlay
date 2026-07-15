@@ -139,6 +139,18 @@
 				reg = <0xc>;
 				#io-channel-cells = <1>;
 			};
+
+			test_i2c_tla2528: tla2528@d {
+				compatible = "ti,tla2528";
+				reg = <0xd>;
+				#io-channel-cells = <1>;
+
+				test_i2c_tla2528_adc: adc {
+					compatible = "ti,tla2528-adc";
+					status = "okay";
+					#io-channel-cells = <1>;
+				};
+			};
 		};
 
 		test_spi: spi@33334444 {

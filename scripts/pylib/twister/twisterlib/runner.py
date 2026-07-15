@@ -75,81 +75,128 @@ from anytree import Node, RenderTree
 
 logger = logging.getLogger('twister')
 
+# Instance reason set when a pipeline stage assigns an illegal TwisterStatus
+# (StatusAttributeError). Shared by every stage handler in ProjectBuilder.process.
+INCORRECT_STATUS_REASON = 'Incorrect status assignment'
+# Instance reason set when CMake dt/kconfig filtering excludes an instance.
+RUNTIME_FILTER_REASON = 'runtime filter'
+
+
+class AtomicCounter:
+    '''Data descriptor for a lock-protected multiprocessing counter.
+
+    Reading, writing and incrementing all take the backing Value's lock so
+    the counter is safe to share across the ProjectBuilder worker processes.
+    The Value itself is created eagerly by ExecutionCounter.__init__ (before
+    the object is forked into workers) and stored on the instance under a
+    private, underscore-prefixed name.
+    '''
+    def __set_name__(self, owner, name):
+        self.attr = '_' + name
+
+    def _value(self, obj):
+        return getattr(obj, self.attr)
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        value = self._value(obj)
+        with value.get_lock():
+            return value.value
+
+    def __set__(self, obj, value):
+        shared = self._value(obj)
+        with shared.get_lock():
+            shared.value = value
+
+    def increment(self, obj, by=1):
+        shared = self._value(obj)
+        with shared.get_lock():
+            shared.value += by
+
 
 class ExecutionCounter:
+    '''
+    Most of the stats are at test instance level
+    Except that case statistics are for cases of ALL test instances
+
+    total = yaml test scenarios * applicable platforms
+    done := instances that reached report_out stage of the pipeline
+    done = filtered_configs + passed + failed + error
+    completed = done - filtered_static
+    filtered_configs = filtered_runtime + filtered_static
+
+    pass rate = passed / (total - filtered_configs)
+    case pass rate = passed_cases / (cases - filtered_cases - skipped_cases)
+
+    Every counter below is an AtomicCounter descriptor. In addition to the
+    locked attribute (``results.passed``, ``results.passed = n``) each one
+    exposes a ``<name>_increment(value=1)`` method, synthesised on demand by
+    __getattr__.
+    '''
+    # instances that go through the pipeline, updated by report_out()
+    done = AtomicCounter()
+    iteration = AtomicCounter()
+    # instances that actually executed and passed, updated by report_out()
+    passed = AtomicCounter()
+    # instances that are built but not runnable, updated by report_out()
+    notrun = AtomicCounter()
+    # static filter + runtime filter + build skipped,
+    # updated by update_counting_before_pipeline() and report_out()
+    filtered_configs = AtomicCounter()
+    # cmake filter + build skipped, updated by report_out()
+    filtered_runtime = AtomicCounter()
+    # static filtered at yaml parsing time,
+    # updated by update_counting_before_pipeline()
+    filtered_static = AtomicCounter()
+    # updated by report_out() in pipeline
+    error = AtomicCounter()
+    failed = AtomicCounter()
+    skipped = AtomicCounter()
+    # initialized to number of test instances
+    total = AtomicCounter()
+
+    #######################################
+    # TestCase counters for all instances #
+    #######################################
+    # updated in report_out
+    cases = AtomicCounter()
+    # updated by update_counting_before_pipeline() and report_out()
+    skipped_cases = AtomicCounter()
+    filtered_cases = AtomicCounter()
+    # updated by report_out() in pipeline
+    passed_cases = AtomicCounter()
+    notrun_cases = AtomicCounter()
+    failed_cases = AtomicCounter()
+    error_cases = AtomicCounter()
+    blocked_cases = AtomicCounter()
+    # Incorrect statuses
+    none_cases = AtomicCounter()
+    started_cases = AtomicCounter()
+
+    warnings = AtomicCounter()
+
     def __init__(self, total=0):
-        '''
-        Most of the stats are at test instance level
-        Except that case statistics are for cases of ALL test instances
-
-        total = yaml test scenarios * applicable platforms
-        done := instances that reached report_out stage of the pipeline
-        done = filtered_configs + passed + failed + error
-        completed = done - filtered_static
-        filtered_configs = filtered_runtime + filtered_static
-
-        pass rate = passed / (total - filtered_configs)
-        case pass rate = passed_cases / (cases - filtered_cases - skipped_cases)
-        '''
-        # instances that go through the pipeline
-        # updated by report_out()
-        self._done = Value('i', 0)
-
-        # iteration
-        self._iteration = Value('i', 0)
-
-        # instances that actually executed and passed
-        # updated by report_out()
-        self._passed = Value('i', 0)
-
-        # instances that are built but not runnable
-        # updated by report_out()
-        self._notrun = Value('i', 0)
-
-        # static filter + runtime filter + build skipped
-        # updated by update_counting_before_pipeline() and report_out()
-        self._filtered_configs = Value('i', 0)
-
-        # cmake filter + build skipped
-        # updated by report_out()
-        self._filtered_runtime = Value('i', 0)
-
-        # static filtered at yaml parsing time
-        # updated by update_counting_before_pipeline()
-        self._filtered_static = Value('i', 0)
-
-        # updated by report_out() in pipeline
-        self._error = Value('i', 0)
-        self._failed = Value('i', 0)
-        self._skipped = Value('i', 0)
-
-        # initialized to number of test instances
-        self._total = Value('i', total)
-
-        #######################################
-        # TestCase counters for all instances #
-        #######################################
-        # updated in report_out
-        self._cases = Value('i', 0)
-
-        # updated by update_counting_before_pipeline() and report_out()
-        self._skipped_cases = Value('i', 0)
-        self._filtered_cases = Value('i', 0)
-
-        # updated by report_out() in pipeline
-        self._passed_cases = Value('i', 0)
-        self._notrun_cases = Value('i', 0)
-        self._failed_cases = Value('i', 0)
-        self._error_cases = Value('i', 0)
-        self._blocked_cases = Value('i', 0)
-
-        # Incorrect statuses
-        self._none_cases = Value('i', 0)
-        self._started_cases = Value('i', 0)
-
-        self._warnings = Value('i', 0)
-
+        # Create every counter's shared Value eagerly, before this object is
+        # forked into worker processes, so all processes share the same memory.
+        for descriptor in type(self).__dict__.values():
+            if isinstance(descriptor, AtomicCounter):
+                setattr(self, descriptor.attr, Value('i', 0))
+        self.total = total
         self.lock = Lock()
+
+    def __getattr__(self, name):
+        # Synthesise `<counter>_increment(value=1)` for each AtomicCounter.
+        # __getattr__ only fires for attributes not found normally, so this
+        # never shadows the descriptors or real methods above.
+        suffix = '_increment'
+        if name.endswith(suffix):
+            descriptor = type(self).__dict__.get(name[:-len(suffix)])
+            if isinstance(descriptor, AtomicCounter):
+                return lambda value=1: descriptor.increment(self, value)
+        raise AttributeError(
+            f"{type(self).__name__!r} object has no attribute {name!r}"
+        )
 
     @staticmethod
     def _find_number_length(n):
@@ -209,313 +256,6 @@ class ExecutionCounter:
         for pre, _, node in RenderTree(root):
             print(f"{pre}{node.name}")
 
-    @property
-    def warnings(self):
-        with self._warnings.get_lock():
-            return self._warnings.value
-
-    @warnings.setter
-    def warnings(self, value):
-        with self._warnings.get_lock():
-            self._warnings.value = value
-
-    def warnings_increment(self, value=1):
-        with self._warnings.get_lock():
-            self._warnings.value += value
-
-    @property
-    def cases(self):
-        with self._cases.get_lock():
-            return self._cases.value
-
-    @cases.setter
-    def cases(self, value):
-        with self._cases.get_lock():
-            self._cases.value = value
-
-    def cases_increment(self, value=1):
-        with self._cases.get_lock():
-            self._cases.value += value
-
-    @property
-    def skipped_cases(self):
-        with self._skipped_cases.get_lock():
-            return self._skipped_cases.value
-
-    @skipped_cases.setter
-    def skipped_cases(self, value):
-        with self._skipped_cases.get_lock():
-            self._skipped_cases.value = value
-
-    def skipped_cases_increment(self, value=1):
-        with self._skipped_cases.get_lock():
-            self._skipped_cases.value += value
-
-    @property
-    def filtered_cases(self):
-        with self._filtered_cases.get_lock():
-            return self._filtered_cases.value
-
-    @filtered_cases.setter
-    def filtered_cases(self, value):
-        with self._filtered_cases.get_lock():
-            self._filtered_cases.value = value
-
-    def filtered_cases_increment(self, value=1):
-        with self._filtered_cases.get_lock():
-            self._filtered_cases.value += value
-
-    @property
-    def passed_cases(self):
-        with self._passed_cases.get_lock():
-            return self._passed_cases.value
-
-    @passed_cases.setter
-    def passed_cases(self, value):
-        with self._passed_cases.get_lock():
-            self._passed_cases.value = value
-
-    def passed_cases_increment(self, value=1):
-        with self._passed_cases.get_lock():
-            self._passed_cases.value += value
-
-    @property
-    def notrun_cases(self):
-        with self._notrun_cases.get_lock():
-            return self._notrun_cases.value
-
-    @notrun_cases.setter
-    def notrun_cases(self, value):
-        with self._notrun.get_lock():
-            self._notrun.value = value
-
-    def notrun_cases_increment(self, value=1):
-        with self._notrun_cases.get_lock():
-            self._notrun_cases.value += value
-
-    @property
-    def failed_cases(self):
-        with self._failed_cases.get_lock():
-            return self._failed_cases.value
-
-    @failed_cases.setter
-    def failed_cases(self, value):
-        with self._failed_cases.get_lock():
-            self._failed_cases.value = value
-
-    def failed_cases_increment(self, value=1):
-        with self._failed_cases.get_lock():
-            self._failed_cases.value += value
-
-    @property
-    def error_cases(self):
-        with self._error_cases.get_lock():
-            return self._error_cases.value
-
-    @error_cases.setter
-    def error_cases(self, value):
-        with self._error_cases.get_lock():
-            self._error_cases.value = value
-
-    def error_cases_increment(self, value=1):
-        with self._error_cases.get_lock():
-            self._error_cases.value += value
-
-    @property
-    def blocked_cases(self):
-        with self._blocked_cases.get_lock():
-            return self._blocked_cases.value
-
-    @blocked_cases.setter
-    def blocked_cases(self, value):
-        with self._blocked_cases.get_lock():
-            self._blocked_cases.value = value
-
-    def blocked_cases_increment(self, value=1):
-        with self._blocked_cases.get_lock():
-            self._blocked_cases.value += value
-
-    @property
-    def none_cases(self):
-        with self._none_cases.get_lock():
-            return self._none_cases.value
-
-    @none_cases.setter
-    def none_cases(self, value):
-        with self._none_cases.get_lock():
-            self._none_cases.value = value
-
-    def none_cases_increment(self, value=1):
-        with self._none_cases.get_lock():
-            self._none_cases.value += value
-
-    @property
-    def started_cases(self):
-        with self._started_cases.get_lock():
-            return self._started_cases.value
-
-    @started_cases.setter
-    def started_cases(self, value):
-        with self._started_cases.get_lock():
-            self._started_cases.value = value
-
-    def started_cases_increment(self, value=1):
-        with self._started_cases.get_lock():
-            self._started_cases.value += value
-
-    @property
-    def skipped(self):
-        with self._skipped.get_lock():
-            return self._skipped.value
-
-    @skipped.setter
-    def skipped(self, value):
-        with self._skipped.get_lock():
-            self._skipped.value = value
-
-    def skipped_increment(self, value=1):
-        with self._skipped.get_lock():
-            self._skipped.value += value
-
-    @property
-    def error(self):
-        with self._error.get_lock():
-            return self._error.value
-
-    @error.setter
-    def error(self, value):
-        with self._error.get_lock():
-            self._error.value = value
-
-    def error_increment(self, value=1):
-        with self._error.get_lock():
-            self._error.value += value
-
-    @property
-    def iteration(self):
-        with self._iteration.get_lock():
-            return self._iteration.value
-
-    @iteration.setter
-    def iteration(self, value):
-        with self._iteration.get_lock():
-            self._iteration.value = value
-
-    def iteration_increment(self, value=1):
-        with self._iteration.get_lock():
-            self._iteration.value += value
-
-    @property
-    def done(self):
-        with self._done.get_lock():
-            return self._done.value
-
-    @done.setter
-    def done(self, value):
-        with self._done.get_lock():
-            self._done.value = value
-
-    def done_increment(self, value=1):
-        with self._done.get_lock():
-            self._done.value += value
-
-    @property
-    def passed(self):
-        with self._passed.get_lock():
-            return self._passed.value
-
-    @passed.setter
-    def passed(self, value):
-        with self._passed.get_lock():
-            self._passed.value = value
-
-    def passed_increment(self, value=1):
-        with self._passed.get_lock():
-            self._passed.value += value
-
-    @property
-    def notrun(self):
-        with self._notrun.get_lock():
-            return self._notrun.value
-
-    @notrun.setter
-    def notrun(self, value):
-        with self._notrun.get_lock():
-            self._notrun.value = value
-
-    def notrun_increment(self, value=1):
-        with self._notrun.get_lock():
-            self._notrun.value += value
-
-    @property
-    def filtered_configs(self):
-        with self._filtered_configs.get_lock():
-            return self._filtered_configs.value
-
-    @filtered_configs.setter
-    def filtered_configs(self, value):
-        with self._filtered_configs.get_lock():
-            self._filtered_configs.value = value
-
-    def filtered_configs_increment(self, value=1):
-        with self._filtered_configs.get_lock():
-            self._filtered_configs.value += value
-
-    @property
-    def filtered_static(self):
-        with self._filtered_static.get_lock():
-            return self._filtered_static.value
-
-    @filtered_static.setter
-    def filtered_static(self, value):
-        with self._filtered_static.get_lock():
-            self._filtered_static.value = value
-
-    def filtered_static_increment(self, value=1):
-        with self._filtered_static.get_lock():
-            self._filtered_static.value += value
-
-    @property
-    def filtered_runtime(self):
-        with self._filtered_runtime.get_lock():
-            return self._filtered_runtime.value
-
-    @filtered_runtime.setter
-    def filtered_runtime(self, value):
-        with self._filtered_runtime.get_lock():
-            self._filtered_runtime.value = value
-
-    def filtered_runtime_increment(self, value=1):
-        with self._filtered_runtime.get_lock():
-            self._filtered_runtime.value += value
-
-    @property
-    def failed(self):
-        with self._failed.get_lock():
-            return self._failed.value
-
-    @failed.setter
-    def failed(self, value):
-        with self._failed.get_lock():
-            self._failed.value = value
-
-    def failed_increment(self, value=1):
-        with self._failed.get_lock():
-            self._failed.value += value
-
-    @property
-    def total(self):
-        with self._total.get_lock():
-            return self._total.value
-
-    @total.setter
-    def total(self, value):
-        with self._total.get_lock():
-            self._total.value = value
-
-    def total_increment(self, value=1):
-        with self._total.get_lock():
-            self._total.value += value
 
 class CMake:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
@@ -999,7 +739,7 @@ class ProjectBuilder(FilterBuilder):
                     if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
                         logger.debug(f"filtering {self.instance.name}")
                         self.instance.status = TwisterStatus.FILTER
-                        self.instance.reason = "runtime filter"
+                        self.instance.reason = RUNTIME_FILTER_REASON
                         results.filtered_runtime_increment()
                         self.instance.add_missing_case_status(TwisterStatus.FILTER)
                         next_op = 'report'
@@ -1008,7 +748,7 @@ class ProjectBuilder(FilterBuilder):
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
+                reason = INCORRECT_STATUS_REASON
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
@@ -1032,7 +772,7 @@ class ProjectBuilder(FilterBuilder):
                     if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
                         logger.debug(f"filtering {self.instance.name}")
                         self.instance.status = TwisterStatus.FILTER
-                        self.instance.reason = "runtime filter"
+                        self.instance.reason = RUNTIME_FILTER_REASON
                         results.filtered_runtime_increment()
                         self.instance.add_missing_case_status(TwisterStatus.FILTER)
                         next_op = 'report'
@@ -1041,7 +781,7 @@ class ProjectBuilder(FilterBuilder):
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
+                reason = INCORRECT_STATUS_REASON
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
@@ -1090,7 +830,7 @@ class ProjectBuilder(FilterBuilder):
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
+                reason = INCORRECT_STATUS_REASON
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
@@ -1114,7 +854,7 @@ class ProjectBuilder(FilterBuilder):
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
+                reason = INCORRECT_STATUS_REASON
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
@@ -1145,7 +885,7 @@ class ProjectBuilder(FilterBuilder):
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
+                reason = INCORRECT_STATUS_REASON
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
@@ -1174,7 +914,7 @@ class ProjectBuilder(FilterBuilder):
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
+                reason = INCORRECT_STATUS_REASON
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
@@ -1213,7 +953,7 @@ class ProjectBuilder(FilterBuilder):
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                reason = f"Incorrect status assignment on {op}"
+                reason = f"{INCORRECT_STATUS_REASON} on {op}"
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
@@ -1242,7 +982,7 @@ class ProjectBuilder(FilterBuilder):
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
+                reason = INCORRECT_STATUS_REASON
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = None
@@ -1263,7 +1003,7 @@ class ProjectBuilder(FilterBuilder):
             except StatusAttributeError as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
+                reason = INCORRECT_STATUS_REASON
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
 
@@ -1598,6 +1338,13 @@ class ProjectBuilder(FilterBuilder):
                     results.warnings_increment(1)
 
 
+    @staticmethod
+    def _colored_count(count, status, always=False):
+        # Right-aligned, 4-wide count coloured with the status colour when it is
+        # non-zero (or `always`), otherwise reset to neutral.
+        color = TwisterStatus.get_color(status) if always or count > 0 else Fore.RESET
+        return f"{color}{count:>4}{Fore.RESET}"
+
     def report_out(self, results):
         total_to_do = results.total - results.filtered_static
         total_tests_width = len(str(total_to_do))
@@ -1697,29 +1444,14 @@ class ProjectBuilder(FilterBuilder):
                 f"{unfiltered:>4}/{total_to_do:>4}"
                 f"{Fore.RESET}  {completed_perc:>2}%"
             )
-            notrun_section = (
-                f"{TwisterStatus.get_color(TwisterStatus.NOTRUN)}{results.notrun:>4}{Fore.RESET}"
+            notrun_section = self._colored_count(
+                results.notrun, TwisterStatus.NOTRUN, always=True
             )
-            filtered_section_color = (
-                TwisterStatus.get_color(TwisterStatus.SKIP)
-                if results.filtered_configs > 0
-                else Fore.RESET
+            filtered_section = self._colored_count(
+                results.filtered_configs, TwisterStatus.SKIP
             )
-            filtered_section = (
-                f"{filtered_section_color}{results.filtered_configs:>4}{Fore.RESET}"
-            )
-            failed_section_color = (
-                TwisterStatus.get_color(TwisterStatus.FAIL) if results.failed > 0 else Fore.RESET
-            )
-            failed_section = (
-                f"{failed_section_color}{results.failed:>4}{Fore.RESET}"
-            )
-            error_section_color = (
-                TwisterStatus.get_color(TwisterStatus.ERROR) if results.error > 0 else Fore.RESET
-            )
-            error_section = (
-                f"{error_section_color}{results.error:>4}{Fore.RESET}"
-            )
+            failed_section = self._colored_count(results.failed, TwisterStatus.FAIL)
+            error_section = self._colored_count(results.error, TwisterStatus.ERROR)
             sys.stdout.write(
                 f"INFO    - Total complete: {complete_section}"
                 f"  built (not run): {notrun_section},"

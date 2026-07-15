@@ -5473,13 +5473,17 @@ static void l2cap_br_retransmit_i_frames(struct bt_l2cap_br_chan *br_chan)
 {
 	struct bt_l2cap_br_window *tx_win, *next;
 
-	if (atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAMES)) {
+	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAMES)) {
 		LOG_WRN("Retransmit-I-frames is ongoing");
 		return;
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&br_chan->_pdu_outstanding, tx_win, next, node) {
 		tx_win->retransmit = true;
+	}
+
+	if (sys_slist_peek_head(&br_chan->_pdu_outstanding) != NULL) {
+		atomic_set_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAMES);
 	}
 }
 

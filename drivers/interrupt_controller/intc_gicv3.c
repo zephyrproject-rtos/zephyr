@@ -522,7 +522,7 @@ static void gicv3_cpuif_init(void)
 	 * Check if system interface can be enabled.
 	 * 'icc_sre_el3' needs to be configured at 'EL3'
 	 * to allow access to 'icc_sre_el1' at 'EL1'
-	 * eg: z_arch_el3_plat_init can be used by platform.
+	 * eg: z_arm64_el3_plat_init can be used by platform.
 	 */
 	icc_sre = read_sysreg(ICC_SRE_EL1);
 

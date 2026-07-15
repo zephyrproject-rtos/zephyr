@@ -284,9 +284,6 @@ extern "C" {
 #define sys_port_trace_k_event_wait_exit(event, events, ret)                                       \
 	sys_trace_k_event_wait_exit(event, events, ret)
 
-#define sys_trace_sys_init_enter(...)
-#define sys_trace_sys_init_exit(...)
-
 void sys_trace_idle(void);
 void sys_trace_idle_exit(void);
 void sys_trace_isr_enter(void);
@@ -641,6 +638,10 @@ void sys_trace_net_rx_time(struct net_pkt *pkt, uint32_t end_time);
 void sys_trace_net_tx_time(struct net_pkt *pkt, uint32_t end_time);
 
 void sys_trace_named_event(const char *name, uint32_t arg0, uint32_t arg1);
+
+struct init_entry;
+void sys_trace_sys_init_enter(const struct init_entry *entry, int level);
+void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int result);
 
 /* GPIO */
 struct gpio_callback;

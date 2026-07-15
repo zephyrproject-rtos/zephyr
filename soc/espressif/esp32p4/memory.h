@@ -75,9 +75,24 @@
  * cache is at the bottom, so usable RAM ends at the ROM reserved region.
  */
 #if defined(CONFIG_SOC_ESP32P4_REV_1_3)
-#define DRAM_USER_END (HPSRAM_BASE + HPSRAM_TOTAL_SIZE - L2_CACHE_SIZE)
+#define DRAM_HW_USER_END (HPSRAM_BASE + HPSRAM_TOTAL_SIZE - L2_CACHE_SIZE)
 #else
-#define DRAM_USER_END DRAM_ROM_RESERVED_START
+#define DRAM_HW_USER_END DRAM_ROM_RESERVED_START
+#endif
+
+/* Non-cacheable window. The __nocache section is placed here at its normal
+ * (cached, DMA-reachable) SRAM address; a PMA NAPOT entry configured at boot
+ * marks the region non-cacheable. NAPOT requires the region to be a power of
+ * two and aligned to its own size, so the block is aligned down from the top
+ * of usable RAM. Its cached bytes are removed from DRAM_USER_END so no other
+ * section can use them. Size comes from the sramhp_nocache devicetree node.
+ */
+#if defined(CONFIG_NOCACHE_MEMORY)
+#define NOCACHE_SIZE  DT_REG_SIZE(DT_NODELABEL(sramhp_nocache))
+#define NOCACHE_START (((DRAM_HW_USER_END - NOCACHE_SIZE)) & ~((NOCACHE_SIZE) - 1))
+#define DRAM_USER_END NOCACHE_START
+#else
+#define DRAM_USER_END DRAM_HW_USER_END
 #endif
 
 /* Stack pointer for early startup (__start) */
@@ -89,18 +104,24 @@
 #define BOOTLOADER_DRAM_LOADER_SEG_LEN 0x0C00
 
 /* Upper limit of SRAM available for MCUboot bootloader segments */
+#if defined(CONFIG_SOC_ESP32P4_REV_1_3)
+#define BOOTLOADER_USER_DRAM_END (0x4ff3abd0 - BOOTLOADER_STACK_OVERHEAD)
+#define BOOTLOADER_SEG_FLOOR     HPSRAM_BASE
+#else
 #define BOOTLOADER_USER_DRAM_END (DRAM_USER_END - BOOTLOADER_STACK_OVERHEAD)
+#define BOOTLOADER_SEG_FLOOR     (HPSRAM_START + ICACHE_SIZE)
+#endif
 
-/* MCUboot iram/dram segments: placed in upper half of SRAM, below dram_loader_seg.
- * On unified-address SoCs (P4, C5, C6, H2) these are the same physical memory.
- * The lower half is reserved for the application image.
+/* MCUboot iram/dram segments: placed below dram_loader_seg, down to
+ * BOOTLOADER_SEG_FLOOR. On unified-address SoCs (P4, C5, C6, H2) these are the
+ * same physical memory. The remaining SRAM is reserved for the application.
  */
 #define BOOTLOADER_IRAM_LOADER_SEG_START \
 	(BOOTLOADER_USER_DRAM_END - BOOTLOADER_IRAM_LOADER_SEG_LEN)
 #define BOOTLOADER_DRAM_LOADER_SEG_START \
 	(BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_DRAM_LOADER_SEG_LEN)
 #define BOOTLOADER_IRAM_SEG_TARGET_LEN \
-	((BOOTLOADER_DRAM_LOADER_SEG_START - (HPSRAM_START + ICACHE_SIZE)) / 4)
+	((BOOTLOADER_DRAM_LOADER_SEG_START - BOOTLOADER_SEG_FLOOR) / 4)
 #define BOOTLOADER_IRAM_SEG_START \
 	ALIGN_UP(BOOTLOADER_DRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_TARGET_LEN, 0x100)
 #define BOOTLOADER_IRAM_SEG_LEN \

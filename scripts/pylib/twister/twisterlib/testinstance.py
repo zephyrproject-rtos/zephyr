@@ -14,7 +14,6 @@ import logging
 import os
 import random
 import re
-from enum import Enum
 
 from twisterlib.constants import (
     PYTEST_HARNESSES,
@@ -24,7 +23,7 @@ from twisterlib.constants import (
     SUPPORTED_SIMS_WITH_EXEC,
 )
 from twisterlib.environment import TwisterEnv
-from twisterlib.error import BuildError, StatusAttributeError, TwisterException
+from twisterlib.error import BuildError, TwisterException
 from twisterlib.handlers import (
     BinaryHandler,
     DeviceHandler,
@@ -38,13 +37,13 @@ from twisterlib.hardwaremap import HardwareMap
 from twisterlib.hardwareutil import HardwareReservationManager
 from twisterlib.platform import Platform
 from twisterlib.size_calc import SizeCalculator
-from twisterlib.statuses import TwisterStatus
+from twisterlib.statuses import StatusMixin, TwisterStatus
 from twisterlib.testsuite import TestCase, TestSuite
 
 logger = logging.getLogger('twister')
 
 
-class TestInstance:
+class TestInstance(StatusMixin):
     """Class representing the execution of a particular TestSuite on a platform
 
     @param test The TestSuite object we want to build/execute
@@ -128,19 +127,6 @@ class TestInstance:
                                     quoting = csv.QUOTE_NONNUMERIC)
                 cw.writeheader()
                 cw.writerows(self.recording)
-
-    @property
-    def status(self) -> TwisterStatus:
-        return self._status
-
-    @status.setter
-    def status(self, value : TwisterStatus) -> None:
-        # Check for illegal assignments by value
-        try:
-            key = value.name if isinstance(value, Enum) else value
-            self._status = TwisterStatus[key]
-        except KeyError as err:
-            raise StatusAttributeError(self.__class__, value) from err
 
     def add_filter(self, reason, filter_type):
         self.filters.append({'type': filter_type, 'reason': reason })

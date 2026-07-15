@@ -122,29 +122,33 @@ static int spi_numaker_usci_txrx(const struct device *dev, uint8_t spi_dfs)
 		USPI_WRITE_TX(dev_cfg->uspi, 0x00U);
 	}
 
-	if (spi_context_rx_on(ctx)) {
-		if (!USPI_GET_RX_EMPTY_FLAG(dev_cfg->uspi)) {
-			rx_frame = USPI_READ_RX(dev_cfg->uspi);
-			if (ctx->rx_buf != NULL) {
-				if (spi_dfs > 2) {
-					UNALIGNED_PUT(rx_frame, (uint32_t *)data->ctx.rx_buf);
-				} else if (spi_dfs > 1) {
-					UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
-				} else {
-					UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
-				}
-			}
-			spi_context_update_rx(ctx, spi_dfs, 1);
-			LOG_DBG("%s --> RX [0x%x] done", __func__, rx_frame);
+	/* One TX frame always yields exactly one RX frame. Waiting for
+	 * RX-not-empty keeps TX/RX aligned regardless of the shallow USCI
+	 * buffer depth (unlike the deep-FIFO SPI, we cannot pipeline).
+	 */
+	time_out_cnt = SystemCoreClock;
+	while (USPI_GET_RX_EMPTY_FLAG(dev_cfg->uspi)) {
+		if (--time_out_cnt == 0) {
+			LOG_ERR("Wait for USCI_SPI RX time-out");
+			return -EIO;
 		}
 	}
 
-	time_out_cnt = SystemCoreClock;
-	while (dev_cfg->uspi->PROTSTS & USPI_PROTSTS_BUSY_Msk) {
-		if (--time_out_cnt == 0) {
-			LOG_ERR("Wait for USCI_SPI time-out");
-			return -EIO;
+	rx_frame = USPI_READ_RX(dev_cfg->uspi);
+
+	/* Store received word only if a RX buffer is present */
+	if (spi_context_rx_on(ctx)) {
+		if (ctx->rx_buf != NULL) {
+			if (spi_dfs > 2) {
+				UNALIGNED_PUT(rx_frame, (uint32_t *)data->ctx.rx_buf);
+			} else if (spi_dfs > 1) {
+				UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
+			} else {
+				UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
+			}
 		}
+		spi_context_update_rx(ctx, spi_dfs, 1);
+		LOG_DBG("%s --> RX [0x%x] done", __func__, rx_frame);
 	}
 
 	LOG_DBG("%s --> exit", __func__);
@@ -180,12 +184,6 @@ static int spi_numaker_usci_transceive(const struct device *dev, const struct sp
 		break;
 	case 16:
 		spi_dfs = 2;
-		break;
-	case 24:
-		spi_dfs = 3;
-		break;
-	case 32:
-		spi_dfs = 4;
 		break;
 	default:
 		spi_dfs = 0;

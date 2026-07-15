@@ -5,7 +5,6 @@
  */
 
 #define DT_DRV_COMPAT atmel_sam0_nvmctrl
-#define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -17,6 +16,9 @@ LOG_MODULE_REGISTER(flash_sam0);
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <string.h>
+#include "flash_priv.h"
+
+#define SOC_NV_FLASH_NODE SOC_NV_FLASH_CHILD_NODE(0)
 
 #define FLASH_WRITE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
 BUILD_ASSERT((FLASH_WRITE_BLK_SZ % sizeof(uint32_t)) == 0, "unsupported write-block-size");

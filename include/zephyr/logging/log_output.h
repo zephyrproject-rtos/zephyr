@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Header file for the log output formatter.
+ * @ingroup log_output
+ */
+
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_OUTPUT_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_OUTPUT_H_
 
@@ -17,9 +24,9 @@ extern "C" {
 #endif
 
 /**
- * @brief Log output API
- * @defgroup log_output Log output API
+ * @defgroup log_output Log output
  * @ingroup logger
+ * @brief Formatting of log messages into human-readable or structured output.
  * @{
  */
 
@@ -62,16 +69,27 @@ extern "C" {
 
 /**@} */
 
-/** @brief Supported backend logging format types for use
- * with log_format_set() API to switch log format at runtime.
+/**
+ * @name Output format types
+ *
+ * Values used with log_format_set() and log_backend_format_set() to select the
+ * output format of a backend at run time.
+ * @{
  */
+
+/** @brief Plain text output format. */
 #define LOG_OUTPUT_TEXT 0
 
+/** @brief MIPI Sys-T output format. */
 #define LOG_OUTPUT_SYST 1
 
+/** @brief Dictionary-based (binary) output format. */
 #define LOG_OUTPUT_DICT 2
 
+/** @brief Custom, user-provided output format. */
 #define LOG_OUTPUT_CUSTOM 3
+
+/** @} */
 
 /**
  * @brief Prototype of the function processing output data.
@@ -88,19 +106,21 @@ extern "C" {
  */
 typedef int (*log_output_func_t)(uint8_t *buf, size_t size, void *ctx);
 
-/* @brief Control block structure for log_output instance.  */
+/** @brief Run-time control block for a @ref log_output instance. */
 struct log_output_control_block {
+	/** @cond INTERNAL_HIDDEN */
 	atomic_t offset;
 	void *ctx;
 	const char *hostname;
+	/** @endcond */
 };
 
-/** @brief Log_output instance structure. */
+/** @brief Log output instance. */
 struct log_output {
-	log_output_func_t func;
-	struct log_output_control_block *control_block;
-	uint8_t *buf;
-	size_t size;
+	log_output_func_t func; /**< Function called to write formatted output. */
+	struct log_output_control_block *control_block; /**< Run-time control block. */
+	uint8_t *buf; /**< Buffer holding formatted output before it is written. */
+	size_t size; /**< Size of @ref log_output.buf, in bytes. */
 };
 
 /**

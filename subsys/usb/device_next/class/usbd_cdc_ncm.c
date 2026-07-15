@@ -929,15 +929,30 @@ static int usbd_cdc_ncm_ctd(struct usbd_class_data *const c_data,
 	return -ENOTSUP;
 }
 
-static int usbd_cdc_ncm_cth(struct usbd_class_data *const c_data,
-			    const struct usb_setup_packet *const setup,
-			    struct net_buf *const buf)
+static struct net_buf *cdc_ncm_cth_response(struct usbd_class_data *const c_data,
+					    const struct usb_setup_packet *const setup,
+					    const void *data, uint16_t data_len)
+{
+	struct net_buf *buf;
+	uint16_t len = MIN(setup->wLength, data_len);
+
+	buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), len);
+	if (buf == NULL) {
+		return NULL;
+	}
+
+	net_buf_add_mem(buf, data, len);
+	return buf;
+}
+
+static struct net_buf *usbd_cdc_ncm_cth(struct usbd_class_data *const c_data,
+					const struct usb_setup_packet *const setup)
 {
 	LOG_DBG("%d: %d %d %d %d", setup->RequestType.type, setup->bRequest,
 		setup->wLength, setup->wIndex, setup->wValue);
 
 	if (setup->RequestType.type != USB_REQTYPE_TYPE_CLASS) {
-		return -ENOTSUP;
+		return NULL;
 	}
 
 	switch (setup->bRequest) {
@@ -956,11 +971,9 @@ static int usbd_cdc_ncm_cth(struct usbd_class_data *const c_data,
 			.wNdbOutAlignment = sys_cpu_to_le16(CDC_NCM_ALIGNMENT),
 			.wNtbOutMaxDatagrams = sys_cpu_to_le16(CDC_NCM_RECV_MAX_DATAGRAMS_PER_NTB),
 		};
-		const uint16_t len = MIN(sizeof(ntb_params), setup->wLength);
 
 		LOG_DBG("GET_NTB_PARAMETERS");
-		net_buf_add_mem(buf, &ntb_params, len);
-		break;
+		return cdc_ncm_cth_response(c_data, setup, &ntb_params, sizeof(ntb_params));
 	}
 
 	case GET_NTB_INPUT_SIZE: {
@@ -969,19 +982,16 @@ static int usbd_cdc_ncm_cth(struct usbd_class_data *const c_data,
 			.wNtbInMaxDatagrams = sys_cpu_to_le16(CDC_NCM_SEND_MAX_DATAGRAMS_PER_NTB),
 			.wReserved = sys_cpu_to_le16(0),
 		};
-		const uint16_t len = MIN(sizeof(input_size), setup->wLength);
 
 		LOG_DBG("GET_NTB_INPUT_SIZE");
-		net_buf_add_mem(buf, &input_size, len);
-		break;
+		return cdc_ncm_cth_response(c_data, setup, &input_size, sizeof(input_size));
 	}
 
 	default:
 		LOG_DBG("bRequest 0x%02x not supported", setup->bRequest);
-		return -ENOTSUP;
 	}
 
-	return 0;
+	return NULL;
 }
 
 static int usbd_cdc_ncm_init(struct usbd_class_data *const c_data)

@@ -53,23 +53,28 @@ static inline int usbd_class_request(struct usbd_class_data *const c_data,
  *
  * The execution of the handler must not block.
  *
+ * @note The handler is responsible for allocating the buffer. If the
+ * request is valid, ownership of the buffer is transferred to the
+ * stack. If the handler has already allocated a buffer but determines
+ * the response should be a STALL handshake, it must free the buffer
+ * before returning NULL.
+ *
  * @param[in] c_data Pointer to USB device class data
  * @param[in] setup Pointer to USB Setup Packet
- * @param[in] buf Control Request Data buffer
  *
- * @return 0 on success, other values on fail.
+ * @return Buffer with data to send to host on success, NULL on fail.
  */
-static inline int usbd_class_control_to_host(struct usbd_class_data *const c_data,
-					     struct usb_setup_packet *const setup,
-					     struct net_buf *const buf)
+static inline struct net_buf *
+usbd_class_control_to_host(struct usbd_class_data *const c_data,
+			   struct usb_setup_packet *const setup)
 {
 	const struct usbd_class_api *api = c_data->api;
 
 	if (api->control_to_host != NULL) {
-		return api->control_to_host(c_data, setup, buf);
+		return api->control_to_host(c_data, setup);
 	}
 
-	return -ENOTSUP;
+	return NULL;
 }
 
 /**

@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief Header file for the Intel ADSP mtrace log backend API
+ * @brief Header file for the Intel ADSP mtrace log backend.
  * @ingroup log_backend_adsp_mtrace
  */
 
@@ -14,9 +14,9 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_ADSP_MTRACE_H_
 
 /**
- * @brief Intel ADSP mtrace log backend API
- * @defgroup log_backend_adsp_mtrace Intel ADSP mtrace log backend API
+ * @defgroup log_backend_adsp_mtrace Intel ADSP mtrace log backend
  * @ingroup log_backend
+ * @brief Logging backend that writes to an Intel ADSP mtrace SRAM buffer.
  * @{
  */
 
@@ -24,7 +24,7 @@
 #include <stddef.h>
 
 /**
- *@brief mtracelogger requires a hook for IPC messages
+ * @brief mtrace logger requires a hook for IPC messages
  *
  * When new log data is added to the SRAM buffer, a IPC message
  * should be sent to the host. This hook function pointer allows
@@ -40,6 +40,11 @@ typedef void(*adsp_mtrace_log_hook_t)(size_t written, size_t space_left);
  */
 void adsp_mtrace_log_init(adsp_mtrace_log_hook_t hook);
 
+/**
+ * @brief Get the Intel ADSP mtrace log backend.
+ *
+ * @return Pointer to the mtrace log backend instance.
+ */
 const struct log_backend *log_backend_adsp_mtrace_get(void);
 
 /** @} */

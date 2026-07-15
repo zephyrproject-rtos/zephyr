@@ -448,6 +448,7 @@
 		osc32k-coarse-adjustment = <MCXW_CLK_OSC32K_COARSE_RANGE3>;
 		firc-mode = <MCXW_CLK_FIRC_ENABLE>;
 		firc-range = <MCXW_CLK_FIRC_RANGE_96MHZ>;
+		sirc-supported;
 		enable-sirc-in-lp-mode;
 		sys-clk-src = <MCXW_CLK_SYSTEM_CLK_SRC_FIRC>;
 		sys-clk-div-plat = <2>;

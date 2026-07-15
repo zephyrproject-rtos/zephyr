@@ -61,8 +61,10 @@ struct mcxw_clock_control_config {
 	/* FIRC frequency range configuration */
 	uint8_t firc_range;
 
+#if DT_INST_NODE_HAS_PROP(0, sirc_supported)
 	/* Enable SIRC in low power mode */
 	bool enable_sirc_in_lp_mode;
+#endif
 
 	/* System clock source selection */
 	uint8_t sys_clk_src;
@@ -156,7 +158,12 @@ static int nxp_mcxw_clock_control_get_rate(const struct device *dev,
 			break;
 		}
 		case MCXW_CLK_IP_MUX_FRO_6M: {
+#if DT_INST_NODE_HAS_PROP(0, sirc_supported)
 			*rate = CLOCK_GetFreq(kCLOCK_ScgSircClk);
+#else
+			/* SIRC not present on this SoC; FRO6M runs at a fixed 6 MHz */
+			*rate = 6000000U;
+#endif
 			break;
 		}
 		default: {
@@ -237,6 +244,13 @@ static int nxp_mcxw_clock_control_pm(const struct device *dev, enum pm_device_ac
 
 static int nxp_mcxw_clock_validate_sys_clk_src(const struct mcxw_clock_control_config *config)
 {
+#if !DT_INST_NODE_HAS_PROP(0, sirc_supported)
+	if (config->sys_clk_src == MCXW_CLK_SYSTEM_CLK_SRC_SIRC) {
+		LOG_ERR("SIRC is not available as system clock source on this SoC");
+		return -EINVAL;
+	}
+#endif
+
 	switch (config->sys_clk_src) {
 	case MCXW_CLK_SYSTEM_CLK_SRC_SOSC:
 		if (!config->enable_sosc) {
@@ -271,7 +285,9 @@ static int nxp_mcxw_clock_control_init(const struct device *dev)
 
 	/* Unlock Reference Clock Status Registers to allow writes */
 	CLOCK_UnlockFircControlStatusReg();
+#if DT_INST_NODE_HAS_PROP(0, sirc_supported)
 	CLOCK_UnlockSircControlStatusReg();
+#endif
 	CLOCK_UnlockRoscControlStatusReg();
 	CLOCK_UnlockSysOscControlStatusReg();
 
@@ -320,12 +336,14 @@ static int nxp_mcxw_clock_control_init(const struct device *dev)
 	/* Initialize FIRC */
 	(void)CLOCK_InitFirc(&scg_firc_config);
 
+#if DT_INST_NODE_HAS_PROP(0, sirc_supported)
 	if (config->enable_sirc_in_lp_mode) {
 		scg_sirc_config_t scg_sirc_config = {
 			.enableMode = kSCG_SircEnableInSleep,
 		};
 		(void)CLOCK_InitSirc(&scg_sirc_config);
 	}
+#endif
 
 	if (config->enable_sosc) {
 		scg_sosc_config_t scg_sosc_config = {
@@ -417,7 +435,9 @@ static struct mcxw_clock_control_config config = {
 	.coarse_adjustment = DT_INST_PROP(0, osc32k_coarse_adjustment),
 	.firc_mode = DT_INST_PROP(0, firc_mode),
 	.firc_range = DT_INST_PROP(0, firc_range),
+#if DT_INST_NODE_HAS_PROP(0, sirc_supported)
 	.enable_sirc_in_lp_mode = DT_INST_PROP(0, enable_sirc_in_lp_mode),
+#endif
 	.sys_clk_src = DT_INST_PROP(0, sys_clk_src),
 #if DT_INST_NODE_HAS_PROP(0, sys_clk_div_plat)
 	.sys_clk_div_plat = DT_INST_PROP(0, sys_clk_div_plat),

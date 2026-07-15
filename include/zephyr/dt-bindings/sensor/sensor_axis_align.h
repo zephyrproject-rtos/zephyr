@@ -9,8 +9,8 @@
  * @ingroup sensor_axis_align_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_AXIS_ALIGN_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_AXIS_ALIGN_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_SENSOR_AXIS_ALIGN_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_SENSOR_AXIS_ALIGN_H_
 
 /**
  * @defgroup sensor_axis_align_interface Sensor axis alignment
@@ -43,4 +43,4 @@
 
 /** @} */
 
-#endif /*ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_AXIS_ALIGN_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_SENSOR_AXIS_ALIGN_H_ */

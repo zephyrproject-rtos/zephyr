@@ -3,10 +3,29 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Header file for the logging frontend interface.
+ * @ingroup log_frontend
+ */
+
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_FRONTEND_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_FRONTEND_H_
 
 #include <zephyr/logging/log_core.h>
+
+/**
+ * @defgroup log_frontend Logger frontend
+ * @ingroup logger
+ * @brief Interface implemented by a logging frontend that bypasses the core.
+ *
+ * A frontend receives log messages directly from the logging macros, before the
+ * core message buffer, and is responsible for their handling. Most applications
+ * do not implement these functions; they are provided by a frontend
+ * implementation selected through Kconfig.
+ * @{
+ */
 
 /** @brief Initialize frontend.
  */
@@ -80,5 +99,7 @@ void log_frontend_simple_2(const void *source, uint32_t level,
 
 /** @brief Panic state notification. */
 void log_frontend_panic(void);
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_LOGGING_LOG_FRONTEND_H_ */

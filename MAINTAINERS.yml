@@ -1309,6 +1309,7 @@ Devicetree:
     - mbolivar
     - rruuaanng
     - kylebonnici
+    - maass-hamburg
   files-regex:
     - ^dts/bindings/.*zephyr.*
     - ^dts/bindings/[^,]+$
@@ -1637,6 +1638,7 @@ Documentation Infrastructure:
     - "area: Clock Monitor"
   tests:
     - drivers.clock_monitor
+    - sample.drivers.clock_monitor
 
 "Drivers: Clock control":
   status: maintained
@@ -1803,6 +1805,8 @@ Documentation Infrastructure:
     - samples/drivers/dali/
   labels:
     - "area: DALI"
+  tests:
+    - sample.drivers.dali
 
 "Drivers: DMA":
   status: maintained
@@ -2688,9 +2692,7 @@ Documentation Infrastructure:
     - sample.drivers.sent
 
 "Drivers: SMBus":
-  status: maintained
-  maintainers:
-    - finikorg
+  status: odd fixes
   files:
     - drivers/smbus/
     - dts/bindings/smbus/
@@ -2967,6 +2969,7 @@ Documentation Infrastructure:
     - "area: Wi-Fi"
   tests:
     - drivers.net.wifi
+    - drivers.wifi
 
 "Drivers: Wi-Fi as nRF Wi-Fi":
   status: maintained
@@ -3132,6 +3135,7 @@ Espressif Platforms:
     - esp.wifi.sec
     - sample.boards.esp32
     - sample.esp32.deep_sleep
+    - boards.espressif
 
 Ezurio platforms:
   status: maintained
@@ -3643,8 +3647,8 @@ Linker Scripts:
     - "area: Linker Scripts"
   tests:
     - linker
-    - buildsystem.app_dev.code_relocation
     - sample.app_dev.code_relocation_nocopy
+    - buildsystem.app_dev
 
 Linters and Static Analyzers:
   status: maintained
@@ -3791,6 +3795,16 @@ Logging:
     - libraries.mpsc_pbuf
     - libraries.spsc_pbuf
     - sample.logging
+
+M5Stack Platforms:
+  status: maintained
+  maintainers:
+    - thc1006
+  files:
+    - boards/m5stack/
+    - boards/shields/m5stack_*/
+  labels:
+    - "platform: M5Stack"
 
 MAINTAINERS file:
   status: maintained
@@ -4681,6 +4695,7 @@ Networking:
     - "area: MCP"
   tests:
     - net.mcp
+    - sample.net.mcp
 
 "Networking: MQTT":
   status: maintained
@@ -4808,6 +4823,7 @@ Networking:
   tests:
     - net.wifi
     - sample.net.wifi
+    - wifi.build.nan
 
 "Networking: gPTP":
   status: maintained
@@ -5018,6 +5034,7 @@ POSIX API layer:
     - portability.posix
     - sample.posix
     - portability.xsi
+    - posix.threads_base
 
 Panasonic Platforms:
   status: maintained
@@ -5765,7 +5782,7 @@ Silabs Platforms:
   labels:
     - "platform: Silabs"
   tests:
-    - boards.silabs.dma.block_append.dma_m2m_ba
+    - boards.silabs
 
 Silabs SiM3U Platforms:
   status: maintained
@@ -6187,6 +6204,11 @@ Twister:
     - scripts/pylib/*-twister-harness/
   labels:
     - "area: Twister"
+  tests:
+    - kernel.common
+    - sample.pytest
+    - sample.harness
+    - sample.twister
 
 USB:
   status: maintained
@@ -7089,6 +7111,7 @@ West:
     - secure_storage.psa
     - crypto.mbedtls_psa
     - crypto.secp256r1
+    - crypto.psa
 
 "West project: mcuboot":
   status: maintained

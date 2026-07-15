@@ -4,6 +4,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Header file for dictionary-based log output.
+ * @ingroup log_output
+ */
+
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_OUTPUT_DICT_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_OUTPUT_DICT_H_
 
@@ -18,33 +25,31 @@ extern "C" {
 #endif
 
 /**
- * Log message type
+ * @addtogroup log_output
+ * @{
  */
+
+/** @brief Dictionary output message type. */
 enum log_dict_output_msg_type {
-	MSG_NORMAL = 0,
-	MSG_DROPPED_MSG = 1,
+	MSG_NORMAL = 0,      /**< Normal log message. */
+	MSG_DROPPED_MSG = 1, /**< Notification about dropped messages. */
 };
 
-/**
- * Output header for one dictionary based log message.
- */
+/** @brief On-wire header for one dictionary-based log message. */
 struct log_dict_output_normal_msg_hdr_t {
-	uint8_t type;
-	uint32_t domain:4;
-	uint32_t level:4;
-	uint32_t package_len:16;
-	uint32_t data_len:16;
-	uintptr_t source;
-	log_timestamp_t timestamp;
+	uint8_t type;             /**< Message type, see @ref log_dict_output_msg_type. */
+	uint32_t domain:4;        /**< Domain ID. */
+	uint32_t level:4;         /**< Severity level. */
+	uint32_t package_len:16;  /**< Length of the cbprintf package, in bytes. */
+	uint32_t data_len:16;     /**< Length of the appended hexdump data, in bytes. */
+	uintptr_t source;         /**< Address identifying the log source. */
+	log_timestamp_t timestamp; /**< Message timestamp. */
 } __packed;
 
-/**
- * Output for one dictionary based log message about
- * dropped messages.
- */
+/** @brief On-wire dictionary-based message reporting dropped messages. */
 struct log_dict_output_dropped_msg_t {
-	uint8_t type;
-	uint16_t num_dropped_messages;
+	uint8_t type;                  /**< Message type, see @ref log_dict_output_msg_type. */
+	uint16_t num_dropped_messages; /**< Number of dropped messages. */
 } __packed;
 
 /** @brief Process log messages v2 for dictionary-based logging.
@@ -67,6 +72,8 @@ void log_dict_output_msg_process(const struct log_output *log_output,
  * @param cnt        Number of dropped messages.
  */
 void log_dict_output_dropped_process(const struct log_output *output, uint32_t cnt);
+
+/** @} */
 
 #ifdef __cplusplus
 }

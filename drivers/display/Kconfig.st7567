@@ -14,8 +14,8 @@ if ST7567
 
 config ST7567_DEFAULT_CONTRAST
 	int "ST7567 default contrast"
-	default 8
-	range 0 15
+	default 127
+	range 0 255
 	help
 	  ST7567 default contrast.
 

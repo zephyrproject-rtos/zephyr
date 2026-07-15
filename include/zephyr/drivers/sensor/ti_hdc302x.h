@@ -12,8 +12,8 @@
  * setting the Low power parameters.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_HDC302X_H_
-#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_HDC302X_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_TI_HDC302X_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_TI_HDC302X_H_
 
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/i2c.h>
@@ -76,4 +76,4 @@ enum sensor_measurement_interval_hdc302x {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_HDC302X_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_TI_HDC302X_H_ */

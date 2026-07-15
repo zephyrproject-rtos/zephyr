@@ -492,8 +492,11 @@ static int esp_hosted_stats(const struct device *dev,
 }
 #endif
 
-static int esp_hosted_status(const struct device *dev, struct wifi_iface_status *status)
+static int esp_hosted_status(const struct device *dev, struct net_if *iface,
+			     struct wifi_iface_status *status)
 {
+	ARG_UNUSED(iface);
+
 	esp_hosted_data_t *data = dev->data;
 	CtrlMsg ctrl_msg = CtrlMsg_init_zero;
 	size_t itf = esp_hosted_get_iface(dev);

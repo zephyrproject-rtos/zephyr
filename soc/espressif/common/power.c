@@ -37,6 +37,10 @@ extern esp_err_t sleep_clock_icg_startup_init(void);
 
 #include <power.h>
 
+#if defined(CONFIG_SOC_SERIES_ESP32P4) && defined(CONFIG_NOCACHE_MEMORY)
+#include <cache.h>
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(soc_pm, CONFIG_SOC_LOG_LEVEL);
 
@@ -238,6 +242,13 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 			rtc_wakeup_enable(state, false);
 		}
 
+#if defined(CONFIG_SOC_SERIES_ESP32P4) && defined(CONFIG_NOCACHE_MEMORY)
+		/* PMA CSRs are volatile across CPU power-down sleep; re-apply
+		 * the non-cacheable region attribute after wake.
+		 */
+		nocache_region_init();
+#endif
+
 #if defined(CONFIG_RISCV)
 		rv_utils_intr_global_enable();
 		irq_unlock(0);
@@ -289,7 +300,7 @@ uint64_t esp32_lptim_hook_get_freq(void)
 {
 #if defined(SOC_SYSTIMER_SUPPORTED)
 	return systimer_us_to_ticks(1) * 1000000ULL;
-#elif defined(CONFIG_ESP_TIMER_IMPL_TG0_LAC)
+#elif defined(CONFIG_SOC_SERIES_ESP32)
 	return LACT_TICKS_PER_US * 1000000ULL;
 #endif
 }

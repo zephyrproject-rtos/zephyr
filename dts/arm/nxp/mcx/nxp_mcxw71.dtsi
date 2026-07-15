@@ -106,6 +106,12 @@
 	clock-names = "clksrc0", "clksrc1", "clksrc2", "clksrc3";
 };
 
+&clk_ctrl {
+	/* MCXW71 has SIRC hardware; enable it in low-power mode by default. */
+	sirc-supported;
+	enable-sirc-in-lp-mode;
+};
+
 &nbu {
 	rfmc-xo-cdac = <0x0c>;
 	rfmc-xo-isel = <0x05>;

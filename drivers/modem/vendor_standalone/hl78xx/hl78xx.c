@@ -492,6 +492,11 @@ void hl78xx_start_timer(struct hl78xx_data *data, k_timeout_t timeout)
 	k_work_schedule(&data->work.timeout_work, timeout);
 }
 
+void hl78xx_reschedule_timer(struct hl78xx_data *data, k_timeout_t timeout)
+{
+	(void)k_work_reschedule(&data->work.timeout_work, timeout);
+}
+
 void hl78xx_stop_timer(struct hl78xx_data *data)
 {
 	k_work_cancel_delayable(&data->work.timeout_work);
@@ -2645,6 +2650,7 @@ static bool hl78xx_await_registered_resume_should_sleep(struct hl78xx_data *data
 
 static void hl78xx_await_registered_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
+	LOG_DBG("Await registered event handler: %d", evt);
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:

@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief Header file for the network log backend API
+ * @brief Header file for the network log backend.
  * @ingroup log_backend_net
  */
 
@@ -14,9 +14,9 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_NET_H_
 
 /**
- * @brief Network log backend API
- * @defgroup log_backend_net Network log backend API
+ * @defgroup log_backend_net Network log backend
  * @ingroup log_backend
+ * @brief Logging backend that sends messages to a syslog server over the network.
  * @{
  */
 

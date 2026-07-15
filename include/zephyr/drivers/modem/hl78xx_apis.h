@@ -2107,9 +2107,13 @@ int hl78xx_gnss_set_nmea_output(const struct device *dev, enum nmea_output_port 
 /**
  * @brief Set GNSS search timeout
  *
+ * If a GNSS search is already active, the remaining timeout is replaced from
+ * the moment this function is called. Setting @p timeout_ms to 0 disables the
+ * active search timeout.
+ *
  * @param dev Pointer to the GNSS device
  * @param timeout_ms Timeout in milliseconds (0 = no timeout)
- * @return 0 on success, -EBUSY if GNSS search is active, negative errno on failure
+ * @return 0 on success, negative errno on failure
  */
 int hl78xx_gnss_set_search_timeout(const struct device *dev, uint32_t timeout_ms);
 

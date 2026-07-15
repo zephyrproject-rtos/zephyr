@@ -2687,6 +2687,22 @@ struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
 bool net_if_ipv4_router_rm(struct net_if_router *router);
 
 /**
+ * @brief Add an IPv4 route to the system routing table.
+ *
+ * @param iface Network interface this route is tied to.
+ * @param addr Destination IPv4 address of the route.
+ * @param mask_len Destination netmask length.
+ * @param nexthop IPv4 address of the next hop, or NULL for an on-link
+ *                (directly connected) route.
+ * @param lifetime Route lifetime in seconds (UINT32_MAX for a route that
+ *                 never expires).
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+int net_if_ipv4_route_add(struct net_if *iface, const struct net_in_addr *addr, uint8_t mask_len,
+			  const struct net_in_addr *nexthop, uint32_t lifetime);
+
+/**
  * @brief Check if the given IPv4 address belongs to local subnet.
  *
  * @param iface Interface to use. Must be a valid pointer to an interface.

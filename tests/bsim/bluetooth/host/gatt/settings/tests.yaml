@@ -1,7 +1,8 @@
 common:
-  build_only: true
+  timeout: 600
   tags:
     - bluetooth
+  depends_on: bsim
   platform_allow:
     - nrf52_bsim/native
   harness: bsim
@@ -9,9 +10,15 @@ common:
 tests:
   bluetooth.host.gatt.settings:
     harness_config:
+      fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_host_gatt_settings_prj_conf
+      tests_scripts:
+        - test_scripts/run_gatt_settings.sh
   bluetooth.host.gatt.settings_priv:
     harness_config:
+      fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_host_gatt_settings_overlay-privacy_conf
+      tests_scripts:
+        - test_scripts/run_gatt_settings_privacy.sh
     extra_args:
       EXTRA_CONF_FILE=overlay-privacy.conf
