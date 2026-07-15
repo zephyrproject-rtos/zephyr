@@ -10,7 +10,7 @@
  * of the settings implementation of the ITS store module.
  * They are not meant to be called directly other than by the settings ITS store module.
  * This header file may and must be included when providing a custom implementation of one
- * or more of these functions (@kconfig{CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_*_CUSTOM}).
+ * or more of these functions (`CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_*_CUSTOM`).
  */
 #include <zephyr/secure_storage/its/common.h>
 

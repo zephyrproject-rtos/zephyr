@@ -10,7 +10,7 @@
  * of the AEAD implementation of the ITS transform module.
  * They are not meant to be called directly other than by the AEAD ITS transform module.
  * This header file may and must be included when providing a custom implementation of one
- * or more of these functions (@kconfig{CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_*_CUSTOM}).
+ * or more of these functions (`CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_*_CUSTOM`).
  */
 #include <zephyr/secure_storage/its/common.h>
 #include <psa/crypto_types.h>
