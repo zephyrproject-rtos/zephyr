@@ -8,85 +8,42 @@ import pytest
 from runners.xsdb import XSDBBinaryRunner
 from conftest import RC_KERNEL_ELF
 
+# Only keys that differ from their None/absent default need to be given;
+# test code below reads the rest via tc.get(key).
 TEST_CASES = [
     {
-        "config": None,
-        "bitstream": None,
-        "fsbl": None,
-        "pdi": None,
-        "bl31": None,
-        "dtb": None,
-        "pmufw": None,
         "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF],
     },
     {
         "config": "custom_cfg_path",
-        "bitstream": None,
-        "fsbl": None,
-        "pdi": None,
-        "bl31": None,
-        "dtb": None,
-        "pmufw": None,
         "expected_cmd": ["xsdb", "custom_cfg_path", RC_KERNEL_ELF],
     },
     {
-        "config": None,
         "bitstream": "bitstream_path",
-        "fsbl": None,
-        "pdi": None,
-        "bl31": None,
-        "dtb": None,
-        "pmufw": None,
         "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF, "bitstream_path"],
     },
     {
-        "config": None,
-        "bitstream": None,
         "fsbl": "fsbl_path",
-        "pdi": None,
-        "bl31": None,
-        "dtb": None,
-        "pmufw": None,
         "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF, "fsbl_path"],
     },
     {
-        "config": None,
         "bitstream": "bitstream_path",
         "fsbl": "fsbl_path",
-        "pdi": None,
-        "bl31": None,
-        "dtb": None,
-        "pmufw": None,
         "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF, "bitstream_path", "fsbl_path"],
     },
     {
-        "config": None,
-        "bitstream": None,
-        "fsbl": None,
         "pdi": "pdi_path",
-        "bl31": None,
-        "dtb": None,
-        "pmufw": None,
         "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF, "pdi_path"],
     },
     {
-        "config": None,
-        "bitstream": None,
-        "fsbl": None,
         "pdi": "pdi_path",
         "bl31": "bl31_path",
-        "dtb": None,
-        "pmufw": None,
         "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF, "pdi_path", "bl31_path"],
     },
     {
-        "config": None,
-        "bitstream": None,
-        "fsbl": None,
         "pdi": "pdi_path",
         "bl31": "bl31_path",
         "dtb": "dtb_path",
-        "pmufw": None,
         "expected_cmd": [
             "xsdb",
             "default_cfg_path",
@@ -97,12 +54,9 @@ TEST_CASES = [
         ],
     },
     {
-        "config": None,
         "bitstream": "bitstream_path",
         "fsbl": "fsbl_path",
-        "pdi": None,
         "bl31": "bl31_path",
-        "dtb": None,
         "pmufw": "pmufw_path",
         "expected_cmd": [
             "xsdb",
@@ -126,13 +80,13 @@ def test_xsdbbinaryrunner_init(check_call, path_exists, tc, runner_config):
     with patch("runners.xsdb.os.path.join", return_value="default_cfg_path"):
         runner = XSDBBinaryRunner(
             cfg=runner_config,
-            config=tc["config"],
-            bitstream=tc["bitstream"],
-            fsbl=tc["fsbl"],
-            pdi=tc["pdi"],
-            bl31=tc["bl31"],
-            dtb=tc["dtb"],
-            pmufw=tc["pmufw"],
+            config=tc.get("config"),
+            bitstream=tc.get("bitstream"),
+            fsbl=tc.get("fsbl"),
+            pdi=tc.get("pdi"),
+            bl31=tc.get("bl31"),
+            dtb=tc.get("dtb"),
+            pmufw=tc.get("pmufw"),
         )
 
     runner.do_run("flash")
@@ -146,19 +100,19 @@ def test_xsdbbinaryrunner_init(check_call, path_exists, tc, runner_config):
 def test_xsdbbinaryrunner_create(check_call, path_exists, tc, runner_config):
     '''Test actions using a runner created from action line parameters.'''
     args = []
-    if tc["config"]:
+    if tc.get("config"):
         args.extend(["--config", tc["config"]])
-    if tc["bitstream"]:
+    if tc.get("bitstream"):
         args.extend(["--bitstream", tc["bitstream"]])
-    if tc["fsbl"]:
+    if tc.get("fsbl"):
         args.extend(["--fsbl", tc["fsbl"]])
-    if tc["pdi"]:
+    if tc.get("pdi"):
         args.extend(["--pdi", tc["pdi"]])
-    if tc["bl31"]:
+    if tc.get("bl31"):
         args.extend(["--bl31", tc["bl31"]])
-    if tc["dtb"]:
+    if tc.get("dtb"):
         args.extend(["--system-dtb", tc["dtb"]])
-    if tc["pmufw"]:
+    if tc.get("pmufw"):
         args.extend(["--pmufw", tc["pmufw"]])
 
     parser = argparse.ArgumentParser(allow_abbrev=False)
