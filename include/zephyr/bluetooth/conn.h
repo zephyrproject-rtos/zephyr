@@ -2872,7 +2872,6 @@ struct bt_conn_oob_info {
 	};
 };
 
-#if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 /** @brief Pairing request and pairing response info structure.
  *
  *  This structure is the same for both smp_pairing_req and smp_pairing_rsp
@@ -2902,7 +2901,6 @@ struct bt_conn_pairing_feat {
 	 */
 	uint8_t resp_key_dist;
 };
-#endif /* CONFIG_BT_SMP_APP_PAIRING_ACCEPT */
 
 /**
  * Special passkey value that can be used to generate a random passkey when using the
@@ -3398,11 +3396,12 @@ int bt_conn_br_switch_role(const struct bt_conn *conn, uint8_t role);
  */
 int bt_conn_br_set_role_switch_enable(const struct bt_conn *conn, bool enable);
 
-#if defined(CONFIG_BT_POWER_MODE_CONTROL)
 /** @brief bluetooth conn check and enter sniff mode
  *
  *  This function is used to identify which ACL link connection is to
  *  be placed in Sniff mode
+ *
+ *  @kconfig_dep{CONFIG_BT_POWER_MODE_CONTROL}
  *
  *  @param conn bt_conn conn
  *  @param min_interval Minimum sniff interval.
@@ -3415,6 +3414,8 @@ int bt_conn_br_enter_sniff_mode(struct bt_conn *conn, uint16_t min_interval,
 
 /** @brief bluetooth conn check and exit sniff mode
  *
+ *  @kconfig_dep{CONFIG_BT_POWER_MODE_CONTROL}
+ *
  *  @param conn bt_conn conn
  *
  *  @return  Zero for success, non-zero otherwise.
@@ -3426,6 +3427,8 @@ int bt_conn_br_exit_sniff_mode(struct bt_conn *conn);
  *  Configure sniff subrating parameters for a BR/EDR connection.
  *  Sniff subrating allows further power savings by reducing the
  *  number of sniff anchor points the device needs to listen on.
+ *
+ *  @kconfig_dep{CONFIG_BT_POWER_MODE_CONTROL}
  *
  *  @param conn               Connection object.
  *  @param max_latency        Maximum allowed sniff subrate latency
@@ -3443,7 +3446,6 @@ int bt_conn_br_exit_sniff_mode(struct bt_conn *conn);
 int bt_conn_br_set_sniff_subrating(struct bt_conn *conn, uint16_t max_latency,
 				   uint16_t min_remote_timeout,
 				   uint16_t min_local_timeout);
-#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 
 /** @brief Read BR/EDR supervision timeout.
  *
