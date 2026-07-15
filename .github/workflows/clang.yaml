@@ -60,25 +60,9 @@ jobs:
           persist-credentials: false
 
       - name: Environment Setup
-        run: |
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          git config --global user.email "bot@zephyrproject.org"
-          git config --global user.name "Zephyr Bot"
-          rm -fr ".git/rebase-apply"
-          rm -fr ".git/rebase-merge"
-          git clean -f -d
-          git log  --pretty=oneline | head -n 10
-          west init -l . || true
-          west config --global update.narrow true
-          west config manifest.group-filter -- +ci,+optional
-          # In some cases modules are left in a state where they can't be
-          # updated (i.e. when we cancel a job and the builder is killed),
-          # So first retry to update, if that does not work, remove all modules
-          # and start over. (Workaround until we implement more robust module
-          # west caching).
-          west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.log || west update --path-cache /repo-cache/zephyrproject 2>&1 1> west2.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /repo-cache/zephyrproject)
-
-          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
+        uses: ./.github/actions/zephyr-ci-env
+        with:
+          group-filter: '+ci,+optional'
 
       - name: Check Environment
         run: |
