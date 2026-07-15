@@ -153,7 +153,6 @@ int intc_rz_tint_set_type(const struct device *dev, enum intc_rz_tint_trigger tr
 	const struct intc_rz_tint_config *config = dev->config;
 	struct intc_rz_tint_data *data = dev->data;
 	uint8_t tint = config->tint;
-	uint32_t flags = IRQ_TYPE_LEVEL;
 	uint32_t set = 0;
 	mem_addr_t base = INTC_BASE;
 	uint32_t reg_val;
@@ -189,13 +188,17 @@ int intc_rz_tint_set_type(const struct device *dev, enum intc_rz_tint_trigger tr
 		 * write 0 to the TSTATn bit of TSCR.
 		 */
 		if ((trig == RZ_TINT_RISING_EDGE) || (trig == RZ_TINT_FAILING_EDGE)) {
-			flags = IRQ_TYPE_EDGE;
 			intc_rz_tint_clear_irq_status(dev);
 		}
 
 		/* Set interrupt type for GIC, and clear pending interrupt */
 #ifdef CONFIG_GIC
+#if defined(CONFIG_SOC_SERIES_RZV2H)
+		uint32_t flags = ((trig == RZ_TINT_RISING_EDGE) || (trig == RZ_TINT_FAILING_EDGE))
+				 ? IRQ_TYPE_EDGE : IRQ_TYPE_LEVEL;
+
 		arm_gic_irq_set_priority(config->irq, config->prio, flags);
+#endif
 		arm_gic_irq_clear_pending(config->irq);
 #else
 		NVIC_ClearPendingIRQ(config->irq);
