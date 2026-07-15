@@ -6,5 +6,5 @@
 
 /* Note: this is the unit-address (in hex) of the node */
 #define DT_DRAM_BASE            100000
-#define DT_DRAM_SIZE            DT_SIZE_K(256)
+#define DT_DRAM_SIZE            DT_SIZE_K(384)
 #include "qemu_x86.dts"
