@@ -125,9 +125,9 @@ int mfd_npm13xx_reset(const struct device *dev);
  * Enters low power state, and wakes after specified time
  *
  * @param dev npm13xx mfd device
- * @param time_ms timer value in ms
+ * @param time_ms timer value in ms, must be at least one timer tick (16 ms)
  * @return 0 on success, negative errno value on failure (see i2c_write_dt()).
- * @retval -EINVAL Time value is too large.
+ * @retval -EINVAL Time value is too large, or shorter than one timer tick
  */
 int mfd_npm13xx_hibernate(const struct device *dev, uint32_t time_ms);
 

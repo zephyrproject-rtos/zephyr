@@ -267,7 +267,14 @@ int mfd_npm13xx_reset(const struct device *dev)
 
 int mfd_npm13xx_hibernate(const struct device *dev, uint32_t time_ms)
 {
-	int ret = mfd_npm13xx_set_timer(dev, time_ms);
+	int ret;
+
+	/* Close to zero immediately wakes up, won't hibernate */
+	if (time_ms < TIMER_PRESCALER_MS) {
+		return -EINVAL;
+	}
+
+	ret = mfd_npm13xx_set_timer(dev, time_ms);
 
 	if (ret != 0) {
 		return ret;
