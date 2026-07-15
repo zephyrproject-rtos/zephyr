@@ -1345,7 +1345,7 @@ static void virt_region_foreach(void *addr, size_t size,
  *    - Update page tables with location
  * - Mark page frame as busy
  *
- * Returns -ENOMEM if the backing store is full
+ * Returns -ENOMEM if the backing store is full, -EFAULT if fails to page out.
  */
 static int page_frame_prepare_locked(struct k_mem_page_frame *pf, bool *dirty_ptr,
 				     bool page_fault, uintptr_t *location_ptr)
@@ -1384,7 +1384,12 @@ static int page_frame_prepare_locked(struct k_mem_page_frame *pf, bool *dirty_pt
 			LOG_ERR("out of backing store memory");
 			return -ENOMEM;
 		}
-		sys_mm_vm_backend_mem_page_out(k_mem_page_frame_to_virt(pf), *location_ptr);
+
+		ret = sys_mm_vm_backend_mem_page_out(k_mem_page_frame_to_virt(pf), *location_ptr);
+		if (ret != 0) {
+			LOG_ERR("Cannot page out memory");
+			return -EFAULT;
+		}
 
 		if (IS_ENABLED(CONFIG_EVICTION_TRACKING)) {
 			k_mem_paging_eviction_remove(pf);
@@ -1779,7 +1784,12 @@ static bool do_page_fault(void *addr, bool pin)
 		k_mem_page_frame_set(pf, K_MEM_PAGE_FRAME_PINNED);
 	}
 
-	sys_mm_vm_backend_mem_page_in(addr, k_mem_page_frame_to_phys(pf));
+	ret = sys_mm_vm_backend_mem_page_in(addr, k_mem_page_frame_to_phys(pf));
+	__ASSERT(ret == 0, "failed to page in %p", addr);
+	if (ret != 0) {
+		goto out;
+	}
+
 	k_mem_paging_backing_store_page_finalize(pf, page_in_location);
 	if (IS_ENABLED(CONFIG_EVICTION_TRACKING) && (!pin)) {
 		k_mem_paging_eviction_add(pf);

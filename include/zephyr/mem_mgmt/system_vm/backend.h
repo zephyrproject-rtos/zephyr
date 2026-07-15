@@ -174,8 +174,13 @@ void sys_mm_vm_backend_reserved_pages_update(void);
  *
  * @param addr Virtual data page address being evicted
  * @param location Backing store location value to associate with the page
+ *
+ * @retval 0 Successfully paging out memory
+ * @retval -EFAULT Fail to page out memoryu
+ * @retval -EINVAL Invalid input arguments
+ * @retval -ENOTSUP Paging out is not supported
  */
-void sys_mm_vm_backend_mem_page_out(void *addr, uintptr_t location);
+int sys_mm_vm_backend_mem_page_out(void *addr, uintptr_t location);
 
 /**
  * Update all page tables for a paged-in data page
@@ -188,8 +193,13 @@ void sys_mm_vm_backend_mem_page_out(void *addr, uintptr_t location);
  *
  * @param addr Virtual data page address being paged in
  * @param phys Physical page frame address to map it to
+ *
+ * @retval 0 Successfully paging in memory
+ * @retval -EFAULT Fail to page in memoryu
+ * @retval -EINVAL Invalid input arguments
+ * @retval -ENOTSUP Paging in is not supported
  */
-void sys_mm_vm_backend_mem_page_in(void *addr, uintptr_t phys);
+int sys_mm_vm_backend_mem_page_in(void *addr, uintptr_t phys);
 
 /**
  * Temporarily map a physical page frame for scratch access.

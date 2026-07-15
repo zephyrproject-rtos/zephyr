@@ -47,14 +47,18 @@ static ALWAYS_INLINE void sys_mm_vm_backend_reserved_pages_update(void)
 	arch_reserved_pages_update();
 }
 
-static ALWAYS_INLINE void sys_mm_vm_backend_mem_page_out(void *addr, uintptr_t location)
+static ALWAYS_INLINE int sys_mm_vm_backend_mem_page_out(void *addr, uintptr_t location)
 {
 	arch_mem_page_out(addr, location);
+
+	return 0;
 }
 
-static ALWAYS_INLINE void sys_mm_vm_backend_mem_page_in(void *addr, uintptr_t phys)
+static ALWAYS_INLINE int sys_mm_vm_backend_mem_page_in(void *addr, uintptr_t phys)
 {
 	arch_mem_page_in(addr, phys);
+
+	return 0;
 }
 
 static ALWAYS_INLINE void sys_mm_vm_backend_mem_scratch(uintptr_t phys)
