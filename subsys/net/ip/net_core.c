@@ -168,9 +168,6 @@ static void net_post_init(void)
 #if defined(CONFIG_NET_ARP)
 	net_arp_init();
 #endif
-#if defined(CONFIG_NET_LLDP)
-	net_lldp_init();
-#endif
 #if defined(CONFIG_NET_GPTP)
 	net_gptp_init();
 #endif

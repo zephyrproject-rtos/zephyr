@@ -198,11 +198,6 @@ int net_lldp_config_optional(struct net_if *iface, const uint8_t *tlv,
 			     size_t len);
 
 /**
- * @brief Initialize LLDP engine.
- */
-void net_lldp_init(void);
-
-/**
  * @brief LLDP Receive packet callback
  *
  * Callback gets called upon receiving packet. It is responsible for
