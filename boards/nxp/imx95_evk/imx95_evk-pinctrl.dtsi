@@ -211,4 +211,14 @@
 			bias-pull-up;
 		};
 	};
+
+	pinmux_pdm: pinmux_pdm {
+		group0 {
+			pinmux = <&iomuxc_pdm_clk_pdm_clk_pdm_clk>,
+				 <&iomuxc_pdm_bit_stream0_pdm_bit_stream_bit_pdm_bit_stream_bit0>;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+			input-enable;
+		};
+	};
 };
