@@ -195,7 +195,9 @@ int intc_rz_tint_set_type(const struct device *dev, enum intc_rz_tint_trigger tr
 
 		/* Set interrupt type for GIC, and clear pending interrupt */
 #ifdef CONFIG_GIC
+#if defined(CONFIG_SOC_SERIES_RZV2H)
 		arm_gic_irq_set_priority(config->irq, config->prio, flags);
+#endif
 		arm_gic_irq_clear_pending(config->irq);
 #else
 		NVIC_ClearPendingIRQ(config->irq);
