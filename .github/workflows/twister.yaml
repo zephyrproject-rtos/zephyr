@@ -40,7 +40,6 @@ jobs:
       PUSH_MATRIX_SIZE: 25
       WEEKLY_MATRIX_SIZE: 200
       TESTS_PER_BUILDER: 900
-      COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
     steps:
       - name: Print cloud service information
@@ -172,7 +171,6 @@ jobs:
       WEEKLY_OPTIONS: ' -M --build-only --all --show-footprint --report-filtered -j 32'
       PR_OPTIONS: ' --clobber-output --integration -j 16'
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered -j 16'
-      COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-20
     steps:
       - name: Print cloud service information
