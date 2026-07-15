@@ -11,7 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
-#include <usb_dwc2_hw.h>
+#include <synopsys/usb_dwc2_hw.h>
 
 struct usb_dw_stm32_clk {
 	const struct device *const dev;

@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/usb/uhc.h>
-#include <usb_dwc2_hw.h>
+#include <synopsys/usb_dwc2_hw.h>
 
 /* Vendor quirks per driver instance */
 struct uhc_dwc2_vendor_quirks {
