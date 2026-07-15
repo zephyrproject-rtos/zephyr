@@ -108,6 +108,7 @@ extensions = [
     "zephyr.doxyrunner",
     "zephyr.doxybridge",
     "zephyr.doxytooltip",
+    "zephyr.doxyxref",
     "zephyr.gh_utils",
     "zephyr.manifest_projects_table",
     "notfound.extension",
@@ -319,6 +320,10 @@ if SKIP_DOXYGEN:
     # No Doxygen XML to bridge; C-domain references are replaced with plain
     # text by zephyr.partial_build before resolution.
     doxybridge_projects = {}
+
+# -- Options for zephyr.doxyxref plugin ------------------------------------
+
+doxyxref_projects = doxybridge_projects
 
 # -- Options for html_redirect plugin -------------------------------------
 
