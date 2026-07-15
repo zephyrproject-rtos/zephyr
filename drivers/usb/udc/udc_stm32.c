@@ -614,6 +614,52 @@ void HAL_PCD_DataOutStageCallback(stm32_pcd_handle_t *hpcd, uint8_t epnum)
 	}
 }
 
+/*
+ * Isochronous OUT "incomplete transfer" recovery.
+ *
+ * When an isochronous OUT endpoint misses its (micro)frame (e.g. the re-arm
+ * landed a frame late, so the host's token found the endpoint armed for the
+ * wrong even/odd frame), the OTG core drops the packet, raises the
+ * incomplete-iso interrupt and disables the endpoint. The HAL then calls this
+ * callback from the ISR. We re-arm the pending receive here: HAL_PCD_EP_Receive
+ * re-selects the correct even/odd frame at arm time, resynchronising the
+ * endpoint.
+ *
+ * Without this, iso OUT reception (e.g. UAC2 host-to-device playback) stalls
+ * permanently after the first missed frame. Isochronous IN (e.g. a UAC2
+ * microphone) degrades gracefully, so it keeps working without an equivalent
+ * IN handler; recovering iso IN correctly has to go through the normal
+ * data-in completion path and is left as a follow-up.
+ */
+void HAL_PCD_ISOOUTIncompleteCallback(stm32_pcd_handle_t *hpcd, uint8_t epnum)
+{
+	struct udc_stm32_data *priv = hpcd2data(hpcd);
+	uint8_t ep = epnum | USB_EP_DIR_OUT;
+	struct udc_ep_config *ep_cfg;
+	struct net_buf *buf;
+	stm32_status_t status;
+
+	ep_cfg = udc_get_ep_cfg(priv->dev, ep);
+	if (ep_cfg == NULL) {
+		return;
+	}
+
+	buf = udc_buf_peek(ep_cfg);
+	if (buf == NULL) {
+		return;
+	}
+
+	/* The pending buffer has not been filled yet (tail == data,
+	 * tailroom == size); use the net_buf accessors to re-arm into the free
+	 * space, matching the normal OUT receive path.
+	 */
+	status = hal_udc_set_endpoint_receive(&priv->pcd, ep, net_buf_tail(buf),
+					      net_buf_tailroom(buf));
+	if (status != HAL_OK) {
+		LOG_ERR("iso OUT re-arm failed(0x%02x), %d", ep, (int)status);
+	}
+}
+
 static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint16_t rx_count)
 {
 	const struct device *dev = priv->dev;
