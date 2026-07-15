@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/wuc.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
@@ -23,6 +24,7 @@ struct nxp_irtc_counter_config {
 	struct counter_config_info info;
 	RTC_Type *base;
 	void (*irq_config_func)(const struct device *dev);
+	struct wuc_dt_spec wuc;
 	/* Enable the OSC_DIV_ENA /32 prescaler (1024 Hz vs raw 32768 Hz). */
 	bool osc_div;
 };
@@ -40,6 +42,16 @@ struct nxp_irtc_counter_data {
 	bool armed;
 	struct k_spinlock lock;
 };
+
+static inline bool nxp_irtc_wake_via_wuc(const struct device *dev)
+{
+	const struct counter_config_info *info = dev->config;
+	const struct nxp_irtc_counter_config *config =
+		CONTAINER_OF(info, struct nxp_irtc_counter_config, info);
+
+	return IS_ENABLED(CONFIG_WUC) && (config->wuc.dev != NULL) &&
+	       pm_device_wakeup_is_enabled(dev);
+}
 
 /*
  * Force a lock then unlock of the IRTC registers, guaranteeing a window of
@@ -113,6 +125,11 @@ static void nxp_irtc_counter_isr(const struct device *dev)
 	data->alarm_user_data = NULL;
 
 	k_spin_unlock(&data->lock, key);
+
+	/* One-shot alarm has fired: no wake is pending anymore, disarm the WUC. */
+	if (nxp_irtc_wake_via_wuc(dev)) {
+		(void)wuc_disable_wakeup_source_dt(&config->wuc);
+	}
 
 	if (callback != NULL) {
 		callback(dev, 0, span, user_data);
@@ -240,6 +257,11 @@ static int nxp_irtc_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 
 	k_spin_unlock(&data->lock, key);
 
+	/* A wake is now pending: allow this alarm to wake the CPU from deep sleep. */
+	if (nxp_irtc_wake_via_wuc(dev)) {
+		(void)wuc_enable_wakeup_source_dt(&config->wuc);
+	}
+
 	return 0;
 }
 
@@ -267,6 +289,11 @@ static int nxp_irtc_counter_cancel_alarm(const struct device *dev, uint8_t chan_
 	data->alarm_user_data = NULL;
 
 	k_spin_unlock(&data->lock, key);
+
+	/* No wake is pending anymore, disarm the WUC. */
+	if (nxp_irtc_wake_via_wuc(dev)) {
+		(void)wuc_disable_wakeup_source_dt(&config->wuc);
+	}
 
 	return 0;
 }
@@ -339,6 +366,12 @@ static DEVICE_API(counter, nxp_irtc_counter_driver_api) = {
 	.get_top_value = nxp_irtc_counter_get_top_value,
 };
 
+#ifdef CONFIG_WUC
+#define NXP_IRTC_COUNTER_WUC_INIT(n) .wuc = WUC_DT_SPEC_INST_GET_OR(n, {0}),
+#else
+#define NXP_IRTC_COUNTER_WUC_INIT(n)
+#endif
+
 #define NXP_IRTC_COUNTER_INIT(n)                                                                   \
 	static void nxp_irtc_counter_irq_config_##n(const struct device *dev);                     \
                                                                                                    \
@@ -347,6 +380,7 @@ static DEVICE_API(counter, nxp_irtc_counter_driver_api) = {
 	static const struct nxp_irtc_counter_config nxp_irtc_counter_config_##n = {                \
 		.base = (RTC_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                                \
 		.irq_config_func = nxp_irtc_counter_irq_config_##n,                                \
+		NXP_IRTC_COUNTER_WUC_INIT(n)                                                       \
 		.osc_div = DT_INST_PROP(n, osc_div),                                               \
 		.info =                                                                            \
 			{                                                                          \
