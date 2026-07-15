@@ -252,7 +252,7 @@ struct bt_le_ext_adv_cb {
 	void (*scanned)(struct bt_le_ext_adv *adv,
 			struct bt_le_ext_adv_scanned_info *info);
 
-#if defined(CONFIG_BT_PRIVACY)
+#if defined(CONFIG_BT_PRIVACY) || defined(__DOXYGEN__)
 	/**
 	 * @brief The RPA validity of the advertising set has expired.
 	 *
@@ -1733,7 +1733,7 @@ struct bt_le_per_adv_sync_synced_info {
 	 *
 	 */
 	struct bt_conn *conn;
-#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP) || defined(__DOXYGEN__)
 	/** Number of subevents */
 	uint8_t num_subevents;
 
@@ -1804,7 +1804,7 @@ struct bt_le_per_adv_sync_recv_info {
 
 	/** The Constant Tone Extension (CTE) of the advertisement (@ref bt_df_cte_type) */
 	uint8_t cte_type;
-#if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
+#if defined(CONFIG_BT_PER_ADV_SYNC_RSP) || defined(__DOXYGEN__)
 	/** The value of the event counter where the subevent indication was received. */
 	uint16_t periodic_event_counter;
 
