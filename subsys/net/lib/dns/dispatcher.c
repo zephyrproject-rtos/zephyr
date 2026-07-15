@@ -131,6 +131,13 @@ static int recv_data(struct net_socket_service_event *pev)
 	int ret = 0, len;
 
 	dispatcher = table[pev->event.fd].ctx;
+	if (dispatcher == NULL) {
+		/* The dispatch slot was cleared concurrently, for example the
+		 * server socket was just closed while its poll event was still
+		 * in flight. Nothing to dispatch to, so drop the event.
+		 */
+		return 0;
+	}
 
 	k_mutex_lock(&dispatcher->lock, K_FOREVER);
 
