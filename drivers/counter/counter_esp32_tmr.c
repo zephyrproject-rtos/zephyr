@@ -35,7 +35,7 @@
 #endif
 
 #if COUNTER_SLEEP_RETENTION_ENABLED
-#include <hal/timer_periph.h>
+#include "gptimer_priv.h"
 #include <esp_private/sleep_retention.h>
 #endif
 
@@ -104,21 +104,22 @@ static esp_err_t counter_esp32_create_sleep_retention_cb(void *arg)
 	const struct counter_esp32_config *cfg = dev->config;
 
 	return sleep_retention_entries_create(
-		soc_timg_gptimer_retention_infos[cfg->group][cfg->index].regdma_entry_array,
-		soc_timg_gptimer_retention_infos[cfg->group][cfg->index].array_size,
+		gptimer_retention_infos[cfg->group][cfg->index].regdma_entry_array,
+		gptimer_retention_infos[cfg->group][cfg->index].array_size,
 		REGDMA_LINK_PRI_GPTIMER,
-		soc_timg_gptimer_retention_infos[cfg->group][cfg->index].module);
+		gptimer_retention_infos[cfg->group][cfg->index].module);
 }
 
 static void counter_esp32_sleep_retention_init(const struct device *dev)
 {
 	const struct counter_esp32_config *cfg = dev->config;
-	const soc_timg_gptimer_retention_desc_t *info =
-		&soc_timg_gptimer_retention_infos[cfg->group][cfg->index];
+	const gptimer_retention_desc_t *info =
+		&gptimer_retention_infos[cfg->group][cfg->index];
 
 	sleep_retention_module_init_param_t init_param = {
 		.cbs = {.create = {.handle = counter_esp32_create_sleep_retention_cb,
 				   .arg = (void *)dev}},
+		.attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
 		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM),
 	};
 
@@ -126,6 +127,9 @@ static void counter_esp32_sleep_retention_init(const struct device *dev)
 
 	if (err == ESP_OK) {
 		err = sleep_retention_module_allocate(info->module);
+	}
+	if (err == ESP_OK) {
+		err = sleep_retention_module_attach(info->module);
 	}
 	if (err != ESP_OK) {
 		LOG_WRN("GPTimer sleep retention init failed (%d) group=%u index=%u", err,
