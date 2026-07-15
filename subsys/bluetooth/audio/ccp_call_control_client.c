@@ -29,9 +29,6 @@ LOG_MODULE_REGISTER(bt_ccp_call_control_client, CONFIG_BT_CCP_CALL_CONTROL_CLIEN
 
 static sys_slist_t ccp_call_control_client_cbs =
 	SYS_SLIST_STATIC_INIT(&ccp_call_control_client_cbs);
-static struct bt_tbs_client_cb tbs_client_cbs;
-
-static struct bt_tbs_client_cb tbs_client_cbs;
 
 /* A service instance can either be a GTBS or a TBS instance */
 struct bt_ccp_call_control_client_bearer {
@@ -87,45 +84,6 @@ static struct bt_ccp_call_control_client *get_client_by_conn(const struct bt_con
 
 	return &clients[bt_conn_index(conn)];
 }
-
-static void connected_cb(struct bt_conn *conn, uint8_t err)
-{
-	static bool cbs_registered;
-
-	ARG_UNUSED(conn);
-
-	/* We register the callbacks in the connected callback. That way we ensure that they are
-	 * registered before any procedures are completed or we receive any notifications, while
-	 * registering them as late as possible
-	 */
-	if (err == BT_HCI_ERR_SUCCESS && !cbs_registered) {
-		int cb_err;
-
-		cb_err = bt_tbs_client_register_cb(&tbs_client_cbs);
-		__ASSERT(cb_err == 0, "Failed to register TBS callbacks: %d", cb_err);
-
-		cbs_registered = true;
-	}
-}
-
-static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
-{
-	struct bt_ccp_call_control_client *client = get_client_by_conn(conn);
-
-	ARG_UNUSED(reason);
-
-	/* client->conn may be NULL */
-	if (client->conn == conn) {
-		bt_conn_drop(&client->conn);
-
-		memset(client->bearers, 0, sizeof(client->bearers));
-	}
-}
-
-BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.connected = connected_cb,
-	.disconnected = disconnected_cb,
-};
 
 static void populate_bearers(struct bt_ccp_call_control_client *client,
 			     struct bt_ccp_call_control_client_bearers *bearers)
@@ -227,8 +185,6 @@ int bt_ccp_call_control_client_discover(struct bt_conn *conn,
 	if (atomic_test_and_set_bit(client->flags, CCP_CALL_CONTROL_CLIENT_FLAG_BUSY)) {
 		return -EBUSY;
 	}
-
-	tbs_client_cbs.discover = tbs_client_discover_cb;
 
 	ref = bt_conn_ref(conn);
 	if (ref == NULL) {
@@ -392,8 +348,6 @@ int bt_ccp_call_control_client_read_bearer_provider_name(
 		return err;
 	}
 
-	tbs_client_cbs.bearer_provider_name = tbs_client_read_bearer_provider_name_cb;
-
 	err = bt_tbs_client_read_bearer_provider_name(client->conn, bearer->tbs_index);
 	if (err != 0) {
 		atomic_clear_bit(client->flags, CCP_CALL_CONTROL_CLIENT_FLAG_BUSY);
@@ -455,8 +409,6 @@ int bt_ccp_call_control_client_read_bearer_uci(struct bt_ccp_call_control_client
 	if (err != 0) {
 		return err;
 	}
-
-	tbs_client_cbs.bearer_uci = tbs_client_read_bearer_uci_cb;
 
 	err = bt_tbs_client_read_bearer_uci(client->conn, bearer->tbs_index);
 	if (err != 0) {
@@ -520,8 +472,6 @@ int bt_ccp_call_control_client_read_bearer_tech(struct bt_ccp_call_control_clien
 		return err;
 	}
 
-	tbs_client_cbs.technology = tbs_client_read_bearer_tech_cb;
-
 	err = bt_tbs_client_read_technology(client->conn, bearer->tbs_index);
 	if (err != 0) {
 		atomic_clear_bit(client->flags, CCP_CALL_CONTROL_CLIENT_FLAG_BUSY);
@@ -544,3 +494,54 @@ int bt_ccp_call_control_client_read_bearer_tech(struct bt_ccp_call_control_clien
 	return 0;
 }
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY */
+
+static void connected_cb(struct bt_conn *conn, uint8_t err)
+{
+	static bool cbs_registered;
+
+	ARG_UNUSED(conn);
+
+	/* We register the callbacks in the connected callback. That way we ensure that they are
+	 * registered before any procedures are completed or we receive any notifications, while
+	 * registering them as late as possible
+	 */
+	if (err == BT_HCI_ERR_SUCCESS && !cbs_registered) {
+		static struct bt_tbs_client_cb tbs_client_cbs = {
+			.discover = tbs_client_discover_cb,
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
+			.bearer_provider_name = tbs_client_read_bearer_provider_name_cb,
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI)
+			.bearer_uci = tbs_client_read_bearer_uci_cb,
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)
+			.technology = tbs_client_read_bearer_tech_cb,
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY */
+		};
+		__maybe_unused int cb_err;
+
+		cb_err = bt_tbs_client_register_cb(&tbs_client_cbs);
+		__ASSERT(cb_err == 0, "Failed to register TBS callbacks: %d", cb_err);
+
+		cbs_registered = true;
+	}
+}
+
+static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
+{
+	struct bt_ccp_call_control_client *client = get_client_by_conn(conn);
+
+	ARG_UNUSED(reason);
+
+	/* client->conn may be NULL */
+	if (client->conn == conn) {
+		bt_conn_drop(&client->conn);
+
+		memset(client->bearers, 0, sizeof(client->bearers));
+	}
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.connected = connected_cb,
+	.disconnected = disconnected_cb,
+};
