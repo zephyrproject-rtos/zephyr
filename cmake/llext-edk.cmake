@@ -182,6 +182,11 @@ list(TRANSFORM llext_edk_c_incs REPLACE "^-I" "")
 yaml_get(llext_edk_file NAME build_info KEY cmake llext-edk file)
 yaml_get(APPLICATION_SOURCE_DIR NAME build_info KEY cmake application source-dir)
 yaml_get(WEST_TOPDIR NAME build_info KEY west topdir)
+if(${WEST_TOPDIR} STREQUAL west-NOTFOUND)
+  # When sysbuild is used in conjunction with west, the west topdir is not available.
+  # Use the llext-edk topdir instead, which propagates west topdir.
+  yaml_get(WEST_TOPDIR NAME build_info KEY cmake llext-edk topdir)
+endif()
 
 yaml_get(board_name NAME build_info KEY cmake board name)
 yaml_get(board_qualifiers NAME build_info KEY cmake board qualifiers)

@@ -92,6 +92,8 @@ properties:
         properties:
           file:
             type: string
+          topdir:
+            type: string
           remove-cflags:
             type: array
             items:

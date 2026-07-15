@@ -2407,6 +2407,12 @@ if(CONFIG_LLEXT_EDK)
   build_info(llext-edk file PATH ${llext_edk_file})
   build_info(llext-edk remove-cflags VALUE ${LLEXT_REMOVE_FLAGS} ${LLEXT_EDK_REMOVE_FLAGS})
   build_info(llext-edk append-cflags VALUE ${LLEXT_APPEND_FLAGS} ${LLEXT_EDK_APPEND_FLAGS} -DLL_EXTENSION_BUILD)
+  if(WEST_TOPDIR)
+    # If sysbuild is being used in conjunction with west, the application build_info.yml will not
+    # have the west entries. Propagate topdir to llext-edk entry, so that EDK can be built with a proper
+    # west topdir.
+    build_info(llext-edk topdir VALUE ${WEST_TOPDIR})
+  endif()
 
   # Generate the compiler flag files that will be used by the EDK
   add_subdirectory(misc/llext_edk)
