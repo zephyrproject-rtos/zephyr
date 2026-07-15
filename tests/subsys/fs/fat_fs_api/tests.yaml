@@ -22,6 +22,10 @@ tests:
     filter: dt_compat_enabled("zephyr,sdmmc-disk")
     platform_type:
       - mcu
+  filesystem.fat.api.nor:
+    extra_args: CONF_FILE="prj_nor.conf"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
   filesystem.fat.ram.api:
     platform_allow:
       - native_sim
