@@ -29,22 +29,12 @@ extern "C" {
 static ALWAYS_INLINE int sys_mm_vm_backend_mem_map(void *virt, uintptr_t phys, size_t size,
 						   uint32_t flags)
 {
-	arch_mem_map(virt, phys, size, flags);
-
-	/* arch_mem_map() would cause kernel panic if fails to map.
-	 * If we get here, mapping is successful.
-	 */
-	return 0;
+	return arch_mem_map(virt, phys, size, flags);
 }
 
 static ALWAYS_INLINE int sys_mm_vm_backend_mem_unmap(void *addr, size_t size)
 {
-	arch_mem_unmap(addr, size);
-
-	/* arch_mem_unmap() would cause kernel panic if fails to unmap.
-	 * If we get here, unmapping is successful.
-	 */
-	return 0;
+	return arch_mem_unmap(addr, size);
 }
 
 static ALWAYS_INLINE int sys_mm_vm_backend_page_phys_get(void *virt, uintptr_t *phys)
