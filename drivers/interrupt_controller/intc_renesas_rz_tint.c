@@ -60,6 +60,9 @@ DEVICE_MMIO_TOPLEVEL_STATIC(intc_regs, DT_NODELABEL(intc));
 #define REG_INTSEL_WRITE(base, irq, v) sys_write32((v), INTSEL(base) + (OFFSET(irq) / 3) * 4)
 #define REG_INTSEL_SPIk_SEL_MASK(irq)  (BIT_MASK(10) << ((OFFSET(irq) % 3) * 10))
 
+/* data->gpioint value for a tint channel that is not connected to a GPIO pin yet */
+#define GPIOINT_UNASSIGNED 0xFFU
+
 struct intc_rz_tint_config {
 	uint8_t tint;
 	uint8_t max_gpioint;
@@ -78,6 +81,9 @@ struct intc_rz_tint_data {
 
 static const uint8_t gpioint_table[] = DT_PROP(DT_NODELABEL(intc), gpioint_table);
 static struct k_spinlock lock;
+#if defined(CONFIG_ASSERT)
+static bool used_gpioint[DT_PROP(DT_NODELABEL(intc), max_gpioint) + 1];
+#endif
 
 /* Helper function to read TINT status
  * V2H, V2N: TSTATn bit of TSCTR register
@@ -268,13 +274,29 @@ int intc_rz_tint_connect(const struct device *dev, uint8_t port, uint8_t pin)
 	/* Map to GPIOINT */
 	uint8_t gpioint = gpioint_table[port] + pin;
 
-	if (gpioint > config->max_gpioint) {
-		return -EINVAL;
-	}
+	__ASSERT(gpioint <= config->max_gpioint,
+		 "port %u pin %u maps to gpioint %u, out of range (max %u)", port, pin, gpioint,
+		 config->max_gpioint);
 
 	K_SPINLOCK(&lock) {
-		uint32_t reg_val = REG_TSSR_READ(base, tint);
+		uint32_t reg_val;
 
+		/* Already mapped, no need to remap and return successfully */
+		if (data->gpioint == gpioint) {
+			K_SPINLOCK_BREAK;
+		}
+
+		__ASSERT(data->gpioint == GPIOINT_UNASSIGNED,
+			 "tint %u already assigned to port %u pin %u", tint,
+			 data->port, data->pin);
+		__ASSERT(!used_gpioint[gpioint],
+			 "port %u pin %u (gpioint %u) already assigned to another tint", port,
+			 pin, gpioint);
+#if defined(CONFIG_ASSERT)
+		used_gpioint[gpioint] = true;
+#endif
+
+		reg_val = REG_TSSR_READ(base, tint);
 		reg_val &= ~(REG_TSSR_TSSEL_MASK(tint) | REG_TSSR_TIEN_MASK(tint));
 		reg_val |= FIELD_PREP(REG_TSSR_TSSEL_MASK(tint), gpioint);
 		reg_val |= FIELD_PREP(REG_TSSR_TIEN_MASK(tint), 1U);
@@ -311,6 +333,7 @@ int intc_rz_tint_set_callback(const struct device *dev, intc_rz_tint_callback_t 
 		.max_gpioint = DT_PROP(DT_INST_PARENT(index), max_gpioint),                        \
 	};                                                                                         \
 	struct intc_rz_tint_data intc_rz_tint_data##index = {                                      \
+		.gpioint = GPIOINT_UNASSIGNED,                                                     \
 		.trigger_type = DT_INST_ENUM_IDX_OR(index, trigger_type, 0),                       \
 	};                                                                                         \
 	static int intc_rz_tint_init##index(const struct device *dev)                              \
