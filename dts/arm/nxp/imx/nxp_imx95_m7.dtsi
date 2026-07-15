@@ -478,6 +478,78 @@
 			status = "disabled";
 		};
 
+		pdm: pdm@44520000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "nxp,micfil";
+			reg = <0x44520000 DT_SIZE_K(4)>;
+			interrupts = <188 0>;
+			clocks = <&scmi_clk IMX95_CLK_PDM>;
+			dmas = <&edma1 0 6>;
+			dma-names = "rx";
+			quality-mode = <1>;
+			cic-decimation-rate = <0>;
+			fifo-watermark = <4>;
+			sample-rate = <16000>;
+			status = "disabled";
+
+			channel0: pdm-channel@0 {
+				reg = <0>;
+				dc-remover-cutoff-freq = <2>;
+				decimation-filter-gain = <0>;
+				status = "disabled";
+			};
+
+			channel1: pdm-channel@1 {
+				reg = <1>;
+				dc-remover-cutoff-freq = <2>;
+				decimation-filter-gain = <0>;
+				status = "disabled";
+			};
+
+			channel2: pdm-channel@2 {
+				reg = <2>;
+				dc-remover-cutoff-freq = <2>;
+				decimation-filter-gain = <0>;
+				status = "disabled";
+			};
+
+			channel3: pdm-channel@3 {
+				reg = <3>;
+				dc-remover-cutoff-freq = <2>;
+				decimation-filter-gain = <0>;
+				status = "disabled";
+			};
+
+			channel4: pdm-channel@4 {
+				reg = <4>;
+				dc-remover-cutoff-freq = <2>;
+				decimation-filter-gain = <0>;
+				status = "disabled";
+			};
+
+			channel5: pdm-channel@5 {
+				reg = <5>;
+				dc-remover-cutoff-freq = <2>;
+				decimation-filter-gain = <0>;
+				status = "disabled";
+			};
+
+			channel6: pdm-channel@6 {
+				reg = <6>;
+				dc-remover-cutoff-freq = <2>;
+				decimation-filter-gain = <0>;
+				status = "disabled";
+			};
+
+			channel7: pdm-channel@7 {
+				reg = <7>;
+				dc-remover-cutoff-freq = <2>;
+				decimation-filter-gain = <0>;
+				status = "disabled";
+			};
+		};
+
 		lpuart7: serial@42690000 {
 			compatible = "nxp,imx-lpuart", "nxp,lpuart";
 			reg = <0x42690000 DT_SIZE_K(64)>;
