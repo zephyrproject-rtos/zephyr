@@ -693,7 +693,7 @@ static inline bool __arch_mem_map(void *vaddr, uintptr_t paddr, uint32_t attrs, 
 	return ret;
 }
 
-void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
+int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	uint32_t va = (uint32_t)virt;
 	uint32_t pa = (uint32_t)phys;
@@ -752,6 +752,8 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	}
 
 	k_spin_unlock(&xtensa_mmu_lock, key);
+
+	return 0;
 }
 
 /**
@@ -860,7 +862,7 @@ static inline void __arch_mem_unmap(void *vaddr)
 #endif /* CONFIG_USERSPACE */
 }
 
-void arch_mem_unmap(void *addr, size_t size)
+int arch_mem_unmap(void *addr, size_t size)
 {
 	uint32_t va = (uint32_t)addr;
 	uint32_t rem_size = (uint32_t)size;
@@ -868,12 +870,12 @@ void arch_mem_unmap(void *addr, size_t size)
 
 	if (addr == NULL) {
 		LOG_ERR("Cannot unmap NULL pointer");
-		return;
+		return -EINVAL;
 	}
 
 	if (size == 0) {
 		LOG_ERR("Cannot unmap virtual memory with zero size");
-		return;
+		return -EINVAL;
 	}
 
 	key = k_spin_lock(&xtensa_mmu_lock);
@@ -894,6 +896,8 @@ void arch_mem_unmap(void *addr, size_t size)
 	}
 
 	k_spin_unlock(&xtensa_mmu_lock, key);
+
+	return 0;
 }
 
 /* This should be implemented in the SoC layer.

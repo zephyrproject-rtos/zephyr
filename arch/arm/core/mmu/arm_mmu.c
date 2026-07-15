@@ -964,8 +964,10 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
  * @param size Size (in bytes) of the memory area to map.
  * @param flags Memory attributes & permissions. Comp. K_MEM_...
  *              flags in kernel/mm.h.
+ *
+ * @retval 0 If succeeded
  */
-void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
+int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	int ret = __arch_mem_map(virt, phys, size, flags);
 
@@ -975,6 +977,8 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	} else {
 		invalidate_tlb_all();
 	}
+
+	return 0;
 }
 
 /**
@@ -1024,8 +1028,11 @@ static int __arch_mem_unmap(void *addr, size_t size)
  *
  * @param addr 32-bit virtual address to unmap.
  * @param size Size (in bytes) of the memory area to unmap.
+ *
+ * @retval 0 If succeeded
+ * @retval -EINVAL Invalid input arguments
  */
-void arch_mem_unmap(void *addr, size_t size)
+int arch_mem_unmap(void *addr, size_t size)
 {
 	int ret = __arch_mem_unmap(addr, size);
 
@@ -1034,6 +1041,8 @@ void arch_mem_unmap(void *addr, size_t size)
 	} else {
 		invalidate_tlb_all();
 	}
+
+	return ret;
 }
 
 /**

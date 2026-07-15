@@ -330,8 +330,10 @@ static inline bool arch_is_in_isr(void);
  * @param phys Page-aligned Source physical address to map
  * @param size Page-aligned size of the mapped memory region in bytes
  * @param flags Caching, access and control flags, see K_MAP_* macros
+ *
+ * @return 0 on success, negative errno code on fail
  */
-void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags);
+int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags);
 
 /**
  * Remove mappings for a provided virtual address range
@@ -358,8 +360,10 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags);
  *
  * @param addr Page-aligned base virtual address to un-map
  * @param size Page-aligned region size
+ *
+ * @return 0 on success, negative errno code on fail
  */
-void arch_mem_unmap(void *addr, size_t size);
+int arch_mem_unmap(void *addr, size_t size);
 
 /**
  * Get the mapped physical memory address from virtual address.
