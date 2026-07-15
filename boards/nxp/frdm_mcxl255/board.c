@@ -127,6 +127,12 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_GateAonUART);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_kpp0))
+	CLOCK_AttachClk(kFRO16K_to_AON_KPP);
+	CLOCK_EnableClock(kCLOCK_GateAonKPP);
+	RESET_ReleasePeripheralReset(kAonKPP_RST_SHIFT_RSTn);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rtc))
 	if (!CLOCK_IsRoscInitialized()) {
 		rosc_init_config_t rosc_init_config;

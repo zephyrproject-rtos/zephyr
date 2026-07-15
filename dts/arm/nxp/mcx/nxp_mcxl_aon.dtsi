@@ -74,3 +74,19 @@
 		status = "disabled";
 	};
 };
+
+&aon_peripheral {
+	kpp_clock: kpp-clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <16384>;
+	};
+
+	aon_kpp0: kpp@95000 {
+		compatible = "nxp,mcux-kpp";
+		reg = <0x95000 0x1000>;
+		interrupts = <21 0>;
+		clocks = <&kpp_clock>;
+		status = "disabled";
+	};
+};

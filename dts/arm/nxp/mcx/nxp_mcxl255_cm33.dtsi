@@ -42,3 +42,7 @@
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
+
+&aon_kpp0 {
+	interrupts = <148 0>;
+};
