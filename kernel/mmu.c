@@ -576,6 +576,7 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 	k_spinlock_key_t key;
 	uint8_t *pos;
 	bool uninit = (flags & K_MEM_MAP_UNINIT) != 0U;
+	uint8_t *failed_unmap_from, *failed_unmap_to;
 
 	__ASSERT(!is_anon || (is_anon && page_frames_initialized),
 		 "%s called too early", __func__);
@@ -644,13 +645,9 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 				ret = map_anon_page(pos, flags);
 
 				if (ret != 0) {
-					/* TODO:
-					 * call k_mem_unmap(dst, pos - dst)
-					 * when implemented in #28990 and
-					 * release any guard virtual page as well.
-					 */
-					dst = NULL;
-					goto out;
+					failed_unmap_from = dst;
+					failed_unmap_to = pos;
+					goto fail_need_unmap;
 				}
 			}
 		}
@@ -675,6 +672,12 @@ out:
 	}
 
 	return dst;
+
+fail_need_unmap:
+	/* Need to unmap already mappped pages if we encounter any errors. */
+	arch_mem_unmap(failed_unmap_from, failed_unmap_to - failed_unmap_from);
+
+	return NULL;
 }
 
 void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
