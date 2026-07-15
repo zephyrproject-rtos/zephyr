@@ -12,33 +12,58 @@ from conftest import RC_KERNEL_ELF
 # test code below reads the rest via tc.get(key).
 TEST_CASES = [
     {
-        "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF],
+        "expected_cmd": ["xsdb", "default_cfg_path", "elf", RC_KERNEL_ELF],
     },
     {
         "config": "custom_cfg_path",
-        "expected_cmd": ["xsdb", "custom_cfg_path", RC_KERNEL_ELF],
+        "expected_cmd": ["xsdb", "custom_cfg_path", "elf", RC_KERNEL_ELF],
     },
     {
         "bitstream": "bitstream_path",
-        "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF, "bitstream_path"],
+        "expected_cmd": [
+            "xsdb",
+            "default_cfg_path",
+            "elf",
+            RC_KERNEL_ELF,
+            "bitstream",
+            "bitstream_path",
+        ],
     },
     {
         "fsbl": "fsbl_path",
-        "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF, "fsbl_path"],
+        "expected_cmd": ["xsdb", "default_cfg_path", "elf", RC_KERNEL_ELF, "fsbl", "fsbl_path"],
     },
     {
         "bitstream": "bitstream_path",
         "fsbl": "fsbl_path",
-        "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF, "bitstream_path", "fsbl_path"],
+        "expected_cmd": [
+            "xsdb",
+            "default_cfg_path",
+            "elf",
+            RC_KERNEL_ELF,
+            "bitstream",
+            "bitstream_path",
+            "fsbl",
+            "fsbl_path",
+        ],
     },
     {
         "pdi": "pdi_path",
-        "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF, "pdi_path"],
+        "expected_cmd": ["xsdb", "default_cfg_path", "elf", RC_KERNEL_ELF, "pdi", "pdi_path"],
     },
     {
         "pdi": "pdi_path",
         "bl31": "bl31_path",
-        "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF, "pdi_path", "bl31_path"],
+        "expected_cmd": [
+            "xsdb",
+            "default_cfg_path",
+            "elf",
+            RC_KERNEL_ELF,
+            "pdi",
+            "pdi_path",
+            "bl31",
+            "bl31_path",
+        ],
     },
     {
         "pdi": "pdi_path",
@@ -47,9 +72,13 @@ TEST_CASES = [
         "expected_cmd": [
             "xsdb",
             "default_cfg_path",
+            "elf",
             RC_KERNEL_ELF,
+            "pdi",
             "pdi_path",
+            "bl31",
             "bl31_path",
+            "dtb",
             "dtb_path",
         ],
     },
@@ -61,11 +90,112 @@ TEST_CASES = [
         "expected_cmd": [
             "xsdb",
             "default_cfg_path",
+            "elf",
             RC_KERNEL_ELF,
+            "bitstream",
             "bitstream_path",
+            "fsbl",
             "fsbl_path",
+            "bl31",
             "bl31_path",
+            "pmufw",
             "pmufw_path",
+        ],
+    },
+    {
+        # --param pl_pdi is the generic pass-through for a parameter not
+        # covered by a dedicated option.
+        "pdi": "pdi_path",
+        "params": [("pl_pdi", "pl_pdi_path")],
+        "expected_cmd": [
+            "xsdb",
+            "default_cfg_path",
+            "elf",
+            RC_KERNEL_ELF,
+            "pdi",
+            "pdi_path",
+            "pl_pdi",
+            "pl_pdi_path",
+        ],
+    },
+    {
+        "pdi": "pdi_path",
+        "params": [("pl_pdi", "pl_pdi_path")],
+        "bl31": "bl31_path",
+        "expected_cmd": [
+            "xsdb",
+            "default_cfg_path",
+            "elf",
+            RC_KERNEL_ELF,
+            "pdi",
+            "pdi_path",
+            "bl31",
+            "bl31_path",
+            "pl_pdi",
+            "pl_pdi_path",
+        ],
+    },
+    {
+        "pdi": "pdi_path",
+        "params": [("pl_pdi", "pl_pdi_path")],
+        "bl31": "bl31_path",
+        "dtb": "dtb_path",
+        "expected_cmd": [
+            "xsdb",
+            "default_cfg_path",
+            "elf",
+            RC_KERNEL_ELF,
+            "pdi",
+            "pdi_path",
+            "bl31",
+            "bl31_path",
+            "dtb",
+            "dtb_path",
+            "pl_pdi",
+            "pl_pdi_path",
+        ],
+    },
+    {
+        # Multiple --param entries sharing a NAME collapse into a single key
+        # whose value is a space-joined Tcl list, so boards read them back
+        # with a foreach -- e.g. several PL PDIs for partial reconfiguration.
+        "pdi": "pdi_path",
+        "params": [
+            ("pl_pdi", "pl_pdi_path1"),
+            ("pl_pdi", "pl_pdi_path2"),
+            ("pl_pdi", "pl_pdi_path3"),
+        ],
+        "bl31": "bl31_path",
+        "dtb": "dtb_path",
+        "expected_cmd": [
+            "xsdb",
+            "default_cfg_path",
+            "elf",
+            RC_KERNEL_ELF,
+            "pdi",
+            "pdi_path",
+            "bl31",
+            "bl31_path",
+            "dtb",
+            "dtb_path",
+            "pl_pdi",
+            "pl_pdi_path1 pl_pdi_path2 pl_pdi_path3",
+        ],
+    },
+    {
+        # --param is fully generic: any NAME a board's xsdb.cfg declares
+        # works, not just the ones west happens to know about.
+        "pdi": "pdi_path",
+        "params": [("some_board_specific_key", "some_value")],
+        "expected_cmd": [
+            "xsdb",
+            "default_cfg_path",
+            "elf",
+            RC_KERNEL_ELF,
+            "pdi",
+            "pdi_path",
+            "some_board_specific_key",
+            "some_value",
         ],
     },
 ]
@@ -87,6 +217,7 @@ def test_xsdbbinaryrunner_init(check_call, path_exists, tc, runner_config):
             bl31=tc.get("bl31"),
             dtb=tc.get("dtb"),
             pmufw=tc.get("pmufw"),
+            params=tc.get("params"),
         )
 
     runner.do_run("flash")
@@ -108,6 +239,8 @@ def test_xsdbbinaryrunner_create(check_call, path_exists, tc, runner_config):
         args.extend(["--fsbl", tc["fsbl"]])
     if tc.get("pdi"):
         args.extend(["--pdi", tc["pdi"]])
+    for name, value in tc.get("params") or []:
+        args.extend(["--param", name, value])
     if tc.get("bl31"):
         args.extend(["--bl31", tc["bl31"]])
     if tc.get("dtb"):
