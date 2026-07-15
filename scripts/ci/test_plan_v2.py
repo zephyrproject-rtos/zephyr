@@ -449,6 +449,16 @@ class MaintainerAreaStrategy(SelectionStrategy):
 # ---------------------------------------------------------------------------
 
 
+class TwisterExecutionError(RuntimeError):
+    """Raised when a twister enumeration subprocess crashes.
+
+    A crash (missing dependency, import error, OOM, segfault, corrupted
+    output) is distinct from a clean run that legitimately matched no tests.
+    The former must **fail the pipeline** - silently treating it as an empty
+    test plan lets a change merge with no coverage at all.
+    """
+
+
 class TwisterExecutor:
     """Executes :class:`TwisterCall` descriptors and collects results.
 
@@ -469,7 +479,18 @@ class TwisterExecutor:
         self._quarantine_list = quarantine_list or []
 
     def execute(self, call):
-        """Run twister for *call* and return the list of test suites."""
+        """Run twister for *call* and return the list of test suites.
+
+        Fails closed on the exit code.  twister's contract (see
+        twisterlib/testplan.py) is: exit 0 means success - either a results
+        file was written, or the patterns legitimately matched no tests (an
+        empty selection, reported via ``SystemExit(0)``); any load error or
+        crash exits non-zero.  So **any** non-zero exit is a failure and raises
+        :class:`TwisterExecutionError` rather than being downgraded to an empty
+        plan, which is how a change would merge with zero coverage.  Keying on
+        the exit code - not on parsed error text - means new failure modes fail
+        closed by default without the tool having to recognise them.
+        """
         with tempfile.NamedTemporaryFile(
             suffix=".json", prefix="twister_partial_", delete=False
         ) as tf:
@@ -478,20 +499,37 @@ class TwisterExecutor:
         try:
             cmd = self._build_cmd(call, partial_path)
             log.info("Running: %s", " ".join(cmd))
-            ret = subprocess.call(cmd)  # noqa: S603
-            if ret != 0:
-                log.warning("twister exited with code %d for call: %s", ret, call.description)
+            res = subprocess.run(  # noqa: S603
+                cmd, text=True, capture_output=True, check=False
+            )
+            # Forward twister's own output so CI logs keep the full detail.
+            if res.stdout:
+                sys.stdout.write(res.stdout)
+            if res.stderr:
+                sys.stderr.write(res.stderr)
 
+            if res.returncode != 0:
+                raise TwisterExecutionError(
+                    f"twister exited with code {res.returncode} for call "
+                    f"'{call.description}'; refusing to treat a failed test "
+                    f"selection as an empty test plan"
+                )
+
+            # Exit 0: success. The results file is absent when twister matched
+            # no tests (it exits 0 without writing one) - a valid empty result.
             if not os.path.exists(partial_path) or os.path.getsize(partial_path) == 0:
-                log.warning("twister did not produce output at %s", partial_path)
+                log.info("twister matched no tests for call: %s", call.description)
                 return []
 
             try:
                 with open(partial_path, encoding="utf-8") as fh:
                     data = json.load(fh)
             except json.JSONDecodeError as err:
-                log.warning("twister produced invalid JSON at %s: %s", partial_path, err)
-                return []
+                # Exit 0 but an unreadable file is a contract violation.
+                raise TwisterExecutionError(
+                    f"twister exited 0 but produced invalid JSON for call "
+                    f"'{call.description}': {err}"
+                ) from err
             return data.get("testsuites", [])
         finally:
             if os.path.exists(partial_path):
@@ -3987,7 +4025,16 @@ def main():
         tests_per_builder=args.tests_per_builder,
     )
 
-    return orchestrator.run(changed_files, args.output_file)
+    try:
+        return orchestrator.run(changed_files, args.output_file)
+    except TwisterExecutionError as err:
+        log.error("Test plan generation FAILED: %s", err)
+        log.error(
+            "Not emitting a test plan. Failing the job so the change is not "
+            "built/merged with an incomplete or empty plan. Fix the twister "
+            "environment (e.g. missing Python dependencies) and re-run."
+        )
+        return 1
 
 
 if __name__ == "__main__":
