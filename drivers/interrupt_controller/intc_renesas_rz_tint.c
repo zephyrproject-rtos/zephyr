@@ -77,6 +77,10 @@ struct intc_rz_tint_data {
 static const uint8_t gpioint_table[] = DT_PROP(DT_NODELABEL(intc), gpioint_table);
 static struct k_spinlock lock;
 
+/* Helper function to read TINT status
+ * V2H, V2N: TSTATn bit of TSCTR register
+ * Others: TSTATSn bit of TSCR register
+ */
 static inline bool intc_rz_tint_status_read(mem_addr_t base, uint8_t tint)
 {
 #ifdef CONFIG_RENESAS_RZ_TINT_SUPPORT_STATUS_CLEAR_REG
@@ -87,6 +91,10 @@ static inline bool intc_rz_tint_status_read(mem_addr_t base, uint8_t tint)
 #endif /* CONFIG_RENESAS_RZ_TINT_SUPPORT_STATUS_CLEAR_REG */
 }
 
+/* Helper function to clear TINT status
+ * V2H, V2N: TCLRn bit of TSCLR register
+ * Others: TSTATSn bit of TSCR register
+ */
 static inline void intc_rz_tint_status_clear(mem_addr_t base, uint8_t tint)
 {
 #ifdef CONFIG_RENESAS_RZ_TINT_SUPPORT_STATUS_CLEAR_REG
@@ -103,19 +111,28 @@ static inline void intc_rz_tint_status_clear(mem_addr_t base, uint8_t tint)
 #endif /* CONFIG_RENESAS_RZ_TINT_SUPPORT_STATUS_CLEAR_REG */
 }
 
+/* Helper function to perform the process of clearing the interrupt status after changing
+ * the setting as per User's manual "Precaution when Changing Interrupt Settings".
+ * Note: the caller must hold the lock for the shared TSCR register.
+ */
 static inline void intc_rz_tint_clear_irq_status(const struct device *dev)
 {
 	const struct intc_rz_tint_config *config = dev->config;
 	mem_addr_t base = DEVICE_MMIO_GET(dev);
 	uint8_t tint = config->tint;
 
-	intc_rz_tint_status_clear(base, tint);
-
-	/*
-	 * User's manual: Clear Timing of Interrupt Cause
-	 * Dummy read is required after write
+	/* As per TSCLR register (V2H, V2N) and TSCR register (A3x, G2x, G3x, V2L)
+	 * Only clear TINTn status flags when it is 1. Otherwise, writing has no effect
 	 */
-	(void)intc_rz_tint_status_read(base, tint);
+	if (intc_rz_tint_status_read(base, tint)) {
+		intc_rz_tint_status_clear(base, tint);
+
+		/*
+		 * User's manual: Clear Timing of Interrupt Cause
+		 * Dummy read is required after write
+		 */
+		(void)intc_rz_tint_status_read(base, tint);
+	}
 }
 
 int intc_rz_tint_enable(const struct device *dev)
