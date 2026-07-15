@@ -2108,66 +2108,6 @@ class CMakeStyle(StyleCheckMixin, ComplianceTest):
         )
 
 
-class Identity(ComplianceTest):
-    """
-    Checks if Emails of author and signed-off messages are consistent.
-    """
-
-    name = "Identity"
-    doc = zephyr_doc_detail_builder("/contribute/guidelines.html#commit-guidelines")
-
-    def run(self):
-        for shaidx in get_shas(COMMIT_RANGE):
-            commit_info = git('show', '-s', '--format=%an%n%ae%n%b', shaidx).split('\n', 2)
-
-            failures = []
-
-            if len(commit_info) == 2:
-                failures.append(f'{shaidx}: Empty commit message body')
-                auth_name, auth_email = commit_info
-                body = ''
-            elif len(commit_info) == 3:
-                auth_name, auth_email, body = commit_info
-            else:
-                self.failure(f'Unable to parse commit message for {shaidx}')
-                continue
-
-            if auth_email.endswith("@users.noreply.github.com"):
-                failures.append(
-                    f"{shaidx}: author email ({auth_email}) must "
-                    "be a real email and cannot end in "
-                    "@users.noreply.github.com"
-                )
-
-            # Returns an array of everything to the right of ':' on each signoff line
-            signoff_lines = re.findall(r"signed-off-by:\s(.*)", body, re.IGNORECASE)
-            if len(signoff_lines) == 0:
-                failures.append(f'{shaidx}: Missing signed-off-by line')
-            else:
-                # Validate all signoff lines' syntax while also searching for commit author
-                found_author_signoff = False
-                for signoff in signoff_lines:
-                    match = re.search(r"(.+) <(.+)>", signoff)
-
-                    if not match:
-                        failures.append(
-                            f"{shaidx}: Signed-off-by line ({signoff}) "
-                            "does not follow the syntax: First "
-                            "Last <email>."
-                        )
-                    elif (auth_name, auth_email) == match.groups():
-                        found_author_signoff = True
-
-                if not found_author_signoff:
-                    failures.append(
-                        f"{shaidx}: author name ({auth_name}) and email ({auth_email}) "
-                        "needs to match one of the signed-off-by entries."
-                    )
-
-            if failures:
-                self.failure('\n'.join(failures))
-
-
 class BinaryFiles(ComplianceTest):
     """
     Check that the diff contains no binary files.
@@ -3018,7 +2958,7 @@ def parse_args(argv):
         const=f'{empty_tree}..HEAD',
         help="""The full history commit range. Useful for testing purposes.
                 WARNING: Should not be set for checks that perform per-commit actions, such as
-                GitDiffCheck/GitLint/Identity.""",
+                GitDiffCheck/GitLint.""",
     )
     parser.add_argument(
         '-o',

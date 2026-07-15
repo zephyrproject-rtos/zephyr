@@ -84,10 +84,6 @@ jobs:
         # Increase rename limit to allow for large PRs
         git config diff.renameLimit 10000
         excludes="-e KconfigBasic -e SysbuildKconfigBasic -e ClangFormat"
-        # The signed-off-by check for dependabot should be skipped
-        if [ "${{ github.actor }}" == "dependabot[bot]" ]; then
-          excludes="$excludes -e Identity"
-        fi
         ./scripts/ci/check_compliance.py --annotate $excludes -c origin/${BASE_REF}..
 
     - name: upload-results
