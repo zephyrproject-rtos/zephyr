@@ -203,7 +203,7 @@ static void dwmac_tx_release(const struct device *dev)
 			net_pkt_unref(pkt);
 
 			if ((des0 & TDES0_ES) != 0U) {
-				LOG_ERR("tx error (DES0 = 0x%08x)", des0);
+				LOG_DBG("tx error (DES0 = 0x%08x)", des0);
 				eth_stats_update_errors_tx(p->iface);
 			}
 		}
@@ -275,7 +275,7 @@ static void dwmac_receive(const struct device *dev)
 					net_pkt_unref(p->rx_pkt);
 				}
 			} else {
-				LOG_ERR("rx error (DES0 = 0x%08x)", des0);
+				LOG_DBG("rx error (DES0 = 0x%08x)", des0);
 				eth_stats_update_errors_rx(p->iface);
 				net_pkt_unref(p->rx_pkt);
 			}
