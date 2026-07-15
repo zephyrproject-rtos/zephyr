@@ -182,3 +182,32 @@ int cs40l26_firmware_multi_write(const struct device *const dev,
 
 	return 0;
 }
+
+int cs40l26_firmware_poll(const struct device *const dev, const uint32_t firmware_control,
+			  const uint32_t val, const k_timeout_t timeout)
+{
+	const struct cs40l26_config *const config = dev->config;
+	const k_timepoint_t end = sys_timepoint_calc(timeout);
+	uint32_t firmware_address, reg_val;
+	int ret;
+
+	ret = cs40l26_get_firmware_address(dev, firmware_control, &firmware_address);
+	if (ret < 0) {
+		return ret;
+	}
+
+	do {
+		ret = cs40lxx_read(&config->io_bus, firmware_address, &reg_val);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (reg_val == val) {
+			return 0;
+		}
+
+		(void)k_msleep(1);
+	} while (!sys_timepoint_expired(end));
+
+	return -ETIMEDOUT;
+}
