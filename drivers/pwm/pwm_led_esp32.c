@@ -432,12 +432,16 @@ static void pwm_led_esp32_sleep_retention_init(void)
 	sleep_retention_module_t module = ledc_reg_retention_info[0].module_id;
 	sleep_retention_module_init_param_t init_param = {
 		.cbs = {.create = {.handle = pwm_led_esp32_create_sleep_retention_cb, .arg = NULL}},
+		.attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
 		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)};
 
 	esp_err_t err = sleep_retention_module_init(module, &init_param);
 
 	if (err == ESP_OK) {
 		err = sleep_retention_module_allocate(module);
+	}
+	if (err == ESP_OK) {
+		err = sleep_retention_module_attach(module);
 	}
 	if (err != ESP_OK) {
 		LOG_WRN("LEDC sleep retention init failed (%d)", err);
