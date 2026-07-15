@@ -520,12 +520,12 @@ struct bt_ots_date_time {
  */
 struct bt_ots_obj_metadata {
 
-#if defined(CONFIG_BT_OTS)
+#if defined(CONFIG_BT_OTS) || defined(__DOXYGEN__)
 	/** @brief Object Name */
 	char                           *name;
 #endif /* CONFIG_BT_OTS */
 
-#if defined(CONFIG_BT_OTS_CLIENT)
+#if defined(CONFIG_BT_OTS_CLIENT) || defined(__DOXYGEN__)
 	/* TODO: Unify client/server name */
 	/** @brief Object name (client) */
 	char                           name_c[CONFIG_BT_OTS_OBJ_MAX_NAME_LEN + 1];
@@ -537,7 +537,7 @@ struct bt_ots_obj_metadata {
 	/** @brief Object Size */
 	struct bt_ots_obj_size         size;
 
-#if defined(CONFIG_BT_OTS_CLIENT)
+#if defined(CONFIG_BT_OTS_CLIENT) || defined(__DOXYGEN__)
 	/** @brief Object first created time */
 	struct bt_ots_date_time        first_created;
 

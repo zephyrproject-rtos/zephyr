@@ -743,7 +743,7 @@ struct bt_l2cap_chan_ops {
 	 */
 	void (*reconfigured)(struct bt_l2cap_chan *chan);
 
-#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+#if defined(CONFIG_BT_L2CAP_SEG_RECV) || defined(__DOXYGEN__)
 	/** @brief Handle L2CAP segments directly
 	 *
 	 *  This is an alternative to @ref bt_l2cap_chan_ops.recv. They cannot

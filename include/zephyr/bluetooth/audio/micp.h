@@ -217,7 +217,7 @@ struct bt_micp_mic_ctlr_cb {
 	 */
 	void (*unmute_written)(struct bt_micp_mic_ctlr *mic_ctlr, int err);
 
-#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
+#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS) || defined(__DOXYGEN__)
 	/** Audio Input Control Service client callback */
 	struct bt_aics_cb               aics_cb;
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
