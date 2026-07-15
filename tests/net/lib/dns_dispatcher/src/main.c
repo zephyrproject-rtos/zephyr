@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/socket.h>
 #include <zephyr/net/socket_service.h>
 
 #define NET_LOG_ENABLED 1
@@ -35,6 +36,24 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #else
 #define DBG(fmt, ...)
 #endif
+
+extern void dns_dispatcher_svc_handler(struct net_socket_service_event *pev);
+
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(test_pair_svc, dns_dispatcher_svc_handler, 1);
+
+static int test_dispatch_cb(struct dns_socket_dispatcher *ctx, int sock,
+			    struct net_sockaddr *addr, size_t addrlen,
+			    struct net_buf *buf, size_t data_len)
+{
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(sock);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(addrlen);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(data_len);
+
+	return 0;
+}
 
 #define NAME4 "4.zephyr.test"
 #define NAME6 "6.zephyr.test"
@@ -201,6 +220,87 @@ ZTEST(dns_dispatcher, test_dns_dispatcher)
 
 	zassert_equal(ctx->servers[0].dispatcher.fds[sock2].fd, -1, "Socket not closed");
 	zassert_equal(ctx->servers[0].dispatcher.sock, -1, "Dispatcher still registered");
+}
+
+/* Register a responder and a resolver on the same family/port so the
+ * dispatcher pairs them (responder->pair points at the resolver). Closing the
+ * resolver must clear that back-reference, otherwise the surviving responder
+ * would later delegate traffic to an unregistered context.
+ */
+ZTEST(dns_dispatcher, test_dispatcher_pair_cleanup)
+{
+	static struct dns_socket_dispatcher responder;
+	static struct dns_socket_dispatcher resolver;
+	static struct zsock_pollfd responder_fds[1];
+	static struct zsock_pollfd resolver_fds[1];
+	struct net_sockaddr_in local = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(65123),
+	};
+	int responder_sock, resolver_sock;
+
+	responder_sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(responder_sock >= 0, "Cannot create responder socket");
+
+	resolver_sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(resolver_sock >= 0, "Cannot create resolver socket");
+
+	responder_fds[0].fd = responder_sock;
+	resolver_fds[0].fd = resolver_sock;
+
+	responder.type = DNS_SOCKET_RESPONDER;
+	responder.cb = test_dispatch_cb;
+	responder.fds = responder_fds;
+	responder.fds_len = 1;
+	responder.sock = responder_sock;
+	responder.svc = &test_pair_svc;
+	memcpy(&responder.local_addr, &local, sizeof(local));
+
+	resolver.type = DNS_SOCKET_RESOLVER;
+	resolver.cb = test_dispatch_cb;
+	resolver.fds = resolver_fds;
+	resolver.fds_len = 1;
+	resolver.sock = resolver_sock;
+	resolver.svc = &test_pair_svc;
+	memcpy(&resolver.local_addr, &local, sizeof(local));
+
+	zassert_ok(dns_dispatcher_register(&responder), "Cannot register responder");
+	zassert_ok(dns_dispatcher_register(&resolver), "Cannot register resolver");
+
+	zassert_equal(responder.pair, &resolver, "Dispatchers were not paired");
+
+	zassert_ok(dns_dispatcher_unregister(&resolver), "Cannot unregister resolver");
+	zassert_is_null(responder.pair, "Pair back-reference was not cleared");
+
+	zassert_ok(dns_dispatcher_unregister(&responder), "Cannot unregister responder");
+
+	(void)zsock_close(responder_sock);
+	(void)zsock_close(resolver_sock);
+}
+
+/* A poll event may still be in flight for a socket whose dispatch slot was
+ * cleared concurrently (e.g. the server was just closed). Emulate that by
+ * handing the handler a dispatch table whose slot is NULL and verify the event
+ * is dropped instead of dereferencing a NULL dispatcher.
+ */
+ZTEST(dns_dispatcher, test_dispatcher_null_slot_dropped)
+{
+	/* dispatch_table entries start with the dispatcher pointer, so a plain
+	 * NULL pointer slot is layout-compatible for index 0.
+	 */
+	struct dns_socket_dispatcher *table[1] = { NULL };
+	struct net_socket_service_event pev = {
+		.event = {
+			.fd = 0,
+			.revents = ZSOCK_POLLIN,
+		},
+		.user_data = table,
+	};
+
+	/* Prior to the NULL guard this dereferenced a NULL dispatcher and
+	 * crashed; reaching the next statement proves the event was dropped.
+	 */
+	dns_dispatcher_svc_handler(&pev);
 }
 
 ZTEST_SUITE(dns_dispatcher, NULL, test_init, NULL, NULL, NULL);
