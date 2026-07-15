@@ -215,4 +215,17 @@
 		resets = <&reset NXP_SYSCON_RESET(0, 9)>;
 		status = "disabled";
 	};
+
+	ostimer0: timers@ad000 {
+		compatible = "nxp,os-timer";
+		reg = <0xad000 0x1000>;
+		interrupts = <57 0>;
+		status = "disabled";
+	};
+
+	ostimer0_clk: clock-ostimer0 {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(1)>;
+		#clock-cells = <0>;
+	};
 };
