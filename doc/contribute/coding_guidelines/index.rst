@@ -1306,3 +1306,17 @@ Rationale
   .. _gmtime_r(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/gmtime_r.html
   .. _strnlen(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strlen.html
   .. _strtok_r(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strtok.html
+
+Rule A.6: Bit-field Storage Allocation and Alignment
+====================================================
+Severity
+  Required
+
+Description
+  Portable Zephyr code shall not depend on the allocation order, alignment, padding, or binary
+  representation of C bit-fields (i.e. bit-fields shall not be used for modelling hardware register
+  fields, protocol fields, or similar in portable code).
+
+Rationale
+  The ISO/IEC 9899:2011 standard, also known as C11, (section 6.7.2.1, paragraph 11) leaves
+  bit-field storage allocation and alignment as implementation-defined.
