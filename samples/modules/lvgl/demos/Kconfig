@@ -72,4 +72,11 @@ config LV_Z_DEMO_RENDER_DYNAMIC_SCENE_TIMEOUT
 
 endif
 
+# The keypad/encoder demo is meant to be driven by an encoder (and keypad).
+# On boards that derive an LVGL pointer from the 'zephyr,touch' chosen device
+# (e.g. native_sim), disable that pointer so the demo is navigated purely by
+# the encoder instead of being short-circuited by pointer clicks.
+configdefault LV_Z_POINTER_FROM_CHOSEN_TOUCH
+	default n if LV_Z_DEMO_KEYPAD_AND_ENCODER
+
 source "Kconfig.zephyr"
