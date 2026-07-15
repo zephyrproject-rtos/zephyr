@@ -581,6 +581,7 @@
 			compatible = "st,stm32-vrefbuf";
 			reg = <0x40010030 0xd0>;
 			ref-voltages = <2048000>, <2500000>;
+			st,has-active-scale-change;
 			status = "disabled";
 		};
 
