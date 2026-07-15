@@ -443,21 +443,21 @@ struct bt_l2cap_br_endpoint {
 	uint8_t                                 max_transmit;
 	/** Endpoint Retransmission Timeout
 	 * The field is configured by
-	 * `@kconfig{BT_L2CAP_BR_RET_TIMEOUT}`
+	 * @kconfig{CONFIG_BT_L2CAP_BR_RET_TIMEOUT}
 	 * The field should be no more than the field
 	 * `monitor_timeout`.
 	 */
 	uint16_t                                ret_timeout;
 	/** Endpoint Monitor Timeout
 	 * The field is configured by
-	 * `@kconfig{BT_L2CAP_BR_MONITOR_TIMEOUT}`
+	 * @kconfig{CONFIG_BT_L2CAP_BR_MONITOR_TIMEOUT}
 	 */
 	uint16_t                                monitor_timeout;
 	/** Endpoint Maximum PDU payload Size */
 	uint16_t                                mps;
 	/** Endpoint Maximum Window Size
 	 * MAX supported window size is configured by
-	 * `@kconfig{BT_L2CAP_MAX_WINDOW_SIZE}`. The field
+	 * @kconfig{CONFIG_BT_L2CAP_MAX_WINDOW_SIZE}. The field
 	 * should be no more then `CONFIG_BT_L2CAP_MAX_WINDOW_SIZE`.
 	 */
 	uint16_t                                max_window;

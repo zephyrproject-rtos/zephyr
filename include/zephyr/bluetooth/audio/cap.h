@@ -67,7 +67,7 @@ struct bt_cap_unicast_group;
  * Service instance.
  *
  * This shall only be done as a server, and requires
- * @kconfig{BT_CAP_ACCEPTOR_SET_MEMBER}. If @kconfig{BT_CAP_ACCEPTOR_SET_MEMBER}
+ * @kconfig{CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER}. If @kconfig{CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER}
  * is not enabled, the Common Audio Service will by statically registered.
  *
  * @param[in]  param     Coordinated Set Identification Service register

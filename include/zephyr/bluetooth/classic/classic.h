@@ -181,7 +181,7 @@ int bt_br_oob_get_local(struct bt_br_oob *oob);
  * to first be in connectable state.
  *
  * If the device enters limited discoverable mode, the controller will leave from discoverable
- * mode after the duration of @kconfig{BT_LIMITED_DISCOVERABLE_DURATION} seconds in the limited
+ * mode after the duration of @kconfig{CONFIG_BT_LIMITED_DISCOVERABLE_DURATION} seconds in the limited
  * discoverable mode.
  *
  * @param enable Value allowing/disallowing controller to become discoverable.
@@ -239,7 +239,7 @@ typedef enum bt_br_conn_req_rsp (*bt_br_conn_req_func_t)(const bt_addr_t *addr, 
  *               false, this parameter is ignored.
  *               If @p func is NULL, the conn_req will be accepted internally. The default role
  *               is peripheral. The role switch request can be performed if the
- *               @kconfig{BT_ACCEPT_CONN_AS_CENTRAL} is enabled.
+ *               @kconfig{CONFIG_BT_ACCEPT_CONN_AS_CENTRAL} is enabled.
  *               If @p func is provided, the conn_req will be passed to the callback function
  *               for the application to decide whether to accept or reject the connection, and
  *               the desired role for the connection.

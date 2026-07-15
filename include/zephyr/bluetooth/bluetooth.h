@@ -795,7 +795,7 @@ enum bt_le_adv_opt {
 	 * Coding Selection. If these conditions are not met, it will default to
 	 * no required coding scheme.
 	 *
-	 * @kconfig_dep{BT_EXT_ADV_CODING_SELECTION}
+	 * @kconfig_dep{CONFIG_BT_EXT_ADV_CODING_SELECTION}
 	 */
 	BT_LE_ADV_OPT_REQUIRE_S2_CODING = BIT(20),
 
@@ -812,7 +812,7 @@ enum bt_le_adv_opt {
 	 * Coding Selection. If these conditions are not met, it will default to
 	 * no required coding scheme.
 	 *
-	 * @kconfig_dep{BT_EXT_ADV_CODING_SELECTION}
+	 * @kconfig_dep{CONFIG_BT_EXT_ADV_CODING_SELECTION}
 	 */
 	BT_LE_ADV_OPT_REQUIRE_S8_CODING = BIT(21),
 
