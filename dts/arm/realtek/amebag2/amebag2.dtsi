@@ -78,6 +78,23 @@
 			status = "disabled";
 		};
 
+		i2s0: i2s@40118000 {
+			compatible = "realtek,ameba-i2s";
+			reg = <0x40118000 0xa00>;
+			interrupts = <40 0>;
+			clocks = <&rcc AMEBA_SPORT_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			dmas = <&dma 1 12 0>, <&dma 0 14 0>, <&dma 2 13 0>, <&dma 3 15 0>;
+			dma-names = "tx", "rx", "tx_ext", "rx_ext";
+			mclk-multiple = <128>;
+			mclk-fixed-max = <0>;
+			multiio = <0>;
+			clock-mode = <40000000>;
+			pll-tune = <0>;
+			status = "disabled";
+		};
+
 		spic: flash-controller@4011d000 {
 			compatible = "realtek,ameba-flash-controller";
 			reg = <0x4011d000 0x400>;
