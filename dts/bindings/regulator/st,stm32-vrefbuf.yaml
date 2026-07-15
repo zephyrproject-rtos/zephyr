@@ -54,3 +54,12 @@ properties:
     description: |
       Enables the VREF+ output pin. VREF+ pin is in high-impedance state
       otherwise.
+
+  st,has-active-scale-change:
+    type: boolean
+    description: |
+      If present, indicates the VREFBUF supports changing voltage scale while enabled.
+
+      Refer to description of bit(s) VRS in the VREFBUF_CSR register in Reference Manual
+      to determine if this feature is supported: if not, the description will indicate
+      "The software can program this bitfield only when the VREFBUF is disabled (ENVR=0)".
