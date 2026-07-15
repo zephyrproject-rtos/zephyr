@@ -35,11 +35,14 @@ config SOC_NRF71_WIFI_DAP
 
 config SOC_NRF71_WIFI_BOOT
 	bool "nRF71 start Wi-Fi on system initialization"
-	default y if !BUILD_WITH_TFM
 	help
 	  This controls whether the Wi-Fi core is started on system initialization. If
 	  disabled, the Wi-Fi core must be started by the application before it can be
 	  used.
+
+	  A booted Wi-Fi core is only useful together with a Wi-Fi driver, so this is
+	  disabled by default and must be enabled explicitly, either by the driver
+	  that owns the core or by the application.
 
 config SOC_NRF7120_TFM_MRAMC_SERVICE
 	bool "TF-M MRAMC service"
