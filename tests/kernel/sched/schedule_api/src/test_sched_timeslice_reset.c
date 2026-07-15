@@ -67,7 +67,7 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 	/* Keep this thread busy past one slice so the slicer fires and
 	 * hands the CPU to the next thread.
 	 */
-	spin_for_ms(BUSY_MS);
+	k_busy_wait(BUSY_MS * USEC_PER_MSEC);
 	k_sem_give(&sema);
 }
 
