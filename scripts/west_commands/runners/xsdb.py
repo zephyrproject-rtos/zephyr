@@ -2,14 +2,18 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Runner for flashing and debugging with xsdb CLI, the official programming
-utility from AMD platforms.
+"""West runner for AMD XSDB (Xilinx Software Command-line Tool for Debug).
+
+XSDB is distributed with AMD Vitis and related AMD toolchains; it is not
+shipped as part of the Zephyr SDK. Install the vendor tools on the host and
+ensure the ``xsdb`` executable is on ``PATH`` (same model as other
+vendor-specific runners such as J-Link or STM32CubeCLT).
 """
 
 import argparse
 import os
 
-from runners.core import RunnerCaps, RunnerConfig, ZephyrBinaryRunner
+from runners.core import MissingProgram, RunnerCaps, RunnerConfig, ZephyrBinaryRunner
 
 _XSDB_INTERACTIVE_TCL = os.path.join(os.path.dirname(__file__), 'xsdb_interactive.tcl')
 
@@ -23,6 +27,17 @@ XSDB Quick Reference (type help in XSDB for the full command list):
 
 
 class XSDBBinaryRunner(ZephyrBinaryRunner):
+    _XSDB_MISSING = (
+        'xsdb (from AMD Vitis or related AMD tools; not included in Zephyr SDK - '
+        'install vendor tools and add the directory containing xsdb to PATH)'
+    )
+
+    def _require_xsdb(self) -> str:
+        try:
+            return self.require('xsdb')
+        except MissingProgram:
+            raise MissingProgram(self._XSDB_MISSING) from None
+
     def __init__(
         self,
         cfg: RunnerConfig,
@@ -164,7 +179,7 @@ class XSDBBinaryRunner(ZephyrBinaryRunner):
 
     def do_flash(self, **kwargs):
         """Flash the target using XSDB."""
-        self.require('xsdb')
+        self._require_xsdb()
 
         cmd = ['xsdb', self.xsdb_cfg_file, *self._boot_args()]
         self.check_call(cmd)
@@ -211,7 +226,7 @@ class XSDBBinaryRunner(ZephyrBinaryRunner):
         Uses the board's xsdb.cfg which contains the proper target selection
         and platform initialization specific to each board.
         """
-        self.require('xsdb')
+        self._require_xsdb()
 
         if not self.xsdb_cfg_file or not os.path.exists(self.xsdb_cfg_file):
             raise ValueError(
