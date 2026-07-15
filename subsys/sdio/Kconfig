@@ -1,0 +1,54 @@
+# Copyright 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Role-neutral SDIO subsystem configuration
+
+menuconfig SDIO
+	bool "Role-neutral SDIO subsystem"
+	help
+	  Enable the standalone, role-neutral SDIO subsystem. Unlike the
+	  SD-card centered SDIO protocol support (SDIO_STACK), this subsystem
+	  models SDIO as a general transport with explicit host and
+	  device/slave roles, decoupled from struct sd_card.
+
+if SDIO
+
+module = SDIO
+module-str = SDIO subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+config SDIO_LOCK_TIMEOUT_MS
+	int "SDIO bus lock timeout (ms)"
+	default 500
+	help
+	  Maximum time to wait for the per-endpoint bus lock when issuing a
+	  function I/O operation.
+
+config SDIO_HOST
+	bool "SDIO host role"
+	depends on SDHC
+	help
+	  Enable the host-role transport backend. An SDIO host endpoint drives
+	  the bus through a Zephyr SD host controller (SDHC).
+
+if SDIO_HOST
+
+config SDIO_HOST_CMD_TIMEOUT_MS
+	int "SDIO host command timeout (ms)"
+	default 200
+
+config SDIO_HOST_DATA_TIMEOUT_MS
+	int "SDIO host data timeout (ms)"
+	default 5000
+
+endif # SDIO_HOST
+
+config SDIO_DEVICE
+	bool "SDIO device/slave role"
+	depends on SDIO_DC
+	help
+	  Enable the device/slave-role subsystem. An SDIO device endpoint
+	  exposes function I/O space, register windows and FIFOs to a remote
+	  SDIO host through an SDIO device controller (SDIO_DC).
+
+endif # SDIO

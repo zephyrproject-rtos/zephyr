@@ -1,0 +1,14 @@
+/*
+ * Copyright 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	sdio_dc0: sdio_dc0 {
+		compatible = "zephyr,sdio-device-virtual";
+		status = "okay";
+		num-functions = <3>;
+		max-block-size = <512>;
+	};
+};

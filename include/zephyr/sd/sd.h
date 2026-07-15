@@ -15,6 +15,9 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/sdhc.h>
 #include <zephyr/kernel.h>
+#ifdef CONFIG_SDIO_STACK
+#include <zephyr/sdio/sdio_core.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,6 +83,12 @@ struct sd_card {
 	uint8_t bus_width; /*!< Desired bus width */
 	uint32_t cccr_flags; /*!< SDIO CCCR data */
 	struct sdio_func func0; /*!< Function 0 common card data */
+#ifdef CONFIG_SDIO_STACK
+	/*!< Role-neutral SDIO bus endpoint (host role) backing the legacy
+	 * SDIO API. Initialized during SDIO enumeration.
+	 */
+	struct sdio_dev sdio_bus;
+#endif
 
 	/* NOTE: The buffer is accessed as a uint32_t* by the SD subsystem, so must be
 	 * aligned to 4 bytes for platforms that don't support unaligned access...

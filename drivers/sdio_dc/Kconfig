@@ -1,0 +1,32 @@
+# Copyright 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SDIO_DC
+	bool "SDIO device controller drivers"
+	help
+	  Enable the SDIO device controller (slave/peripheral side) driver
+	  class. SDIO device controllers answer commands from a remote SDIO
+	  host and are the counterpart of SD host controllers (SDHC).
+
+if SDIO_DC
+
+module = SDIO_DC
+module-str = SDIO device controller
+source "subsys/logging/Kconfig.template.log_config"
+
+config SDIO_DEVICE_INIT_PRIORITY
+	int "SDIO device controller init priority"
+	default 70
+	help
+	  Device initialization priority for SDIO device controllers.
+
+config SDIO_DC_VIRTUAL
+	bool "Virtual (loopback) SDIO device controller"
+	default y
+	depends on DT_HAS_ZEPHYR_SDIO_DEVICE_VIRTUAL_ENABLED
+	help
+	  Software-only SDIO device controller that also exposes an in-process
+	  loopback transport for a host-role endpoint. Intended for tests and
+	  samples on platforms without SDIO hardware.
+
+endif # SDIO_DC
