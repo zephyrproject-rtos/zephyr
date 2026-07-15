@@ -110,3 +110,7 @@
 &systick {
 	status = "okay";
 };
+
+&mbox_a {
+	status = "okay";
+};
