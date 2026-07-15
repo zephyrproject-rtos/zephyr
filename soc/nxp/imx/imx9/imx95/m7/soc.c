@@ -41,7 +41,7 @@ int set_flexcan_clock(uint32_t clk_id)
 
 #define FLEXCAN_CLOCK_SETUP(node_id) set_flexcan_clock(DT_CLOCKS_CELL_BY_IDX(node_id, 0, name));
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_i2s)
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_i2s) || DT_HAS_COMPAT_STATUS_OKAY(nxp_micfil)
 static int set_audiopll1_clock(struct scmi_protocol *proto)
 {
 	int ret = 0;
@@ -87,7 +87,9 @@ static int set_audiopll1_clock(struct scmi_protocol *proto)
 
 	return ret;
 }
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_i2s) || DT_HAS_COMPAT_STATUS_OKAY(nxp_micfil) */
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_i2s)
 static int set_sai_clock(uint32_t clk_id)
 {
 	int ret = 0;
@@ -122,8 +124,45 @@ static int set_sai_clock(uint32_t clk_id)
 }
 
 #define SAI_CLOCK_SETUP(node_id) set_sai_clock(DT_CLOCKS_CELL_BY_IDX(node_id, 0, name));
-
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_i2s) */
+
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_micfil)
+static int set_pdm_clock(uint32_t clk_id)
+{
+	int ret = 0;
+	static bool audiopll1_initialized;
+	const struct device *clk_dev = DEVICE_DT_GET(DT_NODELABEL(scmi_clk));
+	struct scmi_protocol *proto = clk_dev->data;
+	struct scmi_clock_rate_config clk_cfg = {0};
+	uint64_t pdm_clk = 196608000ULL; /* 196.608 MHz */
+
+	if (!audiopll1_initialized) {
+		ret = set_audiopll1_clock(proto);
+		if (ret) {
+			return ret;
+		}
+		audiopll1_initialized = true;
+	}
+
+	/* PDM clock init: parent = AUDIOPLL1, rate = 196.608 MHz */
+	ret = scmi_clock_parent_set(proto, clk_id, IMX95_CLK_AUDIOPLL1);
+	if (ret) {
+		return ret;
+	}
+
+	clk_cfg.flags = SCMI_CLK_RATE_SET_FLAGS_ROUNDS_AUTO;
+	clk_cfg.clk_id = clk_id;
+	clk_cfg.rate[0] = pdm_clk & 0xffffffff;
+	clk_cfg.rate[1] = (pdm_clk >> 32) & 0xffffffff;
+
+	ret = scmi_clock_rate_set(proto, &clk_cfg);
+
+	return ret;
+}
+
+#define PDM_CLOCK_SETUP(node_id) set_pdm_clock(DT_CLOCKS_CELL_BY_IDX(node_id, 0, name));
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(nxp_micfil) */
+
 void soc_early_init_hook(void)
 {
 #ifdef CONFIG_CACHE_MANAGEMENT
@@ -323,6 +362,8 @@ static int soc_init(void)
 	DT_FOREACH_STATUS_OKAY(nxp_flexcan, FLEXCAN_CLOCK_SETUP)
 
 	DT_FOREACH_STATUS_OKAY(nxp_mcux_i2s, SAI_CLOCK_SETUP)
+
+	DT_FOREACH_STATUS_OKAY(nxp_micfil, PDM_CLOCK_SETUP)
 
 #if defined(CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS)
 	cpu_cfg.cpu_id = CPU_IDX_M7P;
