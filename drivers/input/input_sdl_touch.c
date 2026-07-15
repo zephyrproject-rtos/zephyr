@@ -26,6 +26,21 @@ static void sdl_input_callback(struct sdl_input_data *data)
 		input_report_abs(data->dev, INPUT_ABS_Y, data->y, false, K_FOREVER);
 		input_report_key(data->dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
 	}
+
+	if (data->middle_pending) {
+		input_report_key(data->dev, INPUT_BTN_MIDDLE, data->middle, true, K_FOREVER);
+		data->middle_pending = false;
+	}
+
+	if (data->right_pending) {
+		input_report_key(data->dev, INPUT_BTN_RIGHT, data->right, true, K_FOREVER);
+		data->right_pending = false;
+	}
+
+	if (data->wheel != 0) {
+		input_report_rel(data->dev, INPUT_REL_WHEEL, data->wheel, true, K_FOREVER);
+		data->wheel = 0;
+	}
 }
 
 static int sdl_init(const struct device *dev)
