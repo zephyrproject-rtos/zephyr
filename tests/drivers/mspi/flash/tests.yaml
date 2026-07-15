@@ -29,7 +29,7 @@ tests:
     integration_platforms:
       - apollo510_evb
     extra_configs:
-      - CONFIG_FLASH_MSPI_XIP_READ=y
+      - CONFIG_FLASH_MSPI_MEMMAP_READ=y
   drivers.mspi.flash.mspi_dw_system_workqueue:
     filter: dt_alias_exists("mspi0") and dt_compat_enabled("jedec,nor")
       and CONFIG_MSPI_DW

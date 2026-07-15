@@ -62,8 +62,8 @@ struct flash_mspi_is25xX0xx_config {
 	struct mspi_dev_cfg                 serial_cfg;
 	struct mspi_dev_cfg                 tar_dev_cfg;
 
-	MSPI_XIP_CFG_STRUCT_DECLARE(tar_xip_cfg)
-	MSPI_XIP_BASE_ADDR_DECLARE(xip_base_addr)
+	MSPI_MEMMAP_CFG_STRUCT_DECLARE(tar_memmap_cfg)
+	MSPI_MEMMAP_BASE_ADDR_DECLARE(memmap_base_addr)
 	MSPI_SCRAMBLE_CFG_STRUCT_DECLARE(tar_scramble_cfg)
 	MSPI_TIMING_CFG_STRUCT_DECLARE(tar_timing_cfg)
 	MSPI_TIMING_PARAM_DECLARE(timing_cfg_mask)
@@ -77,7 +77,7 @@ struct flash_mspi_is25xX0xx_config {
 
 struct flash_mspi_is25xX0xx_data {
 	struct mspi_dev_cfg                 dev_cfg;
-	struct mspi_xip_cfg                 xip_cfg;
+	struct mspi_memmap_cfg              memmap_cfg;
 	struct mspi_scramble_cfg            scramble_cfg;
 	mspi_timing_cfg                     timing_cfg;
 	struct mspi_xfer                    trans;
@@ -496,13 +496,14 @@ static int flash_mspi_is25xX0xx_read(const struct device *flash, off_t offset, v
 
 	acquire(flash);
 
-#if CONFIG_FLASH_MSPI_XIP_READ
-	if (cfg->tar_xip_cfg.enable) {
-		uint32_t xip_addr = cfg->xip_base_addr + cfg->tar_xip_cfg.address_offset + offset;
+#if CONFIG_FLASH_MSPI_MEMMAP_READ
+	if (cfg->tar_memmap_cfg.enable) {
+		uint32_t xip_addr = cfg->memmap_base_addr +
+				    cfg->tar_memmap_cfg.address_offset + offset;
 
 		memcpy(rdata, (void *)xip_addr, len);
 	} else {
-#endif /* CONFIG_FLASH_MSPI_XIP_READ */
+#endif /* CONFIG_FLASH_MSPI_MEMMAP_READ */
 
 #if CONFIG_FLASH_MSPI_HANDLE_CACHE
 		if (!buf_in_nocache((uintptr_t)rdata, len)) {
@@ -550,9 +551,9 @@ static int flash_mspi_is25xX0xx_read(const struct device *flash, off_t offset, v
 			}
 		}
 #endif /* CONFIG_FLASH_MSPI_HANDLE_CACHE */
-#if CONFIG_FLASH_MSPI_XIP_READ
+#if CONFIG_FLASH_MSPI_MEMMAP_READ
 	}
-#endif /* CONFIG_FLASH_MSPI_XIP_READ */
+#endif /* CONFIG_FLASH_MSPI_MEMMAP_READ */
 
 	release(flash);
 
@@ -565,7 +566,7 @@ static int flash_mspi_is25xX0xx_write(const struct device *flash, off_t offset, 
 	int      ret;
 	uint8_t *src = (uint8_t *)wdata;
 	int      i;
-#if CONFIG_FLASH_MSPI_HANDLE_CACHE && CONFIG_FLASH_MSPI_XIP_READ
+#if CONFIG_FLASH_MSPI_HANDLE_CACHE && CONFIG_FLASH_MSPI_MEMMAP_READ
 	off_t  addr = offset;
 	size_t size = len;
 #endif
@@ -634,11 +635,12 @@ static int flash_mspi_is25xX0xx_write(const struct device *flash, off_t offset, 
 		return ret;
 	}
 
-#if CONFIG_FLASH_MSPI_HANDLE_CACHE && CONFIG_FLASH_MSPI_XIP_READ
+#if CONFIG_FLASH_MSPI_HANDLE_CACHE && CONFIG_FLASH_MSPI_MEMMAP_READ
 	const struct flash_mspi_is25xX0xx_config *cfg = flash->config;
 
-	if (cfg->tar_xip_cfg.enable) {
-		uint32_t xip_addr = cfg->xip_base_addr + cfg->tar_xip_cfg.address_offset + addr;
+	if (cfg->tar_memmap_cfg.enable) {
+		uint32_t xip_addr = cfg->memmap_base_addr +
+				    cfg->tar_memmap_cfg.address_offset + addr;
 
 		if (!buf_in_nocache((uintptr_t)xip_addr, size)) {
 			if (size > CONFIG_FLASH_MSPI_RANGE_HANDLE_CACHE_SIZE) {
@@ -883,13 +885,13 @@ static int flash_mspi_is25xX0xx_init(const struct device *flash)
 	data->timing_cfg = cfg->tar_timing_cfg;
 #endif
 
-#if CONFIG_MSPI_XIP
-	if (cfg->tar_xip_cfg.enable) {
-		if (mspi_xip_config(cfg->bus, &cfg->dev_id, &cfg->tar_xip_cfg)) {
+#if CONFIG_MSPI_MEMMAP
+	if (cfg->tar_memmap_cfg.enable) {
+		if (mspi_memmap_config(cfg->bus, &cfg->dev_id, &cfg->tar_memmap_cfg)) {
 			LOG_ERR("Failed to enable XIP/%u", __LINE__);
 			return -EIO;
 		}
-		data->xip_cfg = cfg->tar_xip_cfg;
+		data->memmap_cfg = cfg->tar_memmap_cfg;
 	}
 #endif
 
@@ -1020,9 +1022,9 @@ static DEVICE_API(flash, flash_mspi_is25xX0xx_api) = {
 		.dev_id             = MSPI_DEVICE_ID_DT_INST(n),                                  \
 		.serial_cfg         = MSPI_DEVICE_CONFIG_SERIAL(n),                               \
 		.tar_dev_cfg        = MSPI_DEVICE_CONFIG_DT_INST(n),                              \
-		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_XIP,                                    \
-					      tar_xip_cfg, MSPI_XIP_CONFIG_DT_INST(n))            \
-		MSPI_XIP_BASE_ADDR_INIT(xip_base_addr, DT_INST_BUS(n))                            \
+		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_MEMMAP,                                 \
+					      tar_memmap_cfg, MSPI_MEMMAP_CONFIG_DT_INST(n))      \
+		MSPI_MEMMAP_BASE_ADDR_INIT(memmap_base_addr, DT_INST_BUS(n))                      \
 		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_SCRAMBLE,                               \
 					      tar_scramble_cfg, MSPI_SCRAMBLE_CONFIG_DT_INST(n))  \
 		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_TIMING,                                 \

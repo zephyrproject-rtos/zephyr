@@ -74,45 +74,45 @@ extern "C" {
 #define MSPI_DEVICE_CONFIG_DT_INST(inst) MSPI_DEVICE_CONFIG_DT(DT_DRV_INST(inst))
 
 /**
- * @brief Structure initializer for <tt>struct mspi_xip_cfg</tt> from devicetree
+ * @brief Structure initializer for <tt>struct mspi_memmap_cfg</tt> from devicetree
  *
  * This helper macro expands to a static initializer for a <tt>struct
- * mspi_xip_cfg</tt> by reading the relevant data from the devicetree.
+ * mspi_memmap_cfg</tt> by reading the relevant data from the devicetree.
  *
  * @param mspi_dev Devicetree node identifier for the MSPI device whose
- *                 struct mspi_xip_cfg to create an initializer for
+ *                 struct mspi_memmap_cfg to create an initializer for
  */
-#define MSPI_XIP_CONFIG_DT_NO_CHECK(mspi_dev)                                                     \
+#define MSPI_MEMMAP_CONFIG_DT_NO_CHECK(mspi_dev)                                                  \
 	{                                                                                         \
-		.enable               = DT_PROP_BY_IDX(mspi_dev, xip_config, 0),                  \
-		.address_offset       = DT_PROP_BY_IDX(mspi_dev, xip_config, 1),                  \
-		.size                 = DT_PROP_BY_IDX(mspi_dev, xip_config, 2),                  \
-		.permission           = DT_PROP_BY_IDX(mspi_dev, xip_config, 3),                  \
+		.enable               = DT_PROP_BY_IDX(mspi_dev, memmap_config, 0),               \
+		.address_offset       = DT_PROP_BY_IDX(mspi_dev, memmap_config, 1),               \
+		.size                 = DT_PROP_BY_IDX(mspi_dev, memmap_config, 2),               \
+		.permission           = DT_PROP_BY_IDX(mspi_dev, memmap_config, 3),               \
 	}
 
 /**
- * @brief Structure initializer for <tt>struct mspi_xip_cfg</tt> from devicetree
+ * @brief Structure initializer for <tt>struct mspi_memmap_cfg</tt> from devicetree
  *
- * This helper macro check whether <tt>xip_config</tt> binding exist first
- * before calling <tt>MSPI_XIP_CONFIG_DT_NO_CHECK</tt>.
+ * This helper macro check whether <tt>memmap_config</tt> binding exist first
+ * before calling <tt>MSPI_MEMMAP_CONFIG_DT_NO_CHECK</tt>.
  *
  * @param mspi_dev Devicetree node identifier for the MSPI device whose
- *                 struct mspi_xip_cfg to create an initializer for
+ *                 struct mspi_memmap_cfg to create an initializer for
  */
-#define MSPI_XIP_CONFIG_DT(mspi_dev)                                                              \
-		COND_CODE_1(DT_NODE_HAS_PROP(mspi_dev, xip_config),                               \
-			(MSPI_XIP_CONFIG_DT_NO_CHECK(mspi_dev)),                                  \
+#define MSPI_MEMMAP_CONFIG_DT(mspi_dev)                                                           \
+		COND_CODE_1(DT_NODE_HAS_PROP(mspi_dev, memmap_config),                            \
+			(MSPI_MEMMAP_CONFIG_DT_NO_CHECK(mspi_dev)),                               \
 			({}))
 
 /**
- * @brief Structure initializer for <tt>struct mspi_xip_cfg</tt> from devicetree instance
+ * @brief Structure initializer for <tt>struct mspi_memmap_cfg</tt> from devicetree instance
  *
  * This is equivalent to
- * <tt>MSPI_XIP_CONFIG_DT(DT_DRV_INST(inst))</tt>.
+ * <tt>MSPI_MEMMAP_CONFIG_DT(DT_DRV_INST(inst))</tt>.
  *
  * @param inst Devicetree instance number
  */
-#define MSPI_XIP_CONFIG_DT_INST(inst) MSPI_XIP_CONFIG_DT(DT_DRV_INST(inst))
+#define MSPI_MEMMAP_CONFIG_DT_INST(inst) MSPI_MEMMAP_CONFIG_DT(DT_DRV_INST(inst))
 
 /**
  * @brief Structure initializer for <tt>struct mspi_scramble_cfg</tt> from devicetree
