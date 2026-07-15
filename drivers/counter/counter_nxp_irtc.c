@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/drivers/counter.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/logging/log.h>
@@ -296,6 +297,19 @@ static uint32_t nxp_irtc_counter_get_pending_int(const struct device *dev)
 											    : 0U;
 }
 
+/*
+ * A stub action is provided only so the device gets a pm_base and can be selected
+ * as a wakeup source via pm_device_wakeup_enable() (which sets the WS_ENABLED flag
+ * this driver reads).
+ */
+static int nxp_irtc_counter_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(action);
+
+	return 0;
+}
+
 static int nxp_irtc_counter_init(const struct device *dev)
 {
 	const struct counter_config_info *info = dev->config;
@@ -311,7 +325,7 @@ static int nxp_irtc_counter_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
-	return 0;
+	return pm_device_driver_init(dev, nxp_irtc_counter_pm_action);
 }
 
 static DEVICE_API(counter, nxp_irtc_counter_driver_api) = {
@@ -327,6 +341,8 @@ static DEVICE_API(counter, nxp_irtc_counter_driver_api) = {
 
 #define NXP_IRTC_COUNTER_INIT(n)                                                                   \
 	static void nxp_irtc_counter_irq_config_##n(const struct device *dev);                     \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(n, nxp_irtc_counter_pm_action);                                   \
                                                                                                    \
 	static const struct nxp_irtc_counter_config nxp_irtc_counter_config_##n = {                \
 		.base = (RTC_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                                \
@@ -345,9 +361,10 @@ static DEVICE_API(counter, nxp_irtc_counter_driver_api) = {
                                                                                                    \
 	static struct nxp_irtc_counter_data nxp_irtc_counter_data_##n;                             \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, nxp_irtc_counter_init, NULL, &nxp_irtc_counter_data_##n,          \
-			      &nxp_irtc_counter_config_##n.info, POST_KERNEL,                      \
-			      CONFIG_COUNTER_INIT_PRIORITY, &nxp_irtc_counter_driver_api);         \
+	DEVICE_DT_INST_DEFINE(n, nxp_irtc_counter_init, PM_DEVICE_DT_INST_GET(n),                  \
+			      &nxp_irtc_counter_data_##n, &nxp_irtc_counter_config_##n.info,       \
+			      POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,                           \
+			      &nxp_irtc_counter_driver_api);                                       \
                                                                                                    \
 	static void nxp_irtc_counter_irq_config_##n(const struct device *dev)                      \
 	{                                                                                          \
