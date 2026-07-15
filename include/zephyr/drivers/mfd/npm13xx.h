@@ -132,6 +132,17 @@ int mfd_npm13xx_reset(const struct device *dev);
 int mfd_npm13xx_hibernate(const struct device *dev, uint32_t time_ms);
 
 /**
+ * @brief npm13xx ship mode
+ *
+ * Enters lowest power state. Unlike hibernate no wake-up timer is running;
+ * the device only wakes on SHPHLD button press or VBUS connection.
+ *
+ * @param dev npm13xx mfd device
+ * @return 0 on success, negative errno value on failure (see i2c_write_dt()).
+ */
+int mfd_npm13xx_ship_mode(const struct device *dev);
+
+/**
  * @brief Add npm13xx event callback
  *
  * @param dev npm13xx mfd device

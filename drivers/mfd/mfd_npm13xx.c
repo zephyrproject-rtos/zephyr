@@ -28,6 +28,7 @@
 
 #define SHIP_OFFSET_HIBERNATE 0x00U
 #define SHIP_OFFSET_CFGSTROBE 0x01U
+#define SHIP_OFFSET_SHIPMODE  0x02U
 #define SHIP_OFFSET_CONFIG    0x04U
 #define SHIP_OFFSET_LPCONFIG  0x06U
 
@@ -284,6 +285,11 @@ int mfd_npm13xx_hibernate(const struct device *dev, uint32_t time_ms)
 	k_msleep(1);
 
 	return mfd_npm13xx_reg_write(dev, NPM13XX_SHIP_BASE, SHIP_OFFSET_HIBERNATE, 1U);
+}
+
+int mfd_npm13xx_ship_mode(const struct device *dev)
+{
+	return mfd_npm13xx_reg_write(dev, NPM13XX_SHIP_BASE, SHIP_OFFSET_SHIPMODE, 1U);
 }
 
 int mfd_npm13xx_add_callback(const struct device *dev, struct gpio_callback *callback)
