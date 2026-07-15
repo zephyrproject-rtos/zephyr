@@ -364,6 +364,19 @@ int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx)
 		dispatch_table[sock].ctx = NULL;
 	}
 
+	/* Drop any pairing that referenced this dispatcher so that a
+	 * surviving dispatcher does not delegate to an unregistered context.
+	 * Also clear our own pair so a later re-register does not inherit a
+	 * stale partner.
+	 */
+	SYS_SLIST_FOR_EACH_CONTAINER(&sockets, entry, node) {
+		if (entry->pair == ctx) {
+			entry->pair = NULL;
+		}
+	}
+
+	ctx->pair = NULL;
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&sockets, entry, node) {
 		if (entry->svc == svc) {
 			ret = net_socket_service_register(entry->svc, entry->fds,
