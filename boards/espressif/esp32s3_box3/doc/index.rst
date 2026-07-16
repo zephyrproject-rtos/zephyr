@@ -43,7 +43,7 @@ The ESP32-S3-BOX-3 uses the following GPIO pin assignments:
 - GPIO0: Boot button
 - GPIO1: Mute button / Speaker mute status
 - GPIO2: I2S MCLK
-- GPIO3: Touch screen interrupt (TT21100)
+- GPIO3: Touch screen interrupt (GT911)
 - GPIO4: Display DC pin (SPI)
 - GPIO5: Display CS pin (SPI)
 - GPIO6: Display SDA/MOSI (SPI)
