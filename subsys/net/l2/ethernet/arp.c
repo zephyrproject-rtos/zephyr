@@ -41,8 +41,6 @@ static K_WORK_DELAYABLE_DEFINE(arp_request_timer, arp_request_timeout);
 static K_MUTEX_DEFINE(arp_mutex);
 
 #if defined(CONFIG_NET_ARP_GRATUITOUS_TRANSMISSION)
-static struct net_mgmt_event_callback iface_event_cb;
-static struct net_mgmt_event_callback ipv4_event_cb;
 static void arp_gratuitous_work_handler(struct k_work *work);
 
 static K_WORK_DELAYABLE_DEFINE(arp_gratuitous_work, arp_gratuitous_work_handler);
@@ -614,11 +612,9 @@ static void notify_all_ipv4_addr(struct net_if *iface)
 	}
 }
 
-static void iface_event_handler(struct net_mgmt_event_callback *cb,
-				uint64_t mgmt_event, struct net_if *iface)
+static void iface_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
+				size_t info_length __unused, void *user_data __unused)
 {
-	ARG_UNUSED(cb);
-
 	if (!(net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET) ||
 	      net_eth_is_vlan_interface(iface))) {
 		return;
@@ -631,8 +627,10 @@ static void iface_event_handler(struct net_mgmt_event_callback *cb,
 	notify_all_ipv4_addr(iface);
 }
 
-static void ipv4_event_handler(struct net_mgmt_event_callback *cb,
-			       uint64_t mgmt_event, struct net_if *iface)
+NET_MGMT_REGISTER_EVENT_HANDLER(arp_iface_events, NET_EVENT_IF_UP, iface_event_handler, NULL);
+
+static void ipv4_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info,
+			       size_t info_length, void *user_data __unused)
 {
 	struct net_in_addr *ipaddr;
 
@@ -649,14 +647,16 @@ static void ipv4_event_handler(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
-	if (cb->info_length != sizeof(struct net_in_addr)) {
+	if (info_length != sizeof(struct net_in_addr)) {
 		return;
 	}
 
-	ipaddr = (struct net_in_addr *)cb->info;
+	ipaddr = (struct net_in_addr *)info;
 
 	arp_gratuitous_send(iface, ipaddr);
 }
+
+NET_MGMT_REGISTER_EVENT_HANDLER(arp_ipv4_events, NET_EVENT_IPV4_ADDR_ADD, ipv4_event_handler, NULL);
 
 static void iface_cb(struct net_if *iface, void *user_data)
 {
@@ -1057,14 +1057,6 @@ void net_arp_init(void)
 	arp_cache_initialized = true;
 
 #if defined(CONFIG_NET_ARP_GRATUITOUS_TRANSMISSION)
-	net_mgmt_init_event_callback(&iface_event_cb, iface_event_handler,
-				     NET_EVENT_IF_UP);
-	net_mgmt_init_event_callback(&ipv4_event_cb, ipv4_event_handler,
-				     NET_EVENT_IPV4_ADDR_ADD);
-
-	net_mgmt_add_event_callback(&iface_event_cb);
-	net_mgmt_add_event_callback(&ipv4_event_cb);
-
 	k_work_reschedule(&arp_gratuitous_work,
 			  K_SECONDS(CONFIG_NET_ARP_GRATUITOUS_INTERVAL));
 #endif /* defined(CONFIG_NET_ARP_GRATUITOUS_TRANSMISSION) */
