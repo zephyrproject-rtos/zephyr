@@ -2149,6 +2149,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 			/* Let the system timeout and then send the NS again */
 			net_ipv6_nbr_unlock();
+			net_pkt_unref(pkt);
 			return 0;
 		}
 	}
