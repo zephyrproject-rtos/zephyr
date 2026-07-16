@@ -30,18 +30,22 @@ LOG_MODULE_REGISTER(net_arp, CONFIG_NET_ARP_LOG_LEVEL);
 static bool arp_cache_initialized;
 static struct arp_entry arp_entries[CONFIG_NET_ARP_TABLE_SIZE];
 
-static sys_slist_t arp_free_entries;
-static sys_slist_t arp_pending_entries;
-static sys_slist_t arp_table;
+static sys_slist_t arp_free_entries = SYS_SLIST_STATIC_INIT(&arp_free_entries);
+static sys_slist_t arp_pending_entries = SYS_SLIST_STATIC_INIT(&arp_pending_entries);
+static sys_slist_t arp_table = SYS_SLIST_STATIC_INIT(&arp_table);
 
-static struct k_work_delayable arp_request_timer;
+static void arp_request_timeout(struct k_work *work);
 
-static struct k_mutex arp_mutex;
+static K_WORK_DELAYABLE_DEFINE(arp_request_timer, arp_request_timeout);
+
+static K_MUTEX_DEFINE(arp_mutex);
 
 #if defined(CONFIG_NET_ARP_GRATUITOUS_TRANSMISSION)
 static struct net_mgmt_event_callback iface_event_cb;
 static struct net_mgmt_event_callback ipv4_event_cb;
-static struct k_work_delayable arp_gratuitous_work;
+static void arp_gratuitous_work_handler(struct k_work *work);
+
+static K_WORK_DELAYABLE_DEFINE(arp_gratuitous_work, arp_gratuitous_work_handler);
 #endif /* defined(CONFIG_NET_ARP_GRATUITOUS_TRANSMISSION) */
 
 static void arp_entry_cleanup(struct arp_entry *entry, bool pending)
@@ -1044,19 +1048,11 @@ void net_arp_init(void)
 		return;
 	}
 
-	sys_slist_init(&arp_free_entries);
-	sys_slist_init(&arp_pending_entries);
-	sys_slist_init(&arp_table);
-
 	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
 		/* Inserting entry as free with initialised packet queue */
 		k_fifo_init(&arp_entries[i].pending_queue);
 		sys_slist_prepend(&arp_free_entries, &arp_entries[i].node);
 	}
-
-	k_work_init_delayable(&arp_request_timer, arp_request_timeout);
-
-	k_mutex_init(&arp_mutex);
 
 	arp_cache_initialized = true;
 
@@ -1069,8 +1065,6 @@ void net_arp_init(void)
 	net_mgmt_add_event_callback(&iface_event_cb);
 	net_mgmt_add_event_callback(&ipv4_event_cb);
 
-	k_work_init_delayable(&arp_gratuitous_work,
-			      arp_gratuitous_work_handler);
 	k_work_reschedule(&arp_gratuitous_work,
 			  K_SECONDS(CONFIG_NET_ARP_GRATUITOUS_INTERVAL));
 #endif /* defined(CONFIG_NET_ARP_GRATUITOUS_TRANSMISSION) */
