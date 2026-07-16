@@ -38,51 +38,92 @@ child-binding:
   description: NXP XSPI MDAD/FRAD configurations
 
   properties:
-    # MDAD configuration
-    enable-descriptor-lock:
-      type: int
-      description: Enable descriptor lock
-    mask-type:
-      type: int
-      description: Mask type (0=AND, 1=OR)
-    mask:
-      type: int
-      description: 6-bit mask value
-    master-id-reference:
-      type: int
-      description: Master ID reference value
-    secure-attribute:
-      type: int
-      enum: [1, 2, 3]
-      description: Security attribute setting
-
-    # FRAD configuration
+    # FRAD region address range (start-address/end-address) and the
+    # #address-cells/#size-cells needed by the target-group@N / mdad@N children.
     start-address:
       type: int
       description: Start address of the memory region
+
     end-address:
       type: int
       description: End address of the memory region
-    tg0-master-access:
+
+    "#address-cells":
       type: int
-      description: Target group 0 access permissions
-    tg1-master-access:
-      type: int
-      description: Target group 1 access permissions
-    descriptor-lock:
-      type: int
-      enum: [0, 1, 2, 3]
+      const: 1
       description: |
-        Descriptor lock mode:
-        - Disable
-        - Enable till hard reset
-        - Enable except master ID
-        - Enable
-    exclusive-access-lock:
+        Required so each per-target-group child (target-group@N) can carry a
+        unit-address that encodes its target-group index.
+    "#size-cells":
       type: int
-      enum: [0, 2, 3]
-      description: |
-        Exclusive access lock mode:
-        - Disable
-        - Enable except master ID
-        - Enable
+      const: 0
+
+  # Shared nested child-binding for both FRAD target-group@N children (under a
+  # frad_region node) and MDAD mdad@N children (under the sfp-mdad container).
+  # A DT node has a single nested child-binding that applies to all of its
+  # grandchildren, so this binding is a superset carrying both the FRAD
+  # per-target-group properties and the MDAD descriptor properties. Each child
+  # uses its unit-address (reg) as the tgConfig[] / tgMdad[] array subscript.
+  # On XSPI variants with the EENV feature the HAL nests one
+  # xspi_frad_tg_config_t per target group; on variants without EENV only
+  # element 0 of target group 0 / 1 is consumed.
+  child-binding:
+    description: XSPI FRAD target-group / MDAD per-target-group descriptor
+
+    properties:
+      reg:
+        type: array
+        required: true
+        description: |
+          Target-group index this descriptor configures (used as the
+          tgConfig[] / tgMdad[] array subscript).
+
+      # MDAD descriptor properties (mdad@N under the sfp-mdad container)
+      enable-descriptor-lock:
+        type: int
+        description: Enable descriptor lock
+      mask-type:
+        type: int
+        description: Mask type (0=AND, 1=OR)
+      mask:
+        type: int
+        description: 6-bit mask value
+      master-id-reference:
+        type: int
+        description: Master ID reference value
+      secure-attribute:
+        type: int
+        enum: [1, 2, 3]
+        description: Security attribute setting
+
+      # FRAD per-target-group properties (target-group@N under a frad_region)
+
+      master-access:
+        type: array
+        description: |
+          Per-master access permissions for this target group, one entry per
+          master (tgMasterAccess[]). The array length should match the HAL
+          target-group count. On the non-EENV flat layout only element 0 is
+          consumed.
+      assign-valid:
+        type: boolean
+        description: Mark this FRAD descriptor valid (assignIsValid).
+      descriptor-lock:
+        type: int
+        default: 0
+        enum: [0, 1, 2, 3]
+        description: |
+          Descriptor lock mode:
+          - Disable
+          - Enable till hard reset
+          - Enable except master ID
+          - Enable
+      exclusive-access-lock:
+        type: int
+        default: 0
+        enum: [0, 2, 3]
+        description: |
+          Exclusive access lock mode:
+          - Disable
+          - Enable except master ID
+          - Enable
