@@ -287,6 +287,8 @@ static void start_client(void)
  * @see k_msgq_put()
  * @see k_msgq_get()
  * @see k_msgq_purge()
+ * @verifies ZEP-SRS-31-4
+ * @verifies ZEP-SRS-31-8
  */
 ZTEST(msgq_usage, test_msgq_usage)
 {

@@ -293,6 +293,9 @@ static void prepend_full_entry(void *p1, void *p2, void *p3)
  * @see k_msgq_put()
  * @see k_msgq_put_front()
  * @see k_msgq_get()
+ * @verifies ZEP-SRS-31-4
+ * @verifies ZEP-SRS-31-8
+ * @verifies ZEP-SRS-31-9
  */
 ZTEST(msgq_api_1cpu, test_msgq_thread)
 {
@@ -325,6 +328,7 @@ ZTEST(msgq_api_1cpu, test_msgq_thread)
  * - The statically defined queue accepts and delivers messages as-is.
  *
  * @see K_MSGQ_DEFINE
+ * @verifies ZEP-SRS-31-1
  */
 ZTEST_USER(msgq_api, test_msgq_define)
 {
@@ -360,6 +364,7 @@ ZTEST_USER(msgq_api, test_msgq_define)
  * - The initialized queue is empty and accepts and delivers messages.
  *
  * @see k_msgq_init()
+ * @verifies ZEP-SRS-31-2
  */
 ZTEST(msgq_api, test_msgq_init)
 {
@@ -395,6 +400,8 @@ ZTEST(msgq_api, test_msgq_init)
  *
  * @see k_msgq_put_front()
  * @see k_msgq_get()
+ * @verifies ZEP-SRS-31-5
+ * @verifies ZEP-SRS-31-18
  */
 ZTEST_USER(msgq_api, test_msgq_put_front_order)
 {
@@ -431,6 +438,7 @@ ZTEST_USER(msgq_api, test_msgq_put_front_order)
  *   -ENOMSG on an empty queue.
  *
  * @see k_msgq_peek()
+ * @verifies ZEP-SRS-31-12
  */
 ZTEST_USER(msgq_api, test_msgq_peek)
 {
@@ -476,6 +484,8 @@ ZTEST_USER(msgq_api, test_msgq_peek)
  *
  * @see k_msgq_put()
  * @see k_msgq_get()
+ * @verifies ZEP-SRS-31-4
+ * @verifies ZEP-SRS-31-9
  */
 ZTEST(msgq_api, test_msgq_thread_overflow)
 {
@@ -516,6 +526,8 @@ ZTEST(msgq_api, test_msgq_thread_overflow)
  * @see k_msgq_alloc_init()
  * @see k_msgq_put()
  * @see k_msgq_get()
+ * @verifies ZEP-SRS-31-4
+ * @verifies ZEP-SRS-31-8
  */
 ZTEST_USER(msgq_api, test_msgq_user_thread)
 {
@@ -549,6 +561,8 @@ ZTEST_USER(msgq_api, test_msgq_user_thread)
  * @see k_msgq_alloc_init()
  * @see k_msgq_put()
  * @see k_msgq_get()
+ * @verifies ZEP-SRS-31-4
+ * @verifies ZEP-SRS-31-9
  */
 ZTEST_USER(msgq_api, test_msgq_user_thread_overflow)
 {
@@ -587,6 +601,8 @@ ZTEST_USER(msgq_api, test_msgq_user_thread_overflow)
  * @see k_msgq_put()
  * @see k_msgq_put_front()
  * @see k_msgq_get()
+ * @verifies ZEP-SRS-31-4
+ * @verifies ZEP-SRS-31-8
  */
 ZTEST(msgq_api, test_msgq_isr)
 {
@@ -622,6 +638,7 @@ ZTEST(msgq_api, test_msgq_isr)
  * @see k_msgq_put()
  * @see k_msgq_put_front()
  * @see k_msgq_get()
+ * @verifies ZEP-SRS-31-6
  */
 ZTEST(msgq_api_1cpu, test_msgq_pend_thread)
 {
@@ -652,6 +669,8 @@ ZTEST(msgq_api_1cpu, test_msgq_pend_thread)
  *
  * @see k_msgq_alloc_init()
  * @see k_msgq_cleanup()
+ * @verifies ZEP-SRS-31-3
+ * @verifies ZEP-SRS-31-17
  */
 ZTEST(msgq_api, test_msgq_alloc)
 {
@@ -691,6 +710,8 @@ ZTEST(msgq_api, test_msgq_alloc)
  *
  * @see k_msgq_get()
  * @see k_msgq_cleanup()
+ * @verifies ZEP-SRS-31-10
+ * @verifies ZEP-SRS-31-20
  */
 ZTEST(msgq_api_1cpu, test_msgq_empty)
 {
@@ -737,6 +758,7 @@ ZTEST(msgq_api_1cpu, test_msgq_empty)
  * - The put returns -ENOMSG/-EAGAIN as appropriate and blocks under K_FOREVER.
  *
  * @see k_msgq_put()
+ * @verifies ZEP-SRS-31-6
  */
 ZTEST(msgq_api_1cpu, test_msgq_full)
 {
@@ -782,6 +804,7 @@ ZTEST(msgq_api_1cpu, test_msgq_full)
  *
  * @see k_msgq_put()
  * @see k_msgq_put_front()
+ * @verifies ZEP-SRS-31-6
  */
 ZTEST(msgq_api_1cpu, test_msgq_thread_pending)
 {
@@ -829,6 +852,7 @@ ZTEST(msgq_api_1cpu, test_msgq_thread_pending)
  * number of queued messages returns -ENOMSG.
  *
  * @see k_msgq_peek_at()
+ * @verifies ZEP-SRS-31-13
  */
 ZTEST_USER(msgq_api, test_msgq_peek_at)
 {
