@@ -1,0 +1,18 @@
+/*
+ * Copyright (C) 2026 Conclusive Engineering
+ * Copyright (C) 2026 Texas Instruments
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "adafruit_2_4_tft.dtsi"
+
+display_spi: &spi0 {
+	status = "okay";
+};
+
+&adafruit_2_4_tft_mipi_dbi {
+	spi-dev = <&display_spi>;
+	dc-gpios = <&gpios 31 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpios 17 GPIO_ACTIVE_LOW>;
+};

@@ -1,0 +1,6 @@
+# Copyright (c) 2026 Conclusive Engineering
+# Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ADAFRUIT_2_4_TFT
+	def_bool $(shields_list_contains,adafruit_2_4_tft)

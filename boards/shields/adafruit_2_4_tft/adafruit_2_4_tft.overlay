@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2026 Conclusive Engineering
+ * Copyright (c) 2026 Texas Instruments
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "adafruit_2_4_tft.dtsi"

@@ -1,0 +1,6 @@
+shields:
+  - name: adafruit_2_4_tft
+    full_name: Adafruit 2.4" TFT Shield
+    vendor: adafruit
+    supported_features:
+      - display
