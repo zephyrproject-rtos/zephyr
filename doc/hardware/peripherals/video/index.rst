@@ -5,6 +5,11 @@ Video
 
 The video driver API offers a generic interface to video devices.
 
+.. toctree::
+   :maxdepth: 1
+
+   heimann_htpa_sensor.rst
+
 Basic Operation
 ***************
 

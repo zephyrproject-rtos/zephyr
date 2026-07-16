@@ -3080,7 +3080,7 @@ Documentation Infrastructure:
     - include/zephyr/drivers/video.h
     - include/zephyr/drivers/video/
     - include/zephyr/dt-bindings/video/
-    - doc/hardware/peripherals/video.rst
+    - doc/hardware/peripherals/video/
     - tests/drivers/*/video/
     - dts/bindings/video/
   labels:

@@ -2417,6 +2417,10 @@ New Drivers
   * :dtcompatible:`nxp,jpegdec` (:github:`101883`)
   * :dtcompatible:`nxp,pngdec` (:github:`109973`)
   * :dtcompatible:`zephyr,native-sim-video-fifo` (:github:`119658`)
+  * Heimann HTPA 120x84 thermopile sensor array
+    (:dtcompatible:`heimann,htpa-120x84`).
+  * Heimann HTPA 160x120 thermopile sensor array
+    (:dtcompatible:`heimann,htpa-160x120`).
 
 * Wakeup Controller
 
