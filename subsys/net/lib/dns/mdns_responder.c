@@ -2396,8 +2396,6 @@ static void do_init_listener(struct k_work *work)
 static int mdns_responder_init(void)
 {
 	uint64_t flags = NET_EVENT_IF_UP;
-	external_records = NULL;
-	external_records_count = 0;
 
 	net_mgmt_init_event_callback(&mgmt_iface_cb, mdns_iface_event_handler, flags);
 	net_mgmt_add_event_callback(&mgmt_iface_cb);
