@@ -881,8 +881,9 @@ static bool bap_stream_valid_ase_op(const struct bt_conn *conn, const struct bt_
 		valid_op = false;
 	}
 
-	LOG_DBG("ASE operation (dir %s) %u in state %s is%s valid", bt_audio_dir_str(ep_dir),
-		ase_op, bt_bap_ep_state_str(ep_state), valid_op ? "" : " not");
+	LOG_DBG("ASE operation (dir %s) %s (%u) in state %s is%s valid", bt_audio_dir_str(ep_dir),
+		bt_ascs_op_str(ase_op), ase_op, bt_bap_ep_state_str(ep_state),
+		valid_op ? "" : " not");
 
 	return valid_op;
 }
