@@ -1,0 +1,27 @@
+/*
+ * Copyright (C) 2026 Conclusive Engineering
+ * Copyright (C) 2026 Texas Instruments
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+/ {
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_D3 0 &gpios 19 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpios 18 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpios 16 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpios 17 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpios 31 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpios 26 0>;
+	};
+};
+
+arduino_spi: &spi0 {
+	status = "okay";
+};

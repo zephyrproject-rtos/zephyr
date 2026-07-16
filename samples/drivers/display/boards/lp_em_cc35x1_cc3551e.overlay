@@ -1,0 +1,8 @@
+/*
+ * Copyright (C) 2026 Conclusive Engineering
+ * Copyright (C) 2026 Texas Instruments
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "lm_em_cc35xx_arduino.dtsi"
