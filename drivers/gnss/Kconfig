@@ -59,6 +59,15 @@ config GNSS_TIMEPULSE
 	  GNSS PPS capture infrastructure exposed through
 	  gnss_get_latest_timepulse(). Selected by a capture backend.
 
+config GNSS_TIMEPULSE_GPIO
+	bool "GPIO PPS capture"
+	depends on GPIO
+	select GNSS_TIMEPULSE
+	help
+	  Capture a recurring GNSS PPS signal using a GPIO interrupt. For drivers that
+	  imply this option from devicetree, it may be enabled automatically
+	  when dependencies are met.
+
 config GNSS_INIT_PRIORITY
 	int "GNSS driver initialization priority"
 	default 80
