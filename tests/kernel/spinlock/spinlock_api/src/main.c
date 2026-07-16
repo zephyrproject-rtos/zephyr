@@ -38,6 +38,7 @@ volatile int trylock_successes;
  * @ingroup kernel_spinlock_tests
  *
  * @see k_spin_lock(), k_spin_unlock()
+ * @verifies ZEP-SRS-34-3
  */
 ZTEST(spinlock, test_spinlock_basic)
 {
