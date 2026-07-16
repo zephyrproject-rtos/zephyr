@@ -162,13 +162,24 @@ ZTEST(usage_api, test_all_stats_usage)
 	zassert_true(stats4.current_cycles <= stats1.current_cycles);
 	zassert_true(stats5.current_cycles > stats4.current_cycles);
 
-	/* The peak busy stretch is the same one before and after it closed; it
-	 * only grew by the sub-tick measurement tail between the stats3 sample
-	 * and the idle event. Scheduling here is tick aligned, so comparing in
-	 * the tick domain makes that tail vanish, no percentage tolerance needed.
+	/* stats3 sampled this busy stretch mid-way and stats4 after the idle
+	 * event closed it, so peak grew only by the CPU-busy time that elapsed
+	 * between the two samples. That busy time is exactly the growth in
+	 * total_cycles: peak (longest) and total are advanced from the same cycle
+	 * deltas, so peak can never grow by more than total. Bounding peak growth
+	 * by it needs no tolerance and no per-platform value, self-scales with the
+	 * clock, and still catches a spurious jump at the idle event.
 	 */
-	zassert_equal(k_cyc_to_ticks_near64(stats4.peak_cycles),
-		      k_cyc_to_ticks_near64(stats3.peak_cycles), NULL);
+	zassert_true(stats4.peak_cycles >= stats3.peak_cycles,
+		     "peak_cycles shrank across the idle event: %llu -> %llu",
+		     (unsigned long long)stats3.peak_cycles,
+		     (unsigned long long)stats4.peak_cycles);
+	zassert_true((stats4.peak_cycles - stats3.peak_cycles) <=
+		     (stats4.total_cycles - stats3.total_cycles),
+		     "peak grew by %llu cycles but only %llu busy cycles elapsed "
+		     "between the samples",
+		     (unsigned long long)(stats4.peak_cycles - stats3.peak_cycles),
+		     (unsigned long long)(stats4.total_cycles - stats3.total_cycles));
 	zassert_true(stats4.peak_cycles == stats5.peak_cycles);
 
 	zassert_true(stats4.average_cycles > 0);
