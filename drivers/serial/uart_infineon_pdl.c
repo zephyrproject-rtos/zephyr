@@ -1395,6 +1395,11 @@ static int ifx_cat1_uart_init(const struct device *dev)
 			PERI_0_TRIG_IN_MUX_0_SCB_RX_TR_OUT0 + data->hw_resource.block_num,
 			PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->async.dma_rx.dma_channel, false,
 			TRIGGER_TYPE_LEVEL);
+#elif defined(CONFIG_SOC_DIE_PSC3M6)
+		/* PSC3M6 trigger mux has 6 entries per SCB, so stride is 6. */
+		Cy_TrigMux_Connect(TRIG_IN_MUX_0_SCB_RX0 + (6 * data->hw_resource.block_num),
+				   TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->async.dma_rx.dma_channel,
+				   false, TRIGGER_TYPE_LEVEL);
 #elif defined(COMPONENT_CAT1B)
 		Cy_TrigMux_Connect(TRIG_IN_MUX_0_SCB_RX0 + (3 * data->hw_resource.block_num),
 				   TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->async.dma_rx.dma_channel,
@@ -1421,6 +1426,10 @@ static int ifx_cat1_uart_init(const struct device *dev)
 			PERI_0_TRIG_IN_MUX_0_SCB_TX_TR_OUT0 + data->hw_resource.block_num,
 			PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->async.dma_tx.dma_channel, false,
 			TRIGGER_TYPE_EDGE);
+#elif defined(CONFIG_SOC_DIE_PSC3M6)
+		Cy_TrigMux_Connect(TRIG_IN_MUX_0_SCB_TX0 + (6 * data->hw_resource.block_num),
+				   TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->async.dma_tx.dma_channel,
+				   false, TRIGGER_TYPE_EDGE);
 #elif defined(COMPONENT_CAT1B)
 		Cy_TrigMux_Connect(TRIG_IN_MUX_0_SCB_TX0 + (3 * data->hw_resource.block_num),
 				   TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->async.dma_tx.dma_channel,
