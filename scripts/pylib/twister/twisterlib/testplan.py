@@ -215,17 +215,21 @@ class TestPlan:
         num = self.add_testsuites(testsuite_filter=self.options.test,
                                 testsuite_pattern=self.options.test_pattern)
 
+        if self.load_errors:
+            logger.error(f"Found {self.load_errors} errors loading {num} test configurations.")
+            raise SystemExit(1)
+
         if num == 0:
-            logger.error("No testsuites found at the specified location...")
-            raise SystemExit("No testsuites found at the specified location...")
+            logger.warning("No testsuites found at the specified location...")
+            raise SystemExit(0)
 
         self.add_testsuites_for_required_applications()
 
+        # check for error and exit if any were found during loading of testsuites in
+        # add_testsuites_for_required_applications, which is also calls add_testsuites.
         if self.load_errors:
             logger.error(f"Found {self.load_errors} errors loading {num} test configurations.")
-            raise SystemExit(
-                f"Found {self.load_errors} errors loading {num} test configurations."
-            )
+            raise SystemExit(1)
 
         self.find_subtests()
         # get list of scenarios we have parsed into one list

@@ -29,7 +29,7 @@ class TestError:
         (
             None,
             'dummy.agnostic.group1.subgroup1',
-            (1, 'No testsuites found at the specified location...')
+            (0, 'No testsuites found at the specified location...')
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy'),
