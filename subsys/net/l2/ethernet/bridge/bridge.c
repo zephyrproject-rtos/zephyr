@@ -276,11 +276,19 @@ static void bridge_iface_init(struct net_if *iface)
 	/* We need to set the link address here as normally it would be set in
 	 * virtual interface API attach function but we do not use that in
 	 * bridging.
+	 *
+	 * The bridge can own an IP address and terminate/originate traffic of
+	 * its own, so it acts as an Ethernet endpoint. Its link address must be
+	 * a proper 6-byte Ethernet MAC: a locally destined unicast (e.g. an ARP
+	 * reply) is compared against the interface link address with
+	 * net_linkaddr_cmp(), which requires the lengths to match. A longer
+	 * address would make that comparison fail and the frame be dropped as
+	 * "not for me".
 	 */
-	random_linkaddr(vctx->lladdr.addr, sizeof(vctx->lladdr.addr));
+	random_linkaddr(vctx->lladdr.addr, NET_ETH_ADDR_LEN);
 
-	vctx->lladdr.len = sizeof(vctx->lladdr.addr);
-	vctx->lladdr.type = NET_LINK_UNKNOWN;
+	vctx->lladdr.len = NET_ETH_ADDR_LEN;
+	vctx->lladdr.type = NET_LINK_ETHERNET;
 
 	net_if_set_link_addr(iface, vctx->lladdr.addr,
 			     vctx->lladdr.len, vctx->lladdr.type);
