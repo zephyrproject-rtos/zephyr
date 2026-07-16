@@ -151,6 +151,7 @@ static int esp32_wifi_send(const struct device *dev __unused, struct net_pkt *pk
 	bool sta_connected = (data->state == ESP32_STA_CONNECTED);
 	esp_interface_t ifx = ap_running ? ESP_IF_WIFI_AP : ESP_IF_WIFI_STA;
 	k_timepoint_t end;
+	int ret;
 	int err;
 
 	if (!sta_connected && !ap_running) {
@@ -159,6 +160,7 @@ static int esp32_wifi_send(const struct device *dev __unused, struct net_pkt *pk
 
 	if (pkt_len > sizeof(data->frame_buf)) {
 		LOG_ERR("Packet too large to send: %zu > %zu", pkt_len, sizeof(data->frame_buf));
+		ret = -EMSGSIZE;
 		goto out;
 	}
 
@@ -166,6 +168,7 @@ static int esp32_wifi_send(const struct device *dev __unused, struct net_pkt *pk
 
 	/* Read the packet payload */
 	if (net_pkt_read(pkt, data->frame_buf, pkt_len) < 0) {
+		ret = -EIO;
 		goto unlock;
 	}
 
@@ -178,6 +181,7 @@ static int esp32_wifi_send(const struct device *dev __unused, struct net_pkt *pk
 		 k_sem_take(&data->tx_done_sem, sys_timepoint_timeout(end)) == 0);
 
 	if (err != ESP_OK) {
+		ret = (err == ESP_ERR_NO_MEM) ? -ENOBUFS : -EIO;
 		goto unlock;
 	}
 
@@ -195,11 +199,11 @@ unlock:
 	k_mutex_unlock(&data->send_lock);
 out:
 
-	LOG_ERR("Failed to send packet");
+	LOG_ERR("Failed to send packet: %d", ret);
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	data->stats.errors.tx++;
 #endif
-	return -EIO;
+	return ret;
 }
 
 static esp_err_t eth_esp32_rx(void *buffer, uint16_t len, void *eb)
