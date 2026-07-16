@@ -18,6 +18,24 @@ LOG_MODULE_REGISTER(memc_mcux_xspi, CONFIG_MEMC_LOG_LEVEL);
 #define MEMC_XSPI_TARGET_GROUP_COUNT 2
 #define MEMC_XSPI_SFP_FRAD_COUNT     8
 
+/*
+ * The byteOrder and enableDoze members only exist in the HAL xspi_config_t when
+ * the SoC provides the END_CFG / DOZE_MODE XSPI features. Guard the initializers
+ * with the same feature macros so the driver builds on variants that lack them.
+ */
+#if (defined(FSL_FEATURE_XSPI_HAS_END_CFG) && FSL_FEATURE_XSPI_HAS_END_CFG)
+#define MCUX_XSPI_BYTE_ORDER(n) .byteOrder = DT_INST_PROP(n, byte_order),
+#else
+#define MCUX_XSPI_BYTE_ORDER(n)
+#endif
+
+#if (defined(FSL_FEATURE_XSPI_HAS_DOZE_MODE) && FSL_FEATURE_XSPI_HAS_DOZE_MODE)
+#define MCUX_XSPI_DOZE .enableDoze = false,
+#else
+#define MCUX_XSPI_DOZE
+#endif
+
+
 struct memc_mcux_xspi_config {
 	const struct pinctrl_dev_config *pincfg;
 	xspi_config_t xspi_config;
@@ -203,8 +221,8 @@ static int memc_mcux_xspi_init(const struct device *dev)
 	static const struct memc_mcux_xspi_config memc_mcux_xspi_config_##n = {	\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),	\
 		.xspi_config = {	\
-			.byteOrder = DT_INST_PROP(n, byte_order),	\
-			.enableDoze = false,	\
+			MCUX_XSPI_BYTE_ORDER(n)	\
+			MCUX_XSPI_DOZE	\
 			.ptrAhbAccessConfig = &(xspi_ahb_access_config_t){	\
 				.ahbErrorPayload = {	\
 					.highPayload = 0x5A5A5A5A,	\
