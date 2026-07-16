@@ -672,6 +672,8 @@ static int spi_esp32_init(const struct device *dev)
 	/* Enable internal SPI clock - new HAL requires explicit call */
 	spi_ll_enable_clock(cfg->dma_host + 1, true);
 
+	spi_ll_set_clk_source(cfg->spi, cfg->clock_source);
+
 	if (cfg->dma_enabled) {
 		err = spi_esp32_init_dma(dev);
 		if (err) {
