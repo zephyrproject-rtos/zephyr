@@ -108,6 +108,8 @@
  *
  * @see k_usleep()
  * @see k_uptime_get()
+ * @verifies ZEP-SRS-28-9
+ * @verifies ZEP-SRS-28-10
  */
 ZTEST_USER(sleep, test_usleep)
 {
