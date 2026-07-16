@@ -72,7 +72,6 @@ tests:
   libraries.gui.lvgl.stm32h747i_disco_m7_blk:
     platform_allow: stm32h747i_disco/stm32h747xx/m7
     extra_configs:
-      - CONFIG_SDMMC_STM32_HWFC=y
       - CONFIG_NOCACHE_MEMORY=y
       - CONFIG_DUMMY_DISPLAY=n
     extra_args:
