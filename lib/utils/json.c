@@ -545,6 +545,23 @@ static int decode_string_buf(const struct json_token *token, char *str, size_t s
 	return 0;
 }
 
+static int decode_string(const struct json_token *token, char **str, size_t size)
+{
+
+	*token->end = '\0';
+	*str = token->start;
+
+	size_t escaped_len = token->end - token->start;
+	/* Check if we would have to truncate due to the original escaped string being too long */
+	if (escaped_len >= size) {
+		return -EINVAL;
+	}
+	int ret = json_unescape_string(token->start, *str, escaped_len, size);
+	if (ret < 0) {
+		return -EINVAL;
+	}
+}
+
 static int decode_int32(const struct json_token *token, int32_t *num)
 {
 	/* FIXME: strtod() is not available in newlib/minimal libc,
@@ -984,15 +1001,7 @@ static int64_t decode_value(struct json_obj *obj,
 	case JSON_TOK_STRING: {
 		char **str = field;
 
-		*value->end = '\0';
-		*str = value->start;
-
-		size_t escaped_len = value->end - value->start;
-		if (escaped_len >= descr->field.size)
-		{
-			return -EINVAL;
-		}
-		return json_unescape_string(value->start, *str, escaped_len, descr->field.size);
+		return decode_string(value, str, descr->field.size);
 	}
 	case JSON_TOK_STRING_BUF: {
 		char *str = field;
@@ -1981,15 +1990,7 @@ static int64_t decode_mixed_value(struct json_obj *obj,
 	case JSON_TOK_STRING: {
 		char **str_ptr = field;
 
-		*value->end = '\0';
-		*str_ptr = value->start;
-
-		size_t escaped_len = value->end - value->start;
-		if (escaped_len >= elem->primitive.size)
-		{
-			return -EINVAL;
-		}
-		return json_unescape_string(value->start, *str_ptr, escaped_len, elem->primitive.size);
+		return decode_string(value, str_ptr, elem->primitive.size);
 	}
 	case JSON_TOK_STRING_BUF: {
 		char *str_buf = field;
