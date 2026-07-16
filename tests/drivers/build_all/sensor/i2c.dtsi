@@ -1652,3 +1652,9 @@ test_i2c_icm40627: icm40627@d6 {
 	accel-fs = <16>;
 	gyro-fs = <2000>;
 };
+
+test_i2c_lps33hw: lps33hw@d7 {
+	compatible = "st,lps33hw";
+	reg = <0xd7>;
+	odr = <75>;
+};
