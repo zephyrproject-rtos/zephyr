@@ -328,6 +328,8 @@ void join_participant_threads(void)
  * @ingroup kernel_mutex_tests
  * @see sys_mutex_lock()
  * @see sys_mutex_unlock()
+ * @verifies ZEP-SRS-6-9
+ * @verifies ZEP-SRS-6-12
  */
 
 ZTEST_USER_OR_NOT(mutex_complex, test_mutex)
@@ -449,6 +451,7 @@ ZTEST_USER_OR_NOT(mutex_complex, test_mutex)
  * @ingroup kernel_mutex_tests
  * @see sys_mutex_lock()
  * @see sys_mutex_unlock()
+ * @verifies ZEP-SRS-6-4
  */
 ZTEST(mutex_complex, test_supervisor_access)
 {
@@ -480,6 +483,7 @@ ZTEST(mutex_complex, test_supervisor_access)
  *
  * @ingroup kernel_mutex_tests
  * @see sys_mutex_lock()
+ * @verifies ZEP-SRS-6-1
  */
 ZTEST_USER_OR_NOT(mutex_complex, test_user_access)
 {
