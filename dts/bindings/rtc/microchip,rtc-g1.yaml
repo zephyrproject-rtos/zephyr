@@ -1,4 +1,4 @@
-# Copyright(c) 2025 Microchip Technology Inc.
+# Copyright(c) 2025-2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 title: Microchip G1 RTC driver
@@ -12,14 +12,13 @@ description: |
   Group g1 RTC driver supports following hardware peripherals:
     - module name="RTC" id="U2250" version="2.1.0"
 
-  The node has the 'rtc' node label set in your SoC's devicetree, so you can
-  modify it like this:
-
+examples:
+  - |
     &rtc {
         /* your modifications go here */
     };
 
-    Example:
+  - |
     Correction in ppm = (FREQCORR.VALUE * 1e6 ppm) / (8192 * 128)
 
     &rtc {
