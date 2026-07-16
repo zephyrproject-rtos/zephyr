@@ -57,6 +57,7 @@ int write_log_to_file(uint8_t *data, size_t length, void *ctx);
  *
  * @see fs_mount()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-5
  */
 ZTEST(test_log_backend_fs, test_fs_nonexist)
 {
@@ -151,6 +152,8 @@ ZTEST(test_log_backend_fs, test_wipe_fs_logs)
  *
  * @see fs_read()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-5
  */
 ZTEST(test_log_backend_fs, test_log_fs_file_content)
 {
@@ -218,6 +221,7 @@ ZTEST(test_log_backend_fs, test_log_fs_file_content)
  *
  * @see fs_stat()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-5
  */
 ZTEST(test_log_backend_fs, test_log_fs_file_size)
 {
@@ -297,6 +301,7 @@ ZTEST(test_log_backend_fs, test_log_fs_file_size)
  *
  * @see fs_readdir()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-5
  */
 ZTEST(test_log_backend_fs, test_log_fs_files_max)
 {

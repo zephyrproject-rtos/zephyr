@@ -53,6 +53,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_DBG);
  *
  * @see log_format_func_t_get()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-16
  */
 ZTEST(log_syst, test_log_syst_format_table_selection)
 {
@@ -109,6 +112,9 @@ const char *module_id = "00";
  *
  * @see validate_msg()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-16
  */
 ZTEST(log_syst, test_log_syst_data)
 {
@@ -139,6 +145,9 @@ ZTEST(log_syst, test_log_syst_data)
  *
  * @see validate_msg()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-16
  */
 ZTEST(log_syst, test_log_syst_data_multiple_args)
 {
@@ -168,6 +177,9 @@ ZTEST(log_syst, test_log_syst_data_multiple_args)
  *
  * @see validate_msg()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-16
  */
 ZTEST(log_syst, test_log_syst_float_data)
 {

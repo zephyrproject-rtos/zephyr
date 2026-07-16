@@ -251,6 +251,28 @@ static bool use_func_prefix(uint8_t level)
 	}
 }
 
+/**
+ * @brief Verify each severity level renders its corresponding text marker.
+ *
+ * @details
+ * Iterates over the error, warning, info and debug levels and confirms the
+ * formatter renders the matching marker ("<err>", "<wrn>", "<inf>", "<dbg>"),
+ * optionally including the function-name prefix when configured. This
+ * validates rendering of all supported severity levels into formatted output.
+ *
+ * Test steps:
+ * - For each level, package a message and process it with the level flag.
+ * - Account for the function-name prefix when enabled for that level.
+ * - Assert the rendered length and string for each level.
+ *
+ * Expected result:
+ * - Each message carries the correct severity marker and text.
+ *
+ * @see log_output_process()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-7
+ */
 ZTEST(test_log_output, test_levels)
 {
 	char __aligned(Z_LOG_MSG_ALIGNMENT) package[256];
@@ -290,6 +312,28 @@ ZTEST(test_log_output, test_levels)
 	}
 }
 
+/**
+ * @brief Verify color escape codes wrap messages per severity when enabled.
+ *
+ * @details
+ * Enables the level and colors flags and confirms the formatter surrounds each
+ * message with the ANSI color escape sequence associated with its severity
+ * (or the default sequence when colors are disabled in the build). This
+ * validates color decoration of formatted, severity-tagged output.
+ *
+ * Test steps:
+ * - For each level, build the expected colored string and package a message.
+ * - Process it with the level + colors flags set.
+ * - Assert the rendered length and string for each level.
+ *
+ * Expected result:
+ * - Each message is wrapped with the expected color codes for its level.
+ *
+ * @see log_output_process()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-7
+ */
 ZTEST(test_log_output, test_colors)
 {
 #define LOG_COLOR_CODE_DEFAULT "\x1B[0m"
@@ -356,6 +400,26 @@ ZTEST(test_log_output, test_colors)
 	}
 }
 
+/**
+ * @brief Verify the originating thread identity is rendered when requested.
+ *
+ * @details
+ * Enables the thread flag and confirms the formatter prepends the originating
+ * thread's priority and name (or pointer when names are disabled) to the
+ * message. This validates rendering of thread context into formatted output.
+ *
+ * Test steps:
+ * - Skip unless CONFIG_LOG_THREAD_ID_PREFIX is enabled.
+ * - Build the expected string from the current thread's priority and name.
+ * - Package a message and process it with the level + thread flags.
+ *
+ * Expected result:
+ * - Output includes the "[prio name]" thread prefix ahead of the message.
+ *
+ * @see log_output_process()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(test_log_output, test_thread_id)
 {
 	if (!IS_ENABLED(CONFIG_LOG_THREAD_ID_PREFIX)) {
@@ -389,6 +453,26 @@ ZTEST(test_log_output, test_thread_id)
 	zassert_str_equal(exp_str, mock_buffer);
 }
 
+/**
+ * @brief Verify the source prefix is omitted when the skip-source flag is set.
+ *
+ * @details
+ * Enables LOG_OUTPUT_FLAG_SKIP_SOURCE and confirms the formatter renders only
+ * the message payload and CRLF, without the source-name prefix. This validates
+ * the formatter's ability to suppress source decoration in the output.
+ *
+ * Test steps:
+ * - Package a simple string with cbprintf_package().
+ * - Process it with the skip-source flag set.
+ * - Compare the rendered buffer against the expected string.
+ *
+ * Expected result:
+ * - Output equals "test\r\n" with no source prefix.
+ *
+ * @see log_output_process()
+ * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ */
 ZTEST(test_log_output, test_skip_src)
 {
 	char __aligned(Z_LOG_MSG_ALIGNMENT) package[256];

@@ -214,6 +214,8 @@ static bool log_test_process(void)
  *
  * @see log_backend_activate()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-5
+ * @verifies ZEP-SRS-11-21
  */
 ZTEST(test_log_core_additional, test_log_backend)
 {
@@ -281,6 +283,7 @@ ZTEST(test_log_core_additional, test_log_domain_id)
  *
  * @see LOG_INF()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-8
  */
 ZTEST(test_log_core_additional, test_log_sync)
 {
@@ -320,6 +323,7 @@ ZTEST(test_log_core_additional, test_log_sync)
  *
  * @see LOG_INF()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-6
  */
 ZTEST(test_log_core_additional, test_log_early_logging)
 {
@@ -376,6 +380,8 @@ ZTEST(test_log_core_additional, test_log_early_logging)
  *
  * @see LOG_INF()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-7
+ * @verifies ZEP-SRS-11-9
  */
 ZTEST(test_log_core_additional, test_log_severity)
 {
@@ -418,6 +424,8 @@ ZTEST(test_log_core_additional, test_log_severity)
  *
  * @see log_set_timestamp_func()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-14
+ * @verifies ZEP-SRS-11-15
  */
 ZTEST(test_log_core_additional, test_log_timestamping)
 {
@@ -480,6 +488,7 @@ ZTEST(test_log_core_additional, test_log_timestamping)
  *
  * @see log_backend_enable()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-5
  */
 ZTEST(test_log_core_additional, test_multiple_backends)
 {
@@ -524,6 +533,8 @@ ZTEST(test_log_core_additional, test_multiple_backends)
  *
  * @see log_data_pending()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-1
+ * @verifies ZEP-SRS-11-6
  */
 
 #ifdef CONFIG_LOG_PROCESS_THREAD
@@ -579,6 +590,8 @@ ZTEST(test_log_core_additional, test_log_thread)
  *
  * @see log_thread_trigger()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-1
+ * @verifies ZEP-SRS-11-6
  */
 
 #ifdef CONFIG_LOG_PROCESS_THREAD
@@ -638,6 +651,7 @@ static void call_log_generic(const char *fmt, ...)
  *
  * @see log_generic()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
  */
 ZTEST(test_log_core_additional, test_log_generic)
 {

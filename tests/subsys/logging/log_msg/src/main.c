@@ -218,6 +218,7 @@ void validate_base_message_set(const struct log_source_const_data *source,
  *
  * @see z_log_msg_runtime_create()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
  */
 ZTEST(log_msg, test_log_msg_0_args_msg)
 {
@@ -268,6 +269,8 @@ ZTEST(log_msg, test_log_msg_0_args_msg)
  *
  * @see z_log_msg_runtime_create()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
  */
 ZTEST(log_msg, test_log_msg_various_args)
 {
@@ -322,6 +325,8 @@ ZTEST(log_msg, test_log_msg_various_args)
  *
  * @see z_log_msg_runtime_create()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-12
  */
 ZTEST(log_msg, test_log_msg_only_data)
 {
@@ -368,6 +373,9 @@ ZTEST(log_msg, test_log_msg_only_data)
  *
  * @see z_log_msg_runtime_create()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-12
  */
 ZTEST(log_msg, test_log_msg_string_and_data)
 {
@@ -419,6 +427,8 @@ ZTEST(log_msg, test_log_msg_string_and_data)
  *
  * @see z_log_msg_runtime_create()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
  */
 ZTEST(log_msg, test_log_msg_fp)
 {
@@ -491,6 +501,7 @@ static void get_msg_validate_length(uint32_t exp_len)
  *
  * @see log_msg_generic_get_wlen()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
  */
 ZTEST(log_msg, test_mode_size_plain_string)
 {
@@ -543,6 +554,8 @@ ZTEST(log_msg, test_mode_size_plain_string)
  *
  * @see log_msg_generic_get_wlen()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-12
  */
 ZTEST(log_msg, test_mode_size_data_only)
 {
@@ -591,6 +604,8 @@ ZTEST(log_msg, test_mode_size_data_only)
  *
  * @see log_msg_generic_get_wlen()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-12
  */
 ZTEST(log_msg, test_mode_size_plain_str_data)
 {
@@ -640,6 +655,8 @@ ZTEST(log_msg, test_mode_size_plain_str_data)
  *
  * @see log_msg_generic_get_wlen()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
  */
 ZTEST(log_msg, test_mode_size_str_with_strings)
 {
@@ -697,6 +714,8 @@ ZTEST(log_msg, test_mode_size_str_with_strings)
  *
  * @see log_msg_generic_get_wlen()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-3
  */
 ZTEST(log_msg, test_mode_size_str_with_2strings)
 {
@@ -767,6 +786,7 @@ static log_timestamp_t timestamp_get_inc(void)
  *
  * @see z_log_dropped_read_and_clear()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-6
  */
 ZTEST(log_msg, test_saturate)
 {

@@ -134,6 +134,9 @@ LOG_LINK_DEF(mock_link2, mock_log_link_api, 0, &mock_link_b);
  *
  * @see log_domains_count()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-5
+ * @verifies ZEP-SRS-11-24
+ * @verifies ZEP-SRS-11-25
  */
 ZTEST(log_links, test_log_domain_count)
 {
@@ -167,6 +170,8 @@ ZTEST(log_links, test_log_domain_count)
  *
  * @see log_src_cnt_get()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-11
+ * @verifies ZEP-SRS-11-25
  */
 ZTEST(log_links, test_log_source_count)
 {
@@ -217,6 +222,7 @@ static void test_single_compile_level(uint8_t d, uint16_t s, uint32_t exp_level)
  *
  * @see log_filter_get()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-9
  */
 ZTEST(log_links, test_log_compiled_level_get)
 {
@@ -279,6 +285,7 @@ static void test_single_runtime_level(uint8_t d, uint16_t s, uint8_t *link_level
  *
  * @see log_filter_set()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-10
  */
 ZTEST(log_links, test_log_runtime_level_set)
 {
@@ -308,6 +315,7 @@ ZTEST(log_links, test_log_runtime_level_set)
  *
  * @see log_domain_name_get()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-25
  */
 ZTEST(log_links, test_log_domain_name_get)
 {
@@ -354,6 +362,8 @@ static void test_single_log_source_name_get(uint8_t d, uint16_t s,
  *
  * @see log_source_name_get()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-11
+ * @verifies ZEP-SRS-11-25
  */
 ZTEST(log_links, test_log_source_name_get)
 {
