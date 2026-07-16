@@ -112,6 +112,8 @@ static void tstack_thread_isr(struct k_stack *pstack)
  * @ingroup kernel_stack_tests
  *
  * @see k_stack_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
+ * @verifies ZEP-SRS-30-5
+ * @verifies ZEP-SRS-30-6
  */
 ZTEST(stack_contexts, test_stack_thread2thread)
 {
@@ -134,6 +136,7 @@ ZTEST(stack_contexts, test_stack_thread2thread)
  * @ingroup kernel_stack_tests
  *
  * @see #K_STACK_DEFINE(x), k_stack_push(), k_stack_pop()
+ * @verifies ZEP-SRS-30-1
  */
 ZTEST(stack_contexts, test_stack_define)
 {
@@ -158,6 +161,7 @@ ZTEST(stack_contexts, test_stack_define)
  * @ingroup kernel_stack_tests
  *
  * @see k_stack_init(), k_stack_push(), k_stack_pop()
+ * @verifies ZEP-SRS-30-2
  */
 ZTEST(stack_contexts, test_stack_init)
 {
@@ -184,6 +188,7 @@ ZTEST(stack_contexts, test_stack_init)
  * @ingroup kernel_stack_tests
  *
  * @see k_stack_push(), k_stack_pop()
+ * @verifies ZEP-SRS-30-10
  */
 ZTEST(stack_contexts, test_stack_pop_order)
 {
@@ -206,6 +211,8 @@ ZTEST(stack_contexts, test_stack_pop_order)
 /**
  * @brief Verifies data passing between user threads via stack
  * @see k_stack_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
+ * @verifies ZEP-SRS-30-5
+ * @verifies ZEP-SRS-30-6
  */
 ZTEST_USER(stack_contexts, test_stack_user_thread2thread)
 {
@@ -222,6 +229,8 @@ ZTEST_USER(stack_contexts, test_stack_user_thread2thread)
 /**
  * @brief Verifies data passing between thread and ISR via stack
  * @see k_stack_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
+ * @verifies ZEP-SRS-30-5
+ * @verifies ZEP-SRS-30-6
  */
 ZTEST(stack_contexts, test_stack_thread2isr)
 {
@@ -236,6 +245,8 @@ ZTEST(stack_contexts, test_stack_thread2isr)
 /**
  * @see k_stack_alloc_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop(),
  * k_stack_cleanup()
+ * @verifies ZEP-SRS-30-3
+ * @verifies ZEP-SRS-30-4
  */
 ZTEST(stack_contexts, test_stack_alloc_thread2thread)
 {
@@ -308,6 +319,7 @@ static void high_prio_t2_wait_for_stack(void *p1, void *p2, void *p3)
  * thread that has waited longest.
  *
  * @ingroup kernel_stack_tests
+ * @verifies ZEP-SRS-30-6
  */
 ZTEST(stack_contexts, test_stack_multithread_competition)
 {
@@ -367,6 +379,7 @@ ZTEST(stack_contexts, test_stack_multithread_competition)
  * then see if returns an expected value.
  *
  * @ingroup kernel_stack_tests
+ * @verifies ZEP-SRS-30-3
  */
 ZTEST(stack_contexts, test_stack_alloc_null)
 {
