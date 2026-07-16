@@ -2107,10 +2107,22 @@ static inline void net_if_ipv6_set_mcast_hop_limit(struct net_if *iface,
 #endif /* CONFIG_NET_NATIVE_IPV6 */
 
 /**
+ * @brief Maximum IPv6 base reachable time in milliseconds.
+ *
+ * Upper bound for the base reachable time, matching the AdvReachableTime limit
+ * from RFC 4861 section 6.2.1. Values passed to
+ * @ref net_if_ipv6_set_base_reachable_time above this are clamped. This also
+ * keeps @ref net_if_ipv6_calc_reachable_time from overflowing when it scales
+ * the value by the RFC 4861 random factor.
+ */
+#define NET_IPV6_MAX_REACHABLE_TIME 3600000U
+
+/**
  * @brief Set IPv6 reachable time for a given interface
  *
  * @param iface Network interface
- * @param reachable_time New reachable time
+ * @param reachable_time New reachable time. Values above
+ *                       @ref NET_IPV6_MAX_REACHABLE_TIME are clamped.
  */
 static inline void net_if_ipv6_set_base_reachable_time(struct net_if *iface,
 						       uint32_t reachable_time)
@@ -2122,6 +2134,10 @@ static inline void net_if_ipv6_set_base_reachable_time(struct net_if *iface,
 
 	if (!iface->config.ip.ipv6) {
 		return;
+	}
+
+	if (reachable_time > NET_IPV6_MAX_REACHABLE_TIME) {
+		reachable_time = NET_IPV6_MAX_REACHABLE_TIME;
 	}
 
 	iface->config.ip.ipv6->base_reachable_time = reachable_time;
