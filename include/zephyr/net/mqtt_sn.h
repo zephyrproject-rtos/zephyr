@@ -309,7 +309,7 @@ struct mqtt_sn_client {
 	sys_slist_t topic;
 
 	/** List of found gateways */
-	sys_slist_t gateway;
+	sys_slist_t gateways;
 
 	/** Current state of the MQTT-SN client */
 	int state;
