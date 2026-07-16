@@ -3182,7 +3182,7 @@ class ManifestStrategy(SelectionStrategy):
                 "(e.g. comment / formatting edit) - no module tests needed.",
                 self.name,
             )
-            return set(manifest_files), set(manifest_files)
+            return [], set(manifest_files)
 
         log.info(
             "[%s] Changed west.yml modules: %s",
