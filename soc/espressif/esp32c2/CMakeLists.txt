@@ -4,6 +4,7 @@ zephyr_sources(
   vectors.S
   soc_irq.S
   soc.c
+  ../common/start.S
   ../common/loader.c
   )
 
