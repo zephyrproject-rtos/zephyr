@@ -80,6 +80,7 @@ static void errno_thread(void *_n, void *_my_errno, void *_unused)
  * - Every thread observes its own errno value and the main thread's errno is unchanged.
  *
  * @see k_thread_create()
+ * @verifies ZEP-SRS-18-9
  */
 ZTEST(common_errno, test_thread_context)
 {
