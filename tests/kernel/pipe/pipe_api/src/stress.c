@@ -41,6 +41,8 @@ static struct k_pipe pipe;
  * - Every write returns a positive count and the full payload is written.
  *
  * @see k_pipe_write()
+ *
+ * @verifies ZEP-SRS-32-3
  */
 ZTEST(k_pipe_stress, test_pipe_write)
 {
@@ -79,6 +81,8 @@ ZTEST(k_pipe_stress, test_pipe_write)
  *
  * @see k_pipe_write()
  * @see k_pipe_read()
+ *
+ * @verifies ZEP-SRS-32-4
  */
 ZTEST(k_pipe_stress, test_pipe_read)
 {
