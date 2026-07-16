@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(net_dns_dispatcher, CONFIG_DNS_SOCKET_DISPATCHER_LOG_LEVEL);
 
 static K_MUTEX_DEFINE(lock);
 
-static sys_slist_t sockets;
+static sys_slist_t sockets = SYS_SLIST_STATIC_INIT(&sockets);
 
 #define DNS_RESOLVER_MIN_BUF	1
 #define DNS_RESOLVER_BUF_CTR	(DNS_RESOLVER_MIN_BUF + \
@@ -359,9 +359,4 @@ out:
 	k_mutex_unlock(&lock);
 
 	return ret;
-}
-
-void dns_dispatcher_init(void)
-{
-	sys_slist_init(&sockets);
 }
