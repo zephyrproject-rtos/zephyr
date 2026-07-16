@@ -49,8 +49,6 @@ static struct net_sockaddr_in local_addr4;
 static int ipv6;
 #endif
 
-static struct net_mgmt_event_callback mgmt_cb;
-
 #define BUF_ALLOC_TIMEOUT K_MSEC(100)
 
 /* This value is recommended by RFC 1035 */
@@ -116,8 +114,9 @@ static void create_ipv4_dst_addr(struct net_sockaddr_in *src_addr,
 }
 #endif
 
-static void llmnr_iface_event_handler(struct net_mgmt_event_callback *cb,
-				      uint64_t mgmt_event, struct net_if *iface)
+static void llmnr_iface_event_handler(uint64_t mgmt_event, struct net_if *iface,
+				      void *info __unused, size_t info_length __unused,
+				      void *user_data __unused)
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
 		/* When the interface comes back up (e.g. Ethernet cable was
@@ -167,6 +166,9 @@ static void llmnr_iface_event_handler(struct net_mgmt_event_callback *cb,
 #endif /* defined(CONFIG_NET_IPV6) */
 	}
 }
+
+NET_MGMT_REGISTER_EVENT_HANDLER(llmnr_iface_events, NET_EVENT_IF_UP, llmnr_iface_event_handler,
+				NULL);
 
 static int get_socket(net_sa_family_t family)
 {
@@ -763,14 +765,4 @@ ipv4_out:
 	return !ok;
 }
 
-static int llmnr_responder_init(void)
-{
-	net_mgmt_init_event_callback(&mgmt_cb, llmnr_iface_event_handler,
-				     NET_EVENT_IF_UP);
-
-	net_mgmt_add_event_callback(&mgmt_cb);
-
-	return init_listener();
-}
-
-SYS_INIT(llmnr_responder_init, APPLICATION, CONFIG_LLMNR_RESPONDER_INIT_PRIO);
+SYS_INIT(init_listener, APPLICATION, CONFIG_LLMNR_RESPONDER_INIT_PRIO);
