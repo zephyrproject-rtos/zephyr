@@ -1,0 +1,68 @@
+# CoAP OSCORE (RFC 8613) implementation for Zephyr
+
+# Copyright (c) 2026 Siemens AG
+# SPDX-License-Identifier: Apache-2.0
+
+config COAP_OSCORE
+	bool "OSCORE support for CoAP (RFC 8613)"
+	depends on UOSCORE
+	help
+	  Enable Object Security for Constrained RESTful Environments (OSCORE)
+	  support for CoAP server. OSCORE provides end-to-end protection of
+	  CoAP messages using COSE (CBOR Object Signing and Encryption).
+
+	  This option requires the uoscore-uedhoc module and PSA Crypto support.
+	  When enabled, CoAP messages can be protected with OSCORE by using a
+	  OSCORE enabled service.
+
+	  See RFC 8613 for details.
+
+if COAP_OSCORE
+
+config COAP_OSCORE_MAX_CONTEXTS
+	int "Maximum number of OSCORE security contexts"
+	default 1
+	range 1 32
+	help
+	  Number of OSCORE security contexts that can be allocated at runtime
+	  through coap_oscore_context_init(). Each context is used to protect
+	  and verify messages for one CoAP client or service. Increase this if
+	  your application uses more than one OSCORE-enabled endpoint at a time.
+
+
+config COAP_OSCORE_EXCHANGE_CACHE_SIZE
+	int "OSCORE exchange cache size per service"
+	default 3
+	range 1 255
+	help
+	  Number of OSCORE exchange entries to cache per service endpoint.
+	  This tracks which ongoing exchanges require OSCORE-protected responses.
+	  Each entry stores client address and token information to match
+	  responses to OSCORE requests per RFC 8613 Section 8.3.
+
+	  Synchronous responses and Observe notifications do NOT rely on this
+	  cache for response but still temporarily need a slot in it due to the
+	  fact, that asynchronous behaviour cannot be predicted.
+
+config COAP_OSCORE_EXCHANGE_LIFETIME_MS
+	int "OSCORE exchange lifetime in milliseconds"
+	default 247000
+	help
+	  Lifetime of a tracked OSCORE exchange entry. These entries are only
+	  used to protect deferred (separate) responses, i.e. responses produced
+	  after the request handler has already returned.
+
+	  Synchronous responses and Observe notifications do NOT rely on this
+	  expiry and are therefore never affected by it.
+
+	  After this time a deferred exchange entry is considered expired and
+	  removed. A separate response produced later is treated as invalid: on an
+	  OSCORE-required service it is dropped (fail-closed). On a mixed service
+	  that also accepts unprotected clients it can no longer be matched to the
+	  exchange and would be sent unprotected. Keep this value at or above the
+	  CoAP EXCHANGE_LIFETIME if a resource can defer responses that long.
+
+	  The default of 247 seconds matches the CoAP EXCHANGE_LIFETIME
+	  (RFC 7252 Section 4.8.2).
+
+endif # COAP_OSCORE
