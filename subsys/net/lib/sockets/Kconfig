@@ -386,10 +386,9 @@ config NET_SOCKETS_INET_RAW
 	  to receive raw IP datagrams before further processing takes place.
 
 config NET_SOCKETS_CAN
-	bool "Socket CAN support [EXPERIMENTAL]"
+	bool "Socket CAN support"
 	select NET_L2_CANBUS_RAW
 	select NET_CONNECTION_SOCKETS
-	select EXPERIMENTAL
 	help
 	  The value depends on your network needs.
 
