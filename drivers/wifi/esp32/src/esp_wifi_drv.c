@@ -82,13 +82,14 @@ struct esp32_wifi_runtime {
 	scan_result_cb_t scan_cb;
 	uint8_t state;
 	uint8_t ap_connection_cnt;
+	struct k_mutex send_lock;
+	struct k_sem tx_done_sem;
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
 	struct wifi_enterprise_creds_params enterprise_creds;
 #endif
 };
 
 static struct net_mgmt_event_callback esp32_dhcp_cb;
-static K_MUTEX_DEFINE(esp32_wifi_send_lock);
 
 static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 			       struct net_if *iface)
@@ -100,6 +101,34 @@ static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt
 	default:
 		break;
 	}
+}
+
+static void esp32_wifi_tx_done(uint8_t ifidx, uint8_t *data __unused, uint16_t *data_len __unused,
+			       bool status __unused)
+{
+	struct esp32_wifi_runtime *runtime_data = &esp32_data;
+
+#if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+	if (ifidx == ESP_IF_WIFI_AP) {
+		runtime_data = &esp32_ap_sta_data;
+	}
+#else
+	ARG_UNUSED(ifidx);
+#endif
+
+	k_sem_give(&runtime_data->tx_done_sem);
+}
+
+static int esp32_wifi_start(void)
+{
+	int ret;
+
+	ret = esp_wifi_start();
+	if (ret) {
+		return ret;
+	}
+
+	return esp_wifi_set_tx_done_cb(esp32_wifi_tx_done);
 }
 
 static inline struct esp32_wifi_runtime *esp32_wifi_data_get(struct net_if *iface __maybe_unused)
@@ -121,6 +150,8 @@ static int esp32_wifi_send(const struct device *dev __unused, struct net_pkt *pk
 			   data->state == ESP32_AP_DISCONNECTED);
 	bool sta_connected = (data->state == ESP32_STA_CONNECTED);
 	esp_interface_t ifx = ap_running ? ESP_IF_WIFI_AP : ESP_IF_WIFI_STA;
+	k_timepoint_t end;
+	int err;
 
 	if (!sta_connected && !ap_running) {
 		return -EIO;
@@ -131,19 +162,26 @@ static int esp32_wifi_send(const struct device *dev __unused, struct net_pkt *pk
 		goto out;
 	}
 
-	k_mutex_lock(&esp32_wifi_send_lock, K_FOREVER);
+	k_mutex_lock(&data->send_lock, K_FOREVER);
 
 	/* Read the packet payload */
 	if (net_pkt_read(pkt, data->frame_buf, pkt_len) < 0) {
 		goto unlock;
 	}
 
-	/* Enqueue packet for transmission */
-	if (esp_wifi_internal_tx(ifx, (void *)data->frame_buf, pkt_len) != ESP_OK) {
+	k_sem_reset(&data->tx_done_sem);
+	end = sys_timepoint_calc(K_MSEC(CONFIG_ESP32_WIFI_TX_RETRY_TIMEOUT_MS));
+
+	do {
+		err = esp_wifi_internal_tx(ifx, (void *)data->frame_buf, pkt_len);
+	} while (err == ESP_ERR_NO_MEM &&
+		 k_sem_take(&data->tx_done_sem, sys_timepoint_timeout(end)) == 0);
+
+	if (err != ESP_OK) {
 		goto unlock;
 	}
 
-	k_mutex_unlock(&esp32_wifi_send_lock);
+	k_mutex_unlock(&data->send_lock);
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	data->stats.bytes.sent += pkt_len;
@@ -154,7 +192,7 @@ static int esp32_wifi_send(const struct device *dev __unused, struct net_pkt *pk
 	return 0;
 
 unlock:
-	k_mutex_unlock(&esp32_wifi_send_lock);
+	k_mutex_unlock(&data->send_lock);
 out:
 
 	LOG_ERR("Failed to send packet");
@@ -898,7 +936,7 @@ static int esp32_wifi_connect(const struct device *dev __unused,
 		return -EAGAIN;
 	}
 
-	ret = esp_wifi_start();
+	ret = esp32_wifi_start();
 	if (ret) {
 		LOG_ERR("Failed to start Wi-Fi driver (%d)", ret);
 		return -EAGAIN;
@@ -1079,7 +1117,7 @@ static int esp32_wifi_scan(const struct device *dev __unused,
 		return -EINVAL;
 	}
 
-	ret = esp_wifi_start();
+	ret = esp32_wifi_start();
 	if (ret) {
 		LOG_ERR("Failed to start Wi-Fi driver (%d)", ret);
 		data->scan_cb = NULL;
@@ -1201,7 +1239,7 @@ static int esp32_wifi_ap_enable(const struct device *dev __unused, struct net_if
 		return -EINVAL;
 	}
 
-	err = esp_wifi_start();
+	err = esp32_wifi_start();
 	if (err) {
 		LOG_ERR("Failed to enable Wi-Fi AP mode");
 		return -EAGAIN;
@@ -1233,7 +1271,7 @@ static int esp32_wifi_ap_disable(const struct device *dev __unused, struct net_i
 	esp_wifi_get_mode(&mode);
 	if (mode == ESP32_WIFI_MODE_APSTA) {
 		err = esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
-		err |= esp_wifi_start();
+		err |= esp32_wifi_start();
 	} else {
 		err = esp_wifi_stop();
 	}
@@ -1508,7 +1546,16 @@ static int esp32_wifi_dev_init(const struct device *dev)
 #endif /* CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3 */
 
 	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
-	esp_err_t ret = esp_wifi_init(&config);
+	esp_err_t ret;
+
+	k_mutex_init(&esp32_data.send_lock);
+	k_sem_init(&esp32_data.tx_done_sem, 0, 1);
+#if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+	k_mutex_init(&esp32_ap_sta_data.send_lock);
+	k_sem_init(&esp32_ap_sta_data.tx_done_sem, 0, 1);
+#endif
+
+	ret = esp_wifi_init(&config);
 
 	if (ret == ESP_ERR_NO_MEM) {
 		LOG_ERR("Not enough memory to initialize Wi-Fi.");
@@ -1526,7 +1573,7 @@ static int esp32_wifi_dev_init(const struct device *dev)
 	}
 
 	/* Start Wi-Fi early to enable coexistence for WiFi/BT operation. */
-	ret = esp_wifi_start();
+	ret = esp32_wifi_start();
 	if (ret != ESP_OK) {
 		LOG_ERR("Unable to start the Wi-Fi: %d", ret);
 		return -EIO;
