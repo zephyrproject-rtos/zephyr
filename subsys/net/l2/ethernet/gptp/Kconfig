@@ -2,10 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig NET_GPTP
-	bool "IEEE 802.1AS (gPTP) support [EXPERIMENTAL]"
+	bool "IEEE 802.1AS (gPTP) support"
 	select PTP_CLOCK
 	select NET_L2_PTP_TIMESTAMPING
-	select EXPERIMENTAL
 	help
 	  Enable gPTP driver that send and receives gPTP packets
 	  and handles network packet timestamps.
