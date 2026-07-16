@@ -196,6 +196,17 @@ def scan_sbom_graph(cfg, sbom_graph):
             if cfg.do_md5:
                 f.hashes["MD5"] = h_md5
 
+            # if the file is a module blob, cross-check it against the
+            # checksum its module declares for it
+            declared_sha256 = f.metadata.get("blob", {}).get("sha256", "")
+            if declared_sha256 and declared_sha256.lower() != h_sha256.lower():
+                _logger.warning(
+                    "file %s does not match the sha256 its module declares "
+                    "for this blob (%s)",
+                    f.path,
+                    declared_sha256,
+                )
+
             # get licenses for file
             reuse_licenses, copyrights = get_reuse_info(reuse_project, f.path)
 

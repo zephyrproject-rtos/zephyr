@@ -22,6 +22,7 @@ from zspdx.model import (
 from zspdx.serializers.helpers import (
     CPE23TYPE_REGEX,
     PURL_REGEX,
+    format_blob_comment,
     generate_download_url,
     get_standard_licenses,
     normalize_spdx_name,
@@ -586,6 +587,13 @@ class SPDX3Serializer:
 
         # Copyright
         file_element.software_copyrightText = file_obj.copyright_text or NOASSERTION
+
+        # blob provenance metadata, for files that modules declare as blobs
+        blob = file_obj.metadata.get("blob")
+        if blob:
+            file_element.comment = format_blob_comment(blob)
+            if blob.get("description"):
+                file_element.description = blob["description"]
 
         # Hashes - SPDX 3.0 uses verifiedUsing with Hash (which is a type of IntegrityMethod)
         for hash_type, hash_value in file_obj.hashes.items():

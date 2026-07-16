@@ -114,6 +114,11 @@ class Walker:
         # queue of pending source file paths to create, process and assign
         self.pending_sources = []
 
+        # blob declarations from the modules' module.yml files, keyed by the
+        # blob's absolute path; used to enrich matching Files with the blob's
+        # provenance metadata (url, version, sha256, ...)
+        self.module_blobs = {}
+
         # queue of pending relationship data to create, process and assign
         # Format: (from_type, from_identifier, to_type, to_identifier, relationship_type)
         # Types: "component", "file"
@@ -475,7 +480,33 @@ class Walker:
             self.doc_zephyr.add_described_component(module_component)
             self.component_zephyr_modules[module_name] = module_component
 
+            self.collect_module_blobs(module_path)
+
         return True
+
+    # load a module's blob declarations from its module.yml, keyed by the
+    # blob's absolute path (blobs live under <module>/zephyr/blobs/, see the
+    # "Binary Blobs" section of the modules documentation)
+    def collect_module_blobs(self, module_path):
+        for module_yml in ("module.yml", "module.yaml"):
+            module_yml_path = os.path.join(module_path, "zephyr", module_yml)
+            if os.path.isfile(module_yml_path):
+                break
+        else:
+            return
+
+        try:
+            with open(module_yml_path) as f:
+                meta = yaml.safe_load(f)
+        except (OSError, yaml.YAMLError):
+            _logger.warning(f"failed to load module metadata from {module_yml_path}", exc_info=True)
+            return
+
+        for blob in (meta or {}).get("blobs", []):
+            blob_abspath = os.path.normpath(
+                os.path.join(module_path, "zephyr", "blobs", blob.get("path", ""))
+            )
+            self.module_blobs[blob_abspath] = blob
 
     def setup_sdk_component(self):
         """Set up SDK sources component."""
@@ -899,7 +930,15 @@ class Walker:
                 continue
 
             # create File and assign it to the Component
-            self.sbom_graph.add_file(SBOMFile(path=src_abspath), owning_component)
+            sbom_file = SBOMFile(path=src_abspath)
+
+            # if this file is a blob declared by its module, carry the blob's
+            # provenance metadata along
+            blob = self.module_blobs.get(src_abspath)
+            if blob:
+                sbom_file.metadata["blob"] = blob
+
+            self.sbom_graph.add_file(sbom_file, owning_component)
 
     # figure out which Component should own the given file based on path
     def _is_within(self, src_abspath, base_dir):
