@@ -1605,7 +1605,9 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 							     (uint32_t)acq_time_index);
 		} else {
 			/* Reg is used and value does not match */
-			LOG_ERR("Multiple sampling times not supported");
+			LOG_ERR("Multiple sampling times not supported. "
+				"Previously configured sampling time remain reserved until the "
+				"next ADC read.");
 			return -EINVAL;
 		}
 #endif
@@ -1637,7 +1639,9 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 							     (uint32_t)acq_time_index);
 		} else {
 			/* Both regs are used, value does not match any of them */
-			LOG_ERR("Only two different sampling times supported");
+			LOG_ERR("Only two different sampling times supported. "
+				"Previously configured sampling times remain reserved until the "
+				"next ADC read.");
 			return -EINVAL;
 		}
 #endif
