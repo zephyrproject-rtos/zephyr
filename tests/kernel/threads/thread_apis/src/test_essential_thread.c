@@ -66,6 +66,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
  * @see k_thread_essential_set()
  * @see k_thread_essential_clear()
  * @see k_is_essential()
+ * @verifies ZEP-SRS-1-11
  */
 ZTEST(threads_lifecycle, test_thread_essential_set_clear)
 {
@@ -131,6 +132,7 @@ static void abort_thread_self(void *p1, void *p2, void *p3)
  * @see K_ESSENTIAL
  * @see k_thread_abort()
  * @see k_sys_fatal_error_handler()
+ * @verifies ZEP-SRS-1-11
  */
 ZTEST(threads_lifecycle, test_thread_essential_abort_panics)
 {
@@ -166,6 +168,7 @@ ZTEST(threads_lifecycle, test_thread_essential_abort_panics)
  *
  * @see K_ESSENTIAL
  * @see k_sys_fatal_error_handler()
+ * @verifies ZEP-SRS-1-11
  */
 ZTEST(threads_lifecycle, test_thread_essential_abort_self_panics)
 {

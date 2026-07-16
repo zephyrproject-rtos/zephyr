@@ -63,6 +63,8 @@ static void threads_suspend_resume(int prio)
  *
  * @see k_thread_suspend()
  * @see k_thread_resume()
+ * @verifies ZEP-SRS-1-3
+ * @verifies ZEP-SRS-1-4
  */
 ZTEST(threads_lifecycle_1cpu, test_thread_suspend_resume_coop)
 {
@@ -92,6 +94,8 @@ ZTEST(threads_lifecycle_1cpu, test_thread_suspend_resume_coop)
  *
  * @see k_thread_suspend()
  * @see k_thread_resume()
+ * @verifies ZEP-SRS-1-3
+ * @verifies ZEP-SRS-1-4
  */
 ZTEST_USER(threads_lifecycle, test_thread_suspend_resume_preempt)
 {
@@ -130,6 +134,7 @@ void suspend_myself(void *arg0, void *arg1, void *arg2)
  *   resumed, so the suspend switched away before the following statement.
  *
  * @see k_thread_suspend()
+ * @verifies ZEP-SRS-1-3
  */
 ZTEST(threads_lifecycle, test_thread_suspend)
 {
@@ -183,6 +188,7 @@ void sleep_suspended(void *arg0, void *arg1, void *arg2)
  *
  * @see k_thread_suspend()
  * @see k_sleep()
+ * @verifies ZEP-SRS-1-3
  */
 ZTEST(threads_lifecycle, test_thread_suspend_timeout)
 {
@@ -227,6 +233,8 @@ ZTEST(threads_lifecycle, test_thread_suspend_timeout)
  *
  * @see k_thread_resume()
  * @see k_thread_state_str()
+ * @verifies ZEP-SRS-1-4
+ * @verifies ZEP-SRS-1-7
  */
 ZTEST(threads_lifecycle, test_thread_resume_not_suspended)
 {

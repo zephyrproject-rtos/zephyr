@@ -58,6 +58,7 @@ static ZTEST_DMEM int tp = 10;
  * - The main thread runs at the configured priority.
  *
  * @see k_thread_priority_get()
+ * @verifies ZEP-SRS-1-31
  */
 ZTEST(threads_lifecycle, test_thread_main_priority)
 {
@@ -83,6 +84,7 @@ ZTEST(threads_lifecycle, test_thread_main_priority)
  * - The running thread's priority is higher than the idle priority.
  *
  * @see k_thread_priority_get()
+ * @verifies ZEP-SRS-1-32
  */
 ZTEST(threads_lifecycle, test_thread_idle_priority)
 {
@@ -128,6 +130,7 @@ static void customdata_entry(void *p1, void *p2, void *p3)
  *
  * @see k_thread_custom_data_set()
  * @see k_thread_custom_data_get()
+ * @verifies ZEP-SRS-1-12
  */
 ZTEST(threads_lifecycle_1cpu, test_thread_custom_data_coop)
 {
@@ -171,6 +174,8 @@ static void thread_name_entry(void *p1, void *p2, void *p3)
  * @see k_thread_name_set()
  * @see k_thread_name_get()
  * @see k_thread_name_copy()
+ * @verifies ZEP-SRS-1-17
+ * @verifies ZEP-SRS-1-18
  */
 ZTEST(threads_lifecycle, test_thread_name_get_set)
 {
@@ -232,6 +237,8 @@ struct k_sem sem;
  *
  * @see k_thread_name_set()
  * @see k_thread_name_copy()
+ * @verifies ZEP-SRS-1-17
+ * @verifies ZEP-SRS-1-18
  */
 ZTEST_USER(threads_lifecycle, test_thread_name_user_get_set)
 {
@@ -318,6 +325,7 @@ ZTEST_USER(threads_lifecycle, test_thread_name_user_get_set)
  *
  * @see k_thread_custom_data_set()
  * @see k_thread_custom_data_get()
+ * @verifies ZEP-SRS-1-12
  */
 ZTEST_USER(threads_lifecycle_1cpu, test_thread_custom_data_preempt)
 {
@@ -384,6 +392,8 @@ static void enter_user_mode_entry(void *p1, void *p2, void *p3)
  *
  * @see k_thread_user_mode_enter()
  * @see k_is_user_context()
+ * @verifies ZEP-SRS-1-9
+ * @verifies ZEP-SRS-1-19
  */
 ZTEST_USER(threads_lifecycle, test_thread_user_mode)
 {
@@ -424,6 +434,7 @@ static void current_get_entry(void *expected_tid, void *p2, void *p3)
  *
  * @ingroup kernel_thread_tests
  * @see k_current_get()
+ * @verifies ZEP-SRS-1-19
  */
 ZTEST_USER(threads_lifecycle, test_thread_current_get)
 {
@@ -590,6 +601,7 @@ static inline int join_scenario(enum control_method m)
  * - Every join returns success only after the target thread has ended.
  *
  * @see k_thread_join()
+ * @verifies ZEP-SRS-1-20
  */
 ZTEST_USER(threads_lifecycle, test_thread_join)
 {
@@ -635,6 +647,7 @@ ZTEST_USER(threads_lifecycle, test_thread_join)
  *
  * @see k_thread_join()
  * @see irq_offload()
+ * @verifies ZEP-SRS-1-20
  */
 ZTEST(threads_lifecycle, test_thread_join_isr)
 {
@@ -690,6 +703,7 @@ static void deadlock2_entry(void *p1, void *p2, void *p3)
  *   succeed.
  *
  * @see k_thread_join()
+ * @verifies ZEP-SRS-1-20
  */
 ZTEST_USER(threads_lifecycle, test_thread_join_deadlock)
 {
@@ -746,6 +760,7 @@ static void user_start_thread(void *p1, void *p2, void *p3)
  *
  * @see k_thread_timeout_remaining_ticks()
  * @see k_thread_timeout_expires_ticks()
+ * @verifies ZEP-SRS-1-33
  */
 
 ZTEST_USER(threads_lifecycle, test_thread_timeout_remaining_expires)
@@ -821,6 +836,8 @@ static void foreach_callback(const struct k_thread *thread, void *user_data)
  *
  * @see k_thread_runtime_stats_get()
  * @see k_thread_runtime_stats_all_get()
+ * @verifies ZEP-SRS-1-28
+ * @verifies ZEP-SRS-1-29
  */
 ZTEST(threads_lifecycle, test_thread_runtime_stats_get)
 {
@@ -863,6 +880,7 @@ ZTEST(threads_lifecycle, test_thread_runtime_stats_get)
  *
  * @see k_busy_wait()
  * @see k_thread_runtime_stats_get()
+ * @verifies ZEP-SRS-28-13
  */
 ZTEST(threads_lifecycle, test_thread_busy_wait)
 {
@@ -924,6 +942,7 @@ static void tp_entry(void *p1, void *p2, void *p3)
  *
  * @see k_busy_wait()
  * @see k_thread_runtime_stats_get()
+ * @verifies ZEP-SRS-28-13
  */
 ZTEST_USER(threads_lifecycle_1cpu, test_thread_busy_wait_user)
 {
@@ -981,6 +1000,8 @@ static int small_stack(size_t *space)
  * - The deeper call reports less unused stack space than the shallow one.
  *
  * @see k_thread_stack_space_get()
+ * @verifies ZEP-SRS-1-8
+ * @verifies ZEP-SRS-1-27
  */
 ZTEST_USER(threads_lifecycle, test_thread_stack_space_get_user)
 {

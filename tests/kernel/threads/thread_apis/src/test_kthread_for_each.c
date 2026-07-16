@@ -98,6 +98,7 @@ void thread_callback_unlocked(const struct k_thread *thread, void *user_data)
  *   one more than the first.
  *
  * @see k_thread_foreach()
+ * @verifies ZEP-SRS-1-26
  */
 ZTEST(threads_lifecycle_1cpu, test_thread_foreach)
 {
@@ -156,6 +157,7 @@ ZTEST(threads_lifecycle_1cpu, test_thread_foreach)
  *   more, and aborting from the callback does not disturb the walk.
  *
  * @see k_thread_foreach_unlocked()
+ * @verifies ZEP-SRS-1-26
  */
 ZTEST(threads_lifecycle_1cpu, test_thread_foreach_unlocked)
 {
@@ -224,6 +226,7 @@ ZTEST(threads_lifecycle_1cpu, test_thread_foreach_unlocked)
  * - The call raises the expected fatal error and does not return.
  *
  * @see k_thread_foreach()
+ * @verifies ZEP-SRS-1-26
  */
 ZTEST(threads_lifecycle_1cpu, test_thread_foreach_null_cb)
 {
@@ -246,6 +249,7 @@ ZTEST(threads_lifecycle_1cpu, test_thread_foreach_null_cb)
  * - The call raises the expected fatal error and does not return.
  *
  * @see k_thread_foreach_unlocked()
+ * @verifies ZEP-SRS-1-26
  */
 ZTEST(threads_lifecycle_1cpu, test_thread_foreach_unlocked_null_cb)
 {
@@ -274,6 +278,8 @@ ZTEST(threads_lifecycle_1cpu, test_thread_foreach_unlocked_null_cb)
  *   documented name.
  *
  * @see k_thread_state_str()
+ * @verifies ZEP-SRS-1-7
+ * @verifies ZEP-SRS-1-21
  */
 ZTEST(threads_lifecycle_1cpu, test_thread_state_str)
 {
