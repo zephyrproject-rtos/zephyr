@@ -245,17 +245,8 @@ NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v6_svc, dns_dispatcher_svc_handler,
 #endif
 
 #if defined(CONFIG_MDNS_RESPONDER_PROBE)
-static struct net_mgmt_event_callback mgmt_iface_cb;
 static void cancel_probes(struct mdns_responder_context *ctx);
-static struct net_mgmt_event_callback mgmt_conn_cb;
-#if defined(CONFIG_NET_IPV4)
-static struct net_mgmt_event_callback mgmt4_addr_cb;
-#endif
-#if defined(CONFIG_NET_IPV6)
-static struct net_mgmt_event_callback mgmt6_addr_cb;
-#endif
 #if defined(CONFIG_NET_DHCPV4)
-static struct net_mgmt_event_callback mgmt_dhcpv4_cb;
 static void announce_start(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(announce_timer, announce_start);
 #endif
@@ -337,11 +328,9 @@ static void mark_needs_announce(struct net_if *iface, bool needs_announce)
 		mon_if[i].needs_announce = needs_announce;
 	}
 }
-#endif /* CONFIG_MDNS_RESPONDER_PROBE */
 
-#if defined(CONFIG_MDNS_RESPONDER_PROBE)
-static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
-				     uint64_t mgmt_event, struct net_if *iface)
+static void mdns_iface_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
+				     size_t info_length __unused, void *user_data __unused)
 
 {
 	if (!mdns_iface_is_enabled(iface)) {
@@ -355,6 +344,8 @@ static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
 		mark_needs_announce(iface, true);
 	}
 }
+
+NET_MGMT_REGISTER_EVENT_HANDLER(mdns_iface_events, NET_EVENT_IF_UP, mdns_iface_event_handler, NULL);
 #endif /* CONFIG_MDNS_RESPONDER_PROBE */
 
 static int set_ttl_hop_limit(int sock, int level, int option, int new_limit)
@@ -1193,8 +1184,9 @@ static void start_announce(struct net_if *iface)
 }
 #endif /* CONFIG_NET_DHCPV4 */
 
-static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
-				    uint64_t mgmt_event, struct net_if *iface)
+static void mdns_addr_event_handler(uint64_t mgmt_event __maybe_unused, struct net_if *iface,
+				    void *info __maybe_unused, size_t info_length __maybe_unused,
+				    void *user_data __unused)
 {
 	uint32_t probe_delay = sys_rand32_get() % 250;
 	bool probe_started = false;
@@ -1211,7 +1203,7 @@ static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 				continue;
 			}
 
-			ret = add_address(iface, NET_AF_INET, cb->info, cb->info_length);
+			ret = add_address(iface, NET_AF_INET, info, info_length);
 			if (ret < 0 && ret != -EALREADY) {
 				NET_DBG("Cannot %s %s address (%d)", "add", "IPv4", ret);
 				return;
@@ -1242,7 +1234,7 @@ static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 				continue;
 			}
 
-			ret = del_address(iface, NET_AF_INET, cb->info, cb->info_length);
+			ret = del_address(iface, NET_AF_INET, info, info_length);
 			if (ret < 0) {
 				if (ret == -ENOENT) {
 					continue;
@@ -1283,7 +1275,7 @@ static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 				continue;
 			}
 
-			ret = add_address(iface, NET_AF_INET6, cb->info, cb->info_length);
+			ret = add_address(iface, NET_AF_INET6, info, info_length);
 			if (ret < 0 && ret != -EALREADY) {
 				NET_DBG("Cannot %s %s address (%d)", "add", "IPv6", ret);
 				return;
@@ -1314,7 +1306,7 @@ static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 				continue;
 			}
 
-			ret = del_address(iface, NET_AF_INET6, cb->info, cb->info_length);
+			ret = del_address(iface, NET_AF_INET6, info, info_length);
 			if (ret < 0) {
 				if (ret == -ENOENT) {
 					continue;
@@ -1356,8 +1348,24 @@ static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 #endif /* CONFIG_NET_DHCPV4 */
 }
 
-static void mdns_conn_event_handler(struct net_mgmt_event_callback *cb,
-				    uint64_t mgmt_event, struct net_if *iface)
+#if defined(CONFIG_NET_IPV4)
+NET_MGMT_REGISTER_EVENT_HANDLER(mdns_addr_ipv4_events,
+				NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ADDR_DEL,
+				mdns_addr_event_handler, NULL);
+#endif
+#if defined(CONFIG_NET_IPV6)
+NET_MGMT_REGISTER_EVENT_HANDLER(mdns_addr_ipv6_events,
+				NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_ADDR_DEL,
+				mdns_addr_event_handler, NULL);
+#endif
+#if defined(CONFIG_NET_DHCPV4)
+NET_MGMT_REGISTER_EVENT_HANDLER(mdns_addr_dhcpv4_events, NET_EVENT_IPV4_DHCP_BOUND,
+				mdns_addr_event_handler, NULL);
+#endif
+
+static void mdns_conn_event_handler(uint64_t mgmt_event, struct net_if *iface __unused,
+				    void *info __unused, size_t info_length __unused,
+				    void *user_data __unused)
 {
 	if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
 		/* Clear the failed probes counter so that we can start
@@ -1366,6 +1374,9 @@ static void mdns_conn_event_handler(struct net_mgmt_event_callback *cb,
 		failed_probes = 0;
 	}
 }
+
+NET_MGMT_REGISTER_EVENT_HANDLER(mdns_conn_events, NET_EVENT_L4_DISCONNECTED,
+				mdns_conn_event_handler, NULL);
 #endif /* CONFIG_MDNS_RESPONDER_PROBE */
 
 #if defined(CONFIG_NET_IPV6)
@@ -2433,34 +2444,6 @@ static int mdns_responder_init(void)
 {
 #if defined(CONFIG_MDNS_RESPONDER_PROBE)
 	int ret;
-
-	net_mgmt_init_event_callback(&mgmt_iface_cb, mdns_iface_event_handler, NET_EVENT_IF_UP);
-	net_mgmt_add_event_callback(&mgmt_iface_cb);
-
-	net_mgmt_init_event_callback(&mgmt_conn_cb, mdns_conn_event_handler,
-				     NET_EVENT_L4_DISCONNECTED);
-	net_mgmt_add_event_callback(&mgmt_conn_cb);
-
-#if defined(CONFIG_NET_IPV4)
-	net_mgmt_init_event_callback(&mgmt4_addr_cb, mdns_addr_event_handler,
-				     NET_EVENT_IPV4_ADDR_ADD |
-				     NET_EVENT_IPV4_ADDR_DEL);
-	net_mgmt_add_event_callback(&mgmt4_addr_cb);
-#endif
-
-#if defined(CONFIG_NET_IPV6)
-	net_mgmt_init_event_callback(&mgmt6_addr_cb, mdns_addr_event_handler,
-				     NET_EVENT_IPV6_ADDR_ADD |
-				     NET_EVENT_IPV6_ADDR_DEL);
-	net_mgmt_add_event_callback(&mgmt6_addr_cb);
-#endif
-
-#define DHCPV4_EVENT_MASK (NET_EVENT_IPV4_DHCP_BOUND)
-#if defined(CONFIG_NET_DHCPV4)
-	net_mgmt_init_event_callback(&mgmt_dhcpv4_cb, mdns_addr_event_handler,
-				     DHCPV4_EVENT_MASK);
-	net_mgmt_add_event_callback(&mgmt_dhcpv4_cb);
-#endif
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_MDNS_WORKER_PRIO)
