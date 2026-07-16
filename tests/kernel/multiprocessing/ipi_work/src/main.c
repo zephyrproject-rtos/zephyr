@@ -112,6 +112,8 @@ static void timer_func(struct k_timer *tmr)
  * @see k_ipi_work_add()
  * @see k_ipi_work_signal()
  * @see k_ipi_work_wait()
+ *
+ * @verifies ZEP-SRS-34-11
  */
 ZTEST(ipi_work, test_ipi_work_executes_on_target_cpu)
 {
