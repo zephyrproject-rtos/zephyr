@@ -10,6 +10,7 @@ compatible: "gnss-nmea-generic"
 
 include:
   - uart-device.yaml
+  - gnss-timepulse.yaml
 
 examples:
   - |

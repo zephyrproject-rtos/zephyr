@@ -44,8 +44,6 @@ enum gnss_pps_mode {
 	GNSS_PPS_MODE_ENABLED_WHILE_LOCKED = 3
 };
 
-
-
 /** GNSS navigation modes */
 enum gnss_navigation_mode {
 	/** Dynamics have no impact on tracking */
@@ -57,8 +55,6 @@ enum gnss_navigation_mode {
 	/** High dynamics have higher impact on tracking */
 	GNSS_NAVIGATION_MODE_HIGH_DYNAMICS = 3
 };
-
-
 
 /** Systems contained in gnss_systems_t */
 enum gnss_system {
@@ -94,8 +90,6 @@ enum gnss_system {
 
 /** Type storing bitmask of GNSS systems */
 typedef uint32_t gnss_systems_t;
-
-
 
 /** GNSS fix status */
 enum gnss_fix_status {
@@ -169,8 +163,7 @@ typedef int (*gnss_set_fix_rate_t)(const struct device *dev, uint32_t fix_interv
 typedef int (*gnss_get_fix_rate_t)(const struct device *dev, uint32_t *fix_interval_ms);
 
 /** API for setting navigation mode */
-typedef int (*gnss_set_navigation_mode_t)(const struct device *dev,
-					  enum gnss_navigation_mode mode);
+typedef int (*gnss_set_navigation_mode_t)(const struct device *dev, enum gnss_navigation_mode mode);
 
 /** API for getting navigation mode */
 typedef int (*gnss_get_navigation_mode_t)(const struct device *dev,
@@ -263,15 +256,14 @@ struct gnss_satellite {
 	/** System of satellite */
 	enum gnss_system system;
 	/** True if satellite is being tracked */
-	uint8_t is_tracked : 1;
+	uint8_t is_tracked: 1;
 	/** True if satellite tracking has RTK corrections */
-	uint8_t is_corrected : 1;
+	uint8_t is_corrected: 1;
 };
 
 /** Template for GNSS satellites callback */
 typedef void (*gnss_satellites_callback_t)(const struct device *dev,
-					   const struct gnss_satellite *satellites,
-					   uint16_t size);
+					   const struct gnss_satellite *satellites, uint16_t size);
 
 /** GNSS callback structure */
 struct gnss_satellites_callback {
@@ -334,8 +326,7 @@ static inline int z_impl_gnss_get_fix_rate(const struct device *dev, uint32_t *f
  * @return 0 if successful
  * @return -errno negative errno code on failure
  */
-__syscall int gnss_set_navigation_mode(const struct device *dev,
-				       enum gnss_navigation_mode mode);
+__syscall int gnss_set_navigation_mode(const struct device *dev, enum gnss_navigation_mode mode);
 
 static inline int z_impl_gnss_set_navigation_mode(const struct device *dev,
 						  enum gnss_navigation_mode mode)
@@ -358,8 +349,7 @@ static inline int z_impl_gnss_set_navigation_mode(const struct device *dev,
  * @return 0 if successful
  * @return -errno negative errno code on failure
  */
-__syscall int gnss_get_navigation_mode(const struct device *dev,
-				       enum gnss_navigation_mode *mode);
+__syscall int gnss_get_navigation_mode(const struct device *dev, enum gnss_navigation_mode *mode);
 
 static inline int z_impl_gnss_get_navigation_mode(const struct device *dev,
 						  enum gnss_navigation_mode *mode)
@@ -384,8 +374,7 @@ static inline int z_impl_gnss_get_navigation_mode(const struct device *dev,
  */
 __syscall int gnss_set_enabled_systems(const struct device *dev, gnss_systems_t systems);
 
-static inline int z_impl_gnss_set_enabled_systems(const struct device *dev,
-						  gnss_systems_t systems)
+static inline int z_impl_gnss_set_enabled_systems(const struct device *dev, gnss_systems_t systems)
 {
 	const struct gnss_driver_api *api = DEVICE_API_GET(gnss, dev);
 
@@ -407,8 +396,7 @@ static inline int z_impl_gnss_set_enabled_systems(const struct device *dev,
  */
 __syscall int gnss_get_enabled_systems(const struct device *dev, gnss_systems_t *systems);
 
-static inline int z_impl_gnss_get_enabled_systems(const struct device *dev,
-						  gnss_systems_t *systems)
+static inline int z_impl_gnss_get_enabled_systems(const struct device *dev, gnss_systems_t *systems)
 {
 	const struct gnss_driver_api *api = DEVICE_API_GET(gnss, dev);
 
@@ -458,8 +446,7 @@ static inline int z_impl_gnss_get_supported_systems(const struct device *dev,
  */
 __syscall int gnss_get_latest_timepulse(const struct device *dev, k_ticks_t *timestamp);
 
-static inline int z_impl_gnss_get_latest_timepulse(const struct device *dev,
-						    k_ticks_t *timestamp)
+static inline int z_impl_gnss_get_latest_timepulse(const struct device *dev, k_ticks_t *timestamp)
 {
 	const struct gnss_driver_api *api = DEVICE_API_GET(gnss, dev);
 
@@ -477,11 +464,11 @@ static inline int z_impl_gnss_get_latest_timepulse(const struct device *dev,
  * @param _callback The callback function (see @ref gnss_data_callback_t)
  */
 #if CONFIG_GNSS
-#define GNSS_DATA_CALLBACK_DEFINE(_dev, _callback)                                              \
-	static const STRUCT_SECTION_ITERABLE(gnss_data_callback,                                \
-					     _gnss_data_callback__##_callback) = {              \
-		.dev = _dev,                                                                    \
-		.callback = _callback,                                                          \
+#define GNSS_DATA_CALLBACK_DEFINE(_dev, _callback)                                                 \
+	static const STRUCT_SECTION_ITERABLE(gnss_data_callback,                                   \
+					     _gnss_data_callback__##_callback) = {                 \
+		.dev = _dev,                                                                       \
+		.callback = _callback,                                                             \
 	}
 
 /**
@@ -509,11 +496,11 @@ static inline int z_impl_gnss_get_latest_timepulse(const struct device *dev,
  * @param _callback The callback function (see @ref gnss_satellites_callback_t)
  */
 #if CONFIG_GNSS_SATELLITES
-#define GNSS_SATELLITES_CALLBACK_DEFINE(_dev, _callback)                                        \
-	static const STRUCT_SECTION_ITERABLE(gnss_satellites_callback,                          \
-					     _gnss_satellites_callback__##_callback) = {        \
-		.dev = _dev,                                                                    \
-		.callback = _callback,                                                          \
+#define GNSS_SATELLITES_CALLBACK_DEFINE(_dev, _callback)                                           \
+	static const STRUCT_SECTION_ITERABLE(gnss_satellites_callback,                             \
+					     _gnss_satellites_callback__##_callback) = {           \
+		.dev = _dev,                                                                       \
+		.callback = _callback,                                                             \
 	}
 
 /**

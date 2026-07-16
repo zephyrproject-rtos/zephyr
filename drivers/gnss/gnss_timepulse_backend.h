@@ -18,11 +18,11 @@ struct gnss_timepulse_source {
 	void *data;
 };
 
-#define GNSS_TIMEPULSE_SOURCE_DEFINE(name, _dev, _attach, _data)                      \
-	static const STRUCT_SECTION_ITERABLE(gnss_timepulse_source, name) = {         \
-		.dev = _dev,                                                           \
-		.attach = _attach,                                                     \
-		.data = _data,                                                         \
+#define GNSS_TIMEPULSE_SOURCE_DEFINE(name, _dev, _attach, _data)                                   \
+	static const STRUCT_SECTION_ITERABLE(gnss_timepulse_source, name) = {                      \
+		.dev = _dev,                                                                       \
+		.attach = _attach,                                                                 \
+		.data = _data,                                                                     \
 	}
 
 #endif /* ZEPHYR_DRIVERS_GNSS_GNSS_TIMEPULSE_BACKEND_H_ */

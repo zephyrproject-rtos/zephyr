@@ -4,10 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
 / {
 	test {
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		test_gpio: gpio@100 {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0x100 0x100>;
+			#gpio-cells = <2>;
+			status = "okay";
+		};
 
 		test_uart: uart@0 {
 			compatible = "vnd,serial";
@@ -17,6 +27,7 @@
 
 			gnss_nmea_generic: gnss-nmea-generic {
 				compatible = "gnss-nmea-generic";
+				timepulse-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
 			};
 
 			gnss_air530z: air530z {

@@ -6,15 +6,23 @@
 
 #include "gnss_timepulse_backend.h"
 
+TYPE_SECTION_START_EXTERN(struct gnss_timepulse_source, gnss_timepulse_source);
+TYPE_SECTION_END_EXTERN(struct gnss_timepulse_source, gnss_timepulse_source);
+
 int gnss_timepulse_attach(const struct device *dev, struct gnss_timepulse *tp)
 {
 	const struct gnss_timepulse_source *match = NULL;
+	const struct gnss_timepulse_source *src_end = TYPE_SECTION_END(gnss_timepulse_source);
 
 	tp->last = 0;
 	tp->available = false;
 	tp->valid = false;
 
-	STRUCT_SECTION_FOREACH(gnss_timepulse_source, src) {
+	__ASSERT(TYPE_SECTION_START(gnss_timepulse_source) <= src_end,
+		 "unexpected list end location");
+
+	for (const struct gnss_timepulse_source *src = TYPE_SECTION_START(gnss_timepulse_source);
+	     src < src_end; src++) {
 		if (src->dev != dev) {
 			continue;
 		}
