@@ -90,6 +90,14 @@
 			status = "disabled";
 		};
 
+		pwm0: pwm@30000 {
+			compatible = "shakti,pwm";
+			reg = <0x30000 0x60>;
+			#pwm-cells = <3>;
+			clock-frequency = <DT_FREQ_M(40)>;
+			status = "disabled";
+		};
+
 		gpio0: gpio@40100 {
 			compatible = "shakti,gpio";
 			reg = <0x40100 0x100>;
