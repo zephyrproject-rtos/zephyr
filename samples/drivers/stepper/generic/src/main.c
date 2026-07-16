@@ -13,7 +13,18 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(stepper_generic, CONFIG_STEPPER_LOG_LEVEL);
 
+/*
+ * The stepper-driver alias is optional: some stepper controllers (e.g. h-bridge based ones)
+ * drive the motor directly and do not have a separate hardware driver to enable/disable.
+ */
+#if DT_NODE_EXISTS(DT_ALIAS(stepper_driver))
+#define HAS_STEPPER_DRIVER 1
+#define STEPPER_DRIVER_MICRO_STEP_RES DT_PROP_OR(DT_ALIAS(stepper_driver), micro_step_res, 1)
 static const struct device *stepper_driver = DEVICE_DT_GET(DT_ALIAS(stepper_driver));
+#else
+#define HAS_STEPPER_DRIVER 0
+#define STEPPER_DRIVER_MICRO_STEP_RES 1
+#endif
 static const struct device *stepper_ctrl = DEVICE_DT_GET(DT_ALIAS(stepper_ctrl));
 
 enum stepper_mode {
@@ -29,7 +40,7 @@ enum stepper_mode {
 static atomic_t stepper_mode = ATOMIC_INIT(STEPPER_MODE_DISABLE);
 
 static int32_t ping_pong_target_position = CONFIG_STEPS_PER_REV * CONFIG_PING_PONG_N_REV *
-					   DT_PROP_OR(DT_ALIAS(stepper_driver), micro_step_res, 1);
+					   STEPPER_DRIVER_MICRO_STEP_RES;
 
 static K_SEM_DEFINE(stepper_generic_sem, 0, 1);
 
@@ -71,6 +82,12 @@ int main(void)
 		LOG_ERR("Device %s is not ready", stepper_ctrl->name);
 		return -ENODEV;
 	}
+#if HAS_STEPPER_DRIVER
+	if (!device_is_ready(stepper_driver)) {
+		LOG_ERR("Device %s is not ready", stepper_driver->name);
+		return -ENODEV;
+	}
+#endif
 	LOG_DBG("stepper is %p, name is %s", stepper_ctrl, stepper_ctrl->name);
 
 	stepper_ctrl_set_event_cb(stepper_ctrl, stepper_callback, NULL);
@@ -81,7 +98,9 @@ int main(void)
 		k_sem_take(&stepper_generic_sem, K_FOREVER);
 		switch (atomic_get(&stepper_mode)) {
 		case STEPPER_MODE_ENABLE:
+#if HAS_STEPPER_DRIVER
 			stepper_enable(stepper_driver);
+#endif
 			LOG_INF("mode: enable");
 			break;
 		case STEPPER_MODE_PING_PONG_RELATIVE:
@@ -107,7 +126,9 @@ int main(void)
 			LOG_INF("mode: stop");
 			break;
 		case STEPPER_MODE_DISABLE:
+#if HAS_STEPPER_DRIVER
 			stepper_disable(stepper_driver);
+#endif
 			LOG_INF("mode: disable");
 			break;
 		default:

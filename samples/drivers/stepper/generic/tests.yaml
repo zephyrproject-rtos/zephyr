@@ -6,3 +6,11 @@ tests:
     tags: stepper
     platform_allow: nucleo_g071rb
     depends_on: gpio input
+  sample.drivers.stepper.generic.h_bridge_4_click:
+    build_only: true
+    tags:
+      - stepper
+      - shield
+    platform_allow: mikroe_clicker_ra4m1
+    extra_args: SHIELD=mikroe_h_bridge_4_click
+    depends_on: gpio
