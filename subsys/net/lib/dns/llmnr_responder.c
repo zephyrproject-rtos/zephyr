@@ -31,10 +31,10 @@ LOG_MODULE_REGISTER(net_llmnr_responder, CONFIG_LLMNR_RESPONDER_LOG_LEVEL);
 #include <zephyr/net/igmp.h>
 
 #include "dns_pack.h"
-#include "ipv6.h"
+#include <ipv6.h>
 #include "../../ip/net_stats.h"
 
-#include "net_private.h"
+#include <net_private.h>
 
 #define LLMNR_LISTEN_PORT 5355
 

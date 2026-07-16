@@ -14,8 +14,8 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/drivers/ptp_clock.h>
-#include "ptp/clock.h"
-#include "ptp/port.h"
+#include <ptp/clock.h>
+#include <ptp/port.h>
 #endif
 
 #include "net_shell_private.h"

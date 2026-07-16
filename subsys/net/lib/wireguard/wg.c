@@ -28,11 +28,11 @@ LOG_MODULE_REGISTER(wireguard, CONFIG_WIREGUARD_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_log.h>
 
-#include "net_private.h"
-#include "udp_internal.h"
-#include "ipv4.h"
-#include "ipv6.h"
-#include "net_stats.h"
+#include <net_private.h>
+#include <udp_internal.h>
+#include <ipv4.h>
+#include <ipv6.h>
+#include <net_stats.h>
 
 /* Constants */
 /* The UTF-8 string literal "Noise_IKpsk2_25519_ChaChaPoly_BLAKE2s", 37 bytes of output */

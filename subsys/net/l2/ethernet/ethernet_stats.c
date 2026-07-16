@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(net_ethernet_stats, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/ethernet.h>
 
-#include "net_stats.h"
+#include <net_stats.h>
 
 #if defined(CONFIG_NET_STATISTICS_USER_API)
 

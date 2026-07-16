@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include "icmpv4.h"
 #include "udp_internal.h"
 #include "tcp_internal.h"
-#include "dhcpv4/dhcpv4_internal.h"
+#include <dhcpv4/dhcpv4_internal.h>
 #include "ipv4.h"
 #include "pmtu.h"
 #include "route_ipv4.h"

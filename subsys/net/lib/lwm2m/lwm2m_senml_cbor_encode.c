@@ -12,9 +12,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-#include "zcbor_encode.h"
+#include <zcbor_encode.h>
 #include "lwm2m_senml_cbor_encode.h"
-#include "zcbor_print.h"
+#include <zcbor_print.h>
 
 #define log_result(state, result, func)                                                            \
 	do {                                                                                       \

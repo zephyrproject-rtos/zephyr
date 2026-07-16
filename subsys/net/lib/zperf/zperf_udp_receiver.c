@@ -23,10 +23,10 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
 /* To get net_sprint_ipv{4|6}_addr() */
 #define NET_LOG_ENABLED 1
-#include "net_private.h"
+#include <net_private.h>
 
 /* To support multicast */
-#include "ipv6.h"
+#include <ipv6.h>
 #include <zephyr/net/igmp.h>
 
 static struct net_sockaddr_in6 *in6_addr_my;

@@ -18,7 +18,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #if defined(CONFIG_WEBSOCKET_CLIENT)
 
-#include "websocket/websocket_internal.h"
+#include <websocket/websocket_internal.h>
 
 static void websocket_context_cb(struct websocket_context *context,
 				 void *user_data)

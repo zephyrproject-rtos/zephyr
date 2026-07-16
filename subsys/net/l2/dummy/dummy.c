@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(net_l2_dummy, LOG_LEVEL_NONE);
 
 #include <zephyr/net/dummy.h>
 
-#include "net_stats.h"
+#include <net_stats.h>
 
 static inline enum net_verdict dummy_recv(struct net_if *iface,
 					  struct net_pkt *pkt)

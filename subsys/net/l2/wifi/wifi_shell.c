@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #endif
 #include <zephyr/sys/slist.h>
 
-#include "net_shell_private.h"
+#include <net_shell_private.h>
 #include <math.h>
 
 #include <ctype.h>

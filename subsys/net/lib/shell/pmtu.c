@@ -9,7 +9,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include "net_shell_private.h"
 
-#include "pmtu.h"
+#include <pmtu.h>
 
 #if !defined(CONFIG_NET_PMTU)
 static void print_pmtu_error(const struct shell *sh)

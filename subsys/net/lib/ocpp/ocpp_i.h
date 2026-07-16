@@ -7,7 +7,7 @@
 #ifndef __OCPP_I_
 #define __OCPP_I_
 
-#include "string.h"
+#include <string.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/ocpp.h>
 #include <zephyr/net/socket.h>

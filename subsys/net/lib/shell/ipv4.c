@@ -11,7 +11,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/net/igmp.h>
 
 #include "net_shell_private.h"
-#include "../ip/ipv4.h"
+#include <ipv4.h>
 
 #if defined(CONFIG_NET_IPV4)
 static void ip_address_info_cb(struct net_if *iface, void *user_data)

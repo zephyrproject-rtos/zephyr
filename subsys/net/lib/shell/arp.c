@@ -11,7 +11,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include "net_shell_private.h"
 
 #if defined(CONFIG_NET_ARP)
-#include "ethernet/arp.h"
+#include <ethernet/arp.h>
 #include <zephyr/net/net_if.h>
 #endif
 

@@ -12,8 +12,8 @@ LOG_MODULE_REGISTER(net_any, CONFIG_NET_PSEUDO_IFACE_LOG_LEVEL);
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/virtual.h>
 
-#include "net_private.h"
-#include "net_stats.h"
+#include <net_private.h>
+#include <net_stats.h>
 
 struct any_context {
 	struct net_if *iface;

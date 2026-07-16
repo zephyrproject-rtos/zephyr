@@ -10,13 +10,13 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include "net_shell_private.h"
 
-#include "../ip/route_ipv6.h"
-#include "../ip/route_ipv4.h"
+#include <route_ipv6.h>
+#include <route_ipv4.h>
 
 #if defined(CONFIG_WIREGUARD)
 #include <zephyr/net/virtual.h>
 #include <zephyr/net/wireguard.h>
-#include "wg_internal.h"
+#include <wg_internal.h>
 #endif
 
 #if (defined(CONFIG_NET_NATIVE_IPV6) && defined(CONFIG_NET_IPV6_ROUTE)) || \
@@ -179,7 +179,7 @@ static int print_wireguard_route_status(const struct shell *sh,
 #endif /* CONFIG_WIREGUARD */
 
 #if defined(CONFIG_NET_ARP)
-#include "ethernet/arp.h"
+#include <ethernet/arp.h>
 
 static void arp_cb(struct arp_entry *entry, void *user_data)
 {

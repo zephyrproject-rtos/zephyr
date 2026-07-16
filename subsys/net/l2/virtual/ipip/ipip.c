@@ -16,9 +16,9 @@ LOG_MODULE_REGISTER(net_virtual_ipip, CONFIG_NET_L2_IPIP_LOG_LEVEL);
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/virtual.h>
 
-#include "ipv4.h"
-#include "ipv6.h"
-#include "net_private.h"
+#include <ipv4.h>
+#include <ipv6.h>
+#include <net_private.h>
 
 #if defined(CONFIG_NET_L2_IPIP_TXRX_DEBUG)
 #define DEBUG_TX 1

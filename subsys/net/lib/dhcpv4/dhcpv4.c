@@ -23,10 +23,10 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/hostname.h>
-#include "net_private.h"
+#include <net_private.h>
 
 #include <zephyr/net/udp.h>
-#include "udp_internal.h"
+#include <udp_internal.h>
 #include <zephyr/net/dhcpv4.h>
 #include <zephyr/net/dns_resolve.h>
 
@@ -35,8 +35,8 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 #include <zephyr/logging/log_ctrl.h>
 
 #include "dhcpv4_internal.h"
-#include "ipv4.h"
-#include "net_stats.h"
+#include <ipv4.h>
+#include <net_stats.h>
 
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>

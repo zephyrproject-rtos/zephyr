@@ -16,7 +16,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include "net_shell_private.h"
 
-#include "../ip/net_stats.h"
+#include <net_stats.h>
 
 enum net_shell_stats_format {
 	NET_SHELL_STATS_FORMAT_DEFAULT,

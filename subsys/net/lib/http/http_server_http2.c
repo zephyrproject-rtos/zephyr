@@ -25,7 +25,7 @@ LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
 static const char content_404[] = {
 #ifdef INCLUDE_HTML_CONTENT
-#include "not_found_page.html.gz.inc"
+#include <not_found_page.html.gz.inc>
 #endif
 };
 

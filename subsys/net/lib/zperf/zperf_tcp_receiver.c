@@ -23,7 +23,7 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
 /* To get net_sprint_ipv{4|6}_addr() */
 #define NET_LOG_ENABLED 1
-#include "net_private.h"
+#include <net_private.h>
 
 #define SOCK_ID_IPV4_LISTEN 0
 #define SOCK_ID_IPV6_LISTEN 1

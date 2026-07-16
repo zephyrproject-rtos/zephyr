@@ -13,7 +13,7 @@ index f8006525d79..0bd686d8174 100644
 
 @@ -16,10 +16,6 @@
  #include "lwm2m_senml_cbor_decode.h"
- #include "zcbor_print.h"
+ #include <zcbor_print.h>
 
 -#if DEFAULT_MAX_QTY != 99
 -#error "The type file was generated with a different default_max_qty than this file"
@@ -80,7 +80,7 @@ index 851cf994c6d..4ec898e656d 100644
 
 @@ -16,10 +16,6 @@
  #include "lwm2m_senml_cbor_encode.h"
- #include "zcbor_print.h"
+ #include <zcbor_print.h>
 
 -#if DEFAULT_MAX_QTY != 99
 -#error "The type file was generated with a different default_max_qty than this file"

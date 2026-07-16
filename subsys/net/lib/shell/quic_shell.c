@@ -17,7 +17,7 @@ LOG_MODULE_DECLARE(net_shell);
 #if defined(CONFIG_QUIC_SHELL)
 
 #include <zephyr/net/quic.h>
-#include "quic/quic_internal.h"
+#include <quic/quic_internal.h>
 
 static void quic_endpoint_cb(struct quic_endpoint *ep, void *user_data)
 {
@@ -292,7 +292,7 @@ static int cmd_net_quic(const struct shell *sh, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_NET_STATISTICS_QUIC) && defined(CONFIG_NET_STATISTICS_USER_API)
-#include "quic_stats.h"
+#include <quic_stats.h>
 
 static uint64_t quic_shell_uptime_ms(void)
 {

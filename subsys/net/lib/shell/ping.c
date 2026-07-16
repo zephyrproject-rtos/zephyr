@@ -16,11 +16,11 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include "net_shell_private.h"
 
-#include "../ip/icmpv6.h"
-#include "../ip/icmpv4.h"
-#include "../ip/route_ipv6.h"
-#include "../ip/route_ipv4.h"
-#include "../ip/route.h"
+#include <icmpv6.h>
+#include <icmpv4.h>
+#include <route_ipv6.h>
+#include <route_ipv4.h>
+#include <route.h>
 
 #if defined(CONFIG_NET_IP)
 

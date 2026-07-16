@@ -15,7 +15,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #if defined(CONFIG_NET_CONNECTION_MANAGER)
 
-#include "conn_mgr_private.h"
+#include <conn_mgr_private.h>
 #include <zephyr/net/conn_mgr_connectivity.h>
 #include <zephyr/net/conn_mgr_monitor.h>
 

@@ -361,7 +361,7 @@ void npf_rules_foreach(npf_rule_cb_t cb, void *user_data)
 #endif /* CONFIG_NET_PKT_FILTER_IPV6_HOOK */
 }
 
-#include "net_private.h" /* for net_sprint_addr() */
+#include <net_private.h> /* for net_sprint_addr() */
 
 const char *npf_test_get_str(struct npf_test *test, char *buf, size_t len)
 {

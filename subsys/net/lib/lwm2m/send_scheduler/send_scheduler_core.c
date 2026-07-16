@@ -19,9 +19,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_LWM2M_SEND_SCHEDULER_LOG_LEVEL);
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 
-#include "lwm2m_engine.h"
-#include "lwm2m_object.h"
-#include "lwm2m_registry.h"
+#include <lwm2m_engine.h>
+#include <lwm2m_object.h>
+#include <lwm2m_registry.h>
 
 #include <zephyr/net/lwm2m_send_scheduler.h>
 #include "send_scheduler_internal.h"

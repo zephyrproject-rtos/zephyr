@@ -18,7 +18,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include "net_shell_private.h"
 
 #if defined(CONFIG_WIREGUARD)
-#include "wg_internal.h"
+#include <wg_internal.h>
 #endif
 
 #if defined(CONFIG_WIREGUARD_SHELL)

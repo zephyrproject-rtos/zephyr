@@ -12,11 +12,11 @@ LOG_MODULE_DECLARE(net_shell);
 
 #if defined(CONFIG_NET_GPTP)
 #include <zephyr/net/gptp.h>
-#include "ethernet/gptp/gptp_messages.h"
-#include "ethernet/gptp/gptp_md.h"
-#include "ethernet/gptp/gptp_state.h"
-#include "ethernet/gptp/gptp_data_set.h"
-#include "ethernet/gptp/gptp_private.h"
+#include <ethernet/gptp/gptp_messages.h>
+#include <ethernet/gptp/gptp_md.h>
+#include <ethernet/gptp/gptp_state.h>
+#include <ethernet/gptp/gptp_data_set.h>
+#include <ethernet/gptp/gptp_private.h>
 #endif
 
 #include "net_shell_private.h"

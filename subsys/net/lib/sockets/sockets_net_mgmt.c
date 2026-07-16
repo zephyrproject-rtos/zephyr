@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(net_sock_mgmt, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/ethernet_mgmt.h>
 
 #include "sockets_internal.h"
-#include "net_private.h"
+#include <net_private.h>
 
 #define MSG_ALLOC_TIMEOUT K_MSEC(100)
 

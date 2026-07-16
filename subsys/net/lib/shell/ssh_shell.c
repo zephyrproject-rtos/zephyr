@@ -24,7 +24,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include "net_shell_private.h"
 
 #if defined(CONFIG_SSH)
-#include "ssh_transport.h"
+#include <ssh_transport.h>
 #endif
 
 #if defined(CONFIG_SSH_SHELL)

@@ -14,7 +14,7 @@ LOG_MODULE_DECLARE(wireguard, CONFIG_WIREGUARD_LOG_LEVEL);
 #include <zephyr/net/wireguard.h>
 #include <zephyr/net/net_log.h>
 
-#include "native_rtc.h"
+#include <native_rtc.h>
 
 int wireguard_get_current_time(uint64_t *seconds, uint32_t *nanoseconds)
 {

@@ -20,11 +20,11 @@ LOG_MODULE_REGISTER(net_capture, CONFIG_NET_CAPTURE_LOG_LEVEL);
 #include <zephyr/net/capture.h>
 #include <zephyr/net/ethernet.h>
 
-#include "net_private.h"
-#include "ipv4.h"
-#include "ipv6.h"
-#include "udp_internal.h"
-#include "net_stats.h"
+#include <net_private.h>
+#include <ipv4.h>
+#include <ipv6.h>
+#include <udp_internal.h>
+#include <net_stats.h>
 
 #define PKT_ALLOC_TIME K_MSEC(50)
 #define DEFAULT_PORT 4242

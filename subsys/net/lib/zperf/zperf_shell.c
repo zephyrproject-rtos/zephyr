@@ -31,9 +31,9 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
  * that NET_LOG_ENABLED is set.
  */
 #define NET_LOG_ENABLED 1
-#include "net_private.h"
+#include <net_private.h>
 
-#include "ipv6.h" /* to get infinite lifetime */
+#include <ipv6.h> /* to get infinite lifetime */
 
 
 static const char *CONFIG =

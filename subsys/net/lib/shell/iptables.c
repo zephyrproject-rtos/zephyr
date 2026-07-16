@@ -11,7 +11,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #if defined(CONFIG_NET_IPV4_NAT)
 #include <zephyr/net/ipv4_nat.h>
-#include "../ip/ipv4_nat_internal.h"
+#include <ipv4_nat_internal.h>
 #endif
 
 #define IPSTR "%hhu.%hhu.%hhu.%hhu"

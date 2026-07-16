@@ -12,10 +12,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ieee802154_6lo_fragment, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
-#include "6lo.h"
-#include "6lo_private.h"
+#include <6lo.h>
+#include <6lo_private.h>
 #include "ieee802154_6lo_fragment.h"
-#include "net_private.h"
+#include <net_private.h>
 
 #include <errno.h>
 

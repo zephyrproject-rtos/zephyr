@@ -53,8 +53,8 @@
 		}                                                               \
 	} while (false)
 
-#include "net_private.h"
-#include "../ip/ipv6.h"
+#include <net_private.h>
+#include <ipv6.h>
 
 struct net_shell_user_data {
 	const struct shell *sh;
