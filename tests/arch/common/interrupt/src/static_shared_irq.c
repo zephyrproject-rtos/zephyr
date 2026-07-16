@@ -17,6 +17,7 @@
  * @details This tests if interrupts are statically shared successfully
  * (i.e: multiple ISR/arg pairs are called whenever the interrupt they
  * were registered for is triggered).
+ * @verifies ZEP-SRS-7-1
  */
 ZTEST(interrupt_feature, test_static_shared_irq_write)
 {

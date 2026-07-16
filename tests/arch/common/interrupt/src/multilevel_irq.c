@@ -18,6 +18,8 @@
  * interrupt numbers obtained from the devicetree, verifying conversion between
  * raw and Zephyr-encoded IRQ numbers, parent (aggregator) resolution and IRQ
  * level queries. This exercises the kernel support for multi-level interrupts.
+ *
+ * @verifies ZEP-SRS-7-14
  */
 ZTEST(interrupt_feature, test_multi_level_api)
 {
@@ -82,6 +84,8 @@ ZTEST(interrupt_feature, test_multi_level_api)
  * interrupt numbers obtained from the devicetree, verifying conversion and
  * parent resolution across three interrupt levels. This exercises the kernel
  * support for multi-level interrupts.
+ *
+ * @verifies ZEP-SRS-7-14
  */
 ZTEST(interrupt_feature, test_multi_level_api_l3)
 {

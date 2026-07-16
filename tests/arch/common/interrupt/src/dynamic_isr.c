@@ -43,6 +43,13 @@ struct _isr_table_entry _sw_isr_table[];
  * by checking the software ISR table entry.
  *
  * @see arch_irq_connect_dynamic()
+ * @verifies ZEP-SRS-7-5
+ * @verifies ZEP-SRS-7-5
+ * @verifies ZEP-SRS-7-6
+ * @verifies ZEP-SRS-7-10
+ * @verifies ZEP-SRS-7-11
+ * @verifies ZEP-SRS-7-15
+ * @verifies ZEP-SRS-7-16
  */
 ZTEST(interrupt_feature, test_isr_dynamic)
 {
