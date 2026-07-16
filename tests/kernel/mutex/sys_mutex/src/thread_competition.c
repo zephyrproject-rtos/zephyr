@@ -94,6 +94,8 @@ static void high_prio_t2_wait_for_mutex(void *p1, void *p2, void *p3)
  * @ingroup kernel_mutex_tests
  * @see sys_mutex_lock()
  * @see sys_mutex_unlock()
+ * @verifies ZEP-SRS-6-6
+ * @verifies ZEP-SRS-6-13
  */
 ZTEST(mutex_complex, test_mutex_multithread_competition)
 {

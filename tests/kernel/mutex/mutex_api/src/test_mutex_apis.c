@@ -230,6 +230,7 @@ static void tThread_waiter(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_mutex_tests
  * @see K_MUTEX_DEFINE
+ * @verifies ZEP-SRS-6-2
  */
 ZTEST(mutex_api, test_mutex_define)
 {
@@ -254,6 +255,7 @@ ZTEST(mutex_api, test_mutex_define)
  *
  * @ingroup kernel_mutex_tests
  * @see k_mutex_init()
+ * @verifies ZEP-SRS-6-3
  */
 ZTEST(mutex_api, test_mutex_init)
 {
@@ -274,6 +276,8 @@ ZTEST(mutex_api, test_mutex_init)
  * @see k_mutex_init()
  * @see k_mutex_lock()
  * @see k_mutex_unlock()
+ * @verifies ZEP-SRS-6-1
+ * @verifies ZEP-SRS-6-6
  */
 ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_forever)
 {
@@ -297,6 +301,8 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_forever)
  * @ingroup kernel_mutex_tests
  * @see k_mutex_lock()
  * @see k_mutex_unlock()
+ * @verifies ZEP-SRS-6-1
+ * @verifies ZEP-SRS-6-6
  */
 ZTEST_USER(mutex_api, test_mutex_reent_lock_no_wait)
 {
@@ -317,6 +323,9 @@ ZTEST_USER(mutex_api, test_mutex_reent_lock_no_wait)
  * @ingroup kernel_mutex_tests
  * @see k_mutex_lock()
  * @see k_mutex_unlock()
+ * @verifies ZEP-SRS-6-1
+ * @verifies ZEP-SRS-6-7
+ * @verifies ZEP-SRS-6-8
  */
 ZTEST_USER(mutex_api, test_mutex_reent_lock_timeout_fail)
 {
@@ -337,6 +346,8 @@ ZTEST_USER(mutex_api, test_mutex_reent_lock_timeout_fail)
  * @ingroup kernel_mutex_tests
  * @see k_mutex_lock()
  * @see k_mutex_unlock()
+ * @verifies ZEP-SRS-6-1
+ * @verifies ZEP-SRS-6-7
  */
 ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_timeout_pass)
 {
@@ -359,6 +370,9 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_timeout_pass)
  * @see k_mutex_init()
  * @see k_mutex_lock()
  * @see k_mutex_unlock()
+ * @verifies ZEP-SRS-6-4
+ * @verifies ZEP-SRS-6-5
+ * @verifies ZEP-SRS-6-10
  */
 ZTEST_USER(mutex_api_1cpu, test_mutex_lock_unlock)
 {
@@ -375,6 +389,8 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_lock_unlock)
  * succeed and waiters will be unblocked only when the number of locks
  * reaches zero.
  * @ingroup kernel_mutex_tests
+ * @verifies ZEP-SRS-6-1
+ * @verifies ZEP-SRS-6-9
  */
 ZTEST_USER(mutex_api, test_mutex_recursive)
 {
@@ -427,6 +443,9 @@ ZTEST_USER(mutex_api, test_mutex_recursive)
  * - case 3. When priority T2 > T3 > T1, priority inheritance happened but T2
  *   wait for timeout and T3 got the mutex.
  * @ingroup kernel_mutex_tests
+ * @verifies ZEP-SRS-6-1
+ * @verifies ZEP-SRS-6-11
+ * @verifies ZEP-SRS-6-12
  */
 ZTEST_USER(mutex_api_1cpu, test_mutex_priority_inheritance)
 {
@@ -546,6 +565,8 @@ static void tThread_mutex_lock_should_fail(void *p1, void *p2, void *p3)
  * @ingroup kernel_mutex_tests
  *
  * @see k_mutex_lock()
+ * @verifies ZEP-SRS-6-7
+ * @verifies ZEP-SRS-6-12
  */
 ZTEST(mutex_api_1cpu, test_mutex_timeout_race_during_priority_inversion)
 {

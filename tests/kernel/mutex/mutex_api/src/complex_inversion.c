@@ -232,6 +232,8 @@ static void join_participant_threads(void)
  * This thread orchestrates mutex locking on other threads and verifies that
  * the correct thread is holding mutexes at any given step.
  *
+ * @verifies ZEP-SRS-6-1
+ * @verifies ZEP-SRS-6-12
  */
 
 ZTEST(mutex_api, test_complex_inversion)
