@@ -115,8 +115,12 @@ config MEMC_MCUX_XSPI_PSRAM
 	help
 	  Enable the mcux xspi psram driver.
 
+endif # DT_HAS_NXP_XSPI_PSRAM_ENABLED
+
 config MEMC_MCUX_XSPI
 	bool
 	select PINCTRL
-
-endif # DT_HAS_NXP_XSPI_PSRAM_ENABLED
+	help
+	  Common MCUX XSPI controller support. Selected by either the XSPI
+	  PSRAM memc driver or the XSPI NOR flash driver, so it must live
+	  outside the PSRAM-only conditional block.
