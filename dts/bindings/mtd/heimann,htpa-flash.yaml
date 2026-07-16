@@ -1,0 +1,14 @@
+# Copyright (c) 2026 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+description: Heimann HTPA Flash used for storing sensor calibration data
+
+compatible: "heimann,htpa-flash"
+
+include: [spi-device.yaml]
+
+properties:
+  size:
+    type: int
+    required: true
+    description: Memory capacity in bytes
