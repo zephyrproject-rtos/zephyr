@@ -1,0 +1,11 @@
+shield:
+  name: rakwireless_rak19007
+  full_name: RAK19007 WisBlock Base Board 2nd Gen
+  vendor: rakwireless
+  supported_features:
+    - gpio
+    - led
+    - serial
+    - adc
+    - sensor
+    - fuel_gauge
