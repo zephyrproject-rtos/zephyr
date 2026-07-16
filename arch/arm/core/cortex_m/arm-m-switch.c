@@ -1,4 +1,7 @@
-/* Copyright 2025 The ChromiumOS Authors
+/*
+ * Copyright 2025 The ChromiumOS Authors
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/sys/util.h>
@@ -335,7 +338,8 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 		__asm__ volatile("vmov %0, s0;"
 				 "mrs %0, control;"
 				 "bic %0, %0, #4;"
-				 "msr control, %0;" ::"r"(dummy));
+				 "msr control, %0;"
+				 : "+r"(dummy));
 	}
 
 	/* Detects interrupted ICI/IT instructions and rigs up thread
