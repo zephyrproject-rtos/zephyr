@@ -41,11 +41,6 @@
 			label = "VEXT Control";
 		};
 
-		adc_control: adc_control {
-			gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
-			label = "ADC Control";
-		};
-
 		tft_en: tft_en {
 			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
 			label = "TFT_EN - display enable";
@@ -82,6 +77,14 @@
 			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
 			label = "gnss PPS";
 		};
+	};
+
+	vbatt: vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 2>;
+		output-ohms = <100000>;
+		full-ohms = <490000>;
+		power-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
 	};
 
 	led_strip: led_strip {
@@ -141,7 +144,6 @@
 		mcuboot-led4 = &led4;
 		watchdog0 = &wdt0;
 		vext-control = &vext_control;
-		adc-control = &adc_control;
 		tft-en = &tft_en;
 		tft-led-en = &tft_led_en;
 		gnss-rst = &gnss_rst;
@@ -157,7 +159,6 @@
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	io-channels = <&adc 2>;
 
 	channel@2 {
 		reg = <2>;
