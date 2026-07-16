@@ -149,6 +149,8 @@ volatile uint32_t heap_guard1;
  *
  * @see K_HEAP_DEFINE()
  * @see k_heap_alloc()
+ * @verifies ZEP-SRS-9-3
+ * @verifies ZEP-SRS-9-5
  */
 ZTEST(k_heap_api, test_k_heap_min_size)
 {
@@ -187,6 +189,8 @@ ZTEST(k_heap_api, test_k_heap_min_size)
  * The allocation in the 4th step should succeed if k_heap_free() works as expected
  *
  * @see k_heap_alloc, k_heap_free()
+ * @verifies ZEP-SRS-9-5
+ * @verifies ZEP-SRS-9-10
  */
 ZTEST(k_heap_api, test_k_heap_free)
 {
@@ -217,6 +221,7 @@ ZTEST(k_heap_api, test_k_heap_free)
  *
  * @see k_heap_alloc()
  * @see k_heap_free()
+ * @verifies ZEP-SRS-9-5
  */
 ZTEST(k_heap_api, test_kheap_alloc_in_isr_nowait)
 {
@@ -234,6 +239,8 @@ ZTEST(k_heap_api, test_kheap_alloc_in_isr_nowait)
  *
  * @see k_heap_alloc()
  * @see k_heap_free()
+ * @verifies ZEP-SRS-9-5
+ * @verifies ZEP-SRS-9-7
  */
 ZTEST(k_heap_api, test_k_heap_alloc_pending)
 {
@@ -274,6 +281,8 @@ ZTEST(k_heap_api, test_k_heap_alloc_pending)
  *
  * @see k_heap_alloc()
  * @see k_heap_free()
+ * @verifies ZEP-SRS-9-7
+ * @verifies ZEP-SRS-9-8
  */
 ZTEST(k_heap_api, test_k_heap_alloc_pending_null)
 {
@@ -351,6 +360,8 @@ ZTEST(k_heap_api, test_k_heap_alloc_pending_deadline)
  * Also tests k_heap_calloc() overflow and zero-size edge cases
  *
  * @see k_heap_calloc(), k_heap_free()
+ * @verifies ZEP-SRS-9-5
+ * @verifies ZEP-SRS-9-10
  */
 ZTEST(k_heap_api, test_k_heap_calloc)
 {
@@ -381,6 +392,7 @@ ZTEST(k_heap_api, test_k_heap_calloc)
  * @details The test ensures that valid values are returned
  *
  * @see k_heap_array_get()
+ * @verifies ZEP-SRS-9-18
  */
 ZTEST(k_heap_api, test_k_heap_array_get)
 {
@@ -412,6 +424,7 @@ ZTEST(k_heap_api, test_k_heap_array_get)
  * 3. Verifying data integrity after reallocation
  *
  * @see k_heap_realloc()
+ * @verifies ZEP-SRS-9-9
  */
 ZTEST(k_heap_api, test_k_heap_realloc)
 {
@@ -456,6 +469,7 @@ ZTEST(k_heap_api, test_k_heap_realloc)
  * when called with a NULL pointer.
  *
  * @see k_heap_realloc()
+ * @verifies ZEP-SRS-9-9
  */
 ZTEST(k_heap_api, test_k_heap_realloc_null)
 {
@@ -475,6 +489,8 @@ ZTEST(k_heap_api, test_k_heap_realloc_null)
  * when called with size 0.
  *
  * @see k_heap_realloc()
+ * @verifies ZEP-SRS-9-9
+ * @verifies ZEP-SRS-9-10
  */
 ZTEST(k_heap_api, test_k_heap_realloc_zero)
 {
@@ -624,6 +640,8 @@ ZTEST(k_heap_api, test_k_heap_realloc_move_wakes_waiter)
  * trying to reallocate to a size larger than the heap.
  *
  * @see k_heap_realloc()
+ * @verifies ZEP-SRS-9-9
+ * @verifies ZEP-SRS-9-8
  */
 ZTEST(k_heap_api, test_k_heap_realloc_fail)
 {
@@ -649,6 +667,8 @@ ZTEST(k_heap_api, test_k_heap_realloc_fail)
  * and checks alignment, then tries oversize and invalid alignment.
  *
  * @see k_heap_aligned_alloc()
+ * @verifies ZEP-SRS-9-6
+ * @verifies ZEP-SRS-9-8
  */
 ZTEST(k_heap_api, test_k_heap_aligned_alloc)
 {
@@ -687,6 +707,7 @@ ZTEST(k_heap_api, test_k_heap_aligned_alloc)
  * @details The test validates that double-freeing a pointer asserts
  *
  * @see k_heap_alloc, k_heap_free()
+ * @verifies ZEP-SRS-9-10
  */
 ZTEST(k_heap_api, test_z_k_heap_double_free)
 {
@@ -718,6 +739,7 @@ ZTEST(k_heap_api, test_z_k_heap_double_free)
  * an allocation larger than the region fails, and the block can be freed.
  *
  * @see k_heap_init()
+ * @verifies ZEP-SRS-9-4
  */
 ZTEST(k_heap_api, test_k_heap_init)
 {
@@ -774,6 +796,9 @@ struct heap_alloc_case {
  *
  * @see k_heap_alloc()
  * @see k_heap_free()
+ * @verifies ZEP-SRS-9-1
+ * @verifies ZEP-SRS-9-5
+ * @verifies ZEP-SRS-9-8
  */
 ZTEST_P(k_heap_api, test_k_heap_alloc_size)
 {
