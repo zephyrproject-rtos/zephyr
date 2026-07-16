@@ -345,6 +345,9 @@ static void run_crash_thread(k_thread_entry_t entry, bool abort)
  *
  * @see k_sys_fatal_error_handler()
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-16-1
+ * @verifies ZEP-SRS-16-7
+ * @verifies ZEP-SRS-16-8
  */
 ZTEST(fatal_exception, test_fatal_cpu_exception)
 {
@@ -371,6 +374,9 @@ ZTEST(fatal_exception, test_fatal_cpu_exception)
  *
  * @see k_sys_fatal_error_handler()
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-16-1
+ * @verifies ZEP-SRS-16-7
+ * @verifies ZEP-SRS-16-8
  */
 ZTEST(fatal_exception, test_fatal_cpu_exception_extended)
 {
@@ -399,6 +405,10 @@ ZTEST(fatal_exception, test_fatal_cpu_exception_extended)
  * @see k_oops()
  * @see k_sys_fatal_error_handler()
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-16-4
+ * @verifies ZEP-SRS-16-5
+ * @verifies ZEP-SRS-16-7
+ * @verifies ZEP-SRS-16-8
  */
 ZTEST(fatal_exception, test_fatal_oops)
 {
@@ -426,6 +436,10 @@ ZTEST(fatal_exception, test_fatal_oops)
  * @see k_panic()
  * @see k_sys_fatal_error_handler()
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-16-4
+ * @verifies ZEP-SRS-16-6
+ * @verifies ZEP-SRS-16-7
+ * @verifies ZEP-SRS-16-8
  */
 ZTEST(fatal_exception, test_fatal_panic)
 {
@@ -453,6 +467,9 @@ ZTEST(fatal_exception, test_fatal_panic)
  *
  * @see k_sys_fatal_error_handler()
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-16-2
+ * @verifies ZEP-SRS-16-7
+ * @verifies ZEP-SRS-16-8
  */
 ZTEST(fatal_exception, test_fatal_assert_fail)
 {
@@ -480,6 +497,9 @@ ZTEST(fatal_exception, test_fatal_assert_fail)
  *
  * @see k_sys_fatal_error_handler()
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-16-2
+ * @verifies ZEP-SRS-16-7
+ * @verifies ZEP-SRS-16-8
  */
 ZTEST(fatal_exception, test_fatal_except_reason_positive)
 {
@@ -505,6 +525,9 @@ ZTEST(fatal_exception, test_fatal_except_reason_positive)
  *
  * @see k_sys_fatal_error_handler()
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-16-2
+ * @verifies ZEP-SRS-16-7
+ * @verifies ZEP-SRS-16-8
  */
 ZTEST(fatal_exception, test_fatal_except_reason_negative)
 {
@@ -532,6 +555,8 @@ ZTEST(fatal_exception, test_fatal_except_reason_negative)
  *
  * @see k_sys_fatal_error_handler()
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-16-2
+ * @verifies ZEP-SRS-16-8
  */
 ZTEST(fatal_exception, test_fatal_stack_sentinel_timer)
 {
@@ -556,6 +581,8 @@ ZTEST(fatal_exception, test_fatal_stack_sentinel_timer)
  *
  * @see k_sys_fatal_error_handler()
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-16-2
+ * @verifies ZEP-SRS-16-8
  */
 ZTEST(fatal_exception, test_fatal_stack_sentinel_swap)
 {
@@ -585,6 +612,8 @@ ZTEST(fatal_exception, test_fatal_stack_sentinel_swap)
  *
  * @see k_sys_fatal_error_handler()
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-16-1
+ * @verifies ZEP-SRS-16-8
  */
 ZTEST(fatal_exception, test_fatal_stack_hw_overflow)
 {
@@ -614,6 +643,8 @@ ZTEST(fatal_exception, test_fatal_stack_hw_overflow)
  *
  * @see k_sys_fatal_error_handler()
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-16-1
+ * @verifies ZEP-SRS-16-8
  */
 ZTEST(fatal_exception, test_fatal_stack_hw_overflow_fpu)
 {
@@ -644,6 +675,8 @@ ZTEST(fatal_exception, test_fatal_stack_hw_overflow_fpu)
  *
  * @see k_sys_fatal_error_handler()
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-16-1
+ * @verifies ZEP-SRS-16-8
  */
 ZTEST(fatal_exception, test_fatal_stack_hw_overflow_user)
 {
@@ -683,6 +716,8 @@ ZTEST(fatal_exception, test_fatal_stack_hw_overflow_user)
  *
  * @see k_sys_fatal_error_handler()
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-16-1
+ * @verifies ZEP-SRS-16-8
  */
 ZTEST(fatal_exception, test_fatal_stack_hw_overflow_user_priv)
 {
@@ -713,6 +748,8 @@ ZTEST(fatal_exception, test_fatal_stack_hw_overflow_user_priv)
  *
  * @see k_sys_fatal_error_handler()
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-16-1
+ * @verifies ZEP-SRS-16-8
  */
 ZTEST(fatal_exception, test_fatal_stack_hw_overflow_user_fpu)
 {
