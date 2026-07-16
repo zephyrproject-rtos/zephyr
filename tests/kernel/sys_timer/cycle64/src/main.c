@@ -52,6 +52,7 @@ uint32_t timeout(uint64_t prev, uint64_t now)
  *
  * @ingroup kernel_timer_tests
  * @see k_cycle_get_64()
+ * @verifies ZEP-SRS-28-6
  */
 ZTEST(cycle64_tests, test_32bit_wrap_around)
 {
