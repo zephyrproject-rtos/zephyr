@@ -93,4 +93,14 @@ int memc_xspi_set_device_config(const struct device *dev, const xspi_device_conf
  */
 uint32_t memc_mcux_xspi_get_ahb_address(const struct device *dev);
 
+/**
+ * @brief Invalidate the XSPI AHB read buffer.
+ *
+ * Drops any data cached in the XSPI AHB read buffer so a subsequent
+ * memory-mapped read observes the current flash contents (for example after
+ * an erase or program). Does not touch CPU/system caches.
+ * @param dev: XSPI device
+ */
+void memc_mcux_xspi_clear_ahb_buffer(const struct device *dev);
+
 #endif /* ZEPHYR_DRIVERS_MEMC_MCUX_XSPI_H_ */

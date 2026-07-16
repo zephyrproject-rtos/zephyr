@@ -13,6 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/cache.h>
 #include "memc_mcux_xspi.h"
 #include "spi_nor.h"
 
@@ -329,7 +330,26 @@ static int flash_mcux_xspi_read(const struct device *dev, off_t offset, void *da
 		return -EINVAL;
 	}
 
+	/*
+	 * Invalidate the XSPI AHB read buffers so this memory-mapped read
+	 * observes the current flash contents rather than data prefetched
+	 * before a preceding erase or program.
+	 */
+	memc_mcux_xspi_clear_ahb_buffer(devData->xspi_dev);
+
+#if defined(CACHE64_CTRL0_BASE)
 	XSPI_Cache64_InvalidateCacheByRange((uint32_t)src, len);
+#endif
+
+	/*
+	 * When the CPU data cache is enabled it may hold stale lines over the
+	 * memory-mapped XSPI region (e.g. contents prefetched before an erase
+	 * or program). Invalidate the CPU data cache for the read range so the
+	 * memcpy below observes the current flash contents.
+	 */
+	if (IS_ENABLED(CONFIG_DCACHE)) {
+		sys_cache_data_invd_range(src, len);
+	}
 
 	(void)memcpy(data, src, len);
 
