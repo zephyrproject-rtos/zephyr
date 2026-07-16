@@ -151,6 +151,9 @@ static void thread_entry_fn_isr(void *p1, void *p2, void *p3)
  *
  * @see k_fifo_put()
  * @see k_fifo_get()
+ * @verifies ZEP-SRS-24-3
+ * @verifies ZEP-SRS-24-7
+ * @verifies ZEP-SRS-24-8
  */
 ZTEST(fifo_usage, test_single_fifo_play)
 {
@@ -201,6 +204,9 @@ ZTEST(fifo_usage, test_single_fifo_play)
  *
  * @see k_fifo_put()
  * @see k_fifo_get()
+ * @verifies ZEP-SRS-24-3
+ * @verifies ZEP-SRS-24-7
+ * @verifies ZEP-SRS-24-8
  */
 ZTEST(fifo_usage, test_dual_fifo_play)
 {
@@ -244,6 +250,9 @@ ZTEST(fifo_usage, test_dual_fifo_play)
  *
  * @see k_fifo_put()
  * @see k_fifo_get()
+ * @verifies ZEP-SRS-24-3
+ * @verifies ZEP-SRS-24-7
+ * @verifies ZEP-SRS-24-8
  */
 ZTEST(fifo_usage, test_isr_fifo_play)
 {
