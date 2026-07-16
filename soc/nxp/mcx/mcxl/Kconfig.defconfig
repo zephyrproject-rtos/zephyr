@@ -29,4 +29,15 @@ config FLASH_FILL_BUFFER_SIZE
 config RESET
 	default y if DT_HAS_NXP_MRCC_RESET_ENABLED
 
+if MBEDTLS_PSA_CRYPTO_C
+
+# MCXL255 has the SGI PKC security subsystem
+config PSA_CRYPTO_DRIVER_SGI_PKC
+	bool
+	default y if SOC_MCXL255
+	select SGI_PKC
+	select SGI_PKC_PLATFORM_MCXL if SOC_MCXL255
+
+endif # MBEDTLS_PSA_CRYPTO_C
+
 endif # SOC_FAMILY_MCXL
