@@ -70,6 +70,6 @@ Peripherals
    usbc_vbus.rst
    tcpc.rst
    tgpio.rst
-   video.rst
+   video/index.rst
    watchdog.rst
    wuc.rst

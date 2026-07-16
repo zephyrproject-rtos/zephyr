@@ -2883,7 +2883,7 @@ Documentation Infrastructure:
     - include/zephyr/drivers/video/
     - include/zephyr/drivers/video-controls.h
     - include/zephyr/dt-bindings/video/
-    - doc/hardware/peripherals/video.rst
+    - doc/hardware/peripherals/video/
     - tests/drivers/*/video/
     - dts/bindings/video/
     - samples/drivers/video/

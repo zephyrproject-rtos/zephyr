@@ -285,6 +285,13 @@ New Drivers
 
   * VIRTIO input device (:dtcompatible:`virtio,input`).
 
+* Video
+
+  * Heimann HTPA 120x84 thermopile sensor array
+    (:dtcompatible:`heimann,htpa-120x84`).
+  * Heimann HTPA 160x120 thermopile sensor array
+    (:dtcompatible:`heimann,htpa-160x120`).
+
 * Clock Monitor
 
   * :dtcompatible:`nxp,cmu-fc` — NXP Clock Monitoring Unit (Frequency Check)
