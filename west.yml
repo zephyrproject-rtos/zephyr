@@ -324,13 +324,13 @@ manifest:
       revision: 85aa60d18b3d5e5588d7b247abf90198f07c8a63
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: a3e190fe44c78d1ba67f55979e1257328cc7d0d8
+      revision: 098e120afb51877ed814bdc04443890ae12e0642
       path: modules/crypto/mbedtls
       groups:
         - crypto
     - name: mbedtls-3.6 # Required for TF-M build until we bump it to v2.3
       repo-path: mbedtls
-      revision: a00e23de17b6b0a0de28e180cb186da6f0008836
+      revision: 52053a9bf7170f9ba3979ec24ebfcc84c18091d9
       path: modules/crypto/mbedtls-3.6
       groups:
         - crypto
@@ -395,7 +395,7 @@ manifest:
         - testing
         - tee
     - name: tf-psa-crypto
-      revision: dc575a2ddcc8cb16275d24c42a52eaf79ebe2231
+      revision: fa92349590a54959ee2efc21b668e5afdb144726
       path: modules/crypto/tf-psa-crypto
       groups:
         - crypto
