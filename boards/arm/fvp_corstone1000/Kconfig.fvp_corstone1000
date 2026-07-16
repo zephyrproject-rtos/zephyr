@@ -1,6 +1,8 @@
 # Copyright (c) 2026 BayLibre SAS
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_FVP_CORSTONE1000
 	select SOC_A320 if BOARD_FVP_CORSTONE1000_A320
 	select SOC_A320 if BOARD_FVP_CORSTONE1000_A320_SMP
+	select SOC_CORSTONE1000_EXTSYS if BOARD_FVP_CORSTONE1000_CORSTONE1000_EXTSYS

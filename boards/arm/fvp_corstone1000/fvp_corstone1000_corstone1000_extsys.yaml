@@ -1,0 +1,19 @@
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: fvp_corstone1000/corstone1000/extsys
+name: Arm Corstone-1000 External System Fixed Virtual Platform
+arch: arm
+type: sim
+simulation:
+  - name: armfvp
+    exec: FVP_Corstone-1000
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 32
+flash: 256
+vendor: arm
+sysbuild: true
+testing:
+  default: true
