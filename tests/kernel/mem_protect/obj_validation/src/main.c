@@ -101,6 +101,8 @@ void object_permission_checks(struct k_sem *sem, bool skip_init)
  * @see k_object_alloc()
  * @see k_object_access_grant()
  * @see k_object_free()
+ * @verifies ZEP-SRS-8-2
+ * @verifies ZEP-SRS-8-16
  */
 ZTEST(object_validation, test_kobj_validate_states)
 {
@@ -159,6 +161,8 @@ ZTEST(object_validation, test_kobj_validate_states)
  *
  * @see k_object_alloc()
  * @see k_sem_init()
+ * @verifies ZEP-SRS-8-2
+ * @verifies ZEP-SRS-8-16
  */
 ZTEST(object_validation, test_kobj_assign_perms_on_alloc_obj)
 {
@@ -207,6 +211,7 @@ ZTEST(object_validation, test_kobj_assign_perms_on_alloc_obj)
  *
  * @see k_object_alloc()
  * @see k_object_access_revoke()
+ * @verifies ZEP-SRS-8-16
  */
 ZTEST(object_validation, test_kobj_freed_when_unreferenced)
 {

@@ -102,6 +102,8 @@ static void execute_from_buffer(uint8_t *dst)
  *
  * Expected result:
  * - The write raises a fatal error; the code after it is never reached.
+ *
+ * @verifies ZEP-SRS-8-1
  */
 ZTEST(protection, test_protection_write_rodata)
 {
@@ -147,6 +149,8 @@ ZTEST(protection, test_protection_write_rodata)
  *
  * Expected result:
  * - The write raises a fatal error; the code after it is never reached.
+ *
+ * @verifies ZEP-SRS-8-1
  */
 ZTEST(protection, test_protection_write_text)
 {
@@ -194,6 +198,8 @@ ZTEST(protection, test_protection_write_text)
  *
  * Expected result:
  * - The call raises a fatal error; the code after it is never reached.
+ *
+ * @verifies ZEP-SRS-8-1
  */
 ZTEST(protection, test_protection_exec_data)
 {
@@ -225,6 +231,8 @@ ZTEST(protection, test_protection_exec_data)
  *
  * Expected result:
  * - The call raises a fatal error; the code after it is never reached.
+ *
+ * @verifies ZEP-SRS-8-1
  */
 ZTEST(protection, test_protection_exec_stack)
 {
@@ -260,6 +268,7 @@ ZTEST(protection, test_protection_exec_stack)
  * - The call raises a fatal error; the code after it is never reached.
  *
  * @see k_malloc()
+ * @verifies ZEP-SRS-8-1
  */
 ZTEST(protection, test_protection_exec_heap)
 {

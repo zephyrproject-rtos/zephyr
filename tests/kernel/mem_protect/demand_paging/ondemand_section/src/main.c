@@ -46,6 +46,8 @@ static void __ondemand_func evictable_function(void)
  * @see k_mem_page_out()
  * @see k_mem_page_in()
  * @see k_mem_num_pagefaults_get()
+ * @verifies ZEP-SRS-36-8
+ * @verifies ZEP-SRS-36-15
  */
 ZTEST(ondemand_section, test_ondemand_basic)
 {

@@ -101,6 +101,8 @@ static void test_thread_1_for_SU(void *p1, void *p2, void *p3)
  *
  * @see k_mem_domain_init(), k_mem_domain_add_thread(),
  * k_thread_access_grant()
+ * @verifies ZEP-SRS-8-2
+ * @verifies ZEP-SRS-8-16
  */
 ZTEST(mem_protect, test_permission_inheritance)
 {
@@ -170,6 +172,7 @@ void parent_handler(void *p1, void *p2, void *p3)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_thread_heap_assign()
+ * @verifies ZEP-SRS-8-18
  */
 ZTEST(mem_protect, test_inherit_resource_pool)
 {
