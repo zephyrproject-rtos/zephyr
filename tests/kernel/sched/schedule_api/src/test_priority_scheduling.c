@@ -66,6 +66,9 @@ static void thread_tslice(void *p1, void *p2, void *p3)
  * execute based on their priorities
  *
  * @ingroup tests_kernel_sched
+ * @verifies ZEP-SRS-2-8
+ * @verifies ZEP-SRS-2-9
+ * @verifies ZEP-SRS-2-12
  */
 ZTEST(threads_scheduling, test_priority_scheduling)
 {

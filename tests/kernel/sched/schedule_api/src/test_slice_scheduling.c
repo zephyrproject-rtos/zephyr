@@ -154,6 +154,8 @@ static void slice_perthread_fn(void *a, void *b, void *c)
  * @ingroup tests_kernel_sched
  *
  * @see k_sched_time_slice_set()
+ * @verifies ZEP-SRS-2-11
+ * @verifies ZEP-SRS-2-13
  */
 ZTEST(threads_scheduling, test_slice_scheduling)
 {
@@ -238,6 +240,7 @@ ZTEST(threads_scheduling, test_slice_scheduling)
  * @ingroup tests_kernel_sched
  *
  * @see k_thread_time_slice_set()
+ * @verifies ZEP-SRS-2-18
  */
 ZTEST(threads_scheduling, test_slice_perthread)
 {
