@@ -768,6 +768,15 @@
 			status = "disabled";
 		};
 
+		cordic: cordic@40020c00 {
+			compatible = "st,stm32-cordic";
+			reg = <0x40020c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 3)>;
+			clock-names = "cordicx";
+			interrupts = <100 0>;
+			status = "disabled";
+		};
+
 		ucpd1: ucpd@4000a000 {
 			compatible = "st,stm32-ucpd";
 			reg = <0x4000a000 0x400>;
