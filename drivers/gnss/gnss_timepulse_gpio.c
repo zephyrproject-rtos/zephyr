@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/util.h>
@@ -19,10 +21,16 @@ struct gnss_timepulse_gpio {
 	struct gnss_timepulse *tp;
 };
 
+static inline struct gnss_timepulse_gpio *gnss_timepulse_gpio_from_cb(struct gpio_callback *cb)
+{
+	return (struct gnss_timepulse_gpio *)((char *)cb -
+					      offsetof(struct gnss_timepulse_gpio, cb));
+}
+
 static void gnss_timepulse_gpio_isr(const struct device *port, struct gpio_callback *cb,
 				    uint32_t pins)
 {
-	struct gnss_timepulse_gpio *entry = CONTAINER_OF(cb, struct gnss_timepulse_gpio, cb);
+	struct gnss_timepulse_gpio *entry = gnss_timepulse_gpio_from_cb(cb);
 
 	ARG_UNUSED(port);
 	ARG_UNUSED(pins);
@@ -70,15 +78,14 @@ static int gnss_timepulse_gpio_attach(const struct gnss_timepulse_source *src,
 	return 0;
 }
 
-#define GNSS_TIMEPULSE_GPIO_SOURCE_DEFINE(node_id)                                          \
-	static struct gnss_timepulse_gpio gnss_timepulse_gpio_##node_id = {                 \
-		.gpio = GPIO_DT_SPEC_GET(node_id, timepulse_gpios),                         \
-	};                                                                                    \
-	GNSS_TIMEPULSE_SOURCE_DEFINE(gnss_timepulse_source_gpio_##node_id,                  \
-				     DEVICE_DT_GET(node_id), gnss_timepulse_gpio_attach,    \
-				     &gnss_timepulse_gpio_##node_id);
+#define GNSS_TIMEPULSE_GPIO_SOURCE_DEFINE(node_id)                                                 \
+	static struct gnss_timepulse_gpio gnss_timepulse_gpio_##node_id = {                        \
+		.gpio = GPIO_DT_SPEC_GET(node_id, timepulse_gpios),                                \
+	};                                                                                         \
+	GNSS_TIMEPULSE_SOURCE_DEFINE(gnss_timepulse_source_gpio_##node_id, DEVICE_DT_GET(node_id), \
+				     gnss_timepulse_gpio_attach, &gnss_timepulse_gpio_##node_id);
 
-#define GNSS_TIMEPULSE_GPIO_NODE(node_id)                                                    \
+#define GNSS_TIMEPULSE_GPIO_NODE(node_id)                                                          \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, timepulse_gpios),                              \
 		    (GNSS_TIMEPULSE_GPIO_SOURCE_DEFINE(node_id)), ())
 

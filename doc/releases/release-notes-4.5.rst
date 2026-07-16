@@ -222,6 +222,11 @@ New APIs and options
   * :c:macro:`DT_IRQN_BY_NAME`
   * :c:macro:`DT_INST_IRQN_BY_NAME`
 
+* GNSS
+
+  * :kconfig:option:`CONFIG_GNSS_TIMEPULSE_GPIO` for GPIO-based GNSS PPS
+    capture, implementing :c:func:`gnss_get_latest_timepulse`.
+
 * Haptics
 
   * :c:enumerator:`haptics_monitor`
