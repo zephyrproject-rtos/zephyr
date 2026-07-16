@@ -100,6 +100,8 @@ static void tlifo_read_write(struct k_lifo *plifo)
  *
  * @see k_lifo_put()
  * @see k_lifo_get()
+ * @verifies ZEP-SRS-23-2
+ * @verifies ZEP-SRS-23-4
  */
 ZTEST(lifo_loop, test_lifo_loop)
 {
