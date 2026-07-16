@@ -6,6 +6,8 @@
 /dts-v1/;
 
 #include <shakti/ganga.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Nexys Video Shakti Ganga";
@@ -15,8 +17,36 @@
 		zephyr,console = &uart0;
 		zephyr,sram = &sram0;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+			label = "User LED 0";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		btnc: button_0 {
+			gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+			label = "center button (BTNC B22)";
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		sw0 = &btnc;
+	};
 };
 
 &uart0 {
+	status = "okay";
+};
+
+&gpio0 {
 	status = "okay";
 };

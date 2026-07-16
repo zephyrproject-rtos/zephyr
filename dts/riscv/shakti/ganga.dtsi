@@ -89,5 +89,14 @@
 			interrupts = <30 1>;
 			status = "disabled";
 		};
+
+		gpio0: gpio@40100 {
+			compatible = "shakti,gpio";
+			reg = <0x40100 0x100>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
 	};
 };
