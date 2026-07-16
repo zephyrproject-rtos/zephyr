@@ -306,7 +306,7 @@ static int gen_shared_secret(struct ssh_transport *transport,
 		return -ENOMEM;
 	}
 
-	NET_DBG("shared_secret %zu", transport->shared_secret->len);
+	NET_DBG("shared_secret %zu", (size_t)transport->shared_secret->len);
 	NET_HEXDUMP_DBG(transport->shared_secret->data,
 			transport->shared_secret->len, "shared_secret");
 
