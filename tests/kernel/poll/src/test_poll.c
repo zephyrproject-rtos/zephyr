@@ -67,6 +67,9 @@ static volatile bool wake_up_by_poll = true;
  *
  * @see K_POLL_EVENT_INITIALIZER(), k_poll_signal_init(),
  * k_poll_signal_raise(), k_poll_signal_check()
+ * @verifies ZEP-SRS-33-1
+ * @verifies ZEP-SRS-33-3
+ * @verifies ZEP-SRS-33-4
  */
 ZTEST_USER(poll_api_1cpu, test_poll_no_wait)
 {
@@ -461,6 +464,9 @@ void check_results(struct k_poll_event *events, uint32_t event_type, bool is_ava
  * - N/A
  *
  * @see k_poll_signal_init(), k_poll()
+ * @verifies ZEP-SRS-33-1
+ * @verifies ZEP-SRS-33-2
+ * @verifies ZEP-SRS-33-4
  */
 ZTEST(poll_api_1cpu, test_poll_wait)
 {
@@ -709,6 +715,8 @@ void test_poll_cancel(bool is_main_low_prio)
 
 /**
  * @brief k_poll() reports cancellation when a polled FIFO is cancelled (low-priority poller)
+ *
+ * @verifies ZEP-SRS-33-4
  */
 ZTEST(poll_api_1cpu, test_poll_cancel_main_low_prio)
 {
@@ -717,6 +725,8 @@ ZTEST(poll_api_1cpu, test_poll_cancel_main_low_prio)
 
 /**
  * @brief k_poll() reports cancellation when a polled FIFO is cancelled (high-priority poller)
+ *
+ * @verifies ZEP-SRS-33-4
  */
 ZTEST(poll_api_1cpu, test_poll_cancel_main_high_prio)
 {
@@ -767,6 +777,8 @@ static K_SEM_DEFINE(multi_ready_sem, 1, 1);
  * @ingroup kernel_poll_tests
  *
  * @see K_POLL_EVENT_INITIALIZER(), k_poll(), k_poll_event_init()
+ * @verifies ZEP-SRS-33-1
+ * @verifies ZEP-SRS-33-2
  */
 ZTEST(poll_api, test_poll_multi)
 {
@@ -852,6 +864,7 @@ static void threadstate(void *p1, void *p2, void *p3)
  *
  * @see K_POLL_EVENT_INITIALIZER(), k_poll(), k_poll_signal_init(),
  * k_poll_signal_check(), k_poll_signal_raise()
+ * @verifies ZEP-SRS-33-8
  */
 ZTEST(poll_api_1cpu, test_poll_threadstate)
 {
@@ -916,6 +929,9 @@ static void high_prio_main(void *param1, void *param2, void *param3)
 
 /**
  * @brief k_poll() wakes a high-priority thread waiting on a message queue
+ *
+ * @verifies ZEP-SRS-33-1
+ * @verifies ZEP-SRS-33-2
  */
 ZTEST(poll_api_1cpu, test_poll_msgq)
 {
@@ -939,6 +955,8 @@ ZTEST(poll_api_1cpu, test_poll_msgq)
 
 /**
  * @brief k_poll() with zero events returns -EAGAIN
+ *
+ * @verifies ZEP-SRS-33-1
  */
 ZTEST(poll_api_1cpu, test_poll_zero_events)
 {
@@ -965,6 +983,9 @@ static struct k_poll_signal lifecycle_signal;
  * reported by k_poll_signal_check().
  *
  * @see k_poll_signal_init(), k_poll_signal_raise(), k_poll_signal_check()
+ * @verifies ZEP-SRS-33-5
+ * @verifies ZEP-SRS-33-6
+ * @verifies ZEP-SRS-33-7
  */
 ZTEST(poll_api, test_poll_signal_raise)
 {
@@ -993,6 +1014,7 @@ ZTEST(poll_api, test_poll_signal_raise)
  * unsignaled state.
  *
  * @see k_poll_signal_raise(), k_poll_signal_reset(), k_poll_signal_check()
+ * @verifies ZEP-SRS-33-9
  */
 ZTEST(poll_api, test_poll_signal_reset)
 {
@@ -1020,6 +1042,7 @@ static struct k_poll_signal persist_signal;
  * after k_poll_signal_reset() does it return to the unsignaled state.
  *
  * @see k_poll_signal_raise(), k_poll_signal_check(), k_poll_signal_reset()
+ * @verifies ZEP-SRS-33-8
  */
 ZTEST(poll_api, test_poll_signal_persist)
 {
