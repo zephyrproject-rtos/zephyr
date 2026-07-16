@@ -32,6 +32,7 @@
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,camera = &htpa_cam1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -175,24 +176,4 @@
 
 &pioc {
 	status = "okay";
-};
-
-zephyr_udc0: &usbhs {
-	status = "okay";
-};
-
-&twihs0 {
-	status = "okay";
-
-	pinctrl-0 = <&twihs0_default>;
-	pinctrl-names = "default";
-
-	eeprom: eeprom@50 {
-		compatible = "atmel,at24", "atmel,24mac402";
-		reg = <0x50>;
-		size = <256>;
-		pagesize = <8>;
-		address-width = <8>;
-		timeout = <5>;
-	};
 };
