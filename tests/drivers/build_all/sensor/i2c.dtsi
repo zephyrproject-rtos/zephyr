@@ -1760,3 +1760,9 @@ test_i2c_adxl373: adxl373@e4 {
 	reg = <0xe4>;
 	int1-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_lps33hw: lps33hw@e5 {
+	compatible = "st,lps33hw";
+	reg = <0xe5>;
+	odr = <75>;
+};
