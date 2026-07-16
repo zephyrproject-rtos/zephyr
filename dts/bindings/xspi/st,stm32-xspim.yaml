@@ -22,12 +22,14 @@ properties:
   io-port-1:
     type: phandles
     required: true
+    dependency-mode: ignore
     description: |
       List of XSPI controllers mapped to XSPIM I/O port 1
 
   io-port-2:
     type: phandles
     required: true
+    dependency-mode: ignore
     description: |
       List of XSPI controllers mapped to XSPIM I/O port 2
 
