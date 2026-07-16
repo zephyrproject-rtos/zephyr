@@ -122,9 +122,8 @@ config NET_IPV4_ACD
 	  The conflict detection is based on ARP probes/announcements.
 
 config NET_IPV4_AUTO
-	bool "IPv4 autoconfiguration [EXPERIMENTAL]"
+	bool "IPv4 autoconfiguration"
 	depends on NET_ARP
-	select EXPERIMENTAL
 	select NET_IPV4_ACD
 	select NET_MGMT
 	select NET_MGMT_EVENT
