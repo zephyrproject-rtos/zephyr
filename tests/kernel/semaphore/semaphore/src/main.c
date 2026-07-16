@@ -272,6 +272,8 @@ void sem_take_multiple_high_prio_long_helper(void *p1, void *p2, void *p3)
  * - Verify the semaphore count equals to initialized value.
  * @ingroup kernel_semaphore_tests
  * @see k_sem_count_get()
+ * @verifies ZEP-SRS-5-1
+ * @verifies ZEP-SRS-5-5
  */
 ZTEST_USER(semaphore, test_k_sem_define)
 {
@@ -300,6 +302,7 @@ ZTEST_USER(semaphore, test_k_sem_define)
  *
  * @see k_sem_init()
  * @see K_SEM_DEFINE()
+ * @verifies ZEP-SRS-5-2
  */
 ZTEST_USER(semaphore, test_sem_thread2thread)
 {
@@ -331,6 +334,7 @@ ZTEST_USER(semaphore, test_sem_thread2thread)
  *
  * @see k_sem_init()
  * @see K_SEM_DEFINE()
+ * @verifies ZEP-SRS-5-20
  */
 ZTEST(semaphore, test_sem_thread2isr)
 {
@@ -368,6 +372,10 @@ struct sem_init_case {
  *
  * @ingroup kernel_semaphore_tests
  * @see k_sem_init()
+ * @verifies ZEP-SRS-5-2
+ * @verifies ZEP-SRS-5-4
+ * @verifies ZEP-SRS-5-5
+ * @verifies ZEP-SRS-5-18
  */
 ZTEST_USER_P(semaphore, test_sem_init_validity)
 {
@@ -427,6 +435,7 @@ ZTEST_INSTANTIATE_TEST_SUITE_P(cases, semaphore,
  *
  * @ingroup kernel_semaphore_tests
  * @see k_sem_init(), k_sem_take(), k_sem_count_get()
+ * @verifies ZEP-SRS-5-5
  */
 ZTEST_USER(semaphore, test_k_sem_init_initial_count)
 {
@@ -460,6 +469,7 @@ ZTEST_USER(semaphore, test_k_sem_init_initial_count)
  * - Count is zero after reset; take returns -EBUSY (no wait) and -EAGAIN (timeout).
  *
  * @see k_sem_reset()
+ * @verifies ZEP-SRS-5-16
  */
 ZTEST_USER(semaphore, test_sem_reset)
 {
@@ -497,6 +507,7 @@ ZTEST_USER(semaphore, test_sem_reset)
  * @ingroup kernel_semaphore_tests
  * @see k_sem_reset()
  * @see k_sem_take()
+ * @verifies ZEP-SRS-5-17
  */
 ZTEST_USER(semaphore, test_sem_reset_waiting)
 {
@@ -541,6 +552,8 @@ ZTEST_USER(semaphore, test_sem_reset_waiting)
  *   the configured maximum.
  *
  * @see k_sem_count_get()
+ * @verifies ZEP-SRS-5-13
+ * @verifies ZEP-SRS-5-15
  */
 ZTEST_USER(semaphore, test_sem_count_get)
 {
@@ -573,6 +586,8 @@ ZTEST_USER(semaphore, test_sem_count_get)
  * - Verify whether the semaphore's count as expected
  * @ingroup kernel_semaphore_tests
  * @see k_sem_give()
+ * @verifies ZEP-SRS-5-12
+ * @verifies ZEP-SRS-5-20
  */
 ZTEST(semaphore, test_sem_give_from_isr)
 {
@@ -601,6 +616,8 @@ ZTEST(semaphore, test_sem_give_from_isr)
  * - Verify whether the semaphore's count as expected
  * @ingroup kernel_semaphore_tests
  * @see k_sem_give()
+ * @verifies ZEP-SRS-5-12
+ * @verifies ZEP-SRS-5-13
  */
 ZTEST_USER(semaphore, test_sem_give_from_thread)
 {
@@ -636,6 +653,8 @@ ZTEST_USER(semaphore, test_sem_give_from_thread)
  * - Each take returns 0 and the count decreases by one each time.
  *
  * @see k_sem_take()
+ * @verifies ZEP-SRS-5-6
+ * @verifies ZEP-SRS-5-7
  */
 ZTEST_USER(semaphore, test_sem_take_no_wait)
 {
@@ -671,6 +690,7 @@ ZTEST_USER(semaphore, test_sem_take_no_wait)
  * - Each take returns -EBUSY and the count remains zero.
  *
  * @see k_sem_take()
+ * @verifies ZEP-SRS-5-11
  */
 ZTEST_USER(semaphore, test_sem_take_no_wait_fails)
 {
@@ -695,6 +715,7 @@ ZTEST_USER(semaphore, test_sem_take_no_wait_fails)
  * - Take an unavailable semaphore and wait it until timeout.
  * @ingroup kernel_semaphore_tests
  * @see k_sem_take()
+ * @verifies ZEP-SRS-5-10
  */
 ZTEST_USER(semaphore, test_sem_take_timeout_fails)
 {
@@ -718,6 +739,8 @@ ZTEST_USER(semaphore, test_sem_take_timeout_fails)
  * - Take semaphore and wait it given by other threads in specified timeout.
  * @ingroup kernel_semaphore_tests
  * @see k_sem_take()
+ * @verifies ZEP-SRS-5-8
+ * @verifies ZEP-SRS-5-9
  */
 ZTEST_USER(semaphore, test_sem_take_timeout)
 {
@@ -753,6 +776,7 @@ ZTEST_USER(semaphore, test_sem_take_timeout)
  * - Take semaphore, wait it given by other thread forever until it's available.
  * @ingroup kernel_semaphore_tests
  * @see k_sem_take()
+ * @verifies ZEP-SRS-5-8
  */
 ZTEST_USER(semaphore, test_sem_take_timeout_forever)
 {
@@ -795,6 +819,8 @@ ZTEST_USER(semaphore, test_sem_take_timeout_forever)
  * - k_sem_take() returns 0 (acquired before the timeout expires).
  *
  * @see k_sem_take()
+ * @verifies ZEP-SRS-5-9
+ * @verifies ZEP-SRS-5-20
  */
 ZTEST(semaphore_1cpu, test_sem_take_timeout_isr)
 {
@@ -823,6 +849,7 @@ ZTEST(semaphore_1cpu, test_sem_take_timeout_isr)
  * longest-waiting) thread must be the one that acquires it.
  * @ingroup kernel_semaphore_tests
  * @see k_sem_take()
+ * @verifies ZEP-SRS-5-14
  */
 ZTEST_USER(semaphore, test_sem_take_multiple)
 {
@@ -979,6 +1006,9 @@ ZTEST_USER(semaphore, test_sem_take_multiple)
  * @ingroup kernel_semaphore_tests
  * @see k_sem_count_get()
  * @see k_sem_give()
+ * @verifies ZEP-SRS-5-3
+ * @verifies ZEP-SRS-5-4
+ * @verifies ZEP-SRS-5-19
  */
 ZTEST_USER(semaphore, test_k_sem_correct_count_limit)
 {
@@ -1040,6 +1070,7 @@ ZTEST_USER(semaphore, test_k_sem_correct_count_limit)
  * - The count tracks every give/take and ends at zero.
  *
  * @see k_sem_give()
+ * @verifies ZEP-SRS-5-20
  */
 ZTEST(semaphore, test_sem_give_take_from_isr)
 {
@@ -1097,6 +1128,7 @@ void sem_multiple_threads_wait_helper(void *p1, void *p2, void *p3)
  * @ingroup kernel_semaphore_tests
  * @see k_sem_take()
  * @see k_sem_give()
+ * @verifies ZEP-SRS-5-12
  */
 ZTEST(semaphore, test_sem_multiple_threads_wait)
 {
@@ -1162,6 +1194,7 @@ ZTEST(semaphore, test_sem_multiple_threads_wait)
  * @see k_sem_take()
  * @see k_sem_give()
  * @see k_sem_reset()
+ * @verifies ZEP-SRS-5-9
  */
 ZTEST(semaphore, test_sem_measure_timeouts)
 {
@@ -1241,6 +1274,7 @@ void sem_measure_timeout_from_thread_helper(void *p1, void *p2, void *p3)
  * @see k_sem_give()
  * @see k_sem_reset()
  * @see k_sem_take()
+ * @verifies ZEP-SRS-5-8
  */
 ZTEST(semaphore, test_sem_measure_timeout_from_thread)
 {
@@ -1317,6 +1351,7 @@ void sem_multiple_take_and_timeouts_helper(void *p1, void *p2, void *p3)
  * @ingroup kernel_semaphore_tests
  * @see k_sem_take()
  * @see k_sem_reset()
+ * @verifies ZEP-SRS-5-10
  */
 ZTEST(semaphore_1cpu, test_sem_multiple_take_and_timeouts)
 {
@@ -1405,6 +1440,7 @@ void sem_multi_take_timeout_diff_sem_helper(void *p1, void *p2, void *p3)
  * @ingroup kernel_semaphore_tests
  * @see k_sem_take()
  * @see k_sem_reset()
+ * @verifies ZEP-SRS-5-10
  */
 ZTEST(semaphore, test_sem_multi_take_timeout_diff_sem)
 {
@@ -1463,6 +1499,7 @@ ZTEST(semaphore, test_sem_multi_take_timeout_diff_sem)
  * @ingroup kernel_semaphore_tests
  * @see k_sem_take()
  * @see k_sem_give()
+ * @verifies ZEP-SRS-5-6
  */
 ZTEST(semaphore_1cpu, test_sem_queue_mutual_exclusion)
 {
@@ -1509,6 +1546,7 @@ static void thread_sem_give_null(void *p1, void *p2, void *p3)
  * @ingroup kernel_semaphore_tests
  *
  * @see k_sem_give()
+ * @verifies ZEP-SRS-5-12
  */
 ZTEST_USER(semaphore_null_case, test_sem_give_null)
 {
@@ -1544,6 +1582,7 @@ static void thread_sem_init_null(void *p1, void *p2, void *p3)
  * @ingroup kernel_semaphore_tests
  *
  * @see k_sem_init()
+ * @verifies ZEP-SRS-5-2
  */
 ZTEST_USER(semaphore_null_case, test_sem_init_null)
 {
@@ -1579,6 +1618,7 @@ static void thread_sem_take_null(void *p1, void *p2, void *p3)
  * @ingroup kernel_semaphore_tests
  *
  * @see k_sem_take()
+ * @verifies ZEP-SRS-5-6
  */
 ZTEST_USER(semaphore_null_case, test_sem_take_null)
 {
@@ -1614,6 +1654,7 @@ static void thread_sem_reset_null(void *p1, void *p2, void *p3)
  * @ingroup kernel_semaphore_tests
  *
  * @see k_sem_reset()
+ * @verifies ZEP-SRS-5-16
  */
 ZTEST_USER(semaphore_null_case, test_sem_reset_null)
 {
@@ -1649,6 +1690,7 @@ static void thread_sem_count_get_null(void *p1, void *p2, void *p3)
  * @ingroup kernel_semaphore_tests
  *
  * @see k_sem_count_get()
+ * @verifies ZEP-SRS-5-15
  */
 ZTEST_USER(semaphore_null_case, test_sem_count_get_null)
 {
