@@ -109,8 +109,7 @@ config COAP_OVER_RELIABLE_TRANSPORT
 	  (CoAP (Constrained Application Protocol) over TCP, TLS, and WebSockets)
 
 config COAP_CLIENT
-	bool "CoAP client support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "CoAP client support"
 	select ZVFS
 	select ZVFS_EVENTFD
 	help
@@ -232,8 +231,7 @@ config COAP_CLIENT_TCP_BLOCKWISE_REUSE_TOKEN
 endif # COAP_OVER_RELIABLE_TRANSPORT
 
 config COAP_SERVER
-	bool "CoAP server support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "CoAP server support"
 	select NET_SOCKETS
 	select ZVFS
 	select ZVFS_EVENTFD
