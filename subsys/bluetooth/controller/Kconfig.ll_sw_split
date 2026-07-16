@@ -1291,6 +1291,16 @@ config BT_CTLR_SCAN_SLOT_WINDOW
 	  such overlapping states/roles at the end of the slot window so that it
 	  does not take the interval of the overlapped state/role.
 
+config BT_CTLR_SCAN_SLOT_WINDOW_DRIFT
+	bool "Drift Extended Scanning within a slot window"
+	depends on BT_TICKER_EXT && \
+		   BT_OBSERVER && \
+		   BT_CTLR_ADV_EXT
+	help
+	  Drift Extended Scanning within a slot window to avoid overlapping with
+	  other periodically scheduled states/roles; and be placed before or
+	  after such overlapping states/roles.
+
 config BT_MAYFLY_YIELD_AFTER_CALL
 	bool "Yield from mayfly thread after first call"
 	default y

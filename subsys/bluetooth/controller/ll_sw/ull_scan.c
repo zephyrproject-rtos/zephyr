@@ -429,8 +429,13 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 
 #if defined(CONFIG_BT_TICKER_EXT)
 #if defined(CONFIG_BT_CTLR_SCAN_SLOT_WINDOW)
+#if defined(CONFIG_BT_CTLR_SCAN_SLOT_WINDOW_DRIFT)
+		ll_scan_ticker_ext[handle].ticks_slot_window = ticks_interval;
+		ll_scan_ticker_ext[handle].is_drift_in_window = 1U;
+#else /* !CONFIG_BT_CTLR_SCAN_SLOT_WINDOW_DRIFT */
 		ll_scan_ticker_ext[handle].ticks_slot_window =
 			scan->ull.ticks_slot + ticks_slot_overhead;
+#endif /* !CONFIG_BT_CTLR_SCAN_SLOT_WINDOW_DRIFT */
 #else /* !CONFIG_BT_CTLR_SCAN_SLOT_WINDOW */
 		ll_scan_ticker_ext[handle].ticks_slot_window = 0U;
 #endif /* !CONFIG_BT_CTLR_SCAN_SLOT_WINDOW */
@@ -449,6 +454,9 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 #if defined(CONFIG_BT_TICKER_EXT)
 #if defined(CONFIG_BT_CTLR_SCAN_SLOT_WINDOW)
 		ll_scan_ticker_ext[handle].ticks_slot_window = ticks_interval;
+#if defined(CONFIG_BT_CTLR_SCAN_SLOT_WINDOW_DRIFT)
+		ll_scan_ticker_ext[handle].is_drift_in_window = 1U;
+#endif /* CONFIG_BT_CTLR_SCAN_SLOT_WINDOW_DRIFT */
 #else /* !CONFIG_BT_CTLR_SCAN_SLOT_WINDOW */
 		ll_scan_ticker_ext[handle].ticks_slot_window = 0U;
 #endif /* !CONFIG_BT_CTLR_SCAN_SLOT_WINDOW */
