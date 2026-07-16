@@ -353,6 +353,22 @@ extern "C" {
 #define IS_EQ(a, b) Z_IS_EQ(a, b)
 
 /**
+ * @brief Restrict function accessibility to test builds.
+ *
+ * When compiling in a test suite environment (where CONFIG_ZTEST is enabled),
+ * this macro expands to nothing, allowing tests to utilize the designated function.
+ * In non-test production builds, it expands to a compiler error attribute to
+ * block invalid calls during compile-time.
+ */
+#ifndef __test_only
+#if defined(CONFIG_ZTEST)
+#define __test_only
+#else
+#define __test_only __attribute__((error("This function should only be used by tests")))
+#endif
+#endif /* __test_only */
+
+/**
  * @brief Remove empty arguments from list.
  *
  * During macro expansion, `__VA_ARGS__` and other preprocessor
