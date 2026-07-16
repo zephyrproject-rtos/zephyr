@@ -29,6 +29,7 @@
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,camera = &htpa_cam1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -135,6 +136,45 @@
 	pinctrl-names = "default";
 };
 
+&spi0 {
+	status = "okay";
+
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+
+	dmas = <&xdmac 1 DMA_PERID_SPI0_TX>, <&xdmac 2 DMA_PERID_SPI0_RX>;
+	dma-names = "tx", "rx";
+
+	/* use the same chipselect high/low active for flash and sensor */
+	cs-gpios = <&pioa 24 GPIO_ACTIVE_HIGH>,
+			   <&pioa 24 GPIO_ACTIVE_LOW>;
+
+	htpa_flash0: htpaflash@0 {
+		compatible = "heimann,htpa-flash";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+
+		size = <DT_SIZE_K(512)>;
+	};
+
+	htpa_cam1: camera@1 {
+		/*compatible = "heimann,htpa-120x84";*/
+		compatible = "heimann,htpa-160x120";
+		reg = <1>;
+		status = "okay";
+		spi-cs-high;
+
+		/* calibration memory */
+		calibration-flash = <&htpa_flash0>;
+
+		/* spi */
+		spi-max-frequency = <8000000>;
+
+		/* video */
+		remote-endpoint-label = "sink";
+	};
+};
+
 &wdt {
 	status = "okay";
 };
@@ -171,5 +211,9 @@
 };
 
 &pioc {
+	status = "okay";
+};
+
+zephyr_udc0: &usbhs {
 	status = "okay";
 };
