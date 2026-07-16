@@ -193,6 +193,9 @@ static void status_stop(struct k_timer *timer)
  * @see k_timer_stop()
  * @see k_uptime_get()
  * @see k_busy_wait()
+ * @verifies ZEP-SRS-4-2
+ * @verifies ZEP-SRS-4-5
+ * @verifies ZEP-SRS-4-6
  */
 ZTEST_USER(timer_api, test_timer_duration_period)
 {
@@ -222,6 +225,7 @@ ZTEST_USER(timer_api, test_timer_duration_period)
  * @see k_timer_init()
  * @see k_timer_start()
  * @see k_timer_status_get()
+ * @verifies ZEP-SRS-4-4
  */
 ZTEST(timer_api, test_timer_init_runtime)
 {
@@ -257,6 +261,7 @@ ZTEST(timer_api, test_timer_init_runtime)
  * @see k_uptime_get()
  * @see k_busy_wait()
  *
+ * @verifies ZEP-SRS-4-8
  */
 ZTEST_USER(timer_api, test_timer_restart)
 {
@@ -294,6 +299,7 @@ ZTEST_USER(timer_api, test_timer_restart)
  * @see k_timer_stop()
  * @see k_uptime_get()
  * @see k_busy_wait()
+ * @verifies ZEP-SRS-4-5
  */
 ZTEST_USER(timer_api, test_timer_period_0)
 {
@@ -334,6 +340,7 @@ ZTEST_USER(timer_api, test_timer_period_0)
  * @see k_timer_stop()
  * @see k_uptime_get()
  * @see k_busy_wait()
+ * @verifies ZEP-SRS-4-5
  */
 ZTEST_USER(timer_api, test_timer_period_k_forever)
 {
@@ -376,6 +383,8 @@ ZTEST_USER(timer_api, test_timer_period_k_forever)
  * @see k_timer_stop()
  * @see k_uptime_get()
  * @see k_busy_wait()
+ * @verifies ZEP-SRS-4-2
+ * @verifies ZEP-SRS-4-3
  */
 ZTEST_USER(timer_api, test_timer_expirefn_null)
 {
@@ -424,6 +433,7 @@ static void tick_sync(void)
  * @see k_timer_stop()
  * @see k_uptime_get()
  * @see k_uptime_delta()
+ * @verifies ZEP-SRS-4-5
  */
 ZTEST_USER(timer_api, test_timer_periodicity)
 {
@@ -495,6 +505,8 @@ ZTEST_USER(timer_api, test_timer_periodicity)
  * @see k_timer_status_get()
  * @see k_timer_remaining_get()
  * @see k_timer_stop()
+ * @verifies ZEP-SRS-4-7
+ * @verifies ZEP-SRS-4-12
  */
 ZTEST_USER(timer_api, test_timer_status_get)
 {
@@ -527,6 +539,7 @@ ZTEST_USER(timer_api, test_timer_status_get)
  * @see k_timer_status_get()
  * @see k_timer_stop()
  * @see k_busy_wait()
+ * @verifies ZEP-SRS-4-7
  */
 ZTEST_USER(timer_api, test_timer_status_get_anytime)
 {
@@ -563,6 +576,7 @@ ZTEST_USER(timer_api, test_timer_status_get_anytime)
  * @see k_timer_start()
  * @see k_timer_status_sync()
  * @see k_timer_stop()
+ * @verifies ZEP-SRS-4-9
  */
 ZTEST_USER(timer_api, test_timer_status_sync)
 {
@@ -606,6 +620,7 @@ ZTEST_USER(timer_api, test_timer_status_sync)
  * @see k_timer_stop()
  * @see k_uptime_get()
  * @see k_busy_wait()
+ * @verifies ZEP-SRS-4-1
  */
 ZTEST_USER(timer_api, test_timer_k_define)
 {
@@ -693,6 +708,8 @@ static void user_data_timer_handler(struct k_timer *timer)
  * @see k_timer_start()
  * @see k_timer_user_data_get()
  * @see k_timer_stop()
+ * @verifies ZEP-SRS-4-13
+ * @verifies ZEP-SRS-4-14
  */
 ZTEST_USER(timer_api, test_timer_user_data)
 {
@@ -747,6 +764,9 @@ ZTEST_USER(timer_api, test_timer_user_data)
  * @see k_timer_start()
  * @see k_timer_stop()
  * @see k_timer_remaining_get()
+ * @verifies ZEP-SRS-4-10
+ * @verifies ZEP-SRS-4-11
+ * @verifies ZEP-SRS-4-12
  */
 
 ZTEST_USER(timer_api, test_timer_remaining)
@@ -857,6 +877,18 @@ ZTEST(timer_api, test_timer_remaining_overdue)
 	zassert_equal(rem, 0, "overdue remaining was %lld", (long long)rem);
 }
 
+/**
+ * @brief Test absolute timeouts
+ *
+ * @details Where 64-bit timeouts are enabled, verify that a timeout specified
+ * as an absolute point in time (via K_TIMEOUT_ABS_*) yields the expected
+ * remaining time until expiry.
+ *
+ * @ingroup kernel_timer_tests
+ * @see K_TIMEOUT_ABS_TICKS
+ * @see k_timer_remaining_ticks()
+ * @verifies ZEP-SRS-28-14
+ */
 ZTEST_USER(timer_api, test_timeout_abs)
 {
 #ifdef CONFIG_TIMEOUT_64BIT
@@ -994,6 +1026,18 @@ ZTEST_USER(timer_api, test_timeout_abs)
 #endif
 }
 
+/**
+ * @brief Test sleeping until an absolute deadline
+ *
+ * @details Verify that k_sleep() with an absolute timeout (K_TIMEOUT_ABS_TICKS)
+ * wakes the thread at the requested tick-aligned point in time.
+ *
+ * @ingroup kernel_timer_tests
+ * @see k_sleep()
+ * @see K_TIMEOUT_ABS_TICKS
+ * @verifies ZEP-SRS-28-8
+ * @verifies ZEP-SRS-28-14
+ */
 ZTEST_USER(timer_api, test_sleep_abs)
 {
 #ifndef CONFIG_TIMEOUT_64BIT
@@ -1075,6 +1119,7 @@ static void isr_ctx_expire(struct k_timer *timer)
  *
  * @see k_timer_start()
  * @see k_is_in_isr()
+ * @verifies ZEP-SRS-4-15
  */
 ZTEST(timer_api, test_timer_expiry_in_isr)
 {
@@ -1107,6 +1152,7 @@ static struct k_timer cleanup_timer;
  * resources may be released.
  *
  * @see k_timer_cleanup()
+ * @verifies ZEP-SRS-4-16
  */
 ZTEST(timer_api, test_timer_cleanup)
 {
@@ -1150,6 +1196,7 @@ static void cleanup_waiter(void *p1, void *p2, void *p3)
  *
  * @see k_timer_cleanup()
  * @see k_timer_status_sync()
+ * @verifies ZEP-SRS-4-17
  */
 ZTEST(timer_api, test_timer_cleanup_pending)
 {

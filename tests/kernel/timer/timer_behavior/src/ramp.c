@@ -49,6 +49,7 @@ static struct k_timer tm;
  *
  * @ingroup kernel_timer_tests
  * @see k_timer_start()
+ * @verifies ZEP-SRS-4-5
  */
 ZTEST(timer_ramp, test_timer_ramp)
 {
