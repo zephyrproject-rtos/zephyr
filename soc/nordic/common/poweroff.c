@@ -35,31 +35,11 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 void z_sys_poweroff(void)
 {
 #if defined(CONFIG_HAS_NORDIC_RAM_CTRL)
-	uint8_t *ram_start;
-	size_t ram_size;
 
-#if defined(NRF_MEMORY_RAM_BASE)
-	ram_start = (uint8_t *)NRF_MEMORY_RAM_BASE;
-#else
-	ram_start = (uint8_t *)NRF_MEMORY_RAM0_BASE;
-#endif
-
-	ram_size = 0;
-#if defined(NRF_MEMORY_RAM_SIZE)
-	ram_size += NRF_MEMORY_RAM_SIZE;
-#endif
-#if defined(NRF_MEMORY_RAM0_SIZE)
-	ram_size += NRF_MEMORY_RAM0_SIZE;
-#endif
-#if defined(NRF_MEMORY_RAM1_SIZE)
-	ram_size += NRF_MEMORY_RAM1_SIZE;
-#endif
-#if defined(NRF_MEMORY_RAM2_SIZE)
-	ram_size += NRF_MEMORY_RAM2_SIZE;
-#endif
-
+#if !defined(CONFIG_SOC_SERIES_NRF71)
 	/* Disable retention for all memory blocks */
-	nrfx_ram_ctrl_retention_enable_set(ram_start, ram_size, false);
+	nrfx_ram_ctrl_retention_enable_all_set(false);
+#endif
 
 #endif /* defined(CONFIG_HAS_NORDIC_RAM_CTRL) */
 

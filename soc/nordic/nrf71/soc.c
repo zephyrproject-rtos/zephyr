@@ -32,6 +32,7 @@
 
 #include <soc.h>
 #include <nrfx.h>
+#include <helpers/nrfx_ram_ctrl.h>
 #include <lib/nrfx_coredep.h>
 
 #include <hal/nrf_spu.h>
@@ -178,6 +179,10 @@ static void wifi_setup(void)
 
 void soc_early_init_hook(void)
 {
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	nrfx_ram_ctrl_retention_enable_all_set(false);
+#endif
+
 	/* Update the SystemCoreClock global variable with current core clock
 	 * retrieved from hardware state.
 	 */
