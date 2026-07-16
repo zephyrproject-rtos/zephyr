@@ -75,6 +75,7 @@ static void tfifo_thread_thread(struct k_fifo *pfifo)
  *
  * @see k_fifo_cancel_wait()
  * @see k_fifo_get()
+ * @verifies ZEP-SRS-24-2
  */
 ZTEST(fifo_api_1cpu, test_fifo_cancel_wait)
 {

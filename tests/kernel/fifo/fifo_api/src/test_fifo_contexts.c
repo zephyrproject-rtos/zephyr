@@ -154,6 +154,8 @@ static void tfifo_is_empty(void *p)
  * @see k_fifo_put_list()
  * @see k_fifo_put_slist()
  * @see k_fifo_get()
+ * @verifies ZEP-SRS-24-3
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_api_1cpu, test_fifo_thread2thread)
 {
@@ -181,6 +183,7 @@ ZTEST(fifo_api_1cpu, test_fifo_thread2thread)
  * - The statically defined FIFO accepts and delivers items as-is.
  *
  * @see K_FIFO_DEFINE
+ * @verifies ZEP-SRS-24-1
  */
 ZTEST(fifo_api, test_fifo_define)
 {
@@ -211,6 +214,7 @@ ZTEST(fifo_api, test_fifo_define)
  *
  * @see k_fifo_put_list()
  * @see k_fifo_get()
+ * @verifies ZEP-SRS-24-5
  */
 ZTEST(fifo_api, test_fifo_put_list_order)
 {
@@ -253,6 +257,7 @@ ZTEST(fifo_api, test_fifo_put_list_order)
  *
  * @see k_fifo_put_slist()
  * @see k_fifo_get()
+ * @verifies ZEP-SRS-24-6
  */
 ZTEST(fifo_api, test_fifo_put_slist_order)
 {
@@ -297,6 +302,8 @@ ZTEST(fifo_api, test_fifo_put_slist_order)
  *
  * @see k_fifo_put()
  * @see k_fifo_get()
+ * @verifies ZEP-SRS-24-3
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_api, test_fifo_thread2isr)
 {
@@ -326,6 +333,8 @@ ZTEST(fifo_api, test_fifo_thread2isr)
  *
  * @see k_fifo_put()
  * @see k_fifo_get()
+ * @verifies ZEP-SRS-24-3
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_api, test_fifo_isr2thread)
 {
@@ -354,6 +363,7 @@ ZTEST(fifo_api, test_fifo_isr2thread)
  * - k_fifo_is_empty() reflects the presence or absence of queued data.
  *
  * @see k_fifo_is_empty()
+ * @verifies ZEP-SRS-24-8
  */
 ZTEST(fifo_api, test_fifo_is_empty_thread)
 {
@@ -381,6 +391,7 @@ ZTEST(fifo_api, test_fifo_is_empty_thread)
  * - k_fifo_is_empty() reports the correct state when called from an ISR.
  *
  * @see k_fifo_is_empty()
+ * @verifies ZEP-SRS-24-8
  */
 ZTEST(fifo_api, test_fifo_is_empty_isr)
 {
@@ -399,6 +410,8 @@ ZTEST(fifo_api, test_fifo_is_empty_isr)
  * empty FIFO returns NULL.
  *
  * @see k_fifo_peek_head(), k_fifo_peek_tail()
+ * @verifies ZEP-SRS-24-9
+ * @verifies ZEP-SRS-24-10
  */
 ZTEST(fifo_api, test_fifo_peek)
 {
@@ -431,6 +444,7 @@ K_HEAP_DEFINE(fifo_alloc_pool, 256);
  * data pointer is returned by a subsequent get.
  *
  * @see k_fifo_alloc_put()
+ * @verifies ZEP-SRS-24-4
  */
 ZTEST(fifo_api, test_fifo_alloc_put)
 {
