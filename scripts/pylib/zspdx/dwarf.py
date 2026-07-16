@@ -66,6 +66,7 @@ def collect_used_lines(
         DWARF info or cannot be opened.
     """
     try:
+        from elftools.common.exceptions import ELFError
         from elftools.elf.elffile import ELFFile
     except ImportError:
         _logger.error(
@@ -85,6 +86,9 @@ def collect_used_lines(
             _collect_lines(elf.get_dwarf_info(), file_lines, known_paths)
     except OSError as exc:
         _logger.error("Cannot open ELF file %s: %s", elf_path, exc)
+        return {}
+    except ELFError as exc:
+        _logger.error("Not a valid ELF file %s: %s", elf_path, exc)
         return {}
 
     _logger.debug(
