@@ -348,7 +348,7 @@ class JsonReport:
                 continue
             suite = {}
             handler_log = os.path.join(instance.build_dir, "handler.log")
-            pytest_log = os.path.join(instance.build_dir, "twister_harness.log")
+            script_log = os.path.join(instance.build_dir, "twister_harness.log")
             build_log = os.path.join(instance.build_dir, "build.log")
             device_log = os.path.join(instance.build_dir, "device.log")
 
@@ -388,8 +388,8 @@ class JsonReport:
             if instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
                 suite['status'] = instance.status
                 # FIXME
-                if os.path.exists(pytest_log):
-                    suite["log"] = self.process_log(pytest_log)
+                if os.path.exists(script_log):
+                    suite["log"] = self.process_log(script_log)
                 elif os.path.exists(handler_log):
                     suite["log"] = self.process_log(handler_log)
                 elif os.path.exists(device_log):
