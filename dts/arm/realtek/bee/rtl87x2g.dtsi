@@ -59,16 +59,16 @@
 			reg = <0x100000 DT_SIZE_K(3)>;
 		};
 
-		/* 0x100c00-0x13cc00: Free space for Zephyr */
+		/* 0x100c00-0x133c00: Free space for Zephyr */
 		tcm0: memory@100c00 {
 			/* TCM0, used as zephyr-sram */
-			reg = <0x100c00 DT_SIZE_K(100)>;
+			reg = <0x100c00 DT_SIZE_K(176)>;
 		};
 
-		tcm1: memory@119c00 {
+		tcm1: memory@12cc00 {
 			/* TCM1, used as zephyr-itcm */
 			compatible = "zephyr,memory-region", "arm,itcm";
-			reg = <0x119c00 DT_SIZE_K(104)>;
+			reg = <0x12cc00 DT_SIZE_K(28)>;
 			zephyr,memory-region = "ITCM";
 		};
 
