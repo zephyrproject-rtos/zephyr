@@ -6,6 +6,25 @@
 #include <nxp/nxp_imx/mimx94398avkm-pinctrl.dtsi>
 
 &pinctrl {
+	xspi1_default: xspi1_default {
+		group1 {
+			pinmux = <&iomuxc_xspi1_sclk_xspi_a_sclk_xspi1_a_sclk>,
+				 <&iomuxc_xspi1_dqs_xspi_a_dqs_xspi1_a_dqs>,
+				 <&iomuxc_xspi1_ss0_b_xspi_a_ss_b_xspi1_a_ss0_b>,
+				 <&iomuxc_xspi1_ss1_b_xspi_a_ss_b_xspi1_a_ss1_b>,
+				 <&iomuxc_xspi1_data0_xspi_a_data_xspi1_a_data0>,
+				 <&iomuxc_xspi1_data1_xspi_a_data_xspi1_a_data1>,
+				 <&iomuxc_xspi1_data2_xspi_a_data_xspi1_a_data2>,
+				 <&iomuxc_xspi1_data3_xspi_a_data_xspi1_a_data3>,
+				 <&iomuxc_xspi1_data4_xspi_a_data_xspi1_a_data4>,
+				 <&iomuxc_xspi1_data5_xspi_a_data_xspi1_a_data5>,
+				 <&iomuxc_xspi1_data6_xspi_a_data_xspi1_a_data6>,
+				 <&iomuxc_xspi1_data7_xspi_a_data_xspi1_a_data7>;
+			slew-rate = "fast";
+			drive-strength = "x4";
+		};
+	};
+
 	emdio_default: emdio_default {
 		group1 {
 			pinmux = <&iomuxc_eth4_mdc_gpio1_netc_emdc_netc_emdc>,
