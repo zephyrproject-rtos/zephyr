@@ -720,8 +720,7 @@ config NET_BUF_FIXED_DATA_SIZE
 	  as necessary to reach that request.
 
 config NET_BUF_VARIABLE_DATA_SIZE
-	bool "Variable data size buffer [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Variable data size buffer"
 	help
 	  The buffer is dynamically allocated from runtime requested size.
 
