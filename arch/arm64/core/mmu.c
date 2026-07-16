@@ -1296,17 +1296,50 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
 	k_spinlock_key_t key;
 	uint16_t asid;
+	uint16_t candidate;
+	bool found = false;
 
 	MMU_DEBUG("%s\n", __func__);
 
 	key = k_spin_lock(&xlat_lock);
 
 	/*
-	 * Pick a new ASID. We use round-robin
-	 * Note: `next_asid` is an uint16_t and `VM_ASID_BITS` could
-	 *  be up to 16, hence `next_asid` might overflow to 0 below.
+	 * Find a free ASID. The round-robin counter may point to an ASID
+	 * still in use by a live domain, so scan domain_list and advance
+	 * until an unused ASID is found.
 	 */
-	asid = next_asid++;
+	candidate = next_asid;
+	do {
+		sys_snode_t *node;
+		struct arch_mem_domain *arch_domain;
+		bool in_use = false;
+
+		SYS_SLIST_FOR_EACH_NODE(&domain_list, node) {
+			arch_domain = CONTAINER_OF(node, struct arch_mem_domain, node);
+			if (get_asid(arch_domain->ptables.ttbr0) == candidate) {
+				in_use = true;
+				break;
+			}
+		}
+
+		if (!in_use) {
+			asid = candidate;
+			found = true;
+			break;
+		}
+
+		candidate++;
+		if ((candidate >= (1UL << VM_ASID_BITS)) || (candidate == 0)) {
+			candidate = 1;
+		}
+	} while (candidate != next_asid);
+
+	if (!found) {
+		k_spin_unlock(&xlat_lock, key);
+		return -ENOMEM;
+	}
+
+	next_asid = candidate + 1;
 	if ((next_asid >= (1UL << VM_ASID_BITS)) || (next_asid == 0)) {
 		next_asid = 1;
 	}
