@@ -597,6 +597,18 @@
 			status = "disabled";
 		};
 
+		xspi1: spi@42b90000 {
+			compatible = "nxp,xspi";
+			reg = <0x42b90000 DT_SIZE_K(64)>,
+			      <0x28000000 DT_SIZE_M(128)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg-names = "xspi", "xspi_mmap";
+			interrupts = <390 0>;
+			clocks = <&scmi_clk IMX943_CLK_XSPI1>;
+			status = "disabled";
+		};
+
 		edma4: dma@42df0000 {
 			compatible = "nxp,mcux-edma";
 			reg = <0x42df0000 0x210000>;

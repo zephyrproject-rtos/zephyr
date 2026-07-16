@@ -62,6 +62,15 @@ Serial Port
 This board configuration uses a single serial communication channel with the
 CPU's UART1 for Cortex-A55, and UART8 for Cortex-M33.
 
+XSPI NOR Flash
+--------------
+
+On Cortex-M33, XSPI1 provides access to the 64 MiB NOR flash mapped at CPU address
+``0x28000000``. The memory-mapped partitions are ``image-0`` (7 MiB at offset 0),
+``image-1`` (7 MiB at offset ``0x00700000``), and ``storage`` (2 MiB at offset
+``0x00e00000``). Flash API offsets remain relative to the NOR device, not the CPU
+address space.
+
 Ethernet
 --------
 
