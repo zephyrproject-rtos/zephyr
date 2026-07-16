@@ -53,6 +53,8 @@ struct flash_mcux_xspi_data {
 	uint32_t amba_address;
 	struct flash_parameters flash_param;
 	uint64_t flash_size;
+	/* Matched device config (set in probe), used for enter-OPI sequence. */
+	struct memc_xspi_dev_config *dev_cfg;
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	struct flash_pages_layout layout;
 #endif
@@ -63,6 +65,8 @@ struct flash_mcux_xspi_data {
  * Description: Read command including RDSR command can't work if LUT data size in read status is
  * less than 8. Workaround: Use LUT data size of minimum 8 byte for read commands including RDSR.
  */
+
+/* Macronix MX25UM51345G octal SPI NOR LUT. */
 static const uint32_t flash_xspi_lut[][5] = {
 	/* Memory read. */
 	[FLASH_CMD_MEM_READ] = {
@@ -140,6 +144,87 @@ static const uint32_t flash_xspi_lut[][5] = {
 				 kXSPI_8PAD, 0x8),
 	}};
 
+/*
+ * Micron MT35XU512ABA 512 Mbit (64 MByte) octal (8S-8D-8D) SPI NOR LUT.
+ *
+ * This device sends the command opcode SDR on 8 pads (no inverse
+ * command-extension byte) with DDR address/data. Read latency is covered by
+ * the external DQS strobe (sample-clk-source = 3), so the exact dummy count is
+ * not timing-critical. Octal-DDR mode is entered via the volatile
+ * configuration register (cmd 0x81, value 0xE7).
+ */
+static const uint32_t flash_xspi_lut_mt35x[][5] = {
+	/* Memory read (Octal I/O Fast Read, cmd 0xFD). */
+	[FLASH_CMD_MEM_READ] = {
+			XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_8PAD, 0xFD,
+					 kXSPI_Command_RADDR_DDR, kXSPI_8PAD, 0x20),
+			XSPI_LUT_SEQ(kXSPI_Command_DUMMY_SDR, kXSPI_8PAD, 0x03,
+					 kXSPI_Command_READ_DDR, kXSPI_8PAD, 0x04),
+		},
+
+	/* Read status SPI. */
+	[FLASH_CMD_READ_STATUS] = {
+			XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_1PAD, 0x05, kXSPI_Command_READ_SDR,
+					 kXSPI_1PAD, 0x08),
+		},
+
+	/* Read Status OPI (8S-8D-8D): cmd 0x05 SDR on 8 pads, dummy, status DDR. */
+	[FLASH_CMD_READ_STATUS_OPI] = {
+			XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_8PAD, 0x05,
+					 kXSPI_Command_DUMMY_SDR, kXSPI_8PAD, 0x08),
+			XSPI_LUT_SEQ(kXSPI_Command_READ_DDR, kXSPI_8PAD, 0x01,
+					 kXSPI_Command_STOP, kXSPI_1PAD, 0x00),
+		},
+
+	/* Write enable. */
+	[FLASH_CMD_WRITE_ENABLE] = {
+			XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_1PAD, 0x06, kXSPI_Command_STOP,
+					 kXSPI_1PAD, 0x04),
+		},
+
+	/* Write Enable - OPI (8S): cmd 0x06 SDR on 8 pads. */
+	[FLASH_CMD_WRITE_ENABLE_OPI] = {
+			XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_8PAD, 0x06,
+					 kXSPI_Command_STOP, kXSPI_1PAD, 0x00),
+		},
+
+	/* Read ID (OPI). */
+	[FLASH_CMD_READ_ID_OPI] = {
+			XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_8PAD, 0x9F,
+					 kXSPI_Command_DUMMY_SDR, kXSPI_8PAD, 0x08),
+			XSPI_LUT_SEQ(kXSPI_Command_READ_DDR, kXSPI_8PAD, 0x01, kXSPI_Command_STOP,
+					 kXSPI_1PAD, 0x00),
+		},
+
+	/* Erase Sector (8S-8D): cmd 0x21 SDR on 8 pads, address DDR. */
+	[FLASH_CMD_ERASE_SECTOR] = {
+			XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_8PAD, 0x21,
+					 kXSPI_Command_RADDR_DDR, kXSPI_8PAD, 0x20),
+		},
+
+	/*
+	 * Enable OPI DDR mode - Micron MT35X (WRITE VOLATILE CONFIGURATION
+	 * REGISTER, cmd 0x81). Writes configuration register CFR0V (address
+	 * 0x000000) with the octal-DDR-enable value 0xE7. While the device is
+	 * still in the default 1-line SPI 3-byte-address mode, the register
+	 * address MUST be sent as 3 bytes (0x18 = 24 bits); a 4-byte address
+	 * is not recognized and the write is silently ignored.
+	 */
+	[FLASH_CMD_ENTER_OPI] = {
+			XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_1PAD, 0x81, kXSPI_Command_RADDR_SDR,
+					 kXSPI_1PAD, 0x18),
+			XSPI_LUT_SEQ(kXSPI_Command_WRITE_SDR, kXSPI_1PAD, 0x01, kXSPI_Command_STOP,
+					 kXSPI_1PAD, 0x00),
+		},
+
+	/* Page program (Extended Octal Input Fast Program, 8S-8D-8D, cmd 0x12). */
+	[FLASH_CMD_PAGEPROGRAM_OCTAL] = {
+		XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_8PAD, 0x12,
+				 kXSPI_Command_RADDR_DDR, kXSPI_8PAD, 0x20),
+		XSPI_LUT_SEQ(kXSPI_Command_WRITE_DDR, kXSPI_8PAD, 0x04,
+				 kXSPI_Command_STOP, kXSPI_1PAD, 0x00),
+	}};
+
 /* Memory devices table. */
 static struct memc_xspi_dev_config device_configs[] = {
 	{
@@ -163,6 +248,37 @@ static struct memc_xspi_dev_config device_configs[] = {
 			},
 		.lut_array = &flash_xspi_lut[0][0],
 		.lut_count = FLASH_MCUX_XSPI_LUT_ARRAY_SIZE(flash_xspi_lut),
+		.enter_opi_seq = FLASH_CMD_ENTER_OPI,
+		.enter_opi_value = 0x02U, /* WRCR2 DTR-OPI enable */
+	},
+	{
+		/*
+		 * Micron MT35XU512ABA: 512 Mbit (64 MByte) Octal SPI NOR. Uses the
+		 * 8S-8D-8D command scheme; the geometry (256-byte page, 4 KB sector,
+		 * byte-addressable) matches the mx25um51345g device config.
+		 */
+		.name_prefix = "mt35xu512aba",
+		.xspi_dev_config = {
+				.deviceInterface = kXSPI_StrandardExtendedSPI,
+				.interfaceSettings.strandardExtendedSPISettings.pageSize = 256,
+				.CSHoldTime = 2,
+				.CSSetupTime = 2,
+				.addrMode = kXSPI_DeviceByteAddressable,
+				.columnAddrWidth = 0,
+				.enableCASInterleaving = false,
+				.ptrDeviceDdrConfig =
+					&(xspi_device_ddr_config_t){
+						.ddrDataAlignedClk =
+							kXSPI_DDRDataAlignedWith2xInternalRefClk,
+						.enableByteSwapInOctalMode = false,
+						.enableDdr = true,
+					},
+				.deviceSize = {64 * 1024, 64 * 1024},
+			},
+		.lut_array = &flash_xspi_lut_mt35x[0][0],
+		.lut_count = FLASH_MCUX_XSPI_LUT_ARRAY_SIZE(flash_xspi_lut_mt35x),
+		.enter_opi_seq = FLASH_CMD_ENTER_OPI,
+		.enter_opi_value = 0xE7U, /* CFR0V octal-DDR enable */
 	},
 };
 
@@ -385,20 +501,27 @@ static int flash_mcux_xspi_erase(const struct device *dev, off_t offset, size_t 
 
 static int flash_mcux_xspi_enable_opi(const struct device *dev)
 {
-	uint32_t value = FLASH_MX25_WRCR2_DTR_OPI_ENABLE_OFFSET;
 	struct flash_mcux_xspi_data *data = dev->data;
 	const struct device *xspi_dev = data->xspi_dev;
+	uint32_t value = data->dev_cfg->enter_opi_value;
 	xspi_transfer_t flashXfer;
 	int ret;
 
-	ret = flash_mcux_xspi_write_enable(dev, 0, true);
+	/*
+	 * The device is still in 1-line SPI mode here, so the write-enable
+	 * (and the subsequent ENTER_OPI register write) must be issued in
+	 * SPI mode. Using the octal write-enable would not be understood and
+	 * WEL would never latch, leaving the config-register write ignored.
+	 */
+	ret = flash_mcux_xspi_write_enable(dev, 0, false);
 	if (ret < 0) {
+		LOG_ERR("enable_opi: write_enable(SPI) failed: %d", ret);
 		return ret;
 	}
 
 	flashXfer.deviceAddress = data->amba_address;
 	flashXfer.cmdType = kXSPI_Write;
-	flashXfer.seqIndex = FLASH_CMD_ENTER_OPI;
+	flashXfer.seqIndex = data->dev_cfg->enter_opi_seq;
 	flashXfer.targetGroup = kXSPI_TargetGroup0;
 	flashXfer.data = &value;
 	flashXfer.dataSize = 1;
@@ -406,10 +529,24 @@ static int flash_mcux_xspi_enable_opi(const struct device *dev)
 
 	ret = memc_mcux_xspi_transfer(xspi_dev, &flashXfer);
 	if (ret < 0) {
+		LOG_ERR("enable_opi: ENTER_OPI write failed: %d", ret);
 		return ret;
 	}
 
-	return flash_xspi_nor_wait_bus_busy(dev, true);
+	/*
+	 * The mode switch is not instantaneous; the reference HAL waits after
+	 * issuing the enter-octal command before any follow-up transfer.
+	 * Without this the first octal status read races the switch.
+	 */
+	k_busy_wait(100);
+
+	ret = flash_xspi_nor_wait_bus_busy(dev, true);
+
+	if (ret < 0) {
+		LOG_ERR("enable_opi: wait_bus_busy(OPI) failed: %d", ret);
+	}
+
+	return ret;
 }
 
 static const struct flash_parameters *flash_mcux_xspi_get_parameters(const struct device *dev)
@@ -487,15 +624,24 @@ static int flash_mcux_xspi_probe(const struct device *dev)
 			break;
 		}
 
+		/* Store the matched config only after validation, so we never
+		 * persist a NULL dev_cfg that a later dereference could fault on.
+		 */
+		data->dev_cfg = flash_dev_config;
+
 		/* Set special device configurations. */
 		dev_config = &flash_dev_config->xspi_dev_config;
+
 		dev_config->enableCknPad = flash_config->enable_differential_clk;
 		dev_config->sampleClkConfig = flash_config->sample_clk_config;
 
 		ret = memc_mcux_xspi_get_root_clock(xspi_dev, &dev_config->xspiRootClk);
 		if (ret < 0) {
+			LOG_ERR("get_root_clock failed: %d", ret);
 			break;
 		}
+		LOG_INF("probe: matched %s, root clk %u Hz", flash_dev_config->name_prefix,
+			dev_config->xspiRootClk);
 
 		/* Block potential AHB access when setup XSPI. */
 		if (memc_xspi_is_running_xip(xspi_dev)) {
@@ -527,12 +673,21 @@ static int flash_mcux_xspi_init(const struct device *dev)
 
 	ret = flash_mcux_xspi_probe(dev);
 	if (ret < 0) {
+		LOG_ERR("probe failed: %d", ret);
 		return ret;
 	}
 
 	data->amba_address = memc_mcux_xspi_get_ahb_address(xspi_dev);
+	LOG_INF("init: amba_address 0x%08x", data->amba_address);
 
-	return flash_mcux_xspi_enable_opi(dev);
+	ret = flash_mcux_xspi_enable_opi(dev);
+	if (ret < 0) {
+		LOG_ERR("enable_opi failed: %d", ret);
+	} else {
+		LOG_INF("init: enable_opi ok, flash ready");
+	}
+
+	return ret;
 }
 
 static DEVICE_API(flash, flash_mcux_xspi_api) = {
