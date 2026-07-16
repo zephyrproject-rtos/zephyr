@@ -81,6 +81,8 @@ static void oops_entry(void *p1, void *p2, void *p3)
  * @see k_oops()
  * @see k_sys_fatal_error_handler()
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-16-2
+ * @verifies ZEP-SRS-16-4
  */
 ZTEST(fatal_message_capture, test_fatal_message_capture)
 {
