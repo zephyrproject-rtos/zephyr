@@ -50,6 +50,8 @@ void busy_loop(uint32_t ticks)
  *    - Idle time should not increase
  *    - current, peak and average cycles should be different
  * @ingroup kernel_thread_tests
+ * @verifies ZEP-SRS-1-28
+ * @verifies ZEP-SRS-1-29
  */
 ZTEST(usage_api, test_all_stats_usage)
 {
@@ -200,6 +202,7 @@ ZTEST(usage_api, test_all_stats_usage)
 /**
  * @brief Test the k_thread_runtime_stats_enable/disable APIs
  * @ingroup kernel_thread_tests
+ * @verifies ZEP-SRS-1-34
  */
 ZTEST(usage_api, test_thread_stats_enable_disable)
 {
@@ -351,6 +354,7 @@ ZTEST(usage_api, test_thread_stats_enable_disable_current)
 /**
  * @brief Test the k_sys_runtime_stats_enable/disable APIs
  * @ingroup kernel_thread_tests
+ * @verifies ZEP-SRS-1-34
  */
 ZTEST(usage_api, test_sys_stats_enable_disable)
 {
