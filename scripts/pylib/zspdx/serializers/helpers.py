@@ -23,6 +23,15 @@ def generate_download_url(url: str, revision: str) -> str:
     return f'git+{url}@{revision}'
 
 
+def format_blob_comment(blob: dict) -> str:
+    """Render a module blob declaration as a single-line file comment."""
+    parts = ["module blob"]
+    for key in ("version", "url"):
+        if blob.get(key):
+            parts.append(f"{key}: {blob[key]}")
+    return "; ".join(parts)
+
+
 def get_standard_licenses() -> set:
     """Get set of standard SPDX license IDs."""
     # Import here to avoid circular dependency
