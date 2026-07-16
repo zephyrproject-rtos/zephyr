@@ -159,6 +159,8 @@ static void tqueue_isr_thread(struct k_queue *pqueue)
  * @see k_queue_append()
  * @see k_queue_prepend()
  * @see k_queue_get()
+ * @verifies ZEP-SRS-20-3
+ * @verifies ZEP-SRS-20-6
  */
 ZTEST(queue_api_1cpu, test_queue_thread2thread)
 {
@@ -188,6 +190,7 @@ ZTEST(queue_api_1cpu, test_queue_thread2thread)
  * @ingroup tests_kernel_queue
  *
  * @see K_QUEUE_DEFINE
+ * @verifies ZEP-SRS-20-1
  */
 ZTEST(queue_api, test_queue_define)
 {
@@ -218,6 +221,7 @@ ZTEST(queue_api, test_queue_define)
  * @ingroup tests_kernel_queue
  *
  * @see k_queue_init()
+ * @verifies ZEP-SRS-20-2
  */
 ZTEST(queue_api, test_queue_init)
 {
@@ -252,6 +256,7 @@ ZTEST(queue_api, test_queue_init)
  *
  * @see k_queue_prepend()
  * @see k_queue_get()
+ * @verifies ZEP-SRS-20-4
  */
 ZTEST(queue_api, test_queue_prepend_order)
 {
@@ -288,6 +293,7 @@ ZTEST(queue_api, test_queue_prepend_order)
  *
  * @see k_queue_insert()
  * @see k_queue_get()
+ * @verifies ZEP-SRS-20-10
  */
 ZTEST(queue_api, test_queue_insert_after)
 {
@@ -325,6 +331,7 @@ ZTEST(queue_api, test_queue_insert_after)
  *
  * @see k_queue_append_list()
  * @see k_queue_get()
+ * @verifies ZEP-SRS-20-11
  */
 ZTEST(queue_api, test_queue_append_list_order)
 {
@@ -369,6 +376,7 @@ ZTEST(queue_api, test_queue_append_list_order)
  *
  * @see k_queue_merge_slist()
  * @see k_queue_get()
+ * @verifies ZEP-SRS-20-12
  */
 ZTEST(queue_api, test_queue_merge_slist_order)
 {
@@ -475,6 +483,8 @@ ZTEST(queue_api_1cpu, test_queue_merge_slist_wake)
  *
  * @see k_queue_append()
  * @see k_queue_get()
+ * @verifies ZEP-SRS-20-3
+ * @verifies ZEP-SRS-20-6
  */
 ZTEST(queue_api, test_queue_thread2isr)
 {
@@ -506,6 +516,8 @@ ZTEST(queue_api, test_queue_thread2isr)
  *
  * @see k_queue_append()
  * @see k_queue_get()
+ * @verifies ZEP-SRS-20-3
+ * @verifies ZEP-SRS-20-6
  */
 ZTEST(queue_api, test_queue_isr2thread)
 {
@@ -568,6 +580,7 @@ static void tqueue_get_2threads(struct k_queue *pqueue)
  *
  * @see k_queue_get()
  * @see k_queue_append()
+ * @verifies ZEP-SRS-20-6
  */
 ZTEST(queue_api_1cpu, test_queue_get_2threads)
 {
@@ -638,6 +651,9 @@ static void tqueue_alloc(struct k_queue *pqueue)
  * @see k_queue_alloc_append()
  * @see k_queue_alloc_prepend()
  * @see k_thread_heap_assign()
+ * @verifies ZEP-SRS-20-5
+ * @verifies ZEP-SRS-20-7
+ * @verifies ZEP-SRS-20-14
  */
 ZTEST(queue_api, test_queue_alloc)
 {
@@ -735,6 +751,7 @@ static void queue_poll_race_consume(void *p1, void *p2, void *p3)
  *
  * @see k_queue_append()
  * @see k_queue_get()
+ * @verifies ZEP-SRS-20-6
  */
 ZTEST(queue_api_1cpu, test_queue_poll_race)
 {
@@ -796,6 +813,9 @@ ZTEST(queue_api_1cpu, test_queue_poll_race)
 #define QUEUE_NUM 10
 /**
  * @brief Operate on multiple independent queues
+ *
+ * @verifies ZEP-SRS-20-3
+ * @verifies ZEP-SRS-20-6
  */
 ZTEST(queue_api, test_multiple_queues)
 {
@@ -838,6 +858,8 @@ void user_access_queue_private_data(void *p1, void *p2, void *p3)
  * @ingroup tests_kernel_queue
  *
  * @see k_queue_is_empty()
+ * @verifies ZEP-SRS-20-8
+ * @verifies ZEP-SRS-20-10
  */
 ZTEST(queue_api, test_access_kernel_obj_with_priv_data)
 {
@@ -901,6 +923,7 @@ static void high_prio_t2_wait_for_queue(void *p1, void *p2, void *p3)
  *
  * @see k_queue_get()
  * @see k_queue_append()
+ * @verifies ZEP-SRS-20-6
  */
 ZTEST(queue_api_1cpu, test_queue_multithread_competition)
 {
@@ -972,6 +995,7 @@ ZTEST(queue_api_1cpu, test_queue_multithread_competition)
  * @ingroup tests_kernel_queue
  *
  * @see k_queue_unique_append()
+ * @verifies ZEP-SRS-20-13
  */
 ZTEST(queue_api, test_queue_unique_append)
 {
