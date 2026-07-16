@@ -328,6 +328,7 @@ static const struct ztest_param_values conversion_vals = {
  * hardware cycles and verifying each result is within the rounding-mode bound.
  *
  * @ingroup kernel_timer_tests
+ * @verifies ZEP-SRS-28-7
  */
 ZTEST_P(timer_api, test_time_conversions)
 {

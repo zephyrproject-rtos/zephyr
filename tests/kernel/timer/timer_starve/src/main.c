@@ -43,6 +43,7 @@ static const char *tag(void)
  * @ingroup kernel_timer_tests
  * @see k_uptime_get_32()
  * @see sys_clock_tick_get()
+ * @verifies ZEP-SRS-28-1
  */
 ZTEST(starve_fn, test_timer_starve)
 {
