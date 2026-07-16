@@ -205,6 +205,10 @@ void test_slab_free_all_blocks(void **p)
  *
  * @see k_mem_slab_alloc(), k_mem_slab_num_used_get(),
  * memset(), k_mem_slab_free()
+ * @verifies ZEP-SRS-9-12
+ * @verifies ZEP-SRS-9-14
+ * @verifies ZEP-SRS-9-15
+ * @verifies ZEP-SRS-9-16
  */
 ZTEST(memory_slab_1cpu, test_mslab)
 {
