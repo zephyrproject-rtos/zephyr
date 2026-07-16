@@ -82,6 +82,7 @@ static void z_riscv_fpu_load(void)
 
 	/* become new owner */
 	atomic_ptr_set(&_current_cpu->arch.fpu_owner, _current);
+	_current->base.user_options |= K_FP_REGS;
 
 	/* restore our content */
 	z_riscv_status_set(MSTATUS_FS_INIT);
@@ -368,6 +369,7 @@ int arch_float_disable(struct k_thread *thread)
 	}
 
 	z_riscv_fpu_flush_thread(thread);
+	thread->base.user_options &= ~K_FP_REGS;
 
 	return 0;
 }
