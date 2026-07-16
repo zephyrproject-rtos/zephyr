@@ -171,9 +171,19 @@ def debug_die(die, text):
     files = lp_header["file_entry"]
     includes = lp_header["include_directory"]
 
-    fileinfo = files[die.attributes["DW_AT_decl_file"].value - 1]
+    dwarf_v5 = lp_header.version >= 5
+
+    file_index = die.attributes["DW_AT_decl_file"].value
+    fileinfo = files[file_index if dwarf_v5 else file_index - 1]
     filename = fileinfo.name.decode("utf-8")
-    filedir = includes[fileinfo.dir_index - 1].decode("utf-8")
+
+    dir_index = fileinfo.dir_index
+    if dwarf_v5:
+        filedir = includes[dir_index].decode("utf-8")
+    elif dir_index == 0:
+        filedir = ""
+    else:
+        filedir = includes[dir_index - 1].decode("utf-8")
 
     path = os.path.join(filedir, filename)
     lineno = die.attributes["DW_AT_decl_line"].value
