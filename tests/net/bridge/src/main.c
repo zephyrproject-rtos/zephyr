@@ -370,6 +370,14 @@ static void test_bridge_link_addr(void)
 	zassert_equal(lladdr->type, NET_LINK_ETHERNET,
 		      "bridge link address type is %u, expected NET_LINK_ETHERNET",
 		      lladdr->type);
+
+	/* Whether random or derived from the device id, the address must be a
+	 * locally administered unicast MAC.
+	 */
+	zassert_equal(lladdr->addr[0] & 0x01, 0x00,
+		      "bridge link address is not unicast");
+	zassert_equal(lladdr->addr[0] & 0x02, 0x02,
+		      "bridge link address is not locally administered");
 }
 
 /*
