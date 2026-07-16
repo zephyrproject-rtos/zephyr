@@ -55,15 +55,16 @@ static inline void gnss_timepulse_report(struct gnss_timepulse *tp, k_ticks_t ti
 static inline int gnss_timepulse_get_ticks(struct gnss_timepulse *tp, k_ticks_t *timestamp)
 {
 	k_spinlock_key_t key = k_spin_lock(&tp->lock);
-	int ret = -EAGAIN;
+	int ret;
 
 	if (!tp->available) {
 		ret = -ENOTSUP;
-	} else if (tp->valid &&
-		   (k_uptime_ticks() - tp->last) <
-			   k_ms_to_ticks_ceil64(GNSS_TIMEPULSE_PPS_1HZ_STALE_MS)) {
+	} else if (tp->valid && (k_uptime_ticks() - tp->last) <
+					k_ms_to_ticks_ceil64(GNSS_TIMEPULSE_PPS_1HZ_STALE_MS)) {
 		*timestamp = tp->last;
 		ret = 0;
+	} else {
+		ret = -EAGAIN;
 	}
 
 	k_spin_unlock(&tp->lock, key);
