@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NXP_MCXW7X_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NXP_MCXW7X_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NXP_MCXW7X_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NXP_MCXW7X_CLOCK_H_
 
 /**
  * @file
@@ -164,4 +164,4 @@
 	((((mrcc_offset) & 0xFFFF) << 16) | (((clk_mux) & 0xFF) << 8) | (((clk_div) & 0xF) << 4) | \
 	 (((flag) & 0xF)))
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NXP_MCXW7X_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NXP_MCXW7X_CLOCK_H_ */

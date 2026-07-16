@@ -9,8 +9,8 @@
  * @brief ESP32-C5 clock definitions for device tree bindings
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32C5_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32C5_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32C5_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32C5_CLOCK_H_
 
 /* Supported CPU clock Sources */
 #define ESP32_CPU_CLK_SRC_XTAL 0U /**< CPU clock source: XTAL */
@@ -95,4 +95,4 @@
 #define ESP32_LP_I2C0_MODULE      127 /**< LP I2C0 module */
 #define ESP32_LP_UART0_MODULE     128 /**< LP UART0 module */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32C5_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32C5_CLOCK_H_ */

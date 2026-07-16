@@ -12,8 +12,8 @@
  * devicetree clock bindings.
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32P4_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32P4_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32P4_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32P4_CLOCK_H_
 
 /* Supported CPU clock Sources
  * Derived from components/soc/esp32p4/include/soc/clk_tree_defs.h
@@ -98,4 +98,4 @@
 #define ESP32_LP_I2C0_MODULE      137 /**< LP I2C0 module */
 #define ESP32_LP_UART0_MODULE     138 /**< LP UART0 module */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32P4_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32P4_CLOCK_H_ */
