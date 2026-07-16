@@ -2092,6 +2092,31 @@ static inline void net_if_ipv6_set_base_reachable_time(struct net_if *iface,
 }
 
 /**
+ * @brief Get IPv6 base reachable time for a given interface
+ *
+ * @param iface Network interface
+ *
+ * @return Base reachable time in milliseconds
+ */
+static inline uint32_t net_if_ipv6_get_base_reachable_time(struct net_if *iface)
+{
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	if (iface == NULL) {
+		return 0;
+	}
+
+	if (iface->config.ip.ipv6 == NULL) {
+		return 0;
+	}
+
+	return iface->config.ip.ipv6->base_reachable_time;
+#else
+	ARG_UNUSED(iface);
+	return 0;
+#endif
+}
+
+/**
  * @brief Get IPv6 reachable timeout specified for a given interface
  *
  * @param iface Network interface

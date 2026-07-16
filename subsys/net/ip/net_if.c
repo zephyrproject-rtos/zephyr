@@ -3411,17 +3411,32 @@ struct net_if *net_if_ipv6_select_src_iface(const struct in6_addr *dst)
 uint32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6)
 {
 	uint32_t min_reachable, max_reachable;
+	uint32_t spread;
+
+	if (ipv6->base_reachable_time == 0U) {
+		return REACHABLE_TIME;
+	}
 
 	min_reachable = (MIN_RANDOM_NUMER * ipv6->base_reachable_time)
 			/ MIN_RANDOM_DENOM;
 	max_reachable = (MAX_RANDOM_NUMER * ipv6->base_reachable_time)
 			/ MAX_RANDOM_DENOM;
 
+	/* RFC 4861 uses MIN_RANDOM_FACTOR (1/2); round up so the range is never 0 ms */
+	if (min_reachable == 0U) {
+		min_reachable = 1U;
+	}
+
 	NET_DBG("min_reachable:%u max_reachable:%u", min_reachable,
 		max_reachable);
 
-	return min_reachable +
-	       sys_rand32_get() % (max_reachable - min_reachable);
+	if (max_reachable <= min_reachable) {
+		return min_reachable;
+	}
+
+	spread = max_reachable - min_reachable;
+
+	return min_reachable + sys_rand32_get() % spread;
 }
 
 static void iface_ipv6_start(struct net_if *iface)
