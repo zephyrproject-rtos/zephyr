@@ -268,6 +268,8 @@ New Shields
 ..
   Same as above, this will also be recomputed at the time of the release.
 
+* :ref:`RAK19007 WisBlock Base Board 2nd Gen <rakwireless_rak19007>`
+
 
 New Drivers
 ***********
