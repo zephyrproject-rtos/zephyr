@@ -329,13 +329,30 @@ static void hfclk_stop(void)
 }
 
 #if NRF_CLOCK_HAS_HFCLK24M
+static struct onoff_client hfclk_for_24m_cli;
+
 static void hfclk24m_start(void)
 {
+	int ret;
+	struct onoff_manager *mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_TYPE_HFCLK);
+
+	/* HFCLK (XO) is automatically requested when XO24M is started but it's
+	 * easier to manage from software perspective if XO is explicitly requested.
+	 */
+	sys_notify_init_spinwait(&hfclk_for_24m_cli.notify);
+	ret = onoff_request(mgr, &hfclk_for_24m_cli);
+	if (ret < 0) {
+		LOG_ERR("Failed to request HFCLK for HFCLK24M: %d", ret);
+		__ASSERT_NO_MSG(false);
+	}
 	nrfx_clock_start(NRF_CLOCK_DOMAIN_HFCLK24M);
 }
 
 static void hfclk24m_stop(void)
 {
+	struct onoff_manager *mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_TYPE_HFCLK);
+
+	(void)onoff_cancel_or_release(mgr, &hfclk_for_24m_cli);
 	nrfx_clock_stop(NRF_CLOCK_DOMAIN_HFCLK24M);
 }
 #endif
