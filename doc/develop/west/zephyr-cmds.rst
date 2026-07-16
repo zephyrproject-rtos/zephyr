@@ -162,6 +162,9 @@ For SPDX 3.0, every document declares conformance to the Core, Software and Simp
 profiles, and :file:`build.jsonld` additionally declares the :ref:`Build profile
 <west-spdx-build-profile>` that captures how the artifacts were produced.
 
+With ``--analyze-elf=snippets``, an additional ``snippets`` document records the source line-ranges
+that ended up in the final image. See :ref:`west-spdx-analyze-elf`.
+
 Each file in the bill-of-materials is scanned, so that its hashes (SHA256, SHA1, and MD5)
 can be recorded, along with any detected licenses if an
 ``SPDX-License-Identifier`` comment appears in the file.
@@ -208,6 +211,35 @@ used.
 Each intermediate target, such as a static library, also gets its own sub-build capturing the exact
 sources, tools and compile flags that produced its artifact, so any output can be traced back to how
 it was built.
+
+.. _west-spdx-analyze-elf:
+
+Image analysis (``--analyze-elf``)
+----------------------------------
+
+By default the bill-of-materials lists every source file that took part in the build. Not all of
+that code reaches the firmware: the linker garbage-collects unused sections, and whole files can end
+up contributing nothing. ``--analyze-elf`` reads the DWARF debug information of the final image to
+narrow the documents down to what actually shipped. It may be given more than once to combine
+analyses.
+
+``--analyze-elf=prune-sources`` drops the translation units (``.c``, ``.S``, ...) whose code is
+absent from the image, so the BOM lists the sources the firmware is actually built from rather than
+everything that was compiled. Headers, generated data and build artifacts are left untouched.
+
+``--analyze-elf=snippets`` records the opposite view: the source line-ranges that *did* contribute
+code, as SPDX Snippets in an additional :file:`snippets.spdx` (or :file:`snippets.jsonld`) document.
+Each snippet carries the line and byte range within its source file, inherits that file's license
+and copyright, and is tied back to the image it was found in. This narrows license and provenance
+questions from "which files were compiled" down to "which lines shipped".
+
+The image analyzed defaults to :file:`BUILD_DIR/zephyr/zephyr.elf`; point ``--elf-file`` at another
+one to analyze it instead.
+
+.. note::
+   Both analyses need an image built with debug symbols, which is the default for most Zephyr
+   configurations. If the image carries no DWARF information, ``west spdx`` reports it and leaves
+   the bill-of-materials untouched rather than silently emitting an empty result.
 
 Command-line options
 --------------------
