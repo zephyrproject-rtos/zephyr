@@ -27,8 +27,12 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 
 #include "coap_oscore_internal.h"
 
-#define COAP_BUF_SIZE 128
+#define COAP_BUF_SIZE      128
+#define SHORT_TIMEOUT      500
+#define LONG_TIMEOUT       2000
+#define COAP_OSCORE_OPTION 9
 
+#if defined(CONFIG_COAP_OSCORE)
 /*
  * Shared OSCORE test infrastructure.
  *
@@ -793,7 +797,7 @@ ZTEST(coap_oscore, test_oscore_e2e_response_encrypted)
 	ret = oscore_send_protected(sock, client_ctx, &dst, &req);
 	zassert_ok(ret, "Failed to send request (%d)", ret);
 
-	ret = oscore_recv_verify(sock, 2000, client_ctx, innerbuf, &inner_len, &inner);
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client_ctx, innerbuf, &inner_len, &inner);
 	zassert_equal(ret, 0, "OSCORE response verify/parse failed (%d)", ret);
 	zassert_equal(coap_header_get_code(&inner), COAP_RESPONSE_CODE_CONTENT,
 		      "Unexpected inner response code");
@@ -839,7 +843,7 @@ ZTEST(coap_oscore, test_oscore_required_rejects_plaintext)
 	ret = oscore_send_plain(sock, &dst, &req);
 	zassert_ok(ret, "Failed to send request (%d)", ret);
 
-	ret = oscore_recv(sock, 2000, recvbuf, sizeof(recvbuf));
+	ret = oscore_recv(sock, LONG_TIMEOUT, recvbuf, sizeof(recvbuf));
 	zassert_true(ret > 0, "Timed out waiting for response (%d)", ret);
 
 	ret = coap_packet_parse(&rsp, recvbuf, ret, NULL, 0);
@@ -897,7 +901,7 @@ ZTEST(coap_oscore, test_oscore_mixed_sync_and_plaintext)
 	ret = oscore_send_protected(sock, client_ctx, &dst, &req);
 	zassert_ok(ret, "Failed to send OSCORE request (%d)", ret);
 
-	ret = oscore_recv_verify(sock, 2000, client_ctx, innerbuf, &inner_len, &inner);
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client_ctx, innerbuf, &inner_len, &inner);
 	zassert_ok(ret, "OSCORE response verify/parse failed (%d)", ret);
 	zassert_equal(coap_header_get_code(&inner), COAP_RESPONSE_CODE_CONTENT,
 		      "Unexpected inner response code");
@@ -915,7 +919,7 @@ ZTEST(coap_oscore, test_oscore_mixed_sync_and_plaintext)
 	ret = oscore_send_plain(sock, &dst, &req);
 	zassert_ok(ret, "Failed to send plaintext request (%d)", ret);
 
-	ret = oscore_recv(sock, 2000, recvbuf, sizeof(recvbuf));
+	ret = oscore_recv(sock, LONG_TIMEOUT, recvbuf, sizeof(recvbuf));
 	zassert_true(ret > 0, "Timed out waiting for plaintext response (%d)", ret);
 
 	ret = coap_packet_parse(&rsp, recvbuf, ret, NULL, 0);
@@ -972,7 +976,7 @@ ZTEST(coap_oscore, test_oscore_observe_notifications_encrypted)
 
 	/* Initial notification must be OSCORE-protected. */
 	inner_len = sizeof(innerbuf);
-	ret = oscore_recv_verify(sock, 2000, client_ctx, innerbuf, &inner_len, &inner);
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client_ctx, innerbuf, &inner_len, &inner);
 	zassert_ok(ret, "Initial notification verify/parse failed (%d)", ret);
 	zassert_true(coap_get_option_int(&inner, COAP_OPTION_OBSERVE) >= 0,
 		     "Initial notification must carry the Observe option");
@@ -982,7 +986,7 @@ ZTEST(coap_oscore, test_oscore_observe_notifications_encrypted)
 	zassert_ok(ret, "coap_resource_notify failed (%d)", ret);
 
 	inner_len = sizeof(innerbuf);
-	ret = oscore_recv_verify(sock, 2000, client_ctx, innerbuf, &inner_len, &inner);
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client_ctx, innerbuf, &inner_len, &inner);
 	zassert_ok(ret, "Async notification verify/parse failed (%d)", ret);
 	zassert_true(coap_get_option_int(&inner, COAP_OPTION_OBSERVE) >= 0,
 		     "Async notification must carry the Observe option");
@@ -995,13 +999,13 @@ ZTEST(coap_oscore, test_oscore_observe_notifications_encrypted)
 	zassert_ok(ret, "Failed to send deregister request (%d)", ret);
 
 	inner_len = sizeof(innerbuf);
-	ret = oscore_recv_verify(sock, 2000, client_ctx, innerbuf, &inner_len, &inner);
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client_ctx, innerbuf, &inner_len, &inner);
 	zassert_ok(ret, "Deregister response verify/parse failed (%d)", ret);
 
 	/* No further notifications once the observation is gone. */
 	ret = coap_resource_notify(&oscore_observe_resource);
 	zassert_ok(ret, "coap_resource_notify after deregister failed (%d)", ret);
-	ret = oscore_recv(sock, 500, innerbuf, sizeof(innerbuf));
+	ret = oscore_recv(sock, SHORT_TIMEOUT, innerbuf, sizeof(innerbuf));
 	zassert_equal(ret, -ETIMEDOUT, "No notification expected after deregister (%d)", ret);
 
 	zassert_ok(zsock_close(sock), "Failed to close socket");
@@ -1044,7 +1048,7 @@ ZTEST(coap_oscore, test_oscore_observe_plaintext_not_encrypted)
 	zassert_ok(ret, "Failed to send observe request (%d)", ret);
 
 	/* Initial notification must be plaintext. */
-	ret = oscore_recv(sock, 2000, recvbuf, sizeof(recvbuf));
+	ret = oscore_recv(sock, LONG_TIMEOUT, recvbuf, sizeof(recvbuf));
 	zassert_true(ret > 0, "Timed out waiting for initial notification (%d)", ret);
 	ret = coap_packet_parse(&rsp, recvbuf, ret, NULL, 0);
 	zassert_ok(ret, "Failed to parse initial notification (%d)", ret);
@@ -1054,7 +1058,7 @@ ZTEST(coap_oscore, test_oscore_observe_plaintext_not_encrypted)
 	/* Asynchronous notification must also be plaintext. */
 	ret = coap_resource_notify(&oscore_mixed_observe_resource);
 	zassert_ok(ret, "coap_resource_notify failed (%d)", ret);
-	ret = oscore_recv(sock, 2000, recvbuf, sizeof(recvbuf));
+	ret = oscore_recv(sock, LONG_TIMEOUT, recvbuf, sizeof(recvbuf));
 	zassert_true(ret > 0, "Timed out waiting for async notification (%d)", ret);
 	ret = coap_packet_parse(&rsp, recvbuf, ret, NULL, 0);
 	zassert_ok(ret, "Failed to parse async notification (%d)", ret);
@@ -1068,7 +1072,7 @@ ZTEST(coap_oscore, test_oscore_observe_plaintext_not_encrypted)
 	ret = oscore_send_plain(sock, &dst, &req);
 	zassert_ok(ret, "Failed to send deregister request (%d)", ret);
 
-	ret = oscore_recv(sock, 2000, recvbuf, sizeof(recvbuf));
+	ret = oscore_recv(sock, LONG_TIMEOUT, recvbuf, sizeof(recvbuf));
 	zassert_true(ret > 0, "Timed out waiting for deregister response (%d)", ret);
 	ret = coap_packet_parse(&rsp, recvbuf, ret, NULL, 0);
 	zassert_ok(ret, "Failed to parse deregister response (%d)", ret);
@@ -1124,7 +1128,7 @@ ZTEST(coap_oscore, test_oscore_empty_ack_and_deferred)
 	zassert_ok(ret, "Failed to send request (%d)", ret);
 
 	/* The empty ACK is a plaintext, code 0.00 messaging-layer message. */
-	ret = oscore_recv(sock, 2000, recvbuf, sizeof(recvbuf));
+	ret = oscore_recv(sock, LONG_TIMEOUT, recvbuf, sizeof(recvbuf));
 	zassert_true(ret > 0, "Timed out waiting for empty ACK (%d)", ret);
 	ret = coap_packet_parse(&ack, recvbuf, ret, NULL, 0);
 	zassert_ok(ret, "Failed to parse empty ACK (%d)", ret);
@@ -1143,7 +1147,7 @@ ZTEST(coap_oscore, test_oscore_empty_ack_and_deferred)
 	ret = oscore_send_deferred_response(&oscore_separate_resource);
 	zassert_ok(ret, "Failed to send deferred response (%d)", ret);
 
-	ret = oscore_recv_verify(sock, 2000, client_ctx, innerbuf, &inner_len, &inner);
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client_ctx, innerbuf, &inner_len, &inner);
 	zassert_ok(ret, "Deferred response verify/parse failed (%d)", ret);
 	zassert_equal(coap_header_get_code(&inner), COAP_RESPONSE_CODE_CONTENT,
 		      "Unexpected deferred response code");
@@ -1203,7 +1207,7 @@ ZTEST(coap_oscore, test_oscore_deferred_after_expiry_required_dropped)
 	ret = oscore_send_protected(sock, client_ctx, &dst, &req);
 	zassert_ok(ret, "Failed to send request (%d)", ret);
 
-	ret = oscore_recv(sock, 2000, recvbuf, sizeof(recvbuf));
+	ret = oscore_recv(sock, LONG_TIMEOUT, recvbuf, sizeof(recvbuf));
 	zassert_true(ret > 0, "Timed out waiting for empty ACK (%d)", ret);
 	zassert_true(oscore_deferred.valid, "Separate handler must have run");
 
@@ -1218,7 +1222,7 @@ ZTEST(coap_oscore, test_oscore_deferred_after_expiry_required_dropped)
 	ret = oscore_send_deferred_response(&oscore_separate_resource);
 	zassert_equal(ret, -EACCES, "Expired deferred response must fail closed (%d)", ret);
 
-	ret = oscore_recv(sock, 500, recvbuf, sizeof(recvbuf));
+	ret = oscore_recv(sock, SHORT_TIMEOUT, recvbuf, sizeof(recvbuf));
 	zassert_equal(ret, -ETIMEDOUT, "No plaintext downgrade expected (%d)", ret);
 
 	zassert_ok(zsock_close(sock), "Failed to close socket");
@@ -1267,7 +1271,7 @@ ZTEST(coap_oscore, test_oscore_deferred_after_expiry_mixed_plaintext)
 	ret = oscore_send_protected(sock, client_ctx, &dst, &req);
 	zassert_ok(ret, "Failed to send request (%d)", ret);
 
-	ret = oscore_recv(sock, 2000, recvbuf, sizeof(recvbuf));
+	ret = oscore_recv(sock, LONG_TIMEOUT, recvbuf, sizeof(recvbuf));
 	zassert_true(ret > 0, "Timed out waiting for empty ACK (%d)", ret);
 	zassert_true(oscore_deferred.valid, "Separate handler must have run");
 
@@ -1281,7 +1285,7 @@ ZTEST(coap_oscore, test_oscore_deferred_after_expiry_mixed_plaintext)
 	ret = oscore_send_deferred_response(&oscore_separate_mixed_resource);
 	zassert_ok(ret, "Mixed deferred response should still be sent (%d)", ret);
 
-	ret = oscore_recv(sock, 2000, recvbuf, sizeof(recvbuf));
+	ret = oscore_recv(sock, LONG_TIMEOUT, recvbuf, sizeof(recvbuf));
 	zassert_true(ret > 0, "Timed out waiting for deferred response (%d)", ret);
 	ret = coap_packet_parse(&rsp, recvbuf, ret, NULL, 0);
 	zassert_ok(ret, "Failed to parse deferred response (%d)", ret);
@@ -1324,5 +1328,280 @@ ZTEST(coap_oscore, test_oscore_empty_ack_does_not_clear_exchange)
 				     sizeof(token));
 	zassert_not_null(entry, "tkl=0 removal must not clear the real (tkl>0) entry");
 }
+#else
+static uint16_t coap_service_port = 56839;
+static const uint8_t plain_payload[] = "encrypted-response";
+static const char *const coap_service_path[] = {"plain", NULL};
+
+static int coap_service_get(struct coap_resource *resource, struct coap_packet *request,
+			    struct net_sockaddr *addr, net_socklen_t addr_len)
+{
+	uint8_t token[COAP_TOKEN_MAX_LEN];
+	uint8_t data[COAP_BUF_SIZE];
+	struct coap_packet response;
+	uint8_t tkl;
+	int ret;
+
+	ARG_UNUSED(resource);
+
+	tkl = coap_header_get_token(request, token);
+
+	ret = coap_packet_init(&response, data, sizeof(data), COAP_VERSION_1, COAP_TYPE_ACK, tkl,
+			       token, COAP_RESPONSE_CODE_CONTENT, coap_header_get_id(request));
+	if (ret < 0) {
+		return COAP_RESPONSE_CODE_INTERNAL_ERROR;
+	}
+
+	ret = coap_packet_append_payload_marker(&response);
+	if (ret < 0) {
+		return COAP_RESPONSE_CODE_INTERNAL_ERROR;
+	}
+
+	ret = coap_packet_append_payload(&response, plain_payload, sizeof(plain_payload) - 1);
+	if (ret < 0) {
+		return COAP_RESPONSE_CODE_INTERNAL_ERROR;
+	}
+
+	ret = coap_resource_send(resource, &response, addr, addr_len, NULL);
+	if (ret < 0) {
+		return COAP_RESPONSE_CODE_INTERNAL_ERROR;
+	}
+
+	return 0;
+}
+
+static int coap_client_socket(void)
+{
+	return zsock_socket(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+}
+
+static int coap_server_send(int sock, enum coap_msgtype type, bool add_unsupported, uint16_t msg_id,
+			    const uint8_t *token, uint8_t tkl)
+{
+	uint8_t req_buf[COAP_BUF_SIZE];
+	struct coap_packet req;
+	int ret;
+
+	ret = coap_packet_init(&req, req_buf, sizeof(req_buf), COAP_VERSION_1, type, tkl, token,
+			       COAP_METHOD_GET, msg_id);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = coap_packet_append_option(&req, COAP_OPTION_URI_PATH,
+					(const uint8_t *)coap_service_path[0],
+					strlen(coap_service_path[0]));
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (add_unsupported) {
+		uint8_t critical_opt_value[] = {0x42};
+
+		ret = coap_packet_append_option(&req, COAP_OSCORE_OPTION, critical_opt_value,
+						sizeof(critical_opt_value));
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	struct net_sockaddr_in6 dst = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_addr = {{{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}}},
+		.sin6_port = net_htons(coap_service_port),
+	};
+
+	ret = zsock_sendto(sock, req.data, req.offset, 0, (struct net_sockaddr *)&dst, sizeof(dst));
+	if (ret < 0) {
+		return -errno;
+	}
+
+	return ret;
+}
+
+static int coap_server_wait_response_timeout(int sock, uint8_t *buf, size_t len, int timeout_ms)
+{
+	struct zsock_pollfd pfd = {
+		.fd = sock,
+		.events = ZSOCK_POLLIN,
+		.revents = 0,
+	};
+	int ret;
+
+	ret = zsock_poll(&pfd, 1, timeout_ms);
+	if (ret <= 0) {
+		return ret;
+	}
+
+	ret = zsock_recvfrom(sock, buf, len, 0, NULL, NULL);
+	if (ret < 0) {
+		return -errno;
+	}
+
+	return ret;
+}
+
+COAP_SERVICE_DEFINE(coap_service, NULL, &coap_service_port, 0);
+
+/* clang-format off */
+COAP_RESOURCE_DEFINE(coap_service_resource, coap_service,
+			{
+				.path = coap_service_path,
+				.get = coap_service_get,
+			}
+);
+
+ZTEST(coap_oscore, test_unsupported_critical_option_helper)
+{
+	struct coap_packet cpkt;
+	uint8_t buffer[128];
+	uint16_t unsupported_opt;
+	int ret;
+
+	/* Build a packet with OSCORE option (which is unsupported in this build) */
+	ret = coap_packet_init(&cpkt, buffer, sizeof(buffer), COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_GET, 0x1234);
+	zassert_ok(ret, "Failed to init packet");
+
+	/* Add OSCORE option with some dummy value */
+	uint8_t oscore_value[] = {0x01, 0x02, 0x03};
+
+	ret = coap_packet_append_option(&cpkt, COAP_OPTION_OSCORE, oscore_value,
+				      sizeof(oscore_value));
+	zassert_ok(ret, "Failed to append OSCORE option");
+
+	/* Add a payload to make it a valid OSCORE message format */
+	ret = coap_packet_append_payload_marker(&cpkt);
+	zassert_ok(ret, "Failed to append payload marker");
+
+	uint8_t payload[] = "test";
+
+	ret = coap_packet_append_payload(&cpkt, payload, sizeof(payload));
+	zassert_ok(ret, "Failed to append payload");
+
+	/* Test: Check for unsupported critical options */
+	ret = coap_check_unsupported_critical_options(&cpkt, &unsupported_opt);
+	zassert_equal(ret, -ENOTSUP, "Should detect unsupported OSCORE option");
+	zassert_equal(unsupported_opt, COAP_OPTION_OSCORE,
+		      "Should report OSCORE as unsupported option");
+
+	/* Test: Packet without OSCORE should pass */
+	uint8_t buffer2[128];
+
+	ret = coap_packet_init(&cpkt, buffer2, sizeof(buffer2), COAP_VERSION_1, COAP_TYPE_CON, 0,
+			     NULL, COAP_METHOD_GET, 0x1235);
+	zassert_ok(ret, "Failed to init packet");
+
+	ret = coap_check_unsupported_critical_options(&cpkt, &unsupported_opt);
+	zassert_ok(ret, "Should not detect unsupported options in normal packet");
+}
+
+ZTEST(coap_oscore, test_server_rejects_unsupported_critical_con_request)
+{
+	uint8_t recv_buf[COAP_BUF_SIZE];
+	struct coap_packet response;
+	uint8_t token[] = {0xAA, 0x55};
+	uint8_t rsp_token[COAP_TOKEN_MAX_LEN] = {0};
+	uint16_t msg_id = 0x3301;
+	int sock;
+	int ret;
+
+	ret = coap_service_start(&coap_service);
+	zassert_ok(ret, "Failed to start emulation CoAP service (%d)", ret);
+
+	sock = coap_client_socket();
+	zassert_true(sock >= 0, "Failed to open client socket (%d)", sock);
+
+	ret = coap_server_send(sock, COAP_TYPE_CON, true, msg_id, token, sizeof(token));
+	zassert_true(ret > 0, "Failed to send CON request with unsupported option (%d)", ret);
+
+	ret = coap_server_wait_response_timeout(sock, recv_buf, sizeof(recv_buf),
+						    SHORT_TIMEOUT);
+	zassert_true(ret > 0, "Expected 4.02 response, got %d", ret);
+
+	ret = coap_packet_parse(&response, recv_buf, ret, NULL, 0);
+	zassert_ok(ret, "Failed to parse response (%d)", ret);
+	zassert_equal(coap_header_get_type(&response), COAP_TYPE_ACK,
+		      "Expected ACK for unsupported CON request");
+	zassert_equal(coap_header_get_code(&response), COAP_RESPONSE_CODE_BAD_OPTION,
+		      "Expected 4.02 Bad Option response");
+	zassert_equal(coap_header_get_id(&response), msg_id, "Response id mismatch");
+	zassert_equal(coap_header_get_token(&response, rsp_token), sizeof(token),
+		      "Response token length mismatch");
+	zassert_mem_equal(rsp_token, token, sizeof(token), "Response token mismatch");
+
+	zassert_ok(zsock_close(sock), "Failed to close client socket");
+	zassert_ok(coap_service_stop(&coap_service),
+		      "Failed to stop emulation CoAP service");
+}
+
+ZTEST(coap_oscore, test_server_drops_unsupported_critical_non_request)
+{
+	uint8_t recv_buf[COAP_BUF_SIZE];
+	uint8_t token[] = {0xAA, 0x56};
+	int sock;
+	int ret;
+
+	ret = coap_service_start(&coap_service);
+	zassert_ok(ret, "Failed to start emulation CoAP service (%d)", ret);
+
+	sock = coap_client_socket();
+	zassert_true(sock >= 0, "Failed to open client socket (%d)", sock);
+
+	ret = coap_server_send(sock, COAP_TYPE_NON_CON, true, 0x3302, token,
+					   sizeof(token));
+	zassert_true(ret > 0, "Failed to send NON request with unsupported option (%d)", ret);
+
+	ret = coap_server_wait_response_timeout(sock, recv_buf, sizeof(recv_buf),
+						    SHORT_TIMEOUT);
+	zassert_ok(ret,
+		      "Expected silent drop for NON request with unsupported option, got %d", ret);
+
+	zassert_ok(zsock_close(sock), "Failed to close client socket");
+	zassert_ok(coap_service_stop(&coap_service),
+		      "Failed to stop emulation CoAP service");
+}
+
+ZTEST(coap_oscore, test_normal_messages_not_affected_by_unsupported_option)
+{
+	static const uint8_t expected_payload[] = "encrypted-response";
+	uint8_t recv_buf[COAP_BUF_SIZE];
+	struct coap_packet response;
+	uint8_t token[] = {0xAA, 0x57};
+	uint16_t payload_len;
+	const uint8_t *payload;
+	int sock;
+	int ret;
+
+	ret = coap_service_start(&coap_service);
+	zassert_ok(ret, "Failed to start emulation CoAP service (%d)", ret);
+
+	sock = coap_client_socket();
+	zassert_true(sock >= 0, "Failed to open client socket (%d)", sock);
+	ret = coap_server_send(sock, COAP_TYPE_CON, false, 0x3303, token,
+					   sizeof(token));
+	zassert_true(ret > 0, "Failed to send normal request (%d)", ret);
+	ret = coap_server_wait_response_timeout(sock, recv_buf, sizeof(recv_buf),
+						    SHORT_TIMEOUT);
+	zassert_true(ret > 0, "Expected normal response, got %d", ret);
+
+	ret = coap_packet_parse(&response, recv_buf, ret, NULL, 0);
+	zassert_ok(ret, "Failed to parse response (%d)", ret);
+	zassert_equal(coap_header_get_type(&response), COAP_TYPE_ACK,
+		      "Expected ACK for normal CON request");
+	zassert_equal(coap_header_get_code(&response), COAP_RESPONSE_CODE_CONTENT,
+		      "Expected 2.05 Content response");
+
+			  payload = coap_packet_get_payload(&response, &payload_len);
+	zassert_not_null(payload, "Expected payload in normal response");
+	zassert_equal(payload_len, sizeof(expected_payload) - 1U, "Unexpected payload length");
+	zassert_mem_equal(payload, expected_payload, sizeof(expected_payload) - 1U,
+			  "Unexpected response payload");
+
+	zassert_ok(zsock_close(sock), "Failed to close client socket");
+	zassert_ok(coap_service_stop(&coap_service),
+		      "Failed to stop emulation CoAP service");
+}
+#endif /* CONFIG_COAP_OSCORE */
 
 ZTEST_SUITE(coap_oscore, NULL, NULL, NULL, NULL, NULL);
