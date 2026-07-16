@@ -4,3 +4,10 @@ version = 1
 path = "src/*"
 SPDX-License-Identifier = "Apache-2.0"
 SPDX-FileCopyrightText = "Copyright The Zephyr Project Contributors"
+
+# binary blobs cannot carry SPDX headers; REUSE.toml is what supplies their
+# license and copyright, the same way HAL modules do for their real blobs
+[[annotations]]
+path = "zephyr/blobs/*"
+SPDX-License-Identifier = "MIT"
+SPDX-FileCopyrightText = "Copyright (c) 2026 Fake Vendor"
