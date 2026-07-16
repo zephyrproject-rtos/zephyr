@@ -12,10 +12,14 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/cache.h>
 #include "memc_mcux_xspi.h"
 #include "spi_nor.h"
 
 LOG_MODULE_REGISTER(flash_mcux_xspi);
+
+/* Protect complete NOR operations, including the shared optional write buffer. */
+static K_SEM_DEFINE(flash_xspi_lock, 1, 1);
 
 #define FLASH_MCUX_XSPI_HAS_RESET_GPIOS DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 #define FLASH_MCUX_XSPI_HAS_SOFT_RESET  DT_ANY_INST_HAS_BOOL_STATUS_OKAY(initial_soft_reset)
@@ -397,9 +401,32 @@ static int flash_mcux_xspi_read(const struct device *dev, off_t offset, void *da
 		return -EINVAL;
 	}
 
+	k_sem_take(&flash_xspi_lock, K_FOREVER);
+
+	/*
+	 * Invalidate the XSPI AHB read buffers so this memory-mapped read
+	 * observes the current flash contents rather than data prefetched
+	 * before a preceding erase or program.
+	 */
+	memc_mcux_xspi_clear_ahb_buffer(devData->xspi_dev);
+
+#if defined(CACHE64_CTRL0_BASE)
 	XSPI_Cache64_InvalidateCacheByRange((uint32_t)src, len);
+#endif
+
+	/*
+	 * When the CPU data cache is enabled it may hold stale lines over the
+	 * memory-mapped XSPI region (e.g. contents prefetched before an erase
+	 * or program). Invalidate the CPU data cache for the read range so the
+	 * memcpy below observes the current flash contents.
+	 */
+	if (IS_ENABLED(CONFIG_DCACHE)) {
+		sys_cache_data_invd_range(src, len);
+	}
 
 	(void)memcpy(data, src, len);
+
+	k_sem_give(&flash_xspi_lock);
 
 	return 0;
 }
@@ -442,6 +469,8 @@ static int flash_mcux_xspi_write(const struct device *dev, off_t offset, const v
 		return -EINVAL;
 	}
 #endif
+
+	k_sem_take(&flash_xspi_lock, K_FOREVER);
 
 	if (memc_xspi_is_running_xip(xspi_dev)) {
 		key = irq_lock();
@@ -507,6 +536,8 @@ static int flash_mcux_xspi_write(const struct device *dev, off_t offset, const v
 		irq_unlock(key);
 	}
 
+	k_sem_give(&flash_xspi_lock);
+
 	return ret;
 }
 
@@ -544,6 +575,8 @@ static int flash_mcux_xspi_erase(const struct device *dev, off_t offset, size_t 
 		return -EINVAL;
 	}
 
+	k_sem_take(&flash_xspi_lock, K_FOREVER);
+
 	if (memc_xspi_is_running_xip(xspi_dev)) {
 		key = irq_lock();
 		memc_xspi_wait_bus_idle(xspi_dev);
@@ -576,6 +609,8 @@ static int flash_mcux_xspi_erase(const struct device *dev, off_t offset, size_t 
 	if (memc_xspi_is_running_xip(xspi_dev)) {
 		irq_unlock(key);
 	}
+
+	k_sem_give(&flash_xspi_lock);
 
 	return ret;
 }
@@ -691,6 +726,7 @@ static int flash_mcux_xspi_read_jedec_id(const struct device *dev, uint8_t *id)
 	struct flash_mcux_xspi_data *data = dev->data;
 	const struct device *xspi_dev = data->xspi_dev;
 	xspi_transfer_t flashXfer = {0};
+	int ret;
 
 	flashXfer.deviceAddress = data->amba_address;
 	flashXfer.cmdType = kXSPI_Read;
@@ -700,7 +736,11 @@ static int flash_mcux_xspi_read_jedec_id(const struct device *dev, uint8_t *id)
 	flashXfer.dataSize = SPI_NOR_MAX_ID_LEN;
 	flashXfer.lockArbitration = false;
 
-	return memc_mcux_xspi_transfer(xspi_dev, &flashXfer);
+	k_sem_take(&flash_xspi_lock, K_FOREVER);
+	ret = memc_mcux_xspi_transfer(xspi_dev, &flashXfer);
+	k_sem_give(&flash_xspi_lock);
+
+	return ret;
 }
 #endif /* CONFIG_FLASH_JESD216_API */
 
