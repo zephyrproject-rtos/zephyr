@@ -11,7 +11,7 @@ tests:
     min_ram: 32
     extra_configs:
       - CONFIG_SHELL_METAKEYS=y
-    exclude_platforms:
+    platform_exclude:
       # flaky tests, platform disables icount with > 1 CPU
       - qemu_x86_64/atom
     integration_platforms:
