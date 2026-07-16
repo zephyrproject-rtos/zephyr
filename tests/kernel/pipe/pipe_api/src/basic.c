@@ -43,6 +43,8 @@ static struct k_pipe pipe;
  *
  * @see k_pipe_init()
  *
+ * @verifies ZEP-SRS-32-1
+ * @verifies ZEP-SRS-32-2
  */
 ZTEST(k_pipe_basic, test_pipe_init)
 {
@@ -69,6 +71,8 @@ ZTEST(k_pipe_basic, test_pipe_init)
  * @see k_pipe_write()
  * @see k_pipe_read()
  *
+ * @verifies ZEP-SRS-32-3
+ * @verifies ZEP-SRS-32-4
  */
 ZTEST(k_pipe_basic, test_pipe_write_read_one)
 {
@@ -101,6 +105,8 @@ ZTEST(k_pipe_basic, test_pipe_write_read_one)
  * @see k_pipe_write()
  * @see k_pipe_read()
  *
+ * @verifies ZEP-SRS-32-3
+ * @verifies ZEP-SRS-32-4
  */
 ZTEST(k_pipe_basic, test_pipe_write_read_multiple)
 {
@@ -132,6 +138,8 @@ ZTEST(k_pipe_basic, test_pipe_write_read_multiple)
  * - The first write stores all bytes; the second returns -EAGAIN.
  *
  * @see k_pipe_write()
+ *
+ * @verifies ZEP-SRS-32-3
  */
 ZTEST(k_pipe_basic, test_pipe_write_full)
 {
@@ -159,6 +167,8 @@ ZTEST(k_pipe_basic, test_pipe_write_full)
  * - k_pipe_read() returns -EAGAIN.
  *
  * @see k_pipe_read()
+ *
+ * @verifies ZEP-SRS-32-4
  */
 ZTEST(k_pipe_basic, test_pipe_read_empty)
 {
@@ -187,6 +197,8 @@ ZTEST(k_pipe_basic, test_pipe_read_empty)
  * @see k_pipe_write()
  * @see k_pipe_read()
  *
+ * @verifies ZEP-SRS-32-3
+ * @verifies ZEP-SRS-32-4
  */
 ZTEST(k_pipe_basic, test_pipe_read_write_full)
 {
@@ -223,6 +235,8 @@ ZTEST(k_pipe_basic, test_pipe_read_write_full)
  * @see k_pipe_write()
  * @see k_pipe_read()
  *
+ * @verifies ZEP-SRS-32-3
+ * @verifies ZEP-SRS-32-4
  */
 ZTEST(k_pipe_basic, test_pipe_read_write_wrap_around)
 {
@@ -264,6 +278,8 @@ ZTEST(k_pipe_basic, test_pipe_read_write_wrap_around)
  * - The pipe remains functional after the reset.
  *
  * @see k_pipe_reset()
+ *
+ * @verifies ZEP-SRS-32-7
  */
 ZTEST(k_pipe_basic, test_pipe_reset)
 {
@@ -303,6 +319,8 @@ ZTEST(k_pipe_basic, test_pipe_reset)
  * @see k_pipe_close()
  * @see k_pipe_read()
  * @see k_pipe_write()
+ *
+ * @verifies ZEP-SRS-32-8
  */
 ZTEST(k_pipe_basic, test_pipe_close)
 {
