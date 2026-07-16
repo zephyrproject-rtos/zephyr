@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 RAKwireless Technology Limited
 
-config BOARD_RAK4631
-	select SOC_NRF52840_QIAA
+if(SB_CONFIG_BOOTLOADER_MCUBOOT)
+  sysbuild_cache_set(VAR mcuboot_SHIELD "")
+endif()
