@@ -78,7 +78,7 @@ LOG_MODULE_REGISTER(spi_cadence, CONFIG_SPI_LOG_LEVEL);
 #define SPI_FREQ_LIST_MAX ((SPI_MBRD_MAX + 1) * 2 + 1)
 
 #define SPI_CFG(dev)         ((struct spi_cdns_cfg *)(dev->config))
-#define SPI_REG(dev, offset) ((mem_addr_t)(SPI_CFG(dev)->base + (offset)))
+#define SPI_REG(dev, offset) ((mem_addr_t)(DEVICE_MMIO_GET(dev) + (offset)))
 /*******************************************************************************
  * Types Definition
  ******************************************************************************/
@@ -89,7 +89,6 @@ typedef void (*irq_config_func_t)(void);
  *
  * This parameter isn't updated after initialization.
  *
- * @param base                         SPI register base address.
  * @param clock_frequency              Peripheral bus clock
  * @param ext_clock                    External clock frequency.
  * @param cs_setup_us                  Array of durations from CS assert to
@@ -104,7 +103,7 @@ typedef void (*irq_config_func_t)(void);
  *                                     frequency list.
  */
 struct spi_cdns_cfg {
-	uint32_t base;
+	DEVICE_MMIO_ROM;
 	uint32_t clock_frequency;
 	uint32_t ext_clock;
 	irq_config_func_t irq_config;
@@ -123,6 +122,7 @@ struct spi_cdns_cfg {
  * @param fifo_diff       Difference between Tx-FIFO entry and Rx-FIFO entry.
  */
 struct spi_cdns_data {
+	DEVICE_MMIO_RAM;
 	struct spi_context ctx;
 	struct spi_config config;
 	uint32_t freq;
@@ -590,6 +590,8 @@ static int spi_cdns_init(const struct device *dev)
 	const struct spi_cdns_cfg *cfg = dev->config;
 	struct spi_cdns_data *data = dev->data;
 
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
 	cfg->irq_config();
 
 	sys_write32(SPI_CONF_INITIAL_VAL, SPI_REG(dev, SPI_CONF));
@@ -809,7 +811,7 @@ static DEVICE_API(spi, spi_cdns_api) = {
 		SPI_CONTEXT_INIT_SYNC(spi_cdns_data_##n, ctx),                                     \
 	};                                                                                         \
 	static struct spi_cdns_cfg spi_cdns_cfg_##n = {                                            \
-		.base = DT_INST_REG_ADDR(n),                                                       \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 		.irq_config = spi_cdns_irq_config_##n,                                             \
 		.clock_frequency = DT_INST_PROP(n, clock_frequency),                               \
 		.ext_clock = DT_INST_PROP_OR(n, clock_frequency_ext, 0),                           \
