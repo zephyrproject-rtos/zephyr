@@ -185,7 +185,7 @@ typedef int (*gnss_get_enabled_systems_t)(const struct device *dev, gnss_systems
 /** API for getting enabled systems */
 typedef int (*gnss_get_supported_systems_t)(const struct device *dev, gnss_systems_t *systems);
 
-/** API for getting timestamp of last PPS pulse */
+/** API for getting timestamp of last captured PPS pulse */
 typedef int (*gnss_get_latest_timepulse_t)(const struct device *dev, k_ticks_t *timestamp);
 
 /**
@@ -443,17 +443,18 @@ static inline int z_impl_gnss_get_supported_systems(const struct device *dev,
 }
 
 /**
- * @brief Get the timestamp of the latest PPS timepulse
+ * @brief Get the timestamp of the latest captured PPS pulse
  *
- * @note The timestamp is considered valid when the timepulse pin is actively toggling.
+ * @note The timestamp is considered valid while a recurring PPS signal is
+ *	 actively toggling on the configured input.
  *
  * @param dev Device instance
- * @param timestamp Kernel tick count at the time of the PPS pulse
+ * @param timestamp Kernel tick count at the time of the latest PPS pulse
  *
  * @retval 0 if successful
  * @retval -ENOSYS if driver does not support API
- * @retval -ENOTSUP if driver does not have PPS pin connected
- * @retval -EAGAIN if PPS pulse is not considered valid
+ * @retval -ENOTSUP if driver does not have a PPS input connected
+ * @retval -EAGAIN if no recent PPS pulse is considered valid
  */
 __syscall int gnss_get_latest_timepulse(const struct device *dev, k_ticks_t *timestamp);
 
