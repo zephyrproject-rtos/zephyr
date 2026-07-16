@@ -2431,9 +2431,6 @@ static void do_init_listener(struct k_work *work)
 
 static int mdns_responder_init(void)
 {
-	external_records = NULL;
-	external_records_count = 0;
-
 #if defined(CONFIG_MDNS_RESPONDER_PROBE)
 	int ret;
 
