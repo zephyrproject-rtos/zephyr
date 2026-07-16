@@ -65,6 +65,8 @@ static void tm_fn(struct k_timer *tm)
  * @ingroup kernel_timer_tests
  * @see k_timer_start()
  * @see K_TIMEOUT_ABS_TICKS
+ * @verifies ZEP-SRS-4-5
+ * @verifies ZEP-SRS-28-14
  */
 ZTEST(timer_tick_train, test_one_tick_timer_train)
 {

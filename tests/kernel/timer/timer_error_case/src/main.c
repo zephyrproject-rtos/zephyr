@@ -42,6 +42,7 @@ static void thread_timer_start_null(void *p1, void *p2, void *p3)
  * @ingroup kernel_timer_tests
  *
  * @see k_timer_start()
+ * @verifies ZEP-SRS-4-5
  */
 ZTEST_USER(timer_api_error, test_timer_start_null)
 {
@@ -80,6 +81,7 @@ static void thread_timer_stop_null(void *p1, void *p2, void *p3)
  * @ingroup kernel_timer_tests
  *
  * @see k_timer_stop()
+ * @verifies ZEP-SRS-4-6
  */
 ZTEST_USER(timer_api_error, test_timer_stop_null)
 {
@@ -118,6 +120,7 @@ static void thread_timer_status_get_null(void *p1, void *p2, void *p3)
  * @ingroup kernel_timer_tests
  *
  * @see k_timer_status_get()
+ * @verifies ZEP-SRS-4-7
  */
 ZTEST_USER(timer_api_error, test_timer_status_get_null)
 {
@@ -156,6 +159,7 @@ static void thread_timer_status_sync_null(void *p1, void *p2, void *p3)
  * @ingroup kernel_timer_tests
  *
  * @see k_timer_status_sync()
+ * @verifies ZEP-SRS-4-9
  */
 ZTEST_USER(timer_api_error, test_timer_status_sync_null)
 {
@@ -194,6 +198,7 @@ static void thread_timer_remaining_ticks_null(void *p1, void *p2, void *p3)
  * @ingroup kernel_timer_tests
  *
  * @see k_timer_remaining_ticks()
+ * @verifies ZEP-SRS-4-11
  */
 ZTEST_USER(timer_api_error, test_timer_remaining_ticks_null)
 {
@@ -232,6 +237,7 @@ static void thread_timer_expires_ticks_null(void *p1, void *p2, void *p3)
  * @ingroup kernel_timer_tests
  *
  * @see k_timer_expires_ticks()
+ * @verifies ZEP-SRS-4-10
  */
 ZTEST_USER(timer_api_error, test_timer_expires_ticks_null)
 {
@@ -269,6 +275,7 @@ static void thread_timer_user_data_get_null(void *p1, void *p2, void *p3)
  * @ingroup kernel_timer_tests
  *
  * @see k_timer_user_data_get()
+ * @verifies ZEP-SRS-4-14
  */
 ZTEST_USER(timer_api_error, test_timer_user_data_get_null)
 {
@@ -308,6 +315,7 @@ static void thread_timer_user_data_set_null(void *p1, void *p2, void *p3)
  * @ingroup kernel_timer_tests
  *
  * @see k_timer_user_data_set()
+ * @verifies ZEP-SRS-4-13
  */
 ZTEST_USER(timer_api_error, test_timer_user_data_set_null)
 {

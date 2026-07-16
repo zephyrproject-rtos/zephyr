@@ -384,6 +384,7 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
  *
  * @ingroup kernel_timer_tests
  * @see k_timer_start()
+ * @verifies ZEP-SRS-4-5
  */
 ZTEST(timer_jitter_drift, test_jitter_drift_timer_period)
 {
@@ -408,6 +409,7 @@ ZTEST(timer_jitter_drift, test_jitter_drift_timer_period)
  *
  * @ingroup kernel_timer_tests
  * @see k_timer_start()
+ * @verifies ZEP-SRS-4-5
  */
 ZTEST(timer_jitter_drift, test_jitter_drift_timer_startdelay)
 {
