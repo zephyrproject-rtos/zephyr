@@ -78,6 +78,8 @@ static void thread_high_prio_sem_take(void *p1, void *p2, void *p3)
  * @see sys_sem_init()
  * @see sys_sem_give()
  * @see sys_sem_take()
+ * @verifies ZEP-SRS-5-2
+ * @verifies ZEP-SRS-5-14
  */
 ZTEST_USER(kernel_sys_sem, test_multiple_thread_sem_usage)
 {
@@ -176,6 +178,8 @@ static void multi_thread_sem_take(void *p1, void *p2, void *p3)
  * @see sys_sem_give()
  * @see sys_sem_take()
  * @see sys_sem_count_get()
+ * @verifies ZEP-SRS-5-3
+ * @verifies ZEP-SRS-5-19
  */
 ZTEST_USER(kernel_sys_sem, test_multi_thread_sem_limit)
 {
