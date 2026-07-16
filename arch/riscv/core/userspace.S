@@ -29,13 +29,12 @@ SECTION_FUNC(TEXT, arch_user_string_nlen)
 	sw	a5, 0(a2)	# Init error value to 0
 
 loop:
+	beq	a5, a1, exit		# Check if max length is reached
 	add	a4, a0, a5	# Determine character address
 z_riscv_user_string_nlen_fault_start:
 	lbu	a4, 0(a4)	# Load string's character
 z_riscv_user_string_nlen_fault_end:
-	beqz	a4, exit	# Test string's end of line
-
-	bne	a5, a1, continue	# Check if max length is reached
+	bnez	a4, continue	# Test string's end of line
 
 exit:
 	mv	a0, a5		# Return counter value (length)
