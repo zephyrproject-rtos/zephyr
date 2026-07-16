@@ -40,6 +40,7 @@ K_TIMER_DEFINE(alarm, alarm_callback, NULL);
  *
  * @see k_sleep()
  * @see k_wakeup()
+ * @verifies ZEP-SRS-28-8
  */
 ZTEST(wraparound, test_tick_wraparound_in_sleep)
 {
