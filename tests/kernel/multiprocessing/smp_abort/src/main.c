@@ -65,6 +65,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
 /**
  * @brief Circular cross-CPU thread abort from ISR without deadlock
  * @ingroup kernel_smp_tests
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp_abort, test_smp_thread_abort_deadlock)
 {

@@ -126,6 +126,9 @@ static void t2_fn(void *a, void *b, void *c)
  *
  * @details Multi processing is verified by checking whether
  * 2 cooperative threads run simultaneously at different cores
+ *
+ * @verifies ZEP-SRS-34-1
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp, test_smp_coop_threads)
 {
@@ -190,6 +193,9 @@ static void child_fn(void *p1, void *p2, void *p3)
  * parent thread from child thread. Relies on the SMP initialization having
  * brought up the secondary CPUs so that a child thread can run on a different
  * core than its parent.
+ *
+ * @verifies ZEP-SRS-12-9
+ * @verifies ZEP-SRS-34-5
  */
 ZTEST(smp, test_cpu_id_threads)
 {
@@ -322,6 +328,7 @@ static void __no_optimization thread_ab_entry(void *p1, void *p2, void *p3)
  *
  * This was the test case for zephyrproject-rtos/zephyr#58040 issue where this test caused system
  * hang.
+ * @verifies ZEP-SRS-34-10
  */
 
 ZTEST(smp, test_coop_switch_in_abort)
@@ -375,6 +382,8 @@ ZTEST(smp, test_coop_switch_in_abort)
  * supported. Main thread will already be running on 1 core.
  * Check if the last thread created preempts any threads
  * already running.
+ * @verifies ZEP-SRS-34-1
+ * @verifies ZEP-SRS-2-14
  */
 ZTEST(smp, test_coop_resched_threads)
 {
@@ -416,6 +425,8 @@ ZTEST(smp, test_coop_resched_threads)
  * @details Create preemptive thread and let it run
  * on another core and verify if it gets preempted
  * if another thread of higher priority is spawned
+ * @verifies ZEP-SRS-34-1
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp, test_preempt_resched_threads)
 {
@@ -449,6 +460,7 @@ ZTEST(smp, test_preempt_resched_threads)
  * of cores, so last thread would be pending, call
  * yield() from main thread. Now, all threads must be
  * executed
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp, test_yield_threads)
 {
@@ -482,6 +494,7 @@ ZTEST(smp, test_yield_threads)
  * @details Spawn cooperative thread and call
  * sleep() from main thread. After timeout, all
  * threads has to be scheduled.
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp, test_sleep_threads)
 {
@@ -564,6 +577,7 @@ static void check_wokeup_threads(int tnum)
  * remaining cores and let them sleep for a while. Call
  * wakeup() of those threads from parent thread and check
  * if they are all running
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp, test_wakeup_threads)
 {
@@ -658,6 +672,7 @@ static void thread_get_cpu_entry(void *p1, void *p2, void *p3)
  *   , only x86_64, arc and xtensa supported.
  *
  * @see arch_curr_cpu()
+ * @verifies ZEP-SRS-34-6
  */
 static int _cpu_id;
 /**
@@ -718,6 +733,7 @@ ZTEST(smp, test_get_cpu)
  * configured maximum.
  *
  * @see arch_num_cpus()
+ * @verifies ZEP-SRS-34-4
  */
 ZTEST(smp, test_num_cpus)
 {
@@ -743,6 +759,7 @@ static K_SEM_DEFINE(coherence_sem, 0, 1);
  * cache-coherent architectures).
  *
  * @see cache_is_mem_coherent()
+ * @verifies ZEP-SRS-34-19
  */
 ZTEST(smp, test_smp_kernel_coherence)
 {
@@ -810,6 +827,7 @@ void z_trace_sched_ipi(void)
  *   , only x86_64 and arc supported.
  *
  * @see arch_sched_broadcast_ipi()
+ * @verifies ZEP-SRS-34-11
  */
 #if defined(CONFIG_SCHED_IPI_SUPPORTED) || defined(__DOXYGEN__)
 ZTEST(smp, test_smp_ipi)
@@ -885,6 +903,7 @@ void entry_oops(void *p1, void *p2, void *p3)
  * the same time.
  *
  * @ingroup kernel_common_tests
+ * @verifies ZEP-SRS-34-1
  */
 ZTEST(smp, test_fatal_on_smp)
 {
@@ -920,6 +939,7 @@ static void workq_handler(struct k_work *work)
  * on different core.
  *
  * @ingroup kernel_common_tests
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp, test_workq_on_smp)
 {
@@ -989,6 +1009,7 @@ static void t2_mutex_lock(void *p1, void *p2, void *p3)
  *
  * @details Validate the scenario that make the internal APIs of SMP
  * z_smp_release_global_lock() to be called.
+ * @verifies ZEP-SRS-34-3
  */
 ZTEST(smp, test_smp_release_global_lock)
 {
@@ -1167,6 +1188,7 @@ static int run_concurrency(void *p1, void *p2, void *p3)
  * - Use global irq lock
  * - Use semaphore
  * - Use mutex
+ * @verifies ZEP-SRS-34-3
  */
 ZTEST(smp, test_inc_concurrency)
 {
@@ -1267,6 +1289,8 @@ static void signal_raise(void *arg0, void *arg1, void *arg2)
 
 /**
  * @brief Stress context switching across CPUs via k_poll signals
+ *
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp_stress, test_smp_switch_stress)
 {

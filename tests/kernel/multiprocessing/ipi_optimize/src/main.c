@@ -188,6 +188,7 @@ void busy_threads_priority_set(int priority, int delta)
 /**
  * Verify that arch_sched_broadcast_ipi() broadcasts IPIs as expected.
  * @ingroup kernel_smp_tests
+ * @verifies ZEP-SRS-34-11
  */
 ZTEST(ipi, test_arch_sched_broadcast_ipi)
 {
@@ -228,6 +229,7 @@ ZTEST(ipi, test_arch_sched_broadcast_ipi)
 /**
  * Verify that arch_sched_directed_ipi() directs IPIs as expected.
  * @ingroup kernel_smp_tests
+ * @verifies ZEP-SRS-34-17
  */
 ZTEST(ipi, test_arch_sched_directed_ipi)
 {
@@ -274,6 +276,7 @@ ZTEST(ipi, test_arch_sched_directed_ipi)
  * Verify that waking a thread whose priority is lower than any other
  * currently executing thread does not result in any IPIs being sent.
  * @ingroup kernel_smp_tests
+ * @verifies ZEP-SRS-34-16
  */
 ZTEST(ipi, test_low_thread_wakes_no_ipis)
 {
@@ -323,6 +326,7 @@ ZTEST(ipi, test_low_thread_wakes_no_ipis)
  * Verify that waking a thread whose priority is higher than all currently
  * executing threads results in the proper IPIs being sent and processed.
  * @ingroup kernel_smp_tests
+ * @verifies ZEP-SRS-34-16
  */
 ZTEST(ipi, test_high_thread_wakes_some_ipis)
 {
@@ -381,6 +385,8 @@ ZTEST(ipi, test_high_thread_wakes_some_ipis)
  * thread ought to receive the IPI. Otherwise if IPIs are broadcast, then all
  * other CPUs save the current CPU ought to receive IPIs.
  * @ingroup kernel_smp_tests
+ * @verifies ZEP-SRS-34-16
+ * @verifies ZEP-SRS-34-17
  */
 ZTEST(ipi, test_thread_priority_set_lower)
 {
@@ -437,6 +443,7 @@ ZTEST(ipi, test_thread_priority_set_lower)
  * Verify that IPIs are not sent to CPUs that are executing cooperative
  * threads.
  * @ingroup kernel_smp_tests
+ * @verifies ZEP-SRS-34-16
  */
 ZTEST(ipi, test_thread_coop_no_ipis)
 {
