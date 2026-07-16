@@ -370,6 +370,7 @@ int arch_float_disable(struct k_thread *thread)
 
 	z_riscv_fpu_flush_thread(thread);
 	thread->base.user_options &= ~K_FP_REGS;
+	thread->arch.fpu_recently_used = false;
 
 	return 0;
 }
