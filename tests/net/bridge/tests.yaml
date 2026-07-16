@@ -27,3 +27,10 @@ tests:
       - CONFIG_NET_IPV4=y
       - CONFIG_NET_IPV6=y
       - CONFIG_NET_LINK_ADDR_CUSTOM_LENGTH=8
+  # Exercise the stable (device-id derived) bridge MAC address option.
+  net.eth_bridge.ip.unique_mac:
+    extra_configs:
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_IPV6=y
+      - CONFIG_HWINFO=y
+      - CONFIG_NET_ETHERNET_BRIDGE_UNIQUE_MAC=y

@@ -20,6 +20,9 @@ LOG_MODULE_REGISTER(net_eth_bridge, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 #endif
 #include <zephyr/sys/slist.h>
 #include <zephyr/random/random.h>
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_UNIQUE_MAC)
+#include <zephyr/drivers/hwinfo.h>
+#endif
 
 #include "net_private.h"
 #include "arp.h"
@@ -245,13 +248,51 @@ int eth_bridge_iface_remove(struct net_if *br, struct net_if *iface)
 	return 0;
 }
 
+static void set_laa_unicast(uint8_t *linkaddr)
+{
+	linkaddr[0] |= 0x02;  /* force LAA (locally administered) bit */
+	linkaddr[0] &= ~0x01; /* clear multicast bit */
+}
+
 static void random_linkaddr(uint8_t *linkaddr, size_t len)
 {
 	sys_rand_get(linkaddr, len);
 
-	linkaddr[0] |= 0x02;  /* force LAA bit */
-	linkaddr[0] &= ~0x01; /* clear multicast bit */
+	set_laa_unicast(linkaddr);
 }
+
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_UNIQUE_MAC)
+/* Derive a stable MAC address from the hardware device ID so that it stays the
+ * same across reboots. The bridge index is mixed in so that multiple bridge
+ * interfaces get distinct addresses. Falls back to a random address if no
+ * device ID is available.
+ */
+static void unique_linkaddr(uint8_t *linkaddr, size_t len, uint8_t id)
+{
+	uint8_t hwid[16];
+	ssize_t ret;
+
+	ret = hwinfo_get_device_id(hwid, sizeof(hwid));
+	if (ret <= 0) {
+		NET_DBG("No device id available (%d), using random link address",
+			(int)ret);
+		random_linkaddr(linkaddr, len);
+		return;
+	}
+
+	/* Fold the device id into the link address so that a device id shorter
+	 * or longer than the link address still contributes all of its bytes.
+	 */
+	(void)memset(linkaddr, 0, len);
+	for (ssize_t i = 0; i < ret; i++) {
+		linkaddr[i % len] ^= hwid[i];
+	}
+
+	linkaddr[len - 1] ^= id;
+
+	set_laa_unicast(linkaddr);
+}
+#endif /* CONFIG_NET_ETHERNET_BRIDGE_UNIQUE_MAC */
 
 static void bridge_iface_init(struct net_if *iface)
 {
@@ -285,7 +326,11 @@ static void bridge_iface_init(struct net_if *iface)
 	 * address would make that comparison fail and the frame be dropped as
 	 * "not for me".
 	 */
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_UNIQUE_MAC)
+	unique_linkaddr(vctx->lladdr.addr, NET_ETH_ADDR_LEN, ctx->id);
+#else
 	random_linkaddr(vctx->lladdr.addr, NET_ETH_ADDR_LEN);
+#endif
 
 	vctx->lladdr.len = NET_ETH_ADDR_LEN;
 	vctx->lladdr.type = NET_LINK_ETHERNET;
