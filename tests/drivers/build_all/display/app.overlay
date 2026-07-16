@@ -447,6 +447,15 @@
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
 
+			test_mipi_dbi_ssd1683: ssd1683@19 {
+				compatible = "solomon,ssd1683";
+				mipi-max-frequency = <4000000>;
+				reg = <0x19>;
+				width = <300>;
+				height = <400>;
+				busy-gpios = <&test_gpio 0 0>;
+			};
+
 			test_mipi_dbi_ed2208_gca: ed2208_gca@25 {
 				compatible = "eink,ed2208-gca";
 				reg = <0x25>;
