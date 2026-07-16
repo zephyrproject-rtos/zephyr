@@ -513,6 +513,7 @@ Created: {created}
                         written_indices.append(index)
                         count += 1
 
+                self._write_snippets_describes(f, binary_ref, written_indices)
                 self._write_snippet_provenance(f, binary_ref, written_indices)
 
         except OSError:
@@ -520,6 +521,23 @@ Created: {created}
             return
 
         _logger.info("Written %d snippet(s) to %s", count, output_path)
+
+    def _write_snippets_describes(self, f, binary_ref: str | None, indices: list) -> None:
+        """Emit the ``SPDXRef-DOCUMENT DESCRIBES ...`` relationship SPDX requires.
+
+        A document without exactly one package must state what it describes.
+        This one holds no package, so it describes the image the snippets were
+        read from, or the snippets themselves when that image is not tracked.
+        """
+        if binary_ref:
+            f.write(f"Relationship: SPDXRef-DOCUMENT DESCRIBES {binary_ref}\n")
+        else:
+            for index in indices:
+                f.write(
+                    f"Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-Snippet-{index}\n"
+                )
+        if indices:
+            f.write("\n")
 
     def _snippet_binary_ref(self) -> str | None:
         """Cross-document SPDX id of the image the snippets were extracted from.
