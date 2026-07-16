@@ -42,15 +42,24 @@ config CPU_CORTEX_A32
 
 if CPU_AARCH32_CORTEX_A
 
+config ARM_A_PROFILE_AARCH32
+	bool
+	help
+	  Capability flag enabled for any ARM A-profile processor running in the
+	  AArch32 execution state (ARMv7-A or ARMv8-A AArch32).
+
+	  This option is not user-selectable; A-profile AArch32 architecture
+	  symbols select it.
+
 config ARMV7_A
 	bool
+	select ARM_A_PROFILE_AARCH32
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ISA_ARM
 
-# TODO: Introduce an ARM_A_PROFILE_AARCH32 capability flag selected by both
-# ARMV7_A and AARCH32_ARMV8_A to simplify the conditional guards in shared code.
 config AARCH32_ARMV8_A
 	bool
+	select ARM_A_PROFILE_AARCH32
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ISA_ARM
 	help
