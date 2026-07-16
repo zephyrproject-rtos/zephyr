@@ -1,0 +1,17 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Location of the GNSS PPS signal on the MCU.
+
+  The capture backend is selected through Kconfig (CONFIG_GNSS_TIMEPULSE_*),
+  not devicetree. The current in-tree backend uses a GPIO interrupt to capture
+  a recurring PPS input. The pulse output itself is
+  configured chip-side through gnss-pps.yaml where the receiver supports it.
+
+properties:
+  timepulse-gpios:
+    type: phandle-array
+    description: |
+      MCU input pin the receiver PPS output is wired to. The active
+      edge is selected through the GPIO flags. Optional.
