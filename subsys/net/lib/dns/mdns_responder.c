@@ -256,11 +256,13 @@ static struct net_mgmt_event_callback mgmt6_addr_cb;
 #endif
 #if defined(CONFIG_NET_DHCPV4)
 static struct net_mgmt_event_callback mgmt_dhcpv4_cb;
-struct k_work_delayable announce_timer;
+static void announce_start(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(announce_timer, announce_start);
 #endif
 static struct k_work_q mdns_work_q;
 static K_KERNEL_STACK_DEFINE(mdns_work_q_stack, CONFIG_MDNS_WORKQ_STACK_SIZE);
-struct k_work_delayable init_listener_timer;
+static void do_init_listener(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(init_listener_timer, do_init_listener);
 static int failed_probes;
 static int probe_count;
 static int announce_count;
@@ -2461,8 +2463,6 @@ static int mdns_responder_init(void)
 	net_mgmt_init_event_callback(&mgmt_dhcpv4_cb, mdns_addr_event_handler,
 				     DHCPV4_EVENT_MASK);
 	net_mgmt_add_event_callback(&mgmt_dhcpv4_cb);
-
-	k_work_init_delayable(&announce_timer, announce_start);
 #endif
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
@@ -2481,8 +2481,6 @@ static int mdns_responder_init(void)
 
 		k_thread_name_set(mdns_work_q.thread_id, "mdns_work");
 	}
-
-	k_work_init_delayable(&init_listener_timer, do_init_listener);
 
 	return ret;
 #else
