@@ -47,6 +47,7 @@ void tmslab_alloc_wait_ok(void *p1, void *p2, void *p3)
  *
  * @see k_mem_slab_alloc()
  * @see k_mem_slab_free()
+ * @verifies ZEP-SRS-9-14
  */
 ZTEST(mslab_concept, test_mslab_alloc_wait_prio)
 {
