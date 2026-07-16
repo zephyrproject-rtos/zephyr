@@ -226,6 +226,8 @@ SYS_INIT(null_driver_init, POST_KERNEL, 0);
  * Confirms check is correct.
  *
  * @see k_is_pre_kernel()
+ * @verifies ZEP-SRS-12-5
+ * @verifies ZEP-SRS-12-6
  */
 ZTEST(device, test_pre_kernel_detection)
 {
@@ -311,6 +313,8 @@ SYS_INIT_NAMED(init5, init_fn, APPLICATION, 999);
  *
  * @see SYS_INIT()
  * @see SYS_INIT_NAMED()
+ * @verifies ZEP-SRS-12-1
+ * @verifies ZEP-SRS-12-4
  */
 ZTEST(device, test_sys_init_multiple)
 {
@@ -333,6 +337,9 @@ extern unsigned int seq_priority_cnt;
  * means assigning the level for driver instance works.
  *
  * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-12-2
+ * @verifies ZEP-SRS-12-3
+ * @verifies ZEP-SRS-12-7
  */
 ZTEST(device, test_device_init_level)
 {
@@ -360,6 +367,8 @@ ZTEST(device, test_device_init_level)
  * means assigning the priority for driver instance works.
  *
  * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-12-4
+ * @verifies ZEP-SRS-12-7
  */
 ZTEST(device, test_device_init_priority)
 {
@@ -387,6 +396,8 @@ ZTEST(device, test_device_init_priority)
  * means using the devicetree for sub-priority sorting works.
  *
  * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-12-4
+ * @verifies ZEP-SRS-12-7
  */
 ZTEST(device, test_device_init_sub_priority)
 {
@@ -450,6 +461,7 @@ ZTEST(device, test_abstraction_driver_common)
  *
  * @see device_init
  * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-14-7
  */
 ZTEST(device, test_deferred_init)
 {
@@ -478,6 +490,7 @@ static int fakedeferdriver_init(const struct device *dev)
  *
  * @see device_init
  * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-14-8
  */
 ZTEST(device, test_deferred_init_failure)
 {
@@ -692,6 +705,7 @@ ZTEST(device, test_device_api_extends_sibling)
  *
  * @see device_init
  * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-14-7
  */
 ZTEST_USER(device, test_deferred_init_user)
 {
@@ -713,6 +727,7 @@ ZTEST_USER(device, test_deferred_init_user)
  *
  * @see device_deinit
  * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-14-10
  */
 ZTEST(device, test_deinit_not_supported)
 {
@@ -742,6 +757,7 @@ DEVICE_DEINIT_DEFINE(dummy_deinit, DUMMY_DEINIT, NULL, dummy_deinit, NULL, NULL,
  *
  * @see device_deinit
  * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-14-9
  */
 ZTEST(device, test_deinit_success_and_redeinit)
 {
@@ -769,6 +785,7 @@ DEVICE_DT_DEFINE(FAKEDRIVER0_NODEID, NULL, NULL, NULL, NULL, POST_KERNEL,
  *
  * @see device_get_by_dt_nodelabel
  * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-14-12
  */
 ZTEST(device, test_device_get_by_dt_nodelabel)
 {
