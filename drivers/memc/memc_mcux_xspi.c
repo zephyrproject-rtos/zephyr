@@ -15,8 +15,30 @@
 
 LOG_MODULE_REGISTER(memc_mcux_xspi, CONFIG_MEMC_LOG_LEVEL);
 
+/*
+ * XSPI target-group and FRAD-region counts.
+ *
+ * LISTIFY()/FOR_EACH_*() need the loop bound (and the region-index list) to be
+ * plain decimal integer literals, so they cannot consume the HAL macros
+ * XSPI_TARGET_GROUP_COUNT / XSPI_SFP_FRAD_COUNT directly (those expand to a
+ * parenthesised, U-suffixed value such as "(2U)"). To avoid silently assuming a
+ * count, the literals below are pinned to the HAL values with BUILD_ASSERTs: if
+ * a future HAL changes either count, the build breaks here instead of emitting
+ * a wrong config. Update the literals (and MEMC_XSPI_FRAD_REGION_IDS) to match.
+ */
 #define MEMC_XSPI_TARGET_GROUP_COUNT 2
 #define MEMC_XSPI_SFP_FRAD_COUNT     8
+#define MEMC_XSPI_FRAD_REGION_IDS    0, 1, 2, 3, 4, 5, 6, 7
+
+BUILD_ASSERT(MEMC_XSPI_TARGET_GROUP_COUNT == XSPI_TARGET_GROUP_COUNT,
+	     "MEMC_XSPI_TARGET_GROUP_COUNT is out of sync with the HAL "
+	     "XSPI_TARGET_GROUP_COUNT; update the literal and the tgConfig/tgMdad "
+	     "initializers to match.");
+BUILD_ASSERT(MEMC_XSPI_SFP_FRAD_COUNT == XSPI_SFP_FRAD_COUNT,
+	     "MEMC_XSPI_SFP_FRAD_COUNT is out of sync with the HAL "
+	     "XSPI_SFP_FRAD_COUNT; update the literal and MEMC_XSPI_FRAD_REGION_IDS.");
+BUILD_ASSERT(NUM_VA_ARGS(MEMC_XSPI_FRAD_REGION_IDS) == MEMC_XSPI_SFP_FRAD_COUNT,
+	     "MEMC_XSPI_FRAD_REGION_IDS must enumerate every FRAD region.");
 
 /*
  * The byteOrder and enableDoze members only exist in the HAL xspi_config_t when
@@ -195,45 +217,179 @@ static int memc_mcux_xspi_init(const struct device *dev)
 #define MEMC_XSPI_CFG_XIP(node_id) false
 #endif
 
-#define MCUX_XSPI_GET_MDAD(n, idx, x)	\
-	DT_PROP(DT_CHILD(DT_DRV_INST(n), mdad_tg ## idx), x)
+/*
+ * Resolve the mdad@<idx> child node under the sfp_mdad container. The MDAD
+ * descriptors cannot be placed at the xspi top level (a top-level mdad@0 would
+ * collide with the flash@0 chip-select unit-address), so they live in a
+ * dedicated sfp_mdad container, mirroring how target-group@N lives under a
+ * frad_region node. Each child's unit-address (reg) is the tgMdad[] array
+ * subscript. DT_CHILD sanitises "mdad@0" to "mdad_0".
+ */
+#define MCUX_XSPI_MDAD_NODE(n, idx)   DT_CHILD(DT_CHILD(DT_DRV_INST(n), sfp_mdad), mdad_##idx)
+#define MCUX_XSPI_MDAD_EXISTS(idx, n) DT_NODE_EXISTS(MCUX_XSPI_MDAD_NODE(n, idx))
+#define MCUX_XSPI_FRAD_EXISTS(idx, n) DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(n), frad_region##idx))
+#define MCUX_XSPI_GET_MDAD(n, idx, x) DT_PROP(MCUX_XSPI_MDAD_NODE(n, idx), x)
 #define MCUX_XSPI_GET_FRAD(n, idx, x)	\
 	DT_PROP(DT_CHILD(DT_DRV_INST(n), frad_region ## idx), x)
 
-#define MCUX_XSPI_MDAD_INIT(idx, n)	\
-	COND_CODE_1(DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(n), mdad_tg ## idx)),	\
-		({	\
+/*
+ * Resolve the target-group@<tgidx> child node of FRAD region <ridx>. Each FRAD
+ * region carries one target-group@N child per target group; the unit-address N
+ * (== the child's reg) is the tgConfig[] array subscript. DT_CHILD sanitises
+ * "target-group@0" to the token "target_group_0".
+ */
+#define MCUX_XSPI_FRAD_TG_NODE(n, ridx, tgidx)                                                     \
+	DT_CHILD(DT_CHILD(DT_DRV_INST(n), frad_region##ridx), target_group_##tgidx)
+
+/*
+ * Emit one xspi_mdad_config_t entry for target group <idx>, sourced from the
+ * mdad@<idx> child of the sfp_mdad container. The array subscript is the
+ * child's unit-address (reg), matching the target-group index, so the correct
+ * tgMdad[] slot is populated. Absent mdad@<idx> nodes zero-initialise.
+ */
+#define MCUX_XSPI_MDAD_INIT(idx, n)                                                                \
+	COND_CODE_1(DT_NODE_EXISTS(MCUX_XSPI_MDAD_NODE(n, idx)),	\
+		([idx] = {	\
 			.enableDescriptorLock =	\
 				MCUX_XSPI_GET_MDAD(n, idx, enable_descriptor_lock),	\
 			.maskType = MCUX_XSPI_GET_MDAD(n, idx, mask_type),	\
+			.assignIsValid = MCUX_XSPI_GET_MDAD(n, idx, assign_valid),	\
 			.mask = MCUX_XSPI_GET_MDAD(n, idx, mask),	\
 			.masterIdReference =	\
 				MCUX_XSPI_GET_MDAD(n, idx, master_id_reference),	\
 			.secureAttribute =	\
 				MCUX_XSPI_GET_MDAD(n, idx, secure_attribute),	\
 		}),	\
-		({	\
+		([idx] = {	\
 			0	\
 		}))
 
-#define MCUX_XSPI_FRAD_INIT(idx, n)	\
-	COND_CODE_1(DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(n), frad_region ## idx)),	\
-		({	\
-			.startAddress = MCUX_XSPI_GET_FRAD(n, idx, start_address), \
-			.endAddress = MCUX_XSPI_GET_FRAD(n, idx, end_address),	\
-			.tg0MasterAccess =	\
-				MCUX_XSPI_GET_FRAD(n, idx, tg0_master_access),	\
-			.tg1MasterAccess =	\
-				MCUX_XSPI_GET_FRAD(n, idx, tg1_master_access),	\
-			.assignIsValid = true,	\
+/*
+ * On XSPI variants that provide the EENV feature (e.g. i.MX943), the HAL
+ * xspi_frad_config_t nests the per-target-group access control inside a
+ * tgConfig[] array (xspi_frad_tg_config_t), one entry per target group. On
+ * variants without EENV the same fields are exposed as flat members. Emit the
+ * layout that matches the HAL struct in use.
+ */
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+/*
+ * Fetch a property from the target-group@<tgidx> child of FRAD region <ridx>:
+ * frad_region<ridx> { target-group@<tgidx> { <x> = <..>; }; }.
+ */
+#define MCUX_XSPI_GET_FRAD_TG(n, ridx, tgidx, x) DT_PROP(MCUX_XSPI_FRAD_TG_NODE(n, ridx, tgidx), x)
+
+/*
+ * Emit one xspi_frad_tg_config_t entry for target group <tgidx> of FRAD region
+ * <ridx>. The array subscript is the target-group index itself (the child's
+ * unit-address / reg), so the correct slot is populated without hard-coding a
+ * specific kXSPI_TargetGroupN value. The tgMasterAccess[] array is initialised
+ * from the child's master-access DT array property, so it scales with the HAL
+ * target-group count too.
+ */
+#define MCUX_XSPI_FRAD_TG_INIT(tgidx, ridx, n)                                                     \
+	COND_CODE_1(DT_NODE_EXISTS(MCUX_XSPI_FRAD_TG_NODE(n, ridx, tgidx)),	\
+		([tgidx] = {	\
+			.tgMasterAccess =	\
+				MCUX_XSPI_GET_FRAD_TG(n, ridx, tgidx, master_access),	\
+			.assignIsValid =	\
+				MCUX_XSPI_GET_FRAD_TG(n, ridx, tgidx, assign_valid),	\
 			.descriptorLock =	\
-				MCUX_XSPI_GET_FRAD(n, idx, descriptor_lock),	\
+				MCUX_XSPI_GET_FRAD_TG(n, ridx, tgidx, descriptor_lock),	\
 			.exclusiveAccessLock =	\
-				MCUX_XSPI_GET_FRAD(n, idx, exclusive_access_lock),	\
+				MCUX_XSPI_GET_FRAD_TG(n, ridx, tgidx, exclusive_access_lock),	\
 		}),	\
-		({	\
+		([tgidx] = {0}))
+
+/*
+ * Populate every target-group slot of a FRAD region's tgConfig[] array. The
+ * number of slots is driven by the HAL target-group count (LISTIFY index),
+ * never a hard-coded value. LISTIFY() can be used here because the enclosing
+ * FRAD-region loop below uses the FOR_EACH() macro family (a different
+ * expansion mechanism), so there is no LISTIFY-within-LISTIFY recursion.
+ */
+#define MCUX_XSPI_FRAD_TGCONFIG(n, ridx)                                                           \
+	LISTIFY(MEMC_XSPI_TARGET_GROUP_COUNT, MCUX_XSPI_FRAD_TG_INIT, (,), ridx, n)
+
+/*
+ * Emit one xspi_frad_config_t entry for FRAD region <ridx>. Invoked by
+ * FOR_EACH_IDX_FIXED_ARG as F(loop_index, ridx, n); loop_index is unused.
+ */
+#define MCUX_XSPI_FRAD_INIT(unused, ridx, n)                                                       \
+	COND_CODE_1(DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(n), frad_region ## ridx)),	\
+		([ridx] = {	\
+			.startAddress = MCUX_XSPI_GET_FRAD(n, ridx, start_address), \
+			.endAddress = MCUX_XSPI_GET_FRAD(n, ridx, end_address),	\
+			.tgConfig = {	\
+				MCUX_XSPI_FRAD_TGCONFIG(n, ridx)	\
+			},	\
+		}),	\
+		([ridx] = {	\
 			0	\
 		}))
+#else
+/*
+ * Non-EENV flat layout: xspi_frad_config_t exposes tg0/tg1 master access as
+ * flat members. Reuse element 0 of each target-group@N child's master-access
+ * array; the shared validity and lock fields come from target-group@0.
+ */
+#define MCUX_XSPI_GET_FRAD_M0(n, ridx, tgidx)                                                      \
+	COND_CODE_1(DT_NODE_EXISTS(MCUX_XSPI_FRAD_TG_NODE(n, ridx, tgidx)),	\
+		(DT_PROP_BY_IDX(MCUX_XSPI_FRAD_TG_NODE(n, ridx, tgidx), master_access, 0)),	\
+		(0))
+
+#define MCUX_XSPI_FRAD_INIT(unused, ridx, n)                                                       \
+	COND_CODE_1(DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(n), frad_region ## ridx)),	\
+		([ridx] = {	\
+			.startAddress = MCUX_XSPI_GET_FRAD(n, ridx, start_address), \
+			.endAddress = MCUX_XSPI_GET_FRAD(n, ridx, end_address),	\
+			.tg0MasterAccess = MCUX_XSPI_GET_FRAD_M0(n, ridx, 0),	\
+			.tg1MasterAccess = MCUX_XSPI_GET_FRAD_M0(n, ridx, 1),	\
+			.assignIsValid =	\
+				DT_PROP_OR(MCUX_XSPI_FRAD_TG_NODE(n, ridx, 0),	\
+					   assign_valid, false),	\
+			.descriptorLock =	\
+				DT_PROP_OR(MCUX_XSPI_FRAD_TG_NODE(n, ridx, 0),	\
+					   descriptor_lock, 0),	\
+			.exclusiveAccessLock =	\
+				DT_PROP_OR(MCUX_XSPI_FRAD_TG_NODE(n, ridx, 0),	\
+					   exclusive_access_lock, 0),	\
+		}),	\
+		([ridx] = {	\
+			0	\
+		}))
+#endif
+
+/*
+ * Compile-time validation of the FRAD master-access arrays.
+ *
+ * The HAL sizes xspi_frad_tg_config_t::tgMasterAccess[] with
+ * XSPI_TARGET_GROUP_COUNT, so the number of masters is not hard-coded here: the
+ * DT tg<N>-master-access array supplies the values and its length must not
+ * exceed the HAL array dimension. A too-long array would silently overflow the
+ * initializer, so it is rejected at build time. Shorter arrays are allowed and
+ * leave the remaining masters zero-initialised.
+ */
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+#define MCUX_XSPI_FRAD_TG_CHECK(tgidx, ridx, n)                                                    \
+	COND_CODE_1(DT_NODE_EXISTS(MCUX_XSPI_FRAD_TG_NODE(n, ridx, tgidx)),	\
+		(BUILD_ASSERT(DT_PROP_LEN(MCUX_XSPI_FRAD_TG_NODE(n, ridx, tgidx),	\
+				 master_access) <=	\
+		     XSPI_TARGET_GROUP_COUNT,	\
+		     "target-group@N master-access has more entries than the HAL "	\
+		     "tgMasterAccess[] can hold (XSPI_TARGET_GROUP_COUNT).");),	\
+		())
+
+#define MCUX_XSPI_FRAD_REGION_CHECK(unused, ridx, n)                                               \
+	COND_CODE_1(DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(n), frad_region ## ridx)),	\
+		(LISTIFY(MEMC_XSPI_TARGET_GROUP_COUNT,	\
+			 MCUX_XSPI_FRAD_TG_CHECK, (), ridx, n)),	\
+		())
+
+#define MCUX_XSPI_VALIDATE(n)                                                                      \
+	FOR_EACH_IDX_FIXED_ARG(MCUX_XSPI_FRAD_REGION_CHECK, (), n, MEMC_XSPI_FRAD_REGION_IDS)
+#else
+#define MCUX_XSPI_VALIDATE(n)
+#endif
 
 #define MCUX_XSPI_INIT(n)                                                                          \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
@@ -272,13 +428,16 @@ static int memc_mcux_xspi_init(const struct device *dev)
 					MCUX_XSPI_MDAD_INIT, (,), n)	\
 			},	\
 		},	\
-		.mdad_valid = DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(n), mdad_tg0)),	\
+		.mdad_valid = LISTIFY(MEMC_XSPI_TARGET_GROUP_COUNT,	\
+				     MCUX_XSPI_MDAD_EXISTS, (||), n),	\
 		.frad_configs = {	\
 			.fradConfig = {	\
-				LISTIFY(MEMC_XSPI_SFP_FRAD_COUNT, MCUX_XSPI_FRAD_INIT, (,), n)	\
+				FOR_EACH_IDX_FIXED_ARG(MCUX_XSPI_FRAD_INIT, (,), n,	\
+					MEMC_XSPI_FRAD_REGION_IDS)	\
 			},	\
 		},	\
-		.frad_valid = DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(n), frad_region0)),	\
+		.frad_valid = LISTIFY(MEMC_XSPI_SFP_FRAD_COUNT,	\
+				     MCUX_XSPI_FRAD_EXISTS, (||), n),	\
 	};                  \
 	static struct memc_mcux_xspi_data memc_mcux_xspi_data_##n = {                              \
 		.base = (XSPI_Type *)DT_INST_REG_ADDR(n),                                          \
@@ -291,4 +450,5 @@ static int memc_mcux_xspi_init(const struct device *dev)
 			      &memc_mcux_xspi_config_##n, POST_KERNEL, CONFIG_MEMC_INIT_PRIORITY,  \
 			      NULL);
 
+DT_INST_FOREACH_STATUS_OKAY(MCUX_XSPI_VALIDATE)
 DT_INST_FOREACH_STATUS_OKAY(MCUX_XSPI_INIT)

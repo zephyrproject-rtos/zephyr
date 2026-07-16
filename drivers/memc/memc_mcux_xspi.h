@@ -104,6 +104,7 @@ uint32_t memc_mcux_xspi_get_ahb_address(const struct device *dev);
  * The XSPI controller caches memory-mapped flash reads in its AHB buffers.
  * After an erase or program the buffer contents are stale, so it must be
  * cleared before the next memory-mapped read to observe the new flash data.
+ *
  * @param dev: XSPI device
  */
 void memc_mcux_xspi_clear_ahb_buffer(const struct device *dev);
