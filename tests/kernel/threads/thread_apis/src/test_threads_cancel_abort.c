@@ -51,6 +51,7 @@ static void thread_entry_abort(void *p1, void *p2, void *p3)
  *   after it.
  *
  * @see k_thread_abort()
+ * @verifies ZEP-SRS-1-6
  */
 ZTEST_USER(threads_lifecycle, test_thread_abort_self)
 {
@@ -83,6 +84,7 @@ ZTEST_USER(threads_lifecycle, test_thread_abort_self)
  *   starting is terminated.
  *
  * @see k_thread_abort()
+ * @verifies ZEP-SRS-1-6
  */
 ZTEST_USER(threads_lifecycle, test_thread_abort_others)
 {
@@ -125,6 +127,7 @@ ZTEST_USER(threads_lifecycle, test_thread_abort_others)
  * - The repeated aborts complete without error and the system keeps running.
  *
  * @see k_thread_abort()
+ * @verifies ZEP-SRS-1-6
  */
 ZTEST(threads_lifecycle_1cpu, test_thread_abort_repeat)
 {
@@ -174,6 +177,7 @@ static void delayed_thread_entry(void *p1, void *p2, void *p3)
  * - The thread never runs, so its flag stays clear.
  *
  * @see k_thread_abort()
+ * @verifies ZEP-SRS-1-6
  */
 ZTEST(threads_lifecycle_1cpu, test_thread_abort_delayed)
 {
@@ -263,6 +267,7 @@ extern struct k_sem offload_sem;
  *
  * @see k_thread_abort()
  * @see irq_offload()
+ * @verifies ZEP-SRS-1-6
  */
 ZTEST(threads_lifecycle, test_thread_abort_from_isr)
 {
@@ -330,6 +335,7 @@ static void entry_aborted_thread(void *p1, void *p2, void *p3)
  *
  * @see k_thread_abort()
  * @see irq_offload()
+ * @verifies ZEP-SRS-1-6
  */
 ZTEST(threads_lifecycle, test_thread_abort_from_isr_not_self)
 {

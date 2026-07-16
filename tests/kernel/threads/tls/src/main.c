@@ -213,6 +213,7 @@ static void start_tls_test(uint32_t thread_options)
  * - Every thread reads back only the values it wrote itself.
  *
  * @see Z_THREAD_LOCAL
+ * @verifies ZEP-SRS-1-23
  */
 ZTEST(thread_tls, test_tls_vars_are_per_thread)
 {
@@ -247,6 +248,7 @@ ZTEST(thread_tls, test_tls_vars_are_per_thread)
  *
  * @see Z_THREAD_LOCAL
  * @see k_thread_create()
+ * @verifies ZEP-SRS-1-23
  */
 ZTEST_USER(thread_tls, test_tls_vars_are_per_thread_user)
 {

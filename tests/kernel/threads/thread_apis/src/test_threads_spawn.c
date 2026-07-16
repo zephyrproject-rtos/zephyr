@@ -55,6 +55,8 @@ static void thread_entry_delay(void *p1, void *p2, void *p3)
  * - The thread observes exactly the parameters that were passed to it.
  *
  * @see k_thread_create()
+ * @verifies ZEP-SRS-1-1
+ * @verifies ZEP-SRS-1-15
  */
 ZTEST_USER(threads_lifecycle, test_thread_spawn_params)
 {
@@ -86,6 +88,8 @@ ZTEST_USER(threads_lifecycle, test_thread_spawn_params)
  *
  * @see k_thread_create()
  * @see k_thread_priority_get()
+ * @verifies ZEP-SRS-1-1
+ * @verifies ZEP-SRS-1-2
  */
 ZTEST(threads_lifecycle, test_thread_spawn_priority)
 {
@@ -116,6 +120,8 @@ ZTEST(threads_lifecycle, test_thread_spawn_priority)
  * - The sentinel is untouched, so the thread had not run yet.
  *
  * @see k_thread_create()
+ * @verifies ZEP-SRS-1-1
+ * @verifies ZEP-SRS-1-5
  */
 ZTEST_USER(threads_lifecycle, test_thread_spawn_delay)
 {
@@ -154,6 +160,7 @@ ZTEST_USER(threads_lifecycle, test_thread_spawn_delay)
  *
  * @see k_thread_create()
  * @see k_thread_start()
+ * @verifies ZEP-SRS-1-1
  */
 ZTEST(threads_lifecycle, test_thread_spawn_forever)
 {
@@ -195,6 +202,8 @@ ZTEST(threads_lifecycle, test_thread_spawn_forever)
  * - The second start does nothing, so the value stays as it was reset.
  *
  * @see k_thread_start()
+ * @verifies ZEP-SRS-1-1
+ * @verifies ZEP-SRS-1-14
  */
 ZTEST(threads_lifecycle, test_thread_start)
 {
@@ -245,6 +254,7 @@ static void user_start_thread(void *p1, void *p2, void *p3)
  *
  * @see k_thread_start()
  * @see k_thread_create()
+ * @verifies ZEP-SRS-1-14
  */
 ZTEST_USER(threads_lifecycle, test_thread_start_user)
 {

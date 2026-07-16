@@ -52,6 +52,9 @@ void child_fn(void *a, void *b, void *c)
  * @see k_thread_cpu_mask_enable()
  * @see k_thread_cpu_mask_disable()
  * @see k_thread_cpu_pin()
+ * @verifies ZEP-SRS-34-2
+ * @verifies ZEP-SRS-34-12
+ * @verifies ZEP-SRS-34-13
  */
 ZTEST(threads_lifecycle_1cpu, test_thread_cpu_mask)
 {
