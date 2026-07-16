@@ -182,6 +182,8 @@ static bool dbg_enabled(void)
  * @see LOG_INF()
  * @see LOG_DBG()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-7
  */
 ZTEST(test_log_api, test_log_various_messages)
 {
@@ -277,6 +279,9 @@ ZTEST(test_log_api, test_log_various_messages)
  * @see log_filter_get()
  * @see log_frontend_filter_set()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-4
+ * @verifies ZEP-SRS-11-5
+ * @verifies ZEP-SRS-11-10
  */
 ZTEST(test_log_api, test_log_backend_runtime_filtering)
 {
@@ -456,6 +461,8 @@ static uint8_t log_buf[CONFIG_LOG_BUFFER_SIZE];
  * @see LOG_HEXDUMP_INF()
  * @see LOG_INF()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-6
+ * @verifies ZEP-SRS-11-22
  */
 ZTEST(test_log_api, test_log_overflow)
 {
@@ -555,6 +562,7 @@ ZTEST(test_log_api, test_log_overflow)
  *
  * @see LOG_INF()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
  */
 ZTEST(test_log_api, test_log_arguments)
 {
@@ -634,6 +642,7 @@ ZTEST(test_log_api, test_log_arguments)
  * @see LOG_MODULE_DECLARE()
  * @see log_source_id_get()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-11
  */
 ZTEST(test_log_api, test_log_from_declared_module)
 {
@@ -751,6 +760,8 @@ static void log_n_messages(uint32_t n_msg, uint32_t exp_dropped)
  *
  * @see log_backend_dropped()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-6
+ * @verifies ZEP-SRS-11-22
  */
 ZTEST(test_log_api_1cpu, test_log_msg_dropped_notification)
 {
@@ -802,6 +813,8 @@ ZTEST(test_log_api_1cpu, test_log_msg_dropped_notification)
  *
  * @see log_panic()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-8
+ * @verifies ZEP-SRS-11-13
  */
 ZTEST(test_log_api, test_log_panic)
 {
@@ -852,6 +865,7 @@ ZTEST(test_log_api, test_log_panic)
  *
  * @see printk()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-20
  */
 ZTEST(test_log_api, test_log_printk)
 {
@@ -1056,6 +1070,7 @@ ZTEST(test_log_api, test_log_wrn_once)
  *
  * @see CONFIG_LOG_OVERRIDE_LEVEL
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-9
  */
 ZTEST(test_log_api, test_log_override_level)
 {
