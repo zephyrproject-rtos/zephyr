@@ -202,6 +202,7 @@ static int device_visitor(const struct device *dev,
  *
  * @ingroup kernel_device_tests
  * @see device_required_handles_get, device_required_foreach
+ * @verifies ZEP-SRS-14-11
  */
 ZTEST(devicetree_devices, test_requires)
 {
@@ -357,6 +358,7 @@ ZTEST(devicetree_devices, test_get_or_null)
  *
  * @ingroup kernel_device_tests
  * @see device_supported_handles_get, device_supported_foreach
+ * @verifies ZEP-SRS-14-11
  */
 ZTEST(devicetree_devices, test_supports)
 {

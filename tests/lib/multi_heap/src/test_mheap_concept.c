@@ -58,6 +58,7 @@ static void tmheap_malloc_align4_handler(void *p1, void *p2, void *p3)
  * blocks allocated.
  *
  * @see k_malloc(), k_free()
+ * @verifies ZEP-SRS-9-11
  */
 ZTEST(mheap_api, test_mheap_malloc_align4)
 {
@@ -94,6 +95,8 @@ static void tmheap_threadsafe_handler(void *p1, void *p2, void *p3)
  * interfering with each other.
  *
  * @ingroup kernel_memory_slab_tests
+ *
+ * @verifies ZEP-SRS-9-11
  */
 ZTEST(mheap_api, test_mheap_threadsafe)
 {
