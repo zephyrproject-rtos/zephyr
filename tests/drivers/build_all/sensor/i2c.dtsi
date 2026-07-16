@@ -1680,3 +1680,9 @@ test_i2c_icm56686: icm56686@68 {
 	gyro-lpf = <1>;
 	gyro-pwr-mode = <2>;
 };
+
+test_i2c_lps33hw: lps33hw@d9 {
+	compatible = "st,lps33hw";
+	reg = <0xd9>;
+	odr = <75>;
+};
