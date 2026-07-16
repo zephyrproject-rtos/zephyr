@@ -303,6 +303,36 @@ ZTEST_USER(syscalls, test_string_nlen)
 }
 
 /**
+ * @brief Test that string_nlen with maxlen 0 does not touch the string
+ *
+ * @details strnlen() semantics require examining at most maxlen bytes,
+ * so with maxlen == 0 the source pointer must not be dereferenced at
+ * all: even an inaccessible address must yield length 0 and no error.
+ * Regression test for arch implementations that loaded the string
+ * byte before checking the length limit.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_usermode_string_nlen()
+ */
+ZTEST(syscalls, test_string_nlen_maxsize_zero)
+{
+	int err = 0;
+	size_t ret;
+	char buf[8] = "abcdefg";
+
+	ret = k_usermode_string_nlen((const char *)FAULTY_ADDRESS, 0, &err);
+	zassert_equal(ret, 0, "maxlen=0 returned %zu", ret);
+	zassert_equal(err, 0, "maxlen=0 dereferenced the pointer (err %d)", err);
+
+	/* Capped length: no NUL within maxlen must return maxlen. */
+	err = 0;
+	ret = k_usermode_string_nlen(buf, 4, &err);
+	zassert_equal(ret, 4, "capped length returned %zu", ret);
+	zassert_equal(err, 0, "capped length faulted (err %d)", err);
+}
+
+/**
  * @brief Test to verify syscall for string alloc copy
  *
  * @ingroup kernel_memprotect_tests
