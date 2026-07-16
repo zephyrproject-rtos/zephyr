@@ -51,6 +51,7 @@
  *   call reports the correct previous state.
  *
  * @see sys_set_bit()
+ * @verifies ZEP-SRS-19-1
  */
 ZTEST(bitfield, test_bitfield)
 {
