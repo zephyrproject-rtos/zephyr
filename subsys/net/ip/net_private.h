@@ -152,12 +152,6 @@ static inline int net_context_get_local_addr(struct net_context *context,
 }
 #endif
 
-#if defined(CONFIG_DNS_SOCKET_DISPATCHER)
-extern void dns_dispatcher_init(void);
-#else
-static inline void dns_dispatcher_init(void) { }
-#endif
-
 #if defined(CONFIG_MDNS_RESPONDER)
 extern void mdns_init_responder(void);
 #else
