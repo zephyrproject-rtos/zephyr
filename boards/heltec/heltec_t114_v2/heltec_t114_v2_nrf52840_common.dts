@@ -46,16 +46,6 @@
 			label = "ADC Control";
 		};
 
-		tft_en: tft_en {
-			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
-			label = "TFT_EN - display enable";
-		};
-
-		tft_led_en: tft_led_en {
-			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
-			label = "TFT_LED_EN - display backlight";
-		};
-
 		gnss_rst: gnss_rst {
 			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
 			label = "gnss Reset";
@@ -93,6 +83,20 @@
 				 LED_COLOR_ID_RED
 				 LED_COLOR_ID_BLUE>;
 		status = "okay";
+	};
+
+	tft_en: tft_en {
+		compatible = "regulator-fixed";
+		regulator-name = "tft_power_enable";
+		enable-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		regulator-boot-on;
+	};
+
+	tft_led_en: tft_led_en {
+		compatible = "regulator-fixed";
+		regulator-name = "tft_backlight_enable";
+		enable-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+		regulator-boot-on;
 	};
 
 	mipi_dbi_tft {
@@ -142,8 +146,6 @@
 		watchdog0 = &wdt0;
 		vext-control = &vext_control;
 		adc-control = &adc_control;
-		tft-en = &tft_en;
-		tft-led-en = &tft_led_en;
 		gnss-rst = &gnss_rst;
 		gnss-wakeup = &gnss_wakeup;
 	};
