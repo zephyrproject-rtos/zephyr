@@ -76,6 +76,7 @@ struct ifx_cat1_dma_stream_rx {
 	size_t offset;
 	size_t counter;
 	uint32_t timeout;
+	k_timepoint_t timeout_deadline;
 	size_t dma_transmitted_bytes;
 	struct k_work_delayable timeout_work;
 };
@@ -101,6 +102,7 @@ struct ifx_cat1_uart_async {
 	size_t rx_next_buf_len;
 };
 
+#define IFX_UART_ASYNC_RX_POLL_INTERVAL_US 1000U
 #define CURRENT_BUFFER 0
 #define NEXT_BUFFER    1
 
@@ -402,9 +404,6 @@ static int ifx_cat1_uart_configure(const struct device *dev, const struct uart_c
 	struct ifx_cat1_uart_data *data = dev->data;
 	const struct ifx_cat1_uart_config *const config = dev->config;
 
-	/* Store Uart Zephyr configuration (uart config) into data structure */
-	data->cfg = *cfg;
-
 	/* Configure parity, data and stop bits */
 	Cy_SCB_UART_Disable(config->reg_addr, NULL);
 	data->scb_config.dataWidth = convert_uart_data_bits_z_to_cy(cfg->data_bits);
@@ -421,6 +420,11 @@ static int ifx_cat1_uart_configure(const struct device *dev, const struct uart_c
 	/* Enable RTS/CTS flow control */
 	if ((result == CY_RSLT_SUCCESS) && cfg->flow_ctrl) {
 		Cy_SCB_UART_EnableCts(config->reg_addr);
+	}
+
+	/* Store Uart Zephyr configuration (uart config) into data structure */
+	if (result == CY_RSLT_SUCCESS) {
+		data->cfg = *cfg;
 	}
 
 	return (result == CY_RSLT_SUCCESS) ? 0 : -ENOTSUP;
@@ -806,7 +810,16 @@ static int ifx_cat1_uart_async_tx_abort(const struct device *dev)
 	struct dma_status stat;
 	int err = 0;
 
+	if (data->async.dma_tx.dma_dev == NULL) {
+		return -ENODEV;
+	}
+
 	unsigned int key = irq_lock();
+
+	if (data->async.dma_tx.buf == NULL) {
+		err = -EFAULT;
+		goto unlock;
+	}
 
 	k_work_cancel_delayable(&data->async.dma_tx.timeout_work);
 
@@ -818,13 +831,21 @@ static int ifx_cat1_uart_async_tx_abort(const struct device *dev)
 
 	err = dma_get_status(data->async.dma_tx.dma_dev, data->async.dma_tx.dma_channel, &stat);
 	if (err) {
-		LOG_ERR("Error stopping Tx DMA (%d)", err);
-		goto unlock;
+		LOG_WRN("Error getting Tx DMA status (%d), assuming 0 bytes sent", err);
+		evt.data.tx.len = 0;
+	} else {
+		if (data->async.dma_tx.buf_len >= stat.pending_length) {
+			evt.data.tx.len = data->async.dma_tx.buf_len - stat.pending_length;
+		} else {
+			evt.data.tx.len = 0;
+		}
 	}
 
 	evt.type = UART_TX_ABORTED;
 	evt.data.tx.buf = data->async.dma_tx.buf;
-	evt.data.tx.len = 0;
+
+	data->async.dma_tx.buf = NULL;
+	data->async.dma_tx.buf_len = 0;
 
 	if (data->async.cb) {
 		data->async.cb(dev, &evt, data->async.user_data);
@@ -843,6 +864,11 @@ static void dma_callback_tx_done(const struct device *dma_dev, void *arg, uint32
 	struct ifx_cat1_uart_data *const data = uart_dev->data;
 
 	unsigned int key = irq_lock();
+
+	if (data->async.dma_tx.buf == NULL) {
+		irq_unlock(key);
+		return;
+	}
 
 	if (status == 0) {
 
@@ -1014,7 +1040,8 @@ static int ifx_cat1_uart_async_rx_enable(const struct device *dev, uint8_t *rx_d
 
 	/* Configure timeout */
 	if ((timeout != SYS_FOREVER_US) && (timeout != 0)) {
-		k_work_reschedule(&data->async.dma_rx.timeout_work, K_USEC(timeout));
+		k_work_reschedule(&data->async.dma_rx.timeout_work,
+				  K_USEC(MIN(timeout, IFX_UART_ASYNC_RX_POLL_INTERVAL_US)));
 	}
 
 unlock:
@@ -1064,7 +1091,8 @@ static void dma_callback_rx_rdy(const struct device *dma_dev, void *arg, uint32_
 		if ((data->async.dma_rx.timeout != SYS_FOREVER_US) &&
 		    (data->async.dma_rx.timeout != 0)) {
 			k_work_reschedule(&data->async.dma_rx.timeout_work,
-					  K_USEC(data->async.dma_rx.timeout));
+					  K_USEC(MIN(data->async.dma_rx.timeout,
+						     IFX_UART_ASYNC_RX_POLL_INTERVAL_US)));
 		}
 
 	} else {
@@ -1089,12 +1117,13 @@ static void ifx_cat1_uart_async_rx_timeout(struct k_work *work)
 		CONTAINER_OF(dwork, struct ifx_cat1_dma_stream_rx, timeout_work);
 	struct ifx_cat1_uart_async *async =
 		CONTAINER_OF(dma_rx, struct ifx_cat1_uart_async, dma_rx);
-	struct ifx_cat1_uart_data *data = CONTAINER_OF(async, struct ifx_cat1_uart_data, async);
+	struct ifx_cat1_uart_data *data = async->uart_dev->data;
 	struct dma_status stat;
 
 	unsigned int key = irq_lock();
 
-	if (dma_rx->buf_len == 0) {
+	if ((dma_rx->buf_len == 0) || (dma_rx->timeout == SYS_FOREVER_US) ||
+	    (dma_rx->timeout == 0)) {
 		irq_unlock(key);
 		return;
 	}
@@ -1102,16 +1131,28 @@ static void ifx_cat1_uart_async_rx_timeout(struct k_work *work)
 	if (dma_get_status(dma_rx->dma_dev, dma_rx->dma_channel, &stat) == 0) {
 		size_t rx_rcv_len = dma_rx->buf_len - stat.pending_length;
 
-		if ((rx_rcv_len > 0) && (rx_rcv_len == dma_rx->counter)) {
+		if (rx_rcv_len != dma_rx->counter) {
 			dma_rx->counter = rx_rcv_len;
+			/* Wait a full idle interval after observed progress. The extra tick
+			 * prevents early expiry when the observation falls between ticks.
+			 */
+			dma_rx->timeout_deadline = sys_timepoint_calc(
+				K_TICKS(k_us_to_ticks_ceil64(dma_rx->timeout) + 1U));
+		} else if ((dma_rx->counter > dma_rx->offset) &&
+			   sys_timepoint_expired(dma_rx->timeout_deadline)) {
 			async_evt_rx_rdy(data);
-		} else {
-			dma_rx->counter = rx_rcv_len;
 		}
+	} else {
+		/* A failed progress query cannot establish an idle interval. */
+		dma_rx->timeout_deadline = sys_timepoint_calc(
+			K_TICKS(k_us_to_ticks_ceil64(dma_rx->timeout) + 1U));
 	}
 
-	if ((dma_rx->timeout != SYS_FOREVER_US) && (dma_rx->timeout != 0)) {
-		k_work_reschedule(&dma_rx->timeout_work, K_USEC(dma_rx->timeout));
+	/* The callback may have disabled RX. */
+	if ((dma_rx->buf_len != 0) && (dma_rx->timeout != SYS_FOREVER_US) &&
+	    (dma_rx->timeout != 0)) {
+		k_work_reschedule(&dma_rx->timeout_work,
+				  K_USEC(MIN(dma_rx->timeout, IFX_UART_ASYNC_RX_POLL_INTERVAL_US)));
 	}
 
 	irq_unlock(key);
