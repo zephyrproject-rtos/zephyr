@@ -82,6 +82,8 @@ static void thread_entry(void *p1, void *p2, void *p3)
  *
  * @see k_thread_suspend()
  * @see k_thread_resume()
+ *
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp_suspend_resume, test_smp_thread_suspend_resume_stress)
 {

@@ -342,6 +342,9 @@ ZTEST_F(cpu_deferred_start, test_cpu_deferred_start_boot_topology)
  * - The pinned thread runs, so the CPU started and is scheduling threads.
  *
  * @see k_smp_cpu_start()
+ *
+ * @verifies ZEP-SRS-34-7
+ * @verifies ZEP-SRS-34-14
  */
 ZTEST(cpu_deferred_start, test_cpu_deferred_start_runtime_bringup)
 {
@@ -437,6 +440,9 @@ ZTEST(cpu_deferred_start, test_cpu_deferred_start_ipi_ready)
  *   initialization function was invoked on that CPU with the given argument.
  *
  * @see k_smp_cpu_start()
+ *
+ * @verifies ZEP-SRS-34-7
+ * @verifies ZEP-SRS-34-8
  */
 ZTEST_F(cpu_deferred_start, test_cpu_deferred_start_custom_init)
 {

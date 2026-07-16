@@ -138,6 +138,9 @@ static void t2_fn(void *a, void *b, void *c)
  *
  * @see k_thread_create()
  * @see K_PRIO_COOP()
+ *
+ * @verifies ZEP-SRS-34-1
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp, test_smp_coop_threads)
 {
@@ -218,6 +221,9 @@ static void child_fn(void *p1, void *p2, void *p3)
  *
  * @see arch_curr_cpu()
  * @see k_thread_create()
+ *
+ * @verifies ZEP-SRS-12-9
+ * @verifies ZEP-SRS-34-5
  */
 ZTEST(smp, test_smp_cpu_id_threads)
 {
@@ -362,6 +368,8 @@ static void __no_optimization thread_ab_entry(void *p1, void *p2, void *p3)
  *
  * @see k_thread_abort()
  * @see k_thread_join()
+ *
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp, test_smp_coop_switch_in_abort)
 {
@@ -430,6 +438,9 @@ ZTEST(smp, test_smp_coop_switch_in_abort)
  *
  * @see K_PRIO_COOP()
  * @see k_thread_create()
+ *
+ * @verifies ZEP-SRS-34-1
+ * @verifies ZEP-SRS-2-14
  */
 ZTEST(smp, test_smp_coop_resched_threads)
 {
@@ -487,6 +498,9 @@ ZTEST(smp, test_smp_coop_resched_threads)
  *
  * @see K_PRIO_PREEMPT()
  * @see k_thread_create()
+ *
+ * @verifies ZEP-SRS-34-1
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp, test_smp_preempt_resched_threads)
 {
@@ -533,6 +547,8 @@ ZTEST(smp, test_smp_preempt_resched_threads)
  *   the yield.
  *
  * @see k_yield()
+ *
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp, test_smp_yield_threads)
 {
@@ -578,6 +594,8 @@ ZTEST(smp, test_smp_yield_threads)
  * - Every spawned thread has executed by the time the sleep expires.
  *
  * @see k_msleep()
+ *
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp, test_smp_sleep_threads)
 {
@@ -677,6 +695,8 @@ static void check_wokeup_threads(int tnum)
  *
  * @see k_wakeup()
  * @see k_msleep()
+ *
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp, test_smp_wakeup_threads)
 {
@@ -751,6 +771,8 @@ static int _cpu_id;
  *   differs from the test thread's CPU.
  *
  * @see arch_curr_cpu()
+ *
+ * @verifies ZEP-SRS-34-6
  */
 ZTEST(smp, test_smp_get_cpu)
 {
@@ -797,6 +819,8 @@ ZTEST(smp, test_smp_get_cpu)
  * - arch_num_cpus() reports a count within the configured range.
  *
  * @see arch_num_cpus()
+ *
+ * @verifies ZEP-SRS-34-4
  */
 ZTEST(smp, test_smp_num_cpus)
 {
@@ -822,6 +846,8 @@ static K_SEM_DEFINE(coherence_sem, 0, 1);
  * cache-coherent architectures).
  *
  * @see cache_is_mem_coherent()
+ *
+ * @verifies ZEP-SRS-34-19
  */
 ZTEST(smp, test_smp_kernel_coherence)
 {
@@ -873,6 +899,8 @@ void z_trace_sched_ipi(void)
  *
  * @see arch_sched_broadcast_ipi()
  * @see z_trace_sched_ipi()
+ *
+ * @verifies ZEP-SRS-34-11
  */
 ZTEST(smp, test_smp_ipi)
 {
@@ -964,6 +992,8 @@ void entry_oops(void *p1, void *p2, void *p3)
  *
  * @see k_oops()
  * @see k_sys_fatal_error_handler()
+ *
+ * @verifies ZEP-SRS-34-1
  */
 ZTEST(smp, test_smp_fatal_error)
 {
@@ -1017,6 +1047,8 @@ static void workq_handler(struct k_work *work)
  *
  * @see k_work_submit()
  * @see k_work_busy_get()
+ *
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp, test_smp_workq)
 {
@@ -1109,6 +1141,8 @@ static void t2_mutex_lock(void *p1, void *p2, void *p3)
  *
  * @see k_mutex_lock()
  * @see k_mutex_unlock()
+ *
+ * @verifies ZEP-SRS-34-3
  */
 ZTEST(smp, test_smp_release_global_lock)
 {
@@ -1299,6 +1333,8 @@ static int run_concurrency(void *p1, void *p2, void *p3)
  * @see irq_lock()
  * @see k_sem_take()
  * @see k_mutex_lock()
+ *
+ * @verifies ZEP-SRS-34-3
  */
 ZTEST(smp, test_smp_inc_concurrency)
 {
@@ -1420,6 +1456,8 @@ static void signal_raise(void *arg0, void *arg1, void *arg2)
  * @see k_poll()
  * @see k_poll_signal_raise()
  * @see k_poll_signal_reset()
+ *
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp_stress, test_smp_switch_stress)
 {

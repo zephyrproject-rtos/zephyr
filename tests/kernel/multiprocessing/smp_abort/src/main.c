@@ -92,6 +92,8 @@ static void thread_entry(void *p1, void *p2, void *p3)
  *
  * @see k_thread_abort()
  * @see irq_offload()
+ *
+ * @verifies ZEP-SRS-34-10
  */
 ZTEST(smp_abort, test_smp_thread_abort_deadlock)
 {

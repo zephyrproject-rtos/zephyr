@@ -135,6 +135,9 @@ static void helper_thread_entry(void *p1, void *p2, void *p3)
  *
  * @see irq_offload()
  * @see K_HIGHEST_THREAD_PRIO
+ *
+ * @verifies ZEP-SRS-2-4
+ * @verifies ZEP-SRS-34-11
  */
 ZTEST(smp_metairq, test_smp_metairq_no_migration)
 {

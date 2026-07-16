@@ -210,6 +210,9 @@ void thread2_entry(void *p1, void *p2, void *p3)
  *
  * @see k_thread_cpu_pin()
  * @see k_event_set()
+ *
+ * @verifies ZEP-SRS-34-11
+ * @verifies ZEP-SRS-34-18
  */
 ZTEST(ipi_cascade, test_ipi_cascade)
 {

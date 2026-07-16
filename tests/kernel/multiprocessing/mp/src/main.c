@@ -80,6 +80,8 @@ FUNC_NORETURN void cpu_fn(void *arg)
  *   and reports itself running within the timeout.
  *
  * @see arch_cpu_start()
+ * @verifies ZEP-SRS-34-7
+ * @verifies ZEP-SRS-34-8
  */
 ZTEST(multiprocessing, test_mp_start)
 {

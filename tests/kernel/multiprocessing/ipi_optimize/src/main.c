@@ -289,6 +289,8 @@ void busy_threads_priority_set(int priority, int delta)
  *   issuing CPU received none.
  *
  * @see arch_sched_broadcast_ipi()
+ *
+ * @verifies ZEP-SRS-34-11
  */
 ZTEST(ipi, test_ipi_broadcast_reaches_all_cpus)
 {
@@ -350,6 +352,8 @@ ZTEST(ipi, test_ipi_broadcast_reaches_all_cpus)
  *   count stayed at zero.
  *
  * @see arch_sched_directed_ipi()
+ *
+ * @verifies ZEP-SRS-34-17
  */
 ZTEST(ipi, test_ipi_directed_reaches_target_cpu)
 {
@@ -698,6 +702,8 @@ ZTEST(ipi, test_ipi_metairq_displaced_wake_sends_one)
  *
  * @see k_sem_give()
  * @see z_is_thread_ready()
+ *
+ * @verifies ZEP-SRS-34-16
  */
 ZTEST(ipi, test_ipi_low_thread_wake_sends_none)
 {
@@ -767,6 +773,8 @@ ZTEST(ipi, test_ipi_low_thread_wake_sends_none)
  *
  * @see k_sem_give()
  * @see z_is_thread_ready()
+ *
+ * @verifies ZEP-SRS-34-16
  */
 ZTEST(ipi, test_ipi_high_thread_wake_sends_all)
 {
@@ -845,6 +853,9 @@ ZTEST(ipi, test_ipi_high_thread_wake_sends_all)
  *   current CPU received none.
  *
  * @see k_thread_priority_set()
+ *
+ * @verifies ZEP-SRS-34-16
+ * @verifies ZEP-SRS-34-17
  */
 ZTEST(ipi, test_ipi_priority_set_lower_sends)
 {
@@ -921,6 +932,8 @@ ZTEST(ipi, test_ipi_priority_set_lower_sends)
  *
  * @see k_sem_give()
  * @see K_PRIO_COOP()
+ *
+ * @verifies ZEP-SRS-34-16
  */
 ZTEST(ipi, test_ipi_coop_cpus_receive_none)
 {
