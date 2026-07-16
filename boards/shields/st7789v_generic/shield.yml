@@ -10,3 +10,11 @@ shields:
     vendor: waveshare
     supported_features:
       - display
+
+  - name: st7789v_waveshare_240x320
+    full_name: Waveshare 240x320 2.8inch TFT Touch Screen + SD
+    vendor: waveshare
+    supported_features:
+      - display
+      - touch
+      - mmc
