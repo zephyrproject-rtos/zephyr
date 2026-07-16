@@ -271,28 +271,24 @@ static void spi_cdns_send(const struct device *dev)
 	sys_write32(val, SPI_REG(dev, SPI_TX_DATA));
 }
 
-static inline void spi_cdns_rx_store(const struct spi_cdns_cfg *config,
-		struct spi_context *ctx,
-		uint32_t val, uint8_t dfs, int idx)
+static inline void spi_cdns_rx_store(const struct spi_cdns_cfg *config, struct spi_context *ctx,
+				     uint32_t val, uint8_t dfs, int idx)
 {
 	switch (dfs) {
 	case 1:
 		if (config->fifo_width == 8) {
 			UNALIGNED_PUT(val & 0xFF, (uint8_t *)ctx->rx_buf);
 		} else if (config->fifo_width == 16) {
-			UNALIGNED_PUT((val >> 8 * (1 - idx)) & 0xFF,
-					(uint8_t *)ctx->rx_buf);
+			UNALIGNED_PUT((val >> 8 * (1 - idx)) & 0xFF, (uint8_t *)ctx->rx_buf);
 		} else if (config->fifo_width == 32) {
-			UNALIGNED_PUT((val >> 8 * (3 - idx)) & 0xFF,
-					(uint8_t *)ctx->rx_buf);
+			UNALIGNED_PUT((val >> 8 * (3 - idx)) & 0xFF, (uint8_t *)ctx->rx_buf);
 		}
 		break;
 	case 2:
 		if (config->fifo_width == 16) {
 			UNALIGNED_PUT(val & 0xFFFF, (uint16_t *)ctx->rx_buf);
 		} else if (config->fifo_width == 32) {
-			UNALIGNED_PUT((val >> 16 * (1 - idx)) & 0xFFFF,
-					(uint16_t *)ctx->rx_buf);
+			UNALIGNED_PUT((val >> 16 * (1 - idx)) & 0xFFFF, (uint16_t *)ctx->rx_buf);
 		}
 		break;
 	case 4:
