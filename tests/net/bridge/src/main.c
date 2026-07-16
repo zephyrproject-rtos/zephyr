@@ -352,6 +352,26 @@ static void test_setup_bridge(void)
 	zassert_equal(ret, 0, "");
 }
 
+/* The bridge can terminate/originate IP traffic, so it must present a proper
+ * 6-byte Ethernet link address. If the link address max length is larger (e.g.
+ * 8 when another L2 such as IEEE 802.15.4/PPP or a custom length is enabled),
+ * setting the bridge address to that full length makes the Ethernet "for me"
+ * check (net_linkaddr_cmp, which requires equal lengths) reject locally
+ * destined unicast frames like ARP replies, breaking address resolution.
+ */
+static void test_bridge_link_addr(void)
+{
+	struct net_linkaddr *lladdr = net_if_get_link_addr(bridge);
+
+	zassert_not_null(lladdr, "");
+	zassert_equal(lladdr->len, NET_ETH_ADDR_LEN,
+		      "bridge link address length is %u, expected %u",
+		      lladdr->len, NET_ETH_ADDR_LEN);
+	zassert_equal(lladdr->type, NET_LINK_ETHERNET,
+		      "bridge link address type is %u, expected NET_LINK_ETHERNET",
+		      lladdr->type);
+}
+
 /*
  * When the bridge interface owns an IPv4 address it can originate traffic of
  * its own (e.g. a TCP server bound to the bridge). Such locally originated
@@ -511,6 +531,74 @@ static void test_local_ipv4_tx_unicast_arp_miss(void)
 
 	check_free_packet_count();
 }
+
+/* A locally destined unicast frame arriving on a member port must be delivered
+ * to the bridge, not dropped by the Ethernet "for me" check. Inject a unicast
+ * ARP request for the bridge's own IP and verify the bridge answers: the reply
+ * is flooded out the other member ports. If the request were dropped (e.g. due
+ * to a mismatched bridge link address length), no reply would be produced.
+ */
+static void test_local_unicast_delivered_to_bridge(void)
+{
+	struct net_in_addr peer_ip = { { { 192, 0, 2, 9 } } };
+	struct net_eth_addr peer_mac = {
+		.addr = { 0x02, 0xaa, 0xbb, 0xcc, 0xdd, 0xee }
+	};
+	struct net_eth_hdr eth_hdr = { 0 };
+	struct net_arp_hdr arp_hdr = { 0 };
+	struct net_linkaddr *bridge_ll;
+	bool reply_seen = false;
+	struct net_pkt *pkt;
+	int i, ret;
+
+	ensure_bridge_ipv4();
+	bridge_ll = net_if_get_link_addr(bridge);
+
+	for (i = 0; i < 3; i++) {
+		eth_fake_data[i].arp_seen = false;
+	}
+
+	pkt = net_pkt_rx_alloc_with_buffer(fake_iface[1],
+					   sizeof(eth_hdr) + sizeof(arp_hdr),
+					   NET_AF_UNSPEC, 0, K_FOREVER);
+	zassert_not_null(pkt, "");
+
+	/* Unicast Ethernet frame addressed to the bridge's own MAC. */
+	memcpy(&eth_hdr.dst, bridge_ll->addr, sizeof(eth_hdr.dst));
+	memcpy(&eth_hdr.src, peer_mac.addr, sizeof(eth_hdr.src));
+	eth_hdr.type = net_htons(NET_ETH_PTYPE_ARP);
+
+	/* ARP request: who-has <bridge_ip> tell <peer>. */
+	arp_hdr.hwtype = net_htons(NET_ARP_HTYPE_ETH);
+	arp_hdr.protocol = net_htons(NET_ETH_PTYPE_IP);
+	arp_hdr.hwlen = NET_ETH_ADDR_LEN;
+	arp_hdr.protolen = NET_ARP_IPV4_PTYPE_SIZE;
+	arp_hdr.opcode = net_htons(NET_ARP_REQUEST);
+	memcpy(&arp_hdr.src_hwaddr, peer_mac.addr, sizeof(arp_hdr.src_hwaddr));
+	memcpy(arp_hdr.src_ipaddr, &peer_ip, sizeof(arp_hdr.src_ipaddr));
+	memcpy(&arp_hdr.dst_hwaddr, bridge_ll->addr, sizeof(arp_hdr.dst_hwaddr));
+	memcpy(arp_hdr.dst_ipaddr, &bridge_ip, sizeof(arp_hdr.dst_ipaddr));
+
+	ret = net_pkt_write(pkt, &eth_hdr, sizeof(eth_hdr));
+	zassert_equal(ret, 0, "");
+	ret = net_pkt_write(pkt, &arp_hdr, sizeof(arp_hdr));
+	zassert_equal(ret, 0, "");
+
+	ret = net_recv_data(fake_iface[1], pkt);
+	zassert_equal(ret, 0, "");
+
+	/* give time to the processing threads to run */
+	k_sleep(K_MSEC(100));
+
+	for (i = 0; i < 3; i++) {
+		reply_seen |= eth_fake_data[i].arp_seen;
+	}
+
+	zassert_true(reply_seen,
+		     "unicast ARP request to bridge was dropped, no reply sent");
+
+	check_free_packet_count();
+}
 #endif /* CONFIG_NET_IPV4 */
 
 static void test_recv_with_bridge(void)
@@ -652,9 +740,11 @@ ZTEST(net_eth_bridge, test_net_eth_bridge)
 	test_recv_before_bridging();
 	DBG("With bridging\n");
 	test_setup_bridge();
+	test_bridge_link_addr();
 #if defined(CONFIG_NET_IPV4)
 	test_local_ipv4_tx_unicast();
 	test_local_ipv4_tx_unicast_arp_miss();
+	test_local_unicast_delivered_to_bridge();
 #endif
 	test_recv_with_bridge();
 	test_recv_with_bridge_fdb();
