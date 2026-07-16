@@ -10,10 +10,15 @@ config CLOCK_CONTROL_NRF_FORCE_ALT
 	  This option can be enabled to force an alternative implementation
 	  of the clock control driver.
 
+config CLOCK_CONTROL_NRFX_COMMON
+	bool
+	select ONOFF
+
 menuconfig CLOCK_CONTROL_NRF
 	bool "NRF Clock controller support"
 	default y
 	depends on DT_HAS_NORDIC_NRF_CLOCK_ENABLED
+	select CLOCK_CONTROL_NRFX_COMMON
 	select NRFX_CLOCK if !CLOCK_CONTROL_NRF_FORCE_ALT
 	select ONOFF
 	help
