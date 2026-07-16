@@ -1,0 +1,6 @@
+tests:
+  net.coap.oscore:
+    min_ram: 64
+    min_flash: 192
+    tags: net
+    depends_on: netif
