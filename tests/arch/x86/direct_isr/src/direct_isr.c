@@ -54,6 +54,8 @@ ISR_DIRECT_DECLARE(direct_isr2)
  * @ingroup kernel_interrupt_tests
  *
  * @see IRQ_DIRECT_CONNECT(), ISR_DIRECT_DECLARE()
+ * @verifies ZEP-SRS-7-3
+ * @verifies ZEP-SRS-7-11
  */
 ZTEST(x86_direct_interrupt, test_direct_interrupt)
 {

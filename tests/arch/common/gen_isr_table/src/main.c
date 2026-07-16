@@ -332,6 +332,8 @@ static int check_sw_isr(void *isr, uintptr_t arg, int offset)
  *
  * @see IRQ_DIRECT_CONNECT(), irq_enable()
  *
+ * @verifies ZEP-SRS-7-3
+ * @verifies ZEP-SRS-7-11
  */
 ZTEST(gen_isr_table, test_build_time_direct_interrupt)
 {
@@ -374,6 +376,8 @@ ZTEST(gen_isr_table, test_build_time_direct_interrupt)
  *
  * @see IRQ_CONNECT(), irq_enable()
  *
+ * @verifies ZEP-SRS-7-1
+ * @verifies ZEP-SRS-7-11
  */
 ZTEST(gen_isr_table, test_build_time_interrupt)
 {
@@ -419,6 +423,8 @@ ZTEST(gen_isr_table, test_build_time_interrupt)
  *
  * @see irq_connect_dynamic(), irq_enable()
  *
+ * @verifies ZEP-SRS-7-5
+ * @verifies ZEP-SRS-7-11
  */
 ZTEST(gen_isr_table, test_run_time_interrupt)
 {

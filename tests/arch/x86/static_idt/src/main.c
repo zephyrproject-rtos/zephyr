@@ -154,6 +154,8 @@ void idt_spur_task(void *arg1, void *arg2, void *arg3)
  * should get called. A specific handler is assigned to the divide-error
  * exception with _EXCEPTION_CONNECT_NOCODE(); triggering the exception
  * confirms the assigned handler is invoked.
+ *
+ * @verifies ZEP-SRS-16-3
  */
 
 ZTEST(static_idt, test_static_idt)

@@ -156,6 +156,8 @@ static void dynamic_shared_irq_suite_before(void *data)
  * @details This tests if interrupts are dynamically shared successfully
  * (i.e: multiple ISR/arg pairs are called whenever the interrupt
  * they were registered for is triggered).
+ * @verifies ZEP-SRS-7-5
+ * @verifies ZEP-SRS-7-15
  */
 ZTEST(shared_irq_feature, test_dynamic_shared_irq_write)
 {
@@ -188,6 +190,8 @@ ZTEST(shared_irq_feature, test_dynamic_shared_irq_write)
  * @details This tests if ISR/arg pairs are disconnected successfully
  * and the interrupts are "unshared" whenever a single ISR/arg pair is
  * left.
+ * @verifies ZEP-SRS-7-7
+ * @verifies ZEP-SRS-7-10
  */
 ZTEST(shared_irq_feature, test_dynamic_shared_irq_disconnect_write)
 {

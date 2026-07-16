@@ -151,6 +151,7 @@ void isr0(const void *param)
  * 3. [isr1] Set ISR 1 result token and return
  * 4. [isr0] Validate ISR 1 result token and return
  * 5. [thread] Validate ISR 0 result token
+ * @verifies ZEP-SRS-7-14
  */
 ZTEST(interrupt_feature, test_nested_isr)
 {
