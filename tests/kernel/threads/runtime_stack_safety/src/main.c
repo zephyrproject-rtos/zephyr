@@ -124,6 +124,7 @@ static void suite_teardown(void *fixture)
  *
  * @see k_thread_runtime_stack_unused_threshold_pct_set()
  * @see k_thread_runtime_stack_unused_threshold_get()
+ * @verifies ZEP-SRS-1-30
  */
 ZTEST(runtime_stack_safety, test_stack_safety_threshold_pct_set_get)
 {
@@ -165,6 +166,7 @@ ZTEST(runtime_stack_safety, test_stack_safety_threshold_pct_set_get)
  *
  * @see k_thread_runtime_stack_unused_threshold_set()
  * @see k_thread_runtime_stack_unused_threshold_get()
+ * @verifies ZEP-SRS-1-30
  */
 ZTEST(runtime_stack_safety, test_stack_safety_threshold_bytes_set_get)
 {
@@ -207,6 +209,7 @@ ZTEST(runtime_stack_safety, test_stack_safety_threshold_bytes_set_get)
  *   passed the correct thread, unused amount and argument.
  *
  * @see k_thread_runtime_stack_safety_full_check()
+ * @verifies ZEP-SRS-1-30
  */
 ZTEST(runtime_stack_safety, test_stack_safety_full_check)
 {
@@ -268,6 +271,7 @@ ZTEST(runtime_stack_safety, test_stack_safety_full_check)
  * - The check returns 0, reports a plausible unused value, and does not fault.
  *
  * @see k_thread_runtime_stack_safety_full_check()
+ * @verifies ZEP-SRS-1-30
  */
 ZTEST(runtime_stack_safety, test_stack_safety_full_check_null_handler)
 {
@@ -303,6 +307,7 @@ ZTEST(runtime_stack_safety, test_stack_safety_full_check_null_handler)
  *
  * @see k_thread_runtime_stack_safety_threshold_check()
  * @see k_thread_runtime_stack_safety_full_check()
+ * @verifies ZEP-SRS-1-30
  */
 ZTEST(runtime_stack_safety, test_stack_safety_threshold_check)
 {
@@ -359,6 +364,7 @@ ZTEST(runtime_stack_safety, test_stack_safety_threshold_check)
  * @see k_thread_runtime_stack_unused_threshold_set()
  * @see k_thread_runtime_stack_unused_threshold_get()
  * @see k_thread_runtime_stack_unused_threshold_pct_set()
+ * @verifies ZEP-SRS-1-30
  */
 ZTEST_USER(runtime_stack_safety, test_stack_safety_threshold_syscalls)
 {

@@ -126,6 +126,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
  *
  * @see K_THREAD_DEFINE()
  * @see k_thread_priority_get()
+ * @verifies ZEP-SRS-1-13
  */
 ZTEST_USER(thread_init, test_thread_init_kdefine_preempt)
 {
@@ -167,6 +168,7 @@ ZTEST_USER(thread_init, test_thread_init_kdefine_preempt)
  *
  * @see K_THREAD_DEFINE()
  * @see k_thread_priority_get()
+ * @verifies ZEP-SRS-1-13
  */
 ZTEST_USER(thread_init, test_thread_init_kdefine_coop)
 {
@@ -210,6 +212,7 @@ ZTEST_USER(thread_init, test_thread_init_kdefine_coop)
  *
  * @see k_thread_create()
  * @see k_thread_priority_get()
+ * @verifies ZEP-SRS-1-1
  */
 ZTEST_USER(thread_init, test_thread_init_create_preempt)
 {
@@ -266,6 +269,7 @@ ZTEST_USER(thread_init, test_thread_init_create_preempt)
  *
  * @see k_thread_create()
  * @see k_thread_priority_get()
+ * @verifies ZEP-SRS-1-1
  */
 ZTEST(thread_init, test_thread_init_create_coop)
 {

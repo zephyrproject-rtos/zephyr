@@ -254,6 +254,8 @@ ZTEST(thread_dynamic, test_dyn_thread_index_recycle)
  *
  * @see k_object_alloc()
  * @see k_thread_create()
+ * @verifies ZEP-SRS-1-1
+ * @verifies ZEP-SRS-1-9
  */
 ZTEST(thread_dynamic, test_dyn_thread_create_from_kernel)
 {
@@ -288,6 +290,8 @@ ZTEST(thread_dynamic, test_dyn_thread_create_from_kernel)
  *
  * @see k_object_alloc()
  * @see k_thread_create()
+ * @verifies ZEP-SRS-1-1
+ * @verifies ZEP-SRS-1-9
  */
 ZTEST_USER(thread_dynamic, test_dyn_thread_create_from_user)
 {

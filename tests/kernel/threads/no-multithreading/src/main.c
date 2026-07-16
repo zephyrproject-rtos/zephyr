@@ -33,6 +33,7 @@
  *
  * @see k_busy_wait()
  * @see k_uptime_get()
+ * @verifies ZEP-SRS-28-13
  */
 ZTEST(no_multithreading, test_no_multithreading_busy_wait)
 {
@@ -92,6 +93,8 @@ K_TIMER_DEFINE(timer, timeout_handler, NULL);
  * @see irq_lock()
  * @see irq_unlock()
  * @see k_timer_start()
+ * @verifies ZEP-SRS-7-8
+ * @verifies ZEP-SRS-7-9
  */
 ZTEST(no_multithreading, test_no_multithreading_irq_lock)
 {
@@ -153,6 +156,7 @@ ZTEST(no_multithreading, test_no_multithreading_irq_lock)
  *
  * @see k_cpu_idle()
  * @see k_timer_start()
+ * @verifies ZEP-SRS-13-14
  */
 ZTEST(no_multithreading, test_no_multithreading_cpu_idle)
 {
@@ -273,6 +277,7 @@ FOR_EACH(SYS_INIT_CREATE, (;), PRE_KERNEL_1, PRE_KERNEL_2, POST_KERNEL);
  * - All three init functions ran, in level order, leaving the counter at 3.
  *
  * @see SYS_INIT()
+ * @verifies ZEP-SRS-1-22
  */
 ZTEST(no_multithreading, test_no_multithreading_sys_init)
 {

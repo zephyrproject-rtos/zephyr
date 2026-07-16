@@ -435,6 +435,8 @@ void scenario_entry(void *stack_obj, size_t obj_size, size_t reported_size,
  * @see K_KERNEL_STACK_DEFINE()
  * @see K_THREAD_STACK_SIZEOF()
  * @see k_thread_stack_space_get()
+ * @verifies ZEP-SRS-1-8
+ * @verifies ZEP-SRS-1-35
  */
 ZTEST(userspace_thread_stack, test_thread_stack_buffer_access)
 {
