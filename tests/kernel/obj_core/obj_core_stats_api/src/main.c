@@ -59,6 +59,7 @@ static void test_thread_entry(void *p1, void *p2, void *p3)
  * - Both calls return -ENOTSUP.
  *
  * @see k_obj_core_stats_enable()
+ * @verifies ZEP-SRS-35-6
  */
 ZTEST(obj_core_stats_api, test_obj_core_stats_enable)
 {
@@ -110,6 +111,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_enable)
  * - Both calls return -ENOTSUP.
  *
  * @see k_obj_core_stats_disable()
+ * @verifies ZEP-SRS-35-6
  */
 ZTEST(obj_core_stats_api, test_obj_core_stats_disable)
 {
@@ -161,6 +163,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_disable)
  * - Both calls return -ENOTSUP.
  *
  * @see k_obj_core_stats_reset()
+ * @verifies ZEP-SRS-35-7
  */
 ZTEST(obj_core_stats_api, test_obj_core_stats_reset)
 {
@@ -212,6 +215,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_reset)
  * - Both calls return -ENOTSUP.
  *
  * @see k_obj_core_stats_query()
+ * @verifies ZEP-SRS-35-5
  */
 ZTEST(obj_core_stats_api, test_obj_core_stats_query)
 {
@@ -269,6 +273,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_query)
  *   -EINVAL.
  *
  * @see k_obj_core_stats_raw()
+ * @verifies ZEP-SRS-35-5
  */
 ZTEST(obj_core_stats_api, test_obj_core_stats_raw)
 {
@@ -354,6 +359,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_raw)
  *
  * @see k_obj_core_stats_deregister()
  * @see k_obj_core_stats_register()
+ * @verifies ZEP-SRS-35-6
  */
 ZTEST(obj_core_stats_api, test_obj_core_stats_dereg)
 {
@@ -413,6 +419,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_dereg)
  *
  * @see k_obj_core_stats_register()
  * @see k_obj_core_stats_raw()
+ * @verifies ZEP-SRS-35-6
  */
 ZTEST(obj_core_stats_api, test_obj_core_stats_register)
 {

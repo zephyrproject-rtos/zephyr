@@ -271,6 +271,30 @@ ZTEST(obj_core, test_obj_core_mbox)
 			     K_OBJ_CORE(&mbox1), K_OBJ_CORE(&mbox2));
 }
 
+/**
+ * @brief Verify condition variable objects are registered with the object core
+ * framework.
+ *
+ * @details
+ * Both a statically defined and a dynamically initialized condition variable
+ * are registered with the object core framework. Confirm the condition variable
+ * object type can be found and that walking it locates both objects.
+ *
+ * Test steps:
+ * - Initialize a condition variable dynamically with k_condvar_init().
+ * - Find the condition variable object type and walk it (locked and unlocked)
+ *   for both the static and dynamic condition variables.
+ *
+ * Expected result:
+ * - Both the static and dynamic condition variable object cores are found.
+ *
+ * @see k_obj_type_find()
+ * @see k_obj_type_walk_locked()
+ * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
+ */
 ZTEST(obj_core, test_obj_core_condvar)
 {
 	k_condvar_init(&condvar2);
@@ -278,6 +302,29 @@ ZTEST(obj_core, test_obj_core_condvar)
 			     K_OBJ_CORE(&condvar1), K_OBJ_CORE(&condvar2));
 }
 
+/**
+ * @brief Verify event objects are registered with the object core framework.
+ *
+ * @details
+ * Both a statically defined and a dynamically initialized event are registered
+ * with the object core framework. Confirm the event object type can be found
+ * and that walking it locates both objects.
+ *
+ * Test steps:
+ * - Initialize an event dynamically with k_event_init().
+ * - Find the event object type and walk it (locked and unlocked) for both the
+ *   static and dynamic events.
+ *
+ * Expected result:
+ * - Both the static and dynamic event object cores are found.
+ *
+ * @see k_obj_type_find()
+ * @see k_obj_type_walk_locked()
+ * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
+ */
 ZTEST(obj_core, test_obj_core_event)
 {
 	k_event_init(&event2);
@@ -285,6 +332,29 @@ ZTEST(obj_core, test_obj_core_event)
 			     K_OBJ_CORE(&event1), K_OBJ_CORE(&event2));
 }
 
+/**
+ * @brief Verify mutex objects are registered with the object core framework.
+ *
+ * @details
+ * Both a statically defined and a dynamically initialized mutex are registered
+ * with the object core framework. Confirm the mutex object type can be found
+ * and that walking it locates both objects.
+ *
+ * Test steps:
+ * - Initialize a mutex dynamically with k_mutex_init().
+ * - Find the mutex object type and walk it (locked and unlocked) for both the
+ *   static and dynamic mutexes.
+ *
+ * Expected result:
+ * - Both the static and dynamic mutex object cores are found.
+ *
+ * @see k_obj_type_find()
+ * @see k_obj_type_walk_locked()
+ * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
+ */
 ZTEST(obj_core, test_obj_core_mutex)
 {
 	k_mutex_init(&mutex2);
@@ -292,6 +362,30 @@ ZTEST(obj_core, test_obj_core_mutex)
 			     K_OBJ_CORE(&mutex1), K_OBJ_CORE(&mutex2));
 }
 
+/**
+ * @brief Verify semaphore objects are registered with the object core
+ * framework.
+ *
+ * @details
+ * Both a statically defined and a dynamically initialized semaphore are
+ * registered with the object core framework. Confirm the semaphore object type
+ * can be found and that walking it locates both objects.
+ *
+ * Test steps:
+ * - Initialize a semaphore dynamically with k_sem_init().
+ * - Find the semaphore object type and walk it (locked and unlocked) for both
+ *   the static and dynamic semaphores.
+ *
+ * Expected result:
+ * - Both the static and dynamic semaphore object cores are found.
+ *
+ * @see k_obj_type_find()
+ * @see k_obj_type_walk_locked()
+ * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
+ */
 ZTEST(obj_core, test_obj_core_sem)
 {
 	k_sem_init(&sem2, 0, 1);
