@@ -334,6 +334,12 @@ static inline int uhc_bus_reset(const struct device *dev)
 
 	api->lock(dev);
 	ret = api->bus_reset(dev);
+
+	/* Enforce reset recovery time 10 ms (TRSTRCY) */
+	if (ret == 0) {
+		k_sleep(K_MSEC(10));
+	}
+
 	api->unlock(dev);
 
 	return ret;
