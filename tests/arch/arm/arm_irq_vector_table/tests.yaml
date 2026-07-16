@@ -19,3 +19,23 @@ tests:
       - mr_navq95b/mimx9596/m7
       - mr_navq95b/mimx9596/m7/flash
       - mr_navq95b/mimx9596/m7/ddr
+  arch.arm.irq_vector_table.legacy_nrf_clock:
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE and
+            not CONFIG_GEN_ISR_TABLES
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=y
+      - CONFIG_DEPRECATION_TEST=y
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf52840dk/nrf52840
+      - nrf54lm20dk/nrf54lm20
+    platform_exclude:
+      - mr_canhubk3
+      - imx95_evk/mimx9596/m7
+      - imx95_evk_15x15/mimx9596/m7
+      - imx95_evk/mimx9596/m7/ddr
+      - imx95_evk/mimx9596/m7/flash
+      - imx952_evk/mimx9529/m7
+      - mr_navq95b/mimx9596/m7
+      - mr_navq95b/mimx9596/m7/flash
+      - mr_navq95b/mimx9596/m7/ddr
