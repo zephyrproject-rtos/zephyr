@@ -2,3 +2,19 @@ name: sbom_used_module
 
 build:
   cmake: ./
+
+blobs:
+  - path: libsbom_blob_imported.a
+    sha256: f0a17a43c74d2fe5474fa2fd29c8f14799e777d7d75a2cc4d11c20a6e7b161c5
+    type: lib
+    version: "1.2.3"
+    license-path: zephyr/blobs/license.txt
+    url: https://example.com/blobs/libsbom_blob_imported.a
+    description: Fake vendor blob linked as an imported library
+  - path: libsbom_blob_flag.a
+    sha256: f0a17a43c74d2fe5474fa2fd29c8f14799e777d7d75a2cc4d11c20a6e7b161c5
+    type: lib
+    version: "1.2.3"
+    license-path: zephyr/blobs/license.txt
+    url: https://example.com/blobs/libsbom_blob_flag.a
+    description: Fake vendor blob linked with -l and -L linker flags
