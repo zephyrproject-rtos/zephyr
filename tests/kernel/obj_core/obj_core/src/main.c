@@ -157,6 +157,10 @@ static void common_obj_core_test(uint32_t type_id, const char *str,
  * @see k_obj_type_find()
  * @see k_obj_type_walk_locked()
  * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-2
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
  */
 ZTEST(obj_core, test_obj_core_thread)
 {
@@ -226,6 +230,9 @@ ZTEST(obj_core, test_obj_core_thread)
  * @see k_obj_type_find()
  * @see k_obj_type_walk_locked()
  * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
  */
 ZTEST(obj_core, test_obj_core_system)
 {
@@ -266,6 +273,9 @@ ZTEST(obj_core, test_obj_core_system)
  * @see k_obj_type_find()
  * @see k_obj_type_walk_locked()
  * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
  */
 ZTEST(obj_core, test_obj_core_sys_mem_block)
 {
@@ -293,6 +303,9 @@ ZTEST(obj_core, test_obj_core_sys_mem_block)
  * @see k_obj_type_find()
  * @see k_obj_type_walk_locked()
  * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
  */
 ZTEST(obj_core, test_obj_core_mem_slab)
 {
@@ -320,6 +333,9 @@ ZTEST(obj_core, test_obj_core_mem_slab)
  * @see k_obj_type_find()
  * @see k_obj_type_walk_locked()
  * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
  */
 ZTEST(obj_core, test_obj_core_timer)
 {
@@ -347,6 +363,9 @@ ZTEST(obj_core, test_obj_core_timer)
  * @see k_obj_type_find()
  * @see k_obj_type_walk_locked()
  * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
  */
 ZTEST(obj_core, test_obj_core_stack)
 {
@@ -374,6 +393,9 @@ ZTEST(obj_core, test_obj_core_stack)
  * @see k_obj_type_find()
  * @see k_obj_type_walk_locked()
  * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
  */
 ZTEST(obj_core, test_obj_core_fifo)
 {
@@ -401,6 +423,9 @@ ZTEST(obj_core, test_obj_core_fifo)
  * @see k_obj_type_find()
  * @see k_obj_type_walk_locked()
  * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
  */
 ZTEST(obj_core, test_obj_core_lifo)
 {
@@ -428,6 +453,9 @@ ZTEST(obj_core, test_obj_core_lifo)
  * @see k_obj_type_find()
  * @see k_obj_type_walk_locked()
  * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
  */
 ZTEST(obj_core, test_obj_core_pipe)
 {
@@ -456,6 +484,9 @@ ZTEST(obj_core, test_obj_core_pipe)
  * @see k_obj_type_find()
  * @see k_obj_type_walk_locked()
  * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
  */
 ZTEST(obj_core, test_obj_core_msgq)
 {
@@ -483,6 +514,9 @@ ZTEST(obj_core, test_obj_core_msgq)
  * @see k_obj_type_find()
  * @see k_obj_type_walk_locked()
  * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
  */
 ZTEST(obj_core, test_obj_core_mbox)
 {
@@ -511,6 +545,9 @@ ZTEST(obj_core, test_obj_core_mbox)
  * @see k_obj_type_find()
  * @see k_obj_type_walk_locked()
  * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
  */
 ZTEST(obj_core, test_obj_core_condvar)
 {
@@ -538,6 +575,9 @@ ZTEST(obj_core, test_obj_core_condvar)
  * @see k_obj_type_find()
  * @see k_obj_type_walk_locked()
  * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
  */
 ZTEST(obj_core, test_obj_core_event)
 {
@@ -565,6 +605,9 @@ ZTEST(obj_core, test_obj_core_event)
  * @see k_obj_type_find()
  * @see k_obj_type_walk_locked()
  * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
  */
 ZTEST(obj_core, test_obj_core_mutex)
 {
@@ -593,6 +636,9 @@ ZTEST(obj_core, test_obj_core_mutex)
  * @see k_obj_type_find()
  * @see k_obj_type_walk_locked()
  * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
  */
 ZTEST(obj_core, test_obj_core_sem)
 {

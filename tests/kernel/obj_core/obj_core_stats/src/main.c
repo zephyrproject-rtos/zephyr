@@ -82,6 +82,7 @@ void busy_thread_entry(void *p1, void *p2, void *p3)
  *
  * @see k_obj_core_stats_raw()
  * @see k_obj_core_stats_query()
+ * @verifies ZEP-SRS-35-5
  */
 ZTEST(obj_core_stats_system, test_obj_core_stats_system)
 {
@@ -189,6 +190,7 @@ ZTEST(obj_core_stats_system, test_obj_core_stats_system)
  * - Each call returns -ENOTSUP.
  *
  * @see k_obj_core_stats_reset()
+ * @verifies ZEP-SRS-35-7
  */
 ZTEST(obj_core_stats_system, test_obj_core_stats_cpu_reset)
 {
@@ -217,6 +219,7 @@ ZTEST(obj_core_stats_system, test_obj_core_stats_cpu_reset)
  * - Each call returns -ENOTSUP.
  *
  * @see k_obj_core_stats_disable()
+ * @verifies ZEP-SRS-35-6
  */
 ZTEST(obj_core_stats_system, test_obj_core_stats_cpu_disable)
 {
@@ -245,6 +248,7 @@ ZTEST(obj_core_stats_system, test_obj_core_stats_cpu_disable)
  * - Each call returns -ENOTSUP.
  *
  * @see k_obj_core_stats_enable()
+ * @verifies ZEP-SRS-35-6
  */
 ZTEST(obj_core_stats_system, test_obj_core_stats_cpu_enable)
 {
@@ -272,6 +276,7 @@ ZTEST(obj_core_stats_system, test_obj_core_stats_cpu_enable)
  * - The call returns -ENOTSUP.
  *
  * @see k_obj_core_stats_reset()
+ * @verifies ZEP-SRS-35-7
  */
 ZTEST(obj_core_stats_system, test_obj_core_stats_kernel_reset)
 {
@@ -297,6 +302,7 @@ ZTEST(obj_core_stats_system, test_obj_core_stats_kernel_reset)
  * - The call returns -ENOTSUP.
  *
  * @see k_obj_core_stats_disable()
+ * @verifies ZEP-SRS-35-6
  */
 ZTEST(obj_core_stats_system, test_obj_core_stats_kernel_disable)
 {
@@ -322,6 +328,7 @@ ZTEST(obj_core_stats_system, test_obj_core_stats_kernel_disable)
  * - The call returns -ENOTSUP.
  *
  * @see k_obj_core_stats_enable()
+ * @verifies ZEP-SRS-35-6
  */
 ZTEST(obj_core_stats_system, test_obj_core_stats_kernel_enable)
 {
@@ -380,6 +387,9 @@ void test_thread_entry(void *p1, void *p2, void *p3)
  * @see k_obj_core_stats_query()
  *      k_obj_core_stats_reset(), k_obj_core_stats_enable(),
  *      k_obj_core_stats_disable()
+ * @verifies ZEP-SRS-35-5
+ * @verifies ZEP-SRS-35-6
+ * @verifies ZEP-SRS-35-7
  */
 ZTEST(obj_core_stats_thread, test_obj_core_stats_thread_test)
 {
@@ -559,6 +569,7 @@ ZTEST(obj_core_stats_thread, test_obj_core_stats_thread_test)
  * - The call returns -ENOTSUP.
  *
  * @see k_obj_core_stats_enable()
+ * @verifies ZEP-SRS-35-6
  */
 ZTEST(obj_core_stats_mem_block, test_sys_mem_block_enable)
 {
@@ -585,6 +596,7 @@ ZTEST(obj_core_stats_mem_block, test_sys_mem_block_enable)
  * - The call returns -ENOTSUP.
  *
  * @see k_obj_core_stats_disable()
+ * @verifies ZEP-SRS-35-6
  */
 ZTEST(obj_core_stats_mem_block, test_sys_mem_block_disable)
 {
@@ -671,6 +683,8 @@ static void test_mem_block_query(const char *str,
  * @see k_obj_core_stats_raw()
  * @see k_obj_core_stats_query()
  *      k_obj_core_stats_reset()
+ * @verifies ZEP-SRS-35-5
+ * @verifies ZEP-SRS-35-7
  */
 ZTEST(obj_core_stats_mem_block, test_obj_core_stats_mem_block)
 {
@@ -775,6 +789,7 @@ ZTEST(obj_core_stats_mem_block, test_obj_core_stats_mem_block)
  *
  * @see k_obj_core_stats_enable()
  * @see k_obj_core_stats_disable()
+ * @verifies ZEP-SRS-35-6
  */
 ZTEST(obj_core_stats_mem_slab,  test_mem_slab_enable)
 {
@@ -801,6 +816,7 @@ ZTEST(obj_core_stats_mem_slab,  test_mem_slab_enable)
  * - The call returns -ENOTSUP.
  *
  * @see k_obj_core_stats_disable()
+ * @verifies ZEP-SRS-35-6
  */
 ZTEST(obj_core_stats_mem_slab,  test_mem_slab_disable)
 {
@@ -884,6 +900,8 @@ static void test_mem_slab_query(const char *str,
  * @see k_obj_core_stats_raw()
  * @see k_obj_core_stats_query()
  *      k_obj_core_stats_reset()
+ * @verifies ZEP-SRS-35-5
+ * @verifies ZEP-SRS-35-7
  */
 ZTEST(obj_core_stats_mem_slab, test_obj_core_stats_mem_slab)
 {
