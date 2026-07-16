@@ -212,6 +212,19 @@ Security Considerations
    using EDHOC), the sender sequence number must be persisted to non-volatile memory
    to prevent reuse.
 
+Handling OSCORE When Not Supported
+-----------------------------------
+
+When OSCORE support is not enabled (:kconfig:option:`CONFIG_COAP_OSCORE` is not set),
+the Zephyr CoAP stack implements fail-closed behavior for the OSCORE option per
+RFC 7252 Section 5.4.1:
+
+**Server behavior** (when ``CONFIG_COAP_OSCORE=n``):
+
+- **CON requests** with OSCORE option: Returns **4.02 (Bad Option)** response
+- **NON requests** with OSCORE option: Silently rejects (drops) the message
+- **Responses** with OSCORE option: Sends RST for CON, silently drops NON/ACK
+
 API Reference
 =============
 

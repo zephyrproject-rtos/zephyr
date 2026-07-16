@@ -2140,6 +2140,31 @@ void coap_set_transmission_parameters(const struct coap_transmission_parameters 
 	coap_transmission_params = *params;
 }
 
+int coap_check_unsupported_critical_options(const struct coap_packet *cpkt, uint16_t *opt)
+{
+	if (cpkt == NULL || opt == NULL) {
+		return -EINVAL;
+	}
+
+	/* RFC 8613 Section 2: OSCORE option (9) is critical.
+	 * RFC 7252 Section 5.4.1: Unrecognized critical options must be rejected.
+	 * If OSCORE support is not enabled, treat OSCORE option as unrecognized critical.
+	 */
+#if !defined(CONFIG_COAP_OSCORE)
+	struct coap_option option;
+	int ret;
+
+	ret = coap_find_options(cpkt, COAP_OPTION_OSCORE, &option, 1);
+	if (ret > 0) {
+		/* OSCORE option found but not supported in this build */
+		*opt = COAP_OPTION_OSCORE;
+		return -ENOTSUP;
+	}
+#endif
+
+	return 0;
+}
+
 #if defined(CONFIG_COAP_OVER_RELIABLE_TRANSPORT)
 
 int coap_tcp_packet_init(struct coap_packet *cpkt, uint8_t *data,
