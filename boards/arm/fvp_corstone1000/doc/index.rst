@@ -98,6 +98,44 @@ Zephyr board options
          Initial provisioning reboots the Secure Enclave before normal boot, as with
          the Cortex-A320 target.
 
+  .. tab:: Corstone-1000-External-System (FVP)
+
+   Zephyr runs on the Cortex-M3 External System processor of the standard
+   Corstone-1000 FVP. Sysbuild also builds the Hello World application for the
+   Cortex-A35 host as its BL33 payload.
+
+   The External System configuration provides support for:
+
+   * Cortex-M3 CPU (Armv7-M architecture)
+
+     * Memory Protection Unit (MPU) with 8 regions, enabled by default
+       (``CONFIG_ARM_MPU=y``). Region sizes are powers of two, starting at 32 bytes.
+       Regions of 256 bytes or larger also have eight equal-sized subregions that
+       can be enabled or disabled individually. Regions of 32, 64, or 128 bytes
+       do not support subregions.
+     * Nested Vectored Interrupt Controller (NVIC) with 3 priority bits and
+       16 external interrupt inputs in the default FVP configuration
+       (``extsys0.cpu.NUM_IRQ=16``). Zephyr allocates 16 external IRQ slots by default
+       (``CONFIG_NUM_IRQS=16``); Cortex-M system exceptions are separate.
+     * Debugger access through the FVP's Iris interface and partial Instrumentation
+       Trace Macrocell (ITM) support, with trace output through the Model Trace
+       Interface (MTI)
+
+   * CMSDK timers
+   * PL011 UART controller
+   * CMSDK watchdog
+   * Dedicated Code & Data SRAM (not accessible from the host application processor)
+
+   Boot Architecture:
+    - For ``fvp_corstone1000/corstone1000/extsys``, the FVP External System
+      flash loader places the Cortex-M3 Zephyr binary in the External System flash.
+      TF-M initializes the platform and releases the Cortex-M3 from reset,
+      allowing it to boot Zephyr from address ``0x00000000``.
+
+      The Secure Enclave and Cortex-A35 use the boot chain described above.
+      Sysbuild builds TF-M, including BL1, and TF-A BL2/BL31, with Hello World
+      as the Cortex-A35 host's BL33 payload to complete the platform boot flow.
+
 Hardware
 ********
 
@@ -114,6 +152,7 @@ The following board targets are available:
 * ``fvp_corstone1000/a320`` - single-core ARMv9.2-A with Cortex-A320 CPU
 * ``fvp_corstone1000/a320/smp`` - quad-core SMP with all 4 Cortex-A320 CPUs
 * ``fvp_corstone1000/corstone1000/a35`` - single-core Armv8-A with Cortex-A35 CPU
+* ``fvp_corstone1000/corstone1000/extsys`` - Cortex-M3 External System
 
 Programming and Debugging
 *************************
@@ -122,15 +161,17 @@ Prerequisites
 =============
 
 1. :ref:`toolchain_zephyr_sdk` (recommended) — provides both ``arm-zephyr-eabi``
-   for TF-M and ``aarch64-zephyr-elf`` for Zephyr/TF-A builds, plus ``dtc`` for
-   TF-A device tree compilation.
+   for TF-M and the Cortex-M3 application, and ``aarch64-zephyr-elf`` for the
+   Cortex-A35/Cortex-A320 applications and TF-A, plus ``dtc`` for TF-A device tree
+   compilation.
 
 2. Install the FVP corresponding to the selected board target from
    `Arm Ecosystem FVPs <https://developer.arm.com/Tools%20and%20Software/Fixed%20Virtual%20Platforms/IoT%20FVPs>`_:
 
    * ``fvp_corstone1000/a320`` and ``fvp_corstone1000/a320/smp`` require
      ``FVP_Corstone-1000-A320``
-   * ``fvp_corstone1000/corstone1000/a35`` requires ``FVP_Corstone-1000``
+   * ``fvp_corstone1000/corstone1000/a35`` and
+     ``fvp_corstone1000/corstone1000/extsys`` require ``FVP_Corstone-1000``
 
    Set the ``ARMFVP_BIN_PATH`` environment variable to the directory containing
    the selected FVP binary. For the Cortex-A320 targets, for example:
@@ -139,11 +180,11 @@ Prerequisites
 
       export ARMFVP_BIN_PATH=~/FVP_Corstone_1000-A320/models/Linux64_GCC-9.3
 
-   For the Cortex-A35 target, point ``ARMFVP_BIN_PATH`` to
+   For the Cortex-A35 and External System targets, point ``ARMFVP_BIN_PATH`` to
    the directory containing ``FVP_Corstone-1000`` instead.
 
-3. The Cortex-A320 and Cortex-A35 sysbuilds require ``sgdisk`` to create the GPT partition
-   table. Install it from the ``gdisk`` package:
+3. All targets require ``sgdisk`` to create the GPT partition table.
+   Install it from the ``gdisk`` package:
 
    .. code-block:: bash
 
@@ -156,15 +197,15 @@ Prerequisites
 Building
 ========
 
-The Cortex-A320 and Cortex-A35 targets require TF-M and TF-A modules
-with support for the selected Corstone-1000 variant. After cloning the
+The Cortex-A320, Cortex-A35, and External System targets require TF-M and TF-A
+modules with support for the selected Corstone-1000 variant. After cloning the
 repository, update the modules:
 
 .. code-block:: bash
 
    west update
 
-Both host variants require :ref:`sysbuild` to automatically build TF-M
+All targets require :ref:`sysbuild` to automatically build TF-M
 (Secure Enclave) and TF-A (Host firmware) alongside Zephyr.
 
 For Cortex-A320:
@@ -181,6 +222,17 @@ For Cortex-A35:
 
    west build -b fvp_corstone1000/corstone1000/a35 samples/hello_world --sysbuild
 
+For the Cortex-M3 External System:
+
+.. code-block:: bash
+
+   west build -b fvp_corstone1000/corstone1000/extsys samples/hello_world --sysbuild
+
+The selected application runs on the Cortex-M3. Sysbuild also builds
+``samples/hello_world`` for ``fvp_corstone1000/corstone1000/a35`` as the
+``hello_world_a35`` image, which TF-A uses as BL33. TF-M BL1 and TF-A BL2/BL31
+are built alongside these applications to complete the platform boot flow.
+
 .. tip::
 
    To avoid passing ``--sysbuild`` every time, set it as the default:
@@ -189,11 +241,18 @@ For Cortex-A35:
 
       west config build.sysbuild true
 
-For either host variant, the build creates the following files in ``build/firmware/``:
+For all targets, the build creates the following files in ``build/firmware/``:
 
 * ``bl1.bin`` — Secure Enclave ROM (BL1_1 + provisioning bundle)
 * ``cs1000.bin`` — 32 MB GPT flash image containing signed TF-M, signed TF-A
   BL2, BL31, and Zephyr in a FIP
+
+The Hello World build for the External System also produces:
+
+* ``build/hello_world/zephyr/zephyr.bin`` — Cortex-M3 application loaded by the
+  FVP External System flash loader.
+* ``build/hello_world_a35/zephyr/zephyr.bin`` — Cortex-A35 Hello World application
+  packaged as BL33 in ``build/firmware/cs1000.bin``
 
 Running
 =======
@@ -213,12 +272,12 @@ at configure time:
        samples/hello_world --sysbuild
    west build -t run
 
-Expected output (after the provisioning cycle for Cortex-A320 and Cortex-A35 targets):
+Expected output after the platform provisioning cycle:
 
 .. code-block:: none
 
    *** Booting Zephyr OS build v4.3.0-... ***
-   Hello World! fvp_corstone1000/<a320,a320/smp,corstone1000/a35>
+   Hello World! fvp_corstone1000/<a320,a320/smp,corstone1000/a35,corstone1000/extsys>
 
 Debugging
 =========
@@ -249,12 +308,15 @@ Known Limitations
   appears in TF-A BL2/BL31. This is a non-fatal Ethos-U85 memory map overlap
   in release mode, also present in the Yocto reference build.
 
-
 References
 **********
 
 - `Arm Corstone-1000 Technical Overview <https://developer.arm.com/documentation/102360/latest/>`_
 - `Arm Cortex-A320 <https://developer.arm.com/Processors/Cortex-A320>`_
 - `Arm Cortex-A35 <https://developer.arm.com/Processors/Cortex-A35>`_
+- `Arm Cortex-M3 Devices Generic User Guide <https://developer.arm.com/documentation/dui0552/a/>`_
+- `Cortex-M3 model reference`_ (Fast Models Reference Guide, ``ARMCortexM3CT``)
 - `Corstone-1000 Software Documentation <https://corstone1000.docs.arm.com/en/corstone1000-2025.12/index.html>`_
 - `Corstone-1000 Armv9-A Edge-AI Ecosystem FVP <https://developer.arm.com/Tools%20and%20Software/Fixed%20Virtual%20Platforms/IoT%20FVPs>`_
+
+.. _Cortex-M3 model reference: https://developer.arm.com/documentation/100964/1123/
