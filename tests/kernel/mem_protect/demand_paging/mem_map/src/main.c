@@ -103,6 +103,7 @@ static const char *nums = "0123456789";
  * - The over-committed mapping succeeds and returns a usable arena.
  *
  * @see k_mem_map()
+ * @verifies ZEP-SRS-36-8
  */
 ZTEST(demand_paging, test_map_anon_pages)
 {
@@ -249,6 +250,8 @@ static void touch_anon_pages(bool zig, bool zag)
  * @see k_mem_paging_stats_get()
  * @see k_mem_paging_thread_stats_get()
  * @see k_mem_num_pagefaults_get()
+ * @verifies ZEP-SRS-36-8
+ * @verifies ZEP-SRS-36-9
  */
 ZTEST(demand_paging, test_touch_anon_pages)
 {
@@ -274,6 +277,7 @@ ZTEST(demand_paging, test_touch_anon_pages)
  *   show faults and evictions.
  *
  * @see k_mem_paging_stats_get()
+ * @verifies ZEP-SRS-36-8
  */
 ZTEST(demand_paging, test_touch_anon_pages_zigzag1)
 {
@@ -297,6 +301,7 @@ ZTEST(demand_paging, test_touch_anon_pages_zigzag1)
  *   show faults and evictions.
  *
  * @see k_mem_paging_stats_get()
+ * @verifies ZEP-SRS-36-8
  */
 ZTEST(demand_paging, test_touch_anon_pages_zigzag2)
 {
@@ -322,6 +327,7 @@ ZTEST(demand_paging, test_touch_anon_pages_zigzag2)
  * - The access faults; the code after it is never reached.
  *
  * @see k_mem_unmap()
+ * @verifies ZEP-SRS-36-2
  */
 ZTEST(demand_paging, test_unmap_anon_pages)
 {
@@ -388,6 +394,7 @@ static void test_k_mem_page_out(void)
  *
  * @see k_mem_page_in()
  * @see k_mem_page_out()
+ * @verifies ZEP-SRS-36-10
  */
 ZTEST(demand_paging_api, test_k_mem_page_in)
 {
@@ -437,6 +444,7 @@ ZTEST(demand_paging_api, test_k_mem_page_in)
  * - Zero page faults are taken in the pinned range despite the pressure.
  *
  * @see k_mem_pin()
+ * @verifies ZEP-SRS-36-11
  */
 ZTEST(demand_paging_api, test_k_mem_pin)
 {
@@ -489,6 +497,8 @@ ZTEST(demand_paging_api, test_k_mem_pin)
  *
  * @see k_mem_unpin()
  * @see k_mem_page_out()
+ * @verifies ZEP-SRS-36-9
+ * @verifies ZEP-SRS-36-12
  */
 ZTEST(demand_paging_api, test_k_mem_unpin)
 {
@@ -527,6 +537,9 @@ ZTEST(demand_paging_api, test_k_mem_unpin)
  *
  * @see k_mem_map()
  * @see k_mem_num_pagefaults_get()
+ * @verifies ZEP-SRS-36-9
+ * @verifies ZEP-SRS-36-12
+ * @verifies ZEP-SRS-36-8
  */
 ZTEST(demand_paging_stat, test_backing_store_capacity)
 {
@@ -589,6 +602,7 @@ ZTEST(demand_paging_stat, test_backing_store_capacity)
  *
  * @see k_mem_paging_stats_get()
  * @see k_mem_paging_thread_stats_get()
+ * @verifies ZEP-SRS-36-13
  */
 ZTEST_USER(demand_paging_stat, test_user_get_stats)
 {
@@ -668,6 +682,7 @@ static bool print_histogram(struct k_mem_paging_histogram_t *hist)
  * @see k_mem_paging_histogram_eviction_get()
  * @see k_mem_paging_histogram_backing_store_page_in_get()
  * @see k_mem_paging_histogram_backing_store_page_out_get()
+ * @verifies ZEP-SRS-36-14
  */
 ZTEST_USER(demand_paging_stat, test_user_get_hist)
 {

@@ -72,6 +72,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
  * - Both aliases show the written data and the read-only write faults.
  *
  * @see k_mem_map_phys_bare()
+ * @verifies ZEP-SRS-36-1
  */
 ZTEST(mem_map, test_k_mem_map_phys_bare_rw)
 {
@@ -180,6 +181,7 @@ static void transplanted_function(bool *executed)
  * - The executable mapping runs the function; the non-executable one faults.
  *
  * @see k_mem_map_phys_bare()
+ * @verifies ZEP-SRS-36-1
  */
 ZTEST(mem_map, test_k_mem_map_phys_bare_exec)
 {
@@ -241,6 +243,7 @@ ZTEST(mem_map, test_k_mem_map_phys_bare_exec)
  * - The buffer is unchanged by the act of mapping it.
  *
  * @see k_mem_map_phys_bare()
+ * @verifies ZEP-SRS-36-1
  */
 ZTEST(mem_map, test_k_mem_map_phys_bare_side_effect)
 {
@@ -285,6 +288,7 @@ ZTEST(mem_map, test_k_mem_map_phys_bare_side_effect)
  * - The read after the unmap faults; the code after it is never reached.
  *
  * @see k_mem_unmap_phys_bare()
+ * @verifies ZEP-SRS-36-2
  */
 ZTEST(mem_map, test_k_mem_unmap_phys_bare)
 {
@@ -331,6 +335,7 @@ ZTEST(mem_map, test_k_mem_unmap_phys_bare)
  *
  * @see k_mem_map_phys_bare()
  * @see k_mem_unmap_phys_bare()
+ * @verifies ZEP-SRS-36-3
  */
 ZTEST(mem_map, test_k_mem_map_phys_bare_unmap_reclaim_addr)
 {
@@ -391,6 +396,7 @@ ZTEST(mem_map, test_k_mem_map_phys_bare_unmap_reclaim_addr)
  *
  * @see k_mem_map()
  * @see k_mem_unmap()
+ * @verifies ZEP-SRS-36-4
  */
 ZTEST(mem_map_api, test_k_mem_map_unmap)
 {
@@ -482,6 +488,7 @@ ZTEST(mem_map_api, test_k_mem_map_unmap)
  *   the code after it is never reached.
  *
  * @see k_mem_map()
+ * @verifies ZEP-SRS-36-5
  */
 ZTEST(mem_map_api, test_k_mem_map_guard_before)
 {
@@ -528,6 +535,7 @@ ZTEST(mem_map_api, test_k_mem_map_guard_before)
  *   the code after it is never reached.
  *
  * @see k_mem_map()
+ * @verifies ZEP-SRS-36-5
  */
 ZTEST(mem_map_api, test_k_mem_map_guard_after)
 {
@@ -580,6 +588,7 @@ ZTEST(mem_map_api, test_k_mem_map_guard_after)
  *
  * @see k_mem_map()
  * @see k_mem_unmap()
+ * @verifies ZEP-SRS-36-7
  */
 ZTEST(mem_map_api, test_k_mem_map_exhaustion)
 {
@@ -713,6 +722,7 @@ static void user_function(void *p1, void *p2, void *p3)
  *   kernel-only mapping faults.
  *
  * @see k_mem_map_phys_bare()
+ * @verifies ZEP-SRS-36-6
  */
 ZTEST(mem_map_api, test_k_mem_map_user)
 {

@@ -275,6 +275,8 @@ static inline uint32_t z_vrfy_more_args(uint32_t arg1, uint32_t arg2,
  *   every forbidden access is reported through the error argument.
  *
  * @see k_usermode_string_nlen()
+ * @verifies ZEP-SRS-8-14
+ * @verifies ZEP-SRS-8-15
  */
 ZTEST_USER(syscalls, test_syscall_string_nlen)
 {
@@ -372,6 +374,7 @@ ZTEST(syscalls, test_syscall_string_nlen_maxsize_zero)
  *   fitting string succeeds.
  *
  * @see k_usermode_string_alloc_copy()
+ * @verifies ZEP-SRS-8-15
  */
 ZTEST_USER(syscalls, test_syscall_string_alloc_copy)
 {
@@ -413,6 +416,7 @@ ZTEST_USER(syscalls, test_syscall_string_alloc_copy)
  *   fitting string succeeds.
  *
  * @see k_usermode_string_copy()
+ * @verifies ZEP-SRS-8-15
  */
 ZTEST_USER(syscalls, test_syscall_string_copy)
 {
@@ -453,6 +457,7 @@ ZTEST_USER(syscalls, test_syscall_string_copy)
  *   exact data.
  *
  * @see k_usermode_to_copy()
+ * @verifies ZEP-SRS-8-14
  */
 ZTEST_USER(syscalls, test_syscall_to_copy)
 {
@@ -489,6 +494,7 @@ void run_test_arg64(void)
  *
  * @ingroup kernel_memprotect_tests
  * @see syscall_arg64()
+ * @verifies ZEP-SRS-8-10
  */
 ZTEST_USER(syscalls, test_syscall_arg64)
 {
@@ -504,6 +510,7 @@ ZTEST_USER(syscalls, test_syscall_arg64)
  * calls with many arguments.
  *
  * @ingroup kernel_memprotect_tests
+ * @verifies ZEP-SRS-8-10
  */
 ZTEST_USER(syscalls, test_syscall_more_args)
 {
@@ -585,6 +592,8 @@ void syscall_switch_stress(void *arg1, void *arg2, void *arg3)
  * Expected result:
  * - Every thread completes every iteration without a validation failure or
  *   fault.
+ *
+ * @verifies ZEP-SRS-8-10
  */
 ZTEST(syscalls_extended, test_syscall_switch_stress)
 {
@@ -661,6 +670,7 @@ void test_syscall_context_user(void *p1, void *p2, void *p3)
  * - The predicate is true only inside a system call invoked from user mode.
  *
  * @see k_is_in_user_syscall()
+ * @verifies ZEP-SRS-8-10
  */
 ZTEST(syscalls, test_syscall_context)
 {

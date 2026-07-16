@@ -31,6 +31,7 @@ int no_obj;
  * - The calls return 0, -EPERM, -EBADF and 0 respectively.
  *
  * @see k_object_access_check()
+ * @verifies ZEP-SRS-8-2
  */
 ZTEST_USER(userspace_access_check, test_kobject_access_check)
 {

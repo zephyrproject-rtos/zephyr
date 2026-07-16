@@ -75,6 +75,7 @@ static struct k_thread alt_thread_data;
  *   initial stack pointer is not fixed.
  *
  * @see k_thread_create()
+ * @verifies ZEP-SRS-8-27
  */
 ZTEST(stack_pointer_randomness, test_stack_pt_randomization)
 {

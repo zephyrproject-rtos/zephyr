@@ -184,6 +184,7 @@ static void futex_multiple_wait_wake_task(void *p1, void *p2, void *p3)
  * - The value is unchanged: the waiter blocked and never woke.
  *
  * @see k_futex_wait()
+ * @verifies ZEP-SRS-37-1
  */
 ZTEST(futex, test_futex_wait_forever)
 {
@@ -223,6 +224,7 @@ ZTEST(futex, test_futex_wait_forever)
  * - The waiter timed out and ran its post-wait code, so the value is zero.
  *
  * @see k_futex_wait()
+ * @verifies ZEP-SRS-37-1
  */
 ZTEST(futex, test_futex_wait_timeout)
 {
@@ -260,6 +262,7 @@ ZTEST(futex, test_futex_wait_timeout)
  * - The waiter returned immediately with -ETIMEDOUT and ran on.
  *
  * @see k_futex_wait()
+ * @verifies ZEP-SRS-37-1
  */
 ZTEST(futex, test_futex_wait_nowait)
 {
@@ -300,6 +303,8 @@ ZTEST(futex, test_futex_wait_nowait)
  *
  * @see k_futex_wake()
  * @see k_futex_wait()
+ * @verifies ZEP-SRS-37-1
+ * @verifies ZEP-SRS-37-2
  */
 ZTEST(futex, test_futex_wait_forever_wake)
 {
@@ -353,6 +358,8 @@ ZTEST(futex, test_futex_wait_forever_wake)
  *
  * @see k_futex_wake()
  * @see k_futex_wait()
+ * @verifies ZEP-SRS-37-1
+ * @verifies ZEP-SRS-37-2
  */
 ZTEST(futex, test_futex_wait_timeout_wake)
 {
@@ -404,6 +411,7 @@ ZTEST(futex, test_futex_wait_timeout_wake)
  *
  * @see k_futex_wake()
  * @see k_futex_wait()
+ * @verifies ZEP-SRS-37-2
  */
 ZTEST(futex, test_futex_wait_nowait_wake)
 {
@@ -450,6 +458,7 @@ ZTEST(futex, test_futex_wait_nowait_wake)
  *
  * @see k_futex_wake()
  * @see irq_offload()
+ * @verifies ZEP-SRS-37-2
  */
 ZTEST(futex, test_futex_wait_forever_wake_from_isr)
 {
@@ -497,6 +506,7 @@ ZTEST(futex, test_futex_wait_forever_wake_from_isr)
  *
  * @see k_futex_wake()
  * @see k_futex_wait()
+ * @verifies ZEP-SRS-37-2
  */
 ZTEST(futex, test_futex_multiple_threads_wait_wake)
 {
@@ -552,6 +562,8 @@ ZTEST(futex, test_futex_multiple_threads_wait_wake)
  *
  * @see k_futex_wake()
  * @see k_futex_wait()
+ * @verifies ZEP-SRS-37-1
+ * @verifies ZEP-SRS-37-2
  */
 ZTEST(futex, test_futex_independent_wait_wake)
 {
@@ -609,6 +621,7 @@ ZTEST(futex, test_futex_independent_wait_wake)
  *
  * @see k_futex_wait()
  * @see k_futex_wake()
+ * @verifies ZEP-SRS-37-3
  */
 ZTEST_USER(futex, test_futex_bad_inputs)
 {
@@ -693,6 +706,7 @@ static void futex_wake(void *p1, void *p2, void *p3)
  * @see atomic_set(), atomic_sub(), k_futex_wake(), k_futex_wait()
  *
  * @ingroup kernel_futex_tests
+ * @verifies ZEP-SRS-37-3
  */
 ZTEST_USER(futex, test_futex_locate_access)
 {
