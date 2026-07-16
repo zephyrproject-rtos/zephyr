@@ -54,5 +54,7 @@
 		power-domains = <&modem_dcdc>;
 		mdm-power-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
 		mdm-reset-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+		mdm-dtr-gpios = <&gpio2 7 GPIO_ACTIVE_LOW>;
+		mdm-ring-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
 	};
 };
