@@ -2845,4 +2845,84 @@ ZTEST(net_ipv6, test_na_with_bad_hop_limit)
 	test_nd_packet_drop(icmpv6_na_bad_hop_limit, sizeof(icmpv6_na_bad_hop_limit));
 }
 
+/* A malicious Router Advertisement can carry a tiny Reachable Time. Verify the
+ * randomized reachable time never rounds down to 0, which would trip the
+ * "Zero reachable timeout!" assert / break the ND reachable timer.
+ */
+ZTEST(net_ipv6, test_calc_reachable_time_never_zero)
+{
+	struct net_if *iface = TEST_NET_IF;
+	struct net_if_ipv6 *ipv6;
+	uint32_t saved;
+
+	zassert_not_null(iface, "No test interface");
+	zassert_not_null(iface->config.ip.ipv6, "No IPv6 config on interface");
+	ipv6 = iface->config.ip.ipv6;
+	saved = ipv6->base_reachable_time;
+
+	/* base 0 falls back to the default, which is non-zero. */
+	ipv6->base_reachable_time = 0U;
+	zassert_not_equal(net_if_ipv6_calc_reachable_time(ipv6), 0U,
+			  "Reachable time is 0 for base 0");
+
+	/* Small base values must never round down to 0. Loop to exercise the
+	 * random path.
+	 */
+	for (uint32_t base = 1U; base <= 4U; base++) {
+		ipv6->base_reachable_time = base;
+
+		for (int i = 0; i < 16; i++) {
+			uint32_t reachable = net_if_ipv6_calc_reachable_time(ipv6);
+
+			zassert_not_equal(reachable, 0U,
+					  "Reachable time is 0 for base %u", base);
+			zassert_true(reachable <= 3U * base,
+				     "Reachable time %u out of range for base %u",
+				     reachable, base);
+		}
+	}
+
+	/* The largest allowed base must not overflow into a small value. */
+	ipv6->base_reachable_time = NET_IPV6_MAX_REACHABLE_TIME;
+	for (int i = 0; i < 16; i++) {
+		uint32_t reachable = net_if_ipv6_calc_reachable_time(ipv6);
+
+		zassert_true(reachable >= NET_IPV6_MAX_REACHABLE_TIME / 2U,
+			     "Reachable time %u too small at max base", reachable);
+	}
+
+	ipv6->base_reachable_time = saved;
+}
+
+/* The public setter must clamp out-of-range values so that later reachable time
+ * randomization cannot overflow.
+ */
+ZTEST(net_ipv6, test_set_base_reachable_time_clamp)
+{
+	struct net_if *iface = TEST_NET_IF;
+	uint32_t saved;
+
+	zassert_not_null(iface, "No test interface");
+	zassert_not_null(iface->config.ip.ipv6, "No IPv6 config on interface");
+	saved = net_if_ipv6_get_base_reachable_time(iface);
+
+	/* In-range values are stored unchanged. */
+	net_if_ipv6_set_base_reachable_time(iface, 5000U);
+	zassert_equal(net_if_ipv6_get_base_reachable_time(iface), 5000U,
+		      "In-range base reachable time not stored");
+
+	net_if_ipv6_set_base_reachable_time(iface, NET_IPV6_MAX_REACHABLE_TIME);
+	zassert_equal(net_if_ipv6_get_base_reachable_time(iface),
+		      NET_IPV6_MAX_REACHABLE_TIME,
+		      "Base reachable time at limit not stored");
+
+	/* Values above the limit are clamped. */
+	net_if_ipv6_set_base_reachable_time(iface, UINT32_MAX);
+	zassert_equal(net_if_ipv6_get_base_reachable_time(iface),
+		      NET_IPV6_MAX_REACHABLE_TIME,
+		      "Base reachable time not clamped");
+
+	net_if_ipv6_set_base_reachable_time(iface, saved);
+}
+
 ZTEST_SUITE(net_ipv6, NULL, ipv6_setup, ipv6_before, NULL, ipv6_teardown);
