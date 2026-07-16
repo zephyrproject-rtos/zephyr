@@ -100,6 +100,13 @@ uint32_t memc_mcux_xspi_get_ahb_address(const struct device *dev)
 	return ((const struct memc_mcux_xspi_data *)dev->data)->amba_address;
 }
 
+void memc_mcux_xspi_clear_ahb_buffer(const struct device *dev)
+{
+	XSPI_Type *base = ((struct memc_mcux_xspi_data *)dev->data)->base;
+
+	XSPI_ClearAHBRxBuffer(base);
+}
+
 int memc_mcux_xspi_transfer(const struct device *dev, xspi_transfer_t *xfer)
 {
 	XSPI_Type *base = ((struct memc_mcux_xspi_data *)dev->data)->base;
