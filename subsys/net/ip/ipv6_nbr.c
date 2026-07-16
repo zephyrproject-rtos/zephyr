@@ -50,7 +50,7 @@ LOG_MODULE_REGISTER(net_ipv6_nd, CONFIG_NET_IPV6_ND_LOG_LEVEL);
 /* Maximum reachable time value specified in RFC 4861 section
  * 6.2.1. Router Configuration Variables, AdvReachableTime
  */
-#define MAX_REACHABLE_TIME 3600000
+#define MAX_REACHABLE_TIME NET_IPV6_MAX_REACHABLE_TIME
 
 /* IPv6 minimum link MTU specified in RFC 8200 section 5
  * Packet Size Issues
