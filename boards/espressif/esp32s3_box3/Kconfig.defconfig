@@ -15,4 +15,7 @@ config LV_COLOR_16_SWAP
 
 endif # LVGL
 
+config INPUT_INIT_PRIORITY
+	default 99
+
 endif # BOARD_ESP32S3_BOX3_ESP32S3_PROCPU
