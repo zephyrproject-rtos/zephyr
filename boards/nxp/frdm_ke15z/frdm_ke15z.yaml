@@ -13,5 +13,6 @@ supported:
   - flash
   - gpio
   - hwinfo
+  - pwm
   - uart
   - watchdog

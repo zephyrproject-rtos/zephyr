@@ -87,6 +87,12 @@
 			reg = <0x40064000 0x1000>;
 			#clock-cells = <1>;
 
+			sosc_clk: sosc_clk {
+				compatible = "fixed-clock";
+				status = "disabled";
+				#clock-cells = <0>;
+			};
+
 			sirc_clk: sirc_clk {
 				compatible = "fixed-clock";
 				clock-frequency = <DT_FREQ_M(8)>;
@@ -107,7 +113,7 @@
 
 			core_clk: core_clk {
 				compatible = "fixed-factor-clock";
-				#clocks = <&firc_clk>;
+                                #clocks = <&firc_clk>;
 				clocks = <&lpfll_clk>;
 				clock-div = <1>;
 				#clock-cells = <0>;
@@ -117,6 +123,13 @@
 				compatible = "fixed-factor-clock";
 				clocks = <&core_clk>;
 				clock-div = <4>;
+				#clock-cells = <0>;
+			};
+
+			soscdiv2_clk: soscdiv2_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&sosc_clk>;
+				clock-div = <0>;
 				#clock-cells = <0>;
 			};
 
