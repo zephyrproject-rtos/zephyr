@@ -75,6 +75,7 @@ ZTEST_SUITE(workqueue_work_timeout, NULL, test_setup, NULL, NULL, NULL);
  * @see k_work_queue_start()
  * @see k_work_submit_to_queue()
  * @ingroup kernel_workqueue_tests
+ * @verifies ZEP-SRS-26-26
  */
 ZTEST(workqueue_work_timeout, test_work)
 {
