@@ -26,6 +26,36 @@
 
 .. _zephyr_4.3:
 
+.. _zephyr_4.3.2:
+
+Zephyr 4.3.2
+############
+
+This is a maintenance release with fixes.
+
+Issues Fixed
+************
+
+These GitHub issues were addressed since the previous 4.3.1 tagged release:
+
+.. comment  List derived from GitHub Issue query: ...
+   * :github:`issuenumber` - issue title
+
+Security Vulnerability Related
+******************************
+
+The following CVEs are addressed by this release:
+
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+Mbed TLS
+********
+
+Mbed TLS was updated to version 3.6.7 (from 3.6.6). It addresses a number of CVEs.
+Release notes can be found at: https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.7
+
 .. _zephyr_4.3.1:
 
 Zephyr 4.3.1
@@ -203,8 +233,7 @@ These GitHub issues were addressed since the previous 4.3.0 tagged release:
 Security Vulnerability Related
 ******************************
 
-The following security vulnerabilities (CVEs) were addressed in this
-release:
+The following CVEs are addressed by this release:
 
 * :cve:`2026-7656`: Under embargo until 2026-06-25
 * :cve:`2026-8023`: Under embargo until 2026-06-23
@@ -319,6 +348,7 @@ The following sections provide detailed lists of changes by component.
 
 Security Vulnerability Related
 ******************************
+
 The following CVEs are addressed by this release:
 
 * :cve:`2025-9408` `Zephyr project bug tracker GHSA-3r6j-5mp3-75wr
