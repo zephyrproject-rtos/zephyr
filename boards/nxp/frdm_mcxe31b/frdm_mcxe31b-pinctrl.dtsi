@@ -49,6 +49,23 @@
 		};
 	};
 
+	pinmux_emios0_pwm: pinmux_emios0_pwm {
+		group1 {
+			pinmux = <PTD0_EMIOS_0_CH2_G_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTD1_EMIOS_0_CH3_G_O>;
+			output-enable;
+		};
+
+		group3 {
+			pinmux = <PTB16_EMIOS_0_CH4_G_I>;
+			input-enable;
+		};
+	};
+
 	pinmux_lpi2c_1: pinmux_lpi2c_1 {
 		group1 {
 			pinmux = <(PTC6_LPI2C1_SDA_I | PTC6_LPI2C1_SDA_O)>,

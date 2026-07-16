@@ -1,0 +1,73 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Enhanced Modular IO SubSystem (eMIOS).
+
+compatible: "nxp,emios"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  clocks:
+    required: true
+
+  global-prescaler:
+    type: int
+    min: 1
+    max: 256
+    default: 1
+    description: |
+      Global clock prescaler value.
+
+child-binding:
+  child-binding:
+    description: |
+      Node for eMIOS counter bus. Each channel (UC) capable of becoming a counter bus
+      has a node defined in the root devicetree but is disabled by default. To allow
+      using the counter bus, the devicetree node should be enabled and dts properties
+      should be configured as required by the application.
+
+      For example, to enable bus A of eMIOS instance 0 that can be used as a timebase
+      for channels from 0 to 22:
+        counter_bus {
+          emios0_bus_a: emios0_bus_a {
+            channel = <23>;
+            prescaler = <1>;
+            mode = "MCB_UP_COUNTER";
+            status = "okay";
+          };
+        };
+
+    properties:
+      channel:
+        type: int
+        required: true
+        description: |
+          Channel identifier for the counter bus.
+
+      prescaler:
+        type: int
+        min: 1
+        max: 16
+        default: 1
+        description: |
+          Clock divider value for internal UC prescaler.
+          Clock for internal counter = (eMIOS clock / global prescaler) / internal prescaler.
+
+      mode:
+        type: string
+        required: true
+        description: |
+          Counter bus mode.
+        enum:
+          - "MCB_UP_COUNTER"
+          - "MCB_UP_DOWN_COUNTER"

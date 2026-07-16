@@ -1,0 +1,38 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Test requires a wire connection between:
+ *   eMIOS0 CH3 (OPWFMB) output at PTD1  (J3-15)
+ *   <-> eMIOS0 CH4 (SAIC) input  at PTB16 (J3-9)
+ *
+ *   clock = 160MHz / 160 (global prescaler) / 10 (channel prescaler) = 100 kHz
+ *   max period = 65535 / 100kHz = 655.35 ms  (covers default 100 ms test)
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&emios0_pwm 3 0 PWM_POLARITY_NORMAL>,
+		       <&emios0_pwm 4 0 PWM_POLARITY_NORMAL>;
+	};
+};
+
+&emios_0 {
+	global-prescaler = <160>;
+
+	emios0_pwm: pwm {
+		pwm_3 {
+			prescaler = <10>;
+		};
+
+		pwm_4 {
+			prescaler = <10>;
+		};
+	};
+};
