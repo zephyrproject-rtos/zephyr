@@ -58,6 +58,8 @@ static void attrs_get(struct k_msgq *q)
  * - used_msgs reports 0, full, then 0 as messages are added and removed.
  *
  * @see k_msgq_get_attrs()
+ * @verifies ZEP-SRS-31-15
+ * @verifies ZEP-SRS-31-16
  */
 ZTEST(msgq_api, test_msgq_attrs_get)
 {
@@ -84,6 +86,8 @@ ZTEST(msgq_api, test_msgq_attrs_get)
  *
  * @see k_msgq_get_attrs()
  * @see k_msgq_alloc_init()
+ * @verifies ZEP-SRS-31-15
+ * @verifies ZEP-SRS-31-16
  */
 ZTEST_USER(msgq_api, test_msgq_user_attrs_get)
 {
