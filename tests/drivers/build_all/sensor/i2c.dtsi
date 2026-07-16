@@ -1765,3 +1765,9 @@ test_i2c_ictx53xx: ictx53xx@e5 {
 	compatible = "invensense,ictx53xx";
 	reg = <0xe5>;
 };
+
+test_i2c_lps33hw: lps33hw@e6 {
+	compatible = "st,lps33hw";
+	reg = <0xe6>;
+	odr = <75>;
+};
