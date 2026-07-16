@@ -3665,17 +3665,32 @@ struct net_if *net_if_ipv6_select_src_iface(const struct net_in6_addr *dst)
 uint32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6)
 {
 	uint32_t min_reachable, max_reachable;
+	uint32_t spread;
+
+	if (ipv6->base_reachable_time == 0U) {
+		return REACHABLE_TIME;
+	}
 
 	min_reachable = (MIN_RANDOM_NUMER * ipv6->base_reachable_time)
 			/ MIN_RANDOM_DENOM;
 	max_reachable = (MAX_RANDOM_NUMER * ipv6->base_reachable_time)
 			/ MAX_RANDOM_DENOM;
 
+	/* RFC 4861 uses MIN_RANDOM_FACTOR (1/2); round up so the range is never 0 ms */
+	if (min_reachable == 0U) {
+		min_reachable = 1U;
+	}
+
 	NET_DBG("min_reachable:%u max_reachable:%u", min_reachable,
 		max_reachable);
 
-	return min_reachable +
-	       sys_rand32_get() % (max_reachable - min_reachable);
+	if (max_reachable <= min_reachable) {
+		return min_reachable;
+	}
+
+	spread = max_reachable - min_reachable;
+
+	return min_reachable + sys_rand32_get() % spread;
 }
 
 static void iface_ipv6_start(struct net_if *iface)
@@ -3736,6 +3751,11 @@ static void iface_ipv6_stop(struct net_if *iface)
 	}
 
 	net_if_unlock(iface);
+
+	/* Drop cached neighbor entries: their reachability is no longer valid
+	 * once the link is down, so they are re-resolved when it comes back.
+	 */
+	net_ipv6_nbr_clear_cache(iface);
 }
 
 static void iface_ipv6_init(int if_count)
@@ -5359,6 +5379,26 @@ bool net_if_ipv4_router_rm(struct net_if_router *router)
 	return iface_router_rm(router);
 }
 
+int net_if_ipv4_route_add(struct net_if *iface, const struct net_in_addr *addr, uint8_t mask_len,
+			  const struct net_in_addr *nexthop, uint32_t lifetime)
+{
+#if defined(CONFIG_NET_IPV4_ROUTE)
+	struct net_route_entry *route;
+
+	route = net_route_ipv4_add(iface, (struct net_in_addr *)addr, mask_len,
+				   (struct net_in_addr *)nexthop, lifetime, 0);
+
+	return route == NULL ? -ENOMEM : 0;
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(mask_len);
+	ARG_UNUSED(nexthop);
+	ARG_UNUSED(lifetime);
+
+	return -ENOTSUP;
+#endif
+}
 
 static void iface_ipv4_init(int if_count)
 {

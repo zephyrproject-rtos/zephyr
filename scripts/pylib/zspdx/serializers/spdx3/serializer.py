@@ -80,6 +80,11 @@ class SPDX3Serializer:
         # Track file IDs for uniqueness
         self.filename_counts = {}
 
+        # Lazily built map: element id -> name of the document that defines it.
+        # Used to reference cross-document elements via ExternalMap instead of
+        # re-serializing them in every document that mentions them.
+        self._element_home = None
+
         # Namespace prefixes for shortened IDs
         self.namespace_prefixes = {}
         if self.sbom_data.namespace_prefix:
@@ -764,6 +769,42 @@ class SPDX3Serializer:
         self.relationship_elements.append(rel)
         return rel
 
+    def _document_owned_elements(self, sbom_doc: SBOMDocument):
+        """Yield the package and file elements defined by ``sbom_doc``."""
+        for component in sbom_doc.components.values():
+            package = self.component_elements.get(component.name)
+            if package:
+                yield package
+            for file_obj in component.files.values():
+                file_element = self.file_elements.get(file_obj.path)
+                if file_element:
+                    yield file_element
+
+    def _build_owned_elements(self):
+        """Yield the Build-profile elements, all defined in the build document."""
+        if self.build:
+            yield self.build
+        yield from self.target_builds.values()
+        yield from self.build_tools.values()
+
+    def _element_home_index(self) -> dict:
+        """Map each package/file element id to the document that defines it.
+
+        Every component belongs to exactly one document and every file to exactly
+        one component, so this "home" is unique. Build-profile elements live in the
+        build document. Ids absent from the map (licenses, the tool/agent, well-known
+        individuals) have no single owner and are serialized wherever referenced.
+        """
+        if self._element_home is None:
+            home = {}
+            for doc_name, sbom_doc in self.sbom_data.documents.items():
+                for element in self._document_owned_elements(sbom_doc):
+                    home[element._id] = doc_name
+            for element in self._build_owned_elements():
+                home[element._id] = self._BUILD_DOCUMENT
+            self._element_home = home
+        return self._element_home
+
     def _create_document(self, sbom_doc: SBOMDocument) -> spdx.SpdxDocument:
         """Create an SPDX 3.0 document for a specific SBOMDocument."""
         self._initialize_shared_objects()
@@ -771,8 +812,8 @@ class SPDX3Serializer:
         document = self._new_spdx_document(sbom_doc)
         components = sbom_doc.components.values()
 
-        element_ids = self._collect_document_element_ids(sbom_doc, components)
-        self._populate_document(document, element_ids, components, sbom_doc)
+        element_ids, import_ids = self._collect_document_element_ids(sbom_doc, components)
+        self._populate_document(document, element_ids, import_ids, components, sbom_doc)
 
         self.elements.append(document)
         self.documents[sbom_doc.name] = document
@@ -813,12 +854,17 @@ class SPDX3Serializer:
             document.profileConformance.append(spdx.ProfileIdentifierType.build)
         return document
 
-    def _collect_document_element_ids(self, sbom_doc: SBOMDocument, components) -> set:
+    def _collect_document_element_ids(self, sbom_doc: SBOMDocument, components) -> tuple[set, set]:
         """Gather the IDs of every element that belongs to this document.
 
         This spans the document's packages and files, the licenses they
         reference, the relationships connecting them, and the shared
         tool/agent/data-license elements.
+
+        Returns a ``(element_ids, import_ids)`` pair: ``element_ids`` are defined
+        by this document and serialized into it, while ``import_ids`` are elements
+        referenced by this document's relationships but defined in another document
+        (declared via ExternalMap rather than re-serialized here).
         """
         element_ids = self._package_and_file_ids(components)
         element_ids.update(self._referenced_license_ids(components))
@@ -830,7 +876,7 @@ class SPDX3Serializer:
         # Seed the build document so its build-scoped relationships are collected.
         self._seed_build_element_ids(sbom_doc, element_ids)
 
-        self._collect_relationship_ids(element_ids)
+        import_ids = self._collect_relationship_ids(sbom_doc, element_ids)
 
         if self.tool:
             element_ids.add(self.tool._id)
@@ -840,7 +886,10 @@ class SPDX3Serializer:
         if data_license:
             element_ids.add(data_license._id)
 
-        return element_ids
+        # A locally defined element is never also imported.
+        import_ids -= element_ids
+
+        return element_ids, import_ids
 
     def _package_and_file_ids(self, components) -> set:
         """IDs of the package and file elements contained in this document."""
@@ -887,39 +936,57 @@ class SPDX3Serializer:
         for tool in self.build_tools.values():
             element_ids.add(tool._id)
 
-    def _collect_relationship_ids(self, element_ids: set):
-        """Add this document's relationships and their endpoints to ``element_ids``.
+    def _collect_relationship_ids(self, sbom_doc: SBOMDocument, element_ids: set) -> set:
+        """Add this document's relationships and their local endpoints to ``element_ids``.
 
         A relationship belongs to the document that owns its original
         (pre-reversal) "from" element. Ownership is tested against a snapshot
         of the document's own elements so that pulling in endpoints does not
         draw in unrelated relationships.
+
+        Endpoints defined in another document are returned as the import set so
+        the caller can declare them via ExternalMap instead of re-serializing
+        them here.
         """
         owned = set(element_ids)
+        home = self._element_home_index()
+        this_doc = sbom_doc.name
         relationship_ids = set()
         endpoint_ids = set()
+        import_ids = set()
         for rel in self.relationship_elements:
             from_id = getattr(rel, 'from_', None)
             original_from_id = self.relationship_original_from.get(rel._id, from_id)
-            if original_from_id in owned:
-                relationship_ids.add(rel._id)
-                if from_id:
-                    endpoint_ids.add(from_id)
-                endpoint_ids.update(rel.to)
+            if original_from_id not in owned:
+                continue
+            relationship_ids.add(rel._id)
+            endpoints = list(rel.to)
+            if from_id:
+                endpoints.append(from_id)
+            for endpoint in endpoints:
+                endpoint_home = home.get(endpoint)
+                if endpoint_home is not None and endpoint_home != this_doc:
+                    import_ids.add(endpoint)
+                else:
+                    endpoint_ids.add(endpoint)
         element_ids.update(relationship_ids)
         element_ids.update(endpoint_ids)
+        return import_ids
 
     def _populate_document(
         self,
         document: spdx.SpdxDocument,
         element_ids: set,
+        import_ids: set,
         components,
         sbom_doc: SBOMDocument,
     ):
-        """Attach the selected elements and root components to the document."""
+        """Attach the selected elements, imports and root components to the document."""
         for element in self.elements:
             if self._belongs_in_document(element, document._id, element_ids):
                 document.element.append(element)
+
+        self._add_external_maps(document, import_ids)
 
         for component in components:
             package = self.component_elements.get(component.name)
@@ -929,6 +996,22 @@ class SPDX3Serializer:
         # The Build element is a root of the build document.
         if self.build and sbom_doc.name == self._BUILD_DOCUMENT:
             document.rootElement.append(self.build)
+
+    def _add_external_maps(self, document: spdx.SpdxDocument, import_ids: set):
+        """Declare elements used by, but defined outside, this document.
+
+        Each foreign endpoint becomes an ExternalMap in the document's ``import`` set instead of
+        being re-serialized here. ``locationHint`` points at the sibling JSON-LD file that defines
+        the element so a consumer can retrieve it.
+        """
+        home_index = self._element_home_index()
+        for import_id in sorted(import_ids):
+            external_map = spdx.ExternalMap()
+            external_map.externalSpdxId = import_id
+            home = home_index.get(import_id)
+            if home:
+                external_map.locationHint = f"./{home}.jsonld"
+            document.import_.append(external_map)
 
     @staticmethod
     def _belongs_in_document(element, document_id: str, element_ids: set) -> bool:

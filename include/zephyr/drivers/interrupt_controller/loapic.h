@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_LOAPIC_H_
-#define ZEPHYR_INCLUDE_DRIVERS_LOAPIC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_LOAPIC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_LOAPIC_H_
 
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/x86/msr.h>
@@ -193,4 +193,4 @@ static inline void z_loapic_ipi(uint8_t apic_id, uint32_t ipi, uint8_t vector)
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_LOAPIC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_LOAPIC_H_ */

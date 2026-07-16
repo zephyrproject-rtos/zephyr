@@ -14,8 +14,8 @@
  *
  */
 
-#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_MCHP_XEC_ECIA_H_
-#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_MCHP_XEC_ECIA_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_MCHP_XEC_ECIA_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_MCHP_XEC_ECIA_H_
 
 #include <zephyr/device.h>
 #include <zephyr/irq.h>
@@ -207,4 +207,4 @@ uint32_t mchp_xec_ecia_info_girq_result(int ecia_info);
  */
 void mchp_xec_ecia_info_nvic_clr_pend(int ecia_info);
 
-#endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_MCHP_XEC_ECIA_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_MCHP_XEC_ECIA_H_ */

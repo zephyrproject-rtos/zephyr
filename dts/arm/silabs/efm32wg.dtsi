@@ -28,14 +28,14 @@
 		clk_lfxo: clk-lfxo {
 			compatible = "silabs,series0-lfxo";
 			#clock-cells = <0>;
-			clock-frequency = <DT_FREQ_K(32)>;
+			clock-frequency = <32768>;
 			status = "disabled";
 		};
 
 		clk_lfrco: clk-lfrco {
 			compatible = "silabs,series0-lfrco";
 			#clock-cells = <0>;
-			clock-frequency = <DT_FREQ_K(32)>;
+			clock-frequency = <32768>;
 			status = "disabled";
 		};
 

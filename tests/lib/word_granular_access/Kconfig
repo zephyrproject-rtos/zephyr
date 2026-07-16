@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Word granular library tests"
+
+source "Kconfig.zephyr"
+
+config TEST_WORD_GRANULAR_ACCESS_SECTION
+	string "Section name for the test's buffer in word granular access memory"
+	default ".iram.data"
+	help
+	  The section name to place the test's word granular access memory buffer.
+	  This section should be placed in word granular access memory by the
+	  linker script.

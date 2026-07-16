@@ -24,38 +24,47 @@ jobs:
     name: Check for doc changes
     runs-on: ubuntu-24.04
     outputs:
-      file_check: ${{ steps.check-doc-files.outputs.any_modified }}
+      sphinx_check: ${{ steps.check-sphinx-files.outputs.any_modified }}
+      doxygen_check: ${{ steps.check-doxygen-files.outputs.any_modified }}
     steps:
     - name: checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
-    - name: Check if Documentation related files changed
+    - name: Check if any file pulled into the Sphinx documentation changed
       uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
-      id: check-doc-files
+      id: check-sphinx-files
       with:
         files: |
           doc/
           boards/**/doc/
           **.rst
+          **/Kconfig*
+          west.yml
+          scripts/dts/
+          .github/workflows/doc-build.yml
+          scripts/pylib/pytest-twister-harness/src/twister_harness/device/device_adapter.py
+          scripts/pylib/pytest-twister-harness/src/twister_harness/helpers/shell.py
+    - name: Check if any file pulled into the Doxygen API documentation changed
+      uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
+      id: check-doxygen-files
+      with:
+        files: |
+          doc/zephyr.doxyfile.in
+          doc/_doxygen/
           include/
           kernel/include/kernel_arch_interface.h
           lib/libc/**
           subsys/testsuite/ztest/include/**
-          **/Kconfig*
-          west.yml
-          scripts/dts/
-          doc/requirements.txt
-          .github/workflows/doc-build.yml
-          scripts/pylib/pytest-twister-harness/src/twister_harness/device/device_adapter.py
-          scripts/pylib/pytest-twister-harness/src/twister_harness/helpers/shell.py
 
   doc-build-html:
     name: "Documentation Build (HTML)"
     needs: [doc-file-check]
     if: >
-      needs.doc-file-check.outputs.file_check == 'true' || github.event_name != 'pull_request'
+      needs.doc-file-check.outputs.sphinx_check == 'true' ||
+      needs.doc-file-check.outputs.doxygen_check == 'true' ||
+      github.event_name != 'pull_request'
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
@@ -138,26 +147,39 @@ jobs:
 
     - name: Build HTML documentation
       shell: bash
+      env:
+        SPHINX_CHANGED: ${{ needs.doc-file-check.outputs.sphinx_check }}
       run: |
+        DOXYGEN_OUT_DIR="doc/_build/html/doxygen"
+
         if [[ "$GITHUB_REF" =~ "refs/tags/v" ]]; then
           DOC_TAG="release"
         else
           DOC_TAG="development"
         fi
 
-        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-          DOC_TARGET="html-fast"
+        if [[ "${{ github.event_name }}" == "pull_request" && "${SPHINX_CHANGED}" != "true" ]]; then
+          # Only API (Doxygen) input files changed: build the API docs alone and skip the much
+          # slower Sphinx build. The standalone doxygen target writes to _build/doxygen; move it to
+          # ${DOXYGEN_OUT_DIR}.
+          DOC_TAG=${DOC_TAG} make -C doc doxygen
+          mkdir -p "$(dirname "${DOXYGEN_OUT_DIR}")"
+          mv doc/_build/doxygen "${DOXYGEN_OUT_DIR}"
         else
-          DOC_TARGET="html"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            DOC_TARGET="html-fast"
+          else
+            DOC_TARGET="html"
+          fi
+
+          DOC_TAG=${DOC_TAG} \
+          SPHINXOPTS="-j ${JOB_COUNT} -W --keep-going -T" \
+          SPHINXOPTS_EXTRA="-q -t publish" \
+          make -C doc ${DOC_TARGET} NO_EXTERNAL_DEPS=1
         fi
 
-        DOC_TAG=${DOC_TAG} \
-        SPHINXOPTS="-j ${JOB_COUNT} -W --keep-going -T" \
-        SPHINXOPTS_EXTRA="-q -t publish" \
-        make -C doc ${DOC_TARGET} NO_EXTERNAL_DEPS=1
-
         # API documentation coverage
-        python3 -m coverxygen --xml-dir  doc/_build/html/doxygen/xml/ --src-dir include/ --output doc-coverage.info
+        python3 -m coverxygen --xml-dir "${DOXYGEN_OUT_DIR}/xml/" --src-dir include/ --output doc-coverage.info
         # deprecated page causing issues
         lcov --remove doc-coverage.info \*/deprecated > new.info
         genhtml --no-function-coverage --no-branch-coverage new.info -o coverage-report
@@ -272,6 +294,8 @@ jobs:
 
     - name: Summarize PR documentation URLs
       if: github.event_name == 'pull_request'
+      env:
+        SPHINX_CHANGED: ${{ needs.doc-file-check.outputs.sphinx_check }}
       run: |
         REPO_NAME="${{ github.event.repository.name }}"
         PR_NUM="${{ github.event.pull_request.number }}"
@@ -283,7 +307,11 @@ jobs:
         echo "${PR_NUM}" > pr_num
         echo "Build results will be available shortly at the following URLs:" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "- Documentation: ${DOC_URL}" >> $GITHUB_STEP_SUMMARY
+        if [ "${SPHINX_CHANGED}" = "true" ]; then
+          echo "- Documentation: ${DOC_URL}" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- Documentation: not rebuilt (only API/Doxygen inputs changed in this PR)" >> $GITHUB_STEP_SUMMARY
+        fi
         echo "- API Documentation: ${API_DOC_URL}" >> $GITHUB_STEP_SUMMARY
         echo "- API Coverage Report: ${API_COVERAGE_URL}" >> $GITHUB_STEP_SUMMARY
         echo "- Accessibility Report: ${A11Y_REPORT_URL}" >> $GITHUB_STEP_SUMMARY
@@ -314,7 +342,7 @@ jobs:
         path: zephyr
 
     - name: Set up Python
-      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
       with:
         python-version: 3.12
         cache: pip

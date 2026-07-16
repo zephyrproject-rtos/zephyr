@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_RPMSG_SERVICE_RPMSG_SERVICE_H_
-#define ZEPHYR_INCLUDE_RPMSG_SERVICE_RPMSG_SERVICE_H_
+#ifndef ZEPHYR_INCLUDE_IPC_RPMSG_SERVICE_H_
+#define ZEPHYR_INCLUDE_IPC_RPMSG_SERVICE_H_
 
 #include <openamp/open_amp.h>
 
@@ -76,4 +76,4 @@ bool rpmsg_service_endpoint_is_bound(int endpoint_id);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_RPMSG_SERVICE_RPMSG_SERVICE_H_ */
+#endif /* ZEPHYR_INCLUDE_IPC_RPMSG_SERVICE_H_ */

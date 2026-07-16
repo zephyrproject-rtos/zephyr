@@ -11,6 +11,13 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/usb/uhc.h>
 #include <usb_dwc2_hw.h>
+#include "uhc_common.h"
+
+/* Required by DEVICE_MMIO_NAMED_* macros */
+#define DEV_CFG(_dev)	((const struct uhc_dwc2_config *)(_dev)->config)
+#define DEV_DATA(_dev)	((struct uhc_dwc2_data *)(uhc_get_private(_dev)))
+
+struct usb_dwc2_reg *uhc_dwc2_get_base(const struct device *dev);
 
 /* Vendor quirks per driver instance */
 struct uhc_dwc2_vendor_quirks {
@@ -35,7 +42,7 @@ struct uhc_dwc2_vendor_quirks {
 /* Driver configuration per instance */
 struct uhc_dwc2_config {
 	/* Pointer to base address of DWC_OTG registers */
-	struct usb_dwc2_reg *const base;
+	DEVICE_MMIO_NAMED_ROM(core);
 	/* Vendor specific quirks */
 	const struct uhc_dwc2_vendor_quirks *const quirks;
 	void *quirk_data;
@@ -55,8 +62,12 @@ struct uhc_dwc2_config {
 #define UHC_DWC2_QUIRK_DATA(dev)						\
 	(((const struct uhc_dwc2_config *)dev->config)->quirk_data)
 
-#if DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_usb_otg)
-#include "uhc_dwc2_esp32_usb_otg.h"
+#if DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_usb_otg_fs)
+#include "uhc_dwc2_esp32_usb_otg_fs.h"
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_usbhs_nrf54l)
+#include "uhc_dwc2_nrf_usbhs_nrf54l.h"
 #endif
 
 #define UHC_DWC2_VENDOR_QUIRK_GET(n)						\

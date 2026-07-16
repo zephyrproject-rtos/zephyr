@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/gpio/dvp-20pin-connector.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
 
 / {
 	aliases {
@@ -17,6 +18,7 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		wakeup-button = &user_button_2;
 		sdhc0 = &usdhc0;
 		mcuboot-button0 = &user_button_2;
 	};
@@ -56,7 +58,9 @@
 			label = "User SW2";
 			gpios = <&gpio0 23 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_0>;
-			status = "disabled";
+			/* SW2 wakes via WUU external pin 5. */
+			wakeup-ctrls = <&wuu NXP_WUU_PIN_5_FALLING_INT>;
+			status = "okay";
 		};
 
 		user_button_3: button_1 {

@@ -138,4 +138,16 @@
 	mmc2_dat3: mmc2_dat3_default {
 		pinmux = <K3_PINMUX(0x00f4, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (R22) MMC2_DAT3 */
 	};
+
+	main_epwm0_a: epwm0_a_default {
+		pinmux = <K3_PINMUX(0x0ac, PIN_OUTPUT, MUX_MODE_4)>; /* (G22) EHRPWM0_A */
+	};
+
+	main_epwm0_b: epwm0_b_default {
+		pinmux = <K3_PINMUX(0x0b0, PIN_OUTPUT, MUX_MODE_4)>;  /* (F22) EHRPWM0_B */
+	};
+
+	main_ecap0_in: ecap0_in_default {
+		pinmux = <K3_PINMUX(0x078, PIN_INPUT, MUX_MODE_5)>; /* (L22) ECAP0_IN_APWM_OUT */
+	};
 };

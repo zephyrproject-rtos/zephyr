@@ -10,8 +10,8 @@
  * @ingroup stcc4_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_STCC4_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_STCC4_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_STCC4_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_STCC4_H_
 
 /**
  * @defgroup stcc4_interface STCC4
@@ -32,4 +32,4 @@
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_STCC4_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_STCC4_H_ */

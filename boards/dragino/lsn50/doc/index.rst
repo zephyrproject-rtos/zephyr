@@ -162,7 +162,7 @@ You can debug an application in the usual way.  Here is an example for the
    :goals: debug
 
 .. _Dragino LSN50 website:
-   https://www.dragino.com/products/lora-lorawan-end-node/item/128-lsn50.html
+   https://www.dragino.com/products/lora-lorawan-end-node/item/lsn50.html
 
 .. _STM32L072CZ on www.st.com:
    https://www.st.com/en/microcontrollers/stm32l072cz.html

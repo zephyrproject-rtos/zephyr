@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
- * Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2021-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,10 +26,25 @@
 #include <zephyr/sys/util.h>
 #include <string.h>
 
+#if CONFIG_PM
+#include <zephyr/pm/policy.h>
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_esp32, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
+
+#if CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_I2C_SUPPORT_SLEEP_RETENTION
+#define I2C_SLEEP_RETENTION_ENABLED 1
+#else
+#define I2C_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if I2C_SLEEP_RETENTION_ENABLED
+#include <hal/i2c_periph.h>
+#include <esp_private/sleep_retention.h>
+#endif
 
 #if defined(CONFIG_I2C_TARGET) && SOC_I2C_SUPPORT_SLAVE && SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
 #define I2C_ESP32_TARGET_ENABLED 1
@@ -75,6 +90,9 @@ struct i2c_esp32_data {
 	uint32_t dev_config;
 	int cmd_idx;
 	int irq_line;
+#if CONFIG_PM
+	bool pm_policy_state_on;
+#endif
 #if I2C_ESP32_TARGET_ENABLED
 	struct i2c_target_config *target_cfg;
 	bool target_attached;
@@ -91,6 +109,32 @@ struct i2c_esp32_data {
 #endif
 #endif
 };
+
+#if CONFIG_PM
+static void i2c_esp32_pm_policy_state_lock_get(struct i2c_esp32_data *data)
+{
+	unsigned int key = irq_lock();
+
+	if (!data->pm_policy_state_on) {
+		data->pm_policy_state_on = true;
+		pm_policy_state_all_lock_get();
+	}
+
+	irq_unlock(key);
+}
+
+static void i2c_esp32_pm_policy_state_lock_put(struct i2c_esp32_data *data)
+{
+	unsigned int key = irq_lock();
+
+	if (data->pm_policy_state_on) {
+		data->pm_policy_state_on = false;
+		pm_policy_state_all_lock_put();
+	}
+
+	irq_unlock(key);
+}
+#endif /* CONFIG_PM */
 
 typedef void (*irq_connect_cb)(void);
 
@@ -273,6 +317,9 @@ static void IRAM_ATTR i2c_hw_fsm_reset(const struct device *dev)
 #else
 	i2c_ll_master_fsm_rst(data->hal.dev);
 	i2c_master_clear_bus(dev);
+	i2c_hal_master_init(&data->hal);
+	i2c_ll_disable_intr_mask(data->hal.dev, I2C_LL_INTR_MASK);
+	i2c_ll_clear_intr_mask(data->hal.dev, I2C_LL_INTR_MASK);
 #endif
 	i2c_ll_update(data->hal.dev);
 }
@@ -282,7 +329,23 @@ static int i2c_esp32_recover(const struct device *dev)
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
 	k_sem_take(&data->transfer_sem, K_FOREVER);
+
+#if CONFIG_PM
+	i2c_esp32_pm_policy_state_lock_get(data);
+#endif
+
 	i2c_hw_fsm_reset(dev);
+
+#if CONFIG_PM
+#if I2C_ESP32_TARGET_ENABLED
+	if (!data->target_attached) {
+		i2c_esp32_pm_policy_state_lock_put(data);
+	}
+#else
+	i2c_esp32_pm_policy_state_lock_put(data);
+#endif
+#endif
+
 	k_sem_give(&data->transfer_sem);
 
 	return 0;
@@ -418,7 +481,7 @@ static int IRAM_ATTR i2c_esp32_transmit(const struct device *dev)
 		i2c_hw_fsm_reset(dev);
 		ret = -ETIMEDOUT;
 	} else if (data->status == I2C_STATUS_ACK_ERROR) {
-		ret = -EFAULT;
+		ret = -EIO;
 	}
 
 	return ret;
@@ -684,6 +747,10 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 
 	k_sem_take(&data->transfer_sem, K_FOREVER);
 
+#if CONFIG_PM
+	i2c_esp32_pm_policy_state_lock_get(data);
+#endif
+
 #if I2C_ESP32_TARGET_ENABLED
 	bool was_target = data->target_attached;
 
@@ -725,6 +792,16 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 	if (was_target) {
 		i2c_esp32_target_resume(dev);
 	}
+#endif
+
+#if CONFIG_PM
+#if I2C_ESP32_TARGET_ENABLED
+	if (!data->target_attached) {
+		i2c_esp32_pm_policy_state_lock_put(data);
+	}
+#else
+	i2c_esp32_pm_policy_state_lock_put(data);
+#endif
 #endif
 
 	k_sem_give(&data->transfer_sem);
@@ -1035,6 +1112,10 @@ static int i2c_esp32_target_register(const struct device *dev, struct i2c_target
 	data->target_attached = true;
 	data->dev_config = 0;
 
+#if CONFIG_PM
+	i2c_esp32_pm_policy_state_lock_get(data);
+#endif
+
 	k_sem_give(&data->transfer_sem);
 
 	return 0;
@@ -1070,6 +1151,10 @@ static int i2c_esp32_target_unregister(const struct device *dev, struct i2c_targ
 	i2c_hal_master_init(&data->hal);
 	i2c_esp32_configure_data_mode(dev);
 
+#if CONFIG_PM
+	i2c_esp32_pm_policy_state_lock_put(data);
+#endif
+
 	k_sem_give(&data->transfer_sem);
 
 	return 0;
@@ -1089,6 +1174,38 @@ static DEVICE_API(i2c, i2c_esp32_driver_api) = {
 	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
 };
+
+#if I2C_SLEEP_RETENTION_ENABLED
+static esp_err_t i2c_esp32_create_sleep_retention_cb(void *arg)
+{
+	uint32_t port = (uint32_t)(uintptr_t)arg;
+
+	return sleep_retention_entries_create(i2c_regs_retention[port].link_list,
+					      i2c_regs_retention[port].link_num,
+					      REGDMA_LINK_PRI_I2C,
+					      i2c_regs_retention[port].module_id);
+}
+
+static void i2c_esp32_sleep_retention_init(uint32_t port)
+{
+	sleep_retention_module_init_param_t init_param = {
+		.cbs = {.create = {.handle = i2c_esp32_create_sleep_retention_cb,
+				   .arg = (void *)(uintptr_t)port}},
+		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM),
+		.attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH};
+
+	esp_err_t err = sleep_retention_module_init(i2c_regs_retention[port].module_id,
+						    &init_param);
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_allocate(i2c_regs_retention[port].module_id);
+	}
+
+	if (err != ESP_OK) {
+		LOG_WRN("I2C%lu sleep retention init failed (%d)", (unsigned long)port, err);
+	}
+}
+#endif /* I2C_SLEEP_RETENTION_ENABLED */
 
 static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 {
@@ -1138,7 +1255,19 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 
 	i2c_esp32_configure_data_mode(dev);
 
-	return i2c_esp32_configure(dev, I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->bitrate));
+	ret = i2c_esp32_configure(dev, I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->bitrate));
+
+	if (ret < 0) {
+		return ret;
+	}
+
+#if I2C_SLEEP_RETENTION_ENABLED
+	if (config->index < SOC_HP_I2C_NUM) {
+		i2c_esp32_sleep_retention_init(config->index);
+	}
+#endif
+
+	return 0;
 }
 
 #define I2C(idx) DT_NODELABEL(i2c##idx)

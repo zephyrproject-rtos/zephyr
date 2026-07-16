@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_IPC_SERVICE_IPC_STATIC_VRINGS_H_
-#define ZEPHYR_INCLUDE_IPC_SERVICE_IPC_STATIC_VRINGS_H_
+#ifndef ZEPHYR_INCLUDE_IPC_IPC_STATIC_VRINGS_H_
+#define ZEPHYR_INCLUDE_IPC_IPC_STATIC_VRINGS_H_
 
 #include <zephyr/ipc/ipc_service.h>
 #include <openamp/open_amp.h>
@@ -122,4 +122,4 @@ int ipc_static_vrings_deinit(struct ipc_static_vrings *vr, unsigned int role);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_IPC_SERVICE_IPC_STATIC_VRINGS_H_ */
+#endif /* ZEPHYR_INCLUDE_IPC_IPC_STATIC_VRINGS_H_ */

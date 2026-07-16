@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the multidomain logging helpers.
+ * @ingroup log_backend_multidomain
+ */
+
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_MULTIDOMAIN_HELPER_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_MULTIDOMAIN_HELPER_H_
 
@@ -70,70 +76,70 @@
 
 /** @brief Content of the logging message. */
 struct log_multidomain_log_msg {
-	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data); /**< Serialized log message bytes. */
 } __packed;
 
 /** @brief Content of the domain count message. */
 struct log_multidomain_domain_cnt {
-	uint16_t count;
+	uint16_t count; /**< Number of domains. */
 } __packed;
 
 /** @brief Content of the source count message. */
 struct log_multidomain_source_cnt {
-	uint8_t domain_id;
-	uint16_t count;
+	uint8_t domain_id; /**< Domain ID the request applies to. */
+	uint16_t count;    /**< Number of sources in the domain. */
 } __packed;
 
 /** @brief Content of the domain name message. */
 struct log_multidomain_domain_name {
-	uint8_t domain_id;
-	char name[];
+	uint8_t domain_id; /**< Domain ID. */
+	char name[];       /**< Null-terminated domain name. */
 } __packed;
 
 /** @brief Content of the source name message. */
 struct log_multidomain_source_name {
-	uint8_t domain_id;
-	uint16_t source_id;
-	char name[];
+	uint8_t domain_id;  /**< Domain ID. */
+	uint16_t source_id; /**< Source ID within the domain. */
+	char name[];        /**< Null-terminated source name. */
 } __packed;
 
 /** @brief Content of the message for getting logging levels. */
 struct log_multidomain_levels {
-	uint8_t domain_id;
-	uint16_t source_id;
-	uint8_t level;
-	uint8_t runtime_level;
+	uint8_t domain_id;     /**< Domain ID. */
+	uint16_t source_id;    /**< Source ID within the domain. */
+	uint8_t level;         /**< Compile-time level. */
+	uint8_t runtime_level; /**< Run-time level. */
 } __packed;
 
 /** @brief Content of the message for setting logging level. */
 struct log_multidomain_set_runtime_level {
-	uint8_t domain_id;
-	uint16_t source_id;
-	uint8_t runtime_level;
+	uint8_t domain_id;     /**< Domain ID. */
+	uint16_t source_id;    /**< Source ID within the domain. */
+	uint8_t runtime_level; /**< Run-time level to set. */
 } __packed;
 
 /** @brief Content of the message for getting amount of dropped messages. */
 struct log_multidomain_dropped {
-	uint32_t dropped;
+	uint32_t dropped; /**< Number of dropped messages. */
 } __packed;
 
 /** @brief Union with all message types. */
 union log_multidomain_msg_data {
-	struct log_multidomain_log_msg log_msg;
-	struct log_multidomain_domain_cnt domain_cnt;
-	struct log_multidomain_source_cnt source_cnt;
-	struct log_multidomain_domain_name domain_name;
-	struct log_multidomain_source_name source_name;
-	struct log_multidomain_levels levels;
-	struct log_multidomain_set_runtime_level set_rt_level;
-	struct log_multidomain_dropped dropped;
+	struct log_multidomain_log_msg log_msg;           /**< Log message payload. */
+	struct log_multidomain_domain_cnt domain_cnt;     /**< Domain count payload. */
+	struct log_multidomain_source_cnt source_cnt;     /**< Source count payload. */
+	struct log_multidomain_domain_name domain_name;   /**< Domain name payload. */
+	struct log_multidomain_source_name source_name;   /**< Source name payload. */
+	struct log_multidomain_levels levels;             /**< Levels payload. */
+	struct log_multidomain_set_runtime_level set_rt_level; /**< Set-level payload. */
+	struct log_multidomain_dropped dropped;           /**< Dropped count payload. */
 };
 
 /** @brief Message. */
 struct log_multidomain_msg {
-	uint8_t id;
-	uint8_t status;
-	union log_multidomain_msg_data data;
+	uint8_t id;     /**< Message ID, see @ref LOG_MULTIDOMAIN_HELPER_MESSAGE_IDS. */
+	uint8_t status; /**< Status code, see @ref LOG_MULTIDOMAIN_STATUS. */
+	union log_multidomain_msg_data data; /**< Message payload. */
 } __packed;
 
 /** @brief Forward declaration. */
@@ -141,26 +147,31 @@ struct log_multidomain_link;
 
 /** @brief Structure with link transport API. */
 struct log_multidomain_link_transport_api {
+	/** @brief Initialize the transport. */
 	int (*init)(struct log_multidomain_link *link);
+	/** @brief Send a buffer to the remote backend. */
 	int (*send)(struct log_multidomain_link *link, void *data, size_t len);
 };
 
 /** @brief Union for holding data returned by associated remote backend. */
 union log_multidomain_link_dst {
-	uint16_t count;
+	uint16_t count; /**< Domain or source count. */
 
+	/** @brief Destination buffer for a requested name. */
 	struct {
-		char *dst;
-		size_t *len;
+		char *dst;   /**< Output buffer for the name. */
+		size_t *len; /**< In/out buffer length, updated with the name length. */
 	} name;
 
+	/** @brief Returned level settings of a source. */
 	struct {
-		uint8_t level;
-		uint8_t runtime_level;
+		uint8_t level;         /**< Compile-time level. */
+		uint8_t runtime_level; /**< Run-time level. */
 	} levels;
 
+	/** @brief Result of a set-runtime-level request. */
 	struct {
-		uint8_t level;
+		uint8_t level; /**< Run-time level actually set. */
 	} set_runtime_level;
 };
 
@@ -169,11 +180,17 @@ extern struct log_link_api log_multidomain_link_api;
 
 /** @brief Remote link structure. */
 struct log_multidomain_link {
+	/** Transport operations. */
 	const struct log_multidomain_link_transport_api *transport_api;
+	/** Semaphore signaled when a response is ready. */
 	struct k_sem rdy_sem;
+	/** Associated log link instance. */
 	const struct log_link *link;
+	/** Storage for the latest response. */
 	union log_multidomain_link_dst dst;
+	/** Status of the last operation. */
 	int status;
+	/** Set once the link is ready. */
 	bool ready;
 };
 
@@ -182,7 +199,9 @@ struct log_multidomain_backend;
 
 /** @brief Backend transport API. */
 struct log_multidomain_backend_transport_api {
+	/** Initialize the transport. */
 	int (*init)(struct log_multidomain_backend *backend);
+	/** Send a buffer to the remote link. */
 	int (*send)(struct log_multidomain_backend *backend, void *data, size_t len);
 };
 
@@ -191,11 +210,17 @@ extern const struct log_backend_api log_multidomain_backend_api;
 
 /** @brief Remote backend structure. */
 struct log_multidomain_backend {
+	/** Transport operations. */
 	const struct log_multidomain_backend_transport_api *transport_api;
+	/** Associated log backend instance. */
 	const struct log_backend *log_backend;
+	/** Semaphore signaled when the remote is ready. */
 	struct k_sem rdy_sem;
+	/** Set when the backend is in panic mode. */
 	bool panic;
+	/** Status of the last operation. */
 	int status;
+	/** Set once the backend is ready. */
 	bool ready;
 };
 

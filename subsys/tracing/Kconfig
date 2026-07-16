@@ -23,6 +23,44 @@ config TRACING_CORE
 	  Automatically selected by formats that require the core
 	  tracing infrastructure.
 
+if TRACING_CORE
+
+choice TRACING_INIT_LEVEL
+	prompt "Tracing initialization level"
+	default TRACING_INIT_LEVEL_APPLICATION
+	help
+	  SYS_INIT level at which the tracing backend is initialized. A lower
+	  level starts tracing earlier and captures more of the boot sequence,
+	  but runs before subsystems initialized at later levels.
+
+config TRACING_INIT_LEVEL_PRE_KERNEL_2
+	bool "PRE_KERNEL_2"
+	depends on TRACING_SYNC
+	help
+	  Earliest supported level. Sync tracing only: async tracing creates its
+	  drainer thread in tracing_init(), which needs the kernel. The system
+	  timer also initializes at PRE_KERNEL_2 (sys_clock_driver_init at
+	  SYSTEM_CLOCK_INIT_PRIORITY), so TRACING_INIT_PRIORITY must be set higher
+	  than that - otherwise tracing runs before the cycle counter is live and
+	  event timestamps are invalid.
+
+config TRACING_INIT_LEVEL_POST_KERNEL
+	bool "POST_KERNEL"
+
+config TRACING_INIT_LEVEL_APPLICATION
+	bool "APPLICATION"
+
+endchoice
+
+config TRACING_INIT_PRIORITY
+	int "Tracing initialization priority"
+	default 0
+	help
+	  Initialization priority of the tracing backend within
+	  TRACING_INIT_LEVEL.
+
+endif # TRACING_CORE
+
 choice TRACING_FORMAT_CHOICE
 	prompt "Tracing Format"
 	default TRACING_NONE
@@ -74,6 +112,19 @@ config TRACING_CUSTOM
 
 endchoice
 
+config TRACING_FORMAT_HEADER
+	string
+	help
+	  Name of a tracing format header to include from
+	  <zephyr/tracing/tracing.h>, pulled in with a computed #include. This
+	  lets an out-of-tree module supply its own tracing format without
+	  editing the core tree: the module's Kconfig sets this string (for
+	  example, default "my_format.h" if TRACING_MY_FORMAT) and adds its
+	  header directory to the include path. The header should define the
+	  sys_port_trace_* hooks it records and end with
+	  #include <zephyr/tracing/tracing_hooks.h> so any hook it does not
+	  define falls back to a no-op. It is only consulted when none of the
+	  in-tree formats above is selected.
 
 config TRACING_CTF_TIMESTAMP
 	bool "CTF internal timestamp"
@@ -221,6 +272,13 @@ config TRACING_OBJECT_TRACKING
 	bool "Object tracking"
 	help
 	  Keep lists to track kernel objects.
+
+config TRACING_SHELL
+	bool "Tracing shell commands"
+	depends on TRACING_CORE && SHELL
+	help
+	  Enable the "tracing" shell command for runtime enable/disable of
+	  tracing output, dropped-packet statistics, and backend flush.
 
 menu "Tracing Configuration"
 

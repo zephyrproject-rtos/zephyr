@@ -801,7 +801,8 @@ required_applications: <list of required applications> (default empty)
     - ``platform``: Target platform (optional, defaults to current test's platform)
     - ``path``: Directory path where Twister should search for the application
       (optional). Can be an absolute path or a path relative to the directory
-      containing the test's YAML file. Environment variables are expanded.
+      containing the test's YAML file. Environment variables and Zephyr module
+      directory variables are expanded (see :ref:`twister_module_dir_vars`).
       If not specified, Twister searches in the same directory as the referring
       test's YAML file.
 
@@ -908,6 +909,23 @@ To load arguments from a file, add ``+`` before the file name, e.g.,
 line break instead of white spaces.
 
 Most everyday users will run with no arguments.
+
+.. _twister_module_dir_vars:
+
+Expanding paths with module directory variables
+===============================================
+
+Path options in the test scenario file (e.g. ``required_applications``,
+``harness_config: pytest_root``) are expanded before use. In addition to
+environment variables, Twister expands Zephyr module directory
+variables, which mirror the CMake variables defined for every module:
+
+* ``ZEPHYR_<MODULE>_MODULE_DIR`` - absolute path to the module's root.
+* ``ZEPHYR_<MODULE>_MODULE_NAME`` - the module's name.
+
+``<MODULE>`` is upper-cased with non-alphanumeric characters replaced by ``_``,
+exactly as CMake does (for example ``$ZEPHYR_HAL_NORDIC_MODULE_DIR`` for the
+``hal_nordic`` module). Unknown references are left unchanged.
 
 Managing tests timeouts
 =======================

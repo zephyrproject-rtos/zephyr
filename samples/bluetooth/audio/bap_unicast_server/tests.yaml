@@ -1,26 +1,39 @@
 sample:
   description: Bluetooth Low Energy Audio Unicast Server sample
   name: Bluetooth Low Energy Audio Unicast Server sample
+common:
+  tags:
+    - bluetooth
 tests:
   sample.bluetooth.audio.unicast_server:
     harness: bluetooth
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
-      - nrf5340bsim/nrf5340/cpuapp
       - nrf5340dk/nrf5340/cpuapp
       - native_sim
-    tags: bluetooth
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
     sysbuild: true
   sample.bluetooth.audio.unicast_server.bt_ll_sw_split:
     harness: bluetooth
     platform_allow:
-      - nrf52_bsim
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
     integration_platforms:
       - nrf52dk/nrf52832
     extra_args: EXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf
-    tags: bluetooth
+  sample.bluetooth.audio.unicast_server.bsim:
+    depends_on: bsim
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15bsim/nrf54l15/cpuapp
+    build_only: true
+    sysbuild: true
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-bt_ll_sw_split.conf"
+      - platform:nrf5340bsim/nrf5340/cpuapp:EXTRA_CONF_FILE=""
+    harness: bsim
+    harness_config:
+      bsim_exe_name: samples_bluetooth_audio_bap_unicast_server_prj_conf

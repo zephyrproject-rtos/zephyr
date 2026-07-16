@@ -10,8 +10,8 @@
  * @ingroup qdec_nrf_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_QDEC_NRF_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_QDEC_NRF_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_QDEC_NRF_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_QDEC_NRF_H_
 
 /**
  * @defgroup qdec_nrf_interface QDEC nRF
@@ -38,4 +38,4 @@
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_QDEC_NRF_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_QDEC_NRF_H_ */

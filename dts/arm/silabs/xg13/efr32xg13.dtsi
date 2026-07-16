@@ -11,6 +11,7 @@
 
 / {
 	chosen {
+		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &msc;
 		silabs,sleeptimer = &rtcc0;
 	};
@@ -48,14 +49,14 @@
 		clk_lfxo: clk-lfxo {
 			compatible = "silabs,series0-lfxo";
 			#clock-cells = <0>;
-			clock-frequency = <DT_FREQ_K(32)>;
+			clock-frequency = <32768>;
 			status = "disabled";
 		};
 
 		clk_lfrco: clk-lfrco {
 			compatible = "silabs,series0-lfrco";
 			#clock-cells = <0>;
-			clock-frequency = <DT_FREQ_K(32)>;
+			clock-frequency = <32768>;
 			status = "disabled";
 		};
 
@@ -261,6 +262,13 @@
 			reg = <0x40052400 0x2c>;
 			peripheral-id = <1>;
 			interrupts = <3 0>;
+			status = "disabled";
+		};
+
+		trng0: trng@4001d000 {
+			compatible = "silabs,gecko-trng";
+			reg = <0x4001d000 0x400>;
+			interrupts = <45 0>;
 			status = "disabled";
 		};
 	};

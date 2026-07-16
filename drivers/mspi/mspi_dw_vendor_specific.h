@@ -215,8 +215,8 @@ static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 {
 	struct mspi_dw_data *dev_data = dev->data;
 	const struct mspi_dw_config *config = dev->config;
-	const struct mspi_xfer_packet *packet =
-		&dev_data->xfer.packets[dev_data->packets_done];
+	const struct mspi_xfer_packet *packet = &dev_data->sub_pkt;
+
 	NRF_MSPI_Type *preg = (NRF_MSPI_Type *)config->wrapper_regs;
 
 	/* Use vendor-specific data from config - stores job and transfer lists */
@@ -255,15 +255,12 @@ static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 		joblist[job_idx] = EVDMA_NULL_JOB();
 		/* rx_job is always EVDMA_NULL_JOB() for transmit */
 		transfer_list->rx_job = &joblist[job_idx];
-		preg->TMOD = MSPI_TMOD_TMOD_TXONLY;
 	} else {
 		preg->CONFIG.RXTRANSFERLENGTH = ((packet->num_bytes) >>
 						dev_data->bytes_per_frame_exp);
 
 		/* If sending address or command while being configured as controller */
 		if (job_idx > 0 && config->op_mode == MSPI_OP_MODE_CONTROLLER) {
-			preg->TMOD = MSPI_TMOD_TMOD_TXANDRX;
-
 			/* After command and address, setup RX job for data */
 			joblist[job_idx++] = EVDMA_NULL_JOB();
 			transfer_list->rx_job = &joblist[job_idx];
@@ -272,14 +269,18 @@ static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 			joblist[job_idx]   = EVDMA_NULL_JOB();
 		} else {
 			/* Sending command or address while configured as target isn't supported */
-			preg->TMOD = MSPI_TMOD_TMOD_RXONLY;
-
 			transfer_list->rx_job = &joblist[0];
 			joblist[0] = EVDMA_JOB(packet->data_buf, packet->num_bytes,
 					       EVDMA_PLAIN_DATA);
 			joblist[1] = EVDMA_NULL_JOB();
 			transfer_list->tx_job = &joblist[1];
 		}
+	}
+
+	/* The wrapper's TMOD register is only used in peripheral mode */
+	if (config->op_mode == MSPI_OP_MODE_PERIPHERAL) {
+		preg->TMOD = (packet->dir == MSPI_TX) ? MSPI_TMOD_TMOD_TXONLY
+						      : MSPI_TMOD_TMOD_RXONLY;
 	}
 
 	/* The wrapper uses formatting registers regardless of whether it is driving a display

@@ -19,6 +19,7 @@
 #include <soc_common.h>
 #include <cmsis_core.h>
 #include <sl_sleeptimer.h>
+#include <sl_power_manager.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -90,4 +91,8 @@ void soc_early_init_hook(void)
 	/* Configure SWO debug output */
 	swo_init();
 #endif
+
+	if (IS_ENABLED(CONFIG_PM) && IS_ENABLED(CONFIG_SILABS_GECKO_POWER_MANAGER)) {
+		sl_power_manager_init();
+	}
 }

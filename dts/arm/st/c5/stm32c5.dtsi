@@ -32,10 +32,29 @@
 			i-cache-line-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&stop0 &stop1>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			stop0: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <100>;
+				exit-latency-us = <10>;
+			};
+
+			stop1: state1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <2>;
+				min-residency-us = <500>;
+				exit-latency-us = <43>;
 			};
 		};
 	};
@@ -305,6 +324,18 @@
 			interrupts = <78 0>, <79 0>, <80 0>, <81 0>;
 			dma-channels = <4>;
 			dma-requests = <94>;
+			status = "disabled";
+		};
+
+		lptim1: timers@44004400 {
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44004400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB3, 11)>;
+			resets = <&rctl STM32_RESET(APB3, 11)>;
+			interrupts = <57 0>;
+			interrupt-names = "wakeup";
 			status = "disabled";
 		};
 

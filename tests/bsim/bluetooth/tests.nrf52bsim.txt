@@ -1,3 +1,6 @@
 # Search paths(s) for tests which will be run in the nrf52bsim
 # This file is used in CI to select which tests are run
-tests/bsim/bluetooth/
+tests/bsim/bluetooth/hci_uart/
+tests/bsim/bluetooth/ll/
+tests/bsim/bluetooth/mesh/
+tests/bsim/bluetooth/samples/

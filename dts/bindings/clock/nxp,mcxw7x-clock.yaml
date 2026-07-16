@@ -97,6 +97,22 @@ properties:
       - 14
       - 15
 
+  osc32k-coarse-adjustment:
+    type: int
+    default: 0
+    description: |
+      32 kHz crystal oscillator amplifier coarse gain adjustment.
+      Used to match the external crystal ESR range.
+      0: Range0
+      1: Range1
+      2: Range2
+      3: Range3
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
   firc-mode:
     type: int
     required: true
@@ -116,10 +132,18 @@ properties:
     description: |
       FIRC frequency range selection.
 
+  sirc-supported:
+    type: boolean
+    description: |
+      Indicates that this SoC variant has a SIRC (Slow Internal RC Clock)
+      hardware block. Present on MCXW70 and MCXW71; absent on MCXW72 variants
+      where the SIRC register block was removed. Used at compile time to
+      conditionally include SIRC-specific SDK types and functions.
+
   enable-sirc-in-lp-mode:
     type: boolean
     description: |
-     Enable/disable SIRC(FRO 6M) in low power mode.
+      Enable SIRC in low-power mode. Only meaningful when sirc-supported is set.
 
   sys-clk-src:
     type: int

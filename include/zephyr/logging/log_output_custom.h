@@ -4,6 +4,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Header file for custom log output formatting.
+ * @ingroup log_output
+ */
+
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_OUTPUT_CUSTOM_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_OUTPUT_CUSTOM_H_
 
@@ -68,7 +75,7 @@ typedef int (*log_timestamp_printer_t)(const struct log_output *output, const ch
  * @endcode
  *
  * @param output The logger instance to write to
- * @param timestamp
+ * @param timestamp Message timestamp to format.
  * @param printer The printing function to use when formatting the timestamp.
  */
 typedef int (*log_timestamp_format_func_t)(const struct log_output *output,
@@ -81,7 +88,7 @@ typedef int (*log_timestamp_format_func_t)(const struct log_output *output,
  * process formatted string and output the data.
  *
  * @param output Pointer to the log output instance.
- * @param timestamp
+ * @param timestamp Message timestamp to format.
  * @param printer The printing function to use when formatting the timestamp.
  */
 int log_custom_timestamp_print(const struct log_output *output, const log_timestamp_t timestamp,

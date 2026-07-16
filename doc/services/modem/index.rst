@@ -326,7 +326,7 @@ binding, then write a driver source file using the macros from
    /* Macro for defining a DT instance */
    #define MY_MODEM_DEVICE(inst)                                                   \
        MODEM_DT_INST_PPP_DEFINE(inst,                                              \
-           MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);               \
+           MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);                   \
                                                                                    \
        static struct modem_cellular_data                                           \
            MODEM_CELLULAR_INST_NAME(data, inst) = {                                \

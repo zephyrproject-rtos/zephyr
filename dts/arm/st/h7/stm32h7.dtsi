@@ -1212,6 +1212,7 @@
 			clocks = <&rcc STM32_CLOCK(AHB3, 16)>,
 				 <&rcc STM32_SRC_PLL1_Q SDMMC_SEL(0)>;
 			resets = <&rctl STM32_RESET(AHB3, 16)>;
+			interrupt-names = "event";
 			interrupts = <49 0>;
 			status = "disabled";
 		};

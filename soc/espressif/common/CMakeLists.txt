@@ -117,10 +117,11 @@ if(CONFIG_MCUBOOT)
       ARGS
         --rtl-dirs ${CMAKE_BINARY_DIR}/zephyr
         --elf-file ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
-        find-refs
-        --from-section='.iram0.loader_text'
-        --to-section='.iram0.text'
-        --exit-code)
+        find-reachable-from-loader-func
+        --map ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_MAP_NAME}
+        --roots='do_boot,start_cpu0_image'
+        --outplacers
+        --summary)
 endif()
 
 if(CONFIG_MCUBOOT)
@@ -135,3 +136,4 @@ endif()
 
 zephyr_sources_ifdef(CONFIG_ESP32_LCD_CAM esp_lcd_cam.c)
 zephyr_sources_ifdef(CONFIG_ESP32_ETM esp_etm_alloc.c)
+zephyr_sources(instr_mem.c)

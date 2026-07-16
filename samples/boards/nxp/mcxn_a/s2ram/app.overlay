@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Suspend-to-RAM (Deep Power Down) is opt-in: the SoC disables it by default.
+ * This sample places its working set in retained RAM and arms a wakeup source,
+ * so enable the state here.
+ */
+&deeppowerdown {
+	status = "okay";
+};
+
+&lptmr0 {
+	status = "okay";
+	clock-frequency = <16384>;
+	timer-mode-sel = <0>;
+};

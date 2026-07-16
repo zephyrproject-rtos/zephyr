@@ -13,7 +13,8 @@
 #define ZEPHYR_SOC_RISCV_BFLB_COMMON_SOC_MEMORY_ATTRIBUTES_H_
 
 /** Enforce relocation of critical code into TCM coupled to CPU directly */
-#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808) \
+	|| defined(CONFIG_SOC_SERIES_BL616CL)
 /* All RAM is tightly coupled on BL61x, and it generally is on BL808 */
 #define __bflb_critfunc __ramfunc
 #else

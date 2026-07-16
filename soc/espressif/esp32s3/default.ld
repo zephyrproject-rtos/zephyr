@@ -10,6 +10,13 @@
 
 #include "memory.h"
 
+bootloader_iram_loader_seg_start = BOOTLOADER_IRAM_LOADER_SEG_START;
+bootloader_dram_loader_seg_start = BOOTLOADER_DRAM_LOADER_SEG_START;
+bootloader_iram_seg_start = BOOTLOADER_IRAM_SEG_START;
+bootloader_dram_seg_start = BOOTLOADER_DRAM_SEG_START;
+
+user_dram_end = USER_DRAM_END;
+
 /* User available SRAM memory segments */
 procpu_iram_end = USER_IRAM_END - APPCPU_SRAM_SIZE;
 procpu_dram_end = USER_DRAM_END - APPCPU_SRAM_SIZE;
@@ -582,6 +589,9 @@ SECTIONS
   {
     . = ALIGN(4);
     _iram_data_start = ABSOLUTE(.);
+#if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
+    *(.llext_instr_heap)
+#endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
     *(.iram.data)
     *(.iram.data*)
     _iram_data_end = ABSOLUTE(.);
@@ -836,9 +846,8 @@ SECTIONS
     *(.noinit.*)
 #endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
 #if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
-    *(.llext_heap)
-    *(.llext_ext_heap)
     *(.llext_metadata_heap)
+    *(.llext_data_heap)
 #endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
     __dram_noinit_end = ABSOLUTE(.);
     . = ALIGN(4) ;

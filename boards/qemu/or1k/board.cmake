@@ -6,7 +6,7 @@ set(QEMU_binary_suffix or1k)
 set(QEMU_CPU_TYPE_${ARCH} or1k)
 
 set(QEMU_FLAGS_${ARCH}
-  -machine or1k-sim
+  -machine virt
   -nographic
 )
 

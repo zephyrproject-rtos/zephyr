@@ -31,6 +31,8 @@ zephyr_library_sources_ifdef(CONFIG_LLEXT elf.c)
 zephyr_library_sources_ifdef(CONFIG_SMP smp.c)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_HIFI_SHARING xtensa_hifi.S)
 
+zephyr_library_sources(instr_mem.c)
+
 if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "xcc")
   zephyr_library_sources(xcc_stubs.c)
 endif()
@@ -80,7 +82,7 @@ else()
   set(MAY_NEED_SYSCALL_SCRATCH_REG false)
 endif()
 
-if(CONFIG_KERNEL_COHERENCE AND NOT CONFIG_SCHED_CPU_MASK_PIN_ONLY)
+if(CONFIG_KERNEL_COHERENCE)
   set(NEED_FLUSH_SCRATCH_REG true)
 else()
   set(NEED_FLUSH_SCRATCH_REG false)

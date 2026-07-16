@@ -35,6 +35,23 @@
 
 #define LPTIM (LPTIM_TypeDef *) DT_INST_REG_ADDR(0)
 
+#if defined(CONFIG_SOC_SERIES_STM32MP1X)
+#define LL_LPTIM_ClearFlag_ARRM  LL_LPTIM_ClearFLAG_ARRM
+#define LL_LPTIM_ClearFlag_CMPM  LL_LPTIM_ClearFLAG_CMPM
+#endif /* CONFIG_SOC_SERIES_STM32MP1X */
+
+#if defined(CONFIG_STM32_HAL2)
+#define STM32_LPTIM_OCPOLARITY_HIGH    LL_LPTIM_OCPOLARITY_HIGH
+#define STM32_LPTIM_OCPOLARITY_LOW     LL_LPTIM_OCPOLARITY_LOW
+#define STM32_LPTIM_PRELOAD_DISABLED   LL_LPTIM_PRELOAD_DISABLED
+#define STM32_LPTIM_PRELOAD_ENABLED    LL_LPTIM_PRELOAD_ENABLED
+#else /* CONFIG_STM32_HAL2 */
+#define STM32_LPTIM_OCPOLARITY_HIGH    LL_LPTIM_OUTPUT_POLARITY_REGULAR
+#define STM32_LPTIM_OCPOLARITY_LOW     LL_LPTIM_OUTPUT_POLARITY_INVERSE
+#define STM32_LPTIM_PRELOAD_DISABLED   LL_LPTIM_UPDATE_MODE_IMMEDIATE
+#define STM32_LPTIM_PRELOAD_ENABLED    LL_LPTIM_UPDATE_MODE_ENDOFPERIOD
+#endif /* CONFIG_STM32_HAL2 */
+
 static const struct stm32_pclken lptim_clk[] = STM32_DT_INST_CLOCKS(0);
 
 static const struct device *const clk_ctrl = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
@@ -76,9 +93,6 @@ static bool autoreload_ready = true;
 static struct k_spinlock lock;
 
 #ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
-
-#define CURRENT_CPU \
-	(COND_CODE_1(CONFIG_SMP, (arch_curr_cpu()->id), (_current_cpu->id)))
 
 #define cycle_t uint32_t
 
@@ -246,7 +260,7 @@ static void lptim_irq_handler(const struct device *unused)
 		k_spinlock_key_t key = k_spin_lock(&lock);
 
 		/* do not change ARR yet, sys_clock_announce will do */
-		LL_LPTIM_ClearFLAG_ARRM(LPTIM);
+		LL_LPTIM_ClearFlag_ARRM(LPTIM);
 
 		/* increase the total nb of autoreload count
 		 * used in the sys_clock_cycle_get_32() function.
@@ -313,7 +327,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 #ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
 	const struct pm_state_info *next;
 
-	next = pm_policy_next_state(CURRENT_CPU, ticks);
+	next = pm_policy_next_state(_current_cpu->id, ticks);
 
 	/* Check if STANBY or STOP3 is requested */
 	timeout_stdby = false;
@@ -466,7 +480,6 @@ static uint32_t sys_clock_lp_time_get(void)
 
 	return lp_time;
 }
-
 
 uint32_t sys_clock_elapsed(void)
 {
@@ -626,37 +639,35 @@ static int sys_clock_driver_init(void)
 	/* the LPTIM clock freq is affected by the prescaler */
 	LL_LPTIM_SetPrescaler(LPTIM, (__CLZ(__RBIT(lptim_clock_presc)) << LPTIM_CFGR_PRESC_Pos));
 
-#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32H5X) ||                  \
-	defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32U0X)
-	LL_LPTIM_OC_SetPolarity(LPTIM, LL_LPTIM_CHANNEL_CH1, LL_LPTIM_OUTPUT_POLARITY_REGULAR);
-#else
-	LL_LPTIM_SetPolarity(LPTIM, LL_LPTIM_OUTPUT_POLARITY_REGULAR);
-#endif
-	LL_LPTIM_SetUpdateMode(LPTIM, LL_LPTIM_UPDATE_MODE_IMMEDIATE);
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_lptim)
+	LL_LPTIM_OC_SetPolarity(LPTIM, LL_LPTIM_CHANNEL_CH1, STM32_LPTIM_OCPOLARITY_HIGH);
+#else /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_lptim) */
+	LL_LPTIM_SetPolarity(LPTIM, STM32_LPTIM_OCPOLARITY_HIGH);
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_lptim) */
+	LL_LPTIM_SetUpdateMode(LPTIM, STM32_LPTIM_PRELOAD_DISABLED);
 	LL_LPTIM_SetCounterMode(LPTIM, LL_LPTIM_COUNTER_MODE_INTERNAL);
 	LL_LPTIM_DisableTimeout(LPTIM);
 	/* counting start is initiated by software */
 	LL_LPTIM_TrigSw(LPTIM);
 
-#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32H5X) ||                  \
-	defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32U0X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_lptim)
 	/* Enable the LPTIM before proceeding with configuration */
 	LL_LPTIM_Enable(LPTIM);
 
 	LL_LPTIM_DisableIT_CC1(LPTIM);
 	stm32_lptim_wait_ready();
-	LL_LPTIM_ClearFLAG_CC1(LPTIM);
-#else
+	LL_LPTIM_ClearFlag_CC1(LPTIM);
+#else /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_lptim) */
 	/* LPTIM interrupt set-up before enabling */
 	/* no Compare match Interrupt */
 	LL_LPTIM_DisableIT_CMPM(LPTIM);
-	LL_LPTIM_ClearFLAG_CMPM(LPTIM);
-#endif
+	LL_LPTIM_ClearFlag_CMPM(LPTIM);
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_lptim) */
 
 	/* Autoreload match Interrupt */
 	LL_LPTIM_EnableIT_ARRM(LPTIM);
 	stm32_lptim_wait_ready();
-	LL_LPTIM_ClearFLAG_ARRM(LPTIM);
+	LL_LPTIM_ClearFlag_ARRM(LPTIM);
 
 	/* ARROK bit validates the write operation to ARR register */
 	autoreload_ready = true;
@@ -664,12 +675,10 @@ static int sys_clock_driver_init(void)
 	stm32_lptim_wait_ready();
 	LL_LPTIM_ClearFlag_ARROK(LPTIM);
 
-#if !defined(CONFIG_SOC_SERIES_STM32U5X) && \
-	!defined(CONFIG_SOC_SERIES_STM32H5X) && \
-	!defined(CONFIG_SOC_SERIES_STM32WBAX)
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_lptim)
 	/* Enable the LPTIM counter */
 	LL_LPTIM_Enable(LPTIM);
-#endif
+#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_lptim) */
 
 	/* Set the Autoreload value once the timer is enabled */
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {

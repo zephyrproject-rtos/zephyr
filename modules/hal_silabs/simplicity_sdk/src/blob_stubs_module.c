@@ -9,7 +9,7 @@
 #include <stdbool.h>
 
 #include <rail.h>
-#include "pa_curve_types_efr32.h"
+#include <pa_curve_types_efr32.h>
 
 const RAIL_TxPowerCurvesConfigAlt_t RAIL_TxPowerCurvesVbat;
 const RAIL_TxPowerCurvesConfigAlt_t RAIL_TxPowerCurvesDcdc;

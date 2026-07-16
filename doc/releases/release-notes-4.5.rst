@@ -137,6 +137,13 @@ Deprecated APIs and options
     :c:func:`ring_buf_item_get`, :c:func:`ring_buf_item_space_get`) has been deprecated in favor of
     :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`).
 
+* Networking
+
+  * Deprecated LLMNR support (:kconfig:option:`CONFIG_LLMNR_RESOLVER` and
+    :kconfig:option:`CONFIG_LLMNR_RESPONDER`). LLMNR is being phased out; use
+    mDNS (:kconfig:option:`CONFIG_MDNS_RESOLVER` /
+    :kconfig:option:`CONFIG_MDNS_RESPONDER`) instead.
+
 * Networking Link layer
 
   * Deprecated :kconfig:option:`CONFIG_NET_L2_PTP`.
@@ -159,6 +166,7 @@ New APIs and options
 * Audio
 
   * :c:member:`pcm_stream_cfg.gain_db`
+  * :c:struct:`audio_codec_eq_cfg`
 
 * Bluetooth
 
@@ -174,6 +182,8 @@ New APIs and options
     * :c:func:`bt_conn_take`
     * :c:func:`bt_conn_drop`
     * :c:func:`bt_le_per_adv_update_did`
+    * :c:member:`bt_le_adv_param.tx_power` and :c:enumerator:`BT_LE_ADV_OPT_TX_POWER`
+      to request a specific TX power level per extended advertising set.
     * :c:member:`bt_conn_cb.le_param_update_rejected`
 
   * Mesh
@@ -206,6 +216,10 @@ New APIs and options
   * :c:func:`haptics_select_source`
   * :c:func:`haptics_set_level`
   * :c:func:`haptics_stream_samples`
+
+* Kconfig
+
+  * Add ``dt_partition_mtd`` preprocessor function (:github:`111599`)
 
 * Kernel
 
@@ -244,6 +258,10 @@ New Boards
 
   * :zephyr:board:`Seeed Wio Tracker L1 <wio_tracker_l1>` (``wio_tracker_l1``)
 
+* WCH
+
+  * :zephyr:board:`WCH CH32V103EVT <ch32v103evt>` (``ch32v103evt``)
+
 New Shields
 ***********
 
@@ -273,6 +291,13 @@ New Drivers
     back-end for the new :ref:`clock_monitor_api` subsystem.
   * :dtcompatible:`nxp,cmu-fm` — NXP Clock Monitoring Unit (Frequency Meter)
     back-end for the new :ref:`clock_monitor_api` subsystem.
+
+* USB
+
+  * :dtcompatible:`espressif,esp32-usb-otg-fs` - Espressif USB-OTG full-speed
+    controller with internal FS/LS PHY.
+  * :dtcompatible:`espressif,esp32-usb-otg-hs` - Espressif USB-OTG high-speed
+    controller with internal UTMI PHY.
 
 New Samples
 ***********
@@ -345,6 +370,16 @@ Other notable changes
 
   * Removed the ``samples/net/wifi/test_certs/rsa2k`` enterprise test
     certificates (DES-encrypted private keys). Use ``rsa2k_no_des`` instead.
+
+* MCUboot
+
+  * :kconfig:option:`SB_CONFIG_BOOT_SIGNATURE_KEY_FILE` now accepts a comma-separated list of
+    key files, embedding the public half of each in the MCUboot bootloader. When more
+    than one key is given, MCUboot accepts an image signed with any of them -- the
+    typical use is a development bootloader that boots both development- and
+    production-signed images, while production bootloaders embed only the production
+    key. The first entry is the key the application is signed with and the rest are
+    verification-only public keys. See :ref:`build-signing`.
 
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write

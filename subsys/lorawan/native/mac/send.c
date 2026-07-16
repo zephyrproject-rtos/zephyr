@@ -66,9 +66,6 @@ LOG_MODULE_DECLARE(lorawan_native_mac, CONFIG_LORAWAN_LOG_LEVEL);
 #define DIR_DOWNLINK		1
 #define MAX_FRAME_SIZE		256
 
-/* FOpts carries up to 15 bytes of MAC commands; capped by FCtrl[3:0]. */
-#define LWAN_MAX_FOPTS_LEN	15
-
 #define FCTRL_ADR		BIT(7)
 #define FCTRL_ACK		BIT(5)
 #define FCTRL_FPENDING		BIT(4)
@@ -108,11 +105,43 @@ struct dl_work_ctx {
 	int8_t snr;
 	uint8_t len;
 	uint8_t data[MAX_RX_BUF_SIZE];
+	bool notify_downlink;
 };
 
 struct send_tx_ctx {
 	const struct lwan_send_req *req;
 	bool tx_done;
+};
+
+struct data_frame_layout {
+	size_t fopts_len;
+	size_t fhdr_end;
+	size_t total_len;
+};
+
+struct dl_frame_info {
+	uint32_t dev_addr;
+	uint32_t fcnt_down;
+	uint8_t fopts_len;
+	uint8_t flags;
+	bool ack_received;
+};
+
+struct dl_payload_info {
+	uint8_t port;
+	size_t start;
+	size_t len;
+};
+
+struct send_state {
+	const struct lwan_send_req *req;
+	struct send_tx_ctx tx_ctx;
+	uint8_t frame[MAX_FRAME_SIZE];
+	size_t frame_len;
+	uint32_t fcnt;
+	uint32_t rx1_delay_ms;
+	uint8_t dr_idx;
+	uint8_t tries;
 };
 
 static K_SEM_DEFINE(dl_work_sem, 1, 1);
@@ -122,6 +151,13 @@ static void dl_work_handler(struct k_work *work)
 	struct dl_work_ctx *wctx =
 		CONTAINER_OF(work, struct dl_work_ctx, work);
 	struct lorawan_downlink_cb *cb;
+
+	mac_cmd_deliver_link_check_ans(wctx->ctx);
+
+	if (!wctx->notify_downlink) {
+		k_sem_give(&dl_work_sem);
+		return;
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&wctx->ctx->dl_callbacks, cb, node) {
 		if (cb->port == LW_RECV_PORT_ANY || cb->port == wctx->port) {
@@ -175,73 +211,127 @@ static int mac_encrypt_ul_payload(struct lwan_session *sess, uint8_t port,
 					   &frame[fhdr_end + FPORT_SIZE], len);
 }
 
-static int mac_build_data_frame(struct lwan_ctx *ctx,
-				const struct lwan_send_req *req,
-				uint8_t *frame, size_t *frame_len)
+static struct data_frame_layout mac_ul_frame_layout(
+	const struct lwan_send_req *req, size_t fopts_len)
 {
-	struct pkt_data_hdr *hdr = (struct pkt_data_hdr *)frame;
-	struct lwan_session *sess = &ctx->session;
-	uint8_t fopts[LWAN_MAX_FOPTS_LEN];
-	size_t fopts_len;
-	size_t fhdr_end;
-	size_t msg_len;
-	size_t pos;
-	uint8_t fctrl;
-	int ret;
+	struct data_frame_layout layout = {
+		.fopts_len = fopts_len,
+		.fhdr_end = sizeof(struct pkt_data_hdr) + fopts_len,
+	};
 
-	fopts_len = mac_cmd_build_ul_fopts(ctx, fopts, sizeof(fopts));
-	fhdr_end = sizeof(*hdr) + fopts_len;
-
-	pos = fhdr_end + LWAN_MIC_SIZE;
+	layout.total_len = layout.fhdr_end + LWAN_MIC_SIZE;
 	if (req->len > 0) {
-		pos += FPORT_SIZE + req->len;
+		layout.total_len += FPORT_SIZE + req->len;
 	}
 
-	if (pos > *frame_len) {
-		return -EMSGSIZE;
-	}
+	return layout;
+}
 
-	fctrl = (uint8_t)FIELD_PREP(FCTRL_FOPTS_LEN_MASK, fopts_len);
+static uint8_t mac_ul_fctrl(const struct lwan_ctx *ctx, size_t fopts_len)
+{
+	uint8_t fctrl = (uint8_t)FIELD_PREP(FCTRL_FOPTS_LEN_MASK, fopts_len);
+
 	if (ctx->pending & LWAN_PENDING_ACK) {
 		fctrl |= FCTRL_ACK;
 	}
+
 	if (ctx->mac.adr_enabled) {
 		fctrl |= FCTRL_ADR;
 	}
 
+	return fctrl;
+}
+
+static void mac_write_ul_header(struct lwan_ctx *ctx,
+				const struct lwan_send_req *req,
+				uint8_t *frame, const uint8_t *fopts,
+				size_t fopts_len)
+{
+	struct pkt_data_hdr *hdr = (struct pkt_data_hdr *)frame;
+	struct lwan_session *sess = &ctx->session;
+
 	hdr->mhdr = req->type == LORAWAN_MSG_CONFIRMED
 		   ? MHDR_CONF_DATA_UP : MHDR_UNCONF_DATA_UP;
-	hdr->fctrl = fctrl;
+	hdr->fctrl = mac_ul_fctrl(ctx, fopts_len);
 	sys_put_le32(sess->dev_addr, hdr->dev_addr);
 	sys_put_le16((uint16_t)(sess->fcnt_up & FCNT_LOW_MASK), hdr->fcnt);
 
 	if (fopts_len > 0) {
 		memcpy(&frame[sizeof(*hdr)], fopts, fopts_len);
 	}
+}
 
-	if (req->len > 0) {
-		ret = mac_encrypt_ul_payload(sess, req->port, req->data,
-					     req->len, frame, fhdr_end);
-		if (ret != 0) {
-			LOG_ERR("Payload encrypt failed: %d", ret);
-			return ret;
-		}
+static int mac_write_ul_payload(struct lwan_session *sess,
+				const struct lwan_send_req *req,
+				uint8_t *frame, size_t fhdr_end)
+{
+	int ret;
+
+	if (req->len == 0) {
+		return 0;
 	}
 
-	msg_len = pos - LWAN_MIC_SIZE;
+	ret = mac_encrypt_ul_payload(sess, req->port, req->data,
+				     req->len, frame, fhdr_end);
+	if (ret != 0) {
+		LOG_ERR("Payload encrypt failed: %d", ret);
+	}
+
+	return ret;
+}
+
+static int mac_write_ul_mic(struct lwan_session *sess, uint8_t *frame,
+			    size_t msg_len)
+{
+	int ret;
 
 	ret = mac_compute_data_mic(sess->fnwk_s_int_cmac, sess->dev_addr,
 				   sess->fcnt_up, DIR_UPLINK,
 				   frame, msg_len, &frame[msg_len]);
 	if (ret != 0) {
 		LOG_ERR("Data MIC compute failed: %d", ret);
+	}
+
+	return ret;
+}
+
+static int mac_build_data_frame(struct lwan_ctx *ctx,
+				const struct lwan_send_req *req,
+				uint8_t *frame, size_t *frame_len)
+{
+	struct lwan_session *sess = &ctx->session;
+	struct data_frame_layout layout;
+	uint8_t fopts[LWAN_MAX_FOPTS_LEN];
+	size_t fopts_len;
+	size_t msg_len;
+	int ret;
+
+	fopts_len = mac_cmd_build_ul_fopts(ctx, fopts, sizeof(fopts));
+	layout = mac_ul_frame_layout(req, fopts_len);
+
+	if (layout.total_len > *frame_len) {
+		return -EMSGSIZE;
+	}
+
+	mac_write_ul_header(ctx, req, frame, fopts, layout.fopts_len);
+
+	ret = mac_write_ul_payload(sess, req, frame, layout.fhdr_end);
+	if (ret != 0) {
 		return ret;
 	}
 
-	*frame_len = pos;
+	msg_len = layout.total_len - LWAN_MIC_SIZE;
+
+	ret = mac_write_ul_mic(sess, frame, msg_len);
+	if (ret != 0) {
+		return ret;
+	}
+
+	*frame_len = layout.total_len;
 
 	LOG_DBG("Data frame built: port=%u len=%u fcnt=%u fopts=%zu total=%zu",
-		req->port, req->len, sess->fcnt_up, fopts_len, *frame_len);
+		req->port, req->len, sess->fcnt_up, layout.fopts_len,
+		*frame_len);
 
 	return 0;
 }
@@ -262,6 +352,7 @@ static void mac_dispatch_downlink(struct lwan_ctx *ctx, uint8_t port,
 	dl_work_ctx.rssi = rssi;
 	dl_work_ctx.snr = snr;
 	dl_work_ctx.len = len;
+	dl_work_ctx.notify_downlink = true;
 
 	if (data != NULL && len > 0) {
 		memcpy(dl_work_ctx.data, data, len);
@@ -270,59 +361,144 @@ static void mac_dispatch_downlink(struct lwan_ctx *ctx, uint8_t port,
 	k_work_submit(&dl_work_ctx.work);
 }
 
-static int mac_process_dl_payload(struct lwan_ctx *ctx,
-				  const uint8_t *rx_buf, size_t rx_len,
-				  uint8_t fopts_len, uint32_t dev_addr,
-				  uint32_t fcnt_down, uint8_t flags,
-				  int16_t rssi, int8_t snr,
-				  bool ack_received)
+static void mac_dispatch_mac_delivery(struct lwan_ctx *ctx)
 {
-	struct lwan_session *sess = &ctx->session;
+	if (k_sem_take(&dl_work_sem, K_NO_WAIT) != 0) {
+		LOG_WRN("MAC notification dispatch busy, dropping");
+		return;
+	}
+
+	dl_work_ctx.ctx = ctx;
+	dl_work_ctx.notify_downlink = false;
+
+	k_work_submit(&dl_work_ctx.work);
+}
+
+/* Dispatch payload-less notifications so callbacks run on the workqueue. */
+static void mac_dispatch_dl_notify(struct lwan_ctx *ctx,
+				   const struct dl_frame_info *frame_info,
+				   int16_t rssi, int8_t snr)
+{
+	/* Report an ACK or a flag (e.g. FPending) even on an empty downlink. */
+	if (frame_info->ack_received || frame_info->flags != 0) {
+		mac_dispatch_downlink(ctx, 0, frame_info->flags, rssi, snr,
+				      NULL, 0);
+	} else if (mac_cmd_has_pending_delivery(ctx)) {
+		mac_dispatch_mac_delivery(ctx);
+	}
+}
+
+static bool mac_get_dl_payload_info(const uint8_t *rx_buf, size_t rx_len,
+				    uint8_t fopts_len,
+				    struct dl_payload_info *payload)
+{
 	size_t fhdr_end = sizeof(struct pkt_data_hdr) + fopts_len;
 	size_t msg_len = rx_len - LWAN_MIC_SIZE;
-	size_t payload_start = fhdr_end + FPORT_SIZE;
-	size_t payload_len;
-	uint8_t port;
 
 	if (rx_len <= fhdr_end + LWAN_MIC_SIZE) {
-		/* No FPort/payload — notify ACK-only if applicable */
-		if (ack_received) {
-			mac_dispatch_downlink(ctx, 0, flags, rssi, snr,
-					      NULL, 0);
-		}
+		return false;
+	}
+
+	payload->port = rx_buf[fhdr_end];
+	payload->start = fhdr_end + FPORT_SIZE;
+	payload->len = msg_len - payload->start;
+
+	return true;
+}
+
+static int mac_decrypt_dl_payload(struct lwan_session *sess,
+				  const struct dl_frame_info *frame_info,
+				  const struct dl_payload_info *payload,
+				  const uint8_t *rx_buf, uint8_t *dl_payload)
+{
+	psa_key_id_t ecb_key = payload->port == 0
+			       ? sess->fnwk_s_int_ecb : sess->app_s_key;
+
+	memcpy(dl_payload, &rx_buf[payload->start], payload->len);
+
+	return lwan_crypto_payload_encrypt(ecb_key, frame_info->dev_addr,
+					   frame_info->fcnt_down,
+					   DIR_DOWNLINK, dl_payload,
+					   payload->len);
+}
+
+static int mac_dispatch_dl_payload(struct lwan_ctx *ctx,
+				   const struct dl_frame_info *frame_info,
+				   const struct dl_payload_info *payload,
+				   int16_t rssi, int8_t snr,
+				   const uint8_t *rx_buf)
+{
+	uint8_t dl_payload[MAX_RX_BUF_SIZE];
+	int ret;
+
+	if (payload->len == 0) {
 		return 0;
 	}
 
-	port = rx_buf[fhdr_end];
-
-	payload_len = msg_len - payload_start;
-
-	if (payload_len > 0) {
-		uint8_t dl_payload[MAX_RX_BUF_SIZE];
-		psa_key_id_t ecb_key;
-		int ret;
-
-		memcpy(dl_payload, &rx_buf[payload_start], payload_len);
-
-		ecb_key = (port == 0) ? sess->fnwk_s_int_ecb : sess->app_s_key;
-
-		ret = lwan_crypto_payload_encrypt(ecb_key, dev_addr,
-						      fcnt_down,
-						      DIR_DOWNLINK,
-						      dl_payload,
-						      payload_len);
-		if (ret != 0) {
-			return ret;
-		}
-
-		LOG_INF("Downlink: port=%u len=%zu fcnt=%u",
-			port, payload_len, fcnt_down);
-
-		mac_dispatch_downlink(ctx, port, flags, rssi, snr,
-				      dl_payload, (uint8_t)payload_len);
+	ret = mac_decrypt_dl_payload(&ctx->session, frame_info, payload,
+				     rx_buf, dl_payload);
+	if (ret != 0) {
+		return ret;
 	}
 
+	LOG_INF("Downlink: port=%u len=%zu fcnt=%u",
+		payload->port, payload->len, frame_info->fcnt_down);
+
+	mac_dispatch_downlink(ctx, payload->port, frame_info->flags, rssi, snr,
+			      dl_payload, (uint8_t)payload->len);
+
 	return 0;
+}
+
+/* Port-0 FRMPayload is the long-form MAC command container, not application
+ * data.  Decrypt with the network key and run it through the same parser as
+ * FOpts; it is never delivered to the application.
+ */
+static int mac_process_dl_mac_payload(struct lwan_ctx *ctx,
+				      const struct dl_frame_info *frame_info,
+				      const struct dl_payload_info *payload,
+				      const uint8_t *rx_buf)
+{
+	uint8_t mac_payload[MAX_RX_BUF_SIZE];
+	int ret;
+
+	if (payload->len == 0) {
+		return 0;
+	}
+
+	ret = mac_decrypt_dl_payload(&ctx->session, frame_info, payload,
+				     rx_buf, mac_payload);
+	if (ret != 0) {
+		return ret;
+	}
+
+	LOG_DBG("Port-0 MAC commands: len=%zu fcnt=%u",
+		payload->len, frame_info->fcnt_down);
+
+	mac_cmd_process_dl_fopts(ctx, mac_payload, payload->len);
+
+	return 0;
+}
+
+static int mac_process_dl_payload(struct lwan_ctx *ctx,
+				  const uint8_t *rx_buf, size_t rx_len,
+				  const struct dl_frame_info *frame_info,
+				  int16_t rssi, int8_t snr)
+{
+	struct dl_payload_info payload;
+
+	if (!mac_get_dl_payload_info(rx_buf, rx_len, frame_info->fopts_len,
+				     &payload) ||
+	    payload.port == 0) {
+		/* No app payload to deliver: a bare ACK/answer frame, or
+		 * port-0 MAC commands (already parsed). Notify only.
+		 */
+		mac_dispatch_dl_notify(ctx, frame_info, rssi, snr);
+		return 0;
+	}
+
+	return mac_dispatch_dl_payload(ctx, frame_info, &payload, rssi, snr,
+				       rx_buf);
 }
 
 static uint32_t mac_reconstruct_fcnt_down(uint16_t fcnt16,
@@ -396,70 +572,124 @@ static int mac_verify_data_mic(psa_key_id_t cmac_key, uint32_t dev_addr,
 	return 0;
 }
 
-static int mac_parse_downlink(struct lwan_ctx *ctx, const uint8_t *rx_buf,
-			      size_t rx_len, int16_t rssi, int8_t snr,
-			      bool *ack_received)
+static int mac_validate_dl_fopts_len(size_t rx_len, uint8_t fopts_len)
+{
+	if (rx_len < sizeof(struct pkt_data_hdr) + fopts_len + LWAN_MIC_SIZE) {
+		LOG_DBG("Invalid FOptsLen: %u for len %zu", fopts_len, rx_len);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int mac_read_dl_frame_info(struct lwan_ctx *ctx, const uint8_t *rx_buf,
+				  size_t rx_len,
+				  struct dl_frame_info *frame_info)
 {
 	const struct pkt_data_hdr *hdr = (const struct pkt_data_hdr *)rx_buf;
 	struct lwan_session *sess = &ctx->session;
-	uint32_t dev_addr;
-	uint16_t fcnt16;
-	uint32_t fcnt_down;
-	uint8_t fopts_len;
-	uint8_t flags = 0;
 	int ret;
-
-	*ack_received = false;
 
 	ret = mac_validate_dl_header(rx_buf, rx_len, sess->dev_addr);
 	if (ret != 0) {
 		return ret;
 	}
 
-	dev_addr = sys_get_le32(hdr->dev_addr);
-	fcnt16 = sys_get_le16(hdr->fcnt);
-	fcnt_down = mac_reconstruct_fcnt_down(fcnt16, sess->fcnt_down);
-	fopts_len = FIELD_GET(FCTRL_FOPTS_LEN_MASK, hdr->fctrl);
-	if (rx_len < sizeof(*hdr) + fopts_len + LWAN_MIC_SIZE) {
-		LOG_DBG("Invalid FOptsLen: %u for len %zu", fopts_len, rx_len);
-		return -EINVAL;
-	}
+	frame_info->dev_addr = sys_get_le32(hdr->dev_addr);
+	frame_info->fcnt_down =
+		mac_reconstruct_fcnt_down(sys_get_le16(hdr->fcnt),
+					   sess->fcnt_down);
+	frame_info->fopts_len = FIELD_GET(FCTRL_FOPTS_LEN_MASK, hdr->fctrl);
 
-	ret = mac_verify_data_mic(sess->fnwk_s_int_cmac, dev_addr,
-				  fcnt_down, rx_buf, rx_len);
-	if (ret != 0) {
-		return ret;
-	}
+	return mac_validate_dl_fopts_len(rx_len, frame_info->fopts_len);
+}
 
-	if (fopts_len > 0) {
-		LOG_WRN("Downlink MAC commands not supported; ignoring %u byte(s)",
-			fopts_len);
-	}
-
+static int mac_validate_dl_replay(struct lwan_session *sess,
+				  uint32_t fcnt_down)
+{
 	if (sess->fcnt_down != LWAN_FCNT_NONE && fcnt_down <= sess->fcnt_down) {
 		LOG_WRN("Downlink replay (fcnt %u <= %u)", fcnt_down,
 			sess->fcnt_down);
 		return -EAGAIN;
 	}
 
-	if (hdr->fctrl & FCTRL_ACK) {
-		*ack_received = true;
-	}
+	return 0;
+}
+
+static void mac_apply_dl_fctrl(struct lwan_ctx *ctx,
+			       const struct pkt_data_hdr *hdr,
+			       struct dl_frame_info *frame_info)
+{
+	frame_info->ack_received = (hdr->fctrl & FCTRL_ACK) != 0;
+	frame_info->flags = 0;
 
 	if (hdr->fctrl & FCTRL_FPENDING) {
-		flags |= LORAWAN_DATA_PENDING;
+		frame_info->flags |= LORAWAN_DATA_PENDING;
 	}
-
-	sess->fcnt_down = fcnt_down;
 
 	/* Confirmed downlinks require ACK in our next uplink */
 	if ((hdr->mhdr & MHDR_TYPE_MASK) == MHDR_CONF_DATA_DOWN) {
 		ctx->pending |= LWAN_PENDING_ACK;
 	}
+}
 
-	return mac_process_dl_payload(ctx, rx_buf, rx_len, fopts_len, dev_addr,
-				      fcnt_down, flags, rssi, snr,
-				      *ack_received);
+static int mac_parse_downlink(struct lwan_ctx *ctx, const uint8_t *rx_buf,
+			      size_t rx_len, int16_t rssi, int8_t snr,
+			      bool *ack_received)
+{
+	const struct pkt_data_hdr *hdr = (const struct pkt_data_hdr *)rx_buf;
+	struct lwan_session *sess = &ctx->session;
+	struct dl_payload_info payload;
+	struct dl_frame_info frame_info;
+	bool has_payload;
+	int ret;
+
+	*ack_received = false;
+
+	ret = mac_read_dl_frame_info(ctx, rx_buf, rx_len, &frame_info);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = mac_verify_data_mic(sess->fnwk_s_int_cmac, frame_info.dev_addr,
+				  frame_info.fcnt_down, rx_buf, rx_len);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = mac_validate_dl_replay(sess, frame_info.fcnt_down);
+	if (ret != 0) {
+		return ret;
+	}
+
+	has_payload = mac_get_dl_payload_info(rx_buf, rx_len,
+					      frame_info.fopts_len, &payload);
+
+	/* FPort 0 carries MAC commands in its FRMPayload; per the spec that
+	 * form cannot be combined with FOpts MAC commands in the same frame.
+	 */
+	if (frame_info.fopts_len > 0 && has_payload && payload.port == 0) {
+		LOG_WRN("Downlink with both FOpts and FPort=0");
+		return -EBADMSG;
+	}
+
+	mac_cmd_process_dl_fopts(ctx, &rx_buf[sizeof(struct pkt_data_hdr)],
+				 frame_info.fopts_len);
+
+	if (has_payload && payload.port == 0) {
+		ret = mac_process_dl_mac_payload(ctx, &frame_info, &payload,
+						 rx_buf);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	mac_apply_dl_fctrl(ctx, hdr, &frame_info);
+	sess->fcnt_down = frame_info.fcnt_down;
+	*ack_received = frame_info.ack_received;
+
+	return mac_process_dl_payload(ctx, rx_buf, rx_len, &frame_info,
+				      rssi, snr);
 }
 
 static enum mac_rx_result send_rx_handler(struct lwan_ctx *ctx,
@@ -511,107 +741,186 @@ static void send_post_tx(struct lwan_ctx *ctx, void *user_data)
 
 	tx_ctx->tx_done = true;
 	ctx->pending &= ~LWAN_PENDING_ACK;
+	mac_cmd_commit_ul_fopts(ctx);
+}
+
+static uint32_t send_rx1_delay_ms(const struct lwan_session *sess)
+{
+	return (sess->rx_delay == 0 ? 1 : sess->rx_delay) * 1000U;
+}
+
+static uint8_t send_try_count(const struct lwan_ctx *ctx,
+			      const struct lwan_send_req *req)
+{
+	return req->type == LORAWAN_MSG_CONFIRMED ? ctx->conf_tries : 1;
+}
+
+static void send_state_init(struct send_state *state, struct lwan_ctx *ctx,
+			    const struct lwan_send_req *req)
+{
+	state->req = req;
+	state->tx_ctx = (struct send_tx_ctx){
+		.req = req,
+	};
+	state->frame_len = sizeof(state->frame);
+	state->fcnt = ctx->session.fcnt_up;
+	state->rx1_delay_ms = send_rx1_delay_ms(&ctx->session);
+	state->dr_idx = (uint8_t)ctx->current_dr;
+	state->tries = send_try_count(ctx, req);
+}
+
+static int send_validate_payload_size(struct lwan_ctx *ctx,
+				      const struct send_state *state)
+{
+	struct lwan_dr_params dr_params;
+	uint8_t max_payload;
+	int8_t tx_power;
+	int ret;
+
+	ret = ctx->region->get_tx_params(state->dr_idx, ctx->mac.tx_power_idx,
+					 &dr_params, &tx_power);
+	if (ret != 0) {
+		LOG_ERR("Invalid datarate DR%u: %d", state->dr_idx, ret);
+		return ret;
+	}
+
+	/* Pending MAC commands in FOpts eat into the payload budget */
+	max_payload = mac_cmd_next_payload_size(ctx, dr_params.max_payload);
+	if (state->req->len > max_payload) {
+		LOG_ERR("Payload too large for DR%u: %u > %u", state->dr_idx,
+			state->req->len, max_payload);
+		return -EMSGSIZE;
+	}
+
+	return 0;
+}
+
+static int send_prepare_frame(struct lwan_ctx *ctx, struct send_state *state)
+{
+	int ret;
+
+	ret = send_validate_payload_size(ctx, state);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return mac_build_data_frame(ctx, state->req, state->frame,
+				    &state->frame_len);
+}
+
+static struct mac_tx_params send_tx_params(struct send_state *state,
+					   uint32_t tx_freq)
+{
+	return (struct mac_tx_params){
+		.frame = state->frame,
+		.frame_len = state->frame_len,
+		.tx_freq = tx_freq,
+		.tx_dr_idx = state->dr_idx,
+		.rx1_delay_ms = state->rx1_delay_ms,
+		.post_tx = send_post_tx,
+		.rx_handler = send_rx_handler,
+		.user_data = &state->tx_ctx,
+	};
+}
+
+static void send_retry_backoff(void)
+{
+	uint32_t backoff_ms = 1000 + (sys_rand32_get() % 2001);
+
+	LOG_DBG("Retry backoff: %u ms", backoff_ms);
+	k_msleep(backoff_ms);
+}
+
+/*
+ * Positive retry sentinel: cannot collide with success (0) or an
+ * errno value propagated from the layers below.
+ */
+#define SEND_ATTEMPT_RETRY	1
+
+static int send_handle_attempt_result(const struct send_state *state,
+				      uint8_t attempt, int ret)
+{
+	if (ret == 0) {
+		return 0;
+	}
+
+	if (ret != -ETIMEDOUT) {
+		LOG_ERR("TX/RX transaction failed: %d", ret);
+		return ret;
+	}
+
+	if (state->req->type != LORAWAN_MSG_CONFIRMED) {
+		/* Unconfirmed: no downlink is normal */
+		return 0;
+	}
+
+	LOG_WRN("Confirmed uplink: no ACK (attempt %u/%u)",
+		attempt + 1, state->tries);
+
+	if (attempt < state->tries - 1) {
+		send_retry_backoff();
+	}
+
+	return SEND_ATTEMPT_RETRY;
+}
+
+static int send_one_attempt(struct lwan_ctx *ctx, struct send_state *state,
+			    uint8_t attempt)
+{
+	struct mac_tx_params tx_params;
+	uint32_t tx_freq;
+	int ret;
+
+	LOG_INF("Send: port=%u len=%u fcnt=%u attempt=%u/%u",
+		state->req->port, state->req->len, state->fcnt,
+		attempt + 1, state->tries);
+
+	ret = select_data_channel_wait(ctx, state->dr_idx, &tx_freq);
+	if (ret != 0) {
+		LOG_ERR("No channel available for DR%u: %d",
+			state->dr_idx, ret);
+		return ret;
+	}
+
+	tx_params = send_tx_params(state, tx_freq);
+
+	ret = mac_do_tx_rx(ctx, &tx_params);
+
+	return send_handle_attempt_result(state, attempt, ret);
+}
+
+static int send_attempts(struct lwan_ctx *ctx, struct send_state *state)
+{
+	int ret;
+
+	for (uint8_t attempt = 0; attempt < state->tries; attempt++) {
+		ret = send_one_attempt(ctx, state, attempt);
+		if (ret != SEND_ATTEMPT_RETRY) {
+			return ret;
+		}
+	}
+
+	return -ETIMEDOUT;
 }
 
 void mac_do_send(struct lwan_ctx *ctx, const struct lwan_req *req)
 {
 	const struct lwan_send_req *send_req = req->data;
-	const struct lwan_region_ops *region = ctx->region;
 	struct lwan_session *sess = &ctx->session;
-	struct mac_tx_params tx_params;
-	struct lwan_dr_params dr_params;
-	struct send_tx_ctx tx_ctx = {
-		.req = send_req,
-	};
-	uint8_t tx_frame[MAX_FRAME_SIZE];
-	size_t tx_frame_len = sizeof(tx_frame);
-	uint32_t rx1_delay_ms;
-	uint32_t frame_fcnt;
-	uint32_t tx_freq;
-	uint8_t tx_dr_idx;
-	uint8_t tries;
-	int8_t tx_power;
+	struct send_state state;
 	int ret;
 
-	tx_dr_idx = (uint8_t)ctx->current_dr;
-	frame_fcnt = sess->fcnt_up;
+	send_state_init(&state, ctx, send_req);
 
-	ret = region->get_tx_params(tx_dr_idx, ctx->mac.tx_power_idx,
-				    &dr_params, &tx_power);
-	if (ret != 0) {
-		LOG_ERR("Invalid datarate DR%u: %d", tx_dr_idx, ret);
-		goto done;
-	}
-
-	if (send_req->len > dr_params.max_payload) {
-		LOG_ERR("Payload too large for DR%u: %u > %u", tx_dr_idx,
-			send_req->len, dr_params.max_payload);
-		ret = -EMSGSIZE;
-		goto done;
-	}
-
-	rx1_delay_ms = (sess->rx_delay == 0 ? 1 : sess->rx_delay) * 1000U;
-
-	tries = (send_req->type == LORAWAN_MSG_CONFIRMED) ? ctx->conf_tries : 1;
-
-	ret = mac_build_data_frame(ctx, send_req, tx_frame, &tx_frame_len);
+	ret = send_prepare_frame(ctx, &state);
 	if (ret != 0) {
 		goto done;
 	}
 
-	for (uint8_t attempt = 0; attempt < tries; attempt++) {
-		LOG_INF("Send: port=%u len=%u fcnt=%u attempt=%u/%u",
-			send_req->port, send_req->len, frame_fcnt, attempt + 1, tries);
-
-		ret = select_data_channel_wait(ctx, tx_dr_idx, &tx_freq);
-		if (ret != 0) {
-			LOG_ERR("No channel available for DR%u: %d",
-				tx_dr_idx, ret);
-			goto done;
-		}
-
-		tx_params = (struct mac_tx_params){
-			.frame = tx_frame,
-			.frame_len = tx_frame_len,
-			.tx_freq = tx_freq,
-			.tx_dr_idx = tx_dr_idx,
-			.rx1_delay_ms = rx1_delay_ms,
-			.post_tx = send_post_tx,
-			.rx_handler = send_rx_handler,
-			.user_data = &tx_ctx,
-		};
-
-		ret = mac_do_tx_rx(ctx, &tx_params);
-		if (ret == 0) {
-			goto done;
-		}
-
-		if (ret != -ETIMEDOUT) {
-			LOG_ERR("TX/RX transaction failed: %d", ret);
-			goto done;
-		}
-
-		if (send_req->type != LORAWAN_MSG_CONFIRMED) {
-			/* Unconfirmed: no downlink is normal */
-			ret = 0;
-			goto done;
-		}
-
-		LOG_WRN("Confirmed uplink: no ACK (attempt %u/%u)",
-			attempt + 1, tries);
-
-		if (attempt < tries - 1) {
-			uint32_t backoff_ms = 1000 + (sys_rand32_get() % 2001);
-
-			LOG_DBG("Retry backoff: %u ms", backoff_ms);
-			k_msleep(backoff_ms);
-		}
-	}
-
-	ret = -ETIMEDOUT;
+	ret = send_attempts(ctx, &state);
 
 done:
-	if (tx_ctx.tx_done) {
+	if (state.tx_ctx.tx_done) {
 		sess->fcnt_up++;
 	}
 

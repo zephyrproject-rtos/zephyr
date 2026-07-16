@@ -14,7 +14,7 @@ if DMA_AMD_ACP_TDM
 
 config DMA_AMD_ACP_TDM_CHANNEL_COUNT
 	int "Channel count"
-	default 8
+	default 6
 	help
 	  Number of DMA channels (2 per instance x 3 instances).
 

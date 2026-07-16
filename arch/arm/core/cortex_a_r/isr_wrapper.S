@@ -183,18 +183,6 @@ _idle_state_cleared:
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 	push {r0, r1}
 
-	/*
-	 * Enable interrupts to allow nesting.
-	 *
-	 * Note that interrupts are disabled up to this point on the ARM
-	 * architecture variants other than the Cortex-M. It is also important
-	 * to note that most interrupt controllers require that the nested
-	 * interrupts are handled after the active interrupt is acknowledged;
-	 * this is be done through the `get_active` interrupt controller
-	 * interface function.
-	 */
-	cpsie i
-
 #if CONFIG_GIC_VER >= 3
 	/*
 	 * Ignore GIC special INTIDs (1020-1023), which do not represent
@@ -225,7 +213,21 @@ oob:
 			 * in thumb mode */
 
 	ldm r1!,{r0,r3}	/* arg in r0, ISR in r3 */
+
+	/*
+	 * Enable interrupts only while the registered ISR runs to allow
+	 * nesting. Keep EOI and interrupt exit non-reentrant.
+	 *
+	 * Note that interrupts are disabled up to this point on the ARM
+	 * architecture variants other than the Cortex-M. It is also important
+	 * to note that most interrupt controllers require that the nested
+	 * interrupts are handled after the active interrupt is acknowledged;
+	 * this is done through the `get_active` interrupt controller
+	 * interface function.
+	 */
+	cpsie i
 	blx r3		/* call ISR */
+	cpsid i
 
 spurious_continue:
 	/* Signal end-of-interrupt */

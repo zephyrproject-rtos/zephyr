@@ -26,7 +26,6 @@
  * The state must be seeded so that it is not everywhere zero.
  */
 
-#include <zephyr/init.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/kernel.h>

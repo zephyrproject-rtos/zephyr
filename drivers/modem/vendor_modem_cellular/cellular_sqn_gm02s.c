@@ -61,7 +61,7 @@ static const struct modem_cellular_vendor_config sqn_gm02s_vendor = {
 };
 
 #define MODEM_CELLULAR_DEVICE_SQN_GM02S(inst)                                                      \
-	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);   \
+	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
                                                                                                    \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
 		.chat_delimiter = "\r",                                                            \

@@ -9,3 +9,6 @@ board:
         - name: aia-imsic
           variants:
             - name: smp
+        - name: aia-direct
+          variants:
+            - name: smp

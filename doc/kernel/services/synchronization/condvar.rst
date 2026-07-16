@@ -35,6 +35,11 @@ the condition using :c:func:`k_condvar_signal` or
 #. Re-acquires the mutex previously released.
 #. Returns from :c:func:`k_condvar_wait`.
 
+Regardless of why the wait completes -- whether the thread was signaled, the
+supplied timeout elapsed, or the wait was requested without blocking --
+:c:func:`k_condvar_wait` always returns with the associated mutex re-locked by
+the calling thread.
+
 A condition variable must be initialized before it can be used.
 
 

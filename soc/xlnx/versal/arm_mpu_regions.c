@@ -152,9 +152,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 			 DEVICE_SHAREABLE |
 			 NOT_EXEC}),
 
-	/* Region 3: OCM overlay - 256KB normal cacheable memory from 0xFFFC0000
-	 * This overlays the peripheral region and marks OCM as cacheable
-	 */
+	/* Region 3: OCM overlay - 256KB normal cacheable memory from 0xFFFC0000 */
 	MPU_REGION_ENTRY(
 		"ocm",
 		0xFFFC0000,
@@ -163,12 +161,13 @@ static const struct arm_mpu_region mpu_regions[] = {
 			 NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE}),
 
 	/* Region 4: Interrupt vectors at 0x0
-	 * ARMv7-R requires vectors at 0x0 (HIVECS=0)
+	 * ARMv7-R requires vectors at 0x0 (HIVECS=0).  Use 256 B to cover the
+	 * relocated table plus its literal pool (vector_table.S + pool > 64 B).
 	 */
 	MPU_REGION_ENTRY(
 		"vectors",
 		0x00000000,
-		REGION_64B,
+		REGION_256B,
 		{.rasr = P_RO_U_NA_Msk |
 			 NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE}),
 

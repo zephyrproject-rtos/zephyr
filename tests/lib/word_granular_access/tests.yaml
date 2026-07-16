@@ -1,0 +1,3 @@
+tests:
+  libraries.word_granular_access:
+    filter: CONFIG_ARCH_HAS_WORD_GRANULAR_ACCESS_INSTR_MEM

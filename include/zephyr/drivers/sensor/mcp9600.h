@@ -10,8 +10,8 @@
  * @ingroup mcp9600_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_MCP9600H_
-#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_MCP9600H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_MCP9600_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_MCP9600_H_
 
 /**
  * @brief Microchip MCP9600 Thermocouple Electromotive Force (EMF) to °C Converter
@@ -152,4 +152,4 @@ enum sensor_attribute_mcp9600 {
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_MCP9600H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_MCP9600_H_ */

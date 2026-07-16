@@ -64,6 +64,7 @@ properties:
 
 child-binding:
   description: GPIO KEYS child node
+  include: wuc-device.yaml
   properties:
     gpios:
       type: phandle-array

@@ -1,0 +1,55 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Ameba ADC
+
+  Mapping input pinctrl:
+  Channel 0 -> adc_in0_pb19
+  Channel 1 -> adc_in1_pb18
+  Channel 2 -> adc_in2_pb17
+  Channel 3 -> adc_in3_pb16
+  Channel 4 -> adc_in4_pb15
+  Channel 5 -> adc_in5_pb14
+  Channel 6 -> adc_in6_pb13
+
+compatible: "realtek,ameba-adc"
+
+include:
+  - adc-controller.yaml
+  - pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  vref-mv:
+    type: int
+    default: 3300
+    description: |
+      Indicates the reference voltage of the ADC in millivolts.
+      Default is 3300 mV, which matches the typical VDDA supply voltage
+      used on Ameba reference boards.
+
+  channel-count:
+    type: int
+    required: true
+    description: The maximum channels supported.
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

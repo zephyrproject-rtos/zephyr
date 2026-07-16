@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_SIP_SVC_H_
-#define ZEPHYR_INCLUDE_SIP_SVC_H_
+#ifndef ZEPHYR_INCLUDE_SIP_SVC_SIP_SVC_H_
+#define ZEPHYR_INCLUDE_SIP_SVC_SIP_SVC_H_
 
 /**
  * @file
@@ -185,4 +185,4 @@ void *sip_svc_get_priv_data(void *ctrl, uint32_t c_token);
  */
 void *sip_svc_get_controller(char *method);
 
-#endif /* ZEPHYR_INCLUDE_SIP_SVC_H_ */
+#endif /* ZEPHYR_INCLUDE_SIP_SVC_SIP_SVC_H_ */

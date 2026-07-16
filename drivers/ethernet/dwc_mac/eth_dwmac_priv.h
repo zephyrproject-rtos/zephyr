@@ -115,6 +115,10 @@ struct dwmac_priv {
 	uint32_t feature3;
 #endif
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	struct net_stats_eth stats;
+#endif
+
 	struct dwmac_dma_desc *tx_descs, *rx_descs;
 	struct k_sem free_tx_descs, free_rx_descs;
 	unsigned int tx_desc_head, tx_desc_tail;

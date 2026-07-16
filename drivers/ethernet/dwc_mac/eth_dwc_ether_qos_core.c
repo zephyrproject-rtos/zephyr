@@ -68,6 +68,14 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define RXDESC_PHYS_L(idx) phys_lo32(&p->rx_descs[idx])
 #endif
 
+/*
+ * If dribbling error flag (RDES3_DE) is set but CRC error flag (RDES3_CE)
+ * is not set, the packet is still valid and can be passed up to the stack.
+ * Therefore, exclude the dribbling error flag from the error mask to avoid
+ * dropping valid packets.
+ */
+#define RDES3_ERROR_MASK (RDES3_RE | RDES3_OE | RDES3_RWT | RDES3_GP | RDES3_CE)
+
 static inline uint32_t hi32(uintptr_t val)
 {
 	/* trickery to avoid compiler warnings on 32-bit build targets */
@@ -111,6 +119,10 @@ static enum ethernet_hw_caps dwmac_caps(const struct device *dev, struct net_if 
 	}
 
 	caps |= ETHERNET_PROMISC_MODE;
+
+#ifdef CONFIG_NET_VLAN
+	caps |= ETHERNET_HW_VLAN;
+#endif
 
 	return caps;
 }
@@ -304,7 +316,7 @@ static void dwmac_receive(struct dwmac_priv *p)
 		/* last descriptor: */
 		if (des3_val & RDES3_LD) {
 			/* submit packet if no errors */
-			if (!(des3_val & RDES3_ES)) {
+			if ((des3_val & RDES3_ERROR_MASK) == 0) {
 				LOG_DBG("pkt len/frags=%zd/%d",
 					net_pkt_get_len(p->rx_pkt),
 					net_pkt_get_nbfrags(p->rx_pkt));
@@ -690,10 +702,22 @@ int dwmac_probe(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+static struct net_stats_eth *dwmac_stats(const struct device *dev, struct net_if *iface __unused)
+{
+	struct dwmac_priv *p = dev->data;
+
+	return &p->stats;
+}
+#endif
+
 const struct ethernet_api dwmac_api = {
 	.iface_api.init		= dwmac_iface_init,
 	.get_capabilities	= dwmac_caps,
 	.set_config		= dwmac_set_config,
 	.get_phy		= dwmac_get_phy,
 	.send			= dwmac_send,
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	.get_stats		= dwmac_stats,
+#endif
 };

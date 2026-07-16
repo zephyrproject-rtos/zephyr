@@ -10,8 +10,8 @@
  * @ingroup shell_websocket
  */
 
-#ifndef ZEPHYR_INCLUDE_SHELL_WEBSOCKET_H_
-#define ZEPHYR_INCLUDE_SHELL_WEBSOCKET_H_
+#ifndef ZEPHYR_INCLUDE_SHELL_SHELL_WEBSOCKET_H_
+#define ZEPHYR_INCLUDE_SHELL_SHELL_WEBSOCKET_H_
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/http/server.h>
@@ -198,4 +198,4 @@ int shell_websocket_enable(const struct shell *sh);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_SHELL_WEBSOCKET_H_ */
+#endif /* ZEPHYR_INCLUDE_SHELL_SHELL_WEBSOCKET_H_ */

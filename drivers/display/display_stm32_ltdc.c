@@ -468,8 +468,8 @@ static int stm32_ltdc_display_register_event_cb(const struct device *dev, displa
 		LOG_ERR("Registration failed: only ISR context is supported for this driver");
 		return -ENOSYS;
 	}
-	if (event_mask & DISPLAY_EVENT_FRAME_DONE) {
-		LOG_ERR("Registration failed: DISPLAY_EVENT_FRAME_DONE is not supported");
+	if (event_mask & ~(DISPLAY_EVENT_VSYNC | DISPLAY_EVENT_LINE_INT)) {
+		LOG_ERR("Registration failed: Unsupported event requested");
 		return -ENOSYS;
 	}
 

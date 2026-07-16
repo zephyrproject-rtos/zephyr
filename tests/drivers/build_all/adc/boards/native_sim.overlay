@@ -139,6 +139,18 @@
 				reg = <0xc>;
 				#io-channel-cells = <1>;
 			};
+
+			test_i2c_tla2528: tla2528@d {
+				compatible = "ti,tla2528";
+				reg = <0xd>;
+				#io-channel-cells = <1>;
+
+				test_i2c_tla2528_adc: adc {
+					compatible = "ti,tla2528-adc";
+					status = "okay";
+					#io-channel-cells = <1>;
+				};
+			};
 		};
 
 		test_spi: spi@33334444 {
@@ -518,6 +530,23 @@
 				reg = <0x2f>;
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
+			};
+
+			test_spi_ads1220: ads1220@30 {
+				compatible = "ti,ads1220";
+				reg = <0x24>;
+				spi-max-frequency = <4000000>;
+				drdy-gpios = <&test_gpio 0 0>;
+				#io-channel-cells = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				channel@0 {
+					reg = <0>;
+					zephyr,gain = "ADC_GAIN_1";
+					zephyr,reference = "ADC_REF_INTERNAL";
+					zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+				};
 			};
 
 			test_spi_max2253x: max2253x@30 {

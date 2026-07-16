@@ -305,6 +305,7 @@ hannstar	HannStar Display Corporation
 haoyu	Haoyu Microelectronic Co. Ltd.
 hardkernel	Hardkernel Co., Ltd
 hazard3	Hazard3 by Luke Wren
+heimann	Heimann Sensor GmbH
 heltec	Chengdu Heltec Automation Technology Co., Ltd.
 hideep	HiDeep Inc.
 himax	Himax Technologies, Inc.
@@ -649,6 +650,7 @@ sff	Small Form Factor Committee
 sgd	Solomon Goldentek Display Corporation
 sgmicro	SG Micro Corp
 sgx	SGX Sensortech
+shakti	SHAKTI Processor Program
 sharp	Sharp Corporation
 shimafuji	Shimafuji Electric, Inc.
 shiratech	Shiratech Solutions
@@ -758,6 +760,7 @@ ubnt	Ubiquiti Networks
 ucrobotics	uCRobotics
 udoo	Udoo
 ugoos	Ugoos Industrial Co., Ltd.
+uiap	Umeta & Ikki Automotive Parts
 ultrachip	UltraChip Inc.
 uniwest	United Western Technologies Corp (UniWest)
 up-bridge-the-gap	UP Bridge the Gap

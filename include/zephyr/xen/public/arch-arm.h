@@ -338,6 +338,15 @@ struct xen_arch_domainconfig {
 	 *
 	 */
 	uint32_t clock_frequency;
+#if CONFIG_XEN_DOMCTL_INTERFACE_VERSION >= 0x00000017
+	/* IN */
+	uint8_t arm_sci_type;
+#endif /* CONFIG_XEN_DOMCTL_INTERFACE_VERSION */
+#if CONFIG_XEN_DOMCTL_INTERFACE_VERSION >= 0x00000018
+	/* IN */
+	uint8_t v8r_el1_msa;
+	uint16_t pad;
+#endif /* CONFIG_XEN_DOMCTL_INTERFACE_VERSION */
 };
 #endif /* CONFIG_XEN_DOM0 */
 

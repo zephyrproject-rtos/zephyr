@@ -12,6 +12,7 @@
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
 
 / {
 	cpus: cpus {
@@ -23,11 +24,61 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&sleep &deepsleep &powerdown &deeppowerdown>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
 			};
+		};
+	};
+
+	power-states {
+		/*
+		 * Note:
+		 *  - 'exit-latency-us' depends on system clock frequency and voltage level.
+		 *  - 'min-residency-us' needs to be adjusted according to the actual project
+		 *    requirements. The values provided here are not applicable to all real
+		 *    projects.
+		 */
+		sleep: sleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <10000>;
+			exit-latency-us = <1>;
+		};
+
+		deepsleep: deepsleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <50000>;
+			exit-latency-us = <10>;
+		};
+
+		powerdown: powerdown {
+			compatible = "zephyr,power-state";
+			power-state-name = "standby";
+			min-residency-us = <80000>;
+			exit-latency-us = <20>;
+		};
+
+		/*
+		 * Deep Power Down. The whole CORE domain (ARM core, NVIC, SysTick)
+		 * is power gated and LDO_CORE is turned off; the chip wakes through
+		 * the reset routine. Only the RAMA arrays kept alive by the VBAT
+		 * backup SRAM regulator survive, so the entire retained working set
+		 * must fit in that region for transparent S2RAM resume.
+		 */
+		deeppowerdown: deeppowerdown {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-ram";
+			/* Suspend-to-RAM needs the application to place its working set
+			 * in retained RAM and arm a wakeup source, so it is opt-in:
+			 * enable this node from the application to use it.
+			 */
+			status = "disabled";
+			min-residency-us = <500000>;
+			exit-latency-us = <500>;
 		};
 	};
 
@@ -511,6 +562,7 @@
 		prescale-glitch-filter-bypass;
 		clk-source = <1>;
 		resolution = <32>;
+		wakeup-ctrls = <&wuu NXP_WUU_MODULE_6_INT>;
 	};
 
 	waketimer0: wake-timer@ae000 {
@@ -754,6 +806,24 @@
 	cmc: system-modules@c6000 {
 		compatible = "nxp,cmc";
 		reg = <0xc6000 0x1000>;
+	};
+
+	spc: system-modules@cb000 {
+		compatible = "nxp,spc";
+		reg = <0xcb000 0x1000>;
+		wakeup-delay = <0x7d>;
+	};
+
+	wuu: system-modules@92000 {
+		compatible = "nxp,wuc-wuu", "nxp,wuu";
+		reg = <0x92000 0x1000>;
+		interrupts = <18 0>;
+		#wakeup-ctrl-cells = <1>;
+	};
+
+	vbat: system-modules@93000 {
+		compatible = "nxp,vbat";
+		reg = <0x93000 0x1000>;
 	};
 
 	eim0: eim@400c7000 {

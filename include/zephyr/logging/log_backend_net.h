@@ -6,17 +6,17 @@
 
 /**
  * @file
- * @brief Header file for the network log backend API
+ * @brief Header file for the network log backend.
  * @ingroup log_backend_net
  */
 
-#ifndef ZEPHYR_LOG_BACKEND_NET_H_
-#define ZEPHYR_LOG_BACKEND_NET_H_
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_NET_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_NET_H_
 
 /**
- * @brief Network log backend API
- * @defgroup log_backend_net Network log backend API
+ * @defgroup log_backend_net Network log backend
  * @ingroup log_backend
+ * @brief Logging backend that sends messages to a syslog server over the network.
  * @{
  */
 
@@ -96,4 +96,4 @@ void log_backend_net_start(void);
 
 /** @} */
 
-#endif /* ZEPHYR_LOG_BACKEND_NET_H_ */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_NET_H_ */

@@ -1,9 +1,11 @@
 common:
-  build_only: true
+  timeout: 600
   tags:
     - bluetooth
+  depends_on: bsim
   harness: bsim
   harness_config:
+    fixture: bsim_multi_test
     bsim_exe_name: tests_bsim_bluetooth_host_iso_bis_prj_conf
 
 tests:
@@ -16,3 +18,8 @@ tests:
     sysbuild: true
     platform_allow:
       - nrf5340bsim/nrf5340/cpuapp
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_iso_bis_prj_conf
+      tests_scripts:
+        - tests_scripts/bis.sh

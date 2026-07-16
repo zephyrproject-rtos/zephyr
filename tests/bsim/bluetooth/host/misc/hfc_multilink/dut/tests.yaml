@@ -4,6 +4,7 @@ tests:
     sysbuild: true
     tags:
       - bluetooth
+    depends_on: bsim
     platform_allow:
       - nrf52_bsim/native
       - nrf5340bsim/nrf5340/cpuapp

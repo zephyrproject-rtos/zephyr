@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ZBUS_H_
-#define ZEPHYR_INCLUDE_ZBUS_H_
+#ifndef ZEPHYR_INCLUDE_ZBUS_ZBUS_H_
+#define ZEPHYR_INCLUDE_ZBUS_ZBUS_H_
 
 #include <string.h>
 
@@ -565,7 +565,7 @@ struct zbus_channel_observation {
  */
 #define ZBUS_MSG_SUBSCRIBER_DEFINE(_name) ZBUS_MSG_SUBSCRIBER_DEFINE_WITH_ENABLE(_name, true)
 
-#if defined(CONFIG_ZBUS_ASYNC_LISTENER)
+#if defined(CONFIG_ZBUS_ASYNC_LISTENER) || defined(__DOXYGEN__)
 /** @cond INTERNAL_HIDDEN */
 struct zbus_async_listener_work {
 	struct k_work work;
@@ -1345,4 +1345,4 @@ bool zbus_iterate_over_observers_with_user_data(
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ZBUS_H_ */
+#endif /* ZEPHYR_INCLUDE_ZBUS_ZBUS_H_ */

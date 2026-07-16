@@ -23,3 +23,14 @@ tests:
     filter: ARCH_HAS_EXTRA_EXCEPTION_INFO and not CONFIG_TRUSTED_EXECUTION_NONSECURE
     extra_configs:
       - CONFIG_EXTRA_EXCEPTION_INFO=y
+  arch.arm.interrupt.secure_fpu_extra_exception_info:
+    platform_allow:
+      - mps3/corstone300/an547
+    extra_configs:
+      - CONFIG_FPU=y
+      - CONFIG_FPU_SHARING=y
+      - CONFIG_EXTRA_EXCEPTION_INFO=y
+      - CONFIG_EXCEPTION_DEBUG=y
+      - CONFIG_FAULT_DUMP=2
+    integration_platforms:
+      - mps3/corstone300/an547

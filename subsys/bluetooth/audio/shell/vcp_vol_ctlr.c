@@ -274,7 +274,7 @@ static void vcs_vocs_location_cb(struct bt_vocs *inst, int err,
 	if (err != 0) {
 		bt_shell_error("VOCS location get failed (%d) for inst %p", err, inst);
 	} else {
-		bt_shell_print("VOCS inst %p location %u", inst, location);
+		bt_shell_print("VOCS inst %p location 0x%08X", inst, location);
 	}
 }
 

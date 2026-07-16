@@ -18,6 +18,13 @@ K_HEAP_DEFINE(gcov_heap, CONFIG_COVERAGE_GCOV_HEAP_SIZE);
 
 static struct gcov_info *gcov_info_head;
 
+#if defined(CONFIG_COVERAGE_SEMIHOST) && defined(CONFIG_REBOOT)
+#define GCOV_FILENAME_KEY 0x23A5B6C4
+static char gcov_filename[512];
+static __noinit uint32_t gcov_filename_key;
+static __noinit uint32_t gcov_filename_idx;
+#endif
+
 /**
  * Is called by gcc-generated constructor code for each object file compiled
  * with -fprofile-arcs.
@@ -262,6 +269,27 @@ void gcov_reset_counts(struct gcov_info *info)
 	}
 }
 
+/*
+ * Returns true if any execution counter of this object is non-zero, i.e. the
+ * object contributed coverage since the last reset. Used to skip all-zero
+ * objects from per-test dumps, which speeds up both the on-target dump and the
+ * host-side processing without changing the resulting coverage.
+ */
+static bool gcov_info_has_data(struct gcov_info *info)
+{
+	for (uint32_t fn = 0U; fn < info->n_functions; fn++) {
+		struct gcov_ctr_info *ctrs = info->functions[fn]->ctrs;
+
+		for (uint32_t vi = 0U; vi < ctrs->num; vi++) {
+			if (ctrs->values[vi] != 0) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 void gcov_reset_all_counts(void)
 {
 	struct gcov_info *gcov_list = NULL;
@@ -304,8 +332,12 @@ void dump_on_console_data(char *ptr, size_t len)
 
 /**
  * Retrieves gcov coverage data and sends it over the given interface.
+ *
+ * When @p tag is not NULL it is appended to the dump start marker so that
+ * consumers can attribute the block to a specific producer (for example a
+ * single test). A NULL tag reproduces the historical, untagged output.
  */
-void gcov_coverage_dump(void)
+void gcov_coverage_dump_tagged(const char *tag)
 {
 	uint8_t *buffer;
 	size_t size;
@@ -319,7 +351,15 @@ void gcov_coverage_dump(void)
 	}
 #endif
 	printk("\nGCOV_COVERAGE_DUMP_START");
+	if (tag != NULL) {
+		printk(" %s", tag);
+	}
 	while (gcov_list) {
+		/* For per-test (tagged) dumps skip objects with no coverage. */
+		if ((tag != NULL) && !gcov_info_has_data(gcov_list)) {
+			goto file_dump_end;
+		}
+
 		if ((strlen(CONFIG_COVERAGE_DUMP_PATH_EXCLUDE) > 0) &&
 		    (fnmatch(CONFIG_COVERAGE_DUMP_PATH_EXCLUDE, gcov_list->filename, 0) == 0)) {
 			/* Don't print a note here, it would be interpreted as dump data */
@@ -362,17 +402,40 @@ coverage_dump_end:
 	return;
 }
 
+void gcov_coverage_dump(void)
+{
+	gcov_coverage_dump_tagged(NULL);
+}
+
 #elif CONFIG_COVERAGE_SEMIHOST
 /**
- * Retrieves gcov coverage data and sends it over the given interface.
+ * Retrieves gcov coverage data and writes it to the host filesystem via
+ * semihosting.
+ *
+ * When @p tag is not NULL each .gcda is written to "<filename>@@<tag>" instead
+ * of its canonical path, so that several isolated dumps (for example one per
+ * test) can coexist next to the matching .gcno without overwriting each other.
+ * A NULL tag reproduces the historical behaviour of writing to the canonical
+ * .gcda path.
  */
-void gcov_coverage_semihost(void)
+void gcov_coverage_dump_tagged(const char *tag)
 {
 	uint8_t *buffer;
 	size_t size;
 	size_t written_size;
 	struct gcov_info *gcov_list_first = gcov_info_head;
 	struct gcov_info *gcov_list = gcov_info_head;
+	const char *filename;
+	int fd;
+
+#if defined(CONFIG_REBOOT)
+	if (gcov_filename_key != GCOV_FILENAME_KEY) {
+		gcov_filename_key = GCOV_FILENAME_KEY;
+		gcov_filename_idx = 0;
+	} else {
+		gcov_filename_idx += 1;
+	}
+#endif /* defined(CONFIG_REBOOT) */
 
 #ifdef CONFIG_MULTITHREADING
 	if (!k_is_in_isr()) {
@@ -380,11 +443,45 @@ void gcov_coverage_semihost(void)
 	}
 #endif
 	while (gcov_list) {
+		const char *path;
+		char *tagged_path = NULL;
 
-		int fd = semihost_open(gcov_list->filename, SEMIHOST_OPEN_WB);
+		if ((strlen(CONFIG_COVERAGE_DUMP_PATH_EXCLUDE) > 0) &&
+		    (fnmatch(CONFIG_COVERAGE_DUMP_PATH_EXCLUDE, gcov_list->filename, 0) == 0)) {
+			goto file_dump_end;
+		}
 
+		/* For per-test (tagged) dumps skip objects with no coverage. */
+		if ((tag != NULL) && !gcov_info_has_data(gcov_list)) {
+			goto file_dump_end;
+		}
+
+#if defined(CONFIG_REBOOT)
+		snprintf(gcov_filename, sizeof(gcov_filename), "%s.%d", gcov_list->filename,
+			 gcov_filename_idx);
+		filename = gcov_filename;
+#else
+		filename = gcov_list->filename;
+#endif /* defined(CONFIG_REBOOT) */
+
+		path = filename;
+
+		if (tag != NULL) {
+			size_t path_size = strlen(filename) + strlen(tag) + sizeof("@@");
+
+			tagged_path = k_heap_alloc(&gcov_heap, path_size, K_NO_WAIT);
+			if (tagged_path == NULL) {
+				printk("No memory available for tagged path\n");
+				goto coverage_dump_end;
+			}
+			snprintk(tagged_path, path_size, "%s@@%s", filename, tag);
+			path = tagged_path;
+		}
+
+		fd = semihost_open(path, SEMIHOST_OPEN_WB);
 		if (fd < 0) {
-			printk("Failed to open file: %s\n", gcov_list->filename);
+			printk("Failed to open file: %s\n", path);
+			k_heap_free(&gcov_heap, tagged_path);
 			goto coverage_dump_end;
 		}
 
@@ -395,6 +492,7 @@ void gcov_coverage_semihost(void)
 			printk("No memory available to continue dump\n");
 			semihost_close(fd);
 			k_heap_free(&gcov_heap, buffer);
+			k_heap_free(&gcov_heap, tagged_path);
 			goto coverage_dump_end;
 		}
 
@@ -403,22 +501,26 @@ void gcov_coverage_semihost(void)
 			printk("Write Error on buffer\n");
 			semihost_close(fd);
 			k_heap_free(&gcov_heap, buffer);
+			k_heap_free(&gcov_heap, tagged_path);
 			goto coverage_dump_end;
 		}
 
 		int ret = semihost_write(fd, (const void *)buffer, size);
 
 		if (ret < 0) {
-			printk("Failed to write data to file: %s\n", gcov_list->filename);
+			printk("Failed to write data to file: %s\n", path);
 			semihost_close(fd);
 			k_heap_free(&gcov_heap, buffer);
+			k_heap_free(&gcov_heap, tagged_path);
 			goto coverage_dump_end;
 		}
 
+		semihost_close(fd);
 		k_heap_free(&gcov_heap, buffer);
+		k_heap_free(&gcov_heap, tagged_path);
+file_dump_end:
 		gcov_list = gcov_list->next;
 		if (gcov_list_first == gcov_list) {
-			semihost_close(fd);
 			goto coverage_dump_end;
 		}
 	}
@@ -428,6 +530,11 @@ coverage_dump_end:
 		k_sched_unlock();
 	}
 #endif
+}
+
+void gcov_coverage_semihost(void)
+{
+	gcov_coverage_dump_tagged(NULL);
 }
 #endif
 

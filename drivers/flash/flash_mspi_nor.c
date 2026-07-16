@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT jedec_mspi_nor
+#define DT_DRV_COMPAT jedec_nor
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>

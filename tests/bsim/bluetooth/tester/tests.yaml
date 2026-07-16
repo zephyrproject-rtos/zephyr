@@ -1,10 +1,33 @@
+common:
+  tags:
+    - bluetooth
+  harness: bsim
+  depends_on: bsim
+
 tests:
-  bluetooth.tester_bsim:
+  bluetooth.tests.bsim.tester.image:
     build_only: true
-    tags:
-      - bluetooth
-    harness: bsim
     harness_config:
       bsim_exe_name: tests_bsim_bluetooth_tester_prj_conf
     platform_allow:
       - nrf52_bsim/native
+
+  bluetooth.tests.bsim.tester:
+    timeout: 1200
+    build: false
+    platform_allow:
+      - nrf52_bsim/native
+      - nrf5340bsim/nrf5340/cpuapp
+    harness_config:
+      fixture: bsim_multi_test
+    required_applications:
+      - application: bluetooth.general.tester_bsim
+        path: ${ZEPHYR_BASE}/tests/bluetooth/tester/
+      - application: bluetooth.audio.tester_bsim
+        path: ${ZEPHYR_BASE}/tests/bluetooth/tester/
+      - application: bluetooth.tests.bsim.tester.image
+        platform: nrf52_bsim/native
+        # We only want to build the tests/bsim/bluetooth/tester/ application for the
+        # nrf52_bsim/native board as we do not gain anything from running this application for the
+        # nrf5340bsim_nrf5340_cpuapp and it is not worth the added complexity to run it with
+        # anything but nrf52_bsim/native

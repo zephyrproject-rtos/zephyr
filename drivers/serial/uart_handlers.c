@@ -157,8 +157,7 @@ static inline int z_vrfy_uart_line_ctrl_set(const struct device *dev,
 					    uint32_t ctrl, uint32_t val)
 {
 	K_OOPS(K_SYSCALL_DRIVER_UART(dev, line_ctrl_set));
-	return z_impl_uart_line_ctrl_set((const struct device *)dev, ctrl,
-					 val);
+	return z_impl_uart_line_ctrl_set(dev, ctrl, val);
 }
 #include <zephyr/syscalls/uart_line_ctrl_set_mrsh.c>
 
@@ -167,8 +166,7 @@ static inline int z_vrfy_uart_line_ctrl_get(const struct device *dev,
 {
 	K_OOPS(K_SYSCALL_DRIVER_UART(dev, line_ctrl_get));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(val, sizeof(uint32_t)));
-	return z_impl_uart_line_ctrl_get((const struct device *)dev, ctrl,
-					 (uint32_t *)val);
+	return z_impl_uart_line_ctrl_get(dev, ctrl, val);
 }
 #include <zephyr/syscalls/uart_line_ctrl_get_mrsh.c>
 #endif /* CONFIG_UART_LINE_CTRL */
@@ -178,7 +176,7 @@ static inline int z_vrfy_uart_drv_cmd(const struct device *dev, uint32_t cmd,
 				      uint32_t p)
 {
 	K_OOPS(K_SYSCALL_DRIVER_UART(dev, drv_cmd));
-	return z_impl_uart_drv_cmd((const struct device *)dev, cmd, p);
+	return z_impl_uart_drv_cmd(dev, cmd, p);
 }
 #include <zephyr/syscalls/uart_drv_cmd_mrsh.c>
 #endif /* CONFIG_UART_DRV_CMD */

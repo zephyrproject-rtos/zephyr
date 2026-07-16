@@ -59,4 +59,175 @@
 			status = "disabled";
 		};
 	};
+
+	test_dt_partition_mtd {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		dummy_flash_controller@10000 {
+			compatible = "zephyr,sim-flash";
+			reg = <0x10000 0x10000>;
+			ranges;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			dummy_flash: dummy_flash@1000 {
+				compatible = "soc-nv-flash";
+				reg = <0x1000 0x8000>;
+				ranges = <0x0 0x1000 0x8000>;
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+
+		dummy_range_flash_controller@20000 {
+			compatible = "zephyr,sim-flash";
+			reg = <0x20000 0x8000>;
+			ranges;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			dummy_range_flash: dummy_range_flash@11000 {
+				compatible = "soc-nv-flash";
+				reg = <0x11000 0x8000>;
+				ranges = <0x0 0x11000 0x8000>;
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+	};
+};
+
+&dummy_flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		dummy_0x0: partition@0 {
+			reg = <0x0 0x1000>;
+		};
+
+		dummy_0x1000: partition@1000 {
+			compatible = "fixed-subpartitions";
+			reg = <0x1000 0x2000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			dummy_0x1000_0x0: partition@0 {
+				reg = <0x0 0x800>;
+			};
+
+			dummy_0x1000_0x800: partition@800 {
+				compatible = "fixed-subpartitions";
+				reg = <0x800 0x800>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				dummy_0x1000_0x800_0x0: partition@0 {
+					reg = <0x0 0x400>;
+				};
+
+				dummy_0x1000_0x800_0x400: partition@400 {
+					reg = <0x400 0x400>;
+				};
+			};
+
+			dummy_0x1000_0x1000: partition@1000 {
+				reg = <0x1000 0x1000>;
+			};
+		};
+
+		dummy_0x3000: partition@3000 {
+			compatible = "fixed-subpartitions";
+			reg = <0x3000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			dummy_0x3000_0x0: partition@0 {
+				reg = <0x0 0x800>;
+			};
+
+			dummy_0x3000_0x800: partition@800 {
+				compatible = "fixed-subpartitions";
+				reg = <0x800 0x800>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				dummy_0x3000_0x800_0x0: partition@0 {
+					reg = <0x0 0x400>;
+				};
+
+				dummy_0x3000_0x800_0x400: partition@400 {
+					reg = <0x400 0x400>;
+				};
+			};
+
+			dummy_0x3000_0x1000: partition@1000 {
+				reg = <0x1000 0x1000>;
+			};
+		};
+
+		dummy_0x4000: partition@4000 {
+			reg = <0x4000 0x4000>;
+		};
+	};
+};
+
+&dummy_range_flash {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		dummy_range_0x0: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 0x1000>;
+		};
+
+		dummy_range_0x1000: partition@1000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x1000 0x2000>;
+			ranges = <0x0 0x1000 0x2000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			dummy_range_0x1000_0x0: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				reg = <0x0 0x800>;
+			};
+
+			dummy_range_0x1000_0x800: partition@800 {
+				compatible = "zephyr,mapped-partition";
+				reg = <0x800 0x800>;
+				ranges = <0x0 0x800 0x800>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				dummy_range_0x1000_0x800_0x0: partition@0 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x0 0x400>;
+				};
+
+				dummy_range_0x1000_0x800_0x400: partition@400 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x400 0x400>;
+				};
+			};
+
+			dummy_range_0x1000_0x1000: partition@1000 {
+				compatible = "zephyr,mapped-partition";
+				reg = <0x1000 0x1000>;
+			};
+		};
+
+		dummy_range_0x4000: partition@4000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x4000 0x4000>;
+		};
+	};
 };

@@ -29,6 +29,30 @@
 			status = "disabled";
 		};
 
+		spi0: spi@ff040000 {
+			compatible = "cdns,spi";
+			reg = <0xff040000 DT_SIZE_K(4)>;
+			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			fifo-width = <8>;
+			rx-fifo-depth = <128>;
+			tx-fifo-depth = <128>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@ff050000 {
+			compatible = "cdns,spi";
+			reg = <0xff050000 DT_SIZE_K(4)>;
+			interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			fifo-width = <8>;
+			rx-fifo-depth = <128>;
+			tx-fifo-depth = <128>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		ttc0: timer@ff0e0000 {
 			compatible = "xlnx,ttcps";
 			reg = <0xff0e0000 DT_SIZE_K(64)>;

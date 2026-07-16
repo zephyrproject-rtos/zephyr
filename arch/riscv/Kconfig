@@ -583,6 +583,9 @@ config MAIN_STACK_SIZE
 	default 4096 if 64BIT
 	default 2048 if PMP_STACK_GUARD
 
+config PRIVILEGED_STACK_SIZE
+	default 2048 if 64BIT && ASSERT
+
 config TEST_EXTRA_STACK_SIZE
 	default 4096 if CPP_EXCEPTIONS
 	default 1536

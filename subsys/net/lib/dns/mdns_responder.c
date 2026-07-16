@@ -167,20 +167,61 @@ static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
 
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
+		/* When the interface comes back up (e.g. Ethernet cable was
+		 * reattached), the stack has left the mDNS multicast groups if
+		 * the interface was fully brought down. Rejoin them here so
+		 * that the responder keeps receiving queries. The well-known
+		 * group addresses are constant, so construct them directly
+		 * instead of relying on any interface-index bookkeeping.
+		 */
 #if defined(CONFIG_NET_IPV4)
 		if (net_if_flag_is_set(iface, NET_IF_IPV4)) {
-			int index = net_if_get_by_iface(iface) - 1;
-			int ret = net_ipv4_igmp_join(iface,
-				&net_sin(&v4_ctx[index].dispatcher.local_addr)->sin_addr,
-					NULL);
+			struct net_sockaddr_in addr4;
+			int ret;
+
+			create_ipv4_addr(&addr4);
+
+			/* Rejoin so that a fresh IGMP membership report is always
+			 * emitted, even when the group is still locally marked as
+			 * joined (net_ipv4_igmp_join() would return early without
+			 * sending a report in that case). This matters for e.g. an
+			 * IGMP-snooping switch that dropped its state while the link
+			 * was down. If the group was fully removed while the
+			 * interface was down, rejoin returns -ENOENT, so fall back
+			 * to a join which re-adds it.
+			 */
+			ret = net_ipv4_igmp_rejoin(iface, &addr4.sin_addr);
+			if (ret == -ENOENT) {
+				ret = net_ipv4_igmp_join(iface, &addr4.sin_addr, NULL);
+			}
+
 			if (ret < 0) {
 				NET_DBG("Cannot add IPv4 multicast address %s to iface %d (%d)",
-					net_sprint_ipv4_addr(&net_sin(
-						&v4_ctx[index].dispatcher.local_addr)->sin_addr),
+					net_sprint_ipv4_addr(&addr4.sin_addr),
 					net_if_get_by_iface(iface), ret);
 			}
 		}
 #endif /* defined(CONFIG_NET_IPV4) */
+
+#if defined(CONFIG_NET_IPV6)
+		if (net_if_flag_is_set(iface, NET_IF_IPV6)) {
+			struct net_sockaddr_in6 addr6;
+			int ret;
+
+			create_ipv6_addr(&addr6);
+
+			ret = net_ipv6_mld_rejoin(iface, &addr6.sin6_addr);
+			if (ret == -ENOENT) {
+				ret = net_ipv6_mld_join(iface, &addr6.sin6_addr);
+			}
+
+			if (ret < 0) {
+				NET_DBG("Cannot add IPv6 multicast address %s to iface %d (%d)",
+					net_sprint_ipv6_addr(&addr6.sin6_addr),
+					net_if_get_by_iface(iface), ret);
+			}
+		}
+#endif /* defined(CONFIG_NET_IPV6) */
 	}
 
 #if defined(CONFIG_MDNS_RESPONDER_PROBE)
@@ -1336,6 +1377,11 @@ static int pre_init_listener(void)
 		}
 
 		v6_ctx[i].iface = iface;
+		/* Mark the socket as not yet created so that an announce that
+		 * is triggered (e.g. by a DHCP bound event) before the listener
+		 * is initialized does not try to send on it.
+		 */
+		v6_ctx[i].sock = -1;
 		v6_ctx[i].dispatcher.local_addr.sa_family = NET_AF_INET6;
 		v6_ctx[i].dispatcher.svc = &v6_svc;
 
@@ -1359,6 +1405,11 @@ static int pre_init_listener(void)
 		}
 
 		v4_ctx[i].iface = iface;
+		/* Mark the socket as not yet created so that an announce that
+		 * is triggered (e.g. by a DHCP bound event) before the listener
+		 * is initialized does not try to send on it.
+		 */
+		v4_ctx[i].sock = -1;
 		v4_ctx[i].dispatcher.local_addr.sa_family = NET_AF_INET;
 		v4_ctx[i].dispatcher.svc = &v4_svc;
 

@@ -11,8 +11,8 @@
  * @ingroup shell_ssh
  */
 
-#ifndef ZEPHYR_INCLUDE_SHELL_SSH_H_
-#define ZEPHYR_INCLUDE_SHELL_SSH_H_
+#ifndef ZEPHYR_INCLUDE_SHELL_SHELL_SSH_H_
+#define ZEPHYR_INCLUDE_SHELL_SHELL_SSH_H_
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/ssh/server.h>
@@ -127,4 +127,4 @@ int shell_sshd_transport_event_callback(struct ssh_transport *transport,
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_SHELL_SSH_H_ */
+#endif /* ZEPHYR_INCLUDE_SHELL_SHELL_SSH_H_ */

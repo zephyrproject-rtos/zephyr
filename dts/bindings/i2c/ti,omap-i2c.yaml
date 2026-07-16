@@ -16,5 +16,4 @@ properties:
     required: true
   clock-frequency:
     description: The frequency of the I2C bus.
-    default: 100000
     required: true

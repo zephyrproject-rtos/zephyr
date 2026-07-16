@@ -644,11 +644,10 @@ int i2c_stm32_error(const struct device *dev)
 
 	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
 		LL_I2C_ClearFlag_BERR(i2c);
-		/* STM32 I2C V1 errata: Spurious Bus Error detection in
-		 * controller mode. Multiple errata sheets document this:
-		 *   - ES0182 (STM32F405/407) §2.10.1
-		 *   - ES0305 (STM32F412)     §2.11.1
-		 *   - ES0206 (STM32F2)       §2.10.1
+		/* Address "Spurious Bus Error detection in controller mode"
+		 * erratum, that affects STM32 I2C v1 controller, referenced
+		 * in multiple errata sheets document like:
+		 * - ES0182 (STM32F41x/41x) Rev 18, section 2.10.1
 		 *
 		 * Workaround: clear the BERR flag and let the ongoing
 		 * transfer continue. If a real bus error has occurred,

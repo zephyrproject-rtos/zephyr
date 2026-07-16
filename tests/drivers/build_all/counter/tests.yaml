@@ -15,3 +15,14 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+  drivers.counter.build.mcux_ctimer.capture:
+    extra_configs:
+      - CONFIG_COUNTER_CAPTURE=y
+    platform_allow:
+      - frdm_mcxa153
+      - frdm_mcxa577
+      - frdm_mcxn236
+      - frdm_mcxw23
+      - frdm_rw612
+      - lpcxpresso55s36
+      - mimxrt595_evk/mimxrt595s/cm33

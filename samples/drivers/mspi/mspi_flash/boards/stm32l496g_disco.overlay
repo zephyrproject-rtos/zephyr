@@ -36,7 +36,7 @@
 			status = "okay";
 
 			mx25r6435: qspi-nor-flash@0 {
-				compatible = "jedec,mspi-nor";
+				compatible = "jedec,nor";
 				reg = <0>;
 
 				size = <DT_SIZE_M(64)>; /* 64 Mbits */

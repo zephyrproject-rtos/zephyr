@@ -64,6 +64,9 @@ static enum ethernet_hw_caps dwmac_caps(const struct device *dev __unused,
 #ifdef CONFIG_NET_PROMISCUOUS_MODE
 	       | ETHERNET_PROMISC_MODE
 #endif
+#ifdef CONFIG_NET_VLAN
+	       | ETHERNET_HW_VLAN
+#endif
 #ifdef CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM
 	       | ETHERNET_HW_RX_CHKSUM_OFFLOAD
 #endif
@@ -125,7 +128,7 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 	barrier_dmem_fence_full();
 
 	d = &p->tx_descs[p->tx_desc_head];
-	d->des0 = TDES0_OWN | TDES0_FS | TDES0_FLAGS_DEFAULT;
+	d->des0 |= TDES0_OWN | TDES0_FS;
 
 	barrier_dmem_fence_full();
 	p->tx_desc_head = d_idx;
@@ -484,10 +487,22 @@ int dwmac_probe(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+static struct net_stats_eth *dwmac_stats(const struct device *dev, struct net_if *iface __unused)
+{
+	struct dwmac_priv *p = dev->data;
+
+	return &p->stats;
+}
+#endif
+
 const struct ethernet_api dwmac_api = {
 	.iface_api.init = dwmac_iface_init,
 	.get_capabilities = dwmac_caps,
 	.set_config = dwmac_set_config,
 	.get_phy = dwmac_get_phy,
 	.send = dwmac_send,
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	.get_stats = dwmac_stats,
+#endif
 };

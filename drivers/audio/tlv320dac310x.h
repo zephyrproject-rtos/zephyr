@@ -96,17 +96,22 @@ extern "C" {
 #define HEADPHONE_DRV_CM(val)	(((val) << 3) & HEADPHONE_DRV_CM_MASK)
 #define HEADPHONE_DRV_RESERVED	(BIT(2))
 
+#define SPEAKER_AMP_ADDR	(struct reg_addr){1, 32}
+#define SPEAKER_AMP_POWER	(BIT(7))
+
 #define HP_OUT_POP_RM_ADDR	(struct reg_addr){1, 33}
 #define HP_OUT_POP_RM_ENABLE	(BIT(7))
 
 #define OUTPUT_ROUTING_ADDR	(struct reg_addr){1, 35}
-#define OUTPUT_ROUTING_HPL	  (2 << 6)
-#define OUTPUT_ROUTING_MIXERL (1 << 6)
-#define OUTPUT_ROUTING_HPR	  (2 << 2)
-#define OUTPUT_ROUTING_MIXERR (1 << 2)
+#define OUTPUT_ROUTING_HPL	(2 << 6)
+#define OUTPUT_ROUTING_MIXERL	(1 << 6)
+#define OUTPUT_ROUTING_HPR	(2 << 2)
+#define OUTPUT_ROUTING_MIXERR	(1 << 2)
 
 #define HPL_ANA_VOL_CTRL_ADDR	(struct reg_addr){1, 36}
 #define HPR_ANA_VOL_CTRL_ADDR	(struct reg_addr){1, 37}
+#define SPKL_ANA_VOL_CTRL_ADDR	(struct reg_addr){1, 38}
+#define SPKR_ANA_VOL_CTRL_ADDR	(struct reg_addr){1, 39}
 #define HPX_ANA_VOL_ENABLE	(BIT(7))
 #define HPX_ANA_VOL_MASK	(BIT_MASK(7))
 #define HPX_ANA_VOL(val)	(((val) & HPX_ANA_VOL_MASK) |	\
@@ -117,10 +122,21 @@ extern "C" {
 #define HPX_ANA_VOL_MUTE	(HPX_ANA_VOL_MIN | ~HPX_ANA_VOL_ENABLE)
 #define HPX_ANA_VOL_LOW_THRESH	(105)
 #define HPX_ANA_VOL_FLOOR	(144)
+#define SPK_ANA_VOL_DEFAULT	(20)
 
 #define HPL_DRV_GAIN_CTRL_ADDR	(struct reg_addr){1, 40}
 #define HPR_DRV_GAIN_CTRL_ADDR	(struct reg_addr){1, 41}
 #define	HPX_DRV_UNMUTE		(BIT(2))
+#define HPX_DRV_MUTE		(0)
+
+#define SPKL_DRV_ADDR		(struct reg_addr){1, 42}
+#define SPKR_DRV_ADDR		(struct reg_addr){1, 43}
+#define SPEAKER_DRV_GAIN_MASK	(BIT_MASK(2) << 3)
+#define SPEAKER_DRV_GAIN_6DB	(0 << 3)
+#define SPEAKER_DRV_GAIN_12DB	(1 << 3)
+#define SPEAKER_DRV_GAIN_18DB	(2 << 3)
+#define SPEAKER_DRV_GAIN_24DB	(3 << 3)
+#define SPEAKER_DRV_UNMUTE	(BIT(2))
 
 #define HEADPHONE_DRV_CTRL_ADDR	(struct reg_addr){1, 44}
 #define HEADPHONE_DRV_LINEOUT	(BIT(1) | BIT(2))
@@ -132,8 +148,8 @@ extern "C" {
 #define TIMER_MCLK_DIV_VAL(val)	((val) & TIMER_MCLK_DIV_MASK)
 
 struct reg_addr {
-	uint8_t page; 		/* page number */
-	uint8_t reg_addr; 		/* register address */
+	uint8_t page;		/* page number */
+	uint8_t reg_addr;	/* register address */
 };
 
 enum proc_block {

@@ -24,6 +24,7 @@ config ARC
 	imply XIP
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select ARCH_SUPPORTS_ROM_START
+	select ARCH_SUPPORTS_ROM_OFFSET
 	select ARCH_HAS_DIRECTED_IPIS
 	help
 	  ARC architecture
@@ -39,6 +40,9 @@ config ARM
 	select GEN_PRIV_STACKS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_AARCH32_CORTEX_R || CPU_CORTEX_M || CPU_AARCH32_CORTEX_A
 	select BARRIER_OPERATIONS_ARCH
+	select ARCH_HAS_SEMIHOST
+	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
+	select ARCH_SUPPORTS_ROM_OFFSET
 	help
 	  ARM architecture
 
@@ -58,6 +62,10 @@ config ARM64
 	select ARCH_SUPPORTS_EVICTION_TRACKING
 	select EVICTION_TRACKING if DEMAND_PAGING
 	select MEM_DOMAIN_HAS_THREAD_LIST if ARM_MPU && USERSPACE
+	select ARCH_HAS_IRQ_OFFLOAD_NESTED
+	select ARCH_HAS_SEMIHOST
+	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
+	select ARCH_SUPPORTS_ROM_OFFSET
 	help
 	  ARM64 (AArch64) architecture
 
@@ -76,6 +84,7 @@ config OPENRISC
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select ARCH_HAS_CODE_DATA_RELOCATION
 	help
 	  OpenRISC architecture
 
@@ -115,6 +124,8 @@ config X86
 	select ARCH_HAS_STACK_CANARIES_TLS
 	select ARCH_SUPPORTS_MEM_MAPPED_STACKS if X86_MMU && !DEMAND_PAGING
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
+	select ARCH_HAS_IRQ_OFFLOAD_NESTED
+	select ARCH_SUPPORTS_ROM_OFFSET
 	help
 	  x86 architecture
 
@@ -140,6 +151,10 @@ config RISCV
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
 	select ARCH_HAS_STACK_CANARIES_TLS
 	select STACK_CANARIES_TLS_PREPEND if STACK_CANARIES_TLS
+	select ARCH_HAS_IRQ_OFFLOAD_NESTED
+	select ARCH_HAS_SEMIHOST
+	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
+	select ARCH_SUPPORTS_ROM_OFFSET
 	depends on DT_HAS_RISCV_ENABLED
 	help
 	  RISCV architecture
@@ -158,6 +173,8 @@ config XTENSA
 	select ARCH_SUPPORTS_COREDUMP_STACK_PTR if !SMP
 	select ARCH_HAS_USERSPACE if XTENSA_MMU || XTENSA_MPU
 	imply ARCH_HAS_RESERVED_PAGE_FRAMES if XTENSA_MMU
+	select ARCH_HAS_IRQ_OFFLOAD_NESTED
+	select ARCH_HAS_SEMIHOST
 	help
 	  Xtensa architecture
 
@@ -515,7 +532,7 @@ config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
 	# Userspace is currently not supported
 	depends on !USERSPACE
 	# List of currently supported architectures
-	depends on ARM || ARM64 || RISCV
+	depends on ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	# List of currently supported toolchains
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "gnuarmemb" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm" || TOOLCHAIN_SUPPORTS_ISR_TABLES_LOCAL_DECLARATION
 
@@ -697,7 +714,7 @@ config SRAM_SW_ISR_TABLE
 config IRQ_OFFLOAD_NESTED
 	bool "irq_offload() supports nested IRQs"
 	depends on IRQ_OFFLOAD
-	default y if ARM64 || X86 || RISCV || XTENSA
+	default y if ARCH_HAS_IRQ_OFFLOAD_NESTED
 	help
 	  When set by the platform layers, indicates that
 	  irq_offload() may legally be called in interrupt context to
@@ -810,6 +827,28 @@ config ARCH_HAS_VECTOR_TABLE_RELOCATION
 
 config ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	bool
+
+config ARCH_HAS_IRQ_OFFLOAD_NESTED
+	bool
+	help
+	  This option is selected by architectures whose irq_offload()
+	  implementation may legally be called in interrupt context to cause a
+	  synchronous nested interrupt on the current CPU. It gates the default
+	  value of CONFIG_IRQ_OFFLOAD_NESTED.
+
+config ARCH_HAS_SEMIHOST
+	bool
+	help
+	  This option is selected by architectures that provide a semihosting
+	  implementation (arch/*/core/semihost.c). It is a prerequisite for
+	  CONFIG_SEMIHOST.
+
+config ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
+	bool
+	help
+	  This option is selected by architectures that support local
+	  declaration of interrupt tables placed by the linker. It is a
+	  prerequisite for CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED.
 
 config ARCH_SUPPORTS_COREDUMP
 	bool
@@ -1228,12 +1267,11 @@ config CACHE_MANAGEMENT
 	  This option enables the cache management functions backed by arch or
 	  driver code.
 
-if CACHE_MANAGEMENT
-
 if DCACHE
 
 config DCACHE_LINE_SIZE_DETECT
 	bool "Detect d-cache line size at runtime"
+	depends on CACHE_MANAGEMENT
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the d-cache line size at the expense of taking more memory and
@@ -1260,6 +1298,7 @@ if ICACHE
 
 config ICACHE_LINE_SIZE_DETECT
 	bool "Detect i-cache line size at runtime"
+	depends on CACHE_MANAGEMENT
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the i-cache line size at the expense of taking more memory and
@@ -1281,6 +1320,8 @@ config ICACHE_LINE_SIZE
 	  Detect automatically at runtime by selecting ICACHE_LINE_SIZE_DETECT.
 
 endif # ICACHE
+
+if CACHE_MANAGEMENT
 
 choice CACHE_TYPE
 	prompt "Cache type"

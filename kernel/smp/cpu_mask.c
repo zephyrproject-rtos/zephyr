@@ -11,8 +11,8 @@ extern struct k_spinlock _sched_spinlock;
 
 
 # ifdef CONFIG_SMP
-/* Right now we use a two byte for this mask */
-BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS <= 16, "Too many CPUs for mask word");
+/* The mask width scales with CONFIG_MP_MAX_NUM_CPUS, up to 32 bits */
+BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS <= 32, "Too many CPUs for mask word");
 # endif /* CONFIG_SMP */
 
 
@@ -35,7 +35,7 @@ static int cpu_mask_mod(k_tid_t thread, uint32_t enable_mask, uint32_t disable_m
 	}
 
 #if defined(CONFIG_ASSERT) && defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
-		int m = thread->base.cpu_mask;
+		uint32_t m = thread->base.cpu_mask;
 
 		__ASSERT(m != 0 && (m & (m - 1)) == 0,
 			 "PIN_ONLY requires exactly one CPU in mask");

@@ -399,6 +399,8 @@ static void quic_dplpmtud_on_probe_acked_locked(struct quic_endpoint *ep,
 						uint16_t probe_size);
 static void quic_dplpmtud_on_probe_lost_locked(struct quic_endpoint *ep,
 					       uint16_t probe_size);
+ZTESTABLE_STATIC bool quic_early_data_is_armed(const struct quic_endpoint *ep);
+ZTESTABLE_STATIC enum quic_secret_level quic_stream_send_level(const struct quic_endpoint *ep);
 
 #if defined(CONFIG_NET_STATISTICS_QUIC)
 static struct net_stats_quic *quic_stats_get_for_ep(struct quic_endpoint *ep)
@@ -2425,8 +2427,7 @@ static struct quic_crypto_context *quic_get_crypto_context(struct quic_endpoint 
 	case QUIC_PACKET_TYPE_HANDSHAKE:
 		return ep->crypto.handshake.initialized ? &ep->crypto.handshake : NULL;
 	case QUIC_PACKET_TYPE_0RTT:
-		/* 0-RTT not implemented */
-		return NULL;
+		return ep->crypto.early.initialized ? &ep->crypto.early : NULL;
 	default:
 		break;
 	}
@@ -3071,6 +3072,7 @@ static int quic_endpoint_unref(struct quic_endpoint *ep)
 	quic_crypto_context_destroy(&ep->crypto.initial);
 	quic_crypto_context_destroy(&ep->crypto.handshake);
 	quic_crypto_context_destroy(&ep->crypto.application);
+	quic_crypto_context_destroy(&ep->crypto.early);
 
 	if (ep->parent != NULL) {
 		/* The ref was taken in process_long_header() when we assigned
@@ -3088,6 +3090,15 @@ static int quic_endpoint_unref(struct quic_endpoint *ep)
 	NET_DBG("[EP:%p/%d] Freeing endpoint from slab %p", ep, quic_get_by_ep(ep), ep->slab);
 
 	ep->slab_index = -1;
+
+	/* quic_recovery_begin_shutdown() (called above via the unref path) must
+	 * have cancelled pto_work before we get here: endpoint_alloc() memsets
+	 * the reused slab slot, and zeroing a still-linked _timeout node would
+	 * corrupt the global kernel timeout list and surface as a baffling
+	 * assert in unrelated code. Catch any future teardown regression here.
+	 */
+	__ASSERT(!sys_dnode_is_linked(&ep->recovery.pto_work.timeout.node),
+		 "pto_work still linked at endpoint free");
 
 	k_mem_slab_free(ep->slab, (void *)ep);
 
@@ -3441,6 +3452,7 @@ static inline int level_to_pn_space(enum quic_secret_level level)
 		return 0;
 	case QUIC_SECRET_LEVEL_HANDSHAKE:
 		return 1;
+	case QUIC_SECRET_LEVEL_EARLY:
 	case QUIC_SECRET_LEVEL_APPLICATION:
 	default:
 		return 2;
@@ -3566,6 +3578,7 @@ ZTESTABLE_STATIC void quic_recovery_init(struct quic_endpoint *ep)
 			ep->recovery.sent_pkts[pn_space][i].dplpmtud_probe = false;
 			ep->recovery.sent_pkts[pn_space][i].dplpmtud_probe_size = 0U;
 			ep->recovery.sent_pkts[pn_space][i].has_stream_frame = false;
+			ep->recovery.sent_pkts[pn_space][i].level = QUIC_SECRET_LEVEL_INITIAL;
 		}
 	}
 
@@ -3605,6 +3618,7 @@ ZTESTABLE_STATIC void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 	/* Record this packet */
 	info->pkt_num = pkt_num;
 	info->sent_time = k_uptime_get();
+	info->level = level;
 	info->sent_bytes = (uint16_t)MIN(sent_bytes, UINT16_MAX);
 	info->ack_eliciting = ack_eliciting;
 	info->in_flight = ack_eliciting; /* Only ack-eliciting packets count */
@@ -3989,12 +4003,24 @@ static void quic_annotate_sent_stream(struct quic_endpoint *ep,
 	}
 }
 
+/* Scratch buffer for stream-frame retransmission. The lost payload is copied
+ * out of the stream TX buffer under tx_lock, then sent from here. It is kept in
+ * .bss (not on the stack) because it is up to CONFIG_QUIC_TX_BUFFER_SIZE bytes;
+ * quic_retransmit_lock serializes the two threads that can retransmit (the
+ * socket-service thread on ACK-driven loss and the recovery work queue on PTO).
+ * The payload must be copied and tx_lock released before sending: the send
+ * records the packet under recovery.lock, while the ACK path takes recovery.lock
+ * then tx_lock, so holding tx_lock across the send would invert that order.
+ */
+static uint8_t quic_retransmit_payload[CONFIG_QUIC_TX_BUFFER_SIZE];
+static K_MUTEX_DEFINE(quic_retransmit_lock);
+
 static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 					 const struct quic_sent_pkt_info *lost)
 {
 	/* Small fixed header, 1 + 8 + 8 + 8 bytes max */
 	uint8_t hdr[32];
-	uint8_t payload[CONFIG_QUIC_TX_BUFFER_SIZE];
+	enum quic_secret_level level;
 	size_t hdr_len = 0;
 	struct quic_stream_tx_buffer *tx;
 	struct quic_stream *stream;
@@ -4009,31 +4035,35 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 		return;
 	}
 
-	if (lost->stream_data_len > sizeof(payload)) {
+	if (lost->stream_data_len > sizeof(quic_retransmit_payload)) {
 		NET_WARN("[EP:%p/%d] Lost frame too large to retransmit (%u)",
 			 ep, quic_get_by_ep(ep), lost->stream_data_len);
 		return;
 	}
 
-	k_mutex_lock(&stream->tx_lock, K_FOREVER);
-
+	level = quic_stream_send_level(ep);
 	tx = &stream->tx_buf;
+
+	k_mutex_lock(&quic_retransmit_lock, K_FOREVER);
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
 
 	if (lost->stream_offset < tx->base_offset) {
 		k_mutex_unlock(&stream->tx_lock);
+		k_mutex_unlock(&quic_retransmit_lock);
 		return; /* already ACKed */
 	}
 
 	buf_off = (size_t)(lost->stream_offset - tx->base_offset);
 	if (buf_off + lost->stream_data_len > tx->len) {
 		k_mutex_unlock(&stream->tx_lock);
+		k_mutex_unlock(&quic_retransmit_lock);
 		NET_WARN("[EP:%p/%d] Lost frame not in TX buffer",
 			 ep, quic_get_by_ep(ep));
 		return;
 	}
 
 	payload_len = lost->stream_data_len;
-	memcpy(payload, &tx->data[buf_off], payload_len);
+	memcpy(quic_retransmit_payload, &tx->data[buf_off], payload_len);
 
 	k_mutex_unlock(&stream->tx_lock);
 
@@ -4046,33 +4076,38 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 
 	ret = quic_put_len(&hdr[hdr_len], sizeof(hdr) - hdr_len, lost->stream_id);
 	if (ret != 0) {
-		return;
+		goto unlock;
 	}
 	hdr_len += quic_get_varint_size(lost->stream_id);
 
 	ret = quic_put_len(&hdr[hdr_len], sizeof(hdr) - hdr_len, lost->stream_offset);
 	if (ret != 0) {
-		return;
+		goto unlock;
 	}
 	hdr_len += quic_get_varint_size(lost->stream_offset);
 
 	ret = quic_put_len(&hdr[hdr_len], sizeof(hdr) - hdr_len, lost->stream_data_len);
 	if (ret != 0) {
-		return;
+		goto unlock;
 	}
 	hdr_len += quic_get_varint_size(lost->stream_data_len);
 
-	/* Send: header from stack, payload copied under tx_lock above */
-	ret = quic_send_packet_sg(ep, QUIC_SECRET_LEVEL_APPLICATION,
-				  hdr, hdr_len,
-				  payload, payload_len,
+	/* Send: header from stack, payload from the scratch buffer copied under
+	 * tx_lock above.
+	 */
+	ret = quic_send_packet_sg(ep, level, hdr, hdr_len,
+				  quic_retransmit_payload, payload_len,
 				  &sent_pn);
 	if (ret == 0) {
-		quic_annotate_sent_stream(ep, QUIC_SECRET_LEVEL_APPLICATION,
-					  sent_pn, lost->stream_id,
-					  lost->stream_offset, lost->stream_data_len,
+		quic_annotate_sent_stream(ep, level, sent_pn,
+					  lost->stream_id,
+					  lost->stream_offset,
+					  lost->stream_data_len,
 					  lost->stream_fin);
 	}
+
+unlock:
+	k_mutex_unlock(&quic_retransmit_lock);
 }
 
 /* Maximum number of ACK ranges we track from a single ACK frame.
@@ -5228,7 +5263,14 @@ static struct quic_context *quic_context_init(struct quic_context *ctx)
 	k_sem_init(&ctx->pending.accept_sem, 0, 1);
 
 	k_fifo_init(&ctx->incoming.stream_q);
-	k_sem_init(&ctx->incoming.stream_sem, 0, 1);
+	/*
+	 * Use K_SEM_MAX_LIMIT so each peer-initiated stream gets its own
+	 * semaphore count.  A cap of 1 would silently discard wakeups when
+	 * multiple streams arrive in the same 0-RTT or coalesced packet,
+	 * causing quic_stream_accept() to block even though the FIFO is
+	 * non-empty.
+	 */
+	k_sem_init(&ctx->incoming.stream_sem, 0, K_SEM_MAX_LIMIT);
 
 	sys_slist_init(&ctx->endpoints);
 	sys_slist_init(&ctx->streams);
@@ -5568,6 +5610,11 @@ static int quic_tls_secret_callback(void *user_data,
 				quic_log_tls_secret("CLIENT_TRAFFIC_SECRET_0",
 						    tls->client_random, tx_secret, secret_len);
 			}
+		} else if (level == QUIC_SECRET_LEVEL_EARLY) {
+			quic_log_tls_secret("CLIENT_EARLY_TRAFFIC_SECRET",
+					    tls->client_random,
+					    ep->is_server ? rx_secret : tx_secret,
+					    secret_len);
 		}
 	}
 
@@ -5601,6 +5648,9 @@ static int quic_tls_secret_callback(void *user_data,
 		break;
 	case QUIC_SECRET_LEVEL_APPLICATION:
 		crypto_ctx = &ep->crypto.application;
+		break;
+	case QUIC_SECRET_LEVEL_EARLY:
+		crypto_ctx = &ep->crypto.early;
 		break;
 	default:
 		NET_ERR("Invalid secret level: %d", level);
@@ -5777,6 +5827,103 @@ static int handle_handshake_packet(struct quic_endpoint *ep,
 	}
 
 	return ret;
+}
+
+static int handle_0rtt_packet(struct quic_endpoint *ep,
+			      const uint8_t *payload,
+			      size_t payload_len,
+			      size_t packet_len)
+{
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_QUIC_0RTT)) {
+		NET_DBG("[EP:%p/%d] Dropping 0-RTT packet while support is disabled",
+			ep, quic_get_by_ep(ep));
+		return 0;
+	}
+
+	if (ep->is_server && !ep->crypto.tls.early_data_accepted) {
+		NET_DBG("[EP:%p/%d] Ignoring 0-RTT packet before acceptance", ep,
+			quic_get_by_ep(ep));
+		return 0;
+	}
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_EARLY,
+					 payload, payload_len, packet_len, NULL);
+	if (ret >= 0) {
+		QUIC_EP_STAT_INC(ep, valid_rx);
+	} else {
+		QUIC_EP_STAT_INC(ep, invalid_packet);
+		QUIC_EP_STAT_INC(ep, drop_rx);
+	}
+
+	return ret;
+}
+
+ZTESTABLE_STATIC bool quic_early_data_is_armed(const struct quic_endpoint *ep)
+{
+	const struct quic_tls_context *tls;
+
+	if (!IS_ENABLED(CONFIG_QUIC_0RTT) || ep == NULL || ep->is_server ||
+	    ep->handshake.completed) {
+		return false;
+	}
+
+	tls = &ep->crypto.tls;
+
+	if (!tls->is_initialized || !tls->session_state_valid ||
+	    !tls->early_data_offered ||
+	    tls->early_data_rejected ||
+	    tls->session_state.max_early_data_size == 0U) {
+		return false;
+	}
+
+	return ep->crypto.early.initialized;
+}
+
+ZTESTABLE_STATIC int quic_mark_rejected_early_data(struct quic_endpoint *ep)
+{
+	struct quic_stream *stream;
+	int pn_space = level_to_pn_space(QUIC_SECRET_LEVEL_EARLY);
+
+	if (!IS_ENABLED(CONFIG_QUIC_0RTT)) {
+		return 0;
+	}
+
+	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+
+	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
+		struct quic_sent_pkt_info *info = &ep->recovery.sent_pkts[pn_space][i];
+
+		if (info->level != QUIC_SECRET_LEVEL_EARLY) {
+			continue;
+		}
+
+		if (info->in_flight) {
+			ep->recovery.bytes_in_flight -= info->sent_bytes;
+			info->in_flight = false;
+		}
+
+		if (!info->has_stream_frame || !info->stream_fin) {
+			continue;
+		}
+
+		stream = quic_find_stream_by_id(ep, info->stream_id);
+		if (stream != NULL) {
+			stream->replay_fin_pending = true;
+		}
+	}
+
+	quic_reset_pto_timer_locked(ep);
+	k_mutex_unlock(&ep->recovery.lock);
+
+	return 0;
+}
+
+ZTESTABLE_STATIC enum quic_secret_level quic_stream_send_level(const struct quic_endpoint *ep)
+{
+	return quic_early_data_is_armed(ep) ? QUIC_SECRET_LEVEL_EARLY :
+					      QUIC_SECRET_LEVEL_APPLICATION;
 }
 
 /*
@@ -5995,6 +6142,42 @@ static int quic_endpoint_send_connection_close(struct quic_endpoint *ep,
 	return quic_endpoint_send_transport_close(ep, error_code, 0, reason);
 }
 
+#define QUIC_CHECK_RESUMED_TP_GE(field)							\
+	do {										\
+		if (ret == 0 && ep->peer_params.field < remembered->field) {		\
+			NET_ERR("[EP:%p/%d] Resumed transport parameter " #field	\
+				" shrank from %" PRIu64 " to %" PRIu64,			\
+				ep, quic_get_by_ep(ep), remembered->field,		\
+				ep->peer_params.field);					\
+			ret = -EPROTO;							\
+		}									\
+	} while (false)
+
+static int quic_validate_resumed_transport_params(struct quic_endpoint *ep)
+{
+	const struct quic_tls_context *tls = &ep->crypto.tls;
+	const struct quic_session_transport_params *remembered =
+		&tls->session_state.transport_params;
+	int ret = 0;
+
+	if (ep->is_server || !tls->session_state_valid || !remembered->valid ||
+	    !tls->early_data_accepted) {
+		goto out;
+	}
+
+	QUIC_CHECK_RESUMED_TP_GE(initial_max_data);
+	QUIC_CHECK_RESUMED_TP_GE(initial_max_stream_data_bidi_local);
+	QUIC_CHECK_RESUMED_TP_GE(initial_max_stream_data_bidi_remote);
+	QUIC_CHECK_RESUMED_TP_GE(initial_max_stream_data_uni);
+	QUIC_CHECK_RESUMED_TP_GE(initial_max_streams_bidi);
+	QUIC_CHECK_RESUMED_TP_GE(initial_max_streams_uni);
+
+#undef QUIC_CHECK_RESUMED_TP_GE
+
+out:
+	return ret;
+}
+
 /* Parse peer's transport parameters and initialize flow control */
 ZTESTABLE_STATIC int parse_peer_transport_params(struct quic_endpoint *ep)
 {
@@ -6143,6 +6326,11 @@ ZTESTABLE_STATIC int parse_peer_transport_params(struct quic_endpoint *ep)
 		}
 	}
 
+	ret = quic_validate_resumed_transport_params(ep);
+	if (ret != 0) {
+		return ret;
+	}
+
 	ep->peer_params.parsed = true;
 
 	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
@@ -6162,6 +6350,8 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 	struct quic_context *listen_ctx;
 	struct quic_context *child_ctx;
 	struct quic_stream *stream, *tmp;
+	struct quic_stream *queued_streams[ARRAY_SIZE(streams)];
+	size_t queued_stream_count = 0U;
 
 	/* Only server child endpoints should be enqueued */
 	if (!child_ep->is_server || child_ep->parent == NULL) {
@@ -6192,12 +6382,19 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 	sys_slist_find_and_remove(&listen_ctx->endpoints, &child_ep->node);
 	sys_slist_prepend(&child_ctx->endpoints, &child_ep->node);
 
-	/* Migrate any pending streams to the new context as well. This
-	 * can happen if the connection accept queue has not been processed
-	 * fully yet and the streams were allocated to wrong connection context.
+	/* Migrate any pending streams to the new context as well. This can happen
+	 * if peer streams arrive before the accepted child socket is created.
+	 * Keep the original FIFO arrival order when those streams are later
+	 * delivered via accept(), so control streams are not reordered behind
+	 * request streams.
+	 *
+	 * Do NOT pre-allocate file descriptors here.  fd allocation is the
+	 * exclusive responsibility of quic_stream_accept(); doing it here
+	 * would cause a double-allocation (and fd leak) when quic_stream_accept()
+	 * subsequently allocates another fd for the same stream.
 	 */
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&listen_ctx->streams, stream, tmp, node) {
-		if (stream->conn != listen_ctx) {
+		if (stream->conn != listen_ctx || stream->ep != child_ep) {
 			continue;
 		}
 
@@ -6212,55 +6409,37 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 
 		stream->conn = child_ctx;
 		stream->ep = child_ep;
+	}
 
-		/* Remove stream from listen_ctx pending accept queue if it's there,
-		 * since it should now be delivered to the new child_ctx accept queue.
-		 */
-		do {
-			struct quic_stream *st = k_fifo_get(&listen_ctx->incoming.stream_q,
-							    K_NO_WAIT);
-
-			if (st == stream) {
-				/* Found the stream, don't put it back */
-				break;
-			} else if (st == NULL) {
-				/* No more streams in the queue */
-				break;
-			}
-
-			/* Not the stream we're looking for, put it back and keep looking */
-			k_fifo_put(&listen_ctx->incoming.stream_q, st);
-		} while (true);
-
-		/* Reparent only already-instantiated stream sockets.
-		 * Peer-created streams normally get their fd later in accept().
-		 */
-		if (stream->sock >= 0) {
-			zvfs_free_fd(stream->sock);
-			(void)sock_obj_core_dealloc(stream->sock);
-
-			stream->sock = zvfs_reserve_fd();
-			if (stream->sock < 0) {
-				NET_ERR("[EP:%p/%d] Failed to reserve fd for stream %p/%d: %d",
-					child_ep, quic_get_by_ep(child_ep),
-					stream, quic_get_by_stream(stream),
-					stream->sock);
-				quic_stream_unref(stream);
-				break;
-			}
-
-			zvfs_finalize_typed_fd(stream->sock, stream,
-					       (const struct fd_op_vtable *)
-					       &quic_stream_fd_op_vtable,
-					       ZVFS_MODE_IFSOCK);
-
-			(void)sock_obj_core_alloc_find(child_ctx->sock, stream->sock,
-						       NET_SOCK_STREAM);
+	while (queued_stream_count < ARRAY_SIZE(queued_streams)) {
+		stream = k_fifo_get(&listen_ctx->incoming.stream_q, K_NO_WAIT);
+		if (stream == NULL) {
+			break;
 		}
 
-		/* Queue for accept() call */
-		k_fifo_put(&child_ctx->incoming.stream_q, stream);
-		k_sem_give(&child_ctx->incoming.stream_sem);
+		queued_streams[queued_stream_count++] = stream;
+	}
+
+	k_sem_reset(&listen_ctx->incoming.stream_sem);
+
+	for (size_t i = 0U; i < queued_stream_count; i++) {
+		stream = queued_streams[i];
+
+		if (stream->ep == child_ep) {
+			if (stream->conn == listen_ctx) {
+				sys_slist_find_and_remove(&listen_ctx->streams, &stream->node);
+				sys_slist_prepend(&child_ctx->streams, &stream->node);
+
+				stream->conn = child_ctx;
+				stream->ep = child_ep;
+			}
+
+			k_fifo_put(&child_ctx->incoming.stream_q, stream);
+			k_sem_give(&child_ctx->incoming.stream_sem);
+		} else {
+			k_fifo_put(&listen_ctx->incoming.stream_q, stream);
+			k_sem_give(&listen_ctx->incoming.stream_sem);
+		}
 	}
 
 	k_mutex_unlock(&endpoints_lock);
@@ -6317,6 +6496,12 @@ static int quic_handshake_complete(struct quic_endpoint *ep)
 		return ret;
 	}
 
+	ret = quic_tls_note_handshake_complete(tls);
+	if (ret != 0) {
+		NET_ERR("Failed to finalize TLS resumption state");
+		return ret;
+	}
+
 	/* Send HANDSHAKE_DONE frame (only server sends this) */
 	if (ep->is_server) {
 		ret = quic_send_handshake_done(ep);
@@ -6330,12 +6515,49 @@ static int quic_handshake_complete(struct quic_endpoint *ep)
 			NET_WARN("[EP:%p/%d] Failed to send NEW_TOKEN (%d)",
 				 ep, quic_get_by_ep(ep), ret);
 		}
+
+		if (tls->issue_session_tickets) {
+			ret = quic_tls_send_new_session_ticket(tls);
+			if (ret != 0 && ret != -ENOTSUP) {
+				NET_WARN("[EP:%p/%d] Failed to send NewSessionTicket (%d)",
+					 ep, quic_get_by_ep(ep), ret);
+			}
+		}
 	}
 
 	quic_recovery_discard_pn_space(ep, level_to_pn_space(QUIC_SECRET_LEVEL_INITIAL));
 	quic_recovery_discard_pn_space(ep, level_to_pn_space(QUIC_SECRET_LEVEL_HANDSHAKE));
 
 	quic_endpoint_handshake_complete(ep);
+
+	if (IS_ENABLED(CONFIG_QUIC_0RTT) && !ep->is_server &&
+	    tls->early_data_rejected) {
+		ret = quic_mark_rejected_early_data(ep);
+		if (ret != 0) {
+			return ret;
+		}
+
+		ret = quic_prepare_rejected_early_data_replay(ep);
+		if (ret != 0) {
+			return ret;
+		}
+
+		ret = quic_replay_rejected_early_data(ep);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_QUIC_0RTT) && ep->crypto.early.initialized) {
+		/* RFC 9001 4.9.3: discard 0-RTT keys once the handshake is
+		 * complete. The client no longer needs them now that 1-RTT keys
+		 * are installed, and the server must not retain them beyond a
+		 * short time; any later-reordered 0-RTT packet is dropped and its
+		 * data retransmitted under 1-RTT.
+		 */
+		quic_crypto_context_destroy(&ep->crypto.early);
+	}
+
 	(void)quic_dplpmtud_maybe_probe(ep);
 
 	NET_DBG("[EP:%p/%d] QUIC handshake complete", ep, quic_get_by_ep(ep));
@@ -6908,6 +7130,92 @@ static struct quic_stream *quic_create_stream_from_peer(struct quic_context *ctx
 	return stream;
 }
 
+#if defined(CONFIG_QUIC_0RTT)
+static int quic_buffer_deferred_0rtt_packet(struct quic_pkt *pkt)
+{
+	struct quic_endpoint *ep = pkt->ep;
+	struct quic_deferred_0rtt_packet *deferred;
+
+	if (!ep->is_server) {
+		return -EINVAL;
+	}
+
+	if (ep->deferred_0rtt.count >= ARRAY_SIZE(ep->deferred_0rtt.packets)) {
+		return -ENOBUFS;
+	}
+
+	deferred = &ep->deferred_0rtt.packets[ep->deferred_0rtt.count++];
+	deferred->len = pkt->len;
+	deferred->total_len = pkt->total_len;
+	deferred->pn_offset = pkt->pn_offset;
+	memcpy(deferred->data, pkt->data, pkt->total_len);
+
+	return 0;
+}
+
+static int quic_flush_deferred_0rtt_packets(struct quic_endpoint *ep)
+{
+	struct quic_crypto_context *crypto_ctx;
+
+	if (!ep->is_server || ep->deferred_0rtt.count == 0U) {
+		return 0;
+	}
+
+	if (!ep->crypto.tls.early_data_accepted) {
+		if (ep->crypto.tls.early_data_rejected || ep->handshake.completed) {
+			ep->deferred_0rtt.count = 0U;
+		}
+
+		return 0;
+	}
+
+	crypto_ctx = quic_get_crypto_context_by_level(ep, QUIC_SECRET_LEVEL_EARLY);
+	if (crypto_ctx == NULL || !crypto_ctx->initialized) {
+		return 0;
+	}
+
+	while (ep->deferred_0rtt.count > 0U) {
+		struct quic_deferred_0rtt_packet *deferred = &ep->deferred_0rtt.packets[0];
+		struct quic_pkt *pkt;
+
+		pkt = quic_pkt_alloc(&quic_pkts, K_MSEC(CONFIG_QUIC_PKT_ALLOC_TIMEOUT));
+		if (pkt == NULL) {
+			return -ENOMEM;
+		}
+
+		pkt->ep = ep;
+		pkt->old_ep = ep->parent;
+		pkt->ptype = QUIC_PACKET_TYPE_0RTT;
+		pkt->htype = QUIC_HEADER_TYPE_LONG;
+		pkt->pn_offset = deferred->pn_offset;
+		pkt->pos = 0U;
+		pkt->len = deferred->len;
+		pkt->total_len = deferred->total_len;
+		memcpy(pkt->data, deferred->data, deferred->total_len);
+
+		quic_endpoint_ref(pkt->ep);
+		k_fifo_put(&quic_queue, pkt);
+
+		ep->deferred_0rtt.count--;
+		if (ep->deferred_0rtt.count > 0U) {
+			memmove(&ep->deferred_0rtt.packets[0],
+				&ep->deferred_0rtt.packets[1],
+				ep->deferred_0rtt.count *
+					sizeof(ep->deferred_0rtt.packets[0]));
+		}
+	}
+
+	return 0;
+}
+#else
+static int quic_flush_deferred_0rtt_packets(struct quic_endpoint *ep)
+{
+	ARG_UNUSED(ep);
+
+	return 0;
+}
+#endif /* CONFIG_QUIC_0RTT */
+
 static void process_pkt(struct quic_pkt *pkt)
 {
 	int ret = 0;
@@ -6935,6 +7243,15 @@ static void process_pkt(struct quic_pkt *pkt)
 			NET_DBG("[EP:%p/%d] Connection closing after %s packet",
 				pkt->ep, quic_get_by_ep(pkt->ep), "Initial");
 			quic_endpoint_unref(pkt->ep);
+		}
+
+		if (ret == 0) {
+			int flush_ret = quic_flush_deferred_0rtt_packets(pkt->ep);
+
+			if (flush_ret < 0) {
+				NET_WARN("[EP:%p/%d] Failed to flush deferred 0-RTT packets (%d)",
+					 pkt->ep, quic_get_by_ep(pkt->ep), flush_ret);
+			}
 		}
 
 		break;
@@ -6965,10 +7282,33 @@ static void process_pkt(struct quic_pkt *pkt)
 			quic_endpoint_unref(pkt->ep);
 		}
 
+		if (ret == 0) {
+			int flush_ret = quic_flush_deferred_0rtt_packets(pkt->ep);
+
+			if (flush_ret < 0) {
+				NET_WARN("[EP:%p/%d] Failed to flush deferred 0-RTT packets (%d)",
+					 pkt->ep, quic_get_by_ep(pkt->ep), flush_ret);
+			}
+		}
+
 		break;
 
 	case QUIC_PACKET_TYPE_0RTT:
-		/* TODO: Handle 0-RTT */
+		ret = handle_0rtt_packet(pkt->ep,
+					 pkt->data,
+					 pkt->len,
+					 pkt->total_len);
+		if (ret < 0) {
+			NET_DBG("[EP:%p/%d] %s packet handling failure (%d)",
+				pkt->ep, quic_get_by_ep(pkt->ep), "0-RTT", ret);
+			if (!pkt->ep->handshake.completed) {
+				quic_endpoint_notify_streams_closed(pkt->ep);
+			}
+		} else if (ret == 1) {
+			NET_DBG("[EP:%p/%d] Connection closing after %s packet",
+				pkt->ep, quic_get_by_ep(pkt->ep), "0-RTT");
+			quic_endpoint_unref(pkt->ep);
+		}
 		break;
 
 	case QUIC_PACKET_TYPE_1RTT:
@@ -7061,6 +7401,40 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 		QUIC_EP_STAT_INC(ep, drop_rx);
 		goto fail;
 	}
+
+#if defined(CONFIG_QUIC_0RTT)
+	if (ptype == QUIC_PACKET_TYPE_0RTT) {
+		struct quic_crypto_context *crypto_ctx;
+
+		crypto_ctx = quic_get_crypto_context_by_level(ep, QUIC_SECRET_LEVEL_EARLY);
+		if (crypto_ctx == NULL || !crypto_ctx->initialized) {
+			/* Before the handshake completes, hold the packet until the
+			 * early keys are installed. Afterwards the 0-RTT keys have
+			 * been discarded (RFC 9001 4.9.3), so drop any late or
+			 * reordered 0-RTT packet; its data is retransmitted at 1-RTT.
+			 */
+			if (ep->handshake.completed) {
+				NET_DBG("[EP:%p/%d] Dropping 0-RTT packet after handshake",
+					ep, quic_get_by_ep(ep));
+				QUIC_EP_STAT_INC(ep, drop_rx);
+				goto fail;
+			}
+
+			ret = quic_buffer_deferred_0rtt_packet(pkt);
+			if (ret < 0) {
+				NET_DBG("[EP:%p/%d] Failed to defer 0-RTT packet (%d)",
+					ep, quic_get_by_ep(ep), ret);
+				QUIC_EP_STAT_INC(ep, alloc_failed);
+				QUIC_EP_STAT_INC(ep, drop_rx);
+				goto fail;
+			}
+
+			NET_DBG("[EP:%p/%d] Deferred 0-RTT packet until early keys are ready",
+				ep, quic_get_by_ep(ep));
+			return false;
+		}
+	}
+#endif /* CONFIG_QUIC_0RTT */
 
 	/*
 	 * Decrypt the complete packet:

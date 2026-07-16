@@ -1,4 +1,4 @@
-/* x86 address types (virtual, physical, etc) definitions */
+/* Address types (virtual, physical, etc) definitions */
 
 /*
  * Copyright (c) 2015 Wind River Systems, Inc.

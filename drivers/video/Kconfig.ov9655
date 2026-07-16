@@ -4,6 +4,8 @@
 config VIDEO_OV9655
 	bool "OV9655 CMOS digital image sensor"
 	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_OVTI_OV9655),pwdn-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_OVTI_OV9655),reset-gpios)
 	depends on DT_HAS_OVTI_OV9655_ENABLED
 	default y
 	help

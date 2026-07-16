@@ -11,6 +11,7 @@
 #include <zephyr/llext/llext.h>
 #include <zephyr/llext/llext_internal.h>
 #include <zephyr/kernel.h>
+#include <zephyr/arch/common/instr_mem.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
@@ -312,6 +313,20 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			break;
 		}
 
+		/*
+		 * TLS sections (e.g. .tbss/.tdata) are not loaded as runtime
+		 * regions in an llext: the extension executes in one of the
+		 * loader's threads and shares that thread's TLS block. Local-exec
+		 * references only need the symbol's thread-pointer-relative offset,
+		 * which is carried in the relocation (st_value + TCB), so the
+		 * section itself is never mapped. Skipping also avoids a TLS
+		 * SHT_NOBITS section colliding with .bss in LLEXT_MEM_BSS.
+		 */
+		if (shdr->sh_flags & SHF_TLS) {
+			LOG_DBG("section %d name %s is TLS, not mapped", i, name);
+			continue;
+		}
+
 		/* Special exception for .exported_sym */
 		if (strcmp(name, ".exported_sym") == 0) {
 			mem_idx = LLEXT_MEM_EXPORT;
@@ -373,18 +388,12 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			}
 
 			if (mem_idx == LLEXT_MEM_TEXT &&
-			    !INSTR_FETCHABLE(detached_sect_ptr, shdr->sh_size)) {
-#ifdef CONFIG_ARC
+			    !arch_is_instr_mem(detached_sect_ptr, shdr->sh_size)) {
 				LOG_ERR("ELF buffer's detached text section %s not in instruction "
 					"memory: %p-%p",
 					name, detached_sect_ptr,
 					(void *)((char *)detached_sect_ptr + shdr->sh_size));
 				return -ENOEXEC;
-#else
-				LOG_WRN("Unknown if ELF buffer's detached text section %s is in "
-					"instruction memory; proceeding...",
-					name);
-#endif
 			}
 			continue;
 		}

@@ -42,24 +42,12 @@ jobs:
           echo "TODO: add release overview and notes link" > release-notes.txt
 
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@0cb9c9b65d5d1901c1f53e5e66eaf4afd303e70e # v1.1.4
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Zephyr ${{ steps.get_version.outputs.TRIMMED_VERSION }}
-          body_path: release-notes.txt
-          draft: true
-          prerelease: true
-
-      - name: Upload Release Assets
-        id: upload-release-asset
-        uses: actions/upload-release-asset@e8f9f06c4b078e705bd2ea027f0926603fc9b4d5 # v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: zephyr-${{ steps.get_version.outputs.VERSION }}.spdx
-          asset_name: zephyr-${{ steps.get_version.outputs.VERSION }}.spdx
-          asset_content_type: text/plain
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.get_version.outputs.VERSION }}" \
+            "zephyr-${{ steps.get_version.outputs.VERSION }}.spdx" \
+            --title "Zephyr ${{ steps.get_version.outputs.TRIMMED_VERSION }}" \
+            --notes-file release-notes.txt \
+            --draft \
+            --prerelease

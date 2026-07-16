@@ -208,6 +208,12 @@
 	status = "okay";
 };
 
+stm32_lp_tick_source: &lptim1 {
+	clocks = <&rcc STM32_CLOCK(APB3, 11)>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(2)>;
+	status = "okay";
+};
+
 &lpuart1 {
 	pinctrl-0 = <&lpuart1_tx_pa3 &lpuart1_rx_pa2>;
 	pinctrl-names = "default";

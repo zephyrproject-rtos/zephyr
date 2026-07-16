@@ -68,7 +68,7 @@ You should see the following output on the serial console:
    Hello World! opi_zero/sun8i_h3
 
 .. _Orange Pi Zero:
-   http://www.orangepi.org/orangepiwiki/index.php/Orange_Pi_Zero/
+   http://www.orangepi.org/html/hardWare/computerAndMicrocontrollers/details/Orange-Pi-Zero.html
 
 .. _Das U-Boot Website:
    https://docs.u-boot.org/en/latest/

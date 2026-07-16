@@ -10,9 +10,11 @@
  * Delivery-mode-specific tests live in separate source files gated by
  * the matching Kconfig option (see CMakeLists.txt):
  *   - aplic_msi_imsic.c: CONFIG_RISCV_APLIC_MSI (APLIC MSI mode + IMSIC)
+ *   - aplic_direct.c: CONFIG_RISCV_APLIC_DIRECT (APLIC direct mode)
  */
 
 #include <stdint.h>
+#include <zephyr/irq.h>
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/interrupt_controller/riscv_aplic.h>
 
@@ -113,4 +115,32 @@ ZTEST(intc_riscv_aia, test_hart_index_boundaries)
 	uint32_t encoded_overflow = (hart_overflow & APLIC_TARGET_HART_MASK)
 				    << APLIC_TARGET_HART_SHIFT;
 	zassert_equal(0xFFFC0000, encoded_overflow, "Hart overflow masking");
+}
+
+/* Verify functionality of SMAIA extension introduced by AIA */
+ZTEST(intc_riscv_aia, test_smaia_isa_ext)
+{
+	if (!IS_ENABLED(CONFIG_RISCV_ISA_EXT_SMAIA)) {
+		ztest_test_skip();
+	}
+
+	int ret = -1;
+
+	csr_write(mie, 0);
+	csr_write(mieh, 0);
+
+	/*
+	 * Start at bit 16: bits 0-15 include standard interrupt bits with
+	 * architecture-defined WARL behavior (e.g. VSSIE, VSTIE require H-extension).
+	 * Bits 16-63 are AIA local interrupt enables and are unconditionally writable.
+	 */
+	for (uint32_t irq = 16; irq < 64; irq++) {
+		irq_enable(irq);
+		ret = irq_is_enabled(irq);
+		zassert_equal(ret, 1, "Expected IRQ %u in mie is enabled. ret = %d", irq, ret);
+
+		irq_disable(irq);
+		ret = irq_is_enabled(irq);
+		zassert_equal(ret, 0, "Expected IRQ %u in mie is disabled. ret = %d", irq, ret);
+	}
 }

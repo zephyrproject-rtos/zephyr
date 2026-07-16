@@ -10,8 +10,8 @@
  * @ingroup shell_api
  */
 
-#ifndef SHELL_H__
-#define SHELL_H__
+#ifndef ZEPHYR_INCLUDE_SHELL_SHELL_H_
+#define ZEPHYR_INCLUDE_SHELL_SHELL_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell_types.h>
@@ -1475,6 +1475,7 @@ void shell_help(const struct shell *sh);
 #else
 static inline void shell_help(const struct shell *sh)
 {
+	ARG_UNUSED(sh);
 }
 #endif /* CONFIG_SHELL_HELP */
 
@@ -1670,4 +1671,4 @@ int shell_readline(const struct shell *sh, uint8_t *buf, size_t len, k_timeout_t
 #include <zephyr_custom_shell.h>
 #endif
 
-#endif /* SHELL_H__ */
+#endif /* ZEPHYR_INCLUDE_SHELL_SHELL_H_ */

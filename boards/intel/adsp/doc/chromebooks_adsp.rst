@@ -412,4 +412,4 @@ https://www.chromium.org/chromium-os/developer-library/reference/device/disk-for
 
 This is great too, with an eye toward booting things other than ChromeOS:
 
-https://www.chromium.org/chromium-os/developer-information-for-chrome-os-devices/custom-firmware
+https://www.chromium.org/chromium-os/developer-library/reference/development/developer-information-for-chrome-os-devices/custom-firmware/

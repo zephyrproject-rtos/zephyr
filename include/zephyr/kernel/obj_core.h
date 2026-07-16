@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __KERNEL_OBJ_CORE_H__
-#define __KERNEL_OBJ_CORE_H__
+#ifndef ZEPHYR_INCLUDE_KERNEL_OBJ_CORE_H_
+#define ZEPHYR_INCLUDE_KERNEL_OBJ_CORE_H_
 
 #include <stddef.h>
 #include <zephyr/sys/slist.h>
@@ -500,4 +500,4 @@ int k_obj_core_stats_disable(struct k_obj_core *obj_core);
 int k_obj_core_stats_enable(struct k_obj_core *obj_core);
 
 /** @} */
-#endif /* __KERNEL_OBJ_CORE_H__ */
+#endif /* ZEPHYR_INCLUDE_KERNEL_OBJ_CORE_H_ */

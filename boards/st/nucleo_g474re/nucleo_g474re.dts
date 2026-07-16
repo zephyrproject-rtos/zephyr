@@ -116,8 +116,6 @@
 	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	status = "okay";
-	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
-	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 };
 
 &spi1 {

@@ -144,6 +144,24 @@ configdefault OPENTHREAD_SRP_CLIENT
 configdefault OPENTHREAD_UPTIME
 	default y if OPENTHREAD_FTD || OPENTHREAD_MTD
 
+configdefault OPENTHREAD_CSL_AUTO_SYNC
+	default y
+
+configdefault NET_PKT_TIMESTAMP
+	default y
+
+configdefault NET_PKT_TXTIME
+	default y
+
+configdefault OPENTHREAD_CSL_RECEIVE_TIME_AHEAD
+	default 1000 if SILABS_SISDK_RAIL_MULTIPROTOCOL
+	default 600
+
+configdefault OPENTHREAD_PLATFORM_CSL_UNCERT
+	default 175 if OPENTHREAD_REFERENCE_DEVICE
+	default 20 if OPENTHREAD_FTD
+	default 12
+
 if OPENTHREAD_COMMISSIONER
 configdefault MBEDTLS_HEAP_SIZE
 	default 16384

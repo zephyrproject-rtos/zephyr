@@ -109,14 +109,30 @@ enum http_h3_alt_svc_policy {
 	HTTP_H3_ALT_SVC_ENABLE,
 };
 
+/** HTTP/3 configuration for a service. */
+struct http_service_h3_config {
+	/** HTTP/3 Alt-Svc advertisement policy for the service. */
+	enum http_h3_alt_svc_policy alt_svc_policy;
+	/** Enable QUIC session tickets on the HTTP/3 listener for this service. */
+	bool enable_session_tickets;
+	/**
+	 * HTTP/3 listener early-data limit in bytes.
+	 *
+	 * A value of 0 keeps 0-RTT disabled for newly issued tickets. A non-zero
+	 * value advertises that early-data allowance and implicitly enables
+	 * session-ticket issuance for the HTTP/3 listener.
+	 */
+	uint32_t max_early_data_size;
+};
+
 /** HTTP service configuration */
 struct http_service_config {
 	/** Custom socket creation for the service if needed */
 	http_socket_create_fn socket_create;
 	/** What HTTP version to use for the service. */
 	enum http_version http_ver;
-	/** HTTP/3 Alt-Svc advertisement policy for the service. */
-	enum http_h3_alt_svc_policy h3_alt_svc_policy;
+	/** HTTP/3-specific configuration. */
+	struct http_service_h3_config h3;
 
 	/* If any more service-specific configuration is needed, it can be added here. */
 };

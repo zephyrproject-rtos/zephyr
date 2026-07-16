@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_STM32_H_
-#define ZEPHYR_INCLUDE_DRIVERS_DMA_STM32_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_STM32_H_
+#define ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_STM32_H_
 
 #include <zephyr/devicetree.h>
 #include <zephyr/devicetree/dma.h>
@@ -105,4 +105,4 @@
 		STM32_DMA_GET_CHANNEL_INSTANCE((reg), (channel) - STM32_DMA_STREAM_OFFSET);
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_STM32_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_STM32_H_ */

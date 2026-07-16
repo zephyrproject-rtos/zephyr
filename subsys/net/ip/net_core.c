@@ -358,9 +358,8 @@ static inline bool process_multicast(struct net_pkt *pkt)
 
 #if defined(CONFIG_NET_IPV4)
 	if (family == NET_AF_INET) {
-		const struct net_in_addr *dst = (const struct net_in_addr *)&NET_IPV4_HDR(pkt)->dst;
-
-		return net_ipv4_is_addr_mcast(dst) && net_context_get_ipv4_mcast_loop(ctx);
+		return net_ipv4_is_addr_mcast_raw(NET_IPV4_HDR(pkt)->dst) &&
+		       net_context_get_ipv4_mcast_loop(ctx);
 	}
 #endif
 #if defined(CONFIG_NET_IPV6)

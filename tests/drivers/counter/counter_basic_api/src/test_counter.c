@@ -220,6 +220,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_WUT_MAX32
 	DEVS_FOR_DT_COMPAT(adi_max32_wut)
 #endif
+#ifdef CONFIG_COUNTER_XLNX_TTC
+	DEVS_FOR_DT_COMPAT(xlnx_ttc_counter)
+#endif
 };
 
 static const struct device *const period_devs[] = {
@@ -889,15 +892,14 @@ static void test_valid_function_without_alarm(const struct device *dev)
 
 	/* counter might not start from 0, use current value as offset */
 	counter_get_value(dev, &tick_current);
+	k_busy_wait(wait_for_us);
+	err = counter_get_value(dev, &ticks);
+
 	if (counter_is_counting_up(dev)) {
 		ticks_expected += tick_current;
 	} else {
 		ticks_expected = tick_current - ticks_expected;
 	}
-
-	k_busy_wait(wait_for_us);
-
-	err = counter_get_value(dev, &ticks);
 
 	zassert_equal(0, err, "%s: could not get counter value", dev->name);
 	zassert_between_inclusive(
@@ -1288,6 +1290,9 @@ static bool reliable_cancel_capable(const struct device *dev)
 	if (single_channel_alarm_capable(dev)) {
 		return true;
 	}
+#endif
+#ifdef CONFIG_COUNTER_XLNX_TTC
+	return true;
 #endif
 	return false;
 }

@@ -26,4 +26,5 @@ supported:
   - watchdog
   - edac
   - pwm
+  - opamp
 vendor: nxp
