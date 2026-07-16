@@ -621,8 +621,6 @@ static inline void l3_init(void)
 	net_ipv4_init();
 	net_ipv6_init();
 
-	net_ipv4_autoconf_init();
-
 	if (IS_ENABLED(CONFIG_NET_UDP) ||
 	    IS_ENABLED(CONFIG_NET_TCP) ||
 	    IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) ||
