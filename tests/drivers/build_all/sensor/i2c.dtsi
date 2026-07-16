@@ -1716,3 +1716,9 @@ test_i2c_vl53l5cx: vl53l5cx@de {
 	compatible = "st,vl53l5cx";
 	reg = <0xde>;
 };
+
+test_i2c_lps33hw: lps33hw@df {
+	compatible = "st,lps33hw";
+	reg = <0xdf>;
+	odr = <75>;
+};
