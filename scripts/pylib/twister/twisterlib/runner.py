@@ -648,10 +648,25 @@ class ProjectBuilder(FilterBuilder):
     def trace(self) -> bool:
         return self.options.verbose > 2
 
-    def log_info(self, filename, inline_logs, log_testcases=False):
+    def log_info(self, filename, inline_logs, log_only_failed=False):
         filename = os.path.abspath(os.path.realpath(filename))
         if inline_logs:
             logger.info(f"{filename:-^100}")
+
+            if log_only_failed:
+                any_found = False
+                for tc in self.instance.testcases:
+                    if not tc.reason:
+                        continue
+                    logger.error(
+                        f"\n{str(tc.name).center(100, '_')}\n"
+                        f"{tc.reason}\n"
+                        f"{100*'_'}\n"
+                        f"{tc.output}"
+                    )
+                    any_found = True
+                if any_found:
+                    return
 
             try:
                 with open(filename) as fp:
@@ -670,16 +685,6 @@ class ProjectBuilder(FilterBuilder):
 
             logger.info(f"{filename:-^100}")
 
-            if log_testcases:
-                for tc in self.instance.testcases:
-                    if not tc.reason:
-                        continue
-                    logger.info(
-                        f"\n{str(tc.name).center(100, '_')}\n"
-                        f"{tc.reason}\n"
-                        f"{100*'_'}\n"
-                        f"{tc.output}"
-                    )
         else:
             logger.error("see: " + Fore.YELLOW + filename + Fore.RESET)
 
@@ -695,7 +700,7 @@ class ProjectBuilder(FilterBuilder):
         if os.path.exists(v_log) and "Valgrind" in self.instance.reason:
             self.log_info(f"{v_log}", inline_logs)
         elif os.path.exists(script_log) and os.path.getsize(script_log) > 0:
-            self.log_info(f"{script_log}", inline_logs, log_testcases=True)
+            self.log_info(f"{script_log}", inline_logs, log_only_failed=True)
         elif os.path.exists(h_log) and os.path.getsize(h_log) > 0:
             self.log_info(f"{h_log}", inline_logs)
         elif os.path.exists(he_log) and os.path.getsize(he_log) > 0:
