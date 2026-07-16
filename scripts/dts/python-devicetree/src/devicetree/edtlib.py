@@ -505,8 +505,9 @@ class Binding:
             return
 
         ok_prop_keys = {"description", "type", "required",
-                        "enum", "const", "default", "deprecated",
-                        "specifier-space", "min", "max", "min-len", "max-len"}
+                "enum", "const", "default", "deprecated",
+                "specifier-space", "target-compatibles",
+                "min", "max", "min-len", "max-len"}
 
         for prop_name, options in raw["properties"].items():
             for key in options:
@@ -596,6 +597,10 @@ class PropertySpec:
 
     specifier_space:
       The specifier space for the property as given in the binding, or None.
+
+    target_compatibles:
+      A list of compatible strings that referenced node(s) must match, or
+        None. This is only valid for 'phandle' and 'phandles' type properties.
 
     min:
       The minimum value the property may take as given in the binding, or None.
@@ -699,6 +704,11 @@ class PropertySpec:
     def specifier_space(self) -> Optional[str]:
         "See the class docstring"
         return self._raw.get("specifier-space")
+
+    @property
+    def target_compatibles(self) -> Optional[list[str]]:
+        "See the class docstring"
+        return self._raw.get("target-compatibles")
 
     @property
     def min(self) -> Optional[int]:
@@ -1892,6 +1902,22 @@ class Node:
         required = prop_spec.required
         default = prop_spec.default
         specifier_space = prop_spec.specifier_space
+        target_compatibles = prop_spec.target_compatibles
+
+        def validate_target_compatibles(target: Node, index: Optional[int] = None) -> None:
+            if not target_compatibles:
+                return
+
+            if any(compat in target.compats for compat in target_compatibles):
+                return
+
+            idx = f"[{index}]" if index is not None else ""
+            _err(
+                f"property '{name}{idx}' on {node.path} in {self.edt.dts_path} "
+                f"points to {target.path}, but this node has compatibles {target.compats!r}; "
+                f"expected one of {target_compatibles!r} from "
+                f"'target-compatibles' in {binding_path}"
+            )
 
         if prop and deprecated:
             msg = (
@@ -1944,10 +1970,15 @@ class Node:
             return prop.to_strings()
 
         if prop_type == "phandle":
-            return self.edt._node2enode[prop.to_node()]
+            target = self.edt._node2enode[prop.to_node()]
+            validate_target_compatibles(target)
+            return target
 
         if prop_type == "phandles":
-            return [self.edt._node2enode[node] for node in prop.to_nodes()]
+            targets = [self.edt._node2enode[node] for node in prop.to_nodes()]
+            for i, target in enumerate(targets):
+                validate_target_compatibles(target, i)
+            return targets
 
         if prop_type == "phandle-array":
             # This type is a bit high-level for dtlib as it involves
@@ -3086,7 +3117,8 @@ def _check_prop_by_type(prop_name: str,
                         options: dict,
                         binding_path: Optional[str]) -> None:
     # Binding._check_properties() helper. Checks 'type:', 'default:',
-    # 'const:', 'specifier-space:', 'min:' and 'max:' for the property
+    # 'const:', 'specifier-space:', 'target-compatibles:', 'min:' and 'max:'
+    # for the property
     # named 'prop_name'
 
     prop_type = options.get("type")
@@ -3096,6 +3128,7 @@ def _check_prop_by_type(prop_name: str,
     max_val = options.get("max")
     min_len = options.get("min-len")
     max_len = options.get("max-len")
+    target_compatibles = options.get("target-compatibles")
 
     if prop_type is None:
         _err(f"missing 'type:' for '{prop_name}' in 'properties' in "
@@ -3120,6 +3153,23 @@ def _check_prop_by_type(prop_name: str,
         _err(f"'{prop_name}' in 'properties:' in '{binding_path}' "
              f"has type 'phandle-array' and its name does not end in 's', "
              f"but no 'specifier-space' was provided.")
+
+    if target_compatibles is not None:
+        if prop_type not in {"phandle", "phandles"}:
+            _err(f"'target-compatibles' in 'properties: {prop_name}' "
+                 f"has type '{prop_type}', expected 'phandle' or 'phandles'")
+
+        if not isinstance(target_compatibles, list):
+            _err(f"'target-compatibles' for '{prop_name}' in '{binding_path}' "
+                 "is not a list")
+
+        if not target_compatibles:
+            _err(f"'target-compatibles' for '{prop_name}' in '{binding_path}' "
+                 "must not be empty")
+
+        if not all(isinstance(compat, str) for compat in target_compatibles):
+            _err(f"'target-compatibles' for '{prop_name}' in '{binding_path}' "
+                 "must be a list of strings")
 
     # If you change const_types, be sure to update the type annotation
     # for PropertySpec.const.
