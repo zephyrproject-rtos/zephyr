@@ -709,12 +709,12 @@ class ProjectBuilder(FilterBuilder):
         b_log = f"{build_dir}/build.log"
         v_log = f"{build_dir}/valgrind.log"
         d_log = f"{build_dir}/device.log"
-        pytest_log = f"{build_dir}/twister_harness.log"
+        script_log = f"{build_dir}/twister_harness.log"
 
         if os.path.exists(v_log) and "Valgrind" in self.instance.reason:
             self.log_info(f"{v_log}", inline_logs)
-        elif os.path.exists(pytest_log) and os.path.getsize(pytest_log) > 0:
-            self.log_info(f"{pytest_log}", inline_logs, log_testcases=True)
+        elif os.path.exists(script_log) and os.path.getsize(script_log) > 0:
+            self.log_info(f"{script_log}", inline_logs, log_testcases=True)
         elif os.path.exists(h_log) and os.path.getsize(h_log) > 0:
             self.log_info(f"{h_log}", inline_logs)
         elif os.path.exists(he_log) and os.path.getsize(he_log) > 0:
