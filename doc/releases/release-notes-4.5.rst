@@ -945,6 +945,7 @@ New Shields
 * :ref:`NXP MX8 DSI OLED1A Panel <nxp_mx8_dsi_oled1a>`
 * :ref:`NXP MX9 DSI OLED Panel <nxp_mx9_dsi_oled>`
 * :ref:`OD-6010 SLCD Panel Shield <od_6010_shield>`
+* :ref:`RAK19007 WisBlock Base Board 2nd Gen <rakwireless_rak19007>`
 * :ref:`Seeed Studio COB LED Driver Board for XIAO <seeed_xiao_cob_led>`
 * :ref:`ST B-M2MEM-PACK1 M.2 serial memory pack <st_b_m2mem_pack1_shield>`
 * :ref:`X-NUCLEO-67W61M1: Wi-Fi 6 expansion board <x_nucleo_67w61m1>`
