@@ -74,6 +74,7 @@ static void thread_func(void *p1, void *p2, void *p3)
  *
  * @see LOG_INF()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-8
  */
 ZTEST(log_immediate, test_log_immediate_preemption)
 {

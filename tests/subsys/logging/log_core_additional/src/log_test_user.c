@@ -42,6 +42,8 @@ LOG_MODULE_REGISTER(user);
  *
  * @see log_process()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-6
+ * @verifies ZEP-SRS-11-19
  */
 ZTEST_USER(test_log_core_additional, test_log_from_user)
 {
@@ -75,6 +77,7 @@ ZTEST_USER(test_log_core_additional, test_log_from_user)
  *
  * @see LOG_HEXDUMP_INF()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-12
  */
 ZTEST_USER(test_log_core_additional, test_log_hexdump_from_user)
 {
@@ -112,6 +115,7 @@ static void call_log_generic(uint32_t source_id, const char *fmt, ...)
  *
  * @see log_generic()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
  */
 ZTEST_USER(test_log_core_additional, test_log_generic_user)
 {
@@ -140,6 +144,7 @@ ZTEST_USER(test_log_core_additional, test_log_generic_user)
  *
  * @see log_filter_set()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-10
  */
 ZTEST_USER(test_log_core_additional, test_log_filter_set)
 {
@@ -164,6 +169,7 @@ ZTEST_USER(test_log_core_additional, test_log_filter_set)
  *
  * @see log_panic()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-13
  */
 ZTEST_USER(test_log_core_additional, test_log_panic)
 {
@@ -194,6 +200,8 @@ ZTEST_USER(test_log_core_additional, test_log_panic)
  *
  * @see LOG_PRINTK()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-19
+ * @verifies ZEP-SRS-11-20
  */
 ZTEST_USER(test_log_core_additional, test_log_printk_from_user)
 {

@@ -74,6 +74,7 @@ static void uart_emul_before(void *f)
  *
  * @see LOG_RAW()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-5
  */
 ZTEST_F(log_backend_uart, test_log_backend_uart_multi_instance)
 {

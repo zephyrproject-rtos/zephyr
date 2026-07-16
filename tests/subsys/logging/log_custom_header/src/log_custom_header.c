@@ -69,6 +69,7 @@ LOG_BACKEND_DEFINE(backend, backend_api, false);
  *
  * @see log_msg_get_package()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
  */
 ZTEST(log_custom_header, test_macro_prefix)
 {

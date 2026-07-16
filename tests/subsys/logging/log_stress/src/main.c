@@ -212,6 +212,7 @@ static void test_stress(uint32_t delay)
  *
  * @see LOG_INF()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-6
  */
 ZTEST(log_stress, test_stress_fast_processing)
 {
@@ -240,6 +241,7 @@ ZTEST(log_stress, test_stress_fast_processing)
  *
  * @see LOG_INF()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-6
  */
 ZTEST(log_stress, test_stress_slow_processing)
 {

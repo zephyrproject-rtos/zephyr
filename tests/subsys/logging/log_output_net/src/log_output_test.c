@@ -68,6 +68,9 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_LOG_BACKEND_NET), "syslog backend not enabled");
  *
  * @see log_output_process()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-5
+ * @verifies ZEP-SRS-11-2
  */
 ZTEST(test_log_output_net, test_format)
 {

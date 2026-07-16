@@ -132,6 +132,7 @@ LOG_BACKEND_DEFINE(backend2, backend_api, true, &context2);
  *
  * @see log_backend_enable()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-5
  */
 ZTEST(log_backend_init, test_log_backends_initialization)
 {

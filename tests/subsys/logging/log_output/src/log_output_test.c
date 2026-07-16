@@ -64,6 +64,7 @@ LOG_OUTPUT_DEFINE(log_output, mock_output_func,
  *
  * @see log_output_process()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
  */
 ZTEST(test_log_output, test_no_flags)
 {
@@ -100,6 +101,7 @@ ZTEST(test_log_output, test_no_flags)
  *
  * @see log_output_process()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
  */
 ZTEST(test_log_output, test_raw)
 {
@@ -135,6 +137,7 @@ ZTEST(test_log_output, test_raw)
  *
  * @see log_output_process()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
  */
 ZTEST(test_log_output, test_no_flags_dname)
 {
@@ -170,6 +173,8 @@ ZTEST(test_log_output, test_no_flags_dname)
  *
  * @see log_output_process()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-7
  */
 ZTEST(test_log_output, test_level_flag)
 {
@@ -207,6 +212,9 @@ ZTEST(test_log_output, test_level_flag)
  *
  * @see log_output_process()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-14
  */
 ZTEST(test_log_output, test_ts_flag)
 {
@@ -246,6 +254,9 @@ ZTEST(test_log_output, test_ts_flag)
  *
  * @see log_output_process()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-2
+ * @verifies ZEP-SRS-11-14
  */
 ZTEST(test_log_output, test_format_ts)
 {
@@ -292,6 +303,7 @@ ZTEST(test_log_output, test_format_ts)
  *
  * @see log_output_timestamp_to_us()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
  */
 ZTEST(test_log_output, test_ts_to_us)
 {
@@ -339,6 +351,8 @@ static bool use_func_prefix(uint8_t level)
  *
  * @see log_output_process()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-7
  */
 ZTEST(test_log_output, test_levels)
 {
@@ -398,6 +412,8 @@ ZTEST(test_log_output, test_levels)
  *
  * @see log_output_process()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
+ * @verifies ZEP-SRS-11-7
  */
 ZTEST(test_log_output, test_colors)
 {
@@ -483,6 +499,7 @@ ZTEST(test_log_output, test_colors)
  *
  * @see log_output_process()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
  */
 ZTEST(test_log_output, test_thread_id)
 {
@@ -535,6 +552,7 @@ ZTEST(test_log_output, test_thread_id)
  *
  * @see log_output_process()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-3
  */
 ZTEST(test_log_output, test_skip_src)
 {
