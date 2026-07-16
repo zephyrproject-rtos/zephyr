@@ -23,6 +23,13 @@ config VIDEO_INIT_PRIORITY
 	help
 	  System initialization priority for video drivers.
 
+config VIDEO_BUFFER_POOL_ALLOC_OPS
+	bool "Use user-managed video buffer allocation"
+	help
+	  When enabled, video buffers allocation is in charge of the user
+	  instead of pre-reserving a fixed video buffer pool. This is
+	  useful when the pool is not always needed to save memory.
+
 config VIDEO_BUFFER_POOL_HEAP_SIZE
 	int "Size in byte of the video buffer pool"
 	default 2097152
