@@ -319,6 +319,13 @@ class ConstType:
     def __repr__(self):
         return f"<const {self.child_type}>"
 
+    @property
+    def size(self):
+        # Delegate to the underlying type so that arrays of const-qualified
+        # kernel objects (e.g. "const struct device foo[N]") can compute the
+        # per-element stride. Mirrors has_kobject()/get_kobjects() delegation.
+        return type_env[self.child_type].size
+
     def has_kobject(self):
         if self.child_type not in type_env:
             return False
