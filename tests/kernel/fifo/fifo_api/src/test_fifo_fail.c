@@ -30,6 +30,7 @@
  * - Both k_fifo_get() calls return NULL.
  *
  * @see k_fifo_get()
+ * @verifies ZEP-SRS-24-7
  */
 ZTEST(fifo_api, test_fifo_get_fail)
 {
