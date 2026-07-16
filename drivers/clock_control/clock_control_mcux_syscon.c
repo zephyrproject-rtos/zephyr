@@ -167,6 +167,23 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_anactrl_freqme)
+	if ((uint32_t)sub_system == MCUX_ANALOG_CTRL_CLK) {
+		/* The ANACTRL freq-measure register block has its own gate
+		 * (kCLOCK_Freqme) in addition to the analog-control gate; both
+		 * must be enabled for FREQ_ME_CTRL to be writable.
+		 */
+		CLOCK_EnableClock(kCLOCK_AnalogCtrl);
+		CLOCK_EnableClock(kCLOCK_Freqme);
+	}
+#endif
+
+#if defined(CONFIG_SOC_SERIES_MCXW2XX)
+	if ((uint32_t)sub_system == MCUX_FRO_1M_CLK) {
+		CLOCK_Enable1MFRO(true);
+	}
+#endif
+
 #if defined(CONFIG_PINCTRL_NXP_PORT)
 	switch ((uint32_t)sub_system) {
 #if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
@@ -270,6 +287,12 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	CLOCK_EnableClock(kCLOCK_Rtc0);
 #endif /* CONFIG_SOC_FAMILY_MCXN */
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(rtc), okay) */
+
+#if defined(CONFIG_SOC_SERIES_MCXW2XX)
+	if ((uint32_t)sub_system == MCUX_RTC_CLK) {
+		CLOCK_EnableClock(kCLOCK_Rtc);
+	}
+#endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(opamp0), okay)
 	if ((uint32_t)sub_system == MCUX_OPAMP0_CLK) {
@@ -471,6 +494,12 @@ static int mcux_lpc_syscon_clock_control_off(const struct device *dev,
 	}
 #endif /* FSL_FEATURE_SOC_EQDC_COUNT > 1 */
 #endif
+
+#if defined(CONFIG_SOC_SERIES_MCXW2XX)
+	if ((uint32_t)sub_system == MCUX_FRO_1M_CLK) {
+		CLOCK_Enable1MFRO(false);
+	}
+#endif
 	return 0;
 }
 
@@ -514,6 +543,14 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		break;
 	case MCUX_EXT_CLK:
 		*rate = CLOCK_GetSysOscFreq();
+		break;
+#endif
+#if defined(CONFIG_SOC_SERIES_MCXW2XX)
+	case MCUX_FRO_1M_CLK:
+		*rate = 1000000U;
+		break;
+	case MCUX_OSC32K_CLK:
+		*rate = 32768U;
 		break;
 #endif
 

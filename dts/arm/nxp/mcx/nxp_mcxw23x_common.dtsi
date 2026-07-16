@@ -212,6 +212,7 @@
 		compatible = "nxp,lpc-rtc";
 		reg = <0x2c000 0x1000>;
 		interrupts = <29 1>;
+		clocks = <&syscon MCUX_RTC_CLK>;
 		status = "okay";
 
 		rtc_highres: rtc_highres {
