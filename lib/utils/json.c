@@ -987,7 +987,11 @@ static int64_t decode_value(struct json_obj *obj,
 		*value->end = '\0';
 		*str = value->start;
 
-		return 0;
+		size_t escaped_len = value->end - value->start;
+
+		/* Safe approach: never copy more than (size - 1) bytes to leave room for null */
+		size_t safe_len = min( escaped_len,  descr->field.size - 1);
+		return json_unescape_string(value->start, *str, safe_len, descr->field.size);;
 	}
 	case JSON_TOK_STRING_BUF: {
 		char *str = field;
