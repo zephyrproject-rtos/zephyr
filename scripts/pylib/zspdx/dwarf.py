@@ -167,7 +167,9 @@ def _collect_lines(
             if state is None or state.end_sequence or state.line == 0:
                 continue
             try:
-                path = _resolve_file(state.file, file_entries, include_dirs, comp_dir)
+                path = _resolve_file(
+                    state.file, file_entries, include_dirs, comp_dir, lp_header.version
+                )
             except (IndexError, AttributeError):
                 continue
             if known_paths is not None and path not in known_paths:
@@ -180,16 +182,31 @@ def _resolve_file(
     file_entries,
     include_dirs,
     comp_dir: str,
+    version: int,
 ) -> str:
-    """Resolve a 1-based DWARF file-table index to an absolute realpath."""
-    fe = file_entries[file_idx - 1]
+    """Resolve a DWARF file-table index to an absolute realpath.
+
+    Up to v4 the file table is 1-based and directory 0 is implicitly the
+    compilation directory; from v5 both tables are 0-based and directory 0 is
+    an explicit entry holding it.
+    """
+    if version >= 5:
+        fe = file_entries[file_idx]
+    else:
+        fe = file_entries[file_idx - 1]
+
     name = fe.name.decode("utf-8", errors="replace")
     dir_idx = fe.dir_index
-    if dir_idx == 0:
+
+    if version >= 5:
+        raw = include_dirs[dir_idx].decode("utf-8", errors="replace")
+        base = raw if os.path.isabs(raw) else os.path.join(comp_dir, raw)
+    elif dir_idx == 0:
         base = comp_dir
     else:
         raw = include_dirs[dir_idx - 1].decode("utf-8", errors="replace")
         base = raw if os.path.isabs(raw) else os.path.join(comp_dir, raw)
+
     full = name if os.path.isabs(name) else os.path.join(base, name)
     return os.path.realpath(full)
 
