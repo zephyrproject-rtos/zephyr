@@ -52,6 +52,7 @@ enum {
 	FLASH_CMD_ENTER_4BYTE,
 	FLASH_CMD_RESET_ENABLE,
 	FLASH_CMD_RESET_MEMORY,
+	FLASH_CMD_WRITE_ENABLE_SPI,
 	FLASH_CMD_SEQ_MAX
 };
 
@@ -62,6 +63,8 @@ struct flash_xspi_device {
 	bool mode_enable;
 	bool addr_4byte;
 	uint8_t mode_enable_value;
+	uint8_t mode_enable_write_enable_seq;
+	uint16_t mode_enable_delay_us;
 	uint8_t status_read_size;
 };
 
@@ -154,6 +157,61 @@ static const uint32_t flash_xspi_lut_mx25um[][5] = {
 		},
 };
 
+/* Micron MT35X uses SDR opcodes on eight pads with DDR address and data. */
+static const uint32_t flash_xspi_lut_mt35x[][5] = {
+	[FLASH_CMD_MEM_READ] = {
+		XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_8PAD, 0xFD,
+			     kXSPI_Command_RADDR_DDR, kXSPI_8PAD, 0x20),
+		XSPI_LUT_SEQ(kXSPI_Command_DUMMY_SDR, kXSPI_8PAD, 0x03,
+			     kXSPI_Command_READ_DDR, kXSPI_8PAD, 0x04),
+	},
+	[FLASH_CMD_READ_STATUS] = {
+		XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_8PAD, 0x05,
+			     kXSPI_Command_DUMMY_SDR, kXSPI_8PAD, 0x08),
+		XSPI_LUT_SEQ(kXSPI_Command_READ_DDR, kXSPI_8PAD, 0x08,
+			     kXSPI_Command_STOP, kXSPI_1PAD, 0x00),
+	},
+	[FLASH_CMD_WRITE_ENABLE] = {
+		XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_8PAD, 0x06,
+			     kXSPI_Command_STOP, kXSPI_1PAD, 0x00),
+	},
+	[FLASH_CMD_PAGE_PROGRAM] = {
+		XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_8PAD, 0x12,
+			     kXSPI_Command_RADDR_DDR, kXSPI_8PAD, 0x20),
+		XSPI_LUT_SEQ(kXSPI_Command_WRITE_DDR, kXSPI_8PAD, 0x04,
+			     kXSPI_Command_STOP, kXSPI_1PAD, 0x00),
+	},
+	[FLASH_CMD_ERASE_SECTOR] = {
+		XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_8PAD, 0x21,
+			     kXSPI_Command_RADDR_DDR, kXSPI_8PAD, 0x20),
+	},
+	[FLASH_CMD_READ_ID] = {
+		XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_8PAD, 0x9F,
+			     kXSPI_Command_DUMMY_SDR, kXSPI_8PAD, 0x08),
+		XSPI_LUT_SEQ(kXSPI_Command_READ_DDR, kXSPI_8PAD, 0x08,
+			     kXSPI_Command_STOP, kXSPI_1PAD, 0x00),
+	},
+	/* CFR0V uses a 24-bit register address before entering octal mode. */
+	[FLASH_CMD_MODE_ENABLE] = {
+		XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_1PAD, 0x81,
+			     kXSPI_Command_RADDR_SDR, kXSPI_1PAD, 0x18),
+		XSPI_LUT_SEQ(kXSPI_Command_WRITE_SDR, kXSPI_1PAD, 0x01,
+			     kXSPI_Command_STOP, kXSPI_1PAD, 0x00),
+	},
+	[FLASH_CMD_RESET_ENABLE] = {
+		XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_1PAD, SPI_NOR_CMD_RESET_EN,
+			     kXSPI_Command_STOP, kXSPI_1PAD, 0x00),
+	},
+	[FLASH_CMD_RESET_MEMORY] = {
+		XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_1PAD, SPI_NOR_CMD_RESET_MEM,
+			     kXSPI_Command_STOP, kXSPI_1PAD, 0x00),
+	},
+	[FLASH_CMD_WRITE_ENABLE_SPI] = {
+		XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_1PAD, 0x06,
+			     kXSPI_Command_STOP, kXSPI_1PAD, 0x00),
+	},
+};
+
 static const uint32_t flash_xspi_lut_w25q512nw[][5] = {
 	[FLASH_CMD_MEM_READ] = {
 			XSPI_LUT_SEQ(kXSPI_Command_SDR, kXSPI_1PAD, 0xEC,
@@ -231,10 +289,40 @@ static const struct flash_xspi_device flash_xspi_mxicy_mx25um51345g __maybe_unus
 	},
 	.mode_enable = true,
 	.mode_enable_value = 0x02, /* CR2: select DTR-OPI. */
+	.mode_enable_write_enable_seq = FLASH_CMD_WRITE_ENABLE,
 	.addr_4byte = false,
 	.status_read_size = 2,
 	.reset_assert_us = 10, /* tRLRH: Reset# low pulse width. */
 	.reset_recovery_us = 35, /* tREADY1: reset recovery time from standby. */
+};
+
+static const struct flash_xspi_device flash_xspi_micron_mt35xu512aba __maybe_unused = {
+	.memc = {
+		.xspi_dev_config = {
+			.deviceInterface = kXSPI_StrandardExtendedSPI,
+			.interfaceSettings.strandardExtendedSPISettings.pageSize = 256,
+			.CSHoldTime = 2,
+			.CSSetupTime = 2,
+			.addrMode = kXSPI_DeviceByteAddressable,
+			.columnAddrWidth = 0,
+			.enableCASInterleaving = false,
+			.ptrDeviceDdrConfig =
+				&(xspi_device_ddr_config_t){
+					.ddrDataAlignedClk =
+						kXSPI_DDRDataAlignedWith2xInternalRefClk,
+					.enableByteSwapInOctalMode = false,
+					.enableDdr = true,
+				},
+			.deviceSize = {64 * 1024, 64 * 1024},
+		},
+		.lut_array = &flash_xspi_lut_mt35x[0][0],
+		.lut_count = FLASH_MCUX_XSPI_LUT_ARRAY_SIZE(flash_xspi_lut_mt35x),
+	},
+	.mode_enable = true,
+	.mode_enable_value = 0xE7,
+	.mode_enable_write_enable_seq = FLASH_CMD_WRITE_ENABLE_SPI,
+	.mode_enable_delay_us = 100,
+	.status_read_size = 2,
 };
 
 static const struct flash_xspi_device flash_xspi_winbond_w25q512nw __maybe_unused = {
@@ -255,6 +343,7 @@ static const struct flash_xspi_device flash_xspi_winbond_w25q512nw __maybe_unuse
 	},
 	.mode_enable = true,
 	.mode_enable_value = 0x02, /* SR2: set QE (bit 1) */
+	.mode_enable_write_enable_seq = FLASH_CMD_WRITE_ENABLE,
 	.addr_4byte = false,
 	.status_read_size = 1,
 	.reset_assert_us = 0,
@@ -499,7 +588,12 @@ static int flash_mcux_xspi_mode_enable(const struct device *dev)
 	xspi_transfer_t flashXfer = {0};
 	int ret;
 
-	ret = flash_mcux_xspi_write_enable(dev);
+	flashXfer.deviceAddress = data->amba_address;
+	flashXfer.cmdType = kXSPI_Command;
+	flashXfer.seqIndex = data->flash_dev->mode_enable_write_enable_seq;
+	flashXfer.targetGroup = kXSPI_TargetGroup0;
+
+	ret = memc_mcux_xspi_transfer(xspi_dev, &flashXfer);
 	if (ret < 0) {
 		return ret;
 	}
@@ -516,6 +610,8 @@ static int flash_mcux_xspi_mode_enable(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
+
+	k_busy_wait(data->flash_dev->mode_enable_delay_us);
 
 	return flash_xspi_nor_wait_bus_busy(dev);
 }
@@ -803,12 +899,14 @@ static DEVICE_API(flash, flash_mcux_xspi_api) = {
 #define FLASH_MCUX_XSPI_SOFT_RESET(n)
 #endif
 
-#define FLASH_MCUX_XSPI_CHIP_DEV(node_id)					\
+#define FLASH_MCUX_XSPI_CHIP_DEV(node_id)                                                          \
 	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, mxicy_mx25um51345g),		\
 		    (&flash_xspi_mxicy_mx25um51345g,),				\
 	(COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, winbond_w25q512nw),		\
 		    (&flash_xspi_winbond_w25q512nw,),				\
-		    ())))
+	(COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, micron_mt35xu512aba),	\
+		    (&flash_xspi_micron_mt35xu512aba,),				\
+		    ())))))
 
 #define FLASH_MCUX_XSPI_NOR_DEV(n)						\
 	GET_ARG_N(1, DT_INST_FOREACH_CHILD_STATUS_OKAY(n, FLASH_MCUX_XSPI_CHIP_DEV) NULL)
