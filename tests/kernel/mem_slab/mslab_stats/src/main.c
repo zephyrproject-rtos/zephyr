@@ -19,6 +19,7 @@ K_MEM_SLAB_DEFINE(kmslab, BLK_SZ, NUM_BLOCKS, 4);
  * with invalid parameters and verify they return -EINVAL.
  *
  * @ingroup kernel_memory_slab_tests
+ * @verifies ZEP-SRS-9-17
  */
 ZTEST(lib_mem_slab_stats_test, test_mem_slab_stats_invalid_params)
 {
@@ -56,6 +57,7 @@ ZTEST(lib_mem_slab_stats_test, test_mem_slab_stats_invalid_params)
  * allocations and frees, and that resetting the maximum works.
  *
  * @ingroup kernel_memory_slab_tests
+ * @verifies ZEP-SRS-9-17
  */
 ZTEST(lib_mem_slab_stats_test, test_mem_slab_runtime_stats)
 {
