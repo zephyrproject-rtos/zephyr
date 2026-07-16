@@ -327,6 +327,8 @@ K_THREAD_DEFINE(load_high, THREAD_STACK_SIZE, load_store_high, NULL, NULL, NULL,
  * context switches.
  *
  * @ingroup kernel_fpsharing_tests
+ * @verifies ZEP-SRS-29-1
+ * @verifies ZEP-SRS-29-4
  */
 ZTEST(fpu_sharing_generic, test_load_store)
 {
