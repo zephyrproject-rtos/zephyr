@@ -198,6 +198,7 @@ def debug_die(die, text):
 DW_OP_addr = 0x3
 DW_OP_plus_uconst = 0x23
 DW_OP_fbreg = 0x91
+DW_OP_addrx = 0xA1
 STACK_TYPE = "z_thread_stack_element"
 thread_counter = 0
 sys_mutex_counter = 0
@@ -632,7 +633,7 @@ def find_kobjects(elf, syms):
             continue
 
         opcode = loc.value[0]
-        if opcode != DW_OP_addr:
+        if opcode not in (DW_OP_addr, DW_OP_addrx):
             # Check if frame pointer offset DW_OP_fbreg
             if opcode == DW_OP_fbreg:
                 debug_die(die, f"kernel object '{name}' found on stack")
@@ -641,7 +642,16 @@ def find_kobjects(elf, syms):
             continue
 
         endian_code = "<" if elf.little_endian else ">"
-        if "CONFIG_64BIT" in syms:
+        if opcode == DW_OP_addrx:
+            # DWARF v5: the operand is a ULEB128 index into .debug_addr rather
+            # than an inline address.
+            addr_index, uconst_idx = decode_uleb128(loc.value, 1)
+            try:
+                addr = die.dwarfinfo.get_addr(die.cu, addr_index)
+            except Exception:
+                debug_die(die, f"kernel object '{name}' unresolvable DW_OP_addrx index")
+                continue
+        elif "CONFIG_64BIT" in syms:
             addr = struct.unpack(endian_code + "Q", bytes(loc.value[1:9]))[0]
             uconst_idx = 9
         else:
