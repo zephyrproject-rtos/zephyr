@@ -152,6 +152,24 @@
 	};
 
 	soc {
+		sysctl: syscon@400af000 {
+			compatible = "syscon";
+			reg = <0x400af000 0x2000>;
+			status = "disabled";
+		};
+
+		cpuss: syscon@40400000 {
+			compatible = "syscon";
+			reg = <0x40400000 0x2000>;
+			status = "disabled";
+		};
+
+		factoryregion: syscon@41c40000 {
+			compatible = "syscon";
+			reg = <0x41c40000 0x400>;
+			status = "disabled";
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 		};
