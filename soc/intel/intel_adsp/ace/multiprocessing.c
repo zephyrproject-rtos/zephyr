@@ -34,38 +34,49 @@
 
 #define ACE_INTC_IRQ DT_IRQN(DT_NODELABEL(ace_intc))
 
-#ifdef CONFIG_XTENSA_MMU
-#define IPI_TLB_FLUSH 0x01
-#endif
+#define IPI_SCHED     BIT(0)
+#define IPI_TLB_FLUSH BIT(1)
+
+/** Per-CPU pending IPIs. */
+static atomic_val_t cpu_pending_ipi[CONFIG_MP_MAX_NUM_CPUS];
 
 static void ipc_isr(void *arg)
 {
 	uint32_t cpu_id = arch_proc_id();
 
-#if defined(CONFIG_XTENSA_MMU) && (CONFIG_MP_MAX_NUM_CPUS > 1)
-	uint32_t msg = IDC[cpu_id].agents[0].ipc.tdr & ~INTEL_ADSP_IPC_BUSY;
+	/* Grab pending IPIs from the CSR register.
+	 *
+	 * We are not writing back to the CSR register to clear
+	 * the bits at this point, as that will also clear
+	 * the CST register for the sender. This is because
+	 * send_ipi() checks for cleared CST register before
+	 * sending IPI, and we don't want it to send new IPIs
+	 * while we are stilling processing pending ones.
+	 */
+	uint32_t pending_ipi = IDC[cpu_id].agents[0].ipc.csr;
 
-	if (msg == IPI_TLB_FLUSH) {
+#if defined(CONFIG_XTENSA_MMU) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+	if ((pending_ipi & IPI_TLB_FLUSH) == IPI_TLB_FLUSH) {
 		xtensa_mmu_tlb_shootdown();
 	}
 #endif
 
-	/*
-	 * Clearing the BUSY bits in both TDR and TDA are needed to
-	 * complete an IDC message. If we do only one (and not both),
+#ifdef CONFIG_SMP
+	if ((pending_ipi & IPI_SCHED) == IPI_SCHED) {
+		void z_sched_ipi(void);
+
+		z_sched_ipi();
+	}
+#endif
+
+	/* Write 1s to clear the bits in the CSR register and
+	 * thus zeroing out the CST register on the other side
+	 * to complete the IDC message. Without this step,
 	 * the other side will not be able to send another IDC
 	 * message as the hardware still thinks you are processing
 	 * the IDC message (and thus will not send another one).
-	 * On TDR, it is to write one to clear, while on TDA, it is
-	 * to write zero to clear.
 	 */
-	IDC[cpu_id].agents[0].ipc.tdr = INTEL_ADSP_IPC_BUSY;
-	IDC[cpu_id].agents[0].ipc.tda = 0;
-
-#ifdef CONFIG_SMP
-	void z_sched_ipi(void);
-	z_sched_ipi();
-#endif
+	IDC[cpu_id].agents[0].ipc.csr = pending_ipi;
 }
 
 #define DFIDCCP			0x2020
@@ -91,11 +102,21 @@ void soc_mp_init(void)
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (int i = 0; i < num_cpus; i++) {
+		/* Initialize pending IPI bitfield. */
+		atomic_clear(&cpu_pending_ipi[i]);
+
 		/* DINT has one bit per IPC, unmask only IPC "Ax" on core "x" */
 		ACE_DINT[i].ie[ACE_INTL_IDCA] = BIT(i);
 
-		/* Agent A should signal only BUSY interrupts */
-		IDC[i].agents[0].ipc.ctl = BIT(0); /* IPCTBIE */
+		/* Agent A should signal only CST/CSR interrupts.
+		 * Manual says to preserve the upper 29 bits.
+		 */
+		IDC[i].agents[0].ipc.ctl = (IDC[i].agents[0].ipc.ctl & ~0x7U) | BIT(2);
+
+		/* Writing 1s to clear the CSR register so we can start sending
+		 * IDC messages.
+		 */
+		IDC[i].agents[0].ipc.csr = IDC[i].agents[0].ipc.csr;
 	}
 
 	/* Set the core 0 active */
@@ -207,26 +228,63 @@ void soc_mp_startup(uint32_t cpu)
 /**
  * @brief Send a IPI to other processors.
  *
- * @note: Leave the MSB clear when passing @param msg.
- *
- * @param msg Message to be sent (31-bit integer).
+ * @param ipi IPI to be sent.
+ * @param cpu_bitmap Bitmask of target CPUs.
  */
-#ifndef CONFIG_XTENSA_MMU
-ALWAYS_INLINE
-#endif
-static void send_ipi(uint32_t msg, uint32_t cpu_bitmap)
+static void send_ipi(uint32_t ipi, uint32_t cpu_bitmap)
 {
 	uint32_t curr = arch_proc_id();
 
-	/* Signal agent B[n] to cause an interrupt from agent A[n] */
 	unsigned int num_cpus = arch_num_cpus();
+	uint32_t cpu_ipi_defer = 0U;
 
+	/* Always exclude current CPU */
+	uint32_t other_cpus = cpu_bitmap & ~BIT(curr);
+
+	/* Set pending IPI bit for active target CPUs.
+	 *
+	 * Note that the bit setting loop and the IPI sending loop
+	 * are separated as a subtle way to reduce repeated IPIs
+	 * being sent to one CPU. If multiple CPUs are in send_ipi()
+	 * sending the same IPI message, the slight delay between
+	 * setting the bits and raising IRQ means we can group these
+	 * together to only send once. Otherwise, the later incoming
+	 * IPIs will need to be deferred and thus raising unnecessary
+	 * interrupts.
+	 */
 	for (int core = 0; core < num_cpus; core++) {
-		if ((core != curr) && soc_cpus_active[core] &&
-		    ((cpu_bitmap & BIT(core)) != 0)) {
-			IDC[core].agents[1].ipc.idr = msg | INTEL_ADSP_IPC_BUSY;
+		if (soc_cpus_active[core]) {
+			if ((other_cpus & BIT(core)) != 0U) {
+				atomic_or(&cpu_pending_ipi[core], ipi);
+			}
+		} else {
+			/* Ignore non-active CPU */
+			other_cpus &= ~BIT(core);
 		}
 	}
+
+	/* Send IPI to target CPUs. */
+	for (int core = 0; core < num_cpus; core++) {
+		if ((other_cpus & BIT(core)) != 0U) {
+			/* Note that if CST register is not zero, target CPU is still processing
+			 * the last set of pending IPIs. We cannot send another batch there so
+			 * we must defer.
+			 */
+			if (IDC[core].agents[1].ipc.cst == 0U) {
+				uint32_t pending = (uint32_t)atomic_clear(&cpu_pending_ipi[core]);
+
+				/* Signal agent B[n] to cause an interrupt from agent A[n] */
+				if (pending != 0U) {
+					IDC[core].agents[1].ipc.cst = pending;
+				}
+			} else {
+				cpu_ipi_defer |= BIT(core);
+			}
+		}
+	}
+
+	/* Requeue IPIs to target CPUs that we have not notified. */
+	flag_ipi(cpu_ipi_defer);
 }
 
 #if defined(CONFIG_XTENSA_MMU) && (CONFIG_MP_MAX_NUM_CPUS > 1)
@@ -238,12 +296,12 @@ void xtensa_mmu_tlb_ipi(void)
 
 void arch_sched_broadcast_ipi(void)
 {
-	send_ipi(0, IPI_ALL_CPUS_MASK);
+	send_ipi(IPI_SCHED, IPI_ALL_CPUS_MASK);
 }
 
 void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 {
-	send_ipi(0, cpu_bitmap);
+	send_ipi(IPI_SCHED, cpu_bitmap);
 }
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
