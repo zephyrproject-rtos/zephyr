@@ -493,6 +493,13 @@ function updateBoardCount() {
     ` ${visibleShields.length} of ${shields.length} shields`;
 }
 
+function updateOptionsAvailability(selectElement, availableValues) {
+  Array.from(selectElement.options).forEach((option) => {
+    if (option.value === "") return; // "Any" placeholder is always selectable
+    option.disabled = !availableValues.has(option.value);
+  });
+}
+
 function wildcardMatch(pattern, str) {
   // Convert wildcard pattern to regex
   // Escape special regex characters except *
@@ -802,6 +809,9 @@ function filterBoards() {
 
   const boards = document.getElementsByClassName("board-card");
 
+  const availableArchs = new Set();
+  const availableVendors = new Set();
+
   Array.from(boards).forEach(function (board) {
     const boardName = board.getAttribute("data-name").toLowerCase();
     const boardArchs = (board.getAttribute("data-arch") || "").split(" ").filter(Boolean);
@@ -816,40 +826,46 @@ function filterBoards() {
       .filter(Boolean);
     const isShield = board.classList.contains("shield");
 
-    let matches = true;
-
     const selectedSocs = [...socSocSelect.selectedOptions].map(({ value }) => value);
 
-    if ((isShield && !showShields) || (!isShield && !showBoards)) {
-      matches = false;
-    } else {
-      // Check if board matches all selected compatibles (with wildcard support)
-      const compatiblesMatch =
-        selectedCompatibles.length === 0 ||
-        selectedCompatibles.every((pattern) =>
-          boardCompatibles.some((compatible) => wildcardMatch(pattern, compatible)),
-        );
+    const typeVisible = isShield ? showShields : showBoards;
+    const nameMatch = !nameInput || boardName.includes(nameInput);
+    const archMatch = !archSelect || boardArchs.includes(archSelect);
+    const memoryMatch =
+      !(isShield && (ramFiltered || flashFiltered)) &&
+      targetMemoryMatches(
+        boardTargetMemory,
+        ramMinBytes,
+        ramMaxBytes,
+        flashMinBytes,
+        flashMaxBytes,
+      );
+    const vendorMatch = !vendorSelect || boardVendor === vendorSelect;
+    const socMatch =
+      selectedSocs.length === 0 || selectedSocs.some((soc) => boardSocs.includes(soc));
+    const hwCapsMatch =
+      selectedHWTags.length === 0 ||
+      selectedHWTags.every((tag) => boardSupportedFeatures.includes(tag));
+    // Check if board matches all selected compatibles (with wildcard support)
+    const compatiblesMatch =
+      selectedCompatibles.length === 0 ||
+      selectedCompatibles.every((pattern) =>
+        boardCompatibles.some((compatible) => wildcardMatch(pattern, compatible)),
+      );
 
-      matches =
-        !(isShield && (ramFiltered || flashFiltered)) &&
-        !(nameInput && !boardName.includes(nameInput)) &&
-        !(archSelect && !boardArchs.includes(archSelect)) &&
-        targetMemoryMatches(
-          boardTargetMemory,
-          ramMinBytes,
-          ramMaxBytes,
-          flashMinBytes,
-          flashMaxBytes,
-        ) &&
-        !(vendorSelect && boardVendor !== vendorSelect) &&
-        (selectedSocs.length === 0 || selectedSocs.some((soc) => boardSocs.includes(soc))) &&
-        (selectedHWTags.length === 0 ||
-          selectedHWTags.every((tag) => boardSupportedFeatures.includes(tag))) &&
-        compatiblesMatch;
-    }
+    const otherFiltersMatch =
+      typeVisible && nameMatch && memoryMatch && socMatch && hwCapsMatch && compatiblesMatch;
 
-    board.classList.toggle("hidden", !matches);
+    // An arch/vendor option stays selectable as long as choosing it would yield at least one
+    // result under every *other* active filter
+    if (otherFiltersMatch && vendorMatch) boardArchs.forEach((arch) => availableArchs.add(arch));
+    if (otherFiltersMatch && archMatch) availableVendors.add(boardVendor);
+
+    board.classList.toggle("hidden", !(otherFiltersMatch && archMatch && vendorMatch));
   });
+
+  updateOptionsAvailability(document.getElementById("arch"), availableArchs);
+  updateOptionsAvailability(document.getElementById("vendor"), availableVendors);
 
   updateURL();
   updateBoardCount();

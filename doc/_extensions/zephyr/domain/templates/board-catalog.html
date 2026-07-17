@@ -38,7 +38,7 @@
     <label for="arch">Architecture</label>
     <div class="select-container">
       <select id="arch">
-        <option value="" disabled selected>Select an architecture</option>
+        <option value="" selected>Any architecture</option>
         {% for arch_name, arch in archs | items | sort(attribute='1.full_name') -%}
         <option value="{{ arch_name }}">{{ arch.full_name }}</option>
         {% endfor %}
@@ -50,7 +50,7 @@
     <label for="vendor">Vendor</label>
     <div class="select-container">
       <select id="vendor">
-        <option value="" disabled selected>Select a vendor</option>
+        <option value="" selected>Any vendor</option>
         {# Only show those vendors that have actual boards or shields in the catalog.
            Note: as sorting per vendor name is not feasible in Jinja, the option list is sorted in the JavaScript code later #}
         {% set board_vendors = boards | items | map(attribute='1.vendor') | unique | list %}
