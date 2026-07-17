@@ -140,6 +140,13 @@ LOG_MODULE_REGISTER(i2c_ite_it51xxx, CONFIG_I2C_LOG_LEVEL);
 #define SMB_SFCMA       0x18
 #define SMB_SFSAE       BIT(3)
 #define SMB_SFSFSA(n)   FIELD_PREP(GENMASK(2, 0), n)
+
+/* FIFO Control n Register: base1: 0x22, 0x48, 0x71, 0x96, 0xbd, 0xe5
+ *                          base2: 0x7d, 0xa5, 0xcd
+ */
+#define BLOCK_DONE_STATUS BIT(1)
+#define FIFO_ENABLE       BIT(0)
+
 /* Shared FIFO Base Address MSB for Master n: base1: 0x3e, 0x66, 0x8e, 0xb6, 0xde
  *                                            base2: 0x76, 0x9e, 0xc6
  */
@@ -255,11 +262,13 @@ BUILD_ASSERT((DT_PROP(DT_NODELABEL(i2c6), fifo_enable) == false) &&
 #define SMB_FIFO_MODE_MAX_SIZE  32
 #define SMB_FIFO_MODE_TOTAL_LEN 255
 #define SMB_MSG_BURST_READ_MASK (I2C_MSG_RESTART | I2C_MSG_STOP | I2C_MSG_READ)
+#ifndef CONFIG_I2C_IT51XXX_ALL_CH_FIFO_MODE
 #define FIFO_ENABLE_NODE(idx)   DT_PROP(DT_NODELABEL(i2c##idx), fifo_enable)
 #define FIFO_ENABLE_COUNT                                                                          \
 	(FIFO_ENABLE_NODE(1) + FIFO_ENABLE_NODE(2) + FIFO_ENABLE_NODE(3) + FIFO_ENABLE_NODE(4) +   \
 	 FIFO_ENABLE_NODE(5) + FIFO_ENABLE_NODE(6) + FIFO_ENABLE_NODE(7) + FIFO_ENABLE_NODE(8))
 BUILD_ASSERT(FIFO_ENABLE_COUNT <= 1, "More than one node has fifo2-enable property enabled!");
+#endif /* CONFIG_I2C_IT51XXX_ALL_CH_FIFO_MODE */
 #endif /* CONFIG_I2C_IT51XXX_FIFO_MODE */
 
 #ifdef CONFIG_I2C_TARGET
@@ -270,9 +279,11 @@ struct target_shared_fifo_size_sel {
 	uint8_t value;
 };
 
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 static const struct target_shared_fifo_size_sel fifo_size_table[] = {
 	[0] = {16, 0x1}, [1] = {32, 0x2}, [2] = {64, 0x3}, [3] = {128, 0x4}, [4] = {256, 0x5},
 };
+#endif
 #endif /* CONFIG_I2C_TARGET */
 
 /* Start smbus session from idle state */
@@ -298,6 +309,9 @@ struct i2c_it51xxx_config {
 	uint8_t i2cs_irq_base;
 	uint8_t port;
 	uint8_t channel_switch_sel;
+#if CONFIG_I2C_IT51XXX_ALL_CH_FIFO_MODE
+	uint8_t fifo_ctrl_offset;
+#endif /* CONFIG_I2C_IT51XXX_ALL_CH_FIFO_MODE */
 	bool fifo_enable;
 	bool target_enable;
 	bool target_fifo_mode;
@@ -336,6 +350,7 @@ struct i2c_it51xxx_data {
 	uint16_t addr_16bit;
 	/* Wait for stop bit interrupt */
 	uint8_t stop;
+	uint8_t *buf;
 #ifdef CONFIG_I2C_IT51XXX_FIFO_MODE
 	struct i2c_msg *msgs_list;
 	/* Read or write byte counts. */
@@ -411,6 +426,59 @@ static void i2c_ite_pm_policy_state_lock_put(struct i2c_it51xxx_data *data,
 #endif /* CONFIG_PM */
 
 #ifdef CONFIG_I2C_TARGET
+static void clear_target_status(const struct device *dev, uint8_t status)
+{
+	const struct i2c_it51xxx_config *config = dev->config;
+
+	/* Write to clear a specific status */
+#ifdef CONFIG_SOC_IT51526AW
+	sys_write8(status, config->i2cbase_mapping + SMB_SLSTA(config->port));
+#else
+	sys_write8(status, config->target_base + SMB_SLSTn);
+#endif
+}
+
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+static void target_i2c_reset_fifo(const struct device *dev)
+{
+	const struct i2c_it51xxx_config *config = dev->config;
+	uint8_t sdfpctl;
+
+	/* Disable FIFO mode to clear left count */
+	sdfpctl = sys_read8(config->target_base + SMB_SnDFPCTL);
+	sys_write8(sdfpctl & ~SMB_SADFE, config->target_base + SMB_SnDFPCTL);
+	/* Target n FIFO Enable */
+	sdfpctl = sys_read8(config->target_base + SMB_SnDFPCTL);
+	sys_write8(sdfpctl | SMB_SADFE, config->target_base + SMB_SnDFPCTL);
+}
+
+static bool target_i2c_fifo_read_to_buf(const struct device *dev, uint32_t count)
+{
+	const struct i2c_it51xxx_config *config = dev->config;
+	struct i2c_it51xxx_data *data = dev->data;
+
+	if (data->w_index + count > sizeof(data->target_in_buffer)) {
+		LOG_ERR("I2CS ch%d: write OOB (w_index=%d + count=%d > buf_size=%d), aborting",
+			config->port, data->w_index, count, sizeof(data->target_in_buffer));
+		target_i2c_reset_fifo(dev);
+
+		return false;
+	}
+
+	for (int i = 0; i < count; i++) {
+#ifdef CONFIG_SOC_IT51526AW
+		data->target_in_buffer[i + data->w_index] =
+			sys_read8(config->i2cbase_mapping + SMB_SLDA(config->port));
+#else
+		data->target_in_buffer[i + data->w_index] =
+			sys_read8(config->target_base + SMB_SLDn);
+#endif
+	}
+	data->w_index += count;
+
+	return true;
+}
+
 static void target_i2c_isr_fifo(const struct device *dev)
 {
 	const struct i2c_it51xxx_config *config = dev->config;
@@ -418,7 +486,6 @@ static void target_i2c_isr_fifo(const struct device *dev)
 	struct i2c_target_config *target_cfg;
 	const struct i2c_target_callbacks *target_cb;
 	uint32_t count, len;
-	uint8_t sdfpctl;
 	uint8_t target_status, fifo_status, target_idx;
 
 #ifdef CONFIG_SOC_IT51526AW
@@ -430,10 +497,13 @@ static void target_i2c_isr_fifo(const struct device *dev)
 	/* bit0-4 : FIFO byte count */
 	count = fifo_status & GENMASK(4, 0);
 
-	/* Any error */
+	/* Timeout status occurs */
 	if (target_status & SMB_STS) {
+		LOG_ERR("I2CS ch%d timeout occurs", config->port);
+
 		data->w_index = 0;
 		data->r_index = 0;
+		target_i2c_reset_fifo(dev);
 		goto done;
 	}
 
@@ -447,17 +517,18 @@ static void target_i2c_isr_fifo(const struct device *dev)
 		if (target_status & SMB_RCS) {
 			uint8_t *rdata = NULL;
 
-#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
-			/* Read data callback function */
-			if (target_cb->buf_read_requested) {
-				target_cb->buf_read_requested(target_cfg, &rdata, &len);
-			}
-#endif
-			if (len > sizeof(data->target_out_buffer)) {
-				LOG_ERR("I2CS ch%d: The length exceeds out_buffer size=%d",
-					config->port, sizeof(data->target_out_buffer));
-			} else {
-				memcpy(data->target_out_buffer, rdata, len);
+			if (data->r_index == 0) {
+				/* Read data callback function */
+				if (target_cb->buf_read_requested) {
+					target_cb->buf_read_requested(target_cfg, &rdata, &len);
+				}
+
+				if (len > sizeof(data->target_out_buffer)) {
+					LOG_ERR("I2CS ch%d: The length exceeds out_buffer size=%d",
+						config->port, sizeof(data->target_out_buffer));
+				} else {
+					memcpy(data->target_out_buffer, rdata, len);
+				}
 			}
 
 			for (int i = 0; i < SMB_TARGET_IT51XXX_MAX_FIFO_SIZE; i++) {
@@ -473,59 +544,22 @@ static void target_i2c_isr_fifo(const struct device *dev)
 			/* Index to next 16 bytes of read buffer */
 			data->r_index += SMB_TARGET_IT51XXX_MAX_FIFO_SIZE;
 		} else {
-			for (int i = 0; i < count; i++) {
-				/* Host transmitting, target receiving */
-#ifdef CONFIG_SOC_IT51526AW
-				data->target_in_buffer[i + data->w_index] =
-					sys_read8(config->i2cbase_mapping + SMB_SLDA(config->port));
-#else
-				data->target_in_buffer[i + data->w_index] =
-					sys_read8(config->target_base + SMB_SLDn);
-#endif
-			}
-#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
-			/* Write data done callback function */
-			if (target_cb->buf_write_received) {
-				target_cb->buf_write_received(target_cfg, data->target_in_buffer,
-							      count);
-			}
-#endif
-			/* Index to next 16 bytes of write buffer */
-			data->w_index += count;
-			if (data->w_index > sizeof(data->target_in_buffer)) {
-				LOG_ERR("I2CS ch%d: The write size exceeds in buffer size=%d",
-					config->port, sizeof(data->target_in_buffer));
-			}
+			target_i2c_fifo_read_to_buf(dev, count);
 		}
 	}
 	/* Stop condition, indicate stop condition detected. */
 	if (target_status & SMB_SPDS) {
 		/* Read data less 16 bytes status */
 		if (target_status & SMB_RCS) {
-			/* Disable FIFO mode to clear left count */
-			sdfpctl = sys_read8(config->target_base + SMB_SnDFPCTL);
-			sys_write8(sdfpctl & ~SMB_SADFE, config->target_base + SMB_SnDFPCTL);
-			/* Target n FIFO Enable */
-			sdfpctl = sys_read8(config->target_base + SMB_SnDFPCTL);
-			sys_write8(sdfpctl | SMB_SADFE, config->target_base + SMB_SnDFPCTL);
+			target_i2c_reset_fifo(dev);
 		} else {
-			for (int i = 0; i < count; i++) {
-				/* Host transmitting, target receiving */
-#ifdef CONFIG_SOC_IT51526AW
-				data->target_in_buffer[i + data->w_index] =
-					sys_read8(config->i2cbase_mapping + SMB_SLDA(config->port));
-#else
-				data->target_in_buffer[i + data->w_index] =
-					sys_read8(config->target_base + SMB_SLDn);
-#endif
+			if (target_i2c_fifo_read_to_buf(dev, count)) {
+				/* Write data done callback function */
+				if (target_cb->buf_write_received) {
+					target_cb->buf_write_received(
+						target_cfg, data->target_in_buffer, data->w_index);
+				}
 			}
-#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
-			/* Write data done callback function */
-			if (target_cb->buf_write_received) {
-				target_cb->buf_write_received(target_cfg, data->target_in_buffer,
-							      count);
-			}
-#endif
 		}
 
 		/* Transfer done callback function */
@@ -537,25 +571,10 @@ static void target_i2c_isr_fifo(const struct device *dev)
 	}
 
 done:
-	/* W/C */
-#ifdef CONFIG_SOC_IT51526AW
-	sys_write8(target_status, config->i2cbase_mapping + SMB_SLSTA(config->port));
-#else
-	sys_write8(target_status, config->target_base + SMB_SLSTn);
-#endif
+	/* Write to clear a target status */
+	clear_target_status(dev, target_status);
 }
-
-static void clear_target_status(const struct device *dev, uint8_t status)
-{
-	const struct i2c_it51xxx_config *config = dev->config;
-
-	/* Write to clear a specific status */
-#ifdef CONFIG_SOC_IT51526AW
-	sys_write8(status, config->i2cbase_mapping + SMB_SLSTA(config->port));
-#else
-	sys_write8(status, config->target_base + SMB_SLSTn);
-#endif
-}
+#endif /* CONFIG_I2C_TARGET_BUFFER_MODE */
 
 static void target_i2c_isr_pio(const struct device *dev)
 {
@@ -592,6 +611,7 @@ static void target_i2c_isr_pio(const struct device *dev)
 		data->w_index = 0;
 		data->r_index = 0;
 
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 		if (config->target_shared_fifo_mode) {
 			uint8_t sdfpctl;
 
@@ -599,22 +619,23 @@ static void target_i2c_isr_pio(const struct device *dev)
 			sdfpctl = sys_read8(config->target_base + SMB_SnDFPCTL);
 			sys_write8(sdfpctl & ~SMB_SADFE, config->target_base + SMB_SnDFPCTL);
 		}
+#endif
 	}
 
 	if (target_status & SMB_SDS) {
 		if (target_status & SMB_RCS) {
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 			/* Target shared FIFO mode */
 			if (config->target_shared_fifo_mode) {
 				uint32_t len;
 				uint8_t *rdata = NULL;
 				uint8_t sndfpctl;
 
-#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 				/* Read data callback function */
 				if (target_cb->buf_read_requested) {
 					target_cb->buf_read_requested(target_cfg, &rdata, &len);
 				}
-#endif
+
 				if (len > sizeof(data->target_shared_fifo)) {
 					LOG_ERR("I2CS ch%d: The length exceeds shared fifo size=%d",
 						config->port, sizeof(data->target_shared_fifo));
@@ -628,6 +649,7 @@ static void target_i2c_isr_pio(const struct device *dev)
 				/* Write to clear data status of target */
 				clear_target_status(dev, SMB_SDS);
 			} else {
+#endif /* CONFIG_I2C_TARGET_BUFFER_MODE */
 				/* Host receiving, target transmitting */
 				if (!data->r_index) {
 					if (target_cb->read_requested) {
@@ -643,7 +665,9 @@ static void target_i2c_isr_pio(const struct device *dev)
 				/* Release clock pin */
 				sys_write8(val, config->target_base + SMB_SLDn);
 				data->r_index++;
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 			}
+#endif
 		} else {
 			/* Host transmitting, target receiving */
 			if (!data->w_index) {
@@ -666,13 +690,17 @@ static void target_i2c_isr_pio(const struct device *dev)
 
 static void target_i2c_isr(const struct device *dev)
 {
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 	const struct i2c_it51xxx_config *config = dev->config;
 
 	if (config->target_fifo_mode) {
 		target_i2c_isr_fifo(dev);
 	} else {
+#endif
 		target_i2c_isr_pio(dev);
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 	}
+#endif
 }
 #endif /* CONFIG_I2C_TARGET */
 
@@ -817,7 +845,7 @@ int i2c_tran_read(const struct device *dev)
 		} else if (sys_read8(config->host_base + SMB_HOSTA) & SMB_BDS) {
 			if (data->ridx < data->msg->len) {
 				/* To get received data. */
-				*(data->msg->buf++) = sys_read8(config->host_base + SMB_HOBDB);
+				*data->buf++ = sys_read8(config->host_base + SMB_HOBDB);
 				data->ridx++;
 				/* For last byte */
 				i2c_r_last_byte(dev);
@@ -855,7 +883,7 @@ int i2c_tran_write(const struct device *dev)
 
 		sys_write8((uint8_t)(data->addr_16bit << 1), config->host_base + SMB_TRASLA);
 		/* Send first byte */
-		sys_write8(*(data->msg->buf++), config->host_base + SMB_HOBDB);
+		sys_write8(*data->buf++, config->host_base + SMB_HOBDB);
 
 		data->widx++;
 		/* Clear start flag */
@@ -867,7 +895,7 @@ int i2c_tran_write(const struct device *dev)
 		if (sys_read8(config->host_base + SMB_HOSTA) & SMB_BDS) {
 			if (data->widx < data->msg->len) {
 				/* Send next byte */
-				sys_write8(*(data->msg->buf++), config->host_base + SMB_HOBDB);
+				sys_write8(*data->buf++, config->host_base + SMB_HOBDB);
 
 				data->widx++;
 				/* W/C byte done for next byte */
@@ -954,20 +982,58 @@ void i2c_fifo_en_w2r(const struct device *dev, bool enable)
 	irq_unlock(key);
 }
 
+static inline bool it51xxx_is_block_done(const struct device *dev)
+{
+	const struct i2c_it51xxx_config *config = dev->config;
+
+#if CONFIG_I2C_IT51XXX_ALL_CH_FIFO_MODE
+	return sys_read8(config->host_base + config->fifo_ctrl_offset) & BLOCK_DONE_STATUS;
+#else
+	uint8_t blkds = (config->port == SMB_CHANNEL_A) ? SMB_BLKDS1 : SMB_BLKDS2;
+
+	return sys_read8(config->i2cbase + SMB_MSTFCSTS) & blkds;
+#endif /* CONFIG_I2C_IT51XXX_ALL_CH_FIFO_MODE */
+}
+
+static inline void it51xxx_fifo_enable(const struct device *dev, const bool enable)
+{
+	const struct i2c_it51xxx_config *config = dev->config;
+
+#if CONFIG_I2C_IT51XXX_ALL_CH_FIFO_MODE
+	if (enable) {
+		sys_write8(sys_read8(config->host_base + config->fifo_ctrl_offset) | FIFO_ENABLE,
+			   config->host_base + config->fifo_ctrl_offset);
+		return;
+	}
+
+	sys_write8(sys_read8(config->host_base + config->fifo_ctrl_offset) & ~FIFO_ENABLE,
+		   config->host_base + config->fifo_ctrl_offset);
+#else
+	uint8_t fifo_en;
+
+	fifo_en = (config->port == SMB_CHANNEL_A) ? SMB_FF1EN : SMB_FF2EN;
+
+	if (enable) {
+		sys_write8(sys_read8(config->i2cbase + SMB_MSTFCSTS) | fifo_en,
+			   config->i2cbase + SMB_MSTFCSTS);
+		return;
+	}
+
+	sys_write8(sys_read8(config->i2cbase + SMB_MSTFCSTS) & ~fifo_en,
+		   config->i2cbase + SMB_MSTFCSTS);
+#endif /* CONFIG_I2C_IT51XXX_ALL_CH_FIFO_MODE */
+}
+
 void i2c_tran_fifo_write_start(const struct device *dev)
 {
 	const struct i2c_it51xxx_config *config = dev->config;
 	struct i2c_it51xxx_data *data = dev->data;
 	uint32_t i;
-	uint8_t fifo_en;
 
 	/* Clear start flag. */
 	data->msg->flags &= ~SMB_MSG_START;
 
-	fifo_en = (config->port == SMB_CHANNEL_A) ? SMB_FF1EN : SMB_FF2EN;
-	/* Enable SMB channel in FIFO mode. */
-	sys_write8(sys_read8(config->i2cbase + SMB_MSTFCSTS) | fifo_en,
-		   config->i2cbase + SMB_MSTFCSTS);
+	it51xxx_fifo_enable(dev, true);
 
 	/* I2C enable. */
 	sys_write8(SMB_SMD_TO_EN | I2C_EN | SMB_SMH_EN, config->host_base + SMB_HOCTL2);
@@ -980,7 +1046,7 @@ void i2c_tran_fifo_write_start(const struct device *dev)
 	data->bytecnt = MIN(data->msg->len, SMB_FIFO_MODE_MAX_SIZE);
 	for (i = 0; i < data->bytecnt; i++) {
 		/* Set host block data byte. */
-		sys_write8(*(data->msg->buf++), config->host_base + SMB_HOBDB);
+		sys_write8(*data->buf++, config->host_base + SMB_HOBDB);
 	}
 	/* Calculate the remaining byte counts. */
 	data->bytecnt = data->msg->len - data->bytecnt;
@@ -1002,7 +1068,7 @@ void i2c_tran_fifo_write_next_block(const struct device *dev)
 	_bytecnt = MIN(data->bytecnt, SMB_FIFO_MODE_MAX_SIZE);
 	for (i = 0; i < _bytecnt; i++) {
 		/* Set host block data byte. */
-		sys_write8(*(data->msg->buf++), config->host_base + SMB_HOBDB);
+		sys_write8(*data->buf++, config->host_base + SMB_HOBDB);
 	}
 
 	/* Clear FIFO block done status. */
@@ -1013,9 +1079,14 @@ void i2c_tran_fifo_write_next_block(const struct device *dev)
 	sys_write8(sys_read8(config->i2cbase_mapping + mstfctrl) | SMB_BLKDS,
 		   config->i2cbase_mapping + mstfctrl);
 #else
+#if CONFIG_I2C_IT51XXX_ALL_CH_FIFO_MODE
+	sys_write8(sys_read8(config->host_base + config->fifo_ctrl_offset) | BLOCK_DONE_STATUS,
+		   config->host_base + config->fifo_ctrl_offset);
+#else
 	sys_write8(sys_read8(config->i2cbase + SMB_MSTFCSTS) | blkds,
 		   config->i2cbase + SMB_MSTFCSTS);
-#endif
+#endif /* CONFIG_I2C_IT51XXX_ALL_CH_FIFO_MODE */
+#endif /* CONFIG_SOC_IT51526AW */
 	/* Calculate the remaining byte counts. */
 	data->bytecnt -= _bytecnt;
 }
@@ -1058,6 +1129,7 @@ int i2c_tran_fifo_w2r_change_direction(const struct device *dev)
 
 	/* Point to the next msg for the read location. */
 	data->msg = &data->msgs_list[data->msg_index];
+	data->buf = data->msg->buf;
 	/* Set read byte counts. */
 	sys_write8(data->msg->len, config->host_base + SMB_D0REG);
 	data->bytecnt = data->msg->len;
@@ -1073,15 +1145,11 @@ void i2c_tran_fifo_read_start(const struct device *dev)
 {
 	const struct i2c_it51xxx_config *config = dev->config;
 	struct i2c_it51xxx_data *data = dev->data;
-	uint8_t fifo_en;
 
 	/* Clear start flag. */
 	data->msg->flags &= ~SMB_MSG_START;
 
-	fifo_en = (config->port == SMB_CHANNEL_A) ? SMB_FF1EN : SMB_FF2EN;
-	/* Enable SMB channel in FIFO mode. */
-	sys_write8(sys_read8(config->i2cbase + SMB_MSTFCSTS) | fifo_en,
-		   config->i2cbase + SMB_MSTFCSTS);
+	it51xxx_fifo_enable(dev, true);
 
 	data->bytecnt = data->msg->len;
 
@@ -1100,17 +1168,22 @@ void i2c_tran_fifo_read_next_block(const struct device *dev)
 	const struct i2c_it51xxx_config *config = dev->config;
 	struct i2c_it51xxx_data *data = dev->data;
 	uint32_t i;
-	uint8_t blkds;
-
-	blkds = (config->port == SMB_CHANNEL_A) ? SMB_BLKDS1 : SMB_BLKDS2;
 
 	for (i = 0; i < SMB_FIFO_MODE_MAX_SIZE; i++) {
 		/* To get received data. */
-		*(data->msg->buf++) = sys_read8(config->host_base + SMB_HOBDB);
+		*data->buf++ = sys_read8(config->host_base + SMB_HOBDB);
 	}
 	/* Clear FIFO block done status. */
+#if CONFIG_I2C_IT51XXX_ALL_CH_FIFO_MODE
+	sys_write8(sys_read8(config->host_base + config->fifo_ctrl_offset) | BLOCK_DONE_STATUS,
+		   config->host_base + config->fifo_ctrl_offset);
+#else
+	uint8_t blkds;
+
+	blkds = (config->port == SMB_CHANNEL_A) ? SMB_BLKDS1 : SMB_BLKDS2;
 	sys_write8(sys_read8(config->i2cbase + SMB_MSTFCSTS) | blkds,
 		   config->i2cbase + SMB_MSTFCSTS);
+#endif /* CONFIG_I2C_IT51XXX_ALL_CH_FIFO_MODE */
 
 	/* Calculate the remaining byte counts. */
 	data->bytecnt -= SMB_FIFO_MODE_MAX_SIZE;
@@ -1124,7 +1197,7 @@ void i2c_tran_fifo_read_finish(const struct device *dev)
 
 	for (i = 0; i < data->bytecnt; i++) {
 		/* To get received data. */
-		*(data->msg->buf++) = sys_read8(config->host_base + SMB_HOBDB);
+		*data->buf++ = sys_read8(config->host_base + SMB_HOBDB);
 	}
 	/* Clear byte count register. */
 	sys_write8(0, config->host_base + SMB_D0REG);
@@ -1139,17 +1212,13 @@ int i2c_tran_fifo_write_to_read(const struct device *dev)
 	const struct i2c_it51xxx_config *config = dev->config;
 	struct i2c_it51xxx_data *data = dev->data;
 	int ret = 1;
-	uint8_t blkds;
-
-	blkds = (config->port == SMB_CHANNEL_A) ? SMB_BLKDS1 : SMB_BLKDS2;
 
 	if (data->msg->flags & SMB_MSG_START) {
 		/* Enable I2C write to read FIFO mode. */
 		i2c_fifo_en_w2r(dev, true);
 		i2c_tran_fifo_write_start(dev);
 	} else {
-		/* Check block done status. */
-		if (sys_read8(config->i2cbase + SMB_MSTFCSTS) & blkds) {
+		if (it51xxx_is_block_done(dev)) {
 			if (sys_read8(config->host_base + SMB_HOCTL2) & I2C_SW_EN) {
 				i2c_tran_fifo_read_next_block(dev);
 			} else {
@@ -1178,15 +1247,11 @@ int i2c_tran_fifo_read(const struct device *dev)
 {
 	const struct i2c_it51xxx_config *config = dev->config;
 	struct i2c_it51xxx_data *data = dev->data;
-	uint8_t blkds;
-
-	blkds = (config->port == SMB_CHANNEL_A) ? SMB_BLKDS1 : SMB_BLKDS2;
 
 	if (data->msg->flags & SMB_MSG_START) {
 		i2c_tran_fifo_read_start(dev);
 	} else {
-		/* Check block done status. */
-		if (sys_read8(config->i2cbase + SMB_MSTFCSTS) & blkds) {
+		if (it51xxx_is_block_done(dev)) {
 			i2c_tran_fifo_read_next_block(dev);
 		} else {
 			/* Wait finish. */
@@ -1205,15 +1270,11 @@ int i2c_tran_fifo_write(const struct device *dev)
 {
 	const struct i2c_it51xxx_config *config = dev->config;
 	struct i2c_it51xxx_data *data = dev->data;
-	uint8_t blkds;
-
-	blkds = (config->port == SMB_CHANNEL_A) ? SMB_BLKDS1 : SMB_BLKDS2;
 
 	if (data->msg->flags & SMB_MSG_START) {
 		i2c_tran_fifo_write_start(dev);
 	} else {
-		/* Check block done status. */
-		if (sys_read8(config->i2cbase + SMB_MSTFCSTS) & blkds) {
+		if (it51xxx_is_block_done(dev)) {
 			i2c_tran_fifo_write_next_block(dev);
 		} else {
 			/* Wait finish. */
@@ -1251,41 +1312,6 @@ int i2c_fifo_transaction(const struct device *dev)
 	sys_write8(0, config->host_base + SMB_HOCTL2);
 
 	return 0;
-}
-
-static void i2c_it51xxx_isr(const void *arg)
-{
-	const struct device *dev = arg;
-	const struct i2c_it51xxx_config *config = dev->config;
-	struct i2c_it51xxx_data *data = dev->data;
-
-#ifdef CONFIG_I2C_TARGET
-	if (atomic_get(&data->num_registered_addrs) != 0) {
-		target_i2c_isr(dev);
-	} else {
-#endif
-#ifdef CONFIG_I2C_IT51XXX_FIFO_MODE
-		uint8_t fifo_en;
-
-		fifo_en = (config->port == SMB_CHANNEL_A) ? SMB_FF1EN : SMB_FF2EN;
-		/* If done doing work, wake up the task waiting for the transfer. */
-		if (config->fifo_enable && (sys_read8(config->i2cbase + SMB_MSTFCSTS) & fifo_en)) {
-			if (i2c_fifo_transaction(dev)) {
-				return;
-			}
-		} else {
-#endif
-			if (i2c_pio_transaction(dev)) {
-				return;
-			}
-#ifdef CONFIG_I2C_IT51XXX_FIFO_MODE
-		}
-#endif
-		irq_disable(config->i2c_irq_base);
-		k_sem_give(&data->device_sync_sem);
-#ifdef CONFIG_I2C_TARGET
-	}
-#endif
 }
 
 bool fifo_mode_allowed(const struct device *dev, struct i2c_msg *msgs)
@@ -1344,6 +1370,47 @@ bool fifo_mode_allowed(const struct device *dev, struct i2c_msg *msgs)
 	return false;
 }
 #endif /* CONFIG_I2C_IT51XXX_FIFO_MODE */
+
+static void i2c_it51xxx_isr(const void *arg)
+{
+	const struct device *dev = arg;
+	const struct i2c_it51xxx_config *config = dev->config;
+	struct i2c_it51xxx_data *data = dev->data;
+
+#ifdef CONFIG_I2C_TARGET
+	if (atomic_get(&data->num_registered_addrs) != 0) {
+		target_i2c_isr(dev);
+	} else {
+#endif /* CONFIG_I2C_TARGET */
+#ifdef CONFIG_I2C_IT51XXX_FIFO_MODE
+		uint8_t fifo_en;
+
+		fifo_en = (config->port == SMB_CHANNEL_A) ? SMB_FF1EN : SMB_FF2EN;
+		/* If done doing work, wake up the task waiting for the transfer. */
+#if CONFIG_I2C_IT51XXX_ALL_CH_FIFO_MODE
+		if (config->fifo_enable &&
+		    (sys_read8(config->host_base + config->fifo_ctrl_offset) & FIFO_ENABLE)) {
+#else
+		if (config->fifo_enable && (sys_read8(config->i2cbase + SMB_MSTFCSTS) & fifo_en)) {
+#endif /* CONFIG_I2C_IT51XXX_ALL_CH_FIFO_MODE */
+
+			if (i2c_fifo_transaction(dev)) {
+				return;
+			}
+		} else {
+#endif /* CONFIG_I2C_IT51XXX_FIFO_MODE */
+			if (i2c_pio_transaction(dev)) {
+				return;
+			}
+#ifdef CONFIG_I2C_IT51XXX_FIFO_MODE
+		}
+#endif /* CONFIG_I2C_IT51XXX_FIFO_MODE */
+		irq_disable(config->i2c_irq_base);
+		k_sem_give(&data->device_sync_sem);
+#ifdef CONFIG_I2C_TARGET
+	}
+#endif /* CONFIG_I2C_TARGET */
+}
 
 static void i2c_standard_port_timing_regs_400khz(const struct device *dev)
 {
@@ -1499,6 +1566,7 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 		data->ridx = 0;
 		data->err = 0;
 		data->msg = &msgs[i];
+		data->buf = msgs[i].buf;
 		data->addr_16bit = addr;
 
 #ifdef CONFIG_I2C_IT51XXX_FIFO_MODE
@@ -1556,13 +1624,7 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 	}
 #ifdef CONFIG_I2C_IT51XXX_FIFO_MODE
 	if (fifo_mode_enable) {
-		uint8_t fifo_en;
-
-		fifo_en = (config->port == SMB_CHANNEL_A) ? SMB_FF1EN : SMB_FF2EN;
-
-		/* Disable SMB channels in FIFO mode. */
-		sys_write8(sys_read8(config->i2cbase + SMB_MSTFCSTS) & ~fifo_en,
-			   config->i2cbase + SMB_MSTFCSTS);
+		it51xxx_fifo_enable(dev, false);
 
 		/* Disable I2C write to read FIFO mode. */
 		if (data->num_msgs == 2) {
@@ -1710,6 +1772,7 @@ static int i2c_it51xxx_target_register(const struct device *dev,
 	}
 
 	if (atomic_get(&data->num_registered_addrs) == 0) {
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 		if (config->target_shared_fifo_mode) {
 			uint32_t fifo_addr;
 
@@ -1724,6 +1787,7 @@ static int i2c_it51xxx_target_register(const struct device *dev,
 			/* Block to enter idle mode. */
 			chip_block_idle();
 		}
+#endif
 #ifdef CONFIG_PM
 		/* Block to enter power policy. */
 		i2c_ite_pm_policy_state_lock_get(data, I2CS_ITE_PM_POLICY_FLAG);
@@ -1790,11 +1854,12 @@ static int i2c_it51xxx_target_unregister(const struct device *dev,
 			/* Permit to enter power policy. */
 			i2c_ite_pm_policy_state_lock_put(data, I2CS_ITE_PM_POLICY_FLAG);
 #endif
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 			if (config->target_shared_fifo_mode) {
 				/* Permit to enter idle mode. */
 				chip_permit_idle();
 			}
-
+#endif
 			irq_disable(config->i2cs_irq_base);
 		}
 	}
@@ -1829,9 +1894,11 @@ static int i2c_it51xxx_init(const struct device *dev)
 	uint8_t ssclkts;
 
 	if (config->target_enable) {
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 		if (config->target_fifo_mode) {
 			LOG_INF("I2CS ch%d: target_in_buffer=%p, target_out_buffer=%p\n",
-				config->port, data->target_in_buffer, data->target_out_buffer);
+				config->port, (void *)data->target_in_buffer,
+				(void *)data->target_out_buffer);
 			/* Target A or B or C FIFO Enable */
 			sys_write8(sys_read8(config->target_base + SMB_SnDFPCTL) | SMB_SADFE,
 				   config->target_base + SMB_SnDFPCTL);
@@ -1839,7 +1906,7 @@ static int i2c_it51xxx_init(const struct device *dev)
 			uint8_t ssfifoc, target_fifo_size_val = 0;
 
 			LOG_INF("I2CS ch%d: target_shared_fifo=%p\n", config->port,
-				data->target_shared_fifo);
+				(void *)data->target_shared_fifo);
 
 			data->fifo_size_list = fifo_size_table;
 			for (int i = 0; i <= ARRAY_SIZE(fifo_size_table); i++) {
@@ -1863,7 +1930,7 @@ static int i2c_it51xxx_init(const struct device *dev)
 			sys_write8(sys_read8(config->target_base + SMB_SSFIFOCn) | SMB_SFSAE,
 				   config->target_base + SMB_SSFIFOCn);
 		}
-
+#endif /* CONFIG_I2C_TARGET_BUFFER_MODE */
 		/* Target SMCLK & SMDAT timeout disable */
 		sys_write8(sys_read8(config->target_base + SMB_SSCLKTSn) | SMB_SSMCDTD,
 			   config->target_base + SMB_SSCLKTSn);
@@ -1910,12 +1977,13 @@ static int i2c_it51xxx_init(const struct device *dev)
 	sys_write8((smbpctlr & ~GENMASK(7, 4)) | SMB_DASTI(config->channel_switch_sel),
 		   config->host_base + SMB_SMBPCTL);
 
-#ifdef CONFIG_I2C_IT51XXX_FIFO_MODE
+#if defined(CONFIG_I2C_IT51XXX_FIFO_MODE) && !defined(CONFIG_I2C_IT51XXX_ALL_CH_FIFO_MODE)
 	/* Select which port to use FIFO2 except port A */
 	if ((config->port != SMB_CHANNEL_A) && config->fifo_enable) {
 		sys_write8(SMB_FFCHSEL2(config->port - 1), config->i2cbase + SMB_MSTFCSTS);
 	}
 #endif
+
 	error = i2c_it51xxx_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	data->i2ccs = I2C_CH_NORMAL;
 
@@ -1938,6 +2006,25 @@ pin_config:
 
 	return 0;
 }
+
+/* clang-format off */
+#ifdef CONFIG_I2C_TARGET
+#define INST_REQUIRES_BUFFER_MODE(inst)                                                            \
+	+(DT_INST_PROP(inst, target_shared_fifo_mode) || DT_INST_PROP(inst, target_fifo_mode))
+#define NUM_REQUIRES_TARGET_BUFFER_MODE_INSTS                                                      \
+	(0 DT_INST_FOREACH_STATUS_OKAY(INST_REQUIRES_BUFFER_MODE))
+BUILD_ASSERT(!(NUM_REQUIRES_TARGET_BUFFER_MODE_INSTS > 0) ||
+	     IS_ENABLED(CONFIG_I2C_TARGET_BUFFER_MODE),
+	     "target_shared_fifo_mode or target_fifo_mode requires "
+	     "CONFIG_I2C_TARGET_BUFFER_MODE to be enabled");
+#endif
+
+#define INST_HAS_FIFO_CTRL_OFFSET(inst) \
+	+DT_INST_NODE_HAS_PROP(inst, fifo_ctrl_offset)
+#define NUM_FIFO_CTRL_OFFSET_INSTS      (0 DT_INST_FOREACH_STATUS_OKAY(INST_HAS_FIFO_CTRL_OFFSET))
+BUILD_ASSERT((NUM_FIFO_CTRL_OFFSET_INSTS == 0) ||
+		     (NUM_FIFO_CTRL_OFFSET_INSTS == DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)),
+	     "Inconsistent fifo_ctrl_offset configuration");
 
 #define I2C_ITE_IT51XXX_INIT(inst)                                                                 \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
@@ -1968,6 +2055,8 @@ pin_config:
 		.target_fifo_mode = DT_INST_PROP(inst, target_fifo_mode),                          \
 		.target_shared_fifo_mode = DT_INST_PROP(inst, target_shared_fifo_mode),            \
 		.push_pull_recovery = DT_INST_PROP(inst, push_pull_recovery),                      \
+		IF_ENABLED(CONFIG_I2C_IT51XXX_ALL_CH_FIFO_MODE, (                                  \
+			.fifo_ctrl_offset = DT_INST_PROP(inst, fifo_ctrl_offset),))                \
 	};                                                                                         \
                                                                                                    \
 	static struct i2c_it51xxx_data i2c_it51xxx_data_##inst;                                    \
@@ -1977,3 +2066,4 @@ pin_config:
 				  &i2c_it51xxx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_ITE_IT51XXX_INIT)
+/* clang-format on */

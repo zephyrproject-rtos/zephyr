@@ -30,13 +30,30 @@ config I2C_IT51XXX_FIFO_MODE
 	  I2C FIFO mode of IT51XXX can support I2C APIs including:
 	  i2c_write(), i2c_read(), i2c_burst_read.
 
-endif # I2C_ITE_IT51XXX
+config I2C_IT51XXX_ALL_CH_FIFO_MODE
+	bool
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ITE_IT51XXX_I2C),fifo-ctrl-offset)
+	help
+	  For the controller role, older hardware provides only two FIFOs, while newer
+	  hardware supports FIFO mode on all channels. The presence of the
+	  fifo_ctrl_offset property in the devicetree indicates that all I2C channels
+	  support FIFO mode.
 
 if I2C_TARGET
 
+config I2C_TARGET_BUFFER_MODE
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ITE_IT51XXX_I2C),target-fifo-mode,True) || \
+	           $(dt_compat_any_has_prop,$(DT_COMPAT_ITE_IT51XXX_I2C),target-shared-fifo-mode,True)
+
 config I2C_TARGET_IT51XXX_MAX_BUF_SIZE
-	int "It is allowed to configure the dedicated FIFO size up to 256 bytes."
+	int "I2C target driver buffer size"
 	default 256
+	range 32 2048
+	help
+	  Size of the buffer used by the I2C target driver, used to accumulate
+	  data across multiple FIFO transfers.
 
 config I2C_IT51XXX_MAX_SHARE_FIFO_SIZE
 	int "It is allowed to configure the shared FIFO size up to 256 bytes."
@@ -49,3 +66,4 @@ config SOC_IT51XXX_CPU_IDLE_GATING
 	  This option is used when the I2C target shared FIFO property is enabled.
 
 endif # I2C_TARGET
+endif # I2C_ITE_IT51XXX
