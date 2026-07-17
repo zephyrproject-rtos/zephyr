@@ -6,6 +6,9 @@
 #include <zephyr/device.h>
 #include "fsl_power.h"
 #include "fsl_clock.h"
+#if defined(CONFIG_SECOND_CORE_MCUX)
+#include "fsl_mu.h"
+#endif
 #include <soc.h>
 #include <fsl_glikey.h>
 
@@ -13,6 +16,10 @@
 #define SYSOSC_SETTLING_US 220U
 /*!< xtal frequency in Hz */
 #define XTAL_SYS_CLK_HZ    24000000U
+
+#if defined(CONFIG_SECOND_CORE_MCUX)
+#define IMXRT7XX_CPU1_BOOT_FLAG 0x1U
+#endif
 
 #if CONFIG_SOC_MIMXRT798S_CM33_CPU0
 #define SYSCON_BASE DT_REG_ADDR(DT_NODELABEL(syscon0))
@@ -180,11 +187,6 @@ void board_early_init_hook(void)
 
 	BOARD_InitAHBSC();
 
-#if defined(CONFIG_SECOND_CORE_MCUX)
-	POWER_DisablePD(kPDRUNCFG_SHUT_SENSEP_MAINCLK);
-	POWER_ApplyPD();
-#endif
-
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(edma0))
 	edma_enable_all_request(0);
 #endif
@@ -261,7 +263,17 @@ void board_early_init_hook(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c15))
+	/*
+	 * LPI2C15 (PMIC bus) functional clock source is per-core: the SENSE base
+	 * clock is only brought up on CPU1, so CPU0 must source from an FRO that is
+	 * available in the Compute domain. Selecting kSENSE_BASE_to_LPI2C15 on CPU0
+	 * would yield a 0 Hz functional clock and a divide-by-zero in LPI2C_MasterInit.
+	 */
+#if CONFIG_SOC_MIMXRT798S_CM33_CPU0
+	CLOCK_AttachClk(kFRO1_DIV1_to_LPI2C15);
+#elif CONFIG_SOC_MIMXRT798S_CM33_CPU1
 	CLOCK_AttachClk(kSENSE_BASE_to_LPI2C15);
+#endif
 	CLOCK_SetClkDiv(kCLOCK_DivLpi2c15Clk, 2U);
 	CLOCK_EnableClock(kCLOCK_LPI2c15);
 #endif
@@ -339,6 +351,25 @@ void board_early_init_hook(void)
 		DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(os_timer_cpu1)))
 	CLOCK_AttachClk(kLPOSC_to_OSTIMER);
 	CLOCK_SetClkDiv(kCLOCK_DivOstimerClk, 1U);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(irtc_wake))
+	/*
+	 * The IRTC calendar/alarm runs on the always-on 32 kHz oscillator
+	 * (OSC32KNP). Bring it up in self-charge (low-power) mode and enable
+	 * the IRTC functional clock so the alarm keeps running across deep sleep
+	 * retention and can wake the compute domain.
+	 */
+	clock_osc32k_config_t osc32k_cfg = {
+		.bypass = false,
+		.monitorEnable = false,
+		.lowPowerMode = true,
+		.cap = kCLOCK_Osc32kCapPf16,
+	};
+
+	CLOCK_EnableOsc32K(&osc32k_cfg);
+	CLOCK_EnableClock(kCLOCK_Rtc);
+
 #endif
 
 #if ((DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb0)) && CONFIG_UDC_NXP_EHCI) || \
@@ -615,8 +646,13 @@ static int second_core_boot(void)
 	/* Get the boot address for the second core */
 	uint32_t boot_address = (uint32_t)(DT_REG_ADDR(DT_NODELABEL(sram_code)));
 
+	/* Power up SRAM */
 	PMC0->PDRUNCFG2 &= ~0x3FFC0000;
 	PMC0->PDRUNCFG3 &= ~0x3FFC0000;
+
+	/* Power up SENSE domain MAIN clock */
+	POWER_DisablePD(kPDRUNCFG_SHUT_SENSEP_MAINCLK);
+	POWER_ApplyPD();
 
 	/* RT700 specific CPU1 boot sequence */
 	/* Glikey write enable, GLIKEY4 */
@@ -637,8 +673,32 @@ static int second_core_boot(void)
 	/* Release cpu wait*/
 	SYSCON3->CPU_STATUS &= ~SYSCON3_CPU_STATUS_CPU_WAIT_MASK;
 
+	/* Wait CPU1 booted */
+	RESET_ClearPeripheralReset(kMU1_RST_SHIFT_RSTn);
+	MU_Init(MU1_MUA);
+
+	while (MU_GetFlags(MU1_MUA) != IMXRT7XX_CPU1_BOOT_FLAG) {
+	}
+
+#if defined(CONFIG_PM)
+	POWER_DisableLPRequestMask(kPower_MaskAll);
+#endif
+
 	return 0;
 }
 
 SYS_INIT(second_core_boot, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif
+
+#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_SOC_MIMXRT798S_CM33_CPU1)
+static int second_core_notify_boot(void)
+{
+	RESET_ClearPeripheralReset(kMU1_RST_SHIFT_RSTn);
+	MU_Init(MU1_MUB);
+	MU_SetFlags(MU1_MUB, IMXRT7XX_CPU1_BOOT_FLAG);
+
+	return 0;
+}
+
+SYS_INIT(second_core_notify_boot, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif

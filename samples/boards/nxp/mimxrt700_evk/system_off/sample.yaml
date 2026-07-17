@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: System Off / Deep Power Down Sample for mimxrt700_evk
+common:
+  tags: power
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Powering off"
+
+tests:
+  sample.boards.mimxrt700_evk.system_off:
+    platform_allow:
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+    integration_platforms:
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0

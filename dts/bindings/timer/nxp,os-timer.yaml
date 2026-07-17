@@ -16,10 +16,26 @@ properties:
 
   deep-sleep-counter:
     type: phandle
+    deprecated: true
     description: |
+      Deprecated. The OS Timer now uses the generic system-timer low-power
+      companion framework (CONFIG_SYSTEM_TIMER_LPM_COMPANION_*). Select the
+      low-power companion counter through the
+      /chosen/zephyr,system-timer-companion property instead.
+
       Instance of a counter peripheral. The OS Timer maybe powered off in
       certain deep power down modes. The OS Timer driver will use this
       counter to wakeup and also to keep track of system time.
+
+  handoff-power-states:
+    type: phandles
+    description: |
+      List of power states in which the OS Timer is powered off or reset and can
+      no longer keep time. When the system is about to enter one of these states,
+      the driver hands timekeeping over to the low-power companion selected by
+      /chosen/zephyr,system-timer-companion for the duration of that state. Each
+      phandle points to a "zephyr,power-state" node. If omitted, the OS Timer is
+      assumed to keep time in all low-power states and no handoff is performed.
 
   resets:
     type: phandle-array

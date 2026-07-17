@@ -88,8 +88,12 @@ config PM_POLICY_DEVICE_CONSTRAINTS
 config COUNTER
 	default y if "$(dt_nodelabel_enabled,standby)"
 
+# The OS Timer saves/restores its state automatically when a system-timer
+# companion is selected. Keep defaulting the deprecated save/restore option only
+# for boards still on the legacy deep-sleep-counter path (no companion selected),
+# so they retain OS Timer save/restore across standby.
 config MCUX_OS_TIMER_PM_POWERED_OFF
-	default y
+	default y if SYSTEM_TIMER_LPM_COMPANION_NONE
 
 # PM code that runs from the idle loop has a large
 # footprint. Hence increase the size when PM is enabled.

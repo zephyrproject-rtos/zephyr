@@ -7,6 +7,13 @@
 if(CONFIG_BOARD_MIMXRT700_EVK_MIMXRT798S_CM33_CPU0 OR CONFIG_BOARD_MIMXRT700_EVK_MIMXRT798S_CM33_CPU1)
   zephyr_library()
   zephyr_library_sources(board.c)
+
+  if(CONFIG_SECOND_CORE_MCUX)
+    if(NOT CONFIG_IPM_IMX AND NOT CONFIG_MBOX_NXP_IMX_MU)
+      zephyr_library_sources(${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/mu1/fsl_mu.c)
+    endif()
+     zephyr_library_include_directories(${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/mu1)
+  endif()
 endif()
 
 if(CONFIG_NXP_IMXRT_BOOT_HEADER)

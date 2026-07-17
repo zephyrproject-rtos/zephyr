@@ -43,6 +43,17 @@ config NXP_IMXRT_BOOT_HEADER
 
 endif
 
+if PM
+
+# The OS Timer power domain collapses in Deep Sleep Retention, so the system
+# timer is reset by that low-power mode. Delegate wakeup timekeeping to the
+# system-timer low-power companion (see /chosen zephyr,system-timer-companion),
+# which the timer driver arms on every idle entry.
+configdefault SYSTEM_TIMER_RESET_BY_LPM
+	default y
+
+endif # PM
+
 endif # SOC_MIMXRT798S_CM33_CPU0
 
 
