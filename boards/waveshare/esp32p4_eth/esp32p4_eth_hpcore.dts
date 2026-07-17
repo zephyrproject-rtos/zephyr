@@ -1,0 +1,165 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32p4/esp32p4_n32r32.dtsi>
+#include "esp32p4_eth_hpcore-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <espressif/partitions_0x2000_default_32M.dtsi>
+
+/ {
+	model = "Waveshare ESP32-P4-ETH HP Core";
+	compatible = "waveshare,esp32-p4-eth";
+
+	chosen {
+		zephyr,sram = &sramhp;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		i2c-0 = &i2c0;
+		mcuboot-button0 = &boot_button;
+		sdhc0 = &sdhc0;
+		sw0 = &boot_button;
+		uart-0 = &uart0;
+		watchdog0 = &wdt0;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		boot_button: button {
+			label = "Boot Button";
+			gpios = <&gpio1 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+/*
+ * This board carries pre-v3 (v1.3) ESP32-P4 silicon, whose valid CPU
+ * frequencies are 90/180/360 MHz. Using a frequency outside that set
+ * builds but fails at boot with "invalid CPU frequency".
+ */
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(360)>;
+};
+
+&cpu1 {
+	clock-frequency = <DT_FREQ_M(360)>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&coretemp {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "disabled";
+};
+
+&dma {
+	status = "okay";
+};
+
+&dma_axi {
+	status = "okay";
+};
+
+&ldo {
+	status = "okay";
+
+	ldo1@1 {
+		regulator-init-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	ldo2@2 {
+		regulator-init-microvolt = <1800000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	ldo4@4 {
+		regulator-init-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+};
+
+&sdhc {
+	sdhc0: sdhc@0 {
+		status = "okay";
+		bus-width = <4>;
+		max-bus-freq = <40000000>;
+		clk-pin = <43>;
+		cmd-pin = <44>;
+		d0-pin = <39>;
+		d1-pin = <40>;
+		d2-pin = <41>;
+		d3-pin = <42>;
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
+};
+
+&mdio {
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: ethernet-phy@1 {
+		compatible = "ethernet-phy";
+		reg = <1>;
+		reset-gpios = <&gpio1 19 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&eth {
+	status = "okay";
+	phy-handle = <&phy>;
+	pinctrl-0 = <&rmii_default>;
+	pinctrl-names = "default";
+};
+
+/*
+ * Native USB 2.0 HS OTG exposed on the on-board 4-pin USB header (J3),
+ * wired to the dedicated UTMI PHY pins (DP/DM). The USB-C port is a
+ * separate USB-to-UART bridge used for the console (see uart0).
+ */
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};
