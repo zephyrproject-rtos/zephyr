@@ -246,8 +246,7 @@ struct scan_delegator_sync_state {
 		     CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT),                                  \
 		    (0))
 
-extern struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN * MAX(UNICAST_SERVER_STREAM_COUNT,
-								    UNICAST_CLIENT_STREAM_COUNT)];
+extern struct shell_stream unicast_streams[CONFIG_BT_ISO_MAX_CHAN];
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
