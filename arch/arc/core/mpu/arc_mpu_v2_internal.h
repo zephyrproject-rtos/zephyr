@@ -6,6 +6,8 @@
 #ifndef ZEPHYR_ARCH_ARC_CORE_MPU_ARC_MPU_V2_INTERNAL_H_
 #define ZEPHYR_ARCH_ARC_CORE_MPU_ARC_MPU_V2_INTERNAL_H_
 
+#include <zephyr/sys/math_extras.h>
+
 #define AUX_MPU_EN_ENABLE   BIT(30)
 #define AUX_MPU_EN_DISABLE  ~BIT(30)
 
@@ -125,6 +127,7 @@ static inline bool _is_in_region(uint32_t r_index, uint32_t start, uint32_t size
 	uint32_t r_addr_start;
 	uint32_t r_addr_end;
 	uint32_t r_size_lshift;
+	uint32_t end;
 
 	r_addr_start = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + r_index * 2U)
 		       & (~AUX_MPU_RDB_VALID_MASK);
@@ -133,7 +136,11 @@ static inline bool _is_in_region(uint32_t r_index, uint32_t start, uint32_t size
 	r_size_lshift = AUX_MPU_RDP_SIZE_SHIFT(r_size_lshift);
 	r_addr_end = r_addr_start  + (1 << (r_size_lshift + 1));
 
-	if (start >= r_addr_start && (start + size) <= r_addr_end) {
+	if (u32_add_overflow(start, size, &end)) {
+		return false;
+	}
+
+	if (start >= r_addr_start && end <= r_addr_end) {
 		return true;
 	}
 
