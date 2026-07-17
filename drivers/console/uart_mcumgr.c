@@ -40,9 +40,9 @@ static bool uart_mcumgr_ignoring;
 K_MEM_SLAB_DEFINE_TYPE(uart_mcumgr_slab, struct uart_mcumgr_rx_buf,
 		       CONFIG_UART_MCUMGR_RX_BUF_COUNT);
 
-#if defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
-uint8_t async_buffer[CONFIG_MCUMGR_TRANSPORT_UART_ASYNC_BUFS]
-		    [CONFIG_MCUMGR_TRANSPORT_UART_ASYNC_BUF_SIZE];
+#if defined(CONFIG_MCUMGR_TRANSPORT_UART_MODE_ASYNC)
+uint8_t async_buffer[CONFIG_MCUMGR_TRANSPORT_UART_MODE_ASYNC_BUFS]
+		    [CONFIG_MCUMGR_TRANSPORT_UART_MODE_ASYNC_BUF_SIZE];
 static int async_current;
 #endif
 
@@ -70,7 +70,7 @@ void uart_mcumgr_free_rx_buf(struct uart_mcumgr_rx_buf *rx_buf)
 	k_mem_slab_free(&uart_mcumgr_slab, block);
 }
 
-#if !defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
+#if defined(CONFIG_MCUMGR_TRANSPORT_UART_MODE_INTERRUPT)
 /**
  * Reads a chunk of received data from the UART.
  */
@@ -139,7 +139,7 @@ static struct uart_mcumgr_rx_buf *uart_mcumgr_rx_byte(uint8_t byte)
 #endif
 }
 
-#if defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
+#if defined(CONFIG_MCUMGR_TRANSPORT_UART_MODE_ASYNC)
 static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, void *user_data)
 {
 	struct uart_mcumgr_rx_buf *rx_buf;
@@ -175,7 +175,7 @@ static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, 
 		 * UART_RX_BUF_REQUEST is processed.
 		 */
 		++async_current;
-		async_current %= CONFIG_MCUMGR_TRANSPORT_UART_ASYNC_BUFS;
+		async_current %= CONFIG_MCUMGR_TRANSPORT_UART_MODE_ASYNC_BUFS;
 		uart_rx_buf_rsp(dev, async_buffer[async_current],
 				sizeof(async_buffer[async_current]));
 		break;
@@ -184,7 +184,7 @@ static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, 
 		break;
 	}
 }
-#else
+#elif defined(CONFIG_MCUMGR_TRANSPORT_UART_MODE_INTERRUPT)
 /**
  * ISR that is called when UART bytes are received.
  */
@@ -244,7 +244,7 @@ int uart_mcumgr_send(const uint8_t *data, int len)
 #endif
 }
 
-#if defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
+#if defined(CONFIG_MCUMGR_TRANSPORT_UART_MODE_ASYNC)
 static void uart_mcumgr_setup(const struct device *uart)
 {
 	uart_callback_set(uart, uart_mcumgr_async, NULL);
@@ -252,7 +252,7 @@ static void uart_mcumgr_setup(const struct device *uart)
 	uart_rx_enable(uart, async_buffer[0], sizeof(async_buffer[0]),
 		       CONFIG_UART_CONSOLE_MCUMGR_ASYNC_RX_TIMEOUT_US);
 }
-#else
+#elif defined(CONFIG_MCUMGR_TRANSPORT_UART_MODE_INTERRUPT)
 static void uart_mcumgr_setup(const struct device *uart)
 {
 	uart_irq_rx_disable(uart);

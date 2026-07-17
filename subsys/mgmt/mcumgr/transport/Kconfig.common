@@ -18,16 +18,26 @@ config MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE
 	  Hidden Kconfig selected by transports that implement the raw binary non-SMP over console
 	  serial transport and need this functionality to be available in the serial_util.c file.
 
-if (MCUMGR_TRANSPORT_UART || MCUMGR_TRANSPORT_RAW_UART) && UART_ASYNC_API
+if (MCUMGR_TRANSPORT_UART || MCUMGR_TRANSPORT_RAW_UART)
 
-menuconfig MCUMGR_TRANSPORT_UART_ASYNC
-	bool "Use async UART API when available"
-	help
-	  The option enables use of UART async API when available for selected MCUmgr UART port.
+choice MCUMGR_TRANSPORT_UART_MODE
+	prompt "UART transport mode"
+	default MCUMGR_TRANSPORT_UART_MODE_INTERRUPT if UART_INTERRUPT_DRIVEN
+	default MCUMGR_TRANSPORT_UART_MODE_ASYNC if UART_ASYNC_API
 
-if MCUMGR_TRANSPORT_UART_ASYNC
+config MCUMGR_TRANSPORT_UART_MODE_INTERRUPT
+	bool "Interrupt"
+	depends on UART_INTERRUPT_DRIVEN
 
-config MCUMGR_TRANSPORT_UART_ASYNC_BUFS
+config MCUMGR_TRANSPORT_UART_MODE_ASYNC
+	bool "Async"
+	depends on UART_ASYNC_API
+
+endchoice
+
+if MCUMGR_TRANSPORT_UART_MODE_ASYNC
+
+config MCUMGR_TRANSPORT_UART_MODE_ASYNC_BUFS
 	int "Number of async RX UART buffers"
 	range 2 8
 	default 2
@@ -37,14 +47,14 @@ config MCUMGR_TRANSPORT_UART_ASYNC_BUFS
 	  receive data without stopping due to running out of buffer space. At least two buffers
 	  area required for smooth RX operation.
 
-config MCUMGR_TRANSPORT_UART_ASYNC_BUF_SIZE
+config MCUMGR_TRANSPORT_UART_MODE_ASYNC_BUF_SIZE
 	int "Size of single async RX UART buffer"
 	default 64
 	help
 	  The size of single buffer for asynchronous RX.
 
-endif # MCUMGR_TRANSPORT_UART_ASYNC
+endif # MCUMGR_TRANSPORT_UART_MODE_ASYNC
 
-endif # (MCUMGR_TRANSPORT_UART || MCUMGR_TRANSPORT_RAW_UART) && UART_ASYNC_API
+endif # (MCUMGR_TRANSPORT_UART || MCUMGR_TRANSPORT_RAW_UART)
 
 endmenu

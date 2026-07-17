@@ -213,7 +213,6 @@ config IPM_CONSOLE_LINE_BUF_LEN
 
 config UART_MCUMGR
 	bool "MCUmgr UART driver"
-	select UART_INTERRUPT_DRIVEN
 	help
 	  Enable the MCUmgr UART driver. This driver allows the application to
 	  communicate over UART using the MCUmgr (over console) protocol for image upgrade and
