@@ -15,20 +15,22 @@
 			status = "disabled";
 		};
 
-		gpiof: gpio@42021400 {
-			compatible = "st,stm32-gpio";
-			gpio-controller;
-			#gpio-cells = <2>;
-			reg = <0x42021400 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 5)>;
-		};
+		pinctrl: pin-controller@42020000 {
+			gpiof: gpio@42021400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42021400 0x400>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 5)>;
+			};
 
-		gpioi: gpio@42022000 {
-			compatible = "st,stm32-gpio";
-			gpio-controller;
-			#gpio-cells = <2>;
-			reg = <0x42022000 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 8)>;
+			gpioi: gpio@42022000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42022000 0x400>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 8)>;
+			};
 		};
 
 		sdmmc2: sdmmc@420c8c00 {
