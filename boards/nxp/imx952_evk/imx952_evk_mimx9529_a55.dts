@@ -14,6 +14,7 @@
 	compatible = "fsl,mimx952";
 
 	chosen {
+		zephyr,canbus = &flexcan2;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,sram = &dram;
@@ -35,6 +36,15 @@
 
 	dram: memory@d0000000 {
 		reg = <0xd0000000 DT_SIZE_M(10)>;
+	};
+
+	can_phy2: can-phy2 {
+		compatible = "nxp,tja1463", "can-transceiver-gpio";
+		enable-gpios = <&gpio_exp0 4 GPIO_ACTIVE_HIGH>;
+		standby-gpios = <&gpio_exp0 3 GPIO_ACTIVE_LOW>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+		status = "okay";
 	};
 };
 
@@ -64,4 +74,11 @@
 		int-gpios = <&gpio2 18 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";
 	};
+};
+
+&flexcan2 {
+	pinctrl-0 = <&flexcan2_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy2>;
+	status = "okay";
 };
