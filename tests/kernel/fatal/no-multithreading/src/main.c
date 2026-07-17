@@ -114,11 +114,29 @@ static const exc_trigger_func_t exc_trigger_func[] = {
 };
 
 /**
- * @brief Verify the kernel fatal error handling works correctly
- * @details Manually trigger the crash with various ways and check
- * that the kernel is handling that properly or not. Also the crash reason
- * should match.
+ * @brief Verify fatal errors are handled correctly without multithreading.
  *
+ * @details
+ * With CONFIG_MULTITHREADING disabled there is no thread to abort, so a fatal
+ * error cannot be recovered from - the kernel must report the correct reason
+ * code and halt. This test triggers one fatal condition per build (selected by
+ * the VIA_TWISTER index, one twister scenario per cause) and the installed
+ * fatal handler verifies the reported reason matches the trigger before halting.
+ * The covered causes are a CPU exception, k_oops(), k_panic(), a failed
+ * __ASSERT(), and z_except_reason() with a positive and a negative reason.
+ *
+ * Test steps:
+ * - Trigger the fatal condition selected for this build.
+ * - In the fatal handler, compare the reported reason against the expected one.
+ *
+ * Expected result:
+ * - The fatal handler is invoked with the reason code matching the trigger and
+ *   the system halts (the test body never returns).
+ *
+ * @see k_oops()
+ * @see k_panic()
+ * @see z_except_reason()
+ * @see k_sys_fatal_error_handler()
  * @ingroup kernel_fatal_tests
  */
 ZTEST(fatal_no_mt, test_fatal_no_mt)
