@@ -37,4 +37,19 @@ endif # DISK_DRIVERS
 configdefault NET_L2_ETHERNET
 	default y if DT_HAS_NXP_ENET_ENABLED
 
+
+# Size needed for two buffers of BX24 1280x720 frames: 2 * 1280 * 720 * 4 = 7,372,800 bytes + some bytes for headers
+config VIDEO_BUFFER_POOL_HEAP_SIZE
+	default 7373600
+	depends on VIDEO && CPU_CORTEX_M7
+
+config DMA
+	default y
+	depends on VIDEO && CPU_CORTEX_M7 && DISPLAY
+
+config MCUX_ELCDIF_PXP
+	default y
+	depends on VIDEO && CPU_CORTEX_M7 && DISPLAY
+
+
 endif
