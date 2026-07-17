@@ -115,7 +115,7 @@ Programming
 Set ``--shield arducam_cu450_ov5640_dvp`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture
+   :zephyr-app: samples/subsys/video/capture
    :board: ek_ra8p1/r7ka8p1kflcac/cm85
    :shield: arducam_cu450_ov5640_dvp
    :goals: build

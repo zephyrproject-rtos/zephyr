@@ -63,7 +63,7 @@ Building and Running
 For :zephyr:board:`mimxrt1064_evk`, build this sample application with the following commands:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture
+   :zephyr-app: samples/subsys/video/capture
    :board: mimxrt1064_evk
    :shield: dvp_fpc24_mt9m114,rk043fn66hs_ctg
    :goals: build
@@ -72,7 +72,7 @@ For :zephyr:board:`mimxrt1064_evk`, build this sample application with the follo
 For :zephyr:board:`mimxrt1170_evk`, build this sample application with the following commands:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture
+   :zephyr-app: samples/subsys/video/capture
    :board: mimxrt1170_evk/mimxrt1176/cm7
    :shield: nxp_btb44_ov5640,rk055hdmipi4ma0
    :goals: build
@@ -82,7 +82,7 @@ For :zephyr:board:`arduino_nicla_vision`, build this sample application with the
 commands:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture
+   :zephyr-app: samples/subsys/video/capture
    :board: arduino_nicla_vision/stm32h747xx/m7
    :goals: build
    :compact:
@@ -91,7 +91,7 @@ For :zephyr:board:`frdm_mcxn947`, build this sample application with the followi
 using the :ref:`dvp_20pin_ov7670` and :ref:`lcd_par_s035` connected to the board:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture
+   :zephyr-app: samples/subsys/video/capture
    :board: frdm_mcxn947/mcxn947/cpu0
    :shield: dvp_20pin_ov7670,lcd_par_s035_8080
    :goals: build
@@ -101,7 +101,7 @@ For :zephyr:board:`stm32h7b3i_dk`, build this sample application with the follow
 using the :ref:`st_b_cams_omv_mb1683` shield with a compatible camera module:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture
+   :zephyr-app: samples/subsys/video/capture
    :board: stm32h7b3i_dk
    :shield: st_b_cams_omv_mb1683
    :goals: build
@@ -111,7 +111,7 @@ For :zephyr:board:`stm32n6570_dk`, build this sample application with the follow
 using the :ref:`st_b_cams_imx_mb1854` camera module:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture
+   :zephyr-app: samples/subsys/video/capture
    :board: stm32n6570_dk
    :shield: st_b_cams_imx_mb1854
    :goals: build
@@ -122,7 +122,7 @@ a video software pattern generator is supported by the above build commands with
 specifying the shields, and using :ref:`snippet-video-sw-generator`:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture
+   :zephyr-app: samples/subsys/video/capture
    :board: native_sim/native/64
    :snippets: video-sw-generator
    :goals: build
@@ -132,7 +132,7 @@ For controlling the camera device using shell commands instead of continuously c
 append ``-DCONFIG_VIDEO_SHELL=y`` to the build command:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture
+   :zephyr-app: samples/subsys/video/capture
    :board: mimxrt1064_evk
    :shield: dvp_fpc24_mt9m114,rk043fn66hs_ctg
    :gen-args: -DCONFIG_VIDEO_SHELL=y
@@ -142,7 +142,7 @@ append ``-DCONFIG_VIDEO_SHELL=y`` to the build command:
 For :zephyr:board:`stm32h7b3i_dk` with shell commands:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture
+   :zephyr-app: samples/subsys/video/capture
    :board: stm32h7b3i_dk
    :shield: st_b_cams_omv_mb1683
    :gen-args: -DCONFIG_VIDEO_SHELL=y

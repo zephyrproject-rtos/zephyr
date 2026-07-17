@@ -93,7 +93,7 @@ Select the shield variant that matches your board's connector and pass it to
 ``west build``. For example, using the Arduino variant on the ``nucleo_h563zi``:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/tcpserversink
+   :zephyr-app: samples/subsys/video/tcpserversink
    :board: nucleo_h563zi
    :shield: arducam_mega_arduino
    :gen-args: -DCONFIG_NET_PKT_RX_COUNT=10 -DCONFIG_NET_PKT_TX_COUNT=10 -DCONFIG_NET_BUF_RX_COUNT=20 -DCONFIG_NET_BUF_TX_COUNT=20 -DCONFIG_NET_MAX_CONTEXTS=10 -DCONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE=131072 -DCONFIG_VIDEO_FRAME_WIDTH=96 -DCONFIG_VIDEO_FRAME_HEIGHT=96 -DCONFIG_VIDEO_PIXEL_FORMAT=\"JPEG\"

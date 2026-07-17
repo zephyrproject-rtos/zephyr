@@ -30,7 +30,7 @@ Building and Running
 For :zephyr:board:`mini_stm32h743`, build this sample application with the following commands:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture_to_lvgl/
+   :zephyr-app: samples/subsys/video/capture_to_lvgl/
    :board: mini_stm32h743
    :shield: weact_ov2640_cam_module
    :goals: build flash
@@ -41,7 +41,7 @@ For testing purpose and without the need of any real video capture hardware,
 a video software pattern generator is supported by using :ref:`snippet-video-sw-generator`:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture
+   :zephyr-app: samples/subsys/video/capture
    :board: native_sim/native/64
    :snippets: video-sw-generator
    :goals: build

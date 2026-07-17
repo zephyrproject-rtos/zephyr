@@ -69,7 +69,7 @@ Programming
 Set ``--shield weact_ov2640_cam_module`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture_to_lvgl/
+   :zephyr-app: samples/subsys/video/capture_to_lvgl/
    :board: mini_stm32h743
    :shield: weact_ov2640_cam_module
    :gen-args: -DCONFIG_BOOT_DELAY=2000
