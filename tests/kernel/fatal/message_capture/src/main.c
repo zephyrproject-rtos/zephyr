@@ -1,93 +1,114 @@
 /*
- * Copyright (c) Copyright (c) 2020 Intel Corporation.
+ * Copyright (c) 2020 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/ztest.h>
 #include <zephyr/sys/printk.h>
-#include <ksched.h>
+#include <zephyr/tc_capture.h>
 
-static volatile int expected_reason = -1;
+#define STACKSIZE     (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define MAIN_PRIORITY 7
+#define PRIORITY      5
 
-void z_thread_essential_clear(struct k_thread *thread);
+/*
+ * The kernel fatal path prints the offending thread's identity via
+ * EXCEPTION_DUMP(), which resolves to LOG_ERR() when CONFIG_LOG is enabled and
+ * to printk() otherwise. The tc_capture helper records whichever path is
+ * active, so this test asserts on the dump line without any per-test plumbing.
+ */
+#define EXPECTED_DUMP_STR "Current thread:"
 
-void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
+static K_THREAD_STACK_DEFINE(crash_stack, STACKSIZE);
+static struct k_thread crash_thread;
+
+static ZTEST_DMEM volatile int expected_reason = -1;
+
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
 {
-	printk("Caught system error -- reason %d\n", reason);
+	ARG_UNUSED(esf);
 
-	if (expected_reason == -1) {
-		printk("Was not expecting a crash\n");
-		printk("PROJECT EXECUTION FAILED\n");
-		k_fatal_halt(reason);
-	}
+	printk("Caught system error -- reason %d\n", reason);
 
 	if (reason != expected_reason) {
 		printk("Wrong crash type got %d expected %d\n", reason,
 		       expected_reason);
-		printk("PROJECT EXECUTION FAILED\n");
 		k_fatal_halt(reason);
 	}
-
-	printk("Fatal error expected as part of test case.\n");
 
 	expected_reason = -1;
 }
 
-/**
- * @brief This test case verifies when fatal error
- *        log message can be captured.
- * @details
- * Test Objective:
- * - When the fatal error is triggered, if the debugging message function
- *   is turned on, the system can capture the log information.
- *
- * Prerequisite Conditions:
- * - N/A
- *
- * Input Specifications:
- * - N/A
- *
- * Test Procedure:
- * -# Writing a function deliberately triggers a koops exception.
- * -# When the log module is enabled, it will log some information
- *    in the process of exception.
- * -# The regex in testcase.yaml verify the kernel will dump thread id
- *    information and error type when exception occurs.
- *
- * Expected Test Result:
- * - The expected log message is caught.
- *
- * Pass/Fail Criteria:
- * - Success if the log matching regex in step 3.
- * - Failure if the log is not matching regex in step 3.
- *
- * Assumptions and Constraints:
- * - N/A
- * @ingroup kernel_fatal_tests
- */
-void test_message_capture(void)
+static void oops_entry(void *p1, void *p2, void *p3)
 {
-	unsigned int key;
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
 	expected_reason = K_ERR_KERNEL_OOPS;
-
-	key = irq_lock();
 	k_oops();
-	printk("SHOULD NEVER SEE THIS\n");
-	irq_unlock(key);
+
+	/* The thread must be terminated by the fatal path before returning. */
+	ztest_test_fail();
 }
 
-int main(void)
+/**
+ * @brief Verify the fatal error path emits the offending thread dump.
+ *
+ * @details
+ * When a fatal error is raised, the kernel prints diagnostic information about
+ * the offending thread (via EXCEPTION_DUMP()) before invoking the application
+ * fatal handler. Depending on configuration that dump is emitted through the
+ * logging subsystem or directly via printk(). Using the tc_capture helper the
+ * test records whichever output path is active, raises a fatal error with
+ * k_oops() from a cooperative thread, and asserts both that the "Current
+ * thread:" dump line was emitted and that the reason code reached
+ * k_sys_fatal_error_handler().
+ *
+ * Test steps:
+ * - Start test output capture.
+ * - Spawn a cooperative thread that calls k_oops() (K_ERR_KERNEL_OOPS).
+ * - Let the kernel dump the diagnostics and invoke the fatal handler, which
+ *   returns so the offending thread is terminated.
+ * - Stop capture and inspect the recorded output.
+ *
+ * Expected result:
+ * - The captured output contains the "Current thread:" dump line.
+ * - The fatal handler observes K_ERR_KERNEL_OOPS (expected_reason cleared).
+ *
+ * @see k_oops()
+ * @see k_sys_fatal_error_handler()
+ * @ingroup kernel_fatal_tests
+ */
+ZTEST(fatal_message_capture, test_fatal_message_capture)
 {
-	/* main() is an essential thread, and we try to OOPS it.  When
-	 * this test was written, that worked (even though it wasn't
-	 * supposed to per docs).  Now we trap a different error (a
-	 * panic and not an oops).  Set the thread non-essential as a
-	 * workaround.
-	 */
-	z_thread_essential_clear(_current);
+	tc_capture_start();
 
-	test_message_capture();
-	return 0;
+	k_thread_create(&crash_thread, crash_stack,
+			K_THREAD_STACK_SIZEOF(crash_stack), oops_entry,
+			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0, K_NO_WAIT);
+	k_thread_abort(&crash_thread);
+
+	tc_capture_stop();
+
+	zassert_true(tc_capture_contains(EXPECTED_DUMP_STR),
+		     "fatal path did not emit \"%s\"", EXPECTED_DUMP_STR);
+	zassert_equal(expected_reason, -1,
+		      "fatal handler did not observe K_ERR_KERNEL_OOPS");
 }
+
+/*
+ * Lower the ztest thread to a preemptible priority so the cooperative crash
+ * thread runs and faults deterministically, mirroring the fatal/exception
+ * suite. Done per test because each case runs on its own ztest thread.
+ */
+static void mc_before(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(MAIN_PRIORITY));
+}
+
+ZTEST_SUITE(fatal_message_capture, NULL, NULL, mc_before, NULL, NULL);
