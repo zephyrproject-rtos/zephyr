@@ -1502,10 +1502,6 @@ static inline bool adc_is_ready_dt(const struct adc_dt_spec *spec)
 }
 
 /**
- * @}
- */
-
-/**
  * @brief Get the decoder name for the current driver
  *
  * This function depends on @c DT_DRV_COMPAT being defined.
@@ -1586,6 +1582,10 @@ extern const struct rtio_iodev_api __adc_iodev_api;
 		.trigger_cnt = ARRAY_SIZE(_CONCAT(__trigger_array_, name)),			\
 	};											\
 	RTIO_IODEV_DEFINE(name, &__adc_iodev_api, &_CONCAT(__adc_read_config_, name))
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
