@@ -10,6 +10,10 @@
 
 #include <soc.h>
 
+#ifndef CONFIG_SOC_MSPM_DEVICE_FAMILY_TYPE
+#error "SOC_MSPM_DEVICE_FAMILY_TYPE not configured"
+#endif
+
 void soc_early_init_hook(void)
 {
 	/* Low Power Mode is configured to be SLEEP0 */

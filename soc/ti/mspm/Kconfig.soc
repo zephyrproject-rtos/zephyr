@@ -10,4 +10,5 @@ config SOC_FAMILY_TI_MSPM
 config SOC_FAMILY
 	default "ti_mspm" if SOC_FAMILY_TI_MSPM
 
+rsource "Kconfig.device_family"
 rsource "*/Kconfig.soc"
