@@ -1,0 +1,40 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		sdio-device = &sdio_device0;
+	};
+
+	soc {
+		sdio_device0: sdio_device@50158000 {
+			compatible = "nxp,rw6xx-sdio-device";
+			reg = <0x50158000 0x200>;
+			interrupts = <46 0>;
+			num-funcs = <1>;
+			vendor-id = <0x0471>;
+			device-id = <0x0209>;
+			card-type = <0x1>;
+			pinctrl-0 = <&pinmux_sdio_device>;
+			pinctrl-names = "default";
+			status = "okay";
+		};
+	};
+};
+
+&pinctrl {
+	pinmux_sdio_device: pinmux_sdio_device {
+		group0 {
+			pinmux = <IO_MUX_SDIO_IO15
+				  IO_MUX_SDIO_IO16
+				  IO_MUX_SDIO_IO17
+				  IO_MUX_SDIO_IO18
+				  IO_MUX_SDIO_IO19
+				  IO_MUX_SDIO_IO20>;
+			slew-rate = "ultra";
+		};
+	};
+};
