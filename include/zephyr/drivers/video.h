@@ -12,8 +12,8 @@
  * @brief Main header file for video driver API.
  */
 
-#ifndef ZEPHYR_INCLUDE_VIDEO_H_
-#define ZEPHYR_INCLUDE_VIDEO_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_VIDEO_H_
+#define ZEPHYR_INCLUDE_DRIVERS_VIDEO_H_
 
 /**
  * @brief Interfaces for video devices.
@@ -2595,4 +2595,4 @@ static inline uint8_t video_mipi_data_type(uint32_t pixfmt)
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_VIDEO_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_VIDEO_H_ */

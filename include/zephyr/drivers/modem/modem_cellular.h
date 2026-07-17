@@ -10,8 +10,8 @@
  * @ingroup modem_cellular_backend
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_CELLULAR_INTERNAL_H_
-#define ZEPHYR_INCLUDE_DRIVERS_CELLULAR_INTERNAL_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MODEM_MODEM_CELLULAR_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MODEM_MODEM_CELLULAR_H_
 
 #include <zephyr/drivers/cellular.h>
 #include <zephyr/modem/backend/uart.h>
@@ -647,4 +647,4 @@ int cellular_modem_resume_periodic_script(const struct device *dev);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_CELLULAR_INTERNAL_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MODEM_MODEM_CELLULAR_H_ */

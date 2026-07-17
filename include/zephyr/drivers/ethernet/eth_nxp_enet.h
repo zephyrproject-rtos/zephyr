@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_ETH_NXP_ENET_H__
-#define ZEPHYR_INCLUDE_DRIVERS_ETH_NXP_ENET_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_ETHERNET_ETH_NXP_ENET_H_
+#define ZEPHYR_INCLUDE_DRIVERS_ETHERNET_ETH_NXP_ENET_H_
 
 /*
  * This header is for NXP ENET driver development
@@ -80,4 +80,4 @@ extern void nxp_enet_driver_cb(const struct device *dev,
 #endif
 
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_ETH_NXP_ENET_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_ETHERNET_ETH_NXP_ENET_H_ */

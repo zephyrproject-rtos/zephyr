@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef INCLUDE_ZEPHYR_DRIVERS_EMUL_BBRAM_H_
-#define INCLUDE_ZEPHYR_DRIVERS_EMUL_BBRAM_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_EMUL_BBRAM_H_
+#define ZEPHYR_INCLUDE_DRIVERS_EMUL_BBRAM_H_
 
 #include <zephyr/drivers/emul.h>
 
@@ -94,4 +94,4 @@ static inline int emul_bbram_backend_get_data(const struct emul *target, size_t 
  * @}
  */
 
-#endif /* INCLUDE_ZEPHYR_DRIVERS_EMUL_BBRAM_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_EMUL_BBRAM_H_ */

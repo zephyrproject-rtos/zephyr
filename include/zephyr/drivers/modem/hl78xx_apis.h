@@ -10,8 +10,8 @@
  * @ingroup hl78xx_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_HL78XX_APIS_H_
-#define ZEPHYR_INCLUDE_DRIVERS_HL78XX_APIS_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MODEM_HL78XX_APIS_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MODEM_HL78XX_APIS_H_
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
@@ -2231,4 +2231,4 @@ void hl78xx_power_down_confirm(const struct device *dev);
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_HL78XX_APIS_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MODEM_HL78XX_APIS_H_ */

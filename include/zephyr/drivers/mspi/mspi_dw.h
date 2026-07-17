@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_MSPI_DW_H_
-#define ZEPHYR_INCLUDE_DRIVERS_MSPI_DW_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MSPI_MSPI_DW_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MSPI_MSPI_DW_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,4 +26,4 @@ struct mspi_dw_timing_cfg {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_MSPI_DW_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MSPI_MSPI_DW_H_ */

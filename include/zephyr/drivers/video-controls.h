@@ -5,8 +5,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_VIDEO_CONTROLS_H_
-#define ZEPHYR_INCLUDE_VIDEO_CONTROLS_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_VIDEO_CONTROLS_H_
+#define ZEPHYR_INCLUDE_DRIVERS_VIDEO_CONTROLS_H_
 
 /**
  * @file
@@ -543,4 +543,4 @@ struct video_ctrl_query {
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_VIDEO_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_VIDEO_CONTROLS_H_ */

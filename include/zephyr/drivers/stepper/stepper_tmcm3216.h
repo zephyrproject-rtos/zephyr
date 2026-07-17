@@ -8,8 +8,8 @@
  * @brief Public API for ADI TMCM-3216 stepper motor controller
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_STEPPER_TMCM3216_H_
-#define ZEPHYR_INCLUDE_DRIVERS_STEPPER_TMCM3216_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_STEPPER_STEPPER_TMCM3216_H_
+#define ZEPHYR_INCLUDE_DRIVERS_STEPPER_STEPPER_TMCM3216_H_
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/stepper/stepper.h>
@@ -67,4 +67,4 @@ int tmcm3216_get_status(const struct device *dev, struct tmcm3216_status *status
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_STEPPER_TMCM3216_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_STEPPER_STEPPER_TMCM3216_H_ */

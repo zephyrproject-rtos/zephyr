@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NXP_IMX_NETC_H__
-#define __NXP_IMX_NETC_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_ETHERNET_NXP_IMX_NETC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_ETHERNET_NXP_IMX_NETC_H_
 
 #include <zephyr/net/dsa_core.h>
 #include <zephyr/drivers/ptp_clock.h>
@@ -56,4 +56,4 @@ void dsa_netc_port_twostep_timestamp(struct dsa_switch_context *dsa_switch_ctx, 
 #endif /* CONFIG_PTP_CLOCK_NXP_NETC && NETC_SWITCH_TAG_SUPPORT */
 #endif /* CONFIG_DSA_NXP_IMX_NETC */
 
-#endif
+#endif /* ZEPHYR_INCLUDE_DRIVERS_ETHERNET_NXP_IMX_NETC_H_ */

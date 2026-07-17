@@ -9,8 +9,8 @@
  * @brief Peripheral Sensor Interface (PSI5) driver API.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_PSI5_H_
-#define ZEPHYR_INCLUDE_DRIVERS_PSI5_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_PSI5_PSI5_H_
+#define ZEPHYR_INCLUDE_DRIVERS_PSI5_PSI5_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -276,4 +276,4 @@ static inline int z_impl_psi5_register_callback(const struct device *dev, uint8_
 
 #include <zephyr/syscalls/psi5.h>
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_PSI5_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_PSI5_PSI5_H_ */

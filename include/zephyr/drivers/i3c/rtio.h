@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_I3C_RTIO_H_
-#define ZEPHYR_DRIVERS_I3C_RTIO_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_I3C_RTIO_H_
+#define ZEPHYR_INCLUDE_DRIVERS_I3C_RTIO_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/i3c.h>
@@ -123,4 +123,4 @@ int i3c_rtio_ccc(struct i3c_rtio *ctx, struct i3c_ccc_payload *payload);
 }
 #endif
 
-#endif /* ZEPHYR_DRVIERS_I3C_RTIO_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_I3C_RTIO_H_ */

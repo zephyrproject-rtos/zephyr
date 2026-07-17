@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_SERIAL_UART_ASYNC_TO_IRQ_H_
-#define ZEPHYR_DRIVERS_SERIAL_UART_ASYNC_TO_IRQ_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SERIAL_UART_ASYNC_TO_IRQ_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SERIAL_UART_ASYNC_TO_IRQ_H_
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/logging/log.h>
@@ -277,4 +277,4 @@ void z_uart_async_to_irq_irq_callback_set(const struct device *dev,
 
 /** @} */
 
-#endif /* ZEPHYR_DRIVERS_SERIAL_UART_ASYNC_TO_IRQ_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SERIAL_UART_ASYNC_TO_IRQ_H_ */

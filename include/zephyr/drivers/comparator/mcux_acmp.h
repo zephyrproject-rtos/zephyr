@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_COMP_MCUX_ACMP_H_
-#define ZEPHYR_INCLUDE_DRIVERS_COMP_MCUX_ACMP_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_COMPARATOR_MCUX_ACMP_H_
+#define ZEPHYR_INCLUDE_DRIVERS_COMPARATOR_MCUX_ACMP_H_
 
 #include <zephyr/drivers/comparator.h>
 
@@ -133,4 +133,4 @@ int comp_mcux_acmp_set_window_mode(const struct device *dev, bool enable);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_COMP_MCUX_ACMP_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_COMPARATOR_MCUX_ACMP_H_ */

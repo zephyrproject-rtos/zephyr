@@ -10,8 +10,8 @@
  * @ingroup st87mxx_interface
  */
 
-#ifndef STM87MXX_APP_SRV_H
-#define STM87MXX_APP_SRV_H
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MODEM_ST87MXX_APP_SERVICES_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MODEM_ST87MXX_APP_SERVICES_H_
 
 /**
  * @defgroup st87mxx_interface ST87Mxx
@@ -252,4 +252,4 @@ sequence_state st87mxx_app_services_getstate(void);
 
 /** @} */
 
-#endif /* STM87MXX_APP_SRV_H */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MODEM_ST87MXX_APP_SERVICES_H_ */

@@ -11,8 +11,8 @@
  * @brief File containing API's for the Offloaded raw TX feature.
  */
 
-#ifndef INCLUDE_ZEPHYR_DRIVERS_OFF_RAW_TX_API_H_
-#define INCLUDE_ZEPHYR_DRIVERS_OFF_RAW_TX_API_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_WIFI_NRF_WIFI_OFF_RAW_TX_OFF_RAW_TX_API_H_
+#define ZEPHYR_INCLUDE_DRIVERS_WIFI_NRF_WIFI_OFF_RAW_TX_OFF_RAW_TX_API_H_
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -258,4 +258,4 @@ int nrf70_off_raw_tx_stats(struct nrf_wifi_off_raw_tx_stats *off_raw_tx_stats);
 /**
  * @}
  */
-#endif /* INCLUDE_ZEPHYR_DRIVERS_OFF_RAW_TX_API_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_WIFI_NRF_WIFI_OFF_RAW_TX_OFF_RAW_TX_API_H_ */

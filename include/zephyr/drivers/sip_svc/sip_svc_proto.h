@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_SIP_SVC_PROTO_H_
-#define ZEPHYR_INCLUDE_SIP_SVC_PROTO_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SIP_SVC_SIP_SVC_PROTO_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SIP_SVC_SIP_SVC_PROTO_H_
 
 /**
  * @file
@@ -185,4 +185,4 @@ struct sip_svc_response {
 	void *priv_data;
 };
 
-#endif /* ZEPHYR_INCLUDE_SIP_SVC_PROTO_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SIP_SVC_SIP_SVC_PROTO_H_ */

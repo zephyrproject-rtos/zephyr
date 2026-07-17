@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_COMP_NRF_COMP_H_
-#define ZEPHYR_INCLUDE_DRIVERS_COMP_NRF_COMP_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_COMPARATOR_NRF_COMP_H_
+#define ZEPHYR_INCLUDE_DRIVERS_COMPARATOR_NRF_COMP_H_
 
 #include <zephyr/dt-bindings/comparator/nrf-comp.h>
 #include <zephyr/drivers/comparator.h>
@@ -118,4 +118,4 @@ int comp_nrf_comp_configure_diff(const struct device *dev,
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_COMP_NRF_COMP_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_COMPARATOR_NRF_COMP_H_ */

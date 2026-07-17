@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_MFD_MAXQ10XX_H_
-#define ZEPHYR_INCLUDE_DRIVERS_MFD_MAXQ10XX_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MFD_MFD_MAXQ10XX_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MFD_MFD_MAXQ10XX_H_
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
@@ -28,4 +28,4 @@ struct k_sem *mfd_maxq10xx_get_lock(const struct device *dev);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_MFD_MAXQ10XX_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MFD_MFD_MAXQ10XX_H_ */

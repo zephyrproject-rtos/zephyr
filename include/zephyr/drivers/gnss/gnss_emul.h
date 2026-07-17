@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_GNSS_GNSS_EMUL_H_
-#define ZEPHYR_DRIVERS_GNSS_GNSS_EMUL_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_GNSS_GNSS_EMUL_H_
+#define ZEPHYR_INCLUDE_DRIVERS_GNSS_GNSS_EMUL_H_
 
 #include <stdint.h>
 
@@ -60,4 +60,4 @@ int gnss_emul_get_navigation_mode(const struct device *dev, enum gnss_navigation
  */
 int gnss_emul_get_enabled_systems(const struct device *dev, gnss_systems_t *systems);
 
-#endif /* ZEPHYR_DRIVERS_GNSS_GNSS_EMUL_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_GNSS_GNSS_EMUL_H_ */
