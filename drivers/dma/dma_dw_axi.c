@@ -810,7 +810,7 @@ static int dma_dw_axi_stop(const struct device *dev, uint32_t channel)
 
 static int dma_dw_axi_resume(const struct device *dev, uint32_t channel)
 {
-	uint32_t reg;
+	uint64_t reg;
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, dma_mmio);
 	const struct dma_dw_axi_dev_cfg *dw_dma_config = DEV_CFG(dev);
 	uint32_t ch_state;
