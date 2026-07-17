@@ -272,4 +272,16 @@
 		compatible = "mmio-sram";
 		reg = <0x34000000 0x20000>;
 	};
+
+	flash_controller: flash-controller@52150000 {
+		compatible = "infineon,flash-controller";
+		reg = <0x52150000 0x10000>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		erase-value = <0x00>;
+		infineon,cache-invalidate = "icache0";
+		infineon,explicit-erase;
+		status = "disabled";
+	};
 };
