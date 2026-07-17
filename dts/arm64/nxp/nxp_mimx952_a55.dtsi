@@ -294,3 +294,44 @@
 		status = "disabled";
 	};
 };
+
+/*
+ * GPIO pinmux options. These options define the pinmux settings
+ * for GPIO ports on the package, so that the GPIO driver can
+ * select GPIO mux options during GPIO configuration.
+ */
+
+&gpio2 {
+	pinmux = <&iomuxc_gpio_io00_gpio_io_bit_gpio2_io_bit0>,
+		 <&iomuxc_gpio_io01_gpio_io_bit_gpio2_io_bit1>,
+		 <&iomuxc_gpio_io02_gpio_io_bit_gpio2_io_bit2>,
+		 <&iomuxc_gpio_io03_gpio_io_bit_gpio2_io_bit3>,
+		 <&iomuxc_gpio_io04_gpio_io_bit_gpio2_io_bit4>,
+		 <&iomuxc_gpio_io05_gpio_io_bit_gpio2_io_bit5>,
+		 <&iomuxc_gpio_io06_gpio_io_bit_gpio2_io_bit6>,
+		 <&iomuxc_gpio_io07_gpio_io_bit_gpio2_io_bit7>,
+		 <&iomuxc_gpio_io08_gpio_io_bit_gpio2_io_bit8>,
+		 <&iomuxc_gpio_io09_gpio_io_bit_gpio2_io_bit9>,
+		 <&iomuxc_gpio_io10_gpio_io_bit_gpio2_io_bit10>,
+		 <&iomuxc_gpio_io11_gpio_io_bit_gpio2_io_bit11>,
+		 <&iomuxc_gpio_io12_gpio_io_bit_gpio2_io_bit12>,
+		 <&iomuxc_gpio_io13_gpio_io_bit_gpio2_io_bit13>,
+		 <&iomuxc_gpio_io14_gpio_io_bit_gpio2_io_bit14>,
+		 <&iomuxc_gpio_io15_gpio_io_bit_gpio2_io_bit15>,
+		 <&iomuxc_gpio_io16_gpio_io_bit_gpio2_io_bit16>,
+		 <&iomuxc_gpio_io17_gpio_io_bit_gpio2_io_bit17>,
+		 <&iomuxc_gpio_io18_gpio_io_bit_gpio2_io_bit18>,
+		 <&iomuxc_gpio_io19_gpio_io_bit_gpio2_io_bit19>,
+		 <&iomuxc_gpio_io20_gpio_io_bit_gpio2_io_bit20>,
+		 <&iomuxc_gpio_io21_gpio_io_bit_gpio2_io_bit21>,
+		 <&iomuxc_gpio_io22_gpio_io_bit_gpio2_io_bit22>,
+		 <&iomuxc_gpio_io23_gpio_io_bit_gpio2_io_bit23>,
+		 <&iomuxc_gpio_io24_gpio_io_bit_gpio2_io_bit24>,
+		 <&iomuxc_gpio_io25_gpio_io_bit_gpio2_io_bit25>,
+		 <&iomuxc_gpio_io26_gpio_io_bit_gpio2_io_bit26>,
+		 <&iomuxc_gpio_io27_gpio_io_bit_gpio2_io_bit27>,
+		 <&iomuxc_gpio_io28_gpio_io_bit_gpio2_io_bit28>,
+		 <&iomuxc_gpio_io29_gpio_io_bit_gpio2_io_bit29>,
+		 <&iomuxc_gpio_io30_gpio_io_bit_gpio2_io_bit30>,
+		 <&iomuxc_gpio_io31_gpio_io_bit_gpio2_io_bit31>;
+};
