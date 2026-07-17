@@ -14,7 +14,12 @@
 #include <infineon_kconfig.h>
 #include <zephyr/drivers/timer/ifx_tcpwm.h>
 #include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+#include <zephyr/drivers/clock_control/clock_control_ifx.h>
+#else
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
+#endif
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
 
@@ -35,6 +40,10 @@ struct ifx_tcpwm_counter_config {
 	uint32_t divider_val;
 	en_clk_dst_t clk_dst;
 	void (*irq_enable_func)(const struct device *dev);
+#if CONFIG_SOC_FAMILY_INFINEON_TRAVEO
+	uint32_t frequency;
+	const struct device *clk_dev;
+#endif
 };
 
 struct ifx_tcpwm_counter_data {
@@ -47,7 +56,11 @@ struct ifx_tcpwm_counter_data {
 	struct counter_alarm_cfg alarm_cfg;
 	struct counter_top_cfg top_value_cfg_counter;
 	uint32_t guard_period;
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+	struct ifx_clk_peri clock;
+#else
 	struct ifx_cat1_clock clock;
+#endif
 };
 
 static const cy_stc_tcpwm_counter_config_t counter_default_config = {
@@ -161,13 +174,19 @@ static int ifx_tcpwm_counter_init(const struct device *dev)
 	uint32_t old_mask = Cy_TCPWM_GetInterruptMask(config->reg_base, config->index);
 
 	Cy_TCPWM_Counter_DeInit(config->reg_base, config->index, &counter_config);
-
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+	rslt = clock_control_set_rate(config->clk_dev, &data->clock,
+				      (uint32_t *)&config->frequency);
+	if (rslt != 0) {
+		return rslt;
+	}
+#else
 	/* Connect this TCPWM to the peripheral clock */
 	rslt = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
 	if (rslt != CY_RSLT_SUCCESS) {
 		return -EIO;
 	}
-
+#endif
 	rslt = (cy_rslt_t)Cy_TCPWM_Counter_Init(config->reg_base, config->index, &counter_config);
 	if (rslt != CY_RSLT_SUCCESS) {
 		return -EIO;
@@ -217,9 +236,17 @@ static uint32_t ifx_tcpwm_counter_get_freq(const struct device *dev)
 {
 	struct ifx_tcpwm_counter_data *const data = dev->data;
 	const struct ifx_tcpwm_counter_config *config = dev->config;
-
-	uint32_t frequency = ifx_cat1_utils_peri_pclk_get_frequency(config->clk_dst, &data->clock);
-
+	uint32_t frequency;
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+	cy_rslt_t status;
+	status = clock_control_get_rate(config->clk_dev, (void *)&data->clock,
+					&frequency);
+	if (status != 0) {
+		return -EINVAL;
+	}
+#else
+	frequency = ifx_cat1_utils_peri_pclk_get_frequency(config->clk_dst, &data->clock);
+#endif
 	return frequency;
 }
 
@@ -498,6 +525,13 @@ static DEVICE_API(counter, counter_api) = {
 			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
 		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
 	}
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+#define COUNTER_PERI_CLOCK_INIT(n)                                                                 \
+	.clock = {                                                                      \
+		.rootclk_id = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, rootclk_id),                        \
+		.divider_type = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, divider_type),                    \
+		.divider_inst = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, divider_inst),                    \
+	},
 #else
 #define COUNTER_PERI_CLOCK_INIT(n)                                                                 \
 	.clock = {                                                                                 \
@@ -506,6 +540,14 @@ static DEVICE_API(counter, counter_api) = {
 			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
 		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
 	}
+#endif
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+#define CLOCK_GET(n)  \
+	.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),\
+	.frequency = DT_PROP(DT_INST_PARENT(n), frequency),
+#else
+#define CLOCK_GET(n)
 #endif
 
 #if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
@@ -542,6 +584,7 @@ static DEVICE_API(counter, counter_api) = {
 			(DT_PROP(DT_INST_PARENT(n), resolution) == 32) ? true : false,             \
 		.clk_dst = DT_PROP(DT_INST_PARENT(n), clk_dst),                                    \
 		.irq_enable_func = ifx_counter_irq_enable_func_##n,                                \
+		CLOCK_GET(n)                                					   \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, ifx_tcpwm_counter_init, NULL, &ifx_tcpwm_counter##n##_data,       \
