@@ -345,6 +345,21 @@ static int gpio_stm32_config(const struct device *dev,
 			return -EINVAL;
 		}
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwr_wkupctrl)
+		const struct gpio_stm32_config *cfg = dev->config;
+
+		err = stm32_gpiomgr_enable_wakeup_pin(cfg->port, pin, flags);
+		if (err == -ENODEV) {
+			LOG_ERR("No wake-up pin found associated to GPIO%c pin %d",
+				('A' + cfg->port), pin);
+			return -EINVAL;
+		} else if (err < 0) {
+			LOG_ERR("Failed to configure GPIO%c pin %d as wake-up source",
+				('A' + cfg->port), pin);
+			return err;
+		}
+#else /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwr_wkupctrl) */
+		/* Legacy / transitional WKUP configuration API */
 		struct gpio_dt_spec gpio_dt_cfg = {
 			.port = dev,
 			.pin = pin,
@@ -357,7 +372,8 @@ static int gpio_stm32_config(const struct device *dev,
 					gpio_dt_cfg.port->name, gpio_dt_cfg.pin);
 			return err;
 		}
-#else
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwr_wkupctrl) */
+#else /* CONFIG_POWEROFF */
 		LOG_DBG("STM32_GPIO_WKUP flag has no effect when CONFIG_POWEROFF=n");
 #endif /* CONFIG_POWEROFF */
 	}

@@ -133,11 +133,20 @@ int stm32_gpioport_configure_pin(const struct device *port,
 
 #if defined(CONFIG_STM32_WKUP_PINS)
 /**
- * @brief Configure a GPIO pin as a source for STM32 PWR wake-up pins
+ * @brief Enable and configure the wake-up line associated to a GPIO pin.
  *
- * @param gpio Container for GPIO pin information specified in devicetree
- *
- * @return 0 on success, -EINVAL on invalid values
+ * @param port_idx GPIO port index (STM32_PORTx)
+ * @param pin GPIO pin number
+ * @param flags GPIO configuration flags
+ * @retval 0 Success
+ * @retval -ENODEV No wake-up line associated to specified GPIO pin
+ * @retval <0 Unspecified error
+ */
+int stm32_gpiomgr_enable_wakeup_pin(uint32_t port_idx, gpio_pin_t pin, gpio_flags_t flags);
+
+/**
+ * @deprecated
+ * @note Only available when !DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwr_wkupctrl).
  */
 int stm32_pwr_wkup_pin_cfg_gpio(const struct gpio_dt_spec *gpio);
 #endif /* defined(CONFIG_STM32_WKUP_PINS) */
