@@ -10,6 +10,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/dt-bindings/sensor/tmp114.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
@@ -28,6 +29,7 @@ LOG_MODULE_REGISTER(TMP114, CONFIG_SENSOR_LOG_LEVEL);
 #define TMP114_DEVICE_ID	0x1114
 
 #define TMP114_ALERT_DATA_READY BIT(0)
+#define TMP114_CFGR_SHUTDOWN	BIT(3)
 #define TMP114_CFGR_AVG		BIT(7)
 #define TMP114_AVG		BIT(7)
 #define TMP114_CFGR_CONV	(BIT(0) | BIT(1) | BIT(2))
@@ -257,18 +259,13 @@ static DEVICE_API(sensor, tmp114_driver_api) = {
 	.channel_get = tmp114_channel_get
 };
 
-static int tmp114_init(const struct device *dev)
+static int tmp114_setup(const struct device *dev)
 {
 	struct tmp114_data *drv_data = dev->data;
 	const struct tmp114_dev_config *cfg = dev->config;
 	int rc;
 	uint16_t id;
 	struct sensor_value val;
-
-	if (!i2c_is_ready_dt(&cfg->bus)) {
-		LOG_ERR_DEVICE_NOT_READY(cfg->bus.bus);
-		return -EINVAL;
-	}
 
 	/* Check the Device ID */
 	rc = tmp114_device_id_check(dev, &id);
@@ -291,7 +288,38 @@ static int tmp114_init(const struct device *dev)
 		return rc;
 	}
 
-	return 0;
+	/* Land in shutdown: pm_device_driver_init() leaves the device SUSPENDED
+	 * after TURN_ON (RESUME only runs on first use), so state must match.
+	 */
+	return tmp114_write_config(dev, TMP114_CFGR_SHUTDOWN, TMP114_CFGR_SHUTDOWN);
+}
+
+static int tmp114_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		return tmp114_setup(dev);
+	case PM_DEVICE_ACTION_RESUME:
+		return tmp114_write_config(dev, TMP114_CFGR_SHUTDOWN, 0);
+	case PM_DEVICE_ACTION_SUSPEND:
+		return tmp114_write_config(dev, TMP114_CFGR_SHUTDOWN, TMP114_CFGR_SHUTDOWN);
+	case PM_DEVICE_ACTION_TURN_OFF:
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static int tmp114_init(const struct device *dev)
+{
+	const struct tmp114_dev_config *cfg = dev->config;
+
+	if (!i2c_is_ready_dt(&cfg->bus)) {
+		LOG_ERR_DEVICE_NOT_READY(cfg->bus.bus);
+		return -EINVAL;
+	}
+
+	return pm_device_driver_init(dev, tmp114_pm_action);
 }
 
 #define DEFINE_TMP114(_num) \
@@ -301,7 +329,8 @@ static int tmp114_init(const struct device *dev)
 		.odr = DT_INST_PROP(_num, odr), \
 		.oversampling = DT_INST_PROP(_num, oversampling), \
 	}; \
-	SENSOR_DEVICE_DT_INST_DEFINE(_num, tmp114_init, NULL, \
+	PM_DEVICE_DT_INST_DEFINE(_num, tmp114_pm_action); \
+	SENSOR_DEVICE_DT_INST_DEFINE(_num, tmp114_init, PM_DEVICE_DT_INST_GET(_num), \
 		&tmp114_data_##_num, &tmp114_config_##_num, POST_KERNEL, \
 		CONFIG_SENSOR_INIT_PRIORITY, &tmp114_driver_api);
 
