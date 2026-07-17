@@ -111,7 +111,6 @@ config DWMAC_NB_RX_DESCS
 
 config ETH_DWMAC_RX_REFILL_IRQ
 	bool "Receive buffer refill in interrupt"
-	depends on ETH_DWC_ETHER_1000_CORE
 	default y
 	help
 	  Refill the receive buffer pool in the rx interrupt, if
