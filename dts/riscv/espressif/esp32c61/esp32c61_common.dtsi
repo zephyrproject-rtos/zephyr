@@ -48,7 +48,7 @@
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
 				min-residency-us = <2500>;
-				exit-latency-us = <50>;
+				exit-latency-us = <0>;
 			};
 
 			deep_sleep: deep_sleep {

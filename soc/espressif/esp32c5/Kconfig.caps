@@ -37,6 +37,10 @@ config SOC_ESP32_PM_SUPPORT_VDDSDIO_PD
 	bool
 	default y
 
+config SOC_ESP32_PM_FLASH_KEEP_POWER_IN_LSLP
+	bool
+	default y
+
 config SOC_ESP32_ETM_SUPPORTED
 	bool
 	default y

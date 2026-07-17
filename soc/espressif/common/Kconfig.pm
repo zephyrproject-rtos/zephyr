@@ -79,6 +79,38 @@ config ESP32_PM_ESP_SLEEP_POWER_DOWN_CPU
 config SOC_ESP32_PM_SLP_DEFAULT_PARAMS_OPT
 	bool
 
+config SOC_ESP32_PM_WAKEUP_MARGIN_US
+	int "Light sleep RTC wake pad (us)"
+	range 0 2000
+	default 1000 if SOC_SERIES_ESP32C5 && \
+			ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && ESP32_PM_SLP_IRAM_OPT
+	default 2000 if SOC_SERIES_ESP32C5 && ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+	default 0 if ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+	default 300
+	help
+	  Extra time subtracted when programming the RTC wake timer for light
+	  sleep, in addition to the measured time since idle entry.
+	  HAL's sleep code has an estimation to compensate for exit latency depending
+	  on the hardware resources enabled. However, this compensation does not cover
+	  all code involved in the sleep path. If no extra margin is added, we
+	  fail to meet the kernel's wake deadline in some configurations.
+
+	  Zephyr's exit-latency-us (DTS setting) can't be used for this compensation,
+	  as the wakeup signal comes from an LP timer, not from the system timer
+	  Zephyr schedules on. This means that we need to recalculate the wake
+	  deadline and add an extra margin.
+
+	  Defaults to 0 when peripheral power down is enabled (except on
+	  ESP32-C5): the HAL already overestimates that wake path, so an
+	  extra pad would only waste sleep.
+
+	  ESP32-C5 needs a much larger lead when the CPU powers down: its cache
+	  tags live in the CPU power domain, so every wake starts with a cold
+	  cache and refills from flash, which dominates the resume path.
+	  Disabling CPU power down removes the extra latency, and the IRAM
+	  optimization shortens it by keeping the early wake path independent
+	  of the flash cache.
+
 config ESP32_TIMER_IN_IRAM
 	bool
 
@@ -95,6 +127,7 @@ config ESP32_SLEEP_POWER_DOWN_FLASH
 	bool "Power down flash supply in light sleep (VDDSDIO path)"
 	depends on SOC_ESP32_PM_SUPPORT_VDDSDIO_PD
 	depends on SOC_ESP32_FLASH_SUPPORTED
+	depends on !SOC_ESP32_PM_FLASH_KEEP_POWER_IN_LSLP
 	depends on !ESP_SPIRAM
 	select ESP32_PM_SLP_IRAM_OPT
 	help

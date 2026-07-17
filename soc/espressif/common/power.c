@@ -45,12 +45,18 @@ extern esp_err_t sleep_clock_icg_startup_init(void);
 LOG_MODULE_REGISTER(soc_pm, CONFIG_SOC_LOG_LEVEL);
 
 #define MIN_RESIDENCY_SLEEP_US DT_PROP(DT_NODELABEL(light_sleep), min_residency_us)
-#define WAKEUP_MARGIN_US       200
+
+#if defined(CONFIG_ESP32_PM_SLP_IRAM_OPT)
+#define ESP32_PM_SLEEP_FN_ATTR IRAM_ATTR
+#else
+#define ESP32_PM_SLEEP_FN_ATTR
+#endif
 
 static const struct device *const rtc_dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(rtc_timer));
 
 static bool sleep_enabled;
 static uint64_t sleep_time_us;
+static uint64_t lpm_entry_counter;
 static uint64_t gpio_sleep_hold;
 #if defined(SOC_RTC_SLOW_MEM_SUPPORTED) || defined(SOC_RTC_FAST_MEM_SUPPORTED)
 static RTC_DATA_ATTR uint64_t gpio_was_held;
@@ -64,7 +70,18 @@ static gpio_hal_context_t gpio_hal = {.dev = GPIO_HAL_GET_HW(GPIO_PORT_0)};
 static uint32_t intenable;
 #endif
 
-static bool rtc_wakeup_enable(enum pm_state state, bool enable)
+static inline uint64_t lpm_counter_ticks_per_us(void)
+{
+#if defined(SOC_SYSTIMER_SUPPORTED)
+	return systimer_us_to_ticks(1);
+#elif defined(CONFIG_SOC_SERIES_ESP32)
+	return LACT_TICKS_PER_US;
+#else
+	return 1;
+#endif
+}
+
+static bool ESP32_PM_SLEEP_FN_ATTR rtc_wakeup_enable(enum pm_state state, bool enable)
 {
 	bool wakeup_allowed;
 	bool result = false;
@@ -96,17 +113,22 @@ static bool rtc_wakeup_enable(enum pm_state state, bool enable)
 	}
 
 	if (enable) {
-		/* Here we subtract a time margin from the sleep period to wake up before the
-		 * systimer/ccount scheduler event. Since the RTC timer is used as a wakeup
-		 * source instead of the systimer, the compensation must be applied based on
-		 * the programmed wakeup time in order to resume execution just in time to
-		 * execute the scheduler event. Because of this, we keep 'exit-latency-us' to
-		 * a minimum in the device tree, and apply the actual compensation here. Also,
-		 * HAL already compensates exit latency according to config/dynamic parameters,
-		 * so we'll leave HAL to manage it.
+		/* The RTC timer, not the systimer/ccount, is the wakeup source, so we must
+		 * resume before the scheduler deadline captured at low-power-idle entry. The
+		 * lead time has two parts: the software latency from that entry until here,
+		 * measured from the counter snapshot taken in the LPM entry hook (the HAL
+		 * cannot see it), plus CONFIG_SOC_ESP32_PM_WAKEUP_MARGIN_US as a residual pad
+		 * for the remaining, unmeasured tail up to the HAL's internal sleep-start (GPIO
+		 * prepare and the sleep prologue). Feature-dependent hardware wake latency
+		 * (peripheral, flash and CPU power down) is compensated by HAL.
 		 */
-		if (sleep_time_us >= (MIN_RESIDENCY_SLEEP_US + WAKEUP_MARGIN_US)) {
-			esp_sleep_enable_timer_wakeup(sleep_time_us - WAKEUP_MARGIN_US);
+		uint64_t now = esp_timer_impl_get_counter_reg();
+		uint64_t elapsed_us = (now - lpm_entry_counter) / lpm_counter_ticks_per_us();
+		uint64_t lead_us = elapsed_us + CONFIG_SOC_ESP32_PM_WAKEUP_MARGIN_US;
+
+		if ((sleep_time_us > lead_us) &&
+		    ((sleep_time_us - lead_us) >= MIN_RESIDENCY_SLEEP_US)) {
+			esp_sleep_enable_timer_wakeup(sleep_time_us - lead_us);
 			result = true;
 		}
 	} else {
@@ -163,7 +185,7 @@ void esp32_sleep_gpio_prepare(void)
 	}
 }
 
-void esp32_sleep_gpio_restore(void)
+void ESP32_PM_SLEEP_FN_ATTR esp32_sleep_gpio_restore(void)
 {
 	for (int gpio = 0; gpio < SOC_GPIO_PIN_COUNT; gpio++) {
 
@@ -210,7 +232,11 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 		if (sleep_enabled) {
 			esp32_sleep_gpio_prepare();
-			esp_light_sleep_start();
+			esp_err_t ret = esp_light_sleep_start();
+
+			if (ret != ESP_OK) {
+				LOG_DBG("Light sleep rejected by HAL (0x%x)", ret);
+			}
 		}
 		break;
 
@@ -231,7 +257,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	}
 }
 
-void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+void ESP32_PM_SLEEP_FN_ATTR pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 
@@ -274,11 +300,16 @@ uint64_t esp32_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us)
 #endif
 {
 	/* Since LPM state is not yet confirmed, we only program
-	 * wakeup at pm_state_set() event.
+	 * wakeup at pm_state_set() event. Snapshot the counter here too, so the
+	 * software latency until the wakeup is programmed can be measured and
+	 * discounted from the sleep period.
 	 */
-	sleep_time_us = max_lpm_time_us;
+	uint64_t counter = esp_timer_impl_get_counter_reg();
 
-	return esp_timer_impl_get_counter_reg();
+	sleep_time_us = max_lpm_time_us;
+	lpm_entry_counter = counter;
+
+	return counter;
 }
 
 #if defined(CONFIG_XTENSA_TIMER_LPM_TIMER_HOOK)
