@@ -397,6 +397,45 @@
 		clocks = <&scmi_clk IMX952_CLK_LPI2C2>;
 		status = "disabled";
 	};
+
+	flexcan1: can@443a0000 {
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
+		reg = <0x443a0000 DT_SIZE_K(64)>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 8 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "common";
+		clocks = <&scmi_clk IMX952_CLK_CAN1>;
+		clock-names = "clksrc0";
+		clk-source = <0>;
+		number-of-mb = <96>;
+		status = "disabled";
+	};
+
+	flexcan2: can@421d0000 {
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
+		reg = <0x421d0000 DT_SIZE_K(64)>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "common";
+		clocks = <&scmi_clk IMX952_CLK_CAN2>;
+		clock-names = "clksrc0";
+		clk-source = <0>;
+		number-of-mb = <96>;
+		status = "disabled";
+	};
+
+	flexcan3: can@42220000 {
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
+		reg = <0x42220000 DT_SIZE_K(64)>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "common";
+		clocks = <&scmi_clk IMX952_CLK_CAN3>;
+		clock-names = "clksrc0";
+		clk-source = <0>;
+		number-of-mb = <96>;
+		status = "disabled";
+	};
 };
 
 /*
