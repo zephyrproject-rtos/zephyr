@@ -265,7 +265,7 @@
 			compatible = "st,stm32-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
-			reg = <0x42020000 0x2000>;
+			reg = <0x42020000 0x2800>;
 
 			gpioa: gpio@42020000 {
 				compatible = "st,stm32-gpio";
