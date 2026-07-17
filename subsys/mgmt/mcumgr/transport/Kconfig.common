@@ -24,6 +24,7 @@ choice MCUMGR_TRANSPORT_UART_MODE
 	prompt "UART transport mode"
 	default MCUMGR_TRANSPORT_UART_MODE_INTERRUPT if UART_INTERRUPT_DRIVEN
 	default MCUMGR_TRANSPORT_UART_MODE_ASYNC if UART_ASYNC_API
+	default MCUMGR_TRANSPORT_UART_MODE_POLL
 
 config MCUMGR_TRANSPORT_UART_MODE_INTERRUPT
 	bool "Interrupt"
@@ -32,6 +33,9 @@ config MCUMGR_TRANSPORT_UART_MODE_INTERRUPT
 config MCUMGR_TRANSPORT_UART_MODE_ASYNC
 	bool "Async"
 	depends on UART_ASYNC_API
+
+config MCUMGR_TRANSPORT_UART_MODE_POLL
+	bool "Poll"
 
 endchoice
 
@@ -54,6 +58,16 @@ config MCUMGR_TRANSPORT_UART_MODE_ASYNC_BUF_SIZE
 	  The size of single buffer for asynchronous RX.
 
 endif # MCUMGR_TRANSPORT_UART_MODE_ASYNC
+
+if MCUMGR_TRANSPORT_UART_MODE_POLL
+
+config MCUMGR_TRANSPORT_UART_MODE_POLL_PERIOD
+	int "RX polling period (in milliseconds)"
+	default 10
+	help
+	  Determines how often UART is polled for RX byte.
+
+endif # MCUMGR_TRANSPORT_UART_MODE_POLL
 
 endif # (MCUMGR_TRANSPORT_UART || MCUMGR_TRANSPORT_RAW_UART)
 

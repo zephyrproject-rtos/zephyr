@@ -218,6 +218,20 @@ static void uart_mcumgr_isr(const struct device *unused, void *user_data)
 		}
 	}
 }
+#elif defined(CONFIG_MCUMGR_TRANSPORT_UART_MODE_POLL)
+static void timer_handler(struct k_timer *timer)
+{
+	unsigned char byte;
+	struct uart_mcumgr_rx_buf *rx_buf;
+
+	while (uart_poll_in(uart_mcumgr_dev, &byte) >= 0) {
+		rx_buf = uart_mcumgr_rx_byte(byte);
+		if (rx_buf != NULL) {
+			uart_mcumgr_recv_cb(rx_buf);
+		}
+	}
+}
+K_TIMER_DEFINE(uart_mcumgr_timer, timer_handler, NULL);
 #endif
 
 /**
@@ -261,6 +275,13 @@ static void uart_mcumgr_setup(const struct device *uart)
 	uart_irq_callback_set(uart, uart_mcumgr_isr);
 
 	uart_irq_rx_enable(uart);
+}
+#elif defined(CONFIG_MCUMGR_TRANSPORT_UART_MODE_POLL)
+static void uart_mcumgr_setup(const struct device *uart)
+{
+	ARG_UNUSED(uart);
+	k_timer_start(&uart_mcumgr_timer, K_MSEC(CONFIG_MCUMGR_TRANSPORT_UART_MODE_POLL_PERIOD),
+		      K_MSEC(CONFIG_MCUMGR_TRANSPORT_UART_MODE_POLL_PERIOD));
 }
 #endif
 
