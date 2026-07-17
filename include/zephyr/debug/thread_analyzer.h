@@ -99,8 +99,9 @@ void thread_analyzer_stack_safety_handler_set(thread_analyzer_stack_safety_handl
  *  Callback function with thread analysis information.
  *
  *  @param info Thread analysis information.
+ *  @param user_data Pointer to user data.
  */
-typedef void (*thread_analyzer_cb)(struct thread_analyzer_info *info);
+typedef void (*thread_analyzer_cb)(struct thread_analyzer_info *info, void *user_data);
 
 /** @brief Run the thread analyzer and provide information to the callback
  *
@@ -111,8 +112,9 @@ typedef void (*thread_analyzer_cb)(struct thread_analyzer_info *info);
  *
  *  @param cb The callback function handler
  *  @param cpu cpu to analyze, ignored if THREAD_ANALYZER_AUTO_SEPARATE_CORES=n
+ *  @param user_data Pointer to user data that will be passed to the callback function
  */
-void thread_analyzer_run(thread_analyzer_cb cb, unsigned int cpu);
+void thread_analyzer_run(thread_analyzer_cb cb, unsigned int cpu, void *user_data);
 
 /** @brief Run the thread analyzer and print stack size statistics.
  *

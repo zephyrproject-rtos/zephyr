@@ -1082,6 +1082,13 @@ Other subsystems
      ZTEST_BENCHMARK(suite, my_bench, 100, setup, teardown) { /* ... */ }
      ZTEST_BENCHMARK_TIMED(suite, my_bench, 1000, setup, teardown) { /* ... */ }
 
+* The :c:func:`thread_analyzer_run` function now takes a ``void *user_data``
+  argument that is forwarded to the callback. The :c:type:`thread_analyzer_cb`
+  callback typedef has also been updated to accept ``void *user_data`` as a
+  second argument. Callers of :c:func:`thread_analyzer_run` must pass ``NULL``
+  if no user data is needed, and existing callback implementations must add the
+  ``void *user_data`` parameter to their signature.
+
 Random
 ======
 
