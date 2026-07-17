@@ -13,48 +13,4 @@ set -uex
 
 TWISTER_OPTIONS="-vv --fixture bsim_multi_test --no-clean --force-color --inline-logs"
 
-${ZEPHYR_BASE}/scripts/twister ${TWISTER_OPTIONS} -T tests/bsim/bluetooth/audio/
-
-${ZEPHYR_BASE}/scripts/twister ${TWISTER_OPTIONS} -T tests/bsim/bluetooth/audio_samples/
-
-${ZEPHYR_BASE}/scripts/twister ${TWISTER_OPTIONS} -T tests/bsim/bluetooth/hci_uart/
-
-${ZEPHYR_BASE}/scripts/twister ${TWISTER_OPTIONS} -T tests/bsim/bluetooth/host/
-
-${ZEPHYR_BASE}/scripts/twister ${TWISTER_OPTIONS} -T tests/bsim/bluetooth/mesh
-
-${ZEPHYR_BASE}/scripts/twister ${TWISTER_OPTIONS} -T tests/bsim/bluetooth/samples/
-
-${ZEPHYR_BASE}/scripts/twister ${TWISTER_OPTIONS} -T tests/bsim/bluetooth/tester/
-
-# nrf52_bsim set:
-nice tests/bsim/bluetooth/compile.sh
-
-BOARD=nrf52_bsim/native \
-RESULTS_FILE=${ZEPHYR_BASE}/bsim_out/bsim_results.bt.52.xml \
-TESTS_FILE=tests/bsim/bluetooth/tests.nrf52bsim.txt \
-tests/bsim/run_parallel.sh
-
-# nrf5340bsim/nrf5340/cpunet set:
-nice tests/bsim/bluetooth/compile.nrf5340bsim_nrf5340_cpunet.sh
-
-BOARD=nrf5340bsim/nrf5340/cpunet \
-RESULTS_FILE=${ZEPHYR_BASE}/bsim_out/bsim_results.bt.53_cpunet.xml \
-TESTS_FILE=tests/bsim/bluetooth/tests.nrf5340bsim_nrf5340_cpunet.txt \
-tests/bsim/run_parallel.sh
-
-# nrf5340 split stack set:
-nice tests/bsim/bluetooth/compile.nrf5340bsim_nrf5340_cpuapp.sh
-
-BOARD=nrf5340bsim/nrf5340/cpuapp \
-RESULTS_FILE=${ZEPHYR_BASE}/bsim_out/bsim_results.bt.53_cpuapp.xml \
-TESTS_FILE=tests/bsim/bluetooth/tests.nrf5340bsim_nrf5340_cpuapp.txt \
-tests/bsim/run_parallel.sh
-
-# nrf54l15bsim/nrf54l15/cpuapp set:
-nice tests/bsim/bluetooth/compile.nrf54l15bsim_nrf54l15_cpuapp.sh
-
-BOARD=nrf54l15bsim/nrf54l15/cpuapp \
-RESULTS_FILE=${ZEPHYR_BASE}/bsim_out/bsim_results.bt.54l15_cpuapp.xml \
-TESTS_FILE=tests/bsim/bluetooth/tests.nrf54l15bsim_nrf54l15_cpuapp.txt \
-tests/bsim/run_parallel.sh
+${ZEPHYR_BASE}/scripts/twister ${TWISTER_OPTIONS} -T tests/bsim/bluetooth/
