@@ -1271,81 +1271,6 @@ static struct bt_le_ext_adv_cb adv_callbacks = {
 #endif /* CONFIG_BT_BROADCASTER */
 #endif /* CONFIG_BT_EXT_ADV */
 
-#if defined(CONFIG_BT_PER_ADV_SYNC)
-struct bt_le_per_adv_sync *per_adv_syncs[CONFIG_BT_PER_ADV_SYNC_MAX];
-size_t selected_per_adv_sync;
-
-static void per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
-				 struct bt_le_per_adv_sync_synced_info *info)
-{
-	bt_shell_print("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
-		       "Interval 0x%04x (%u us), PHY %s, SD 0x%04X, PAST peer %s",
-		       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr),
-		       info->interval, BT_CONN_INTERVAL_TO_US(info->interval),
-		       phy2str(info->phy), info->service_data,
-		       info->conn != NULL ? bt_conn_dst_str(info->conn) : "not present");
-
-	if (info->conn) { /* if from PAST */
-		for (int i = 0; i < ARRAY_SIZE(per_adv_syncs); i++) {
-			if (!per_adv_syncs[i]) {
-				per_adv_syncs[i] = sync;
-				break;
-			}
-		}
-	}
-}
-
-static void per_adv_sync_terminated_cb(
-	struct bt_le_per_adv_sync *sync,
-	const struct bt_le_per_adv_sync_term_info *info)
-{
-	for (int i = 0; i < ARRAY_SIZE(per_adv_syncs); i++) {
-		if (per_adv_syncs[i] == sync) {
-			per_adv_syncs[i] = NULL;
-			break;
-		}
-	}
-
-	bt_shell_print("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated",
-		       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr));
-}
-
-static void per_adv_sync_recv_cb(
-	struct bt_le_per_adv_sync *sync,
-	const struct bt_le_per_adv_sync_recv_info *info,
-	struct net_buf_simple *buf)
-{
-	bt_shell_print("PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, "
-		       "RSSI %i, CTE %u, data length %u",
-		       bt_le_per_adv_sync_get_index(sync),
-		       bt_addr_le_str(info->addr), info->tx_power,
-		       info->rssi, info->cte_type, buf->len);
-}
-
-static void per_adv_sync_biginfo_cb(struct bt_le_per_adv_sync *sync,
-				    const struct bt_iso_biginfo *biginfo)
-{
-	bt_shell_print("BIG_INFO PER_ADV_SYNC[%u]: [DEVICE]: %s, sid 0x%02x, num_bis %u, "
-		       "nse 0x%02x, interval 0x%04x (%u us), bn 0x%02x, pto 0x%02x, irc 0x%02x, "
-		       "max_pdu 0x%04x, sdu_interval 0x%04x, max_sdu 0x%04x, phy %s, framing 0x%02x, "
-		       "%sencrypted",
-		       bt_le_per_adv_sync_get_index(sync),
-		       bt_addr_le_str(biginfo->addr), biginfo->sid, biginfo->num_bis,
-		       biginfo->sub_evt_count, biginfo->iso_interval,
-		       BT_CONN_INTERVAL_TO_US(biginfo->iso_interval), biginfo->burst_number,
-		       biginfo->offset, biginfo->rep_count, biginfo->max_pdu, biginfo->sdu_interval,
-		       biginfo->max_sdu, phy2str(biginfo->phy), biginfo->framing,
-		       biginfo->encryption ? "" : "not ");
-}
-
-static struct bt_le_per_adv_sync_cb per_adv_sync_cb = {
-	.synced = per_adv_sync_sync_cb,
-	.term = per_adv_sync_terminated_cb,
-	.recv = per_adv_sync_recv_cb,
-	.biginfo = per_adv_sync_biginfo_cb,
-};
-#endif /* CONFIG_BT_PER_ADV_SYNC */
-
 static void bt_ready(int err)
 {
 	if (err) {
@@ -1371,10 +1296,6 @@ static void bt_ready(int err)
 #if defined(CONFIG_BT_CONN)
 	default_conn = NULL;
 #endif /* CONFIG_BT_CONN */
-
-#if defined(CONFIG_BT_PER_ADV_SYNC)
-	bt_le_per_adv_sync_cb_register(&per_adv_sync_cb);
-#endif /* CONFIG_BT_PER_ADV_SYNC */
 
 #if defined(CONFIG_BT_SMP)
 	bt_conn_auth_info_cb_register(&auth_info_cb);
@@ -2994,6 +2915,92 @@ static int cmd_per_adv_update_did(const struct shell *sh, size_t argc, char *arg
 #endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_PER_ADV_SYNC)
+struct bt_le_per_adv_sync *per_adv_syncs[CONFIG_BT_PER_ADV_SYNC_MAX];
+size_t selected_per_adv_sync;
+
+static void per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
+				 struct bt_le_per_adv_sync_synced_info *info)
+{
+	bt_shell_print("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
+		       "Interval 0x%04x (%u us), PHY %s, SD 0x%04X, PAST peer %s",
+		       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr),
+		       info->interval, BT_CONN_INTERVAL_TO_US(info->interval), phy2str(info->phy),
+		       info->service_data,
+		       info->conn != NULL ? bt_conn_dst_str(info->conn) : "not present");
+
+	if (info->conn != NULL) { /* if from PAST */
+		for (size_t i = 0U; i < ARRAY_SIZE(per_adv_syncs); i++) {
+			if (per_adv_syncs[i] == NULL) {
+				per_adv_syncs[i] = sync;
+				break;
+			}
+		}
+	}
+}
+
+static void per_adv_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
+				       const struct bt_le_per_adv_sync_term_info *info)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(per_adv_syncs); i++) {
+		if (per_adv_syncs[i] == sync) {
+			per_adv_syncs[i] = NULL;
+			break;
+		}
+	}
+
+	bt_shell_print("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated",
+		       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr));
+}
+
+static void per_adv_sync_recv_cb(struct bt_le_per_adv_sync *sync,
+				 const struct bt_le_per_adv_sync_recv_info *info,
+				 struct net_buf_simple *buf)
+{
+	bt_shell_print("PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, "
+		       "RSSI %i, CTE %u, data length %u",
+		       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr),
+		       info->tx_power, info->rssi, info->cte_type, buf->len);
+}
+
+static void per_adv_sync_biginfo_cb(struct bt_le_per_adv_sync *sync,
+				    const struct bt_iso_biginfo *biginfo)
+{
+	bt_shell_print(
+		"BIG_INFO PER_ADV_SYNC[%u]: [DEVICE]: %s, sid 0x%02x, num_bis %u, "
+		"nse 0x%02x, interval 0x%04x (%u us), bn 0x%02x, pto 0x%02x, irc 0x%02x, "
+		"max_pdu 0x%04x, sdu_interval 0x%04x, max_sdu 0x%04x, phy %s, framing 0x%02x, "
+		"%sencrypted",
+		bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(biginfo->addr), biginfo->sid,
+		biginfo->num_bis, biginfo->sub_evt_count, biginfo->iso_interval,
+		BT_CONN_INTERVAL_TO_US(biginfo->iso_interval), biginfo->burst_number,
+		biginfo->offset, biginfo->rep_count, biginfo->max_pdu, biginfo->sdu_interval,
+		biginfo->max_sdu, phy2str(biginfo->phy), biginfo->framing,
+		biginfo->encryption ? "" : "not ");
+}
+
+static int try_register_per_adv_sync_cbs(void)
+{
+	static bool cbs_registered;
+
+	if (!cbs_registered) {
+		static struct bt_le_per_adv_sync_cb per_adv_sync_cb = {
+			.synced = per_adv_sync_sync_cb,
+			.term = per_adv_sync_terminated_cb,
+			.recv = per_adv_sync_recv_cb,
+			.biginfo = per_adv_sync_biginfo_cb,
+		};
+
+		const int err = bt_le_per_adv_sync_cb_register(&per_adv_sync_cb);
+
+		if (err != 0) {
+			return err;
+		}
+
+		cbs_registered = true;
+	}
+
+	return 0;
+}
 
 static int cmd_per_adv_sync_create(const struct shell *sh, size_t argc,
 				   char *argv[])
@@ -3052,6 +3059,12 @@ static int cmd_per_adv_sync_create(const struct shell *sh, size_t argc,
 	}
 
 	create_params.options = options;
+
+	err = try_register_per_adv_sync_cbs();
+	if (err != 0) {
+		shell_error(sh, "Failed to register per_adv_sync_cb: %d", err);
+		return -ENOEXEC;
+	}
 
 	err = bt_le_per_adv_sync_create(&create_params, &per_adv_syncs[selected_per_adv_sync]);
 	if (err) {
@@ -3174,7 +3187,11 @@ static int cmd_past_subscribe(const struct shell *sh, size_t argc,
 		}
 	}
 
-	bt_le_per_adv_sync_cb_register(&per_adv_sync_cb);
+	err = try_register_per_adv_sync_cbs();
+	if (err != 0) {
+		shell_error(sh, "Failed to register per_adv_sync_cb: %d", err);
+		return -ENOEXEC;
+	}
 
 	err = bt_le_per_adv_sync_transfer_subscribe(
 		global ? NULL : default_conn, &param);
