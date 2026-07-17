@@ -34,4 +34,101 @@
 		status = "okay";
 		power-domains = <&test_domain_balanced>;
 	};
+
+	test_domain_1: test_domain_1 {
+		compatible = "power-domain";
+		status = "okay";
+		#power-domain-cells = <0>;
+	};
+
+	test_domain_2: test_domain_2 {
+		compatible = "power-domain";
+		status = "okay";
+		#power-domain-cells = <0>;
+	};
+
+	/* Depends on two power domains at once. */
+	test_dev_multi: test_dev_multi {
+		compatible = "test-device-pm";
+		status = "okay";
+		power-domains = <&test_domain_1 &test_domain_2>;
+	};
+
+	/* Shares one domain with test_dev_multi to exercise refcounting. */
+	test_dev_shared: test_dev_shared {
+		compatible = "test-device-pm";
+		status = "okay";
+		power-domains = <&test_domain_2>;
+	};
+
+	test_domain_f1: test_domain_f1 {
+		compatible = "power-domain";
+		status = "okay";
+		#power-domain-cells = <0>;
+	};
+
+	test_domain_f2: test_domain_f2 {
+		compatible = "power-domain";
+		status = "okay";
+		#power-domain-cells = <0>;
+	};
+
+	test_domain_f3: test_domain_f3 {
+		compatible = "power-domain";
+		status = "okay";
+		#power-domain-cells = <0>;
+	};
+
+	/* Refuses to resume, so a get fails after f1/f2/f3 are already claimed. */
+	test_domain_f4: test_domain_f4 {
+		compatible = "power-domain";
+		status = "okay";
+		#power-domain-cells = <0>;
+	};
+
+	test_domain_f5: test_domain_f5 {
+		compatible = "power-domain";
+		status = "okay";
+		#power-domain-cells = <0>;
+	};
+
+	/* Depends on five domains; used to exercise multi-domain get rollback. */
+	test_dev_multi_fail: test_dev_multi_fail {
+		compatible = "test-device-pm";
+		status = "okay";
+		power-domains = <&test_domain_f1 &test_domain_f2 &test_domain_f3
+				 &test_domain_f4 &test_domain_f5>;
+	};
+
+	test_domain_g: test_domain_g {
+		compatible = "power-domain";
+		status = "okay";
+		#power-domain-cells = <0>;
+	};
+
+	/* Refuses to power on, used to exercise the turn-on-failure path. */
+	test_dev_turn_on_fail: test_dev_turn_on_fail {
+		compatible = "test-device-pm";
+		status = "okay";
+		power-domains = <&test_domain_g>;
+	};
+
+	test_domain_async1: test_domain_async1 {
+		compatible = "power-domain";
+		status = "okay";
+		#power-domain-cells = <0>;
+	};
+
+	test_domain_async2: test_domain_async2 {
+		compatible = "power-domain";
+		status = "okay";
+		#power-domain-cells = <0>;
+	};
+
+	/* Used to exercise asynchronous release of multiple domains. */
+	test_dev_async: test_dev_async {
+		compatible = "test-device-pm";
+		status = "okay";
+		power-domains = <&test_domain_async1 &test_domain_async2>;
+	};
 };

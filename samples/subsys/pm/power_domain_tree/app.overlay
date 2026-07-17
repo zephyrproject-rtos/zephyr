@@ -1,0 +1,110 @@
+/*
+ * Copyright (c) 2026 Rodrigo Peixoto <rodrigopex@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Power domain dependency tree exercised by the sample (see the README for a
+ * diagram):
+ *   - pd_root powers pd_a and pd_b.
+ *   - pd_a powers pd_a1 and pd_a2; pd_b powers pd_b1.
+ *   - pd_shared depends on both pd_a and pd_b; pd_deep depends on pd_shared.
+ *   - dev_a on pd_a1; dev_b on pd_a2 and pd_b1; dev_c on pd_deep;
+ *     dev_d on pd_a1 and pd_deep (dev_b and dev_d depend on two domains).
+ *
+ * Every node sets "zephyr,pm-device-runtime-auto" so runtime PM is enabled
+ * automatically at boot; the application only has to get/put the leaf devices.
+ */
+
+/ {
+	pd_root: pd_root {
+		compatible = "zephyr,power-domain-log";
+		status = "okay";
+		#power-domain-cells = <0>;
+		zephyr,pm-device-runtime-auto;
+	};
+
+	pd_a: pd_a {
+		compatible = "zephyr,power-domain-log";
+		status = "okay";
+		#power-domain-cells = <0>;
+		power-domains = <&pd_root>;
+		zephyr,pm-device-runtime-auto;
+	};
+
+	pd_b: pd_b {
+		compatible = "zephyr,power-domain-log";
+		status = "okay";
+		#power-domain-cells = <0>;
+		power-domains = <&pd_root>;
+		zephyr,pm-device-runtime-auto;
+	};
+
+	pd_a1: pd_a1 {
+		compatible = "zephyr,power-domain-log";
+		status = "okay";
+		#power-domain-cells = <0>;
+		power-domains = <&pd_a>;
+		zephyr,pm-device-runtime-auto;
+	};
+
+	pd_a2: pd_a2 {
+		compatible = "zephyr,power-domain-log";
+		status = "okay";
+		#power-domain-cells = <0>;
+		power-domains = <&pd_a>;
+		zephyr,pm-device-runtime-auto;
+	};
+
+	pd_b1: pd_b1 {
+		compatible = "zephyr,power-domain-log";
+		status = "okay";
+		#power-domain-cells = <0>;
+		power-domains = <&pd_b>;
+		zephyr,pm-device-runtime-auto;
+	};
+
+	/* Depends on two parent domains at once. */
+	pd_shared: pd_shared {
+		compatible = "zephyr,power-domain-log";
+		status = "okay";
+		#power-domain-cells = <0>;
+		power-domains = <&pd_a &pd_b>;
+		zephyr,pm-device-runtime-auto;
+	};
+
+	pd_deep: pd_deep {
+		compatible = "zephyr,power-domain-log";
+		status = "okay";
+		#power-domain-cells = <0>;
+		power-domains = <&pd_shared>;
+		zephyr,pm-device-runtime-auto;
+	};
+
+	dev_a: dev_a {
+		compatible = "zephyr,power-domain-log";
+		status = "okay";
+		power-domains = <&pd_a1>;
+		zephyr,pm-device-runtime-auto;
+	};
+
+	dev_b: dev_b {
+		compatible = "zephyr,power-domain-log";
+		status = "okay";
+		power-domains = <&pd_a2 &pd_b1>;
+		zephyr,pm-device-runtime-auto;
+	};
+
+	dev_c: dev_c {
+		compatible = "zephyr,power-domain-log";
+		status = "okay";
+		power-domains = <&pd_deep>;
+		zephyr,pm-device-runtime-auto;
+	};
+
+	dev_d: dev_d {
+		compatible = "zephyr,power-domain-log";
+		status = "okay";
+		power-domains = <&pd_a1 &pd_deep>;
+		zephyr,pm-device-runtime-auto;
+	};
+};

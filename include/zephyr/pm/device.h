@@ -218,8 +218,9 @@ struct pm_device_base {
 	uint32_t usage;
 #endif /* CONFIG_PM_DEVICE_RUNTIME */
 #ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
-	/** Power Domain it belongs */
-	const struct device *domain;
+	/** Power Domains it belongs */
+	const struct device **domains;
+	uint8_t domain_count;
 #endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
 };
 
@@ -281,11 +282,33 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
 #endif /* CONFIG_PM_DEVICE_RUNTIME */
 
 #ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
-#define	Z_PM_DEVICE_POWER_DOMAIN_INIT(_node_id)			\
-	.domain = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(_node_id,	\
-				   power_domains)),
+#define Z_PM_DEVICE_DOMAINS_NAME(obj) _CONCAT(obj, _domains)
+
+/* Reserve a slot even without a devicetree domain so a domain can be attached
+ * at runtime through pm_device_power_domain_add().
+ */
+#define Z_PM_DEVICE_DOMAIN_COUNT(node_id)				\
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, power_domains),		\
+		    (DT_PROP_LEN(node_id, power_domains)), (1))
+
+#define Z_PM_DEVICE_DOMAIN_GET(node_id, prop, idx)			\
+	DEVICE_DT_GET_OR_NULL(DT_PHANDLE_BY_IDX(node_id, prop, idx))
+
+#define Z_PM_DEVICE_DOMAINS_DEFINE(node_id, obj)			  \
+	static const struct device					  \
+		*Z_PM_DEVICE_DOMAINS_NAME(obj)[Z_PM_DEVICE_DOMAIN_COUNT(node_id)] = { \
+		COND_CODE_1(DT_NODE_HAS_PROP(node_id, power_domains),	  \
+			    (DT_FOREACH_PROP_ELEM_SEP(node_id, power_domains, \
+						      Z_PM_DEVICE_DOMAIN_GET, (,))), \
+			    (NULL))					  \
+	};
+
+#define Z_PM_DEVICE_POWER_DOMAIN_INIT(obj, node_id)			\
+	.domains = Z_PM_DEVICE_DOMAINS_NAME(obj),			\
+	.domain_count = Z_PM_DEVICE_DOMAIN_COUNT(node_id),
 #else
-#define Z_PM_DEVICE_POWER_DOMAIN_INIT(obj)
+#define Z_PM_DEVICE_DOMAINS_DEFINE(node_id, obj)
+#define Z_PM_DEVICE_POWER_DOMAIN_INIT(obj, node_id)
 #endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
 
 /**
@@ -320,7 +343,7 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
 		.flags = ATOMIC_INIT(Z_PM_DEVICE_FLAGS(node_id) | (_flags)), \
 		.state = PM_DEVICE_STATE_ACTIVE,			     \
 		.action_cb = pm_action_cb,				     \
-		Z_PM_DEVICE_POWER_DOMAIN_INIT(node_id)			     \
+		Z_PM_DEVICE_POWER_DOMAIN_INIT(obj, node_id)		     \
 	}
 
 /**
@@ -376,6 +399,7 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
  */
 #define Z_PM_DEVICE_DEFINE(node_id, dev_id, pm_action_cb, isr_safe)		\
 	Z_PM_DEVICE_DEFINE_SLOT(dev_id);					\
+	Z_PM_DEVICE_DOMAINS_DEFINE(node_id, Z_PM_DEVICE_NAME(dev_id))		\
 	static struct COND_CODE_1(isr_safe, (pm_device_isr), (pm_device))	\
 		Z_PM_DEVICE_NAME(dev_id) =					\
 		Z_PM_DEVICE_INIT(Z_PM_DEVICE_NAME(dev_id), node_id,		\
@@ -651,6 +675,37 @@ bool pm_device_wakeup_is_capable(const struct device *dev);
  * @retval false Device is not on a switchable power domain.
  */
 bool pm_device_on_power_domain(const struct device *dev);
+
+#if defined(CONFIG_PM_DEVICE_POWER_DOMAIN) || defined(__DOXYGEN__)
+/**
+ * @brief Check if a device belongs to a specific power domain.
+ *
+ * @note Only available when @kconfig{CONFIG_PM_DEVICE_POWER_DOMAIN} is enabled.
+ *
+ * @param domain Power domain.
+ * @param dev Device instance.
+ *
+ * @retval true Device depends on @p domain.
+ * @retval false Device does not depend on @p domain (or has no PM support).
+ */
+static inline bool pm_device_power_domain_contains(const struct device *domain,
+						   const struct device *dev)
+{
+	struct pm_device_base *pm = dev->pm_base;
+
+	if (pm == NULL) {
+		return false;
+	}
+
+	for (uint8_t i = 0U; i < pm->domain_count; i++) {
+		if (pm->domains[i] == domain) {
+			return true;
+		}
+	}
+
+	return false;
+}
+#endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
 
 /**
  * @brief Add a device to a power domain.
