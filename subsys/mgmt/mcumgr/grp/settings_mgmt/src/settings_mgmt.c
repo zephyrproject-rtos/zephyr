@@ -108,8 +108,8 @@ static int settings_mgmt_read(struct smp_streamer *ctxt)
 		if (status != MGMT_CB_OK) {
 			if (status == MGMT_CB_ERROR_RC) {
 #ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
-				k_free(key_name);
-				k_free(data);
+				free(key_name);
+				free(data);
 #endif
 				return ret_rc;
 			}
@@ -225,7 +225,7 @@ static int settings_mgmt_write(struct smp_streamer *ctxt)
 		if (status != MGMT_CB_OK) {
 			if (status == MGMT_CB_ERROR_RC) {
 #ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
-				k_free(key_name);
+				free(key_name);
 #endif
 				return ret_rc;
 			}
@@ -327,7 +327,7 @@ static int settings_mgmt_delete(struct smp_streamer *ctxt)
 		if (status != MGMT_CB_OK) {
 			if (status == MGMT_CB_ERROR_RC) {
 #ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
-				k_free(key_name);
+				free(key_name);
 #endif
 				return ret_rc;
 			}
