@@ -14,8 +14,8 @@
  * should be include instead <sys/util_internal.h>
  */
 
-#ifndef ZEPHYR_INCLUDE_SYS_UTIL_MACROS_H_
-#define ZEPHYR_INCLUDE_SYS_UTIL_MACROS_H_
+#ifndef ZEPHYR_INCLUDE_SYS_UTIL_MACRO_H_
+#define ZEPHYR_INCLUDE_SYS_UTIL_MACRO_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -770,4 +770,4 @@ extern "C" {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_SYS_UTIL_MACROS_H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_UTIL_MACRO_H_ */
