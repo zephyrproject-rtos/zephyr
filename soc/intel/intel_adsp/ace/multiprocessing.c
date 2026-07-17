@@ -218,12 +218,14 @@ static void send_ipi(uint32_t msg, uint32_t cpu_bitmap)
 {
 	uint32_t curr = arch_proc_id();
 
+	/* Always exclude current CPU */
+	const uint32_t other_cpus = cpu_bitmap & ~BIT(curr);
+
 	/* Signal agent B[n] to cause an interrupt from agent A[n] */
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (int core = 0; core < num_cpus; core++) {
-		if ((core != curr) && soc_cpus_active[core] &&
-		    ((cpu_bitmap & BIT(core)) != 0)) {
+		if (soc_cpus_active[core] && ((other_cpus & BIT(core)) != 0U)) {
 			IDC[core].agents[1].ipc.idr = msg | INTEL_ADSP_IPC_BUSY;
 		}
 	}
