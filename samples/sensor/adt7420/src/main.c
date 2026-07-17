@@ -131,55 +131,46 @@ static void process(const struct device *dev)
 
 	/* configuration for trigger thresholds */
 	temp_val.val1 = T_HIGH_CEL;
-	ret = sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_UPPER_THRESH,
-			      &temp_val);
+	ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_UPPER_THRESH, &temp_val);
 	if (ret) {
 		printf("sensor_attr_set failed ret %d\n", ret);
 		return;
 	}
 
-	ret = sensor_attr_get(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_UPPER_THRESH,
-			      &temp_val);
+	ret = sensor_attr_get(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_UPPER_THRESH, &temp_val);
 	if (ret) {
 		printf("sensor_attr_get failed ret %d\n", ret);
 		return;
 	}
 
-	printf("[%s]: T_High %.6f Cel\n", now_str(),
-		sensor_value_to_double(&temp_val));
+	printf("[%s]: T_High %.6f Cel\n", now_str(), sensor_value_to_double(&temp_val));
 
 	temp_val.val1 = T_LOW_CEL;
-	ret = sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_LOWER_THRESH,
-			      &temp_val);
+	ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_LOWER_THRESH, &temp_val);
 	if (ret) {
 		printf("sensor_attr_set failed ret %d\n", ret);
 		return;
 	}
 
-	ret = sensor_attr_get(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_LOWER_THRESH,
-			      &temp_val);
+	ret = sensor_attr_get(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_LOWER_THRESH, &temp_val);
 	if (ret) {
 		printf("sensor_attr_get failed ret %d\n", ret);
 		return;
 	}
 
-	printf("[%s]: T_Low %.6f Cel\n", now_str(),
-		sensor_value_to_double(&temp_val));
+	printf("[%s]: T_Low %.6f Cel\n", now_str(), sensor_value_to_double(&temp_val));
 
 
 	/* Read device configuration */
-	ret = sensor_attr_get(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_HYSTERESIS,
-			      &temp_val);
+	ret = sensor_attr_get(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_HYSTERESIS, &temp_val);
 	if (ret) {
 		printf("sensor_attr_get failed ret %d\n", ret);
 		return;
 	}
 
-	printf("[%s]: T_Hyst %.6f Cel\n", now_str(),
-		sensor_value_to_double(&temp_val));
+	printf("[%s]: T_Hyst %.6f Cel\n", now_str(), sensor_value_to_double(&temp_val));
 
-	ret = sensor_attr_get(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_CONFIGURATION,
-			      &temp_val);
+	ret = sensor_attr_get(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_CONFIGURATION, &temp_val);
 	if (ret) {
 		printf("sensor_attr_get failed ret %d\n", ret);
 		return;
@@ -195,8 +186,7 @@ static void process(const struct device *dev)
 			return;
 		}
 
-		ret = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP,
-					 &temp_val);
+		ret = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp_val);
 		if (ret) {
 			printf("sensor_channel_get failed ret %d\n", ret);
 			return;
@@ -210,7 +200,7 @@ static void process(const struct device *dev)
 		       sensor_value_to_double(&temp_val),
 		       reset_window ? ": NEED RESET" : "");
 
-		ret = sensor_attr_get(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_ALERT, &temp_val);
+		ret = sensor_attr_get(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_ALERT, &temp_val);
 		if (ret) {
 			printf("sensor_attr_get failed ret %d\n", ret);
 			return;
