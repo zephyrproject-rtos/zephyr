@@ -28,6 +28,9 @@
 #include <soc/pmu_reg.h>
 #include <ulp_lp_core_utils.h>
 #include <ulp_lp_core_interrupts.h>
+#if defined(MBOX_ESP32_HPCORE)
+#include <esp_sleep.h>
+#endif
 #if defined(MBOX_ESP32_LPCORE)
 #include <hal/pmu_ll.h>
 #include <soc/pmu_struct.h>
@@ -52,6 +55,13 @@ struct esp32_mbox_control {
 	volatile uint32_t busy[2];
 };
 
+/*
+ * Stamped into the LP core's busy slot once its interrupt is enabled, distinct
+ * from the 0/1 the slot holds in use. The slot is reused instead of a dedicated
+ * field because the control block ends at the top of LP RAM on every SoC.
+ */
+#define ESP32_MBOX_LP_READY_MAGIC 0x4c505244
+
 struct esp32_mbox_memory {
 	uint8_t *pro_cpu_shm;
 	uint8_t *app_cpu_shm;
@@ -72,6 +82,7 @@ struct esp32_mbox_data {
 	uint32_t this_core_id;
 	uint32_t other_core_id;
 	uint32_t shm_size;
+	bool lp_ready;
 	struct esp32_mbox_memory shm;
 	struct esp32_mbox_control *control;
 };
@@ -143,6 +154,34 @@ IRAM_ATTR static void esp32_mbox_isr(const struct device *dev)
 	dev_data->control->busy[dev_data->this_core_id] = 0;
 }
 
+#if defined(MBOX_ESP32_HPCORE)
+/* A deep-sleep wakeup leaves the LP core running with its stamp still valid. */
+static bool esp32_mbox_lp_core_kept_running(void)
+{
+	return (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_ULP)) != 0;
+}
+
+/* Consume the ready stamp once the LP core has posted it. Does not block. */
+static bool esp32_mbox_lp_is_ready(struct esp32_mbox_data *dev_data)
+{
+	volatile uint32_t *slot = &dev_data->control->busy[dev_data->other_core_id];
+
+	if (dev_data->lp_ready) {
+		return true;
+	}
+
+	if (*slot != ESP32_MBOX_LP_READY_MAGIC) {
+		return false;
+	}
+
+	*slot = 0;
+	barrier_dsync_fence_full();
+	dev_data->lp_ready = true;
+
+	return true;
+}
+#endif
+
 static int esp32_mbox_send(const struct device *dev, mbox_channel_id_t channel,
 			   const struct mbox_msg *msg)
 {
@@ -158,6 +197,12 @@ static int esp32_mbox_send(const struct device *dev, mbox_channel_id_t channel,
 		LOG_ERR("Message size %d exceeds shared memory region %d", msg->size, mtu);
 		return -EMSGSIZE;
 	}
+
+#if defined(MBOX_ESP32_HPCORE)
+	if (!esp32_mbox_lp_is_ready(dev_data)) {
+		return -EBUSY;
+	}
+#endif
 
 	uint32_t key = irq_lock();
 
@@ -268,7 +313,18 @@ static int esp32_mbox_init(const struct device *dev)
 
 	if (data->this_core_id == 0) {
 		data->control->busy[0] = 0;
+#if defined(MBOX_ESP32_HPCORE)
+		/*
+		 * Clear a stale stamp left in unretained LP RAM, but keep a
+		 * valid one from a deep-sleep wakeup: the LP core kept running
+		 * and will not post it again.
+		 */
+		if (!esp32_mbox_lp_core_kept_running()) {
+			data->control->busy[1] = 0;
+		}
+#else
 		data->control->busy[1] = 0;
+#endif
 		barrier_dsync_fence_full();
 #if !defined(MBOX_ESP32_LPCORE)
 		ret = esp_intr_alloc(cfg->irq_source_pro_cpu,
@@ -285,6 +341,9 @@ static int esp32_mbox_init(const struct device *dev)
 		s_mbox_dev = dev;
 		ulp_lp_core_intr_enable();
 		ulp_lp_core_sw_intr_enable(true);
+
+		data->control->busy[data->this_core_id] = ESP32_MBOX_LP_READY_MAGIC;
+		barrier_dsync_fence_full();
 #else
 		ret = esp_intr_alloc(cfg->irq_source_app_cpu,
 				     ESP_PRIO_TO_FLAGS(cfg->irq_priority_app_cpu) |
