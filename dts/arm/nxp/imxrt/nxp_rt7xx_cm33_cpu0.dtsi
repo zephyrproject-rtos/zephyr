@@ -1240,6 +1240,14 @@
 		resets = <&rstctl0 NXP_SYSCON_RESET(3, 18)>;
 		status = "disabled";
 	};
+
+	jpegdec: jpegdec@a6000 {
+		compatible = "nxp,jpegdec";
+		reg = <0xa6000 0x1000>,
+		      <0xa6100 0x100>;
+		interrupts = <139 0>;
+		status = "disabled";
+	};
 };
 
 &xspi0 {
