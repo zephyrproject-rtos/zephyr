@@ -143,13 +143,13 @@ The current minimum required versions for the main dependencies are:
 
       .. note::
 
-         Due to issues finding executables, the Zephyr Project doesn't
-         currently support application flashing using the `Windows Subsystem
-         for Linux (WSL)
-         <https://msdn.microsoft.com/en-us/commandline/wsl/install_guide>`_
-         (WSL).
-
-         Therefore, we don't recommend using WSL when getting started.
+         These instructions cover the native Windows environment. You may
+         also use the `Windows Subsystem for Linux (WSL)
+         <https://learn.microsoft.com/windows/wsl/install>`_ by following
+         the Ubuntu instructions in this guide instead. In that case, note
+         that flashing and debugging hardware from within WSL requires
+         first making the USB device visible to WSL, for example using
+         `usbipd-win <https://github.com/dorssel/usbipd-win>`_.
 
       On modern versions of Windows (10 and later), install Windows Terminal from the
       Microsoft Store. The instructions below work in either ``cmd.exe`` or
