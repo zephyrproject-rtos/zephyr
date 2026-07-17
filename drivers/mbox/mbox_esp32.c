@@ -180,6 +180,29 @@ static bool esp32_mbox_lp_is_ready(struct esp32_mbox_data *dev_data)
 
 	return true;
 }
+
+/*
+ * Hold the application back until the LP core can service the mailbox, so a
+ * first send from main() does not race it. The LP core is only started by the
+ * SoC late init hook, after device init, so this runs at APPLICATION level.
+ * Bounded so an LP image that never uses the mailbox still boots; mbox_send()
+ * keeps reporting -EBUSY until ready.
+ */
+static int esp32_mbox_wait_lp_ready(void)
+{
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	struct esp32_mbox_data *dev_data = (struct esp32_mbox_data *)dev->data;
+
+	if (dev_data->this_core_id == 0 &&
+	    !WAIT_FOR(esp32_mbox_lp_is_ready(dev_data), CONFIG_MBOX_ESP32_LP_READY_TIMEOUT_US,
+		      k_busy_wait(100))) {
+		LOG_WRN("%s: remote core is not servicing the mailbox", dev->name);
+	}
+
+	return 0;
+}
+
+SYS_INIT(esp32_mbox_wait_lp_ready, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif
 
 static int esp32_mbox_send(const struct device *dev, mbox_channel_id_t channel,
