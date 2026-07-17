@@ -159,15 +159,24 @@
 	status = "okay";
 };
 
+&sosc_clk {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(8)>;
+};
+
+&soscdiv2_clk {
+	clock-div = <1>;
+};
+
 &ftm2 {
 	status = "okay";
 	compatible = "nxp,ftm-pwm";
 	#pwm-cells = <3>;
-	clocks = <&scg KINETIS_SCG_SIRC_CLK>;
+	clocks = <&scg KINETIS_SCG_SOSC_CLK>;
 	prescaler = <128>;
 	pinctrl-0 = <&ftm2_default>;
 	pinctrl-names = "default";
-	clock-source = "system";
+	clock-source = "fixed";
 };
 
 &flash0 {
