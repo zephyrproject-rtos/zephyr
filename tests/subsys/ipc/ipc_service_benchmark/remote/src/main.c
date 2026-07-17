@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/debug/cpu_load.h>
+#include <zephyr/sys/cpu_load.h>
 #include <zephyr/ipc/ipc_service.h>
 #include <zephyr/logging/log.h>
 #include "common.h"

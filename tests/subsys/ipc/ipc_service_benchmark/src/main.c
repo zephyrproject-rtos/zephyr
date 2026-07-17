@@ -9,7 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/ztest.h>
 #include <zephyr/ztress.h>
-#include <zephyr/debug/cpu_load.h>
+#include <zephyr/sys/cpu_load.h>
 #include <zephyr/random/random.h>
 #include <zephyr/ipc/ipc_service.h>
 #include <sys/errno.h>
