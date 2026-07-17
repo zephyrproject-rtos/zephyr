@@ -44,3 +44,7 @@
 	pinctrl-0 = <&lpuart1_default>;
 	pinctrl-names = "default";
 };
+
+&gpio2 {
+	status = "okay";
+};
