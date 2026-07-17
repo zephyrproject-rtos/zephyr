@@ -11,14 +11,41 @@ properties:
   reg:
     required: true
 
+  channel:
+    type: int
+    required: true
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: pwm output channel
+
   prescaler-cx:
     type: int
     required: true
-    enum:
-      - 1
-      - 2
-      - 3
+    enum: [1, 2, 3]
     description: 1 = PWM_PRESCALER_C4, 2 = PWM_PRESCALER_C6, 3 = PWM_PRESCALER_C7
+
+  max-dimming-duty:
+    type: int
+    enum: [0, 1, 2, 3]
+    description: |
+     Setting pwm max duty cycle of dimming mode (only pwm0/1/7 support),
+     0 = PWM_DIMMING_DC_40H, 1 = PWM_DIMMING_DC_80H, 2 = PWM_DIMMING_DC_C0H,
+     3 = PWM_DIMMING_DC_FFH
+
+  dimming-duty-increase:
+    type: int
+    enum: [0, 1, 2, 3]
+    description: |
+     Setting pwm duty cycle increase step of dimming mode (only pwm0/1/7 support),
+     0 = PWM_DIMMING_DC_STEP_1H, 1 = PWM_DIMMING_DC_STEP_2H, 2 = PWM_DIMMING_DC_STEP_4H,
+     3 = PWM_DIMMING_DC_STEP_8H
+
+  dimming-duty-decrease:
+    type: int
+    enum: [0, 1, 2, 3]
+    description: |
+     Setting pwm duty cycle decrease step of dimming mode (only pwm0/1/7 support),
+     0 = PWM_DIMMING_DC_STEP_1H, 1 = PWM_DIMMING_DC_STEP_2H, 2 = PWM_DIMMING_DC_STEP_4H,
+     3 = PWM_DIMMING_DC_STEP_8H
 
   pinctrl-0:
     required: true
