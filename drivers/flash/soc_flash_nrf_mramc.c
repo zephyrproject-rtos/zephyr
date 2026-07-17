@@ -20,8 +20,8 @@ LOG_MODULE_REGISTER(flash_nrf_mramc, CONFIG_FLASH_LOG_LEVEL);
 
 #define DT_DRV_COMPAT nordic_nrf_mramc
 
-#define MRAM_NODE		  DT_NODELABEL(cpuapp_mram)
-#define MRAM_BASE		 DT_REG_ADDR(MRAM_NODE)
+#define MRAM_NODE		  DT_INST(0, soc_nv_flash)
+#define MRAM_BASE		  DT_REG_ADDR(MRAM_NODE)
 #define MRAM_SIZE		  DT_REG_SIZE(MRAM_NODE)
 
 BUILD_ASSERT(MRAM_BASE <= UINT32_MAX, "MRAM_BASE is not in size of uint32_t");
