@@ -284,6 +284,126 @@ release_ctx:
 #endif
 }
 
+static int cmd_net_udp_dplpmtud(const struct shell *sh, size_t argc, char *argv[])
+{
+#if !defined(CONFIG_NET_UDP) || !defined(CONFIG_NET_NATIVE_UDP) || \
+	!defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	PR_INFO("Set %s to enable %s support.\n",
+		"CONFIG_NET_UDP_OPTIONS_DPLPMTUD", "DPLPMTUD over UDP options");
+	return -EOPNOTSUPP;
+#else
+	char *host = NULL;
+	char *endptr = NULL;
+	long port_long;
+	uint16_t port;
+	struct net_if *iface;
+	struct net_sockaddr addr;
+	int addrlen;
+	int enable = 1;
+	int ret;
+
+	if (argc < 3) {
+		PR_WARNING("Usage: net udp dplpmtud <host> <port>\n");
+		return -EINVAL;
+	}
+
+	host = argv[1];
+	port_long = strtol(argv[2], &endptr, 0);
+	if (endptr == argv[2] || *endptr != '\0' ||
+	    port_long <= 0 || port_long > 65535) {
+		PR_WARNING("Invalid port number\n");
+		return -EINVAL;
+	}
+
+	port = (uint16_t)port_long;
+
+	if (udp_ctx != NULL && net_context_is_used(udp_ctx)) {
+		PR_WARNING("Network context already in use, run 'net udp close' first\n");
+		return -EALREADY;
+	}
+
+	memset(&addr, 0, sizeof(addr));
+
+	ret = net_ipaddr_parse(host, strlen(host), &addr);
+	if (ret < 0) {
+		PR_WARNING("Cannot parse address \"%s\"\n", host);
+		return -EINVAL;
+	}
+
+	ret = net_context_get(addr.sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP,
+			      &udp_ctx);
+	if (ret < 0) {
+		PR_WARNING("Cannot get UDP context (%d)\n", ret);
+		return ret;
+	}
+
+	udp_shell = sh;
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.sa_family == NET_AF_INET6) {
+		net_sin6(&addr)->sin6_port = net_htons(port);
+		addrlen = sizeof(struct net_sockaddr_in6);
+		iface = net_if_ipv6_select_src_iface(&net_sin6(&addr)->sin6_addr);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr.sa_family == NET_AF_INET) {
+		net_sin(&addr)->sin_port = net_htons(port);
+		addrlen = sizeof(struct net_sockaddr_in);
+		iface = net_if_ipv4_select_src_iface(&net_sin(&addr)->sin_addr);
+	} else {
+		PR_WARNING("IPv6 and IPv4 are disabled, cannot probe.\n");
+		ret = -EAFNOSUPPORT;
+		goto release_ctx;
+	}
+
+	if (iface == NULL) {
+		PR_WARNING("No interface to reach given host\n");
+		ret = -ENETUNREACH;
+		goto release_ctx;
+	}
+
+	net_context_set_iface(udp_ctx, iface);
+
+	/* A connected UDP context gives the prober a fixed destination. */
+	ret = net_context_connect(udp_ctx, &addr, addrlen, NULL, K_NO_WAIT, NULL);
+	if (ret < 0) {
+		PR_WARNING("Cannot connect UDP context (%d)\n", ret);
+		goto release_ctx;
+	}
+
+	/* Receiving is needed so the prober sees the RES echoes. */
+	ret = net_context_recv(udp_ctx, udp_rcvd, K_NO_WAIT, NULL);
+	if (ret < 0) {
+		PR_WARNING("Setting rcv callback failed (%d)\n", ret);
+		goto release_ctx;
+	}
+
+	/* Enabling DPLPMTUD on a connected context makes the prober emit an
+	 * initial BASE_PLPMTU probe (a DF-set, REQ-bearing UDP datagram padded
+	 * via the options surplus area) right away and keep probing upward on
+	 * its timer.
+	 */
+	ret = net_context_set_option(udp_ctx, NET_OPT_UDP_OPT_DPLPMTUD,
+				     &enable, sizeof(enable));
+	if (ret < 0) {
+		PR_WARNING("Cannot enable DPLPMTUD (%d)\n", ret);
+		goto release_ctx;
+	}
+
+	PR("DPLPMTUD probing started to %s port %u.\n", host, port);
+	PR("Use 'net pmtu' to see the discovered MTU, 'net udp close' to stop.\n");
+
+	return 0;
+
+release_ctx:
+	(void)net_context_put(udp_ctx);
+	udp_ctx = NULL;
+
+	return ret;
+#endif
+}
+
 static int cmd_net_udp(const struct shell *sh, size_t argc, char *argv[])
 {
 	ARG_UNUSED(sh);
@@ -304,6 +424,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_udp,
 		  SHELL_HELP("Sends UDP packet to a network host",
 			     "<host> <port> <payload>"),
 		  cmd_net_udp_send),
+	SHELL_CMD(dplpmtud, NULL,
+		  SHELL_HELP("Start DPLPMTUD (RFC 9869) probing to a host "
+			     "using UDP options", "<host> <port>"),
+		  cmd_net_udp_dplpmtud),
 	SHELL_SUBCMD_SET_END
 );
 
