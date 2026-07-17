@@ -2624,6 +2624,25 @@ int net_context_set_udp_dplpmtud(struct net_context *context, bool enable)
 				goto out;
 			}
 
+			/* Raise the shared per-destination entry's ceiling to
+			 * the local link capacity so the search can probe above
+			 * BASE_PLPMTU (the entry is created at base). Mirrors the
+			 * QUIC DPLPMTUD driver.
+			 */
+			net_dplpmtud_set_path_max_plpmtu(
+				&context->options.udp_opt.dplpmtud.path,
+				udp_dplpmtud_link_cap(context));
+
+			/* The per-destination DPLPMTUD state is shared and
+			 * outlives the context. A prior prober to the same
+			 * destination may have exhausted the search (all probes
+			 * lost with no responder), collapsing the search range so
+			 * a plain re-enable would send no probes. Reopen it so the
+			 * freshly enabled prober actively probes again.
+			 */
+			net_dplpmtud_reopen_path_search(
+				&context->options.udp_opt.dplpmtud.path);
+
 			udp_dplpmtud_kick(context);
 		}
 	} else {
