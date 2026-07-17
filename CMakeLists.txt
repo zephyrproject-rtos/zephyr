@@ -1834,6 +1834,21 @@ if(CONFIG_BUILD_OUTPUT_BIN)
   endif()
 endif()
 
+if(CONFIG_GENERATE_INC_FILE_FOR_TARGET)
+  message(WARNING "generating binary image")
+  list(APPEND
+    post_build_commands
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include/generated/bin
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/file2hex.py
+            --file ${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME}
+            > ${PROJECT_BINARY_DIR}/include/generated/bin/image.inc
+  )
+  list(APPEND
+    post_build_byproducts
+    include/generated/bin/image.inc
+  )
+endif()
+
 if(CONFIG_BUILD_OUTPUT_UF2)
   if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_BASE)
     set(code_address "${CONFIG_FLASH_BASE_ADDRESS}")

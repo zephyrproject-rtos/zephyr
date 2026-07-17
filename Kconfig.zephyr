@@ -679,6 +679,14 @@ endchoice # COMPILER_CODEGEN_VLIW
 
 endmenu # Code Generation
 
+config GENERATE_INC_FILE_FOR_TARGET
+	bool "Generate hex include file from this image's zephyr.bin"
+	depends on BUILD_OUTPUT_BIN
+	help
+	  When enabled, build post-processing generates
+	  include/generated/bin/image.inc containing comma-separated 0xNN byte
+	  values from this image's zephyr.bin output file.
+
 endmenu
 
 choice
