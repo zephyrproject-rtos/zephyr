@@ -1283,6 +1283,7 @@
 			compatible = "ite,it51xxx-pwm";
 			reg = <0x00f04600 0xf
 			       0x00f04680 0x80>;
+			channel = <0>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -1291,6 +1292,7 @@
 			compatible = "ite,it51xxx-pwm";
 			reg = <0x00f04610 0xf
 			       0x00f04680 0x80>;
+			channel = <1>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -1299,6 +1301,7 @@
 			compatible = "ite,it51xxx-pwm";
 			reg = <0x00f04620 0xf
 			       0x00f04680 0x80>;
+			channel = <2>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -1307,6 +1310,7 @@
 			compatible = "ite,it51xxx-pwm";
 			reg = <0x00f04630 0xf
 			       0x00f04680 0x80>;
+			channel = <3>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -1315,6 +1319,7 @@
 			compatible = "ite,it51xxx-pwm";
 			reg = <0x00f04640 0xf
 			       0x00f04680 0x80>;
+			channel = <4>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -1323,6 +1328,7 @@
 			compatible = "ite,it51xxx-pwm";
 			reg = <0x00f04650 0xf
 			       0x00f04680 0x80>;
+			channel = <5>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -1331,6 +1337,7 @@
 			compatible = "ite,it51xxx-pwm";
 			reg = <0x00f04660 0xf
 			       0x00f04680 0x80>;
+			channel = <6>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -1339,6 +1346,7 @@
 			compatible = "ite,it51xxx-pwm";
 			reg = <0x00f04670 0xf
 			       0x00f04680 0x80>;
+			channel = <7>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
