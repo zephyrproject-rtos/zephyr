@@ -996,9 +996,9 @@ static uint8_t exchange_mtu(const void *cmd, uint16_t cmd_len,
 static struct btp_gatt_discover_params {
 	struct bt_gatt_discover_params params;
 	struct net_buf *buf;
+	uint8_t opcode;
 } discover_params;
 static struct bt_uuid_any uuid;
-static uint8_t btp_opcode;
 
 #define BTP_GET_DISCOVER_PARAMS(_params) \
 	CONTAINER_OF(_params, struct btp_gatt_discover_params, params);
@@ -1026,8 +1026,8 @@ static uint8_t disc_prim_cb(struct bt_conn *conn,
 	rp = (void *)discover->buf->data;
 
 	if (attr == NULL) {
-		tester_rsp_full(BTP_SERVICE_ID_GATT, btp_opcode,
-				discover->buf->data, discover->buf->len);
+		tester_rsp_full(BTP_SERVICE_ID_GATT, discover->opcode, discover->buf->data,
+				discover->buf->len);
 		discover_destroy(discover);
 		return BT_GATT_ITER_STOP;
 	}
@@ -1038,7 +1038,7 @@ static uint8_t disc_prim_cb(struct bt_conn *conn,
 
 	service = gatt_buf_reserve(discover->buf, sizeof(*service) + uuid_length);
 	if (service == NULL) {
-		tester_rsp(BTP_SERVICE_ID_GATT, btp_opcode, BTP_STATUS_FAILED);
+		tester_rsp(BTP_SERVICE_ID_GATT, discover->opcode, BTP_STATUS_FAILED);
 		discover_destroy(discover);
 		return BT_GATT_ITER_STOP;
 	}
@@ -1092,7 +1092,7 @@ static uint8_t disc_all_prim(const void *cmd, uint16_t cmd_len,
 	discover_params.params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 #endif
 
-	btp_opcode = BTP_GATT_DISC_ALL_PRIM;
+	discover_params.opcode = BTP_GATT_DISC_ALL_PRIM;
 
 	if (bt_gatt_discover(conn, &discover_params.params) < 0) {
 		discover_destroy(&discover_params);
@@ -1147,7 +1147,7 @@ static uint8_t disc_prim_uuid(const void *cmd, uint16_t cmd_len,
 	discover_params.params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 #endif
 
-	btp_opcode = BTP_GATT_DISC_PRIM_UUID;
+	discover_params.opcode = BTP_GATT_DISC_PRIM_UUID;
 
 	if (bt_gatt_discover(conn, &discover_params.params) < 0) {
 		discover_destroy(&discover_params);
@@ -1273,7 +1273,7 @@ static uint8_t disc_chrc_cb(struct bt_conn *conn,
 	rp = (void *)discover->buf->data;
 
 	if (!attr) {
-		tester_rsp_full(BTP_SERVICE_ID_GATT, btp_opcode,
+		tester_rsp_full(BTP_SERVICE_ID_GATT, discover->opcode,
 				discover->buf->data, discover->buf->len);
 		discover_destroy(discover);
 		return BT_GATT_ITER_STOP;
@@ -1285,7 +1285,7 @@ static uint8_t disc_chrc_cb(struct bt_conn *conn,
 
 	chrc = gatt_buf_reserve(discover->buf, sizeof(*chrc) + uuid_length);
 	if (!chrc) {
-		tester_rsp(BTP_SERVICE_ID_GATT, btp_opcode, BTP_STATUS_FAILED);
+		tester_rsp(BTP_SERVICE_ID_GATT, discover->opcode, BTP_STATUS_FAILED);
 		discover_destroy(discover);
 		return BT_GATT_ITER_STOP;
 	}
@@ -1339,8 +1339,7 @@ static uint8_t disc_all_chrc(const void *cmd, uint16_t cmd_len,
 	discover_params.params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 #endif
 
-	/* TODO should be handled as user_data via CONTAINER_OF macro */
-	btp_opcode = BTP_GATT_DISC_ALL_CHRC;
+	discover_params.opcode = BTP_GATT_DISC_ALL_CHRC;
 
 	if (bt_gatt_discover(conn, &discover_params.params) < 0) {
 		discover_destroy(&discover_params);
@@ -1395,8 +1394,7 @@ static uint8_t disc_chrc_uuid(const void *cmd, uint16_t cmd_len,
 	discover_params.params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 #endif
 
-	/* TODO should be handled as user_data via CONTAINER_OF macro */
-	btp_opcode = BTP_GATT_DISC_CHRC_UUID;
+	discover_params.opcode = BTP_GATT_DISC_CHRC_UUID;
 
 	if (bt_gatt_discover(conn, &discover_params.params) < 0) {
 		discover_destroy(&discover_params);
@@ -1505,6 +1503,7 @@ static uint8_t disc_all_desc(const void *cmd, uint16_t cmd_len,
 static struct btp_gatt_read_params {
 	struct bt_gatt_read_params params;
 	struct net_buf *buf;
+	uint8_t opcode;
 } read_params[BTP_READ_PARAMS_COUNT];
 
 static void read_destroy(struct btp_gatt_read_params *read)
@@ -1559,13 +1558,13 @@ static uint8_t read_cb(struct bt_conn *conn, uint8_t err,
 
 	/* read complete */
 	if (data == NULL) {
-		tester_rsp_full(BTP_SERVICE_ID_GATT, btp_opcode, read->buf->data, read->buf->len);
+		tester_rsp_full(BTP_SERVICE_ID_GATT, read->opcode, read->buf->data, read->buf->len);
 		read_destroy(read);
 		return BT_GATT_ITER_STOP;
 	}
 
 	if (gatt_buf_add(read->buf, data, length) == NULL) {
-		tester_rsp(BTP_SERVICE_ID_GATT, btp_opcode, BTP_STATUS_FAILED);
+		tester_rsp(BTP_SERVICE_ID_GATT, read->opcode, BTP_STATUS_FAILED);
 		read_destroy(read);
 		return BT_GATT_ITER_STOP;
 	}
@@ -1596,7 +1595,7 @@ static uint8_t read_uuid_cb(struct bt_conn *conn, uint8_t err,
 
 	/* read complete */
 	if (!data) {
-		tester_rsp_full(BTP_SERVICE_ID_GATT, btp_opcode, read->buf->data, read->buf->len);
+		tester_rsp_full(BTP_SERVICE_ID_GATT, read->opcode, read->buf->data, read->buf->len);
 		read_destroy(read);
 
 		return BT_GATT_ITER_STOP;
@@ -1606,14 +1605,14 @@ static uint8_t read_uuid_cb(struct bt_conn *conn, uint8_t err,
 	value.data_len = length;
 
 	if (gatt_buf_add(read->buf, &value, sizeof(struct btp_gatt_char_value)) == NULL) {
-		tester_rsp(BTP_SERVICE_ID_GATT, btp_opcode, BTP_STATUS_FAILED);
+		tester_rsp(BTP_SERVICE_ID_GATT, read->opcode, BTP_STATUS_FAILED);
 		read_destroy(read);
 
 		return BT_GATT_ITER_STOP;
 	}
 
 	if (gatt_buf_add(read->buf, data, length) == NULL) {
-		tester_rsp(BTP_SERVICE_ID_GATT, btp_opcode, BTP_STATUS_FAILED);
+		tester_rsp(BTP_SERVICE_ID_GATT, read->opcode, BTP_STATUS_FAILED);
 		read_destroy(read);
 
 		return BT_GATT_ITER_STOP;
@@ -1656,8 +1655,7 @@ static uint8_t read_data(const void *cmd, uint16_t cmd_len,
 	read->params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 #endif
 
-	/* TODO should be handled as user_data via CONTAINER_OF macro */
-	btp_opcode = BTP_GATT_READ;
+	read->opcode = BTP_GATT_READ;
 
 	if (bt_gatt_read(conn, &read->params) < 0) {
 		read_destroy(read);
@@ -1713,7 +1711,7 @@ static uint8_t read_uuid(const void *cmd, uint16_t cmd_len,
 	read->params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 #endif
 
-	btp_opcode = BTP_GATT_READ_UUID;
+	read->opcode = BTP_GATT_READ_UUID;
 
 	if (bt_gatt_read(conn, &read->params) < 0) {
 		read_destroy(read);
@@ -1758,8 +1756,7 @@ static uint8_t read_long(const void *cmd, uint16_t cmd_len,
 	read->params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 #endif
 
-	/* TODO should be handled as user_data via CONTAINER_OF macro */
-	btp_opcode = BTP_GATT_READ_LONG;
+	read->opcode = BTP_GATT_READ_LONG;
 
 	if (bt_gatt_read(conn, &read->params) < 0) {
 		read_destroy(read);
@@ -1819,8 +1816,7 @@ static uint8_t read_multiple(const void *cmd, uint16_t cmd_len,
 	read->params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 #endif
 
-	/* TODO should be handled as user_data via CONTAINER_OF macro */
-	btp_opcode = BTP_GATT_READ_MULTIPLE;
+	read->opcode = BTP_GATT_READ_MULTIPLE;
 
 	if (bt_gatt_read(conn, &read->params) < 0) {
 		read_destroy(read);
@@ -1879,8 +1875,7 @@ static uint8_t read_multiple_var(const void *cmd, uint16_t cmd_len,
 	read->params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 #endif
 
-	/* TODO should be handled as user_data via CONTAINER_OF macro */
-	btp_opcode = BTP_GATT_READ_MULTIPLE_VAR;
+	read->opcode = BTP_GATT_READ_MULTIPLE_VAR;
 
 	if (bt_gatt_read(conn, &read->params) < 0) {
 		read_destroy(read);
