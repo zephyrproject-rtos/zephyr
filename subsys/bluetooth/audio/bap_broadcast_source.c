@@ -478,7 +478,7 @@ static bool encode_base(struct bt_bap_broadcast_source *source, struct net_buf_s
 	struct bt_bap_broadcast_subgroup *subgroup;
 	uint8_t streams_encoded;
 	uint8_t subgroup_count;
-	uint32_t pd;
+	uint32_t pd = 0U;
 
 	/* 13 is the size of the fixed size values following this check */
 	if ((buf->size - buf->len) < MINIMUM_BASE_SIZE) {
