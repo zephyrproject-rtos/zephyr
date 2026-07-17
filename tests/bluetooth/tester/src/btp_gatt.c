@@ -1500,15 +1500,40 @@ static uint8_t disc_all_desc(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_DELAY_REPLY;
 }
 
+#define BTP_READ_PARAMS_COUNT 2
+
 static struct btp_gatt_read_params {
 	struct bt_gatt_read_params params;
 	struct net_buf *buf;
-} read_params;
+} read_params[BTP_READ_PARAMS_COUNT];
 
 static void read_destroy(struct btp_gatt_read_params *read)
 {
 	gatt_buf_clear(read->buf);
 	(void)memset(read, 0, sizeof(*read));
+}
+
+static struct btp_gatt_read_params *read_allocate(void)
+{
+	struct btp_gatt_read_params *read = NULL;
+
+	ARRAY_FOR_EACH(read_params, i) {
+		if (read_params[i].buf == NULL) {
+			read = &read_params[i];
+		}
+	}
+
+	if (read == NULL) {
+		return NULL;
+	}
+
+	read->buf = gatt_buf_allocate();
+	if (read->buf == NULL) {
+		read_destroy(read);
+		return NULL;
+	}
+
+	return read;
 }
 
 #define BTP_GET_READ_PARAMS(_params) \
@@ -1602,6 +1627,7 @@ static uint8_t read_uuid_cb(struct bt_conn *conn, uint8_t err,
 static uint8_t read_data(const void *cmd, uint16_t cmd_len,
 			 void *rsp, uint16_t *rsp_len)
 {
+	struct btp_gatt_read_params *read;
 	const struct btp_gatt_read_cmd *cp = cmd;
 	struct bt_conn *conn;
 
@@ -1610,31 +1636,31 @@ static uint8_t read_data(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	read_params.buf = gatt_buf_allocate();
-	if (read_params.buf == NULL) {
+	read = read_allocate();
+	if (read == NULL) {
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
 
-	if (gatt_buf_reserve(read_params.buf, sizeof(struct btp_gatt_read_rp)) == NULL) {
-		read_destroy(&read_params);
+	if (gatt_buf_reserve(read->buf, sizeof(struct btp_gatt_read_rp)) == NULL) {
+		read_destroy(read);
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
 
-	read_params.params.handle_count = 1;
-	read_params.params.single.handle = sys_le16_to_cpu(cp->handle);
-	read_params.params.single.offset = 0x0000;
-	read_params.params.func = read_cb;
+	read->params.handle_count = 1;
+	read->params.single.handle = sys_le16_to_cpu(cp->handle);
+	read->params.single.offset = 0x0000;
+	read->params.func = read_cb;
 #if defined(CONFIG_BT_EATT)
-	read_params.params.chan_opt = BT_ATT_CHAN_OPT_NONE;
+	read->params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 #endif
 
 	/* TODO should be handled as user_data via CONTAINER_OF macro */
 	btp_opcode = BTP_GATT_READ;
 
-	if (bt_gatt_read(conn, &read_params.params) < 0) {
-		read_destroy(&read_params);
+	if (bt_gatt_read(conn, &read->params) < 0) {
+		read_destroy(read);
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
@@ -1647,6 +1673,7 @@ static uint8_t read_data(const void *cmd, uint16_t cmd_len,
 static uint8_t read_uuid(const void *cmd, uint16_t cmd_len,
 			 void *rsp, uint16_t *rsp_len)
 {
+	struct btp_gatt_read_params *read;
 	const struct btp_gatt_read_uuid_cmd *cp = cmd;
 	struct bt_conn *conn;
 
@@ -1665,31 +1692,31 @@ static uint8_t read_uuid(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	read_params.buf = gatt_buf_allocate();
-	if (read_params.buf == NULL) {
+	read = read_allocate();
+	if (read == NULL) {
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
 
-	if (gatt_buf_reserve(read_params.buf, sizeof(struct btp_gatt_read_uuid_rp)) == NULL) {
-		read_destroy(&read_params);
+	if (gatt_buf_reserve(read->buf, sizeof(struct btp_gatt_read_uuid_rp)) == NULL) {
+		read_destroy(read);
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
 
-	read_params.params.by_uuid.uuid = &uuid.uuid;
-	read_params.params.handle_count = 0;
-	read_params.params.by_uuid.start_handle = sys_le16_to_cpu(cp->start_handle);
-	read_params.params.by_uuid.end_handle = sys_le16_to_cpu(cp->end_handle);
-	read_params.params.func = read_uuid_cb;
+	read->params.by_uuid.uuid = &uuid.uuid;
+	read->params.handle_count = 0;
+	read->params.by_uuid.start_handle = sys_le16_to_cpu(cp->start_handle);
+	read->params.by_uuid.end_handle = sys_le16_to_cpu(cp->end_handle);
+	read->params.func = read_uuid_cb;
 #if defined(CONFIG_BT_EATT)
-	read_params.params.chan_opt = BT_ATT_CHAN_OPT_NONE;
+	read->params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 #endif
 
 	btp_opcode = BTP_GATT_READ_UUID;
 
-	if (bt_gatt_read(conn, &read_params.params) < 0) {
-		read_destroy(&read_params);
+	if (bt_gatt_read(conn, &read->params) < 0) {
+		read_destroy(read);
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
@@ -1702,6 +1729,7 @@ static uint8_t read_uuid(const void *cmd, uint16_t cmd_len,
 static uint8_t read_long(const void *cmd, uint16_t cmd_len,
 			 void *rsp, uint16_t *rsp_len)
 {
+	struct btp_gatt_read_params *read;
 	const struct btp_gatt_read_long_cmd *cp = cmd;
 	struct bt_conn *conn;
 
@@ -1710,31 +1738,31 @@ static uint8_t read_long(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	read_params.buf = gatt_buf_allocate();
-	if (read_params.buf == NULL) {
+	read = read_allocate();
+	if (read == NULL) {
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
 
-	if (gatt_buf_reserve(read_params.buf, sizeof(struct btp_gatt_read_rp)) == NULL) {
-		read_destroy(&read_params);
+	if (gatt_buf_reserve(read->buf, sizeof(struct btp_gatt_read_rp)) == NULL) {
+		read_destroy(read);
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
 
-	read_params.params.handle_count = 1;
-	read_params.params.single.handle = sys_le16_to_cpu(cp->handle);
-	read_params.params.single.offset = sys_le16_to_cpu(cp->offset);
-	read_params.params.func = read_cb;
+	read->params.handle_count = 1;
+	read->params.single.handle = sys_le16_to_cpu(cp->handle);
+	read->params.single.offset = sys_le16_to_cpu(cp->offset);
+	read->params.func = read_cb;
 #if defined(CONFIG_BT_EATT)
-	read_params.params.chan_opt = BT_ATT_CHAN_OPT_NONE;
+	read->params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 #endif
 
 	/* TODO should be handled as user_data via CONTAINER_OF macro */
 	btp_opcode = BTP_GATT_READ_LONG;
 
-	if (bt_gatt_read(conn, &read_params.params) < 0) {
-		read_destroy(&read_params);
+	if (bt_gatt_read(conn, &read->params) < 0) {
+		read_destroy(read);
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
@@ -1747,6 +1775,7 @@ static uint8_t read_long(const void *cmd, uint16_t cmd_len,
 static uint8_t read_multiple(const void *cmd, uint16_t cmd_len,
 			     void *rsp, uint16_t *rsp_len)
 {
+	struct btp_gatt_read_params *read;
 	const struct btp_gatt_read_multiple_cmd *cp = cmd;
 	uint16_t handles[5];
 	struct bt_conn *conn;
@@ -1770,31 +1799,31 @@ static uint8_t read_multiple(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	read_params.buf = gatt_buf_allocate();
-	if (read_params.buf == NULL) {
+	read = read_allocate();
+	if (read == NULL) {
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
 
-	if (gatt_buf_reserve(read_params.buf, sizeof(struct btp_gatt_read_rp)) == NULL) {
-		read_destroy(&read_params);
+	if (gatt_buf_reserve(read->buf, sizeof(struct btp_gatt_read_rp)) == NULL) {
+		read_destroy(read);
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
 
-	read_params.params.func = read_cb;
-	read_params.params.handle_count = cp->handles_count;
-	read_params.params.multiple.handles = handles; /* not used in read func */
-	read_params.params.multiple.variable = false;
+	read->params.func = read_cb;
+	read->params.handle_count = cp->handles_count;
+	read->params.multiple.handles = handles; /* not used in read func */
+	read->params.multiple.variable = false;
 #if defined(CONFIG_BT_EATT)
-	read_params.params.chan_opt = BT_ATT_CHAN_OPT_NONE;
+	read->params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 #endif
 
 	/* TODO should be handled as user_data via CONTAINER_OF macro */
 	btp_opcode = BTP_GATT_READ_MULTIPLE;
 
-	if (bt_gatt_read(conn, &read_params.params) < 0) {
-		read_destroy(&read_params);
+	if (bt_gatt_read(conn, &read->params) < 0) {
+		read_destroy(read);
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
@@ -1807,6 +1836,7 @@ static uint8_t read_multiple(const void *cmd, uint16_t cmd_len,
 static uint8_t read_multiple_var(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
+	struct btp_gatt_read_params *read;
 	const struct btp_gatt_read_multiple_var_cmd *cp = cmd;
 	uint16_t handles[5];
 	struct bt_conn *conn;
@@ -1829,31 +1859,31 @@ static uint8_t read_multiple_var(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	read_params.buf = gatt_buf_allocate();
-	if (read_params.buf == NULL) {
+	read = read_allocate();
+	if (read == NULL) {
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
 
-	if (gatt_buf_reserve(read_params.buf, sizeof(struct btp_gatt_read_rp)) == NULL) {
-		read_destroy(&read_params);
+	if (gatt_buf_reserve(read->buf, sizeof(struct btp_gatt_read_rp)) == NULL) {
+		read_destroy(read);
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
 
-	read_params.params.func = read_cb;
-	read_params.params.handle_count = cp->handles_count;
-	read_params.params.multiple.handles = handles; /* not used in read func */
-	read_params.params.multiple.variable = true;
+	read->params.func = read_cb;
+	read->params.handle_count = cp->handles_count;
+	read->params.multiple.handles = handles; /* not used in read func */
+	read->params.multiple.variable = true;
 #if defined(CONFIG_BT_EATT)
-	read_params.params.chan_opt = BT_ATT_CHAN_OPT_NONE;
+	read->params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 #endif
 
 	/* TODO should be handled as user_data via CONTAINER_OF macro */
 	btp_opcode = BTP_GATT_READ_MULTIPLE_VAR;
 
-	if (bt_gatt_read(conn, &read_params.params) < 0) {
-		read_destroy(&read_params);
+	if (bt_gatt_read(conn, &read->params) < 0) {
+		read_destroy(read);
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
