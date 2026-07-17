@@ -92,6 +92,25 @@ void net_dplpmtud_set_path_max_plpmtu(struct net_dplpmtud_path *path,
 				      uint16_t max_plpmtu);
 
 /**
+ * @brief Restart the PLPMTU search for a path.
+ *
+ * Resets the search to start again from the base PLPMTU up to the entry's
+ * current ceiling and clears any stale in-flight probe state, so a newly
+ * (re)started prober re-validates the path from scratch.
+ *
+ * The per-destination DPLPMTUD state is shared and outlives an individual
+ * transport/socket. A prior run may have left it in a terminal state that
+ * yields no further probes: either the search completed (validated PLPMTU has
+ * reached the ceiling) or it collapsed after repeated probe loss with no
+ * responder. In both cases a plain re-enable would send no probes, so a
+ * transport that reattaches to a destination should call this when it
+ * re-enables probing.
+ *
+ * @param path Initialized path handle
+ */
+void net_dplpmtud_reopen_path_search(struct net_dplpmtud_path *path);
+
+/**
  * @brief Get the currently validated PLPMTU for a path.
  *
  * The path must have been initialized with net_dplpmtud_init_path(). This
