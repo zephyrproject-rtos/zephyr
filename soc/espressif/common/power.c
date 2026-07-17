@@ -70,14 +70,14 @@ static gpio_hal_context_t gpio_hal = {.dev = GPIO_HAL_GET_HW(GPIO_PORT_0)};
 static uint32_t intenable;
 #endif
 
-static inline uint64_t lpm_counter_ticks_per_us(void)
+static inline uint64_t lpm_counter_ticks_per_sec(void)
 {
 #if defined(SOC_SYSTIMER_SUPPORTED)
-	return systimer_us_to_ticks(1);
+	return systimer_us_to_ticks(1000000ULL);
 #elif defined(CONFIG_SOC_SERIES_ESP32)
-	return LACT_TICKS_PER_US;
+	return LACT_TICKS_PER_US * 1000000ULL;
 #else
-	return 1;
+	return 1000000ULL;
 #endif
 }
 
@@ -123,7 +123,8 @@ static bool ESP32_PM_SLEEP_FN_ATTR rtc_wakeup_enable(enum pm_state state, bool e
 		 * (peripheral, flash and CPU power down) is compensated by HAL.
 		 */
 		uint64_t now = esp_timer_impl_get_counter_reg();
-		uint64_t elapsed_us = (now - lpm_entry_counter) / lpm_counter_ticks_per_us();
+		uint64_t elapsed_us =
+			((now - lpm_entry_counter) * 1000000ULL) / lpm_counter_ticks_per_sec();
 		uint64_t lead_us = elapsed_us + CONFIG_SOC_ESP32_PM_WAKEUP_MARGIN_US;
 
 		if ((sleep_time_us > lead_us) &&
@@ -329,11 +330,7 @@ uint64_t z_xtensa_lptim_hook_get_freq(void)
 uint64_t esp32_lptim_hook_get_freq(void)
 #endif
 {
-#if defined(SOC_SYSTIMER_SUPPORTED)
-	return systimer_us_to_ticks(1) * 1000000ULL;
-#elif defined(CONFIG_SOC_SERIES_ESP32)
-	return LACT_TICKS_PER_US * 1000000ULL;
-#endif
+	return lpm_counter_ticks_per_sec();
 }
 
 /* Sleep retention initialization */
