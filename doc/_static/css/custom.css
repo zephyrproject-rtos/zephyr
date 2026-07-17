@@ -275,12 +275,14 @@ code,
     border-bottom: 1px solid var(--code-background-color) !important;
 }
 
-/* Code literals */
-a.internal code.literal {
+/* Code literals that are links in body content take the link color. Scoped to .rst-content so the
+   navigation sidebar (where code identifiers are section titles, not cross-references) is unaffected
+   and keeps the regular nav text color. */
+.rst-content a.internal code.literal {
     color: var(--link-color);
 }
 
-a.internal:visited code.literal {
+.rst-content a.internal:visited code.literal {
     color: var(--link-color-visited);
 }
 
@@ -555,9 +557,29 @@ kbd, .kbd,
     font-weight: 100;
 }
 
+/* Section titles that are code identifiers would otherwise render as a small inline-code chip, both
+   in the body and the sidebar. Let the code inherit the surrounding size, weight and color so the
+   heading hierarchy and nav entries stay legible. */
+.rst-content section > h1 code,
+.rst-content section > h2 code,
+.rst-content section > h3 code,
+.rst-content section > h4 code,
+.rst-content section > h5 code,
+.rst-content section > h6 code,
+.wy-menu-vertical a code.literal {
+    font-size: inherit;
+    font-weight: inherit;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: inherit;
+}
+
 /* Definition lists */
 .rst-content dl {
-    border-left: 4px solid var(--admonition-note-background-color);
+    /* Neutral gray, distinct from the accent color the headings use for their left border, so a
+       definition list is not mistaken for content nested under the preceding heading. */
+    border-left: 4px solid var(--code-border-color);
 }
 
 .rst-content dl:not(.field-list) > dt {
@@ -578,6 +600,18 @@ kbd, .kbd,
     background: var(--admonition-note-title-background-color);
     border-radius: 50%;
     border: 4px solid var(--content-background-color);
+}
+
+/* Give CMake signatures and their nested parameter terms the code background, so the syntax
+   highlighting stays legible and the terms aren't left with the theme's too-bright default. */
+.rst-content dl.cmake > dt,
+.rst-content dl.cmake dd dl:not(.field-list) > dt {
+    background: var(--highlight-background-color) !important;
+    color: var(--highlight-default-color) !important;
+}
+
+.rst-content dl.cmake > dt .sig-name {
+    color: inherit !important;
 }
 
 /* Buttons */
