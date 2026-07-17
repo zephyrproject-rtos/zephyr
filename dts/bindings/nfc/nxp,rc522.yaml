@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Luke Bugbee <lbugbee@protonmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: RC522 NFC Driver
+
+compatible: "nxp,rc522"
+
+include: spi-device.yaml
+
+properties:
+  reset-gpios:
+    required: true
+    type: phandle-array

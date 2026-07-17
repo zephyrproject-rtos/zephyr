@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2026 Luke Bugbee <lbugbee@protonmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		nfc = &rc522_0;
+	};
+};
+
+&usart1 {
+	status = "disabled";
+};
+
+&i2c1 {
+	status = "disabled";
+};
+
+&spi1 {
+	status = "okay";
+
+	rc522_0: rc522@0 {
+		compatible = "nxp,rc522";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+		reset-gpios = <&gpiob 9 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+};

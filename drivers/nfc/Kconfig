@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Luke Bugbee <lbugbee@protonmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# Top-level configuration file for NFC drivers.
+
+menuconfig NFC
+	bool "NFC drivers"
+	depends on NET_BUF
+	help
+	  Include NFC drivers in the system configuration.
+
+if NFC
+
+module = NFC
+module-str = NFC
+source "subsys/logging/Kconfig.template.log_config"
+
+config NFC_INIT_PRIORITY
+	int "NFC initialization priority"
+	default 90
+	help
+	  System initialization priority for NFC drivers.
+
+source "drivers/nfc/Kconfig.rc522"
+
+endif # NFC
