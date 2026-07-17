@@ -1023,6 +1023,13 @@ config NXP_WIFI_ANT_DETECT
 	  This option is used to auto detect which two antennas are present and
 	  then configure corresponding evaluate Mode-X to firmware and enable antenna diversity.
 
+config NXP_WIFI_EXT_ANT_GAIN
+	bool "External antenna gain configuration"
+	default y
+	help
+	  This option enables runtime configuration of net antenna gain
+	  per sub-band via host command.
+
 config NXP_WIFI_WLAN_CALDATA_1ANT
 	bool "One antenna"
 	help
