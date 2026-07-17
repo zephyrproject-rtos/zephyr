@@ -42,7 +42,7 @@ For :zephyr:board:`mimxrt1064_evk`, the sample can be built with the following c
 If a mt9m114 camera shield is missing, video software generator will be used instead.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/tcpserversink
+   :zephyr-app: samples/subsys/video/tcpserversink
    :board: mimxrt1064_evk
    :shield: dvp_fpc24_mt9m114
    :goals: build
@@ -52,7 +52,7 @@ For testing purpose and without the need of any real video capture hardware,
 a video software pattern generator is supported by using :ref:`snippet-video-sw-generator`:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture
+   :zephyr-app: samples/subsys/video/capture
    :board: native_sim/native/64
    :snippets: video-sw-generator
    :goals: build
@@ -62,7 +62,7 @@ For :zephyr:board:`stm32n6570_dk`, the sample can be built with H264 video compr
 support using the venc file_suffix at the end of the following command:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/tcpserversink
+   :zephyr-app: samples/subsys/video/tcpserversink
    :board: stm32n6570_dk
    :shield: st_b_cams_imx_mb1854
    :gen-args: -DFILE_SUFFIX=venc

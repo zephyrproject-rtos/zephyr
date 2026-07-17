@@ -55,7 +55,7 @@ Programming
 Set ``--shield dvp_20pin_ov7670`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture
+   :zephyr-app: samples/subsys/video/capture
    :board: frdm_mcxn947
    :shield: dvp_20pin_ov7670
    :goals: build

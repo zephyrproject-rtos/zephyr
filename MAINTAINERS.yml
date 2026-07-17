@@ -2886,8 +2886,6 @@ Documentation Infrastructure:
     - doc/hardware/peripherals/video.rst
     - tests/drivers/*/video/
     - dts/bindings/video/
-    - samples/drivers/video/
-    - tests/drivers/video/
   labels:
     - "area: Video"
   tests:
@@ -6388,7 +6386,9 @@ Video Subsystem:
     - avolmat-st
   files:
     - include/zephyr/video/
+    - samples/subsys/video/
     - subsys/video/
+    - tests/subsys/video/
   labels:
     - "area: Video"
   tests:
