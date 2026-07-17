@@ -7,3 +7,7 @@ project(stack_unwind_test)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
+
+if(CONFIG_RISCV)
+  target_sources(app PRIVATE src/riscv_leaf.S)
+endif()
