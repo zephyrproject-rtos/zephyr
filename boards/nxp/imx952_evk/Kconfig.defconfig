@@ -21,4 +21,11 @@ config ARM_SCMI_TRANSPORT_INIT_PRIORITY
 config CLOCK_CONTROL_INIT_PRIORITY
 	default 31 if SOC_MIMX9529_A55
 
+# I2C multiplexer channels must be initialized after their root
+configdefault I2C_TCA954X_ROOT_INIT_PRIO
+	default 60
+
+configdefault I2C_TCA954X_CHANNEL_INIT_PRIO
+	default 61
+
 endif # SOC_MIMX9529_A55
