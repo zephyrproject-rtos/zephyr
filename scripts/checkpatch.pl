@@ -1823,6 +1823,19 @@ sub annotate_values {
 			push(@av_paren_type, $type);
 			$type = 'c';
 
+		} elsif ($perl_version_ok &&
+			 $cur =~ /^((?:$Modifier\s+|const\s+)*(?:struct|union|enum)\s+$Ident\s*$balanced_parens(?:\s|\*)*)(?:$Ident|,|\)|\s*$)/) {
+			# A tagged type whose name is produced by a
+			# function-like macro, e.g. "struct MY_MACRO(NODE)
+			# *spec". Consume the macro's parenthesized argument, and
+			# any trailing pointer '*', as part of the type. This
+			# mirrors how the plain $Type regex absorbs the '*' so it
+			# is not annotated as a binary operator. Requiring a
+			# struct/union/enum tag keeps this from matching a lone
+			# macro that returns a value, e.g. "u32(5) * 2".
+			print "DECLARE($1)\n" if ($dbg_values > 1);
+			$type = 'T';
+
 		} elsif ($cur =~ /^($Type)\s*(?:$Ident|,|\)|\(|\s*$)/) {
 			print "DECLARE($1)\n" if ($dbg_values > 1);
 			$type = 'T';
@@ -4231,6 +4244,37 @@ sub process {
 			$to =~ s/(\b$Modifier$)/$1 /;
 
 ##			print "2: from<$from> to<$to> ident<$ident>\n";
+			if ($from ne $to && $ident !~ /^$Modifier$/) {
+				if (ERROR("POINTER_LOCATION",
+					  "\"foo${from}bar\" should be \"foo${to}bar\"\n" .  $herecurr) &&
+				    $fix) {
+
+					my $sub_from = $match;
+					my $sub_to = $match;
+					$sub_to =~ s/\Q$from\E/$to/;
+					$fixed[$fixlinenr] =~
+					    s@\Q$sub_from\E@$sub_to@;
+				}
+			}
+		}
+		# Same as above, but for a tagged type whose name is produced by
+		# a function-like macro, e.g. "struct MY_MACRO(NODE)*spec". The
+		# macro's parenthesized argument sits between the type and the
+		# '*', so the plain $NonptrType patterns above do not match it.
+		while ($perl_version_ok &&
+		       $line =~ m{(\b(?:$Modifier\b\s*|const\s+)*(?:struct|union|enum)\s+$Ident\s*$balanced_parens(\s*(?:$Modifier\b\s*|\*\s*)+)($Ident))}g) {
+			my ($match, $from, $to, $ident) = ($1, $3, $3, $4);
+
+			# Should start with a space.
+			$to =~ s/^(\S)/ $1/;
+			# Should not end with a space.
+			$to =~ s/\s+$//;
+			# '*'s should not have spaces between.
+			while ($to =~ s/\*\s+\*/\*\*/) {
+			}
+			# Modifiers should have spaces.
+			$to =~ s/(\b$Modifier$)/$1 /;
+
 			if ($from ne $to && $ident !~ /^$Modifier$/) {
 				if (ERROR("POINTER_LOCATION",
 					  "\"foo${from}bar\" should be \"foo${to}bar\"\n" .  $herecurr) &&
