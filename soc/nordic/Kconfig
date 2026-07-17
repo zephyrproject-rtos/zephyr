@@ -272,4 +272,10 @@ config NRF_PLATFORM_LUMOS
 	  directly. The symbol is kept temporarily so that out-of-tree code that
 	  still references it continues to build, with a deprecation warning.
 
+config NRF_REMOTE_IMAGE_INC_DIR
+	string "Remote image include directory"
+	help
+	  The directory containing the remote image include files.
+	  This is used to include the remote image include files in the build.
+
 endif # SOC_FAMILY_NORDIC_NRF

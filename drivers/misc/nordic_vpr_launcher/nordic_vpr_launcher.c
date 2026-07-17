@@ -40,6 +40,12 @@ struct nordic_vpr_launcher_config {
 #endif
 };
 
+/* Determine if there is a single VPR executing from RRAM (xip). */
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1 && \
+	DT_SAME_NODE(DT_PARENT(DT_INST_PHANDLE(0, execution_memory)), DT_NODELABEL(rram_controller))
+#define VPR_EXEC_XIP 1
+#endif
+
 /* Determine if all code that will be copied is 8 byte aligned. If yes then optimized
  * copying can be used. Macro ends with && so it must be followed by an additional
  * condition.
@@ -59,7 +65,29 @@ static int nordic_vpr_launcher_init(const struct device *dev)
 		return 0;
 	}
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(source_memory)
+#if defined(CONFIG_NORDIC_VPR_LAUNCHER_FROM_ARRAY) && !defined(VPR_EXEC_XIP)
+	static const uint8_t vpr_image[] __aligned(sizeof(uint32_t)) = {
+		#include <bin/image.inc>
+	};
+	uint64_t *dst = (uint64_t *)config->exec_addr;
+	uint64_t *src = (uint64_t *)vpr_image;
+	size_t total_size = sizeof(vpr_image);
+	size_t len64 = total_size / sizeof(uint64_t);
+
+	/* Load VPR code from array. */
+	LOG_INF("Loading VPR code from array (%p) to %p (%zu bytes)", src, dst, total_size);
+	for (size_t i = 0; i < len64; i++) {
+		dst[i] = (uint64_t)src[i];
+	}
+
+	total_size = total_size - len64 * sizeof(uint64_t);
+	if (total_size > 0) {
+		uint8_t *dst8 = (uint8_t *)(dst + len64 * sizeof(uint64_t));
+		uint8_t *src8 = (uint8_t *)(src + len64);
+
+		memcpy(dst8, src8, total_size);
+	}
+#elif DT_ANY_INST_HAS_PROP_STATUS_OKAY(source_memory)
 	if (config->size > 0U) {
 		LOG_DBG("Loading VPR (%p) from %p to %p (%zu bytes)", config->vpr,
 			(void *)config->src_addr, (void *)config->exec_addr, config->size);

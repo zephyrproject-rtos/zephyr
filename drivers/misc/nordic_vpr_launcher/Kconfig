@@ -23,4 +23,10 @@ config NORDIC_VPR_LAUNCHER_INIT_PRIORITY
 	help
 	  The init priority of the VPR coprocessor launcher.
 
+config NORDIC_VPR_LAUNCHER_FROM_ARRAY
+	bool "Use local array with VPR code instead of device tree partition"
+	help
+	  Use local array with VPR code instead of device tree partition.
+	  Can only be used for a single VPR core.
+
 endif # NORDIC_VPR_LAUNCHER
