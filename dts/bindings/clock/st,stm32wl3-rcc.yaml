@@ -1,0 +1,33 @@
+# Copyright (c) 2024 STMicroelectronics
+# Copyright (c) 2026 Anders Frandsen <anfran@anfran.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32WL3x RCC (Reset and Clock Controller).
+
+  This node is in charge of the system clock ('SYSCLK') source
+  selection and generation.
+
+compatible: "st,stm32wl3-rcc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 2
+
+  clock-frequency:
+    required: true
+    type: int
+    description: |
+      Default CLK_SYS (CPU / AHB / APB) frequency in Hz. At reset this is
+      HSI 64 MHz / 4 = 16 MHz.
+
+# TODO: add 'slow-clock' and 'clksys-prescaler' properties
+
+clock-cells:
+  - bus
+  - bits

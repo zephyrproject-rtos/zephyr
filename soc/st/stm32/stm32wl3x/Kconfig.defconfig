@@ -1,0 +1,10 @@
+# STMicroelectronics STM32WL3 MCU line
+
+# Copyright (c) 2026 Anders Frandsen <anfran@anfran.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32WL3X
+
+# Series-wide defaults
+
+endif # SOC_SERIES_STM32WL3X
