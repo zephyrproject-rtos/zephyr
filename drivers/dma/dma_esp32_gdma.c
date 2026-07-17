@@ -874,6 +874,8 @@ static int dma_esp32_init(const struct device *dev)
 		memset(dma_channel->desc_list, 0, sizeof(dma_channel->desc_list));
 	}
 
+	int group_id;
+
 #if defined(SOC_AXI_GDMA_SUPPORTED)
 	/*
 	 * Dual-bus SoCs have two gdma instances sharing the same compatible, told
@@ -883,21 +885,24 @@ static int dma_esp32_init(const struct device *dev)
 	if ((uint32_t)data->hal.dev == DR_REG_AXI_DMA_BASE) {
 		gdma_ll_enable_bus_clock(1, true);
 		gdma_ll_reset_register(1);
+		group_id = GDMA_LL_AXI_GROUP_START_ID;
 		gdma_hal_config_t hal_config = {
-			.group_id = GDMA_LL_AXI_GROUP_START_ID,
+			.group_id = group_id,
 		};
 		gdma_axi_hal_init(&data->hal, &hal_config);
 		data->is_axi = true;
 	} else {
+		group_id = GDMA_LL_AHB_GROUP_START_ID;
 		gdma_hal_config_t hal_config = {
-			.group_id = GDMA_LL_AHB_GROUP_START_ID,
+			.group_id = group_id,
 		};
 		gdma_ahb_hal_init(&data->hal, &hal_config);
 		data->is_axi = false;
 	}
 #else
+	group_id = GDMA_LL_AHB_GROUP_START_ID;
 	gdma_hal_config_t hal_config = {
-		.group_id = GDMA_LL_AHB_GROUP_START_ID,
+		.group_id = group_id,
 	};
 	gdma_ahb_hal_init(&data->hal, &hal_config);
 #endif
@@ -912,7 +917,7 @@ static int dma_esp32_init(const struct device *dev)
 #if GDMA_SLEEP_RETENTION_ENABLED
 	for (uint8_t pair = 0; pair < GDMA_LL_PAIRS_PER_INST; pair++) {
 		const gdma_retention_desc_t *ctx =
-			&gdma_retention_infos[hal_config.group_id][pair];
+			&gdma_retention_infos[group_id][pair];
 		sleep_retention_module_init_param_t init_param = {
 			.cbs = {.create = {.handle = gdma_create_sleep_retention_cb,
 					   .arg = (void *)ctx}},
