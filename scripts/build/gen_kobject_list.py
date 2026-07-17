@@ -460,6 +460,19 @@ def analyze_die_const(die):
     type_env[die.offset] = ConstType(type_offset)
 
 
+def _is_constant_form(form):
+    # A subrange bound is a plain integer count only for constant-class forms.
+    # DWARF <=4 GCC uses DW_FORM_dataN; DWARF 5 GCC uses DW_FORM_implicit_const,
+    # and other producers use the signed/unsigned LEB forms. Anything else
+    # (an exprloc/block computing a dynamic bound, or a reference) is not a
+    # constant we can turn into an element count, so it is skipped.
+    return form.startswith("DW_FORM_data") or form in (
+        "DW_FORM_implicit_const",
+        "DW_FORM_sdata",
+        "DW_FORM_udata",
+    )
+
+
 def analyze_die_array(die):
     type_offset = die_get_type_offset(die)
     elements = []
@@ -471,7 +484,7 @@ def analyze_die_array(die):
         if "DW_AT_upper_bound" in child.attributes:
             ub = child.attributes["DW_AT_upper_bound"]
 
-            if not ub.form.startswith("DW_FORM_data"):
+            if not _is_constant_form(ub.form):
                 continue
 
             elements.append(ub.value + 1)
@@ -480,7 +493,7 @@ def analyze_die_array(die):
         elif "DW_AT_count" in child.attributes:
             ub = child.attributes["DW_AT_count"]
 
-            if not ub.form.startswith("DW_FORM_data"):
+            if not _is_constant_form(ub.form):
                 continue
 
             elements.append(ub.value)
