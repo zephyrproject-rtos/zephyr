@@ -1711,6 +1711,26 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 	return ret;
 }
 
+bool xtensa_buffer_is_kernel_readable(const void *addr, size_t size)
+{
+	uint8_t *virt;
+	size_t aligned_size;
+	const struct k_thread *thread = _current;
+	uint32_t *ptables = thread_page_tables_get(thread);
+
+	/* addr/size arbitrary, fix this up into an aligned region */
+	k_mem_region_align((uintptr_t *)&virt, &aligned_size, (uintptr_t)addr, size,
+			   CONFIG_MMU_PAGE_SIZE);
+
+	for (size_t offset = 0; offset < aligned_size; offset += CONFIG_MMU_PAGE_SIZE) {
+		if (!page_validate(ptables, (uint32_t)(virt + offset), RING_KERNEL, false)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 void xtensa_exc_dtlb_multihit_handle(void *vaddr)
 {
 	uint8_t way, i;
