@@ -53,6 +53,12 @@ static void smp_uart_process_rx_queue(struct k_work *work);
 K_FIFO_DEFINE(smp_uart_rx_fifo);
 K_WORK_DEFINE(smp_uart_work, smp_uart_process_rx_queue);
 
+/* Serialises whole-frame TX so concurrent writers to the same serial transport
+ * (e.g. the host->downstream forward path and a locally originated Smart Connect
+ * announce) cannot interleave their bytes in the single-wire driver TX ring.
+ */
+K_MUTEX_DEFINE(smp_uart_tx_mutex);
+
 static struct mcumgr_serial_rx_ctxt smp_uart_rx_ctxt;
 #ifdef CONFIG_SMP_CLIENT
 static struct smp_client_transport_entry smp_client_transport;
@@ -138,6 +144,16 @@ static int smp_uart_tx_pkt(
 
 	LOG_HEXDUMP_DBG(nb->data, nb->len, "TX");
 
+	/*
+	 * Serialise the whole frame. With the forward tree the same serial
+	 * transport is written both by the host->downstream forward path and by any
+	 * locally originated writer (e.g. the Smart Connect announce), from
+	 * different work queues. uart_mcumgr_send() streams the frame byte by byte
+	 * into the driver TX ring, so without this lock two concurrent frames
+	 * interleave in the ring and corrupt each other on the wire.
+	 */
+	k_mutex_lock(&smp_uart_tx_mutex, K_FOREVER);
+
 	rc = uart_mcumgr_send(
 #if defined(CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE)
 		dev,
@@ -145,6 +161,8 @@ static int smp_uart_tx_pkt(
 		uart_mcumgr_dev,
 #endif
 		nb->data, nb->len);
+
+	k_mutex_unlock(&smp_uart_tx_mutex);
 
 	smp_packet_free(nb);
 
