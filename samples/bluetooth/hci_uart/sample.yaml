@@ -16,6 +16,14 @@ tests:
     tags:
       - uart
       - bluetooth
+  sample.bluetooth.hci_uart.ti_lpf3.flowcontrol:
+    harness: bluetooth
+    platform_allow:
+      - lp_em_cc2340r53
+    extra_args: DTC_OVERLAY_FILE=./boards/ti_lpf3_flowcontrol.overlay
+    tags:
+      - uart
+      - bluetooth
   sample.bluetooth.hci_uart.ti_lpf3.test_mode:
     harness: bluetooth
     extra_configs:
