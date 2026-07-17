@@ -75,10 +75,10 @@ static void dplpmtud_cb(struct net_dplpmtud_entry *entry, void *user_data)
 		   "Destination Address");
 	}
 
-	PR("[%2d] %" STRINGIFY(ADDR_STR_LEN) "s %8d  %d\n", *count + 1,
+	PR("[%2d] %" STRINGIFY(ADDR_STR_LEN) "s %8u  %u\n", *count + 1,
 	   net_sprint_addr(entry->dst.family, (void *)&entry->dst.in_addr),
-	   entry->validated_plpmtu,
-	   (k_uptime_get_32() - entry->last_update) / 1000U);
+	   (unsigned int)entry->validated_plpmtu,
+	   (unsigned int)((k_uptime_get_32() - entry->last_update) / 1000U));
 
 	(*count)++;
 }
