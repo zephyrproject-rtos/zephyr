@@ -12,7 +12,6 @@
 #include "ulp_lp_core.h"
 #include "ulp_lp_core_memory_shared.h"
 #include <esp_sleep.h>
-#include <hal/lp_core_ll.h>
 
 LOG_MODULE_REGISTER(esp32p4_lp_core, CONFIG_SOC_LOG_LEVEL);
 
@@ -61,10 +60,6 @@ void IRAM_ATTR lp_core_image_init(void)
 	};
 
 	ulp_lp_core_run(&cfg);
-
-	/* Disable stall/reset so LP core survives HP deep sleep */
-	lp_core_ll_stall_at_sleep_request(false);
-	lp_core_ll_rst_at_sleep_enable(false);
 }
 
 void soc_late_init_hook(void)
