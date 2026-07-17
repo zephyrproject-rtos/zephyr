@@ -10,8 +10,8 @@ supported:
   - adc
   - uart
   - shdc
+  - netif:eth
 testing:
   ignore_tags:
-    - net
     - bluetooth
 vendor: ti
