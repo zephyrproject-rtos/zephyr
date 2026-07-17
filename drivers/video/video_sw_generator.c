@@ -73,9 +73,8 @@ static const uint8_t h264_start_code_4[] = {0x00, 0x00, 0x00, 0x01};
 #endif
 
 struct video_sw_generator_data {
-	const struct device *dev;
+	struct video_device_context dctx;
 	struct sw_ctrls ctrls;
-	struct video_format fmt;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	struct k_work_delayable work;
@@ -286,16 +285,7 @@ static int video_sw_generator_set_fmt(const struct device *dev, struct video_for
 	}
 #endif
 
-	data->fmt = *fmt;
-	return 0;
-}
-
-static int video_sw_generator_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct video_sw_generator_data *data = dev->data;
-
-	*fmt = data->fmt;
-
+	data->dctx.fmt = *fmt;
 	return 0;
 }
 
@@ -538,7 +528,7 @@ static uint16_t video_sw_generator_fill_grey(uint8_t *buffer, uint16_t width, bo
 static int video_sw_generator_fill(const struct device *const dev, struct video_buffer *vbuf)
 {
 	struct video_sw_generator_data *data = dev->data;
-	struct video_format *fmt = &data->fmt;
+	struct video_format *fmt = &data->dctx.fmt;
 	size_t pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 	bool hflip = data->ctrls.hflip.val;
 	uint16_t lines = 0;
@@ -550,9 +540,9 @@ static int video_sw_generator_fill(const struct device *const dev, struct video_
 #endif
 
 	/* Handle JPEG and PNG formats specially */
-	if ((data->fmt.pixelformat == VIDEO_PIX_FMT_JPEG) ||
-	    (data->fmt.pixelformat == VIDEO_PIX_FMT_PNG)) {
-		return video_sw_generator_fill_compressed(vbuf, hflip, data->fmt.pixelformat);
+	if ((data->dctx.fmt.pixelformat == VIDEO_PIX_FMT_JPEG) ||
+	    (data->dctx.fmt.pixelformat == VIDEO_PIX_FMT_PNG)) {
+		return video_sw_generator_fill_compressed(vbuf, hflip, data->dctx.fmt.pixelformat);
 	}
 
 	if (vbuf->size < pitch * 2) {
@@ -561,7 +551,7 @@ static int video_sw_generator_fill(const struct device *const dev, struct video_
 	}
 
 	/* Fill the first row of the emulated framebuffer */
-	switch (data->fmt.pixelformat) {
+	switch (data->dctx.fmt.pixelformat) {
 	case VIDEO_PIX_FMT_YUYV:
 		lines = video_sw_generator_fill_yuyv(vbuf->buffer, fmt->width, hflip);
 		break;
@@ -609,10 +599,10 @@ static int video_sw_generator_fill(const struct device *const dev, struct video_
 	}
 
 	/* How much was filled in so far */
-	vbuf->bytesused = data->fmt.pitch * lines;
+	vbuf->bytesused = data->dctx.fmt.pitch * lines;
 
 	/* Duplicate the first line(s) all over the buffer */
-	for (int h = lines; h < data->fmt.height; h += lines) {
+	for (int h = lines; h < data->dctx.fmt.height; h += lines) {
 		if (vbuf->size < vbuf->bytesused + pitch * lines) {
 			LOG_WRN("Generation stopped early: buffer too small");
 			break;
@@ -644,7 +634,7 @@ static void video_sw_generator_worker(struct k_work *work)
 
 	switch (data->pattern) {
 	case VIDEO_PATTERN_COLOR_BAR:
-		video_sw_generator_fill(data->dev, vbuf);
+		video_sw_generator_fill(data->dctx.vctx.dev, vbuf);
 		break;
 	}
 
@@ -703,6 +693,7 @@ static int video_sw_generator_flush(const struct device *dev, bool cancel)
 
 static int video_sw_generator_get_caps(const struct device *dev, struct video_caps *caps)
 {
+	caps->type = VIDEO_BUF_TYPE_OUTPUT;
 	caps->format_caps = fmts;
 	caps->min_vbuf_count = 1;
 
@@ -775,7 +766,6 @@ static int video_sw_generator_enum_frmival(const struct device *dev, struct vide
 
 static DEVICE_API(video, video_sw_generator_driver_api) = {
 	.set_format = video_sw_generator_set_fmt,
-	.get_format = video_sw_generator_get_fmt,
 	.set_stream = video_sw_generator_set_stream,
 	.flush = video_sw_generator_flush,
 	.enqueue = video_sw_generator_enqueue,
@@ -807,8 +797,13 @@ static int video_sw_generator_init_controls(const struct device *dev)
 static int video_sw_generator_init(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->data;
+	int ret;
 
-	data->dev = dev;
+	ret = video_init_context_dev(dev, VIDEO_BUF_TYPE_OUTPUT);
+	if (ret < 0) {
+		return ret;
+	}
+
 	k_fifo_init(&data->fifo_in);
 	k_fifo_init(&data->fifo_out);
 	k_work_init_delayable(&data->work, video_sw_generator_worker);
@@ -818,11 +813,12 @@ static int video_sw_generator_init(const struct device *dev)
 
 #define VIDEO_SW_GENERATOR_DEFINE(n)                                                               \
 	static struct video_sw_generator_data video_sw_generator_data_##n = {                      \
-		.fmt.width = DEFAULT_FRAME_WIDTH,                                                  \
-		.fmt.height = DEFAULT_FRAME_HEIGHT,                                                \
-		.fmt.pitch = DEFAULT_FRAME_WIDTH * 2,                                              \
-		.fmt.pixelformat = VIDEO_PIX_FMT_RGB565,                                           \
-		.fmt.size = DEFAULT_FRAME_WIDTH * 2 * DEFAULT_FRAME_HEIGHT,                        \
+		.dctx.fmt.type = VIDEO_BUF_TYPE_OUTPUT,                                            \
+		.dctx.fmt.width = DEFAULT_FRAME_WIDTH,                                             \
+		.dctx.fmt.height = DEFAULT_FRAME_HEIGHT,                                           \
+		.dctx.fmt.pitch = DEFAULT_FRAME_WIDTH * 2,                                         \
+		.dctx.fmt.pixelformat = VIDEO_PIX_FMT_RGB565,                                      \
+		.dctx.fmt.size = DEFAULT_FRAME_WIDTH * 2 * DEFAULT_FRAME_HEIGHT,                   \
 		.frame_rate = DEFAULT_FRAME_RATE,                                                  \
 	};                                                                                         \
                                                                                                    \

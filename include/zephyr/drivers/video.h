@@ -287,6 +287,42 @@ struct video_selection {
 };
 
 /**
+ * @brief Video framework context structure
+ *
+ * Struct meant to be added as first element of other video type specific
+ * context structures
+ */
+struct video_context {
+	/** device unique struct device pointer */
+	const struct device *dev;
+	/** device lock, used to serialize all video calls */
+	struct k_mutex lock;
+	/** supported type bitfield - considering enum video_buf_type as bit */
+	uint8_t supported_buf_type;
+	/** pointers to the streaming status */
+	bool *is_streaming_in;
+	bool *is_streaming_out;
+	/** pointers to the video_formats */
+	struct video_format *fmt_in;
+	struct video_format *fmt_out;
+};
+
+/**
+ * @brief Video framework device context structure
+ *
+ * Struct meant to be added as first element of other video type specific
+ * context structures
+ */
+struct video_device_context {
+	/** struct video_context */
+	struct video_context vctx;
+	/** streaming boolean */
+	bool is_streaming;
+	/** video_format */
+	struct video_format fmt;
+};
+
+/**
  * @def_driverbackendgroup{Video,video_interface}
  * @{
  */
@@ -450,6 +486,11 @@ __subsystem struct video_driver_api {
  * @}
  */
 
+static inline bool is_video_type_valid(struct video_context *ctx, enum video_buf_type type)
+{
+	return !!(ctx->supported_buf_type & type);
+}
+
 /**
  * @brief Set video format.
  *
@@ -466,17 +507,47 @@ __subsystem struct video_driver_api {
 static inline int video_set_format(const struct device *dev, struct video_format *fmt)
 {
 	const struct video_driver_api *api;
+	struct video_context *ctx;
+	int ret;
 
-	if (dev == NULL || fmt == NULL) {
+	if (dev == NULL || dev->data == NULL || fmt == NULL) {
 		return -EINVAL;
+	}
+
+	ctx = dev->data;
+
+	if (!is_video_type_valid(ctx, fmt->type)) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+
+	/* Format cannot be set if the device is already streaming */
+	if ((fmt->type == VIDEO_BUF_TYPE_INPUT && *ctx->is_streaming_in) ||
+	    (fmt->type == VIDEO_BUF_TYPE_OUTPUT && *ctx->is_streaming_out)) {
+		ret = -EBUSY;
+		goto out;
+	}
+
+	/* Check if the new format is different from the currently set format */
+	ret = memcmp(fmt->type == VIDEO_BUF_TYPE_INPUT ? ctx->fmt_in : ctx->fmt_out,
+		     fmt, sizeof(struct video_format));
+	if (ret	== 0) {
+		/* Nothing to do */
+		goto out;
 	}
 
 	api = DEVICE_API_GET(video, dev);
 	if (api->set_format == NULL) {
-		return -ENOSYS;
+		ret = -ENOSYS;
+		goto out;
 	}
 
-	return api->set_format(dev, fmt);
+	ret = api->set_format(dev, fmt);
+out:
+	k_mutex_unlock(&ctx->lock);
+
+	return ret;
 }
 
 /**
@@ -492,8 +563,16 @@ static inline int video_set_format(const struct device *dev, struct video_format
 static inline int video_get_format(const struct device *dev, struct video_format *fmt)
 {
 	const struct video_driver_api *api;
+	struct video_context *ctx;
+	int ret = 0;
 
-	if (dev == NULL || fmt == NULL) {
+	if (dev == NULL || dev->data == NULL || fmt == NULL) {
+		return -EINVAL;
+	}
+
+	ctx = dev->data;
+
+	if (!is_video_type_valid(ctx, fmt->type)) {
 		return -EINVAL;
 	}
 
@@ -502,7 +581,17 @@ static inline int video_get_format(const struct device *dev, struct video_format
 		return -ENOSYS;
 	}
 
-	return api->get_format(dev, fmt);
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+
+	if (api->get_format != NULL) {
+		ret = api->get_format(dev, fmt);
+	} else {
+		*fmt = (fmt->type == VIDEO_BUF_TYPE_INPUT ? *ctx->fmt_in : *ctx->fmt_out);
+	}
+
+	k_mutex_unlock(&ctx->lock);
+
+	return ret;
 }
 
 /**
@@ -524,8 +613,10 @@ static inline int video_get_format(const struct device *dev, struct video_format
 static inline int video_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	const struct video_driver_api *api;
+	struct video_context *ctx;
+	int ret;
 
-	if (dev == NULL || frmival == NULL) {
+	if (dev == NULL || dev->data == NULL || frmival == NULL) {
 		return -EINVAL;
 	}
 
@@ -538,7 +629,13 @@ static inline int video_set_frmival(const struct device *dev, struct video_frmiv
 		return -ENOSYS;
 	}
 
-	return api->set_frmival(dev, frmival);
+	ctx = dev->data;
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	ret = api->set_frmival(dev, frmival);
+	k_mutex_unlock(&ctx->lock);
+
+	return ret;
 }
 
 /**
@@ -557,8 +654,10 @@ static inline int video_set_frmival(const struct device *dev, struct video_frmiv
 static inline int video_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	const struct video_driver_api *api;
+	struct video_context *ctx;
+	int ret;
 
-	if (dev == NULL || frmival == NULL) {
+	if (dev == NULL || dev->data == NULL || frmival == NULL) {
 		return -EINVAL;
 	}
 
@@ -567,7 +666,13 @@ static inline int video_get_frmival(const struct device *dev, struct video_frmiv
 		return -ENOSYS;
 	}
 
-	return api->get_frmival(dev, frmival);
+	ctx = dev->data;
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	ret = api->get_frmival(dev, frmival);
+	k_mutex_unlock(&ctx->lock);
+
+	return ret;
 }
 
 /**
@@ -590,8 +695,10 @@ static inline int video_get_frmival(const struct device *dev, struct video_frmiv
 static inline int video_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	const struct video_driver_api *api;
+	struct video_context *ctx;
+	int ret;
 
-	if (dev == NULL || fie == NULL || fie->format == NULL) {
+	if (dev == NULL || dev->data == NULL || fie == NULL || fie->format == NULL) {
 		return -EINVAL;
 	}
 
@@ -600,7 +707,17 @@ static inline int video_enum_frmival(const struct device *dev, struct video_frmi
 		return -ENOSYS;
 	}
 
-	return api->enum_frmival(dev, fie);
+	ctx = dev->data;
+
+	if (!is_video_type_valid(ctx, fie->format->type)) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	ret = api->enum_frmival(dev, fie);
+	k_mutex_unlock(&ctx->lock);
+
+	return ret;
 }
 
 /**
@@ -636,8 +753,10 @@ static inline int video_dequeue(const struct device *dev, struct video_buffer **
 				k_timeout_t timeout)
 {
 	const struct video_driver_api *api;
+	struct video_context *ctx;
+	int ret;
 
-	if (dev == NULL || buf == NULL) {
+	if (dev == NULL || dev->data == NULL || buf == NULL) {
 		return -EINVAL;
 	}
 
@@ -646,7 +765,17 @@ static inline int video_dequeue(const struct device *dev, struct video_buffer **
 		return -ENOSYS;
 	}
 
-	return api->dequeue(dev, buf, timeout);
+	ctx = dev->data;
+
+	if (!is_video_type_valid(ctx, (*buf)->type)) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	ret = api->dequeue(dev, buf, timeout);
+	k_mutex_unlock(&ctx->lock);
+
+	return ret;
 }
 
 /**
@@ -665,8 +794,10 @@ static inline int video_dequeue(const struct device *dev, struct video_buffer **
 static inline int video_flush(const struct device *dev, bool cancel)
 {
 	const struct video_driver_api *api;
+	struct video_context *ctx;
+	int ret;
 
-	if (dev == NULL) {
+	if (dev == NULL || dev->data == NULL) {
 		return -EINVAL;
 	}
 
@@ -675,7 +806,13 @@ static inline int video_flush(const struct device *dev, bool cancel)
 		return -ENOSYS;
 	}
 
-	return api->flush(dev, cancel);
+	ctx = dev->data;
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	ret = api->flush(dev, cancel);
+	k_mutex_unlock(&ctx->lock);
+
+	return ret;
 }
 
 /**
@@ -697,8 +834,11 @@ static inline int video_flush(const struct device *dev, bool cancel)
 static inline int video_stream_start(const struct device *dev, enum video_buf_type type)
 {
 	const struct video_driver_api *api;
+	struct video_context *ctx;
+	bool *is_streaming;
+	int ret;
 
-	if (dev == NULL) {
+	if (dev == NULL || dev->data == NULL) {
 		return -EINVAL;
 	}
 
@@ -707,7 +847,27 @@ static inline int video_stream_start(const struct device *dev, enum video_buf_ty
 		return -ENOSYS;
 	}
 
-	return api->set_stream(dev, true, type);
+	ctx = dev->data;
+
+	if (!is_video_type_valid(ctx, type)) {
+		return -EINVAL;
+	}
+
+	is_streaming = (type == VIDEO_BUF_TYPE_INPUT ? ctx->is_streaming_in :
+			ctx->is_streaming_out);
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	if (*is_streaming) {
+		k_mutex_unlock(&ctx->lock);
+		return -EALREADY;
+	}
+	ret = api->set_stream(dev, true, type);
+	if (ret == 0) {
+		*is_streaming = true;
+	}
+	k_mutex_unlock(&ctx->lock);
+
+	return ret;
 }
 
 /**
@@ -726,9 +886,11 @@ static inline int video_stream_start(const struct device *dev, enum video_buf_ty
 static inline int video_stream_stop(const struct device *dev, enum video_buf_type type)
 {
 	const struct video_driver_api *api;
+	struct video_context *ctx;
+	bool *is_streaming;
 	int ret;
 
-	if (dev == NULL) {
+	if (dev == NULL || dev->data == NULL) {
 		return -EINVAL;
 	}
 
@@ -737,8 +899,29 @@ static inline int video_stream_stop(const struct device *dev, enum video_buf_typ
 		return -ENOSYS;
 	}
 
+	ctx = dev->data;
+
+	if (!is_video_type_valid(ctx, type)) {
+		return -EINVAL;
+	}
+
+	is_streaming = (type == VIDEO_BUF_TYPE_INPUT ? ctx->is_streaming_in :
+			ctx->is_streaming_out);
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	if (!*is_streaming) {
+		k_mutex_unlock(&ctx->lock);
+		return -EALREADY;
+	}
 	ret = api->set_stream(dev, false, type);
-	video_flush(dev, true);
+	if (ret < 0) {
+		k_mutex_unlock(&ctx->lock);
+		return ret;
+	} else if (ret == 0) {
+		*is_streaming = false;
+	}
+	ret = api->flush(dev, true);
+	k_mutex_unlock(&ctx->lock);
 
 	return ret;
 }
@@ -754,9 +937,10 @@ static inline int video_stream_stop(const struct device *dev, enum video_buf_typ
 static inline int video_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	const struct video_driver_api *api;
+	struct video_context *ctx;
+	int ret;
 
-	if (dev == NULL || caps == NULL ||
-	    (caps->type != VIDEO_BUF_TYPE_INPUT && caps->type != VIDEO_BUF_TYPE_OUTPUT)) {
+	if (dev == NULL || dev->data == NULL || caps == NULL) {
 		return -EINVAL;
 	}
 
@@ -765,7 +949,17 @@ static inline int video_get_caps(const struct device *dev, struct video_caps *ca
 		return -ENOSYS;
 	}
 
-	return api->get_caps(dev, caps);
+	ctx = dev->data;
+
+	if (!is_video_type_valid(ctx, caps->type)) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	ret = api->get_caps(dev, caps);
+	k_mutex_unlock(&ctx->lock);
+
+	return ret;
 }
 
 /**
@@ -808,9 +1002,10 @@ static inline int video_transform_cap(const struct device *const dev,
 				      enum video_buf_type type, uint16_t ind)
 {
 	const struct video_driver_api *api;
+	struct video_context *ctx;
+	int ret;
 
-	if (dev == NULL || cap == NULL || res_cap == NULL ||
-	    (type != VIDEO_BUF_TYPE_INPUT && type != VIDEO_BUF_TYPE_OUTPUT)) {
+	if (dev == NULL || dev->data == NULL || cap == NULL || res_cap == NULL) {
 		return -EINVAL;
 	}
 
@@ -819,7 +1014,17 @@ static inline int video_transform_cap(const struct device *const dev,
 		return -ENOSYS;
 	}
 
-	return api->transform_cap(dev, cap, res_cap, type, ind);
+	ctx = dev->data;
+
+	if (!is_video_type_valid(ctx, type)) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	ret = api->transform_cap(dev, cap, res_cap, type, ind);
+	k_mutex_unlock(&ctx->lock);
+
+	return ret;
 }
 
 /**
@@ -902,8 +1107,10 @@ void video_print_ctrl(const struct video_ctrl_query *const cq);
 static inline int video_set_signal(const struct device *dev, struct k_poll_signal *sig)
 {
 	const struct video_driver_api *api;
+	struct video_context *ctx;
+	int ret;
 
-	if (dev == NULL || sig == NULL) {
+	if (dev == NULL || dev->data == NULL || sig == NULL) {
 		return -EINVAL;
 	}
 
@@ -912,7 +1119,13 @@ static inline int video_set_signal(const struct device *dev, struct k_poll_signa
 		return -ENOSYS;
 	}
 
-	return api->set_signal(dev, sig);
+	ctx = dev->data;
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	ret = api->set_signal(dev, sig);
+	k_mutex_unlock(&ctx->lock);
+
+	return ret;
 }
 
 /**
@@ -937,8 +1150,10 @@ static inline int video_set_signal(const struct device *dev, struct k_poll_signa
 static inline int video_set_selection(const struct device *dev, struct video_selection *sel)
 {
 	const struct video_driver_api *api;
+	struct video_context *ctx;
+	int ret;
 
-	if (dev == NULL || sel == NULL) {
+	if (dev == NULL || dev->data == NULL || sel == NULL) {
 		return -EINVAL;
 	}
 
@@ -947,7 +1162,17 @@ static inline int video_set_selection(const struct device *dev, struct video_sel
 		return -ENOSYS;
 	}
 
-	return api->set_selection(dev, sel);
+	ctx = dev->data;
+
+	if (!is_video_type_valid(ctx, sel->type)) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	ret = api->set_selection(dev, sel);
+	k_mutex_unlock(&ctx->lock);
+
+	return ret;
 }
 
 /**
@@ -970,8 +1195,10 @@ static inline int video_set_selection(const struct device *dev, struct video_sel
 static inline int video_get_selection(const struct device *dev, struct video_selection *sel)
 {
 	const struct video_driver_api *api;
+	struct video_context *ctx;
+	int ret;
 
-	if (dev == NULL || sel == NULL) {
+	if (dev == NULL || dev->data == NULL || sel == NULL) {
 		return -EINVAL;
 	}
 
@@ -980,7 +1207,17 @@ static inline int video_get_selection(const struct device *dev, struct video_sel
 		return -ENOSYS;
 	}
 
-	return api->get_selection(dev, sel);
+	ctx = dev->data;
+
+	if (!is_video_type_valid(ctx, sel->type)) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	ret = api->get_selection(dev, sel);
+	k_mutex_unlock(&ctx->lock);
+
+	return ret;
 }
 
 /**
@@ -1143,6 +1380,8 @@ int video_set_compose_format(const struct device *dev, struct video_format *fmt)
 int video_transfer_buffer(const struct device *src, const struct device *sink,
 			  enum video_buf_type src_type, enum video_buf_type sink_type,
 			  k_timeout_t timeout);
+
+int video_init_context_dev(const struct device *dev, enum video_buf_type buf_type);
 
 /**
  * @defgroup video_pixel_formats Video pixel formats

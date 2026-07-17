@@ -57,10 +57,9 @@ struct imx335_ctrls {
 };
 
 struct imx335_data {
+	struct video_device_context dctx;
 	struct imx335_ctrls ctrls;
-	struct video_format fmt;
 	uint32_t frame_rate;
-	bool enabled;
 };
 
 #define IMX335_REG8(addr)  ((addr) | VIDEO_REG_ADDR16_DATA8)
@@ -370,17 +369,9 @@ static const uint32_t imx335_framerates[] = {
 	[IMX335_60_FPS] = 60,
 };
 
-static int imx335_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct imx335_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
-
-	return 0;
-}
-
 static int imx335_get_caps(const struct device *dev, struct video_caps *caps)
 {
+	caps->type = VIDEO_BUF_TYPE_OUTPUT;
 	caps->format_caps = imx335_fmts;
 	return 0;
 }
@@ -388,7 +379,6 @@ static int imx335_get_caps(const struct device *dev, struct video_caps *caps)
 static int imx335_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	const struct imx335_config *cfg = dev->config;
-	struct imx335_data *drv_data = dev->data;
 	int ret;
 
 	ret = video_write_cci_reg(&cfg->i2c, IMX335_STANDBY,
@@ -397,8 +387,6 @@ static int imx335_set_stream(const struct device *dev, bool enable, enum video_b
 		LOG_ERR("Failed to set standby register\n");
 		return ret;
 	}
-
-	drv_data->enabled = enable;
 
 	k_sleep(K_USEC(20));
 
@@ -494,7 +482,7 @@ static int imx335_set_frmival(const struct device *dev, struct video_frmival *fr
 	int ret;
 
 	struct video_frmival_enum match = {
-		.format = &drv_data->fmt,
+		.format = &drv_data->dctx.fmt,
 		.type = VIDEO_FRMIVAL_TYPE_DISCRETE,
 		.discrete = *frmival,
 	};
@@ -507,8 +495,8 @@ static int imx335_set_frmival(const struct device *dev, struct video_frmival *fr
 
 	switch (match.index) {
 	case IMX335_25_FPS:
-		hmax = (drv_data->fmt.width == IMX335_BIN_2X2_WIDTH
-				&& drv_data->fmt.height == IMX335_BIN_2X2_HEIGHT) ? 0x0280 : 0x0294;
+		hmax = (drv_data->dctx.fmt.width == IMX335_BIN_2X2_WIDTH &&
+			drv_data->dctx.fmt.height == IMX335_BIN_2X2_HEIGHT) ? 0x0280 : 0x0294;
 		break;
 	case IMX335_30_FPS:
 		hmax = 0x0226;
@@ -554,11 +542,6 @@ static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
 	int ret;
 	size_t fmt_idx;
 
-	if (drv_data->enabled) {
-		LOG_ERR("Cannot set format while the stream is running");
-		return -EBUSY;
-	}
-
 	ret = video_format_caps_index(imx335_fmts, fmt, &fmt_idx);
 	if (ret < 0) {
 		LOG_ERR("Unsupported pixel format or resolution");
@@ -600,8 +583,8 @@ static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
 		}
 	}
 
-	drv_data->fmt.width = fmt->width;
-	drv_data->fmt.height = fmt->height;
+	drv_data->dctx.fmt.width = fmt->width;
+	drv_data->dctx.fmt.height = fmt->height;
 	/* update framerate, since the timing and allowed framerates may have changed */
 	struct video_frmival frmival = {
 		.numerator = 1,
@@ -645,7 +628,6 @@ static int imx335_enum_frmival(const struct device *dev, struct video_frmival_en
 
 static DEVICE_API(video, imx335_driver_api) = {
 	.set_format = imx335_set_fmt,
-	.get_format = imx335_get_fmt,
 	.get_caps = imx335_get_caps,
 	.set_stream = imx335_set_stream,
 	.set_ctrl = imx335_set_ctrl,
@@ -754,6 +736,11 @@ static int imx335_init(const struct device *dev)
 	struct imx335_data *drv_data = dev->data;
 	int ret;
 
+	ret = video_init_context_dev(dev, VIDEO_BUF_TYPE_OUTPUT);
+	if (ret < 0) {
+		return ret;
+	}
+
 	if (!device_is_ready(cfg->i2c.bus)) {
 		LOG_ERR("Bus device is not ready");
 		return -ENODEV;
@@ -797,7 +784,7 @@ static int imx335_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = imx335_set_fmt(dev, &drv_data->fmt);
+	ret = imx335_set_fmt(dev, &drv_data->dctx.fmt);
 	if (ret < 0) {
 		LOG_ERR("Unable to apply format");
 		return ret;
@@ -828,13 +815,13 @@ static int imx335_init(const struct device *dev)
 
 #define IMX335_INIT(n)										\
 	static struct imx335_data imx335_data_##n = {						\
-		.fmt = {									\
+		.dctx.fmt = {									\
+			.type = VIDEO_BUF_TYPE_OUTPUT,						\
 			.pixelformat = VIDEO_PIX_FMT_SRGGB10P,					\
 			.width = IMX335_NATIVE_WIDTH,						\
 			.height = IMX335_NATIVE_HEIGHT,						\
 		},										\
 		.frame_rate = 30,								\
-		.enabled = false,								\
 	};											\
 	static const struct imx335_config imx335_cfg_##n = {					\
 		.i2c = I2C_DT_SPEC_INST_GET(n),							\

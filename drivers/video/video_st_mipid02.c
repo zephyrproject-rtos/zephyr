@@ -33,7 +33,7 @@ struct mipid02_config {
 };
 
 struct mipid02_data {
-	struct video_format fmt;
+	struct video_device_context dctx;
 	const struct mipid02_format_desc *desc;
 	struct video_format_cap *caps;
 };
@@ -169,7 +169,7 @@ static int mipid02_set_fmt(const struct device *dev, struct video_format *fmt)
 		return ret;
 	}
 
-	drv_data->fmt = *fmt;
+	drv_data->dctx.fmt = *fmt;
 	drv_data->desc = desc;
 
 	return 0;
@@ -197,11 +197,11 @@ static int mipid02_get_fmt(const struct device *dev, struct video_format *fmt)
 		/* Override the pixelformat */
 		fmt->pixelformat = desc->pixelformat;
 
-		drv_data->fmt = *fmt;
+		drv_data->dctx.fmt = *fmt;
 		drv_data->desc = desc;
 	}
 
-	*fmt = drv_data->fmt;
+	*fmt = drv_data->dctx.fmt;
 
 	return 0;
 }
@@ -291,7 +291,7 @@ static int mipid02_set_stream(const struct device *dev, bool enable, enum video_
 		return 0;
 	}
 
-	desc = mipid02_get_format_desc(drv_data->fmt.pixelformat);
+	desc = mipid02_get_format_desc(drv_data->dctx.fmt.pixelformat);
 	if (!desc) {
 		LOG_ERR("No valid format desc available, should get/set_fmt prior to set_stream");
 		return -EIO;
@@ -366,6 +366,11 @@ static int mipid02_init(const struct device *dev)
 {
 	const struct mipid02_config *cfg = dev->config;
 	int ret;
+
+	ret = video_init_context_dev(dev, VIDEO_BUF_TYPE_OUTPUT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (!device_is_ready(cfg->i2c.bus)) {
 		LOG_ERR("Bus device is not ready");

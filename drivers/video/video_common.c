@@ -153,15 +153,22 @@ struct video_buffer *video_import_buffer(uint8_t *mem, size_t sz)
 int video_enqueue(const struct device *dev, struct video_buffer *buf)
 {
 	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+	struct video_context *ctx;
 
-	if (dev == NULL || buf == NULL || buf->index >= CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
-	    (buf->type != VIDEO_BUF_TYPE_INPUT && buf->type != VIDEO_BUF_TYPE_OUTPUT)) {
+	if (dev == NULL || dev->data == NULL || buf == NULL ||
+	    buf->index >= CONFIG_VIDEO_BUFFER_POOL_NUM_MAX) {
 		return -EINVAL;
 	}
 
 	api = (const struct video_driver_api *)dev->api;
 	if (api->enqueue == NULL) {
 		return -ENOSYS;
+	}
+
+	ctx = dev->data;
+
+	if (!is_video_type_valid(ctx, buf->type)) {
+		return -EINVAL;
 	}
 
 	video_buf[buf->index].type = buf->type;
@@ -589,4 +596,46 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 	buf->type = sink_type;
 
 	return video_enqueue(sink, buf);
+}
+
+static int video_init_context(const struct device *dev, uint8_t buf_type)
+{
+	struct video_context *vctx;
+
+	if (dev == NULL || dev->data == NULL) {
+		return -EINVAL;
+	}
+
+	vctx = (struct video_context *)dev->data;
+
+	vctx->dev = dev;
+	k_mutex_init(&vctx->lock);
+	vctx->supported_buf_type = buf_type;
+
+	return 0;
+}
+
+int video_init_context_dev(const struct device *dev, enum video_buf_type buf_type)
+{
+	struct video_context *vctx;
+	struct video_device_context *dctx;
+	int ret;
+
+	ret = video_init_context(dev, buf_type);
+	if (ret < 0) {
+		return ret;
+	}
+
+	vctx = (struct video_context *)dev->data;
+	dctx = (struct video_device_context *)dev->data;
+
+	if (buf_type == VIDEO_BUF_TYPE_INPUT) {
+		vctx->is_streaming_in = &dctx->is_streaming;
+		vctx->fmt_in = &dctx->fmt;
+	} else {
+		vctx->is_streaming_out = &dctx->is_streaming;
+		vctx->fmt_out = &dctx->fmt;
+	}
+
+	return 0;
 }
