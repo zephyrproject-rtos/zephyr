@@ -187,5 +187,17 @@
 			reg = <59>;
 			#power-domain-cells = <0>;
 		};
+
+		cpsw3g_pd: power-domain@3 {
+			compatible = "arm,scmi-power-domain";
+			reg = <3>;
+			#power-domain-cells = <0>;
+		};
+
+		pktdma_pd: power-domain@b {
+			compatible = "arm,scmi-power-domain";
+			reg = <11>;
+			#power-domain-cells = <0>;
+		};
 	};
 };

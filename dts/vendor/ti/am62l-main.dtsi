@@ -365,6 +365,99 @@
 		status = "disabled";
 	};
 
+	pktdma: dma@485c0000 {
+		compatible = "ti,am62l-pktdma";
+		reg = <0x485c0000 0x4000>,
+		      <0x48900000 0x80000>,
+		      <0x47200000 0x100000>;
+		reg-names = "gcfg", "chanrt", "ringrt";
+		#address-cells = <0>;
+		#dma-cells = <2>;
+		power-domains = <&pktdma_pd>;
+		#interrupt-cells = <1>;
+		interrupt-map = <0 &gic 0 GIC_SPI 354 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<1 &gic 0 GIC_SPI 355 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<2 &gic 0 GIC_SPI 358 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<3 &gic 0 GIC_SPI 359 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<4 &gic 0 GIC_SPI 362 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<5 &gic 0 GIC_SPI 363 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<6 &gic 0 GIC_SPI 366 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<7 &gic 0 GIC_SPI 367 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<8 &gic 0 GIC_SPI 370 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<9 &gic 0 GIC_SPI 371 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<10 &gic 0 GIC_SPI 374 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<11 &gic 0 GIC_SPI 375 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<12 &gic 0 GIC_SPI 378 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<13 &gic 0 GIC_SPI 379 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<64 &gic 0 GIC_SPI 500 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<65 &gic 0 GIC_SPI 501 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<66 &gic 0 GIC_SPI 502 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<67 &gic 0 GIC_SPI 503 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<68 &gic 0 GIC_SPI 504 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<69 &gic 0 GIC_SPI 505 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<70 &gic 0 GIC_SPI 506 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<71 &gic 0 GIC_SPI 507 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<72 &gic 0 GIC_SPI 508 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<73 &gic 0 GIC_SPI 509 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<74 &gic 0 GIC_SPI 510 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<75 &gic 0 GIC_SPI 511 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<76 &gic 0 GIC_SPI 512 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<77 &gic 0 GIC_SPI 513 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<78 &gic 0 GIC_SPI 514 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<79 &gic 0 GIC_SPI 515 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<96 &gic 0 GIC_SPI 484 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		status = "disabled";
+	};
+
+	cpsw3g: ethernet@8000000 {
+		compatible = "ti,am62l-cpsw";
+		reg = <0x08000000 0x200000>,
+		      <0x091be000 0x8>,
+		      <0x43002000 0x8>;
+		reg-names = "cpsw_nuss", "gmii_sel", "mac_efuse";
+		clocks = <&scmi_clk 9>;
+		clock-names = "fck";
+		power-domains = <&cpsw3g_pd>;
+		dmas = <&pktdma 64 15>,
+		       <&pktdma 66 15>,
+		       <&pktdma 68 15>,
+		       <&pktdma 70 15>,
+		       <&pktdma 72 15>,
+		       <&pktdma 74 15>,
+		       <&pktdma 76 15>,
+		       <&pktdma 78 15>,
+		       <&pktdma 96 15>;
+		dma-names = "tx0", "tx1", "tx2", "tx3", "tx4", "tx5", "tx6",
+			    "tx7", "rx";
+		status = "disabled";
+
+		ethernet-ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			cpsw_port1: port@1 {
+				reg = <1>;
+				phy-connection-type = "rgmii-id";
+				ti,mac-only;
+			};
+
+			cpsw_port2: port@2 {
+				reg = <2>;
+				zephyr,random-mac-address;
+				phy-connection-type = "rgmii-id";
+				ti,mac-only;
+			};
+		};
+
+		cpsw_mdio: mdio {
+			compatible = "ti,am62l-cpsw-mdio";
+			clock-frequency = <1000000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
 	main_sdhci0: mmc@fa10000 {
 		compatible = "ti,am654-sdhci";
 		reg = <0xfa10000 DT_SIZE_K(4)>, <0xfa18000 DT_SIZE_K(1)>;
