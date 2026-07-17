@@ -153,7 +153,7 @@ int tp_poll(struct mqtt_sn_transport *transport)
 	return recvfrom_data.sz;
 }
 
-#define NUM_TEST_CLIENTS 16
+#define NUM_TEST_CLIENTS 17
 static ZTEST_BMEM struct mqtt_sn_client mqtt_clients[NUM_TEST_CLIENTS];
 static ZTEST_BMEM struct mqtt_sn_client *mqtt_client;
 
@@ -775,6 +775,30 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_large_address)
 
 	err = input(mqtt_client, ping_request, sizeof(ping_request), &large_addr);
 	zassert_equal(err, -ENOBUFS, "unexpected error %d", err);
+}
+
+static ZTEST(mqtt_sn_client, test_mqtt_sn_ping_timeout)
+{
+	int err;
+	static const uint8_t ping_request[] = {2, 0x16};
+
+	mqtt_sn_connect_no_will(mqtt_client);
+	err = k_sem_take(&mqtt_sn_tx_sem, K_NO_WAIT);
+
+	for (size_t i = 0; i < CONFIG_MQTT_SN_LIB_N_RETRY; i++) {
+		err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(CONFIG_MQTT_SN_KEEPALIVE + 1));
+		zassert_equal(err, 0, "Timed out waiting for callback.");
+		assert_msg_send_data(1, ping_request, sizeof(ping_request), &gw_addr);
+		k_sleep(K_SECONDS(CONFIG_MQTT_SN_LIB_T_RETRY));
+	}
+
+	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(CONFIG_MQTT_SN_KEEPALIVE + 1));
+	zassert_equal(err, -EAGAIN, "Unexpected TX");
+
+	zassert_true(sys_slist_is_empty(&mqtt_client->gateways), "GW not deleted.");
+	zassert_equal(mqtt_client->state, 0, "Wrong state");
+	zassert_equal(evt_cb_data.called, 2, "NO event");
+	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_DISCONNECTED, "Wrong event");
 }
 
 ZTEST_SUITE(mqtt_sn_client, NULL, NULL, setup, cleanup, NULL);
