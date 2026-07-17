@@ -15,9 +15,15 @@
 / {
 	chosen {
 		zephyr,sram = &sram0;
-		zephyr,flash = &slot0_partition;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &flash_controller;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &uart3;
 		zephyr,shell-uart = &uart3;
 		zephyr,canbus = &can1;
 	};
+};
+
+&flash_controller {
+	status = "okay";
 };
