@@ -79,6 +79,60 @@ enum smf_action_type {
 #define SMF_ERR_NULL_TRANSITION    1 /**< new_state is NULL in smf_set_state */
 #define SMF_ERR_TRANSITION_IN_EXIT 2 /**< smf_set_state called in exit action */
 
+#if defined(CONFIG_SMF_TRANSITION_TABLE) || defined(__DOXYGEN__)
+
+struct smf_ctx;
+struct smf_state;
+
+/**
+ * Trigger value meaning "evaluate on every smf_run_state() call regardless of event".
+ */
+#define SMF_TRIGGER_ANY (-1)
+
+/** @brief A single entry in a declarative transition table. */
+struct smf_transition {
+	const struct smf_state *from;
+	const struct smf_state *to;
+	/** Event ID that activates this transition. SMF_TRIGGER_ANY (-1) always activates. */
+	int32_t trigger;
+	/** Returns true if the transition may be taken; NULL always passes. */
+	bool (*guard)(void *obj);
+	/** Invoked on the owning object when the transition fires; NULL for no effect. */
+	void (*effect)(void *obj);
+	/** Lower value wins when multiple transitions are eligible simultaneously. */
+	int prio;
+};
+
+/**
+ * @brief Define a transition table entry.
+ *
+ * @param _from     Source state pointer
+ * @param _to       Destination state pointer
+ * @param _trigger  Event ID or SMF_TRIGGER_ANY
+ * @param _guard    Guard function or NULL
+ * @param _effect   Effect function or NULL
+ * @param _prio     Priority (lower wins)
+ */
+#define SMF_CREATE_TRANSITION(_from, _to, _trigger, _guard, _effect, _prio) \
+	{ .from = (_from), .to = (_to), .trigger = (_trigger),              \
+	  .guard = (_guard), .effect = (_effect), .prio = (_prio) }
+
+/**
+ * @brief Register a transition table on the state machine context.
+ *
+ * Must be called after smf_set_initial(). The table is evaluated automatically
+ * at the end of each smf_run_state() call. Set ctx->event before each call to
+ * smf_run_state() to activate signal transitions.
+ *
+ * @param ctx   State machine context
+ * @param table Array of smf_transition entries
+ * @param count Number of entries
+ */
+void smf_set_transitions(struct smf_ctx *const ctx, const struct smf_transition *table,
+			 size_t count);
+
+#endif /* CONFIG_SMF_TRANSITION_TABLE */
+
 #if defined(CONFIG_SMF_INSTRUMENTATION) || defined(__DOXYGEN__)
 /* Forward declarations for hook typedefs */
 struct smf_ctx;
@@ -205,7 +259,34 @@ struct smf_ctx {
 	/** Optional instrumentation hooks for testing and debugging */
 	const struct smf_hooks *hooks;
 #endif /* CONFIG_SMF_INSTRUMENTATION */
+
+#ifdef CONFIG_SMF_TRANSITION_TABLE
+	/** Transition table registered via smf_set_transitions() */
+	const struct smf_transition *transitions;
+	/** Number of entries in the transition table */
+	size_t transition_count;
+	/** Current event ID; set before smf_run_state(); SMF_TRIGGER_ANY (-1) means no event */
+	int32_t event;
+	/** Effect staged by smf_evaluate_transitions(); fired inside smf_set_state() after exit */
+	void (*pending_effect)(void *obj);
+#endif /* CONFIG_SMF_TRANSITION_TABLE */
 };
+
+#if defined(CONFIG_SMF_TRANSITION_TABLE) || defined(__DOXYGEN__)
+/**
+ * @brief Post an event to the state machine for trigger matching.
+ *
+ * The event is consumed (reset to SMF_TRIGGER_ANY) automatically at the
+ * end of the next smf_run_state() call, so it fires at most once.
+ *
+ * @param ctx   State machine context
+ * @param event Event ID to post; must not equal SMF_TRIGGER_ANY (-1)
+ */
+static inline void smf_raise_event(struct smf_ctx *const ctx, int32_t event)
+{
+	ctx->event = event;
+}
+#endif /* CONFIG_SMF_TRANSITION_TABLE */
 
 /**
  * @brief Initializes the state machine and sets its initial state.

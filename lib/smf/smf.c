@@ -263,6 +263,46 @@ static bool smf_execute_all_exit_actions(struct smf_ctx *const ctx, const struct
 }
 #endif /* CONFIG_SMF_ANCESTOR_SUPPORT */
 
+#ifdef CONFIG_SMF_TRANSITION_TABLE
+static void smf_evaluate_transitions(struct smf_ctx *const ctx)
+{
+	const struct smf_transition *best = NULL;
+
+	for (size_t i = 0; i < ctx->transition_count; i++) {
+		const struct smf_transition *t = &ctx->transitions[i];
+
+#ifdef CONFIG_SMF_ANCESTOR_SUPPORT
+		/* Match if current state is t->from or any descendant of it */
+		if (!is_descendant_of(ctx->current, t->from)) {
+			continue;
+		}
+#else
+		if (t->from != ctx->current) {
+			continue;
+		}
+#endif
+		if (t->trigger != SMF_TRIGGER_ANY && t->trigger != ctx->event) {
+			continue;
+		}
+		if (t->guard != NULL && !t->guard((void *)ctx)) {
+			continue;
+		}
+		if (best == NULL || t->prio < best->prio) {
+			best = t;
+		}
+	}
+
+	/* Consume the event regardless of whether a transition fired */
+	ctx->event = SMF_TRIGGER_ANY;
+
+	if (best != NULL) {
+		ctx->pending_effect = best->effect;
+		smf_set_state(ctx, best->to);
+		ctx->pending_effect = NULL;
+	}
+}
+#endif /* CONFIG_SMF_TRANSITION_TABLE */
+
 /**
  * @brief Reset the internal state of the state machine back to default values.
  * Should be called on entry to smf_set_initial() and smf_set_state().
@@ -299,6 +339,13 @@ void smf_set_initial(struct smf_ctx *const ctx, const struct smf_state *init_sta
 #ifdef CONFIG_SMF_INSTRUMENTATION
 	ctx->hooks = NULL;
 #endif /* CONFIG_SMF_INSTRUMENTATION */
+
+#ifdef CONFIG_SMF_TRANSITION_TABLE
+	ctx->transitions = NULL;
+	ctx->transition_count = 0;
+	ctx->event = SMF_TRIGGER_ANY;
+	ctx->pending_effect = NULL;
+#endif /* CONFIG_SMF_TRANSITION_TABLE */
 
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
 	struct internal_ctx *const internal = (void *)&ctx->internal;
@@ -394,6 +441,17 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 
 	internal->is_exit = false;
 
+#ifdef CONFIG_SMF_TRANSITION_TABLE
+	/* UML: effect fires after all exits, before any entries */
+	if (ctx->pending_effect != NULL) {
+		ctx->pending_effect((void *)ctx);
+		ctx->pending_effect = NULL;
+		if (internal->terminate) {
+			return;
+		}
+	}
+#endif
+
 	/* if self transition, call the entry action */
 	if ((ctx->executing == new_state) && (new_state->entry)) {
 		INVOKE_ACTION_HOOK(ctx, new_state, SMF_ACTION_ENTRY);
@@ -438,6 +496,16 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 		}
 		internal->is_exit = false;
 	}
+#ifdef CONFIG_SMF_TRANSITION_TABLE
+	/* UML: effect fires after exit, before entry */
+	if (ctx->pending_effect != NULL) {
+		ctx->pending_effect((void *)ctx);
+		ctx->pending_effect = NULL;
+		if (internal->terminate) {
+			return;
+		}
+	}
+#endif
 	/* update the state variables */
 	ctx->previous = ctx->current;
 	ctx->current = new_state;
@@ -497,8 +565,27 @@ int32_t smf_run_state(struct smf_ctx *const ctx)
 		ctx->current->run(ctx);
 	}
 #endif
+
+#ifdef CONFIG_SMF_TRANSITION_TABLE
+	if (ctx->transitions != NULL) {
+		smf_evaluate_transitions(ctx);
+		if (internal->terminate) {
+			return ctx->terminate_val;
+		}
+	}
+#endif /* CONFIG_SMF_TRANSITION_TABLE */
+
 	return 0;
 }
+
+#ifdef CONFIG_SMF_TRANSITION_TABLE
+void smf_set_transitions(struct smf_ctx *const ctx, const struct smf_transition *table,
+			 size_t count)
+{
+	ctx->transitions = table;
+	ctx->transition_count = count;
+}
+#endif /* CONFIG_SMF_TRANSITION_TABLE */
 
 #ifdef CONFIG_SMF_INSTRUMENTATION
 void smf_set_hooks(struct smf_ctx *const ctx, const struct smf_hooks *hooks)

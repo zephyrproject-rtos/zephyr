@@ -14,3 +14,7 @@ elseif(CONFIG_SMF_ANCESTOR_SUPPORT)
 else()
   target_sources(app PRIVATE src/test_lib_flat_smf.c)
 endif()
+
+if(CONFIG_SMF_TRANSITION_TABLE)
+  target_sources(app PRIVATE src/test_lib_smf_transition_table.c)
+endif()

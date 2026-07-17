@@ -28,4 +28,15 @@ config SMF_INSTRUMENTATION
 	   If y, then the state machine framework includes instrumentation
 	   hooks for observing state transitions
 
+config SMF_TRANSITION_TABLE
+	bool "Declarative transition table support"
+	help
+	  If y, a transition table can be registered on the state machine
+	  context via smf_set_transitions(). The table is evaluated
+	  automatically at the end of each smf_run_state() call. Each entry
+	  defines a source state, destination state, optional guard function,
+	  optional effect function, and a priority. Among all entries whose
+	  source matches the current state and whose guard passes (NULL guard
+	  always passes), the entry with the lowest priority value wins.
+
 endif # SMF

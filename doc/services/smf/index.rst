@@ -157,6 +157,130 @@ For example::
 To retrieve the state whose entry, run, or exit action is currently being executed,
 use the :c:func:`smf_get_current_executing_state` function.
 
+Transition Tables
+=================
+
+By default, transitions are implemented imperatively by calling
+:c:func:`smf_set_state` from entry or run actions. Alternatively, transitions
+can be described declaratively in a transition table by enabling the
+:kconfig:option:`CONFIG_SMF_TRANSITION_TABLE` option. Each table entry,
+created with the :c:macro:`SMF_CREATE_TRANSITION` macro, defines:
+
+- **Source state** — the state the transition leaves. With
+  :kconfig:option:`CONFIG_SMF_ANCESTOR_SUPPORT` enabled, the transition also
+  matches when the current state is a descendant of the source state.
+- **Destination state** — the state the transition enters.
+- **Trigger** — the event ID that activates the transition, or
+  :c:macro:`SMF_TRIGGER_ANY` to evaluate the transition on every
+  :c:func:`smf_run_state` call. Event IDs are application defined and must
+  not equal :c:macro:`SMF_TRIGGER_ANY` (-1).
+- **Guard** — an optional function ``bool funct(void *obj)`` that must return
+  true for the transition to be taken. A NULL guard always passes.
+- **Effect** — an optional function ``void funct(void *obj)`` executed when
+  the transition fires, after the exit actions of the source state and before
+  the entry actions of the destination state, as defined by UML.
+- **Priority** — when several transitions are eligible at the same time, the
+  entry with the lowest priority value wins. Ties are broken by table order.
+
+The table is registered on the state machine context with
+:c:func:`smf_set_transitions` and is evaluated automatically at the end of
+each :c:func:`smf_run_state` call, after the run actions have executed. This
+allows run actions to raise an event that is dispatched in the same cycle.
+
+Events are posted with :c:func:`smf_raise_event` before calling
+:c:func:`smf_run_state`. An event is consumed by the evaluation — whether a
+transition fired or not — so it activates trigger-based transitions at most
+once.
+
+.. note:: :c:func:`smf_set_transitions` must be called **after**
+   :c:func:`smf_set_initial`, because :c:func:`smf_set_initial` resets the
+   transition table registration.
+
+.. note:: Guard functions must be free of side effects. All eligible guards
+   may be evaluated during a single :c:func:`smf_run_state` call, including
+   those of transitions that do not fire.
+
+If the state machine is terminated with :c:func:`smf_set_terminate` from a
+guard or effect function, no further transitions are evaluated and
+:c:func:`smf_run_state` returns the given termination value.
+
+Transition tables can be freely combined with imperative
+:c:func:`smf_set_state` calls; states not covered by the table behave as
+before. When :kconfig:option:`CONFIG_SMF_TRANSITION_TABLE` is not set, all
+transition table code is compiled out and there is zero runtime overhead.
+
+Transition Table Example
+************************
+
+This example implements the two-state button state machine from the event
+driven example above using a transition table::
+
+	#include <zephyr/smf.h>
+
+	/* List of demo events */
+	enum demo_event { EV_BTN_PRESS };
+
+	/* List of demo states */
+	enum demo_state { S0, S1 };
+
+	/* User defined object */
+	struct s_object {
+		/* This must be first */
+		struct smf_ctx ctx;
+
+		bool armed;
+	} s_obj;
+
+	static bool s0_guard(void *o)
+	{
+		struct s_object *s = (struct s_object *)o;
+
+		/* Only transition when armed */
+		return s->armed;
+	}
+
+	static void s0_effect(void *o)
+	{
+		printk("S0 -> S1\n");
+	}
+
+	/* Populate state table */
+	static const struct smf_state demo_states[] = {
+		[S0] = SMF_CREATE_STATE(NULL, NULL, NULL, NULL, NULL),
+		[S1] = SMF_CREATE_STATE(NULL, NULL, NULL, NULL, NULL),
+	};
+
+	/* Populate transition table */
+	static const struct smf_transition demo_transitions[] = {
+		SMF_CREATE_TRANSITION(&demo_states[S0], &demo_states[S1],
+				      EV_BTN_PRESS, s0_guard, s0_effect, 0),
+		/* No guard or effect: always taken on EV_BTN_PRESS */
+		SMF_CREATE_TRANSITION(&demo_states[S1], &demo_states[S0],
+				      EV_BTN_PRESS, NULL, NULL, 0),
+	};
+
+	int main(void)
+	{
+		s_obj.armed = true;
+
+		/* Set initial state first */
+		smf_set_initial(SMF_CTX(&s_obj), &demo_states[S0]);
+
+		/* Register the transition table after smf_set_initial() */
+		smf_set_transitions(SMF_CTX(&s_obj), demo_transitions,
+				    ARRAY_SIZE(demo_transitions));
+
+		while (1) {
+			/* Wait for a button press, then post the event */
+			smf_raise_event(SMF_CTX(&s_obj), EV_BTN_PRESS);
+
+			/* State machine terminates if a non-zero value is returned */
+			if (smf_run_state(SMF_CTX(&s_obj))) {
+				break;
+			}
+		}
+	}
+
 UML State Machines
 ==================
 
@@ -171,6 +295,9 @@ SMF breaks from UML rules in:
 
 1. Executing the actions associated with the transition within the context
    of the source state, rather than after the exit actions are performed.
+   This only applies to imperative transitions via :c:func:`smf_set_state`;
+   effects of transition table entries (see `Transition Tables`_) follow the
+   UML ordering.
 2. Only allowing external transitions to self, not to sub-states. A transition
    from a superstate to a child state is treated as a local transition.
 3. Prohibiting transitions using :c:func:`smf_set_state` in exit actions.

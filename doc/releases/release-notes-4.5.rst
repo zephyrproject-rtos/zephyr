@@ -333,6 +333,15 @@ Libraries / Subsystems
     the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
   * :c:member:`lora_modem_config.sync_word`
 
+* State Machine Framework
+
+  * Added declarative transition table support
+    (:kconfig:option:`CONFIG_SMF_TRANSITION_TABLE`). A table of transitions
+    with triggers, guards, effects and priorities can be registered on a
+    state machine context with :c:func:`smf_set_transitions` and is evaluated
+    automatically by :c:func:`smf_run_state`. Events are posted with
+    :c:func:`smf_raise_event`.
+
 Devicetree
 **********
 
