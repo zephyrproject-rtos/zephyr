@@ -519,6 +519,15 @@ void board_early_init_hook(void)
 	POWER_DisablePD(kPDRUNCFG_PPD_NPU);
 	POWER_ApplyPD();
 #endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_pngdec)
+	CLOCK_EnableClock(kCLOCK_PngDecoder);
+	RESET_ClearPeripheralReset(kPNGDEC_RST_SHIFT_RSTn);
+
+	POWER_DisablePD(kPDRUNCFG_APD_PNGDEC);
+	POWER_DisablePD(kPDRUNCFG_PPD_PNGDEC);
+	POWER_ApplyPD();
+#endif
 }
 
 static void GlikeyWriteEnable(GLIKEY_Type *base, uint8_t idx)
