@@ -667,7 +667,7 @@ Bluetooth HCI:
     - HoZHel
     - cvinayak
     - HaavardRei
-    - merin-infineon
+    - MerinMGeorge
   files:
     - include/zephyr/drivers/bluetooth/
     - include/zephyr/drivers/bluetooth.h
@@ -3341,7 +3341,7 @@ Infineon Platforms:
     - jsbatch
     - Peterson-Brett
     - lauracarlesso
-    - merin-infineon
+    - MerinMGeorge
     - ifx-rmcs
     - parthitce
   files:
@@ -6722,7 +6722,7 @@ West:
     - jsbatch
     - Peterson-Brett
     - lauracarlesso
-    - merin-infineon
+    - MerinMGeorge
     - ifx-rmcs
   files:
     - modules/Kconfig.infineon
