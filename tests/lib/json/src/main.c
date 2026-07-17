@@ -111,12 +111,14 @@ struct test_double_limits {
 struct escape_test_data {
 	char string_value[128];
 	char string_buf[64];
+	const char *string_ptr;
 	int integer_value;
 };
 
 static const struct json_obj_descr escape_test_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct escape_test_data, string_value, JSON_TOK_STRING_BUF),
 	JSON_OBJ_DESCR_PRIM(struct escape_test_data, string_buf, JSON_TOK_STRING_BUF),
+	JSON_OBJ_DESCR_PRIM(struct escape_test_data, string_ptr, JSON_TOK_STRING),
 	JSON_OBJ_DESCR_PRIM(struct escape_test_data, integer_value, JSON_TOK_NUMBER),
 };
 
@@ -2360,13 +2362,15 @@ ZTEST(lib_json_test, test_json_escape_sequence_stability)
 {
 	struct escape_test_data original = {
 		.string_value = "Line1\nLine2\tTabbed",
+		.string_ptr = "Line3\nLine4\tTabbed",
 		.integer_value = 42,
 	};
 	strncpy(original.string_value, "Line1\nLine2\tTabbed", sizeof(original.string_value) - 1);
 	strncpy(original.string_buf, "Text with\nnewline and\ttab",
 		sizeof(original.string_buf) - 1);
 
-	char buffer[512];
+	char encode_buffer[512];
+	char parse_buffer[512];
 	struct escape_test_data decoded = {0};
 	int ret;
 
@@ -2374,11 +2378,12 @@ ZTEST(lib_json_test, test_json_escape_sequence_stability)
 
 	/* First encode */
 	ret = json_obj_encode_buf(escape_test_descr, ARRAY_SIZE(escape_test_descr), &original,
-				  buffer, sizeof(buffer));
+				  encode_buffer, sizeof(encode_buffer));
 	zassert_equal(ret, 0, "First encoding failed");
 
 	/* First decode */
-	ret = json_obj_parse(buffer, strlen(buffer), escape_test_descr,
+	strcpy(parse_buffer, encode_buffer);
+	ret = json_obj_parse(parse_buffer, strlen(parse_buffer), escape_test_descr,
 			     ARRAY_SIZE(escape_test_descr), &decoded);
 	zassert_equal(ret, (1 << ARRAY_SIZE(escape_test_descr)) - 1, "First decoding failed");
 
@@ -2387,18 +2392,21 @@ ZTEST(lib_json_test, test_json_escape_sequence_stability)
 			  "String value changed after first decode");
 	zassert_str_equal(decoded.string_buf, original.string_buf,
 			  "String buffer changed after first decode");
+	zassert_str_equal(decoded.string_ptr, original.string_ptr,
+			  "String pointer changed after first decode");
 	zassert_equal(decoded.integer_value, original.integer_value,
 		      "Integer value changed after first decode");
 
 	/* Second encode */
 	ret = json_obj_encode_buf(escape_test_descr, ARRAY_SIZE(escape_test_descr), &decoded,
-				  buffer, sizeof(buffer));
+				  encode_buffer, sizeof(encode_buffer));
 	zassert_equal(ret, 0, "Second encoding failed");
 
 	/* Second decode */
 	struct escape_test_data decoded2 = {0};
 
-	ret = json_obj_parse(buffer, strlen(buffer), escape_test_descr,
+	strcpy(parse_buffer, encode_buffer);
+	ret = json_obj_parse(parse_buffer, strlen(parse_buffer), escape_test_descr,
 			     ARRAY_SIZE(escape_test_descr), &decoded2);
 	zassert_equal(ret, (1 << ARRAY_SIZE(escape_test_descr)) - 1, "Second decoding failed");
 
@@ -2407,8 +2415,10 @@ ZTEST(lib_json_test, test_json_escape_sequence_stability)
 			  "String value corrupted after encode/decode cycle");
 	zassert_str_equal(decoded2.string_buf, original.string_buf,
 			  "String buffer corrupted after encode/decode cycle");
+	zassert_str_equal(decoded2.string_ptr, original.string_ptr,
+			  "String pointer corrupted after encode/decode cycle");
 	zassert_equal(decoded2.integer_value, original.integer_value,
-		      "Integer value changed after encode/decode cycle");
+			  "Integer value changed after encode/decode cycle");
 }
 
 /**
@@ -2442,6 +2452,7 @@ ZTEST(lib_json_test, test_json_specific_escape_sequences)
 			sizeof(test_data.string_value) - 1);
 		strncpy(test_data.string_buf, test_cases[i].input,
 			sizeof(test_data.string_buf) - 1);
+		test_data.string_ptr = test_cases[i].input;
 
 		char buffer[256];
 		struct escape_test_data decoded = {0};
@@ -2463,6 +2474,8 @@ ZTEST(lib_json_test, test_json_specific_escape_sequences)
 				  "Escape sequence corrupted for %s", test_cases[i].description);
 		zassert_str_equal(decoded.string_buf, test_data.string_buf,
 				  "String buffer corrupted for %s", test_cases[i].description);
+		zassert_str_equal(decoded.string_ptr, test_data.string_ptr,
+				  "String pointer corrupted for %s", test_cases[i].description);
 	}
 }
 
@@ -2505,8 +2518,10 @@ ZTEST(lib_json_test, test_json_multiple_cycle_stability)
 	};
 	strncpy(original.string_value, "Start\nMiddle\tEnd", sizeof(original.string_value) - 1);
 	strncpy(original.string_buf, "Cyclic\ntest\tdata", sizeof(original.string_buf) - 1);
+	original.string_ptr = "Cyclic\ntest\tdata";
 
-	char buffer[512];
+	char encode_buffer[512];
+	char parse_buffer[512];
 	struct escape_test_data current = {0};
 	int ret;
 
@@ -2514,18 +2529,20 @@ ZTEST(lib_json_test, test_json_multiple_cycle_stability)
 	current.integer_value = original.integer_value;
 	strncpy(current.string_value, original.string_value, sizeof(current.string_value));
 	strncpy(current.string_buf, original.string_buf, sizeof(current.string_buf));
+	current.string_ptr = original.string_ptr;
 
 	/* Run multiple encode/decode cycles */
 	for (int cycle = 0; cycle < 5; cycle++) {
 		/* Encode */
 		ret = json_obj_encode_buf(escape_test_descr, ARRAY_SIZE(escape_test_descr),
-					  &current, buffer, sizeof(buffer));
+					  &current, encode_buffer, sizeof(encode_buffer));
 		zassert_equal(ret, 0, "Encoding failed at cycle %d", cycle);
 
 		/* Decode into a fresh struct */
 		struct escape_test_data next = {0};
 
-		ret = json_obj_parse(buffer, strlen(buffer), escape_test_descr,
+		strcpy(parse_buffer, encode_buffer);
+		ret = json_obj_parse(parse_buffer, strlen(parse_buffer), escape_test_descr,
 				     ARRAY_SIZE(escape_test_descr), &next);
 		zassert_equal(ret, (1 << ARRAY_SIZE(escape_test_descr)) - 1,
 			      "Decoding failed at cycle %d", cycle);
@@ -2535,6 +2552,8 @@ ZTEST(lib_json_test, test_json_multiple_cycle_stability)
 				  "String corrupted after %d cycles", cycle + 1);
 		zassert_str_equal(next.string_buf, original.string_buf,
 				  "String buffer corrupted after %d cycles", cycle + 1);
+		zassert_str_equal(next.string_ptr, original.string_ptr,
+				  "String pointer corrupted after %d cycles", cycle + 1);
 		zassert_equal(next.integer_value, original.integer_value,
 			      "Integer corrupted after %d cycles", cycle + 1);
 
@@ -2542,6 +2561,7 @@ ZTEST(lib_json_test, test_json_multiple_cycle_stability)
 		current.integer_value = next.integer_value;
 		strncpy(current.string_value, next.string_value, sizeof(current.string_value));
 		strncpy(current.string_buf, next.string_buf, sizeof(current.string_buf));
+		current.string_ptr = next.string_ptr;
 	}
 }
 
@@ -2687,6 +2707,7 @@ ZTEST(lib_json_test, test_json_quote_unescaping_decoding)
 	/* JSON with escaped quotes */
 	char encoded_json[] = "{\"string_value\":\"Text with \\\"quotes\\\" inside\","
 			      "\"string_buf\":\"Buffer with \\\"quotes\\\"\","
+			      "\"string_ptr\":\"Text with some \\\"quotes\\\" inside\","
 			      "\"integer_value\":42}";
 
 	struct escape_test_data decoded = {0};
@@ -2702,6 +2723,8 @@ ZTEST(lib_json_test, test_json_quote_unescaping_decoding)
 			  "Quotes not properly unescaped in string_value");
 	zassert_str_equal(decoded.string_buf, "Buffer with \"quotes\"",
 			  "Quotes not properly unescaped in string_buf");
+	zassert_str_equal(decoded.string_ptr, "Text with some \"quotes\" inside",
+			  "Quotes not properly unescaped in string_ptr");
 }
 
 /**
