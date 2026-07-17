@@ -78,3 +78,23 @@ config KERNEL_THREAD_SHELL_KILL
 	select KERNEL_THREAD_SHELL
 	help
 	  Internal helper macro to compile the 'kill' subcommad
+
+config KERNEL_THREAD_SHELL_TOP
+	bool
+	default y
+	depends on THREAD_MONITOR
+	depends on THREAD_RUNTIME_STATS
+	depends on SCHED_THREAD_USAGE_ALL
+	select KERNEL_THREAD_SHELL
+	help
+	  Internal helper macro to compile the 'top' subcommand
+
+config KERNEL_THREAD_SHELL_TOP_MAX_THREADS
+	int "Maximum number of threads shown by 'kernel thread top'"
+	default 20
+	range 1 256
+	depends on KERNEL_THREAD_SHELL_TOP
+	help
+	  Size of the static table used by the 'kernel thread top' command to
+	  track per-thread execution cycles between refreshes. Threads beyond
+	  this count are counted but not shown.
