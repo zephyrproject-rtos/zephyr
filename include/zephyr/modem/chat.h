@@ -326,6 +326,67 @@ struct modem_chat_config {
 };
 
 /**
+ * @brief Get the currently executing modem chat script.
+ *
+ * This function may be called while a script is active or from its callback.
+ * The returned pointer identifies the current command only while the script
+ * is active, including during its callback.
+ *
+ * @param chat Non-NULL modem chat instance.
+ * @return Pointer to the current script, or NULL if no script is active.
+ */
+static inline const struct modem_chat_script *
+modem_chat_current_script(const struct modem_chat *chat)
+{
+	return chat->script;
+}
+
+/**
+ * @brief Get the current modem chat script command index.
+ *
+ * This function may be called while a script is active or from its callback.
+ *
+ * When called from a successful script callback, the returned index is equal
+ * to the number of commands in the script and does not identify a valid
+ * command. The returned value is not meaningful when no script is active.
+ *
+ * @param chat Non-NULL modem chat instance.
+ * @return Current script command index.
+ */
+static inline uint16_t modem_chat_current_script_chat_index(const struct modem_chat *chat)
+{
+	return chat->script_chat_it;
+}
+
+/**
+ * @brief Get the current modem chat script command.
+ *
+ * This function may be called from a modem chat script callback to identify
+ * the command that was active when the script aborted or timed out.
+ *
+ * When the script completes successfully, there is no current command and
+ * this function returns NULL.
+ *
+ * The returned pointer identifies the current command only while the script
+ * execution state is active.
+ *
+ * @param chat Non-NULL modem chat instance.
+ * @return Pointer to the current script command, or NULL if no current
+ *         command is available.
+ */
+static inline const struct modem_chat_script_chat *
+modem_chat_current_script_chat(const struct modem_chat *chat)
+{
+	const struct modem_chat_script *script = chat->script;
+
+	if ((script == NULL) || (chat->script_chat_it >= script->script_chats_size)) {
+		return NULL;
+	}
+
+	return &script->script_chats[chat->script_chat_it];
+}
+
+/**
  * @brief Initialize modem pipe chat instance
  * @param chat Chat instance
  * @param config Configuration which shall be applied to Chat instance
