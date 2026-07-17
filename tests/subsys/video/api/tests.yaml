@@ -2,9 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 tests:
-  drivers.video.api:
+  video.api:
     min_ram: 32
     tags:
-      - drivers
       - video
     platform_allow: native_sim
