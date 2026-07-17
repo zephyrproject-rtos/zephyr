@@ -1,7 +1,7 @@
 sample:
   name: Video TCP server sink
 tests:
-  sample.drivers.video.tcpserversink:
+  sample.video.tcpserversink:
     build_only: true
     tags:
       - video

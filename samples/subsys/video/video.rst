@@ -2,4 +2,4 @@
    :name: Video
    :show-listing:
 
-   These samples demonstrate how to use the :ref:`video <video_api>` driver API.
+   These samples demonstrate how to use the :ref:`video <video_api>` APIs.
