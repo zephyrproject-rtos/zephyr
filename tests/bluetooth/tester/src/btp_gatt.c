@@ -1916,22 +1916,36 @@ static uint8_t write_without_rsp(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static void write_rsp(struct bt_conn *conn, uint8_t err,
-		      struct bt_gatt_write_params *params)
+static struct btp_gatt_write_params {
+	struct bt_gatt_write_params params;
+	struct net_buf *buf;
+} write_params;
+
+static void write_destroy(struct btp_gatt_write_params *write)
 {
-	tester_rsp_full(BTP_SERVICE_ID_GATT, BTP_GATT_WRITE, &err, sizeof(err));
+	gatt_buf_clear(write->buf);
+	(void)memset(write, 0, sizeof(*write));
 }
 
-static struct bt_gatt_write_params write_params;
+#define BTP_GET_WRITE_PARAMS(_params) \
+	CONTAINER_OF(_params, struct btp_gatt_write_params, params);
+
+static void write_rsp(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	struct btp_gatt_write_params *write = BTP_GET_WRITE_PARAMS(params);
+
+	write_destroy(write);
+	tester_rsp_full(BTP_SERVICE_ID_GATT, BTP_GATT_WRITE, &err, sizeof(err));
+}
 
 static uint8_t write_data(const void *cmd, uint16_t cmd_len,
 			  void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_gatt_write_cmd *cp = cmd;
 	struct bt_conn *conn;
+	uint16_t len = sys_le16_to_cpu(cp->data_length);
 
-	if (cmd_len < sizeof(*cp) ||
-	    cmd_len != sizeof(*cp) + sys_le16_to_cpu(cp->data_length)) {
+	if (cmd_len < sizeof(*cp) || cmd_len != sizeof(*cp) + len) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1940,16 +1954,31 @@ static uint8_t write_data(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	write_params.handle = sys_le16_to_cpu(cp->handle);
-	write_params.func = write_rsp;
-	write_params.offset = 0U;
-	write_params.data = cp->data;
-	write_params.length = sys_le16_to_cpu(cp->data_length);
+	write_params.buf = gatt_buf_allocate();
+	if (write_params.buf == NULL) {
+		bt_conn_unref(conn);
+		return BTP_STATUS_FAILED;
+	}
+
+	if (net_buf_tailroom(write_params.buf) < len) {
+		write_destroy(&write_params);
+		bt_conn_unref(conn);
+		return BTP_STATUS_FAILED;
+	}
+
+	net_buf_add_mem(write_params.buf, cp->data, len);
+
+	write_params.params.handle = sys_le16_to_cpu(cp->handle);
+	write_params.params.func = write_rsp;
+	write_params.params.offset = 0U;
+	write_params.params.data = write_params.buf->data;
+	write_params.params.length = len;
 #if defined(CONFIG_BT_EATT)
-	write_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
+	write_params.params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 #endif
 
-	if (bt_gatt_write(conn, &write_params) < 0) {
+	if (bt_gatt_write(conn, &write_params.params) < 0) {
+		write_destroy(&write_params);
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
@@ -1961,6 +1990,9 @@ static uint8_t write_data(const void *cmd, uint16_t cmd_len,
 static void write_long_rsp(struct bt_conn *conn, uint8_t err,
 			   struct bt_gatt_write_params *params)
 {
+	struct btp_gatt_write_params *write = BTP_GET_WRITE_PARAMS(params);
+
+	write_destroy(write);
 	tester_rsp_full(BTP_SERVICE_ID_GATT, BTP_GATT_WRITE_LONG, &err, sizeof(err));
 }
 
@@ -1969,9 +2001,9 @@ static uint8_t write_long(const void *cmd, uint16_t cmd_len,
 {
 	const struct btp_gatt_write_long_cmd *cp = cmd;
 	struct bt_conn *conn;
+	uint16_t len = sys_le16_to_cpu(cp->data_length);
 
-	if (cmd_len < sizeof(*cp) ||
-	    cmd_len != sizeof(*cp) + sys_le16_to_cpu(cp->data_length)) {
+	if (cmd_len < sizeof(*cp) || cmd_len != sizeof(*cp) + len) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1980,16 +2012,31 @@ static uint8_t write_long(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	write_params.handle = sys_le16_to_cpu(cp->handle);
-	write_params.func = write_long_rsp;
-	write_params.offset = sys_le16_to_cpu(cp->offset);
-	write_params.data = cp->data;
-	write_params.length = sys_le16_to_cpu(cp->data_length);
+	write_params.buf = gatt_buf_allocate();
+	if (write_params.buf == NULL) {
+		bt_conn_unref(conn);
+		return BTP_STATUS_FAILED;
+	}
+
+	if (net_buf_tailroom(write_params.buf) < len) {
+		write_destroy(&write_params);
+		bt_conn_unref(conn);
+		return BTP_STATUS_FAILED;
+	}
+
+	net_buf_add_mem(write_params.buf, cp->data, len);
+
+	write_params.params.handle = sys_le16_to_cpu(cp->handle);
+	write_params.params.func = write_long_rsp;
+	write_params.params.offset = sys_le16_to_cpu(cp->offset);
+	write_params.params.data = write_params.buf->data;
+	write_params.params.length = len;
 #if defined(CONFIG_BT_EATT)
-	write_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
+	write_params.params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 #endif
 
-	if (bt_gatt_write(conn, &write_params) < 0) {
+	if (bt_gatt_write(conn, &write_params.params) < 0) {
+		write_destroy(&write_params);
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
