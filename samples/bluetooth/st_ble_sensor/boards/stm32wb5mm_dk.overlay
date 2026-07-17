@@ -1,0 +1,13 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2026 STMicroelectronics
+ */
+
+&rgb_led_strip {
+	status = "okay";
+};
+
+&rgb_cs {
+	status = "okay";
+};
