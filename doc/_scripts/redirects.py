@@ -321,6 +321,7 @@ REDIRECTS = (
     ('samples/boards/stm32/power_mgmt/stop3/README', 'samples/boards/st/power_mgmt/stop3/README'),
     ('samples/boards/stm32/power_mgmt/suspend_to_ram/README', 'samples/boards/st/power_mgmt/suspend_to_ram/README'),
     ('samples/boards/stm32/power_mgmt/wkup_pins/README', 'samples/boards/st/power_mgmt/wkup_pins/README'),
+    ('samples/drivers/counter/maxim_ds3231/README', 'samples/drivers/rtc/README'),
     ('samples/drivers/led_is31fl3216a/README', 'samples/drivers/led/is31fl3216a/README'),
     ('samples/drivers/led_is31fl3733/README', 'samples/drivers/led/is31fl3733/README'),
     ('samples/drivers/led_lp3943/README', 'samples/drivers/led/lp3943/README'),
