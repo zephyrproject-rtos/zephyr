@@ -251,6 +251,28 @@ void test_get_stored_dump_size(int size_expected)
 	}
 }
 
+#ifdef CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY
+void test_copy_stored_dump(void)
+{
+	uint8_t buf[sizeof(struct coredump_hdr_t)];
+	struct coredump_cmd_copy_arg copy_arg = {
+		.offset = 0,
+		.buffer = buf,
+		.length = sizeof(buf),
+	};
+	int ret;
+
+	/* Cannot proceed with previous errors */
+	check_error();
+
+	ret = coredump_cmd(COREDUMP_CMD_COPY_STORED_DUMP, &copy_arg);
+	check_error();
+	zassert_equal(ret, (int)copy_arg.length,
+		      "Copied coredump size %d != %d size expected.",
+		      ret, (int)copy_arg.length);
+}
+#endif /* CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY */
+
 /* Execute tests in exact sequence with the stored core dump. */
 
 ZTEST(coredump_backends, test_coredump_0_ready) {
@@ -270,11 +292,17 @@ ZTEST(coredump_backends, test_coredump_3_verify) {
 	test_verify_stored_dump();
 }
 
-ZTEST(coredump_backends, test_coredump_4_invalidate) {
+#ifdef CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY
+ZTEST(coredump_backends, test_coredump_4_copy_in_memory) {
+	test_copy_stored_dump();
+}
+#endif /* CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY */
+
+ZTEST(coredump_backends, test_coredump_5_invalidate) {
 	test_invalidate_stored_dump();
 }
 
-ZTEST(coredump_backends, test_coredump_5_erase) {
+ZTEST(coredump_backends, test_coredump_6_erase) {
 	test_erase_stored_dump();
 }
 

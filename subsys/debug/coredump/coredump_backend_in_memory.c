@@ -86,7 +86,7 @@ static int in_memory_copy_to(struct coredump_cmd_copy_arg *copy_arg)
 	       &in_memory_coredump[IN_MEMORY_START + copy_arg->offset],
 	       copy_arg->length);
 
-	return 0;
+	return (int)copy_arg->length;
 }
 
 static void coredump_in_memory_backend_start(void)
