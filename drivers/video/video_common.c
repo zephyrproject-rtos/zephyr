@@ -21,6 +21,7 @@
 
 LOG_MODULE_REGISTER(video_common, CONFIG_VIDEO_LOG_LEVEL);
 
+#if !defined(CONFIG_VIDEO_BUFFER_POOL_ALLOC_OPS)
 #if defined(CONFIG_VIDEO_BUFFER_USE_SHARED_MULTI_HEAP)
 #include <zephyr/multi_heap/shared_multi_heap.h>
 
@@ -61,10 +62,33 @@ static void *video_buffer_k_heap_aligned_alloc(size_t align, size_t bytes, k_tim
 #define VIDEO_COMMON_FREE(block) k_heap_free(&video_buffer_pool, block)
 #endif
 
+#endif
+
 static struct video_buffer video_buf[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
+
+#if defined(CONFIG_VIDEO_BUFFER_POOL_ALLOC_OPS)
+static const struct video_user_buffer_ops *user_buffer_ops;
+
+int video_register_user_buffer_ops(const struct video_user_buffer_ops *ops)
+{
+	if (ops == NULL) {
+		return -EINVAL;
+	}
+
+	user_buffer_ops = ops;
+
+	return 0;
+}
+#endif
 
 struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_timeout_t timeout)
 {
+#if defined(CONFIG_VIDEO_BUFFER_POOL_ALLOC_OPS)
+	if (user_buffer_ops != NULL && user_buffer_ops->aligned_alloc != NULL) {
+		return user_buffer_ops->aligned_alloc(size, align, timeout);
+	}
+	return NULL;
+#else
 	struct video_buffer *vbuf = NULL;
 
 	/* find available video buffer */
@@ -91,6 +115,7 @@ struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_tim
 	vbuf->bytesused = 0;
 
 	return vbuf;
+#endif
 }
 
 struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout)
@@ -100,6 +125,14 @@ struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout)
 
 int video_buffer_release(struct video_buffer *vbuf)
 {
+#if defined(CONFIG_VIDEO_BUFFER_POOL_ALLOC_OPS)
+	if (user_buffer_ops == NULL || user_buffer_ops->release == NULL) {
+		LOG_ERR("User buffer callbacks are not configured");
+		return -EINVAL;
+	}
+
+	return user_buffer_ops->release(vbuf);
+#else
 	if (vbuf == NULL || vbuf->index >= ARRAY_SIZE(video_buf)) {
 		LOG_ERR("Invalid buffer index: %u", vbuf->index);
 		return -EINVAL;
@@ -117,6 +150,7 @@ int video_buffer_release(struct video_buffer *vbuf)
 	video_buf[vbuf->index].buffer = NULL;
 
 	return 0;
+#endif
 }
 
 struct video_buffer *video_import_buffer(uint8_t *mem, size_t sz)
