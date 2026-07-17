@@ -34,21 +34,14 @@
 
 #define ACE_INTC_IRQ DT_IRQN(DT_NODELABEL(ace_intc))
 
-#ifdef CONFIG_XTENSA_MMU
-#define IPI_TLB_FLUSH 0x01
-#endif
+#define IPI_SCHED     BIT(0)
+#define IPI_TLB_FLUSH BIT(1)
+
+static atomic_val_t cpu_pending_ipi[CONFIG_MP_MAX_NUM_CPUS];
 
 static void ipc_isr(void *arg)
 {
 	uint32_t cpu_id = arch_proc_id();
-
-#if defined(CONFIG_XTENSA_MMU) && (CONFIG_MP_MAX_NUM_CPUS > 1)
-	uint32_t msg = IDC[cpu_id].agents[0].ipc.tdr & ~INTEL_ADSP_IPC_BUSY;
-
-	if (msg == IPI_TLB_FLUSH) {
-		xtensa_mmu_tlb_shootdown();
-	}
-#endif
 
 	/*
 	 * Clearing the BUSY bits in both TDR and TDA are needed to
@@ -62,9 +55,20 @@ static void ipc_isr(void *arg)
 	IDC[cpu_id].agents[0].ipc.tdr = INTEL_ADSP_IPC_BUSY;
 	IDC[cpu_id].agents[0].ipc.tda = 0;
 
+	/* Process pending IPIs. */
+	uint32_t pending_ipi = (uint32_t)atomic_clear(&cpu_pending_ipi[cpu_id]);
+
+#if defined(CONFIG_XTENSA_MMU) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+	if ((pending_ipi & IPI_TLB_FLUSH) == IPI_TLB_FLUSH) {
+		xtensa_mmu_tlb_shootdown();
+	}
+#endif
+
 #ifdef CONFIG_SMP
-	void z_sched_ipi(void);
-	z_sched_ipi();
+	if ((pending_ipi & IPI_SCHED) == IPI_SCHED) {
+		void z_sched_ipi(void);
+		z_sched_ipi();
+	}
 #endif
 }
 
@@ -91,6 +95,9 @@ void soc_mp_init(void)
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (int i = 0; i < num_cpus; i++) {
+		/* Initialize pending IPI bitfield. */
+		atomic_clear(&cpu_pending_ipi[i]);
+
 		/* DINT has one bit per IPC, unmask only IPC "Ax" on core "x" */
 		ACE_DINT[i].ie[ACE_INTL_IDCA] = BIT(i);
 
@@ -226,7 +233,10 @@ static void send_ipi(uint32_t msg, uint32_t cpu_bitmap)
 
 	for (int core = 0; core < num_cpus; core++) {
 		if (soc_cpus_active[core] && ((other_cpus & BIT(core)) != 0U)) {
-			IDC[core].agents[1].ipc.idr = msg | INTEL_ADSP_IPC_BUSY;
+			/* Indicate which IPI needs to be processed. */
+			atomic_or(&cpu_pending_ipi[core], msg);
+
+			IDC[core].agents[1].ipc.idr = INTEL_ADSP_IPC_BUSY;
 		}
 	}
 }
@@ -240,12 +250,12 @@ void xtensa_mmu_tlb_ipi(void)
 
 void arch_sched_broadcast_ipi(void)
 {
-	send_ipi(0, IPI_ALL_CPUS_MASK);
+	send_ipi(IPI_SCHED, IPI_ALL_CPUS_MASK);
 }
 
 void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 {
-	send_ipi(0, cpu_bitmap);
+	send_ipi(IPI_SCHED, cpu_bitmap);
 }
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
