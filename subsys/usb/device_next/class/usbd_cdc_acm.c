@@ -19,7 +19,7 @@
 
 #include <zephyr/drivers/usb/udc.h>
 
-#include "usbd_msg.h"
+#include <usbd_msg.h>
 
 #include <zephyr/logging/log.h>
 /* Prevent endless recursive logging loop and warn user about it */

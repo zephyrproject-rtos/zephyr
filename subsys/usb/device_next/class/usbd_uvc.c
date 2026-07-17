@@ -23,9 +23,10 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/usb/class/usbd_uvc.h>
 
-#include "uvc.h"
-#include "../../../drivers/video/video_ctrls.h"
-#include "../../../drivers/video/video_device.h"
+#include <uvc.h>
+
+#include "../../../../drivers/video/video_ctrls.h"
+#include "../../../../drivers/video/video_device.h"
 
 LOG_MODULE_REGISTER(usbd_uvc, CONFIG_USBD_VIDEO_LOG_LEVEL);
 

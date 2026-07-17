@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "usbd_msg.h"
+#include <usbd_msg.h>
 
 #include <zephyr/init.h>
 #include <zephyr/usb/usbd.h>
