@@ -173,6 +173,30 @@ elseif("${ARCH}" STREQUAL "xtensa")
 
   # .S assembly files need the integrated assembler
   set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -fintegrated-as -fno-unwind-tables" CACHE STRING "" FORCE)
+
+  # LLEXT shared libraries are loadable modules, not standalone executables.
+  # Prevent the GCC driver from linking crt0.o/crtn.o into them.
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -nostartfiles -nodefaultlibs" CACHE STRING "" FORCE)
+
+  # Override the shared library link rule with our wrapper script that:
+  # 1. Uses objcopy to make .rodata sections writable (fixes "dangerous
+  #    relocation in read-only section")
+  # 2. Links with GCC + -mtext-section-literals (fixes "l32r literal placed
+  #    after use" errors from section ordering)
+  set(LLEXT_LINK_WRAPPER "${CMAKE_CURRENT_LIST_DIR}/llext-link-wrapper.sh")
+  set(XTENSA_CROSS_PREFIX "${TOOLCHAIN_HOME}llvm-")
+  set(CMAKE_C_CREATE_SHARED_LIBRARY
+   "${LLEXT_LINK_WRAPPER} ${XTENSA_CROSS_PREFIX} <LINK_FLAGS> -fuse-ld=lld <CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS> <SONAME_FLAG><TARGET_SONAME> -o <TARGET> <OBJECTS> <LINK_LIBRARIES>" CACHE STRING "" FORCE)
+  set(CMAKE_CXX_CREATE_SHARED_LIBRARY
+   "${LLEXT_LINK_WRAPPER} ${XTENSA_CROSS_PREFIX} <LINK_FLAGS> -fuse-ld=lld <CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS> <SONAME_FLAG><TARGET_SONAME> -o <TARGET> <OBJECTS> <LINK_LIBRARIES>" CACHE STRING "" FORCE)
+  set(CMAKE_C_CREATE_SHARED_MODULE
+   "${LLEXT_LINK_WRAPPER} ${XTENSA_CROSS_PREFIX} <LINK_FLAGS> -fuse-ld=lld <CMAKE_SHARED_MODULE_CREATE_C_FLAGS> <SONAME_FLAG><TARGET_SONAME> -o <TARGET> <OBJECTS> <LINK_LIBRARIES>" CACHE STRING "" FORCE)
+  set(CMAKE_CXX_CREATE_SHARED_MODULE
+   "${LLEXT_LINK_WRAPPER} ${XTENSA_CROSS_PREFIX} <LINK_FLAGS> -fuse-ld=lld <CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS> <SONAME_FLAG><TARGET_SONAME> -o <TARGET> <OBJECTS> <LINK_LIBRARIES>" CACHE STRING "" FORCE)
+
+  # Disable ccache for link steps - ccache can't properly handle our
+  # wrapper script (it caches/eats the output).
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK "")
 endif()
 
 if(DEFINED triple)
