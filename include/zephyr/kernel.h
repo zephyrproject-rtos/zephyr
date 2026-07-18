@@ -4621,6 +4621,7 @@ int k_work_cancel_delayable(struct k_work_delayable *dwork);
 bool k_work_cancel_delayable_sync(struct k_work_delayable *dwork,
 				  struct k_work_sync *sync);
 
+/** @brief Work item and work queue state flag values. */
 enum {
 /**
  * @cond INTERNAL_HIDDEN
