@@ -5239,7 +5239,8 @@ void k_work_poll_init(struct k_work_poll *work,
  *
  *
  * @retval 0 Work item started watching for events.
- * @retval -EINVAL Work item is being processed or has completed its work.
+ * @retval -EINVAL Bad parameters, or work item is being processed or has
+ *		   completed its work.
  * @retval -EADDRINUSE Work item is pending on a different workqueue.
  */
 int k_work_poll_submit_to_queue(struct k_work_q *work_q,
@@ -6980,7 +6981,7 @@ void k_poll_event_init(struct k_poll_event *event, uint32_t type,
  *         words, -EINTR status means that at least one of output events is
  *         K_POLL_STATE_CANCELLED.
  * @retval -ENOMEM Thread resource pool insufficient memory (user mode only)
- * @retval -EINVAL Bad parameters (user mode only)
+ * @retval -EINVAL Bad parameters
  */
 
 __syscall int k_poll(struct k_poll_event *events, int num_events,
