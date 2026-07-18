@@ -7267,7 +7267,7 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats);
  *
  * @param cpu The cpu number
  * @param stats Pointer to struct to copy statistics into.
- * @return -EINVAL if null pointers, otherwise 0
+ * @return -EINVAL if null pointers or invalid cpu, otherwise 0
  */
 int k_thread_runtime_stats_cpu_get(int cpu, k_thread_runtime_stats_t *stats);
 
