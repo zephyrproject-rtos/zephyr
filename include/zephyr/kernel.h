@@ -5368,12 +5368,11 @@ struct k_msgq {
 	Z_POLL_EVENT_OBJ_INIT(obj) \
 	.flags = 0, \
 	}
+
+#define K_MSGQ_FLAG_ALLOC	BIT(0)
 /**
  * INTERNAL_HIDDEN @endcond
  */
-
-
-#define K_MSGQ_FLAG_ALLOC	BIT(0)
 
 /**
  * @brief Message Queue Attributes
