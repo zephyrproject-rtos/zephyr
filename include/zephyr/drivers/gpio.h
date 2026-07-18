@@ -763,84 +763,189 @@ struct gpio_callback {
 };
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * For internal use only, skip these in public documentation.
+ * @def_driverbackendgroup{GPIO,gpio_interface}
+ * @{
  */
 
-/* Used by driver api function pin_interrupt_configure, these are defined
+/**
+ * @brief Interrupt modes for the pin_interrupt_configure driver operation.
+ *
+ * Used by driver api function pin_interrupt_configure, these are defined
  * in terms of the public flags so we can just mask and pass them
- * through to the driver api
+ * through to the driver api.
  */
 enum gpio_int_mode {
+	/** Disable pin interrupt. */
 	GPIO_INT_MODE_DISABLED = GPIO_INT_DISABLE,
+	/** Enable level-triggered pin interrupt. */
 	GPIO_INT_MODE_LEVEL = GPIO_INT_ENABLE,
+	/** Enable edge-triggered pin interrupt. */
 	GPIO_INT_MODE_EDGE = GPIO_INT_ENABLE | GPIO_INT_EDGE,
-#ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
+#if defined(CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT) || defined(__DOXYGEN__)
+	/**
+	 * Disable a previously configured pin interrupt without deconfiguring it.
+	 * @kconfig_dep{CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT}
+	 */
 	GPIO_INT_MODE_DISABLE_ONLY = GPIO_INT_DISABLE | GPIO_INT_ENABLE_DISABLE_ONLY,
+	/**
+	 * Re-enable a previously configured pin interrupt.
+	 * @kconfig_dep{CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT}
+	 */
 	GPIO_INT_MODE_ENABLE_ONLY = GPIO_INT_ENABLE | GPIO_INT_ENABLE_DISABLE_ONLY,
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 };
 
+/**
+ * @brief Interrupt triggers for the pin_interrupt_configure driver operation.
+ */
 enum gpio_int_trig {
-	/* Trigger detection when input state is (or transitions to)
+	/** Trigger detection when input state is (or transitions to)
 	 * physical low. (Edge Falling or Active Low)
 	 */
 	GPIO_INT_TRIG_LOW = GPIO_INT_LOW_0,
-	/* Trigger detection when input state is (or transitions to)
+	/** Trigger detection when input state is (or transitions to)
 	 * physical high. (Edge Rising or Active High) */
 	GPIO_INT_TRIG_HIGH = GPIO_INT_HIGH_1,
-	/* Trigger detection on pin rising or falling edge. */
+	/** Trigger detection on pin rising or falling edge. */
 	GPIO_INT_TRIG_BOTH = GPIO_INT_LOW_0 | GPIO_INT_HIGH_1,
-	/* Trigger a system wakeup. */
+	/** Trigger a system wakeup. */
 	GPIO_INT_TRIG_WAKE = GPIO_INT_WAKEUP,
-	/* Trigger a system wakeup when input state is (or transitions to)
+	/** Trigger a system wakeup when input state is (or transitions to)
 	 * physical low. (Edge Falling or Active Low)
 	 */
 	GPIO_INT_TRIG_WAKE_LOW = GPIO_INT_LOW_0 | GPIO_INT_WAKEUP,
-	/* Trigger a system wakeup when input state is (or transitions to)
+	/** Trigger a system wakeup when input state is (or transitions to)
 	 * physical high. (Edge Rising or Active High)
 	 */
 	GPIO_INT_TRIG_WAKE_HIGH = GPIO_INT_HIGH_1 | GPIO_INT_WAKEUP,
-	/* Trigger a system wakeup on pin rising or falling edge. */
+	/** Trigger a system wakeup on pin rising or falling edge. */
 	GPIO_INT_TRIG_WAKE_BOTH = GPIO_INT_LOW_0 | GPIO_INT_HIGH_1 | GPIO_INT_WAKEUP,
 };
 
+/**
+ * @brief Callback API to configure a single pin.
+ * See gpio_pin_configure() for argument description.
+ */
+typedef int (*gpio_api_pin_configure_t)(const struct device *port, gpio_pin_t pin,
+					gpio_flags_t flags);
+
+/**
+ * @brief Callback API to get the configuration of a single pin.
+ * See gpio_pin_get_config() for argument description.
+ */
+typedef int (*gpio_api_pin_get_config_t)(const struct device *port, gpio_pin_t pin,
+					 gpio_flags_t *flags);
+
+/**
+ * @brief Callback API to get the physical level of all input pins in a port.
+ * See gpio_port_get_raw() for argument description.
+ */
+typedef int (*gpio_api_port_get_raw_t)(const struct device *port,
+				       gpio_port_value_t *value);
+
+/**
+ * @brief Callback API to set the physical level of selected output pins in a port.
+ * See gpio_port_set_masked_raw() for argument description.
+ */
+typedef int (*gpio_api_port_set_masked_raw_t)(const struct device *port,
+					      gpio_port_pins_t mask,
+					      gpio_port_value_t value);
+
+/**
+ * @brief Callback API to set the physical level of selected output pins to high.
+ * See gpio_port_set_bits_raw() for argument description.
+ */
+typedef int (*gpio_api_port_set_bits_raw_t)(const struct device *port,
+					    gpio_port_pins_t pins);
+
+/**
+ * @brief Callback API to set the physical level of selected output pins to low.
+ * See gpio_port_clear_bits_raw() for argument description.
+ */
+typedef int (*gpio_api_port_clear_bits_raw_t)(const struct device *port,
+					      gpio_port_pins_t pins);
+
+/**
+ * @brief Callback API to toggle the level of selected output pins.
+ * See gpio_port_toggle_bits() for argument description.
+ */
+typedef int (*gpio_api_port_toggle_bits_t)(const struct device *port,
+					   gpio_port_pins_t pins);
+
+/**
+ * @brief Callback API to configure a pin interrupt.
+ * See gpio_pin_interrupt_configure() for argument description, noting that the
+ * public @c GPIO_INT_* flags are decomposed into @p mode and @p trig before
+ * being passed to the driver.
+ */
+typedef int (*gpio_api_pin_interrupt_configure_t)(const struct device *port,
+						  gpio_pin_t pin,
+						  enum gpio_int_mode mode,
+						  enum gpio_int_trig trig);
+
+/**
+ * @brief Callback API to add or remove an application callback.
+ * See gpio_add_callback() and gpio_remove_callback() for argument description.
+ */
+typedef int (*gpio_api_manage_callback_t)(const struct device *port,
+					  struct gpio_callback *cb,
+					  bool set);
+
+/**
+ * @brief Callback API to get pending interrupts.
+ * See gpio_get_pending_int() for argument description.
+ */
+typedef uint32_t (*gpio_api_get_pending_int_t)(const struct device *dev);
+
+/**
+ * @brief Callback API to get the direction of selected pins in a port.
+ * See gpio_port_get_direction() for argument description.
+ */
+typedef int (*gpio_api_port_get_direction_t)(const struct device *port, gpio_port_pins_t map,
+					     gpio_port_pins_t *inputs, gpio_port_pins_t *outputs);
+
+/**
+ * @driver_ops{GPIO}
+ */
 __subsystem struct gpio_driver_api {
-	int (*pin_configure)(const struct device *port, gpio_pin_t pin,
-			     gpio_flags_t flags);
-#ifdef CONFIG_GPIO_GET_CONFIG
-	int (*pin_get_config)(const struct device *port, gpio_pin_t pin,
-			      gpio_flags_t *flags);
-#endif
-	int (*port_get_raw)(const struct device *port,
-			    gpio_port_value_t *value);
-	int (*port_set_masked_raw)(const struct device *port,
-				   gpio_port_pins_t mask,
-				   gpio_port_value_t value);
-	int (*port_set_bits_raw)(const struct device *port,
-				 gpio_port_pins_t pins);
-	int (*port_clear_bits_raw)(const struct device *port,
-				   gpio_port_pins_t pins);
-	int (*port_toggle_bits)(const struct device *port,
-				gpio_port_pins_t pins);
-	int (*pin_interrupt_configure)(const struct device *port,
-				       gpio_pin_t pin,
-				       enum gpio_int_mode mode,
-				       enum gpio_int_trig trig);
-	int (*manage_callback)(const struct device *port,
-			       struct gpio_callback *cb,
-			       bool set);
-	uint32_t (*get_pending_int)(const struct device *dev);
-#ifdef CONFIG_GPIO_GET_DIRECTION
-	int (*port_get_direction)(const struct device *port, gpio_port_pins_t map,
-				  gpio_port_pins_t *inputs, gpio_port_pins_t *outputs);
+	/** @driver_ops_mandatory @copybrief gpio_pin_configure */
+	gpio_api_pin_configure_t pin_configure;
+#if defined(CONFIG_GPIO_GET_CONFIG) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_optional @copybrief gpio_pin_get_config
+	 * @kconfig_dep{CONFIG_GPIO_GET_CONFIG}
+	 */
+	gpio_api_pin_get_config_t pin_get_config;
+#endif /* CONFIG_GPIO_GET_CONFIG */
+	/** @driver_ops_mandatory @copybrief gpio_port_get_raw */
+	gpio_api_port_get_raw_t port_get_raw;
+	/** @driver_ops_mandatory @copybrief gpio_port_set_masked_raw */
+	gpio_api_port_set_masked_raw_t port_set_masked_raw;
+	/** @driver_ops_mandatory @copybrief gpio_port_set_bits_raw */
+	gpio_api_port_set_bits_raw_t port_set_bits_raw;
+	/** @driver_ops_mandatory @copybrief gpio_port_clear_bits_raw */
+	gpio_api_port_clear_bits_raw_t port_clear_bits_raw;
+	/** @driver_ops_mandatory @copybrief gpio_port_toggle_bits */
+	gpio_api_port_toggle_bits_t port_toggle_bits;
+	/** @driver_ops_optional @copybrief gpio_pin_interrupt_configure */
+	gpio_api_pin_interrupt_configure_t pin_interrupt_configure;
+	/**
+	 * @driver_ops_optional Add or remove an application callback.
+	 * See gpio_add_callback() and gpio_remove_callback().
+	 */
+	gpio_api_manage_callback_t manage_callback;
+	/** @driver_ops_optional @copybrief gpio_get_pending_int */
+	gpio_api_get_pending_int_t get_pending_int;
+#if defined(CONFIG_GPIO_GET_DIRECTION) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_optional @copybrief gpio_port_get_direction
+	 * @kconfig_dep{CONFIG_GPIO_GET_DIRECTION}
+	 */
+	gpio_api_port_get_direction_t port_get_direction;
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
-/**
- * @endcond
- */
+/** @} */
 
 /**
  * @brief Validate that GPIO port is ready.
