@@ -443,38 +443,35 @@ struct dac_dt_spec {
 	DAC_DT_SPEC_GET_OR(DT_DRV_INST(inst), default_value)
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * For internal use only, skip these in public documentation.
+ * @def_driverbackendgroup{DAC,dac_interface}
+ * @{
  */
 
-/*
- * Type definition of DAC API function for configuring a channel.
+/**
+ * @brief Type definition of DAC API function for configuring a channel.
  * See dac_channel_setup() for argument descriptions.
  */
 typedef int (*dac_api_channel_setup)(const struct device *dev,
 				     const struct dac_channel_cfg *channel_cfg);
 
-/*
- * Type definition of DAC API function for setting a write request.
+/**
+ * @brief Type definition of DAC API function for setting a write request.
  * See dac_write_value() for argument descriptions.
  */
 typedef int (*dac_api_write_value)(const struct device *dev,
 				    uint8_t channel, uint32_t value);
 
-/*
- * DAC driver API
- *
- * This is the mandatory API any DAC driver needs to expose.
+/**
+ * @driver_ops{DAC}
  */
 __subsystem struct dac_driver_api {
+	/** @driver_ops_mandatory @copybrief dac_channel_setup */
 	dac_api_channel_setup channel_setup;
+	/** @driver_ops_mandatory @copybrief dac_write_value */
 	dac_api_write_value   write_value;
 };
 
-/**
- * @endcond
- */
+/** @} */
 
 /**
  * @brief Configure a DAC channel.
