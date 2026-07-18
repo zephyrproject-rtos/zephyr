@@ -303,6 +303,14 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 	if (index >= index_limit) {
 		LOG_ERR("out of PMP slots");
 		ok = false;
+	} else if (PMP_NAPOT_SUPPORTED && size == 0) {
+		/*
+		 * "start=0 size=0" means the whole address range.
+		 * NAPOT all-ones encoding covers every address from 0.
+		 */
+		pmp_addr[index] = -1UL;
+		pmp_n_cfg[index] = perm | PMP_NAPOT;
+		index += 1;
 	} else if (PMP_TOR_SUPPORTED &&
 		   ((index == 0 && start == 0) ||
 		    (index != 0 && pmp_addr[index - 1] == PMP_ADDR(start)))) {
