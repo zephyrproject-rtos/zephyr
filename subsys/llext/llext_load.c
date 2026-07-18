@@ -46,6 +46,16 @@ __weak int arch_elf_veneer_init(struct llext_loader *ldr, struct llext *ext)
 
 const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct llext *ext, unsigned int sh_ndx)
 {
+	if (sh_ndx >= ext->sect_cnt) {
+		return NULL;
+	}
+
+	elf_shdr_t *shdr = ext->sect_hdrs + sh_ndx;
+
+	if (shdr->sh_addr < 0x08000000) {
+		return llext_peek(ldr, shdr->sh_offset);
+	}
+
 	enum llext_mem mem_idx = ldr->sect_map[sh_ndx].mem_idx;
 
 	if (mem_idx == LLEXT_MEM_COUNT) {
