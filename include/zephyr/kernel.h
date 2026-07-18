@@ -2670,6 +2670,11 @@ __syscall void *k_queue_peek_tail(struct k_queue *queue);
  * bypasses the kernel object permission management mechanism.
  */
 struct k_futex {
+	/**
+	 * Futex value. User mode threads operate on this value directly
+	 * using atomic operations, and pass its expected content to
+	 * k_futex_wait().
+	 */
 	atomic_t val;
 };
 
