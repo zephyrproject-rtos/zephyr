@@ -703,18 +703,18 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 	 */
 	pos = addr;
 	ret = arch_page_phys_get(pos - CONFIG_MMU_PAGE_SIZE, NULL);
+	__ASSERT(ret != 0,
+		 "%s: cannot find preceding guard page for (%p, %zu)",
+		 __func__, addr, size);
 	if (ret == 0) {
-		__ASSERT(ret == 0,
-			 "%s: cannot find preceding guard page for (%p, %zu)",
-			 __func__, addr, size);
 		goto out;
 	}
 
 	ret = arch_page_phys_get(pos + size, NULL);
+	__ASSERT(ret != 0,
+		 "%s: cannot find succeeding guard page for (%p, %zu)",
+		 __func__, addr, size);
 	if (ret == 0) {
-		__ASSERT(ret == 0,
-			 "%s: cannot find succeeding guard page for (%p, %zu)",
-			 __func__, addr, size);
 		goto out;
 	}
 
