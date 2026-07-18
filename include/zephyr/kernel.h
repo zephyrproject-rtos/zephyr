@@ -1436,6 +1436,7 @@ static inline void k_thread_start(k_tid_t thread)
  * @param prio Highest thread priority level eligible for time slicing.
  *
  * @satisfies ZEP-SRS-2-11
+ * @satisfies ZEP-SRS-2-23
  */
 void k_sched_time_slice_set(int32_t slice, int prio);
 
