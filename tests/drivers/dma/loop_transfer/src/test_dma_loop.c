@@ -373,6 +373,10 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 
 	memset(tx_data, 0, sizeof(tx_data));
 
+	for (int i = 0; i < CONFIG_DMA_LOOP_TRANSFER_SIZE; i++) {
+		tx_data[i] = i;
+	}
+
 	memset(rx_data, 0, sizeof(rx_data));
 
 	if (!device_is_ready(dma)) {
