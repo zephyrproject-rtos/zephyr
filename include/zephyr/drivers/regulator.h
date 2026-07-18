@@ -96,67 +96,183 @@ typedef void (*regulator_callback_t)(const struct device *dev,
 				     const struct regulator_event *const evt,
 				     const void *const user_data);
 
-/** @cond INTERNAL_HIDDEN */
+/**
+ * @def_driverbackendgroup{Regulator,regulator_interface}
+ * @{
+ */
 
+/**
+ * @brief Set a DVS state.
+ * See regulator_parent_dvs_state_set() for argument description.
+ */
 typedef int (*regulator_dvs_state_set_t)(const struct device *dev,
 					 regulator_dvs_state_t state);
 
+/**
+ * @brief Enter ship mode.
+ * See regulator_parent_ship_mode() for argument description.
+ */
 typedef int (*regulator_ship_mode_t)(const struct device *dev);
 
-/** @brief Driver-specific API functions to support parent regulator control. */
+/**
+ * @driver_ops{Regulator Parent}
+ */
 __subsystem struct regulator_parent_driver_api {
+	/** @driver_ops_optional @copybrief regulator_parent_dvs_state_set */
 	regulator_dvs_state_set_t dvs_state_set;
+	/** @driver_ops_optional @copybrief regulator_parent_ship_mode */
 	regulator_ship_mode_t ship_mode;
 };
 
+/**
+ * @brief Enable a regulator.
+ * See regulator_enable() for argument description.
+ */
 typedef int (*regulator_enable_t)(const struct device *dev);
+
+/**
+ * @brief Disable a regulator.
+ * See regulator_disable() for argument description.
+ */
 typedef int (*regulator_disable_t)(const struct device *dev);
+
+/**
+ * @brief Obtain the number of supported voltage levels.
+ * See regulator_count_voltages() for argument description.
+ */
 typedef unsigned int (*regulator_count_voltages_t)(const struct device *dev);
+
+/**
+ * @brief Obtain the value of a voltage given an index.
+ * See regulator_list_voltage() for argument description.
+ */
 typedef int (*regulator_list_voltage_t)(const struct device *dev,
 					unsigned int idx, int32_t *volt_uv);
+
+/**
+ * @brief Set the output voltage.
+ * See regulator_set_voltage() for argument description.
+ */
 typedef int (*regulator_set_voltage_t)(const struct device *dev, int32_t min_uv,
 				       int32_t max_uv);
+
+/**
+ * @brief Obtain output voltage.
+ * See regulator_get_voltage() for argument description.
+ */
 typedef int (*regulator_get_voltage_t)(const struct device *dev,
 				       int32_t *volt_uv);
+
+/**
+ * @brief Obtain the number of supported current limit levels.
+ * See regulator_count_current_limits() for argument description.
+ */
 typedef unsigned int (*regulator_count_current_limits_t)(const struct device *dev);
+
+/**
+ * @brief Obtain the value of a current limit given an index.
+ * See regulator_list_current_limit() for argument description.
+ */
 typedef int (*regulator_list_current_limit_t)(const struct device *dev,
 					      unsigned int idx, int32_t *current_ua);
+
+/**
+ * @brief Set output current limit.
+ * See regulator_set_current_limit() for argument description.
+ */
 typedef int (*regulator_set_current_limit_t)(const struct device *dev,
 					     int32_t min_ua, int32_t max_ua);
+
+/**
+ * @brief Get output current limit.
+ * See regulator_get_current_limit() for argument description.
+ */
 typedef int (*regulator_get_current_limit_t)(const struct device *dev,
 					     int32_t *curr_ua);
+
+/**
+ * @brief Set mode.
+ * See regulator_set_mode() for argument description.
+ */
 typedef int (*regulator_set_mode_t)(const struct device *dev,
 				    regulator_mode_t mode);
+
+/**
+ * @brief Get mode.
+ * See regulator_get_mode() for argument description.
+ */
 typedef int (*regulator_get_mode_t)(const struct device *dev,
 				    regulator_mode_t *mode);
+
+/**
+ * @brief Set active discharge setting.
+ * See regulator_set_active_discharge() for argument description.
+ */
 typedef int (*regulator_set_active_discharge_t)(const struct device *dev,
 				    bool active_discharge);
+
+/**
+ * @brief Get active discharge setting.
+ * See regulator_get_active_discharge() for argument description.
+ */
 typedef int (*regulator_get_active_discharge_t)(const struct device *dev,
 				    bool *active_discharge);
+
+/**
+ * @brief Get active error flags.
+ * See regulator_get_error_flags() for argument description.
+ */
 typedef int (*regulator_get_error_flags_t)(
 	const struct device *dev, regulator_error_flags_t *flags);
+
+/**
+ * @brief Set event handler function.
+ * See regulator_set_callback() for argument description.
+ */
 typedef int (*regulator_set_callback_t)(const struct device *dev,
 	regulator_callback_t cb, const void *const user_data);
 
-/** @brief Driver-specific API functions to support regulator control. */
+/**
+ * @driver_ops{Regulator}
+ */
 __subsystem struct regulator_driver_api {
+	/** @driver_ops_optional @copybrief regulator_enable */
 	regulator_enable_t enable;
+	/** @driver_ops_optional @copybrief regulator_disable */
 	regulator_disable_t disable;
+	/** @driver_ops_optional @copybrief regulator_count_voltages */
 	regulator_count_voltages_t count_voltages;
+	/** @driver_ops_optional @copybrief regulator_list_voltage */
 	regulator_list_voltage_t list_voltage;
+	/** @driver_ops_optional @copybrief regulator_set_voltage */
 	regulator_set_voltage_t set_voltage;
+	/** @driver_ops_optional @copybrief regulator_get_voltage */
 	regulator_get_voltage_t get_voltage;
+	/** @driver_ops_optional @copybrief regulator_count_current_limits */
 	regulator_count_current_limits_t count_current_limits;
+	/** @driver_ops_optional @copybrief regulator_list_current_limit */
 	regulator_list_current_limit_t list_current_limit;
+	/** @driver_ops_optional @copybrief regulator_set_current_limit */
 	regulator_set_current_limit_t set_current_limit;
+	/** @driver_ops_optional @copybrief regulator_get_current_limit */
 	regulator_get_current_limit_t get_current_limit;
+	/** @driver_ops_optional @copybrief regulator_set_mode */
 	regulator_set_mode_t set_mode;
+	/** @driver_ops_optional @copybrief regulator_get_mode */
 	regulator_get_mode_t get_mode;
+	/** @driver_ops_optional @copybrief regulator_set_active_discharge */
 	regulator_set_active_discharge_t set_active_discharge;
+	/** @driver_ops_optional @copybrief regulator_get_active_discharge */
 	regulator_get_active_discharge_t get_active_discharge;
+	/** @driver_ops_optional @copybrief regulator_get_error_flags */
 	regulator_get_error_flags_t get_error_flags;
+	/** @driver_ops_optional @copybrief regulator_set_callback */
 	regulator_set_callback_t set_callback;
 };
+
+/** @} */
+
+/** @cond INTERNAL_HIDDEN */
 
 /**
  * @name Regulator flags
