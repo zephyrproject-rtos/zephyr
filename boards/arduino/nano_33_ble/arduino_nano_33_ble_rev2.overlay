@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/nordic-nrf-gpio.h>
+
 / {
 	aliases {
 		accel0 = &bmi270;
@@ -14,6 +16,8 @@
 /delete-node/ &lsm9ds1_mag;
 
 &i2c1 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+
 	bmi270: bmi270@68 {
 		compatible = "bosch,bmi270";
 		reg = <0x68>;
@@ -23,4 +27,8 @@
 		compatible = "bosch,bmm150";
 		reg = <0x10>;
 	};
+};
+
+&vdd_env {
+	enable-gpios = <&gpio0 22 (GPIO_ACTIVE_HIGH | NRF_GPIO_DRIVE_H0H1)>;
 };
