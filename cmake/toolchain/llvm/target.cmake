@@ -132,7 +132,44 @@ elseif("${ARCH}" STREQUAL "xtensa")
   # To enable manually: add '-Xclang -target-feature -Xclang +flix' to CMAKE_C_FLAGS
   # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Xclang -target-feature -Xclang +flix" CACHE STRING "" FORCE)
 
+  # Ensure the dummy compile test can find the Xtensa assembler and linker.
+  if(TOOLCHAIN_HOME)
+    set(ENV{PATH} "${TOOLCHAIN_HOME}:$ENV{PATH}")
+  endif()
+  set(_req_flags "")
+  if(TOOLCHAIN_HOME)
+    list(APPEND _req_flags -B${TOOLCHAIN_HOME})
+  endif()
+  list(APPEND _req_flags
+    -mcpu=${XTENSA_CLANG_MCPU}
+    -nostartfiles
+    -nostdlib
+  )
+  string(REPLACE ";" " " _req_flags_str "${_req_flags}")
+  set(CMAKE_REQUIRED_FLAGS "${_req_flags_str}")
+
+  if(TOOLCHAIN_HOME)
+    list(APPEND TOOLCHAIN_LD_FLAGS -B${TOOLCHAIN_HOME})
+    # Derive the per-core SDK ld binary from XTENSA_TOOLCHAIN_TARGET so
+    # each Xtensa core uses its matching SDK linker (e.g. tgl, ace15, ace30).
+    set(XTENSA_SDK_LD "${TOOLCHAIN_HOME}xtensa-${XTENSA_TOOLCHAIN_TARGET}_zephyr-elf-ld")
+  endif()
+
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -nostartfiles -nodefaultlibs" CACHE STRING "" FORCE)
+
+  # Override compiler_set_linker_properties to use compiler-rt builtins
+  # instead of libgcc; the compiler-rt builtins are distributed with the
+  # LLVM toolchain and cover all Xtensa intrinsics used by Zephyr/SOF.
+  function(compiler_set_linker_properties)
+    set(_clang_rt_dir "${LLVM_TOOLCHAIN_PATH}/lib/clang/23/lib/xtensa-unknown-unknown-elf")
+    set_linker_property(PROPERTY lib_include_dir "-L\"${_clang_rt_dir}\"")
+    set_linker_property(PROPERTY rt_library "-lclang_rt.builtins")
+  endfunction()
+
   message(STATUS "Xtensa LLVM: triple=${triple} mcpu=${XTENSA_CLANG_MCPU}")
+
+  # .S assembly files need the integrated assembler
+  set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -fintegrated-as -fno-unwind-tables" CACHE STRING "" FORCE)
 endif()
 
 if(DEFINED triple)
