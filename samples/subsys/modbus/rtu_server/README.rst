@@ -150,3 +150,41 @@ To read holding registers use FC03 command (read_holding_registers).
 
 .. _`joy-it RS-485 shield for Arduino`: https://joy-it.net/en/products/ARD-RS485
 .. _`PyModbus`: https://github.com/riptideio/pymodbus
+
+STM32F4-Discovery
+=================
+
+The STM32F4-Discovery board uses USART1 (PB6/PB7) for Modbus RTU communication
+with a MAX485 or equivalent RS-485 transceiver. Pin PB8 is used as the
+direction enable (DE/RE) signal.
+
+Wiring
+------
+
+Connect a TTL-to-RS485 module (e.g. MAX485, SP3485, C25B) as follows:
+
++------------------+-------------------+
+| STM32F4-Discovery| RS-485 Module     |
++==================+===================+
+| PB6 (USART1 TX)  | DI                |
++------------------+-------------------+
+| PB7 (USART1 RX)  | RO                |
++------------------+-------------------+
+| PB8 (GPIO)       | DE + RE (tied)    |
++------------------+-------------------+
+| 3.3V             | VCC               |
++------------------+-------------------+
+| GND              | GND               |
++------------------+-------------------+
+
+Connect the RS-485 module A/B terminals to the USB-to-RS485 adapter
+connected to the PC or Raspberry Pi running the Modbus client.
+
+Building and Flashing
+---------------------
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/modbus/rtu_server
+   :board: stm32f4_disco
+   :goals: build flash
+   :compact:

@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2024 LakshmiNarasimman R
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <19200>;
+	status = "okay";
+
+	modbus0 {
+		compatible = "zephyr,modbus-serial";
+		status = "okay";
+		de-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+	};
+};
