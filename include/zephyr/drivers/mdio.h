@@ -29,30 +29,57 @@ extern "C" {
 #endif
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * These are for internal use only, so skip these in
- * public documentation.
+ * @def_driverbackendgroup{MDIO,mdio_interface}
+ * @{
+ */
+
+/**
+ * @brief Read data from MDIO bus.
+ * See mdio_read() for argument description.
+ */
+typedef int (*mdio_api_read_t)(const struct device *dev, uint8_t prtad, uint8_t regad,
+			       uint16_t *data);
+
+/**
+ * @brief Write data to MDIO bus.
+ * See mdio_write() for argument description.
+ */
+typedef int (*mdio_api_write_t)(const struct device *dev, uint8_t prtad, uint8_t regad,
+				uint16_t data);
+
+/**
+ * @brief Read data from MDIO bus using Clause 45 access.
+ * See mdio_read_c45() for argument description.
+ */
+typedef int (*mdio_api_read_c45_t)(const struct device *dev, uint8_t prtad, uint8_t devad,
+				   uint16_t regad, uint16_t *data);
+
+/**
+ * @brief Write data to MDIO bus using Clause 45 access.
+ * See mdio_write_c45() for argument description.
+ */
+typedef int (*mdio_api_write_c45_t)(const struct device *dev, uint8_t prtad, uint8_t devad,
+				    uint16_t regad, uint16_t data);
+
+/**
+ * @driver_ops{MDIO}
  */
 __subsystem struct mdio_driver_api {
-	/** Read data from MDIO bus */
-	int (*read)(const struct device *dev, uint8_t prtad, uint8_t regad,
-		    uint16_t *data);
+	/** @driver_ops_optional @copybrief mdio_read */
+	mdio_api_read_t read;
 
-	/** Write data to MDIO bus */
-	int (*write)(const struct device *dev, uint8_t prtad, uint8_t regad,
-		     uint16_t data);
+	/** @driver_ops_optional @copybrief mdio_write */
+	mdio_api_write_t write;
 
-	/** Read data from MDIO bus using Clause 45 access */
-	int (*read_c45)(const struct device *dev, uint8_t prtad, uint8_t devad,
-			uint16_t regad, uint16_t *data);
+	/** @driver_ops_optional @copybrief mdio_read_c45 */
+	mdio_api_read_c45_t read_c45;
 
-	/** Write data to MDIO bus using Clause 45 access */
-	int (*write_c45)(const struct device *dev, uint8_t prtad, uint8_t devad,
-			 uint16_t regad, uint16_t data);
+	/** @driver_ops_optional @copybrief mdio_write_c45 */
+	mdio_api_write_c45_t write_c45;
 };
+
 /**
- * @endcond
+ * @}
  */
 
 /**
