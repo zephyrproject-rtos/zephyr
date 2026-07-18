@@ -94,7 +94,10 @@ typedef void (*psi5_tx_callback_t)(const struct device *dev, uint8_t channel, in
 typedef void (*psi5_rx_frame_callback_t)(const struct device *dev, uint8_t channel,
 					 uint32_t num_frame, void *user_data);
 
-/** @cond INTERNAL_HIDDEN */
+/**
+ * @def_driverbackendgroup{PSI5,psi5_interface}
+ * @{
+ */
 
 /**
  * @brief Callback API upon starting sync PSI5
@@ -146,14 +149,21 @@ struct psi5_rx_callback_configs {
 typedef int (*psi5_register_callback_t)(const struct device *dev, uint8_t channel,
 					struct psi5_rx_callback_configs callback_configs);
 
+/**
+ * @driver_ops{PSI5}
+ */
 __subsystem struct psi5_driver_api {
+	/** @driver_ops_optional @copybrief psi5_start_sync */
 	psi5_start_sync_t start_sync;
+	/** @driver_ops_optional @copybrief psi5_stop_sync */
 	psi5_stop_sync_t stop_sync;
+	/** @driver_ops_optional @copybrief psi5_send */
 	psi5_send_t send;
+	/** @driver_ops_optional @copybrief psi5_register_callback */
 	psi5_register_callback_t register_callback;
 };
 
-/** @endcond */
+/** @} */
 
 /**
  * @brief Start the sync pulse generator on a specific channel
