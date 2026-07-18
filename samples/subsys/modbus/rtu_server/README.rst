@@ -12,9 +12,10 @@ in Zephyr RTOS.
 Requirements
 ************
 
-This sample has been tested with the nRF52840-DK and FRDM-K64F boards,
-but it should work with any board that has a free UART interface or USB
-device controller. Additionally the board should have three LEDs.
+This sample has been tested with the nRF52840-DK, FRDM-K64F and
+STM32F4-Discovery boards, but it should work with any board that has a
+free UART interface or USB device controller. Additionally the board
+should have three LEDs.
 
 RTU server example is running on an evaluation board. Client is running
 on a PC or laptop.
