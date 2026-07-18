@@ -70,46 +70,137 @@ enum w1_settings_type {
 	W1_SETINGS_TYPE_COUNT,
 };
 
-/**  @cond INTERNAL_HIDDEN */
+/**
+ * @def_driverbackendgroup{1-Wire,w1_interface}
+ * @{
+ */
 
-/** Configuration common to all 1-Wire master implementations. */
+/**
+ * @brief Configuration common to all 1-Wire master implementations.
+ *
+ * This structure is common to all 1-Wire master implementations and is
+ * expected to be the first element in the object pointed to by the config
+ * field in the device structure.
+ */
 struct w1_master_config {
-	/* Number of connected slaves */
+	/** Number of connected slaves */
 	uint16_t slave_count;
 };
 
-/** Data common to all 1-Wire master implementations. */
+/**
+ * @brief Data common to all 1-Wire master implementations.
+ *
+ * This structure is common to all 1-Wire master implementations and is
+ * expected to be the first element in the object pointed to by the data
+ * field in the device structure.
+ */
 struct w1_master_data {
-	/* The mutex used by w1_lock_bus and w1_unlock_bus methods */
+	/** The mutex used by w1_lock_bus() and w1_unlock_bus() methods */
 	struct k_mutex bus_lock;
 };
 
+/**
+ * @brief Reset the 1-Wire bus to prepare slaves for communication.
+ * See w1_reset_bus() for argument description.
+ */
 typedef int (*w1_reset_bus_t)(const struct device *dev);
+
+/**
+ * @brief Read a single bit from the 1-Wire bus.
+ * See w1_read_bit() for argument description.
+ */
 typedef int (*w1_read_bit_t)(const struct device *dev);
+
+/**
+ * @brief Write a single bit to the 1-Wire bus.
+ * See w1_write_bit() for argument description.
+ */
 typedef int (*w1_write_bit_t)(const struct device *dev, bool bit);
+
+/**
+ * @brief Read a single byte from the 1-Wire bus.
+ * See w1_read_byte() for argument description.
+ */
 typedef int (*w1_read_byte_t)(const struct device *dev);
+
+/**
+ * @brief Write a single byte to the 1-Wire bus.
+ * See w1_write_byte() for argument description.
+ */
 typedef int (*w1_write_byte_t)(const struct device *dev, const uint8_t byte);
+
+/**
+ * @brief Read a block of data from the 1-Wire bus.
+ * See w1_read_block() for argument description.
+ */
 typedef int (*w1_read_block_t)(const struct device *dev, uint8_t *buffer,
 			       size_t len);
+
+/**
+ * @brief Write a block of data to the 1-Wire bus.
+ * See w1_write_block() for argument description.
+ */
 typedef int (*w1_write_block_t)(const struct device *dev, const uint8_t *buffer,
 				size_t len);
+
+/**
+ * @brief Get the number of slaves on the bus.
+ * See w1_get_slave_count() for argument description.
+ */
 typedef size_t (*w1_get_slave_count_t)(const struct device *dev);
+
+/**
+ * @brief Configure parameters of the 1-Wire master.
+ * See w1_configure() for argument description.
+ */
 typedef int (*w1_configure_t)(const struct device *dev,
 			      enum w1_settings_type type, uint32_t value);
+
+/**
+ * @brief Lock or unlock the 1-Wire bus.
+ * See w1_lock_bus() and w1_unlock_bus() for details.
+ */
 typedef int (*w1_change_bus_lock_t)(const struct device *dev, bool lock);
 
+/**
+ * @driver_ops{1-Wire}
+ */
 __subsystem struct w1_driver_api {
+	/** @driver_ops_mandatory @copybrief w1_reset_bus */
 	w1_reset_bus_t reset_bus;
+	/** @driver_ops_mandatory @copybrief w1_read_bit */
 	w1_read_bit_t read_bit;
+	/** @driver_ops_mandatory @copybrief w1_write_bit */
 	w1_write_bit_t write_bit;
+	/** @driver_ops_mandatory @copybrief w1_read_byte */
 	w1_read_byte_t read_byte;
+	/** @driver_ops_mandatory @copybrief w1_write_byte */
 	w1_write_byte_t write_byte;
+	/**
+	 * @driver_ops_optional @copybrief w1_read_block
+	 *
+	 * If not implemented, the subsystem falls back to repeated
+	 * @ref w1_driver_api.read_byte calls.
+	 */
 	w1_read_block_t read_block;
+	/**
+	 * @driver_ops_optional @copybrief w1_write_block
+	 *
+	 * If not implemented, the subsystem falls back to repeated
+	 * @ref w1_driver_api.write_byte calls.
+	 */
 	w1_write_block_t write_block;
+	/** @driver_ops_mandatory @copybrief w1_configure */
 	w1_configure_t configure;
+	/**
+	 * @driver_ops_optional Lock or unlock bus access.
+	 *
+	 * If not implemented, the subsystem falls back to a mutex-based lock.
+	 */
 	w1_change_bus_lock_t change_bus_lock;
 };
-/** @endcond */
+
+/** @} */
 
 /** @cond INTERNAL_HIDDEN */
 __syscall int w1_change_bus_lock(const struct device *dev, bool lock);
