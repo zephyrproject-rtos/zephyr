@@ -583,6 +583,7 @@
 			prescale-glitch-filter-bypass;
 			clk-source = <1>;
 			resolution = <32>;
+			wakeup-source;
 			wakeup-ctrls = <&wuu NXP_WUU_MODULE_6_INT>;
 			status = "disabled";
 		};
