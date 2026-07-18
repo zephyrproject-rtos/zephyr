@@ -33,6 +33,8 @@ BUILD_ASSERT(CONFIG_NUM_COOP_PRIORITIES >= CONFIG_NUM_METAIRQ_PRIORITIES,
  * that next_up() can return to it once the metairq finishes.
  *
  * @param thread The thread about to become _current.
+ *
+ * @satisfies ZEP-SRS-2-22
  */
 static inline void update_metairq_preempt(struct k_thread *thread)
 {
