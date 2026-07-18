@@ -108,6 +108,38 @@ static struct k_thread *poller_thread(struct z_poller *p)
 	return p ? CONTAINER_OF(p, struct k_thread, poller) : NULL;
 }
 
+static inline bool event_is_valid(const struct k_poll_event *event)
+{
+	if (event->mode != K_POLL_MODE_NOTIFY_ONLY) {
+		return false;
+	}
+
+	switch (event->type) {
+	case K_POLL_TYPE_SEM_AVAILABLE:
+	case K_POLL_TYPE_DATA_AVAILABLE:
+	case K_POLL_TYPE_SIGNAL:
+	case K_POLL_TYPE_MSGQ_DATA_AVAILABLE:
+	case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
+		return event->obj != NULL;
+	case K_POLL_TYPE_IGNORE:
+		return true;
+	default:
+		return false;
+	}
+}
+
+static inline bool events_are_valid(const struct k_poll_event *events,
+				    int num_events)
+{
+	for (int i = 0; i < num_events; i++) {
+		if (!event_is_valid(&events[i])) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static inline void add_event(sys_dlist_t *events, struct k_poll_event *event,
 			     struct z_poller *poller)
 {
@@ -289,7 +321,8 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events,
 
 	__ASSERT(!arch_is_in_isr(), "");
 
-	CHECKIF((events == NULL) || (num_events < 0)) {
+	CHECKIF((events == NULL) || (num_events < 0) ||
+		!events_are_valid(events, num_events)) {
 		return -EINVAL;
 	}
 
@@ -710,7 +743,8 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 	k_spinlock_key_t key;
 
 	CHECKIF((work_q == NULL) || (work == NULL) ||
-		(events == NULL) || (num_events < 0)) {
+		(events == NULL) || (num_events < 0) ||
+		!events_are_valid(events, num_events)) {
 		return -EINVAL;
 	}
 
