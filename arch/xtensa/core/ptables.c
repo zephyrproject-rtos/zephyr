@@ -476,7 +476,7 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 
 static void xtensa_init_page_tables(void)
 {
-	volatile uint8_t entry;
+	uint32_t entry;
 	static bool already_inited;
 
 	if (already_inited) {
