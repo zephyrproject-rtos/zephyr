@@ -45,20 +45,61 @@ BUILD_ASSERT(sizeof(intptr_t) == sizeof(long));
  * @}
  */
 
+/**
+ * @brief Wildcard used to match any thread.
+ *
+ * Can be used wherever a thread identifier is expected but any thread is
+ * acceptable, such as the source or target thread of a mailbox message.
+ *
+ * @ingroup kernel_apis
+ */
 #define K_ANY NULL
 
 #if (CONFIG_NUM_COOP_PRIORITIES + CONFIG_NUM_PREEMPT_PRIORITIES) == 0
 #error Zero available thread priorities defined!
 #endif
 
+/**
+ * @addtogroup thread_apis
+ * @{
+ */
+
+/**
+ * @brief Compute a cooperative thread priority.
+ *
+ * Cooperative priorities are negative thread priority values; the lower the
+ * value, the higher the priority.
+ *
+ * @param x Priority level within the cooperative range, from 0 (highest) to
+ *          @kconfig{CONFIG_NUM_COOP_PRIORITIES} - 1 (lowest).
+ * @return Thread priority value usable with thread creation APIs.
+ */
 #define K_PRIO_COOP(x) (-(CONFIG_NUM_COOP_PRIORITIES - (x)))
+
+/**
+ * @brief Compute a preemptible thread priority.
+ *
+ * Preemptible priorities are non-negative thread priority values; the lower
+ * the value, the higher the priority.
+ *
+ * @param x Priority level within the preemptible range, from 0 (highest) to
+ *          @kconfig{CONFIG_NUM_PREEMPT_PRIORITIES} - 1 (lowest).
+ * @return Thread priority value usable with thread creation APIs.
+ */
 #define K_PRIO_PREEMPT(x) (x)
 
+/** Highest (most urgent) thread priority value. */
 #define K_HIGHEST_THREAD_PRIO (-CONFIG_NUM_COOP_PRIORITIES)
+/** Lowest (least urgent) thread priority value, used by the idle thread. */
 #define K_LOWEST_THREAD_PRIO CONFIG_NUM_PREEMPT_PRIORITIES
+/** Priority of the idle thread. */
 #define K_IDLE_PRIO K_LOWEST_THREAD_PRIO
+/** Highest priority usable by application threads. */
 #define K_HIGHEST_APPLICATION_THREAD_PRIO (K_HIGHEST_THREAD_PRIO)
+/** Lowest priority usable by application threads. */
 #define K_LOWEST_APPLICATION_THREAD_PRIO (K_LOWEST_THREAD_PRIO - 1)
+
+/** @} */
 
 #ifdef CONFIG_POLL
 #define Z_POLL_EVENT_OBJ_INIT(obj) \
@@ -88,10 +129,15 @@ struct k_mem_partition;
 struct k_futex;
 struct k_event;
 
+/**
+ * @brief Types of execution contexts.
+ *
+ * @ingroup kernel_apis
+ */
 enum execution_context_types {
-	K_ISR = 0,
-	K_COOP_THREAD,
-	K_PREEMPT_THREAD,
+	K_ISR = 0,        /**< Executing in an interrupt service routine. */
+	K_COOP_THREAD,    /**< Executing in a cooperative thread. */
+	K_PREEMPT_THREAD, /**< Executing in a preemptible thread. */
 };
 
 /* private, used by k_poll and k_work_poll */
@@ -124,6 +170,12 @@ static inline void
 #endif
 }
 
+/**
+ * @brief Callback type used by thread iteration functions.
+ *
+ * @param thread Thread currently being visited by the iteration.
+ * @param user_data User data passed to the iteration function.
+ */
 typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
 				   void *user_data);
 
@@ -272,7 +324,13 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * */
 #define K_ESSENTIAL (BIT(0))
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 #define K_FP_IDX 1
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 /**
  * @brief FPU registers are managed by context switch
  *
@@ -314,6 +372,13 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
 #define K_CALLBACK_STATE (BIT(4))
 
 /**
+ * @cond INTERNAL_HIDDEN
+ */
+#define K_DSP_IDX 13
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+/**
  * @brief DSP registers are managed by context switch
  *
  * @details
@@ -322,9 +387,15 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * restore the contents of these registers when scheduling the thread.
  * No effect if @kconfig{CONFIG_DSP_SHARING} is not enabled.
  */
-#define K_DSP_IDX 13
 #define K_DSP_REGS (BIT(K_DSP_IDX))
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+#define K_AGU_IDX 14
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 /**
  * @brief AGU registers are managed by context switch
  *
@@ -333,7 +404,6 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * memory and DSP feature. Often used with @kconfig{CONFIG_ARC_AGU_SHARING}.
  * No effect if @kconfig{CONFIG_ARC_AGU_SHARING} is not enabled.
  */
-#define K_AGU_IDX 14
 #define K_AGU_REGS (BIT(K_AGU_IDX))
 
 /**
