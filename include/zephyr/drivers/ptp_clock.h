@@ -35,12 +35,58 @@ extern "C" {
 #define PTP_CLOCK_NAME "PTP_CLOCK"
 #endif
 
+/**
+ * @def_driverbackendgroup{PTP Clock,ptp_clock_interface}
+ * @{
+ */
+
+/**
+ * @brief Set the time of the PTP clock.
+ * See ptp_clock_set() for argument description.
+ */
+typedef int (*ptp_clock_api_set_t)(const struct device *dev, struct net_ptp_time *tm);
+
+/**
+ * @brief Get the time of the PTP clock.
+ * See ptp_clock_get() for argument description.
+ */
+typedef int (*ptp_clock_api_get_t)(const struct device *dev, struct net_ptp_time *tm);
+
+/**
+ * @brief Adjust the PTP clock time.
+ * See ptp_clock_adjust() for argument description.
+ */
+typedef int (*ptp_clock_api_adjust_t)(const struct device *dev, int increment);
+
+/**
+ * @brief Adjust the PTP clock rate ratio based on its nominal frequency.
+ * See ptp_clock_rate_adjust() for argument description.
+ */
+typedef int (*ptp_clock_api_rate_adjust_t)(const struct device *dev, double ratio);
+
+/**
+ * @driver_ops{PTP Clock}
+ */
 __subsystem struct ptp_clock_driver_api {
-	int (*set)(const struct device *dev, struct net_ptp_time *tm);
-	int (*get)(const struct device *dev, struct net_ptp_time *tm);
-	int (*adjust)(const struct device *dev, int increment);
-	int (*rate_adjust)(const struct device *dev, double ratio);
+	/**
+	 * @driver_ops_mandatory @copybrief ptp_clock_set
+	 */
+	ptp_clock_api_set_t set;
+	/**
+	 * @driver_ops_mandatory @copybrief ptp_clock_get
+	 */
+	ptp_clock_api_get_t get;
+	/**
+	 * @driver_ops_mandatory @copybrief ptp_clock_adjust
+	 */
+	ptp_clock_api_adjust_t adjust;
+	/**
+	 * @driver_ops_mandatory @copybrief ptp_clock_rate_adjust
+	 */
+	ptp_clock_api_rate_adjust_t rate_adjust;
 };
+
+/** @} */
 
 /**
  * @brief Set the time of the PTP clock.
