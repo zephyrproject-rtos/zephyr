@@ -119,6 +119,6 @@ print("    z_xtensa_vecbase = .;")
 print("    KEEP(*(.WindowVectors.text));")
 for s in sects:
     print(f"    KEEP(*(.{s}Vector.literal));")
-    print(f"    . = 0x{offsets[s]:x};")
+    print(f"    . = z_xtensa_vecbase + 0x{offsets[s]:x};")
     print(f"    KEEP(*(.{s}Vector.text));")
 print("  }")
