@@ -521,7 +521,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 				continue;
 			}
 
-			if (REGIONS_OVERLAP_ON(x, y, sh_offset)) {
+			if (ldr->hdr.e_type != ET_REL && REGIONS_OVERLAP_ON(x, y, sh_offset)) {
 				LOG_ERR("Region %d ELF file range (%#zx-%#zx) "
 					"overlaps with %d (%#zx-%#zx)",
 					i, REGION_BOT(x, sh_offset), REGION_TOP(x, sh_offset),
@@ -794,30 +794,40 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 			elf_shdr_t *shdr = ext->sect_hdrs + shndx;
 			uintptr_t section_addr = shdr->sh_addr;
 
-			if (ldr_parm->pre_located &&
-			    (!ldr_parm->section_detached || !ldr_parm->section_detached(shdr))) {
-				sym_tab->syms[j].addr = (uint8_t *)sym.st_value +
-					(ldr->hdr.e_type == ET_REL ? section_addr : 0);
-			} else {
-				const void *base;
-
-				base = llext_loaded_sect_ptr(ldr, ext, shndx);
+			if (ldr->hdr.e_type == ET_REL) {
+				const void *base = llext_loaded_sect_ptr(ldr, ext, shndx);
 				if (!base) {
-					/* If the section is not mapped, try to peek.
-					 * Be noisy about it, since this is addressing
-					 * data that was missed by llext_map_sections.
-					 */
 					base = llext_peek(ldr, shdr->sh_offset);
-					if (base) {
-						LOG_DBG("section %d peeked at %p", shndx, base);
-					} else {
+					if (!base) {
 						LOG_ERR("No data for section %d", shndx);
 						return -ENOTSUP;
 					}
 				}
+				sym_tab->syms[j].addr = (uint8_t *)base + sym.st_value;
+			} else {
+				if (ldr_parm->pre_located &&
+				    (!ldr_parm->section_detached || !ldr_parm->section_detached(shdr))) {
+					sym_tab->syms[j].addr = (uint8_t *)sym.st_value;
+				} else {
+					const void *base;
 
-				sym_tab->syms[j].addr = (uint8_t *)base + sym.st_value -
-					(ldr->hdr.e_type == ET_REL ? 0 : section_addr);
+					base = llext_loaded_sect_ptr(ldr, ext, shndx);
+					if (!base) {
+						/* If the section is not mapped, try to peek.
+						 * Be noisy about it, since this is addressing
+						 * data that was missed by llext_map_sections.
+						 */
+						base = llext_peek(ldr, shdr->sh_offset);
+						if (base) {
+							LOG_DBG("section %d peeked at %p", shndx, base);
+						} else {
+							LOG_ERR("No data for section %d", shndx);
+							return -ENOTSUP;
+						}
+					}
+
+					sym_tab->syms[j].addr = (uint8_t *)base + sym.st_value - section_addr;
+				}
 			}
 
 			LOG_DBG("function symbol %d name %s addr %p",
