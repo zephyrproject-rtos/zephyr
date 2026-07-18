@@ -2,6 +2,113 @@
 
 .. _zephyr_3.7:
 
+.. _zephyr_3.7.3:
+
+Zephyr 3.7.3
+############
+
+This is an LTS maintenance release with fixes. It is primarily a
+security-hardening release: the bulk of the changes add missing bounds,
+length and permission checks and fix memory-safety issues (use-after-free,
+buffer overflows/underflows, leaks and race conditions) across the
+networking stack, Bluetooth host and controller, kernel user-space system
+call handlers, file systems, LoRaWAN and the device management subsystems.
+
+Security Vulnerability Related
+******************************
+
+The following CVE is addressed by this release:
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+Mbed TLS
+********
+
+Mbed TLS was updated to version 3.6.6 (from 3.6.5). The release notes can be
+found at:
+https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.6
+
+Mbed TLS 3.6 is an LTS release that will be supported
+with security and bug fixes until at least March 2027.
+
+Issues fixed
+************
+
+These GitHub issues were addressed since the previous 3.7.2 tagged release:
+
+* :github:`87223` - net: if: NET_EVENT_L4_CONNECTED is no longer sent when !IPV4_ACD and/or !IPV6_DAD
+* :github:`99527` - subsys: net/lib/ptp: wrong use of CONTAINER_OF with struct ptp_tlv_mgmt *
+* :github:`103831` - Add mcxc242 lpuart dma support (async api)
+* :github:`105540` - STM32G0C1RET3 (Zephyr WWDG): EWI Callback Not Invoked
+* :github:`106895` - [v3.7-branch] update Mbed TLS to 3.6.6
+* :github:`106991` - net: tcp: use-after-free in net_tcp_foreach() causes bus fault
+* :github:`107900` - net: ipv6: Neighbor Discovery packets validation is incorrect
+* :github:`107920` - net: icmp: assert triggered sending icmp echo response with CONFIG_NET_STATISTICS=y
+* :github:`107928` - [backport] net: lib: http_server: Fix in websocket must be back ported to 3.7 and 4.3
+* :github:`108793` - kernel: init: main thread not tagged K_FP_REGS when CONFIG_FPU && CONFIG_FPU_SHARING
+* :github:`108835` - adin2111: Communication gets stuck after high bandwidth transfer
+* :github:`108846` - Validate DNS rdata length in dns_unpack_answer
+* :github:`108963` - net: lwm2m: URI string may be unterminated in FW pull mode
+* :github:`109053` - native_sim: FUSE files are opened write-only
+* :github:`109063` - The issue in Bluetooth Mesh solicitation PDU parsing
+* :github:`109128` - fs: backend file resource leak when fs_open with FS_O_TRUNC fails during truncate
+* :github:`109133` - Undefined bitwise shift behavior in PTP port management interval handling
+* :github:`109257` - [backport] xtensa: mpu: fix arch_buffer_validate() if overflow
+* :github:`109620` - [backport] Bluetooth: Controller: Fix OOB read in ISOAL
+* :github:`109942` - Security advisory GHSA-8hrf-pfww-83v9 / CVE-2025-12890 fix not available for Zephyr 3.7
+* :github:`109957` - Kernel: Backport k_poll() memory leak fix to 3.7
+* :github:`109958` - Kernel: userspace: Backport validate_kernel_object type/init to 3.7
+* :github:`109960` - backport: kernel: add kobj NULL check in k_thread_name_copy()
+* :github:`110032` - [backport] fs: ext2: validate directory entry structure before traversal #108226
+* :github:`110645` - [Backport] net: sockets: recvmsg() ancillary-data capacity check undercounts cmsg size
+* :github:`110762` - bluetooth: classic: hfp_hf: cind_handle_values() writes past ind_table on a long +CIND list
+* :github:`110854` - bluetooth: classic: rfcomm: session stuck and L2CAP channel leaked when both sides disconnect simultaneously
+* :github:`110866` - net: dns: `.local` suffix check reads past the end of the hostname string
+* :github:`110915` - pb-adv bearer resets the protocol timer unconditionally
+* :github:`110956` - Bluetooth: ISO: bt_iso_recv() pulls the SDU header without checking buf->len
+* :github:`110967` - Bluetooth: BAP: Broadcast Assistant shares one att_buf across all connections
+* :github:`111016` - kernel: userspace: dynamic kernel-object list freed under a different lock than it is traversed
+* :github:`111031` - tests/drivers/can/api/drivers.can.api fails on mutex
+* :github:`111032` - tests/net/lib/tls_credentials/net.tls_credentials.trusted_tfm fails on mutex
+* :github:`111216` - [Backport v3.7-branch] Failed to backport #109875
+* :github:`111238` - net: http: server: spurious zsock_poll() return of 0 leaks sockets and corrupts the kernel timeout list
+* :github:`111404` - bluetooth: host: classic: l2cap_br: conf req/rsp validate minimum size against the wrong length
+* :github:`111407` - kernel: userspace: thread_idx_alloc() races on SMP and can hand out duplicate thread indices
+* :github:`111416` - logging: z_vrfy_log_filter_set() accepts a negative src_id and indexes outside log_dynamic
+* :github:`111427` - bluetooth: host: gatt_write_ccc_rsp() uses subscription params after releasing them
+* :github:`111431` - net: ip: forwarded packets keep their original TTL / hop-limit (no decrement on the routing path)
+* :github:`111534` - Bluetooth: GATT: notify/indicate checks the declaration's permissions, not the value's, when passed a characteristic declaration
+* :github:`111936` - fs: ext2: Avoid using 0 value inode and block per group in calculations
+* :github:`112204` - net: sockets: recvmsg() ancillary write checks total buffer, not room at the chosen slot
+* :github:`112211` - Bluetooth: BAP: UC: NULL stream->group dereference on QoS Configured notification
+* :github:`112325` - Out-of-bounds read in PTP receive path: unchecked 4-bit message type indexes
+* :github:`112435` - kernel: k_queue_peek_head()/k_queue_peek_tail() dereference a node without holding the queue lock
+* :github:`112441` - mgmt: updatehub: socket leak, NULL deref, and concurrency bugs in the OTA client
+* :github:`112616` - net: sockets: userspace sendmsg/recvmsg verifiers re-read live user msghdr after copying it
+* :github:`112743` - drivers: dai: intel: alh: get_properties reads out of bounds for an invalid stream_id
+* :github:`112782` - mgmt/settings: heap buffers leaked on access-hook and OOM paths in settings read/write/delete
+* :github:`112838` - Bluetooth: Host: GATT: parse_read_std_char_desc() loops forever when a Read By Type Response has len 0
+* :github:`112927` - lorawan: frag_transport: DataFragment index 0 underflows to an out-of-bounds decoder write
+* :github:`113039` - drivers: modem: hl7800 and wncm14a2a AT-response handlers write past fixed stack buffers
+* :github:`113043` - net: 6lo: get_ihpc_inlined_size() reads past da_inline_size_table for reserved destination modes
+* :github:`113048` - net: ipv6: handle_ra_6co() underflows memset length for context_len > 128
+* :github:`113216` - The issue in Bluetooth Mesh solicitation PDU decryption
+* :github:`113266` - kernel: thread: thread_obj_validate() fails to oops a denied k_thread_join/k_thread_abort
+* :github:`113295` - settings: nvs: NUL terminator is written past the end of the name buffer
+* :github:`113303` - wifi: airoc: TX net_buf is leaked when whd_network_send_ethernet_data() fails
+* :github:`113307` - mbox: userspace: z_vrfy_mbox_send validates msg->data then forwards the mutable userspace pointer
+* :github:`113324` - fs: ext2: mount does not validate superblock s_log_block_size
+* :github:`113346` - bluetooth: audio: has: notification work runs with NULL attributes when a bonded peer reconnects before bt_has_register()
+* :github:`113350` - fs: ext2: block-bitmap validation reads past the bitmap buffer for an oversized s_blocks_count
+* :github:`113354` - lorawan: services parse downlink commands without checking remaining payload length
+* :github:`113443` - net: lwm2m: JSON get_string() writes the NUL terminator one byte past the buffer
+* :github:`113684` - [backport] net: ipv6: Zero reachable time from Router Advertisement assertion
+* :github:`113698` - bluetooth: classic: l2cap: BR/EDR receive path processes data on channels that are not yet established
+* :github:`113729` - sd: sdio: byte-I/O loop spins forever when a card reports max_blk_size == 0
+* :github:`113735` - net: sockets: tls: concurrent client sockets race on the shared session cache
+* :github:`113748` - net: sockets/tls: TLS_DTLS_PEER_CID_VALUE getsockopt writes past the caller's buffer
+
 .. _zephyr_3.7.2:
 
 Zephyr 3.7.2
