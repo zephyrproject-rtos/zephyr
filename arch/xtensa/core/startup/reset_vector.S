@@ -79,6 +79,9 @@ _ResetHandler:
 	 *  section is in place (which is sometimes only after unpacking).
 	 */
 	.begin	no-absolute-literals
+#ifdef __clang__
+	.begin	auto-litpools
+#endif
 
 	/*
 	 * If we have dynamic cache way support, init the caches as soon
@@ -708,6 +711,9 @@ unpackdone:
 	.size	__start, . - __start
 #endif
 
+#ifdef __clang__
+	.end	auto-litpools
+#endif
 	.text
 	.global xthals_hw_configid0, xthals_hw_configid1
 	.global xthals_release_major, xthals_release_minor

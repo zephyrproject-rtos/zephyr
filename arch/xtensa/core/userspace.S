@@ -114,7 +114,8 @@ _not_checking_user_context:
 	l32i a2, a1, 0
 	l32i a2, a2, ___xtensa_irq_bsa_t_a2_OFFSET
 	movi a0, K_SYSCALL_LIMIT
-	bgeu a2, a0, _bad_syscall
+	bltu a2, a0, _id_ok
+	j _bad_syscall
 
 _id_ok:
 	/* Find the function handler for the given syscall id. */
