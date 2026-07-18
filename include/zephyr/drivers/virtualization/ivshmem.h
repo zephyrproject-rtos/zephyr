@@ -26,60 +26,151 @@ extern "C" {
 #define IVSHMEM_V2_PROTO_UNDEFINED	0x0000
 #define IVSHMEM_V2_PROTO_NET		0x0001
 
+/**
+ * @def_driverbackendgroup{Inter-VM Shared Memory,ivshmem}
+ * @{
+ */
+
+/**
+ * @brief Callback API to get the inter-VM shared memory.
+ * See ivshmem_get_mem() for argument description.
+ */
 typedef size_t (*ivshmem_get_mem_f)(const struct device *dev,
 				    uintptr_t *memmap);
 
+/**
+ * @brief Callback API to get our VM ID.
+ * See ivshmem_get_id() for argument description.
+ */
 typedef uint32_t (*ivshmem_get_id_f)(const struct device *dev);
 
+/**
+ * @brief Callback API to get the number of interrupt vectors we can use.
+ * See ivshmem_get_vectors() for argument description.
+ */
 typedef uint16_t (*ivshmem_get_vectors_f)(const struct device *dev);
 
+/**
+ * @brief Callback API to interrupt another VM.
+ * See ivshmem_int_peer() for argument description.
+ */
 typedef int (*ivshmem_int_peer_f)(const struct device *dev,
 				  uint32_t peer_id, uint16_t vector);
 
+/**
+ * @brief Callback API to register a vector notification (interrupt) handler.
+ * See ivshmem_register_handler() for argument description.
+ */
 typedef int (*ivshmem_register_handler_f)(const struct device *dev,
 					  struct k_poll_signal *signal,
 					  uint16_t vector);
 
-#ifdef CONFIG_IVSHMEM_V2
+#if defined(CONFIG_IVSHMEM_V2) || defined(__DOXYGEN__)
 
+/**
+ * @brief Callback API to get the ivshmem read/write section.
+ * See ivshmem_get_rw_mem_section() for argument description.
+ */
 typedef size_t (*ivshmem_get_rw_mem_section_f)(const struct device *dev,
 					       uintptr_t *memmap);
 
+/**
+ * @brief Callback API to get the ivshmem output section for a peer.
+ * See ivshmem_get_output_mem_section() for argument description.
+ */
 typedef size_t (*ivshmem_get_output_mem_section_f)(const struct device *dev,
 						   uint32_t peer_id,
 						   uintptr_t *memmap);
 
+/**
+ * @brief Callback API to get the state value of a peer.
+ * See ivshmem_get_state() for argument description.
+ */
 typedef uint32_t (*ivshmem_get_state_f)(const struct device *dev,
 					uint32_t peer_id);
 
+/**
+ * @brief Callback API to set our state.
+ * See ivshmem_set_state() for argument description.
+ */
 typedef int (*ivshmem_set_state_f)(const struct device *dev,
 				   uint32_t state);
 
+/**
+ * @brief Callback API to get the maximum number of peers supported.
+ * See ivshmem_get_max_peers() for argument description.
+ */
 typedef uint32_t (*ivshmem_get_max_peers_f)(const struct device *dev);
 
+/**
+ * @brief Callback API to get the protocol used by this ivshmem instance.
+ * See ivshmem_get_protocol() for argument description.
+ */
 typedef uint16_t (*ivshmem_get_protocol_f)(const struct device *dev);
 
+/**
+ * @brief Callback API to set the interrupt enablement for our VM.
+ * See ivshmem_enable_interrupts() for argument description.
+ */
 typedef int (*ivshmem_enable_interrupts_f)(const struct device *dev,
 					   bool enable);
 
 #endif /* CONFIG_IVSHMEM_V2 */
 
+/**
+ * @driver_ops{Inter-VM Shared Memory}
+ */
 __subsystem struct ivshmem_driver_api {
+	/** @driver_ops_mandatory @copybrief ivshmem_get_mem */
 	ivshmem_get_mem_f get_mem;
+	/** @driver_ops_mandatory @copybrief ivshmem_get_id */
 	ivshmem_get_id_f get_id;
+	/** @driver_ops_mandatory @copybrief ivshmem_get_vectors */
 	ivshmem_get_vectors_f get_vectors;
+	/** @driver_ops_mandatory @copybrief ivshmem_int_peer */
 	ivshmem_int_peer_f int_peer;
+	/** @driver_ops_mandatory @copybrief ivshmem_register_handler */
 	ivshmem_register_handler_f register_handler;
-#ifdef CONFIG_IVSHMEM_V2
+#if defined(CONFIG_IVSHMEM_V2) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_mandatory @copybrief ivshmem_get_rw_mem_section
+	 * @kconfig_dep{CONFIG_IVSHMEM_V2}
+	 */
 	ivshmem_get_rw_mem_section_f get_rw_mem_section;
+	/**
+	 * @driver_ops_mandatory @copybrief ivshmem_get_output_mem_section
+	 * @kconfig_dep{CONFIG_IVSHMEM_V2}
+	 */
 	ivshmem_get_output_mem_section_f get_output_mem_section;
+	/**
+	 * @driver_ops_mandatory @copybrief ivshmem_get_state
+	 * @kconfig_dep{CONFIG_IVSHMEM_V2}
+	 */
 	ivshmem_get_state_f get_state;
+	/**
+	 * @driver_ops_mandatory @copybrief ivshmem_set_state
+	 * @kconfig_dep{CONFIG_IVSHMEM_V2}
+	 */
 	ivshmem_set_state_f set_state;
+	/**
+	 * @driver_ops_mandatory @copybrief ivshmem_get_max_peers
+	 * @kconfig_dep{CONFIG_IVSHMEM_V2}
+	 */
 	ivshmem_get_max_peers_f get_max_peers;
+	/**
+	 * @driver_ops_mandatory @copybrief ivshmem_get_protocol
+	 * @kconfig_dep{CONFIG_IVSHMEM_V2}
+	 */
 	ivshmem_get_protocol_f get_protocol;
+	/**
+	 * @driver_ops_mandatory @copybrief ivshmem_enable_interrupts
+	 * @kconfig_dep{CONFIG_IVSHMEM_V2}
+	 */
 	ivshmem_enable_interrupts_f enable_interrupts;
 #endif
 };
+
+/** @} */
 
 /**
  * @brief Get the inter-VM shared memory
@@ -176,7 +267,7 @@ static inline int z_impl_ivshmem_register_handler(const struct device *dev,
 	return DEVICE_API_GET(ivshmem, dev)->register_handler(dev, signal, vector);
 }
 
-#ifdef CONFIG_IVSHMEM_V2
+#if defined(CONFIG_IVSHMEM_V2) || defined(__DOXYGEN__)
 
 /**
  * @brief Get the ivshmem read/write section (ivshmem-v2 only)
