@@ -255,10 +255,15 @@ struct tee_shm {
 };
 
 /**
+ * @def_driverbackendgroup{TEE,tee_interface}
+ * @{
+ */
+
+/**
  *
  * @brief Callback API to get current tee version
  *
- * See @a tee_version_get() for argument definitions.
+ * See @a tee_get_version() for argument definitions.
  */
 typedef int (*tee_get_version_t)(const struct device *dev, struct tee_version_info *info);
 
@@ -329,17 +334,31 @@ typedef int (*tee_suppl_recv_t)(const struct device *dev, uint32_t *func, unsign
 typedef int (*tee_suppl_send_t)(const struct device *dev, unsigned int ret, unsigned int num_params,
 				struct tee_param *param);
 
+/**
+ * @driver_ops{TEE}
+ */
 __subsystem struct tee_driver_api {
+	/** @driver_ops_optional @copybrief tee_get_version */
 	tee_get_version_t get_version;
+	/** @driver_ops_optional @copybrief tee_open_session */
 	tee_open_session_t open_session;
+	/** @driver_ops_optional @copybrief tee_close_session */
 	tee_close_session_t close_session;
+	/** @driver_ops_optional @copybrief tee_cancel */
 	tee_cancel_t cancel;
+	/** @driver_ops_optional @copybrief tee_invoke_func */
 	tee_invoke_func_t invoke_func;
+	/** @driver_ops_optional @copybrief tee_shm_register */
 	tee_shm_register_t shm_register;
+	/** @driver_ops_optional @copybrief tee_shm_unregister */
 	tee_shm_unregister_t shm_unregister;
+	/** @driver_ops_optional @copybrief tee_suppl_recv */
 	tee_suppl_recv_t suppl_recv;
+	/** @driver_ops_optional @copybrief tee_suppl_send */
 	tee_suppl_send_t suppl_send;
 };
+
+/** @} */
 
 /**
  * @brief Get the current TEE version info
