@@ -3943,6 +3943,13 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
 struct k_ipi_work;
 
 
+/**
+ * @brief IPI work item handler function type.
+ *
+ * Invoked at ISR level on each CPU targeted by k_ipi_work_add().
+ *
+ * @param work IPI work item being processed.
+ */
 typedef void (*k_ipi_func_t)(struct k_ipi_work *work);
 
 /**
