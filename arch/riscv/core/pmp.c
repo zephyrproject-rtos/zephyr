@@ -951,8 +951,9 @@ void z_riscv_pmp_kernelmode_enable(struct k_thread *thread)
 
 	/* Write our m-mode MPP entries */
 	if (thread->arch.m_mode_pmp_end_index > global_end_index) {
+		/* Clear trailing entries from the previous thread */
 		write_pmp_entries(global_end_index, thread->arch.m_mode_pmp_end_index,
-				  false /* no need to clear to the end */, PMP_M_MODE(thread));
+				  true, PMP_M_MODE(thread));
 	}
 
 #if defined(CONFIG_PMP_DATA_EXECUTION_PREVENTION) && defined(CONFIG_USERSPACE)
