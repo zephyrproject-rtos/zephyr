@@ -17,6 +17,7 @@
 #include <kernel_internal.h>
 #include <inttypes.h>
 #include <zephyr/arch/exception.h>
+#include <zephyr/arch/arm/arm-m-switch.h>
 #include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
