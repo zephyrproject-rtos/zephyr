@@ -5813,10 +5813,16 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer);
  */
 __syscall void k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t buffer_size);
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 enum pipe_flags {
 	PIPE_FLAG_OPEN = BIT(0),
 	PIPE_FLAG_RESET = BIT(1),
 };
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /**
  * @brief Kernel pipe structure
