@@ -88,20 +88,10 @@ static struct pm_notifier button_pm_notifier = {
 	.state_exit = on_pm_state_exit,
 };
 #else
-/* LPTMR0 (the system-timer companion) reaches the core as a WUU internal-module
- * wakeup source.
+/* The timer variant relies on LPTMR0, which the counter driver arms as a
+ * wakeup source on its own.
  */
-static const struct wuc_dt_spec timer_wakeup = WUC_DT_SPEC_GET(DT_NODELABEL(lptmr0));
 #endif /* CONFIG_SAMPLE_S2RAM_WAKEUP_BUTTON */
-
-static void arm_wakeup_source(void)
-{
-#if defined(CONFIG_SAMPLE_S2RAM_WAKEUP_BUTTON)
-	(void)wuc_enable_wakeup_source_dt(&button);
-#else
-	(void)wuc_enable_wakeup_source_dt(&timer_wakeup);
-#endif
-}
 
 static void app_thread(void *p1, void *p2, void *p3)
 {
@@ -123,12 +113,12 @@ static void app_thread(void *p1, void *p2, void *p3)
 		/* Let the UART finish shifting out the line above before DPD cuts its clock. */
 		k_busy_wait(2000);
 
-#if defined(CONFIG_SOC_SERIES_MCXAXX6) || defined(CONFIG_SOC_SERIES_MCXAXX7)
-		/* On MCXAxx6 / MCXAxx7 the Deep Power Down wakeup reset clears the
-		 * WUU wakeup-source configuration, so the source has to be re-armed
-		 * before every entry.
+#if defined(CONFIG_SAMPLE_S2RAM_WAKEUP_BUTTON) &&				\
+	(defined(CONFIG_SOC_SERIES_MCXAXX6) || defined(CONFIG_SOC_SERIES_MCXAXX7))
+		/* MCXAxx6 / MCXAxx7 clear the WUU config on the DPD wakeup reset,
+		 * so re-arm the button before each entry.
 		 */
-		arm_wakeup_source();
+		(void)wuc_enable_wakeup_source_dt(&button);
 #endif
 
 		pm_state_force(0U, &(struct pm_state_info){PM_STATE_SUSPEND_TO_RAM, 0, 0});
@@ -162,13 +152,11 @@ int main(void)
 	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 
-	/* The application selects and enables its own wakeup source through the
-	 * WUC subsystem; the SoC power code does not hard-code one.
-	 */
 #if defined(CONFIG_SAMPLE_S2RAM_WAKEUP_BUTTON)
+	/* Arm the button as the wakeup source. */
 	pm_notifier_register(&button_pm_notifier);
+	(void)wuc_enable_wakeup_source_dt(&button);
 #endif
-	arm_wakeup_source();
 
 	k_thread_create(&app_thread_data, app_stack, APP_STACK_SIZE, app_thread,
 			NULL, NULL, NULL, APP_PRIORITY, 0, K_NO_WAIT);
