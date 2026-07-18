@@ -220,6 +220,21 @@ static inline void arm_m_exc_tail(void)
 #endif
 }
 
+#ifdef CONFIG_USE_SWITCH
+/**
+ * @brief Kernel housekeeping when exiting an exception/interrupt (switch-based).
+ *
+ * Inline wrapper around arm_m_exc_tail(). Provided here (rather than in
+ * <zephyr/arch/arm/cortex_m/exception.h>) so that the exception header does not
+ * have to pull in the context-switch machinery and <kernel/thread.h>.
+ * See z_arm_int_exit().
+ */
+static inline void z_arm_exc_exit(void)
+{
+	arm_m_exc_tail();
+}
+#endif
+
 /**
  * @brief Core Cortex-M context switch routine.
  *
