@@ -9,8 +9,8 @@ set_ifndef(LINKERFLAGPREFIX -Wl)
 if((${CMAKE_LINKER} STREQUAL "${CROSS_COMPILE}ld.bfd") OR
    ${GNULD_LINKER_IS_BFD})
   # ld.bfd was found so let's explicitly use that for linking, see #32237
-  list(APPEND TOOLCHAIN_LD_FLAGS -fuse-ld=bfd)
-  list(APPEND CMAKE_REQUIRED_FLAGS -fuse-ld=bfd)
+  # list(APPEND TOOLCHAIN_LD_FLAGS -fuse-ld=bfd)
+  # list(APPEND CMAKE_REQUIRED_FLAGS -fuse-ld=bfd)
   string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 endif()
 

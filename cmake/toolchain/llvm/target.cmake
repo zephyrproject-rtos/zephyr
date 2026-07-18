@@ -119,6 +119,9 @@ elseif("${ARCH}" STREQUAL "xtensa")
   if(CONFIG_COMPILER_CODEGEN_VLIW_ENABLED)
     # Add +flix strictly to compile steps to prevent ld from misinterpreting +flix as an object file
     add_compile_options("$<$<COMPILE_LANGUAGE:C,CXX,ASM>:SHELL:-Xclang -target-feature -Xclang +flix>")
+  elseif(CONFIG_COMPILER_CODEGEN_VLIW_DISABLED)
+    # Add -flix strictly to compile steps to override wrapper scripts or default CPU settings
+    add_compile_options("$<$<COMPILE_LANGUAGE:C,CXX,ASM>:SHELL:-Xclang -target-feature -Xclang -flix>")
   endif()
   # Don't force auto-litpools inline in text sections; place in separate .literal sections instead
 
