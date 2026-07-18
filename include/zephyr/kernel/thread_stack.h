@@ -350,6 +350,7 @@ struct _thread_hw_shadow_stack_static {
  *
  * @param sym Thread stack symbol name
  * @param size Size of the stack memory region
+ * @satisfies ZEP-SRS-1-35
  */
 #define K_KERNEL_STACK_DEFINE(sym, size) \
 	Z_KERNEL_STACK_DEFINE_IN(sym, size, __kstackmem); \
@@ -612,6 +613,7 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @param sym Thread stack symbol name
  * @param size Size of the stack memory region
  * @satisfies ZEP-SRS-1-8
+ * @satisfies ZEP-SRS-1-35
  */
 #define K_THREAD_STACK_DEFINE(sym, size) \
 	Z_THREAD_STACK_DEFINE_IN(sym, size, __stackmem)
