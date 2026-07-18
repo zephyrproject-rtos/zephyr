@@ -78,26 +78,34 @@ static int xtensa_elf_relocate(struct llext_loader *ldr, struct llext *ext,
 	case R_XTENSA_SLOT0_OP:
 		/* Apparently only actionable with LOCAL bindings */
 		;
-		elf_sym_t rsym;
-		int ret = llext_seek(ldr, ldr->sects[LLEXT_MEM_SYMTAB].sh_offset +
-				     ELF_R_SYM(rel->r_info) * sizeof(elf_sym_t));
+		uintptr_t link_addr;
 
-		if (!ret) {
-			ret = llext_read(ldr, &rsym, sizeof(elf_sym_t));
-		}
-		if (ret) {
-			LOG_ERR("Failed to read a symbol table entry, LLEXT linking might fail.");
-			return ret;
-		}
+		if (stb == STB_GLOBAL) {
+			link_addr = addr;
+		} else {
+			elf_sym_t rsym;
+			int ret = llext_seek(ldr, ldr->sects[LLEXT_MEM_SYMTAB].sh_offset +
+					     ELF_R_SYM(rel->r_info) * sizeof(elf_sym_t));
 
-		/*
-		 * So far in all observed use-cases
-		 * llext_loaded_sect_ptr(ldr, ext, rsym.st_shndx) was already
-		 * available as the "addr" argument of this function, supplied
-		 * by arch_elf_relocate_local() from its non-STT_SECTION branch.
-		 */
-		uintptr_t link_addr = (uintptr_t)llext_loaded_sect_ptr(ldr, ext, rsym.st_shndx) +
-			rsym.st_value + rel->r_addend;
+			if (!ret) {
+				ret = llext_read(ldr, &rsym, sizeof(elf_sym_t));
+			}
+			if (ret) {
+				LOG_ERR("Failed to read a symbol table entry, LLEXT linking might fail.");
+				return ret;
+			}
+
+			uintptr_t sec_addr;
+			if (rsym.st_shndx != SHN_UNDEF && rsym.st_shndx < ext->sect_cnt) {
+				elf_shdr_t *shdr = ext->sect_hdrs + rsym.st_shndx;
+				sec_addr = shdr->sh_addr &&
+					(!ldr_parm || !ldr_parm->section_detached || !ldr_parm->section_detached(shdr)) ?
+					shdr->sh_addr : (uintptr_t)llext_loaded_sect_ptr(ldr, ext, rsym.st_shndx);
+			} else {
+				sec_addr = 0;
+			}
+			link_addr = sec_addr + rsym.st_value + rel->r_addend;
+		}
 		ssize_t value = (link_addr - (((uintptr_t)got_entry + 3) & ~3)) >> 2;
 
 		/* Check the opcode */
@@ -143,15 +151,26 @@ int arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext, const e
 	int type = ELF32_R_TYPE(rel->r_info);
 	uintptr_t sh_addr;
 
-	if (ELF_ST_TYPE(sym->st_info) == STT_SECTION) {
-		elf_shdr_t *shdr = ext->sect_hdrs + sym->st_shndx;
-
-		/* shdr->sh_addr is NULL when not built for a specific address */
-		sh_addr = shdr->sh_addr &&
-			(!ldr_parm->section_detached || !ldr_parm->section_detached(shdr)) ?
-			shdr->sh_addr : (uintptr_t)llext_loaded_sect_ptr(ldr, ext, sym->st_shndx);
+	if (ldr->hdr.e_type == ET_REL) {
+		if (sym->st_shndx != SHN_UNDEF && sym->st_shndx < ext->sect_cnt) {
+			elf_shdr_t *shdr = ext->sect_hdrs + sym->st_shndx;
+			uintptr_t sec_addr = shdr->sh_addr &&
+				(!ldr_parm->section_detached || !ldr_parm->section_detached(shdr)) ?
+				shdr->sh_addr : (uintptr_t)llext_loaded_sect_ptr(ldr, ext, sym->st_shndx);
+			sh_addr = sec_addr + sym->st_value;
+		} else {
+			sh_addr = sym->st_value;
+		}
 	} else {
-		sh_addr = ldr->sects[LLEXT_MEM_TEXT].sh_addr;
+		if (ELF_ST_TYPE(sym->st_info) == STT_SECTION) {
+			elf_shdr_t *shdr = ext->sect_hdrs + sym->st_shndx;
+
+			sh_addr = shdr->sh_addr &&
+				(!ldr_parm->section_detached || !ldr_parm->section_detached(shdr)) ?
+				shdr->sh_addr : (uintptr_t)llext_loaded_sect_ptr(ldr, ext, sym->st_shndx);
+		} else {
+			sh_addr = ldr->sects[LLEXT_MEM_TEXT].sh_addr;
+		}
 	}
 
 	return xtensa_elf_relocate(ldr, ext, rel, sh_addr, rel_addr, type,
