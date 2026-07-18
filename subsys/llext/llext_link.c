@@ -328,14 +328,16 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 			continue;
 		}
 
-		uint8_t *rel_addr = (uint8_t *)ext->mem[LLEXT_MEM_TEXT] -
-			ldr->sects[LLEXT_MEM_TEXT].sh_offset;
+		uint8_t *rel_addr;
 
 		if (tgt) {
 			/* Relocatable / partially linked ELF. */
-			rel_addr += rela.r_offset + tgt->sh_offset;
+			unsigned int tgt_sect_idx = tgt - ext->sect_hdrs;
+			rel_addr = (uint8_t *)llext_loaded_sect_ptr(ldr, ext, tgt_sect_idx) + rela.r_offset;
 		} else {
 			/* Shared / dynamically linked ELF */
+			rel_addr = (uint8_t *)ext->mem[LLEXT_MEM_TEXT] -
+				ldr->sects[LLEXT_MEM_TEXT].sh_offset;
 			ssize_t offset = llext_file_offset(ldr, rela.r_offset);
 
 			if (offset < 0) {

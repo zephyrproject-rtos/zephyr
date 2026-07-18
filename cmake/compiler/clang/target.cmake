@@ -102,6 +102,7 @@ if(NOT "${ARCH}" STREQUAL "posix")
 endif()
 
 # Override the default implementation in target_template.cmake.
+if(NOT COMMAND compiler_set_linker_properties)
 function(compiler_set_linker_properties)
 
   compiler_simple_options(simple_options)
@@ -136,3 +137,4 @@ function(compiler_set_linker_properties)
 
   set_linker_property(PROPERTY rt_library "-l${library_name}")
 endfunction()
+endif()

@@ -22,6 +22,11 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp23 "-std=c++23"
 
 set_compiler_property(PROPERTY optimization_fast -O3 -ffast-math)
 
+# Clang uses -flto=thin (parallel) and -flto=full (single-threaded) instead
+# of the GCC-specific -flto=auto and -flto=1 forms.
+set_compiler_property(PROPERTY optimization_lto -flto=thin)
+set_compiler_property(PROPERTY optimization_lto_st -flto=full)
+
 #######################################################
 # This section covers flags related to warning levels #
 #######################################################
@@ -149,6 +154,13 @@ set_compiler_property(PROPERTY diagnostic -fcolor-diagnostics)
 # clang flag to disable macro backtrace in diagnostics (can't fully disable it, so limit to 1)
 set_compiler_property(PROPERTY no_track_macro_expansion "-fmacro-backtrace-limit=1")
 
-set_compiler_property(PROPERTY no_global_merge "-mno-global-merge")
+# -mno-global-merge is only supported by Clang on ARM targets.
+# On other architectures (e.g. Xtensa) it triggers:
+#   warning: argument unused during compilation: '-mno-global-merge'
+if("${ARCH}" STREQUAL "arm" OR "${ARCH}" STREQUAL "arm64")
+  set_compiler_property(PROPERTY no_global_merge "-mno-global-merge")
+else()
+  set_compiler_property(PROPERTY no_global_merge "")
+endif()
 
 set_compiler_property(PROPERTY specs)
