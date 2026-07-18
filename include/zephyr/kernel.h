@@ -6730,34 +6730,71 @@ enum _poll_states_bits {
 
 /* Public polling API */
 
-/* public - values for k_poll_event.type bitfield */
+/**
+ * @name Poll event types
+ * Values for the k_poll_event.type bitfield.
+ * @{
+ */
+
+/** Event is ignored by k_poll(). */
 #define K_POLL_TYPE_IGNORE 0
+/** Poll for a raised poll signal. */
 #define K_POLL_TYPE_SIGNAL Z_POLL_TYPE_BIT(_POLL_TYPE_SIGNAL)
+/** Poll for a semaphore becoming available. */
 #define K_POLL_TYPE_SEM_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_SEM_AVAILABLE)
+/** Poll for data becoming available in a queue. */
 #define K_POLL_TYPE_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_DATA_AVAILABLE)
+/** Poll for data becoming available in a FIFO. */
 #define K_POLL_TYPE_FIFO_DATA_AVAILABLE K_POLL_TYPE_DATA_AVAILABLE
+/** Poll for data becoming available in a message queue. */
 #define K_POLL_TYPE_MSGQ_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_MSGQ_DATA_AVAILABLE)
+/** Poll for data becoming available in a pipe. */
 #define K_POLL_TYPE_PIPE_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_PIPE_DATA_AVAILABLE)
 
-/* public - polling modes */
+/** @} */
+
+/** @brief Modes of operation of a poll event. */
 enum k_poll_modes {
-	/* polling thread does not take ownership of objects when available */
+	/** Polling thread is notified of object availability, but does not
+	 * take ownership of the object.
+	 */
 	K_POLL_MODE_NOTIFY_ONLY = 0,
 
-	K_POLL_NUM_MODES
+	K_POLL_NUM_MODES /**< Number of poll modes. */
 };
 
-/* public - values for k_poll_event.state bitfield */
+/**
+ * @name Poll event states
+ * Values for the k_poll_event.state bitfield.
+ * @{
+ */
+
+/** Condition being polled for has not occurred yet. */
 #define K_POLL_STATE_NOT_READY 0
+/** Poll signal was raised. */
 #define K_POLL_STATE_SIGNALED Z_POLL_STATE_BIT(_POLL_STATE_SIGNALED)
+/** Semaphore became available. */
 #define K_POLL_STATE_SEM_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_SEM_AVAILABLE)
+/** Data became available in a queue. */
 #define K_POLL_STATE_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_DATA_AVAILABLE)
+/** Data became available in a FIFO. */
 #define K_POLL_STATE_FIFO_DATA_AVAILABLE K_POLL_STATE_DATA_AVAILABLE
+/** Data became available in a message queue. */
 #define K_POLL_STATE_MSGQ_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_MSGQ_DATA_AVAILABLE)
+/** Data became available in a pipe. */
 #define K_POLL_STATE_PIPE_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_PIPE_DATA_AVAILABLE)
+/** Wait on the polled object was cancelled, e.g. by k_queue_cancel_wait(). */
 #define K_POLL_STATE_CANCELLED Z_POLL_STATE_BIT(_POLL_STATE_CANCELLED)
 
-/* public - poll signal object */
+/** @} */
+
+/**
+ * @brief Poll signal object
+ *
+ * A poll signal is a kernel object that can be raised from threads or ISRs
+ * with k_poll_signal_raise(), and polled on with k_poll() using
+ * @ref K_POLL_TYPE_SIGNAL.
+ */
 struct k_poll_signal {
 /**
  * @cond INTERNAL_HIDDEN
@@ -6778,6 +6815,11 @@ struct k_poll_signal {
 	int result;
 };
 
+/**
+ * @brief Statically initialize a poll signal.
+ *
+ * @param obj Name of the struct k_poll_signal instance being initialized.
+ */
 #define K_POLL_SIGNAL_INITIALIZER(obj) \
 	{ \
 	.poll_events = SYS_DLIST_STATIC_INIT(&obj.poll_events), \
@@ -6818,19 +6860,34 @@ struct k_poll_event {
 
 	/** per-type data */
 	union {
-		/* The typed_* fields below are used by K_POLL_EVENT_*INITIALIZER() macros to ensure
-		 * type safety of polled objects.
+		/* The _typed_* aliases below are used by the K_POLL_EVENT_*INITIALIZER() macros to
+		 * ensure type safety of polled objects.
 		 */
-		void *obj, *typed_K_POLL_TYPE_IGNORE;
-		struct k_poll_signal *signal, *typed_K_POLL_TYPE_SIGNAL;
-		struct k_sem *sem, *typed_K_POLL_TYPE_SEM_AVAILABLE;
-		struct k_fifo *fifo, *typed_K_POLL_TYPE_FIFO_DATA_AVAILABLE;
-		struct k_queue *queue, *typed_K_POLL_TYPE_DATA_AVAILABLE;
-		struct k_msgq *msgq, *typed_K_POLL_TYPE_MSGQ_DATA_AVAILABLE;
-		struct k_pipe *pipe, *typed_K_POLL_TYPE_PIPE_DATA_AVAILABLE;
+		/** Generic object pointer. */
+		void *obj, *_typed_K_POLL_TYPE_IGNORE;
+		/** Poll signal being polled. */
+		struct k_poll_signal *signal, *_typed_K_POLL_TYPE_SIGNAL;
+		/** Semaphore being polled. */
+		struct k_sem *sem, *_typed_K_POLL_TYPE_SEM_AVAILABLE;
+		/** FIFO being polled. */
+		struct k_fifo *fifo, *_typed_K_POLL_TYPE_FIFO_DATA_AVAILABLE;
+		/** Queue being polled. */
+		struct k_queue *queue, *_typed_K_POLL_TYPE_DATA_AVAILABLE;
+		/** Message queue being polled. */
+		struct k_msgq *msgq, *_typed_K_POLL_TYPE_MSGQ_DATA_AVAILABLE;
+		/** Pipe being polled. */
+		struct k_pipe *pipe, *_typed_K_POLL_TYPE_PIPE_DATA_AVAILABLE;
 	};
 };
 
+/**
+ * @brief Statically initialize a poll event.
+ *
+ * @param _event_type Type of the event; one of the K_POLL_TYPE_xxx values.
+ * @param _event_mode Mode of operation; one of the enum k_poll_modes values.
+ * @param _event_obj Address of the kernel object or poll signal being polled,
+ *                   matching the event type.
+ */
 #define K_POLL_EVENT_INITIALIZER(_event_type, _event_mode, _event_obj) \
 	{ \
 	.poller = NULL, \
@@ -6839,10 +6896,19 @@ struct k_poll_event {
 	.mode = _event_mode, \
 	.unused = 0, \
 	{ \
-		.typed_##_event_type = _event_obj, \
+		._typed_##_event_type = _event_obj, \
 	}, \
 	}
 
+/**
+ * @brief Statically initialize a poll event, with a user tag.
+ *
+ * @param _event_type Type of the event; one of the K_POLL_TYPE_xxx values.
+ * @param _event_mode Mode of operation; one of the enum k_poll_modes values.
+ * @param _event_obj Address of the kernel object or poll signal being polled,
+ *                   matching the event type.
+ * @param event_tag Opaque user-specified tag.
+ */
 #define K_POLL_EVENT_STATIC_INITIALIZER(_event_type, _event_mode, _event_obj, \
 					event_tag) \
 	{ \
@@ -6852,7 +6918,7 @@ struct k_poll_event {
 	.mode = _event_mode, \
 	.unused = 0, \
 	{ \
-		.typed_##_event_type = _event_obj, \
+		._typed_##_event_type = _event_obj, \
 	}, \
 	}
 
