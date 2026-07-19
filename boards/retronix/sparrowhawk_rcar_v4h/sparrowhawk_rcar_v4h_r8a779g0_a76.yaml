@@ -1,0 +1,11 @@
+identifier: sparrowhawk_rcar_v4h/r8a779g0/a76
+name: Retronix Sparrow Hawk with Renesas R-Car V4H Cortex A76
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+supported:
+  - pinctrl
+  - clock_control
+  - uart
