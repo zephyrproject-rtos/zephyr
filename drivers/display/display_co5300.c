@@ -438,7 +438,6 @@ static int co5300_init(const struct device *dev)
 	struct display_cmds lcm_init_settings = {0};
 	uint8_t *ptr_to_cmd_register = 0;
 	uint8_t *ptr_to_last_cmd = 0;
-	uint8_t cmd_params = 0;
 	uint8_t cmd_param_size = 0;
 	uint8_t cmd_register = 0;
 	int ret = 0;
@@ -470,11 +469,10 @@ static int co5300_init(const struct device *dev)
 		 */
 		cmd_register = *ptr_to_cmd_register++;
 		cmd_param_size = *ptr_to_cmd_register++;
-		cmd_params = *ptr_to_cmd_register;
-		ptr_to_cmd_register += cmd_param_size;
 
-		ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
-				cmd_register, &cmd_params, cmd_param_size);
+		ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel, cmd_register,
+					 ptr_to_cmd_register, cmd_param_size);
+		ptr_to_cmd_register += cmd_param_size;
 		if (ret < 0) {
 			return ret;
 		}
