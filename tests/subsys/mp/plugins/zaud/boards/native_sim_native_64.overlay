@@ -1,0 +1,12 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		/* I2S receiver the source element captures from. */
+		i2s-codec-rx = &i2s_rx0;
+	};
+};
