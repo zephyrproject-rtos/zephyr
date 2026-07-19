@@ -29,7 +29,7 @@ static inline bool is_channel_valid(const struct device *dev, uint32_t ch)
 {
 	const struct mbox_plic_conf *conf = dev->config;
 
-	return (ch <= conf->channel_max) && conf->irq_sources[ch];
+	return (ch < conf->channel_max) && conf->irq_sources[ch];
 }
 
 static int mbox_plic_send(const struct device *dev, uint32_t ch, const struct mbox_msg *msg)
