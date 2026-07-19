@@ -80,7 +80,8 @@ static void mlx90394_convert_magn(enum mlx90394_reg_config_val config, struct se
 
 static void mlx90394_convert_temp(struct sensor_value *val, uint8_t sample_l, uint8_t sample_h)
 {
-	int64_t conv_val = sample_l | (sample_h << 8) * MLX90394_MICRO_CELSIUS_PER_BIT;
+	int64_t conv_val = (int16_t)((uint16_t)sample_l | (uint16_t)(sample_h << 8)) *
+			   MLX90394_MICRO_CELSIUS_PER_BIT;
 
 	val->val1 = conv_val / 1000000;                 /* C */
 	val->val2 = (conv_val - (val->val1 * 1000000)); /* uC */
