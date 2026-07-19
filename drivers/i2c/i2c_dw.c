@@ -1615,7 +1615,7 @@ static int i2c_dw_initialize(const struct device *dev)
 	static const struct i2c_dw_rom_config i2c_config_dw_##n = {                                \
 		I2C_CONFIG_REG_INIT(n).config_func = i2c_config_##n,                               \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
-		.sda_hold_tx = COND_CODE_1(DT-INST-NODE-HAS-PROP(n, i2c_sda_hold_time_ns),         \
+		.sda_hold_tx = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, i2c_sda_hold_time_ns),         \
 				 (HOLD_TIME_TO_TICKS(DT_INST_PROP(n, i2c_sda_hold_time_ns))),      \
 				 (DT_INST_PROP_OR(n, sda_hold_tx, SDA_HOLD_INVALID))),             \
 		.sda_hold_rx = DT_INST_PROP_OR(n, sda_hold_rx, SDA_HOLD_INVALID),                  \
