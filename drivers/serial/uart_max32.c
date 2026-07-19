@@ -899,7 +899,7 @@ static int api_rx_enable(const struct device *dev, uint8_t *buf, size_t len, int
 	data->async.rx.buf = buf;
 	data->async.rx.len = len;
 
-	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
+	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	dma_cfg.dma_callback = uart_max32_async_rx_callback;
 	dma_cfg.user_data = (void *)dev;
 	dma_cfg.dma_slot = config->rx_dma.slot;
