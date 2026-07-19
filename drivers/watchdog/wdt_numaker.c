@@ -54,7 +54,7 @@ static uint32_t wdt_numaker_calc_ms(const struct device *dev, const uint32_t tou
 
 	if (clock_control_get_rate(cfg->clk_dev, (clock_control_subsys_t)&scc_subsys, &clk_freq) !=
 		    0 ||
-	    clk_freq != 0) {
+	    clk_freq == 0) {
 		return 0;
 	}
 
