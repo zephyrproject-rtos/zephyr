@@ -116,7 +116,7 @@ static int mtch9010_set_reference(const struct device *dev, char *temp_buffer)
 			return -EIO;
 		}
 
-		if (mtch9010_timeout_receive(dev, temp_buffer, sizeof(temp_buffer),
+		if (mtch9010_timeout_receive(dev, temp_buffer, MTCH9010_INTERNAL_BUFFER_SIZE,
 					     CONFIG_MTCH9010_SAMPLE_DELAY_TIMEOUT_MS) == 0) {
 			LOG_INST_ERR(config->log, "Reference value timed "
 						  "out during averaging");
