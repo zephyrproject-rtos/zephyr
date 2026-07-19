@@ -10,6 +10,7 @@
 #include <zephyr/drivers/mdio.h>
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/net/mdio.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(xlnx_gem_mdio, CONFIG_MDIO_LOG_LEVEL);
@@ -81,6 +82,18 @@ enum eth_xlnx_mdc_clock_divider {
 	MDC_DIVIDER_224
 };
 
+static inline bool xlnx_gem_mdio_is_idle(mm_reg_t reg_base)
+{
+	return (sys_read32(reg_base + ETH_XLNX_GEM_NWSR_OFFSET) &
+		ETH_XLNX_GEM_NWSR_MDIO_IDLE_BIT) != 0;
+}
+
+static bool xlnx_gem_mdio_poll_idle(mm_reg_t reg_base)
+{
+	return WAIT_FOR(xlnx_gem_mdio_is_idle(reg_base), CONFIG_MDIO_XLNX_GEM_IDLE_TIMEOUT_US,
+			k_busy_wait(1));
+}
+
 /**
  * @brief GEM MDIO transfer function
  *
@@ -105,7 +118,6 @@ static int xlnx_gem_mdio_transfer(const struct device *dev, uint8_t prtad, uint8
 	const struct device *mac_dev = (const struct device *)dev->config;
 
 	uint32_t reg_val;
-	uint32_t poll_cnt = 0;
 
 	/*
 	 * MDIO read and write operations as described in Zynq-7000 TRM,
@@ -114,20 +126,9 @@ static int xlnx_gem_mdio_transfer(const struct device *dev, uint8_t prtad, uint8
 
 	mm_reg_t reg_base = DEVICE_MMIO_GET(mac_dev);
 
-	/*
-	 * Wait until gem.net_status[phy_mgmt_idle] == 1 before issuing the
-	 * current command.
-	 */
-	do {
-		if (poll_cnt++ > 0) {
-			k_busy_wait(CONFIG_MDIO_XLNX_GEM_POLL_DELAY);
-		}
-		reg_val = sys_read32(reg_base + ETH_XLNX_GEM_NWSR_OFFSET);
-	} while ((reg_val & ETH_XLNX_GEM_NWSR_MDIO_IDLE_BIT) == 0 &&
-		 poll_cnt < CONFIG_MDIO_XLNX_GEM_MAX_POLL_RETRIES);
-	if (poll_cnt == CONFIG_MDIO_XLNX_GEM_MAX_POLL_RETRIES) {
-		LOG_ERR("%s: MDIO operation 0x%1X, PHY address %hhu, register address "
-			"%hhu timed out", dev->name, (uint32_t)op, prtad, regad);
+	if (!xlnx_gem_mdio_poll_idle(reg_base)) {
+		LOG_ERR("%s: MDIO bus idle timeout pre-op (op 0x%1X, PHY %hhu, reg 0x%02x)",
+			dev->name, (uint32_t)op, prtad, regad);
 		return -ETIMEDOUT;
 	}
 
@@ -144,21 +145,9 @@ static int xlnx_gem_mdio_transfer(const struct device *dev, uint8_t prtad, uint8
 
 	sys_write32(reg_val, reg_base + ETH_XLNX_GEM_PHY_MAINTENANCE_OFFSET);
 
-	/*
-	 * Wait until gem.net_status[phy_mgmt_idle] == 1 -> current command
-	 * completed.
-	 */
-	poll_cnt = 0;
-	do {
-		if (poll_cnt++ > 0) {
-			k_busy_wait(CONFIG_MDIO_XLNX_GEM_POLL_DELAY);
-		}
-		reg_val = sys_read32(reg_base + ETH_XLNX_GEM_NWSR_OFFSET);
-	} while ((reg_val & ETH_XLNX_GEM_NWSR_MDIO_IDLE_BIT) == 0 &&
-		 poll_cnt < CONFIG_MDIO_XLNX_GEM_MAX_POLL_RETRIES);
-	if (poll_cnt == CONFIG_MDIO_XLNX_GEM_MAX_POLL_RETRIES) {
-		LOG_ERR("%s: MDIO operation 0x%1X, PHY address %hhu, register address "
-			"%hhu timed out", dev->name, (uint32_t)op, prtad, regad);
+	if (!xlnx_gem_mdio_poll_idle(reg_base)) {
+		LOG_ERR("%s: MDIO bus idle timeout post-op (op 0x%1X, PHY %hhu, reg 0x%02x)",
+			dev->name, (uint32_t)op, prtad, regad);
 		return -ETIMEDOUT;
 	}
 
