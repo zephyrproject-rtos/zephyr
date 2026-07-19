@@ -938,12 +938,15 @@ static int dma_mcux_lpc_get_status(const struct device *dev, uint32_t channel,
 {
 	const struct dma_mcux_lpc_config *config = dev->config;
 	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
-	int8_t virtual_channel = dev_data->channel_index[channel];
-	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
+	int8_t virtual_channel;
+	struct channel_data *data;
 
-	if (channel > config->num_of_channels) {
+	if (channel >= config->num_of_channels) {
 		return -EINVAL;
 	}
+
+	virtual_channel = dev_data->channel_index[channel];
+	data = DEV_CHANNEL_DATA(dev, virtual_channel);
 
 	/* If channel is actually busy or the virtual channel is just not set up */
 	if (data->busy && (virtual_channel != -1)) {
