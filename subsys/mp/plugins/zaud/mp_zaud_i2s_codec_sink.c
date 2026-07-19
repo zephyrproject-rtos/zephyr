@@ -330,6 +330,7 @@ int mp_zaud_i2s_codec_sink_chainfn(struct mp_pad *pad, struct net_buf *in_buf,
 				*out_buf = NULL;
 				return -EIO;
 			}
+			audio_codec_start_output(zaud_i2s_codec_sink->codec_dev);
 			zaud_i2s_codec_sink->started = true;
 		}
 	}
