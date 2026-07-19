@@ -50,6 +50,8 @@ static int lsm9ds0_gyro_set_fs_raw(const struct device *dev, uint8_t fs)
 	}
 
 #if defined(CONFIG_LSM9DS0_GYRO_FULLSCALE_RUNTIME)
+	struct lsm9ds0_gyro_data *data = dev->data;
+
 	data->fs = fs;
 #endif
 
