@@ -339,7 +339,7 @@ static bool i2c_set_baudrate(const struct device *dev, uint32_t bitrate, uint32_
 
 		i2c_regs->I2CM.SERCOM_CTRLA =
 			((i2c_regs->I2CM.SERCOM_CTRLA &
-			  (~SERCOM_I2CM_CTRLA_SPEED_Msk | ~SERCOM_I2CM_CTRLA_SDAHOLD_Msk)) |
+			  ~(SERCOM_I2CM_CTRLA_SPEED_Msk | SERCOM_I2CM_CTRLA_SDAHOLD_Msk)) |
 			 (SERCOM_I2CM_CTRLA_SPEED(i2c_speed_mode) |
 			  SERCOM_I2CM_CTRLA_SDAHOLD(sda_hold_time)));
 	}
