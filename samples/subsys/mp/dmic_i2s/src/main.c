@@ -46,7 +46,7 @@ static struct mp_caps_filter caps_filter;
 
 int main(void)
 {
-	int gain_val = 90; /* Set gain to 90% (0.9x amplification) */
+	int gain_val = CONFIG_SAMPLE_AUDIO_GAIN_PERCENT;
 	int ret = 0;
 
 	MP_ELEMENT_INIT(&pipe, mp_pipeline_init, PIPE_ID);
