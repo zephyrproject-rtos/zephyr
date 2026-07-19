@@ -56,6 +56,16 @@ Boards
   instead. ``stm32_min_dev_defconfig`` was renamed accordingly to
   :file:`stm32_min_dev_stm32f103x8_defconfig`.
 
+* The Adafruit ESP32 Feather board target ``adafruit_feather_esp32`` has been renamed to
+  :zephyr:board:`adafruit_feather_esp32_v2` (``adafruit_feather_esp32_v2``) to match the
+  manufacturer's naming: Adafruit ESP32 Feather V2. The old ``adafruit_feather_esp32``
+  board target is deprecated and now automatically redirects to the new target with a warning.
+  Update board targets from ``adafruit_feather_esp32/esp32/procpu`` and
+  ``adafruit_feather_esp32/esp32/appcpu`` to ``adafruit_feather_esp32_v2/esp32/procpu`` and
+  ``adafruit_feather_esp32_v2/esp32/appcpu`` respectively. The new board defines no revisions,
+  so drop the ``@2`` revision suffix if it was specified: ``adafruit_feather_esp32@2`` is not
+  redirected and fails with an invalid board revision error.
+
 * :zephyr:board:`cy8ckit_041s_max`: the console moved from SCB2 to SCB1 on the same pins (P0.4,
   P0.5), and its node label changed from ``uart2`` to ``uart1``. The ``spi1`` node on SCB1
   (P2.0 to P2.2) was removed. SCB2 is now ``arduino_spi`` on the Arduino header pins D11 to D13
