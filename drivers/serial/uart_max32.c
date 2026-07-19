@@ -1220,7 +1220,7 @@ static DEVICE_API(uart, uart_max32_driver_api) = {
 		.uart_conf.data_bits = DT_INST_ENUM_IDX(_num, data_bits),                          \
 		.uart_conf.stop_bits = DT_INST_ENUM_IDX(_num, stop_bits),                          \
 		.uart_conf.flow_ctrl =                                                             \
-			DT_INST_PROP_OR(index, hw_flow_control, UART_CFG_FLOW_CTRL_NONE),          \
+			DT_INST_PROP_OR(_num, hw_flow_control, UART_CFG_FLOW_CTRL_NONE),           \
 		MAX32_UART_DMA_INIT(_num) IF_ENABLED(                                              \
 			MAX32_UART_USE_IRQ, (.irq_config_func = uart_max32_irq_init_##_num,))};    \
 	static struct max32_uart_data max32_uart_data##_num = {                                    \
