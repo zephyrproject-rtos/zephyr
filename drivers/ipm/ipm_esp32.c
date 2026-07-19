@@ -110,7 +110,7 @@ static int esp32_ipm_send(const struct device *dev, int wait, uint32_t id,
 		return -EINVAL;
 	}
 
-	if (dev_data->shm_size < size) {
+	if ((dev_data->shm_size / 2) < size) {
 		LOG_ERR("Not enough memory in IPM channel");
 		return -ENOMEM;
 	}
@@ -179,7 +179,7 @@ static int esp32_ipm_max_data_size_get(const struct device *dev)
 {
 	struct esp32_ipm_data *data = (struct esp32_ipm_data *)dev->data;
 
-	return data->shm_size;
+	return data->shm_size / 2;
 }
 
 static uint32_t esp_32_ipm_max_id_val_get(const struct device *dev)
