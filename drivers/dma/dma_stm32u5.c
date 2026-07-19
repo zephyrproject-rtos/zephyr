@@ -626,7 +626,6 @@ static int dma_stm32_configure(const struct device *dev,
 #endif /* CONFIG_STM32_HAL2 */
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
-
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	if (dma == HPDMA1) {
 		/* Overwrite the config in case of HPDMA */
@@ -823,6 +822,24 @@ static int dma_stm32_init(const struct device *dev)
 		LOG_ERR("clock op failed\n");
 		return -EIO;
 	}
+
+#if defined(CONFIG_SOC_SERIES_STM32N6X) && defined(CONFIG_ARM_SECURE_FIRMWARE)
+	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
+
+	if (dma == HPDMA1) {
+		/* HPDMA supports per-channel CID configuration.
+		 * Configure each channel to use CID1 as do other
+		 * bus masters (see soc/st/stm32/stm32n6x/soc.c).
+		 * Without this configuration, transfers would appear
+		 * to complete but silently fail to move any data.
+		 */
+		for (uint32_t i = 0; i < config->max_streams; i++) {
+			LL_DMA_SetStaticIsolation(dma, dma_stm32_id_to_stream(i),
+						  LL_DMA_CHANNEL_STATIC_CID_1);
+			LL_DMA_EnableIsolation(dma, dma_stm32_id_to_stream(i));
+		}
+	}
+#endif /* CONFIG_SOC_SERIES_STM32N6X && CONFIG_ARM_SECURE_FIRMWARE */
 
 	config->config_irq(dev);
 
