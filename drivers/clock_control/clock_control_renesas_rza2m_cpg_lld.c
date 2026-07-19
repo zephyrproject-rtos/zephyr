@@ -336,7 +336,7 @@ int rza2m_cpg_set_sub_clock_divider(const struct device *dev, enum rza2m_cp_sub_
 	case 0x333: /* "VALID":do nothing, fall through */
 		break;
 	default:
-		return !EINVAL;
+		return -EINVAL;
 	}
 
 	/* Update local divisor variables based on the clock type */
