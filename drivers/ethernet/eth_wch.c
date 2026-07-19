@@ -393,12 +393,59 @@ static void eth_isr(const struct device *dev)
 	}
 }
 
-static int eth_wch_start(const struct device *dev, struct net_if *iface __unused)
+static int eth_mac_init(const struct device *dev)
 {
 	const struct eth_wch_config *config = dev->config;
 	ETH_TypeDef *eth = config->regs;
 
+	eth->DMABMR |= ETH_DMABMR_SR;
+	while ((eth->DMABMR & ETH_DMABMR_SR) != 0) {
+	}
+
+	/* Configure ethernet MAC */
+	eth->MACCR = 0x0;
+#if defined(CONFIG_ETH_WCH_HW_CHECKSUM)
+	eth->MACCR |= ETH_MACCR_IPCO;
+#endif /* defined(CONFIG_ETH_WCH_HW_CHECKSUM) */
+
+	eth->MACHTHR = 0x0;
+	eth->MACHTLR = 0x0;
+	eth->MACFCR = 0x0;
+	eth->MACVLANTR = 0x0;
+
+	eth->DMAOMR = ETH_DMAOMR_TSF | ETH_DMAOMR_FEF | ETH_DMAOMR_FUGF;
+
+	/* Disable unwanted MMC interrupts */
+	eth->MMCTIMR = ETH_MMCTIMR_TGFM;
+	eth->MMCRIMR = ETH_MMCRIMR_RGUFM | ETH_MMCRIMR_RFCEM;
+
+	eth->DMAIER =
+		(ETH_DMA_IT_NIS | ETH_DMA_IT_R | ETH_DMA_IT_T | ETH_DMA_IT_AIS | ETH_DMA_IT_RBU);
+
+	if (strcmp(config->connection_type, "internal") == 0) {
+		eth->MACCR |= ETH_MACCR_PR;
+		eth->DMAIER |= ETH_DMA_IT_PHYLINK;
+	}
+
+	init_tx_dma_desc(eth);
+	init_rx_dma_desc(eth);
+
+	return 0;
+}
+
+static int eth_wch_start(const struct device *dev, struct net_if *iface __unused)
+{
+	const struct eth_wch_config *config = dev->config;
+	struct eth_wch_data *data = dev->data;
+	ETH_TypeDef *eth = config->regs;
+
 	LOG_DBG("Starting ETH HAL driver");
+
+	/* DMA engine on WCH seems to handle disconnects differently to the
+	   equivalent ST peripheral. ETH_DMA reset on start seems to fix the issue */
+	eth_mac_init(dev);
+	set_mac_addr(config->regs, data->mac_addr, iface);
+	setup_mac_filter(config->regs);
 
 	eth->MACCR |= ETH_MACCR_TE | ETH_MACCR_RE;
 	eth->DMAOMR |= ETH_DMAOMR_FTF | ETH_DMAOMR_ST | ETH_DMAOMR_SR;
@@ -473,47 +520,6 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 	net_eth_carrier_set(data->iface, state->is_up);
 }
 
-static int eth_mac_init(const struct device *dev)
-{
-	const struct eth_wch_config *config = dev->config;
-	ETH_TypeDef *eth = config->regs;
-
-	eth->DMABMR |= ETH_DMABMR_SR;
-	while (eth->DMABMR & ETH_DMABMR_SR) {
-		;
-	}
-
-	/* Configure ethernet MAC */
-	eth->MACCR = 0x0;
-#if defined(CONFIG_ETH_WCH_HW_CHECKSUM)
-	eth->MACCR |= ETH_MACCR_IPCO;
-#endif /* defined(CONFIG_ETH_WCH_HW_CHECKSUM) */
-
-	eth->MACHTHR = 0x0;
-	eth->MACHTLR = 0x0;
-	eth->MACFCR = 0x0;
-	eth->MACVLANTR = 0x0;
-
-	eth->DMAOMR = ETH_DMAOMR_TSF | ETH_DMAOMR_FEF | ETH_DMAOMR_FUGF;
-
-	/* Disable unwanted MMC interrupts */
-	eth->MMCTIMR = ETH_MMCTIMR_TGFM;
-	eth->MMCRIMR = ETH_MMCRIMR_RGUFM | ETH_MMCRIMR_RFCEM;
-
-	eth->DMAIER =
-		(ETH_DMA_IT_NIS | ETH_DMA_IT_R | ETH_DMA_IT_T | ETH_DMA_IT_AIS | ETH_DMA_IT_RBU);
-
-	if (strcmp(config->connection_type, "internal") == 0) {
-		eth->MACCR |= ETH_MACCR_PR;
-		eth->DMAIER |= ETH_DMA_IT_PHYLINK;
-	}
-
-	init_tx_dma_desc(eth);
-	init_rx_dma_desc(eth);
-
-	return 0;
-}
-
 static void eth_wch_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -570,10 +576,8 @@ static enum ethernet_hw_caps eth_wch_get_capabilities(const struct device *dev _
 		;
 }
 
-static int eth_wch_set_config(const struct device *dev,
-			      struct net_if *iface __unused,
-			      enum ethernet_config_type type,
-			      const struct ethernet_config *config)
+static int eth_wch_set_config(const struct device *dev, struct net_if *iface __unused,
+			      enum ethernet_config_type type, const struct ethernet_config *config)
 {
 	struct eth_wch_data *data = dev->data;
 	const struct eth_wch_config *dev_config = dev->config;
