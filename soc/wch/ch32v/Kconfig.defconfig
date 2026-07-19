@@ -6,4 +6,7 @@ if SOC_FAMILY_CH32V
 
 rsource "*/Kconfig.defconfig"
 
+config FLASH_FILL_BUFFER_SIZE
+	default 256 if FLASH
+
 endif # SOC_FAMILY_CH32V
