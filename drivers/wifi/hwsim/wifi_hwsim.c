@@ -181,7 +181,7 @@ static int hwsim_mgmt_ap_enable(const struct device *dev, struct net_if *iface,
 	struct hwsim_radio *radio = (struct hwsim_radio *)dev->data;
 	struct net_linkaddr *lla = net_if_get_link_addr(iface);
 
-	if (params == NULL || params->ssid == NULL ||
+	if (params == NULL || params->ssid == NULL || lla == NULL ||
 	    params->ssid_length == 0 || params->ssid_length > WIFI_SSID_MAX_LEN) {
 		wifi_mgmt_raise_ap_enable_result_event(radio->iface,
 						       WIFI_STATUS_AP_FAIL);
