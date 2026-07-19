@@ -2826,10 +2826,12 @@ int modem_cellular_init(const struct device *dev)
 			.user_data = data,
 			.receive_buf = data->chat_receive_buf,
 			.receive_buf_size = ARRAY_SIZE(data->chat_receive_buf),
-			.delimiter = data->chat_delimiter,
-			.delimiter_size = strlen(data->chat_delimiter),
-			.filter = data->chat_filter,
-			.filter_size = data->chat_filter ? strlen(data->chat_filter) : 0,
+			.delimiter = (const uint8_t *)config->vendor->chat_delimiter,
+			.delimiter_size = strlen(config->vendor->chat_delimiter),
+			.filter = (const uint8_t *)config->vendor->chat_filter,
+			.filter_size = config->vendor->chat_filter
+					       ? strlen(config->vendor->chat_filter)
+					       : 0,
 			.argv = data->chat_argv,
 			.argv_size = ARRAY_SIZE(data->chat_argv),
 			.unsol_matches = config->vendor->unsol_matches.matches,

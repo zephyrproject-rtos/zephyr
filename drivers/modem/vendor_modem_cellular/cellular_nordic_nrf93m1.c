@@ -115,6 +115,7 @@ static const struct modem_cellular_vendor_config nrf93m1_vendor = {
 		.size = ARRAY_SIZE(nordic_nrf93m1_unsol),
 	},
 	/* clang-format on */
+	.chat_delimiter = "\r\n",
 	.power_pulse_duration_ms = 100,
 	.reset_pulse_duration_ms = 500,
 	/* In practice RDY event short circuits this timeout */
@@ -127,7 +128,6 @@ static const struct modem_cellular_vendor_config nrf93m1_vendor = {
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 1500);     \
                                                                                                    \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
-		.chat_delimiter = "\r\n",                                                          \
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 	};                                                                                         \
                                                                                                    \

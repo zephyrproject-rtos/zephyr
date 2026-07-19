@@ -144,23 +144,6 @@ struct modem_cellular_data {
 	/* Modem chat */
 	struct modem_chat chat;
 	uint8_t chat_receive_buf[CONFIG_MODEM_CELLULAR_CHAT_BUFFER_SIZE];
-	/** @endcond */
-
-	/**
-	 * Command delimiter used by the modem, as a NULL-terminated string.
-	 *
-	 * Must not be NULL and must remain valid for the lifetime of the device.
-	 */
-	uint8_t *chat_delimiter;
-	/**
-	 * Characters filtered from modem responses, as a NULL-terminated string.
-	 *
-	 * May be NULL to disable filtering. A non-NULL string must remain valid for the lifetime of
-	 * the device.
-	 */
-	uint8_t *chat_filter;
-
-	/** @cond INTERNAL_HIDDEN */
 	uint8_t *chat_argv[32];
 	uint8_t script_failure_counter;
 	uint8_t recovery_count;
@@ -287,6 +270,19 @@ struct modem_cellular_vendor_config {
 		/** Number of elements in @c matches. */
 		uint16_t size;
 	} unsol_matches;
+	/**
+	 * Command delimiter used by the modem, as a NULL-terminated string.
+	 *
+	 * Must not be NULL and must remain valid for the lifetime of the device.
+	 */
+	const char *chat_delimiter;
+	/**
+	 * Characters filtered from modem responses, as a NULL-terminated string.
+	 *
+	 * May be NULL to disable filtering. A non-NULL string must remain valid for the lifetime of
+	 * the device.
+	 */
+	const char *chat_filter;
 	/** Duration of the modem power-key pulse, in milliseconds. */
 	uint16_t power_pulse_duration_ms;
 	/** Duration of the modem reset pulse, in milliseconds. */

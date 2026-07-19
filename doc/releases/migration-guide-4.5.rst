@@ -1058,6 +1058,12 @@ Ethernet
   ``pkt->timestamp`` must be updated or their RX timestamps will not be passed to
   socket applications. (:github:`110582`)
 
+Modem
+=====
+
+* Cellular modem chat delimiters and filters are now specified in
+  :c:struct:`modem_cellular_vendor_config`, not :c:struct:`modem_cellular_data`.
+
 PTP
 ===
 
