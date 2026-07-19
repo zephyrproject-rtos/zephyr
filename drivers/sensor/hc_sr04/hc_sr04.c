@@ -15,8 +15,6 @@ LOG_MODULE_REGISTER(HC_SR04, CONFIG_SENSOR_LOG_LEVEL);
 
 #define HC_SR04_MM_PER_MS     171
 
-static const uint32_t hw_cycles_per_ms = sys_clock_hw_cycles_per_sec() / 1000;
-
 struct hcsr04_data {
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
@@ -29,6 +27,11 @@ struct hcsr04_config {
 	struct gpio_dt_spec trigger_gpios;
 	struct gpio_dt_spec echo_gpios;
 };
+
+static inline uint32_t hw_cycles_per_ms(void)
+{
+	return sys_clock_hw_cycles_per_sec() / 1000U;
+}
 
 static void hcsr04_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins);
 
@@ -160,8 +163,7 @@ static int hcsr04_channel_get(const struct device *dev, enum sensor_channel chan
 		return -ENOTSUP;
 	}
 
-	distance_mm = HC_SR04_MM_PER_MS * atomic_get(&data->echo_high_cycles) /
-			hw_cycles_per_ms;
+	distance_mm = HC_SR04_MM_PER_MS * atomic_get(&data->echo_high_cycles) / hw_cycles_per_ms();
 	return sensor_value_from_milli(val, distance_mm);
 }
 
