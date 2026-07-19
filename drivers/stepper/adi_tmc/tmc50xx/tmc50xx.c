@@ -216,7 +216,7 @@ static void rampstat_work_handler(struct k_work *work)
 	const struct device *dev = data->dev;
 	const struct tmc50xx_config *config = dev->config;
 
-	for (uint8_t i = 0; i < config->num_stepper_drivers; i++) {
+	for (uint8_t i = 0; i < config->num_motion_controllers; i++) {
 		data->work_index = tmc50xx_stepper_ctrl_index(config->motion_controllers[i]);
 		rampstat_work(dev);
 	}
