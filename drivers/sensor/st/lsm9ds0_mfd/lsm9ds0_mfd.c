@@ -94,6 +94,8 @@ static inline int lsm9ds0_mfd_accel_set_fs_raw(const struct device *dev,
 	}
 
 #if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME)
+	struct lsm9ds0_mfd_data *data = dev->data;
+
 	data->accel_fs = fs;
 #endif
 
@@ -175,6 +177,8 @@ static inline int lsm9ds0_mfd_magn_set_fs_raw(const struct device *dev,
 	}
 
 #if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME)
+	struct lsm9ds0_mfd_data *data = dev->data;
+
 	data->magn_fs = fs;
 #endif
 
