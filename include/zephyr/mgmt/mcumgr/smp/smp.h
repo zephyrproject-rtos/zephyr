@@ -77,6 +77,18 @@ struct net_buf *smp_packet_alloc(void);
  */
 void smp_packet_free(struct net_buf *nb);
 
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief	Returns number of free MCUmgr network buffers. Can be enabled with
+ *		@kconfig{CONFIG_MCUMGR_TRANSPORT_NETBUF_AVAILABLE}.
+ *
+ * @return      Number of available MCUmgr network buffers
+ */
+size_t smp_packet_buffers_available(void);
+
+/** @endcond */
+
 /**
  * @brief Decodes, encodes, and transmits SMP packets.
  */
