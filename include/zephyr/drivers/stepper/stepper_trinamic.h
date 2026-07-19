@@ -118,6 +118,22 @@ struct tmc_ramp_generator_data {
 	}
 
 /**
+ * @brief Get TMC524x Stepper Ramp Generator data from DT instance
+ *
+ * @param node DT instance number
+ *
+ * @return struct tmc_ramp_generator_data
+ */
+#define TMC_RAMP_DT_SPEC_GET_TMC524X(node)					\
+	{									\
+		TMC_RAMP_DT_SPEC_GET_COMMON(DT_DRV_INST(node))			\
+		.tpowerdown = DT_INST_PROP(node, tpowerdown),			\
+		.tpwmthrs = DT_INST_PROP(node, tpwmthrs),			\
+		.tcoolthrs = DT_INST_PROP(node, tcoolthrs),			\
+		.thigh = DT_INST_PROP(node, thigh),				\
+	}
+
+/**
  * @brief Configure Trinamic Stepper Ramp Generator
  *
  * @param dev Pointer to the stepper motor controller instance

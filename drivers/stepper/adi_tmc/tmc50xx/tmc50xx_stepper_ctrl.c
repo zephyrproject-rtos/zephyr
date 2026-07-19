@@ -293,6 +293,10 @@ static int tmc50xx_stepper_ctrl_run(const struct device *dev,
 			return -EIO;
 		}
 		break;
+
+	default:
+		LOG_ERR("Unsupported direction %d", direction);
+		return -ENOTSUP;
 	}
 
 	if (data->sg_settings.is_sg_enabled) {

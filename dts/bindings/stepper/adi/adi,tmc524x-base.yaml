@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common properties for the Analog Devices TMC524x Stepper Motor Controller
+  family (TMC5240 and TMC5241, which share the same register map)
+
+include:
+  - name: adi,trinamic-gconf.yaml
+    property-allowlist:
+      - en-pwm-mode
+      - test-mode
+
+properties:
+  shaft:
+    type: boolean
+    description: |
+      Inverse motor direction
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      The frequency of the clock signal provided to the TMC524X.
+      This is used for real world conversion.
+
+      Hint: µstep velocity v[Hz] µsteps / s v[Hz] = v[524x] * ( fCLK[Hz]/2 / 2^23 )
+            where v[524x] is the value written to the TMC524X.
