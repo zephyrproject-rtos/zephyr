@@ -32,7 +32,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		uint8_t cfg = 0;
 
 		if (pins->output_high || pins->output_low) {
-			cfg |= BIT(0);
+			cfg |= (pins->slew_rate + 1);
 			if (pins->drive_open_drain) {
 				cfg |= BIT(2);
 			}

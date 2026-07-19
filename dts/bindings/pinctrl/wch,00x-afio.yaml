@@ -40,6 +40,8 @@ child-binding:
         type: string
         default: "max-speed-30mhz"
         enum:
+          - "max-speed-10mhz"
+          - "max-speed-2mhz"
           - "max-speed-30mhz"
 
       pinmux:
