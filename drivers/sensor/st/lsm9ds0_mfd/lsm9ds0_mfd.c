@@ -151,10 +151,10 @@ static int lsm9ds0_mfd_magn_set_odr(const struct device *dev,
 {
 	uint8_t i;
 
-	for (i = 0U; i < ARRAY_SIZE(lsm9ds0_mfd_accel_odr_map); ++i) {
-		if (val->val1 < lsm9ds0_mfd_accel_odr_map[i].freq_int ||
-		    (val->val1 == lsm9ds0_mfd_accel_odr_map[i].freq_int &&
-		     val->val2 <= lsm9ds0_mfd_accel_odr_map[i].freq_micro)) {
+	for (i = 0U; i < ARRAY_SIZE(lsm9ds0_mfd_magn_odr_map); ++i) {
+		if (val->val1 < lsm9ds0_mfd_magn_odr_map[i].freq_int ||
+		    (val->val1 == lsm9ds0_mfd_magn_odr_map[i].freq_int &&
+		     val->val2 <= lsm9ds0_mfd_magn_odr_map[i].freq_micro)) {
 			return lsm9ds0_mfd_magn_set_odr_raw(dev, i);
 		}
 	}
