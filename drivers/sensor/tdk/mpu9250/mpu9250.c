@@ -175,10 +175,10 @@ static int mpu9250_channel_get(const struct device *dev,
 		return ak8963_convert_magn(val, drv_data->magn_z,
 				    drv_data->magn_scale_z,
 				    drv_data->magn_st2);
+#endif
 	case SENSOR_CHAN_DIE_TEMP:
 		mpu9250_convert_temp(val, drv_data->temp);
 		break;
-#endif
 	default:
 		return -ENOTSUP;
 	}
