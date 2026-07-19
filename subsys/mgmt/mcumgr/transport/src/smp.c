@@ -53,6 +53,13 @@ void smp_packet_free(struct net_buf *nb)
 	net_buf_unref(nb);
 }
 
+#if defined(CONFIG_MCUMGR_TRANSPORT_NETBUF_AVAILABLE)
+size_t smp_packet_buffers_available(void)
+{
+	return net_buf_get_available(&pkt_pool);
+}
+#endif
+
 /**
  * @brief Allocates a request buffer.
  *

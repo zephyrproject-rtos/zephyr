@@ -37,6 +37,14 @@ config MCUMGR_TRANSPORT_NETBUF_COUNT
 	  The number of net_bufs to allocate for MCUmgr. These buffers are used for both requests
 	  and responses.
 
+config MCUMGR_TRANSPORT_NETBUF_AVAILABLE
+	bool "Available MCUmgr buffers functionality"
+	depends on NET_BUF_POOL_USAGE
+	help
+	  With this enabled, the `smp_packet_buffers_available` function can be used to see how
+	  many MCUmgr buffers are available (free). This should only be used for debugging or in
+	  tests.
+
 config MCUMGR_TRANSPORT_NETBUF_SIZE
 	int "Size of each MCUmgr buffer"
 	default 2048 if MCUMGR_TRANSPORT_UDP
