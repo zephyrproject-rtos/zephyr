@@ -393,7 +393,7 @@ static int flash_stm32_check_status(const struct device *dev)
 
 #ifdef DUAL_BANK
 	sr = regs->SR2;
-	if (sr & (FLASH_FLAG_SNECCERR_BANK1 | FLASH_FLAG_DBECCERR_BANK1)) {
+	if (sr & (FLASH_FLAG_SNECCERR_BANK2 | FLASH_FLAG_DBECCERR_BANK2)) {
 		uint32_t word = regs->ECC_FA2 & FLASH_ECC_FA_FAIL_ECC_ADDR;
 
 		LOG_WRN("Bank%d ECC error at 0x%08x", 2,
