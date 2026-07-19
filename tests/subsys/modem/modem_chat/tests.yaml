@@ -16,3 +16,6 @@ tests:
   modem.modem_chat.workq:
     extra_configs:
       - CONFIG_MODEM_DEDICATED_WORKQUEUE=y
+  modem.modem_chat.conditional_commands:
+    extra_configs:
+      - CONFIG_MODEM_CHAT_TEST_CONDITIONAL_COMMANDS=y

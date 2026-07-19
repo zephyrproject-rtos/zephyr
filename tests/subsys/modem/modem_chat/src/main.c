@@ -783,6 +783,83 @@ ZTEST(modem_chat, test_runtime_script)
 	zassert_equal(ret, -EINVAL, "Should have failed to set abort matches");
 }
 
+#if defined(CONFIG_MODEM_CHAT_CONDITIONAL_COMMANDS)
+static bool test_chat_run_result;
+
+static bool test_chat_run(void *user_data)
+{
+	zassert_equal(&cmd_user_data, user_data, "Unexpected user data");
+	return test_chat_run_result;
+}
+
+MODEM_CHAT_MATCHES_DEFINE(partial_matches,
+			  MODEM_CHAT_MATCH_INITIALIZER("ERR", "", NULL, false, false),
+			  MODEM_CHAT_MATCH_INITIALIZER("OK", "", NULL, false, false));
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(script_cond_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_COND("RSP", ok_match, test_chat_run),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT_COND("MULT", partial_matches,
+								   test_chat_run),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE_COND("NONE", 100, test_chat_run),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(cond_script, script_cond_cmds, abort_matches, on_script_result, 4);
+#endif
+
+ZTEST(modem_chat, test_script_skip_chats)
+{
+#if defined(CONFIG_MODEM_CHAT_CONDITIONAL_COMMANDS)
+
+	/* Conditional commands are skipped */
+	test_chat_run_result = false;
+	zassert_true(modem_chat_script_run(&cmd, &cond_script) == 0, "Failed to start script");
+	k_msleep(100);
+
+	modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer));
+	zassert_true(memcmp(buffer, "AT\r", sizeof("AT\r") - 1) == 0,
+		     "Request not sent as expected");
+	modem_backend_mock_put(&mock, ok_response, sizeof(ok_response) - 1);
+	k_msleep(100);
+	modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer));
+	zassert_true(memcmp(buffer, "AT\r", sizeof("AT\r") - 1) == 0,
+		     "Request not sent as expected");
+	modem_backend_mock_put(&mock, ok_response, sizeof(ok_response) - 1);
+	k_msleep(100);
+
+	/* Conditional commands are run */
+	test_chat_run_result = true;
+	zassert_true(modem_chat_script_run(&cmd, &cond_script) == 0, "Failed to start script");
+	k_msleep(100);
+
+	modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer));
+	zassert_true(memcmp(buffer, "AT\r", sizeof("AT\r") - 1) == 0,
+		     "Request not sent as expected");
+	modem_backend_mock_put(&mock, ok_response, sizeof(ok_response) - 1);
+	k_msleep(100);
+	modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer));
+	zassert_true(memcmp(buffer, "RSP\r", sizeof("RSP\r") - 1) == 0,
+		     "Request not sent as expected");
+	modem_backend_mock_put(&mock, ok_response, sizeof(ok_response) - 1);
+	k_msleep(100);
+	modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer));
+	zassert_true(memcmp(buffer, "MULT\r", sizeof("MULT\r") - 1) == 0,
+		     "Request not sent as expected");
+	modem_backend_mock_put(&mock, ok_response, sizeof(ok_response) - 1);
+	k_msleep(100);
+	modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer));
+	zassert_true(memcmp(buffer, "NONE\r", sizeof("NONE\r") - 1) == 0,
+		     "Request not sent as expected");
+	k_msleep(100);
+	modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer));
+	zassert_true(memcmp(buffer, "AT\r", sizeof("AT\r") - 1) == 0,
+		     "Request not sent as expected");
+	modem_backend_mock_put(&mock, ok_response, sizeof(ok_response) - 1);
+	k_msleep(100);
+#else
+	ztest_test_skip();
+#endif
+}
+
 /*************************************************************************************************/
 /*                                         Test suite                                            */
 /*************************************************************************************************/
