@@ -53,6 +53,9 @@ static int nxp_acomp_set_trigger(const struct device *dev, enum comparator_trigg
 	struct nxp_acomp_data *data = dev->data;
 	uint32_t ctrl = config->base->CTRL0;
 
+	/* Mask interrupts while reconfiguring; re-enabled below if needed. */
+	config->base->IMR0 |= ACOMP_IMR0_OUTA_INT_MASK_MASK | ACOMP_IMR0_OUT_INT_MASK_MASK;
+
 	ctrl &= ~(ACOMP_CTRL0_INT_ACT_HI_MASK | ACOMP_CTRL0_EDGE_LEVL_SEL_MASK);
 
 	switch (trigger) {
