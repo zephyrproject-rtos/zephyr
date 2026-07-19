@@ -21,7 +21,7 @@ static struct net_if *iface_ap;
 static struct net_if *iface_sta;
 
 static struct wifi_connect_req_params default_ap_params = {
-	.ssid = (uint8_t *)"ZephyrHwsim",
+	.ssid = "ZephyrHwsim",
 	.ssid_length = 10,
 	.channel = 6,
 	.security = WIFI_SECURITY_TYPE_NONE,
