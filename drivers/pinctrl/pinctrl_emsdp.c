@@ -158,7 +158,7 @@ static int pinctrl_emsdp_set(uint32_t pin, uint32_t type)
 			reg |= PM_B_CFG0_UART2a;
 			break;
 		case PMOD_UARTB:
-			reg |= PM_A_CFG0_UART1b;
+			reg |= PM_B_CFG0_UART2b;
 			break;
 		case PMOD_SPI:
 			reg |= PM_B_CFG0_SPI;
