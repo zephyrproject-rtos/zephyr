@@ -376,6 +376,18 @@ Alif Semiconductor Platforms:
   description: >-
     Alif Semiconductor SoCs, device tree files, and related drivers.
 
+Allwinner Platforms:
+  status: maintained
+  maintainers:
+    - khaidox
+  files:
+    - boards/xunlong/opi_zero2w/
+    - dts/arm/allwinner/
+    - dts/arm64/allwinner/
+    - soc/allwinner/
+  labels:
+    - "platform: Allwinner"
+
 Ambiq Platforms:
   status: maintained
   maintainers:
